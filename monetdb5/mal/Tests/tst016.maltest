@@ -1,9 +1,0 @@
-query T nosort
-a:= "Dit is een test\n";
-b:= blob.toblob(a);
-io.print(a);
-io.print(b);
-----
-"Dit is een test\n"
-4469742069732065656E20746573740A00
-

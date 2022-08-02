@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -18,8 +18,7 @@
 #include "mal_namespace.h"
 #include "mal_private.h"
 
-Symbol newFunctionArgs(const char *mod, const char *nme, int kind, int args)
-{
+Symbol newFunction(str mod, str nme,int kind){
 	Symbol s;
 	InstrPtr p;
 	int varid;
@@ -37,7 +36,7 @@ Symbol newFunctionArgs(const char *mod, const char *nme, int kind, int args)
 		return NULL;
 	}
 
-	p = newInstructionArgs(NULL, mod, nme, args);
+	p = newInstruction(NULL, mod, nme);
 	if (p == NULL) {
 		freeSymbol(s);
 		return NULL;
@@ -48,12 +47,6 @@ Symbol newFunctionArgs(const char *mod, const char *nme, int kind, int args)
 	pushInstruction(s->def,p);
 	return s;
 }
-
-Symbol newFunction(const char *mod, const char *nme, int kind)
-{
-	return newFunctionArgs(mod, nme, kind, MAXARG);
-}
-
 /*
  * Optimizers may be interested in the function definition
  * for obtaining properties. Rather than polution of the
@@ -94,15 +87,17 @@ chkFlow(MalBlkPtr mb)
 {   int i,j,k, v,lastInstruction;
 	int  pc[DEPTH];
 	int  var[DEPTH];
+	char buf[IDLENGTH * 2 +2];
 	InstrPtr stmt[DEPTH];
 	int btop=0;
 	int endseen=0, retseen=0, yieldseen=0;
-	InstrPtr p, sig;
+	InstrPtr p;
 	str msg = MAL_SUCCEED;
 
 	if ( mb->errors != MAL_SUCCEED)
 		return mb->errors ;
-	sig = getInstrPtr(mb, 0);
+	p = getInstrPtr(mb, 0);
+	snprintf(buf, IDLENGTH * 2 +2, "%s.%s", getModuleId(p), getFunctionId(p));
 	lastInstruction = mb->stop-1;
 	for(i= 0; i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
@@ -112,23 +107,23 @@ chkFlow(MalBlkPtr mb)
 		case BARRIERsymbol:
 		case CATCHsymbol:
 			if(btop== DEPTH)
-			    throw(MAL,"chkFlow", "%s.%s Too many nested MAL blocks", getModuleId(sig), getFunctionId(sig));
+			    throw(MAL,buf,"Too many nested MAL blocks");
 			pc[btop]= i;
 			v= var[btop]= getDestVar(p);
 			stmt[btop]=p;
 
 			for(j=btop-1;j>=0;j--)
 			if( v==var[j])
-			    throw(MAL,"chkFlow", "%s.%s recursive %s[%d] shields %s[%d]", getModuleId(sig), getFunctionId(sig), getVarName(mb,v), pc[j], getFcnName(mb),pc[i]);
+			    throw(MAL,buf, "recursive %s[%d] shields %s[%d]", getVarName(mb,v), pc[j], getFcnName(mb),pc[i]);
 
 			btop++;
 			break;
 		case EXITsymbol:
 			v= getDestVar(p);
 			if( btop>0 && var[btop-1] != v)
-			    throw(MAL,"chkFlow",  "%s.%s exit-label '%s' doesnot match '%s'", getModuleId(sig), getFunctionId(sig), getVarName(mb,v), getVarName(mb,var[btop-1]));
+			    throw(MAL, buf, "exit-label '%s' doesnot match '%s'", getVarName(mb,v), getVarName(mb,var[btop-1]));
 			if(btop==0)
-			    throw(MAL,"chkFlow", "%s.%s exit-label '%s' without begin-label",  getModuleId(sig), getFunctionId(sig), getVarName(mb,v));
+			    throw(MAL,buf, "exit-label '%s' without begin-label", getVarName(mb,v));
 			/* search the matching block */
 			for(j=btop-1;j>=0;j--)
 			if( var[j]==v) break;
@@ -154,13 +149,13 @@ chkFlow(MalBlkPtr mb)
 			if( var[j]==v) break;
 			if(j<0){
 				str nme=getVarName(mb,v);
-			    throw(MAL,"chkFlow",  "%s.%s label '%s' not in guarded block", getModuleId(sig), getFunctionId(sig), nme);
+			    throw(MAL,buf, "label '%s' not in guarded block", nme);
 			}
 			break;
 		case YIELDsymbol:
 			{ InstrPtr ps= getInstrPtr(mb,0);
 			if( ps->token != FACTORYsymbol){
-			    throw(MAL,"chkFlow",  "%s.%s yield misplaced!",  getModuleId(sig), getFunctionId(sig));
+			    throw(MAL, buf, "yield misplaced!");
 			}
 			yieldseen= TRUE;
 			 }
@@ -172,13 +167,13 @@ chkFlow(MalBlkPtr mb)
 				if (p->barrier == RETURNsymbol)
 					yieldseen = FALSE;    /* always end with a return */
 				if (ps->retc != p->retc) {
-					throw(MAL,"chkFlow",  "%s.%s invalid return target!",  getModuleId(sig), getFunctionId(sig));
+					throw(MAL, buf, "invalid return target!");
 				} else
 				if (ps->typechk == TYPE_RESOLVED)
 					for (e = 0; e < p->retc; e++) {
 						if (resolveType(getArgType(mb, ps, e), getArgType(mb, p, e)) < 0) {
 							str tpname = getTypeName(getArgType(mb, p, e));
-							msg = createException(MAL, "%s.%s %s type mismatch at type '%s'\n", getModuleId(p), getFunctionId(p),
+							msg = createException(MAL, buf, "%s type mismatch at type '%s'\n",
 									(p->barrier == RETURNsymbol ? "RETURN" : "YIELD"), tpname);
 							GDKfree(tpname);
 							return msg;
@@ -200,7 +195,7 @@ chkFlow(MalBlkPtr mb)
 					/* do nothing */
 				} else if( i) {
 					str l = instruction2str(mb,0,p,TRUE);
-					msg = createException( MAL, "%s.%s signature misplaced\n!%s", getModuleId(p), getFunctionId(p),l);
+					msg = createException( MAL, buf, "signature misplaced\n!%s",l);
 					GDKfree(l);
 					return  msg;
 				}
@@ -209,20 +204,20 @@ chkFlow(MalBlkPtr mb)
 	}
 
 	if(lastInstruction < mb->stop-1 )
-		throw(MAL,"chkFlow",  "%s.%s instructions after END", getModuleId(sig), getFunctionId(sig));
+		throw(MAL, buf, "instructions after END");
 
 	if( endseen && btop  > 0)
-			throw(MAL,"chkFlow",  "barrier '%s' without exit in %s[%d]", getVarName(mb,var[btop - 1]), getFcnName(mb), i);
+			throw(MAL, buf, "barrier '%s' without exit in %s[%d]", getVarName(mb,var[btop - 1]),getFcnName(mb),i);
 	p= getInstrPtr(mb,0);
 	if( !isaSignature(p))
-		throw( MAL,"chkFlow",  "%s.%s signature missing",  getModuleId(sig), getFunctionId(sig));
+		throw( MAL, buf, "signature missing");
 	if( retseen == 0){
 		if( getArgType(mb,p,0)!= TYPE_void &&
 			(p->token==FUNCTIONsymbol || p->token==FACTORYsymbol))
-				throw(MAL,"chkFlow",  "%s.%s RETURN missing", getModuleId(sig), getFunctionId(sig));
+				throw(MAL, buf,  "RETURN missing");
 	}
 	if ( yieldseen && getArgType(mb,p,0)!= TYPE_void)
-			throw( MAL,"chkFlow",  "%s.%s RETURN missing", getModuleId(sig), getFunctionId(sig));
+			throw( MAL, buf,"RETURN missing");
 	return MAL_SUCCEED;
 }
 
@@ -407,15 +402,13 @@ debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int s
 	if ( flg == 0 || step < 0  || first < 0 )
 		return;
 
-	if( mb->errors)
-				mnstr_printf(fd,"#errors seen: %s\n", mb->errors);
 	for (i = first; i < first +step && i < mb->stop; i++){
 		ps = instruction2str(mb, stk, (p=getInstrPtr(mb, i)), flg);
 		if (ps) {
 			if (p->token == REMsymbol)
 				mnstr_printf(fd,"%-40s\n",ps);
 			else {
-				mnstr_printf(fd,"%-40s\t#[%d] %s ",ps, i, (p->blk? p->blk->binding:""));
+				mnstr_printf(fd,"%-40s\t#[%d] ("BUNFMT") %s ",ps, i, getRowCnt(mb,getArg(p,0)), (p->blk? p->blk->binding:""));
 				if( flg & LIST_MAL_FLOW){
 					for(j =0; j < p->retc; j++)
 						mnstr_printf(fd,"%d ",getArg(p,j));
@@ -424,6 +417,9 @@ debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int s
 					for(; j < p->argc; j++)
 						mnstr_printf(fd,"%d ",getArg(p,j));
 				}
+				// also show type check property
+				if( p->typechk == TYPE_UNKNOWN)
+					mnstr_printf(fd," type check needed ");
 				mnstr_printf(fd,"\n");
 			}
 			GDKfree(ps);
@@ -443,10 +439,8 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 	}
 	if ( flg == 0)
 		return;
-
 	assert(size>=0);
 	assert(first>=0 && first <mb->stop);
-	renameVariables(mb);
 	if (flg & LIST_MAL_MAPI) {
 		size_t len = 0;
 		str ps;
@@ -470,37 +464,13 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 		printInstruction(fd, mb, stk, getInstrPtr(mb, i), flg);
 }
 
-
-void
-renameVariables(MalBlkPtr mb)
-{
-	int i;
-	char *s;
-
-	/* Temporary variables get their name from the position in the symbol table */
-	/* However, also MAL input may contain temporary names. At some point you need to clean it up to avoid clashes */
-	/* Certainly when you are about to print the MAL function */
-	/* During optimization they may be copied around, which means there name should be re-establised */
-	/* rename all temporaries for ease of variable table interpretation */
-	/* this code should not be necessary is variables always keep their position */
-	for( i = 0; i < mb->vtop; i++) {
-		s = getVarName(mb, i);
-		if( s[1] == '_' && (*s == 'C' || *s == 'X'))
-			snprintf(s + 2, IDLENGTH-2, "%d", i);
-	}
-}
-
 void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
 {
 	int i,j;
 	InstrPtr p;
-
-
 	// Set the used bits properly
 	for(i=0; i< mb->vtop; i++)
 		clrVarUsed(mb,i);
-
-
 	for(i=0; i< mb->stop; i++){
 		p= getInstrPtr(mb,i);
 		for(j= p->retc; j<p->argc; j++)
@@ -694,9 +664,10 @@ void clrDeclarations(MalBlkPtr mb){
 str
 chkDeclarations(MalBlkPtr mb){
 	int pc,i, k,l;
-	InstrPtr p, sig;
+	InstrPtr p;
 	short blks[MAXDEPTH], top= 0, blkId=1;
 	int dflow = -1;
+	char buf[IDLENGTH * 2 +2];
 	str msg = MAL_SUCCEED;
 
 	if( mb->errors)
@@ -708,9 +679,10 @@ chkDeclarations(MalBlkPtr mb){
 		setVarScope(mb,i,0);
 
 	/* all signature variables are declared at outer level */
-	sig= getInstrPtr(mb,0);
-	for(k=0; k<sig->argc; k++)
-		setVarScope(mb, getArg(sig, k), blkId);
+	p= getInstrPtr(mb,0);
+	for(k=0;k<p->argc; k++)
+		setVarScope(mb, getArg(p,k), blkId);
+	snprintf(buf, IDLENGTH * 2 +2, "%s.%s", getModuleId(p), getFunctionId(p));
 
 	for(pc=1;pc<mb->stop; pc++){
 		p= getInstrPtr(mb,pc);
@@ -720,7 +692,7 @@ chkDeclarations(MalBlkPtr mb){
 		for(k=p->retc;k<p->argc; k++) {
 			l=getArg(p,k);
 			if ( l < 0)
-					throw(MAL,"chkFlow",  "%s.%s Non-declared variable: pc=%d, var= %d",  getModuleId(sig), getFunctionId(sig), pc, k);
+					throw(MAL, buf, "Non-declared variable: pc=%d, var= %d", pc, k);
 			setVarUsed(mb,l);
 			if( getVarScope(mb,l) == 0){
 				/*
@@ -734,8 +706,9 @@ chkDeclarations(MalBlkPtr mb){
 				 */
 				if( p->barrier == CATCHsymbol){
 					setVarScope(mb, l, blks[0]);
-				} else if( !( isVarConstant(mb, l) || isVarTypedef(mb,l)) && !isVarInit(mb,l) ) {
-					throw(MAL,"chkFlow",  "%s.%s '%s' may not be used before being initialized",  getModuleId(sig), getFunctionId(sig), getVarName(mb,l));
+				} else if( !( isVarConstant(mb, l) || isVarTypedef(mb,l)) &&
+					!isVarInit(mb,l) ) {
+					throw(MAL, buf, "'%s' may not be used before being initialized", getVarName(mb,l));
 				}
 			} else if( !isVarInit(mb,l) ){
 			    /* is the block still active ? */
@@ -743,7 +716,7 @@ chkDeclarations(MalBlkPtr mb){
 				if( blks[i] == getVarScope(mb,l) )
 					break;
 			    if( i> top || blks[i]!= getVarScope(mb,l) )
-			        throw( MAL,"chkFlow",  "%s.%s '%s' used outside scope", getModuleId(sig), getFunctionId(sig), getVarName(mb,l));
+			        throw( MAL, buf, "'%s' used outside scope", getVarName(mb,l));
 			}
 			if( blockCntrl(p) || blockStart(p) )
 				setVarInit(mb, l);
@@ -771,11 +744,11 @@ chkDeclarations(MalBlkPtr mb){
 		if( p->barrier && msg == MAL_SUCCEED){
 			if ( blockStart(p)){
 				if( top == MAXDEPTH-2)
-					throw(MAL,"chkFlow",  "%s.%s too deeply nested  MAL program",  getModuleId(sig), getFunctionId(sig));
+					throw(MAL, buf, "too deeply nested  MAL program");
 				blkId++;
 				if (getModuleId(p) && getFunctionId(p) && strcmp(getModuleId(p),"language")==0 && strcmp(getFunctionId(p),"dataflow")== 0){
 					if( dflow != -1)
-						throw(MAL,"chkFlow",  "%s.%s setLifeSpan nested dataflow blocks not allowed", getModuleId(sig), getFunctionId(sig));
+						throw(MAL, buf, "setLifeSpan nested dataflow blocks not allowed" );
 					dflow= blkId;
 				}
 				blks[++top]= blkId;

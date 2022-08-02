@@ -1,0 +1,59 @@
+stderr of test 'truncate_tmp_tables.Bug-6543` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 19:00:04 >  
+# 19:00:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32461" "--set" "mapi_usock=/var/tmp/mtest-11969/.s.monetdb.32461" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2018"
+# 19:00:04 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32461
+# cmdline opt 	mapi_usock = /var/tmp/mtest-11969/.s.monetdb.32461
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2018
+# cmdline opt 	gdk_debug = 553648138
+
+# 19:03:45 >  
+# 19:03:45 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14006" "--port=32702" "-utestuser" "-Ptestpassword"
+# 19:03:45 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-11969/.s.monetdb.32461
+QUERY = TRUNCATE TABLE tmp.triggers;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'triggers'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-11969/.s.monetdb.32461
+QUERY = TRUNCATE TABLE tmp.objects;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'objects'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-11969/.s.monetdb.32461
+QUERY = TRUNCATE TABLE tmp.keys;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'keys'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-11969/.s.monetdb.32461
+QUERY = TRUNCATE TABLE tmp.idxs;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'idxs'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-11969/.s.monetdb.32461
+QUERY = TRUNCATE TABLE tmp._tables;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table '_tables'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-11969/.s.monetdb.32461
+QUERY = TRUNCATE TABLE tmp._columns;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table '_columns'
+CODE  = 42000
+
+
+# 19:00:04 >  
+# 19:00:04 >  "Done."
+# 19:00:04 >  
+

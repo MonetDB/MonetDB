@@ -1,3 +1,0 @@
-statement error
-select * from _tables limit 1000000000000000000000000000000000000000
-

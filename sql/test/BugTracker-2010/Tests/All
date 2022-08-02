@@ -8,6 +8,7 @@ correlated_update_type_mismatch.SF-2947841
 heap_combine_crash.SF-2947763
 rank-over-crash.SF-2926454
 embedded_record_seperator.SF-2991400
+crash_with_prepare_statement.Bug-2549
 mat.slice_on_empty_BATs.SF-2994521
 reorder.SF-2995671
 crashonschema.Bug-2547
@@ -15,15 +16,19 @@ connectto.Bug-2548
 copy-into-too-long-string.Bug-2358
 in_column_exp.Bug-2561
 multiple-updates-in-transaction.Bug-2543
+limit_in_prepare.Bug-2552
 select_star.Bug-2563
 delete_insert.Bug-2529
 decimal_div_whole_nrs.Bug-2579
 SQLengine_error_on_join.Bug-2580
 keycheck_crash.Bug-2583
+prepare_on_boolean_bug.Bug-2581
 in_query_with_constants_fails.Bug-2582
+prepare_statements_crash_server.Bug-2599
 and_not_broken.Bug-2602
 insert-into-except.Bug-2569
 not-in-union-except-union.Bug-2577
+prepare_stmt.Bug-2533.Bug-2534
 predicate_in_select.Bug-2535
 subselect.Bug-2537
 group-by_ordered_column.Bug-2564
@@ -32,7 +37,7 @@ ORDER_BY_over_UNION_EXCEPT_INTERSECT.Bug-2606
 second_function_existing_signature.Bug-2611
 update_statement_in_function_ignored.Bug-2614
 error-truncated.Bug-2615
-LIMIT_OFFSET_big-endian.Bug-2622        # Fails because of EXPLAIN and PLAN
+LIMIT_OFFSET_big-endian.Bug-2622
 decimal-function.BUG-2624
 function_results_NULL.Bug-2626
 with_row_number_crash.Bug-2631
@@ -62,6 +67,7 @@ select-distinct-limit.Bug-2676
 cast-varchar.Bug-2682
 substring_display_width.Bug-2683
 new-readonly-db.Bug-2695
+#Mbedded-crash.Bug-2701  no longer under maintenance
 distinct-order-by-limit.Bug-2691
 join_problem.Bug-2694
 TypeException_with_missing_function.Bug-2674
@@ -77,7 +83,7 @@ store_function_argument_correctly.Bug-2750
 COPY_INTO_with_backslashes.Bug-2748
 wrong_error_message_dropping_view.Bug-2713
 call_function_without_warning.Bug-2752
-#vacuum
+vacuum
 with-between.Bug-2732
 sequence-restart-with-null.Bug-2648
 constants-optimizer.Bug-2317

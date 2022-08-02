@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -26,7 +26,7 @@ void MCpopClientInput(Client c)
 	__attribute__((__visibility__("hidden")));
 int MCreadClient(Client c)
 	__attribute__((__visibility__("hidden")));
-bool MCshutdowninprogress(void)
+int MCshutdowninprogress(void)
 	__attribute__((__visibility__("hidden")));
 str defaultScenario(Client c)	/* used in src/mal/mal_session.c */
 	__attribute__((__visibility__("hidden")));
@@ -41,14 +41,14 @@ str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc)
 	__attribute__((__visibility__("hidden")));
 str callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[],char flag)
 	__attribute__((__visibility__("hidden")));
-
-Client setClientContext(Client cntxt)
-	__attribute__((__visibility__("hidden")));
 #endif
 
-str malAtomDefinition(const char *name,int tpe)
+str malAtomDefinition(str name,int tpe)
 	__attribute__((__visibility__("hidden")));
 str malAtomProperty(MalBlkPtr mb, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+
+void setqptimeout(lng usecs)
 	__attribute__((__visibility__("hidden")));
 
 bool mdbInit(void)
@@ -64,8 +64,6 @@ Symbol cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 int getBarrierEnvelop(MalBlkPtr mb)
 	__attribute__((__visibility__("hidden")));
 void listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int step)
-	__attribute__((__visibility__("hidden")));
-MALfcn findFunctionImplementation(const char *cname)
 	__attribute__((__visibility__("hidden")));
 
 /* mal_linker.h */

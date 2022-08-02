@@ -1,0 +1,22 @@
+stderr of test 'updating_views.SF-1023645` in directory 'sql/test/BugDay_2005-11-09_2.8` itself:
+
+
+# 10:01:11 >  
+# 10:01:11 >  Mtimeout -timeout 180 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./lib/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/log" --set mapi_port=30641 --set sql_port=47297 --set xquery_port=51579 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.8" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 10:01:11 >  
+
+
+# 10:01:12 >  
+# 10:01:12 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=47297  < updating_views.SF-1023645.sql
+# 10:01:12 >  
+
+MAPI  = monetdb@sofia:39182
+QUERY = insert into v1023645 values (1);
+ERROR = !INSERT INTO: cannot insert into view 'v1023645'
+CODE  = 42000
+
+
+# 10:01:13 >  
+# 10:01:13 >  Done.
+# 10:01:13 >  
+

@@ -1,0 +1,17 @@
+stdout of test 'stethoscope--help` in directory 'clients/mapiclient` itself:
+
+
+# 11:43:47 >  
+# 11:43:47 >  Mtimeout -timeout 120 ./stethoscope--help stethoscope--help 
+# 11:43:47 >  
+
+
+# 11:43:47 >  
+# 11:43:47 >  Mtimeout -timeout 60 stethoscope --help
+# 11:43:47 >  
+
+
+# 11:43:47 >  
+# 11:43:47 >  Done.
+# 11:43:47 >  
+

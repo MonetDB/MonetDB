@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -44,7 +44,6 @@
 #include "mal_parser.h"
 #include "mal_namespace.h"
 #include "mal_private.h"
-#include "mal_interpreter.h"
 #include "mal_runtime.h"
 #include "mal_authorize.h"
 #include "mapi_prompt.h"
@@ -72,10 +71,7 @@ MCinit(void)
 		maxclients = atoi(max_clients);
 	if (maxclients <= 0) {
 		maxclients = 64;
-		if (GDKsetenv("max_clients", "64") != GDK_SUCCEED) {
-			TRC_CRITICAL(MAL_SERVER, "Initialization failed: " MAL_MALLOC_FAIL "\n");
-			return false;
-		}
+		GDKsetenv("max_clients", "64");
 	}
 
 	MAL_MAXCLIENTS = /* client connections */ maxclients;
@@ -86,7 +82,6 @@ MCinit(void)
 	}
 	for (int i = 0; i < MAL_MAXCLIENTS; i++){
 		ATOMIC_INIT(&mal_clients[i].lastprint, 0);
-		mal_clients[i].idx = -1; /* indicate it's available */
 	}
 	return true;
 }
@@ -140,15 +135,14 @@ MCnewClient(void)
 	Client c;
 
 	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
-		if (c->idx == -1)
+		if (c->mode == FREECLIENT) {
+			c->mode = RUNCLIENT;
 			break;
+		}
 	}
 
 	if (c == mal_clients + MAL_MAXCLIENTS)
 		return NULL;
-
-	assert(c->mode == FREECLIENT);
-	c->mode = RUNCLIENT;
 	c->idx = (int) (c - mal_clients);
 	return c;
 }
@@ -190,10 +184,8 @@ MCresetProfiler(stream *fdout)
 void
 MCexitClient(Client c)
 {
+	finishSessionProfiler(c);
 	MCresetProfiler(c->fdout);
-	// Remove any left over constant symbols
-	if( c->curprg)
-		resetMalBlk(c->curprg->def);
 	if (c->father == NULL) { /* normal client */
 		if (c->fdout && c->fdout != GDKstdout)
 			close_stream(c->fdout);
@@ -207,7 +199,6 @@ MCexitClient(Client c)
 		c->fdout = NULL;
 		c->fdin = NULL;
 	}
-	setClientContext(NULL);
 }
 
 static Client
@@ -226,7 +217,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->fdin = fin ? fin : bstream_create(GDKstdin, 0);
 	if ( c->fdin == NULL){
 		c->mode = FREECLIENT;
-		c->idx = -1;
 		TRC_ERROR(MAL_SERVER, "No stdin channel available\n");
 		return NULL;
 	}
@@ -260,24 +250,30 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 		if (fin == NULL) {
 			c->fdin->s = NULL;
 			bstream_destroy(c->fdin);
+			c->mode = FREECLIENT;
 		}
-		c->mode = FREECLIENT;
-		c->idx = -1;
 		return NULL;
 	}
 	c->promptlength = strlen(prompt);
 
+	c->actions = 0;
 	c->profticks = c->profstmt = NULL;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	c->sqlprofiler = 0;
 	c->wlc_kind = 0;
 	c->wlc = NULL;
+#ifndef HAVE_EMBEDDED /* no authentication in embedded mode */
+	{
+		str msg = AUTHgetUsername(&c->username, c);
+		if (msg)				/* shouldn't happen */
+			freeException(msg);
+	}
+#endif
 	c->blocksize = BLOCK;
 	c->protocol = PROTOCOL_9;
 
 	c->filetrans = false;
-	c->handshake_options = NULL;
-	c->query = NULL;
+	c->getquery = NULL;
 
 	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "Client%d->s", (int) (c - mal_clients));
@@ -292,13 +288,8 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 
 	MT_lock_set(&mal_contextLock);
 	c = MCnewClient();
-
-	if (c) {
-		Client c_old = setClientContext(c);
-		(void) c_old;
-		assert(NULL == c_old);
+	if (c)
 		c = MCinitClientRecord(c, user, fin, fout);
-	}
 	MT_lock_unset(&mal_contextLock);
 	return c;
 }
@@ -392,16 +383,6 @@ MCforkClient(Client father)
 	return son;
 }
 
-static bool shutdowninprogress = false;
-
-bool
-MCshutdowninprogress(void){
-	MT_lock_set(&mal_contextLock);
-	bool ret = shutdowninprogress;
-	MT_lock_unset(&mal_contextLock);
-	return ret;
-}
-
 /*
  * When a client needs to be terminated then the file descriptors for
  * its input/output are simply closed.  This leads to a graceful
@@ -416,14 +397,9 @@ MCshutdowninprogress(void){
 void
 MCfreeClient(Client c)
 {
-	MT_lock_set(&mal_contextLock);
-	if( c->mode == FREECLIENT) {
-		assert(c->idx == -1);
-		MT_lock_unset(&mal_contextLock);
+	if( c->mode == FREECLIENT)
 		return;
-	}
 	c->mode = FINISHCLIENT;
-	MT_lock_unset(&mal_contextLock);
 
 	MCexitClient(c);
 
@@ -436,9 +412,10 @@ MCfreeClient(Client c)
 	c->prompt = NULL;
 	c->promptlength = -1;
 	if (c->errbuf) {
-		/* no client threads in embedded mode */
-		//if (!GDKembedded())
+/* no client threads in embedded mode */
+#ifndef HAVE_EMBEDDED
 		GDKsetbuf(0);
+#endif
 		if (c->father == NULL)
 			GDKfree(c->errbuf);
 		c->errbuf = 0;
@@ -480,17 +457,8 @@ MCfreeClient(Client c)
 	c->sqlprofiler = 0;
 	c->wlc_kind = 0;
 	c->wlc = NULL;
-	free(c->handshake_options);
-	c->handshake_options = NULL;
 	MT_sema_destroy(&c->s);
-	MT_lock_set(&mal_contextLock);
-	if (shutdowninprogress) {
-		c->mode = BLOCKCLIENT;
-	} else {
-		c->mode = FREECLIENT;
-		c->idx = -1;
-	}
-	MT_lock_unset(&mal_contextLock);
+	c->mode = MCshutdowninprogress()? BLOCKCLIENT: FREECLIENT;
 }
 
 /*
@@ -508,23 +476,27 @@ MCfreeClient(Client c)
  * When the server is about to shutdown, we should softly terminate
  * all outstanding session.
  */
+static volatile int shutdowninprogress = 0;
+
+int
+MCshutdowninprogress(void){
+	return shutdowninprogress;
+}
+
 void
 MCstopClients(Client cntxt)
 {
+	Client c = mal_clients;
+
 	MT_lock_set(&mal_contextLock);
-	for (int i = 0; i < MAL_MAXCLIENTS; i++) {
-		Client c = mal_clients + i;
-		if (cntxt != c) {
-			if (c->mode == RUNCLIENT)
-				c->mode = FINISHCLIENT;
-			else if (c->mode == FREECLIENT) {
-				assert(c->idx == -1);
-				c->idx = i;
-				c->mode = BLOCKCLIENT;
-			}
-		}
+	for(c = mal_clients;  c < mal_clients+MAL_MAXCLIENTS; c++)
+	if (cntxt != c){
+		if (c->mode == RUNCLIENT)
+			c->mode = FINISHCLIENT;
+		else if (c->mode == FREECLIENT)
+			c->mode = BLOCKCLIENT;
 	}
-	shutdowninprogress = true;
+	shutdowninprogress =1;
 	MT_lock_unset(&mal_contextLock);
 }
 
@@ -540,33 +512,10 @@ MCactiveClients(void)
 	return active;
 }
 
-/* To determine the average memory claims for assignment, we should calculate the outstanding claims*/
-/* This only concerns active clients and if one query claims all, then all should be divided equally */
-
-size_t
-MCmemoryClaim(void)
-{
-	size_t claim = 0;
-	int active = 1;
-
-	Client cntxt = mal_clients;
-
-	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++)
-	if( cntxt->idle == 0 && cntxt->mode == RUNCLIENT){
-		if(cntxt->memorylimit){
-			claim += cntxt->memorylimit;
-			active ++;
-		} else
-			return GDK_mem_maxsize;
-	}
-	if(active == 0 ||  claim  * LL_CONSTANT(1048576) >= GDK_mem_maxsize)
-		return GDK_mem_maxsize;
-	return claim * LL_CONSTANT(1048576);
-}
-
 void
 MCcloseClient(Client c)
 {
+	/* free resources of a single thread */
 	MCfreeClient(c);
 }
 
@@ -621,15 +570,16 @@ MCreadClient(Client c)
 		in->pos++;
 
 	if (in->pos >= in->len || in->mode) {
-		ssize_t rd;
+		ssize_t rd, sum = 0;
 
 		if (in->eof || !isa_block_stream(c->fdout)) {
 			if (!isa_block_stream(c->fdout) && c->promptlength > 0)
 				mnstr_write(c->fdout, c->prompt, c->promptlength, 1);
-			mnstr_flush(c->fdout, MNSTR_FLUSH_DATA);
+			mnstr_flush(c->fdout);
 			in->eof = false;
 		}
 		while ((rd = bstream_next(in)) > 0 && !in->eof) {
+			sum += rd;
 			if (!in->mode) /* read one line at a time in line mode */
 				break;
 		}

@@ -1,0 +1,15 @@
+#Testing variable return lists
+
+pattern fi(i:int):int...  address MDBdummy;
+pattern fs(i:int):str...  address MDBdummy;
+
+function tst();
+a:=fi(1);
+(a,b):=fi(1);
+(a,b,c):=fi(1);
+
+z:= fs(1);
+(y,z):=fs(1);
+end tst;
+mdb.list("user","tst");
+mdb.List("user","tst");

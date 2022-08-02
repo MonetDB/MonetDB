@@ -1,0 +1,36 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+
+MTSAFE
+INCLUDES = ../lib \
+           ../../gdk \
+           ../../common/utils \
+           ../../common/stream \
+           ../../monetdb5/mal \
+           $(GEOS_INCS) $(proj_CFLAGS)
+
+lib__geom = {
+	MODULE
+	DIR = libdir/monetdb5
+	SOURCES = geom.h geom.c geomBulk.c geom_upgrade.c
+	LIBS = ../lib/libgeom \
+	       WIN32?../../gdk/libbat \
+	       WIN32?../../common/stream/libstream \
+	       WIN32?../../monetdb5/tools/libmonetdb5 \
+	       $(GEOS_LIBS) $(proj_LIBS)
+}
+
+headers_mal = {
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = geom.mal
+}
+
+headers_autoload = {
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 30_geom.mal
+}

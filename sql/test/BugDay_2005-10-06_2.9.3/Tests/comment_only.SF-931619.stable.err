@@ -1,0 +1,17 @@
+stderr of test 'comment_only.SF-931619` in directory 'sql/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 13:51:23 >  
+# 13:51:23 >  Mtimeout -timeout 180 Mserver "--config=/ufs/roberto/servers/MonetDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/roberto/servers/MonetDB/lib/MonetDB:/ufs/roberto/servers/MonetDB/lib/bin" --set "gdk_dbfarm=/ufs/roberto/servers/MonetDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/roberto/servers/MonetDB/var/MonetDB/log" --set mapi_port=37494 --set sql_port=47565 --set xquery_port=52596 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 13:51:23 >  
+
+
+# 13:51:23 >  
+# 13:51:23 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=47565  < comment_only.SF-931619.sql
+# 13:51:23 >  
+
+
+# 13:51:23 >  
+# 13:51:23 >  Done.
+# 13:51:23 >  
+

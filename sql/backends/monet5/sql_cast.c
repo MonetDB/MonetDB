@@ -3,66 +3,544 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "sql.h"
-#include "sql_cast.h"
 #include "sql_result.h"
+#include "sql_cast.h"
+#include "sql_gencode.h"
+#include "sql_storage.h"
+#include "sql_scenario.h"
+#include "store_sequence.h"
+#include "sql_optimizer.h"
+#include "sql_datetime.h"
+#include "rel_optimizer.h"
+#include "rel_distribute.h"
+#include "rel_select.h"
+#include "rel_exp.h"
+#include "rel_dump.h"
+#include "opt_pipes.h"
+#include "clients.h"
 #include "mal_instruction.h"
 
-/* TODO get max size for all from type */
-static size_t
-str_buf_initial_capacity(sql_class eclass, int digits)
+str
+nil_2_timestamp(timestamp *res, const void *val)
 {
-	switch (eclass)
-	{
-		case EC_BIT:
-			/* should hold false for clob type and (var)char > 4 */
-			return (digits == 0 || digits > 4) ? 8 : 2;
-		case EC_SEC:
-		case EC_MONTH:
-		case EC_NUM:
-		case EC_DEC:
-		case EC_POS:
-		case EC_TIME:
-		case EC_TIME_TZ:
-		case EC_DATE:
-		case EC_TIMESTAMP:
-		case EC_TIMESTAMP_TZ:
-			return 64;
-		case EC_FLT:
-			return 128;
-		case EC_CHAR:
-		case EC_STRING:
-		case EC_BLOB:
-		case EC_GEOM:
-			return 1024;
-		default:
-			return 128;
-	}
+	(void) val;
+	*res = timestamp_nil;
+	return MAL_SUCCEED;
 }
 
-static inline str
-SQLstr_cast_any_type(str *r, size_t *rlen, mvc *m, sql_class eclass, int d, int s, int has_tz, const void *p, int tpe, int len)
+str
+str_2_timestamp(timestamp *res, const str *val)
 {
-	ssize_t sz = convert2str(m, eclass, d, s, has_tz, p, tpe, r, rlen);
-	if ((len > 0 && sz > (ssize_t) len) || sz < 0)
-		throw(SQL, "str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", len);
+	ssize_t pos = 0;
+	timestamp tp = 0, *conv = &tp;
+	str buf = *val;
+
+	if (strNil(buf)) {
+		*res = timestamp_nil;
+	} else {
+		pos = timestamp_fromstr(buf, &(size_t){sizeof(timestamp)}, &conv, false);
+		if (pos < (ssize_t) strlen(buf) || /* includes pos < 0 */ ATOMcmp(TYPE_timestamp, conv, ATOMnilptr(TYPE_timestamp)) == 0)
+			return createException(SQL, "calc.str_2_date", SQLSTATE(22007) "Timestamp '%s' has incorrect format", buf);
+		else
+			*res = *conv;
+	}
+	return MAL_SUCCEED;
+}
+
+str
+batnil_2_timestamp(bat *res, const bat *bid)
+{
+	BAT *b, *dst;
+	BUN p, q;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "batcalc.nil_2_timestamp", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	dst = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT);
+	if (dst == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(SQL, "sql.2_timestamp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	BATloop(b, p, q) {
+		if (BUNappend(dst, &timestamp_nil, false) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.timestamp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+	}
+	BBPkeepref(*res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+batstr_2_timestamp(bat *res, const bat *bid)
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p, q;
+	char *msg = NULL;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "batcalc.str_2_timestamp", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT);
+	if (dst == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(SQL, "sql.2_timestamp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	BATloop(b, p, q) {
+		str v = (str) BUNtvar(bi, p);
+		timestamp r;
+		msg = str_2_timestamp(&r, &v);
+		if (msg) {
+			BBPunfix(dst->batCacheid);
+			BBPunfix(b->batCacheid);
+			return msg;
+		}
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.timestamp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+	}
+	BBPkeepref(*res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
+}
+
+str
+nil_2_daytime(daytime *res, const void *val)
+{
+	(void) val;
+	*res = daytime_nil;
+	return MAL_SUCCEED;
+}
+
+str
+str_2_daytime(daytime *res, const str *val)
+{
+	ssize_t pos = 0;
+	daytime dt = 0, *conv = &dt;
+	str buf = *val;
+
+	if (strNil(buf)) {
+		*res = daytime_nil;
+	} else {
+		pos = daytime_fromstr(buf, &(size_t){sizeof(daytime)}, &conv, false);
+		if (pos < (ssize_t) strlen(buf) || /* includes pos < 0 */ ATOMcmp(TYPE_daytime, conv, ATOMnilptr(TYPE_daytime)) == 0)
+			return createException(SQL, "calc.str_2_date", SQLSTATE(22007) "Time '%s' has incorrect format", buf);
+		else
+			*res = *conv;
+	}
+	return MAL_SUCCEED;
+}
+
+str
+batnil_2_daytime(bat *res, const bat *bid)
+{
+	BAT *b, *dst;
+	BUN p, q;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "batcalc.nil_2_daytime", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	dst = COLnew(b->hseqbase, TYPE_daytime, BATcount(b), TRANSIENT);
+	if (dst == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(SQL, "sql.2_daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	daytime r = daytime_nil;
+	BATloop(b, p, q) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.timestamp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+	}
+	BBPkeepref(*res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+batstr_2_daytime(bat *res, const bat *bid)
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p, q;
+	char *msg = NULL;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "batcalc.str_2_daytime", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = COLnew(b->hseqbase, TYPE_daytime, BATcount(b), TRANSIENT);
+	if (dst == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(SQL, "sql.2_daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	BATloop(b, p, q) {
+		str v = (str) BUNtvar(bi, p);
+		daytime r;
+		msg = str_2_daytime(&r, &v);
+		if (msg) {
+			BBPunfix(dst->batCacheid);
+			BBPunfix(b->batCacheid);
+			return msg;
+		}
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+	}
+	BBPkeepref(*res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
+}
+
+str
+nil_2_date(date *res, const void *val)
+{
+	(void) val;
+	*res = date_nil;
+	return MAL_SUCCEED;
+}
+
+str
+str_2_date(date *res, const str *val)
+{
+	ssize_t pos = 0;
+	date dt = 0, *conv = &dt;
+	str buf = *val;
+
+	if (strNil(buf)) {
+		*res = date_nil;
+	} else {
+		pos = date_fromstr(buf, &(size_t){sizeof(date)}, &conv, false);
+		if (pos < (ssize_t) strlen(buf) || /* includes pos < 0 */ ATOMcmp(TYPE_date, conv, ATOMnilptr(TYPE_date)) == 0)
+			return createException(SQL, "calc.str_2_date", SQLSTATE(22007) "Date '%s' has incorrect format", buf);
+		else
+			*res = *conv;
+	}
+	return MAL_SUCCEED;
+}
+
+str
+SQLdate_2_str(str *res, const date *val)
+{
+	char *p = NULL;
+	size_t len = 0;
+	if (date_tostr(&p, &len, val, false) < 0) {
+		GDKfree(p);
+		throw(SQL, "date", GDK_EXCEPTION);
+	}
+	*res = p;
+	return MAL_SUCCEED;
+}
+
+str
+batnil_2_date(bat *res, const bat *bid)
+{
+	BAT *b, *dst;
+	BUN p, q;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "batcalc.nil_2_date", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	dst = COLnew(b->hseqbase, TYPE_date, BATcount(b), TRANSIENT);
+	if (dst == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(SQL, "sql.2_date", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	date r = date_nil;
+	BATloop(b, p, q) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.date", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+	}
+	BBPkeepref(*res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+batnil_ce_2_date(bat *res, const bat *bid, const bat *r)
+{
+	(void)r;
+	return batnil_2_date(res, bid);
+}
+
+str
+batstr_2_date(bat *res, const bat *bid)
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p, q;
+	char *msg = NULL;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "batcalc.str_2_date", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = COLnew(b->hseqbase, TYPE_date, BATcount(b), TRANSIENT);
+	if (dst == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(SQL, "sql.2_date", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	BATloop(b, p, q) {
+		str v = (str) BUNtvar(bi, p);
+		date r;
+		msg = str_2_date(&r, &v);
+		if (msg) {
+			BBPunfix(dst->batCacheid);
+			BBPunfix(b->batCacheid);
+			return msg;
+		}
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.date", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+	}
+	BBPkeepref(*res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
+}
+
+str
+batstr_ce_2_date(bat *res, const bat *bid, const bat *r)
+{
+	BAT *b, *c, *dst;
+	BATiter bi;
+	BUN p, q;
+	char *msg = NULL;
+	bit *ce;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "batcalc.str_2_date", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if ((c = BATdescriptor(*r)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(SQL, "batcalc.str_2_date", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	ce = Tloc(c, 0);
+	bi = bat_iterator(b);
+	dst = COLnew(b->hseqbase, TYPE_date, BATcount(b), TRANSIENT);
+	if (dst == NULL) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(c->batCacheid);
+		throw(SQL, "sql.2_date", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	BATloop(b, p, q) {
+		str v = (str) BUNtvar(bi, p);
+		date r;
+		if(ce[p])
+			msg = str_2_date(&r, &v);
+		else
+			r = date_nil;
+		if (msg) {
+			BBPunfix(dst->batCacheid);
+			BBPunfix(b->batCacheid);
+			BBPunfix(c->batCacheid);
+			return msg;
+		}
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(c->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.date", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+	}
+	BBPkeepref(*res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(c->batCacheid);
+	return msg;
+}
+
+str
+str_2_blob(blob **res, const str *val)
+{
+	ptr p = NULL;
+	size_t len = 0;
+	ssize_t e;
+	char buf[BUFSIZ];
+
+	e = ATOMfromstr(TYPE_blob, &p, &len, *val, false);
+	if (e < 0 || !p || (ATOMcmp(TYPE_blob, p, ATOMnilptr(TYPE_blob)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
+		if (p)
+			GDKfree(p);
+		snprintf(buf, BUFSIZ, "Conversion of string '%s' failed", *val? *val:"");
+		throw(SQL, "blob", SQLSTATE(42000) "%s", buf);
+	}
+	*res = (blob *) p;
+	return MAL_SUCCEED;
+}
+
+str
+SQLblob_2_str(str *res, const blob *val)
+{
+	char *p = NULL;
+	size_t len = 0;
+	if (BLOBtostr(&p, &len, val, false) < 0) {
+		GDKfree(p);
+		throw(SQL, "blob", GDK_EXCEPTION);
+	}
+	*res = p;
+	return MAL_SUCCEED;
+}
+
+str
+batstr_2_blob(bat *res, const bat *bid)
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p, q;
+	char *msg = NULL;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "batcalc.str_2_blob", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = COLnew(b->hseqbase, TYPE_blob, BATcount(b), TRANSIENT);
+	if (dst == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(SQL, "sql.2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	BATloop(b, p, q) {
+		str v = (str) BUNtvar(bi, p);
+		blob *r;
+		msg = str_2_blob(&r, &v);
+		if (msg) {
+			BBPunfix(dst->batCacheid);
+			BBPunfix(b->batCacheid);
+			return msg;
+		}
+		if (BUNappend(dst, r, false) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		GDKfree(r);
+	}
+	BBPkeepref(*res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
+}
+
+str
+batstr_ce_2_blob(bat *res, const bat *bid, const bat *r)
+{
+	BAT *b, *c, *dst;
+	BATiter bi;
+	BUN p, q;
+	char *msg = NULL;
+	bit *ce;
+	const blob *n;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "batcalc.str_2_blob", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if ((c = BATdescriptor(*r)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(SQL, "batcalc.str_2_blob", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	ce = Tloc(c, 0);
+	bi = bat_iterator(b);
+	dst = COLnew(b->hseqbase, TYPE_blob, BATcount(b), TRANSIENT);
+	n = ATOMnilptr(TYPE_blob);
+	if (dst == NULL) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(c->batCacheid);
+		throw(SQL, "sql.2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	BATloop(b, p, q) {
+		str v = (str) BUNtvar(bi, p);
+		blob *r;
+		if (ce[p])
+			msg = str_2_blob(&r, &v);
+		else
+			r = (blob*)n;
+		if (msg) {
+			BBPunfix(dst->batCacheid);
+			BBPunfix(b->batCacheid);
+			BBPunfix(c->batCacheid);
+			return msg;
+		}
+		if (BUNappend(dst, r, false) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(c->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		GDKfree(r);
+	}
+	BBPkeepref(*res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(c->batCacheid);
+	return msg;
+}
+
+static str
+SQLstr_cast_(str *res, mvc *m, sql_class eclass, int d, int s, int has_tz, ptr p, int tpe, int len)
+{
+	char *r = NULL;
+	int sz = MAX(2, len + 1);	/* nil should fit */
+
+	if (tpe != TYPE_str) {
+		/* TODO get max size for all from type */
+		if (len == 0 && tpe == TYPE_bit) /* should hold false */
+			sz = 6;
+		r = GDKmalloc(sz);
+		if (r == NULL)
+			throw(SQL, "str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		sz = convert2str(m, eclass, d, s, has_tz, p, tpe, &r, sz);
+	} else {
+		str v = (str) p;
+		STRLength(&sz, &v);
+		if (len == 0 || (sz >= 0 && sz <= len)) {
+			r = GDKstrdup(v);
+			if (r == NULL)
+				throw(SQL, "str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+	}
+	if ((len > 0 && sz > len) || sz < 0) {
+		if (r)
+			GDKfree(r);
+		if (ATOMcmp(tpe, ATOMnilptr(tpe), p) != 0) {
+			throw(SQL, "str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", len);
+		} else {
+			r = GDKstrdup(str_nil);
+			if (r == NULL)
+				throw(SQL, "str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+	}
+	*res = r;
 	return MAL_SUCCEED;
 }
 
 str
 SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *res = getArgReference_str(stk, pci, 0), r = NULL, msg;
+	str *res = getArgReference_str(stk, pci, 0);
 	sql_class eclass = (sql_class)*getArgReference_int(stk, pci, 1);
-	int d = *getArgReference_int(stk, pci, 2), s = *getArgReference_int(stk, pci, 3);
-	int has_tz = *getArgReference_int(stk, pci, 4), tpe = getArgType(mb, pci, 5), digits = *getArgReference_int(stk, pci, 6);
-	const void *p = getArgReference(stk, pci, 5);
+	int d = *getArgReference_int(stk, pci, 2);
+	int s = *getArgReference_int(stk, pci, 3);
+	int has_tz = *getArgReference_int(stk, pci, 4);
+	ptr p = getArgReference(stk, pci, 5);
+	int tpe = getArgType(mb, pci, 5);
+	int len = *getArgReference_int(stk, pci, 6);
 	mvc *m = NULL;
-	bool from_str = EC_VARCHAR(eclass) || tpe == TYPE_str;
+	str msg;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -70,234 +548,84 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (ATOMextern(tpe))
 		p = *(ptr *) p;
-
-	if (from_str) {
-		r = (str) p;
-		if (digits > 0 && !strNil(r) && UTF8_strlen(r) > digits)
-			throw(SQL, "calc.str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", digits);
-	} else {
-		size_t rlen = MAX(str_buf_initial_capacity(eclass, digits), strlen(str_nil) + 1); /* don't reallocate on str_nil */
-		if (!(r = GDKmalloc(rlen)))
-			throw(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d, s, has_tz, p, tpe, digits)) != MAL_SUCCEED) {
-			GDKfree(r);
-			return msg;
-		}
-	}
-
-	*res = GDKstrdup(r);
-	if (!from_str)
-		GDKfree(r);
-	if (!res)
-		throw(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
+	return SQLstr_cast_(res, m, eclass, d, s, has_tz, p, tpe, len);
 }
 
-#define SQLstr_cast_str(v, digits) \
-	if (UTF8_strlen(v) > digits) { \
-		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", digits); \
-		goto bailout1; \
-	}
-
-/* str SQLbatstr_cast(int *res, int *eclass, int *d1, int *s1, int *has_tz, int *bid, int *digits); */
+/* str SQLbatstr_cast(int *res, int *eclass, int *d1, int *s1, int *has_tz, int *bid, int *digits, [ bat[:int] *condexec] ); */
 str
 SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *b = NULL, *s = NULL, *dst = NULL;
+	BAT *b, *dst, *ce = NULL;
 	BATiter bi;
+	BUN p, q;
 	mvc *m = NULL;
-	str msg, r = NULL;
+	str msg;
+	char *r = NULL;
 	bat *res = getArgReference_bat(stk, pci, 0);
 	sql_class eclass = (sql_class) *getArgReference_int(stk, pci, 1);
-	int d1 = *getArgReference_int(stk, pci, 2), s1 = *getArgReference_int(stk, pci, 3), has_tz = *getArgReference_int(stk, pci, 4);
-	bat *bid = getArgReference_bat(stk, pci, 5), *sid = pci->argc == 7 ? NULL : getArgReference_bat(stk, pci, 6);
-	int tpe = getBatType(getArgType(mb, pci, 5)), digits = pci->argc == 7 ? *getArgReference_int(stk, pci, 6) : *getArgReference_int(stk, pci, 7);
-	struct canditer ci;
-	oid off;
-	bool nils = false, from_str = EC_VARCHAR(eclass) || tpe == TYPE_str, btkey = false, btsorted = false, btrevsorted = false;
-	size_t rlen = 0;
+	int *d1 = getArgReference_int(stk, pci, 2);
+	int *s1 = getArgReference_int(stk, pci, 3);
+	int *has_tz = getArgReference_int(stk, pci, 4);
+	bat *bid = getArgReference_bat(stk, pci, 5);
+	int *digits = getArgReference_int(stk, pci, 6);
+	bit *e = NULL;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(SQL, "batcalc.str", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		throw(SQL, "batcalc.str", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
-	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-		msg = createException(SQL, "batcalc.str", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
-
-	assert(digits >= 0);
-	if (from_str && digits == 0) {
-		if (s) {
-			if (!(dst = BATproject(s, b))) {
-				msg = createException(SQL, "batcalc.str", GDK_EXCEPTION);
-				goto bailout;
-			}
-			BBPunfix(s->batCacheid);
+	if (pci->argc == 8) {
+		bid = getArgReference_bat(stk, pci, 7);
+		if (bid && (ce = BATdescriptor(*bid)) == NULL) {
 			BBPunfix(b->batCacheid);
-			*res = dst->batCacheid;
-			BBPkeepref(dst);
-		} else {
-			*res = b->batCacheid;
-			BBPkeepref(b);
+			throw(SQL, "batcalc.str", SQLSTATE(HY005) "Cannot access column descriptor");
 		}
-		return MAL_SUCCEED;
+		assert(BATcount(b) == BATcount(ce));
 	}
-	off = b->hseqbase;
-	canditer_init(&ci, b, s);
+
 	bi = bat_iterator(b);
-
-	if (from_str && ci.tpe == cand_dense && ci.ncand == BATcount(b)) { /* from string case, just do validation, if right, return */
-		for (BUN i = 0; i < ci.ncand; i++) {
-			oid p = (canditer_next_dense(&ci) - off);
-			const char *v = BUNtvar(bi, p);
-
-			if (!strNil(v))
-				SQLstr_cast_str(v, digits);
-		}
-		if (s)
-			BBPunfix(s->batCacheid);
-		bat_iterator_end(&bi);
-		*res = b->batCacheid;
-		BBPkeepref(b);
-		return MAL_SUCCEED;
-	}
-
-	if (!(dst = COLnew(ci.hseq, TYPE_str, ci.ncand, TRANSIENT))) {
-		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout1;
-	}
-
-	rlen = MAX(str_buf_initial_capacity(eclass, digits), strlen(str_nil) + 1); /* don't reallocate on str_nil */
-	assert(rlen > 0);
-	if (!from_str && !(r = GDKmalloc(rlen))) {
-		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout1;
-	}
-
-	if (ci.tpe == cand_dense) {
-		if (from_str) { /* string to string */
-			for (BUN i = 0; i < ci.ncand; i++) {
-				oid p = (canditer_next_dense(&ci) - off);
-				const char *v = BUNtvar(bi, p);
-
-				if (strNil(v)) {
-					if (tfastins_nocheckVAR(dst, i, str_nil) != GDK_SUCCEED) {
-						msg = createException(MAL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout1;
-					}
-					nils = true;
-				} else {
-					SQLstr_cast_str(v, digits);
-					if (tfastins_nocheckVAR(dst, i, v) != GDK_SUCCEED) {
-						msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout1;
-					}
-				}
-			}
-		} else { /* any other type to string */
-			for (BUN i = 0; i < ci.ncand; i++) {
-				oid p = (canditer_next_dense(&ci) - off);
-				const void *v = BUNtail(bi, p);
-
-				if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
-					goto bailout1;
-				if (tfastins_nocheckVAR(dst, i, r) != GDK_SUCCEED) {
-					msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout1;
-				}
-				nils |= strNil(r);
-			}
-		}
-	} else {
-		if (from_str) { /* string to string */
-			for (BUN i = 0; i < ci.ncand; i++) {
-				oid p = (canditer_next(&ci) - off);
-				const char *v = BUNtvar(bi, p);
-
-				if (strNil(v)) {
-					if (tfastins_nocheckVAR(dst, i, str_nil) != GDK_SUCCEED) {
-						msg = createException(MAL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout1;
-					}
-					nils = true;
-				} else {
-					SQLstr_cast_str(v, digits);
-					if (tfastins_nocheckVAR(dst, i, v) != GDK_SUCCEED) {
-						msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout1;
-					}
-				}
-			}
-		} else { /* any other type to string */
-			for (BUN i = 0; i < ci.ncand; i++) {
-				oid p = (canditer_next(&ci) - off);
-				const void *v = BUNtail(bi, p);
-
-				if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
-					goto bailout1;
-				if (tfastins_nocheckVAR(dst, i, r) != GDK_SUCCEED) {
-					msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout1;
-				}
-				nils |= strNil(r);
-			}
-		}
-	}
-	btkey = from_str ? bi.key : ci.ncand <= 1;
-	btsorted = from_str ? bi.sorted : ci.ncand <= 1;
-	btrevsorted = from_str ? bi.revsorted : ci.ncand <= 1;
-bailout1:
-	bat_iterator_end(&bi);
-
-bailout:
-	GDKfree(r);
-	if (b)
+	if (ce)
+		e = (bit*)Tloc(ce, 0);
+	dst = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT);
+	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	if (dst && !msg) {
-		BATsetcount(dst, ci.ncand);
-		dst->tnil = nils;
-		dst->tnonil = !nils;
-		dst->tkey = btkey;
-		dst->tsorted = btsorted;
-		dst->trevsorted = btrevsorted;
-		*res = dst->batCacheid;
-		BBPkeepref(dst);
-	} else if (dst)
-		BBPreclaim(dst);
+		if (ce)
+			BBPunfix(ce->batCacheid);
+		throw(SQL, "sql.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	BATloop(b, p, q) {
+		ptr v = (ptr) BUNtail(bi, p);
+		if (!ce || e[p])
+			msg = SQLstr_cast_(&r, m, eclass, *d1, *s1, *has_tz, v, b->ttype, *digits);
+		else
+			r = (str)str_nil;
+		if (msg) {
+			BBPunfix(dst->batCacheid);
+			BBPunfix(b->batCacheid);
+			if (ce)
+				BBPunfix(ce->batCacheid);
+			return msg;
+		}
+		if (BUNappend(dst, r, false) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			if (ce)
+				BBPunfix(ce->batCacheid);
+			BBPreclaim(dst);
+			throw(SQL, "sql.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		if (r != str_nil)
+			GDKfree(r);
+		r = NULL;
+	}
+	BBPkeepref(*res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	if (ce)
+		BBPunfix(ce->batCacheid);
 	return msg;
 }
-
-#define flt_is_numeric 0
-#define dbl_is_numeric 0
-#define bte_is_numeric 1
-#define sht_is_numeric 1
-#define int_is_numeric 1
-#define lng_is_numeric 1
-#define hge_is_numeric 1
-
-/* stringify token */
-#define _STRNG_(s) #s
-#define STRNG(t) _STRNG_(t)
-
-/* concatenate two, three or four tokens */
-#define CONCAT_2(a,b)		a##b
-#define CONCAT_3(a,b,c)		a##b##c
-#define CONCAT_4(a,b,c,d)	a##b##c##d
-
-#define NIL(t)				CONCAT_2(t,_nil)
-#define ISNIL(t)			CONCAT_3(is_,t,_nil)
-#define TPE(t)				CONCAT_2(TYPE_,t)
-#define GDKmin(t)			CONCAT_3(GDK_,t,_min)
-#define GDKmax(t)			CONCAT_3(GDK_,t,_max)
-#define FUN(a,b,c,d)		CONCAT_4(a,b,c,d)
-#define IS_NUMERIC(t)		CONCAT_2(t,_is_numeric)
 
 /* up casting */
 
@@ -395,66 +723,71 @@ bailout:
 
 /* sql_cast_impl_down_from_flt */
 
+#define round_float(x)	roundf(x)
+
 #define TP1 flt
 #define TP2 bte
-#include "sql_cast_impl_int.h"
+#include "sql_cast_impl_down_from_flt.h"
 #undef TP2
 #undef TP1
 
 #define TP1 flt
 #define TP2 sht
-#include "sql_cast_impl_int.h"
+#include "sql_cast_impl_down_from_flt.h"
 #undef TP2
 #undef TP1
 
 #define TP1 flt
 #define TP2 int
-#include "sql_cast_impl_int.h"
+#include "sql_cast_impl_down_from_flt.h"
 #undef TP2
 #undef TP1
 
 #define TP1 flt
 #define TP2 lng
-#include "sql_cast_impl_int.h"
+#include "sql_cast_impl_down_from_flt.h"
 #undef TP2
 #undef TP1
 
 #ifdef HAVE_HGE
 #define TP1 flt
 #define TP2 hge
-#include "sql_cast_impl_int.h"
+#include "sql_cast_impl_down_from_flt.h"
 #undef TP2
 #undef TP1
 #endif
 
+#undef round_float
+#define round_float(x)	round(x)
+
 #define TP1 dbl
 #define TP2 bte
-#include "sql_cast_impl_int.h"
+#include "sql_cast_impl_down_from_flt.h"
 #undef TP2
 #undef TP1
 
 #define TP1 dbl
 #define TP2 sht
-#include "sql_cast_impl_int.h"
+#include "sql_cast_impl_down_from_flt.h"
 #undef TP2
 #undef TP1
 
 #define TP1 dbl
 #define TP2 int
-#include "sql_cast_impl_int.h"
+#include "sql_cast_impl_down_from_flt.h"
 #undef TP2
 #undef TP1
 
 #define TP1 dbl
 #define TP2 lng
-#include "sql_cast_impl_int.h"
+#include "sql_cast_impl_down_from_flt.h"
 #undef TP2
 #undef TP1
 
 #ifdef HAVE_HGE
 #define TP1 dbl
 #define TP2 hge
-#include "sql_cast_impl_int.h"
+#include "sql_cast_impl_down_from_flt.h"
 #undef TP2
 #undef TP1
 #endif
@@ -463,64 +796,64 @@ bailout:
 
 #define TP1 bte
 #define TP2 flt
-#include "sql_cast_impl_int.h"
+#include "sql_cast_impl_up_to_flt.h"
 #undef TP2
 #undef TP1
 
 #define TP1 sht
 #define TP2 flt
-#include "sql_cast_impl_int.h"
+#include "sql_cast_impl_up_to_flt.h"
 #undef TP2
 #undef TP1
 
 #define TP1 int
 #define TP2 flt
-#include "sql_cast_impl_int.h"
+#include "sql_cast_impl_up_to_flt.h"
 #undef TP2
 #undef TP1
 
 #define TP1 lng
 #define TP2 flt
-#include "sql_cast_impl_int.h"
+#include "sql_cast_impl_up_to_flt.h"
 #undef TP2
 #undef TP1
 
 #ifdef HAVE_HGE
 #define TP1 hge
 #define TP2 flt
-#include "sql_cast_impl_int.h"
+#include "sql_cast_impl_up_to_flt.h"
 #undef TP2
 #undef TP1
 #endif
 
 #define TP1 bte
 #define TP2 dbl
-#include "sql_cast_impl_int.h"
+#include "sql_cast_impl_up_to_flt.h"
 #undef TP2
 #undef TP1
 
 #define TP1 sht
 #define TP2 dbl
-#include "sql_cast_impl_int.h"
+#include "sql_cast_impl_up_to_flt.h"
 #undef TP2
 #undef TP1
 
 #define TP1 int
 #define TP2 dbl
-#include "sql_cast_impl_int.h"
+#include "sql_cast_impl_up_to_flt.h"
 #undef TP2
 #undef TP1
 
 #define TP1 lng
 #define TP2 dbl
-#include "sql_cast_impl_int.h"
+#include "sql_cast_impl_up_to_flt.h"
 #undef TP2
 #undef TP1
 
 #ifdef HAVE_HGE
 #define TP1 hge
 #define TP2 dbl
-#include "sql_cast_impl_int.h"
+#include "sql_cast_impl_up_to_flt.h"
 #undef TP2
 #undef TP1
 #endif
@@ -592,3 +925,4 @@ bailout:
 #undef TP2
 #undef TP1
 #endif
+

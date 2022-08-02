@@ -1,0 +1,17 @@
+stderr of test 'sesamstr_parser_error.SF-993366` in directory 'sql/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 22:17:50 >  
+# 22:17:50 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program/var/MonetDB/log" --set mapi_port=38375 --set sql_port=40591 --set xquery_port=52386 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 22:17:50 >  
+
+
+# 22:17:50 >  
+# 22:17:50 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=40591  < sesame_parser_error.SF-993366.sql
+# 22:17:50 >  
+
+
+# 22:17:52 >  
+# 22:17:52 >  Done.
+# 22:17:52 >  
+

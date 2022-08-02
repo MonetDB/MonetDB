@@ -1,0 +1,59 @@
+stderr of test 'quantiles` in directory 'sql/test/quantiles` itself:
+
+
+# 12:24:30 >  
+# 12:24:30 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34927" "--set" "mapi_usock=/var/tmp/mtest-30339/.s.monetdb.34927" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/hannes/monetdb-default-install/var/MonetDB/mTests_sql_test_quantiles" "--set" "mal_listing=0"
+# 12:24:30 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/hannes/monetdb-default-install/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 34927
+# cmdline opt 	mapi_usock = /var/tmp/mtest-30339/.s.monetdb.34927
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/hannes/monetdb-default-install/var/MonetDB/mTests_sql_test_quantiles
+# cmdline opt 	mal_listing = 0
+
+# 12:24:30 >  
+# 12:24:30 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30339" "--port=34927"
+# 12:24:30 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-6487/.s.monetdb.31354
+QUERY = select quantile(l_extendedprice,-1.0) from lit;
+ERROR = !quantile value of -1.000000 is not in range [0,1]
+MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
+QUERY = select quantile(l_extendedprice,-1) from lit;
+ERROR = !quantile value of -1.000000 is not in range [0,1]
+MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
+QUERY = select quantile(l_extendedprice,42) from lit;
+ERROR = !quantile value of 42.000000 is not in range [0,1]
+MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
+QUERY = select quantile(l_extendedprice,42.0) from lit;
+ERROR = !quantile value of 42.000000 is not in range [0,1]
+MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
+QUERY = select quantile(l_extendedprice,-1.0) from lit group by l_returnflag;
+ERROR = !quantile value of -1.000000 is not in range [0,1]
+MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
+QUERY = select quantile(l_extendedprice,-1) from lit group by l_returnflag;
+ERROR = !quantile value of -1.000000 is not in range [0,1]
+MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
+QUERY = select quantile(l_extendedprice,42) from lit group by l_returnflag;
+ERROR = !quantile value of 42.000000 is not in range [0,1]
+MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
+QUERY = select quantile(l_extendedprice,42.0) from lit group by l_returnflag;
+ERROR = !quantile value of 42.000000 is not in range [0,1]
+
+# 12:24:32 >  
+# 12:24:32 >  "Done."
+# 12:24:32 >  
+

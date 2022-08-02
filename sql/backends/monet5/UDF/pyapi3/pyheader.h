@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -21,6 +21,7 @@
 #include "mal_stack.h"
 #include "mal_linker.h"
 #include "gdk.h"
+#include "blob.h"
 #include "sql_catalog.h"
 #include "sql_scenario.h"
 #include "sql_cast.h"
@@ -40,10 +41,9 @@
 #else
 #include <Python.h>
 #endif
-#include <datetime.h>
 
 // Numpy Library
-#ifdef __COVERITY__
+#ifdef STATIC_CODE_ANALYSIS
 #define _NPY_NO_DEPRECATIONS
 #endif
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
@@ -66,15 +66,45 @@
 #define pyapi_export extern
 #endif
 
-PyDateTime_CAPI *get_DateTimeAPI(void);
-void init_DateTimeAPI(void);
+// Fixes for Python 2 <> Python 3
+#if PY_MAJOR_VERSION >= 3
+#define IS_PY3K
+#define PyString_FromString PyUnicode_FromString
+#define PyString_Check PyUnicode_Check
+#define PyString_CheckExact PyUnicode_CheckExact
+#define PyString_AsString PyUnicode_AsUTF8
+#define PyString_AS_STRING PyUnicode_AsUTF8
+#define PyString_FromStringAndSize PyUnicode_FromStringAndSize
+#define PyInt_FromLong PyLong_FromLong
+#define PyInt_Check PyLong_Check
+#define PythonUnicodeType Py_UNICODE
+#define PYFUNCNAME(name) PYAPI3##name
+#else
+#define PythonUnicodeType Py_UNICODE
+#define PYFUNCNAME(name) PYAPI2##name
+#endif
 
-#define USE_DATETIME_API						\
-	do {										\
-		PyDateTimeAPI = get_DateTimeAPI();		\
-	} while(0)
+#if defined(WIN32) && !defined(HAVE_EMBEDDED)
+// On Windows we need to dynamically load any SQL functions we use
+// For embedded, this is not necessary because we create one large shared object
+#define CREATE_SQL_FUNCTION_PTR(retval, fcnname)                               \
+	typedef retval (*fcnname##_ptr_tpe)();                                     \
+	fcnname##_ptr_tpe fcnname##_ptr = NULL;
 
+#define LOAD_SQL_FUNCTION_PTR(fcnname)                                         \
+	fcnname##_ptr =                                                            \
+		(fcnname##_ptr_tpe)getAddress(#fcnname);       \
+	if (fcnname##_ptr == NULL) {                                               \
+		msg = createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "Failed to load function %s", \
+							  #fcnname);                                       \
+	}
+#else
+#define CREATE_SQL_FUNCTION_PTR(retval, fcnname)                               \
+	typedef retval (*fcnname##_ptr_tpe)();                                     \
+	fcnname##_ptr_tpe fcnname##_ptr = (fcnname##_ptr_tpe)fcnname;
 
+#define LOAD_SQL_FUNCTION_PTR(fcnname) (void)fcnname
+#endif
 
 #define utf8string_minlength 256
 

@@ -1,0 +1,32 @@
+# testing string stuff
+s:= "hello world";
+
+t:= str.string(s,0,2);	io.print(t);
+t:= str.string(s,-4,2);	io.print(t);
+t:= str.string(s,0,15);	io.print(t);
+t:= str.string(nil:str,0,15);	io.print(t);
+
+t:= str.string(s,5);	io.print(t);
+t:= str.prefix(s,4);	io.print(t);
+t:= str.suffix(s,4);	io.print(t);
+
+i:= str.locate(s,"hello"); io.print(i);
+i:= str.locate(s,"xyz"); io.print(i);
+i:= str.locate(s,nil:str); io.print(i);
+i:= str.locate(nil:str,"hello"); io.print(i);
+i:= str.locate(nil:str,"xyz"); io.print(i);
+i:= str.locate(nil:str,nil:str); io.print(i);
+
+t:= str.repeat("abc",3);	io.print(t);
+t:= str.repeat(nil:str,3);	io.print(t);
+
+t:= str.insert("hello world",5,1,"brave new "); io.print(t);
+t:= str.insert("",5,1,"brave new "); io.print(t);
+t:= str.insert(nil:str,5,1,"brave new "); io.print(t);
+t:= str.insert("",5,1,"brave new "); io.print(t);
+t:= str.insert("",0,1,"brave new "); io.print(t);
+t:= str.insert("hello world",5,1,""); io.print(t);
+t:= str.insert("hello world",5,1,nil:str); io.print(t);
+
+t:= str.replace("hello world","world","brave new world"); io.print(t);
+

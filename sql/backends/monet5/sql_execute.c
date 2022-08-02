@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -26,6 +26,10 @@
 #include "sql_user.h"
 #include "sql_optimizer.h"
 #include "sql_datetime.h"
+#include "rel_unnest.h"
+#include "rel_optimizer.h"
+#include "rel_partition.h"
+#include "rel_distribute.h"
 #include "rel_select.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
@@ -185,15 +189,104 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	pushEndInstruction(mb);
 	if( msg == MAL_SUCCEED)
 		msg = chkTypes(cntxt->usermodule, mb, TRUE);
-	renameVariables(mb);
 	return msg;
 }
 
+/*
+ * Execution of the SQL program is delegated to the MALengine.
+ * Different cases should be distinguished. The default is to
+ * hand over the MAL block derived by the parser for execution.
+ * However, when we received an Execute call, we make a shortcut
+ * and prepare the stack for immediate execution
+ */
 static str
-SQLrun(Client c, mvc *m)
+SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
+{
+	mvc *m = be->mvc;
+	int argc, parc;
+	ValPtr *argv, argvbuffer[MAXARG], v;
+	ValRecord *argrec, argrecbuffer[MAXARG];
+	MalStkPtr glb;
+	InstrPtr pci;
+	int i;
+	str ret;
+	cq *q= be->q;
+
+	pci = getInstrPtr(mb, 0);
+	if (pci->argc >= MAXARG){
+		argv = (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
+		if( argv == NULL)
+			throw(SQL,"sql.prepare",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	} else
+		argv = argvbuffer;
+
+	if (pci->retc >= MAXARG){
+		argrec = (ValRecord *) GDKmalloc(sizeof(ValRecord) * pci->retc);
+		if( argrec == NULL){
+			if( argv != argvbuffer)
+				GDKfree(argv);
+			throw(SQL,"sql.prepare",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+	} else
+		argrec = argrecbuffer;
+
+	/* prepare the target variables */
+	for (i = 0; i < pci->retc; i++) {
+		argv[i] = argrec + i;
+		argv[i]->vtype = getVarGDKType(mb, i);
+	}
+
+	argc = m->argc;
+	parc = q->paramlen;
+
+	if (argc != parc) {
+		if (pci->argc >= MAXARG && argv != argvbuffer)
+			GDKfree(argv);
+		if (pci->retc >= MAXARG && argrec != argrecbuffer)
+			GDKfree(argrec);
+		throw(SQL, "sql.prepare", SQLSTATE(07001) "EXEC: wrong number of arguments for prepared statement: %d, expected %d", argc, parc);
+	} else {
+		for (i = 0; i < m->argc; i++) {
+			atom *arg = m->args[i];
+			sql_subtype *pt = q->params + i;
+
+			if (!atom_cast(m->sa, arg, pt)) {
+				/*sql_error(c, 003, buf); */
+				if (pci->argc >= MAXARG && argv != argvbuffer)
+					GDKfree(argv);
+				if (pci->retc >= MAXARG && argrec != argrecbuffer)
+					GDKfree(argrec);
+				throw(SQL, "sql.prepare", SQLSTATE(07001) "EXEC: wrong type for argument %d of " "prepared statement: %s, expected %s", i + 1, atom_type(arg)->type->sqlname, pt->type->sqlname);
+			}
+			argv[pci->retc + i] = &arg->data;
+		}
+	}
+	glb = (MalStkPtr) (q->stk);
+	ret = callMAL(c, mb, &glb, argv, (m->emod & mod_debug ? 'n' : 0));
+	/* cleanup the arguments */
+	for (i = pci->retc; i < pci->argc; i++) {
+		garbageElement(c, v = &glb->stk[pci->argv[i]]);
+		v->vtype = TYPE_int;
+		v->val.ival = int_nil;
+	}
+	q->stk = (backend_stack) glb; /* save garbageCollected stack */
+	if (glb && SQLdebug & 1)
+		printStack(GDKstdout, mb, glb);
+	if (pci->argc >= MAXARG && argv != argvbuffer)
+		GDKfree(argv);
+	if (pci->retc >= MAXARG && argrec != argrecbuffer)
+		GDKfree(argrec);
+	return ret;
+}
+
+static str
+SQLrun(Client c, backend *be, mvc *m)
 {
 	str msg= MAL_SUCCEED;
-	MalBlkPtr mb=c->curprg->def;
+	MalBlkPtr mc = 0, mb=c->curprg->def;
+	InstrPtr p=0;
+	int i,j, retc;
+	ValPtr val;
 
 	if (*m->errstr){
 		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
@@ -203,22 +296,77 @@ SQLrun(Client c, mvc *m)
 		*m->errstr=0;
 		return msg;
 	}
-	TRC_INFO(SQL_EXECUTION, "Executing: %s", c->query);
-	MT_thread_setworking(c->query);
+	if (m->emode == m_execute && be->q->paramlen != m->argc)
+		throw(SQL, "sql.prepare", SQLSTATE(42000) "EXEC called with wrong number of arguments: expected %d, got %d", be->q->paramlen, m->argc);
+	TRC_INFO(SQL_EXECUTION, "Executing: %s", m->query);
+	MT_thread_setworking(m->query);
+	// locate and inline the query template instruction
+	mb = copyMalBlk(c->curprg->def);
+	if (!mb) {
+		MT_thread_setworking(NULL);
+		throw(SQL, "sql.prepare", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	mb->history = c->curprg->def->history;
+	c->curprg->def->history = 0;
+
+	/* only consider a re-optimization when we are dealing with query templates */
+	for ( i= 1; i < mb->stop;i++){
+		p = getInstrPtr(mb,i);
+		if( getFunctionId(p) &&  qc_isapreparedquerytemplate(getFunctionId(p) ) ){
+			msg = SQLexecutePrepared(c, be, p->blk);
+			freeMalBlk(mb);
+			MT_thread_setworking(NULL);
+			return msg;
+		}
+		if( getFunctionId(p) &&  p->blk && qc_isaquerytemplate(getFunctionId(p)) ) {
+			mc = copyMalBlk(p->blk);
+			if (!mc) {
+				freeMalBlk(mb);
+				MT_thread_setworking(NULL);
+				throw(SQL, "sql.prepare", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			retc = p->retc;
+			freeMalBlk(mb); // TODO can be factored out
+			mb = mc;
+			// declare the argument values as a constant
+			// We use the knowledge that the arguments are first on the stack
+			for (j = 0; j < m->argc; j++) {
+				sql_subtype *pt = be->q->params + j;
+				atom *arg = m->args[j];
+
+				if (!atom_cast(m->sa, arg, pt)) {
+					freeMalBlk(mb);
+					MT_thread_setworking(NULL);
+					throw(SQL, "sql.prepare", SQLSTATE(07001) "EXEC: wrong type for argument %d of " "query template : %s, expected %s", i + 1, atom_type(arg)->type->sqlname, pt->type->sqlname);
+				}
+				val= (ValPtr) &arg->data;
+				if (VALcopy(&mb->var[j+retc].value, val) == NULL){
+					freeMalBlk(mb);
+					MT_thread_setworking(NULL);
+					throw(MAL, "sql.prepare", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				setVarConstant(mb, j+retc);
+				setVarFixed(mb, j+retc);
+			}
+			mb->stmt[0]->argc = 1;
+			break;
+		}
+	}
 	// JIT optimize the SQL query using all current information
 	// This include template constants, BAT sizes.
 	if( m->emod & mod_debug)
 		mb->keephistory = TRUE;
-	if ((m->emod & mod_exec) == 0) {
-		msg = SQLoptimizeQuery(c, mb);
-		if( msg != MAL_SUCCEED){
-			MT_thread_setworking(NULL);
-			return msg;
-		}
+	msg = SQLoptimizeQuery(c, mb);
+	if( msg != MAL_SUCCEED){
+		// freeMalBlk(mb);
+		MT_thread_setworking(NULL);
+		return msg;
 	}
 	mb->keephistory = FALSE;
 
 	if (mb->errors){
+		// freeMalBlk(mb);
+		// mal block might be so broken free causes segfault
 		msg = mb->errors;
 		mb->errors = 0;
 		MT_thread_setworking(NULL);
@@ -231,32 +379,26 @@ SQLrun(Client c, mvc *m)
 	} else if( m->emod & mod_debug) {
 		c->idle = 0;
 		c->lastcmd = time(0);
-#ifdef NDEBUG
-		msg = createException(SQL,"sql.statement",SQLSTATE(HY000) "DEBUG requires compilation for debugging");
-#else
-		setVariableScope(mb);
 		msg = runMALDebugger(c, mb);
-#endif
 	} else {
 		if( m->emod & mod_trace){
 			if((msg = SQLsetTrace(c,mb)) == MAL_SUCCEED) {
-				setVariableScope(mb);
 				c->idle = 0;
 				c->lastcmd = time(0);
 				msg = runMAL(c, mb, 0, 0);
 				stopTrace(c);
 			}
 		} else {
-			setVariableScope(mb);
-			c->idle = 0;
-			c->lastcmd = time(0);
+				c->idle = 0;
+				c->lastcmd = time(0);
 			msg = runMAL(c, mb, 0, 0);
 		}
-		resetMalBlk(mb);
 	}
 	/* after the query has been finished we enter the idle state */
 	c->idle = time(0);
 	c->lastcmd = 0;
+	// release the resources
+	freeMalBlk(mb);
 	MT_thread_setworking(NULL);
 	return msg;
 }
@@ -305,24 +447,22 @@ SQLescapeString(str s)
 }
 
 str
-SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit output, res_table **result)
+SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_table **result)
 {
-	int status = 0, err = 0, oldvtop, oldstop = 1, oldvid, inited = 0, ac, sizeframes, topframes;
+	int status = 0, err = 0, oldvtop, oldstop = 1, inited = 0, ac, sizevars, topvars;
 	unsigned int label;
 	mvc *o = NULL, *m = NULL;
-	sql_frame **frames;
-	list *global_vars;
+	sql_var *vars;
 	buffer *b = NULL;
-	char *n = NULL;
+	char *n = NULL, *mquery;
 	bstream *bs = NULL;
 	stream *buf = NULL;
 	str msg = MAL_SUCCEED;
 	backend *be = NULL, *sql = (backend *) c->sqlcontext;
-	Symbol backup = NULL;
-	size_t len = strlen(expr);
+	size_t len = strlen(*expr);
 
 #ifdef _SQL_COMPILE
-	mnstr_printf(c->fdout, "#SQLstatement:%s\n", expr);
+	mnstr_printf(c->fdout, "#SQLstatement:%s\n", *expr);
 #endif
 	if (!sql) {
 		inited = 1;
@@ -338,13 +478,13 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 	ac = m->session->auto_commit;
 	o = MNEW(mvc);
 	if (!o) {
-		if (inited) {
-			msg = SQLresetClient(c);
-			freeException(msg);
-		}
+		if (inited)
+			SQLresetClient(c);
 		throw(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	*o = *m;
+	/* hide query cache, this causes crashes in SQLtrans() due to uninitialized memory otherwise */
+	m->qc = NULL;
 
 	/* create private allocator */
 	m->sa = NULL;
@@ -367,23 +507,25 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 		sql->output_format = OFMT_NONE;
 	}
 	sql->depth++;
-
+	// and do it again
+	m->qc = NULL;
+	m->caching = 0;
 	m->user_id = m->role_id = USER_MONETDB;
 	if (result)
 		m->reply_size = -2; /* do not clean up result tables */
 
 	/* mimic a client channel on which the query text is received */
-	b = malloc(sizeof(buffer));
+	b = (buffer *) GDKmalloc(sizeof(buffer));
 	if (b == NULL) {
 		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto endofcompile;
 	}
-	n = malloc(len + 1 + 1);
+	n = GDKmalloc(len + 1 + 1);
 	if (n == NULL) {
 		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto endofcompile;
 	}
-	strcpy_len(n, expr, len + 1);
+	strncpy(n, *expr, len);
 	n[len] = '\n';
 	n[len + 1] = 0;
 	len++;
@@ -398,7 +540,6 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 	bs = bstream_create(buf, b->len);
 	if (bs == NULL) {
 		mnstr_destroy(buf);
-		buffer_destroy(b);
 		b = NULL;
 		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto endofcompile;
@@ -408,8 +549,11 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 	bstream_next(m->scanner.rs);
 
 	m->params = NULL;
+	m->argc = 0;
 	m->session->auto_commit = 0;
-	if (!m->sa && !(m->sa = sa_create(m->pa)) ) {
+	if (!m->sa)
+		m->sa = sa_create();
+	if (!m->sa) {
 		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto endofcompile;
 	}
@@ -419,14 +563,15 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 	 * Scan the complete string for SQL statements, stop at the first error.
 	 */
 	c->sqlcontext = sql;
-	if (c->curprg) {
-		backup = c->curprg;
-		c->curprg = NULL;
-	}
-
 	while (msg == MAL_SUCCEED && m->scanner.rs->pos < m->scanner.rs->len) {
 		sql_rel *r;
 
+		if (!m->sa)
+			m->sa = sa_create();
+		if (!m->sa) {
+			msg = createException(PARSE, "SQLparser",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto endofcompile;
+		}
 		m->sym = NULL;
 		if ((err = sqlparse(m)) ||
 		    /* Only forget old errors on transaction boundaries */
@@ -440,7 +585,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 					msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
 				*m->errstr = 0;
 			}
-			sqlcleanup(sql, err);
+			sqlcleanup(m, err);
 			execute = 0;
 			if (!err)
 				continue;
@@ -454,166 +599,93 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 		 * optimize and produce code.
 		 * We don't search the cache for a previous incarnation yet.
 		 */
-		if((msg = MSinitClientPrg(c, sql_private_module_name, nme)) != MAL_SUCCEED) {
+		if((msg = MSinitClientPrg(c, "user", nme)) != MAL_SUCCEED) {
 			goto endofcompile;
 		}
 		oldvtop = c->curprg->def->vtop;
 		oldstop = c->curprg->def->stop;
-		oldvid = c->curprg->def->vid;
-		r = sql_symbol2relation(sql, m->sym);
+		r = sql_symbol2relation(m, m->sym);
 #ifdef _SQL_COMPILE
 		mnstr_printf(c->fdout, "#SQLstatement:\n");
 #endif
-		if (m->emode != m_prepare) {
-
-			scanner_query_processed(&(m->scanner));
-			if ((err = mvc_status(m)) ) {
+		scanner_query_processed(&(m->scanner));
+		if ((err = mvc_status(m)) ) {
 				if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 					msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 				else
 					msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
-				*m->errstr=0;
-				msg = handle_error(m, status, msg);
-				sqlcleanup(sql, err);
-				/* restore the state */
-				MSresetInstructions(c->curprg->def, oldstop);
-				freeVariables(c, c->curprg->def, c->glb, oldvtop, oldvid);
-				c->curprg->def->errors = 0;
-				goto endofcompile;
-			}
-		/* generate MAL code */
-#ifdef _SQL_COMPILE
-			mnstr_printf(c->fdout, "#SQLstatement:pre-compile\n");
-			printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
-#endif
-			be->depth++;
-			setVarType(c->curprg->def, 0, 0);
-			if (backend_dumpstmt(be, c->curprg->def, r, 1, 1, NULL) < 0)
-				err = 1;
-			be->depth--;
-#ifdef _SQL_COMPILE
-			mnstr_printf(c->fdout, "#SQLstatement:post-compile\n");
-			printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
-#endif
-		} else {
-			// Do not directly execute prepared statements.
-			execute = 0;
-
-			if ((c->query = query_cleaned(m->sa, QUERY(m->scanner))) == NULL) {
-				err = 1;
-				msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
-
-			char *q_copy = sa_strdup(m->sa, c->query);
-
-			be->q = NULL;
-			if (!q_copy) {
-				err = 1;
-				msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			} else {
-				be->q = qc_insert(m->qc, m->sa,	/* the allocator */
-						  r,	/* keep relational query */
-						  m->sym,	/* the sql symbol tree */
-						  m->params,	/* the argument list */
-						  m->type,	/* the type of the statement */
-						  q_copy,
-						  be->no_mitosis);
-			}
-			if (!be->q) {
-				err = 1;
-				msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
-			scanner_query_processed(&(m->scanner));
-			if (be->q && backend_dumpproc(be, c, be->q, r) < 0)
-				err = 1;
-
-			/* passed over to query cache, used during dumpproc */
-			m->sa = NULL;
-			m->sym = NULL;
-			m->runs = NULL;
-			m->params = NULL;
-			/* register name in the namespace */
-			if (be->q) {
-				be->q->name = putName(be->q->name);
-				if (!be->q->name) {
-					msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					err = 1;
-				}
-
-				if (!err && (err = mvc_export_prepare(be, c->fdout)) < 0) {
-					msg = createException(PARSE, "SQLparser", SQLSTATE(45000) "Export operation failed: %s", mvc_export_error(be, c->fdout, err));
-					err = 1;
-				}
-			}
-		}
-
-		if (err) {
-			status = -10;
-			if (msg) {
-				msg = handle_error(m, status, msg);
-			}
-			sqlcleanup(sql, err);
+			*m->errstr=0;
+			msg = handle_error(m, status, msg);
+			sqlcleanup(m, err);
 			/* restore the state */
 			MSresetInstructions(c->curprg->def, oldstop);
-			freeVariables(c, c->curprg->def, c->glb, oldvtop, oldvid);
+			freeVariables(c, c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
 			goto endofcompile;
 		}
-
-		if (execute) {
-
-			/*
-
-			msg = SQLoptimizeFunction(c, c->curprg->def);
-
-			if (c->curprg->def->errors || msg) {
-				// restore the state
-				char *error = NULL;
-				MSresetInstructions(c->curprg->def, oldstop);
-				freeVariables(c, c->curprg->def, c->glb, oldvtop, oldvid);
-				c->curprg->def->errors = 0;
-				if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
-					error = createException(PARSE, "SQLparser", "%s", m->errstr);
-				else if (*m->errstr)
-					error = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
-				else
-					error = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", msg);
-				if (msg)
-					freeException(msg);
-				msg = error;
-				*m->errstr = 0;
-				goto endofcompile;
-			}
-			*/
+		/* generate MAL code */
 #ifdef _SQL_COMPILE
-			mnstr_printf(c->fdout, "#result of sql.eval()\n");
-			printFunction(c->fdout, c->curprg->def, 0, c->listing);
+		mnstr_printf(c->fdout, "#SQLstatement:pre-compile\n");
+		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
 #endif
+		be->depth++;
+		if (backend_callinline(be, c) < 0 ||
+		    backend_dumpstmt(be, c->curprg->def, r, 1, 1, NULL) < 0)
+			err = 1;
+		be->depth--;
+#ifdef _SQL_COMPILE
+		mnstr_printf(c->fdout, "#SQLstatement:post-compile\n");
+		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
+#endif
+		msg = SQLoptimizeFunction(c, c->curprg->def);
 
-			if (!output)
-				sql->out = NULL;	/* no output stream */
-			be->depth++;
-			msg = SQLrun(c,m);
-			be->depth--;
+		if (err || c->curprg->def->errors || msg) {
+			/* restore the state */
+			char *error = NULL;
 			MSresetInstructions(c->curprg->def, oldstop);
-			freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
-			sqlcleanup(sql, 0);
-			if (!execute)
-				goto endofcompile;
+			freeVariables(c, c->curprg->def, c->glb, oldvtop);
+			c->curprg->def->errors = 0;
+			if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
+				error = createException(PARSE, "SQLparser", "%s", m->errstr);
+			else if (*m->errstr)
+				error = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
+			else
+				error = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", msg);
+			if (msg)
+				freeException(msg);
+			msg = error;
+			*m->errstr = 0;
+			goto endofcompile;
+		}
 #ifdef _SQL_COMPILE
-			mnstr_printf(c->fdout, "#parse/execute result %d\n", err);
+		mnstr_printf(c->fdout, "#result of sql.eval()\n");
+		printFunction(c->fdout, c->curprg->def, 0, c->listing);
 #endif
+
+		if (!output)
+			sql->out = NULL;	/* no output stream */
+		be->depth++;
+		if (execute)
+			msg = SQLrun(c,be,m);
+		be->depth--;
+		MSresetInstructions(c->curprg->def, oldstop);
+		freeVariables(c, c->curprg->def, NULL, oldvtop);
+		sqlcleanup(m, 0);
+		if (!execute)
+			goto endofcompile;
+#ifdef _SQL_COMPILE
+		mnstr_printf(c->fdout, "#parse/execute result %d\n", err);
+#endif
+	}
+	if (m->results) {
+		if (result) { /* return all results sets */
+			*result = m->results;
+		} else {
+			if (m->results == o->results)
+				o->results = NULL;
+			res_tables_destroy(m->results);
 		}
-		if (sql->results) {
-			if (result) { /* return all results sets */
-				*result = sql->results;
-			} else {
-				if (sql->results == be->results)
-					be->results = NULL;
-				res_tables_destroy(sql->results);
-			}
-			sql->results = NULL;
-		}
+		m->results = NULL;
 	}
 /*
  * We are done; a MAL procedure resides in the cache.
@@ -622,38 +694,33 @@ endofcompile:
 	if (execute)
 		MSresetInstructions(c->curprg->def, 1);
 
-	if (backup)
-		c->curprg = backup;
-
 	c->sqlcontext = be;
 	backend_destroy(sql);
-	buffer_destroy(b);
+	GDKfree(n);
+	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
 	if (m->sa)
 		sa_destroy(m->sa);
 	m->sa = NULL;
 	m->sym = NULL;
-	m->runs = NULL;
 	/* variable stack maybe resized, ie we need to keep the new stack */
 	label = m->label;
 	status = m->session->status;
-	global_vars = m->global_vars;
-	sizeframes = m->sizeframes;
-	topframes = m->topframes;
-	frames = m->frames;
+	sizevars = m->sizevars;
+	topvars = m->topvars;
+	vars = m->vars;
+	mquery = m->query;
 	*m = *o;
 	_DELETE(o);
 	m->label = label;
-	m->global_vars = global_vars;
-	m->sizeframes = sizeframes;
-	m->topframes = topframes;
-	m->frames = frames;
+	m->sizevars = sizevars;
+	m->topvars = topvars;
+	m->vars = vars;
 	m->session->status = status;
 	m->session->auto_commit = ac;
-	if (inited) {
-		str other = SQLresetClient(c);
-		freeException(other);
-	}
+	m->query = mquery;
+	if (inited)
+		SQLresetClient(c);
 	return msg;
 }
 
@@ -665,8 +732,7 @@ SQLengineIntern(Client c, backend *be)
 	mvc *m = be->mvc;
 
 	if (oldlang == 'X') {	/* return directly from X-commands */
-		sqlcleanup(be, 0);
-		c->query = NULL;
+		sqlcleanup(be->mvc, 0);
 		return MAL_SUCCEED;
 	}
 
@@ -681,12 +747,11 @@ SQLengineIntern(Client c, backend *be)
 			}
 			goto cleanup_engine;
 		}
-		sqlcleanup(be, 0);
-		c->query = NULL;
+		sqlcleanup(be->mvc, 0);
 		return MAL_SUCCEED;
 	}
 
-	if (m->emode == m_deallocate || m->emode == m_prepare)
+	if (m->emode == m_prepare)
 		goto cleanup_engine;
 
 	be->language = 'D';
@@ -698,11 +763,11 @@ SQLengineIntern(Client c, backend *be)
 	if (MALcommentsOnly(c->curprg->def))
 		msg = MAL_SUCCEED;
 	else
-		msg = SQLrun(c,m);
+		msg = SQLrun(c,be,m);
 
 cleanup_engine:
-	if (m->emode != m_deallocate && m->emode != m_prepare && m->type == Q_SCHEMA && m->qc != NULL)
-		qc_clean(m->qc);
+	if (m->type == Q_SCHEMA && m->qc != NULL)
+		qc_clean(m->qc, false);
 	if (msg) {
 		/* don't print exception decoration, just the message */
 /*
@@ -724,9 +789,9 @@ cleanup_engine:
 		qc_delete(m->qc, be->q);
 	}
 	be->q = NULL;
-	sqlcleanup(be, (!msg) ? 0 : -1);
+	sqlcleanup(be->mvc, (!msg) ? 0 : -1);
 	MSresetInstructions(c->curprg->def, 1);
-	freeVariables(c, c->curprg->def, NULL, be->vtop, be->vid);
+	freeVariables(c, c->curprg->def, NULL, be->vtop);
 	be->language = oldlang;
 	/*
 	 * Any error encountered during execution should block further processing
@@ -741,16 +806,6 @@ SQLdestroyResult(res_table *destroy)
 	res_table_destroy(destroy);
 }
 
-static str
-RAcommit_statement(backend *be, str msg)
-{
-	mvc *m = be->mvc;
-	/* if an error already exists set the session status to dirty */
-	if (msg != MAL_SUCCEED && m->session->tr->active && !m->session->status)
-		m->session->status = -1;
-	return msg;
-}
-
 /* a hook is provided to execute relational algebra expressions */
 str
 RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -758,96 +813,74 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int pos = 0;
 	str *expr = getArgReference_str(stk, pci, 1);
 	bit *opt = getArgReference_bit(stk, pci, 2);
-	backend *be = NULL;
+	backend *b = NULL;
 	mvc *m = NULL;
-	str msg = MAL_SUCCEED;
+	str msg;
 	sql_rel *rel;
 	list *refs;
 
-	if ((msg = getSQLContext(c, mb, &m, &be)) != NULL)
+	if ((msg = getSQLContext(c, mb, &m, &b)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(c)) != NULL)
 		return msg;
 	if ((msg = SQLtrans(m)) != MAL_SUCCEED)
 		return msg;
 	if (!m->sa)
-		m->sa = sa_create(m->pa);
+		m->sa = sa_create();
 	if (!m->sa)
-		return RAcommit_statement(be, createException(SQL,"RAstatement",SQLSTATE(HY013) MAL_MALLOC_FAIL));
+		return createException(SQL,"RAstatement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	refs = sa_list(m->sa);
 	rel = rel_read(m, *expr, &pos, refs);
-	if (*opt && rel)
-		rel = sql_processrelation(m, rel, 0, 0, 0, 0);
-	if (!rel) {
-		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
-			msg = createException(SQL, "RAstatement", "%s", m->errstr);
-		else
-			msg = createException(SQL, "RAstatement", SQLSTATE(42000) "%s", m->errstr);
-	} else {
-		if ((msg = MSinitClientPrg(c, sql_private_module_name, "test")) != MAL_SUCCEED)
-			return RAcommit_statement(be, msg);
+	if (rel) {
+		int oldvtop = c->curprg->def->vtop;
+		int oldstop = c->curprg->def->stop;
+
+		if (*opt && rel)
+			rel = sql_processrelation(m, rel, 0);
+
+		if ((msg = MSinitClientPrg(c, "user", "test")) != MAL_SUCCEED) {
+			rel_destroy(rel);
+			return msg;
+		}
 
 		/* generate MAL code, ignoring any code generation error */
-		setVarType(c->curprg->def, 0, 0);
-		if (backend_dumpstmt(be, c->curprg->def, rel, 0, 1, NULL) < 0) {
+		if (backend_callinline(b, c) < 0 ||
+		    backend_dumpstmt(b, c->curprg->def, rel, 1, 1, NULL) < 0) {
 			msg = createException(SQL,"RAstatement","Program contains errors"); // TODO: use macro definition.
 		} else {
 			SQLaddQueryToCache(c);
 			msg = SQLoptimizeFunction(c,c->curprg->def);
-			if( msg == MAL_SUCCEED)
-				msg = SQLrun(c,m);
-			resetMalBlk(c->curprg->def);
-			SQLremoveQueryFromCache(c);
 		}
 		rel_destroy(rel);
-	}
-	return RAcommit_statement(be, msg);
-}
-
-static char *
-parseIdent(char *in, char *out)
-{
-	while (*in && *in != '"') {
-		if (*in == '\\' && (*(in + 1) == '\\' || *(in + 1) == '"')) {
-			*out++ = *(in + 1);
-			in+=2;
-		} else {
-			*out++ = *in++;
+		if( msg == MAL_SUCCEED)
+			msg = SQLrun(c,b,m);
+		if (!msg) {
+			resetMalBlk(c->curprg->def, oldstop);
+			freeVariables(c, c->curprg->def, NULL, oldvtop);
 		}
+		if (!msg)
+			msg = mvc_commit(m, 0, NULL, false);
+		else
+			msg = mvc_rollback(m, 0, NULL, false);
 	}
-	*out++ = '\0';
-	return in;
+	return msg;
 }
 
-struct local_var_entry {
-	char *vname;
-	sql_subtype tpe;
-} local_var_entry;
-
-struct global_var_entry {
-	char *vname;
-	sql_schema *s;
-} global_var_entry;
-
-static str
-RAstatement2_return(backend *be, mvc *m, int nlevels, struct global_var_entry *gvars, int gentries, str msg)
+static int
+is_a_number(char *v)
 {
-	while (nlevels) { /* clean added frames */
-		stack_pop_frame(m);
-		nlevels--;
+	while(*v) {
+		if (!isdigit((unsigned char) *v))
+			return 0;
+		v++;
 	}
-	for (int i = 0 ; i < gentries ; i++) { /* clean any added global variables */
-		struct global_var_entry gv = gvars[i];
-		(void) remove_global_var(m, gv.s, gv.vname);
-	}
-	sa_reset(m->ta);
-	return RAcommit_statement(be, msg);
+	return 1;
 }
 
 str
 RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int pos = 0, nlevels = 0, *lkeys = NULL, lcap = 0, lentries = 0, gcap = 0, gentries = 0;
+	int pos = 0;
 	str mod = *getArgReference_str(stk, pci, 1);
 	str nme = *getArgReference_str(stk, pci, 2);
 	str expr = *getArgReference_str(stk, pci, 3);
@@ -858,8 +891,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	sql_rel *rel;
 	list *refs, *ops;
-	struct local_var_entry *lvars = NULL;
-	struct global_var_entry *gvars = NULL;
+	char buf[BUFSIZ];
 
 	if ((msg = getSQLContext(cntxt, mb, &m, &be)) != NULL)
 		return msg;
@@ -868,113 +900,72 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = SQLtrans(m)) != MAL_SUCCEED)
 		return msg;
 	if (!m->sa)
-		m->sa = sa_create(m->pa);
-	if (!m->sa)
-		return RAstatement2_return(be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
+		m->sa = sa_create();
+	if (!m->sa) {
+		sqlcleanup(m, 0);
+		return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
+	/* keep copy of signature and relational expression */
+	snprintf(buf, BUFSIZ, "%s %s", sig, expr);
+
+	if (!stack_push_frame(m, NULL)) {
+		sqlcleanup(m, 0);
+		return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	ops = sa_list(m->sa);
-	while (sig && *sig) {
-		sql_schema *sh = NULL;
-		sql_type *t = NULL;
-		sql_subtype tpe;
-		char *p, *vtype = NULL, *sch = NULL, *var = NULL;
-		int d, s, level = strtol(sig, &p, 10);
+	while (sig && *sig && !isspace((unsigned char) *sig)) {
+		char *vnme = sig, *tnme;
+		char *p = strchr(++sig, (int)' ');
+		int d,s,nr = -1;
+		sql_subtype t;
+		atom *a;
 
-		var = p+1;
-		assert(*p == '"');
-		p = parseIdent(p+1, var);
-		p++;
-		if (*p == '"') { /* global variable, parse schema and name */
-			sch = var;
-			var = p+1;
-			p = parseIdent(p+1, var);
-			p++;
+		*p++ = 0;
+		/* vnme can be name or number */
+		if (is_a_number(vnme+1))
+			nr = strtol(vnme+1, NULL, 10);
+		tnme = p;
+		p = strchr(p, (int)'(');
+		*p++ = 0;
+		tnme = sa_strdup(m->sa, tnme);
+		if (!tnme) {
+			sqlcleanup(m, 0);
+			return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-
-		assert(*p == ' ');
-		p++; /* skip space and get type */
-		vtype = p;
-		p = strchr(p, '(');
-		*p++ = '\0';
-
-		/* get digits and scale */
 		d = strtol(p, &p, 10);
 		p++; /* skip , */
 		s = strtol(p, &p, 10);
-		p+=2; /* skip ) and , or ' ' */
-		sig = p;
 
-		if (!sql_find_subtype(&tpe, vtype, d, s)) {
-			if (!(t = mvc_bind_type(m, vtype))) /* try an external type */
-				return RAstatement2_return(be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(42000) "SQL type %s(%d, %d) not found\n", vtype, d, s));
-			sql_init_subtype(&tpe, t, d, s);
-		}
-
-		if (sch) {
-			assert(level == 0);
-			if (!(sh = mvc_bind_schema(m, sch)))
-				return RAstatement2_return(be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(3F000) "No such schema '%s'", sch));
-			if (!find_global_var(m, sh, var)) { /* don't add the same global variable again */
-				if (!push_global_var(m, sch, var, &tpe)) /* if doesn't exist, add it, then remove it before returning */
-					return RAstatement2_return(be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
-				if (gentries == gcap) {
-					if (gcap == 0) {
-						gcap = 8;
-						gvars = SA_NEW_ARRAY(m->ta, struct global_var_entry, gcap);
-					} else {
-						int ngcap = gcap * 4;
-						gvars = SA_RENEW_ARRAY(m->ta, struct global_var_entry, gvars, ngcap, gcap);
-						gcap = ngcap;
-					}
-					gvars[gentries++] = (struct global_var_entry) {.s = sh, .vname = var,};
-				}
+		sql_find_subtype(&t, tnme, d, s);
+		a = atom_general(m->sa, &t, NULL);
+		a->isnull = 0; // disable NULL value optimizations ugh
+		/* the argument list may have holes and maybe out of order, ie
+		 * don't use sql_add_arg, but special numbered version
+		 * sql_set_arg(m, a, nr);
+		 * */
+		if (nr >= 0) {
+			append(ops, exp_atom_ref(m->sa, nr, &t));
+			if (!sql_set_arg(m, nr, a)) {
+				sqlcleanup(m, 0);
+				return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			list_append(ops, exp_var(m->sa, sa_strdup(m->sa, sch), sa_strdup(m->sa, var), &tpe, 0));
 		} else {
-			char opname[BUFSIZ];
-
-			if (lentries == lcap) {
-				if (lcap == 0) {
-					lcap = 8;
-					lkeys = SA_NEW_ARRAY(m->ta, int, lcap);
-					lvars = SA_NEW_ARRAY(m->ta, struct local_var_entry, lcap);
-				} else {
-					int nlcap = lcap * 4;
-					lkeys = SA_RENEW_ARRAY(m->ta, int, lkeys, nlcap, lcap);
-					lvars = SA_RENEW_ARRAY(m->ta, struct local_var_entry, lvars, nlcap, lcap);
-					lcap = nlcap;
-				}
+			if (!stack_push_var(m, vnme+1, &t)) {
+				sqlcleanup(m, 0);
+				return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			lkeys[lentries] = level;
-			lvars[lentries] = (struct local_var_entry) {.tpe = tpe, .vname = var,};
-			lentries++;
-
-			snprintf(opname, BUFSIZ, "%d%%%s", level, var); /* engineering trick */
-			list_append(ops, exp_var(m->sa, NULL, sa_strdup(m->sa, opname), &tpe, level));
+			append(ops, exp_var(m->sa, sa_strdup(m->sa, vnme+1), &t, m->frame));
 		}
+		sig = strchr(p, (int)',');
+		if (sig)
+			sig++;
 	}
-	if (lentries) {
-		GDKqsort(lkeys, lvars, NULL, lentries, sizeof(int), sizeof(struct local_var_entry), TYPE_int, false, false);
-
-		for (int i = 0 ; i < lentries ; i++) {
-			int next_level = lkeys[i];
-			struct local_var_entry next_val = lvars[i];
-
-			assert(next_level != 0); /* no global variables here */
-			while (nlevels < next_level) { /* add gap levels */
-				if (!stack_push_frame(m, NULL))
-					return RAstatement2_return(be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
-				nlevels++;
-			}
-			if (!frame_push_var(m, next_val.vname, &next_val.tpe))
-				return RAstatement2_return(be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
-		}
-	}
-
 	refs = sa_list(m->sa);
 	rel = rel_read(m, expr, &pos, refs);
+	stack_pop_frame(m);
 	if (rel)
-		rel = sql_processrelation(m, rel, 0, 0, 0, 0);
+		rel = sql_processrelation(m, rel, 1);
 	if (!rel) {
 		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 			msg = createException(SQL, "RAstatement2", "%s", m->errstr);
@@ -995,12 +986,13 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for (node *n = rel->exps->h, *m = types_list->h ; n && m && !msg ; n = n->next, m = m->next) {
 				sql_exp *e = (sql_exp *) n->data;
 				sql_subtype *t = exp_subtype(e);
-				str got = sql_subtype_string(be->mvc->ta, t), expected = (str) m->data;
+				str got = subtype2string(t), expected = (str) m->data;
 
 				if (!got)
 					msg = createException(SQL, "RAstatement2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				else if (strcmp(expected, got) != 0)
 					msg = createException(SQL, "RAstatement2", SQLSTATE(42000) "Parameter %d has wrong SQL type, expected %s, but got %s instead", i, expected, got);
+				GDKfree(got);
 				i++;
 			}
 		}
@@ -1008,23 +1000,6 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!msg && monet5_create_relational_function(m, mod, nme, rel, NULL, ops, 0) < 0)
 		msg = createException(SQL, "RAstatement2", "%s", m->errstr);
 	rel_destroy(rel);
-	return RAstatement2_return(be, m, nlevels, gvars, gentries, msg);
-}
-
-str
-RAstatementEnd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	backend *be = NULL;
-	mvc *m = NULL;
-	str msg = MAL_SUCCEED;
-
-	(void) stk;
-	(void) pci;
-	if ((msg = getSQLContext(cntxt, mb, &m, &be)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-
-	sqlcleanup(be, 0);
-	return SQLautocommit(m);
+	sqlcleanup(m, 0);
+	return msg;
 }

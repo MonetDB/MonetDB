@@ -3,18 +3,17 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_tracer.h"
 #include "gdk_private.h"
-#include "mutils.h"
 
 #define DEFAULT_ADAPTER BASIC
 #define DEFAULT_LOG_LEVEL M_ERROR
-#define DEFAULT_FLUSH_LEVEL M_DEBUG
+#define DEFAULT_FLUSH_LEVEL M_INFO
 
 #define FILE_NAME "mdbtrace.log"
 
@@ -24,15 +23,13 @@
 #define GENERATE_STRING(STRING) #STRING,
 
 static FILE *active_tracer;
-MT_Lock GDKtracer_lock = MT_LOCK_INITIALIZER(GDKtracer_lock);
+MT_Lock lock = MT_LOCK_INITIALIZER("GDKtracer_1");
 
 static char file_name[FILENAME_MAX];
 
 static ATOMIC_TYPE cur_adapter = ATOMIC_VAR_INIT(DEFAULT_ADAPTER);
 
 static log_level_t cur_flush_level = DEFAULT_FLUSH_LEVEL;
-
-static bool write_to_tracer = false;
 
 #define GENERATE_LOG_LEVEL(COMP) DEFAULT_LOG_LEVEL,
 log_level_t lvl_per_component[] = {
@@ -83,14 +80,6 @@ static const char *level_str[] = {
 		## __VA_ARGS__);
 
 
-#define GDK_TRACER_RESET_OUTPUT()					\
-	do {								\
-		write_to_tracer = false;				\
-		for (int i = 0; i < (int) COMPONENTS_COUNT; i++) {	\
-			write_to_tracer = write_to_tracer || lvl_per_component[i] > DEFAULT_LOG_LEVEL; \
-		}							\
-	} while(0)
-
 static inline char *
 get_timestamp(char *datetime, size_t dtsz)
 {
@@ -106,28 +95,30 @@ get_timestamp(char *datetime, size_t dtsz)
 // When BASIC adapter is active, all the log messages are getting printed to a file.
 // This function prepares a file in order to write the contents of the buffer when necessary.
 static gdk_return
-GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
+_GDKtracer_init_basic_adptr(void)
 {
-	if (dbtrace == NULL) {
-		write_to_tracer = false;
-		if (dbpath == NULL) {
+	const char *trace_path;
+
+	trace_path = GDKgetenv("gdk_dbtrace");
+	if (trace_path == NULL) {
+		trace_path = GDKgetenv("gdk_dbpath");
+		if (trace_path == NULL) {
 			active_tracer = stderr;
 			return GDK_SUCCEED;
 		}
 		if (strconcat_len(file_name, sizeof(file_name),
-				  dbpath, DIR_SEP_STR, FILE_NAME, NULL)
+				  trace_path, DIR_SEP_STR, FILE_NAME, NULL)
 		    >= sizeof(file_name)) {
 			goto too_long;
 		}
 	} else {
-		write_to_tracer = true;
-		if (strcpy_len(file_name, dbtrace, sizeof(file_name))
+		if (strcpy_len(file_name, trace_path, sizeof(file_name))
 		    >= sizeof(file_name)) {
 			goto too_long;
 		}
 	}
 
-	active_tracer = MT_fopen(file_name, "a");
+	active_tracer = fopen(file_name, "a");
 
 	if (active_tracer == NULL) {
 		GDK_TRACER_EXCEPTION("Failed to open %s: %s\n", file_name,
@@ -146,12 +137,6 @@ GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
 	return GDK_FAIL;
 }
 
-static gdk_return
-_GDKtracer_init_basic_adptr(void)
-{
-	return GDKtracer_init_trace_file(GDKgetenv("gdk_dbpath"),
-					 GDKgetenv("gdk_dbtrace"));
-}
 
 static void
 set_level_for_layer(int layer, int lvl)
@@ -160,11 +145,11 @@ set_level_for_layer(int layer, int lvl)
 	log_level_t level = (log_level_t) lvl;
 
 	// make sure we initialize before changing the component level
-	MT_lock_set(&GDKtracer_lock);
+	MT_lock_set(&lock);
 	if (file_name[0] == 0) {
 		_GDKtracer_init_basic_adptr();
 	}
-	MT_lock_unset(&GDKtracer_lock);
+	MT_lock_unset(&lock);
 
 	for (int i = 0; i < COMPONENTS_COUNT; i++) {
 		if (layer == MDB_ALL) {
@@ -190,9 +175,6 @@ set_level_for_layer(int layer, int lvl)
 			}
 		}
 	}
-	MT_lock_set(&GDKtracer_lock);
-	GDK_TRACER_RESET_OUTPUT();
-	MT_lock_unset(&GDKtracer_lock);
 }
 
 static inline adapter_t
@@ -275,7 +257,7 @@ GDKtracer_reinit_basic(int sig)
 		return;
 
 	// Make sure that GDKtracer is not trying to flush the buffer
-	MT_lock_set(&GDKtracer_lock);
+	MT_lock_set(&lock);
 
 	if (active_tracer) {
 		if (active_tracer != stderr)
@@ -286,7 +268,7 @@ GDKtracer_reinit_basic(int sig)
 	}
 	_GDKtracer_init_basic_adptr();
 
-	MT_lock_unset(&GDKtracer_lock);
+	MT_lock_unset(&lock);
 }
 
 
@@ -294,14 +276,7 @@ gdk_return
 GDKtracer_stop(void)
 {
 	set_level_for_layer(MDB_ALL, DEFAULT_LOG_LEVEL);
-	if (active_tracer) {
-		if (active_tracer != stderr)
-			fclose(active_tracer);
-		else
-			fflush(active_tracer);
-		active_tracer = NULL;
-	}
-	return GDK_SUCCEED;
+	return GDKtracer_flush_buffer();
 }
 
 gdk_return
@@ -320,12 +295,11 @@ GDKtracer_set_component_level(const char *comp, const char *lvl)
 	}
 
 	// make sure we initialize before changing the component level
-	MT_lock_set(&GDKtracer_lock);
+	MT_lock_set(&lock);
 	if (file_name[0] == 0) {
 		_GDKtracer_init_basic_adptr();
 	}
-	write_to_tracer = write_to_tracer || level > DEFAULT_LOG_LEVEL;
-	MT_lock_unset(&GDKtracer_lock);
+	MT_lock_unset(&lock);
 
 	lvl_per_component[component] = level;
 
@@ -355,10 +329,6 @@ GDKtracer_reset_component_level(const char *comp)
 		return GDK_FAIL;
 	}
 	lvl_per_component[component] = DEFAULT_LOG_LEVEL;
-	MT_lock_set(&GDKtracer_lock);
-	GDK_TRACER_RESET_OUTPUT();
-	MT_lock_unset(&GDKtracer_lock);
-
 	return GDK_SUCCEED;
 }
 
@@ -447,24 +417,14 @@ GDKtracer_reset_adapter(void)
 
 static bool add_ts;		/* add timestamp to error message to stderr */
 
-gdk_return
-GDKtracer_init(const char *dbpath, const char *dbtrace)
+void
+GDKtracer_init(void)
 {
-	MT_lock_set(&GDKtracer_lock);
 #ifdef _MSC_VER
 	add_ts = GetFileType(GetStdHandle(STD_ERROR_HANDLE)) != FILE_TYPE_PIPE;
 #else
 	add_ts = isatty(2) || lseek(2, 0, SEEK_CUR) != (off_t) -1 || errno != ESPIPE;
 #endif
-	gdk_return rc = GDKtracer_init_trace_file(dbpath, dbtrace);
-	MT_lock_unset(&GDKtracer_lock);
-	return rc;
-}
-
-gdk_return
-GDKtracer_set_tracefile(const char *tracefile)
-{
-	return GDKtracer_init(NULL, tracefile);
 }
 
 void
@@ -517,15 +477,14 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	}
 	va_end(va);
 	if (bytes_written < 0) {
-		if ((adapter_t) ATOMIC_GET(&cur_adapter) != MBEDDED)
-			GDK_TRACER_EXCEPTION("Failed to write logs\n");
+		GDK_TRACER_EXCEPTION("Failed to write logs\n");
 		return;
 	}
 	char *p;
 	if ((p = strchr(buffer, '\n')) != NULL)
 		*p = '\0';
 
-	if (comp == GDK && level <= M_ERROR) {
+	if (comp == GDK && (level == M_CRITICAL || level == M_ERROR)) {
 		/* append message to GDKerrbuf (if set) */
 		char *buf = GDKerrbuf;
 		if (buf) {
@@ -538,22 +497,22 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 		}
 	}
 
-	/* don't write to file on embedded case, but set the GDK error buffer */
-	if ((adapter_t) ATOMIC_GET(&cur_adapter) == MBEDDED)
-		return;
-
-	if (level <= M_WARNING || (GDKdebug & FORCEMITOMASK)) {
-		fprintf(stderr, "#%s%s%s: %s: %s: %s%s%s\n",
+	if (level == M_CRITICAL || level == M_ERROR || level == M_WARNING) {
+		fprintf(stderr, "#%s%s%s: %s: %s%s%s%s\n",
 			add_ts ? ts : "",
 			add_ts ? ": " : "",
-			MT_thread_getname(), func, level_str[level] + 2,
+			MT_thread_getname(), func, GDKERROR,
 			msg, syserr ? ": " : "",
 			syserr ? syserr : "");
-		if (active_tracer == NULL || active_tracer == stderr || !write_to_tracer)
+		if (active_tracer == NULL || active_tracer == stderr)
 			return;
 	}
-	if (active_tracer == NULL)
+	MT_lock_set(&lock);
+	if (file_name[0] == 0) {
+		MT_lock_unset(&lock);
 		return;
+	}
+	MT_lock_unset(&lock);
 	if (syserr)
 		fprintf(active_tracer, "%s: %s\n", buffer, syserr);
 	else
@@ -565,7 +524,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	// like mserver5 refusing to start due to allocated port
 	// and the error is never reported to the user because it
 	// is still in the buffer which it never gets flushed.
-	if (level == cur_flush_level || level <= M_ERROR)
+	if (level == cur_flush_level || level == M_CRITICAL || level == M_ERROR)
 		fflush(active_tracer);
 }
 

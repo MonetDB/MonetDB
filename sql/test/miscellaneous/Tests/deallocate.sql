@@ -1,6 +1,6 @@
 deallocate all; --deallocate all the prepared statements from the current directory run (but does the client reconnect after each test?)
 
-prepare select "system" or ? from sys._tables WHERE false;
+prepare select "system" or ? from _tables WHERE false;
 select "statement" from prepared_statements; --only 1
 select "inout", "number", "type", "type_digits", "type_scale", "schema", "table", "column" from prepared_statements_args; --only 1
 select "prep"."statement", "inout", "number", "type", "type_digits", "type_scale", "schema", "table", "column" 
@@ -16,7 +16,7 @@ select "inout", "number", "type", "type_digits", "type_scale", "schema", "table"
 exec **(false); --error, the last prepared statement, no longer exists;
 DEALLOCATE **; --error, last prepared statement already closed
 
-prepare select "system" or ? from sys._tables WHERE false;
+prepare select "system" or ? from _tables WHERE false;
 execute **(false);
 DEALLOCATE prepare all;
 EXECUTE **(false); --error, the last prepared statement, no longer exists;

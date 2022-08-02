@@ -1,0 +1,13 @@
+# test constant expressions
+function tst();
+    X2 := calc.dbl(1);
+    X14 := calc.dbl(180);
+    X15 := calc.*(X2,X14);
+    X16 := mmath.pi();
+    X17 := calc./(X15,X16);
+	io.print(X17);
+end tst;
+
+optimizer.evaluate("user","tst");
+optimizer.aliases("user","tst");
+mdb.List("user","tst");

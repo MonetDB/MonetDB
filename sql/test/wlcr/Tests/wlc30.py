@@ -3,7 +3,6 @@ try:
 except ImportError:
     import process
 import os, sys
-from MonetDBtesting.sqltest import SQLTestCase
 
 dbfarm = os.getenv('GDK_DBFARM')
 tstdb = os.getenv('TSTDB')
@@ -15,35 +14,20 @@ if not tstdb or not dbfarm:
 dbname = tstdb
 
 with process.server(dbname=dbname, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s, \
-        SQLTestCase() as tc:
-    tc.connect(database=dbname)
-    tc.execute("update tmp set i = 3 where i = 1;")\
-        .assertSucceeded()\
-        .assertRowCount(1)
-    tc.execute("update tmp set s = 'blah';")\
-        .assertSucceeded()\
-        .assertRowCount(6)
-    tc.execute("select * from tmp;")\
-        .assertSucceeded()\
-        .assertDataResultMatch([(3, 'blah'), (2, 'blah'), (3, 'blah'), (4, 'blah'), (5, 'blah'), (6, 'blah')])
+     process.client('sql', server = s, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as c:
+
+    cout, cerr = c.communicate('''\
+update tmp set i = 3 where i = 1;
+update tmp set s = 'blah';
+select * from tmp;
+''')
 
     sout, serr = s.communicate()
 
-#with process.server(dbname=dbname, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s, \
-#     process.client('sql', server = s, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as c:
-#
-#    cout, cerr = c.communicate('''\
-#update tmp set i = 3 where i = 1;
-#update tmp set s = 'blah';
-#select * from tmp;
-#''')
-#
-#    sout, serr = s.communicate()
-#
-#    sys.stdout.write(sout)
-#    sys.stdout.write(cout)
-#    sys.stderr.write(serr)
-#    sys.stderr.write(cerr)
+    sys.stdout.write(sout)
+    sys.stdout.write(cout)
+    sys.stderr.write(serr)
+    sys.stderr.write(cerr)
 
 def listfiles(path):
     sys.stdout.write("#LISTING OF THE LOG FILES\n")

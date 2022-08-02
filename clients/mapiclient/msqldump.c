@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -42,7 +42,6 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -t table    | --table=table      dump a database table\n");
 	fprintf(stderr, " -D          | --describe         describe database\n");
 	fprintf(stderr, " -N          | --inserts          use INSERT INTO statements\n");
-	fprintf(stderr, " -e          | --noescape         use NO ESCAPE\n");
 	fprintf(stderr, " -q          | --quiet            don't print welcome message\n");
 	fprintf(stderr, " -X          | --Xdebug           trace mapi network interaction\n");
 	fprintf(stderr, " -?          | --help             show this usage message\n");
@@ -51,11 +50,7 @@ usage(const char *prog, int xit)
 }
 
 int
-#ifdef _MSC_VER
-wmain(int argc, wchar_t **wargv)
-#else
 main(int argc, char **argv)
-#endif
 {
 	int port = 0;
 	char *user = NULL;
@@ -67,7 +62,6 @@ main(int argc, char **argv)
 	bool describe = false;
 	bool functions = false;
 	bool useinserts = false;
-	bool noescape = false;
 	int c;
 	Mapi mid;
 	bool quiet = false;
@@ -82,7 +76,6 @@ main(int argc, char **argv)
 		{"functions", 0, 0, 'f'},
 		{"table", 1, 0, 't'},
 		{"inserts", 0, 0, 'N'},
-		{"noescape", 0, 0, 'e'},
 		{"Xdebug", 0, 0, 'X'},
 		{"user", 1, 0, 'u'},
 		{"quiet", 0, 0, 'q'},
@@ -90,20 +83,6 @@ main(int argc, char **argv)
 		{"help", 0, 0, '?'},
 		{0, 0, 0, 0}
 	};
-#ifdef _MSC_VER
-	char **argv = malloc((argc + 1) * sizeof(char *));
-	if (argv == NULL) {
-		fprintf(stderr, "cannot allocate memory for argument conversion\n");
-		exit(1);
-	}
-	for (int i = 0; i < argc; i++) {
-		if ((argv[i] = wchartoutf8(wargv[i])) == NULL) {
-			fprintf(stderr, "cannot convert argument to UTF-8\n");
-			exit(1);
-		}
-	}
-	argv[argc] = NULL;
-#endif
 
 	parse_dotmonetdb(&dotfile);
         user = dotfile.user;
@@ -112,7 +91,7 @@ main(int argc, char **argv)
 	host = dotfile.host;
 	port = dotfile.port;
 
-	while ((c = getopt_long(argc, argv, "h:p:d:Dft:NeXu:qv?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "h:p:d:Dft:NXu:qv?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'u':
 			if (user)
@@ -138,9 +117,6 @@ main(int argc, char **argv)
 		case 'N':
 			useinserts = true;
 			break;
-		case 'e':
-			noescape = true;
-			break;
 		case 'f':
 			if (table)
 				usage(argv[0], -1);
@@ -159,7 +135,7 @@ main(int argc, char **argv)
 			break;
 		case 'v': {
 			printf("msqldump, the MonetDB interactive database "
-			       "dump tool, version %s", MONETDB_VERSION);
+			       "dump tool, version %s", VERSION);
 #ifdef MONETDB_RELEASE
 			printf(" (%s)", MONETDB_RELEASE);
 #else
@@ -198,7 +174,7 @@ main(int argc, char **argv)
 	if (passwd == NULL)
 		passwd = simple_prompt("password", BUFSIZ, 0, NULL);
 
-	mid = mapi_mapi(host, port, user, passwd, "sql", dbname);
+	mid = mapi_connect(host, port, user, passwd, "sql", dbname);
 	if (user)
 		free(user);
 	if (passwd)
@@ -209,8 +185,6 @@ main(int argc, char **argv)
 		fprintf(stderr, "failed to allocate Mapi structure\n");
 		exit(2);
 	}
-	mapi_set_time_zone(mid, 0);
-	mapi_reconnect(mid);
 	if (mapi_error(mid)) {
 		mapi_explain(mid, stderr);
 		exit(2);
@@ -224,9 +198,9 @@ main(int argc, char **argv)
 	mapi_trace(mid, trace);
 	mapi_cache_limit(mid, -1);
 
-	out = stdout_wastream();
+	out = file_wastream(stdout, "stdout");
 	if (out == NULL) {
-		fprintf(stderr, "failed to allocate stream: %s\n", mnstr_peek_error(NULL));
+		fprintf(stderr, "failed to allocate stream\n");
 		exit(2);
 	}
 	if (!quiet) {
@@ -247,7 +221,7 @@ main(int argc, char **argv)
 			*p = 0;
 
 		mnstr_printf(out,
-			     "-- msqldump version %s", MONETDB_VERSION);
+			     "-- msqldump version %s", VERSION);
 #ifdef MONETDB_RELEASE
 		mnstr_printf(out, " (%s)", MONETDB_RELEASE);
 #else
@@ -268,17 +242,15 @@ main(int argc, char **argv)
 		mnstr_printf(out, "COMMIT;\n");
 	} else if (table) {
 		mnstr_printf(out, "START TRANSACTION;\n");
-		c = dump_table(mid, NULL, table, out, describe, true, useinserts, false, noescape);
+		c = dump_table(mid, NULL, table, out, describe, true, useinserts, false);
 		mnstr_printf(out, "COMMIT;\n");
 	} else
-		c = dump_database(mid, out, describe, useinserts, noescape);
-	mnstr_flush(out, MNSTR_FLUSH_DATA);
+		c = dump_database(mid, out, describe, useinserts);
+	mnstr_flush(out);
 
 	mapi_destroy(mid);
 	if (mnstr_errnr(out)) {
-		char *err = mnstr_error(out);
-		fprintf(stderr, "%s: %s\n", argv[0], err);
-		free(err);
+		fprintf(stderr, "%s: %s", argv[0], mnstr_error(out));
 		return 1;
 	}
 

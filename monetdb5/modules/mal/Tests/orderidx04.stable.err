@@ -1,0 +1,35 @@
+stderr of test 'orderidx04` in directory 'monetdb5/modules/mal` itself:
+
+
+# 13:07:49 >  
+# 13:07:49 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35887" "--set" "mapi_usock=/var/tmp/mtest-22853/.s.monetdb.35887" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/lsidir/monetdb//prefix/var/MonetDB/mTests_monetdb5_modules_mal" "--set" "embedded_r=yes"
+# 13:07:49 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch2/lsidir/monetdb//prefix/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 35887
+# cmdline opt 	mapi_usock = /var/tmp/mtest-22853/.s.monetdb.35887
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch2/lsidir/monetdb//prefix/var/MonetDB/mTests_monetdb5_modules_mal
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 13:07:50 >  
+# 13:07:50 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-22853" "--port=35887"
+# 13:07:50 >  
+
+
+# 13:07:50 >  
+# 13:07:50 >  "Done."
+# 13:07:50 >  
+

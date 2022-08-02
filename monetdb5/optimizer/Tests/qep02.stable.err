@@ -1,0 +1,12 @@
+stderr of test 'qep02` in directory 'monetdb5/optimizer` itself:
+
+
+# 18:42:45 >  
+# 18:42:45 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=32834 --set sql_port=44108 --set xquery_port=52561 --set monet_prompt= --trace --dbname=mTests_src_optimizer  qep02.mal </dev/null
+# 18:42:45 >  
+
+
+# 18:42:45 >  
+# 18:42:45 >  Done.
+# 18:42:45 >  
+

@@ -1,6 +1,0 @@
-statement ok
-create table numtest (id integer, val numeric(18,8))
-
-statement ok
-drop table numtest
-

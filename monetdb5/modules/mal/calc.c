@@ -3,11 +3,12 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "gdk.h"
+#include <math.h>
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 
@@ -33,32 +34,61 @@ mythrow(enum malexception type, const char *fcn, const char *msg)
 	return createException(type, fcn, "%s", msg);
 }
 
+mal_export str CMDvarSUBsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
+CMDvarSUBsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	if (VARcalcsub(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], 1) != GDK_SUCCEED)
+		return mythrow(MAL, "calc.-", OPERATION_FAILED);
+	return MAL_SUCCEED;
+}
+
+mal_export str CMDvarSUB(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
 CMDvarSUB(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcsub(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
-		return mythrow(MAL, "calc.-", OPERATION_FAILED);
+	if (VARcalcsub(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], 0) != GDK_SUCCEED)
+		return mythrow(MAL, "calc.sub_noerror", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarADDsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
+CMDvarADDsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	if (VARcalcadd(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], 1) != GDK_SUCCEED)
+		return mythrow(MAL, "calc.+", OPERATION_FAILED);
+	return MAL_SUCCEED;
+}
+
+mal_export str CMDvarADD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
 CMDvarADD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcadd(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
-		return mythrow(MAL, "calc.+", OPERATION_FAILED);
+	if (VARcalcadd(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], 0) != GDK_SUCCEED)
+		return mythrow(MAL, "calc.add_noerror", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarADDstr(str *ret, str *s1, str *s2);
 
-static str
+str
 CMDvarADDstr(str *ret, str *s1, str *s2)
 {
 	str s;
@@ -79,8 +109,9 @@ CMDvarADDstr(str *ret, str *s1, str *s2)
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarADDstrint(str *ret, str *s1, int *i);
 
-static str
+str
 CMDvarADDstrint(str *ret, str *s1, int *i)
 {
 	str s;
@@ -101,68 +132,139 @@ CMDvarADDstrint(str *ret, str *s1, int *i)
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarMULsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
+CMDvarMULsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	if (VARcalcmul(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], 1) != GDK_SUCCEED)
+		return mythrow(MAL, "calc.*", OPERATION_FAILED);
+	return MAL_SUCCEED;
+}
+
+mal_export str CMDvarMUL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
 CMDvarMUL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcmul(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
-		return mythrow(MAL, "calc.*", OPERATION_FAILED);
+	if (VARcalcmul(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], 0) != GDK_SUCCEED)
+		return mythrow(MAL, "calc.mul_noerror", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarDIVsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
+CMDvarDIVsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	if (VARcalcdiv(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], 1) != GDK_SUCCEED)
+		return mythrow(MAL, "calc./", OPERATION_FAILED);
+	return MAL_SUCCEED;
+}
+
+mal_export str CMDvarDIV(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
 CMDvarDIV(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcdiv(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
-		return mythrow(MAL, "calc./", OPERATION_FAILED);
+	if (VARcalcdiv(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], 0) != GDK_SUCCEED)
+		return mythrow(MAL, "calc.div_noerror", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarMODsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
+CMDvarMODsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	if (VARcalcmod(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], 1) != GDK_SUCCEED)
+		return mythrow(MAL, "calc.%", OPERATION_FAILED);
+	return MAL_SUCCEED;
+}
+
+mal_export str CMDvarMOD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
 CMDvarMOD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcmod(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
-		return mythrow(MAL, "calc.%", OPERATION_FAILED);
+	if (VARcalcmod(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], 0) != GDK_SUCCEED)
+		return mythrow(MAL, "calc.modmod", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarLSHsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
+CMDvarLSHsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	if (VARcalclsh(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], 1) != GDK_SUCCEED)
+		return mythrow(MAL, "calc.<<", OPERATION_FAILED);
+	return MAL_SUCCEED;
+}
+
+mal_export str CMDvarLSH(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
 CMDvarLSH(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalclsh(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
-		return mythrow(MAL, "calc.<<", OPERATION_FAILED);
+	if (VARcalclsh(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], 0) != GDK_SUCCEED)
+		return mythrow(MAL, "calc.lsh_noerror", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarRSHsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
+CMDvarRSHsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	if (VARcalcrsh(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], 1) != GDK_SUCCEED)
+		return mythrow(MAL, "calc.>>", OPERATION_FAILED);
+	return MAL_SUCCEED;
+}
+
+mal_export str CMDvarRSH(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
 CMDvarRSH(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcrsh(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
-		return mythrow(MAL, "calc.>>", OPERATION_FAILED);
+	if (VARcalcrsh(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], 0) != GDK_SUCCEED)
+		return mythrow(MAL, "calc.rsh_noerror", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarAND(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
 CMDvarAND(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -173,8 +275,9 @@ CMDvarAND(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarOR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
 CMDvarOR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -185,8 +288,9 @@ CMDvarOR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarXOR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
 CMDvarXOR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -197,8 +301,9 @@ CMDvarXOR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarLT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
 CMDvarLT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -209,8 +314,9 @@ CMDvarLT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarLE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
 CMDvarLE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -221,8 +327,9 @@ CMDvarLE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarGT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
 CMDvarGT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -233,8 +340,9 @@ CMDvarGT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarGE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
 CMDvarGE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -245,8 +353,9 @@ CMDvarGE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarEQ(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
 CMDvarEQ(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -261,8 +370,9 @@ CMDvarEQ(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarNE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
 CMDvarNE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -277,8 +387,9 @@ CMDvarNE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarCMP(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
 CMDvarCMP(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -289,8 +400,9 @@ CMDvarCMP(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
 CMDvarBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -300,15 +412,16 @@ CMDvarBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	symmetric = *getArgReference_bit(stk, pci, 4);
 	linc = *getArgReference_bit(stk, pci, 5);
 	hinc = *getArgReference_bit(stk, pci, 6);
-	nils_false = *getArgReference_bit(stk, pci, 7);
-	anti = *getArgReference_bit(stk, pci, 8);
+	nils_false = *getArgReference_bit(stk, pci, 6);
+	anti = *getArgReference_bit(stk, pci, 7);
 	if (VARcalcbetween(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], &stk->stk[getArg(pci, 3)], symmetric, linc, hinc, nils_false, anti) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.between", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDstrlength(int *ret, str *v);
 
-static str
+str
 CMDstrlength(int *ret, str *v)
 {
 	size_t l = strlen(*v);
@@ -319,8 +432,9 @@ CMDstrlength(int *ret, str *v)
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarCONVERT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
 CMDvarCONVERT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[20];
@@ -328,23 +442,25 @@ CMDvarCONVERT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARconvert(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], 0, 0, 0) != GDK_SUCCEED) {
+	if (VARconvert(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], 1) != GDK_SUCCEED) {
 		snprintf(buf, sizeof(buf), "%s.%s", pci->modname, pci->fcnname);
 		return mythrow(MAL, buf, OPERATION_FAILED);
 	}
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarCONVERTptr(ptr *ret, ptr *v);
 
-static str
+str
 CMDvarCONVERTptr(ptr *ret, ptr *v)
 {
 	*ret = *v;
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarISZERO(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
 CMDvarISZERO(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[20];
@@ -359,8 +475,9 @@ CMDvarISZERO(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarISNIL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
 CMDvarISNIL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[20];
@@ -375,8 +492,9 @@ CMDvarISNIL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarISNOTNIL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
 CMDvarISNOTNIL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[20];
@@ -391,8 +509,9 @@ CMDvarISNOTNIL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarNOT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
 CMDvarNOT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[20];
@@ -407,8 +526,9 @@ CMDvarNOT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarABS(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
 CMDvarABS(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[20];
@@ -423,8 +543,9 @@ CMDvarABS(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarSIGN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
 CMDvarSIGN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[20];
@@ -439,8 +560,9 @@ CMDvarSIGN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarNEG(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
 CMDvarNEG(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[20];
@@ -455,47 +577,48 @@ CMDvarNEG(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarINCRsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
-CMDvarINCR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str
+CMDvarINCRsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[20];
 
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcincr(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)]) != GDK_SUCCEED) {
+	if (VARcalcincr(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], 1) != GDK_SUCCEED) {
 		snprintf(buf, sizeof(buf), "%s.%s", pci->modname, pci->fcnname);
 		return mythrow(MAL, buf, OPERATION_FAILED);
 	}
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDvarDECRsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
-CMDvarDECR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str
+CMDvarDECRsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[20];
 
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcdecr(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)]) != GDK_SUCCEED) {
+	if (VARcalcdecr(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], 1) != GDK_SUCCEED) {
 		snprintf(buf, sizeof(buf), "%s.%s", pci->modname, pci->fcnname);
 		return mythrow(MAL, buf, OPERATION_FAILED);
 	}
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-static str
+str
 CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	ptr p;
 	ptr retval = getArgReference(stk, pci, 0);
-	bit b = stk->stk[getArg(pci, 1)].vtype == TYPE_msk
-		? (bit) *getArgReference_msk(stk, pci, 1)
-		: *getArgReference_bit(stk, pci, 1);
+	bit b = *getArgReference_bit(stk, pci, 1);
 	int t1 = getArgType(mb, pci, 2);
 	int t2 = getArgType(mb, pci, 3);
 
@@ -520,8 +643,9 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-static str
+str
 CALCmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int t = getArgType(mb, pci, 1);
@@ -546,8 +670,9 @@ CALCmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCmin_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-static str
+str
 CALCmin_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int t = getArgType(mb, pci, 1);
@@ -571,8 +696,9 @@ CALCmin_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-static str
+str
 CALCmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int t = getArgType(mb, pci, 1);
@@ -597,8 +723,9 @@ CALCmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-static str
+str
 CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int t = getArgType(mb, pci, 1);
@@ -624,7 +751,7 @@ CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-			  gdk_return (*sumprod)(void *, int, BAT *, BAT *, bool, bool),
+			  gdk_return (*sumprod)(void *, int, BAT *, BAT *, bool, bool, bool),
 			  const char *func)
 {
 	ValPtr ret = &stk->stk[getArg(pci, 0)];
@@ -653,7 +780,7 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			}
 		}
 	}
-	r = (*sumprod)(VALget(ret), ret->vtype, b, s, true, nil_if_empty);
+	r = (*sumprod)(VALget(ret), ret->vtype, b, s, true, true, nil_if_empty);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
@@ -662,8 +789,9 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	return MAL_SUCCEED;
 }
 
+mal_export str CMDBATsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
 CMDBATsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -671,8 +799,9 @@ CMDBATsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return CMDBATsumprod(mb, stk, pci, BATsum, "aggr.sum");
 }
 
+mal_export str CMDBATprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
+str
 CMDBATprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -680,139 +809,9 @@ CMDBATprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return CMDBATsumprod(mb, stk, pci, BATprod, "aggr.prod");
 }
 
-#define arg_type(stk, pci, k) ((stk)->stk[pci->argv[k]].vtype)
+mal_export str CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-static str
-CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	ValPtr ret = &stk->stk[getArg(pci, 0)];
-	lng *rest = NULL, *cnt = NULL;
-	bat *bid, *sid;
-	bit *skip_nils;
-	BAT *b = NULL, *s = NULL, *avgs, *cnts, *rems;
-
-	gdk_return rc;
-	(void)cntxt;
-	(void)mb;
-
-	/* optional results rest and count */
-	if (arg_type(stk, pci, 1) == TYPE_lng)
-		rest = getArgReference_lng(stk, pci, 1);
-	if (arg_type(stk, pci, 2) == TYPE_lng)
-		cnt = getArgReference_lng(stk, pci, 2);
-	bid = getArgReference_bat(stk, pci, 3);
-	sid = getArgReference_bat(stk, pci, 4);
-	skip_nils = getArgReference_bit(stk, pci, 5);
-	b = BATdescriptor(*bid);
-	s = sid != NULL && !is_bat_nil(*sid) ? BATdescriptor(*sid) : NULL;
-	if (b == NULL ||
-		(sid != NULL && !is_bat_nil(*sid) && s == NULL)) {
-		if (b)
-			BBPunfix(b->batCacheid);
-		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	rc = BATgroupavg3(&avgs, &rems, &cnts, b, NULL, NULL, s, *skip_nils);
-	if (avgs && BATcount(avgs) == 1) {
-		/* only type bte, sht, int, lng and hge */
-		ptr res = VALget(ret);
-		lng xcnt = 0;
-
-		if (avgs->ttype == TYPE_bte) {
-			*(bte*)res = *(bte*) Tloc(avgs, 0);
-		} else if (avgs->ttype == TYPE_sht) {
-			*(sht*)res = *(sht*) Tloc(avgs, 0);
-		} else if (avgs->ttype == TYPE_int) {
-			*(int*)res = *(int*) Tloc(avgs, 0);
-		} else if (avgs->ttype == TYPE_lng) {
-			*(lng*)res = *(lng*) Tloc(avgs, 0);
-#ifdef HAVE_HGE
-		} else if (avgs->ttype == TYPE_hge) {
-			*(hge*)res = *(hge*) Tloc(avgs, 0);
-#endif
-		}
-		if (cnt)
-			xcnt = *cnt = *(lng*) Tloc(cnts, 0);
-		if (rest)
-			*rest = *(lng*) Tloc(rems, 0);
-		if (xcnt == 0)
-			VALset(ret, ret->vtype, (ptr)ATOMnilptr(ret->vtype));
-	} else {
-		VALset(ret, ret->vtype, (ptr)ATOMnilptr(ret->vtype));
-		if (rest)
-			*rest = lng_nil;
-		if (cnt)
-			*cnt = lng_nil;
-	}
-	if (avgs)
-		BBPunfix(avgs->batCacheid);
-	if (rems)
-		BBPunfix(rems->batCacheid);
-	if (cnts)
-		BBPunfix(cnts->batCacheid);
-	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	if (rc != GDK_SUCCEED)
-		return mythrow(MAL, "aggr.avg", OPERATION_FAILED);
-	return MAL_SUCCEED;
-}
-
-static str
-CMDBATavg3comb(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	ValPtr ret = &stk->stk[getArg(pci, 0)];
-	BAT *b = NULL, *r = NULL, *c = NULL, *avgs;
-	bat *bid = getArgReference_bat(stk, pci, 1);
-	bat *rid = getArgReference_bat(stk, pci, 2);
-	bat *cid = getArgReference_bat(stk, pci, 3);
-
-	(void)cntxt;
-	(void)mb;
-
-	b = BATdescriptor(*bid);
-	r = BATdescriptor(*rid);
-	c = BATdescriptor(*cid);
-	if (b == NULL || r == NULL || c == NULL) {
-		if (b)
-			BBPunfix(b->batCacheid);
-		if (r)
-			BBPunfix(r->batCacheid);
-		if (c)
-			BBPunfix(c->batCacheid);
-		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	avgs = BATgroupavg3combine(b, r, c, NULL, NULL, TRUE);
-	if (avgs && BATcount(avgs) == 1) {
-		/* only type bte, sht, int, lng and hge */
-		ptr res = VALget(ret);
-
-		if (avgs->ttype == TYPE_bte) {
-			*(bte*)res = *(bte*) Tloc(avgs, 0);
-		} else if (avgs->ttype == TYPE_sht) {
-			*(sht*)res = *(sht*) Tloc(avgs, 0);
-		} else if (avgs->ttype == TYPE_int) {
-			*(int*)res = *(int*) Tloc(avgs, 0);
-		} else if (avgs->ttype == TYPE_lng) {
-			*(lng*)res = *(lng*) Tloc(avgs, 0);
-#ifdef HAVE_HGE
-		} else if (avgs->ttype == TYPE_hge) {
-			*(hge*)res = *(hge*) Tloc(avgs, 0);
-#endif
-		}
-	} else {
-		VALset(ret, ret->vtype, (ptr)ATOMnilptr(ret->vtype));
-	}
-	if (avgs)
-		BBPunfix(avgs->batCacheid);
-	BBPunfix(b->batCacheid);
-	BBPunfix(r->batCacheid);
-	BBPunfix(c->batCacheid);
-	if (avgs == NULL)
-		throw(MAL, "aggr.avg", GDK_EXCEPTION);
-	return MAL_SUCCEED;
-}
-
-static str
+str
 CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	ValPtr ret = &stk->stk[getArg(pci, 0)];
@@ -865,7 +864,7 @@ CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	assert((separator && !sep) || (!separator && sep));
-	r = BATstr_group_concat(ret, b, s, sep, true, nil_if_empty, separator);
+	r = BATstr_group_concat(ret, b, s, sep, true, true, nil_if_empty, separator);
 	BBPunfix(b->batCacheid);
 	if (sep)
 		BBPunfix(sep->batCacheid);
@@ -875,1868 +874,3 @@ CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return mythrow(MAL, "aggr.str_group_concat", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
-
-#include "mel.h"
-mel_func calc_init_funcs[] = {
-#ifdef HAVE_HGE
- pattern("calc", "iszero", CMDvarISZERO, false, "Unary check for zero of V", args(1,2, arg("",bit),arg("v",hge))),
- pattern("calc", "not", CMDvarNOT, false, "Unary bitwise not of V", args(1,2, arg("",hge),arg("v",hge))),
- pattern("calc", "sign", CMDvarSIGN, false, "Unary sign (-1,0,1) of V", args(1,2, arg("",bte),arg("v",hge))),
- pattern("calc", "abs", CMDvarABS, false, "Unary absolute value of V", args(1,2, arg("",hge),arg("v",hge))),
- pattern("calc", "-", CMDvarNEG, false, "Unary negation of V", args(1,2, arg("",hge),arg("v",hge))),
- pattern("calc", "++", CMDvarINCR, false, "Unary V + 1", args(1,2, arg("",hge),arg("v",hge))),
- pattern("calc", "--", CMDvarDECR, false, "Unary V - 1", args(1,2, arg("",hge),arg("v",hge))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",bte),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",sht),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",int),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",int),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",int),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",int),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",int),arg("v2",hge))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",int),arg("v2",hge))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",int),arg("v2",hge))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",lng),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",hge))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",lng),arg("v2",hge))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",lng),arg("v2",hge))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",hge),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",hge),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",hge),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",hge),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",flt))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",hge),arg("v2",flt))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",dbl))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",hge))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",flt),arg("v2",hge))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",hge))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",bte),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",sht),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",int),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",int),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",int),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",int),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",int),arg("v2",hge))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",int),arg("v2",hge))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",int),arg("v2",hge))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",lng),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",hge))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",lng),arg("v2",hge))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",lng),arg("v2",hge))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",hge),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",hge),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",hge),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",hge),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",flt))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",hge),arg("v2",flt))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",dbl))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",hge))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",flt),arg("v2",hge))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",bte),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",sht),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",int),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",int),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",int),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",int),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",int),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",int),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",int),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",lng),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",hge),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",lng),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",lng),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",hge),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",hge),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",hge),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",hge),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",hge),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",flt),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",hge),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",hge),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",hge),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",hge),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",int),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",lng),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",hge),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",flt),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",flt),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",flt),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",flt),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",flt),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",flt),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",flt),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",flt),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",flt),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",hge),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",hge),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",hge),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",hge),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",int),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",lng),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",hge),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",dbl),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",dbl),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",dbl),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",dbl),arg("v2",hge))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",dbl),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",dbl),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",dbl),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",dbl),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",dbl),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",bte),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",bte),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",sht),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",int),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",int),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",int),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",int),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",int),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",int),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",int),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",int),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",int),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",int),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",int),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",lng),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",lng),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",lng),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",lng),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",lng),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",lng),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",hge),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",hge),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",hge),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",hge),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",hge),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",hge),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",hge),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",hge),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",flt),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",flt),arg("v2",hge))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",dbl),arg("v2",hge))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",bte),arg("v2",int))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",bte),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",sht),arg("v2",int))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",int),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",int),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",int),arg("v2",int))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",int),arg("v2",lng))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",int),arg("v2",hge))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",int),arg("v2",hge))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",int),arg("v2",hge))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",lng),arg("v2",int))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",lng),arg("v2",hge))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",lng),arg("v2",hge))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",bte),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",hge),arg("v2",int))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",hge),arg("v2",int))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",hge),arg("v2",int))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",hge),arg("v2",lng))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",hge),arg("v2",lng))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",hge),arg("v2",flt))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",hge),arg("v2",dbl))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",flt),arg("v2",hge))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",hge))),
- pattern("calc", "and", CMDvarAND, false, "Return V1 AND V2", args(1,3, arg("",hge),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "or", CMDvarOR, false, "Return V1 OR V2", args(1,3, arg("",hge),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "xor", CMDvarXOR, false, "Return V1 XOR V2", args(1,3, arg("",hge),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",bte),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",sht),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",int),arg("v1",int),arg("v2",hge))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",lng),arg("v1",lng),arg("v2",hge))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",hge),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",hge),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",hge),arg("v1",hge),arg("v2",int))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",hge),arg("v1",hge),arg("v2",lng))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",hge),arg("v1",hge),arg("v2",hge))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",bte),arg("v1",bte),arg("v2",hge))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",sht),arg("v1",sht),arg("v2",hge))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",int),arg("v1",int),arg("v2",hge))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",lng),arg("v1",lng),arg("v2",hge))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",hge),arg("v1",hge),arg("v2",bte))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",hge),arg("v1",hge),arg("v2",sht))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",hge),arg("v1",hge),arg("v2",int))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",hge),arg("v1",hge),arg("v2",lng))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",hge),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",hge))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",hge))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",int))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",lng))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",flt))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",dbl))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",hge))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",hge))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",hge))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",hge))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",int))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",lng))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",flt))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",dbl))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",hge))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",hge))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",hge))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",hge))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",hge))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",hge))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",bte))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",sht))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",int))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",lng))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",hge))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",flt))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",dbl))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",hge))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",hge))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",hge))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",hge))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",hge))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",hge))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",bte))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",sht))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",int))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",lng))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",hge))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",flt))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",dbl))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",hge))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",hge))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",bte),arg("v2",hge),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",sht),arg("v2",hge),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",hge))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",int),arg("v2",hge),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",hge))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",lng),arg("v2",hge),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",hge),arg("v2",bte),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",hge),arg("v2",sht),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",int))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",hge),arg("v2",int),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",lng))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",hge),arg("v2",lng),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",hge),arg("v2",hge),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",flt))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",hge),arg("v2",flt),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",dbl))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",hge),arg("v2",dbl),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",hge))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",flt),arg("v2",hge),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",hge))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",dbl),arg("v2",hge),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",bte),arg("v2",hge),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",sht),arg("v2",hge),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",hge))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",int),arg("v2",hge),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",hge))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",lng),arg("v2",hge),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",hge),arg("v2",bte),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",hge),arg("v2",sht),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",int))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",hge),arg("v2",int),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",lng))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",hge),arg("v2",lng),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",hge),arg("v2",hge),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",flt))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",hge),arg("v2",flt),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",hge),arg("v2",dbl))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",hge),arg("v2",dbl),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",hge))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",flt),arg("v2",hge),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",hge))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",dbl),arg("v2",hge),arg("nil_matches",bit))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",bte),arg("v2",hge))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",sht),arg("v2",hge))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",int),arg("v2",hge))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",lng),arg("v2",hge))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",hge),arg("v2",bte))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",hge),arg("v2",sht))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",hge),arg("v2",int))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",hge),arg("v2",lng))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",hge),arg("v2",hge))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",hge),arg("v2",flt))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",hge),arg("v2",dbl))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",flt),arg("v2",hge))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",dbl),arg("v2",hge))),
- pattern("calc", "void", CMDvarCONVERT, false, "Cast VALUE to void", args(1,2, arg("",void),arg("v",hge))),
- pattern("calc", "bit", CMDvarCONVERT, false, "Cast VALUE to bit", args(1,2, arg("",bit),arg("v",hge))),
- pattern("calc", "bte", CMDvarCONVERT, false, "Cast VALUE to bte", args(1,2, arg("",bte),arg("v",hge))),
- pattern("calc", "sht", CMDvarCONVERT, false, "Cast VALUE to sht", args(1,2, arg("",sht),arg("v",hge))),
- pattern("calc", "int", CMDvarCONVERT, false, "Cast VALUE to int", args(1,2, arg("",int),arg("v",hge))),
- pattern("calc", "lng", CMDvarCONVERT, false, "Cast VALUE to lng", args(1,2, arg("",lng),arg("v",hge))),
- pattern("calc", "hge", CMDvarCONVERT, false, "Cast VALUE to hge", args(1,2, arg("",hge),arg("v",void))),
- pattern("calc", "hge", CMDvarCONVERT, false, "Cast VALUE to hge", args(1,2, arg("",hge),arg("v",bit))),
- pattern("calc", "hge", CMDvarCONVERT, false, "Cast VALUE to hge", args(1,2, arg("",hge),arg("v",bte))),
- pattern("calc", "hge", CMDvarCONVERT, false, "Cast VALUE to hge", args(1,2, arg("",hge),arg("v",sht))),
- pattern("calc", "hge", CMDvarCONVERT, false, "Cast VALUE to hge", args(1,2, arg("",hge),arg("v",int))),
- pattern("calc", "hge", CMDvarCONVERT, false, "Cast VALUE to hge", args(1,2, arg("",hge),arg("v",lng))),
- pattern("calc", "hge", CMDvarCONVERT, false, "Cast VALUE to hge", args(1,2, arg("",hge),arg("v",hge))),
- pattern("calc", "hge", CMDvarCONVERT, false, "Cast VALUE to hge", args(1,2, arg("",hge),arg("v",flt))),
- pattern("calc", "hge", CMDvarCONVERT, false, "Cast VALUE to hge", args(1,2, arg("",hge),arg("v",dbl))),
- pattern("calc", "hge", CMDvarCONVERT, false, "Cast VALUE to hge", args(1,2, arg("",hge),arg("v",oid))),
- pattern("calc", "hge", CMDvarCONVERT, false, "Cast VALUE to hge", args(1,2, arg("",hge),arg("v",str))),
- pattern("calc", "flt", CMDvarCONVERT, false, "Cast VALUE to flt", args(1,2, arg("",flt),arg("v",hge))),
- pattern("calc", "dbl", CMDvarCONVERT, false, "Cast VALUE to dbl", args(1,2, arg("",dbl),arg("v",hge))),
- pattern("calc", "oid", CMDvarCONVERT, false, "Cast VALUE to oid", args(1,2, arg("",oid),arg("v",hge))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",msk))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",msk),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",msk),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",bte))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",bte),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",sht))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",sht),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",sht),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",int))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",int),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",int),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",lng))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",lng),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",lng),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",hge))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",hge),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",hge),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",hge),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",hge))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",hge),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",hge),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",hge),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",hge),batarg("b",bte))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",hge),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",hge),batarg("b",bte),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",hge),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",hge),batarg("b",sht))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",hge),batarg("b",sht),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",hge),batarg("b",sht),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",hge),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",hge),batarg("b",int))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",hge),batarg("b",int),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",hge),batarg("b",int),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",hge),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",hge),batarg("b",lng))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",hge),batarg("b",lng),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",hge),batarg("b",lng),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",hge),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",hge),batarg("b",hge))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",hge),batarg("b",hge),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",hge),batarg("b",hge),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",hge),batarg("b",hge),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",hge))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",hge),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",hge),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",hge),batarg("s",oid),arg("nil_if_empty",bit))),
-#endif
-
- pattern("aggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",bte),arg("",lng),arg("",lng),batarg("b",bte),batarg("s",oid),arg("skip_nils",bit))),
- pattern("aggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",sht),arg("",lng),arg("",lng),batarg("b",sht),batarg("s",oid),arg("skip_nils",bit))),
- pattern("aggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",int),arg("",lng),arg("",lng),batarg("b",int),batarg("s",oid),arg("skip_nils",bit))),
- pattern("aggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",lng),arg("",lng),arg("",lng),batarg("b",lng),batarg("s",oid),arg("skip_nils",bit))),
-#ifdef HAVE_HGE
- pattern("aggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",hge),arg("",lng),arg("",lng),batarg("b",hge),batarg("s",oid),arg("skip_nils",bit))),
-#endif
-
- pattern("aggr", "avg", CMDBATavg3comb, false, "Average aggregation combiner.", args(1,4, arg("",bte),batarg("b",bte),batarg("r",lng),batarg("c",lng))),
- pattern("aggr", "avg", CMDBATavg3comb, false, "Average aggregation combiner.", args(1,4, arg("",sht),batarg("b",sht),batarg("r",lng),batarg("c",lng))),
- pattern("aggr", "avg", CMDBATavg3comb, false, "Average aggregation combiner.", args(1,4, arg("",int),batarg("b",int),batarg("r",lng),batarg("c",lng))),
- pattern("aggr", "avg", CMDBATavg3comb, false, "Average aggregation combiner.", args(1,4, arg("",lng),batarg("b",lng),batarg("r",lng),batarg("c",lng))),
-#ifdef HAVE_HGE
- pattern("aggr", "avg", CMDBATavg3comb, false, "Average aggregation combiner.", args(1,4, arg("",hge),batarg("b",hge),batarg("r",lng),batarg("c",lng))),
-#endif
-
- /* calc ops from json */
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("l",json),arg("r",json))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("l",json),arg("r",json),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("l",json),arg("r",json))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("l",json),arg("r",json),arg("nil_matches",bit))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("l",json),arg("r",json))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("l",json),arg("r",json))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("l",json),arg("r",json))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("l",json),arg("r",json))),
- /* calc ops from inet */
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("l",inet),arg("r",inet))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("l",inet),arg("r",inet),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("l",inet),arg("r",inet))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("l",inet),arg("r",inet),arg("nil_matches",bit))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("l",inet),arg("r",inet))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("l",inet),arg("r",inet))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("l",inet),arg("r",inet))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("l",inet),arg("r",inet))),
- /* calc ops from uuid */
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("l",uuid),arg("r",uuid))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("l",uuid),arg("r",uuid),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("l",uuid),arg("r",uuid))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("l",uuid),arg("r",uuid),arg("nil_matches",bit))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("l",uuid),arg("r",uuid))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("l",uuid),arg("r",uuid))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("l",uuid),arg("r",uuid))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("l",uuid),arg("r",uuid))),
- /* calc ops from mtime */
- pattern("calc", "==", CMDvarEQ, false, "Equality of two dates", args(1,3, arg("",bit),arg("v",date),arg("w",date))),
- pattern("calc", "==", CMDvarEQ, false, "Equality of two dates", args(1,4, arg("",bit),arg("v",date),arg("w",date),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Equality of two dates", args(1,3, arg("",bit),arg("v",date),arg("w",date))),
- pattern("calc", "!=", CMDvarNE, false, "Equality of two dates", args(1,4, arg("",bit),arg("v",date),arg("w",date),arg("nil_matches",bit))),
- pattern("calc", "<", CMDvarLT, false, "Equality of two dates", args(1,3, arg("",bit),arg("v",date),arg("w",date))),
- pattern("calc", "<=", CMDvarLE, false, "Equality of two dates", args(1,3, arg("",bit),arg("v",date),arg("w",date))),
- pattern("calc", ">", CMDvarGT, false, "Equality of two dates", args(1,3, arg("",bit),arg("v",date),arg("w",date))),
- pattern("calc", ">=", CMDvarGE, false, "Equality of two dates", args(1,3, arg("",bit),arg("v",date),arg("w",date))),
- pattern("calc", "==", CMDvarEQ, false, "Equality of two daytimes", args(1,3, arg("",bit),arg("v",daytime),arg("w",daytime))),
- pattern("calc", "==", CMDvarEQ, false, "Equality of two daytimes", args(1,4, arg("",bit),arg("v",daytime),arg("w",daytime),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Equality of two daytimes", args(1,3, arg("",bit),arg("v",daytime),arg("w",daytime))),
- pattern("calc", "!=", CMDvarNE, false, "Equality of two daytimes", args(1,4, arg("",bit),arg("v",daytime),arg("w",daytime),arg("nil_matches",bit))),
- pattern("calc", "<", CMDvarLT, false, "Equality of two daytimes", args(1,3, arg("",bit),arg("v",daytime),arg("w",daytime))),
- pattern("calc", "<=", CMDvarLE, false, "Equality of two daytimes", args(1,3, arg("",bit),arg("v",daytime),arg("w",daytime))),
- pattern("calc", ">", CMDvarGT, false, "Equality of two daytimes", args(1,3, arg("",bit),arg("v",daytime),arg("w",daytime))),
- pattern("calc", ">=", CMDvarGE, false, "Equality of two daytimes", args(1,3, arg("",bit),arg("v",daytime),arg("w",daytime))),
- pattern("calc", "==", CMDvarEQ, false, "Equality of two timestamps", args(1,3, arg("",bit),arg("v",timestamp),arg("w",timestamp))),
- pattern("calc", "==", CMDvarEQ, false, "Equality of two timestamps", args(1,4, arg("",bit),arg("v",timestamp),arg("w",timestamp),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Equality of two timestamps", args(1,3, arg("",bit),arg("v",timestamp),arg("w",timestamp))),
- pattern("calc", "!=", CMDvarNE, false, "Equality of two timestamps", args(1,4, arg("",bit),arg("v",timestamp),arg("w",timestamp),arg("nil_matches",bit))),
- pattern("calc", "<", CMDvarLT, false, "Equality of two timestamps", args(1,3, arg("",bit),arg("v",timestamp),arg("w",timestamp))),
- pattern("calc", "<=", CMDvarLE, false, "Equality of two timestamps", args(1,3, arg("",bit),arg("v",timestamp),arg("w",timestamp))),
- pattern("calc", ">", CMDvarGT, false, "Equality of two timestamps", args(1,3, arg("",bit),arg("v",timestamp),arg("w",timestamp))),
- pattern("calc", ">=", CMDvarGE, false, "Equality of two timestamps", args(1,3, arg("",bit),arg("v",timestamp),arg("w",timestamp))),
- /* calc ops from 01_calc.mal */
- pattern("calc", "iszero", CMDvarISZERO, false, "Unary check for zero of V", args(1,2, arg("",bit),arg("v",bte))),
- pattern("calc", "iszero", CMDvarISZERO, false, "Unary check for zero of V", args(1,2, arg("",bit),arg("v",sht))),
- pattern("calc", "iszero", CMDvarISZERO, false, "Unary check for zero of V", args(1,2, arg("",bit),arg("v",int))),
- pattern("calc", "iszero", CMDvarISZERO, false, "Unary check for zero of V", args(1,2, arg("",bit),arg("v",lng))),
- pattern("calc", "iszero", CMDvarISZERO, false, "Unary check for zero of V", args(1,2, arg("",bit),arg("v",flt))),
- pattern("calc", "iszero", CMDvarISZERO, false, "Unary check for zero of V", args(1,2, arg("",bit),arg("v",dbl))),
- pattern("calc", "isnil", CMDvarISNIL, false, "Unary check for nil of V", args(1,2, arg("",bit),argany("v",0))),
- pattern("calc", "isnotnil", CMDvarISNOTNIL, false, "Unary check for notnil of V", args(1,2, arg("",bit),argany("v",0))),
- pattern("calc", "not", CMDvarNOT, false, "Return the Boolean inverse", args(1,2, arg("",bit),arg("v",bit))),
- pattern("calc", "not", CMDvarNOT, false, "Unary bitwise not of V", args(1,2, arg("",bte),arg("v",bte))),
- pattern("calc", "not", CMDvarNOT, false, "Unary bitwise not of V", args(1,2, arg("",sht),arg("v",sht))),
- pattern("calc", "not", CMDvarNOT, false, "Unary bitwise not of V", args(1,2, arg("",int),arg("v",int))),
- pattern("calc", "not", CMDvarNOT, false, "Unary bitwise not of V", args(1,2, arg("",lng),arg("v",lng))),
- pattern("calc", "sign", CMDvarSIGN, false, "Unary sign (-1,0,1) of V", args(1,2, arg("",bte),arg("v",bte))),
- pattern("calc", "sign", CMDvarSIGN, false, "Unary sign (-1,0,1) of V", args(1,2, arg("",bte),arg("v",sht))),
- pattern("calc", "sign", CMDvarSIGN, false, "Unary sign (-1,0,1) of V", args(1,2, arg("",bte),arg("v",int))),
- pattern("calc", "sign", CMDvarSIGN, false, "Unary sign (-1,0,1) of V", args(1,2, arg("",bte),arg("v",lng))),
- pattern("calc", "sign", CMDvarSIGN, false, "Unary sign (-1,0,1) of V", args(1,2, arg("",bte),arg("v",flt))),
- pattern("calc", "sign", CMDvarSIGN, false, "Unary sign (-1,0,1) of V", args(1,2, arg("",bte),arg("v",dbl))),
- pattern("calc", "abs", CMDvarABS, false, "Unary absolute value of V", args(1,2, arg("",bte),arg("v",bte))),
- pattern("calc", "abs", CMDvarABS, false, "Unary absolute value of V", args(1,2, arg("",sht),arg("v",sht))),
- pattern("calc", "abs", CMDvarABS, false, "Unary absolute value of V", args(1,2, arg("",int),arg("v",int))),
- pattern("calc", "abs", CMDvarABS, false, "Unary absolute value of V", args(1,2, arg("",lng),arg("v",lng))),
- pattern("calc", "abs", CMDvarABS, false, "Unary absolute value of V", args(1,2, arg("",flt),arg("v",flt))),
- pattern("calc", "abs", CMDvarABS, false, "Unary absolute value of V", args(1,2, arg("",dbl),arg("v",dbl))),
- pattern("calc", "-", CMDvarNEG, false, "Unary negation of V", args(1,2, arg("",bte),arg("v",bte))),
- pattern("calc", "-", CMDvarNEG, false, "Unary negation of V", args(1,2, arg("",sht),arg("v",sht))),
- pattern("calc", "-", CMDvarNEG, false, "Unary negation of V", args(1,2, arg("",int),arg("v",int))),
- pattern("calc", "-", CMDvarNEG, false, "Unary negation of V", args(1,2, arg("",lng),arg("v",lng))),
- pattern("calc", "-", CMDvarNEG, false, "Unary negation of V", args(1,2, arg("",flt),arg("v",flt))),
- pattern("calc", "-", CMDvarNEG, false, "Unary negation of V", args(1,2, arg("",dbl),arg("v",dbl))),
- pattern("calc", "++", CMDvarINCR, false, "Unary V + 1", args(1,2, arg("",bte),arg("v",bte))),
- pattern("calc", "++", CMDvarINCR, false, "Unary V + 1", args(1,2, arg("",sht),arg("v",sht))),
- pattern("calc", "++", CMDvarINCR, false, "Unary V + 1", args(1,2, arg("",int),arg("v",int))),
- pattern("calc", "++", CMDvarINCR, false, "Unary V + 1", args(1,2, arg("",lng),arg("v",lng))),
- pattern("calc", "++", CMDvarINCR, false, "Unary V + 1", args(1,2, arg("",flt),arg("v",flt))),
- pattern("calc", "++", CMDvarINCR, false, "Unary V + 1", args(1,2, arg("",dbl),arg("v",dbl))),
- pattern("calc", "--", CMDvarDECR, false, "Unary V - 1", args(1,2, arg("",bte),arg("v",bte))),
- pattern("calc", "--", CMDvarDECR, false, "Unary V - 1", args(1,2, arg("",sht),arg("v",sht))),
- pattern("calc", "--", CMDvarDECR, false, "Unary V - 1", args(1,2, arg("",int),arg("v",int))),
- pattern("calc", "--", CMDvarDECR, false, "Unary V - 1", args(1,2, arg("",lng),arg("v",lng))),
- pattern("calc", "--", CMDvarDECR, false, "Unary V - 1", args(1,2, arg("",flt),arg("v",flt))),
- pattern("calc", "--", CMDvarDECR, false, "Unary V - 1", args(1,2, arg("",dbl),arg("v",dbl))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",int),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",sht),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",int),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",bte),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",bte),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",int),arg("v1",bte),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",int),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",int),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",sht),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",sht),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",int),arg("v1",sht),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",int),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",int),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",int),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",int),arg("v1",int),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",int),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",int),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",int),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",int),arg("v1",int),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",int),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",int),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",int),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",int),arg("v1",int),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",int),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",int),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",int),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",int),arg("v2",flt))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",int),arg("v2",flt))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",int),arg("v2",dbl))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",lng),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",lng),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",flt))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",lng),arg("v2",flt))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",dbl))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",flt),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",flt),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",flt),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",flt),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",flt))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",flt),arg("v2",flt))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",dbl))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",bte))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",sht))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",int))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",lng))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",flt))),
- pattern("calc", "+", CMDvarADD, false, "Return V1 + V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",dbl))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",int),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",sht),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",int),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",bte),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",bte),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",int),arg("v1",bte),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",int),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",int),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",sht),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",sht),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",int),arg("v1",sht),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",int),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",int),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",int),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",int),arg("v1",int),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",int),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",int),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",int),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",int),arg("v1",int),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",int),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",int),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",int),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",int),arg("v1",int),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",int),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",int),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",int),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",int),arg("v2",flt))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",int),arg("v2",flt))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",int),arg("v2",dbl))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",lng),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",lng),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",flt))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",lng),arg("v2",flt))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",dbl))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",flt),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",flt),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",flt),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",flt),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",flt))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",flt),arg("v2",flt))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",dbl))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",bte))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",sht))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",int))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",lng))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",flt))),
- pattern("calc", "-", CMDvarSUB, false, "Return V1 - V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",int),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",sht),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",int),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",bte),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",bte),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",bte),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",int),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",int),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",sht),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",sht),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",sht),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",int),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",int),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",int),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",int),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",int),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",int),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",int),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",int),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",int),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",int),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",lng),arg("v1",int),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",int),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",int),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",int),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",int),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",int),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",int),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",int),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",lng),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",lng),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",flt),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",lng),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",flt),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",flt),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",flt),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",flt),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, guarantee no overflow by returning larger type", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",flt),arg("v1",flt),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",int),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",int),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",int),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",lng),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",lng),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",lng),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",int),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",lng),arg("v2",flt))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",flt),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",flt),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",flt),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",flt),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",flt),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",flt),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",flt),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",flt),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",flt),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",flt),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",flt),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",flt),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",flt),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",flt),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",flt),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",flt),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",int),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",int),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",int),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",lng),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",lng),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",lng),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",int),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",lng),arg("v2",dbl))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",dbl),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",dbl),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",dbl),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",dbl),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",dbl),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",dbl),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",dbl),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",dbl),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",dbl),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",bte),arg("v1",dbl),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",sht),arg("v1",dbl),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",int),arg("v1",dbl),arg("v2",lng))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",dbl),arg("v2",bte))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",dbl),arg("v2",sht))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",dbl),arg("v2",int))),
- pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",lng),arg("v1",dbl),arg("v2",lng))),
- command("calc", "+", CMDvarADDstr, false, "Concatenate LEFT and RIGHT", args(1,3, arg("",str),arg("v1",str),arg("v2",str))),
- command("calc", "+", CMDvarADDstrint, false, "Concatenate LEFT and string representation of RIGHT", args(1,3, arg("",str),arg("v1",str),arg("i",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",bte),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",bte),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",bte),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",bte),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",bte),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",bte),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",bte),arg("v1",bte),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",bte),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",bte),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",bte),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",sht),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",sht),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",sht),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",sht),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",int),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",int),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",int),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",int),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",int),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",int),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",int),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",int),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",int),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",int),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",int),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",int),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",int),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",int),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",int),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",int),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",int),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",int),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",int),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",int),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",int),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",int),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",int),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",int),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",lng),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",lng),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",lng),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",lng),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",lng),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",lng),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",flt),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",flt),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",flt),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",flt),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",flt),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",flt),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",flt))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",dbl))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",bte),arg("v1",flt),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",flt),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",flt),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",flt),arg("v2",lng))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",bte),arg("v1",dbl),arg("v2",bte))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",dbl),arg("v2",sht))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",dbl),arg("v2",int))),
- pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",dbl),arg("v2",lng))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",bte),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",bte),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",bte),arg("v2",int))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",bte),arg("v2",int))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",bte),arg("v2",int))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",bte),arg("v1",bte),arg("v2",int))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",bte),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",bte),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",sht),arg("v2",int))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",sht),arg("v2",int))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",sht),arg("v2",int))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",int),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",int),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",int),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",bte),arg("v1",int),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",int),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",int),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",int),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",int),arg("v2",int))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",int),arg("v2",int))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",int),arg("v2",lng))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",int),arg("v2",lng))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",int),arg("v2",flt))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",int),arg("v2",dbl))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",bte),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",sht),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",lng),arg("v2",int))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",int),arg("v1",lng),arg("v2",int))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",lng),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",lng),arg("v2",flt))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",lng),arg("v2",dbl))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",flt),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",flt),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",flt),arg("v2",int))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",flt),arg("v2",lng))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",flt),arg("v1",flt),arg("v2",flt))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",flt),arg("v2",dbl))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",bte))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",sht))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",int))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",lng))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",flt))),
- pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",dbl))),
- pattern("mmath", "fmod", CMDvarMOD, false, "", args(1,3, arg("",flt),arg("y",flt),arg("x",flt))),
- pattern("mmath", "fmod", CMDvarMOD, false, "The fmod(x,y) function computes the remainder of dividing x by y.\nThe return value is x - n * y, where n is the quotient of x / y,\nrounded towards zero to an integer.", args(1,3, arg("",dbl),arg("y",dbl),arg("x",dbl))),
- pattern("calc", "and", CMDvarAND, false, "Return V1 AND V2", args(1,3, arg("",bit),arg("v1",bit),arg("v2",bit))),
- pattern("calc", "and", CMDvarAND, false, "Return V1 AND V2", args(1,3, arg("",bte),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "and", CMDvarAND, false, "Return V1 AND V2", args(1,3, arg("",sht),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "and", CMDvarAND, false, "Return V1 AND V2", args(1,3, arg("",int),arg("v1",int),arg("v2",int))),
- pattern("calc", "and", CMDvarAND, false, "Return V1 AND V2", args(1,3, arg("",lng),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "or", CMDvarOR, false, "Return V1 OR V2", args(1,3, arg("",bit),arg("v1",bit),arg("v2",bit))),
- pattern("calc", "or", CMDvarOR, false, "Return V1 OR V2", args(1,3, arg("",bte),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "or", CMDvarOR, false, "Return V1 OR V2", args(1,3, arg("",sht),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "or", CMDvarOR, false, "Return V1 OR V2", args(1,3, arg("",int),arg("v1",int),arg("v2",int))),
- pattern("calc", "or", CMDvarOR, false, "Return V1 OR V2", args(1,3, arg("",lng),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "xor", CMDvarXOR, false, "Return V1 XOR V2", args(1,3, arg("",bit),arg("v1",bit),arg("v2",bit))),
- pattern("calc", "xor", CMDvarXOR, false, "Return V1 XOR V2", args(1,3, arg("",bte),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "xor", CMDvarXOR, false, "Return V1 XOR V2", args(1,3, arg("",sht),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "xor", CMDvarXOR, false, "Return V1 XOR V2", args(1,3, arg("",int),arg("v1",int),arg("v2",int))),
- pattern("calc", "xor", CMDvarXOR, false, "Return V1 XOR V2", args(1,3, arg("",lng),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",bte),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",bte),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",bte),arg("v1",bte),arg("v2",int))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",bte),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",sht),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",sht),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",sht),arg("v1",sht),arg("v2",int))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",sht),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",int),arg("v1",int),arg("v2",bte))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",int),arg("v1",int),arg("v2",sht))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",int),arg("v1",int),arg("v2",int))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",int),arg("v1",int),arg("v2",lng))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",lng),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",lng),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",lng),arg("v1",lng),arg("v2",int))),
- pattern("calc", "<<", CMDvarLSH, false, "Return V1 << V2, raise error on out of range second operand", args(1,3, arg("",lng),arg("v1",lng),arg("v2",lng))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",bte),arg("v1",bte),arg("v2",bte))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",bte),arg("v1",bte),arg("v2",sht))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",bte),arg("v1",bte),arg("v2",int))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",bte),arg("v1",bte),arg("v2",lng))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",sht),arg("v1",sht),arg("v2",bte))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",sht),arg("v1",sht),arg("v2",sht))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",sht),arg("v1",sht),arg("v2",int))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",sht),arg("v1",sht),arg("v2",lng))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",int),arg("v1",int),arg("v2",bte))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",int),arg("v1",int),arg("v2",sht))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",int),arg("v1",int),arg("v2",int))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",int),arg("v1",int),arg("v2",lng))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",lng),arg("v1",lng),arg("v2",bte))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",lng),arg("v1",lng),arg("v2",sht))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",lng),arg("v1",lng),arg("v2",int))),
- pattern("calc", ">>", CMDvarRSH, false, "Return V1 >> V2, raise error on out of range second operand", args(1,3, arg("",lng),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",bit),arg("v2",bit))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",str),arg("v2",str))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",blob),arg("v2",blob))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",oid),arg("v2",oid))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",int))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",int))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",bte))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",sht))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",int))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",lng))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",flt))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",dbl))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",int))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",flt))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",dbl))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",bte))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",sht))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",int))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",lng))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",flt))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",dbl))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",bte))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",sht))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",int))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",lng))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",flt))),
- pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",dbl))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",bit),arg("v2",bit))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",str),arg("v2",str))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",blob),arg("v2",blob))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",oid),arg("v2",oid))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",int))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",int))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",bte))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",sht))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",int))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",lng))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",flt))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",dbl))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",int))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",flt))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",dbl))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",bte))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",sht))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",int))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",lng))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",flt))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",dbl))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",bte))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",sht))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",int))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",lng))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",flt))),
- pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",dbl))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",bit),arg("v2",bit))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",str),arg("v2",str))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",blob),arg("v2",blob))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",oid),arg("v2",oid))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",bte))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",sht))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",int))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",lng))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",flt))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",bte))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",sht))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",int))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",lng))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",flt))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",bte))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",sht))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",int))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",lng))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",flt))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",dbl))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",bte))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",sht))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",int))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",lng))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",flt))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",dbl))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",bte))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",sht))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",int))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",lng))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",flt))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",dbl))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",bte))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",sht))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",int))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",lng))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",flt))),
- pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",dbl))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",bit),arg("v2",bit))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",str),arg("v2",str))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",blob),arg("v2",blob))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",oid),arg("v2",oid))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",bte))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",sht))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",int))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",lng))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",flt))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",bte))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",sht))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",int))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",lng))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",flt))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",bte))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",sht))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",int))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",lng))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",flt))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",dbl))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",bte))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",sht))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",int))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",lng))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",flt))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",dbl))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",bte))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",sht))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",int))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",lng))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",flt))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",dbl))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",bte))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",sht))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",int))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",lng))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",flt))),
- pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",dbl))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",bit),arg("v2",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",bit),arg("v2",bit),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",str),arg("v2",str))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",str),arg("v2",str),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",blob),arg("v2",blob))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",blob),arg("v2",blob),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",oid),arg("v2",oid))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",oid),arg("v2",oid),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",bte),arg("v2",bte),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",bte),arg("v2",sht),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",int))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",bte),arg("v2",int),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",bte),arg("v2",lng),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",bte),arg("v2",flt),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",bte),arg("v2",dbl),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",sht),arg("v2",bte),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",sht),arg("v2",sht),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",int))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",sht),arg("v2",int),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",sht),arg("v2",lng),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",sht),arg("v2",flt),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",sht),arg("v2",dbl),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",bte))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",int),arg("v2",bte),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",sht))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",int),arg("v2",sht),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",int))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",int),arg("v2",int),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",lng))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",int),arg("v2",lng),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",flt))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",int),arg("v2",flt),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",dbl))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",int),arg("v2",dbl),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",lng),arg("v2",bte),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",lng),arg("v2",sht),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",int))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",lng),arg("v2",int),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",lng),arg("v2",lng),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",flt))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",lng),arg("v2",flt),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",dbl))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",lng),arg("v2",dbl),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",bte))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",flt),arg("v2",bte),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",sht))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",flt),arg("v2",sht),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",int))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",flt),arg("v2",int),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",lng))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",flt),arg("v2",lng),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",flt))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",flt),arg("v2",flt),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",dbl))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",flt),arg("v2",dbl),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",bte))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",dbl),arg("v2",bte),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",sht))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",dbl),arg("v2",sht),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",int))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",dbl),arg("v2",int),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",lng))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",dbl),arg("v2",lng),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",flt))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",dbl),arg("v2",flt),arg("nil_matches",bit))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",dbl))),
- pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("v1",dbl),arg("v2",dbl),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",bit),arg("v2",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",bit),arg("v2",bit),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",str),arg("v2",str))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",str),arg("v2",str),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",blob),arg("v2",blob))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",blob),arg("v2",blob),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",oid),arg("v2",oid))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",oid),arg("v2",oid),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",bte),arg("v2",bte),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",bte),arg("v2",sht),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",int))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",bte),arg("v2",int),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",bte),arg("v2",lng),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",bte),arg("v2",flt),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",bte),arg("v2",dbl),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",sht),arg("v2",bte),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",sht),arg("v2",sht),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",int))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",sht),arg("v2",int),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",sht),arg("v2",lng),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",sht),arg("v2",flt),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",sht),arg("v2",dbl),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",bte))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",int),arg("v2",bte),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",sht))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",int),arg("v2",sht),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",int))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",int),arg("v2",int),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",lng))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",int),arg("v2",lng),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",flt))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",int),arg("v2",flt),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",int),arg("v2",dbl))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",int),arg("v2",dbl),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",lng),arg("v2",bte),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",lng),arg("v2",sht),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",int))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",lng),arg("v2",int),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",lng),arg("v2",lng),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",flt))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",lng),arg("v2",flt),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",lng),arg("v2",dbl))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",lng),arg("v2",dbl),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",bte))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",flt),arg("v2",bte),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",sht))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",flt),arg("v2",sht),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",int))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",flt),arg("v2",int),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",lng))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",flt),arg("v2",lng),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",flt))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",flt),arg("v2",flt),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",flt),arg("v2",dbl))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",flt),arg("v2",dbl),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",bte))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",dbl),arg("v2",bte),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",sht))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",dbl),arg("v2",sht),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",int))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",dbl),arg("v2",int),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",lng))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",dbl),arg("v2",lng),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",flt))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",dbl),arg("v2",flt),arg("nil_matches",bit))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("v1",dbl),arg("v2",dbl))),
- pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("v1",dbl),arg("v2",dbl),arg("nil_matches",bit))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",bit),arg("v2",bit))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",str),arg("v2",str))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",oid),arg("v2",oid))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",bte),arg("v2",bte))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",bte),arg("v2",sht))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",bte),arg("v2",int))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",bte),arg("v2",lng))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",bte),arg("v2",flt))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",bte),arg("v2",dbl))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",sht),arg("v2",bte))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",sht),arg("v2",sht))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",sht),arg("v2",int))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",sht),arg("v2",flt))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",sht),arg("v2",dbl))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",int),arg("v2",bte))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",int),arg("v2",sht))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",int),arg("v2",int))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",int),arg("v2",lng))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",int),arg("v2",flt))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",int),arg("v2",dbl))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",lng),arg("v2",bte))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",lng),arg("v2",sht))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",lng),arg("v2",int))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",lng),arg("v2",flt))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",lng),arg("v2",dbl))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",flt),arg("v2",bte))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",flt),arg("v2",sht))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",flt),arg("v2",int))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",flt),arg("v2",lng))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",flt),arg("v2",flt))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",flt),arg("v2",dbl))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",dbl),arg("v2",bte))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",dbl),arg("v2",sht))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",dbl),arg("v2",int))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",dbl),arg("v2",lng))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",dbl),arg("v2",flt))),
- pattern("calc", "cmp", CMDvarCMP, false, "Return -1/0/1 if V1 </==/> V2", args(1,3, arg("",bte),arg("v1",dbl),arg("v2",dbl))),
- pattern("calc", "between", CMDvarBETWEEN, false, "B between LO and HI inclusive", args(1,9, arg("",bit),argany("b",1),argany("lo",1),argany("hi",1),arg("sym",bit),arg("linc",bit),arg("hinc",bit),arg("nils_false",bit),arg("anti",bit))),
- pattern("calc", "void", CMDvarCONVERT, false, "Cast VALUE to void", args(1,2, arg("",void),arg("v",void))),
- pattern("calc", "void", CMDvarCONVERT, false, "Cast VALUE to void", args(1,2, arg("",void),arg("v",bit))),
- pattern("calc", "void", CMDvarCONVERT, false, "Cast VALUE to void", args(1,2, arg("",void),arg("v",bte))),
- pattern("calc", "void", CMDvarCONVERT, false, "Cast VALUE to void", args(1,2, arg("",void),arg("v",sht))),
- pattern("calc", "void", CMDvarCONVERT, false, "Cast VALUE to void", args(1,2, arg("",void),arg("v",int))),
- pattern("calc", "void", CMDvarCONVERT, false, "Cast VALUE to void", args(1,2, arg("",void),arg("v",lng))),
- pattern("calc", "void", CMDvarCONVERT, false, "Cast VALUE to void", args(1,2, arg("",void),arg("v",flt))),
- pattern("calc", "void", CMDvarCONVERT, false, "Cast VALUE to void", args(1,2, arg("",void),arg("v",dbl))),
- pattern("calc", "void", CMDvarCONVERT, false, "Cast VALUE to void", args(1,2, arg("",void),arg("v",oid))),
- pattern("calc", "void", CMDvarCONVERT, false, "Cast VALUE to void", args(1,2, arg("",void),arg("v",str))),
- pattern("calc", "bit", CMDvarCONVERT, false, "Cast VALUE to bit", args(1,2, arg("",bit),arg("v",void))),
- pattern("calc", "bit", CMDvarCONVERT, false, "Cast VALUE to bit", args(1,2, arg("",bit),arg("v",bit))),
- pattern("calc", "bit", CMDvarCONVERT, false, "Cast VALUE to bit", args(1,2, arg("",bit),arg("v",bte))),
- pattern("calc", "bit", CMDvarCONVERT, false, "Cast VALUE to bit", args(1,2, arg("",bit),arg("v",sht))),
- pattern("calc", "bit", CMDvarCONVERT, false, "Cast VALUE to bit", args(1,2, arg("",bit),arg("v",int))),
- pattern("calc", "bit", CMDvarCONVERT, false, "Cast VALUE to bit", args(1,2, arg("",bit),arg("v",lng))),
- pattern("calc", "bit", CMDvarCONVERT, false, "Cast VALUE to bit", args(1,2, arg("",bit),arg("v",flt))),
- pattern("calc", "bit", CMDvarCONVERT, false, "Cast VALUE to bit", args(1,2, arg("",bit),arg("v",dbl))),
- pattern("calc", "bit", CMDvarCONVERT, false, "Cast VALUE to bit", args(1,2, arg("",bit),arg("v",oid))),
- pattern("calc", "bit", CMDvarCONVERT, false, "Cast VALUE to bit", args(1,2, arg("",bit),arg("v",str))),
- pattern("calc", "bte", CMDvarCONVERT, false, "Cast VALUE to bte", args(1,2, arg("",bte),arg("v",void))),
- pattern("calc", "bte", CMDvarCONVERT, false, "Cast VALUE to bte", args(1,2, arg("",bte),arg("v",bit))),
- pattern("calc", "bte", CMDvarCONVERT, false, "Cast VALUE to bte", args(1,2, arg("",bte),arg("v",bte))),
- pattern("calc", "bte", CMDvarCONVERT, false, "Cast VALUE to bte", args(1,2, arg("",bte),arg("v",sht))),
- pattern("calc", "bte", CMDvarCONVERT, false, "Cast VALUE to bte", args(1,2, arg("",bte),arg("v",int))),
- pattern("calc", "bte", CMDvarCONVERT, false, "Cast VALUE to bte", args(1,2, arg("",bte),arg("v",lng))),
- pattern("calc", "bte", CMDvarCONVERT, false, "Cast VALUE to bte", args(1,2, arg("",bte),arg("v",flt))),
- pattern("calc", "bte", CMDvarCONVERT, false, "Cast VALUE to bte", args(1,2, arg("",bte),arg("v",dbl))),
- pattern("calc", "bte", CMDvarCONVERT, false, "Cast VALUE to bte", args(1,2, arg("",bte),arg("v",oid))),
- pattern("calc", "bte", CMDvarCONVERT, false, "Cast VALUE to bte", args(1,2, arg("",bte),arg("v",str))),
- pattern("calc", "sht", CMDvarCONVERT, false, "Cast VALUE to sht", args(1,2, arg("",sht),arg("v",void))),
- pattern("calc", "sht", CMDvarCONVERT, false, "Cast VALUE to sht", args(1,2, arg("",sht),arg("v",bit))),
- pattern("calc", "sht", CMDvarCONVERT, false, "Cast VALUE to sht", args(1,2, arg("",sht),arg("v",bte))),
- pattern("calc", "sht", CMDvarCONVERT, false, "Cast VALUE to sht", args(1,2, arg("",sht),arg("v",sht))),
- pattern("calc", "sht", CMDvarCONVERT, false, "Cast VALUE to sht", args(1,2, arg("",sht),arg("v",int))),
- pattern("calc", "sht", CMDvarCONVERT, false, "Cast VALUE to sht", args(1,2, arg("",sht),arg("v",lng))),
- pattern("calc", "sht", CMDvarCONVERT, false, "Cast VALUE to sht", args(1,2, arg("",sht),arg("v",flt))),
- pattern("calc", "sht", CMDvarCONVERT, false, "Cast VALUE to sht", args(1,2, arg("",sht),arg("v",dbl))),
- pattern("calc", "sht", CMDvarCONVERT, false, "Cast VALUE to sht", args(1,2, arg("",sht),arg("v",oid))),
- pattern("calc", "sht", CMDvarCONVERT, false, "Cast VALUE to sht", args(1,2, arg("",sht),arg("v",str))),
- pattern("calc", "int", CMDvarCONVERT, false, "Cast VALUE to int", args(1,2, arg("",int),arg("v",void))),
- pattern("calc", "int", CMDvarCONVERT, false, "Cast VALUE to int", args(1,2, arg("",int),arg("v",bit))),
- pattern("calc", "int", CMDvarCONVERT, false, "Cast VALUE to int", args(1,2, arg("",int),arg("v",bte))),
- pattern("calc", "int", CMDvarCONVERT, false, "Cast VALUE to int", args(1,2, arg("",int),arg("v",sht))),
- pattern("calc", "int", CMDvarCONVERT, false, "Cast VALUE to int", args(1,2, arg("",int),arg("v",int))),
- pattern("calc", "int", CMDvarCONVERT, false, "Cast VALUE to int", args(1,2, arg("",int),arg("v",lng))),
- pattern("calc", "int", CMDvarCONVERT, false, "Cast VALUE to int", args(1,2, arg("",int),arg("v",flt))),
- pattern("calc", "int", CMDvarCONVERT, false, "Cast VALUE to int", args(1,2, arg("",int),arg("v",dbl))),
- pattern("calc", "int", CMDvarCONVERT, false, "Cast VALUE to int", args(1,2, arg("",int),arg("v",oid))),
- pattern("calc", "int", CMDvarCONVERT, false, "Cast VALUE to int", args(1,2, arg("",int),arg("v",str))),
- pattern("calc", "lng", CMDvarCONVERT, false, "Cast VALUE to lng", args(1,2, arg("",lng),arg("v",void))),
- pattern("calc", "lng", CMDvarCONVERT, false, "Cast VALUE to lng", args(1,2, arg("",lng),arg("v",bit))),
- pattern("calc", "lng", CMDvarCONVERT, false, "Cast VALUE to lng", args(1,2, arg("",lng),arg("v",bte))),
- pattern("calc", "lng", CMDvarCONVERT, false, "Cast VALUE to lng", args(1,2, arg("",lng),arg("v",sht))),
- pattern("calc", "lng", CMDvarCONVERT, false, "Cast VALUE to lng", args(1,2, arg("",lng),arg("v",int))),
- pattern("calc", "lng", CMDvarCONVERT, false, "Cast VALUE to lng", args(1,2, arg("",lng),arg("v",lng))),
- pattern("calc", "lng", CMDvarCONVERT, false, "Cast VALUE to lng", args(1,2, arg("",lng),arg("v",flt))),
- pattern("calc", "lng", CMDvarCONVERT, false, "Cast VALUE to lng", args(1,2, arg("",lng),arg("v",dbl))),
- pattern("calc", "lng", CMDvarCONVERT, false, "Cast VALUE to lng", args(1,2, arg("",lng),arg("v",oid))),
- pattern("calc", "lng", CMDvarCONVERT, false, "Cast VALUE to lng", args(1,2, arg("",lng),arg("v",str))),
- pattern("calc", "flt", CMDvarCONVERT, false, "Cast VALUE to flt", args(1,2, arg("",flt),arg("v",void))),
- pattern("calc", "flt", CMDvarCONVERT, false, "Cast VALUE to flt", args(1,2, arg("",flt),arg("v",bit))),
- pattern("calc", "flt", CMDvarCONVERT, false, "Cast VALUE to flt", args(1,2, arg("",flt),arg("v",bte))),
- pattern("calc", "flt", CMDvarCONVERT, false, "Cast VALUE to flt", args(1,2, arg("",flt),arg("v",sht))),
- pattern("calc", "flt", CMDvarCONVERT, false, "Cast VALUE to flt", args(1,2, arg("",flt),arg("v",int))),
- pattern("calc", "flt", CMDvarCONVERT, false, "Cast VALUE to flt", args(1,2, arg("",flt),arg("v",lng))),
- pattern("calc", "flt", CMDvarCONVERT, false, "Cast VALUE to flt", args(1,2, arg("",flt),arg("v",flt))),
- pattern("calc", "flt", CMDvarCONVERT, false, "Cast VALUE to flt", args(1,2, arg("",flt),arg("v",dbl))),
- pattern("calc", "flt", CMDvarCONVERT, false, "Cast VALUE to flt", args(1,2, arg("",flt),arg("v",oid))),
- pattern("calc", "flt", CMDvarCONVERT, false, "Cast VALUE to flt", args(1,2, arg("",flt),arg("v",str))),
- pattern("calc", "dbl", CMDvarCONVERT, false, "Cast VALUE to dbl", args(1,2, arg("",dbl),arg("v",void))),
- pattern("calc", "dbl", CMDvarCONVERT, false, "Cast VALUE to dbl", args(1,2, arg("",dbl),arg("v",bit))),
- pattern("calc", "dbl", CMDvarCONVERT, false, "Cast VALUE to dbl", args(1,2, arg("",dbl),arg("v",bte))),
- pattern("calc", "dbl", CMDvarCONVERT, false, "Cast VALUE to dbl", args(1,2, arg("",dbl),arg("v",sht))),
- pattern("calc", "dbl", CMDvarCONVERT, false, "Cast VALUE to dbl", args(1,2, arg("",dbl),arg("v",int))),
- pattern("calc", "dbl", CMDvarCONVERT, false, "Cast VALUE to dbl", args(1,2, arg("",dbl),arg("v",lng))),
- pattern("calc", "dbl", CMDvarCONVERT, false, "Cast VALUE to dbl", args(1,2, arg("",dbl),arg("v",flt))),
- pattern("calc", "dbl", CMDvarCONVERT, false, "Cast VALUE to dbl", args(1,2, arg("",dbl),arg("v",dbl))),
- pattern("calc", "dbl", CMDvarCONVERT, false, "Cast VALUE to dbl", args(1,2, arg("",dbl),arg("v",oid))),
- pattern("calc", "dbl", CMDvarCONVERT, false, "Cast VALUE to dbl", args(1,2, arg("",dbl),arg("v",str))),
- pattern("calc", "oid", CMDvarCONVERT, false, "Cast VALUE to oid", args(1,2, arg("",oid),arg("v",void))),
- pattern("calc", "oid", CMDvarCONVERT, false, "Cast VALUE to oid", args(1,2, arg("",oid),arg("v",bit))),
- pattern("calc", "oid", CMDvarCONVERT, false, "Cast VALUE to oid", args(1,2, arg("",oid),arg("v",bte))),
- pattern("calc", "oid", CMDvarCONVERT, false, "Cast VALUE to oid", args(1,2, arg("",oid),arg("v",sht))),
- pattern("calc", "oid", CMDvarCONVERT, false, "Cast VALUE to oid", args(1,2, arg("",oid),arg("v",int))),
- pattern("calc", "oid", CMDvarCONVERT, false, "Cast VALUE to oid", args(1,2, arg("",oid),arg("v",lng))),
- pattern("calc", "oid", CMDvarCONVERT, false, "Cast VALUE to oid", args(1,2, arg("",oid),arg("v",flt))),
- pattern("calc", "oid", CMDvarCONVERT, false, "Cast VALUE to oid", args(1,2, arg("",oid),arg("v",dbl))),
- pattern("calc", "oid", CMDvarCONVERT, false, "Cast VALUE to oid", args(1,2, arg("",oid),arg("v",oid))),
- pattern("calc", "oid", CMDvarCONVERT, false, "Cast VALUE to oid", args(1,2, arg("",oid),arg("v",str))),
- pattern("calc", "str", CMDvarCONVERT, false, "Cast VALUE to str", args(1,2, arg("",str),argany("v",0))),
- pattern("calc", "min", CALCmin, false, "Return min of V1 and V2", args(1,3, argany("",1),argany("v1",1),argany("v2",1))),
- pattern("calc", "min_no_nil", CALCmin_no_nil, false, "Return min of V1 and V2, ignoring nil values", args(1,3, argany("",1),argany("v1",1),argany("v2",1))),
- pattern("calc", "max", CALCmax, false, "Return max of V1 and V2", args(1,3, argany("",1),argany("v1",1),argany("v2",1))),
- pattern("calc", "max_no_nil", CALCmax_no_nil, false, "Return max of V1 and V2, ignoring nil values", args(1,3, argany("",1),argany("v1",1),argany("v2",1))),
- command("calc", "ptr", CMDvarCONVERTptr, false, "Cast VALUE to ptr", args(1,2, arg("",ptr),arg("v",ptr))),
- pattern("calc", "ifthenelse", CALCswitchbit, false, "If VALUE is true return MIDDLE else RIGHT", args(1,4, argany("",1),arg("b",bit),argany("t",1),argany("f",1))),
- command("calc", "length", CMDstrlength, false, "Length of STRING", args(1,2, arg("",int),arg("s",str))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",bte),batarg("b",msk))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",bte),batarg("b",msk),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",bte),batarg("b",msk),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",bte),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",sht),batarg("b",msk))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",sht),batarg("b",msk),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",sht),batarg("b",msk),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",sht),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",int),batarg("b",msk))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",int),batarg("b",msk),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",int),batarg("b",msk),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",int),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",lng),batarg("b",msk))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",lng),batarg("b",msk),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",lng),batarg("b",msk),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",lng),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",msk))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",msk),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",msk),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",bte),batarg("b",bte))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",bte),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",bte),batarg("b",bte),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",bte),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",sht),batarg("b",bte))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",sht),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",sht),batarg("b",bte),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",sht),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",int),batarg("b",bte))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",int),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",int),batarg("b",bte),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",int),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",lng),batarg("b",bte))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",lng),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",lng),batarg("b",bte),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",lng),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",bte))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",bte),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",sht),batarg("b",sht))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",sht),batarg("b",sht),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",sht),batarg("b",sht),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",sht),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",int),batarg("b",sht))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",int),batarg("b",sht),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",int),batarg("b",sht),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",int),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",lng),batarg("b",sht))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",lng),batarg("b",sht),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",lng),batarg("b",sht),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",lng),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",sht))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",sht),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",sht),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",int),batarg("b",int))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",int),batarg("b",int),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",int),batarg("b",int),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",int),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",lng),batarg("b",int))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",lng),batarg("b",int),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",lng),batarg("b",int),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",lng),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",int))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",int),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",int),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",lng),batarg("b",lng))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",lng),batarg("b",lng),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",lng),batarg("b",lng),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",lng),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",lng))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",lng),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",lng),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",flt),batarg("b",flt))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",flt),batarg("b",flt),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",flt),batarg("b",flt),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",flt),batarg("b",flt),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",flt))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",flt),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",flt),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",flt),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",dbl))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",dbl),arg("nil_if_empty",bit))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",dbl),batarg("s",oid))),
- pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",dbl),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",bte),batarg("b",bte))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",bte),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",bte),batarg("b",bte),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",bte),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",sht),batarg("b",bte))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",sht),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",sht),batarg("b",bte),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",sht),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",int),batarg("b",bte))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",int),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",int),batarg("b",bte),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",int),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",lng),batarg("b",bte))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",lng),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",lng),batarg("b",bte),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",lng),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",bte))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",bte),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",sht),batarg("b",sht))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",sht),batarg("b",sht),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",sht),batarg("b",sht),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",sht),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",int),batarg("b",sht))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",int),batarg("b",sht),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",int),batarg("b",sht),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",int),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",lng),batarg("b",sht))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",lng),batarg("b",sht),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",lng),batarg("b",sht),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",lng),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",sht))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",sht),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",sht),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",int),batarg("b",int))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",int),batarg("b",int),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",int),batarg("b",int),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",int),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",lng),batarg("b",int))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",lng),batarg("b",int),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",lng),batarg("b",int),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",lng),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",int))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",int),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",int),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",lng),batarg("b",lng))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",lng),batarg("b",lng),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",lng),batarg("b",lng),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",lng),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",lng))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",lng),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",lng),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",flt),batarg("b",flt))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",flt),batarg("b",flt),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",flt),batarg("b",flt),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",flt),batarg("b",flt),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",flt))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",flt),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",flt),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",flt),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",dbl))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",dbl),arg("nil_if_empty",bit))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",dbl),batarg("s",oid))),
- pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",dbl),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B.", args(1,2, arg("",str),batarg("b",str))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B.", args(1,3, arg("",str),batarg("b",str),arg("nil_if_empty",bit))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B with candidate list.", args(1,3, arg("",str),batarg("b",str),batarg("s",oid))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B with candidate list.", args(1,4, arg("",str),batarg("b",str),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B with separator SEP.", args(1,3, arg("",str),batarg("b",str),batarg("sep",str))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B with separator SEP.", args(1,4, arg("",str),batarg("b",str),batarg("sep",str),arg("nil_if_empty",bit))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B with candidate list and separator SEP.", args(1,4, arg("",str),batarg("b",str),batarg("sep",str),batarg("s",oid))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B with candidate list and separator SEP.", args(1,5, arg("",str),batarg("b",str),batarg("sep",str),batarg("s",oid),arg("nil_if_empty",bit))),
- //from sql
- pattern("aggr", "anyequal", CMDvarEQ, false, "", args(1,3, arg("",bit),argany("l",1),argany("r",1))),
- pattern("aggr", "not_anyequal", CMDvarNE, false, "", args(1,3, arg("",bit),argany("l",1),argany("r",1))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_calc_mal)
-{ mal_module("calc", NULL, calc_init_funcs); }

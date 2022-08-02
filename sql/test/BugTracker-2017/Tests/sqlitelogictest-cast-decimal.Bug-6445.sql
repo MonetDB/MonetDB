@@ -1,0 +1,4 @@
+CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+SELECT col0 + - - CAST ( NULL AS REAL ) - + col0 + + col1 FROM tab1 cor0 WHERE ( NULL ) IS NOT NULL;
+SELECT col0 + - - CAST( NULL AS DECIMAL ) - + col0 + + col1 FROM tab1 cor0 WHERE ( NULL ) IS NOT NULL;
+DROP TABLE tab1;

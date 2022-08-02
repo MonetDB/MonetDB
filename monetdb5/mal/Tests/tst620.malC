@@ -1,0 +1,10 @@
+#check the storage size
+function tst():void;
+	z:= inspect.getSize();
+	io.printf("#size %d\n",z);
+end tst;
+
+user.tst();
+
+l:= inspect.getSize();
+io.printf("#size %d\n",l);

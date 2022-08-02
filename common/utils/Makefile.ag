@@ -1,0 +1,39 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+
+## Process this file with automake to produce Makefile.in
+
+MTSAFE
+
+INCLUDES = ../.. $(openssl_CFLAGS)
+
+EXTRA_DIST = matomic.h
+
+headers_h = {
+	DIR = includedir/monetdb
+	HEADERS = h
+	SOURCES = matomic.h mstring.h
+}
+
+lib_mutils  =  {
+	NOINST
+	SOURCES = mutils.h mutils.c prompt.c mprompt.h revision.c mstring.h
+}
+
+lib_mcrypt = {
+	NOINST
+	SOURCES = mcrypt.h mcrypt.c
+}
+
+lib_muuid = {
+	NOINST
+	SOURCES = muuid.h muuid.c
+}
+
+lib_msabaoth = {
+	NOINST
+	SOURCES = msabaoth.h msabaoth.c
+}

@@ -1,0 +1,17 @@
+# A few system calls
+	io.print("hello world");
+	io.print(0);
+	io.print(1:lng);
+	io.print(2:bte);
+	io.print(true);
+	pi := 3.147;
+	x:=1;
+	io.print(x);
+	io.print(pi);
+	io.printf("hello\n");
+	io.printf("%5d\n",0);
+	io.printf("%5d\n",1:lng);
+	io.printf("%5d\n",2:bte);
+	io.printf("%-8d\n", true);
+	io.printf("%6.2f\n",pi);
+	io.printf("single line %s \n","hello");

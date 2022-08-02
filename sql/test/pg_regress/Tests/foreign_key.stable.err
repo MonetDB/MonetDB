@@ -1,0 +1,449 @@
+stderr of test 'foreign_key` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
+
+#--
+#-- FOREIGN KEY
+#--
+#-- MATCH FULL
+#--
+#-- First test, check and cascade
+#--
+#-- Insert test data into PKTABLE
+#-- Insert successful rows into FK TABLE
+#-- Insert a failed row into FK TABLE
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO FKTABLE VALUES (100, 2);
+ERROR = insert or update on table "fktable" violates foreign key constraint "fktable_ftest1_fkey"
+DETAIL:  Key (ftest1)=(100) is not present in table "pktable".
+#-- Check FKTABLE
+#-- Delete a row from PK TABLE
+#-- Check FKTABLE for removal of matched row
+#-- Update a row from PK TABLE
+#-- Check FKTABLE for update of matched row
+#--
+#-- check set NULL and table constraint on multiple columns
+#--
+#-- Test comments
+#-- Insert test data into PKTABLE
+#-- Insert successful rows into FK TABLE
+#-- Insert failed rows into FK TABLE
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO FKTABLE VALUES (100, 2, 4);
+ERROR = insert or update on table "fktable" violates foreign key constraint "constrname"
+DETAIL:  Key (ftest1,ftest2)=(100,2) is not present in table "pktable".
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO FKTABLE VALUES (2, 2, 4);
+ERROR = insert or update on table "fktable" violates foreign key constraint "constrname"
+DETAIL:  Key (ftest1,ftest2)=(2,2) is not present in table "pktable".
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO FKTABLE VALUES (NULL, 2, 4);
+ERROR = insert or update on table "fktable" violates foreign key constraint "constrname"
+DETAIL:  MATCH FULL does not allow mixing of null and nonnull key values.
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO FKTABLE VALUES (1, NULL, 4);
+ERROR = insert or update on table "fktable" violates foreign key constraint "constrname"
+DETAIL:  MATCH FULL does not allow mixing of null and nonnull key values.
+#-- Check FKTABLE
+#-- Delete a row from PK TABLE
+#-- Check FKTABLE for removal of matched row
+#-- Delete another row from PK TABLE
+#-- Check FKTABLE (should be no change)
+#-- Update a row from PK TABLE
+#-- Check FKTABLE for update of matched row
+#-- Try altering the column type where foreign keys are involved
+#--
+#-- check set default and table constraint on multiple columns
+#--
+#-- Insert a value in PKTABLE for default
+#-- Insert test data into PKTABLE
+#-- Insert successful rows into FK TABLE
+#-- Insert failed rows into FK TABLE
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO FKTABLE VALUES (100, 2, 4);
+ERROR = insert or update on table "fktable" violates foreign key constraint "constrname2"
+DETAIL:  Key (ftest1,ftest2)=(100,2) is not present in table "pktable".
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO FKTABLE VALUES (2, 2, 4);
+ERROR = insert or update on table "fktable" violates foreign key constraint "constrname2"
+DETAIL:  Key (ftest1,ftest2)=(2,2) is not present in table "pktable".
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO FKTABLE VALUES (NULL, 2, 4);
+ERROR = insert or update on table "fktable" violates foreign key constraint "constrname2"
+DETAIL:  MATCH FULL does not allow mixing of null and nonnull key values.
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO FKTABLE VALUES (1, NULL, 4);
+ERROR = insert or update on table "fktable" violates foreign key constraint "constrname2"
+DETAIL:  MATCH FULL does not allow mixing of null and nonnull key values.
+#-- Check FKTABLE
+#-- Delete a row from PK TABLE
+#-- Check FKTABLE to check for removal
+#-- Delete another row from PK TABLE
+#-- Check FKTABLE (should be no change)
+#-- Update a row from PK TABLE
+#-- Check FKTABLE for update of matched row
+#-- this should fail for lack of CASCADE
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = DROP TABLE PKTABLE;
+NOTICE:  constraint constrname2 on table fktable depends on table pktable
+ERROR = cannot drop table pktable because other objects depend on it
+#--
+#-- First test, check with no on delete or on update
+#--
+#-- Insert test data into PKTABLE
+#-- Insert successful rows into FK TABLE
+#-- Insert a failed row into FK TABLE
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO FKTABLE VALUES (100, 2);
+ERROR = insert or update on table "fktable" violates foreign key constraint "fktable_ftest1_fkey"
+DETAIL:  Key (ftest1)=(100) is not present in table "pktable".
+#-- Check FKTABLE
+#-- Check PKTABLE
+#-- Delete a row from PK TABLE (should fail)
+#-- Delete a row from PK TABLE (should succeed)
+#-- Check PKTABLE for deletes
+#-- Update a row from PK TABLE (should fail)
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = UPDATE PKTABLE SET ptest1=0 WHERE ptest1=2;
+ERROR = update or delete on "pktable" violates foreign key constraint "fktable_ftest1_fkey" on "fktable"
+DETAIL:  Key (ptest1)=(2) is still referenced from table "fktable".
+#-- Update a row from PK TABLE (should succeed)
+#-- Check PKTABLE for updates
+#-- MATCH unspecified
+#-- Base test restricting update/delete
+#-- Insert Primary Key values
+#-- Insert Foreign Key values
+#-- Insert a failed values
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO FKTABLE VALUES (1, 2, 7, 6);
+ERROR = insert or update on table "fktable" violates foreign key constraint "constrname3"
+DETAIL:  Key (ftest1,ftest2,ftest3)=(1,2,7) is not present in table "pktable".
+#-- Show FKTABLE
+#-- Try to update something that should fail
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = UPDATE PKTABLE set ptest2=5 where ptest2=2;
+ERROR = update or delete on "pktable" violates foreign key constraint "constrname3" on "fktable"
+DETAIL:  Key (ptest1,ptest2,ptest3)=(1,2,3) is still referenced from table "fktable".
+#-- Try to update something that should succeed
+#-- Try to delete something that should fail
+#-- Try to delete something that should work
+#-- Show PKTABLE and FKTABLE
+#-- cascade update/delete
+#-- Insert Primary Key values
+#-- Insert Foreign Key values
+#-- Insert a failed values
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO FKTABLE VALUES (1, 2, 7, 6);
+ERROR = insert or update on table "fktable" violates foreign key constraint "constrname3"
+DETAIL:  Key (ftest1,ftest2,ftest3)=(1,2,7) is not present in table "pktable".
+#-- Show FKTABLE
+#-- Try to update something that will cascade
+#-- Try to update something that should not cascade
+#-- Show PKTABLE and FKTABLE
+#-- Try to delete something that should cascade
+#-- Show PKTABLE and FKTABLE
+#-- Try to delete something that should not have a cascade
+#-- Show PKTABLE and FKTABLE
+#-- set null update / set default delete
+#-- Insert Primary Key values
+#-- Insert Foreign Key values
+#-- Insert a failed values
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO FKTABLE VALUES (1, 2, 7, 6);
+ERROR = insert or update on table "fktable" violates foreign key constraint "constrname3"
+DETAIL:  Key (ftest1,ftest2,ftest3)=(1,2,7) is not present in table "pktable".
+#-- Show FKTABLE
+#-- Try to update something that will set null
+#-- Try to update something that should not set null
+#-- Show PKTABLE and FKTABLE
+#-- Try to delete something that should set default
+#-- Show PKTABLE and FKTABLE
+#-- Try to delete something that should not set default
+#-- Show PKTABLE and FKTABLE
+#-- set default update / set null delete
+#-- Insert Primary Key values
+#-- Insert Foreign Key values
+#-- Insert a failed values
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO FKTABLE VALUES (1, 2, 7, 6);
+ERROR = insert or update on table "fktable" violates foreign key constraint "constrname3"
+DETAIL:  Key (ftest1,ftest2,ftest3)=(1,2,7) is not present in table "pktable".
+#-- Show FKTABLE
+#-- Try to update something that will fail
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = UPDATE PKTABLE set ptest2=5 where ptest2=2;
+ERROR = insert or update on table "fktable" violates foreign key constraint "constrname3"
+DETAIL:  Key (ftest1,ftest2,ftest3)=(1,-1,3) is not present in table "pktable".
+#-- Try to update something that will set default
+#-- Try to update something that should not set default
+#-- Show PKTABLE and FKTABLE
+#-- Try to delete something that should set null
+#-- Show PKTABLE and FKTABLE
+#-- Try to delete something that should not set null
+#-- Show PKTABLE and FKTABLE
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE FKTABLE_FAIL1 ( ftest1 int, CONSTRAINT fkfail1 FOREIGN KEY (ftest2) REFERENCES PKTABLE);
+ERROR = column "ftest2" referenced in foreign key constraint does not exist
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE FKTABLE_FAIL2 ( ftest1 int, CONSTRAINT fkfail1 FOREIGN KEY (ftest1) REFERENCES PKTABLE(ptest2));
+ERROR = column "ptest2" referenced in foreign key constraint does not exist
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = DROP TABLE FKTABLE_FAIL1;
+ERROR = table "fktable_fail1" does not exist
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = DROP TABLE FKTABLE_FAIL2;
+ERROR = table "fktable_fail2" does not exist
+#-- Test for referencing column number smaller than referenced constraint
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE FKTABLE_FAIL1 (ftest1 int REFERENCES pktable(ptest1));
+ERROR = there is no unique constraint matching given keys for referenced table "pktable"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = DROP TABLE FKTABLE_FAIL1;
+ERROR = table "fktable_fail1" does not exist
+#--
+#-- Tests for mismatched types
+#--
+#-- Basic one column, two table setup 
+#-- This next should fail, because inet=int does not exist
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE FKTABLE (ftest1 inet REFERENCES pktable);
+ERROR = foreign key constraint "fktable_ftest1_fkey" cannot be implemented
+DETAIL:  Key columns "ftest1" and "ptest1" are of incompatible types: inet and integer.
+#-- This should also fail for the same reason, but here we
+#-- give the column string
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE FKTABLE (ftest1 inet REFERENCES pktable(ptest1));
+ERROR = foreign key constraint "fktable_ftest1_fkey" cannot be implemented
+DETAIL:  Key columns "ftest1" and "ptest1" are of incompatible types: inet and integer.
+#-- This should succeed (with a warning), even though they are different types
+#-- because int=varchar does exist
+#-- As should this
+#-- Two columns, two tables
+#-- This should fail, because we just chose really odd types
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE FKTABLE (ftest1 cidr, ftest2 timestamp, FOREIGN KEY(ftest1, ftest2) REFERENCES pktable);
+ERROR = foreign key constraint "fktable_ftest1_fkey" cannot be implemented
+DETAIL:  Key columns "ftest1" and "ptest1" are of incompatible types: cidr and integer.
+#-- Again, so should this...
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE FKTABLE (ftest1 cidr, ftest2 timestamp, FOREIGN KEY(ftest1, ftest2) REFERENCES pktable(ptest1, ptest2));
+ERROR = foreign key constraint "fktable_ftest1_fkey" cannot be implemented
+DETAIL:  Key columns "ftest1" and "ptest1" are of incompatible types: cidr and integer.
+#-- This fails because we mixed up the column ordering
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE FKTABLE (ftest1 int, ftest2 inet, FOREIGN KEY(ftest2, ftest1) REFERENCES pktable);
+ERROR = foreign key constraint "fktable_ftest2_fkey" cannot be implemented
+DETAIL:  Key columns "ftest2" and "ptest1" are of incompatible types: inet and integer.
+#-- As does this...
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE FKTABLE (ftest1 int, ftest2 inet, FOREIGN KEY(ftest2, ftest1) REFERENCES pktable(ptest1, ptest2));
+ERROR = foreign key constraint "fktable_ftest2_fkey" cannot be implemented
+DETAIL:  Key columns "ftest2" and "ptest1" are of incompatible types: inet and integer.
+#-- And again..
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE FKTABLE (ftest1 int, ftest2 inet, FOREIGN KEY(ftest1, ftest2) REFERENCES pktable(ptest2, ptest1));
+ERROR = foreign key constraint "fktable_ftest1_fkey" cannot be implemented
+DETAIL:  Key columns "ftest1" and "ptest2" are of incompatible types: integer and inet.
+#-- This works...
+#-- As does this
+#-- Two columns, same table
+#-- Make sure this still works...
+#-- And this, 
+#-- This shouldn't (mixed up columns)
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE PKTABLE (ptest1 int, ptest2 inet, ptest3 int, ptest4 inet, PRIMARY KEY(ptest1, ptest2), FOREIGN KEY(ptest3,
+ptest4) REFERENCES pktable(ptest2, ptest1));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "pktable_pkey" for table "pktable"
+ERROR = foreign key constraint "pktable_ptest3_fkey" cannot be implemented
+DETAIL:  Key columns "ptest3" and "ptest2" are of incompatible types: integer and inet.
+#-- Nor should this... (same reason, we have 4,3 referencing 1,2 which mismatches types
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE PKTABLE (ptest1 int, ptest2 inet, ptest3 int, ptest4 inet, PRIMARY KEY(ptest1, ptest2), FOREIGN KEY(ptest4,
+ptest3) REFERENCES pktable(ptest1, ptest2));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "pktable_pkey" for table "pktable"
+ERROR = foreign key constraint "pktable_ptest4_fkey" cannot be implemented
+DETAIL:  Key columns "ptest4" and "ptest1" are of incompatible types: inet and integer.
+#-- Not this one either... Same as the last one except we didn't defined the columns being referenced.
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE PKTABLE (ptest1 int, ptest2 inet, ptest3 int, ptest4 inet, PRIMARY KEY(ptest1, ptest2), FOREIGN KEY(ptest4,
+ptest3) REFERENCES pktable);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "pktable_pkey" for table "pktable"
+ERROR = foreign key constraint "pktable_ptest4_fkey" cannot be implemented
+DETAIL:  Key columns "ptest4" and "ptest1" are of incompatible types: inet and integer.
+#--
+#-- Now some cases with inheritance
+#-- Basic 2 table case: 1 column of matching types.
+#-- now some ins, upd, del
+#--  let's insert a non-existant fktable value
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = insert into fktable(ftest1) values (3);
+ERROR = insert or update on table "fktable" violates foreign key constraint "fktable_ftest1_fkey"
+DETAIL:  Key (ftest1)=(3) is not present in table "pktable".
+#--  let's make a valid row for that
+#-- let's try removing a row that should fail from pktable
+#-- okay, let's try updating all of the base1 values to *4
+#-- which should fail.
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = update pktable set base1=base1*4;
+ERROR = update or delete on "pktable" violates foreign key constraint "fktable_ftest1_fkey" on "fktable"
+DETAIL:  Key (base1)=(3) is still referenced from table "fktable".
+#-- okay, let's try an update that should work.
+#-- and a delete that should work
+#-- cleanup
+#-- Now 2 columns 2 tables, matching types
+#-- now some ins, upd, del
+#--  let's insert a non-existant fktable value
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = insert into fktable(ftest1, ftest2) values (3, 1);
+ERROR = insert or update on table "fktable" violates foreign key constraint "fktable_ftest1_fkey"
+DETAIL:  Key (ftest1,ftest2)=(3,1) is not present in table "pktable".
+#--  let's make a valid row for that
+#-- let's try removing a row that should fail from pktable
+#-- okay, let's try updating all of the base1 values to *4
+#-- which should fail.
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = update pktable set base1=base1*4;
+ERROR = update or delete on "pktable" violates foreign key constraint "fktable_ftest1_fkey" on "fktable"
+DETAIL:  Key (base1,ptest1)=(3,1) is still referenced from table "fktable".
+#-- okay, let's try an update that should work.
+#-- and a delete that should work
+#-- cleanup
+#-- Now we'll do one all in 1 table with 2 columns of matching types
+#-- fails (3,2) isn't in base1, ptest1
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = insert into pktable (base1, ptest1, base2, ptest2) values (2, 3, 3, 2);
+ERROR = insert or update on table "pktable" violates foreign key constraint "pktable_base2_fkey"
+DETAIL:  Key (base2,ptest2)=(3,2) is not present in table "pktable".
+#-- fails (2,2) is being referenced
+#-- fails (1,1) is being referenced (twice)
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = update pktable set base1=3 where base1=1;
+ERROR = update or delete on "pktable" violates foreign key constraint "pktable_base2_fkey" on "pktable"
+DETAIL:  Key (base1,ptest1)=(1,1) is still referenced from table "pktable".
+#-- this sequence of two deletes will work, since after the first there will be no (2,*) references
+#-- 2 columns (2 tables), mismatched types
+#-- just generally bad types (with and without column references on the referenced table)
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = create table fktable(ftest1 cidr, ftest2 int[], foreign key (ftest1, ftest2) references pktable);
+ERROR = foreign key constraint "fktable_ftest1_fkey" cannot be implemented
+DETAIL:  Key columns "ftest1" and "base1" are of incompatible types: cidr and integer.
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = create table fktable(ftest1 cidr, ftest2 int[], foreign key (ftest1, ftest2) references pktable(base1, ptest1));
+ERROR = foreign key constraint "fktable_ftest1_fkey" cannot be implemented
+DETAIL:  Key columns "ftest1" and "base1" are of incompatible types: cidr and integer.
+#-- let's mix up which columns reference which
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = create table fktable(ftest1 int, ftest2 inet, foreign key(ftest2, ftest1) references pktable);
+ERROR = foreign key constraint "fktable_ftest2_fkey" cannot be implemented
+DETAIL:  Key columns "ftest2" and "base1" are of incompatible types: inet and integer.
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = create table fktable(ftest1 int, ftest2 inet, foreign key(ftest2, ftest1) references pktable(base1, ptest1));
+ERROR = foreign key constraint "fktable_ftest2_fkey" cannot be implemented
+DETAIL:  Key columns "ftest2" and "base1" are of incompatible types: inet and integer.
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = create table fktable(ftest1 int, ftest2 inet, foreign key(ftest1, ftest2) references pktable(ptest1, base1));
+ERROR = foreign key constraint "fktable_ftest1_fkey" cannot be implemented
+DETAIL:  Key columns "ftest1" and "ptest1" are of incompatible types: integer and inet.
+#-- 2 columns (1 table), mismatched types
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = create table pktable(ptest1 inet, ptest2 inet[], primary key(base1, ptest1), foreign key(base2, ptest2) references
+                                             pktable(base1, ptest1)); -- inherits (pktable_base)
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "pktable_pkey" for table "pktable"
+ERROR = foreign key constraint "pktable_base2_fkey" cannot be implemented
+DETAIL:  Key columns "ptest2" and "ptest1" are of incompatible types: inet[] and inet.
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = create table pktable(ptest1 inet, ptest2 inet, primary key(base1, ptest1), foreign key(base2, ptest2) references
+                                             pktable(ptest1, base1)); -- inherits (pktable_base)
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "pktable_pkey" for table "pktable"
+ERROR = foreign key constraint "pktable_base2_fkey" cannot be implemented
+DETAIL:  Key columns "base2" and "ptest1" are of incompatible types: integer and inet.
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = create table pktable(ptest1 inet, ptest2 inet, primary key(base1, ptest1), foreign key(ptest2, base2) references
+                                             pktable(base1, ptest1)); -- inherits (pktable_base)
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "pktable_pkey" for table "pktable"
+ERROR = foreign key constraint "pktable_ptest2_fkey" cannot be implemented
+DETAIL:  Key columns "ptest2" and "base1" are of incompatible types: inet and integer.
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = create table pktable(ptest1 inet, ptest2 inet, primary key(base1, ptest1), foreign key(ptest2, base2) references
+                                             pktable(base1, ptest1)); -- inherits (pktable_base)
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "pktable_pkey" for table "pktable"
+ERROR = foreign key constraint "pktable_ptest2_fkey" cannot be implemented
+DETAIL:  Key columns "ptest2" and "base1" are of incompatible types: inet and integer.
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop table pktable;
+ERROR = table "pktable" does not exist
+#--
+#-- Deferrable constraints
+#--		(right now, only FOREIGN KEY constraints can be deferred)
+#--
+#-- deferrable, explicitely deferred
+#-- default to immediate: should fail
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO fktable VALUES (5, 10);
+ERROR = insert or update on table "fktable" violates foreign key constraint "fktable_fk_fkey"
+DETAIL:  Key (fk)=(10) is not present in table "pktable".
+#-- explicitely defer the constraint
+#-- deferrable, initially deferred
+#-- default to deferred, should succeed
+#-- default to deferred, explicitely make immediate
+#-- should fail
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO fktable VALUES (500, 1000);
+ERROR = insert or update on table "fktable" violates foreign key constraint "fktable_fk_fkey"
+DETAIL:  Key (fk)=(1000) is not present in table "pktable".
+#-- tricky behavior: according to SQL99, if a deferred constraint is set
+#-- to 'immediate' mode, it should be checked for validity *immediately*,
+#-- not when the current transaction commits (i.e. the mode change applies
+#-- retroactively)
+#-- should succeed, for now
+#-- should cause transaction abort, due to preceding error
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO pktable VALUES (2000, 3); -- too late
+ERROR = current transaction is aborted, commands ignored until end of transaction block
+#-- deferrable, initially deferred
+#-- no error here
+#-- error here on commit
+#-- test notice about expensive referential integrity checks,
+#-- where the index cannot be used because of type incompatibilities.
+#-- check individual constraints with alter table.
+#-- should generate warnings
+#-- should NOT generate warnings
+#-- integer promotes to text, so this is ok
+#-- integer promotes to real
+#-- text is compatible with varchar
+#-- smallint is part of integer opclass as of 8.0
+#-- check multikey cases, especially out-of-order column lists
+#-- no warnings here
+#-- warnings here
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
+

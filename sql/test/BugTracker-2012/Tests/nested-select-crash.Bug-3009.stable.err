@@ -1,0 +1,41 @@
+stderr of test 'nested-select-crash.Bug-3009` in directory 'sql/test/BugTracker-2012` itself:
+
+
+# 16:07:02 >  
+# 16:07:02 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=4" "--set" "gdk_dbfarm=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=31869" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_BugTracker-2012" "--set" "mal_listing=0"
+# 16:07:02 >  
+
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /home/niels/scratch/monetdb/Linux-x86_64/var/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_alloc_map = no
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 4
+# cmdline opt 	gdk_dbfarm = /home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31869
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_test_BugTracker-2012
+# cmdline opt 	mal_listing = 0
+
+# 16:07:02 >  
+# 16:07:02 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=31869"
+# 16:07:02 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+QUERY = select 1 as y, (select x from (select 1) as test where x = y);
+ERROR = !SELECT: identifier 'x' unknown
+CODE  = 42000
+
+# 16:07:02 >  
+# 16:07:02 >  "Done."
+# 16:07:02 >  
+

@@ -1,0 +1,17 @@
+stderr of test 'convert_dec2varchar.SF-1774312` in directory 'sql/test/BugTracker` itself:
+
+
+# 23:35:36 >  
+# 23:35:36 >  Mtimeout -timeout 180  Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=33233 --set xrpc_port=44672 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit=" module(sql_server);" ; echo ; echo Over..
+# 23:35:36 >  
+
+
+# 23:35:37 >  
+# 23:35:37 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=koala --port=33233 
+# 23:35:37 >  
+
+
+# 23:35:37 >  
+# 23:35:37 >  Done.
+# 23:35:37 >  
+

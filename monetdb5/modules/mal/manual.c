@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -12,16 +12,9 @@
  * and the list of all MAL functions for analysis using SQL.
  */
 #include "monetdb_config.h"
-#include "gdk.h"
-#include <time.h>
-#include "mal_resolve.h"
-#include "mal_client.h"
-#include "mal_exception.h"
-#include "mal_debugger.h"
-#include "mal_interpreter.h"
-#include "mal_namespace.h"
+#include "manual.h"
 
-static str
+str
 MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *mod, *fcn, *sig, *adr, *com;
@@ -68,8 +61,6 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for (j = 0; j < MAXSCOPE; j++) {
 				if (s->space[j]) {
 					for (t = s->space[j]; t != NULL; t = t->peer) {
-						if (t->def->stmt[0]->fcnname[0] == '#')
-							continue;
 						(void) fcnDefinition(t->def, getInstrPtr(t->def, 0), buf, TRUE, buf, sizeof(buf));
 						tt = strstr(buf, "address ");
 						if (tt) {
@@ -89,16 +80,11 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	*mx = mod->batCacheid;
-	BBPkeepref(mod);
-	*fx = fcn->batCacheid;
-	BBPkeepref(fcn);
-	*sx = sig->batCacheid;
-	BBPkeepref(sig);
-	*ax = adr->batCacheid;
-	BBPkeepref(adr);
-	*cx = com->batCacheid;
-	BBPkeepref(com);
+	BBPkeepref( *mx = mod->batCacheid);
+	BBPkeepref( *fx = fcn->batCacheid);
+	BBPkeepref( *sx = sig->batCacheid);
+	BBPkeepref( *ax = adr->batCacheid);
+	BBPkeepref( *cx = com->batCacheid);
 	(void)mb;
 	return MAL_SUCCEED;
 
@@ -110,16 +96,3 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPreclaim(com);
 	throw(MAL, "manual.functions", GDK_EXCEPTION);
 }
-
-#include "mel.h"
-mel_func manual_init_funcs[] = {
- pattern("manual", "functions", MANUALcreateOverview, false, "Produces a table with all MAL functions known", args(5,5, batarg("mod",str),batarg("fcn",str),batarg("sig",str),batarg("adr",str),batarg("com",str))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_manual_mal)
-{ mal_module("manual", NULL, manual_init_funcs); }

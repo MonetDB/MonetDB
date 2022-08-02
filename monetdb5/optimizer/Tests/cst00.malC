@@ -1,0 +1,12 @@
+# testing simple constant expression optimizations
+
+function tst();
+a:= 1+1;		io.print(a);
+b:=2;			io.print(b);
+c:= 3*b;		io.print(c);
+d:= calc.flt(c);io.print(d);
+e:= mmath.sin(d);io.print(e);
+end tst;
+
+optimizer.evaluate("user","tst");
+mdb.List("user","tst");

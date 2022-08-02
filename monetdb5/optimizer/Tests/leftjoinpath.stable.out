@@ -1,0 +1,64 @@
+stdout of test 'leftjoinpath` in directory 'monetdb5/optimizer` itself:
+
+
+# 20:32:27 >  
+# 20:32:27 >   mserver5 "--config=/ufs/mk/current//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/current//Linux/lib/MonetDB5:/ufs/mk/current//Linux/lib/MonetDB5/lib:/ufs/mk/current//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/current//Linux/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=37769 --set xrpc_port=40688 --set monet_prompt= --trace  --dbname=mTests_src_optimizer  leftjoinpath.mal
+# 20:32:27 >  
+
+# MonetDB server v5.17.0, based on kernel v1.35.0
+# Serving database 'mTests_src_optimizer', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.753 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37769/
+function user.tst1():void;
+    a := bat.new(:oid,:oid);
+    b := bat.new(:oid,:oid);
+    c := bat.new(:oid,:oid);
+    j1 := algebra.leftjoin(a,b);
+    j2 := algebra.leftjoin(c,j1);
+    j3 := algebra.leftjoin(a,c);
+    j4 := algebra.leftjoin(c,j3);
+    io.print(j2);
+    io.print(j4);
+end user.tst1;
+function user.tst2():void;
+    a := bat.new(:oid,:oid);
+    b := bat.new(:oid,:oid);
+    c := bat.new(:oid,:oid);
+    j1 := algebra.leftjoin(a,b);
+    j2 := algebra.leftjoin(j1,c);
+    j3 := algebra.leftjoin(j1,a);
+    io.print(j2);
+    io.print(j3);
+end user.tst2;
+function user.main():void;
+    mdb.list("user","tst1");
+    mdb.list("user","tst2");
+end user.main;
+function user.tst1():void;
+    a := bat.new(:oid,:oid);
+    b := bat.new(:oid,:oid);
+    c := bat.new(:oid,:oid);
+    j2:bat[:oid,:oid] := algebra.leftjoinPath(c,a,b);
+    j4:bat[:oid,:oid] := algebra.leftjoinPath(c,a,c);
+    io.print(j2);
+    io.print(j4);
+end user.tst1;
+function user.tst2():void;
+    a := bat.new(:oid,:oid);
+    b := bat.new(:oid,:oid);
+    c := bat.new(:oid,:oid);
+    j1 := algebra.leftjoin(a,b);
+    j2 := algebra.leftjoin(j1,c);
+    j3 := algebra.leftjoin(j1,a);
+    io.print(j2);
+    io.print(j3);
+end user.tst2;
+
+# 20:32:27 >  
+# 20:32:27 >  Done.
+# 20:32:27 >  
+

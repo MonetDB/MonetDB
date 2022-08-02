@@ -1,0 +1,26 @@
+# the base experiment to execute a string
+# if we can convert a MAL function to a string
+# it can be shipped for remote execution.
+
+function tst(i:int,s:str):bit;
+	j:= i+1;
+	io.print(j);
+# ignore comments
+	format:= "hello %s\n";
+	io.printf(format,s);
+	return tst:=true;
+end tst;
+# there should be only one definition
+d:= inspect.getSignature("user","tst");
+io.print(d);
+
+user.tst(1,"world");
+m:=inspect.getSource("user","tst");
+io.print(m);
+
+#Call the string derived from definition
+language.call(m);
+
+# now we should have two definitions
+d:= inspect.getSignature("user","tst");
+io.print(d);

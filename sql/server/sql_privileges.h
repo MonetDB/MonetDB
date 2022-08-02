@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _SQL_PRIV_H_
@@ -32,6 +32,7 @@ extern int execute_priv(mvc *m, sql_func *f);
 extern int sql_privilege(mvc *m, sqlid auth_id, sqlid obj_id, int privs);
 extern int sql_grantable(mvc *m, sqlid grantorid, sqlid obj_id, int privs);
 extern sqlid sql_find_auth(mvc *m, str auth);
+extern sqlid sql_find_schema(mvc *m, str schema);
 
 extern char *sql_create_role(mvc *m, str auth, int grantor);
 extern char *sql_drop_role(mvc *m, str auth);
@@ -40,10 +41,9 @@ extern char *sql_revoke_role(mvc *m, str grantee, str auth, sqlid grantor, int a
 extern int sql_create_privileges(mvc *m, sql_schema *s);
 extern int sql_schema_has_user(mvc *m, sql_schema *s);
 
-extern char * sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, char *schema, char *schema_path, lng max_memory, int max_workers, char *optimizer, char *default_role);
+extern char * sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, char *schema);
 extern char * sql_drop_user(mvc *sql, char *user);
-extern char * sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char *schema_path, char *oldpasswd, char *role);
+extern char * sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char *oldpasswd);
 extern char * sql_rename_user(mvc *sql, char *olduser, char *newuser);
-extern void sql_set_user_api_hooks(mvc *m);
 
 #endif /*_SQL_PRIV_H_ */

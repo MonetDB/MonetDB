@@ -1,0 +1,37 @@
+stderr of test 'broken_join.SF-1373391` in directory 'sql/test/BugTracker` itself:
+
+
+# 14:15:47 >  
+# 14:15:47 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=34645 --set sql_port=41952 --set xquery_port=57685 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 14:15:47 >  
+
+
+# 14:15:47 >  
+# 14:15:47 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=41952  < broken_join.SF-1373391.sql
+# 14:15:47 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+QUERY = select urlid,clicktime from
+        (clicks left outer join urls on
+        urls.suburl0x0=clicks.suburl0x0 and
+        urls.suburl0x1=clicks.suburl0x1 and
+        urls.suburl1x0=clicks.suburl1x0 and
+        urls.suburl1x1=clicks.suburl1x1 and
+        urls.suburl2x0=clicks.suburl2x0 and
+        urls.suburl2x1=clicks.suburl2x1 and
+        urls.suburl3x0=clicks.suburl3x0 and
+        urls.suburl3x1=clicks.suburl3x1 and
+        urls.suburl4x0=clicks.suburl4x0 and
+        urls.suburl4x1=clicks.suburl4x1 and
+        urls.suburl5x0=clicks.suburl5x0 and
+        urls.suburl5x1=clicks.suburl5x1 and
+        urls.suburl6x0=clicks.suburl6x0 and
+ERROR = !syntax error, unexpected ')', expecting SCOLON in: "select urlid,clicktime from
+        !(clicks left outer join urls on
+        !urls.suburl0x0=click"
+CODE  = 42000
+
+# 14:15:47 >  
+# 14:15:47 >  Done.
+# 14:15:47 >  
+

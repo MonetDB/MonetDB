@@ -1,0 +1,17 @@
+stdout of test 'mclient--help` in directory 'clients/mapiclient` itself:
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 300 ./mclient--help mclient--help 
+# 16:36:12 >  
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 60 mclient --help
+# 16:36:12 >  
+
+
+# 16:36:12 >  
+# 16:36:12 >  Done.
+# 16:36:12 >  
+

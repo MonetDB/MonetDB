@@ -1,9 +1,0 @@
-statement ok
-create table test (today date)
-
-statement error
-select sum(today) from test
-
-statement ok
-drop table test
-

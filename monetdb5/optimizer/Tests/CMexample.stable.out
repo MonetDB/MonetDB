@@ -1,0 +1,46 @@
+stdout of test 'CMexample` in directory 'monetdb5/optimizer` itself:
+
+
+# 08:55:26 >  
+# 08:55:26 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=38095 --set monet_prompt= --trace --dbname=mTests_src_optimizer  CMexample.mal < /dev/null
+# 08:55:26 >  
+
+# MonetDB 5 server v11.19.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_optimizer', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:31955/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-20624/.s.monetdb.31955
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+function user.q():void;
+    r := bat.new(:oid,:int);
+    s := bat.new(:oid,:int);
+    r := bat.new(:oid,:int);
+    s := bat.new(:oid,:int);
+    x := bat.new(:oid,:oid);
+    rs := algebra.subselect(s,x,1,1,true,true,false);
+    j := algebra.projection(rs,r);
+end user.q;
+function user.main():void;
+# Cost model example 
+    mdb.List("user","q");
+end user.main;
+function user.q():void;                 	#[0]  0 
+    r:bat[:oid,:int]{rows=100} := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 3 4 
+    s:bat[:oid,:int]{rows=1000} := bat.new(:oid,:int);	#[2] CMDBATnew 5 <- 3 7 
+    r:bat[:oid,:int]{rows=100} := bat.new(:oid,:int);	#[3] CMDBATnew 1 <- 3 8 
+    s:bat[:oid,:int]{rows=1000} := bat.new(:oid,:int);	#[4] CMDBATnew 5 <- 3 9 
+    x:bat[:oid,:oid]{rows=300} := bat.new(:oid,:oid);	#[5] CMDBATnew 10 <- 3 3 
+    rs:bat[:oid,:oid]{rows=151} := algebra.subselect(s:bat[:oid,:int],x:bat[:oid,:oid],1:int,1:int,true:bit,true:bit,false:bit);	#[6] ALGsubselect2 12 <- 5 10 13 14 15 16 17 
+    j:bat[:oid,:int]{rows=100} := algebra.projection(rs:bat[:oid,:oid],r:bat[:oid,:int]);	#[7] ALGprojection 18 <- 12 1 
+end user.q;                             	#[8]  
+
+# 08:55:26 >  
+# 08:55:26 >  Done.
+# 08:55:26 >  
+

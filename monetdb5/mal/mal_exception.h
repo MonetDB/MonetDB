@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _MAL_EXCEPTION_H
@@ -26,8 +26,7 @@ enum malexception {
 	PARSE,
 	ARITH,
 	PERMD,
-	SQL,
-	REMOTE
+	SQL
 };
 
 #define MAL_SUCCEED ((str) 0) /* no error */
@@ -35,7 +34,7 @@ enum malexception {
 #define throw \
 	return createException
 #define rethrow(FCN, TMP, PRV) \
-	do { if ((TMP = (PRV)) != MAL_SUCCEED) return(TMP); } while(0)
+	{if ((TMP = PRV) != MAL_SUCCEED) return(TMP);}
 
 #if !__has_attribute(__returns_nonnull__)
 #define __returns_nonnull__
@@ -50,10 +49,7 @@ mal_export str createMalException(MalBlkPtr , int , enum malexception ,
 	_In_z_ _Printf_format_string_ const char *, ...)
 	__attribute__((__format__(__printf__, 4, 5)))
 	__attribute__((__returns_nonnull__));
-mal_export char *concatErrors(char *err1, const char *err2)
-	__attribute__((__nonnull__(1))) __attribute__((__nonnull__(2)))
-	__attribute__((__returns_nonnull__));
-mal_export bool isExceptionVariable(const char *nme);
+mal_export int isExceptionVariable(str nme);
 
 mal_export enum malexception	getExceptionType(const char *);
 mal_export str	getExceptionPlace(const char *);

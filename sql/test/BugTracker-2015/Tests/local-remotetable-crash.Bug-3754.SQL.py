@@ -1,30 +1,23 @@
-import os, pymonetdb
+import os, sys, re
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
-db = os.getenv("TSTDB")
-port = int(os.getenv("MAPIPORT"))
-
-client1 = pymonetdb.connect(database=db, port=port, autocommit=True)
-cur1 = client1.cursor()
-cur1.execute('''
+with process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
+    c.stdin.write('''\
 CREATE TABLE t1 (i int);
 CREATE REMOTE TABLE rt (LIKE t1) ON 'mapi:monetdb://localhost:{}/{}';
+SELECT * FROM rt;
 '''.format(os.environ['MAPIPORT'], os.environ['TSTDB']))
-
-try:
-    cur1.execute('SELECT * from rt;')
-    print('Exception expected')
-except pymonetdb.DatabaseError as e:
-    if 'Exception occurred in the remote server, please check the log there' not in str(e):
-        print(str(e))
-
-cur1.close()
-client1.close()
-
-client2 = pymonetdb.connect(database=db, port=port, autocommit=True)
-cur2 = client2.cursor()
-cur2.execute('''
+    out, err = c.communicate()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
+with process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
+    c.stdin.write('''\
 DROP TABLE rt;
 DROP TABLE t1;
 ''')
-cur2.close()
-client2.close()
+    out, err = c.communicate()
+    sys.stdout.write(out)
+    sys.stderr.write(err)

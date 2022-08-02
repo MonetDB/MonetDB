@@ -1,0 +1,17 @@
+stderr of test 'MapiClient-dump.SF-905851` in directory 'sql/test/BugDay_2005-10-06_2.8` itself:
+
+
+# 15:55:37 >  
+# 15:55:37 >  Mtimeout -timeout 360 Mserver "--config=/home/sjoerd/src/stable/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/home/sjoerd/src/stable/lib/MonetDB:/home/sjoerd/src/stable/lib/bin" --set "gdk_dbfarm=/home/sjoerd/src/stable/var/MonetDB/dbfarm" --set "sql_logdir=/home/sjoerd/src/stable/var/MonetDB/log" --set mapi_port=33509 --set sql_port=49307 --set xquery_port=52284 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.8" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 15:55:37 >  
+
+
+# 15:55:37 >  
+# 15:55:37 >  Mtimeout -timeout 240 ./MapiClient-dump.SF-905851.SQL MapiClient-dump.SF-905851 
+# 15:55:37 >  
+
+
+# 15:55:38 >  
+# 15:55:38 >  Done.
+# 15:55:38 >  
+

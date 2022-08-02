@@ -1,0 +1,17 @@
+stderr of test 'fk_without_notnull_constraint.SF-1016842` in directory 'sql/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 21:23:11 >  
+# 21:23:11 >  Mtimeout -timeout 180 Mserver "--config=/ufs/zhang/scratch/monet-stable/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/zhang/scratch/monet-stable/program/MonetDB:/ufs/zhang/scratch/monet-stable/program/lib/MonetDB:/ufs/zhang/scratch/monet-stable/sql/build/lib/MonetDB" --set "gdk_dbfarm=/ufs/zhang/scratch/monet-stable/program/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/zhang/scratch/monet-stable/program/var/MonetDB/log" --set mapi_port=32040 --set sql_port=45108 --set xquery_port=52003 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 21:23:11 >  
+
+
+# 21:23:11 >  
+# 21:23:11 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45108  < fk_without_notnull_constraint.SF-1016842.sql
+# 21:23:11 >  
+
+
+# 21:23:11 >  
+# 21:23:11 >  Done.
+# 21:23:11 >  
+

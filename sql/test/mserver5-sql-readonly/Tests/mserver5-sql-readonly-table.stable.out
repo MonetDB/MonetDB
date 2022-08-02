@@ -1,0 +1,48 @@
+stdout of test 'mserver5-sql-readonly-table` in directory 'sql/test/mserver5-sql-readonly` itself:
+
+
+# 09:35:12 >  
+# 09:35:12 >  /usr/bin/python mserver5-sql-readonly-table.py mserver5-sql-readonly-table 
+# 09:35:12 >  
+
+# MonetDB server v5.21.0, based on kernel v1.39.0
+# Not released
+# Serving database 'mTests_src_test_mserver5-sql-readonly', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.751 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://yngling.ins.cwi.nl:36267/
+# MonetDB/SQL module v2.39.0 loaded
+
+[ 1	]
+#select * from t1;
+% sys.t1 # table_name
+% a # name
+% int # type
+% 1 # length
+[ 1	]
+# SQL catalog created, loading sql scripts once
+# MonetDB server v5.21.0, based on kernel v1.39.0
+# Not released
+# Serving database 'mTests_src_test_mserver5-sql-readonly', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.751 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://yngling.ins.cwi.nl:36267/
+# MonetDB/SQL module v2.39.0 loaded
+
+#select * from t1;
+% sys.t1 # table_name
+% a # name
+% int # type
+% 1 # length
+[ 1	]
+
+# 09:35:13 >  
+# 09:35:13 >  Done.
+# 09:35:13 >  
+

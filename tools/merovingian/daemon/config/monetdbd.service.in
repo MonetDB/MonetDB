@@ -1,16 +1,16 @@
 [Unit]
 Description=MonetDB database server daemon
-Documentation=man:monetdbd https://www.monetdb.org/documentation/admin-guide/manpages/monetdbd/
+Documentation=man:monetdbd https://www.monetdb.org/Documentation/monetdbd-man-page
 After=network.target
 
 [Service]
 Type=forking
 User=monetdb
 Group=monetdb
-ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/monetdbd start @CMAKE_INSTALL_FULL_LOCALSTATEDIR@/monetdb5/dbfarm
-ExecStop=@CMAKE_INSTALL_FULL_BINDIR@/monetdbd stop @CMAKE_INSTALL_FULL_LOCALSTATEDIR@/monetdb5/dbfarm
+ExecStart=@Ebindir@/monetdbd start @Elocalstatedir@/monetdb5/dbfarm
+ExecStop=@Ebindir@/monetdbd stop @Elocalstatedir@/monetdb5/dbfarm
 Restart=on-failure
-PIDFile=@CMAKE_INSTALL_FULL_RUNSTATEDIR@/monetdb/merovingian.pid
+PIDFile=@Erundir@/merovingian.pid
 PrivateDevices=no
 ProtectSystem=full
 ProtectHome=read-only

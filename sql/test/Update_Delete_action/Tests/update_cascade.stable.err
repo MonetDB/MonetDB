@@ -1,0 +1,19 @@
+stderr of test 'update_cascade` in directory 'sql/test/Update_Delete_action` itself:
+
+
+# 17:59:18 >  
+# 17:59:18 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=34408 --set xrpc_port=47491 --set monet_prompt= --trace "--dbname=mTests_src_test_Update_Delete_action" --dbinit='include sql;' ; echo ; echo Over..
+# 17:59:18 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf)
+
+# 17:59:18 >  
+# 17:59:18 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=34408 
+# 17:59:18 >  
+
+
+# 17:59:18 >  
+# 17:59:18 >  Done.
+# 17:59:18 >  
+

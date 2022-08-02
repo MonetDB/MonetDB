@@ -1,0 +1,17 @@
+stdout of test 'Mbedded-crash.Bug-2701` in directory 'sql/test/BugTracker-2010` itself:
+
+
+# 14:56:23 >  
+# 14:56:23 >  ./Mbedded-crash.Bug-2701 Mbedded-crash.Bug-2701 
+# 14:56:23 >  
+
+# MonetDB/GIS module v0.20.0 loaded
+% .tables # table_name
+% name # name
+% varchar # type
+% 0 # length
+
+# 14:56:23 >  
+# 14:56:23 >  Done.
+# 14:56:23 >  
+

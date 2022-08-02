@@ -1,0 +1,22 @@
+stdout of test 'alter-table-add-column.Bug-6816` in directory 'sql/test/BugTracker-2020` itself:
+
+
+# 11:33:03 >  
+# 11:33:03 >  "/usr/bin/python3" "alter-table-add-column.Bug-6816.py" "alter-table-add-column.Bug-6816"
+# 11:33:03 >  
+
+#CREATE TABLE "testVarcharToClob" ("varcharColumn" varchar(255));
+#INSERT INTO "testVarcharToClob" VALUES ('value1'), ('value2');
+[ 2	]
+#ALTER TABLE "testVarcharToClob" add "clobColumn" TEXT NULL;
+#UPDATE "testVarcharToClob" SET "clobColumn" = "varcharColumn";
+[ 2	]
+#ALTER TABLE "testVarcharToClob" drop "varcharColumn";
+#INSERT INTO "testVarcharToClob" VALUES ('value3');
+[ 1	]
+#DROP TABLE "testVarcharToClob";
+
+# 11:33:03 >  
+# 11:33:03 >  "Done."
+# 11:33:03 >  
+

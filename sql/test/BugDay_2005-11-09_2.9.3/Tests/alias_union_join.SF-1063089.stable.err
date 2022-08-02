@@ -1,0 +1,17 @@
+stderr of test 'alias_union_join.SF-1063089` in directory 'sql/test/BugDay_2005-11-09_2.9.3` itself:
+
+
+# 15:41:14 >  
+# 15:41:14 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=31740 --set sql_port=45850 --set xquery_port=55031 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 15:41:14 >  
+
+
+# 15:41:14 >  
+# 15:41:14 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45850  < alias_union_join.SF-1063089.sql
+# 15:41:14 >  
+
+
+# 15:41:15 >  
+# 15:41:15 >  Done.
+# 15:41:15 >  
+

@@ -1,0 +1,47 @@
+stderr of test 'init` in directory 'sql/benchmarks/arno_flt` itself:
+
+
+# 06:21:27 >  
+# 06:21:27 >  Mtimeout -timeout 2460 Mserver "--config=/ufs/niels/data/Linux-i686/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --set "gdk_dbfarm=/ufs/niels/data/Linux-i686/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/data/Linux-i686/var/MonetDB/log" --set mapi_port=40407 --set sql_port=57549 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_arno_flt" "/net/stem.ins.cwi.nl/export/scratch1/niels/Linux-i686/build-sql/src/backends/monet4/sql_server.mil" init.prologue ; echo ; echo Over..
+# 06:21:27 >  
+
+
+# 06:21:28 >  
+# 06:21:28 >  Mtimeout -timeout 2220 ./init.SQL init 
+# 06:21:28 >  
+
+
+# 06:21:28 >  
+# 06:21:28 >  Mtimeout -timeout 180 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=57549
+# 06:21:28 >  
+
+
+# 06:21:29 >  
+# 06:21:29 >  Mtimeout -timeout 180 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=57549
+# 06:21:29 >  
+
+
+# 06:21:29 >  
+# 06:21:29 >  Mtimeout -timeout 180 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=57549
+# 06:21:29 >  
+
+
+# 06:21:29 >  
+# 06:21:29 >  Mtimeout -timeout 180 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=57549
+# 06:21:29 >  
+
+
+# 06:21:37 >  
+# 06:21:37 >  Mtimeout -timeout 180 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=57549
+# 06:21:37 >  
+
+
+# 06:21:45 >  
+# 06:21:45 >  Mtimeout -timeout 180 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=57549
+# 06:21:45 >  
+
+
+# 06:21:47 >  
+# 06:21:47 >  Done.
+# 06:21:47 >  
+

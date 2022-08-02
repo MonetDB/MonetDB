@@ -1,39 +1,92 @@
-from MonetDBtesting.sqltest import SQLTestCase
-
+import sys
 try:
     from MonetDBtesting import process
 except ImportError:
     import process
 
+def server_stop(s):
+    out, err = s.communicate()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
+
+def client(input):
+    with process.client('sql',
+                        stdin=process.PIPE,
+                        stdout=process.PIPE,
+                        stderr=process.PIPE) as c:
+        out, err = c.communicate(input)
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+
+script1 = '''\
+select * from t1;
+'''
+
+script2 = '''\
+create view v1 as select * from t1;
+'''
+
+script3 = '''\
+create view v2 as select * from t1;
+'''
+
+script4 = '''\
+drop view v2;
+'''
+
+script5 = '''\
+select * from v1;
+'''
+
+script6 = '''\
+drop view v1;
+'''
+
+script7 = '''\
+insert into v1 (a) values ( 1 );
+'''
+
+script8 = '''\
+update v1 set a = 2 where a = 1;
+'''
+
+script9 = '''\
+delete from v1 where a = 1;
+'''
+
+script10 = '''\
+insert into v1 (a) values ( 2 );
+'''
+
+script11 = '''\
+update v1 set a = 3 where a = 2;
+'''
+
+script12 = '''\
+delete from v1 where a = 3;
+'''
 
 with process.server(args=[],
-                    mapiport='0',
                     stdin=process.PIPE,
                     stdout=process.PIPE,
                     stderr=process.PIPE) as s:
-    with SQLTestCase() as tc:
-        tc.connect(username="monetdb", password="monetdb", port=str(s.dbport))
-        tc.execute("select * from t1;").assertSucceeded().assertDataResultMatch([(1,)])
-        tc.execute("create view v1 as select * from t1;").assertSucceeded()
-        tc.execute("create view v2 as select * from t1;").assertSucceeded()
-        tc.execute("drop view v2;").assertSucceeded()
-        tc.execute("insert into v1 (a) values ( 2 );").assertFailed(err_message='INSERT INTO: cannot insert into view \'v1\'')
-        tc.execute("update v1 set a = 3 where a = 2;").assertFailed(err_message='UPDATE: cannot update view \'v1\'')
-        tc.execute("delete from v1 where a = 3;").assertFailed(err_message='DELETE FROM: cannot delete from view \'v1\'')
-    s.communicate()
-
+    client(script1)
+    client(script2)
+    client(script3)
+    client(script4)
+    client(script10)
+    client(script11)
+    client(script12)
+    server_stop(s)
 with process.server(args=["--readonly"],
-                    mapiport='0',
                     stdin=process.PIPE,
                     stdout=process.PIPE,
                     stderr=process.PIPE) as s:
-    with SQLTestCase() as tc:
-        tc.connect(username="monetdb", password="monetdb", port=str(s.dbport))
-        tc.execute("select * from t1;").assertSucceeded().assertDataResultMatch([(1,)])
-        tc.execute("create view v2 as select * from t1;").assertFailed(err_message='Schema statements cannot be executed on a readonly database.')
-        tc.execute("drop view v1;").assertFailed(err_message='Schema statements cannot be executed on a readonly database.')
-        tc.execute("select * from v1;").assertSucceeded()
-        tc.execute("insert into v1 (a) values ( 1 );").assertFailed(err_message='INSERT INTO: cannot insert into view \'v1\'')
-        tc.execute("update v1 set a = 2 where a = 1;").assertFailed(err_message='UPDATE: cannot update view \'v1\'')
-        tc.execute("delete from v1 where a = 1;").assertFailed(err_message='DELETE FROM: cannot delete from view \'v1\'')
-    s.communicate()
+    client(script1)
+    client(script3)
+    client(script6)
+    client(script5)
+    client(script7)
+    client(script8)
+    client(script9)
+    server_stop(s)

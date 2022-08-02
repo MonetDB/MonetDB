@@ -1,0 +1,17 @@
+stderr of test 'load_objmask` in directory 'sql/test/Skyserver/bugs` itself:
+
+
+# 13:25:53 >  
+# 13:25:53 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB/lib:/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/sql_logs" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/xquery_logs" --set mapi_port=33368 --set monet_prompt= --trace "--dbname=mTests_src_test_Skyserver_bugs" --dbinit=" module(sql_server);" ; echo ; echo Over..
+# 13:25:53 >  
+
+
+# 13:25:53 >  
+# 13:25:53 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33368  < load_objmask.sql
+# 13:25:53 >  
+
+
+# 13:25:54 >  
+# 13:25:54 >  Done.
+# 13:25:54 >  
+

@@ -1,0 +1,96 @@
+stderr of test 'transactions` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
+
+#--
+#-- TRANSACTIONS
+#--
+#-- should retrieve one value--
+#-- should be empty
+#-- should not exist 
+#-- should have members again 
+#-- Read-only tests
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = DROP TABLE writetest; -- fail
+ERROR = transaction is read-only
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO writetest VALUES (1); -- fail
+ERROR = transaction is read-only
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE test AS SELECT * FROM writetest; -- fail
+ERROR = transaction is read-only
+#-- Subtransactions, basic tests
+#-- create & drop tables
+#-- should exist: barbaz, baz, foo
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT * FROM bar;		-- shouldn't exist
+ERROR = relation "bar" does not exist
+#-- inserts
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = 		INSERT into bar VALUES (1);
+ERROR = relation "bar" does not exist
+#-- test whole-tree commit
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = 		SELECT foo;
+ERROR = column "foo" does not exist
+#-- test whole-tree rollback
+#-- test whole-tree commit on an aborted subtransaction
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = 		SELECT foo;
+ERROR = column "foo" does not exist
+#-- rows 6 and 8 should have been created by the same xact
+#-- rows 6 and 7 should have been created by different xacts
+#-- rows 9 and 11 should have been created by different xacts
+#-- only in a transaction block:
+#-- Only "rollback to" allowed in aborted state
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY =   SELECT 0/0;
+ERROR = division by zero
+#-- check non-transactional behavior of cursors
+#--
+#-- Check that "stable" functions are really stable.  They should not be
+#-- able to see the partial results of the calling query.  (Ideally we would
+#-- also check that they don't see commits of concurrent transactions, but
+#-- that's a mite hard to do within the limitations of pg_regress.)
+#--
+#-- But a volatile function can see the partial results of the calling query
+#-- Now the same test with plpgsql (since it depends on SPI which is different)
+#-- test case for problems with dropping an open relation during abort
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = 		INSERT INTO koju VALUES (1);
+ERROR = duplicate key violates unique constraint "koju_a_key"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = 	INSERT INTO koju VALUES (1);
+ERROR = duplicate key violates unique constraint "koju_a_key"
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
+

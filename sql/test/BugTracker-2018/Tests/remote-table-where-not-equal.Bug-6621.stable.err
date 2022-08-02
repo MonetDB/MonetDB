@@ -1,0 +1,46 @@
+stderr of test 'remote-table-where-not-equal.Bug-6621` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 18:29:55 >  
+# 18:29:55 >  "/usr/local/opt/python@2/bin/python2.7" "remote-table-where-not-equal.Bug-6621.py" "remote-table-where-not-equal.Bug-6621"
+# 18:29:55 >  
+
+# builtin opt 	gdk_dbpath = /Users/jennie/scratch/monet-install/Mar2018/debug/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mapi_port = 61212
+# cmdline opt 	mapi_usock = /var/tmp/mtest-24605/.s.monetdb.61212
+# cmdline opt 	gdk_dbpath = /var/folders/bx/mwf_nhqs2nqb6zw9zmrnm8400000gn/T/tmpdOmNZr/node1/node1
+# cmdline opt 	gdk_debug = 553648138
+# builtin opt 	gdk_dbpath = /Users/jennie/scratch/monet-install/Mar2018/debug/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mapi_port = 61214
+# cmdline opt 	mapi_usock = /var/tmp/mtest-24605/.s.monetdb.61214
+# cmdline opt 	gdk_dbpath = /var/folders/bx/mwf_nhqs2nqb6zw9zmrnm8400000gn/T/tmpdOmNZr/node2/node2
+# cmdline opt 	gdk_debug = 553648138
+
+# 18:29:57 >  
+# 18:29:57 >  "Done."
+# 18:29:57 >  
+

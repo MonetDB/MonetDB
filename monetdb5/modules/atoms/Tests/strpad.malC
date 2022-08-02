@@ -1,0 +1,26 @@
+a := str.lpad("hi", 7);
+io.print(a);
+a := str.lpad("hixyäbcdef", 7);
+io.print(a);
+a := str.lpad("hi", 7, "xya");
+io.print(a);
+a := str.lpad("hi", 7, "xyä");
+io.print(a);
+a := str.lpad("hi", 7, "xyäbcdef");
+io.print(a);
+a := str.lpad("hixyäbcdef", 7, "lmn");
+io.print(a);
+
+a := str.rpad("hi", 7);
+io.print(a);
+a := str.rpad("hixyäbcdef", 7);
+io.print(a);
+a := str.rpad("hi", 7, "xya");
+io.print(a);
+a := str.rpad("hi", 7, "xyä");
+io.print(a);
+a := str.rpad("hi", 7, "xyäbcdef");
+io.print(a);
+a := str.rpad("hixyäbcdef", 7, "lmn");
+io.print(a);
+

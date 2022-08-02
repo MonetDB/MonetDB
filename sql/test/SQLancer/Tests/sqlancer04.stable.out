@@ -1,0 +1,66 @@
+stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
+
+
+# 09:44:50 >  
+# 09:44:50 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-36890" "--port=30177"
+# 09:44:50 >  
+
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" INTERVAL MONTH NOT NULL);
+#COPY 3 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#150184010
+#332127116
+#2136089006
+[ 3	]
+#SELECT SUM(ALL 0.12830007105673624234754015560611151158) FROM t0 WHERE ((sql_min(t0.c0, t0.c0))<>(COALESCE (t0.c0, sql_min(abs(t0.c0), nullif(t0.c0, t0.c0))))) GROUP BY 0.1 
+#HAVING MIN(ALL ((r'946496923')LIKE(CAST(nullif(0.5, 0.03) AS STRING(538))))) 
+#UNION ALL SELECT SUM(ALL 0.12830007105673624234754015560611151158) FROM t0 WHERE ((sql_min(t0.c0, t0.c0))<>(COALESCE (t0.c0, sql_min(abs(t0.c0), nullif(t0.c0, t0.c0))))) GROUP BY 0.1 
+#HAVING NOT (MIN(ALL ((r'946496923')LIKE(CAST(nullif(0.5, 0.03) AS STRING(538)))))) 
+% .%26 # table_name
+% %2 # name
+% double # type
+% 24 # length
+#SELECT SUM(ALL 0.12830007105673624234754015560611151158) FROM t0 WHERE ((sql_min(t0.c0, t0.c0))<>(COALESCE (t0.c0, sql_min(abs(t0.c0), nullif(t0.c0, t0.c0))))) GROUP BY 0.1 
+#HAVING MIN(ALL ((r'946496923')LIKE(CAST(nullif(0.5, 0.03) AS STRING(538))))) 
+#UNION ALL SELECT SUM(ALL 0.12830007105673624234754015560611151158) FROM t0 WHERE ((sql_min(t0.c0, t0.c0))<>(COALESCE (t0.c0, sql_min(abs(t0.c0), nullif(t0.c0, t0.c0))))) GROUP BY 0.1 
+#HAVING NOT (MIN(ALL ((r'946496923')LIKE(CAST(nullif(0.5, 0.03) AS STRING(538)))))) 
+% .%26 # table_name
+% %2 # name
+% double # type
+% 24 # length
+#ROLLBACK;
+#SELECT covar_samp(1, - (COALESCE(1, 2)||5)); --error on default, covar_samp between integer and string not possible
+% .%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0"("c0" DATE, "c1" DATE, "c2" INTERVAL SECOND NOT NULL,"c3" TIME NOT NULL);
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" INTERVAL SECOND NOT NULL);
+#SELECT CASE '5'^3 WHEN COUNT(TRUE) THEN 1 END FROM t0 GROUP BY 2 IN ((CAST(INTERVAL '-2' SECOND AS INT))%2);
+% .%7 # table_name
+% %7 # name
+% tinyint # type
+% 1 # length
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" CHARACTER LARGE OBJECT NOT NULL,"c1" BIGINT NOT NULL,CONSTRAINT "t0_c1_pkey" PRIMARY KEY ("c1"));
+#CREATE TABLE "sys"."t1" ("c0" CHARACTER LARGE OBJECT,"c1" BIGINT);
+#COPY 3 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#"-216073164"	NULL
+#"-2044926527"	NULL
+#NULL	1
+[ 3	]
+#ROLLBACK;
+#CREATE TABLE t0(c0 TIME, UNIQUE(c0));
+#DROP TABLE t0;
+#CREATE TABLE t0(c0 INTERVAL SECOND, UNIQUE(c0));
+#DROP TABLE t0;
+
+# 09:44:50 >  
+# 09:44:50 >  "Done."
+# 09:44:50 >  
+

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -14,18 +14,21 @@
 str
 OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, limit, slimit, actions = 0;
+	int i, limit, slimit;
 	InstrPtr p = 0, *old= mb->stmt, q,r;
 	int argc, io, user,nice,sys,idle,iowait,load, arg, start,finish, name;
 	int xtime=0, rtime = 0, tuples=0;
 	InstrPtr defineQuery = NULL;
+	char buf[256];
+	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
 
 	// query log needed?
 	if ( !QLOGisset() )
-		goto wrapup;
+		return MAL_SUCCEED;
 
+	(void) pci;
 	(void) stk;		/* to fool compilers */
 	(void) cntxt;
 	/* gather information */
@@ -38,9 +41,8 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 	if ( defineQuery == NULL)
 		/* nothing to do */
-		goto wrapup;
+		return MAL_SUCCEED;
 
-	actions++;
 	limit= mb->stop;
 	slimit= mb->ssize;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
@@ -67,7 +69,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	defineQuery = addArgument(mb,defineQuery,start);
 	pushInstruction(mb, defineQuery);
 
-	q = newStmtArgs(mb, sqlRef, "argRecord", old[0]->argc);
+	q = newStmt(mb, sqlRef, "argRecord");
 	for ( argc=1; argc < old[0]->argc; argc++)
 		q = pushArgument(mb, q, getArg(old[0],argc));
 
@@ -110,7 +112,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			pushInstruction(mb,p);
 			continue;
 		}
-		if ( getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef && isaBatType(getVarType(mb,getArg(p,3)))){
+		if ( getModuleId(p) == sqlRef && idcmp(getFunctionId(p),"resultSet")==0  && isaBatType(getVarType(mb,getArg(p,3)))){
 			q = newStmt(mb, "aggr", "count");
 			getArg(q,0) = tuples;
 			(void) pushArgument(mb,q, getArg(p,3));
@@ -149,7 +151,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			q = pushArgument(mb,q,idle);
 			q = pushArgument(mb,q,iowait);
 
-			q = newStmtArgs(mb, querylogRef, "call", 9);
+			q = newStmt(mb, querylogRef, "call");
 			q = pushArgument(mb, q, start);
 			q = pushArgument(mb, q, finish);
 			q = pushArgument(mb, q, arg);
@@ -167,7 +169,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			/* the factory yield may return */
 			q = newStmt(mb, "mtime", "current_timestamp");
 			start= getArg(q,0)= newVariable(mb,"start",5,TYPE_any);
-			q = newStmtArgs(mb, sqlRef, "argRecord", old[0]->argc);
+			q = newStmt(mb, sqlRef, "argRecord");
 			for ( argc=1; argc < old[0]->argc; argc++)
 				q = pushArgument(mb, q, getArg(old[0],argc));
 			arg= getArg(q,0)= newVariable(mb,"args",4,TYPE_str);
@@ -186,16 +188,18 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	for( ; i<slimit; i++)
 		if(old[i])
-			pushInstruction(mb, old[i]);
+			freeInstruction(old[i]);
 	GDKfree(old);
-	/* Defense line against incorrect plans */
-	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	    /* Defense line against incorrect plans */
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	if (!msg)
-		msg = chkFlow(mb);
+        	msg = chkFlow(mb);
 	if (!msg)
-		msg = chkDeclarations(mb);
-	/* keep actions taken as a fake argument*/
-wrapup:
-	(void) pushInt(mb, pci, actions);
+        	msg = chkDeclarations(mb);
+	/* keep all actions taken as a post block comment */
+	usec = GDKusec()- usec;
+	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","querylog", usec);
+	newComment(mb,buf);
+	addtoMalBlkHistory(mb);
 	return msg;
 }

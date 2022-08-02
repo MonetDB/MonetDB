@@ -1,0 +1,39 @@
+stderr of test 'count-count-distinct.Bug-2808` in directory 'sql/test/BugTracker-2011` itself:
+
+
+# 10:05:42 >  
+# 10:05:42 >   mserver5  --debug=10 --set gdk_nr_threads=4  --set "gdk_dbfarm=/ufs/niels/scratch/MonetDB/Linux-x86_64/var/MonetDB" --set mapi_open=true --set mapi_port=30195 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 10:05:42 >  
+
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /ufs/niels/scratch/MonetDB/Linux-x86_64/var/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_alloc_map = no
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	default_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+# builtin opt 	minimal_pipe = inline,remap,deadcode,multiplex,garbageCollector
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 4
+# cmdline opt 	gdk_dbfarm = /ufs/niels/scratch/MonetDB/Linux-x86_64/var/MonetDB
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30195
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_test_BugTracker-2011
+# cmdline opt 	mal_listing = 0
+
+# 10:05:42 >  
+# 10:05:42 >  mclient -lsql -ftest -i -e --host=alf --port=30195 
+# 10:05:42 >  
+
+
+# 10:05:42 >  
+# 10:05:42 >  Done.
+# 10:05:42 >  
+

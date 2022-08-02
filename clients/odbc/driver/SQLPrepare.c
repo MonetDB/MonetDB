@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -180,8 +180,6 @@ MNDBPrepare(ODBCStmt *stmt,
 		}
 
 		s = mapi_fetch_field(hdl, 0); /* type */
-		if (!stmt->Dbc->allow_hugeint && strcmp(s, "hugeint") == 0)
-			s = "bigint";
 		rec->sql_desc_type_name = (SQLCHAR *) strdup(s);
 		concise_type = ODBCConciseType(s);
 
@@ -277,6 +275,7 @@ MNDBPrepare(ODBCStmt *stmt,
 
 		rec->sql_desc_local_type_name = NULL;
 		rec->sql_desc_rowver = SQL_FALSE;
+		rec->sql_desc_catalog_name = stmt->Dbc->dbname ? (SQLCHAR *) strdup(stmt->Dbc->dbname) : NULL;
 
 		/* unused fields */
 		rec->sql_desc_auto_unique_value = SQL_FALSE;
@@ -286,7 +285,6 @@ MNDBPrepare(ODBCStmt *stmt,
 		rec->sql_desc_literal_prefix = NULL;
 		rec->sql_desc_literal_suffix = NULL;
 		rec->sql_desc_octet_length_ptr = NULL;
-		rec->sql_desc_catalog_name = NULL;
 		rec->sql_desc_schema_name = NULL;
 		rec->sql_desc_updatable = SQL_ATTR_READONLY;
 

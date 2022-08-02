@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -23,6 +23,7 @@
 #include "gdk.h"
 #include <time.h>
 #include "mal_exception.h"
+#include "status.h"
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
@@ -35,30 +36,30 @@
 # include <sys/resource.h>
 #endif
 
-static inline int
+static int
 pseudo(bat *ret, bat *ret2, BAT *bn, BAT *b) {
 	*ret = bn->batCacheid;
-	BBPkeepref(bn);
+	BBPkeepref(*ret);
 	*ret2 = b->batCacheid;
-	BBPkeepref(b);
+	BBPkeepref(*ret2);
 	return 0;
 }
 
-static str
+str
 SYSgetmem_cursize(lng *num)
 {
 	*num = GDKmem_cursize();
 	return MAL_SUCCEED;
 }
 
-static str
+str
 SYSgetmem_maxsize(lng *num)
 {
 	*num = GDK_mem_maxsize;
 	return MAL_SUCCEED;
 }
 
-static str
+str
 SYSsetmem_maxsize(void *ret, const lng *num)
 {
 	size_t sze = 0;
@@ -76,21 +77,21 @@ SYSsetmem_maxsize(void *ret, const lng *num)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 SYSgetvm_cursize(lng *num)
 {
 	*num = GDKvm_cursize();
 	return MAL_SUCCEED;
 }
 
-static str
+str
 SYSgetvm_maxsize(lng *num)
 {
 	*num = GDK_vm_maxsize;
 	return MAL_SUCCEED;
 }
 
-static str
+str
 SYSsetvm_maxsize(void *ret, const lng *num)
 {
 	(void) ret;
@@ -117,7 +118,7 @@ static time_t clk = 0;
 static struct tms state;
 #endif
 
-static str
+str
 SYScpuStatistics(bat *ret, bat *ret2)
 {
 	lng i;
@@ -197,7 +198,7 @@ SYScpuStatistics(bat *ret, bat *ret2)
 }
 
 static size_t memincr;
-static str
+str
 SYSmemStatistics(bat *ret, bat *ret2)
 {
 	BAT *b, *bn;
@@ -226,34 +227,30 @@ SYSmemStatistics(bat *ret, bat *ret2)
 	throw(MAL, "status.memStatistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
-#define heap(X1,X2,X3,X4,UNLOCK)							\
+#define heap(X1,X2,X3,X4)									\
 	if (X1) {												\
 		sz = HEAPmemsize(X2);								\
 		if (sz > *minsize) {								\
 			sprintf(buf, X4"/%s", s);						\
 			if (BUNappend(bn, buf, false) != GDK_SUCCEED ||	\
-				BUNappend(b, &sz, false) != GDK_SUCCEED) {	\
-				UNLOCK;										\
+				BUNappend(b, &sz, false) != GDK_SUCCEED)	\
 				goto bailout;								\
-			}												\
 		}													\
 		X3 += sz; tot += sz;								\
 	}
-#define heapvm(X1,X2,X3,X4,UNLOCK)							\
+#define heapvm(X1,X2,X3,X4)									\
 	if (X1) {												\
 		sz = HEAPvmsize(X2);								\
 		if (sz > *minsize) {								\
 			sprintf(buf, X4"/%s", s);						\
 			if (BUNappend(bn, buf, false) != GDK_SUCCEED ||	\
-				BUNappend(b, &sz, false) != GDK_SUCCEED) {	\
-				UNLOCK;										\
+				BUNappend(b, &sz, false) != GDK_SUCCEED)	\
 				goto bailout;								\
-			}												\
 		}													\
 		X3 += sz; tot += sz;								\
 	}
 
-static str
+str
 SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 {
 	lng hbuns = 0, tbuns = 0, hhsh = 0, thsh = 0, hind = 0, tind = 0, head = 0, tail = 0, tot = 0, n = 0, sz;
@@ -269,13 +266,13 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 	}
 	BBPlock();
 	for (i = 1; i < getBBPsize(); i++) {
-		BAT *c = BBPquickdesc(i);
+		BAT *c = BBPquickdesc(i, false);
 		str s;
 
 		if( c == NULL  || !BBPvalid(i))
 			continue;
 
-		s = BBP_logical(i);
+		s = BBPname(i);
 		sz = 0;
 		if (BBP_desc(i))
 			sz += sizeof(BAT);
@@ -292,21 +289,13 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 		}
 		tot += (lng) sz;
 
-		if (c)
-			MT_lock_set(&c->theaplock);
 		if (c == NULL || isVIEW(c)) {
-			if (c)
-				MT_lock_unset(&c->theaplock);
 			continue;
 		}
-
-		heap(1,c->theap,tbuns,"tbuns", MT_lock_unset(&c->theaplock));
-		heap(c->tvheap,c->tvheap,tail,"tail", MT_lock_unset(&c->theaplock));
-		MT_lock_unset(&c->theaplock);
-		MT_rwlock_rdlock(&c->thashlock);
-		heap(c->thash && c->thash != (Hash *) 1,&c->thash->heaplink,thsh,"thshl",MT_rwlock_rdunlock(&c->thashlock));
-		heap(c->thash && c->thash != (Hash *) 1,&c->thash->heapbckt,thsh,"thshb",MT_rwlock_rdunlock(&c->thashlock));
-		MT_rwlock_rdunlock(&c->thashlock);
+		heap(1,&c->theap,tbuns,"tbuns");
+		heap(c->thash && c->thash != (Hash *) 1,&c->thash->heaplink,thsh,"thshl");
+		heap(c->thash && c->thash != (Hash *) 1,&c->thash->heapbckt,thsh,"thshb");
+		heap(c->tvheap,c->tvheap,tail,"tail");
 	}
 	/* totals per category */
 	if (BUNappend(bn, "_tot/hbuns", false) != GDK_SUCCEED ||
@@ -363,9 +352,9 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 
 	BBPunlock();
 	*ret = bn->batCacheid;
-	BBPkeepref(bn);
+	BBPkeepref(bn->batCacheid);
 	*ret2 = b->batCacheid;
-	BBPkeepref(b);
+	BBPkeepref(b->batCacheid);
 
 	return MAL_SUCCEED;
 
@@ -376,7 +365,7 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 	throw(MAL, "status.memUsage", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
-static str
+str
 SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 {
 	lng hbuns = 0, tbuns = 0, hhsh = 0, thsh = 0, hind = 0, tind = 0, head = 0, tail = 0, tot = 0, sz;
@@ -398,24 +387,15 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 		if (!BBPvalid(i))
 			continue;
 
-		s = BBP_logical(i);
+		s = BBPname(i);
  		c = BBP_cache(i);
-
-		if (c)
-			MT_lock_set(&c->theaplock);
 		if (c == NULL || isVIEW(c)) {
-			if (c)
-				MT_lock_unset(&c->theaplock);
 			continue;
 		}
-
-		heapvm(1,c->theap,tbuns,"tcuns",MT_lock_unset(&c->theaplock));
-		heapvm(c->tvheap,c->tvheap,tail,"tail",MT_lock_unset(&c->theaplock));
-		MT_lock_unset(&c->theaplock);
-		MT_rwlock_rdlock(&c->thashlock);
-		heapvm(c->thash && c->thash != (Hash *) 1,&c->thash->heaplink,thsh,"thshl",MT_rwlock_rdunlock(&c->thashlock));
-		heapvm(c->thash && c->thash != (Hash *) 1,&c->thash->heapbckt,thsh,"thshb",MT_rwlock_rdunlock(&c->thashlock));
-		MT_rwlock_rdunlock(&c->thashlock);
+		heapvm(1,&c->theap,tbuns,"tcuns");
+		heapvm(c->thash && c->thash != (Hash *) 1,&c->thash->heaplink,thsh,"thshl");
+		heapvm(c->thash && c->thash != (Hash *) 1,&c->thash->heapbckt,thsh,"thshb");
+		heapvm(c->tvheap,c->tvheap,tail,"tail");
 	}
 	/* totals per category */
 	if (BUNappend(bn, "_tot/hbuns", false) != GDK_SUCCEED ||
@@ -458,9 +438,9 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 
 	BBPunlock();
 	*ret = bn->batCacheid;
-	BBPkeepref(bn);
+	BBPkeepref(bn->batCacheid);
 	*ret2 = b->batCacheid;
-	BBPkeepref(b);
+	BBPkeepref(b->batCacheid);
 	return MAL_SUCCEED;
 
   bailout:
@@ -503,7 +483,7 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
  *
  * The BAT grows. It should be compacted.
  */
-static str
+str
 SYSioStatistics(bat *ret, bat *ret2)
 {
 #ifdef HAVE_SYS_RESOURCE_H
@@ -588,7 +568,7 @@ SYSioStatistics(bat *ret, bat *ret2)
 	throw(MAL, "status.ioStatistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
-static str
+str
 SYSgdkEnv(bat *ret, bat *ret2)
 {
 	int pbat = 0;
@@ -634,7 +614,7 @@ SYSgdkEnv(bat *ret, bat *ret2)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 SYSgdkThread(bat *ret, bat *ret2)
 {
 	BAT *b, *bn;
@@ -666,28 +646,3 @@ SYSgdkThread(bat *ret, bat *ret2)
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "status.getThreads", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
-
-#include "mel.h"
-mel_func status_init_funcs[] = {
- command("status", "cpuStatistics", SYScpuStatistics, false, "Global cpu usage information", args(2,2, batarg("",str),batarg("",lng))),
- command("status", "memStatistics", SYSmemStatistics, false, "Global memory usage information", args(2,2, batarg("",str),batarg("",lng))),
- command("status", "ioStatistics", SYSioStatistics, false, "Global IO activity information", args(2,2, batarg("",str),batarg("",lng))),
- command("status", "vmStatistics", SYSvm_usage, false, "Get a split-up of how much virtual memory blocks are in use", args(2,3, batarg("",str),batarg("",lng),arg("minsize",lng))),
- command("status", "memUsage", SYSmem_usage, false, "Get a split-up of how much memory blocks are in use", args(2,3, batarg("",str),batarg("",lng),arg("minsize",lng))),
- command("status", "batStatistics", SYSgdkEnv, false, "Show distribution of bats by kind", args(2,2, batarg("",str),batarg("",str))),
- command("status", "getThreads", SYSgdkThread, false, "Produce overview of active threads", args(2,2, batarg("",int),batarg("",str))),
- command("status", "mem_cursize", SYSgetmem_cursize, false, "The amount of physical swapspace in KB that is currently in use", args(1,1, arg("",lng))),
- command("status", "mem_maxsize", SYSgetmem_maxsize, false, "The maximum usable amount of physical swapspace in KB (target only)", args(1,1, arg("",lng))),
- command("status", "mem_maxsize", SYSsetmem_maxsize, false, "Set the maximum usable amount of physical swapspace in KB", args(1,2, arg("",void),arg("v",lng))),
- command("status", "vm_cursize", SYSgetvm_cursize, false, "The amount of logical VM space in KB that is currently in use", args(1,1, arg("",lng))),
- command("status", "vm_maxsize", SYSgetvm_maxsize, false, "The maximum usable amount of logical VM space in KB (target only)", args(1,1, arg("",lng))),
- command("status", "vm_maxsize", SYSsetvm_maxsize, false, "Set the maximum usable amount of physical swapspace in KB", args(1,2, arg("",void),arg("v",lng))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_status_mal)
-{ mal_module("status", NULL, status_init_funcs); }

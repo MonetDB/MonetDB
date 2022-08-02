@@ -1,0 +1,11 @@
+# The 4000 series deals with strategic optimizer constructs
+# common subexpression evaluation
+function foo();
+b:= bat.new(:str);
+c:= bat.new(:str);       # identical until insert takes place
+d:= algebra.select(b,nil:bat[:oid],"hello","world",true,true,false);
+e:= algebra.select(b,nil:bat[:oid],"hello","world",true,true,false);    # mapped onto one instruction
+end foo;
+optimizer.commonTerms("user,","foo");
+optimizer.aliases("user,","foo");
+mdb.List("user","foo");

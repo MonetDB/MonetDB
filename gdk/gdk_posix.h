@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef GDK_POSIX_H
@@ -20,10 +20,8 @@
 #include <sys/time.h>		/* gettimeofday */
 #endif
 
-#ifndef HAVE_SYS_SOCKET_H
 #ifdef HAVE_WINSOCK_H
 #include <winsock.h>		/* for timeval */
-#endif
 #endif
 
 #include "gdk_system.h" /* gdk_export */
@@ -162,6 +160,17 @@ gdk_export char *dlerror(void);
 #ifndef HAVE_GETTIMEOFDAY
 gdk_export int gettimeofday(struct timeval *tv, int *ignore_zone);
 #endif
+gdk_export int win_stat(const char *, struct stat *);
+gdk_export int win_rmdir(const char *);
+gdk_export int win_rename(const char *, const char *);
+gdk_export int win_unlink(const char *);
+gdk_export int win_mkdir(const char *, const int mode);
+
+#define _stat64(x,y)	win_stat(x,y)
+#define mkdir		win_mkdir
+#define rmdir		win_rmdir
+#define rename		win_rename
+#define remove		win_unlink
 
 #endif	/* NATIVE_WIN32 */
 
@@ -184,13 +193,13 @@ gdk_export int strerror_r(int errnum, char *buf, size_t buflen);
 static inline const char *
 GDKstrerror(int errnum, char *buf, size_t buflen)
 {
-#if !defined(_GNU_SOURCE) || ((_POSIX_C_SOURCE >= 200112L) && !_GNU_SOURCE)
+#ifdef STRERROR_R_CHAR_P
+	return strerror_r(errnum, buf, buflen);
+#else
 	if (strerror_r(errnum, buf, buflen) == 0)
 		return buf;
 	snprintf(buf, buflen, "Unknown error %d", errnum);
 	return buf;
-#else
-	return strerror_r(errnum, buf, buflen);
 #endif
 }
 

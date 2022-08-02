@@ -1,0 +1,35 @@
+stdout of test 'decimal_prepare.SF-1655818` in directory 'sql/test/BugTracker` itself:
+
+
+# 11:47:08 >  
+# 11:47:08 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/fabian/scratch/monetdb/stable/program-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/stable/program-x86_64/lib64/MonetDB5:/ufs/fabian/scratch/monetdb/stable/program-x86_64/lib64/MonetDB5/lib:/ufs/fabian/scratch/monetdb/stable/program-x86_64/lib64/MonetDB5/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-stable-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-stable-pegasus.ins.cwi.nl/sql/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-stable-pegasus.ins.cwi.nl/sql/xquerylog" --set mapi_port=33419 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit='include sql;' ; echo ; echo Over..
+# 11:47:08 >  
+
+
+
+# 12:37:53 >  
+# 12:37:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=madrid" "--port=32243"
+# 12:37:53 >  
+
+#START TRANSACTION;
+#create table P1655818 (
+#	time timestamp not null,
+#	x numeric(5,2) not null,
+#	y numeric(5,2) not null
+#);
+#PREPARE insert into P1655818 (time,x,y) values (?,?,?);
+#PREPARE insert into P1655818 (time,x,y) values (?,?,?);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 9,	1,	1,	0,	0,	0 # length
+[ "timestamp",	7,	0,	NULL,	NULL,	NULL	]
+[ "decimal",	5,	2,	NULL,	NULL,	NULL	]
+[ "decimal",	5,	2,	NULL,	NULL,	NULL	]
+#exec 2(timestamp '2003-01-30 18:03:35.0', 71.91, 71.98);
+[ 1	]
+
+# 11:47:08 >  
+# 11:47:08 >  Done.
+# 11:47:08 >  
+

@@ -1,0 +1,17 @@
+stderr of test 'interval_times_int.SF-1281996` in directory 'sql/test/BugDay_2005-12-19_2.9.3` itself:
+
+
+# 16:27:57 >  
+# 16:27:57 >  Mtimeout -timeout 180 Mserver "--config=/ufs/sjoerd/Monet-virgin/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/devel/sql-virgin/Linux/lib/MonetDB:/ufs/sjoerd/Monet-virgin/lib/MonetDB" --set "gdk_dbfarm=/ufs/sjoerd/Monet-virgin/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/sjoerd/Monet-virgin/var/MonetDB/log" --set mapi_port=35478 --set sql_port=40983 --set xquery_port=56404 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-12-19_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 16:27:57 >  
+
+
+# 16:27:57 >  
+# 16:27:57 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=40983  < interval_times_int.SF-1281996.sql
+# 16:27:57 >  
+
+
+# 16:27:57 >  
+# 16:27:57 >  Done.
+# 16:27:57 >  
+

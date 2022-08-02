@@ -20,25 +20,18 @@ The dump can be used to populate a new MonetDB/SQL database.
 .PP
 Before
 .I msqldump
-starts parsing command line options, it reads a configuration file.
+starts parsing command line options, it reads a
+.I .monetdb
+file.
 If the environment variable
 .B DOTMONETDBFILE
-is set and not empty, it reads the file pointed to by that variable.
-If set but empty, no configuration file is read.
-If unset,
+is set, it reads the file pointed to by that variable instead.
+When unset,
 .I msqldump
-first looks for a file
+searches for a
 .I .monetdb
-in the current working directory, and if that doesn't exist, it
-looks for a file
-.I monetdb
-in the XDG configuration directory
-.RB ( $XDG_CONFIG_HOME
-which defaults to
-.B $HOME/.config
-if not set), and finally for a file
-.I .monetdb
-in the current user's home directory.
+file in the current working directory, and if that doesn't exist, in the
+current user's home directory.
 This file can contain defaults for the flags
 .BR user ,
 .BR password ,
@@ -80,10 +73,6 @@ When dumping the table data, use INSERT INTO statements, rather than
 COPY INTO + CSV values.
 INSERT INTO statements are more portable, and necessary when the
 load of the dump is processed by e.g. a JDBC application.
-.TP
-\fB\-\-noescape\fP (\fB\-e\fP)
-When dumping the table data, use the NO ESCAPE option on the COPY INTO
-query.
 .TP
 \fB\-\-functions\fP (\fB\-f\fP)
 Only dump functions definitions.

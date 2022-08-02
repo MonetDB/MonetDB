@@ -3,19 +3,20 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _SHP_
 #define _SHP_
 #include "mal.h"
 #include "mal_client.h"
-
-/* these were previously defined in monetdb_config.h */
-#undef HAVE_DLFCN_H
-#undef HAVE_FCNTL_H
-#undef HAVE_ICONV
-#undef HAVE_STRINGS_H
+/* these are redefined in gdal.h */
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_URL
+#undef PACKAGE_VERSION
 #include <gdal.h>
 #include <ogr_api.h>
 

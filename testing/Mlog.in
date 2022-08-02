@@ -1,0 +1,40 @@
+#!@BASH@
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+
+THIS=$0
+THISDIR=${0%/*}
+THISFILE=${0##*/}
+
+#############################################################################
+#	FUNCTIONS
+
+function LOG1 () { prompt="# `date +%H:%M:%S` >  " ; { echo ; echo "$prompt" ; echo "$prompt$*" ; echo "$prompt" ; echo ; } >&2 ; }
+function LOG2 () { LOG1 "$@" 2>&1 ; LOG1 "$@" ; }
+ 
+function LOG1x () { LOG1 "$@" ; eval "$@" ; }
+function LOG2x () { LOG2 "$@" ; eval "$@" ; }
+
+#############################################################################
+#	MAIN
+
+ACTION=LOG2
+while :; do
+	case "$1" in
+	-1)		ACTION=LOG1;;
+	-1x | -x1)	ACTION=LOG1x;;
+	-x | -2x | -x2)	ACTION=LOG2x;;
+	-*)		;;
+	*)		break;;
+	esac
+	shift
+done
+
+$ACTION "$@"
+
+#	END
+#############################################################################

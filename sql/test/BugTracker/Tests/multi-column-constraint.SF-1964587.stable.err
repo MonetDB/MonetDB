@@ -1,0 +1,19 @@
+stderr of test 'multi-column-constraint.SF-1964587` in directory 'sql/test/BugTracker` itself:
+
+
+# 16:17:36 >  
+# 16:17:36 >   mserver5 "--config=/ufs/sjoerd/Monet-virgin-stable/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/virgin-stable/sql/x86_64-unknown-linux-gnu/src/backends/monet5/.libs:/ufs/sjoerd/src/MonetDB/virgin-stable/sql/x86_64-unknown-linux-gnu/src/backends/monet5:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB5:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB5/lib:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/virgin-stable/sql/x86_64-unknown-linux-gnu/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/virgin-stable/sql/x86_64-unknown-linux-gnu/sql_logs" --set "xquery_logdir=/ufs/sjoerd/src/MonetDB/virgin-stable/sql/x86_64-unknown-linux-gnu/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=32134 --set xrpc_port=45022 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 16:17:36 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/sjoerd/Monet-virgin-stable/etc/monetdb5.conf)
+
+# 16:17:36 >  
+# 16:17:36 >  mclient -lsql -umonetdb -Pmonetdb --host=ottar --port=32134 
+# 16:17:36 >  
+
+
+# 16:17:36 >  
+# 16:17:36 >  Done.
+# 16:17:36 >  
+

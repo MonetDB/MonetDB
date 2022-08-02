@@ -1,9 +1,0 @@
-statement ok
-CREATE TABLE bigramlex (subtotal int)
-
-statement error
-select count(subtotal) from bigramlex order by subtotal
-
-statement ok
-drop TABLE bigramlex
-

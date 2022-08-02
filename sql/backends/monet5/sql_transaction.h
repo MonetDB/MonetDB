@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -11,6 +11,16 @@
  */
 #ifndef _SQL_TRANSACTION_H
 #define _SQL_TRANSACTION_H
+
+#ifdef WIN32
+#ifndef LIBSQL
+#define sql5_export extern __declspec(dllimport)
+#else
+#define sql5_export extern __declspec(dllexport)
+#endif
+#else
+#define sql5_export extern
+#endif
 
 #include "sql.h"
 #include "mal_backend.h"
@@ -20,10 +30,10 @@
 #include "sql_mvc.h"
 #include "mal_function.h"
 
-extern str SQLtransaction_begin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
-extern str SQLtransaction_release(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
-extern str SQLtransaction_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
-extern str SQLtransaction_rollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
+sql5_export str SQLtransaction_begin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
+sql5_export str SQLtransaction_release(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
+sql5_export str SQLtransaction_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
+sql5_export str SQLtransaction_rollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
 
 #endif /* _SQL_TRANSACTION_H */
 

@@ -1,0 +1,19 @@
+stderr of test 'xml` in directory 'sql/test/sql_xml` itself:
+
+
+# 17:54:53 >  
+# 17:54:53 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=35176 --set xrpc_port=43869 --set monet_prompt= --trace "--dbname=mTests_src_test_sql_xml" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 17:54:53 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf)
+
+# 17:54:53 >  
+# 17:54:53 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=35176 
+# 17:54:53 >  
+
+
+# 17:54:53 >  
+# 17:54:53 >  Done.
+# 17:54:53 >  
+

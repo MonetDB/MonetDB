@@ -1,0 +1,24 @@
+# remapping inline functions
+# the crucial part is to recognize valid inlines
+# here the inlined function contains more then
+# just multiplex callable functions.
+inline function foo(a:int,b:int):int;
+	c:= a+b;
+	base:=1;
+barrier loop:= true;
+	c:= c *c;
+	base:= base+1;
+	redo loop:= base <3;
+exit loop;
+	return c;
+end foo;
+function qry();
+	b:= bat.new(:int);
+	bat.append(b,1);
+	z:bat[:int]:= mal.multiplex("user","foo",b,b);
+	z:bat[:int]:= mal.multiplex("user","foo",b,2);
+end qry;
+
+	optimizer.inline("user","qry");
+	optimizer.remap("user","qry");
+	mdb.List("user","qry");

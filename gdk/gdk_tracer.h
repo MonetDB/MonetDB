@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* // TODO: Complete it when documentation is accepted
@@ -42,7 +42,6 @@
 #define FOREACH_ADPTR(ADPTR)			\
 	ADPTR( BASIC )				\
 	ADPTR( PROFILER )			\
-	ADPTR( MBEDDED )			\
 						\
 	ADPTR( ADAPTERS_COUNT )
 
@@ -105,6 +104,7 @@ typedef enum {
 	COMP( THRD )				\
 						\
 	COMP( GEOM )				\
+	COMP( LIDAR )				\
 	COMP( FITS )				\
 	COMP( SHP )				\
 						\
@@ -140,7 +140,9 @@ gdk_export log_level_t lvl_per_component[];
 // ERROR or WARNING it is logged no matter the component. In any other
 // case the component is taken into account
 #define GDK_TRACER_TEST(LOG_LEVEL, COMP)	\
-	(LOG_LEVEL <= M_WARNING  ||		\
+	(LOG_LEVEL == M_CRITICAL ||		\
+	 LOG_LEVEL == M_ERROR    ||		\
+	 LOG_LEVEL == M_WARNING  ||		\
 	 lvl_per_component[COMP] >= LOG_LEVEL)
 
 
@@ -148,10 +150,6 @@ gdk_export log_level_t lvl_per_component[];
 	GDKtracer_log(__FILE__, __func__, __LINE__,			\
 		      LOG_LEVEL, COMP, NULL, MSG, ##__VA_ARGS__)
 
-#ifdef __COVERITY__
-/* hide this for static code analysis: too many false positives */
-#define GDK_TRACER_LOG(LOG_LEVEL, COMP, MSG, ...)	((void) 0)
-#else
 #define GDK_TRACER_LOG(LOG_LEVEL, COMP, MSG, ...)			\
 	do {								\
 		if (GDK_TRACER_TEST(LOG_LEVEL, COMP)) {			\
@@ -159,7 +157,6 @@ gdk_export log_level_t lvl_per_component[];
 					    ## __VA_ARGS__);		\
 		}							\
 	} while (0)
-#endif
 
 
 #define TRC_CRITICAL(COMP, MSG, ...)				\
@@ -211,16 +208,16 @@ gdk_export log_level_t lvl_per_component[];
 #define TRC_CRITICAL_ENDIF(COMP, MSG, ...)				\
 	GDK_TRACER_LOG_BODY(M_CRITICAL, COMP, MSG, ## __VA_ARGS__)
 
-#define TRC_ERROR_ENDIF(COMP, MSG, ...)					\
+#define TRC_ERROR_ENDIF(COMP, MSG, ...)				\
 	GDK_TRACER_LOG_BODY(M_ERROR, COMP, MSG, ## __VA_ARGS__)
 
 #define TRC_WARNING_ENDIF(COMP, MSG, ...)				\
 	GDK_TRACER_LOG_BODY(M_WARNING, COMP, MSG, ## __VA_ARGS__)
 
-#define TRC_INFO_ENDIF(COMP, MSG, ...)					\
+#define TRC_INFO_ENDIF(COMP, MSG, ...)				\
 	GDK_TRACER_LOG_BODY(M_INFO, COMP, MSG, ## __VA_ARGS__)
 
-#define TRC_DEBUG_ENDIF(COMP, MSG, ...)					\
+#define TRC_DEBUG_ENDIF(COMP, MSG, ...)				\
 	GDK_TRACER_LOG_BODY(M_DEBUG, COMP, MSG, ## __VA_ARGS__)
 
 
@@ -232,8 +229,6 @@ gdk_export log_level_t lvl_per_component[];
  */
 // Used for logrotate
 gdk_export void GDKtracer_reinit_basic(int sig);
-
-gdk_export gdk_return GDKtracer_set_tracefile(const char *tracefile);
 
 gdk_export gdk_return GDKtracer_stop(void);
 
@@ -258,5 +253,7 @@ gdk_export void GDKtracer_log(const char *file, const char *func,
 	__attribute__((__format__(__printf__, 7, 8)));
 
 gdk_export gdk_return GDKtracer_flush_buffer(void);
+
+gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_level);
 
 #endif /* _GDK_TRACER_H_ */

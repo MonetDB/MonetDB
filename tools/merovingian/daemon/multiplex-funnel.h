@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _MULTIPLEX_H
@@ -45,11 +45,13 @@ typedef struct _multiplex {
 	multiplex_client    *clients;
 } multiplex;
 
-err multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr);
-void multiplexDestroy(const char *mp);
-void multiplexAddClient(const char *mp, int sock, stream *fout, stream *fdin, char *name);
+err multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr);
+void multiplexDestroy(char *mp);
+void multiplexAddClient(char *mp, int sock, stream *fout, stream *fdin, char *name);
 void multiplexRemoveClient(multiplex *m, multiplex_client *c);
 void multiplexNotifyAddedDB(const char *database);
 void multiplexNotifyRemovedDB(const char *database);
 
 #endif
+
+/* vim:set ts=4 sw=4 noexpandtab: */

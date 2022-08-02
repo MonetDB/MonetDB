@@ -1,0 +1,17 @@
+stderr of test 'decimal2` in directory 'sql/test` itself:
+
+
+# 20:26:51 >  
+# 20:26:51 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB/lib:/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/sql_logs" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/xquery_logs" --set mapi_port=39101 --set monet_prompt= --trace "--dbname=mTests_src_test" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 20:26:51 >  
+
+
+# 20:26:51 >  
+# 20:26:51 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=39101  < decimal2.sql
+# 20:26:51 >  
+
+
+# 20:26:51 >  
+# 20:26:51 >  Done.
+# 20:26:51 >  
+

@@ -1,0 +1,43 @@
+stderr of test 'create-or-replace-views` in directory 'sql/test` itself:
+
+
+# 09:44:20 >  
+# 09:44:20 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30539" "--set" "mapi_usock=/var/tmp/mtest-7857/.s.monetdb.30539" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/MonetDB-default/BUILD/var/MonetDB/mTests_sql_test" "--set" "embedded_py=true"
+# 09:44:20 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/MonetDB-default/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30539
+# cmdline opt 	mapi_usock = /var/tmp/mtest-7857/.s.monetdb.30539
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/MonetDB-default/BUILD/var/MonetDB/mTests_sql_test
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 536870922
+
+# 09:44:20 >  
+# 09:44:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7857" "--port=30539"
+# 09:44:20 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-15815/.s.monetdb.39325
+QUERY = CREATE OR REPLACE VIEW failureview AS SELECT b2 FROM testingnothing WHERE b2 = 'two'; --error
+ERROR = !SELECT: no such table 'testingnothing'
+CODE  = 42S02
+
+
+
+
+
+# 09:44:21 >  
+# 09:44:21 >  "Done."
+# 09:44:21 >  
+

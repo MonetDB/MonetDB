@@ -1,6 +1,0 @@
-statement ok
-function f();
-	a:= "hello";
-	b:= "the quick brown fox";
-end f;
-

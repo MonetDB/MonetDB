@@ -1,8 +1,0 @@
-query ITTT nosort
-select * from event
-----
-
-query IITT nosort
-select * from event_metadata
-----
-

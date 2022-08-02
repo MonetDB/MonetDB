@@ -1,7 +1,0 @@
-query TIT rowsort
-SELECT date '2017-11-14', EXTRACT(year from date '2017-11-14'), date_to_str(date '2017-11-14', '%Y %m %d -A:%A -G:%G V:%V w:%w W:%W')
-----
-2017-11-14
-2017
-2017 11 14 -A:Tuesday -G:2017 V:46 w:2 W:46
-

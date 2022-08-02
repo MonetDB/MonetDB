@@ -1,5 +1,0 @@
-query T rowsort
-SELECT ST_AsText(ST_Centroid(boundary)) FROM named_places WHERE name = 'Goose Island'
-----
-POINT (63 15.5)
-

@@ -1,0 +1,14 @@
+function f1();
+	io.print("hello");
+end f1;
+
+function f2();
+	io.print("world");
+end f2;
+
+function q();
+	language.call("user","f1");
+	language.call("user","f2");
+end q;
+
+q();

@@ -1,7 +1,0 @@
-statement ok
-create table tmp(i int)
-
-query I rowsort
-select i from tmp union select i from tmp
-----
-

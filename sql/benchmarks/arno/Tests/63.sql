@@ -1,0 +1,1 @@
+SELECT MODEL255.is_mutagen, count(distinct MODEL255.model_id ) FROM MODEL MODEL255, BOND T1008290429280  WHERE MODEL255.model_id=T1008290429280.model_id AND MODEL255.logp='5' group by MODEL255.is_mutagen;

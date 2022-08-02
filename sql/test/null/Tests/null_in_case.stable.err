@@ -1,0 +1,19 @@
+stderr of test 'null_in_case` in directory 'sql/test/null` itself:
+
+
+# 10:16:15 >  
+# 10:16:15 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=30781 --set xrpc_port=44156 --set monet_prompt= --trace  "--dbname=mTests_src_test_null" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 10:16:15 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf)
+
+# 10:16:15 >  
+# 10:16:15 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=30781 
+# 10:16:15 >  
+
+
+# 10:16:15 >  
+# 10:16:15 >  Done.
+# 10:16:15 >  
+

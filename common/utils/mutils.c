@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -30,182 +30,18 @@
 #endif
 
 #ifndef O_CLOEXEC
-#ifdef _O_NOINHERIT
-#define O_CLOEXEC _O_NOINHERIT	/* Windows */
-#else
 #define O_CLOEXEC 0
-#endif
 #endif
 
 #ifdef NATIVE_WIN32
 
-#include <windows.h>
-#include <wchar.h>
-
 /* Some definitions that we need to compile on Windows.
  * Note that Windows only runs on little endian architectures. */
+typedef unsigned int u_int32_t;
+typedef int int32_t;
 #define BIG_ENDIAN	4321
 #define LITTLE_ENDIAN	1234
 #define BYTE_ORDER	LITTLE_ENDIAN
-
-wchar_t *
-utf8towchar(const char *src)
-{
-	wchar_t *dest;
-	size_t i = 0;
-	size_t j = 0;
-	uint32_t c;
-
-	if (src == NULL)
-		return NULL;
-
-	/* count how many wchar_t's we need, while also checking for
-	 * correctness of the input */
-	while (src[j]) {
-		i++;
-		if ((src[j+0] & 0x80) == 0) {
-			j += 1;
-		} else if ((src[j+0] & 0xE0) == 0xC0
-			   && (src[j+1] & 0xC0) == 0x80
-			   && (src[j+0] & 0x1E) != 0) {
-			j += 2;
-		} else if ((src[j+0] & 0xF0) == 0xE0
-			   && (src[j+1] & 0xC0) == 0x80
-			   && (src[j+2] & 0xC0) == 0x80
-			   && ((src[j+0] & 0x0F) != 0
-			       || (src[j+1] & 0x20) != 0)) {
-			j += 3;
-		} else if ((src[j+0] & 0xF8) == 0xF0
-			   && (src[j+1] & 0xC0) == 0x80
-			   && (src[j+2] & 0xC0) == 0x80
-			   && (src[j+3] & 0xC0) == 0x80) {
-			c = (src[j+0] & 0x07) << 18
-				| (src[j+1] & 0x3F) << 12
-				| (src[j+2] & 0x3F) << 6
-				| (src[j+3] & 0x3F);
-			if (c < 0x10000
-			    || c > 0x10FFFF
-			    || (c & 0x1FF800) == 0x00D800) {
-				return NULL;
-			}
-#if SIZEOF_WCHAR_T == 2
-			i++;
-#endif
-			j += 4;
-		} else {
-			return NULL;
-		}
-	}
-	dest = malloc((i + 1) * sizeof(wchar_t));
-	if (dest == NULL)
-		return NULL;
-	/* go through the source string again, this time we can skip
-	 * the correctness tests */
-	i = j = 0;
-	while (src[j]) {
-		if ((src[j+0] & 0x80) == 0) {
-			dest[i++] = src[j+0];
-			j += 1;
-		} else if ((src[j+0] & 0xE0) == 0xC0) {
-			dest[i++] = (src[j+0] & 0x1F) << 6
-				| (src[j+1] & 0x3F);
-			j += 2;
-		} else if ((src[j+0] & 0xF0) == 0xE0) {
-			dest[i++] = (src[j+0] & 0x0F) << 12
-				| (src[j+1] & 0x3F) << 6
-				| (src[j+2] & 0x3F);
-			j += 3;
-		} else if ((src[j+0] & 0xF8) == 0xF0) {
-			c = (src[j+0] & 0x07) << 18
-				| (src[j+1] & 0x3F) << 12
-				| (src[j+2] & 0x3F) << 6
-				| (src[j+3] & 0x3F);
-#if SIZEOF_WCHAR_T == 2
-			dest[i++] = 0xD800 | ((c - 0x10000) >> 10);
-			dest[i++] = 0xDE00 | (c & 0x3FF);
-#else
-			dest[i++] = c;
-#endif
-			j += 4;
-		}
-	}
-	dest[i] = 0;
-
-	/* dir manipulations fail in WIN32 if file name contains trailing
-	 * slashes; work around this */
-	while (i > 2 && dest[i - 1] == L'\\' && dest[i - 2] != L':')
-		dest[--i] = 0;
-
-	return dest;
-}
-
-char *
-wchartoutf8(const wchar_t *ws)
-{
-	size_t len = 1;
-	for (size_t i = 0; ws[i]; i++) {
-		if (ws[i] <= 0x7F)
-			len += 1;
-		else if (ws[i] <= 0x7FF)
-			len += 2;
-		else if (
-#if SIZEOF_WCHAR_T == 2
-			(ws[i] & 0xF800) != 0xD800
-#else
-			ws[i] <= 0xFFFF
-#endif
-			) {
-			assert((ws[i] & 0xF800) != 0xD800);
-			len += 3;
-		} else {
-#if SIZEOF_WCHAR_T == 2
-			assert((ws[i + 0] & 0xFC00) == 0xD800); /* high surrogate */
-			assert((ws[i + 1] & 0xFC00) == 0xDC00); /* low surrogate */
-			len += 4;
-			i++;
-#else
-			assert(ws[i] <= 0x10FFFF);
-			len += 4;
-#endif
-		}
-	}
-	unsigned char *us = malloc(len);
-	if (us != NULL) {
-		size_t j = 0;
-		for (size_t i = 0; ws[i]; i++) {
-			if (ws[i] <= 0x7F)
-				us[j++] = (unsigned char) ws[i];
-			else if (ws[i] <= 0x7FF) {
-				us[j++] = (unsigned char) (ws[i] >> 6 | 0xC0);
-				us[j++] = (unsigned char) ((ws[i] & 0x3F) | 0x80);
-			} else if (
-#if SIZEOF_WCHAR_T == 2
-				(ws[i] & 0xF800) != 0xD800
-#else
-				ws[i] <= 0xFFFF
-#endif
-				) {
-				us[j++] = (unsigned char) (ws[i] >> 12 | 0xE0);
-				us[j++] = (unsigned char) (((ws[i] >> 6) & 0x3F) | 0x80);
-				us[j++] = (unsigned char) ((ws[i] & 0x3F) | 0x80);
-			} else {
-				uint32_t wc;
-#if SIZEOF_WCHAR_T == 2
-				wc = ((ws[i+0] & 0x03FF) + 0x40) << 10 | (ws[i+1] & 0x03FF);
-				i++;
-#else
-				wc = (uint32_t) ws[i];
-#endif
-				us[j++] = (unsigned char) (wc >> 18 | 0xF0);
-				us[j++] = (unsigned char) (((wc >> 12) & 0x3F) | 0x80);
-				us[j++] = (unsigned char) (((wc >> 6) & 0x3F) | 0x80);
-				us[j++] = (unsigned char) ((wc & 0x3F) | 0x80);
-			}
-		}
-		us[j] = 0;
-	}
-	return (char *) us;
-}
 
 /* translate Windows error code (GetLastError()) to Unix-style error */
 int
@@ -276,19 +112,11 @@ winerror(int e)
 	}
 }
 
-struct DIR {
-	wchar_t *dir_name;
-	int just_opened;
-	HANDLE find_file_handle;
-	void *find_file_data;
-	struct dirent result;
-};
-
 DIR *
 opendir(const char *dirname)
 {
 	DIR *result = NULL;
-	wchar_t *mask;
+	char *mask;
 	size_t k;
 	DWORD e;
 
@@ -302,8 +130,8 @@ opendir(const char *dirname)
 		errno = ENOMEM;
 		return NULL;
 	}
-	result->find_file_data = malloc(sizeof(WIN32_FIND_DATAW));
-	result->dir_name = utf8towchar(dirname);
+	result->find_file_data = malloc(sizeof(WIN32_FIND_DATA));
+	result->dir_name = strdup(dirname);
 	if (result->find_file_data == NULL || result->dir_name == NULL) {
 		if (result->find_file_data)
 			free(result->find_file_data);
@@ -314,13 +142,12 @@ opendir(const char *dirname)
 		return NULL;
 	}
 
-	k = wcslen(result->dir_name);
-	if (k && result->dir_name[k - 1] == L'\\') {
-		result->dir_name[k - 1] = L'\0';
+	k = strlen(result->dir_name);
+	if (k && result->dir_name[k - 1] == '\\') {
+		result->dir_name[k - 1] = '\0';
 		k--;
 	}
-	size_t masklen = (wcslen(result->dir_name) + 3) * sizeof(wchar_t);
-	mask = malloc(masklen);
+	mask = malloc(strlen(result->dir_name) + 3);
 	if (mask == NULL) {
 		free(result->find_file_data);
 		free(result->dir_name);
@@ -328,9 +155,9 @@ opendir(const char *dirname)
 		errno = ENOMEM;
 		return NULL;
 	}
-	swprintf(mask, masklen, L"%ls\\*", result->dir_name);
+	sprintf(mask, "%s\\*", result->dir_name);
 
-	result->find_file_handle = FindFirstFileW(mask, (LPWIN32_FIND_DATAW) result->find_file_data);
+	result->find_file_handle = FindFirstFile(mask, (LPWIN32_FIND_DATA) result->find_file_data);
 	if (result->find_file_handle == INVALID_HANDLE_VALUE) {
 		e = GetLastError();
 		free(mask);
@@ -347,32 +174,32 @@ opendir(const char *dirname)
 	return result;
 }
 
-static wchar_t *
-basename(const wchar_t *file_name)
+static char *
+basename(const char *file_name)
 {
-	const wchar_t *p;
-	const wchar_t *base;
+	const char *p;
+	const char *base;
 
 	if (file_name == NULL)
 		return NULL;
 
-	if (iswalpha(file_name[0]) && file_name[1] == L':')
+	if (isalpha((unsigned char) file_name[0]) && file_name[1] == ':')
 		file_name += 2;	/* skip over drive letter */
 
 	base = NULL;
 	for (p = file_name; *p; p++)
-		if (*p == L'\\' || *p == L'/')
+		if (*p == '\\' || *p == '/')
 			base = p;
 	if (base)
-		return (wchar_t *) base + 1;
+		return (char *) base + 1;
 
-	return (wchar_t *) file_name;
+	return (char *) file_name;
 }
 
 struct dirent *
 readdir(DIR *dir)
 {
-	char *base;
+	static struct dirent result;
 
 	if (dir == NULL) {
 		errno = EFAULT;
@@ -381,23 +208,19 @@ readdir(DIR *dir)
 
 	if (dir->just_opened)
 		dir->just_opened = FALSE;
-	else if (!FindNextFileW(dir->find_file_handle,
-			       (LPWIN32_FIND_DATAW) dir->find_file_data))
+	else if (!FindNextFile(dir->find_file_handle,
+			       (LPWIN32_FIND_DATA) dir->find_file_data))
 		return NULL;
-	base = wchartoutf8(basename(((LPWIN32_FIND_DATAW) dir->find_file_data)->cFileName));
-	if (base == NULL)
-		return NULL;
-	strcpy_len(dir->result.d_name, base, sizeof(dir->result.d_name));
-	free(base);
-	dir->result.d_namelen = (int) strlen(dir->result.d_name);
+	strcpy_len(result.d_name, basename(((LPWIN32_FIND_DATA) dir->find_file_data)->cFileName), sizeof(result.d_name));
+	result.d_namelen = (int) strlen(result.d_name);
 
-	return &dir->result;
+	return &result;
 }
 
 void
 rewinddir(DIR *dir)
 {
-	wchar_t *mask;
+	char *mask;
 
 	if (dir == NULL) {
 		errno = EFAULT;
@@ -407,15 +230,14 @@ rewinddir(DIR *dir)
 	if (!FindClose(dir->find_file_handle))
 		fprintf(stderr, "#rewinddir(): FindClose() failed\n");
 
-	size_t masklen = (wcslen(dir->dir_name) + 3) * sizeof(wchar_t);
-	mask = malloc(masklen);
+	mask = malloc(strlen(dir->dir_name) + 3);
 	if (mask == NULL) {
 		errno = ENOMEM;
 		dir->find_file_handle = INVALID_HANDLE_VALUE;
 		return;
 	}
-	swprintf(mask, masklen, L"%ls\\*", dir->dir_name);
-	dir->find_file_handle = FindFirstFileW(mask, (LPWIN32_FIND_DATAW) dir->find_file_data);
+	sprintf(mask, "%s\\*", dir->dir_name);
+	dir->find_file_handle = FindFirstFile(mask, (LPWIN32_FIND_DATA) dir->find_file_data);
 	free(mask);
 	if (dir->find_file_handle == INVALID_HANDLE_VALUE)
 		return;
@@ -456,21 +278,18 @@ dirname(char *path)
 
 /* see contract of unix MT_lockf */
 int
-MT_lockf(const char *filename, int mode)
+MT_lockf(char *filename, int mode)
 {
 	int ret = 1, fd = -1;
 	OVERLAPPED ov;
 	HANDLE fh;
 	static struct lockedfiles {
 		struct lockedfiles *next;
-		wchar_t *wfilename;
+		char *filename;
 		int fildes;
 	} *lockedfiles;
 	struct lockedfiles **fpp, *fp;
-	wchar_t *wfilename;
 
-	if ((wfilename = utf8towchar(filename)) == NULL)
-		return -2;
 	ov = (OVERLAPPED) {0};
 #if defined(DUMMYSTRUCTNAME) && (defined(NONAMELESSUNION) || !defined(_MSC_EXTENSIONS))	/* Windows SDK v7.0 */
 	ov.u.s.Offset = 4;
@@ -482,24 +301,22 @@ MT_lockf(const char *filename, int mode)
 
 	if (mode == F_ULOCK) {
 		for (fpp = &lockedfiles; (fp = *fpp) != NULL; fpp = &fp->next) {
-			if (wcscmp(fp->wfilename, wfilename) == 0) {
-				free(fp->wfilename);
+			if (strcmp(fp->filename, filename) == 0) {
+				free(fp->filename);
 				fd = fp->fildes;
 				fh = (HANDLE) _get_osfhandle(fd);
 				fp = *fpp;
 				*fpp = fp->next;
 				free(fp);
 				ret = UnlockFileEx(fh, 0, 1, 0, &ov);
-				free(wfilename);
 				return ret ? 0 : -1;
 			}
 		}
 		/* didn't find the locked file, try opening the file
 		 * directly */
-		fh = CreateFileW(wfilename,
+		fh = CreateFile(filename,
 				GENERIC_READ | GENERIC_WRITE, 0,
-				NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED, NULL);
-		free(wfilename);
+				NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (fh == INVALID_HANDLE_VALUE)
 			return -2;
 		ret = UnlockFileEx(fh, 0, 1, 0, &ov);
@@ -507,14 +324,12 @@ MT_lockf(const char *filename, int mode)
 		return 0;
 	}
 
-	if (_wsopen_s(&fd, wfilename, _O_CREAT | _O_RDWR | _O_TEXT, _SH_DENYNO, _S_IREAD | _S_IWRITE) != 0) {
-		free(wfilename);
+	fd = open(filename, O_CREAT | O_RDWR | O_TEXT | O_CLOEXEC, MONETDB_MODE);
+	if (fd < 0)
 		return -2;
-	}
 	fh = (HANDLE) _get_osfhandle(fd);
 	if (fh == INVALID_HANDLE_VALUE) {
 		close(fd);
-		free(wfilename);
 		return -2;
 	}
 
@@ -527,199 +342,25 @@ MT_lockf(const char *filename, int mode)
 		if (ret != 0) {
 			UnlockFileEx(fh, 0, 1, 0, &ov);
 			close(fd);
-			free(wfilename);
 			return 0;
 		}
 	} else {
 		close(fd);
 		errno = EINVAL;
-		free(wfilename);
 		return -2;
 	}
 	if (ret != 0) {
-		if ((fp = malloc(sizeof(*fp))) != NULL) {
-			fp->wfilename = wfilename;
+		if ((fp = malloc(sizeof(*fp))) != NULL &&
+		    (fp->filename = strdup(filename)) != NULL) {
 			fp->fildes = fd;
 			fp->next = lockedfiles;
 			lockedfiles = fp;
-		} else {
-			free(wfilename);
 		}
 		return fd;
 	} else {
 		close(fd);
-		free(wfilename);
 		return -1;
 	}
-}
-
-FILE *
-MT_fopen(const char *filename, const char *mode)
-{
-	wchar_t *wfilename, *wmode;
-	wfilename = utf8towchar(filename);
-	wmode = utf8towchar(mode);
-	FILE *f = NULL;
-	if (wfilename != NULL && wmode != NULL && (f = _wfopen(wfilename, wmode)) != NULL && strchr(mode, 'w') != NULL)
-		SetFileAttributesW(wfilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
-	free(wfilename);
-	free(wmode);
-	return f;
-}
-
-int
-MT_open(const char *filename, int flags)
-{
-	wchar_t *wfilename = utf8towchar(filename);
-	if (wfilename == NULL)
-		return -1;
-	int fd;
-	if (_wsopen_s(&fd, wfilename, flags, _SH_DENYNO, _S_IREAD | _S_IWRITE) != 0)
-		fd = -1;
-	else if (flags & O_CREAT)
-		SetFileAttributesW(wfilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
-	free(wfilename);
-	return fd;
-}
-
-int
-MT_stat(const char *pathname, struct _stat64 *st)
-{
-	wchar_t *wpathname = utf8towchar(pathname);
-	int ret;
-	if (wpathname == NULL)
-		return -1;
-
-	ret = _wstat64(wpathname, st);
-	free(wpathname);
-	return ret;
-}
-
-#define RETRIES 10
-#define SLEEPTIME 20
-
-int
-MT_rmdir(const char *pathname)
-{
-	wchar_t *wpathname = utf8towchar(pathname);
-	int ret;
-	if (wpathname == NULL)
-		return -1;
-
-	for (int i = 0; i < RETRIES; i++) {
-		ret = _wrmdir(wpathname);
-		if (ret == 0 || errno == ENOENT)
-			break;
-		/* it could be the <expletive deleted> indexing
-		 * service which prevents us from doing what we have a
-		 * right to do, so try again (once) */
-//		fprintf(stderr, "#Retry rmdir %s\n", pathname);
-		Sleep(SLEEPTIME);	/* wait a little */
-	}
-	free(wpathname);
-	return ret;
-}
-
-static inline int
-WMT_remove(const wchar_t *wpathname)
-{
-	int ret;
-
-	SetFileAttributesW(wpathname, FILE_ATTRIBUTE_NORMAL);
-	for (int i = 0; i < RETRIES; i++) {
-		ret = _wunlink(wpathname);
-		if (ret == 0 || errno == ENOENT)
-			break;
-		/* it could be the <expletive deleted> indexing
-		 * service which prevents us from doing what we have a
-		 * right to do, so try again (once) */
-//		fprintf(stderr, "#Retry unlink %ls\n", wpathname);
-		Sleep(SLEEPTIME);	/* wait a little */
-	}
-	return ret;
-}
-
-int
-MT_remove(const char *pathname)
-{
-	wchar_t *wpathname = utf8towchar(pathname);
-	int ret;
-	if (wpathname == NULL)
-		return -1;
-
-	ret = WMT_remove(wpathname);
-	free(wpathname);
-	return ret;
-}
-
-int
-MT_rename(const char *old, const char *dst)
-{
-	int ret = -1;
-	wchar_t *wold, *wdst;
-	wold = utf8towchar(old);
-	wdst = utf8towchar(dst);
-
-	if (wold && wdst) {
-		for (int i = 0; i < RETRIES; i++) {
-			ret = _wrename(wold, wdst);
-			if (ret < 0 && errno == EEXIST) {
-				if ((ret = WMT_remove(wdst)) < 0 &&
-				    errno != ENOENT)
-					break;
-				ret = _wrename(wold, wdst);
-			}
-			if (ret == 0 || errno == ENOENT)
-				break;
-			/* it could be the <expletive deleted> indexing
-			 * service which prevents us from doing what we have a
-			 * right to do, so try again (once) */
-//			fprintf(stderr, "#Retry rename %s %s\n", old, dst);
-			Sleep(SLEEPTIME);	/* wait a little */
-		}
-	}
-	free(wold);
-	free(wdst);
-	return ret;
-}
-
-int
-MT_mkdir(const char *pathname)
-{
-	wchar_t *wpathname = utf8towchar(pathname);
-	if (wpathname == NULL)
-		return -1;
-	int ret = _wmkdir(wpathname);
-	if (ret == 0)
-		SetFileAttributesW(wpathname, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
-	free(wpathname);
-	return ret;
-}
-
-char *
-MT_getcwd(char *buffer, size_t size)
-{
-	wchar_t *wcwd = _wgetcwd(NULL, 0);
-	if (wcwd == NULL)
-		return NULL;
-	char *cwd = wchartoutf8(wcwd);
-	free(wcwd);
-	if (cwd == NULL)
-		return NULL;
-	size_t len = strcpy_len(buffer, cwd, size);
-	free(cwd);
-	return len < size ? buffer : NULL;
-}
-
-int
-MT_access(const char *pathname, int mode)
-{
-	wchar_t *wpathname = utf8towchar(pathname);
-	if (wpathname == NULL)
-		return -1;
-	int ret = _waccess(wpathname, mode);
-	free(wpathname);
-	return ret;
 }
 
 #else
@@ -759,7 +400,7 @@ lockf(int fd, int cmd, off_t len)
  * returns the (open) file descriptor to the file when locking
  * returns 0 when unlocking */
 int
-MT_lockf(const char *filename, int mode)
+MT_lockf(char *filename, int mode)
 {
 	int fd = open(filename, O_CREAT | O_RDWR | O_TEXT | O_CLOEXEC, MONETDB_MODE);
 
@@ -792,14 +433,9 @@ get_bin_path(void)
 	/* getting the path to the executable's binary, isn't all that
 	 * simple, unfortunately */
 #ifdef NATIVE_WIN32
-	static wchar_t wbin_path[PATH_MAX];
-	if (GetModuleFileNameW(NULL, wbin_path, PATH_MAX) != 0) {
-		char *path = wchartoutf8(wbin_path);
-		size_t len = strcpy_len(_bin_path, path, PATH_MAX);
-		free(path);
-		if (len < PATH_MAX)
-			return _bin_path;
-	}
+	if (GetModuleFileName(NULL, _bin_path,
+			      (DWORD) sizeof(_bin_path)) != 0)
+		return _bin_path;
 #elif defined(HAVE__NSGETEXECUTABLEPATH)  /* Darwin/OSX */
 	char buf[PATH_MAX];
 	uint32_t size = PATH_MAX;

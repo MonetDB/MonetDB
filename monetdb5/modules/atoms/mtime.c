@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* In this file we implement three new types with supporting code.
@@ -29,732 +29,588 @@
  */
 
 #include "monetdb_config.h"
+#include "gdk.h"
+#include "gdk_time.h"
 #include "mtime.h"
-#include "mal_client.h"
-
+#include "mal_exception.h"
 
 #ifndef HAVE_STRPTIME
 extern char *strptime(const char *, const char *, struct tm *);
 #endif
 
 /* interfaces callable from MAL, not used from any C code */
+mal_export str MTIMEcurrent_date(date *ret);
+mal_export str MTIMEcurrent_time(daytime *ret);
+mal_export str MTIMEcurrent_timestamp(timestamp *ret);
+mal_export str MTIMEdate_sub_msec_interval(date *ret, const date *d, const lng *ms);
+mal_export str MTIMEdate_add_msec_interval(date *ret, const date *d, const lng *ms);
+mal_export str MTIMEtimestamp_sub_msec_interval(timestamp *ret, const timestamp *t, const lng *ms);
+mal_export str MTIMEtimestamp_add_msec_interval(timestamp *ret, const timestamp *t, const lng *ms);
+mal_export str MTIMEtimestamp_sub_month_interval(timestamp *ret, const timestamp *t, const int *m);
+mal_export str MTIMEtimestamp_add_month_interval(timestamp *ret, const timestamp *t, const int *m);
+mal_export str MTIMEtime_sub_msec_interval(daytime *ret, const daytime *t, const lng *ms);
+mal_export str MTIMEtime_add_msec_interval(daytime *ret, const daytime *t, const lng *ms);
+mal_export str MTIMEdaytime_diff_msec(lng *ret, const daytime *t1, const daytime *t2);
+mal_export str MTIMEdate_submonths(date *ret, const date *d, const int *m);
+mal_export str MTIMEdate_addmonths(date *ret, const date *d, const int *m);
+mal_export str MTIMEdate_extract_dayofyear(int *ret, const date *d);
+mal_export str MTIMEdate_extract_weekofyear(int *ret, const date *d);
+mal_export str MTIMEdate_extract_dayofweek(int *ret, const date *d);
+mal_export str MTIMEtimestamp_century(int *ret, const timestamp *t);
+mal_export str MTIMEtimestamp_decade(int *ret, const timestamp *t);
+mal_export str MTIMEtimestamp_year(int *ret, const timestamp *t);
+mal_export str MTIMEtimestamp_quarter(int *ret, const timestamp *t);
+mal_export str MTIMEtimestamp_month(int *ret, const timestamp *t);
+mal_export str MTIMEtimestamp_day(int *ret, const timestamp *t);
+mal_export str MTIMEtimestamp_hours(int *ret, const timestamp *t);
+mal_export str MTIMEtimestamp_minutes(int *ret, const timestamp *t);
+mal_export str MTIMEsql_year(int *ret, const int *months);
+mal_export str MTIMEsql_month(int *ret, const int *months);
+mal_export str MTIMEsql_day(lng *ret, const lng *msecs);
+mal_export str MTIMEsql_hours(int *ret, const lng *msecs);
+mal_export str MTIMEsql_minutes(int *ret, const lng *msecs);
+mal_export str MTIMEsql_seconds(int *ret, const lng *msecs);
 
-static str
+mal_export str MTIMEdate_fromstr(date *ret, const char *const *s);
+mal_export str MTIMEdate_date(date *dst, const date *src);
+mal_export str MTIMEtimestamp_fromstr(timestamp *ret, const char *const *s);
+mal_export str MTIMEtimestamp_timestamp(timestamp *dst, const timestamp *src);
+mal_export str MTIMEseconds_since_epoch(int *ret, const timestamp *t);
+mal_export str MTIMEdaytime_fromstr(daytime *ret, const char *const *s);
+mal_export str MTIMEdaytime_daytime(daytime *dst, const daytime *src);
+mal_export str MTIMEdaytime_fromseconds(daytime *ret, const lng *secs);
+mal_export str MTIMEdaytime_fromseconds_bulk(bat *ret, bat *bid);
+mal_export str MTIMElocal_timezone_msec(lng *ret);
+mal_export str MTIMEstr_to_date(date *ret, const char *const *s, const char *const *format);
+mal_export str MTIMEdate_to_str(str *ret, const date *d, const char *const *format);
+mal_export str MTIMEstr_to_time(daytime *ret, const char *const *s, const char *const *format);
+mal_export str MTIMEtime_to_str(str *ret, const daytime *d, const char *const *format);
+mal_export str MTIMEstr_to_timestamp(timestamp *ret, const char *const *s, const char *const *format);
+mal_export str MTIMEtimestamp_to_str(str *ret, const timestamp *d, const char *const *format);
+
+str
 MTIMEcurrent_date(date *ret)
 {
 	*ret = timestamp_date(timestamp_current());
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MTIMEcurrent_time(daytime *ret)
 {
 	*ret = timestamp_daytime(timestamp_current());
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MTIMEcurrent_timestamp(timestamp *ret)
 {
 	*ret = timestamp_current();
 	return MAL_SUCCEED;
 }
 
-#define is_str_nil strNil
-
-#define MTIME_STR_BUFFER_LENGTH MAX(strlen(str_nil) + 1, 512)
-
-
-#define DEC_VAR_R(TYPE, ARG) TYPE *restrict ptr##ARG
-
-#define DEC_VAR(TYPE, ARG) TYPE *ptr##ARG
-
-#define DEC_ITER(TYPE, ARG)
-
-#define DEC_BUFFER(OUTTYPE, RES, MALFUNC) \
-	OUTTYPE RES = GDKmalloc(MTIME_STR_BUFFER_LENGTH); \
-	if (!res) {	\
-		msg = createException(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-		goto bailout; \
-	}
-
-#define DEC_INT(OUTTYPE, RES, MALFUNC) OUTTYPE RES = (OUTTYPE){0}
-
-#define INIT_VAROUT(ARG) ptr##ARG = Tloc(b##ARG, 0)
-#define INIT_VARIN(ARG) ptr##ARG = b##ARG##i.base
-#define INIT_ITERIN(ARG)
-
-#define APPEND_VAR(MALFUNC) ptrn[i] = res
-
-#define GET_NEXT_VAR(ARG, OFF) ptr##ARG[OFF]
-
-#define APPEND_STR(MALFUNC) \
-	if (tfastins_nocheckVAR(bn, i, res) != GDK_SUCCEED) { \
-		msg = createException(SQL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-		break; \
-	}
-
-#define GET_NEXT_ITER(ARG, OFF) BUNtvar(b##ARG##i, OFF)
-
-#define DEC_NOTHING(TYPE, ARG)
-#define INIT_NOTHING(ARG)
-
-#define FINISH_BUFFER_SINGLE(MALFUNC) \
-bailout: \
-	*ret = NULL; \
-	if (!msg && res && !(*ret = GDKstrdup(res))) \
-		msg = createException(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-	GDKfree(res)
-
-#define FINISH_INT_SINGLE(MALFUNC) *ret = res
-
-#define FINISH_BUFFER_MULTI(RES) GDKfree(RES)
-
-#define CLEAR_NOTHING(RES)
-
-
-#define COPYFLAGS(n)	do { bn->tsorted = b1i.sorted; bn->trevsorted = b1i.revsorted; } while (0)
-#define SETFLAGS(n)	do { bn->tsorted = bn->trevsorted = n < 2; } while (0)
-#define func1(NAME, MALFUNC, INTYPE, OUTTYPE,							\
-			  FUNC, SETFLAGS, FUNC_CALL,								\
-			  DEC_SRC, DEC_OUTPUT,										\
-			  INIT_SRC, INIT_OUTPUT, GET_NEXT_SRC)						\
-static str																\
-NAME(OUTTYPE *ret, const INTYPE *src)									\
+#define COPYFLAGS	do { bn->tsorted = b->tsorted; bn->trevsorted = b->trevsorted; } while (0)
+#define SETFLAGS	do { bn->tsorted = bn->trevsorted = n < 2; } while (0)
+#define func1(NAME, NAMEBULK, MALFUNC, INTYPE, OUTYPE, FUNC, SETFLAGS)	\
+mal_export str NAME(OUTYPE *ret, const INTYPE *src);					\
+mal_export str NAMEBULK(bat *ret, const bat *bid);						\
+str																		\
+NAME(OUTYPE *ret, const INTYPE *src)									\
 {																		\
-	str msg = MAL_SUCCEED; 												\
-	do {																\
-		FUNC_CALL(FUNC, (*ret), *src);									\
-	} while (0);														\
-	return msg;															\
+	*ret = FUNC(*src);													\
+	return MAL_SUCCEED;													\
 }																		\
-static str																\
-NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
+str																		\
+NAMEBULK(bat *ret, const bat *bid)										\
 {																		\
-	str msg = MAL_SUCCEED; 												\
-	BAT *b1 = NULL, *s = NULL, *bn = NULL;								\
-	struct canditer ci = {0};											\
-	oid off;															\
-	bool nils = false;													\
-	bat *ret = getArgReference_bat(stk, pci, 0),						\
-		*bid = getArgReference_bat(stk, pci, 1),						\
-		*sid = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;\
-	BATiter b1i;														\
-	DEC_SRC(INTYPE, 1); 												\
-	DEC_OUTPUT(OUTTYPE, n);												\
+	BAT *b, *bn;														\
+	BUN n;																\
+	const INTYPE *src;													\
+	OUTYPE *dst;														\
 																		\
-	(void) cntxt;														\
-	(void) mb;															\
-	if ((b1 = BATdescriptor(*bid)) == NULL)	{							\
-		msg = createException(MAL, "batmtime." MALFUNC,					\
+	if ((b = BATdescriptor(*bid)) == NULL)								\
+		throw(MAL, "batmtime." MALFUNC,									\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
-		goto bailout;													\
+	n = BATcount(b);													\
+	if ((bn = COLnew(b->hseqbase, TYPE_##OUTYPE, n, TRANSIENT)) == NULL) { \
+		BBPunfix(b->batCacheid);										\
+		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 	}																	\
-	b1i = bat_iterator(b1);												\
-	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {\
-		msg = createException(MAL, "batmtime." MALFUNC,					\
-			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
-		goto bailout;													\
+	src = Tloc(b, 0);													\
+	dst = Tloc(bn, 0);													\
+	for (BUN i = 0; i < n; i++) {										\
+		dst[i] = FUNC(src[i]);											\
 	}																	\
-	off = b1->hseqbase;													\
-	canditer_init(&ci, b1, s);											\
-	if ((bn = COLnew(ci.hseq, TYPE_##OUTTYPE, ci.ncand, TRANSIENT)) == NULL) { \
-		msg = createException(MAL, "batmtime." MALFUNC,					\
-			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
-		goto bailout;													\
-	}																	\
-	INIT_SRC(1);														\
-	INIT_OUTPUT(n);														\
-	if (ci.tpe == cand_dense) {											\
-		for (BUN i = 0; i < ci.ncand; i++) {							\
-			oid p = (canditer_next_dense(&ci) - off);					\
-			FUNC_CALL(FUNC, ptrn[i], GET_NEXT_SRC(1, p));				\
-			nils |= is_##OUTTYPE##_nil(ptrn[i]);						\
-		}																\
-	} else {															\
-		for (BUN i = 0; i < ci.ncand; i++) {							\
-			oid p = (canditer_next(&ci) - off);							\
-			FUNC_CALL(FUNC, ptrn[i], GET_NEXT_SRC(1, p));				\
-			nils |= is_##OUTTYPE##_nil(ptrn[i]);						\
-		}																\
-	}																	\
-	BATsetcount(bn, ci.ncand);											\
-	bn->tnonil = !nils;													\
-	bn->tnil = nils;													\
-	SETFLAGS(ci.ncand);													\
+	bn->tnonil = b->tnonil;												\
+	bn->tnil = b->tnil;													\
+	BATsetcount(bn, n);													\
+	SETFLAGS;															\
 	bn->tkey = false;													\
-bailout: 																\
-	if (b1) {															\
-		bat_iterator_end(&b1i);											\
-		BBPunfix(b1->batCacheid);										\
-	}																	\
-	if (s)																\
-		BBPunfix(s->batCacheid);										\
-	if (bn) {															\
-		if (msg)														\
-			BBPreclaim(bn);												\
-		else {															\
-			*ret = bn->batCacheid;										\
-			BBPkeepref(bn);												\
-		}																\
-	}																	\
-	return msg;															\
+	BBPunfix(b->batCacheid);											\
+	BBPkeepref(*ret = bn->batCacheid);									\
+	return MAL_SUCCEED;													\
 }
 
-#define func1_noexcept(FUNC, RET, PARAM) RET = FUNC(PARAM)
-#define func1_except(FUNC, RET, PARAM) msg = FUNC(&RET, PARAM); if (msg) break
-
-#define func2(NAME, MALFUNC,											\
-			  INTYPE1, INTYPE2, OUTTYPE, FUNC, FUNC_CALL,				\
-			  DEC_SRC1, DEC_SRC2, DEC_OUTPUT, DEC_EXTRA,				\
-			  INIT_SRC1, INIT_SRC2, INIT_OUTPUT,						\
-			  GET_NEXT_SRC1, GET_NEXT_SRC2,								\
-			  APPEND_NEXT, CLEAR_EXTRA_SINGLE, CLEAR_EXTRA_MULTI)		\
-static str																\
+#define func2(NAME, NAMEBULK, MALFUNC, INTYPE1, INTYPE2, OUTTYPE, FUNC)	\
+mal_export str NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2); \
+mal_export str NAMEBULK(bat *ret, const bat *bid1, const bat *bid2);	\
+str																		\
 NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2)				\
 {																		\
-	str msg = MAL_SUCCEED; 												\
-	DEC_EXTRA(OUTTYPE, res, MALFUNC);									\
-																		\
-	do {																\
-		FUNC_CALL(FUNC, res, *v1, *v2);									\
-	} while (0);														\
-	CLEAR_EXTRA_SINGLE(MALFUNC);										\
-	return msg;															\
+	*ret = FUNC(*v1, *v2);												\
+	return MAL_SUCCEED;													\
 }																		\
-static str																\
-NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
+str																		\
+NAMEBULK(bat *ret, const bat *bid1, const bat *bid2)					\
 {																		\
-	str msg = MAL_SUCCEED; 												\
-	BAT *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL, *bn = NULL;		\
-	oid off1, off2; 													\
-	struct canditer ci1 = {0}, ci2 = {0}; 								\
-	bool nils = false; 													\
-	bat *ret = getArgReference_bat(stk, pci, 0),						\
-		*bid1 = getArgReference_bat(stk, pci, 1),						\
-		*bid2 = getArgReference_bat(stk, pci, 2),						\
-		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL, \
-		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL; \
-	BATiter b1i, b2i = (BATiter){ .vh = NULL };							\
-	DEC_SRC1(INTYPE1, 1);												\
-	DEC_SRC2(INTYPE2, 2);												\
-	DEC_OUTPUT(OUTTYPE, n);												\
+	BAT *b1, *b2, *bn;													\
+	BUN n;																\
+	const INTYPE1 *src1;												\
+	const INTYPE2 *src2;												\
+	OUTTYPE *dst;														\
 																		\
-	(void) cntxt;														\
-	(void) mb;															\
 	b1 = BATdescriptor(*bid1);											\
 	b2 = BATdescriptor(*bid2);											\
-	b1i = bat_iterator(b1);												\
-	b2i = bat_iterator(b2);												\
-	DEC_EXTRA(OUTTYPE, res, MALFUNC);									\
 	if (b1 == NULL || b2 == NULL) {										\
-		msg = createException(MAL, "batmtime." MALFUNC,					\
+		if (b1)															\
+			BBPunfix(b1->batCacheid);									\
+		if (b2)															\
+			BBPunfix(b2->batCacheid);									\
+		throw(MAL, "batmtime." MALFUNC,									\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
-		goto bailout;													\
 	}																	\
-	if (sid1 && !is_bat_nil(*sid1) && (s1 = BATdescriptor(*sid1)) == NULL) { \
-		msg = createException(MAL, "batmtime." MALFUNC,					\
-			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
-		goto bailout;													\
-	}																	\
-	if (sid2 && !is_bat_nil(*sid2) && (s2 = BATdescriptor(*sid2)) == NULL) { \
-		msg = createException(MAL, "batmtime." MALFUNC,					\
-			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
-		goto bailout;													\
-	}																	\
-	canditer_init(&ci1, b1, s1);										\
-	canditer_init(&ci2, b2, s2);										\
-	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {				\
-		msg = createException(MAL, "batmtime." MALFUNC, 				\
-			  "inputs not the same size");								\
-		goto bailout;													\
-	}																	\
-	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE, ci1.ncand, TRANSIENT)) == NULL) { \
-		msg = createException(MAL, "batmtime." MALFUNC, 				\
-			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
-		goto bailout;													\
-	}																	\
-	off1 = b1->hseqbase;												\
-	off2 = b2->hseqbase;												\
-	INIT_SRC1(1);														\
-	INIT_SRC2(2);														\
-	INIT_OUTPUT(n);														\
-	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {				\
-		for (BUN i = 0; i < ci1.ncand; i++) {							\
-			oid p1 = (canditer_next_dense(&ci1) - off1);				\
-			oid p2 = (canditer_next_dense(&ci2) - off2);				\
-			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(1, p1), GET_NEXT_SRC2(2, p2)); \
-			APPEND_NEXT(MALFUNC); 										\
-			nils |= is_##OUTTYPE##_nil(res);							\
-		}																\
-	} else {															\
-		for (BUN i = 0; i < ci1.ncand; i++) {							\
-			oid p1 = (canditer_next(&ci1) - off1);						\
-			oid p2 = (canditer_next(&ci2) - off2);						\
-			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(1, p1), GET_NEXT_SRC2(2, p2)); \
-			APPEND_NEXT(MALFUNC); 										\
-			nils |= is_##OUTTYPE##_nil(res);							\
-		}																\
-	}																	\
-	BATsetcount(bn, ci1.ncand);											\
-	bn->tnonil = !nils;													\
-	bn->tnil = nils;													\
-	bn->tsorted = ci1.ncand < 2;										\
-	bn->trevsorted = ci1.ncand < 2;										\
-	bn->tkey = false;													\
-bailout: 																\
-	CLEAR_EXTRA_MULTI(res);												\
-	bat_iterator_end(&b1i);												\
-	bat_iterator_end(&b2i);												\
-	if (b1)																\
+	n = BATcount(b1);													\
+	if (n != BATcount(b2)) {											\
 		BBPunfix(b1->batCacheid);										\
-	if (b2) 															\
 		BBPunfix(b2->batCacheid);										\
-	if (s1)																\
-		BBPunfix(s1->batCacheid);										\
-	if (s2) 															\
-		BBPunfix(s2->batCacheid);										\
-	if (bn) {															\
-		if (msg)														\
-			BBPreclaim(bn);												\
-		else {															\
-			*ret = bn->batCacheid;										\
-			BBPkeepref(bn);												\
-		}																\
+		throw(MAL, "batmtime." MALFUNC, "inputs not the same size");	\
 	}																	\
-	return msg;															\
-}																		\
-static str																\
-NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
-{																		\
-	str msg = MAL_SUCCEED; 												\
-	BAT *b2 = NULL, *s2 = NULL, *bn = NULL;								\
-	oid off2; 															\
-	struct canditer ci2 = {0}; 											\
-	bool nils = false; 													\
-	bat *ret = getArgReference_bat(stk, pci, 0),						\
-		*bid2 = getArgReference_bat(stk, pci, 2),						\
-		*sid2 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL; \
-	const INTYPE1 src1 = *(INTYPE1*)getArgReference(stk, pci, 1);		\
-	BATiter b2i;														\
-	DEC_SRC2(INTYPE2, 2);												\
-	DEC_OUTPUT(OUTTYPE, n);												\
-	DEC_EXTRA(OUTTYPE, res, MALFUNC);									\
-																		\
-	(void) cntxt;														\
-	(void) mb;															\
-	if ((b2 = BATdescriptor(*bid2)) == NULL) {							\
-		msg = createException(MAL, "batmtime." MALFUNC,					\
-			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
-		goto bailout;													\
-	}																	\
-	b2i = bat_iterator(b2);												\
-	if (sid2 && !is_bat_nil(*sid2) && (s2 = BATdescriptor(*sid2)) == NULL) { \
-		msg = createException(MAL, "batmtime." MALFUNC,					\
-			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
-		goto bailout;													\
-	}																	\
-	canditer_init(&ci2, b2, s2);										\
-	if ((bn = COLnew(ci2.hseq, TYPE_##OUTTYPE, ci2.ncand, TRANSIENT)) == NULL) { \
-		msg = createException(MAL, "batmtime." MALFUNC, 				\
-			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
-		goto bailout;													\
-	}																	\
-	off2 = b2->hseqbase;												\
-	INIT_SRC2(2);														\
-	INIT_OUTPUT(n);														\
-	if (ci2.tpe == cand_dense) {										\
-		for (BUN i = 0; i < ci2.ncand; i++) {							\
-			oid p2 = (canditer_next_dense(&ci2) - off2);				\
-			FUNC_CALL(FUNC, res, src1, GET_NEXT_SRC2(2, p2));			\
-			APPEND_NEXT(MALFUNC); 										\
-			nils |= is_##OUTTYPE##_nil(res);							\
-		}																\
-	} else {															\
-		for (BUN i = 0; i < ci2.ncand; i++) {							\
-			oid p2 = (canditer_next(&ci2) - off2);						\
-			FUNC_CALL(FUNC, res, src1, GET_NEXT_SRC2(2, p2));			\
-			APPEND_NEXT(MALFUNC); 										\
-			nils |= is_##OUTTYPE##_nil(res);							\
-		}																\
-	}																	\
-	BATsetcount(bn, ci2.ncand);											\
-	bn->tnonil = !nils;													\
-	bn->tnil = nils;													\
-	bn->tsorted = ci2.ncand < 2;										\
-	bn->trevsorted = ci2.ncand < 2;										\
-	bn->tkey = false;													\
-bailout: 																\
-	CLEAR_EXTRA_MULTI(res);												\
-	if (b2) { 															\
-		bat_iterator_end(&b2i);											\
-		BBPunfix(b2->batCacheid);										\
-	}																	\
-	if (s2) 															\
-		BBPunfix(s2->batCacheid);										\
-	if (bn) {															\
-		if (msg)														\
-			BBPreclaim(bn);												\
-		else {															\
-			*ret = bn->batCacheid;										\
-			BBPkeepref(bn);												\
-		}																\
-	}																	\
-	return msg;															\
-}																		\
-static str																\
-NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
-{																		\
-	str msg = MAL_SUCCEED; 												\
-	BAT *b1 = NULL, *s1 = NULL, *bn = NULL;								\
-	oid off1; 															\
-	struct canditer ci1 = {0};											\
-	bool nils = false; 													\
-	bat *ret = getArgReference_bat(stk, pci, 0),						\
-		*bid1 = getArgReference_bat(stk, pci, 1),						\
-		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL; \
-	BATiter b1i;														\
-	DEC_SRC1(INTYPE1, 1);												\
-	const INTYPE2 src2 = *(INTYPE2*)getArgReference(stk, pci, 2);		\
-	DEC_OUTPUT(OUTTYPE, n);												\
-	DEC_EXTRA(OUTTYPE, res, MALFUNC);									\
-																		\
-	(void) cntxt;														\
-	(void) mb;															\
-	if ((b1 = BATdescriptor(*bid1)) == NULL) {							\
-		msg = createException(MAL, "batmtime." MALFUNC,					\
-			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
-		goto bailout;													\
-	}																	\
-	b1i = bat_iterator(b1);												\
-	if (sid1 && !is_bat_nil(*sid1) && (s1 = BATdescriptor(*sid1)) == NULL) { \
-		msg = createException(MAL, "batmtime." MALFUNC,					\
-			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
-		goto bailout;													\
-	}																	\
-	canditer_init(&ci1, b1, s1);										\
-	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE, ci1.ncand, TRANSIENT)) == NULL) { \
-		msg = createException(MAL, "batmtime." MALFUNC, 				\
-			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
-		goto bailout;													\
-	}																	\
-	off1 = b1->hseqbase;												\
-	INIT_SRC1(1);														\
-	INIT_OUTPUT(n);														\
-	if (ci1.tpe == cand_dense) {										\
-		for (BUN i = 0; i < ci1.ncand; i++) {							\
-			oid p1 = (canditer_next_dense(&ci1) - off1);				\
-			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(1, p1), src2);			\
-			APPEND_NEXT(MALFUNC); 										\
-			nils |= is_##OUTTYPE##_nil(res);							\
-		}																\
-	} else {															\
-		for (BUN i = 0; i < ci1.ncand; i++) {							\
-			oid p1 = (canditer_next(&ci1) - off1);						\
-			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(1, p1), src2);			\
-			APPEND_NEXT(MALFUNC); 										\
-			nils |= is_##OUTTYPE##_nil(res);							\
-		}																\
-	}																	\
-	BATsetcount(bn, ci1.ncand);											\
-	bn->tnonil = !nils;													\
-	bn->tnil = nils;													\
-	bn->tsorted = ci1.ncand < 2;										\
-	bn->trevsorted = ci1.ncand < 2;										\
-	bn->tkey = false;													\
-bailout: 																\
-	CLEAR_EXTRA_MULTI(res);												\
-	if (b1) { 															\
-		bat_iterator_end(&b1i);											\
+	if ((bn = COLnew(b1->hseqbase, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
 		BBPunfix(b1->batCacheid);										\
+		BBPunfix(b2->batCacheid);										\
+		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 	}																	\
-	if (s1) 															\
-		BBPunfix(s1->batCacheid);										\
-	if (bn) {															\
-		if (msg)														\
-			BBPreclaim(bn);												\
-		else {															\
-			*ret = bn->batCacheid;										\
-			BBPkeepref(bn);												\
-		}																\
+	src1 = Tloc(b1, 0);													\
+	src2 = Tloc(b2, 0);													\
+	dst = Tloc(bn, 0);													\
+	for (BUN i = 0; i < n; i++) {										\
+		dst[i] = FUNC(src1[i], src2[i]);								\
 	}																	\
-	return msg;															\
+	bn->tnonil = b1->tnonil & b2->tnonil;								\
+	bn->tnil = b1->tnil | b2->tnil;										\
+	BATsetcount(bn, n);													\
+	bn->tsorted = n < 2;												\
+	bn->trevsorted = n < 2;												\
+	bn->tkey = false;													\
+	BBPunfix(b1->batCacheid);											\
+	BBPunfix(b2->batCacheid);											\
+	BBPkeepref(*ret = bn->batCacheid);									\
+	return MAL_SUCCEED;													\
 }
 
-#define func2_noexcept(FUNC, RET, PARAM1, PARAM2) RET = FUNC(PARAM1, PARAM2)
-#define func2_except(FUNC, RET, PARAM1, PARAM2) msg = FUNC(&RET, PARAM1, PARAM2); if (msg) break
+func2(MTIMEdate_diff, MTIMEdate_diff_bulk, "diff", date, date, int, date_diff)
 
-func2(MTIMEdate_diff, "diff",
-	  date, date, lng, date_diff_imp, func2_noexcept,
-	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
-	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
-	  GET_NEXT_VAR, GET_NEXT_VAR,
-	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
-func2(MTIMEdaytime_diff_msec, "diff",
-	  daytime, daytime, lng, daytime_diff, func2_noexcept,
-	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
-	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
-	  GET_NEXT_VAR, GET_NEXT_VAR,
-	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+#define func2chk(NAME, NAMEBULK, MALFUNC, INTYPE1, INTYPE2, OUTTYPE, FUNC)	\
+mal_export str NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2); \
+mal_export str NAMEBULK(bat *ret, const bat *bid1, const bat *bid2);	\
+str																		\
+NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2)				\
+{																		\
+	if (is_##INTYPE1##_nil(*v1) || is_##INTYPE2##_nil(*v2))				\
+		*ret = OUTTYPE##_nil;											\
+	else {																\
+		*ret = FUNC(*v1, *v2);											\
+		if (is_##OUTTYPE##_nil(*ret))									\
+			throw(MAL, "mtime." MALFUNC,								\
+				  SQLSTATE(22003) "overflow in calculation");			\
+	}																	\
+	return MAL_SUCCEED;													\
+}																		\
+str																		\
+NAMEBULK(bat *ret, const bat *bid1, const bat *bid2)					\
+{																		\
+	BAT *b1, *b2, *bn;													\
+	BUN n;																\
+	const INTYPE1 *src1;												\
+	const INTYPE2 *src2;												\
+	OUTTYPE *dst;														\
+																		\
+	b1 = BATdescriptor(*bid1);											\
+	b2 = BATdescriptor(*bid2);											\
+	if (b1 == NULL || b2 == NULL) {										\
+		if (b1)															\
+			BBPunfix(b1->batCacheid);									\
+		if (b2)															\
+			BBPunfix(b2->batCacheid);									\
+		throw(MAL, "batmtime." MALFUNC,									\
+			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
+	}																	\
+	n = BATcount(b1);													\
+	if (n != BATcount(b2)) {											\
+		BBPunfix(b1->batCacheid);										\
+		BBPunfix(b2->batCacheid);										\
+		throw(MAL, "batmtime." MALFUNC, "inputs not the same size");	\
+	}																	\
+	if ((bn = COLnew(b1->hseqbase, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
+		BBPunfix(b1->batCacheid);										\
+		BBPunfix(b2->batCacheid);										\
+		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+	}																	\
+	src1 = Tloc(b1, 0);													\
+	src2 = Tloc(b2, 0);													\
+	dst = Tloc(bn, 0);													\
+	bn->tnil = false;													\
+	for (BUN i = 0; i < n; i++) {										\
+		if (is_##INTYPE1##_nil(src1[i]) || is_##INTYPE2##_nil(src2[i])) { \
+			dst[i] = OUTTYPE##_nil;										\
+			bn->tnil = true;											\
+		} else {														\
+			dst[i] = FUNC(src1[i], src2[i]);							\
+			if (is_##OUTTYPE##_nil(dst[i])) {							\
+				BBPunfix(b1->batCacheid);								\
+				BBPunfix(b2->batCacheid);								\
+				BBPreclaim(bn);											\
+				throw(MAL, "batmtime." MALFUNC,							\
+					  SQLSTATE(22003) "overflow in calculation");		\
+			}															\
+		}																\
+	}																	\
+	bn->tnonil = !bn->tnil;												\
+	BATsetcount(bn, n);													\
+	bn->tsorted = n < 2;												\
+	bn->trevsorted = n < 2;												\
+	bn->tkey = false;													\
+	BBPunfix(b1->batCacheid);											\
+	BBPunfix(b2->batCacheid);											\
+	BBPkeepref(*ret = bn->batCacheid);									\
+	return MAL_SUCCEED;													\
+}
 
-func2(MTIMEdate_sub_msec_interval, "date_sub_msec_interval",
-	  date, lng, date, date_sub_msec_interval, func2_except,
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
-	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
-	  GET_NEXT_VAR, GET_NEXT_VAR,
-	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
-func2(MTIMEdate_add_msec_interval, "date_add_msec_interval",
-	  date, lng, date, date_add_msec_interval, func2_except,
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
-	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
-	  GET_NEXT_VAR, GET_NEXT_VAR,
-	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
-
-func2(MTIMEtimestamp_sub_msec_interval, "timestamp_sub_msec_interval",
-	  timestamp, lng, timestamp, timestamp_sub_msec_interval, func2_except,
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
-	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
-	  GET_NEXT_VAR, GET_NEXT_VAR,
-	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
-func2(MTIMEtimestamp_add_msec_interval, "timestamp_add_msec_interval",
-	  timestamp, lng, timestamp, timestamp_add_msec_interval, func2_except,
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
-	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
-	  GET_NEXT_VAR, GET_NEXT_VAR,
-	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
-
-func2(MTIMEtimestamp_sub_month_interval, "timestamp_sub_month_interval",
-	  timestamp, int, timestamp, timestamp_sub_month_interval, func2_except,
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
-	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
-	  GET_NEXT_VAR, GET_NEXT_VAR,
-	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
-func2(MTIMEtimestamp_add_month_interval, "timestamp_add_month_interval",
-	  timestamp, int, timestamp, timestamp_add_month_interval, func2_except,
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
-	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
-	  GET_NEXT_VAR, GET_NEXT_VAR,
-	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
-
-func2(MTIMEtime_sub_msec_interval, "time_sub_msec_interval",
-	  daytime, lng, daytime, time_sub_msec_interval, func2_noexcept,
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
-	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
-	  GET_NEXT_VAR, GET_NEXT_VAR,
-	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
-func2(MTIMEtime_add_msec_interval, "time_add_msec_interval",
-	  daytime, lng, daytime, time_add_msec_interval, func2_noexcept,
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
-	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
-	  GET_NEXT_VAR, GET_NEXT_VAR,
-	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
-
-func2(MTIMEdate_submonths, "date_submonths",
-	  date, int, date, date_submonths, func2_except,
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
-	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
-	  GET_NEXT_VAR, GET_NEXT_VAR,
-	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
-func2(MTIMEdate_addmonths, "date_addmonths",
-	  date, int, date, date_addmonths, func2_except,
-	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
-	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
-	  GET_NEXT_VAR, GET_NEXT_VAR,
-	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
-
-func1(MTIMEdate_extract_century, "date_century", date, int,
-	  date_century, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdate_extract_decade, "date_decade", date, int,
-	  date_decade, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdate_extract_year, "date_year", date, int,
-	  date_year, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdate_extract_quarter, "date_quarter", date, int,
-	  date_quarter, SETFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdate_extract_month, "date_month", date, int,
-	  date_month, SETFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdate_extract_day, "date_day", date, int,
-	  date_day, SETFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdate_extract_dayofyear, "date_dayofyear", date, int,
-	  date_dayofyear, SETFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdate_extract_weekofyear, "date_weekofyear", date, int,
-	  date_weekofyear, SETFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdate_extract_usweekofyear, "date_usweekofyear", date, int,
-	  date_usweekofyear, SETFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdate_extract_dayofweek, "date_dayofweek", date, int,
-	  date_dayofweek, SETFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdate_extract_epoch_ms, "epoch_ms", date, lng,
-	  date_to_msec_since_epoch, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdaytime_extract_hours, "daytime_hour", daytime, int,
-	  daytime_hour, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdaytime_extract_minutes, "daytime_minutes", daytime, int,
-	  daytime_min, SETFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdaytime_extract_sql_seconds, "daytime_seconds", daytime, int,
-	  daytime_sec_usec, SETFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdaytime_extract_epoch_ms, "epoch_ms", daytime, lng,
-	  daytime_to_msec_since_epoch, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-
-func2(MTIMEtimestamp_diff_msec, "diff",
-	  timestamp, timestamp, lng, TSDIFF, func2_noexcept,
-	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
-	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
-	  GET_NEXT_VAR, GET_NEXT_VAR,
-	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
-
-func1(MTIMEtimestamp_century, "timestamp_century", timestamp, int,
-	  timestamp_century, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEtimestamp_decade, "timestamp_decade", timestamp, int,
-	  timestamp_decade, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEtimestamp_year, "timestamp_year", timestamp, int,
-	  timestamp_year, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEtimestamp_quarter,"timestamp_quarter", timestamp, int,
-	  timestamp_quarter, SETFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEtimestamp_month, "timestamp_month", timestamp, int,
-	  timestamp_month, SETFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEtimestamp_day, "timestamp_day", timestamp, int,
-	  timestamp_day, SETFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEtimestamp_hours, "timestamp_hours", timestamp, int,
-	  timestamp_hours, SETFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEtimestamp_minutes, "timestamp_minutes", timestamp, int,
-	  timestamp_minutes, SETFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEtimestamp_sql_seconds, "sql_seconds", timestamp, int,
-	  timestamp_extract_usecond, SETFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEtimestamp_extract_epoch_ms, "epoch_ms", timestamp, lng,
-	  timestamp_to_msec_since_epoch, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-
-func1(MTIMEsql_year, "sql_year", int, int,
-	  sql_year, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEsql_month, "sql_month", int, int,
-	  sql_month, SETFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEsql_day, "sql_day", lng, lng,
-	  sql_day, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEsql_hours, "sql_hours", lng, int,
-	  sql_hours, SETFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEsql_minutes, "sql_minutes", lng, int,
-	  sql_minutes, SETFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEsql_seconds, "sql_seconds", lng, int,
-	  sql_seconds, SETFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEmsec_extract_epoch_ms, "msepoch", lng, lng,
-	  msec_since_epoch, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-
-static inline str
-date_fromstr_func(date *ret, str s)
+str
+MTIMEdate_sub_msec_interval(date *ret, const date *d, const lng *ms)
 {
-	if (date_fromstr(s, &(size_t){sizeof(date)}, &ret, false) < 0) {
-		if (strNil(s))
-			throw(MAL, "mtime.date_fromstr", SQLSTATE(42000) "Conversion of NULL string to date failed");
-		throw(MAL, "mtime.date_fromstr", SQLSTATE(22007) "Conversion of string '%s' to date failed", s);
+	if (is_date_nil(*d) || is_lng_nil(*ms))
+		*ret = date_nil;
+	else {
+		*ret = date_add_day(*d, (int) (-*ms / (24*60*60*1000)));
+		if (is_date_nil(*ret))
+			throw(MAL, "mtime.date_sub_msec_interval",
+				  SQLSTATE(22003) "overflow in calculation");
 	}
 	return MAL_SUCCEED;
 }
-func1(MTIMEdate_fromstr, "date_fromstr", str, date,
-	  date_fromstr_func, SETFLAGS, func1_except,
-	  DEC_ITER, DEC_VAR_R,
-	  INIT_ITERIN, INIT_VAROUT, GET_NEXT_ITER)
 
-#define date_date(m) m
-func1(MTIMEdate_date, "date_date", date, date,
-	  date_date, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-
-func1(MTIMEtimestamp_extract_date, "date", timestamp, date,
-	  timestamp_date, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-
-static inline str
-timestamp_fromstr_func(timestamp *ret, str s)
+str
+MTIMEdate_add_msec_interval(date *ret, const date *d, const lng *ms)
 {
-	if (timestamp_fromstr(s, &(size_t){sizeof(timestamp)}, &ret, false) < 0)
-		throw(MAL, "mtime.timestamp_fromstr", GDK_EXCEPTION);
+	if (is_date_nil(*d) || is_lng_nil(*ms))
+		*ret = date_nil;
+	else {
+		*ret = date_add_day(*d, (int) (*ms / (24*60*60*1000)));
+		if (is_date_nil(*ret))
+			throw(MAL, "mtime.date_add_msec_interval",
+				  SQLSTATE(22003) "overflow in calculation");
+	}
 	return MAL_SUCCEED;
 }
-func1(MTIMEtimestamp_fromstr, "timestamp_fromstr", str, timestamp,
-	  timestamp_fromstr_func, SETFLAGS, func1_except,
-	  DEC_ITER, DEC_VAR_R,
-	  INIT_ITERIN, INIT_VAROUT, GET_NEXT_ITER)
 
-#define timestamp_timestamp(m) m
-func1(MTIMEtimestamp_timestamp, "timestamp_timestamp", timestamp, timestamp,
-	  timestamp_timestamp, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
+#define TSSUBMS(ts, ms)		timestamp_add_usec((ts), -(ms) * 1000)
+#define TSADDMS(ts, ms)		timestamp_add_usec((ts), (ms) * 1000)
+func2chk(MTIMEtimestamp_sub_msec_interval, MTIMEtimestamp_sub_msec_interval_bulk, "timestamp_sub_msec_interval", timestamp, lng, timestamp, TSSUBMS)
+func2chk(MTIMEtimestamp_add_msec_interval, MTIMEtimestamp_add_msec_interval_bulk, "timestamp_add_msec_interval", timestamp, lng, timestamp, TSADDMS)
+
+str
+MTIMEtimestamp_sub_month_interval(timestamp *ret, const timestamp *t, const int *m)
+{
+	if (is_timestamp_nil(*t) || is_int_nil(*m))
+		*ret = timestamp_nil;
+	else {
+		*ret = timestamp_add_month(*t, -*m);
+		if (is_timestamp_nil(*ret))
+			throw(MAL, "mtime.timestamp_sub_month_interval",
+				  SQLSTATE(22003) "overflow in calculation");
+	}
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtimestamp_add_month_interval(timestamp *ret, const timestamp *t, const int *m)
+{
+	if (is_timestamp_nil(*t) || is_int_nil(*m))
+		*ret = timestamp_nil;
+	else {
+		*ret = timestamp_add_month(*t, *m);
+		if (is_timestamp_nil(*ret))
+			throw(MAL, "mtime.timestamp_add_month_interval",
+				  SQLSTATE(22003) "overflow in calculation");
+	}
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtime_sub_msec_interval(daytime *ret, const daytime *t, const lng *ms)
+{
+	if (is_daytime_nil(*t) || is_lng_nil(*ms))
+		*ret = daytime_nil;
+	else {
+		*ret = daytime_add_usec_modulo(*t, -*ms * 1000);
+	}
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtime_add_msec_interval(daytime *ret, const daytime *t, const lng *ms)
+{
+	if (is_daytime_nil(*t) || is_lng_nil(*ms))
+		*ret = daytime_nil;
+	else {
+		*ret = daytime_add_usec_modulo(*t, *ms * 1000);
+	}
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEdaytime_diff_msec(lng *ret, const daytime *t1, const daytime *t2)
+{
+	if (is_daytime_nil(*t1) || is_daytime_nil(*t2))
+		*ret = lng_nil;
+	else
+		*ret = (*t1 - *t2) / 1000;
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEdate_submonths(date *ret, const date *d, const int *m)
+{
+	if (is_date_nil(*d) || is_int_nil(*m))
+		*ret = date_nil;
+	else {
+		*ret = date_add_month(*d, -*m);
+		if (is_date_nil(*ret))
+			throw(MAL, "mtime.date_sub_month_interval",
+				  SQLSTATE(22003) "overflow in calculation");
+	}
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEdate_addmonths(date *ret, const date *d, const int *m)
+{
+	if (is_date_nil(*d) || is_int_nil(*m))
+		*ret = date_nil;
+	else {
+		*ret = date_add_month(*d, *m);
+		if (is_date_nil(*ret))
+			throw(MAL, "mtime.date_sub_month_interval",
+				  SQLSTATE(22003) "overflow in calculation");
+	}
+	return MAL_SUCCEED;
+}
+
+func1(MTIMEdate_extract_century, MTIMEdate_extract_century_bulk, "century", date, int, date_century, COPYFLAGS)
+func1(MTIMEdate_extract_decade, MTIMEdate_extract_decade_bulk, "decade", date, int, date_decade, COPYFLAGS)
+func1(MTIMEdate_extract_year, MTIMEdate_extract_year_bulk, "year", date, int, date_year, COPYFLAGS)
+func1(MTIMEdate_extract_quarter, MTIMEdate_extract_quarter_bulk, "quarter", date, int, date_quarter, SETFLAGS)
+func1(MTIMEdate_extract_month, MTIMEdate_extract_month_bulk, "month", date, int, date_month, SETFLAGS)
+func1(MTIMEdate_extract_day, MTIMEdate_extract_day_bulk, "day", date, int, date_day, SETFLAGS)
+func1(MTIMEdaytime_extract_hours, MTIMEdaytime_extract_hours_bulk, "hours", daytime, int, daytime_hour, COPYFLAGS)
+func1(MTIMEdaytime_extract_minutes, MTIMEdaytime_extract_minutes_bulk, "minutes", daytime, int, daytime_min, SETFLAGS)
+func1(MTIMEdaytime_extract_sql_seconds, MTIMEdaytime_extract_sql_seconds_bulk, "seconds", daytime, int, daytime_sec_usec, SETFLAGS)
+
+str
+MTIMEdate_extract_dayofyear(int *ret, const date *d)
+{
+	*ret = date_dayofyear(*d);
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEdate_extract_weekofyear(int *ret, const date *d)
+{
+	*ret = date_weekofyear(*d);
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEdate_extract_dayofweek(int *ret, const date *d)
+{
+	*ret = date_dayofweek(*d);
+	return MAL_SUCCEED;
+}
+
+static inline lng
+TSDIFF(timestamp t1, timestamp t2)
+{
+	lng diff = timestamp_diff(t1, t2);
+	if (!is_lng_nil(diff)) {
+#ifndef TRUNCATE_NUMBERS
+		if (diff < 0)
+			diff = -((-diff + 500) / 1000);
+		else
+			diff = (diff + 500) / 1000;
+#else
+		diff /= 1000;
+#endif
+	}
+	return diff;
+}
+func2(MTIMEtimestamp_diff_msec, MTIMEtimestamp_diff_msec_bulk, "diff", timestamp, timestamp, lng, TSDIFF)
+
+str
+MTIMEtimestamp_century(int *ret, const timestamp *t)
+{
+	if (is_timestamp_nil(*t)) {
+		*ret = int_nil;
+	} else {
+		int y = date_year(timestamp_date(*t));
+		if (y > 0)
+			*ret = (y - 1) / 100 + 1;
+		else
+			*ret = -((-y - 1) / 100 + 1);
+	}
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtimestamp_decade(int *ret, const timestamp *t)
+{
+	if (is_timestamp_nil(*t)) {
+		*ret = int_nil;
+	} else {
+		*ret = date_year(timestamp_date(*t)) / 10;
+	}
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtimestamp_year(int *ret, const timestamp *t)
+{
+	*ret = date_year(timestamp_date(*t));
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtimestamp_quarter(int *ret, const timestamp *t)
+{
+	*ret = is_timestamp_nil(*t) ? int_nil : (date_month(timestamp_date(*t)) - 1) / 3 + 1;
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtimestamp_month(int *ret, const timestamp *t)
+{
+	*ret = date_month(timestamp_date(*t));
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtimestamp_day(int *ret, const timestamp *t)
+{
+	*ret = date_day(timestamp_date(*t));
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtimestamp_hours(int *ret, const timestamp *t)
+{
+	*ret = daytime_hour(timestamp_daytime(*t));
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtimestamp_minutes(int *ret, const timestamp *t)
+{
+	*ret = daytime_min(timestamp_daytime(*t));
+	return MAL_SUCCEED;
+}
+
+#define timestamp_extract_usecond(ts)	daytime_sec_usec(timestamp_daytime(ts))
+func1(MTIMEtimestamp_sql_seconds, MTIMEtimestamp_sql_seconds_bulk, "sql_seconds", timestamp, int, timestamp_extract_usecond, SETFLAGS)
+
+str
+MTIMEsql_year(int *ret, const int *months)
+{
+	*ret = is_int_nil(*months) ? int_nil : *months / 12;
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEsql_month(int *ret, const int *months)
+{
+	*ret = is_int_nil(*months) ? int_nil : *months % 12;
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEsql_day(lng *ret, const lng *msecs)
+{
+	*ret = is_lng_nil(*msecs) ? lng_nil : *msecs / (24*60*60*1000);
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEsql_hours(int *ret, const lng *msecs)
+{
+	*ret = is_lng_nil(*msecs) ? int_nil : (int) ((*msecs % (24*60*60*1000)) / (60*60*1000));
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEsql_minutes(int *ret, const lng *msecs)
+{
+	*ret = is_lng_nil(*msecs) ? int_nil : (int) ((*msecs % (60*60*1000)) / (60*1000));
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEsql_seconds(int *ret, const lng *msecs)
+{
+	*ret = is_lng_nil(*msecs) ? int_nil : (int) ((*msecs % (60*1000)) / 1000);
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEdate_fromstr(date *ret, const char *const *s)
+{
+	if (date_fromstr(*s, &(size_t){sizeof(date)}, &ret, true) < 0)
+		throw(MAL, "cald.date", GDK_EXCEPTION);
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEdate_date(date *dst, const date *src)
+{
+	*dst = *src;
+	return MAL_SUCCEED;
+}
+
+func1(MTIMEtimestamp_extract_date, MTIMEtimestamp_extract_date_bulk, "date", timestamp, date, timestamp_date, COPYFLAGS)
+
+str
+MTIMEtimestamp_fromstr(timestamp *ret, const char *const *s)
+{
+	if (timestamp_fromstr(*s, &(size_t){sizeof(timestamp)}, &ret, true) < 0)
+		throw(MAL, "calc.timestamp", GDK_EXCEPTION);
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtimestamp_timestamp(timestamp *dst, const timestamp *src)
+{
+	*dst = *src;
+	return MAL_SUCCEED;
+}
 
 #define mkts(dt)	timestamp_create(dt, daytime_create(0, 0, 0, 0))
-func1(MTIMEtimestamp_fromdate, "timestamp_fromdate", date, timestamp,
-	  mkts, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
+func1(MTIMEtimestamp_fromdate, MTIMEtimestamp_fromdate_bulk, "timestamp", date, timestamp, mkts, COPYFLAGS)
 
-#define seconds_since_epoch(t) is_timestamp_nil(t) ? int_nil : (int) (timestamp_diff(t, unixepoch) / 1000000);
-func1(MTIMEseconds_since_epoch, "seconds_since_epoch", timestamp, int,
-	  seconds_since_epoch, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
+str
+MTIMEseconds_since_epoch(int *ret, const timestamp *t)
+{
+	lng df = timestamp_diff(*t, unixepoch);
+	*ret = is_lng_nil(df) ? int_nil : (int) (df / 1000000);
+	return MAL_SUCCEED;
+}
 
 #define mktsfromsec(sec)	(is_int_nil(sec) ?							\
 							 timestamp_nil :							\
@@ -764,63 +620,77 @@ func1(MTIMEseconds_since_epoch, "seconds_since_epoch", timestamp, int,
 							 timestamp_nil :							\
 							 timestamp_add_usec(unixepoch,				\
 												(msec) * LL_CONSTANT(1000)))
-/* TODO later I have to remove this call */
-func1(MTIMEtimestamp_fromsecond_epoch, "timestamp_fromsecond_epoch", int, timestamp,
-	  mktsfromsec, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEtimestamp_fromsecond, "timestamp_fromsecond", int, timestamp,
-	  mktsfromsec, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-/* TODO later I have to remove this call */
-func1(MTIMEtimestamp_frommsec_epoch, "timestamp_frommsec_epoch", lng, timestamp,
-	  mktsfrommsec, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEtimestamp_frommsec, "timestamp_frommsec", lng, timestamp,
-	  mktsfrommsec, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
+func1(MTIMEtimestamp_fromsecond, MTIMEtimestamp_fromsecond_bulk, "timestamp", int, timestamp, mktsfromsec, COPYFLAGS)
+func1(MTIMEtimestamp_frommsec, MTIMEtimestamp_frommsec_bulk, "timestamp", lng, timestamp, mktsfrommsec, COPYFLAGS)
 
-static inline str
-daytime_fromstr_func(daytime *ret, str s)
+str
+MTIMEdaytime_fromstr(daytime *ret, const char *const *s)
 {
-	if (daytime_fromstr(s, &(size_t){sizeof(daytime)}, &ret, false) < 0)
-		throw(MAL, "mtime.daytime_fromstr", GDK_EXCEPTION);
+	if (daytime_fromstr(*s, &(size_t){sizeof(daytime)}, &ret, true) < 0)
+		throw(MAL, "calc.daytime", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
-func1(MTIMEdaytime_fromstr, "daytime_fromstr", str, daytime,
-	  daytime_fromstr_func, SETFLAGS, func1_except,
-	  DEC_ITER, DEC_VAR_R,
-	  INIT_ITERIN, INIT_VAROUT, GET_NEXT_ITER)
 
-#define daytime_daytime(m) m
-func1(MTIMEdaytime_daytime, "daytime_daytime", daytime, daytime,
-	  daytime_daytime, COPYFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-
-static inline str
-daytime_fromseconds(daytime *ret, lng secs)
+str
+MTIMEdaytime_daytime(daytime *dst, const daytime *src)
 {
-	if (is_lng_nil(secs))
+	*dst = *src;
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEdaytime_fromseconds(daytime *ret, const lng *secs)
+{
+	if (is_lng_nil(*secs))
 		*ret = daytime_nil;
-	else if (secs < 0 || secs >= 24*60*60)
-		throw(MAL, "mtime.daytime_fromseconds", SQLSTATE(42000) ILLEGAL_ARGUMENT);
+	else if (*secs < 0 || *secs >= 24*60*60)
+		throw(MAL, "calc.daytime", SQLSTATE(42000) ILLEGAL_ARGUMENT);
 	else
-		*ret = (daytime) (secs * 1000000);
+		*ret = (daytime) (*secs * 1000000);
 	return MAL_SUCCEED;
 }
-func1(MTIMEdaytime_fromseconds, "daytime_fromseconds", lng, daytime,
-	  daytime_fromseconds, COPYFLAGS, func1_except,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
 
-func1(MTIMEtimestamp_extract_daytime, "timestamp_extract_daytime", timestamp, daytime,
-	  timestamp_daytime, SETFLAGS, func1_noexcept,
-	  DEC_VAR_R, DEC_VAR_R,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
+str
+MTIMEdaytime_fromseconds_bulk(bat *ret, bat *bid)
+{
+	BAT *b, *bn;
+	BUN n;
+	const lng *s;
+	daytime *d;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "batcalc.daytime", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	n = BATcount(b);
+	if ((bn = COLnew(b->hseqbase, TYPE_daytime, n, TRANSIENT)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "batcalc.daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	s = Tloc(b, 0);
+	d = Tloc(bn, 0);
+	bn->tnil = false;
+	for (BUN i = 0; i < n; i++) {
+		if (is_lng_nil(s[i])) {
+			bn->tnil = true;
+			d[i] = daytime_nil;
+		} else if (s[i] < 0 || s[i] >= 24*60*60) {
+			BBPunfix(b->batCacheid);
+			BBPreclaim(bn);
+			throw(MAL, "batcalc.daytime", SQLSTATE(42000) ILLEGAL_ARGUMENT);
+		} else {
+			d[i] = (daytime) (s[i] * 1000000);
+		}
+	}
+	bn->tnonil = !bn->tnil;
+	BATsetcount(bn, n);
+	bn->tsorted = b->tsorted;
+	bn->trevsorted = b->trevsorted;
+	bn->tkey = false;
+	BBPunfix(b->batCacheid);
+	BBPkeepref(*ret = bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+func1(MTIMEtimestamp_extract_daytime, MTIMEtimestamp_extract_daytime_bulk, "daytime", timestamp, daytime, timestamp_daytime, SETFLAGS)
 
 /* return current system time zone offset in seconds East of Greenwich */
 static int
@@ -890,7 +760,7 @@ local_timezone(int *isdstp)
 	return tzone;
 }
 
-static str
+str
 MTIMElocal_timezone_msec(lng *ret)
 {
 	int tzone = local_timezone(NULL);
@@ -899,14 +769,18 @@ MTIMElocal_timezone_msec(lng *ret)
 }
 
 static str
-timestamp_to_str(str *buf, const timestamp *d, str *format, const char *type, const char *malfunc)
+timestamp_to_str(str *ret, const timestamp *d, const char *const *format,
+				 const char *type, const char *malfunc)
 {
+	char buf[512];
 	date dt;
 	daytime t;
 	struct tm tm;
 
 	if (is_timestamp_nil(*d) || strNil(*format)) {
-		strcpy(*buf, str_nil);
+		*ret = GDKstrdup(str_nil);
+		if (*ret == NULL)
+			throw(MAL, malfunc, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	dt = timestamp_date(*d);
@@ -921,13 +795,16 @@ timestamp_to_str(str *buf, const timestamp *d, str *format, const char *type, co
 		.tm_min = daytime_min(t),
 		.tm_sec = daytime_sec(t),
 	};
-	if (strftime(*buf, MTIME_STR_BUFFER_LENGTH, *format, &tm) == 0)
+	if (strftime(buf, sizeof(buf), *format, &tm) == 0)
 		throw(MAL, malfunc, "cannot convert %s", type);
+	*ret = GDKstrdup(buf);
+	if (*ret == NULL)
+		throw(MAL, malfunc, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
 static str
-str_to_timestamp(timestamp *ret, str *s, str *format, const char *type, const char *malfunc)
+str_to_timestamp(timestamp *ret, const char *const *s, const char *const *format, const char *type, const char *malfunc)
 {
 	struct tm tm = (struct tm) {0};
 	time_t t;
@@ -973,364 +850,51 @@ str_to_timestamp(timestamp *ret, str *s, str *format, const char *type, const ch
 	return MAL_SUCCEED;
 }
 
-static inline str
-str_to_date(date *ret, str s, str format)
+str
+MTIMEstr_to_date(date *ret, const char *const *s, const char *const *format)
 {
-	str msg = MAL_SUCCEED;
 	timestamp ts;
-	if ((msg = str_to_timestamp(&ts, &s, &format, "date", "mtime.str_to_date")) != MAL_SUCCEED)
+	str msg = str_to_timestamp(&ts, s, format, "date", "mtime.str_to_date");
+	if (msg != MAL_SUCCEED)
 		return msg;
 	*ret = timestamp_date(ts);
 	return MAL_SUCCEED;
 }
-func2(MTIMEstr_to_date, "str_to_date",
-	  str, str, date, str_to_date, func2_except,
-	  DEC_ITER, DEC_ITER, DEC_VAR_R, DEC_INT,
-	  INIT_ITERIN, INIT_ITERIN, INIT_VAROUT,
-	  GET_NEXT_ITER, GET_NEXT_ITER,
-	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
-static inline str
-str_to_time(daytime *ret, str s, str format)
+str
+MTIMEdate_to_str(str *ret, const date *d, const char *const *format)
 {
-	str msg = MAL_SUCCEED;
+	timestamp ts = timestamp_create(*d, timestamp_daytime(timestamp_current()));
+	return timestamp_to_str(ret, &ts, format, "date", "mtime.date_to_str");
+}
+
+str
+MTIMEstr_to_time(daytime *ret, const char *const *s, const char *const *format)
+{
 	timestamp ts;
-	if ((msg = str_to_timestamp(&ts, &s, &format, "time", "mtime.str_to_time")) != MAL_SUCCEED)
+	str msg = str_to_timestamp(&ts, s, format, "time", "mtime.str_to_time");
+	if (msg != MAL_SUCCEED)
 		return msg;
 	*ret = timestamp_daytime(ts);
 	return MAL_SUCCEED;
 }
-func2(MTIMEstr_to_time, "str_to_time",
-	  str, str, daytime, str_to_time, func2_except,
-	  DEC_ITER, DEC_ITER, DEC_VAR_R, DEC_INT,
-	  INIT_ITERIN, INIT_ITERIN, INIT_VAROUT,
-	  GET_NEXT_ITER, GET_NEXT_ITER,
-	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
-static inline str
-str_to_timestamp_func(timestamp *ret, str s, str format)
+str
+MTIMEtime_to_str(str *ret, const daytime *d, const char *const *format)
 {
-	return str_to_timestamp(ret, &s, &format, "timestamp", "mtime.str_to_timestamp");
+	timestamp ts = timestamp_create(timestamp_date(timestamp_current()), *d);
+	return timestamp_to_str(ret, &ts, format, "time", "mtime.time_to_str");
 }
-func2(MTIMEstr_to_timestamp, "str_to_timestamp",
-	  str, str, timestamp, str_to_timestamp_func, func2_except,
-	  DEC_ITER, DEC_ITER, DEC_VAR_R, DEC_INT,
-	  INIT_ITERIN, INIT_ITERIN, INIT_VAROUT,
-	  GET_NEXT_ITER, GET_NEXT_ITER,
-	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
-static inline str
-date_to_str(str *ret, date d, str format)
+str
+MTIMEstr_to_timestamp(timestamp *ret, const char *const *s, const char *const *format)
 {
-	timestamp ts = timestamp_create(d, timestamp_daytime(timestamp_current()));
-	return timestamp_to_str(ret, &ts, &format, "date", "mtime.date_to_str");
+	return str_to_timestamp(ret, s, format, "timestamp", "mtime.str_to_timestamp");
 }
-func2(MTIMEdate_to_str, "date_to_str",
-	  date, str, str, date_to_str, func2_except,
-	  DEC_VAR, DEC_ITER, DEC_NOTHING, DEC_BUFFER,
-	  INIT_VARIN, INIT_ITERIN, INIT_NOTHING,
-	  GET_NEXT_VAR, GET_NEXT_ITER,
-	  APPEND_STR, FINISH_BUFFER_SINGLE, FINISH_BUFFER_MULTI)
 
-static inline str
-time_to_str(str *ret, daytime d, str format)
+str
+MTIMEtimestamp_to_str(str *ret, const timestamp *d, const char *const *format)
 {
-	timestamp ts = timestamp_create(timestamp_date(timestamp_current()), d);
-	return timestamp_to_str(ret, &ts, &format, "time", "mtime.time_to_str");
+	return timestamp_to_str(ret, d, format,
+							"timestamp", "mtime.timestamp_to_str");
 }
-func2(MTIMEtime_to_str, "time_to_str",
-	  daytime, str, str, time_to_str, func2_except,
-	  DEC_VAR, DEC_ITER, DEC_NOTHING, DEC_BUFFER,
-	  INIT_VARIN, INIT_ITERIN, INIT_NOTHING,
-	  GET_NEXT_VAR, GET_NEXT_ITER,
-	  APPEND_STR, FINISH_BUFFER_SINGLE, FINISH_BUFFER_MULTI)
-
-static inline str
-timestamp_to_str_func(str *ret, timestamp d, str format)
-{
-	return timestamp_to_str(ret, &d, &format, "timestamp", "mtime.timestamp_to_str");
-}
-func2(MTIMEtimestamp_to_str, "timestamp_to_str",
-	  timestamp, str, str, timestamp_to_str_func, func2_except,
-	  DEC_VAR, DEC_ITER, DEC_NOTHING, DEC_BUFFER,
-	  INIT_VARIN, INIT_ITERIN, INIT_NOTHING,
-	  GET_NEXT_VAR, GET_NEXT_ITER,
-	  APPEND_STR, FINISH_BUFFER_SINGLE, FINISH_BUFFER_MULTI)
-
-#include "mel.h"
-static mel_func mtime_init_funcs[] = {
- command("mtime", "epoch", MTIMEseconds_since_epoch, false, "unix-time (epoch) support: seconds since epoch", args(1,2, arg("",int),arg("t",timestamp))),
- pattern("batmtime", "epoch", MTIMEseconds_since_epoch_bulk, false, "", args(1,2, batarg("",int),batarg("t",timestamp))),
- pattern("batmtime", "epoch", MTIMEseconds_since_epoch_bulk, false, "", args(1,3, batarg("",int),batarg("t",timestamp),batarg("s",oid))),
- command("mtime", "epoch", MTIMEtimestamp_fromsecond_epoch, false, "convert seconds since epoch into a timestamp", args(1,2, arg("",timestamp),arg("t",int))),
- pattern("batmtime", "epoch", MTIMEtimestamp_fromsecond_epoch_bulk, false, "", args(1,2, batarg("",timestamp),batarg("t",int))),
- pattern("batmtime", "epoch", MTIMEtimestamp_fromsecond_epoch_bulk, false, "", args(1,3, batarg("",timestamp),batarg("t",int),batarg("s",oid))),
- command("mtime", "epoch", MTIMEtimestamp_frommsec_epoch, false, "convert milli seconds since epoch into a timestamp", args(1,2, arg("",timestamp),arg("t",lng))),
- pattern("batmtime", "epoch", MTIMEtimestamp_frommsec_epoch_bulk, false, "", args(1,2, batarg("",timestamp),batarg("t",lng))),
- pattern("batmtime", "epoch", MTIMEtimestamp_frommsec_epoch_bulk, false, "", args(1,3, batarg("",timestamp),batarg("t",lng),batarg("s",oid))),
- command("mtime", "date_sub_msec_interval", MTIMEdate_sub_msec_interval, false, "", args(1,3, arg("",date),arg("t",date),arg("ms",lng))),
- pattern("batmtime", "date_sub_msec_interval", MTIMEdate_sub_msec_interval_bulk, false, "", args(1,3, batarg("",date),batarg("t",date),batarg("ms",lng))),
- pattern("batmtime", "date_sub_msec_interval", MTIMEdate_sub_msec_interval_bulk_p1, false, "", args(1,3, batarg("",date),arg("t",date),batarg("ms",lng))),
- pattern("batmtime", "date_sub_msec_interval", MTIMEdate_sub_msec_interval_bulk_p2, false, "", args(1,3, batarg("",date),batarg("t",date),arg("ms",lng))),
- pattern("batmtime", "date_sub_msec_interval", MTIMEdate_sub_msec_interval_bulk, false, "", args(1,5, batarg("",date),batarg("t",date),batarg("ms",lng),batarg("s1",oid),batarg("s2",oid))),
- pattern("batmtime", "date_sub_msec_interval", MTIMEdate_sub_msec_interval_bulk_p1, false, "", args(1,4, batarg("",date),arg("t",date),batarg("ms",lng),batarg("s",oid))),
- pattern("batmtime", "date_sub_msec_interval", MTIMEdate_sub_msec_interval_bulk_p2, false, "", args(1,4, batarg("",date),batarg("t",date),arg("ms",lng),batarg("s",oid))),
- command("mtime", "date_add_msec_interval", MTIMEdate_add_msec_interval, false, "", args(1,3, arg("",date),arg("t",date),arg("ms",lng))),
- pattern("batmtime", "date_add_msec_interval", MTIMEdate_add_msec_interval_bulk, false, "", args(1,3, batarg("",date),batarg("t",date),batarg("ms",lng))),
- pattern("batmtime", "date_add_msec_interval", MTIMEdate_add_msec_interval_bulk_p1, false, "", args(1,3, batarg("",date),arg("t",date),batarg("ms",lng))),
- pattern("batmtime", "date_add_msec_interval", MTIMEdate_add_msec_interval_bulk_p2, false, "", args(1,3, batarg("",date),batarg("t",date),arg("ms",lng))),
- pattern("batmtime", "date_add_msec_interval", MTIMEdate_add_msec_interval_bulk, false, "", args(1,5, batarg("",date),batarg("t",date),batarg("ms",lng),batarg("s1",oid),batarg("s2",oid))),
- pattern("batmtime", "date_add_msec_interval", MTIMEdate_add_msec_interval_bulk_p1, false, "", args(1,4, batarg("",date),arg("t",date),batarg("ms",lng),batarg("s",oid))),
- pattern("batmtime", "date_add_msec_interval", MTIMEdate_add_msec_interval_bulk_p2, false, "", args(1,4, batarg("",date),batarg("t",date),arg("ms",lng),batarg("s",oid))),
- command("mtime", "timestamp_sub_msec_interval", MTIMEtimestamp_sub_msec_interval, false, "", args(1,3, arg("",timestamp),arg("t",timestamp),arg("ms",lng))),
- pattern("batmtime", "timestamp_sub_msec_interval", MTIMEtimestamp_sub_msec_interval_bulk, false, "", args(1,3, batarg("",timestamp),batarg("t",timestamp),batarg("ms",lng))),
- pattern("batmtime", "timestamp_sub_msec_interval", MTIMEtimestamp_sub_msec_interval_bulk_p1, false, "", args(1,3, batarg("",timestamp),arg("t",timestamp),batarg("ms",lng))),
- pattern("batmtime", "timestamp_sub_msec_interval", MTIMEtimestamp_sub_msec_interval_bulk_p2, false, "", args(1,3, batarg("",timestamp),batarg("t",timestamp),arg("ms",lng))),
- pattern("batmtime", "timestamp_sub_msec_interval", MTIMEtimestamp_sub_msec_interval_bulk, false, "", args(1,5, batarg("",timestamp),batarg("t",timestamp),batarg("ms",lng),batarg("s1",oid),batarg("s2",oid))),
- pattern("batmtime", "timestamp_sub_msec_interval", MTIMEtimestamp_sub_msec_interval_bulk_p1, false, "", args(1,4, batarg("",timestamp),arg("t",timestamp),batarg("ms",lng),batarg("s",oid))),
- pattern("batmtime", "timestamp_sub_msec_interval", MTIMEtimestamp_sub_msec_interval_bulk_p2, false, "", args(1,4, batarg("",timestamp),batarg("t",timestamp),arg("ms",lng),batarg("s",oid))),
- command("mtime", "timestamp_add_msec_interval", MTIMEtimestamp_add_msec_interval, false, "", args(1,3, arg("",timestamp),arg("t",timestamp),arg("ms",lng))),
- pattern("batmtime", "timestamp_add_msec_interval", MTIMEtimestamp_add_msec_interval_bulk, false, "", args(1,3, batarg("",timestamp),batarg("t",timestamp),batarg("ms",lng))),
- pattern("batmtime", "timestamp_add_msec_interval", MTIMEtimestamp_add_msec_interval_bulk_p1, false, "", args(1,3, batarg("",timestamp),arg("t",timestamp),batarg("ms",lng))),
- pattern("batmtime", "timestamp_add_msec_interval", MTIMEtimestamp_add_msec_interval_bulk_p2, false, "", args(1,3, batarg("",timestamp),batarg("t",timestamp),arg("ms",lng))),
- pattern("batmtime", "timestamp_add_msec_interval", MTIMEtimestamp_add_msec_interval_bulk, false, "", args(1,5, batarg("",timestamp),batarg("t",timestamp),batarg("ms",lng),batarg("s1",oid),batarg("s2",oid))),
- pattern("batmtime", "timestamp_add_msec_interval", MTIMEtimestamp_add_msec_interval_bulk_p1, false, "", args(1,4, batarg("",timestamp),arg("t",timestamp),batarg("ms",lng),batarg("s",oid))),
- pattern("batmtime", "timestamp_add_msec_interval", MTIMEtimestamp_add_msec_interval_bulk_p2, false, "", args(1,4, batarg("",timestamp),batarg("t",timestamp),arg("ms",lng),batarg("s",oid))),
- command("mtime", "timestamp_sub_month_interval", MTIMEtimestamp_sub_month_interval, false, "Subtract months from a timestamp", args(1,3, arg("",timestamp),arg("t",timestamp),arg("s",int))),
- pattern("batmtime", "timestamp_sub_month_interval", MTIMEtimestamp_sub_month_interval_bulk, false, "", args(1,3, batarg("",timestamp),batarg("t",timestamp),batarg("s",int))),
- pattern("batmtime", "timestamp_sub_month_interval", MTIMEtimestamp_sub_month_interval_bulk_p1, false, "", args(1,3, batarg("",timestamp),arg("t",timestamp),batarg("s",int))),
- pattern("batmtime", "timestamp_sub_month_interval", MTIMEtimestamp_sub_month_interval_bulk_p2, false, "", args(1,3, batarg("",timestamp),batarg("t",timestamp),arg("s",int))),
- pattern("batmtime", "timestamp_sub_month_interval", MTIMEtimestamp_sub_month_interval_bulk, false, "", args(1,5, batarg("",timestamp),batarg("t",timestamp),batarg("s",int),batarg("s1",oid),batarg("s2",oid))),
- pattern("batmtime", "timestamp_sub_month_interval", MTIMEtimestamp_sub_month_interval_bulk_p1, false, "", args(1,4, batarg("",timestamp),arg("t",timestamp),batarg("s",int),batarg("s",oid))),
- pattern("batmtime", "timestamp_sub_month_interval", MTIMEtimestamp_sub_month_interval_bulk_p2, false, "", args(1,4, batarg("",timestamp),batarg("t",timestamp),arg("s",int),batarg("s",oid))),
- command("mtime", "timestamp_add_month_interval", MTIMEtimestamp_add_month_interval, false, "Add months to a timestamp", args(1,3, arg("",timestamp),arg("t",timestamp),arg("s",int))),
- pattern("batmtime", "timestamp_add_month_interval", MTIMEtimestamp_add_month_interval_bulk, false, "", args(1,3, batarg("",timestamp),batarg("t",timestamp),batarg("s",int))),
- pattern("batmtime", "timestamp_add_month_interval", MTIMEtimestamp_add_month_interval_bulk_p1, false, "", args(1,3, batarg("",timestamp),arg("t",timestamp),batarg("s",int))),
- pattern("batmtime", "timestamp_add_month_interval", MTIMEtimestamp_add_month_interval_bulk_p2, false, "", args(1,3, batarg("",timestamp),batarg("t",timestamp),arg("s",int))),
- pattern("batmtime", "timestamp_add_month_interval", MTIMEtimestamp_add_month_interval_bulk, false, "", args(1,5, batarg("",timestamp),batarg("t",timestamp),batarg("s",int),batarg("s1",oid),batarg("s2",oid))),
- pattern("batmtime", "timestamp_add_month_interval", MTIMEtimestamp_add_month_interval_bulk_p1, false, "", args(1,4, batarg("",timestamp),arg("t",timestamp),batarg("s",int),batarg("s",oid))),
- pattern("batmtime", "timestamp_add_month_interval", MTIMEtimestamp_add_month_interval_bulk_p2, false, "", args(1,4, batarg("",timestamp),batarg("t",timestamp),arg("s",int),batarg("s",oid))),
- command("mtime", "time_sub_msec_interval", MTIMEtime_sub_msec_interval, false, "Subtract seconds from a time", args(1,3, arg("",daytime),arg("t",daytime),arg("ms",lng))),
- pattern("batmtime", "time_sub_msec_interval", MTIMEtime_sub_msec_interval_bulk, false, "", args(1,3, batarg("",daytime),batarg("t",daytime),batarg("ms",lng))),
- pattern("batmtime", "time_sub_msec_interval", MTIMEtime_sub_msec_interval_bulk_p1, false, "", args(1,3, batarg("",daytime),arg("t",daytime),batarg("ms",lng))),
- pattern("batmtime", "time_sub_msec_interval", MTIMEtime_sub_msec_interval_bulk_p2, false, "", args(1,3, batarg("",daytime),batarg("t",daytime),arg("ms",lng))),
- pattern("batmtime", "time_sub_msec_interval", MTIMEtime_sub_msec_interval_bulk, false, "", args(1,5, batarg("",daytime),batarg("t",daytime),batarg("ms",lng),batarg("s1",oid),batarg("s2",oid))),
- pattern("batmtime", "time_sub_msec_interval", MTIMEtime_sub_msec_interval_bulk_p1, false, "", args(1,4, batarg("",daytime),arg("t",daytime),batarg("ms",lng),batarg("s",oid))),
- pattern("batmtime", "time_sub_msec_interval", MTIMEtime_sub_msec_interval_bulk_p2, false, "", args(1,4, batarg("",daytime),batarg("t",daytime),arg("ms",lng),batarg("s",oid))),
- command("mtime", "time_add_msec_interval", MTIMEtime_add_msec_interval, false, "Add seconds to a time", args(1,3, arg("",daytime),arg("t",daytime),arg("ms",lng))),
- pattern("batmtime", "time_add_msec_interval", MTIMEtime_add_msec_interval_bulk, false, "", args(1,3, batarg("",daytime),batarg("t",daytime),batarg("ms",lng))),
- pattern("batmtime", "time_add_msec_interval", MTIMEtime_add_msec_interval_bulk_p1, false, "", args(1,3, batarg("",daytime),arg("t",daytime),batarg("ms",lng))),
- pattern("batmtime", "time_add_msec_interval", MTIMEtime_add_msec_interval_bulk_p2, false, "", args(1,3, batarg("",daytime),batarg("t",daytime),arg("ms",lng))),
- pattern("batmtime", "time_add_msec_interval", MTIMEtime_add_msec_interval_bulk, false, "", args(1,5, batarg("",daytime),batarg("t",daytime),batarg("ms",lng),batarg("s1",oid),batarg("s2",oid))),
- pattern("batmtime", "time_add_msec_interval", MTIMEtime_add_msec_interval_bulk_p1, false, "", args(1,4, batarg("",daytime),arg("t",daytime),batarg("ms",lng),batarg("s",oid))),
- pattern("batmtime", "time_add_msec_interval", MTIMEtime_add_msec_interval_bulk_p2, false, "", args(1,4, batarg("",daytime),batarg("t",daytime),arg("ms",lng),batarg("s",oid))),
- command("mtime", "diff", MTIMEdaytime_diff_msec, false, "returns the number of msec between 'val1' and 'val2'.", args(1,3, arg("",lng),arg("val1",daytime),arg("val2",daytime))),
- pattern("batmtime", "diff", MTIMEdaytime_diff_msec_bulk, false, "", args(1,3, batarg("",lng),batarg("val1",daytime),batarg("val2",daytime))),
- pattern("batmtime", "diff", MTIMEdaytime_diff_msec_bulk_p1, false, "", args(1,3, batarg("",lng),arg("val1",daytime),batarg("val2",daytime))),
- pattern("batmtime", "diff", MTIMEdaytime_diff_msec_bulk_p2, false, "", args(1,3, batarg("",lng),batarg("val1",daytime),arg("val2",daytime))),
- pattern("batmtime", "diff", MTIMEdaytime_diff_msec_bulk, false, "", args(1,5, batarg("",lng),batarg("val1",daytime),batarg("val2",daytime),batarg("s1",oid),batarg("s2",oid))),
- pattern("batmtime", "diff", MTIMEdaytime_diff_msec_bulk_p1, false, "", args(1,4, batarg("",lng),arg("val1",daytime),batarg("val2",daytime),batarg("s",oid))),
- pattern("batmtime", "diff", MTIMEdaytime_diff_msec_bulk_p2, false, "", args(1,4, batarg("",lng),batarg("val1",daytime),arg("val2",daytime),batarg("s",oid))),
- command("mtime", "date_sub_month_interval", MTIMEdate_submonths, false, "Subtract months from a date", args(1,3, arg("",date),arg("t",date),arg("months",int))),
- pattern("batmtime", "date_sub_month_interval", MTIMEdate_submonths_bulk, false, "", args(1,3, batarg("",date),batarg("t",date),batarg("months",int))),
- pattern("batmtime", "date_sub_month_interval", MTIMEdate_submonths_bulk_p1, false, "", args(1,3, batarg("",date),arg("t",date),batarg("months",int))),
- pattern("batmtime", "date_sub_month_interval", MTIMEdate_submonths_bulk_p2, false, "", args(1,3, batarg("",date),batarg("t",date),arg("months",int))),
- pattern("batmtime", "date_sub_month_interval", MTIMEdate_submonths_bulk, false, "", args(1,5, batarg("",date),batarg("t",date),batarg("months",int),batarg("s1",oid),batarg("s2",oid))),
- pattern("batmtime", "date_sub_month_interval", MTIMEdate_submonths_bulk_p1, false, "", args(1,4, batarg("",date),arg("t",date),batarg("months",int),batarg("s",oid))),
- pattern("batmtime", "date_sub_month_interval", MTIMEdate_submonths_bulk_p2, false, "", args(1,4, batarg("",date),batarg("t",date),arg("months",int),batarg("s",oid))),
- command("mtime", "local_timezone", MTIMElocal_timezone_msec, false, "get the local timezone in seconds", args(1,1, arg("",lng))),
- command("mtime", "century", MTIMEdate_extract_century, false, "extracts century from date.", args(1,2, arg("",int),arg("d",date))),
- pattern("batmtime", "century", MTIMEdate_extract_century_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
- pattern("batmtime", "century", MTIMEdate_extract_century_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),
- command("mtime", "decade", MTIMEdate_extract_decade, false, "extracts decade from date.", args(1,2, arg("",int),arg("d",date))),
- pattern("batmtime", "decade", MTIMEdate_extract_decade_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
- pattern("batmtime", "decade", MTIMEdate_extract_decade_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),
- command("mtime", "year", MTIMEdate_extract_year, false, "extracts year from date.", args(1,2, arg("",int),arg("d",date))),
- pattern("batmtime", "year", MTIMEdate_extract_year_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
- pattern("batmtime", "year", MTIMEdate_extract_year_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),
- command("mtime", "quarter", MTIMEdate_extract_quarter, false, "extracts quarter from date", args(1,2, arg("",int),arg("d",date))),
- pattern("batmtime", "quarter", MTIMEdate_extract_quarter_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
- pattern("batmtime", "quarter", MTIMEdate_extract_quarter_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),
- command("mtime", "month", MTIMEdate_extract_month, false, "extracts month from date", args(1,2, arg("",int),arg("d",date))),
- pattern("batmtime", "month", MTIMEdate_extract_month_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
- pattern("batmtime", "month", MTIMEdate_extract_month_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),
- command("mtime", "day", MTIMEdate_extract_day, false, "extracts day from date ", args(1,2, arg("",int),arg("d",date))),
- pattern("batmtime", "day", MTIMEdate_extract_day_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
- pattern("batmtime", "day", MTIMEdate_extract_day_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),
- command("mtime", "epoch_ms", MTIMEdate_extract_epoch_ms, false, "", args(1,2, arg("",lng),arg("d",date))),
- pattern("batmtime", "epoch_ms", MTIMEdate_extract_epoch_ms_bulk, false, "", args(1,2, batarg("",lng),batarg("d",date))),
- pattern("batmtime", "epoch_ms", MTIMEdate_extract_epoch_ms_bulk, false, "", args(1,3, batarg("",lng),batarg("d",date),batarg("s",oid))),
- command("mtime", "hours", MTIMEdaytime_extract_hours, false, "extracts hour from daytime", args(1,2, arg("",int),arg("h",daytime))),
- pattern("batmtime", "hours", MTIMEdaytime_extract_hours_bulk, false, "", args(1,2, batarg("",int),batarg("d",daytime))),
- pattern("batmtime", "hours", MTIMEdaytime_extract_hours_bulk, false, "", args(1,3, batarg("",int),batarg("d",daytime),batarg("s",oid))),
- command("mtime", "minutes", MTIMEdaytime_extract_minutes, false, "extracts minutes from daytime", args(1,2, arg("",int),arg("d",daytime))),
- pattern("batmtime", "minutes", MTIMEdaytime_extract_minutes_bulk, false, "", args(1,2, batarg("",int),batarg("d",daytime))),
- pattern("batmtime", "minutes", MTIMEdaytime_extract_minutes_bulk, false, "", args(1,3, batarg("",int),batarg("d",daytime),batarg("s",oid))),
- command("mtime", "sql_seconds", MTIMEdaytime_extract_sql_seconds, false, "extracts seconds (with fractional milliseconds) from daytime", args(1,2, arg("",int),arg("d",daytime))),
- pattern("batmtime", "sql_seconds", MTIMEdaytime_extract_sql_seconds_bulk, false, "", args(1,2, batarg("",int),batarg("d",daytime))),
- pattern("batmtime", "sql_seconds", MTIMEdaytime_extract_sql_seconds_bulk, false, "", args(1,3, batarg("",int),batarg("d",daytime),batarg("s",oid))),
- command("mtime", "epoch_ms", MTIMEdaytime_extract_epoch_ms, false, "", args(1,2, arg("",lng),arg("d",daytime))),
- pattern("batmtime", "epoch_ms", MTIMEdaytime_extract_epoch_ms_bulk, false, "", args(1,2, batarg("",lng),batarg("d",daytime))),
- pattern("batmtime", "epoch_ms", MTIMEdaytime_extract_epoch_ms_bulk, false, "", args(1,3, batarg("",lng),batarg("d",daytime),batarg("s",oid))),
- command("mtime", "addmonths", MTIMEdate_addmonths, false, "returns the date after a number of\nmonths (possibly negative).", args(1,3, arg("",date),arg("value",date),arg("months",int))),
- pattern("batmtime", "addmonths", MTIMEdate_addmonths_bulk, false, "", args(1,3, batarg("",date),batarg("value",date),batarg("months",int))),
- pattern("batmtime", "addmonths", MTIMEdate_addmonths_bulk_p1, false, "", args(1,3, batarg("",date),arg("value",date),batarg("months",int))),
- pattern("batmtime", "addmonths", MTIMEdate_addmonths_bulk_p2, false, "", args(1,3, batarg("",date),batarg("value",date),arg("months",int))),
- pattern("batmtime", "addmonths", MTIMEdate_addmonths_bulk, false, "", args(1,5, batarg("",date),batarg("value",date),batarg("months",int),batarg("s1",oid),batarg("s2",oid))),
- pattern("batmtime", "addmonths", MTIMEdate_addmonths_bulk_p1, false, "", args(1,4, batarg("",date),arg("value",date),batarg("months",int),batarg("s",oid))),
- pattern("batmtime", "addmonths", MTIMEdate_addmonths_bulk_p2, false, "", args(1,4, batarg("",date),batarg("value",date),arg("months",int),batarg("s",oid))),
- command("mtime", "diff", MTIMEdate_diff, false, "returns the number of days\nbetween 'val1' and 'val2'.", args(1,3, arg("",lng),arg("val1",date),arg("val2",date))),
- pattern("batmtime", "diff", MTIMEdate_diff_bulk, false, "", args(1,3, batarg("",lng),batarg("val1",date),batarg("val2",date))),
- pattern("batmtime", "diff", MTIMEdate_diff_bulk_p1, false, "", args(1,3, batarg("",lng),arg("val1",date),batarg("val2",date))),
- pattern("batmtime", "diff", MTIMEdate_diff_bulk_p2, false, "", args(1,3, batarg("",lng),batarg("val1",date),arg("val2",date))),
- pattern("batmtime", "diff", MTIMEdate_diff_bulk, false, "", args(1,5, batarg("",lng),batarg("val1",date),batarg("val2",date),batarg("s1",oid),batarg("s2",oid))),
- pattern("batmtime", "diff", MTIMEdate_diff_bulk_p1, false, "", args(1,4, batarg("",lng),arg("val1",date),batarg("val2",date),batarg("s",oid))),
- pattern("batmtime", "diff", MTIMEdate_diff_bulk_p2, false, "", args(1,4, batarg("",lng),batarg("val1",date),arg("val2",date),batarg("s",oid))),
- command("mtime", "dayofyear", MTIMEdate_extract_dayofyear, false, "Returns N where d is the Nth day\nof the year (january 1 returns 1)", args(1,2, arg("",int),arg("d",date))),
- pattern("batmtime", "dayofyear", MTIMEdate_extract_dayofyear_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
- pattern("batmtime", "dayofyear", MTIMEdate_extract_dayofyear_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),
- command("mtime", "weekofyear", MTIMEdate_extract_weekofyear, false, "Returns the week number in the year.", args(1,2, arg("",int),arg("d",date))),
- pattern("batmtime", "weekofyear", MTIMEdate_extract_weekofyear_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
- pattern("batmtime", "weekofyear", MTIMEdate_extract_weekofyear_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),
- command("mtime", "usweekofyear", MTIMEdate_extract_usweekofyear, false, "Returns the week number in the year, US style.", args(1,2, arg("",int),arg("d",date))),
- pattern("batmtime", "usweekofyear", MTIMEdate_extract_usweekofyear_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
- pattern("batmtime", "usweekofyear", MTIMEdate_extract_usweekofyear_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),
- command("mtime", "dayofweek", MTIMEdate_extract_dayofweek, false, "Returns the current day of the week\nwhere 1=monday, .., 7=sunday", args(1,2, arg("",int),arg("d",date))),
- pattern("batmtime", "dayofweek", MTIMEdate_extract_dayofweek_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
- pattern("batmtime", "dayofweek", MTIMEdate_extract_dayofweek_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),
- command("mtime", "diff", MTIMEtimestamp_diff_msec, false, "returns the number of milliseconds\nbetween 'val1' and 'val2'.", args(1,3, arg("",lng),arg("val1",timestamp),arg("val2",timestamp))),
- pattern("batmtime", "diff", MTIMEtimestamp_diff_msec_bulk, false, "", args(1,3, batarg("",lng),batarg("val1",timestamp),batarg("val2",timestamp))),
- pattern("batmtime", "diff", MTIMEtimestamp_diff_msec_bulk_p1, false, "", args(1,3, batarg("",lng),arg("val1",timestamp),batarg("val2",timestamp))),
- pattern("batmtime", "diff", MTIMEtimestamp_diff_msec_bulk_p2, false, "", args(1,3, batarg("",lng),batarg("val1",timestamp),arg("val2",timestamp))),
- pattern("batmtime", "diff", MTIMEtimestamp_diff_msec_bulk, false, "", args(1,5, batarg("",lng),batarg("val1",timestamp),batarg("val2",timestamp),batarg("s1",oid),batarg("s2",oid))),
- pattern("batmtime", "diff", MTIMEtimestamp_diff_msec_bulk_p1, false, "", args(1,4, batarg("",lng),arg("val1",timestamp),batarg("val2",timestamp),batarg("s",oid))),
- pattern("batmtime", "diff", MTIMEtimestamp_diff_msec_bulk_p2, false, "", args(1,4, batarg("",lng),batarg("val1",timestamp),arg("val2",timestamp),batarg("s",oid))),
- command("mtime", "str_to_date", MTIMEstr_to_date, false, "create a date from the string, using the specified format (see man strptime)", args(1,3, arg("",date),arg("s",str),arg("format",str))),
- pattern("batmtime", "str_to_date", MTIMEstr_to_date_bulk, false, "", args(1,3, batarg("",date),batarg("s",str),batarg("format",str))),
- pattern("batmtime", "str_to_date", MTIMEstr_to_date_bulk_p1, false, "", args(1,3, batarg("",date),arg("s",str),batarg("format",str))),
- pattern("batmtime", "str_to_date", MTIMEstr_to_date_bulk_p2, false, "", args(1,3, batarg("",date),batarg("s",str),arg("format",str))),
- pattern("batmtime", "str_to_date", MTIMEstr_to_date_bulk, false, "", args(1,5, batarg("",date),batarg("s",str),batarg("format",str),batarg("s1",oid),batarg("s2",oid))),
- pattern("batmtime", "str_to_date", MTIMEstr_to_date_bulk_p1, false, "", args(1,4, batarg("",date),arg("s",str),batarg("format",str),batarg("s",oid))),
- pattern("batmtime", "str_to_date", MTIMEstr_to_date_bulk_p2, false, "", args(1,4, batarg("",date),batarg("s",str),arg("format",str),batarg("s",oid))),
- command("mtime", "date_to_str", MTIMEdate_to_str, false, "create a string from the date, using the specified format (see man strftime)", args(1,3, arg("",str),arg("d",date),arg("format",str))),
- pattern("batmtime", "date_to_str", MTIMEdate_to_str_bulk, false, "", args(1,3, batarg("",str),batarg("d",str),batarg("format",str))),
- pattern("batmtime", "date_to_str", MTIMEdate_to_str_bulk_p1, false, "", args(1,3, batarg("",str),arg("d",date),batarg("format",str))),
- pattern("batmtime", "date_to_str", MTIMEdate_to_str_bulk_p2, false, "", args(1,3, batarg("",str),batarg("d",date),arg("format",str))),
- pattern("batmtime", "date_to_str", MTIMEdate_to_str_bulk, false, "", args(1,5, batarg("",str),batarg("d",str),batarg("format",str),batarg("s1",oid),batarg("s2",oid))),
- pattern("batmtime", "date_to_str", MTIMEdate_to_str_bulk_p1, false, "", args(1,4, batarg("",str),arg("d",date),batarg("format",str),batarg("s",oid))),
- pattern("batmtime", "date_to_str", MTIMEdate_to_str_bulk_p2, false, "", args(1,4, batarg("",str),batarg("d",date),arg("format",str),batarg("s",oid))),
- command("mtime", "str_to_time", MTIMEstr_to_time, false, "create a time from the string, using the specified format (see man strptime)", args(1,3, arg("",daytime),arg("s",str),arg("format",str))),
- pattern("batmtime", "str_to_time", MTIMEstr_to_time_bulk, false, "", args(1,3, batarg("",daytime),batarg("s",str),batarg("format",str))),
- pattern("batmtime", "str_to_time", MTIMEstr_to_time_bulk_p1, false, "", args(1,3, batarg("",daytime),arg("s",str),batarg("format",str))),
- pattern("batmtime", "str_to_time", MTIMEstr_to_time_bulk_p2, false, "", args(1,3, batarg("",daytime),batarg("s",str),arg("format",str))),
- pattern("batmtime", "str_to_time", MTIMEstr_to_time_bulk, false, "", args(1,5, batarg("",daytime),batarg("s",str),batarg("format",str),batarg("s1",oid),batarg("s2",oid))),
- pattern("batmtime", "str_to_time", MTIMEstr_to_time_bulk_p1, false, "", args(1,4, batarg("",daytime),arg("s",str),batarg("format",str),batarg("s",oid))),
- pattern("batmtime", "str_to_time", MTIMEstr_to_time_bulk_p2, false, "", args(1,4, batarg("",daytime),batarg("s",str),arg("format",str),batarg("s",oid))),
- command("mtime", "time_to_str", MTIMEtime_to_str, false, "create a string from the time, using the specified format (see man strftime)", args(1,3, arg("",str),arg("d",daytime),arg("format",str))),
- pattern("batmtime", "time_to_str", MTIMEtime_to_str_bulk, false, "", args(1,3, batarg("",str),batarg("d",daytime),batarg("format",str))),
- pattern("batmtime", "time_to_str", MTIMEtime_to_str_bulk_p1, false, "", args(1,3, batarg("",str),arg("d",daytime),batarg("format",str))),
- pattern("batmtime", "time_to_str", MTIMEtime_to_str_bulk_p2, false, "", args(1,3, batarg("",str),batarg("d",daytime),arg("format",str))),
- pattern("batmtime", "time_to_str", MTIMEtime_to_str_bulk, false, "", args(1,5, batarg("",str),batarg("d",daytime),batarg("format",str),batarg("s1",oid),batarg("s2",oid))),
- pattern("batmtime", "time_to_str", MTIMEtime_to_str_bulk_p1, false, "", args(1,4, batarg("",str),arg("d",daytime),batarg("format",str),batarg("s",oid))),
- pattern("batmtime", "time_to_str", MTIMEtime_to_str_bulk_p2, false, "", args(1,4, batarg("",str),batarg("d",daytime),arg("format",str),batarg("s",oid))),
- command("mtime", "str_to_timestamp", MTIMEstr_to_timestamp, false, "create a timestamp from the string, using the specified format (see man strptime)", args(1,3, arg("",timestamp),arg("s",str),arg("format",str))),
- pattern("batmtime", "str_to_timestamp", MTIMEstr_to_timestamp_bulk, false, "", args(1,3, batarg("",timestamp),batarg("d",str),batarg("format",str))),
- pattern("batmtime", "str_to_timestamp", MTIMEstr_to_timestamp_bulk_p1, false, "", args(1,3, batarg("",timestamp),arg("s",str),batarg("format",str))),
- pattern("batmtime", "str_to_timestamp", MTIMEstr_to_timestamp_bulk_p2, false, "", args(1,3, batarg("",timestamp),batarg("s",str),arg("format",str))),
- pattern("batmtime", "str_to_timestamp", MTIMEstr_to_timestamp_bulk, false, "", args(1,5, batarg("",timestamp),batarg("d",str),batarg("format",str),batarg("s1",oid),batarg("s2",oid))),
- pattern("batmtime", "str_to_timestamp", MTIMEstr_to_timestamp_bulk_p1, false, "", args(1,4, batarg("",timestamp),arg("s",str),batarg("format",str),batarg("s",oid))),
- pattern("batmtime", "str_to_timestamp", MTIMEstr_to_timestamp_bulk_p2, false, "", args(1,4, batarg("",timestamp),batarg("s",str),arg("format",str),batarg("s",oid))),
- command("mtime", "timestamp_to_str", MTIMEtimestamp_to_str, false, "create a string from the time, using the specified format (see man strftime)", args(1,3, arg("",str),arg("d",timestamp),arg("format",str))),
- pattern("batmtime", "timestamp_to_str", MTIMEtimestamp_to_str_bulk, false, "", args(1,3, batarg("",str),batarg("d",timestamp),batarg("format",str))),
- pattern("batmtime", "timestamp_to_str", MTIMEtimestamp_to_str_bulk_p1, false, "", args(1,3, batarg("",str),arg("d",timestamp),batarg("format",str))),
- pattern("batmtime", "timestamp_to_str", MTIMEtimestamp_to_str_bulk_p2, false, "", args(1,3, batarg("",str),batarg("d",timestamp),arg("format",str))),
- pattern("batmtime", "timestamp_to_str", MTIMEtimestamp_to_str_bulk, false, "", args(1,5, batarg("",str),batarg("d",timestamp),batarg("format",str),batarg("s1",oid),batarg("s2",oid))),
- pattern("batmtime", "timestamp_to_str", MTIMEtimestamp_to_str_bulk_p1, false, "", args(1,4, batarg("",str),arg("d",timestamp),batarg("format",str),batarg("s",oid))),
- pattern("batmtime", "timestamp_to_str", MTIMEtimestamp_to_str_bulk_p2, false, "", args(1,4, batarg("",str),batarg("d",timestamp),arg("format",str),batarg("s",oid))),
- command("mtime", "current_timestamp", MTIMEcurrent_timestamp, false, "", args(1,1, arg("",timestamp))),
- command("mtime", "current_date", MTIMEcurrent_date, false, "", args(1,1, arg("",date))),
- command("mtime", "current_time", MTIMEcurrent_time, false, "", args(1,1, arg("",daytime))),
- command("mtime", "century", MTIMEtimestamp_century, false, "", args(1,2, arg("",int),arg("t",timestamp))),
- pattern("batmtime", "century", MTIMEtimestamp_century_bulk, false, "", args(1,2, batarg("",int),batarg("t",timestamp))),
- pattern("batmtime", "century", MTIMEtimestamp_century_bulk, false, "", args(1,3, batarg("",int),batarg("t",timestamp),batarg("s",oid))),
- command("mtime", "decade", MTIMEtimestamp_decade, false, "", args(1,2, arg("",int),arg("t",timestamp))),
- pattern("batmtime", "decade", MTIMEtimestamp_decade_bulk, false, "", args(1,2, batarg("",int),batarg("t",timestamp))),
- pattern("batmtime", "decade", MTIMEtimestamp_decade_bulk, false, "", args(1,3, batarg("",int),batarg("t",timestamp),batarg("s",oid))),
- command("mtime", "year", MTIMEtimestamp_year, false, "", args(1,2, arg("",int),arg("t",timestamp))),
- pattern("batmtime", "year", MTIMEtimestamp_year_bulk, false, "", args(1,2, batarg("",int),batarg("t",timestamp))),
- pattern("batmtime", "year", MTIMEtimestamp_year_bulk, false, "", args(1,3, batarg("",int),batarg("t",timestamp),batarg("s",oid))),
- command("mtime", "quarter", MTIMEtimestamp_quarter, false, "", args(1,2, arg("",int),arg("t",timestamp))),
- pattern("batmtime", "quarter", MTIMEtimestamp_quarter_bulk, false, "", args(1,2, batarg("",int),batarg("t",timestamp))),
- pattern("batmtime", "quarter", MTIMEtimestamp_quarter_bulk, false, "", args(1,3, batarg("",int),batarg("t",timestamp),batarg("s",oid))),
- command("mtime", "month", MTIMEtimestamp_month, false, "", args(1,2, arg("",int),arg("t",timestamp))),
- pattern("batmtime", "month", MTIMEtimestamp_month_bulk, false, "", args(1,2, batarg("",int),batarg("t",timestamp))),
- pattern("batmtime", "month", MTIMEtimestamp_month_bulk, false, "", args(1,3, batarg("",int),batarg("t",timestamp),batarg("s",oid))),
- command("mtime", "day", MTIMEtimestamp_day, false, "", args(1,2, arg("",int),arg("t",timestamp))),
- pattern("batmtime", "day", MTIMEtimestamp_day_bulk, false, "", args(1,2, batarg("",int),batarg("t",timestamp))),
- pattern("batmtime", "day", MTIMEtimestamp_day_bulk, false, "", args(1,3, batarg("",int),batarg("t",timestamp),batarg("s",oid))),
- command("mtime", "hours", MTIMEtimestamp_hours, false, "", args(1,2, arg("",int),arg("t",timestamp))),
- pattern("batmtime", "hours", MTIMEtimestamp_hours_bulk, false, "", args(1,2, batarg("",int),batarg("t",timestamp))),
- pattern("batmtime", "hours", MTIMEtimestamp_hours_bulk, false, "", args(1,3, batarg("",int),batarg("t",timestamp),batarg("s",oid))),
- command("mtime", "minutes", MTIMEtimestamp_minutes, false, "", args(1,2, arg("",int),arg("t",timestamp))),
- pattern("batmtime", "minutes", MTIMEtimestamp_minutes_bulk, false, "", args(1,2, batarg("",int),batarg("t",timestamp))),
- pattern("batmtime", "minutes", MTIMEtimestamp_minutes_bulk, false, "", args(1,3, batarg("",int),batarg("t",timestamp),batarg("s",oid))),
- command("mtime", "sql_seconds", MTIMEtimestamp_sql_seconds, false, "", args(1,2, arg("",int),arg("t",timestamp))),
- pattern("batmtime", "sql_seconds", MTIMEtimestamp_sql_seconds_bulk, false, "", args(1,2, batarg("",int),batarg("d",timestamp))),
- pattern("batmtime", "sql_seconds", MTIMEtimestamp_sql_seconds_bulk, false, "", args(1,3, batarg("",int),batarg("d",timestamp),batarg("s",oid))),
- command("mtime", "epoch_ms", MTIMEtimestamp_extract_epoch_ms, false, "", args(1,2, arg("",lng),arg("t",timestamp))),
- pattern("batmtime", "epoch_ms", MTIMEtimestamp_extract_epoch_ms_bulk, false, "", args(1,2, batarg("",lng),batarg("t",timestamp))),
- pattern("batmtime", "epoch_ms", MTIMEtimestamp_extract_epoch_ms_bulk, false, "", args(1,3, batarg("",lng),batarg("t",timestamp),batarg("s",oid))),
- command("mtime", "year", MTIMEsql_year, false, "", args(1,2, arg("",int),arg("months",int))),
- pattern("batmtime", "year", MTIMEsql_year_bulk, false, "", args(1,2, batarg("",int),batarg("months",int))),
- pattern("batmtime", "year", MTIMEsql_year_bulk, false, "", args(1,3, batarg("",int),batarg("months",int),batarg("s",oid))),
- command("mtime", "month", MTIMEsql_month, false, "", args(1,2, arg("",int),arg("months",int))),
- pattern("batmtime", "month", MTIMEsql_month_bulk, false, "", args(1,2, batarg("",int),batarg("months",int))),
- pattern("batmtime", "month", MTIMEsql_month_bulk, false, "", args(1,3, batarg("",int),batarg("months",int),batarg("s",oid))),
- command("mtime", "day", MTIMEsql_day, false, "", args(1,2, arg("",lng),arg("msecs",lng))),
- pattern("batmtime", "day", MTIMEsql_day_bulk, false, "", args(1,2, batarg("",lng),batarg("msecs",lng))),
- pattern("batmtime", "day", MTIMEsql_day_bulk, false, "", args(1,3, batarg("",lng),batarg("msecs",lng),batarg("s",oid))),
- command("mtime", "hours", MTIMEsql_hours, false, "", args(1,2, arg("",int),arg("msecs",lng))),
- pattern("batmtime", "hours", MTIMEsql_hours_bulk, false, "", args(1,2, batarg("",int),batarg("msecs",lng))),
- pattern("batmtime", "hours", MTIMEsql_hours_bulk, false, "", args(1,3, batarg("",int),batarg("msecs",lng),batarg("s",oid))),
- command("mtime", "minutes", MTIMEsql_minutes, false, "", args(1,2, arg("",int),arg("msecs",lng))),
- pattern("batmtime", "minutes", MTIMEsql_minutes_bulk, false, "", args(1,2, batarg("",int),batarg("msecs",lng))),
- pattern("batmtime", "minutes", MTIMEsql_minutes_bulk, false, "", args(1,3, batarg("",int),batarg("msecs",lng),batarg("s",oid))),
- command("mtime", "seconds", MTIMEsql_seconds, false, "", args(1,2, arg("",int),arg("msecs",lng))),
- pattern("batmtime", "seconds", MTIMEsql_seconds_bulk, false, "", args(1,2, batarg("",int),batarg("msecs",lng))),
- pattern("batmtime", "seconds", MTIMEsql_seconds_bulk, false, "", args(1,3, batarg("",int),batarg("msecs",lng),batarg("s",oid))),
- command("mtime", "epoch_ms", MTIMEmsec_extract_epoch_ms, false, "", args(1,2, arg("",lng),arg("msecs",lng))),
- pattern("batmtime", "epoch_ms", MTIMEmsec_extract_epoch_ms_bulk, false, "", args(1,2, batarg("",lng),batarg("msecs",lng))),
- pattern("batmtime", "epoch_ms", MTIMEmsec_extract_epoch_ms_bulk, false, "", args(1,3, batarg("",lng),batarg("msecs",lng),batarg("s",oid))),
- command("calc", "date", MTIMEdate_fromstr, false, "", args(1,2, arg("",date),arg("s",str))),
- command("calc", "date", MTIMEdate_date, false, "", args(1,2, arg("",date),arg("d",date))),
- command("calc", "date", MTIMEtimestamp_extract_date, false, "", args(1,2, arg("",date),arg("t",timestamp))),
- command("calc", "timestamp", MTIMEtimestamp_fromstr, false, "", args(1,2, arg("",timestamp),arg("s",str))),
- command("calc", "timestamp", MTIMEtimestamp_timestamp, false, "", args(1,2, arg("",timestamp),arg("t",timestamp))),
- command("calc", "timestamp", MTIMEtimestamp_fromdate, false, "", args(1,2, arg("",timestamp),arg("d",date))),
- command("calc", "timestamp", MTIMEtimestamp_fromsecond, false, "", args(1,2, arg("",timestamp),arg("secs",int))),
- command("calc", "timestamp", MTIMEtimestamp_frommsec, false, "", args(1,2, arg("",timestamp),arg("msecs",lng))),
- command("calc", "daytime", MTIMEdaytime_fromstr, false, "", args(1,2, arg("",daytime),arg("s",str))),
- command("calc", "daytime", MTIMEdaytime_daytime, false, "", args(1,2, arg("",daytime),arg("d",daytime))),
- command("calc", "daytime", MTIMEdaytime_fromseconds, false, "", args(1,2, arg("",daytime),arg("s",lng))),
- command("calc", "daytime", MTIMEtimestamp_extract_daytime, false, "", args(1,2, arg("",daytime),arg("t",timestamp))),
- pattern("batcalc", "date", MTIMEdate_fromstr_bulk, false, "", args(1,3, batarg("",date),batarg("s",str),batarg("s",oid))),
- pattern("batcalc", "date", MTIMEdate_date_bulk, false, "", args(1,3, batarg("",date),batarg("d",date),batarg("s",oid))),
- pattern("batcalc", "date", MTIMEtimestamp_extract_date_bulk, false, "", args(1,3, batarg("",date),batarg("t",timestamp),batarg("s",oid))),
- pattern("batcalc", "timestamp", MTIMEtimestamp_fromstr_bulk, false, "", args(1,3, batarg("",timestamp),batarg("s",str),batarg("s",oid))),
- pattern("batcalc", "timestamp", MTIMEtimestamp_timestamp_bulk, false, "", args(1,3, batarg("",timestamp),batarg("t",timestamp),batarg("s",oid))),
- pattern("batcalc", "timestamp", MTIMEtimestamp_fromdate_bulk, false, "", args(1,3, batarg("",timestamp),batarg("d",date),batarg("s",oid))),
- pattern("batcalc", "timestamp", MTIMEtimestamp_fromsecond_bulk, false, "", args(1,3, batarg("",timestamp),batarg("secs",int),batarg("s",oid))),
- pattern("batcalc", "timestamp", MTIMEtimestamp_frommsec_bulk, false, "", args(1,3, batarg("",timestamp),batarg("msecs",lng),batarg("s",oid))),
- pattern("batcalc", "daytime", MTIMEdaytime_fromstr_bulk, false, "", args(1,3, batarg("",daytime),batarg("s",str),batarg("s",oid))),
- pattern("batcalc", "daytime", MTIMEdaytime_daytime_bulk, false, "", args(1,3, batarg("",daytime),batarg("d",daytime),batarg("s",oid))),
- pattern("batcalc", "daytime", MTIMEdaytime_fromseconds_bulk, false, "", args(1,3, batarg("",daytime),batarg("s",lng),batarg("s",oid))),
- pattern("batcalc", "daytime", MTIMEtimestamp_extract_daytime_bulk, false, "", args(1,3, batarg("",daytime),batarg("t",timestamp),batarg("s",oid))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_mtime_mal)
-{ mal_module("mtime", NULL, mtime_init_funcs); }

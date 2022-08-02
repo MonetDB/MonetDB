@@ -1,0 +1,308 @@
+stderr of test 'plpgsql` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
+
+#--
+#-- PLPGSQL
+#--
+#-- Scenario:
+#-- 
+#--     A building with a modern TP cable installation where any
+#--     of the wall connectors can be used to plug in phones,
+#--     ethernet interfaces or local office hubs. The backside
+#--     of the wall connectors is wired to one of several patch-
+#--     fields in the building.
+#-- 
+#--     In the patchfields, there are hubs and all the slots
+#--     representing the wall connectors. In addition there are
+#--     slots that can represent a phone line from the central
+#--     phone system.
+#-- 
+#--     Triggers ensure consistency of the patching information.
+#-- 
+#--     Functions are used to build up powerful views that let
+#--     you look behind the wall when looking at a patchfield
+#--     or into a room.
+#-- 
+#-- ************************************************************
+#-- * 
+#-- * Trigger procedures and functions for the patchfield
+#-- * test of PL/pgSQL
+#-- * 
+#-- ************************************************************
+#-- ************************************************************
+#-- * AFTER UPDATE on Room
+#-- *	- If room no changes let wall slots follow
+#-- ************************************************************
+#-- ************************************************************
+#-- * AFTER DELETE on Room
+#-- *	- delete wall slots in this room
+#-- ************************************************************
+#-- ************************************************************
+#-- * BEFORE INSERT or UPDATE on WSlot
+#-- *	- Check that room exists
+#-- ************************************************************
+#-- ************************************************************
+#-- * AFTER UPDATE on PField
+#-- *	- Let PSlots of this field follow
+#-- ************************************************************
+#-- ************************************************************
+#-- * AFTER DELETE on PField
+#-- *	- Remove all slots of this patchfield
+#-- ************************************************************
+#-- ************************************************************
+#-- * BEFORE INSERT or UPDATE on PSlot
+#-- *	- Ensure that our patchfield does exist
+#-- ************************************************************
+#-- ************************************************************
+#-- * AFTER UPDATE on System
+#-- *	- If system name changes let interfaces follow
+#-- ************************************************************
+#-- ************************************************************
+#-- * BEFORE INSERT or UPDATE on IFace
+#-- *	- set the slotname to IF.sysname.ifname
+#-- ************************************************************
+#-- ************************************************************
+#-- * AFTER INSERT or UPDATE or DELETE on Hub
+#-- *	- insert/delete/rename slots as required
+#-- ************************************************************
+#-- ************************************************************
+#-- * Support function to add/remove slots of Hub
+#-- ************************************************************
+#-- Test comments
+#-- ************************************************************
+#-- * BEFORE INSERT or UPDATE on HSlot
+#-- *	- prevent from manual manipulation
+#-- *	- set the slotname to HS.hubname.slotno
+#-- ************************************************************
+#-- ************************************************************
+#-- * BEFORE DELETE on HSlot
+#-- *	- prevent from manual manipulation
+#-- ************************************************************
+#-- ************************************************************
+#-- * BEFORE INSERT on all slots
+#-- *	- Check name prefix
+#-- ************************************************************
+#-- ************************************************************
+#-- * BEFORE INSERT or UPDATE on all slots with slotlink
+#-- *	- Set slotlink to empty string if NULL value given
+#-- ************************************************************
+#-- ************************************************************
+#-- * BEFORE INSERT or UPDATE on all slots with backlink
+#-- *	- Set backlink to empty string if NULL value given
+#-- ************************************************************
+#-- ************************************************************
+#-- * BEFORE UPDATE on PSlot
+#-- *	- do delete/insert instead of update if name changes
+#-- ************************************************************
+#-- ************************************************************
+#-- * BEFORE UPDATE on WSlot
+#-- *	- do delete/insert instead of update if name changes
+#-- ************************************************************
+#-- ************************************************************
+#-- * BEFORE UPDATE on PLine
+#-- *	- do delete/insert instead of update if name changes
+#-- ************************************************************
+#-- ************************************************************
+#-- * BEFORE UPDATE on IFace
+#-- *	- do delete/insert instead of update if name changes
+#-- ************************************************************
+#-- ************************************************************
+#-- * BEFORE UPDATE on HSlot
+#-- *	- do delete/insert instead of update if name changes
+#-- ************************************************************
+#-- ************************************************************
+#-- * BEFORE UPDATE on PHone
+#-- *	- do delete/insert instead of update if name changes
+#-- ************************************************************
+#-- ************************************************************
+#-- * AFTER INSERT or UPDATE or DELETE on slot with backlink
+#-- *	- Ensure that the opponent correctly points back to us
+#-- ************************************************************
+#-- ************************************************************
+#-- * Support function to set the opponents backlink field
+#-- * if it does not already string to the requested slot
+#-- ************************************************************
+#-- ************************************************************
+#-- * Support function to clear out the backlink field if
+#-- * it still points to specific slot
+#-- ************************************************************
+#-- ************************************************************
+#-- * AFTER INSERT or UPDATE or DELETE on slot with slotlink
+#-- *	- Ensure that the opponent correctly points back to us
+#-- ************************************************************
+#-- ************************************************************
+#-- * Support function to set the opponents slotlink field
+#-- * if it does not already string to the requested slot
+#-- ************************************************************
+#-- ************************************************************
+#-- * Support function to clear out the slotlink field if
+#-- * it still points to specific slot
+#-- ************************************************************
+#-- ************************************************************
+#-- * Describe the backside of a patchfield slot
+#-- ************************************************************
+#-- ************************************************************
+#-- * Describe the front of a patchfield slot
+#-- ************************************************************
+#-- ************************************************************
+#-- * Describe the front of a wall connector slot
+#-- ************************************************************
+#-- ************************************************************
+#-- * View of a patchfield describing backside and patches
+#-- ************************************************************
+#--
+#-- First we build the house - so we create the rooms
+#--
+#--
+#-- Second we install the wall connectors
+#--
+#--
+#-- Now create the patch fields and their slots
+#--
+#--
+#-- The cables for these will be made later, so they are unconnected for now
+#--
+#--
+#-- These are already wired to the wall connectors
+#--
+#--
+#-- This patchfield will be renamed later into PF0_2 - so its
+#-- slots references in pfname should follow
+#--
+#--
+#-- Now we wire the wall connectors 1a-2a in room 001 to the
+#-- patchfield. In the second update we make an error, and
+#-- correct it after
+#--
+#--
+#-- Same procedure for 2b-3b but this time updating the WSlot instead
+#-- of the PSlot. Due to the triggers the result is the same:
+#-- WSlot and corresponding PSlot string to each other.
+#--
+#--
+#-- Fix the wrong name for patchfield PF0_2
+#--
+#--
+#-- Install the central phone system and create the phone numbers.
+#-- They are weired on insert to the patchfields. Again the
+#-- triggers automatically tell the PSlots to update their
+#-- backlink field.
+#--
+#--
+#-- Buy some phones, plug them into the wall and patch the
+#-- phone lines to the corresponding patchfield slots.
+#--
+#--
+#-- Install a hub at one of the patchfields, plug a computers
+#-- ethernet interface into the wall and patch it to the hub.
+#--
+#--
+#-- Now we take a look at the patchfield
+#--
+#--
+#-- Finally we want errors
+#--
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = insert into PField values ('PF1_1', 'should fail due to unique index');
+ERROR = duplicate key violates unique constraint "pfield_name"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = update PSlot set backlink = 'WS.not.there' where slotname = 'PS.base.a1';
+ERROR = WS.not.there         does not exist
+CONTEXT:  PL/pgSQL function "tg_backlink_a" line 16 at assignment
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = update PSlot set backlink = 'XX.illegal' where slotname = 'PS.base.a1';
+ERROR = illegal backlink beginning with XX
+CONTEXT:  PL/pgSQL function "tg_backlink_a" line 16 at assignment
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = update PSlot set slotlink = 'PS.not.there' where slotname = 'PS.base.a1';
+ERROR = PS.not.there         does not exist
+CONTEXT:  PL/pgSQL function "tg_slotlink_a" line 16 at assignment
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = update PSlot set slotlink = 'XX.illegal' where slotname = 'PS.base.a1';
+ERROR = illegal slotlink beginning with XX
+CONTEXT:  PL/pgSQL function "tg_slotlink_a" line 16 at assignment
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = insert into HSlot values ('HS', 'base.hub1', 1, '');
+ERROR = duplicate key violates unique constraint "hslot_name"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = insert into HSlot values ('HS', 'base.hub1', 20, '');
+ERROR = no manual manipulation of HSlot
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = insert into IFace values ('IF', 'notthere', 'eth0', '');
+ERROR = system "notthere" does not exist
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = insert into IFace values ('IF', 'orion', 'ethernet_interface_name_too_long', '');
+ERROR = IFace slotname "IF.orion.ethernet_interface_name_too_long" too long (20 char max)
+#--
+#-- The following tests are unrelated to the scenario outlined above;
+#-- they merely exercise specific parts of PL/PgSQL
+#--
+#--
+#-- Test recursion, per bug report 7-Sep-01
+#--
+#--
+#-- Test the FOUND magic variable
+#--
+#--
+#-- Test set-returning functions for PL/pgSQL
+#--
+#--
+#-- test PERFORM
+#--
+#--
+#-- Test error trapping
+#--
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select trap_zero_divide(-100);
+NOTICE:  should see this
+NOTICE:  should see this only if -100 <> 0
+NOTICE:  should see this only if -100 fits in smallint
+ERROR = -100 is less than zero
+#-- Test for pass-by-ref values being stored in proper context
+#--
+#-- test foreign key error trapping
+#--
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = insert into slave values(2);	-- fails
+ERROR = insert or update on table "slave" violates foreign key constraint "slave_f1_fkey"
+DETAIL:  Key (f1)=(2) is not present in table "master".
+#--
+#-- Test proper snapshot handling in simple expressions
+#--
+#--
+#-- tests for refcursors
+#--
+#-- should fail
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
+

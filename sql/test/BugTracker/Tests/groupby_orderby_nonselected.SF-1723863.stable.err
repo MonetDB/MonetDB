@@ -1,0 +1,27 @@
+stderr of test 'groupby_orderby_nonselected.SF-1723863` in directory 'sql/test/BugTracker` itself:
+
+
+# 23:24:26 >  
+# 23:24:26 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_port=35962 --set xrpc_port=41949 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit=" module(sql_server);" ; echo ; echo Over..
+# 23:24:26 >  
+
+
+# 23:24:26 >  
+# 23:24:26 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35962 
+# 23:24:26 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+QUERY = select count(*)
+        from (
+        select col2, count(*) as row_count
+        from data_1to10
+        group by col2
+        order by row_count desc, col1
+        ) sq;
+ERROR = !SELECT: cannot use non GROUP BY column 'col1' in query results without an aggregate function
+CODE  = 42000
+
+# 23:24:26 >  
+# 23:24:26 >  Done.
+# 23:24:26 >  
+

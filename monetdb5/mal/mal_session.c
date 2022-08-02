@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (author) M.L. Kersten
@@ -27,10 +27,11 @@
  * The startup script is run as user Admin.
  */
 str
-malBootstrap(char *modules[], bool embedded)
+malBootstrap(void)
 {
 	Client c;
 	str msg = MAL_SUCCEED;
+	str bootfile = "mal_init";
 
 	c = MCinitClient(MAL_ADMIN, NULL, NULL);
 	if(c == NULL) {
@@ -50,12 +51,11 @@ malBootstrap(char *modules[], bool embedded)
 		MCfreeClient(c);
 		return msg;
 	}
-
 	if( MCinitClientThread(c) < 0){
 		MCfreeClient(c);
 		throw(MAL, "malBootstrap", "Failed to create client thread");
 	}
-	if ((msg = malIncludeModules(c, modules, 0, embedded)) != MAL_SUCCEED) {
+	if ((msg = malInclude(c, bootfile, 0)) != MAL_SUCCEED) {
 		MCfreeClient(c);
 		return msg;
 	}
@@ -85,7 +85,7 @@ malBootstrap(char *modules[], bool embedded)
  * BATs introduced.
  */
 static str
-MSresetClientPrg(Client cntxt, const char *mod, const char *fcn)
+MSresetClientPrg(Client cntxt, str mod, str fcn)
 {
 	MalBlkPtr mb;
 	InstrPtr p;
@@ -120,7 +120,7 @@ MSresetClientPrg(Client cntxt, const char *mod, const char *fcn)
  */
 
 str
-MSinitClientPrg(Client cntxt, const char *mod, const char *nme)
+MSinitClientPrg(Client cntxt, str mod, str nme)
 {
 	int idx;
 
@@ -154,7 +154,7 @@ static void
 exit_streams( bstream *fin, stream *fout )
 {
 	if (fout && fout != GDKstdout) {
-		mnstr_flush(fout, MNSTR_FLUSH_DATA);
+		mnstr_flush(fout);
 		close_stream(fout);
 	}
 	if (fin)
@@ -163,45 +163,10 @@ exit_streams( bstream *fin, stream *fout )
 
 const char* mal_enableflag = "mal_for_all";
 
-static bool
-is_exiting(void *data)
-{
-	(void) data;
-	return GDKexiting();
-}
-
-static str MSserveClient(Client cntxt);
-
-
-static inline void
-cleanUpScheduleClient(Client c, Scenario s, bstream *fin, stream *fout, str *command, str *err)
-{
-	if(c) {
-		if (s) {
-			str msg = NULL;
-			if((msg = s->exitClientCmd(c)) != MAL_SUCCEED) {
-				mnstr_printf(fout, "!%s\n", msg);
-				freeException(msg);
-			}
-		}
-		MCfreeClient(c);
-	}
-	exit_streams(fin, fout);
-	if (command) {
-		GDKfree(*command);
-		*command = NULL;
-	}
-	if (err) {
-		freeException(*err);
-		*err = NULL;
-	}
-}
-
-
 void
 MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize)
 {
-	char *user = command, *algo = NULL, *passwd = NULL, *lang = NULL, *handshake_opts = NULL;
+	char *user = command, *algo = NULL, *passwd = NULL, *lang = NULL;
 	char *database = NULL, *s;
 	const char *dbname;
 	str msg = MAL_SUCCEED;
@@ -278,16 +243,8 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 	if (s && strncmp(s, "FILETRANS:", 10) == 0) {
 		s += 10;
 		filetrans = true;
-	} else if (s && s[0] == ':') {
-		s += 1;
-		filetrans = false;
 	}
 
-	if (s && strchr(s, ':') != NULL) {
-		handshake_opts = s;
-		s = strchr(s, ':');
-		*s++ = '\0';
-	}
 	dbname = GDKgetenv("gdk_dbname");
 	if (database != NULL && database[0] != '\0' &&
 		strcmp(database, dbname) != 0)
@@ -302,38 +259,22 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		return;
 	} else {
 		str err;
-		oid uid = 0;
+		oid uid;
 		sabdb *stats = NULL;
 
-		if (!GDKembedded()) {
-			if ((c = MCinitClient(MAL_ADMIN, NULL, NULL)) == NULL) {
-				if ( MCshutdowninprogress())
-					mnstr_printf(fout, "!system shutdown in progress, please try again later\n");
-				else
-					mnstr_printf(fout, "!maximum concurrent client limit reached "
-									   "(%d), please try again later\n", MAL_MAXCLIENTS);
-				cleanUpScheduleClient(NULL, NULL, fin, fout, &command, NULL);
-				return;
-			}
-			Scenario scenario = findScenario("sql");
-			if ((msg = scenario->initClientCmd(c)) != MAL_SUCCEED) {
-				mnstr_printf(fout, "!%s\n", msg);
-				cleanUpScheduleClient(c, scenario, fin, fout, &command, &msg);
-				return;
-			}
-			/* access control: verify the credentials supplied by the user,
-			 * no need to check for database stuff, because that is done per
-			 * database itself (one gets a redirect) */
-			if ((msg = AUTHcheckCredentials(&uid, c, user, passwd, challenge, algo)) != MAL_SUCCEED) {
-				mnstr_printf(fout, "!%s\n", msg);
-				cleanUpScheduleClient(c, scenario, fin, fout, &command, &msg);
-				return;
-			}
-			cleanUpScheduleClient(c, scenario, NULL, NULL, NULL, NULL);
+		/* access control: verify the credentials supplied by the user,
+		 * no need to check for database stuff, because that is done per
+		 * database itself (one gets a redirect) */
+		err = AUTHcheckCredentials(&uid, NULL, user, passwd, challenge, algo);
+		if (err != MAL_SUCCEED) {
+			mnstr_printf(fout, "!%s\n", err);
+			exit_streams(fin, fout);
+			freeException(err);
+			GDKfree(command);
+			return;
 		}
 
-
-		if (!GDKinmemory(0) && !GDKembedded()) {
+		if (!GDKinmemory()) {
 			err = msab_getMyStatus(&stats);
 			if (err != NULL) {
 				/* this is kind of awful, but we need to get rid of this
@@ -373,7 +314,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			return;
 		}
 		c->filetrans = filetrans;
-		c->handshake_options = handshake_opts ? strdup(handshake_opts) : NULL;
 		/* move this back !! */
 		if (c->usermodule == 0) {
 			c->curmodule = c->usermodule = userModule();
@@ -387,7 +327,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 
 		if ((s = setScenario(c, lang)) != NULL) {
 			mnstr_printf(c->fdout, "!%s\n", s);
-			mnstr_flush(c->fdout, MNSTR_FLUSH_DATA);
+			mnstr_flush(c->fdout);
 			GDKfree(s);
 			c->mode = FINISHCLIENT;
 		}
@@ -410,9 +350,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		return;
 	}
 
-	// at this point username should have being verified
-	c->username = GDKstrdup(user);
-
 	GDKfree(command);
 
 	/* NOTE ABOUT STARTING NEW THREADS
@@ -432,7 +369,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 	c->protocol = protocol;
 	c->blocksize = blocksize;
 
-	mnstr_settimeout(c->fdin->s, 50, is_exiting, NULL);
+	mnstr_settimeout(c->fdin->s, 50, GDKexiting);
 	msg = MSserveClient(c);
 	if (msg != MAL_SUCCEED) {
 		mnstr_printf(fout, "!could not serve client\n");
@@ -478,63 +415,33 @@ MSresetInstructions(MalBlkPtr mb, int start)
 }
 
 /*
- * MAL instructions generate variables.
- * The values of temporary variables should be cleaned at the end of a call
- * The values of global variables are retained.
- * Global variables should not start with C_ or X_
+ * Determine the variables being used and clear non-used onces.
  */
 void
-MSresetStack(Client cntxt, MalBlkPtr mb, MalStkPtr glb)
+MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 {
-	InstrPtr sig = getInstrPtr(mb, 0);
-	int i, k = sig->argc;
+	int i;
 
-	if (mb->errors == MAL_SUCCEED){
-		for (i = sig->argc; i < mb->vtop; i++) {
-			if (glb && i < glb->stktop && isTmpVar(mb,i) && !glb->keepTmps) {
+	for (i = 0; i < start && i < mb->vtop ; i++)
+		setVarUsed(mb,i);
+	if (mb->errors == MAL_SUCCEED)
+		for (i = start; i < mb->vtop; i++) {
+			if (isVarUsed(mb,i) || !isTmpVar(mb,i)){
+				assert(!mb->var[i].value.vtype || isVarConstant(mb, i));
+				setVarUsed(mb,i);
+			}
+			if (glb && i < glb->stktop && !isVarUsed(mb,i)) {
+				if (isVarConstant(mb, i))
+					garbageElement(cntxt, &glb->stk[i]);
 				/* clean stack entry */
-				garbageElement(cntxt, &glb->stk[i]);
 				glb->stk[i].vtype = TYPE_int;
 				glb->stk[i].len = 0;
 				glb->stk[i].val.pval = 0;
-				if (isVarConstant(mb, i))
-					garbageElement(cntxt, &mb->var[i].value);
-			} else {
-				/* compress the global variable list and stack */
-				mb->var[k] = mb->var[i];
-				glb->stk[k] = glb->stk[i];
-				setVarUsed(mb, k);
-				setVarInit(mb, k);
-				if( i != k){
-					glb->stk[i].vtype = TYPE_int;
-					glb->stk[i].len = 0;
-					glb->stk[i].val.pval = 0;
-					clrVarConstant(mb,i);
-					clrVarCleanup(mb,i);
-				}
-				k++;
 			}
 		}
-	}
-	mb->vtop = k;
-}
-
-/* The symbol table be become filled with constant values to be garbage collected
-* The signature is always left behind.
-*/
-
-void
-MSresetVariables(MalBlkPtr mb)
-{
-	InstrPtr sig = getInstrPtr(mb, 0);
-	int i;
 
 	if (mb->errors == MAL_SUCCEED)
-		for (i = sig->argc; i < mb->vtop; i++)
-			if( isVarConstant(mb,i)){
-				VALclear(&getVarConstant(mb,i));
-				clrVarConstant(mb, i);
-			}
+		trimMalVariables_(mb, glb);
 }
 
 /*
@@ -542,7 +449,7 @@ MSresetVariables(MalBlkPtr mb)
  * for the global variables.  Thereafter it is up to the scenario
  * interpreter to process input.
  */
-static str
+str
 MSserveClient(Client c)
 {
 	MalBlkPtr mb;
@@ -560,7 +467,7 @@ MSserveClient(Client c)
 	if (c->glb == NULL)
 		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
 	if (c->glb == NULL) {
-		MCcloseClient(c);
+		c->mode = RUNCLIENT;
 		throw(MAL, "serveClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		c->glb->stktop = mb->vtop;
@@ -570,7 +477,7 @@ MSserveClient(Client c)
 	if (c->scenario == 0)
 		msg = defaultScenario(c);
 	if (msg) {
-		MCcloseClient(c);
+		c->mode = RUNCLIENT;
 		return msg;
 	} else {
 		do {
@@ -598,8 +505,6 @@ MSserveClient(Client c)
 		c->backup = 0;
 	}
 
-	if( c->curprg && c->curprg->def)
-		resetMalBlk(c->curprg->def);
 	/*
 	if (c->curprg) {
 		freeSymbol(c->curprg);
@@ -608,6 +513,10 @@ MSserveClient(Client c)
 	*/
 
 	MCcloseClient(c);
+	if (c->usermodule /*&& strcmp(c->usermodule->name, "user") == 0*/) {
+		freeModule(c->usermodule);
+		c->usermodule = NULL;
+	}
 	return MAL_SUCCEED;
 }
 
@@ -663,41 +572,20 @@ MALreader(Client c)
 	return MAL_SUCCEED;
 }
 
-/* Before compiling a large string, it makes sense to allocate
- * approximately enough space to keep the intermediate
- * code. Otherwise, we end up with a repeated extend on the MAL block,
- * which really consumes a lot of memcpy resources. The average MAL
- * string length could been derived from the test cases. An error in
- * the estimate is more expensive than just counting the lines.
- */
-static int
-prepareMalBlk(MalBlkPtr mb, str s)
-{
-	int cnt = STMT_INCREMENT;
-
-	while (s) {
-		s = strchr(s, '\n');
-		if (s) {
-			s++;
-			cnt++;
-		}
-	}
-	cnt = (int) (cnt * 1.1);
-	return resizeMalBlk(mb, cnt);
-}
-
 str
 MALparser(Client c)
 {
 	InstrPtr p;
+	MalBlkRecord oldstate;
 	str msg= MAL_SUCCEED;
 
 	assert(c->curprg->def->errors == NULL);
 	c->curprg->def->errors = 0;
+	oldstate = *c->curprg->def;
 
 	if( prepareMalBlk(c->curprg->def, CURRENT(c)) < 0)
 		throw(MAL, "mal.parser", "Failed to prepare");
-	parseMAL(c, c->curprg, 0, INT_MAX, 0);
+	parseMAL(c, c->curprg, 0, INT_MAX);
 
 	/* now the parsing is done we should advance the stream */
 	c->fdin->pos += c->yycur;
@@ -717,16 +605,16 @@ MALparser(Client c)
 	if (p->token != FUNCTIONsymbol) {
 		msg =c->curprg->def->errors;
 		c->curprg->def->errors = 0;
-		MSresetStack(c, c->curprg->def, c->glb);
-		resetMalTypes(c->curprg->def, 1);
+		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
+		resetMalBlk(c->curprg->def, 1);
 		return msg;
 	}
 	pushEndInstruction(c->curprg->def);
 	msg = chkProgram(c->usermodule, c->curprg->def);
 	if (msg !=MAL_SUCCEED || (msg =c->curprg->def->errors) ){
 		c->curprg->def->errors = 0;
-		MSresetStack(c, c->curprg->def, c->glb);
-		resetMalTypes(c->curprg->def, 1);
+		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
+		resetMalBlk(c->curprg->def, 1);
 		return msg;
 	}
 	return MAL_SUCCEED;
@@ -771,6 +659,8 @@ MALengine(Client c)
 {
 	Symbol prg;
 	str msg = MAL_SUCCEED;
+	MalBlkRecord oldstate = *c->curprg->def;
+	oldstate.stop = 0;
 
 	if (c->blkmode)
 		return MAL_SUCCEED;
@@ -783,8 +673,8 @@ MALengine(Client c)
 	if (prg->def->errors != MAL_SUCCEED) {
 		msg = prg->def->errors;
 		prg->def->errors = NULL;
-		MSresetStack(c, c->curprg->def, c->glb);
-		resetMalTypes(c->curprg->def, 1);
+		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
+		resetMalBlk(c->curprg->def, 1);
 		return msg;
 	}
 	if (prg->def->stop == 1 || MALcommentsOnly(prg->def))
@@ -818,15 +708,15 @@ MALengine(Client c)
 			msg = MAL_SUCCEED;
 		}
 	}
-	MSresetStack(c, prg->def, c->glb);
-	resetMalTypes(prg->def, 1);
+	MSresetVariables(c, prg->def, c->glb, 0);
+	resetMalBlk(prg->def, 1);
 	if (c->glb) {
 		/* for global stacks avoid reinitialization from this point */
 		c->glb->stkbot = prg->def->vtop;
 	}
 
 	if (prg->def->errors)
-		freeException(prg->def->errors);
+		GDKfree(prg->def->errors);
 	prg->def->errors = NULL;
 	if (c->itrace)
 		mnstr_printf(c->fdout, "mdb>#EOD\n");

@@ -1,4 +1,9 @@
-import pymonetdb, os
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
+
+import sys, time, pymonetdb, os
 
 def connect(autocommit):
     return pymonetdb.connect(database = os.getenv('TSTDB'),
@@ -16,6 +21,7 @@ def query(conn, sql):
     return r
 
 def run(conn, sql):
+    print(sql)
     r = conn.execute(sql)
 
 # boring setup and schema creation stuff:
@@ -29,20 +35,14 @@ run(c1, 'start transaction')
 run(c1, 'delete from foo_2017')
 run(c1, 'drop view bar')
 run(c1, 'create view bar as select * from foo_2017')
-try:
-    run(c2, 'create table baz (a int);drop table baz')
-except pymonetdb.DatabaseError:
-    pass
+run(c2, 'create table baz (a int);drop table baz')
 try:
     run(c1, 'commit')
-    #print("shouldn't get here")
-    # perfectly fine changing independent parts of the schema
+    print("shouldn't get here")
 except pymonetdb.IntegrityError:
+    print("commit failed")
     pass
 
 run(c1, 'insert into foo_2017 values (4),(5),(6)') # SIGABRT here
 run(c1, 'drop view bar')
 run(c1, 'drop table foo_2017')
-
-c1.close()
-c2.close()

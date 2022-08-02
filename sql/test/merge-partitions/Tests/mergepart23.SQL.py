@@ -1,109 +1,138 @@
-import os, tempfile
-
-from MonetDBtesting.sqltest import SQLTestCase
+import os, socket, sys, tempfile
 
 try:
     from MonetDBtesting import process
 except ImportError:
     import process
 
+def freeport():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind(('', 0))
+    port = sock.getsockname()[1]
+    sock.close()
+    return port
+
+def server_stop(s):
+    out, err = s.communicate()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
+
+
+def client(input):
+    with process.client('sql', port=myport, dbname='db1', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
+        out, err = c.communicate(input)
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+
+
+script1 = '''
+CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE ON (a);
+CREATE TABLE subtable1 (a int, b varchar(32));
+CREATE TABLE subtable2 (a int, b varchar(32));
+CREATE TABLE subtable3 (a int, b varchar(32));
+CREATE TABLE subtable4 (a int, b varchar(32));
+CREATE TABLE subtable5 (a int, b varchar(32));
+ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM 5 TO 10;
+ALTER TABLE testme ADD TABLE subtable5 AS PARTITION FOR NULL VALUES;
+CREATE MERGE TABLE anothertest (a int, b varchar(32)) PARTITION BY RANGE USING (a + 1);
+ALTER TABLE anothertest ADD TABLE subtable3 AS PARTITION FROM 11 TO 20;
+SELECT "minimum", "maximum" FROM range_partitions;
+'''
+
+script2 = '''
+SELECT "minimum", "maximum" FROM range_partitions;
+DROP TABLE subtable1; --error, subtable1 is a child of testme
+DROP TABLE subtable3; --error, subtable3 is a child of anothertest
+ALTER TABLE anothertest ADD TABLE subtable1 AS PARTITION FROM 11 TO 20; --error, subtable1 is part of another table
+SELECT "minimum", "maximum" FROM range_partitions;
+'''
+
+script3 = '''
+SELECT "minimum", "maximum" FROM range_partitions;
+ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 11 TO 20;
+ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION FROM 21 TO 30;
+INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four'), (NULL, 'five');
+INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');
+SELECT a,b FROM testme;
+SELECT a,b FROM anothertest;
+SELECT "minimum", "maximum" FROM range_partitions;
+ALTER TABLE testme DROP TABLE subtable1;
+ALTER TABLE testme DROP TABLE subtable2;
+ALTER TABLE testme DROP TABLE subtable5;
+ALTER TABLE anothertest DROP TABLE subtable3;
+ALTER TABLE anothertest DROP TABLE subtable4;
+SELECT "minimum", "maximum" FROM range_partitions;
+ALTER TABLE testme DROP COLUMN "a"; --error, a is a partition column
+ALTER TABLE anothertest DROP COLUMN "a"; --error, a is used on partition expression
+DROP TABLE testme;
+DROP TABLE subtable1;
+DROP TABLE subtable2;
+DROP TABLE anothertest;
+DROP TABLE subtable3;
+DROP TABLE subtable4;
+DROP TABLE subtable5;
+'''
+
+script4 = '''
+CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);
+CREATE TABLE subtable1 (a int, b varchar(32));
+CREATE TABLE subtable2 (a int, b varchar(32));
+CREATE TABLE subtable3 (a int, b varchar(32));
+ALTER TABLE upsme ADD TABLE subtable3 AS PARTITION FOR NULL VALUES;
+INSERT INTO upsme VALUES (NULL, 'one');
+ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);
+ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);
+SELECT "value" FROM value_partitions;
+'''
+
+script5 = '''
+INSERT INTO upsme VALUES (10, 'two'), (40, 'three'), (NULL, 'four');
+INSERT INTO subtable3 VALUES (NULL, 'five');
+SELECT a,b FROM upsme;
+SELECT a,b FROM subtable1;
+SELECT a,b FROM subtable2;
+SELECT a,b FROM subtable3;
+ALTER TABLE upsme DROP TABLE subtable1;
+ALTER TABLE upsme DROP TABLE subtable2;
+ALTER TABLE upsme DROP TABLE subtable3;
+SELECT "value" FROM value_partitions;
+DROP TABLE upsme;
+DROP TABLE subtable1;
+DROP TABLE subtable2;
+DROP TABLE subtable3;
+'''
+
 with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
+    myport = freeport()
 
-    with process.server(mapiport='0', dbname='db1',
+    with process.server(mapiport=myport, dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as s:
-        with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=s.dbport, database='db1')
-            tc.execute('CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE ON (a);').assertSucceeded()
-            tc.execute('CREATE TABLE subtable1 (a int, b varchar(32));').assertSucceeded()
-            tc.execute('CREATE TABLE subtable2 (a int, b varchar(32));').assertSucceeded()
-            tc.execute('CREATE TABLE subtable3 (a int, b varchar(32));').assertSucceeded()
-            tc.execute('CREATE TABLE subtable4 (a int, b varchar(32));').assertSucceeded()
-            tc.execute('CREATE TABLE subtable5 (a int, b varchar(32));').assertSucceeded()
-            tc.execute('ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM 5 TO 10;').assertSucceeded()
-            tc.execute('ALTER TABLE testme ADD TABLE subtable5 AS PARTITION FOR NULL VALUES;').assertSucceeded()
-            tc.execute('CREATE MERGE TABLE anothertest (a int, b varchar(32)) PARTITION BY RANGE USING (a + 1);').assertSucceeded()
-            tc.execute('ALTER TABLE anothertest ADD TABLE subtable3 AS PARTITION FROM 11 TO 20;').assertSucceeded()
-            tc.execute('SELECT "minimum", "maximum" FROM range_partitions;').assertSucceeded().assertDataResultMatch([("5","10"),(None,None),("11","20")])
-        s.communicate()
-    with process.server(mapiport='0', dbname='db1',
+        client(script1)
+        server_stop(s)
+    with process.server(mapiport=myport, dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as s:
-        with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=s.dbport, database='db1')
-            tc.execute('SELECT "minimum", "maximum" FROM range_partitions;').assertSucceeded().assertDataResultMatch([("5","10"),(None,None),("11","20")])
-            tc.execute('DROP TABLE subtable1;').assertFailed(err_message='DROP TABLE: unable to drop table subtable1 (there are database objects which depend on it)') # error, subtable1 is a child of testme
-            tc.execute('DROP TABLE subtable3;').assertFailed(err_message='DROP TABLE: unable to drop table subtable3 (there are database objects which depend on it)') # error, subtable3 is a child of anothertest
-            tc.execute('ALTER TABLE anothertest ADD TABLE subtable1 AS PARTITION FROM 11 TO 20;').assertFailed(err_message='ALTER TABLE: table \'sys.subtable1\' is already part of another table') # error, subtable1 is part of another table
-            tc.execute('SELECT "minimum", "maximum" FROM range_partitions;').assertSucceeded().assertDataResultMatch([("5","10"),(None,None),("11","20")])
-        s.communicate()
-    with process.server(mapiport='0', dbname='db1',
+        client(script2)
+        server_stop(s)
+    with process.server(mapiport=myport, dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as s:
-        with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=s.dbport, database='db1')
-            tc.execute('SELECT "minimum", "maximum" FROM range_partitions;').assertSucceeded().assertDataResultMatch([("5","10"),(None,None),("11","20")])
-            tc.execute('ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 11 TO 20;').assertSucceeded()
-            tc.execute('ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION FROM 21 TO 30;').assertSucceeded()
-            tc.execute("INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four'), (NULL, 'five');").assertSucceeded().assertRowCount(5)
-            tc.execute("INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');").assertSucceeded().assertRowCount(4)
-            tc.execute('SELECT a,b FROM testme;').assertSucceeded().assertDataResultMatch([(5,"one"),(None,"five"),(12,"two"),(13,"three"),(15,"four")])
-            tc.execute('SELECT a,b FROM anothertest;').assertSucceeded().assertDataResultMatch([(11,"one"),(12,"two"),(13,"three"),(15,"four")])
-            tc.execute('SELECT "minimum", "maximum" FROM range_partitions;').assertSucceeded().assertDataResultMatch([("5","10"),(None,None),("11","20"),("11","20"),("21","30")])
-            tc.execute('ALTER TABLE testme DROP TABLE subtable1;').assertSucceeded()
-            tc.execute('ALTER TABLE testme DROP TABLE subtable2;').assertSucceeded()
-            tc.execute('ALTER TABLE testme DROP TABLE subtable5;').assertSucceeded()
-            tc.execute('ALTER TABLE anothertest DROP TABLE subtable3;').assertSucceeded()
-            tc.execute('ALTER TABLE anothertest DROP TABLE subtable4;').assertSucceeded()
-            tc.execute('SELECT "minimum", "maximum" FROM range_partitions;').assertSucceeded().assertDataResultMatch([])
-            tc.execute('ALTER TABLE testme DROP COLUMN "a";').assertFailed(err_message='ALTER TABLE: cannot drop column \'a\': is the partitioned column on the table \'testme\'') # error, a is a partition column
-            tc.execute('ALTER TABLE anothertest DROP COLUMN "a";').assertFailed(err_message='ALTER TABLE: cannot drop column \'a\': the expression used in \'anothertest\' depends on it') # error, a is used on partition expression
-            tc.execute('DROP TABLE testme;').assertSucceeded()
-            tc.execute('DROP TABLE subtable1;').assertSucceeded()
-            tc.execute('DROP TABLE subtable2;').assertSucceeded()
-            tc.execute('DROP TABLE anothertest;').assertSucceeded()
-            tc.execute('DROP TABLE subtable3;').assertSucceeded()
-            tc.execute('DROP TABLE subtable4;').assertSucceeded()
-            tc.execute('DROP TABLE subtable5;').assertSucceeded()
-        s.communicate()
-    with process.server(mapiport='0', dbname='db1',
+        client(script3)
+        server_stop(s)
+    with process.server(mapiport=myport, dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as s:
-        with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=s.dbport, database='db1')
-            tc.execute('CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);').assertSucceeded()
-            tc.execute('CREATE TABLE subtable1 (a int, b varchar(32));').assertSucceeded()
-            tc.execute('CREATE TABLE subtable2 (a int, b varchar(32));').assertSucceeded()
-            tc.execute('CREATE TABLE subtable3 (a int, b varchar(32));').assertSucceeded()
-            tc.execute('ALTER TABLE upsme ADD TABLE subtable3 AS PARTITION FOR NULL VALUES;').assertSucceeded()
-            tc.execute("INSERT INTO upsme VALUES (NULL, 'one');").assertSucceeded().assertRowCount(1)
-            tc.execute('ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);').assertSucceeded()
-            tc.execute('ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);').assertSucceeded()
-            tc.execute('SELECT "value" FROM value_partitions;').assertSucceeded().assertDataResultMatch([(None,),("15",),("25",),("35",),("45",),("55",),("65",)])
-        s.communicate()
-    with process.server(mapiport='0', dbname='db1',
+        client(script4)
+        server_stop(s)
+    with process.server(mapiport=myport, dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as s:
-        with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=s.dbport, database='db1')
-            tc.execute("INSERT INTO upsme VALUES (10, 'two'), (40, 'three'), (NULL, 'four');").assertSucceeded().assertRowCount(3)
-            tc.execute("INSERT INTO subtable3 VALUES (NULL, 'five');").assertSucceeded().assertRowCount(1)
-            tc.execute('SELECT a,b FROM upsme;').assertSucceeded().assertDataResultMatch([(10,"two"),(40,"three"),(None,"one"),(None,"four"),(None,"five")])
-            tc.execute('SELECT a,b FROM subtable1;').assertSucceeded().assertDataResultMatch([(10,"two")])
-            tc.execute('SELECT a,b FROM subtable2;').assertSucceeded().assertDataResultMatch([(40,"three")])
-            tc.execute('SELECT a,b FROM subtable3;').assertSucceeded().assertDataResultMatch([(None,"one"),(None,"four"),(None,"five")])
-            tc.execute('ALTER TABLE upsme DROP TABLE subtable1;').assertSucceeded()
-            tc.execute('ALTER TABLE upsme DROP TABLE subtable2;').assertSucceeded()
-            tc.execute('ALTER TABLE upsme DROP TABLE subtable3;').assertSucceeded()
-            tc.execute('SELECT "value" FROM value_partitions;').assertSucceeded().assertDataResultMatch([])
-            tc.execute('DROP TABLE upsme;').assertSucceeded()
-            tc.execute('DROP TABLE subtable1;').assertSucceeded()
-            tc.execute('DROP TABLE subtable2;').assertSucceeded()
-            tc.execute('DROP TABLE subtable3;').assertSucceeded()
-        s.communicate()
+        client(script5)
+        server_stop(s)

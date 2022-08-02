@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+
+SQL="mclient -umonetdb -Pmonetdb -lsql"
+if [ $# -eq 1 ]; then
+	SQL=$1
+fi
+
+echo "loading"
+$SQL < load.sql  
+echo "simple join"
+$SQL < Tests/select_simple_join.sql
+echo "join"
+$SQL < Tests/select_join.sql
+echo "distinct"
+$SQL < Tests/select_distinct.sql  
+echo "prefix_join"
+$SQL < Tests/select_key_prefix_join.sql
+echo "group"
+$SQL < Tests/select_group.sql 
+echo "drop"
+$SQL < drop.sql             

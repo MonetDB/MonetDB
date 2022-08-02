@@ -1,16 +1,18 @@
 # tests related to bug reports:
 # <descriptive-name>.Bug-<bug-report-id>
 #
+HAVE_PHP?php-size-limit-bug
 select-around-zero.Bug-3220
 segfault_in_aggregation.Bug-3225
 subtract-one-year.Bug-3215
-HAVE_LIBPCRE?crash-from-optimizer.Bug-3241
+HAVE_PERL?perl-undef-0.Bug-3235
+HAVE_PCRE?crash-from-optimizer.Bug-3241
 select-view-view.Bug-3245
 stddev-group.Bug-3257
-#oid_handling
+oid_handling
 between.Bug-3259
 correlated_select.Bug-3250
-!ARCH_BITS32?empty-strings.Bug-3261
+empty-strings.Bug-3261
 groupby_on_value_view.Bug-3264
 copy-into-decimal.Bug-3265
 aggregates-typing-issues.Bug-3277
@@ -21,9 +23,8 @@ corrupt-after-restart.Bug-3282
 db_users.Bug-3287
 create_table_with_func.Bug-3286
 add_boolean.Bug-3289
-psm_functions_and_accessrights.Bug-3300-1
-USER=psm&PASSWD=psm?psm_functions_and_accessrights.Bug-3300-2
-psm_functions_and_accessrights.Bug-3300-3
+prepare-smallint.Bug-3297
+psm_functions_and_accessrights.Bug-3300
 decimal-cast.Bug-3310
 hashed_exp.Bug-3313
 mitosis-floor.Bug-3330
@@ -52,6 +53,7 @@ crash_after_creation_of_unique_key.Bug-3363
 alter_resets_readonly.Bug-3362
 env_errors.Bug-3370
 swapped_likejoin.Bug-3375
+HAVE_PYMONETDB?python-explain.Bug-3380
 case-orderby.Bug-3388
 unop_vs_aggr.Bug-3885
 singleton-median.Bug-3389

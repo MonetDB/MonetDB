@@ -1,0 +1,17 @@
+stderr of test 'union_all_where_1=1-bug-sf-936386` in directory 'sql/test/bugs` itself:
+
+
+# 21:33:32 >  
+# 21:33:32 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --set "gdk_dbfarm=/ufs/niels/data/Linux-i686/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/data/Linux-i686/var/MonetDB/log" --set mapi_port=41737 --set sql_port=53937 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/net/stem.ins.cwi.nl/export/scratch1/niels/Linux-i686/build-sql/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 21:33:32 >  
+
+
+# 21:33:32 >  
+# 21:33:32 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=53937  < union_all_where_1=1-bug-sf-936386.sql
+# 21:33:32 >  
+
+
+# 21:33:32 >  
+# 21:33:32 >  Done.
+# 21:33:32 >  
+

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -24,6 +24,22 @@
 
 static char* dbdir = NULL;
 
+#define CREATE_SQL_FUNCTION_PTR(retval, fcnname)     \
+   typedef retval (*fcnname##_ptr_tpe)();            \
+   fcnname##_ptr_tpe fcnname##_ptr = NULL;
+
+#define LOAD_SQL_FUNCTION_PTR(fcnname)                                             \
+    fcnname##_ptr = (fcnname##_ptr_tpe) getAddress( #fcnname); \
+    if (fcnname##_ptr == NULL) {                                                           \
+        retval = #fcnname;  \
+    }
+
+CREATE_SQL_FUNCTION_PTR(int,SQLautocommit);
+CREATE_SQL_FUNCTION_PTR(str,SQLexitClient);
+CREATE_SQL_FUNCTION_PTR(str,SQLinitClient);
+CREATE_SQL_FUNCTION_PTR(str,SQLstatementIntern);
+CREATE_SQL_FUNCTION_PTR(void,SQLdestroyResult);
+
 static int monetdb_initialized = 0;
 
 static void* monetdb_connect(void) {
@@ -36,9 +52,7 @@ static void* monetdb_connect(void) {
 		return NULL;
 	}
 	conn->curmodule = conn->usermodule = userModule();
-	str msg;
-	if ((msg = SQLinitClient(conn)) != MAL_SUCCEED) {
-		freeException(msg);
+	if ((*SQLinitClient_ptr)(conn) != MAL_SUCCEED) {
 		return NULL;
 	}
 	((backend *) conn->sqlcontext)->mvc->session->auto_commit = 1;
@@ -49,10 +63,12 @@ static str monetdb_query(Client c, str query) {
 	str retval;
 	mvc* m = ((backend *) c->sqlcontext)->mvc;
 	res_table* res = NULL;
-
-	retval = SQLstatementIntern(c, query, "name", 1, 0, &res);
-	if (retval == MAL_SUCCEED)
-		retval = SQLautocommit(m);
+	int i;
+	retval = (*SQLstatementIntern_ptr)(c,
+		&query,
+		"name",
+		1, 0, &res);
+	(*SQLautocommit_ptr)(m);
 	if (retval != MAL_SUCCEED) {
 		printf("Failed to execute SQL query: %s\n", query);
 		freeException(retval);
@@ -61,12 +77,12 @@ static str monetdb_query(Client c, str query) {
 	}
 	if (res) {
 		// print result columns
-//		printf("%s (", res->cols->tn);
-//		for(int i = 0; i < res->nr_cols; i++) {
-//			printf("%s", res->cols[i].name);
-//			printf(i + 1 == res->nr_cols ? ")\n" : ",");
-//		}
-		SQLdestroyResult(res);
+		printf("%s (", res->cols->tn);
+		for(i = 0; i < res->nr_cols; i++) {
+			printf("%s", res->cols[i].name);
+			printf(i + 1 == res->nr_cols ? ")\n" : ",");
+		}
+		(*SQLdestroyResult_ptr)(res);
 	}
 	return MAL_SUCCEED;
 }
@@ -75,8 +91,7 @@ static void monetdb_disconnect(void* conn) {
 	if (!MCvalid((Client) conn)) {
 		return;
 	}
-	str msg = SQLexitClient((Client) conn);
-	freeException(msg);
+	(*SQLexitClient_ptr)((Client) conn);
 	MCcloseClient((Client) conn);
 }
 
@@ -112,11 +127,11 @@ static str monetdb_initialize(void) {
 	setlen = mo_builtin_settings(&set);
 	setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dbdir);
 
-	if (BBPaddfarm(dbdir, (1U << PERSISTENT) | (1U << TRANSIENT), false) != GDK_SUCCEED) {
+	if (BBPaddfarm(dbdir, (1 << PERSISTENT) | (1 << TRANSIENT)) != GDK_SUCCEED) {
 		retval = GDKstrdup("BBPaddfarm failed");
 		goto cleanup;
 	}
-	if (GDKinit(set, setlen, true) != GDK_SUCCEED) {
+	if (GDKinit(set, setlen) != GDK_SUCCEED) {
 		retval = GDKstrdup("GDKinit() failed");
 		goto cleanup;
 	}
@@ -133,7 +148,7 @@ static str monetdb_initialize(void) {
 		 * bin/mserver5 -> ../
 		 * libX/monetdb5/lib/
 		 * probe libX = lib, lib32, lib64, lib/64 */
-		const char *libdirs[] = { "lib", "lib64", "lib/64", "lib32", NULL };
+		char *libdirs[] = { "lib", "lib64", "lib/64", "lib32", NULL };
 		size_t i;
 		struct stat sb;
 		if (binpath != NULL) {
@@ -148,7 +163,7 @@ static str monetdb_initialize(void) {
 							binpath, DIR_SEP, libdirs[i], DIR_SEP);
 					if (len == -1 || len >= FILENAME_MAX)
 						continue;
-					if (MT_stat(prmodpath, &sb) == 0) {
+					if (stat(prmodpath, &sb) == 0) {
 						modpath = prmodpath;
 						break;
 					}
@@ -254,14 +269,17 @@ static str monetdb_initialize(void) {
 		exit(1);
 	}
 
-	char *modules[2];
-	modules[0] = "sql";
-	modules[1] = 0;
-	if (mal_init(modules, true) != 0) { // mal_init() does not return meaningful codes on failure
+	if (mal_init() != 0) { // mal_init() does not return meaningful codes on failure
 		retval = GDKstrdup("mal_init() failed");
 		goto cleanup;
 	}
 	GDKfataljumpenable = 0;
+
+	LOAD_SQL_FUNCTION_PTR(SQLautocommit);
+	LOAD_SQL_FUNCTION_PTR(SQLexitClient);
+	LOAD_SQL_FUNCTION_PTR(SQLinitClient);
+	LOAD_SQL_FUNCTION_PTR(SQLstatementIntern);
+	LOAD_SQL_FUNCTION_PTR(SQLdestroyResult);
 
 	if (retval != MAL_SUCCEED) {
 		printf("Failed to load SQL function: %s\n", retval);
@@ -271,11 +289,6 @@ static str monetdb_initialize(void) {
 
 	{
 		Client c = (Client) monetdb_connect();
-		if (!c) {
-			printf("Failed to initialize client\n");
-			retval = GDKstrdup("Failed to initialize client\n");
-			goto cleanup;
-		}
 		char* query = "SELECT * FROM tables;";
 		retval = monetdb_query(c, query);
 		monetdb_disconnect(c);
@@ -293,7 +306,7 @@ cleanup:
 
 static void monetdb_shutdown(void) {
 	if (monetdb_initialized) {
-		mal_reset();
+		mserver_reset();
 		monetdb_initialized = 0;
 	}
 }
@@ -314,30 +327,20 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 	c = (Client) monetdb_connect();
-	if (!c) {
-		printf("Failed to initialize client\n");
-		monetdb_shutdown();
-		return -1;
-	}
 	monetdb_query(c, "CREATE TABLE temporary_table(i INTEGER);");
 	monetdb_query(c, "INSERT INTO temporary_table VALUES (3), (4);");
 	monetdb_disconnect(c);
-//	printf("Successfully initialized MonetDB.\n");
+	printf("Successfully initialized MonetDB.\n");
 	for(i = 0; i < 10; i++) {
 		monetdb_shutdown();
-//		printf("Successfully shutdown MonetDB.\n");
+		printf("Successfully shutdown MonetDB.\n");
 		retval = monetdb_initialize();
 		if (retval != MAL_SUCCEED) {
 			printf("Failed MonetDB restart: %s\n", retval);
 			return -1;
 		}
-//		printf("Successfully restarted MonetDB.\n");
+		printf("Successfully restarted MonetDB.\n");
 		c = (Client) monetdb_connect();
-		if (!c) {
-			printf("Failed to initialize client\n");
-			monetdb_shutdown();
-			return -1;
-		}
 		monetdb_query(c, "SELECT * FROM temporary_table;");
 		monetdb_query(c, "DROP TABLE temporary_table;");
 		monetdb_query(c, "CREATE TABLE temporary_table(i INTEGER);");

@@ -1,5 +1,0 @@
-query T rowsort
-select cast('0' as interval year)
-----
-0
-

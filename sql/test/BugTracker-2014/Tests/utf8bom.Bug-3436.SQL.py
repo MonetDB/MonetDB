@@ -1,4 +1,8 @@
-import os, sys, zipfile, pymonetdb
+import os, sys, zipfile
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
 TSTTRGDIR = os.environ['TSTTRGDIR']
 
@@ -15,26 +19,28 @@ def mkpardir(path):
         i = path.find('/')
 
 z = zipfile.ZipFile(archive)
+print('Archive:  %s' % archive)
 for name in z.namelist():
+    print('  inflating: %s' % name)
     mkpardir(name)
     data = z.read(name)
     f = open(name, 'wb')
     f.write(data)
     f.close()
 
-dbh = pymonetdb.connect(port=int(os.getenv('MAPIPORT')),hostname=os.getenv('MAPIHOST'),database=os.getenv('TSTDB'), autocommit=True)
-cursor = dbh.cursor()
-
-cursor.execute('''
+query = '''\
 start transaction;
-create table utf8bom (city string,id integer);
-''')
-if cursor.execute("copy into utf8bom from r'%s' using delimiters ',',E'\\n','\"';" % os.path.join(TSTTRGDIR, 'utf8bom.csv')) != 2:
-    sys.stderr.write("Expected 2 rows inserted")
-cursor.execute("select * from utf8bom order by id;")
-if cursor.fetchall() != [('Montréal', 1621), ('New York', 8392)]:
-    sys.stderr.write("Expected [('Montréal', 1621), ('New York', 8392)]")
-cursor.execute("rollback")
+create table utf8bom (
+    city string,
+    id integer
+);
+copy into utf8bom from r'%s' using delimiters ',',E'\\n','"';
+select * from utf8bom order by id;
+rollback;
+'''
 
-cursor.close()
-dbh.close()
+with process.client('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as c:
+    c.stdin.write(query % os.path.join(TSTTRGDIR, 'utf8bom.csv'))
+    out, err = c.communicate()
+    sys.stdout.write(out)
+    sys.stderr.write(err)

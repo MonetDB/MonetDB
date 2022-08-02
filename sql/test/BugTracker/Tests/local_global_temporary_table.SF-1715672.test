@@ -1,9 +1,0 @@
-statement ok
-create LOCAL TEMPORARY table t1715672a (id int) ON COMMIT DROP
-
-statement ok
-create GLOBAL TEMPORARY table t1715672a (id int) ON COMMIT DROP
-
-statement ok
-drop table t1715672a
-

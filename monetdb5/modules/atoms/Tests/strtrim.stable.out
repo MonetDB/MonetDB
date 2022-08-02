@@ -1,0 +1,54 @@
+stdout of test 'strtrim` in directory 'monetdb5/modules/atoms` itself:
+
+
+# 16:41:06 >  
+# 16:41:06 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35634" "--set" "mapi_usock=/var/tmp/mtest-5410/.s.monetdb.35634" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch2/zhang/monet-install/default/debug/var/MonetDB/mTests_monetdb5_modules_atoms" "strtrim.mal"
+# 16:41:06 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_atoms', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://riga.ins.cwi.nl:35634/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5410/.s.monetdb.35634
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+    a := str.trim("zzzytrimxxxx","zyx");
+    io.print(a);
+    a := str.trim("zzëzytrimxxëxx","zëyx");
+    io.print(a);
+    a := str.trim("zzë颖zytrimxx颖ëxx","zëy颖x");
+    io.print(a);
+    a := str.ltrim("zzzytrim","zyx");
+    io.print(a);
+    a := str.ltrim("zzëzytrim","zëyx");
+    io.print(a);
+    a := str.ltrim("zzë颖zytrim","zëy颖x");
+    io.print(a);
+    a := str.rtrim("trimxxxx","zyx");
+    io.print(a);
+    a := str.rtrim("trimxxëxx","zëyx");
+    io.print(a);
+    a := str.rtrim("trimxx颖ëxx","zëy颖x");
+    io.print(a);
+end main;
+[ "trim" ]
+[ "trim" ]
+[ "trim" ]
+[ "trim" ]
+[ "trim" ]
+[ "trim" ]
+[ "trim" ]
+[ "trim" ]
+[ "trim" ]
+
+# 16:41:06 >  
+# 16:41:06 >  "Done."
+# 16:41:06 >  
+

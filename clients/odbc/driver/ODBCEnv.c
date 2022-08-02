@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -48,9 +48,11 @@ newODBCEnv(void)
 	if (env == NULL)
 		return NULL;
 
-	*env = (ODBCEnv) {
-		.Type = ODBC_ENV_MAGIC_NR,
-	};
+	env->Error = NULL;
+	env->RetrievedErrors = 0;
+	env->FirstDbc = NULL;
+	env->Type = ODBC_ENV_MAGIC_NR;
+	env->sql_attr_odbc_version = 0;
 
 	return env;
 }

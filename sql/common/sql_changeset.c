@@ -3,78 +3,89 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "sql_catalog.h"
 
 void
-cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy, fkeyvalue hfunc)
+cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy)
 {
 	*cs = (changeset) {
 		.sa = sa,
 		.destroy = destroy,
-		.fkeyvalue = hfunc,
 	};
 }
 
 void
-cs_destroy(changeset * cs, void *data)
+cs_destroy(changeset * cs)
 {
 	if (cs->set) {
-		list_destroy2(cs->set, data);
+		list_destroy(cs->set);
 		cs->set = NULL;
 	}
 	if (cs->dset) {
-		list_destroy2(cs->dset, data);
+		list_destroy(cs->dset);
 		cs->dset = NULL;
 	}
 }
 
-changeset *
-cs_add(changeset * cs, void *elm, bool isnew)
+void
+cs_add(changeset * cs, void *elm, int flags)
 {
-	if (!cs->set && !(cs->set = list_new(cs->sa, cs->destroy)))
-		return NULL;
-
-	int sz = list_length(cs->set);
-	/* re-hash or create hash table before inserting */
-	if ((!cs->set->ht || cs->set->ht->size * 16 < sz) && sz > HASH_MIN_SIZE) {
-		hash_destroy(cs->set->ht);
-		if (!(cs->set->ht = hash_new(cs->sa, MAX(sz, 1) * 16, cs->fkeyvalue)))
-			return NULL;
-		for (node *n = cs->set->h; n; n = n->next) {
-			if (!hash_add(cs->set->ht, cs->set->ht->key(n->data), n->data))
-				return NULL;
-		}
-	}
-	if (!list_append(cs->set, elm))
-		return NULL;
-	if (isnew && !cs->nelm)
+	if (!cs->set)
+		cs->set = list_new(cs->sa, cs->destroy);
+	list_append(cs->set, elm);
+	if (newFlagSet(flags) && !cs->nelm)
 		cs->nelm = cs->set->t;
-	return cs;
 }
 
-changeset *
-cs_del(changeset * cs, void *gdata, node *n, bool force)
+void *
+cs_transverse_with_validate(changeset * cs, void *elm, fvalidate cmp)
 {
-	if (!force && !cs->dset && !(cs->dset = list_new(cs->sa, cs->destroy)))
-		return NULL;
+	return list_traverse_with_validate(cs->set, elm, cmp);
+}
 
-	if (cs->nelm == n) /* update nelm pointer */
-		cs->nelm = n->next;
-	if (cs->set->ht) /* delete hashed value */
-		hash_del(cs->set->ht, cs->set->ht->key(n->data), n->data);
+void*
+cs_add_with_validate(changeset * cs, void *elm, int flags, fvalidate cmp)
+{
+	void* res = NULL;
+	if (!cs->set)
+		cs->set = list_new(cs->sa, cs->destroy);
+	if((res = list_append_with_validate(cs->set, elm, cmp)) != NULL)
+		return res;
+	if (newFlagSet(flags) && !cs->nelm)
+		cs->nelm = cs->set->t;
+	return res;
+}
 
-	if (force) { /* remove just added */
-		if (!list_remove_node(cs->set, gdata, n))
-			return NULL;
+void
+cs_add_before(changeset * cs, node *n, void *elm)
+{
+	list_append_before(cs->set, n, elm);
+}
+
+void
+cs_del(changeset * cs, node *elm, int flags)
+{
+	if (newFlagSet(flags)) {	/* remove just added */
+		if (cs->nelm == elm)
+			cs->nelm = elm->next;
+		list_remove_node(cs->set, elm);
 	} else {
-		if (!list_move_data(cs->set, cs->dset, n->data))
-			return NULL;
+		if (!cs->dset)
+			cs->dset = list_new(cs->sa, cs->destroy);
+		list_move_data(cs->set, cs->dset, elm->data);
 	}
-	return cs;
+}
+
+void
+cs_move(changeset *from, changeset *to, void *data)
+{
+	if (!to->set)
+		to->set = list_new(to->sa, to->destroy);
+	list_move_data(from->set, to->set, data);
 }
 
 int
@@ -85,3 +96,24 @@ cs_size(changeset * cs)
 	return 0;
 }
 
+node *
+cs_first_node(changeset * cs)
+{
+	return cs->set->h;
+}
+
+node *
+cs_last_node(changeset * cs)
+{
+	return cs->set->t;
+}
+
+void
+cs_remove_node(changeset * cs, node *n)
+{
+	node *nxt = n->next;
+
+	list_remove_node(cs->set, n);
+	if (cs->nelm == n)
+		cs->nelm = nxt;
+}

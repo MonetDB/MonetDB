@@ -1,9 +1,0 @@
-for selinuxvariant in "@SELINUX_TYPES@"
-do
-  /usr/sbin/semodule -s ${selinuxvariant} -i \
-    @CMAKE_INSTALL_DATADIR@/selinux/${selinuxvariant}/monetdb.pp &> /dev/null || :
-done
-# use /var/run/monetdb since that's what it says in the monetdb.fc file
-# it says that because /run/monetdb for some reason doesn't work
-/sbin/restorecon -R @CMAKE_INSTALL_FULL_LOCALSTATEDIR@/monetdb5 @CMAKE_INSTALL_FULL_LOCALSTATEDIR@/log/monetdb @CMAKE_INSTALL_FULL_RUNSTATEDIR@/monetdb @CMAKE_INSTALL_FULL_BINDIR@/monetdbd @CMAKE_INSTALL_FULL_BINDIR@/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
-/usr/bin/systemctl try-restart monetdbd.service

@@ -1,0 +1,17 @@
+stderr of test 'innerjoin_multiple-bug-sf-943661` in directory 'sql/test/bugs` itself:
+
+
+# 17:28:13 >  
+# 17:28:13 >  Mtimeout -timeout 180 Mserver "--config=/ufs/heman/local-GNU-DBG/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/heman/local-GNU-DBG/lib/MonetDB:/ufs/heman/local-GNU-DBG/lib/bin" --set "gdk_dbfarm=/ufs/heman/local-GNU-DBG/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/heman/local-GNU-DBG/var/MonetDB/log" --set mapi_port=34029 --set sql_port=41118 --set xquery_port=52123 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 17:28:13 >  
+
+
+# 17:28:13 >  
+# 17:28:13 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=41118  < innerjoin_multiple-bug-sf-943661.sql
+# 17:28:13 >  
+
+
+# 17:28:13 >  
+# 17:28:13 >  Done.
+# 17:28:13 >  
+

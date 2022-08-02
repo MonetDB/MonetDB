@@ -1,5 +1,0 @@
-query T rowsort
-SELECT ST_AsText(ST_GeometryN(centerlines, 2)) FROM divided_routes WHERE name = 'Route 75'
-----
-LINESTRING (16 0, 16 23, 16 48)
-

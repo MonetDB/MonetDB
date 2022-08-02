@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -52,7 +52,7 @@ proxyThread(void *d)
 	while ((len = mnstr_read(p->in, data, 1, sizeof(data))) >= 0) {
 		if (len > 0 && mnstr_write(p->out, data, len, 1) != 1)
 			break;
-		if (len == 0 &&	mnstr_flush(p->out, MNSTR_FLUSH_DATA) == -1)
+		if (len == 0 &&	mnstr_flush(p->out) == -1)
 			break;
 	}
 
@@ -62,10 +62,10 @@ proxyThread(void *d)
 	if (p->name != NULL) {
 		/* name is only set on the client-to-server thread */
 		if (len <= 0) {
-			Mlevelfprintf(DEBUG, stdout, "client %s has disconnected from proxy\n",
+			Mfprintf(stdout, "client %s has disconnected from proxy\n",
 					p->name);
 		} else {
-			Mlevelfprintf(WARNING, stdout, "server has terminated proxy connection, "
+			Mfprintf(stdout, "server has terminated proxy connection, "
 					"disconnecting client %s\n", p->name);
 		}
 		free(p->name);
@@ -156,7 +156,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 		(void) fcntl(ssock, F_SETFD, FD_CLOEXEC);
 #endif
-		if (connect(ssock, (struct sockaddr *) &server, sizeof(struct sockaddr_un)) == -1) {
+		if (connect(ssock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == -1) {
 			closesocket(ssock);
 			return(newErr("cannot connect: %s", strerror(errno)));
 		}
@@ -184,7 +184,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		msg.msg_controllen = cmsg->cmsg_len;
 		msg.msg_flags = 0;
 
-		Mlevelfprintf(DEBUG, stdout, "target connection is on local UNIX domain socket, "
+		Mfprintf(stdout, "target connection is on local UNIX domain socket, "
 				"passing on filedescriptor instead of proxying\n");
 		if (sendmsg(ssock, &msg, 0) < 0) {
 			closesocket(ssock);
@@ -247,14 +247,12 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 	}
 
 	sfdin = block_stream(socket_rstream(ssock, "merovingian<-server (proxy read)"));
-	if (sfdin == 0) {
-		return(newErr("merovingian-server inputstream or outputstream problems: %s", mnstr_peek_error(NULL)));
-	}
-
 	sfout = block_stream(socket_wstream(ssock, "merovingian->server (proxy write)"));
-	if (sfout == 0) {
+
+	if (sfdin == 0 || sfout == 0) {
+		close_stream(sfout);
 		close_stream(sfdin);
-		return(newErr("merovingian-server inputstream or outputstream problems: %s", mnstr_peek_error(NULL)));
+		return(newErr("merovingian-server inputstream or outputstream problems"));
 	}
 
 	/* our proxy schematically looks like this:
@@ -307,3 +305,74 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 
 	return(NO_ERR);
 }
+
+#ifdef MYSQL_EMULATION_BLEEDING_EDGE_STUFF
+static err
+handleMySQLClient(int sock)
+{
+	stream *fdin, *fout;
+	str buf[8096];
+	str p;
+	int len;
+
+	fdin = socket_rstream(sock, "merovingian<-mysqlclient (read)");
+	if (fdin == 0)
+		return(newErr("merovingian-mysqlclient inputstream problems"));
+
+	fout = socket_wstream(sock, "merovingian->mysqlclient (write)");
+	if (fout == 0) {
+		close_stream(fdin);
+		return(newErr("merovingian-mysqlclient outputstream problems"));
+	}
+
+#ifdef WORDS_BIGENDIAN
+#define le_int(P, X) \
+	*(P)++ = (unsigned int)X & 255; \
+	*(P)++ = ((unsigned int)X >> 8) & 255; \
+	*(P)++ = ((unsigned int)X >> 16) & 255; \
+	*(P)++ = ((unsigned int)X >> 24) & 255;
+#define le_sht(P, X) \
+	*(P)++ = (unsigned short)X & 255; \
+	*(P)++ = ((unsigned short)X >> 8) & 255;
+#else
+#define le_int(P, X) \
+	*(P)++ = ((unsigned int)X >> 24) & 255; \
+	*(P)++ = ((unsigned int)X >> 16) & 255; \
+	*(P)++ = ((unsigned int)X >> 8) & 255; \
+	*(P)++ = (unsigned int)X & 255;
+#define le_sht(P, X) \
+	*(P)++ = ((unsigned short)X >> 8) & 255; \
+	*(P)++ = (unsigned short)X & 255;
+#endif
+
+	/* Handshake Initialization Packet */
+	p = buf + 4;   /* skip bytes for package header */
+	*p++ = 0x10;   /* protocol_version */
+	p += sprintf(p, VERSION "-merovingian") + 1; /* server_version\0 */
+	le_int(p, 0);  /* thread_number */
+	p += sprintf(p, "voidvoid"); /* scramble_buff */
+	*p++ = 0x00;   /* filler */
+	/* server_capabilities:
+	 * CLIENT_CONNECT_WITH_DB CLIENT_NO_SCHEMA CLIENT_PROTOCOL_41
+	 * CLIENT_INTERACTIVE CLIENT_MULTI_STATEMENTS CLIENT_MULTI_RESULTS
+	 */
+	le_sht(p, (8 | 16 | 512 | 1024 | 8192 | 65536 | 131072));
+	*p++ = 0x33;   /* server_language = utf8_general_ci */
+	le_sht(p, 2);  /* server_status = SERVER_STATUS_AUTOCOMMIT */
+	p += sprintf(p, "             ");  /* filler 14 bytes */
+
+	/* packet header */
+	len = p - buf;
+	p = buf;
+	le_int(p, len);
+	*p = *(p + 1); p++;
+	*p = *(p + 1); p++;
+	*p = *(p + 1); p++;
+	*p = 0x00;   /* packet number */
+	mnstr_flush(fout);
+
+	return(NO_ERR);
+}
+#endif
+
+/* vim:set ts=4 sw=4 noexpandtab: */

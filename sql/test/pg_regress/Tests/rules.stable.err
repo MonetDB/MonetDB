@@ -1,0 +1,155 @@
+stderr of test 'rules` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
+
+#--
+#-- RULES
+#-- From Jan's original setup_ruletest.sql and run_ruletest.sql
+#-- - thomas 1998-09-13
+#--
+#--
+#-- Tables and rules for the view test
+#--
+#-- Test comments
+#--
+#-- Tables and rules for the constraint update/delete test
+#--
+#-- Note:
+#-- 	Now that we have multiple action rule support, we check
+#-- 	both possible syntaxes to define them (The last action
+#--  can but must not have a semicolon at the end).
+#--
+#--
+#-- Tables and rules for the logging test
+#--
+#--
+#-- Tables and rules for the multiple cascaded qualified instead
+#-- rule test 
+#--
+#--
+#-- Tables and rules for the rule fire order test
+#--
+#-- As of PG 7.3, the rules should fire in order by string, regardless
+#-- of INSTEAD attributes or creation order.
+#--
+#--
+#-- Tables and rules for the instead nothing test
+#--
+#--
+#-- Tests on a view that is select * of a table
+#-- and has insert/update/delete instead rules to
+#-- behave close like the real table.
+#--
+#--
+#-- We need test date later
+#--
+#-- insert values
+#-- delete with constant expression
+#-- insert select
+#-- same with swapped targetlist
+#-- now with only one target attribute
+#-- let attribute a differ (must be done on rtest_t1 - see above)
+#-- now updates with constant expression
+#-- updates in a mergejoin
+#--
+#-- Test for constraint updates/deletes
+#--
+#-- Note: use ORDER BY here to ensure consistent output across all systems.
+#-- The above UPDATE affects two rows with equal keys, so they could be
+#-- updated in either order depending on the whim of the local qsort().
+#--
+#-- Rule qualification test
+#--
+#--
+#-- Multiple cascaded qualified instead rule test
+#--
+#--
+#-- Check that the ordering of rules fired is correct
+#--
+#--
+#-- Check if instead nothing w/without qualification works
+#--
+#--
+#-- Test for computations in views
+#--
+#--
+#-- In addition run the (slightly modified) queries from the
+#-- programmers manual section on the rule system.
+#--
+#-- SELECTs in doc
+#-- Want "log_who" to be CURRENT_USER,
+#-- but that is non-portable for the regression test
+#-- - thomas 1999-02-21
+#--
+#-- Simple test of qualified ON INSERT ... this did not work in 7.0 ...
+#--
+#-- this should fail because f1 is not exposed for unqualified reference:
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = create rule foorule as on insert to foo where f1 < 100
+do instead insert into foo2 values (f1);
+ERROR = column "f1" does not exist
+#-- this is the correct way:
+#--
+#-- Test rules containing INSERT ... SELECT, which is a very ugly special
+#-- case as of 7.1.  Example is based on bug report from Joel Burton.
+#--
+#--
+#-- Check that ruleutils are working
+#--
+#--
+#-- CREATE OR REPLACE RULE
+#--
+#-- Check that rewrite rules splitting one INSERT into multiple
+#-- conditional statements does not disable FK checking.
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = insert into rule_and_refint_t3 values (1, 11, 13, 'row5');
+ERROR = insert or update on table "rule_and_refint_t3" violates foreign key constraint "rule_and_refint_t3_id3a_fkey1"
+DETAIL:  Key (id3a,id3c)=(1,13) is not present in table "rule_and_refint_t2".
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = insert into rule_and_refint_t3 values (1, 13, 11, 'row6');
+ERROR = insert or update on table "rule_and_refint_t3" violates foreign key constraint "rule_and_refint_t3_id3a_fkey"
+DETAIL:  Key (id3a,id3b)=(1,13) is not present in table "rule_and_refint_t1".
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = insert into rule_and_refint_t3 values (1, 11, 13, 'row7');
+ERROR = insert or update on table "rule_and_refint_t3" violates foreign key constraint "rule_and_refint_t3_id3a_fkey1"
+DETAIL:  Key (id3a,id3c)=(1,13) is not present in table "rule_and_refint_t2".
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = insert into rule_and_refint_t3 values (1, 13, 11, 'row8');
+ERROR = insert or update on table "rule_and_refint_t3" violates foreign key constraint "rule_and_refint_t3_id3a_fkey"
+DETAIL:  Key (id3a,id3b)=(1,13) is not present in table "rule_and_refint_t1".
+#--
+#-- check for planner problems with complex inherited UPDATES
+#--
+#-- currently, must respecify PKEY for each inherited subtable
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
+

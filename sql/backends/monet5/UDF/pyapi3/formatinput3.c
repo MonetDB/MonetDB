@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -48,7 +48,7 @@ PyObject *PyCodeObject_ParseString(char *string, char **msg)
 	}
 	code_copy[j] = '\0';
 	tuple = PyTuple_New(1);
-	mystr = PyUnicode_FromStringAndSize(
+	mystr = PyString_FromStringAndSize(
 		code_copy,
 		j); // use FromStringAndSize because the string is not null-terminated
 	PyTuple_SetItem(tuple, 0, mystr);
@@ -107,7 +107,14 @@ char *FormatCode(char *code, char **args, size_t argcount, size_t tabwidth,
 	char base_start[] = "def pyfun(";
 	char base_end[] = "):\n";
 	*msg = NULL;
+#ifndef IS_PY3K
+	if (code[1] == '@') {
+		*code_object = PyCodeObject_ParseString(code, msg);
+		return NULL;
+	}
+#else
 	(void)code_object;
+#endif
 
 	indentation_levels = (size_t *)GDKzalloc(max_indentation * sizeof(size_t));
 	statements_per_level =

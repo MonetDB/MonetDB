@@ -1,0 +1,93 @@
+stderr of test 'select` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
+
+#--
+#-- SELECT
+#--
+#-- btree index
+#-- awk '{if($1<10){print;}else{next;}}' onek.data | sort +0n -1
+#--
+#--
+#-- awk '{if($1<20){print $1,$14;}else{next;}}' onek.data | sort +0nr -1
+#--
+#--
+#-- awk '{if($1>980){print $1,$14;}else{next;}}' onek.data | sort +1d -2
+#--
+#--
+#-- awk '{if($1>980){print $1,$16;}else{next;}}' onek.data |
+#-- sort +1d -2 +0nr -1
+#--
+#--
+#-- awk '{if($1>980){print $1,$16;}else{next;}}' onek.data |
+#-- sort +1dr -2 +0n -1
+#--
+#--
+#-- awk '{if($1<20){print $1,$16;}else{next;}}' onek.data |
+#-- sort +0nr -1 +1d -2
+#--
+#--
+#-- awk '{if($1<20){print $1,$16;}else{next;}}' onek.data |
+#-- sort +0n -1 +1dr -2
+#--
+#--
+#-- test partial btree indexes
+#--
+#-- As of 7.2, planner probably won't pick an indexscan without stats,
+#-- so ANALYZE first.
+#--
+#--
+#-- awk '{if($1<10){print $0;}else{next;}}' onek.data | sort +0n -1
+#--
+#--
+#-- awk '{if($1<20){print $1,$14;}else{next;}}' onek.data | sort +0nr -1
+#--
+#--
+#-- awk '{if($1>980){print $1,$14;}else{next;}}' onek.data | sort +1d -2
+#--
+#--
+#-- awk '{print $1,$2;}' person.data |
+#-- awk '{if(NF!=2){print $3,$2;}else{print;}}' - emp.data |
+#-- awk '{if(NF!=2){print $3,$2;}else{print;}}' - student.data |
+#-- awk 'BEGIN{FS="      ";}{if(NF!=2){print $4,$5;}else{print;}}' - stud_emp.data
+#--
+#-- SELECT string, age FROM person*; ??? check if different
+#--
+#-- awk '{print $1,$2;}' person.data |
+#-- awk '{if(NF!=2){print $3,$2;}else{print;}}' - emp.data |
+#-- awk '{if(NF!=2){print $3,$2;}else{print;}}' - student.data |
+#-- awk 'BEGIN{FS="      ";}{if(NF!=1){print $4,$5;}else{print;}}' - stud_emp.data |
+#-- sort +1nr -2
+#--
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
+

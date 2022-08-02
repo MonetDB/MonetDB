@@ -1,9 +1,0 @@
-statement ok
-create table broken_delete (b int)
-
-statement ok
-insert into broken_delete values(1)
-
-statement ok
-insert into broken_delete values(3)
-

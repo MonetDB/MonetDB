@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -31,6 +31,7 @@ list_init(list *l, sql_allocator *sa, fdestroy destroy)
 			.sa = sa,
 			.destroy = destroy,
 		};
+		MT_lock_init(&l->ht_lock, "sa_ht_lock");
 	}
 	return l;
 }
@@ -46,23 +47,6 @@ sa_list(sql_allocator *sa)
 {
 	list *l = (sa)?SA_NEW(sa, list):MNEW(list);
 	return list_init(l, sa, NULL);
-}
-
-/*
-static void
-_free(void *dummy, void *data)
-{
-	(void)dummy;
-	GDKfree(data);
-}
-*/
-
-list *
-sa_list_append(sql_allocator *sa, list *l, void *data)
-{
-	if (!l)
-		l = SA_LIST(sa, NULL);
-	return list_append(l, data);
 }
 
 list *
@@ -92,10 +76,10 @@ list_empty(list *l)
 }
 
 static void
-node_destroy(list *l, void *data, node *n)
+node_destroy(list *l, node *n)
 {
 	if (n->data && l->destroy) {
-		l->destroy(data, n->data);
+		l->destroy(n->data);
 		n->data = NULL;
 	}
 	if (!l->sa)
@@ -103,33 +87,25 @@ node_destroy(list *l, void *data, node *n)
 }
 
 void
-list_destroy2(list *l, void *data)
+list_destroy(list *l)
 {
 	if (l) {
 		node *n = l->h;
 
+		MT_lock_destroy(&l->ht_lock);
 		l->h = NULL;
 		if (l->destroy || l->sa == NULL) {
 			while (n) {
 				node *t = n;
 
 				n = t->next;
-				node_destroy(l, data, t);
+				node_destroy(l, t);
 			}
 		}
-
-		if (l->ht && !l->ht->sa)
-			hash_destroy(l->ht);
 
 		if (!l->sa)
 			_DELETE(l);
 	}
-}
-
-void
-list_destroy(list *l)
-{
-	list_destroy2(l, NULL);
 }
 
 int
@@ -151,13 +127,16 @@ list_append_node(list *l, node *n)
 	l->t = n;
 	l->cnt++;
 	if (n->data) {
+		MT_lock_set(&l->ht_lock);
 		if (l->ht) {
 			int key = l->ht->key(n->data);
 
 			if (hash_add(l->ht, key, n->data) == NULL) {
+				MT_lock_unset(&l->ht_lock);
 				return NULL;
 			}
 		}
+		MT_lock_unset(&l->ht_lock);
 	}
 	return l;
 }
@@ -172,8 +151,8 @@ list_append(list *l, void *data)
 	return list_append_node(l, n);
 }
 
-void *
-list_append_with_validate(list *l, void *data, void *extra, fvalidate cmp)
+void*
+list_append_with_validate(list *l, void *data, fvalidate cmp)
 {
 	node *n = node_create(l->sa, data), *m;
 	void* err = NULL;
@@ -182,12 +161,9 @@ list_append_with_validate(list *l, void *data, void *extra, fvalidate cmp)
 		return NULL;
 	if (l->cnt) {
 		for (m = l->h; m; m = m->next) {
-			err = cmp(m->data, data, extra);
-			if(err) {
-				n->data = NULL;
-				node_destroy(l, NULL, n);
+			err = cmp(m->data, data);
+			if(err)
 				return err;
-			}
 		}
 		l->t->next = n;
 	} else {
@@ -195,17 +171,20 @@ list_append_with_validate(list *l, void *data, void *extra, fvalidate cmp)
 	}
 	l->t = n;
 	l->cnt++;
+	MT_lock_set(&l->ht_lock);
 	if (l->ht) {
 		int key = l->ht->key(data);
 
 		if (hash_add(l->ht, key, data) == NULL) {
+			MT_lock_unset(&l->ht_lock);
 			return NULL;
 		}
 	}
+	MT_lock_unset(&l->ht_lock);
 	return NULL;
 }
 
-void *
+void*
 list_append_sorted(list *l, void *data, void *extra, fcmpvalidate cmp)
 {
 	node *n = node_create(l->sa, data), *m, *prev = NULL;
@@ -220,11 +199,8 @@ list_append_sorted(list *l, void *data, void *extra, fcmpvalidate cmp)
 	} else {
 		for (m = l->h; m; m = m->next) {
 			err = cmp(m->data, data, extra, &comp);
-			if(err) {
-				n->data = NULL;
-				node_destroy(l, NULL, n);
+			if(err)
 				return err;
-			}
 			if(comp < 0)
 				break;
 			first = 0;
@@ -243,13 +219,16 @@ list_append_sorted(list *l, void *data, void *extra, fcmpvalidate cmp)
 		}
 	}
 	l->cnt++;
+	MT_lock_set(&l->ht_lock);
 	if (l->ht) {
 		int key = l->ht->key(data);
 
 		if (hash_add(l->ht, key, data) == NULL) {
+			MT_lock_unset(&l->ht_lock);
 			return NULL;
 		}
 	}
+	MT_lock_unset(&l->ht_lock);
 	return NULL;
 }
 
@@ -270,13 +249,16 @@ list_append_before(list *l, node *m, void *data)
 		p->next = n;
 	}
 	l->cnt++;
+	MT_lock_set(&l->ht_lock);
 	if (l->ht) {
 		int key = l->ht->key(data);
 
 		if (hash_add(l->ht, key, data) == NULL) {
+			MT_lock_unset(&l->ht_lock);
 			return NULL;
 		}
 	}
+	MT_lock_unset(&l->ht_lock);
 	return l;
 }
 
@@ -293,13 +275,16 @@ list_prepend(list *l, void *data)
 	n->next = l->h;
 	l->h = n;
 	l->cnt++;
+	MT_lock_set(&l->ht_lock);
 	if (l->ht) {
 		int key = l->ht->key(data);
 
 		if (hash_add(l->ht, key, data) == NULL) {
+			MT_lock_unset(&l->ht_lock);
 			return NULL;
 		}
 	}
+	MT_lock_unset(&l->ht_lock);
 	return l;
 }
 
@@ -318,7 +303,6 @@ hash_delete(sql_hash *h, void *data)
 		else
 			e->chain = p->chain;
 	}
-	h->entries--;
 }
 
 static node *
@@ -330,7 +314,6 @@ list_remove_node_(list *l, node *n)
 	if (p != n)
 		while (p && p->next != n)
 			p = p->next;
-	assert(p==n||(p && p->next == n));
 	if (p == n) {
 		l->h = n->next;
 		p = NULL;
@@ -340,25 +323,27 @@ list_remove_node_(list *l, node *n)
 	if (n == l->t)
 		l->t = p;
 	if (data) {
+		MT_lock_set(&l->ht_lock);
 		if (l->ht && data)
 			hash_delete(l->ht, data);
+		MT_lock_unset(&l->ht_lock);
 	}
 	l->cnt--;
-	assert(l->cnt > 0 || l->h == NULL);
+	assert(l->cnt >= 0);
 	return p;
 }
 
 node *
-list_remove_node(list *l, void *gdata, node *n)
+list_remove_node(list *l, node *n)
 {
 	node *p = list_remove_node_(l, n);
 
-	node_destroy(l, gdata, n);
+	node_destroy(l, n);
 	return p;
 }
 
 void
-list_remove_data(list *s, void *gdata, void *data)
+list_remove_data(list *s, void *data)
 {
 	node *n;
 
@@ -367,33 +352,37 @@ list_remove_data(list *s, void *gdata, void *data)
 		return;
 	for (n = s->h; n; n = n->next) {
 		if (n->data == data) {
+			MT_lock_set(&s->ht_lock);
 			if (s->ht && n->data)
 				hash_delete(s->ht, n->data);
+			MT_lock_unset(&s->ht_lock);
 			n->data = NULL;
-			list_remove_node(s, gdata, n);
+			list_remove_node(s, n);
 			break;
 		}
 	}
 }
 
 void
-list_remove_list(list *l, void *gdata, list *data)
+list_remove_list(list *l, list *data)
 {
 	node *n;
 
 	for (n=data->h; n; n = n->next)
-		list_remove_data(l, gdata, n->data);
+		list_remove_data(l, n->data);
 }
 
-list *
+void
 list_move_data(list *s, list *d, void *data)
 {
 	node *n = NULL;
 
 	for (n = s->h; n; n = n->next) {
 		if (n->data == data) {
+			MT_lock_set(&s->ht_lock);
 			if (s->ht && n->data)
 				hash_delete(s->ht, n->data);
+			MT_lock_unset(&s->ht_lock);
 			n->data = NULL;	/* make sure data isn't destroyed */
 			(void)list_remove_node_(s, n);
 			n->data = data;
@@ -401,10 +390,10 @@ list_move_data(list *s, list *d, void *data)
 		}
 	}
 	if (!n) {
-		return list_append(d, data);
+		list_append(d, data);
 	} else {
 		n->next = NULL;
-		return list_append_node(d, n);
+		list_append_node(d, n);
 	}
 }
 
@@ -432,12 +421,12 @@ list_traverse(list *l, traverse_func f, void *clientdata)
 }
 
 void *
-list_transverse_with_validate(list *l, void *data, void *extra, fvalidate cmp)
+list_traverse_with_validate(list *l, void *data, fvalidate cmp)
 {
 	void* err = NULL;
 
 	for (node *n = l->h; n; n = n->next) {
-		err = cmp(n->data, data, extra);
+		err = cmp(n->data, data);
 		if(err)
 			break;
 	}
@@ -772,8 +761,10 @@ list_hash_delete(list *l, void *data, fcmp cmp)
 	if (l && data) {
 		node *n = list_find(l, data, cmp);
 		if(n) {
+			MT_lock_set(&l->ht_lock);
 			if (l->ht && n->data)
 				hash_delete(l->ht, data);
+			MT_lock_unset(&l->ht_lock);
 		}
 	}
 }
@@ -784,12 +775,15 @@ list_hash_add(list *l, void *data, fcmp cmp)
 	if (l && data) {
 		node *n = list_find(l, data, cmp);
 		if(n) {
+			MT_lock_set(&l->ht_lock);
 			if (l->ht && n->data) {
 				int nkey = l->ht->key(data);
 				if (hash_add(l->ht, nkey, data) == NULL) {
+					MT_lock_unset(&l->ht_lock);
 					return NULL;
 				}
 			}
+			MT_lock_unset(&l->ht_lock);
 		}
 	}
 	return data;
@@ -798,5 +792,7 @@ list_hash_add(list *l, void *data, fcmp cmp)
 void
 list_hash_clear(list *l)
 {
+	MT_lock_set(&l->ht_lock);
 	l->ht = NULL;
+	MT_lock_unset(&l->ht_lock);
 }

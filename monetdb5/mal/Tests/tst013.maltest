@@ -1,5 +1,0 @@
-statement error
-barrier z:= true;
-	leave;
-exit;
-

@@ -1,0 +1,12 @@
+stderr of test 'FTexample` in directory 'monetdb5/optimizer` itself:
+
+
+# 23:27:48 >  
+# 23:27:48 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=35469 --set sql_port=42170 --set xquery_port=53059 --set monet_prompt= --trace --dbname=mTests_src_optimizer  FTexample.mal </dev/null
+# 23:27:48 >  
+
+
+# 23:27:48 >  
+# 23:27:48 >  Done.
+# 23:27:48 >  
+

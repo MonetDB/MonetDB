@@ -1,0 +1,18 @@
+# The series tst2?? is a patched version of suite_00
+# The first and foremost BAT operations
+
+# String iterator stuff
+c:= bat.new(:str);
+bat.append(c,"hello");
+bat.append(c,"brave");
+bat.append(c,"world");
+bat.append(c,"");
+x:= calc.str(nil);
+bat.append(c,x);
+bat.append(c,"!");
+io.print(c);
+barrier (h,ts):= iterator.new(c);
+	io.printf("[%d,",h);
+	io.printf("%s]\n",ts);
+	redo (h,ts):= iterator.next(c);
+exit (h,ts);

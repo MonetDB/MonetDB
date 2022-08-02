@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifdef _MSC_VER
@@ -15,7 +15,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <string.h>
 #include <sql.h>
 #include <sqlext.h>
 
@@ -82,10 +81,10 @@ main(int argc, char **argv)
 	SQLRETURN ret;
 	int i;
 	SQLSMALLINT f1;
-	char f2[30], ff2[30];
+	char f2[30];
 	SQLDOUBLE f3;
-	SQL_DATE_STRUCT f4, ff4;
-	SQL_TIME_STRUCT f5, ff5;
+	SQL_DATE_STRUCT f4;
+	SQL_TIME_STRUCT f5;
 
 	if (argc > 1)
 		dsn = argv[1];
@@ -274,17 +273,6 @@ main(int argc, char **argv)
 	ret = SQLExecute(stmt2);
 	check(ret, SQL_HANDLE_STMT, stmt2, "SQLExecute 3");
 
-	i = 0;
-	ff4 = (SQL_DATE_STRUCT) {
-		.year = 2003,
-		.month = 1,
-		.day = 1,
-	};
-	ff5 = (SQL_TIME_STRUCT) {
-		.hour = 0,
-		.minute = 0,
-		.second = 0,
-	};
 	for (;;) {
 		/* Alternate fetching an even and an odd entry.  The
 		   end result should be that we get all entries in the
@@ -294,60 +282,15 @@ main(int argc, char **argv)
 		if (ret == SQL_NO_DATA)
 			break;
 		check(ret, SQL_HANDLE_STMT, stmt, "SQLFetch 1");
-		snprintf(ff2, sizeof(ff2), "value \342\200\230%d\342\200\231", i);
-		ff4.day++;
-		if ((ff4.day == 29 && ff4.month == 2) || (ff4.day == 31 && (ff4.month == 4 || ff4.month == 6 || ff4.month == 9 || ff4.month == 11)) || ff4.day == 32) {
-			ff4.day = 1;
-			ff4.month++;
-			if (ff4.month == 13) {
-				ff4.month = 1;
-				ff4.year++;
-			}
-		}
-		ff5.second++;
-		if (ff5.second == 60) {
-			ff5.second = 0;
-			ff5.minute++;
-			if (ff5.minute == 60) {
-				ff5.minute = 0;
-				ff5.hour++;
-				if (ff5.hour == 25)
-					ff5.hour = 0;
-			}
-		}
-		if (f1 != i || strcmp(f2, ff2) != 0 || f3 != i * 1.5 || f4.year != ff4.year || f4.month != ff4.month || f4.day != ff4.day || f5.hour != ff5.hour || f5.minute != ff5.minute || f5.second != ff5.second)
-			printf("%d %s %g %04d:%02d:%02d %02d-%02d-%02d\n", f1, f2, f3, f4.year, f4.month, f4.day, f5.hour, f5.minute, f5.second);
-		i++;
+
+		printf("%d %s %g %04d:%02d:%02d %02d-%02d-%02d\n", f1, f2, f3, f4.year, f4.month, f4.day, f5.hour, f5.minute, f5.second);
 
 		ret = SQLFetch(stmt2);
 		if (ret == SQL_NO_DATA)
 			break;
 		check(ret, SQL_HANDLE_STMT, stmt2, "SQLFetch 2");
-		snprintf(ff2, sizeof(ff2), "value \342\200\230%d\342\200\231", i);
-		ff4.day++;
-		if ((ff4.day == 29 && ff4.month == 2) || (ff4.day == 31 && (ff4.month == 4 || ff4.month == 6 || ff4.month == 9 || ff4.month == 11)) || ff4.day == 32) {
-			ff4.day = 1;
-			ff4.month++;
-			if (ff4.month == 13) {
-				ff4.month = 1;
-				ff4.year++;
-			}
-		}
-		ff5.second++;
-		if (ff5.second == 60) {
-			ff5.second = 0;
-			ff5.minute++;
-			if (ff5.minute == 60) {
-				ff5.minute = 0;
-				ff5.hour++;
-				if (ff5.hour == 25)
-					ff5.hour = 0;
-			}
-		}
-		if (f1 != i || strcmp(f2, ff2) != 0 || f3 != i * 1.5 || f4.year != ff4.year || f4.month != ff4.month || f4.day != ff4.day || f5.hour != ff5.hour || f5.minute != ff5.minute || f5.second != ff5.second)
-			printf("%d %s %g %04d:%02d:%02d %02d-%02d-%02d\n", f1, f2, f3, f4.year, f4.month, f4.day, f5.hour, f5.minute, f5.second);
-		i++;
 
+		printf("%d %s %g %04d:%02d:%02d %02d-%02d-%02d\n", f1, f2, f3, f4.year, f4.month, f4.day, f5.hour, f5.minute, f5.second);
 	}
 
 	ret = SQLCloseCursor(stmt);

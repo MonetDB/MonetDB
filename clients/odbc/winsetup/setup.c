@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* Visual Studio 8 has deprecated lots of stuff: suppress warnings */
@@ -258,7 +258,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	MergeFromProfileString(data.dsn, &data.uid, "uid", "monetdb");
 	MergeFromProfileString(data.dsn, &data.pwd, "pwd", "monetdb");
 	MergeFromProfileString(data.dsn, &data.host, "host", "localhost");
-	MergeFromProfileString(data.dsn, &data.port, "port", MAPI_PORT_STR);
+	MergeFromProfileString(data.dsn, &data.port, "port", "50000");
 	MergeFromProfileString(data.dsn, &data.database, "database", "");
 
 	ODBCLOG("ConfigDSN values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s\n",

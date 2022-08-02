@@ -2,7 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 -- (co) Martin Kersten
 -- The JSON type comes with a few operators.
@@ -40,13 +40,21 @@ create function json."integer"(js json)
 returns bigint external name json."integer";
 GRANT EXECUTE ON FUNCTION json."integer"(json) TO PUBLIC;
 
--- test string for JSON validity
+-- test string for JSON compliancy
 create function json.isvalid(js string)
 returns bool external name json.isvalid;
 GRANT EXECUTE ON FUNCTION json.isvalid(string) TO PUBLIC;
 
+create function json.isobject(js string)
+returns bool external name json.isobject;
+GRANT EXECUTE ON FUNCTION json.isobject(string) TO PUBLIC;
+
+create function json.isarray(js string)
+returns bool external name json.isarray;
+GRANT EXECUTE ON FUNCTION json.isarray(string) TO PUBLIC;
+
 create function json.isvalid(js json)
-returns bool begin return true; end;
+returns bool external name json.isvalid;
 GRANT EXECUTE ON FUNCTION json.isvalid(json) TO PUBLIC;
 
 create function json.isobject(js json)
@@ -76,7 +84,9 @@ GRANT EXECUTE ON FUNCTION json.text(json) TO PUBLIC;
 
 -- The remainder awaits the implementation
 
--- create aggregate json.output(js json) returns string external name json.output;
+create aggregate json.output(js json)
+returns string external name json.output;
+GRANT EXECUTE ON AGGREGATE json.output(json) TO PUBLIC;
 
 -- create function json.object(*) returns json external name json.objectrender;
 

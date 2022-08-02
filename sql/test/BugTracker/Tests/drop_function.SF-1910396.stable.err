@@ -1,0 +1,19 @@
+stderr of test 'drop_function.SF-1910396` in directory 'sql/test/BugTracker` itself:
+
+
+# 09:54:02 >  
+# 09:54:02 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=38146 --set xrpc_port=43369 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 09:54:02 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf)
+
+# 09:54:02 >  
+# 09:54:02 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=38146 
+# 09:54:02 >  
+
+
+# 09:54:02 >  
+# 09:54:02 >  Done.
+# 09:54:02 >  
+

@@ -1,0 +1,12 @@
+# the first of a series of BBP test cases
+
+io.print("Start test");
+b:= bat.new(:int);
+bat.setName(b,"myfirstbat");
+bat.append(b,2);
+c:bat[:int] := bbp.bind("myfirstbat");
+catch MALException:str;
+	io.print(MALException);
+exit MALException;
+io.print("FIRST ROUND");
+io.print(c);

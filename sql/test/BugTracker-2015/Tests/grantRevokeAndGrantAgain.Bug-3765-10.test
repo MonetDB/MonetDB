@@ -1,3 +1,0 @@
-statement error 42000!SELECT: access denied for user_select to table 'schematest.testtable'
-SELECT * from schemaTest.testTable
-

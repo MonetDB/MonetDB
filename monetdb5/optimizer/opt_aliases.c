@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -21,12 +21,13 @@ OPTaliasRemap(InstrPtr p, int *alias){
 }
 
 str
-OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j,k=1, limit, actions=0;
 	int *alias = 0;
+	char buf[256];
+	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
-	InstrPtr p;
 
 	(void) stk;
 	(void) cntxt;
@@ -36,10 +37,6 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		p= getInstrPtr(mb,i);
 		if (OPTisAlias(p))
 			break;
-	}
-	if( i == limit){
-		// we didn't found a simple assignment that warrants a rewrite
-		goto wrapup;
 	}
 	k = i;
 	if( i < limit){
@@ -81,8 +78,12 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	//	msg = chkFlow(mb);
 	// if ( msg == MAL_SUCCEED)
 	// 	msg = chkDeclarations(mb);
-wrapup:
-	/* keep actions taken as a fake argument*/
-	(void) pushInt(mb, pci, actions);
+    /* keep all actions taken as a post block comment
+	 * and update statics */
+	usec= GDKusec() - usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","aliases",actions,usec);
+    newComment(mb,buf);
+	if( actions > 0)
+		addtoMalBlkHistory(mb);
 	return msg;
 }

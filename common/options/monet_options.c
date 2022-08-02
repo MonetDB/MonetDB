@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -205,6 +205,7 @@ mo_system_config(opt **Set, int setlen)
 	if (!cfg)
 		return setlen;
 	setlen = mo_config_file(Set, setlen, cfg);
+	free(cfg);
 	return setlen;
 }
 
@@ -217,7 +218,7 @@ mo_builtin_settings(opt **Set)
 	if (Set == NULL)
 		return 0;
 
-#define N_OPTIONS	5	/*MUST MATCH # OPTIONS BELOW */
+#define N_OPTIONS	8	/*MUST MATCH # OPTIONS BELOW */
 	set = malloc(sizeof(opt) * N_OPTIONS);
 	if (set == NULL)
 		return 0;
@@ -229,7 +230,19 @@ mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("mapi_port");
-	set[i].value = strdup(MAPI_PORT_STR);
+	set[i].value = strdup("50000");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("mapi_open");
+	set[i].value = strdup("false");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("mapi_ipv6");
+	set[i].value = strdup("false");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("mapi_autosense");
+	set[i].value = strdup("false");
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("sql_optimizer");

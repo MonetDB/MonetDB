@@ -1,0 +1,16 @@
+# testing the library for unsafe instructions
+# bat C can still be shared with B
+function foo();
+b:= bat.new(:int);
+c:= bat.new(:int);
+bat.append(b,1);
+
+# in this case D should be left alone
+d:= bat.new(:int);
+bat.append(d,2);
+end;
+
+optimizer.commonTerms("user,","foo");
+optimizer.aliases("user,","foo");
+mdb.List("user","foo");
+

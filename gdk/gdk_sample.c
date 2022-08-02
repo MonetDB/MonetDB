@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -30,14 +30,9 @@
 
 /* this is a straightforward implementation of a binary tree */
 struct oidtreenode {
-	union {
-		struct {	/* use as a binary tree */
-			oid o;
-			struct oidtreenode *left;
-			struct oidtreenode *right;
-		};
-		uint64_t r;	/* temporary storage for random numbers */
-	};
+	oid o;
+	struct oidtreenode *left;
+	struct oidtreenode *right;
 };
 
 static int
@@ -67,32 +62,32 @@ OIDTreeMaybeInsert(struct oidtreenode *tree, oid o, BUN allocated)
 
 /* inorder traversal, gives us a sorted BAT */
 static void
-OIDTreeToBAT(struct oidtreenode *node, BAT *bn)
+OIDTreeToBAT(struct oidtreenode *node, BAT *bat)
 {
 	if (node->left != NULL)
-		OIDTreeToBAT(node->left, bn);
-	((oid *) bn->theap->base)[bn->batCount++] = node->o;
+		OIDTreeToBAT(node->left, bat);
+	((oid *) bat->theap.base)[bat->batCount++] = node->o;
 	if (node->right != NULL )
-		OIDTreeToBAT(node->right, bn);
+		OIDTreeToBAT(node->right, bat);
 }
 
 /* Antiset traversal, give us all values but the ones in the tree */
 static void
-OIDTreeToBATAntiset(struct oidtreenode *node, BAT *bn, oid start, oid stop)
+OIDTreeToBATAntiset(struct oidtreenode *node, BAT *bat, oid start, oid stop)
 {
 	oid noid;
 
 	if (node->left != NULL)
-        	OIDTreeToBATAntiset(node->left, bn, start, node->o);
+        	OIDTreeToBATAntiset(node->left, bat, start, node->o);
 	else
 		for (noid = start; noid < node->o; noid++)
-			((oid *) bn->theap->base)[bn->batCount++] = noid;
+			((oid *) bat->theap.base)[bat->batCount++] = noid;
 
         if (node->right != NULL)
- 		OIDTreeToBATAntiset(node->right, bn, node->o + 1, stop);
+ 		OIDTreeToBATAntiset(node->right, bat, node->o + 1, stop);
 	else
 		for (noid = node->o+1; noid < stop; noid++)
-                        ((oid *) bn->theap->base)[bn->batCount++] = noid;
+                        ((oid *) bat->theap.base)[bat->batCount++] = noid;
 }
 
 static BAT *
@@ -134,41 +129,19 @@ do_batsample(BAT *b, BUN n, random_state_engine rse, MT_Lock *lock)
 			return NULL;
 		}
 
-		/* generate a list of random numbers; note we use the
-		 * "tree" array, but we use the value from each location
-		 * before it is overwritten by the use as part of the
-		 * binary tree */
-		if (lock) {
-			MT_lock_set(lock);
-			for (rescnt = 0; rescnt < n; rescnt++)
-				tree[rescnt].r = next(rse);
-			MT_lock_unset(lock);
-		} else {
-			for (rescnt = 0; rescnt < n; rescnt++)
-				tree[rescnt].r = next(rse);
-		}
-
 		/* while we do not have enough sample OIDs yet */
-		BUN rnd = 0;
+		if (lock)	/* serialize access to random state engine */
+			MT_lock_set(lock);
 		for (rescnt = 0; rescnt < n; rescnt++) {
 			oid candoid;
 			do {
-				if (rnd == n) {
-					/* we ran out of random numbers,
-					 * so generate more */
-					if (lock)
-						MT_lock_set(lock);
-					for (rnd = rescnt; rnd < n; rnd++)
-						tree[rnd].r = next(rse);
-					if (lock)
-						MT_lock_unset(lock);
-					rnd = rescnt;
-				}
-				candoid = minoid + tree[rnd++].r % cnt;
+				candoid = minoid + next(rse) % cnt;
 				/* if that candidate OID was already
 				 * generated, try again */
 			} while (!OIDTreeMaybeInsert(tree, candoid, rescnt));
 		}
+		if (lock)
+			MT_lock_unset(lock);
 		if (!antiset) {
 			OIDTreeToBAT(tree, bn);
 		} else {
@@ -190,20 +163,20 @@ do_batsample(BAT *b, BUN n, random_state_engine rse, MT_Lock *lock)
 
 /* BATsample implements sampling for BATs */
 BAT *
-BATsample_with_seed(BAT *b, BUN n, uint64_t seed)
+BATsample_with_seed(BAT *b, BUN n, unsigned seed)
 {
 	random_state_engine rse;
 
-	init_random_state_engine(rse, seed);
+	init_random_state_engine(rse, (uint64_t) seed);
 
 	return do_batsample(b, n, rse, NULL);
 }
 
-static MT_Lock rse_lock = MT_LOCK_INITIALIZER(rse_lock);
 BAT *
 BATsample(BAT *b, BUN n)
 {
 	static random_state_engine rse;
+	static MT_Lock rse_lock = MT_LOCK_INITIALIZER("rse_lock");
 
 	MT_lock_set(&rse_lock);
 	if (rse[0] == 0 && rse[1] == 0 && rse[2] == 0 && rse[3] == 0)

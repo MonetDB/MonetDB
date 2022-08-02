@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-$SQL_CLIENT < $TSTSRCDIR/create_table.sql
+Mlog -x "$SQL_CLIENT < $TSTSRCDIR/create_table.sql"
+
+Mlog "loading data with sed-foo"
 
 # don't load stud_emp, as it's the only data file with \N entries
 # (PostgreSQL NULL notation)
@@ -13,4 +15,4 @@ sed \
 	$TSTSRCDIR/../input/copy.source \
 	| $SQL_CLIENT
 
-$SQL_CLIENT -s 'select count(*) from aggtest;'
+Mlog -x "$SQL_CLIENT -s 'select count(*) from aggtest;'"

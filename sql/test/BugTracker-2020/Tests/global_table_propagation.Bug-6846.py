@@ -10,32 +10,23 @@ cursor2 = client2.cursor()
 
 cursor1.execute('CREATE GLOBAL TEMPORARY TABLE close_d (qaid int, value_ float) ON COMMIT PRESERVE ROWS;')
 
-if cursor1.execute('INSERT INTO tmp.close_d VALUES (1,1);') != 1:
-    sys.stderr.write("1 row inserted expected")
+cursor1.execute('INSERT INTO tmp.close_d VALUES (1,1);')
 cursor2.execute('SELECT qaid, value_ FROM tmp.close_d;')
-if cursor2.fetchall() != []:
-    sys.stderr.write("No rows should have been fetched")
+print(cursor2.fetchall())
 cursor1.execute('SELECT qaid, value_ FROM tmp.close_d;')
-if cursor1.fetchall() != [(1, 1.0)]:
-    sys.stderr.write("Just row (1, 1.0) expected")
+print(cursor1.fetchall())
 
-if cursor2.execute('INSERT INTO tmp.close_d VALUES (2,2);') != 1:
-    sys.stderr.write("1 row inserted expected")
+cursor2.execute('INSERT INTO tmp.close_d VALUES (2,2);')
 cursor2.execute('SELECT qaid, value_ FROM tmp.close_d;')
-if cursor2.fetchall() != [(2, 2.0)]:
-    sys.stderr.write("Just row (2, 2.0) expected")
-
+print(cursor2.fetchall())
 cursor1.execute('SELECT qaid, value_ FROM tmp.close_d;')
-if cursor1.fetchall() != [(1, 1.0)]:
-    sys.stderr.write("Just row (1, 1.0) expected")
+print(cursor1.fetchall())
 
 cursor1.execute('DROP TABLE tmp.close_d;')
-#try:
-    #cursor2.execute('SELECT qaid, value_ FROM tmp.close_d;')  # error, tmp.close_d doesn't exist anymore
-    #sys.stderr.write('Exception expected')
-#except pymonetdb.OperationalError as e:
-    #if "no such table 'tmp'.'close_d'" not in str(e):
-        #sys.stderr.write(str(e))
+try:
+    cursor2.execute('SELECT qaid, value_ FROM tmp.close_d;')  # error, tmp.close_d doesn't exist anymore
+except pymonetdb.OperationalError as e:
+    sys.stderr.write(str(e))
 
 cursor1.close()
 cursor2.close()

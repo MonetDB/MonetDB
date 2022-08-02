@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -20,26 +20,18 @@
  * the pseudo BAT to a variable.
  */
 #include "monetdb_config.h"
-#include "gdk.h"
-#include <time.h>
-#include "mal_resolve.h"
-#include "mal_client.h"
-#include "mal_exception.h"
-#include "mal_debugger.h"
-#include "mal_interpreter.h"
-#include "mal_listing.h"
-#include "mal_namespace.h"
+#include "inspect.h"
 
 static int
 pseudo(bat *ret, BAT *b, str X1,str X2, str X3) {
 	char buf[BUFSIZ];
 	snprintf(buf,BUFSIZ,"%s_%s_%s", X1,X2,X3);
-	if (BBPindex(buf) <= 0 && BBPrename(b, buf) != 0)
+	if (BBPindex(buf) <= 0 && BBPrename(b->batCacheid, buf) != 0)
 		return -1;
 	if (BATroles(b,X2) != GDK_SUCCEED)
 		return -1;
 	*ret = b->batCacheid;
-	BBPkeepref(b);
+	BBPkeepref(*ret);
 	return 0;
 }
 
@@ -52,7 +44,7 @@ pseudo(bat *ret, BAT *b, str X1,str X2, str X3) {
  * which makes it susceptable for intermediate updates
  */
 
-static str
+str
 INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module s;
@@ -93,7 +85,7 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(MAL, "inspect.getgetFunctionId", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
-static str
+str
 INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module s;
@@ -135,7 +127,7 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(MAL, "inspect.getmodule", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
-static str
+str
 INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module s;
@@ -177,7 +169,8 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(MAL, "inspect.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
-static str
+
+str
 INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module s;
@@ -219,9 +212,7 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	freeModuleList(moduleList);
 	throw(MAL, "inspect.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
-
-#if 0
-static str
+str
 INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module s;
@@ -266,9 +257,8 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	freeModuleList(moduleList);
 	throw(MAL, "inspect.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
-#endif
 
-static str
+str
 INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret = getArgReference_bat(stk,pci,0);
@@ -310,23 +300,7 @@ INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(MAL, "inspect.getDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
-static str
-INSPECTgetExistence(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) mb;
-
-	bit *ret = getArgReference_bit(stk,pci,0);
-	str *mod = getArgReference_str(stk,pci,1);
-	str *fcn = getArgReference_str(stk,pci,2);
-
-	Symbol s = findSymbol(cntxt->usermodule, getName(*mod), putName(*fcn));
-
-	*ret = (s != NULL);
-
-	return MAL_SUCCEED;
-}
-
-static str
+str
 INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret = getArgReference_bat(stk,pci,0);
@@ -380,7 +354,61 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(MAL, "inspect.getSignature", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
-static str
+str
+INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat *ret = getArgReference_bat(stk,pci,0);
+	str *mod = getArgReference_str(stk,pci,1);
+	str *fcn = getArgReference_str(stk,pci,2);
+	Symbol s;
+	str ps, tail;
+	BAT *b;
+	(void) mb;
+
+	s = findSymbol(cntxt->usermodule, getName(*mod), putName(*fcn));
+	if (s == 0)
+		throw(MAL, "inspect.getAddress", RUNTIME_SIGNATURE_MISSING);
+	b = COLnew(0, TYPE_str, 12, TRANSIENT);
+	if (b == 0)
+		throw(MAL, "inspect.getAddress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	while (s != NULL) {
+		if (idcmp(s->name, *fcn) == 0) {
+			InstrPtr p = getSignature(s);
+			char *c,*w;
+
+			ps = instruction2str(s->def, 0, p, 0);
+			if(ps == NULL)
+				continue;
+			c = strchr(ps, '(');
+			if (c == 0) {
+				GDKfree(ps);
+				continue;
+			}
+			tail= strstr(c,"address");
+			if( tail){
+				*tail = 0;
+				for( tail=tail+7; isspace((unsigned char) *tail); tail++)  ;
+			}
+			if (tail && (w=strchr(tail, ';')) )
+				*w = 0;
+			if (BUNappend(b, (tail? tail: "nil"), false) != GDK_SUCCEED) {
+				GDKfree(ps);
+				goto bailout;
+			}
+			GDKfree(ps);
+		}
+		s = s->peer;
+	}
+
+	if (pseudo(ret,b,"view","input","result"))
+		goto bailout;
+	return MAL_SUCCEED;
+  bailout:
+	BBPreclaim(b);
+	throw(MAL, "inspect.getAddress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+}
+str
 INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret = getArgReference_bat(stk,pci,0);
@@ -412,7 +440,7 @@ INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(MAL, "inspect.getComment", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
-static str
+str
 INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *ret = getArgReference_str(stk,pci,0);
@@ -468,7 +496,7 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 INSPECTatom_names(bat *ret)
 {
 	int i;
@@ -489,8 +517,7 @@ INSPECTatom_names(bat *ret)
 	BBPreclaim(b);
 	throw(MAL, "inspect.getAtomNames", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
-
-static str
+str
 INSPECTgetEnvironment(bat *ret, bat *ret2)
 {
 	BAT *k, *v;
@@ -498,14 +525,12 @@ INSPECTgetEnvironment(bat *ret, bat *ret2)
 	if (GDKcopyenv(&k, &v, false) != GDK_SUCCEED)
 		throw(MAL, "inspect.getEnvironment", GDK_EXCEPTION);
 
-	*ret = k->batCacheid;
-	BBPkeepref(k);
-	*ret2 = v->batCacheid;
-	BBPkeepref(v);
+	BBPkeepref(*ret = k->batCacheid);
+	BBPkeepref(*ret2 = v->batCacheid);
 	return MAL_SUCCEED;
 }
 
-static str
+str
 INSPECTgetEnvironmentKey(str *ret, str *key)
 {
 	const char *s;
@@ -522,7 +547,7 @@ INSPECTgetEnvironmentKey(str *ret, str *key)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 INSPECTatom_sup_names(bat *ret)
 {
 	int i, k;
@@ -547,7 +572,7 @@ INSPECTatom_sup_names(bat *ret)
 	throw(MAL, "inspect.getAtomSuper", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
-static str
+str
 INSPECTatom_sizes(bat *ret)
 {
 	int i;
@@ -588,7 +613,7 @@ INSPECTcalcSize(MalBlkPtr mb){
 	return size;
 }
 
-static str
+str
 INSPECTgetSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	lng *ret = getArgReference_lng(stk,p,0);
 
@@ -599,7 +624,7 @@ INSPECTgetSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	return MAL_SUCCEED;
 }
 
-static str
+str
 INSPECTgetFunctionSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	lng *ret = getArgReference_lng(stk,pci,0);
@@ -617,9 +642,7 @@ INSPECTgetFunctionSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /*
  * Display routines
  */
-
-#if 0
-static str
+str
 INSPECTshowFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
@@ -627,7 +650,7 @@ INSPECTshowFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 INSPECTshowFunction3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str modnme = getArgName(mb, p, 1);
@@ -644,9 +667,8 @@ INSPECTshowFunction3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		printFunction(cntxt->fdout, s->def, stk, LIST_INPUT);
 	return MAL_SUCCEED;
 }
-#endif
 
-static str
+str
 INSPECTequalType(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *ret;
@@ -657,7 +679,7 @@ INSPECTequalType(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *hn, *tn =0;
@@ -672,41 +694,12 @@ INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else if (isaBatType(getArgType(mb,pci,1) ) ){
 		bat *bid= getArgReference_bat(stk,pci,1);
 		BAT *b;
-		if ((b = BBPquickdesc(*bid)))
+		if ((b = BATdescriptor(*bid)) ) {
 			*hn = getTypeName(newBatType(b->ttype));
-		else
+			BBPunfix(b->batCacheid);
+		} else
 			*hn = getTypeName(getArgType(mb, pci, 1));
 	} else
 		*hn = getTypeName(getArgType(mb, pci, 1));
 	return MAL_SUCCEED;
 }
-
-#include "mel.h"
-mel_func inspect_init_funcs[] = {
- pattern("inspect", "getDefinition", INSPECTgetDefinition, false, "Returns a string representation of a specific function.", args(1,3, batarg("",str),arg("mod",str),arg("fcn",str))),
- pattern("inspect", "getExistence", INSPECTgetExistence, false, "Returns a boolean indicating existence of a definition of a specific function.", args(1,3, arg("",bit),arg("mod",str),arg("fcn",str))),
- pattern("inspect", "getSignature", INSPECTgetSignature, false, "Returns the function signature(s).", args(1,3, batarg("",str),arg("mod",str),arg("fcn",str))),
- pattern("inspect", "getComment", INSPECTgetComment, false, "Returns the function help information.", args(1,3, batarg("",str),arg("mod",str),arg("fcn",str))),
- pattern("inspect", "getSource", INSPECTgetSource, false, "Return the original input for a function.", args(1,3, arg("",str),arg("mod",str),arg("fcn",str))),
- pattern("inspect", "getKind", INSPECTgetkind, false, "Obtain the instruction kind.", args(1,1, batarg("",str))),
- pattern("inspect", "getModule", INSPECTgetAllModules, false, "Obtain the function name.", args(1,1, batarg("",str))),
- pattern("inspect", "getFunction", INSPECTgetAllFunctions, false, "Obtain the function name.", args(1,1, batarg("",str))),
- pattern("inspect", "getSignatures", INSPECTgetAllSignatures, false, "Obtain the function signatures.", args(1,1, batarg("",str))),
- pattern("inspect", "getSize", INSPECTgetSize, false, "Return the storage size for the current function (in bytes).", args(1,1, arg("",lng))),
- pattern("inspect", "getSize", INSPECTgetFunctionSize, false, "Return the storage size for a function (in bytes).", args(1,3, arg("",lng),arg("mod",str),arg("fcn",str))),
- pattern("inspect", "getType", INSPECTtypeName, false, "Return the concrete type of a variable (expression).", args(1,2, arg("",str),argany("v",1))),
- pattern("inspect", "equalType", INSPECTequalType, false, "Return true if both operands are of the same type", args(1,3, arg("",bit),argany("l",0),argany("r",0))),
- command("inspect", "getAtomNames", INSPECTatom_names, false, "Collect a BAT with the atom names.", args(1,1, batarg("",str))),
- command("inspect", "getAtomSuper", INSPECTatom_sup_names, false, "Collect a BAT with the atom names.", args(1,1, batarg("",str))),
- command("inspect", "getAtomSizes", INSPECTatom_sizes, false, "Collect a BAT with the atom sizes.", args(1,1, batarg("",int))),
- command("inspect", "getEnvironment", INSPECTgetEnvironment, false, "Collect the environment variables.", args(2,2, batarg("k",str),batarg("v",str))),
- command("inspect", "getEnvironment", INSPECTgetEnvironmentKey, false, "Get the value of an environemnt variable", args(1,2, arg("",str),arg("k",str))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_inspect_mal)
-{ mal_module("inspect", NULL, inspect_init_funcs); }

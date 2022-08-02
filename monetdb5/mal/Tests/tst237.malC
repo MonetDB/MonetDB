@@ -1,0 +1,36 @@
+b:= bat.new(:oid);
+bat.append(b,1@0);
+bat.append(b,2@0);
+bat.append(b,3@0);
+
+io.print(b);
+bl:= batcalc.lng(b);
+io.print(bl);
+
+bb:= bat.new(:oid);
+bat.append(bb,1@0);
+bat.append(bb,2@0);
+bat.append(bb,3@0);
+
+io.print(bb);
+bbl:= batcalc.lng(bb);
+io.print(bbl);
+
+c:= bat.new(:oid);
+bat.append(c,1@0);
+o:= algebra.fetch(c,0@0);
+io.print(o);
+bat.append(c,2@0);
+bat.append(c,3@0);
+o:= 1@0;
+io.print(o);
+bat.append(c,o);
+o:= 2@0;
+bat.append(c,o);
+o:= 3@0;
+bat.append(c,o);
+
+io.print(c);
+cl:= batcalc.lng(c);
+io.print(cl);
+

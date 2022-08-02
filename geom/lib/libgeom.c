@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -15,6 +15,8 @@
 
 #include "monetdb_config.h"
 #include "libgeom.h"
+
+#include <math.h>
 
 static void __attribute__((__format__(__printf__, 1, 2)))
 geomerror(_In_z_ _Printf_format_string_ const char *fmt, ...)
@@ -56,7 +58,7 @@ is_wkb_nil(const wkb *w)
  * Creates an mbr holding the lower left and upper right coordinates
  * of a GEOSGeom.
  */
-#if 0
+/*
 int
 getMbrGeos(mbr *res, const GEOSGeom geosGeometry)
 {
@@ -113,7 +115,7 @@ getMbrGeos(mbr *res, const GEOSGeom geosGeometry)
 	GEOSGeom_destroy(envelope);
 	return 1;
 }
-#endif
+*/
 
 GEOSGeom
 wkb2geos(const wkb *geomWKB)
@@ -134,7 +136,7 @@ wkb2geos(const wkb *geomWKB)
 /* Function getMbrGeom
  * A wrapper for getMbrGeos on a geom_geometry.
  */
-#if 0
+/*
 int
 getMbrGeom(mbr *res, wkb *geom)
 {
@@ -147,7 +149,7 @@ getMbrGeom(mbr *res, wkb *geom)
 	}
 	return 0;
 }
-#endif
+*/
 
 const char *
 geom_type2str(int t, int flag)
@@ -199,7 +201,7 @@ geom_type2str(int t, int flag)
 }
 
 
-#if 0
+/*
 str
 geomerty_2_geometry(wkb *res, wkb **geom, int *columnType, int *columnSRID, int *valueSRID)
 {
@@ -217,4 +219,4 @@ geomerty_2_geometry(wkb *res, wkb **geom, int *columnType, int *columnSRID, int 
 	fprintf(stderr, "%d vs %d\n", *columnSRID, *valueSRID);
 	return "0";
 }
-#endif
+*/

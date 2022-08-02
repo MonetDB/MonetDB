@@ -1,6 +1,0 @@
-statement ok
-create view x as select 1
-
-statement ok
-drop view x
-

@@ -1,0 +1,447 @@
+# -*- makefile -*-
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+
+VERSION=11.37.14
+
+!IFDEF MAKE_INCLUDEFILE
+!INCLUDE $(MAKE_INCLUDEFILE)
+!ENDIF
+
+!IFNDEF bits
+!IF defined(BITS32)
+bits=32
+!ELSEIF defined(BITS64)
+bits=64
+!ELSE
+# default:
+bits=32
+!ENDIF
+!ENDIF
+
+!IF $(bits) == 32
+!IFNDEF BITS32
+BITS32=True
+BITSMCHN=X86
+!ENDIF
+!ELSEIF $(bits) == 64
+!IFNDEF BITS64
+BITS64=True
+BITSMCHN=X64
+!ENDIF
+!ENDIF
+
+!IFDEF DEBUG
+# force W_CFLAGS off in debug builds: using icc, you get way more
+# warnings about casts which results in the code being uncompilable
+W_CFLAGS =
+HAVE_MAL_DEBUGGER = 1
+!ENDIF
+!IFDEF ENABLE_STRICT
+# strict mode: treat warnings as errors
+W_CFLAGS = -WX
+!ENDIF
+
+# This is the location of pthreads for Win32, 
+# see http://sources.redhat.com/pthreads-win32/
+# Note that pthreads are no longer used to compile MonetDB (although
+# it might still work).
+PTHREAD =
+!IFNDEF PTHREAD_INCS
+PTHREAD_INCS =
+!ENDIF
+!IFNDEF PTHREAD_LIBS
+PTHREAD_LIBS =
+!ENDIF
+
+ODBCINST_LIBS = odbccp32.lib user32.lib $(LEGACY_STDIO_DEFINITIONS)
+ODBC_LIBS = odbc32.lib
+
+!IFNDEF PY3VER
+PY3VER=7
+!ENDIF
+!IFNDEF PYTHON3BASE
+PYTHON3BASE=C:\Python3$(PY3VER)
+!ENDIF
+!IFNDEF PYTHON3LIB
+PYTHON3LIB=python3$(PY3VER).lib
+!ENDIF
+
+PYTHON_LIBDIR=share\MonetDB\python
+
+!IFDEF HAVE_PCRE
+# This is the location of the PCRE library
+!IFNDEF LIBPCRE
+LIBPCRE = C:\Program Files\PCRE
+!ENDIF
+pcre_LIBS = "$(LIBPCRE)\lib\pcre.lib"
+pcre_CFLAGS = -DHAVE_LIBPCRE "-I$(LIBPCRE)\include"
+!ENDIF
+
+!IFDEF HAVE_OPENSSL
+# This is the location of the OpenSSL library
+!IFNDEF LIBOPENSSL
+LIBOPENSSL = C:\openssl-1.1.0g.win$(bits)
+!ENDIF
+openssl_LIBS = "$(LIBOPENSSL)\lib\libcrypto.lib"
+openssl_CFLAGS = -DHAVE_OPENSSL "-I$(LIBOPENSSL)\include"
+!ENDIF
+
+!IFDEF HAVE_ICONV
+# This is the location of the ICONV library
+!IFNDEF LIBICONV
+LIBICONV = C:\iconv-1.9.2.win$(bits)
+!ENDIF
+LTLIBICONV = "$(LIBICONV)\lib\iconv.dll.lib"
+ICONV_CFLAGS = -DHAVE_ICONV "-I$(LIBICONV)\include"
+!ENDIF
+
+!IFDEF HAVE_LIBZ
+# This is the location of the ZLIB library
+!IFNDEF LIBZLIB
+LIBZLIB = C:\zlib-1.2.3.win$(bits)
+!ENDIF
+!IFNDEF LIBZLIBFILE
+LIBZLIBFILE=zlib1
+!ENDIF
+zlib_LIBS = "$(LIBZLIB)\lib\$(LIBZLIBFILE).lib"
+zlib_CFLAGS = -DHAVE_LIBZ "-I$(LIBZLIB)\include"
+!ENDIF
+
+!IFDEF HAVE_LIBBZ2
+# This is the location of the BZIP2 library
+!IFNDEF LIBBZIP2
+LIBBZIP2 = C:\bzip2-1.0.5.win$(bits)
+!ENDIF
+!IFDEF DEBUG
+# in a debug build of MonetDB, we need to use a debug build of libbz2
+# since it seems that the FILE pointer cannot be carried over from a
+# debug build to a non-debug build.
+BZIPDEBUGEXT = d
+!endif
+bzip2_LIBS = "$(LIBBZIP2)\lib\libbz2$(BZIPDEBUGEXT).lib"
+bzip2_CFLAGS = -DHAVE_LIBBZ2 "-I$(LIBBZIP2)\include"
+!ENDIF
+
+!IFDEF HAVE_LIBXML
+# This is the location of the libxml2 library
+!IFNDEF LIBXML2
+LIBXML2 = C:\libxml2-2.6.30.win$(bits)
+!ENDIF
+# by default libxml2 include files get installed in ...\include\libxml2\libxml
+# but this has sometimes been moved to ...\include\libxml
+libxml2_CFLAGS = -DHAVE_LIBXML "-I$(LIBXML2)\include\libxml2" "-I$(LIBXML2)\include" $(zlib_CFLAGS) $(ICONV_CFLAGS)
+libxml2_LIBS = "$(LIBXML2)\lib\libxml2.lib" $(zlib_LIBS) $(ICONV_LIBS)
+!ENDIF
+
+!IFNDEF LIBGEOS
+LIBGEOS = C:\geos-3.0.win$(bits)
+!ENDIF
+!IFNDEF GEOSFILE
+GEOSFILE = geos_c
+!ENDIF
+GEOS_LIBS = $(LIBGEOS)\lib\$(GEOSFILE).lib
+GEOS_INCS = -I$(LIBGEOS)\include
+
+!IFDEF HAVE_LIBR
+# This is the location of the R library
+libr_LIBDEP = R.lib
+!IFNDEF LIBR
+LIBR = c:\Program Files\R\R-3.1.0
+!ENDIF
+!IFDEF BITS32
+RDLL=bin\i386\R.dll
+!ELSE
+RDLL=bin\x64\R.dll
+!ENDIF
+libr_DLL=$(LIBR)\$(RDLL)
+libr_LIBS = $(libr_LIBDEP)
+libr_CFLAGS = -DHAVE_LIBR "-I$(LIBR)\include"
+
+# generate R.lib from R.dll, needed for linking
+R.lib: "$(libr_DLL)"
+	dumpbin /exports "$(libr_DLL)" | "$(PYTHON)" "$(TOPDIR)\..\NT\makelibdef.py" > R.def
+	lib /machine:$(BITSMCHN) /def:R.def /out:R.lib
+!ENDIF
+
+!IFDEF HAVE_LIBPY3
+libpy3_LIBS = "$(PYTHON3DIR)\libs\$(PYTHON3LIB)"
+libpy3_CFLAGS = -DHAVE_LIBPY3 "-I$(PYTHON3DIR)\include" "-I$(PYTHON3DIR)\Lib\site-packages\numpy\core\include"
+!ENDIF
+
+# some programs we use, probably no need to edit
+
+# install python, flex and bison on your systems
+# PYTHON may be either a version 2 or a version 3
+# here we let %Path% determine which version we get
+PYTHON = python
+BISON = bison
+
+ARCHIVER = lib /nologo
+GENDLL =
+RC = rc
+
+MT = mt /nologo
+
+# no need to edit beyond here..
+
+CONFIGURE_PY = "$(TOPDIR)\..\NT\winconfig.py"
+WINCONFIG_INCS = "-I$(TOPDIR)\..\buildtools\conf"
+
+!IFDEF DEBUG
+COMPILERFLAGS = -GF -W3 $(W_CFLAGS) -MDd -nologo -Od -D_DEBUG -RTC1 -Zi -Oi
+!ELSE
+# add -Zi flag (implies -debug, not -D_DEBUG) to get symbol info in .pdb files
+COMPILERFLAGS = -GF -W3 $(W_CFLAGS) -MD -nologo -Ox -Zi -Oi
+!ENDIF
+CFLAGS = $(COMPILERFLAGS)  -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES) $(WINCONFIG_INCS) $(ICONV_CFLAGS)
+
+# No general LDFLAGS needed
+INSTALL = copy
+# TODO
+# replace this hack by something like configure ...
+MKDIR = mkdir
+ECHO = echo
+CD = cd
+
+exec_prefix = $(prefix)
+
+bindir = $(exec_prefix)\bin
+sbindir = $(exec_prefix)\sbin
+libexecdir = $(exec_prefix)\libexec
+datadir = $(prefix)\share
+sysconfdir = $(prefix)\etc
+localstatedir = $(prefix)\var
+libdir = $(exec_prefix)\lib
+infodir = $(prefix)\info
+mandir = $(prefix)\man
+includedir = $(prefix)\include
+oldincludedir = \usr\include
+pkgdatadir = $(datadir)\$(pkg)
+pkglibdir = $(libdir)\$(pkg)
+pkgincludedir = $(includedir)\$(pkg)
+
+LIBC_INCS = $(PTHREAD_INCS)
+MATH_LIBS =
+SOCKET_LIBS = wsock32.lib Ws2_32.lib
+
+CP=copy
+MV=copy
+DEL=del
+EDITBIN=editbin /nologo
+NATIVE_WIN32 = 1
+
+# we can't use the Windows utility find since it prints the file name
+# we could use the Unix utility grep, but we can also use the Windows
+# utility findstr, but with some care and feeding.
+FILTER=findstr /v /l
+FILTERPREF=/c:
+
+# To avoid a too long commandline when calling winconfig.py ($(CONFIGURE)),
+# we called the settings for AM_CONDITIONALS defined in configure.ag into
+# a file ($(TOPDIR)\winconfig_conds.py) where winconfig.py reads these
+# settings from, and make each call of winconfig.py (via $(CONFIGURE))
+# depend on this file.
+# To avoid unnecessary identical re-creation of $(TOPDIR)\winconfig_conds.py
+# (and thus unnecessary identical re-conversion of *.in files by winconfig.py,
+#  and thus unnecessary re-compilation of the resulting code files),
+# we first create a temporary $(TOPDIR)\winconfig_conds_new.py with each
+# nmake call, and then update the actual $(TOPDIR)\winconfig_conds.py
+# only if the new $(TOPDIR)\winconfig_conds_new.py is different.
+
+# These should cover all AM_CONDITIONALS defined in configure.ag, i.e.,
+# `grep AM_CONDITIONAL configure.ag | sed 's|^AM_CONDITIONAL(\([^,]*\),.*$|\1|' | sort -u`
+create_winconfig_conds_new_py:
+	$(ECHO) # > "$(TOPDIR)\winconfig_conds_new.py"
+!IFDEF BITS32
+	$(ECHO) BITS32_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) BITS64_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) BITS32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!IFDEF BITS64
+	$(ECHO) BITS64_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) BITS64_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!ENDIF
+!IFDEF CROSS_COMPILING
+	$(ECHO) CROSS_COMPILING_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) CROSS_COMPILING_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_CURL
+	$(ECHO) HAVE_CURL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_CURL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_DEVELOPER
+	$(ECHO) HAVE_DEVELOPER_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_DEVELOPER_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_FITS
+	$(ECHO) HAVE_FITS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_FITS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_GEOM
+	$(ECHO) HAVE_GEOM_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_GEOM_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_HGE
+	$(ECHO) HAVE_HGE_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_HGE_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_LIBBZ2
+	$(ECHO) HAVE_LIBBZ2_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_LIBBZ2_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_LIBLZ4
+	$(ECHO) HAVE_LIBLZ4_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_LIBLZ4_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_LIBLZMA
+	$(ECHO) HAVE_LIBLZMA_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_LIBLZMA_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_LIBPY3
+	$(ECHO) HAVE_LIBPY3_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_LIBPY3_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_LIBR
+	$(ECHO) HAVE_LIBR_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_LIBR_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_LIBXML
+	$(ECHO) HAVE_LIBXML_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_LIBXML_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_LIBZ
+	$(ECHO) HAVE_LIBZ_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_LIBZ_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_LIDAR
+	$(ECHO) HAVE_LIDAR_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_LIDAR_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_NETCDF
+	$(ECHO) HAVE_NETCDF_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_NETCDF_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_ODBC
+	$(ECHO) HAVE_ODBC_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_ODBC_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_PCRE
+	$(ECHO) HAVE_PCRE_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_PCRE_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_PROJ
+	$(ECHO) HAVE_PROJ_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_PROJ_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_SHP
+	$(ECHO) HAVE_SHP_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_SHP_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_MAL_DEBUGGER
+	$(ECHO) HAVE_MAL_DEBUGGER_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_MAL_DEBUGGER_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_TESTING
+	$(ECHO) HAVE_TESTING_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_TESTING_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF NATIVE_WIN32
+	$(ECHO) NATIVE_WIN32_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) NATIVE_WIN32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF NOT_WIN32
+	$(ECHO) NOT_WIN32_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) NOT_WIN32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+
+update_winconfig_conds_py: create_winconfig_conds_new_py
+	if not exist "$(TOPDIR)\winconfig_conds.py" $(CP) "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py"
+	cmp -s "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py" || \
+	$(CP) "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py"
+
+CONFIGURE="$(PYTHON)" $(CONFIGURE_PY) \
+	"$(TOPDIR)\winconfig_conds.py" \
+	"prefix=$(prefix)" \
+	"LIBICONV=$(LIBICONV)" \
+	"LIBXML2=$(LIBXML2)" \
+	"LIBZLIB=$(LIBZLIB)" \
+	"PACKAGE=$(pkg)" \
+	"PYTHON=$(PYTHON)" \
+	"PYTHON_LIBDIR=$(PYTHON_LIBDIR)" \
+	"PY3VER=$(PY3VER)" \
+	"PYTHON3=$(PYTHON3)" \
+	"TOPDIR=$(TOPDIR)" \
+	"VERSION=$(VERSION)" \
+	"builtby=%USER%@%COMPUTERNAME%" \
+	"compilercall=$(CC) $(COMPILERFLAGS)" \
+	"linkercall=$(CC) $(COMPILERFLAGS)" \
+	"pcreversion=" \
+	"opensslversion=" \
+	"libxml2version="
+
+# Use "nmake DEBUG=1" to get a debug build (assertions enabled);
+# use "nmake NDEBUG=1" to get a release build (assertions disabled);
+# use plain "nmake" to get the default.
+!IFNDEF DEBUG
+!IFDEF NDEBUG
+CFLAGS = $(CFLAGS) -DNDEBUG
+MAKEDEBUG=NDEBUG=1
+!ELSE
+# default in case neither NDEBUG nor DEBUG are defined
+CFLAGS = $(CFLAGS)
+MAKEDEBUG=
+!ENDIF
+!ELSE
+# CFLAGS = $(CFLAGS) -Wp64
+MAKEDEBUG=DEBUG=1
+!ENDIF
+
+PSAPILIB = psapi.lib
+
+CONFIG_H = monetdb_config.h
+
+{$(srcdir)}.c.obj:
+	$(CC) $(CFLAGS) -c $<
+
+.c.obj:
+	$(CC) $(CFLAGS) -c $<
+
+{$(srcdir)}.syms.def:
+	echo EXPORTS > $@
+	type $< >> $@
+
+.syms.def:
+	echo EXPORTS > $@
+	type $< >> $@
+
+.SUFFIXES: .syms .def

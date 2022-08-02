@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -31,6 +31,7 @@
 #include "monetdb_config.h"
 #include "mstring.h"
 #include "gdk.h"
+#include "gdk_system.h"
 #include "gdk_system_private.h"
 
 #include <time.h>
@@ -72,7 +73,6 @@ sortlocklist(MT_Lock *l)
 		r = r->next;
 	}
 	ll->next = NULL;	/* break list into two */
-	r->prev = NULL;
 	/* recursively sort both sublists */
 	l = sortlocklist(l);
 	r = sortlocklist(r);
@@ -92,7 +92,6 @@ sortlocklist(MT_Lock *l)
 				t = ll = l;
 			} else {
 				ll->next = l;
-				l->prev = ll;
 				ll = ll->next;
 			}
 			l = l->next;
@@ -103,20 +102,13 @@ sortlocklist(MT_Lock *l)
 				t = ll = r;
 			} else {
 				ll->next = r;
-				r->prev = ll;
 				ll = ll->next;
 			}
 			r = r->next;
 		}
 	}
 	/* append rest of remaining list */
-	if (l) {
-		ll->next = l;
-		l->prev = ll;
-	} else {
-		ll->next = r;
-		r->prev = ll;
-	}
+	ll->next = l ? l : r;
 	return t;
 }
 
@@ -151,9 +143,7 @@ GDKlockstatistics(int what)
 		return;
 	}
 	GDKlocklist = sortlocklist(GDKlocklist);
-	fprintf(stderr, "%-18s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-		"lock name", "count", "content", "sleep",
-		"locked", "locker", "thread");
+	fprintf(stderr, "lock name\tcount\tcontention\tsleep\tlocked\t(un)locker\tthread\n");
 	for (l = GDKlocklist; l; l = l->next) {
 		n++;
 		if (what == 0 ||
@@ -177,8 +167,6 @@ GDKlockstatistics(int what)
 
 #endif	/* LOCK_STATS */
 
-static void MT_thread_setcondwait(MT_Cond *cond);
-
 #if !defined(HAVE_PTHREAD_H) && defined(WIN32)
 static struct winthread {
 	struct winthread *next;
@@ -188,15 +176,11 @@ static struct winthread {
 	void *data;
 	MT_Lock *lockwait;	/* lock we're waiting for */
 	MT_Sema *semawait;	/* semaphore we're waiting for */
-	MT_Cond *condwait;	/* condition variable we're waiting for */
 	struct winthread *joinwait; /* process we are joining with */
 	const char *working;	/* what we're currently doing */
-	char algorithm[512];	/* the algorithm used in the last operation */
-	size_t algolen;		/* length of string in .algorithm */
 	ATOMIC_TYPE exited;
 	bool detached:1, waiting:1;
 	char threadname[MT_NAME_LEN];
-	QryCtx *qry_ctx;
 } *winthreads = NULL;
 static struct winthread mainthread = {
 	.threadname = "main thread",
@@ -216,7 +200,6 @@ dump_threads(void)
 					w->threadname,
 					w->lockwait ? w->lockwait->name :
 					w->semawait ? w->semawait->name :
-					w->condwait ? w->condwait->name :
 					w->joinwait ? w->joinwait->threadname :
 					"nothing",
 					ATOMIC_GET(&w->exited) ? "exiting" :
@@ -262,59 +245,22 @@ find_winthread(DWORD tid)
 const char *
 MT_thread_getname(void)
 {
-	if (threadslot == TLS_OUT_OF_INDEXES)
-		return mainthread.threadname;
 	struct winthread *w = TlsGetValue(threadslot);
-	return w ? w->threadname : UNKNOWN_THREAD;
+	return w ? w->threadname : "unknown thread";
 }
 
 void
 MT_thread_setdata(void *data)
 {
-	if (threadslot == TLS_OUT_OF_INDEXES)
-		return;
 	struct winthread *w = TlsGetValue(threadslot);
 
 	if (w)
 		w->data = data;
 }
 
-void *
-MT_thread_getdata(void)
-{
-	if (threadslot == TLS_OUT_OF_INDEXES)
-		return NULL;
-	struct winthread *w = TlsGetValue(threadslot);
-
-	return w ? w->data : NULL;
-}
-
-void
-MT_thread_set_qry_ctx(QryCtx *ctx)
-{
-	if (threadslot == TLS_OUT_OF_INDEXES)
-		return;
-	struct winthread *w = TlsGetValue(threadslot);
-
-	if (w)
-		w->qry_ctx = ctx;
-}
-
-QryCtx *
-MT_thread_get_qry_ctx(void)
-{
-	if (threadslot == TLS_OUT_OF_INDEXES)
-		return NULL;
-	struct winthread *w = TlsGetValue(threadslot);
-
-	return w ? w->qry_ctx : NULL;
-}
-
 void
 MT_thread_setlockwait(MT_Lock *lock)
 {
-	if (threadslot == TLS_OUT_OF_INDEXES)
-		return;
 	struct winthread *w = TlsGetValue(threadslot);
 
 	if (w)
@@ -324,75 +270,35 @@ MT_thread_setlockwait(MT_Lock *lock)
 void
 MT_thread_setsemawait(MT_Sema *sema)
 {
-	if (threadslot == TLS_OUT_OF_INDEXES)
-		return;
 	struct winthread *w = TlsGetValue(threadslot);
 
 	if (w)
 		w->semawait = sema;
 }
 
-static void
-MT_thread_setcondwait(MT_Cond *cond)
-{
-	if (threadslot == TLS_OUT_OF_INDEXES)
-		return;
-	struct winthread *w = TlsGetValue(threadslot);
-
-	if (w)
-		w->condwait = cond;
-}
-
 void
 MT_thread_setworking(const char *work)
 {
-	if (threadslot == TLS_OUT_OF_INDEXES)
-		return;
 	struct winthread *w = TlsGetValue(threadslot);
 
 	if (w)
 		w->working = work;
 }
 
-void
-MT_thread_setalgorithm(const char *algo)
-{
-	if (threadslot == TLS_OUT_OF_INDEXES)
-		return;
-	struct winthread *w = TlsGetValue(threadslot);
-
-	if (w) {
-		if (algo) {
-			if (w->algolen > 0) {
-				if (w->algolen < sizeof(w->algorithm))
-					w->algolen += strconcat_len(w->algorithm + w->algolen, sizeof(w->algorithm) - w->algolen, "; ", algo, NULL);
-			} else
-				w->algolen = strcpy_len(w->algorithm, algo, sizeof(w->algorithm));
-		} else {
-			w->algorithm[0] = 0;
-			w->algolen = 0;
-		}
-	}
-}
-
-const char *
-MT_thread_getalgorithm(void)
-{
-	if (threadslot == TLS_OUT_OF_INDEXES)
-		return NULL;
-	struct winthread *w = TlsGetValue(threadslot);
-
-	return w && w->algorithm[0] ? w->algorithm : NULL;
-}
-
 bool
 MT_thread_override_limits(void)
 {
-	if (threadslot == TLS_OUT_OF_INDEXES)
-		return false;
 	struct winthread *w = TlsGetValue(threadslot);
 
 	return w && w->working && strcmp(w->working, "store locked") == 0;
+}
+
+void *
+MT_thread_getdata(void)
+{
+	struct winthread *w = TlsGetValue(threadslot);
+
+	return w ? w->data : NULL;
 }
 
 static void
@@ -430,8 +336,6 @@ join_threads(void)
 	bool waited;
 
 	struct winthread *self = TlsGetValue(threadslot);
-	if (!self)
-		return;
 	EnterCriticalSection(&winthread_cs);
 	do {
 		waited = false;
@@ -538,9 +442,6 @@ MT_getpid(void)
 void
 MT_exiting_thread(void)
 {
-	if (threadslot == TLS_OUT_OF_INDEXES)
-		return;
-
 	struct winthread *w = TlsGetValue(threadslot);
 
 	if (w) {
@@ -606,17 +507,13 @@ static struct posthread {
 	void *data;
 	MT_Lock *lockwait;	/* lock we're waiting for */
 	MT_Sema *semawait;	/* semaphore we're waiting for */
-	MT_Cond *condwait;	/* condition variable we're waiting for */
 	struct posthread *joinwait; /* process we are joining with */
 	const char *working;	/* what we're currently doing */
-	char algorithm[512];	/* the algorithm used in the last operation */
-	size_t algolen;		/* length of string in .algorithm */
 	char threadname[MT_NAME_LEN];
 	pthread_t tid;
 	MT_Id mtid;
 	ATOMIC_TYPE exited;
 	bool detached:1, waiting:1;
-	QryCtx *qry_ctx;
 } *posthreads = NULL;
 static struct posthread mainthread = {
 	.threadname = "main thread",
@@ -627,7 +524,6 @@ static pthread_mutex_t posthread_lock = PTHREAD_MUTEX_INITIALIZER;
 static MT_Id MT_thread_id = 1;
 
 static pthread_key_t threadkey;
-static bool thread_initialized = false;
 
 void
 dump_threads(void)
@@ -639,7 +535,6 @@ dump_threads(void)
 					p->threadname,
 					p->lockwait ? p->lockwait->name :
 					p->semawait ? p->semawait->name :
-					p->condwait ? p->condwait->name :
 					p->joinwait ? p->joinwait->threadname :
 					"nothing",
 					ATOMIC_GET(&p->exited) ? "exiting" :
@@ -658,7 +553,6 @@ MT_thread_init(void)
 		GDKsyserr(ret, "Creating specific key for thread failed");
 		return false;
 	}
-	thread_initialized = true;
 	mainthread.tid = pthread_self();
 	if ((ret = pthread_setspecific(threadkey, &mainthread)) != 0) {
 		GDKsyserr(ret, "Setting specific value failed");
@@ -684,17 +578,13 @@ MT_thread_getname(void)
 {
 	struct posthread *p;
 
-	if (!thread_initialized)
-		return mainthread.threadname;
 	p = pthread_getspecific(threadkey);
-	return p ? p->threadname : UNKNOWN_THREAD;
+	return p ? p->threadname : "unknown thread";
 }
 
 void
 MT_thread_setdata(void *data)
 {
-	if (!thread_initialized)
-		return;
 	struct posthread *p = pthread_getspecific(threadkey);
 
 	if (p)
@@ -704,39 +594,14 @@ MT_thread_setdata(void *data)
 void *
 MT_thread_getdata(void)
 {
-	if (!thread_initialized)
-		return NULL;
 	struct posthread *p = pthread_getspecific(threadkey);
 
 	return p ? p->data : NULL;
 }
 
 void
-MT_thread_set_qry_ctx(QryCtx *ctx)
-{
-	if (!thread_initialized)
-		return;
-	struct posthread *p = pthread_getspecific(threadkey);
-
-	if (p)
-		p->qry_ctx = ctx;
-}
-
-QryCtx *
-MT_thread_get_qry_ctx(void)
-{
-	if (!thread_initialized)
-		return NULL;
-	struct posthread *p = pthread_getspecific(threadkey);
-
-	return p ? p->qry_ctx : NULL;
-}
-
-void
 MT_thread_setlockwait(MT_Lock *lock)
 {
-	if (!thread_initialized)
-		return;
 	struct posthread *p = pthread_getspecific(threadkey);
 
 	if (p)
@@ -746,8 +611,6 @@ MT_thread_setlockwait(MT_Lock *lock)
 void
 MT_thread_setsemawait(MT_Sema *sema)
 {
-	if (!thread_initialized)
-		return;
 	struct posthread *p = pthread_getspecific(threadkey);
 
 	if (p)
@@ -755,63 +618,17 @@ MT_thread_setsemawait(MT_Sema *sema)
 }
 
 void
-MT_thread_setcondwait(MT_Cond *cond)
-{
-	if (!thread_initialized)
-		return;
-	struct posthread *p = pthread_getspecific(threadkey);
-
-	if (p)
-		p->condwait = cond;
-}
-
-void
 MT_thread_setworking(const char *work)
 {
-	if (!thread_initialized)
-		return;
 	struct posthread *p = pthread_getspecific(threadkey);
 
 	if (p)
 		p->working = work;
 }
 
-void
-MT_thread_setalgorithm(const char *algo)
-{
-	if (!thread_initialized)
-		return;
-	struct posthread *p = pthread_getspecific(threadkey);
-
-	if (p) {
-		if (algo) {
-			if (p->algolen > 0) {
-				if (p->algolen < sizeof(p->algorithm))
-					p->algolen += strconcat_len(p->algorithm + p->algolen, sizeof(p->algorithm) - p->algolen, "; ", algo, NULL);
-			} else
-				p->algolen = strcpy_len(p->algorithm, algo, sizeof(p->algorithm));
-		} else {
-			p->algorithm[0] = 0;
-			p->algolen = 0;
-		}
-	}
-}
-
-const char *
-MT_thread_getalgorithm(void)
-{
-	if (!thread_initialized)
-		return NULL;
-	struct posthread *p = pthread_getspecific(threadkey);
-
-	return p && p->algorithm[0] ? p->algorithm : NULL;
-}
-
 bool
 MT_thread_override_limits(void)
 {
-	if (!thread_initialized)
-		return false;
 	struct posthread *p = pthread_getspecific(threadkey);
 
 	return p && p->working && strcmp(p->working, "store locked") == 0;
@@ -877,9 +694,9 @@ join_threads(void)
 				p->waiting = true;
 				pthread_mutex_unlock(&posthread_lock);
 				TRC_DEBUG(THRD, "Join thread \"%s\"\n", p->threadname);
-				if (self) self->joinwait = p;
+				self->joinwait = p;
 				pthread_join(p->tid, NULL);
-				if (self) self->joinwait = NULL;
+				self->joinwait = NULL;
 				rm_posthread(p);
 				waited = true;
 				pthread_mutex_lock(&posthread_lock);
@@ -904,9 +721,9 @@ join_detached_threads(void)
 				p->waiting = true;
 				pthread_mutex_unlock(&posthread_lock);
 				TRC_DEBUG(THRD, "Join thread \"%s\"\n", p->threadname);
-				if (self) self->joinwait = p;
+				self->joinwait = p;
 				pthread_join(p->tid, NULL);
-				if (self) self->joinwait = NULL;
+				self->joinwait = NULL;
 				rm_posthread(p);
 				waited = true;
 				pthread_mutex_lock(&posthread_lock);
@@ -969,7 +786,6 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	*t = p->mtid = ++MT_thread_id;
 	ret = pthread_create(&p->tid, &attr, thread_starter, p);
 	if (ret != 0) {
-		pthread_mutex_unlock(&posthread_lock);
 		GDKsyserr(ret, "Cannot start thread");
 		free(p);
 		ret = -1;
@@ -977,8 +793,8 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		/* must not fail after this: the thread has been started */
 		p->next = posthreads;
 		posthreads = p;
-		pthread_mutex_unlock(&posthread_lock);
 	}
+	pthread_mutex_unlock(&posthread_lock);
 	(void) pthread_attr_destroy(&attr); /* not interested in errors */
 #ifdef HAVE_PTHREAD_SIGMASK
 	MT_thread_sigmask(&orig_mask, NULL);
@@ -991,8 +807,6 @@ MT_getpid(void)
 {
 	struct posthread *p;
 
-	if (!thread_initialized)
-		return mainthread.mtid;
 	p = pthread_getspecific(threadkey);
 	return p ? p->mtid : 0;
 }
@@ -1002,8 +816,6 @@ MT_exiting_thread(void)
 {
 	struct posthread *p;
 
-	if (!thread_initialized)
-		return;
 	p = pthread_getspecific(threadkey);
 	if (p) {
 		ATOMIC_SET(&p->exited, 1);
@@ -1024,9 +836,9 @@ MT_join_thread(MT_Id t)
 		return -1;
 	TRC_DEBUG(THRD, "Join thread \"%s\"\n", p->threadname);
 	struct posthread *self = pthread_getspecific(threadkey);
-	if (self) self->joinwait = p;
+	self->joinwait = p;
 	ret = pthread_join(p->tid, NULL);
-	if (self) self->joinwait = NULL;
+	self->joinwait = NULL;
 	if (ret != 0) {
 		GDKsyserr(ret, "Joining thread failed");
 		return -1;
@@ -1135,58 +947,4 @@ MT_check_nr_cores(void)
 #endif
 
 	return ncpus;
-}
-
-
-void
-MT_cond_init(MT_Cond *cond)
-{
-#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
-	InitializeConditionVariable(&cond->cv);
-#else
-	pthread_cond_init(&cond->cv, NULL);
-#endif
-}
-
-
-void
-MT_cond_destroy(MT_Cond *cond)
-{
-#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
-	/* no need */
-#else
-	pthread_cond_destroy(&cond->cv);
-#endif
-}
-
-void
-MT_cond_wait(MT_Cond *cond, MT_Lock *lock)
-{
-	MT_thread_setcondwait(cond);
-#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
-	SleepConditionVariableCS(&cond->cv, &lock->lock, INFINITE);
-#else
-	pthread_cond_wait(&cond->cv, &lock->lock);
-#endif
-	MT_thread_setcondwait(NULL);
-}
-
-void
-MT_cond_signal(MT_Cond *cond)
-{
-#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
-	WakeConditionVariable(&cond->cv);
-#else
-	pthread_cond_signal(&cond->cv);
-#endif
-}
-
-void
-MT_cond_broadcast(MT_Cond *cond)
-{
-#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
-	WakeAllConditionVariable(&cond->cv);
-#else
-	pthread_cond_broadcast(&cond->cv);
-#endif
 }

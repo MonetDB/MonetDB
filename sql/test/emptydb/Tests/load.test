@@ -1,5 +1,0 @@
-query I nosort
-select 1
-----
-1
-

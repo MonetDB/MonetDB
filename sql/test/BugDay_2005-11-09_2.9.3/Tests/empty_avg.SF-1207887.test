@@ -1,8 +1,0 @@
-statement ok
-create table sf1207887 (field decimal(3,1))
-
-query R rowsort
-select avg(field) from sf1207887
-----
-NULL
-

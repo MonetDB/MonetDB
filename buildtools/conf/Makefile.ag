@@ -1,0 +1,49 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+
+scripts_sh = {
+	COND = HAVE_DEVELOPER
+	EXT = ""
+	DIR = bindir
+	SOURCES = Maddlog
+}
+
+headers_bmp = {
+	COND = NATIVE_WIN32
+	HEADERS = bmp
+	DIR = prefix
+	SOURCES = banner.bmp
+}
+
+headers_rtf = {
+	COND = NATIVE_WIN32
+	HEADERS = rtf
+	DIR = prefix
+	SOURCES = license.rtf
+}
+
+headers_ico = {
+	COND = NATIVE_WIN32
+	HEADERS = ico
+	DIR = prefix
+	SOURCES = monetdb.ico
+}
+
+headers_html = {
+	COND = NATIVE_WIN32
+	HEADERS = html
+	DIR = prefix
+	SOURCES = website.html
+}
+
+headers_systemd = {
+	COND = NOT_WIN32
+	HEADERS = conf
+	DIR = sysconfdir/tmpfiles.d
+	SOURCES = monetdbd.conf
+}
+
+EXTRA_DIST = rules.mk banner.bmp license.rtf monetdb.ico website.html

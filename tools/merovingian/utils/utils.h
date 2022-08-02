@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _SEEN_UTILS_H
@@ -21,17 +21,8 @@ enum valtype {
 	STR,
 	MURI,
 	LADDR,
-	LOGLEVEL,
-	MODS,						/* list of mserver5 modules */
 	OTHER
 };
-
-typedef enum loglevel_t {
-	ERROR = 1,
-	WARNING,
-	INFORMATION,
-	DEBUG
-} loglevel;
 
 typedef struct _confkeyval {
 	char *key;
@@ -54,20 +45,7 @@ void abbreviateString(char *ret, const char *in, size_t width);
 void generateSalt(char *buf, unsigned int len);
 char *generatePassphraseFile(const char *path);
 void sleep_ms(size_t ms);
-char* deletedir(const char *dir);
-
-
-struct snapshot {
-	char *dbname;
-	time_t time;
-	off_t size;
-	char *name;
-	char *path;
-};
-
-struct snapshot *push_snapshot(struct snapshot **snapshots, int *nsnapshots);
-void copy_snapshot(struct snapshot *dest, struct snapshot *src);
-void free_snapshots(struct snapshot *snapshots, int nsnapshots);
-
 
 #endif
+
+/* vim:set ts=4 sw=4 noexpandtab: */

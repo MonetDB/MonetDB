@@ -1,0 +1,16 @@
+stderr of test 'zones` in directory 'sql/test` itself:
+
+
+# 13:54:27 >  
+# 13:54:27 >  Mtimeout -timeout 180 mserver5 "--config=/export/scratch1/milena/monet/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/export/scratch1/milena/monet/lib/MonetDB5:/export/scratch1/milena/monet/lib/MonetDB5" --set "gdk_dbfarm=/export/scratch1/milena/monet/var/MonetDB5/dbfarm" --set "sql_logdir=/export/scratch1/milena/monet/var/MonetDB5/dblogs" --set mapi_port=31278 --set monet_prompt= --trace "--dbname=mTests_src_test" --dbinit='include sql;' ; echo ; echo Over..
+# 13:54:27 >  
+
+
+# 13:54:28 >  
+# 13:54:28 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31278  < zones.sql
+# 13:54:28 >  
+
+# 13:54:28 >  
+# 13:54:28 >  Done.
+# 13:54:28 >  
+

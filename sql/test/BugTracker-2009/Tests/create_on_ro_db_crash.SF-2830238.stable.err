@@ -1,0 +1,67 @@
+stderr of test 'create_on_ro_db_crash.SF-2830238` in directory 'sql/test/BugTracker-2009` itself:
+
+
+# 21:37:20 >  
+# 21:37:20 >  /usr/bin/python create_on_ro_db_crash.SF-2830238.py create_on_ro_db_crash.SF-2830238 
+# 21:37:20 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+QUERY = create table t2 (a int);
+ERROR = !Schema statements cannot be executed on a readonly database.
+CODE  = 25006
+# builtin opt 	gdk_dbpath = /ufs/sjoerd/@Monet-candidate/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_alloc_map = no
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_admin = adm
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_welcome = yes
+# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
+# builtin opt 	monet_daemon = yes
+# builtin opt 	host = localhost
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_noheaders = no
+# builtin opt 	mapi_debug = 0
+# builtin opt 	mapi_clients = 2
+# builtin opt 	sql_debug = 0
+# builtin opt 	standoff_ns = http://monetdb.cwi.nl/standoff
+# builtin opt 	standoff_start = start
+# builtin opt 	standoff_end = end
+# config opt 	prefix = /ufs/niels/scratch/rc/Linux-x86_64
+# config opt 	config = ${prefix}/etc/monetdb5.conf
+# config opt 	prefix = /ufs/niels/scratch/rc/Linux-x86_64
+# config opt 	exec_prefix = ${prefix}
+# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB5/dbfarm
+# config opt 	gdk_dbname = demo
+# config opt 	gdk_alloc_map = no
+# config opt 	gdk_embedded = no
+# config opt 	gdk_debug = 0
+# config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB5:${exec_prefix}/lib/MonetDB5/lib:${exec_prefix}/lib/MonetDB5/bin
+# config opt 	monet_daemon = no
+# config opt 	monet_welcome = yes
+# config opt 	mero_msglog = ${prefix}/var/log/MonetDB/merovingian.log
+# config opt 	mero_errlog = ${prefix}/var/log/MonetDB/merovingian.log
+# config opt 	mero_pidfile = ${prefix}/var/run/MonetDB/merovingian.pid
+# config opt 	mal_init = ${exec_prefix}/lib/MonetDB5/mal_init.mal
+# config opt 	mal_listing = 2
+# config opt 	mapi_port = 50000
+# config opt 	mapi_autosense = false
+# config opt 	mapi_open = false
+# config opt 	sql_optimizer = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
+# cmdline opt 	config = /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	monet_mod_path = /ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin
+# cmdline opt 	gdk_dbfarm = /ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm
+# cmdline opt 	mapi_open = true
+# cmdline opt 	xrpc_open = true
+# cmdline opt 	mapi_port = 39382
+# cmdline opt 	xrpc_port = 41903
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_readonly = yes
+#warning: please don't forget to set your vault key!
+#(see /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf)
+
+# 21:37:20 >  
+# 21:37:20 >  Done.
+# 21:37:20 >  
+

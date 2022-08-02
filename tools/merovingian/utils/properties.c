@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /**
@@ -31,16 +31,18 @@ static const confkeyval _internal_prop_keys[PROPLENGTH] = {
 	{"optpipe",     NULL, 0, STR},
 	{"readonly",    NULL, 0, BOOLEAN},
 	{"embedr",      NULL, 0, BOOLEAN},
+	{"embedpy",     NULL, 0, BOOLEAN},
 	{"embedpy3",    NULL, 0, BOOLEAN},
 	{"embedc",      NULL, 0, BOOLEAN},
+	{"ipv6",        NULL, 0, BOOLEAN},
 	{"listenaddr",  NULL, 0, LADDR},
 	{"nclients",    NULL, 0, INT},
 	{"mfunnel",     NULL, 0, STR},
 	{"dbextra",     NULL, 0, STR},
+	{"dbtrace",     NULL, 0, STR},
 	{"memmaxsize",  NULL, 0, INT},
 	{"vmmaxsize",   NULL, 0, INT},
 	{"raw_strings", NULL, 0, BOOLEAN},
-	{"loadmodules", NULL, 0, MODS},
 	{ NULL,         NULL, 0, INVALID}
 };
 
@@ -233,7 +235,7 @@ readPropsBuf(confkeyval *ckv, char *buf)
  * the key and associated value.
  */
 char *
-setProp(const char *path, const char *key, const char *val)
+setProp(char *path, char *key, char *val)
 {
 	char *err;
 	char buf[8096];
@@ -260,7 +262,7 @@ setProp(const char *path, const char *key, const char *val)
 				return(strdup(buf));
 			}
 		} else if (strcmp(key, "shared") == 0) {
-			const char *value = val;
+			char *value = val;
 			/* check if tag matches [A-Za-z0-9./]+ */
 			if (*value == '\0') {
 				freeConfFile(props);
@@ -309,3 +311,5 @@ setProp(const char *path, const char *key, const char *val)
 
 	return(NULL);
 }
+
+/* vim:set ts=4 sw=4 noexpandtab: */

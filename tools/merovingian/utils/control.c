@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -23,60 +23,68 @@
 #include "mcrypt.h"
 #include "mstring.h"
 
-struct control_state {
-	int sock;
-	stream *fdin;
-	stream *fdout;
+#define SOCKPTR struct sockaddr *
+
+/* Sends command for database to merovingian listening at host and port.
+ * If host is a path, and port is -1, a UNIX socket connection for host
+ * is opened.  The response of merovingian is returned as a malloced
+ * string.  If wait is set to a non-zero value, this function will only
+ * return after it has seen an EOF from the server.  This is useful with
+ * multi-line responses, but can lock up for single line responses where
+ * the server allows pipelining (and hence doesn't close the
+ * connection).
+ */
+char* control_send(
+		char** ret,
+		char* host,
+		int port,
+		char* database,
+		char* command,
+		char wait,
+		char* pass)
+{
 	char sbuf[8096];
 	char rbuf[8096];
-};
-
-static char *
-control_setup(
-	struct control_state *control,
-	const char *host,
-	int port,
-	const char *database,
-	const char *command,
-	const char *pass
-)
-{
-	ssize_t len;
 	char *buf;
+	int sock = -1;
+	ssize_t len;
+	stream *fdin = NULL;
+	stream *fdout = NULL;
 
+	*ret = NULL;		/* gets overwritten in case of success */
 	if (port == -1) {
 		struct sockaddr_un server;
 		/* UNIX socket connect */
-		if ((control->sock = socket(PF_UNIX, SOCK_STREAM
+		if ((sock = socket(PF_UNIX, SOCK_STREAM
 #ifdef SOCK_CLOEXEC
 						   | SOCK_CLOEXEC
 #endif
 						   , 0)) == -1) {
-			snprintf(control->sbuf, sizeof(control->sbuf), "cannot open connection: %s",
+			snprintf(sbuf, sizeof(sbuf), "cannot open connection: %s",
 					strerror(errno));
-			return(strdup(control->sbuf));
+			return(strdup(sbuf));
 		}
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
-		(void) fcntl(control->sock, F_SETFD, FD_CLOEXEC);
+		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
 		server = (struct sockaddr_un) {
 			.sun_family = AF_UNIX,
 		};
 		strcpy_len(server.sun_path, host, sizeof(server.sun_path));
-		if (connect(control->sock, (struct sockaddr *) &server, sizeof(struct sockaddr_un)) == -1) {
+		if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == -1) {
 			switch (errno) {
 			case ENOENT:
-				snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: control socket does not exist");
+				snprintf(sbuf, sizeof(sbuf), "cannot connect: control socket does not exist");
 				break;
 			case EACCES:
-				snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: no permission to access control socket");
+				snprintf(sbuf, sizeof(sbuf), "cannot connect: no permission to access control socket");
 				break;
 			default:
-				snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: %s", strerror(errno));
+				snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", strerror(errno));
 				break;
 			}
-			closesocket(control->sock);
-			return(strdup(control->sbuf));
+			closesocket(sock);
+			return(strdup(sbuf));
 		}
 	} else {
 		int check;
@@ -91,85 +99,75 @@ control_setup(
 		snprintf(sport, sizeof(sport), "%d", port & 0xFFFF);
 		check = getaddrinfo(host, sport, &hints, &res);
 		if (check) {
-			snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: %s", gai_strerror(check));
-			return(strdup(control->sbuf));
+			snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", gai_strerror(check));
+			return(strdup(sbuf));
 		}
 		for (rp = res; rp; rp = rp->ai_next) {
-			control->sock = socket(rp->ai_family, rp->ai_socktype
+			sock = socket(rp->ai_family, rp->ai_socktype
 #ifdef SOCK_CLOEXEC
 						 | SOCK_CLOEXEC
 #endif
 						 , rp->ai_protocol);
-			if (control->sock == INVALID_SOCKET)
+			if (sock == INVALID_SOCKET)
 				continue;
-			if (connect(control->sock, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
+			if (connect(sock, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
 				break;  /* success */
-			closesocket(control->sock);
+			closesocket(sock);
 		}
 		freeaddrinfo(res);
 		if (rp == NULL) {
-			snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect to %s:%s: %s", host, sport,
+			snprintf(sbuf, sizeof(sbuf), "cannot connect to %s:%s: %s", host, sport,
 #ifdef _MSC_VER
 					 wsaerror(WSAGetLastError())
 #else
 					 strerror(errno)
 #endif
 			);
-			return(strdup(control->sbuf));
+			return(strdup(sbuf));
 		}
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
-		(void) fcntl(control->sock, F_SETFD, FD_CLOEXEC);
+		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
 
 		/* try reading length */
-		len = recv(control->sock, control->rbuf, 2, 0);
+		len = recv(sock, rbuf, 2, 0);
 		if (len == 2)
-			len += recv(control->sock, control->rbuf + len, sizeof(control->rbuf) - len - 1, 0);
+			len += recv(sock, rbuf + len, sizeof(rbuf) - len - 1, 0);
 		/* perform login ritual */
 		if (len <= 2) {
-			snprintf(control->sbuf, sizeof(control->sbuf), "no response from monetdbd");
-			closesocket(control->sock);
-			return(strdup(control->sbuf));
+			snprintf(sbuf, sizeof(sbuf), "no response from monetdbd");
+			closesocket(sock);
+			return(strdup(sbuf));
 		}
-		control->rbuf[len] = 0;
+		rbuf[len] = 0;
 		/* we only understand merovingian:1 and :2 (backwards compat
 		 * <=Aug2011) and mapi v9 on merovingian */
-		if (strncmp(control->rbuf, "merovingian:1:", strlen("merovingian:1:")) == 0) {
-			buf = control->rbuf + strlen("merovingian:1:");
+		if (strncmp(rbuf, "merovingian:1:", strlen("merovingian:1:")) == 0) {
+			buf = rbuf + strlen("merovingian:1:");
 			ver = 1;
-		} else if (strncmp(control->rbuf, "merovingian:2:", strlen("merovingian:2:")) == 0) {
-			buf = control->rbuf + strlen("merovingian:2:");
+		} else if (strncmp(rbuf, "merovingian:2:", strlen("merovingian:2:")) == 0) {
+			buf = rbuf + strlen("merovingian:2:");
 			ver = 2;
-		} else if (strstr(control->rbuf + 2, ":merovingian:9:") != NULL) {
-			buf = control->rbuf + 2;
+		} else if (strstr(rbuf + 2, ":merovingian:9:") != NULL) {
+			buf = rbuf + 2;
 			ver = 9;
 
-			control->fdin = block_stream(socket_rstream(control->sock, "client in"));
-			if (control->fdin == NULL) {
-				closesocket(control->sock);
-				snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: %s", mnstr_peek_error(NULL));
-				return strdup(control->sbuf);
-			}
-			control->fdout = block_stream(socket_wstream(control->sock, "client out"));
-			if (control->fdout == NULL) {
-				close_stream(control->fdin);
-				snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: %s", mnstr_peek_error(NULL));
-				return strdup(control->sbuf);
-			}
+			fdin = block_stream(socket_rstream(sock, "client in"));
+			fdout = block_stream(socket_wstream(sock, "client out"));
 		} else {
-			if (strstr(control->rbuf + 2, ":BIG:") != NULL ||
-				strstr(control->rbuf + 2, ":LIT:") != NULL)
+			if (strstr(rbuf + 2, ":BIG:") != NULL ||
+				strstr(rbuf + 2, ":LIT:") != NULL)
 			{
-				snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
+				snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 						"server looks like a mapi server, "
 						"are you connecting to an mserver directly "
 						"instead of monetdbd?");
 			} else {
-				snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
+				snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 						"unsupported monetdbd server");
 			}
-			closesocket(control->sock);
-			return(strdup(control->sbuf));
+			closesocket(sock);
+			return(strdup(sbuf));
 		}
 
 		switch (ver) {
@@ -179,12 +177,12 @@ control_setup(
 				if (p != NULL)
 					*p = '\0';
 				p = control_hash(pass, buf);
-				len = snprintf(control->sbuf, sizeof(control->sbuf), "%s%s\n",
+				len = snprintf(sbuf, sizeof(sbuf), "%s%s\n",
 						p, ver == 2 ? ":control" : "");
-				len = send(control->sock, control->sbuf, len, 0);
+				len = send(sock, sbuf, len, 0);
 				free(p);
 				if (len == -1) {
-					closesocket(control->sock);
+					closesocket(sock);
 					return(strdup("cannot send challenge response to server"));
 				}
 				break;
@@ -195,110 +193,138 @@ control_setup(
 				char *shash = NULL;
 				char *phash = NULL;
 				char *algsv[] = {
+#ifdef HAVE_RIPEMD160_UPDATE
 					"RIPEMD160",
+#endif
+#ifdef HAVE_SHA512_UPDATE
 					"SHA512",
+#endif
+#ifdef HAVE_SHA384_UPDATE
 					"SHA384",
+#endif
+#ifdef HAVE_SHA256_UPDATE
 					"SHA256",
+#endif
+#ifdef HAVE_SHA224_UPDATE
 					"SHA224",
+#endif
+#ifdef HAVE_SHA1_UPDATE
 					"SHA1",
+#endif
 					NULL
 				};
-				(void)algsv;
+				char **algs = algsv;
 
 				/* buf at this point looks like
 				 * "challenge:servertype:protover:algos:endian:hash:" */
 				chal = buf; /* chal */
 				p = strchr(chal, ':');
 				if (p == NULL) {
-					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
+					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"invalid challenge from monetdbd server");
-					close_stream(control->fdout);
-					close_stream(control->fdin);
-					return(strdup(control->sbuf));
+					close_stream(fdout);
+					close_stream(fdin);
+					return(strdup(sbuf));
 				}
 				*p++ = '\0'; /* servertype */
 				p = strchr(p, ':');
 				if (p == NULL) {
-					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
+					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"invalid challenge from monetdbd server");
-					close_stream(control->fdout);
-					close_stream(control->fdin);
-					return(strdup(control->sbuf));
+					close_stream(fdout);
+					close_stream(fdin);
+					return(strdup(sbuf));
 				}
 				*p++ = '\0'; /* protover */
 				p = strchr(p, ':');
 				if (p == NULL) {
-					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
+					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"invalid challenge from monetdbd server");
-					close_stream(control->fdout);
-					close_stream(control->fdin);
-					return(strdup(control->sbuf));
+					close_stream(fdout);
+					close_stream(fdin);
+					return(strdup(sbuf));
 				}
 				*p++ = '\0'; /* algos */
 				algos = p;
 				p = strchr(p, ':');
 				if (p == NULL) {
-					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
+					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"invalid challenge from monetdbd server");
-					close_stream(control->fdout);
-					close_stream(control->fdin);
-					return(strdup(control->sbuf));
+					close_stream(fdout);
+					close_stream(fdin);
+					return(strdup(sbuf));
 				}
 				*p++ = '\0'; /* endian */
 				p = strchr(p, ':');
 				if (p == NULL) {
-					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
+					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"invalid challenge from monetdbd server");
-					close_stream(control->fdout);
-					close_stream(control->fdin);
-					return(strdup(control->sbuf));
+					close_stream(fdout);
+					close_stream(fdin);
+					return(strdup(sbuf));
 				}
 				*p++ = '\0'; /* hash */
 				shash = p;
 				p = strchr(p, ':');
 				if (p == NULL) {
-					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
+					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"invalid challenge from monetdbd server");
-					close_stream(control->fdout);
-					close_stream(control->fdin);
-					return(strdup(control->sbuf));
+					close_stream(fdout);
+					close_stream(fdin);
+					return(strdup(sbuf));
 				}
 				*p = '\0';
 
 				/* we first need to hash our password in the form the
 				 * server stores it too */
+#ifdef HAVE_RIPEMD160_UPDATE
 				if (strcmp(shash, "RIPEMD160") == 0) {
 					phash = mcrypt_RIPEMD160Sum(pass, strlen(pass));
-				} else if (strcmp(shash, "SHA512") == 0) {
+				} else
+#endif
+#ifdef HAVE_SHA512_UPDATE
+				if (strcmp(shash, "SHA512") == 0) {
 					phash = mcrypt_SHA512Sum(pass, strlen(pass));
 				} else
+#endif
+#ifdef HAVE_SHA384_UPDATE
 				if (strcmp(shash, "SHA384") == 0) {
 					phash = mcrypt_SHA384Sum(pass, strlen(pass));
-				} else if (strcmp(shash, "SHA256") == 0) {
+				} else
+#endif
+#ifdef HAVE_SHA256_UPDATE
+				if (strcmp(shash, "SHA256") == 0) {
 					phash = mcrypt_SHA256Sum(pass, strlen(pass));
-				} else if (strcmp(shash, "SHA224") == 0) {
+				} else
+#endif
+#ifdef HAVE_SHA224_UPDATE
+				if (strcmp(shash, "SHA224") == 0) {
 					phash = mcrypt_SHA224Sum(pass, strlen(pass));
-				} else if (strcmp(shash, "SHA1") == 0) {
+				} else
+#endif
+#ifdef HAVE_SHA1_UPDATE
+				if (strcmp(shash, "SHA1") == 0) {
 					phash = mcrypt_SHA1Sum(pass, strlen(pass));
-				} else {
-					(void)phash; (void)algos;
-					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
+				} else
+#endif
+				{
+					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"monetdbd server requires unknown hash: %s", shash);
-					close_stream(control->fdout);
-					close_stream(control->fdin);
-					return(strdup(control->sbuf));
+					close_stream(fdout);
+					close_stream(fdin);
+					return(strdup(sbuf));
 				}
+
 				if (!phash) {
-					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
+					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"allocation failure while establishing connection");
-					close_stream(control->fdout);
-					close_stream(control->fdin);
-					return(strdup(control->sbuf));
+					close_stream(fdout);
+					close_stream(fdin);
+					return(strdup(sbuf));
 				}
 
 				/* now hash the password hash with the provided
 				 * challenge */
-				char **algs = algsv;
 				for (; *algs != NULL; algs++) {
 					/* TODO: make this actually obey the separation by
 					 * commas, and only allow full matches */
@@ -306,10 +332,10 @@ control_setup(
 						p = mcrypt_hashPassword(*algs, phash, chal);
 						if (p == NULL)
 							continue;
-						mnstr_printf(control->fdout,
+						mnstr_printf(fdout,
 								"BIG:monetdb:{%s}%s:control:merovingian:\n",
 								*algs, p);
-						mnstr_flush(control->fdout, MNSTR_FLUSH_DATA);
+						mnstr_flush(fdout);
 						free(p);
 						break;
 					}
@@ -317,279 +343,145 @@ control_setup(
 				free(phash);
 				if (p == NULL) {
 					/* the server doesn't support what we can */
-					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
+					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"unsupported hash algoritms: %s", algos);
-					close_stream(control->fdout);
-					close_stream(control->fdin);
-					return(strdup(control->sbuf));
+					close_stream(fdout);
+					close_stream(fdin);
+					return(strdup(sbuf));
 				}
 			}
 		}
 
-		if (control->fdin != NULL) {
+		if (fdin != NULL) {
 			/* stream.h is sooo broken :( */
-			memset(control->rbuf, '\0', sizeof(control->rbuf));
-			if ((len = mnstr_read_block(control->fdin, control->rbuf, sizeof(control->rbuf) - 1, 1)) < 0) {
-				close_stream(control->fdout);
-				close_stream(control->fdin);
+			memset(rbuf, '\0', sizeof(rbuf));
+			if ((len = mnstr_read_block(fdin, rbuf, sizeof(rbuf) - 1, 1)) < 0) {
+				close_stream(fdout);
+				close_stream(fdin);
 				return(strdup("no response from monetdbd after login"));
 			}
-			control->rbuf[len - 1] = '\0';
+			rbuf[len - 1] = '\0';
 		} else {
-			if ((len = recv(control->sock, control->rbuf, sizeof(control->rbuf), 0)) <= 0) {
-				closesocket(control->sock);
+			if ((len = recv(sock, rbuf, sizeof(rbuf), 0)) <= 0) {
+				closesocket(sock);
 				return(strdup("no response from monetdbd after login"));
 			}
-			control->rbuf[len - 1] = '\0';
+			rbuf[len - 1] = '\0';
 		}
 
-		if (strncmp(control->rbuf, "=OK", 3) != 0 && strncmp(control->rbuf, "OK", 2) != 0) {
-			buf = control->rbuf;
+		if (strncmp(rbuf, "=OK", 3) != 0 && strncmp(rbuf, "OK", 2) != 0) {
+			buf = rbuf;
 			if (*buf == '!')
 				buf++;
-			if (control->fdin != NULL) {
-				close_stream(control->fdout);
-				close_stream(control->fdin);
+			if (fdin != NULL) {
+				close_stream(fdout);
+				close_stream(fdin);
 			} else {
-				closesocket(control->sock);
+				closesocket(sock);
 			}
 			return(strdup(buf));
 		}
 	}
 
-	if (control->fdout != NULL) {
-		mnstr_printf(control->fdout, "%s %s\n", database, command);
-		mnstr_flush(control->fdout, MNSTR_FLUSH_DATA);
+	if (fdout != NULL) {
+		mnstr_printf(fdout, "%s %s\n", database, command);
+		mnstr_flush(fdout);
 	} else {
-		len = snprintf(control->sbuf, sizeof(control->sbuf), "%s %s\n", database, command);
-		if (send(control->sock, control->sbuf, len, 0) == -1) {
-			closesocket(control->sock);
+		len = snprintf(sbuf, sizeof(sbuf), "%s %s\n", database, command);
+		if (send(sock, sbuf, len, 0) == -1) {
+			closesocket(sock);
 			return(strdup("failed to send control command to server"));
 		}
 	}
-
-	return NULL;
-}
-
-static char *
-control_receive_wait(char **ret, struct control_state *control)
-{
-	ssize_t len;
-	size_t buflen = sizeof(control->sbuf);
-	size_t bufpos = 0;
-	char *buf, *bufp;
-	bufp = buf = malloc(buflen);
-	if (buf == NULL) {
-		if (control->fdin != NULL) {
-			close_stream(control->fdin);
-			close_stream(control->fdout);
-		} else {
-			closesocket(control->sock);
-		}
-		return(strdup("failed to allocate memory"));
-	}
-	while (1) {
-		if (control->fdin != NULL) {
-			/* stream.h is sooo broken :( */
-			memset(buf + bufpos, '\0', buflen - bufpos);
-			len = mnstr_read_block(control->fdin, buf + bufpos, buflen - bufpos - 1, 1);
-			if (len >= 0)
-				len = strlen(buf + bufpos);
-		} else {
-			len = recv(control->sock, buf + bufpos, buflen - bufpos, 0);
-		}
-		if (len <= 0)
-			break;
-		if ((size_t)len == buflen - bufpos) {
-			buflen *= 2;
-			bufp = realloc(buf, sizeof(char) * buflen);
-			if (bufp == NULL) {
-				free(buf);
-				if (control->fdin != NULL) {
-					close_stream(control->fdin);
-					close_stream(control->fdout);
-				} else {
-					closesocket(control->sock);
-				}
-				return(strdup("failed to allocate more memory"));
+	if (wait != 0) {
+		size_t buflen = sizeof(sbuf);
+		size_t bufpos = 0;
+		char *bufp;
+		bufp = buf = malloc(sizeof(char) * buflen);
+		if (buf == NULL) {
+			if (fdin != NULL) {
+				close_stream(fdin);
+				close_stream(fdout);
+			} else {
+				closesocket(sock);
 			}
-			buf = bufp;
+			return(strdup("failed to allocate memory"));
 		}
-		bufpos += (size_t)len;
-	}
-	if (bufpos == 0) {
-		if (control->fdin != NULL) {
-			close_stream(control->fdin);
-			close_stream(control->fdout);
+		while (1) {
+			if (fdin != NULL) {
+				/* stream.h is sooo broken :( */
+				memset(buf + bufpos, '\0', buflen - bufpos);
+				len = mnstr_read_block(fdin, buf + bufpos, buflen - bufpos - 1, 1);
+				if (len >= 0)
+					len = strlen(buf + bufpos);
+			} else {
+				len = recv(sock, buf + bufpos, buflen - bufpos, 0);
+			}
+			if (len <= 0)
+				break;
+			if ((size_t)len == buflen - bufpos) {
+				buflen *= 2;
+				bufp = realloc(buf, sizeof(char) * buflen);
+				if (bufp == NULL) {
+					free(buf);
+					if (fdin != NULL) {
+						close_stream(fdin);
+						close_stream(fdout);
+					} else {
+						closesocket(sock);
+					}
+					return(strdup("failed to allocate more memory"));
+				}
+				buf = bufp;
+			}
+			bufpos += (size_t)len;
+		}
+		if (bufpos == 0) {
+			if (fdin != NULL) {
+				close_stream(fdin);
+				close_stream(fdout);
+			} else {
+				closesocket(sock);
+			}
+			free(buf);
+			return(strdup("incomplete response from monetdbd"));
+		}
+		buf[bufpos - 1] = '\0';
+
+		if (fdin) {
+			/* strip out protocol = */
+			memmove(bufp, bufp + 1, strlen(bufp + 1) + 1);
+			while ((bufp = strstr(bufp, "\n=")) != NULL)
+				memmove(bufp + 1, bufp + 2, strlen(bufp + 2) + 1);
+		}
+		*ret = buf;
+	} else {
+		if (fdin != NULL) {
+			if (mnstr_read_block(fdin, rbuf, sizeof(rbuf) - 1, 1) < 0) {
+				close_stream(fdin);
+				close_stream(fdout);
+				return(strdup("incomplete response from monetdbd"));
+			}
+			rbuf[strlen(rbuf) - 1] = '\0';
+			*ret = strdup(rbuf + 1);
 		} else {
-			closesocket(control->sock);
+			if ((len = recv(sock, rbuf, sizeof(rbuf), 0)) <= 0) {
+				closesocket(sock);
+				return(strdup("incomplete response from monetdbd"));
+			}
+			rbuf[len - 1] = '\0';
+			*ret = strdup(rbuf);
 		}
-		free(buf);
-		return(strdup("incomplete response from monetdbd"));
 	}
-	buf[bufpos - 1] = '\0';
 
-	if (control->fdin) {
-		/* strip out protocol = */
-		memmove(bufp, bufp + 1, strlen(bufp + 1) + 1);
-		while ((bufp = strstr(bufp, "\n=")) != NULL)
-			memmove(bufp + 1, bufp + 2, strlen(bufp + 2) + 1);
-	}
-	*ret = buf;
-
-	return NULL;
-}
-
-static char *
-control_receive_nowait(char **ret, struct control_state *control)
-{
-	ssize_t len;
-	if (control->fdin != NULL) {
-		if (mnstr_read_block(control->fdin, control->rbuf, sizeof(control->rbuf) - 1, 1) < 0) {
-			close_stream(control->fdin);
-			close_stream(control->fdout);
-			return(strdup("incomplete response from monetdbd"));
-		}
-		control->rbuf[strlen(control->rbuf) - 1] = '\0';
-		*ret = strdup(control->rbuf + 1);
+	if (fdin != NULL) {
+		close_stream(fdin);
+		close_stream(fdout);
 	} else {
-		if ((len = recv(control->sock, control->rbuf, sizeof(control->rbuf), 0)) <= 0) {
-			closesocket(control->sock);
-			return(strdup("incomplete response from monetdbd"));
-		}
-		control->rbuf[len - 1] = '\0';
-		*ret = strdup(control->rbuf);
-	}
-
-	return NULL;
-}
-
-/* Sends command for database to merovingian listening at host and port.
- * If host is a path, and port is -1, a UNIX socket connection for host
- * is opened.  The response of merovingian is returned as a malloced
- * string.  If wait is set to a non-zero value, this function will only
- * return after it has seen an EOF from the server.  This is useful with
- * multi-line responses, but can lock up for single line responses where
- * the server allows pipelining (and hence doesn't close the
- * connection).
- */
-char* control_send(
-		char** ret,
-		const char* host,
-		int port,
-		const char *database,
-		const char *command,
-		bool wait,
-		const char *pass)
-{
-	char *msg;
-	struct control_state control_state = {0};
-	struct control_state *control = &control_state;
-
-	*ret = NULL;		/* gets overwritten in case of success */
-
-	msg = control_setup(control, host, port, database, command, pass);
-	if (msg != NULL)
-		return msg;
-
-	if (wait)
-		msg = control_receive_wait(ret, control);
-	else
-		msg = control_receive_nowait(ret, control);
-
-	if (msg)
-		return msg;
-
-	if (control->fdin != NULL) {
-		close_stream(control->fdin);
-		close_stream(control->fdout);
-	} else {
-		closesocket(control->sock);
+		closesocket(sock);
 	}
 
 	return(NULL);
-}
-
-
-/* Sends command for database to merovingian listening at host and port.
- * If host is a path, and port is -1, a UNIX socket connection for host
- * is opened.  The response of merovingian is returned as a malloced
- * string.  If wait is set to a non-zero value, this function will only
- * return after it has seen an EOF from the server.  This is useful with
- * multi-line responses, but can lock up for single line responses where
- * the server allows pipelining (and hence doesn't close the
- * connection).
- */
-char* control_send_callback(
-		char** ret,
-		const char *host,
-		int port,
-		const char *database,
-		const char *command,
-		void (*callback)(const void *data, size_t size, void *cb_private),
-		void *cb_private,
-		const char *pass)
-{
-	char *msg = NULL;
-	struct control_state control_state = {0};
-	struct control_state *control = &control_state;
-	char buf[8192];
-	ssize_t nread;
-
-	*ret = NULL;		/* gets overwritten in case of success */
-
-	msg = control_setup(control, host, port, database, command, pass);
-	if (msg != NULL)
-		return msg;
-
-	stream *wrapper = NULL;
-	stream *bs = NULL;
-	stream *s = NULL;  // aliases either bs or control->fdin
-
-	do {
-		if (control->fdin) {
-			assert(isa_block_stream(control->fdin));
-			s = control->fdin;
-		} else {
-			wrapper = socket_rstream(control->sock, "sockwrapper");
-			if (!wrapper) {
-				msg = strdup("could not wrap socket");
-				break;
-			}
-			bs = block_stream(wrapper);
-			if (!bs) {
-				msg = strdup("could not wrap block stream");
-				break;
-			}
-			wrapper = NULL; // it will be cleaned up when bs is cleaned up
-			s = bs;
-		}
-		while ((nread = mnstr_read(s, buf, 1, sizeof(buf))) > 0) {
-			callback(buf, (size_t)nread, cb_private);
-		}
-		if (mnstr_errnr(s))
-			msg = mnstr_error(s);
-	} while (0);
-	if (bs)
-		mnstr_destroy(bs);
-	if (wrapper)
-		mnstr_destroy(wrapper);
-	if (msg)
-		return msg;
-
-	msg = control_receive_wait(ret, control);
-
-	/* control_receive_wait closes control in case of error */
-	if (msg == NULL) {
-		if (control->fdin != NULL) {
-			close_stream(control->fdin);
-			close_stream(control->fdout);
-		} else {
-			closesocket(control->sock);
-		}
-	}
-
-	return msg;
 }
 
 /**
@@ -600,7 +492,7 @@ char* control_send_callback(
  * and v2 protocol merovingians (<=Aug2011).
  */
 char *
-control_hash(const char *pass, const char *salt) {
+control_hash(char *pass, char *salt) {
 	unsigned int ho;
 	unsigned int h = 0;
 	char buf[32];
@@ -637,10 +529,10 @@ control_hash(const char *pass, const char *salt) {
  * socket.
  */
 char *
-control_ping(const char *host, int port, const char *pass) {
+control_ping(char *host, int port, char *pass) {
 	char *res;
 	char *err;
-	if ((err = control_send(&res, host, port, "", "ping", false, pass)) == NULL) {
+	if ((err = control_send(&res, host, port, "", "ping", 0, pass)) == NULL) {
 		if (res != NULL)
 			free(res);
 	}

@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+
+PWD=`pwd`
+SQL="mclient -lsql -umonetdb -Pmonetdb"
+SQL1="mclient -lsql -umonet_test -Ppass_test"
+
+#Generate Data...
+
+#Bulk-Load into SQL server...
+
+echo Dependencies between User and Schema
+$SQL < dependency_owner_schema_1.sql
+echo done
+$SQL1 < dependency_owner_schema_2.sql
+echo done
+
+echo Dependencies between database objects
+$SQL < dependency_DBobjects.sql
+echo done
+
+echo Cleanup
+$SQL < dependency_owner_schema_3.sql
+echo done

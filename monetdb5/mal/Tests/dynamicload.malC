@@ -1,0 +1,10 @@
+# examples of non-bindable instructions
+
+#load unknown library
+include UNKNOWlib;
+
+command wrong()
+address UNKOWNaddress
+comment "Should not be callable";
+
+wrong();

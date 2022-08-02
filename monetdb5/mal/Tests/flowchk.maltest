@@ -1,9 +1,0 @@
-statement error
-function tst();
-barrier go:=true;
-	a:=bat.new(:int);
-	io.print(a);
-exit go;
-	c:=a;
-end tst;
-

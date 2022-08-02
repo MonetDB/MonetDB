@@ -1,0 +1,7 @@
+#multiple atomary types
+atom myint:int;
+atom myint:int;
+i:= 1:myint;
+j:= i+3;
+io.print(i);
+io.print(j);

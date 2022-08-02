@@ -1,3 +1,0 @@
-statement ok
-CREATE TABLE A (a DATE)
-

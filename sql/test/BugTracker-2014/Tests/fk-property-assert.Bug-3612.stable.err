@@ -1,0 +1,37 @@
+stderr of test 'fk-property-assert.Bug-3612` in directory 'sql/test/BugTracker-2014` itself:
+
+
+# 14:49:52 >  
+# 14:49:52 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31650" "--set" "mapi_usock=/var/tmp/mtest-12778/.s.monetdb.31650" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-candidate/var/MonetDB/mTests_sql_test_BugTracker-2014" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 14:49:52 >  
+
+# builtin opt 	gdk_dbpath = /ufs/sjoerd/Monet-candidate/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31650
+# cmdline opt 	mapi_usock = /var/tmp/mtest-12778/.s.monetdb.31650
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/sjoerd/Monet-candidate/var/MonetDB/mTests_sql_test_BugTracker-2014
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 14:49:52 >  
+# 14:49:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12778" "--port=31650"
+# 14:49:52 >  
+
+
+# 14:49:52 >  
+# 14:49:52 >  "Done."
+# 14:49:52 >  
+

@@ -1,0 +1,177 @@
+stderr of test 'conversion` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
+
+#--
+#-- create user defined conversion
+#--
+#--
+#-- cannot make same name conversion in same schema
+#--
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE CONVERSION myconv FOR 'LATIN1' TO 'UNICODE' FROM iso8859_1_to_utf8;
+ERROR = conversion "myconv" already exists
+#--
+#-- create default conversion with qualified string
+#--
+#--
+#-- cannot make default conversion with same shcema/for_encoding/to_encoding
+#--
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE DEFAULT CONVERSION public.mydef2 FOR 'LATIN1' TO 'UNICODE' FROM iso8859_1_to_utf8;
+ERROR = default conversion for LATIN1 to UNICODE already exists
+#-- test comments
+#--
+#-- drop user defined conversion
+#--
+#--
+#-- make sure all pre-defined conversions are fine.
+#-- SQL_ASCII --> MULE_INTERNAL
+#-- MULE_INTERNAL --> SQL_ASCII
+#-- KOI8R --> MULE_INTERNAL
+#-- MULE_INTERNAL --> KOI8R
+#-- ISO-8859-5 --> MULE_INTERNAL
+#-- MULE_INTERNAL --> ISO-8859-5
+#-- WIN1251 --> MULE_INTERNAL
+#-- MULE_INTERNAL --> WIN1251
+#-- ALT --> MULE_INTERNAL
+#-- MULE_INTERNAL --> ALT
+#-- KOI8R --> WIN1251
+#-- WIN1251 --> KOI8R
+#-- KOI8R --> ALT
+#-- ALT --> KOI8R
+#-- ALT --> WIN1251
+#-- WIN1251 --> ALT
+#-- ISO-8859-5 --> KOI8R
+#-- KOI8R --> ISO-8859-5
+#-- ISO-8859-5 --> WIN1251
+#-- WIN1251 --> ISO-8859-5
+#-- ISO-8859-5 --> ALT
+#-- ALT --> ISO-8859-5
+#-- EUC_CN --> MULE_INTERNAL
+#-- MULE_INTERNAL --> EUC_CN
+#-- EUC_JP --> SJIS
+#-- SJIS --> EUC_JP
+#-- EUC_JP --> MULE_INTERNAL
+#-- SJIS --> MULE_INTERNAL
+#-- MULE_INTERNAL --> EUC_JP
+#-- MULE_INTERNAL --> SJIS
+#-- EUC_KR --> MULE_INTERNAL
+#-- MULE_INTERNAL --> EUC_KR
+#-- EUC_TW --> BIG5
+#-- BIG5 --> EUC_TW
+#-- EUC_TW --> MULE_INTERNAL
+#-- BIG5 --> MULE_INTERNAL
+#-- MULE_INTERNAL --> EUC_TW
+#-- MULE_INTERNAL --> BIG5
+#-- LATIN2 --> MULE_INTERNAL
+#-- MULE_INTERNAL --> LATIN2
+#-- WIN1250 --> MULE_INTERNAL
+#-- MULE_INTERNAL --> WIN1250
+#-- LATIN2 --> WIN1250
+#-- WIN1250 --> LATIN2
+#-- LATIN1 --> MULE_INTERNAL
+#-- MULE_INTERNAL --> LATIN1
+#-- LATIN3 --> MULE_INTERNAL
+#-- MULE_INTERNAL --> LATIN3
+#-- LATIN4 --> MULE_INTERNAL
+#-- MULE_INTERNAL --> LATIN4
+#-- SQL_ASCII --> UNICODE
+#-- UNICODE --> SQL_ASCII
+#-- BIG5 --> UNICODE
+#-- UNICODE --> BIG5
+#-- UNICODE --> KOI8R
+#-- KOI8R --> UNICODE
+#-- UNICODE --> WIN1251
+#-- WIN1251 --> UNICODE
+#-- UNICODE --> ALT
+#-- ALT --> UNICODE
+#-- EUC_CN --> UNICODE
+#-- UNICODE --> EUC_CN
+#-- EUC_JP --> UNICODE
+#-- UNICODE --> EUC_JP
+#-- EUC_KR --> UNICODE
+#-- UNICODE --> EUC_KR
+#-- EUC_TW --> UNICODE
+#-- UNICODE --> EUC_TW
+#-- GB18030 --> UNICODE
+#-- UNICODE --> GB18030
+#-- GBK --> UNICODE
+#-- UNICODE --> GBK
+#-- UNICODE --> LATIN2
+#-- LATIN2 --> UNICODE
+#-- UNICODE --> LATIN3
+#-- LATIN3 --> UNICODE
+#-- UNICODE --> LATIN4
+#-- LATIN4 --> UNICODE
+#-- UNICODE --> LATIN5
+#-- LATIN5 --> UNICODE
+#-- UNICODE --> LATIN6
+#-- LATIN6 --> UNICODE
+#-- UNICODE --> LATIN7
+#-- LATIN7 --> UNICODE
+#-- UNICODE --> LATIN8
+#-- LATIN8 --> UNICODE
+#-- UNICODE --> LATIN9
+#-- LATIN9 --> UNICODE
+#-- UNICODE --> LATIN10
+#-- LATIN10 --> UNICODE
+#-- UNICODE --> ISO-8859-5
+#-- ISO-8859-5 --> UNICODE
+#-- UNICODE --> ISO-8859-6
+#-- ISO-8859-6 --> UNICODE
+#-- UNICODE --> ISO-8859-7
+#-- ISO-8859-7 --> UNICODE
+#-- UNICODE --> ISO-8859-8
+#-- ISO-8859-8 --> UNICODE
+#-- LATIN1 --> UNICODE
+#-- UNICODE --> LATIN1
+#-- JOHAB --> UNICODE
+#-- UNICODE --> JOHAB
+#-- SJIS --> UNICODE
+#-- UNICODE --> SJIS
+#-- TCVN --> UNICODE
+#-- UNICODE --> TCVN
+#-- UHC --> UNICODE
+#-- UNICODE --> UHC
+#-- UNICODE --> WIN1250
+#-- WIN1250 --> UNICODE
+#-- UNICODE --> WIN1256
+#-- WIN1256 --> UNICODE
+#-- UNICODE --> WIN874
+#-- WIN874 --> UNICODE
+#--
+#-- return to the super user
+#--
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
+

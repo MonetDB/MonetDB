@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -17,6 +17,7 @@
 #ifdef WIN32
 
 #undef HAVE_IO_H
+#undef HAVE_SYS_UTIME_H
 #undef PREFIX
 #undef EXEC_PREFIX
 #undef SIZEOF_VOID_P
@@ -26,9 +27,7 @@
 #undef snprintf
 #undef vsnprintf
 
-#if PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION < 10
 #undef ssize_t
-#endif
 
 #ifndef bool
 #define bool unsigned char

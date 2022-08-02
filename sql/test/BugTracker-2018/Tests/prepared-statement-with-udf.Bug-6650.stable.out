@@ -1,0 +1,138 @@
+stdout of test 'prepared-statement-with-udf.Bug-6650` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 13:30:55 >  
+# 13:30:55 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36830" "--set" "mapi_usock=/var/tmp/mtest-11999/.s.monetdb.36830" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-Aug2018/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_c=true"
+# 13:30:55 >  
+
+# MonetDB 5 server v11.31.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://wired-142.cwi.nl:36830/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11999/.s.monetdb.36830
+# MonetDB/GIS module loaded
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+
+# 13:30:56 >  
+# 13:30:56 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11999" "--port=36830"
+# 13:30:56 >  
+
+#start transaction;
+#create table onet (a text, b text, c text);
+#insert into onet values ('a', 'b', 'c');
+[ 1	]
+#create function get_onet(d text) returns table (aa text, bb text, cc text) return table(select * from onet where a = d);
+#prepare select * from get_onet(?);
+#prepare select * from get_onet(?);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 4,	1,	1,	0,	2,	2 # length
+[ "clob",	0,	0,	"",	"%2",	"aa"	]
+[ "clob",	0,	0,	"",	"%2",	"bb"	]
+[ "clob",	0,	0,	"",	"%2",	"cc"	]
+[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+#exec  9('a');
+% .%2,	.%2,	.%2 # table_name
+% aa,	bb,	cc # name
+% clob,	clob,	clob # type
+% 1,	1,	1 # length
+[ "a",	"b",	"c"	]
+#prepare select * from get_onet(?) tt where tt.aa = ?;
+#prepare select * from get_onet(?) tt where tt.aa = ?;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 4,	1,	1,	0,	2,	2 # length
+[ "clob",	0,	0,	"",	"tt",	"aa"	]
+[ "clob",	0,	0,	"",	"tt",	"bb"	]
+[ "clob",	0,	0,	"",	"tt",	"cc"	]
+[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+#exec 11('a', 'b');
+% .tt,	.tt,	.tt # table_name
+% aa,	bb,	cc # name
+% clob,	clob,	clob # type
+% 0,	0,	0 # length
+#prepare with something as (select a from onet where a = ?) select * from get_onet(?), something;
+#prepare with something as (select a from onet where a = ?) select * from get_onet(?), something;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 4,	1,	1,	0,	9,	2 # length
+[ "clob",	0,	0,	"",	"%2",	"aa"	]
+[ "clob",	0,	0,	"",	"%2",	"bb"	]
+[ "clob",	0,	0,	"",	"%2",	"cc"	]
+[ "clob",	0,	0,	"",	"something",	"a"	]
+[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+#exec 13('a', 'a');
+% .%2,	.%2,	.%2,	sys.something # table_name
+% aa,	bb,	cc,	a # name
+% clob,	clob,	clob,	clob # type
+% 1,	1,	1,	1 # length
+[ "a",	"b",	"c",	"a"	]
+#drop function get_onet;
+#drop table onet;
+#CREATE FUNCTION twoargs(input1 INT, input2 CLOB) RETURNS TABLE (outt CLOB) BEGIN RETURN TABLE(SELECT input1 || input2); END;
+#prepare select 1 from twoargs(?,?);
+#prepare select 1 from twoargs(?,?);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	1,	0,	2,	2 # length
+[ "tinyint",	1,	0,	"",	"%7",	"%7"	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+#rollback;
+
+# 13:30:56 >  
+# 13:30:56 >  "Done."
+# 13:30:56 >  
+

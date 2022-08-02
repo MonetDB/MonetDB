@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -26,7 +26,6 @@
 #include "monetdb_config.h"
 #include "querylog.h"
 #include "gdk_time.h"
-#include "mal_exception.h"
 
 /* (c) M.L. Kersten
  * The query logger facility is hardwired to avoid interference
@@ -80,9 +79,7 @@ static BAT *QLOG_calls_result = 0;
 static BAT *QLOG_calls_cpuload = 0;
 static BAT *QLOG_calls_iowait = 0;
 
-static MT_Lock QLOGlock = MT_LOCK_INITIALIZER(QLOGlock);
-
-static str initQlog(void);
+static MT_Lock QLOGlock = MT_LOCK_INITIALIZER("QLOGlock");
 
 str
 QLOGcatalog(BAT **r)
@@ -167,18 +164,14 @@ QLOGcreate(str hnme, str tnme, int tt)
 
 	snprintf(buf, 128, "querylog_%s_%s", hnme, tnme);
 	b = BATdescriptor(BBPindex(buf));
-	if (b) {
-		/* make append-only in case this wasn't done when created */
-		return BATsetaccess(b, BAT_APPEND);
-	}
+	if (b)
+		return b;
 
 	b = COLnew(0, tt, 1 << 16, PERSISTENT);
 	if (b == NULL)
 		return NULL;
-	if ((b = BATsetaccess(b, BAT_APPEND)) == NULL)
-		return NULL;
 
-	if (BBPrename(b, buf) != 0 ||
+	if (BBPrename(b->batCacheid, buf) != 0 ||
 		BATmode(b, false) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		return NULL;
@@ -188,15 +181,7 @@ QLOGcreate(str hnme, str tnme, int tt)
 	return b;
 }
 
-#define cleanup(X)								\
-	do {										\
-		if (X) {								\
-			(X)->batTransient = true;			\
-			BBPrename((X), NULL);				\
-			BBPunfix((X)->batCacheid);			\
-		}										\
-		(X) = NULL;								\
-	} while (0)
+#define cleanup(X)  if (X) { (X)->batTransient = true; BBPrename((X)->batCacheid,"_"); BBPunfix((X)->batCacheid); } (X) = NULL;
 
 static void
 _QLOGcleanup(void)
@@ -254,11 +239,11 @@ _initQlog(void)
 	}
 
 	QLOG_init = true;
-	TMsubcommit_list(commitlist, NULL, committop, getBBPlogno(), getBBPtransid());
+	TMsubcommit_list(commitlist, committop);
 	return MAL_SUCCEED;
 }
 
-static str
+str
 initQlog(void)
 {
 	str msg;
@@ -303,7 +288,7 @@ QLOGisset(void)
 	return QLOGtrace;
 }
 
-static str
+str
 QLOGissetFcn(int *ret)
 {
 	*ret = QLOGtrace;
@@ -341,12 +326,12 @@ QLOGempty(void *ret)
 	BATclear(QLOG_calls_cpuload,true);
 	BATclear(QLOG_calls_iowait,true);
 
-	TMsubcommit_list(commitlist, NULL, committop, getBBPlogno(), getBBPtransid());
+	TMsubcommit_list(commitlist, committop);
 	MT_lock_unset(&QLOGlock);
 	return MAL_SUCCEED;
 }
 
-static str
+str
 QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	oid *ret = getArgReference_oid(stk,pci,0);
@@ -380,12 +365,12 @@ QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL, "querylog.append", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
-	TMsubcommit_list(commitlist, NULL, committop, getBBPlogno(), getBBPtransid());
+	TMsubcommit_list(commitlist, committop);
 	MT_lock_unset(&QLOGlock);
 	return MAL_SUCCEED;
 }
 
-static str
+str
 QLOGdefineNaive(void *ret, str *qry, str *opt, int *nr)
 {
 	// Nothing else to be done.
@@ -396,7 +381,7 @@ QLOGdefineNaive(void *ret, str *qry, str *opt, int *nr)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 QLOGcontextNaive(void *ret, str *release, str *version, str *revision, str *uri)
 {
 	// Nothing else to be done.
@@ -408,7 +393,7 @@ QLOGcontextNaive(void *ret, str *release, str *version, str *revision, str *uri)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	timestamp *tick1  = getArgReference_TYPE(stk,pci,1,timestamp);
@@ -441,28 +426,7 @@ QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		MT_lock_unset(&QLOGlock);
 		throw(MAL, "querylog.call", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	TMsubcommit_list(commitlist, NULL, committop, getBBPlogno(), getBBPtransid());
+	TMsubcommit_list(commitlist, committop);
 	MT_lock_unset(&QLOGlock);
 	return MAL_SUCCEED;
 }
-
-#include "mel.h"
-mel_func querylog_init_funcs[] = {
- command("querylog", "enable", QLOGenableThreshold, false, "Turn on the query logger", args(0,1, arg("threshold",int))),
- command("querylog", "enable", QLOGenable, false, "Turn on the query logger", noargs),
- command("querylog", "disable", QLOGdisable, false, "Turn off the query logger", noargs),
- command("querylog", "isset", QLOGissetFcn, false, "Return status of query logger", args(1,1, arg("",int))),
- command("querylog", "empty", QLOGempty, false, "Clear the query log tables", noargs),
- pattern("querylog", "append", QLOGappend, false, "Add a new query call to the query log", args(0,4, arg("q",str),arg("pipe",str),arg("usr",str),arg("tick",timestamp))),
- command("querylog", "define", QLOGdefineNaive, false, "Noop operation, just marking the query", args(0,3, arg("q",str),arg("pipe",str),arg("size",int))),
- command("querylog", "context", QLOGcontextNaive, false, "Noop operation, just marking the query", args(0,4, arg("release",str),arg("version",str),arg("revision",str),arg("uri",str))),
- pattern("querylog", "call", QLOGcall, false, "Add a new query call to the query log", args(0,8, arg("tick1",timestamp),arg("tick2",timestamp),arg("arg",str),arg("tuples",lng),arg("xtime",lng),arg("rtime",lng),arg("cpu",int),arg("iowait",int))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_querylog_mal)
-{ mal_module("querylog", NULL, querylog_init_funcs); }

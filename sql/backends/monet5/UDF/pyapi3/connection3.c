@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -13,11 +13,31 @@
 #include "type_conversion.h"
 #include "gdk_interprocess.h"
 
+CREATE_SQL_FUNCTION_PTR(void, SQLdestroyResult);
+CREATE_SQL_FUNCTION_PTR(str, SQLstatementIntern);
+CREATE_SQL_FUNCTION_PTR(str, create_table_from_emit);
+CREATE_SQL_FUNCTION_PTR(str, append_to_table_from_emit);
+
 static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
 {
 	char *query = NULL;
+#ifndef IS_PY3K
 	if (PyUnicode_CheckExact(args)) {
+		PyObject* str = PyUnicode_AsUTF8String(args);
+		if (!str) {
+			PyErr_Format(PyExc_Exception, "Unicode failure.");
+			return NULL;
+		}
+		query = GDKstrdup(((PyStringObject *)str)->ob_sval);
+		Py_DECREF(str);
+	} else
+#endif
+	if (PyString_CheckExact(args)) {
+#ifndef IS_PY3K
+		query = GDKstrdup(((PyStringObject *)args)->ob_sval);
+#else
 		query = GDKstrdup(PyUnicode_AsUTF8(args));
+#endif
 	} else {
 		PyErr_Format(PyExc_TypeError,
 					 "expected a query string, but got an object of type %s",
@@ -41,7 +61,6 @@ static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
 		if (res != MAL_SUCCEED) {
 			PyErr_Format(PyExc_Exception, "SQL Query Failed: %s",
 						 (res ? getExceptionMessage(res) : "<no error>"));
-			freeException(res);
 			return NULL;
 		}
 
@@ -75,7 +94,7 @@ static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
 					return NULL;
 				}
 				PyDict_SetItem(result,
-							   PyUnicode_FromString(output->cols[i].name),
+							   PyString_FromString(output->cols[i].name),
 							   numpy_array);
 				Py_DECREF(numpy_array);
 				BBPunfix(input.bat->batCacheid);
@@ -114,26 +133,26 @@ PyTypeObject Py_ConnectionType = {
 
 void _connection_cleanup_result(void *output)
 {
-	SQLdestroyResult((res_table *)output);
+	(*SQLdestroyResult_ptr)((res_table *)output);
 }
 
-str _connection_query(Client cntxt, const char *query, res_table **result)
+str _connection_query(Client cntxt, char *query, res_table **result)
 {
 	str res = MAL_SUCCEED;
-	res = SQLstatementIntern(cntxt, query, "name", 1, 0, result);
+	res = (*SQLstatementIntern_ptr)(cntxt, &query, "name", 1, 0, result);
 	return res;
 }
 
 str _connection_create_table(Client cntxt, char *sname, char *tname,
 							 sql_emit_col *columns, size_t ncols)
 {
-	return create_table_from_emit(cntxt, sname, tname, columns, ncols);
+	return (*create_table_from_emit_ptr)(cntxt, sname, tname, columns, ncols);
 }
 
 str _connection_append_to_table(Client cntxt, char *sname, char *tname,
 							 sql_emit_col *columns, size_t ncols)
 {
-	return append_to_table_from_emit(cntxt, sname, tname, columns, ncols);
+	return (*append_to_table_from_emit_ptr)(cntxt, sname, tname, columns, ncols);
 }
 
 PyObject *Py_Connection_Create(Client cntxt, bit mapped, QueryStruct *query_ptr,
@@ -160,6 +179,11 @@ str _connection_init(void)
 {
 	str msg = MAL_SUCCEED;
 	_connection_import_array();
+
+	LOAD_SQL_FUNCTION_PTR(SQLdestroyResult);
+	LOAD_SQL_FUNCTION_PTR(SQLstatementIntern);
+	LOAD_SQL_FUNCTION_PTR(create_table_from_emit);
+	LOAD_SQL_FUNCTION_PTR(append_to_table_from_emit);
 
 	if (msg != MAL_SUCCEED) {
 		return msg;

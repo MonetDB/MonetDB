@@ -1,5 +1,5 @@
-ssbm
-HAVE_DATA_PATH?creds
-HAVE_DATA_PATH?invalid_creds
-HAVE_DATA_PATH?different_user
+HAVE_PYMONETDB?ssbm
+HAVE_PYMONETDB&HAVE_DATA_PATH?creds
+HAVE_PYMONETDB&HAVE_DATA_PATH?invalid_creds
+HAVE_PYMONETDB&HAVE_DATA_PATH?different_user
 THREADS>=2?partition_elim

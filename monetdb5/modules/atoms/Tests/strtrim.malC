@@ -1,0 +1,21 @@
+a := str.trim("zzzytrimxxxx", "zyx");
+io.print(a);
+a := str.trim("zzëzytrimxxëxx", "zëyx");
+io.print(a);
+a := str.trim("zzë颖zytrimxx颖ëxx", "zëy颖x");
+io.print(a);
+
+a := str.ltrim("zzzytrim", "zyx");
+io.print(a);
+a := str.ltrim("zzëzytrim", "zëyx");
+io.print(a);
+a := str.ltrim("zzë颖zytrim", "zëy颖x");
+io.print(a);
+
+a := str.rtrim("trimxxxx", "zyx");
+io.print(a);
+a := str.rtrim("trimxxëxx", "zëyx");
+io.print(a);
+a := str.rtrim("trimxx颖ëxx", "zëy颖x");
+io.print(a);
+

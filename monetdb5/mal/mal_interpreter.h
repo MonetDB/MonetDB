@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -33,9 +33,6 @@ mal_export void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int 
 mal_export str malCommandCall(MalStkPtr stk, InstrPtr pci);
 mal_export int isNotUsedIn(InstrPtr p, int start, int a);
 
-/* defined in mal.c */
-mal_export Client getClientContext(void);
-
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #if !defined(NDEBUG) && defined(__GNUC__)
 /* for ease of programming and debugging (assert reporting a useful
@@ -45,12 +42,6 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 	({															\
 		assert((s)->stk[(pci)->argv[k]].vtype == TYPE_##TYPE);	\
 		(TYPE *) getArgReference((s), (pci), (k));				\
-	})
-#define getArgReference_msk(s, pci, k)				\
-	({												\
-		ValRecord *v = &(s)->stk[(pci)->argv[k]];	\
-		assert(v->vtype == TYPE_msk);				\
-		&v->val.mval;								\
 	})
 #define getArgReference_bit(s, pci, k)				\
 	({												\
@@ -128,7 +119,6 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 	})
 #else
 #define getArgReference_TYPE(s, pci, k, TYPE)	((TYPE *) getArgReference(s, pci, k))
-#define getArgReference_msk(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.mval)
 #define getArgReference_bit(s, pci, k)	((bit *) &(s)->stk[(pci)->argv[k]].val.btval)
 #define getArgReference_sht(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.shval)
 #define getArgReference_bat(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.bval)

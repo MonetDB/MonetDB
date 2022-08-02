@@ -1,0 +1,34 @@
+stderr of test 'sqlitelogictest-in-cast-null.Bug-6529` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 19:12:38 >  
+# 19:12:38 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32688" "--set" "mapi_usock=/var/tmp/mtest-29155/.s.monetdb.32688" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018"
+# 19:12:38 >  
+
+# builtin opt 	gdk_dbpath = /home/niels/scratch/rc-monetdb/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32688
+# cmdline opt 	mapi_usock = /var/tmp/mtest-29155/.s.monetdb.32688
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018
+# cmdline opt 	gdk_debug = 553648138
+
+# 19:12:38 >  
+# 19:12:38 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29155" "--port=32688"
+# 19:12:38 >  
+
+
+# 19:12:38 >  
+# 19:12:38 >  "Done."
+# 19:12:38 >  
+

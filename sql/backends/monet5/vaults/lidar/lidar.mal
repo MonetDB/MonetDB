@@ -1,0 +1,19 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+
+module lidar;
+
+pattern attach(fname:str):void
+address LIDARattach
+comment "Open a LIDAR file and return catalog of the table HDUs";
+
+pattern load(tablename:str):void
+address LIDARloadTable
+comment "Load a LIDAR table from an attached file";
+
+pattern export(tablename:str, fname:str, type:str):void
+address LIDARexportTable
+comment "Exporta LIDAR table to a LAS/LAZ file"

@@ -1,8 +1,0 @@
-query T rowsort
-select timestamp '2004-04-01 08:57'
-----
-2004-04-01 08:57:00
-
-statement error
-select timestamp '01-04-2004 08:57'
-

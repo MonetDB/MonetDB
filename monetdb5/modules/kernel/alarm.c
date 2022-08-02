@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -25,9 +25,14 @@
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include <time.h>
-#include "mal_exception.h"
 
-static str
+mal_export str ALARMusec(lng *ret);
+mal_export str ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str ALARMctime(str *res);
+mal_export str ALARMepoch(int *res);
+mal_export str ALARMtime(int *res);
+
+str
 ALARMusec(lng *ret)
 {
 	*ret = GDKusec();
@@ -49,13 +54,11 @@ ALARMusec(lng *ret)
 	do { \
 		for (i = 0; i < j ; i++) { \
 			if (is_##TPE##_nil(bb[i])) { \
-				bat_iterator_end(&bi); \
 				BBPreclaim(r); \
 				BBPunfix(b->batCacheid); \
 				throw(MAL, "alarm.sleepr", "NULL values not allowed for sleeping time"); \
 			} \
 			if (bb[i] < 0) { \
-				bat_iterator_end(&bi); \
 				BBPreclaim(r); \
 				BBPunfix(b->batCacheid); \
 				throw(MAL, "alarm.sleepr", "Cannot sleep for a negative time"); \
@@ -67,7 +70,7 @@ ALARMusec(lng *ret)
 		} \
 	} while (0)
 
-static str
+str
 ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *r = NULL, *b = NULL;
@@ -83,12 +86,10 @@ ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!(b = BATdescriptor(*bid)))
 			throw(MAL, "alarm.sleepr", SQLSTATE(HY005) "Cannot access column descriptor");
 
-		BATiter bi = bat_iterator(b);
-		j = bi.count;
-		bb = bi.base;
+		j = BATcount(b);
+		bb = Tloc(b, 0);
 
 		if (!(r = COLnew(0, tpe, j, TRANSIENT))) {
-			bat_iterator_end(&bi);
 			BBPunfix(b->batCacheid);
 			throw(MAL, "alarm.sleepr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -105,17 +106,14 @@ ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				SLEEP_MULTI(int);
 				break;
 			default: {
-				bat_iterator_end(&bi);
 				BBPreclaim(r);
 				BBPunfix(b->batCacheid);
 				throw(MAL, "alarm.sleepr", SQLSTATE(42000) "Sleep function not available for type %s", ATOMname(tpe));
 			}
 		}
-		bat_iterator_end(&bi);
 
 		BBPunfix(b->batCacheid);
-		*res = r->batCacheid;
-		BBPkeepref(r);
+		BBPkeepref(*res = r->batCacheid);
 	} else {
 		switch (getArgType(mb, pci, 1)) {
 			case TYPE_bte:
@@ -134,7 +132,7 @@ ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 ALARMctime(str *res)
 {
 	time_t t = time(0);
@@ -157,35 +155,17 @@ ALARMctime(str *res)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 ALARMepoch(int *res)  /* XXX should be lng */
 {
 	*res = (int) time(0);
 	return MAL_SUCCEED;
 }
 
-static str
+str
 ALARMtime(int *res)
 {
 	*res = GDKms();
 	return MAL_SUCCEED;
 }
 
-#include "mel.h"
-mel_func alarm_init_funcs[] = {
- pattern("alarm", "sleep", ALARMsleep, true, "Sleep a few milliseconds", args(1,2, arg("",void),argany("msecs",1))),
- pattern("alarm", "sleep", ALARMsleep, true, "Sleep a few milliseconds and return the slept value", args(1,2, argany("",1),argany("msecs",1))),
- pattern("alarm", "sleep", ALARMsleep, true, "Sleep a few milliseconds and return the slept value", args(1,2, batargany("",1),batargany("msecs",1))),
- command("alarm", "usec", ALARMusec, true, "Return time since Jan 1, 1970 in microseconds.", args(1,1, arg("",lng))),
- command("alarm", "time", ALARMtime, true, "Return time since program start in milliseconds.", args(1,1, arg("",int))),
- command("alarm", "epoch", ALARMepoch, true, "Return time since Jan 1, 1970 in seconds.", args(1,1, arg("",int))),
- command("alarm", "ctime", ALARMctime, true, "Return the current time as a C-time string.", args(1,1, arg("",str))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_alarm_mal)
-{ mal_module("alarm", NULL, alarm_init_funcs); }

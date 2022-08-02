@@ -1,6 +1,7 @@
-HAVE_GEOM?regression_load2D
-HAVE_GEOM?regression_load3D
-HAVE_GEOM?regression_load4D
+#HAVE_GEOM?regression_load2D
+#HAVE_GEOM?regression_load3D
+#HAVE_GEOM?regression_load4D
+#HAVE_GEOM?regression_drop
 
 #HAVE_GEOM?binary #Unknown Types: CIRCULARSTRING, COMPOUNDCURVE, CURVEPOLYGON, MULTICURVE, MULTISURFACE, TRIANGLE, TIN
 		#Unknown Functions: st_force3dz, st_force3dm, st_force4d, st_orderingequals
@@ -83,7 +84,7 @@ HAVE_GEOM?regress_ogc_cover
 
 #HAVE_GEOM?regress_management #Functions not applicable in MOnetDB
 
-HAVE_GEOM&GEOS_VERSION>=3.10?dump #Unknown Types: TRIANGLE, TIN (queries for those types commented out)
+HAVE_GEOM?dump #Unknown Types: TRIANGLE, TIN (queries for those types commented out)
 
 HAVE_GEOM?dumppoints #Uknown Types: TRIANGLE, TIN, CURVEPOLYGON (queries for these types commented out)
 

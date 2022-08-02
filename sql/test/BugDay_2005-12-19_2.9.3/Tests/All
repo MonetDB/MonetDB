@@ -3,6 +3,8 @@
 NULL_in_CASE.SF-1211335
 cast_bigint_to_int.SF-1211903
 in_operator.SF-1211925
+prepare_doesnot_like_LIKE.SF-1234205
+prepare-where.SF-1238867.1238959.1238965.1240124
 delete_where_1_equals_1.SF-1240162
 subselect_cardinality.SF-1240701.1242164
 default_next_value_for_non_ex_seq.SF.1246631

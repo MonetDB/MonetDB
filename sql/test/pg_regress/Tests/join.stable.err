@@ -1,0 +1,110 @@
+stderr of test 'join` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
+
+#--
+#-- JOIN
+#-- Test JOIN clauses
+#--
+#--
+#-- CORRELATION NAMES
+#-- Make sure that table/column aliases are supported
+#-- before diving into more complex join syntax.
+#--
+#--
+#-- CROSS JOIN
+#-- Qualifications are not allowed on cross joins,
+#-- which degenerate into a standard unqualified inner join.
+#--
+#-- ambiguous column
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT '' AS "xxx", i, k, t
+  FROM J1_TBL CROSS JOIN J2_TBL;
+ERROR = column reference "i" is ambiguous
+#-- resolve previous ambiguity by specifying the table string
+#--
+#--
+#-- Inner joins (equi-joins)
+#--
+#--
+#--
+#-- Inner joins (equi-joins) with USING clause
+#-- The USING syntax changes the shape of the resulting table
+#-- by including a column in the USING clause only once in the result.
+#--
+#-- Inner equi-join on specified column
+#-- Same as above, slightly different syntax
+#--
+#-- NATURAL JOIN
+#-- Inner equi-join on all columns with the same string
+#--
+#-- mismatch number of columns
+#-- currently, Postgres will fill in with underlying names
+#--
+#-- Inner joins (equi-joins)
+#--
+#--
+#-- Non-equi-joins
+#--
+#--
+#-- Outer joins
+#-- Note that OUTER is a noise word
+#--
+#--
+#-- More complicated constructs
+#--
+#-- UNION JOIN isn't implemented yet
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT '' AS "xxx", *
+  FROM J1_TBL UNION JOIN J2_TBL;
+ERROR = UNION JOIN is not implemented
+#--
+#-- Multiway full join
+#--
+#--
+#-- Test interactions of join syntax and subqueries
+#--
+#-- Basic cases (we expect planner to pull up the subquery here)
+#-- Cases with non-nullable expressions in subquery results;
+#-- make sure these go to null as expected
+#-- Test for propagation of nullability constraints into sub-joins
+#-- these should NOT give the same answers as above
+#--
+#-- regression test: check for bug with propagation of implied equality
+#-- to outside an IN
+#--
+#--
+#-- Clean up
+#--
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
+

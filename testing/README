@@ -8,7 +8,8 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 
 - The testing environment consists of the following tools:
   + Mtest.py	a python script to run tests
-  + Mz.py	another python script to run tests in a slightly different way
+  + Mdiff	a C program to show the differences of two files as HTML document
+  + Mapprove.py	a python script to approve recent test output (see below)
 
   When called with command-line option "--help", each of these tools
   provides the respective usage information.
@@ -177,6 +178,7 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 	HOST		hostname
 	SYST		`uname`
 	SYSTVER		`uname``uname -r`
+	MDIFF		"Mdiff"
 	MSERVER		"mserver5 --config=$MONETDB_CONF --debug=$GDK_DEBUG $setMONETDB_MOD_PATH $setGDK_DBFARM --set mapi_port=$MAPIPORT --set monet_prompt="
 	MAL_CLIENT	"$MALCLIENT --config=$MONETDB_CONF --host=$HOST --port=$MAPIPORT"
 	SQL_CLIENT	"$SQLCLIENT -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT"
@@ -224,6 +226,26 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
   variables are as described above.
   For the whole test run, a global entry point to the test results is
   created as $TSTTRGBASE/mTests/index.html.
+
+
+- Mfilter.py is used to filter out variable date form the test output to
+  avoid no-error differences when running Mdiff. Mfilter.py prefixes all
+  lines enclosed in two line containing only "#~BeginVariableOutput~#" and
+  "#~EndVariableOutput~#", respectively, with "#~". These lines are then
+  ignored during Mdiff.
+
+  MAL Example:
+	io.printf("#~BeginVariableOutput~#\n");
+	io.print(somebat);
+	io.printf("#~EndVariableOutput~#\n");
+
+
+- A tool Mapprove.py is provided to copy the recent output from
+  $TSTTRGDIR/TST.test.{out,err} to $TSTSRCDIR/TST.stable.{out,err}. Lines
+  starting with a '!' (i.e. error messages) are eliminated during copying.
+  Of course, $TSTTRGDIR/TST.test.{out,err} have to be checked and claimed
+  correct before being approved!
+  See "Mapprove.py -?" for command-line options.
 
 
 - A development session is then supposed to proceed as follows:

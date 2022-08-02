@@ -1,0 +1,17 @@
+stderr of test 'like_exp.SF-1613949` in directory 'sql/test/BugTracker` itself:
+
+
+# 21:38:42 >  
+# 21:38:42 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/monetdb4/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb4/Linux-x86_64/lib64/MonetDB4:/ufs/niels/scratch/monetdb4/Linux-x86_64/lib64/MonetDB4/lib:/ufs/niels/scratch/monetdb4/Linux-x86_64/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb4/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb4/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/monetdb4/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_port=33867 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit=" module(sql_server);" ; echo ; echo Over..
+# 21:38:42 >  
+
+
+# 21:38:42 >  
+# 21:38:42 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33867  < like_exp.SF-1613949.sql
+# 21:38:42 >  
+
+
+# 21:38:42 >  
+# 21:38:42 >  Done.
+# 21:38:42 >  
+

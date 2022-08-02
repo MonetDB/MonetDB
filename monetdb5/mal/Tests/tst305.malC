@@ -1,0 +1,15 @@
+
+# Exceptions can be explicitly raised in a function
+# which requires the exception identifier to be defined.
+
+function myException();
+raise	IllegalAccess:="new exception";
+	io.print("should have left function ");
+end myException;
+
+function foo();
+	user.myException();
+	io.print("should not come here");
+end foo;
+mdb.List("user","foo");
+user.foo();

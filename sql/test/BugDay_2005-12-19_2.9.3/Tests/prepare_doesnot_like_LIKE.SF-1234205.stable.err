@@ -1,0 +1,17 @@
+stderr of test 'prepare_doesnot_like_LIKE.SF-1234205` in directory 'sql/test/BugDay_2005-12-19_2.9.3` itself:
+
+
+# 09:15:18 >  
+# 09:15:18 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/rc/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/log" --set mapi_port=36877 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-12-19_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 09:15:18 >  
+
+
+# 09:15:18 >  
+# 09:15:18 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36877  < prepare_doesnot_like_LIKE.SF-1234205.sql
+# 09:15:18 >  
+
+
+# 09:15:18 >  
+# 09:15:18 >  Done.
+# 09:15:18 >  
+

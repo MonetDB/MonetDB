@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -21,9 +21,9 @@
 		tpe val = tpe##_nil;                                                   \
 		msg = pyobject_to_##tpe(&dictEntry, 42, &val);                         \
 		if (msg != MAL_SUCCEED ||                                              \
-			BUNappend(self->cols[i].b, &val, false) != GDK_SUCCEED) {          \
+			BUNappend(self->cols[i].b, &val, false) != GDK_SUCCEED) {              \
 			if (msg == MAL_SUCCEED)                                            \
-				msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) "BUNappend failed."); \
+				msg = GDKstrdup("BUNappend failed.");                          \
 			goto wrapup;                                                       \
 		}                                                                      \
 	}
@@ -60,7 +60,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 			if (this_size < 0) {
 				PyErr_Format(
 					PyExc_TypeError, "Unsupported Python Object %s",
-					PyUnicode_AsUTF8(PyObject_Str(PyObject_Type(dictEntry))));
+					PyString_AsString(PyObject_Str(PyObject_Type(dictEntry))));
 				Py_DECREF(items);
 				return NULL;
 			}
@@ -71,7 +71,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 				PyErr_Format(
 					PyExc_TypeError, "Element %s has size %zd, but expected an "
 									 "element with size %zd",
-					PyUnicode_AsUTF8(PyObject_Str(key)), this_size, el_count);
+					PyString_AsString(PyObject_Str(key)), this_size, el_count);
 				Py_DECREF(items);
 				return NULL;
 			}
@@ -96,7 +96,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 			// element that was not matched
 			PyObject *keys = PyDict_Keys(args);
 			if (!keys) {
-				msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				msg = GDKstrdup(MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
 			for (i = 0; i < (size_t)PyList_Size(keys); i++) {
@@ -110,9 +110,8 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 					PyErr_Format(
 						PyExc_TypeError,
 						"Could not convert object type %s to a string: %s",
-						PyUnicode_AsUTF8(PyObject_Str(PyObject_Type(key))),
+						PyString_AsString(PyObject_Str(PyObject_Type(key))),
 						msg);
-					free(val);
 					goto loop_end;
 				}
 				for (ai = 0; ai < self->ncols; ai++) {
@@ -127,10 +126,8 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 					PyErr_Format(PyExc_TypeError,
 								 "Unmatched element \"%s\" in dict", val);
 					error = true;
-					free(val);
 					goto loop_end;
 				}
-				free(val);
 			}
 		loop_end:
 			Py_DECREF(keys);
@@ -167,10 +164,9 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 				PyErr_Format(
 					PyExc_TypeError,
 					"Could not convert object type %s to a string: %s",
-					PyUnicode_AsUTF8(PyObject_Str(PyObject_Type(key))), msg);
+					PyString_AsString(PyObject_Str(PyObject_Type(key))), msg);
 				error = true;
 				Py_DECREF(keys);
-				free(val);
 				goto wrapup;
 			}
 			for (ai = 0; ai < self->ncols; ai++) {
@@ -194,7 +190,6 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 					PyErr_Format(PyExc_TypeError,
 								 "Failed to create NumPy array.");
 					error = true;
-					free(val);
 					goto wrapup;
 				}
 				array_type =
@@ -202,25 +197,16 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 				bat_type = PyType_ToBat(array_type->type_num);
 				Py_DECREF(array);
 
-				if (!(self->cols[self->ncols].b = COLnew(0, bat_type, 0, TRANSIENT))) {
-					msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					free(val);
-					goto wrapup;
-				}
-				if (!(self->cols[self->ncols].name = GDKstrdup(val))) {
-					msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					free(val);
-					goto wrapup;
-				}
+				self->cols[self->ncols].b = COLnew(0, bat_type, 0, TRANSIENT);
+				self->cols[self->ncols].name = GDKstrdup(val);
 				self->cols[self->ncols].def = NULL;
 				if (self->nvals > 0) {
 					// insert NULL values up until the current entry
 					for (ai = 0; ai < self->nvals; ai++) {
 						if (BUNappend(self->cols[self->ncols].b,
-									  ATOMnilptr(self->cols[self->ncols].b->ttype),
+									  ATOMnil(self->cols[self->ncols].b->ttype),
 									  false) != GDK_SUCCEED) {
-							msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) "BUNappend failed.");
-							free(val);
+							msg = GDKstrdup("BUNappend failed.");
 							goto wrapup;
 						}
 					}
@@ -230,7 +216,6 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 				}
 				self->ncols++;
 			}
-			free(val);
 		}
 	}
 
@@ -246,7 +231,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 					if (msg != MAL_SUCCEED ||
 						BUNappend(self->cols[i].b, val, false) != GDK_SUCCEED) {
 						if (msg == MAL_SUCCEED)
-							msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) "BUNappend failed.");
+							msg = GDKstrdup("BUNappend failed.");
 						goto wrapup;
 					}
 				GDKfree(val);
@@ -286,14 +271,13 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 							gdk_return retval;
 							msg = pyobject_to_str(&dictEntry, 42, &val);
 							if (msg != MAL_SUCCEED) {
-								free(val);
 								goto wrapup;
 							}
 							assert(val);
 							retval = convert_and_append(self->cols[i].b, val, 0);
 							free(val);
 							if (retval != GDK_SUCCEED) {
-								msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) "BUNappend failed.");
+								msg = GDKstrdup("BUNappend failed.");
 								goto wrapup;
 							}
 						} break;
@@ -308,7 +292,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 				size_t iu = 0;
 				if (BATextend(self->cols[i].b, self->nvals + el_count) !=
 					GDK_SUCCEED) {
-					msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) "Failed to allocate memory to extend BAT.");
+					msg = GDKstrdup("Failed to allocate memory to extend BAT.");
 					goto wrapup;
 				}
 				msg = PyObject_GetReturnValues(dictEntry, ret);
@@ -316,7 +300,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 					goto wrapup;
 				}
 				if (ret->array_data == NULL) {
-					msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) "No return value stored in the structure.");
+					msg = GDKstrdup("No return value stored in the structure.");
 					goto wrapup;
 				}
 				mask = (bool *)ret->mask_data;
@@ -379,12 +363,12 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 			}
 		} else {
 			if (self->cols[i].def != NULL) {
-				msg = createException(MAL, "pyapi3.emit", "Inserting into columns with default values is not supported currently.");
+				msg = GDKstrdup("Inserting into columns with default values is not supported currently.");
 				goto wrapup;
 			}
 			for (ai = 0; ai < (size_t)el_count; ai++) {
 				if (BUNappend(self->cols[i].b,
-							  ATOMnilptr(self->cols[i].b->ttype),
+							  ATOMnil(self->cols[i].b->ttype),
 							  false) != GDK_SUCCEED) {
 					goto wrapup;
 				}
@@ -399,7 +383,6 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 wrapup:
 	if (msg != MAL_SUCCEED) {
 		PyErr_Format(PyExc_TypeError, "Failed conversion: %s", msg);
-		freeException(msg);
 	} else if (!error) {
 		Py_RETURN_NONE;
 	}

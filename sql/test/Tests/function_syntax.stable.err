@@ -1,0 +1,32 @@
+stderr of test 'function_syntax` in directory 'sql/test` itself:
+
+
+# 13:04:59 >  
+# 13:04:59 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=36428 --set xrpc_port=48805 --set monet_prompt= --trace "--dbname=mTests_src_test" --dbinit=' include sql;' ; echo ; echo Over..
+# 13:04:59 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf)
+
+# 13:04:59 >  
+# 13:04:59 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36428 
+# 13:04:59 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+QUERY = DROP FUNCTION f1;
+ERROR = !DROP FUNCTION: there are more than one function called 'f1', please use the full signature
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = DROP FUNCTION f2 (int, varchar(1024));
+ERROR = !DROP FUNCTION: no such function 'f2' (int(32), varchar(1024))
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = DROP ALL FUNCTION f1 CASCADE;
+ERROR = !DROP ALL FUNCTION: no such function 'f1'
+CODE  = 3F000
+
+
+# 13:04:59 >  
+# 13:04:59 >  Done.
+# 13:04:59 >  
+

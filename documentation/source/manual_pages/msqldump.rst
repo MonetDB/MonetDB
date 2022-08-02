@@ -24,17 +24,14 @@ accelerators, and an SQL front end.
 be used to populate a new MonetDB/SQL database.
 
 Before *msqldump* starts parsing command line options, it reads a
-configuration file. If the environment variable **DOTMONETDBFILE** is
-set and not empty, it reads the file pointed to by that variable. If set
-but empty, no configuration file is read. If unset, *msqldump* first
-looks for a file *.monetdb* in the current working directory, and if
-that doesn't exist, it looks for a file *monetdb* in the XDG
-configuration directory (**$XDG_CONFIG_HOME** which defaults to
-**$HOME/.config** if not set), and finally for a file *.monetdb* in the
-current user's home directory. This file can contain defaults for the
-flags **user**, **password**, **host**, and **port**. To disable reading
-the *.monetdb* file, set the variable **DOTMONETDBFILE** to the empty
-string in the environment.
+*.monetdb* file. If the environment variable **DOTMONETDBFILE** is set,
+it reads the file pointed to by that variable instead. When unset,
+*msqldump* searches for a *.monetdb* file in the current working
+directory, and if that doesn't exist, in the current user's home
+directory. This file can contain defaults for the flags **user**,
+**password**, **host**, and **port**. To disable reading the *.monetdb*
+file, set the variable **DOTMONETDBFILE** to the empty string in the
+environment.
 
 OPTIONS
 =======
@@ -65,10 +62,6 @@ OPTIONS
    COPY INTO + CSV values. INSERT INTO statements are more portable, and
    necessary when the load of the dump is processed by e.g. a JDBC
    application.
-
-**--noescape** (**-e**)
-   When dumping the table data, use the NO ESCAPE option on the COPY
-   INTO query.
 
 **--functions** (**-f**)
    Only dump functions definitions.

@@ -1,0 +1,97 @@
+stderr of test 'mergepart23` in directory 'sql/test/merge-partitions` itself:
+
+
+# 08:41:06 >  
+# 08:41:06 >  "/usr/bin/python3" "mergepart23.SQL.py" "mergepart23"
+# 08:41:06 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Jun2020/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_ipv6 = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# builtin opt 	raw_strings = false
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 58997
+# cmdline opt 	mapi_usock = /var/tmp/mtest-10859/.s.monetdb.58997
+# cmdline opt 	gdk_dbpath = /tmp/tmpxda437iy/db1/db1
+MAPI  = (monetdb) /var/tmp/mtest-10859/.s.monetdb.58997
+QUERY = DROP TABLE subtable1; --error, subtable1 is a child of testme
+ERROR = !DROP TABLE: unable to drop table subtable1 (there are database objects which depend on it)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-10859/.s.monetdb.58997
+QUERY = DROP TABLE subtable3; --error, subtable3 is a child of anothertest
+ERROR = !DROP TABLE: unable to drop table subtable3 (there are database objects which depend on it)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-10859/.s.monetdb.58997
+QUERY = ALTER TABLE anothertest ADD TABLE subtable1 AS PARTITION FROM 11 TO 20; --error, subtable1 is part of another table
+ERROR = !ALTER TABLE: table 'sys.subtable1' is already part of another table
+CODE  = 42000
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Jun2020/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_ipv6 = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# builtin opt 	raw_strings = false
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 50085
+# cmdline opt 	mapi_usock = /var/tmp/mtest-12650/.s.monetdb.50085
+# cmdline opt 	gdk_dbpath = /tmp/tmphzgzx_1k/db1/db1
+MAPI  = (monetdb) /var/tmp/mtest-12650/.s.monetdb.50085
+QUERY = ALTER TABLE testme DROP COLUMN "a"; --error, a is a partition column
+ERROR = !ALTER TABLE: cannot drop column 'a': is the partitioned column on the table 'testme'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-12650/.s.monetdb.50085
+QUERY = ALTER TABLE anothertest DROP COLUMN "a"; --error, a is used on partition expression
+ERROR = !ALTER TABLE: cannot drop column 'a': there are database objects which depend on it
+CODE  = 2BM37
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Jun2020/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_ipv6 = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# builtin opt 	raw_strings = false
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 59527
+# cmdline opt 	mapi_usock = /var/tmp/mtest-8016/.s.monetdb.59527
+# cmdline opt 	gdk_dbpath = /tmp/tmpeohzwcf3/db1/db1
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Jun2020/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_ipv6 = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# builtin opt 	raw_strings = false
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 59527
+# cmdline opt 	mapi_usock = /var/tmp/mtest-8016/.s.monetdb.59527
+# cmdline opt 	gdk_dbpath = /tmp/tmpeohzwcf3/db1/db1
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Jun2020/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_ipv6 = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# builtin opt 	raw_strings = false
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 59527
+# cmdline opt 	mapi_usock = /var/tmp/mtest-8016/.s.monetdb.59527
+# cmdline opt 	gdk_dbpath = /tmp/tmpeohzwcf3/db1/db1
+
+# 08:41:09 >  
+# 08:41:09 >  "Done."
+# 08:41:09 >  
+

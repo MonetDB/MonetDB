@@ -1,0 +1,22 @@
+stderr of test 'crash_on_incorrect_SQL.SF-1314904` in directory 'sql/test/BugDay_2005-12-19_2.9.3` itself:
+
+
+# 16:53:01 >  
+# 16:53:01 >  Mtimeout -timeout 180 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./SQL/lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/lib/MonetDB" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/var/MonetDB/log" --set mapi_port=30548 --set sql_port=47799 --set xquery_port=51215 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-12-19_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 16:53:01 >  
+
+
+# 16:53:01 >  
+# 16:53:01 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=47799  < crash_on_incorrect_SQL.SF-1314904.sql
+# 16:53:01 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+QUERY = create table t1314904b (testid unknowntype, testchar varchar(255));
+ERROR = !Type (unknowntype) unknown in: "create table t1314904b (testid unknowntype,"
+        !syntax error, unexpected IDENT in: "testchar"
+CODE  = 22000
+
+# 16:53:01 >  
+# 16:53:01 >  Done.
+# 16:53:01 >  
+

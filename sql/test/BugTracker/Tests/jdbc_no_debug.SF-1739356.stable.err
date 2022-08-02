@@ -1,0 +1,44 @@
+stderr of test 'jdbc_no_debug.SF-1739356` in directory 'sql/test/BugTracker` itself:
+
+
+# 13:05:27 >  
+# 13:05:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/net/sofia.ins.cwi.nl/export/scratch1/fabian/tmp/mtest-Dec2011-sofia.ins.cwi.nl/sql/dbfarm" "--set" "mapi_open=true" "--set" "mapi_port=38256" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_BugTracker" "--set" "mal_listing=0"
+# 13:05:27 >  
+
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /ufs/fabian/scratch/ssd/monetdb/Dec2011/program-x86_64/var/lib/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_alloc_map = no
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	gdk_dbfarm = /net/sofia.ins.cwi.nl/export/scratch1/fabian/tmp/mtest-Dec2011-sofia.ins.cwi.nl/sql/dbfarm
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38256
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_test_BugTracker
+# cmdline opt 	mal_listing = 0
+
+# 13:05:27 >  
+# 13:05:27 >  "./jdbc_no_debug.SF-1739356.SQL.sh" "jdbc_no_debug.SF-1739356"
+# 13:05:27 >  
+
+
+# 13:05:27 >  
+# 13:05:27 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h sofia -p 38256 -d mTests_test_BugTracker -f "../../../../../..//monetdb/Dec2011/hgrepo/sql/test/BugTracker/Tests/jdbc_no_debug.SF-1739356-data.sql"
+# 13:05:27 >  
+
+Error on line 1: [42000] SQL debugging only supported in interactive mode in: "debug"
+Error on line 1: [25005] Current transaction is aborted (please ROLLBACK)
+
+# 13:05:27 >  
+# 13:05:27 >  "Done."
+# 13:05:27 >  
+

@@ -11,6 +11,6 @@ try:
     if os.name == 'nt':
         os.system('shutdowntest.exe "%s"' % databasedir)
     else:
-        os.system('shutdowntest "%s"' % databasedir)
+        os.system('Mlog -x shutdowntest "%s"' % databasedir)
 finally:
     shutil.rmtree(databasedir)

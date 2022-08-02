@@ -1,0 +1,19 @@
+stderr of test 'cascade_operations_in_different_sessions.SF-1823387_drop` in directory 'sql/test/BugTracker` itself:
+
+
+# 12:54:39 >  
+# 12:54:39 >   mserver5 "--config=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=38468 --set xrpc_port=46524 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 --dbinit=" include sql;" ; echo ; echo Over..
+# 12:54:39 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/etc/monetdb5.conf)
+
+# 12:54:40 >  
+# 12:54:40 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=38468 
+# 12:54:40 >  
+
+
+# 12:54:40 >  
+# 12:54:40 >  Done.
+# 12:54:40 >  
+

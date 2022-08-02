@@ -1,0 +1,14 @@
+# inspect the clients population
+
+d:= clients.getId();
+io.print(d);
+(a,b):= clients.getInfo();
+#io.print(i);
+
+#u:= clients.getUsers();
+#io.print(u);
+
+#(u,l):= clients.getLogins();
+#io.print(u,l);
+
+

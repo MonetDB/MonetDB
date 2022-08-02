@@ -1,6 +1,0 @@
-statement ok
-create schema mine
-
-statement error
-grant all on mine to monetdb
-

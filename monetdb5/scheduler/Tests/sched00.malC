@@ -1,0 +1,12 @@
+include run_isolate;
+function f();
+	i:=1;	# just properties
+    mdb.List();
+    io.print("start running\n");
+    scheduler.isolation();
+    io.print("done\n");
+    mdb.List();
+end f;
+
+f(); #shows self-modification in action
+

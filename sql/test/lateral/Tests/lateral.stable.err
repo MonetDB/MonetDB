@@ -1,0 +1,34 @@
+stderr of test 'lateral` in directory 'sql/test/lateral` itself:
+
+
+# 19:57:50 >  
+# 19:57:50 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35682" "--set" "mapi_usock=/var/tmp/mtest-27963/.s.monetdb.35682" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_lateral"
+# 19:57:50 >  
+
+# builtin opt 	gdk_dbpath = /home/niels/scratch/monetdb/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 35682
+# cmdline opt 	mapi_usock = /var/tmp/mtest-27963/.s.monetdb.35682
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_lateral
+# cmdline opt 	gdk_debug = 536870922
+
+# 19:57:50 >  
+# 19:57:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27963" "--port=35682"
+# 19:57:50 >  
+
+
+# 19:57:51 >  
+# 19:57:51 >  "Done."
+# 19:57:51 >  
+

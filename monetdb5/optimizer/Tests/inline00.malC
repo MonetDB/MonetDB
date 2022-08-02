@@ -1,0 +1,27 @@
+inline function help();
+b:= bat.new(:int);
+c:= bat.new(:int);
+bat.append(b,1);
+
+barrier (y,z):= iterator.new(b);
+	io.print(y);
+catch MALException:str;
+exit MALException;
+exit (y,z);
+
+barrier (x,z):= iterator.new(c);
+	io.print(x);
+	redo (x,z):= iterator.next(c);
+catch MALException:str;
+exit MALException;
+exit (x,z);
+end help;
+
+function user.qry();
+	user.help();
+end qry;
+
+mdb.List("user","help");
+optimizer.inline("user","qry");
+optimizer.remap("user","qry");
+mdb.List("user","qry");

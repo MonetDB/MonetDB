@@ -1,7 +1,3 @@
-HAVE_GEOM?dependency_owner_schema_1
-USER=monet_test&PASSWD=pass_test&HAVE_GEOM?dependency_owner_schema_2
-HAVE_GEOM?dependency_DBobjects
-HAVE_GEOM?dependency_functions
-HAVE_GEOM?dependency_owner_schema_3
+HAVE_GEOM?Dependencies
 HAVE_GEOM?dependency_loop
 view_table_udf

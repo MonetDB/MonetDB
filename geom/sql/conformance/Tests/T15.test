@@ -1,5 +1,0 @@
-query R rowsort
-SELECT ST_X("position") FROM bridges WHERE name = 'Cam Bridge'
-----
-44.000
-

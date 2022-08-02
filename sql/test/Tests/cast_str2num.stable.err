@@ -1,0 +1,17 @@
+stderr of test 'cast_str2num` in directory 'sql/test` itself:
+
+
+# 10:57:40 >  
+# 10:57:40 >  Mtimeout -timeout 180 Mserver "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB:/var/tmp/_PREFIX_SQL_GNU_32_d__/lib/MonetDB" --dbfarm "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm" --set monet_prompt= --trace "--dbname=mTests_src_test" --set sql_port=54321 --set mapi_port=58886 "/var/tmp/_PREFIX_SQL_GNU_32_d__/lib/MonetDB/sqlserver.mil" ; echo ; echo Over..
+# 10:57:40 >  
+
+
+# 10:57:41 >  
+# 10:57:41 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=54321 < cast_str2num.sql
+# 10:57:41 >  
+
+
+# 10:57:41 >  
+# 10:57:41 >  Done.
+# 10:57:41 >  
+

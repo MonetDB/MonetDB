@@ -1,0 +1,17 @@
+stderr of test 'prepare_decimal_float.SF-1675795` in directory 'sql/test/BugTracker` itself:
+
+
+# 16:00:53 >  
+# 16:00:53 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_port=32565 --set xrpc_port=47589 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit=" module(sql_server);" ; echo ; echo Over..
+# 16:00:53 >  
+
+
+# 16:00:53 >  
+# 16:00:53 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32565 
+# 16:00:53 >  
+
+
+# 16:00:53 >  
+# 16:00:53 >  Done.
+# 16:00:53 >  
+

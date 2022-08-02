@@ -1,0 +1,40 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+
+EXTRA_DIST = testing_getopt.c mktest.py
+
+bin_Mdiff = {
+	SOURCES = difflib.c helpers.c Mdiff.c difflib.h  helpers.h
+	LIBS = $(MALLOC_LIBS)
+}
+
+bin_Mapprove.py = bin_Mtest.py
+bin_Mapprove.py.bat = NATIVE_WIN32?bin_Mtest.py.bat
+
+scripts_bat = {
+	COND = NATIVE_WIN32
+	DIR = bindir
+	SOURCES = Mlog.bat Mtest.py.bat
+}
+
+scripts_py = {
+	DIR = bindir
+	SOURCES = Mtest.py.in
+}
+
+headers_python = {
+	HEADERS = py
+	DIR = $(prefix)/$(PYTHON_LIBDIR)/MonetDBtesting
+	SOURCES = Mfilter.py process.py __init__.py listexports.py.in \
+		exportutils.py malcheck.py sqllogictest.py
+}
+
+scripts_sh = {
+	COND = NOT_WIN32
+	EXT = ""
+	DIR = bindir
+	SOURCES = Mlog.in
+}

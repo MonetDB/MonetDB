@@ -155,6 +155,12 @@ insert into "myschema"."mytable2" values (
 'col15', 134, 'col17', 892, 'col19', 9348, 'col21', 'col22', 'col23', 'col24', 934, 'col26', 'col27', 'col28', 849.2739, 1742.718,
 395.824, 39.824, 'col33', 'col34', 395824, 3789);
 
+SELECT "'col26'" FROM "myschema"."mytable2" WHERE 
+( ( ("'col19'"='Some information of my hobby')) AND 
+( ("'col9'"='' AND "'col3'"='ABCDE' AND (EXTRACT(YEAR FROM "'col1'")*100 + EXTRACT(MONTH FROM "'col1'"))/100.0='2011.040' 
+AND "'col14'"='A description of something' AND "'col8'"='2015-08-07')) AND  ( ("'col34'"='home to')) AND  ( ("'col36'"='2013'))) GROUP BY "'col26'"
+LIMIT 1001 OFFSET 0; --error, from the condition "'col9'"='', it fails to covert '' to date
+
 PREPARE SELECT "'col26'" FROM "myschema"."mytable2" WHERE 
 ( ( ("'col19'"='Some information of my hobby')) AND 
 ( ("'col9'"='' AND "'col3'"='ABCDE' AND (EXTRACT(YEAR FROM "'col1'")*100 + EXTRACT(MONTH FROM "'col1'"))/100.0='2011.040' 
@@ -176,14 +182,5 @@ AND "'col14'"='A description of something' AND "'col8'"='2015-08-07')) AND  ( ("
 LIMIT 1001 OFFSET 0;
 
 exec ** ();
-
-prepare select 1;
-exec ** (); 
-
-prepare select cast(? as interval second);
-exec ** (blob 'aaaa'); --error, cannot cast
-
-prepare select cast(? as interval second);
-exec ** (time '10:00:00' + 1); --error, no such binary operator
 
 drop schema "myschema" cascade;

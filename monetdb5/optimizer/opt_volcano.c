@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -23,24 +23,25 @@
 str
 OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, limit, actions = 0;
+	int i, limit;
 	int mvcvar = -1;
 	int count=0;
-	InstrPtr p,q, *old = NULL;
+	InstrPtr p,q, *old = mb->stmt;
+	char buf[256];
+	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
+	(void) pci;
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 
 	if ( mb->inlineProp )
-		goto wrapup;
+		return MAL_SUCCEED;
 
-	old = mb->stmt;
 	limit= mb->stop;
 	if ( newMalBlkStmt(mb, mb->ssize + 20) < 0)
 		throw(MAL,"optimizer.volcano", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	actions = 1;
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 
@@ -80,13 +81,10 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		if( getModuleId(p) == sqlRef){
 			if ( getFunctionId(p) == bindRef ||
 				getFunctionId(p) == bindidxRef ||
-				getFunctionId(p) == tidRef ||
-				getFunctionId(p) == appendRef ||
-				getFunctionId(p) == updateRef ||
-				getFunctionId(p) == claimRef ||
-				getFunctionId(p) == dependRef ||
-				getFunctionId(p) == predicateRef ||
-				getFunctionId(p) == deleteRef
+				getFunctionId(p)== tidRef ||
+				getFunctionId(p)== appendRef ||
+				getFunctionId(p)== updateRef ||
+				getFunctionId(p)== deleteRef
 			){
 				setArg(p,p->retc,mvcvar);
 			}
@@ -94,16 +92,19 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	}
 	GDKfree(old);
 
-	/* Defense line against incorrect plans */
-	if( count){
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
-		if (!msg)
-			msg = chkFlow(mb);
-		if (!msg)
-			msg = chkDeclarations(mb);
-	}
-wrapup:
-	/* keep actions taken as a fake argument*/
-	(void) pushInt(mb, pci, actions);
+    /* Defense line against incorrect plans */
+    if( count){
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
+    }
+    /* keep all actions taken as a post block comment */
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","volcano",count,usec);
+    newComment(mb,buf);
+	if( count > 0)
+		addtoMalBlkHistory(mb);
 	return msg;
 }

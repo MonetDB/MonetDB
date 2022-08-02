@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -35,7 +35,7 @@ static void setAtomName(InstrPtr pci)
 str
 malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 {
-	const char *name;
+	str name;
 	int tpe;
 	(void)mb;  /* fool compilers */
 	assert(pci != 0);
@@ -77,7 +77,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 			/* heap function makes an atom varsized */
 			BATatoms[tpe].size = sizeof(var_t);
 			assert_shift_width(ATOMelmshift(ATOMsize(tpe)), ATOMsize(tpe));
-			BATatoms[tpe].atomHeap = (gdk_return (*)(Heap *, size_t))pci->fcn;
+			BATatoms[tpe].atomHeap = (void (*)(Heap *, size_t))pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
@@ -110,7 +110,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		break;
 	case 'p':
 		if (idcmp("put", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomPut = (var_t (*)(BAT *, var_t *, const void *))pci->fcn;
+			BATatoms[tpe].atomPut = (var_t (*)(Heap *, var_t *, const void *))pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
@@ -138,7 +138,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		break;
 	case 'r':
 		if (idcmp("read", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomRead = (void *(*)(void *, size_t *, stream *, size_t))pci->fcn;
+			BATatoms[tpe].atomRead = (void *(*)(void *, stream *, size_t))pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
@@ -162,7 +162,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
  */
 
 str
-malAtomDefinition(const char *name, int tpe)
+malAtomDefinition(str name, int tpe)
 {
 	int i;
 

@@ -1,0 +1,17 @@
+stderr of test 'view_case-bug-sf-1023058` in directory 'sql/test/bugs` itself:
+
+
+# 13:25:59 >  
+# 13:25:59 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --set "gdk_dbfarm=/ufs/niels/data/Linux-i686/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/data/Linux-i686/var/MonetDB/log" --set mapi_port=43349 --set sql_port=51318 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/net/stem.ins.cwi.nl/export/scratch1/niels/Linux-i686/build-sql/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 13:25:59 >  
+
+
+# 13:26:00 >  
+# 13:26:00 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=51318  < bug-sf-1023058.sql
+# 13:26:00 >  
+
+
+# 13:26:01 >  
+# 13:26:01 >  Done.
+# 13:26:01 >  
+

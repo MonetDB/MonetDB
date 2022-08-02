@@ -1,0 +1,91 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+
+SUBDIRS = NOT_WIN32?vaults UDF generator
+
+INCLUDES = ../../include ../../common ../../storage ../../server \
+		   ../../../monetdb5/modules/atoms \
+		   ../../../monetdb5/modules/kernel \
+		   ../../../monetdb5/mal \
+		   ../../../monetdb5/modules/mal \
+		   ../../../monetdb5/optimizer \
+		   ../../../monetdb5/scheduler \
+		   ../../../monetdb5/extras/rapi \
+		   ../../../common/stream \
+		   ../../../common/utils \
+		   ../../../clients/mapilib \
+		   ../../../gdk
+
+lib__sql = {
+	MODULE
+	DIR = libdir/monetdb5
+	SOURCES = \
+		sql.c sql.h \
+		mal_backend.c mal_backend.h \
+		sql_user.c sql_user.h \
+		sql_scenario.c sql_scenario.h \
+		sql_execute.c sql_execute.h \
+		sql_assert.c sql_assert.h \
+		sql_upgrades.c sql_upgrades.h \
+		rel_bin.c rel_bin.h \
+		sql_cat.c sql_cat.h \
+		sql_transaction.c sql_transaction.h \
+		sql_statement.c sql_statement.h \
+		sql_statistics.c sql_statistics.h \
+		sql_gencode.c sql_gencode.h \
+		sql_session.c sql_session.h \
+		sql_optimizer.c sql_optimizer.h \
+		sql_result.c sql_result.h \
+		sql_cast.c sql_cast.h \
+		sql_cast_impl_down_from_flt.h \
+		sql_cast_impl_int.h \
+		sql_cast_impl_up_to_flt.h \
+		sql_round.c sql_round_impl.h sql_bat2time.c \
+		sql_fround.c sql_fround_impl.h \
+		sql_orderidx.c sql_orderidx.h \
+		wlr.c wlr.h \
+		sql_datetrunc.c \
+		sql_rank.c sql_rank.h sql_subquery.c sql_subquery.h
+	# libmapi on Windows for mcrypt_*
+	LIBS = ../../server/libsqlserver \
+		../../storage/libstore \
+		../../storage/bat/libbatstore \
+		../../common/libsqlcommon \
+		WIN32?../../../clients/mapilib/libmapi \
+ 		WIN32?../../../monetdb5/tools/libmonetdb5 \
+		WIN32?../../../gdk/libbat \
+		WIN32?../../../common/stream/libstream \
+		WIN32?$(openssl_LIBS)
+}
+
+headers_mal = {
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = sql_decimal.mal sql_inspect.mal wlr.mal \
+		sql_subquery.mal sql_rank.mal sqlcatalog.mal sql_transaction.mal  sql.mal sql_session.mal
+}
+
+headers_mal_hge = {
+	COND = HAVE_HGE
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = sql_hge.mal sql_decimal_hge.mal sql_rank_hge.mal
+}
+
+headers_autoload = {
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 40_sql.mal
+}
+
+headers_autoload_hge = {
+	COND = HAVE_HGE
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 41_sql_hge.mal
+}
+
+EXTRA_DIST_DIR = Tests

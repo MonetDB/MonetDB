@@ -1,15 +1,25 @@
-from MonetDBtesting.sqltest import SQLTestCase
+import sys
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
-with SQLTestCase() as tc:
-    tc.connect(username="monetdb", password="monetdb")
-    tc.execute('create function myfunc() returns table (x int) begin declare myvar int; return select myvar; end;').assertSucceeded()
-    tc.execute('create function myfunc2() returns int begin declare myvar int; return myvar; end;').assertSucceeded()
-    tc.execute('select * from myfunc();').assertSucceeded().assertDataResultMatch([(None,)])
-    tc.execute('select myfunc2();').assertSucceeded().assertDataResultMatch([(None,)])
+def client(input):
+    with process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
+        out, err = c.communicate(input)
+        sys.stdout.write(out)
+        sys.stderr.write(err)
 
-with SQLTestCase() as tc:
-    tc.connect(username="monetdb", password="monetdb")
-    tc.execute('select * from myfunc();').assertSucceeded().assertDataResultMatch([(None,)])
-    tc.execute('select myfunc2();').assertSucceeded().assertDataResultMatch([(None,)])
-    tc.execute('drop function myfunc();').assertSucceeded()
-    tc.execute('drop function myfunc2();').assertSucceeded()
+client('''
+declare myvar int;
+create function myfunc() returns table (x int) begin return select myvar; end;
+create function myfunc2() returns int begin return myvar; end;
+select * from myfunc();
+select myfunc2();
+''')
+client('''
+select * from myfunc(); --error, myvar doesn\'t exist
+select myfunc2(); --error, myvar doesn\'t exist
+drop function myfunc();
+drop function myfunc2();
+''')

@@ -1,0 +1,38 @@
+stderr of test 'upgrade` in directory 'sql/test/testdb-upgrade-chain-hge` itself:
+
+
+# 15:45:52 >  
+# 15:45:52 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37689" "--set" "mapi_usock=/var/tmp/mtest-31771/.s.monetdb.37689" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-candidate/var/MonetDB/mTests_sql_test_testdb-upgrade-chain-hge" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 15:45:52 >  
+
+# builtin opt 	gdk_dbpath = /ufs/sjoerd/Monet-candidate/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 37689
+# cmdline opt 	mapi_usock = /var/tmp/mtest-31771/.s.monetdb.37689
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/sjoerd/Monet-candidate/var/MonetDB/mTests_sql_test_testdb-upgrade-chain-hge
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 15:45:53 >  
+# 15:45:53 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
+# 15:45:53 >  
+
+
+
+# 15:45:53 >  
+# 15:45:53 >  "Done."
+# 15:45:53 >  
+

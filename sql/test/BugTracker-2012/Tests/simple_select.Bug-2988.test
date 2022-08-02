@@ -1,9 +1,0 @@
-query II rowsort
-select 1, (select 1) as x
-----
-1
-1
-
-statement error
-select 1, (select 1 as y, 2 as z) as x
-

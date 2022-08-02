@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -83,7 +83,7 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 				goto nomem;
 		}
 		if (NameLength4 > 0) {
-			col = ODBCParsePV("a", "name",
+			col = ODBCParsePV("c", "name",
 					  (const char *) ColumnName,
 					  (size_t) NameLength4);
 			if (col == NULL)
@@ -105,7 +105,7 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 				goto nomem;
 		}
 		if (NameLength4 > 0) {
-			col = ODBCParseID("a", "name",
+			col = ODBCParseID("c", "name",
 					  (const char *) ColumnName,
 					  (size_t) NameLength4);
 			if (col == NULL)
@@ -114,78 +114,72 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 	}
 
 	/* construct the query now */
-	querylen = 6500 + (sch ? strlen(sch) : 0) + (prc ? strlen(prc) : 0) +
+	querylen = 6500 + strlen(stmt->Dbc->dbname) +
+		(sch ? strlen(sch) : 0) + (prc ? strlen(prc) : 0) +
 		(col ? strlen(col) : 0);
 	query = malloc(querylen);
 	if (query == NULL)
 		goto nomem;
 
 	/* SQLProcedureColumns returns a table with the following columns:
-	   VARCHAR      PROCEDURE_CAT
-	   VARCHAR      PROCEDURE_SCHEM
-	   VARCHAR      PROCEDURE_NAME NOT NULL
-	   VARCHAR      COLUMN_NAME NOT NULL
-	   SMALLINT     COLUMN_TYPE NOT NULL
-	   SMALLINT     DATA_TYPE NOT NULL
-	   VARCHAR      TYPE_NAME NOT NULL
-	   INTEGER      COLUMN_SIZE
-	   INTEGER      BUFFER_LENGTH
-	   SMALLINT     DECIMAL_DIGITS
-	   SMALLINT     NUM_PREC_RADIX
-	   SMALLINT     NULLABLE NOT NULL
-	   VARCHAR      REMARKS
-	   VARCHAR      COLUMN_DEF
-	   SMALLINT     SQL_DATA_TYPE NOT NULL
-	   SMALLINT     SQL_DATETIME_SUB
-	   INTEGER      CHAR_OCTET_LENGTH
-	   INTEGER      ORDINAL_POSITION NOT NULL
-	   VARCHAR      IS_NULLABLE
-	   VARCHAR      SPECIFIC_NAME	(Note this is a MonetDB extension, needed to differentiate between overloaded procedure/function names)
-					(similar to JDBC DatabaseMetaData methods getProcedureColumns() and getFunctionColumns())
+	   VARCHAR      procedure_cat
+	   VARCHAR      procedure_schem
+	   VARCHAR      procedure_name NOT NULL
+	   VARCHAR      column_name NOT NULL
+	   SMALLINT     column_type NOT NULL
+	   SMALLINT     data_type NOT NULL
+	   VARCHAR      type_name NOT NULL
+	   INTEGER      column_size
+	   INTEGER      buffer_length
+	   SMALLINT     decimal_digits
+	   SMALLINT     num_prec_radix
+	   SMALLINT     nullable NOT NULL
+	   VARCHAR      remarks
+	   VARCHAR      column_def
+	   SMALLINT     sql_data_type NOT NULL
+	   SMALLINT     sql_datetime_sub
+	   INTEGER      char_octet_length
+	   INTEGER      ordinal_position NOT NULL
+	   VARCHAR      is_nullable
 	 */
 
-/* see sql/include/sql_catalog.h */
-#define F_FUNC 1
-#define F_PROC 2
+/* see sql_catalog.h */
 #define F_UNION 5
+#define FUNC_LANG_SQL 2
 	pos += snprintf(query + pos, querylen - pos,
-		"select cast(null as varchar(1)) as \"PROCEDURE_CAT\", "
-		       "s.name as \"PROCEDURE_SCHEM\", "
-		       "p.name as \"PROCEDURE_NAME\", "
-		       "a.name as \"COLUMN_NAME\", "
-		       "cast(case when a.inout = 1 then %d "
+		"select '%s' as procedure_cat, "
+		       "s.name as procedure_schem, "
+		       "p.name as procedure_name, "
+		       "a.name as column_name, "
+		       "case when a.inout = 1 then %d "
 			    "when p.type = %d then %d "
 			    "else %d "
-		       "end as smallint) as \"COLUMN_TYPE\", "
+		       "end as column_type, "
 		DATA_TYPE(a) ", "
 		TYPE_NAME(a) ", "
 		COLUMN_SIZE(a) ", "
 		BUFFER_LENGTH(a) ", "
 		DECIMAL_DIGITS(a) ", "
 		NUM_PREC_RADIX(a) ", "
-		       "cast(%d as smallint) as \"NULLABLE\", "
-		       "%s as \"REMARKS\", "
-		       "cast(null as varchar(1)) as \"COLUMN_DEF\", "
+		       "cast(%d as smallint) as nullable, "
+		       "%s as remarks, "
+		       "cast(null as varchar(1)) as column_def, "
 		SQL_DATA_TYPE(a) ", "
 		SQL_DATETIME_SUB(a) ", "
 		CHAR_OCTET_LENGTH(a) ", "
-		       "cast(case when p.type = 5 and a.inout = 0 then a.number + 1 "
+		       "case when p.type = 5 and a.inout = 0 then a.number + 1 "
 			    "when p.type = 5 and a.inout = 1 then a.number - x.maxout "
-			    "when p.type = 2 and a.inout = 1 then a.number + 1 "
 			    "when a.inout = 0 then 0 "
-			    "else a.number "
-		       "end as integer) as \"ORDINAL_POSITION\", "
-		       "'' as \"IS_NULLABLE\", "
-			/* Only the id value uniquely identifies a specific procedure.
-			   Include it to be able to differentiate between multiple
-			   overloaded procedures with the same name and schema */
-			"cast(p.id as varchar(10)) AS \"SPECIFIC_NAME\" "
+			    "else a.number + 1 "
+		       "end as ordinal_position, "
+		       "'' as is_nullable "
 		"from sys.schemas s, "
 		     "sys.functions p left outer join (select func_id, max(number) as maxout from sys.args where inout = 0 group by func_id) as x on p.id = x.func_id, "
 		     "sys.args a%s "
-		"where s.id = p.schema_id and "
-		      "p.id = a.func_id and "
-		      "p.type in (%d, %d, %d)",
+		"where p.language >= %d and "
+		      "s.id = p.schema_id and "
+		      "p.id = a.func_id",
+		stmt->Dbc->dbname,
 		/* column_type: */
 		SQL_PARAM_INPUT, F_UNION, SQL_RESULT_COL, SQL_RETURN_VALUE,
 #ifdef DATA_TYPE_ARGS
@@ -221,9 +215,8 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 #endif
 		/* from clause: */
 		stmt->Dbc->has_comment ? " left outer join sys.comments c on c.id = a.id" : "",
-		/* where clause: */
-		F_FUNC, F_PROC, F_UNION);
-	assert(pos < 6400);
+		FUNC_LANG_SQL);
+	assert(pos < 6300);
 
 	/* depending on the input parameter values we must add a
 	   variable selection condition dynamically */
@@ -253,10 +246,7 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 	}
 
 	/* add the ordering (exclude procedure_cat as it is the same for all rows) */
-	pos += strcpy_len(query + pos, " order by \"PROCEDURE_SCHEM\", \"PROCEDURE_NAME\", \"SPECIFIC_NAME\", \"COLUMN_TYPE\", \"ORDINAL_POSITION\"", querylen - pos);
-	assert(pos < querylen);
-
-	/* debug: fprintf(stdout, "SQLProcedureColumns query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */
+	pos += strcpy_len(query + pos, " order by procedure_schem, procedure_name, column_type, ordinal_position", querylen - pos);
 
 	/* query the MonetDB data dictionary tables */
 	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);

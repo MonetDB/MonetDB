@@ -1,0 +1,138 @@
+stderr of test 'triggers` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
+
+#--
+#-- TRIGGERS
+#--
+#--
+#-- For fkeys:
+#-- 	(fkey1, fkey2)	--> pkeys (pkey1, pkey2)
+#-- 	(fkey3)		--> fkeys2 (pkey23)
+#--
+#--
+#-- For fkeys2:
+#-- 	(fkey21, fkey22)	--> pkeys (pkey1, pkey2)
+#--
+#-- Test comments
+#--
+#-- For pkeys:
+#-- 	ON DELETE/UPDATE (pkey1, pkey2) CASCADE:
+#-- 		fkeys (fkey1, fkey2) and fkeys2 (fkey21, fkey22)
+#--
+#--
+#-- For fkeys2:
+#-- 	ON DELETE/UPDATE (pkey23) RESTRICT:
+#-- 		fkeys (fkey3)
+#--
+#-- no key in pkeys
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = insert into fkeys2 values (70, '5', 3);
+ERROR = tuple references non-existent key
+DETAIL:  Trigger "check_fkeys2_pkey_exist" found tuple referencing non-existent key in "pkeys".
+#-- no key in pkeys
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = insert into fkeys values (70, '5', 1);
+ERROR = tuple references non-existent key
+DETAIL:  Trigger "check_fkeys_pkey_exist" found tuple referencing non-existent key in "pkeys".
+#-- no key in fkeys2
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = insert into fkeys values (60, '6', 4);
+ERROR = tuple references non-existent key
+DETAIL:  Trigger "check_fkeys_pkey2_exist" found tuple referencing non-existent key in "fkeys2".
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = update pkeys set pkey1 = 7, pkey2 = '70' where pkey1 = 50 and pkey2 = '5';
+NOTICE:  check_pkeys_fkey_cascade: 1 tuple(s) of fkeys are deleted
+ERROR = "check_fkeys2_fkey_restrict": tuple is referenced in "fkeys"
+CONTEXT:  SQL statement "delete from fkeys2 where fkey21 = $1 and fkey22 = $2 "
+#-- -- I've disabled the funny_dup17 test because the new semantics
+#-- -- of AFTER ROW triggers, which get now fired at the end of a
+#-- -- query always, cause funny_dup17 to enter an endless loop.
+#-- --
+#-- --      Jan
+#--
+#-- create table dup17 (x integer);
+#-- 
+#-- create trigger dup17_before 
+#-- 	before insert on dup17
+#-- 	for each row 
+#-- 	execute procedure 
+#-- 	funny_dup17 ()
+#-- ;
+#-- 
+#-- insert into dup17 values (17);
+#-- select count(*) from dup17;
+#-- insert into dup17 values (17);
+#-- select count(*) from dup17;
+#-- 
+#-- drop trigger dup17_before on dup17;
+#-- 
+#-- create trigger dup17_after
+#-- 	after insert on dup17
+#-- 	for each row 
+#-- 	execute procedure 
+#-- 	funny_dup17 ()
+#-- ;
+#-- insert into dup17 values (13);
+#-- select count(*) from dup17 where x = 13;
+#-- insert into dup17 values (13);
+#-- select count(*) from dup17 where x = 13;
+#-- 
+#-- DROP TABLE dup17;
+#-- what do we see ?
+#-- get current prices
+#-- change price for price_id == 3
+#-- now we want to change pric_id in ALL tuples
+#-- this gets us not what we need
+#-- restore data as before last update:
+#-- and try change price_id now!
+#-- isn't it what we need ?
+#-- we want to correct some "date"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = update tttest set price_on = -1 where price_id = 1;
+ERROR = ttdummy (tttest): you can't change price_on and/or price_off columns (use set_ttdummy)
+#-- but this doesn't work
+#-- try in this way
+#-- isn't it what we need ?
+#-- get price for price_id == 5 as it was @ "date" 35
+#--
+#-- tests for per-statement triggers
+#--
+#--
+#-- if neither 'FOR EACH ROW' nor 'FOR EACH STATEMENT' was specified,
+#-- CREATE TRIGGER should default to 'FOR EACH STATEMENT'
+#--
+#-- UPDATE that effects zero rows should still call per-statement trigger
+#-- COPY should fire per-row and per-statement INSERT triggers
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
+

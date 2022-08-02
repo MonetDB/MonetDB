@@ -1,0 +1,18 @@
+stderr of test 'example-drop` in directory 'sql/test` itself:
+
+
+# 20:07:28 >  
+# 20:07:28 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=0 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace "--dbname=mTests_src_test" --set sql_port=50445 "/ufs/niels/data/Linux-i686/share/MonetDB/sqlserver.mil" ; echo ; echo Over..
+# 20:07:28 >  
+
+# server listening on port 50445
+
+# 20:07:28 >  
+# 20:07:28 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < example-drop.sql
+# 20:07:28 >  
+
+
+# 20:07:28 >  
+# 20:07:28 >  Done.
+# 20:07:28 >  
+

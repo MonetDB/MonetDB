@@ -1,0 +1,17 @@
+stderr of test 'view_limit.SF-1345861` in directory 'sql/test/bugs` itself:
+
+
+# 21:02:41 >  
+# 21:02:41 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=34977 --set sql_port=42163 --set xquery_port=58225 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 21:02:41 >  
+
+
+# 21:02:41 >  
+# 21:02:41 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=42163  < view_limit.SF-1345861.sql
+# 21:02:41 >  
+
+
+# 21:02:41 >  
+# 21:02:41 >  Done.
+# 21:02:41 >  
+

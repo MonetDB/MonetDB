@@ -14,7 +14,7 @@ text
 int2
 int4
 int8
-#oid
+oid
 float4
 float8
 # bit NOT supported in MonetDB. BIT is also not standard SQL so exclude this test
@@ -29,7 +29,7 @@ HAVE_GEOM?point
 #HAVE_GEOM?lseg   # lseg is NOT supported in MonetDB. lseg (Line Segment) is also not part of OpenGIS standard so exclude this test
 HAVE_GEOM?box     # box is not supported in MonetDB but it can be replaced with mbr (= minimum bounded rectangle)
 HAVE_GEOM?path    # path is not supported in MonetDB but it can be replaced with linestring
-HAVE_GEOM&GEOS_VERSION>=3.10?polygon
+HAVE_GEOM?polygon
 #HAVE_GEOM?circle # circle is NOT supported in MonetDB. It is also not part of OpenGIS standard so exclude this test
 #HAVE_GEOM?geometry  # tables CIRCLE_TBL and LSEG_TBL do not exist as they have been disabled above. All queries fail
 date
@@ -59,7 +59,7 @@ select_views
 create_aggregate
 #ToDo triggers
 #ToDo inherit
-#vacuum
+vacuum
 #ToDo sanity_check
 #ToDo errors
 #ToDo select
@@ -75,10 +75,6 @@ case		#[MK] interactive behavior is inconsistent with script run, see bugreport
 #ToDo aggregates
 #ToDo transactions
 random	#[MK] causes an non-displayed error and lost of information in the result
-limit	#[MK] handles
-alter_table
-drop
-
 #portals [MK] MonetDB does not support SQL cursor/fetch operations
 arrays
 #btree_index	[MK]MonetDB does not support construction of btrees
@@ -90,6 +86,7 @@ update
 #ToDo portals_p2 [MK] MonetDB does not support SQL cursor/fetch operations
 #ToDo foreign_key
 #cluster	[MK]MonetDB does not support clustering of tables
+limit	#[MK] handles
 #ToDo plpgsql
 #ToDo copy2
 #ToDo temp
@@ -99,6 +96,7 @@ update
 without_oid
 #ToDo conversion
 #truncate [MK] a combination of a DROP TABLE followed by its CREATE table, feature request?
+alter_table
 #ToDo sequence
 #ToDo polymorphism
 #rowtypes [MK] MonetDB does not support object type definitions 
@@ -107,6 +105,7 @@ without_oid
 # these four were in a 2005 pgregress set, but are no longer
 # in the 2014 v9.3.4 pgregress set; not sure when/where they
 # should be run; keep them for last for now
+drop
 #ToDo mule_internal
 numeric_big
 #ToDo sql_ascii

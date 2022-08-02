@@ -1,0 +1,10 @@
+#possible leak in constant string handling
+#confirmed feb 2009
+function f();
+	a:= "hello";
+	b:= "the quick brown fox";
+end f;
+barrier i:= 0:lng;
+	f();
+	redo i:= iterator.next(1:lng,1000:lng);
+exit i;

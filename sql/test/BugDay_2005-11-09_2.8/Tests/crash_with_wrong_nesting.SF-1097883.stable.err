@@ -1,0 +1,22 @@
+stderr of test 'crash_with_wrong_nesting.SF-1097883` in directory 'sql/test/BugDay_2005-11-09_2.8` itself:
+
+
+# 13:25:29 >  
+# 13:25:29 >  Mtimeout -timeout 180 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./lib/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/log" --set mapi_port=39034 --set sql_port=49588 --set xquery_port=50967 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.8" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 13:25:29 >  
+
+
+# 13:25:30 >  
+# 13:25:30 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=49588  < crash_with_wrong_nesting.SF-1097883.sql
+# 13:25:30 >  
+
+MAPI  = monetdb@sofia:39182
+QUERY = update crash_q set b= (
+        select b from crash_me where crash_q.a = crash_me.a);
+ERROR = !SELECT: no such table 'crash_me'
+CODE  = 42S02
+
+# 13:25:30 >  
+# 13:25:30 >  Done.
+# 13:25:30 >  
+

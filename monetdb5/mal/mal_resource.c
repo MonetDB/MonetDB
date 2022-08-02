@@ -3,16 +3,14 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (author) M.L. Kersten
  */
 #include "monetdb_config.h"
-#include "mal_exception.h"
 #include "mal_resource.h"
 #include "mal_private.h"
-#include "mal_instruction.h"
 
 /* Memory based admission does not seem to have a major impact so far. */
 static lng memorypool = 0;      /* memory claimed by concurrent threads */
@@ -69,29 +67,21 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 		b = BATdescriptor( stk->stk[getArg(pci, i)].val.bval);
 		if (b == NULL)
 			return 0;
-		MT_lock_set(&b->theaplock);
 		if (flag && isVIEW(b)) {
-			MT_lock_unset(&b->theaplock);
 			BBPunfix(b->batCacheid);
 			return 0;
 		}
 
 		/* calculate the basic scan size */
-		total += BATcount(b) << b->tshift;
+		total += BATcount(b) * b->twidth;
 		total += heapinfo(b->tvheap, b->batCacheid);
-		MT_lock_unset(&b->theaplock);
 
 		/* indices should help, find their maximum footprint */
-		MT_rwlock_rdlock(&b->thashlock);
 		itotal = hashinfo(b->thash, d->batCacheid);
-		MT_rwlock_rdunlock(&b->thashlock);
 		t = IMPSimprintsize(b);
 		if( t > itotal)
 			itotal = t;
-		/* We should also consider the ordered index size */
-		t = b->torderidx && b->torderidx != (Heap *) 1 ? (lng) b->torderidx->free : 0;
-		if( t > itotal)
-			itotal = t;
+		/* We should also consider the ordered index and mosaic */
 		//total = total > (lng)(MEMORY_THRESHOLD ) ? (lng)(MEMORY_THRESHOLD ) : total;
 		BBPunfix(b->batCacheid);
 		if ( total < itotal)
@@ -106,26 +96,26 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
  * The client context also keeps bounds on the memory claim/client.
  * Surpassing this bound may be a reason to not admit the instruction to proceed.
  */
-static MT_Lock admissionLock = MT_LOCK_INITIALIZER(admissionLock);
+static MT_Lock admissionLock = MT_LOCK_INITIALIZER("admissionLock");
 
 int
 MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argclaim)
 {
 	(void) mb;
 	(void) pci;
+	if (argclaim == 0)
+		return 0;
 
+	MT_lock_set(&admissionLock);
 	/* Check if we are allowed to allocate another worker thread for this client */
 	/* It is somewhat tricky, because we may be in a dataflow recursion, each of which should be counted for.
 	 * A way out is to attach the thread count to the MAL stacks, which just limits the level
 	 * of parallism for a single dataflow graph.
 	 */
 	if(cntxt->workerlimit && cntxt->workerlimit < stk->workers){
+		MT_lock_unset(&admissionLock);
 		return -1;
 	}
-	if (argclaim == 0)
-		return 0;
-
-	MT_lock_set(&admissionLock);
 	/* Determine if the total memory resource is exhausted, because it is overall limitation.  */
 	if ( memorypool <= 0){
 		// we accidently released too much memory or need to initialize
@@ -145,13 +135,6 @@ MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng 
 		}
 		memorypool -= argclaim;
 		stk->workers++;
-		stk->memory += argclaim;
-		MT_lock_set(&mal_delayLock);
-		if( mb->workers < stk->workers)
-			mb->workers = stk->workers;
-		if( mb->memory < stk->memory)
-			mb->memory = stk->memory;
-		MT_lock_unset(&mal_delayLock);
 		MT_lock_unset(&admissionLock);
 		return 0;
 	}
@@ -178,7 +161,6 @@ MALadmission_release(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, ln
 		memorypool = (lng) MEMORY_THRESHOLD;
 	}
 	stk->workers--;
-	stk->memory -= argclaim;
 	MT_lock_unset(&admissionLock);
 	return;
 }

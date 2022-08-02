@@ -1,0 +1,58 @@
+create table test_aggre_limit (id int, name varchar(25), type varchar(10));
+
+insert into test_aggre_limit values ( 1,'id','int');
+insert into test_aggre_limit values ( 2,'name','varchar');
+insert into test_aggre_limit values ( 3,'internal','varchar');
+insert into test_aggre_limit values ( 4,'id','int');
+insert into test_aggre_limit values ( 5,'name','varchar');
+insert into test_aggre_limit values ( 6,'authorization','int');
+insert into test_aggre_limit values ( 7,'id','int');
+insert into test_aggre_limit values ( 8,'name','varchar');
+insert into test_aggre_limit values ( 9,'schema_id','int');
+insert into test_aggre_limit values (10,'query','varchar');
+insert into test_aggre_limit values (11,'istable','boolean');
+insert into test_aggre_limit values (12,'system','boolean');
+insert into test_aggre_limit values (13,'clear','boolean');
+insert into test_aggre_limit values (14,'id','int');
+insert into test_aggre_limit values (15,'name','varchar');
+insert into test_aggre_limit values (16,'type','varchar');
+insert into test_aggre_limit values (17,'type_digits','int');
+insert into test_aggre_limit values (18,'type_scale','int');
+insert into test_aggre_limit values (19,'table_id','int');
+insert into test_aggre_limit values (20,'default','varchar');
+insert into test_aggre_limit values (21,'null','boolean');
+insert into test_aggre_limit values (22,'number','int');
+insert into test_aggre_limit values (23,'id','int');
+insert into test_aggre_limit values (24,'table_id','int');
+insert into test_aggre_limit values (25,'type','int');
+insert into test_aggre_limit values (26,'name','varchar');
+insert into test_aggre_limit values (27,'rkey','int');
+insert into test_aggre_limit values (28,'id','int');
+insert into test_aggre_limit values (29,'table_id','int');
+insert into test_aggre_limit values (30,'type','int');
+insert into test_aggre_limit values (31,'name','varchar');
+insert into test_aggre_limit values (32,'id','int');
+insert into test_aggre_limit values (33,'column','varchar');
+insert into test_aggre_limit values (34,'trunc','int');
+insert into test_aggre_limit values (35,'nr','int');
+insert into test_aggre_limit values (36,'id','int');
+insert into test_aggre_limit values (37,'systemname','varchar');
+insert into test_aggre_limit values (38,'sqlname','varchar');
+insert into test_aggre_limit values (39,'digits','int');
+insert into test_aggre_limit values (40,'scale','int');
+insert into test_aggre_limit values (41,'radix','int');
+insert into test_aggre_limit values (42,'eclass','int');
+insert into test_aggre_limit values (43,'module_id','int');
+insert into test_aggre_limit values (44,'id','int');
+insert into test_aggre_limit values (45,'name','varchar');
+insert into test_aggre_limit values (46,'func','varchar');
+insert into test_aggre_limit values (47,'sql','boolean');
+insert into test_aggre_limit values (48,'aggr','boolean');
+insert into test_aggre_limit values (49,'module_id','int');
+insert into test_aggre_limit values (50,'id','int');
+
+select count(*) from test_aggre_limit limit 1;
+
+select type, count(*) from test_aggre_limit group by type limit 1;
+
+drop table test_aggre_limit;

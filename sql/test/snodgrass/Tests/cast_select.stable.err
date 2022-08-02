@@ -1,0 +1,53 @@
+stderr of test 'cast_select` in directory 'sql/test/snodgrass` itself:
+
+
+# 08:24:51 >  
+# 08:24:51 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30215" "--set" "mapi_usock=/var/tmp/mtest-21360/.s.monetdb.30215" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_snodgrass" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 08:24:51 >  
+
+# builtin opt 	gdk_dbpath = /home/niels/scratch/monetdb/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30215
+# cmdline opt 	mapi_usock = /var/tmp/mtest-21360/.s.monetdb.30215
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_snodgrass
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 08:24:51 >  
+# 08:24:51 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21360" "--port=30215"
+# 08:24:51 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-21360/.s.monetdb.30215
+QUERY = SELECT CAST(TIME '12:34:56' AS TIMESTAMP WITH TIME ZONE) = TIMESTAMP '1997-07-23 12:34:56-07:00';
+ERROR = !types time(1,0) and timestamptz(7,0) are not equal
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = SELECT CAST('3-7' AS INTERVAL MONTH );
+ERROR = !Wrong format (3-7)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = SELECT CAST('12:34' AS INTERVAL DAY TO MINUTE ); -- err: works not
+ERROR = !Wrong format (12:34)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = SELECT CAST('86 00:00:00' AS INTERVAL HOUR(3) TO SECOND ); -- err: overflow exception
+ERROR = !Wrong format (86 00:00:00)
+CODE  = 42000
+
+# 12:02:15 >  
+# 12:02:15 >  "Done."
+# 12:02:15 >  
+

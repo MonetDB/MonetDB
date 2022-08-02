@@ -1,0 +1,14 @@
+stderr of test 'create_view_with_check_options.SF-1314951` in directory 'sql/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 15:51:44 >  
+# 15:51:44 >  Mtimeout -timeout 180 Mserver "--config=/ufs/roberto/servers/MonetDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/roberto/servers/MonetDB/lib/MonetDB:/ufs/roberto/servers/MonetDB/lib/bin" --set "gdk_dbfarm=/ufs/roberto/servers/MonetDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/roberto/servers/MonetDB/var/MonetDB/log" --set mapi_port=30437 --set sql_port=42973 --set xquery_port=58391 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 15:51:44 >  
+
+
+
+
+# 22:57:42 >  
+# 22:57:42 >  Done.
+# 22:57:42 >  
+

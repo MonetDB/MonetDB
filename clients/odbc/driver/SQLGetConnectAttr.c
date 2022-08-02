@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -84,16 +84,9 @@ MNDBGetConnectAttr(ODBCDbc *dbc,
 		break;
 	case SQL_ATTR_CURRENT_CATALOG:		/* SQLCHAR* */
 		/* SQL_CURRENT_QUALIFIER */
-		/* MonetDB does NOT support SQL catalog qualifier, return empty string */
-		if (BufferLength <= 0) {
-			/* Invalid string or buffer length */
-			addDbcError(dbc, "HY090", NULL, 0);
-			return SQL_ERROR;
-		}
-		strcpy_len((char *) ValuePtr, "", BufferLength);
-		if (StringLengthPtr) {
-			*(StringLengthPtr) = (SQLINTEGER) 0;
-		}
+		copyString(dbc->dbname, strlen(dbc->dbname), ValuePtr,
+			   BufferLength, StringLengthPtr, SQLINTEGER,
+			   addDbcError, dbc, return SQL_ERROR);
 		break;
 	case SQL_ATTR_TXN_ISOLATION:		/* SQLUINTEGER */
 		/* SQL_TXN_ISOLATION */
@@ -191,7 +184,7 @@ SQLGetConnectAttrW(SQLHDBC ConnectionHandle,
 {
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 	SQLRETURN rc;
-	SQLPOINTER ptr = NULL;
+	SQLPOINTER ptr;
 	SQLINTEGER n;
 
 #ifdef ODBCDEBUG
@@ -210,15 +203,11 @@ SQLGetConnectAttrW(SQLHDBC ConnectionHandle,
 	switch (Attribute) {
 	/* all string attributes */
 	case SQL_ATTR_CURRENT_CATALOG:
-	case SQL_ATTR_TRACEFILE:
-	case SQL_ATTR_TRANSLATE_LIB:
-		if (BufferLength > 0) {
-			ptr = malloc(BufferLength);
-			if (ptr == NULL) {
-				/* Memory allocation error */
-				addDbcError(dbc, "HY001", NULL, 0);
-				return SQL_ERROR;
-			}
+		ptr = malloc(BufferLength);
+		if (ptr == NULL) {
+			/* Memory allocation error */
+			addDbcError(dbc, "HY001", NULL, 0);
+			return SQL_ERROR;
 		}
 		break;
 	default:

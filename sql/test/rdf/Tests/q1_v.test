@@ -1,6 +1,0 @@
-query II rowsort
-SELECT A.obj, count(*)
-	FROM prop17582582_pso AS A
-	GROUP BY A.obj
-----
-

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -55,6 +55,7 @@ struct clientdata {
 
 static void *
 handleClient(void *data)
+
 {
 	stream *fdin, *fout;
 	char buf[8096];
@@ -66,7 +67,7 @@ handleClient(void *data)
 	char port[16];
 	sabdb *top = NULL;
 	sabdb *stat = NULL;
-	struct sockaddr_storage saddr;
+	struct sockaddr saddr;
 	socklen_t saddrlen = (socklen_t) sizeof(saddr);
 	err e;
 	confkeyval *ckv, *kv;
@@ -83,9 +84,9 @@ handleClient(void *data)
 	memcpy(chal, ((struct clientdata *) data)->challenge, sizeof(chal));
 	free(data);
 	fdin = socket_rstream(sock, "merovingian<-client (read)");
-	if (fdin == NULL) {
+	if (fdin == 0) {
 		self->dead = true;
-		return(newErr("merovingian-client inputstream problems: %s", mnstr_peek_error(NULL)));
+		return(newErr("merovingian-client inputstream problems"));
 	}
 	fdin = block_stream(fdin);
 
@@ -93,18 +94,18 @@ handleClient(void *data)
 	if (fout == 0) {
 		close_stream(fdin);
 		self->dead = true;
-		return(newErr("merovingian-client outputstream problems: %s", mnstr_peek_error(NULL)));
+		return(newErr("merovingian-client outputstream problems"));
 	}
 	fout = block_stream(fout);
 
 	if (isusock) {
 		snprintf(host, sizeof(host), "(local)");
-	} else if (getpeername(sock, (struct sockaddr *) &saddr, &saddrlen) == -1) {
-		Mlevelfprintf(ERROR, stderr, "couldn't get peername of client: %s\n", strerror(errno));
+	} else if (getpeername(sock, &saddr, &saddrlen) == -1) {
+		Mfprintf(stderr, "couldn't get peername of client: %s\n", strerror(errno));
 		snprintf(host, sizeof(host), "(unknown)");
 	} else {
 		char ghost[512];
-		if (getnameinfo((struct sockaddr *) &saddr, saddrlen, ghost, sizeof(ghost), port, sizeof(port),
+		if (getnameinfo(&saddr, saddrlen, ghost, sizeof(ghost), port, sizeof(port),
 			NI_NUMERICSERV | NI_NUMERICHOST) == 0) {
 			snprintf(host, sizeof(host), "%s:%s", ghost, port);
 		} else {
@@ -123,7 +124,7 @@ handleClient(void *data)
 #endif
 			MONETDB5_PASSWDHASH
 			);
-	mnstr_flush(fout, MNSTR_FLUSH_DATA);
+	mnstr_flush(fout);
 
 	/* get response */
 	buf[0] = '\0';
@@ -133,7 +134,7 @@ handleClient(void *data)
 				host, buf);
 		mnstr_printf(fout, "!monetdbd: client sent something this "
 				"server could not understand, sorry\n");
-		mnstr_flush(fout, MNSTR_FLUSH_DATA);
+		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
 		self->dead = true;
@@ -154,7 +155,7 @@ handleClient(void *data)
 	} else {
 		e = newErr("client %s challenge error: %s", host, buf);
 		mnstr_printf(fout, "!monetdbd: incomplete challenge '%s'\n", buf);
-		mnstr_flush(fout, MNSTR_FLUSH_DATA);
+		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
 		self->dead = true;
@@ -170,7 +171,7 @@ handleClient(void *data)
 		if (*passwd != '{') {
 			e = newErr("client %s challenge error: %s", host, buf);
 			mnstr_printf(fout, "!monetdbd: invalid password entry\n");
-			mnstr_flush(fout, MNSTR_FLUSH_DATA);
+			mnstr_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
 			self->dead = true;
@@ -181,7 +182,7 @@ handleClient(void *data)
 		if (!s) {
 			e = newErr("client %s challenge error: %s", host, buf);
 			mnstr_printf(fout, "!monetdbd: invalid password entry\n");
-			mnstr_flush(fout, MNSTR_FLUSH_DATA);
+			mnstr_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
 			self->dead = true;
@@ -192,7 +193,7 @@ handleClient(void *data)
 	} else {
 		e = newErr("client %s challenge error: %s", host, buf);
 		mnstr_printf(fout, "!monetdbd: incomplete challenge, missing password after '%s'\n", user);
-		mnstr_flush(fout, MNSTR_FLUSH_DATA);
+		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
 		self->dead = true;
@@ -207,7 +208,7 @@ handleClient(void *data)
 	} else {
 		e = newErr("client %s challenge error: %s", host, buf);
 		mnstr_printf(fout, "!monetdbd: incomplete challenge, missing language after '%s'\n", passwd);
-		mnstr_flush(fout, MNSTR_FLUSH_DATA);
+		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
 		self->dead = true;
@@ -225,7 +226,7 @@ handleClient(void *data)
 		if (s == NULL) {
 			e = newErr("client %s challenge error: %s", host, buf);
 			mnstr_printf(fout, "!monetdbd: incomplete challenge, missing trailing colon\n");
-			mnstr_flush(fout, MNSTR_FLUSH_DATA);
+			mnstr_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
 			self->dead = true;
@@ -239,7 +240,7 @@ handleClient(void *data)
 		/* we need to have a database, if we haven't gotten one,
 		 * complain */
 		mnstr_printf(fout, "!monetdbd: please specify a database\n");
-		mnstr_flush(fout, MNSTR_FLUSH_DATA);
+		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
 		self->dead = true;
@@ -277,9 +278,9 @@ handleClient(void *data)
 			mnstr_printf(fout, "!monetdbd: no such database '%s', please create it first\n", database);
 		} else {
 			mnstr_printf(fout, "!monetdbd: internal error while starting mserver '%s'%s\n", e, strstr(e, "logfile")?"":", please refer to the logs");
-			Mlevelfprintf(ERROR, _mero_ctlerr, "!monetdbd: an internal error has occurred '%s'\n",e);
+			Mfprintf(_mero_ctlerr, "!monetdbd: an internal error has occurred '%s'\n",e);
 		}
-		mnstr_flush(fout, MNSTR_FLUSH_DATA);
+		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
 		self->dead = true;
@@ -301,10 +302,10 @@ handleClient(void *data)
 	/* collect possible redirects */
 	for (stat = top; stat != NULL; stat = stat->next) {
 		if (stat->conns == NULL || stat->conns->val == NULL) {
-			Mlevelfprintf(ERROR, stdout, "dropping database without available "
+			Mfprintf(stdout, "dropping database without available "
 					"connections: '%s'\n", stat->dbname);
 		} else if (r == 24) {
-			Mlevelfprintf(ERROR, stdout, "dropping database connection because of "
+			Mfprintf(stdout, "dropping database connection because of "
 					"too many already: %s\n", stat->conns->val);
 		} else {
 			redirs[r++] = *stat;
@@ -319,7 +320,7 @@ handleClient(void *data)
 			e = newErr("there are no available connections for '%s'", database);
 		}
 		mnstr_printf(fout, "!monetdbd: %s\n", e);
-		mnstr_flush(fout, MNSTR_FLUSH_DATA);
+		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
 		msab_freeStatus(&top);
@@ -366,19 +367,16 @@ handleClient(void *data)
 		/* flush redirect */
 		fprintf(stdout, "\n");
 		fflush(stdout);
-		mnstr_flush(fout, MNSTR_FLUSH_DATA);
-		close_stream(fout);
-		close_stream(fdin);
+		mnstr_flush(fout);
 	} else {
-		Mlevelfprintf(DEBUG, stdout, "proxying client %s for database '%s' to "
+		Mfprintf(stdout, "proxying client %s for database '%s' to "
 				"%s?database=%s\n",
 				host, database, redirs[0].conns->val, redirs[0].dbname);
-
 		/* merovingian is in control, only consider the first redirect */
 		mnstr_printf(fout, "^mapi:merovingian://proxy?database=%s\n",
 				redirs[0].dbname);
 		/* flush redirect */
-		mnstr_flush(fout, MNSTR_FLUSH_DATA);
+		mnstr_flush(fout);
 
 		/* wait for input, or disconnect in a proxy runner */
 		if ((e = startProxy(sock, fdin, fout,
@@ -388,14 +386,14 @@ handleClient(void *data)
 			 * the protocol */
 			mnstr_printf(fout, "void:merovingian:9:%s:BIG:%s:",
 					mcrypt_getHashAlgorithms(), MONETDB5_PASSWDHASH);
-			mnstr_flush(fout, MNSTR_FLUSH_DATA);
+			mnstr_flush(fout);
 			mnstr_read_block(fdin, buf, 8095, 1); /* eat away client response */
 			mnstr_printf(fout, "!monetdbd: an internal error has occurred '%s', refer to the logs for details, please try again later\n",e);
-			mnstr_flush(fout, MNSTR_FLUSH_DATA);
-			Mlevelfprintf(ERROR, _mero_ctlerr, "!monetdbd: an internal error has occurred '%s'\n",e);
+			mnstr_flush(fout);
+			Mfprintf(_mero_ctlerr, "!monetdbd: an internal error has occurred '%s'\n",e);
 			close_stream(fout);
 			close_stream(fdin);
-			Mlevelfprintf(ERROR, stdout, "starting a proxy failed: %s\n", e);
+			Mfprintf(stdout, "starting a proxy failed: %s\n", e);
 			msab_freeStatus(&top);
 			self->dead = true;
 			return(e);
@@ -408,10 +406,17 @@ handleClient(void *data)
 }
 
 char *
-acceptConnections(int socks[3])
+acceptConnections(int sock, int usock)
 {
 	char *msg;
 	int retval;
+#ifdef HAVE_POLL
+	struct pollfd pfd[2];
+#else
+	fd_set fds;
+	struct timeval tv;
+#endif
+	int msgsock;
 	void *e;
 	struct clientdata *data;
 	struct threads *threads = NULL, **threadp, *p;
@@ -420,36 +425,22 @@ acceptConnections(int socks[3])
 	do {
 		/* handle socket connections */
 		bool isusock = false;
-		int i;
-		int sock = -1;
 
 #ifdef HAVE_POLL
-		struct pollfd pfd[3];
-		int npoll = 0;
-		for (i = 0; i < 3; i++) {
-			if (socks[i] >= 0)
-				pfd[npoll++] = (struct pollfd) {.fd = socks[i],
-												.events = POLLIN};
-		}
+		pfd[0] = (struct pollfd) {.fd = sock, .events = POLLIN};
+		pfd[1] = (struct pollfd) {.fd = usock, .events = POLLIN};
 
 		/* Wait up to 5 seconds */
-		retval = poll(pfd, npoll, 5000);
+		retval = poll(pfd, 2, 5000);
 #else
-		fd_set fds;
 		FD_ZERO(&fds);
-
-		for (i = 0; i < 3; i++) {
-			if (socks[i] >= 0) {
-				if (socks[i] > sock)
-					sock = socks[i];
-				FD_SET(socks[i], &fds);
-			}
-		}
+		FD_SET(sock, &fds);
+		FD_SET(usock, &fds);
 
 		/* Wait up to 5 seconds */
-		struct timeval tv = (struct timeval) {.tv_sec = 5};
-		retval = select(sock + 1, &fds, NULL, NULL, &tv);
-		sock = -1;
+		tv = (struct timeval) {.tv_sec = 5};
+		retval = select((sock > usock ? sock : usock) + 1,
+				&fds, NULL, NULL, &tv);
 #endif
 		errnr = errno;
 		/* join any handleClient threads that we started and that may
@@ -461,7 +452,7 @@ acceptConnections(int socks[3])
 				*threadp = p->next;
 				free(p);
 				if (e != NO_ERR) {
-					Mlevelfprintf(ERROR, stderr, "client error: %s\n",
+					Mfprintf(stderr, "client error: %s\n",
 							 getErrMsg((char *) e));
 					freeErr(e);
 				}
@@ -494,59 +485,78 @@ acceptConnections(int socks[3])
 			}
 			continue;
 		}
+		if (
 #ifdef HAVE_POLL
-		for (i = 0; i < npoll; i++) {
-			if (pfd[i].revents & POLLIN) {
-				sock = pfd[i].fd;
-				isusock = sock == socks[2];
-				break;
-			}
-		}
+			pfd[0].revents & POLLIN
 #else
-		for (i = 0; i < 3; i++) {
-			if (socks[i] >= 0 && FD_ISSET(socks[i], &fds)) {
-				sock = socks[i];
-				isusock = i == 2;
-				break;
-			}
-		}
+			FD_ISSET(sock, &fds)
 #endif
-		if (sock < 0)
-			continue;
-
-		if ((sock = accept4(sock, NULL, NULL, SOCK_CLOEXEC)) == -1) {
-			if (_mero_keep_listening == 0)
-				break;
-			switch (errno) {
-			case EINTR:
-				/* interrupted */
-				break;
-			case EMFILE:
-			case ENFILE:
-			case ENOBUFS:
-			case ENOMEM:
-				/* transient failures */
-				sleep_ms(500);	/* wait a little, maybe it goes away */
-				break;
-			case ECONNABORTED:
-				/* connection aborted before we began */
-				break;
-			default:
-				msg = strerror(errno);
-				goto error;
+			) {
+			isusock = false;
+			if ((msgsock = accept4(sock, (SOCKPTR)0, (socklen_t *) 0, SOCK_CLOEXEC)) == -1) {
+				if (_mero_keep_listening == 0)
+					break;
+				switch (errno) {
+				case EINTR:
+					/* interrupted */
+					break;
+				case EMFILE:
+				case ENFILE:
+				case ENOBUFS:
+				case ENOMEM:
+					/* transient failures */
+					break;
+				case ECONNABORTED:
+					/* connection aborted before we began */
+					break;
+				default:
+					msg = strerror(errno);
+					goto error;
+				}
+				continue;
 			}
-			continue;
-		}
 #if defined(HAVE_FCNTL) && (!defined(SOCK_CLOEXEC) || !defined(HAVE_ACCEPT4))
-		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
+			(void) fcntl(msgsock, F_SETFD, FD_CLOEXEC);
 #endif
-
-		if (isusock) {
+		} else if (
+#ifdef HAVE_POLL
+			pfd[1].revents & POLLIN
+#else
+			FD_ISSET(usock, &fds)
+#endif
+			) {
 			struct msghdr msgh;
 			struct iovec iov;
 			char buf[1];
 			int rv;
 			char ccmsg[CMSG_SPACE(sizeof(int))];
+
+			isusock = true;
+			if ((msgsock = accept4(usock, (SOCKPTR)0, (socklen_t *)0, SOCK_CLOEXEC)) == -1) {
+				if (_mero_keep_listening == 0)
+					break;
+				switch (errno) {
+				case EINTR:
+					/* interrupted */
+					break;
+				case EMFILE:
+				case ENFILE:
+				case ENOBUFS:
+				case ENOMEM:
+					/* transient failures */
+					break;
+				case ECONNABORTED:
+					/* connection aborted before we began */
+					break;
+				default:
+					msg = strerror(errno);
+					goto error;
+				}
+				continue;
+			}
+#if defined(HAVE_FCNTL) && (!defined(SOCK_CLOEXEC) || !defined(HAVE_ACCEPT4))
+			(void) fcntl(usock, F_SETFD, FD_CLOEXEC);
+#endif
 
 			/* BEWARE: unix domain sockets have a slightly different
 			 * behaviour initialy than normal sockets, because we can
@@ -575,9 +585,9 @@ acceptConnections(int socks[3])
 				.msg_controllen = sizeof(ccmsg),
 			};
 
-			rv = recvmsg(sock, &msgh, 0);
+			rv = recvmsg(msgsock, &msgh, 0);
 			if (rv == -1) {
-				closesocket(sock);
+				closesocket(msgsock);
 				continue;
 			}
 
@@ -587,17 +597,17 @@ acceptConnections(int socks[3])
 				break;
 			case '1':
 				/* filedescriptor, no way */
-				closesocket(sock);
-				Mlevelfprintf(ERROR, stderr, "client error: fd passing not supported\n");
+				closesocket(msgsock);
+				Mfprintf(stderr, "client error: fd passing not supported\n");
 				continue;
 			default:
 				/* some unknown state */
-				closesocket(sock);
-				Mlevelfprintf(ERROR, stderr, "client error: unknown initial byte\n");
+				closesocket(msgsock);
+				Mfprintf(stderr, "client error: unknown initial byte\n");
 				continue;
 			}
-		}
-
+		} else
+			continue;
 		/* start handleClient as a thread so that we're not blocked by
 		 * a slow client */
 		data = malloc(sizeof(*data)); /* freed by handleClient */
@@ -607,11 +617,11 @@ acceptConnections(int socks[3])
 				free(data);
 			if (p)
 				free(p);
-			closesocket(sock);
-			Mlevelfprintf(ERROR, stderr, "cannot allocate memory\n");
+			closesocket(msgsock);
+			Mfprintf(stderr, "cannot allocate memory\n");
 			continue;
 		}
-		data->sock = sock;
+		data->sock = msgsock;
 		data->isusock = isusock;
 		p->dead = false;
 		data->self = p;
@@ -621,30 +631,19 @@ acceptConnections(int socks[3])
 			p->next = threads;
 			threads = p;
 		} else {
-			closesocket(sock);
+			closesocket(msgsock);
 			free(data);
 			free(p);
 		}
 	} while (_mero_keep_listening);
-	if (socks[0] >= 0) {
-		shutdown(socks[0], SHUT_RDWR);
-		closesocket(socks[0]);
-	}
-	if (socks[1] >= 0) {
-		shutdown(socks[1], SHUT_RDWR);
-		closesocket(socks[1]);
-	}
+	shutdown(sock, SHUT_RDWR);
+	closesocket(sock);
 	return(NO_ERR);
 
 error:
 	_mero_keep_listening = 0;
-	if (socks[0] >= 0) {
-		shutdown(socks[0], SHUT_RDWR);
-		closesocket(socks[0]);
-	}
-	if (socks[1] >= 0) {
-		shutdown(socks[1], SHUT_RDWR);
-		closesocket(socks[1]);
-	}
+	closesocket(sock);
 	return(newErr("accept connection: %s", msg));
 }
+
+/* vim:set ts=4 sw=4 noexpandtab: */

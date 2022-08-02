@@ -1,0 +1,35 @@
+stderr of test 'truncate-statements` in directory 'sql/test` itself:
+
+
+# 12:21:47 >  
+# 12:21:47 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35576" "--set" "mapi_usock=/var/tmp/mtest-8388/.s.monetdb.35576" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/MonetDB-default/BUILD/var/MonetDB/mTests_sql_test" "--set" "embedded_py=true"
+# 12:21:47 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/MonetDB-default/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 35576
+# cmdline opt 	mapi_usock = /var/tmp/mtest-8388/.s.monetdb.35576
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/MonetDB-default/BUILD/var/MonetDB/mTests_sql_test
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 536870922
+
+# 12:21:47 >  
+# 12:21:47 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8388" "--port=35576"
+# 12:21:47 >  
+
+
+# 12:21:48 >  
+# 12:21:48 >  "Done."
+# 12:21:48 >  
+

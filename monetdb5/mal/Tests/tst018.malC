@@ -1,0 +1,13 @@
+# handling assignments of 'nil';
+
+i:= 23;
+i:= nil;
+io.print(i);
+
+b:= bat.new(:int);
+b:= nil;
+io.print(b);
+
+s:= "hello";
+s:= nil;
+io.print(s);

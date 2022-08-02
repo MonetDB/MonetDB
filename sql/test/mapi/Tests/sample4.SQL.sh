@@ -1,3 +1,3 @@
 #!/bin/sh
 
-sample4 $HOST $MAPIPORT sql
+Mlog -x "sample4 $HOST $MAPIPORT sql"

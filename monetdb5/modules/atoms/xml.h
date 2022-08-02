@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -24,26 +24,30 @@ typedef str xml;
 
 mal_export int TYPE_xml;
 
-extern str XMLxml2str(str *s, xml *x);
-extern str XMLstr2xml(xml *x, const char **s);
-extern str XMLxmltext(str *s, xml *x);
-extern str XMLxml2xml(xml *x, xml *s);
-extern str XMLdocument(xml *x, str *s);
-extern str XMLcontent(xml *x, str *s);
-extern str XMLisdocument(bit *x, str *s);
-extern str XMLcomment(xml *x, str *s);
-extern str XMLpi(xml *x, str *target, str *s);
-extern str XMLroot(xml *x, xml *v, str *version, str *standalone);
-extern str XMLparse(xml *x, str *doccont, str *s, str *option);
-extern str XMLattribute(xml *ret, str *name, str *val);
-extern str XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val);
-extern str XMLelementSmall(xml *ret, str *name, xml *val);
-extern str XMLconcat(xml *ret, xml *left, xml *right);
-extern str XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export ssize_t XMLfromString(const char *src, size_t *len, xml *x, bool external);
+mal_export ssize_t XMLtoString(str *s, size_t *len, const char *src, bool external);
 
-extern size_t XMLquotestring(const char *s, char *buf, size_t len);
-extern size_t XMLunquotestring(const char **p, char q, char *buf);
+mal_export str XMLxml2str(str *s, xml *x);
+mal_export str XMLstr2xml(xml *x, const char **s);
+mal_export str XMLxmltext(str *s, xml *x);
+mal_export str XMLxml2xml(xml *x, xml *s);
+mal_export str XMLdocument(xml *x, str *s);
+mal_export str XMLcontent(xml *x, str *s);
+mal_export str XMLisdocument(bit *x, str *s);
+mal_export str XMLcomment(xml *x, str *s);
+mal_export str XMLpi(xml *x, str *target, str *s);
+mal_export str XMLroot(xml *x, xml *v, str *version, str *standalone);
+mal_export str XMLparse(xml *x, str *doccont, str *s, str *option);
+mal_export str XMLattribute(xml *ret, str *name, str *val);
+mal_export str XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val);
+mal_export str XMLelementSmall(xml *ret, str *name, xml *val);
+mal_export str XMLconcat(xml *ret, xml *left, xml *right);
+mal_export str XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-extern str XMLepilogue(void *ret);
+mal_export size_t XMLquotestring(const char *s, char *buf, size_t len);
+mal_export size_t XMLunquotestring(const char **p, char q, char *buf);
+
+mal_export str XMLprelude(void *ret);
+mal_export str XMLepilogue(void *ret);
 
 #endif /* XML_H */

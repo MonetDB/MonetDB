@@ -1,0 +1,8 @@
+
+CREATE TABLE A (a DATE);
+
+INSERT INTO A VALUES ( DATE '9999-01-01' + INTERVAL '1-00' YEAR TO MONTH);
+
+select * from A;
+
+drop table a;

@@ -1,0 +1,17 @@
+stderr of test 'slam` in directory 'sql/test/ADT2006` itself:
+
+
+# 21:14:15 >  
+# 21:14:15 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB:/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/sql_logs" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/xquery_logs" --set mapi_port=32169 --set monet_prompt= --trace "--dbname=mTests_src_test_ADT2006" --dbinit=" module(sql_server);" ; echo ; echo Over..
+# 21:14:15 >  
+
+
+# 21:14:15 >  
+# 21:14:15 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32169  < slam.sql
+# 21:14:15 >  
+
+
+# 21:14:18 >  
+# 21:14:18 >  Done.
+# 21:14:18 >  
+

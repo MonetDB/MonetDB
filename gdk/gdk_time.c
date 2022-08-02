@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -172,7 +172,12 @@ date_add_month(date dt, int months)
 		m = (m - 1) % 12 + 1;
 	}
 	if (d > monthdays(y, m)) {
-		d = monthdays(y, m);
+		d -= monthdays(y, m);
+		if (++m > 12) {
+			m = 1;
+			if (++y > YEAR_MAX)
+				return date_nil;
+		}
 	}
 	return mkdate(y, m, d);
 }
@@ -245,24 +250,6 @@ date_weekofyear(date dt)
 	return (cnt2 - cnt1) / 7 + 1;
 }
 
-/* In the US they have to do it differently, of course.
- * Week 1 is the week (Sunday to Saturday) in which January 1 falls */
-int
-date_usweekofyear(date dt)
-{
-	if (is_date_nil(dt))
-		return int_nil;
-	int y = date_extract_year(dt);
-	int m = date_extract_month(dt);
-	/* day of year (date_dayofyear without nil check) */
-	int doy = date_extract_day(dt) + cumdays[m-1]
-		+ (m > 2 && isleapyear(y));
-	int jan1 = mkdate(y, 1, 1);
-	int jan1days = date_countdays(jan1);
-	int jan1dow = (jan1days + DOW_OFF + 1) % 7; /* Sunday=0, Saturday=6 */
-	return (doy + jan1dow - 1) / 7 + 1;
-}
-
 int
 date_dayofyear(date dt)
 {
@@ -277,15 +264,6 @@ daytime
 daytime_create(int hour, int min, int sec, int usec)
 {
 	return istime(hour, min, sec, usec) ? mkdaytime(hour, min, sec, usec) : daytime_nil;
-}
-
-/* return the difference in milliseconds between the two daytimes */
-lng
-daytime_diff(daytime d1, daytime d2)
-{
-	if (is_daytime_nil(d1) || is_daytime_nil(d2))
-		return lng_nil;
-	return (d1 - d2) / 1000;
 }
 
 int
@@ -550,12 +528,12 @@ parse_date(const char *buf, date *d, bool external)
 	if (external && strncmp(buf, "nil", 3) == 0)
 		return 3;
 	if ((yearneg = (buf[0] == '-')))
-		pos++;
-	if (!yearneg && !GDKisdigit(buf[pos])) {
+		buf++;
+	if (!yearneg && !GDKisdigit(buf[0])) {
 		yearlast = true;
 		sep = ' ';
 	} else {
-		for (; GDKisdigit(buf[pos]); pos++) {
+		for (pos = 0; GDKisdigit(buf[pos]); pos++) {
 			year = (buf[pos] - '0') + year * 10;
 			if (year > YEAR_MAX)
 				break;
@@ -610,35 +588,13 @@ parse_date(const char *buf, date *d, bool external)
 				break;
 		}
 	}
-	if (!yearneg && buf[pos] == ' ') {
-		ssize_t opos = pos;
-		while (buf[++pos] == ' ')
-			;
-		if (strncasecmp(buf + pos, "BCE", 3) == 0) {
-			/* Before Common Era */
-			yearneg = true;
-			pos += 3;
-		} else if (strncasecmp(buf + pos, "BC", 2) == 0) {
-			/* Before Christ */
-			yearneg = true;
-			pos += 2;
-		} else if (strncasecmp(buf + pos, "CE", 2) == 0) {
-			/* Common Era */
-			pos += 2;
-		} else if (strncasecmp(buf + pos, "AD", 2) == 0) {
-			/* Anno Domino */
-			pos += 2;
-		} else {
-			pos = opos;
-		}
-	}
 	/* handle semantic error here */
 	*d = date_create(yearneg ? -year : year, month, day);
 	if (is_date_nil(*d)) {
 		GDKerror("Semantic error in date.\n");
 		return -1;
 	}
-	return pos;
+	return pos + yearneg;
 }
 
 ssize_t

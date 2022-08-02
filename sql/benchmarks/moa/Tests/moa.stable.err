@@ -1,0 +1,17 @@
+stderr of test 'moa` in directory 'sql/benchmarks/moa` itself:
+
+
+# 15:22:54 >  
+# 15:22:54 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/monet/Linux/lib/MonetDB:/ufs/niels/data/sql/Linux/lib/sql" --dbfarm "/ufs/niels/data/monet/Linux/var/dbfarm" --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_moa" --set sql_port=59044 "/ufs/niels/data/sql/Linux/share/sql/sqlserver.mil" ; echo ; echo Over..
+# 15:22:54 >  
+
+
+# 15:22:54 >  
+# 15:22:54 >  Mtimeout -timeout 60 sql_client -u monetdb -P monetdb --host=stem --port=59044 < moa.sql
+# 15:22:54 >  
+
+
+# 15:22:55 >  
+# 15:22:55 >  Done.
+# 15:22:55 >  
+

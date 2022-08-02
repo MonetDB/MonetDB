@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -39,11 +39,11 @@ struct tODBCError {
 	struct tODBCError *next;	/* pointer to the next Error object or NULL */
 };
 
-const char ODBCErrorMsgPrefix[] = "[MonetDB][ODBC Driver " MONETDB_VERSION "]";
+const char ODBCErrorMsgPrefix[] = "[MonetDB][ODBC Driver " PACKAGE_VERSION "]";
 const int ODBCErrorMsgPrefixLength = (int) sizeof(ODBCErrorMsgPrefix) - 1;
 
 /*
- * Local utility function which returns the standard ODBC/ISO error
+ * Local utility function which retuns the standard ODBC/ISO error
  * message text for a given ISO SQLState code.
  * When no message could be found for a given SQLState a msg is
  * printed to stderr to warn that the programmer has forgotten to
@@ -239,12 +239,11 @@ newODBCError(const char *SQLState, const char *msg, int nativeCode)
 		return &malloc_error;
 	}
 
-	*error = (ODBCError) {
-		.nativeErrorCode = nativeCode,
-	};
-
 	if (SQLState) {
 		strcpy_len(error->sqlState, SQLState, sizeof(error->sqlState));
+	} else {
+		/* initialize it with nulls */
+		memset(error->sqlState, 0, sizeof(error->sqlState));
 	}
 
 	if (msg) {
@@ -259,9 +258,14 @@ newODBCError(const char *SQLState, const char *msg, int nativeCode)
 		/* remove trailing newlines */
 		len = strlen(error->message);
 		while (len > 0 && error->message[len - 1] == '\n') {
-			error->message[--len] = 0;
+			error->message[len - 1] = 0;
+			len--;
 		}
+	} else {
+		error->message = NULL;
 	}
+	error->nativeErrorCode = nativeCode;
+	error->next = NULL;
 
 	return error;
 }

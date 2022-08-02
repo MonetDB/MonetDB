@@ -1,9 +1,9 @@
 # this is the logrotate configuration for merovingian
-@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/log/monetdb/merovingian.log {
+@Elogdir@/merovingian.log {
 	su monetdb monetdb
 	missingok
 	notifempty
 	postrotate
-		[ -s @CMAKE_INSTALL_FULL_RUNSTATEDIR@/monetdb/merovingian.pid ] && kill -HUP $(cat @CMAKE_INSTALL_FULL_RUNSTATEDIR@/monetdb/merovingian.pid)
+		[ -s @Erundir@/merovingian.pid ] && kill -HUP $(cat @Erundir@/merovingian.pid)
 	endscript
 }

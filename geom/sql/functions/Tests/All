@@ -18,11 +18,11 @@ HAVE_GEOM?loadTestGeometries
 HAVE_GEOM?ST_GeometryType
 HAVE_GEOM?ST_AsText
 
-HAVE_GEOM?ST_IsClosed
-HAVE_GEOM?ST_IsEmpty
-HAVE_GEOM&GEOS_VERSION>=3.8?ST_IsSimple
-HAVE_GEOM?ST_IsValid
-HAVE_GEOM?ST_IsRing
+HAVE_GEOM?ST_IsClosed #ignores Z coordinate
+HAVE_GEOM?ST_IsEmpty 
+HAVE_GEOM?ST_IsSimple #ignores Z coordinate
+HAVE_GEOM?ST_IsValid #ignores Z coordinate
+HAVE_GEOM?ST_IsRing #ignores Z coordinate
 
 HAVE_GEOM?XYZ
 HAVE_GEOM?XYZMinMax
@@ -37,11 +37,11 @@ HAVE_GEOM?ST_NRings
 
 #HAVE_GEOM?transform
 
-HAVE_GEOM?ST_Contains
+HAVE_GEOM?ST_Contains #ignores Z coordinate
 
 #HAVE_GEOM?equals
 
-HAVE_GEOM?ST_Boundary
+HAVE_GEOM?ST_Boundary #Missing geom_bat + bat_geom
 
 HAVE_GEOM?ST_Dimension
 HAVE_GEOM?ST_CoordDim
@@ -68,5 +68,3 @@ HAVE_GEOM?ST_MakeBox2D
 
 
 HAVE_GEOM?dropTestGeometries
-
-HAVE_GEOM?geomcasts

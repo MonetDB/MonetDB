@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _GDK_BBP_H_
@@ -48,54 +48,47 @@
 #define BBPSAVING       512	/* set while we are saving */
 #define BBPRENAMED	1024	/* set when bat is renamed in this transaction */
 #define BBPDELETING	2048	/* set while we are deleting (special case in module unload) */
-#define BBPHOT		4096	/* bat is "hot", i.e. is still in active use */
-#define BBPSYNCING	8192	/* bat between creating backup and saving */
-
 #define BBPUNSTABLE	(BBPUNLOADING|BBPDELETING)	/* set while we are unloading */
-#define BBPWAITING      (BBPUNLOADING|BBPLOADING|BBPSAVING|BBPDELETING|BBPSYNCING)
+#define BBPWAITING      (BBPUNLOADING|BBPLOADING|BBPSAVING|BBPDELETING)
 
 #define BBPTRIM_ALL	(((size_t)1) << (sizeof(size_t)*8 - 2))	/* very large positive size_t */
 
 gdk_export bat getBBPsize(void); /* current occupied size of BBP array */
-gdk_export lng getBBPlogno(void); /* two lng of extra info in BBP.dir */
-gdk_export lng getBBPtransid(void);
-gdk_export unsigned BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, lng *transid);
-gdk_export int BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn,
-#ifdef GDKLIBRARY_HASHASH
-			      int *hashash,
-#endif
-			      char *batname, char *filename, char **options);
 
 /* global calls */
-gdk_export gdk_return BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror);
+gdk_export gdk_return BBPaddfarm(const char *dirname, int rolemask);
 
 /* update interface */
+gdk_export void BBPclear(bat bid);
 gdk_export int BBPreclaim(BAT *b);
 gdk_export gdk_return BBPsave(BAT *b);
-gdk_export int BBPrename(BAT *b, const char *nme);
+gdk_export int BBPrename(bat bid, const char *nme);
 
 /* query interface */
 gdk_export bat BBPindex(const char *nme);
+gdk_export BAT *BBPdescriptor(bat b);
 
 /* swapping interface */
-gdk_export gdk_return BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng transid);
+gdk_export gdk_return BBPsync(int cnt, bat *subcommit);
 gdk_export int BBPfix(bat b);
 gdk_export int BBPunfix(bat b);
 gdk_export int BBPretain(bat b);
 gdk_export int BBPrelease(bat b);
-gdk_export void BBPkeepref(BAT *b)
-	__attribute__((__nonnull__(1)));
+gdk_export void BBPkeepref(bat i);
 gdk_export void BBPshare(bat b);
-gdk_export void BBPcold(bat i);
 
-#define BBP_status_set(bid, mode)			\
-	ATOMIC_SET(&BBP_record(bid).status, mode)
+#define BBPtmpcheck(s)	(strncmp(s, "tmp_", 4) == 0)
 
-#define BBP_status_on(bid, flags)			\
-	ATOMIC_OR(&BBP_record(bid).status, flags)
+#define BBP_status_set(bid, mode, nme)		\
+	do {					\
+		BBP_status(bid) = mode;		\
+	} while (0)
 
-#define BBP_status_off(bid, flags)			\
-	ATOMIC_AND(&BBP_record(bid).status, ~(flags))
+#define BBP_status_on(bid, flags, nme)					\
+		BBP_status_set(bid, BBP_status(bid) | flags, nme)
+
+#define BBP_status_off(bid, flags, nme)					\
+		BBP_status_set(bid, BBP_status(bid) & ~(flags), nme)
 
 #define BBPswappable(b) ((b) && (b)->batCacheid && BBP_refs((b)->batCacheid) == 0)
 #define BBPtrimmable(b) (BBPswappable(b) && isVIEW(b) == 0 && (BBP_status((b)->batCacheid)&BBPWAITING) == 0)

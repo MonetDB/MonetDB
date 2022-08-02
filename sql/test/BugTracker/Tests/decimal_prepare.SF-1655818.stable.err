@@ -1,0 +1,19 @@
+stderr of test 'decimal_prepare.SF-1655818` in directory 'sql/test/BugTracker` itself:
+
+
+# 11:47:08 >  
+# 11:47:08 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/fabian/scratch/monetdb/stable/program-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/stable/program-x86_64/lib64/MonetDB5:/ufs/fabian/scratch/monetdb/stable/program-x86_64/lib64/MonetDB5/lib:/ufs/fabian/scratch/monetdb/stable/program-x86_64/lib64/MonetDB5/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-stable-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-stable-pegasus.ins.cwi.nl/sql/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-stable-pegasus.ins.cwi.nl/sql/xquerylog" --set mapi_port=33419 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit='include sql;' ; echo ; echo Over..
+# 11:47:08 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/fabian/scratch/monetdb/stable/program-x86_64/etc/monetdb5.conf)
+
+# 11:47:08 >  
+# 11:47:08 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33419  < decimal_prepare.SF-1655818.sql
+# 11:47:08 >  
+
+
+# 11:47:08 >  
+# 11:47:08 >  Done.
+# 11:47:08 >  
+

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef SQL_RELATION_H
@@ -31,11 +31,6 @@ typedef struct sql_exp_name {
 	const char *rname;
 } sql_exp_name;
 
-typedef struct sql_var_name {
-	const char *name;
-	const char *sname;
-} sql_var_name;
-
 typedef struct expression {
 	expression_type type;	/* atom, cmp, func/aggr */
 	sql_exp_name alias;
@@ -56,12 +51,10 @@ typedef struct expression {
 	 semantics:1,	/* is vs = semantics (nil = nil vs unknown != unknown), ranges with or without nil, aggregation with or without nil */
 	 need_no_nil:1,
 	 has_no_nil:1,
-	 unique:1,	/* expression has unique values, but it may have multiple NULL values! */
 
 	 base:1,
 	 ref:1,		/* used to indicate an other expression may reference this one */
-	 used:1,	/* used for quick dead code removal */
-	 symmetric:1; /* compare between symmetric */
+	 used:1;	/* used for quick dead code removal */
 	sql_subtype	tpe;
 	void *p;	/* properties for the optimizer */
 } sql_exp;
@@ -74,11 +67,11 @@ typedef struct expression {
 
 /* or-ed with the above TABLE_PROD_FUNC */
 #define UPD_COMP		2
+#define UPD_LOCKED		4
+#define UPD_NO_CONSTRAINT	8
 
 #define LEFT_JOIN		4
 #define REL_PARTITION		8
-#define MERGE_LEFT		16 /* used by merge statements */
-#define OUTER_ZERO		32
 
 /* We need bit wise exclusive numbers as we merge the level also in the flag */
 #define PSM_SET 1
@@ -164,8 +157,7 @@ typedef enum operator_type {
 	op_insert,	/* insert(l=table, r insert expressions) */
 	op_update,	/* update(l=table, r update expressions) */
 	op_delete,	/* delete(l=table, r delete expression) */
-	op_truncate, /* truncate(l=table) */
-	op_merge
+	op_truncate /* truncate(l=table) */
 } operator_type;
 
 #define is_atom(et) 		(et == e_atom)
@@ -188,7 +180,6 @@ typedef enum operator_type {
 #define is_left(op) 		(op == op_left)
 #define is_right(op) 		(op == op_right)
 #define is_full(op) 		(op == op_full)
-#define is_innerjoin(op)	(op == op_join)
 #define is_join(op) 		(op == op_join || is_outerjoin(op))
 #define is_semi(op) 		(op == op_semi || op == op_anti)
 #define is_joinop(op) 		(is_join(op) || is_semi(op))
@@ -200,14 +191,14 @@ typedef enum operator_type {
 #define is_simple_project(op) 	(op == op_project)
 #define is_project(op) 		(op == op_project || op == op_groupby || is_set(op))
 #define is_groupby(op) 		(op == op_groupby)
+#define is_sort(rel) 		(((rel)->op == op_project && (rel)->r) || (rel)->op == op_topn)
 #define is_topn(op) 		(op == op_topn)
-#define is_modify(op) 	 	(op == op_insert || op == op_update || op == op_delete || op == op_truncate || op == op_merge)
+#define is_modify(op) 	 	(op == op_insert || op == op_update || op == op_delete || op == op_truncate)
 #define is_sample(op) 		(op == op_sample)
 #define is_insert(op) 		(op == op_insert)
 #define is_update(op) 		(op == op_update)
 #define is_delete(op) 		(op == op_delete)
 #define is_truncate(op) 	(op == op_truncate)
-#define is_merge(op) 		(op == op_merge)
 
 /* ZERO on empty sets, needed for sum (of counts)). */
 #define zero_if_empty(e) 	((e)->zero_if_empty)
@@ -230,15 +221,10 @@ typedef enum operator_type {
 #define set_nulls_first(e) 	((e)->nulls_last=0)
 #define set_direction(e, dir) 	((e)->ascending = (dir&1), (e)->nulls_last = (dir&2)?1:0)
 
-#define is_unique(e)		((e)->unique)
-#define set_unique(e)		(e)->unique = 1
-#define set_not_unique(e)	(e)->unique = 0
-#define is_anti(e) 			((e)->anti)
+#define is_anti(e) 		((e)->anti)
 #define set_anti(e)  		(e)->anti = 1
 #define is_semantics(e) 	((e)->semantics)
 #define set_semantics(e) 	(e)->semantics = 1
-#define is_symmetric(e) 	((e)->symmetric)
-#define set_symmetric(e) 	(e)->symmetric = 1
 #define is_intern(e) 		((e)->intern)
 #define set_intern(e) 		(e)->intern = 1
 #define is_basecol(e) 		((e)->base)
@@ -248,12 +234,15 @@ typedef enum operator_type {
 
 /* used for expressions and relations */
 #define need_distinct(er) 	((er)->distinct)
-#define set_distinct(er) 	(er)->distinct = 1
-#define set_nodistinct(er)	(er)->distinct = 0
+#define set_distinct(er) 	(er)->distinct = 1;
+#define set_nodistinct(er)	(er)->distinct = 0;
 
 #define is_processed(rel) 	((rel)->processed)
 #define set_processed(rel) 	(rel)->processed = 1
 #define reset_processed(rel) 	(rel)->processed = 0
+#define is_subquery(rel) 	((rel)->subquery)
+#define set_subquery(rel) 	(rel)->subquery = 1
+#define reset_subquery(rel) 	(rel)->subquery = 0
 #define is_dependent(rel) 	((rel)->dependent)
 #define set_dependent(rel) 	(rel)->dependent = 1
 #define reset_dependent(rel) 	(rel)->dependent = 0
@@ -277,13 +266,6 @@ typedef struct relation {
 	void *l;
 	void *r;
 	list *exps;
-	list *attr; /* attributes: mark-joins return extra attributes */
-				/* later put all 'projection' attributes in here, ie for set ops, project/group/table/basetable by
-				 * select/ (semi/anti/left/outer/right)join will use exps for predicates
-				 * groupby will use exps for group by exps
-				 * project can use exps for the order by bits
-				 * topn/sample use exps for the input arguments of the limit/sample
-				 */
 	int nrcols;	/* nr of cols */
 	unsigned int
 	 flag:16,
@@ -293,12 +275,9 @@ typedef struct relation {
 	 processed:1,   /* fully processed or still in the process of building */
 	 outer:1,	/* used as outer (ungrouped) */
 	 grouped:1,	/* groupby processed all the group by exps */
-	 single:1;
-	/*
-	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice
-	 * The list is kept at rel_optimizer_private.h Please update it accordingly
-	 */
-	uint8_t used;
+	 single:1,
+	 subquery:1,	/* is this part a subquery, this is needed for proper name binding */
+	 used:1;	/* used by rewrite_fix_count at rel_unnest, so a relation is not modified twice */
 	void *p;	/* properties for the optimizer, distribution */
 } sql_rel;
 

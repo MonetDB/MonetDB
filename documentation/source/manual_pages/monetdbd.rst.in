@@ -20,17 +20,17 @@ DESCRIPTION
 meant to be used as daemon, but it also allows to setup and change the
 configuration of a dbfarm. The use of *monetdbd* is either as
 user-oriented way to configure, start and stop a database farm, or to be
-started from a startup script, such as from *systemd*\ (1) on Linux
-systems, as part of a system startup.
+started from a startup script, such as from */etc/init.d/* on Linux
+systems or *smf*\ (5) on Solaris systems, as part of a system startup.
 
 *Monetdbd* is the system formerly known as *merovingian*. It was renamed
 to *monetdbd* since the name *merovingian* proved to be confusing to
 most regular end-users. Internally, *monetdbd* uses the name
 *merovingian* at many places for historical reasons.
 
-A *monetdbd* instance manages one local cluster of databases, which is a
-directory in the system, referred to as the *dbfarm*. The dbfarm
-location must always be given as argument to *monetdbd*.
+A *monetdbd* instance manages one local cluster based, which is a
+directory in the system, referred to as the *dbfarm*. Nowadays, the
+dbfarm location always has to be given as argument to *monetdbd*.
 
 Within its local cluster *monetdbd* takes care of starting up databases
 when necessary, and stopping them either upon request via *monetdb*\ (1)
@@ -57,7 +57,7 @@ The commands for *monetdbd* are **create**, **start**, **stop**,
 initializing a dbfarm, starting and stopping the MonetDB Database
 Server, and retrieving or setting options.
 
-**create** *dbfarm*
+**create dbfarm**
    Initializes a new database farm, such that a MonetDB Database Server
    can be started on that location. All necessary directories are
    attempted to be created, and an initial properties file is created in
@@ -72,13 +72,7 @@ Server, and retrieving or setting options.
 
 **stop** *dbfarm*
    Sends a stop signal to the *monetdbd* process responsible for the
-   given dbfarm. If the **exittimeout** value is non-zero (see below),
-   all mserver processes will be sent a termination signal. The current
-   process will wait for the manager process to terminate, but sends a
-   SIGKILL signal if waiting takes longer than 5 seconds more than the
-   value of exittimeout. If exittimeout is negative, both monetdbd
-   processes involved will wait until the servers have all terminated
-   and no extra signals are sent.
+   given dbfarm.
 
 **get** <**all** \| *property*\ [,\ *property*\ [,..]]> *dbfarm*
    Prints the requested properties, or all known properties, for the
@@ -124,33 +118,15 @@ using the **set** command. The following properties can be set:
    This property specifies which TCP port *monetdbd* should listen to
    for connection requests. Defaults to 50000.
 
+**ipv6**
+   This property forces *monetdbd* to bind connections on IPv6 addresses
+   only. Defaults to false.
+
 **listenaddr**
    This property specifies an address that is allowed to connect to the
-   server. This property is ignored if the property **forward** is set
-   to **proxy** (the default). The following possibilities exist:
-
-   **localhost**
-      The server only listens on the IPv4 and IPv6 loopback interface
-      (if available). This is the default.
-
-   **127.0.0.1**
-      The server only listens on the IPv4 loopback interface.
-
-   **::1**
-      The server only listens on the IPv6 loopback interface.
-
-   **all**
-      The server listens on all available IPv4 and IPv6 interfaces.
-
-   **0.0.0.0**
-      The server listens on all available IPv4 interfaces.
-
-   **::**
-      The server listens on all available IPv6 interfaces.
-
-   *hostname*
-      The server listens on the interface designated by *hostname* which
-      is looked up using the normal hostname lookup facilities.
+   server. The user can specify one IP(v6) address, or use the 0.0.0.0
+   notation to allow connections from everywhere. Defaults to localhost
+   (127.0.0.1).
 
 **control**
    For remote management of *monetdbd*, the **control** property
@@ -165,23 +141,8 @@ using the **set** command. The following properties can be set:
    either given as hashed value prefixed by the hash type in curly
    braces (e.g. {SHA512}xxx...) or as plain text value which will be
    hashed automatically. Note that the only hash accepted is the one
-   specified at configure time, which is @PASSWORD_BACKEND@. Changing
+   specified at configure time, which is @MONETDB5_PASSWDHASH@. Changing
    this property takes effect immediately at runtime.
-
-**snapshotdir**
-   This property specifies where the *monetdb snapshot create* command
-   stores its snapshots. There is no default value. If unset, no
-   snapshots can be created.
-
-**snapshotcompression**
-   This property specifies whether database snapshots created by
-   *monetdb snapshot create* are compressed, and if so, using which
-   algorithm. The default value is *.tar.lz4* if LZ4 compression is
-   available, or *.tar* otherwise. Other supported values are, if
-   available, *.tar.gz*, *.tar.xz*, and *.tar.bz2*. These more efficient
-   but much slower compression algorithms are usually not recommended
-   for backups of large databases because it would take enormous amounts
-   of time.
 
 **discovery**
    Specifies whether neighbor discovery is to be enabled using UDP
@@ -200,21 +161,17 @@ using the **set** command. The following properties can be set:
    reachable databases.
 
 **exittimeout**
-   If *monetdbd* stops a running mserver, for example in response to a
-   *monetdb stop* command or when *monetdbd* itself is shutting down, it
-   first sends the mserver a SIGTERM signal to trigger a graceful
-   shutdown. If that takes more than **exittimeout** seconds, SIGKILL is
-   sent as a last resort. This may cause (partial) data loss in that
-   transactions may not be able to complete (all completed transactions,
-   whether reported back or not, should be save). A negative time-out
-   value value means the second signal (SIGKILL) will not be sent, but
-   instead all mserver processes will be waited for. A time-out value of
-   0 means no mservers will be shut down, and hence they will continue
-   to run after *monetdbd* has shut down. Note that this particular
-   configuration is extremely inconvenient. The default time-out is 60
-   seconds. If your databases are rather large and you find your
-   databases consistently being killed by *monetdbd* upon shutdown, you
-   may want to increase this time-out. Changing this property takes
+   mservers that were started by the MonetDB Database Server are shut
+   down when *monetdbd* is shut down. Setting the **exittimeout**
+   property to a positive non-zero value will shut down each running
+   mserver with the given time-out in seconds. If the time-out expires,
+   the mserver process is killed using the SIGKILL signal. A time-out
+   value of 0 means no mservers will be shut down, and hence they will
+   continue to run after *monetdbd* has shut down. Note that this
+   particular configuration is extremely inconvenient. The default
+   time-out is 60 seconds. If your databases are rather large and find
+   your databases consistently being killed by *monetdbd* upon shutdown,
+   you may want to increase this time-out. Changing this property takes
    effect immediately at runtime.
 
 **forward**
@@ -239,9 +196,6 @@ using the **set** command. The following properties can be set:
 
 REMOTE DATABASES
 ================
-
-**Deprecation notice:** This feature is deprecated and may be removed in
-the future.
 
 The neighbor discovery capabilities of *monetdbd* allow a user to
 contact a remote database transparently, as if it were a local database.
@@ -271,51 +225,47 @@ instance the following three databases with their tag:
 
    dbX/master/tableQ
 
-..
+      dbY/slave/tableQ
 
-   dbY/slave/tableQ
+         dbZ/slave/tableQ
 
-   dbZ/slave/tableQ
+         A default match has implicit \`/*' added to the search, making
+         more generic search strings match more specific ones. Hence, a
+         connect with database *dbX* is the same as *dbX/\** and hence
+         matches *dbX/master/tableQ*. Similar, a database connect for
+         *\*/master* matches the same database as before. Note that the
+         implicit \`/*' is not added if that would cause no matches,
+         such as for *\*/master/tableQ* which would return all masters
+         for *tableQ*, which in our hypothetical example is only *dbX*.
+         In contrast, a database connect for *\*/slave/tableQ* matches
+         with either *dbY* or *dbZ*. *Monetdbd* returns the two options
+         to the client in a round-robin fashion, such that subsequent
+         connects for the same pattern result in a load-balanced connect
+         to either of both databases.
 
-A default match has implicit \`/*' added to the search, making more
-generic search strings match more specific ones. Hence, a connect with
-database *dbX* is the same as *dbX/\** and hence matches
-*dbX/master/tableQ*. Similar, a database connect for *\*/master* matches
-the same database as before. Note that the implicit \`/*' is not added
-if that would cause no matches, such as for *\*/master/tableQ* which
-would return all masters for *tableQ*, which in our hypothetical example
-is only *dbX*. In contrast, a database connect for *\*/slave/tableQ*
-matches with either *dbY* or *dbZ*. *Monetdbd* returns the two options
-to the client in a round-robin fashion, such that subsequent connects
-for the same pattern result in a load-balanced connect to either of both
-databases.
+         With tags in use, one can possibly make distinction between
+         databases, if setup like that. The previous example could hence
+         also be setup like this:
 
-With tags in use, one can possibly make distinction between databases,
-if setup like that. The previous example could hence also be setup like
-this:
+            tableQ/master
 
-   tableQ/master
+               tableQ/slave
 
-..
+                  tableQ/slave
 
-   tableQ/slave
-
-   tableQ/slave
-
-Connecting to *tableQ/slave* would now return either of both databases
-even though they are not unique (apart from the host they are located
-on, which is not shown in the example). While being confusing for
-humans, for *monetdbd* it is the same situation as in the previous
-example. However, because globbing allows to make things easier to
-understand, tags for both slaves could be changed to *slaveX* or
-*slave/X* and use the necessary pattern to match them. It is up to the
-user to decide how to use the tags.
+                  Connecting to *tableQ/slave* would now return either
+                  of both databases even though they are not unique
+                  (apart from the host they are located on, which is not
+                  shown in the example). While being confusing for
+                  humans, for *monetdbd* it is the same situation as in
+                  the previous example. However, because globbing allows
+                  to make things easier to understand, tags for both
+                  slaves could be changed to *slaveX* or *slave/X* and
+                  use the necessary pattern to match them. It is up to
+                  the user to decide how to use the tags.
 
 MULTIPLEX-FUNNELS
 =================
-
-**Deprecation notice:** This feature is deprecated and may be removed in
-the future.
 
 *Monetdbd* implements multiplex-funnel capabilities. As the name
 suggests two techniques are combined, the multiplexer and the funnel.

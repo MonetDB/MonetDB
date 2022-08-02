@@ -1,0 +1,22 @@
+stderr of test 'odbcsample1` in directory 'sql/odbc/samples` itself:
+
+
+# 14:55:34 >  
+# 14:55:34 >  Mtimeout -timeout 180 Mserver "--config=/ufs/sjoerd/Monet/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/build-sql/src/backends/monet4/.libs:/ufs/sjoerd/Monet/lib/MonetDB" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/build-sql/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/build-sql/log" --set mapi_port=41642 --set sql_port=50684 --set monet_prompt= --trace "--dbname=mTests_src_odbc_samples" "/ufs/sjoerd/src/MonetDB/build-sql/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 14:55:34 >  
+
+
+# 14:55:35 >  
+# 14:55:35 >  Mtimeout -timeout 60 ./odbcsample1.SQL odbcsample1 
+# 14:55:35 >  
+
+
+# 14:55:35 >  
+# 14:55:35 >  odbcsample1
+# 14:55:35 >  
+
+
+# 14:55:56 >  
+# 14:55:56 >  Done.
+# 14:55:56 >  
+

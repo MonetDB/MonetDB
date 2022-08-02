@@ -1,0 +1,16 @@
+# Check proper termination of scope of variables
+# that seem to end within a block
+function getz(p:int):bat[:int];
+    x := bat.new(:int);
+	z := bat.new(:int);
+	V30 := bat.new(:int);
+barrier V12 := true;
+    V13 := algebra.union(x,z);
+	V30:=V13;
+exit V12;
+    return V31 := V30;
+end getz;
+optimizer.aliases("user","getz");
+mdb.List("user","getz");
+optimizer.garbageCollector("user","getz");
+mdb.List("user","getz");

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -19,8 +19,11 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 {
 	int i;
 	InstrPtr p;
+	char  buf[256];
+	lng usec = GDKusec();
 	str msg= MAL_SUCCEED;
 
+	(void) pci;
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 	for (i = 0; i < mb->stop; i++) {
@@ -40,7 +43,7 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		else if( getModuleId(p) == algebraRef ){
 			if(getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef)
 				setVarCList(mb,getArg(p,0));
-			else if(getFunctionId(p) == likeselectRef)
+			else if(getFunctionId(p) == likeselectRef || getFunctionId(p) == likethetaselectRef)
 				setVarCList(mb,getArg(p,0));
 			else if(getFunctionId(p) == intersectRef || getFunctionId(p) == differenceRef )
 				setVarCList(mb,getArg(p,0));
@@ -65,7 +68,7 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 		else if (getModuleId(p) == groupRef && p->retc > 1) {
 			if (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef ||
-				getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef)
+			    getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef)
 				setVarCList(mb, getArg(p, 1));
 		} else if (getModuleId(p) == batRef) {
 			if (getFunctionId(p) == mergecandRef ||
@@ -76,14 +79,17 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 	}
 
-	/* Defense line against incorrect plans */
+    /* Defense line against incorrect plans */
 	/* plan remains unaffected */
 	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	// if( ms== MAL_SUCCEED)
 	//	msg = chkFlow(mb);
 	// if( ms== MAL_SUCCEED)
 	// 	msg = chkDeclarations(mb);
-	/* keep actions taken as a fake argument*/
-	(void) pushInt(mb, pci, 1);
+	/* keep all actions taken as a post block comment */
+	usec = GDKusec()- usec;
+	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","candidates",usec);
+	newComment(mb,buf);
+	addtoMalBlkHistory(mb);
 	return msg;
 }

@@ -3,33 +3,44 @@
 # Assess that a user can change its own password.
 ###
 
-from MonetDBtesting.sqltest import SQLTestCase
-import logging
+import os, sys
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
-logging.basicConfig(level=logging.FATAL)
+def sql_test_client(user, passwd, input):
+    with process.client(lang="sql", user=user, passwd=passwd, communicate=True,
+                        stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE,
+                        input=input, port=int(os.getenv("MAPIPORT"))) as c:
+        c.communicate()
 
-with SQLTestCase() as tc:
-    tc.connect(username="monetdb", password="monetdb")
-    tc.execute("CREATE USER april WITH PASSWORD 'april' NAME 'april' SCHEMA sys;").assertSucceeded()
-    tc.connect(username="april", password="april")
-    tc.execute("select current_user, 'password is \"april\"';").assertSucceeded()\
-            .assertDataResultMatch([("april", "password is \"april\"",)])
+sql_test_client('monetdb', 'monetdb', input="""\
+ALTER USER april  WITH UNENCRYPTED PASSWORD 'april2';
+""")
 
-    tc.connect(username="monetdb", password="monetdb")
-    tc.execute("ALTER USER april WITH UNENCRYPTED PASSWORD 'april2';").assertSucceeded()
-    tc.connect(username="april", password="april")
-    tc.execute("select 'password incorrect april';").assertFailed(err_code=None, err_message="InvalidCredentialsException:checkCredentials:invalid credentials for user 'april'")
-    tc.connect(username="april", password="april2")
-    tc.execute("select 'password correct april2';").assertSucceeded()\
-            .assertDataResultMatch([("password correct april2",)])
-    # april tries to change its password with an incorrect old password
-    tc.execute("ALTER USER SET UNENCRYPTED PASSWORD 'april5' USING OLD PASSWORD 'april3';")\
-            .assertFailed(err_code="M0M27", err_message='42000!changeUserPassword: password mismatch')
-    tc.execute("ALTER USER SET UNENCRYPTED PASSWORD 'april' USING OLD PASSWORD 'april2';").assertSucceeded()
-    tc.connect(username="april", password="april2")
-    tc.execute("select 'password april2 (wrong!!!)';").assertFailed()
-    tc.connect(username="april", password="april")
-    tc.execute("select 'password change successfully';").assertSucceeded().assertDataResultMatch([("password change successfully",)])
+# try to log in with old password
+sql_test_client('april', 'april', input="""\
+select 'password april';
+""")
 
-    tc.connect(username="monetdb", password="monetdb")
-    tc.execute("DROP USER april;").assertSucceeded()
+# try to log in with new password
+sql_test_client('april', 'april2', input="""\
+select 'password april2';
+ALTER USER SET UNENCRYPTED PASSWORD 'april5' USING OLD PASSWORD 'april3';
+ALTER USER SET UNENCRYPTED PASSWORD 'april' USING OLD PASSWORD 'april2';
+""")
+
+# try to log in with old password
+sql_test_client('april', 'april2', input="""\
+select 'password april2 (wrong!!!)';
+""")
+
+
+# try to log in with the new password
+sql_test_client('april', 'april', input="""\
+select 'password change successfully';
+""")
+
+
+

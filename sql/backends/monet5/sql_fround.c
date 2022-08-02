@@ -3,11 +3,23 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "sql.h"
+#include "sql_result.h"
+#include "sql_gencode.h"
+#include "sql_storage.h"
+#include "sql_scenario.h"
+#include "store_sequence.h"
+#include "sql_datetime.h"
+#include "rel_optimizer.h"
+#include "rel_distribute.h"
+#include "rel_select.h"
+#include "rel_exp.h"
+#include "rel_dump.h"
+#include "clients.h"
 #include "mal_instruction.h"
 
 #define CONCAT_2(a, b)		a##b
@@ -21,36 +33,6 @@
 #define FUN(a, b)		CONCAT_3(a, _, b)
 
 #define STRING(a)		#a
-
-static void
-finalize_ouput_copy_sorted_property(bat *res, BAT *bn, str msg, bool nils, BUN q, bool istsorted, bool istrevsorted)
-{
-	if (bn && !msg) {
-		BATsetcount(bn, q);
-		bn->tnil = nils;
-		bn->tnonil = !nils;
-		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = istsorted || BATcount(bn) <= 1;
-		bn->trevsorted = istrevsorted || BATcount(bn) <= 1;
-		*res = bn->batCacheid;
-		BBPkeepref(bn);
-	} else if (bn)
-		BBPreclaim(bn);
-}
-
-static void
-unfix_inputs(int nargs, ...)
-{
-	va_list valist;
-
-	va_start(valist, nargs);
-	for (int i = 0; i < nargs; i++) {
-		BAT *b = va_arg(valist, BAT *);
-		if (b)
-			BBPunfix(b->batCacheid);
-	}
-	va_end(valist);
-}
 
 #define TYPE flt
 #include "sql_fround_impl.h"

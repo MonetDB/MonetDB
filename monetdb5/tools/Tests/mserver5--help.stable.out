@@ -1,0 +1,17 @@
+stdout of test 'mserver5--help` in directory 'monetdb5/tools` itself:
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 300 ./mserver5--help mserver5--help 
+# 16:36:12 >  
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 60 mserver5 --config= --help
+# 16:36:12 >  
+
+
+# 10:03:11 >  
+# 10:03:11 >  Done.
+# 10:03:11 >  
+

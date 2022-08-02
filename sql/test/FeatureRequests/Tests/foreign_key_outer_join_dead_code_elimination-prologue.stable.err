@@ -1,0 +1,34 @@
+stderr of test 'foreign_key_outer_join_dead_code_elimination-prologue` in directory 'sql/test/FeatureRequests` itself:
+
+
+# 14:51:33 >  
+# 14:51:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34071" "--set" "mapi_usock=/var/tmp/mtest-8963/.s.monetdb.34071" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/manegold/_/Monet/release/prefix/_/var/MonetDB/mTests_sql_test_FeatureRequests"
+# 14:51:33 >  
+
+# builtin opt 	gdk_dbpath = /ufs/manegold/_/Monet/release/prefix/_/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 34071
+# cmdline opt 	mapi_usock = /var/tmp/mtest-8963/.s.monetdb.34071
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /ufs/manegold/_/Monet/release/prefix/_/var/MonetDB/mTests_sql_test_FeatureRequests
+# cmdline opt 	gdk_debug = 536870922
+
+# 14:51:34 >  
+# 14:51:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8963" "--port=34071"
+# 14:51:34 >  
+
+
+# 14:51:34 >  
+# 14:51:34 >  "Done."
+# 14:51:34 >  
+

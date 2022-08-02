@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+
+# NOTE: if you happen to have bootstrap failures due to missing M4
+# macros, export M4DIRS as a space separated list of directories where
+# aclocal should look in your environment.
+
+PYTHONPATH=${PWD:-$(pwd)}/buildtools/autogen${PYTHONPATH:+:$PYTHONPATH}
+export PYTHONPATH
+
+# cope with systems where libtool is not GNU libtool, e.g. Darwin
+if type -P glibtoolize > /dev/null; then
+    libtoolize=glibtoolize
+else
+    libtoolize=libtoolize
+fi
+
+# cope with systems where aclocal is known as aclocal-1.10 (and
+# automake as automake-1.10), e.g. OpenIndiana
+amv=
+if ! type -P aclocal > /dev/null; then
+    if type -P aclocal-1.11 > /dev/null; then
+	amv=-1.11
+    elif type -P aclocal-1.10 > /dev/null; then
+	amv=-1.10
+    fi
+fi
+
+_m4_extra_dirs=
+if [[ -n ${M4DIRS} ]] ; then
+	for d in ${M4DIRS} ; do
+		case ${d} in
+			"-I")  d=          ;;
+			"-I"*) d=${d#-I}   ;;
+		esac
+		[[ -n ${d} ]] && _m4_extra_dirs="${_m4_extra_dirs} -I ${d}"
+	done
+fi
+
+python buildtools/autogen/autogen.py || exit $?
+(
+# replace the line starting with AC_CONFIG_FILES in configure.ag with
+# the command to substitute the configure results into the .in files,
+# making sure executable files remain executable.
+sed -n '/^AC_CONFIG_FILES/s/.*/AC_CONFIG_FILES([/;1,/^AC_CONFIG_FILES/p' configure.ag || exit $?
+while read f; do
+    [ -x $f.in ] || echo $f
+done < acout.in
+echo '])'
+while read f; do
+    [ -x $f.in ] && echo "AC_CONFIG_FILES([$f], [chmod +x $f])"
+done < acout.in
+sed '1,/^AC_CONFIG_FILES/d' configure.ag
+) > configure.ac || exit $?
+$libtoolize -c -f  || exit $?
+aclocal$amv ${_m4_extra_dirs} || exit $?
+autoheader  || exit $?
+automake$amv --add-missing --copy --foreign  || exit $?
+autoconf || exit $?
+# a bit hacky: add dependency on monetdb_hgversion.h for common/utils/revision.c
+sed -i~ '/revision.*:/s;$; ../../monetdb_hgversion.h;' common/utils/Makefile.am
+if [ -f buildtools/conf/install-sh -a ! -x buildtools/conf/install-sh ]; then
+    chmod +x buildtools/conf/install-sh
+fi

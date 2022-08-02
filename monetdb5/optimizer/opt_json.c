@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -24,8 +24,11 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr p,q;
 	int actions = 0;
 	InstrPtr *old;
+	char buf[256];
+	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
+	(void) pci;
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 	old= mb->stmt;
@@ -49,7 +52,7 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			q = newInstruction(0, NULL, NULL);
 			q->barrier = RETURNsymbol;
 			getArg(q,0)= getArg(p,0);
-			q = addArgument(mb,q,j);
+			addArgument(mb,q,j);
 			pushInstruction(mb,q);
 			actions++;
 			continue;
@@ -70,17 +73,21 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	for(; i<slimit; i++)
 		if (old[i])
-			pushInstruction(mb, old[i]);
+			freeInstruction(old[i]);
 	GDKfree(old);
-	/* Defense line against incorrect plans */
-	if( actions > 0){
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
-		if (!msg)
-			msg = chkFlow(mb);
-		if (!msg)
-			msg = chkDeclarations(mb);
-	}
-	/* keep actions taken as a fake argument*/
-	(void) pushInt(mb, pci, actions);
+    /* Defense line against incorrect plans */
+    if( actions > 0){
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
+    }
+    /* keep all actions taken as a post block comment */
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","json",actions, usec);
+    newComment(mb,buf);
+	if( actions > 0)
+		addtoMalBlkHistory(mb);
 	return msg;
 }

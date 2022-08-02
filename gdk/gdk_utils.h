@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _GDK_UTILS_H_
@@ -98,11 +98,10 @@ gdk_export str GDKstrdup(const char *s)
 gdk_export str GDKstrndup(const char *s, size_t n)
 	__attribute__((__malloc__))
 	__attribute__((__warn_unused_result__));
-gdk_export size_t GDKmallocated(const void *s);
 
 gdk_export void MT_init(void);	/*  init the package. */
 struct opt;
-gdk_export gdk_return GDKinit(struct opt *set, int setlen, bool embedded);
+gdk_export gdk_return GDKinit(struct opt *set, int setlen);
 
 /* used for testing only */
 gdk_export void GDKsetmallocsuccesscount(lng count);
@@ -112,16 +111,16 @@ gdk_export void GDKsetmallocsuccesscount(lng count);
  * the transient BATs should be removed.  The buffer pool manager
  * takes care of this.
  */
+#ifndef HAVE_EMBEDDED
+gdk_export _Noreturn void GDKexit(int status);
+#else
 gdk_export void GDKexit(int status);
+#endif
 gdk_export bool GDKexiting(void);
 
 gdk_export void GDKprepareExit(void);
 gdk_export void GDKreset(int status);
-/* global version number */
 gdk_export const char *GDKversion(void)
-	__attribute__((__const__));
-/* ABI version of GDK library */
-gdk_export const char *GDKlibversion(void)
 	__attribute__((__const__));
 
 // these are used in embedded mode to jump out of GDKfatal
@@ -138,7 +137,7 @@ gdk_export lng GDKusec(void);
 gdk_export int GDKms(void);
 
 
-#if !defined(NDEBUG) && !defined(__COVERITY__)
+#if !defined(NDEBUG) && !defined(STATIC_CODE_ANALYSIS)
 /* In debugging mode, replace GDKmalloc and other functions with a
  * version that optionally prints calling information.
  *
@@ -181,13 +180,13 @@ gdk_export int GDKms(void);
 			TRC_DEBUG(ALLOC, "GDKfree(%p)\n", _ptr);	\
 		GDKfree(_ptr);						\
 	})
-#define GDKstrdup(s)						\
-	({							\
-		const char *_str = (s);				\
-		void *_res = GDKstrdup(_str);			\
-		TRC_DEBUG(ALLOC, "GDKstrdup(len=%zu) -> %p\n",	\
-			  _str ? strlen(_str) : 0, _res);	\
-		_res;						\
+#define GDKstrdup(s)							\
+	({								\
+		const char *_str = (s);					\
+		void *_res = GDKstrdup(_str);				\
+		TRC_DEBUG(ALLOC, "GDKstrdup(len=%zu) -> %p\n",		\
+			  _str ? strlen(_str) : 0, _res);		\
+		_res;							\
 	})
 #define GDKstrndup(s, n)					\
 	({							\

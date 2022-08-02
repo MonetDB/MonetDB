@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -17,7 +17,7 @@
  * The call optimizer.multiplex(MOD,FCN,A1,...An) introduces the following code
  * structure:
  *
- * 	resB:= bat.new(restype, A1);
+ * 	resB:= bat.new(A1);
  * barrier (h,t1):= iterator.new(A1);
  * 	t2:= algebra.fetch(A2,h)
  * 	...
@@ -35,12 +35,14 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i = 2, iter = 0;
 	int hvar, tvar;
-	const char *mod, *fcn;
+	str mod, fcn;
 	int *alias, *resB;
 	InstrPtr q;
 	int tt;
 	int bat = (getModuleId(pci) == batmalRef) ;
 
+	//if ( optimizerIsApplied(mb,"multiplex"))
+		//return 0;
 	(void) cntxt;
 	(void) stk;
 	for (i = 0; i < pci->retc; i++) {
@@ -50,10 +52,10 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (isAnyExpression(getArgType(mb, pci, i)))
 			throw(MAL, "optimizer.multiplex", SQLSTATE(HY002) "Target type is missing");
 	}
-	int plus_one = getArgType(mb, pci, pci->retc) == TYPE_lng ? 1 : 0;
-	mod = VALget(&getVar(mb, getArg(pci, pci->retc + plus_one))->value);
+
+	mod = VALget(&getVar(mb, getArg(pci, pci->retc))->value);
 	mod = putName(mod);
-	fcn = VALget(&getVar(mb, getArg(pci, pci->retc+1 + plus_one))->value);
+	fcn = VALget(&getVar(mb, getArg(pci, pci->retc+1))->value);
 	fcn = putName(fcn);
 	if(mod == NULL || fcn == NULL)
 		throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -66,12 +68,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 #endif
 
-	if (plus_one) {
-		q = newFcnCallArgs(mb, batRef, putName("densebat"), 2);
-		q = pushArgument(mb, q, getArg(pci, pci->retc));
-		iter = getArg(q,0);
-	}
-	else /* search the iterator bat */
+	/* search the iterator bat */
 	for (i = pci->retc+2; i < pci->argc; i++)
 		if (isaBatType(getArgType(mb, pci, i))) {
 			iter = getArg(pci, i);
@@ -96,15 +93,13 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* resB := new(refBat) */
 	for (i = 0; i < pci->retc; i++) {
-		q = newFcnCallArgs(mb, batRef, newRef, 3);
+		q = newFcnCall(mb, batRef, newRef);
 		resB[i] = getArg(q, 0);
 
 		tt = getBatType(getArgType(mb, pci, i));
 
 		setVarType(mb, getArg(q, 0), newBatType(tt));
 		q = pushType(mb, q, tt);
-		q = pushArgument(mb, q, iter);
-		assert(q->argc==3);
 	}
 
 	/* barrier (h,r) := iterator.new(refBat); */
@@ -117,7 +112,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pushArgument(mb,q,iter);
 
 	/* $1:= algebra.fetch(Ai,h) or constant */
-	for (i = pci->retc+2+plus_one; i < pci->argc; i++) {
+	for (i = pci->retc+2; i < pci->argc; i++) {
 		if (getArg(pci, i) != iter && isaBatType(getArgType(mb, pci, i))) {
 			q = newFcnCall(mb, algebraRef, "fetch");
 			alias[i] = newTmpVariable(mb, getBatType(getArgType(mb, pci, i)));
@@ -128,7 +123,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	/* cr:= mod.CMD($1,...,$n); */
-	q = newFcnCallArgs(mb, mod, fcn, pci->argc - 2 - plus_one);
+	q = newFcnCall(mb, mod, fcn);
 	for (i = 0; i < pci->retc; i++) {
 		int nvar = 0;
 		if (bat) {
@@ -143,7 +138,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			getArg(q, 0) = nvar;
 	}
 
-	for (i = pci->retc+2+plus_one; i < pci->argc; i++) {
+	for (i = pci->retc+2; i < pci->argc; i++) {
 		if (getArg(pci, i) == iter) {
 			q = pushArgument(mb, q, tvar);
 		} else if (isaBatType(getArgType(mb, pci, i))) {
@@ -190,6 +185,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
 {
+	//MalBlkPtr mb= cntxt->curprg->def;
 	int i, doit=0;
 	InstrPtr p;
 	str msg = MAL_SUCCEED;
@@ -220,17 +216,11 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	InstrPtr *old = 0, p;
 	int i, limit, slimit, actions= 0;
 	str msg= MAL_SUCCEED;
+	char buf[256];
+	lng usec = GDKusec();
 
 	(void) stk;
-	for (i = 0; i < mb->stop; i++) {
-		p = getInstrPtr(mb,i);
-		if (isMultiplex(p)) {
-			break;
-		}
-	}
-	if( i == mb->stop){
-		goto wrapup;
-	}
+	(void) pci;
 
 	old = mb->stmt;
 	limit = mb->stop;
@@ -263,20 +253,22 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	}
 	for(;i<slimit; i++)
 		if( old[i])
-			pushInstruction(mb, old[i]);
+			freeInstruction(old[i]);
 	GDKfree(old);
 
-	/* Defense line against incorrect plans */
-	if( msg == MAL_SUCCEED && actions > 0){
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
-		if (!msg)
-			msg = chkFlow(mb);
-		if (!msg)
-			msg = chkDeclarations(mb);
-	}
-wrapup:
-	/* keep actions taken as a fake argument*/
-	(void) pushInt(mb, pci, actions);
-
+    /* Defense line against incorrect plans */
+    if( msg == MAL_SUCCEED && actions > 0){
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
+    }
+    /* keep all actions taken as a post block comment */
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","multiplex",actions, usec);
+    newComment(mb,buf);
+	if( actions > 0)
+		addtoMalBlkHistory(mb);
 	return msg;
 }

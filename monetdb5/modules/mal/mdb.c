@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -37,20 +37,7 @@
  */
 
 #include "monetdb_config.h"
-#include "gdk.h"
-#include "mutils.h"
-#include <time.h>
-#include <sys/types.h>
-#ifdef HAVE_DIRENT_H
-#include <dirent.h>
-#endif
-#include "mal_resolve.h"
-#include "mal_linker.h"
-#include "mal_client.h"
-#include "mal_exception.h"
-#include "mal_debugger.h"
-#include "mal_interpreter.h"
-#include "mal_namespace.h"
+#include "mdb.h"
 #include "mal_authorize.h"
 #include "mal_function.h"
 
@@ -64,16 +51,16 @@ static int
 pseudo(bat *ret, BAT *b, const char *X1, const char *X2, const char *X3) {
 	char buf[BUFSIZ];
 	snprintf(buf,BUFSIZ,"%s_%s_%s", X1,X2,X3);
-	if (BBPindex(buf) <= 0 && BBPrename(b, buf) != 0)
+	if (BBPindex(buf) <= 0 && BBPrename(b->batCacheid, buf) != 0)
 		return -1;
 	if (BATroles(b,X2) != GDK_SUCCEED)
 		return -1;
 	*ret = b->batCacheid;
-	BBPkeepref(b);
+	BBPkeepref(*ret);
 	return 0;
 }
 
-static str
+str
 MDBstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	Client c;
@@ -98,7 +85,7 @@ MDBstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MDBstartFactory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) cntxt;
@@ -108,7 +95,7 @@ MDBstartFactory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		throw(MAL, "mdb.start", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
-static str
+str
 MDBstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	stk->cmd = 0;
@@ -131,7 +118,7 @@ MDBtraceFlag(Client cntxt, MalStkPtr stk, int b)
 	}
 }
 
-static str
+str
 MDBsetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int b;
@@ -143,7 +130,7 @@ MDBsetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MDBgetVMsize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	lng *ret = getArgReference_lng(stk, p, 0);
@@ -155,7 +142,7 @@ MDBgetVMsize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 /* Set the max VM in MBs */
-static str
+str
 MDBsetVMsize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	lng *ret = getArgReference_lng(stk, p, 0);
@@ -168,7 +155,7 @@ MDBsetVMsize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MDBsetVarTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str v;
@@ -181,7 +168,7 @@ MDBsetVarTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MDBgetDebug(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int *ret = getArgReference_int(stk,p,0);
@@ -194,7 +181,7 @@ MDBgetDebug(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MDBsetDebug(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int *ret = getArgReference_int(stk,p,0);
@@ -214,7 +201,7 @@ MDBsetDebug(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (BUNappend(flg, (void*) NME, false) != GDK_SUCCEED) goto bailout;\
 	if (BUNappend(val, &state, false) != GDK_SUCCEED) goto bailout;
 
-static str
+str
 MDBgetDebugFlags(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	bat *f = getArgReference_bat(stk,p,0);
@@ -244,10 +231,8 @@ MDBgetDebugFlags(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	addFlag("performance", GRPperformance, GDKdebug);
 	addFlag("forcemito", GRPforcemito, GDKdebug);
 
-	*f = flg->batCacheid;
-	BBPkeepref(flg);
-	*v = val->batCacheid;
-	BBPkeepref(val);
+	BBPkeepref( *f = flg->batCacheid);
+	BBPkeepref( *v = val->batCacheid);
 	return MAL_SUCCEED;
 
 bailout:
@@ -289,7 +274,7 @@ MDBsetDebugStr_(int *ret, str *flg)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MDBsetDebugStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str *flg = (str*) getArgReference(stk, p, 1);
@@ -300,7 +285,7 @@ MDBsetDebugStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MDBsetDebugStr_(ret, flg);
 }
 
-static str
+str
 MDBsetCatch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int b;
@@ -311,7 +296,7 @@ MDBsetCatch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MDBinspect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str modnme;
@@ -351,7 +336,7 @@ getStkDepth(MalStkPtr s)
 	return i;
 }
 
-static str
+str
 MDBStkDepth(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
 	int *ret = getArgReference_int(s, p, 0);
@@ -390,7 +375,7 @@ MDBgetFrame(BAT *b, BAT *bn, MalBlkPtr mb, MalStkPtr s, int depth, const char *n
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MDBgetStackFrame(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	bat *ret = getArgReference_bat(s, p, 0);
@@ -423,7 +408,7 @@ MDBgetStackFrame(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MDBgetStackFrameN(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	int n;
@@ -464,7 +449,7 @@ MDBgetStackFrameN(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	BAT *b, *bn;
@@ -558,7 +543,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 /*
  * Display routines
  */
-static str
+str
 MDBlist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
@@ -567,7 +552,7 @@ MDBlist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MDBlistMapi(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
@@ -576,7 +561,7 @@ MDBlistMapi(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MDBlist3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str modnme = *getArgReference_str(stk, p, 1);
@@ -591,7 +576,7 @@ MDBlist3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MDBlistDetail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
@@ -600,7 +585,7 @@ MDBlistDetail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str modnme = *getArgReference_str(stk, p, 1);
@@ -615,7 +600,7 @@ MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return NULL;
 }
 
-static str
+str
 MDBvar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
@@ -624,7 +609,7 @@ MDBvar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MDBvar3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str modnme = *getArgReference_str(stk, p, 1);
@@ -643,7 +628,7 @@ MDBvar3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  * It is illustrative to dump the code when you
  * have encountered an error.
  */
-static str
+str
 MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 {
 	int i;
@@ -675,7 +660,7 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MDBgetExceptionVariable(str *ret, str *msg)
 {
 	str tail;
@@ -692,7 +677,7 @@ MDBgetExceptionVariable(str *ret, str *msg)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MDBgetExceptionContext(str *ret, str *msg)
 {
 	str tail, tail2;
@@ -712,7 +697,7 @@ MDBgetExceptionContext(str *ret, str *msg)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MDBgetExceptionReason(str *ret, str *msg)
 {
 	str tail;
@@ -730,72 +715,100 @@ MDBgetExceptionReason(str *ret, str *msg)
 	return MAL_SUCCEED;
 }
 
-static str MDBdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str MDBdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) cntxt;
 	mdbDump(cntxt,mb,stk,pci);
 	return MAL_SUCCEED;
 }
 
-static str
-MDBdummy(void *ret)
+str
+MDBdummy(int *ret)
 {
 	(void) ret;
 	throw(MAL, "mdb.dummy", OPERATION_FAILED);
 }
 
+/*
+ * CMDmodules
+ * Obtains a list of modules by looking at what files are present in the
+ * module directory.
+ */
+static BAT *
+TBL_getdir(void)
+{
+	BAT *b = COLnew(0, TYPE_str, 100, TRANSIENT);
+	int i = 0;
 
-static str
+	const char *mod_path;
+	size_t extlen = strlen(MAL_EXT);
+	size_t len;
+	struct dirent *dent;
+	DIR *dirp = NULL;
+
+	if ( b == 0)
+		return NULL;
+	mod_path = GDKgetenv("monet_mod_path");
+	if (mod_path == NULL)
+		return b;
+	while (*mod_path == PATH_SEP)
+		mod_path++;
+	if (*mod_path == 0)
+		return b;
+
+	while (mod_path || dirp) {
+		if (dirp == NULL) {
+			char *cur_dir;
+			const char *p;
+			size_t l;
+
+			if ((p = strchr(mod_path, PATH_SEP)) != NULL) {
+				l = p - mod_path;
+			} else {
+				l = strlen(mod_path);
+			}
+			cur_dir = GDKmalloc(l + 1);
+			if ( cur_dir == NULL){
+				BBPreclaim(b);
+				return NULL;
+			}
+			strncpy(cur_dir, mod_path, l + 1); /* including NULL byte */
+			if ((mod_path = p) != NULL) {
+				while (*mod_path == PATH_SEP)
+					mod_path++;
+			}
+			dirp = opendir(cur_dir);
+			GDKfree(cur_dir);
+			if (dirp == NULL)
+				continue;
+		}
+		if ((dent = readdir(dirp)) == NULL) {
+			closedir(dirp);
+			dirp = NULL;
+			continue;
+		}
+		len = strlen(dent->d_name);
+		if (len < extlen || strcmp(dent->d_name + len - extlen, MAL_EXT) != 0)
+			continue;
+		dent->d_name[len - extlen] = 0;
+		if (BUNappend(b, dent->d_name, false) != GDK_SUCCEED) {
+			BBPreclaim(b);
+			if (dirp)
+				closedir(dirp);
+			return NULL;
+		}
+		i++;
+	}
+	return b;
+}
+
+str
 CMDmodules(bat *bid)
 {
-	BAT *b = getModules();
+	BAT *b = TBL_getdir();
 
 	if (b == NULL)
 		throw(MAL, "mdb.modules", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*bid = b->batCacheid;
-	BBPkeepref(b);
+	BBPkeepref(*bid);
 	return MAL_SUCCEED;
 }
-
-#include "mel.h"
-mel_func mdb_init_funcs[] = {
- pattern("mdb", "start", MDBstart, false, "Start interactive debugger", args(1,1, arg("",void))),
- pattern("mdb", "start", MDBstart, false, "Start interactive debugger on a client", args(1,2, arg("",void),arg("clientid",int))),
- pattern("mdb", "start", MDBstartFactory, false, "Start interactive debugger on a running factory", args(1,3, arg("",void),arg("mod",str),arg("fcn",str))),
- pattern("mdb", "stop", MDBstop, false, "Stop the interactive debugger", args(1,1, arg("",void))),
- pattern("mdb", "inspect", MDBinspect, false, "Run the debugger on a specific function", args(1,3, arg("",void),arg("mod",str),arg("fcn",str))),
- command("mdb", "modules", CMDmodules, false, "List available modules", args(1,1, batarg("",str))),
- pattern("mdb", "getVMsize", MDBgetVMsize, false, "Retrieve the max VM size", args(1,1, arg("",lng))),
- pattern("mdb", "setVMsize", MDBsetVMsize, false, "Manipulate the VM max size in MBs", args(1,2, arg("",lng),arg("l",lng))),
- pattern("mdb", "setTrace", MDBsetTrace, false, "Turn on/off tracing of current routine", args(1,2, arg("",void),arg("b",bit))),
- pattern("mdb", "setTrace", MDBsetVarTrace, false, "Turn on/off tracing of a variable ", args(1,2, arg("",void),arg("b",str))),
- pattern("mdb", "setCatch", MDBsetCatch, false, "Turn on/off catching exceptions", args(1,2, arg("",void),arg("b",bit))),
- pattern("mdb", "getDebugFlags", MDBgetDebugFlags, false, "Get the kernel debugging flags bit-set", args(2,2, batarg("flg",str),batarg("val",bit))),
- pattern("mdb", "getDebug", MDBgetDebug, false, "Get the kernel debugging bit-set.\nSee the MonetDB configuration file for details", args(1,1, arg("",int))),
- pattern("mdb", "setDebug", MDBsetDebugStr, false, "Set the kernel debugging bit-set and return its previous value.\nThe recognized options are: threads, memory, properties,\nio, transactions, modules, algorithms, estimates.", args(1,2, arg("",int),arg("flg",str))),
- pattern("mdb", "setDebug", MDBsetDebug, false, "Set the kernel debugging bit-set and return its previous value.", args(1,2, arg("",int),arg("flg",int))),
- command("mdb", "getException", MDBgetExceptionVariable, false, "Extract the variable name from the exception message", args(1,2, arg("",str),arg("s",str))),
- command("mdb", "getReason", MDBgetExceptionReason, false, "Extract the reason from the exception message", args(1,2, arg("",str),arg("s",str))),
- command("mdb", "getContext", MDBgetExceptionContext, false, "Extract the context string from the exception message", args(1,2, arg("",str),arg("s",str))),
- pattern("mdb", "list", MDBlist, false, "Dump the current routine on standard out.", args(1,1, arg("",void))),
- pattern("mdb", "listMapi", MDBlistMapi, false, "Dump the current routine on standard out with Mapi prefix.", args(1,1, arg("",void))),
- pattern("mdb", "list", MDBlist3, false, "Dump the routine M.F on standard out.", args(1,3, arg("",void),arg("M",str),arg("F",str))),
- pattern("mdb", "List", MDBlistDetail, false, "Dump the current routine on standard out.", args(1,1, arg("",void))),
- pattern("mdb", "List", MDBlist3Detail, false, "Dump the routine M.F on standard out.", args(1,3, arg("",void),arg("M",str),arg("F",str))),
- pattern("mdb", "var", MDBvar, false, "Dump the symboltable of current routine on standard out.", args(1,1, arg("",void))),
- pattern("mdb", "var", MDBvar3, false, "Dump the symboltable of routine M.F on standard out.", args(1,3, arg("",void),arg("M",str),arg("F",str))),
- pattern("mdb", "getStackDepth", MDBStkDepth, false, "Return the depth of the calling stack.", args(1,1, arg("",int))),
- pattern("mdb", "getStackFrame", MDBgetStackFrameN, false, "", args(2,3, batarg("",str),batarg("",str),arg("i",int))),
- pattern("mdb", "getStackFrame", MDBgetStackFrame, false, "Collect variable binding of current (n-th) stack frame.", args(2,2, batarg("",str),batarg("",str))),
- pattern("mdb", "getStackTrace", MDBStkTrace, false, "", args(2,2, batarg("",int),batarg("",str))),
- pattern("mdb", "dump", MDBdump, false, "Dump instruction, stacktrace, and stack", noargs),
- pattern("mdb", "getDefinition", MDBgetDefinition, false, "Returns a string representation of the current function \nwith typing information attached", args(1,1, batarg("",str))),
- command("mdb", "#dummy", MDBdummy, false, "Dummy function for testing", args(1,1, arg("",void))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_mdb_mal)
-{ mal_module("mdb", NULL, mdb_init_funcs); }

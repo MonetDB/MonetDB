@@ -1,0 +1,78 @@
+stderr of test 'with-between.Bug-2732` in directory 'sql/test/BugTracker-2010` itself:
+
+
+# 13:44:44 >  
+# 13:44:44 >   mserver5 "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/monetdb5:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/monetdb5/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/monetdb5/bin" --set "gdk_dbfarm=/net/volund.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-volund.ins.cwi.nl/sql/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36387 --set xrpc_port=44547 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2010" --set mal_listing=0 ; echo ; echo Over..
+# 13:44:44 >  
+
+# builtin opt 	gdk_arch = 64bitx86_64-pc-linux-gnu
+# builtin opt 	gdk_version = 11.0.0
+# builtin opt 	prefix = /ufs/fabian/scratch/monetdb/current/program-x86_64
+# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_alloc_map = no
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_admin = adm
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_welcome = yes
+# builtin opt 	monet_mod_path = /ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB
+# builtin opt 	monet_daemon = no
+# builtin opt 	host = localhost
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_clients = 2
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	default_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+# builtin opt 	minimal_pipe = inline,remap,deadcode,multiplex,garbageCollector
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# builtin opt 	standoff_ns = 
+# builtin opt 	standoff_start = start
+# builtin opt 	standoff_end = end
+# config opt 	prefix = /ufs/fabian/scratch/monetdb/current/program-x86_64
+# config opt 	config = /ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf
+# config opt 	prefix = /ufs/fabian/scratch/monetdb/current/program-x86_64
+# config opt 	exec_prefix = ${prefix}
+# config opt 	gdk_dbfarm = ${prefix}/var/monetdb5/dbfarm
+# config opt 	monet_mod_path = /ufs/fabian/scratch/monetdb/current/program-x86_64/lib/monetdb5:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/monetdb5/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/monetdb5/bin
+# config opt 	mero_pidfile = ${prefix}/var/run/monetdb/merovingian.pid
+# config opt 	no_mitosis_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+# config opt 	sequential_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,history,multiplex,garbageCollector
+# config opt 	nov2009_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+# config opt 	replication_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector
+# config opt 	accumulator_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,accumulators,dataflow,history,multiplex,garbageCollector
+# config opt 	recycler_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,deadcode,recycle,reduce,dataflow,history,multiplex,garbageCollector
+# config opt 	cracker_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,selcrack,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+# config opt 	sidcrack_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,sidcrack,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+# config opt 	octopus_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,octopus,reduce,dataflow,history,multiplex,garbageCollector
+# config opt 	mapreduce_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mapreduce,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+# config opt 	datacyclotron_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,datacyclotron,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector
+# config opt 	derive_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,derivePath,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+# config opt 	dictionary_pipe = inline,remap,dictionary,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+# config opt 	compression_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,compression,dataflow,history,multiplex,garbageCollector
+# cmdline opt 	config = /ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	monet_mod_path = /ufs/fabian/scratch/monetdb/current/program-x86_64/lib/monetdb5:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/monetdb5/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/monetdb5/bin
+# cmdline opt 	gdk_dbfarm = /net/volund.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-volund.ins.cwi.nl/sql/dbfarm
+# cmdline opt 	mapi_open = true
+# cmdline opt 	xrpc_open = true
+# cmdline opt 	mapi_port = 36387
+# cmdline opt 	xrpc_port = 44547
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_test_BugTracker-2010
+# cmdline opt 	mal_listing = 0
+#warning: please don't forget to set your vault key!
+#(see /ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf)
+
+# 13:44:47 >  
+# 13:44:47 >  mclient -lsql -ftest -i -e --host=volund --port=36387 
+# 13:44:47 >  
+
+
+# 13:44:48 >  
+# 13:44:48 >  Done.
+# 13:44:48 >  
+

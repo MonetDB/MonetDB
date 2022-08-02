@@ -1,0 +1,19 @@
+stderr of test 'order_by_over_table_from_another_function.SF-1959822` in directory 'sql/test/BugTracker` itself:
+
+
+# 10:53:08 >  
+# 10:53:08 >   mserver5 "--config=/ufs/goncalve/scratch/MonetDB/current/debug/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/current/debug/MonetDB5//lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/current/debug/MonetDB5//lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/current/debug/MonetDB5//lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/current/debug/MonetDB5//var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/current/debug/MonetDB5//var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=39845 --set xrpc_port=47079 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 10:53:08 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/goncalve/scratch/MonetDB/current/debug/MonetDB5/etc/monetdb5.conf)
+
+# 10:53:08 >  
+# 10:53:08 >  mclient -lsql -umonetdb -Pmonetdb --host=alviss --port=39845 
+# 10:53:08 >  
+
+
+# 10:53:08 >  
+# 10:53:08 >  Done.
+# 10:53:08 >  
+

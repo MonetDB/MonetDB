@@ -1,0 +1,318 @@
+stdout of test 'sql_int128` in directory 'sql/test/mapi` itself:
+
+
+# 07:30:43 >  
+# 07:30:43 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34256" "--set" "mapi_usock=/var/tmp/mtest-20272/.s.monetdb.34256" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/int128/prefix/_/var/MonetDB/mTests_sql_test_mapi" "--set" "mal_listing=0"
+# 07:30:43 >  
+
+# MonetDB 5 server v11.17.17 "Jan2014-SP2"
+# Serving database 'mTests_sql_test_mapi', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:34256/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-20272/.s.monetdb.34256
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 99_system.sql
+
+# 07:30:43 >  
+# 07:30:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20272" "--port=34256"
+# 07:30:43 >  
+
+#START TRANSACTION;
+#DECLARE a HUGEINT, b HUGEINT, c HUGEINT, d HUGEINT, e HUGEINT;
+#explain SET a = 1234567890987654321;
+% .explain # table_name
+% mal # name
+% clob # type
+% 103 # length
+function user.s4_0():void;
+    X_2:void := querylog.define("explain set a = 1234567890987654321;":str, "default_pipe":str, 8:int);
+    X_5:int := sql.mvc();
+    sql.setVariable(X_5:int, "a":str, 1234567890987654321:hge);
+    sql.exportOperation();
+end user.s4_0;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=1 usec 
+#costmodel            actions= 1 time=0 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions= 1 time=3 usec 
+#evaluate             actions= 1 time=10 usec 
+#emptybind            actions= 0 time=0 usec 
+#pushselect           actions= 0 time=2 usec 
+#aliases              actions= 1 time=2 usec 
+#mergetable           actions= 0 time=12 usec 
+#deadcode             actions= 0 time=3 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 0 time=1 usec 
+#commonTerms          actions= 0 time=1 usec 
+#projectionpath       actions= 0 time=1 usec 
+#deadcode             actions= 0 time=2 usec 
+#reorder              actions= 1 time=8 usec 
+#matpack              actions= 0 time=0 usec 
+#dataflow             actions= 0 time=3 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=1 usec 
+#deadcode             actions= 0 time=2 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=5 usec 
+#total                actions=29 time=117 usec 
+#explain SET b = 10000000000;
+% .explain # table_name
+% mal # name
+% clob # type
+% 95 # length
+function user.s6_0():void;
+    X_2:void := querylog.define("explain set b = 10000000000;":str, "default_pipe":str, 8:int);
+    X_5:int := sql.mvc();
+    sql.setVariable(X_5:int, "b":str, 10000000000:hge);
+    sql.exportOperation();
+end user.s6_0;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=1 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions= 1 time=2 usec 
+#evaluate             actions= 1 time=8 usec 
+#emptybind            actions= 0 time=0 usec 
+#pushselect           actions= 0 time=2 usec 
+#aliases              actions= 1 time=2 usec 
+#mergetable           actions= 0 time=13 usec 
+#deadcode             actions= 0 time=3 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 0 time=1 usec 
+#commonTerms          actions= 0 time=1 usec 
+#projectionpath       actions= 0 time=1 usec 
+#deadcode             actions= 0 time=2 usec 
+#reorder              actions= 1 time=8 usec 
+#matpack              actions= 0 time=0 usec 
+#dataflow             actions= 0 time=3 usec 
+#multiplex            actions= 0 time=0 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=1 usec 
+#deadcode             actions= 0 time=2 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=5 usec 
+#total                actions=29 time=116 usec 
+#explain SET c = a * b;
+% .explain # table_name
+% mal # name
+% clob # type
+% 89 # length
+function user.s8_0():void;
+    X_1:void := querylog.define("explain set c = a * b;":str, "default_pipe":str, 9:int);
+    X_4:int := sql.mvc();
+    X_5:hge := sql.getVariable(X_4:int, "a":str);
+    X_7:hge := sql.getVariable(X_4:int, "b":str);
+    X_9:hge := calc.*(X_5:hge, X_7:hge);
+    sql.setVariable(X_4:int, "c":str, X_9:hge);
+    sql.exportOperation();
+end user.s8_0;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=1 usec 
+#costmodel            actions= 1 time=0 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions= 0 time=0 usec 
+#evaluate             actions= 0 time=3 usec 
+#emptybind            actions= 0 time=0 usec 
+#pushselect           actions= 0 time=2 usec 
+#aliases              actions= 0 time=0 usec 
+#mergetable           actions= 0 time=18 usec 
+#deadcode             actions= 0 time=3 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 0 time=1 usec 
+#commonTerms          actions= 0 time=1 usec 
+#projectionpath       actions= 0 time=1 usec 
+#deadcode             actions= 0 time=3 usec 
+#reorder              actions= 1 time=10 usec 
+#matpack              actions= 0 time=0 usec 
+#dataflow             actions= 0 time=4 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=1 usec 
+#deadcode             actions= 0 time=3 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=8 usec 
+#total                actions=29 time=141 usec 
+#explain SET d = c * b;
+% .explain # table_name
+% mal # name
+% clob # type
+% 89 # length
+function user.s10_0():void;
+    X_1:void := querylog.define("explain set d = c * b;":str, "default_pipe":str, 9:int);
+    X_4:int := sql.mvc();
+    X_5:hge := sql.getVariable(X_4:int, "c":str);
+    X_7:hge := sql.getVariable(X_4:int, "b":str);
+    X_9:hge := calc.*(X_5:hge, X_7:hge);
+    sql.setVariable(X_4:int, "d":str, X_9:hge);
+    sql.exportOperation();
+end user.s10_0;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=1 usec 
+#costmodel            actions= 1 time=0 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions= 0 time=0 usec 
+#evaluate             actions= 0 time=2 usec 
+#emptybind            actions= 0 time=0 usec 
+#pushselect           actions= 0 time=2 usec 
+#aliases              actions= 0 time=0 usec 
+#mergetable           actions= 0 time=16 usec 
+#deadcode             actions= 0 time=4 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 0 time=1 usec 
+#commonTerms          actions= 0 time=1 usec 
+#projectionpath       actions= 0 time=1 usec 
+#deadcode             actions= 0 time=2 usec 
+#reorder              actions= 1 time=9 usec 
+#matpack              actions= 0 time=0 usec 
+#dataflow             actions= 0 time=3 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=0 usec 
+#candidates           actions= 1 time=1 usec 
+#deadcode             actions= 0 time=3 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=9 usec 
+#total                actions=29 time=114 usec 
+#explain SET e = d + a;
+% .explain # table_name
+% mal # name
+% clob # type
+% 89 # length
+function user.s12_0():void;
+    X_1:void := querylog.define("explain set e = d + a;":str, "default_pipe":str, 9:int);
+    X_4:int := sql.mvc();
+    X_5:hge := sql.getVariable(X_4:int, "d":str);
+    X_7:hge := sql.getVariable(X_4:int, "a":str);
+    X_9:hge := calc.+(X_5:hge, X_7:hge);
+    sql.setVariable(X_4:int, "e":str, X_9:hge);
+    sql.exportOperation();
+end user.s12_0;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=0 usec 
+#costmodel            actions= 1 time=0 usec 
+#coercion             actions= 0 time=0 usec 
+#aliases              actions= 0 time=0 usec 
+#evaluate             actions= 0 time=2 usec 
+#emptybind            actions= 0 time=0 usec 
+#pushselect           actions= 0 time=2 usec 
+#aliases              actions= 0 time=1 usec 
+#mergetable           actions= 0 time=16 usec 
+#deadcode             actions= 0 time=3 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 0 time=1 usec 
+#commonTerms          actions= 0 time=2 usec 
+#projectionpath       actions= 0 time=1 usec 
+#deadcode             actions= 0 time=2 usec 
+#reorder              actions= 1 time=9 usec 
+#matpack              actions= 0 time=1 usec 
+#dataflow             actions= 0 time=3 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=0 usec 
+#candidates           actions= 1 time=0 usec 
+#deadcode             actions= 0 time=3 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=8 usec 
+#total                actions=29 time=109 usec 
+#SET a = 1234567890987654321;
+#SET b = 10000000000;
+#SET c = a * b;
+#SET d = c * b;
+#SET e = d + a;
+#SELECT a, b, c, d, e;
+% .%2,	.%3,	.%4,	.%5,	.%6 # table_name
+% %2,	%3,	%4,	%5,	%6 # name
+% hugeint,	hugeint,	hugeint,	hugeint,	hugeint # type
+% 19,	11,	29,	39,	39 # length
+[ 1234567890987654321,	10000000000,	12345678909876543210000000000,	123456789098765432100000000000000000000,	123456789098765432101234567890987654321	]
+#SELECT 123456789098765432101234567890987654321;
+% .%2 # table_name
+% %2 # name
+% hugeint # type
+% 39 # length
+[ 123456789098765432101234567890987654321	]
+#CREATE TABLE sql_int128 (i HUGEINT);
+#explain INSERT INTO sql_int128 VALUES (123456789098765432101234567890987654321);
+% .explain # table_name
+% mal # name
+% clob # type
+% 147 # length
+function user.s30_0():void;
+    X_2:void := querylog.define("explain insert into sql_int128 values (123456789098765432101234567890987654321);":str, "default_pipe":str, 8:int);
+    X_5:int := sql.mvc();
+    X_8:int := sql.append(X_5:int, "sys":str, "sql_int128":str, "i":str, 123456789098765432101234567890987654321:hge);
+    sql.affectedRows(X_8:int, 1:lng);
+end user.s30_0;
+# optimizer.mitosis()
+# optimizer.dataflow()
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=14 usec 
+#remap                actions= 0 time=5 usec 
+#costModel            actions= 1 time=11 usec 
+#coercions            actions= 1 time=12 usec 
+#evaluate             actions= 1 time=27 usec 
+#emptybind            actions= 0 time=6 usec 
+#pushselect           actions= 0 time=4 usec 
+#aliases              actions= 1 time=15 usec 
+#mergetable           actions= 0 time=24 usec 
+#deadcode             actions= 0 time=7 usec 
+#aliases              actions= 0 time=6 usec 
+#constants            actions= 1 time=13 usec 
+#commonTerms          actions= 0 time=6 usec 
+#projectionpath       actions= 0 time=6 usec 
+#deadcode             actions= 0 time=6 usec 
+#reorder              actions= 1 time=26 usec 
+#reduce               actions=23 time=29 usec 
+#matpack              actions= 0 time=6 usec 
+#querylog             actions= 0 time=2 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=7 usec 
+#garbageCollector     actions= 1 time=14 usec 
+#total                actions= 1 time=344 usec 
+#INSERT INTO sql_int128 VALUES (123456789098765432101234567890987654321);
+[ 1	]
+#SELECT * FROM sql_int128;
+% sys.sql_int128 # table_name
+% i # name
+% hugeint # type
+% 39 # length
+[ 123456789098765432101234567890987654321	]
+
+# 07:30:43 >  
+# 07:30:43 >  "Done."
+# 07:30:43 >  
+

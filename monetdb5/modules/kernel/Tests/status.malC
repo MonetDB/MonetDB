@@ -1,4 +1,4 @@
-#-- volatile status
+-- volatile status
 
 io.printf("#Global cpu usage information\n");
 (bs,bi):= status.cpuStatistics();

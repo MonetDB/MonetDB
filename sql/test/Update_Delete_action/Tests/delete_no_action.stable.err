@@ -1,0 +1,17 @@
+stderr of test 'delete_no_action` in directory 'sql/test/Update_Delete_action` itself:
+
+
+# 15:35:33 >  
+# 15:35:33 >  Mtimeout -timeout 180 Mserver "--config=/ufs/goncalve/scratch/MonetDB/MonetDB4/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB4/lib/MonetDB4:/ufs/goncalve/scratch/MonetDB/MonetDB4/lib/MonetDB4/lib:/ufs/goncalve/scratch/MonetDB/MonetDB4/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB4/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB4/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB4/var/MonetDB4/xquery_logs" --set mapi_port=37767 --set xrpc_port=48239 --set monet_prompt= --trace "--dbname=mTests_src_test_Update_Delete_action" --dbinit=" module(sql_server);" ; echo ; echo Over..
+# 15:35:33 >  
+
+
+# 15:35:33 >  
+# 15:35:33 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=37767 
+# 15:35:33 >  
+
+
+# 15:35:33 >  
+# 15:35:33 >  Done.
+# 15:35:33 >  
+

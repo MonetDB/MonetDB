@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -23,37 +23,32 @@ log_base2(unsigned int n)
 sql_hash *
 hash_new(sql_allocator *sa, int size, fkeyvalue key)
 {
-	sql_hash *ht = (sa)?SA_NEW(sa, sql_hash):MNEW(sql_hash);
+	int i;
+	sql_hash *ht = SA_ZNEW(sa, sql_hash);
 
 	if (ht == NULL)
 		return NULL;
 	ht->sa = sa;
-	ht->entries = 0;
 	ht->size = (1<<log_base2(size-1));
 	ht->key = key;
-	ht->buckets = (ht->sa)?SA_ZNEW_ARRAY(sa, sql_hash_e*, ht->size):ZNEW_ARRAY(sql_hash_e*, ht->size);
-	if (ht->buckets == NULL) {
-		if (!ht->sa)
-			_DELETE(ht);
-		return NULL;
-	}
+	ht->buckets = SA_NEW_ARRAY(sa, sql_hash_e*, ht->size);
+	for(i = 0; i < ht->size; i++)
+		ht->buckets[i] = NULL;
 	return ht;
 }
 
-int
-hash_entries(sql_hash *h)
+sql_hash_e*
+hash_add(sql_hash *h, int key, void *value)
 {
-	if (h)
-		return h->entries;
-	return 0;
-}
+	sql_hash_e *e = SA_ZNEW(h->sa, sql_hash_e);
 
-int
-hash_empty(sql_hash *h)
-{
-	if (h)
-		return hash_entries(h) == 0;
-	return 1;
+	if (e == NULL)
+		return NULL;
+	e->chain = h->buckets[key&(h->size-1)];
+	h->buckets[key&(h->size-1)] = e;
+	e->key = key;
+	e->value = value;
+	return e;
 }
 
 void
@@ -66,58 +61,26 @@ hash_del(sql_hash *h, int key, void *value)
 		e = e->chain;
 	}
 	if (e) {
-		h->entries--;
 		if (p)
 			p->chain = e->chain;
 		else
 			h->buckets[key&(h->size-1)] = e->chain;
-		if (!h->sa)
-			_DELETE(e);
 	}
 }
 
-/* clear all hash table entries */
-void
-hash_clear(sql_hash *h) /* this code should be called for hash tables created outside SQL allocators only! */
+unsigned int
+hash_key(const char *k)
 {
-	if (h == NULL || h->sa)
-		return;
-	for (int i = 0; i < h->size; i++) {
-		sql_hash_e *e = h->buckets[i], *c = NULL;
+	unsigned int h = 0;
 
-		if (e)
-			c = e->chain;
-		while (c) {
-			sql_hash_e *next = c->chain;
-
-			_DELETE(c);
-			c = next;
-		}
-		_DELETE(e);
-		h->buckets[i] = NULL;
+	while (*k) {
+		h += *k;
+		h += (h << 10);
+		h ^= (h >> 6);
+		k++;
 	}
-	h->entries = 0;
+	h += (h << 3);
+	h ^= (h >> 11);
+	h += (h << 15);
+	return h;
 }
-
-void
-hash_destroy(sql_hash *h) /* this code should be called for hash tables created outside SQL allocators only! */
-{
-	if (h == NULL || h->sa)
-		return;
-	for (int i = 0; i < h->size; i++) {
-		sql_hash_e *e = h->buckets[i], *c = NULL;
-
-		if (e)
-			c = e->chain;
-		while (c) {
-			sql_hash_e *next = c->chain;
-
-			_DELETE(c);
-			c = next;
-		}
-		_DELETE(e);
-	}
-	_DELETE(h->buckets);
-	_DELETE(h);
-}
-

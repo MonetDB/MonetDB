@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -31,55 +31,15 @@
  */
 
 #define MODULE_HASH_SIZE 1024
-static Module moduleIndex[MODULE_HASH_SIZE] = { NULL };
+Module moduleIndex[MODULE_HASH_SIZE] = { NULL };
 
-MALfcn
-findFunctionImplementation(const char *cname)
+void
+listModules(stream *out, Module s)
 {
-	for (int i = 0; i < MODULE_HASH_SIZE; i++) {
-		if (moduleIndex[i] != NULL && moduleIndex[i]->space != NULL) {
-			for (int j = 0; j < MAXSCOPE; j++) {
-				Symbol s;
-				if ((s = moduleIndex[i]->space[j]) != NULL) {
-					do {
-						if (s->def &&
-							strcmp(s->def->binding, cname) == 0 &&
-							s->def->stmt &&
-							s->def->stmt[0] &&
-							s->def->stmt[0]->fcn) {
-							return s->def->stmt[0]->fcn;
-						}
-					} while ((s = s->peer) != NULL);
-				}
-			}
-		}
+	while(s){
+		mnstr_printf(out,"Unexpected module %s\n",  s->name);
+		s= s->link;
 	}
-	return NULL;
-}
-
-BAT *
-getModules(void)
-{
-	BAT *b = COLnew(0, TYPE_str, 100, TRANSIENT);
-	int i;
-	Module s,n;
-
-	if (!b)
-		return NULL;
-	for( i = 0; i< MODULE_HASH_SIZE; i++){
-		s = moduleIndex[i];
-		while(s){
-			if (BUNappend(b, s->name, FALSE) != GDK_SUCCEED) {
-				BBPreclaim(b);
-				return NULL;
-			}
-			n = s->link;
-			while(n)
-				n = n->link;
-			s = s->link;
-		}
-	}
-	return b;
 }
 
 // perform sanity check on duplicate occurrences as well
@@ -91,7 +51,7 @@ dumpModules(stream *out)
 	for( i = 0; i< MODULE_HASH_SIZE; i++){
 		s= moduleIndex[i];
 		while(s){
-			mnstr_printf(out,"[%d] module %s\n", i, s->name);
+			mnstr_printf(out,"[%d] module %s\n", i,  s->name);
 			n = s->link;
 			while(n){
 				if( n == s)
@@ -121,7 +81,7 @@ mal_module_reset(void)
 	}
 }
 
-static int getModuleIndex(const char *name) {
+static int getModuleIndex(str name) {
 	return (int) (strHash(name) % MODULE_HASH_SIZE);
 }
 
@@ -149,7 +109,7 @@ static void addModuleToIndex(Module cur){
 	moduleIndex[index] = cur;
 }
 
-Module getModule(const char *name) {
+Module getModule(str name) {
 	int index = getModuleIndex(name);
 	Module m = moduleIndex[index];
 	while(m) {
@@ -194,7 +154,7 @@ void freeModuleList(Module* list) {
  * Module scope management
  * It will contain the symbol table of all globally accessible functions.
  */
-Module globalModule(const char *nme)
+Module globalModule(str nme)
 {	Module cur;
 
 	// Global modules are not named 'user'
@@ -205,6 +165,7 @@ Module globalModule(const char *nme)
 		return NULL;
 	cur->name = nme;
 	cur->link = NULL;
+	cur->isAtomModule = FALSE;
 	cur->space = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));
 	if (cur->space == NULL) {
 		GDKfree(cur);
@@ -225,6 +186,7 @@ Module userModule(void){
 	cur->name = putName("user");
 	cur->link = NULL;
 	cur->space = NULL;
+	cur->isAtomModule = FALSE;
 	cur->space = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));
 	if (cur->space == NULL) {
 		GDKfree(cur);
@@ -236,7 +198,7 @@ Module userModule(void){
  * The scope can be fixed. This is used by the parser.
  * Reading a module often calls for creation first.
  */
-Module fixModule(const char *nme) {
+Module fixModule(str nme) {
 	Module m;
 
 	m = getModule(nme);
@@ -274,13 +236,11 @@ void freeModule(Module m)
 	if ((s = findSymbolInModule(m, "epilogue")) != NULL) {
 		InstrPtr pci = getInstrPtr(s->def,0);
 		if (pci && pci->token == COMMANDsymbol && pci->argc == 1) {
-			int status = 0;
-			str ret = MAL_SUCCEED;
+			int ret = 0;
 
 			assert(pci->fcn != NULL);
-			ret = (*pci->fcn)(&status);
-			freeException(ret);
-			(void)status;
+			(*pci->fcn)(&ret);
+			(void)ret;
 		}
 	}
 	freeSubScope(m);
@@ -377,7 +337,7 @@ void deleteSymbol(Module scope, Symbol prg){
  * The 'user' module is an alias for the scope attached
  * to the current user.
  */
-Module findModule(Module scope, const char *name){
+Module findModule(Module scope, str name){
 	Module def = scope;
 	Module m;
 	if (name == NULL) return scope;
@@ -400,7 +360,7 @@ Module findModule(Module scope, const char *name){
  * The variation on this routine is to dump the definition of
  * all matching definitions.
  */
-Symbol findSymbolInModule(Module v, const char *fcn) {
+Symbol findSymbolInModule(Module v, str fcn) {
 	Symbol s;
 	if (v == NULL || fcn == NULL) return NULL;
 	s = v->space[(int)(*fcn)];
@@ -411,7 +371,7 @@ Symbol findSymbolInModule(Module v, const char *fcn) {
 	return NULL;
 }
 
-Symbol findSymbol(Module usermodule, const char *mod, const char *fcn) {
+Symbol findSymbol(Module usermodule, str mod, str fcn) {
 	Module m = findModule(usermodule, mod);
 	return findSymbolInModule(m, fcn);
 }

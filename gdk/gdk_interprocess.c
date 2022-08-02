@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -13,7 +13,6 @@
 #include "gdk_interprocess.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include "mutils.h"
 
 #include <string.h>
 
@@ -117,7 +116,7 @@ GDKreleasemmap(void *ptr, size_t size, size_t id)
 	if (path == NULL) {
 		return GDK_FAIL;
 	}
-	ret = MT_remove(path);
+	ret = remove(path);
 	if (ret < 0)
 		GDKsyserror("cannot remove '%s'", path);
 	GDKfree(path);
@@ -130,7 +129,7 @@ GDKreleasemmap(void *ptr, size_t size, size_t id)
  * id: Identifier of the file
 */
 gdk_return
-GDKmmapfile(char *buffer, size_t max, size_t id)
+GDKmmapfile(str buffer, size_t max, size_t id)
 {
 	snprintf(buffer, max, "pymmap%zu", id);
 	return GDK_SUCCEED;
@@ -268,7 +267,7 @@ GDKreleasesem(int sem_id)
 #define align(sz) ((sz + 7) & ~7)
 
 size_t
-GDKbatcopysize(BAT *bat, const char *colname)
+GDKbatcopysize(BAT *bat, str colname)
 {
 	size_t size = 0;
 
@@ -284,9 +283,8 @@ GDKbatcopysize(BAT *bat, const char *colname)
 }
 
 size_t
-GDKbatcopy(char *dest, BAT *bat, const char *colname)
+GDKbatcopy(char *dest, BAT *bat, str colname)
 {
-	MT_lock_set(&bat->theaplock);
 	size_t batsize = bat->twidth * BATcount(bat);
 	size_t position = 0;
 
@@ -307,7 +305,6 @@ GDKbatcopy(char *dest, BAT *bat, const char *colname)
 		memcpy(dest + position, bat->tvheap->base, bat->tvheap->size);
 		position += align(bat->tvheap->size);
 	}
-	MT_lock_unset(&bat->theaplock);
 	return position;
 }
 
@@ -324,7 +321,7 @@ GDKbatread(char *src, BAT **bat, str *colname)
 	b = (BAT *) (src + position);
 	position += align(sizeof(BAT));
 	//[DATA]
-	b->theap->base = (void *) (src + position);
+	b->theap.base = (void *) (src + position);
 	position += align(b->twidth * BATcount(b));
 	if (b->tvheap != NULL) {
 		//[VHEAP]

@@ -1,0 +1,37 @@
+stderr of test 'declared_tables` in directory 'sql/test/miscellaneous` itself:
+
+
+# 14:29:32 >  
+# 14:29:32 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39353" "--set" "mapi_usock=/var/tmp/mtest-20678/.s.monetdb.39353" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-Aug2018/BUILD/var/MonetDB/mTests_sql_test_miscellaneous" "--set" "embedded_c=true"
+# 14:29:32 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-1000805/.s.monetdb.34597
+QUERY = declare table x (b int); --error table x is already declared
+ERROR = !DECLARE TABLE: name 'x' already in use
+CODE  = 42S01
+MAPI  = (monetdb) /var/tmp/mtest-1000805/.s.monetdb.34597
+QUERY = drop table x; --error, not table x exists
+ERROR = !DROP TABLE: no such table 'x'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-1000805/.s.monetdb.34597
+QUERY = select b; --error, b was never declared
+ERROR = !SELECT: identifier 'b' unknown
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-522051/.s.monetdb.31503
+QUERY = CREATE OR REPLACE FUNCTION testtruncate() RETURNS INT 
+        BEGIN
+            DECLARE TABLE z (a int);
+            INSERT INTO z VALUES (1);
+            UPDATE z SET a = 2 WHERE a = 1;
+            TRUNCATE z;
+            INSERT INTO z VALUES (3);
+            DELETE FROM z WHERE a = 3;
+            RETURN SELECT a FROM z;
+        END;
+ERROR = !SELECT: identifier 'a' ambiguous
+CODE  = 42000
+
+# 14:29:33 >  
+# 14:29:33 >  "Done."
+# 14:29:33 >  
+

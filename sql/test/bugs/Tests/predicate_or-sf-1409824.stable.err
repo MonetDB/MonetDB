@@ -1,0 +1,17 @@
+stderr of test 'predicate_or-sf-1409824` in directory 'sql/test/bugs` itself:
+
+
+# 22:21:34 >  
+# 22:21:34 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/rc/Linux-i686/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-i686/lib/MonetDB:/ufs/niels/scratch/rc/Linux-i686/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-i686/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-i686/var/MonetDB/log" --set mapi_port=34690 --set sql_port=45174 --set xquery_port=58844 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 22:21:34 >  
+
+
+# 22:21:35 >  
+# 22:21:35 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45174  < predicate_or-sf-1409824.sql
+# 22:21:35 >  
+
+
+# 22:21:36 >  
+# 22:21:36 >  Done.
+# 22:21:36 >  
+

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -13,22 +13,21 @@
 
 #include "monetdb_config.h"
 #include "mal_instruction.h"
-#include "mal_profiler.h"
 #include "opt_prelude.h"
 #include "opt_profiler.h"
 
 str
 OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, actions = 0;
+	int i;
 	InstrPtr p;
+	char buf[BUFSIZ];
+	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
+	(void) pci;
 	(void) stk;
 	(void) cntxt;
-	/* we only need the beautified version if we plan to emit events */
-	if(malProfileMode == 0 )
-		goto wrapup;
 
 	for( i=0; i< mb->stop; i++){
 		p= getInstrPtr(mb,i);
@@ -58,13 +57,14 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			 getFunctionId(p) == selectNotNilRef) ){
 			getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,p->retc));
 		} else
-		if( getModuleId(p)== algebraRef && getFunctionId(p)== likeselectRef){
+		if( getModuleId(p)== algebraRef && (getFunctionId(p)== likeselectRef || getFunctionId(p) == ilikeselectRef)){
 			getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,p->retc));
 		} else
 		if( getModuleId(p)== algebraRef &&
 			( getFunctionId(p)== joinRef ||
 			  getFunctionId(p) == leftjoinRef ||
 			  getFunctionId(p) == thetajoinRef ||
+			  getFunctionId(p) == antijoinRef ||
 			  getFunctionId(p) == bandjoinRef ||
 			  getFunctionId(p) == rangejoinRef )){
 				getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,p->retc));
@@ -74,16 +74,17 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,1));
 		}
 	}
-	actions = 1;
-	/* Defense line against incorrect plans */
+    	/* Defense line against incorrect plans */
 	/* Plan remains unaffected */
 	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	// if (!msg)
 	//	msg = chkFlow(mb);
 	// if (!msg)
 	// 	msg = chkDeclarations(mb);
-wrapup:
-	/* keep actions taken as a fake argument*/
-	(void) pushInt(mb, pci, actions);
+	/* keep all actions taken as a post block comment */
+	usec = GDKusec()- usec;
+	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","profiler", usec);
+	newComment(mb,buf);
+	addtoMalBlkHistory(mb);
 	return msg;
 }

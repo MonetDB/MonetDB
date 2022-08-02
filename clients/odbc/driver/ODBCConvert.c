@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "ODBCGlobal.h"
@@ -53,7 +53,7 @@ typedef union {
  * 1 is returned if all is well;
  * 2 is returned if there is loss of precision (i.e. overflow of the value);
  * 0 is returned if the string is not a number, or if scale doesn't fit.
- */
+*/
 static int
 parseint(const char *data, bignum_t *nval)
 {
@@ -1238,7 +1238,7 @@ ODBCFetch(ODBCStmt *stmt,
 			case SQL_VARBINARY:
 			case SQL_LONGVARBINARY:
 			case SQL_GUID:
-				/* this is certainly enough for strings */
+				 /* this is certainly enough for strings */
 				buflen = (SQLLEN) datalen + 1;
 				ptr = NULL;
 				break;
@@ -2399,11 +2399,9 @@ ODBCFetch(ODBCStmt *stmt,
 					/* Fractional truncation */
 					addStmtError(stmt, "01S07", NULL, 0);
 				}
-				dval = (DATE_STRUCT) {
-					.year = tsval.year,
-					.month = tsval.month,
-					.day = tsval.day,
-				};
+				dval.year = tsval.year;
+				dval.month = tsval.month;
+				dval.day = tsval.day;
 			} else if (!parsedate(data, &dval)) {
 				/* Invalid character value for cast
 				 * specification */
@@ -2486,28 +2484,24 @@ ODBCFetch(ODBCStmt *stmt,
 #else
 					tm = *localtime(&t);
 #endif
-					tsval = (TIMESTAMP_STRUCT) {
-						.year = tm.tm_year + 1900,
-						.month = tm.tm_mon + 1,
-						.day = tm.tm_mday,
-						.hour = tval.hour,
-						.minute = tval.minute,
-						.second = tval.second,
-						.fraction = 0,
-					};
+					tsval.year = tm.tm_year + 1900;
+					tsval.month = tm.tm_mon + 1;
+					tsval.day = tm.tm_mday;
+					tsval.hour = tval.hour;
+					tsval.minute = tval.minute;
+					tsval.second = tval.second;
+					tsval.fraction = 0;
 				} else {
 					i = parsedate(data, &dval);
 					if (i) {
 		case SQL_TYPE_DATE:
-						tsval = (TIMESTAMP_STRUCT) {
-							.year = dval.year,
-							.month = dval.month,
-							.day = dval.day,
-							.hour = 0,
-							.minute = 0,
-							.second = 0,
-							.fraction = 0,
-						};
+						tsval.year = dval.year;
+						tsval.month = dval.month;
+						tsval.day = dval.day;
+						tsval.hour = 0;
+						tsval.minute = 0;
+						tsval.second = 0;
+						tsval.fraction = 0;
 					} else {
 						/* Invalid character
 						 * value for cast
@@ -2842,40 +2836,40 @@ ODBCFetch(ODBCStmt *stmt,
 }
 
 #define assign(buf,bufpos,buflen,value,stmt)				\
-	do {								\
-		if (bufpos >= buflen) {					\
-			char *b = realloc(buf, buflen += 1024);		\
-			if (b == NULL) {				\
-				free(buf);				\
-				if (ctype == SQL_C_WCHAR && sval)	\
-					free(sval);			\
-				/* Memory allocation error */		\
-				addStmtError(stmt, "HY001", NULL, 0);	\
-				return SQL_ERROR;			\
+		do {							\
+			if (bufpos >= buflen) {				\
+				char *b = realloc(buf, buflen += 1024);	\
+				if (b == NULL) {			\
+					free(buf);			\
+					if (ctype == SQL_C_WCHAR && sval) \
+						free(sval);		\
+					/* Memory allocation error */	\
+					addStmtError(stmt, "HY001", NULL, 0); \
+					return SQL_ERROR;		\
+				}					\
+				buf = b;				\
 			}						\
-			buf = b;					\
-		}							\
-		buf[bufpos++] = (value);				\
-	} while (0)
+			buf[bufpos++] = (value);			\
+		} while (0)
 #define assigns(buf,bufpos,buflen,value,stmt)				\
-	do {								\
-		size_t _len = strlen(value);				\
-		size_t _i;						\
-		while (bufpos + _len >= buflen) {			\
-			char *b = realloc(buf, buflen += 1024);		\
-			if (b == NULL) {				\
-				free(buf);				\
-				if (ctype == SQL_C_WCHAR && sval)	\
-					free(sval);			\
-				/* Memory allocation error */		\
-				addStmtError(stmt, "HY001", NULL, 0);	\
-				return SQL_ERROR;			\
+		do {							\
+			size_t _len = strlen(value);			\
+			size_t _i;					\
+			while (bufpos + _len >= buflen) {		\
+				char *b = realloc(buf, buflen += 1024);	\
+				if (b == NULL) {			\
+					free(buf);			\
+					if (ctype == SQL_C_WCHAR && sval) \
+						free(sval);		\
+					/* Memory allocation error */	\
+					addStmtError(stmt, "HY001", NULL, 0); \
+					return SQL_ERROR;		\
+				}					\
+				buf = b;				\
 			}						\
-			buf = b;					\
-		}							\
-		for (_i = 0; _i < _len; _i++)				\
-			buf[bufpos++] = (value)[_i];			\
-	} while (0)
+			for (_i = 0; _i < _len; _i++)			\
+				buf[bufpos++] = (value)[_i];		\
+		} while (0)
 
 SQLRETURN
 ODBCStore(ODBCStmt *stmt,
@@ -3410,11 +3404,9 @@ ODBCStore(ODBCStmt *stmt,
 					/* Datetime field overflow */
 					addStmtError(stmt, "22008", NULL, 0);
 				}
-				dval = (DATE_STRUCT) {
-					.year = tsval.year,
-					.month = tsval.month,
-					.day = tsval.day,
-				};
+				dval.year = tsval.year;
+				dval.month = tsval.month;
+				dval.day = tsval.day;
 			} else if (!parsedate(sval, &dval)) {
 				/* Invalid character value for cast
 				 * specification */
@@ -3449,11 +3441,9 @@ ODBCStore(ODBCStmt *stmt,
 					/* Datetime field overflow */
 					addStmtError(stmt, "22008", NULL, 0);
 				}
-				tval = (TIME_STRUCT) {
-					.hour = tsval.hour,
-					.minute = tsval.minute,
-					.second = tsval.second,
-				};
+				tval.hour = tsval.hour;
+				tval.minute = tsval.minute;
+				tval.second = tsval.second;
 			} else if (!parsetime(sval, &tval)) {
 				/* Invalid character value for cast
 				 * specification */
@@ -3494,28 +3484,24 @@ ODBCStore(ODBCStmt *stmt,
 #else
 					tm = *localtime(&t);
 #endif
-					tsval = (TIMESTAMP_STRUCT) {
-						.year = tm.tm_year + 1900,
-						.month = tm.tm_mon + 1,
-						.day = tm.tm_mday,
-						.hour = tval.hour,
-						.minute = tval.minute,
-						.second = tval.second,
-						.fraction = 0,
-					};
+					tsval.year = tm.tm_year + 1900;
+					tsval.month = tm.tm_mon + 1;
+					tsval.day = tm.tm_mday;
+					tsval.hour = tval.hour;
+					tsval.minute = tval.minute;
+					tsval.second = tval.second;
+					tsval.fraction = 0;
 				} else {
 					i = parsedate(sval, &dval);
 					if (i) {
 		case SQL_TYPE_DATE:
-						tsval = (TIMESTAMP_STRUCT) {
-							.year = dval.year,
-							.month = dval.month,
-							.day = dval.day,
-							.hour = 0,
-							.minute = 0,
-							.second = 0,
-							.fraction = 0,
-						};
+						tsval.year = dval.year;
+						tsval.month = dval.month;
+						tsval.day = dval.day;
+						tsval.hour = 0;
+						tsval.minute = 0;
+						tsval.second = 0;
+						tsval.fraction = 0;
 					} else {
 						/* Invalid character
 						 * value for cast

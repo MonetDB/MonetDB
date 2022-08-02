@@ -46,10 +46,11 @@ trimtest-bug-sf-1023588
 savepoint_rollback-bug-sf-1023652
 select_orderby_alias-bug-sf-1024615
 like-bug-sf-1031435
-unicode_varchar-bug-sf-1041324
+unicode_varchar-bug-sf-1041324_MapiClient
+HAVE_JDBCCLIENT_JAR?unicode_varchar-bug-sf-1041324_JdbcClient
 unique-bug-sf-1043512
 # like-bug-sf-1043521  # covered by like_tests
-except-union-intersect-bug-sf-1146079
+HAVE_JDBCCLIENT_JAR?except-union-intersect-bug-sf-1146079
 timestamp_comparison-bug-sf-1158581
 selectlist_subquery-sf-1208599
 interval_data_commutative_add_bug-sf-1263928
@@ -111,6 +112,3 @@ WHERE_IN_subquery_incorrect_results-JIRA-44
 select_select_bug
 HAVE_GEOM?filter_error
 in
-rtrim_bug
-savepoint-release
-procedure-recompile

@@ -1,0 +1,10 @@
+b:= bat.new(:int,0:int,true:bit);
+bat.append(b,2);
+bat.setPersistent(b);
+x:= bat.isPersistent(b);
+z:= bat.isTransient(b);
+io.print(x); io.print(z); io.print("");
+bat.setTransient(b);
+x:= bat.isPersistent(b);
+z:= bat.isTransient(b);
+io.print(x); io.print(z); io.print("");

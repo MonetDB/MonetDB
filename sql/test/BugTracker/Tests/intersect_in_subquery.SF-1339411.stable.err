@@ -1,0 +1,17 @@
+stderr of test 'intersect_in_subquery.SF-1339411` in directory 'sql/test/BugTracker` itself:
+
+
+# 18:03:32 >  
+# 18:03:32 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/build-m5/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/Linux-x86_64/build-m5/lib/MonetDB5" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/build-m5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/build-m5/var/MonetDB5/log" --set mapi_port=35329 --set sql_port=43723 --set xquery_port=57520 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit="include sql; mapi.listen(43723:int);" ; echo ; echo Over..
+# 18:03:32 >  
+
+
+# 18:03:32 >  
+# 18:03:32 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=43723  < intersect_in_subquery.SF-1339411.sql
+# 18:03:32 >  
+
+
+# 18:03:32 >  
+# 18:03:32 >  Done.
+# 18:03:32 >  
+

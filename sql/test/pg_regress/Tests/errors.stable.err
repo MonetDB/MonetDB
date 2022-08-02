@@ -1,0 +1,446 @@
+stderr of test 'errors` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
+
+#--
+#-- ERRORS
+#--
+#-- bad in postquel, but ok in postsql
+#--
+#-- UNSUPPORTED STUFF
+#-- doesn't work 
+#-- attachas nonesuch
+#--
+#-- doesn't work 
+#-- notify pg_class
+#--
+#--
+#-- SELECT
+#-- missing relation name 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select;
+ERROR = syntax error at or near ";" at character 7
+#-- no such relation 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select * from nonesuch;
+ERROR = relation "nonesuch" does not exist
+#-- missing target list
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select from pg_database;
+ERROR = syntax error at or near "from" at character 8
+#-- bad name in target list
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select nonesuch from pg_database;
+ERROR = column "nonesuch" does not exist
+#-- bad attribute name on lhs of operator
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select * from pg_database where nonesuch = pg_database.datname;
+ERROR = column "nonesuch" does not exist
+#-- bad attribute name on rhs of operator
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select * from pg_database where pg_database.datname = nonesuch;
+ERROR = column "nonesuch" does not exist
+#-- bad select distinct on syntax, distinct attribute missing
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select distinct on (foobar) from pg_database;
+ERROR = syntax error at or near "from" at character 29
+#-- bad select distinct on syntax, distinct attribute not in target list
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select distinct on (foobar) * from pg_database;
+ERROR = column "foobar" does not exist
+#--
+#-- DELETE
+#-- missing relation name (this had better not wildcard!) 
+#-- no such relation 
+#--
+#-- DROP
+#-- missing relation name (this had better not wildcard!) 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop table;
+ERROR = syntax error at or near ";" at character 11
+#-- no such relation 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop table nonesuch;
+ERROR = table "nonesuch" does not exist
+#--
+#-- ALTER TABLE
+#-- relation renaming 
+#-- missing relation name 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = alter table rename;
+ERROR = syntax error at or near ";" at character 19
+#-- no such relation 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = alter table nonesuch rename to newnonesuch;
+ERROR = relation "nonesuch" does not exist
+#-- no such relation 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = alter table nonesuch rename to stud_emp;
+ERROR = relation "nonesuch" does not exist
+#-- conflict 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = alter table stud_emp rename to aggtest;
+ERROR = relation "aggtest" already exists
+#-- self-conflict 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = alter table stud_emp rename to stud_emp;
+ERROR = relation "stud_emp" already exists
+#-- attribute renaming 
+#-- no such relation 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = alter table nonesuchrel rename column nonesuchatt to newnonesuchatt;
+ERROR = relation "nonesuchrel" does not exist
+#-- no such attribute 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = alter table emp rename column nonesuchatt to newnonesuchatt;
+ERROR = column "nonesuchatt" does not exist
+#-- conflict 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = alter table emp rename column salary to manager;
+ERROR = column "manager" of relation "stud_emp" already exists
+#-- conflict 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = alter table emp rename column salary to oid;
+ERROR = column "oid" of relation "stud_emp" already exists
+#--
+#-- TRANSACTION STUFF
+#-- not in a xact 
+#-- not in a xact 
+#--
+#-- CREATE AGGREGATE
+#-- sfunc/finalfunc type disagreement 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = create aggregate newavg2 (sfunc = int4pl,
+			  basetype = integer,
+			  stype = integer,
+			  finalfunc = int2um,
+			  initcond = '0');
+ERROR = function int2um(integer) does not exist
+#-- left out basetype
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = create aggregate newcnt1 (sfunc = int4inc,
+			  stype = integer,
+			  initcond = '0');
+ERROR = aggregate basetype must be specified
+#--
+#-- DROP INDEX
+#-- missing index name 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop index;
+ERROR = syntax error at or near ";" at character 11
+#-- bad index name 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop index 314159;
+ERROR = syntax error at or near "314159" at character 12
+#-- no such index 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop index nonesuch;
+ERROR = index "nonesuch" does not exist
+#--
+#-- DROP AGGREGATE
+#-- missing aggregate name 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop aggregate;
+ERROR = syntax error at or near ";" at character 15
+#-- missing aggregate type
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop aggregate newcnt1;
+ERROR = syntax error at or near ";" at character 23
+#-- bad aggregate name 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop aggregate 314159 (int);
+ERROR = syntax error at or near "314159" at character 16
+#-- bad aggregate type
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop aggregate newcnt (nonesuch);
+ERROR = type "nonesuch" does not exist
+#-- no such aggregate 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop aggregate nonesuch (integer);
+ERROR = aggregate nonesuch(integer) does not exist
+#-- no such aggregate for type
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop aggregate newcnt (float);
+ERROR = aggregate newcnt(real) does not exist
+#--
+#-- DROP FUNCTION
+#-- missing function name 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop function ();
+ERROR = syntax error at or near "(" at character 15
+#-- bad function name 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop function 314159();
+ERROR = syntax error at or near "314159" at character 15
+#-- no such function 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop function nonesuch();
+ERROR = function nonesuch() does not exist
+#--
+#-- DROP TYPE
+#-- missing type name 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop type;
+ERROR = syntax error at or near ";" at character 10
+#-- bad type name 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop type 314159;
+ERROR = syntax error at or near "314159" at character 11
+#-- no such type 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop type nonesuch;
+ERROR = type "nonesuch" does not exist
+#--
+#-- DROP OPERATOR
+#-- missing everything 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop operator;
+ERROR = syntax error at or near ";" at character 14
+#-- bad operator name 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop operator equals;
+ERROR = syntax error at or near ";" at character 21
+#-- missing type list 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop operator ===;
+ERROR = syntax error at or near ";" at character 18
+#-- missing parentheses 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop operator integer, integer;
+ERROR = syntax error at or near "," at character 19
+#-- missing operator name 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop operator (integer, integer);
+ERROR = syntax error at or near "(" at character 15
+#-- missing type list contents 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop operator === ();
+ERROR = syntax error at or near ")" at character 20
+#-- no such operator 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop operator === (integer);
+ERROR = missing argument
+#-- no such operator by that name 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop operator === (integer, integer);
+ERROR = operator does not exist: integer === integer
+#-- no such type1 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop operator = (nonesuch);
+ERROR = missing argument
+#-- no such type1 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop operator = ( , integer);
+ERROR = syntax error at or near "," at character 19
+#-- no such type1 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop operator = (nonesuch, integer);
+ERROR = type nonesuch does not exist
+#-- no such type2 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop operator = (integer, nonesuch);
+ERROR = type nonesuch does not exist
+#-- no such type2 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop operator = (integer, );
+ERROR = syntax error at or near ")" at character 24
+#--
+#-- DROP RULE
+#-- missing rule name 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop rule;
+ERROR = syntax error at or near ";" at character 10
+#-- bad rule name 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop rule 314159;
+ERROR = syntax error at or near "314159" at character 11
+#-- no such rule 
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop rule nonesuch on noplace;
+ERROR = relation "noplace" does not exist
+#-- these postquel variants are no longer supported
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop tuple rule nonesuch;
+ERROR = syntax error at or near "tuple" at character 6
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop instance rule nonesuch on noplace;
+ERROR = syntax error at or near "instance" at character 6
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = drop rewrite rule nonesuch;
+ERROR = syntax error at or near "rewrite" at character 6
+#--
+#-- Check that division-by-zero is properly caught.
+#--
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select 1/0;
+ERROR = division by zero
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select 1::bigint/0;
+ERROR = division by zero
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select 1/0::bigint;
+ERROR = division by zero
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select 1::smallint/0;
+ERROR = division by zero
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select 1/0::smallint;
+ERROR = division by zero
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select 1::numeric/0;
+ERROR = division by zero
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select 1/0::numeric;
+ERROR = division by zero
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select 1::double/0;
+ERROR = division by zero
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select 1/0::double;
+ERROR = division by zero
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select 1::float/0;
+ERROR = division by zero
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select 1/0::float;
+ERROR = division by zero
+#--
+#-- Test psql's reporting of syntax error location
+#--
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE foo;
+ERROR = syntax error at or near "foo" at character 8
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE ;
+ERROR = syntax error at or near ";" at character 14
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE
+\g
+ERROR = syntax error at end of input at character 13
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO foo VALUES(123) foo;
+ERROR = syntax error at or near "foo" at character 29
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO 123
+VALUES(123);
+ERROR = syntax error at or near "123" at character 13
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO foo 
+VALUES(123) 123
+;
+ERROR = syntax error at or near "123" at character 30
+#-- with a tab
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE foo
+  (id integer UNIQUE NOT NULL, id2 TEXT NOT NULL PRIMARY KEY,
+	id3 INTEGER NOT NUL,
+   id4 integer UNIQUE NOT NULL, id5 TEXT UNIQUE NOT NULL);
+ERROR = syntax error at or near "NUL" at character 94
+#-- long line to be truncated on the left
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE foo(id integer UNIQUE NOT NULL, id2 TEXT NOT NULL PRIMARY KEY, id3 INTEGER NOT NUL, 
+id4 integer UNIQUE NOT NULL, id5 TEXT UNIQUE NOT NULL);
+ERROR = syntax error at or near "NUL" at character 90
+#-- long line to be truncated on the right
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE foo(
+id3 INTEGER NOT NUL, id4 integer UNIQUE NOT NULL, id5 TEXT UNIQUE NOT NULL, id integer UNIQUE NOT NULL, id2 TEXT NOT NULL PRIMARY KEY);
+ERROR = syntax error at or near "NUL" at character 35
+#-- long line to be truncated both ways
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE TABLE foo(id integer UNIQUE NOT NULL, id2 TEXT NOT NULL PRIMARY KEY, id3 INTEGER NOT NUL, id4 integer UNIQUE NOT NULL, id5 TEXT UNIQUE NOT NULL);
+ERROR = syntax error at or near "NUL" at character 90
+#-- long line to be truncated on the left, many lines
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE
+TEMPORARY
+TABLE 
+foo(id integer UNIQUE NOT NULL, id2 TEXT NOT NULL PRIMARY KEY, id3 INTEGER NOT NUL, 
+id4 integer 
+UNIQUE 
+NOT 
+NULL, 
+id5 TEXT 
+UNIQUE 
+NOT 
+NULL)
+;
+ERROR = syntax error at or near "NUL" at character 101
+#-- long line to be truncated on the right, many lines
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE 
+TEMPORARY
+TABLE 
+foo(
+id3 INTEGER NOT NUL, id4 integer UNIQUE NOT NULL, id5 TEXT UNIQUE NOT NULL, id integer UNIQUE NOT NULL, id2 TEXT NOT NULL PRIMARY KEY)
+;
+ERROR = syntax error at or near "NUL" at character 47
+#-- long line to be truncated both ways, many lines
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE 
+TEMPORARY
+TABLE 
+foo
+(id 
+integer 
+UNIQUE NOT NULL, idx integer UNIQUE NOT NULL, idy integer UNIQUE NOT NULL, id2 TEXT NOT NULL PRIMARY KEY, id3 INTEGER NOT NUL, id4 integer UNIQUE NOT NULL, id5 TEXT UNIQUE NOT NULL, 
+idz integer UNIQUE NOT NULL, 
+idv integer UNIQUE NOT NULL);
+ERROR = syntax error at or near "NUL" at character 157
+#-- more than 10 lines...
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE 
+TEMPORARY
+TABLE 
+foo
+(id 
+integer 
+UNIQUE 
+NOT 
+NULL
+, 
+idm
+integer 
+UNIQUE 
+NOT 
+NULL,
+idx integer UNIQUE NOT NULL, idy integer UNIQUE NOT NULL, id2 TEXT NOT NULL PRIMARY KEY, id3 INTEGER NOT NUL, id4 integer UNIQUE NOT NULL, id5 TEXT UNIQUE NOT NULL, 
+idz integer UNIQUE NOT NULL, 
+idv 
+integer 
+UNIQUE 
+NOT 
+NULL);
+ERROR = syntax error at or near "NUL" at character 190
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
+

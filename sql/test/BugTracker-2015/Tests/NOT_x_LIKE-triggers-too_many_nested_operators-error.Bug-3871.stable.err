@@ -1,0 +1,37 @@
+stderr of test 'NOT_x_LIKE-triggers-too_many_nested_operators-error.Bug-3871` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 13:02:54 >  
+# 13:02:54 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31655" "--set" "mapi_usock=/var/tmp/mtest-29864/.s.monetdb.31655" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/Users/jennie/scratch/monet-install/Jul2015/debug/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 13:02:54 >  
+
+# builtin opt 	gdk_dbpath = /Users/jennie/scratch/monet-install/Jul2015/debug/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31655
+# cmdline opt 	mapi_usock = /var/tmp/mtest-29864/.s.monetdb.31655
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /Users/jennie/scratch/monet-install/Jul2015/debug/var/MonetDB/mTests_sql_test_BugTracker-2015
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 13:02:55 >  
+# 13:02:55 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29864" "--port=31655"
+# 13:02:55 >  
+
+
+# 13:02:55 >  
+# 13:02:55 >  "Done."
+# 13:02:55 >  
+

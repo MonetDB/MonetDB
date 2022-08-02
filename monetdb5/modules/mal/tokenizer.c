@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -39,11 +39,8 @@
  */
 #include "monetdb_config.h"
 #include "bat5.h"
-#include "mal.h"
-#include "mal_client.h"
-#include "mal_interpreter.h"
+#include "tokenizer.h"
 #include "mal_linker.h"
-#include "mal_exception.h"
 
 #define MAX_TKNZR_DEPTH 256
 #define INDEX MAX_TKNZR_DEPTH
@@ -71,16 +68,12 @@ static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
 	BUN p;
 
 	if (BAThash(b) == GDK_SUCCEED) {
-		MT_rwlock_rdlock(&b->thashlock);
 		HASHloop_str(bi, b->thash, p, part) {
 			if (BUNtoid(bidx, p) == *prv) {
-				MT_rwlock_rdunlock(&b->thashlock);
-				bat_iterator_end(&bi);
 				*prv = (oid) p;
 				return TRUE;
 			}
 		}
-		MT_rwlock_rdunlock(&b->thashlock);
 	} else {
 		/* hash failed, slow scan */
 		BUN q;
@@ -88,17 +81,15 @@ static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
 		BATloop(b, p, q) {
 			if (BUNtoid(bidx, p) == *prv &&
 				strcmp(BUNtail(bi, p), part) == 0) {
-				bat_iterator_end(&bi);
 				*prv = (oid) p;
 				return TRUE;
 			}
 		}
 	}
-	bat_iterator_end(&bi);
 	return FALSE;
 }
 
-static str
+str
 TKNZRopen(void *ret, str *in)
 {
 	int depth;
@@ -110,7 +101,7 @@ TKNZRopen(void *ret, str *in)
 	(void) ret;
 	if (strlen(*in) > 127)
 		throw(MAL, "tokenizer.open",
-			  ILLEGAL_ARGUMENT " tokenizer name too long");
+				ILLEGAL_ARGUMENT " tokenizer name too long");
 
 	MT_lock_set(&mal_contextLock);
 	if (TRANS != NULL) {
@@ -141,14 +132,11 @@ TKNZRopen(void *ret, str *in)
 		b = COLnew(0, TYPE_oid, 1024, PERSISTENT);
 		if (b == NULL)
 			throw(MAL, "tokenizer.open", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		str msg;
-		if ((msg = BKCsetName(&r, &b->batCacheid, &(const char*){batname})) != MAL_SUCCEED ||
-			(msg = BKCsetPersistent(&r, &b->batCacheid)) != MAL_SUCCEED ||
+		if (BKCsetName(&r, &b->batCacheid, &(const char*){batname}) != MAL_SUCCEED ||
+			BKCsetPersistent(&r, &b->batCacheid) != MAL_SUCCEED ||
 			BUNappend(TRANS, batname, false) != GDK_SUCCEED) {
 			BBPreclaim(b);
-			if (msg)
-				return msg;
-			throw(MAL, "tokenizer.open", GDK_EXCEPTION);
+			throw(MAL, "tokenizer.open", OPERATION_FAILED);
 		}
 		tokenBAT[INDEX].val = b;
 	} else { /* existing tokenizer */
@@ -191,7 +179,7 @@ TKNZRopen(void *ret, str *in)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 TKNZRclose(void *r)
 {
 	int i;
@@ -242,7 +230,7 @@ TKNZRtokenize(str in, str *parts, char tkn)
 	return depth;
 }
 
-static str
+str
 TKNZRappend(oid *pos, str *s)
 {
 	str url;
@@ -294,7 +282,7 @@ TKNZRappend(oid *pos, str *s)
 				(msg = BKCsetPersistent(&r, &bVal->batCacheid)) != MAL_SUCCEED ||
 				BUNappend(TRANS, batname, false) != GDK_SUCCEED) {
 				GDKfree(url);
-				return msg ? msg : createException(MAL, "tokenizer.append", GDK_EXCEPTION);
+				return msg ? msg : createException(MAL, "tokenizer.append", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 
 			/* make new bat for index */
@@ -311,7 +299,7 @@ TKNZRappend(oid *pos, str *s)
 				(msg = BKCsetPersistent(&r, &bIdx->batCacheid)) != MAL_SUCCEED ||
 				BUNappend(TRANS, batname, false) != GDK_SUCCEED) {
 				GDKfree(url);
-				return msg ? msg : createException(MAL, "tokenizer.append", GDK_EXCEPTION);
+				return msg ? msg : createException(MAL, "tokenizer.append", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 
 		}
@@ -376,7 +364,7 @@ TKNZRappend(oid *pos, str *s)
 }
 
 #define SIZE (1 * 1024 * 1024)
-static str
+str
 TKNZRdepositFile(void *r, str *fnme)
 {
 	stream *fs;
@@ -400,16 +388,14 @@ TKNZRdepositFile(void *r, str *fnme)
 	/* later, handle directory separator */
 	fs = open_rastream(buf);
 	if (fs == NULL)
-		throw(MAL, "tokenizer.depositFile", "%s", mnstr_peek_error(NULL));
+		throw(MAL, "tokenizer.depositFile", RUNTIME_FILE_NOT_FOUND "%s", buf);
 	if (mnstr_errnr(fs)) {
 		close_stream(fs);
-		throw(MAL, "tokenizer.depositFile", "%s", mnstr_peek_error(NULL));
+		throw(MAL, "tokenizer.depositFile", RUNTIME_FILE_NOT_FOUND "%s", buf);
 	}
 	bs = bstream_create(fs, SIZE);
-	if (bs == NULL) {
-		close_stream(fs);
+	if (bs == NULL)
 		throw(MAL, "tokenizer.depositFile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
 	while (bstream_read(bs, bs->size - (bs->len - bs->pos)) != 0 &&
 		   !mnstr_errnr(bs->s))
 	{
@@ -445,7 +431,7 @@ TKNZRdepositFile(void *r, str *fnme)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 TKNZRlocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	oid pos;
@@ -502,12 +488,11 @@ TKNZRlocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 takeOid(oid id, str *val)
 {
 	int i, depth;
 	str parts[MAX_TKNZR_DEPTH];
-	BATiter iters[MAX_TKNZR_DEPTH];
 	size_t lngth = 0;
 	str s;
 
@@ -521,18 +506,15 @@ takeOid(oid id, str *val)
 	id = GET_h(id);
 
 	for (i = depth - 1; i >= 0; i--) {
-		iters[i] = bat_iterator(tokenBAT[i].val);
-		parts[i] = (str) BUNtvar(iters[i], id);
+		BATiter bi = bat_iterator(tokenBAT[i].val);
+		parts[i] = (str) BUNtvar(bi, id);
 		id = BUNtoid(tokenBAT[i].idx, id);
 		lngth += strlen(parts[i]);
 	}
 
 	*val = (str) GDKmalloc(lngth+depth+1);
-	if (*val == NULL) {
-		for (i = 0; i < depth; i++)
-			bat_iterator_end(&iters[i]);
+	if( *val == NULL)
 		throw(MAL, "tokenizer.takeOid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
 	s = *val;
 
 	for (i = 0; i < depth; i++) {
@@ -541,13 +523,11 @@ takeOid(oid id, str *val)
 		*s++ = '/';
 	}
 	*s = '\0';
-	for (i = 0; i < depth; i++)
-		bat_iterator_end(&iters[i]);
 
 	return MAL_SUCCEED;
 }
 
-static str
+str
 TKNZRtakeOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str ret, val = NULL;
@@ -566,7 +546,7 @@ TKNZRtakeOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return ret;
 }
 
-static str
+str
 TKNZRgetIndex(bat *r)
 {
 	if (TRANS == NULL)
@@ -576,7 +556,7 @@ TKNZRgetIndex(bat *r)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 TKNZRgetLevel(bat *r, int *level)
 {
 	BAT* view;
@@ -589,11 +569,11 @@ TKNZRgetLevel(bat *r, int *level)
 		throw(MAL, "tokenizer.getLevel", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*r = view->batCacheid;
 
-	BBPkeepref(view);
+	BBPkeepref(*r);
 	return MAL_SUCCEED;
 }
 
-static str
+str
 TKNZRgetCount(bat *r)
 {
 	BAT *b;
@@ -614,16 +594,16 @@ TKNZRgetCount(bat *r)
 	}
 	BATsetcount(b, tokenDepth);
 	*r = b->batCacheid;
-	BBPkeepref(b);
+	BBPkeepref(*r);
 	return MAL_SUCCEED;
 }
 
-static str
+str
 TKNZRgetCardinality(bat *r)
 {
 	BAT *b, *en;
 	int i;
-	struct canditer ci;
+	lng cnt;
 
 	if (TRANS == NULL)
 		throw(MAL, "tokenizer", "no tokenizer store open");
@@ -635,9 +615,9 @@ TKNZRgetCardinality(bat *r)
 			BBPreclaim(b);
 			throw(MAL, "tokenizer.getCardinality", GDK_EXCEPTION);
 		}
-		canditer_init(&ci, NULL, en);
+		cnt = (lng) BATcount(en);
 		BBPunfix(en->batCacheid);
-		if (BUNappend(b, &(lng){ci.ncand}, false) != GDK_SUCCEED) {
+		if (BUNappend(b, &cnt, false) != GDK_SUCCEED) {
 			BBPreclaim(b);
 			throw(MAL, "tokenizer.getCardinality", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -645,28 +625,7 @@ TKNZRgetCardinality(bat *r)
 
 	BATsetcount(b, tokenDepth);
 	*r = b->batCacheid;
-	BBPkeepref(b);
+	BBPkeepref(*r);
 	return MAL_SUCCEED;
 }
 
-#include "mel.h"
-mel_func tokenizer_init_funcs[] = {
- command("tokenizer", "open", TKNZRopen, false, "open the named tokenizer store, a new one is created if the specified name does not exist", args(1,2, arg("",void),arg("name",str))),
- command("tokenizer", "close", TKNZRclose, false, "close the current tokenizer store", args(1,1, arg("",void))),
- pattern("tokenizer", "take", TKNZRtakeOid, false, "reconstruct and returns the i-th string", args(1,2, arg("",str),arg("i",oid))),
- pattern("tokenizer", "locate", TKNZRlocate, false, "if the given string is in the store returns its oid, otherwise oid_nil", args(1,2, arg("",oid),arg("s",str))),
- command("tokenizer", "append", TKNZRappend, false, "tokenize a new string and append it to the tokenizer (duplicate elimination is performed)", args(1,2, arg("",oid),arg("u",str))),
- command("tokenizer", "depositFile", TKNZRdepositFile, false, "batch insertion from a file of strings to tokenize, each string is separated by a new line", args(1,2, arg("",void),arg("fnme",str))),
- command("tokenizer", "getLevel", TKNZRgetLevel, false, "administrative function that returns the bat on level i", args(1,2, batarg("",str),arg("i",int))),
- command("tokenizer", "getIndex", TKNZRgetIndex, false, "administrative function that returns the INDEX bat", args(1,1, batarg("",oid))),
- command("tokenizer", "getCount", TKNZRgetCount, false, "debugging function that returns the size of the bats at each level", args(1,1, batarg("",lng))),
- command("tokenizer", "getCardinality", TKNZRgetCardinality, false, "debugging function that returns the unique tokens at each level", args(1,1, batarg("",lng))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_tokenizer_mal)
-{ mal_module("tokenizer", NULL, tokenizer_init_funcs); }

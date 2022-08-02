@@ -1,0 +1,25 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+
+SUBDIRS = buildtools common clients \
+	gdk \
+	monetdb5 \
+	sql \
+	HAVE_GEOM?geom \
+	tools \
+	HAVE_TESTING?testing \
+
+EXTRA_DIST = bootstrap configure configure.ac configure.ag libversions \
+	MonetDB.spec rpm.mk.in COPYING README.rst license.txt HowToStart.rst \
+	README-Fedora README-Debian
+
+EXTRA_DIST_DIR = NT debian MacOSX documentation
+
+headers_config = {
+	DIR = includedir/monetdb
+	HEADERS = h
+	SOURCES = monetdb_config.h
+}

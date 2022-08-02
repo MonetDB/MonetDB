@@ -1,0 +1,19 @@
+stderr of test 'copy_into_quote` in directory 'sql/test/bugs` itself:
+
+
+# 17:26:23 >  
+# 17:26:23 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=37460 --set xrpc_port=41525 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 17:26:23 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf)
+
+# 17:26:23 >  
+# 17:26:23 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=37460 
+# 17:26:23 >  
+
+
+# 17:26:23 >  
+# 17:26:23 >  Done.
+# 17:26:23 >  
+

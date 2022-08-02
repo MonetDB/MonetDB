@@ -1,0 +1,119 @@
+stderr of test 'triggers_schema_operations` in directory 'sql/test/Triggers` itself:
+
+
+# 14:01:51 >  
+# 14:01:51 >  Mtimeout -timeout 180 Mserver "--config=/ufs/goncalve/scratch/MonetDB/monetdb4/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/monetdb4/lib/MonetDB:/ufs/goncalve/scratch/MonetDB/monetdb4/lib/MonetDB/lib:/ufs/goncalve/scratch/MonetDB/monetdb4/lib/MonetDB/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/monetdb4/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/monetdb4/var/MonetDB/sql_logs" --set "xquery_logdir=something" --set mapi_port=32415 --set monet_prompt= --trace "--dbname=mTests_src_test_Triggers" --dbinit=" module(sql_server);" ; echo ; echo Over..
+# 14:01:51 >  
+
+
+# 14:01:52 >  
+# 14:01:52 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32415  < triggers_schema_operations.sql
+# 14:01:52 >  
+
+MAPI  = monetdb@sofia:38256
+QUERY = create trigger test_7_1
+        	after update on t_7_1
+        	create table t_7_2 (id int);
+ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test_7_1
+        !	after update on t_7_1
+        !	create"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = drop trigger test_7_1;
+ERROR = !DROP TRIGGER: unknown trigger test_7_1
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = create trigger test_7_1
+        	after update on t_7_1
+        	drop table t_7_2;
+ERROR = !syntax error, unexpected DROP, expecting WHILE in: "create trigger test_7_1
+        !	after update on t_7_1
+        !	drop"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = drop trigger test_7_1;
+ERROR = !DROP TRIGGER: unknown trigger test_7_1
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = create trigger test_7_1
+        	after update on t_7_1
+        	alter table t_7_2 add column (name varchar(1024));
+ERROR = !syntax error, unexpected ALTER, expecting WHILE in: "create trigger test_7_1
+        !	after update on t_7_1
+        !	alter"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = create trigger test_7_2
+        	after update on t_7_1
+        	create trigger test_7_2_1
+        		after update on t_7_1
+        		alter table t_7_2 add column (name varchar(1024));
+ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test_7_2
+        !	after update on t_7_1
+        !	create"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = create trigger test_7_3
+        	after update on t_7_1
+        	create view v1 as select * from t_7_1;
+ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test_7_3
+        !	after update on t_7_1
+        !	create"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = create trigger test_7_4
+        	after update on t_7_1
+        	create function f1 (id int)
+        	returns boolean
+        	BEGIN
+        		if (id >0)
+        			then return true;
+ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test_7_4
+        !	after update on t_7_1
+        !	create"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = else return false;
+ERROR = !syntax error, unexpected ELSE in: "			else"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = end if;
+ERROR = !syntax error, unexpected END in: "		end"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = END;
+ERROR = !syntax error, unexpected END in: "	end"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = create trigger test_7_5
+        	after update on t_7_1
+        	create index id_index on t_7_2(id);
+ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test_7_5
+        !	after update on t_7_1
+        !	create"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = drop trigger test_7_1;
+ERROR = !DROP TRIGGER: unknown trigger test_7_1
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = drop trigger test_7_2;
+ERROR = !DROP TRIGGER: unknown trigger test_7_2
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = drop trigger test_7_3;
+ERROR = !DROP TRIGGER: unknown trigger test_7_3
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = drop trigger test_7_4;
+ERROR = !DROP TRIGGER: unknown trigger test_7_4
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = drop trigger test_7_5;
+ERROR = !DROP TRIGGER: unknown trigger test_7_5
+CODE  = 3F000
+
+# 14:01:52 >  
+# 14:01:52 >  Done.
+# 14:01:52 >  
+

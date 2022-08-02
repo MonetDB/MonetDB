@@ -1,0 +1,12 @@
+stderr of test 'tst049` in directory 'monetdb5/mal` itself:
+
+
+# 09:04:59 >  
+# 09:04:59 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=37375 --set sql_port=44387 --set xquery_port=52599 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst049.mal < /dev/null
+# 09:04:59 >  
+
+
+# 09:04:59 >  
+# 09:04:59 >  Done.
+# 09:04:59 >  
+

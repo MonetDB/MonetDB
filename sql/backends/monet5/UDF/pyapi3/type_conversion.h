@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -24,7 +24,7 @@
 //! Copies the string of size up to max_size from the source to the destination,
 //! returns FALSE if "source" is not a legal ASCII string (i.e. a character is
 //! >= 128)
-bool pyapi3_string_copy(const char *source, char *dest, size_t max_size, bool allow_unicode);
+bool string_copy(const char *source, char *dest, size_t max_size, bool allow_unicode);
 #ifdef HAVE_HGE
 //! Converts a hge to a string and writes it into the string "str"
 int hge_to_string(char *str, hge);
@@ -45,19 +45,6 @@ size_t pyobject_get_size(PyObject *obj);
 str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value);
 //! Converts a PyObject to a blob
 str pyobject_to_blob(PyObject **ptr, size_t maxsize, blob **value);
-
-str pyobject_to_date(PyObject **ptr, size_t maxsize, date *value);
-str str_to_date(const char *ptr, size_t maxsize, date *value);
-str unicode_to_date(Py_UNICODE *ptr, size_t maxsize, date *value);
-
-str pyobject_to_daytime(PyObject **ptr, size_t maxsize, daytime *value);
-str str_to_daytime(const char *ptr, size_t maxsize, daytime *value);
-str unicode_to_daytime(Py_UNICODE *ptr, size_t maxsize, daytime *value);
-
-str pyobject_to_timestamp(PyObject **ptr, size_t maxsize, timestamp *value);
-str str_to_timestamp(const char *ptr, size_t maxsize, timestamp *value);
-str unicode_to_timestamp(Py_UNICODE *ptr, size_t maxsize, timestamp *value);
-
 
 //using macros, create a number of str_to_<type>, unicode_to_<type> and pyobject_to_<type> functions (we are Java now)
 #define CONVERSION_FUNCTION_HEADER_FACTORY(tpe)          \

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -13,9 +13,7 @@
  * This makes it easier to search for statement duplicates
  * and alias their variables.
  */
-/* We should not look at constants in simple, side-effect functions, because
- * they can not be removed later on.
-*/
+
 /*
  * We have to keep an alias table to reorganize the program
  * after the variable stack has changed.
@@ -29,23 +27,20 @@
 #include "opt_constants.h"
 
 str
-OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, j, k = 1, n  = 0, fnd = 0, actions  = 0, limit = 0;
-	int *alias = NULL, *index = NULL, *cand = NULL;
-	VarPtr x,y, *cst = NULL;
+	int i, k = 1, n  = 0, fnd = 0, actions  = 0, limit = 0;
+	int *alias, *index;
+	VarPtr x,y, *cst;
+	char buf[256];
+	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
-	InstrPtr p, q;
 
-	if( isSimpleSQL(mb)){
-		goto wrapup;
-	}
 	alias= (int*) GDKzalloc(sizeof(int) * mb->vtop);
-	cand= (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	cst= (VarPtr*) GDKzalloc(sizeof(VarPtr) * mb->vtop);
 	index= (int*) GDKzalloc(sizeof(int) * mb->vtop);
 
-	if ( alias == NULL || cst == NULL || index == NULL || cand == NULL){
+	if ( alias == NULL || cst == NULL || index == NULL){
 		msg = createException(MAL,"optimizer.constants", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
@@ -53,28 +48,10 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	(void) stk;
 	(void) cntxt;
 
-	for(i=0; i<mb->stop; i++){
-		q = getInstrPtr(mb,i);
-		if ( !q) {
-			continue;
-		}
-		if ( getModuleId(q) == sqlRef && getFunctionId(q) != tidRef) {
-			continue;
-		}
-		if( hasSideEffects(mb, q, 1) )
-			continue;
-		for(k= q->retc; k < q->argc; k++){
-			j = getArg(q,k);
-			if( cand[j] == 0) {
-				cand[j] = isVarConstant(mb, j)  && isVarFixed(mb, j)  && getVarType(mb, j) != TYPE_ptr;
-			}
-		}
-	}
-
 	for (i=0; i< mb->vtop; i++)
 		alias[ i]= i;
 	for (i=0; i< mb->vtop; i++)
-		if ( cand[i]) {
+		if ( isVarConstant(mb,i)  && isVarFixed(mb,i)  && getVarType(mb,i) != TYPE_ptr){
 			x= getVar(mb,i);
 			fnd = 0;
 			limit = n - 128; // don't look to far back
@@ -107,19 +84,21 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				getArg(p,k) = alias[getArg(p,k)];
 		}
 
-	/* Defense line against incorrect plans */
+    /* Defense line against incorrect plans */
 	/* Plan remains unaffected */
 	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	// if (!msg)
 	// 	msg = chkFlow(mb);
 	// if(!msg)
 	// 	msg = chkDeclarations(mb);
-	/* keep all actions taken as a post block comment */
-wrapup:
-	/* keep actions taken as a fake argument*/
-	(void) pushInt(mb, pci, actions);
+    /* keep all actions taken as a post block comment */
+	usec = GDKusec()- usec;
+	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","constants",actions,usec);
+	newComment(mb,buf);
+	if (actions > 0)
+		addtoMalBlkHistory(mb);
 
-	if( cand) GDKfree(cand);
+wrapup:
 	if( alias) GDKfree(alias);
 	if( cst) GDKfree(cst);
 	if( index) GDKfree(index);

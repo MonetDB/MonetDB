@@ -5,7 +5,7 @@ except ImportError:
     import process
 
 def client(args):
-    with process.client('sql', args=args,
+    with process.client('sql', args=args, log=True,
                         stdout=process.PIPE, stderr=process.PIPE) as clt:
         out, err = clt.communicate()
         sys.stdout.write(out)

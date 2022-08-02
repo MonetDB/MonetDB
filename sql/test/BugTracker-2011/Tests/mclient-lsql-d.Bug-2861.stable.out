@@ -1,0 +1,35 @@
+stdout of test 'mclient-lsql-d.Bug-2861` in directory 'sql/test/BugTracker-2011` itself:
+
+
+# 10:06:13 >  
+# 10:06:13 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/volund.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-Aug2011-volund.ins.cwi.nl/sql/dbfarm" --set mapi_open=true --set mapi_port=31159 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 10:06:13 >  
+
+# MonetDB 5 server v11.5.0 "Aug2011-7c7245f9cb28"
+# Serving database 'mTests_test_BugTracker-2011', using 4 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://volund.ins.cwi.nl:31159/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# SQLException:mvc:SQL module not initialized
+
+# SQL catalog created, loading sql scripts once
+
+
+# 10:06:13 >  
+# 10:06:13 >  ./mclient-lsql-d.Bug-2861.SQL.sh mclient-lsql-d.Bug-2861 
+# 10:06:13 >  
+
+
+#create table bug2861 (id int);
+TABLE       sys.bug2861
+#drop table bug2861;
+
+# 10:06:13 >  
+# 10:06:13 >  Done.
+# 10:06:13 >  
+

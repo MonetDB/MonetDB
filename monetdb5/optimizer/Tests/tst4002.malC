@@ -1,0 +1,10 @@
+#testing some optimizer constructions
+
+function foo();
+z:= "nil";
+d:= calc.date(z);
+end foo;
+
+optimizer.aliases("user","foo");
+optimizer.garbageCollector("user","foo");
+mdb.list("user","foo");

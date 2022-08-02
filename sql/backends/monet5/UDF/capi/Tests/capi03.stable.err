@@ -1,0 +1,43 @@
+stderr of test 'capi03` in directory 'sql/backends/monet5/UDF/capi` itself:
+
+
+# 17:24:54 >  
+# 17:24:54 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35915" "--set" "mapi_usock=/var/tmp/mtest-2836/.s.monetdb.35915" "--set" "monet_prompt=" "--forcemito" "--dbpath=NONE/var/MonetDB/mTests_sql_backends_monet5_UDF_capi"
+# 17:24:54 >  
+
+# builtin opt 	gdk_dbpath = /Users/myth/opt/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 35915
+# cmdline opt 	mapi_usock = /var/tmp/mtest-2836/.s.monetdb.35915
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /Users/myth/opt/mTests/sql/backends/monet5/UDF/capi/NONE/var/MonetDB/mTests_sql_backends_monet5_UDF_capi
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:24:54 >  
+# 17:24:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2836" "--port=35915"
+# 17:24:54 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-2836/.s.monetdb.35915
+QUERY = SELECT * FROM capi03();
+ERROR = !Data has different cardinalities.
+MAPI  = (monetdb) /var/tmp/mtest-2836/.s.monetdb.35915
+QUERY = SELECT capi03(i) FROM integers;
+ERROR = !No data returned.
+MAPI  = (monetdb) /var/tmp/mtest-2836/.s.monetdb.35915
+QUERY = SELECT capi03(i) FROM integers;
+ERROR = !Something went wrong!
+
+# 17:24:55 >  
+# 17:24:55 >  "Done."
+# 17:24:55 >  
+

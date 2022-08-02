@@ -5,20 +5,19 @@ Maintainer: MonetDB BV <info@monetdb.org>
 Homepage: https://www.monetdb.org/
 Vcs-Browser: https://dev.monetdb.org/hg/MonetDB/
 Vcs-Hg: https://dev.monetdb.org/hg/MonetDB/
-Build-Depends: debhelper (>= 9), cmake (>= 3.12), bison,
+Build-Depends: debhelper (>= 9), autotools-dev, bison,
  libbz2-dev, libcurl4-gnutls-dev, libgeos-dev (>= 3.4.0),
- libpcre3-dev, libreadline-dev, liblzma-dev, liblz4-dev (>= 1.8.0),
- libxml2-dev, pkg-config,
+ libpcre3-dev, libreadline-dev, liblzma-dev,
+ libssl-dev, libxml2-dev, pkg-config,
  python3, python3-dev, python3-numpy,
- unixodbc-dev, zlib1g-dev, r-base-dev,
+ unixodbc-dev, uuid-dev, zlib1g-dev, liblas-c-dev (>= 1.8.0), r-base-dev,
  libcfitsio-dev
 Standards-Version: 3.8.0
 X-Python-Version: >= 2.6
 
-Package: libmonetdb25
+Package: libmonetdb20
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb-stream25 (= ${source:Version})
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: libmonetdb5-server-geom (<< ${source:Version})
 Description: MonetDB core library
  MonetDB is a database management system that is developed from a
@@ -35,8 +34,7 @@ Description: MonetDB core library
 Package: libmonetdb-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb25 (= ${source:Version}),
- libmonetdb-stream-dev (= ${source:Version})
+ libmonetdb20, libmonetdb-stream-dev
 Description: MonetDB development files
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -46,7 +44,7 @@ Description: MonetDB development files
  This package contains files needed to develop extensions to the core
  functionality of MonetDB.
 
-Package: libmonetdb-stream25
+Package: libmonetdb-stream13
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: MonetDB stream library
@@ -61,7 +59,7 @@ Description: MonetDB stream library
 Package: libmonetdb-stream-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb-stream25 (= ${source:Version})
+ libmonetdb-stream13 (= ${source:Version})
 Description: MonetDB stream library development files
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -69,12 +67,11 @@ Description: MonetDB stream library development files
  accelerators.  It also has an SQL front end.
  .
  This package contains the files to develop with the
- libmonetdb-stream25 library.
+ libmonetdb-stream13 library.
 
-Package: libmonetdb-client25
+Package: libmonetdb-client12
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb-stream25 (= ${source:Version})
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: MonetDB client/server interface library
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -87,23 +84,20 @@ Description: MonetDB client/server interface library
 Package: libmonetdb-client-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb-client25 (= ${source:Version})
+ libmonetdb-client12 (= ${source:Version})
 Description: MonetDB client/server interface library development files
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
  automatic index management, extensibility of data types and search
  accelerators.  It also has an SQL front end.
  .
- This package contains the files to develop with the libmonetdb-client25
+ This package contains the files to develop with the libmonetdb-client12
  library.
 
 Package: monetdb-client
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb-client25 (= ${source:Version}),
- libmonetdb-stream25 (= ${source:Version})
-Recommends: monetdb5-sql (= ${source:Version}),
- monetdb5-server (= ${source:Version})
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: monetdb5-sql (= ${source:Version})
 Description: MonetDB database client
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -117,8 +111,7 @@ Description: MonetDB database client
 
 Package: libmonetdb-client-odbc
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, odbcinst,
- libmonetdb-client25 (= ${source:Version})
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: MonetDB ODBC driver
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -130,14 +123,11 @@ Description: MonetDB ODBC driver
 Package: monetdb-client-testing
 Architecture: any
 Depends: ${shlibs:Depends}, libmonetdb-client-odbc (= ${source:Version}),
- libmonetdb-client25 (= ${source:Version}),
- libmonetdb-stream25 (= ${source:Version}),
- libmonetdb25 (= ${source:Version}),
  monetdb5-server (= ${source:Version}),
  libdbd-monetdb-perl (>= 1.0),
  php-monetdb (>= 1.0),
  python3-pymonetdb (>= 1.0.6),
- monetdb5-server (= ${source:Version})
+ monetdb5-sql (= ${source:Version})
 Description: MonetDB client testing tools
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -152,9 +142,7 @@ Package: libmonetdb5-server-geom
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb-stream25 (= ${source:Version}),
- libmonetdb25 (= ${source:Version}),
- monetdb5-server (= ${source:Version})
+ monetdb5-sql (= ${source:Version})
 Description: MonetDB5 SQL GIS support module
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -162,15 +150,27 @@ Description: MonetDB5 SQL GIS support module
  accelerators.  It also has an SQL front end.
  .
  This package contains the GIS (Geographic Information System)
- extensions for monetdb5-server.
+ extensions for MonetDB-SQL-server5.
+
+Package: libmonetdb5-server-lidar
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ monetdb5-sql (= ${source:Version})
+Description: MonetDB5 SQL GIS support module
+ MonetDB is a database management system that is developed from a
+ main-memory perspective with use of a fully decomposed storage model,
+ automatic index management, extensibility of data types and search
+ accelerators.  It also has an SQL front end.
+ .
+ This package contains support for reading and writing LiDAR data.
 
 Package: libmonetdb5-server-cfitsio
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb25 (= ${source:Version}),
- monetdb5-server (= ${source:Version})
-Description: MonetDB5 add on module for FITS files
+ monetdb5-sql (= ${source:Version})
+Description: MonetDB5 SQL GIS support module
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
  automatic index management, extensibility of data types and search
@@ -181,15 +181,11 @@ Description: MonetDB5 add on module for FITS files
 
 Package: monetdb5-server
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, adduser,
- libmonetdb-client25 (= ${source:Version}),
- libmonetdb-stream25 (= ${source:Version}),
- libmonetdb25 (= ${source:Version}),
-Recommends: monetdb5-sql (= ${source:Version})
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
+Recommends: monetdb5-server-hugeint (= ${source:Version}) [amd64],
+ monetdb5-sql (= ${source:Version})
 Suggests: monetdb-client (= ${source:Version})
-Conflicts: monetdb5-server-hugeint (<< 11.38.0),
- python-pymonetdb (<< 1.0.6)
-Replaces: monetdb5-server-hugeint (<< 11.38.0)
+Conflicts: python-pymonetdb (<< 1.0.6)
 Description: MonetDB database server version 5
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -197,15 +193,26 @@ Description: MonetDB database server version 5
  accelerators.  It also has an SQL front end.
  .
  This package contains the MonetDB server component.  You need this
- package if you want to use the MonetDB database system.  If you want to
- use the monetdb and monetdbd programs to manage your databases
- (recommended), you also need monetdb5-sql.
+ package if you want to use the MonetDB database system.  If you want
+ to use the SQL front end, you also need monetdb5-sql.
+
+Package: monetdb5-server-hugeint
+Architecture: amd64
+Depends: monetdb5-server (= ${source:Version})
+Description: MonetDB - 128-bit integer support for MonetDB5-server
+ MonetDB is a database management system that is developed from a
+ main-memory perspective with use of a fully decomposed storage model,
+ automatic index management, extensibility of data types and search
+ accelerators.  It also has an SQL front end.
+ .
+ This package provides HUGEINT (128-bit integer) support for the
+ MonetDB5-server component.
 
 Package: monetdb5-server-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
  monetdb5-server (= ${source:Version}), libmonetdb-dev (= ${source:Version})
-Description: MonetDB database server version 5 development files
+Description: MonetDB database server version 5
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
  automatic index management, extensibility of data types and search
@@ -217,11 +224,8 @@ Description: MonetDB database server version 5 development files
 Package: monetdb5-sql
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb-client25 (= ${source:Version}),
- libmonetdb-stream25 (= ${source:Version}),
  monetdb5-server (= ${source:Version})
-Conflicts: monetdb5-sql-hugeint (<< 11.38.0)
-Replaces: monetdb5-sql-hugeint (<< 11.38.0)
+Recommends: monetdb5-sql-hugeint (= ${source:Version}) [amd64]
 Suggests: monetdb-client (= ${source:Version})
 Description: MonetDB SQL support for monetdb5
  MonetDB is a database management system that is developed from a
@@ -229,27 +233,25 @@ Description: MonetDB SQL support for monetdb5
  automatic index management, extensibility of data types and search
  accelerators.  It also has an SQL front end.
  .
- This package contains the monetdb and monetdbd programs and the systemd
- configuration.
+ This package contains the SQL front end for MonetDB.
 
-Package: monetdb5-sql-dev
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends},
- monetdb5-server-dev (= ${source:Version}),
- monetdb5-sql (= ${source:Version})
-Description: MonetDB SQL support for monetdb5
+Package: monetdb5-sql-hugeint
+Architecture: amd64
+Depends: monetdb5-sql (= ${source:Version}),
+ monetdb5-server-hugeint (= ${source:Version})
+Description: MonetDB5 128 bit integer (hugeint) support for SQL
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
  automatic index management, extensibility of data types and search
  accelerators.  It also has an SQL front end.
  .
- This package contains files needed to develop SQL extensions.
+ This package provides HUGEINT (128-bit integer) support for the SQL
+ front end of MonetDB.
 
 Package: monetdb-python3
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb25 (= ${source:Version}),
- monetdb5-server (= ${source:Version}), python3-numpy
+ monetdb5-sql (= ${source:Version}), python3-numpy
 Description: Integration of MonetDB and Python, allowing use of Python from within SQL
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -266,8 +268,7 @@ Description: Integration of MonetDB and Python, allowing use of Python from with
 Package: monetdb-r
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb25 (= ${source:Version}),
- monetdb5-server (= ${source:Version}), r-base-core
+ monetdb5-sql (= ${source:Version}), r-base-core
 Description: Integration of MonetDB and R, allowing use of R from within SQL
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -281,53 +282,23 @@ Description: Integration of MonetDB and R, allowing use of R from within SQL
  know how this package affects the security of your system, do not
  install it.
 
-Package: libmonetdbe25
+Package: monetdb-testing
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb-stream25 (= ${source:Version}),
- libmonetdb25 (= ${source:Version}),
- monetdb5-server (= ${source:Version})
-Description: MonetDB as an embedded library
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: MonetDB testing programs
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
  automatic index management, extensibility of data types and search
  accelerators.  It also has an SQL front end.
  .
- This package contains the library to turn MonetDB into an embeddable
- library.  Also see %{name}-embedded-devel to use this in a program.
-
-Package: libmonetdbe-dev
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdbe25 (= ${source:Version}),
- libmonetdb-dev (= ${source:Version})
-Description: MonetDB development files
- MonetDB is a database management system that is developed from a
- main-memory perspective with use of a fully decomposed storage model,
- automatic index management, extensibility of data types and search
- accelerators.  It also has an SQL front end.
- .
- This package contains the library and include files to create a
- program that uses MonetDB as an embeddable library.
-
-Package: monetdb-embedded-testing
-Architecture: any
-Depends: ${shlibs:Depends},
- libmonetdbe25 (= ${source:Version}),
- libmonetdbe (= ${source:Version})
-Description: MonetDB embedded testing tools
- MonetDB is a database management system that is developed from a
- main-memory perspective with use of a fully decomposed storage model,
- automatic index management, extensibility of data types and search
- accelerators.  It also has an SQL front end.
- .
- This package contains the sample MAPI programs used for testing other
+ This package contains the programs and files needed for testing the
  MonetDB packages.  You probably don't need this, unless you are a
- developer.
+ developer.  If you do want to test, install monetdb-testing-python.
 
 Package: monetdb-testing-python
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, python3,
+ monetdb-testing (= ${source:Version}),
  monetdb-client-testing (= ${source:Version})
 Description: MonetDB testing Python programs
  MonetDB is a database management system that is developed from a

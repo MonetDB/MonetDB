@@ -1,0 +1,35 @@
+stderr of test 'mserver5--help` in directory 'monetdb5/tools` itself:
+
+
+# 16:36:12 >  
+# 16:36:12 >  ".\mserver5--help.bat" "mserver5--help" 
+# 16:36:12 >  
+
+Usage: mserver5.exe [options]
+    --dbpath=<directory>      Specify database location
+    --dbextra=<directory>     Directory for transient BATs
+    --dbtrace=<file>          File for produced traces
+    --in-memory               Run database in-memory only
+    --config=<config_file>    Use config_file to read options from
+    --single-user             Allow only one user at a time
+    --readonly                Safeguard database
+    --set <option>=<value>    Set configuration option
+    --help                    Print this list of options
+    --version                 Print version and compile time info
+The debug, testing & trace options:
+     --algorithms
+     --forcemito
+     --heaps
+     --io
+     --memory
+     --modules
+     --performance
+     --properties
+     --threads
+     --transactions
+     --debug=<bitmask>
+
+# 10:03:11 >  
+# 10:03:11 >  Done.
+# 10:03:11 >  
+

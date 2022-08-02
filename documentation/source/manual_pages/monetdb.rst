@@ -56,10 +56,10 @@ COMMANDS
 
 The commands for the *monetdb* utility are **create**, **destroy**,
 **lock**, **release**, **status**, **start**, **stop**, **kill**,
-**profilerstart**, **profilerstop**, **snapshot**, **set**, **get**,
-**inherit**, **discover**, **help**, and **version**. The commands
-facilitate adding, removing, maintaining, starting and stopping a
-database inside the MonetDB Database Server.
+**profilerstart**, **profilerstop**, **set**, **get**, **inherit**,
+**discover**, **help**, and **version**. The commands facilitate adding,
+removing, maintaining, starting and stopping a database inside the
+MonetDB Database Server.
 
 For all commands, database arguments can be glob-like expressions. This
 allows to do wildcard matches. For details on the syntax, see
@@ -167,68 +167,34 @@ allows to do wildcard matches. For details on the syntax, see
 **kill [-a]**\ *database*\ **[**\ *database*\ **...]**
 
 Starts, stops or kills the given database, or, when **-a** is supplied,
-all known databases. The **kill** command immediately terminates the
-database by sending the SIGKILL signal. Any data that hasn't been
-committed will be lost. This command should only be used as last resort
-for a database that doesn't respond any more. It is more common to use
-the **stop** command to stop a database. This will first attempt to stop
-the database, waiting for **exittimeout** seconds and if that fails,
-kill the database. When using the **start** command, *monetdb*\ (1) will
-output diagnostic messages if the requested action failed. When
-encountering an error, one should always consult the logfile of
-*monetdbd*\ (1) for more details. For the **kill** command a diagnostic
-message indicating the database has crashed is always emitted, due to
-the nature of that command. Note that in combination with **-a** the
-return code of *monetdb*\ (1) indicates failure if one of the databases
-had a failure, even though the operation on other databases was
-successful.
+all known databases. The **kill** command immediately sends a SIGKILL
+and should only be used as last resort for a database that doesn't
+respond any more. Killing a database may result in (partial) data loss.
+It is more common to use the **stop** command to stop a database. It
+will first attempt to stop the database, waiting for
+**mero_exittimeout** seconds and if that fails, kill the database. When
+using the **start** command, *monetdb*\ (1) will output diagnostic
+messages if the requested action failed. When encountering an error, one
+should always consult the logfile of *monetdbd*\ (1) for more details.
+For the **kill** command a diagnostic message indicating the database
+has crashed is always emitted, due to the nature of that command. Note
+that in combination with **-a** the return code of *monetdb*\ (1)
+indicates failure if one of the databases had a failure, even though the
+operation on other databases was successful.
 
-**monetdb snapshot write**\ *dbname*
-   Takes a snapshot of the given database and writes it to stdout.
+**profilerstart**\ *database*\ **[**\ *database*\ **...]**
 
-**monetdb snapshot create [-t**\ *targetfile*\ **]**\ *dbname*\ **[**\ *dbname*\ **..]**
-   Takes a snapshot of the given databases. Here, *dbname* can be either
-   the name of a single database or a pattern such as *staging\**
-   indicating multiple databases to snapshot. Unless **-t** is given,
-   the snapshots are written to files named
-   *<snapshotdir>/<dbname>_<YYYY><MM><DD>T<HH><MM>UTC<snapshotcompression>*
-   where *snapshotdir* is a *monetdbd* setting that has to be configured
-   explicitly using **monetdbd set** and *snapshotcompression* is
-   another **monetdbd** setting which defaults to *.tar.lz4* or *.tar*.
-   If **-t** is given, only a single database can be snapshotted and the
-   snapshot is written to *targetfile*, a file on the server which must
-   be somewhere under *snapshotdir* but which does not have to follow
-   any particular naming convention.
+**profilerstop**\ *database*\ **[**\ *database*\ **...]**
 
-**monetdb snapshot list [**\ *dbname*\ **..]**
-   Lists the snapshots for the given databases, or all databases if none
-   is given, showing the snapshot id, the time the snapshot was taken
-   and the (compressed) size of the snapshot file. Only snapshots
-   following the naming convention described under **monetdb snapshot
-   create** are listed. The snapshot id is of the form
-   *dbname*\ **@**\ *tag* where the tags are numbers starting at 1 for
-   the most recent snapshot of a database, 2 for the next most recent,
-   etc. For clarity, the first snapshot for each database shows the full
-   snapshot id (*dbname*\ **@1) and** older snapshots for the same
-   database are listed just as @2, @3, etc.
-
-**monetdb snapshot restore [-f]**\ *snapshotid*\ **[**\ *dbname*\ **]**
-   Restores a database from the given snapshot, where *snapshotid* is
-   either a path on the server or *name*\ **@**\ *tag*\ **as listed by**
-   **monetdb snapshot** **list.** The optional *dbname* argument sets
-   the name of the newly created database. It can be omitted unless
-   *snapshotid* is a full path. When **-f** is given, no confirmation is
-   asked when overwriting an existing database.
-
-**monetdb snapshot destroy [-f]**\ *name*\ **@**\ *tag*\ **..**
-   Delete the listed snapshots from the *snapshotdir* directory. When
-   **-f** is given, no confirmation is asked.
-
-**monetdb snapshot destroy [-f] -r**\ *N*\ *dbname*\ **..**
-   Delete all but the *N* latest snapshots for the given databases.
-   Again, *dbname* can be a pattern such as *staging\** or even *\** to
-   work on all snapshotted databases. When **-f** is given, no
-   confirmation is asked.
+Starts or stops the collection of profiling logs for the given database.
+The property **profilerlogpath** must be set for the given database, and
+it should point to a directory where the logs will be gathered. The
+filenames of the logs have the format:
+*proflog_<database>_YYYY-MM-DD_HH-MM-SS.json* where the last part is the
+date and time when the collection started. Please note that a file
+recording the pid of the profiler is written in the log directory,
+therefore each database needs to have a different **profilerlogpath**
+value.
 
 **get <all \|**\ *property*\ **[,**\ *property*\ **[,..]]> [**\ *database*\ **...]**
    Prints the requested properties, or all known properties, for the

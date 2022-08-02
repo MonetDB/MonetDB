@@ -1,0 +1,19 @@
+stderr of test 'seconds2timestamp` in directory 'sql/test/bugs` itself:
+
+
+# 22:40:46 >  
+# 22:40:46 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=37931 --set xrpc_port=40948 --set monet_prompt= --trace  "--dbname=mTests_src_test_bugs" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 22:40:46 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf)
+
+# 22:40:46 >  
+# 22:40:46 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=37931 
+# 22:40:46 >  
+
+
+# 22:40:46 >  
+# 22:40:46 >  Done.
+# 22:40:46 >  
+

@@ -1,6 +1,0 @@
-statement error
-create table t1 (id int CHECK (f1() = 1))
-
-statement error
-drop table t1
-

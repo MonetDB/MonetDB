@@ -3,16 +3,19 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "sql_query.h"
 #include "rel_partition.h"
+#include "rel_optimizer.h"
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_dump.h"
 #include "rel_select.h"
+#include "rel_updates.h"
+#include "sql_env.h"
 
 static lng
 rel_getcount(mvc *sql, sql_rel *rel)
@@ -24,10 +27,10 @@ rel_getcount(mvc *sql, sql_rel *rel)
 	case op_basetable: {
 		sql_table *t = rel->l;
 
-		if (t && isTable(t)) {
-			sqlstore *store = sql->session->tr->store;
-			return (lng)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, 0);
-		}
+		if (t && isTable(t))
+			return (lng)store_funcs.count_col(sql->session->tr, t->columns.set->h->data, 1);
+		if (!t && rel->r) /* dict */
+			return (lng)sql_trans_dist_count(sql->session->tr, rel->r);
 		return 0;
 	}
 	default:
@@ -39,7 +42,7 @@ rel_getcount(mvc *sql, sql_rel *rel)
 static void
 find_basetables(mvc *sql, sql_rel *rel, list *tables )
 {
-	if (mvc_highwater(sql)) {
+	if (THRhighwater()) {
 		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return;
 	}
@@ -69,7 +72,6 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 	case op_insert:
 	case op_update:
 	case op_delete:
-	case op_merge:
 		if (rel->l)
 			find_basetables(sql, rel->l, tables);
 		if (rel->r)
@@ -137,11 +139,11 @@ has_groupby(sql_rel *rel)
 		return 0;
 	if (is_groupby(rel->op))
 		return 1;
-	if (is_join(rel->op) || is_semi(rel->op) || is_set(rel->op) || is_merge(rel->op))
+	if (is_join(rel->op) || is_semi(rel->op) || is_set(rel->op))
 		return has_groupby(rel->l) || has_groupby(rel->r);
 	if (is_simple_project(rel->op) || is_select(rel->op) || is_topn(rel->op) || is_sample(rel->op))
 		return has_groupby(rel->l);
-	if (is_insert(rel->op) || is_update(rel->op) || is_delete(rel->op) || is_truncate(rel->op))
+	if (is_modify(rel->op))
 		return has_groupby(rel->r);
 	if (is_ddl(rel->op)) {
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view)
@@ -157,7 +159,7 @@ has_groupby(sql_rel *rel)
 sql_rel *
 rel_partition(mvc *sql, sql_rel *rel)
 {
-	if (mvc_highwater(sql))
+	if (THRhighwater())
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (is_basetable(rel->op)) {
@@ -165,13 +167,13 @@ rel_partition(mvc *sql, sql_rel *rel)
 	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_groupby(rel->op) || is_topn(rel->op) || is_sample(rel->op)) {
 		if (rel->l)
 			rel_partition(sql, rel->l);
-	} else if (is_semi(rel->op) || is_set(rel->op) || is_merge(rel->op)) {
+	} else if (is_modify(rel->op)) {
+		if (rel->r && rel->card <= CARD_AGGR)
+			rel_partition(sql, rel->r);
+	} else if (is_semi(rel->op) || is_set(rel->op)) {
 		if (rel->l)
 			rel_partition(sql, rel->l);
 		if (rel->r)
-			rel_partition(sql, rel->r);
-	} else if (is_insert(rel->op) || is_update(rel->op) || is_delete(rel->op) || is_truncate(rel->op)) {
-		if (rel->r && rel->card <= CARD_AGGR)
 			rel_partition(sql, rel->r);
 	} else if (is_join(rel->op)) {
 		if (has_groupby(rel->l) || has_groupby(rel->r)) {

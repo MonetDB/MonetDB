@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -32,8 +32,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "mal_exception.h"
-#include "mal_interpreter.h"
-
+#include "sample.h"
 // TODO: Go through this documentation and update it with an explanation about seeds.
 /*
  * @- Uniform Sampling.
@@ -68,7 +67,7 @@
  *
  */
 
-static str
+str
 SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	bat *r, *b;
@@ -115,23 +114,6 @@ SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	if (br == NULL)
 		throw(MAL, "sample.subuniform", OPERATION_FAILED);
 
-	*r = br->batCacheid;
-	BBPkeepref(br);
+	BBPkeepref(*r = br->batCacheid);
 	return MAL_SUCCEED;
 }
-
-#include "mel.h"
-mel_func sample_init_funcs[] = {
- pattern("sample", "subuniform", SAMPLEuniform, false, "Returns the oids of a uniform sample of size s", args(1,3, batarg("",oid),batargany("b",0),arg("sample_size",lng))),
- pattern("sample", "subuniform", SAMPLEuniform, false, "Returns the oids of a uniform sample of size s and where the prg is seeded with sample_seed", args(1,4, batarg("",oid),batargany("b",0),arg("sample_size",lng),arg("sample_seed",int))),
- pattern("sample", "subuniform", SAMPLEuniform, false, "Returns the oids of a uniform sample of size = (p x count(b)), where 0 <= p <= 1.0", args(1,3, batarg("",oid),batargany("b",0),arg("p",dbl))),
- pattern("sample", "subuniform", SAMPLEuniform, false, "Returns the oids of a uniform sample of size = (p x count(b)), where 0 <= p <= 1.0 and where the prg is seeded with sample_seed", args(1,4, batarg("",oid),batargany("b",0),arg("p",dbl),arg("sample_seed",int))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_sample_mal)
-{ mal_module("sample", NULL, sample_init_funcs); }

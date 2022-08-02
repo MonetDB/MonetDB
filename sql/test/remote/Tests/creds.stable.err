@@ -1,0 +1,86 @@
+stderr of test 'creds` in directory 'sql/test/remote` itself:
+
+
+# 16:41:16 >  
+# 16:41:16 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39959" "--set" "mapi_usock=/var/tmp/mtest-22488/.s.monetdb.39959" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/kutsurak/work/monet/sources/MonetDB/build/install/var/MonetDB/mTests_sql_test_remote" "--set" "embedded_c=true"
+# 16:41:16 >  
+
+# builtin opt 	gdk_dbpath = /home/kutsurak/work/monet/sources/MonetDB/build/install/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 39959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-22488/.s.monetdb.39959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/kutsurak/work/monet/sources/MonetDB/build/install/var/MonetDB/mTests_sql_test_remote
+# cmdline opt 	embedded_c = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 16:41:17 >  
+# 16:41:17 >  "/bin/python" "creds.SQL.py" "creds"
+# 16:41:17 >  
+
+# builtin opt 	gdk_dbpath = /home/kutsurak/work/monet/sources/MonetDB/build/install/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mapi_port = 40133
+# cmdline opt 	mapi_usock = /var/tmp/mtest-22488/.s.monetdb.40133
+# cmdline opt 	gdk_dbpath = /tmp/tmphNPMP3/supervisor/supervisor
+# cmdline opt 	gdk_debug = 553648138
+# builtin opt 	gdk_dbpath = /home/kutsurak/work/monet/sources/MonetDB/build/install/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mapi_port = 36599
+# cmdline opt 	mapi_usock = /var/tmp/mtest-22488/.s.monetdb.36599
+# cmdline opt 	gdk_dbpath = /tmp/tmphNPMP3/worker_0/worker_0
+# cmdline opt 	gdk_debug = 553648138
+# builtin opt 	gdk_dbpath = /home/kutsurak/work/monet/sources/MonetDB/build/install/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mapi_port = 57109
+# cmdline opt 	mapi_usock = /var/tmp/mtest-22488/.s.monetdb.57109
+# cmdline opt 	gdk_dbpath = /tmp/tmphNPMP3/worker_1/worker_1
+# cmdline opt 	gdk_debug = 553648138
+
+# 16:41:19 >  
+# 16:41:19 >  "Done."
+# 16:41:19 >  
+

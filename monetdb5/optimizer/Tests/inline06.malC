@@ -1,0 +1,19 @@
+# remapping inline functions
+# the crucial part is to recognize valid inlines
+inline function foo(a:int,b:int):int;
+	c:= a+b;
+	base:=mmath.rand(); # this has a memory-side effect
+	c:= c*base;
+	return c;
+end foo;
+
+function qry();
+	b:= bat.new(:int);
+	bat.append(b,1);
+	z:bat[:int]:= mal.multiplex("user","foo",b,b);
+	z:bat[:int]:= mal.multiplex("user","foo",b,2);
+end qry;
+
+	optimizer.inline("user","qry");
+	optimizer.remap("user","qry");
+	mdb.List("user","qry");

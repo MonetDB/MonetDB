@@ -1,0 +1,21 @@
+stderr of test 'having_clause_quirks.SF-947601` in directory 'sql/test/BugDay_2005-11-09_2.9.3` itself:
+
+
+# 11:56:59 >  
+# 11:56:59 >  Mtimeout -timeout 180 Mserver "--config=/ufs/zhang/scratch/monet-stable/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/zhang/scratch/monet-stable/program/MonetDB:/ufs/zhang/scratch/monet-stable/program/lib/MonetDB:/ufs/zhang/scratch/monet-stable/sql/build/lib/MonetDB" --set "gdk_dbfarm=/ufs/zhang/scratch/monet-stable/program/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/zhang/scratch/monet-stable/program/var/MonetDB/log" --set mapi_port=38410 --set sql_port=42620 --set xquery_port=54393 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 11:56:59 >  
+
+
+# 11:56:59 >  
+# 11:56:59 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=42620  < having_clause_quirks.SF-947601.sql
+# 11:56:59 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+QUERY = select name from t947601 having 1=1;
+ERROR = !SELECT: cannot use non GROUP BY column 'name' in query results without an aggregate function
+CODE  = 42000
+
+# 11:57:00 >  
+# 11:57:00 >  Done.
+# 11:57:00 >  
+

@@ -1,9 +1,0 @@
-statement ok
-CREATE TABLE A (a INT)
-
-statement ok
-INSERT INTO A VALUES (.31416E+1)
-
-statement ok
-DROP TABLE A
-

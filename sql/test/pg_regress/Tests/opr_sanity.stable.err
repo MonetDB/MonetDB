@@ -1,0 +1,230 @@
+stderr of test 'opr_sanity` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
+
+#--
+#-- OPR_SANITY
+#-- Sanity checks for common errors in making operator/procedure system tables:
+#-- pg_operator, pg_proc, pg_cast, pg_aggregate, pg_am, pg_amop, pg_amproc, pg_opclass.
+#--
+#-- None of the SELECTs here should ever find any matching entries,
+#-- so the expected output is easy to maintain ;-).
+#-- A test failure indicates someone messed up an entry in the system tables.
+#--
+#-- NB: we assume the oidjoins test will have caught any dangling links,
+#-- that is OID or REGPROC fields that are not zero and do not match some
+#-- row in the linked-to table.  However, if we want to enforce that a link
+#-- field can't be 0, we have to check it here.
+#--
+#-- NB: run this test earlier than the create_operator test, because
+#-- that test creates some bogus operators...
+#-- Helper functions to deal with cases where binary-coercible matches are
+#-- allowed.
+#-- This should match IsBinaryCoercible() in parse_coerce.c.
+#-- This one ignores castcontext, so it considers only physical equivalence
+#-- and not whether the coercion can be invoked implicitly.
+#-- **************** pg_proc ****************
+#-- Look for illegal values in pg_proc fields.
+#-- NOTE: in reality pronargs could be more than 10, but I'm too lazy to put
+#-- a larger number of proargtypes check clauses in here.  If we ever have
+#-- more-than-10-arg functions in the standard catalogs, extend this query.
+#-- Look for conflicting proc definitions (same names and input datatypes).
+#-- (This test should be dead code now that we have the unique index
+#-- pg_proc_proname_narg_type_index, but I'll leave it in anyway.)
+#-- Considering only built-in procs (prolang = 12), look for multiple uses
+#-- of the same internal function (ie, matching prosrc fields).  It's OK to
+#-- have several entries with different pronames for the same internal function,
+#-- but conflicts in the number of arguments and other critical items should
+#-- be complained of.
+#-- Look for uses of different type OIDs in the argument/result type fields
+#-- for different aliases of the same built-in function.
+#-- This indicates that the types are being presumed to be binary-equivalent,
+#-- or that the built-in function is prepared to deal with different types.
+#-- That's not wrong, necessarily, but we make lists of all the types being
+#-- so treated.  Note that the expected output of this part of the test will
+#-- need to be modified whenever new pairs of types are made binary-equivalent,
+#-- or when new polymorphic built-in functions are added!
+#-- Note: ignore aggregate functions here, since they all string to the same
+#-- dummy built-in function.
+#-- Look for functions that return type "internal" and do not have any
+#-- "internal" argument.  Such a function would be a security hole since
+#-- it might be used to call an internal function from an SQL command.
+#-- As of 7.3 this query should find only internal_in.
+#-- **************** pg_cast ****************
+#-- Catch bogus values in pg_cast columns (other than cases detected by
+#-- oidjoins test).
+#-- Look for casts to/from the same type that aren't length coercion functions.
+#-- (We assume they are length coercions if they take multiple arguments.)
+#-- Such entries are not necessarily harmful, but they are useless.
+#-- Look for cast functions that don't have the right signature.  The
+#-- argument and result types in pg_proc must be the same as, or binary
+#-- compatible with, what it says in pg_cast.
+#-- As a special case, we allow casts from CHAR(n) that use functions
+#-- declared to take TEXT.  This does not pass the binary-coercibility test
+#-- because CHAR(n)-to-TEXT normally invokes rtrim().  However, the results
+#-- are the same, so long as the function is one that ignores trailing blanks.
+#-- Look for binary compatible casts that do not have the reverse
+#-- direction registered as well, or where the reverse direction is not
+#-- also binary compatible.  This is legal, but usually not intended.
+#-- As of 7.4, this finds the casts from text and varchar to bpchar, because
+#-- those are binary-compatible while the reverse way goes through rtrim().
+#-- **************** pg_operator ****************
+#-- Look for illegal values in pg_operator fields.
+#-- Look for missing or unwanted operand types
+#-- Look for conflicting operator definitions (same names and input datatypes).
+#-- Look for commutative operators that don't commute.
+#-- DEFINITIONAL NOTE: If A.oprcom = B, then x A y has the same result as y B x.
+#-- We expect that B will always say that B.oprcom = A as well; that's not
+#-- inherently essential, but it would be inefficient not to mark it so.
+#-- Look for negatory operators that don't agree.
+#-- DEFINITIONAL NOTE: If A.oprnegate = B, then both A and B must yield
+#-- boolean results, and (x A y) == ! (x B y), or the equivalent for
+#-- single-operand operators.
+#-- We expect that B will always say that B.oprnegate = A as well; that's not
+#-- inherently essential, but it would be inefficient not to mark it so.
+#-- Also, A and B had better not be the same operator.
+#-- Look for mergejoin operators that don't match their links.
+#-- An lsortop/rsortop link leads from an '=' operator to the
+#-- sort operator ('<' operator) that's appropriate for
+#-- its left-side or right-side data type.
+#-- An ltcmpop/gtcmpop link leads from an '=' operator to the
+#-- '<' or '>' operator of the same input datatypes.
+#-- (If the '=' operator has identical L and R input datatypes,
+#-- then lsortop, rsortop, and ltcmpop are all the same operator.)
+#-- Make sure all four links are specified if any are.
+#-- A mergejoinable = operator must have a commutator (usually itself).
+#-- Mergejoinable operators across datatypes must come in closed sets, that
+#-- is if you provide smallint = integer and integer = bigint then you must also provide
+#-- smallint = bigint (and commutators of all these).  This is necessary because
+#-- the planner tries to deduce additional qual clauses from transitivity
+#-- of mergejoinable operators.  If there are clauses int2var = int4var and
+#-- int4var = int8var, the planner will deduce int2var = int8var ... and it
+#-- had better have a way to represent it.
+#-- Hashing only works on simple equality operators "type = sametype",
+#-- since the hash itself depends on the bitwise representation of the type.
+#-- Check that allegedly hashable operators look like they might be "=".
+#-- In 6.5 we accepted hashable array equality operators when the array element
+#-- type is hashable.  However, what we actually need to make hashjoin work on
+#-- an array is a hashable element type *and* no padding between elements in
+#-- the array storage (or, perhaps, guaranteed-zero padding).  Currently,
+#-- since the padding code in arrayfuncs.c is pretty bogus, it seems safest
+#-- to just forbid hashjoin on array equality ops.
+#-- This should be reconsidered someday.
+#-- -- Look for array equality operators that are hashable when the underlying
+#-- -- type is not, or vice versa.  This is presumably bogus.
+#-- 
+#-- SELECT p1.oid, p1.oprcanhash, p2.oid, p2.oprcanhash, t1.typname, t2.typname
+#-- FROM pg_operator AS p1, pg_operator AS p2, pg_type AS t1, pg_type AS t2
+#-- WHERE p1.oprname = '=' AND p1.oprleft = p1.oprright AND 
+#--     p2.oprname = '=' AND p2.oprleft = p2.oprright AND
+#--     p1.oprleft = t1.oid AND p2.oprleft = t2.oid AND t1.typelem = t2.oid AND
+#--     p1.oprcanhash != p2.oprcanhash;
+#-- Substitute check: forbid hashable array ops, period.
+#-- Hashable operators should appear as members of hash index opclasses.
+#-- And the converse.
+#-- Check that each operator defined in pg_operator matches its oprcode entry
+#-- in pg_proc.  Easiest to do this separately for each oprkind.
+#-- If the operator is mergejoinable or hashjoinable, its underlying function
+#-- should not be volatile.
+#-- If oprrest is set, the operator must return boolean,
+#-- and it must link to a proc with the right signature
+#-- to be a restriction selectivity estimator.
+#-- The proc signature we want is: double proc(internal, oid, internal, integer)
+#-- If oprjoin is set, the operator must be a binary boolean op,
+#-- and it must link to a proc with the right signature
+#-- to be a join selectivity estimator.
+#-- The proc signature we want is: double proc(internal, oid, internal, smallint)
+#-- **************** pg_aggregate ****************
+#-- Look for illegal values in pg_aggregate fields.
+#-- Make sure the matching pg_proc entry is sensible, too.
+#-- Make sure there are no proisagg pg_proc entries without matches.
+#-- If there is no finalfn then the output type must be the transtype.
+#-- Cross-check transfn against its entry in pg_proc.
+#-- NOTE: use physically_coercible here, not binary_coercible, because
+#-- max and min on abstime are implemented using int4larger/int4smaller.
+#-- Cross-check finalfn (if present) against its entry in pg_proc.
+#-- If transfn is strict then either initval should be non-NULL, or
+#-- input type should match transtype so that the first non-null input
+#-- can be assigned as the state value.
+#-- **************** pg_opclass ****************
+#-- Look for illegal values in pg_opclass fields
+#-- There should not be multiple entries in pg_opclass with opcdefault true
+#-- and the same opcamid/opcintype combination.
+#-- **************** pg_amop ****************
+#-- Look for illegal values in pg_amop fields
+#-- Cross-check amopstrategy index against parent AM
+#-- Detect missing pg_amop entries: should have as many strategy operators
+#-- as AM expects for each opclass for the AM.  When nondefault subtypes are
+#-- present, enforce condition separately for each subtype.
+#-- Check that amopopr points at a reasonable-looking operator, ie a binary
+#-- operator yielding boolean.
+#-- Make a list of all the distinct operator names being used in particular
+#-- strategy slots.  This is a bit hokey, since the list might need to change
+#-- in future releases, but it's an effective way of spotting mistakes such as
+#-- swapping two operators within a class.
+#-- Check that all operators linked to by opclass entries have selectivity
+#-- estimators.  This is not absolutely required, but it seems a reasonable
+#-- thing to insist on for all standard datatypes.
+#-- Check that operator input types match the opclass
+#-- For 8.0, we require that oprleft match opcintype (possibly by coercion).
+#-- When amopsubtype is zero (default), oprright must equal oprleft;
+#-- when amopsubtype is not zero, oprright must equal amopsubtype.
+#-- Operators that are primary members of opclasses must be immutable (else
+#-- it suggests that the index ordering isn't fixed).  Operators that are
+#-- cross-type members need only be stable, since they are just shorthands
+#-- for index probe queries.
+#-- **************** pg_amproc ****************
+#-- Look for illegal values in pg_amproc fields
+#-- Cross-check amprocnum index against parent AM
+#-- Detect missing pg_amproc entries: should have as many support functions
+#-- as AM expects for each opclass for the AM.  When nondefault subtypes are
+#-- present, enforce condition separately for each subtype.
+#-- Unfortunately, we can't check the amproc link very well because the
+#-- signature of the function may be different for different support routines
+#-- or different base data types.
+#-- We can check that all the referenced instances of the same support
+#-- routine number take the same number of parameters, but that's about it
+#-- for a general check...
+#-- For btree, though, we can do better since we know the support routines
+#-- must be of the form cmp(input, input) returns integer in the default case
+#-- (subtype = 0), and cmp(input, subtype) returns integer when subtype != 0.
+#-- For hash we can also do a little better: the support routines must be
+#-- of the form hash(something) returns integer.  Ideally we'd check that the
+#-- opcintype is binary-coercible to the function's input, but there are
+#-- enough cases where that fails that I'll just leave out the check for now.
+#-- Support routines that are primary members of opclasses must be immutable
+#-- (else it suggests that the index ordering isn't fixed).  But cross-type
+#-- members need only be stable, since they are just shorthands
+#-- for index probe queries.
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
+

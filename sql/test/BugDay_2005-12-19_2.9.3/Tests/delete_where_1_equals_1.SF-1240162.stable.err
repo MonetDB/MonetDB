@@ -1,0 +1,17 @@
+stderr of test 'delete_where_1_equals_1.SF-1240162` in directory 'sql/test/BugDay_2005-12-19_2.9.3` itself:
+
+
+# 13:11:30 >  
+# 13:11:30 >  Mtimeout -timeout 180 Mserver "--config=/ufs/sjoerd/Monet-virgin/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/devel/sql-virgin/Linux/lib/MonetDB:/ufs/sjoerd/Monet-virgin/lib/MonetDB" --set "gdk_dbfarm=/ufs/sjoerd/Monet-virgin/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/sjoerd/Monet-virgin/var/MonetDB/log" --set mapi_port=30566 --set sql_port=44694 --set xquery_port=56860 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-12-19_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 13:11:30 >  
+
+
+# 13:11:30 >  
+# 13:11:30 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=44694  < delete_where_1_equals_1.SF-1240162.sql
+# 13:11:30 >  
+
+
+# 13:11:30 >  
+# 13:11:30 >  Done.
+# 13:11:30 >  
+

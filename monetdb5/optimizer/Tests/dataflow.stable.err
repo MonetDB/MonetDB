@@ -1,0 +1,31 @@
+stderr of test 'dataflow` in directory 'monetdb5/optimizer` itself:
+
+
+# 18:05:39 >  
+# 18:05:39 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/mk/Aug2011//Linux/var/MonetDB" --set mapi_open=true --set mapi_port=32759 --set monet_prompt= --trace --forcemito --set mal_listing=2  --dbname=mTests_optimizer  dataflow.mal
+# 18:05:39 >  
+
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /ufs/mk/Aug2011//Linux/var/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_alloc_map = no
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	gdk_dbfarm = /ufs/mk/Aug2011//Linux/var/MonetDB
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32759
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_optimizer
+
+# 18:05:41 >  
+# 18:05:41 >  Done.
+# 18:05:41 >  
+

@@ -2,12 +2,11 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 create function sys.password_hash (username string)
 	returns string
-    external name sql.password;
-	-- return select password from users where name = username;
+	external name sql.password;
 
 create function sys.remote_table_credentials (tablename string)
 returns table ("uri" string, "username" string, "hash" string)
@@ -128,7 +127,3 @@ grant execute on function sys.prepared_statements_args to public;
 
 create view sys.prepared_statements_args as select * from sys.prepared_statements_args();
 grant select on sys.prepared_statements_args to public;
-
-create function sys.current_sessionid() returns int
-external name clients.current_sessionid;
-grant execute on function sys.current_sessionid to public;

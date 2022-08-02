@@ -1,0 +1,15 @@
+#testing simple stuff around type BAT
+function tst(b:bat[:any_2]):bat[:any_2];
+	return b;
+end tst;
+
+function foo();
+z:= bat.new(:int);
+b:= nil:bat[:int];
+b:= z;
+#io.print(b);
+c:= tst(b);
+io.print(c);
+end;
+mdb.List("user","foo");
+user.foo();

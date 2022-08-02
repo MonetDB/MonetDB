@@ -1,0 +1,42 @@
+stderr of test 'transform` in directory 'geom/sql/functions` itself:
+
+
+# 10:52:12 >  
+# 10:52:12 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39851" "--set" "mapi_usock=/var/tmp/mtest-4010/.s.monetdb.39851" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 10:52:12 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/alvanaki/INSTALL/MonetDB-public/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 39851
+# cmdline opt 	mapi_usock = /var/tmp/mtest-4010/.s.monetdb.39851
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 10:52:12 >  
+# 10:52:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4010" "--port=39851"
+# 10:52:12 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
+QUERY = SELECT st_astext(st_transform(ST_MPolyFromText('MULTIPOLYGON(((-70.916 42.1002,-70.9468 42.0946, -70.9765 420872,-70.916 42.1002)))',4326), 2329));
+ERROR = !Couldn't transform point (-1.237718 0.734787): latitude or longitude exceeded limits
+MAPI  = (monetdb) /var/tmp/mtest-14230/.s.monetdb.38644
+QUERY = SELECT st_astext(st_transform(ST_MPolyFromText('MULTIPOLYGON(((-70.916 42.1002,-70.9468 42.0946, -70.9765 420872,-70.916 42.1002)))',4326), 4329));
+ERROR = !Could not find in spatial_ref_sys srid 4329
+
+# 10:52:12 >  
+# 10:52:12 >  "Done."
+# 10:52:12 >  
+

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -735,9 +735,8 @@ getPolyType(malType t, int *polytype)
 		return polytype[ti];
 
 	tail = ti == 0 ? getBatType(t) : polytype[ti];
-	if (isaBatType(t)) {
-		tail = newBatType(tail);
-	}
+	if (isaBatType(t))
+		return newBatType(tail);
 	return tail;
 }
 

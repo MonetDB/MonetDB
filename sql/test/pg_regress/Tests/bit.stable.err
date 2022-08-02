@@ -1,0 +1,70 @@
+stderr of test 'bit` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
+
+#--
+#-- BIT types
+#--
+#--
+#-- Build tables for testing
+#--
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO BIT_TABLE VALUES (B'10'); -- too short
+ERROR = bit string length 2 does not match type bit(11)
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO BIT_TABLE VALUES (B'101011111010'); -- too long
+ERROR = bit string length 12 does not match type bit(11)
+#--INSERT INTO BIT_TABLE VALUES ('X554');
+#--INSERT INTO BIT_TABLE VALUES ('X555');
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO VARBIT_TABLE VALUES (B'101011111010'); -- too long
+ERROR = bit string too long for type bit varying(11)
+#--INSERT INTO VARBIT_TABLE VALUES ('X554');
+#--INSERT INTO VARBIT_TABLE VALUES ('X555');
+#-- Concatenation
+#-- Length
+#-- Substring
+#-- The following should fail
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select B'001' & B'10';
+ERROR = cannot AND bit strings of different sizes
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select B'0111' | B'011';
+ERROR = cannot OR bit strings of different sizes
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select B'0010' # B'011101';
+ERROR = cannot XOR bit strings of different sizes
+#-- More position tests, checking all the boundary cases
+#-- Shifting
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
+

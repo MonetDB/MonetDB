@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -126,7 +126,7 @@ MNDBGetDescField(ODBCDesc *desc,
 		WriteData(ValuePtr, rec->sql_desc_concise_type, SQLSMALLINT);
 		return SQL_SUCCESS;
 	case SQL_DESC_DATA_PTR:			/* SQLPOINTER */
-#ifndef __COVERITY__
+#ifndef STATIC_CODE_ANALYSIS
 		/* Coverity doesn't like the debug print in WriteData,
 		 * so we hide this whole thing */
 		if (!isIRD(desc))

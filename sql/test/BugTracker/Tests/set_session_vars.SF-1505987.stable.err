@@ -1,0 +1,17 @@
+stderr of test 'set_session_vars.SF-1505987` in directory 'sql/test/BugTracker` itself:
+
+
+# 10:38:14 >  
+# 10:38:14 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/rc/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/log" --set mapi_port=30346 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 10:38:14 >  
+
+
+# 10:38:14 >  
+# 10:38:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30346  < set_session_vars.SF-1505987.sql
+# 10:38:14 >  
+
+
+# 10:38:14 >  
+# 10:38:14 >  Done.
+# 10:38:14 >  
+

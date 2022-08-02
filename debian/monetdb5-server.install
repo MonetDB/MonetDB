@@ -1,7 +1,29 @@
 debian/tmp/usr/bin/mserver5 usr/bin
 debian/tmp/usr/lib/x86_64-linux-gnu/libmonetdb5.so.* usr/lib/x86_64-linux-gnu
-debian/tmp/usr/lib/x86_64-linux-gnu/libmonetdbsql.so* usr/lib/x86_64-linux-gnu
 
-# usr/lib/x86_64-linux-gnu/monetdb5/lib_*.so EXCEPT: lib_{fits,geom,gsl,microbenchmark,opt_sql_append,pyapi*,rapi,run_*,sql,udf}.so
+# usr/lib/x86_64-linux-gnu/monetdb5/lib_*.so EXCEPT: lib_{fits,geom,gsl,lidar,opt_sql_append,pyapi*,rapi,sql}.so
 debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/lib_capi.so usr/lib/x86_64-linux-gnu/monetdb5
 debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/lib_generator.so usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/lib_udf.so usr/lib/x86_64-linux-gnu/monetdb5
+
+# usr/lib/x86_64-linux-gnu/monetdb5/*.mal EXCEPT: {fits,geom,gsl,lidar,opt_sql_appendpyapi,rapi,sql*,*_hge}.mal
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/[!bfgloprsu]*.mal usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/ba[!m]*.mal usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/b[!a]*.mal usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/f[!i]*.mal usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/generator.mal usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/g[!es]*.mal usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/l[!i]*.mal usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/o[!p]*.mal usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/opt[!_]*.mal usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/p[!y]*.mal usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/r[!a]*.mal usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/s[!q]*.mal usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/udf.mal usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/u[!d]*.mal usr/lib/x86_64-linux-gnu/monetdb5
+
+# usr/lib/x86_64-linux-gnu/monetdb5/autoload/*.mal EXCEPT: *_{fits,geom,gsl,hge,lidar,opt_sql_append,pyapi,rapi,sql}.mal
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/autoload/??_batcalc.mal usr/lib/x86_64-linux-gnu/monetdb5/autoload
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/autoload/??_calc.mal usr/lib/x86_64-linux-gnu/monetdb5/autoload
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/autoload/??_generator.mal usr/lib/x86_64-linux-gnu/monetdb5/autoload
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/autoload/??_udf.mal usr/lib/x86_64-linux-gnu/monetdb5/autoload

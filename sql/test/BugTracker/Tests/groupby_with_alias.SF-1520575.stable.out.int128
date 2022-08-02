@@ -1,0 +1,42 @@
+stdout of test 'groupby_with_alias.SF-1520575` in directory 'sql/test/BugTracker` itself:
+
+
+# 10:16:07 >  
+# 10:16:07 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34695" "--set" "mapi_usock=/var/tmp/mtest-24719/.s.monetdb.34695" "--forcemito" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker" "--set" "embedded_c=true"
+# 10:16:07 >  
+
+# MonetDB 5 server v11.34.0 (hg id: bde99d002da3+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.385 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:34695/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-24719/.s.monetdb.34695
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+# 10:16:07 >  
+# 10:16:07 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24719" "--port=34695"
+# 10:16:07 >  
+
+#START TRANSACTION;
+#create table test_grp(a int);
+#select a as b from test_grp group by b; 
+% sys. # table_name
+% b # name
+% int # type
+% 1 # length
+#create table a(f1 varchar(20), f2 int);
+#select coalesce(f1,'EMPTY') as bug_alias, sum(f2) from a group by bug_alias;
+% sys.,	sys.%1 # table_name
+% bug_alias,	%1 # name
+% varchar,	hugeint # type
+% 0,	1 # length
+
+# 11:54:20 >  
+# 11:54:20 >  Done.
+# 11:54:20 >  
+

@@ -1,0 +1,14 @@
+stderr of test 'memo02` in directory 'monetdb5/scheduler` itself:
+
+
+# 22:34:44 >  
+# 22:34:44 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=32539 --set xrpc_port=46725 --set monet_prompt= --trace --dbname=mTests_src_scheduler  memo02.mal < /dev/null
+# 22:34:44 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/mk/monet5/Linux/etc/monetdb5.conf)
+
+# 22:34:44 >  
+# 22:34:44 >  Done.
+# 22:34:44 >  
+

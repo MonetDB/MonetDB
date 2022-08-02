@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /**
@@ -20,7 +20,7 @@
 /**
  * Returns if haystack matches expr, using tag globbing.
  */
-bool
+char
 db_glob(const char *expr, const char *haystack)
 {
 	const char *haymem = NULL;
@@ -48,7 +48,7 @@ db_glob(const char *expr, const char *haystack)
 						expr++;
 						if (*expr == '\0') {
 							/* this will always match the rest */
-							return(true);
+							return(1);
 						} else if (!escape && *expr == '*') {
 							continue;
 						} else if (*expr == '\\') {
@@ -65,7 +65,7 @@ db_glob(const char *expr, const char *haystack)
 					haymem = haystack + 1;
 					if (*haystack == '\0')
 						/* couldn't find it, so no match  */
-						return(false);
+						return(0);
 					break;
 				}
 				/* do asterisk match if escaped */
@@ -75,7 +75,7 @@ db_glob(const char *expr, const char *haystack)
 					if (haymem != NULL) {
 						return(db_glob(exprmem, haymem));
 					} else {
-						return(false);
+						return(0);
 					}
 				}
 			break;

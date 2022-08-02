@@ -1,0 +1,17 @@
+stderr of test 'nil_null.SF-919528` in directory 'sql/test/BugDay_2005-10-06_2.8` itself:
+
+
+# 15:02:59 >  
+# 15:02:59 >  Mtimeout -timeout 180 Mserver "--config=/home/sjoerd/src/stable/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/home/sjoerd/src/stable/lib/MonetDB:/home/sjoerd/src/stable/lib/bin" --set "gdk_dbfarm=/home/sjoerd/src/stable/var/MonetDB/dbfarm" --set "sql_logdir=/home/sjoerd/src/stable/var/MonetDB/log" --set mapi_port=37303 --set sql_port=45020 --set xquery_port=52442 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.8" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 15:02:59 >  
+
+
+# 15:03:00 >  
+# 15:03:00 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45020  < nil_null.SF-919528.sql
+# 15:03:00 >  
+
+
+# 15:03:00 >  
+# 15:03:00 >  Done.
+# 15:03:00 >  
+

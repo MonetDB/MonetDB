@@ -1,0 +1,7 @@
+	x := bat.new(:bte);
+	de_a := bat.append(x,1:bte);
+	ee_a := bat.append(x,1:bte);
+	y:= bat.new(:bte);
+	bat.append(y,x);
+	io.print("result?");
+	io.print(y);

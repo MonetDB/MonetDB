@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -22,21 +22,37 @@
  *
  * The life time of such BATs is forcefully terminated after the block exit.
  */
-
 str
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, limit;
 	InstrPtr p;
 	int actions = 0;
+	char buf[256];
+	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
+	(void) pci;
 	(void) stk;
 	if ( mb->inlineProp)
-		goto wrapup;
+		return 0;
 
 	limit = mb->stop;
 
+
+	/* variables get their name from the position */
+	/* rename all temporaries for ease of variable table interpretation */
+	/* this code should not be necessary is variables always keep their position */
+	for( i = 0; i < mb->vtop; i++) {
+		//strcpy(buf, getVarName(mb,i));
+		if (getVarName(mb,i)[0] == 'X' && getVarName(mb,i)[1] == '_')
+			snprintf(getVarName(mb,i),IDLENGTH,"X_%d",i);
+		else
+		if (getVarName(mb,i)[0] == 'C' && getVarName(mb,i)[1] == '_')
+			snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
+		//if(strcmp(buf, getVarName(mb,i)) )
+			//fprintf(stderr, "non-matching name/entry %s %s\n", buf, getVarName(mb,i));
+	}
 
 	// move SQL query definition to the front for event profiling tools
 	p = NULL;
@@ -64,13 +80,10 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		if ( p->token == ENDsymbol)
 			break;
 	}
-
-	//mnstr_printf(cntxt->fdout,"garbacollector limit %d ssize %d vtop %d vsize %d\n", limit, (int)(mb->ssize), mb->vtop, (int)(mb->vsize));
 	/* A good MAL plan should end with an END instruction */
 	if( p && p->token != ENDsymbol){
 		throw(MAL, "optimizer.garbagecollector", SQLSTATE(42000) "Incorrect MAL plan encountered");
 	}
-	/* move sanity check to other optimizer */
 	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
 
 	/* leave a consistent scope admin behind */
@@ -85,8 +98,11 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			msg = chkDeclarations(mb);
 	}
 	/* keep all actions taken as a post block comment */
-wrapup:
-	/* keep actions taken as a fake argument*/
-	(void) pushInt(mb, pci, actions);
+	usec = GDKusec()- usec;
+	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);
+	newComment(mb,buf);
+	if( actions > 0)
+		addtoMalBlkHistory(mb);
 	return msg;
 }
+

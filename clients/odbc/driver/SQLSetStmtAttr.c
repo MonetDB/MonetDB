@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -267,7 +267,14 @@ MNDBSetStmtAttr(ODBCStmt *stmt,
 		}
 		break;
 
-	/* TODO: implement requested behavior */
+	case SQL_ATTR_ROW_NUMBER:	     /* SQLULEN */
+		/* read-only attribute */
+	default:
+		/* Invalid attribute/option identifier */
+		addStmtError(stmt, "HY092", NULL, 0);
+		return SQL_ERROR;
+
+		/* TODO: implement requested behavior */
 	case SQL_ATTR_ASYNC_ENABLE:		/* SQLULEN */
 #ifdef SQL_ATTR_ASYNC_STMT_EVENT
 	case SQL_ATTR_ASYNC_STMT_EVENT:		/* SQLPOINTER */
@@ -285,13 +292,6 @@ MNDBSetStmtAttr(ODBCStmt *stmt,
 	case SQL_ATTR_USE_BOOKMARKS:		/* SQLULEN */
 		/* Optional feature not implemented */
 		addStmtError(stmt, "HYC00", NULL, 0);
-		return SQL_ERROR;
-
-	case SQL_ATTR_ROW_NUMBER:	     /* SQLULEN */
-		/* invalid attribute, can only be used with SQLGetStmtAttr */
-	default:
-		/* Invalid attribute/option identifier */
-		addStmtError(stmt, "HY092", NULL, 0);
 		return SQL_ERROR;
 	}
 

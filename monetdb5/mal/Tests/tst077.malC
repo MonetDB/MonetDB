@@ -1,0 +1,19 @@
+# parsing operations with multi-assignments
+function swap(x:bat[:int],y:bat[:int]) (a:str,b:bat[:int]);
+        a:="done"; 
+        return (a,x);
+end swap;
+
+function foo();
+X:= bat.new(:int);
+bat.append(X,1);
+Y:= bat.new(:int);
+bat.append(Y,2);
+(x,y):= user.swap(X,Y);
+io.print(x);
+io.print(y);
+end foo;
+
+mdb.List("user","foo");
+user.foo();
+

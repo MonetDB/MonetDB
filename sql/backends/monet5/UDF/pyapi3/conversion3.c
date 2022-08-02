@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -12,7 +12,22 @@
 #include "pytypes.h"
 #include "type_conversion.h"
 #include "unicode.h"
+#include "blob.h"
+#ifndef HAVE_EMBEDDED
 #include "gdk_interprocess.h"
+#endif
+
+CREATE_SQL_FUNCTION_PTR(str, batbte_dec2_dbl);
+CREATE_SQL_FUNCTION_PTR(str, batsht_dec2_dbl);
+CREATE_SQL_FUNCTION_PTR(str, batint_dec2_dbl);
+CREATE_SQL_FUNCTION_PTR(str, batlng_dec2_dbl);
+#ifdef HAVE_HGE
+CREATE_SQL_FUNCTION_PTR(str, bathge_dec2_dbl);
+#endif
+CREATE_SQL_FUNCTION_PTR(str, batstr_2time_timestamp);
+CREATE_SQL_FUNCTION_PTR(str, batstr_2time_daytime);
+CREATE_SQL_FUNCTION_PTR(str, batstr_2_date);
+CREATE_SQL_FUNCTION_PTR(str, batdbl_num2dec_lng);
 
 //! Wrapper to get eclass of SQL type
 int GetSQLType(sql_subtype *sql_subtype);
@@ -42,19 +57,19 @@ PyObject *PyArrayObject_FromScalar(PyInput *inp, char **return_message)
 #endif
 			break;
 		case TYPE_oid:
-			vararray = PyLong_FromLong((long)(*(oid *)inp->dataptr));
+			vararray = PyInt_FromLong((long)(*(oid *)inp->dataptr));
 			break;
 		case TYPE_bit:
-			vararray = PyLong_FromLong((long)(*(bit *)inp->dataptr));
+			vararray = PyInt_FromLong((long)(*(bit *)inp->dataptr));
 			break;
 		case TYPE_bte:
-			vararray = PyLong_FromLong((long)(*(bte *)inp->dataptr));
+			vararray = PyInt_FromLong((long)(*(bte *)inp->dataptr));
 			break;
 		case TYPE_sht:
-			vararray = PyLong_FromLong((long)(*(sht *)inp->dataptr));
+			vararray = PyInt_FromLong((long)(*(sht *)inp->dataptr));
 			break;
 		case TYPE_int:
-			vararray = PyLong_FromLong((long)(*(int *)inp->dataptr));
+			vararray = PyInt_FromLong((long)(*(int *)inp->dataptr));
 			break;
 		case TYPE_lng:
 			vararray = PyLong_FromLongLong((*(lng *)inp->dataptr));
@@ -70,29 +85,6 @@ PyObject *PyArrayObject_FromScalar(PyInput *inp, char **return_message)
 			vararray = PyLong_FromHge(*((hge *)inp->dataptr));
 			break;
 #endif
-		case TYPE_date: {
-				USE_DATETIME_API;
-				date dt = *(date *)inp->dataptr;
-				vararray = PyDate_FromDate(date_year(dt), date_month(dt), date_day(dt));
-				/* error checking */
-				break;
-		}
-		case TYPE_daytime: {
-				USE_DATETIME_API;
-				daytime dt = *(daytime *)inp->dataptr;
-				vararray = PyTime_FromTime(daytime_hour(dt), daytime_min(dt), daytime_sec(dt), daytime_usec(dt));
-				/* error checking */
-				break;
-		}
-		case TYPE_timestamp: {
-				USE_DATETIME_API;
-				timestamp ts = *(timestamp *)inp->dataptr;
-				date dt = timestamp_date(ts);
-				daytime dtm = timestamp_daytime(ts);
-				vararray = PyDateTime_FromDateAndTime(date_year(dt), date_month(dt), date_day(dt), daytime_hour(dtm), daytime_min(dtm), daytime_sec(dtm), daytime_usec(dtm));
-				/* error checking */
-				break;
-		}
 		case TYPE_str:
 			vararray = PyUnicode_FromString(*((char **)inp->dataptr));
 			break;
@@ -131,37 +123,36 @@ PyObject *PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 	// element is NULL, and 'False' otherwise
 	// if we know for sure that the BAT has no NULL values, we can skip the construction
 	// of this masked array. Otherwise, we create it.
-	MT_lock_set(&b->theaplock);
-	bool bnonil = b->tnonil;
-	MT_lock_unset(&b->theaplock);
-	if (!bnonil) {
+	if (b->tnil || !b->tnonil) {
 		PyObject *mask;
 		PyObject *mafunc = PyObject_GetAttrString(
-			PyImport_Import(PyUnicode_FromString("numpy.ma")), "masked_array");
+			PyImport_Import(PyString_FromString("numpy.ma")), "masked_array");
+		PyObject *maargs;
 		PyObject *nullmask = PyNullMask_FromBAT(b, t_start, t_end);
 
 		if (!nullmask) {
 			msg = createException(MAL, "pyapi3.eval", "Failed to create mask for some reason");
 			goto wrapup;
 		} else if (nullmask == Py_None) {
-			Py_DECREF(nullmask);
-		} else {
-			PyObject *maargs = PyTuple_New(2);
+			maargs = PyTuple_New(1);
 			PyTuple_SetItem(maargs, 0, vararray);
-			PyTuple_SetItem(maargs, 1, nullmask);
-
-			// Now we will actually construct the mask by calling the masked
-			// array constructor
-			mask = PyObject_CallObject(mafunc, maargs);
-			if (!mask) {
-				msg = createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "Failed to create mask");
-				goto wrapup;
-			}
-			Py_DECREF(maargs);
-
-			vararray = mask;
+		} else {
+			maargs = PyTuple_New(2);
+			PyTuple_SetItem(maargs, 0, vararray);
+			PyTuple_SetItem(maargs, 1, (PyObject *)nullmask);
 		}
+
+		// Now we will actually construct the mask by calling the masked array
+		// constructor
+		mask = PyObject_CallObject(mafunc, maargs);
+		if (!mask) {
+			msg = createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "Failed to create mask");
+			goto wrapup;
+		}
+		Py_DECREF(maargs);
 		Py_DECREF(mafunc);
+
+		vararray = mask;
 	}
 	return vararray;
 wrapup:
@@ -220,7 +211,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 		data = PyArray_DATA((PyArrayObject *)vararray);
 		BATloop(b, p, q)
 		{
-			const blob *t = (const blob *)BUNtvar(li, p);
+			blob *t = (blob *)BUNtvar(li, p);
 			if (t->nitems == ~(size_t)0) {
 				data[p] = Py_None;
 				Py_INCREF(Py_None);
@@ -228,7 +219,6 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 				data[p] = PyByteArray_FromStringAndSize(t->data, t->nitems);
 			}
 		}
-		bat_iterator_end(&li);
 	} else {
 		switch (inp->bat_type) {
 			case TYPE_void:
@@ -266,67 +256,6 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 			case TYPE_dbl:
 				BAT_TO_NP(b, dbl, NPY_FLOAT64);
 				break;
-			case TYPE_date: {
-				li = bat_iterator(b);
-
-				USE_DATETIME_API;
-				vararray = PyArray_EMPTY(1, elements, NPY_OBJECT, 0);
-				{
-					PyObject **data = ((PyObject **)PyArray_DATA((PyArrayObject *)vararray));
-					// PyObject *obj;
-					j = 0;
-					BATloop(b, p, q)
-					{
-						const date* dt = (const date*)BUNtail(li, p);
-						data[j++] = PyDate_FromDate(date_year(*dt), date_month(*dt), date_day(*dt));
-					}
-				}
-				bat_iterator_end(&li);
-				break;
-			}
-			case TYPE_daytime: {
-				li = bat_iterator(b);
-
-				USE_DATETIME_API;
-				vararray = PyArray_EMPTY(1, elements, NPY_OBJECT, 0);
-				{
-					PyObject **data = ((PyObject **)PyArray_DATA((PyArrayObject *)vararray));
-					// PyObject *obj;
-					j = 0;
-					BATloop(b, p, q)
-					{
-						const daytime* dt = (const daytime*)BUNtail(li, p);
-						data[j++] = PyTime_FromTime(daytime_hour(*dt),
-													daytime_min(*dt),
-													daytime_sec(*dt),
-													daytime_usec(*dt));
-					}
-				}
-				bat_iterator_end(&li);
-				break;
-			}
-			case TYPE_timestamp: {
-				li = bat_iterator(b);
-
-				USE_DATETIME_API;
-				vararray = PyArray_EMPTY(1, elements, NPY_OBJECT, 0);
-				{
-					PyObject **data = ((PyObject **)PyArray_DATA((PyArrayObject *)vararray));
-					// PyObject *obj;
-					j = 0;
-					BATloop(b, p, q)
-					{
-						const timestamp* ts = (const timestamp*)BUNtail(li, p);
-						const date dt = timestamp_date(*ts);
-						const daytime dtm = timestamp_daytime(*ts);
-
-						data[j++] = PyDateTime_FromDateAndTime(date_year(dt), date_month(dt), date_day(dt), daytime_hour(dtm), daytime_min(dtm), daytime_sec(dtm), daytime_usec(dtm));
-					}
-				}
-				bat_iterator_end(&li);
-				break;
-			}
-
 			case TYPE_str: {
 				bool unicode = false;
 				li = bat_iterator(b);
@@ -336,7 +265,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 
 				BATloop(b, p, q)
 				{
-					const char *t = (const char *)BUNtvar(li, p);
+					char *t = (char *)BUNtvar(li, p);
 					for (; *t != 0; t++) {
 						if (*t & 0x80) {
 							unicode = true;
@@ -358,7 +287,6 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 							PyObject **pyptrs =
 								GDKzalloc(b->tvheap->free * sizeof(PyObject *));
 							if (!pyptrs) {
-								bat_iterator_end(&li);
 								msg = createException(MAL, "pyapi3.eval",
 													  SQLSTATE(HY013) MAL_MALLOC_FAIL
 													  " PyObject strings.");
@@ -382,7 +310,6 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 											PyUnicode_FromString(t);
 									}
 									if (!pyptrs[offset]) {
-										bat_iterator_end(&li);
 										msg = createException(
 											MAL, "pyapi3.eval",
 											SQLSTATE(PY000) "Failed to create string.");
@@ -397,7 +324,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 						} else {
 							BATloop(b, p, q)
 							{
-								const char *t = (const char *)BUNtvar(li, p);
+								char *t = (char *)BUNtvar(li, p);
 								if (strNil(t)) {
 									// str_nil isn't a valid UTF-8 character
 									// (it's 0x80), so we can't decode it as
@@ -410,7 +337,6 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 								}
 
 								if (obj == NULL) {
-									bat_iterator_end(&li);
 									msg = createException(
 										MAL, "pyapi3.eval",
 										SQLSTATE(PY000) "Failed to create string.");
@@ -426,7 +352,6 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 							PyObject **pyptrs =
 								GDKzalloc(b->tvheap->free * sizeof(PyObject *));
 							if (!pyptrs) {
-								bat_iterator_end(&li);
 								msg = createException(MAL, "pyapi3.eval",
 													  SQLSTATE(HY013) MAL_MALLOC_FAIL
 													  " PyObject strings.");
@@ -437,7 +362,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 								const char *t = (const char *)BUNtvar(li, p);
 								ptrdiff_t offset = t - b->tvheap->base;
 								if (!pyptrs[offset]) {
-									pyptrs[offset] = PyUnicode_FromString(t);
+									pyptrs[offset] = PyString_FromString(t);
 								} else {
 									Py_INCREF(pyptrs[offset]);
 								}
@@ -447,10 +372,9 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 						} else {
 							BATloop(b, p, q)
 							{
-								const char *t = (const char *)BUNtvar(li, p);
-								obj = PyUnicode_FromString(t);
+								char *t = (char *)BUNtvar(li, p);
+								obj = PyString_FromString(t);
 								if (obj == NULL) {
-									bat_iterator_end(&li);
 									msg = createException(
 										MAL, "pyapi3.eval",
 										SQLSTATE(PY000) "Failed to create string.");
@@ -461,7 +385,6 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 						}
 					}
 				}
-				bat_iterator_end(&li);
 			} break;
 #ifdef HAVE_HGE
 			case TYPE_hge: {
@@ -472,12 +395,10 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 
 				j = 0;
 				npy_float64 *data = (npy_float64 *)PyArray_DATA((PyArrayObject *)vararray);
-				BATiter bi = bat_iterator(b);
-				const hge *vals = (const hge *) bi.base;
+				const hge *vals = (const hge *) Tloc(b, 0);
 				BATloop(b, p, q) {
 					data[j++] = (npy_float64)vals[p];
 				}
-				bat_iterator_end(&bi);
 				break;
 			}
 #endif
@@ -488,7 +409,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 				} else {
 					msg = createException(MAL, "pyapi3.eval",
 										  SQLSTATE(PY000) "Unsupported SQL Type: %s",
-										  inp->sql_subtype->type->base.name);
+										  inp->sql_subtype->type->sqlname);
 				}
 				goto wrapup;
 		}
@@ -511,7 +432,7 @@ wrapup:
 
 #define CreateNullMask(tpe)                                                    \
 	{                                                                          \
-		tpe *bat_ptr = (tpe *)b->theap->base + b->tbaseoff;                    \
+		tpe *bat_ptr = (tpe *)b->theap.base;                                   \
 		for (j = 0; j < count; j++) {                                          \
 			mask_data[j] = is_##tpe##_nil(bat_ptr[j]);                         \
 			found_nil |= mask_data[j];                                         \
@@ -567,7 +488,6 @@ PyObject *PyNullMask_FromBAT(BAT *b, size_t t_start, size_t t_end)
 			}
 		}
 	}
-	bat_iterator_end(&bi);
 
 	if (!found_nil) {
 		Py_DECREF(nullmask);
@@ -656,7 +576,8 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 			}
 		}
 
-		if (PyType_IsPyScalar(pResult)) { // check if the return object is a scalar
+		if (PyType_IsPyScalar(
+				pResult)) { // check if the return object is a scalar
 			if (expected_columns == 1 || expected_columns <= 0) {
 				// if we only expect a single return value, we can accept
 				// scalars by converting it into an array holding an array
@@ -697,8 +618,6 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 			if (PyType_IsNumpyArray(data)) {
 				if (PyArray_NDIM((PyArrayObject *)data) != 1) {
 					IsSingleArray = FALSE;
-				} else if (PyArray_SIZE((PyArrayObject *)data) == 0) {
-					IsSingleArray = TRUE;
 				} else {
 					pColO = PyArray_GETITEM(
 						(PyArrayObject *)data,
@@ -706,12 +625,8 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 					IsSingleArray = PyType_IsPyScalar(pColO);
 				}
 			} else if (PyList_Check(data)) {
-				if (PyList_Size(data) == 0) {
-					IsSingleArray = TRUE;
-				} else {
-					pColO = PyList_GetItem(data, 0);
-					IsSingleArray = PyType_IsPyScalar(pColO);
-				}
+				pColO = PyList_GetItem(data, 0);
+				IsSingleArray = PyType_IsPyScalar(pColO);
 			} else if (!PyType_IsNumpyMaskedArray(data)) {
 				// it is neither a python array, numpy array or numpy masked
 				// array, thus the result is unsupported! Throw an exception!
@@ -720,7 +635,7 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 					SQLSTATE(PY000) "Unsupported result object. Expected either a list, "
 					"dictionary, a numpy array, a numpy masked array or a "
 					"pandas data frame, but received an object of type \"%s\"",
-					PyUnicode_AsUTF8(PyObject_Str(PyObject_Type(data))));
+					PyString_AsString(PyObject_Str(PyObject_Type(data))));
 				goto wrapup;
 			}
 
@@ -921,13 +836,9 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 
 	switch (GetSQLType(type)) {
 		case EC_TIMESTAMP:
-			bat_type = TYPE_timestamp;
-			break;
 		case EC_TIME:
-			bat_type = TYPE_daytime;
-			break;
 		case EC_DATE:
-			bat_type = TYPE_date;
+			bat_type = TYPE_str;
 			break;
 		case EC_DEC:
 			bat_type = TYPE_dbl;
@@ -1045,6 +956,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 		}
 
 		BATsetcount(b, (BUN)ret->count);
+		BATsettrivprop(b);
 	} else {
 		switch (bat_type) {
 			case TYPE_void:
@@ -1079,15 +991,6 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 				NP_CREATE_BAT(b, hge);
 				break;
 #endif
-			case TYPE_date:
-				NP_CREATE_BAT(b, date);
-				break;
-			case TYPE_daytime:
-				NP_CREATE_BAT(b, daytime);
-				break;
-			case TYPE_timestamp:
-				NP_CREATE_BAT(b, timestamp);
-				break;
 			case TYPE_str: {
 				bool *mask = NULL;
 				char *data = NULL;
@@ -1119,6 +1022,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 				if (utf8_string)
 					GDKfree(utf8_string);
 				BATsetcount(b, (BUN)ret->count);
+				BATsettrivprop(b);
 				break;
 			}
 			default:
@@ -1147,6 +1051,9 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 bit ConvertableSQLType(sql_subtype *sql_subtype)
 {
 	switch (GetSQLType(sql_subtype)) {
+		case EC_DATE:
+		case EC_TIME:
+		case EC_TIMESTAMP:
 		case EC_DEC:
 			return 1;
 	}
@@ -1172,6 +1079,11 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 	assert(sql_subtype->type);
 
 	switch (sql_subtype->type->eclass) {
+		case EC_DATE:
+		case EC_TIME:
+		case EC_TIMESTAMP:
+			conv_type = TYPE_str;
+			break;
 		case EC_DEC:
 			conv_type = TYPE_dbl;
 			break;
@@ -1180,6 +1092,7 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 	}
 
 	if (conv_type == TYPE_str) {
+		BATiter li = bat_iterator(b);
 		BUN p = 0, q = 0;
 		char *result = NULL;
 		size_t length = 0;
@@ -1191,23 +1104,19 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 			return createException(MAL, "pyapi3.eval",
 								   SQLSTATE(HY013) MAL_MALLOC_FAIL " string conversion BAT.");
 		}
-		BATiter li = bat_iterator(b);
 		BATloop(b, p, q)
 		{
-			const void *element = (const void*)BUNtail(li, p);
+			void *element = (void *)BUNtail(li, p);
 			if (strConversion(&result, &length, element, false) < 0) {
-				bat_iterator_end(&li);
 				BBPunfix((*ret_bat)->batCacheid);
 				return createException(MAL, "pyapi3.eval",
 									   SQLSTATE(PY000) "Failed to convert element to string.");
 			}
 			if (BUNappend(*ret_bat, result, false) != GDK_SUCCEED) {
-				bat_iterator_end(&li);
 				BBPunfix((*ret_bat)->batCacheid);
 				throw(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
-		bat_iterator_end(&li);
 		if (result) {
 			GDKfree(result);
 		}
@@ -1220,20 +1129,20 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 		// numeric field and convert the one it's actually stored in
 		switch (bat_type) {
 			case TYPE_bte:
-				res = batbte_dec2_dbl(&result, &hpos, &b->batCacheid, NULL);
+				res = (*batbte_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
 				break;
 			case TYPE_sht:
-				res = batsht_dec2_dbl(&result, &hpos, &b->batCacheid, NULL);
+				res = (*batsht_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
 				break;
 			case TYPE_int:
-				res = batint_dec2_dbl(&result, &hpos, &b->batCacheid, NULL);
+				res = (*batint_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
 				break;
 			case TYPE_lng:
-				res = batlng_dec2_dbl(&result, &hpos, &b->batCacheid, NULL);
+				res = (*batlng_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				res = bathge_dec2_dbl(&result, &hpos, &b->batCacheid, NULL);
+				res = (*bathge_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
 				break;
 #endif
 			default:
@@ -1265,29 +1174,28 @@ str ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype,
 
 	switch (sql_subtype->type->eclass) {
 		case EC_TIMESTAMP:
-			res = batstr_2time_timestamp(&result_bat, &b->batCacheid, NULL, &digits);
+			res = (*batstr_2time_timestamp_ptr)(&result_bat, &b->batCacheid,
+												&digits);
 			break;
 		case EC_TIME:
-			res = batstr_2time_daytime(&result_bat, &b->batCacheid, NULL, &digits);
+			res = (*batstr_2time_daytime_ptr)(&result_bat, &b->batCacheid,
+											  &digits);
 			break;
 		case EC_DATE:
-			if ((*ret_bat = BATconvert(b, NULL, TYPE_date, 0, 0, 0)) == NULL)
-				throw(MAL, "pyapi3.eval", GDK_EXCEPTION);
-			*ret_type = TYPE_date;
-			return MAL_SUCCEED;
+			res = (*batstr_2_date_ptr)(&result_bat, &b->batCacheid);
+			break;
 		case EC_DEC:
-			res = batdbl_num2dec_lng(&result_bat, &b->batCacheid, NULL,
-									 &digits, &scale);
+			res = (*batdbl_num2dec_lng_ptr)(&result_bat, &b->batCacheid,
+											&digits, &scale);
 			break;
 		default:
 			return createException(
 				MAL, "pyapi3.eval",
 				"Convert To SQL Type: Unrecognized SQL type %s (%d).",
-				sql_subtype->type->base.name, (int) sql_subtype->type->eclass);
+				sql_subtype->type->sqlname, (int) sql_subtype->type->eclass);
 	}
 	if (res == MAL_SUCCEED) {
 		*ret_bat = BATdescriptor(result_bat);
-		BBPrelease(result_bat);
 		*ret_type = (*ret_bat)->ttype;
 	}
 
@@ -1322,9 +1230,6 @@ bit IsStandardBATType(int type)
 #ifdef HAVE_HGE
 		case TYPE_hge:
 #endif
-		case TYPE_date:
-		case TYPE_daytime:
-		case TYPE_timestamp:
 		case TYPE_str:
 			return 1;
 		default:
@@ -1339,5 +1244,18 @@ str _conversion_init(void)
 	str msg = MAL_SUCCEED;
 	conversion_import_array();
 
+#ifndef HAVE_EMBEDDED
+	LOAD_SQL_FUNCTION_PTR(batbte_dec2_dbl);
+	LOAD_SQL_FUNCTION_PTR(batsht_dec2_dbl);
+	LOAD_SQL_FUNCTION_PTR(batint_dec2_dbl);
+	LOAD_SQL_FUNCTION_PTR(batlng_dec2_dbl);
+#ifdef HAVE_HGE
+	LOAD_SQL_FUNCTION_PTR(bathge_dec2_dbl);
+#endif
+	LOAD_SQL_FUNCTION_PTR(batstr_2time_timestamp);
+	LOAD_SQL_FUNCTION_PTR(batstr_2time_daytime);
+	LOAD_SQL_FUNCTION_PTR(batstr_2_date);
+	LOAD_SQL_FUNCTION_PTR(batdbl_num2dec_lng);
+#endif
 	return msg;
 }

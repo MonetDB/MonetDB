@@ -1,0 +1,68 @@
+stdout of test 'metadataConsistency` in directory 'sql/test/Users` itself:
+
+
+# 14:51:39 >  
+# 14:51:39 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-648617" "--port=36823"
+# 14:51:39 >  
+
+#create schema qdv;
+#set schema qdv;
+#select current_schema;
+% .%2 # table_name
+% %2 # name
+% varchar # type
+% 3 # length
+[ "qdv"	]
+#create user "jtest" with unencrypted password 'wacht01' name 'Jan Test' schema "sys";
+#declare jtest_id int;
+#select id into jtest_id from sys.auths where name = 'jtest';
+#select jtest_id > 0;
+% .%2 # table_name
+% %2 # name
+% boolean # type
+% 5 # length
+[ true	]
+#select privileges from sys.privileges where auth_id = jtest_id;
+% sys.privileges # table_name
+% privileges # name
+% int # type
+% 1 # length
+#create table abem (col1 int);
+#grant select on abem to "jtest";
+#select privileges from sys.privileges where auth_id = jtest_id;
+% sys.privileges # table_name
+% privileges # name
+% int # type
+% 1 # length
+[ 1	]
+#grant insert, update, delete, truncate on abem to "jtest";
+#select privileges from sys.privileges where auth_id = jtest_id;
+% sys.privileges # table_name
+% privileges # name
+% int # type
+% 2 # length
+[ 1	]
+[ 4	]
+[ 2	]
+[ 8	]
+[ 64	]
+#drop user "jtest";
+#select privileges from sys.privileges where auth_id = jtest_id;
+% sys.privileges # table_name
+% privileges # name
+% int # type
+% 1 # length
+#drop table abem;
+#set schema sys;
+#select current_schema;
+% .%2 # table_name
+% %2 # name
+% varchar # type
+% 3 # length
+[ "sys"	]
+#drop schema qdv;
+
+# 14:51:39 >  
+# 14:51:39 >  "Done."
+# 14:51:39 >  
+

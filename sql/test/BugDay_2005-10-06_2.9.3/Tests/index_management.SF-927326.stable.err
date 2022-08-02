@@ -1,0 +1,46 @@
+stderr of test 'index_management.SF-927326` in directory 'sql/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 23:01:40 >  
+# 23:01:40 >  Mtimeout -timeout 180 Mserver "--config=/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./lib/MonetDB:/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./lib/bin" --set "gdk_dbfarm=/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./var/MonetDB/log" --set mapi_port=33564 --set sql_port=41591 --set xquery_port=51924 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 23:01:40 >  
+
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /ufs/fabian/scratch/ssd/monetdb/Dec2011/program-x86_64/var/lib/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_alloc_map = no
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	gdk_dbfarm = /net/sofia.ins.cwi.nl/export/scratch1/fabian/tmp/mtest-Dec2011-sofia.ins.cwi.nl/sql/dbfarm
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 39182
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_test_BugDay_2005-10-06_2.9.3
+# cmdline opt 	mal_listing = 0
+
+# 11:45:16 >  
+# 11:45:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=sofia" "--port=39182"
+# 11:45:16 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+QUERY = CREATE INDEX my_index ON my_table(my_column);
+ERROR = !CREATE INDEX: name 'my_index' already in use
+CODE  = 42S11
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = CREATE UNIQUE INDEX my_index ON my_table(my_column);
+ERROR = !CREATE INDEX: name 'my_index' already in use
+CODE  = 42S11
+
+
+# 23:01:40 >  
+# 23:01:40 >  Done.
+# 23:01:40 >  
+

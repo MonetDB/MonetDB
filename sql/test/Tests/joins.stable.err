@@ -1,0 +1,17 @@
+stderr of test 'joins` in directory 'sql/test` itself:
+
+
+# 14:53:33 >  
+# 14:53:33 >  Mtimeout -timeout 180 Mserver "--config=/ufs/roberto/servers/MonetDB/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/roberto/servers/MonetDB/lib/MonetDB" --set "gdk_dbfarm=/ufs/roberto/servers/MonetDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/roberto/servers/MonetDB/var/MonetDB/log" --set mapi_port=46025 --set sql_port=54229 --set monet_prompt= --trace "--dbname=mTests_src_test" "/export/scratch1/roberto/Monet/current/build/sql/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 14:53:33 >  
+
+
+# 14:53:34 >  
+# 14:53:34 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=aquila --port=54229  < joins.sql
+# 14:53:34 >  
+
+
+# 14:53:35 >  
+# 14:53:35 >  Done.
+# 14:53:35 >  
+

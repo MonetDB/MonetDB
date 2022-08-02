@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -19,19 +19,17 @@
 
 #define BAT_TO_NP(bat, mtpe, nptpe)                                            \
 	do {                                                                       \
-		BATiter bi = bat_iterator(bat);                                        \
 		if (copy) {                                                            \
 			vararray = PyArray_EMPTY(1, elements, nptpe, 0);                   \
-			memcpy(PyArray_DATA((PyArrayObject *)vararray), bi.base,           \
+			memcpy(PyArray_DATA((PyArrayObject *)vararray), Tloc(bat, 0),      \
 				sizeof(mtpe) * (t_end - t_start));                             \
 		} else {                                                               \
 			vararray =                                                         \
 				PyArray_New(&PyArray_Type, 1, elements, nptpe, NULL,           \
-							&((mtpe *)bi.base)[t_start], 0,                    \
+							&((mtpe *)Tloc(bat, 0))[t_start], 0,               \
 							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);   \
 		}                                                                      \
-		bat_iterator_end(&bi);                                                 \
-	} while(0)
+	} while(0)                                                                 \
 
 // This #define creates a new BAT with the internal data and mask from a Numpy
 // array, without copying the data
@@ -65,15 +63,12 @@
 #define nancheck_lng(bat) ((void)0)
 #define nancheck_hge(bat) ((void)0) /* not used if no HAVE_HGE */
 #define nancheck_oid(bat) ((void)0)
-#define nancheck_date(bat) ((void)0)
-#define nancheck_daytime(bat) ((void)0)
-#define nancheck_timestamp(bat) ((void)0)
-#if defined(HAVE_FORK)
+#if defined(HAVE_FORK) && !defined(HAVE_EMBEDDED)
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore)                               \
 	{                                                                          \
 		bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                      \
 		if (bat == NULL) {                                                     \
-			msg = createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "Cannot create column"); \
+		msg = createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "Cannot create column");     \
 			goto wrapup;                                                       \
 		}                                                                      \
 		bat->tnil = false;                                                     \
@@ -98,33 +93,32 @@
 		}                                                                      \
                                                                                \
 		/*When we create a BAT a small part of memory is allocated, free it*/  \
-		GDKfree(bat->theap->base);                                             \
-		bat->theap->base =                                                     \
+		GDKfree(bat->theap.base);                                              \
+		bat->theap.base =                                                      \
 			&data[(index_offset * ret->count) * ret->memory_size];             \
-		bat->theap->size = ret->count * ret->memory_size;                      \
-		bat->theap->free =                                                     \
-			bat->theap->size; /*There are no free places in the array*/        \
-		bat->theap->dirty = true;                                              \
-		/*If index_offset > 0, we are mapping part of a multidimensional */    \
-		/* array.*/                                                            \
-		/*The entire array will be cleared when the part with index_offset=0 */\
-		/* is freed*/                                                          \
+		bat->theap.size = ret->count * ret->memory_size;                       \
+		bat->theap.free =                                                      \
+			bat->theap.size; /*There are no free places in the array*/         \
+		/*If index_offset > 0, we are mapping part of a multidimensional       \
+		 * array.*/                                                            \
+		/*The entire array will be cleared when the part with index_offset=0   \
+		 * is freed*/                                                          \
 		/*So we set this part of the mapping to 'NOWN'*/                       \
 		if (index_offset > 0)                                                  \
-			bat->theap->storage = STORE_NOWN;                                  \
+			bat->theap.storage = STORE_NOWN;                                   \
 		else {                                                                 \
-			bat->theap->storage = batstore;                                    \
+			bat->theap.storage = batstore;                                     \
 			if (batstore == STORE_MMAPABS) {                                   \
 				/* If we are taking data from a MMAP file, set the filename to \
 				 * the absolute path */                                        \
 				char address[100];                                             \
 				GDKmmapfile(address, sizeof(address), ret->mmap_id);           \
-				snprintf(bat->theap->filename, sizeof(bat->theap->filename),   \
+				snprintf(bat->theap.filename, sizeof(bat->theap.filename),     \
 					"%s%c%s.tmp", BATDIR, DIR_SEP, address);                   \
 				ret->mmap_id = -1;                                             \
 			}                                                                  \
 		}                                                                      \
-		bat->theap->newstorage = STORE_MEM;                                    \
+		bat->theap.newstorage = STORE_MEM;                                     \
 		bat->batCount = ret->count;                                            \
 		bat->batCapacity = ret->count;                                         \
 		bat->batCopiedtodisk = false;                                          \
@@ -162,24 +156,23 @@
 			nancheck_##mtpe(bat);                                              \
 		}                                                                      \
 		/*When we create a BAT a small part of memory is allocated, free it*/  \
-		GDKfree(bat->theap->base);                                             \
-		bat->theap->base =                                                     \
+		GDKfree(bat->theap.base);                                              \
+		bat->theap.base =                                                      \
 			&data[(index_offset * ret->count) * ret->memory_size];             \
-		bat->theap->size = ret->count * ret->memory_size;                      \
-		bat->theap->free =                                                     \
-			bat->theap->size; /*There are no free places in the array*/        \
-		bat->theap->dirty = true;                                              \
-		/*If index_offset > 0, we are mapping part of a multidimensional */    \
-		/* array.*/                                                            \
-		/*The entire array will be cleared when the part with index_offset=0 */\
-		/* is freed*/                                                          \
+		bat->theap.size = ret->count * ret->memory_size;                       \
+		bat->theap.free =                                                      \
+			bat->theap.size; /*There are no free places in the array*/         \
+		/*If index_offset > 0, we are mapping part of a multidimensional       \
+		 * array.*/                                                            \
+		/*The entire array will be cleared when the part with index_offset=0   \
+		 * is freed*/                                                          \
 		/*So we set this part of the mapping to 'NOWN'*/                       \
 		if (index_offset > 0)                                                  \
-			bat->theap->storage = STORE_NOWN;                                  \
+			bat->theap.storage = STORE_NOWN;                                   \
 		else {                                                                 \
-			bat->theap->storage = batstore;                                    \
+			bat->theap.storage = batstore;                                     \
 		}                                                                      \
-		bat->theap->newstorage = STORE_MEM;                                    \
+		bat->theap.newstorage = STORE_MEM;                                     \
 		bat->batCount = (BUN)ret->count;                                       \
 		bat->batCapacity = (BUN)ret->count;                                    \
 		bat->batCopiedtodisk = false;                                          \
@@ -400,7 +393,7 @@ convert_and_append(BAT* b, const char* text, bool force) {
 				break;                                                         \
 			case NPY_UNICODE:                                                  \
 				NP_COL_BAT_LOOP_FUNC(bat, mtpe, unicode_to_##mtpe,             \
-									 Py_UNICODE, index);                       \
+									 PythonUnicodeType, index);                \
 				break;                                                         \
 			case NPY_OBJECT:                                                   \
 				NP_COL_BAT_LOOP_FUNC(bat, mtpe, pyobject_to_##mtpe,            \
@@ -470,7 +463,7 @@ convert_and_append(BAT* b, const char* text, bool force) {
 						goto wrapup;                                           \
 					}                                                          \
 				} else {                                                       \
-					if (!pyapi3_string_copy(&data[(index_offset * ret->count + iu) *  \
+					if (!string_copy(&data[(index_offset * ret->count + iu) *  \
 										   ret->memory_size],                  \
 									 utf8_string, ret->memory_size, false)) {  \
 						msg = createException(MAL, "pyapi3.eval",              \
@@ -548,12 +541,10 @@ convert_and_append(BAT* b, const char* text, bool force) {
 					}                                                          \
 				} else {                                                       \
 					/* we try to handle as many types as possible */           \
-					msg = pyobject_to_str(								\
+					pyobject_to_str(                                           \
 						((PyObject **)&data[(index_offset * ret->count + iu) * \
 											ret->memory_size]),                \
 						utf8_size, &utf8_string);                              \
-					if (msg != MAL_SUCCEED)                                    \
-						goto wrapup;                                           \
 					if (convert_and_append(b, utf8_string, false) != GDK_SUCCEED) {     \
 						msg = createException(MAL, "pyapi3.eval",              \
 											  SQLSTATE(PY000) "BUNappend failed.\n");          \
@@ -590,6 +581,7 @@ convert_and_append(BAT* b, const char* text, bool force) {
 		bat->tnil = false;                                                 \
 		bat->tnonil = true;                                                \
 		BATsetcount(bat, (BUN)ret->count);                                 \
+		BATsettrivprop(bat);                                               \
 	}
 
 // This very big #define combines all the previous #defines for one big #define
@@ -641,5 +633,6 @@ convert_and_append(BAT* b, const char* text, bool force) {
 				bat->tnonil = false;                                           \
 			}                                                                  \
 			BATsetcount(bat, (BUN)ret->count);                                 \
+			BATsettrivprop(bat);                                               \
 		}                                                                      \
 	}
