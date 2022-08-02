@@ -3502,45 +3502,13 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 {
 	gdk_return ret = GDK_SUCCEED;
 	char extnew[16];
-	bool istail = strncmp(ext, "tail", 4) == 0;
 
 	if (h->wasempty) {
 		return GDK_SUCCEED;
 	}
 
 	/* direct mmap is unprotected (readonly usage, or has WAL
-	 * protection); however, if we're backing up for subcommit
-	 * and a backup already exists in the main backup directory
-	 * (see GDKupgradevarheap), move the file */
-	if (subcommit) {
-		strcpy_len(extnew, ext, sizeof(extnew));
-		char *p = extnew + strlen(extnew) - 1;
-		if (*p == 'l') {
-			p++;
-			p[1] = 0;
-		}
-		bool exists;
-		for (;;) {
-			exists = file_exists(h->farmid, BAKDIR, nme, extnew);
-			if (exists)
-				break;
-			if (!istail)
-				break;
-			if (*p == '1')
-				break;
-			if (*p == '2')
-				*p = '1';
-#if SIZEOF_VAR_T == 8
-			else if (*p != '4')
-				*p = '4';
-#endif
-			else
-				*p = '2';
-		}
-		if (exists &&
-		    file_move(h->farmid, BAKDIR, SUBDIR, nme, extnew) != GDK_SUCCEED)
-			return GDK_FAIL;
-	}
+	 * protection) */
 	if (h->storage != STORE_MMAP) {
 		/* STORE_PRIV saves into X.new files. Two cases could
 		 * happen. The first is when a valid X.new exists
@@ -3552,75 +3520,21 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 		 * these we write X.new.kill files in the backup
 		 * directory (see heap_move). */
 		gdk_return mvret = GDK_SUCCEED;
-		bool exists;
-
-		if (istail) {
-			exists = file_exists(h->farmid, BAKDIR, nme, "tail.new") ||
-#if SIZEOF_VAR_T == 8
-				file_exists(h->farmid, BAKDIR, nme, "tail4.new") ||
-#endif
-				file_exists(h->farmid, BAKDIR, nme, "tail2.new") ||
-				file_exists(h->farmid, BAKDIR, nme, "tail1.new") ||
-				file_exists(h->farmid, BAKDIR, nme, "tail") ||
-#if SIZEOF_VAR_T == 8
-				file_exists(h->farmid, BAKDIR, nme, "tail4") ||
-#endif
-				file_exists(h->farmid, BAKDIR, nme, "tail2") ||
-				file_exists(h->farmid, BAKDIR, nme, "tail1");
-		} else {
-			exists = file_exists(h->farmid, BAKDIR, nme, "theap.new") ||
-				file_exists(h->farmid, BAKDIR, nme, "theap");
-		}
 
 		strconcat_len(extnew, sizeof(extnew), ext, ".new", NULL);
-		if (dirty && !exists) {
+		if (dirty &&
+		    !file_exists(h->farmid, BAKDIR, nme, extnew) &&
+		    !file_exists(h->farmid, BAKDIR, nme, ext)) {
 			/* if the heap is dirty and there is no heap
 			 * file (with or without .new extension) in
 			 * the BAKDIR, move the heap (preferably with
 			 * .new extension) to the correct backup
 			 * directory */
-			if (istail) {
-				if (file_exists(h->farmid, srcdir, nme, "tail.new"))
-					mvret = heap_move(h, srcdir,
-							  subcommit ? SUBDIR : BAKDIR,
-							  nme, "tail.new");
-#if SIZEOF_VAR_T == 8
-				else if (file_exists(h->farmid, srcdir, nme, "tail4.new"))
-					mvret = heap_move(h, srcdir,
-							  subcommit ? SUBDIR : BAKDIR,
-							  nme, "tail4.new");
-#endif
-				else if (file_exists(h->farmid, srcdir, nme, "tail2.new"))
-					mvret = heap_move(h, srcdir,
-							  subcommit ? SUBDIR : BAKDIR,
-							  nme, "tail2.new");
-				else if (file_exists(h->farmid, srcdir, nme, "tail1.new"))
-					mvret = heap_move(h, srcdir,
-							  subcommit ? SUBDIR : BAKDIR,
-							  nme, "tail1.new");
-				else if (file_exists(h->farmid, srcdir, nme, "tail"))
-					mvret = heap_move(h, srcdir,
-							  subcommit ? SUBDIR : BAKDIR,
-							  nme, "tail");
-#if SIZEOF_VAR_T == 8
-				else if (file_exists(h->farmid, srcdir, nme, "tail4"))
-					mvret = heap_move(h, srcdir,
-							  subcommit ? SUBDIR : BAKDIR,
-							  nme, "tail4");
-#endif
-				else if (file_exists(h->farmid, srcdir, nme, "tail2"))
-					mvret = heap_move(h, srcdir,
-							  subcommit ? SUBDIR : BAKDIR,
-							  nme, "tail2");
-				else if (file_exists(h->farmid, srcdir, nme, "tail1"))
-					mvret = heap_move(h, srcdir,
-							  subcommit ? SUBDIR : BAKDIR,
-							  nme, "tail1");
-			} else if (file_exists(h->farmid, srcdir, nme, extnew))
+			if (file_exists(h->farmid, srcdir, nme, extnew))
 				mvret = heap_move(h, srcdir,
 						  subcommit ? SUBDIR : BAKDIR,
 						  nme, extnew);
-			else
+			else if (file_exists(h->farmid, srcdir, nme, ext))
 				mvret = heap_move(h, srcdir,
 						  subcommit ? SUBDIR : BAKDIR,
 						  nme, ext);
@@ -3885,32 +3799,6 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 						break;
 					}
 				}
-			} else {
-				if (subcommit && (b = BBP_desc(i)) && BBP_status(i) & BBPDELETED) {
-					char o[10];
-					char *f;
-					snprintf(o, sizeof(o), "%o", (unsigned) b->batCacheid);
-					f = GDKfilepath(b->theap->farmid, BAKDIR, o, BATtailname(b));
-					if (f == NULL) {
-						if (lock)
-							MT_lock_unset(&GDKswapLock(i));
-						ret = GDK_FAIL;
-						goto bailout;
-					}
-					if (MT_access(f, F_OK) == 0)
-						file_move(b->theap->farmid, BAKDIR, SUBDIR, o, BATtailname(b));
-					GDKfree(f);
-					f = GDKfilepath(b->theap->farmid, BAKDIR, o, "theap");
-					if (f == NULL) {
-						if (lock)
-							MT_lock_unset(&GDKswapLock(i));
-						ret = GDK_FAIL;
-						goto bailout;
-					}
-					if (MT_access(f, F_OK) == 0)
-						file_move(b->theap->farmid, BAKDIR, SUBDIR, o, "theap");
-					GDKfree(f);
-				}
 			}
 			if (lock)
 				MT_lock_unset(&GDKswapLock(i));
@@ -4029,7 +3917,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 	TRC_DEBUG(PERF, "%s (ready time %d)\n",
 		  ret == GDK_SUCCEED ? "" : " failed",
 		  (t0 = GDKms()) - t1);
-  bailout:
+
 	/* turn off the BBPSYNCING bits for all bats, even when things
 	 * didn't go according to plan (i.e., don't check for ret ==
 	 * GDK_SUCCEED) */
