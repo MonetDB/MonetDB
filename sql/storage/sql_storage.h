@@ -48,6 +48,10 @@ extern int store_readonly;
 extern int store_singleuser;
 extern int store_initialized;
 
+/* callback to access generic_event in store.c */
+typedef void (*generic_event_wrapper_fptr) (str face, ulng tid, int rc, int state);
+extern generic_event_wrapper_fptr generic_event_wrapper_f;
+
 /* relational interface */
 typedef oid (*column_find_row_fptr)(sql_trans *tr, sql_column *c, const void *value, ...);
 typedef void *(*column_find_value_fptr)(sql_trans *tr, sql_column *c, oid rid);
@@ -381,7 +385,7 @@ extern res_table *res_tables_remove(res_table *results, res_table *t);
 extern void res_tables_destroy(res_table *results);
 extern res_table *res_tables_find(res_table *results, int res_id);
 
-extern int store_init(int debug, store_type store, int readonly, int singleuser, backend_stack stk);
+extern int store_init(int debug, store_type store, int readonly, int singleuser, backend_stack stk, generic_event_wrapper_fptr event_wrapper);
 extern void store_exit(void);
 
 extern int store_apply_deltas(bool locked);

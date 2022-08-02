@@ -54,6 +54,16 @@ isaSQLquery(MalBlkPtr mb){
 	return NULL;
 }
 
+oid
+runtimeProfileSetTag(Client cntxt) {
+
+	MT_lock_set(&mal_delayLock);
+	cntxt->curprg->def->tag = qtag++;
+	MT_lock_unset(&mal_delayLock);
+
+	return cntxt->curprg->def->tag;
+}
+
 /*
  * Manage the runtime profiling information
  */
@@ -90,7 +100,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	if (i == qtop) {
 		cntxt->idle = 0;
 		QRYqueue[i].mb = mb;
-		QRYqueue[i].tag = qtag++;
+		QRYqueue[i].tag = stk->tag = mb->tag;
 		QRYqueue[i].stk = stk;				// for status pause 'p'/running '0'/ quiting 'q'
 		QRYqueue[i].start = time(0);
 		QRYqueue[i].runtime = mb->runtime; 	// the estimated execution time

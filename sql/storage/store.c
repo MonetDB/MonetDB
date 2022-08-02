@@ -2117,13 +2117,15 @@ store_load(backend_stack stk) {
 }
 
 int
-store_init(int debug, store_type store, int readonly, int singleuser, backend_stack stk)
+store_init(int debug, store_type store, int readonly, int singleuser, backend_stack stk, generic_event_wrapper_fptr event_wrapper)
 {
 	int v = 1;
 
 	store_readonly = readonly;
 	store_singleuser = singleuser;
 	store_debug = debug;
+
+	generic_event_wrapper_f = event_wrapper;
 
 	MT_lock_set(&bs_lock);
 
@@ -2486,7 +2488,7 @@ store_manager(void)
 	MT_lock_set(&bs_lock);
 
 	for (;;) {
-		int res;
+		int res = LOG_OK;
 
 		if (!flusher_should_run()) {
 			if (GDKexiting())
@@ -5203,6 +5205,7 @@ sql_trans_commit(sql_trans *tr)
 	int ok = LOG_OK;
 	int oldest = oldest_active_tid();
 
+	generic_event_wrapper_f("commit", (ulng)tr->stime, 0, 0);
 	/* write phase */
 	TRC_DEBUG(SQL_STORE, "Forwarding changes (%d, %d) (%d, %d)\n", gtrans->stime, tr->stime, gtrans->wstime, tr->wstime);
 	/* snap shots should be saved first */
@@ -5230,6 +5233,7 @@ sql_trans_commit(sql_trans *tr)
 		ok = rollforward_trans(tr, oldest, R_APPLY);
 	}
 	TRC_DEBUG(SQL_STORE, "Done forwarding changes '%d' and '%d'\n", gtrans->stime, gtrans->wstime);
+	generic_event_wrapper_f("commit", (ulng)tr->stime, 0, 1);
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
 
@@ -7803,6 +7807,8 @@ sql_trans_end(sql_session *s, int commit)
 		(void) ATOMIC_DEC(&store_nr_active);
 	}
 	assert(list_length(active_sessions) == (int) ATOMIC_GET(&store_nr_active));
+
+	generic_event_wrapper_f("transaction", (ulng)s->tr->stime, 0, 1);
 }
 
 void

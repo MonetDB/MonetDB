@@ -2172,6 +2172,7 @@ str fstrcmp_impl(dbl *ret, str *string1, str *string2, dbl *minimum);
 void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag);
 void garbageElement(Client cntxt, ValPtr v);
 str generatorRef;
+void generic_event(str face, struct GenericEvent e, int state);
 MALfcn getAddress(str fcnname);
 str getArgDefault(MalBlkPtr mb, InstrPtr p, int idx);
 ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
@@ -2538,6 +2539,7 @@ void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
 void runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
 void runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
+oid runtimeProfileSetTag(Client cntxt);
 int safetyBarrier(InstrPtr p, InstrPtr q);
 str sampleRef;
 str schedulerRef;
