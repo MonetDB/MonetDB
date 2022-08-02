@@ -1223,9 +1223,9 @@ SQLparser(Client c)
 
 			if(malProfileMode > 0)
 				generic_event("rel_to_mal",
-							 (struct GenericEvent)
-							 { &c->idx, &(c->curprg->def->tag), NULL, NULL, c->query? 0 : 1 },
-							 1);
+							  (struct GenericEvent)
+							  { &c->idx, &(c->curprg->def->tag), NULL, NULL, c->query? 0 : 1 },
+							  1);
 		} else {
 			char *q_copy = sa_strdup(m->sa, c->query);
 
