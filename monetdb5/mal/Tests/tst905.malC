@@ -1,0 +1,14 @@
+# the multiplex code blocks.
+
+function foo();
+b:= bat.new(:lng);
+barrier i:= 0:lng;
+	bat.append(b,i);
+	redo i:= iterator.next(1:lng,10:lng);
+exit i;
+c:= algebra.copy(b);
+x:bat[:lng]:= mal.multiplex("calc","+",b,c);
+io.print(x);
+end;
+optimizer.multiplex("user","foo");
+user.foo();

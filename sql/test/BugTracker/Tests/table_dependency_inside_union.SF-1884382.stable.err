@@ -1,0 +1,27 @@
+stderr of test 'table_dependency_inside_union.SF-1884382` in directory 'sql/test/BugTracker` itself:
+
+
+# 14:42:28 >  
+# 14:42:28 >   mserver5 "--config=/ufs/goncalve/scratch/MonetDB/debug/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/debug/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/debug/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/debug/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/debug/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/debug/MonetDB5/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=32819 --set xrpc_port=42261 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 14:42:28 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/goncalve/scratch/MonetDB/debug/MonetDB5/etc/monetdb5.conf)
+
+# 14:42:29 >  
+# 14:42:29 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=32819 
+# 14:42:29 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+QUERY = drop table t1884382a;
+ERROR = !DROP TABLE: unable to drop table t1884382a (there are database objects which depend on it)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = drop table t1884382b;
+ERROR = !DROP TABLE: unable to drop table t1884382b (there are database objects which depend on it)
+CODE  = 42000
+
+# 14:42:29 >  
+# 14:42:29 >  Done.
+# 14:42:29 >  
+

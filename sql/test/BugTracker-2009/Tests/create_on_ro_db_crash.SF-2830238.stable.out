@@ -1,0 +1,21 @@
+stdout of test 'create_on_ro_db_crash.SF-2830238` in directory 'sql/test/BugTracker-2009` itself:
+
+
+# 21:37:20 >  
+# 21:37:20 >  /usr/bin/python create_on_ro_db_crash.SF-2830238.py create_on_ro_db_crash.SF-2830238 
+# 21:37:20 >  
+
+# MonetDB server v5.14.0, based on kernel v1.32.0
+# Serving database 'demo', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:39382/
+# MonetDB/SQL module v2.32.0 loaded
+
+
+# 21:37:20 >  
+# 21:37:20 >  Done.
+# 21:37:20 >  
+

@@ -1,0 +1,59 @@
+stdout of test 'tst908` in directory 'monetdb5/mal` itself:
+
+
+# 08:01:39 >  
+# 08:01:39 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst908.mal </dev/null
+# 08:01:39 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:35645/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-15498/.s.monetdb.35645
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+
+# 22:45:40 >  
+# 22:45:40 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
+# 22:45:40 >  
+
+function user.foo():void;               	#[0] (0)  0 
+    b:bat[:lng] := bat.new(:lng);       	#[1] (0) CMDBATnew 1 <- 2 
+barrier i:lng := 0:lng;                 	#[2] (0)  3 <- 4 
+    bat.append(b:bat[:lng], i:lng);     	#[3] (0) BKCappend_val_wrap 5 <- 1 3 
+    redo i:lng := iterator.next(1:lng, 10:lng);	#[4] (0) ITRnext_lng 3 <- 6 7 
+exit i:lng;                             	#[5] (0)  3 
+    user.perftst(b:bat[:lng], 1:lng);   	#[6] (0)  8 <- 1 6 
+end user.foo;                           	#[7] (0)  
+[ "perftst" ]
+[ 1 ]
+#-----------------#
+# h	t	  # name
+# lng	lng	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ 6@0,	  6	  ]
+[ 7@0,	  7	  ]
+[ 8@0,	  8	  ]
+[ 9@0,	  9	  ]
+
+# 08:01:39 >  
+# 08:01:39 >  Done.
+# 08:01:39 >  
+

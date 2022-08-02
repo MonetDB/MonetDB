@@ -1,0 +1,19 @@
+stderr of test 'drop_function_cascade` in directory 'sql/test/DropCascade` itself:
+
+
+# 17:28:06 >  
+# 17:28:06 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=30730 --set xrpc_port=43841 --set monet_prompt= --trace "--dbname=mTests_src_test_DropCascade" --dbinit='include sql;' ; echo ; echo Over..
+# 17:28:06 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf)
+
+# 17:28:07 >  
+# 17:28:07 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30730 
+# 17:28:07 >  
+
+
+# 17:28:07 >  
+# 17:28:07 >  Done.
+# 17:28:07 >  
+

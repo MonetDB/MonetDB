@@ -1,0 +1,16 @@
+stderr of test 'grant-select-column.Bug-6765` in directory 'sql/test/BugTracker-2019` itself:
+
+
+# 11:35:12 >  
+# 11:35:12 >  "/usr/bin/python3" "grant-select-column.Bug-6765.py" "grant-select-column.Bug-6765"
+# 11:35:12 >  
+
+MAPI  = (myuser) /var/tmp/mtest-174583/.s.monetdb.31994
+QUERY = SELECT "id", "name" FROM "myschema"."test"; --error, no permission on column "name"
+ERROR = !SELECT: identifier 'id' unknown
+CODE  = 42000
+
+# 11:35:12 >  
+# 11:35:12 >  "Done."
+# 11:35:12 >  
+

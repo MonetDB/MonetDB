@@ -1,0 +1,22 @@
+stderr of test 'unicode_varchar-bug-sf-1041324_JdbcClient` in directory 'sql/test/bugs` itself:
+
+
+# 19:28:39 >  
+# 19:28:39 >  Mtimeout -timeout 180 Mserver "--config=/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d_--enable-debug_/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/var/tmp/_4.4.0_PREFIX_SQL_GNU_32_d_--enable-debug_/lib/MonetDB:/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d_--enable-debug_/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d_--enable-debug_/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_4.4.0_PREFIX_MONETDB_GNU_32_d_--enable-debug_/var/MonetDB/log" --set mapi_port=46000 --set sql_port=56954 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/var/tmp/_4.4.0_BUILD_SQL_GNU_32_d_--enable-debug_/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 19:28:39 >  
+
+
+# 19:28:41 >  
+# 19:28:41 >  Mtimeout -timeout 60 ./unicode_varchar-bug-sf-1041324_JdbcClient.SQL bug-sf-1041324_JdbcClient 
+# 19:28:41 >  
+
+
+# 19:59:40 >  
+# 19:59:40 >  Mtimeout -timeout 9 java -jar /var/tmp/_4.4.0_BUILD_SQL_GNU_32_d_--enable-debug_/src/jdbc/MonetDB_JDBC.jar -p 50830 -f ../../../../../../../ufs/manegold/Monet/4.4.0/sql/src/test/bugs/Tests/../bug-sf-1041324_weird-char.sql
+# 19:59:40 >  
+
+
+# 19:59:41 >  
+# 19:59:41 >  Done.
+# 19:59:41 >  
+

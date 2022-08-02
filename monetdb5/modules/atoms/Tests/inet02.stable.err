@@ -1,0 +1,12 @@
+stderr of test 'inet02` in directory 'monetdb5/modules/atoms` itself:
+
+
+# 21:55:16 >  
+# 21:55:16 >  Mtimeout -timeout 60 Mserver "--config=/ufs/fabian/scratch/monet5/program/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monet5/program/lib/MonetDB5" --set "gdk_dbfarm=/ufs/fabian/scratch/monet5/program/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monet5/program/var/MonetDB5/log" --set mapi_port=42545 --set sql_port=52474 --set monet_prompt= --trace --dbname=mTests_src_modules_atoms  inet02.mal </dev/null
+# 21:55:16 >  
+
+
+# 21:55:16 >  
+# 21:55:16 >  Done.
+# 21:55:16 >  
+

@@ -1,7 +1,7 @@
 This README describes the implementation of the ODBC driver code
 (clients/odbc/driver/*) for the MonetDB SQL frontend.
 It is available from
-https://dev.monetdb.org/hg/MonetDB/file/default/clients/odbc/driver
+http://dev.monetdb.org/hg/MonetDB/file/default/clients/odbc/driver
 
 This file maybe a little out of date.
 
@@ -170,8 +170,8 @@ The next ODBC API functions are functionally implemented (some with TODO's):
   - SQLTables()
   - SQLColumns()
   - SQLSpecialColumns()
-  - SQLPrimaryKeys()
-  - SQLForeignKeys()
+  - SQLPrimarykeys()
+  - SQLForeignkeys()
   - SQLStatistics()
   - SQLTablePrivileges()
   - SQLColumnPrivileges()

@@ -1,0 +1,34 @@
+#basic interaction of factories and restart
+
+module f;
+factory f.step1():int;
+	io.printf("start step 1\n");
+	cnt := 0;
+
+barrier go:= true;
+	cnt:= cnt+1;
+	io.printf("step1 %d\n",cnt);
+	yield step1:= cnt;
+	redo go:= true;
+exit go;
+	return step1:= 0;
+end f.step1;
+
+factory f.step2():int;
+	io.printf("start step 2\n");
+	cnt := 0;
+
+barrier go:= true;
+	cnt:= cnt+1;
+	io.printf("step2 %d\n",cnt);
+	yield step2:= cnt;
+	redo go:= true;
+exit go;
+	return step2:= 0;
+end f.step2;
+
+i:= f.step1();
+j:= f.step2();
+k:= f.step1();
+m:= f.step2();
+factories.shutdown("f","step1");

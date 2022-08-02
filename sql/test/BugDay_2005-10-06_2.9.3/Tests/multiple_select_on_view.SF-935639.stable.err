@@ -1,0 +1,17 @@
+stderr of test 'multiple_select_on_view.SF-935639` in directory 'sql/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 17:06:00 >  
+# 17:06:00 >  Mtimeout -timeout 180 Mserver "--config=/ufs/roberto/servers/MonetDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/roberto/servers/MonetDB/lib/MonetDB:/ufs/roberto/servers/MonetDB/lib/bin" --set "gdk_dbfarm=/ufs/roberto/servers/MonetDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/roberto/servers/MonetDB/var/MonetDB/log" --set mapi_port=34713 --set sql_port=45593 --set xquery_port=53969 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 17:06:00 >  
+
+
+# 17:06:00 >  
+# 17:06:00 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45593  < multiple_select_on_view.SF-935639.sql
+# 17:06:00 >  
+
+
+# 17:06:00 >  
+# 17:06:00 >  Done.
+# 17:06:00 >  
+

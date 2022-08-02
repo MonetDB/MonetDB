@@ -1,0 +1,15 @@
+#validity tests on erroneous calls
+j:= bat.new(:json);
+b:= json.new("[1,\"f2\", 2]");
+bat.append(j,b);
+b:= json.new("[]");
+bat.append(j,b);
+b:= json.new("[1,\"f2\", 2]");
+bat.append(j,b);
+
+f:bat[:json]:= mal.manifold("json","filter",j,0);
+io.print(f);
+f:bat[:json]:= mal.manifold("json","filter",j,1);
+io.print(f);
+f:bat[:json]:= mal.manifold("json","filter",j,2);
+io.print(f);

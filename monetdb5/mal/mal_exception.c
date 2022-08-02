@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -14,7 +14,7 @@
 #include "mal_exception.h"
 #include "mal_private.h"
 
-static const char *exceptionNames[] = {
+static char *exceptionNames[] = {
 /* 0 */	"MALException",
 /* 1 */	"IllegalArgumentException",
 /* 2 */	"OutOfBoundsException",
@@ -29,19 +29,18 @@ static const char *exceptionNames[] = {
 /*11 */	"ArithmeticException",
 /*12 */	"PermissionDeniedException",
 /*13 */	"SQLException",
-/*14 */	"RemoteException",
-/*15 */	"Deprecated operation",
+/*14 */	"Deprecated operation",
 /*EOE*/	NULL
 };
 
-bool
-isExceptionVariable(const char *nme)
-{
-	if (nme)
-		for (int i = 0; exceptionNames[i]; i++)
-			if (strcmp(exceptionNames[i], nme) == 0)
-				return true;
-	return false;
+int
+isExceptionVariable(str nme){
+	int i;
+	if( nme)
+		for(i=0; exceptionNames[i]; i++)
+		if( strcmp(exceptionNames[i],nme)==0)
+			return 1;
+	return 0;
 }
 
 static char *M5OutOfMemory = MAL_MALLOC_FAIL;
@@ -52,18 +51,6 @@ dupError(const char *err)
 	char *msg = GDKstrdup(err);
 
 	return msg ? msg : M5OutOfMemory;
-}
-
-char *
-concatErrors(char *err1, const char *err2)
-{
-	size_t len = strlen(err1) + strlen(err2) + 1;
-	char *new = GDKmalloc(len);
-	if (new == NULL)
-		return err1;
-	strconcat_len(new, len, err1, err2, NULL);
-	freeException(err1);
-	return new;
 }
 
 /**
@@ -106,8 +93,6 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 		msg = M5OutOfMemory;
 	}
 	va_end(ap2);
-
-	assert(msg);
 	return msg;
 }
 
@@ -121,27 +106,26 @@ str
 createException(enum malexception type, const char *fcn, const char *format, ...)
 {
 	va_list ap;
-	str ret = NULL, localGDKerrbuf = GDKerrbuf;
+	str ret = NULL;
 
-	if (localGDKerrbuf &&
+	if (GDKerrbuf &&
 		(ret = strstr(format, MAL_MALLOC_FAIL)) != NULL &&
 		ret[strlen(MAL_MALLOC_FAIL)] != ':' &&
-		(strncmp(localGDKerrbuf, "GDKmalloc", 9) == 0 ||
-		 strncmp(localGDKerrbuf, "GDKrealloc", 10) == 0 ||
-		 strncmp(localGDKerrbuf, "GDKzalloc", 9) == 0 ||
-		 strncmp(localGDKerrbuf, "GDKstrdup", 9) == 0 ||
-		 strncmp(localGDKerrbuf, "allocating too much virtual address space", 41) == 0)) {
+		(strncmp(GDKerrbuf, "GDKmalloc", 9) == 0 ||
+		 strncmp(GDKerrbuf, "GDKrealloc", 10) == 0 ||
+		 strncmp(GDKerrbuf, "GDKzalloc", 9) == 0 ||
+		 strncmp(GDKerrbuf, "GDKstrdup", 9) == 0 ||
+		 strncmp(GDKerrbuf, "allocating too much virtual address space", 41) == 0)) {
 		/* override errors when the underlying error is memory
 		 * exhaustion, but include whatever it is that the GDK level
 		 * reported */
-		ret = createException(type, fcn, SQLSTATE(HY013) MAL_MALLOC_FAIL ": %s", localGDKerrbuf);
+		ret = createException(type, fcn, SQLSTATE(HY013) MAL_MALLOC_FAIL ": %s", GDKerrbuf);
 		GDKclrerr();
-		assert(ret);
 		return ret;
 	}
-	if (localGDKerrbuf && localGDKerrbuf[0] && strcmp(format, GDK_EXCEPTION) == 0) {
+	if (strcmp(format, GDK_EXCEPTION) == 0 && GDKerrbuf[0]) {
 		/* for GDK errors, report the underlying error */
-		char *p = localGDKerrbuf;
+		char *p = GDKerrbuf;
 		if (strncmp(p, GDKERROR, strlen(GDKERROR)) == 0) {
 			/* error is "!ERROR: function_name: STATE!error message"
 			 * we need to skip everything up to the STATE */
@@ -153,7 +137,6 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 		if (ret == NULL)
 			ret = createException(type, fcn, "GDK reported error: %s", p);
 		GDKclrerr();
-		assert(ret);
 		return ret;
 	}
 	va_start(ap, format);
@@ -161,7 +144,6 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 	va_end(ap);
 	GDKclrerr();
 
-	assert(ret);
 	return ret;
 }
 
@@ -181,8 +163,8 @@ static str __attribute__((__format__(__printf__, 5, 0), __returns_nonnull__))
 createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, char *prev, const char *format, va_list ap)
 {
 	bool addnl = false;
-	const char *s = mb && getInstrPtr(mb,0) ? getModName(mb) : "unknown";
-	const char *fcn = mb && getInstrPtr(mb,0) ? getFcnName(mb) : "unknown";
+	const char *s = mb ? getModName(mb) : "unknown";
+	const char *fcn = mb ? getFcnName(mb) : "unknown";
 	size_t msglen;
 
 	if (prev) {

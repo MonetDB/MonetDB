@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -44,7 +44,7 @@ pyapi_list_length(list *l)
 }
 
 str
-PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     sql_func * sqlfun;
     sql_subfunc * sqlmorefun;
     str exprStr;
@@ -68,13 +68,13 @@ PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	char *loader_additional_args[] = {"_emit", "_conn"};
 
-	if (!PYAPI3PyAPIInitialized()) {
-		throw(MAL, "pyapi3.eval",
-				SQLSTATE(PY000) "Embedded Python is enabled but an error was thrown during initialization.");
-	}
-	sqlmorefun = *(sql_subfunc**) getArgReference(stk, pci, pci->retc);
-	sqlfun = sqlmorefun->func;
-	exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
+    if (!PYFUNCNAME(PyAPIInitialized())) {
+        throw(MAL, "pyapi3.eval",
+              SQLSTATE(PY000) "Embedded Python is enabled but an error was thrown during initialization.");
+    }
+    sqlmorefun = *(sql_subfunc**) getArgReference(stk, pci, pci->retc);
+    sqlfun = sqlmorefun->func;
+    exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
 
 	args = (str *)GDKzalloc(pci->argc * sizeof(str));
 	if (!args) {

@@ -1,0 +1,171 @@
+stdout of test 'corrupt-after-restart.Bug-3282` in directory 'sql/test/BugTracker-2013` itself:
+
+
+# 15:30:46 >  
+# 15:30:46 >  "/usr/bin/python2" "corrupt-after-restart.Bug-3282.py" "corrupt-after-restart.Bug-3282"
+# 15:30:46 >  
+
+#create table table3282 (i int);
+#insert into table3282 values (0);
+[ 1	]
+#insert into table3282 select * from table3282;
+[ 1	]
+#insert into table3282 select * from table3282;
+[ 2	]
+#insert into table3282 select * from table3282;
+[ 4	]
+#insert into table3282 select * from table3282;
+[ 8	]
+#insert into table3282 select * from table3282;
+[ 16	]
+#insert into table3282 select * from table3282;
+[ 32	]
+#insert into table3282 select * from table3282;
+[ 64	]
+#insert into table3282 select * from table3282;
+[ 128	]
+#insert into table3282 select * from table3282;
+[ 256	]
+#insert into table3282 select * from table3282;
+[ 512	]
+#insert into table3282 select * from table3282;
+[ 1024	]
+#insert into table3282 select * from table3282;
+[ 2048	]
+#insert into table3282 select * from table3282;
+[ 4096	]
+#insert into table3282 select * from table3282;
+[ 8192	]
+#insert into table3282 select * from table3282;
+[ 16384	]
+#insert into table3282 select * from table3282;
+[ 32768	]
+#insert into table3282 select * from table3282;
+[ 65536	]
+#insert into table3282 select * from table3282;
+[ 131072	]
+#insert into table3282 select * from table3282;
+[ 262144	]
+#insert into table3282 select * from table3282;
+[ 524288	]
+#insert into table3282 select * from table3282;
+[ 1048576	]
+#select * from table3282 offset 2097140;
+% sys.table3282 # table_name
+% i # name
+% int # type
+% 1 # length
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+# MonetDB 5 server v11.15.8 (hg id: 44d3106c446a+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2013', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:36108/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6963/.s.monetdb.36108
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+#select * from table3282 offset 2097140;
+% sys.table3282 # table_name
+% i # name
+% int # type
+% 1 # length
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+# MonetDB 5 server v11.15.8 (hg id: 44d3106c446a+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2013', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:35383/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8634/.s.monetdb.35383
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+#select * from table3282 offset 2097140;
+% sys.table3282 # table_name
+% i # name
+% int # type
+% 1 # length
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+#drop table table3282;
+# MonetDB 5 server v11.15.8 (hg id: 44d3106c446a+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2013', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:36108/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6963/.s.monetdb.36108
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+# 15:30:49 >  
+# 15:30:49 >  "Done."
+# 15:30:49 >  
+

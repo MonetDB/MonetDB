@@ -1,33 +1,48 @@
-import sys, os, pymonetdb
-
-db = os.getenv("TSTDB")
-port = int(os.getenv("MAPIPORT"))
-
-client = pymonetdb.connect(database=db, port=port, autocommit=True)
-cursor = client.cursor()
-cursor.execute('CREATE USER t WITH PASSWORD \'1\' NAME \'t\' SCHEMA "sys"')
-cursor.close()
-client.close()
-
-client = pymonetdb.connect(database=db, port=port, autocommit=True, username='t', password='1')
-cursor = client.cursor()
+import os, sys
 try:
-    cursor.execute('CREATE GLOBAL TEMPORARY TABLE TempTable (i int)')
-    sys.stderr.write('Exception expected')
-except Exception as ex:
-    if 'insufficient privileges for user \'t\' in schema \'tmp\'' not in ex.__str__():
-        sys.stderr.write(ex.__str__())
-cursor.close()
-client.close()
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
-client = pymonetdb.connect(database=db, port=port, autocommit=True, username='t', password='1')
-cursor = client.cursor()
-cursor.execute('CREATE LOCAL TEMPORARY TABLE TempTable (i int)')
-cursor.close()
-client.close()
+with process.client('sql',
+                    args=['-s', 'CREATE USER "testuser" WITH PASSWORD \'password\' NAME \'Test User\' SCHEMA "sys";'],
+                    stdout=process.PIPE,
+                    stderr=process.PIPE) as c:
+    out, err = c.communicate()
+    if out:
+        sys.stdout.write(out)
+    if err:
+        sys.stderr.write(err)
 
-client = pymonetdb.connect(database=db, autocommit=True, port=port)
-cursor = client.cursor()
-cursor.execute('DROP USER t')
-cursor.close()
-client.close()
+with process.client('sql',
+                    args=['-s', 'CREATE GLOBAL TEMPORARY TABLE TempTable (i int);' ],
+                    user='testuser', passwd='password',
+                    stdout=process.PIPE,
+                    stderr=process.PIPE) as c:
+    out, err = c.communicate()
+    if out:
+        sys.stdout.write(out)
+    if err:
+        sys.stderr.write(err)
+
+with process.client('sql',
+                    args=['-s', 'CREATE LOCAL TEMPORARY TABLE TempTable (i int); '],
+                    user='testuser', passwd='password',
+                    stdout=process.PIPE,
+                    stderr=process.PIPE) as c:
+    out, err = c.communicate()
+    if out:
+        sys.stdout.write(out)
+    if err:
+        sys.stderr.write(err)
+
+# undo damage
+with process.client('sql',
+                    args=['-s', 'DROP USER "testuser"'],
+                    stdout=process.PIPE,
+                    stderr=process.PIPE) as c:
+    out, err = c.communicate()
+    if out:
+        sys.stdout.write(out)
+    if err:
+        sys.stderr.write(err)

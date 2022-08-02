@@ -1,0 +1,16 @@
+start transaction;
+create table t3429 (i int);
+insert into t3429 values (42);
+insert into t3429 (select * from t3429);
+insert into t3429 (select * from t3429);
+insert into t3429 (select * from t3429);
+insert into t3429 (select * from t3429);
+insert into t3429 (select * from t3429);
+insert into t3429 (select * from t3429);
+insert into t3429 (select * from t3429);
+insert into t3429 (select * from t3429);
+insert into t3429 (select * from t3429);
+insert into t3429 (select * from t3429);
+insert into t3429 (select * from t3429);
+select * from t3429 sample 300;
+rollback;

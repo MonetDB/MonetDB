@@ -1,6 +1,0 @@
-statement ok
-start transaction
-
-statement ok
-commit
-

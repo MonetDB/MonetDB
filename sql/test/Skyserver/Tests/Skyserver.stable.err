@@ -1,0 +1,23 @@
+stderr of test 'Skyserver` in directory 'sql/test/Skyserver` itself:
+
+
+# 18:20:19 >  
+# 18:20:19 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/monetdb5/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/monetdb5/lib/MonetDB5" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/dblogs" --set mapi_port=36458 --set monet_prompt= --trace "--dbname=mTests_src_test_Skyserver" --dbinit='include sql;' ; echo ; echo Over..
+# 18:20:19 >  
+
+
+# 18:20:19 >  
+# 18:20:19 >  Mtimeout -timeout 60 ./Skyserver.SQL Skyserver 
+# 18:20:19 >  
+
+Create User
+tables
+views
+functions
+Cleanup
+Remove User
+
+# 18:20:22 >  
+# 18:20:22 >  Done.
+# 18:20:22 >  
+

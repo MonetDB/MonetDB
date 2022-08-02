@@ -1,0 +1,75 @@
+stdout of test 'update` in directory 'sql/test/astro` itself:
+
+
+# 13:00:20 >  
+# 13:00:20 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34568" "--set" "mapi_usock=/var/tmp/mtest-1707270/.s.monetdb.34568" "--forcemito" "--dbpath=/home/niels/scratch/rc-jun2020/Linux-x86_64/var/MonetDB/mTests_sql_test_astro" "--set" "embedded_c=true"
+# 13:00:20 >  
+
+# MonetDB 5 server v11.37.8 (hg id: 585d13e0c34f+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_astro', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.354 GiB available main-memory of which we use 12.513 GiB
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:34568/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1707270/.s.monetdb.34568
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+# 13:00:21 >  
+# 13:00:21 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1707270" "--port=34568"
+# 13:00:21 >  
+
+#plan
+#UPDATE fluxz
+#   SET (filter
+#       ,f_datapoints
+#       ,avg_flux
+#       ,avg_fluxsq
+#       ,avg_w
+#       ,avg_wflux
+#       ,avg_wfluxsq
+#       ,avg_dec_zone_deg
+#       )
+#       =
+#       (SELECT filter
+#              ,f_datapoints
+#              ,avg_flux
+#              ,avg_fluxsq
+#              ,avg_w
+#              ,avg_wflux
+#              ,avg_wfluxsq
+#              ,avg_dec_zone_deg
+#          FROM cm_flux 
+#         WHERE cm_flux.runcat = fluxz.runcat 
+#           AND cm_flux.active = TRUE 
+#           AND cm_flux.filter = 'g' 
+% .plan # table_name
+% rel # name
+% clob # type
+% 435 # length
+update(
+| table(sys.fluxz) [ "fluxz"."runcat" NOT NULL, "fluxz"."filter" NOT NULL, "fluxz"."f_datapoints" NOT NULL, "fluxz"."active" NOT NULL, "fluxz"."avg_flux" NOT NULL, "fluxz"."avg_fluxsq" NOT NULL, "fluxz"."avg_w" NOT NULL, "fluxz"."avg_wflux" NOT NULL, "fluxz"."avg_wfluxsq" NOT NULL, "fluxz"."avg_dec_zone_deg" NOT NULL, "fluxz"."%TID%" NOT NULL ] COUNT 
+| single project (
+| | single left outer join (
+| | | semijoin (
+| | | | table(sys.fluxz) [ "fluxz"."runcat" NOT NULL, "fluxz"."filter" NOT NULL, "fluxz"."f_datapoints" NOT NULL, "fluxz"."active" NOT NULL, "fluxz"."avg_flux" NOT NULL, "fluxz"."avg_fluxsq" NOT NULL, "fluxz"."avg_w" NOT NULL, "fluxz"."avg_wflux" NOT NULL, "fluxz"."avg_wfluxsq" NOT NULL, "fluxz"."avg_dec_zone_deg" NOT NULL, "fluxz"."%TID%" NOT NULL ] COUNT ,
+| | | | select (
+| | | | | table(sys.cm_flux) [ "cm_flux"."runcat" NOT NULL, "cm_flux"."filter" NOT NULL, "cm_flux"."active" NOT NULL ] COUNT 
+| | | | ) [ "cm_flux"."active" NOT NULL = boolean "true", "cm_flux"."filter" NOT NULL = char(1) "g" ]
+| | | ) [ "cm_flux"."runcat" NOT NULL = "fluxz"."runcat" NOT NULL, "cm_flux"."filter" NOT NULL = "fluxz"."filter" NOT NULL ],
+| | | project (
+| | | | select (
+| | | | | table(sys.cm_flux) [ "cm_flux"."runcat" NOT NULL, "cm_flux"."filter" NOT NULL, "cm_flux"."f_datapoints" NOT NULL, "cm_flux"."active" NOT NULL, "cm_flux"."avg_flux" NOT NULL, "cm_flux"."avg_fluxsq" NOT NULL, "cm_flux"."avg_w" NOT NULL, "cm_flux"."avg_wflux" NOT NULL, "cm_flux"."avg_wfluxsq" NOT NULL, "cm_flux"."avg_dec_zone_deg" NOT NULL ] COUNT 
+| | | | ) [ "cm_flux"."active" NOT NULL = boolean "true", "cm_flux"."filter" NOT NULL = char(1) "g" ]
+| | | ) [ "cm_flux"."runcat" NOT NULL, "cm_flux"."filter" NOT NULL, "cm_flux"."filter" NOT NULL as "%1"."%1", "cm_flux"."f_datapoints" NOT NULL as "%2"."%2", "cm_flux"."avg_flux" NOT NULL as "%3"."%3", "cm_flux"."avg_fluxsq" NOT NULL as "%4"."%4", "cm_flux"."avg_w" NOT NULL as "%5"."%5", "cm_flux"."avg_wflux" NOT NULL as "%6"."%6", "cm_flux"."avg_wfluxsq" NOT NULL as "%7"."%7", "cm_flux"."avg_dec_zone_deg" NOT NULL as "%10"."%10" ]
+| | ) [ "cm_flux"."runcat" NOT NULL = "fluxz"."runcat" NOT NULL, "cm_flux"."filter" NOT NULL = "fluxz"."filter" NOT NULL ]
+| ) [ "fluxz"."%TID%" NOT NULL, "%1"."%1" NOT NULL as "fluxz"."filter", "%2"."%2" NOT NULL as "fluxz"."f_datapoints", "%3"."%3" NOT NULL as "fluxz"."avg_flux", "%4"."%4" NOT NULL as "fluxz"."avg_fluxsq", "%5"."%5" NOT NULL as "fluxz"."avg_w", "%6"."%6" NOT NULL as "fluxz"."avg_wflux", "%7"."%7" NOT NULL as "fluxz"."avg_wfluxsq", "%10"."%10" NOT NULL as "fluxz"."avg_dec_zone_deg" ]
+) [ "fluxz"."%TID%" NOT NULL, "fluxz"."filter" NOT NULL, "fluxz"."f_datapoints" NOT NULL, "fluxz"."avg_flux" NOT NULL, "fluxz"."avg_fluxsq" NOT NULL, "fluxz"."avg_w" NOT NULL, "fluxz"."avg_wflux" NOT NULL, "fluxz"."avg_wfluxsq" NOT NULL, "fluxz"."avg_dec_zone_deg" NOT NULL ]
+
+# 13:00:21 >  
+# 13:00:21 >  "Done."
+# 13:00:21 >  
+

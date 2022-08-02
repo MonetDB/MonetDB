@@ -1,0 +1,74 @@
+# The first memo driven execution
+# use local cost functions, which leads to a hill-climber
+# Use the backward scheduling.
+
+include run_memo;
+	A:= bat.new(:oid);
+	bat.append(A,1@0);
+	B:= algebra.copy(A);
+	bat.setAccess(B,"w");
+	bat.append(B,2@0);
+	C:= algebra.copy(B);
+	bat.setAccess(C,"w");
+	bat.append(C,3@0);
+	D:= algebra.copy(C);
+	bat.setAccess(D,"w");
+	bat.append(D,3@0);
+
+	Acost:= aggr.count(A);
+	Bcost:= aggr.count(B);
+	Ccost:= aggr.count(C);
+	Dcost:= aggr.count(D);
+	T1cost:= Acost+Bcost; 
+	T2cost:= Bcost+Ccost;
+	T3cost:= Ccost+Dcost;
+
+	io.printf("choicepoint 1\n");
+	scheduler.choice();
+
+	T1:= algebra.projection(A,B);
+	T1cost:= aggr.count(T1);
+	T2:= algebra.projection(B,C);
+	T2cost:= aggr.count(T2);
+	T3:= algebra.projection(C,D);
+	T3cost:= aggr.count(T3);
+
+	io.printf("choicepoint 2\n");
+	scheduler.choice(T1cost,T1, T2cost,T2, T3cost,T3);
+
+	T4cost:=T1cost+Ccost; 
+	T5cost:=Acost+T2cost; 
+	T6cost:=T2cost+Dcost;
+	T7cost:=Bcost+T3cost;
+	T8cost:=Ccost+Dcost; 
+
+	T4:= algebra.projection(T1,C);
+	T4cost:= aggr.count(T4);
+	T5:= algebra.projection(A,T2);
+	T5cost:= aggr.count(T5);
+	T6:= algebra.projection(T2,D);
+	T6cost:= aggr.count(T6);
+	T7:= algebra.projection(B,T3);
+	T7cost:= aggr.count(T7);
+	T8:= algebra.projection(C,D);
+	T8cost:= aggr.count(T8);
+
+	io.printf("choicepoint 3\n");
+	scheduler.choice(T4cost,T4,T5cost,T5,T6cost,T6,T7cost,T7,T8cost,T8);
+
+	T9cost:=T2cost+Dcost;  
+	T10cost:=T5cost+Dcost;  
+	T11cost:= Acost+T6cost;
+	T12cost:= Acost+T7cost;
+	T13cost:= T1cost+T8cost;
+
+	T9:= algebra.projection(T4,D);
+	T10:= algebra.projection(T5,D);
+	T11:= algebra.projection(A,T6);
+	T12:= algebra.projection(A,T7);
+	T13:= algebra.projection(T1,T8);
+
+	io.printf("choicepoint 4\n");
+	scheduler.choice(T9cost,T9,T10cost,T10,T11cost,T11,T12cost,T12,T13cost,T13);
+	answer:= scheduler.pick(T9,T10,T11,T12,T13);
+	io.print(answer);

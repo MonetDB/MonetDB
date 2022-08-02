@@ -3,17 +3,17 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef MAL_BACKEND_H
 #define MAL_BACKEND_H
 
+#include "streams.h"
 #include "mal.h"
 #include "mal_client.h"
 #include "sql_mvc.h"
 #include "sql_qc.h"
-#include "opt_backend.h"
 
 /*
  * The back-end structure collects the information needed to support
@@ -37,38 +37,21 @@ typedef enum output_format {
 
 typedef struct backend {
 	char 	language;		/* 'S' or 's' or 'X' */
-	char	depth;			/* depth >= 1 means no output for trans/schema statements */
-	int 	remote;			/* counter to make remote function names unique */
+	char 	depth;
+	bool 	first_statement_generated;
 	mvc 	*mvc;
 	stream 	*out;
 	ofmt	output_format;	/* csv, json */
 	Client 	client;
 	MalBlkPtr mb;		/* needed during mal generation */
-
-	int 	mvc_var;	/* current variable holding the latest query context (used to create dependencies in mal statements) */
-	int 	rowcount;	/* when multiple insert/update/delete/truncate statements are present, use an accumulator to hold the total number of rows affected */
-	int		vtop;			/* top of the variable stack before the current function */
-	int		vid;			/* old variable id top before the current function */
-	int 	join_idx;	/* number of index joins (used in rel_bin) */
-	lng 	reloptimizer;	/* timer for optimizer phase */
-
-	bool sizeheader:1,	/* print size header in result set */
-		 no_mitosis:1,	/* run query without mitosis */
-		 console:1,
-		 silent:1; /* on some occasions we don't want to output the result set or the number of affected rows */
+	int 	mvc_var;
+	int 	cur_append;
+	int	vtop;		/* top of the variable stack before the current function */
 	cq 	*q;		/* pointer to the cached query */
-
-	int result_id;
-	res_table *results;
-	lng last_id;
-	lng rowcnt;
-	subbackend *subbackend;
-	str fimp; /* for recurisve functions keep the to be generated MAL function name here */
 } backend;
 
 extern backend *backend_reset(backend *b);
 extern backend *backend_create(mvc *m, Client c);
 extern void backend_destroy(backend *b);
-extern str backend_function_imp(backend *b, sql_func *f);
 
 #endif /*MAL_BACKEND_H*/

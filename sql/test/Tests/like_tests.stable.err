@@ -1,0 +1,17 @@
+stderr of test 'like_tests` in directory 'sql/test` itself:
+
+
+# 20:43:53 >  
+# 20:43:53 >  Mtimeout -timeout 180 Mserver "--config=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet/program/lib/MonetDB" --set "gdk_dbfarm=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet/program/var/MonetDB/dbfarm" --set "sql_logdir=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet/program/var/MonetDB/log" --set mapi_port=43089 --set sql_port=52605 --set monet_prompt= --trace "--dbname=mTests_src_test" "/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet/sql/build/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 20:43:53 >  
+
+
+# 20:43:54 >  
+# 20:43:54 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=52605  < like_tests.sql
+# 20:43:54 >  
+
+
+# 20:43:54 >  
+# 20:43:54 >  Done.
+# 20:43:54 >  
+

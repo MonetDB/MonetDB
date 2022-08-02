@@ -1,0 +1,5 @@
+
+    SELECT (NULL);   -- but SELECT NULL; is ok!
+    SELECT 1 WHERE NULL = 42;
+    SELECT (1 = NULL);
+    SELECT (TRUE OR NULL);

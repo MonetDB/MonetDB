@@ -1,0 +1,41 @@
+stdout of test 'prepare-where.SF-1238867.1238959.1238965.1240124` in directory 'sql/test/BugDay_2005-12-19_2.9.3` itself:
+
+
+# 13:00:06 >  
+# 13:00:06 >  Mtimeout -timeout 180 Mserver "--config=/ufs/sjoerd/Monet-virgin/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/devel/sql-virgin/Linux/lib/MonetDB:/ufs/sjoerd/Monet-virgin/lib/MonetDB" --set "gdk_dbfarm=/ufs/sjoerd/Monet-virgin/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/sjoerd/Monet-virgin/var/MonetDB/log" --set mapi_port=33659 --set sql_port=41457 --set xquery_port=54179 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-12-19_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 13:00:06 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+
+
+# 12:37:36 >  
+# 12:37:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=madrid" "--port=32243"
+# 12:37:36 >  
+
+#prepare select * from env() as env where 1 = ?;
+#prepare select * from env() as env where 1 = ?;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	4,	1,	0,	3,	5 # length
+[ "varchar",	1024,	0,	"",	"env",	"name"	]
+[ "varchar",	2048,	0,	"",	"env",	"value"	]
+[ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
+#prepare select * from env() as env where name in (?);
+#prepare select * from env() as env where name in (?);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	7,	1,	0,	3,	5 # length
+[ "varchar",	1024,	0,	"",	"env",	"name"	]
+[ "varchar",	2048,	0,	"",	"env",	"value"	]
+[ "varchar",	1024,	0,	NULL,	NULL,	NULL	]
+
+# 12:37:36 >  
+# 12:37:36 >  "Done."
+# 12:37:36 >  
+

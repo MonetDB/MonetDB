@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -47,34 +47,31 @@
 #endif
 
 str
-sql_update_var(mvc *m, sql_schema *s, const char *name, ValPtr ptr)
+sql_update_var(mvc *m, const char *name, ValPtr ptr)
 {
-	if (strcmp(s->base.name, "sys") == 0) {
-		if (strcmp(name, "debug") == 0 || strcmp(name, "current_timezone") == 0 || strcmp(name, "sql_optimizer") == 0) {
-			VAR_UPCAST sgn = val_get_number(ptr);
+	if (strcmp(name, "debug") == 0 || strcmp(name, "current_timezone") == 0 || strcmp(name, "cache") == 0) {
+		VAR_UPCAST sgn = val_get_number(ptr);
 
-			if (VALisnil(ptr))
-				throw(SQL,"sql.update_var", SQLSTATE(42000) "Variable '%s.%s' cannot be NULL\n", s->base.name, name);
-			if (sgn <= (VAR_UPCAST) GDK_int_min)
-				throw(SQL,"sql.update_var", SQLSTATE(42000) "Value too small for '%s.%s'\n", s->base.name, name);
-			if (sgn > (VAR_UPCAST) GDK_int_max)
-				throw(SQL,"sql.update_var", SQLSTATE(42000) "Value too large for '%s.%s'\n", s->base.name, name);
+		if (VALisnil(ptr))
+			throw(SQL,"sql.update_var", SQLSTATE(42000) "%s cannot be NULL\n", name);
+		if (sgn <= (VAR_UPCAST) GDK_int_min)
+			throw(SQL,"sql.update_var", SQLSTATE(42000) "Value too small for %s\n", name);
+		if (sgn > (VAR_UPCAST) GDK_int_max)
+			throw(SQL,"sql.update_var", SQLSTATE(42000) "Value too large for %s\n", name);
 
-			if (/* DISABLES CODE */ (0) && strcmp(name, "debug") == 0) {
-				m->debug = (int) sgn;
-			} else if (strcmp(name, "current_timezone") == 0) {
-				m->timezone = (int) sgn;
-			} else {
-				m->sql_optimizer = (int) sgn;
-			}
-		} else if (strcmp(name, "current_schema") == 0 || strcmp(name, "current_role") == 0) {
-			if (VALisnil(ptr))
-				throw(SQL,"sql.update_var", SQLSTATE(42000) "Variable '%s.%s' cannot be NULL\n", s->base.name, name);
-			if (strcmp(name, "current_schema") == 0 && !mvc_set_schema(m, ptr->val.sval))
-				throw(SQL,"sql.update_var", SQLSTATE(3F000) "Schema (%s) missing\n", ptr->val.sval);
-			else if (strcmp(name, "current_role") == 0 && !mvc_set_role(m, ptr->val.sval))
-				throw(SQL,"sql.update_var", SQLSTATE(42000) "Role (%s) missing\n", ptr->val.sval);
-		}
+		if (strcmp(name, "debug") == 0)
+			m->debug = (int) sgn;
+		else if (strcmp(name, "current_timezone") == 0)
+			m->timezone = (int) sgn;
+		else if (strcmp(name, "cache") == 0)
+			m->cache = (int) sgn;
+	} else if (strcmp(name, "current_schema") == 0 || strcmp(name, "current_role") == 0) {
+		if (VALisnil(ptr))
+			throw(SQL,"sql.update_var", SQLSTATE(42000) "%s cannot be NULL\n", name);
+		if (strcmp(name, "current_schema") == 0 && !mvc_set_schema(m, ptr->val.sval))
+			throw(SQL,"sql.update_var", SQLSTATE(3F000) "Schema (%s) missing\n", ptr->val.sval);
+		else if (strcmp(name, "current_role") == 0 && !mvc_set_role(m, ptr->val.sval))
+			throw(SQL,"sql.update_var", SQLSTATE(42000) "Role (%s) missing\n", ptr->val.sval);
 	}
 	return NULL;
 }
@@ -83,7 +80,6 @@ int
 sql_create_env(mvc *m, sql_schema *s)
 {
 	list *res, *ops;
-	sql_func *f = NULL;
 
 	res = sa_list(m->sa);
 	list_append(res, sql_create_arg(m->sa, "name", sql_bind_subtype(m->sa, "varchar", 1024, 0), ARG_OUT));
@@ -91,20 +87,13 @@ sql_create_env(mvc *m, sql_schema *s)
 
 	/* add function */
 	ops = sa_list(m->sa);
-	mvc_create_func(&f, m, NULL, s, "env", ops, res, F_UNION, FUNC_LANG_MAL, "inspect", "getEnvironment", "CREATE FUNCTION env() RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME inspect.\"getEnvironment\";", FALSE, FALSE, TRUE, FALSE);
-	if (f)
-		f->instantiated = TRUE;
+	mvc_create_func(m, NULL, s, "env", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "sql_environment", "CREATE FUNCTION env () RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;", FALSE, FALSE, TRUE);
 
 	res = sa_list(m->sa);
-	list_append(res, sql_create_arg(m->sa, "schema", sql_bind_localtype("str"), ARG_OUT));
-	list_append(res, sql_create_arg(m->sa, "name", sql_bind_localtype("str"), ARG_OUT));
-	list_append(res, sql_create_arg(m->sa, "type", sql_bind_localtype("str"), ARG_OUT));
-	list_append(res, sql_create_arg(m->sa, "value", sql_bind_localtype("str"), ARG_OUT));
+	list_append(res, sql_create_arg(m->sa, "name", sql_bind_subtype(m->sa, "varchar", 1024, 0), ARG_OUT));
 
 	/* add function */
 	ops = sa_list(m->sa);
-	mvc_create_func(&f, m, NULL, s, "var", ops, res, F_UNION, FUNC_LANG_MAL, "sql", "sql_variables", "create function \"sys\".\"var\"() returns table(\"schema\" string, \"name\" string, \"type\" string, \"value\" string) external name \"sql\".\"sql_variables\";", FALSE, FALSE, TRUE, FALSE);
-	if (f)
-		f->instantiated = TRUE;
+	mvc_create_func(m, NULL, s, "var", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "sql_variables", "CREATE FUNCTION var() RETURNS TABLE( name varchar(1024)) EXTERNAL NAME sql.sql_variables;", FALSE, FALSE, TRUE);
 	return 0;
 }

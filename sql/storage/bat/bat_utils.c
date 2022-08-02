@@ -3,19 +3,12 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "bat_utils.h"
-
-int
-bat_fix(BAT *b)
-{
-	if (b)
-		return BBPfix(b->batCacheid);
-	return 0;
-}
+#include "mal.h"		/* for have_hge */
 
 void
 bat_destroy(BAT *b)
@@ -27,10 +20,7 @@ bat_destroy(BAT *b)
 BAT *
 bat_new(int tt, BUN size, role_t role)
 {
-	BAT *bn = COLnew(0, tt, size, role);
-	if (bn)
-		BBP_pid(bn->batCacheid) = 0;
-	return bn;
+	return COLnew(0, tt, size, role);
 }
 
 void
@@ -50,7 +40,7 @@ temp_descriptor(log_bid b)
 BAT *
 quick_descriptor(log_bid b)
 {
-	return BBPquickdesc((bat) b);
+	return BBPquickdesc((bat) b, false);
 }
 
 void
@@ -60,12 +50,11 @@ temp_destroy(log_bid b)
 		BBPrelease(b);
 }
 
-log_bid
+void
 temp_dup(log_bid b)
 {
 	if (b)
 		BBPretain(b);
-	return b;
 }
 
 log_bid
@@ -76,34 +65,65 @@ temp_create(BAT *b)
 }
 
 log_bid
-temp_copy(log_bid b, bool renew, bool temp)
+temp_copy(log_bid b, int temp)
 {
 	/* make a copy of b, if temp is set only create a empty bat */
-	BAT *o, *c = NULL;
+	BAT *o = temp_descriptor(b);
+	BAT *c;
 	log_bid r;
 
-	if (!renew) {
-		if (!(o = temp_descriptor(b)))
-			return BID_NIL;
+	if (!o)
+		return BID_NIL;
+	if (!temp) {
 		c = COLcopy(o, o->ttype, true, PERSISTENT);
-		bat_destroy(o);
 		if (!c)
 			return BID_NIL;
-		BATcommit(c, BUN_NONE);
+		bat_set_access(c, BAT_READ);
+		BATcommit(c);
 	} else {
-		if (!(o = quick_descriptor(b)))
-			return BID_NIL;
-		if (!(c = bat_new(o->ttype, COLSIZE, PERSISTENT)))
+		c = bat_new(o->ttype, COLSIZE, PERSISTENT);
+		if (!c)
 			return BID_NIL;
 	}
-	if (!temp)
-		bat_set_access(c, BAT_READ);
 	r = temp_create(c);
 	bat_destroy(c);
+	bat_destroy(o);
 	return r;
 }
 
+BUN
+append_inserted(BAT *b, BAT *i )
+{
+	BUN nr = 0, r;
+	BATiter ii = bat_iterator(i);
+
+	for (r = i->batInserted; r < BUNlast(i); r++) {
+		if (BUNappend(b, BUNtail(ii,r), true) != GDK_SUCCEED)
+			return BUN_NONE;
+		nr++;
+	}
+	return nr;
+}
+
 BAT *ebats[MAXATOMS] = { NULL };
+
+log_bid
+ebat2real(log_bid b, oid ibase)
+{
+	/* make a copy of b */
+	log_bid r = BID_NIL;
+	BAT *o = temp_descriptor(b);
+	if(o) {
+		BAT *c = COLcopy(o, ATOMtype(o->ttype), true, PERSISTENT);
+		if(c) {
+			BAThseqbase(c, ibase );
+			r = temp_create(c);
+			bat_destroy(c);
+		}
+		bat_destroy(o);
+	}
+	return r;
+}
 
 log_bid
 e_bat(int type)
@@ -123,6 +143,41 @@ e_BAT(int type)
 	return temp_descriptor(ebats[type]->batCacheid);
 }
 
+log_bid
+ebat_copy(log_bid b, oid ibase, int temp)
+{
+	/* make a copy of b */
+	BAT *o = temp_descriptor(b);
+	BAT *c;
+	log_bid r;
+
+	if (!o)
+		return BID_NIL;
+	if (!ebats[o->ttype]) {
+		ebats[o->ttype] = bat_new(o->ttype, 0, TRANSIENT);
+		if (!ebats[o->ttype])
+			return BID_NIL;
+	}
+
+	if (!temp && BATcount(o)) {
+		c = COLcopy(o, o->ttype, true, PERSISTENT);
+		if (!c)
+			return BID_NIL;
+		BAThseqbase(c, ibase );
+		BATcommit(c);
+		bat_set_access(c, BAT_READ);
+		r = temp_create(c);
+		bat_destroy(c);
+	} else {
+		c = ebats[o->ttype];
+		if (!c)
+			return BID_NIL;
+		r = temp_create(c);
+	}
+	bat_destroy(o);
+	return r;
+}
+
 int
 bat_utils_init(void)
 {
@@ -130,7 +185,11 @@ bat_utils_init(void)
 	char name[32];
 
 	for (t=1; t<GDKatomcnt; t++) {
-		if (t != TYPE_bat && BATatoms[t].name[0]) {
+		if (t != TYPE_bat && BATatoms[t].name[0]
+#ifdef HAVE_HGE
+		    && (have_hge || t != TYPE_hge)
+#endif
+		) {
 			ebats[t] = bat_new(t, 0, TRANSIENT);
 			if(ebats[t] == NULL) {
 				for (t = t - 1; t >= 1; t--)
@@ -141,8 +200,45 @@ bat_utils_init(void)
 			/* give it a name for debugging purposes */
 			snprintf(name, sizeof(name), "sql_empty_%s_bat",
 				 ATOMname(t));
-			BBPrename(ebats[t], name);
+			BBPrename(ebats[t]->batCacheid, name);
 		}
 	}
 	return 0;
 }
+
+sql_table *
+tr_find_table( sql_trans *tr, sql_table *t)
+{
+	while (t && t->po && !t->base.allocated && tr)  {
+		t = t->po;
+		tr = tr->parent;
+	}
+	if (t->data)
+		return t;
+	return NULL;
+}
+
+sql_column *
+tr_find_column( sql_trans *tr, sql_column *c)
+{
+	while (c && c->po && !c->base.allocated && tr)  {
+		c = c->po;
+		tr = tr->parent;
+	}
+	if (c->data)
+		return c;
+	return NULL;
+}
+
+sql_idx *
+tr_find_idx( sql_trans *tr, sql_idx *i)
+{
+	while (i && i->po && !i->base.allocated && tr)  {
+		i = i->po;
+		tr = tr->parent;
+	}
+	if (i->data)
+		return i;
+	return NULL;
+}
+

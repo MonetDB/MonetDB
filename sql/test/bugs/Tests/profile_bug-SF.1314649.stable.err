@@ -1,0 +1,33 @@
+stderr of test 'profile_bug-SF.1314649` in directory 'sql/test/bugs` itself:
+
+
+# 10:17:26 >  
+# 10:17:26 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=39620 --set sql_port=43024 --set xquery_port=59934 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 10:17:26 >  
+
+
+# 10:17:27 >  
+# 10:17:27 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=43024  < profile_bug-SF.1314649.sql
+# 10:17:27 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+QUERY = record select 1;
+ERROR = !syntax error, unexpected IDENT in: "record"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = select query, user from history;
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = record select count(*) from t1314649 where "human" = true;
+ERROR = !syntax error, unexpected IDENT in: "record"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = select query, user from history;
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+
+# 10:17:27 >  
+# 10:17:27 >  Done.
+# 10:17:27 >  
+

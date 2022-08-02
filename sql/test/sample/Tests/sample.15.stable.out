@@ -1,0 +1,51 @@
+stdout of test 'sample.15` in directory 'sql/test/sample` itself:
+
+
+# 10:58:47 >  
+# 10:58:47 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33041" "--set" "mapi_usock=/var/tmp/mtest-27873/.s.monetdb.33041" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/aris/Installations/default-env/var/MonetDB/mTests_sql_test_sample" "--set" "embedded_c=true"
+# 10:58:47 >  
+
+# MonetDB 5 server v11.32.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_sample', using 4 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.558 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://aris-MonetDB:33041/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27873/.s.monetdb.33041
+# MonetDB/SQL module loaded
+
+
+#prepare select * from GENERATE_SERIES(1,41) sample ?;
+#prepare select * from GENERATE_SERIES(1,41) sample ?;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	1,	0,	2,	5 # length
+[ "tinyint",	8,	0,	"",	"%3",	"value"	]
+[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+#prepare select * from GENERATE_SERIES(1,41) sample 0.2 seed ?;
+#prepare select * from GENERATE_SERIES(1,41) sample 0.2 seed ?;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	1,	0,	2,	5 # length
+[ "tinyint",	8,	0,	"",	"%3",	"value"	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+#prepare select * from GENERATE_SERIES(1,41) sample ? seed ?;
+#prepare select * from GENERATE_SERIES(1,41) sample ? seed ?;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	1,	0,	2,	5 # length
+[ "tinyint",	8,	0,	"",	"%3",	"value"	]
+[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+
+
+# 10:58:47 >  
+# 10:58:47 >  "Done."
+# 10:58:47 >  
+

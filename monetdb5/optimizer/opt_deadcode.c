@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (c) Martin Kersten
@@ -15,29 +15,30 @@ str
 OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, k, se,limit, slimit;
-	InstrPtr p=0, *old= NULL;
+	InstrPtr p=0, *old= mb->stmt;
 	int actions = 0;
 	int *varused=0;
+	char buf[256];
+	lng usec = GDKusec();
 	str msg= MAL_SUCCEED;
 
 	(void) cntxt;
+	(void) pci;
 	(void) stk;		/* to fool compilers */
 
 	if ( mb->inlineProp )
-		goto wrapup;
+		return MAL_SUCCEED;
 
 	varused = GDKzalloc(mb->vtop * sizeof(int));
 	if (varused == NULL)
-		goto wrapup;
+		return MAL_SUCCEED;
 
-	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		GDKfree(varused);
-		throw(MAL,"optimizer.deadcode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg= createException(MAL,"optimizer.deadcode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto wrapup;
 	}
-	//mnstr_printf(cntxt->fdout,"deadcode limit %d ssize %d vtop %d vsize %d\n", limit, (int)(mb->ssize), mb->vtop, (int)(mb->vsize));
 
 	// Calculate the instructions in which a variable is used.
 	// Variables can be used multiple times in an instruction.
@@ -56,6 +57,12 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if( p == 0)
 			continue; //left behind by others?
 
+	/* catched by the hasSideEffects
+		if( getModuleId(p)== sqlRef && getFunctionId(p)== assertRef ){
+			varused[getArg(p,0)]++; // force keeping
+			continue;
+		}
+*/
 		if ( getModuleId(p) == batRef && isUpdateInstruction(p) && !p->barrier){
 			/* bat.append and friends are intermediates that need not be retained
 			 * unless they are not used outside of an update */
@@ -103,25 +110,39 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				freeInstruction(p);
 				actions ++;
 			}
+			/* Enable when bugTracker-2012/Tests/mal_errors survives it
+			if ( getModuleId(p) == groupRef && p->retc == 3 && varused[getArg(p,2)] == 0 &&
+				(getFunctionId(p) == groupRef ||
+				 getFunctionId(p) == subgroupRef ||
+				 getFunctionId(p) == groupdoneRef ||
+				 getFunctionId(p) == subgroupdoneRef)){
+				// remove the histogram unless needed
+				delArgument(p,2);
+				actions++;
+			}
+			*/
 		}
 	}
-	/* save the free instructions records for later */
 	for(; i<slimit; i++)
-		if(old[i]){
-			pushInstruction(mb,old[i]);
-		}
-	/* Defense line against incorrect plans */
+		if( old[i])
+			freeInstruction(old[i]);
+    /* Defense line against incorrect plans */
 	/* we don't create or change existing structures */
-		// no type change msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	if( actions > 0){
+    //if( actions > 0){
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+        if (!msg)
 		msg = chkFlow(mb);
-		if (!msg)
-			msg = chkDeclarations(mb);
-	}
-wrapup:
-	/* keep actions taken as a fake argument*/
-	(void) pushInt(mb, pci, actions);
+        if (!msg)
+        	msg = chkDeclarations(mb);
+    //}
+    /* keep all actions taken as a post block comment */
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","deadcode",actions, usec);
+    newComment(mb,buf);
+	if( actions > 0)
+		addtoMalBlkHistory(mb);
 
+wrapup:
 	if(old) GDKfree(old);
 	if(varused) GDKfree(varused);
 	return msg;

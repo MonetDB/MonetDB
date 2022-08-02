@@ -17,6 +17,7 @@ except ImportError:
 
 import os
 import shutil
+import socket
 import tarfile
 
 import pymonetdb
@@ -40,12 +41,19 @@ def test_snapshot(z_extension, expected_initial_bytes, unpack=True):
         os.remove(tarname)
 
     try:
+        # figure out a free port number
+        s = socket.socket()
+        s.bind(('0.0.0.0', 0))
+        mapi_port = s.getsockname()[1]
+        s.close()
+        s = None
+
         # start the server
-        with process.server(dbname=mydb, mapiport='0', stdin=process.PIPE) as server:
+        with process.server(dbname=mydb, mapiport = mapi_port, stdin=process.PIPE) as server:
             # connection 1 creates, inserts, commits and inserts uncommitted
             conn1 = pymonetdb.connect(
                 database=server.dbname, hostname='localhost',
-                port=server.dbport,
+                port=mapi_port,
                 username="monetdb", password="monetdb",
                 autocommit=False
             )
@@ -58,15 +66,12 @@ def test_snapshot(z_extension, expected_initial_bytes, unpack=True):
             # connection 2 inserts some more uncommitted
             conn2 = pymonetdb.connect(
                 database=server.dbname, hostname='localhost',
-                port=server.dbport,
+                port=mapi_port,
                 username="monetdb", password="monetdb",
                 autocommit=False
             )
             cur2 = conn2.cursor()
-            try:
-                cur2.execute("insert into foo values ('uncommitted2')")
-            except:
-                pass
+            cur2.execute("insert into foo values ('uncommitted2')")
 
             # then conn1 creates the snapshot
             cur1.execute("call sys.hot_snapshot(%(tarname)s)", dict(tarname=tarname))
@@ -111,12 +116,12 @@ def test_snapshot(z_extension, expected_initial_bytes, unpack=True):
 
         f.close()
         # and restart the server
-        with process.server(dbname=mydb, mapiport='0', stdin=process.PIPE) as server:
+        with process.server(dbname=mydb, mapiport = mapi_port, stdin=process.PIPE) as server:
 
             # question is, is our data still there?
             conn3 = pymonetdb.connect(
                 database=server.dbname, hostname='localhost',
-                port=server.dbport,
+                port=mapi_port,
                 username="monetdb", password="monetdb",
                 autocommit=False
             )
@@ -141,3 +146,4 @@ def test_snapshot(z_extension, expected_initial_bytes, unpack=True):
 
 if __name__ == "__main__":
     test_snapshot('', b'')
+

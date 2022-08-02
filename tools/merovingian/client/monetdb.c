@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /**
@@ -58,10 +58,10 @@ command_help(int argc, char *argv[])
 	if (argc < 2) {
 		printf("Usage: monetdb [options] command [command-options-and-arguments]\n");
 		printf("  where command is one of:\n");
-		printf("    create, destroy, lock, release,\n");
-		printf("    status, start, stop, kill,\n");
-		printf("    snapshot,\n");
-		printf("    set, get, inherit,\n");
+		printf("    create, destroy, lock, release\n");
+		printf("    status, start, stop, kill\n");
+		printf("    profilerstart, profilerstop\n");
+		printf("    set, get, inherit\n");
 		printf("    discover, help, version\n");
 		printf("  options can be:\n");
 		printf("    -q       suppress status output\n");
@@ -96,6 +96,14 @@ command_help(int argc, char *argv[])
 		printf("  Brings back a database from maintenance mode.  A released\n");
 		printf("  database is available again for normal use.  Use the\n");
 		printf("  \"lock\" command to take a database under maintenance.\n");
+	} else if (strcmp(argv[1], "profilerstart") == 0) {
+		printf("Usage: monetdb profilerstart database [database ...]\n");
+		printf("  Starts the collection of profiling events. The property\n");
+		printf("  \""PROFILERLOGPROPERTY"\" should be set. Use the \"profilerstop\"\n");
+		printf("  command to stop the profiler.\n");
+	} else if (strcmp(argv[1], "profilerstop") == 0) {
+		printf("Usage: monetdb profilerstop database [database ...]\n");
+		printf("  Stops the collection of profiling events.\n");
 	} else if (strcmp(argv[1], "status") == 0) {
 		printf("Usage: monetdb status [-lc] [expression ...]\n");
 		printf("  Shows the state of a given glob-style database match, or\n");
@@ -161,44 +169,6 @@ command_help(int argc, char *argv[])
 	} else if (strcmp(argv[1], "version") == 0) {
 		printf("Usage: monetdb version\n");
 		printf("  prints the version of this monetdb utility\n");
-	} else if (strcmp(argv[1], "snapshot") == 0) {
-		if (argc > 2 && strcmp(argv[2], "list") == 0) {
-			printf("Usage: monetdb snapshot list [<dbname> ...]\n");
-			printf("  List snapshots for the given database(s), or all databases\n");
-			printf("  if none given.\n");
-		} else if (argc > 2 && strcmp(argv[2], "create") == 0) {
-			printf("Usage: monetdb snapshot create [-t <targetfile>] <dbname> [<dbname> ...]\n");
-			printf("  Take a snapshot of the listed databases. Unless -t is given, the snapshots\n");
-			printf("  are written to files named\n");
-			printf("  <snapshotdir>/<dbname>_<YYYY><MM><DD>T<HH><MM>UTC<snapshotcompression>.\n");
-			printf("Options:\n");
-			printf("  -t <targetfile>  File on the server to write the snapshot to.\n");
-		} else if (argc > 2 && strcmp(argv[2], "restore") == 0) {
-			printf("Usage: monetdb snapshot restore [-f] <snapid> [dbname]\n");
-			printf("  Create a database from the given snapshot, where <snapid> is either\n");
-			printf("  a path on the server or <dbname>@<num> as produced by\n");
-			printf("  'monetdb snapshot list'\n");
-			printf("Options:\n");
-			printf("  -f  do not ask for confirmation\n");
-		} else if (argc > 2 && strcmp(argv[2], "destroy") == 0) {
-			printf("Usage: monetdb snapshot destroy [-f] <snapid> [<snapid> ...]\n");
-			printf("       monetdb snapshot destroy [-f] -r <N> <dbname> [<dbname> ...]\n");
-			printf("  Destroy one or more database snapshots, identified by a database name\n");
-			printf("  and a sequence number as given by 'monetdb snapshot list'.\n");
-			printf("  In the first form, the sequence numbers are part of the <snapid>.\n");
-			printf("  In the second form. <dbname> is a database name or pattern such as 'staging*'\n");
-			printf("  and N is the number of snapshots to retain.\n");
-			printf("Options:\n");
-			printf("  -f  Do not ask for confirmation\n");
-			printf("  -r  Number of snapshots to retain.\n");
-		} else if (argc > 2 && strcmp(argv[2], "write") == 0) {
-			printf("Usage: monetdb snapshot write <dbname>\n");
-			printf("  Write a snapshot of database <dbname> to standard out.\n");
-		} else {
-			printf("Usage: monetdb snapshot subcommand [arguments]\n");
-			printf("  where subcommand is one of:\n");
-			printf("    create, list, restore, destroy or write\n");
-		}
 	} else {
 		printf("help: unknown command: %s\n", argv[1]);
 	}
@@ -207,7 +177,7 @@ command_help(int argc, char *argv[])
 static void
 command_version(void)
 {
-	printf("MonetDB Database Server Toolkit v%s", MONETDB_VERSION);
+	printf("MonetDB Database Server Toolkit v%s", VERSION);
 #ifdef MONETDB_RELEASE
 	printf(" (%s)", MONETDB_RELEASE);
 #else
@@ -249,7 +219,7 @@ MEROgetStatus(sabdb **ret, char *database)
 		database = "#all";
 
 	e = control_send(&buf, mero_host, mero_port,
-			database, "status", true, mero_pass);
+			database, "status", 1, mero_pass);
 	if (e != NULL)
 		return(e);
 
@@ -594,7 +564,7 @@ simple_argv_cmd(char *cmd, sabdb *dbs, char *merocmd,
 		}
 
 		ret = control_send(&out, mero_host, mero_port,
-				dbs->dbname, merocmd, false, mero_pass);
+				dbs->dbname, merocmd, 0, mero_pass);
 
 		if (ret != NULL) {
 			if (premsg != NULL && !monetdb_quiet)
@@ -820,7 +790,8 @@ command_status(int argc, char *argv[])
 		prev = NULL;
 		while (stats != NULL) {
 			if (stats->locked == curLock &&
-					(curLock || stats->state == curMode))
+					(curLock ||
+					 (!curLock && stats->state == curMode)))
 			{
 				sabdb *next = stats->next;
 				stats->next = neworig;
@@ -954,7 +925,7 @@ command_discover(int argc, char *argv[])
 	 * which help each other, just like merovingians do among each
 	 * other. */
 	p = control_send(&buf, mero_host, mero_port,
-			"anelosimus", "eximius", true, mero_pass);
+			"anelosimus", "eximius", 1, mero_pass);
 	if (p != NULL) {
 		printf("%s: %s\n", argv[0], p);
 		free(p);
@@ -964,7 +935,6 @@ command_discover(int argc, char *argv[])
 	if ((p = strtok_r(buf, "\n", &sp)) != NULL) {
 		if (strcmp(p, "OK") != 0) {
 			fprintf(stderr, "%s: %s\n", argv[0], p);
-			free(buf);
 			exit(1);
 		}
 		if (twidth > 0)
@@ -1245,7 +1215,7 @@ command_set(int argc, char *argv[], meroset type)
 		}
 
 		out = control_send(&res, mero_host, mero_port,
-				orig->dbname, p, false, mero_pass);
+				orig->dbname, p, 0, mero_pass);
 		if (out != NULL || strcmp(res, "OK") != 0) {
 			res = out == NULL ? res : out;
 			fprintf(stderr, "%s: %s\n", argv[0], res);
@@ -1263,7 +1233,7 @@ command_set(int argc, char *argv[], meroset type)
 			p = property;
 		}
 		out = control_send(&res, mero_host, mero_port,
-				stats->dbname, p, false, mero_pass);
+				stats->dbname, p, 0, mero_pass);
 		if (out != NULL || strcmp(res, "OK") != 0) {
 			res = out == NULL ? res : out;
 			fprintf(stderr, "%s: %s\n", argv[0], res);
@@ -1364,7 +1334,7 @@ command_get(int argc, char *argv[])
 	}
 
 	e = control_send(&buf, mero_host, mero_port,
-			"#defaults", "get", true, mero_pass);
+			"#defaults", "get", 1, mero_pass);
 	if (e != NULL) {
 		fprintf(stderr, "get: %s\n", e);
 		free(e);
@@ -1392,7 +1362,7 @@ command_get(int argc, char *argv[])
 	stats = orig;
 	while (stats != NULL) {
 		e = control_send(&buf, mero_host, mero_port,
-				stats->dbname, "get", true, mero_pass);
+				stats->dbname, "get", 1, mero_pass);
 		if (e != NULL) {
 			fprintf(stderr, "get: %s\n", e);
 			free(e);
@@ -1420,7 +1390,7 @@ command_get(int argc, char *argv[])
 		} else {
 			/* check validity of properties before printing them */
 			if (stats == orig) {
-				char *sp = NULL;
+				char *sp;
 				snprintf(vbuf, sizeof(vbuf), "%s", property);
 				buf = vbuf;
 				while ((p = strtok_r(buf, ",", &sp)) != NULL) {
@@ -1474,7 +1444,7 @@ command_get(int argc, char *argv[])
 					char *y = NULL;
 					kv = findConfKey(defprops, p);
 					source = "default";
-					y = kv != NULL && kv->val != NULL ? kv->val : "<unset>";
+					y = kv != NULL && kv->val != NULL ? kv->val : "<unknown>";
 					if (twidth > 0) {
 						abbreviateString(value, y, twidth);
 					} else {
@@ -1667,11 +1637,9 @@ command_destroy(int argc, char *argv[])
 		for (stats = orig; stats != NULL; stats = stats->next) {
 			if (stats->state == SABdbRunning || stats->state == SABdbStarting) {
 				ret = control_send(&out, mero_host, mero_port,
-						stats->dbname, "stop", false, mero_pass);
+						stats->dbname, "stop", 0, mero_pass);
 				if (ret != NULL)
 					free(ret);
-				else
-					free(out);
 			}
 		}
 	}
@@ -1692,681 +1660,16 @@ command_release(int argc, char *argv[])
 	return simple_command(argc, argv, "release", "taken database out of maintenance mode", true);
 }
 
-/* Snapshot this single database to the given file */
-static void
-snapshot_create_adhoc(sabdb *databases, char *filename) {
-	/* databases is supposed to only hold a single database */
-	assert(databases != NULL);
-	assert(databases->next == NULL);
-
-	char *merocmd = malloc(100 + strlen(filename));
-	sprintf(merocmd, "snapshot create adhoc %s", filename);
-
-	simple_argv_cmd("snapshot", databases, merocmd, NULL, "snapshotting database");
-
-	free(merocmd);
-}
-
-/* Create automatic snapshots of the given databases */
-static void
-snapshot_create_automatic(sabdb *databases) {
-	simple_argv_cmd("snapshot", databases, "snapshot create automatic", NULL, "snapshotting database");
-}
-
-/* Comparison function used for qsort */
 static int
-snapshot_enumerate_helper(const void *left, const void *right)
+command_profilerstart(int argc, char *argv[])
 {
-	const struct snapshot *left_snap = left;
-	const struct snapshot *right_snap = right;
-	int cmp;
-
-	cmp = strcmp(left_snap->dbname, right_snap->dbname);
-	if (cmp != 0)
-		return cmp;
-
-	// Careful! Sort newest to oldest
-	if (left_snap->time < right_snap->time)
-		return +1; // !!
-	if (left_snap->time > right_snap->time)
-		return -1; // !!
-
-	// No preference
-	return 0;
+	return simple_command(argc, argv, "profilerstart", "started profiler", true);
 }
 
-/* Retrieve a list of all snapshots and Store it in the array. */
-static char*
-snapshot_enumerate(struct snapshot **snapshots, int *nsnapshots)
+static int
+command_profilerstop(int argc, char *argv[])
 {
-	int ninitial = *nsnapshots;
-	char *out = NULL;
-	char *ret = control_send(&out, mero_host, mero_port, "", "snapshot list", true, mero_pass);
-	if (ret != NULL)
-		return ret;
-
-	if (strcmp(out, "OK1") == 0) {
-		// ok, empty resultset
-		free(out);
-	} else if (strncmp(out, "OK1\n", 4) == 0) {
-		// ok, nonempty resultset. Parse it.
-		char *p = out + 4;
-		char *end = p + strlen(p);
-		while (p < end) {
-			char datebuf[100];
-			char *parse_result;
-			struct tm tm = {0};
-			char *eol = strchr(p, '\n');
-			eol = (eol != NULL) ? eol : end;
-			time_t timestamp, pre, post;
-			uint64_t size;
-			int len;
-			if (sscanf(p, "%99s %" SCNu64 " %n", datebuf, &size, &len) != 2) {
-				free(out);
-				return strdup("internal parse error");
-			}
-			parse_result = strptime(datebuf, "%Y%m%dT%H%M%S", &tm);
-			if (parse_result == NULL || *parse_result != '\0') {
-				free(out);
-				return strdup("internal timestamp parse error");
-			}
-			// Unfortunately mktime interprets tm as local time, we have
-			// to correct for that.
-			timestamp = mktime(&tm);
-			pre = time(NULL);
-			gmtime_r(&pre, &tm);
-			post = mktime(&tm);
-			timestamp += pre - post;
-			p += len;
-			char *dbend = strchr(p, ' ');
-			if (dbend == NULL) {
-				free(out);
-				return strdup("Internal parse error");
-			}
-			int dblen = dbend - p;
-			char *path = dbend + 1;
-			int pathlen = eol - path;
-			struct snapshot *snap = push_snapshot(snapshots, nsnapshots);
-			snap->dbname = malloc(dblen + 1);
-			memmove(snap->dbname, p, dblen);
-			snap->dbname[dblen] = '\0';
-			snap->time = timestamp;
-			snap->size = size;
-			snap->path = malloc(pathlen + 1);
-			memmove(snap->path, path, pathlen);
-			snap->path[pathlen] = '\0';
-			p = eol + 1;
-		};
-		free(out);
-	} else {
-		return out;
-	}
-
-	// Sort them and give names of the form dbname@seqno
-	if (*nsnapshots > ninitial) {
-		int sort_len = *nsnapshots - ninitial;
-		struct snapshot *sort_start = *snapshots + ninitial;
-		qsort(sort_start, sort_len, sizeof(struct snapshot), snapshot_enumerate_helper);
-		struct snapshot *prev = NULL;
-		int counter;
-		for (struct snapshot *cur = sort_start; cur < sort_start + sort_len; cur++) {
-			if (prev == NULL || strcmp(prev->dbname, cur->dbname) != 0)
-				counter = 0;
-			counter++;
-			cur->name = malloc(strlen(cur->dbname) + 10);
-			sprintf(cur->name, "%s@%d", cur->dbname, counter);
-			prev = cur;
-		}
-	}
-
-	return NULL;
-}
-
-static void
-snapshot_list(int nglobs, char *globs[]) {
-	struct snapshot *snapshots = NULL;
-	int nsnapshots = 0;
-
-	// Retrieve the full snapshot list
-	char *err = snapshot_enumerate(&snapshots, &nsnapshots);
-	if (err != NULL) {
-		fprintf(stderr, "snapshot list: %s\n", err);
-		exit(1);
-	}
-
-	// Narrow it down
-	struct snapshot *wanted = NULL;
-	int nwanted = 0;
-	for (struct snapshot *snap = snapshots; snap < snapshots + nsnapshots; snap++) {
-		for (int i = 0; i < nglobs; i++) {
-			char *glob = globs[i];
-			if (glob == NULL)
-				continue;
-			if (db_glob(glob, snap->dbname)) {
-				struct snapshot *w = push_snapshot(&wanted, &nwanted);
-				copy_snapshot(w, snap);
-				break;
-			}
-		}
-	}
-
-	int width = 0;
-	for (struct snapshot *snap = wanted; snap < wanted + nwanted; snap++) {
-		int w = strlen(snap->name);
-		width = (width >= w) ? width : w;
-	}
-
-	printf("%-*s    %-25s    %s\n", width, "name", "time", "size");
-
-	char *name_buf = malloc(width + 100);
-	for (struct snapshot *snap = wanted; snap < wanted + nwanted; snap++) {
-		char tm_buf[100];
-		struct tm tm;
-		// format name
-		char *name;
-		if (snap == wanted || strcmp(snap[0].dbname, snap[-1].dbname) != 0) {
-			// subheader, show whole name
-			name = snap->name;
-		} else {
-			// continuation, show only sequence number
-			strcpy(name_buf, snap->name);
-			for (size_t i = 0; i < strlen(snap->dbname); i++)
-				name_buf[i] = ' ';
-			name = name_buf;
-		}
-		// format time
-		localtime_r(&snap->time, &tm);
-		strftime(tm_buf, sizeof(tm_buf), "%a %Y-%m-%d %H:%M:%S", &tm);
-		// format size
-		double size = snap->size;
-		char *units[] = {"B", "KiB", "MiB", "GiB", "TiB", NULL};
-		char **unit = &units[0];
-		while (size >= 1024 && unit[1] != NULL) {
-			size /= 1024;
-			unit++;
-		}
-		printf("%-*s    %-25s    %.1f %s\n", width, name, tm_buf, size, *unit);
-		// output
-	}
-
-	free(name_buf);
-	free_snapshots(wanted, nwanted);
-	free_snapshots(snapshots, nsnapshots);
-}
-
-static void
-snapshot_restore_file(char *sourcefile, char *dbname)
-{
-	char *ret;
-	char *out;
-	char *merocmd = malloc(100 + strlen(sourcefile));
-
-	if (!monetdb_quiet) {
-		printf("Restore '%s' from '%s'... ", dbname, sourcefile);
-		fflush(stdout);
-	}
-
-	sprintf(merocmd, "snapshot restore adhoc %s", sourcefile);
-	ret = control_send(&out, mero_host, mero_port, dbname, merocmd, false, mero_pass);
-	free(merocmd);
-
-	if (ret != NULL) {
-		fprintf(stderr, "snapshot restore: %s", ret);
-		exit(2);
-	}
-	if (strcmp(out, "OK") == 0) {
-		if (!monetdb_quiet) {
-			printf("done\n");
-		}
-	} else {
-		fprintf(stderr, "failed: %s\n", out);
-		free(out);
-		exit(1);
-	}
-	free(out);
-}
-
-static void
-snapshot_destroy_file(char *path)
-{
-	char *ret;
-	char *out = NULL;
-	char *merocmd = malloc(100 + strlen(path));
-
-	sprintf(merocmd, "snapshot destroy %s", path);
-	ret = control_send(&out, mero_host, mero_port, "", merocmd, false, mero_pass);
-	if (ret != NULL) {
-		fprintf(stderr, "snapshot destroy %s failed: %s", path, ret);
-		exit(2);
-	}
-
-	if (strcmp(out, "OK") != 0) {
-		fprintf(stderr, "snapshot destroy %s: %s\n", path, out);
-		free(out);
-		exit(2);
-	}
-
-	if (!monetdb_quiet)
-		printf("Destroyed %s\n", path);
-
-	free(out);
-	free(merocmd);
-}
-
-static void
-command_snapshot_create(int argc, char *argv[])
-{
-	char *targetfile = NULL;
-	char *err;
-
-	/* walk through the arguments and hunt for "options" */
-	for (int i = 1; i < argc; i++) {
-		if (strcmp(argv[i], "--") == 0) {
-			argv[i] = NULL;
-			break;
-		}
-		if (argv[i][0] == '-') {
-			if (argv[i][1] == 't') {
-				if (argv[i][2] != '\0') {
-					targetfile = &argv[i][2];
-					argv[i] = NULL;
-				} else if (i + 1 < argc && argv[i+1][0] != '-') {
-					targetfile = argv[i+1];
-					argv[i] = NULL;
-					argv[i+1] = NULL;
-					i++;
-				} else {
-					fprintf(stderr, "snapshot: -t needs an argument\n");
-					command_help(argc + 2, &argv[-2]);
-					exit(1);
-				}
-			} else {
-				fprintf(stderr, "snapshot create: unknown option: %s\n", argv[i]);
-				command_help(argc + 2, &argv[-2]);
-				exit(1);
-			}
-		}
-	}
-
-	/* Look up the databases to snapshot */
-	sabdb *all = NULL;
-	err = MEROgetStatus(&all, NULL);
-	if (err != NULL) {
-		fprintf(stderr, "snapshot: %s\n", err);
-		free(err);
-		exit(2);
-	}
-	sabdb *databases = globMatchDBS(NULL, argc, argv, &all, "snapshot");
-	msab_freeStatus(&all);
-	if (databases == NULL)
-		exit(1);
-
-	/* Go do the work */
-	if (targetfile != NULL) {
-		if (databases->next != NULL) {
-			fprintf(stderr, "snapshot: -t only allows a single database\n");
-			exit(1);
-		}
-		snapshot_create_adhoc(databases, targetfile);
-	} else {
-		snapshot_create_automatic(databases);
-	}
-
-	msab_freeStatus(&databases);
-}
-
-
-static void
-command_snapshot_list(int argc, char *argv[])
-{
-	/* walk through the arguments and hunt for "options" */
-	for (int i = 1; i < argc; i++) {
-		if (strcmp(argv[i], "--") == 0) {
-			argv[i] = NULL;
-			break;
-		}
-		if (argv[i][0] == '-') {
-			fprintf(stderr, "snapshot create: unknown option: %s\n", argv[i]);
-			command_help(argc + 2, &argv[-2]);
-			exit(1);
-		}
-	}
-
-	if (argc == 1) {
-		char *args[] = {"*"};
-		snapshot_list(1, args);
-	}
-	else
-		snapshot_list(argc - 1, &argv[1]);
-}
-
-
-static void
-command_snapshot_restore(int argc, char *argv[])
-{
-	int force = 0;
-	char *snapid = NULL;
-	char *snapfile = NULL;
-	char *dbname = NULL;
-
-	/* walk through the arguments and hunt for "options" */
-	for (int i = 1; i < argc; i++) {
-		if (strcmp(argv[i], "--") == 0) {
-			argv[i] = NULL;
-			break;
-		}
-		if (argv[i][0] == '-') {
-			if (argv[i][1] == 'f') {
-				force = 1;
-				argv[i] = 0;
-			} else {
-				fprintf(stderr, "snapshot restore: unknown option: %s\n", argv[i]);
-				command_help(argc + 2, &argv[-2]);
-				exit(1);
-			}
-		}
-	}
-
-	/* Find snapid and dbname */
-	for (int i = 1; i < argc; i++) {
-		if (argv[i] == NULL)
-			continue;
-		if (snapid == NULL)
-			snapid = argv[i];
-		else if (dbname == NULL)
-			dbname = strdup(argv[i]);
-		else {
-			fprintf(stderr, "snapshot restore: unexpected argument: %s\n", argv[i]);
-			command_help(argc + 2, &argv[-2]);
-			exit(1);
-		}
-	}
-
-	if (snapid == NULL) {
-		fprintf(stderr, "snapshot restore: snapid is mandatory\n");
-		command_help(argc + 2, &argv[-2]);
-		exit(1);
-	}
-
-	// is snapid a file name?
-	if (strchr(snapid, DIR_SEP) != NULL) {
-		// filename, so dbname argument is mandatory
-		if (dbname == NULL) {
-			fprintf(stderr, "snapshot restore: dbname is mandatory\n");
-			exit(1);
-		}
-		snapfile = strdup(snapid);
-	} else {
-		// it must be <dbname>@<seqno> then.
-		if (strchr(snapid, '@') == NULL) {
-			fprintf(stderr, "snapshot restore: please provide either a snapshot id or a filename\n");
-			exit(1);
-		}
-		struct snapshot *snapshots = NULL;
-		int nsnapshots = 0;
-		char *err = snapshot_enumerate(&snapshots, &nsnapshots);
-		if (err != NULL) {
-			fprintf(stderr, "snapshot restore: %s", err);
-			exit(2);
-		}
-		struct snapshot *snap = NULL;
-		struct snapshot *s;
-		for (int i = 0; i < nsnapshots; i++) {
-			s = &snapshots[i];
-			if (strcmp(s->name, snapid) == 0) {
-				// found it
-				snap = s;
-				break;
-			}
-		}
-		if (snap == NULL) {
-			fprintf(stderr, "snapshot restore: unknown snapshot '%s'\n", snapid);
-			exit(1);
-		}
-		if (dbname == NULL)
-			dbname = strdup(snap->dbname);
-		snapfile = strdup(snap->path);
-
-		free_snapshots(snapshots, nsnapshots);
-	}
-
-	// check if the database exists
-	sabdb *db = NULL;
-	char *e = MEROgetStatus(&db, dbname); // ignore errors
-	free(e);
-
-	if (db != NULL && !force) {
-		char answ;
-		printf("you are about to overwrite database '%s'.\n", db->dbname);
-		printf("ALL data in this database will be lost, are you sure? [y/N] ");
-		if (scanf("%c", &answ) < 1 || (answ != 'y' && answ != 'Y')) {
-			printf("aborted\n");
-			exit(1);
-		}
-	}
-
-	if (db)
-		msab_freeStatus(&db);
-
-	snapshot_restore_file(snapfile, dbname);
-	free(snapfile);
-	free(dbname);
-}
-
-
-static void
-command_snapshot_destroy(int argc, char *argv[])
-{
-	int force = 0;
-	long retain = -1;
-	struct snapshot *snapshots = NULL;
-	int nsnapshots = 0;
-	char *hitlist = NULL;
-
-
-	/* walk through the arguments and hunt for "options" */
-	for (int i = 1; i < argc; i++) {
-		if (strcmp(argv[i], "--") == 0) {
-			argv[i] = NULL;
-			break;
-		}
-		if (argv[i][0] == '-') {
-			if (argv[i][1] == 'f') {
-				force = 1;
-				argv[i] = 0;
-			} else if (argv[i][1] == 'r') {
-				char *n_str;
-				if (argv[i][2] != '\0') {
-					n_str = &argv[i][2];
-					argv[i] = NULL;
-				} else if (i + 1 < argc && argv[i+1][0] != '-') {
-					n_str = argv[i+1];
-					argv[i] = NULL;
-					argv[i+1] = NULL;
-					i++;
-				} else {
-					fprintf(stderr, "snapshot: -t needs an argument\n");
-					command_help(argc + 2, &argv[-2]);
-					exit(1);
-				}
-				char *end = NULL;
-				retain = strtol(n_str, &end, 10);
-				if (*end != '\0' || retain < 0) {
-					fprintf(stderr, "snapshot: -r takes a nonnegative integer\n");
-					command_help(argc + 2, &argv[-2]);
-					exit(1);
-				}
-			} else {
-				fprintf(stderr, "snapshot destroy: unknown option: %s\n", argv[i]);
-				command_help(argc + 2, &argv[-2]);
-				exit(1);
-			}
-		}
-	}
-
-	char *err = snapshot_enumerate(&snapshots, &nsnapshots);
-	if (err != NULL) {
-		fprintf(stderr, "snapshot: %s\n", err);
-		exit(2);
-	}
-
-	/* this is where we will mark the snapshots to be destroyed */
-	hitlist = calloc(nsnapshots, 1);
-
-	/* Go over the arguments and mark the snapshots to be destroyed.
-	 * Relies on the snapshots array to be sorted correctly
-	 */
-	for (int a = 1; a< argc; a++) {
-		char *arg = argv[a];
-		if (arg == NULL)
-			continue;
-		bool matched_something = false;
-		for (int s = 0; s < nsnapshots; s++) {
-			struct snapshot *snap = &snapshots[s];
-			if (retain < 0) {
-				// args are snapshot id's
-				if (strcmp(arg, snap->name) != 0)
-					continue;
-				matched_something = true; // only on full match
-			} else {
-				// args are database names.
-				if (!db_glob(arg, snap->dbname))
-					continue;
-				matched_something = true; // already on db name match
-				int seqno = atoi(strrchr(snap->name, '@') + 1);
-				if (seqno <= retain)
-					continue;
-			}
-			// if we get here it must be destroyed
-			hitlist[s] = 1;
-		}
-		if (!matched_something) {
-			fprintf(stderr, "snapshot destroy: no matching snapshots: %s\n", arg);
-			exit(1);
-		}
-	}
-
-	int nhits = 0;
-	for (int i = 0; i < nsnapshots; i++)
-		nhits += (hitlist[i] != 0);
-	if (nhits == 0)
-		goto end;
-
-	if (nhits > 0 && !force) {
-		printf("About to destroy %d snapshots:\n", nhits);
-		for (int i = 0; i < nsnapshots; i++)
-			if (hitlist[i]) {
-				char buf[100];
-				struct snapshot *snap = &snapshots[i];
-				struct tm tm = {0};
-				localtime_r(&snap->time, &tm);
-				strftime(buf, sizeof(buf),"%a %Y-%m-%d %H:%M:%S", &tm);
-				printf("    %-25s %s\n", snap->name, buf);
-			}
-		char answ;
-		printf("ALL data in %s will be lost, are you sure? [y/N] ",
-			nhits > 1 ? "these snapshots": "this snapshot");
-		if (scanf("%c", &answ) < 1 || (answ != 'y' && answ != 'Y')) {
-			printf("aborted\n");
-			exit(1);
-		}
-	}
-
-	for (int i = 0; i < nsnapshots; i++)
-		if (hitlist[i] != 0)
-			snapshot_destroy_file(snapshots[i].path);
-
-end:
-	free_snapshots(snapshots, nsnapshots);
-	free(hitlist);
-}
-
-static void
-command_snapshot_write_cb(const void *buf, size_t count, void *private) {
-	FILE *f = (FILE*)private;
-	fwrite(buf, 1, count, f);
-}
-
-static void
-command_snapshot_write(int argc, char *argv[])
-{
-	char *msg;
-	char *out = NULL;
-
-	if (argc != 2) {
-		command_help(argc + 2, &argv[-2]);
-		exit(1);
-	}
-
-	if (isatty(fileno(stdout))) {
-		fprintf(stderr, "Refusing to write binary data to tty\n");
-		exit(2);
-	}
-
-	char *dbname = argv[1];
-	sabdb *stats = NULL;
-	msg = MEROgetStatus(&stats, dbname);
-	if (msg) {
-		fprintf(stderr, "snapshot: %s\n", msg);
-		free(msg);
-		exit(2);
-	}
-	if (!stats) {
-		fprintf(stderr, "snapshot: database '%s' not found\n", dbname);
-		exit(2);
-	}
-	msab_freeStatus(&stats);
-
-	char *merocmd = "snapshot stream";
-
-	msg = control_send_callback(
-			&out, mero_host, mero_port, dbname,
-			merocmd, command_snapshot_write_cb, stdout,
-			mero_pass);
-	if (msg) {
-		fprintf(stderr, "snapshot: database '%s': %s\n", dbname, msg);
-		exit(2);
-	}
-	if (out == NULL) {
-		fprintf(stderr, "snapshot: database '%s': unknown error\n", dbname);
-		exit(2);
-	}
-	if (strcmp(out, "OK") != 0) {
-		fprintf(stderr, "snapshot: database '%s': %s\n", dbname, out);
-		exit(2);
-	}
-	free(out);
-}
-
-static void
-command_snapshot(int argc, char *argv[])
-{
-	if (argc <= 1) {
-		/* print help message for this command */
-		command_help(argc + 1, &argv[-1]);
-		exit(1);
-	}
-	if (argv[1][0] == '-') {
-		/* print help message for this command */
-		command_help(argc + 1, &argv[-1]);
-		exit(1);
-	}
-
-	/* pick the right subcommand */
-	if (strcmp(argv[1], "create") == 0) {
-		command_snapshot_create(argc - 1, &argv[1]);
-	} else if (strcmp(argv[1], "list") == 0) {
-		command_snapshot_list(argc - 1, &argv[1]);
-	} else if (strcmp(argv[1], "restore") == 0) {
-		command_snapshot_restore(argc - 1, &argv[1]);
-	} else if (strcmp(argv[1], "destroy") == 0) {
-		command_snapshot_destroy(argc - 1, &argv[1]);
-	} else if (strcmp(argv[1], "write") == 0) {
-		command_snapshot_write(argc - 1, &argv[1]);
-	} else {
-		/* print help message for this command */
-		command_help(argc - 1, &argv[1]);
-	}
+	return simple_command(argc, argv, "profilerstop", "stopped profiler", true);
 }
 
 int
@@ -2496,7 +1799,7 @@ main(int argc, char *argv[])
 			mero_host = "/tmp";
 		/* first try the port given (or else its default) */
 		snprintf(buf, sizeof(buf), "%s/.s.merovingian.%d",
-			 mero_host, mero_port == -1 ? MAPI_PORT : mero_port);
+			 mero_host, mero_port == -1 ? 50000 : mero_port);
 		if ((err = control_ping(buf, -1, NULL)) == NULL) {
 			mero_host = buf;
 		} else {
@@ -2543,7 +1846,7 @@ main(int argc, char *argv[])
 	}
 	/* for TCP connections */
 	if (mero_host != NULL && *mero_host != '/' && mero_port == -1)
-		mero_port = MAPI_PORT;
+		mero_port = 50000;
 
 	/* handle regular commands */
 	if (strcmp(argv[i], "create") == 0) {
@@ -2554,6 +1857,10 @@ main(int argc, char *argv[])
 		retval = command_lock(argc - i, &argv[i]);
 	} else if (strcmp(argv[i], "release") == 0) {
 		retval = command_release(argc - i, &argv[i]);
+	} else if (strcmp(argv[i], "profilerstart") == 0) {
+		retval = command_profilerstart(argc - i, &argv[i]);
+	} else if (strcmp(argv[i], "profilerstop") == 0) {
+		retval = command_profilerstop(argc - i, &argv[i]);
 	} else if (strcmp(argv[i], "status") == 0) {
 		retval = command_status(argc - i, &argv[i]);
 	} else if (strcmp(argv[i], "start") == 0) {
@@ -2570,8 +1877,6 @@ main(int argc, char *argv[])
 		command_set(argc - i, &argv[i], INHERIT);
 	} else if (strcmp(argv[i], "discover") == 0) {
 		command_discover(argc - i, &argv[i]);
-	} else if (strcmp(argv[i], "snapshot") == 0) {
-		command_snapshot(argc - i, &argv[i]);
 	} else {
 		fprintf(stderr, "monetdb: unknown command: %s\n", argv[i]);
 		command_help(0, NULL);
@@ -2583,3 +1888,5 @@ main(int argc, char *argv[])
 
 	return retval;
 }
+
+/* vim:set ts=4 sw=4 noexpandtab: */

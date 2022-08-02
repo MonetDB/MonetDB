@@ -1,0 +1,37 @@
+stderr of test 'innerjoin-leftjoin-or.Bug-4049` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 12:30:58 >  
+# 12:30:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37683" "--set" "mapi_usock=/var/tmp/mtest-32537/.s.monetdb.37683" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 12:30:58 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch2/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 37683
+# cmdline opt 	mapi_usock = /var/tmp/mtest-32537/.s.monetdb.37683
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2016
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 536870922
+
+# 12:30:59 >  
+# 12:30:59 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32537" "--port=37683"
+# 12:30:59 >  
+
+
+
+# 12:30:59 >  
+# 12:30:59 >  "Done."
+# 12:30:59 >  
+

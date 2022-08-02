@@ -1,0 +1,19 @@
+stderr of test 'sql_div.SF-1959357` in directory 'sql/test/BugTracker` itself:
+
+
+# 22:21:20 >  
+# 22:21:20 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=30792 --set xrpc_port=47214 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set sql_debug=16384 --set xquery_backend=algebra --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 22:21:20 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf)
+
+# 22:21:20 >  
+# 22:21:20 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=30792  -G
+# 22:21:20 >  
+
+
+# 22:21:20 >  
+# 22:21:20 >  Done.
+# 22:21:20 >  
+

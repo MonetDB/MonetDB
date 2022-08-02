@@ -1,0 +1,21 @@
+idx := bat.new(:int);
+bat.append(idx,1);
+bat.append(idx,2);
+bat.append(idx,3);
+
+wrd:= bat.new(:str);
+bat.append(wrd,"hello");
+bat.append(wrd,"brave");
+bat.append(wrd,"world");
+
+ans:= bat.new(:bit);
+bat.append(ans,true);
+bat.append(ans,false);
+bat.append(ans,nil:bit);
+
+io.print(idx,wrd,ans);
+
+result:=json.renderobject("idx",idx,"wrd",wrd,"ans",ans);
+io.print(result);
+result:=json.renderarray(idx,wrd,ans);
+io.print(result);

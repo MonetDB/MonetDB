@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include <stdlib.h>
@@ -28,7 +28,7 @@ main(int argc, char **argv)
 	MapiHdl hdl = NULL;
 
 	if (argc != 4) {
-		fprintf(stderr, "usage:%s <host> <port> <language>\n", argv[0]);
+		printf("usage:%s <host> <port> <language>\n", argv[0]);
 		exit(-1);
 	}
 
@@ -55,26 +55,11 @@ main(int argc, char **argv)
 			die(dbh, hdl);
 		if ((hdl = mapi_query(dbh, "select * from emp")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
-		int n = 0;
 		while (mapi_fetch_row(hdl)) {
 			char *nme = mapi_fetch_field(hdl, 0);
 			char *age = mapi_fetch_field(hdl, 1);
 
-			switch (n) {
-			case 0:
-				if (strcmp(nme, "John") != 0 || strcmp(age, "23") != 0)
-					fprintf(stderr, "unexpected result: %s|%s\n", nme, age);
-				break;
-			case 1:
-				if (strcmp(nme, "Mary") != 0 || strcmp(age, "22") != 0)
-					fprintf(stderr, "unexpected result: %s|%s\n", nme, age);
-				break;
-
-			default:
-				fprintf(stderr, "too many results: %s|%s\n", nme, age);
-				break;
-			}
-			n++;
+			printf("%s is %s\n", nme, age);
 		}
 	} else if (strcmp(argv[3], "mal") == 0) {
 		if ((hdl = mapi_query(dbh, "emp := bat.new(:oid,:str);")) == NULL || mapi_error(dbh))
@@ -97,26 +82,10 @@ main(int argc, char **argv)
 			die(dbh, hdl);
 		if ((hdl = mapi_query(dbh, "io.print(emp,age);")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
-		int n = 0;
 		while (mapi_fetch_row(hdl)) {
 			char *nme = mapi_fetch_field(hdl, 1);
 			char *age = mapi_fetch_field(hdl, 2);
-
-			switch (n) {
-			case 0:
-				if (strcmp(nme, "John") != 0 || strcmp(age, "23") != 0)
-					fprintf(stderr, "unexpected result: %s|%s\n", nme, age);
-				break;
-			case 1:
-				if (strcmp(nme, "Mary") != 0 || strcmp(age, "22") != 0)
-					fprintf(stderr, "unexpected result: %s|%s\n", nme, age);
-				break;
-
-			default:
-				fprintf(stderr, "too many results: %s|%s\n", nme, age);
-				break;
-			}
-			n++;
+			printf("%s is %s\n", nme, age);
 		}
 	} else {
 		fprintf(stderr, "%s: unknown language, only mal and sql supported\n", argv[0]);

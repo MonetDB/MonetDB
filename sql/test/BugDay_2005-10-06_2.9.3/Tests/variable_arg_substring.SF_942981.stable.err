@@ -1,0 +1,18 @@
+stderr of test 'variable_arg_substring.SF_942981` in directory 'sql/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 16:52:44 >  
+# 16:52:44 >  Mtimeout -timeout 180 Mserver "--config=/ufs/heman/local-GNU-DBG/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/heman/local-GNU-DBG/lib/MonetDB:/ufs/heman/local-GNU-DBG/lib/bin" --set "gdk_dbfarm=/ufs/heman/local-GNU-DBG/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/heman/local-GNU-DBG/var/MonetDB/log" --set mapi_port=37471 --set sql_port=49109 --set xquery_port=51260 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 16:52:44 >  
+
+
+# 16:52:45 >  
+# 16:52:45 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=49109  < variable_arg_substring.SF_942981.sql
+# 16:52:45 >  
+
+
+
+# 16:52:45 >  
+# 16:52:45 >  Done.
+# 16:52:45 >  
+

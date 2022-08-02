@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -21,19 +21,14 @@
  * access the runtime stack to (push)pull the values needed.
  */
 #include "monetdb_config.h"
-#include "mal_client.h"
-#include "mal_interpreter.h"
-#include "bat5.h"
-#include "gdk_time.h"
-#include "mal_instruction.h"
-#include "mal_exception.h"
+#include "batExtensions.h"
 
 /*
  * BAT enhancements
  * The code to enhance the kernel.
  */
 
-static str
+str
 CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	int tt;
 	role_t kind = TRANSIENT;
@@ -66,28 +61,7 @@ CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	return (str) BKCnewBAT(res,  &tt, &cap, kind);
 }
 
-static str
-CMDBATdup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	BAT *b, *i;
-	bat *ret= getArgReference_bat(stk, pci, 0);
-	int tt = getArgType(mb, pci, 1);
-	bat input = *getArgReference_bat(stk, pci, 2);
-
-	(void)cntxt;
-	if ((i = BBPquickdesc(input)) == NULL)
-		throw(MAL, "bat.new", INTERNAL_BAT_ACCESS);
-	b = COLnew(i->hseqbase, tt, BATcount(i), TRANSIENT);
-	if (b == 0)
-		throw(MAL,"bat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	*ret = b->batCacheid;
-	BATsettrivprop(b);
-	BBPretain(b->batCacheid);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-static str
+str
 CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
@@ -100,18 +74,17 @@ CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( b == 0)
 		throw(MAL,"bat.single", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (ATOMextern(b->ttype))
-		u = (ptr) *(ptr *)u;
+		u = (ptr) *(str *)u;
 	if (BUNappend(b, u, false) != GDK_SUCCEED) {
 		BBPreclaim(b);
 		throw(MAL, "bat.single", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	*ret = b->batCacheid;
-	BBPkeepref(b);
+	BBPkeepref(*ret = b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 /* If the optimizer has not determined the partition bounds we derive one here.  */
-static str
+str
 CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b,*bn;
@@ -143,14 +116,12 @@ CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BAThseqbase(bn, lval);
 		stk->stk[getArg(pci,i)].val.bval = bn->batCacheid;
 		ret= getArgReference_bat(stk,pci,i);
-		*ret = bn->batCacheid;
-		BBPkeepref(bn);
+		BBPkeepref(*ret = bn->batCacheid);
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
-
-static str
+str
 CMDBATpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b,*bn;
@@ -185,12 +156,11 @@ CMDBATpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bat.partition",  INTERNAL_OBJ_CREATE);
 	}
 	ret= getArgReference_bat(stk,pci,0);
-	*ret = bn->batCacheid;
-	BBPkeepref(bn);
+	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
-static str
+str
 CMDBATimprints(void *ret, bat *bid)
 {
 	BAT *b;
@@ -206,8 +176,7 @@ CMDBATimprints(void *ret, bat *bid)
 		throw(MAL, "bat.imprints", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
-
-static str
+str
 CMDBATimprintsize(lng *ret, bat *bid)
 {
 	BAT *b;
@@ -219,126 +188,3 @@ CMDBATimprintsize(lng *ret, bat *bid)
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
-
-static str
-CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bat *r = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1);
-	bit force = *getArgReference_bit(stk, pci, 2);
-	BAT *b;
-	BUN inputs = (BUN)(pci->argc - 3), number_existing = 0, total = 0;
-
-	(void) cntxt;
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.append_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-
-	if (inputs > 0) {
-		number_existing = BATcount(b);
-
-		if (isaBatType(getArgType(mb, pci, 3))) { /* use BATappend for the bulk case */
-			gdk_return rt;
-			for (int i = 3, args = pci->argc; i < args; i++) {
-				BAT *d = BATdescriptor(*getArgReference_bat(stk, pci, i));
-				if (!d) {
-					BBPunfix(b->batCacheid);
-					throw(MAL, "bat.append_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-				}
-				if (mask_cand(d)) {
-					BAT *du = d;
-					d = BATunmask(d);
-					BBPunfix(du->batCacheid);
-					if (!d) {
-						BBPunfix(b->batCacheid);
-						throw(MAL, "bat.append_bulk", GDK_EXCEPTION);
-					}
-				}
-				rt = BATappend(b, d, NULL, force);
-				BBPunfix(d->batCacheid);
-				if (rt != GDK_SUCCEED) {
-					BBPunfix(b->batCacheid);
-					throw(MAL,"bat.append_bulk", GDK_EXCEPTION);
-				}
-			}
-		} else {
-			bool external = ATOMextern(b->ttype);
-			total = number_existing + inputs;
-			if (BATextend(b, total) != GDK_SUCCEED) {
-				BBPunfix(b->batCacheid);
-				throw(MAL,"bat.append_bulk", GDK_EXCEPTION);
-			}
-			for (int i = 3, args = pci->argc; i < args; i++) {
-				ptr u = getArgReference(stk,pci,i);
-				if (external)
-					u = (ptr) *(ptr *) u;
-				if (BUNappend(b, u, force) != GDK_SUCCEED) {
-					BBPunfix(b->batCacheid);
-					throw(MAL,"bat.append_bulk", GDK_EXCEPTION);
-				}
-			}
-		}
-	}
-
-	*r = b->batCacheid;
-	BATsettrivprop(b);
-	BBPretain(b->batCacheid);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-static str
-CMDBATvacuum(bat *r, const bat *bid)
-{
-	BAT *b, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.vacuum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((bn = COLcopy(b, b->ttype, true, b->batRole)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.vacuum", GDK_EXCEPTION);
-	}
-
-	*r = bn->batCacheid;
-	BBPkeepref(bn);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-#include "mel.h"
-mel_func batExtensions_init_funcs[] = {
- pattern("bat", "new", CMDBATnew, false, "", args(1,2, batargany("",1),argany("tt",1))),
- pattern("bat", "new", CMDBATnew, false, "", args(1,3, batargany("",1),argany("tt",1),arg("size",int))),
- pattern("bat", "new", CMDBATnew, false, "", args(1,4, batargany("",1),argany("tt",1),arg("size",lng),arg("persist",bit))),
- pattern("bat", "new", CMDBATnew, false, "", args(1,4, batargany("",1),argany("tt",1),arg("size",int),arg("persist",bit))),
- pattern("bat", "new", CMDBATnew, false, "Creates a new empty transient BAT, with tail-types as indicated.", args(1,3, batargany("",1),argany("tt",1),arg("size",lng))),
- pattern("bat", "new", CMDBATdup, false, "Creates a new empty transient BAT, with tail-type tt and hseqbase and size from the input bat argument.", args(1,3, batargany("",1), argany("tt",1),batargany("i",2))),
- pattern("bat", "single", CMDBATsingle, false, "Create a BAT with a single elemenet", args(1,2, batargany("",1),argany("val",1))),
- pattern("bat", "partition", CMDBATpartition, false, "Create a serie of slices over the BAT argument. The BUNs are distributed evenly.", args(1,2, batvarargany("",1),batargany("b",1))),
- pattern("bat", "partition", CMDBATpartition2, false, "Create the n-th slice over the BAT broken into several pieces.", args(1,4, batargany("",1),batargany("b",1),arg("pieces",int),arg("n",int))),
- command("bat", "imprints", CMDBATimprints, false, "", args(1,2, arg("",void),batarg("b",bte))),
- command("bat", "imprints", CMDBATimprints, false, "", args(1,2, arg("",void),batarg("b",sht))),
- command("bat", "imprints", CMDBATimprints, false, "", args(1,2, arg("",void),batarg("b",int))),
- command("bat", "imprints", CMDBATimprints, false, "", args(1,2, arg("",void),batarg("b",lng))),
- command("bat", "imprints", CMDBATimprints, false, "", args(1,2, arg("",void),batarg("b",flt))),
- command("bat", "imprints", CMDBATimprints, false, "Check for existence or create an imprint index on the BAT.", args(1,2, arg("",void),batarg("b",dbl))),
- command("bat", "imprintsize", CMDBATimprintsize, false, "", args(1,2, arg("",lng),batarg("b",bte))),
- command("bat", "imprintsize", CMDBATimprintsize, false, "", args(1,2, arg("",lng),batarg("b",sht))),
- command("bat", "imprintsize", CMDBATimprintsize, false, "", args(1,2, arg("",lng),batarg("b",int))),
- command("bat", "imprintsize", CMDBATimprintsize, false, "", args(1,2, arg("",lng),batarg("b",lng))),
- command("bat", "imprintsize", CMDBATimprintsize, false, "", args(1,2, arg("",lng),batarg("b",flt))),
- command("bat", "imprintsize", CMDBATimprintsize, false, "Return the storage size of the imprints index structure.", args(1,2, arg("",lng),batarg("b",dbl))),
-#ifdef HAVE_HGE
- command("bat", "imprints", CMDBATimprints, false, "", args(0,1, batarg("b",hge))),
- command("bat", "imprintsize", CMDBATimprintsize, false, "", args(1,2, arg("",lng),batarg("b",hge))),
-#endif
- pattern("bat", "appendBulk", CMDBATappend_bulk, false, "append the arguments ins to i", args(1,4, batargany("",1), batargany("i",1),arg("force",bit),varargany("ins",1))),
- pattern("bat", "appendBulk", CMDBATappend_bulk, false, "append the arguments ins to i", args(1,4, batargany("",1), batargany("i",1),arg("force",bit),batvarargany("ins",1))),
- command("bat", "vacuum", CMDBATvacuum, false, "", args(1,2, batarg("",str),batarg("b",str))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_batExtensions_mal)
-{ mal_module("batExtensions", NULL, batExtensions_init_funcs); }

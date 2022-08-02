@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -32,7 +32,7 @@
  * If the value to be found occurs, the following relationship holds:
  *
  * SORTfndfirst(b, v) <= SORTfnd(b, v) < SORTfndlast(b, v)
- * ORDERfndfirst(b, oidxh, v) <= ORDERfnd(b, oidxh, v) < ORDERfndlast(b, oidxh, v)
+ * ORDERfndfirst(b, v) <= ORDERfnd(b, v) < ORDERfndlast(b, v)
  *
  * and the range from *fndfirst (included) up to *fndlast (not
  * included) are all values in the column that are equal to the value.
@@ -395,26 +395,21 @@ SORTfnd(BAT *b, const void *v)
 			return 0;
 		return BUN_NONE;
 	}
-	BATiter bi = bat_iterator(b);
-	BUN p =  binsearch(NULL, 0, bi.type, bi.base,
-			   bi.vh ? bi.vh->base : NULL, bi.width, 0,
-			   bi.count, v, bi.sorted ? 1 : -1, -1);
-	bat_iterator_end(&bi);
-	return p;
+	return binsearch(NULL, 0, b->ttype, Tloc(b, 0),
+			 b->tvheap ? b->tvheap->base : NULL, b->twidth, 0,
+			 BATcount(b), v, b->tsorted ? 1 : -1, -1);
 }
 
 /* use orderidx, returns BUN on order index */
 BUN
-ORDERfnd(BAT *b, Heap *oidxh, const void *v)
+ORDERfnd(BAT *b, const void *v)
 {
+	assert(b->torderidx);
 	if (BATcount(b) == 0)
 		return BUN_NONE;
-	BATiter bi = bat_iterator(b);
-	BUN p = binsearch((oid *) oidxh->base + ORDERIDXOFF, 0, bi.type,
-			  bi.base, bi.vh ? bi.vh->base : NULL,
-			  bi.width, 0, bi.count, v, 1, -1);
-	bat_iterator_end(&bi);
-	return p;
+	return binsearch((oid *) b->torderidx->base + ORDERIDXOFF, 0, b->ttype,
+			 Tloc(b, 0), b->tvheap ? b->tvheap->base : NULL,
+			 b->twidth, 0, BATcount(b), v, 1, -1);
 }
 
 /* Return the BUN of the first (lowest numbered) tail value that is
@@ -441,26 +436,21 @@ SORTfndfirst(BAT *b, const void *v)
 		assert(is_oid_nil(b->tseqbase));
 		return 0;
 	}
-	BATiter bi = bat_iterator(b);
-	BUN p = binsearch(NULL, 0, bi.type, bi.base,
-			  bi.vh ? bi.vh->base : NULL, bi.width, 0,
-			  bi.count, v, bi.sorted ? 1 : -1, 0);
-	bat_iterator_end(&bi);
-	return p;
+	return binsearch(NULL, 0, b->ttype, Tloc(b, 0),
+			 b->tvheap ? b->tvheap->base : NULL, b->twidth, 0,
+			 BATcount(b), v, b->tsorted ? 1 : -1, 0);
 }
 
 /* use orderidx, returns BUN on order index */
 BUN
-ORDERfndfirst(BAT *b, Heap *oidxh, const void *v)
+ORDERfndfirst(BAT *b, const void *v)
 {
+	assert(b->torderidx);
 	if (BATcount(b) == 0)
 		return 0;
-	BATiter bi = bat_iterator(b);
-	BUN p = binsearch((oid *) oidxh->base + ORDERIDXOFF, 0, bi.type,
-			  bi.base, bi.vh ? bi.vh->base : NULL,
-			  bi.width, 0, bi.count, v, 1, 0);
-	bat_iterator_end(&bi);
-	return p;
+	return binsearch((oid *) b->torderidx->base + ORDERIDXOFF, 0, b->ttype,
+			 Tloc(b, 0), b->tvheap ? b->tvheap->base : NULL,
+			 b->twidth, 0, BATcount(b), v, 1, 0);
 }
 
 /* Return the BUN of the first (lowest numbered) tail value beyond v.
@@ -480,32 +470,25 @@ SORTfndlast(BAT *b, const void *v)
 	if (b->ttype == TYPE_void) {
 		if (b->tvheap) {
 			struct canditer ci;
-			if (is_oid_nil(*(const oid*)v))
-				return 0;
 			canditer_init(&ci, NULL, b);
 			return canditer_search(&ci, *(const oid*)v + 1, true);
 		}
 		assert(is_oid_nil(b->tseqbase));
 		return BATcount(b);
 	}
-	BATiter bi = bat_iterator(b);
-	BUN p = binsearch(NULL, 0, bi.type, bi.base,
-			  bi.vh ? bi.vh->base : NULL, bi.width, 0,
-			  bi.count, v, bi.sorted ? 1 : -1, 1);
-	bat_iterator_end(&bi);
-	return p;
+	return binsearch(NULL, 0, b->ttype, Tloc(b, 0),
+			 b->tvheap ? b->tvheap->base : NULL, b->twidth, 0,
+			 BATcount(b), v, b->tsorted ? 1 : -1, 1);
 }
 
 /* use orderidx, returns BUN on order index */
 BUN
-ORDERfndlast(BAT *b, Heap *oidxh, const void *v)
+ORDERfndlast(BAT *b, const void *v)
 {
+	assert(b->torderidx);
 	if (BATcount(b) == 0)
 		return 0;
-	BATiter bi = bat_iterator(b);
-	BUN p = binsearch((oid *) oidxh->base + ORDERIDXOFF, 0, bi.type,
-			  bi.base, bi.vh ? bi.vh->base : NULL,
-			  bi.width, 0, bi.count, v, 1, 1);
-	bat_iterator_end(&bi);
-	return p;
+	return binsearch((oid *) b->torderidx->base + ORDERIDXOFF, 0, b->ttype,
+			 Tloc(b, 0), b->tvheap ? b->tvheap->base : NULL,
+			 b->twidth, 0, BATcount(b), v, 1, 1);
 }

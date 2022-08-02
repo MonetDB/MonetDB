@@ -1,0 +1,53 @@
+stdout of test 'mdb_starts_with_sql_debug_64.SF-1999354` in directory 'sql/test/BugTracker` itself:
+
+
+# 22:28:20 >  
+# 22:28:20 >  /usr/bin/python mdb_starts_with_sql_debug_64.SF-1999354.py mdb_starts_with_sql_debug_64.SF-1999354 
+# 22:28:20 >  
+
+#create table t1999354a(ra float, "dec" int);
+#CREATE FUNCTION f2(deg float, truncat int , precision int)
+#RETURNS varchar(32)
+#BEGIN
+#DECLARE
+#d float,
+#nd int,
+#np int,
+#q varchar(10),
+#t varchar(16);
+#--
+#SET t = '00:00:00.0';
+#IF (precision < 1)
+#THEN SET precision = 1;
+#END IF;
+#IF (precision > 10)
+#THEN SET precision = 10;
+#END IF;
+#SET np = 0;
+#WHILE (np < precision-1) DO
+#SET t = t||'0';
+#SET np = np + 1;
+#END WHILE;
+#SET d = ABS(deg/15.0);
+#-- degrees
+#SET nd = FLOOR(d);
+#SET q = LTRIM(CAST(nd as varchar(2)));
+#SET t = MS_STUFF(t,3-LENGTH(q),LENGTH(q), q);
+#-- minutes
+#SET d = 60.0 * (d-nd);
+#SELECT f2(1,2,3);
+% .%4 # table_name
+% %4 # name
+% varchar # type
+% 12 # length
+[ "00:04:00.004"	]
+#SELECT f2(p.ra,8,p."dec") FROM t1999354a as p;
+% sys.%1 # table_name
+% %1 # name
+% varchar # type
+% 0 # length
+
+# 22:28:24 >  
+# 22:28:24 >  Done.
+# 22:28:24 >  
+

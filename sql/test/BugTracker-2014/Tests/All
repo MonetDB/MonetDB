@@ -10,7 +10,7 @@ sample-crash.Bug-3429
 temporary.Bug-3430
 indices.Bug-3435
 utf8bom.Bug-3436
-python-microseconds.Bug-3439
+HAVE_PYMONETDB?python-microseconds.Bug-3439
 left-outer-join-with-and.Bug-3444
 setreadonly_forgets_changes.Bug-3446
 select-having.Bug-3458
@@ -24,7 +24,7 @@ boolean_not.Bug-3505
 varchar_conversion_crash.Bug-3506
 HAVE_GEOM?bug_in_cse.Bug-3511
 stringfloatshtcompare.Bug-3512
-#oid-table-assert.Bug-3514
+oid-table-assert.Bug-3514
 round-properties.Bug-3515
 union_with_subqueries.Bug-3518
 unsafe_project_push_down.Bug-3523
@@ -48,11 +48,11 @@ manifold.Bug-3556
 duplicate_primary_keys.Bug-3474
 copy_decimal_into.Bug-3596
 insert_into_temp_table.Bug-3600
-# queueError.Bug-3604
+queueError.Bug-3604
 too_general_errmsg.Bug-3605
 querylog.Bug-3607
 fk-property-assert.Bug-3612
-HAVE_HGE?hexadecimal_literals.Bug-3621
+hexadecimal_literals.Bug-3621
 orderby_column_exp.Bug-3620
 typecast_error.Bug-3622
 case-sqrt.Bug-3627
@@ -64,10 +64,10 @@ stddev-empty.Bug-3628
 ifthenelse.Bug-3629
 order_by_incorrect_error.Bug-3630
 incorrect_floating_point_cast.Bug-3633
-acidity-fail.Bug-3635
+HAVE_PYMONETDB?acidity-fail.Bug-3635
 BOM-in-string.Bug-3641
 combined_WHERE_conditions.Bug-3642
-copy-into.Bug-3481
+HAVE_PYMONETDB?copy-into.Bug-3481
 empty_intermediate_quantile.Bug-3611
 uppercaseboolean.Bug-3519
 null_in_string.Bug-2014

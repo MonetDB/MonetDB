@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -129,8 +129,6 @@ MNDBSetDescField(ODBCDesc *desc,
 	case SQL_DESC_CONCISE_TYPE:		/* SQLSMALLINT */
 		while (tp->concise_type != 0) {
 			if ((intptr_t) tp->concise_type == (intptr_t) ValuePtr) {
-				if (tp->concise_type == SQL_HUGEINT)
-					desc->Dbc->allow_hugeint = true;
 				rec->sql_desc_concise_type = tp->concise_type;
 				rec->sql_desc_type = tp->type;
 				rec->sql_desc_datetime_interval_code = tp->code;
@@ -243,8 +241,6 @@ MNDBSetDescField(ODBCDesc *desc,
 			    (((SQLSMALLINT) (intptr_t) ValuePtr != SQL_DATETIME &&
 			      (SQLSMALLINT) (intptr_t) ValuePtr != SQL_INTERVAL) ||
 			     tp->code == rec->sql_desc_datetime_interval_code)) {
-				if (tp->concise_type == SQL_HUGEINT)
-					desc->Dbc->allow_hugeint = true;
 				rec->sql_desc_concise_type = tp->concise_type;
 				rec->sql_desc_type = tp->type;
 				rec->sql_desc_datetime_interval_code = tp->code;

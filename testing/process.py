@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 import subprocess
 import os
@@ -14,7 +14,10 @@ import copy
 import atexit
 import threading
 import signal
-import queue
+if sys.version.startswith('2'):
+    import Queue as queue
+else:
+    import queue
 
 from subprocess import PIPE
 try:
@@ -79,12 +82,8 @@ class _BufferedPipe:
     def __init__(self, fd):
         self._pipe = fd
         self._queue = queue.Queue()
-        self._cur = None
-        self._curidx = 0
         self._eof = False
         self._empty = ''
-        self._nl = '\n'
-        self._cr = '\r'
         self._thread = threading.Thread(target=self._readerthread,
                                         args=(fd, self._queue))
         self._thread.setDaemon(True)
@@ -95,19 +94,14 @@ class _BufferedPipe:
         w = 0
         first = True
         while True:
-            c = fh.readline()
+            c = fh.read(1)
             if first:
                 if type(c) is type(b''):
                     self._empty = b''
-                    self._nl = b'\n'
-                    self._cr = b'\r'
-                    first = False
+                first = False
+            queue.put(c)                # put '' if at EOF
             if not c:
-                queue.put(c)    # put '' if at EOF
                 break
-            c = c.replace(self._cr, self._empty)
-            if c:
-                queue.put(c)
 
     def close(self):
         if self._thread:
@@ -115,38 +109,24 @@ class _BufferedPipe:
         self._thread = None
 
     def read(self, size=-1):
-        ret = []
-        if self._cur:
-            if size < 0:
-                ret.append(self._cur)
-                self._cur = None
-            else:
-                ret.append(self._cur[self._curidx:self._curidx+size])
-                if self._curidx + size >= len(self._cur):
-                    self._cur = None
-                    self._curidx = 0
-                else:
-                    self._curidx += len(ret[-1])
-                size -= len(ret[-1])
-                if size == 0:
-                    return self._empty.join(ret)
         if self._eof:
-            if ret:
-                return self._empty.join(ret)
             return self._empty
         if size < 0:
             self.close()
+        ret = []
         while size != 0:
             c = self._queue.get()
-            if len(c) > size > 0:
-                ret.append(c[:size])
-                self._cur = c[size:]
-                size = 0
-            else:
-                ret.append(c)
-                if size > 0:
-                    size -= len(c)
-            self._queue.task_done()
+            if c == '\r':
+                c = self._queue.get()   # just ignore \r
+            ret.append(c)
+            if size > 0:
+                size -= 1
+            try:
+                # only available as of Python 2.5
+                self._queue.task_done()
+            except AttributeError:
+                # not essential, if not available
+                pass
             if not c:
                 self._eof = True
                 break                   # EOF
@@ -159,7 +139,7 @@ class _BufferedPipe:
             ret.append(c)
             if size > 0:
                 size -= 1
-            if c == self._nl or c == self._empty:
+            if c == '\n' or c == self._empty:
                 break
         return self._empty.join(ret)
 
@@ -167,7 +147,7 @@ class Popen(subprocess.Popen):
     def __init__(self, *args, **kwargs):
         self.dotmonetdbfile = None
         self.isserver = False
-        if sys.version_info.major == 3 and sys.version_info.minor < 7:
+        if sys.version[:3] < '3.7':
             kw = kwargs.copy()
             if 'text' in kw:
                 kw['universal_newlines'] = kw['text']
@@ -234,9 +214,9 @@ class Popen(subprocess.Popen):
 class client(Popen):
     def __init__(self, lang, args=[], stdin=None, stdout=None, stderr=None,
                  server=None, port=None, dbname=None, host=None,
-                 user='monetdb', passwd='monetdb',
+                 user='monetdb', passwd='monetdb', log=False,
                  interactive=None, echo=None, format=None,
-                 input=None, communicate=False, text=None, encoding=None):
+                 input=None, communicate=False, text=True):
         '''Start a client process.'''
         if lang == 'mal':
             cmd = _mal_client[:]
@@ -246,9 +226,6 @@ class client(Popen):
             cmd = _sql_dump[:]
         if verbose:
             sys.stdout.write('Default client: ' + ' '.join(cmd +  args) + '\n')
-
-        if (encoding is None or encoding.lower() == 'utf-8') and text is None:
-            text = True
 
         # no -i if input from -s or /dev/null
         if '-i' in cmd and ('-s' in args or stdin is None):
@@ -264,27 +241,11 @@ class client(Popen):
             elif '-e' not in cmd and echo:
                 cmd.append('-e')
         if format is not None:
-            for i in range(len(cmd)):
-                if cmd[i] == '-f' or cmd[i] == '--format':
-                    del cmd[i:i+2]
+            for c in cmd:
+                if c.startswith('-f'):
+                    cmd.remove(c)
                     break
-                if cmd[i].startswith('-f') or cmd[i].startswith('--format='):
-                    del cmd[i]
-                    break
-            if format:
-                cmd.append('-f' + format)
-        if encoding is not None:
-            if text and encoding.lower() != 'utf-8':
-                raise RuntimeError('text cannot be combined with encoding')
-            for i in range(len(cmd)):
-                if cmd[i] == '-E' or cmd[i] == '--encoding':
-                    del cmd[i:i+2]
-                    break
-                if cmd[i].startswith('-E') or cmd[i].startswith('--encoding='):
-                    del cmd[i]
-                    break
-            if encoding:
-                cmd.append('-E' + encoding)
+            cmd.append('-f' + format)
 
         env = None
 
@@ -301,14 +262,10 @@ class client(Popen):
                 if cmd[i].startswith('--port='):
                     del cmd[i]
                     break
-            try:
-                cmd.append('--port=%d' % int(port))
-            except ValueError:
-                if port:
-                    raise
+            cmd.append('--port=%d' % int(port))
         if dbname is None:
             dbname = os.getenv('TSTDB')
-        if dbname is not None and dbname:
+        if dbname is not None:
             cmd.append('--database=%s' % dbname)
         if user is not None or passwd is not None:
             env = copy.deepcopy(os.environ)
@@ -326,11 +283,27 @@ class client(Popen):
                 if cmd[i].startswith('--host='):
                     del cmd[i]
                     break
-            if host:
-                cmd.append('--host=%s' % host)
+            cmd.append('--host=%s' % host)
         if verbose:
             sys.stdout.write('Executing: ' + ' '.join(cmd +  args) + '\n')
             sys.stdout.flush()
+        if log:
+            prompt = time.strftime('# %H:%M:%S >  ')
+            cmdstr = ' '.join(cmd +  args)
+            if hasattr(stdin, 'name'):
+                cmdstr += ' < "%s"' % stdin.name
+            sys.stdout.write('\n')
+            sys.stdout.write(prompt + '\n')
+            sys.stdout.write('%s%s\n' % (prompt, cmdstr))
+            sys.stdout.write(prompt + '\n')
+            sys.stdout.write('\n')
+            sys.stdout.flush()
+            sys.stderr.write('\n')
+            sys.stderr.write(prompt + '\n')
+            sys.stderr.write('%s%s\n' % (prompt, cmdstr))
+            sys.stderr.write(prompt + '\n')
+            sys.stderr.write('\n')
+            sys.stderr.flush()
         if stdin is None:
             # if no input provided, use /dev/null as input
             stdin = open(os.devnull)
@@ -338,15 +311,12 @@ class client(Popen):
             out = PIPE
         else:
             out = stdout
-        if text and not encoding:
-            encoding = 'utf-8'
         super().__init__(cmd + args,
                          stdin=stdin,
                          stdout=out,
                          stderr=stderr,
                          shell=False,
                          env=env,
-                         encoding=encoding,
                          text=text)
         if stdout == PIPE:
             self.stdout = _BufferedPipe(self.stdout)
@@ -362,20 +332,26 @@ class client(Popen):
 class server(Popen):
     def __init__(self, args=[], stdin=None, stdout=None, stderr=None,
                  mapiport=None, dbname=os.getenv('TSTDB'), dbfarm=None,
-                 dbextra=None, bufsize=0,
+                 dbextra=None, bufsize=0, log=False,
                  notrace=False, notimeout=False, ipv6=False):
         '''Start a server process.'''
         cmd = _server[:]
         if not cmd:
             cmd = ['mserver5',
-                   '--set', ipv6 and 'mapi_listenaddr=all' or 'mapi_listenaddr=0.0.0.0',
+                   '--set', 'mapi_open=true',
                    '--set', 'gdk_nr_threads=1']
-        if os.getenv('NOWAL'):
-            cmd.extend(['--set', 'sql_debug=128'])
         if verbose:
             sys.stdout.write('Default server: ' + ' '.join(cmd +  args) + '\n')
         if notrace and '--trace' in cmd:
             cmd.remove('--trace')
+        if ipv6:
+            for i in range(len(cmd)):
+                if cmd[i].startswith('mapi_ipv6='):
+                    del cmd[i]
+                    del cmd[i - 1]
+                    break
+            cmd.append('--set')
+            cmd.append('mapi_ipv6=true')
         if mapiport is not None:
             # make sure it's a string
             mapiport = str(int(mapiport))
@@ -395,10 +371,7 @@ class server(Popen):
             cmd.append('mapi_port=%s' % mapiport)
             if usock is not None:
                 cmd.append('--set')
-                if mapiport == '0':
-                    cmd.append('mapi_usock=%s.${PORT}' % usock)
-                else:
-                    cmd.append('mapi_usock=%s.%s' % (usock, mapiport))
+                cmd.append('mapi_usock=%s.%s' % (usock, mapiport))
         for i in range(len(cmd)):
             if cmd[i].startswith('--dbpath='):
                 dbpath = cmd[i][9:]
@@ -449,6 +422,23 @@ class server(Popen):
                     if cmd[j] == '--set' and j+1 < len(cmd) and cmd[j+1].startswith(s + '='):
                         del cmd[j:j+2]
                         break
+        if log:
+            prompt = time.strftime('# %H:%M:%S >  ')
+            cmdstr = ' '.join(cmd +  args)
+            if hasattr(stdin, 'name'):
+                cmdstr += ' < "%s"' % stdin.name
+            sys.stdout.write('\n')
+            sys.stdout.write(prompt + '\n')
+            sys.stdout.write('%s%s\n' % (prompt, cmdstr))
+            sys.stdout.write(prompt + '\n')
+            sys.stdout.write('\n')
+            sys.stdout.flush()
+            sys.stderr.write('\n')
+            sys.stderr.write(prompt + '\n')
+            sys.stderr.write('%s%s\n' % (prompt, cmdstr))
+            sys.stderr.write(prompt + '\n')
+            sys.stderr.write('\n')
+            sys.stderr.flush()
         started = os.path.join(dbpath, '.started')
         try:
             os.unlink(started)
@@ -465,7 +455,6 @@ class server(Popen):
                          shell=False,
                          text=True,
                          bufsize=bufsize,
-                         encoding='utf-8',
                          **kw)
         self.isserver = True
         if stderr == PIPE:
@@ -483,26 +472,5 @@ class server(Popen):
                 break
             if os.path.exists(started):
                 # server is ready
-                try:
-                    conn = open(os.path.join(dbpath, '.conn')).read()
-                except:
-                    if verbose:
-                        print('failed to open {}'.format(os.path.join(dbpath, '.conn')))
-                    pass
-                else:
-                    # retrieve mapi port if available
-                    for c in conn.splitlines():
-                        c = c.rstrip('/')
-                        c = c.rsplit(':', maxsplit=1)
-                        if len(c) == 2:
-                            try:
-                                port = int(c[1])
-                            except ValueError:
-                                pass
-                            else:
-                                if verbose:
-                                    print('mapi port: {}'.format(c[1]))
-                                self.dbport = c[1]
-                                break
                 break
             time.sleep(0.001)

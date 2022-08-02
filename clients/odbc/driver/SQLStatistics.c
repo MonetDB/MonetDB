@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -76,7 +76,6 @@ MNDBStatistics(ODBCStmt *stmt,
 	size_t querylen;
 	size_t pos = 0;
 	char *sch = NULL, *tab = NULL;
-	bool addTmpQuery = false;
 
 	fixODBCstring(TableName, NameLength3, SQLSMALLINT,
 		      addStmtError, stmt, return SQL_ERROR);
@@ -114,6 +113,7 @@ MNDBStatistics(ODBCStmt *stmt,
 		addStmtError(stmt, "HY101", NULL, 0);
 		return SQL_ERROR;
 	}
+
 
 	/* check if a valid (non null, not empty) table name is supplied */
 	if (TableName == NULL) {
@@ -159,62 +159,59 @@ MNDBStatistics(ODBCStmt *stmt,
 		}
 	}
 
-	/* determine if we need to add a query against the tmp.* tables */
-	addTmpQuery = (SchemaName == NULL)
-		   || (SchemaName != NULL
-			&& (strcmp((const char *) SchemaName, "tmp") == 0
-			 || strchr((const char *) SchemaName, '%') != NULL
-			 || strchr((const char *) SchemaName, '_') != NULL));
-
-	/* construct the query */
-	querylen = 1200 + (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0);
-	if (addTmpQuery)
-		querylen *= 2;
+	/* construct the query now */
+	querylen = 1200 + strlen(stmt->Dbc->dbname) +
+		(sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0);
 	query = malloc(querylen);
 	if (query == NULL)
 		goto nomem;
 
 	/* SQLStatistics returns a table with the following columns:
-	   VARCHAR      TABLE_CAT
-	   VARCHAR      TABLE_SCHEM
-	   VARCHAR      TABLE_NAME NOT NULL
-	   SMALLINT     NON_UNIQUE
-	   VARCHAR      INDEX_QUALIFIER
-	   VARCHAR      INDEX_NAME
-	   SMALLINT     TYPE NOT NULL
-	   SMALLINT     ORDINAL_POSITION
-	   VARCHAR      COLUMN_NAME
-	   CHAR(1)      ASC_OR_DESC
-	   INTEGER      CARDINALITY
-	   INTEGER      PAGES
-	   VARCHAR      FILTER_CONDITION
+	   VARCHAR      table_cat
+	   VARCHAR      table_schem
+	   VARCHAR      table_name NOT NULL
+	   SMALLINT     non_unique
+	   VARCHAR      index_qualifier
+	   VARCHAR      index_name
+	   SMALLINT     type NOT NULL
+	   SMALLINT     ordinal_position
+	   VARCHAR      column_name
+	   CHAR(1)      asc_or_desc
+	   INTEGER      cardinality
+	   INTEGER      pages
+	   VARCHAR      filter_condition
 	 */
+	/* TODO: finish the SQL query */
 	pos += snprintf(query + pos, querylen - pos,
-		"select cast(null as varchar(1)) as \"TABLE_CAT\", "
-		       "s.name as \"TABLE_SCHEM\", "
-		       "t.name as \"TABLE_NAME\", "
-		       "cast(sys.ifthenelse(k.name is null,1,0) as smallint) as \"NON_UNIQUE\", "
-		       "cast(null as varchar(1)) as \"INDEX_QUALIFIER\", "
-		       "i.name as \"INDEX_NAME\", "
-		       "cast(sys.ifthenelse(i.type = 0, %d, %d) as smallint) as \"TYPE\", "
-		       "cast(kc.nr + 1 as smallint) as \"ORDINAL_POSITION\", "
-		       "c.name as \"COLUMN_NAME\", "
-		       "cast(null as char(1)) as \"ASC_OR_DESC\", "
-		       "cast(sys.ifthenelse(k.name is null,NULL,st.count) as integer) as \"CARDINALITY\", "
-		       "cast(null as integer) as \"PAGES\", "
-		       "cast(null as varchar(1)) as \"FILTER_CONDITION\" "
-		"from sys.idxs i "
-		"join sys._tables t on i.table_id = t.id "
-		"join sys.schemas s on t.schema_id = s.id "
-		"join sys.objects kc on i.id = kc.id "
-		"join sys._columns c on (t.id = c.table_id and kc.name = c.name) "
-		"%sjoin sys.keys k on (k.name = i.name and i.table_id = k.table_id and k.type in (0, 1)) "
-		"join sys.storage() st on (st.schema = s.name and st.table = t.name and st.column = c.name) "
-		"where 1=1",
-		SQL_INDEX_HASHED, SQL_INDEX_OTHER,
-		(Unique == SQL_INDEX_UNIQUE) ? "" : "left outer ");
-		/* by using left outer join we also get indices for tables
-		   which have no primary key or unique constraints, so no rows in sys.keys */
+		"select '%s' as table_cat, "
+		       "s.name as table_schem, "
+		       "t.name as table_name, "
+		       "case when k.name is null then cast(1 as smallint) "
+		            "else cast(0 as smallint) end as non_unique, "
+		       "cast(null as varchar(1)) as index_qualifier, "
+		       "i.name as index_name, "
+		       "case i.type when 0 then cast(%d as smallint) "
+		                   "else cast(%d as smallint) end as type, "
+		       "cast(kc.nr as smallint) as ordinal_position, "
+		       "c.name as column_name, "
+		       "cast(null as char(1)) as asc_or_desc, "
+		       "cast(null as integer) as cardinality, "
+		       "cast(null as integer) as pages, "
+		       "cast(null as varchar(1)) as filter_condition "
+		"from sys.idxs i, "
+		     "sys.schemas s, "
+		     "sys.tables t, "
+		     "sys.columns c, "
+		     "sys.objects kc, "
+		     "sys.keys k "
+		"where i.table_id = t.id and "
+		      "t.schema_id = s.id and "
+		      "i.id = kc.id and "
+		      "t.id = c.table_id and "
+		      "kc.name = c.name and "
+		      "(k.type is null or k.type = 1)",
+		stmt->Dbc->dbname,
+		SQL_INDEX_HASHED, SQL_INDEX_OTHER);
 	assert(pos < 1000);
 
 	/* Construct the selection condition query part */
@@ -228,70 +225,16 @@ MNDBStatistics(ODBCStmt *stmt,
 	if (sch) {
 		/* filtering requested on schema name */
 		pos += snprintf(query + pos, querylen - pos, " and %s", sch);
+		free(sch);
 	}
 	if (tab) {
 		/* filtering requested on table name */
 		pos += snprintf(query + pos, querylen - pos, " and %s", tab);
-	}
-
-	if (addTmpQuery) {
-		/* we must also include the indexes of local temporary tables
-		   which are stored in tmp.idxs, tmp._tables, tmp._columns, tmp.objects and tmp.keys */
-		pos += snprintf(query + pos, querylen - pos,
-			" UNION ALL "
-			"select cast(null as varchar(1)) as \"TABLE_CAT\", "
-			       "s.name as \"TABLE_SCHEM\", "
-			       "t.name as \"TABLE_NAME\", "
-			       "cast(sys.ifthenelse(k.name is null,1,0) as smallint) as \"NON_UNIQUE\", "
-			       "cast(null as varchar(1)) as \"INDEX_QUALIFIER\", "
-			       "i.name as \"INDEX_NAME\", "
-			       "cast(sys.ifthenelse(i.type = 0, %d, %d) as smallint) as \"TYPE\", "
-			       "cast(kc.nr + 1 as smallint) as \"ORDINAL_POSITION\", "
-			       "c.name as \"COLUMN_NAME\", "
-			       "cast(null as char(1)) as \"ASC_OR_DESC\", "
-			       "cast(sys.ifthenelse(k.name is null,NULL,st.count) as integer) as \"CARDINALITY\", "
-			       "cast(null as integer) as \"PAGES\", "
-			       "cast(null as varchar(1)) as \"FILTER_CONDITION\" "
-			"from tmp.idxs i "
-			"join tmp._tables t on i.table_id = t.id "
-			"join sys.schemas s on t.schema_id = s.id "
-			"join tmp.objects kc on i.id = kc.id "
-			"join tmp._columns c on (t.id = c.table_id and kc.name = c.name) "
-			"%sjoin tmp.keys k on (k.name = i.name and i.table_id = k.table_id and k.type in (0, 1))"
-			"left outer join sys.storage() st on (st.schema = s.name and st.table = t.name and st.column = c.name) "
-			"where 1=1",
-			SQL_INDEX_HASHED, SQL_INDEX_OTHER,
-			(Unique == SQL_INDEX_UNIQUE) ? "" : "left outer ");
-
-		/* Construct the selection condition query part */
-		if (NameLength1 > 0 && CatalogName != NULL) {
-			/* filtering requested on catalog name */
-			if (strcmp((char *) CatalogName, stmt->Dbc->dbname) != 0) {
-				/* catalog name does not match the database name, so return no rows */
-				pos += snprintf(query + pos, querylen - pos, " and 1=2");
-			}
-		}
-		if (sch) {
-			/* filtering requested on schema name */
-			pos += snprintf(query + pos, querylen - pos, " and %s", sch);
-		}
-		if (tab) {
-			/* filtering requested on table name */
-			pos += snprintf(query + pos, querylen - pos, " and %s", tab);
-		}
-	}
-	assert(pos < (querylen - 74));
-
-	if (sch)
-		free(sch);
-	if (tab)
 		free(tab);
+	}
 
 	/* add the ordering */
-	pos += strcpy_len(query + pos, " order by \"NON_UNIQUE\", \"TYPE\", \"INDEX_QUALIFIER\", \"INDEX_NAME\", \"ORDINAL_POSITION\"", querylen - pos);
-	assert(pos < querylen);
-
-	/* debug: fprintf(stdout, "SQLStatistics query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */
+	pos += strcpy_len(query + pos, " order by non_unique, type, index_qualifier, index_name, ordinal_position", querylen - pos);
 
 	/* query the MonetDB data dictionary tables */
 	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);

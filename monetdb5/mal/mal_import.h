@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _MAL_IMPORT_H
@@ -11,11 +11,10 @@
 
 #include "mal_exception.h"
 #include "mal_client.h"
-#include "mal_prelude.h"
+#include "mal_session.h"
+#include "mal_utils.h"
 
-mal_export str malIncludeString(Client c, const char *name, str mal, int listing, MALfcn address);
-
-mal_export str malInclude(Client c, const char *name, int listing);
+mal_export str malInclude(Client c, str name, int listing);
 mal_export void slash_2_dir_sep(str fname);
 mal_export str evalFile(str fname, int listing);
 mal_export str compileString(Symbol *fcn, Client c, str s);

@@ -1,0 +1,109 @@
+stderr of test 'select_implicit` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
+
+#--
+#-- SELECT_IMPLICIT
+#-- Test cases for queries with ordering terms missing from the target list.
+#-- This used to be called "junkfilter.sql".
+#-- The parser uses the term "resjunk" to handle these cases.
+#-- - thomas 1998-07-09
+#--
+#-- load test data
+#--   w/ existing GROUP BY target
+#--   w/o existing GROUP BY target using a relation name in GROUP BY clause
+#--   w/o existing GROUP BY target and w/o existing a different ORDER BY target
+#--   failure expected
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT count(*) FROM test_missing_target GROUP BY a ORDER BY b;
+ERROR = column "test_missing_target.b" must appear in the GROUP BY clause or be used in an aggregate function
+#--   w/o existing GROUP BY target and w/o existing same ORDER BY target
+#--   w/ existing GROUP BY target using a relation name in target
+#--   w/o existing GROUP BY target
+#--   w/o existing ORDER BY target
+#--   group using reference number
+#--   order using reference number
+#--   group using reference number out of range
+#--   failure expected
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT c, count(*) FROM test_missing_target GROUP BY 3;
+ERROR = GROUP BY position 3 is not in select list
+#--   group w/o existing GROUP BY and ORDER BY target under ambiguous condition
+#--   failure expected
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT count(*) FROM test_missing_target x, test_missing_target y 
+	WHERE x.a = y.a
+	GROUP BY b ORDER BY b;
+ERROR = column reference "b" is ambiguous
+#--   order w/ target under ambiguous condition
+#--   failure NOT expected
+#--   order expression w/ target under ambiguous condition
+#--   failure NOT expected
+#--   group expression w/ target under ambiguous condition
+#--   failure NOT expected
+#--   group w/ existing GROUP BY target under ambiguous condition
+#--   group w/o existing GROUP BY target under ambiguous condition
+#--   group w/o existing GROUP BY target under ambiguous condition
+#--   into a table
+#--  Functions and expressions
+#--   w/ existing GROUP BY target
+#--   w/o existing GROUP BY target using a relation name in GROUP BY clause
+#--   w/o existing GROUP BY target and w/o existing a different ORDER BY target
+#--   failure expected
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT count(a) FROM test_missing_target GROUP BY a ORDER BY b;
+ERROR = column "test_missing_target.b" must appear in the GROUP BY clause or be used in an aggregate function
+#--   w/o existing GROUP BY target and w/o existing same ORDER BY target
+#--   w/ existing GROUP BY target using a relation name in target
+#--   w/o existing GROUP BY target
+#--   w/o existing ORDER BY target
+#--   group w/o existing GROUP BY and ORDER BY target under ambiguous condition
+#--   failure expected
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT count(x.a) FROM test_missing_target x, test_missing_target y 
+	WHERE x.a = y.a
+	GROUP BY b/2 ORDER BY b/2;
+ERROR = column reference "b" is ambiguous
+#--   group w/ existing GROUP BY target under ambiguous condition
+#--   group w/o existing GROUP BY target under ambiguous condition
+#--   failure expected due to ambiguous b in count(b)
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT count(b) FROM test_missing_target x, test_missing_target y 
+	WHERE x.a = y.a
+	GROUP BY x.b/2;
+ERROR = column reference "b" is ambiguous
+#--   group w/o existing GROUP BY target under ambiguous condition
+#--   into a table
+#--   Cleanup
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
+

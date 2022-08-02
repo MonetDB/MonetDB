@@ -1,0 +1,27 @@
+stderr of test 'last_line_without_newline.SF-922390` in directory 'sql/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 16:15:41 >  
+# 16:15:41 >  Mtimeout -timeout 300 Mserver "--config=/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./lib/MonetDB:/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./lib/bin" --set "gdk_dbfarm=/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./var/MonetDB/log" --set mapi_port=39718 --set sql_port=45345 --set xquery_port=56096 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 16:15:41 >  
+
+
+# 16:15:41 >  
+# 16:15:41 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45345  < last_line_without_newline.SF-922390_s00.sql
+# 16:15:41 >  
+
+
+# 16:15:41 >  
+# 16:15:41 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45345  < last_line_without_newline.SF-922390_s01.sql
+# 16:15:41 >  
+
+
+# 16:15:41 >  
+# 16:15:41 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45345  < last_line_without_newline.SF-922390_s02.sql
+# 16:15:41 >  
+
+
+# 16:15:41 >  
+# 16:15:41 >  Done.
+# 16:15:41 >  
+

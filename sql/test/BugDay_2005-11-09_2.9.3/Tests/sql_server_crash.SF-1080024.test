@@ -1,5 +1,0 @@
-query T rowsort
-select NULLIF(NULLIF('first', 'second'), 'first')
-----
-NULL
-

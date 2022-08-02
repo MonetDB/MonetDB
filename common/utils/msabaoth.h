@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _SEEN_SABAOTH_H
@@ -27,9 +27,6 @@ typedef enum {
 typedef struct Ssabdb {
 	char *dbname;            /* database name */
 	char *path;              /* path to this database */
-#ifndef WIN32
-	pid_t pid;               /* pid, if known */
-#endif
 	bool locked;             /* whether this database is under maintenance */
 	SABdbState state;        /* current database state */
 	sablist* scens;          /* scenarios available for this database */
@@ -37,7 +34,6 @@ typedef struct Ssabdb {
 	struct Ssabuplog *uplog; /* sabuplog struct for this database */
 	char *uri;               /* URI to connect to this database */
 	struct Ssabdb* next;     /* next database */
-	char *secret;            /* authentication secret for this running database */
 } sabdb;
 
 typedef struct Ssabuplog {
@@ -56,7 +52,7 @@ typedef struct Ssabuplog {
 } sabuplog;
 
 #ifdef WIN32
-#if !defined(LIBMONETDB5) && !defined(LIBMSABAOTH)
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5) && !defined(LIBMSABAOTH)
 #define msab_export extern __declspec(dllimport)
 #else
 #define msab_export extern __declspec(dllexport)
@@ -78,12 +74,11 @@ msab_export char *msab_wildRetreat(void);
 msab_export char *msab_registerStarting(void);
 msab_export char *msab_registerStarted(void);
 msab_export char *msab_registerStop(void);
-msab_export char *msab_pickSecret(char **generated_secret);
 msab_export char *msab_getMyStatus(sabdb** ret);
-msab_export char *msab_getStatus(sabdb** ret, const char *dbname);
+msab_export char *msab_getStatus(sabdb** ret, char *dbname);
 msab_export void msab_freeStatus(sabdb** ret);
 msab_export char *msab_getUplogInfo(sabuplog *ret, const sabdb *db);
 msab_export char *msab_serialise(char **ret, const sabdb *db);
-msab_export char *msab_deserialise(sabdb **ret, const char *sabdb);
+msab_export char *msab_deserialise(sabdb **ret, char *sabdb);
 
 #endif

@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 import os
 import sys
@@ -16,8 +16,6 @@ dirlist = {
     'mapi': ['clients/mapilib', 'common/options', 'common/utils/mcrypt.h'],
     'monetdb5': ['monetdb5', 'common/utils/msabaoth.h', 'common/utils/muuid.h'],
     'stream': ['common/stream'],
-    'monetdbe': ['tools/monetdbe/monetdbe.h'],
-    'sql': ['sql'],
     }
 libs = sorted(dirlist.keys())
 
@@ -39,8 +37,9 @@ nmere = re.compile(r'\b(?P<name>[a-zA-Z_][a-zA-Z_0-9]*)\s*[([;]')
 
 def extract(f):
     decls = []
+    data = open(f).read()
 
-    data = exportutils.preprocess(f, include=False)
+    data = exportutils.preprocess(data)
 
     res = expre.search(data)
     while res is not None:
@@ -83,22 +82,19 @@ def findfiles(dirlist, skipfiles = [], skipdirs = []):
                     decls.extend(extract(os.path.join(root, f)))
                     done[f] = True
     decls.sort()
-    return [decl for name, decl in decls]
+    names, decls = list(zip(*decls))
+    return decls
 
-def listexports():
-    output = []
+def main():
     for lib in libs:
         dirs = dirlist[lib]
         dl = [os.path.join(srcdir, d) for d in dirs]
         decls = findfiles(dl, skipfiles = skipfiles, skipdirs = skipdirs)
-        output.append('# %s\n' % lib)
+        sys.stdout.write('# %s\n' % lib)
         for d in decls:
-            output.append(d + '\n')
-        output.append('\n')
-    return output
-
-def main():
-    sys.stdout.writelines(listexports())
+            sys.stdout.write(d)
+            sys.stdout.write('\n')
+        sys.stdout.write('\n')
 
 if __name__ == '__main__':
     main()

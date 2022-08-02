@@ -1,0 +1,25 @@
+stdout of test 'mitosis00` in directory 'monetdb5/optimizer` itself:
+
+
+# 20:45:24 >  
+# 20:45:24 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36084 --set xrpc_port=47798 --set monet_prompt= --trace  --dbname=mTests_src_optimizer  mitosis00.mal
+# 20:45:24 >  
+
+# MonetDB server v5.7.0, based on kernel v1.25.0
+# Serving database 'mTests_src_optimizer', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
+function user.main():void;
+#check the partition type resolution; 
+    a := bat.new(:oid,:int);
+    b := bat.partition(a);
+    (b,c) := bat.partition(a);
+    (b,c,e) := bat.partition(a);
+end user.main;
+
+# 20:45:24 >  
+# 20:45:24 >  Done.
+# 20:45:24 >  
+

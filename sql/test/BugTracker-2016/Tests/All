@@ -1,5 +1,5 @@
 HAVE_GEOM?storagemodel
-HAVE_HGE?convert-function-test.Bug-3460
+convert-function-test.Bug-3460
 HAVE_HGE?convert-function-test-hge.Bug-3460
 groupby_on_column_expression.Bug-3832
 LEFT-JOIN_with_OR_conditions_triggers_assertion.Bug-3908
@@ -9,8 +9,10 @@ column_name_conflict.Bug-3912
 DISTINCT_with_correlated_scalar_subquery_crashes_mserver.Bug-3920
 create_table_from_complex_query.Bug-3921
 projectionpath-prefix.Bug
+prepare-utf8.Bug-3930
 case-with-string-Bug.3932
 date_calculation_and_comparison_wrong_results.Bug-3940
+wrong-nonil-property-with-copy-binary-into.Bug-3937-prepare
 wrong-nonil-property-with-copy-binary-into.Bug-3937
 column_alias_in_where_clause.Bug-3947
 catalog_name_qualifier.Bug-3948
@@ -24,6 +26,7 @@ HAVE_GEOM?merge_project.Bug-3955
 decimal_vs_integer.Bug-3941
 foreign_key.Bug-3938
 invalidcolumns.Bug-3968
+rename_exps.Bug-3974
 join-with-references-2sides-crashes.Bug-3980
 memory-consumption-query-PLAN-25joins.Bug-3972
 leftjoin.Bug-3981
@@ -46,7 +49,7 @@ like_in_non_sys_schema.Bug-4062
 CREATE_INDEX_breaks_table_queries.Bug-4053
 concat_2_integers.Bug-4058
 column_not_found.Bug-4064
-#prepare_without_querycache.Bug-4047
+prepare_without_querycache.Bug-4047
 outer_constant_predicate.Bug-4070
 name_conflict_in_union.Bug-6065
 cast_and_floor.Bug-6071

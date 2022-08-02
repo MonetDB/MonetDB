@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -18,9 +18,7 @@
 #include "gdk.h"
 #include "sql_catalog.h"
 #include "sql_execute.h"
-#include "mutils.h"
-
-#define RAPI_MAX_TUPLES 2147483647L
+#include "rapi.h"
 
 // R headers
 #define R_INTERFACE_PTRS 1
@@ -48,311 +46,8 @@
 # undef warning
 #endif
 
-#define RSTR(somestr) mkCharCE(somestr, CE_UTF8)
-
-//Element-wise conversion functions, use no-op as passthrough when no conversion required
-#define M_TO_R_NOOP(v)               (v)
-#define R_TO_M_NOOP(v)               (v)
-#define M_TO_R_DATE(v)               mDate_to_rDate(v)
-#define R_TO_M_DATE(v)               rDate_to_mDate(v)
-
-#define BAT_TO_SXP(bat,bati,tpe,retsxp,newfun,ptrfun,ctype,naval,memcopy,mapfun) \
-	do {																\
-		tpe v; size_t j;												\
-		ctype *valptr = NULL;											\
-		tpe* p = (tpe*) bati.base;										\
-		retsxp = PROTECT(newfun(bati.count));							\
-		if (!retsxp) break;												\
-		valptr = ptrfun(retsxp);										\
-		if (bati.nonil && !bati.nil) {								\
-			if (memcopy) {												\
-				memcpy(valptr, p,										\
-					   bati.count * sizeof(tpe));						\
-			} else {													\
-				for (j = 0; j < bati.count; j++) {						\
-					valptr[j] = mapfun((ctype) p[j]);					\
-				}														\
-			}															\
-		} else {														\
-			for (j = 0; j < bati.count; j++) {							\
-				v = p[j];												\
-				if ( is_##tpe##_nil(v))									\
-					valptr[j] = naval;									\
-				else													\
-					valptr[j] = mapfun((ctype) v);						\
-			}															\
-		}																\
-	} while (0)
-
-#define BAT_TO_INTSXP(bat,bati,tpe,retsxp,memcopy)						\
-	BAT_TO_SXP(bat,bati,tpe,retsxp,NEW_INTEGER,INTEGER_POINTER,int,NA_INTEGER,memcopy,M_TO_R_NOOP)\
-
-#define BAT_TO_REALSXP(bat,bati,tpe,retsxp,memcopy)						\
-	BAT_TO_SXP(bat,bati,tpe,retsxp,NEW_NUMERIC,NUMERIC_POINTER,double,NA_REAL,memcopy,M_TO_R_NOOP)\
-
-//DATE stored as integer in MonetDB with epoch 0, R uses double and epoch 1970
-#define BAT_TO_DATESXP(bat,bati,tpe,retsxp,memcopy)							\
-	BAT_TO_SXP(bat,bati,tpe,retsxp,NEW_NUMERIC,NUMERIC_POINTER,double,NA_REAL,memcopy, M_TO_R_DATE); \
-	SEXP klass = mkString("Date");										\
-	classgets(retsxp, klass);
-
-#define SXP_TO_BAT(tpe, access_fun, na_check, mapfun)					\
-	do {																\
-		tpe *p, prev = tpe##_nil; size_t j;								\
-		b = COLnew(0, TYPE_##tpe, cnt, TRANSIENT);						\
-		if (!b) break;                                                  \
-		b->tnil = false; b->tnonil = true; b->tkey = false;				\
-		b->tsorted = true; b->trevsorted = true;						\
-		b->tseqbase = oid_nil;											\
-		p = (tpe*) Tloc(b, 0);											\
-		for( j = 0; j < cnt; j++, p++){								    \
-			*p = mapfun((tpe) access_fun(s)[j]);						\
-			if (na_check){ b->tnil = true; 	b->tnonil = false; 	*p= tpe##_nil;} \
-			if (j > 0){													\
-				if (b->trevsorted && !is_##tpe##_nil(*p) && (is_##tpe##_nil(prev) || *p > prev)){ \
-					b->trevsorted = false;								\
-				} else													\
-					if (b->tsorted && !is_##tpe##_nil(prev) && (is_##tpe##_nil(*p) || *p < prev)){ \
-						b->tsorted = false;								\
-					}													\
-			}															\
-			prev = *p;													\
-		}																\
-		BATsetcount(b, cnt);											\
-	} while (0)
-
-// DATE epoch differs betwen MonetDB (00-01-01) and R (1970-01-01)
-// no c API for R date handling so use fixed offset
-// >>`-as.double(as.Date(0, origin="0-1-1"))`
-static const int days0To1970 = 719528;
-
-static int
-mDate_to_rDate(int v)
-{
-	return v-days0To1970;
-}
-
-static int
-rDate_to_mDate(int v)
-{
-	return v+days0To1970;
-}
-
-static SEXP
-bat_to_sexp(BAT* b, int type)
-{
-	SEXP varvalue = NULL;
-	BATiter bi = bat_iterator(b);
-	// TODO: deal with SQL types (DECIMAL/TIME/TIMESTAMP)
-	switch (ATOMstorage(bi.type)) {
-	case TYPE_void: {
-		size_t i = 0;
-		varvalue = PROTECT(NEW_LOGICAL(BATcount(b)));
-		if (!varvalue) {
-			bat_iterator_end(&bi);
-			return NULL;
-		}
-		for (i = 0; i < BATcount(b); i++) {
-			LOGICAL_POINTER(varvalue)[i] = NA_LOGICAL;
-		}
-		break;
-	}
-	case TYPE_bte:
-		BAT_TO_INTSXP(b, bi, bte, varvalue, 0);
-		break;
-	case TYPE_sht:
-		BAT_TO_INTSXP(b, bi, sht, varvalue, 0);
-		break;
-	case TYPE_int:
-		//Storage is int but the actual defined type may be different
-		switch (type) {
-		case TYPE_int:
-			//Storage is int but the actual defined type may be different
-			switch (type) {
-				case TYPE_int: {
-					// special case: memcpy for int-to-int conversion without NULLs
-					BAT_TO_INTSXP(b, bi, int, varvalue, 1);
-				} break;
-				default: {
-					if (type == ATOMindex("date")) {
-						BAT_TO_DATESXP(b, bi, int, varvalue, 0);
-					} else {
-						//Type stored as int but no implementation to decode into native R type
-						BAT_TO_INTSXP(b, bi, int, varvalue, 1);
-					}
-				}
-			}
-			break;
-		default:
-			if (type == TYPE_date) {
-				BAT_TO_DATESXP(b, bi, int, varvalue, 0);
-			} else {
-				//Type stored as int but no implementation to decode into native R type
-				BAT_TO_INTSXP(b, bi, int, varvalue, 1);
-			}
-			break;
-		}
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge: /* R's integers are stored as int, so we cannot be sure hge will fit */
-		BAT_TO_REALSXP(b, bi, hge, varvalue, 0);
-		break;
-#endif
-	case TYPE_flt:
-		BAT_TO_REALSXP(b, bi, flt, varvalue, 0);
-		break;
-	case TYPE_dbl:
-		// special case: memcpy for double-to-double conversion without NULLs
-		BAT_TO_REALSXP(b, bi, dbl, varvalue, 1);
-		break;
-	case TYPE_lng: /* R's integers are stored as int, so we cannot be sure long will fit */
-		BAT_TO_REALSXP(b, bi, lng, varvalue, 0);
-		break;
-	case TYPE_str: { // there is only one string type, thus no macro here
-		BUN p, q, j = 0;
-		varvalue = PROTECT(NEW_STRING(BATcount(b)));
-		if (varvalue == NULL) {
-			bat_iterator_end(&bi);
-			return NULL;
-		}
-		/* special case where we exploit the duplicate-eliminated string heap */
-		if (GDK_ELIMDOUBLES(b->tvheap)) {
-			SEXP* sexp_ptrs = GDKzalloc(b->tvheap->free * sizeof(SEXP));
-			if (!sexp_ptrs) {
-				bat_iterator_end(&bi);
-				return NULL;
-			}
-			BATloop(b, p, q) {
-				const char *t = (const char *) BUNtvar(bi, p);
-				ptrdiff_t offset = t - b->tvheap->base;
-				if (!sexp_ptrs[offset]) {
-					if (strNil(t)) {
-						sexp_ptrs[offset] = NA_STRING;
-					} else {
-						sexp_ptrs[offset] = RSTR(t);
-					}
-				}
-				SET_STRING_ELT(varvalue, j++, sexp_ptrs[offset]);
-			}
-			GDKfree(sexp_ptrs);
-		}
-		else {
-			if (bi.nonil) {
-				BATloop(b, p, q) {
-					SET_STRING_ELT(varvalue, j++, RSTR(
-									   (const char *) BUNtvar(bi, p)));
-				}
-			}
-			else {
-				BATloop(b, p, q) {
-					const char *t = (const char *) BUNtvar(bi, p);
-					if (strNil(t)) {
-						SET_STRING_ELT(varvalue, j++, NA_STRING);
-					} else {
-						SET_STRING_ELT(varvalue, j++, RSTR(t));
-					}
-				}
-			}
-		}
-	} 	break;
-	}
-	bat_iterator_end(&bi);
-	return varvalue;
-}
-
-static BAT* sexp_to_bat(SEXP s, int type) {
-	BAT* b = NULL;
-	BUN cnt = LENGTH(s);
-	switch (type) {
-	case TYPE_int:
-		if (!IS_INTEGER(s)) {
-			return NULL;
-		}
-		SXP_TO_BAT(int, INTEGER_POINTER, *p==NA_INTEGER, R_TO_M_NOOP);
-		break;
-	case TYPE_lng:
-		if (!IS_INTEGER(s)) {
-			return NULL;
-		}
-		SXP_TO_BAT(lng, INTEGER_POINTER, *p==NA_INTEGER, R_TO_M_NOOP);
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		if (!IS_INTEGER(s)) {
-			return NULL;
-		}
-		SXP_TO_BAT(hge, INTEGER_POINTER, *p==NA_INTEGER, R_TO_M_NOOP);
-		break;
-#endif
-	case TYPE_bte:
-	case TYPE_bit:			 // only R logical types fit into bit BATs
-		if (!IS_LOGICAL(s)) {
-			return NULL;
-		}
-		SXP_TO_BAT(bit, LOGICAL_POINTER, *p==NA_LOGICAL, R_TO_M_NOOP);
-		break;
-	case TYPE_dbl:
-		if (!IS_NUMERIC(s)) {
-			return NULL;
-		}
-		SXP_TO_BAT(dbl, NUMERIC_POINTER, (ISNA(*p) || isnan(*p) || isinf(*p)), R_TO_M_NOOP);
-		break;
-	case TYPE_str: {
-		SEXP levels;
-		size_t j;
-		if (!IS_CHARACTER(s) && !isFactor(s)) {
-			return NULL;
-		}
-		b = COLnew(0, TYPE_str, cnt, TRANSIENT);
-		if (!b) return NULL;
-		b->tnil = false;
-		b->tnonil = true;
-		b->tkey = false;
-		b->tsorted = false;
-		b->trevsorted = false;
-		/* get levels once, since this is a function call */
-		levels = GET_LEVELS(s);
-
-		for (j = 0; j < cnt; j++) {
-			SEXP rse;
-			if (isFactor(s)) {
-				int ii = INTEGER(s)[j];
-				if (ii == NA_INTEGER) {
-					rse = NA_STRING;
-				} else {
-					rse = STRING_ELT(levels, ii - 1);
-				}
-			} else {
-				rse = STRING_ELT(s, j);
-			}
-			if (rse == NA_STRING) {
-				b->tnil = true;
-				b->tnonil = false;
-				if (BUNappend(b, str_nil, false) != GDK_SUCCEED) {
-					BBPreclaim(b);
-					return NULL;
-				}
-			} else {
-				if (BUNappend(b, CHAR(rse), false) != GDK_SUCCEED) {
-					BBPreclaim(b);
-					return NULL;
-				}
-			}
-		}
-		BATsetcount(b, cnt);
-		break;
-	}
-	default:
-		if (type == TYPE_date) {
-			if (!IS_NUMERIC(s)) {
-				return NULL;
-			}
-			SXP_TO_BAT(date, NUMERIC_POINTER, *p==NA_REAL, R_TO_M_DATE);
-		}
-	}
-
-	return b;
-}
+/* we need the BAT-SEXP-BAT conversion in two places, here and in tools/embedded */
+#include "converters.c.h"
 
 const char* rapi_enableflag = "embedded_r";
 
@@ -362,19 +57,16 @@ static bool RAPIEnabled(void) {
 }
 
 // The R-environment should be single threaded, calling for some protective measures.
-static MT_Lock rapiLock = MT_LOCK_INITIALIZER(rapiLock);
+static MT_Lock rapiLock = MT_LOCK_INITIALIZER("rapiLock");
 static bool rapiInitialized = false;
-#if 0
 static char* rtypenames[] = { "NIL", "SYM", "LIST", "CLO", "ENV", "PROM",
 		"LANG", "SPECIAL", "BUILTIN", "CHAR", "LGL", "unknown", "unknown",
 		"INT", "REAL", "CPLX", "STR", "DOT", "ANY", "VEC", "EXPR", "BCODE",
 		"EXTPTR", "WEAKREF", "RAW", "S4" };
-#endif
 
 static Client rapiClient = NULL;
 
 
-#if 0
 // helper function to translate R TYPEOF() return values to something readable
 char* rtypename(int rtypeid) {
 	if (rtypeid < 0 || rtypeid > 25) {
@@ -382,9 +74,8 @@ char* rtypename(int rtypeid) {
 	} else
 		return rtypenames[rtypeid];
 }
-#endif
 
-static void writeConsoleEx(const char * buf, int buflen, int foo) {
+void writeConsoleEx(const char * buf, int buflen, int foo) {
 	(void) buflen;
 	(void) foo;
 	(void) buf; // silence compiler
@@ -393,11 +84,11 @@ static void writeConsoleEx(const char * buf, int buflen, int foo) {
 #endif
 }
 
-static void writeConsole(const char * buf, int buflen) {
+void writeConsole(const char * buf, int buflen) {
 	writeConsoleEx(buf, buflen, -42);
 }
 
-static void clearRErrConsole(void) {
+void clearRErrConsole(void) {
 	// Do nothing?
 }
 
@@ -503,7 +194,7 @@ static char *RAPIinstalladdons(void) {
 	if (len == -1 || len >= FILENAME_MAX)
 		return "cannot create rapi_packages directory because the path is too large";
 
-	if (MT_mkdir(rlibs) != 0 && errno != EEXIST) {
+	if (mkdir(rlibs, S_IRWXU) != 0 && errno != EEXIST) {
 		return "cannot create rapi_packages directory";
 	}
 #ifdef _RAPI_DEBUG_
@@ -541,62 +232,19 @@ static char *RAPIinstalladdons(void) {
 	return NULL;
 }
 
-static str
-empty_return(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, size_t retcols, oid seqbase)
-{
-	str msg = MAL_SUCCEED;
-	void **res = GDKzalloc(retcols * sizeof(void*));
-
-	if (!res) {
-		msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-
-	for (size_t i = 0; i < retcols; i++) {
-		if (isaBatType(getArgType(mb, pci, i))) {
-			BAT *b = COLnew(seqbase, getBatType(getArgType(mb, pci, i)), 0, TRANSIENT);
-			if (!b) {
-				msg = createException(MAL, "rapi.eval", GDK_EXCEPTION);
-				goto bailout;
-			}
-			((BAT**)res)[i] = b;
-		} else { // single value return, only for non-grouped aggregations
-			// return NULL to conform to SQL aggregates
-			int tpe = getArgType(mb, pci, i);
-			if (!VALinit(&stk->stk[pci->argv[i]], tpe, ATOMnilptr(tpe))) {
-				msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout;
-			}
-			((ValPtr*)res)[i] = &stk->stk[pci->argv[i]];
-		}
-	}
-
-bailout:
-	if (res) {
-		for (size_t i = 0; i < retcols; i++) {
-			if (isaBatType(getArgType(mb, pci, i))) {
-				BAT *b = ((BAT**)res)[i];
-
-				if (b && msg) {
-					BBPreclaim(b);
-				} else if (b) {
-					*getArgReference_bat(stk, pci, i) = b->batCacheid;
-					BBPkeepref(b);
-				}
-			} else if (msg) {
-				ValPtr pt = ((ValPtr*)res)[i];
-
-				if (pt)
-					VALclear(pt);
-			}
-		}
-		GDKfree(res);
-	}
-	return msg;
+rapi_export str RAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+							InstrPtr pci) {
+	return RAPIeval(cntxt, mb, stk, pci, 0);
+}
+rapi_export str RAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+							 InstrPtr pci) {
+	return RAPIeval(cntxt, mb, stk, pci, 1);
 }
 
-static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
+str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	sql_func * sqlfun = NULL;
+	str exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
+
 	SEXP x, env, retval;
 	SEXP varname = R_NilValue;
 	SEXP varvalue = R_NilValue;
@@ -618,19 +266,6 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 
 	rapiClient = cntxt;
 
-	// If the first input argument is of type lng, this is a cardinality-only bulk operation.
-	int has_card_arg = 0;
-	lng card; // cardinality of non-bat inputs
-	if (getArgType(mb, pci, pci->retc) == TYPE_lng) {
-		has_card_arg=1;
-		card = *getArgReference_lng(stk, pci, pci->retc);
-	}
-	else {
-		has_card_arg=0;
-		card = 1;
-	}
-	str exprStr = *getArgReference_str(stk, pci, pci->retc + 1 + has_card_arg);
-
 	if (!RAPIEnabled()) {
 		throw(MAL, "rapi.eval",
 			  "Embedded R has not been enabled. Start server with --set %s=true",
@@ -641,7 +276,13 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 			  "Embedded R initialization has failed");
 	}
 
-	sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc+has_card_arg);
+	if (!grouped) {
+		sql_subfunc *sqlmorefun = (*(sql_subfunc**) getArgReference(stk, pci, pci->retc));
+		if (sqlmorefun) sqlfun = (*(sql_subfunc**) getArgReference(stk, pci, pci->retc))->func;
+	} else {
+		sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc);
+	}
+
 	args = (str*) GDKzalloc(sizeof(str) * pci->argc);
 	if (args == NULL) {
 		throw(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -657,7 +298,7 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 	// NEW macro temporarily renamed to MNEW to allow including sql_catalog.h
 
 	if (sqlfun != NULL && sqlfun->ops->cnt > 0) {
-		int carg = pci->retc + 2 + has_card_arg;
+		int carg = pci->retc + 2;
 		argnode = sqlfun->ops->h;
 		while (argnode) {
 			char* argname = ((sql_arg*) argnode->data)->name;
@@ -668,7 +309,7 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 	}
 	// the first unknown argument is the group, we don't really care for the rest.
 	argnameslen = 2;
-	for (i = pci->retc + 2 + has_card_arg; i < pci->argc; i++) {
+	for (i = pci->retc + 2; i < pci->argc; i++) {
 		if (args[i] == NULL) {
 			if (!seengrp && grouped) {
 				args[i] = GDKstrdup("aggr_group");
@@ -683,26 +324,34 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 
 	// install the MAL variables into the R environment
 	// we can basically map values to int ("INTEGER") or double ("REAL")
-	for (i = pci->retc + 2 + has_card_arg; i < pci->argc; i++) {
+	for (i = pci->retc + 2; i < pci->argc; i++) {
 		int bat_type = getBatType(getArgType(mb,pci,i));
 		// check for BAT or scalar first, keep code left
 		if (!isaBatType(getArgType(mb,pci,i))) {
-			const ValRecord *v = &stk->stk[getArg(pci, i)];
-			b = BATconstant(0, v->vtype, VALptr(v), card, TRANSIENT);
+			b = COLnew(0, getArgType(mb, pci, i), 0, TRANSIENT);
 			if (b == NULL) {
 				msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto wrapup;
+			}
+			if ( getArgType(mb,pci,i) == TYPE_str) {
+				if (BUNappend(b, *getArgReference_str(stk, pci, i), false) != GDK_SUCCEED) {
+					BBPreclaim(b);
+					b = NULL;
+					msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto wrapup;
+				}
+			} else {
+				if (BUNappend(b, getArgReference(stk, pci, i), false) != GDK_SUCCEED) {
+					BBPreclaim(b);
+					b = NULL;
+					msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto wrapup;
+				}
 			}
 		} else {
 			b = BATdescriptor(*getArgReference_bat(stk, pci, i));
 			if (b == NULL) {
 				msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto wrapup;
-			}
-			if (BATcount(b) == 0) { /* empty input, generate trivial return */
-				/* I expect all inputs to have the same size, so this should be safe */
-				msg = empty_return(mb, stk, pci, pci->retc, b->hseqbase);
-				BBPunfix(b->batCacheid);
 				goto wrapup;
 			}
 		}
@@ -741,7 +390,7 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 		goto wrapup;
 	}
 	argnames[0] = '\0';
-	for (i = pci->retc + 2 + has_card_arg; i < pci->argc; i++) {
+	for (i = pci->retc + 2; i < pci->argc; i++) {
 		pos += snprintf(argnames + pos, argnameslen - pos, "%s%s",
 						args[i], i < pci->argc - 1 ? ", " : "");
 	}
@@ -814,27 +463,22 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 								  "Failed to convert column %i", i);
 			goto wrapup;
 		}
-
 		// bat return
 		if (isaBatType(getArgType(mb,pci,i))) {
 			*getArgReference_bat(stk, pci, i) = b->batCacheid;
-			BBPkeepref(b);
 		} else { // single value return, only for non-grouped aggregations
 			BATiter li = bat_iterator(b);
 			if (VALinit(&stk->stk[pci->argv[i]], bat_type,
 						BUNtail(li, 0)) == NULL) { // TODO BUNtail here
 				msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				bat_iterator_end(&li);
 				goto wrapup;
 			}
-			bat_iterator_end(&li);
-			BBPunfix(b->batCacheid);
 		}
 		msg = MAL_SUCCEED;
 	}
-  wrapup:
 	/* unprotect environment, so it will be eaten by the GC. */
 	UNPROTECT(1);
+  wrapup:
 	MT_lock_unset(&rapiLock);
 	if (argnames)
 		free(argnames);
@@ -847,28 +491,10 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 	return msg;
 }
 
-static str RAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-							InstrPtr pci) {
-	return RAPIeval(cntxt, mb, stk, pci, 0);
-}
-static str RAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-							 InstrPtr pci) {
-	return RAPIeval(cntxt, mb, stk, pci, 1);
-}
-
-/* used for loopback queries from R
- * see test rapi10 in monetdb5/extras/rapi */
-extern
-#ifdef WIN32
-__declspec(dllexport)
-#endif
-void *RAPIloopback(void *query);
-
-void *
-RAPIloopback(void *query) {
+void* RAPIloopback(void *query) {
 	res_table* output = NULL;
 	char* querystr = (char*)CHAR(STRING_ELT(query, 0));
-	char* err = SQLstatementIntern(rapiClient, querystr, "name", 1, 0, &output);
+	char* err = SQLstatementIntern(rapiClient, &querystr, "name", 1, 0, &output);
 
 	if (err) { // there was an error
 		return ScalarString(RSTR(err));
@@ -902,7 +528,10 @@ RAPIloopback(void *query) {
 	return ScalarLogical(1);
 }
 
-static str RAPIprelude(void) {
+
+str RAPIprelude(void *ret) {
+	(void) ret;
+
 	if (RAPIEnabled()) {
 		MT_lock_set(&rapiLock);
 		/* startup internal R environment  */
@@ -922,23 +551,3 @@ static str RAPIprelude(void) {
 	}
 	return MAL_SUCCEED;
 }
-
-#include "mel.h"
-static mel_func rapi_init_funcs[] = {
- pattern("rapi", "eval", RAPIevalStd, false, "Execute a simple R script returning a single value", args(1,3, argany("",0),arg("fptr",ptr),arg("expr",str))),
- pattern("rapi", "eval", RAPIevalStd, false, "Execute a simple R script value", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
- pattern("rapi", "subeval_aggr", RAPIevalAggr, false, "grouped aggregates through R", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
- pattern("rapi", "eval_aggr", RAPIevalAggr, false, "grouped aggregates through R", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
- pattern("batrapi", "eval", RAPIevalStd, false, "Execute a simple R script value", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
- pattern("batrapi", "eval", RAPIevalStd, false, "Execute a simple R script value", args(1,4, varargany("",0),arg("card", lng), arg("fptr",ptr),arg("expr",str))),
- pattern("batrapi", "subeval_aggr", RAPIevalAggr, false, "grouped aggregates through R", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
- pattern("batrapi", "eval_aggr", RAPIevalAggr, false, "grouped aggregates through R", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_rapi_mal)
-{ mal_module2("rapi", NULL, rapi_init_funcs, RAPIprelude, NULL); }

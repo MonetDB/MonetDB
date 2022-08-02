@@ -10,15 +10,12 @@ class Client(threading.Thread):
         self.dbh = pymonetdb.connect(port=int(os.getenv('MAPIPORT')),hostname=os.getenv('MAPIHOST'),database=os.getenv('TSTDB'))
 
     def run(self):
-        cursor = self.dbh.cursor()
+        cursor = self.dbh.cursor();
         cursor.execute(query)
         self.result = cursor.fetchall()
-        cursor.close()
 
     def output(self):
-        if self.result != [(1, 2)]:
-            sys.stderr.write('[(1, 2)] expected')
-        self.dbh.close()
+        print("(%d, %s)" % (self.client, self.result))
 
 def main():
         C = []

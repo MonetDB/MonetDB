@@ -3,11 +3,10 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "ODBCGlobal.h"
-#undef DATADIR
 #include <winver.h>
 #include <shlwapi.h>
 #include <string.h>
@@ -18,10 +17,10 @@
 #define DLL ".dll"
 #endif
 
-static const char *DriverName = "MonetDB ODBC Driver";
-static const char *DataSourceName = "MonetDB";
-static const char *DriverDLL = "MonetODBC" DLL;
-static const char *DriverDLLs = "MonetODBCs" DLL;
+static char *DriverName = "MonetDB ODBC Driver";
+static char *DataSourceName = "MonetDB";
+static char *DriverDLL = "libMonetODBC" DLL;
+static char *DriverDLLs = "libMonetODBCs" DLL;
 
 /* General error handler for installer functions */
 
@@ -38,10 +37,10 @@ ProcessSQLErrorMessages(const char *func)
 	do {
 		errmsg[0] = '\0';
 		rc = SQLInstallerError(errnr, &errcode,
-							   errmsg, sizeof(errmsg), &errmsglen);
+				       errmsg, sizeof(errmsg), &errmsglen);
 		if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
 			MessageBox(NULL, errmsg, func,
-					   MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
+				   MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
 			func_rc = TRUE;
 		}
 		errnr++;
@@ -55,8 +54,8 @@ ProcessSysErrorMessage(DWORD err, const char *func)
 	char *lpMsgBuf;
 
 	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-				  NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-				  (LPTSTR) & lpMsgBuf, 0, NULL);
+		      NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		      (LPTSTR) & lpMsgBuf, 0, NULL);
 	MessageBox(NULL, (LPCTSTR) lpMsgBuf, func, MB_OK | MB_ICONINFORMATION);
 	LocalFree(lpMsgBuf);
 }
@@ -71,8 +70,9 @@ CheckIfFileExists(const char *filepath, const char *filename)
 }
 
 static BOOL
-InstallMyDriver(const char *driverpath, const char *drivername)
+InstallMyDriver(const char *driverpath)
 {
+	char driver[300];
 	char outpath[301];
 	WORD outpathlen;
 	DWORD usagecount;
@@ -81,13 +81,11 @@ InstallMyDriver(const char *driverpath, const char *drivername)
 	/* the correct format of driver keywords are
 	 * "DriverName\0Driver=...\xxxxxx.DLL\0Setup=...\xxxxxx.DLL\0\0" */
 
-	size_t driverlen = strlen(drivername) + 2 * strlen(driverpath) + strlen(DriverDLL) + strlen(DriverDLLs) + 90;
-	char *driver = malloc(driverlen);
-	snprintf(driver, driverlen,
-			 "%s;Driver=%s\\%s;Setup=%s\\%s;APILevel=1;"
-			 "ConnectFunctions=YYY;DriverODBCVer=%s;SQLLevel=3;",
-			 drivername, driverpath, DriverDLL, driverpath, DriverDLLs,
-			 MONETDB_ODBC_VER);
+	snprintf(driver, sizeof(driver),
+		 "%s;Driver=%s\\%s;Setup=%s\\%s;APILevel=1;"
+		 "ConnectFunctions=YYY;DriverODBCVer=%s;SQLLevel=3;",
+		 DriverName, driverpath, DriverDLL, driverpath, DriverDLLs,
+		 MONETDB_ODBC_VER);
 
 	for (p = driver; *p; p++)
 		if (*p == ';')
@@ -96,19 +94,16 @@ InstallMyDriver(const char *driverpath, const char *drivername)
 	/* call SQLInstallDriverEx to install the driver in the
 	 * registry */
 	if (!SQLInstallDriverEx(driver, driverpath,
-							outpath, sizeof(outpath), &outpathlen,
-							ODBC_INSTALL_COMPLETE, &usagecount) &&
-	    ProcessSQLErrorMessages("SQLInstallDriverEx")) {
-		free(driver);
+				outpath, sizeof(outpath), &outpathlen,
+				ODBC_INSTALL_COMPLETE, &usagecount) &&
+	    ProcessSQLErrorMessages("SQLInstallDriverEx"))
 		return FALSE;
-	}
-	free(driver);
 
 	return TRUE;
 }
 
 static BOOL
-RemoveMyDriver(const char *drivername)
+RemoveMyDriver()
 {
 	char buf[300];
 	DWORD usagecount;
@@ -118,12 +113,12 @@ RemoveMyDriver(const char *drivername)
 	   suppposed to do, except that it consistently causes a
 	   crash, so we do it ourselves */
 	snprintf(buf, sizeof(buf), "SOFTWARE\\ODBC\\ODBCINST.INI\\%s",
-			 drivername);
+		 DriverName);
 	valsize = sizeof(usagecount);
 	usagecount = 0;
 	valtype = REG_DWORD;
 	rc = SHGetValue(HKEY_LOCAL_MACHINE, buf, "UsageCount",
-					&valtype, &usagecount, &valsize);
+			&valtype, &usagecount, &valsize);
 	if (rc == ERROR_FILE_NOT_FOUND) {
 		/* not installed, do nothing */
 		exit(0);
@@ -135,7 +130,7 @@ RemoveMyDriver(const char *drivername)
 	if (usagecount > 1) {
 		usagecount--;
 		rc = SHSetValue(HKEY_LOCAL_MACHINE, buf, "UsageCount",
-						REG_DWORD, &usagecount, sizeof(usagecount));
+				REG_DWORD, &usagecount, sizeof(usagecount));
 		if (rc != ERROR_SUCCESS) {
 			ProcessSysErrorMessage(rc, "two");
 			return FALSE;
@@ -148,8 +143,8 @@ RemoveMyDriver(const char *drivername)
 		return FALSE;
 	}
 	rc = SHDeleteValue(HKEY_LOCAL_MACHINE,
-					   "SOFTWARE\\ODBC\\ODBCINST.INI\\ODBC Drivers",
-					   drivername);
+			   "SOFTWARE\\ODBC\\ODBCINST.INI\\ODBC Drivers",
+			   DriverName);
 	if (rc != ERROR_SUCCESS) {
 		ProcessSysErrorMessage(rc, "four");
 		return FALSE;
@@ -159,11 +154,11 @@ RemoveMyDriver(const char *drivername)
 }
 
 static void
-CreateAttributeString(char *attrs, size_t len, const char *dsn)
+CreateAttributeString(char *attrs, size_t len)
 {
 	snprintf(attrs, len,
-			 "DSN=%s;Server=localhost;Database=;UID=monetdb;PWD=monetdb;",
-			 dsn);
+		 "DSN=%s;Server=localhost;Database=;UID=monetdb;PWD=monetdb;",
+		 DataSourceName);
 
 	for (; *attrs; attrs++)
 		if (*attrs == ';')
@@ -171,17 +166,17 @@ CreateAttributeString(char *attrs, size_t len, const char *dsn)
 }
 
 static BOOL
-AddMyDSN(const char *dsn, const char *drivername)
+AddMyDSN()
 {
 	char attrs[200];
 
-	CreateAttributeString(attrs, sizeof(attrs), dsn);
+	CreateAttributeString(attrs, sizeof(attrs));
 
 	/* I choose to remove the DSN if it already existed */
-	SQLConfigDataSource(NULL, ODBC_REMOVE_SYS_DSN, drivername, attrs);
+	SQLConfigDataSource(NULL, ODBC_REMOVE_SYS_DSN, DriverName, attrs);
 
 	/* then create a new DSN */
-	if (!SQLConfigDataSource(NULL, ODBC_ADD_SYS_DSN, drivername, attrs) &&
+	if (!SQLConfigDataSource(NULL, ODBC_ADD_SYS_DSN, DriverName, attrs) &&
 	    ProcessSQLErrorMessages("SQLConfigDataSource"))
 		return FALSE;
 
@@ -189,21 +184,21 @@ AddMyDSN(const char *dsn, const char *drivername)
 }
 
 static BOOL
-RemoveMyDSN(const char *dsn, const char *drivername)
+RemoveMyDSN()
 {
 	char buf[200];
 	char *p;
 
-	snprintf(buf, sizeof(buf), "DSN=%s;", dsn);
+	snprintf(buf, sizeof(buf), "DSN=%s;", DataSourceName);
 	for (p = buf; *p; p++)
 		if (*p == ';')
 			*p = 0;
-	SQLConfigDataSource(NULL, ODBC_REMOVE_SYS_DSN, drivername, buf);
+	SQLConfigDataSource(NULL, ODBC_REMOVE_SYS_DSN, DriverName, buf);
 	return TRUE;
 }
 
 static BOOL
-Install(const char *driverpath, const char *dsn, const char *drivername)
+Install(const char *driverpath)
 {
 	char path[300];
 	WORD pathlen;
@@ -218,18 +213,18 @@ Install(const char *driverpath, const char *dsn, const char *drivername)
 
 	if (!CheckIfFileExists(path, "odbc32.dll")) {
 		MessageBox(NULL,
-				   "You must install MDAC before you can use the ODBC driver",
-				   "Install",
-				   MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
+			   "You must install MDAC before you can use the ODBC driver",
+			   "Install",
+			   MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
 		SQLRemoveDriverManager(&usagecount);
 		return FALSE;
 	}
 
-	rc = InstallMyDriver(driverpath, drivername);
+	rc = InstallMyDriver(driverpath);
 
 	if (rc) {
 		/* after the driver is installed create the new DSN */
-		rc = AddMyDSN(dsn, drivername);
+		rc = AddMyDSN();
 	}
 
 	if (!rc)
@@ -239,12 +234,12 @@ Install(const char *driverpath, const char *dsn, const char *drivername)
 }
 
 static BOOL
-Uninstall(const char *dsn, const char *drivername)
+Uninstall()
 {
 	DWORD usagecount;
 
-	RemoveMyDSN(dsn, drivername);
-	RemoveMyDriver(drivername);
+	RemoveMyDSN();
+	RemoveMyDriver();
 	SQLRemoveDriverManager(&usagecount);
 	return TRUE;
 }
@@ -252,63 +247,63 @@ Uninstall(const char *dsn, const char *drivername)
 int
 main(int argc, char **argv)
 {
-	char buf[MAX_PATH];
+/* for some bizarre reason, the content of buf gets mangled in the
+ * call to Install().  For that reason we use a copy buf2. */
+	char *buf = malloc(strlen(argv[0]) + 30);
+	char *buf2;
+	char *p;
 
-	if (GetModuleFileName(NULL, buf, (DWORD) sizeof(buf)) == 0) {
-		MessageBox(NULL, "Cannot retrieve file location",
-				   argv[0],
-				   MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
-		exit(1);
-	}
-
-	char *p = strrchr(buf, '\\');
-	if (p != NULL) {
-		/* remove last component */
-		*p = '\0';
-		if (p > buf + 4 && strcmp(p - 4, "\\bin") == 0) {
-			/* also remove \bin directory */
-			p -= 4;
-			*p = '\0';
-		}
-	} else {
+	strcpy(buf, argv[0]);
+	if ((p = strrchr(buf, '\\')) != 0 || (p = strrchr(buf, '/')) != 0)
+		*p = 0;
+	else
 		strcpy(buf, ".");
-		p = buf + 1;
-	}
-	strcpy(p, "\\lib");
+	strcat(buf, "\\lib");
 
-	if (argc < 2 || argc > 4) {
+	if (argc != 2) {
 		MessageBox(NULL, "/Install or /Uninstall argument expected",
-				   argv[0],
-				   MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
+			   argv[0],
+			   MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
 		exit(1);
 	}
-
-	/* after /Install or /Uninstall we optionally accept the DSN and
-	 * the driver name */
-	const char *dsn = argc >= 3 ? argv[2] : DataSourceName;
-	const char *drivername = argc >= 4 ? argv[3] : DriverName;
-
+	buf2 = malloc(strlen(buf) + 25);
+	strcpy(buf2, buf);
 	if (strcmp("/Install", argv[1]) == 0) {
-		if (!Install(buf, dsn, drivername)) {
+		if (!Install(buf)) {
 			MessageBox(NULL, "ODBC Install Failed", argv[0],
-					   MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
+				   MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
 			exit(1);
 		}
+		/* create a file to indicate that we've installed the driver */
+		strcat(buf2, "\\ODBCDriverInstalled.txt");
+		CloseHandle(CreateFile(buf2, READ_CONTROL, 0, NULL,
+				       CREATE_ALWAYS, FILE_ATTRIBUTE_HIDDEN,
+				       NULL));
 	} else if (strcmp("/Uninstall", argv[1]) == 0) {
-		/* remove file we've installed in previous versions of this program */
-		strcat(buf, "\\ODBCDriverInstalled.txt");
-		(void) DeleteFile(buf);
+		/* only uninstall the driver if the file exists */
+		strcat(buf2, "\\ODBCDriverInstalled.txt");
+		if (!DeleteFile(buf2)) {
+			if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+				/* not installed, so don't uninstall */
+				return 0;
+			}
+			MessageBox(NULL, "Cannot delete file for wrong reason",
+				   argv[0],
+				   MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
+		}
 
-		if (!Uninstall(dsn, drivername)) {
+		if (!Uninstall()) {
 			MessageBox(NULL, "ODBC Uninstall Failed", argv[0],
-					   MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
+				   MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
 			exit(1);
 		}
 	} else {
 		MessageBox(NULL, "/Install or /Uninstall argument expected",
-				   argv[0],
-				   MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
+			   argv[0],
+			   MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
 		exit(1);
 	}
+	free(buf);
+	free(buf2);
 	return 0;
 }

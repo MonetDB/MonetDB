@@ -1,0 +1,12 @@
+stdout of test 'unpackage` in directory 'sql/test/testdb-upgrade-chain` itself:
+
+
+# 15:04:27 >  
+# 15:04:27 >  "/usr/bin/python" "unpackage.py" "unpackage"
+# 15:04:27 >  
+
+
+# 15:04:27 >  
+# 15:04:27 >  "Done."
+# 15:04:27 >  
+

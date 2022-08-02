@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _DISCOVERYRUNNER_H
@@ -25,9 +25,11 @@ typedef struct _remotedb {
 	struct _remotedb* next;
 }* remotedb;
 
-sabdb *getRemoteDB(const char *database);
+sabdb *getRemoteDB(char *database);
 
 extern remotedb _mero_remotedbs;
 extern pthread_mutex_t _mero_remotedb_lock;
 
 #endif
+
+/* vim:set ts=4 sw=4 noexpandtab: */

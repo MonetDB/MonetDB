@@ -1,0 +1,17 @@
+stderr of test 'subselect_multiple_unionall_where_1=1-bug-sf-1005596` in directory 'sql/test/bugs` itself:
+
+
+# 16:04:18 >  
+# 16:04:18 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=31799 --set sql_port=47644 --set xquery_port=57552 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 16:04:18 >  
+
+
+# 16:04:18 >  
+# 16:04:18 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=47644  < subselect_multiple_unionall_where_1=1-bug-sf-1005596.sql
+# 16:04:18 >  
+
+
+# 16:04:19 >  
+# 16:04:19 >  Done.
+# 16:04:19 >  
+

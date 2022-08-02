@@ -1,0 +1,27 @@
+stderr of test 'create_same_temp_tab_after_its_drop.SF-1850809` in directory 'sql/test/BugTracker` itself:
+
+
+# 11:00:59 >  
+# 11:00:59 >   mserver5 "--config=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=35980 --set xrpc_port=46562 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 11:00:59 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/etc/monetdb5.conf)
+
+# 11:00:59 >  
+# 11:00:59 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=35980 
+# 11:00:59 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+QUERY = INSERT INTO temptest VALUES (3);
+ERROR = !INSERT INTO: no such table 'temptest'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = DROP TABLE temptest;
+ERROR = !DROP TABLE: no such table 'temptest'
+CODE  = 42S02
+
+# 11:00:59 >  
+# 11:00:59 >  Done.
+# 11:00:59 >  
+

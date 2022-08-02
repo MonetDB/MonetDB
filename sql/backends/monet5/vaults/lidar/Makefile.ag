@@ -1,0 +1,50 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+
+INCLUDES = .. \
+	../.. \
+	../../../../include \
+	../../../../common \
+	../../../../storage \
+	../../../../server \
+	../../../../../monetdb5/modules/atoms \
+	../../../../../monetdb5/modules/kernel \
+	../../../../../monetdb5/mal \
+	../../../../../monetdb5/modules/mal \
+	../../../../../monetdb5/optimizer \
+	../../../../../monetdb5/scheduler \
+	../../../../../common/stream \
+	../../../../../common/utils \
+	../../../../../clients/mapilib \
+	../../../../../gdk \
+	$(LIBLAS_CFLAGS)
+
+lib__lidar = {
+	MODULE
+	DIR = libdir/monetdb5
+	SOURCES = lidar.c lidar.h
+	LIBS = WIN32?../../../../../monetdb5/tools/libmonetdb5 \
+	       WIN32?../../../../../gdk/libbat \
+	       $(LIBLAS_LIBS)
+}
+
+headers_lidarmal = {
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = lidar.mal
+}
+
+headers_lidarsql = {
+	HEADERS = sql
+	DIR = libdir/monetdb5/createdb
+	SOURCES = 75_lidar.sql
+}
+
+headers_lidarautoload = {
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 75_lidar.mal
+}

@@ -1,0 +1,61 @@
+stderr of test 'subquery6` in directory 'sql/test/subquery` itself:
+
+
+# 11:45:43 >  
+# 11:45:43 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-297142" "--port=31114"
+# 11:45:43 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-297142/.s.monetdb.31114
+QUERY = DELETE FROM another_t WHERE (SELECT 1 UNION SELECT 2) > 1; 
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-297142/.s.monetdb.31114
+QUERY = DELETE FROM another_t WHERE (SELECT 1 UNION SELECT 2) > 1; 
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-307385/.s.monetdb.36125
+QUERY = UPDATE another_T SET col1 = 1 WHERE (SELECT 1 UNION SELECT 2) > 1;
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-307385/.s.monetdb.36125
+QUERY = MERGE INTO another_t USING (SELECT col1 FROM another_t) sub ON (SELECT 1 UNION SELECT 2) > 1 WHEN MATCHED THEN DELETE WHEN NOT MATCHED THEN INSERT;
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-307385/.s.monetdb.36125
+QUERY = MERGE INTO another_t USING (SELECT (SELECT 1 UNION SELECT 2) FROM another_t) sub ON TRUE WHEN MATCHED THEN DELETE WHEN NOT MATCHED THEN INSERT;
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-3499083/.s.monetdb.30277
+QUERY = SELECT i FROM integers i1 WHERE (SELECT CASE WHEN i1.i IS NULL THEN (SELECT FALSE FROM integers i2) ELSE TRUE END);
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-308774/.s.monetdb.32939
+QUERY = SELECT 1 IN (col4, MIN(col2)) FROM another_t;
+ERROR = !SELECT: cannot use non GROUP BY column 'col4' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-25203/.s.monetdb.33709
+QUERY = SELECT (SELECT col1) IN ('not a number') FROM another_t;
+ERROR = !conversion of string 'not a number' to type int failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-289487/.s.monetdb.36720
+QUERY = SELECT (SELECT t2.col2 FROM another_t t2 WHERE t2.col1 BETWEEN t1.col1 AND t2.col2) FROM another_t t1;
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-289487/.s.monetdb.36720
+QUERY = SELECT (SELECT t2.col2 FROM another_t t2 WHERE t2.col1 BETWEEN t2.col1 AND t1.col2) FROM another_t t1;
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-637782/.s.monetdb.30540
+QUERY = SELECT 1 > (SELECT 2 FROM integers);
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-215859/.s.monetdb.36103
+QUERY = SELECT debugme(); --error, more than one row returned by a subquery used as an expression
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-184851/.s.monetdb.32392
+QUERY = SELECT debugme2(); --error, more than one row returned by a subquery used as an expression
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-184851/.s.monetdb.32392
+QUERY = SELECT debugme4(); --error, more than one row returned by a subquery used as an expression
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-184851/.s.monetdb.32392
+QUERY = SELECT debugme5(); --error, cannot fetch a single row from an empty input
+ERROR = !Illegal argument: cannot fetch a single row from an empty input
+
+# 11:45:43 >  
+# 11:45:43 >  "Done."
+# 11:45:43 >  
+

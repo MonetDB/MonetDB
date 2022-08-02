@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _MAL_CLIENT_H_
@@ -11,7 +11,7 @@
 
 #include "mal.h"
 
-#include "mal_module.h"
+#include "mal_resolve.h"
 
 #define SCENARIO_PROPERTIES 8
 
@@ -43,7 +43,7 @@ typedef struct CLIENT_INPUT {
 } ClientInput;
 
 typedef struct CLIENT {
-	int idx;        /* entry in mal_clients (-1 if free) */
+	int idx;        /* entry in mal_clients */
 	oid user;       /* user id in the auth administration */
 	str username;	/* for event processor */
 	/*
@@ -82,7 +82,6 @@ typedef struct CLIENT {
 	/* The user can request a TRACE SQL statement, calling for collecting the events locally */
 	BAT *profticks;
 	BAT *profstmt;
-	BAT *profevents;
 
 	ATOMIC_TYPE	lastprint;	/* when we last printed the query, to be depricated */
 	/*
@@ -90,7 +89,7 @@ typedef struct CLIENT {
 	 * It is perfectly legal to have a client without input stream.
 	 * It will simply terminate after consuming the input buffer.
 	 */
-	const char *srcFile;  /* NULL for stdin, or file name */
+	str       srcFile;  /* NULL for stdin, or file name */
 	bstream  *fdin;
 	size_t    yycur;    /* the scanners current position */
 	/*
@@ -145,6 +144,13 @@ typedef struct CLIENT {
 	Symbol      curprg;     /* container for the malparser */
 	Symbol      backup;     /* saving the parser context for functions,commands/patterns */
 	MalStkPtr   glb;        /* global variable stack */
+	/*
+	 * Some statistics on client behavior becomes relevant for server
+	 * maintenance. The scenario loop is used as a frame of reference.
+	 * We measure the elapsed time after a request has been received and
+	 * we have to wait for the next one.
+	 */
+	int		actions;
 
 	/*
 	 * Here are pointers to scenario backends contexts.  For the time
@@ -173,8 +179,7 @@ typedef struct CLIENT {
 	size_t blocksize;
 	protocol_version protocol;
 	bool filetrans;			/* whether the client can read files for us */
-	char *handshake_options;
-	char *query;			/* string, identify whatever we're working on */
+	const char *(*getquery)(struct CLIENT *);
 } *Client, ClientRec;
 
 mal_export int MAL_MAXCLIENTS;
@@ -185,7 +190,6 @@ mal_export Client  MCinitClient(oid user, bstream *fin, stream *fout);
 mal_export Client  MCforkClient(Client father);
 mal_export void	   MCstopClients(Client c);
 mal_export int	   MCactiveClients(void);
-mal_export size_t  MCmemoryClaim(void);
 mal_export void    MCcloseClient(Client c);
 mal_export str     MCsuspendClient(int id);
 mal_export str     MCawakeClient(int id);

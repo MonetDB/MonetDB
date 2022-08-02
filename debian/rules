@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 DH_VERBOSE=1
 
@@ -13,34 +13,45 @@ DH_VERBOSE=1
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
-	-DPYTHON3_LIBDIR=lib/python3/dist-packages \
-	-DCMAKE_INSTALL_RUNSTATEDIR=/run \
-	-DRELEASE_VERSION=ON \
-	-DASSERT=OFF \
-	-DCINTEGRATION=ON \
-	-DFITS=ON \
-	-DGEOM=ON \
-	-DINT128=ON \
-	-DNETCDF=OFF \
-	-DODBC=ON \
-	-DPY3INTEGRATION=ON \
-	-DRINTEGRATION=ON \
-	-DSANITIZER=OFF \
-	-DSHP=OFF \
-	-DSTRICT=OFF \
-	-DTESTING=ON \
-	-DWITH_BZ2=ON \
-	-DWITH_CMOCKA=OFF \
-	-DWITH_CURL=ON \
-	-DWITH_LZ4=ON \
-	-DWITH_LZMA=ON \
-	-DWITH_PCRE=ON \
-	-DWITH_PROJ=OFF \
-	-DWITH_READLINE=ON \
-	-DWITH_SNAPPY=OFF \
-	-DWITH_VALGRIND=OFF \
-	-DWITH_XML2=ON \
-	-DWITH_ZLIB=ON
+	--with-rundir=/run/monetdb \
+	--enable-assert=no \
+	--enable-debug=yes \
+	--enable-developer=no \
+	--enable-embedded=no \
+	--enable-embedded-r=no \
+	--enable-fits=yes \
+	--enable-geom=yes \
+	--enable-lidar=yes \
+	--enable-mapi=yes \
+	--enable-netcdf=no \
+	--enable-odbc=yes \
+	--enable-optimize=yes \
+	--enable-profiler=no \
+	--enable-py3integration=yes \
+	--enable-rintegration=yes \
+	--enable-sanitizer=no \
+	--enable-shp=no \
+	--enable-static-analysis=no \
+	--enable-strict=no \
+	--enable-testing=yes \
+	--with-bz2=yes \
+	--with-curl=yes \
+	--with-gdal=yes \
+	--with-geos=yes \
+	--with-liblas=yes \
+	--with-libxml2=yes \
+	--with-lz4=no \
+	--with-lzma=yes \
+	--with-openssl=yes \
+	--with-proj=no \
+	--with-pthread=yes \
+	--with-python3=yes \
+	--with-readline=yes \
+	--with-regex=PCRE \
+	--with-snappy=no \
+	--with-unixodbc=yes \
+	--with-uuid=yes \
+	--with-valgrind=no
 
 # currently the test suite fails
 override_dh_auto_test:

@@ -1,0 +1,12 @@
+stderr of test 'color` in directory 'monetdb5/modules/atoms` itself:
+
+
+# 23:57:21 >  
+# 23:57:21 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=37313 --set sql_port=44202 --set xquery_port=57499 --set monet_prompt= --trace --dbname=mTests_src_modules_atoms  color.mal </dev/null
+# 23:57:21 >  
+
+
+# 23:57:21 >  
+# 23:57:21 >  Done.
+# 23:57:21 >  
+

@@ -1,0 +1,25 @@
+stderr of test 'Skyserver_v6` in directory 'sql/test/Skyserver` itself:
+
+
+# 16:41:17 >  
+# 16:41:17 >   mserver5 "--config=/ufs/goncalve/scratch/MonetDB/stable/optimized/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/stable/optimized/MonetDB5//lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/stable/optimized/MonetDB5//lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/stable/optimized/MonetDB5//lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/stable/optimized/MonetDB5//var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/stable/optimized/MonetDB5//var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=39673 --set xrpc_port=44271 --set monet_prompt= --trace  "--dbname=mTests_src_test_Skyserver" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 16:41:17 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/goncalve/scratch/MonetDB/stable/optimized/MonetDB5/etc/monetdb5.conf)
+
+# 16:41:17 >  
+# 16:41:17 >  /usr/bin/python Skyserver_v6.SQL.py Skyserver_v6 
+# 16:41:17 >  
+
+Create User
+tables
+views
+functions
+Cleanup
+Remove User
+
+# 16:41:20 >  
+# 16:41:20 >  Done.
+# 16:41:20 >  
+

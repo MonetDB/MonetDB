@@ -1,0 +1,71 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+
+INCLUDES = ../../common/stream \
+		   ../../common/utils \
+		   ../../clients/mapilib \
+		   ../../gdk \
+		   ../optimizer \
+		   ../modules/mal \
+		   $(openssl_CFLAGS)
+MTSAFE
+
+lib_mal = {
+	NOINST
+	SOURCES = \
+		mal.c mal.h \
+		mal_atom.c mal_atom.h \
+		mal_authorize.c mal_authorize.h \
+		mal_builder.c mal_builder.h \
+		mal_client.c mal_client.h \
+		mal_debugger.c mal_debugger.h \
+		mal_errors.h \
+		mal_exception.c mal_exception.h \
+		mal_factory.c mal_factory.h \
+		mal_function.c mal_function.h \
+		mal_import.c mal_import.h \
+		mal_runtime.c mal_runtime.h \
+		mal_instruction.c mal_instruction.h \
+		mal_resource.c mal_resource.h \
+		mal_interpreter.c mal_interpreter.h \
+		mal_dataflow.c mal_dataflow.h \
+		mal_linker.c mal_linker.h \
+		mal_listing.c mal_listing.h \
+		mal_module.c mal_module.h \
+		mal_namespace.c mal_namespace.h \
+		mal_parser.c mal_parser.h \
+		mal_profiler.c mal_profiler.h \
+		mal_resolve.c mal_resolve.h \
+		mal_scenario.c mal_scenario.h \
+		mal_session.c mal_session.h \
+		mal_stack.c mal_stack.h \
+		mal_type.c mal_type.h \
+		mal_utils.c mal_utils.h \
+		mal_private.h
+}
+
+headers_h = {
+	DIR = includedir/monetdb
+	HEADERS = h
+	SOURCES = \
+		mal.h \
+		mal_client.h \
+		mal_errors.h \
+		mal_exception.h \
+		mal_factory.h \
+		mal_function.h \
+		mal_instruction.h \
+		mal_interpreter.h \
+		mal_listing.h \
+		mal_module.h \
+		mal_namespace.h \
+		mal_profiler.h \
+		mal_resolve.h \
+		mal_stack.h \
+		mal_type.h
+}
+
+EXTRA_DIST_DIR = Tests

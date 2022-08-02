@@ -1,0 +1,17 @@
+stderr of test 'cross_product.SF-1122802` in directory 'sql/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 13:25:39 >  
+# 13:25:39 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program/var/MonetDB/log" --set mapi_port=39659 --set sql_port=41939 --set xquery_port=59742 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 13:25:39 >  
+
+
+# 13:25:40 >  
+# 13:25:40 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=41939  < cross_product.SF-1122802.sql
+# 13:25:40 >  
+
+
+# 13:25:40 >  
+# 13:25:40 >  Done.
+# 13:25:40 >  
+

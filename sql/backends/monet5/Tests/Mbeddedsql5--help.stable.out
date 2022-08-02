@@ -1,0 +1,17 @@
+stdout of test 'Mbeddedsql5--help` in directory 'sql/backends/monet5` itself:
+
+
+# 11:43:47 >  
+# 11:43:47 >  Mtimeout -timeout 120 ./Mbeddedsql5--help Mbeddedsql5--help 
+# 11:43:47 >  
+
+
+# 11:43:47 >  
+# 11:43:47 >  Mtimeout -timeout 60 Mbeddedsql5 --help
+# 11:43:47 >  
+
+
+# 11:43:47 >  
+# 11:43:47 >  Done.
+# 11:43:47 >  
+

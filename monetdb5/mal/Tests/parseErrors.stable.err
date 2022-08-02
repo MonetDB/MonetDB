@@ -1,0 +1,27 @@
+stderr of test 'parseErrors` in directory 'monetdb5/mal` itself:
+
+
+# 09:50:18 >  
+# 09:50:18 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=32125 --set xrpc_port=41074 --set monet_prompt= --trace  --dbname=mTests_src_mal  parseErrors.mal
+# 09:50:18 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/mk/monet5/Linux/etc/monetdb5.conf)
+
+# 21:00:37 >  
+# 21:00:37 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23746" "--port=32905"
+# 21:00:37 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
+QUERY = K := :=
+        io.print(1);
+        io.print(2);
+ERROR = !SyntaxException:parseError:K := :=
+        !SyntaxException:parseError:      ^Type identifier expected
+        !SyntaxException:parseError:K := :=
+        !SyntaxException:parseError:      ^';' expected
+
+# 21:00:37 >  
+# 21:00:37 >  "Done."
+# 21:00:37 >  
+

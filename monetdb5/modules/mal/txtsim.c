@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -19,11 +19,7 @@
  *
  */
 #include "monetdb_config.h"
-#include "mal.h"
-#include <string.h>
-#include "gdk.h"
-#include "str.h"
-#include <limits.h>
+#include "txtsim.h"
 #include "mal_exception.h"
 
 
@@ -91,7 +87,7 @@ levenshtein_PutAt(int *pOrigin, int col, int row, int nCols, int x)
 /******************************
  * Compute Levenshtein distance
  *****************************/
-static str
+str
 levenshtein_impl(int *result, str *S, str *T, int *insdel_cost, int *replace_cost, int *transpose_cost)
 {
 	char *s = *S;
@@ -186,7 +182,7 @@ levenshtein_impl(int *result, str *S, str *T, int *insdel_cost, int *replace_cos
 	return MAL_SUCCEED;
 }
 
-static str
+str
 levenshteinbasic_impl(int *result, str *s, str *t)
 {
 	int insdel = 1, replace = 1, transpose = 2;
@@ -194,7 +190,7 @@ levenshteinbasic_impl(int *result, str *s, str *t)
 	return levenshtein_impl(result, s, t, &insdel, &replace, &transpose);
 }
 
-static str
+str
 levenshteinbasic2_impl(int *result, str *s, str *t)
 {
 	int insdel = 1, replace = 1, transpose = 1;
@@ -214,7 +210,7 @@ levenshteinbasic2_impl(int *result, str *s, str *t)
 #define SoundexKey "Z000"	/* default key for soundex code */
 
 /* set letter values */
-static const int Code[] = { 0, 1, 2, 3, 0, 1, 2, 0, 0, 2, 2, 4, 5, 5, 0,
+static int Code[] = { 0, 1, 2, 3, 0, 1, 2, 0, 0, 2, 2, 4, 5, 5, 0,
 	1, 2, 6, 2, 3, 0, 1, 0, 2, 0, 2
 };
 
@@ -226,15 +222,11 @@ SCode(unsigned char c)
 	return (Code[toupper(c) - 'A']);
 }
 
-static str
-soundex_code(const char *Name, char *Key)
+static void
+soundex_code(char *Name, char *Key)
 {
 	char LastLetter;
 	int Index;
-
-	for (const char *p = Name; *p; p++)
-		if ((*p & 0x80) != 0)
-			throw(MAL,"soundex", SQLSTATE(42000) "Soundex function not available for non ASCII strings");
 
 	/* set default key */
 	strcpy(Key, SoundexKey);
@@ -246,7 +238,7 @@ soundex_code(const char *Name, char *Key)
 
 	LastLetter = *Name;
 	if (!*Name)
-		return MAL_SUCCEED;
+		return;
 	Name++;
 
 	/* scan rest of string */
@@ -266,15 +258,12 @@ soundex_code(const char *Name, char *Key)
 			}
 		}
 	}
-	return MAL_SUCCEED;
 }
 
-static str
+
+str
 soundex_impl(str *res, str *Name)
 {
-	str msg = MAL_SUCCEED;
-
-	GDKfree(*res);
 	RETURN_NIL_IF(strNil(*Name), TYPE_str);
 
 	*res = (str) GDKmalloc(sizeof(char) * (SoundexLen + 1));
@@ -282,15 +271,12 @@ soundex_impl(str *res, str *Name)
 		throw(MAL,"soundex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* calculate Key for Name */
-	if ((msg = soundex_code(*Name, *res))) {
-		GDKfree(*res);
-		*res = NULL;
-		return msg;
-	}
-	return msg;
+	soundex_code(*Name, *res);
+
+	return MAL_SUCCEED;
 }
 
-static str
+str
 stringdiff_impl(int *res, str *s1, str *s2)
 {
 	str r = MAL_SUCCEED;
@@ -321,14 +307,13 @@ stringdiff_impl(int *res, str *s1, str *s2)
  * qgramnormalize(" '' t ' est").print(); --> [ "T EST" ]
  *
  *****************************/
-static str
+str
 CMDqgramnormalize(str *res, str *Input)
 {
 	char *input = *Input;
 	int i, j = 0;
 	char c, last = ' ';
 
-	GDKfree(*res);
 	RETURN_NIL_IF(strNil(input), TYPE_str);
 	*res = (str) GDKmalloc(sizeof(char) * (strlen(input) + 1));	/* normalized strings are never longer than original */
 	if (*res == NULL)
@@ -358,6 +343,8 @@ CMDqgramnormalize(str *res, str *Input)
  * =========================================================================
  */
 
+#define PARAMS(proto) proto
+
 /*
  * Data on one input string being compared.
  */
@@ -372,6 +359,38 @@ struct string_data {
 	int edit_count;
 };
 
+static struct string_data string[2];
+
+static int max_edits;		/* compareseq stops when edits > max_edits */
+
+#ifdef MINUS_H_FLAG
+
+/* This corresponds to the diff -H flag.  With this heuristic, for
+   strings with a constant small density of changes, the algorithm is
+   linear in the strings size.  This is unlikely in typical uses of
+   fstrcmp, and so is usually compiled out.  Besides, there is no
+   interface to set it true.  */
+static int heuristic;
+
+#endif
+
+
+/* Vector, indexed by diagonal, containing 1 + the X coordinate of the
+   point furthest along the given diagonal in the forward search of the
+   edit matrix.  */
+static int *fdiag;
+
+/* Vector, indexed by diagonal, containing the X coordinate of the point
+   furthest along the given diagonal in the backward search of the edit
+   matrix.  */
+static int *bdiag;
+
+/* Edit scripts longer than this are too expensive to compute.  */
+static int too_expensive;
+
+/* Snakes bigger than this are considered `big'.  */
+#define SNAKE_LIMIT	20
+
 struct partition {
 	/* Midpoints of this partition.  */
 	int xmid, ymid;
@@ -382,6 +401,7 @@ struct partition {
 	/* Likewise for high half.  */
 	int hi_minimal;
 };
+
 
 /* NAME
 	diag - find diagonal path
@@ -427,8 +447,10 @@ struct partition {
 	cause suboptimal diff output.  It cannot cause incorrect diff
 	output.  */
 
-static inline int
-diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part, int too_expensive, struct string_data *string, int *fdiag, int *bdiag)
+static int diag PARAMS((int, int, int, int, int, struct partition *));
+
+static int
+diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part)
 {
 	int *const fd = fdiag;	/* Give the compiler a chance. */
 	int *const bd = bdiag;	/* Additional help for the compiler. */
@@ -453,7 +475,9 @@ diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part
 	bd[bmid] = xlim;
 	for (c = 1;; ++c) {
 		int d;		/* Active diagonal. */
+		int big_snake;
 
+		big_snake = 0;
 		/* Extend the top-down search by an edit step in each diagonal. */
 		if (fmin > dmin)
 			fd[--fmin - 1] = -1;
@@ -466,6 +490,7 @@ diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part
 		for (d = fmax; d >= fmin; d -= 2) {
 			int x;
 			int y;
+			int oldx;
 			int tlo;
 			int thi;
 
@@ -475,11 +500,14 @@ diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part
 				x = tlo + 1;
 			else
 				x = thi;
+			oldx = x;
 			y = x - d;
 			while (x < xlim && y < ylim && xv[x] == yv[y]) {
 				++x;
 				++y;
 			}
+			if (x - oldx > SNAKE_LIMIT)
+				big_snake = 1;
 			fd[d] = x;
 			if (odd && bmin <= d && d <= bmax && bd[d] <= x) {
 				part->xmid = x;
@@ -500,6 +528,7 @@ diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part
 		for (d = bmax; d >= bmin; d -= 2) {
 			int x;
 			int y;
+			int oldx;
 			int tlo;
 			int thi;
 
@@ -508,11 +537,14 @@ diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part
 				x = tlo;
 			else
 				x = thi - 1;
+			oldx = x;
 			y = x - d;
 			while (x > xoff && y > yoff && xv[x - 1] == yv[y - 1]) {
 				--x;
 				--y;
 			}
+			if (oldx - x > SNAKE_LIMIT)
+				big_snake = 1;
 			bd[d] = x;
 			if (!odd && fmin <= d && d <= fmax && x <= fd[d]) {
 				part->xmid = x;
@@ -524,6 +556,90 @@ diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part
 
 		if (minimal)
 			continue;
+
+#ifdef MINUS_H_FLAG
+		/* Heuristic: check occasionally for a diagonal that has made lots
+		   of progress compared with the edit distance.  If we have any
+		   such, find the one that has made the most progress and return
+		   it as if it had succeeded.
+
+		   With this heuristic, for strings with a constant small density
+		   of changes, the algorithm is linear in the strings size.  */
+		if (c > 200 && big_snake && heuristic) {
+			int best;
+
+			best = 0;
+			for (d = fmax; d >= fmin; d -= 2) {
+				int dd;
+				int x;
+				int y;
+				int v;
+
+				dd = d - fmid;
+				x = fd[d];
+				y = x - d;
+				v = (x - xoff) * 2 - dd;
+
+				if (v > 12 * (c + (dd < 0 ? -dd : dd))) {
+					if (v > best && xoff + SNAKE_LIMIT <= x && x < xlim && yoff + SNAKE_LIMIT <= y && y < ylim) {
+						/* We have a good enough best diagonal; now insist
+						   that it end with a significant snake.  */
+						int k;
+
+						for (k = 1; xv[x - k] == yv[y - k]; k++) {
+							if (k == SNAKE_LIMIT) {
+								best = v;
+								part->xmid = x;
+								part->ymid = y;
+								break;
+							}
+						}
+					}
+				}
+			}
+			if (best > 0) {
+				part->lo_minimal = 1;
+				part->hi_minimal = 0;
+				return 2 * c - 1;
+			}
+			best = 0;
+			for (d = bmax; d >= bmin; d -= 2) {
+				int dd;
+				int x;
+				int y;
+				int v;
+
+				dd = d - bmid;
+				x = bd[d];
+				y = x - d;
+				v = (xlim - x) * 2 + dd;
+
+				if (v > 12 * (c + (dd < 0 ? -dd : dd))) {
+					if (v > best && xoff < x && x <= xlim - SNAKE_LIMIT && yoff < y && y <= ylim - SNAKE_LIMIT) {
+						/* We have a good enough best diagonal; now insist
+						   that it end with a significant snake.  */
+						int k;
+
+						for (k = 0; xv[x + k] == yv[y + k]; k++) {
+							if (k == SNAKE_LIMIT - 1) {
+								best = v;
+								part->xmid = x;
+								part->ymid = y;
+								break;
+							}
+						}
+					}
+				}
+			}
+			if (best > 0) {
+				part->lo_minimal = 0;
+				part->hi_minimal = 1;
+				return 2 * c - 1;
+			}
+		}
+#else
+		(void) big_snake;
+#endif /* MINUS_H_FLAG */
 
 		/* Heuristic: if we've gone well beyond the call of duty, give up
 		   and report halfway between our best results so far.  */
@@ -610,8 +726,10 @@ diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part
 	If MINIMAL is nonzero, find a minimal difference no matter how
 	expensive it is.  */
 
-static inline void
-compareseq(int xoff, int xlim, int yoff, int ylim, int minimal, int max_edits, int too_expensive, struct string_data *string, int *fdiag, int *bdiag) /* compareseq stops when edits > max_edits */
+static void compareseq PARAMS((int, int, int, int, int));
+
+static void
+compareseq(int xoff, int xlim, int yoff, int ylim, int minimal)
 {
 	const char *const xv = string[0].data;	/* Help the compiler.  */
 	const char *const yv = string[1].data;
@@ -647,18 +765,26 @@ compareseq(int xoff, int xlim, int yoff, int ylim, int minimal, int max_edits, i
 		struct partition part;
 
 		/* Find a point of correspondence in the middle of the strings.  */
-		c = diag(xoff, xlim, yoff, ylim, minimal, &part, too_expensive, string, fdiag, bdiag);
+		c = diag(xoff, xlim, yoff, ylim, minimal, &part);
 		if (c == 1) {
+#if 0
+			/* This should be impossible, because it implies that one of
+			   the two subsequences is empty, and that case was handled
+			   above without calling `diag'.  Let's verify that this is
+			   true.  */
+			abort();
+#else
 			/* The two subsequences differ by a single insert or delete;
 			   record it and we are done.  */
 			if (part.xmid - part.ymid < xoff - yoff)
 				++string[1].edit_count;
 			else
 				++string[0].edit_count;
+#endif
 		} else {
 			/* Use the partitions to split this problem into subproblems.  */
-			compareseq(xoff, part.xmid, yoff, part.ymid, part.lo_minimal, max_edits, too_expensive, string, fdiag, bdiag);
-			compareseq(part.xmid, xlim, part.ymid, ylim, part.hi_minimal, max_edits, too_expensive, string, fdiag, bdiag);
+			compareseq(xoff, part.xmid, yoff, part.ymid, part.lo_minimal);
+			compareseq(part.xmid, xlim, part.ymid, ylim, part.hi_minimal);
 		}
 	}
 }
@@ -680,27 +806,21 @@ compareseq(int xoff, int xlim, int yoff, int ylim, int minimal, int max_edits, i
 	strings are identical, and a number in between if they are
 	similar.  */
 
-#define INITIAL_INT_BUFFER_LENGTH 2048
-
-#define CHECK_INT_BUFFER_LENGTH(BUFFER, BUFFER_LEN, NEXT_LEN, OP) \
-	do { \
-		if ((NEXT_LEN) > *BUFFER_LEN) { \
-			size_t newlen = (((NEXT_LEN) + 1023) & ~1023); /* align to a multiple of 1024 bytes */ \
-			int *newbuf = GDKmalloc(newlen); \
-			if (!newbuf) \
-				throw(MAL, OP, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-			GDKfree(*BUFFER); \
-			*BUFFER = newbuf; \
-			*BUFFER_LEN = newlen; \
-		} \
-	} while (0)
-
-static str
-fstrcmp_impl_internal(dbl *ret, int **fdiag_buf, size_t *fdiag_buflen, const char *string1, const char *string2, dbl minimum)
+str
+fstrcmp_impl(dbl *ret, str *S1, str *S2, dbl *minimum)
 {
-	int i, max_edits, *fdiag, *bdiag, too_expensive = 1;
+	char *string1 = *S1;
+	char *string2 = *S2;
+	int i;
+
 	size_t fdiag_len;
-	struct string_data string[2];
+	static int *fdiag_buf;
+	static size_t fdiag_max;
+
+	if (strNil(*S1) || strNil(*S2) || is_dbl_nil(*minimum)) {
+		*ret = dbl_nil;
+		return MAL_SUCCEED;
+	}
 
 	/* set the info for each string.  */
 	string[0].data = string1;
@@ -720,6 +840,7 @@ fstrcmp_impl_internal(dbl *ret, int **fdiag_buf, size_t *fdiag_buflen, const cha
 
 	/* Set TOO_EXPENSIVE to be approximate square root of input size,
 	   bounded below by 256.  */
+	too_expensive = 1;
 	for (i = string[0].data_length + string[1].data_length; i != 0; i >>= 2)
 		too_expensive <<= 1;
 	if (too_expensive < 256)
@@ -730,16 +851,19 @@ fstrcmp_impl_internal(dbl *ret, int **fdiag_buf, size_t *fdiag_buflen, const cha
 	   allocations performed.  Thus, we use a static buffer for the
 	   diagonal vectors, and never free them.  */
 	fdiag_len = string[0].data_length + string[1].data_length + 3;
-	CHECK_INT_BUFFER_LENGTH(fdiag_buf, fdiag_buflen, fdiag_len * 2 * sizeof(int), "txtsim.similarity");
-	fdiag = *fdiag_buf + string[1].data_length + 1;
+	if (fdiag_len > fdiag_max) {
+		fdiag_max = fdiag_len;
+		fdiag_buf = realloc(fdiag_buf, fdiag_max * (2 * sizeof(int)));
+	}
+	fdiag = fdiag_buf + string[1].data_length + 1;
 	bdiag = fdiag + fdiag_len;
 
-	max_edits = 1 + (int) ((string[0].data_length + string[1].data_length) * (1. - minimum));
+	max_edits = 1 + (int) ((string[0].data_length + string[1].data_length) * (1. - *minimum));
 
 	/* Now do the main comparison algorithm */
 	string[0].edit_count = 0;
 	string[1].edit_count = 0;
-	compareseq(0, string[0].data_length, 0, string[1].data_length, 0, max_edits, too_expensive, string, fdiag, bdiag);
+	compareseq(0, string[0].data_length, 0, string[1].data_length, 0);
 
 	/* The result is
 	   ((number of chars in common) / (average length of the strings)).
@@ -751,116 +875,18 @@ fstrcmp_impl_internal(dbl *ret, int **fdiag_buf, size_t *fdiag_buflen, const cha
 	return MAL_SUCCEED;
 }
 
-static str
-fstrcmp_impl(dbl *ret, str *string1, str *string2, dbl *minimum)
-{
-	str s1 = *string1, s2 = *string2;
-	dbl min = *minimum;
-
-	if (strNil(s1) || strNil(s2) || is_dbl_nil(min)) {
-		*ret = dbl_nil;
-		return MAL_SUCCEED;
-	} else {
-		str msg = MAL_SUCCEED;
-		int *fdiag_buf = NULL;
-		size_t fdiag_buflen = INITIAL_INT_BUFFER_LENGTH;
-
-		if (!(fdiag_buf = GDKmalloc(fdiag_buflen)))
-			throw(MAL, "txtsim.similarity", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		msg = fstrcmp_impl_internal(ret, &fdiag_buf, &fdiag_buflen, s1, s1, min);
-		GDKfree(fdiag_buf);
-		return msg;
-	}
-}
-
-static str
+str
 fstrcmp0_impl(dbl *ret, str *string1, str *string2)
 {
-	str s1 = *string1, s2 = *string2;
+	double min = 0.0;
 
-	if (strNil(s1) || strNil(s2)) {
-		*ret = dbl_nil;
-		return MAL_SUCCEED;
-	} else {
-		str msg = MAL_SUCCEED;
-		int *fdiag_buf = NULL;
-		size_t fdiag_buflen = INITIAL_INT_BUFFER_LENGTH;
-
-		if (!(fdiag_buf = GDKmalloc(fdiag_buflen)))
-			throw(MAL, "txtsim.similarity", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		msg = fstrcmp_impl_internal(ret, &fdiag_buf, &fdiag_buflen, s1, s2, 0.0);
-		GDKfree(fdiag_buf);
-		return msg;
-	}
-}
-
-static str
-fstrcmp0_impl_bulk(bat *res, bat *strings1, bat *strings2)
-{
-	BATiter lefti, righti;
-	BAT *bn = NULL, *left = NULL, *right = NULL;
-	BUN q = 0;
-	size_t fdiag_buflen = INITIAL_INT_BUFFER_LENGTH;
-	str msg = MAL_SUCCEED;
-	bool nils = false;
-	dbl *restrict vals;
-	int *fdiag_buf = GDKmalloc(fdiag_buflen);
-
-	if (!fdiag_buf) {
-		msg = createException(MAL, "txtsim.similarity", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-	if (!(left = BATdescriptor(*strings1)) || !(right = BATdescriptor(*strings2))) {
-		msg = createException(MAL, "txtsim.similarity", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
-	q = BATcount(left);
-	if (!(bn = COLnew(left->hseqbase, TYPE_dbl, q, TRANSIENT))) {
-		msg = createException(MAL, "txtsim.similarity", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-
-	lefti = bat_iterator(left);
-	righti = bat_iterator(right);
-	vals = Tloc(bn, 0);
-	for (BUN i = 0; i < q && !msg; i++) {
-		const char *x = BUNtvar(lefti, i);
-		const char *y = BUNtvar(righti, i);
-
-		if (strNil(x) || strNil(y)) {
-			vals[i] = dbl_nil;
-			nils = true;
-		} else {
-			msg = fstrcmp_impl_internal(&vals[i], &fdiag_buf, &fdiag_buflen, x, y, 0.0);
-		}
-	}
-	bat_iterator_end(&lefti);
-	bat_iterator_end(&righti);
-
-bailout:
-	GDKfree(fdiag_buf);
-	if (bn && !msg) {
-		BATsetcount(bn, q);
-		bn->tnil = nils;
-		bn->tnonil = !nils;
-		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = BATcount(bn) <= 1;
-		bn->trevsorted = BATcount(bn) <= 1;
-		*res = bn->batCacheid;
-		BBPkeepref(bn);
-	} else if (bn)
-		BBPreclaim(bn);
-	if (left)
-		BBPunfix(left->batCacheid);
-	if (right)
-		BBPunfix(right->batCacheid);
-	return msg;
+	return fstrcmp_impl(ret, string1, string2, &min);
 }
 
 
 /* ============ Q-GRAM SELF JOIN ============== */
 
-static str
+str
 CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, flt *c, int *k)
 {
 	BAT *qgram, *id, *pos, *len;
@@ -889,27 +915,19 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 		throw(MAL, "txtsim.qgramselfjoin", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
-	BATiter qgrami = bat_iterator(qgram);
-	BATiter idi = bat_iterator(id);
-	BATiter posi = bat_iterator(pos);
-	BATiter leni = bat_iterator(len);
-	if (qgrami.type != TYPE_oid)
+	if (qgram->ttype != TYPE_oid)
 		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": tail of BAT qgram must be oid");
-	else if (idi.type != TYPE_int)
+			  SEMANTIC_TYPE_MISMATCH ": tail of BAT qgram must be oid");
+	else if (id->ttype != TYPE_int)
 		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": tail of BAT id must be int");
-	else if (posi.type != TYPE_int)
+			  SEMANTIC_TYPE_MISMATCH ": tail of BAT id must be int");
+	else if (pos->ttype != TYPE_int)
 		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": tail of BAT pos must be int");
-	else if (leni.type != TYPE_int)
+			  SEMANTIC_TYPE_MISMATCH ": tail of BAT pos must be int");
+	else if (len->ttype != TYPE_int)
 		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": tail of BAT len must be int");
+			  SEMANTIC_TYPE_MISMATCH ": tail of BAT len must be int");
 	if (msg) {
-		bat_iterator_end(&qgrami);
-		bat_iterator_end(&idi);
-		bat_iterator_end(&posi);
-		bat_iterator_end(&leni);
 		BBPunfix(qgram->batCacheid);
 		BBPunfix(id->batCacheid);
 		BBPunfix(pos->batCacheid);
@@ -918,38 +936,38 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 	}
 
 	n = BATcount(qgram);
+	qbuf = (oid *) Tloc(qgram, 0);
+	ibuf = (int *) Tloc(id, 0);
+	pbuf = (int *) Tloc(pos, 0);
+	lbuf = (int *) Tloc(len, 0);
 
-	/* if (BATcount(qgram)>1 && !qgrami.sorted) throw(MAL, "tstsim.qgramselfjoin", SEMANTIC_TYPE_MISMATCH); */
+	/* if (BATcount(qgram)>1 && !BATtordered(qgram)) throw(MAL, "tstsim.qgramselfjoin", SEMANTIC_TYPE_MISMATCH); */
 
 	if (!ALIGNsynced(qgram, id))
 		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": qgram and id are not synced");
+			  SEMANTIC_TYPE_MISMATCH ": qgram and id are not synced");
 
 	else if (!ALIGNsynced(qgram, pos))
 		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": qgram and pos are not synced");
+			  SEMANTIC_TYPE_MISMATCH ": qgram and pos are not synced");
 	else if (!ALIGNsynced(qgram, len))
 		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": qgram and len are not synced");
+			  SEMANTIC_TYPE_MISMATCH ": qgram and len are not synced");
 
-	else if (qgrami.width != ATOMsize(qgrami.type))
+	else if (Tsize(qgram) != ATOMsize(qgram->ttype))
 		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": qgram is not a true void bat");
-	else if (idi.width != ATOMsize(idi.type))
+			  SEMANTIC_TYPE_MISMATCH ": qgram is not a true void bat");
+	else if (Tsize(id) != ATOMsize(id->ttype))
 		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": id is not a true void bat");
+			  SEMANTIC_TYPE_MISMATCH ": id is not a true void bat");
 
-	else if (posi.width != ATOMsize(posi.type))
+	else if (Tsize(pos) != ATOMsize(pos->ttype))
 		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": pos is not a true void bat");
-	else if (leni.width != ATOMsize(leni.type))
+			  SEMANTIC_TYPE_MISMATCH ": pos is not a true void bat");
+	else if (Tsize(len) != ATOMsize(len->ttype))
 		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": len is not a true void bat");
+			  SEMANTIC_TYPE_MISMATCH ": len is not a true void bat");
 	if (msg) {
-		bat_iterator_end(&qgrami);
-		bat_iterator_end(&idi);
-		bat_iterator_end(&posi);
-		bat_iterator_end(&leni);
 		BBPunfix(qgram->batCacheid);
 		BBPunfix(id->batCacheid);
 		BBPunfix(pos->batCacheid);
@@ -960,10 +978,6 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 	bn = COLnew(0, TYPE_int, n, TRANSIENT);
 	bn2 = COLnew(0, TYPE_int, n, TRANSIENT);
 	if (bn == NULL || bn2 == NULL){
-		bat_iterator_end(&qgrami);
-		bat_iterator_end(&idi);
-		bat_iterator_end(&posi);
-		bat_iterator_end(&leni);
 		BBPreclaim(bn);
 		BBPreclaim(bn2);
 		BBPunfix(qgram->batCacheid);
@@ -973,19 +987,11 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 		throw(MAL, "txtsim.qgramselfjoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	qbuf = (oid *) qgrami.base;
-	ibuf = (int *) idi.base;
-	pbuf = (int *) posi.base;
-	lbuf = (int *) leni.base;
 	for (i = 0; i < n - 1; i++) {
 		for (j = i + 1; (j < n && qbuf[j] == qbuf[i] && pbuf[j] <= (pbuf[i] + (*k + *c * MYMIN(lbuf[i], lbuf[j])))); j++) {
 			if (ibuf[i] != ibuf[j] && abs(lbuf[i] - lbuf[j]) <= (*k + *c * MYMIN(lbuf[i], lbuf[j]))) {
 				if (BUNappend(bn, ibuf + i, false) != GDK_SUCCEED ||
 					BUNappend(bn2, ibuf + j, false) != GDK_SUCCEED) {
-					bat_iterator_end(&qgrami);
-					bat_iterator_end(&idi);
-					bat_iterator_end(&posi);
-					bat_iterator_end(&leni);
 					BBPunfix(qgram->batCacheid);
 					BBPunfix(id->batCacheid);
 					BBPunfix(pos->batCacheid);
@@ -997,20 +1003,14 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 			}
 		}
 	}
-	bat_iterator_end(&qgrami);
-	bat_iterator_end(&idi);
-	bat_iterator_end(&posi);
-	bat_iterator_end(&leni);
 
 	BBPunfix(qgram->batCacheid);
 	BBPunfix(id->batCacheid);
 	BBPunfix(pos->batCacheid);
 	BBPunfix(len->batCacheid);
 
-	*res1 = bn->batCacheid;
-	BBPkeepref(bn);
-	*res2 = bn2->batCacheid;
-	BBPkeepref(bn2);
+	BBPkeepref(*res1 = bn->batCacheid);
+	BBPkeepref(*res2 = bn2->batCacheid);
 
 	return MAL_SUCCEED;
 }
@@ -1040,7 +1040,7 @@ utf8strncpy(char *buf, size_t bufsize, const char *src, size_t utf8len)
 	return cnt;
 }
 
-static str
+str
 CMDstr2qgrams(bat *ret, str *val)
 {
 	BAT *bn;
@@ -1073,32 +1073,7 @@ CMDstr2qgrams(bat *ret, str *val)
 				i++;
 		}
 	}
-	*ret = bn->batCacheid;
-	BBPkeepref(bn);
+	BBPkeepref(*ret = bn->batCacheid);
 	GDKfree(s);
 	return MAL_SUCCEED;
 }
-
-#include "mel.h"
-mel_func txtsim_init_funcs[] = {
- command("txtsim", "levenshtein", levenshtein_impl, false, "Calculates Levenshtein distance (edit distance) between two strings, variable operation costs (ins/del, replacement, transposition)", args(1,6, arg("",int),arg("s",str),arg("t",str),arg("insdel_cost",int),arg("replace_cost",int),arg("transpose_cost",int))),
- command("txtsim", "levenshtein", levenshteinbasic_impl, false, "Calculates Levenshtein distance (edit distance) between two strings", args(1,3, arg("",int),arg("s",str),arg("t",str))),
- command("txtsim", "editdistance", levenshteinbasic_impl, false, "Alias for Levenshtein(str,str)", args(1,3, arg("",int),arg("s",str),arg("t",str))),
- command("txtsim", "editdistance2", levenshteinbasic2_impl, false, "Calculates Levenshtein distance (edit distance) between two strings. Cost of transposition is 1 instead of 2", args(1,3, arg("",int),arg("s",str),arg("t",str))),
- command("txtsim", "similarity", fstrcmp_impl, false, "Normalized edit distance between two strings", args(1,4, arg("",dbl),arg("string1",str),arg("string2",str),arg("minimum",dbl))),
- command("txtsim", "similarity", fstrcmp0_impl, false, "Normalized edit distance between two strings", args(1,3, arg("",dbl),arg("string1",str),arg("string2",str))),
- command("battxtsim", "similarity", fstrcmp0_impl_bulk, false, "Normalized edit distance between two strings", args(1,3, batarg("",dbl),batarg("string1",str),batarg("string2",str))),
- command("txtsim", "soundex", soundex_impl, false, "Soundex function for phonetic matching", args(1,2, arg("",str),arg("name",str))),
- command("txtsim", "stringdiff", stringdiff_impl, false, "calculate the soundexed editdistance", args(1,3, arg("",int),arg("s1",str),arg("s2",str))),
- command("txtsim", "qgramnormalize", CMDqgramnormalize, false, "'Normalizes' strings (eg. toUpper and replaces non-alphanumerics with one space", args(1,2, arg("",str),arg("input",str))),
- command("txtsim", "qgramselfjoin", CMDqgramselfjoin, false, "QGram self-join on ordered(!) qgram tables and sub-ordered q-gram positions", args(2,8, batarg("",int),batarg("",int),batarg("qgram",oid),batarg("id",oid),batarg("pos",int),batarg("len",int),arg("c",flt),arg("k",int))),
- command("txtsim", "str2qgrams", CMDstr2qgrams, false, "Break the string into 4-grams", args(1,2, batarg("",str),arg("s",str))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_txtsim_mal)
-{ mal_module("txtsim", NULL, txtsim_init_funcs); }

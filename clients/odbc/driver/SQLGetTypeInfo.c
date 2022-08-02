@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -58,10 +58,10 @@ static const struct types {
 	 * to paste into an SQL query (i.e. including quotes). */
 	{
 		.type_name = "uuid",
-		.data_type = SQL_GUID,	/* -11 */
+		.data_type = SQL_GUID,
 		.column_size = 36,
-		.literal_prefix = "'uuid '''",
-		.literal_suffix = "''''",
+		.literal_prefix = "NULL",
+		.literal_suffix = "NULL",
 		.create_params = "NULL",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
@@ -69,7 +69,7 @@ static const struct types {
 		.unsigned_attribute = -1,
 		.fixed_prec_scale = SQL_FALSE,
 		.auto_unique_value = -1,
-		.local_type_name = "'uuid'",
+		.local_type_name = "NULL",
 		.minimum_scale = -1,
 		.maximum_scale = -1,
 		.sql_data_type = SQL_GUID,
@@ -79,7 +79,7 @@ static const struct types {
 	},
 	{
 		.type_name = "character large object",
-		.data_type = SQL_WLONGVARCHAR,	/* -10 */
+		.data_type = SQL_WLONGVARCHAR,
 		.column_size = 1000000,
 		.literal_prefix = "''''",
 		.literal_suffix = "''''",
@@ -99,50 +99,8 @@ static const struct types {
 		.interval_precision = -1,
 	},
 	{
-		.type_name = "json",
-		.data_type = SQL_WLONGVARCHAR,	/* -10 */
-		.column_size = 1000000,
-		.literal_prefix = "'json '''",
-		.literal_suffix = "''''",
-		.create_params = "NULL",
-		.nullable = SQL_NULLABLE,
-		.case_sensitive = SQL_TRUE,
-		.searchable = SQL_SEARCHABLE,
-		.unsigned_attribute = -1,
-		.fixed_prec_scale = SQL_FALSE,
-		.auto_unique_value = SQL_FALSE,
-		.local_type_name = "'json'",
-		.minimum_scale = -1,
-		.maximum_scale = -1,
-		.sql_data_type = SQL_WLONGVARCHAR,
-		.sql_datetime_sub = -1,
-		.num_prec_radix = -1,
-		.interval_precision = -1,
-	},
-	{
-		.type_name = "url",
-		.data_type = SQL_WLONGVARCHAR,	/* -10 */
-		.column_size = 1000000,
-		.literal_prefix = "'url '''",
-		.literal_suffix = "''''",
-		.create_params = "NULL",
-		.nullable = SQL_NULLABLE,
-		.case_sensitive = SQL_TRUE,
-		.searchable = SQL_SEARCHABLE,
-		.unsigned_attribute = -1,
-		.fixed_prec_scale = SQL_FALSE,
-		.auto_unique_value = SQL_FALSE,
-		.local_type_name = "'url'",
-		.minimum_scale = -1,
-		.maximum_scale = -1,
-		.sql_data_type = SQL_WLONGVARCHAR,
-		.sql_datetime_sub = -1,
-		.num_prec_radix = -1,
-		.interval_precision = -1,
-	},
-	{
 		.type_name = "varchar",
-		.data_type = SQL_WVARCHAR,	/* -9 */
+		.data_type = SQL_WVARCHAR,
 		.column_size = 1000000,
 		.literal_prefix = "''''",
 		.literal_suffix = "''''",
@@ -163,7 +121,7 @@ static const struct types {
 	},
 	{
 		.type_name = "character",
-		.data_type = SQL_WCHAR,	/* -8 */
+		.data_type = SQL_WCHAR,
 		.column_size = 1000000,
 		.literal_prefix = "''''",
 		.literal_suffix = "''''",
@@ -184,7 +142,7 @@ static const struct types {
 	},
 	{
 		.type_name = "char",
-		.data_type = SQL_WCHAR,	/* -8 */
+		.data_type = SQL_WCHAR,
 		.column_size = 1000000,
 		.literal_prefix = "''''",
 		.literal_suffix = "''''",
@@ -205,7 +163,7 @@ static const struct types {
 	},
 	{
 		.type_name = "boolean",
-		.data_type = SQL_BIT,	/* -7 */
+		.data_type = SQL_BIT,
 		.column_size = 1,
 		.literal_prefix = "NULL",
 		.literal_suffix = "NULL",
@@ -213,10 +171,10 @@ static const struct types {
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
 		.searchable = SQL_PRED_BASIC,
-		.unsigned_attribute = SQL_TRUE,
+		.unsigned_attribute = SQL_FALSE,
 		.fixed_prec_scale = SQL_TRUE,
 		.auto_unique_value = SQL_FALSE,
-		.local_type_name = "'boolean'",
+		.local_type_name = "NULL",
 		.minimum_scale = -1,
 		.maximum_scale = -1,
 		.sql_data_type = SQL_BIT,
@@ -226,11 +184,11 @@ static const struct types {
 	},
 	{
 		.type_name = "tinyint",
-		.data_type = SQL_TINYINT,	/* -6 */
-		.column_size = 3,
+		.data_type = SQL_TINYINT,
+		.column_size = 2,
 		.literal_prefix = "NULL",
 		.literal_suffix = "NULL",
-		.create_params = "NULL",
+		.create_params = "'precision'",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
 		.searchable = SQL_PRED_BASIC,
@@ -247,11 +205,11 @@ static const struct types {
 	},
 	{
 		.type_name = "bigint",
-		.data_type = SQL_BIGINT,	/* -5 */
+		.data_type = SQL_BIGINT,
 		.column_size = 19,
 		.literal_prefix = "NULL",
 		.literal_suffix = "NULL",
-		.create_params = "NULL",
+		.create_params = "'precision'",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
 		.searchable = SQL_PRED_BASIC,
@@ -267,31 +225,10 @@ static const struct types {
 		.interval_precision = -1,
 	},
 	{
-		.type_name = "bigserial",
-		.data_type = SQL_BIGINT,	/* -5 */
-		.column_size = 19,
-		.literal_prefix = "NULL",
-		.literal_suffix = "NULL",
-		.create_params = "NULL",
-		.nullable = SQL_NO_NULLS,
-		.case_sensitive = SQL_FALSE,
-		.searchable = SQL_PRED_BASIC,
-		.unsigned_attribute = SQL_FALSE,
-		.fixed_prec_scale = SQL_FALSE,
-		.auto_unique_value = SQL_TRUE,
-		.local_type_name = "'bigserial'",
-		.minimum_scale = 0,
-		.maximum_scale = 0,
-		.sql_data_type = SQL_BIGINT,
-		.sql_datetime_sub = -1,
-		.num_prec_radix = 10,
-		.interval_precision = -1,
-	},
-	{
 		.type_name = "binary large object",
-		.data_type = SQL_LONGVARBINARY,	/* -4 */
+		.data_type = SQL_LONGVARBINARY,
 		.column_size = 1000000,
-		.literal_prefix = "'x'''",
+		.literal_prefix = "''''",
 		.literal_suffix = "''''",
 		.create_params = "NULL",
 		.nullable = SQL_NULLABLE,
@@ -310,9 +247,9 @@ static const struct types {
 	},
 	{
 		.type_name = "binary large object",
-		.data_type = SQL_VARBINARY,	/* -3 */
+		.data_type = SQL_VARBINARY,
 		.column_size = 1000000,
-		.literal_prefix = "'x'''",
+		.literal_prefix = "''''",
 		.literal_suffix = "''''",
 		.create_params = "'length'",
 		.nullable = SQL_NULLABLE,
@@ -321,7 +258,7 @@ static const struct types {
 		.unsigned_attribute = -1,
 		.fixed_prec_scale = SQL_FALSE,
 		.auto_unique_value = SQL_FALSE,
-		.local_type_name = "'blob(max_length)'",
+		.local_type_name = "NULL",
 		.minimum_scale = -1,
 		.maximum_scale = -1,
 		.sql_data_type = SQL_VARBINARY,
@@ -329,10 +266,10 @@ static const struct types {
 		.num_prec_radix = -1,
 		.interval_precision = -1,
 	},
-	/* SQL_BINARY	-2 */
+	/* SQL_BINARY */
 	{
 		.type_name = "character large object",
-		.data_type = SQL_LONGVARCHAR,	/* -1 */
+		.data_type = SQL_LONGVARCHAR,
 		.column_size = 1000000,
 		.literal_prefix = "''''",
 		.literal_suffix = "''''",
@@ -353,7 +290,7 @@ static const struct types {
 	},
 	{
 		.type_name = "char",
-		.data_type = SQL_CHAR,	/* 1 */
+		.data_type = SQL_CHAR,
 		.column_size = 1000000,
 		.literal_prefix = "''''",
 		.literal_suffix = "''''",
@@ -374,7 +311,7 @@ static const struct types {
 	},
 	{
 		.type_name = "numeric",
-		.data_type = SQL_NUMERIC,	/* 2 */
+		.data_type = SQL_NUMERIC,
 		.column_size = 19,
 		.literal_prefix = "NULL",
 		.literal_suffix = "NULL",
@@ -387,7 +324,7 @@ static const struct types {
 		.auto_unique_value = SQL_FALSE,
 		.local_type_name = "NULL",
 		.minimum_scale = 0,
-		.maximum_scale = 18,
+		.maximum_scale = 19,
 		.sql_data_type = SQL_NUMERIC,
 		.sql_datetime_sub = -1,
 		.num_prec_radix = 10,
@@ -395,7 +332,7 @@ static const struct types {
 	},
 	{
 		.type_name = "decimal",
-		.data_type = SQL_DECIMAL,	/* 3 */
+		.data_type = SQL_DECIMAL,
 		.column_size = 19,
 		.literal_prefix = "NULL",
 		.literal_suffix = "NULL",
@@ -408,7 +345,7 @@ static const struct types {
 		.auto_unique_value = SQL_FALSE,
 		.local_type_name = "NULL",
 		.minimum_scale = 0,
-		.maximum_scale = 18,
+		.maximum_scale = 19,
 		.sql_data_type = SQL_DECIMAL,
 		.sql_datetime_sub = -1,
 		.num_prec_radix = 10,
@@ -416,11 +353,11 @@ static const struct types {
 	},
 	{
 		.type_name = "integer",
-		.data_type = SQL_INTEGER,	/* 4 */
-		.column_size = 10,
+		.data_type = SQL_INTEGER,
+		.column_size = 9,
 		.literal_prefix = "NULL",
 		.literal_suffix = "NULL",
-		.create_params = "NULL",
+		.create_params = "'precision'",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
 		.searchable = SQL_PRED_BASIC,
@@ -437,11 +374,11 @@ static const struct types {
 	},
 	{
 		.type_name = "int",
-		.data_type = SQL_INTEGER,	/* 4 */
-		.column_size = 10,
+		.data_type = SQL_INTEGER,
+		.column_size = 9,
 		.literal_prefix = "NULL",
 		.literal_suffix = "NULL",
-		.create_params = "NULL",
+		.create_params = "'precision'",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
 		.searchable = SQL_PRED_BASIC,
@@ -458,39 +395,18 @@ static const struct types {
 	},
 	{
 		.type_name = "mediumint",
-		.data_type = SQL_INTEGER,	/* 4 */
-		.column_size = 10,
+		.data_type = SQL_INTEGER,
+		.column_size = 9,
 		.literal_prefix = "NULL",
 		.literal_suffix = "NULL",
-		.create_params = "NULL",
+		.create_params = "'precision'",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
 		.searchable = SQL_PRED_BASIC,
 		.unsigned_attribute = SQL_FALSE,
 		.fixed_prec_scale = SQL_FALSE,
 		.auto_unique_value = SQL_FALSE,
-		.local_type_name = "'int'",
-		.minimum_scale = 0,
-		.maximum_scale = 0,
-		.sql_data_type = SQL_INTEGER,
-		.sql_datetime_sub = -1,
-		.num_prec_radix = 10,
-		.interval_precision = -1,
-	},
-	{
-		.type_name = "serial",
-		.data_type = SQL_INTEGER,	/* 4 */
-		.column_size = 10,
-		.literal_prefix = "NULL",
-		.literal_suffix = "NULL",
-		.create_params = "NULL",
-		.nullable = SQL_NO_NULLS,
-		.case_sensitive = SQL_FALSE,
-		.searchable = SQL_PRED_BASIC,
-		.unsigned_attribute = SQL_FALSE,
-		.fixed_prec_scale = SQL_FALSE,
-		.auto_unique_value = SQL_TRUE,
-		.local_type_name = "'serial'",
+		.local_type_name = "NULL",
 		.minimum_scale = 0,
 		.maximum_scale = 0,
 		.sql_data_type = SQL_INTEGER,
@@ -500,11 +416,11 @@ static const struct types {
 	},
 	{
 		.type_name = "smallint",
-		.data_type = SQL_SMALLINT,	/* 5 */
-		.column_size = 5,
+		.data_type = SQL_SMALLINT,
+		.column_size = 4,
 		.literal_prefix = "NULL",
 		.literal_suffix = "NULL",
-		.create_params = "NULL",
+		.create_params = "'precision'",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
 		.searchable = SQL_PRED_BASIC,
@@ -521,7 +437,7 @@ static const struct types {
 	},
 	{
 		.type_name = "float",
-		.data_type = SQL_FLOAT,	/* 6 */
+		.data_type = SQL_FLOAT,
 		.column_size = DBL_MANT_DIG,
 		.literal_prefix = "NULL",
 		.literal_suffix = "NULL",
@@ -542,7 +458,7 @@ static const struct types {
 	},
 	{
 		.type_name = "real",
-		.data_type = SQL_REAL,	/* 7 */
+		.data_type = SQL_REAL,
 		.column_size = FLT_MANT_DIG,
 		.literal_prefix = "NULL",
 		.literal_suffix = "NULL",
@@ -563,7 +479,7 @@ static const struct types {
 	},
 	{
 		.type_name = "double",
-		.data_type = SQL_DOUBLE,	/* 8 */
+		.data_type = SQL_DOUBLE,
 		.column_size = DBL_MANT_DIG,
 		.literal_prefix = "NULL",
 		.literal_suffix = "NULL",
@@ -584,7 +500,7 @@ static const struct types {
 	},
 	{
 		.type_name = "varchar",
-		.data_type = SQL_VARCHAR,	/* 12 */
+		.data_type = SQL_VARCHAR,
 		.column_size = 1000000,
 		.literal_prefix = "''''",
 		.literal_suffix = "''''",
@@ -605,9 +521,9 @@ static const struct types {
 	},
 	{
 		.type_name = "date",
-		.data_type = SQL_TYPE_DATE,	/* 91 */
+		.data_type = SQL_TYPE_DATE,
 		.column_size = 10,
-		.literal_prefix = "'date '''",
+		.literal_prefix = "''''",
 		.literal_suffix = "''''",
 		.create_params = "NULL",
 		.nullable = SQL_NULLABLE,
@@ -626,9 +542,9 @@ static const struct types {
 	},
 	{
 		.type_name = "time",
-		.data_type = SQL_TYPE_TIME,	/* 92 */
-		.column_size = 8,
-		.literal_prefix = "'time '''",
+		.data_type = SQL_TYPE_TIME,
+		.column_size = 12,
+		.literal_prefix = "''''",
 		.literal_suffix = "''''",
 		.create_params = "NULL",
 		.nullable = SQL_NULLABLE,
@@ -638,29 +554,8 @@ static const struct types {
 		.fixed_prec_scale = SQL_FALSE,
 		.auto_unique_value = -1,
 		.local_type_name = "NULL",
-		.minimum_scale = 0,
-		.maximum_scale = 0,
-		.sql_data_type = SQL_DATETIME,
-		.sql_datetime_sub = SQL_CODE_TIME,
-		.num_prec_radix = -1,
-		.interval_precision = -1,
-	},
-	{
-		.type_name = "time(precision)",
-		.data_type = SQL_TYPE_TIME,	/* 92 */
-		.column_size = 9 + 6,
-		.literal_prefix = "'time '''",
-		.literal_suffix = "''''",
-		.create_params = "'precision'",
-		.nullable = SQL_NULLABLE,
-		.case_sensitive = SQL_FALSE,
-		.searchable = SQL_PRED_BASIC,
-		.unsigned_attribute = -1,
-		.fixed_prec_scale = SQL_FALSE,
-		.auto_unique_value = -1,
-		.local_type_name = "NULL",
-		.minimum_scale = 0,
-		.maximum_scale = 6,
+		.minimum_scale = -1,
+		.maximum_scale = -1,
 		.sql_data_type = SQL_DATETIME,
 		.sql_datetime_sub = SQL_CODE_TIME,
 		.num_prec_radix = -1,
@@ -668,30 +563,9 @@ static const struct types {
 	},
 	{
 		.type_name = "timestamp",
-		.data_type = SQL_TYPE_TIMESTAMP,	/* 93 */
-		.column_size = 19,
-		.literal_prefix = "'timestamp '''",
-		.literal_suffix = "''''",
-		.create_params = "NULL",
-		.nullable = SQL_NULLABLE,
-		.case_sensitive = SQL_FALSE,
-		.searchable = SQL_PRED_BASIC,
-		.unsigned_attribute = -1,
-		.fixed_prec_scale = SQL_FALSE,
-		.auto_unique_value = -1,
-		.local_type_name = "NULL",
-		.minimum_scale = 0,
-		.maximum_scale = 0,
-		.sql_data_type = SQL_DATETIME,
-		.sql_datetime_sub = SQL_CODE_TIMESTAMP,
-		.num_prec_radix = -1,
-		.interval_precision = -1,
-	},
-	{
-		.type_name = "timestamp(precision)",
-		.data_type = SQL_TYPE_TIMESTAMP,	/* 93 */
-		.column_size = 20 + 6,
-		.literal_prefix = "'timestamp '''",
+		.data_type = SQL_TYPE_TIMESTAMP,
+		.column_size = 23,
+		.literal_prefix = "''''",
 		.literal_suffix = "''''",
 		.create_params = "'precision'",
 		.nullable = SQL_NULLABLE,
@@ -701,8 +575,8 @@ static const struct types {
 		.fixed_prec_scale = SQL_FALSE,
 		.auto_unique_value = -1,
 		.local_type_name = "NULL",
-		.minimum_scale = 0,
-		.maximum_scale = 6,
+		.minimum_scale = -1,
+		.maximum_scale = -1,
 		.sql_data_type = SQL_DATETIME,
 		.sql_datetime_sub = SQL_CODE_TIMESTAMP,
 		.num_prec_radix = -1,
@@ -710,11 +584,11 @@ static const struct types {
 	},
 	{
 		.type_name = "interval year",
-		.data_type = SQL_INTERVAL_YEAR,	/* 101 */
+		.data_type = SQL_INTERVAL_YEAR,
 		.column_size = 9,
 		.literal_prefix = "''''",
 		.literal_suffix = "''''",
-		.create_params = "NULL",
+		.create_params = "'precision'",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
 		.searchable = SQL_PRED_BASIC,
@@ -731,11 +605,11 @@ static const struct types {
 	},
 	{
 		.type_name = "interval month",
-		.data_type = SQL_INTERVAL_MONTH,	/* 102 */
+		.data_type = SQL_INTERVAL_MONTH,
 		.column_size = 10,
 		.literal_prefix = "''''",
 		.literal_suffix = "''''",
-		.create_params = "NULL",
+		.create_params = "'precision'",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
 		.searchable = SQL_PRED_BASIC,
@@ -752,11 +626,11 @@ static const struct types {
 	},
 	{
 		.type_name = "interval day",
-		.data_type = SQL_INTERVAL_DAY,	/* 103 */
+		.data_type = SQL_INTERVAL_DAY,
 		.column_size = 5,
 		.literal_prefix = "''''",
 		.literal_suffix = "''''",
-		.create_params = "NULL",
+		.create_params = "'precision'",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
 		.searchable = SQL_PRED_BASIC,
@@ -773,11 +647,11 @@ static const struct types {
 	},
 	{
 		.type_name = "interval hour",
-		.data_type = SQL_INTERVAL_HOUR,	/* 104 */
+		.data_type = SQL_INTERVAL_HOUR,
 		.column_size = 6,
 		.literal_prefix = "''''",
 		.literal_suffix = "''''",
-		.create_params = "NULL",
+		.create_params = "'precision'",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
 		.searchable = SQL_PRED_BASIC,
@@ -794,11 +668,11 @@ static const struct types {
 	},
 	{
 		.type_name = "interval minute",
-		.data_type = SQL_INTERVAL_MINUTE,	/* 105 */
+		.data_type = SQL_INTERVAL_MINUTE,
 		.column_size = 8,
 		.literal_prefix = "''''",
 		.literal_suffix = "''''",
-		.create_params = "NULL",
+		.create_params = "'precision'",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
 		.searchable = SQL_PRED_BASIC,
@@ -815,7 +689,7 @@ static const struct types {
 	},
 	{
 		.type_name = "interval second",
-		.data_type = SQL_INTERVAL_SECOND,	/* 106 */
+		.data_type = SQL_INTERVAL_SECOND,
 		.column_size = 10,
 		.literal_prefix = "''''",
 		.literal_suffix = "''''",
@@ -836,11 +710,11 @@ static const struct types {
 	},
 	{
 		.type_name = "interval year to month",
-		.data_type = SQL_INTERVAL_YEAR_TO_MONTH,	/* 107 */
+		.data_type = SQL_INTERVAL_YEAR_TO_MONTH,
 		.column_size = 12,
 		.literal_prefix = "''''",
 		.literal_suffix = "''''",
-		.create_params = "NULL",
+		.create_params = "'precision'",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
 		.searchable = SQL_PRED_BASIC,
@@ -857,11 +731,11 @@ static const struct types {
 	},
 	{
 		.type_name = "interval day to hour",
-		.data_type = SQL_INTERVAL_DAY_TO_HOUR,	/* 108 */
+		.data_type = SQL_INTERVAL_DAY_TO_HOUR,
 		.column_size = 8,
 		.literal_prefix = "''''",
 		.literal_suffix = "''''",
-		.create_params = "NULL",
+		.create_params = "'precision'",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
 		.searchable = SQL_PRED_BASIC,
@@ -878,11 +752,11 @@ static const struct types {
 	},
 	{
 		.type_name = "interval day to minute",
-		.data_type = SQL_INTERVAL_DAY_TO_MINUTE,	/* 109 */
+		.data_type = SQL_INTERVAL_DAY_TO_MINUTE,
 		.column_size = 11,
 		.literal_prefix = "''''",
 		.literal_suffix = "''''",
-		.create_params = "NULL",
+		.create_params = "'precision'",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
 		.searchable = SQL_PRED_BASIC,
@@ -899,7 +773,7 @@ static const struct types {
 	},
 	{
 		.type_name = "interval day to second",
-		.data_type = SQL_INTERVAL_DAY_TO_SECOND,	/* 110 */
+		.data_type = SQL_INTERVAL_DAY_TO_SECOND,
 		.column_size = 14,
 		.literal_prefix = "''''",
 		.literal_suffix = "''''",
@@ -920,11 +794,11 @@ static const struct types {
 	},
 	{
 		.type_name = "interval hour to minute",
-		.data_type = SQL_INTERVAL_HOUR_TO_MINUTE,	/* 111 */
+		.data_type = SQL_INTERVAL_HOUR_TO_MINUTE,
 		.column_size = 9,
 		.literal_prefix = "''''",
 		.literal_suffix = "''''",
-		.create_params = "NULL",
+		.create_params = "'precision'",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
 		.searchable = SQL_PRED_BASIC,
@@ -941,7 +815,7 @@ static const struct types {
 	},
 	{
 		.type_name = "interval hour to second",
-		.data_type = SQL_INTERVAL_HOUR_TO_SECOND,	/* 112 */
+		.data_type = SQL_INTERVAL_HOUR_TO_SECOND,
 		.column_size = 12,
 		.literal_prefix = "''''",
 		.literal_suffix = "''''",
@@ -962,7 +836,7 @@ static const struct types {
 	},
 	{
 		.type_name = "interval minute to second",
-		.data_type = SQL_INTERVAL_MINUTE_TO_SECOND,	/* 113 */
+		.data_type = SQL_INTERVAL_MINUTE_TO_SECOND,
 		.column_size = 13,
 		.literal_prefix = "''''",
 		.literal_suffix = "''''",
@@ -983,11 +857,11 @@ static const struct types {
 	},
 	{
 		.type_name = "hugeint",
-		.data_type = SQL_HUGEINT,	/* 0x4000 (defined in ODBCGlobal.h) */
-		.column_size = 38,
+		.data_type = SQL_HUGEINT,
+		.column_size = 19,
 		.literal_prefix = "NULL",
 		.literal_suffix = "NULL",
-		.create_params = "NULL",
+		.create_params = "'precision'",
 		.nullable = SQL_NULLABLE,
 		.case_sensitive = SQL_FALSE,
 		.searchable = SQL_PRED_BASIC,
@@ -1033,7 +907,7 @@ MNDBGetTypeInfo(ODBCStmt *stmt,
 {
 	const struct types *t;
 	int i;
-	char query[4352];
+	char query[4096];
 
 	switch (DataType) {
 	case SQL_ALL_TYPES:
@@ -1057,6 +931,7 @@ MNDBGetTypeInfo(ODBCStmt *stmt,
 	case SQL_VARBINARY:
 	case SQL_LONGVARBINARY:
 	case SQL_BIGINT:
+	case SQL_HUGEINT:
 	case SQL_TINYINT:
 	case SQL_BIT:
 	case SQL_WCHAR:
@@ -1076,12 +951,6 @@ MNDBGetTypeInfo(ODBCStmt *stmt,
 	case SQL_INTERVAL_HOUR_TO_MINUTE:
 	case SQL_INTERVAL_HOUR_TO_SECOND:
 	case SQL_INTERVAL_MINUTE_TO_SECOND:
-		break;
-
-	case SQL_HUGEINT:
-		/* the application shows interest in HUGEINT, so now we
-		 * enable it */
-		stmt->Dbc->allow_hugeint = true;
 		break;
 
 	/* some pre ODBC 3.0 data types which can be mapped to ODBC
@@ -1147,10 +1016,6 @@ MNDBGetTypeInfo(ODBCStmt *stmt,
 	for (t = types; t < &types[sizeof(types) / sizeof(types[0])]; t++) {
 		assert(t == types || t->data_type >= (t-1)->data_type);
 		if (DataType != SQL_ALL_TYPES && DataType != t->data_type)
-			continue;
-		if (DataType == SQL_ALL_TYPES &&
-		    t->data_type == SQL_HUGEINT &&
-		    !stmt->Dbc->allow_hugeint)
 			continue;
 		if (first) {
 			/* specify column types in first set of values */
@@ -1220,30 +1085,29 @@ MNDBGetTypeInfo(ODBCStmt *stmt,
 		}
 	}
 	i += snprintf(query+ i, sizeof(query) - i, ") as monetdb_types "
-		      "(\"TYPE_NAME\""
-		      ",\"DATA_TYPE\""
-		      ",\"COLUMN_SIZE\""
-		      ",\"LITERAL_PREFIX\""
-		      ",\"LITERAL_SUFFIX\""
-		      ",\"CREATE_PARAMS\""
-		      ",\"NULLABLE\""
-		      ",\"CASE_SENSITIVE\""
-		      ",\"SEARCHABLE\""
-		      ",\"UNSIGNED_ATTRIBUTE\""
-		      ",\"FIXED_PREC_SCALE\""
-		      ",\"AUTO_UNIQUE_VALUE\""
-		      ",\"LOCAL_TYPE_NAME\""
-		      ",\"MINIMUM_SCALE\""
-		      ",\"MAXIMUM_SCALE\""
-		      ",\"SQL_DATA_TYPE\""
-		      ",\"SQL_DATETIME_SUB\""
-		      ",\"NUM_PREC_RADIX\""
-		      ",\"INTERVAL_PRECISION\")");
+		      "(type_name"
+		      ",data_type"
+		      ",column_size"
+		      ",literal_prefix"
+		      ",literal_suffix"
+		      ",create_params"
+		      ",nullable"
+		      ",case_sensitive"
+		      ",searchable"
+		      ",unsigned_attribute"
+		      ",fixed_prec_scale"
+		      ",auto_unique_value"
+		      ",local_type_name"
+		      ",minimum_scale"
+		      ",maximum_scale"
+		      ",sql_data_type"
+		      ",sql_datetime_sub"
+		      ",num_prec_radix"
+		      ",interval_precision)");
 	assert(i < (int) sizeof(query));
 
-	/* debug: fprintf(stdout, "SQLGetTypeInfo query (pos: %d, len: %zu):\n%s\n\n", i, strlen(query), query); */
-
-	return MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) i);
+	return MNDBExecDirect(stmt, (SQLCHAR *) query,
+			      (SQLINTEGER) i);
 }
 
 #ifdef ODBCDEBUG

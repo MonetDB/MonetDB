@@ -1,0 +1,66 @@
+stderr of test 'drop_schema_restrict.Bug-6438` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 17:29:19 >  
+# 17:29:19 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33045" "--set" "mapi_usock=/var/tmp/mtest-16183/.s.monetdb.33045" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 17:29:19 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 33045
+# cmdline opt 	mapi_usock = /var/tmp/mtest-16183/.s.monetdb.33045
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2017
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:29:20 >  
+# 17:29:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16183" "--port=33045"
+# 17:29:20 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-30606/.s.monetdb.38993
+QUERY = DROP SCHEMA xyz RESTRICT;
+ERROR = !DROP SCHEMA: unable to drop schema 'xyz' (there are database objects which depend on it)
+CODE  = 2BM37
+MAPI  = (monetdb) /var/tmp/mtest-30606/.s.monetdb.38993
+QUERY = DROP SCHEMA xyz;
+ERROR = !DROP SCHEMA: unable to drop schema 'xyz' (there are database objects which depend on it)
+CODE  = 2BM37
+MAPI  = (monetdb) /var/tmp/mtest-30606/.s.monetdb.38993
+QUERY = SELECT * FROM xyz.t1;
+ERROR = !SELECT: no such schema 'xyz'
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-16183/.s.monetdb.33045
+QUERY = SELECT * FROM xyz.v1;
+ERROR = !SELECT: no such schema 'xyz'
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-16183/.s.monetdb.33045
+QUERY = DROP SCHEMA xyz CASCADE;
+ERROR = !DROP SCHEMA: name xyz does not exist
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-10026/.s.monetdb.37719
+QUERY = DROP SCHEMA xyz2 RESTRICT;
+ERROR = !DROP SCHEMA: unable to drop schema 'xyz2' (there are database objects which depend on it)
+CODE  = 2BM37
+MAPI  = (monetdb) /var/tmp/mtest-10026/.s.monetdb.37719
+QUERY = SELECT * FROM xyz2.t1;
+ERROR = !SELECT: no such table 't1'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-10026/.s.monetdb.37719
+QUERY = SELECT * FROM xyz2.v1;
+ERROR = !SELECT: no such table 'v1'
+CODE  = 42S02
+
+# 17:29:20 >  
+# 17:29:20 >  "Done."
+# 17:29:20 >  
+

@@ -1,0 +1,19 @@
+stderr of test 'variable_names.SF-1838816` in directory 'sql/test/BugTracker` itself:
+
+
+# 00:15:33 >  
+# 00:15:33 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31634 --set xrpc_port=43756 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 00:15:33 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf)
+
+# 00:15:33 >  
+# 00:15:33 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=31634 
+# 00:15:33 >  
+
+
+# 00:15:35 >  
+# 00:15:35 >  Done.
+# 00:15:35 >  
+

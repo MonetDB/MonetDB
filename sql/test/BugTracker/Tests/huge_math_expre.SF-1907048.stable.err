@@ -1,0 +1,19 @@
+stderr of test 'huge_math_expre.SF-1907048` in directory 'sql/test/BugTracker` itself:
+
+
+# 17:16:06 >  
+# 17:16:06 >   mserver5 "--config=/ufs/goncalve/scratch/MonetDB/stable/optimized/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/stable/optimized/MonetDB5//lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/stable/optimized/MonetDB5//lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/stable/optimized/MonetDB5//lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/stable/optimized/MonetDB5//var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/stable/optimized/MonetDB5//var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=38463 --set xrpc_port=40793 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set sql_debug=16384 --set xquery_backend=algebra --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 17:16:06 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/goncalve/scratch/MonetDB/stable/optimized/MonetDB5/etc/monetdb5.conf)
+
+# 17:16:06 >  
+# 17:16:06 >  mclient -lsql -umonetdb -Pmonetdb --host=alviss --port=38463  -G
+# 17:16:06 >  
+
+
+# 17:16:06 >  
+# 17:16:06 >  Done.
+# 17:16:06 >  
+

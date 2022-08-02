@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "ODBCGlobal.h"
@@ -30,14 +30,22 @@ newODBCDesc(ODBCDbc *dbc)
 		addDbcError(dbc, "HY001", NULL, 0);
 		return NULL;
 	}
+	assert(desc);
 
-	*desc = (ODBCDesc) {
-		.Dbc = dbc,
-		.sql_desc_alloc_type = SQL_DESC_ALLOC_USER,
-		.sql_desc_array_size = 1,
-		.sql_desc_bind_type = SQL_BIND_TYPE_DEFAULT,
-		.Type = ODBC_DESC_MAGIC_NR,	/* set it valid */
-	};
+	desc->Dbc = dbc;
+	desc->Error = NULL;
+	desc->RetrievedErrors = 0;
+	desc->Stmt = NULL;
+	desc->descRec = NULL;
+	desc->sql_desc_alloc_type = SQL_DESC_ALLOC_USER;
+	desc->sql_desc_array_size = 1;
+	desc->sql_desc_array_status_ptr = NULL;
+	desc->sql_desc_bind_offset_ptr = NULL;
+	desc->sql_desc_bind_type = SQL_BIND_TYPE_DEFAULT;
+	desc->sql_desc_count = 0;
+	desc->sql_desc_rows_processed_ptr = NULL;
+
+	desc->Type = ODBC_DESC_MAGIC_NR;	/* set it valid */
 	return desc;
 }
 

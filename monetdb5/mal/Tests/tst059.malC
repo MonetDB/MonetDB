@@ -1,0 +1,27 @@
+# three valued logic, using a sequential plan
+# for use in parallel blocks check for the nil in both branches
+# IF b1 THEN RETURN 1;
+# ELSEIF NOT(b1) THEN RETURN 0;
+# ELSE RETURN NULL;
+# END IF;
+
+function threevaluedlogic(B:bit):bit;
+	threevaluedlogic:int:= nil:int ;
+	barrier X_2 := B;
+		return threevaluedlogic:int  := 1:int;
+	exit X_2;
+	barrier X_8 := calc.isnil(B);
+		return threevaluedlogic:int  := nil:int;
+	exit X_8;
+	barrier X_6 := calc.not(B);
+		return threevaluedlogic:int  := 0:int;
+	exit X_6;
+	return threevaluedlogic:int;
+end threevaluedlogic;
+
+z1:= threevaluedlogic(true);
+io.print(z1);
+z2:= threevaluedlogic(false);
+io.print(z2);
+z3:= threevaluedlogic(nil:bit);
+io.print(z3);

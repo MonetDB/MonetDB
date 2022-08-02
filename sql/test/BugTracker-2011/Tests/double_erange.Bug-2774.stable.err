@@ -1,0 +1,39 @@
+stderr of test 'double_erange.Bug-2774` in directory 'sql/test/BugTracker-2011` itself:
+
+
+# 19:20:46 >  
+# 19:20:46 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/HG/Apr2011/prefix/_/var/MonetDB" --set mapi_open=true --set mapi_port=35514 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 19:20:46 >  
+
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /ufs/manegold/_/scratch0/Monet/HG/Apr2011/prefix/_/var/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_alloc_map = no
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	default_pipe = inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector
+# builtin opt 	minimal_pipe = inline,remap,deadcode,multiplex,garbageCollector
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	gdk_dbfarm = /ufs/manegold/_/scratch0/Monet/HG/Apr2011/prefix/_/var/MonetDB
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 35514
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_test_BugTracker-2011
+# cmdline opt 	mal_listing = 0
+
+# 19:28:55 >  
+# 19:28:55 >  mclient -lsql -ftest -i -e --host=rig --port=32288 
+# 19:28:55 >  
+
+
+# 13:53:27 >  
+# 13:53:27 >  "Done."
+# 13:53:27 >  
+

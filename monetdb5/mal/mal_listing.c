@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -117,7 +117,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 			len += strlen(buf+len);
 			GDKfree(cv);
 			showtype = showtype || (getBatType(getVarType(mb,varid)) >= TYPE_date && getBatType(getVarType(mb,varid)) != TYPE_str) ||
-				((isVarTypedef(mb,varid)) && isVarConstant(mb,varid)) || isaBatType(getVarType(mb,varid));
+				((isVarUDFtype(mb,varid) || isVarTypedef(mb,varid)) && isVarConstant(mb,varid)) || isaBatType(getVarType(mb,varid));
 		} else{
 			if ( !isaBatType(getVarType(mb,varid)) && getBatType(getVarType(mb,varid)) >= TYPE_date && getBatType(getVarType(mb,varid)) != TYPE_str ){
 				closequote = 1;
@@ -138,11 +138,11 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 				strcat(buf+len,"\"");
 				len++;
 			}
-			showtype = showtype || closequote > TYPE_str || ((isVarTypedef(mb,varid) || (flg & (LIST_MAL_REMOTE | LIST_MAL_TYPE))) && isVarConstant(mb,varid)) ||
+			showtype = showtype || closequote > TYPE_str || ((isVarUDFtype(mb,varid) || isVarTypedef(mb,varid) || (flg & (LIST_MAL_REMOTE | LIST_MAL_TYPE))) && isVarConstant(mb,varid)) ||
 				(isaBatType(getVarType(mb,varid)) && idx < p->retc);
 
 			if (stk && isaBatType(getVarType(mb,varid)) && stk->stk[varid].val.bval ){
-				BAT *d= BBPquickdesc(stk->stk[varid].val.bval);
+				BAT *d= BBPquickdesc(stk->stk[varid].val.bval, true);
 				if( d)
 					len += snprintf(buf+len,maxlen-len,"[" BUNFMT "]", BATcount(d));
 			}
@@ -151,7 +151,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 
 	// show the type when required or frozen by the user
 	// special care should be taken with constants, they may have been casted
-	if ((flg & LIST_MAL_TYPE) || (idx < p->retc) || isVarTypedef(mb,varid) || showtype){
+	if ((flg & LIST_MAL_TYPE) || (isVarUDFtype(mb, varid) && idx < p->retc) || isVarTypedef(mb,varid) || showtype){
 		strcat(buf + len,":");
 		len++;
 		tpe = getTypeName(getVarType(mb, varid));
@@ -182,6 +182,8 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 	if( mb->inlineProp && !copystring(&t, "inline ", &len))
 		return base;
 	if( mb->unsafeProp && !copystring(&t, "unsafe ", &len))
+		return base;
+	if( mb->sealedProp && !copystring(&t, "sealed ", &len))
 		return base;
 	if (!copystring(&t, operatorName(p->token), &len) ||
 		!copystring(&t, " ", &len) ||
@@ -351,16 +353,12 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	case CMDcall:
 	case ASSIGNsymbol :
 		// is any variable explicit or used
-		/* this code was meant to make it easy to detect functions whose
-		 * result variable was not used anywhere.
-		 * It is not essential
 		for (i = 0; i < p->retc; i++)
-			if ( !isTmpVar(mb,getArg(p,i)) || isVarUsed(mb, getArg(p, i)))
+			if ( !isTmpVar(mb,getArg(p,i)) || isVarUsed(mb, getArg(p, i)) || isVarUDFtype(mb,getArg(p,i)))
 				break;
 
 		if (i == p->retc)
 			break;
-		*/
 
 		/* display multi-assignment list */
 		if (p->retc > 1 && !copystring(&t, "(", &len))
@@ -482,15 +480,6 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 				if (!copystring(&t, " type check needed" , &len))
 					return base;
 			}
-		}
-	}
-	if (flg & LIST_MAL_ALGO) {
-		const char *algo = MT_thread_getalgorithm();
-		if (algo) {
-			if (!copystring(&t, " # ", &len))
-				return base;
-			if (!copystring(&t, algo, &len))
-				return base;
 		}
 	}
 	return base;
@@ -617,26 +606,23 @@ printSignature(stream *fd, Symbol s, int flg)
 void showMalBlkHistory(stream *out, MalBlkPtr mb)
 {
 	MalBlkPtr m=mb;
-	InstrPtr p = NULL,sig;
-	int i, j=0;
+	InstrPtr p,sig;
+	int j=0;
 	str msg;
 
 	sig = getInstrPtr(mb,0);
 	m= m->history;
 	while(m){
-		// find the last optimizer step
-		for( i= m->stop -1; i>0; i--){
-			p= getInstrPtr(m,i);
-			if( p->argc > 1)
-				break;
-		}
-		msg= instruction2str(m, 0, p, FALSE);
-		if (msg ) {
-			mnstr_printf(out,"%s.%s[%2d] %s\n",
-				getModuleId(sig), getFunctionId(sig),j++,msg+3);
-			GDKfree(msg);
-		} else {
-			mnstr_printf(out,"#failed instruction2str()\n");
+		p= getInstrPtr(m,m->stop-1);
+		if( p->token == REMsymbol){
+			msg= instruction2str(m, 0, p, FALSE);
+			if (msg ) {
+				mnstr_printf(out,"%s.%s[%2d] %s\n",
+					getModuleId(sig), getFunctionId(sig),j++,msg+3);
+				GDKfree(msg);
+			} else {
+				mnstr_printf(out,"#failed instruction2str()\n");
+			}
 		}
 		m= m->history;
 	}

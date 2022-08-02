@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -41,16 +41,13 @@ MNDBGetInfo(ODBCDbc *dbc,
 	char buf[64];
 	const char *sValue = NULL;	/* iff non-NULL, return string value */
 	int len = sizeof(SQLUINTEGER);	/* most common size to return */
-	MapiHdl hdl = NULL;
 
 	/* For some info types an active connection is needed */
 	if (!dbc->Connected &&
 	    (InfoType == SQL_DATA_SOURCE_NAME ||
+	     InfoType == SQL_SERVER_NAME ||
 	     InfoType == SQL_DATABASE_NAME ||
-	     InfoType == SQL_DBMS_VER ||
-	     InfoType == SQL_MAX_DRIVER_CONNECTIONS ||
-	     InfoType == SQL_USER_NAME ||
-	     InfoType == SQL_KEYWORDS)) {
+	     InfoType == SQL_USER_NAME)) {
 		/* Connection does not exist */
 		addDbcError(dbc, "08003", NULL, 0);
 		return SQL_ERROR;
@@ -413,7 +410,7 @@ MNDBGetInfo(ODBCDbc *dbc,
 		len = sizeof(SQLINTEGER);
 		break;
 	case SQL_DBMS_NAME:
-		sValue = "MonetDB";
+		sValue = PACKAGE_NAME;
 		break;
 	case SQL_DBMS_VER:
 		snprintf(buf, sizeof(buf), "%02d.%02d.%04d",
@@ -441,10 +438,10 @@ MNDBGetInfo(ODBCDbc *dbc,
 	case SQL_DRIVER_ODBC_VER:
 		sValue = MONETDB_ODBC_VER;
 		break;
-	case SQL_DRIVER_VER:
-		snprintf(buf, sizeof(buf), "%02d.%02d.%04d %s",
-			 MONETDB_VERSION_MAJOR, MONETDB_VERSION_MINOR,
-			 MONETDB_VERSION_PATCH,
+	case SQL_DRIVER_VER: {
+		int maj = 0, min = 0, pat = 0;
+		sscanf(PACKAGE_VERSION, "%d.%d.%d", &maj, &min, &pat);
+		snprintf(buf, sizeof(buf), "%02d.%02d.%04d %s", maj, min, pat,
 #ifdef MONETDB_RELEASE
 			 MONETDB_RELEASE
 #else
@@ -453,6 +450,7 @@ MNDBGetInfo(ODBCDbc *dbc,
 			);
 		sValue = buf;
 		break;
+	}
 	case SQL_DROP_ASSERTION:
 		/* SQL_DA_DROP_ASSERION */
 		break;
@@ -661,13 +659,39 @@ MNDBGetInfo(ODBCDbc *dbc,
 		 * SQL_CA2_SIMULATE_UNIQUE */
 		break;
 	case SQL_KEYWORDS:
-		/* Returns the MonetDB keywords, i.e. a dump of
-		 * sys.keywords */
-		if ((hdl = mapi_query(dbc->mid, "WITH x(k) AS (SELECT keyword FROM sys.keywords ORDER BY keyword) SELECT group_concat(k, ',') FROM x")) != NULL && mapi_fetch_row(hdl)) {
-			sValue = mapi_fetch_field(hdl, 0);
-		} else {
-			addDbcError(dbc, mapi_error(dbc->mid) == MTIMEOUT ? "HYT01" : "HY000", NULL, 0);
-		}
+		/* Returns the MonetDB keywords which are not listed
+		 * as ODBC keyword in the #define SQL_ODBC_KEYWORDS in
+		 * sql.h, collated from
+		 * sql_scan.c:scanner_init_keywords with values
+		 * removed that are in
+		 * sql_parser.y:non_reserved_word */
+		sValue = "ADD,ADMIN,AFTER,AGGREGATE,ALL,ALTER,ALWAYS,AND,ANY,"
+			"ASYMMETRIC,ATOMIC,AUTO_INCREMENT,BEFORE,BEST,BIGINT,"
+			"BIGSERIAL,BINARY,BLOB,CALL,CHAIN,CLOB,COMMITTED,COPY,"
+			"CUME_DIST,CURRENT_ROLE,DELIMITERS,DENSE_RANK,DO,"
+			"EACH,EFFORT,ELSEIF,ENCRYPTED,EVERY,EXCLUDE,FOLLOWING,"
+			"FUNCTION,FWF,GENERATED,GEOMETRYCOLLECTION,"
+			"GEOMETRYCOLLECTIONM,GEOMETRYCOLLECTIONZ,"
+			"GEOMETRYCOLLECTIONZM,HUGEINT,IF,ILIKE,"
+			"LATERAL,LIMIT,LINESTRING,LINESTRINGM,"
+			"LINESTRINGZ,LINESTRINGZM,LOADER,LOCALTIME,"
+			"LOCALTIMESTAMP,LOCKED,MEDIUMINT,MERGE,"
+			"MULTILINESTRING,MULTILINESTRINGM,MULTILINESTRINGZ,"
+			"MULTILINESTRINGZM,MULTIPOINT,MULTIPOINTM,MULTIPOINTZ,"
+			"MULTIPOINTZM,MULTIPOLYGON,MULTIPOLYGONM,"
+			"MULTIPOLYGONZ,MULTIPOLYGONZM,NEW,NOCYCLE,NOMAXVALUE,"
+			"NOMINVALUE,NOW,OFFSET,OLD,ORDERED,OTHERS,OVER,"
+			"PARTITION,PERCENT_RANK,POINT,POINTM,POINTZ,POINTZM,"
+			"POLYGON,POLYGONM,POLYGONZ,POLYGONZM,PRECEDING,"
+			"RANGE,RANK,RECORDS,REFERENCING,REMOTE,"
+			"RENAME,REPEATABLE,REPLICA,RESTART,RETURN,RETURNS,"
+			"ROW_NUMBER,SAMPLE,SAVEPOINT,SEQUENCE,SERIAL,"
+			"SERIALIZABLE,SIMPLE,SPLIT_PART,STDIN,STDOUT,STREAM,"
+			"STRING,SYMMETRIC,TIES,TINYINT,TRIGGER,TRUNCATE,"
+			"UNBOUNDED,UNCOMMITTED,UNENCRYPTED,WHILE,WINDOW,XMLAGG,"
+			"XMLATTRIBUTES,XMLCOMMENT,XMLCONCAT,XMLDOCUMENT,"
+			"XMLELEMENT,XMLFOREST,XMLNAMESPACES,XMLPARSE,XMLPI,"
+			"XMLQUERY,XMLSCHEMA,XMLTEXT,XMLVALIDATE";
 		break;
 	case SQL_LIKE_ESCAPE_CLAUSE:
 		sValue = "Y";	/* "N" */
@@ -695,7 +719,9 @@ MNDBGetInfo(ODBCDbc *dbc,
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_MAX_DRIVER_CONNECTIONS:
-		nValue = dbc->maxclients;
+		nValue = 64;	/* default value of mserver5 */
+		/* TODO query the server for the actual value via SQL:
+		   SELECT value FROM sys.env() WHERE name = 'max_clients'; */
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_MAX_IDENTIFIER_LEN:
@@ -783,10 +809,10 @@ MNDBGetInfo(ODBCDbc *dbc,
 		nValue = SQL_OJ_LEFT |
 			SQL_OJ_RIGHT |
 			SQL_OJ_FULL |
-			SQL_OJ_NESTED |
 			SQL_OJ_NOT_ORDERED |
 			SQL_OJ_INNER |
 			SQL_OJ_ALL_COMPARISON_OPS;
+		/* SQL_OJ_NESTED */
 		break;
 	case SQL_ORDER_BY_COLUMNS_IN_SELECT:
 		sValue = "N";	/* "Y" */
@@ -1168,9 +1194,6 @@ MNDBGetInfo(ODBCDbc *dbc,
 		if (StringLengthPtr)
 			*StringLengthPtr = len;
 	}
-
-	if (hdl)
-		mapi_close_handle(hdl);
 
 	return dbc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }

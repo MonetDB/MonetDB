@@ -1,0 +1,17 @@
+stderr of test 'select_null` in directory 'sql/test/BugDay_2005-10-06_2.8` itself:
+
+
+# 15:31:54 >  
+# 15:31:54 >  Mtimeout -timeout 180 Mserver "--config=/home/sjoerd/src/stable/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/home/sjoerd/src/stable/lib/MonetDB:/home/sjoerd/src/stable/lib/bin" --set "gdk_dbfarm=/home/sjoerd/src/stable/var/MonetDB/dbfarm" --set "sql_logdir=/home/sjoerd/src/stable/var/MonetDB/log" --set mapi_port=34716 --set sql_port=44245 --set xquery_port=58582 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.8" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 15:31:54 >  
+
+
+# 15:31:54 >  
+# 15:31:54 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=44245  < select_null.sql
+# 15:31:54 >  
+
+
+# 15:31:54 >  
+# 15:31:54 >  Done.
+# 15:31:54 >  
+

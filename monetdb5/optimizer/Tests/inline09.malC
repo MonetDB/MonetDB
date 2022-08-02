@@ -1,0 +1,24 @@
+
+# remapping inline functions
+inline function foo(a:str):str;
+	return foo:=a;
+end foo;
+
+inline function bar(a:str,b:str):str;
+	sa:= user.foo(a);
+	sa:= str.substring(sa, 1, 5);
+	sb:= user.foo(b);
+	sb:= str.substring(sb, 1, 3);
+	c:= sa+sb;
+	return bar:=c;
+end bar;
+
+function qry();
+	b:= bat.new(:str);
+	bat.append(b,"HELLO WORLD");
+	z:bat[:str]:= mal.multiplex("user","bar",b,b);
+end qry;
+
+	optimizer.inline("user","qry");
+	optimizer.remap("user","qry");
+	mdb.List("user","qry");

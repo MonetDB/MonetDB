@@ -1,35 +1,53 @@
-###
-# Check that GRANT a ROLE to a USER once works, but GRANT it a second time is
-#   properly rejected with "GRANT: User '<usr>' already has ROLE '<role>'",
-#   which also prevents the related problems described in this bug, i.e.
-#   duplicate entries are created in sys.user_role and subsequent REVOKE
-#   doesn't work.
-###
+import sys
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
-from MonetDBtesting.sqltest import SQLTestCase
 
-with SQLTestCase() as mdb:
-    mdb.connect(username="monetdb", password="monetdb")
-    mdb.execute("create user mydummyuser with password 'mydummyuser' name 'mydummyuser' schema sys;").assertSucceeded()
+def client(input, user, passwd):
+    with process.client('sql', user=user, passwd=passwd, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
+        out, err = c.communicate(input)
+        sys.stdout.write(out)
+        sys.stderr.write(err)
 
-    with SQLTestCase() as tc:
-        tc.connect(username="mydummyuser", password="mydummyuser")
-        tc.execute("set role sysadmin;").assertFailed(err_code="42000", err_message="Role (sysadmin) missing")
 
-        mdb.execute("select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser');").assertSucceeded().assertDataResultMatch([(0,)])
-        mdb.execute("grant sysadmin to mydummyuser;").assertSucceeded()
-        mdb.execute("select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser');").assertSucceeded().assertDataResultMatch([(1,)])
+script1 = '''\
+create user "mydummyuser" with password 'mydummyuser' name 'mydummyuser' schema "sys";
+'''
 
-        tc.execute("set role sysadmin;").assertSucceeded()
+script2 = '''\
+set role "sysadmin"; --error
+'''
 
-        mdb.execute("grant sysadmin to mydummyuser;").assertFailed(err_code="M1M05", err_message="GRANT: User 'mydummyuser' already has ROLE 'sysadmin'")
-        mdb.execute("select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser');").assertSucceeded().assertDataResultMatch([(1,)])
+script3 = '''\
+select count(*) from "user_role" where "login_id" in (select "id" from "sys"."auths" where "name" = 'mydummyuser');
+grant "sysadmin" to "mydummyuser";
+'''
 
-        mdb.execute("revoke sysadmin from mydummyuser;").assertSucceeded()
-        mdb.execute("select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser');").assertSucceeded().assertDataResultMatch([(0,)])
+script4 = '''\
+set role "sysadmin";
+'''
 
-        mdb.execute("revoke sysadmin from mydummyuser;").assertFailed(err_code="01006", err_message="REVOKE: User 'mydummyuser' does not have ROLE 'sysadmin'")
-        mdb.execute("select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser');").assertSucceeded().assertDataResultMatch([(0,)])
+script5 = '''\
+select count(*) from "user_role" where "login_id" in (select "id" from "sys"."auths" where "name" = 'mydummyuser');
+grant "sysadmin" to "mydummyuser"; --error
+select count(*) from "user_role" where "login_id" in (select "id" from "sys"."auths" where "name" = 'mydummyuser');
+revoke "sysadmin" from "mydummyuser";
+select count(*) from "user_role" where "login_id" in (select "id" from "sys"."auths" where "name" = 'mydummyuser');
+revoke "sysadmin" from "mydummyuser"; --error
+select count(*) from "user_role" where "login_id" in (select "id" from "sys"."auths" where "name" = 'mydummyuser');
+drop user "mydummyuser";
+'''
 
-    # clean up
-    mdb.execute("drop user mydummyuser;").assertSucceeded()
+
+def main():
+    client(script1, 'monetdb', 'monetdb')
+    client(script2, 'mydummyuser', 'mydummyuser')
+    client(script3, 'monetdb', 'monetdb')
+    client(script4, 'mydummyuser', 'mydummyuser')
+    client(script5, 'monetdb', 'monetdb')
+
+
+if __name__ == '__main__':
+    main()

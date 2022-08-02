@@ -1,0 +1,66 @@
+stderr of test 'rapi01` in directory 'monetdb5/extras/rapi` itself:
+
+
+# 11:17:46 >  
+# 11:17:46 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31221" "--set" "mapi_usock=/var/tmp/mtest-13991/.s.monetdb.31221" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/Users/hannes/monetdb-install/var/MonetDB/mTests_monetdb5_extras_rapi" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 11:17:46 >  
+
+# builtin opt 	gdk_dbpath = /Users/hannes/monetdb-install/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31221
+# cmdline opt 	mapi_usock = /var/tmp/mtest-13991/.s.monetdb.31221
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /Users/hannes/monetdb-install/var/MonetDB/mTests_monetdb5_extras_rapi
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 11:17:47 >  
+# 11:17:47 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13991" "--port=31221"
+# 11:17:47 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+QUERY = # Error handling tests
+        b:= bat.new(:int);
+        bat.append(b,1804289383);
+        bat.append(b,846930886);
+        bat.append(b,1681692777);
+        bat.append(b,1714636915);
+        bat.append(b,1957747793);
+        bat.append(b,424238335);
+        bat.append(b,719885386);
+        bat.append(b,1649760492);
+        bat.append(b,596516649);
+        bat.append(b,1189641421);
+        
+        io.print(b);
+        
+        # illegal variables being used
+        
+        r:bat[:dbl] := rapi.eval(nil:ptr,"someresult <- Re(fft(somevalue));",b);
+        r:bat[:dbl] := rapi.eval(nil:ptr,"someresult <- Re(fft(arg2));",b);
+        r:bat[:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(somevalue));",b);
+        r:bat[:dbl] := rapi.eval(nil:ptr,"ret1 <- Re(fft(arg2));",b);
+        r:bat[:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(arg5));",b);
+        
+        # illegal R expressions
+        r:bat[:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(arg2)  )  );",b);
+        
+        io.print(r);
+ERROR = !MALException:rapi.eval:Error running R expression: Error in fft(somevalue) : object 'somevalue' not found Calls: as.data.frame -> <Anonymous> -> fft 
+
+# 20:42:39 >  
+# 20:42:39 >  "Done."
+# 20:42:39 >  
+

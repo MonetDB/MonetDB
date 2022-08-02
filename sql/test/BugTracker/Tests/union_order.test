@@ -1,6 +1,0 @@
-statement ok
-create table tmp_one (data numeric(5))
-
-statement ok
-create table tmp_two (data numeric(5))
-

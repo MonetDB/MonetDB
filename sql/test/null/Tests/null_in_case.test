@@ -1,5 +1,0 @@
-query T rowsort
-SELECT CASE WHEN 1 = 1 THEN NULL END
-----
-NULL
-

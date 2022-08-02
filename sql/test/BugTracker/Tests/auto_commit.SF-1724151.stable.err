@@ -1,0 +1,17 @@
+stderr of test 'auto_commit.SF-1724151` in directory 'sql/test/BugTracker` itself:
+
+
+# 13:54:45 >  
+# 13:54:45 >  Mtimeout -timeout 240 Mserver "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_port=31445 --set xrpc_port=44465 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit=" module(sql_server);" ; echo ; echo Over..
+# 13:54:45 >  
+
+
+# 13:54:46 >  
+# 13:54:46 >  Mtimeout -timeout 120 /usr/bin/python auto_commit.SF-1724151.SQL.py auto_commit.SF-1724151 
+# 13:54:46 >  
+
+
+# 13:54:46 >  
+# 13:54:46 >  Done.
+# 13:54:46 >  
+

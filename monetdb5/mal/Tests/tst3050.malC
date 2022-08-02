@@ -1,0 +1,13 @@
+#Parsing properties and keeping them around
+unsafe function dummy(a:int,b:int):int;
+	return dummy:=1;
+end dummy;
+unsafe function myprint():void;
+end myprint;
+
+a:= 0;
+b:= 2;
+t:= user.dummy(a,b);
+
+mdb.var("user","myprint");
+

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* Author(s) M.L. Kersten
@@ -32,8 +32,6 @@
 #include "mal_parser.h"
 #include "mal_authorize.h"
 #include "mal_private.h"
-#include "mal_session.h"
-#include "mal_utils.h"
 
 void
 slash_2_dir_sep(str fname)
@@ -76,6 +74,7 @@ malOpenSource(str file)
 	return fd;
 }
 
+#ifndef HAVE_EMBEDDED
 /*
  * The malLoadScript routine merely reads the contents of a file into
  * the input buffer of the client. It is typically used in situations
@@ -92,7 +91,7 @@ malLoadScript(str name, bstream **fdin)
 	fd = malOpenSource(name);
 	if (fd == NULL || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
 		close_stream(fd);
-		throw(MAL, "malInclude", "could not open file: %s: %s", name, mnstr_peek_error(NULL));
+		throw(MAL, "malInclude", "could not open file: %s", name);
 	}
 	sz = getFileSize(fd);
 	if (sz > (size_t) 1 << 29) {
@@ -111,6 +110,7 @@ malLoadScript(str name, bstream **fdin)
 	}
 	return MAL_SUCCEED;
 }
+#endif
 
 /*
  * Beware that we have to isolate the execution of the source file
@@ -143,65 +143,15 @@ malLoadScript(str name, bstream **fdin)
 	restoreClient1 \
 	restoreClient2
 
-str
-malIncludeString(Client c, const char *name, str mal, int listing, MALfcn address)
-{
-	str msg = MAL_SUCCEED;
-
-	bstream *oldfdin = c->fdin;
-	size_t oldyycur = c->yycur;
-	int oldlisting = c->listing;
-	enum clientmode oldmode = c->mode;
-	int oldblkmode = c->blkmode;
-	ClientInput *oldbak = c->bak;
-	str oldprompt = c->prompt;
-	const char *oldsrcFile = c->srcFile;
-
-	MalStkPtr oldglb = c->glb;
-	Module oldusermodule = c->usermodule;
-	Module oldcurmodule = c->curmodule;
-	Symbol oldprg = c->curprg;
-
-	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
-	c->promptlength = 0;
-	c->listing = listing;
-	c->fdin = NULL;
-
-	size_t mal_len = strlen(mal);
-	buffer* mal_buf;
-	stream* mal_stream;
-
-	if ((mal_buf = GDKmalloc(sizeof(buffer))) == NULL)
-		throw(MAL, "malIncludeString", MAL_MALLOC_FAIL);
-	if ((mal_stream = buffer_rastream(mal_buf, name)) == NULL) {
-		GDKfree(mal_buf);
-		throw(MAL, "malIncludeString", MAL_MALLOC_FAIL);
-	}
-	buffer_init(mal_buf, mal, mal_len);
-	c->srcFile = name;
-	c->yycur = 0;
-	c->bak = NULL;
-	if ((c->fdin = bstream_create(mal_stream, mal_len)) == NULL) {
-		mnstr_destroy(mal_stream);
-		GDKfree(mal_buf);
-		throw(MAL, "malIncludeString", MAL_MALLOC_FAIL);
-	}
-	bstream_next(c->fdin);
-	parseMAL(c, c->curprg, 1, INT_MAX, address);
-	bstream_destroy(c->fdin);
-	c->fdin = NULL;
-	GDKfree(mal_buf);
-
-	restoreClient;
-	return msg;
-}
-
+#ifdef HAVE_EMBEDDED
+extern char* mal_init_inline;
+#endif
 /*
  * The include operation parses the file indentified and
  * leaves the MAL code behind in the 'main' function.
  */
 str
-malInclude(Client c, const char *name, int listing)
+malInclude(Client c, str name, int listing)
 {
 	str msg = MAL_SUCCEED;
 	str filename;
@@ -214,7 +164,7 @@ malInclude(Client c, const char *name, int listing)
 	int oldblkmode = c->blkmode;
 	ClientInput *oldbak = c->bak;
 	str oldprompt = c->prompt;
-	const char *oldsrcFile = c->srcFile;
+	str oldsrcFile = c->srcFile;
 
 	MalStkPtr oldglb = c->glb;
 	Module oldusermodule = c->usermodule;
@@ -226,8 +176,38 @@ malInclude(Client c, const char *name, int listing)
 	c->listing = listing;
 	c->fdin = NULL;
 
+#ifdef HAVE_EMBEDDED
+	(void) filename;
+	(void) p;
+	{
+		size_t mal_init_len = strlen(mal_init_inline);
+		buffer* mal_init_buf;
+		stream* mal_init_stream;
+
+		if ((mal_init_buf = GDKmalloc(sizeof(buffer))) == NULL)
+			throw(MAL, "malInclude", MAL_MALLOC_FAIL);
+		if ((mal_init_stream = buffer_rastream(mal_init_buf, name)) == NULL) {
+			GDKfree(mal_init_buf);
+			throw(MAL, "malInclude", MAL_MALLOC_FAIL);
+		}
+		buffer_init(mal_init_buf, mal_init_inline, mal_init_len);
+		c->srcFile = name;
+		c->yycur = 0;
+		c->bak = NULL;
+		if ((c->fdin = bstream_create(mal_init_stream, mal_init_len)) == NULL) {
+			mnstr_destroy(mal_init_stream);
+			GDKfree(mal_init_buf);
+			throw(MAL, "malInclude", MAL_MALLOC_FAIL);
+		}
+		bstream_next(c->fdin);
+		parseMAL(c, c->curprg, 1, INT_MAX);
+		bstream_destroy(c->fdin);
+		c->fdin = NULL;
+		GDKfree(mal_init_buf);
+	}
+#else
 	if ((filename = malResolveFile(name)) != NULL) {
-		char *fname = filename;
+		name = filename;
 		do {
 			p = strchr(filename, PATH_SEP);
 			if (p)
@@ -236,7 +216,7 @@ malInclude(Client c, const char *name, int listing)
 			c->yycur = 0;
 			c->bak = NULL;
 			if ((msg = malLoadScript(filename, &c->fdin)) == MAL_SUCCEED) {
-				parseMAL(c, c->curprg, 1, INT_MAX, 0);
+				parseMAL(c, c->curprg, 1, INT_MAX);
 				bstream_destroy(c->fdin);
 			} else {
 				/* TODO output msg ? */
@@ -246,9 +226,10 @@ malInclude(Client c, const char *name, int listing)
 			if (p)
 				filename = p + 1;
 		} while (p);
-		GDKfree(fname);
+		GDKfree(name);
 		c->fdin = NULL;
 	}
+#endif
 	restoreClient;
 	return msg;
 }
@@ -274,7 +255,7 @@ malInclude(Client c, const char *name, int listing)
 str
 evalFile(str fname, int listing)
 {
-	Client c, c_old;
+	Client c;
 	stream *fd;
 	str filename;
 	str msg = MAL_SUCCEED;
@@ -295,15 +276,13 @@ evalFile(str fname, int listing)
 			close_stream(fd);
 		throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	c_old = setClientContext(NULL); // save context
-	c = MCinitClient(MAL_ADMIN, bs, 0);
+	c= MCinitClient(MAL_ADMIN, bs, 0);
 	if( c == NULL){
 		throw(MAL,"mal.eval","Can not create user context");
 	}
 	c->curmodule = c->usermodule = userModule();
 	if(c->curmodule == NULL) {
 		MCcloseClient(c);
-		setClientContext(c_old); // restore context
 		throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	c->promptlength = 0;
@@ -311,18 +290,15 @@ evalFile(str fname, int listing)
 
 	if ( (msg = defaultScenario(c)) ) {
 		MCcloseClient(c);
-		setClientContext(c_old); // restore context
 		return msg;
 	}
 	if((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
 		MCcloseClient(c);
-		setClientContext(c_old); // restore context
 		return msg;
 	}
 
 	msg = runScenario(c,0);
 	MCcloseClient(c);
-	setClientContext(c_old); // restore context
 	return msg;
 }
 
@@ -346,7 +322,7 @@ mal_cmdline(char *s, size_t *len)
 str
 compileString(Symbol *fcn, Client cntxt, str s)
 {
-	Client c, c_old;
+	Client c;
 	size_t len = strlen(s);
 	buffer *b;
 	str msg = MAL_SUCCEED;
@@ -385,9 +361,8 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	}
 	strncpy(fdin->buf, qry, len+1);
 
-	c_old = setClientContext(NULL); // save context
 	// compile in context of called for
-	c = MCinitClient(MAL_ADMIN, fdin, 0);
+	c= MCinitClient(MAL_ADMIN, fdin, 0);
 	if( c == NULL){
 		GDKfree(qry);
 		GDKfree(b);
@@ -402,7 +377,6 @@ compileString(Symbol *fcn, Client cntxt, str s)
 		GDKfree(b);
 		c->usermodule= 0;
 		MCcloseClient(c);
-		setClientContext(c_old); // restore context
 		return msg;
 	}
 
@@ -417,7 +391,6 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	c->usermodule= 0;
 	/* restore IO channel */
 	MCcloseClient(c);
-	setClientContext(c_old); // restore context
 	GDKfree(qry);
 	GDKfree(b);
 	return msg;
@@ -426,7 +399,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 str
 callString(Client cntxt, str s, int listing)
 {
-	Client c, c_old;
+	Client c;
 	int i;
 	size_t len = strlen(s);
 	buffer *b;
@@ -456,7 +429,6 @@ callString(Client cntxt, str s, int listing)
 		GDKfree(qry);
 		throw(MAL,"callstring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	c_old = setClientContext(NULL); // save context
 	c= MCinitClient(MAL_ADMIN, bs, cntxt->fdout);
 	if( c == NULL){
 		GDKfree(b);
@@ -473,7 +445,6 @@ callString(Client cntxt, str s, int listing)
 		GDKfree(b);
 		GDKfree(qry);
 		MCcloseClient(c);
-		setClientContext(c_old); // restore context
 		return msg;
 	}
 
@@ -483,7 +454,6 @@ callString(Client cntxt, str s, int listing)
 		GDKfree(qry);
 		c->fdout = GDKstdout;
 		MCcloseClient(c);
-		setClientContext(c_old); // restore context
 		return msg;
 	}
 	msg = runScenario(c,1);
@@ -493,7 +463,6 @@ callString(Client cntxt, str s, int listing)
 		GDKfree(b);
 		GDKfree(qry);
 		MCcloseClient(c);
-		setClientContext(c_old); // restore context
 		return msg;
 	}
 	// The command may have changed the environment of the calling client.
@@ -519,7 +488,6 @@ callString(Client cntxt, str s, int listing)
 	bstream_destroy(c->fdin);
 	c->fdin = 0;
 	MCcloseClient(c);
-	setClientContext(c_old); // restore context
 	GDKfree(qry);
 	GDKfree(b);
 	return msg;

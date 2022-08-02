@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /**
@@ -29,28 +29,15 @@
 #include <string.h> /* for getting error messages */
 #include <stddef.h>
 #include <ctype.h>
-#if defined(HAVE_GETENTROPY) && defined(HAVE_SYS_RANDOM_H)
-#include <sys/random.h>
-#endif
 
 #include "msabaoth.h"
 #include "mutils.h"
 #include "muuid.h"
-#include "mstring.h"
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define close _close
 #define unlink _unlink
 #define fdopen _fdopen
-#define fileno _fileno
-#endif
-
-#ifndef O_CLOEXEC
-#ifdef _O_NOINHERIT
-#define O_CLOEXEC _O_NOINHERIT	/* Windows */
-#else
-#define O_CLOEXEC 0
-#endif
 #endif
 
 /** the directory where the databases are (aka dbfarm) */
@@ -73,7 +60,7 @@ getFarmPath(char *pathbuf, size_t size, const char *extra)
 		snprintf(pathbuf, size, "%s", _sabaoth_internal_dbfarm);
 	} else {
 		snprintf(pathbuf, size, "%s%c%s",
-				 _sabaoth_internal_dbfarm, DIR_SEP, extra);
+				_sabaoth_internal_dbfarm, DIR_SEP, extra);
 	}
 
 	return(NULL);
@@ -93,11 +80,11 @@ getDBPath(char *pathbuf, size_t size, const char *extra)
 
 	if (extra == NULL) {
 		snprintf(pathbuf, size, "%s%c%s",
-				 _sabaoth_internal_dbfarm, DIR_SEP, _sabaoth_internal_dbname);
+				_sabaoth_internal_dbfarm, DIR_SEP, _sabaoth_internal_dbname);
 	} else {
 		snprintf(pathbuf, size, "%s%c%s%c%s",
-				 _sabaoth_internal_dbfarm, DIR_SEP,
-				 _sabaoth_internal_dbname, DIR_SEP, extra);
+				_sabaoth_internal_dbfarm, DIR_SEP,
+				_sabaoth_internal_dbname, DIR_SEP, extra);
 	}
 
 	return(NULL);
@@ -172,9 +159,10 @@ msab_init(const char *dbfarm, const char *dbname)
 	/* remove trailing slashes, newlines and spaces */
 	len--;
 	while (len > 0 && (
-			   _sabaoth_internal_dbfarm[len] == '/' ||
-			   _sabaoth_internal_dbfarm[len] == '\n' ||
-			   _sabaoth_internal_dbfarm[len] == ' ')) {
+				_sabaoth_internal_dbfarm[len] == '/' ||
+				_sabaoth_internal_dbfarm[len] == '\n' ||
+				_sabaoth_internal_dbfarm[len] == ' '))
+	{
 		_sabaoth_internal_dbfarm[len] = '\0';
 		len--;
 	}
@@ -205,7 +193,7 @@ msab_init(const char *dbfarm, const char *dbname)
 			/* remove in a separate loop after reading the directory,
 			 * so as to not have any interference */
 			while (dbe != NULL) {
-				(void) MT_remove(dbe->path);
+				(void) remove(dbe->path);
 				db = dbe;
 				dbe = dbe->next;
 				free(db);
@@ -280,7 +268,7 @@ char *
 msab_marchScenario(const char *lang)
 {
 	FILE *f;
-	char buf[2*FILENAME_MAX];
+	char buf[256];	/* should be enough for now */
 	size_t len;
 	char pathbuf[FILENAME_MAX];
 	char *tmp;
@@ -288,7 +276,7 @@ msab_marchScenario(const char *lang)
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), SCENARIOFILE)) != NULL)
 		return(tmp);
 
-	if ((f = MT_fopen(pathbuf, "a+")) != NULL) {
+	if ((f = fopen(pathbuf, "a+")) != NULL) {
 		if ((len = fread(buf, 1, 255, f)) > 0) {
 			char *p;
 
@@ -311,7 +299,7 @@ msab_marchScenario(const char *lang)
 		return(NULL);
 	}
 	snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
-			 strerror(errno), pathbuf);
+			strerror(errno), pathbuf);
 	return(strdup(buf));
 }
 
@@ -324,7 +312,7 @@ char *
 msab_retreatScenario(const char *lang)
 {
 	FILE *f;
-	char buf[2*FILENAME_MAX];	/* should be enough to hold the entire file */
+	char buf[256];	/* should be enough to hold the entire file */
 	size_t len;
 	char pathbuf[FILENAME_MAX];
 	char *tmp;
@@ -332,7 +320,7 @@ msab_retreatScenario(const char *lang)
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), SCENARIOFILE)) != NULL)
 		return(tmp);
 
-	if ((f = MT_fopen(pathbuf, "a+")) != NULL) {
+	if ((f = fopen(pathbuf, "a+")) != NULL) {
 		if ((len = fread(buf, 1, 255, f)) > 0) {
 			char *p;
 			char written = 0;
@@ -355,7 +343,7 @@ msab_retreatScenario(const char *lang)
 				len = strlen(buf) + 1;
 				if (fwrite(buf, 1, len, f) < len) {
 					snprintf(buf, sizeof(buf), "failed to write: %s (%s)",
-							 strerror(errno), pathbuf);
+							strerror(errno), pathbuf);
 					(void)fclose(f);
 					return(strdup(buf));
 				}
@@ -364,23 +352,23 @@ msab_retreatScenario(const char *lang)
 				return(NULL);
 			}
 			(void)fclose(f);
-			(void) MT_remove(pathbuf);
+			(void) remove(pathbuf);
 			return(NULL);
 		} else {
 			if (ferror(f)) {
 				/* some error */
 				snprintf(buf, sizeof(buf), "failed to write: %s (%s)",
-						 strerror(errno), pathbuf);
+					 strerror(errno), pathbuf);
 				(void)fclose(f);
 				return strdup(buf);
 			}
 			(void)fclose(f);
-			(void) MT_remove(pathbuf);  /* empty file? try to remove */
+			(void) remove(pathbuf);  /* empty file? try to remove */
 			return(NULL);
 		}
 	}
 	snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
-			 strerror(errno), pathbuf);
+			strerror(errno), pathbuf);
 	return(strdup(buf));
 }
 
@@ -404,9 +392,9 @@ msab_marchConnection(const char *host, const int port)
 
 	if (port <= 0 && host[0] != '/')
 		return(strdup("UNIX domain connections should be given as "
-					  "absolute path"));
+					"absolute path"));
 
-	if ((f = MT_fopen(pathbuf, "a")) != NULL) {
+	if ((f = fopen(pathbuf, "a")) != NULL) {
 		/* append to the file */
 		if (port > 0) {
 			fprintf(f, "mapi:monetdb://%s:%i/\n", host, port);
@@ -419,7 +407,7 @@ msab_marchConnection(const char *host, const int port)
 	} else {
 		char buf[FILENAME_MAX + 1024];
 		snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
-				 strerror(errno), pathbuf);
+				strerror(errno), pathbuf);
 		return(strdup(buf));
 	}
 }
@@ -438,19 +426,19 @@ msab_wildRetreat(void)
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), SCENARIOFILE)) != NULL)
 		return(tmp);
-	(void) MT_remove(pathbuf);
+	(void) remove(pathbuf);
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), CONNECTIONFILE)) != NULL)
 		return(tmp);
-	(void) MT_remove(pathbuf);
+	(void) remove(pathbuf);
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), STARTEDFILE)) != NULL)
 		return(tmp);
-	(void) MT_remove(pathbuf);
+	(void) remove(pathbuf);
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), _sabaoth_internal_uuid)) != NULL)
 		return(tmp);
-	(void) MT_remove(pathbuf);
+	(void) remove(pathbuf);
 
 	return(NULL);
 }
@@ -478,15 +466,15 @@ msab_registerStarting(void)
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), UPLOGFILE)) != NULL)
 		return(tmp);
 
-	if ((f = MT_fopen(pathbuf, "a")) != NULL) {
+	if ((f = fopen(pathbuf, "a")) != NULL) {
 		/* append to the file */
 		fprintf(f, "%" PRId64 "\t", (int64_t)time(NULL));
 		(void)fflush(f);
 		(void)fclose(f);
 	} else {
-		char buf[2*FILENAME_MAX];
+		char buf[FILENAME_MAX];
 		snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
-				 strerror(errno), pathbuf);
+				strerror(errno), pathbuf);
 		return(strdup(buf));
 	}
 
@@ -497,14 +485,14 @@ msab_registerStarting(void)
 		free(tmp);
 		return(NULL);
 	}
-	f = MT_fopen(pathbuf, "w");
+	f = fopen(pathbuf, "w");
 	if (f)
 		fclose(f);
 
 	/* remove any stray file that would suggest we've finished starting up */
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), STARTEDFILE)) != NULL)
 		return(tmp);
-	(void) MT_remove(pathbuf);
+	(void) remove(pathbuf);
 
 
 	return(NULL);
@@ -525,7 +513,7 @@ msab_registerStarted(void)
 	/* flag this database as started up */
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), STARTEDFILE)) != NULL)
 		return(tmp);
-	fp = MT_fopen(pathbuf, "w");
+	fp = fopen(pathbuf, "w");
 	if (fp)
 		fclose(fp);
 	else
@@ -548,15 +536,15 @@ msab_registerStop(void)
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), UPLOGFILE)) != NULL)
 		return(tmp);
 
-	if ((f = MT_fopen(pathbuf, "a")) != NULL) {
+	if ((f = fopen(pathbuf, "a")) != NULL) {
 		/* append to the file */
 		fprintf(f, "%" PRId64 "\n", (int64_t)time(NULL));
 		(void)fflush(f);
 		(void)fclose(f);
 	} else {
-		char buf[2*FILENAME_MAX];
+		char buf[FILENAME_MAX];
 		snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
-				 strerror(errno), pathbuf);
+				strerror(errno), pathbuf);
 		return(strdup(buf));
 	}
 
@@ -564,113 +552,8 @@ msab_registerStop(void)
 	 * but for the sake of keeping things clean ... */
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), _sabaoth_internal_uuid)) != NULL)
 		return(tmp);
-	(void) MT_remove(pathbuf);
+	(void) remove(pathbuf);
 	return(NULL);
-}
-
-#define SECRETFILE ".secret"
-#define SECRET_LENGTH (32)
-char *
-msab_pickSecret(char **generated_secret)
-{
-	unsigned char bin_secret[SECRET_LENGTH / 2];
-	char *secret;
-	char pathbuf[FILENAME_MAX];
-	char *e;
-
-	if ((e = getDBPath(pathbuf, sizeof(pathbuf), SECRETFILE)) != NULL)
-		return e;
-
-	// delete existing so we can recreate with appropriate permissions
-	if (MT_remove(pathbuf) < 0 && errno != ENOENT) {
-		char err[FILENAME_MAX + 512];
-		snprintf(err, sizeof(err), "unable to remove '%s': %s",
-				 pathbuf, strerror(errno));
-		return strdup(err);
-	}
-
-	secret = malloc(SECRET_LENGTH + 1);
-	secret[SECRET_LENGTH] = '\0';
-
-#if defined(HAVE_GETENTROPY)
-	if (getentropy(bin_secret, sizeof(bin_secret)) < 0) {
-		free(secret);
-		return strdup("getentropy failed");
-	}
-#elif defined(HAVE_RAND_S)
-	for (size_t i = 0; i < sizeof(bin_secret) / sizeof(unsigned int); i++) {
-		unsigned int r;
-		if (rand_s(&r) != 0) {
-			if (generated_secret)
-				*generated_secret = NULL;
-			free(secret);
-			return NULL;
-		}
-		for (size_t j = 0; j < sizeof(unsigned int); j++) {
-			bin_secret[i] = (unsigned char) (r & 0xFF);
-			r >>= 8;
-		}
-	}
-#else
-	int rfd = open("/dev/urandom", O_RDONLY);
-	if (rfd >= 0) {
-		ssize_t nr;
-		for (size_t n = 0; n < sizeof(bin_secret); n += nr) {
-			nr = read(rfd, bin_secret + n, sizeof(bin_secret) - n);
-			if (nr < 0) {
-				free(secret);
-				return strdup("reading /dev/urandom failed");
-			}
-		}
-		close(rfd);
-	} else {
-		(void)bin_secret;
-		if (generated_secret)
-			// do not return an error, just continue without a secret
-			*generated_secret = NULL;
-		free(secret);
-		return NULL;
-	}
-#endif
-	int fd;
-	FILE *f;
-	for (size_t i = 0; i < sizeof(bin_secret); i++) {
-		snprintf(secret + 2 * i, 3, "%02x", bin_secret[i]);
-	}
-
-	if ((fd = MT_open(pathbuf, O_CREAT | O_WRONLY | O_CLOEXEC)) == -1) {
-		char err[512];
-		snprintf(err, sizeof(err), "unable to open '%s': %s",
-				 pathbuf, strerror(errno));
-		free(secret);
-		return strdup(err);
-	}
-	if ((f = fdopen(fd, "w")) == NULL) {
-		char err[512];
-		snprintf(err, sizeof(err), "unable to open '%s': %s",
-				 pathbuf, strerror(errno));
-		close(fd);
-		(void)MT_remove(pathbuf);
-		free(secret);
-		return strdup(err);
-	}
-	bool error;
-	error = fwrite(secret, 1, SECRET_LENGTH, f) < SECRET_LENGTH;
-	error |= fclose(f) < 0;
-	if (error) {
-		char err[512];
-		snprintf(err, sizeof(err), "cannot write secret: %s",
-				 strerror(errno));
-		(void)MT_remove(pathbuf);
-		free(secret);
-		return strdup(err);
-	}
-
-	if (generated_secret)
-		*generated_secret = secret;
-	else
-		free(secret);
-	return NULL;
 }
 
 /**
@@ -708,13 +591,13 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	sdb = NULL;
 
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, UPLOGFILE);
-	if (MT_stat(buf, &statbuf) == -1)
+	if (stat(buf, &statbuf) == -1)
 		return next;
 
 	sdb = malloc(sizeof(sabdb));
-	*sdb = (sabdb) {
-		.next = next,
-	};
+	sdb->uplog = NULL;
+	sdb->uri = NULL;
+	sdb->next = next;
 
 	/* store the database name */
 	snprintf(buf, sizeof(buf), "%s/%s", pathbuf, dbname);
@@ -734,11 +617,11 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	 */
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname,
 			 _sabaoth_internal_uuid);
-	if (MT_stat(buf, &statbuf) == 0) {
+	if (stat(buf, &statbuf) == 0) {
 		/* database has the same process signature as ours, which
 		 * means, it must be us, rely on the uplog state */
 		snprintf(log, sizeof(log), "%s/%s/%s", pathbuf, dbname, UPLOGFILE);
-		if ((f = MT_fopen(log, "r")) != NULL) {
+		if ((f = fopen(log, "r")) != NULL) {
 			(void)fseek(f, -1, SEEK_END);
 			if (fread(data, 1, 1, f) != 1) {
 				/* the log is empty, assume no crash */
@@ -747,7 +630,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 				/* see if the database has finished starting */
 				snprintf(buf, sizeof(buf), "%s/%s/%s",
 						 pathbuf, dbname, STARTEDFILE);
-				if (MT_stat(buf, &statbuf) == -1) {
+				if (stat(buf, &statbuf) == -1) {
 					sdb->state = SABdbStarting;
 				} else {
 					sdb->state = SABdbRunning;
@@ -765,18 +648,10 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 		 */
 		sdb->state = SABdbInactive;
 	} else if (fd == -1) {
-#ifndef WIN32
-		/* extract process ID from lock file */
-		if ((f = MT_fopen(buf, "r")) != NULL) {
-			int pid;
-			if (fscanf(f, "USR=%*d PID=%d TIME=", &pid) == 1)
-				sdb->pid = pid;
-			fclose(f);
-		}
-#endif
-		/* see if the database has finished starting */
+		/* file is locked, so mserver is running, see if the database
+		 * has finished starting */
 		snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, STARTEDFILE);
-		if (MT_stat(buf, &statbuf) == -1) {
+		if (stat(buf, &statbuf) == -1) {
 			sdb->state = SABdbStarting;
 		} else {
 			sdb->state = SABdbRunning;
@@ -786,9 +661,9 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 		 * in the uplog */
 		snprintf(log, sizeof(log), "%s/%s/%s", pathbuf, dbname, STARTEDFILE);
 		/* just to be sure, remove the .started file */
-		(void) MT_remove(log);		/* may fail, that's fine */
+		(void) remove(log);		/* may fail, that's fine */
 		snprintf(log, sizeof(log), "%s/%s/%s", pathbuf, dbname, UPLOGFILE);
-		if ((f = MT_fopen(log, "r")) != NULL) {
+		if ((f = fopen(log, "r")) != NULL) {
 			(void)fseek(f, -1, SEEK_END);
 			if (fread(data, 1, 1, f) != 1) {
 				/* the log is empty, assume no crash */
@@ -807,12 +682,12 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 		close(fd);
 	}
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, MAINTENANCEFILE);
-	sdb->locked = MT_stat(buf, &statbuf) == 0;
+	sdb->locked = stat(buf, &statbuf) == 0;
 
 	/* add scenarios that are supported */
 	sdb->scens = NULL;
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, SCENARIOFILE);
-	if ((f = MT_fopen(buf, "r")) != NULL) {
+	if ((f = fopen(buf, "r")) != NULL) {
 		sablist* np = NULL;
 		while (fgets(data, (int) sizeof(data), f) != NULL) {
 			if (*data != '\0' && data[strlen(data) - 1] == '\n')
@@ -831,7 +706,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	/* add how this server can be reached */
 	sdb->conns = NULL;
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, CONNECTIONFILE);
-	if ((f = MT_fopen(buf, "r")) != NULL) {
+	if ((f = fopen(buf, "r")) != NULL) {
 		sablist* np = NULL;
 		while (fgets(data, (int) sizeof(data), f) != NULL) {
 			if (*data != '\0' && data[strlen(data) - 1] == '\n')
@@ -847,32 +722,6 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 		(void)fclose(f);
 	}
 
-	// read the secret
-	do {
-		struct stat stb;
-		snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, SECRETFILE);
-		if ((f = MT_fopen(buf, "r")) == NULL)
-			break;
-		if (fstat(fileno(f), &stb) < 0) {
-			fclose(f);
-			break;
-		}
-		size_t len = (size_t)stb.st_size;
-		char *secret = malloc(len + 1);
-		if (!secret) {
-			fclose(f);
-			break;
-		}
-		if (fread(secret, 1, len, f) != len) {
-			fclose(f);
-			free(secret);
-			break;
-		}
-		fclose(f);
-		secret[len] = '\0';
-		sdb->secret = secret;
-	} while (0);
-
 	return sdb;
 }
 
@@ -885,7 +734,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
  * is terminated by a NULL entry.
  */
 char *
-msab_getStatus(sabdb** ret, const char *dbname)
+msab_getStatus(sabdb** ret, char *dbname)
 {
 	DIR *d;
 	struct dirent *e;
@@ -917,7 +766,7 @@ msab_getStatus(sabdb** ret, const char *dbname)
 	d = opendir(pathbuf);
 	if (d == NULL) {
 		snprintf(data, sizeof(data), "failed to open directory %s: %s",
-				 pathbuf, strerror(errno));
+				pathbuf, strerror(errno));
 		return(strdup(data));
 	}
 	while ((e = readdir(d)) != NULL) {
@@ -943,10 +792,12 @@ msab_freeStatus(sabdb** ret)
 
 	p = *ret;
 	while (p != NULL) {
-		free(p->path);
-		free(p->uri);
-		free(p->secret);
-		free(p->uplog);
+		if (p->path != NULL)
+			free(p->path);
+		if (p->uri != NULL)
+			free(p->uri);
+		if (p->uplog != NULL)
+			free(p->uplog);
 		r = p->scens;
 		while (r != NULL) {
 			if (r->val != NULL)
@@ -1002,42 +853,42 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 	};
 
 	snprintf(log, sizeof(log), "%s/%s", db->path, UPLOGFILE);
-	if ((f = MT_fopen(log, "r")) != NULL) {
+	if ((f = fopen(log, "r")) != NULL) {
 		int c;
 		start = stop = up = 0;
 		p = data;
 		while ((c = getc(f)) != EOF) {
 			switch (c) {
-			case '\t':
-				/* start attempt */
-				ret->startcntr++;
-				if (start != 0)
-					ret->lastcrash = start;
-				memmove(&avg10[0], &avg10[1], sizeof(int) * 9);
-				memmove(&avg30[0], &avg30[1], sizeof(int) * 29);
-				avg10[9] = avg30[29] = ret->crashavg1 =
-					(start != 0);
-				*p = '\0';
-				ret->laststart = start = (time_t)atol(data);
-				p = data;
+				case '\t':
+					/* start attempt */
+					ret->startcntr++;
+					if (start != 0)
+						ret->lastcrash = start;
+					memmove(&avg10[0], &avg10[1], sizeof(int) * 9);
+					memmove(&avg30[0], &avg30[1], sizeof(int) * 29);
+					avg10[9] = avg30[29] = ret->crashavg1 =
+						(start != 0);
+					*p = '\0';
+					ret->laststart = start = (time_t)atol(data);
+					p = data;
 				break;
-			case '\n':
-				/* successful stop */
-				ret->stopcntr++;
-				*p = '\0';
-				ret->laststop = stop = (time_t)atol(data);
-				p = data;
-				i = (int) (stop - start);
-				if (i > ret->maxuptime)
-					ret->maxuptime = i;
-				if (ret->minuptime == -1 || ret->minuptime > stop - start)
-					ret->minuptime = stop - start;
-				up += i;
-				start = 0;
+				case '\n':
+					/* successful stop */
+					ret->stopcntr++;
+					*p = '\0';
+					ret->laststop = stop = (time_t)atol(data);
+					p = data;
+					i = (int) (stop - start);
+					if (i > ret->maxuptime)
+						ret->maxuptime = i;
+					if (ret->minuptime == -1 || ret->minuptime > stop - start)
+						ret->minuptime = stop - start;
+					up += i;
+					start = 0;
 				break;
-			default:
-				/* timestamp */
-				*p++ = c;
+				default:
+					/* timestamp */
+					*p++ = c;
 				break;
 			}
 		}
@@ -1066,9 +917,9 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 		}
 		(void)fclose(f);
 	} else {
-		char buf[2*FILENAME_MAX];
+		char buf[FILENAME_MAX];
 		snprintf(buf, sizeof(buf), "could not open file %s: %s",
-				 log, strerror(errno));
+				log, strerror(errno));
 		return(strdup(buf));
 	}
 
@@ -1138,211 +989,270 @@ msab_serialise(char **ret, const sabdb *db)
  * Produces a sabdb struct out of a serialised string.
  */
 char *
-msab_deserialise(sabdb **ret, const char *sdb)
+msab_deserialise(sabdb **ret, char *sdb)
 {
 	char *dbname;
 	char *uri;
-	char *scens;
+	int locked;
+	int state;
+	char *scens = "";
 	sabdb *s;
 	sabuplog *u;
-	const char *lasts;
+	sablist *l;
+	char *p;
+	char *lasts;
 	char buf[FILENAME_MAX];
+	char protover = 0;
 
-	if (strncmp(sdb, "sabdb:", 6) != 0) {
+	lasts = sdb;
+	if ((p = strchr(lasts, ':')) == NULL) {
 		snprintf(buf, sizeof(buf),
-				 "string is not a sabdb struct: %s", sdb);
+				"string does not contain a magic: %s", lasts);
 		return(strdup(buf));
 	}
-	sdb += 6;
-	/* Protocol 1 was used uptil Oct2012 and is no longer supported.
-	 * Since Jul2012 a new state
-	 * SABdbStarting was introduced, but not exposed to the client
-	 * in serialise.  In Feb2013, the path component was removed
-	 * and replaced by a URI field.  This meant dbname could no
-	 * longer be deduced from path, and hence sent separately.
-	 * Since the conns property became useless in the light of the
-	 * added uri, it was dropped.  On top of this, a laststop
-	 * property was added to the uplog struct.
-	 * These four changes were effectuated in protocol 2.  When
-	 * reading protocol 1, we use the path field to set dbname, but
-	 * ignore the path information (and set uri to "<unknown>".  The
-	 * SABdbStarting state never occurs. */
-	if (strncmp(sdb, SABDBVER ":", sizeof(SABDBVER)) != 0) {
+	*p++ = '\0';
+	if (strcmp(lasts, "sabdb") != 0) {
 		snprintf(buf, sizeof(buf),
-				 "string has unsupported version: %s", sdb);
+				"string is not a sabdb struct: %s", lasts);
 		return(strdup(buf));
 	}
-	sdb += sizeof(SABDBVER);
-	lasts = strchr(sdb, ',');
-	if (lasts == NULL) {
+	lasts = p;
+	if ((p = strchr(p, ':')) == NULL) {
 		snprintf(buf, sizeof(buf),
-				 "string does not contain dbname: %s", sdb);
+				"string does not contain a version number: %s", lasts);
 		return(strdup(buf));
 	}
-	dbname = malloc(lasts - sdb + 1);
-	strcpy_len(dbname, sdb, lasts - sdb + 1);
-	sdb = ++lasts;
-	lasts = strchr(sdb, ',');
-	if (lasts == NULL) {
+	*p++ = '\0';
+	if (strcmp(lasts, "1") == 0) {
+		/* Protocol 1 was used uptil Oct2012.  Since Jul2012 a new state
+		 * SABdbStarting was introduced, but not exposed to the client
+		 * in serialise.  In Feb2013, the path component was removed
+		 * and replaced by an URI field.  This meant dbname could no
+		 * longer be deduced from path, and hence sent separately.
+		 * Since the conns property became useless in the light of the
+		 * added uri, it was dropped.  On top of this, a laststop
+		 * property was added to the uplog struct.
+		 * These four changes were effectuated in protocol 2.  When
+		 * reading protocol 1, we use the path field to set dbname, but
+		 * ignore the path information (and set uri to "<unknown>".  The
+		 * SABdbStarting state never occurs. */
+	} else if (strcmp(lasts, SABDBVER) != 0) {
 		snprintf(buf, sizeof(buf),
-				 "string does not contain uri: %s", sdb);
-		free(dbname);
+				"string has unsupported version: %s", lasts);
 		return(strdup(buf));
 	}
-	uri = malloc(lasts - sdb + 1);
-	strcpy_len(uri, sdb, lasts - sdb + 1);
-	sdb = ++lasts;
-	int locked, state, n;
-	switch (sscanf(sdb, "%d,%d%n", &locked, &state, &n)) {
-	case 0:
-		free(uri);
-		free(dbname);
+	protover = lasts[0];
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL) {
 		snprintf(buf, sizeof(buf),
-				 "string does not contain locked state: %s", lasts);
-		return(strdup(buf));
-	case 1:
-		free(uri);
-		free(dbname);
-		snprintf(buf, sizeof(buf),
-				 "string does not contain state: %s", lasts);
-		return(strdup(buf));
-	case -1:
-		free(uri);
-		free(dbname);
-		return strdup("should not happen");
-	default:
-		break;
-	}
-	sdb += n;
-	if (*sdb++ != ',' || (lasts = strchr(sdb, ',')) == NULL) {
-		snprintf(buf, sizeof(buf),
-				 "string does not contain scenarios: %s", lasts);
-		free(uri);
-		free(dbname);
+				"string does not contain %s: %s",
+				protover == '1' ? "path" : "dbname", lasts);
 		return(strdup(buf));
 	}
-	if (lasts > sdb) {
-		scens = malloc(lasts - sdb + 1);
-		strcpy_len(scens, sdb, lasts - sdb + 1);
+	*p++ = '\0';
+	dbname = lasts;
+	if (protover == '1') {
+		uri = "<unknown>";
 	} else {
-		scens = NULL;
+		lasts = p;
+		if ((p = strchr(p, ',')) == NULL) {
+			snprintf(buf, sizeof(buf),
+					"string does not contain uri: %s", lasts);
+			return(strdup(buf));
+		}
+		*p++ = '\0';
+		uri = lasts;
 	}
-	sdb = ++lasts;
-	int startcntr, stopcntr, crashcntr;
-	int64_t avguptime, maxuptime, minuptime, lastcrash, laststart, laststop;
-	int crashavg1;
-	double crashavg10, crashavg30;
-	switch (sscanf(sdb, "%d,%d,%d,%" SCNd64 ",%" SCNd64 ",%" SCNd64 ",%" SCNd64 ",%" SCNd64 ",%" SCNd64 ",%d,%lf,%lf%n", &startcntr, &stopcntr, &crashcntr, &avguptime, &maxuptime, &minuptime, &lastcrash, &laststart, &laststop, &crashavg1, &crashavg10, &crashavg30, &n)) {
-	case -1:
-		free(dbname);
-		free(uri);
-		free(scens);
-		return strdup("should not happen");
-	case 0:
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL) {
 		snprintf(buf, sizeof(buf),
-				 "string does not contain startcounter: %s", sdb);
-		goto bailout;
-	case 1:
-		snprintf(buf, sizeof(buf),
-				 "string does not contain stopcounter: %s", sdb);
-		goto bailout;
-	case 2:
-		snprintf(buf, sizeof(buf),
-				 "string does not contain crashcounter: %s", sdb);
-		goto bailout;
-	case 3:
-		snprintf(buf, sizeof(buf),
-				 "string does not contain avguptime: %s", sdb);
-		goto bailout;
-	case 4:
-		snprintf(buf, sizeof(buf),
-				 "string does not contain maxuptime: %s", sdb);
-		goto bailout;
-	case 5:
-		snprintf(buf, sizeof(buf),
-				 "string does not contain minuptime: %s", sdb);
-		goto bailout;
-	case 6:
-		snprintf(buf, sizeof(buf),
-				 "string does not contain lastcrash: %s", sdb);
-		goto bailout;
-	case 7:
-		snprintf(buf, sizeof(buf),
-				 "string does not contain laststart: %s", sdb);
-		goto bailout;
-	case 8:
-		snprintf(buf, sizeof(buf),
-				 "string does not contain laststop: %s", sdb);
-		goto bailout;
-	case 9:
-		snprintf(buf, sizeof(buf),
-				 "string does not contain crashavg1: %s", sdb);
-		goto bailout;
-	case 10:
-		snprintf(buf, sizeof(buf),
-				 "string does not contain crashavg10: %s", sdb);
-		goto bailout;
-	case 11:
-		snprintf(buf, sizeof(buf),
-				 "string does not contain crashavg30: %s", sdb);
-		goto bailout;
-	case 12:
-		break;
+				"string does not contain locked state: %s", lasts);
+		return(strdup(buf));
 	}
-	sdb += n;
-	if (*sdb) {
+	*p++ = '\0';
+	locked = atoi(lasts);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL) {
 		snprintf(buf, sizeof(buf),
-				 "string contains additional garbage after crashavg30: %s",
-				 sdb);
-		goto bailout;
+				"string does not contain state: %s", lasts);
+		return(strdup(buf));
+	}
+	*p++ = '\0';
+	state = atoi(lasts);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL) {
+		snprintf(buf, sizeof(buf),
+				"string does not contain scenarios: %s", lasts);
+		return(strdup(buf));
+	}
+	*p++ = '\0';
+	scens = lasts;
+	lasts = p;
+	if (protover == '1') {
+		if ((p = strchr(p, ',')) == NULL) {
+			snprintf(buf, sizeof(buf),
+					"string does not contain connections: %s", lasts);
+			return(strdup(buf));
+		}
+		*p++ = '\0';
+		lasts = p;
 	}
 
+	/* start parsing sabuplog struct */
 	u = malloc(sizeof(sabuplog));
-	s = malloc(sizeof(sabdb));
-	*u = (sabuplog) {
-		.startcntr = startcntr,
-		.stopcntr = stopcntr,
-		.crashcntr = crashcntr,
-		.avguptime = (time_t) avguptime,
-		.maxuptime = (time_t) maxuptime,
-		.minuptime = (time_t) minuptime,
-		.lastcrash = (time_t) lastcrash,
-		.laststart = (time_t) laststart,
-		.laststop = (time_t) laststop,
-		.crashavg1 = crashavg1,
-		.crashavg10 = crashavg10,
-		.crashavg30 = crashavg30,
-	};
-	*s = (sabdb) {
-		.dbname = dbname,
-		.path = dbname,
-		.uri = uri,
-		.locked = locked,
-		.state = (SABdbState) state,
-		.uplog = u,
-	};
-	if (scens) {
-		sablist **sp = &s->scens;
-		char *sc = scens;
-		while (sc) {
-			*sp = malloc(sizeof(sablist));
-			char *p = strchr(sc, '\'');
-			if (p)
-				*p++ = 0;
-			**sp = (sablist) {
-				.val = strdup(sc),
-			};
-			sc = p;
-			sp = &(*sp)->next;
-		}
-		free(scens);
+
+	if ((p = strchr(p, ',')) == NULL) {
+		free(u);
+		snprintf(buf, sizeof(buf),
+				"string does not contain startcounter: %s", lasts);
+		return(strdup(buf));
 	}
+	*p++ = '\0';
+	u->startcntr = atoi(lasts);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL) {
+		free(u);
+		snprintf(buf, sizeof(buf),
+				"string does not contain stopcounter: %s", lasts);
+		return(strdup(buf));
+	}
+	*p++ = '\0';
+	u->stopcntr = atoi(lasts);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL) {
+		free(u);
+		snprintf(buf, sizeof(buf),
+				"string does not contain crashcounter: %s", lasts);
+		return(strdup(buf));
+	}
+	*p++ = '\0';
+	u->crashcntr = atoi(lasts);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL) {
+		free(u);
+		snprintf(buf, sizeof(buf),
+				"string does not contain avguptime: %s", lasts);
+		return(strdup(buf));
+	}
+	*p++ = '\0';
+	u->avguptime = (time_t)strtoll(lasts, (char **)NULL, 10);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL) {
+		free(u);
+		snprintf(buf, sizeof(buf),
+				"string does not contain maxuptime: %s", lasts);
+		return(strdup(buf));
+	}
+	*p++ = '\0';
+	u->maxuptime = (time_t)strtoll(lasts, (char **)NULL, 10);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL) {
+		free(u);
+		snprintf(buf, sizeof(buf),
+				"string does not contain minuptime: %s", lasts);
+		return(strdup(buf));
+	}
+	*p++ = '\0';
+	u->minuptime = (time_t)strtoll(lasts, (char **)NULL, 10);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL) {
+		free(u);
+		snprintf(buf, sizeof(buf),
+				"string does not contain lastcrash: %s", lasts);
+		return(strdup(buf));
+	}
+	*p++ = '\0';
+	u->lastcrash = (time_t)strtoll(lasts, (char **)NULL, 10);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL) {
+		free(u);
+		snprintf(buf, sizeof(buf),
+				"string does not contain laststart: %s", lasts);
+		return(strdup(buf));
+	}
+	*p++ = '\0';
+	u->laststart = (time_t)strtoll(lasts, (char **)NULL, 10);
+	lasts = p;
+	if (protover != '1') {
+		if ((p = strchr(p, ',')) == NULL) {
+			free(u);
+			snprintf(buf, sizeof(buf),
+					"string does not contain laststop: %s", lasts);
+			return(strdup(buf));
+		}
+		*p++ = '\0';
+		u->laststop = (time_t)strtoll(lasts, (char **)NULL, 10);
+		lasts = p;
+	} else {
+		u->laststop = -1;
+	}
+	if ((p = strchr(p, ',')) == NULL) {
+		free(u);
+		snprintf(buf, sizeof(buf),
+				"string does not contain crashavg1: %s", lasts);
+		return(strdup(buf));
+	}
+	*p++ = '\0';
+	u->crashavg1 = atoi(lasts);
+	lasts = p;
+	if ((p = strchr(p, ',')) == NULL) {
+		free(u);
+		snprintf(buf, sizeof(buf),
+				"string does not contain crashavg10: %s", lasts);
+		return(strdup(buf));
+	}
+	*p++ = '\0';
+	u->crashavg10 = atof(lasts);
+	lasts = p;
+	if ((p = strchr(p, ',')) != NULL) {
+		free(u);
+		snprintf(buf, sizeof(buf),
+				"string contains additional garbage after crashavg30: %s",
+				p);
+		return(strdup(buf));
+	}
+	u->crashavg30 = atof(lasts);
+
+	/* fill/create sabdb struct */
+
+	if (protover == '1') {
+		if ((p = strrchr(dbname, '/')) == NULL) {
+			free(u);
+			snprintf(buf, sizeof(buf), "invalid path: %s", dbname);
+			return(strdup(buf));
+		}
+		dbname = p + 1;
+	}
+
+	s = malloc(sizeof(sabdb));
+
+	/* msab_freeStatus() actually relies on this trick */
+	s->path = s->dbname = strdup(dbname);
+	s->uri = strdup(uri);
+	s->locked = locked;
+	s->state = (SABdbState)state;
+	if (strlen(scens) == 0) {
+		s->scens = NULL;
+	} else {
+		l = s->scens = malloc(sizeof(sablist));
+		p = strtok_r(scens, "'", &lasts);
+		if (p == NULL) {
+			l->val = strdup(scens);
+			l->next = NULL;
+		} else {
+			l->val = strdup(p);
+			l->next = NULL;
+			while ((p = strtok_r(NULL, "'", &lasts)) != NULL) {
+				l = l->next = malloc(sizeof(sablist));
+				l->val = strdup(p);
+				l->next = NULL;
+			}
+		}
+	}
+	s->conns = NULL;
+	s->uplog = u;
+	s->next = NULL;
 
 	*ret = s;
 	return(NULL);
-  bailout:
-	free(dbname);
-	free(uri);
-	free(scens);
-	return strdup(buf);
 }

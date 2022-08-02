@@ -1,5 +1,0 @@
-query R rowsort
-SELECT ST_Area(boundary) FROM named_places WHERE name = 'Goose Island'
-----
-40.000
-

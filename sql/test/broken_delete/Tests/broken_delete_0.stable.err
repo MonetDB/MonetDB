@@ -1,0 +1,17 @@
+stderr of test 'broken_delete_0` in directory 'sql/test/broken_delete` itself:
+
+
+# 14:14:49 >  
+# 14:14:49 >  Mtimeout -timeout 180  Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=38850 --set xrpc_port=49818 --set monet_prompt= --trace "--dbname=mTests_src_test_broken_delete" --dbinit=" module(sql_server);" ; echo ; echo Over..
+# 14:14:49 >  
+
+
+# 14:14:49 >  
+# 14:14:49 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=koala --port=38850 
+# 14:14:49 >  
+
+
+# 14:14:49 >  
+# 14:14:49 >  Done.
+# 14:14:49 >  
+

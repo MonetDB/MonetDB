@@ -1,5 +1,0 @@
-query I rowsort
-SELECT ST_IsSimple(shore) FROM lakes WHERE name = 'Blue Lake'
-----
-1
-

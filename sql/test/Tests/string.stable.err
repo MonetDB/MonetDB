@@ -1,0 +1,19 @@
+stderr of test 'string` in directory 'sql/test` itself:
+
+
+# 12:30:46 >  
+# 12:30:46 >   mserver5 "--config=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31025 --set xrpc_port=49090 --set monet_prompt= --trace "--dbname=mTests_src_test" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 12:30:46 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/etc/monetdb5.conf)
+
+# 12:30:46 >  
+# 12:30:46 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=31025 
+# 12:30:46 >  
+
+
+# 12:30:46 >  
+# 12:30:46 >  Done.
+# 12:30:46 >  
+

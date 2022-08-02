@@ -1,0 +1,61 @@
+stderr of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
+
+
+# 14:40:54 >  
+# 14:40:54 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/sjoerd/Monet-stable/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=36219" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_testdb-upgrade" "--set" "mal_listing=0"
+# 14:40:54 >  
+
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /ufs/sjoerd/Monet-stable/var/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_alloc_map = no
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	gdk_dbfarm = /ufs/sjoerd/Monet-stable/var/MonetDB
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 36219
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /ufs/sjoerd/@Monet-candidate/var/MonetDB/mTests_sql_test_testdb-upgrade
+# cmdline opt 	gdk_debug = 553648138
+
+
+
+
+# 21:48:33 >  
+# 21:48:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36065" "--set" "mapi_usock=/var/tmp/mtest-14530/.s.monetdb.36065" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-devel/var/MonetDB/mTests_sql_test_testdb-upgrade" "--set" "mal_listing=0"
+# 21:48:33 >  
+
+# builtin opt 	gdk_dbpath = /ufs/sjoerd/Monet-devel/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 36065
+# cmdline opt 	mapi_usock = /var/tmp/mtest-14530/.s.monetdb.36065
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/sjoerd/Monet-devel/var/MonetDB/mTests_sql_test_testdb-upgrade
+# cmdline opt 	mal_listing = 0
+
+
+
+
+
+# 11:12:55 >  
+# 11:12:55 >  "Done."
+# 11:12:55 >  
+

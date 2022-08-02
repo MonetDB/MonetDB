@@ -1,0 +1,43 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+
+## Process this file with automake to produce Makefile.in
+
+MTSAFE
+
+INCLUDES = ../utils \
+		   $(zlib_CFLAGS) \
+		   $(bzip2_CFLAGS) \
+		   $(snappy_CFLAGS) \
+   		   $(lz4_CFLAGS) \
+		   $(liblzma_CFLAGS) \
+		   $(curl_CFLAGS)
+
+lib_stream  =  {
+	SOURCES = stream.c stream.h stream_socket.h
+	VERSION = $(STREAM_VERSION)
+	LIBS = WIN32?$(SOCKET_LIBS) \
+	       WIN32?$(zlib_LIBS) \
+	       WIN32?$(bzip2_LIBS) \
+	       WIN32?$(snappy_LIBS) \
+   	       WIN32?$(lz4_LIBS) \
+	       WIN32?$(liblzma_LIBS) \
+	       WIN32?$(curl_LIBS) \
+	       WIN32?$(LTLIBICONV)
+}
+
+headers_common = {
+	DIR = includedir/monetdb
+	HEADERS = h
+	SOURCES = stream_socket.h stream.h
+}
+
+headers_pc = {
+	COND = NOT_WIN32
+	HEADERS = pc
+	DIR = libdir/pkgconfig
+	SOURCES = monetdb-stream.pc.in
+}

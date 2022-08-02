@@ -1,0 +1,17 @@
+stderr of test 'round` in directory 'sql/test` itself:
+
+
+# 15:17:09 >  
+# 15:17:09 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB/lib:/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/sql_logs" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/xquery_logs" --set mapi_port=30070 --set monet_prompt= --trace "--dbname=mTests_src_test" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 15:17:09 >  
+
+
+# 15:17:09 >  
+# 15:17:09 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30070  < round.sql
+# 15:17:09 >  
+
+
+# 15:17:10 >  
+# 15:17:10 >  Done.
+# 15:17:10 >  
+

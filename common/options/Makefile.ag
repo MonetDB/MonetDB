@@ -1,0 +1,23 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+
+## Process this file with automake to produce Makefile.in
+
+MTSAFE
+
+EXTRA_DIST = getopt.c getopt1.c
+
+lib_moptions = {
+	NOINST
+	NAME = moptions
+	SOURCES = monet_options.c monet_options.h monet_getopt.h
+}
+
+headers_h = {
+	DIR = includedir/monetdb
+	HEADERS = h
+	SOURCES = monet_options.h
+}

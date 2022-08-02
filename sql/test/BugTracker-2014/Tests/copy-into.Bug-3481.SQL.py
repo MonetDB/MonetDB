@@ -1,4 +1,5 @@
-import os, sys, pymonetdb
+import os
+import pymonetdb
 
 def connect():
     return pymonetdb.connect(database = os.getenv('TSTDB'),
@@ -52,9 +53,10 @@ cn.close()
 
 # this should show a-c, but only shows a
 cn = connect()
+#print()
 
-if query(cn, 'SELECT name FROM tables WHERE system=0', True) != [('a', ),('b', ),('c', )]:
-    sys.stderr.write("Expected [('a', ),('b', ),('c', )]")
+for x in query(cn, 'SELECT name FROM tables WHERE system=0', True):
+    print(x[0])
 query(cn, 'DROP TABLE a')
 
 cn.close()

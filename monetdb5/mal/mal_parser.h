@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _MAL_PARSER_H
@@ -20,7 +20,7 @@
 #define prevChar(X) if(X->yycur) X->yycur--
 
 mal_export void initParser(void);   /* needed in src/mal/mal.c */
-mal_export void parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines, MALfcn address);
+mal_export void parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines);
 
 #endif /* _MAL_PARSER_H */
 

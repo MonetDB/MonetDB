@@ -1,0 +1,7 @@
+CREATE TABLE "sys"."mulpk" (
+        "id" int
+);
+ALTER TABLE mulpk ADD CONSTRAINT pk1 PRIMARY KEY (id);
+ALTER TABLE mulpk ADD CONSTRAINT pk2 PRIMARY KEY (id);
+ALTER TABLE mulpk ADD CONSTRAINT pk3 PRIMARY KEY (id);
+DROP TABLE "sys"."mulpk";

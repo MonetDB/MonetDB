@@ -1,0 +1,17 @@
+stderr of test 'huge_expression_and_column_name.SF-921173` in directory 'sql/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 11:32:13 >  
+# 11:32:13 >  Mtimeout -timeout 180 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./lib/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./var/MonetDB/log" --set mapi_port=37221 --set sql_port=44392 --set xquery_port=52551 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 11:32:13 >  
+
+
+# 18:37:34 >  
+# 18:37:34 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=49484  < huge_expression_and_column_name.SF-921173.sql
+# 18:37:34 >  
+
+
+# 18:37:34 >  
+# 18:37:34 >  Done.
+# 18:37:34 >  
+

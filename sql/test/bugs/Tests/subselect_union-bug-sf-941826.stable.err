@@ -1,0 +1,17 @@
+stderr of test 'subselect_union-bug-sf-941826` in directory 'sql/test/bugs` itself:
+
+
+# 15:49:36 >  
+# 15:49:36 >  Mtimeout -timeout 180 Mserver "--config=/ufs/heman/local-GNU-DBG/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/heman/local-GNU-DBG/lib/MonetDB:/ufs/heman/local-GNU-DBG/lib/bin" --set "gdk_dbfarm=/ufs/heman/local-GNU-DBG/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/heman/local-GNU-DBG/var/MonetDB/log" --set mapi_port=31824 --set sql_port=42765 --set xquery_port=56404 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 15:49:36 >  
+
+
+# 15:49:37 >  
+# 15:49:37 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=42765  < subselect_union-bug-sf-941826.sql
+# 15:49:37 >  
+
+
+# 15:49:38 >  
+# 15:49:38 >  Done.
+# 15:49:38 >  
+

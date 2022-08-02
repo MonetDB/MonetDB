@@ -1,0 +1,17 @@
+stderr of test 'groupby_with_alias.SF-1520575` in directory 'sql/test/BugTracker` itself:
+
+
+# 09:13:53 >  
+# 09:13:53 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=33703 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 09:13:53 >  
+
+
+# 09:13:53 >  
+# 09:13:53 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33703  < groupby_with_alias.SF-1520575.sql
+# 09:13:53 >  
+
+
+# 09:13:53 >  
+# 09:13:53 >  Done.
+# 09:13:53 >  
+

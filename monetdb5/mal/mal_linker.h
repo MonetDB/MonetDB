@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _MAL_LINKER_H
@@ -20,10 +20,10 @@
 #define RTLD_GLOBAL 4
 #endif
 
-mal_export MALfcn getAddress(const char *modname, const char *fcnname);
+mal_export MALfcn getAddress(str fcnname);
 mal_export char *MSP_locate_sqlscript(const char *mod_name, bit recurse);
-mal_export str loadLibrary(const char *modulename, int flag);
+mal_export str loadLibrary(str modulename, int flag);
 mal_export char *locate_file(const char *basename, const char *ext, bit recurse);
-mal_export int malLibraryEnabled(const char *name);
-mal_export char* malLibraryHowToEnable(const char *name);
+mal_export int malLibraryEnabled(str name);
+mal_export char* malLibraryHowToEnable(str name);
 #endif /* _MAL_LINKER_H */

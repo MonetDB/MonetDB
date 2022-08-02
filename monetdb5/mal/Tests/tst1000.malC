@@ -1,0 +1,7 @@
+#Access BATs 
+
+b:= bat.new(:int);
+bat.append(b,2);
+bat.setName(b,"mybat");
+c:bat[:int]:= bbp.bind("mybat");
+io.print(c);

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -211,24 +211,18 @@ void reinitialize(void)
 	/* re-read properties, we're in our dbfarm */
 	readProps(_mero_props, ".");
 
-	/* sync the cached  _mero_loglevel  value */
-	kv = findConfKey(_mero_props, "loglevel");
-	if (kv->val != NULL) {
-		setLogLevel(kv->ival);
-	}
-
 	/* check and trim the hash-algo from the passphrase for easy use
 	 * later on */
 	kv = findConfKey(_mero_props, "passphrase");
 	if (kv->val != NULL) {
 		char *h = kv->val + 1;
 		if ((f = strchr(h, '}')) == NULL) {
-			Mlevelfprintf(WARNING, stderr, "ignoring invalid passphrase: %s\n", kv->val);
+			Mfprintf(stderr, "ignoring invalid passphrase: %s\n", kv->val);
 			setConfVal(kv, NULL);
 		} else {
 			*f++ = '\0';
 			if (strcmp(h, MONETDB5_PASSWDHASH) != 0) {
-				Mlevelfprintf(WARNING, stderr, "ignoring passphrase with incompatible "
+				Mfprintf(stderr, "ignoring passphrase with incompatible "
 						"password hash: %s\n", h);
 				setConfVal(kv, NULL);
 			} else {
@@ -246,30 +240,21 @@ void reinitialize(void)
 	/* reopen (or open new) file */
 	t = open(f, O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC, S_IRUSR | S_IWUSR);
 	if (t == -1) {
-		Mlevelfprintf(ERROR, stderr, "forced to ignore SIGHUP: unable to open "
+		Mfprintf(stderr, "forced to ignore SIGHUP: unable to open "
 				"'%s': %s\n", f, strerror(errno));
 	} else {
 #if O_CLOEXEC == 0
 		(void) fcntl(t, F_SETFD, FD_CLOEXEC);
 #endif
-		Mlevelfprintf(INFORMATION, _mero_logfile, "%s END merovingian[%lld]: "
+		Mfprintf(_mero_logfile, "%s END merovingian[%lld]: "
 				"caught SIGHUP, closing logfile\n",
 				mytime, (long long int)_mero_topdp->next->pid);
-		_mero_topdp->input[0].fd = _mero_topdp->input[1].fd = t;
-		FILE *f = _mero_logfile;
-		if ((_mero_logfile = fdopen(t, "a")) == NULL) {
-			/* revert to old log so that we have something */
-			Mlevelfprintf(ERROR, f, "%s ERR merovingian[%lld]: "
-					 "failed to reopen logfile\n",
-					 mytime, (long long int)_mero_topdp->next->pid);
-			_mero_topdp->input[0].fd = _mero_topdp->input[1].fd = fileno(f);
-			_mero_logfile = f;
-		} else {
-			fclose(f);
-			Mlevelfprintf(INFORMATION, _mero_logfile, "%s BEG merovingian[%lld]: "
-					 "reopening logfile\n",
-					 mytime, (long long int)_mero_topdp->next->pid);
-		}
+		fflush(_mero_logfile);
+		_mero_topdp->out = _mero_topdp->err = t;
+		_mero_logfile = fdopen(t, "a");
+		Mfprintf(_mero_logfile, "%s BEG merovingian[%lld]: "
+				"reopening logfile\n",
+				mytime, (long long int)_mero_topdp->next->pid);
 	}
 
 	/* logger go ahead! */
@@ -298,16 +283,16 @@ childhandler(void)
 		while (p != NULL) {
 			if (p->pid == pid) {
 				/* log everything that's still in the pipes */
-				logFD(p, 0, "MSG", p->dbname, (long long int)p->pid, _mero_logfile, 1);
+				logFD(p->out, "MSG", p->dbname, (long long int)p->pid, _mero_logfile, 1);
 				p->pid = -1;	/* indicate the process is dead */
 
 				/* close the descriptors */
-				close(p->input[0].fd);
-				close(p->input[1].fd);
-				p->input[0].fd = -1;
-				p->input[1].fd = -1;
+				close(p->out);
+				close(p->err);
+				p->out = -1;
+				p->err = -1;
 				if (WIFEXITED(wstatus)) {
-					Mlevelfprintf(INFORMATION, stdout, "database '%s' (%lld) has exited with "
+					Mfprintf(stdout, "database '%s' (%lld) has exited with "
 							 "exit status %d\n", p->dbname,
 							 (long long int)p->pid, WEXITSTATUS(wstatus));
 				} else if (WIFSIGNALED(wstatus)) {
@@ -318,11 +303,11 @@ childhandler(void)
 						sigstr = signum;
 					}
 					if (WCOREDUMP(wstatus)) {
-						Mlevelfprintf(ERROR, stdout, "database '%s' (%lld) has crashed "
+						Mfprintf(stdout, "database '%s' (%lld) has crashed "
 								 "with signal %s (dumped core)\n",
 								 p->dbname, (long long int)p->pid, sigstr);
 					} else {
-						Mlevelfprintf(WARNING, stdout, "database '%s' (%lld) was killed "
+						Mfprintf(stdout, "database '%s' (%lld) was killed "
 								 "by signal %s\n",
 								 p->dbname, (long long int)p->pid, sigstr);
 					}
@@ -353,14 +338,16 @@ segvhandler(int sig) {
 	sigaction(SIGSEGV, &sa, NULL);
 
 	if (_mero_topdp != NULL) {
-		const char errmsg[] = "\nSEGMENTATION FAULT OCCURRED\n"
+		char errmsg[] = "\nSEGMENTATION FAULT OCCURRED\n"
 				"\nA fatal error has occurred which prevents monetdbd from operating."
-				"\nThis is likely a bug in monetdbd, please report it on https://github.com/MonetDB/MonetDB/issues/"
+				"\nThis is likely a bug in monetdbd, please report it on http://bugs.monetdb.org/"
 				"\nand include the tail of this log in your bugreport with your explanation of "
 				"\nwhat you were doing, if possible.\n"
 				"\nABORTING NOW, YOU HAVE TO MANUALLY KILL ALL REMAINING mserver5 PROCESSES\n";
-		if (write(_mero_topdp->input[1].fd, errmsg, sizeof(errmsg) - 1) >= 0)
+		if (write(_mero_topdp->err, errmsg, sizeof(errmsg) - 1) >= 0)
 			sync();
 	}
 	abort();
 }
+
+/* vim:set ts=4 sw=4 noexpandtab: */

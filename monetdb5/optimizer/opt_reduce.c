@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -11,10 +11,11 @@
 #include "mal_interpreter.h"
 
 str
-OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	InstrPtr p=0;
 	int actions = 0;
+	char buf[256];
+	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
 	(void)cntxt;
@@ -25,18 +26,22 @@ OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	trimMalVariables(mb,0);
 	actions = actions - mb->vtop;
 
-	/* Defense line against incorrect plans */
+    /* Defense line against incorrect plans */
 	/* plan is not changed */
 	/* plan is not changed */
-	//if( actions > 0){
-		//msg = chkTypes(cntxt->usermodule, mb, FALSE);
-		//if (!msg)
+    //if( actions > 0){
+        //msg = chkTypes(cntxt->usermodule, mb, FALSE);
+        //if (!msg)
 	//	msg = chkFlow(mb);
-		//if (!msg)
-		// 	msg = chkDeclarations(mb);
-	//}
-	/* keep actions taken as a fake argument*/
-	(void) pushInt(mb, pci, actions);
+        //if (!msg)
+        // 	msg = chkDeclarations(mb);
+    //}
+    /* keep all actions taken as a post block comment */
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","reduce",actions, usec);
+    newComment(mb,buf);
+	if( actions > 0)
+		addtoMalBlkHistory(mb);
 
 	return msg;
 }

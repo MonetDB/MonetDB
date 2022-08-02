@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -122,38 +122,38 @@ MNDBColumns(ODBCStmt *stmt,
 	}
 
 	/* construct the query now */
-	querylen = 6500 + (sch ? strlen(sch) : 0) +
+	querylen = 6500 + strlen(stmt->Dbc->dbname) + (sch ? strlen(sch) : 0) +
 		(tab ? strlen(tab) : 0) + (col ? strlen(col) : 0);
 	query = malloc(querylen);
 	if (query == NULL)
 		goto nomem;
 
 	/* SQLColumns returns a table with the following columns:
-	   VARCHAR      TABLE_CAT
-	   VARCHAR      TABLE_SCHEM
-	   VARCHAR      TABLE_NAME NOT NULL
-	   VARCHAR      COLUMN_NAME NOT NULL
-	   SMALLINT     DATA_TYPE NOT NULL
-	   VARCHAR      TYPE_NAME NOT NULL
-	   INTEGER      COLUMN_SIZE
-	   INTEGER      BUFFER_LENGTH
-	   SMALLINT     DECIMAL_DIGITS
-	   SMALLINT     NUM_PREC_RADIX
-	   SMALLINT     NULLABLE NOT NULL
-	   VARCHAR      REMARKS
-	   VARCHAR      COLUMN_DEF
-	   SMALLINT     SQL_DATA_TYPE NOT NULL
-	   SMALLINT     SQL_DATETIME_SUB
-	   INTEGER      CHAR_OCTET_LENGTH
-	   INTEGER      ORDINAL_POSITION NOT NULL
-	   VARCHAR      IS_NULLABLE
+	   VARCHAR      table_cat
+	   VARCHAR      table_schem
+	   VARCHAR      table_name NOT NULL
+	   VARCHAR      column_name NOT NULL
+	   SMALLINT     data_type NOT NULL
+	   VARCHAR      type_name NOT NULL
+	   INTEGER      column_size
+	   INTEGER      buffer_length
+	   SMALLINT     decimal_digits
+	   SMALLINT     num_prec_radix
+	   SMALLINT     nullable NOT NULL
+	   VARCHAR      remarks
+	   VARCHAR      column_def
+	   SMALLINT     sql_data_type NOT NULL
+	   SMALLINT     sql_datetime_sub
+	   INTEGER      char_octet_length
+	   INTEGER      ordinal_position NOT NULL
+	   VARCHAR      is_nullable
 	 */
 
 	pos += snprintf(query + pos, querylen - pos,
-		"select cast(null as varchar(1)) as \"TABLE_CAT\", "
-		       "s.name as \"TABLE_SCHEM\", "
-		       "t.name as \"TABLE_NAME\", "
-		       "c.name as \"COLUMN_NAME\", "
+		"select '%s' as table_cat, "
+		       "s.name as table_schem, "
+		       "t.name as table_name, "
+		       "c.name as column_name, "
 		DATA_TYPE(c) ", "
 		TYPE_NAME(c) ", "
 		COLUMN_SIZE(c) ", "
@@ -163,22 +163,23 @@ MNDBColumns(ODBCStmt *stmt,
 		       "case c.\"null\" "
 			    "when true then cast(%d as smallint) "
 			    "when false then cast(%d as smallint) "
-		       "end as \"NULLABLE\", "
-		       "%s as \"REMARKS\", "
-		       "c.\"default\" as \"COLUMN_DEF\", "
+		       "end as nullable, "
+		       "%s as remarks, "
+		       "c.\"default\" as column_def, "
 		SQL_DATA_TYPE(c) ", "
 		SQL_DATETIME_SUB(c) ", "
 		CHAR_OCTET_LENGTH(c) ", "
-		       "cast(c.number + 1 as integer) as \"ORDINAL_POSITION\", "
+		       "cast(c.number + 1 as integer) as ordinal_position, "
 		       "case c.\"null\" "
 			    "when true then cast('YES' as varchar(3)) "
 			    "when false then cast('NO' as varchar(3)) "
-		       "end as \"IS_NULLABLE\" "
+		       "end as is_nullable "
 		 "from sys.schemas s, "
 		      "sys.tables t, "
 		      "sys.columns c%s "
 		 "where s.id = t.schema_id and "
 		       "t.id = c.table_id",
+		stmt->Dbc->dbname,
 #ifdef DATA_TYPE_ARGS
 		DATA_TYPE_ARGS,
 #endif
@@ -242,10 +243,7 @@ MNDBColumns(ODBCStmt *stmt,
 	}
 
 	/* add the ordering (exclude table_cat as it is the same for all rows) */
-	pos += strcpy_len(query + pos, " order by \"TABLE_SCHEM\", \"TABLE_NAME\", \"ORDINAL_POSITION\"", querylen - pos);
-	assert(pos < querylen);
-
-	/* debug: fprintf(stdout, "SQLColumns query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */
+	pos += strcpy_len(query + pos, " order by table_schem, table_name, ordinal_position", querylen - pos);
 
 	/* query the MonetDB data dictionary tables */
 	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);

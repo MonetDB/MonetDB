@@ -1,0 +1,131 @@
+stdout of test 'decimal_vs_integer.Bug-3941` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 09:23:08 >  
+# 09:23:08 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21127" "--port=34996"
+# 09:23:08 >  
+
+#start transaction;
+#create table tmp(i decimal(8));
+#explain select count(*) from tmp where i = 20160222;
+% .explain # table_name
+% mal # name
+% clob # type
+% 123 # length
+function user.s6_0():void;
+    X_2:void := querylog.define("explain select count(*) from tmp where i = 20160222;":str, "sequential_pipe":str, 12:int);
+    X_15:bat[:oid] := bat.new(nil:oid);
+    X_18:lng := aggr.count(X_15:bat[:oid]);
+    sql.resultSet("sys.%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+end user.s6_0;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=1 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions= 1 time=4 usec 
+#evaluate             actions= 1 time=12 usec 
+#emptybind            actions= 2 time=10 usec 
+#pushselect           actions= 0 time=2 usec 
+#aliases              actions= 1 time=3 usec 
+#mitosis              actions=1 time=0 usec 
+#mergetable           actions= 0 time=18 usec 
+#deadcode             actions= 5 time=7 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 1 time=6 usec 
+#commonTerms          actions= 0 time=3 usec 
+#projectionpath       actions= 0 time=2 usec 
+#deadcode             actions= 0 time=19 usec 
+#reorder              actions= 1 time=41 usec 
+#matpack              actions= 0 time=0 usec 
+#dataflow             actions= 0 time=4 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=0 usec 
+#candidates           actions= 1 time=2 usec 
+#deadcode             actions= 0 time=5 usec 
+#postfix              actions= 0 time=3 usec 
+#wlc                  actions= 0 time=1 usec 
+#garbagecollector     actions= 1 time=72 usec 
+#total                actions=29 time=414 usec 
+#explain select count(*) from tmp where i = '20160222';
+% .explain # table_name
+% mal # name
+% clob # type
+% 126 # length
+function user.s6_0():void;
+    X_2:void := querylog.define("explain select count(*) from tmp where i = \\'20160222\\';":str, "default_pipe":str, 13:int);
+    X_16:bat[:oid] := bat.new(nil:oid);
+    X_19:lng := aggr.count(X_16:bat[:oid]);
+    sql.resultSet("sys.%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_19:lng);
+end user.s6_0;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=1 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions= 1 time=3 usec 
+#evaluate             actions= 1 time=9 usec 
+#emptybind            actions= 3 time=6 usec 
+#pushselect           actions= 0 time=2 usec 
+#aliases              actions= 1 time=3 usec 
+#mergetable           actions= 0 time=15 usec 
+#deadcode             actions= 5 time=5 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 0 time=3 usec 
+#commonTerms          actions= 0 time=2 usec 
+#projectionpath       actions= 0 time=1 usec 
+#deadcode             actions= 0 time=3 usec 
+#reorder              actions= 1 time=9 usec 
+#matpack              actions= 0 time=0 usec 
+#dataflow             actions= 0 time=3 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=0 usec 
+#deadcode             actions= 0 time=3 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=5 usec 
+#total                actions=29 time=140 usec 
+#explain select count(*) from tmp where i = 201602221;
+% .explain # table_name
+% mal # name
+% clob # type
+% 121 # length
+function user.s8_0():void;
+    X_2:void := querylog.define("explain select count(*) from tmp where i = 201602221;":str, "default_pipe":str, 14:int);
+    X_5:int := sql.mvc();
+    X_12:bat[:int] := sql.bind(X_5:int, "sys":str, "tmp":str, "i":str, 0:int);
+    X_13:bat[:int] := batcalc.int(0:int, X_12:bat[:int], 9:int, 0:int);
+    C_6:bat[:oid] := sql.tid(X_5:int, "sys":str, "tmp":str);
+    C_19:bat[:oid] := algebra.thetaselect(X_13:bat[:int], C_6:bat[:oid], 201602221:int, "==":str);
+    X_22:lng := aggr.count(C_19:bat[:oid]);
+    sql.resultSet("sys.%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_22:lng);
+end user.s8_0;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 1 time=6 usec 
+#costmodel            actions= 1 time=0 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions= 1 time=4 usec 
+#evaluate             actions= 1 time=8 usec 
+#emptybind            actions= 2 time=6 usec 
+#pushselect           actions= 0 time=3 usec 
+#aliases              actions= 1 time=3 usec 
+#mergetable           actions= 0 time=18 usec 
+#deadcode             actions= 4 time=5 usec 
+#aliases              actions= 0 time=1 usec 
+#constants            actions= 2 time=4 usec 
+#commonTerms          actions= 0 time=2 usec 
+#projectionpath       actions= 0 time=2 usec 
+#deadcode             actions= 0 time=3 usec 
+#reorder              actions= 1 time=10 usec 
+#matpack              actions= 0 time=0 usec 
+#dataflow             actions= 0 time=4 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=0 usec 
+#deadcode             actions= 0 time=3 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=6 usec 
+#total                actions=29 time=152 usec 
+
+# 15:01:30 >  
+# 15:01:30 >  "Done."
+# 15:01:30 >  
+

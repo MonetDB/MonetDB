@@ -1,2 +1,1 @@
 NOT_WIN32?monetdb_status
-NOT_WIN32&HAVE_GETENTROPY?monetdb_snapshot

@@ -1,0 +1,26 @@
+stdout of test 'tst4701` in directory 'monetdb5/optimizer` itself:
+
+
+# 23:52:59 >  
+# 23:52:59 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39352 --set sql_port=45171 --set xquery_port=52900 --set monet_prompt= --trace --dbname=mTests_src_optimizer  tst4701.mal </dev/null
+# 23:52:59 >  
+
+# MonetDB server v5.9.0, based on kernel v1.27.0
+# Serving database 'mTests_src_optimizer', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32804/
+command user.tst903():void address MCCAdmin_tst903;
+!TypeException:user.main[2]:object code for command user.tst903 missing
+!TypeException:user.main[2]:'user.tst903' undefined in: user.tst903();
+function user.main():void;
+# after the routine tst903 is it can be linked 
+    user.tst903();
+end user.main;
+
+# 23:52:59 >  
+# 23:52:59 >  Done.
+# 23:52:59 >  
+

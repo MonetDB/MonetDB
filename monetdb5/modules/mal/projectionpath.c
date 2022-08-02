@@ -3,15 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
-#include "mal_client.h"
-#include "mal_interpreter.h"
-#include "mal_exception.h"
+#include "projectionpath.h"
 
-static str
+str
 ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
@@ -30,12 +28,10 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = pci->retc; i < pci->argc; i++) {
 		bid = *getArgReference_bat(stk, pci, i);
 		b = BATdescriptor(bid);
-		if (b == NULL || (i + 1 < pci->argc && ATOMtype(b->ttype) != TYPE_oid && b->ttype != TYPE_msk)) {
+		if (b == NULL || (i + 1 < pci->argc && ATOMtype(b->ttype) != TYPE_oid)) {
 			while (--i >= pci->retc)
 				BBPunfix(joins[i - pci->retc]->batCacheid);
 			GDKfree(joins);
-			if (b)
-				BBPunfix(b->batCacheid);
 			throw(MAL, "algebra.projectionpath", "%s", b ? SEMANTIC_TYPE_MISMATCH : INTERNAL_BAT_ACCESS);
 		}
 		joins[i - pci->retc] = b;
@@ -45,23 +41,9 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = pci->retc; i < pci->argc; i++)
 		BBPunfix(joins[i - pci->retc]->batCacheid);
 	GDKfree(joins);
-	if ( b) {
-		*r = b->batCacheid;
-		BBPkeepref(b);
-	} else
-		throw(MAL, "algebra.projectionpath", GDK_EXCEPTION);
+	if ( b)
+		BBPkeepref( *r = b->batCacheid);
+	else
+		throw(MAL, "algebra.projectionpath", INTERNAL_OBJ_CREATE);
 	return MAL_SUCCEED;
 }
-
-#include "mel.h"
-mel_func projectionpath_init_funcs[] = {
- pattern("algebra", "projectionpath", ALGprojectionpath, false, "Routine to handle join paths.  The type analysis is rather tricky.", args(1,2, batargany("",0),batvarargany("l",0))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_projectionpath_mal)
-{ mal_module("projectionpath", NULL, projectionpath_init_funcs); }

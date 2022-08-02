@@ -1,0 +1,93 @@
+stdout of test 'dropManyUsers.Bug-3764` in directory 'sql/test/Users` itself:
+
+
+# 14:28:36 >  
+# 14:28:36 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37510" "--set" "mapi_usock=/var/tmp/mtest-23537/.s.monetdb.37510" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/vera/Desktop/MonetDB/installation/var/MonetDB/mTests_sql_test_Users" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 14:28:36 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_Users', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.386 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:31345/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4412/.s.monetdb.31345
+# MonetDB/GIS module loaded
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+
+# 14:28:37 >  
+# 14:28:37 >  "/usr/bin/python2" "dropManyUsers.SQL.py" "dropManyUsers"
+# 14:28:37 >  
+
+#CREATE SCHEMA newSchema;
+#select u.name, u.fullname, s.name from "sys"."users" u left outer join "sys"."schemas" s on u.default_schema = s.id;
+% .u,	.u,	.s # table_name
+% name,	fullname,	name # name
+% varchar,	varchar,	varchar # type
+% 7,	13,	3 # length
+[ "monetdb",	"MonetDB Admin",	"sys"	]
+#CREATE USER user1 with password '1' name '1st user' schema newSchema;
+#CREATE USER user2 with password '2' name '2nd user' schema newSchema;
+#CREATE USER user3 with password '3' name '3rd user' schema newSchema;
+#CREATE USER user4 with password '4' name '4th user' schema newSchema;
+#select u.name, u.fullname, s.name from "sys"."users" u left outer join "sys"."schemas" s on u.default_schema = s.id;
+% .u,	.u,	.s # table_name
+% name,	fullname,	name # name
+% varchar,	varchar,	varchar # type
+% 7,	13,	9 # length
+[ "monetdb",	"MonetDB Admin",	"sys"	]
+[ "user1",	"1st user",	"newschema"	]
+[ "user2",	"2nd user",	"newschema"	]
+[ "user3",	"3rd user",	"newschema"	]
+[ "user4",	"4th user",	"newschema"	]
+#DROP USER user1;
+#DROP USER user2;
+#DROP USER user3;
+#DROP USER user4;
+#select u.name, u.fullname, s.name from "sys"."users" u left outer join "sys"."schemas" s on u.default_schema = s.id;
+% .u,	.u,	.s # table_name
+% name,	fullname,	name # name
+% varchar,	varchar,	varchar # type
+% 7,	13,	3 # length
+[ "monetdb",	"MonetDB Admin",	"sys"	]
+
+# 14:28:37 >  
+# 14:28:37 >  "Done."
+# 14:28:37 >  
+

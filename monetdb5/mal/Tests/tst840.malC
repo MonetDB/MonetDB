@@ -1,0 +1,10 @@
+# old MAL parser can not deal with new lines
+function foo();
+s:= " \nline1\n\
+line2\n";
+io.printf("----\n");
+io.printf("%s",s);
+io.printf("----\n");
+end;
+mdb.List("user","foo");
+user.foo();

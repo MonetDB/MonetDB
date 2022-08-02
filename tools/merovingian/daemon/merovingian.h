@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _MEROVINGIAN_H
@@ -13,12 +13,13 @@
 #include <pthread.h> /* pthread_mutex_t */
 #include <signal.h>	 /* sig_atomic_t */
 
-#include "utils/utils.h" /* confkeyval, loglevel */
+#include "utils/utils.h" /* confkeyval */
 
-#define MERO_PORT      MAPI_PORT_STR
+#define MERO_PORT      "50000"
 #define MERO_SOCK      ".s.monetdb."
 #define CONTROL_SOCK   ".s.merovingian."
 
+#define SOCKPTR struct sockaddr *
 #ifdef HAVE_SOCKLEN_T
 #define SOCKLEN socklen_t
 #else
@@ -31,6 +32,15 @@ typedef char* err;
 #define getErrMsg(X) X
 #define NO_ERR (err)0
 
+/* when not writing to stderr, one has to flush, make it easy to do so */
+#define Mfprintf(S, ...)						\
+	do {										\
+		if (S) {								\
+			fprintf(S, __VA_ARGS__);			\
+			fflush(S);							\
+		}										\
+	} while (0)
+
 typedef enum _mtype {
 	MERO = 1,
 	MERODB,
@@ -38,12 +48,8 @@ typedef enum _mtype {
 } mtype;
 
 typedef struct _dpair {
-	struct _dpair_input {
-		int fd;
-		int cnt;
-		char buf[8096];
-		time_t ts;
-	} input[2];
+	int out;          /* where to read stdout messages from */
+	int err;          /* where to read stderr messages from */
 	mtype type;       /* type of process */
 	short flag;		  /* flag internal to logListener */
 	pid_t pid;        /* this process' id */
@@ -54,22 +60,8 @@ typedef struct _dpair {
 
 char *newErr(_In_z_ _Printf_format_string_ const char *fmt, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
-bool terminateProcess(char *dbname, pid_t pid, mtype type);
-void logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FILE *stream, bool rest);
-
-loglevel getLogLevel(void);
-void setLogLevel(loglevel level);
-
-/* based on monetdbd loglevel only print when type of msg is lower or equal than loglevel */
-/* DEBUG (4) is greater than INFORMATION (3) is greater than WARNING (2) is greater than ERROR (1) */
-/* when not writing to stderr, one has to flush, make it easy to do so */
-#define Mlevelfprintf(msgtype, S, ...)			\
-	do {										\
-		if (S && (msgtype <= getLogLevel())) {	\
-			fprintf(S, __VA_ARGS__);			\
-			fflush(S);							\
-		}										\
-	} while (0)
+bool terminateProcess(dpair dp, mtype type);
+void logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream, int rest);
 
 extern char *_mero_mserver;
 extern dpair _mero_topdp;
@@ -84,9 +76,12 @@ extern unsigned short _mero_controlport;
 extern FILE *_mero_ctlout;
 extern FILE *_mero_ctlerr;
 extern int _mero_broadcastsock;
+extern const struct in6_addr ipv6_any_addr;
 extern struct sockaddr_in _mero_broadcastaddr;
 extern char _mero_hostname[128];
 extern confkeyval *_mero_db_props;
 extern confkeyval *_mero_props;
 
 #endif
+
+/* vim:set ts=4 sw=4 noexpandtab: */

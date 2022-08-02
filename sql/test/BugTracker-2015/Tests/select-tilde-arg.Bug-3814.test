@@ -1,5 +1,0 @@
-query I rowsort
-select ~0
-----
--1
-

@@ -3,7 +3,37 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ */
+
+/*
+ * The query cache
+ * ===============
+ *
+ * An effective scheme to speedup processing of an SQL engine is
+ * to keep a cache of recently executed queries around.
+ * This cache can be inspected by simply searching for an
+ * identical query string, or a simple pattern match against
+ * the sql query tree.  Finding an element saves code generation.
+ *
+ * The scheme used here is based on keeping a hash-key around for
+ * the original text and subsequently perform a parse-tree comparison.
+ * This means that only text-identical queries are captured.
+ *
+ * The upper layers should consider the cache as an auxiliary
+ * structure. There is no guarantee that elements remain in
+ * the cache forever, nor control features to assure this.
+ *
+ * Entries in the cache obtain a unique(?) cache entry number.
+ * It can be used as an external name.
+ *
+ * [todo]
+ * The information retain for each cached item is back-end specific.
+ * It should have a hook to update the initialize the cache entry
+ * and a method to destroy it.
+ *
+ * The optimization/processing cost should be kept around and the re-use of
+ * a cache entry.
  */
 
 #include "monetdb_config.h"
@@ -11,13 +41,12 @@
 #include "sql_qc.h"
 #include "sql_mvc.h"
 #include "sql_atom.h"
-#include "rel_exp.h"
 #include "gdk_time.h"
 
 qc *
-qc_create(sql_allocator *sa, int clientid, int seqnr)
+qc_create(int clientid, int seqnr)
 {
-	qc *r = SA_NEW(sa, qc);
+	qc *r = MNEW(qc);
 	if (!r)
 		return NULL;
 	*r = (qc) {
@@ -30,11 +59,17 @@ qc_create(sql_allocator *sa, int clientid, int seqnr)
 static void
 cq_delete(int clientid, cq *q)
 {
-	if (q->name)
-		backend_freecode(NULL, clientid, q->name);
-	/* q, params and name are allocated using sa, ie need to be delete last */
+	if (q->code)
+		backend_freecode(clientid, q->code, q->stk, q->id, q->name);
+	if (q->stk)
+		backend_freestack(clientid, q->stk);
+	if (q->codestring)
+		_DELETE(q->codestring);
+
+	/* params and name are allocated using sa, ie need to be delete last */
 	if (q->sa)
 		sa_destroy(q->sa);
+	_DELETE(q);
 }
 
 void
@@ -42,35 +77,39 @@ qc_delete(qc *cache, cq *q)
 {
 	cq *n, *p = NULL;
 
-	if (cache) {
-		for (n = cache->q; n; p = n, n = n->next) {
-			if (n == q) {
-				if (p) {
-					p->next = q->next;
-				} else {
-					cache->q = q->next;
-				}
-				cq_delete(cache->clientid, q);
-				cache->nr--;
-				break;
+	for (n = cache->q; n; p = n, n = n->next) {
+		if (n == q) {
+			if (p) {
+				p->next = q->next;
+			} else {
+				cache->q = q->next;
 			}
+			cq_delete(cache->clientid, q);
+			cache->nr--;
+			break;
 		}
 	}
 }
 
 void
-qc_clean(qc *cache)
+qc_clean(qc *cache, bool prepared)
 {
-	cq *n, *p = NULL;
+	cq *n, *q, *p = NULL;
 
-	if (cache) {
-		for (n = cache->q; n; ) {
-			p = n->next;
-			cq_delete(cache->clientid, n);
+	for (q = cache->q; q; ) {
+		if (q->prepared == prepared) {
+			n = q->next;
+			if (p)
+				p->next = n;
+			else
+				cache->q = n;
+			cq_delete(cache->clientid, q);
 			cache->nr--;
-			n = p;
+			q = n;
+			continue;
 		}
-		cache->q = NULL;
+		p = q;
+		q = q->next;
 	}
 }
 
@@ -78,15 +117,94 @@ void
 qc_destroy(qc *cache)
 {
 	cq *q, *n;
+	for (q = cache->q; q; q = n) {
+		n = q->next;
 
-	if (cache) {
-		for (q = cache->q; q; q = n) {
-			n = q->next;
+		cq_delete(cache->clientid, q);
+		cache->nr--;
+	}
+	_DELETE(cache);
+}
 
-			cq_delete(cache->clientid, q);
-			cache->nr--;
+static int
+param_cmp(sql_subtype *t1, sql_subtype *t2)
+{
+	int res;
+
+	if (t1->scale != t2->scale)
+		return -1;
+
+	if (t1->type->eclass == EC_NUM && t2->type->eclass == EC_NUM &&
+		t1->digits >= t2->digits)
+		return 0;
+
+	res = is_subtype(t2, t1);
+	if (!res)
+		return -1;
+/*
+	if ((t1->digits > 0 && t1->scale == 0 && t1->digits < t2->digits) || (t1->scale > 0 && t1->digits > 0 && t1->digits - t1->scale < t2->digits - t2->scale)) {
+		return -1;
+	}
+*/
+	return 0;
+}
+
+static int
+param_list_cmp(sql_subtype *typelist, atom **atoms, int plen, mapi_query_t type)
+{
+	int i;
+
+	if (!plen && !typelist)
+		return 0;
+
+	if (!typelist || !atoms)
+		return -1;
+	for (i=0; i < plen; i++) {
+		sql_subtype *tp = typelist + i;
+		atom *a = atoms[i];
+
+		if (atom_null(a) && type != Q_UPDATE)
+			return -1;
+
+		/* NULL values match any type */
+		if (!atom_null(a) && param_cmp(tp, atom_type(a)) != 0) {
+			sql_subtype *at = atom_type(a);
+
+			if (tp->type->eclass == EC_CHAR &&
+			    at->type->eclass == EC_CHAR &&
+			      (!tp->digits || tp->digits == at->digits))
+				continue;
+			if (tp->type->eclass == EC_STRING &&
+			    at->type->eclass == EC_CHAR &&
+			      (!tp->digits || tp->digits >= at->digits))
+				continue;
+			if (type != Q_UPDATE)
+				return -1;
+			/* FLT == DEC/NUM and DEC/NUM are equal */
+			if ((!((at->type->eclass == EC_DEC ||
+			        at->type->eclass == EC_NUM) &&
+			       tp->type->eclass == EC_FLT)) &&
+			   (!(EC_VARCHAR(tp->type->eclass) &&
+			      EC_VARCHAR(at->type->eclass) &&
+			      (!tp->digits ||
+			       tp->digits >= at->digits))) &&
+			   (!(tp->type->eclass == EC_DEC &&
+			      at->type->eclass == EC_NUM &&
+			      tp->type->localtype >= at->type->localtype &&
+		             atom_num_digits(a)+tp->scale <= tp->digits)) &&
+			/*
+			   (!(tp->type->eclass == EC_DEC &&
+			      at->type->eclass == EC_DEC &&
+			      tp->type->localtype >= at->type->localtype &&
+			      at->digits <= tp->digits &&
+			      at->scale <= tp->scale)) &&
+			*/
+			   (!(at->type->eclass == EC_NUM && tp->type->eclass == EC_NUM &&
+			      at->type->localtype <= tp->type->localtype)))
+				return -1;
 		}
 	}
+	return 0;
 }
 
 cq *
@@ -94,9 +212,23 @@ qc_find(qc *cache, int id)
 {
 	cq *q;
 
-	if (cache) {
-		for (q = cache->q; q; q = q->next) {
-			if (q->id == id) {
+	for (q = cache->q; q; q = q->next) {
+		if (q->id == id) {
+			q->count++;
+			return q;
+		}
+	}
+	return NULL;
+}
+
+cq *
+qc_match(qc *cache, mvc *sql, symbol *s, atom **params, int plen, int key)
+{
+	cq *q;
+
+	for (q = cache->q; q; q = q->next) {
+		if (q->key == key) {
+			if (q->paramlen == plen && param_list_cmp(q->params, params, plen, q->type) == 0 && symbol_cmp(sql, q->s, s) == 0) {
 				q->count++;
 				return q;
 			}
@@ -106,15 +238,13 @@ qc_find(qc *cache, int id)
 }
 
 cq *
-qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, mapi_query_t type, char *cmd, int no_mitosis)
+qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom **params, int paramlen, int key, mapi_query_t type, char *cmd, int no_mitosis, bool prepared)
 {
-	int namelen;
-	sql_func *f = SA_NEW(sa, sql_func);
-	cq *n = SA_ZNEW(sa, cq);
-	list *res = NULL;
-
-	if (!n || !f || !cache)
+	int i, namelen;
+	cq *n = ZNEW(cq);
+	if (!n)
 		return NULL;
+
 	n->id = cache->id++;
 	cache->nr++;
 
@@ -122,54 +252,55 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, map
 	n->rel = r;
 	n->s = s;
 
-	n->next = cache->q;
-	n->type = type;
-	n->count = 1;
-	namelen = 5 + ((n->id+7)>>3) + ((cache->clientid+7)>>3);
-	char *name = sa_alloc(sa, namelen);
-	n->no_mitosis = no_mitosis;
-	n->created = timestamp_current();
-	if (!name)
-		return NULL;
-	(void) snprintf(name, namelen, "p%d_%d", n->id, cache->clientid);
-	n->name = name;
-	cache->q = n;
+	n->paramlen = paramlen;
+	if (paramlen) {
+		n->params = SA_NEW_ARRAY(sa, sql_subtype,paramlen);
+		if (!n->params) {
+			_DELETE(n);
+			return NULL;
+		}
+		for (i = 0; i < paramlen; i++) {
+			atom *a = params[i];
 
-	if (r && is_project(r->op) && !list_empty(r->exps)) {
-		sql_arg *a;
-		node *m;
-
-		res = sa_list(sa);
-		for(m = r->exps->h; m; m = m->next) {
-			sql_exp *e = m->data;
-			sql_subtype *t = exp_subtype(e);
-
-			a = NULL;
-			if (t)
-				a = sql_create_arg(sa, NULL, t, ARG_OUT);
-			append(res, a);
+			n->params[i] = *(atom_type(a));
 		}
 	}
-
-	*f = (sql_func) {
-		.mod = sql_private_module_name,
-		.type = F_PROC,
-		.lang = FUNC_LANG_INT,
-		.query = cmd,
-		.ops = params,
-		.res = res,
-	};
-	base_init(sa, &f->base, 0, true, NULL);
-	f->base.new = 1;
-	f->base.id = n->id;
-	f->base.name = f->imp = name;
-	f->instantiated = TRUE;
-	n->f = f;
+	n->prepared = prepared;
+	n->next = cache->q;
+	n->type = type;
+	n->key = key;
+	n->codestring = cmd;
+	n->count = 1;
+	namelen = 5 + ((n->id+7)>>3) + ((cache->clientid+7)>>3);
+	n->name = sa_alloc(sa, namelen);
+	n->no_mitosis = no_mitosis;
+	n->created = timestamp_current();
+	if (!n->name) {
+		_DELETE(n->params);
+		_DELETE(n);
+		return NULL;
+	}
+	strcpy(n->name, qname);
+	cache->q = n;
 	return n;
+}
+
+int
+qc_isaquerytemplate(str name)
+{
+	int i,j;
+	return sscanf(name, "s%d_%d", &i,&j) == 2;
+}
+
+int
+qc_isapreparedquerytemplate(str name)
+{
+	int i,j;
+	return sscanf(name, "p%d_%d", &i,&j) == 2;
 }
 
 int
 qc_size(qc *cache)
 {
-	return cache ? cache->nr : 0;
+	return cache->nr;
 }

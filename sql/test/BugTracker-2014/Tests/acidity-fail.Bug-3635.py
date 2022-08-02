@@ -27,8 +27,8 @@ with process.server(stdin = process.PIPE, stdout = process.PIPE, stderr = proces
     c1.execute('create table foo (a int)')
     c1.execute('create table bar (a int)')
     c1.execute('insert into foo values (1),(2),(3)')
-    if query(c1, 'select * from foo') != [(1,), (2,), (3,)]:
-        sys.stderr.write('Expected [(1,), (2,), (3,)]')
+    # print(query(c1, """select * from storage() where "table"='foo'"""))
+    print(query(c1, 'select * from foo'))
 
     # Run 'delete from foo' with store_nr_active > 1
     # This causes MonetDB to allocate a new file for foo rather than
@@ -41,6 +41,7 @@ with process.server(stdin = process.PIPE, stdout = process.PIPE, stderr = proces
     # Populate some new data into foo, and demonstrate that a new file has
     # been allocated
     c1.execute('insert into foo values (4),(5),(6)')
+    # print(query(c1, """select * from storage() where "table"='foo'"""))
 
     # Generate at least 1000 changes, as required by store_manager() in
     # order to cause a logger restart
@@ -51,24 +52,19 @@ with process.server(stdin = process.PIPE, stdout = process.PIPE, stderr = proces
     # An alternative would have been to generate at least SNAPSHOT_MINSIZE
     # rows in one statement, but this way is simpler
     time.sleep(1)
-    if query(c1, 'select * from foo') != [(4,), (5,), (6,)]:
-        sys.stderr.write('Expected [(4,), (5,), (6,)]')
+    print(query(c1, 'select * from foo'))
 
     s.communicate()
-    c2.close()
 
 with process.server(stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as t:
     c3 = connect(True)
     # This prints the wrong data. It should print exactly the same as the
     # previous line: "[(4,), (5,), (6,)]" , but actually prints "[(1,),
     # (2,), (3,)]"
-    if query(c1, 'select * from foo') != [(4,), (5,), (6,)]:
-        sys.stderr.write('Expected [(4,), (5,), (6,)]')
+    print(query(c3, 'select * from foo'))
 
     # cleanup
     c3.execute('drop table foo')
     c3.execute('drop table bar')
 
     t.communicate()
-    c1.close()
-    c3.close()

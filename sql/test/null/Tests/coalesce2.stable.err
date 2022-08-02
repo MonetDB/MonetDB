@@ -1,0 +1,17 @@
+stderr of test 'coalesce2` in directory 'sql/test/null` itself:
+
+
+# 16:51:39 >  
+# 16:51:39 >   Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=30043 --set xrpc_port=40957 --set monet_prompt= --trace  "--dbname=mTests_src_test_null" --set sql_debug=16384 --set xquery_backend=algebra "--dbinit= module(sql_server);" ; echo ; echo Over..
+# 16:51:39 >  
+
+
+# 16:51:39 >  
+# 16:51:39 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=30043  -G
+# 16:51:39 >  
+
+
+# 16:51:39 >  
+# 16:51:39 >  Done.
+# 16:51:39 >  
+

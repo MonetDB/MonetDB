@@ -1,0 +1,9 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+
+## Process this file with automake to produce Makefile.in
+
+EXTRA_DIST = sql_mem.h sql_list.h sql_hash.h sql_stack.h sql_catalog.h sql_keyword.h sql_relation.h

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -20,7 +20,10 @@
 #include "stream.h"
 
 #include <string.h>
+#include <math.h>
 #include <time.h>
+
+#include "gdk_logger.h"
 
 #ifdef WIN32
 #ifndef LIBGEOM
@@ -38,7 +41,50 @@ geom_export str geoHasZ(int* res, int* info);
 geom_export str geoHasM(int* res, int* info);
 geom_export str geoGetType(char** res, int* info, int* flag);
 
+geom_export str geom_prelude(void *ret);
 geom_export str geom_epilogue(void *ret);
+
+/* the len argument is needed for correct storage and retrieval */
+geom_export ssize_t wkbTOSTR(char **geomWKT, size_t *len, const wkb *geomWKB, bool external);
+geom_export ssize_t mbrTOSTR(char **dst, size_t *len, const mbr *atom, bool external);
+geom_export ssize_t wkbaTOSTR(char **toStr, size_t* len, const wkba *fromArray, bool external);
+
+geom_export ssize_t wkbFROMSTR(const char* geomWKT, size_t *len, wkb** geomWKB, bool external);
+geom_export ssize_t mbrFROMSTR(const char *src, size_t *len, mbr **atom, bool external);
+geom_export ssize_t wkbaFROMSTR(const char *fromStr, size_t *len, wkba **toArray, bool external);
+
+geom_export const wkb *wkbNULL(void);
+geom_export const mbr *mbrNULL(void);
+geom_export const wkba *wkbaNULL(void);
+
+geom_export BUN wkbHASH(const wkb *w);
+geom_export BUN mbrHASH(const mbr *atom);
+geom_export BUN wkbaHASH(const wkba *w);
+
+geom_export int wkbCOMP(const wkb *l, const wkb *r);
+geom_export int mbrCOMP(const mbr *l, const mbr *r);
+geom_export int wkbaCOMP(const wkba *l, const wkba *r);
+
+/* read/write to/from log */
+geom_export wkb *wkbREAD(wkb *a, stream *s, size_t cnt);
+geom_export mbr *mbrREAD(mbr *a, stream *s, size_t cnt);
+geom_export wkba* wkbaREAD(wkba *a, stream *s, size_t cnt);
+
+geom_export gdk_return wkbWRITE(const wkb *a, stream *s, size_t cnt);
+geom_export gdk_return mbrWRITE(const mbr *c, stream *s, size_t cnt);
+geom_export gdk_return wkbaWRITE(const wkba *c, stream *s, size_t cnt);
+
+geom_export var_t wkbPUT(Heap *h, var_t *bun, const wkb *val);
+geom_export var_t wkbaPUT(Heap *h, var_t *bun, const wkba *val);
+
+geom_export void wkbDEL(Heap *h, var_t *index);
+geom_export void wkbaDEL(Heap *h, var_t *index);
+
+geom_export size_t wkbLENGTH(const wkb *p);
+geom_export size_t wkbaLENGTH(const wkba *p);
+
+geom_export void wkbHEAP(Heap *heap, size_t capacity);
+geom_export void wkbaHEAP(Heap *heap, size_t capacity);
 
 geom_export str mbrFromString(mbr **w, const char **src);
 geom_export str wkbIsnil(bit *r, wkb **v);
@@ -59,7 +105,6 @@ geom_export mbr* mbrFromGeos(const GEOSGeom geosGeometry);
 
 geom_export str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe);
 geom_export str wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe);
-geom_export str wkbFromText_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *cand, int *srid, int *tpe);
 
 geom_export str wkbMLineStringToPolygon(wkb** geomWKB, str *geomWKT, int* srid, int* flag);
 
@@ -236,11 +281,12 @@ geom_export str wkbUnion_bat(bat* outBAT_id, bat* aBAT_id, bat* bBAT_id);
 
 geom_export str wkbSetSRID_bat(bat* outBAT_id, bat* inBAT_id, int* srid);
 
-geom_export str geom_2_geom_bat(bat* outBAT_id, bat* inBAT_id, bat* cand, int* columnType, int* columnSRID);
+geom_export str geom_2_geom_bat(bat* outBAT_id, bat* inBAT_id, int* columnType, int* columnSRID);
 
 geom_export str wkbMBR_bat(bat* outBAT_id, bat* inBAT_id);
 
 geom_export str wkbCoordinateFromWKB_bat(bat *outBAT_id, bat *inBAT_id, int* coordinateIdx);
 geom_export str wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int* coordinateIdx);
 
+geom_export int geom_catalog_upgrade(void *, int);
 geom_export str geom_sql_upgrade(int);

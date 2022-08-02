@@ -2,7 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 START TRANSACTION;
 
@@ -52,6 +52,7 @@ CREATE OR REPLACE View object_stats as SELECT "object", CAST(COUNT(*) AS BIGINT)
 CREATE   MERGE TABLE mt    (id int primary key, nm varchar(123) NOT NULL);
 CREATE  REMOTE TABLE remt  (id int primary key, nm varchar(123) NOT NULL) ON 'mapi:monetdb://localhost:42001/mdb3';
 CREATE REPLICA TABLE replt (id int primary key, nm varchar(123) NOT NULL);
+CREATE  STREAM TABLE strt  (id int primary key, nm varchar(123) NOT NULL);
 
 CREATE GLOBAL TEMP TABLE gtmpt (id int primary key, nm varchar(123) NOT NULL) ON COMMIT PRESERVE ROWS;
 

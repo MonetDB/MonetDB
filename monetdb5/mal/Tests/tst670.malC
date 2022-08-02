@@ -1,0 +1,10 @@
+function foo();
+io.print("go");
+end foo;
+user.foo();
+clients.quit();
+function foo();
+io.print("gone");
+end foo;
+mdb.List("user","foo");
+user.foo();

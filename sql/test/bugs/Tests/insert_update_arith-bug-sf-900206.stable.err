@@ -1,0 +1,17 @@
+stderr of test 'insert_update_arith-bug-sf-900206` in directory 'sql/test/bugs` itself:
+
+
+# 12:08:33 >  
+# 12:08:33 >  Mtimeout -timeout 180 Mserver "--config=/var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX_SQL_GNU_32_d_--enable-debug_/lib/MonetDB:/var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_PREFIX_MONET_GNU_32_d_--enable-debug_/var/MonetDB/log" --set mapi_port=49231 --set sql_port=51881 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/var/tmp/_BUILD_SQL_GNU_32_d_--enable-debug_/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 12:08:33 >  
+
+
+# 12:08:34 >  
+# 12:08:34 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=draco --port=51881  < insert_update_arith-bug-sf-900206.sql
+# 12:08:34 >  
+
+
+# 12:08:35 >  
+# 12:08:35 >  Done.
+# 12:08:35 >  
+

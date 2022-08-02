@@ -1,0 +1,17 @@
+stderr of test 'drop_index.SF-929243` in directory 'sql/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 13:00:30 >  
+# 13:00:30 >  Mtimeout -timeout 180 Mserver "--config=/ufs/roberto/servers/MonetDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/roberto/servers/MonetDB/lib/MonetDB:/ufs/roberto/servers/MonetDB/lib/bin" --set "gdk_dbfarm=/ufs/roberto/servers/MonetDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/roberto/servers/MonetDB/var/MonetDB/log" --set mapi_port=39215 --set sql_port=48650 --set xquery_port=55332 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 13:00:30 >  
+
+
+# 13:00:30 >  
+# 13:00:30 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=48650  < drop_index.SF-929243.sql
+# 13:00:30 >  
+
+
+# 13:00:31 >  
+# 13:00:31 >  Done.
+# 13:00:31 >  
+

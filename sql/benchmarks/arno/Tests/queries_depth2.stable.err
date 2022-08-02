@@ -1,0 +1,18 @@
+stderr of test 'queries_depth2` in directory 'sql/benchmarks/arno` itself:
+
+
+# 22:12:36 >  
+# 22:12:36 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_arno" --set sql_port=56954 "/ufs/niels/data/Linux-i686/share/MonetDB/sqlserver.mil" ; echo ; echo Over..
+# 22:12:36 >  
+
+# server listening on port 56954
+
+# 22:12:37 >  
+# 22:12:37 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=norma --port=56954 < queries_depth2.sql
+# 22:12:37 >  
+
+
+# 22:12:39 >  
+# 22:12:39 >  Done.
+# 22:12:39 >  
+

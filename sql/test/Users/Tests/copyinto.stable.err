@@ -1,0 +1,16 @@
+stderr of test 'copyinto` in directory 'sql/test/Users` itself:
+
+
+# 19:39:23 >  
+# 19:39:23 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30584" "--set" "mapi_usock=/var/tmp/mtest-23549/.s.monetdb.30584" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_Users" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 19:39:23 >  
+
+MAPI  = (copyuser) /var/tmp/mtest-236553/.s.monetdb.37944
+QUERY = COPY 5 RECORDS INTO region from r'$DATADIR/region.tbl' USING DELIMITERS '|', E'|\n';
+ERROR = !COPY INTO: insufficient privileges: COPY INTO from file(s) requires database administrator rights, use 'COPY INTO "region" FROM file ON CLIENT' instead
+CODE  = 42000
+
+# 19:39:24 >  
+# 19:39:24 >  "Done."
+# 19:39:24 >  
+

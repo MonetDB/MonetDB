@@ -1,0 +1,8 @@
+CREATE TABLE table1 (a INTEGER);
+CREATE TABLE table2 (a INTEGER, b INTEGER);
+INSERT INTO table1 VALUES(1);
+INSERT INTO table1 VALUES(2);
+INSERT INTO table2 VALUES(2, 2);
+SELECT * FROM (SELECT a, 2 AS b FROM table1) t1 INNER JOIN table2 t2 ON (t1.b = t2.b);
+DROP table table2;
+DROP table table1;

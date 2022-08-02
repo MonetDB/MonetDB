@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -41,10 +41,8 @@
  *
  */
 #include "monetdb_config.h"
-#include "mal.h"
-#include "mal_interpreter.h"
+#include "groupby.h"
 #include "group.h"
-#include "mal_exception.h"
 
 /*
  * The implementation is based on a two-phase process. In phase 1, we estimate
@@ -155,7 +153,7 @@ GROUPdelete(AGGRtask *a){
  * estimate of intermediate results using properties.
  */
 
-static str
+str
 GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *grp = getArgReference_bat(stk, pci, 0);
@@ -183,9 +181,10 @@ GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg == MAL_SUCCEED && aggr->last > 1)
 		do {
 			/* early break when there are as many groups as entries */
-			b = BBPquickdesc(*hist);
+			b = BATdescriptor(*hist);
 			if (b) {
 				j = BATcount(b) == count;
+				BBPunfix(*hist);
 				if (j)
 					break;
 			}
@@ -205,16 +204,3 @@ GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GROUPdelete(aggr);
 	return msg;
 }
-
-#include "mel.h"
-mel_func groupby_init_funcs[] = {
- pattern("group", "multicolumn", GROUPmulticolumngroup, false, "Derivation of a group index over multiple columns.", args(3,4, batarg("ref",oid),batarg("grp",oid),batargany("hist",0),batvarargany("b",0))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_groupby_mal)
-{ mal_module("groupby", NULL, groupby_init_funcs); }

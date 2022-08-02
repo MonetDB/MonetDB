@@ -1,0 +1,75 @@
+stderr of test 'clients-hashes` in directory 'monetdb5/modules/mal` itself:
+
+
+# 14:07:01 >  
+# 14:07:01 >   mserver5 "--config=/export/scratch/stripe/fabian/monetdb/current/program-i86pc/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5:/export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5/lib:/export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5/bin" --set "gdk_dbfarm=/export/scratch/stripe/fabian/monetdb/current/mtest-pegasus.ins.cwi.nl/five/dbfarm" --set "sql_logdir=/export/scratch/stripe/fabian/monetdb/current/mtest-pegasus.ins.cwi.nl/five/sqllog" --set "xquery_logdir=/export/scratch/stripe/fabian/monetdb/current/mtest-pegasus.ins.cwi.nl/five/xquerylog"  --set mapi_open=true --set xrpc_open=true --set mapi_port=37637 --set xrpc_port=44162 --set monet_prompt= --trace  --dbname=mTests_src_modules_mal  clients-hashes.mal
+# 14:07:01 >  
+
+# builtin opt 	gdk_arch = 64bitx86_64-pc-solaris2.11
+# builtin opt 	gdk_version = 1.29.0
+# builtin opt 	prefix = /export/scratch/stripe/fabian/monetdb/current/program-i86pc
+# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	gdk_dbname = tst
+# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
+# builtin opt 	gdk_debug = 8
+# builtin opt 	gdk_alloc_map = yes
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_admin = adm
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_welcome = yes
+# builtin opt 	monet_mod_path = /export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB
+# builtin opt 	monet_daemon = yes
+# builtin opt 	host = localhost
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_noheaders = no
+# builtin opt 	mapi_debug = 0
+# builtin opt 	mapi_clients = 2
+# builtin opt 	sql_debug = 0
+# builtin opt 	sql_logdir = sql_logs
+# builtin opt 	xquery_logdir = xquery_logs
+# builtin opt 	standoff_ns = http://monetdb.cwi.nl/standoff
+# builtin opt 	standoff_start = start
+# builtin opt 	standoff_end = end
+# config opt 	prefix = /export/scratch/stripe/fabian/monetdb/current/program-i86pc
+# config opt 	config = ${prefix}/etc/monetdb5.conf
+# config opt 	prefix = /export/scratch/stripe/fabian/monetdb/current/program-i86pc
+# config opt 	exec_prefix = ${prefix}
+# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB5/dbfarm
+# config opt 	gdk_dbname = demo
+# config opt 	gdk_alloc_map = no
+# config opt 	gdk_embedded = no
+# config opt 	gdk_debug = 0
+# config opt 	monet_mod_path = /export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5:/export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5/lib:/export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5/bin
+# config opt 	monet_daemon = no
+# config opt 	monet_welcome = yes
+# config opt 	mero_msglog = ${prefix}/var/log/MonetDB/merovingian.log
+# config opt 	mero_errlog = ${prefix}/var/log/MonetDB/merovingian.log
+# config opt 	mero_timeinterval = 600
+# config opt 	mero_pidfile = ${prefix}/var/run/MonetDB/merovingian.pid
+# config opt 	mero_exittimeout = 7
+# config opt 	mero_doproxy = yes
+# config opt 	mero_discoveryttl = 600
+# config opt 	mal_init = /export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5/mal_init.mal
+# config opt 	mal_listing = 2
+# config opt 	mapi_port = 50000
+# config opt 	mapi_open = false
+# config opt 	sql_logdir = sql_logs
+# cmdline opt 	config = /export/scratch/stripe/fabian/monetdb/current/program-i86pc/etc/monetdb5.conf
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	monet_mod_path = /export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5:/export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5/lib:/export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5/bin
+# cmdline opt 	gdk_dbfarm = /export/scratch/stripe/fabian/monetdb/current/mtest-pegasus.ins.cwi.nl/five/dbfarm
+# cmdline opt 	sql_logdir = /export/scratch/stripe/fabian/monetdb/current/mtest-pegasus.ins.cwi.nl/five/sqllog
+# cmdline opt 	xquery_logdir = /export/scratch/stripe/fabian/monetdb/current/mtest-pegasus.ins.cwi.nl/five/xquerylog
+# cmdline opt 	mapi_open = true
+# cmdline opt 	xrpc_open = true
+# cmdline opt 	mapi_port = 37637
+# cmdline opt 	xrpc_port = 44162
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbname = mTests_src_modules_mal
+#warning: please don't forget to set your vault key!
+#(see /export/scratch/stripe/fabian/monetdb/current/program-i86pc/etc/monetdb5.conf)
+
+# 14:07:02 >  
+# 14:07:02 >  Done.
+# 14:07:02 >  
+

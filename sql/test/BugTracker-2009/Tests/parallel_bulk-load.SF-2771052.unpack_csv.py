@@ -13,7 +13,9 @@ def mkpardir(path):
         i = path.find('/')
 
 z = zipfile.ZipFile(archive)
+print('Archive:  %s' % archive)
 for name in z.namelist():
+    print('  inflating: %s' % name)
     mkpardir(name)
     data = z.read(name)
     f = open(name, 'wb')

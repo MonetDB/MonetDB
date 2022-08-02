@@ -1,0 +1,19 @@
+stderr of test 'select_multiple_not_null_constraints.SF-1926074` in directory 'sql/test/BugTracker` itself:
+
+
+# 13:48:11 >  
+# 13:48:11 >   mserver5 "--config=/export/scratch1/rijke/monetdb-head/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/export/scratch1/rijke/monetdb-head/lib/MonetDB5:/export/scratch1/rijke/monetdb-head/lib/MonetDB5/lib:/export/scratch1/rijke/monetdb-head/lib/MonetDB5/bin" --set "gdk_dbfarm=/export/scratch1/rijke/monetdb-head/var/MonetDB5/dbfarm" --set "sql_logdir=/export/scratch1/rijke/monetdb-head/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=34875 --set xrpc_port=48603 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 13:48:11 >  
+
+#warning: please don't forget to set your vault key!
+#(see /export/scratch1/rijke/monetdb-head/etc/monetdb5.conf)
+
+# 13:48:11 >  
+# 13:48:11 >  mclient -lsql -umonetdb -Pmonetdb --host=vr7 --port=34875 
+# 13:48:11 >  
+
+
+# 13:48:11 >  
+# 13:48:11 >  Done.
+# 13:48:11 >  
+

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -11,7 +11,7 @@
 #include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_prop.h"
-#include "rel_rewriter.h"
+#include "rel_optimizer.h"
 
 typedef struct memoitem {
 	const char *name;
@@ -51,13 +51,17 @@ memo_find(list *memo, const char *name)
 	int key = hash_key(name);
 	sql_hash_e *he;
 
+	MT_lock_set(&memo->ht_lock);
 	he = memo->ht->buckets[key&(memo->ht->size-1)];
 	for (; he; he = he->chain) {
 		memoitem *mi = he->value;
 
-		if (mi->name && strcmp(mi->name, name) == 0)
+		if (mi->name && strcmp(mi->name, name) == 0) {
+			MT_lock_unset(&memo->ht_lock);
 			return mi;
+		}
 	}
+	MT_lock_unset(&memo->ht_lock);
 	return NULL;
 }
 
@@ -119,10 +123,10 @@ rel_getcount(mvc *sql, sql_rel *rel)
 	case op_basetable: {
 		sql_table *t = rel->l;
 
-		if (t && isTable(t)) {
-			sqlstore *store = sql->session->tr->store;
-			return (lng)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, 0);
-		}
+		if (t && isTable(t))
+			return (lng)store_funcs.count_col(sql->session->tr, t->columns.set->h->data, 1);
+		if (!t && rel->r) /* dict */
+			return (lng)sql_trans_dist_count(sql->session->tr, rel->r);
 		return 0;
 	}
 	case op_select:
@@ -195,7 +199,7 @@ exp_getdcount( mvc *sql, sql_rel *r , sql_exp *e, lng count)
 }
 
 static int
-exp_getranges( mvc *sql, sql_rel *r , sql_exp *e, void **min, void **max)
+exp_getranges( mvc *sql, sql_rel *r , sql_exp *e, char **min, char **max)
 {
 	switch(e->type) {
 	case e_column: {
@@ -226,7 +230,7 @@ static atom *
 exp_getatom( mvc *sql, sql_exp *e, atom *m)
 {
 	if (is_atom(e->type))
-		return exp_value(sql, e);
+		return exp_value(sql, e, sql->args, sql->argc);
 	else if (e->type == e_convert)
 		return exp_getatom(sql, e->l, m);
 	else if (e->type == e_func) {
@@ -247,15 +251,15 @@ exp_getatom( mvc *sql, sql_exp *e, atom *m)
 }
 
 static dbl
-exp_getrange_sel( mvc *sql, sql_rel *r, sql_exp *e, void *min, void *max)
+exp_getrange_sel( mvc *sql, sql_rel *r, sql_exp *e, char *min, char *max)
 {
 	atom *amin, *amax, *emin, *emax;
 	dbl sel = 1.0;
 	sql_subtype *t = exp_subtype(e->l);
 
 	(void)r;
-	emin = amin = atom_general_ptr(sql->sa, t, min);
-	emax = amax = atom_general_ptr(sql->sa, t, max);
+	emin = amin = atom_general(sql->sa, t, min);
+	emax = amax = atom_general(sql->sa, t, max);
 
 	if (e->f || e->flag == cmp_gt || e->flag == cmp_gte)
 		emin = exp_getatom(sql, e->r, amin);
@@ -304,7 +308,7 @@ rel_exp_selectivity(mvc *sql, sql_rel *r, sql_exp *e, lng count)
 		case cmp_gte:
 		case cmp_lt:
 		case cmp_lte: {
-			void *min, *max;
+			char *min, *max;
 			if (exp_getranges( sql, r, e->l, &min, &max )) {
 				sel = (dbl)exp_getrange_sel( sql, r, e, min, max);
 			} else {
@@ -436,7 +440,9 @@ memo_create(mvc *sql, list *rels )
 	list *memo = sa_list(sql->sa);
 	node *n;
 
+	MT_lock_set(&memo->ht_lock);
 	memo->ht = hash_new(sql->sa, len*len, (fkeyvalue)&memoitem_key);
+	MT_lock_unset(&memo->ht_lock);
 	for(n = rels->h; n; n = n->next) {
 		sql_rel *r = n->data;
 		memoitem *mi = memoitem_create(memo, sql->sa, rel_name(r), NULL, 1);
@@ -822,6 +828,7 @@ memo_compute_cost(list *memo)
 	}
 }
 
+#ifndef HAVE_EMBEDDED
 static void
 memojoin_print( memojoin *mj )
 {
@@ -868,6 +875,7 @@ memo_print( list *memo )
 		printf("\n");
 	}
 }
+#endif
 
 static memojoin *
 find_cheapest( list *joins )
@@ -900,7 +908,7 @@ memo_select_plan( mvc *sql, list *memo, memoitem *mi, list *sdje, list *exps)
 			op_join);
 		if (mi->level == 2) {
 			rel_join_add_exp(sql->sa, top, mi->data);
-			list_remove_data(sdje, NULL, mi->data);
+			list_remove_data(sdje, mi->data);
 		} else {
 			node *djn;
 
@@ -909,7 +917,7 @@ memo_select_plan( mvc *sql, list *memo, memoitem *mi, list *sdje, list *exps)
 				sql_exp *e = djn->data;
 
 				rel_join_add_exp(sql->sa, top, e);
-				list_remove_data(sdje, NULL, e);
+				list_remove_data(sdje, e);
 			}
 
 			/* all other join expressions on these 2 relations */
@@ -917,10 +925,9 @@ memo_select_plan( mvc *sql, list *memo, memoitem *mi, list *sdje, list *exps)
 				sql_exp *e = djn->data;
 
 				rel_join_add_exp(sql->sa, top, e);
-				list_remove_data(exps, NULL, e);
+				list_remove_data(exps, e);
 			}
 		}
-		set_processed(top);
 		return top;
 	} else {
 		return mi->data;
@@ -941,8 +948,10 @@ rel_planner(mvc *sql, list *rels, list *sdje, list *exps)
 	memo_apply_rules(memo, sql->sa, list_length(rels));
 	memo_locate_exps(memo);
 	memo_compute_cost(memo);
+#ifndef HAVE_EMBEDDED
 	//if (0)
 		memo_print(memo);
+#endif
 	mi = memo->t->data;
 	top = memo_select_plan(sql, memo, mi, sdje, exps);
 	if (list_length(sdje) != 0)

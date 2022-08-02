@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -28,17 +28,21 @@
 static lng
 SQLgetColumnSize(sql_trans *tr, sql_column *c, int access)
 {
-	sqlstore *store = tr->store;
-	return store->storage_api.count_col(tr, c, access);
-}
+	lng size = 0;
 
-static lng
-SQLgetIdxSize(sql_trans *tr, sql_idx *i, int access)
-{
-	sqlstore *store = tr->store;
-	return store->storage_api.count_idx(tr, i, access);
+	switch(access){
+	case 0: /* Read only */
+		size = store_funcs.count_col(tr, c, 1);
+		break;
+	case 1: /* inserts */
+		size = store_funcs.count_col(tr, c, 0);
+		break;
+	case 2: /* updates */
+		size = store_funcs.count_col_upd(tr, c);
+		break;
+	}
+	return size;
 }
-
 
 /*
  * The maximal space occupied by a query is calculated
@@ -73,17 +77,17 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 			sql_table *t = 0;
 			sql_column *c = 0;
 
-			if (!s)
+			if (!s || strcmp(s->base.name, dt_schema) == 0)
 				continue;
 			t = mvc_bind_table(m, s, tname);
-			if (!t || isDeclaredTable(t))
+			if (!t)
 				continue;
 			c = mvc_bind_column(m, t, cname);
-			if (!c)
+			if (!s)
 				continue;
 
 			/* we have to sum the cost of all three components of a BAT */
-			if (c && isTable(c->t) && (lasttable == 0 || strcmp(lasttable,tname)==0)) {
+			if (c && (!isRemote(c->t) && !isMergeTable(c->t)) && (lasttable == 0 || strcmp(lasttable,tname)==0)) {
 				size = SQLgetColumnSize(tr, c, access);
 				space += size;	// accumulate once per table
 				//lasttable = tname;	 invalidate this attempt
@@ -102,8 +106,9 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 			if (getFunctionId(p) == bindidxRef) {
 				sql_idx *i = mvc_bind_idx(m, s, idxname);
 
-				if (i && isTable(i->t)) {
-					size = SQLgetIdxSize(tr, i, access);
+				if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
+					sql_column *c = i->t->columns.set->h->data;
+					size = SQLgetColumnSize(tr, c, access);
 
 					if( !prepare && size == 0 && ! i->t->system){
 						setFunctionId(p, emptybindidxRef);
@@ -119,7 +124,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 str
 getSQLoptimizer(mvc *m)
 {
-	char *opt = get_string_global_var(m, "optimizer");
+	char *opt = stack_get_string(m, "optimizer");
 	char *pipe = "default_pipe";
 
 	if (opt)
@@ -157,12 +162,12 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 		return msg;
 	}
 	mb->keephistory |= be->mvc->emod & mod_debug;
-	if (be->no_mitosis) {
+	if (be->mvc->no_mitosis) {
 		for (i = mb->stop - 1; i > 0; i--) {
 			q = getInstrPtr(mb, i);
 			if (q->token == ENDsymbol)
 				break;
-			if (getFunctionId(q) == mitosisRef)
+			if (getFunctionId(q) == mitosisRef || getFunctionId(q) == dataflowRef)
 				q->token = REMsymbol;	/* they are ignored */
 		}
 	}
@@ -198,9 +203,13 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 	backend *be;
 	str msg = 0, pipe = 0;
 	bool free_pipe = false;
-	InstrPtr p = mb->stmt[mb->stop -1];
 
-	if (p && mb->stop > 0 && getModuleId(p) == optimizerRef)
+	if (mb->stop > 0 &&
+	    mb->stmt[mb->stop-1]->token == REMsymbol &&
+	    mb->stmt[mb->stop-1]->argc > 0 &&
+	    mb->var[mb->stmt[mb->stop-1]->argv[0]].value.vtype == TYPE_str &&
+	    mb->var[mb->stmt[mb->stop-1]->argv[0]].value.val.sval &&
+	    strncmp(mb->var[mb->stmt[mb->stop-1]->argv[0]].value.val.sval, "total", 5) == 0)
 		return MAL_SUCCEED; /* already optimized */
 
 	be = (backend *) c->sqlcontext;
@@ -253,10 +262,4 @@ void
 SQLaddQueryToCache(Client c)
 {
 	insertSymbol(c->usermodule, c->curprg);
-}
-
-void
-SQLremoveQueryFromCache(Client c)
-{
-	deleteSymbol(c->usermodule, c->curprg);
 }

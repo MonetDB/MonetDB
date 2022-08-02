@@ -7,7 +7,7 @@ MonetDB supports columns having the JSON type.
 Usage
 =====
 
-The JSON type is implemented as a subtype of ``VARCHAR``, that is guaranteed to
+The JSON type is implemented as a subtype of ``VARCHAR``, that is guarranteed to
 only contain valid JSON strings. For example
 
 .. code:: sql

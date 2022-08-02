@@ -1,0 +1,17 @@
+stderr of test 'phantom_rows.SF-1044534` in directory 'sql/test/BugDay_2005-11-09_2.9.3` itself:
+
+
+# 20:17:02 >  
+# 20:17:02 >  Mtimeout -timeout 180 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./lib/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/log" --set mapi_port=36086 --set sql_port=46177 --set xquery_port=52463 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 20:17:02 >  
+
+
+# 20:17:02 >  
+# 20:17:02 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=46177  < phantom_rows.SF-1044534.sql
+# 20:17:02 >  
+
+
+# 20:17:02 >  
+# 20:17:02 >  Done.
+# 20:17:02 >  
+

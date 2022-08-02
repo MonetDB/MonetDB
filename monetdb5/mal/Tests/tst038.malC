@@ -1,0 +1,9 @@
+#test the capability to deal with unspecified bats.
+function tst2(b:bat[:any_1]);
+	bat.append(b,"hello");
+end tst2;
+
+b:= bat.new(:int);
+
+#The call to tst2 fails at runtime
+user.tst2(b);

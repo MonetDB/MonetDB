@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -28,18 +28,24 @@
 backend_functions be_funcs;
 
 void
-backend_freecode(const char *mod, int clientid, const char *name)
+backend_freestack(int clientid, backend_stack stk)
+{
+	if (be_funcs.fstack != NULL)
+		be_funcs.fstack(clientid, stk);
+}
+
+void
+backend_freecode(int clientid, backend_code code, backend_stack stk, int nr, char *name)
 {
 	if (be_funcs.fcode != NULL)
-		be_funcs.fcode(mod, clientid, name);
+		be_funcs.fcode(clientid, code, stk, nr, name);
 }
 
 char *
-backend_create_user(ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid defschemid, char *schema_path, sqlid grantor, lng max_memory, int max_workers, char *optimizer, sqlid role_id)
+backend_create_user(ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid defschemid, sqlid grantor)
 {
 	if (be_funcs.fcuser != NULL)
-		return(be_funcs.fcuser(mvc, user, passwd, enc, fullname, defschemid, schema_path, grantor, max_memory,
-					max_workers, optimizer, role_id));
+		return(be_funcs.fcuser(mvc, user, passwd, enc, fullname, defschemid, grantor));
 	return(NULL);
 }
 
@@ -51,7 +57,7 @@ backend_drop_user(ptr mvc, char *user)
 	return FALSE;
 }
 
-oid
+int
 backend_find_user(ptr m, char *user)
 {
 	if (be_funcs.ffuser != NULL)
@@ -76,10 +82,10 @@ backend_schema_has_user(ptr mvc, sql_schema *s)
 
 int
 backend_alter_user(ptr mvc, str user, str passwd, char enc,
-				   sqlid schema_id, char *schema_path, str oldpasswd, sqlid role_id)
+		sqlid schema_id, str oldpasswd)
 {
 	if (be_funcs.fauser != NULL)
-		return(be_funcs.fauser(mvc, user, passwd, enc, schema_id, schema_path, oldpasswd, role_id));
+		return(be_funcs.fauser(mvc, user, passwd, enc, schema_id, oldpasswd));
 	return(FALSE);
 }
 
@@ -100,33 +106,9 @@ backend_schema_user_dependencies(ptr trans, sqlid schema_id)
 }
 
 int
-backend_resolve_function(ptr M, sql_func *f, const char *fimp, bool *side_effect)
+backend_resolve_function(ptr M, sql_func *f)
 {
 	if (be_funcs.fresolve_function != NULL)
-		return be_funcs.fresolve_function(M, f, fimp, side_effect);
+		return be_funcs.fresolve_function(M, f);
 	return 0;
-}
-
-int
-backend_has_module(ptr M, char *name)
-{
-	if (be_funcs.fhas_module_function != NULL)
-		return be_funcs.fhas_module_function(M, name);
-	return 0;
-}
-
-int
-backend_find_role(ptr mvc, char *name, sqlid *role_id)
-{
-	if (be_funcs.ffrole != NULL)
-		return be_funcs.ffrole(mvc, name, role_id);
-	return 0;
-}
-
-
-void
-backend_set_user_api_hooks(ptr mvc)
-{
-	if (be_funcs.fset_user_api_hooks != NULL)
-		be_funcs.fset_user_api_hooks(mvc);
 }

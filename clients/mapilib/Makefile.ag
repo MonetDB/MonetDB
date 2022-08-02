@@ -1,0 +1,33 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+
+MTSAFE
+
+INCLUDES = ../../common/stream ../../common/utils \
+		   $(MSGCONTROL_FLAGS) $(openssl_CFLAGS)
+
+lib_mapi = {
+	VERSION = $(MAPI_VERSION)
+	SOURCES = mapi.c mapi_prompt.h mapi.rc
+	LIBS = ../../common/utils/libmcrypt \
+		WIN32?../../common/stream/libstream \
+		WIN32?../../common/utils/libmutils \
+		WIN32?$(SOCKET_LIBS) \
+		WIN32?$(openssl_LIBS)
+}
+
+headers_mapi = {
+	DIR = includedir/monetdb
+	HEADERS = h
+	SOURCES = mapi.h mapi_querytype.h
+}
+
+headers_pc = {
+	COND = NOT_WIN32
+	HEADERS = pc
+	DIR = libdir/pkgconfig
+	SOURCES = monetdb-mapi.pc.in
+}

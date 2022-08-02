@@ -1,0 +1,4 @@
+CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+INSERT INTO tab1 VALUES(22,6,8), (28,57,45), (82,44,71);
+SELECT ALL - 52 * + COALESCE ( + col2, + 47 / + 25 ) FROM tab1 AS cor0 GROUP BY cor0.col2, cor0.col2;
+DROP TABLE tab1;

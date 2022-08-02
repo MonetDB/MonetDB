@@ -3,13 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /**
  * utils
  * Fabian Groffen
- * Shared utility functions between merovingian/monetdbd and monetdb
+ * Shared utility functions between merovingian and monetdb
  */
 
 /* NOTE: for this file to work correctly, the random number generator
@@ -19,22 +19,22 @@
 #include "utils.h"
 #include <unistd.h> /* unlink */
 #include <string.h> /* memcpy */
+#include <strings.h> /* strcasecmp */
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <time.h>
 #include <ctype.h>
-#include <dirent.h> /* readdir */
-#include <fcntl.h>
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
-#if defined(HAVE_GETENTROPY) && defined(HAVE_SYS_RANDOM_H)
-#include <sys/random.h>
+#ifdef HAVE_OPENSSL
+#include <openssl/rand.h>		/* RAND_bytes */
+#else
+#ifdef HAVE_COMMONCRYPTO
+#include <CommonCrypto/CommonCrypto.h>
+#include <CommonCrypto/CommonRandom.h>
 #endif
-
-#ifdef HAVE_SYS_PARAM_H
-# include <sys/param.h>
-#endif
-#ifdef BSD /* BSD macro is defined in sys/param.h */
-# include <sys/stat.h>  /* Needed for S_IRUSR, S_IWUSR */
 #endif
 
 #ifndef O_CLOEXEC
@@ -54,8 +54,6 @@ readConfFile(confkeyval *list, FILE *cnf) {
 
 	while (fgets(buf, 1024, cnf) != NULL) {
 		/* eliminate fgets' newline */
-		if (buf[0] == '\n' || buf[0] == '#')
-			continue;
 		buf[strlen(buf) - 1] = '\0';
 		for (t = list; t->key != NULL; t++) {
 			len = strlen(t->key);
@@ -272,42 +270,14 @@ setConfVal(confkeyval *ckv, const char *val) {
 		}; break;
 		case LADDR: {
 			if (strncmp(val, "127.0.0.1", strlen("127.0.0.1")) != 0 &&
-				strncmp(val, "0.0.0.0", strlen("0.0.0.0")) != 0 &&
-				strncmp(val, "::", 2) != 0 &&
-				strncmp(val, "::1", 3) != 0 &&
-				strncmp(val, "localhost", strlen("localhost")) != 0 &&
-				strncmp(val, "all", strlen("all")) != 0
-			) {
+				strncmp(val, "0.0.0.0", strlen("0.0.0.0")) != 0) {
 				char buf[256];
 				snprintf(buf, sizeof(buf),
-						 "only valid values for %s are \"127.0.0.1\", \"0.0.0.0\", \"::1\", \"::\", \"localhost\" or \"all\"\n",
+						 "only valid values for %s are \"127.0.0.1\" or \"0.0.0.0\"\n",
 						 ckv->key);
 				return(strdup(buf));
 			}
 		}; break;
-		case LOGLEVEL: {
-			if (strcasecmp(val, "error") == 0) {
-				val = "error";
-				ival = ERROR;
-			} else if (strcasecmp(val, "warning") == 0) {
-				val = "warning";
-				ival = WARNING;
-			} else if (strcasecmp(val, "information") == 0) {
-				val = "information";
-				ival = INFORMATION;
-			} else if (strcasecmp(val, "debug") == 0) {
-				val = "debug";
-				ival = DEBUG;
-			} else {
-				return(strdup("allowed loglevel values are: error or warning or information or debug\n"));
-			}
-		}; break;
-		case MODS:
-			for (size_t i = 0; val[i]; i++) {
-				if (val[i] < ' ' || val[i] == '\\' || val[i] == '/' || val[i] >= 0177)
-					return strdup("only printable ASCII character other than \\ and / allowed");
-			}
-			/* fall through */
 		case STR:
 		case OTHER:
 			/* leave as is, not much to check */
@@ -421,7 +391,7 @@ abbreviateString(char *ret, const char *in, size_t width)
 	}
 }
 
-static const char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 	'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
 	'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
 	'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
@@ -439,21 +409,40 @@ generateSalt(char *buf, unsigned int len)
 	unsigned int fill;
 	unsigned int min;
 
-#ifdef HAVE_GETENTROPY
-	if (getentropy(&size, sizeof(size)) < 0)
+#ifdef HAVE_OPENSSL
+	if (RAND_bytes((unsigned char *) &size, (int) sizeof(size)) < 0)
+#else
+#ifdef HAVE_COMMONCRYPTO
+	if (CCRandomGenerateBytes(&size, sizeof(size)) != kCCSuccess)
 #endif
+#endif
+#ifndef STATIC_CODE_ANALYSIS
 		size = (unsigned int)rand();
+#else
+		size = 0;
+#endif
 	fill = len * 0.75;
 	min = len * 0.42;
 	size = (size % (fill - min)) + min;
-#ifdef HAVE_GETENTROPY
-	if (getentropy(buf, size) == 0) {
+#ifdef HAVE_OPENSSL
+	if (RAND_bytes((unsigned char *) buf, (int) size) >= 0) {
+		for (c = 0; c < size; c++)
+			buf[c] = seedChars[((unsigned char *) buf)[c] % 62];
+	} else
+#else
+#ifdef HAVE_COMMONCRYPTO
+	if (CCRandomGenerateBytes(buf, size) >= 0) {
 		for (c = 0; c < size; c++)
 			buf[c] = seedChars[((unsigned char *) buf)[c] % 62];
 	} else
 #endif
+#endif
 		for (c = 0; c < size; c++) {
+#ifndef STATIC_CODE_ANALYSIS
 			buf[c] = seedChars[rand() % 62];
+#else
+			buf[c] = seedChars[0];
+#endif
 		}
 	for ( ; c < len; c++)
 		buf[c] = '\0';
@@ -515,93 +504,4 @@ sleep_ms(size_t ms)
 	(void) select(0, NULL, NULL, NULL, &tv);
 }
 
-
-/* recursive helper function to delete a directory */
-char*
-deletedir(const char *dir)
-{
-	DIR *d;
-	struct dirent *e;
-	char buf[8192];
-	char path[4096];
-
-	d = opendir(dir);
-	if (d == NULL) {
-		/* silently return if we cannot find the directory; it's
-		 * probably already deleted */
-		if (errno == ENOENT)
-			return(NULL);
-		if (errno == ENOTDIR) {
-			if (remove(dir) != 0 && errno != ENOENT) {
-				snprintf(buf, sizeof(buf),
-					 "unable to remove file %s: %s",
-					 dir, strerror(errno));
-				return(strdup(buf));
-			}
-			return NULL;
-		}
-		snprintf(buf, sizeof(buf), "unable to open dir %s: %s",
-				dir, strerror(errno));
-		return(strdup(buf));
-	}
-	while ((e = readdir(d)) != NULL) {
-		/* ignore . and .. */
-		if (strcmp(e->d_name, ".") != 0 &&
-		    strcmp(e->d_name, "..") != 0) {
-			char* er;
-			snprintf(path, sizeof(path), "%s/%s", dir, e->d_name);
-			if ((er = deletedir(path)) != NULL) {
-				closedir(d);
-				return(er);
-			}
-		}
-	}
-	closedir(d);
-	if (rmdir(dir) == -1 && errno != ENOENT) {
-		snprintf(buf, sizeof(buf), "unable to remove directory %s: %s",
-				dir, strerror(errno));
-		return(strdup(buf));
-	}
-
-	return(NULL);
-}
-
-void
-free_snapshots(struct snapshot *snapshots, int nsnapshots)
-{
-	for (struct snapshot *snap = snapshots; snap < &snapshots[nsnapshots]; snap++) {
-		free(snap->dbname);
-		free(snap->name);
-		free(snap->path);
-	}
-	free(snapshots);
-}
-
-/* Increment *nsnapsnots by 1 and call realloc() on *snapshots to make it
- * accomodate one more snapshot. Return a pointer to the newly allocated
- * snapshot, which has been initialized with 0's and NULL's.
- */
-struct snapshot *
-push_snapshot(struct snapshot **snapshots, int *nsnapshots)
-{
-	*nsnapshots += 1;
-	*snapshots = realloc(*snapshots, *nsnapshots * sizeof(struct snapshot));
-	struct snapshot *snap = *snapshots + *nsnapshots - 1;
-	snap->dbname = NULL;
-	snap->time = 0;
-	snap->size = 0;
-	snap->name = NULL;
-	snap->path = NULL;
-	return snap;
-}
-
-void
-copy_snapshot(struct snapshot *dest, struct snapshot *src)
-{
-
-	dest->dbname = strdup(src->dbname);
-	dest->time = src->time;
-	dest->size = src->size;
-	dest->name = strdup(src->name);
-	dest->path = strdup(src->path);
-}
+/* vim:set ts=4 sw=4 noexpandtab: */

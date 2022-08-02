@@ -1,6 +1,0 @@
-query II rowsort
-SELECT * FROM testTable where v1 = 42
-----
-42
-42
-

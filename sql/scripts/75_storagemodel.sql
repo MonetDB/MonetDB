@@ -2,7 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 -- Author M.Kersten
 -- This script gives the database administrator insight in the actual
@@ -220,7 +220,7 @@ begin
 	if tpe = 'smallint'
 		then return 2 * count;
 	end if;
-	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'day_interval', 'month_interval')
+	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'month_interval')
 		then return 4 * count;
 	end if;
 	if tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')
@@ -275,7 +275,7 @@ begin
 	if tpe = 'smallint'
 		then return cast(0.4 * count as bigint);
 	end if;
-	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'day_interval', 'month_interval')
+	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'month_interval')
 		then return cast(0.8 * count as bigint);
 	end if;
 	if tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')

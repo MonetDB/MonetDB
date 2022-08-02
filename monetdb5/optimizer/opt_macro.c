@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -130,12 +130,16 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	for (n = 0; n < mc->vtop; n++) {
 		if (isExceptionVariable(getVarName(mc,n))) {
 			nv[n] = newVariable(mb, getVarName(mc,n), strlen(getVarName(mc,n)), TYPE_str);
+			if (isVarUDFtype(mc,n))
+				setVarUDFtype(mb,nv[n]);
 		} else if (isVarTypedef(mc,n)) {
 			nv[n] = newTypeVariable(mb,getVarType(mc,n));
 		} else if (isVarConstant(mc,n)) {
 			nv[n] = cpyConstant(mb,getVar(mc,n));
 		} else {
 			nv[n] = newTmpVariable(mb, getVarType(mc, n));
+			if (isVarUDFtype(mc,n))
+				setVarUDFtype(mb,nv[n]);
 		}
 	}
 
@@ -234,7 +238,7 @@ MACROvalidate(MalBlkPtr mb)
 	return MAL_SUCCEED;
 }
 
-static int
+str
 MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 {
 	InstrPtr q;
@@ -243,29 +247,28 @@ MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 
 	(void) cntxt;
 	if (t == NULL)
-		return 0;
-	if ((msg = MACROvalidate(t->def))) {
-		freeException(msg);
-		return 0;
-	}
+		return msg;
+	msg = MACROvalidate(t->def);
+	if (msg)
+		return msg;
 	for (i = 0; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
 		if (getFunctionId(q) && idcmp(getFunctionId(q), t->name) == 0 &&
 			getSignature(t)->token == FUNCTIONsymbol) {
-			if (i == last) /* Duplicate macro expansion */
-				return cnt;
+			if (i == last)
+				throw(MAL, "optimizer.MACROoptimizer", SQLSTATE(HY002) MACRO_DUPLICATE);
 
 			last = i;
 			i = inlineMALblock(mb, i, t->def);
-			if( i < 0) /* Allocation failure */
-				return cnt;
+			if( i < 0)
+				throw(MAL, "optimizer.MACROoptimizer", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 			cnt++;
-			if (cnt > MAXEXPANSION) /* Too many macro expansions */
-				return cnt;
+			if (cnt > MAXEXPANSION)
+				throw(MAL, "optimizer.MACROoptimizer", SQLSTATE(HY002) MACRO_TOO_DEEP);
 		}
 	}
-	return cnt;
+	return msg;
 }
 
 /*
@@ -355,7 +358,7 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 }
 
 static str
-ORCAMprocessor(Client cntxt, MalBlkPtr mb, Symbol t, int *actions)
+ORCAMprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 {
 	MalBlkPtr mc;
 	int i;
@@ -374,7 +377,6 @@ ORCAMprocessor(Client cntxt, MalBlkPtr mb, Symbol t, int *actions)
 			if (msg == MAL_SUCCEED){
 				if( replaceMALblock(mb, i, mc) < 0)
 					throw(MAL,"orcam", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				(*actions)++;
 			} else
 				break;
 		}
@@ -387,15 +389,17 @@ ORCAMprocessor(Client cntxt, MalBlkPtr mb, Symbol t, int *actions)
 	return msg;
 }
 
-static int
+str
 OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	MalBlkPtr target= mb;
 	Module s;
 	Symbol t;
 	str mod,fcn;
-	int j, actions = 0;
+	int j;
+	str msg = MAL_SUCCEED;
 
+	(void) cntxt;
 	(void) stk;
 
 	if( p->argc == 3){
@@ -419,11 +423,15 @@ OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		for (t = s->space[j]; t != NULL; t = t->peer)
 			if (t->def->errors == 0) {
 				if (getSignature(t)->token == FUNCTIONsymbol){
-					actions += MACROprocessor(cntxt, target, t);
+					msg = MACROprocessor(cntxt, target, t);
+					// failures from the macro expansion are ignored
+					// They leave the scene as is
+					if ( msg)
+						freeException(msg);
 				}
 			}
 	}
-	return actions;
+	return MAL_SUCCEED;
 }
 /*
  * The optimizer call infrastructure is identical to the liners
@@ -431,8 +439,8 @@ OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  * functions, regardless their
  */
 
-static str
-OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int *actions)
+str
+OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	MalBlkPtr target= mb;
 	Module s;
@@ -466,7 +474,7 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, in
 			if (t->def->errors == 0) {
 				if (getSignature(t)->token == FUNCTIONsymbol) {
 					freeException(msg);
-					msg =ORCAMprocessor(cntxt, target, t, actions);
+					msg =ORCAMprocessor(cntxt, target, t);
 				}
 			}
 	}
@@ -476,7 +484,9 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, in
 str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Symbol t;
 	str msg = MAL_SUCCEED, mod, fcn;
-	int actions = 0;
+	lng clk= GDKusec();
+	char buf[256];
+	lng usec = GDKusec();
 
 	if( p ==NULL )
 		return 0;
@@ -496,25 +506,34 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	if( msg)
 		return msg;
 	if( mb->errors == 0)
-		actions = OPTmacroImplementation(cntxt,mb,stk,p);
-
-	/* Defense line against incorrect plans */
-	if (actions > 0){
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
-		if (!msg)
-			msg = chkFlow(mb);
-		if (!msg)
-			msg = chkDeclarations(mb);
+		msg= OPTmacroImplementation(cntxt,mb,stk,p);
+	// similar to OPTmacro
+	if( msg) {
+		freeException(msg);
+		msg= MAL_SUCCEED;
 	}
-	/* keep actions taken as a fake argument*/
-	(void) pushInt(mb, p, actions);
+
+    /* Defense line against incorrect plans */
+	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if( msg == MAL_SUCCEED) msg = chkFlow(mb);
+	if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
+	usec += GDKusec() - clk;
+	/* keep all actions taken as a post block comment */
+	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","macro",usec);
+	newComment(mb,buf);
+	addtoMalBlkHistory(mb);
+	if (mb->errors)
+		throw(MAL, "optimizer.macro", SQLSTATE(42000) PROGRAM_GENERAL);
 	return msg;
 }
 
 str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Symbol t;
-	str msg = MAL_SUCCEED, mod, fcn;
-	int actions = 0;
+	str mod,fcn;
+	lng clk= GDKusec();
+	char buf[256];
+	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
 
 	if( p ==NULL )
 		return 0;
@@ -534,18 +553,19 @@ str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	if( msg)
 		return msg;
 	if( mb->errors == 0)
-		msg= OPTorcamImplementation(cntxt,mb,stk,p, &actions);
+		msg= OPTorcamImplementation(cntxt,mb,stk,p);
 	if( msg)
 		return msg;
-	/* Defense line against incorrect plans */
-	if (actions > 0){
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
-		if (!msg)
-			msg = chkFlow(mb);
-		if (!msg)
-			msg = chkDeclarations(mb);
-	}
-	/* keep actions taken as a fake argument*/
-	(void) pushInt(mb, p, actions);
+	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if( msg == MAL_SUCCEED) msg = chkFlow(mb);
+	if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
+	usec += GDKusec() - clk;
+	/* keep all actions taken as a post block comment */
+	usec = GDKusec()- usec;
+	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","orcam",usec);
+	newComment(mb,buf);
+	addtoMalBlkHistory(mb);
+	if (mb->errors)
+		throw(MAL, "optimizer.orcam", SQLSTATE(42000) PROGRAM_GENERAL);
 	return msg;
 }

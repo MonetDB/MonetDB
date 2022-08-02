@@ -1,0 +1,25 @@
+stderr of test 'drop_foreignkey_selfreferencing` in directory 'sql/test/bugs` itself:
+
+
+# 22:06:38 >  
+# 22:06:38 >  Mtimeout -timeout 180 Mserver "--config=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/lib/MonetDB" --set "gdk_dbfarm=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/dbfarm" --set "sql_logdir=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/log" --set mapi_port=43589 --set sql_port=53813 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/sql/build/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 22:06:38 >  
+
+
+# 22:06:39 >  
+# 22:06:39 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=53813  < drop_foreignkey_selfreferencing.sql
+# 22:06:39 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+QUERY = drop table a;
+ERROR = !DROP TABLE: FOREIGN KEY b.b_id_fkey depends on a
+CODE  = 40000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = drop table b;
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+
+# 22:06:39 >  
+# 22:06:39 >  Done.
+# 22:06:39 >  
+

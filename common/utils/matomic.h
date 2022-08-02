@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* This file provides interfaces to perform certain atomic operations
@@ -23,7 +23,8 @@
  * ATOMIC_SUB -- subtract a value from a variable, return original value;
  * ATOMIC_INC -- increment a variable's value, return new value;
  * ATOMIC_DEC -- decrement a variable's value, return new value;
- * These interfaces work on variables of type ATOMIC_TYPE (uint64_t).
+ * These interfaces work on variables of type ATOMIC_TYPE
+ * (int or int64_t depending on architecture).
  *
  * The compare-and-set operation is based on the C11 standard: if the
  * atomic variable equals the expected value, the atomic variable is
@@ -56,52 +57,43 @@
 /* define this if you don't want to use atomic instructions */
 /* #define NO_ATOMIC_INSTRUCTIONS */
 
-/* the atomic type we export is always a 64 bit unsigned integer */
-
-/* ignore __STDC_NO_ATOMICS__ if compiling using Intel compiler on
- * Windows since otherwise we can't compile this at all in C99 mode */
-#if defined(HAVE_STDATOMIC_H) && (!defined(__STDC_NO_ATOMICS__) || (defined(__INTEL_COMPILER) && defined(_WINDOWS))) && !defined(NO_ATOMIC_INSTRUCTIONS)
-
-#ifdef __cplusplus
-
-#include <atomic>
-
-#if SIZEOF_LONG_LONG == 8
-typedef atomic_ullong ATOMIC_TYPE;
-typedef unsigned long long ATOMIC_BASE_TYPE;
-#elif SIZEOF_LONG == 8
-typedef atomic_ulong ATOMIC_TYPE;
-typedef unsigned long ATOMIC_BASE_TYPE;
-#else
-#error "we need a 64 bit atomic type"
-#endif
-
-#else
+#if defined(HAVE_STDATOMIC_H) && !defined(__STDC_NO_ATOMICS__) && !defined(NO_ATOMIC_INSTRUCTIONS)
 
 #include <stdatomic.h>
 
-#if SIZEOF_LONG_LONG == 8
+#if ATOMIC_LLONG_LOCK_FREE == 2
 typedef volatile atomic_ullong ATOMIC_TYPE;
 typedef unsigned long long ATOMIC_BASE_TYPE;
-#elif SIZEOF_LONG == 8
+#elif ATOMIC_LONG_LOCK_FREE == 2
 typedef volatile atomic_ulong ATOMIC_TYPE;
 typedef unsigned long ATOMIC_BASE_TYPE;
+#elif ATOMIC_INT_LOCK_FREE == 2
+typedef volatile atomic_uint ATOMIC_TYPE;
+typedef unsigned int ATOMIC_BASE_TYPE;
+#elif ATOMIC_LLONG_LOCK_FREE == 1
+typedef volatile atomic_ullong ATOMIC_TYPE;
+typedef unsigned long long ATOMIC_BASE_TYPE;
+#elif ATOMIC_LONG_LOCK_FREE == 1
+typedef volatile atomic_ulong ATOMIC_TYPE;
+typedef unsigned long ATOMIC_BASE_TYPE;
+#elif ATOMIC_INT_LOCK_FREE == 1
+typedef volatile atomic_uint ATOMIC_TYPE;
+typedef unsigned int ATOMIC_BASE_TYPE;
 #else
-#error "we need a 64 bit atomic type"
+typedef volatile atomic_ullong ATOMIC_TYPE;
+typedef unsigned long long ATOMIC_BASE_TYPE;
 #endif
 
 #define ATOMIC_INIT(var, val)	atomic_init(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_DESTROY(var)		((void) 0)
-#define ATOMIC_GET(var)			((ATOMIC_BASE_TYPE) atomic_load(var))
+#define ATOMIC_DESTROY(var)	((void) 0)
+#define ATOMIC_GET(var)		atomic_load(var)
 #define ATOMIC_SET(var, val)	atomic_store(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_XCG(var, val)	atomic_exchange(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_CAS(var, exp, des)	atomic_compare_exchange_strong(var, exp, (ATOMIC_BASE_TYPE) (des))
 #define ATOMIC_ADD(var, val)	atomic_fetch_add(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_SUB(var, val)	atomic_fetch_sub(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_INC(var)			(atomic_fetch_add(var, 1) + 1)
-#define ATOMIC_DEC(var)			(atomic_fetch_sub(var, 1) - 1)
-#define ATOMIC_OR(var, val)		atomic_fetch_or(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_AND(var, val)	atomic_fetch_and(var, (ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_INC(var)		(atomic_fetch_add(var, 1) + 1)
+#define ATOMIC_DEC(var)		(atomic_fetch_sub(var, 1) - 1)
 
 #ifdef __INTEL_COMPILER
 typedef volatile atomic_address ATOMIC_PTR_TYPE;
@@ -121,11 +113,7 @@ typedef volatile atomic_flag ATOMIC_FLAG;
 #define ATOMIC_CLEAR(var)	atomic_flag_clear(var)
 #define ATOMIC_TAS(var)		atomic_flag_test_and_set(var)
 
-#endif	/* __cplusplus */
-
 #elif defined(_MSC_VER) && !defined(NO_ATOMIC_INSTRUCTIONS)
-
-typedef uint64_t ATOMIC_BASE_TYPE;
 
 #include <intrin.h>
 
@@ -146,18 +134,18 @@ typedef uint64_t ATOMIC_BASE_TYPE;
  * documentation.
  */
 
-typedef __declspec(align(8)) volatile ATOMIC_BASE_TYPE ATOMIC_TYPE;
+#if SIZEOF_SSIZE_T == 8
 
+typedef volatile int64_t ATOMIC_TYPE;
+typedef int64_t ATOMIC_BASE_TYPE;
 #define ATOMIC_VAR_INIT(val)	(val)
 #define ATOMIC_INIT(var, val)	(*(var) = (val))
-#define ATOMIC_DESTROY(var)		((void) 0)
-
-#if SIZEOF_SIZE_T == 8
+#define ATOMIC_DESTROY(var)	((void) 0)
 
 #ifdef __INTEL_COMPILER
-#define ATOMIC_GET(var)			((ATOMIC_BASE_TYPE) _InterlockedExchangeAdd64(var, 0))
+#define ATOMIC_GET(var)		_InterlockedExchangeAdd64(var, 0)
 #else
-#define ATOMIC_GET(var)			(*(var))
+#define ATOMIC_GET(var)		(*(var))
 /* should we use _InterlockedExchangeAdd64(var, 0) instead? */
 #endif
 #define ATOMIC_SET(var, val)	_InterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
@@ -174,46 +162,52 @@ ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
 }
 #define ATOMIC_CAS(var, exp, des)	ATOMIC_CAS(var, exp, (ATOMIC_BASE_TYPE) (des))
 #define ATOMIC_ADD(var, val)	_InterlockedExchangeAdd64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_SUB(var, val)	_InterlockedExchangeAdd64(var, -(val))
-#define ATOMIC_INC(var)			_InterlockedIncrement64(var)
-#define ATOMIC_DEC(var)			_InterlockedDecrement64(var)
-#define ATOMIC_OR(var, val)		_InterlockedOr64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_AND(var, val)	_InterlockedAnd64(var, (ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_SUB(var, val)	_InterlockedExchangeAdd64(var, -(ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_INC(var)		_InterlockedIncrement64(var)
+#define ATOMIC_DEC(var)		_InterlockedDecrement64(var)
+
+#pragma intrinsic(_InterlockedExchange64)
+#pragma intrinsic(_InterlockedExchangeAdd64)
+#pragma intrinsic(_InterlockedIncrement64)
+#pragma intrinsic(_InterlockedDecrement64)
+#pragma intrinsic(_InterlockedCompareExchange64)
 
 #else
 
-#ifdef DECLSPEC_NOINITALL
-#define ATOMIC_GET(var)			((ATOMIC_BASE_TYPE) _InlineInterlockedExchangeAdd64(var, 0))
-#define ATOMIC_SET(var, val)	_InlineInterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_XCG(var, val)	_InlineInterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_ADD(var, val)	_InlineInterlockedExchangeAdd64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_SUB(var, val)	_InlineInterlockedExchangeAdd64(var, -(val))
-#define ATOMIC_INC(var)			_InlineInterlockedIncrement64(var)
-#define ATOMIC_DEC(var)			_InlineInterlockedDecrement64(var)
-#define ATOMIC_OR(var, val)		_InlineInterlockedOr64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_AND(var, val)	_InlineInterlockedAnd64(var, (ATOMIC_BASE_TYPE) (val))
+typedef volatile int ATOMIC_TYPE;
+typedef int ATOMIC_BASE_TYPE;
+#define ATOMIC_VAR_INIT(val)	(val)
+#define ATOMIC_INIT(var, val)	(*(var) = (val))
+#define ATOMIC_DESTROY(var)	((void) 0)
+
+#ifdef __INTEL_COMPILER
+#define ATOMIC_GET(var)		_InterlockedExchangeAdd(var, 0)
 #else
-#define ATOMIC_GET(var)			((ATOMIC_BASE_TYPE) _InterlockedExchangeAdd64(var, 0))
-#define ATOMIC_SET(var, val)	_InterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_XCG(var, val)	_InterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_ADD(var, val)	_InterlockedExchangeAdd64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_SUB(var, val)	_InterlockedExchangeAdd64(var, -(val))
-#define ATOMIC_INC(var)			_InterlockedIncrement64(var)
-#define ATOMIC_DEC(var)			_InterlockedDecrement64(var)
-#define ATOMIC_OR(var, val)		_InterlockedOr64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_AND(var, val)	_InterlockedAnd64(var, (ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_GET(var)		(*(var))
+/* should we use _InterlockedExchangeAdd(var, 0) instead? */
 #endif
+#define ATOMIC_SET(var, val)	_InterlockedExchange(var, (ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_XCG(var, val)	_InterlockedExchange(var, (ATOMIC_BASE_TYPE) (val))
 static inline bool
 ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
 {
 	ATOMIC_BASE_TYPE old;
-	old = _InterlockedCompareExchange64(var, des, *exp);
+	old = _InterlockedCompareExchange(var, des, *exp);
 	if (old == *exp)
 		return true;
 	*exp = old;
 	return false;
 }
 #define ATOMIC_CAS(var, exp, des)	ATOMIC_CAS(var, exp, (ATOMIC_BASE_TYPE) (des))
+#define ATOMIC_ADD(var, val)	_InterlockedExchangeAdd(var, (ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_SUB(var, val)	_InterlockedExchangeAdd(var, -(ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_INC(var)		_InterlockedIncrement(var)
+#define ATOMIC_DEC(var)		_InterlockedDecrement(var)
+
+#pragma intrinsic(_InterlockedExchange)
+#pragma intrinsic(_InterlockedExchangeAdd)
+#pragma intrinsic(_InterlockedIncrement)
+#pragma intrinsic(_InterlockedDecrement)
 
 #endif
 
@@ -224,7 +218,6 @@ typedef PVOID volatile ATOMIC_PTR_TYPE;
 #define ATOMIC_PTR_GET(var)		(*(var))
 #define ATOMIC_PTR_SET(var, val)	_InterlockedExchangePointer(var, (PVOID) (val))
 #define ATOMIC_PTR_XCG(var, val)	_InterlockedExchangePointer(var, (PVOID) (val))
-#pragma intrinsic(_InterlockedCompareExchangePointer)
 static inline bool
 ATOMIC_PTR_CAS(ATOMIC_PTR_TYPE *var, void **exp, void *des)
 {
@@ -248,23 +241,25 @@ typedef volatile int ATOMIC_FLAG;
 /* the new way of doing this according to GCC (the old way, using
  * __sync_* primitives is not supported) */
 
-typedef uint64_t ATOMIC_BASE_TYPE;
-typedef volatile ATOMIC_BASE_TYPE ATOMIC_TYPE;
-
+#if SIZEOF_SSIZE_T == 8
+typedef int64_t ATOMIC_BASE_TYPE;
+typedef volatile int64_t ATOMIC_TYPE;
+#else
+typedef int ATOMIC_BASE_TYPE;
+typedef volatile int ATOMIC_TYPE;
+#endif
 #define ATOMIC_VAR_INIT(val)	(val)
 #define ATOMIC_INIT(var, val)	(*(var) = (val))
 #define ATOMIC_DESTROY(var)	((void) 0)
 
-#define ATOMIC_GET(var)			((ATOMIC_BASE_TYPE) __atomic_load_n(var, __ATOMIC_SEQ_CST))
+#define ATOMIC_GET(var)		__atomic_load_n(var, __ATOMIC_SEQ_CST)
 #define ATOMIC_SET(var, val)	__atomic_store_n(var, (ATOMIC_BASE_TYPE) (val), __ATOMIC_SEQ_CST)
 #define ATOMIC_XCG(var, val)	__atomic_exchange_n(var, (ATOMIC_BASE_TYPE) (val), __ATOMIC_SEQ_CST)
 #define ATOMIC_CAS(var, exp, des)	__atomic_compare_exchange_n(var, exp, (ATOMIC_BASE_TYPE) (des), false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
 #define ATOMIC_ADD(var, val)	__atomic_fetch_add(var, (ATOMIC_BASE_TYPE) (val), __ATOMIC_SEQ_CST)
 #define ATOMIC_SUB(var, val)	__atomic_fetch_sub(var, (ATOMIC_BASE_TYPE) (val), __ATOMIC_SEQ_CST)
-#define ATOMIC_INC(var)			__atomic_add_fetch(var, 1, __ATOMIC_SEQ_CST)
-#define ATOMIC_DEC(var)			__atomic_sub_fetch(var, 1, __ATOMIC_SEQ_CST)
-#define ATOMIC_OR(var, val)		__atomic_fetch_or(var, (ATOMIC_BASE_TYPE) (val), __ATOMIC_SEQ_CST)
-#define ATOMIC_AND(var, val)	__atomic_fetch_and(var, (ATOMIC_BASE_TYPE) (val), __ATOMIC_SEQ_CST)
+#define ATOMIC_INC(var)		__atomic_add_fetch(var, 1, __ATOMIC_SEQ_CST)
+#define ATOMIC_DEC(var)		__atomic_sub_fetch(var, 1, __ATOMIC_SEQ_CST)
 
 typedef void *volatile ATOMIC_PTR_TYPE;
 #define ATOMIC_PTR_INIT(var, val)	(*(var) = (val))
@@ -284,10 +279,9 @@ typedef volatile char ATOMIC_FLAG;
 
 /* emulate using mutexes */
 
-typedef uint64_t ATOMIC_BASE_TYPE;
-
 #include <pthread.h> /* required for pthread_mutex_t */
 
+typedef size_t ATOMIC_BASE_TYPE;
 typedef struct {
 	ATOMIC_BASE_TYPE val;
 	pthread_mutex_t lck;
@@ -395,30 +389,6 @@ ATOMIC_DEC(ATOMIC_TYPE *var)
 	pthread_mutex_unlock(&var->lck);
 	return new;
 }
-
-static inline ATOMIC_BASE_TYPE
-ATOMIC_OR(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE val)
-{
-	ATOMIC_BASE_TYPE old;
-	pthread_mutex_lock(&var->lck);
-	old = var->val;
-	var->val |= val;
-	pthread_mutex_unlock(&var->lck);
-	return old;
-}
-#define ATOMIC_OR(var, val)	ATOMIC_OR(var, (ATOMIC_BASE_TYPE) (val))
-
-static inline ATOMIC_BASE_TYPE
-ATOMIC_AND(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE val)
-{
-	ATOMIC_BASE_TYPE old;
-	pthread_mutex_lock(&var->lck);
-	old = var->val;
-	var->val &= val;
-	pthread_mutex_unlock(&var->lck);
-	return old;
-}
-#define ATOMIC_AND(var, val)	ATOMIC_AND(var, (ATOMIC_BASE_TYPE) (val))
 
 typedef struct {
 	void *val;

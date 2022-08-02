@@ -1,0 +1,84 @@
+stderr of test 'text` in directory 'sql/test/pg_regress` itself:
+
+
+# 22:26:27 >  
+# 22:26:27 >   mserver5 "--config=/export/scratch/stripe/fabian/monetdb/current/program-i86pc/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5:/export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5/lib:/export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5/bin" --set "gdk_dbfarm=/export/scratch/stripe/fabian/monetdb/current/mtest-pegasus.ins.cwi.nl/sql/dbfarm"    --set mapi_open=true --set xrpc_open=true --set mapi_port=35864 --set xrpc_port=45235 --set monet_prompt= --trace  "--dbname=mTests_src_test_pg_regress" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 22:26:27 >  
+
+# builtin opt 	gdk_arch = 64bitx86_64-pc-solaris2.11
+# builtin opt 	gdk_version = 1.31.0
+# builtin opt 	prefix = /export/scratch/stripe/fabian/monetdb/current/program-i86pc
+# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	gdk_dbname = tst
+# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
+# builtin opt 	gdk_debug = 8
+# builtin opt 	gdk_alloc_map = yes
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_admin = adm
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_welcome = yes
+# builtin opt 	monet_mod_path = /export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB
+# builtin opt 	monet_daemon = yes
+# builtin opt 	host = localhost
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_noheaders = no
+# builtin opt 	mapi_debug = 0
+# builtin opt 	mapi_clients = 2
+# builtin opt 	sql_debug = 0
+# builtin opt 	sql_logdir = sql_logs
+# builtin opt 	xquery_logdir = xquery_logs
+# builtin opt 	standoff_ns = http://monetdb.cwi.nl/standoff
+# builtin opt 	standoff_start = start
+# builtin opt 	standoff_end = end
+# config opt 	prefix = /export/scratch/stripe/fabian/monetdb/current/program-i86pc
+# config opt 	config = ${prefix}/etc/monetdb5.conf
+# config opt 	prefix = /export/scratch/stripe/fabian/monetdb/current/program-i86pc
+# config opt 	exec_prefix = ${prefix}
+# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB5/dbfarm
+# config opt 	gdk_dbname = demo
+# config opt 	gdk_alloc_map = no
+# config opt 	gdk_embedded = no
+# config opt 	gdk_debug = 0
+# config opt 	monet_mod_path = /export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5:/export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5/lib:/export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5/bin
+# config opt 	monet_daemon = no
+# config opt 	monet_welcome = yes
+# config opt 	mero_msglog = ${prefix}/var/log/MonetDB/merovingian.log
+# config opt 	mero_errlog = ${prefix}/var/log/MonetDB/merovingian.log
+# config opt 	mero_pidfile = ${prefix}/var/run/MonetDB/merovingian.pid
+# config opt 	mal_init = /export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5/mal_init.mal
+# config opt 	mal_listing = 2
+# config opt 	mapi_port = 50000
+# config opt 	mapi_autosense = false
+# config opt 	mapi_open = false
+# config opt 	sql_optimizer = inline,remap,evaluate,costModel,coercions,emptySet,cluster,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
+# cmdline opt 	config = /export/scratch/stripe/fabian/monetdb/current/program-i86pc/etc/monetdb5.conf
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	monet_mod_path = /export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5:/export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5/lib:/export/scratch/stripe/fabian/monetdb/current/program-i86pc/lib/MonetDB5/bin
+# cmdline opt 	gdk_dbfarm = /export/scratch/stripe/fabian/monetdb/current/mtest-pegasus.ins.cwi.nl/sql/dbfarm
+# cmdline opt 	mapi_open = true
+# cmdline opt 	xrpc_open = true
+# cmdline opt 	mapi_port = 35864
+# cmdline opt 	xrpc_port = 45235
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbname = mTests_src_test_pg_regress
+# cmdline opt 	mal_listing = 0
+#warning: please don't forget to set your vault key!
+#(see /export/scratch/stripe/fabian/monetdb/current/program-i86pc/etc/monetdb5.conf)
+
+# 22:26:27 >  
+# 22:26:27 >  ./text.SQL.sh text 
+# 22:26:27 >  
+
+
+# 22:26:27 >  
+# 22:26:27 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=pegasus --port=35864  -e < ../../../../../../../../../../mirror/fabian/monetdb/current/sql/src/test/pg_regress/Tests/../monetdb/text.sql
+# 22:26:27 >  
+
+# 17:59:44 >  
+# 17:59:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5665" "--port=31854"
+# 17:59:44 >  
+
+# 22:26:27 >  
+# 22:26:27 >  Done.
+# 22:26:27 >  
+

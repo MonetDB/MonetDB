@@ -1,9 +1,0 @@
-statement ok
-function foo();
-raise	PermissionDeniedException := 1234;
-	io.print("should not come here\n");
-end
-
-statement error
-user.foo()
-

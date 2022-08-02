@@ -1,0 +1,23 @@
+stderr of test 'alter_add_column-bug` in directory 'sql/test/bugs` itself:
+
+
+# 23:04:06 >  
+# 23:04:06 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36740 --set xrpc_port=40230 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 23:04:06 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf)
+
+# 23:04:06 >  
+# 23:04:06 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=36740 
+# 23:04:06 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+QUERY = ALTER TABLE "myschema"."COLLECTION_INFO" ADD COLUMN test_col1  varchar(256);
+ERROR = !ALTER TABLE: no such table 'COLLECTION_INFO' in schema 'myschema'
+CODE  = 42S02
+
+# 23:04:06 >  
+# 23:04:06 >  Done.
+# 23:04:06 >  
+

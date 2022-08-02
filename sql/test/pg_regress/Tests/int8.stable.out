@@ -1,3 +1,32 @@
+stdout of test 'int8` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_pg_regress', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://uwakai.da.cwi.nl:38959/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1142/.s.monetdb.38959
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
+
+#--
+#-- bigint
+#-- Test bigint 64-bit integers.
+#--
 #CREATE TABLE INT8_TBL(q1 bigint, q2 bigint);
 #INSERT INTO INT8_TBL VALUES('  123   ','  456');
 [ 1 ]
@@ -62,7 +91,7 @@
 [ "",	4567890123456789,	-4567890123456789,	9135780246913578 ]
 #SELECT '' AS three, q1, q2, q1 * q2 AS multiply FROM INT8_TBL
 # WHERE q1 < 1000 or (q2 > 0 and q2 < 1000);
-% .,	sys.int8_tbl,	sys.int8_tbl,	sys. # table_name
+% .%1,	sys.int8_tbl,	sys.int8_tbl,	sys.%4 # table_name
 % three,        q1,     q2,     multiply # name
 % char, bigint, bigint, bigint # type
 % 0,    16,     16,     18 # length
@@ -120,3 +149,8 @@
 [ "",	9135780246913578 ]
 [ "",	9135780246913578 ]
 [ "",	9135780246913578 ]
+
+# 16:17:25 >  
+# 16:17:25 >  "Done."
+# 16:17:25 >  
+

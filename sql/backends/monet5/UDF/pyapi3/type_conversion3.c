@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -12,7 +12,13 @@
 
 #include <longintrepr.h>
 
-bool pyapi3_string_copy(const char *source, char *dest, size_t max_size, bool allow_unicode)
+#if PY_MAJOR_VERSION >= 3
+#define IS_PY3K
+#define PyInt_Check PyLong_Check
+#define PyString_CheckExact PyUnicode_CheckExact
+#endif
+
+bool string_copy(const char *source, char *dest, size_t max_size, bool allow_unicode)
 {
 	size_t i;
 	for (i = 0; i < max_size; i++) {
@@ -61,7 +67,11 @@ size_t pyobject_get_size(PyObject *obj)
 {
 	size_t size = 256;
 
-	if (PyByteArray_CheckExact(obj)) {
+	if (
+#ifndef IS_PY3K
+	    PyString_CheckExact(obj) ||
+#endif
+	    PyByteArray_CheckExact(obj)) {
 		size = Py_SIZE(obj); // Normal strings are 1 byte per character
 	} else if (PyUnicode_CheckExact(obj)) {
 		size = Py_SIZE(obj) * 4; // UTF32 is 4 bytes per character
@@ -69,83 +79,6 @@ size_t pyobject_get_size(PyObject *obj)
 	return size;
 }
 
-str pyobject_to_date(PyObject **ptr, size_t maxsize, date *value) {
-	str msg = MAL_SUCCEED;
-
-	if (ptr == NULL || *ptr == NULL) {
-		msg = createException(MAL, "pyapi3.eval", "Invalid PyObject.");
-		goto wrapup;
-	}
-
-	(void) maxsize;
-
-	USE_DATETIME_API;
-	if(PyDate_Check(*ptr)) {
-		*value = date_create(PyDateTime_GET_YEAR(*ptr),
-							 PyDateTime_GET_MONTH(*ptr),
-							 PyDateTime_GET_DAY(*ptr));
-	}
-	else {
-		msg = createException(MAL, "pyapi3.eval", "Invalid PyDate object.");
-	}
-
- wrapup:
-	return msg;
-}
-
-str pyobject_to_daytime(PyObject **ptr, size_t maxsize, daytime *value) {
-	str msg = MAL_SUCCEED;
-
-	if (ptr == NULL || *ptr == NULL) {
-		msg = createException(MAL, "pyapi3.eval", "Invalid PyObject.");
-		goto wrapup;
-	}
-
-	(void) maxsize;
-
-	USE_DATETIME_API;
-	if(PyTime_Check(*ptr)) {
-		*value = daytime_create(PyDateTime_TIME_GET_HOUR(*ptr),
-								PyDateTime_TIME_GET_MINUTE(*ptr),
-								PyDateTime_TIME_GET_SECOND(*ptr),
-								PyDateTime_TIME_GET_MICROSECOND(*ptr));
-	}
-	else {
-		msg = createException(MAL, "pyapi3.eval", "Invalid PyTime object.");
-	}
-
- wrapup:
-	return msg;
-}
-
-str pyobject_to_timestamp(PyObject **ptr, size_t maxsize, timestamp *value) {
-	str msg = MAL_SUCCEED;
-
-	if (ptr == NULL || *ptr == NULL) {
-		msg = createException(MAL, "pyapi3.eval", "Invalid PyObject.");
-		goto wrapup;
-	}
-
-	(void) maxsize;
-
-	USE_DATETIME_API;
-	if(PyDateTime_Check(*ptr)) {
-		date dt = date_create(PyDateTime_GET_YEAR(*ptr),
-							  PyDateTime_GET_MONTH(*ptr),
-							  PyDateTime_GET_DAY(*ptr));
-		daytime dtm = daytime_create(PyDateTime_DATE_GET_HOUR(*ptr),
-									 PyDateTime_DATE_GET_MINUTE(*ptr),
-									 PyDateTime_DATE_GET_SECOND(*ptr),
-									 PyDateTime_DATE_GET_MICROSECOND(*ptr));
-		*value = timestamp_create(dt, dtm);
-	}
-	else {
-		msg = createException(MAL, "pyapi3.eval", "Invalid PyDateTime object.");
-	}
-
- wrapup:
-	return msg;
-}
 
 str pyobject_to_blob(PyObject **ptr, size_t maxsize, blob **value) {
 	size_t size;
@@ -159,6 +92,12 @@ str pyobject_to_blob(PyObject **ptr, size_t maxsize, blob **value) {
 	obj = *ptr;
 
 	(void)maxsize;
+#ifndef IS_PY3K
+	if (PyString_CheckExact(obj)) {
+		size = PyString_Size(obj);
+		bytes_data = ((PyStringObject *)obj)->ob_sval;
+	} else
+#endif
 	if (PyByteArray_CheckExact(obj)) {
 		size = PyByteArray_Size(obj);
 		bytes_data = ((PyByteArrayObject *)obj)->ob_bytes;
@@ -206,25 +145,47 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 		len = maxsize;
 	}
 
-	if (PyByteArray_CheckExact(obj)) {
-		char *str = ((PyByteArrayObject *)obj)->ob_bytes;
-		if (!pyapi3_string_copy(str, utf8_string, len-1, false)) {
+#ifndef IS_PY3K
+	if (PyString_CheckExact(obj)) {
+		char *str = ((PyStringObject *)obj)->ob_sval;
+		if (!string_copy(str, utf8_string, len-1, false)) {
 			msg = createException(MAL, "pyapi3.eval",
-				  SQLSTATE(PY000) "Invalid string encoding used. Please return "
-						  "a regular ASCII string, or a Numpy_Unicode "
-						  "object.\n");
+								  SQLSTATE(PY000) "Invalid string encoding used. Please return "
+								  "a regular ASCII string, or a Numpy_Unicode "
+								  "object.\n");
+			goto wrapup;
+		}
+	} else
+#endif
+		if (PyByteArray_CheckExact(obj)) {
+		char *str = ((PyByteArrayObject *)obj)->ob_bytes;
+		if (!string_copy(str, utf8_string, len-1, false)) {
+			msg = createException(MAL, "pyapi3.eval",
+								  SQLSTATE(PY000) "Invalid string encoding used. Please return "
+								  "a regular ASCII string, or a Numpy_Unicode "
+								  "object.\n");
 			goto wrapup;
 		}
 	} else if (PyUnicode_CheckExact(obj)) {
+#ifndef IS_PY3K
+		Py_UNICODE *str = (Py_UNICODE *)((PyUnicodeObject *)obj)->str;
+#if Py_UNICODE_SIZE >= 4
+		utf32_to_utf8(0, ((PyUnicodeObject *)obj)->length, utf8_string, str);
+#else
+		ucs2_to_utf8(0, ((PyUnicodeObject *)obj)->length, utf8_string, str);
+#endif
+#else
 		const char *str = PyUnicode_AsUTF8(obj);
-		if (!pyapi3_string_copy(str, utf8_string, len-1, true)) {
+		if (!string_copy(str, utf8_string, len-1, true)) {
 			msg = createException(MAL, "pyapi3.eval",
-				  SQLSTATE(PY000) "Invalid string encoding used. Please return "
-						  "a regular ASCII string, or a Numpy_Unicode "
-						  "object.\n");
+								  SQLSTATE(PY000) "Invalid string encoding used. Please return "
+								  "a regular ASCII string, or a Numpy_Unicode "
+								  "object.\n");
 			goto wrapup;
 		}
-	} else if (PyBool_Check(obj) || PyLong_Check(obj) || PyFloat_Check(obj)) {
+#endif
+	} else if (PyBool_Check(obj) || PyLong_Check(obj) || PyInt_Check(obj) ||
+			   PyFloat_Check(obj)) {
 #ifdef HAVE_HGE
 		hge h;
 		pyobject_to_hge(&obj, 0, &h);
@@ -263,61 +224,44 @@ wrapup:
 		return MAL_SUCCEED;                                                    \
 	}
 
-str str_to_date(const char *ptr, size_t maxsize, date *value)
-{
-	(void)ptr;
-	(void)maxsize;
-	(void)value;
-
-	return GDKstrdup("Implicit conversion of string to date is not allowed.");
+#ifndef IS_PY3K
+#define PY_TO_(type, inttpe)						\
+str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
+{									\
+	PyObject *ptr = *pyobj;						\
+	str retval = MAL_SUCCEED;						\
+	(void) maxsize;							\
+	if (PyLong_CheckExact(ptr)) {					\
+		PyLongObject *p = (PyLongObject*) ptr;				\
+		inttpe h = 0;							\
+		inttpe prev = 0;						\
+		ssize_t i = Py_SIZE(p);						\
+		int sign = i < 0 ? -1 : 1;					\
+		i *= sign;							\
+		while (--i >= 0) {						\
+			prev = h; (void)prev;					\
+			h = (h << PyLong_SHIFT) + p->ob_digit[i];			\
+			if ((h >> PyLong_SHIFT) != prev) {				\
+				return GDKstrdup("Overflow when converting value.");	\
+			}								\
+		}								\
+		*value = (type)(h * sign);					\
+	} else if (PyInt_CheckExact(ptr) || PyBool_Check(ptr)) {		\
+		*value = (type)((PyIntObject*)ptr)->ob_ival;			\
+	} else if (PyFloat_CheckExact(ptr)) {				\
+		*value = isnan(((PyFloatObject*)ptr)->ob_fval) ? type##_nil : (type) ((PyFloatObject*)ptr)->ob_fval; \
+	} else if (PyString_CheckExact(ptr)) {				\
+		return str_to_##type(((PyStringObject*)ptr)->ob_sval, 0, value); \
+	}  else if (PyByteArray_CheckExact(ptr)) {				\
+		return str_to_##type(((PyByteArrayObject*)ptr)->ob_bytes, 0, value); \
+	} else if (PyUnicode_CheckExact(ptr)) {				\
+		return unicode_to_##type(((PyUnicodeObject*)ptr)->str, 0, value); \
+	} else if (ptr == Py_None) {					\
+		*value = type##_nil;						\
+	}									\
+	return retval;							\
 }
-
-str unicode_to_date(Py_UNICODE *ptr, size_t maxsize, date *value)
-{
-	(void)ptr;
-	(void)maxsize;
-	(void)value;
-
-	return GDKstrdup("Implicit conversion of string to date is not allowed.");
-}
-
-str str_to_daytime(const char *ptr, size_t maxsize, daytime *value)
-{
-	(void)ptr;
-	(void)maxsize;
-	(void)value;
-
-	return GDKstrdup("Implicit conversion of string to daytime is not allowed.");
-}
-
-str unicode_to_daytime(Py_UNICODE *ptr, size_t maxsize, daytime *value)
-{
-	(void)ptr;
-	(void)maxsize;
-	(void)value;
-
-	return GDKstrdup("Implicit conversion of string to daytime is not allowed.");
-}
-
-str str_to_timestamp(const char *ptr, size_t maxsize, timestamp *value)
-{
-	(void)ptr;
-	(void)maxsize;
-	(void)value;
-
-	return GDKstrdup("Implicit conversion of string to timestamp is not allowed.");
-}
-
-str unicode_to_timestamp(Py_UNICODE *ptr, size_t maxsize, timestamp *value)
-{
-	(void)ptr;
-	(void)maxsize;
-	(void)value;
-
-	return GDKstrdup("Implicit conversion of string to timestamp is not allowed.");
-}
-
-
+#else
 #define PY_TO_(type, inttpe)						\
 str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
 {									\
@@ -352,6 +296,7 @@ str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
 	}									\
 	return retval;							\
 }
+#endif
 
 #define CONVERSION_FUNCTION_FACTORY(tpe, inttpe)            \
 	STRING_TO_NUMBER_FACTORY(tpe)                   \

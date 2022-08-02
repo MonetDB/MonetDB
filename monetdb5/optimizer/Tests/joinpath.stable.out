@@ -1,0 +1,112 @@
+stdout of test 'joinpath` in directory 'monetdb5/optimizer` itself:
+
+
+# 08:48:38 >  
+# 08:48:38 >   mserver5 "--config=/ufs/mk/monet5//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"   --set mapi_open=true --set xrpc_open=true --set mapi_port=38534 --set xrpc_port=41985 --set xrpc_docroot=/ufs/mk/monet5/package/MonetDB5 --set monet_prompt= --trace  --dbname=mTests_src_optimizer  joinpath.mal
+# 08:48:38 >  
+
+# MonetDB server v5.10.0, based on kernel v1.28.0
+# Serving database 'mTests_src_optimizer', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:33706/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-633/.s.monetdb.33706
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+function user.tst0():void;
+    a := bat.new(:oid,:oid);
+    b := bat.new(:oid,:oid);
+    c := bat.new(:oid,:oid);
+    j1 := algebra.projection(a,b);
+    j2 := algebra.projection(c,j1);
+    io.print(j2);
+end tst0;
+function user.tst1():void;
+    a := bat.new(:oid,:oid);
+    b := bat.new(:oid,:oid);
+    c := bat.new(:oid,:oid);
+    j3 := algebra.projection(a,c);
+    j4 := algebra.projection(b,j3);
+    io.print(j4);
+end tst1;
+function user.tst2():void;
+    a := bat.new(:oid,:str);
+    bat.append(a,"world");
+    bat.append(a,"hello");
+    br := bat.new(:oid,:str);
+    bat.append(br,"hello");
+    b := bat.reverse(br);
+    c := bat.new(:oid,:oid);
+    bat.append(c,0@0);
+    io.print(a);
+    io.print(br);
+    io.print(c);
+    j1 := algebra.join(a,b);
+    j2 := algebra.join(j1,c);
+    io.print(j2);
+end tst2;
+function user.main():void;
+# The JAQL test case 
+    mdb.list("user","tst0");
+    mdb.list("user","tst1");
+    mdb.list("user","tst2");
+    user.tst2();
+end main;
+function user.tst0():void;
+    a := bat.new(:oid,:oid);
+    b := bat.new(:oid,:oid);
+    c := bat.new(:oid,:oid);
+    j2:bat[:oid,:oid]  := algebra.projectionPath(c,a,b);
+    io.print(j2);
+end tst0;
+function user.tst1():void;
+    a := bat.new(:oid,:oid);
+    b := bat.new(:oid,:oid);
+    c := bat.new(:oid,:oid);
+    j4:bat[:oid,:oid]  := algebra.projectionPath(b,a,c);
+    io.print(j4);
+end tst1;
+function user.tst2():void;
+    a := bat.new(:oid,:str);
+    bat.append(a,"world");
+    bat.append(a,"hello");
+    br := bat.new(:oid,:str);
+    bat.append(br,"hello");
+    b := bat.reverse(br);
+    c := bat.new(:oid,:oid);
+    bat.append(c,0@0);
+    io.print(a);
+    io.print(br);
+    io.print(c);
+    j2:bat[:oid,:oid]  := algebra.joinPath(a,b,c);
+    io.print(j2);
+end tst2;
+#-------------------------#
+# h	t		  # name
+# void	str		  # type
+#-------------------------#
+[ 0@0,	  "world"	  ]
+[ 1@0,	  "hello"	  ]
+#-------------------------#
+# h	t		  # name
+# void	str		  # type
+#-------------------------#
+[ 0@0,	  "hello"	  ]
+#-----------------#
+# h	t	  # name
+# void	oid	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 1@0,	  0@0	  ]
+
+# 08:48:38 >  
+# 08:48:38 >  Done.
+# 08:48:38 >  
+

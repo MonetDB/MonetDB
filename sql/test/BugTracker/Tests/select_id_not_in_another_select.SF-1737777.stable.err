@@ -1,0 +1,19 @@
+stderr of test 'select_id_not_in_another_select.SF-1737777` in directory 'sql/test/BugTracker` itself:
+
+
+# 09:42:27 >  
+# 09:42:27 >  Mtimeout -timeout 180  mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/xquery_logs" --set mapi_open=true --set mapi_port=32420 --set xrpc_port=48768 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit=' include sql;' ; echo ; echo Over..
+# 09:42:27 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf)
+
+# 09:42:27 >  
+# 09:42:27 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=koala --port=32420 
+# 09:42:27 >  
+
+
+# 09:42:28 >  
+# 09:42:28 >  Done.
+# 09:42:28 >  
+

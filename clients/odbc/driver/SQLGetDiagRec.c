@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -43,7 +43,7 @@ MNDBGetDiagRec(SQLSMALLINT HandleType,
 	       SQLSMALLINT *TextLengthPtr)
 {
 	ODBCError *err;
-	ODBCDbc *dbc = NULL;
+	SQLRETURN retCode;
 	char *msg;
 	SQLSMALLINT msgLen;
 
@@ -56,25 +56,19 @@ MNDBGetDiagRec(SQLSMALLINT HandleType,
 		break;
 	case SQL_HANDLE_DBC:
 		/* Check if this struct is still valid/alive */
-		dbc = (ODBCDbc *) Handle;
-		if (!isValidDbc(dbc))
+		if (!isValidDbc((ODBCDbc *) Handle))
 			return SQL_INVALID_HANDLE;
-		err = getDbcError(dbc);
+		err = getDbcError((ODBCDbc *) Handle);
 		break;
 	case SQL_HANDLE_STMT:
 		/* Check if this struct is still valid/alive */
 		if (!isValidStmt((ODBCStmt *) Handle))
 			return SQL_INVALID_HANDLE;
 		err = getStmtError((ODBCStmt *) Handle);
-		dbc = ((ODBCStmt *) Handle)->Dbc;
 		break;
 	case SQL_HANDLE_DESC:
-		/* Check if this struct is still valid/alive */
-		if (!isValidDesc((ODBCDesc *) Handle))
-			return SQL_INVALID_HANDLE;
-		err = getDescError((ODBCDesc *) Handle);
-		dbc = ((ODBCDesc *) Handle)->Dbc;
-		break;
+		/* not yet supported */
+		return Handle ? SQL_NO_DATA : SQL_INVALID_HANDLE;
 	default:
 		return SQL_INVALID_HANDLE;
 	}
@@ -87,6 +81,7 @@ MNDBGetDiagRec(SQLSMALLINT HandleType,
 		return SQL_ERROR;
 
 	err = getErrorRec(err, RecNumber);
+
 	/* Check the error object from the handle, it may be NULL when
 	 * no (more) errors are available
 	 */
@@ -108,26 +103,23 @@ MNDBGetDiagRec(SQLSMALLINT HandleType,
 		*NativeErrorPtr = getNativeErrorCode(err);
 
 	msg = getMessage(err);
+	retCode = SQL_SUCCESS;
 
 	/* first write the error message prefix text:
-	 * [MonetDB][ODBC driver VERSION][DSN]
-	 * this is required by the ODBC spec:
-	 * https://docs.microsoft.com/en-us/sql/odbc/reference/develop-app/diagnostic-messages
-	 * and used to determine where the error originated
+	 * [MonetDB][ODBC driver VERSION]; this is
+	 * required by the ODBC spec and used to
+	 * determine where the error originated
 	 */
-	if (dbc && dbc->dsn)
-		msgLen = (SQLSMALLINT) strconcat_len((char *) MessageText, BufferLength, ODBCErrorMsgPrefix, "[", dbc->dsn, "]", msg, NULL);
-	else
-		msgLen = (SQLSMALLINT) strconcat_len((char *) MessageText, BufferLength, ODBCErrorMsgPrefix, msg, NULL);
-
-	if (TextLengthPtr)
-		*TextLengthPtr = msgLen;
-
+	msgLen = (SQLSMALLINT) strconcat_len((char *) MessageText, BufferLength, ODBCErrorMsgPrefix, msg, NULL);
 	if (MessageText == NULL || msgLen >= BufferLength) {
 		/* it didn't fit */
-		return SQL_SUCCESS_WITH_INFO;
+		retCode = SQL_SUCCESS_WITH_INFO;
 	}
-	return SQL_SUCCESS;
+
+	if (TextLengthPtr)
+		*TextLengthPtr = (SQLSMALLINT) (msgLen + ODBCErrorMsgPrefixLength);
+
+	return retCode;
 }
 
 SQLRETURN SQL_API

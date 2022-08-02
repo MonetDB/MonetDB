@@ -1,0 +1,17 @@
+stderr of test 'create_column_name_data.SF-1440214` in directory 'sql/test/BugTracker` itself:
+
+
+# 20:09:22 >  
+# 20:09:22 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-monetdb-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-monetdb-pegasus.ins.cwi.nl/sql/log" --set mapi_port=35014 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 20:09:22 >  
+
+
+# 20:09:22 >  
+# 20:09:22 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=35014  < create_column_name_data.SF-1440214.sql
+# 20:09:22 >  
+
+
+# 20:09:22 >  
+# 20:09:22 >  Done.
+# 20:09:22 >  
+

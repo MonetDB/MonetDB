@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -23,12 +23,15 @@
 #include <string.h>
 #include <ctype.h>
 #include "sql_keyword.h"
+#ifdef HAVE_HGE
+#include "mal.h"		/* for have_hge */
+#endif
 
 /**
  * Removes all comments before the query. In query comments are kept.
  */
 char *
-query_cleaned(sql_allocator *sa, const char *query)
+query_cleaned(const char *query)
 {
 	char *q, *r, *c = NULL;
 	int lines = 0;
@@ -38,7 +41,7 @@ query_cleaned(sql_allocator *sa, const char *query)
 	bool incomment2 = false;	/* inside comment starting with --  */
 	bool inline_comment = false;
 
-	r = SA_NEW_ARRAY(sa, char, strlen(query) + 1);
+	r = GDKmalloc(strlen(query) + 1);
 	if(!r)
 		return NULL;
 
@@ -178,7 +181,8 @@ scanner_init_keywords(void)
 	failed += keywords_insert("MEDIUMINT", sqlINTEGER);
 	failed += keywords_insert("BIGINT", BIGINT);
 #ifdef HAVE_HGE
-	failed += keywords_insert("HUGEINT", HUGEINT);
+	if (have_hge)
+		failed += keywords_insert("HUGEINT", HUGEINT);
 #endif
 	failed += keywords_insert("DEC", sqlDECIMAL);
 	failed += keywords_insert("DECIMAL", sqlDECIMAL);
@@ -199,11 +203,6 @@ scanner_init_keywords(void)
 	failed += keywords_insert("FOREIGN", FOREIGN);
 	failed += keywords_insert("FROM", FROM);
 	failed += keywords_insert("FWF", FWF);
-
-	failed += keywords_insert("BIG", BIG);
-	failed += keywords_insert("LITTLE", LITTLE);
-	failed += keywords_insert("NATIVE", NATIVE);
-	failed += keywords_insert("ENDIAN", ENDIAN);
 
 	failed += keywords_insert("REFERENCES", REFERENCES);
 
@@ -244,6 +243,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("SEED", SEED);
 	failed += keywords_insert("LAST", LAST);
 	failed += keywords_insert("LOCAL", LOCAL);
+	failed += keywords_insert("LOCKED", LOCKED);
 	failed += keywords_insert("NATURAL", NATURAL);
 	failed += keywords_insert("NOT", NOT);
 	failed += keywords_insert("NULL", sqlNULL);
@@ -276,7 +276,6 @@ scanner_init_keywords(void)
 	failed += keywords_insert("CURRENT_USER", CURRENT_USER);
 	failed += keywords_insert("CURRENT_ROLE", CURRENT_ROLE);
 	failed += keywords_insert("SESSION_USER", SESSION_USER);
-	failed += keywords_insert("CURRENT_SCHEMA", CURRENT_SCHEMA);
 	failed += keywords_insert("SESSION", sqlSESSION);
 
 	failed += keywords_insert("RIGHT", RIGHT);
@@ -297,10 +296,10 @@ scanner_init_keywords(void)
 	failed += keywords_insert("TABLE", TABLE);
 	failed += keywords_insert("TEMPORARY", TEMPORARY);
 	failed += keywords_insert("TEMP", TEMP);
+	failed += keywords_insert("STREAM", STREAM);
 	failed += keywords_insert("REMOTE", REMOTE);
 	failed += keywords_insert("MERGE", MERGE);
 	failed += keywords_insert("REPLICA", REPLICA);
-	failed += keywords_insert("UNLOGGED", UNLOGGED);
 	failed += keywords_insert("TO", TO);
 	failed += keywords_insert("UNION", UNION);
 	failed += keywords_insert("EXCEPT", EXCEPT);
@@ -321,7 +320,6 @@ scanner_init_keywords(void)
 	failed += keywords_insert("CURRENT_DATE", CURRENT_DATE);
 	failed += keywords_insert("CURRENT_TIME", CURRENT_TIME);
 	failed += keywords_insert("CURRENT_TIMESTAMP", CURRENT_TIMESTAMP);
-	failed += keywords_insert("CURRENT_TIMEZONE", CURRENT_TIMEZONE);
 	failed += keywords_insert("NOW", CURRENT_TIMESTAMP);
 	failed += keywords_insert("LOCALTIME", LOCALTIME);
 	failed += keywords_insert("LOCALTIMESTAMP", LOCALTIMESTAMP);
@@ -339,7 +337,6 @@ scanner_init_keywords(void)
 	failed += keywords_insert("HOUR", HOUR);
 	failed += keywords_insert("MINUTE", MINUTE);
 	failed += keywords_insert("SECOND", SECOND);
-	failed += keywords_insert("EPOCH", EPOCH);
 
 	failed += keywords_insert("POSITION", POSITION);
 	failed += keywords_insert("SUBSTRING", SUBSTRING);
@@ -376,7 +373,6 @@ scanner_init_keywords(void)
 	failed += keywords_insert("UNCOMMITTED", UNCOMMITTED);
 	failed += keywords_insert("COMMITTED", COMMITTED);
 	failed += keywords_insert("REPEATABLE", sqlREPEATABLE);
-	failed += keywords_insert("SNAPSHOT", SNAPSHOT);
 	failed += keywords_insert("SERIALIZABLE", SERIALIZABLE);
 	failed += keywords_insert("DIAGNOSTICS", DIAGNOSTICS);
 	failed += keywords_insert("SIZE", sqlSIZE);
@@ -530,7 +526,6 @@ scanner_init(struct scanner *s, bstream *rs, stream *ws)
 		.rs = rs,
 		.ws = ws,
 		.mode = LINE_N,
-		.raw_string_mode = GDKgetenv_istrue("raw_strings"),
 	};
 }
 
@@ -553,9 +548,16 @@ scanner_query_processed(struct scanner *s)
 	}
 	/*assert(s->rs->pos <= s->rs->len);*/
 	s->yycur = 0;
+	s->key = 0;		/* keep a hash key of the query */
 	s->started = 0;
 	s->as = 0;
 	s->schema = NULL;
+}
+
+void
+scanner_reset_key(struct scanner *s)
+{
+	s->key = 0;
 }
 
 static int
@@ -564,7 +566,7 @@ scanner_error(mvc *lc, int cur)
 	switch (cur) {
 	case EOF:
 		(void) sql_error(lc, 1, SQLSTATE(42000) "Unexpected end of input");
-		return EOF;
+		return -1;	/* EOF needs -1 result */
 	default:
 		/* on Windows at least, iswcntrl returns TRUE for
 		 * U+FEFF, but we just want consistent error
@@ -590,7 +592,7 @@ U-04000000 - U-7FFFFFFF: 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
    utf8chkmsk[n] should be non-zero (else the encoding could be
    shorter).
 */
-static const int utf8chkmsk[] = {
+static int utf8chkmsk[] = {
 	0x0000007f,
 	0x00000780,
 	0x0000f800,
@@ -628,7 +630,7 @@ scanner_read_more(struct scanner *lc, size_t n)
 		/* query is not finished ask for more */
 		if (b->eof || !isa_block_stream(b->s)) {
 			if (mnstr_write(lc->ws, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1)
-				mnstr_flush(lc->ws, MNSTR_FLUSH_DATA);
+				mnstr_flush(lc->ws);
 			b->eof = false;
 			more = true;
 		}
@@ -649,7 +651,7 @@ scanner_getc(struct scanner *lc)
 	int c, m, n, mask;
 
 	if (scanner_read_more(lc, 1) == EOF) {
-		//lc->errstr = SQLSTATE(42000) "end of input stream";
+		lc->errstr = SQLSTATE(42000) "end of input stream";
 		return EOF;
 	}
 	lc->errstr = NULL;
@@ -724,7 +726,7 @@ scanner_string(mvc *c, int quote, bool escapes)
 		size_t pos = 0;
 		const size_t yycur = rs->pos + lc->yycur;
 
-		while (cur != EOF && (quote != '"' || cur != 0xFEFF) && pos < limit &&
+		while (cur != EOF && pos < limit &&
 		       (((cur = rs->buf[yycur + pos++]) & 0x80) == 0) &&
 		       cur && (cur != quote || escape)) {
 			if (escapes && cur == '\\')
@@ -736,9 +738,8 @@ scanner_string(mvc *c, int quote, bool escapes)
 			(void) sql_error(c, 2, SQLSTATE(42000) "string too long");
 			return LEX_ERROR;
 		}
-		/* BOM character not allowed as an identifier */
-		if (cur == EOF || (quote == '"' && cur == 0xFEFF))
-			return scanner_error(c, cur);
+		if (cur == EOF)
+			break;
 		lc->yycur += pos;
 		/* check for quote escaped quote: Obscure SQL Rule */
 		if (cur == quote && rs->buf[yycur + pos] == quote) {
@@ -763,8 +764,8 @@ scanner_string(mvc *c, int quote, bool escapes)
 			cur = scanner_getc(lc);
 		}
 	}
-	(void) sql_error(c, 2, "%s", lc->errstr ? lc->errstr : SQLSTATE(42000) "Unexpected end of input");
-	return EOF;
+	(void) sql_error(c, 2, "%s", lc->errstr ? lc->errstr : SQLSTATE(42000) "unexpected end of input");
+	return LEX_ERROR;
 }
 
 /* scan a structure {blah} into a string. We only count the matching {}
@@ -811,7 +812,7 @@ scanner_body(mvc *c)
 		}
 	}
 	(void) sql_error(c, 2, SQLSTATE(42000) "Unexpected end of input");
-	return EOF;
+	return LEX_ERROR;
 }
 
 static int
@@ -829,16 +830,22 @@ keyword_or_ident(mvc * c, int cur)
 		if (!iswalnum(cur) && cur != '_') {
 			utf8_putchar(lc, cur);
 			(void)scanner_token(lc, IDENT);
-			if ((k = find_keyword_bs(lc,s)))
+			k = find_keyword_bs(lc,s);
+			if (k)
 				lc->yyval = k->token;
+			/* find keyword in SELECT/JOIN/UNION FUNCTIONS */
+			else if (sql_find_func(c->sa, cur_schema(c), lc->rs->buf+lc->rs->pos+s, -1, F_FILT, NULL))
+				lc->yyval = FILTER_FUNC;
 			return lc->yyval;
 		}
 	}
-	if (cur < 0)
-		return cur;
 	(void)scanner_token(lc, IDENT);
-	if ((k = find_keyword_bs(lc,s)))
+	k = find_keyword_bs(lc,s);
+	if (k)
 		lc->yyval = k->token;
+	/* find keyword in SELECT/JOIN/UNION FUNCTIONS */
+	else if (sql_find_func(c->sa, cur_schema(c), lc->rs->buf+lc->rs->pos+s, -1, F_FILT, NULL))
+		lc->yyval = FILTER_FUNC;
 	return lc->yyval;
 }
 
@@ -899,106 +906,53 @@ static int
 number(mvc * c, int cur)
 {
 	struct scanner *lc = &c->scanner;
-	int token = cur == '0' ? sqlINT : 0;
+	int token = sqlINT;
+	int before_cur = EOF;
 
-	/* a number has one of these forms (expressed in regular expressions):
-	 * 0x[0-9A-Fa-f]+                   -- (hexadecimal) INTEGER
-	 * \.[0-9]+                         -- DECIMAL
-	 * [0-9]+\.[0-9]*                   -- DECIMAL
-	 * [0-9]+@0                         -- OID
-	 * [0-9]*\.[0-9]+[eE][-+]?[0-9]+    -- REAL
-	 * [0-9]+(\.[0-9]*)?[eE][-+]?[0-9]+ -- REAL
-	 * [0-9]+                           -- (decimal) INTEGER
-	 */
 	lc->started = 1;
-	/* after this block, cur contains the first character after the
-	 * parsed number (which may be the first causing it not to be a number);
-	 * it token == 0 after this block, a parse error was detected */
 	if (cur == '0' && (cur = scanner_getc(lc)) == 'x') {
-		cur = scanner_getc(lc);
-		while (cur != EOF && iswxdigit(cur)) {
+		while ((cur = scanner_getc(lc)) != EOF &&
+		       (iswdigit(cur) ||
+				 (cur >= 'A' && cur <= 'F') ||
+				 (cur >= 'a' && cur <= 'f')))
 			token = HEXADECIMAL;
-			cur = scanner_getc(lc);
-		}
-
-		if (cur == EOF)
-			return cur;
-
-		if (token != HEXADECIMAL) {
-			/* 0x not followed by a hex digit: show 'x' as erroneous */
-			utf8_putchar(lc, cur);
-			cur = 'x';
-			token = 0;
-		}
+		if (token == sqlINT)
+			before_cur = 'x';
 	} else {
-		while (cur != EOF && iswdigit(cur)) {
-			token = sqlINT;
-			cur = scanner_getc(lc);
-		}
-		if (cur == EOF)
-			return cur;
+		if (iswdigit(cur))
+			while ((cur = scanner_getc(lc)) != EOF && iswdigit(cur))
+				;
 		if (cur == '@') {
-			if (token == sqlINT) {
+			token = OIDNUM;
+			cur = scanner_getc(lc);
+			if (cur == '0')
 				cur = scanner_getc(lc);
-				if (cur == EOF)
-					return cur;
-				if (cur == '0') {
-					cur = scanner_getc(lc);
-					if (cur == EOF)
-						return cur;
-					token = OIDNUM;
-				} else {
-					/* number + '@' not followed by 0: show '@' as erroneous */
-					utf8_putchar(lc, cur);
-					cur = '@';
-					token = 0;
-				}
-			}
-		} else {
-			if (cur == '.') {
-				cur = scanner_getc(lc);
-					if (cur == EOF)
-						return cur;
-				if (token == sqlINT || iswdigit(cur)) {
-					token = INTNUM;
-					while (cur != EOF && iswdigit(cur))
-						cur = scanner_getc(lc);
-					if (cur == EOF)
-						return cur;
-				} else {
-					token = 0;
-				}
-			}
-			if (cur == 'e' || cur == 'E') {
-				if (token != 0) {
-					cur = scanner_getc(lc);
-					if (cur == EOF)
-						return cur;
-					if (cur == '+' || cur == '-')
-						cur = scanner_getc(lc);
-					while (cur != EOF && iswdigit(cur)) {
-						token = APPROXNUM;
-						cur = scanner_getc(lc);
-					}
-					if (cur == EOF)
-						return cur;
-					if (token != APPROXNUM)
-						token = 0;
-				}
-			}
+		}
+
+		if (cur == '.') {
+			token = INTNUM;
+
+			while ((cur = scanner_getc(lc)) != EOF && iswdigit(cur))
+				;
+		}
+		if (cur == 'e' || cur == 'E') {
+			token = APPROXNUM;
+			cur = scanner_getc(lc);
+			if (cur == '-' || cur == '+')
+				token = 0;
+			while ((cur = scanner_getc(lc)) != EOF && iswdigit(cur))
+				token = APPROXNUM;
 		}
 	}
 
 	if (cur == EOF && lc->rs->buf == NULL) /* malloc failure */
 		return EOF;
 
-	if (cur != EOF) {
-		if (iswalnum(cur) || cur == '_' /* || cur == '"' || cur == '\'' */)
-			token = 0;
-		utf8_putchar(lc, cur);
-	}
-
 	if (token) {
+		if (cur != EOF)
+			utf8_putchar(lc, cur);
+		if (before_cur != EOF)
+			utf8_putchar(lc, before_cur);
 		return scanner_token(lc, token);
 	} else {
 		(void)sql_error( c, 2, SQLSTATE(42000) "Unexpected symbol %lc", (wint_t) cur);
@@ -1017,8 +971,6 @@ int scanner_symbol(mvc * c, int cur)
 	case '/':
 		lc->started = 1;
 		next = scanner_getc(lc);
-		if (next < 0)
-			return EOF;
 		if (next == '*') {
 			lc->started = started;
 			cur = skip_c_comment(lc);
@@ -1045,9 +997,11 @@ int scanner_symbol(mvc * c, int cur)
 			return cur;
 		return tokenize(c, cur);
 	case '\'':
-		if (lc->raw_string_mode || lc->next_string_is_raw)
+#ifdef SQL_STRINGS_USE_ESCAPES
+		if (lc->next_string_is_raw || GDKgetenv_istrue("raw_strings"))
 			return scanner_string(c, cur, false);
 		return scanner_string(c, cur, true);
+#endif
 	case '"':
 		return scanner_string(c, cur, false);
 	case '{':
@@ -1055,8 +1009,6 @@ int scanner_symbol(mvc * c, int cur)
 	case '-':
 		lc->started = 1;
 		next = scanner_getc(lc);
-		if (next < 0)
-			return EOF;
 		if (next == '-') {
 			lc->started = started;
 			if ((cur = skip_sql_comment(lc)) == EOF)
@@ -1069,8 +1021,6 @@ int scanner_symbol(mvc * c, int cur)
 	case '~': /* binary not */
 		lc->started = 1;
 		next = scanner_getc(lc);
-		if (next < 0)
-			return EOF;
 		if (next == '=')
 			return scanner_token(lc, GEOM_MBR_EQUAL);
 		utf8_putchar(lc, next);
@@ -1091,14 +1041,8 @@ int scanner_symbol(mvc * c, int cur)
 	case '&':
 		lc->started = 1;
 		cur = scanner_getc(lc);
-		if (cur < 0)
-			return EOF;
-		if (cur < 0)
-			return EOF;
 		if(cur == '<') {
 			next = scanner_getc(lc);
-			if (next < 0)
-				return EOF;
 			if(next == '|') {
 				return scanner_token(lc, GEOM_OVERLAP_OR_BELOW);
 			} else {
@@ -1122,16 +1066,12 @@ int scanner_symbol(mvc * c, int cur)
 	case '<':
 		lc->started = 1;
 		cur = scanner_getc(lc);
-		if (cur < 0)
-			return EOF;
 		if (cur == '=') {
 			return scanner_token( lc, COMPARISON);
 		} else if (cur == '>') {
 			return scanner_token( lc, COMPARISON);
 		} else if (cur == '<') {
 			next = scanner_getc(lc);
-			if (next < 0)
-				return EOF;
 			if (next == '=') {
 				return scanner_token( lc, LEFT_SHIFT_ASSIGN);
 			} else if (next == '|') {
@@ -1142,8 +1082,6 @@ int scanner_symbol(mvc * c, int cur)
 			}
 		} else if(cur == '-') {
 			next = scanner_getc(lc);
-			if (next < 0)
-				return EOF;
 			if(next == '>') {
 				return scanner_token(lc, GEOM_DIST);
 			} else {
@@ -1159,12 +1097,8 @@ int scanner_symbol(mvc * c, int cur)
 	case '>':
 		lc->started = 1;
 		cur = scanner_getc(lc);
-		if (cur < 0)
-			return EOF;
 		if (cur == '>') {
 			cur = scanner_getc(lc);
-			if (cur < 0)
-				return EOF;
 			if (cur == '=')
 				return scanner_token( lc, RIGHT_SHIFT_ASSIGN);
 			utf8_putchar(lc, cur);
@@ -1178,8 +1112,6 @@ int scanner_symbol(mvc * c, int cur)
 	case '.':
 		lc->started = 1;
 		cur = scanner_getc(lc);
-		if (cur < 0)
-			return EOF;
 		if (!iswdigit(cur)) {
 			utf8_putchar(lc, cur);
 			return scanner_token( lc, '.');
@@ -1191,14 +1123,10 @@ int scanner_symbol(mvc * c, int cur)
 	case '|': /* binary or or string concat */
 		lc->started = 1;
 		cur = scanner_getc(lc);
-		if (cur < 0)
-			return EOF;
 		if (cur == '|') {
 			return scanner_token(lc, CONCATSTRING);
 		} else if (cur == '&') {
 			next = scanner_getc(lc);
-			if (next < 0)
-				return EOF;
 			if(next == '>') {
 				return scanner_token(lc, GEOM_OVERLAP_OR_ABOVE);
 			} else {
@@ -1208,8 +1136,6 @@ int scanner_symbol(mvc * c, int cur)
 			}
 		} else if (cur == '>') {
 			next = scanner_getc(lc);
-			if (next < 0)
-				return EOF;
 			if(next == '>') {
 				return scanner_token(lc, GEOM_ABOVE);
 			} else {
@@ -1292,10 +1218,9 @@ tokenize(mvc * c, int cur)
 /* SQL 'quoted' idents consist of a set of any character of
  * the source language character set other than a 'quote'
  *
- * MonetDB has 3 restrictions:
+ * MonetDB has 2 restrictions:
  * 	1 we disallow '%' as the first character.
  * 	2 the length is limited to 1024 characters
- * 	3 the identifier 'TID%' is not allowed
  */
 static bool
 valid_ident(const char *restrict s, char *restrict dst)
@@ -1312,8 +1237,6 @@ valid_ident(const char *restrict s, char *restrict dst)
 			return false;
 	}
 	dst[p] = '\0';
-	if (strcmp(dst, TID + 1) == 0) /* an index named 'TID%' could interfere with '%TID%' */
-		return false;
 	return true;
 }
 
@@ -1356,10 +1279,12 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 	if (token == KW_TYPE)
 		token = aTYPE;
 
-	if (token == IDENT || token == COMPARISON ||
+	if (token == IDENT || token == COMPARISON || token == FILTER_FUNC ||
 	    token == RANK || token == aTYPE || token == ALIAS) {
 		yylval->sval = sa_strndup(c->sa, yylval->sval, lc->yycur-lc->yysval);
+#ifdef SQL_STRINGS_USE_ESCAPES
 		lc->next_string_is_raw = false;
+#endif
 	} else if (token == STRING) {
 		char quote = *yylval->sval;
 		char *str = sa_alloc( c->sa, (lc->yycur-lc->yysval-2)*2 + 1 );
@@ -1392,7 +1317,9 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 			strcpy(str, yylval->sval + 3);
 			token = yylval->sval[2] == '\'' ? USTRING : UIDENT;
 			quote = yylval->sval[2];
+#ifdef SQL_STRINGS_USE_ESCAPES
 			lc->next_string_is_raw = true;
+#endif
 			break;
 		case 'x':
 		case 'X':
@@ -1404,7 +1331,9 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 			*dst = 0;
 			quote = '\'';
 			token = XSTRING;
+#ifdef SQL_STRINGS_USE_ESCAPES
 			lc->next_string_is_raw = true;
+#endif
 			break;
 		case 'r':
 		case 'R':
@@ -1417,7 +1346,9 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 			*dst = 0;
 			break;
 		default:
-			if (lc->raw_string_mode || lc->next_string_is_raw) {
+#ifdef SQL_STRINGS_USE_ESCAPES
+			if (GDKgetenv_istrue("raw_strings") ||
+			    lc->next_string_is_raw) {
 				dst = str;
 				for (char *src = yylval->sval + 1; *src; dst++)
 					if ((*dst = *src++) == '\'' && *src == '\'')
@@ -1428,14 +1359,23 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 					      (unsigned char *)yylval->sval + 1,
 					      lc->yycur - lc->yysval - 1);
 			}
+#else
+			dst = str;
+			for (char *src = yylval->sval + 1; *src; dst++)
+				if ((*dst = *src++) == '\'' && *src == '\'')
+					src++;
+			*dst = 0;
+#endif
 			break;
 		}
 		yylval->sval = str;
 
 		/* reset original */
 		lc->rs->buf[lc->rs->pos+lc->yycur- 1] = quote;
+#ifdef SQL_STRINGS_USE_ESCAPES
 	} else {
 		lc->next_string_is_raw = false;
+#endif
 	}
 
 	return(token);
@@ -1462,8 +1402,6 @@ sqllex(YYSTYPE * yylval, void *parm)
 
 		if (next == NOT) {
 			return sqllex(yylval, parm);
-		} else if (next == EXISTS) {
-			token = NOT_EXISTS;
 		} else if (next == BETWEEN) {
 			token = NOT_BETWEEN;
 		} else if (next == sqlIN) {
@@ -1491,6 +1429,9 @@ sqllex(YYSTYPE * yylval, void *parm)
 	if (lc->log)
 		mnstr_write(lc->log, lc->rs->buf+pos, lc->rs->pos + lc->yycur - pos, 1);
 
+	/* Don't include literals in the calculation of the key */
+	if (token != STRING && token != USTRING && token != sqlINT && token != OIDNUM && token != INTNUM && token != APPROXNUM && token != sqlNULL)
+		lc->key ^= token;
 	lc->started += (token != EOF);
 	return token;
 }

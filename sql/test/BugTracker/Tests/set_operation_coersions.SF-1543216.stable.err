@@ -1,0 +1,26 @@
+stderr of test 'set_operation_coersions.SF-1543216` in directory 'sql/test/BugTracker` itself:
+
+
+# 11:19:45 >  
+# 11:19:45 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib64/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=36646 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 11:19:45 >  
+
+
+# 11:19:45 >  
+# 11:19:45 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36646  < set_operation_coersions.SF-1543216.sql
+# 11:19:45 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+QUERY = select * from t1543216 union select * from s1543216;
+ERROR = !types varchar(23,0) and int(32,0) are not equal for column 'id'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-20479/.s.monetdb.32416
+QUERY = select * from f1543216 union select * from b1543216;
+ERROR = !types boolean(1,0) and double(53,0) are not equal for column 'id'
+CODE  = 42000
+
+
+# 11:19:45 >  
+# 11:19:45 >  Done.
+# 11:19:45 >  
+

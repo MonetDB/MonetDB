@@ -1,0 +1,14 @@
+# Test bulk delete behavior 
+b:= bat.new(:int);
+
+bat.append(b, 5140046);
+bat.append(b, 5442033);
+bat.append(b, 5645862);
+io.print(b);
+
+bat.delete(b,1@0);
+io.print(b);
+
+bat.delete(b);
+io.print(b);
+

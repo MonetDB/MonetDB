@@ -1,0 +1,17 @@
+stderr of test 'select_group` in directory 'sql/benchmarks/ATIS` itself:
+
+
+# 11:38:21 >  
+# 11:38:21 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_ATIS" --set sql_port=55508 "/ufs/niels/data/Linux-i686/lib/MonetDB/sqlserver.mil" ; echo ; echo Over..
+# 11:38:21 >  
+
+
+# 11:38:21 >  
+# 11:38:21 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=55508 < select_group.sql
+# 11:38:21 >  
+
+
+# 11:38:21 >  
+# 11:38:21 >  Done.
+# 11:38:21 >  
+

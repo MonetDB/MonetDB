@@ -1,0 +1,144 @@
+stderr of test 'privileges` in directory 'sql/test/pg_regress` itself:
+
+
+# 17:11:18 >  
+# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 17:11:18 >  
+
+# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:11:19 >  
+# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
+# 17:11:19 >  
+
+#--
+#-- Test access privileges
+#--
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE USER regressuser4;	-- duplicate
+ERROR = user "regressuser4" already exists
+#-- test owner privileges
+#-- try various combinations of queries on atest1 and atest2
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO atest2 VALUES ('foo', true); -- fail
+ERROR = permission denied for relation atest2
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = UPDATE atest2 SET col2 = NOT col2; -- fail
+ERROR = permission denied for relation atest2
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT * FROM atest2 FOR UPDATE; -- fail
+ERROR = permission denied for relation atest2
+#-- checks in subquery, both ok
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT * FROM atest2; -- fail
+ERROR = permission denied for relation atest2
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO atest1 VALUES (2, 'two'); -- fail
+ERROR = permission denied for relation atest1
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO atest2 VALUES ('foo', true); -- fail
+ERROR = permission denied for relation atest2
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = INSERT INTO atest1 SELECT 1, b FROM atest1; -- fail
+ERROR = permission denied for relation atest1
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = UPDATE atest1 SET a = 1 WHERE a = 2; -- fail
+ERROR = permission denied for relation atest1
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = UPDATE atest2 SET col2 = NOT col2; -- fails; requires SELECT on atest2
+ERROR = permission denied for relation atest2
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT * FROM atest1 FOR UPDATE; -- fail
+ERROR = permission denied for relation atest1
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT * FROM atest2 FOR UPDATE; -- fail
+ERROR = permission denied for relation atest2
+#-- checks in subquery, both fail
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT * FROM atest1 WHERE ( b IN ( SELECT col1 FROM atest2 ) );
+ERROR = permission denied for relation atest2
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT * FROM atest2 WHERE ( col1 IN ( SELECT b FROM atest1 ) );
+ERROR = permission denied for relation atest2
+#-- groups
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT * FROM atest3; -- fail
+ERROR = permission denied for relation atest3
+#-- views
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT * FROM atestv2; -- fail
+ERROR = permission denied for relation atest2
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT * FROM atestv2; -- fail
+ERROR = permission denied for relation atestv2
+#-- Two complex cases:
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT * FROM atestv3; -- fail
+ERROR = permission denied for relation atestv3
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT * FROM atestv2; -- fail (even though regressuser2 can access underlying atest2)
+ERROR = permission denied for relation atest2
+#-- privileges on functions, languages
+#-- switch to superuser
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = CREATE FUNCTION testfunc3(int) RETURNS int AS 'select 2 * $1;' LANGUAGE sql; -- fail
+ERROR = permission denied for language sql
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT testfunc1(5); -- fail
+ERROR = permission denied for function testfunc1
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = SELECT col1 FROM atest2 WHERE col2 = true; -- fail
+ERROR = permission denied for relation atest2
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = DROP FUNCTION testfunc1(int); -- fail
+ERROR = must be owner of function testfunc1
+#-- restore to sanity
+#-- has_table_privilege function
+#-- bad-input checks
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select has_table_privilege('pg_shad','select');
+ERROR = relation "pg_shad" does not exist
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select has_table_privilege('nosuchuser','pg_shadow','select');
+ERROR = user "nosuchuser" does not exist
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select has_table_privilege('pg_shadow','sel');
+ERROR = unrecognized privilege type: "sel"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select has_table_privilege(-999999,'pg_shadow','update');
+ERROR = user with ID 4293967297 does not exist
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = select has_table_privilege(1,'rule');
+ERROR = relation with OID 1 does not exist
+#-- superuser
+#-- non-superuser
+#-- Grant options
+#-- clean up
+#-- this should cascade to drop atestv4
+#-- this should complain "does not exist"
+MAPI = (monetdb) /var/tmp/mtest-12345/.s.monetdb.54321
+QUERY = DROP VIEW atestv4;
+ERROR = view "atestv4" does not exist
+
+# 17:11:19 >  
+# 17:11:19 >  "Done."
+# 17:11:19 >  
+

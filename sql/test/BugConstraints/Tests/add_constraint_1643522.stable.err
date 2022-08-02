@@ -1,0 +1,24 @@
+stderr of test 'add_constraint_1643522` in directory 'sql/test/BugConstraints` itself:
+
+
+# 12:55:03 >  
+# 12:55:03 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=33669 --set monet_prompt= --trace "--dbname=mTests_src_test_BugConstraints" --dbinit='include sql;' ; echo ; echo Over..
+# 12:55:03 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/etc/monetdb5.conf)
+
+# 12:55:03 >  
+# 12:55:03 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33669  < add_constraint_1643522.sql
+# 12:55:03 >  
+
+MAPI  = monetdb@sofia:38972
+QUERY = alter table t1 add constraint id_p primary key(id);
+ERROR = !CONSTRAINT PRIMARY KEY: key 'id_p' already exists
+CODE  = 42000
+
+
+# 12:55:04 >  
+# 12:55:04 >  Done.
+# 12:55:04 >  
+

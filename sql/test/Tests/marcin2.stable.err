@@ -1,0 +1,27 @@
+stderr of test 'marcin2` in directory 'sql/test` itself:
+
+
+# 20:07:33 >  
+# 20:07:33 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/monet.conf" --debug=0 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --dbfarm "/ufs/niels/data/Linux-i686/var/dbfarm" --set monet_prompt= --trace "--dbname=mTests_src_test" --set sql_port=50445 "/ufs/niels/data/Linux-i686/share/MonetDB/sqlserver.mil" ; echo ; echo Over..
+# 20:07:33 >  
+
+# server listening on port 50445
+
+# 20:07:33 >  
+# 20:07:33 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < marcin2.sql
+# 20:07:33 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+QUERY = select sum(*) from t3;
+ERROR = !SUM: unable to perform 'sum(*)'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = select sum(*),val from t3 group by val ;
+ERROR = !SUM: unable to perform 'sum(*)'
+CODE  = 42000
+
+
+# 20:07:33 >  
+# 20:07:33 >  Done.
+# 20:07:33 >  
+

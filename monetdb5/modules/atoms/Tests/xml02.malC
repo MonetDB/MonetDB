@@ -1,0 +1,19 @@
+b:= bat.new(:str);
+bat.append(b,"Mary Ann Walker");
+bat.append(b,"Annie Chapman");
+h:= bat.new(:str);
+bat.append(h,"brown");
+bat.append(h,"curly dark brown");
+
+io.print(b);
+
+bc:= batxml.attribute("name",b);
+hc:= batxml.attribute("hair",h);
+bj:= batxml.str(bc);
+hj:= batxml.str(hc);
+io.print(bj);
+io.print(hj);
+
+aa:= batxml.concat(bc,hc);
+as:= batxml.str(aa);
+io.print(as);

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _MAL_BUILDER_
@@ -15,14 +15,12 @@
 mal_export InstrPtr newStmt(MalBlkPtr mb, const char *module, const char *name);
 mal_export InstrPtr newStmtArgs(MalBlkPtr mb, const char *module, const char *name, int args);
 mal_export InstrPtr newAssignment(MalBlkPtr mb);
-mal_export InstrPtr newAssignmentArgs(MalBlkPtr mb, int args);
 mal_export InstrPtr newComment(MalBlkPtr mb, const char *val);
-mal_export InstrPtr newCatchStmt(MalBlkPtr mb, const char *nme);
-mal_export InstrPtr newRaiseStmt(MalBlkPtr mb, const char *nme);
-mal_export InstrPtr newExitStmt(MalBlkPtr mb, const char *nme);
+mal_export InstrPtr newCatchStmt(MalBlkPtr mb, str nme);
+mal_export InstrPtr newRaiseStmt(MalBlkPtr mb, str nme);
+mal_export InstrPtr newExitStmt(MalBlkPtr mb, str nme);
 mal_export InstrPtr newReturnStmt(MalBlkPtr mb);
-mal_export InstrPtr newFcnCall(MalBlkPtr mb, const char *mod, const char *fcn);
-mal_export InstrPtr newFcnCallArgs(MalBlkPtr mb, const char *mod, const char *fcn, int args);
+mal_export InstrPtr newFcnCall(MalBlkPtr mb, char *mod, char *fcn);
 mal_export InstrPtr pushSht(MalBlkPtr mb, InstrPtr q, sht val);
 mal_export InstrPtr pushEndInstruction(MalBlkPtr mb);
 mal_export InstrPtr pushInt(MalBlkPtr mb, InstrPtr q, int val);
@@ -57,3 +55,4 @@ mal_export int getBitConstant(MalBlkPtr mb, bit val);
 mal_export int getHgeConstant(MalBlkPtr mb, hge val);
 #endif
 #endif /* _MAL_BUILDER_ */
+

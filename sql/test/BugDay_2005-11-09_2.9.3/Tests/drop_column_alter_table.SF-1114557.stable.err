@@ -1,0 +1,29 @@
+stderr of test 'drop_column_alter_table.SF-1114557` in directory 'sql/test/BugDay_2005-11-09_2.9.3` itself:
+
+
+# 14:21:46 >  
+# 14:21:46 >  Mtimeout -timeout 180 Mserver "--config=/ufs/mk/opensource/MonetDB/Linux/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/mk/opensource/sql/Linux/lib/MonetDB:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB/log" --set mapi_port=38462 --set sql_port=40415 --set xquery_port=52119 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 14:21:46 >  
+
+
+# 14:21:46 >  
+# 14:21:46 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=40415  < drop_column_alter_table.SF-1114557.sql
+# 14:21:46 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+QUERY = ALTER TABLE t1114557 DROP garbage;
+ERROR = !ALTER TABLE: no such column 'garbage'
+CODE  = 42S22
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = ALTER TABLE t1114557 DROP id;
+ERROR = !ALTER TABLE: cannot drop column 'id': table needs at least one column
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = ALTER TABLE t1114557 DROP name;
+ERROR = !ALTER TABLE: no such column 'name'
+CODE  = 42S22
+
+# 14:21:47 >  
+# 14:21:47 >  Done.
+# 14:21:47 >  
+

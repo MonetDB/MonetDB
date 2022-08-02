@@ -1,0 +1,20 @@
+inline function user.foo(b:int):int;
+   foo:= 0;
+barrier go:= b<10;
+   foo:= 1;
+exit go;
+   return foo;
+end foo;
+
+function qry();
+	b:= bat.new(:int);
+	bat.append(b,1);
+	bat.append(b,10);
+	bat.append(b,20);
+	r:bat[:int]:= mal.multiplex("user","foo",b);
+	io.print(r);
+end qry;
+
+optimizer.inline("user","qry");
+optimizer.remap("user","qry");
+mdb.List("user","qry");

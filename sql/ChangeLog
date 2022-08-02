@@ -1,9 +1,0 @@
-# ChangeLog file for sql
-# This file is updated with Maddlog
-
-* Thu Apr 21 2022 Nuno Faria <nunofpfaria@gmail.com>
-- Added the UNLOGGED TABLE feature.
-
-* Fri Feb  4 2022 Sjoerd Mullender <sjoerd@acm.org>
-- Removed functions sys.index and sys.strings.
-

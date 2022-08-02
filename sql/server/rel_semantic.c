@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -17,15 +17,16 @@
 #include "rel_psm.h"
 #include "rel_sequence.h"
 #include "rel_exp.h"
-#include "sql_privileges.h"
 
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
 
+
 sql_rel *
-rel_parse(mvc *m, sql_schema *s, const char *query, char emode)
+rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 {
+	mvc o = *m;
 	sql_rel *rel = NULL;
 	buffer *b;
 	bstream *bs;
@@ -35,52 +36,61 @@ rel_parse(mvc *m, sql_schema *s, const char *query, char emode)
 	sql_schema *c = cur_schema(m);
 	sql_query *qc = NULL;
 
-	if ((b = malloc(sizeof(buffer))) == NULL)
+	m->qc = NULL;
+
+	m->caching = 0;
+	m->emode = emode;
+	if (s)
+		m->session->schema = s;
+
+	b = (buffer*)GDKmalloc(sizeof(buffer));
+	if (!b) {
 		return NULL;
-	if ((n = malloc(len + 1 + 1)) == NULL) {
-		free(b);
-		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	n = GDKmalloc(len + 1 + 1);
+	if (!n) {
+		GDKfree(b);
+		return NULL;
 	}
 	snprintf(n, len + 2, "%s\n", query);
+	query = n;
 	len++;
-	buffer_init(b, n, len);
+	buffer_init(b, query, len);
 	buf = buffer_rastream(b, "sqlstatement");
 	if(buf == NULL) {
 		buffer_destroy(b);
-		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return NULL;
 	}
 	bs = bstream_create(buf, b->len);
 	if(bs == NULL) {
 		buffer_destroy(b);
-		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return NULL;
 	}
-	mvc o = *m;
 	scanner_init( &m->scanner, bs, NULL);
 	m->scanner.mode = LINE_1;
 	bstream_next(m->scanner.rs);
 
-	m->qc = NULL;
-	m->emode = emode;
-	if (s)
-		m->session->schema = s;
 	m->params = NULL;
+	/*m->args = NULL;*/
+	m->argc = 0;
 	m->sym = NULL;
 	m->errstr[0] = '\0';
-	m->session->status = 0;
 	/* via views we give access to protected objects */
-	assert(emode == m_instantiate || emode == m_deps);
-	m->user_id = USER_MONETDB;
+	if (emode != m_instantiate)
+		m->user_id = USER_MONETDB;
 
 	(void) sqlparse(m);     /* blindly ignore errors */
 	qc = query_create(m);
 	rel = rel_semantic(qc, m->sym);
 
-	buffer_destroy(b);
+	GDKfree(query);
+	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
 
 	m->sym = NULL;
-	o.frames = m->frames;	/* may have been realloc'ed */
-	o.sizeframes = m->sizeframes;
+	o.vars = m->vars;	/* may have been realloc'ed */
+	o.sizevars = m->sizevars;
+	o.query = m->query;
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
 
@@ -90,8 +100,10 @@ rel_parse(mvc *m, sql_schema *s, const char *query, char emode)
 	} else {
 		unsigned int label = m->label;
 
-		while (m->topframes > o.topframes)
-			clear_frame(m, m->frames[--m->topframes]);
+		while (m->topvars > o.topvars) {
+			if (m->vars[--m->topvars].name)
+				c_delete(m->vars[m->topvars].name);
+		}
 		*m = o;
 		m->label = label;
 	}
@@ -190,7 +202,7 @@ rel_semantic(sql_query *query, symbol *s)
 		dnode *d;
 		sql_rel *r = NULL;
 
-		if (!stack_push_frame(sql, "%MUL"))
+		if(!stack_push_frame(sql, "MUL"))
 			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		for (d = s->data.lval->h; d; d = d->next) {
 			symbol *sym = d->data.sym;
@@ -221,6 +233,7 @@ rel_semantic(sql_query *query, symbol *s)
 
 	case SQL_SELECT:
 	case SQL_JOIN:
+	case SQL_CROSS:
 	case SQL_UNION:
 	case SQL_EXCEPT:
 	case SQL_INTERSECT:

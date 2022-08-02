@@ -1,0 +1,11 @@
+#testing floating point numbers;
+
+a:= 3.145:flt;	io.print(a);
+a:= -3.145:flt; io.print(a);
+a:= 0.345e1:flt; io.print(a);
+a:= 3.415e-1:flt; io.print(a);
+
+b:= 3.145:dbl;	io.print(b);
+b:= -3.145:dbl; io.print(b);
+b:= 0.345e1:dbl; io.print(b);
+b:= 3.415e-1:dbl; io.print(b);

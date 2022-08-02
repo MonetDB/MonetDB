@@ -1,0 +1,17 @@
+stderr of test 'select_distinct` in directory 'sql/benchmarks/ATIS` itself:
+
+
+# 13:49:02 >  
+# 13:49:02 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/monet/Linux/lib/MonetDB:/ufs/niels/data/sql/Linux/lib/sql" --dbfarm "/ufs/niels/data/monet/Linux/var/dbfarm" --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_ATIS" --set sql_port=59463 "/ufs/niels/data/sql/Linux/share/sql/sqlserver.mil" ; echo ; echo Over..
+# 13:49:02 >  
+
+
+# 13:49:03 >  
+# 13:49:03 >  Mtimeout -timeout 60 sql_client -u monetdb -P monetdb --host=stem --port=59463 < select_distinct.sql
+# 13:49:03 >  
+
+
+# 13:49:03 >  
+# 13:49:03 >  Done.
+# 13:49:03 >  
+

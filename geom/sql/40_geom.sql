@@ -2,7 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 -- make sure you load the geom module before loading this sql module
 
@@ -4566,7 +4566,7 @@ GRANT EXECUTE ON FUNCTION ST_DumpPoints(Geometry) TO PUBLIC;
 --		RETURN SELECT InternalTransform(geom, srid_src, srid, proj4_src, 'null');
 --	ELSE
 --		RETURN SELECT InternalTransform(geom, srid_src, srid, proj4_src, proj4_dest);
---	END IF;
+--	END IF;▸
 --END IF;
 
 

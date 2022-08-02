@@ -1,0 +1,48 @@
+stderr of test 'procedure_syntax` in directory 'sql/test` itself:
+
+
+# 01:17:48 >  
+# 01:17:48 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=34904 --set xrpc_port=47266 --set monet_prompt= --trace "--dbname=mTests_src_test" --dbinit=' include sql;' ; echo ; echo Over..
+# 01:17:48 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf)
+
+# 01:17:48 >  
+# 01:17:48 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=34904 
+# 01:17:48 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+QUERY = DROP PROCEDURE p1;
+ERROR = !DROP PROCEDURE: there are more than one procedure called 'p1', please use the full signature
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = DROP PROCEDURE p2 (int, varchar(1024));
+ERROR = !DROP PROCEDURE: no such procedure 'p2' (int(32), varchar(1024))
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = DROP table t1;
+ERROR = !DROP TABLE: unable to drop table t1 (there are database objects which depend on it)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = DROP ALL PROCEDURE p1 CASCADE;
+ERROR = !DROP ALL PROCEDURE: no such procedure 'p1'
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = DROP FUNCTION p1;
+ERROR = !DROP FUNCTION: no such function 'p1'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = DROP FUNCTION p1 ();
+ERROR = !DROP FUNCTION: no such function 'p1' ()
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = DROP ALL FUNCTION p1;
+ERROR = !DROP ALL FUNCTION: no such function 'p1'
+CODE  = 3F000
+
+
+# 01:17:48 >  
+# 01:17:48 >  Done.
+# 01:17:48 >  
+

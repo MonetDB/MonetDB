@@ -1,0 +1,17 @@
+stderr of test 'count` in directory 'sql/test` itself:
+
+
+# 17:00:33 >  
+# 17:00:33 >  Mtimeout -timeout 180 Mserver "--config=/ufs/roberto/servers/MonetDB/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/roberto/servers/MonetDB/lib/MonetDB" --set "gdk_dbfarm=/ufs/roberto/servers/MonetDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/roberto/servers/MonetDB/var/MonetDB/log" --set mapi_port=46593 --set sql_port=50327 --set monet_prompt= --trace "--dbname=mTests_src_test" "/export/scratch1/roberto/Monet/build/sql/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 17:00:33 >  
+
+
+# 17:00:34 >  
+# 17:00:34 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=aquila --port=50327 --trace < count.sql
+# 17:00:34 >  
+
+
+# 17:00:34 >  
+# 17:00:34 >  Done.
+# 17:00:34 >  
+

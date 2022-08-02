@@ -1,0 +1,17 @@
+stderr of test 'cast_bigint_to_int.SF-1211903` in directory 'sql/test/BugDay_2005-12-19_2.9.3` itself:
+
+
+# 11:39:42 >  
+# 11:39:42 >  Mtimeout -timeout 180 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./SQL/lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/lib/MonetDB" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/var/MonetDB/log" --set mapi_port=38103 --set sql_port=45657 --set xquery_port=58953 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-12-19_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 11:39:42 >  
+
+
+# 11:39:43 >  
+# 11:39:43 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45657  < cast_bigint_to_int.SF-1211903.sql
+# 11:39:43 >  
+
+
+# 11:39:43 >  
+# 11:39:43 >  Done.
+# 11:39:43 >  
+

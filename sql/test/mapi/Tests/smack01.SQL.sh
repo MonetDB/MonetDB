@@ -1,3 +1,3 @@
 #!/bin/sh
 
-smack01 $MAPIPORT sql
+Mlog -x smack01 $MAPIPORT sql

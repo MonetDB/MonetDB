@@ -1,0 +1,178 @@
+stdout of test 'tst903` in directory 'monetdb5/mal` itself:
+
+
+# 08:19:07 >  
+# 08:19:07 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=46963 --set sql_port=59214 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst903.mal </dev/null
+# 08:19:07 >  
+
+# MonetDB 5 server v11.12.0
+# This is an unreleased version
+# Serving database 'mTests_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:31722/
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+
+
+#mdb.list("user","foo");
+function user.foo():void;
+    t0 := alarm.usec();
+    b := bat.new(:lng);
+    INT_MAX := 2147483647:int;
+    dbgmsk_restore := mdb.getDebug();
+    dbgmsk_unset := calc.+(8:int, 8388608:int);
+    dbgmsk_keep := calc.xor(INT_MAX, dbgmsk_unset);
+    dbgmsk_set := calc.and(dbgmsk_restore, dbgmsk_keep);
+    mdb.setDebug(dbgmsk_set);
+    r := mmath.srand(0:int);
+barrier i := 0:lng;
+    k := mmath.rand();
+    l := calc.lng(k);
+    bat.append(b, l);
+    redo i := iterator.next(1:lng, 1000000:lng);
+exit i;
+    mdb.setDebug(dbgmsk_restore);
+    t1 := alarm.usec();
+    d0 := calc.-(t1, t0);
+    io.printf("#loop %d\n", d0);
+#setReadMode(b); 
+    mx := aggr.max(b);
+#io.printf("max %d",mx); 
+    mi := aggr.min(b);
+#io.printf(" min %d\n",mi); 
+    t0 := alarm.usec();
+    c := algebra.copy(b);
+    t1 := alarm.usec();
+    d0 := calc.-(t1, t0);
+    io.printf("#copy %d ", d0);
+    cnt := aggr.count(c);
+    io.printf("count %d\n", cnt);
+    t0 := alarm.usec();
+    z := algebra.select(b, nil:bat[:oid], 25:lng, 25:lng, true, true, false);
+    t1 := alarm.usec();
+    d0 := calc.-(t1, t0);
+    io.printf("#select none %d", d0);
+    cnt := aggr.count(z);
+    io.printf(" count %d\n", cnt);
+    t0 := alarm.usec();
+    z2 := algebra.select(b, nil:bat[:oid], mi, mx, true, true, false);
+    t1 := alarm.usec();
+    d0 := calc.-(t1, t0);
+    io.printf("#select all %d", d0);
+    cnt := aggr.count(z2);
+    io.printf(" count %d\n", cnt);
+    rng := calc.-(mx, mi);
+    r2 := calc./(rng, 20:int);
+    r3 := calc.+(mi, r2);
+    t0 := alarm.usec();
+    z3 := algebra.select(b, nil:bat[:oid], mi, r3, true, true, false);
+    t1 := alarm.usec();
+    d0 := calc.-(t1, t0);
+    io.printf("#select 0.05 %d", d0);
+    cnt := aggr.count(z3);
+    io.printf(" count %d\n", cnt);
+    r2 := calc./(rng, 10:int);
+    r3 := calc.+(mi, r2);
+    t0 := alarm.usec();
+    z4 := algebra.select(b, nil:bat[:oid], mi, r3, true, true, false);
+    t1 := alarm.usec();
+    d0 := calc.-(t1, t0);
+    io.printf("#select 0.1 %d", d0);
+    cnt := aggr.count(z4);
+    io.printf(" count %d\n", cnt);
+    r2 := calc./(rng, 5:int);
+    r3 := calc.+(mi, r2);
+    t0 := alarm.usec();
+    z5 := algebra.select(b, nil:bat[:oid], mi, r3, true, true, false);
+    t1 := alarm.usec();
+    d0 := calc.-(t1, t0);
+    io.printf("#select 0.2 %d", d0);
+    cnt := aggr.count(z5);
+    io.printf(" count %d\n", cnt);
+    r3 := calc.+(r3, r2);
+    t0 := alarm.usec();
+    z6 := algebra.select(b, nil:bat[:oid], mi, r3, true, true, false);
+    t1 := alarm.usec();
+    d0 := calc.-(t1, t0);
+    io.printf("#select 0.4 %d", d0);
+    cnt := aggr.count(z6);
+    io.printf(" count %d\n", cnt);
+    r3 := calc.+(r3, r2);
+    t0 := alarm.usec();
+    z7 := algebra.select(b, nil:bat[:oid], mi, r3, true, true, false);
+    t1 := alarm.usec();
+    d0 := calc.-(t1, t0);
+    io.printf("#select 0.6 %d", d0);
+    cnt := aggr.count(z7);
+    io.printf(" count %d\n", cnt);
+    r3 := calc.+(r3, r2);
+    t0 := alarm.usec();
+    z8 := algebra.select(b, nil:bat[:oid], mi, r3, true, true, false);
+    t1 := alarm.usec();
+    d0 := calc.-(t1, t0);
+    io.printf("#select 0.8 %d", d0);
+    cnt := aggr.count(z8);
+    io.printf(" count %d\n", cnt);
+    r3 := calc.+(r3, r2);
+    t0 := alarm.usec();
+    z9 := algebra.select(b, nil:bat[:oid], mi, r3, true, true, false);
+    t1 := alarm.usec();
+    d0 := calc.-(t1, t0);
+    io.printf("#select 1.0 %d", d0);
+    cnt := aggr.count(z9);
+    io.printf(" count %d\n", cnt);
+    t0 := alarm.usec();
+    s := algebra.sort(b, false, false, false);
+    t1 := alarm.usec();
+    d0 := calc.-(t1, t0);
+    io.printf("#head sort %d", d0);
+    cnt := aggr.count(s);
+    io.printf(" count %d\n", cnt);
+    cnt := aggr.count(z9);
+    mdb.setDebug(dbgmsk_set);
+    t0 := alarm.usec();
+    X_82 := bat.new(nil:lng);
+barrier (X_85, X_86) := iterator.new(b);
+    X_88 := algebra.fetch(c, X_85);
+    X_90 := calc.+(X_86, X_88);
+    X_82 := bat.append(X_82, X_90);
+    redo (X_85, X_86) := iterator.next(b);
+exit (X_85, X_86);
+    x:bat[:lng] := X_82;
+    t1 := alarm.usec();
+    mdb.setDebug(dbgmsk_restore);
+    d0 := calc.-(t1, t0);
+    io.printf("#mal.multiplex(+) %d\n", d0);
+    t0 := alarm.usec();
+    x:bat[:lng] := batcalc.+(b, c, nil:BAT, nil:BAT);
+    t1 := alarm.usec();
+    d0 := calc.-(t1, t0);
+    io.printf("#batcalc.+() %d\n", d0);
+end user.foo;
+#user.foo();
+#loop 5059436
+#copy 24256 count 1000000
+#select none 4725 count 0
+#select all 8517 count 1000000
+#select 0.05 6775 count 50004
+#select 0.1 9075 count 100016
+#select 0.2 13856 count 199929
+#select 0.4 23775 count 399791
+#select 0.6 30837 count 600237
+#select 0.8 35637 count 799837
+#select 1.0 41211 count 999999
+#head sort 171849 count 1000000
+#mal.multiplex(+) 6068119
+#batcalc.+() 29617
+
+# 08:19:33 >  
+# 08:19:33 >  Done.
+# 08:19:33 >  
+

@@ -6,7 +6,7 @@ clients01
 bigsum
 
 inspect00
-#inspect05 word size problems on different platforms
+inspect05
 inspect10
 #inspect40 word size problems on different platforms
 
@@ -51,6 +51,9 @@ manifoldstr
 # might show different output if openssl is compiled without full sha2
 # support
 clients-hashes
+# shows different output if the password backend is different (or
+# monetdb password has been changed)
+clients-getpasswd
 
 #cpustat too system dependent to always run.
 

@@ -1,9 +1,0 @@
-statement error
-create function t () returns table (x int) begin declare table t (x int, y int); return t; end
-
-statement error
-select * from t()
-
-statement error
-drop function t
-

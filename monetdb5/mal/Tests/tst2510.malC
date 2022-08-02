@@ -1,0 +1,16 @@
+# A exception in a factory should terminate it 
+
+module tst;
+factory tst.tryme():bit;
+	b:= bat.new(:int);
+    bat.setAccess(b,"w");
+barrier always:= true;
+    yield always;
+    redo always;
+exit always;
+#catch MALException:str;
+    #print("exception");
+#exit MALException;
+	return tryme:= false;
+end tst.tryme;
+tst.tryme();    # shouldn't hang when you forget the exception

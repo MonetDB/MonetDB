@@ -1,0 +1,17 @@
+stderr of test 'orderby_limit` in directory 'sql/test` itself:
+
+
+# 19:06:01 >  
+# 19:06:01 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/five/program-x86_64/lib/MonetDB5" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/log" --set mapi_port=37501 --set monet_prompt= --trace "--dbname=mTests_src_test" --dbinit="include sql;" ; echo ; echo Over..
+# 19:06:01 >  
+
+
+# 19:06:01 >  
+# 19:06:01 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=37501  < orderby_limit.sql
+# 19:06:01 >  
+
+
+# 19:06:01 >  
+# 19:06:01 >  Done.
+# 19:06:01 >  
+

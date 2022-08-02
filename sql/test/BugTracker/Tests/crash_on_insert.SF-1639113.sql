@@ -1,0 +1,10 @@
+start transaction;
+create table foo (number integer primary key,y text unique);
+create table bar (number integer references foo(number),x timestamp with time zone default now());
+insert into foo (number,y) select 1,'foo';
+insert into foo (number,y) select 2,'bar';
+select 'the following query causes mserver5 to segfault';
+insert into bar (number) select number from foo where y='foo';
+drop table bar;
+drop table foo;
+commit;

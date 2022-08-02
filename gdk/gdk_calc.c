@@ -3,13 +3,23 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
+#include <math.h>
+
+/* Define symbol FULL_IMPLEMENTATION to get implementations for all
+ * sensible output types for +, -, *, /.  Without the symbol, all
+ * combinations of input types are supported, but only output types
+ * that are either the largest of the input types or one size larger
+ * (if available) for +, -, *.  For division the output type can be
+ * either input type of flt or dbl. */
+
+#define FULL_IMPLEMENTATION
 
 /* Generally, the functions return a new BAT aligned with the input
  * BAT(s).  If there are multiple input BATs, they must be aligned.
@@ -17,15 +27,228 @@
  * the candidates, all other values are NIL (so that the output is
  * still aligned). */
 
-static inline gdk_return
-checkbats(BATiter *b1i, BATiter *b2i, const char *func)
+/* format strings for the seven/eight basic types we deal with */
+#define FMTbte	"%d"
+#define FMTsht	"%d"
+#define FMTint	"%d"
+#define FMTlng	LLFMT
+#ifdef HAVE_HGE
+#define FMThge	"%.40g"
+#endif
+#define FMTflt	"%.9g"
+#define FMTdbl	"%.17g"
+#define FMToid	OIDFMT
+
+/* casts; only required for type hge, since there is no genuine format
+ * string for it (i.e., for __int128) (yet?) */
+#define CSTbte
+#define CSTsht
+#define CSTint
+#define CSTlng
+#ifdef HAVE_HGE
+#define CSThge  (dbl)
+#endif
+#define CSTflt
+#define CSTdbl
+#define CSToid
+
+/* Most of the internal routines return a count of the number of NIL
+ * values they produced.  They indicate an error by returning a value
+ * >= BUN_NONE.  BUN_NONE means that the error was dealt with by
+ * calling GDKerror (generally for overflow or conversion errors).
+ * BUN_NONE+1 is returned by the DIV and MOD functions to indicate
+ * division by zero.  */
+
+/* replace BATconstant with a version that produces a void bat for
+ * TYPE_oid/nil */
+#define BATconstantV(HSEQ, TAILTYPE, VALUE, CNT, ROLE)			\
+	((TAILTYPE) == TYPE_oid && ((CNT) == 0 || *(oid*)(VALUE) == oid_nil) \
+	 ? BATconstant(HSEQ, TYPE_void, VALUE, CNT, ROLE)		\
+	 : BATconstant(HSEQ, TAILTYPE, VALUE, CNT, ROLE))
+
+static gdk_return
+checkbats(BAT *b1, BAT *b2, const char *func)
 {
-	if (b1i->count != b2i->count) {
+	if (b1->batCount != b2->batCount) {
 		GDKerror("%s: inputs not the same size.\n", func);
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
 }
+
+#define UNARY_2TYPE_FUNC(TYPE1, TYPE2, FUNC)				\
+	do {								\
+		const TYPE1 *restrict src = (const TYPE1 *) Tloc(b, 0);	\
+		TYPE2 *restrict dst = (TYPE2 *) Tloc(bn, 0);		\
+		for (i = 0; i < ci.ncand; i++) {			\
+			x = canditer_next(&ci) - b->hseqbase;		\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(src[x])) {			\
+				nils++;					\
+				dst[i] = TYPE2##_nil;			\
+			} else {					\
+				dst[i] = FUNC(src[x]);			\
+			}						\
+		}							\
+	} while (0)
+
+#define BINARY_3TYPE_FUNC(TYPE1, TYPE2, TYPE3, FUNC)			\
+	do {								\
+		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
+			for (k = 0; k < ci1->ncand; k++) {		\
+				x1 = canditer_next_dense(ci1) - candoff1; \
+				x2 = canditer_next_dense(ci2) - candoff2; \
+				i = x1 * incr1;				\
+				j = x2 * incr2;				\
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if ((rv != NULL && !rv[k]) ||		\
+				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					nils++;				\
+					((TYPE3 *) dst)[k] = TYPE3##_nil; \
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+				}					\
+			}						\
+		} else {						\
+			for (k = 0; k < ci1->ncand; k++) {		\
+				x1 = canditer_next(ci1) - candoff1;	\
+				x2 = canditer_next(ci2) - candoff2;	\
+				i = x1 * incr1;				\
+				j = x2 * incr2;				\
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if ((rv != NULL && !rv[k]) ||		\
+				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					nils++;				\
+					((TYPE3 *) dst)[k] = TYPE3##_nil; \
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+				}					\
+			}						\
+		}							\
+	} while (0)
+
+/* special case for EQ and NE where we have a nil_matches flag for
+ * when it is set */
+#define BINARY_3TYPE_FUNC_nilmatch(TYPE1, TYPE2, TYPE3, FUNC)		\
+	do {								\
+		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
+			for (k = 0; k < ci1->ncand; k++) {		\
+				x1 = canditer_next_dense(ci1) - candoff1; \
+				x2 = canditer_next_dense(ci2) - candoff2; \
+				i = x1 * incr1;				\
+				j = x2 * incr2;				\
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if ((rv != NULL && !rv[k]) ||		\
+				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					((TYPE3 *) dst)[k] = FUNC(is_##TYPE1##_nil(v1), is_##TYPE2##_nil(v2)); \
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+				}					\
+			}						\
+		} else {						\
+			for (k = 0; k < ci1->ncand; k++) {		\
+				x1 = canditer_next(ci1) - candoff1;	\
+				x2 = canditer_next(ci2) - candoff2;	\
+				i = x1 * incr1;				\
+				j = x2 * incr2;				\
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if ((rv != NULL && !rv[k]) ||		\
+				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					((TYPE3 *) dst)[k] = FUNC(is_##TYPE1##_nil(v1), is_##TYPE2##_nil(v2)); \
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+				}					\
+			}						\
+		}							\
+	} while (0)
+
+#define BINARY_3TYPE_FUNC_nonil(TYPE1, TYPE2, TYPE3, FUNC)		\
+	do {								\
+		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
+			for (k = 0; k < ci1->ncand; k++) {		\
+				x1 = canditer_next_dense(ci1) - candoff1; \
+				x2 = canditer_next_dense(ci2) - candoff2; \
+				i = x1 * incr1;				\
+				j = x2 * incr2;				\
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
+			}						\
+		} else {						\
+			for (k = 0; k < ci1->ncand; k++) {		\
+				x1 = canditer_next(ci1) - candoff1;	\
+				x2 = canditer_next(ci2) - candoff2;	\
+				i = x1 * incr1;				\
+				j = x2 * incr2;				\
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
+			}						\
+		}							\
+	} while (0)
+
+#define BINARY_3TYPE_FUNC_CHECK(TYPE1, TYPE2, TYPE3, FUNC, CHECK)	\
+	do {								\
+		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
+			for (k = 0; k < ci1->ncand; k++) {		\
+				x1 = canditer_next_dense(ci1) - candoff1; \
+				x2 = canditer_next_dense(ci2) - candoff2; \
+				i = x1 * incr1;				\
+				j = x2 * incr2;				\
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if ((rv != NULL && !rv[k]) ||		\
+				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					nils++;				\
+					((TYPE3 *) dst)[k] = TYPE3##_nil; \
+				} else if (CHECK(v1, v2)) {		\
+					if (abort_on_error) {		\
+						GDKerror("%s: shift operand too large in " \
+							 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
+							 func,		\
+							 CST##TYPE1 v1,	\
+							 CST##TYPE2 v2); \
+						goto checkfail;		\
+					}				\
+					((TYPE3 *)dst)[k] = TYPE3##_nil; \
+					nils++;				\
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+				}					\
+			}						\
+		} else {						\
+			for (k = 0; k < ci1->ncand; k++) {		\
+				x1 = canditer_next(ci1) - candoff1;	\
+				x2 = canditer_next(ci2) - candoff2;	\
+				i = x1 * incr1;				\
+				j = x2 * incr2;				\
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if ((rv != NULL && !rv[k]) ||		\
+				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					nils++;				\
+					((TYPE3 *) dst)[k] = TYPE3##_nil; \
+				} else if (CHECK(v1, v2)) {		\
+					if (abort_on_error) {		\
+						GDKerror("%s: shift operand too large in " \
+							 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
+							 func,		\
+							 CST##TYPE1 v1,	\
+							 CST##TYPE2 v2); \
+						goto checkfail;		\
+					}				\
+					((TYPE3 *)dst)[k] = TYPE3##_nil; \
+					nils++;				\
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+				}					\
+			}						\
+		}							\
+	} while (0)
 
 /* ---------------------------------------------------------------------- */
 /* logical (for type bit) or bitwise (for integral types) NOT */
@@ -34,114 +257,75 @@ checkbats(BATiter *b1i, BATiter *b2i, const char *func)
 #define NOTBIT(x)	(!(x))
 
 BAT *
-BATcalcnot(BAT *b, BAT *s)
+BATcalcnot(BAT *b, BAT *s, BAT *r)
 {
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
-	BUN i;
-	oid x, bhseqbase;
+	BUN i, ncand;
+	oid x;
 	struct canditer ci;
-
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
-
-	bhseqbase = b->hseqbase;
-	canditer_init(&ci, b, s);
-	if (ci.ncand == 0)
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+	if (ncand == 0)
 		return BATconstant(ci.hseq, b->ttype,
-				   ATOMnilptr(b->ttype), ci.ncand, TRANSIENT);
+				   ATOMnilptr(b->ttype), ncand, TRANSIENT);
 
-	bn = COLnew(ci.hseq, b->ttype, ci.ncand, TRANSIENT);
+	bn = COLnew(ci.hseq, b->ttype, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
-	BATiter bi = bat_iterator(b);
-	switch (ATOMbasetype(bi.type)) {
-	case TYPE_msk:
-		if (ci.tpe == cand_dense) {
-			const uint32_t *restrict src = (const uint32_t *) bi.base + (ci.seq - b->hseqbase) / 32;
-			uint32_t *restrict dst = Tloc(bn, 0);
-			int bits = (ci.seq - b->hseqbase) % 32;
-			BUN ncand = (ci.ncand + 31) / 32;
-			if (bits == 0) {
-				TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {
-					dst[i] = ~src[i];
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			} else {
-				TIMEOUT_LOOP_IDX(i, ncand, timeoffset) {
-					dst[i] = (~src[i] >> bits) | ~(src[i + 1] >> (32 - bits));
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			}
-			if (ci.ncand % 32 != 0)
-				dst[ci.ncand / 32] &= (1U << (ci.ncand % 32)) - 1;
-		} else {
-			TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
-				x = canditer_next(&ci) - bhseqbase;
-				mskSetVal(bn, i, !Tmskval(&bi, x));
-			}
-			TIMEOUT_CHECK(timeoffset,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-		}
-		break;
+	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_bte:
-		if (bi.type == TYPE_bit) {
+		if (b->ttype == TYPE_bit) {
 			UNARY_2TYPE_FUNC(bit, bit, NOTBIT);
 		} else {
-			UNARY_2TYPE_FUNC_nilcheck(bte, bte, NOT, ON_OVERFLOW1(bte, "NOT"));
+			UNARY_2TYPE_FUNC(bte, bte, NOT);
 		}
 		break;
 	case TYPE_sht:
-		UNARY_2TYPE_FUNC_nilcheck(sht, sht, NOT, ON_OVERFLOW1(sht, "NOT"));
+		UNARY_2TYPE_FUNC(sht, sht, NOT);
 		break;
 	case TYPE_int:
-		UNARY_2TYPE_FUNC_nilcheck(int, int, NOT, ON_OVERFLOW1(int, "NOT"));
+		UNARY_2TYPE_FUNC(int, int, NOT);
 		break;
 	case TYPE_lng:
-		UNARY_2TYPE_FUNC_nilcheck(lng, lng, NOT, ON_OVERFLOW1(lng, "NOT"));
+		UNARY_2TYPE_FUNC(lng, lng, NOT);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		UNARY_2TYPE_FUNC_nilcheck(hge, hge, NOT, ON_OVERFLOW1(hge, "NOT"));
+		UNARY_2TYPE_FUNC(hge, hge, NOT);
 		break;
 #endif
 	default:
-		GDKerror("type %s not supported.\n", ATOMname(bi.type));
-		goto bailout;
+		BBPunfix(bn->batCacheid);
+		GDKerror("type %s not supported.\n", ATOMname(b->ttype));
+		return NULL;
 	}
 
-	BATsetcount(bn, ci.ncand);
+	BATsetcount(bn, ncand);
 
 	/* NOT reverses the order, but NILs mess it up */
-	bn->tsorted = nils == 0 && bi.revsorted;
-	bn->trevsorted = nils == 0 && bi.sorted;
+	bn->tsorted = nils == 0 && b->trevsorted;
+	bn->trevsorted = nils == 0 && b->tsorted;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	bn->tkey = bi.key && nils <= 1;
-	bat_iterator_end(&bi);
+	bn->tkey = b->tkey && nils <= 1;
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
-
-bailout:
-	bat_iterator_end(&bi);
-	BBPunfix(bn->batCacheid);
-	return NULL;
 }
 
 gdk_return
@@ -149,72 +333,38 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = v->vtype;
 	switch (ATOMbasetype(v->vtype)) {
-	case TYPE_msk:
-		ret->val.mval = !v->val.mval;
-		break;
 	case TYPE_bte:
 		if (is_bit_nil(v->val.btval))
 			ret->val.btval = bit_nil;
 		else if (v->vtype == TYPE_bit)
 			ret->val.btval = !v->val.btval;
-		else {
+		else
 			ret->val.btval = ~v->val.btval;
-			if (is_bte_nil(ret->val.btval)) {
-				GDKerror("22003!overflow in calculation "
-					 "NOT(" FMTbte ").\n", v->val.btval);
-				return GDK_FAIL;
-			}
-		}
 		break;
 	case TYPE_sht:
 		if (is_sht_nil(v->val.shval))
 			ret->val.shval = sht_nil;
-		else {
+		else
 			ret->val.shval = ~v->val.shval;
-			if (is_sht_nil(ret->val.shval)) {
-				GDKerror("22003!overflow in calculation "
-					 "NOT(" FMTsht ").\n", v->val.shval);
-				return GDK_FAIL;
-			}
-		}
 		break;
 	case TYPE_int:
 		if (is_int_nil(v->val.ival))
 			ret->val.ival = int_nil;
-		else {
+		else
 			ret->val.ival = ~v->val.ival;
-			if (is_int_nil(ret->val.ival)) {
-				GDKerror("22003!overflow in calculation "
-					 "NOT(" FMTint ").\n", v->val.ival);
-				return GDK_FAIL;
-			}
-		}
 		break;
 	case TYPE_lng:
 		if (is_lng_nil(v->val.lval))
 			ret->val.lval = lng_nil;
-		else {
+		else
 			ret->val.lval = ~v->val.lval;
-			if (is_lng_nil(ret->val.lval)) {
-				GDKerror("22003!overflow in calculation "
-					 "NOT(" FMTlng ").\n", v->val.lval);
-				return GDK_FAIL;
-			}
-		}
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		if (is_hge_nil(v->val.hval))
 			ret->val.hval = hge_nil;
-		else {
+		else
 			ret->val.hval = ~v->val.hval;
-			if (is_hge_nil(ret->val.hval)) {
-				GDKerror("22003!overflow in calculation "
-					 "NOT(" FMThge ").\n",
-					 CSThge v->val.hval);
-				return GDK_FAIL;
-			}
-		}
 		break;
 #endif
 	default:
@@ -230,38 +380,33 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 #define NEGATE(x)	(-(x))
 
 BAT *
-BATcalcnegate(BAT *b, BAT *s)
+BATcalcnegate(BAT *b, BAT *s, BAT *r)
 {
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
-	BUN i;
-	oid x, bhseqbase;
+	BUN i, ncand;
+	oid x;
 	struct canditer ci;
-
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
-
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
-
-	bhseqbase = b->hseqbase;
-	canditer_init(&ci, b, s);
-	if (ci.ncand == 0)
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+	if (ncand == 0)
 		return BATconstant(ci.hseq, b->ttype,
-				   ATOMnilptr(b->ttype), ci.ncand, TRANSIENT);
+				   ATOMnilptr(b->ttype), ncand, TRANSIENT);
 
-	bn = COLnew(ci.hseq, b->ttype, ci.ncand, TRANSIENT);
+	bn = COLnew(ci.hseq, b->ttype, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
-	BATiter bi = bat_iterator(b);
-	switch (ATOMbasetype(bi.type)) {
+	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bte, NEGATE);
 		break;
@@ -286,30 +431,26 @@ BATcalcnegate(BAT *b, BAT *s)
 		UNARY_2TYPE_FUNC(dbl, dbl, NEGATE);
 		break;
 	default:
-		GDKerror("type %s not supported.\n", ATOMname(bi.type));
-		goto bailout;
+		BBPunfix(bn->batCacheid);
+		GDKerror("type %s not supported.\n", ATOMname(b->ttype));
+		return NULL;
 	}
 
-	BATsetcount(bn, ci.ncand);
+	BATsetcount(bn, ncand);
 
 	/* unary - reverses the order, but NILs mess it up */
-	bn->tsorted = nils == 0 && bi.revsorted;
-	bn->trevsorted = nils == 0 && bi.sorted;
+	bn->tsorted = nils == 0 && b->trevsorted;
+	bn->trevsorted = nils == 0 && b->tsorted;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	bn->tkey = bi.key && nils <= 1;
-	bat_iterator_end(&bi);
+	bn->tkey = b->tkey && nils <= 1;
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
-bailout:
-	bat_iterator_end(&bi);
-	BBPunfix(bn->batCacheid);
-	return NULL;
 }
 
 gdk_return
@@ -372,38 +513,33 @@ VARcalcnegate(ValPtr ret, const ValRecord *v)
 /* absolute value (any numeric type) */
 
 BAT *
-BATcalcabsolute(BAT *b, BAT *s)
+BATcalcabsolute(BAT *b, BAT *s, BAT *r)
 {
 	lng t0 = 0;
 	BAT *bn;
-	BUN nils = 0;
-	BUN i;
-	oid x, bhseqbase;
+	BUN nils= 0;
+	BUN i, ncand;
+	oid x;
 	struct canditer ci;
-
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
-
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
-
-	bhseqbase = b->hseqbase;
-	canditer_init(&ci, b, s);
-	if (ci.ncand == 0)
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+	if (ncand == 0)
 		return BATconstant(ci.hseq, b->ttype,
-				   ATOMnilptr(b->ttype), ci.ncand, TRANSIENT);
+				   ATOMnilptr(b->ttype), ncand, TRANSIENT);
 
-	bn = COLnew(ci.hseq, b->ttype, ci.ncand, TRANSIENT);
+	bn = COLnew(ci.hseq, b->ttype, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
-	BATiter bi = bat_iterator(b);
-	switch (ATOMbasetype(bi.type)) {
+	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bte, (bte) abs);
 		break;
@@ -428,32 +564,28 @@ BATcalcabsolute(BAT *b, BAT *s)
 		UNARY_2TYPE_FUNC(dbl, dbl, fabs);
 		break;
 	default:
-		GDKerror("bad input type %s.\n", ATOMname(bi.type));
-		goto bailout;
+		BBPunfix(bn->batCacheid);
+		GDKerror("bad input type %s.\n", ATOMname(b->ttype));
+		return NULL;
 	}
-	bat_iterator_end(&bi);
 
-	BATsetcount(bn, ci.ncand);
+	BATsetcount(bn, ncand);
 
 	/* ABSOLUTE messes up order (unless all values were negative
 	 * or all values were positive, but we don't know anything
 	 * about that) */
-	bn->tsorted = ci.ncand <= 1 || nils == ci.ncand;
-	bn->trevsorted = ci.ncand <= 1 || nils == ci.ncand;
-	bn->tkey = ci.ncand <= 1;
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
-bailout:
-	bat_iterator_end(&bi);
-	BBPunfix(bn->batCacheid);
-	return NULL;
 }
 
 gdk_return
@@ -518,37 +650,33 @@ VARcalcabsolute(ValPtr ret, const ValRecord *v)
 #define ISZERO(x)		((bit) ((x) == 0))
 
 BAT *
-BATcalciszero(BAT *b, BAT *s)
+BATcalciszero(BAT *b, BAT *s, BAT *r)
 {
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
-	BUN i;
-	oid x, bhseqbase;
+	BUN i, ncand;
+	oid x;
 	struct canditer ci;
-
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
-
-	bhseqbase = b->hseqbase;
-	canditer_init(&ci, b, s);
-	if (ci.ncand == 0)
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+	if (ncand == 0)
 		return BATconstant(ci.hseq, TYPE_bit,
-				   ATOMnilptr(TYPE_bit), ci.ncand, TRANSIENT);
+				   ATOMnilptr(TYPE_bit), ncand, TRANSIENT);
 
-	bn = COLnew(ci.hseq, TYPE_bit, ci.ncand, TRANSIENT);
+	bn = COLnew(ci.hseq, TYPE_bit, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
-	BATiter bi = bat_iterator(b);
-	switch (ATOMbasetype(bi.type)) {
+	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bit, ISZERO);
 		break;
@@ -573,29 +701,25 @@ BATcalciszero(BAT *b, BAT *s)
 		UNARY_2TYPE_FUNC(dbl, bit, ISZERO);
 		break;
 	default:
-		GDKerror("bad input type %s.\n", ATOMname(bi.type));
-		goto bailout;
+		BBPunfix(bn->batCacheid);
+		GDKerror("bad input type %s.\n", ATOMname(b->ttype));
+		return NULL;
 	}
-	bat_iterator_end(&bi);
 
-	BATsetcount(bn, ci.ncand);
+	BATsetcount(bn, ncand);
 
-	bn->tsorted = ci.ncand <= 1 || nils == ci.ncand;
-	bn->trevsorted = ci.ncand <= 1 || nils == ci.ncand;
-	bn->tkey = ci.ncand <= 1;
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
-bailout:
-	bat_iterator_end(&bi);
-	BBPunfix(bn->batCacheid);
-	return NULL;
 }
 
 gdk_return
@@ -661,37 +785,33 @@ VARcalciszero(ValPtr ret, const ValRecord *v)
 #define SIGN(x)		((bte) ((x) < 0 ? -1 : (x) > 0))
 
 BAT *
-BATcalcsign(BAT *b, BAT *s)
+BATcalcsign(BAT *b, BAT *s, BAT *r)
 {
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
-	BUN i;
-	oid x, bhseqbase;
+	BUN i, ncand;
+	oid x;
 	struct canditer ci;
-
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
-
-	bhseqbase = b->hseqbase;
-	canditer_init(&ci, b, s);
-	if (ci.ncand == 0)
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+	if (ncand == 0)
 		return BATconstant(ci.hseq, TYPE_bte,
-				   ATOMnilptr(TYPE_bte), ci.ncand, TRANSIENT);
+				   ATOMnilptr(TYPE_bte), ncand, TRANSIENT);
 
-	bn = COLnew(ci.hseq, TYPE_bte, ci.ncand, TRANSIENT);
+	bn = COLnew(ci.hseq, TYPE_bte, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
-	BATiter bi = bat_iterator(b);
-	switch (ATOMbasetype(bi.type)) {
+	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bte, SIGN);
 		break;
@@ -716,32 +836,28 @@ BATcalcsign(BAT *b, BAT *s)
 		UNARY_2TYPE_FUNC(dbl, bte, SIGN);
 		break;
 	default:
-		GDKerror("bad input type %s.\n", ATOMname(bi.type));
-		goto bailout;
+		BBPunfix(bn->batCacheid);
+		GDKerror("bad input type %s.\n", ATOMname(b->ttype));
+		return NULL;
 	}
 
-	BATsetcount(bn, ci.ncand);
+	BATsetcount(bn, ncand);
 
 	/* SIGN is ordered if the input is ordered (negative comes
 	 * first, positive comes after) and NILs stay in the same
 	 * position */
-	bn->tsorted = bi.sorted || ci.ncand <= 1 || nils == ci.ncand;
-	bn->trevsorted = bi.revsorted || ci.ncand <= 1 || nils == ci.ncand;
-	bn->tkey = ci.ncand <= 1;
+	bn->tsorted = b->tsorted || ncand <= 1 || nils == ncand;
+	bn->trevsorted = b->trevsorted || ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	bat_iterator_end(&bi);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
-bailout:
-	bat_iterator_end(&bi);
-	BBPunfix(bn->batCacheid);
-	return NULL;
 }
 
 gdk_return
@@ -806,57 +922,57 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 
 #define ISNIL_TYPE(TYPE, NOTNIL)					\
 	do {								\
-		const TYPE *restrict src = (const TYPE *) bi.base;	\
-		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {		\
-			x = canditer_next(&ci) - bhseqbase;		\
-			dst[i] = (bit) (is_##TYPE##_nil(src[x]) ^ NOTNIL); \
+		const TYPE *restrict src = (const TYPE *) Tloc(b, 0);	\
+		for (i = 0; i < ci.ncand; i++) {			\
+			x = canditer_next(&ci) - b->hseqbase;		\
+			if (rv && !rv[i]) {				\
+				dst[i] = bit_nil;			\
+				nils++;					\
+			} else {					\
+				dst[i] = (bit) (is_##TYPE##_nil(src[i]) ^ NOTNIL); \
+			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 	} while (0)
 
 static BAT *
-BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
+BATcalcisnil_implementation(BAT *b, BAT *s, BAT *r, bool notnil)
 {
 	lng t0 = 0;
 	BAT *bn;
-	BUN i;
+	BUN i, ncand;
 	oid x;
 	struct canditer ci;
 	bit *restrict dst;
 	BUN nils = 0;
-	oid bhseqbase;
-
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
 
-	bhseqbase = b->hseqbase;
-	canditer_init(&ci, b, s);
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
 
 	if (b->tnonil || BATtdense(b)) {
-		return BATconstant(ci.hseq, TYPE_bit, &(bit){notnil},
-				   ci.ncand, TRANSIENT);
+		return BATconstant(ci.hseq, TYPE_bit, &(bit){0},
+				   ncand, TRANSIENT);
 	} else if (b->ttype == TYPE_void) {
 		/* non-nil handled above */
 		assert(is_oid_nil(b->tseqbase));
-		return BATconstant(ci.hseq, TYPE_bit, &(bit){!notnil},
-				   ci.ncand, TRANSIENT);
+		return BATconstant(ci.hseq, TYPE_bit, &(bit){1},
+				   ncand, TRANSIENT);
 	}
 
-	bn = COLnew(ci.hseq, TYPE_bit, ci.ncand, TRANSIENT);
+	bn = COLnew(ci.hseq, TYPE_bit, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
 	dst = (bit *) Tloc(bn, 0);
 
-	BATiter bi = bat_iterator(b);
-	switch (ATOMbasetype(bi.type)) {
+	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_bte:
 		ISNIL_TYPE(bte, notnil);
 		break;
@@ -880,62 +996,49 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 	case TYPE_dbl:
 		ISNIL_TYPE(dbl, notnil);
 		break;
-	case TYPE_uuid:
-		ISNIL_TYPE(uuid, notnil);
-		break;
 	default:
 	{
-		int (*atomcmp)(const void *, const void *) = ATOMcompare(bi.type);
-		const void *nil = ATOMnilptr(bi.type);
+		BATiter bi = bat_iterator(b);
+		int (*atomcmp)(const void *, const void *) = ATOMcompare(b->ttype);
+		const void *nil = ATOMnilptr(b->ttype);
 
-		TIMEOUT_LOOP_IDX(i, ci.ncand, timeoffset) {
-			x = canditer_next(&ci) - bhseqbase;
+		for (i = 0; i < ci.ncand; i++) {
+			x = canditer_next(&ci) - b->hseqbase;
 			dst[i] = (bit) (((*atomcmp)(BUNtail(bi, x), nil) == 0) ^ notnil);
 		}
-		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		break;
 	}
 	}
 
-	BATsetcount(bn, ci.ncand);
+	BATsetcount(bn, ncand);
 
 	/* If b sorted, all nils are at the start, i.e. bn starts with
 	 * 1's and ends with 0's, hence bn is revsorted.  Similarly
-	 * for revsorted. At the notnil case, these properties remain the same */
-	if (notnil) {
-		bn->tsorted = bi.sorted;
-		bn->trevsorted = bi.revsorted;
-	} else {
-		bn->tsorted = bi.revsorted;
-		bn->trevsorted = bi.sorted;
-	}
+	 * for revsorted. */
+	bn->tsorted = b->trevsorted;
+	bn->trevsorted = b->tsorted;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	bn->tkey = ci.ncand <= 1;
-	bat_iterator_end(&bi);
+	bn->tkey = ncand <= 1;
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
-		  ",notnil=%s -> " ALGOOPTBATFMT " " LLFMT "usec\n",
-		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ",r=" ALGOOPTBATFMT ",notnil=%s -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s), ALGOOPTBATPAR(r),
 		  notnil ? "true" : "false", ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
-bailout:
-	bat_iterator_end(&bi);
-	BBPreclaim(bn);
-	return NULL;
 }
 
 BAT *
-BATcalcisnil(BAT *b, BAT *s)
+BATcalcisnil(BAT *b, BAT *s, BAT *r)
 {
-	return BATcalcisnil_implementation(b, s, false);
+	return BATcalcisnil_implementation(b, s, r, false);
 }
 
 BAT *
-BATcalcisnotnil(BAT *b, BAT *s)
+BATcalcisnotnil(BAT *b, BAT *s, BAT *r)
 {
-	return BATcalcisnil_implementation(b, s, true);
+	return BATcalcisnil_implementation(b, s, r, true);
 }
 
 gdk_return
@@ -954,1465 +1057,10166 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 	return GDK_SUCCEED;
 }
 
-#define MINMAX_TYPE(TYPE, OP)						\
-	do {								\
-		TYPE *tb1 = b1i.base, *tb2 = b2i.base, *restrict tbn = Tloc(bn, 0); \
-		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {	\
-			TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) { \
-				oid x1 = canditer_next_dense(&ci1) - b1hseqbase; \
-				oid x2 = canditer_next_dense(&ci2) - b2hseqbase; \
-				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
-				if (is_##TYPE##_nil(p1) || is_##TYPE##_nil(p2)) { \
-					nils = true;			\
-					tbn[i] = TYPE##_nil;		\
-				} else {				\
-					tbn[i] = p1 OP p2 ? p1 : p2;	\
-				}					\
-			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
-		} else {						\
-			TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) { \
-				oid x1 = canditer_next(&ci1) - b1hseqbase; \
-				oid x2 = canditer_next(&ci2) - b2hseqbase; \
-				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
-				if (is_##TYPE##_nil(p1) || is_##TYPE##_nil(p2)) { \
-					nils = true;			\
-					tbn[i] = TYPE##_nil;		\
-				} else {				\
-					tbn[i] = p1 OP p2 ? p1 : p2;	\
-				}					\
-			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
-		}							\
-	} while (0)
-
 BAT *
-BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
+BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 {
 	lng t0 = 0;
 	BAT *bn;
-	bool nils = false;
+	BUN nils = 0;
+	BUN ncand;
 	struct canditer ci1, ci2;
-	oid b1hseqbase, b2hseqbase;
-
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	const void *restrict nil;
+	BATiter b1i, b2i;
+	int (*cmp)(const void *, const void *);
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
-	b1hseqbase = b1->hseqbase;
-	b2hseqbase = b2->hseqbase;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
 
-	canditer_init(&ci1, b1, s1);
-	canditer_init(&ci2, b2, s2);
-	if (ci1.ncand != ci2.ncand || ci1.hseq != ci2.hseq) {
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
 		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
 
-	bn = COLnew(ci1.hseq, ATOMtype(b1->ttype), ci1.ncand, TRANSIENT);
+	nil = ATOMnilptr(b1->ttype);
+	bn = COLnew(ci1.hseq, ATOMtype(b1->ttype), ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
+	cmp = ATOMcompare(b1->ttype);
+	b1i = bat_iterator(b1);
+	b2i = bat_iterator(b2);
 
-	BATiter b1i = bat_iterator(b1);
-	BATiter b2i = bat_iterator(b2);
-	switch (ATOMbasetype(b1i.type)) {
-	case TYPE_bte:
-		MINMAX_TYPE(bte, <);
-		break;
-	case TYPE_sht:
-		MINMAX_TYPE(sht, <);
-		break;
-	case TYPE_int:
-		MINMAX_TYPE(int, <);
-		break;
-	case TYPE_lng:
-		MINMAX_TYPE(lng, <);
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		MINMAX_TYPE(hge, <);
-		break;
-#endif
-	case TYPE_flt:
-		MINMAX_TYPE(flt, <);
-		break;
-	case TYPE_dbl:
-		MINMAX_TYPE(dbl, <);
-		break;
-	default: {
-		const void *restrict nil = ATOMnilptr(b1i.type);
-		int (*cmp)(const void *, const void *) = ATOMcompare(b1i.type);
-
-		if (ATOMvarsized(b1i.type)) {
-			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
-					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
-					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-					const void *p1 = BUNtvar(b1i, x1);
-					const void *p2 = BUNtvar(b2i, x2);
-					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
-						nils = true;
-						p1 = nil;
-					} else {
-						p1 = cmp(p1, p2) < 0 ? p1 : p2;
-					}
-					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bailout;
-					}
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
-					oid x1 = canditer_next(&ci1) - b1hseqbase;
-					oid x2 = canditer_next(&ci2) - b2hseqbase;
-					const void *p1 = BUNtvar(b1i, x1);
-					const void *p2 = BUNtvar(b2i, x2);
-					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
-						nils = true;
-						p1 = nil;
-					} else {
-						p1 = cmp(p1, p2) < 0 ? p1 : p2;
-					}
-					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bailout;
-					}
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			}
-		} else {
-			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
-			uint16_t width = bn->twidth;
-			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
-					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
-					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-					const void *p1 = BUNtloc(b1i, x1);
-					const void *p2 = BUNtloc(b2i, x2);
-					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
-						nils = true;
-						p1 = nil;
-					} else {
-						p1 = cmp(p1, p2) < 0 ? p1 : p2;
-					}
-					memcpy(bcast, p1, width);
-					bcast += width;
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
-					oid x1 = canditer_next(&ci1) - b1hseqbase;
-					oid x2 = canditer_next(&ci2) - b2hseqbase;
-					const void *p1 = BUNtloc(b1i, x1);
-					const void *p2 = BUNtloc(b2i, x2);
-					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
-						nils = true;
-						p1 = nil;
-					} else {
-						p1 = cmp(p1, p2) < 0 ? p1 : p2;
-					}
-					memcpy(bcast, p1, width);
-					bcast += width;
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			}
+	for (BUN i = 0; i < ncand; i++) {
+		oid x1 = canditer_next(&ci1) - b1->hseqbase;
+		oid x2 = canditer_next(&ci2) - b2->hseqbase;
+		const void *p1 = BUNtail(b1i, x1);
+		const void *p2 = BUNtail(b2i, x2);
+		if ((rv != NULL && !rv[i]) ||
+		    cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+			nils++;
+			p1 = nil;
+		} else if (cmp(p1, p2) > 0) {
+			p1 = p2;
 		}
-	}
+		if (bunfastapp(bn, p1) != GDK_SUCCEED)
+			goto bunins_failed;
 	}
 
-	bn->tnil = nils;
-	bn->tnonil = !nils;
-	BATsetcount(bn, ci1.ncand);
-	if (ci1.ncand <= 1) {
+	bn->tnil = nils > 0;
+	bn->tnonil = nils == 0;
+	if (ncand <= 1) {
 		bn->tsorted = true;
 		bn->trevsorted = true;
 		bn->tkey = true;
-		bn->tseqbase = ATOMtype(b1i.type) == TYPE_oid ? ci1.ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = false;
 		bn->trevsorted = false;
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
 
 	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
 		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
-  bailout:
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
+  bunins_failed:
 	BBPreclaim(bn);
 	return NULL;
 }
 
-#define MINMAX_NONIL_TYPE(TYPE, OP)					\
-	do {								\
-		TYPE *tb1 = b1i.base, *tb2 = b2i.base, *restrict tbn = Tloc(bn, 0); \
-		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {	\
-			TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) { \
-				oid x1 = canditer_next_dense(&ci1) - b1hseqbase; \
-				oid x2 = canditer_next_dense(&ci2) - b2hseqbase; \
-				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
-				if (is_##TYPE##_nil(p1)) {		\
-					if (is_##TYPE##_nil(p2)) {	\
-						tbn[i] = TYPE##_nil;	\
-						nils = true;		\
-					} else {			\
-						tbn[i] = p2;		\
-					}				\
-				} else {				\
-					tbn[i] = !is_##TYPE##_nil(p2) && p2 OP p1 ? p2 : p1; \
-				}					\
-			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
-		} else {						\
-			TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) { \
-				oid x1 = canditer_next(&ci1) - b1hseqbase; \
-				oid x2 = canditer_next(&ci2) - b2hseqbase; \
-				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
-				if (is_##TYPE##_nil(p1)) {		\
-					if (is_##TYPE##_nil(p2)) {	\
-						tbn[i] = TYPE##_nil;	\
-						nils = true;		\
-					} else {			\
-						tbn[i] = p2;		\
-					}				\
-				} else {				\
-					tbn[i] = !is_##TYPE##_nil(p2) && p2 OP p1 ? p2 : p1; \
-				}					\
-			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
-		}							\
-	} while (0)
-
 BAT *
-BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
+BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 {
 	lng t0 = 0;
 	BAT *bn;
-	bool nils = false;
+	BUN nils = 0;
+	BUN ncand;
 	struct canditer ci1, ci2;
-	oid b1hseqbase, b2hseqbase;
-
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	const void *restrict nil;
+	BATiter b1i, b2i;
+	int (*cmp)(const void *, const void *);
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
-	b1hseqbase = b1->hseqbase;
-	b2hseqbase = b2->hseqbase;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
 
-	canditer_init(&ci1, b1, s1);
-	canditer_init(&ci2, b2, s2);
-	if (ci1.ncand != ci2.ncand || ci1.hseq != ci2.hseq) {
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
 		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
 
-	bn = COLnew(ci1.hseq, ATOMtype(b1->ttype), ci1.ncand, TRANSIENT);
+	nil = ATOMnilptr(b1->ttype);
+	bn = COLnew(ci1.hseq, ATOMtype(b1->ttype), ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
+	cmp = ATOMcompare(b1->ttype);
+	b1i = bat_iterator(b1);
+	b2i = bat_iterator(b2);
 
-	BATiter b1i = bat_iterator(b1);
-	BATiter b2i = bat_iterator(b2);
-	switch (ATOMbasetype(b1i.type)) {
-	case TYPE_bte:
-		MINMAX_NONIL_TYPE(bte, <);
-		break;
-	case TYPE_sht:
-		MINMAX_NONIL_TYPE(sht, <);
-		break;
-	case TYPE_int:
-		MINMAX_NONIL_TYPE(int, <);
-		break;
-	case TYPE_lng:
-		MINMAX_NONIL_TYPE(lng, <);
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		MINMAX_NONIL_TYPE(hge, <);
-		break;
-#endif
-	case TYPE_flt:
-		MINMAX_NONIL_TYPE(flt, <);
-		break;
-	case TYPE_dbl:
-		MINMAX_NONIL_TYPE(dbl, <);
-		break;
-	default: {
-		const void *restrict nil = ATOMnilptr(b1i.type);
-		int (*cmp)(const void *, const void *) = ATOMcompare(b1i.type);
-
-		if (ATOMvarsized(b1i.type)) {
-			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
-					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
-					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-					const void *p1 = BUNtvar(b1i, x1);
-					const void *p2 = BUNtvar(b2i, x2);
-					if (cmp(p1, nil) == 0) {
-						if (cmp(p2, nil) == 0) {
-							/* both values are nil */
-							nils = true;
-						} else {
-							p1 = p2;
-						}
-					} else {
-						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
-					}
-					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bailout;
-					}
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+	for (BUN i = 0; i < ncand; i++) {
+		oid x1 = canditer_next(&ci1) - b1->hseqbase;
+		oid x2 = canditer_next(&ci2) - b2->hseqbase;
+		const void *p1 = BUNtail(b1i, x1);
+		const void *p2 = BUNtail(b2i, x2);
+		if ((rv != NULL && !rv[i]) ||
+		    cmp(p1, nil) == 0) {
+			if (cmp(p2, nil) == 0) {
+				/* both values are nil */
+				nils++;
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
-					oid x1 = canditer_next(&ci1) - b1hseqbase;
-					oid x2 = canditer_next(&ci2) - b2hseqbase;
-					const void *p1 = BUNtvar(b1i, x1);
-					const void *p2 = BUNtvar(b2i, x2);
-					if (cmp(p1, nil) == 0) {
-						if (cmp(p2, nil) == 0) {
-							/* both values are nil */
-							nils = true;
-						} else {
-							p1 = p2;
-						}
-					} else {
-						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
-					}
-					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bailout;
-					}
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+				p1 = p2;
 			}
-		} else {
-			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
-			uint16_t width = bn->twidth;
-			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
-					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
-					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-					const void *p1 = BUNtloc(b1i, x1);
-					const void *p2 = BUNtloc(b2i, x2);
-					if (cmp(p1, nil) == 0) {
-						if (cmp(p2, nil) == 0) {
-							/* both values are nil */
-							nils = true;
-						} else {
-							p1 = p2;
-						}
-					} else {
-						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
-					}
-					memcpy(bcast, p1, width);
-					bcast += width;
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
-					oid x1 = canditer_next(&ci1) - b1hseqbase;
-					oid x2 = canditer_next(&ci2) - b2hseqbase;
-					const void *p1 = BUNtloc(b1i, x1);
-					const void *p2 = BUNtloc(b2i, x2);
-					if (cmp(p1, nil) == 0) {
-						if (cmp(p2, nil) == 0) {
-							/* both values are nil */
-							nils = true;
-						} else {
-							p1 = p2;
-						}
-					} else {
-						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
-					}
-					memcpy(bcast, p1, width);
-					bcast += width;
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			}
+		} else if (cmp(p2, nil) != 0 && cmp(p1, p2) > 0) {
+			p1 = p2;
 		}
-	}
+		if (bunfastapp(bn, p1) != GDK_SUCCEED)
+			goto bunins_failed;
 	}
 
-	bn->tnil = nils;
-	bn->tnonil = !nils;
-	BATsetcount(bn, ci1.ncand);
-	if (ci1.ncand <= 1) {
+	bn->tnil = nils > 0;
+	bn->tnonil = nils == 0;
+	if (ncand <= 1) {
 		bn->tsorted = true;
 		bn->trevsorted = true;
 		bn->tkey = true;
-		bn->tseqbase = ATOMtype(b1i.type) == TYPE_oid ? ci1.ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = false;
 		bn->trevsorted = false;
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
 
 	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
 		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
-  bailout:
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
+  bunins_failed:
 	BBPreclaim(bn);
 	return NULL;
 }
 
-#define MINMAX_CST_TYPE(TYPE, OP)					\
-	do {								\
-		TYPE *restrict tb = bi.base, *restrict tbn = Tloc(bn, 0), pp2 = *(TYPE*) p2; \
-		TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {	\
-			oid x = canditer_next(&ci) - bhseqbase;		\
-			TYPE p1 = tb[x];				\
-			if (is_##TYPE##_nil(p1)) {			\
-				nils = true;				\
-				tbn[i] = TYPE##_nil;			\
+BAT *
+BATcalcmincst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
+{
+	lng t0 = 0;
+	BAT *bn;
+	BUN nils = 0;
+	BUN ncand;
+	BUN i;
+	struct canditer ci;
+	oid x;
+	const void *restrict nil;
+	const void *p1, *p2;
+	BATiter bi;
+	int (*cmp)(const void *, const void *);
+	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
+	if (ATOMtype(b->ttype) != v->vtype) {
+		GDKerror("inputs have incompatible types\n");
+		return NULL;
+	}
+
+	nil = ATOMnilptr(b->ttype);
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+
+	nil = ATOMnilptr(b->ttype);
+	cmp = ATOMcompare(b->ttype);
+	p2 = VALptr(v);
+	if (ncand == 0 ||
+	    cmp(p2, nil) == 0 ||
+	    (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)))
+		return BATconstantV(ci.hseq, b->ttype, nil, ncand, TRANSIENT);
+
+	bn = COLnew(ci.hseq, ATOMtype(b->ttype), ncand, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	bi = bat_iterator(b);
+
+	for (i = 0; i < ci.ncand; i++) {
+		x = canditer_next(&ci) - b->hseqbase;
+		p1 = BUNtail(bi, x);
+		if ((rv != NULL && !rv[i]) || cmp(p1, nil) == 0) {
+			nils++;
+			p1 = nil;
+		} else if (cmp(p1, p2) > 0) {
+			p1 = p2;
+		}
+		if (bunfastapp(bn, p1) != GDK_SUCCEED)
+			goto bunins_failed;
+	}
+
+	bn->theap.dirty = true;
+	bn->tnil = nils > 0;
+	bn->tnonil = nils == 0;
+	if (ncand <= 1) {
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
+		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+	} else {
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
+		bn->tseqbase = oid_nil;
+	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+BAT *
+BATcalccstmin(const ValRecord *v, BAT *b, BAT *s, BAT *r)
+{
+	return BATcalcmincst(b, v, s, r);
+}
+
+BAT *
+BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s, BAT *r)
+{
+	lng t0 = 0;
+	BAT *bn;
+	BUN nils = 0;
+	BUN ncand;
+	BUN i;
+	struct canditer ci;
+	oid x;
+	const void *restrict nil;
+	const void *p1, *p2;
+	BATiter bi;
+	int (*cmp)(const void *, const void *);
+	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
+	if (ATOMtype(b->ttype) != v->vtype) {
+		GDKerror("inputs have incompatible types\n");
+		return NULL;
+	}
+
+	nil = ATOMnilptr(b->ttype);
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+	if (ncand == 0)
+		return BATconstantV(ci.hseq, b->ttype,
+				    nil, ncand, TRANSIENT);
+
+	cmp = ATOMcompare(b->ttype);
+	p2 = VALptr(v);
+	if (b->ttype == TYPE_void &&
+	    is_oid_nil(b->tseqbase) &&
+	    is_oid_nil(* (const oid *) p2))
+		return BATconstant(ci.hseq, TYPE_void,
+				   &oid_nil, ncand, TRANSIENT);
+
+	bn = COLnew(ci.hseq, ATOMtype(b->ttype), ncand, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	bi = bat_iterator(b);
+	if (cmp(p2, nil) == 0)
+		p2 = NULL;
+
+	for (i = 0; i < ci.ncand; i++) {
+		x = canditer_next(&ci) - b->hseqbase;
+		if (rv != NULL && !rv[i]) {
+			p1 = nil;
+			nils++;
+		} else {
+			p1 = BUNtail(bi, x);
+			if (p2) {
+				if (cmp(p1, nil) == 0) {
+					p1 = p2;
+				} else if (cmp(p1, p2) > 0) {
+					p1 = p2;
+				}
+			} else {
+				nils += cmp(p1, nil) == 0;
+			}
+		}
+		if (bunfastapp(bn, p1) != GDK_SUCCEED)
+			goto bunins_failed;
+	}
+
+	bn->theap.dirty = true;
+	bn->tnil = nils > 0;
+	bn->tnonil = nils == 0;
+	if (ncand <= 1) {
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
+		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+	} else {
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
+		bn->tseqbase = oid_nil;
+	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+BAT *
+BATcalccstmin_no_nil(const ValRecord *v, BAT *b, BAT *s, BAT *r)
+{
+	return BATcalcmincst_no_nil(b, v, s, r);
+}
+
+BAT *
+BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
+{
+	lng t0 = 0;
+	BAT *bn;
+	BUN nils = 0;
+	BUN ncand;
+	struct canditer ci1, ci2;
+	const void *restrict nil;
+	BATiter b1i, b2i;
+	int (*cmp)(const void *, const void *);
+	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
+
+	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
+		GDKerror("inputs have incompatible types\n");
+		return NULL;
+	}
+
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
+		GDKerror("inputs not the same size.\n");
+		return NULL;
+	}
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+
+	nil = ATOMnilptr(b1->ttype);
+	bn = COLnew(ci1.hseq, ATOMtype(b1->ttype), ncand, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	cmp = ATOMcompare(b1->ttype);
+	b1i = bat_iterator(b1);
+	b2i = bat_iterator(b2);
+
+	for (BUN i = 0; i < ncand; i++) {
+		oid x1 = canditer_next(&ci1) - b1->hseqbase;
+		oid x2 = canditer_next(&ci2) - b2->hseqbase;
+		const void *p1 = BUNtail(b1i, x1);
+		const void *p2 = BUNtail(b2i, x2);
+		if ((rv != NULL && !rv[i]) ||
+		    cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+			nils++;
+			p1 = nil;
+		} else if (cmp(p1, p2) < 0) {
+			p1 = p2;
+		}
+		if (bunfastapp(bn, p1) != GDK_SUCCEED)
+			goto bunins_failed;
+	}
+
+	bn->tnil = nils > 0;
+	bn->tnonil = nils == 0;
+	if (ncand <= 1) {
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
+		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+	} else {
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
+		bn->tseqbase = oid_nil;
+	}
+
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
+		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+BAT *
+BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
+{
+	lng t0 = 0;
+	BAT *bn;
+	BUN nils = 0;
+	BUN ncand;
+	struct canditer ci1, ci2;
+	const void *restrict nil;
+	BATiter b1i, b2i;
+	int (*cmp)(const void *, const void *);
+	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
+
+	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
+		GDKerror("inputs have incompatible types\n");
+		return NULL;
+	}
+
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
+		GDKerror("inputs not the same size.\n");
+		return NULL;
+	}
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+
+	nil = ATOMnilptr(b1->ttype);
+	bn = COLnew(ci1.hseq, ATOMtype(b1->ttype), ncand, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	cmp = ATOMcompare(b1->ttype);
+	b1i = bat_iterator(b1);
+	b2i = bat_iterator(b2);
+
+	for (BUN i = 0; i < ncand; i++) {
+		oid x1 = canditer_next(&ci1) - b1->hseqbase;
+		oid x2 = canditer_next(&ci2) - b2->hseqbase;
+		const void *p1, *p2;
+		if (rv != NULL && !rv[i]) {
+			p1 = nil;
+			nils++;
+		} else {
+			p1 = BUNtail(b1i, x1);
+			p2 = BUNtail(b2i, x2);
+			if (cmp(p1, nil) == 0) {
+				if (cmp(p2, nil) == 0) {
+					/* both values are nil */
+					nils++;
+				} else {
+					p1 = p2;
+				}
+			} else if (cmp(p2, nil) != 0 && cmp(p1, p2) < 0) {
+				p1 = p2;
+			}
+		}
+		if (bunfastapp(bn, p1) != GDK_SUCCEED)
+			goto bunins_failed;
+	}
+
+	bn->tnil = nils > 0;
+	bn->tnonil = nils == 0;
+	if (ncand <= 1) {
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
+		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+	} else {
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
+		bn->tseqbase = oid_nil;
+	}
+
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
+		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+BAT *
+BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
+{
+	lng t0 = 0;
+	BAT *bn;
+	BUN nils = 0;
+	BUN ncand;
+	BUN i;
+	struct canditer ci;
+	oid x;
+	const void *restrict nil;
+	const void *p1, *p2;
+	BATiter bi;
+	int (*cmp)(const void *, const void *);
+	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
+	if (ATOMtype(b->ttype) != v->vtype) {
+		GDKerror("inputs have incompatible types\n");
+		return NULL;
+	}
+
+	nil = ATOMnilptr(b->ttype);
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+
+	nil = ATOMnilptr(b->ttype);
+	cmp = ATOMcompare(b->ttype);
+	p2 = VALptr(v);
+	if (ncand == 0 ||
+	    cmp(p2, nil) == 0 ||
+	    (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)))
+		return BATconstantV(ci.hseq, b->ttype, nil, ncand, TRANSIENT);
+
+	bn = COLnew(ci.hseq, ATOMtype(b->ttype), ncand, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	bi = bat_iterator(b);
+
+	for (i = 0; i < ci.ncand; i++) {
+		x = canditer_next(&ci) - b->hseqbase;
+		p1 = BUNtail(bi, x);
+		if ((rv != NULL && !rv[i]) || cmp(p1, nil) == 0) {
+			nils++;
+			p1 = nil;
+		} else if (cmp(p1, p2) < 0) {
+			p1 = p2;
+		}
+		if (bunfastapp(bn, p1) != GDK_SUCCEED)
+			goto bunins_failed;
+	}
+
+	bn->theap.dirty = true;
+	bn->tnil = nils > 0;
+	bn->tnonil = nils == 0;
+	if (ncand <= 1) {
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
+		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+	} else {
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
+		bn->tseqbase = oid_nil;
+	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+BAT *
+BATcalccstmax(const ValRecord *v, BAT *b, BAT *s, BAT *r)
+{
+	return BATcalcmaxcst(b, v, s, r);
+}
+
+BAT *
+BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s, BAT *r)
+{
+	lng t0 = 0;
+	BAT *bn;
+	BUN nils = 0;
+	BUN ncand;
+	BUN i;
+	struct canditer ci;
+	oid x;
+	const void *restrict nil;
+	const void *p1, *p2;
+	BATiter bi;
+	int (*cmp)(const void *, const void *);
+	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
+	if (ATOMtype(b->ttype) != v->vtype) {
+		GDKerror("inputs have incompatible types\n");
+		return NULL;
+	}
+
+	nil = ATOMnilptr(b->ttype);
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+	if (ncand == 0)
+		return BATconstantV(ci.hseq, b->ttype,
+				    nil, ncand, TRANSIENT);
+
+	cmp = ATOMcompare(b->ttype);
+	p2 = VALptr(v);
+	if (b->ttype == TYPE_void &&
+	    is_oid_nil(b->tseqbase) &&
+	    is_oid_nil(* (const oid *) p2))
+		return BATconstant(ci.hseq, TYPE_void,
+				   &oid_nil, ncand, TRANSIENT);
+
+	bn = COLnew(ci.hseq, ATOMtype(b->ttype), ncand, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	bi = bat_iterator(b);
+	if (cmp(p2, nil) == 0)
+		p2 = NULL;
+
+	for (i = 0; i < ci.ncand; i++) {
+		x = canditer_next(&ci) - b->hseqbase;
+		if (rv != NULL && !rv[i]) {
+			p1 = nil;
+			nils++;
+		} else {
+			p1 = BUNtail(bi, x);
+			if (p2) {
+				if (cmp(p1, nil) == 0) {
+					p1 = p2;
+				} else if (cmp(p1, p2) < 0) {
+					p1 = p2;
+				}
+			} else {
+				nils += cmp(p1, nil) == 0;
+			}
+		}
+		if (bunfastapp(bn, p1) != GDK_SUCCEED)
+			goto bunins_failed;
+	}
+
+	bn->theap.dirty = true;
+	bn->tnil = nils > 0;
+	bn->tnonil = nils == 0;
+	if (ncand <= 1) {
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
+		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+	} else {
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
+		bn->tseqbase = oid_nil;
+	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+BAT *
+BATcalccstmax_no_nil(const ValRecord *v, BAT *b, BAT *s, BAT *r)
+{
+	return BATcalcmaxcst_no_nil(b, v, s, r);
+}
+
+/* ---------------------------------------------------------------------- */
+/* addition (any numeric type) */
+
+#define ON_OVERFLOW(TYPE1, TYPE2, OP)				\
+	do {							\
+		GDKerror("22003!overflow in calculation "	\
+			 FMT##TYPE1 OP FMT##TYPE2 ".\n",	\
+			 CST##TYPE1 lft[i], CST##TYPE2 rgt[j]);	\
+		return BUN_NONE;				\
+	} while (0)
+
+#define ADD_3TYPE(TYPE1, TYPE2, TYPE3, IF)				\
+static BUN								\
+add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *restrict dst, TYPE3 max,		\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				const bit *restrict rv,			\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)			\
+{									\
+	BUN nils = 0;							\
+									\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
 			} else {					\
-				tbn[i] = p1 OP pp2 ? p1 : pp2;		\
+				ADD##IF##_WITH_CHECK(lft[i], rgt[j],	\
+						     TYPE3, dst[k],	\
+						     max,		\
+						     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
 			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
-	} while (0)
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				ADD##IF##_WITH_CHECK(lft[i], rgt[j],	\
+						     TYPE3, dst[k],	\
+						     max,		\
+						     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
+			}						\
+		}							\
+	}								\
+	return nils;							\
+}
+
+#define ADD_3TYPE_enlarge(TYPE1, TYPE2, TYPE3, IF)			\
+static BUN								\
+add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *restrict dst, TYPE3 max,		\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				const bit *restrict rv,			\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)			\
+{									\
+	BUN nils = 0;							\
+	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
+									\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (couldoverflow) {			\
+				ADD##IF##_WITH_CHECK(lft[i], rgt[j],	\
+						     TYPE3, dst[k],	\
+						     max,		\
+						     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
+			} else {					\
+				dst[k] = (TYPE3) lft[i] + rgt[j];	\
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (couldoverflow) {			\
+				ADD##IF##_WITH_CHECK(lft[i], rgt[j],	\
+						     TYPE3, dst[k],	\
+						     max,		\
+						     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
+			} else {					\
+				dst[k] = (TYPE3) lft[i] + rgt[j];	\
+			}						\
+		}							\
+	}								\
+	return nils;							\
+}
+
+ADD_3TYPE(bte, bte, bte, I)
+ADD_3TYPE_enlarge(bte, bte, sht, I)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(bte, bte, int, I)
+ADD_3TYPE_enlarge(bte, bte, lng, I)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(bte, bte, hge, I)
+#endif
+ADD_3TYPE_enlarge(bte, bte, flt, F)
+ADD_3TYPE_enlarge(bte, bte, dbl, F)
+#endif
+ADD_3TYPE(bte, sht, sht, I)
+ADD_3TYPE_enlarge(bte, sht, int, I)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(bte, sht, lng, I)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(bte, sht, hge, I)
+#endif
+ADD_3TYPE_enlarge(bte, sht, flt, F)
+ADD_3TYPE_enlarge(bte, sht, dbl, F)
+#endif
+ADD_3TYPE(bte, int, int, I)
+ADD_3TYPE_enlarge(bte, int, lng, I)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(bte, int, hge, I)
+#endif
+ADD_3TYPE_enlarge(bte, int, flt, F)
+ADD_3TYPE_enlarge(bte, int, dbl, F)
+#endif
+ADD_3TYPE(bte, lng, lng, I)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(bte, lng, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(bte, lng, flt, F)
+ADD_3TYPE_enlarge(bte, lng, dbl, F)
+#endif
+#ifdef HAVE_HGE
+ADD_3TYPE(bte, hge, hge, I)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(bte, hge, flt, F)
+ADD_3TYPE_enlarge(bte, hge, dbl, F)
+#endif
+#endif
+ADD_3TYPE(bte, flt, flt, F)
+ADD_3TYPE_enlarge(bte, flt, dbl, F)
+ADD_3TYPE(bte, dbl, dbl, F)
+ADD_3TYPE(sht, bte, sht, I)
+ADD_3TYPE_enlarge(sht, bte, int, I)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(sht, bte, lng, I)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(sht, bte, hge, I)
+#endif
+ADD_3TYPE_enlarge(sht, bte, flt, F)
+ADD_3TYPE_enlarge(sht, bte, dbl, F)
+#endif
+ADD_3TYPE(sht, sht, sht, I)
+ADD_3TYPE_enlarge(sht, sht, int, I)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(sht, sht, lng, I)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(sht, sht, hge, I)
+#endif
+ADD_3TYPE_enlarge(sht, sht, flt, F)
+ADD_3TYPE_enlarge(sht, sht, dbl, F)
+#endif
+ADD_3TYPE(sht, int, int, I)
+ADD_3TYPE_enlarge(sht, int, lng, I)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(sht, int, hge, I)
+#endif
+ADD_3TYPE_enlarge(sht, int, flt, F)
+ADD_3TYPE_enlarge(sht, int, dbl, F)
+#endif
+ADD_3TYPE(sht, lng, lng, I)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(sht, lng, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(sht, lng, flt, F)
+ADD_3TYPE_enlarge(sht, lng, dbl, F)
+#endif
+#ifdef HAVE_HGE
+ADD_3TYPE(sht, hge, hge, I)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(sht, hge, flt, F)
+ADD_3TYPE_enlarge(sht, hge, dbl, F)
+#endif
+#endif
+ADD_3TYPE(sht, flt, flt, F)
+ADD_3TYPE_enlarge(sht, flt, dbl, F)
+ADD_3TYPE(sht, dbl, dbl, F)
+ADD_3TYPE(int, bte, int, I)
+ADD_3TYPE_enlarge(int, bte, lng, I)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(int, bte, hge, I)
+#endif
+ADD_3TYPE_enlarge(int, bte, flt, F)
+ADD_3TYPE_enlarge(int, bte, dbl, F)
+#endif
+ADD_3TYPE(int, sht, int, I)
+ADD_3TYPE_enlarge(int, sht, lng, I)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(int, sht, hge, I)
+#endif
+ADD_3TYPE_enlarge(int, sht, flt, F)
+ADD_3TYPE_enlarge(int, sht, dbl, F)
+#endif
+ADD_3TYPE(int, int, int, I)
+ADD_3TYPE_enlarge(int, int, lng, I)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(int, int, hge, I)
+#endif
+ADD_3TYPE_enlarge(int, int, flt, F)
+ADD_3TYPE_enlarge(int, int, dbl, F)
+#endif
+ADD_3TYPE(int, lng, lng, I)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(int, lng, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(int, lng, flt, F)
+ADD_3TYPE_enlarge(int, lng, dbl, F)
+#endif
+#ifdef HAVE_HGE
+ADD_3TYPE(int, hge, hge, I)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(int, hge, flt, F)
+ADD_3TYPE_enlarge(int, hge, dbl, F)
+#endif
+#endif
+ADD_3TYPE(int, flt, flt, F)
+ADD_3TYPE_enlarge(int, flt, dbl, F)
+ADD_3TYPE(int, dbl, dbl, F)
+ADD_3TYPE(lng, bte, lng, I)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(lng, bte, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(lng, bte, flt, F)
+ADD_3TYPE_enlarge(lng, bte, dbl, F)
+#endif
+ADD_3TYPE(lng, sht, lng, I)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(lng, sht, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(lng, sht, flt, F)
+ADD_3TYPE_enlarge(lng, sht, dbl, F)
+#endif
+ADD_3TYPE(lng, int, lng, I)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(lng, int, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(lng, int, flt, F)
+ADD_3TYPE_enlarge(lng, int, dbl, F)
+#endif
+ADD_3TYPE(lng, lng, lng, I)
+#ifdef HAVE_HGE
+ADD_3TYPE_enlarge(lng, lng, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(lng, lng, flt, F)
+ADD_3TYPE_enlarge(lng, lng, dbl, F)
+#endif
+#ifdef HAVE_HGE
+ADD_3TYPE(lng, hge, hge, I)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(lng, hge, flt, F)
+ADD_3TYPE_enlarge(lng, hge, dbl, F)
+#endif
+#endif
+ADD_3TYPE(lng, flt, flt, F)
+ADD_3TYPE_enlarge(lng, flt, dbl, F)
+ADD_3TYPE(lng, dbl, dbl, F)
+#ifdef HAVE_HGE
+ADD_3TYPE(hge, bte, hge, I)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(hge, bte, flt, F)
+ADD_3TYPE_enlarge(hge, bte, dbl, F)
+#endif
+ADD_3TYPE(hge, sht, hge, I)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(hge, sht, flt, F)
+ADD_3TYPE_enlarge(hge, sht, dbl, F)
+#endif
+ADD_3TYPE(hge, int, hge, I)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(hge, int, flt, F)
+ADD_3TYPE_enlarge(hge, int, dbl, F)
+#endif
+ADD_3TYPE(hge, lng, hge, I)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(hge, lng, flt, F)
+ADD_3TYPE_enlarge(hge, lng, dbl, F)
+#endif
+ADD_3TYPE(hge, hge, hge, I)
+#ifdef FULL_IMPLEMENTATION
+ADD_3TYPE_enlarge(hge, hge, flt, F)
+ADD_3TYPE_enlarge(hge, hge, dbl, F)
+#endif
+ADD_3TYPE(hge, flt, flt, F)
+ADD_3TYPE_enlarge(hge, flt, dbl, F)
+ADD_3TYPE(hge, dbl, dbl, F)
+#endif
+ADD_3TYPE(flt, bte, flt, F)
+ADD_3TYPE_enlarge(flt, bte, dbl, F)
+ADD_3TYPE(flt, sht, flt, F)
+ADD_3TYPE_enlarge(flt, sht, dbl, F)
+ADD_3TYPE(flt, int, flt, F)
+ADD_3TYPE_enlarge(flt, int, dbl, F)
+ADD_3TYPE(flt, lng, flt, F)
+ADD_3TYPE_enlarge(flt, lng, dbl, F)
+#ifdef HAVE_HGE
+ADD_3TYPE(flt, hge, flt, F)
+ADD_3TYPE_enlarge(flt, hge, dbl, F)
+#endif
+ADD_3TYPE(flt, flt, flt, F)
+ADD_3TYPE_enlarge(flt, flt, dbl, F)
+ADD_3TYPE(flt, dbl, dbl, F)
+ADD_3TYPE(dbl, bte, dbl, F)
+ADD_3TYPE(dbl, sht, dbl, F)
+ADD_3TYPE(dbl, int, dbl, F)
+ADD_3TYPE(dbl, lng, dbl, F)
+#ifdef HAVE_HGE
+ADD_3TYPE(dbl, hge, dbl, F)
+#endif
+ADD_3TYPE(dbl, flt, dbl, F)
+ADD_3TYPE(dbl, dbl, dbl, F)
+
+static BUN
+add_typeswitchloop(const void *lft, int tp1, int incr1,
+		   const void *rgt, int tp2, int incr2,
+		   void *restrict dst, int tp,
+		   struct canditer *restrict ci1, struct canditer *restrict ci2,
+		   const bit *restrict rv,
+		   oid candoff1, oid candoff2, bool abort_on_error,
+		   const char *func)
+{
+	BUN nils;
+
+	tp1 = ATOMbasetype(tp1);
+	tp2 = ATOMbasetype(tp2);
+	tp = ATOMbasetype(tp);
+	switch (tp1) {
+	case TYPE_bte:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_bte:
+				nils = add_bte_bte_bte(lft, incr1, rgt, incr2,
+						       dst, GDK_bte_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_sht:
+				nils = add_bte_bte_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_int:
+				nils = add_bte_bte_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = add_bte_bte_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_bte_bte_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = add_bte_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_bte_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_sht:
+				nils = add_bte_sht_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = add_bte_sht_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = add_bte_sht_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_bte_sht_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = add_bte_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_bte_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_int:
+				nils = add_bte_int_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = add_bte_int_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_bte_int_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = add_bte_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_bte_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_lng:
+				nils = add_bte_lng_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_bte_lng_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_bte_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_bte_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = add_bte_hge_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_bte_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_bte_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = add_bte_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_bte_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = add_bte_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_sht:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_sht:
+				nils = add_sht_bte_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = add_sht_bte_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = add_sht_bte_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_sht_bte_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = add_sht_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_sht_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_sht:
+				nils = add_sht_sht_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = add_sht_sht_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = add_sht_sht_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_sht_sht_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = add_sht_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_sht_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_int:
+				nils = add_sht_int_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = add_sht_int_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_sht_int_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = add_sht_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_sht_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_lng:
+				nils = add_sht_lng_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_sht_lng_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_sht_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_sht_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = add_sht_hge_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_sht_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_sht_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = add_sht_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_sht_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = add_sht_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_int:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_int:
+				nils = add_int_bte_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = add_int_bte_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_int_bte_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = add_int_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_int_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_int:
+				nils = add_int_sht_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = add_int_sht_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_int_sht_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = add_int_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_int_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_int:
+				nils = add_int_int_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = add_int_int_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_int_int_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = add_int_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_int_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_lng:
+				nils = add_int_lng_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_int_lng_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_int_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_int_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = add_int_hge_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_int_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_int_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = add_int_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_int_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = add_int_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_lng:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_lng:
+				nils = add_lng_bte_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_lng_bte_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_lng_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_lng_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_lng:
+				nils = add_lng_sht_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_lng_sht_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_lng_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_lng_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_lng:
+				nils = add_lng_int_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_lng_int_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_lng_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_lng_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_lng:
+				nils = add_lng_lng_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = add_lng_lng_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_lng_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_lng_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = add_lng_hge_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_lng_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_lng_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = add_lng_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_lng_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = add_lng_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_hge:
+				nils = add_hge_bte_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_hge_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_hge_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_hge:
+				nils = add_hge_sht_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_hge_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_hge_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_hge:
+				nils = add_hge_int_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_hge_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_hge_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_hge:
+				nils = add_hge_lng_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_hge_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_hge_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = add_hge_hge_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = add_hge_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_hge_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = add_hge_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_hge_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = add_hge_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+#endif
+	case TYPE_flt:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_flt:
+				nils = add_flt_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_flt_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_flt:
+				nils = add_flt_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_flt_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_flt:
+				nils = add_flt_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_flt_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_flt:
+				nils = add_flt_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_flt_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_flt:
+				nils = add_flt_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_flt_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = add_flt_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = add_flt_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = add_flt_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_dbl:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = add_dbl_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = add_dbl_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = add_dbl_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = add_dbl_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = add_dbl_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = add_dbl_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = add_dbl_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	default:
+		goto unsupported;
+	}
+
+	return nils;
+
+  unsupported:
+	GDKerror("%s: type combination (add(%s,%s)->%s) not supported.\n",
+		 func, ATOMname(tp1), ATOMname(tp2), ATOMname(tp));
+	return BUN_NONE;
+}
+
+static BUN
+addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
+	    struct canditer *restrict ci1, struct canditer *restrict ci2,
+	    const bit *restrict rv)
+{
+	BUN nils = 0;
+	char *s;
+	size_t slen, llen, rlen;
+	BATiter b1i, b2i;
+	oid candoff1, candoff2;
+
+	assert(b1 != NULL || b2 != NULL); /* at least one not NULL */
+	candoff1 = b1 ? b1->hseqbase : 0;
+	candoff2 = b2 ? b2->hseqbase : 0;
+	b1i = bat_iterator(b1);
+	b2i = bat_iterator(b2);
+	slen = 1024;
+	s = GDKmalloc(slen);
+	if (s == NULL)
+		return BUN_NONE;
+	for (BUN i = 0; i < ci1->ncand; i++) {
+		oid x1 = canditer_next(ci1) - candoff1;
+		oid x2 = canditer_next(ci2) - candoff2;
+		if (b1)
+			l = BUNtvar(b1i, x1);
+		if (b2)
+			r = BUNtvar(b2i, x2);
+		if ((rv != NULL && !rv[i]) || strNil(l) || strNil(r)) {
+			nils++;
+			if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED)
+				goto bunins_failed;
+		} else {
+			llen = strlen(l);
+			rlen = strlen(r);
+			if (llen + rlen >= slen) {
+				slen = llen + rlen + 1024;
+				GDKfree(s);
+				s = GDKmalloc(slen);
+				if (s == NULL)
+					goto bunins_failed;
+			}
+			(void) stpcpy(stpcpy(s, l), r);
+			if (tfastins_nocheckVAR(bn, i, s, Tsize(bn)) != GDK_SUCCEED)
+				goto bunins_failed;
+		}
+	}
+	GDKfree(s);
+	bn->theap.dirty = true;
+	return nils;
+
+  bunins_failed:
+	GDKfree(s);
+	return BUN_NONE;
+}
 
 BAT *
-BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
+BATcalcadd(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_error)
 {
 	lng t0 = 0;
 	BAT *bn;
-	bool nils = false;
-	struct canditer ci;
-	const void *p2;
-	const void *restrict nil;
-	int (*cmp)(const void *, const void *);
-	oid bhseqbase;
+	BUN nils;
+	BUN ncand;
+	struct canditer ci1, ci2;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
+
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
+		GDKerror("inputs not the same size.\n");
+		return NULL;
 	}
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+
+	bn = COLnew(ci1.hseq, tp, ncand, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	if (ncand == 0)
+		return bn;
+
+	if (b1->ttype == TYPE_str && b2->ttype == TYPE_str && tp == TYPE_str) {
+		nils = addstr_loop(b1, NULL, b2, NULL, bn, &ci1, &ci2, rv);
+	} else {
+		nils = add_typeswitchloop(Tloc(b1, 0),
+					  b1->ttype, 1,
+					  Tloc(b2, 0),
+					  b2->ttype, 1,
+					  Tloc(bn, 0), tp,
+					  &ci1, &ci2, rv,
+					  b1->hseqbase, b2->hseqbase,
+					  abort_on_error, __func__);
+	}
+
+	if (nils == BUN_NONE) {
+		BBPunfix(bn->batCacheid);
+		return NULL;
+	}
+
+	BATsetcount(bn, ncand);
+
+	/* if both inputs are sorted the same way, and no overflow
+	 * occurred (we only know for sure if abort_on_error is set),
+	 * the result is also sorted */
+	bn->tsorted = (abort_on_error && b1->tsorted & b2->tsorted && nils == 0)
+		|| ncand <= 1 || nils == ncand;
+	bn->trevsorted = (abort_on_error && b1->trevsorted & b2->trevsorted && nils == 0)
+		|| ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
+		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
+}
+
+BAT *
+BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_error)
+{
+	lng t0 = 0;
+	BAT *bn;
+	BUN nils;
+	BUN ncand;
+	struct canditer ci;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
 
-	nil = ATOMnilptr(b->ttype);
-	cmp = ATOMcompare(b->ttype);
-	bhseqbase = b->hseqbase;
-	if (ATOMtype(b->ttype) != v->vtype) {
-		GDKerror("inputs have incompatible types\n");
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
-	canditer_init(&ci, b, s);
-	p2 = VALptr(v);
-	if (ci.ncand == 0 ||
-		cmp(p2, nil) == 0 ||
-		(b->ttype == TYPE_void && is_oid_nil(b->tseqbase)))
-		return BATconstantV(ci.hseq, b->ttype, nil, ci.ncand, TRANSIENT);
-
-	bn = COLnew(ci.hseq, ATOMtype(b->ttype), ci.ncand, TRANSIENT);
+	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
+	if (ncand == 0)
+		return bn;
 
-	BATiter bi = bat_iterator(b);
-	switch (ATOMbasetype(bi.type)) {
-	case TYPE_bte:
-		MINMAX_CST_TYPE(bte, <);
-		break;
-	case TYPE_sht:
-		MINMAX_CST_TYPE(sht, <);
-		break;
-	case TYPE_int:
-		MINMAX_CST_TYPE(int, <);
-		break;
-	case TYPE_lng:
-		MINMAX_CST_TYPE(lng, <);
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		MINMAX_CST_TYPE(hge, <);
-		break;
-#endif
-	case TYPE_flt:
-		MINMAX_CST_TYPE(flt, <);
-		break;
-	case TYPE_dbl:
-		MINMAX_CST_TYPE(dbl, <);
-		break;
-	default:
-		if (ATOMvarsized(bi.type)) {
-			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
-				oid x = canditer_next(&ci) - bhseqbase;
-				const void *restrict p1 = BUNtvar(bi, x);
-				if (cmp(p1, nil) == 0) {
-					nils = true;
-					p1 = nil;
-				} else {
-					p1 = cmp(p1, p2) < 0 ? p1 : p2;
-				}
-				if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-					goto bailout;
-				}
-			}
-			TIMEOUT_CHECK(timeoffset,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-		} else {
-			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
-			uint16_t width = bn->twidth;
-			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
-				oid x = canditer_next(&ci) - bhseqbase;
-				const void *restrict p1 = BUNtloc(bi, x);
-				if (cmp(p1, nil) == 0) {
-					nils = true;
-					p1 = nil;
-				} else {
-					p1 = cmp(p1, p2) < 0 ? p1 : p2;
-				}
-				memcpy(bcast, p1, width);
-				bcast += width;
-			}
-			TIMEOUT_CHECK(timeoffset,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-		}
-	}
-	bat_iterator_end(&bi);
-
-	bn->tnil = nils;
-	bn->tnonil = !nils;
-	BATsetcount(bn, ci.ncand);
-	if (ci.ncand <= 1) {
-		bn->tsorted = true;
-		bn->trevsorted = true;
-		bn->tkey = true;
-		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? ci.ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+	if (b->ttype == TYPE_str && v->vtype == TYPE_str && tp == TYPE_str) {
+		nils = addstr_loop(b, NULL, NULL, v->val.sval, bn, &ci, &(struct canditer){.tpe=cand_dense, .ncand=ncand}, rv);
 	} else {
-		bn->tsorted = false;
-		bn->trevsorted = false;
-		bn->tkey = false;
-		bn->tseqbase = oid_nil;
+		nils = add_typeswitchloop(Tloc(b, 0), b->ttype, 1,
+					  VALptr(v), v->vtype, 0,
+					  Tloc(bn, 0), tp,
+					  &ci,
+					  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+					  rv,
+					  b->hseqbase, 0,
+					  abort_on_error, __func__);
 	}
+
+	if (nils == BUN_NONE) {
+		BBPunfix(bn->batCacheid);
+		return NULL;
+	}
+
+	BATsetcount(bn, ncand);
+
+	/* if the input is sorted, and no overflow occurred (we only
+	 * know for sure if abort_on_error is set), the result is also
+	 * sorted */
+	bn->tsorted = (abort_on_error && b->tsorted && nils == 0) ||
+		ncand <= 1 || nils == ncand;
+	bn->trevsorted = (abort_on_error && b->trevsorted && nils == 0) ||
+		ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
-  bailout:
-	bat_iterator_end(&bi);
-	BBPreclaim(bn);
-	return NULL;
 }
 
 BAT *
-BATcalccstmin(const ValRecord *v, BAT *b, BAT *s)
+BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
-	return BATcalcmincst(b, v, s);
+	lng t0 = 0;
+	BAT *bn;
+	BUN nils;
+	BUN ncand;
+	struct canditer ci;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
+
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+
+	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	if (ncand == 0)
+		return bn;
+
+	if (b->ttype == TYPE_str && v->vtype == TYPE_str && tp == TYPE_str) {
+		nils = addstr_loop(NULL, v->val.sval, b, NULL, bn, &(struct canditer){.tpe=cand_dense, .ncand=ncand}, &ci, rv);
+	} else {
+		nils = add_typeswitchloop(VALptr(v), v->vtype, 0,
+					  Tloc(b, 0), b->ttype, 1,
+					  Tloc(bn, 0), tp,
+					  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+					  &ci,
+					  rv,
+					  0, b->hseqbase,
+					  abort_on_error, __func__);
+	}
+
+	if (nils == BUN_NONE) {
+		BBPunfix(bn->batCacheid);
+		return NULL;
+	}
+
+	BATsetcount(bn, ncand);
+
+	/* if the input is sorted, and no overflow occurred (we only
+	 * know for sure if abort_on_error is set), the result is also
+	 * sorted */
+	bn->tsorted = (abort_on_error && b->tsorted && nils == 0) ||
+		ncand <= 1 || nils == ncand;
+	bn->trevsorted = (abort_on_error && b->trevsorted && nils == 0) ||
+		ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
 }
 
-#define MINMAX_NONIL_CST_TYPE(TYPE, OP)					\
-	do {								\
-		TYPE *restrict tb = bi.base, *restrict tbn = Tloc(bn, 0), pp2 = *(TYPE*) p2; \
-		if (is_##TYPE##_nil(pp2)) {				\
-			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) { \
-				oid x = canditer_next(&ci) - bhseqbase; \
-				TYPE p1 = tb[x];			\
-				nils |= is_##TYPE##_nil(p1);		\
-				tbn[i] = p1;				\
+gdk_return
+VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
+	   bool abort_on_error)
+{
+	if (add_typeswitchloop(VALptr(lft), lft->vtype, 0,
+			       VALptr(rgt), rgt->vtype, 0,
+			       VALget(ret), ret->vtype,
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       NULL,
+			       0, 0, abort_on_error, __func__) == BUN_NONE)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+static BAT *
+BATcalcincrdecr(BAT *b, BAT *s, BAT *r, bool abort_on_error,
+		BUN (*typeswitchloop)(const void *, int, int,
+				      const void *, int, int,
+				      void *, int,
+				      struct canditer *restrict,
+				      struct canditer *restrict,
+				      const bit *restrict,
+				      oid, oid, bool, const char *),
+		const char *func)
+{
+	lng t0 = 0;
+	BAT *bn;
+	BUN nils= 0;
+	BUN ncand;
+	struct canditer ci;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
+
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+
+	bn = COLnew(ci.hseq, b->ttype, ncand, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	if (ncand == 0)
+		return bn;
+
+	nils = (*typeswitchloop)(Tloc(b, 0), b->ttype, 1,
+				 &(bte){1}, TYPE_bte, 0,
+				 Tloc(bn, 0), bn->ttype,
+				 &(struct canditer){.tpe=cand_dense, .ncand=1},
+				 &ci,
+				 rv,
+				 0, b->hseqbase,
+				 abort_on_error, func);
+
+	if (nils == BUN_NONE) {
+		BBPunfix(bn->batCacheid);
+		return NULL;
+	}
+
+	BATsetcount(bn, ncand);
+
+	/* if the input is sorted, and no overflow occurred (we only
+	 * know for sure if abort_on_error is set), the result is also
+	 * sorted */
+	bn->tsorted = (abort_on_error && b->tsorted) ||
+		ncand <= 1 || nils == ncand;
+	bn->trevsorted = (abort_on_error && b->trevsorted) ||
+		ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "%s: b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  func, ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
+}
+
+BAT *
+BATcalcincr(BAT *b, BAT *s, BAT *r, bool abort_on_error)
+{
+	return BATcalcincrdecr(b, s, r, abort_on_error, add_typeswitchloop,
+			       __func__);
+}
+
+gdk_return
+VARcalcincr(ValPtr ret, const ValRecord *v, bool abort_on_error)
+{
+	if (add_typeswitchloop(VALptr(v), v->vtype, 0,
+			       &(bte){1}, TYPE_bte, 0,
+			       VALget(ret), ret->vtype,
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       NULL,
+			       0, 0, abort_on_error, __func__) == BUN_NONE)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+/* ---------------------------------------------------------------------- */
+/* subtraction (any numeric type) */
+
+#define SUB_3TYPE(TYPE1, TYPE2, TYPE3, IF)				\
+static BUN								\
+sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *restrict dst, TYPE3 max,		\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				const bit *restrict rv,			\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)			\
+{									\
+	BUN nils = 0;							\
+									\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				SUB##IF##_WITH_CHECK(lft[i], rgt[j],	\
+						     TYPE3, dst[k],	\
+						     max,		\
+						     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
-		} else {						\
-			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) { \
-				oid x = canditer_next(&ci) - bhseqbase; \
-				TYPE p1 = tb[x];			\
-				if (is_##TYPE##_nil(p1)) {		\
-					tbn[i] = pp2;			\
-				} else {				\
-					tbn[i] = p1 OP pp2 ? p1 : pp2;	\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				SUB##IF##_WITH_CHECK(lft[i], rgt[j],	\
+						     TYPE3, dst[k],	\
+						     max,		\
+						     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
+			}						\
+		}							\
+	}								\
+	return nils;							\
+}
+
+#define SUB_3TYPE_enlarge(TYPE1, TYPE2, TYPE3, IF)			\
+static BUN								\
+sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *restrict dst, TYPE3 max,		\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				const bit *restrict rv,			\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)			\
+{									\
+	BUN nils = 0;							\
+	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
+									\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (couldoverflow) {			\
+				SUB##IF##_WITH_CHECK(lft[i], rgt[j],	\
+						     TYPE3, dst[k],	\
+						     max,		\
+						     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
+			} else {					\
+				dst[k] = (TYPE3) lft[i] - rgt[j];	\
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (couldoverflow) {			\
+				SUB##IF##_WITH_CHECK(lft[i], rgt[j],	\
+						     TYPE3, dst[k],	\
+						     max,		\
+						     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
+			} else {					\
+				dst[k] = (TYPE3) lft[i] - rgt[j];	\
+			}						\
+		}							\
+	}								\
+	return nils;							\
+}
+
+SUB_3TYPE(bte, bte, bte, I)
+SUB_3TYPE_enlarge(bte, bte, sht, I)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(bte, bte, int, I)
+SUB_3TYPE_enlarge(bte, bte, lng, I)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(bte, bte, hge, I)
+#endif
+SUB_3TYPE_enlarge(bte, bte, flt, F)
+SUB_3TYPE_enlarge(bte, bte, dbl, F)
+#endif
+SUB_3TYPE(bte, sht, sht, I)
+SUB_3TYPE_enlarge(bte, sht, int, I)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(bte, sht, lng, I)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(bte, sht, hge, I)
+#endif
+SUB_3TYPE_enlarge(bte, sht, flt, F)
+SUB_3TYPE_enlarge(bte, sht, dbl, F)
+#endif
+SUB_3TYPE(bte, int, int, I)
+SUB_3TYPE_enlarge(bte, int, lng, I)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(bte, int, hge, I)
+#endif
+SUB_3TYPE_enlarge(bte, int, flt, F)
+SUB_3TYPE_enlarge(bte, int, dbl, F)
+#endif
+SUB_3TYPE(bte, lng, lng, I)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(bte, lng, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(bte, lng, flt, F)
+SUB_3TYPE_enlarge(bte, lng, dbl, F)
+#endif
+#ifdef HAVE_HGE
+SUB_3TYPE(bte, hge, hge, I)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(bte, hge, flt, F)
+SUB_3TYPE_enlarge(bte, hge, dbl, F)
+#endif
+#endif
+SUB_3TYPE(bte, flt, flt, F)
+SUB_3TYPE_enlarge(bte, flt, dbl, F)
+SUB_3TYPE(bte, dbl, dbl, F)
+SUB_3TYPE(sht, bte, sht, I)
+SUB_3TYPE_enlarge(sht, bte, int, I)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(sht, bte, lng, I)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(sht, bte, hge, I)
+#endif
+SUB_3TYPE_enlarge(sht, bte, flt, F)
+SUB_3TYPE_enlarge(sht, bte, dbl, F)
+#endif
+SUB_3TYPE(sht, sht, sht, I)
+SUB_3TYPE_enlarge(sht, sht, int, I)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(sht, sht, lng, I)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(sht, sht, hge, I)
+#endif
+SUB_3TYPE_enlarge(sht, sht, flt, F)
+SUB_3TYPE_enlarge(sht, sht, dbl, F)
+#endif
+SUB_3TYPE(sht, int, int, I)
+SUB_3TYPE_enlarge(sht, int, lng, I)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(sht, int, hge, I)
+#endif
+SUB_3TYPE_enlarge(sht, int, flt, F)
+SUB_3TYPE_enlarge(sht, int, dbl, F)
+#endif
+SUB_3TYPE(sht, lng, lng, I)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(sht, lng, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(sht, lng, flt, F)
+SUB_3TYPE_enlarge(sht, lng, dbl, F)
+#endif
+#ifdef HAVE_HGE
+SUB_3TYPE(sht, hge, hge, I)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(sht, hge, flt, F)
+SUB_3TYPE_enlarge(sht, hge, dbl, F)
+#endif
+#endif
+SUB_3TYPE(sht, flt, flt, F)
+SUB_3TYPE_enlarge(sht, flt, dbl, F)
+SUB_3TYPE(sht, dbl, dbl, F)
+SUB_3TYPE(int, bte, int, I)
+SUB_3TYPE_enlarge(int, bte, lng, I)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(int, bte, hge, I)
+#endif
+SUB_3TYPE_enlarge(int, bte, flt, F)
+SUB_3TYPE_enlarge(int, bte, dbl, F)
+#endif
+SUB_3TYPE(int, sht, int, I)
+SUB_3TYPE_enlarge(int, sht, lng, I)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(int, sht, hge, I)
+#endif
+SUB_3TYPE_enlarge(int, sht, flt, F)
+SUB_3TYPE_enlarge(int, sht, dbl, F)
+#endif
+SUB_3TYPE(int, int, int, I)
+SUB_3TYPE_enlarge(int, int, lng, I)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(int, int, hge, I)
+#endif
+SUB_3TYPE_enlarge(int, int, flt, F)
+SUB_3TYPE_enlarge(int, int, dbl, F)
+#endif
+SUB_3TYPE(int, lng, lng, I)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(int, lng, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(int, lng, flt, F)
+SUB_3TYPE_enlarge(int, lng, dbl, F)
+#endif
+#ifdef HAVE_HGE
+SUB_3TYPE(int, hge, hge, I)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(int, hge, flt, F)
+SUB_3TYPE_enlarge(int, hge, dbl, F)
+#endif
+#endif
+SUB_3TYPE(int, flt, flt, F)
+SUB_3TYPE_enlarge(int, flt, dbl, F)
+SUB_3TYPE(int, dbl, dbl, F)
+SUB_3TYPE(lng, bte, lng, I)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(lng, bte, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(lng, bte, flt, F)
+SUB_3TYPE_enlarge(lng, bte, dbl, F)
+#endif
+SUB_3TYPE(lng, sht, lng, I)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(lng, sht, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(lng, sht, flt, F)
+SUB_3TYPE_enlarge(lng, sht, dbl, F)
+#endif
+SUB_3TYPE(lng, int, lng, I)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(lng, int, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(lng, int, flt, F)
+SUB_3TYPE_enlarge(lng, int, dbl, F)
+#endif
+SUB_3TYPE(lng, lng, lng, I)
+#ifdef HAVE_HGE
+SUB_3TYPE_enlarge(lng, lng, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(lng, lng, flt, F)
+SUB_3TYPE_enlarge(lng, lng, dbl, F)
+#endif
+#ifdef HAVE_HGE
+SUB_3TYPE(lng, hge, hge, I)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(lng, hge, flt, F)
+SUB_3TYPE_enlarge(lng, hge, dbl, F)
+#endif
+#endif
+SUB_3TYPE(lng, flt, flt, F)
+SUB_3TYPE_enlarge(lng, flt, dbl, F)
+SUB_3TYPE(lng, dbl, dbl, F)
+#ifdef HAVE_HGE
+SUB_3TYPE(hge, bte, hge, I)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(hge, bte, flt, F)
+SUB_3TYPE_enlarge(hge, bte, dbl, F)
+#endif
+SUB_3TYPE(hge, sht, hge, I)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(hge, sht, flt, F)
+SUB_3TYPE_enlarge(hge, sht, dbl, F)
+#endif
+SUB_3TYPE(hge, int, hge, I)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(hge, int, flt, F)
+SUB_3TYPE_enlarge(hge, int, dbl, F)
+#endif
+SUB_3TYPE(hge, lng, hge, I)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(hge, lng, flt, F)
+SUB_3TYPE_enlarge(hge, lng, dbl, F)
+#endif
+SUB_3TYPE(hge, hge, hge, I)
+#ifdef FULL_IMPLEMENTATION
+SUB_3TYPE_enlarge(hge, hge, flt, F)
+SUB_3TYPE_enlarge(hge, hge, dbl, F)
+#endif
+SUB_3TYPE(hge, flt, flt, F)
+SUB_3TYPE_enlarge(hge, flt, dbl, F)
+SUB_3TYPE(hge, dbl, dbl, F)
+#endif
+SUB_3TYPE(flt, bte, flt, F)
+SUB_3TYPE_enlarge(flt, bte, dbl, F)
+SUB_3TYPE(flt, sht, flt, F)
+SUB_3TYPE_enlarge(flt, sht, dbl, F)
+SUB_3TYPE(flt, int, flt, F)
+SUB_3TYPE_enlarge(flt, int, dbl, F)
+SUB_3TYPE(flt, lng, flt, F)
+SUB_3TYPE_enlarge(flt, lng, dbl, F)
+#ifdef HAVE_HGE
+SUB_3TYPE(flt, hge, flt, F)
+SUB_3TYPE_enlarge(flt, hge, dbl, F)
+#endif
+SUB_3TYPE(flt, flt, flt, F)
+SUB_3TYPE_enlarge(flt, flt, dbl, F)
+SUB_3TYPE(flt, dbl, dbl, F)
+SUB_3TYPE(dbl, bte, dbl, F)
+SUB_3TYPE(dbl, sht, dbl, F)
+SUB_3TYPE(dbl, int, dbl, F)
+SUB_3TYPE(dbl, lng, dbl, F)
+#ifdef HAVE_HGE
+SUB_3TYPE(dbl, hge, dbl, F)
+#endif
+SUB_3TYPE(dbl, flt, dbl, F)
+SUB_3TYPE(dbl, dbl, dbl, F)
+
+static BUN
+sub_typeswitchloop(const void *lft, int tp1, int incr1,
+		   const void *rgt, int tp2, int incr2,
+		   void *restrict dst, int tp,
+		   struct canditer *restrict ci1, struct canditer *restrict ci2,
+		   const bit *restrict rv,
+		   oid candoff1, oid candoff2,
+		   bool abort_on_error, const char *func)
+{
+	BUN nils;
+
+	tp1 = ATOMbasetype(tp1);
+	tp2 = ATOMbasetype(tp2);
+	tp = ATOMbasetype(tp);
+	switch (tp1) {
+	case TYPE_bte:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_bte:
+				nils = sub_bte_bte_bte(lft, incr1, rgt, incr2,
+						       dst, GDK_bte_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_sht:
+				nils = sub_bte_bte_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_int:
+				nils = sub_bte_bte_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = sub_bte_bte_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_bte_bte_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = sub_bte_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_bte_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_sht:
+				nils = sub_bte_sht_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = sub_bte_sht_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = sub_bte_sht_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_bte_sht_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = sub_bte_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_bte_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_int:
+				nils = sub_bte_int_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = sub_bte_int_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_bte_int_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = sub_bte_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_bte_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_lng:
+				nils = sub_bte_lng_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_bte_lng_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_bte_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_bte_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = sub_bte_hge_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_bte_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_bte_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = sub_bte_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_bte_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = sub_bte_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_sht:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_sht:
+				nils = sub_sht_bte_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = sub_sht_bte_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = sub_sht_bte_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_sht_bte_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = sub_sht_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_sht_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_sht:
+				nils = sub_sht_sht_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = sub_sht_sht_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = sub_sht_sht_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_sht_sht_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = sub_sht_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_sht_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_int:
+				nils = sub_sht_int_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = sub_sht_int_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_sht_int_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = sub_sht_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_sht_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_lng:
+				nils = sub_sht_lng_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_sht_lng_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_sht_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_sht_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = sub_sht_hge_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_sht_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_sht_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = sub_sht_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_sht_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = sub_sht_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_int:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_int:
+				nils = sub_int_bte_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = sub_int_bte_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_int_bte_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = sub_int_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_int_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_int:
+				nils = sub_int_sht_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = sub_int_sht_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_int_sht_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = sub_int_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_int_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_int:
+				nils = sub_int_int_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = sub_int_int_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_int_int_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = sub_int_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_int_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_lng:
+				nils = sub_int_lng_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_int_lng_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_int_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_int_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = sub_int_hge_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_int_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_int_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = sub_int_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_int_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = sub_int_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_lng:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_lng:
+				nils = sub_lng_bte_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_lng_bte_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_lng_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_lng_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_lng:
+				nils = sub_lng_sht_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_lng_sht_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_lng_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_lng_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_lng:
+				nils = sub_lng_int_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_lng_int_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_lng_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_lng_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_lng:
+				nils = sub_lng_lng_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = sub_lng_lng_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_lng_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_lng_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = sub_lng_hge_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_lng_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_lng_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = sub_lng_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_lng_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = sub_lng_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_hge:
+				nils = sub_hge_bte_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_hge_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_hge_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_hge:
+				nils = sub_hge_sht_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_hge_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_hge_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_hge:
+				nils = sub_hge_int_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_hge_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_hge_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_hge:
+				nils = sub_hge_lng_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_hge_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_hge_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = sub_hge_hge_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = sub_hge_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_hge_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = sub_hge_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_hge_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = sub_hge_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+#endif
+	case TYPE_flt:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_flt:
+				nils = sub_flt_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_flt_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_flt:
+				nils = sub_flt_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_flt_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_flt:
+				nils = sub_flt_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_flt_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_flt:
+				nils = sub_flt_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_flt_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_flt:
+				nils = sub_flt_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_flt_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = sub_flt_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = sub_flt_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = sub_flt_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_dbl:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = sub_dbl_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = sub_dbl_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = sub_dbl_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = sub_dbl_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = sub_dbl_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = sub_dbl_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = sub_dbl_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	default:
+		goto unsupported;
+	}
+
+	return nils;
+
+  unsupported:
+	GDKerror("%s: type combination (sub(%s,%s)->%s) not supported.\n",
+		 func, ATOMname(tp1), ATOMname(tp2), ATOMname(tp));
+	return BUN_NONE;
+}
+
+BAT *
+BATcalcsub(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_error)
+{
+	lng t0 = 0;
+	BAT *bn;
+	BUN nils;
+	BUN ncand;
+	struct canditer ci1, ci2;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
+
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
+		GDKerror("inputs not the same size.\n");
+		return NULL;
+	}
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+
+	bn = COLnew(ci1.hseq, tp, ncand, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	if (ncand == 0)
+		return bn;
+
+	nils = sub_typeswitchloop(Tloc(b1, 0), b1->ttype, 1,
+				  Tloc(b2, 0), b2->ttype, 1,
+				  Tloc(bn, 0), tp,
+				  &ci1, &ci2, rv,
+				  b1->hseqbase, b2->hseqbase,
+				  abort_on_error, __func__);
+
+	if (nils == BUN_NONE) {
+		BBPunfix(bn->batCacheid);
+		return NULL;
+	}
+
+	BATsetcount(bn, ncand);
+
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
+		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
+}
+
+BAT *
+BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_error)
+{
+	lng t0 = 0;
+	BAT *bn;
+	BUN nils;
+	BUN ncand;
+	struct canditer ci;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
+
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+
+	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	if (ncand == 0)
+		return bn;
+
+	nils = sub_typeswitchloop(Tloc(b, 0), b->ttype, 1,
+				  VALptr(v), v->vtype, 0,
+				  Tloc(bn, 0), tp,
+				  &ci,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  rv,
+				  b->hseqbase, 0,
+				  abort_on_error, __func__);
+
+	if (nils == BUN_NONE) {
+		BBPunfix(bn->batCacheid);
+		return NULL;
+	}
+
+	BATsetcount(bn, ncand);
+
+	/* if the input is sorted, and no overflow occurred (we only
+	 * know for sure if abort_on_error is set), the result is also
+	 * sorted */
+	bn->tsorted = (abort_on_error && b->tsorted && nils == 0) ||
+		ncand <= 1 || nils == ncand;
+	bn->trevsorted = (abort_on_error && b->trevsorted && nils == 0) ||
+		ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
+}
+
+BAT *
+BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
+{
+	lng t0 = 0;
+	BAT *bn;
+	BUN nils;
+	BUN ncand;
+	struct canditer ci;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
+
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+
+	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	if (ncand == 0)
+		return bn;
+
+	nils = sub_typeswitchloop(VALptr(v), v->vtype, 0,
+				  Tloc(b, 0), b->ttype, 1,
+				  Tloc(bn, 0), tp,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  &ci,
+				  rv,
+				  0, b->hseqbase,
+				  abort_on_error, __func__);
+
+	if (nils == BUN_NONE) {
+		BBPunfix(bn->batCacheid);
+		return NULL;
+	}
+
+	BATsetcount(bn, ncand);
+
+	/* if the input is sorted, and no overflow occurred (we only
+	 * know for sure if abort_on_error is set), the result is
+	 * sorted in the opposite direction (except that NILs mess
+	 * things up */
+	bn->tsorted = (abort_on_error && nils == 0 && b->trevsorted) ||
+		ncand <= 1 || nils == ncand;
+	bn->trevsorted = (abort_on_error && nils == 0 && b->tsorted) ||
+		ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
+}
+
+gdk_return
+VARcalcsub(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
+	   bool abort_on_error)
+{
+	if (sub_typeswitchloop(VALptr(lft), lft->vtype, 0,
+			       VALptr(rgt), rgt->vtype, 0,
+			       VALget(ret), ret->vtype,
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       NULL,
+			       0, 0, abort_on_error, __func__) == BUN_NONE)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+BAT *
+BATcalcdecr(BAT *b, BAT *s, BAT *r, bool abort_on_error)
+{
+	return BATcalcincrdecr(b, s, r, abort_on_error, sub_typeswitchloop,
+			       __func__);
+}
+
+gdk_return
+VARcalcdecr(ValPtr ret, const ValRecord *v, bool abort_on_error)
+{
+	if (sub_typeswitchloop(VALptr(v), v->vtype, 0,
+			       &(bte){1}, TYPE_bte, 0,
+			       VALget(ret), ret->vtype,
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       NULL,
+			       0, 0, abort_on_error, __func__) == BUN_NONE)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+/* ---------------------------------------------------------------------- */
+/* multiplication (any numeric type) */
+
+/* TYPE4 must be a type larger than both TYPE1 and TYPE2 so that
+ * multiplying into it doesn't cause overflow */
+#define MUL_4TYPE(TYPE1, TYPE2, TYPE3, TYPE4, IF)			\
+static BUN								\
+mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *restrict dst, TYPE3 max,		\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				const bit *restrict rv,			\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)			\
+{									\
+	BUN nils = 0;							\
+									\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				MUL##IF##4_WITH_CHECK(lft[i], rgt[j],	\
+						      TYPE3, dst[k],	\
+						      max,		\
+						      TYPE4,		\
+						      ON_OVERFLOW(TYPE1, TYPE2, "*")); \
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				MUL##IF##4_WITH_CHECK(lft[i], rgt[j],	\
+						      TYPE3, dst[k],	\
+						      max,		\
+						      TYPE4,		\
+						      ON_OVERFLOW(TYPE1, TYPE2, "*")); \
+			}						\
+		}							\
+	}								\
+	return nils;							\
+}
+
+#define MUL_3TYPE_enlarge(TYPE1, TYPE2, TYPE3, IF)			\
+static BUN								\
+mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *restrict dst, TYPE3 max,		\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				const bit *restrict rv,			\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)			\
+{									\
+	BUN nils = 0;							\
+	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max * (TYPE3) GDK_##TYPE2##_max); \
+									\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (couldoverflow) {			\
+				MUL##IF##4_WITH_CHECK(lft[i], rgt[j],	\
+						      TYPE3, dst[k],	\
+						      max,		\
+						      TYPE3,		\
+						      ON_OVERFLOW(TYPE1, TYPE2, "*")); \
+			} else {					\
+				dst[k] = (TYPE3) lft[i] * rgt[j];	\
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (couldoverflow) {			\
+				MUL##IF##4_WITH_CHECK(lft[i], rgt[j],	\
+						      TYPE3, dst[k],	\
+						      max,		\
+						      TYPE3,		\
+						      ON_OVERFLOW(TYPE1, TYPE2, "*")); \
+			} else {					\
+				dst[k] = (TYPE3) lft[i] * rgt[j];	\
+			}						\
+		}							\
+	}								\
+	return nils;							\
+}
+
+#ifdef HAVE_HGE
+
+#define MUL_2TYPE_lng(TYPE1, TYPE2)	MUL_4TYPE(TYPE1, TYPE2, lng, hge, I)
+
+#define MUL_2TYPE_hge(TYPE1, TYPE2)					\
+static BUN								\
+mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, int incr1,		\
+			    const TYPE2 *rgt, int incr2,		\
+			    hge *restrict dst, hge max,			\
+			    struct canditer *restrict ci1,		\
+			    struct canditer *restrict ci2,		\
+			    const bit *restrict rv,			\
+			    oid candoff1, oid candoff2,			\
+			    bool abort_on_error)			\
+{									\
+	BUN nils = 0;							\
+									\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = hge_nil;			\
+				nils++;					\
+			} else {					\
+				HGEMUL_CHECK(lft[i], rgt[j],		\
+					     dst[k],			\
+					     max,			\
+					     ON_OVERFLOW(TYPE1, TYPE2, "*")); \
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = hge_nil;			\
+				nils++;					\
+			} else {					\
+				HGEMUL_CHECK(lft[i], rgt[j],		\
+					     dst[k],			\
+					     max,			\
+					     ON_OVERFLOW(TYPE1, TYPE2, "*")); \
+			}						\
+		}							\
+	}								\
+	return nils;							\
+}
+
+#else
+
+#define MUL_2TYPE_lng(TYPE1, TYPE2)					\
+static BUN								\
+mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
+			    const TYPE2 *rgt, int incr2,		\
+			    lng *restrict dst, lng max,			\
+			    struct canditer *restrict ci1,		\
+			    struct canditer *restrict ci2,		\
+			    const bit *restrict rv,			\
+			    oid candoff1, oid candoff2,			\
+			    bool abort_on_error)			\
+{									\
+	BUN nils = 0;							\
+									\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = lng_nil;			\
+				nils++;					\
+			} else {					\
+				LNGMUL_CHECK(lft[i], rgt[j],		\
+					     dst[k],			\
+					     max,			\
+					     ON_OVERFLOW(TYPE1, TYPE2, "*")); \
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = lng_nil;			\
+				nils++;					\
+			} else {					\
+				LNGMUL_CHECK(lft[i], rgt[j],		\
+					     dst[k],			\
+					     max,			\
+					     ON_OVERFLOW(TYPE1, TYPE2, "*")); \
+			}						\
+		}							\
+	}								\
+	return nils;							\
+}
+
+#endif
+
+#define MUL_2TYPE_float(TYPE1, TYPE2, TYPE3)				\
+static BUN								\
+mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *restrict dst, TYPE3 max,		\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				const bit *restrict rv,			\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)			\
+{									\
+	BUN nils = 0;							\
+									\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				/* only check for overflow, not for underflow */ \
+				dst[k] = (TYPE3) (lft[i] * rgt[j]);	\
+				if (isinf(dst[k]) || ABSOLUTE(dst[k]) > max) { \
+					if (abort_on_error)		\
+						ON_OVERFLOW(TYPE1, TYPE2, "*");	\
+					dst[k] = TYPE3##_nil;		\
+					nils++;				\
 				}					\
 			}						\
-			TIMEOUT_CHECK(timeoffset,			\
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 		}							\
-	} while (0)
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				/* only check for overflow, not for underflow */ \
+				dst[k] = (TYPE3) (lft[i] * rgt[j]);	\
+				if (isinf(dst[k]) || ABSOLUTE(dst[k]) > max) { \
+					if (abort_on_error)		\
+						ON_OVERFLOW(TYPE1, TYPE2, "*");	\
+					dst[k] = TYPE3##_nil;		\
+					nils++;				\
+				}					\
+			}						\
+		}							\
+	}								\
+	return nils;							\
+}
 
-BAT *
-BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
+MUL_4TYPE(bte, bte, bte, sht, I)
+MUL_3TYPE_enlarge(bte, bte, sht, I)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(bte, bte, int, I)
+MUL_3TYPE_enlarge(bte, bte, lng, I)
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(bte, bte, hge, I)
+#endif
+MUL_3TYPE_enlarge(bte, bte, flt, F)
+MUL_3TYPE_enlarge(bte, bte, dbl, F)
+#endif
+MUL_4TYPE(bte, sht, sht, int, I)
+MUL_3TYPE_enlarge(bte, sht, int, I)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(bte, sht, lng, I)
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(bte, sht, hge, I)
+#endif
+MUL_3TYPE_enlarge(bte, sht, flt, F)
+MUL_3TYPE_enlarge(bte, sht, dbl, F)
+#endif
+MUL_4TYPE(bte, int, int, lng, I)
+MUL_3TYPE_enlarge(bte, int, lng, I)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(bte, int, hge, I)
+#endif
+MUL_3TYPE_enlarge(bte, int, flt, F)
+MUL_3TYPE_enlarge(bte, int, dbl, F)
+#endif
+MUL_2TYPE_lng(bte, lng)
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(bte, lng, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(bte, lng, flt, F)
+MUL_3TYPE_enlarge(bte, lng, dbl, F)
+#endif
+#ifdef HAVE_HGE
+MUL_2TYPE_hge(bte, hge)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(bte, hge, flt, F)
+MUL_3TYPE_enlarge(bte, hge, dbl, F)
+#endif
+#endif
+MUL_2TYPE_float(bte, flt, flt)
+MUL_3TYPE_enlarge(bte, flt, dbl, F)
+MUL_2TYPE_float(bte, dbl, dbl)
+MUL_4TYPE(sht, bte, sht, int, I)
+MUL_3TYPE_enlarge(sht, bte, int, I)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(sht, bte, lng, I)
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(sht, bte, hge, I)
+#endif
+MUL_3TYPE_enlarge(sht, bte, flt, F)
+MUL_3TYPE_enlarge(sht, bte, dbl, F)
+#endif
+MUL_4TYPE(sht, sht, sht, int, I)
+MUL_3TYPE_enlarge(sht, sht, int, I)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(sht, sht, lng, I)
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(sht, sht, hge, I)
+#endif
+MUL_3TYPE_enlarge(sht, sht, flt, F)
+MUL_3TYPE_enlarge(sht, sht, dbl, F)
+#endif
+MUL_4TYPE(sht, int, int, lng, I)
+MUL_3TYPE_enlarge(sht, int, lng, I)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(sht, int, hge, I)
+#endif
+MUL_3TYPE_enlarge(sht, int, flt, F)
+MUL_3TYPE_enlarge(sht, int, dbl, F)
+#endif
+MUL_2TYPE_lng(sht, lng)
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(sht, lng, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(sht, lng, flt, F)
+MUL_3TYPE_enlarge(sht, lng, dbl, F)
+#endif
+#ifdef HAVE_HGE
+MUL_2TYPE_hge(sht, hge)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(sht, hge, flt, F)
+MUL_3TYPE_enlarge(sht, hge, dbl, F)
+#endif
+#endif
+MUL_2TYPE_float(sht, flt, flt)
+MUL_3TYPE_enlarge(sht, flt, dbl, F)
+MUL_2TYPE_float(sht, dbl, dbl)
+MUL_4TYPE(int, bte, int, lng, I)
+MUL_3TYPE_enlarge(int, bte, lng, I)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(int, bte, hge, I)
+#endif
+MUL_3TYPE_enlarge(int, bte, flt, F)
+MUL_3TYPE_enlarge(int, bte, dbl, F)
+#endif
+MUL_4TYPE(int, sht, int, lng, I)
+MUL_3TYPE_enlarge(int, sht, lng, I)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(int, sht, hge, I)
+#endif
+MUL_3TYPE_enlarge(int, sht, flt, F)
+MUL_3TYPE_enlarge(int, sht, dbl, F)
+#endif
+MUL_4TYPE(int, int, int, lng, I)
+MUL_3TYPE_enlarge(int, int, lng, I)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(int, int, hge, I)
+#endif
+MUL_3TYPE_enlarge(int, int, flt, F)
+MUL_3TYPE_enlarge(int, int, dbl, F)
+#endif
+MUL_2TYPE_lng(int, lng)
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(int, lng, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(int, lng, flt, F)
+MUL_3TYPE_enlarge(int, lng, dbl, F)
+#endif
+#ifdef HAVE_HGE
+MUL_2TYPE_hge(int, hge)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(int, hge, flt, F)
+MUL_3TYPE_enlarge(int, hge, dbl, F)
+#endif
+#endif
+MUL_2TYPE_float(int, flt, flt)
+MUL_3TYPE_enlarge(int, flt, dbl, F)
+MUL_2TYPE_float(int, dbl, dbl)
+MUL_2TYPE_lng(lng, bte)
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(lng, bte, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(lng, bte, flt, F)
+MUL_3TYPE_enlarge(lng, bte, dbl, F)
+#endif
+MUL_2TYPE_lng(lng, sht)
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(lng, sht, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(lng, sht, flt, F)
+MUL_3TYPE_enlarge(lng, sht, dbl, F)
+#endif
+MUL_2TYPE_lng(lng, int)
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(lng, int, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(lng, int, flt, F)
+MUL_3TYPE_enlarge(lng, int, dbl, F)
+#endif
+MUL_2TYPE_lng(lng, lng)
+#ifdef HAVE_HGE
+MUL_3TYPE_enlarge(lng, lng, hge, I)
+#endif
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(lng, lng, flt, F)
+MUL_3TYPE_enlarge(lng, lng, dbl, F)
+#endif
+#ifdef HAVE_HGE
+MUL_2TYPE_hge(lng, hge)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(lng, hge, flt, F)
+MUL_3TYPE_enlarge(lng, hge, dbl, F)
+#endif
+#endif
+MUL_2TYPE_float(lng, flt, flt)
+MUL_3TYPE_enlarge(lng, flt, dbl, F)
+MUL_2TYPE_float(lng, dbl, dbl)
+#ifdef HAVE_HGE
+MUL_2TYPE_hge(hge, bte)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(hge, bte, flt, F)
+MUL_3TYPE_enlarge(hge, bte, dbl, F)
+#endif
+MUL_2TYPE_hge(hge, sht)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(hge, sht, flt, F)
+MUL_3TYPE_enlarge(hge, sht, dbl, F)
+#endif
+MUL_2TYPE_hge(hge, int)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(hge, int, flt, F)
+MUL_3TYPE_enlarge(hge, int, dbl, F)
+#endif
+MUL_2TYPE_hge(hge, lng)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(hge, lng, flt, F)
+MUL_3TYPE_enlarge(hge, lng, dbl, F)
+#endif
+MUL_2TYPE_hge(hge, hge)
+#ifdef FULL_IMPLEMENTATION
+MUL_3TYPE_enlarge(hge, hge, flt, F)
+MUL_3TYPE_enlarge(hge, hge, dbl, F)
+#endif
+MUL_2TYPE_float(hge, flt, flt)
+MUL_3TYPE_enlarge(hge, flt, dbl, F)
+MUL_2TYPE_float(hge, dbl, dbl)
+#endif
+MUL_2TYPE_float(flt, bte, flt)
+MUL_3TYPE_enlarge(flt, bte, dbl, F)
+MUL_2TYPE_float(flt, sht, flt)
+MUL_3TYPE_enlarge(flt, sht, dbl, F)
+MUL_2TYPE_float(flt, int, flt)
+MUL_3TYPE_enlarge(flt, int, dbl, F)
+MUL_2TYPE_float(flt, lng, flt)
+MUL_3TYPE_enlarge(flt, lng, dbl, F)
+#ifdef HAVE_HGE
+MUL_2TYPE_float(flt, hge, flt)
+MUL_3TYPE_enlarge(flt, hge, dbl, F)
+#endif
+MUL_2TYPE_float(flt, flt, flt)
+MUL_3TYPE_enlarge(flt, flt, dbl, F)
+MUL_2TYPE_float(flt, dbl, dbl)
+MUL_2TYPE_float(dbl, bte, dbl)
+MUL_2TYPE_float(dbl, sht, dbl)
+MUL_2TYPE_float(dbl, int, dbl)
+MUL_2TYPE_float(dbl, lng, dbl)
+#ifdef HAVE_HGE
+MUL_2TYPE_float(dbl, hge, dbl)
+#endif
+MUL_2TYPE_float(dbl, flt, dbl)
+MUL_2TYPE_float(dbl, dbl, dbl)
+
+static BUN
+mul_typeswitchloop(const void *lft, int tp1, int incr1,
+		   const void *rgt, int tp2, int incr2,
+		   void *restrict dst, int tp,
+		   struct canditer *restrict ci1,
+		   struct canditer *restrict ci2,
+		   const bit *restrict rv,
+		   oid candoff1, oid candoff2,
+		   bool abort_on_error, const char *func)
 {
-	lng t0 = 0;
-	BAT *bn;
-	bool nils = false;
-	struct canditer ci;
-	const void *p2;
-	const void *restrict nil;
-	int (*cmp)(const void *, const void *);
-	oid bhseqbase;
+	BUN nils;
 
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
-
-	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
-
-	BATcheck(b, NULL);
-
-	nil = ATOMnilptr(b->ttype);
-	cmp = ATOMcompare(b->ttype);
-	bhseqbase = b->hseqbase;
-	if (ATOMtype(b->ttype) != v->vtype) {
-		GDKerror("inputs have incompatible types\n");
-		return NULL;
-	}
-
-	canditer_init(&ci, b, s);
-	if (ci.ncand == 0)
-		return BATconstantV(ci.hseq, b->ttype, nil, ci.ncand, TRANSIENT);
-
-	p2 = VALptr(v);
-	if (b->ttype == TYPE_void &&
-		is_oid_nil(b->tseqbase) &&
-		is_oid_nil(* (const oid *) p2))
-		return BATconstant(ci.hseq, TYPE_void, &oid_nil, ci.ncand, TRANSIENT);
-
-	bn = COLnew(ci.hseq, ATOMtype(b->ttype), ci.ncand, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-
-	BATiter bi = bat_iterator(b);
-	switch (ATOMbasetype(bi.type)) {
+	tp1 = ATOMbasetype(tp1);
+	tp2 = ATOMbasetype(tp2);
+	tp = ATOMbasetype(tp);
+	switch (tp1) {
 	case TYPE_bte:
-		MINMAX_NONIL_CST_TYPE(bte, <);
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_bte:
+				nils = mul_bte_bte_bte(lft, incr1, rgt, incr2,
+						       dst, GDK_bte_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_sht:
+				nils = mul_bte_bte_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_int:
+				nils = mul_bte_bte_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mul_bte_bte_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_bte_bte_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = mul_bte_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_bte_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_sht:
+				nils = mul_bte_sht_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = mul_bte_sht_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = mul_bte_sht_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_bte_sht_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = mul_bte_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_bte_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_int:
+				nils = mul_bte_int_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mul_bte_int_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_bte_int_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = mul_bte_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_bte_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_lng:
+				nils = mul_bte_lng_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_bte_lng_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_bte_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_bte_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = mul_bte_hge_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_bte_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_bte_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mul_bte_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_bte_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mul_bte_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
 		break;
 	case TYPE_sht:
-		MINMAX_NONIL_CST_TYPE(sht, <);
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_sht:
+				nils = mul_sht_bte_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = mul_sht_bte_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = mul_sht_bte_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_sht_bte_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = mul_sht_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_sht_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_sht:
+				nils = mul_sht_sht_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = mul_sht_sht_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = mul_sht_sht_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_sht_sht_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = mul_sht_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_sht_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_int:
+				nils = mul_sht_int_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mul_sht_int_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_sht_int_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = mul_sht_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_sht_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_lng:
+				nils = mul_sht_lng_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_sht_lng_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_sht_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_sht_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = mul_sht_hge_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_sht_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_sht_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mul_sht_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_sht_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mul_sht_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
 		break;
 	case TYPE_int:
-		MINMAX_NONIL_CST_TYPE(int, <);
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_int:
+				nils = mul_int_bte_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mul_int_bte_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_int_bte_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = mul_int_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_int_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_int:
+				nils = mul_int_sht_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mul_int_sht_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_int_sht_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = mul_int_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_int_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_int:
+				nils = mul_int_int_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mul_int_int_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_int_int_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = mul_int_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_int_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_lng:
+				nils = mul_int_lng_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_int_lng_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_int_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_int_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = mul_int_hge_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_int_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_int_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mul_int_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_int_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mul_int_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
 		break;
 	case TYPE_lng:
-		MINMAX_NONIL_CST_TYPE(lng, <);
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_lng:
+				nils = mul_lng_bte_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_lng_bte_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_lng_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_lng_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_lng:
+				nils = mul_lng_sht_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_lng_sht_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_lng_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_lng_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_lng:
+				nils = mul_lng_int_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_lng_int_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_lng_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_lng_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_lng:
+				nils = mul_lng_lng_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mul_lng_lng_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_lng_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_lng_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = mul_lng_hge_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_lng_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_lng_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mul_lng_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_lng_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mul_lng_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		MINMAX_NONIL_CST_TYPE(hge, <);
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_hge:
+				nils = mul_hge_bte_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_hge_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_hge_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_hge:
+				nils = mul_hge_sht_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_hge_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_hge_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_hge:
+				nils = mul_hge_int_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_hge_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_hge_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_hge:
+				nils = mul_hge_lng_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_hge_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_hge_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = mul_hge_hge_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_flt:
+				nils = mul_hge_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_hge_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mul_hge_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_hge_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mul_hge_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
 		break;
 #endif
 	case TYPE_flt:
-		MINMAX_NONIL_CST_TYPE(flt, <);
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mul_flt_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_flt_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mul_flt_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_flt_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mul_flt_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_flt_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mul_flt_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_flt_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mul_flt_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_flt_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mul_flt_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = mul_flt_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mul_flt_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
 		break;
 	case TYPE_dbl:
-		MINMAX_NONIL_CST_TYPE(dbl, <);
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mul_dbl_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mul_dbl_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mul_dbl_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mul_dbl_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mul_dbl_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mul_dbl_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mul_dbl_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
 		break;
 	default:
-		if (ATOMvarsized(bi.type)) {
-			if (cmp(p2, nil) == 0) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
-					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtvar(bi, x);
-					nils |= cmp(p1, nil) == 0;
-					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bailout;
-					}
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
-					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtvar(bi, x);
-					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
-					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bailout;
-					}
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			}
-		} else {
-			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
-			uint16_t width = bn->twidth;
-			if (cmp(p2, nil) == 0) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
-					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtloc(bi, x);
-					nils |= cmp(p1, nil) == 0;
-					memcpy(bcast, p1, width);
-					bcast += width;
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
-					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtloc(bi, x);
-					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
-					memcpy(bcast, p1, width);
-					bcast += width;
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			}
-		}
-	}
-	bat_iterator_end(&bi);
-
-	bn->tnil = nils;
-	bn->tnonil = !nils;
-	BATsetcount(bn, ci.ncand);
-	if (ci.ncand <= 1) {
-		bn->tsorted = true;
-		bn->trevsorted = true;
-		bn->tkey = true;
-		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? ci.ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
-	} else {
-		bn->tsorted = false;
-		bn->trevsorted = false;
-		bn->tkey = false;
-		bn->tseqbase = oid_nil;
+		goto unsupported;
 	}
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
-		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+	return nils;
 
-	return bn;
-  bailout:
-	bat_iterator_end(&bi);
-	BBPreclaim(bn);
-	return NULL;
+  unsupported:
+	GDKerror("%s: type combination mul(%s,%s)->%s) not supported.\n",
+		 func, ATOMname(tp1), ATOMname(tp2), ATOMname(tp));
+	return BUN_NONE;
 }
 
-BAT *
-BATcalccstmin_no_nil(const ValRecord *v, BAT *b, BAT *s)
-{
-	return BATcalcmincst_no_nil(b, v, s);
-}
-
-BAT *
-BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
+static BAT *
+BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp,
+		 bool abort_on_error,
+		 BUN (*typeswitchloop)(const void *, int, int,
+				       const void *, int, int,
+				       void *restrict, int,
+				       struct canditer *restrict,
+				       struct canditer *restrict,
+				       const bit *restrict,
+				       oid, oid, bool, const char *),
+		 const char *func)
 {
 	lng t0 = 0;
 	BAT *bn;
-	bool nils = false;
+	BUN nils;
+	BUN ncand;
 	struct canditer ci1, ci2;
-	oid b1hseqbase, b2hseqbase;
-
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
-	b1hseqbase = b1->hseqbase;
-	b2hseqbase = b2->hseqbase;
-	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
-		GDKerror("inputs have incompatible types\n");
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
+		GDKerror("%s: inputs not the same size.\n", func);
+		return NULL;
+	}
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
-	canditer_init(&ci1, b1, s1);
-	canditer_init(&ci2, b2, s2);
-	if (ci1.ncand != ci2.ncand || ci1.hseq != ci2.hseq) {
-		GDKerror("inputs not the same size.\n");
-		return NULL;
-	}
-
-	bn = COLnew(ci1.hseq, ATOMtype(b1->ttype), ci1.ncand, TRANSIENT);
+	bn = COLnew(ci1.hseq, tp, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
+	if (ncand == 0)
+		return bn;
 
-	BATiter b1i = bat_iterator(b1);
-	BATiter b2i = bat_iterator(b2);
-	switch (ATOMbasetype(b1i.type)) {
-	case TYPE_bte:
-		MINMAX_TYPE(bte, >);
-		break;
-	case TYPE_sht:
-		MINMAX_TYPE(sht, >);
-		break;
-	case TYPE_int:
-		MINMAX_TYPE(int, >);
-		break;
-	case TYPE_lng:
-		MINMAX_TYPE(lng, >);
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		MINMAX_TYPE(hge, >);
-		break;
-#endif
-	case TYPE_flt:
-		MINMAX_TYPE(flt, >);
-		break;
-	case TYPE_dbl:
-		MINMAX_TYPE(dbl, >);
-		break;
-	default: {
-		const void *restrict nil = ATOMnilptr(b1i.type);
-		int (*cmp)(const void *, const void *) = ATOMcompare(b1i.type);
+	nils = (*typeswitchloop)(Tloc(b1, 0), b1->ttype, 1,
+				 Tloc(b2, 0), b2->ttype, 1,
+				 Tloc(bn, 0), tp,
+				 &ci1, &ci2, rv, b1->hseqbase, b2->hseqbase,
+				 abort_on_error, func);
 
-		if (ATOMvarsized(b1i.type)) {
-			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
-					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
-					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-					const void *p1 = BUNtvar(b1i, x1);
-					const void *p2 = BUNtvar(b2i, x2);
-					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
-						nils = true;
-						p1 = nil;
-					} else {
-						p1 = cmp(p1, p2) > 0 ? p1 : p2;
-					}
-					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bailout;
-					}
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
-					oid x1 = canditer_next(&ci1) - b1hseqbase;
-					oid x2 = canditer_next(&ci2) - b2hseqbase;
-					const void *p1 = BUNtvar(b1i, x1);
-					const void *p2 = BUNtvar(b2i, x2);
-					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
-						nils = true;
-						p1 = nil;
-					} else {
-						p1 = cmp(p1, p2) > 0 ? p1 : p2;
-					}
-					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bailout;
-					}
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			}
-		} else {
-			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
-			uint16_t width = bn->twidth;
-			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
-					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
-					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-					const void *p1 = BUNtloc(b1i, x1);
-					const void *p2 = BUNtloc(b2i, x2);
-					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
-						nils = true;
-						p1 = nil;
-					} else {
-						p1 = cmp(p1, p2) > 0 ? p1 : p2;
-					}
-					memcpy(bcast, p1, width);
-					bcast += width;
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
-					oid x1 = canditer_next(&ci1) - b1hseqbase;
-					oid x2 = canditer_next(&ci2) - b2hseqbase;
-					const void *p1 = BUNtloc(b1i, x1);
-					const void *p2 = BUNtloc(b2i, x2);
-					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
-						nils = true;
-						p1 = nil;
-					} else {
-						p1 = cmp(p1, p2) > 0 ? p1 : p2;
-					}
-					memcpy(bcast, p1, width);
-					bcast += width;
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			}
-		}
-	}
+	if (nils >= BUN_NONE) {
+		BBPunfix(bn->batCacheid);
+		return NULL;
 	}
 
-	bn->tnil = nils;
-	bn->tnonil = !nils;
-	BATsetcount(bn, ci1.ncand);
-	if (ci1.ncand <= 1) {
-		bn->tsorted = true;
-		bn->trevsorted = true;
-		bn->tkey = true;
-		bn->tseqbase = ATOMtype(b1i.type) == TYPE_oid ? ci1.ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
-	} else {
-		bn->tsorted = false;
-		bn->trevsorted = false;
-		bn->tkey = false;
-		bn->tseqbase = oid_nil;
-	}
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
+	BATsetcount(bn, ncand);
 
-	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "%s: b1=" ALGOBATFMT ",b2=" ALGOBATFMT
 		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
-		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  func, ALGOBATPAR(b1), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
-  bailout:
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
-	BBPreclaim(bn);
-	return NULL;
 }
 
 BAT *
-BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
+BATcalcmul(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_error)
 {
-	lng t0 = 0;
-	BAT *bn;
-	bool nils = false;
-	struct canditer ci1, ci2;
-	oid b1hseqbase, b2hseqbase;
-
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
-
-	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
-
-	BATcheck(b1, NULL);
-	BATcheck(b2, NULL);
-
-	b1hseqbase = b1->hseqbase;
-	b2hseqbase = b2->hseqbase;
-	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
-		GDKerror("inputs have incompatible types\n");
-		return NULL;
-	}
-
-	canditer_init(&ci1, b1, s1);
-	canditer_init(&ci2, b2, s2);
-	if (ci1.ncand != ci2.ncand || ci1.hseq != ci2.hseq) {
-		GDKerror("inputs not the same size.\n");
-		return NULL;
-	}
-
-	bn = COLnew(ci1.hseq, ATOMtype(b1->ttype), ci1.ncand, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-
-	BATiter b1i = bat_iterator(b1);
-	BATiter b2i = bat_iterator(b2);
-	switch (ATOMbasetype(b1i.type)) {
-	case TYPE_bte:
-		MINMAX_NONIL_TYPE(bte, >);
-		break;
-	case TYPE_sht:
-		MINMAX_NONIL_TYPE(sht, >);
-		break;
-	case TYPE_int:
-		MINMAX_NONIL_TYPE(int, >);
-		break;
-	case TYPE_lng:
-		MINMAX_NONIL_TYPE(lng, >);
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		MINMAX_NONIL_TYPE(hge, >);
-		break;
-#endif
-	case TYPE_flt:
-		MINMAX_NONIL_TYPE(flt, >);
-		break;
-	case TYPE_dbl:
-		MINMAX_NONIL_TYPE(dbl, >);
-		break;
-	default: {
-		const void *restrict nil = ATOMnilptr(b1i.type);
-		int (*cmp)(const void *, const void *) = ATOMcompare(b1i.type);
-
-		if (ATOMvarsized(b1i.type)) {
-			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
-					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
-					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-					const void *p1, *p2;
-					p1 = BUNtvar(b1i, x1);
-					p2 = BUNtvar(b2i, x2);
-					if (cmp(p1, nil) == 0) {
-						if (cmp(p2, nil) == 0) {
-							/* both values are nil */
-							nils = true;
-						} else {
-							p1 = p2;
-						}
-					} else {
-						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
-					}
-					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bailout;
-					}
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
-					oid x1 = canditer_next(&ci1) - b1hseqbase;
-					oid x2 = canditer_next(&ci2) - b2hseqbase;
-					const void *p1, *p2;
-					p1 = BUNtvar(b1i, x1);
-					p2 = BUNtvar(b2i, x2);
-					if (cmp(p1, nil) == 0) {
-						if (cmp(p2, nil) == 0) {
-							/* both values are nil */
-							nils = true;
-						} else {
-							p1 = p2;
-						}
-					} else {
-						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
-					}
-					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bailout;
-					}
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			}
-		} else {
-			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
-			uint16_t width = bn->twidth;
-			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
-					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
-					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-					const void *p1, *p2;
-					p1 = BUNtloc(b1i, x1);
-					p2 = BUNtloc(b2i, x2);
-					if (cmp(p1, nil) == 0) {
-						if (cmp(p2, nil) == 0) {
-							/* both values are nil */
-							nils = true;
-						} else {
-							p1 = p2;
-						}
-					} else {
-						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
-					}
-					memcpy(bcast, p1, width);
-					bcast += width;
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, timeoffset) {
-					oid x1 = canditer_next(&ci1) - b1hseqbase;
-					oid x2 = canditer_next(&ci2) - b2hseqbase;
-					const void *p1, *p2;
-					p1 = BUNtloc(b1i, x1);
-					p2 = BUNtloc(b2i, x2);
-					if (cmp(p1, nil) == 0) {
-						if (cmp(p2, nil) == 0) {
-							/* both values are nil */
-							nils = true;
-						} else {
-							p1 = p2;
-						}
-					} else {
-						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
-					}
-					memcpy(bcast, p1, width);
-					bcast += width;
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			}
-		}
-	}
-	}
-
-	bn->tnil = nils;
-	bn->tnonil = !nils;
-	BATsetcount(bn, ci1.ncand);
-	if (ci1.ncand <= 1) {
-		bn->tsorted = true;
-		bn->trevsorted = true;
-		bn->tkey = true;
-		bn->tseqbase = ATOMtype(b1i.type) == TYPE_oid ? ci1.ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
-	} else {
-		bn->tsorted = false;
-		bn->trevsorted = false;
-		bn->tkey = false;
-		bn->tseqbase = oid_nil;
-	}
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
-
-	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
-		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
-		  ALGOBATPAR(b1), ALGOBATPAR(b2),
-		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
-
-	return bn;
-  bailout:
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
-	BBPreclaim(bn);
-	return NULL;
+	return BATcalcmuldivmod(b1, b2, s1, s2, r, tp, abort_on_error,
+				mul_typeswitchloop, __func__);
 }
 
 BAT *
-BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
+BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
 	lng t0 = 0;
 	BAT *bn;
-	bool nils = false;
+	BUN nils;
+	BUN ncand;
 	struct canditer ci;
-	const void *p2;
-	const void *restrict nil;
-	int (*cmp)(const void *, const void *);
-	oid bhseqbase;
-
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
 
-	nil = ATOMnilptr(b->ttype);
-	cmp = ATOMcompare(b->ttype);
-	bhseqbase = b->hseqbase;
-	if (ATOMtype(b->ttype) != v->vtype) {
-		GDKerror("inputs have incompatible types\n");
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
-	canditer_init(&ci, b, s);
-	p2 = VALptr(v);
-	if (ci.ncand == 0 ||
-		cmp(p2, nil) == 0 ||
-		(b->ttype == TYPE_void && is_oid_nil(b->tseqbase)))
-		return BATconstantV(ci.hseq, b->ttype, nil, ci.ncand, TRANSIENT);
-
-	bn = COLnew(ci.hseq, ATOMtype(b->ttype), ci.ncand, TRANSIENT);
+	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
+	if (ncand == 0)
+		return bn;
 
-	BATiter bi = bat_iterator(b);
-	switch (ATOMbasetype(bi.type)) {
-	case TYPE_bte:
-		MINMAX_CST_TYPE(bte, >);
-		break;
-	case TYPE_sht:
-		MINMAX_CST_TYPE(sht, >);
-		break;
-	case TYPE_int:
-		MINMAX_CST_TYPE(int, >);
-		break;
-	case TYPE_lng:
-		MINMAX_CST_TYPE(lng, >);
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		MINMAX_CST_TYPE(hge, >);
-		break;
-#endif
-	case TYPE_flt:
-		MINMAX_CST_TYPE(flt, >);
-		break;
-	case TYPE_dbl:
-		MINMAX_CST_TYPE(dbl, >);
-		break;
-	default:
-		if (ATOMvarsized(bi.type)) {
-			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
-				oid x = canditer_next(&ci) - bhseqbase;
-				const void *restrict p1 = BUNtvar(bi, x);
-				if (cmp(p1, nil) == 0) {
-					nils = true;
-					p1 = nil;
-				} else {
-					p1 = cmp(p1, p2) > 0 ? p1 : p2;
-				}
-				if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-					goto bailout;
-				}
-			}
-			TIMEOUT_CHECK(timeoffset,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-		} else {
-			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
-			uint16_t width = bn->twidth;
-			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
-				oid x = canditer_next(&ci) - bhseqbase;
-				const void *restrict p1 = BUNtloc(bi, x);
-				if (cmp(p1, nil) == 0) {
-					nils = true;
-					p1 = nil;
-				} else {
-					p1 = cmp(p1, p2) > 0 ? p1 : p2;
-				}
-				memcpy(bcast, p1, width);
-				bcast += width;
-			}
-			TIMEOUT_CHECK(timeoffset,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-		}
+	nils = mul_typeswitchloop(Tloc(b, 0), b->ttype, 1,
+				  VALptr(v), v->vtype, 0,
+				  Tloc(bn, 0), tp,
+				  &ci,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  rv,
+				  b->hseqbase, 0,
+				  abort_on_error, __func__);
+
+	if (nils == BUN_NONE) {
+		BBPunfix(bn->batCacheid);
+		return NULL;
 	}
-	bat_iterator_end(&bi);
 
-	bn->tnil = nils;
-	bn->tnonil = !nils;
-	BATsetcount(bn, ci.ncand);
-	if (ci.ncand <= 1) {
-		bn->tsorted = true;
-		bn->trevsorted = true;
-		bn->tkey = true;
-		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? ci.ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+	BATsetcount(bn, ncand);
+
+	/* if the input is sorted, and no overflow occurred (we only
+	 * know for sure if abort_on_error is set), the result is also
+	 * sorted, or reverse sorted if the constant is negative */
+	if (abort_on_error) {
+		ValRecord sign;
+
+		VARcalcsign(&sign, v);
+		bn->tsorted = (sign.val.btval >= 0 && b->tsorted && nils == 0) ||
+			(sign.val.btval <= 0 && b->trevsorted && nils == 0) ||
+			ncand <= 1 || nils == ncand;
+		bn->trevsorted = (sign.val.btval >= 0 && b->trevsorted && nils == 0) ||
+			(sign.val.btval <= 0 && b->tsorted && nils == 0) ||
+			ncand <= 1 || nils == ncand;
 	} else {
-		bn->tsorted = false;
-		bn->trevsorted = false;
-		bn->tkey = false;
-		bn->tseqbase = oid_nil;
+		bn->tsorted = ncand <= 1 || nils == ncand;
+		bn->trevsorted = ncand <= 1 || nils == ncand;
 	}
+	bn->tkey = ncand <= 1;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
-  bailout:
-	bat_iterator_end(&bi);
-	BBPreclaim(bn);
-	return NULL;
 }
 
 BAT *
-BATcalccstmax(const ValRecord *v, BAT *b, BAT *s)
-{
-	return BATcalcmaxcst(b, v, s);
-}
-
-BAT *
-BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
+BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
 	lng t0 = 0;
 	BAT *bn;
-	bool nils = false;
+	BUN nils;
+	BUN ncand;
 	struct canditer ci;
-	const void *p2;
-	const void *restrict nil;
-	int (*cmp)(const void *, const void *);
-	oid bhseqbase;
-
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
 
-	nil = ATOMnilptr(b->ttype);
-	cmp = ATOMcompare(b->ttype);
-	bhseqbase = b->hseqbase;
-	if (ATOMtype(b->ttype) != v->vtype) {
-		GDKerror("inputs have incompatible types\n");
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
-	canditer_init(&ci, b, s);
-	if (ci.ncand == 0)
-		return BATconstantV(ci.hseq, b->ttype, nil, ci.ncand, TRANSIENT);
-
-	cmp = ATOMcompare(b->ttype);
-	p2 = VALptr(v);
-	if (b->ttype == TYPE_void &&
-		is_oid_nil(b->tseqbase) &&
-		is_oid_nil(* (const oid *) p2))
-		return BATconstant(ci.hseq, TYPE_void, &oid_nil, ci.ncand, TRANSIENT);
-
-	bn = COLnew(ci.hseq, ATOMtype(b->ttype), ci.ncand, TRANSIENT);
+	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
+	if (ncand == 0)
+		return bn;
 
-	BATiter bi = bat_iterator(b);
-	switch (ATOMbasetype(bi.type)) {
+	nils = mul_typeswitchloop(VALptr(v), v->vtype, 0,
+				  Tloc(b, 0), b->ttype, 1,
+				  Tloc(bn, 0), tp,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  &ci,
+				  rv,
+				  0, b->hseqbase,
+				  abort_on_error, __func__);
+
+	if (nils == BUN_NONE) {
+		BBPunfix(bn->batCacheid);
+		return NULL;
+	}
+
+	BATsetcount(bn, ncand);
+
+	/* if the input is sorted, and no overflow occurred (we only
+	 * know for sure if abort_on_error is set), the result is also
+	 * sorted, or reverse sorted if the constant is negative */
+	if (abort_on_error) {
+		ValRecord sign;
+
+		VARcalcsign(&sign, v);
+		bn->tsorted = (sign.val.btval >= 0 && b->tsorted && nils == 0) ||
+			(sign.val.btval <= 0 && b->trevsorted && nils == 0) ||
+			ncand <= 1 || nils == ncand;
+		bn->trevsorted = (sign.val.btval >= 0 && b->trevsorted && nils == 0) ||
+			(sign.val.btval <= 0 && b->tsorted && nils == 0) ||
+			ncand <= 1 || nils == ncand;
+	} else {
+		bn->tsorted = ncand <= 1 || nils == ncand;
+		bn->trevsorted = ncand <= 1 || nils == ncand;
+	}
+	bn->tkey = ncand <= 1;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
+}
+
+gdk_return
+VARcalcmul(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
+	   bool abort_on_error)
+{
+	if (mul_typeswitchloop(VALptr(lft), lft->vtype, 0,
+			       VALptr(rgt), rgt->vtype, 0,
+			       VALget(ret), ret->vtype,
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       NULL,
+			       0, 0, abort_on_error, __func__) == BUN_NONE)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+/* ---------------------------------------------------------------------- */
+/* division (any numeric type) */
+
+#define DIV_3TYPE(TYPE1, TYPE2, TYPE3)					\
+static BUN								\
+div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *restrict dst, TYPE3 max,		\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				const bit *restrict rv,			\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)			\
+{									\
+	BUN nils = 0;							\
+									\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (rgt[j] == 0) {			\
+				if (abort_on_error)			\
+					return BUN_NONE + 1;		\
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[k] = (TYPE3) (lft[i] / rgt[j]);	\
+				if (dst[k] < -max || dst[k] > max) {	\
+					if (abort_on_error)		\
+						return BUN_NONE + 2;	\
+					dst[k] = TYPE3##_nil;		\
+					nils++;				\
+				}					\
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (rgt[j] == 0) {			\
+				if (abort_on_error)			\
+					return BUN_NONE + 1;		\
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[k] = (TYPE3) (lft[i] / rgt[j]);	\
+				if (dst[k] < -max || dst[k] > max) {	\
+					if (abort_on_error)		\
+						return BUN_NONE + 2;	\
+					dst[k] = TYPE3##_nil;		\
+					nils++;				\
+				}					\
+			}						\
+		}							\
+	}								\
+	return nils;							\
+}
+
+#define DIV_3TYPE_float(TYPE1, TYPE2, TYPE3)				\
+static BUN								\
+div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *restrict dst, TYPE3 max,		\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				const bit *restrict rv,			\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)			\
+{									\
+	BUN nils = 0;							\
+									\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (rgt[j] == 0 ||			\
+				   (ABSOLUTE(rgt[j]) < 1 &&		\
+				    GDK_##TYPE3##_max * ABSOLUTE(rgt[j]) < lft[i])) { \
+				/* only check for overflow, not for underflow */ \
+				if (abort_on_error) {			\
+					if (rgt[j] == 0)		\
+						return BUN_NONE + 1;	\
+					ON_OVERFLOW(TYPE1, TYPE2, "/");	\
+				}					\
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[k] = (TYPE3) lft[i] / rgt[j];	\
+				if (dst[k] < -max || dst[k] > max) {	\
+					if (abort_on_error)		\
+						return BUN_NONE + 2;	\
+					dst[k] = TYPE3##_nil;		\
+					nils++;				\
+				}					\
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (rgt[j] == 0 ||			\
+				   (ABSOLUTE(rgt[j]) < 1 &&		\
+				    GDK_##TYPE3##_max * ABSOLUTE(rgt[j]) < lft[i])) { \
+				/* only check for overflow, not for underflow */ \
+				if (abort_on_error) {			\
+					if (rgt[j] == 0)		\
+						return BUN_NONE + 1;	\
+					ON_OVERFLOW(TYPE1, TYPE2, "/");	\
+				}					\
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[k] = (TYPE3) lft[i] / rgt[j];	\
+				if (dst[k] < -max || dst[k] > max) {	\
+					if (abort_on_error)		\
+						return BUN_NONE + 2;	\
+					dst[k] = TYPE3##_nil;		\
+					nils++;				\
+				}					\
+			}						\
+		}							\
+	}								\
+	return nils;							\
+}
+
+DIV_3TYPE(bte, bte, bte)
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(bte, bte, sht)
+DIV_3TYPE(bte, bte, int)
+DIV_3TYPE(bte, bte, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(bte, bte, hge)
+#endif
+#endif
+DIV_3TYPE(bte, bte, flt)
+DIV_3TYPE(bte, bte, dbl)
+DIV_3TYPE(bte, sht, bte)
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(bte, sht, sht)
+DIV_3TYPE(bte, sht, int)
+DIV_3TYPE(bte, sht, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(bte, sht, hge)
+#endif
+#endif
+DIV_3TYPE(bte, sht, flt)
+DIV_3TYPE(bte, sht, dbl)
+DIV_3TYPE(bte, int, bte)
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(bte, int, sht)
+DIV_3TYPE(bte, int, int)
+DIV_3TYPE(bte, int, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(bte, int, hge)
+#endif
+#endif
+DIV_3TYPE(bte, int, flt)
+DIV_3TYPE(bte, int, dbl)
+DIV_3TYPE(bte, lng, bte)
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(bte, lng, sht)
+DIV_3TYPE(bte, lng, int)
+DIV_3TYPE(bte, lng, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(bte, lng, hge)
+#endif
+#endif
+DIV_3TYPE(bte, lng, flt)
+DIV_3TYPE(bte, lng, dbl)
+#ifdef HAVE_HGE
+DIV_3TYPE(bte, hge, bte)
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(bte, hge, sht)
+DIV_3TYPE(bte, hge, int)
+DIV_3TYPE(bte, hge, lng)
+DIV_3TYPE(bte, hge, hge)
+#endif
+DIV_3TYPE(bte, hge, flt)
+DIV_3TYPE(bte, hge, dbl)
+#endif
+DIV_3TYPE_float(bte, flt, flt)
+DIV_3TYPE_float(bte, flt, dbl)
+DIV_3TYPE_float(bte, dbl, dbl)
+DIV_3TYPE(sht, bte, sht)
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(sht, bte, int)
+DIV_3TYPE(sht, bte, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(sht, bte, hge)
+#endif
+#endif
+DIV_3TYPE(sht, bte, flt)
+DIV_3TYPE(sht, bte, dbl)
+DIV_3TYPE(sht, sht, sht)
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(sht, sht, int)
+DIV_3TYPE(sht, sht, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(sht, sht, hge)
+#endif
+#endif
+DIV_3TYPE(sht, sht, flt)
+DIV_3TYPE(sht, sht, dbl)
+DIV_3TYPE(sht, int, sht)
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(sht, int, int)
+DIV_3TYPE(sht, int, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(sht, int, hge)
+#endif
+#endif
+DIV_3TYPE(sht, int, flt)
+DIV_3TYPE(sht, int, dbl)
+DIV_3TYPE(sht, lng, sht)
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(sht, lng, int)
+DIV_3TYPE(sht, lng, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(sht, lng, hge)
+#endif
+#endif
+DIV_3TYPE(sht, lng, flt)
+DIV_3TYPE(sht, lng, dbl)
+#ifdef HAVE_HGE
+DIV_3TYPE(sht, hge, sht)
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(sht, hge, int)
+DIV_3TYPE(sht, hge, lng)
+DIV_3TYPE(sht, hge, hge)
+#endif
+DIV_3TYPE(sht, hge, flt)
+DIV_3TYPE(sht, hge, dbl)
+#endif
+DIV_3TYPE_float(sht, flt, flt)
+DIV_3TYPE_float(sht, flt, dbl)
+DIV_3TYPE_float(sht, dbl, dbl)
+DIV_3TYPE(int, bte, int)
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(int, bte, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(int, bte, hge)
+#endif
+#endif
+DIV_3TYPE(int, bte, flt)
+DIV_3TYPE(int, bte, dbl)
+DIV_3TYPE(int, sht, int)
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(int, sht, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(int, sht, hge)
+#endif
+#endif
+DIV_3TYPE(int, sht, flt)
+DIV_3TYPE(int, sht, dbl)
+DIV_3TYPE(int, int, int)
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(int, int, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(int, int, hge)
+#endif
+#endif
+DIV_3TYPE(int, int, flt)
+DIV_3TYPE(int, int, dbl)
+DIV_3TYPE(int, lng, int)
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(int, lng, lng)
+#ifdef HAVE_HGE
+DIV_3TYPE(int, lng, hge)
+#endif
+#endif
+DIV_3TYPE(int, lng, flt)
+DIV_3TYPE(int, lng, dbl)
+#ifdef HAVE_HGE
+DIV_3TYPE(int, hge, int)
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(int, hge, lng)
+DIV_3TYPE(int, hge, hge)
+#endif
+DIV_3TYPE(int, hge, flt)
+DIV_3TYPE(int, hge, dbl)
+#endif
+DIV_3TYPE_float(int, flt, flt)
+DIV_3TYPE_float(int, flt, dbl)
+DIV_3TYPE_float(int, dbl, dbl)
+DIV_3TYPE(lng, bte, lng)
+#ifdef HAVE_HGE
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(lng, bte, hge)
+#endif
+#endif
+DIV_3TYPE(lng, bte, flt)
+DIV_3TYPE(lng, bte, dbl)
+DIV_3TYPE(lng, sht, lng)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+DIV_3TYPE(lng, sht, hge)
+#endif
+#endif
+DIV_3TYPE(lng, sht, flt)
+DIV_3TYPE(lng, sht, dbl)
+DIV_3TYPE(lng, int, lng)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+DIV_3TYPE(lng, int, hge)
+#endif
+#endif
+DIV_3TYPE(lng, int, flt)
+DIV_3TYPE(lng, int, dbl)
+DIV_3TYPE(lng, lng, lng)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+DIV_3TYPE(lng, lng, hge)
+#endif
+#endif
+DIV_3TYPE(lng, lng, flt)
+DIV_3TYPE(lng, lng, dbl)
+#ifdef HAVE_HGE
+DIV_3TYPE(lng, hge, lng)
+#ifdef FULL_IMPLEMENTATION
+DIV_3TYPE(lng, hge, hge)
+#endif
+DIV_3TYPE(lng, hge, flt)
+DIV_3TYPE(lng, hge, dbl)
+#endif
+DIV_3TYPE_float(lng, flt, flt)
+DIV_3TYPE_float(lng, flt, dbl)
+DIV_3TYPE_float(lng, dbl, dbl)
+#ifdef HAVE_HGE
+DIV_3TYPE(hge, bte, hge)
+DIV_3TYPE(hge, bte, flt)
+DIV_3TYPE(hge, bte, dbl)
+DIV_3TYPE(hge, sht, hge)
+DIV_3TYPE(hge, sht, flt)
+DIV_3TYPE(hge, sht, dbl)
+DIV_3TYPE(hge, int, hge)
+DIV_3TYPE(hge, int, flt)
+DIV_3TYPE(hge, int, dbl)
+DIV_3TYPE(hge, lng, hge)
+DIV_3TYPE(hge, lng, flt)
+DIV_3TYPE(hge, lng, dbl)
+DIV_3TYPE(hge, hge, hge)
+DIV_3TYPE(hge, hge, flt)
+DIV_3TYPE(hge, hge, dbl)
+DIV_3TYPE_float(hge, flt, flt)
+DIV_3TYPE_float(hge, flt, dbl)
+DIV_3TYPE_float(hge, dbl, dbl)
+#endif
+DIV_3TYPE(flt, bte, flt)
+DIV_3TYPE(flt, bte, dbl)
+DIV_3TYPE(flt, sht, flt)
+DIV_3TYPE(flt, sht, dbl)
+DIV_3TYPE(flt, int, flt)
+DIV_3TYPE(flt, int, dbl)
+DIV_3TYPE(flt, lng, flt)
+DIV_3TYPE(flt, lng, dbl)
+#ifdef HAVE_HGE
+DIV_3TYPE(flt, hge, flt)
+DIV_3TYPE(flt, hge, dbl)
+#endif
+DIV_3TYPE_float(flt, flt, flt)
+DIV_3TYPE_float(flt, flt, dbl)
+DIV_3TYPE_float(flt, dbl, dbl)
+DIV_3TYPE(dbl, bte, dbl)
+DIV_3TYPE(dbl, sht, dbl)
+DIV_3TYPE(dbl, int, dbl)
+DIV_3TYPE(dbl, lng, dbl)
+#ifdef HAVE_HGE
+DIV_3TYPE(dbl, hge, dbl)
+#endif
+DIV_3TYPE_float(dbl, flt, dbl)
+DIV_3TYPE_float(dbl, dbl, dbl)
+
+static BUN
+div_typeswitchloop(const void *lft, int tp1, int incr1,
+		   const void *rgt, int tp2, int incr2,
+		   void *restrict dst, int tp,
+		   struct canditer *restrict ci1, struct canditer *restrict ci2,
+		   const bit *restrict rv,
+		   oid candoff1, oid candoff2,
+		   bool abort_on_error, const char *func)
+{
+	BUN nils;
+
+	tp1 = ATOMbasetype(tp1);
+	tp2 = ATOMbasetype(tp2);
+	tp = ATOMbasetype(tp);
+	switch (tp1) {
 	case TYPE_bte:
-		MINMAX_NONIL_CST_TYPE(bte, >);
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_bte:
+				nils = div_bte_bte_bte(lft, incr1, rgt, incr2,
+						       dst, GDK_bte_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_sht:
+				nils = div_bte_bte_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = div_bte_bte_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = div_bte_bte_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_bte_bte_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			case TYPE_flt:
+				nils = div_bte_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_bte_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_bte:
+				nils = div_bte_sht_bte(lft, incr1, rgt, incr2,
+						       dst, GDK_bte_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_sht:
+				nils = div_bte_sht_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = div_bte_sht_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = div_bte_sht_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_bte_sht_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			case TYPE_flt:
+				nils = div_bte_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_bte_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_bte:
+				nils = div_bte_int_bte(lft, incr1, rgt, incr2,
+						       dst, GDK_bte_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_sht:
+				nils = div_bte_int_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = div_bte_int_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = div_bte_int_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_bte_int_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			case TYPE_flt:
+				nils = div_bte_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_bte_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_bte:
+				nils = div_bte_lng_bte(lft, incr1, rgt, incr2,
+						       dst, GDK_bte_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_sht:
+				nils = div_bte_lng_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = div_bte_lng_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = div_bte_lng_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_bte_lng_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			case TYPE_flt:
+				nils = div_bte_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_bte_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_bte:
+				nils = div_bte_hge_bte(lft, incr1, rgt, incr2,
+						       dst, GDK_bte_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_sht:
+				nils = div_bte_hge_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = div_bte_hge_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = div_bte_hge_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_hge:
+				nils = div_bte_hge_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = div_bte_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_bte_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = div_bte_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_bte_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = div_bte_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
 		break;
 	case TYPE_sht:
-		MINMAX_NONIL_CST_TYPE(sht, >);
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_sht:
+				nils = div_sht_bte_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_int:
+				nils = div_sht_bte_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = div_sht_bte_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_sht_bte_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			case TYPE_flt:
+				nils = div_sht_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_sht_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_sht:
+				nils = div_sht_sht_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_int:
+				nils = div_sht_sht_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = div_sht_sht_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_sht_sht_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			case TYPE_flt:
+				nils = div_sht_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_sht_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_sht:
+				nils = div_sht_int_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_int:
+				nils = div_sht_int_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = div_sht_int_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_sht_int_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			case TYPE_flt:
+				nils = div_sht_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_sht_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_sht:
+				nils = div_sht_lng_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_int:
+				nils = div_sht_lng_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = div_sht_lng_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_sht_lng_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			case TYPE_flt:
+				nils = div_sht_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_sht_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_sht:
+				nils = div_sht_hge_sht(lft, incr1, rgt, incr2,
+						       dst, GDK_sht_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_int:
+				nils = div_sht_hge_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = div_sht_hge_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_hge:
+				nils = div_sht_hge_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = div_sht_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_sht_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = div_sht_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_sht_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = div_sht_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
 		break;
 	case TYPE_int:
-		MINMAX_NONIL_CST_TYPE(int, >);
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_int:
+				nils = div_int_bte_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = div_int_bte_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_int_bte_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			case TYPE_flt:
+				nils = div_int_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_int_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_int:
+				nils = div_int_sht_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = div_int_sht_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_int_sht_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			case TYPE_flt:
+				nils = div_int_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_int_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_int:
+				nils = div_int_int_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = div_int_int_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_int_int_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			case TYPE_flt:
+				nils = div_int_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_int_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_int:
+				nils = div_int_lng_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = div_int_lng_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_int_lng_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			case TYPE_flt:
+				nils = div_int_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_int_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_int:
+				nils = div_int_hge_int(lft, incr1, rgt, incr2,
+						       dst, GDK_int_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = div_int_hge_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_hge:
+				nils = div_int_hge_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = div_int_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_int_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = div_int_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_int_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = div_int_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
 		break;
 	case TYPE_lng:
-		MINMAX_NONIL_CST_TYPE(lng, >);
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_lng:
+				nils = div_lng_bte_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_lng_bte_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			case TYPE_flt:
+				nils = div_lng_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_lng_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_lng:
+				nils = div_lng_sht_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_lng_sht_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			case TYPE_flt:
+				nils = div_lng_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_lng_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_lng:
+				nils = div_lng_int_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_lng_int_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			case TYPE_flt:
+				nils = div_lng_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_lng_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_lng:
+				nils = div_lng_lng_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = div_lng_lng_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			case TYPE_flt:
+				nils = div_lng_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_lng_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_lng:
+				nils = div_lng_hge_lng(lft, incr1, rgt, incr2,
+						       dst, GDK_lng_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_hge:
+				nils = div_lng_hge_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			case TYPE_flt:
+				nils = div_lng_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_lng_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = div_lng_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_lng_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = div_lng_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		MINMAX_NONIL_CST_TYPE(hge, >);
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_hge:
+				nils = div_hge_bte_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_flt:
+				nils = div_hge_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_hge_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_hge:
+				nils = div_hge_sht_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_flt:
+				nils = div_hge_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_hge_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_hge:
+				nils = div_hge_int_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_flt:
+				nils = div_hge_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_hge_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_hge:
+				nils = div_hge_lng_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_flt:
+				nils = div_hge_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_hge_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = div_hge_hge_hge(lft, incr1, rgt, incr2,
+						       dst, GDK_hge_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_flt:
+				nils = div_hge_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_hge_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = div_hge_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_hge_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = div_hge_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
 		break;
 #endif
 	case TYPE_flt:
-		MINMAX_NONIL_CST_TYPE(flt, >);
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_flt:
+				nils = div_flt_bte_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_flt_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_flt:
+				nils = div_flt_sht_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_flt_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_flt:
+				nils = div_flt_int_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_flt_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_flt:
+				nils = div_flt_lng_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_flt_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_flt:
+				nils = div_flt_hge_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_flt_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = div_flt_flt_flt(lft, incr1, rgt, incr2,
+						       dst, GDK_flt_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_dbl:
+				nils = div_flt_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = div_flt_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
 		break;
 	case TYPE_dbl:
-		MINMAX_NONIL_CST_TYPE(dbl, >);
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = div_dbl_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = div_dbl_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = div_dbl_int_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = div_dbl_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = div_dbl_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = div_dbl_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = div_dbl_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, GDK_dbl_max,
+						       ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
 		break;
 	default:
-		if (ATOMvarsized(bi.type)) {
-			if (cmp(p2, nil) == 0) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
-					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtvar(bi, x);
-					nils |= cmp(p1, nil) == 0;
-					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bailout;
-					}
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
-					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtvar(bi, x);
-					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
-					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
-						goto bailout;
-					}
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			}
-		} else {
-			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
-			uint16_t width = bn->twidth;
-			if (cmp(p2, nil) == 0) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
-					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtloc(bi, x);
-					nils |= cmp(p1, nil) == 0;
-					memcpy(bcast, p1, width);
-					bcast += width;
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, timeoffset) {
-					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtloc(bi, x);
-					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
-					memcpy(bcast, p1, width);
-					bcast += width;
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			}
-		}
-	}
-	bat_iterator_end(&bi);
-
-	bn->tnil = nils;
-	bn->tnonil = !nils;
-	BATsetcount(bn, ci.ncand);
-	if (ci.ncand <= 1) {
-		bn->tsorted = true;
-		bn->trevsorted = true;
-		bn->tkey = true;
-		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? ci.ncand == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
-	} else {
-		bn->tsorted = false;
-		bn->trevsorted = false;
-		bn->tkey = false;
-		bn->tseqbase = oid_nil;
+		goto unsupported;
 	}
 
-	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
-		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+	if (nils == BUN_NONE + 1)
+		GDKerror("22012!division by zero.\n");
 
-	return bn;
-  bailout:
-	bat_iterator_end(&bi);
-	BBPreclaim(bn);
-	return NULL;
+	return nils;
+
+  unsupported:
+	GDKerror("%s: type combination (div(%s,%s)->%s) not supported.\n",
+		 func, ATOMname(tp1), ATOMname(tp2), ATOMname(tp));
+	return BUN_NONE;
 }
 
 BAT *
-BATcalccstmax_no_nil(const ValRecord *v, BAT *b, BAT *s)
+BATcalcdiv(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_error)
 {
-	return BATcalcmaxcst_no_nil(b, v, s);
+	return BATcalcmuldivmod(b1, b2, s1, s2, r, tp, abort_on_error,
+				div_typeswitchloop, __func__);
+}
+
+BAT *
+BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_error)
+{
+	lng t0 = 0;
+	BAT *bn;
+	BUN nils;
+	BUN ncand;
+	struct canditer ci;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
+
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+
+	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	if (ncand == 0)
+		return bn;
+
+	nils = div_typeswitchloop(Tloc(b, 0), b->ttype, 1,
+				  VALptr(v), v->vtype, 0,
+				  Tloc(bn, 0), tp,
+				  &ci,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  rv,
+				  b->hseqbase, 0,
+				  abort_on_error, __func__);
+
+	if (nils >= BUN_NONE) {
+		BBPunfix(bn->batCacheid);
+		return NULL;
+	}
+
+	BATsetcount(bn, ncand);
+
+	/* if the input is sorted, and no zero division occurred (we
+	 * only know for sure if abort_on_error is set), the result is
+	 * also sorted, or reverse sorted if the constant is
+	 * negative */
+	if (abort_on_error) {
+		ValRecord sign;
+
+		VARcalcsign(&sign, v);
+		bn->tsorted = (sign.val.btval > 0 && b->tsorted && nils == 0) ||
+			(sign.val.btval < 0 && b->trevsorted && nils == 0) ||
+			ncand <= 1 || nils == ncand;
+		bn->trevsorted = (sign.val.btval > 0 && b->trevsorted && nils == 0) ||
+			(sign.val.btval < 0 && b->tsorted && nils == 0) ||
+			ncand <= 1 || nils == ncand;
+	} else {
+		bn->tsorted = ncand <= 1 || nils == ncand;
+		bn->trevsorted = ncand <= 1 || nils == ncand;
+	}
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
+}
+
+BAT *
+BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
+{
+	lng t0 = 0;
+	BAT *bn;
+	BUN nils;
+	BUN ncand;
+	struct canditer ci;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
+
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+	if (ncand == 0)
+		return BATconstant(ci.hseq, tp, ATOMnilptr(tp),
+				   ncand, TRANSIENT);
+
+	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	if (ncand == 0)
+		return bn;
+
+	nils = div_typeswitchloop(VALptr(v), v->vtype, 0,
+				  Tloc(b, 0), b->ttype, 1,
+				  Tloc(bn, 0), tp,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  &ci,
+				  rv,
+				  0, b->hseqbase,
+				  abort_on_error, __func__);
+
+	if (nils >= BUN_NONE) {
+		BBPunfix(bn->batCacheid);
+		return NULL;
+	}
+
+	BATsetcount(bn, ncand);
+
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
+}
+
+gdk_return
+VARcalcdiv(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
+	   bool abort_on_error)
+{
+	if (div_typeswitchloop(VALptr(lft), lft->vtype, 0,
+			       VALptr(rgt), rgt->vtype, 0,
+			       VALget(ret), ret->vtype,
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       NULL,
+			       0, 0, abort_on_error, __func__) >= BUN_NONE)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+/* ---------------------------------------------------------------------- */
+/* modulo (any numeric type) */
+
+#define MOD_3TYPE(TYPE1, TYPE2, TYPE3)					\
+static BUN								\
+mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *restrict dst,			\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				const bit *restrict rv,			\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)			\
+{									\
+	BUN nils = 0;							\
+									\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (rgt[j] == 0) {			\
+				if (abort_on_error)			\
+					return BUN_NONE + 1;		\
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[k] = (TYPE3) lft[i] % rgt[j];	\
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (rgt[j] == 0) {			\
+				if (abort_on_error)			\
+					return BUN_NONE + 1;		\
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[k] = (TYPE3) lft[i] % rgt[j];	\
+			}						\
+		}							\
+	}								\
+	return nils;							\
+}
+
+#define FMOD_3TYPE(TYPE1, TYPE2, TYPE3, FUNC)				\
+static BUN								\
+mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *restrict dst,			\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				const bit *restrict rv,			\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)			\
+{									\
+	BUN nils = 0;							\
+									\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (rgt[j] == 0) {			\
+				if (abort_on_error)			\
+					return BUN_NONE + 1;		\
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[k] = (TYPE3) FUNC((TYPE3) lft[i],	\
+						      (TYPE3) rgt[j]);	\
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[k]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (rgt[j] == 0) {			\
+				if (abort_on_error)			\
+					return BUN_NONE + 1;		\
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[k] = (TYPE3) FUNC((TYPE3) lft[i],	\
+						      (TYPE3) rgt[j]);	\
+			}						\
+		}							\
+	}								\
+	return nils;							\
+}
+
+MOD_3TYPE(bte, bte, bte)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(bte, bte, sht)
+MOD_3TYPE(bte, bte, int)
+MOD_3TYPE(bte, bte, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(bte, bte, hge)
+#endif
+#endif
+MOD_3TYPE(bte, sht, bte)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(bte, sht, sht)
+MOD_3TYPE(bte, sht, int)
+MOD_3TYPE(bte, sht, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(bte, sht, hge)
+#endif
+#endif
+MOD_3TYPE(bte, int, bte)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(bte, int, sht)
+MOD_3TYPE(bte, int, int)
+MOD_3TYPE(bte, int, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(bte, int, hge)
+#endif
+#endif
+MOD_3TYPE(bte, lng, bte)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(bte, lng, sht)
+MOD_3TYPE(bte, lng, int)
+MOD_3TYPE(bte, lng, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(bte, lng, hge)
+#endif
+#endif
+#ifdef HAVE_HGE
+MOD_3TYPE(bte, hge, bte)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(bte, hge, sht)
+MOD_3TYPE(bte, hge, int)
+MOD_3TYPE(bte, hge, lng)
+MOD_3TYPE(bte, hge, hge)
+#endif
+#endif
+MOD_3TYPE(sht, bte, bte)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(sht, bte, sht)
+MOD_3TYPE(sht, bte, int)
+MOD_3TYPE(sht, bte, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(sht, bte, hge)
+#endif
+#endif
+MOD_3TYPE(sht, sht, sht)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(sht, sht, int)
+MOD_3TYPE(sht, sht, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(sht, sht, hge)
+#endif
+#endif
+MOD_3TYPE(sht, int, sht)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(sht, int, int)
+MOD_3TYPE(sht, int, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(sht, int, hge)
+#endif
+#endif
+MOD_3TYPE(sht, lng, sht)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(sht, lng, int)
+MOD_3TYPE(sht, lng, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(sht, lng, hge)
+#endif
+#endif
+#ifdef HAVE_HGE
+MOD_3TYPE(sht, hge, sht)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(sht, hge, int)
+MOD_3TYPE(sht, hge, lng)
+MOD_3TYPE(sht, hge, hge)
+#endif
+#endif
+MOD_3TYPE(int, bte, bte)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(int, bte, sht)
+MOD_3TYPE(int, bte, int)
+MOD_3TYPE(int, bte, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(int, bte, hge)
+#endif
+#endif
+MOD_3TYPE(int, sht, sht)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(int, sht, int)
+MOD_3TYPE(int, sht, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(int, sht, hge)
+#endif
+#endif
+MOD_3TYPE(int, int, int)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(int, int, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(int, int, hge)
+#endif
+#endif
+MOD_3TYPE(int, lng, int)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(int, lng, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(int, lng, hge)
+#endif
+#endif
+#ifdef HAVE_HGE
+MOD_3TYPE(int, hge, int)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(int, hge, lng)
+MOD_3TYPE(int, hge, hge)
+#endif
+#endif
+MOD_3TYPE(lng, bte, bte)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(lng, bte, sht)
+MOD_3TYPE(lng, bte, int)
+MOD_3TYPE(lng, bte, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(lng, bte, hge)
+#endif
+#endif
+MOD_3TYPE(lng, sht, sht)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(lng, sht, int)
+MOD_3TYPE(lng, sht, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(lng, sht, hge)
+#endif
+#endif
+MOD_3TYPE(lng, int, int)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(lng, int, lng)
+#ifdef HAVE_HGE
+MOD_3TYPE(lng, int, hge)
+#endif
+#endif
+MOD_3TYPE(lng, lng, lng)
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+MOD_3TYPE(lng, lng, hge)
+#endif
+#endif
+#ifdef HAVE_HGE
+MOD_3TYPE(lng, hge, lng)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(lng, hge, hge)
+#endif
+#endif
+#ifdef HAVE_HGE
+MOD_3TYPE(hge, bte, bte)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(hge, bte, sht)
+MOD_3TYPE(hge, bte, int)
+MOD_3TYPE(hge, bte, lng)
+MOD_3TYPE(hge, bte, hge)
+#endif
+MOD_3TYPE(hge, sht, sht)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(hge, sht, int)
+MOD_3TYPE(hge, sht, lng)
+MOD_3TYPE(hge, sht, hge)
+#endif
+MOD_3TYPE(hge, int, int)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(hge, int, lng)
+MOD_3TYPE(hge, int, hge)
+#endif
+MOD_3TYPE(hge, lng, lng)
+#ifdef FULL_IMPLEMENTATION
+MOD_3TYPE(hge, lng, hge)
+#endif
+MOD_3TYPE(hge, hge, hge)
+#endif
+
+FMOD_3TYPE(bte, flt, flt, fmodf)
+FMOD_3TYPE(sht, flt, flt, fmodf)
+FMOD_3TYPE(int, flt, flt, fmodf)
+FMOD_3TYPE(lng, flt, flt, fmodf)
+#ifdef HAVE_HGE
+FMOD_3TYPE(hge, flt, flt, fmodf)
+#endif
+FMOD_3TYPE(flt, bte, flt, fmodf)
+FMOD_3TYPE(flt, sht, flt, fmodf)
+FMOD_3TYPE(flt, int, flt, fmodf)
+FMOD_3TYPE(flt, lng, flt, fmodf)
+#ifdef HAVE_HGE
+FMOD_3TYPE(flt, hge, flt, fmodf)
+#endif
+FMOD_3TYPE(flt, flt, flt, fmodf)
+FMOD_3TYPE(bte, dbl, dbl, fmod)
+FMOD_3TYPE(sht, dbl, dbl, fmod)
+FMOD_3TYPE(int, dbl, dbl, fmod)
+FMOD_3TYPE(lng, dbl, dbl, fmod)
+#ifdef HAVE_HGE
+FMOD_3TYPE(hge, dbl, dbl, fmod)
+#endif
+FMOD_3TYPE(flt, dbl, dbl, fmod)
+FMOD_3TYPE(dbl, bte, dbl, fmod)
+FMOD_3TYPE(dbl, sht, dbl, fmod)
+FMOD_3TYPE(dbl, int, dbl, fmod)
+FMOD_3TYPE(dbl, lng, dbl, fmod)
+#ifdef HAVE_HGE
+FMOD_3TYPE(dbl, hge, dbl, fmod)
+#endif
+FMOD_3TYPE(dbl, flt, dbl, fmod)
+FMOD_3TYPE(dbl, dbl, dbl, fmod)
+
+static BUN
+mod_typeswitchloop(const void *lft, int tp1, int incr1,
+		   const void *rgt, int tp2, int incr2,
+		   void *restrict dst, int tp,
+		   struct canditer *restrict ci1, struct canditer *restrict ci2,
+		   const bit *restrict rv,
+		   oid candoff1, oid candoff2,
+		   bool abort_on_error, const char *func)
+{
+	BUN nils;
+
+	tp1 = ATOMbasetype(tp1);
+	tp2 = ATOMbasetype(tp2);
+	tp = ATOMbasetype(tp);
+	switch (tp1) {
+	case TYPE_bte:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_bte:
+				nils = mod_bte_bte_bte(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_sht:
+				nils = mod_bte_bte_sht(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = mod_bte_bte_int(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mod_bte_bte_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_bte_bte_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_bte:
+				nils = mod_bte_sht_bte(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_sht:
+				nils = mod_bte_sht_sht(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = mod_bte_sht_int(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mod_bte_sht_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_bte_sht_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_bte:
+				nils = mod_bte_int_bte(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_sht:
+				nils = mod_bte_int_sht(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = mod_bte_int_int(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mod_bte_int_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_bte_int_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_bte:
+				nils = mod_bte_lng_bte(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_sht:
+				nils = mod_bte_lng_sht(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = mod_bte_lng_int(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mod_bte_lng_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_bte_lng_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_bte:
+				nils = mod_bte_hge_bte(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_sht:
+				nils = mod_bte_hge_sht(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = mod_bte_hge_int(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mod_bte_hge_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_hge:
+				nils = mod_bte_hge_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mod_bte_flt_flt(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mod_bte_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_sht:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_bte:
+				nils = mod_sht_bte_bte(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_sht:
+				nils = mod_sht_bte_sht(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = mod_sht_bte_int(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mod_sht_bte_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_sht_bte_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_sht:
+				nils = mod_sht_sht_sht(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_int:
+				nils = mod_sht_sht_int(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mod_sht_sht_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_sht_sht_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_sht:
+				nils = mod_sht_int_sht(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_int:
+				nils = mod_sht_int_int(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mod_sht_int_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_sht_int_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_sht:
+				nils = mod_sht_lng_sht(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_int:
+				nils = mod_sht_lng_int(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mod_sht_lng_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_sht_lng_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_sht:
+				nils = mod_sht_hge_sht(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_int:
+				nils = mod_sht_hge_int(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mod_sht_hge_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_hge:
+				nils = mod_sht_hge_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mod_sht_flt_flt(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mod_sht_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_int:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_bte:
+				nils = mod_int_bte_bte(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_sht:
+				nils = mod_int_bte_sht(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = mod_int_bte_int(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mod_int_bte_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_int_bte_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_sht:
+				nils = mod_int_sht_sht(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_int:
+				nils = mod_int_sht_int(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mod_int_sht_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_int_sht_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_int:
+				nils = mod_int_int_int(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = mod_int_int_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_int_int_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_int:
+				nils = mod_int_lng_int(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = mod_int_lng_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_int_lng_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_int:
+				nils = mod_int_hge_int(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = mod_int_hge_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_hge:
+				nils = mod_int_hge_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mod_int_flt_flt(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mod_int_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_lng:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_bte:
+				nils = mod_lng_bte_bte(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_sht:
+				nils = mod_lng_bte_sht(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = mod_lng_bte_int(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mod_lng_bte_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_lng_bte_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_sht:
+				nils = mod_lng_sht_sht(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_int:
+				nils = mod_lng_sht_int(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mod_lng_sht_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_lng_sht_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_int:
+				nils = mod_lng_int_int(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = mod_lng_int_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_lng_int_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_lng:
+				nils = mod_lng_lng_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				nils = mod_lng_lng_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_lng:
+				nils = mod_lng_hge_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_hge:
+				nils = mod_lng_hge_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mod_lng_flt_flt(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mod_lng_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_bte:
+				nils = mod_hge_bte_bte(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_sht:
+				nils = mod_hge_bte_sht(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_int:
+				nils = mod_hge_bte_int(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mod_hge_bte_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_hge:
+				nils = mod_hge_bte_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_sht:
+				nils = mod_hge_sht_sht(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_int:
+				nils = mod_hge_sht_int(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_lng:
+				nils = mod_hge_sht_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_hge:
+				nils = mod_hge_sht_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_int:
+				nils = mod_hge_int_int(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_lng:
+				nils = mod_hge_int_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			case TYPE_hge:
+				nils = mod_hge_int_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_lng:
+				nils = mod_hge_lng_lng(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#ifdef FULL_IMPLEMENTATION
+			case TYPE_hge:
+				nils = mod_hge_lng_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+#endif
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_hge:
+				nils = mod_hge_hge_hge(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mod_hge_flt_flt(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mod_hge_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+#endif
+	case TYPE_flt:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mod_flt_bte_flt(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mod_flt_sht_flt(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mod_flt_int_flt(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mod_flt_lng_flt(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mod_flt_hge_flt(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_flt:
+				nils = mod_flt_flt_flt(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mod_flt_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_dbl:
+		switch (tp2) {
+		case TYPE_bte:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mod_dbl_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mod_dbl_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mod_dbl_int_dbl(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mod_dbl_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mod_dbl_hge_dbl(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+#endif
+		case TYPE_flt:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mod_dbl_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (tp) {
+			case TYPE_dbl:
+				nils = mod_dbl_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, ci1, ci2, rv, candoff1, candoff2,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	default:
+		goto unsupported;
+	}
+
+	if (nils == BUN_NONE + 1)
+		GDKerror("22012!division by zero.\n");
+
+	return nils;
+
+  unsupported:
+	GDKerror("%s: type combination (mod(%s,%s)->%s) not supported.\n",
+		 func, ATOMname(tp1), ATOMname(tp2), ATOMname(tp));
+	return BUN_NONE;
+}
+
+BAT *
+BATcalcmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_error)
+{
+	return BATcalcmuldivmod(b1, b2, s1, s2, r, tp, abort_on_error,
+				mod_typeswitchloop, __func__);
+}
+
+BAT *
+BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_error)
+{
+	lng t0 = 0;
+	BAT *bn;
+	BUN nils;
+	BUN ncand;
+	struct canditer ci;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
+
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+
+	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	if (ncand == 0)
+		return bn;
+
+	nils = mod_typeswitchloop(Tloc(b, 0), b->ttype, 1,
+				  VALptr(v), v->vtype, 0,
+				  Tloc(bn, 0), tp,
+				  &ci,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  rv,
+				  b->hseqbase, 0,
+				  abort_on_error, __func__);
+
+	if (nils >= BUN_NONE) {
+		BBPunfix(bn->batCacheid);
+		return NULL;
+	}
+
+	BATsetcount(bn, ncand);
+
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
+}
+
+BAT *
+BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
+{
+	lng t0 = 0;
+	BAT *bn;
+	BUN nils;
+	BUN ncand;
+	struct canditer ci;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
+
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	if (ncand == 0)
+		return bn;
+
+	nils = mod_typeswitchloop(VALptr(v), v->vtype, 0,
+				  Tloc(b, 0), b->ttype, 1,
+				  Tloc(bn, 0), tp,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  &ci,
+				  rv,
+				  0, b->hseqbase,
+				  abort_on_error, __func__);
+
+	if (nils >= BUN_NONE) {
+		BBPunfix(bn->batCacheid);
+		return NULL;
+	}
+
+	BATsetcount(bn, ncand);
+
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
+}
+
+gdk_return
+VARcalcmod(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
+	   bool abort_on_error)
+{
+	if (mod_typeswitchloop(VALptr(lft), lft->vtype, 0,
+			       VALptr(rgt), rgt->vtype, 0,
+			       VALget(ret), ret->vtype,
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       NULL,
+			       0, 0, abort_on_error, __func__) >= BUN_NONE)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -2422,22 +11226,18 @@ BATcalccstmax_no_nil(const ValRecord *v, BAT *b, BAT *s)
 #define XORBIT(a, b)	(((a) == 0) != ((b) == 0))
 
 static BUN
-xor_typeswitchloop(const void *lft, bool incr1,
-		   const void *rgt, bool incr2,
+xor_typeswitchloop(const void *lft, int incr1,
+		   const void *rgt, int incr2,
 		   void *restrict dst, int tp,
 		   struct canditer *restrict ci1,
 		   struct canditer *restrict ci2,
+		   const bit *restrict rv,
 		   oid candoff1, oid candoff2,
 		   bool nonil, const char *func)
 {
+	oid x1, x2;
 	BUN i, j, k;
 	BUN nils = 0;
-
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	switch (ATOMbasetype(tp)) {
 	case TYPE_bte:
@@ -2448,35 +11248,35 @@ xor_typeswitchloop(const void *lft, bool incr1,
 				BINARY_3TYPE_FUNC(bit, bit, bit, XORBIT);
 		} else {
 			if (nonil)
-				BINARY_3TYPE_FUNC_nonil_nilcheck(bte, bte, bte, XOR, ON_OVERFLOW(bte, bte, "XOR"));
+				BINARY_3TYPE_FUNC_nonil(bte, bte, bte, XOR);
 			else
-				BINARY_3TYPE_FUNC_nilcheck(bte, bte, bte, XOR, ON_OVERFLOW(bte, bte, "XOR"));
+				BINARY_3TYPE_FUNC(bte, bte, bte, XOR);
 		}
 		break;
 	case TYPE_sht:
 		if (nonil)
-			BINARY_3TYPE_FUNC_nonil_nilcheck(sht, sht, sht, XOR, ON_OVERFLOW(sht, sht, "XOR"));
+			BINARY_3TYPE_FUNC_nonil(sht, sht, sht, XOR);
 		else
-			BINARY_3TYPE_FUNC_nilcheck(sht, sht, sht, XOR, ON_OVERFLOW(sht, sht, "XOR"));
+			BINARY_3TYPE_FUNC(sht, sht, sht, XOR);
 		break;
 	case TYPE_int:
 		if (nonil)
-			BINARY_3TYPE_FUNC_nonil_nilcheck(int, int, int, XOR, ON_OVERFLOW(int, int, "XOR"));
+			BINARY_3TYPE_FUNC_nonil(int, int, int, XOR);
 		else
-			BINARY_3TYPE_FUNC_nilcheck(int, int, int, XOR, ON_OVERFLOW(int, int, "XOR"));
+			BINARY_3TYPE_FUNC(int, int, int, XOR);
 		break;
 	case TYPE_lng:
 		if (nonil)
-			BINARY_3TYPE_FUNC_nonil_nilcheck(lng, lng, lng, XOR, ON_OVERFLOW(lng, lng, "XOR"));
+			BINARY_3TYPE_FUNC_nonil(lng, lng, lng, XOR);
 		else
-			BINARY_3TYPE_FUNC_nilcheck(lng, lng, lng, XOR, ON_OVERFLOW(lng, lng, "XOR"));
+			BINARY_3TYPE_FUNC(lng, lng, lng, XOR);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		if (nonil)
-			BINARY_3TYPE_FUNC_nonil_nilcheck(hge, hge, hge, XOR, ON_OVERFLOW(hge, hge, "XOR"));
+			BINARY_3TYPE_FUNC_nonil(hge, hge, hge, XOR);
 		else
-			BINARY_3TYPE_FUNC_nilcheck(hge, hge, hge, XOR, ON_OVERFLOW(hge, hge, "XOR"));
+			BINARY_3TYPE_FUNC(hge, hge, hge, XOR);
 		break;
 #endif
 	default:
@@ -2488,12 +11288,14 @@ xor_typeswitchloop(const void *lft, bool incr1,
 }
 
 BAT *
-BATcalcxor(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
+BATcalcxor(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 {
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
+	BUN ncand;
 	struct canditer ci1, ci2;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -2505,62 +11307,65 @@ BATcalcxor(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		return NULL;
 	}
 
-	canditer_init(&ci1, b1, s1);
-	canditer_init(&ci2, b2, s2);
-	if (ci1.ncand != ci2.ncand || ci1.hseq != ci2.hseq) {
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
 		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
 
-        bn = COLnew(ci1.hseq, b1->ttype, ci1.ncand, TRANSIENT);
+	bn = COLnew(ci1.hseq, b1->ttype, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ci1.ncand == 0)
+	if (ncand == 0)
 		return bn;
 
-	BATiter b1i = bat_iterator(b1);
-	BATiter b2i = bat_iterator(b2);
-	nils = xor_typeswitchloop(b1i.base, true,
-				  b2i.base, true,
+	nils = xor_typeswitchloop(Tloc(b1, 0), 1,
+				  Tloc(b2, 0), 1,
 				  Tloc(bn, 0),
-				  b1i.type,
+				  b1->ttype,
 				  &ci1, &ci2,
+				  rv,
 				  b1->hseqbase, b2->hseqbase,
-				  b1i.nonil && b2i.nonil,
+				  b1->tnonil && b2->tnonil,
 				  __func__);
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
 		return NULL;
 	}
 
-	BATsetcount(bn, ci1.ncand);
+	BATsetcount(bn, ncand);
 
-	bn->tsorted = ci1.ncand <= 1 || nils == ci1.ncand;
-	bn->trevsorted = ci1.ncand <= 1 || nils == ci1.ncand;
-	bn->tkey = ci1.ncand <= 1;
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
 	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
 		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
 
 BAT *
-BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s)
+BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 {
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
+	BUN ncand;
 	struct canditer ci;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -2571,50 +11376,53 @@ BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s)
 		return NULL;
 	}
 
-	canditer_init(&ci, b, s);
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
 
-	bn = COLnew(ci.hseq, b->ttype, ci.ncand, TRANSIENT);
+	bn = COLnew(ci.hseq, b->ttype, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ci.ncand == 0)
+	if (ncand == 0)
 		return bn;
 
-	BATiter bi = bat_iterator(b);
-	nils = xor_typeswitchloop(bi.base, true,
-				  VALptr(v), false,
-				  Tloc(bn, 0), bi.type,
+	nils = xor_typeswitchloop(Tloc(b, 0), 1,
+				  VALptr(v), 0,
+				  Tloc(bn, 0), b->ttype,
 				  &ci,
-				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  rv,
 				  b->hseqbase, 0,
-				  bi.nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				  b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  __func__);
-	bat_iterator_end(&bi);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
 		return NULL;
 	}
 
-	BATsetcount(bn, ci.ncand);
+	BATsetcount(bn, ncand);
 
-	bn->tsorted = ci.ncand <= 1 || nils == ci.ncand;
-	bn->trevsorted = ci.ncand <= 1 || nils == ci.ncand;
-	bn->tkey = ci.ncand <= 1;
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
 
 BAT *
-BATcalccstxor(const ValRecord *v, BAT *b, BAT *s)
+BATcalccstxor(const ValRecord *v, BAT *b, BAT *s, BAT *r)
 {
-	return BATcalcxorcst(b, v, s);
+	return BATcalcxorcst(b, v, s, r);
 }
 
 gdk_return
@@ -2625,11 +11433,12 @@ VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 		return GDK_FAIL;
 	}
 
-	if (xor_typeswitchloop(VALptr(lft), false,
-			       VALptr(rgt), false,
+	if (xor_typeswitchloop(VALptr(lft), 0,
+			       VALptr(rgt), 0,
 			       VALget(ret), lft->vtype,
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       NULL,
 			       0, 0, false, __func__) == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
@@ -2643,43 +11452,33 @@ VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 #define OR(a, b)	((a) | (b))
 
 static BUN
-or_typeswitchloop(const void *lft, bool incr1,
-		  const void *rgt, bool incr2,
+or_typeswitchloop(const void *lft, int incr1,
+		  const void *rgt, int incr2,
 		  void *restrict dst, int tp,
 		  struct canditer *restrict ci1,
 		  struct canditer *restrict ci2,
+		  const bit *restrict rv,
 		  oid candoff1, oid candoff2,
 		  bool nonil, const char *func)
 {
-	BUN i = 0, j = 0, k;
+	oid x1, x2;
+	BUN i, j, k;
 	BUN nils = 0;
 
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
-
-	/* note, we don't have to check whether the result is equal to
-	 * NIL when using bitwise OR: there is only a single bit set in
-	 * NIL, which means that at least one of the operands must have
-	 * only that single bit set (and the other either also or
-	 * no bits set), so that that operand is already NIL */
 	switch (ATOMbasetype(tp)) {
 	case TYPE_bte:
 		if (tp == TYPE_bit) {
 			/* implement tri-Boolean algebra */
-			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {
-				if (incr1)
-					i = canditer_next(ci1) - candoff1;
-				if (incr2)
-					j = canditer_next(ci2) - candoff2;
+			for (k = 0; k < ci1->ncand; k++) {
+				x1 = canditer_next(ci1) - candoff1;
+				x2 = canditer_next(ci2) - candoff2;
+				i = x1 * incr1;
+				j = x2 * incr2;
 				bit v1 = ((const bit *) lft)[i];
 				bit v2 = ((const bit *) rgt)[j];
 				((bit *) dst)[k] = or3(v1, v2);
 				nils += is_bit_nil(((bit *) dst)[k]);
 			}
-			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
 		} else {
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, bte, bte, OR);
@@ -2722,12 +11521,14 @@ or_typeswitchloop(const void *lft, bool incr1,
 }
 
 BAT *
-BATcalcor(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
+BATcalcor(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 {
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
+	BUN ncand;
 	struct canditer ci1, ci2;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -2739,61 +11540,63 @@ BATcalcor(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		return NULL;
 	}
 
-	canditer_init(&ci1, b1, s1);
-	canditer_init(&ci2, b2, s2);
-	if (ci1.ncand != ci2.ncand || ci1.hseq != ci2.hseq) {
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
 		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
 
-	bn = COLnew(ci1.hseq, b1->ttype, ci1.ncand, TRANSIENT);
+	bn = COLnew(ci1.hseq, b1->ttype, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ci1.ncand == 0)
+	if (ncand == 0)
 		return bn;
 
-	BATiter b1i = bat_iterator(b1);
-	BATiter b2i = bat_iterator(b2);
-	nils = or_typeswitchloop(b1i.base, true,
-				 b2i.base, true,
+	nils = or_typeswitchloop(Tloc(b1, 0), 1,
+				 Tloc(b2, 0), 1,
 				 Tloc(bn, 0),
-				 b1i.type,
-				 &ci1, &ci2, b1->hseqbase, b2->hseqbase,
-				 b1i.nonil && b2i.nonil,
+				 b1->ttype,
+				 &ci1, &ci2, rv, b1->hseqbase, b2->hseqbase,
+				 b1->tnonil && b2->tnonil,
 				 __func__);
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
 		return NULL;
 	}
 
-	BATsetcount(bn, ci1.ncand);
+	BATsetcount(bn, ncand);
 
-	bn->tsorted = ci1.ncand <= 1 || nils == ci1.ncand;
-	bn->trevsorted = ci1.ncand <= 1 || nils == ci1.ncand;
-	bn->tkey = ci1.ncand <= 1;
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
 	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
 		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
 
 BAT *
-BATcalcorcst(BAT *b, const ValRecord *v, BAT *s)
+BATcalcorcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 {
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
+	BUN ncand;
 	struct canditer ci;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -2804,56 +11607,59 @@ BATcalcorcst(BAT *b, const ValRecord *v, BAT *s)
 		return NULL;
 	}
 
-	canditer_init(&ci, b, s);
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
 
 	if (b->ttype == TYPE_bit && v->vtype == TYPE_bit && v->val.btval == 1) {
 		/* true OR anything (including NIL) equals true */
 		return BATconstant(ci.hseq, TYPE_bit, &(bit){1},
-				   ci.ncand, TRANSIENT);
+				   ncand, TRANSIENT);
 	}
 
-	bn = COLnew(ci.hseq, b->ttype, ci.ncand, TRANSIENT);
+	bn = COLnew(ci.hseq, b->ttype, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ci.ncand == 0)
+	if (ncand == 0)
 		return bn;
 
-	BATiter bi = bat_iterator(b);
-	nils = or_typeswitchloop(bi.base, true,
-				 VALptr(v), false,
-				 Tloc(bn, 0), bi.type,
+	nils = or_typeswitchloop(Tloc(b, 0), 1,
+				 VALptr(v), 0,
+				 Tloc(bn, 0), b->ttype,
 				 &ci,
-				 &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+				 &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				 rv,
 				 b->hseqbase, 0,
-				 bi.nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				 b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				 __func__);
-	bat_iterator_end(&bi);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
 		return NULL;
 	}
 
-	BATsetcount(bn, ci.ncand);
+	BATsetcount(bn, ncand);
 
-	bn->tsorted = ci.ncand <= 1 || nils == ci.ncand;
-	bn->trevsorted = ci.ncand <= 1 || nils == ci.ncand;
-	bn->tkey = ci.ncand <= 1;
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
 
 BAT *
-BATcalccstor(const ValRecord *v, BAT *b, BAT *s)
+BATcalccstor(const ValRecord *v, BAT *b, BAT *s, BAT *r)
 {
-	return BATcalcorcst(b, v, s);
+	return BATcalcorcst(b, v, s, r);
 }
 
 gdk_return
@@ -2864,11 +11670,12 @@ VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 		return GDK_FAIL;
 	}
 
-	if (or_typeswitchloop(VALptr(lft), false,
-			      VALptr(rgt), false,
+	if (or_typeswitchloop(VALptr(lft), 0,
+			      VALptr(rgt), 0,
 			      VALget(ret), lft->vtype,
 			      &(struct canditer){.tpe=cand_dense, .ncand=1},
 			      &(struct canditer){.tpe=cand_dense, .ncand=1},
+			      NULL,
 			      0, 0, false, __func__) == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
@@ -2882,69 +11689,64 @@ VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 #define AND(a, b)	((a) & (b))
 
 static BUN
-and_typeswitchloop(const void *lft, bool incr1,
-		   const void *rgt, bool incr2,
+and_typeswitchloop(const void *lft, int incr1,
+		   const void *rgt, int incr2,
 		   void *restrict dst, int tp,
 		   struct canditer *restrict ci1,
 		   struct canditer *restrict ci2,
+		   const bit *restrict rv,
 		   oid candoff1, oid candoff2,
 		   bool nonil, const char *func)
 {
-	BUN i = 0, j = 0, k;
+	oid x1, x2;
+	BUN i, j, k;
 	BUN nils = 0;
-
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	switch (ATOMbasetype(tp)) {
 	case TYPE_bte:
 		if (tp == TYPE_bit) {
 			/* implement tri-Boolean algebra */
-			TIMEOUT_LOOP_IDX(k, ci1->ncand, timeoffset) {
-				if (incr1)
-					i = canditer_next(ci1) - candoff1;
-				if (incr2)
-					j = canditer_next(ci2) - candoff2;
+			for (k = 0; k < ci1->ncand; k++) {
+				x1 = canditer_next(ci1) - candoff1;
+				x2 = canditer_next(ci2) - candoff2;
+				i = x1 * incr1;
+				j = x2 * incr2;
 				bit v1 = ((const bit *) lft)[i];
 				bit v2 = ((const bit *) rgt)[j];
 				((bit *) dst)[k] = and3(v1, v2);
 				nils += is_bit_nil(((bit *) dst)[k]);
 			}
-			TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));
 		} else {
 			if (nonil)
-				BINARY_3TYPE_FUNC_nonil_nilcheck(bte, bte, bte, AND, ON_OVERFLOW(bte, bte, "AND"));
+				BINARY_3TYPE_FUNC_nonil(bte, bte, bte, AND);
 			else
-				BINARY_3TYPE_FUNC_nilcheck(bte, bte, bte, AND, ON_OVERFLOW(bte, bte, "AND"));
+				BINARY_3TYPE_FUNC(bte, bte, bte, AND);
 		}
 		break;
 	case TYPE_sht:
 		if (nonil)
-			BINARY_3TYPE_FUNC_nonil_nilcheck(sht, sht, sht, AND, ON_OVERFLOW(sht, sht, "AND"));
+			BINARY_3TYPE_FUNC_nonil(sht, sht, sht, AND);
 		else
-			BINARY_3TYPE_FUNC_nilcheck(sht, sht, sht, AND, ON_OVERFLOW(sht, sht, "AND"));
+			BINARY_3TYPE_FUNC(sht, sht, sht, AND);
 		break;
 	case TYPE_int:
 		if (nonil)
-			BINARY_3TYPE_FUNC_nonil_nilcheck(int, int, int, AND, ON_OVERFLOW(int, int, "AND"));
+			BINARY_3TYPE_FUNC_nonil(int, int, int, AND);
 		else
-			BINARY_3TYPE_FUNC_nilcheck(int, int, int, AND, ON_OVERFLOW(int, int, "AND"));
+			BINARY_3TYPE_FUNC(int, int, int, AND);
 		break;
 	case TYPE_lng:
 		if (nonil)
-			BINARY_3TYPE_FUNC_nonil_nilcheck(lng, lng, lng, AND, ON_OVERFLOW(lng, lng, "AND"));
+			BINARY_3TYPE_FUNC_nonil(lng, lng, lng, AND);
 		else
-			BINARY_3TYPE_FUNC_nilcheck(lng, lng, lng, AND, ON_OVERFLOW(lng, lng, "AND"));
+			BINARY_3TYPE_FUNC(lng, lng, lng, AND);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		if (nonil)
-			BINARY_3TYPE_FUNC_nonil_nilcheck(hge, hge, hge, AND, ON_OVERFLOW(hge, hge, "AND"));
+			BINARY_3TYPE_FUNC_nonil(hge, hge, hge, AND);
 		else
-			BINARY_3TYPE_FUNC_nilcheck(hge, hge, hge, AND, ON_OVERFLOW(hge, hge, "AND"));
+			BINARY_3TYPE_FUNC(hge, hge, hge, AND);
 		break;
 #endif
 	default:
@@ -2956,12 +11758,14 @@ and_typeswitchloop(const void *lft, bool incr1,
 }
 
 BAT *
-BATcalcand(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
+BATcalcand(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 {
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
+	BUN ncand;
 	struct canditer ci1, ci2;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -2973,61 +11777,63 @@ BATcalcand(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		return NULL;
 	}
 
-	canditer_init(&ci1, b1, s1);
-	canditer_init(&ci2, b2, s2);
-	if (ci1.ncand != ci2.ncand || ci1.hseq != ci2.hseq) {
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
 		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
 
-	bn = COLnew(ci1.hseq, b1->ttype, ci1.ncand, TRANSIENT);
+	bn = COLnew(ci1.hseq, b1->ttype, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ci1.ncand == 0)
+	if (ncand == 0)
 		return bn;
 
-	BATiter b1i = bat_iterator(b1);
-	BATiter b2i = bat_iterator(b2);
-	nils = and_typeswitchloop(b1i.base, true,
-				  b2i.base, true,
+	nils = and_typeswitchloop(Tloc(b1, 0), 1,
+				  Tloc(b2, 0), 1,
 				  Tloc(bn, 0),
-				  b1i.type,
-				  &ci1, &ci2, b1->hseqbase, b2->hseqbase,
-				  b1i.nonil && b2i.nonil,
+				  b1->ttype,
+				  &ci1, &ci2, rv, b1->hseqbase, b2->hseqbase,
+				  b1->tnonil && b2->tnonil,
 				  __func__);
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
 		return NULL;
 	}
 
-	BATsetcount(bn, ci1.ncand);
+	BATsetcount(bn, ncand);
 
-	bn->tsorted = ci1.ncand <= 1 || nils == ci1.ncand;
-	bn->trevsorted = ci1.ncand <= 1 || nils == ci1.ncand;
-	bn->tkey = ci1.ncand <= 1;
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
 	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
 		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
 
 BAT *
-BATcalcandcst(BAT *b, const ValRecord *v, BAT *s)
+BATcalcandcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 {
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
+	BUN ncand;
 	struct canditer ci;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -3038,56 +11844,59 @@ BATcalcandcst(BAT *b, const ValRecord *v, BAT *s)
 		return NULL;
 	}
 
-	canditer_init(&ci, b, s);
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
 
 	if (b->ttype == TYPE_bit && v->vtype == TYPE_bit && v->val.btval == 0) {
 		/* false AND anything (including NIL) equals false */
 		return BATconstant(ci.hseq, TYPE_bit, &(bit){0},
-				   ci.ncand, TRANSIENT);
+				   ncand, TRANSIENT);
 	}
 
-	bn = COLnew(ci.hseq, b->ttype, ci.ncand, TRANSIENT);
+	bn = COLnew(ci.hseq, b->ttype, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ci.ncand == 0)
+	if (ncand == 0)
 		return bn;
 
-	BATiter bi = bat_iterator(b);
-	nils = and_typeswitchloop(bi.base, true,
-				  VALptr(v), false,
-				  Tloc(bn, 0), bi.type,
+	nils = and_typeswitchloop(Tloc(b, 0), 1,
+				  VALptr(v), 0,
+				  Tloc(bn, 0), b->ttype,
 				  &ci,
-				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  rv,
 				  b->hseqbase, 0,
-				  bi.nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				  b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  __func__);
-	bat_iterator_end(&bi);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
 		return NULL;
 	}
 
-	BATsetcount(bn, ci.ncand);
+	BATsetcount(bn, ncand);
 
-	bn->tsorted = ci.ncand <= 1 || nils == ci.ncand;
-	bn->trevsorted = ci.ncand <= 1 || nils == ci.ncand;
-	bn->tkey = ci.ncand <= 1;
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
 
 BAT *
-BATcalccstand(const ValRecord *v, BAT *b, BAT *s)
+BATcalccstand(const ValRecord *v, BAT *b, BAT *s, BAT *r)
 {
-	return BATcalcandcst(b, v, s);
+	return BATcalcandcst(b, v, s, r);
 }
 
 gdk_return
@@ -3098,11 +11907,12 @@ VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 		return GDK_FAIL;
 	}
 
-	if (and_typeswitchloop(VALptr(lft), false,
-			       VALptr(rgt), false,
+	if (and_typeswitchloop(VALptr(lft), 0,
+			       VALptr(rgt), 0,
 			       VALget(ret), lft->vtype,
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       NULL,
 			       0, 0, false, __func__) == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
@@ -3130,22 +11940,18 @@ VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 #define LSH_CHECK_lng(a, b)	LSH_CHECK(a, b, lng)
 
 static BUN
-lsh_typeswitchloop(const void *lft, int tp1, bool incr1,
-		   const void *rgt, int tp2, bool incr2,
+lsh_typeswitchloop(const void *lft, int tp1, int incr1,
+		   const void *rgt, int tp2, int incr2,
 		   void *restrict dst,
 		   struct canditer *restrict ci1,
 		   struct canditer *restrict ci2,
+		   const bit *restrict rv,
 		   oid candoff1, oid candoff2,
-		   const char *func)
+		   bool abort_on_error, const char *func)
 {
+	oid x1, x2;
 	BUN i, j, k;
 	BUN nils = 0;
-
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	tp1 = ATOMbasetype(tp1);
 	tp2 = ATOMbasetype(tp2);
@@ -3304,176 +12110,190 @@ lsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 }
 
 BAT *
-BATcalclsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
+BATcalclsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, bool abort_on_error)
 {
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
+	BUN ncand;
 	struct canditer ci1, ci2;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
-	canditer_init(&ci1, b1, s1);
-	canditer_init(&ci2, b2, s2);
-	if (ci1.ncand != ci2.ncand || ci1.hseq != ci2.hseq) {
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
 		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
 
-	bn = COLnew(ci1.hseq, b1->ttype, ci1.ncand, TRANSIENT);
+	bn = COLnew(ci1.hseq, b1->ttype, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ci1.ncand == 0)
+	if (ncand == 0)
 		return bn;
 
-	BATiter b1i = bat_iterator(b1);
-	BATiter b2i = bat_iterator(b2);
-	nils = lsh_typeswitchloop(b1i.base, b1i.type, true,
-				  b2i.base, b2i.type, true,
+	nils = lsh_typeswitchloop(Tloc(b1, 0), b1->ttype, 1,
+				  Tloc(b2, 0), b2->ttype, 1,
 				  Tloc(bn, 0),
-				  &ci1, &ci2, b1->hseqbase, b2->hseqbase,
-				  __func__);
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
+				  &ci1, &ci2, rv, b1->hseqbase, b2->hseqbase,
+				  abort_on_error, __func__);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
 		return NULL;
 	}
 
-	BATsetcount(bn, ci1.ncand);
+	BATsetcount(bn, ncand);
 
-	bn->tsorted = ci1.ncand <= 1 || nils == ci1.ncand;
-	bn->trevsorted = ci1.ncand <= 1 || nils == ci1.ncand;
-	bn->tkey = ci1.ncand <= 1;
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
 	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
 		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
 
 BAT *
-BATcalclshcst(BAT *b, const ValRecord *v, BAT *s)
+BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, bool abort_on_error)
 {
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
+	BUN ncand;
 	struct canditer ci;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
 
-	canditer_init(&ci, b, s);
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
 
-	bn = COLnew(ci.hseq, b->ttype, ci.ncand, TRANSIENT);
+	bn = COLnew(ci.hseq, b->ttype, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ci.ncand == 0)
+	if (ncand == 0)
 		return bn;
 
-	BATiter bi = bat_iterator(b);
-	nils = lsh_typeswitchloop(bi.base, bi.type, true,
-				  VALptr(v), v->vtype, false,
+	nils = lsh_typeswitchloop(Tloc(b, 0), b->ttype, 1,
+				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, 0),
 				  &ci,
-				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  rv,
 				  b->hseqbase, 0,
-				  __func__);
-	bat_iterator_end(&bi);
+				  abort_on_error, __func__);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
 		return NULL;
 	}
 
-	BATsetcount(bn, ci.ncand);
+	BATsetcount(bn, ncand);
 
-	bn->tsorted = ci.ncand <= 1 || nils == ci.ncand;
-	bn->trevsorted = ci.ncand <= 1 || nils == ci.ncand;
-	bn->tkey = ci.ncand <= 1;
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
 
 BAT *
-BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s)
+BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, BAT *r, bool abort_on_error)
 {
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
+	BUN ncand;
 	struct canditer ci;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
 
-	canditer_init(&ci, b, s);
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
 
-	bn = COLnew(ci.hseq, v->vtype, ci.ncand, TRANSIENT);
+	bn = COLnew(ci.hseq, v->vtype, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ci.ncand == 0)
+	if (ncand == 0)
 		return bn;
 
-	BATiter bi = bat_iterator(b);
-	nils = lsh_typeswitchloop(VALptr(v), v->vtype, false,
-				  bi.base, bi.type, true,
+	nils = lsh_typeswitchloop(VALptr(v), v->vtype, 0,
+				  Tloc(b, 0), b->ttype, 1,
 				  Tloc(bn, 0),
-				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
 				  &ci,
+				  rv,
 				  0, b->hseqbase,
-				  __func__);
-	bat_iterator_end(&bi);
+				  abort_on_error, __func__);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
 		return NULL;
 	}
 
-	BATsetcount(bn, ci.ncand);
+	BATsetcount(bn, ncand);
 
-	bn->tsorted = ci.ncand <= 1 || nils == ci.ncand;
-	bn->trevsorted = ci.ncand <= 1 || nils == ci.ncand;
-	bn->tkey = ci.ncand <= 1;
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
 
 gdk_return
-VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
+VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
+	   bool abort_on_error)
 {
 	ret->vtype = lft->vtype;
-	if (lsh_typeswitchloop(VALptr(lft), lft->vtype, false,
-			       VALptr(rgt), rgt->vtype, false,
+	if (lsh_typeswitchloop(VALptr(lft), lft->vtype, 0,
+			       VALptr(rgt), rgt->vtype, 0,
 			       VALget(ret),
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
-			       0, 0, __func__) == BUN_NONE)
+			       NULL,
+			       0, 0, abort_on_error, __func__) == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -3484,22 +12304,18 @@ VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 #define RSH(a, b)	((a) >> (b))
 
 static BUN
-rsh_typeswitchloop(const void *lft, int tp1, bool incr1,
-		   const void *rgt, int tp2, bool incr2,
+rsh_typeswitchloop(const void *lft, int tp1, int incr1,
+		   const void *rgt, int tp2, int incr2,
 		   void *restrict dst,
 		   struct canditer *restrict ci1,
 		   struct canditer *restrict ci2,
+		   const bit *restrict rv,
 		   oid candoff1, oid candoff2,
-		   const char *restrict func)
+		   bool abort_on_error, const char *restrict func)
 {
+	oid x1, x2;
 	BUN i, j, k;
 	BUN nils = 0;
-
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
 
 	tp1 = ATOMbasetype(tp1);
 	tp2 = ATOMbasetype(tp2);
@@ -3658,179 +12474,376 @@ rsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 }
 
 BAT *
-BATcalcrsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
+BATcalcrsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, bool abort_on_error)
 {
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
+	BUN ncand;
 	struct canditer ci1, ci2;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
-	canditer_init(&ci1, b1, s1);
-	canditer_init(&ci2, b2, s2);
-	if (ci1.ncand != ci2.ncand || ci1.hseq != ci2.hseq) {
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
 		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
 
-	bn = COLnew(ci1.hseq, b1->ttype, ci1.ncand, TRANSIENT);
+	bn = COLnew(ci1.hseq, b1->ttype, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ci1.ncand == 0)
+	if (ncand == 0)
 		return bn;
 
-	BATiter b1i = bat_iterator(b1);
-	BATiter b2i = bat_iterator(b2);
-	nils = rsh_typeswitchloop(b1i.base, b1i.type, true,
-				  b2i.base, b2i.type, true,
+	nils = rsh_typeswitchloop(Tloc(b1, 0), b1->ttype, 1,
+				  Tloc(b2, 0), b2->ttype, 1,
 				  Tloc(bn, 0),
-				  &ci1, &ci2, b1->hseqbase, b2->hseqbase,
-				  __func__);
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
+				  &ci1, &ci2, rv, b1->hseqbase, b2->hseqbase,
+				  abort_on_error, __func__);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
 		return NULL;
 	}
 
-	BATsetcount(bn, ci1.ncand);
+	BATsetcount(bn, ncand);
 
-	bn->tsorted = ci1.ncand <= 1 || nils == ci1.ncand;
-	bn->trevsorted = ci1.ncand <= 1 || nils == ci1.ncand;
-	bn->tkey = ci1.ncand <= 1;
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
 	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT
 		  ",s1=" ALGOOPTBATFMT ",s2=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2),
 		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
 
 BAT *
-BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s)
+BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, bool abort_on_error)
 {
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
+	BUN ncand;
 	struct canditer ci;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
 
-	canditer_init(&ci, b, s);
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
 
-	bn = COLnew(ci.hseq, b->ttype, ci.ncand, TRANSIENT);
+	bn = COLnew(ci.hseq, b->ttype, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ci.ncand == 0)
+	if (ncand == 0)
 		return bn;
 
-	BATiter bi = bat_iterator(b);
-	nils = rsh_typeswitchloop(bi.base, bi.type, true,
-				  VALptr(v), v->vtype, false,
+	nils = rsh_typeswitchloop(Tloc(b, 0), b->ttype, 1,
+				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, 0),
 				  &ci,
-				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  rv,
 				  b->hseqbase, 0,
-				  __func__);
-	bat_iterator_end(&bi);
+				  abort_on_error, __func__);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
 		return NULL;
 	}
 
-	BATsetcount(bn, ci.ncand);
+	BATsetcount(bn, ncand);
 
-	bn->tsorted = ci.ncand <= 1 || nils == ci.ncand;
-	bn->trevsorted = ci.ncand <= 1 || nils == ci.ncand;
-	bn->tkey = ci.ncand <= 1;
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
 
 BAT *
-BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s)
+BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, BAT *r, bool abort_on_error)
 {
 	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
+	BUN ncand;
 	struct canditer ci;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
 
-	canditer_init(&ci, b, s);
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
 
-	bn = COLnew(ci.hseq, v->vtype, ci.ncand, TRANSIENT);
+	bn = COLnew(ci.hseq, v->vtype, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ci.ncand == 0)
+	if (ncand == 0)
 		return bn;
 
-	BATiter bi = bat_iterator(b);
-	nils = rsh_typeswitchloop(VALptr(v), v->vtype, false,
-				  bi.base, bi.type, true,
+	nils = rsh_typeswitchloop(VALptr(v), v->vtype, 0,
+				  Tloc(b, 0), b->ttype, 1,
 				  Tloc(bn, 0),
-				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
 				  &ci,
+				  rv,
 				  0, b->hseqbase,
-				  __func__);
-	bat_iterator_end(&bi);
+				  abort_on_error, __func__);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
 		return NULL;
 	}
 
-	BATsetcount(bn, ci.ncand);
+	BATsetcount(bn, ncand);
 
-	bn->tsorted = ci.ncand <= 1 || nils == ci.ncand;
-	bn->trevsorted = ci.ncand <= 1 || nils == ci.ncand;
-	bn->tkey = ci.ncand <= 1;
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
 
 gdk_return
-VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
+VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
+	   bool abort_on_error)
 {
 	ret->vtype = lft->vtype;
-	if (rsh_typeswitchloop(VALptr(lft), lft->vtype, false,
-			       VALptr(rgt), rgt->vtype, false,
+	if (rsh_typeswitchloop(VALptr(lft), lft->vtype, 0,
+			       VALptr(rgt), rgt->vtype, 0,
 			       VALget(ret),
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
-			       0, 0, __func__) == BUN_NONE)
+			       NULL,
+			       0, 0, abort_on_error, __func__) == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
+
+/* ---------------------------------------------------------------------- */
+/* less than (any "linear" type) */
+
+/* these three are for all simple comparisons (6 in all) */
+#define TYPE_TPE		TYPE_bit
+#define TPE			bit
+#define TPE_nil			bit_nil
+#define is_TPE_nil		is_bit_nil
+
+#define OP			LT
+#define op_typeswitchloop	lt_typeswitchloop
+#define BATcalcop_intern	BATcalclt_intern
+#define BATcalcop		BATcalclt
+#define BATcalcopcst		BATcalcltcst
+#define BATcalccstop		BATcalccstlt
+#define VARcalcop		VARcalclt
+
+#include "gdk_calc_compare.h"
+
+#undef OP
+#undef op_typeswitchloop
+#undef BATcalcop_intern
+#undef BATcalcop
+#undef BATcalcopcst
+#undef BATcalccstop
+#undef VARcalcop
+
+/* ---------------------------------------------------------------------- */
+/* greater than (any "linear" type) */
+
+#define OP			GT
+#define op_typeswitchloop	gt_typeswitchloop
+#define BATcalcop_intern	BATcalcgt_intern
+#define BATcalcop		BATcalcgt
+#define BATcalcopcst		BATcalcgtcst
+#define BATcalccstop		BATcalccstgt
+#define VARcalcop		VARcalcgt
+
+#include "gdk_calc_compare.h"
+
+#undef OP
+#undef op_typeswitchloop
+#undef BATcalcop_intern
+#undef BATcalcop
+#undef BATcalcopcst
+#undef BATcalccstop
+#undef VARcalcop
+
+/* ---------------------------------------------------------------------- */
+/* less than or equal (any "linear" type) */
+
+#define LE(a, b)	((bit) ((a) <= (b)))
+
+#define OP			LE
+#define op_typeswitchloop	le_typeswitchloop
+#define BATcalcop_intern	BATcalcle_intern
+#define BATcalcop		BATcalcle
+#define BATcalcopcst		BATcalclecst
+#define BATcalccstop		BATcalccstle
+#define VARcalcop		VARcalcle
+
+#include "gdk_calc_compare.h"
+
+#undef OP
+#undef op_typeswitchloop
+#undef BATcalcop_intern
+#undef BATcalcop
+#undef BATcalcopcst
+#undef BATcalccstop
+#undef VARcalcop
+
+/* ---------------------------------------------------------------------- */
+/* greater than or equal (any "linear" type) */
+
+#define GE(a, b)	((bit) ((a) >= (b)))
+
+#define OP			GE
+#define op_typeswitchloop	ge_typeswitchloop
+#define BATcalcop_intern	BATcalcge_intern
+#define BATcalcop		BATcalcge
+#define BATcalcopcst		BATcalcgecst
+#define BATcalccstop		BATcalccstge
+#define VARcalcop		VARcalcge
+
+#include "gdk_calc_compare.h"
+
+#undef OP
+#undef op_typeswitchloop
+#undef BATcalcop_intern
+#undef BATcalcop
+#undef BATcalcopcst
+#undef BATcalccstop
+#undef VARcalcop
+
+/* ---------------------------------------------------------------------- */
+/* equal (any type) */
+
+#define EQ(a, b)	((bit) ((a) == (b)))
+
+#define OP			EQ
+#define op_typeswitchloop	eq_typeswitchloop
+#define BATcalcop_intern	BATcalceq_intern
+#define BATcalcop		BATcalceq
+#define BATcalcopcst		BATcalceqcst
+#define BATcalccstop		BATcalccsteq
+#define VARcalcop		VARcalceq
+
+#define NIL_MATCHES_FLAG 1
+
+#include "gdk_calc_compare.h"
+
+#undef OP
+#undef op_typeswitchloop
+#undef BATcalcop_intern
+#undef BATcalcop
+#undef BATcalcopcst
+#undef BATcalccstop
+#undef VARcalcop
+
+/* ---------------------------------------------------------------------- */
+/* not equal (any type) */
+
+#define NE(a, b)	((bit) ((a) != (b)))
+
+#define OP			NE
+#define op_typeswitchloop	ne_typeswitchloop
+#define BATcalcop_intern	BATcalcne_intern
+#define BATcalcop		BATcalcne
+#define BATcalcopcst		BATcalcnecst
+#define BATcalccstop		BATcalccstne
+#define VARcalcop		VARcalcne
+
+#include "gdk_calc_compare.h"
+
+#undef NIL_MATCHES_FLAG
+
+#undef OP
+#undef op_typeswitchloop
+#undef BATcalcop_intern
+#undef BATcalcop
+#undef BATcalcopcst
+#undef BATcalccstop
+#undef VARcalcop
+
+#undef TYPE_TPE
+#undef TPE
+#undef TPE_nil
+#undef is_TPE_nil
+
+/* ---------------------------------------------------------------------- */
+/* generic comparison (any "linear" type) */
+
+/* #define CMP(a, b)	((bte) ((a) < (b) ? -1 : (a) > (b))) */
+#define CMP(a, b)	((bte) (((a) > (b)) - ((a) < (b))))
+
+#define TYPE_TPE		TYPE_bte
+#define TPE			bte
+#define TPE_nil			bte_nil
+#define is_TPE_nil		is_bte_nil
+
+#define OP			CMP
+#define op_typeswitchloop	cmp_typeswitchloop
+#define BATcalcop_intern	BATcalccmp_intern
+#define BATcalcop		BATcalccmp
+#define BATcalcopcst		BATcalccmpcst
+#define BATcalccstop		BATcalccstcmp
+#define VARcalcop		VARcalccmp
+
+#include "gdk_calc_compare.h"
+
+#undef OP
+#undef op_typeswitchloop
+#undef BATcalcop_intern
+#undef BATcalcop
+#undef BATcalcopcst
+#undef BATcalccstop
+#undef VARcalcop
+
+#undef TYPE_TPE
+#undef TPE
+#undef TPE_nil
+#undef is_TPE_nil
 
 /* ---------------------------------------------------------------------- */
 /* between (any "linear" type) */
@@ -3878,53 +12891,51 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 
 #define BETWEEN_LOOP_TYPE(TYPE, canditer_next)				\
 	do {								\
-		i = j = k = 0;						\
-		TIMEOUT_LOOP_IDX(l, ncand, timeoffset) {		\
-			if (incr1)					\
-				i = canditer_next(ci) - seqbase1;	\
-			if (incr2)					\
-				j = canditer_next(cilo) - seqbase2;	\
-			if (incr3)					\
-				k = canditer_next(cihi) - seqbase3;	\
-			dst[l] = BETWEEN(((const TYPE *) src)[i],	\
-					 ((const TYPE *) lo)[j],	\
-					 ((const TYPE *) hi)[k],	\
-					 TYPE);				\
-			nils += is_bit_nil(dst[l]);			\
+		for (l = 0; l < ci->ncand; l++) {			\
+			x1 = canditer_next(ci) - seqbase1;		\
+			x2 = canditer_next(cilo) - seqbase2;		\
+			x3 = canditer_next(cihi) - seqbase3;		\
+			if (rv != NULL && !rv[l]) {			\
+				dst[l] = bit_nil;			\
+				nils++;					\
+			} else {					\
+				i = x1 * incr1;				\
+				j = x2 * incr2;				\
+				k = x3 * incr3;				\
+				dst[l] = BETWEEN(((const TYPE *) src)[i], \
+						 ((const TYPE *) lo)[j], \
+						 ((const TYPE *) hi)[k], \
+						 TYPE);			\
+				nils += is_bit_nil(dst[l]);		\
+			}						\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (0)
 
 static BAT *
-BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
-		      const void *lo, bool incr2, const char *hp2, int wd2,
-		      const void *hi, bool incr3, const char *hp3, int wd3,
+BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
+		      const void *lo, int incr2, const char *hp2, int wd2,
+		      const void *hi, int incr3, const char *hp3, int wd3,
 		      int tp,
 		      struct canditer *restrict ci,
 		      struct canditer *restrict cilo,
 		      struct canditer *restrict cihi,
+		      const bit *restrict rv,
 		      oid seqbase1, oid seqbase2, oid seqbase3,
 		      bool symmetric, bool anti,
 		      bool linc, bool hinc, bool nils_false, const char *func)
 {
 	BAT *bn;
 	BUN nils = 0;
-	BUN i, j, k, l, ncand = ci->ncand;
+	BUN i, j, k, l;
 	bit *restrict dst;
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
+	oid x1, x2, x3;
 
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
-
-	bn = COLnew(ci->hseq, TYPE_bit, ncand, TRANSIENT);
+	bn = COLnew(ci->hseq, TYPE_bit, ci->ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	if (ncand == 0)
+	if (ci->ncand == 0)
 		return bn;
 
 	dst = (bit *) Tloc(bn, 0);
@@ -3986,53 +12997,54 @@ BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
 			return NULL;
 		}
 		nil = ATOMnilptr(tp);
-		i = j = k = 0;
-		TIMEOUT_LOOP_IDX(l, ncand, timeoffset) {
-			if (incr1)
-				i = canditer_next(ci) - seqbase1;
-			if (incr2)
-				j = canditer_next(cilo) - seqbase2;
-			if (incr3)
-				k = canditer_next(cihi) - seqbase3;
-			const void *p1, *p2, *p3;
-			p1 = hp1
-				? (const void *) (hp1 + VarHeapVal(src, i, wd1))
-				: (const void *) ((const char *) src + i * wd1);
-			p2 = hp2
-				? (const void *) (hp2 + VarHeapVal(lo, j, wd2))
-				: (const void *) ((const char *) lo + j * wd2);
-			p3 = hp3
-				? (const void *) (hp3 + VarHeapVal(hi, k, wd3))
-				: (const void *) ((const char *) hi + k * wd3);
-			dst[l] = BETWEEN(p1, p2, p3, any);
-			nils += is_bit_nil(dst[l]);
+		for (l = 0; l < ci->ncand; l++) {
+			x1 = canditer_next(ci) - seqbase1;
+			x2 = canditer_next(cilo) - seqbase2;
+			x3 = canditer_next(cihi) - seqbase3;
+			if (rv != NULL && !rv[l]) {
+				dst[l] = bit_nil;
+				nils++;
+			} else {
+				i = x1 * incr1;
+				j = x2 * incr2;
+				k = x3 * incr3;
+				const void *p1, *p2, *p3;
+				p1 = hp1
+					? (const void *) (hp1 + VarHeapVal(src, i, wd1))
+					: (const void *) ((const char *) src + i * wd1);
+				p2 = hp2
+					? (const void *) (hp2 + VarHeapVal(lo, j, wd2))
+					: (const void *) ((const char *) lo + j * wd2);
+				p3 = hp3
+					? (const void *) (hp3 + VarHeapVal(hi, k, wd3))
+					: (const void *) ((const char *) hi + k * wd3);
+				dst[l] = BETWEEN(p1, p2, p3, any);
+				nils += is_bit_nil(dst[l]);
+			}
 		}
-		TIMEOUT_CHECK(timeoffset,
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		break;
 	}
 
-	BATsetcount(bn, ncand);
+	BATsetcount(bn, ci->ncand);
 
-	bn->tsorted = ncand <= 1 || nils == ncand;
-	bn->trevsorted = ncand <= 1 || nils == ncand;
-	bn->tkey = ncand <= 1;
+	bn->tsorted = ci->ncand <= 1 || nils == ci->ncand;
+	bn->trevsorted = ci->ncand <= 1 || nils == ci->ncand;
+	bn->tkey = ci->ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
 	return bn;
-bailout:
-	BBPunfix(bn->batCacheid);
-	return NULL;
 }
 
 BAT *
-BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi,
+BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi, BAT *r,
 	       bool symmetric, bool linc, bool hinc, bool nils_false, bool anti)
 {
 	lng t0 = 0;
 	BAT *bn;
+	BUN ncand;
 	struct canditer ci, cilo, cihi;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -4040,12 +13052,19 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi,
 	BATcheck(lo, NULL);
 	BATcheck(hi, NULL);
 
-	canditer_init(&ci, b, s);
-	canditer_init(&cilo, lo, slo);
-	canditer_init(&cihi, hi, shi);
-	if (ci.ncand != cilo.ncand || ci.hseq != cilo.hseq ||
-	    ci.ncand != cihi.ncand || ci.hseq != cihi.hseq) {
+	ncand = canditer_init(&ci, b, s);
+	if (canditer_init(&cilo, lo, slo) != ncand ||
+	    ci.hseq != cilo.hseq) {
 		GDKerror("inputs not the same size.\n");
+		return NULL;
+	}
+	if (canditer_init(&cihi, hi, shi) != ncand ||
+	    ci.hseq != cihi.hseq) {
+		GDKerror("inputs not the same size.\n");
+		return NULL;
+	}
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -4055,50 +13074,45 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi,
 		bit res;
 
 		res = BETWEEN(b->tseqbase, lo->tseqbase, hi->tseqbase, oid);
-		return BATconstant(ci.hseq, TYPE_bit, &res, ci.ncand,
+		return BATconstant(ci.hseq, TYPE_bit, &res, ncand,
 				   TRANSIENT);
 	}
 
-	BATiter bi = bat_iterator(b);
-	BATiter loi = bat_iterator(lo);
-	BATiter hii = bat_iterator(hi);
-	bn = BATcalcbetween_intern(bi.base, 1,
-				   bi.vh ? bi.vh->base : NULL,
-				   bi.width,
-				   loi.base, 1,
-				   loi.vh ? loi.vh->base : NULL,
-				   loi.width,
-				   hii.base, 1,
-				   hii.vh ? hii.vh->base : NULL,
-				   hii.width,
-				   bi.type,
-				   &ci, &cilo, &cihi,
+	bn = BATcalcbetween_intern(Tloc(b, 0), 1,
+				   b->tvheap ? b->tvheap->base : NULL,
+				   b->twidth,
+				   Tloc(lo, 0), 1,
+				   lo->tvheap ? lo->tvheap->base : NULL,
+				   lo->twidth,
+				   Tloc(hi, 0), 1,
+				   hi->tvheap ? hi->tvheap->base : NULL,
+				   hi->twidth,
+				   b->ttype,
+				   &ci, &cilo, &cihi, rv,
 				   b->hseqbase, lo->hseqbase, hi->hseqbase,
 				   symmetric, anti, linc, hinc,
 				   nils_false, __func__);
-	bat_iterator_end(&bi);
-	bat_iterator_end(&loi);
-	bat_iterator_end(&hii);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",lo=" ALGOBATFMT ",hi=" ALGOBATFMT
 		  ",s=" ALGOOPTBATFMT ",slo=" ALGOOPTBATFMT ",shi=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOBATPAR(lo), ALGOBATPAR(hi),
 		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(slo), ALGOOPTBATPAR(shi),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
 
 BAT *
 BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi,
-		     BAT *s,
+		     BAT *s, BAT *r,
 		     bool symmetric, bool linc, bool hinc, bool nils_false,
 		     bool anti)
 {
 	lng t0 = 0;
 	BAT *bn;
 	struct canditer ci;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -4111,38 +13125,43 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi,
 	}
 
 	canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ci.ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
 
-	BATiter bi = bat_iterator(b);
-	bn = BATcalcbetween_intern(bi.base, 1,
-				   bi.vh ? bi.vh->base : NULL,
-				   bi.width,
+	bn = BATcalcbetween_intern(Tloc(b, 0), 1,
+				   b->tvheap ? b->tvheap->base : NULL,
+				   b->twidth,
 				   VALptr(lo), 0, NULL, 0,
 				   VALptr(hi), 0, NULL, 0,
-				   bi.type,
+				   b->ttype,
 				   &ci,
 				   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+				   rv,
 				   b->hseqbase, 0, 0, symmetric, anti,
 				   linc, hinc, nils_false,
 				   __func__);
-	bat_iterator_end(&bi);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
 
 BAT *
-BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo,
+BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo, BAT *r,
 		     bool symmetric, bool linc, bool hinc, bool nils_false,
 		     bool anti)
 {
 	lng t0 = 0;
 	BAT *bn;
 	struct canditer ci, cilo;
+	BUN ncand;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -4154,51 +13173,54 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo,
 		return NULL;
 	}
 
-	canditer_init(&ci, b, s);
-	canditer_init(&cilo, lo, slo);
-	if (ci.ncand != cilo.ncand || ci.hseq != cilo.hseq) {
+	ncand = canditer_init(&ci, b, s);
+	if (canditer_init(&cilo, lo, slo) != ncand ||
+	    ci.hseq != cilo.hseq) {
 		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
 
-	BATiter bi = bat_iterator(b);
-	BATiter loi = bat_iterator(lo);
-	bn = BATcalcbetween_intern(bi.base, 1,
-				   bi.vh ? bi.vh->base : NULL,
-				   bi.width,
-				   loi.base, 1,
-				   loi.vh ? loi.vh->base : NULL,
-				   loi.width,
+	bn = BATcalcbetween_intern(Tloc(b, 0), 1,
+				   b->tvheap ? b->tvheap->base : NULL,
+				   b->twidth,
+				   Tloc(lo, 0), 1,
+				   lo->tvheap ? lo->tvheap->base : NULL,
+				   lo->twidth,
 				   VALptr(hi), 0, NULL, 0,
-				   bi.type,
+				   b->ttype,
 				   &ci,
 				   &cilo,
-				   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+				   &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				   rv,
 				   b->hseqbase, lo->hseqbase, 0,
 				   symmetric, anti,
 				   linc, hinc, nils_false,
 				   __func__);
-	bat_iterator_end(&bi);
-	bat_iterator_end(&loi);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",lo=" ALGOBATFMT
 		  ",s=" ALGOOPTBATFMT ",slo=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOBATPAR(lo),
 		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(slo),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
 
 BAT *
-BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, BAT *shi,
+BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, BAT *shi, BAT *r,
 		     bool symmetric, bool linc, bool hinc, bool nils_false,
 		     bool anti)
 {
 	lng t0 = 0;
 	BAT *bn;
 	struct canditer ci, cihi;
+	BUN ncand;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -4210,39 +13232,40 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, BAT *shi,
 		return NULL;
 	}
 
-	canditer_init(&ci, b, s);
-	canditer_init(&cihi, hi, shi);
-	if (ci.ncand != cihi.ncand || ci.hseq != cihi.hseq) {
+	ncand = canditer_init(&ci, b, s);
+	if (canditer_init(&cihi, hi, shi) != ncand ||
+	    ci.hseq != cihi.hseq) {
 		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
 
-	BATiter bi = bat_iterator(b);
-	BATiter hii = bat_iterator(hi);
-	bn = BATcalcbetween_intern(bi.base, 1,
-				   bi.vh ? bi.vh->base : NULL,
-				   bi.width,
+	bn = BATcalcbetween_intern(Tloc(b, 0), 1,
+				   b->tvheap ? b->tvheap->base : NULL,
+				   b->twidth,
 				   VALptr(lo), 0, NULL, 0,
-				   hii.base, 1,
-				   hii.vh ? hii.vh->base : NULL,
-				   hii.width,
-				   bi.type,
+				   Tloc(hi, 0), 1,
+				   hi->tvheap ? hi->tvheap->base : NULL,
+				   hi->twidth,
+				   b->ttype,
 				   &ci,
-				   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+				   &(struct canditer){.tpe=cand_dense, .ncand=ncand},
 				   &cihi,
+				   rv,
 				   b->hseqbase, 0, hi->hseqbase,
 				   symmetric, anti,
 				   linc, hinc, nils_false,
 				   __func__);
-	bat_iterator_end(&bi);
-	bat_iterator_end(&hii);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",hi=" ALGOBATFMT
 		  ",s=" ALGOOPTBATFMT ",shi=" ALGOOPTBATFMT
-		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOBATPAR(b), ALGOBATPAR(hi),
 		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(shi),
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -4307,7 +13330,7 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 
 #define IFTHENELSELOOP(TYPE)						\
 	do {								\
-		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {			\
+		for (i = 0; i < cnt; i++) {				\
 			if (src[i] && !is_bit_nil(src[i])) {		\
 				((TYPE *) dst)[i] = ((TYPE *) col1)[k]; \
 			} else {					\
@@ -4316,32 +13339,27 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 			k += incr1;					\
 			l += incr2;					\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (0)
-#define IFTHENELSELOOP_msk(TYPE)					\
+#define IFTHENELSELOOP_oid()						\
 	do {								\
-		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {			\
-			if (n == 32) {					\
-				n = 0;					\
-				mask = src[i / 32];			\
+		for (i = 0; i < cnt; i++) {				\
+			if (src[i] && !is_bit_nil(src[i])) {		\
+				((oid *) dst)[i] = col1 ? ((oid *) col1)[k] : seq1; \
+			} else {					\
+				((oid *) dst)[i] = col2 ? ((oid *) col2)[k] : seq2; \
 			}						\
-			((TYPE *) dst)[i] = mask & (1U << n) ?		\
-				((TYPE *) col1)[k] :			\
-				((TYPE *) col2)[l];			\
 			k += incr1;					\
 			l += incr2;					\
-			n++;						\
+			seq1 += incr1;					\
+			seq2 += incr2;					\
 		}							\
-		TIMEOUT_CHECK(timeoffset,				\
-			      GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 	} while (0)
 
 static BAT *
-BATcalcifthenelse_intern(BATiter *bi,
-			 const void *col1, bool incr1, const char *heap1,
+BATcalcifthenelse_intern(BAT *b,
+			 const void *col1, int incr1, const char *heap1,
 			 int width1, bool nonil1, oid seq1,
-			 const void *col2, bool incr2, const char *heap2,
+			 const void *col2, int incr2, const char *heap2,
 			 int width2, bool nonil2, oid seq2,
 			 int tpe)
 {
@@ -4349,270 +13367,91 @@ BATcalcifthenelse_intern(BATiter *bi,
 	void *restrict dst;
 	BUN i, k, l;
 	const void *p;
-	BUN cnt = bi->count;
-
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
+	const bit *src;
+	BUN cnt = b->batCount;
 
 	/* col1 and col2 can only be NULL for void columns */
 	assert(col1 != NULL || ATOMtype(tpe) == TYPE_oid);
 	assert(col2 != NULL || ATOMtype(tpe) == TYPE_oid);
 	assert(col1 != NULL || heap1 == NULL);
 	assert(col2 != NULL || heap2 == NULL);
-	assert(col1 != NULL || incr1 == true);
-	assert(col2 != NULL || incr2 == true);
+	assert(col1 != NULL || incr1 == 1);
+	assert(col2 != NULL || incr2 == 1);
 
-	bn = COLnew(bi->b->hseqbase, ATOMtype(tpe), cnt, TRANSIENT);
+	bn = COLnew(b->hseqbase, ATOMtype(tpe), cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	if (cnt == 0)
 		return bn;
 
+	src = (const bit *) Tloc(b, 0);
+
 	dst = (void *) Tloc(bn, 0);
 	k = l = 0;
-	if (bn->tvheap) {
+	if (bn->tvarsized) {
 		assert((heap1 != NULL && width1 > 0) || (width1 == 0 && incr1 == 0));
 		assert((heap2 != NULL && width2 > 0) || (width2 == 0 && incr2 == 0));
-		if (ATOMstorage(bi->type) == TYPE_msk) {
-			const uint32_t *src = bi->base;
-			BUN n = cnt / 32;
-			TIMEOUT_LOOP_IDX(i, n + 1, timeoffset) {
-				BUN rem = i == n ? cnt % 32 : 32;
-				uint32_t mask = rem != 0 ? src[i] : 0;
-				for (BUN j = 0; j < rem; j++) {
-					if (mask & (1U << j)) {
-						if (heap1)
-							p = heap1 + VarHeapVal(col1, k, width1);
-						else
-							p = col1;
-					} else {
-						if (heap2)
-							p = heap2 + VarHeapVal(col2, l, width2);
-						else
-							p = col2;
-					}
-					if (tfastins_nocheckVAR(bn, i, p) != GDK_SUCCEED) {
-						goto bailout;
-					}
-					k += incr1;
-					l += incr2;
-				}
+		for (i = 0; i < cnt; i++) {
+			if (src[i] && !is_bit_nil(src[i])) {
+				if (heap1)
+					p = heap1 + VarHeapVal(col1, k, width1);
+				else
+					p = col1;
+			} else {
+				if (heap2)
+					p = heap2 + VarHeapVal(col2, l, width2);
+				else
+					p = col2;
 			}
-			TIMEOUT_CHECK(timeoffset,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-		} else {
-			const bit *src = bi->base;
-			TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
-				if (src[i] && !is_bit_nil(src[i])) {
-					if (heap1)
-						p = heap1 + VarHeapVal(col1, k, width1);
-					else
-						p = col1;
-				} else {
-					if (heap2)
-						p = heap2 + VarHeapVal(col2, l, width2);
-					else
-						p = col2;
-				}
-				if (tfastins_nocheckVAR(bn, i, p) != GDK_SUCCEED) {
-					goto bailout;
-				}
-				k += incr1;
-				l += incr2;
+			if (tfastins_nocheckVAR(bn, i, p, Tsize(bn)) != GDK_SUCCEED) {
+				BBPreclaim(bn);
+				return NULL;
 			}
-			TIMEOUT_CHECK(timeoffset,
-				      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
+			k += incr1;
+			l += incr2;
 		}
 	} else {
 		assert(heap1 == NULL);
 		assert(heap2 == NULL);
-		if (ATOMstorage(bi->type) == TYPE_msk) {
-			const uint32_t *src = bi->base;
-			uint32_t mask = 0;
-			BUN n = 32;
-			if (ATOMtype(tpe) == TYPE_oid) {
-				TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
-					if (n == 32) {
-						n = 0;
-						mask = src[i / 32];
-					}
-					((oid *) dst)[i] = mask & (1U << n) ?
-						col1 ? ((oid *)col1)[k] : seq1 :
-						col2 ? ((oid *)col2)[l] : seq2;
-					k += incr1;
-					l += incr2;
-					seq1 += incr1;
-					seq2 += incr2;
-					n++;
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			} else if (ATOMstorage(tpe) == TYPE_msk) {
-				uint32_t v1, v2;
-				if (incr1) {
-					v1 = 0;
-				} else {
-					v1 = * (msk *) col1 ? ~0U : 0U;
-				}
-				if (incr2) {
-					v2 = 0;
-				} else {
-					v2 = * (msk *) col2 ? ~0U : 0U;
-				}
-				n = (cnt + 31) / 32;
-				TIMEOUT_LOOP_IDX(i, n, timeoffset) {
-					if (incr1)
-						v1 = ((uint32_t *) col1)[i];
-					if (incr2)
-						v2 = ((uint32_t *) col2)[i];
-					((uint32_t *) dst)[i] = (src[i] & v1)
-						| (~src[i] & v2);
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			} else {
-				switch (bn->twidth) {
-				case 1:
-					IFTHENELSELOOP_msk(bte);
-					break;
-				case 2:
-					IFTHENELSELOOP_msk(sht);
-					break;
-				case 4:
-					IFTHENELSELOOP_msk(int);
-					break;
-				case 8:
-					IFTHENELSELOOP_msk(lng);
-					break;
-				case 16:
-#ifdef HAVE_HGE
-					IFTHENELSELOOP_msk(hge);
-#else
-					IFTHENELSELOOP_msk(uuid);
-#endif
-					break;
-				default:
-					TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
-						if (n == 32) {
-							n = 0;
-							mask = src[i / 32];
-						}
-						if (mask & (1U << n))
-							p = ((const char *) col1) + k * width1;
-						else
-							p = ((const char *) col2) + l * width2;
-						memcpy(dst, p, bn->twidth);
-						dst = (void *) ((char *) dst + bn->twidth);
-						k += incr1;
-						l += incr2;
-						n++;
-					}
-					TIMEOUT_CHECK(timeoffset,
-						      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-				}
-			}
+		if (ATOMtype(tpe) == TYPE_oid) {
+			IFTHENELSELOOP_oid();
 		} else {
-			const bit *src = bi->base;
-			if (ATOMtype(tpe) == TYPE_oid) {
-				TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
+			switch (bn->twidth) {
+			case 1:
+				IFTHENELSELOOP(bte);
+				break;
+			case 2:
+				IFTHENELSELOOP(sht);
+				break;
+			case 4:
+				IFTHENELSELOOP(int);
+				break;
+			case 8:
+				IFTHENELSELOOP(lng);
+				break;
+#ifdef HAVE_HGE
+			case 16:
+				IFTHENELSELOOP(hge);
+				break;
+#endif
+			default:
+				for (i = 0; i < cnt; i++) {
 					if (src[i] && !is_bit_nil(src[i])) {
-						((oid *) dst)[i] = col1 ? ((oid *) col1)[k] : seq1;
+						p = ((const char *) col1) + k * width1;
 					} else {
-						((oid *) dst)[i] = col2 ? ((oid *) col2)[k] : seq2;
+						p = ((const char *) col2) + l * width2;
 					}
+					memcpy(dst, p, bn->twidth);
+					dst = (void *) ((char *) dst + bn->twidth);
 					k += incr1;
 					l += incr2;
-					seq1 += incr1;
-					seq2 += incr2;
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-			} else if (ATOMstorage(tpe) == TYPE_msk) {
-				uint32_t v1, v2;
-				uint32_t *d = dst;
-				if (incr1) {
-					v1 = 0;
-				} else {
-					v1 = * (msk *) col1 ? ~0U : 0U;
-				}
-				if (incr2) {
-					v2 = 0;
-				} else {
-					v2 = * (msk *) col2 ? ~0U : 0U;
-				}
-				i = 0;
-				TIMEOUT_LOOP(cnt / 32, timeoffset) {
-					uint32_t mask = 0;
-					if (incr1)
-						v1 = ((uint32_t *) col1)[i/32];
-					if (incr2)
-						v2 = ((uint32_t *) col2)[i/32];
-					for (int n = 0; n < 32; n++) {
-						mask |= (uint32_t) (src[i] != 0) << n;
-					}
-					*d++ = (mask & v1) | (~mask & v2);
-					i += 32;
-				}
-				TIMEOUT_CHECK(timeoffset,
-					      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
-				/* do the last word */
-				if (i < cnt) {
-					uint32_t mask = 0;
-					if (incr1)
-						v1 = ((uint32_t *) col1)[i/32];
-					if (incr2)
-						v2 = ((uint32_t *) col2)[i/32];
-					for (int n = 0; n < 32; n++) {
-						mask |= (uint32_t) (src[i] != 0) << n;
-						if (++i == cnt)
-							break;
-					}
-					*d++ = (mask & v1) | (~mask & v2);
-				}
-			} else {
-				switch (bn->twidth) {
-				case 1:
-					IFTHENELSELOOP(bte);
-					break;
-				case 2:
-					IFTHENELSELOOP(sht);
-					break;
-				case 4:
-					IFTHENELSELOOP(int);
-					break;
-				case 8:
-					IFTHENELSELOOP(lng);
-					break;
-				case 16:
-#ifdef HAVE_HGE
-					IFTHENELSELOOP(hge);
-#else
-					IFTHENELSELOOP(uuid);
-#endif
-					break;
-				default:
-					TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {
-						if (src[i] && !is_bit_nil(src[i])) {
-							p = ((const char *) col1) + k * width1;
-						} else {
-							p = ((const char *) col2) + l * width2;
-						}
-						memcpy(dst, p, bn->twidth);
-						dst = (void *) ((char *) dst + bn->twidth);
-						k += incr1;
-						l += incr2;
-					}
-					TIMEOUT_CHECK(timeoffset,
-						      GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 				}
 			}
 		}
 	}
 
 	BATsetcount(bn, cnt);
+	bn->theap.dirty = true;
 
 	bn->tsorted = cnt <= 1;
 	bn->trevsorted = cnt <= 1;
@@ -4621,9 +13460,6 @@ BATcalcifthenelse_intern(BATiter *bi,
 	bn->tnonil = nonil1 && nonil2;
 
 	return bn;
-bailout:
-	BBPreclaim(bn);
-	return NULL;
 }
 
 BAT *
@@ -4638,30 +13474,18 @@ BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2)
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
-	BATiter bi = bat_iterator(b);
-	BATiter b1i = bat_iterator(b1);
-	BATiter b2i = bat_iterator(b2);
-	if (checkbats(&bi, &b1i, __func__) != GDK_SUCCEED ||
-	    checkbats(&bi, &b2i, __func__) != GDK_SUCCEED) {
-		bat_iterator_end(&bi);
-		bat_iterator_end(&b1i);
-		bat_iterator_end(&b2i);
+	if (checkbats(b, b1, __func__) != GDK_SUCCEED)
 		return NULL;
-	}
+	if (checkbats(b, b2, __func__) != GDK_SUCCEED)
+		return NULL;
 	if (b->ttype != TYPE_bit || ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
-		bat_iterator_end(&bi);
-		bat_iterator_end(&b1i);
-		bat_iterator_end(&b2i);
 		GDKerror("\"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
-	bn = BATcalcifthenelse_intern(&bi,
-				      b1i.base, true, b1i.vh ? b1i.vh->base : NULL, b1i.width, b1i.nonil, b1->tseqbase,
-				      b2i.base, true, b2i.vh ? b2i.vh->base : NULL, b2i.width, b2i.nonil, b2->tseqbase,
-				      b1i.type);
-	bat_iterator_end(&bi);
-	bat_iterator_end(&b1i);
-	bat_iterator_end(&b2i);
+	bn = BATcalcifthenelse_intern(b,
+				      Tloc(b1, 0), 1, b1->tvheap ? b1->tvheap->base : NULL, b1->twidth, b1->tnonil, b1->tseqbase,
+				      Tloc(b2, 0), 1, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil, b2->tseqbase,
+				      b1->ttype);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",b1=" ALGOBATFMT ",b2=" ALGOBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
@@ -4683,25 +13507,16 @@ BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2)
 	BATcheck(b1, NULL);
 	BATcheck(c2, NULL);
 
-	BATiter bi = bat_iterator(b);
-	BATiter b1i = bat_iterator(b1);
-	if (checkbats(&bi, &b1i, __func__) != GDK_SUCCEED) {
-		bat_iterator_end(&bi);
-		bat_iterator_end(&b1i);
+	if (checkbats(b, b1, __func__) != GDK_SUCCEED)
 		return NULL;
-	}
 	if (b->ttype != TYPE_bit || ATOMtype(b1->ttype) != ATOMtype(c2->vtype)) {
-		bat_iterator_end(&bi);
-		bat_iterator_end(&b1i);
 		GDKerror("\"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
-	bn = BATcalcifthenelse_intern(&bi,
-				      b1i.base, true, b1i.vh ? b1i.vh->base : NULL, b1i.width, b1i.nonil, b1->tseqbase,
-				      VALptr(c2), false, NULL, 0, !VALisnil(c2), 0,
-				      b1i.type);
-	bat_iterator_end(&bi);
-	bat_iterator_end(&b1i);
+	bn = BATcalcifthenelse_intern(b,
+				      Tloc(b1, 0), 1, b1->tvheap ? b1->tvheap->base : NULL, b1->twidth, b1->tnonil, b1->tseqbase,
+				      VALptr(c2), 0, NULL, 0, !VALisnil(c2), 0,
+				      b1->ttype);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",b1=" ALGOBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
@@ -4723,25 +13538,16 @@ BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2)
 	BATcheck(c1, NULL);
 	BATcheck(b2, NULL);
 
-	BATiter bi = bat_iterator(b);
-	BATiter b2i = bat_iterator(b2);
-	if (checkbats(&bi, &b2i, __func__) != GDK_SUCCEED) {
-		bat_iterator_end(&bi);
-		bat_iterator_end(&b2i);
+	if (checkbats(b, b2, __func__) != GDK_SUCCEED)
 		return NULL;
-	}
 	if (b->ttype != TYPE_bit || ATOMtype(b2->ttype) != ATOMtype(c1->vtype)) {
-		bat_iterator_end(&bi);
-		bat_iterator_end(&b2i);
 		GDKerror("\"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
-	bn = BATcalcifthenelse_intern(&bi,
-				      VALptr(c1), false, NULL, 0, !VALisnil(c1), 0,
-				      b2i.base, true, b2i.vh ? b2i.vh->base : NULL, b2i.width, b2i.nonil, b2->tseqbase,
+	bn = BATcalcifthenelse_intern(b,
+				      VALptr(c1), 0, NULL, 0, !VALisnil(c1), 0,
+				      Tloc(b2, 0), 1, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil, b2->tseqbase,
 				      c1->vtype);
-	bat_iterator_end(&bi);
-	bat_iterator_end(&b2i);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",b2=" ALGOBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
@@ -4767,12 +13573,10 @@ BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2)
 		GDKerror("\"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
-	BATiter bi = bat_iterator(b);
-	bn = BATcalcifthenelse_intern(&bi,
-				      VALptr(c1), false, NULL, 0, !VALisnil(c1), 0,
-				      VALptr(c2), false, NULL, 0, !VALisnil(c2), 0,
+	bn = BATcalcifthenelse_intern(b,
+				      VALptr(c1), 0, NULL, 0, !VALisnil(c1), 0,
+				      VALptr(c2), 0, NULL, 0, !VALisnil(c2), 0,
 				      c1->vtype);
-	bat_iterator_end(&bi);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
@@ -4780,4 +13584,1236 @@ BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2)
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
+}
+
+/* ---------------------------------------------------------------------- */
+/* type conversion (cast) */
+
+/* a note on the return values from the internal conversion functions:
+ *
+ * the functions return the number of NIL values produced (or at
+ * least, 0 if no NIL, and != 0 if there were any);
+ * the return value is BUN_NONE if there was overflow and a message
+ * was generated;
+ * the return value is BUN_NONE + 1 if the types were not compatible;
+ * the return value is BUN_NONE + 2 if inserting a value into a BAT
+ * failed (only happens for conversion to str).
+ */
+
+#define convertimpl_copy(TYPE)						\
+static BUN								\
+convert_##TYPE##_##TYPE(const TYPE *src, TYPE *restrict dst,		\
+			struct canditer *restrict ci,			\
+			const bit *restrict rv,				\
+			oid candoff, bool *reduce)			\
+{									\
+	BUN i, nils = 0;						\
+	oid x;								\
+									\
+	(void) rv;							\
+	*reduce = false;						\
+	if (ci->tpe == cand_dense) {					\
+		for (i = 0; i < ci->ncand; i++) {			\
+			x = canditer_next_dense(ci) - candoff;		\
+			nils += is_##TYPE##_nil(src[x]);		\
+			dst[i] = src[x];				\
+		}							\
+	} else {							\
+		for (i = 0; i < ci->ncand; i++) {			\
+			x = canditer_next(ci) - candoff;		\
+			nils += is_##TYPE##_nil(src[x]);		\
+			dst[i] = src[x];				\
+		}							\
+	}								\
+	return nils;							\
+}
+
+#define convertimpl_enlarge(TYPE1, TYPE2)				\
+static BUN								\
+convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
+			  struct canditer *restrict ci,			\
+			  const bit *restrict rv,			\
+			  oid candoff, bool *reduce)			\
+{									\
+	BUN i, nils = 0;						\
+	oid x;								\
+									\
+	(void) rv;							\
+	*reduce = false;						\
+	if (ci->tpe == cand_dense) {					\
+		for (i = 0; i < ci->ncand; i++) {			\
+			x = canditer_next_dense(ci) - candoff;		\
+			if (is_##TYPE1##_nil(src[x])) {			\
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else						\
+				dst[i] = (TYPE2) src[x];		\
+		}							\
+	} else {							\
+		for (i = 0; i < ci->ncand; i++) {			\
+			x = canditer_next(ci) - candoff;		\
+			if (is_##TYPE1##_nil(src[x])) {			\
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else						\
+				dst[i] = (TYPE2) src[x];		\
+		}							\
+	}								\
+	return nils;							\
+}
+
+#define convertimpl_enlarge_float(TYPE1, TYPE2, MANT_DIG)		\
+static BUN								\
+convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
+			  struct canditer *restrict ci,			\
+			  const bit *restrict rv,			\
+			  oid candoff, bool *reduce)			\
+{									\
+	BUN i, nils = 0;						\
+	oid x;								\
+									\
+	*reduce = 8 * sizeof(TYPE1) > MANT_DIG;				\
+	if (ci->tpe == cand_dense) {					\
+		for (i = 0; i < ci->ncand; i++) {			\
+			x = canditer_next_dense(ci) - candoff;		\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(src[x])) {			\
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else						\
+				dst[i] = (TYPE2) src[x];		\
+		}							\
+	} else {							\
+		for (i = 0; i < ci->ncand; i++) {			\
+			x = canditer_next(ci) - candoff;		\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(src[x])) {			\
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else						\
+				dst[i] = (TYPE2) src[x];		\
+		}							\
+	}								\
+	return nils;							\
+}
+
+#define CONV_OVERFLOW(TYPE1, TYPE2, value)				\
+	do {								\
+		GDKerror("22003!overflow in conversion of "		\
+			 FMT##TYPE1 " to %s.\n", CST##TYPE1 (value), TYPE2); \
+		return BUN_NONE;					\
+	} while (0)
+
+#define convertimpl_oid_enlarge(TYPE1)					\
+static BUN								\
+convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
+		      struct canditer *restrict ci,			\
+		      const bit *restrict rv,				\
+		      oid candoff, bool abort_on_error, bool *reduce)	\
+{									\
+	BUN i, nils = 0;						\
+	oid x;								\
+									\
+	*reduce = false;						\
+	if (ci->tpe == cand_dense) {					\
+		for (i = 0; i < ci->ncand; i++) {			\
+			x = canditer_next_dense(ci) - candoff;		\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(src[x])) {			\
+				dst[i] = oid_nil;			\
+				nils++;					\
+			} else if (src[x] < 0) {			\
+				if (abort_on_error)			\
+					CONV_OVERFLOW(TYPE1, "oid", src[i]); \
+				*reduce = true;				\
+				dst[i] = oid_nil;			\
+				nils++;					\
+			} else if (is_oid_nil((dst[i] = (oid) src[x])) && \
+				   abort_on_error)			\
+				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
+		}							\
+	} else {							\
+		for (i = 0; i < ci->ncand; i++) {			\
+			x = canditer_next(ci) - candoff;		\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(src[x])) {			\
+				dst[i] = oid_nil;			\
+				nils++;					\
+			} else if (src[x] < 0) {			\
+				if (abort_on_error)			\
+					CONV_OVERFLOW(TYPE1, "oid", src[x]); \
+				*reduce = true;				\
+				dst[i] = oid_nil;			\
+				nils++;					\
+			} else if (is_oid_nil((dst[i] = (oid) src[x])) && \
+				   abort_on_error)			\
+				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
+		}							\
+	}								\
+	return nils;							\
+}
+
+#define convertimpl_oid_reduce(TYPE1)					\
+static BUN								\
+convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
+		      struct canditer *restrict ci,			\
+		      const bit *restrict rv,				\
+		      oid candoff, bool abort_on_error, bool *reduce)	\
+{									\
+	BUN i, nils = 0;						\
+	oid x;								\
+									\
+	*reduce = false;						\
+	if (ci->tpe == cand_dense) {					\
+		for (i = 0; i < ci->ncand; i++) {			\
+			x = canditer_next_dense(ci) - candoff;		\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(src[x])) {			\
+				dst[i] = oid_nil;			\
+				nils++;					\
+			} else if (src[x] < 0 ||			\
+				   src[x] > (TYPE1) GDK_oid_max) {	\
+				if (abort_on_error)			\
+					CONV_OVERFLOW(TYPE1, "oid", src[x]); \
+				*reduce = true;				\
+				dst[i] = oid_nil;			\
+				nils++;					\
+			} else if (is_oid_nil((dst[i] = (oid) src[x])) && \
+				   abort_on_error)			\
+				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
+		}							\
+	} else {							\
+		for (i = 0; i < ci->ncand; i++) {			\
+			x = canditer_next(ci) - candoff;		\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(src[x])) {			\
+				dst[i] = oid_nil;			\
+				nils++;					\
+			} else if (src[x] < 0 ||			\
+				   src[x] > (TYPE1) GDK_oid_max) {	\
+				if (abort_on_error)			\
+					CONV_OVERFLOW(TYPE1, "oid", src[x]); \
+				*reduce = true;				\
+				dst[i] = oid_nil;			\
+				nils++;					\
+			} else if (is_oid_nil((dst[i] = (oid) src[x])) && \
+				   abort_on_error)			\
+				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
+		}							\
+	}								\
+	return nils;							\
+}
+
+#define convertimpl_reduce(TYPE1, TYPE2)				\
+static BUN								\
+convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
+			  struct canditer *restrict ci,			\
+			  const bit *restrict rv,			\
+			  oid candoff, bool abort_on_error, bool *reduce) \
+{									\
+	BUN i, nils = 0;						\
+	oid x;								\
+									\
+	*reduce = false;						\
+	if (ci->tpe == cand_dense) {					\
+		for (i = 0; i < ci->ncand; i++) {			\
+			x = canditer_next_dense(ci) - candoff;		\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(src[x])) {			\
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else if (src[x] < (TYPE1) GDK_##TYPE2##_min || \
+				   src[x] > (TYPE1) GDK_##TYPE2##_max) { \
+				if (abort_on_error)			\
+					CONV_OVERFLOW(TYPE1, #TYPE2, src[x]); \
+				*reduce = true;				\
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else						\
+				dst[i] = (TYPE2) src[x];		\
+		}							\
+	} else {							\
+		for (i = 0; i < ci->ncand; i++) {			\
+			x = canditer_next(ci) - candoff;		\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(src[x])) {			\
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else if (src[x] < (TYPE1) GDK_##TYPE2##_min || \
+				   src[x] > (TYPE1) GDK_##TYPE2##_max) { \
+				if (abort_on_error)			\
+					CONV_OVERFLOW(TYPE1, #TYPE2, src[x]); \
+				*reduce = true;				\
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else						\
+				dst[i] = (TYPE2) src[x];		\
+		}							\
+	}								\
+	return nils;							\
+}
+
+/* Special version of the above for converting from floating point.
+ * The final assignment rounds the value which can still come out to
+ * the NIL representation, so we need to check for that. */
+#ifdef TRUNCATE_NUMBERS
+#define roundflt(x)	(x)
+#define rounddbl(x)	(x)
+#else
+#define roundflt(x)	roundf(x)
+#define rounddbl(x)	round(x)
+#endif
+
+#define convertimpl_reduce_float(TYPE1, TYPE2)				\
+static BUN								\
+convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
+			  struct canditer *restrict ci,			\
+			  const bit *restrict rv,			\
+			  oid candoff, bool abort_on_error, bool *reduce) \
+{									\
+	BUN i, nils = 0;						\
+	oid x;								\
+									\
+	*reduce = true;							\
+	if (ci->tpe == cand_dense) {					\
+		for (i = 0; i < ci->ncand; i++) {			\
+			x = canditer_next_dense(ci) - candoff;		\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(src[x])) {			\
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else if (src[x] < (TYPE1) GDK_##TYPE2##_min || \
+				   src[x] > (TYPE1) GDK_##TYPE2##_max) { \
+				if (abort_on_error)			\
+					CONV_OVERFLOW(TYPE1, #TYPE2, src[x]); \
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[i] = (TYPE2) round##TYPE1(src[x]);	\
+				if (is_##TYPE2##_nil(dst[i]) &&		\
+				    abort_on_error)			\
+					CONV_OVERFLOW(TYPE1, #TYPE2, src[x]); \
+			}						\
+		}							\
+	} else {							\
+		for (i = 0; i < ci->ncand; i++) {			\
+			x = canditer_next(ci) - candoff;		\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(src[x])) {			\
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else if (src[x] < (TYPE1) GDK_##TYPE2##_min || \
+				   src[x] > (TYPE1) GDK_##TYPE2##_max) { \
+				if (abort_on_error)			\
+					CONV_OVERFLOW(TYPE1, #TYPE2, src[x]); \
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[i] = (TYPE2) round##TYPE1(src[x]);	\
+				if (is_##TYPE2##_nil(dst[i]) &&		\
+				    abort_on_error)			\
+					CONV_OVERFLOW(TYPE1, #TYPE2, src[x]); \
+			}						\
+		}							\
+	}								\
+	return nils;							\
+}
+
+#define convert2bit_impl(TYPE)						\
+static BUN								\
+convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,		\
+		     struct canditer *restrict ci,			\
+		     const bit *restrict rv,				\
+		     oid candoff, bool *reduce)				\
+{									\
+	BUN i, nils = 0;						\
+	oid x;								\
+									\
+	*reduce = true;							\
+	if (ci->tpe == cand_dense) {					\
+		for (i = 0; i < ci->ncand; i++) {			\
+			x = canditer_next_dense(ci) - candoff;		\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE##_nil(src[x])) {			\
+				dst[i] = bit_nil;			\
+				nils++;					\
+			} else						\
+				dst[i] = (bit) (src[x] != 0);		\
+		}							\
+	} else {							\
+		for (i = 0; i < ci->ncand; i++) {			\
+			x = canditer_next(ci) - candoff;		\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE##_nil(src[x])) {			\
+				dst[i] = bit_nil;			\
+				nils++;					\
+			} else						\
+				dst[i] = (bit) (src[x] != 0);		\
+		}							\
+	}								\
+	return nils;							\
+}
+
+convertimpl_copy(bte)
+convertimpl_enlarge(bte, sht)
+convertimpl_enlarge(bte, int)
+convertimpl_oid_enlarge(bte)
+convertimpl_enlarge(bte, lng)
+#ifdef HAVE_HGE
+convertimpl_enlarge(bte, hge)
+#endif
+convertimpl_enlarge_float(bte, flt, FLT_MANT_DIG)
+convertimpl_enlarge_float(bte, dbl, DBL_MANT_DIG)
+
+convertimpl_reduce(sht, bte)
+convertimpl_copy(sht)
+convertimpl_enlarge(sht, int)
+convertimpl_oid_enlarge(sht)
+convertimpl_enlarge(sht, lng)
+#ifdef HAVE_HGE
+convertimpl_enlarge(sht, hge)
+#endif
+convertimpl_enlarge_float(sht, flt, FLT_MANT_DIG)
+convertimpl_enlarge_float(sht, dbl, DBL_MANT_DIG)
+
+convertimpl_reduce(int, bte)
+convertimpl_reduce(int, sht)
+convertimpl_copy(int)
+convertimpl_oid_enlarge(int)
+convertimpl_enlarge(int, lng)
+#ifdef HAVE_HGE
+convertimpl_enlarge(int, hge)
+#endif
+convertimpl_enlarge_float(int, flt, FLT_MANT_DIG)
+convertimpl_enlarge_float(int, dbl, DBL_MANT_DIG)
+
+convertimpl_reduce(lng, bte)
+convertimpl_reduce(lng, sht)
+convertimpl_reduce(lng, int)
+#if SIZEOF_OID == SIZEOF_LNG
+convertimpl_oid_enlarge(lng)
+#else
+convertimpl_oid_reduce(lng)
+#endif
+convertimpl_copy(lng)
+#ifdef HAVE_HGE
+convertimpl_enlarge(lng, hge)
+#endif
+convertimpl_enlarge_float(lng, flt, FLT_MANT_DIG)
+convertimpl_enlarge_float(lng, dbl, DBL_MANT_DIG)
+
+#ifdef HAVE_HGE
+convertimpl_reduce(hge, bte)
+convertimpl_reduce(hge, sht)
+convertimpl_reduce(hge, int)
+convertimpl_oid_reduce(hge)
+convertimpl_reduce(hge, lng)
+convertimpl_copy(hge)
+convertimpl_enlarge_float(hge, flt, FLT_MANT_DIG)
+convertimpl_enlarge_float(hge, dbl, DBL_MANT_DIG)
+#endif
+
+convertimpl_reduce_float(flt, bte)
+convertimpl_reduce_float(flt, sht)
+convertimpl_reduce_float(flt, int)
+convertimpl_oid_reduce(flt)
+convertimpl_reduce_float(flt, lng)
+#ifdef HAVE_HGE
+convertimpl_reduce_float(flt, hge)
+#endif
+convertimpl_copy(flt)
+convertimpl_enlarge_float(flt, dbl, DBL_MANT_DIG)
+
+convertimpl_reduce_float(dbl, bte)
+convertimpl_reduce_float(dbl, sht)
+convertimpl_reduce_float(dbl, int)
+convertimpl_oid_reduce(dbl)
+convertimpl_reduce_float(dbl, lng)
+#ifdef HAVE_HGE
+convertimpl_reduce_float(dbl, hge)
+#endif
+#undef rounddbl
+/* no rounding here */
+#define rounddbl(x)	(x)
+convertimpl_reduce_float(dbl, flt)
+convertimpl_copy(dbl)
+
+convert2bit_impl(bte)
+convert2bit_impl(sht)
+convert2bit_impl(int)
+convert2bit_impl(lng)
+#ifdef HAVE_HGE
+convert2bit_impl(hge)
+#endif
+convert2bit_impl(flt)
+convert2bit_impl(dbl)
+
+static BUN
+convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci,
+		const bit *restrict rv)
+{
+	int tp = b->ttype;
+	oid candoff = b->hseqbase;
+	str dst = 0;
+	size_t len = 0;
+	BUN nils = 0;
+	BUN i;
+	const void *nil = ATOMnilptr(tp);
+	const void *restrict src;
+	ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[tp].atomToStr;
+	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp);
+	oid x;
+
+	if (atomtostr == BATatoms[TYPE_str].atomToStr) {
+		/* compatible with str, we just copy the value */
+		BATiter bi = bat_iterator(b);
+
+		assert(b->ttype != TYPE_void);
+		for (i = 0; i < ci->ncand; i++) {
+			x = canditer_next(ci) - candoff;
+			if (rv != NULL && !rv[i]) {
+				src = str_nil;
+				nils++;
+			} else {
+				src = BUNtvar(bi, x);
+				if (strNil(src))
+					nils++;
+			}
+			if (tfastins_nocheckVAR(bn, i, src, bn->twidth) != GDK_SUCCEED)
+				goto bunins_failed;
+		}
+	} else if (b->tvarsized) {
+		BATiter bi = bat_iterator(b);
+
+		assert(b->ttype != TYPE_void);
+		for (i = 0; i < ci->ncand; i++) {
+			x = canditer_next(ci) - candoff;
+			src = BUNtvar(bi, x);
+			if ((rv != NULL && !rv[i]) ||
+			    (*atomcmp)(src, nil) == 0) {
+				nils++;
+				if (tfastins_nocheckVAR(bn, i, str_nil, bn->twidth) != GDK_SUCCEED)
+					goto bunins_failed;
+			} else {
+				if ((*atomtostr)(&dst, &len, src, false) < 0)
+					goto bunins_failed;
+				if (tfastins_nocheckVAR(bn, i, dst, bn->twidth) != GDK_SUCCEED)
+					goto bunins_failed;
+			}
+		}
+	} else {
+		for (i = 0; i < ci->ncand; i++) {
+			x = canditer_next(ci) - candoff;
+			src = Tloc(b, x);
+			if ((rv != NULL && !rv[i]) ||
+			    (*atomcmp)(src, nil) == 0) {
+				nils++;
+				if (tfastins_nocheckVAR(bn, i, str_nil, bn->twidth) != GDK_SUCCEED)
+					goto bunins_failed;
+			} else {
+				if ((*atomtostr)(&dst, &len, src, false) < 0)
+					goto bunins_failed;
+				if (tfastins_nocheckVAR(bn, i, dst, bn->twidth) != GDK_SUCCEED)
+					goto bunins_failed;
+			}
+		}
+	}
+	bn->theap.dirty = true;
+	BATsetcount(bn, ci->ncand);
+	GDKfree(dst);
+	return nils;
+  bunins_failed:
+	GDKfree(dst);
+	return BUN_NONE + 2;
+}
+
+static BUN
+convert_str_any(BAT *b, int tp, void *restrict dst,
+		struct canditer *restrict ci,
+		const bit *restrict rv,
+		oid candoff, bool abort_on_error)
+{
+	BUN nils = 0;
+	const void *nil = ATOMnilptr(tp);
+	size_t len = ATOMsize(tp);
+	ssize_t l;
+	ssize_t (*atomfromstr)(const char *, size_t *, ptr *, bool) = BATatoms[tp].atomFromStr;
+	BATiter bi = bat_iterator(b);
+
+	for (BUN i = 0; i < ci->ncand; i++) {
+		oid x = canditer_next(ci) - candoff;
+		const char *s = BUNtvar(bi, x);
+		if ((rv != NULL && !rv[i]) || strNil(s)) {
+			memcpy(dst, nil, len);
+			nils++;
+		} else {
+			void *d = dst;
+			if ((l = (*atomfromstr)(s, &len, &d, false)) < 0 ||
+			    l < (ssize_t) strlen(s)) {
+				if (abort_on_error) {
+					GDKclrerr();
+					size_t sz = escapedStrlen(s, NULL, NULL, '\'');
+					char *bf = GDKmalloc(sz + 1);
+					if (bf) {
+						escapedStr(bf, s, sz + 1, NULL, NULL, '\'');
+						GDKerror("22018!conversion of string "
+							 "'%s' to type %s failed.\n",
+							 bf, ATOMname(tp));
+						GDKfree(bf);
+					} else {
+						GDKerror("22018!conversion of string "
+							 "to type %s failed.\n",
+							 ATOMname(tp));
+					}
+					return BUN_NONE;
+				}
+				memcpy(dst, nil, len);
+			}
+			assert(len == ATOMsize(tp));
+			if (ATOMcmp(tp, dst, nil) == 0)
+				nils++;
+		}
+		dst = (void *) ((char *) dst + len);
+	}
+	return nils;
+}
+
+static BUN
+convert_void_any(oid seq, BAT *bn,
+		 struct canditer *restrict ci, const bit *restrict rv,
+		 oid candoff, bool abort_on_error, bool *reduce)
+{
+	BUN nils = 0;
+	BUN i;
+	int tp = bn->ttype;
+	void *restrict dst = Tloc(bn, 0);
+	ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[TYPE_oid].atomToStr;
+	char *s = NULL;
+	size_t len = 0;
+	oid x;
+
+	*reduce = false;
+	assert(!is_oid_nil(seq));
+
+	/* we only need to check rv if there is a chance of overflow */
+	switch (ATOMbasetype(tp)) {
+	case TYPE_bte:
+		if (tp == TYPE_bit) {
+			if (ci->ncand > 0) {
+				x = canditer_next(ci) - candoff;
+				((bit *) dst)[0] = x + seq != 0;
+			}
+			for (i = 1; i < ci->ncand; i++) {
+				((bit *) dst)[i] = 1;
+			}
+		} else {
+			for (i = 0; i < ci->ncand; i++) {
+				x = canditer_next(ci) - candoff;
+				if (rv != NULL && !rv[i]) {
+					((bte *) dst)[i] = bte_nil;
+					nils++;
+				} else if (seq + x > GDK_bte_max) {
+					if (abort_on_error)
+						CONV_OVERFLOW(oid, "bte", seq + x);
+					((bte *) dst)[i] = bte_nil;
+					nils++;
+				} else
+					((bte *) dst)[i] = (bte) (seq + x);
+			}
+		}
+		break;
+	case TYPE_sht:
+		for (i = 0; i < ci->ncand; i++) {
+			x = canditer_next(ci) - candoff;
+			if (rv != NULL && !rv[i]) {
+				((sht *) dst)[i] = bte_nil;
+				nils++;
+			} else if (seq + x > GDK_sht_max) {
+				if (abort_on_error)
+					CONV_OVERFLOW(oid, "sht", seq + x);
+				((sht *) dst)[i] = sht_nil;
+				nils++;
+			} else
+				((sht *) dst)[i] = (sht) (seq + x);
+		}
+		break;
+	case TYPE_int:
+		for (i = 0; i < ci->ncand; i++) {
+			x = canditer_next(ci) - candoff;
+#if SIZEOF_OID > SIZEOF_INT
+			if (rv != NULL && !rv[i]) {
+				((int *) dst)[i] = int_nil;
+				nils++;
+			} else if (seq + x > GDK_int_max) {
+				if (abort_on_error)
+					CONV_OVERFLOW(oid, "int", seq + x);
+				((int *) dst)[i] = int_nil;
+				nils++;
+			} else
+#endif
+				((int *) dst)[i] = (int) (seq + x);
+		}
+		break;
+	case TYPE_lng:
+		for (i = 0; i < ci->ncand; i++) {
+			x = canditer_next(ci) - candoff;
+			((lng *) dst)[i] = (lng) (seq + x);
+		}
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		for (i = 0; i < ci->ncand; i++) {
+			x = canditer_next(ci) - candoff;
+			((hge *) dst)[i] = (hge) (seq + x);
+		}
+		break;
+#endif
+	case TYPE_flt:
+		for (i = 0; i < ci->ncand; i++) {
+			x = canditer_next(ci) - candoff;
+			((flt *) dst)[i] = (flt) (seq + x);
+		}
+		break;
+	case TYPE_dbl:
+		for (i = 0; i < ci->ncand; i++) {
+			x = canditer_next(ci) - candoff;
+			((dbl *) dst)[i] = (dbl) (seq + x);
+		}
+		break;
+	case TYPE_str:
+		for (i = 0; i < ci->ncand; i++) {
+			x = canditer_next(ci) - candoff;
+			if ((*atomtostr)(&s, &len, &(oid){seq + x}, false) < 0)
+				goto bunins_failed;
+			if (tfastins_nocheckVAR(bn, i, s, bn->twidth) != GDK_SUCCEED)
+				goto bunins_failed;
+		}
+		GDKfree(s);
+		s = NULL;
+		break;
+	default:
+		return BUN_NONE + 1;
+	}
+
+	bn->theap.dirty = true;
+	return nils;
+
+  bunins_failed:
+	GDKfree(s);
+	return BUN_NONE + 2;
+}
+
+static BUN
+convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
+		       struct canditer *restrict ci, const bit *restrict rv,
+		       oid candoff, bool abort_on_error, bool *reduce)
+{
+	switch (ATOMbasetype(stp)) {
+	case TYPE_bte:
+		switch (ATOMbasetype(dtp)) {
+		case TYPE_bte:
+			if (dtp == TYPE_bit)
+				return convert_bte_bit(src, dst, ci, rv,
+						       candoff, reduce);
+			return convert_bte_bte(src, dst, ci, rv, candoff,
+					       reduce);
+		case TYPE_sht:
+			return convert_bte_sht(src, dst, ci, rv, candoff,
+					       reduce);
+		case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+			if (dtp == TYPE_oid)
+				return convert_bte_oid(src, dst, ci, rv,
+						       candoff, abort_on_error,
+						       reduce);
+#endif
+			return convert_bte_int(src, dst, ci, rv, candoff,
+					       reduce);
+		case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			if (dtp == TYPE_oid)
+				return convert_bte_oid(src, dst, ci, rv,
+						       candoff, abort_on_error,
+						       reduce);
+#endif
+			return convert_bte_lng(src, dst, ci, rv, candoff,
+					       reduce);
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			return convert_bte_hge(src, dst, ci, rv, candoff,
+					       reduce);
+#endif
+		case TYPE_flt:
+			return convert_bte_flt(src, dst, ci, rv, candoff,
+					       reduce);
+		case TYPE_dbl:
+			return convert_bte_dbl(src, dst, ci, rv, candoff,
+					       reduce);
+		default:
+			return BUN_NONE + 1;
+		}
+	case TYPE_sht:
+		switch (ATOMbasetype(dtp)) {
+		case TYPE_bte:
+			if (dtp == TYPE_bit)
+				return convert_sht_bit(src, dst, ci, rv,
+						       candoff, reduce);
+			return convert_sht_bte(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+		case TYPE_sht:
+			return convert_sht_sht(src, dst, ci, rv, candoff,
+					       reduce);
+		case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+			if (dtp == TYPE_oid)
+				return convert_sht_oid(src, dst, ci, rv,
+						       candoff, abort_on_error,
+						       reduce);
+#endif
+			return convert_sht_int(src, dst, ci, rv, candoff,
+					       reduce);
+		case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			if (dtp == TYPE_oid)
+				return convert_sht_oid(src, dst, ci, rv,
+						       candoff, abort_on_error,
+						       reduce);
+#endif
+			return convert_sht_lng(src, dst, ci, rv, candoff,
+					       reduce);
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			return convert_sht_hge(src, dst, ci, rv, candoff,
+					       reduce);
+#endif
+		case TYPE_flt:
+			return convert_sht_flt(src, dst, ci, rv, candoff,
+					       reduce);
+		case TYPE_dbl:
+			return convert_sht_dbl(src, dst, ci, rv, candoff,
+					       reduce);
+		default:
+			return BUN_NONE + 1;
+		}
+	case TYPE_int:
+		switch (ATOMbasetype(dtp)) {
+		case TYPE_bte:
+			if (dtp == TYPE_bit) {
+				return convert_int_bit(src, dst, ci, rv,
+						       candoff, reduce);
+			}
+			return convert_int_bte(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+		case TYPE_sht:
+			return convert_int_sht(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+		case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+			if (dtp == TYPE_oid)
+				return convert_int_oid(src, dst, ci, rv,
+						       candoff, abort_on_error,
+						       reduce);
+#endif
+			return convert_int_int(src, dst, ci, rv, candoff,
+					       reduce);
+		case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			if (dtp == TYPE_oid)
+				return convert_int_oid(src, dst, ci, rv,
+						       candoff, abort_on_error,
+						       reduce);
+#endif
+			return convert_int_lng(src, dst, ci, rv, candoff,
+					       reduce);
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			return convert_int_hge(src, dst, ci, rv, candoff,
+					       reduce);
+#endif
+		case TYPE_flt:
+			return convert_int_flt(src, dst, ci, rv, candoff,
+					       reduce);
+		case TYPE_dbl:
+			return convert_int_dbl(src, dst, ci, rv, candoff,
+					       reduce);
+		default:
+			return BUN_NONE + 1;
+		}
+	case TYPE_lng:
+		switch (ATOMbasetype(dtp)) {
+		case TYPE_bte:
+			if (dtp == TYPE_bit) {
+				return convert_lng_bit(src, dst, ci, rv,
+						       candoff, reduce);
+			}
+			return convert_lng_bte(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+		case TYPE_sht:
+			return convert_lng_sht(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+		case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+			if (dtp == TYPE_oid)
+				return convert_lng_oid(src, dst, ci, rv,
+						       candoff, abort_on_error,
+						       reduce);
+#endif
+			return convert_lng_int(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+		case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			if (dtp == TYPE_oid)
+				return convert_lng_oid(src, dst, ci, rv,
+						       candoff, abort_on_error,
+						       reduce);
+#endif
+			return convert_lng_lng(src, dst, ci, rv, candoff,
+					       reduce);
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			return convert_lng_hge(src, dst, ci, rv, candoff,
+					       reduce);
+#endif
+		case TYPE_flt:
+			return convert_lng_flt(src, dst, ci, rv, candoff,
+					       reduce);
+		case TYPE_dbl:
+			return convert_lng_dbl(src, dst, ci, rv, candoff,
+					       reduce);
+		default:
+			return BUN_NONE + 1;
+		}
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		switch (ATOMbasetype(dtp)) {
+		case TYPE_bte:
+			if (dtp == TYPE_bit) {
+				return convert_hge_bit(src, dst, ci, rv,
+						       candoff, reduce);
+			}
+			return convert_hge_bte(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+		case TYPE_sht:
+			return convert_hge_sht(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+		case TYPE_int:
+			return convert_hge_int(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+		case TYPE_lng:
+			return convert_hge_lng(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+		case TYPE_hge:
+			return convert_hge_hge(src, dst, ci, rv, candoff,
+					       reduce);
+		case TYPE_oid:
+			return convert_hge_oid(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+		case TYPE_flt:
+			return convert_hge_flt(src, dst, ci, rv, candoff,
+					       reduce);
+		case TYPE_dbl:
+			return convert_hge_dbl(src, dst, ci, rv, candoff,
+					       reduce);
+		default:
+			return BUN_NONE + 1;
+		}
+#endif
+	case TYPE_flt:
+		switch (ATOMbasetype(dtp)) {
+		case TYPE_bte:
+			if (dtp == TYPE_bit) {
+				return convert_flt_bit(src, dst, ci, rv,
+						       candoff, reduce);
+			}
+			return convert_flt_bte(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+		case TYPE_sht:
+			return convert_flt_sht(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+		case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+			if (dtp == TYPE_oid)
+				return convert_flt_oid(src, dst, ci, rv,
+						       candoff, abort_on_error,
+						       reduce);
+#endif
+			return convert_flt_int(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+		case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			if (dtp == TYPE_oid)
+				return convert_flt_oid(src, dst, ci, rv,
+						       candoff, abort_on_error,
+						       reduce);
+#endif
+			return convert_flt_lng(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			return convert_flt_hge(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+#endif
+		case TYPE_flt:
+			return convert_flt_flt(src, dst, ci, rv, candoff,
+					       reduce);
+		case TYPE_dbl:
+			return convert_flt_dbl(src, dst, ci, rv, candoff,
+					       reduce);
+		default:
+			return BUN_NONE + 1;
+		}
+	case TYPE_dbl:
+		switch (ATOMbasetype(dtp)) {
+		case TYPE_bte:
+			if (dtp == TYPE_bit) {
+				return convert_dbl_bit(src, dst, ci, rv,
+						       candoff, reduce);
+			}
+			return convert_dbl_bte(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+		case TYPE_sht:
+			return convert_dbl_sht(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+		case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+			if (dtp == TYPE_oid)
+				return convert_dbl_oid(src, dst, ci, rv,
+						       candoff, abort_on_error,
+						       reduce);
+#endif
+			return convert_dbl_int(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+		case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			if (dtp == TYPE_oid)
+				return convert_dbl_oid(src, dst, ci, rv,
+						       candoff, abort_on_error,
+						       reduce);
+#endif
+			return convert_dbl_lng(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			return convert_dbl_hge(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+#endif
+		case TYPE_flt:
+			return convert_dbl_flt(src, dst, ci, rv, candoff,
+					       abort_on_error, reduce);
+		case TYPE_dbl:
+			return convert_dbl_dbl(src, dst, ci, rv, candoff,
+					       reduce);
+		default:
+			return BUN_NONE + 1;
+		}
+	default:
+		return BUN_NONE + 1;
+	}
+}
+
+BAT *
+BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
+{
+	lng t0 = 0;
+	BAT *bn;
+	BUN nils = 0;	/* in case no conversion defined */
+	struct canditer ci;
+	BUN cnt, ncand;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
+	/* set reduce to true if there are (potentially) multiple
+	 * (different) source values that map to the same destination
+	 * value */
+	bool reduce = false;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
+	if (tp == TYPE_void)
+		tp = TYPE_oid;
+
+	cnt = BATcount(b);
+	ncand = canditer_init(&ci, b, s);
+	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
+		GDKerror("r bat not the correct size or of wrong type\n");
+		return NULL;
+	}
+	if (ncand == 0 || (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)))
+		return BATconstant(ci.hseq, tp,
+				   ATOMnilptr(tp), ncand, TRANSIENT);
+
+	if (cnt == ncand && tp != TYPE_bit &&
+	    ATOMbasetype(b->ttype) == ATOMbasetype(tp) &&
+	    (tp != TYPE_oid || b->ttype == TYPE_oid) &&
+	    (tp != TYPE_str ||
+	     BATatoms[b->ttype].atomToStr == BATatoms[TYPE_str].atomToStr)) {
+		return COLcopy(b, tp, false, TRANSIENT);
+	}
+	if (ATOMstorage(tp) == TYPE_ptr) {
+		GDKerror("type combination (convert(%s)->%s) "
+			 "not supported.\n",
+			 ATOMname(b->ttype), ATOMname(tp));
+		return NULL;
+	}
+
+	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+
+	if (b->ttype == TYPE_void)
+		nils = convert_void_any(b->tseqbase, bn,
+					&ci, rv, b->hseqbase,
+					abort_on_error, &reduce);
+	else if (tp == TYPE_str)
+		nils = convert_any_str(b, bn, &ci, rv);
+	else if (b->ttype == TYPE_str) {
+		reduce = true;
+		nils = convert_str_any(b, tp, Tloc(bn, 0),
+				       &ci, rv, b->hseqbase,
+				       abort_on_error);
+	} else
+		nils = convert_typeswitchloop(Tloc(b, 0), b->ttype,
+					      Tloc(bn, 0), tp,
+					      &ci, rv, b->hseqbase,
+					      abort_on_error, &reduce);
+
+	if (nils >= BUN_NONE) {
+		BBPunfix(bn->batCacheid);
+		if (nils == BUN_NONE + 1) {
+			GDKerror("type combination (convert(%s)->%s) "
+				 "not supported.\n",
+				 ATOMname(b->ttype), ATOMname(tp));
+		} else if (nils == BUN_NONE + 2) {
+			GDKerror("could not insert value into BAT.\n");
+		}
+		return NULL;
+	}
+
+	BATsetcount(bn, ncand);
+
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
+	if ((bn->ttype != TYPE_bit && b->ttype != TYPE_str) ||
+	    BATcount(bn) < 2) {
+		bn->tsorted = nils == 0 && b->tsorted;
+		bn->trevsorted = nils == 0 && b->trevsorted;
+	} else {
+		bn->tsorted = false;
+		bn->trevsorted = false;
+	}
+	if (!reduce || BATcount(bn) < 2)
+		bn->tkey = b->tkey && nils <= 1;
+	else
+		bn->tkey = false;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
+}
+
+gdk_return
+VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error)
+{
+	ptr p;
+	BUN nils = 0;
+	bool reduce;
+
+	if (ret->vtype == TYPE_str) {
+		if (v->vtype == TYPE_void ||
+		    (*ATOMcompare(v->vtype))(VALptr(v),
+					     ATOMnilptr(v->vtype)) == 0) {
+			ret->val.sval = GDKstrdup(str_nil);
+		} else if (BATatoms[v->vtype].atomToStr == BATatoms[TYPE_str].atomToStr) {
+			ret->val.sval = GDKstrdup(v->val.sval);
+		} else {
+			ret->len = 0;
+			ret->val.sval = NULL;
+			if ((*BATatoms[v->vtype].atomToStr)(&ret->val.sval,
+							    &ret->len,
+							    VALptr(v),
+							    false) < 0) {
+				GDKfree(ret->val.sval);
+				ret->val.sval = NULL;
+				ret->len = 0;
+				nils = BUN_NONE;
+			}
+		}
+		if (ret->val.sval == NULL)
+			nils = BUN_NONE;
+	} else if (ret->vtype == TYPE_void) {
+		if (abort_on_error &&
+		    ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0) {
+			GDKerror("22003!cannot convert non-nil to void.\n");
+			nils = BUN_NONE;
+		}
+		ret->val.oval = oid_nil;
+	} else if (v->vtype == TYPE_void) {
+		if (VALinit(ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
+			nils = BUN_NONE;
+	} else if (v->vtype == TYPE_str) {
+		if (strNil(v->val.sval)) {
+			if (VALinit(ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
+				nils = BUN_NONE;
+		} else if (ATOMstorage(ret->vtype) == TYPE_ptr) {
+			nils = BUN_NONE + 1;
+		} else {
+			ssize_t l;
+			size_t len;
+
+			if (ATOMextern(ret->vtype)) {
+				/* let atomFromStr allocate memory
+				 * which we later give away to ret */
+				p = NULL;
+				len = 0;
+			} else {
+				/* use the space provided by ret */
+				p = VALget(ret);
+				len = ATOMsize(ret->vtype);
+			}
+			if ((l = (*BATatoms[ret->vtype].atomFromStr)(
+				     v->val.sval, &len, &p, false)) < 0 ||
+			    l < (ssize_t) strlen(v->val.sval)) {
+				if (ATOMextern(ret->vtype))
+					GDKfree(p);
+				GDKclrerr();
+				size_t sz = escapedStrlen(v->val.sval, NULL, NULL, '\'');
+				char *bf = GDKmalloc(sz + 1);
+				if (bf) {
+					escapedStr(bf, v->val.sval, sz + 1, NULL, NULL, '\'');
+					GDKerror("22018!conversion of string "
+						 "'%s' to type %s failed.\n",
+						 bf, ATOMname(ret->vtype));
+					GDKfree(bf);
+				} else {
+					GDKerror("22018!conversion of string "
+						 "to type %s failed.\n",
+						 ATOMname(ret->vtype));
+				}
+				nils = BUN_NONE;
+			} else {
+				/* now give value obtained to ret */
+				assert(ATOMextern(ret->vtype) ||
+				       p == VALget(ret));
+				ret->len = (int) len;
+				if (ATOMextern(ret->vtype))
+					VALset(ret, ret->vtype, p);
+			}
+		}
+	} else {
+		nils = convert_typeswitchloop(VALptr(v), v->vtype,
+					      VALget(ret), ret->vtype,
+					      &(struct canditer){.tpe=cand_dense, .ncand=1},
+					      NULL,
+					      0, abort_on_error, &reduce);
+	}
+	if (nils == BUN_NONE + 1) {
+		GDKerror("conversion from type %s to type %s "
+			 "unsupported.\n",
+			 ATOMname(v->vtype), ATOMname(ret->vtype));
+		return GDK_FAIL;
+	}
+	ret->len = ATOMlen(ret->vtype, VALptr(ret));
+	return nils == BUN_NONE ? GDK_FAIL : GDK_SUCCEED;
 }

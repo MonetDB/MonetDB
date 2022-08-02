@@ -1,0 +1,17 @@
+stderr of test 'not` in directory 'sql/test/bugs` itself:
+
+
+# 14:04:18 >  
+# 14:04:18 >  Mtimeout -timeout 180  Mserver "--config=/scratch/niels/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/scratch/niels/Linux-x86_64/lib/MonetDB4:/scratch/niels/Linux-x86_64/lib/MonetDB4/lib:/scratch/niels/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/scratch/niels/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/scratch/niels/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/scratch/niels/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=32956 --set xrpc_port=42122 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit=" module(sql_server);" ; echo ; echo Over..
+# 14:04:18 >  
+
+
+# 14:04:18 >  
+# 14:04:18 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=beo-14 --port=32956 
+# 14:04:18 >  
+
+
+# 14:04:18 >  
+# 14:04:18 >  Done.
+# 14:04:18 >  
+

@@ -1,0 +1,7 @@
+# ChangeLog file for sql
+# This file is updated with Maddlog
+
+* Tue Mar  3 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Removed sys.pause(int), sys.resume(int) and sys.stop(int)
+  procedures. They were redundant compared to the bigint versions.
+

@@ -1,0 +1,17 @@
+stderr of test 'UNION_JOIN_vs_plain_set_UNION-2.SF-920585` in directory 'sql/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 11:06:04 >  
+# 11:06:04 >  Mtimeout -timeout 180 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./lib/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d..PREFIX./var/MonetDB/log" --set mapi_port=30067 --set sql_port=44600 --set xquery_port=52084 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 11:06:04 >  
+
+
+# 21:37:02 >  
+# 21:37:02 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31842  < UNION_JOIN_vs_plain_set_UNION-2.SF-920585.sql
+# 21:37:02 >  
+
+
+# 21:45:34 >  
+# 21:45:34 >  Done.
+# 21:45:34 >  
+

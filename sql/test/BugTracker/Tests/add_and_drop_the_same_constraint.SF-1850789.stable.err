@@ -1,0 +1,19 @@
+stderr of test 'add_and_drop_the_same_constraint.SF-1850789` in directory 'sql/test/BugTracker` itself:
+
+
+# 00:22:05 >  
+# 00:22:05 >   mserver5 "--config=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=30502 --set xrpc_port=40239 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 00:22:05 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/etc/monetdb5.conf)
+
+# 00:22:05 >  
+# 00:22:05 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=30502 
+# 00:22:05 >  
+
+
+# 00:22:06 >  
+# 00:22:06 >  Done.
+# 00:22:06 >  
+

@@ -1,0 +1,21 @@
+stderr of test 'double_commit.SF-916584` in directory 'sql/test/BugDay_2005-10-06_2.8` itself:
+
+
+# 14:14:56 >  
+# 14:14:56 >  Mtimeout -timeout 180 Mserver "--config=/home/sjoerd/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/home/sjoerd/lib/MonetDB:/home/sjoerd/lib/bin" --set "gdk_dbfarm=/home/sjoerd/var/MonetDB/dbfarm" --set "sql_logdir=/home/sjoerd/var/MonetDB/log" --set mapi_port=38369 --set sql_port=42862 --set xquery_port=59116 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.8" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 14:14:56 >  
+
+
+# 14:14:57 >  
+# 14:14:57 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=42862  < double_commit.SF-916584.sql
+# 14:14:57 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+QUERY = COMMIT;
+ERROR = !COMMIT: not allowed in auto commit mode
+CODE  = 2DM30
+
+# 14:14:57 >  
+# 14:14:57 >  Done.
+# 14:14:57 >  
+

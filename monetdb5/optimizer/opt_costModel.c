@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -16,7 +16,9 @@
 		c1 = getRowCnt(mb, getArg(p,W));\
 		c2 = getRowCnt(mb, getArg(p,X));\
 		/* just to ensure that rowcnt was/is never set to -1 */\
-		if (c1 == (BUN) -1 || c2 == (BUN) -1 || c1 == BUN_NONE || c2 == BUN_NONE) \
+		assert(c1 != (BUN) -1);\
+		assert(c2 != (BUN) -1);\
+		if (c1 == BUN_NONE || c2 == BUN_NONE) \
 			continue;\
 		setRowCnt(mb, getArg(p,Z), (Y));\
 }
@@ -36,10 +38,13 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	int i;
 	BUN c1, c2;
 	InstrPtr p;
+	char buf[256];
+	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) stk;
+	(void) pci;
 
 	if ( mb->inlineProp )
 		return MAL_SUCCEED;
@@ -89,9 +94,9 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				 * Updates are a little more complicated, because you have to
 				 * propagate changes in the expected size up the expression tree.
 				 * For example, the SQL snippet:
-				 *	 _49:bat[:oid,:oid]{rows=0,bid=622}  := sql.bind_dbat("sys","example",3);
-				 *	 _54 := bat.setWriteMode(_49);
-				 *	 bat.append(_54,_47,true);
+				 *     _49:bat[:oid,:oid]{rows=0,bid=622}  := sql.bind_dbat("sys","example",3);
+				 *     _54 := bat.setWriteMode(_49);
+				 *     bat.append(_54,_47,true);
 				 * shows what is produced when it encounters a deletion. If a non-empty
 				 * append is not properly passed back to _49, the emptySet
 				 * optimizer might remove the complete deletion code.
@@ -133,19 +138,22 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			/* copy the rows property */
 			c1 = getRowCnt(mb, getArg(p,1));
 			/* just to ensure that rowcnt was/is never set to -1 */
-			if (c1 != (BUN) -1 && c1 != BUN_NONE)
+			assert(c1 != (BUN) -1);
+			if (c1 != BUN_NONE)
 				setRowCnt(mb, getArg(p,0), c1);
 		}
 	}
-	/* Defense line against incorrect plans */
+    /* Defense line against incorrect plans */
 	/* plan remains unaffected */
 	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	// if (!msg)
 	// 	msg = chkFlow(mb);
 	// if (!msg)
 	// 	msg = chkDeclarations(mb);
-
-	/* keep actions taken as a fake argument*/
-	(void) pushInt(mb, pci, 1);
+    /* keep all actions taken as a post block comment */
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","costmodel",usec);
+    newComment(mb,buf);
+	addtoMalBlkHistory(mb);
 	return msg;
 }

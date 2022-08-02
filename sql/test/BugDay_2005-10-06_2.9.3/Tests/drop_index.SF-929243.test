@@ -1,9 +1,0 @@
-statement ok
-create table t_dropindex(i int)
-
-statement ok
-create index idx_dropindex on t_dropindex(i)
-
-statement ok
-drop index idx_dropindex
-

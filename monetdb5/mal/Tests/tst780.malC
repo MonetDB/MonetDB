@@ -1,0 +1,17 @@
+#some tests to illustrate function inlining for a module
+
+module dummy;
+function hello():void;
+	io.print("hello world\n");
+end hello;
+
+function doit(i:int, j:str):int;
+	io.print(i);
+	io.print(j);
+	return doit:= 3;
+end doit;
+
+dummy.hello();
+z:=dummy.doit(1,"help");
+optimizer.macro("dummy","hello");
+

@@ -1,9 +1,0 @@
-statement ok
-create merge table emptym(i integer, j integer)
-
-statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
-select * from emptym
-
-statement ok
-drop table emptym
-

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (c) M.L. Kersten
@@ -70,7 +70,7 @@ static void logjsonInternal(char *logbuffer, bool flush)
 		// upon request the log record is sent over the profile stream
 		(void) mnstr_write(maleventstream, logbuffer, 1, len);
 		if (flush)
-			(void) mnstr_flush(maleventstream, MNSTR_FLUSH_DATA);
+			(void) mnstr_flush(maleventstream);
 	}
 }
 
@@ -81,7 +81,7 @@ static void logjsonInternal(char *logbuffer, bool flush)
  * We use the `logadd` function to add data to our buffer (usually key-value pairs). This macro offers an interface similar
  * to printf.
  *
- * The first snprintf below happens in a statically allocated buffer that might be much smaller than logcap. We do not
+ * The first snprintf bellow happens in a statically allocated buffer that might be much smaller than logcap. We do not
  * care. We only need to perform this snprintf to get the actual length of the string that is to be produced.
  *
  * There are three cases:
@@ -113,7 +113,6 @@ static inline void
 logdel(struct logbuf *logbuf)
 {
 	free(logbuf->logbuffer);
-	logbuf->logbuffer = NULL;
 }
 
 static bool logadd(struct logbuf *logbuf,
@@ -183,7 +182,7 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
  }
  "stmt":"X_41=0@0:void := querylog.define(\"select count(*) from tables;\":str,\"default_pipe\":str,30:int);",
 */
-static str
+static void
 prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 {
 	struct logbuf logbuf;
@@ -192,7 +191,6 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 	lng usec;
 	uint64_t microseconds;
 	bool ok;
-	const char *algo = MT_thread_getalgorithm();
 
 	/* ignore generation of events for instructions that are called too often
 	 * they may appear when BARRIER blocks are executed
@@ -201,18 +199,14 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 	if( !start && pci->calls > HIGHWATERMARK){
 		if( pci->calls == 10000 || pci->calls == 100000 || pci->calls == 1000000 || pci->calls == 10000000)
 			TRC_WARNING(MAL_SERVER, "Too many calls: %d\n", pci->calls);
-		return NULL;
+		return;
 	}
 
 	/* The stream of events can be complete read by the DBA,
 	 * all other users can only see events assigned to their account
 	 */
 	if(malprofileruser!= MAL_ADMIN && malprofileruser != cntxt->user)
-		return NULL;
-
-/* align the variable namings with EXPLAIN and TRACE */
-	if( pci->pc == 1 && start)
-		renameVariables(mb);
+		return;
 
 	logbuf = (struct logbuf) {0};
 
@@ -225,7 +219,7 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 	// No comma at the beginning
 	if (!logadd(&logbuf,
 				"{"				// fill in later with the event counter
-				"\"version\":\""MONETDB_VERSION" (hg id: %s)\""
+				"\"version\":\""VERSION" (hg id: %s)\""
 				",\"user\":"OIDFMT
 				",\"clk\":"LLFMT
 				",\"mclk\":%"PRIu64""
@@ -241,50 +235,48 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 				getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)),
 				mb?getPC(mb,pci):0,
 				stk?stk->tag:0))
-		goto cleanup_and_exit;
+		return;
 	if( pci->modname && !logadd(&logbuf, ",\"module\":\"%s\"", pci->modname ? pci->modname : ""))
-		goto cleanup_and_exit;
+		return;
 	if( pci->fcnname && !logadd(&logbuf, ",\"function\":\"%s\"", pci->fcnname ? pci->fcnname : ""))
-		goto cleanup_and_exit;
+		return;
 	if( pci->barrier && !logadd(&logbuf, ",\"barrier\":\"%s\"", operatorName(pci->barrier)))
-		goto cleanup_and_exit;
+		return;
 	if ((pci->token < FCNcall || pci->token > PATcall) &&
 		!logadd(&logbuf, ",\"operator\":\"%s\"", operatorName(pci->token)))
-		goto cleanup_and_exit;
-	if (!GDKinmemory(0) && !GDKembedded()) {
+		return;
+	if (!GDKinmemory()) {
 		char *uuid = NULL;
 		str c;
 		if ((c = msab_getUUID(&uuid)) == NULL) {
 			ok = logadd(&logbuf, ",\"session\":\"%s\"", uuid);
 			free(uuid);
 			if (!ok)
-				goto cleanup_and_exit;
+				return;
 		} else
 			free(c);
 	}
 	if (!logadd(&logbuf, ",\"state\":\"%s\",\"usec\":"LLFMT,
 				start?"start":"done", pci->ticks))
-		goto cleanup_and_exit;
-	if (algo && !logadd(&logbuf, ",\"algorithm\":\"%s\"", algo))
-		goto cleanup_and_exit;
+		return;
 
-/* EXAMPLE MAL statement argument decomposition
- * The eventparser may assume this layout for ease of parsing
- {
- ... as above ...
- "result":{"clk":"173297139,"pc":1,"index":0,,"name":"X_6","type":"void","value":"0@0","eol":0}
- ...
- "argument":{"clk":173297139,"pc":1,"index":"2","type":"str","value":"\"default_pipe\"","eol":0},
- }
- This information can be used to determine memory footprint and variable life times.
-*/
+	/* EXAMPLE MAL statement argument decomposition
+	 * The eventparser may assume this layout for ease of parsing
+	 {
+	 ... as above ...
+	 "result":{"clk":"173297139,"pc":1,"index":0,,"name":"X_6","type":"void","value":"0@0","eol":0}
+	 ...
+	 "argument":{"clk":173297139,"pc":1,"index":"2","type":"str","value":"\"default_pipe\"","eol":0},
+	 }
+	 This information can be used to determine memory footprint and variable life times.
+	*/
 
 	// Also show details of the arguments for modelling
 	if(mb && pci->modname && pci->fcnname){
 		int j;
 
 		if (!logadd(&logbuf, ",\"args\":["))
-			goto cleanup_and_exit;
+			return;
 		for(j=0; j< pci->argc; j++){
 			int tpe = getVarType(mb, getArg(pci,j));
 			str tname = 0, cv;
@@ -295,16 +287,16 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 			if (j == 0) {
 				// No comma at the beginning
 				if (!logadd(&logbuf, "{"))
-					goto cleanup_and_exit;
+					return;
 			}
 			else {
 				if (!logadd(&logbuf, ",{"))
-					goto cleanup_and_exit;
+					return;
 			}
 			if (!logadd(&logbuf, "\"%s\":%d,\"var\":\"%s\"",
 						j < pci->retc ? "ret" : "arg", j,
 						getVarName(mb, getArg(pci,j))))
-				goto cleanup_and_exit;
+				return;
 			c =getVarName(mb, getArg(pci,j));
 			if(getVarSTC(mb,getArg(pci,j))){
 				InstrPtr stc = getInstrPtr(mb, getVarSTC(mb,getArg(pci,j)));
@@ -315,7 +307,7 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 							getVarConstant(mb, getArg(stc,stc->retc +1)).val.sval,
 							getVarConstant(mb, getArg(stc,stc->retc +2)).val.sval,
 							getVarConstant(mb, getArg(stc,stc->retc +3)).val.sval))
-					goto cleanup_and_exit;
+					return;
 			}
 			if(isaBatType(tpe)){
 				BAT *d= BATdescriptor(bid = stk->stk[getArg(pci,j)].val.bval);
@@ -325,24 +317,13 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 				if (!ok) {
 					if (d)
 						BBPunfix(d->batCacheid);
-					goto cleanup_and_exit;
+					return;
 				}
 				if(d) {
-					MT_lock_set(&d->theaplock);
-					BATiter di = bat_iterator_nolock(d);
-					/* outside the lock we cannot dereference di.h or di.vh,
-					 * but we can use all values without dereference and
-					 * without further locking */
-					MT_lock_unset(&d->theaplock);
-					cnt = di.count;
+					BAT *v;
+					cnt = BATcount(d);
 					if(isVIEW(d)){
-						BAT *v= BBP_cache(VIEWtparent(d));
-						bool vtransient = true;
-						if (v) {
-							MT_lock_set(&v->theaplock);
-							vtransient = v->batTransient;
-							MT_lock_unset(&v->theaplock);
-						}
+						v= BBP_cache(VIEWtparent(d));
 						if (!logadd(&logbuf,
 									",\"view\":\"true\""
 									",\"parent\":%d"
@@ -350,14 +331,14 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 									",\"mode\":\"%s\"",
 									VIEWtparent(d),
 									d->hseqbase,
-									vtransient ? "transient" : "persistent")) {
+									v && !v->batTransient ? "persistent" : "transient")) {
 							BBPunfix(d->batCacheid);
-							goto cleanup_and_exit;
+							return;
 						}
 					} else {
-						if (!logadd(&logbuf, ",\"mode\":\"%s\"", (di.transient ? "transient" : "persistent"))) {
+						if (!logadd(&logbuf, ",\"mode\":\"%s\"", (d->batTransient ? "transient" : "persistent"))) {
 							BBPunfix(d->batCacheid);
-							goto cleanup_and_exit;
+							return;
 						}
 					}
 					if (!logadd(&logbuf,
@@ -366,41 +347,14 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 								",\"nonil\":%d"
 								",\"nil\":%d"
 								",\"key\":%d",
-								di.sorted,
-								di.revsorted,
-								di.nonil,
-								di.nil,
-								di.key)) {
+								d->tsorted,
+								d->trevsorted,
+								d->tnonil,
+								d->tnil,
+								d->tkey)) {
 						BBPunfix(d->batCacheid);
-						goto cleanup_and_exit;
+						return;
 					}
-#define keepprop(NME, LNME)												\
-	do {																\
-		const void *valp = BATgetprop(d, NME);							\
-		if ( valp){														\
-			cv = VALformat(valp);										\
-			if (cv) {													\
-				char *cvquote = mal_quote(cv, strlen(cv));				\
-				ok = logadd(&logbuf, ",\"%s\":\"%s\"", LNME, cvquote);	\
-				GDKfree(cv);											\
-				GDKfree(cvquote);										\
-				if (!ok) {												\
-					BBPunfix(d->batCacheid);							\
-					goto cleanup_and_exit;								\
-				}														\
-			}															\
-		}																\
-	} while (0)
-					if ((di.minpos != BUN_NONE &&
-						 !logadd(&logbuf, ",\"minpos\":\""BUNFMT"\"", di.minpos)) ||
-						(di.maxpos != BUN_NONE &&
-						 !logadd(&logbuf, ",\"maxpos\":\""BUNFMT"\"", di.maxpos)) ||
-						(di.unique_est != 0 &&
-						 !logadd(&logbuf, ",\"nestimate\":\"%g\"", di.unique_est))) {
-						BBPunfix(d->batCacheid);
-						goto cleanup_and_exit;
-					}
-
 					cv = VALformat(&stk->stk[getArg(pci,j)]);
 					c = strchr(cv, '>');
 					if (c)		/* unlikely that this isn't true */
@@ -409,30 +363,27 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 					GDKfree(cv);
 					if (!ok) {
 						BBPunfix(d->batCacheid);
-						goto cleanup_and_exit;
+						return;
 					}
-					total += cnt << di.shift;
-					if (!logadd(&logbuf, ",\"width\":%d", di.width)) {
+					total += cnt << d->tshift;
+					if (!logadd(&logbuf, ",\"width\":%d", d->twidth)) {
 						BBPunfix(d->batCacheid);
-						goto cleanup_and_exit;
+						return;
 					}
 					/* keeping information about the individual auxiliary heaps is helpful during analysis. */
-					MT_rwlock_rdlock(&d->thashlock);
 					if( d->thash && !logadd(&logbuf, ",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid))) {
-						MT_rwlock_rdunlock(&d->thashlock);
 						BBPunfix(d->batCacheid);
-						goto cleanup_and_exit;
+						return;
 					}
-					MT_rwlock_rdunlock(&d->thashlock);
-					if( di.vh && !logadd(&logbuf, ",\"vheap\":" BUNFMT, di.vhfree)) {
+					if( d->tvheap && !logadd(&logbuf, ",\"vheap\":" LLFMT, (lng) heapinfo(d->tvheap, d->batCacheid))) {
 						BBPunfix(d->batCacheid);
-						goto cleanup_and_exit;
+						return;
 					}
 					if( d->timprints && !logadd(&logbuf, ",\"imprints\":" LLFMT, (lng) IMPSimprintsize(d))) {
 						BBPunfix(d->batCacheid);
-						goto cleanup_and_exit;
+						return;
 					}
-					/* if (!logadd(&logbuf, "\"debug\":\"%s\",", d->debugmessages)) goto cleanup_and_exit; */
+					/* if (!logadd(&logbuf, "\"debug\":\"%s\",", d->debugmessages)) return; */
 					BBPunfix(d->batCacheid);
 				}
 				if (!logadd(&logbuf,
@@ -440,7 +391,7 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 							",\"count\":"BUNFMT
 							",\"size\":" LLFMT,
 							bid, cnt, total))
-					goto cleanup_and_exit;
+					return;
 			} else{
 				tname = getTypeName(tpe);
 				ok = logadd(&logbuf,
@@ -449,7 +400,7 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 							tname, isVarConstant(mb, getArg(pci,j)));
 				GDKfree(tname);
 				if (!ok)
-					goto cleanup_and_exit;
+					return;
 				cv = VALformat(&stk->stk[getArg(pci,j)]);
 				stmtq = cv ? mal_quote(cv, strlen(cv)) : NULL;
 				if (stmtq)
@@ -457,35 +408,28 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 				GDKfree(cv);
 				GDKfree(stmtq);
 				if (!ok)
-					goto cleanup_and_exit;
+					return;
 			}
 			if (!logadd(&logbuf, ",\"eol\":%d", getVarEolife(mb,getArg(pci,j))))
-				goto cleanup_and_exit;
-			// if (!logadd(&logbuf, ",\"fixed\":%d", isVarFixed(mb,getArg(pci,j)))) return NULL;
+				return;
+			// if (!logadd(&logbuf, ",\"fixed\":%d", isVarFixed(mb,getArg(pci,j)))) return;
 			if (!logadd(&logbuf, "}"))
-				goto cleanup_and_exit;
+				return;
 		}
 		if (!logadd(&logbuf, "]")) // end marker for arguments
-			goto cleanup_and_exit;
+			return;
 	}
 	if (!logadd(&logbuf, "}\n")) // end marker
-		goto cleanup_and_exit;
-	return logbuf.logbuffer;
- cleanup_and_exit:
+		return;
+	logjsonInternal(logbuf.logbuffer, true);
 	logdel(&logbuf);
-	return NULL;
 }
 
 static void
 renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 {
-	str ev;
 	MT_lock_set(&mal_profileLock);
-	ev = prepareProfilerEvent(cntxt, mb, stk, pci, start);
-	if( ev ){
-		logjsonInternal(ev, true);
-		free(ev);
-	}
+	prepareProfilerEvent(cntxt, mb, stk, pci, start);
 	MT_lock_unset(&mal_profileLock);
 }
 
@@ -493,73 +437,69 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
  * We should use an OS define to react to the maximal cores
  */
 
-#define MAXCORES		256
-#define LASTCPU		(MAXCORES - 1)
 static struct{
 	lng user, nice, system, idle, iowait;
 	double load;
-} corestat[MAXCORES];
+} corestat[256];
 
 static int
 getCPULoad(char cpuload[BUFSIZ]){
     int cpu, len = 0, i;
 	lng user, nice, system, idle, iowait;
 	size_t n;
-    char buf[512], *s;
+    char buf[BUFSIZ+1], *s;
 	static FILE *proc= NULL;
 	lng newload;
 
+	if (proc == NULL || ferror(proc))
+		proc = fopen("/proc/stat","r");
+	else rewind(proc);
 	if (proc == NULL) {
-		proc = fopen("/proc/stat", "r");
-		if (proc == NULL) {
-			/* unexpected */
-			return -1;
-		}
-	} else
-		rewind(proc);
-
-	while (fgets(buf, (int) sizeof(buf), proc) != NULL) {
-		n = strlen(buf);
-		if (strncmp(buf, "cpu", 3) == 0) {
-			s = buf + 3;
+		/* unexpected */
+		return -1;
+	}
+	/* read complete file to avoid concurrent write issues */
+	if ((n = fread(buf, 1, BUFSIZ,proc)) == 0)
+		return -1;
+	buf[n] = 0;
+	for (s= buf; *s; s++) {
+		if (strncmp(s,"cpu",3)== 0){
+			s +=3;
 			if (*s == ' ') {
-				cpu = LASTCPU; // the cpu totals stored here
+				s++;
+				cpu = 255; // the cpu totals stored here
 			}  else {
 				cpu = atoi(s);
-				if (cpu < 0 || cpu > LASTCPU)
-					cpu = LASTCPU;
+				if (cpu < 0 || cpu > 255)
+					cpu = 255;
 			}
 			s = strchr(s,' ');
 			if (s == NULL)		/* unexpected format of file */
 				break;
-			while (*s && isspace((unsigned char)*s))
-				s++;
-			i= sscanf(s, LLSCN" "LLSCN" "LLSCN" "LLSCN" "LLSCN,  &user, &nice, &system, &idle, &iowait);
-			if (i == 5) {
-				newload = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
-				if (newload)
-					corestat[cpu].load = (double) newload / (newload + idle - corestat[cpu].idle + iowait - corestat[cpu].iowait);
-				corestat[cpu].user = user;
-				corestat[cpu].nice = nice;
-				corestat[cpu].system = system;
-				corestat[cpu].idle = idle;
-				corestat[cpu].iowait = iowait;
-			}
-		}
 
-		while (buf[n - 1] != '\n') {
-			if (fgets(buf, (int) sizeof(buf), proc) == NULL)
-				goto exitloop;
-			n = strlen(buf);
+			while( *s && isspace((unsigned char)*s)) s++;
+			i= sscanf(s,LLSCN" "LLSCN" "LLSCN" "LLSCN" "LLSCN,  &user, &nice, &system, &idle, &iowait);
+			if ( i != 5 )
+				goto skip;
+			newload = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
+			if ( newload)
+				corestat[cpu].load = (double) newload / (newload + idle - corestat[cpu].idle + iowait - corestat[cpu].iowait);
+			corestat[cpu].user = user;
+			corestat[cpu].nice = nice;
+			corestat[cpu].system = system;
+			corestat[cpu].idle = idle;
+			corestat[cpu].iowait = iowait;
 		}
+	skip:
+		while (*s && *s != '\n')
+			s++;
 	}
-  exitloop:
 
-	if (cpuload == NULL)
+	if(cpuload == 0)
 		return 0;
 	// identify core processing
 	len += snprintf(cpuload, BUFSIZ, "[");
-	for (cpu = 0; cpuload && cpu < LASTCPU && corestat[cpu].user; cpu++) {
+	for (cpu = 0; cpuload && cpu < 255 && corestat[cpu].user; cpu++) {
 		len +=snprintf(cpuload + len, BUFSIZ - len, "%s%.2f", (cpu?",":""), corestat[cpu].load);
 	}
 	(void) snprintf(cpuload + len, BUFSIZ - len, "]");
@@ -587,7 +527,7 @@ profilerHeartbeatEvent(char *alter)
 
 	if (!logadd(&logbuf, "{"))	// fill in later with the event counter
 		return;
-	if (!GDKinmemory(0) && !GDKembedded()) {
+	if (!GDKinmemory()) {
 		char *uuid = NULL, *err;
 		if ((err = msab_getUUID(&uuid)) == NULL) {
 			bool ok = logadd(&logbuf, "\"session\":\"%s\",", uuid);
@@ -676,24 +616,13 @@ openProfilerStream(Client cntxt)
 	// Ignore the JSON rendering mode, use compiled time version
 
 	/* show all in progress instructions for stethoscope startup */
-	/* wait a short time for instructions to finish updating their thread admin
-	 * and then follow the locking scheme */
-
-	MT_sleep_ms(200);
-
-	for(j = 0; j <THREADS; j++){
-		Client c = 0; MalBlkPtr m=0; MalStkPtr s = 0; InstrPtr p = 0;
-		c = workingset[j].cntxt;
-		m = workingset[j].mb;
-		s = workingset[j].stk;
-		p =  workingset[j].pci;
-		if( c && m && s && p ) {
-			/* show the event  assuming the quadruple is aligned*/
-			MT_lock_unset(&mal_profileLock);
-			profilerEvent(c, m, s, p, 1);
-			MT_lock_set(&mal_profileLock);
-		}
-	}
+	/* this code is not thread safe, because the inprogress administration may change concurrently */
+	MT_lock_set(&mal_delayLock);
+	for(j = 0; j <THREADS; j++)
+		if(workingset[j].mb)
+			/* show the event */
+			profilerEvent(workingset[j].cntxt, workingset[j].mb, workingset[j].stk, workingset[j].pci, 1);
+	MT_lock_unset(&mal_delayLock);
 	MT_lock_unset(&mal_profileLock);
 	return MAL_SUCCEED;
 }
@@ -757,8 +686,7 @@ str
 stopProfiler(Client cntxt)
 {
 	MT_lock_set(&mal_profileLock);
-	if (malProfileMode)
-		malProfileMode = 0;
+	malProfileMode = 0;
 	setHeartbeat(0); // stop heartbeat
 	if(cntxt)
 		closeProfilerStream(cntxt);
@@ -785,9 +713,7 @@ _cleanupProfiler(Client cntxt)
 		BBPunfix(cntxt->profticks->batCacheid);
 	if (cntxt->profstmt)
 		BBPunfix(cntxt->profstmt->batCacheid);
-	if (cntxt->profevents)
-		BBPunfix(cntxt->profevents->batCacheid);
-	cntxt->profticks = cntxt->profstmt = cntxt->profevents = NULL;
+	cntxt->profticks = cntxt->profstmt = NULL;
 }
 
 static BAT *
@@ -811,8 +737,7 @@ initTrace(Client cntxt)
 	}
 	cntxt->profticks = TRACEcreate(TYPE_lng);
 	cntxt->profstmt = TRACEcreate(TYPE_str);
-	cntxt->profevents = TRACEcreate(TYPE_str);
-	if (cntxt->profticks == NULL || cntxt->profstmt == NULL || cntxt->profevents == NULL)
+	if (cntxt->profticks == NULL || cntxt->profstmt == NULL)
 		_cleanupProfiler(cntxt);
 	MT_lock_unset(&mal_profileLock);
 }
@@ -828,9 +753,8 @@ TRACEtable(Client cntxt, BAT **r)
 	}
 	r[0] = COLcopy(cntxt->profticks, cntxt->profticks->ttype, false, TRANSIENT);
 	r[1] = COLcopy(cntxt->profstmt, cntxt->profstmt->ttype, false, TRANSIENT);
-	r[2] = COLcopy(cntxt->profevents, cntxt->profevents->ttype, false, TRANSIENT);
 	MT_lock_unset(&mal_profileLock);
-	return 3;
+	return 2;
 }
 
 BAT *
@@ -844,8 +768,6 @@ getTrace(Client cntxt, const char *nme)
 			bn = COLcopy(cntxt->profticks, cntxt->profticks->ttype, false, TRANSIENT);
 		} else if (strcmp(nme, "stmt") == 0){
 			bn = COLcopy(cntxt->profstmt, cntxt->profstmt->ttype, false, TRANSIENT);
-		} else if (strcmp(nme, "events") == 0){
-			bn = COLcopy(cntxt->profevents, cntxt->profevents->ttype, false, TRANSIENT);
 		}
 	}
 	MT_lock_unset(&mal_profileLock);
@@ -878,33 +800,28 @@ cleanupTraces(Client cntxt)
 void
 sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str stmt, c, ev;
+	str stmt, c;
 	int errors = 0;
 
 	if (cntxt->profticks == NULL)
 		return;
 
 	/* generate actual call statement */
-	stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL | LIST_MAL_ALGO);
+	stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
 	c = stmt;
 
-/* unclear why we needed this. OLD?
 	while (c && *c && (isspace((unsigned char)*c) || *c == '!'))
 		c++;
-*/
 
-	ev = prepareProfilerEvent(cntxt, mb, stk, pci, 0);
 	// keep it a short transaction
 	MT_lock_set(&mal_profileLock);
-	if (cntxt->profticks == NULL) {
+ 	if (cntxt->profticks == NULL) {
 		MT_lock_unset(&mal_profileLock);
 		GDKfree(stmt);
 		return;
 	}
 	errors += BUNappend(cntxt->profticks, &pci->ticks, false) != GDK_SUCCEED;
 	errors += BUNappend(cntxt->profstmt, c, false) != GDK_SUCCEED;
-	if( ev)
-		errors += BUNappend(cntxt->profevents, ev, false) != GDK_SUCCEED;
 	if (errors > 0) {
 		/* stop profiling if an error occurred */
 		cntxt->sqlprofiler = FALSE;
@@ -912,7 +829,6 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	MT_lock_unset(&mal_profileLock);
 	GDKfree(stmt);
-	if(ev) free(ev);
 }
 
 lng
@@ -976,17 +892,13 @@ getDiskSpace(void)
 			b = BATdescriptor(i);
 			if (b) {
 				size += sizeof(BAT);
-
-				MT_lock_set(&b->theaplock);
 				if (!isVIEW(b)) {
 					BUN cnt = BATcount(b);
 
+					size += tailsize(b, cnt);
 					/* the upperbound is used for the heaps */
 					if (b->tvheap)
 						size += HEAPvmsize(b->tvheap);
-					MT_lock_unset(&b->theaplock);
-
-					size += tailsize(b, cnt);
 					if (b->thash)
 						size += sizeof(BUN) * cnt;
 					/* also add the size of an imprint, ordered index or mosaic */
@@ -994,8 +906,6 @@ getDiskSpace(void)
 						size += IMPSimprintsize(b);
 					if(b->torderidx)
 						size += HEAPvmsize(b->torderidx);
-				} else {
-					MT_lock_unset(&b->theaplock);
 				}
 				BBPunfix(i);
 			}
@@ -1006,12 +916,12 @@ getDiskSpace(void)
 
 void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 {
-	(void) getCPULoad(NULL);
-	*user = corestat[LASTCPU].user;
-	*nice = corestat[LASTCPU].nice;
-	*sys = corestat[LASTCPU].system;
-	*idle = corestat[LASTCPU].idle;
-	*iowait = corestat[LASTCPU].iowait;
+	(void) getCPULoad(0);
+	*user = corestat[255].user;
+	*nice = corestat[255].nice;
+	*sys = corestat[255].system;
+	*idle = corestat[255].idle;
+	*iowait = corestat[255].iowait;
 }
 
 /* the heartbeat process produces a ping event once every X milliseconds */

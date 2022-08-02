@@ -1,0 +1,14 @@
+stderr of test 'inline10` in directory 'monetdb5/optimizer` itself:
+
+
+# 11:53:01 >  
+# 11:53:01 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36453 --set xrpc_port=42260 --set monet_prompt= --trace --dbname=mTests_src_optimizer  inline10.mal
+# 11:53:01 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/mk/monet5/Linux/etc/monetdb5.conf)
+
+# 11:53:01 >  
+# 11:53:01 >  Done.
+# 11:53:01 >  
+

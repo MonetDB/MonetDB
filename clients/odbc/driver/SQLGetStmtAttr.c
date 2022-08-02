@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -41,7 +41,7 @@ MNDBGetStmtAttr(ODBCStmt *stmt,
 	 * StringLengthPtr */
 
 	switch (Attribute) {
-#ifndef __COVERITY__
+#ifndef STATIC_CODE_ANALYSIS
 	/* Coverity doesn't like the debug print in WriteData, so we
 	 * hide this whole thing */
 	case SQL_ATTR_APP_PARAM_DESC:		/* SQLHANDLE */
@@ -72,7 +72,7 @@ MNDBGetStmtAttr(ODBCStmt *stmt,
 		/* SQL_CURSOR_TYPE */
 		WriteData(ValuePtr, stmt->cursorType, SQLULEN);
 		break;
-#ifndef __COVERITY__
+#ifndef STATIC_CODE_ANALYSIS
 	/* Coverity doesn't like the debug print in WriteData, so we
 	 * hide this whole thing */
 	case SQL_ATTR_IMP_PARAM_DESC:		/* SQLHANDLE */

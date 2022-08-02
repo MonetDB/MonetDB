@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -13,32 +13,22 @@
  * by the server.
  */
 #include "monetdb_config.h"
-#include "mal.h"
-#include "mal_client.h"
-#include "mal_interpreter.h"
-#include "mal_module.h"
-#include "mal_session.h"
-#include "mal_resolve.h"
-#include "mal_client.h"
-#include "mal_interpreter.h"
-#include "mal_profiler.h"
-#include "bat5.h"
-#include "mutils.h"
+#include "bbp.h"
 
 static int
 pseudo(bat *ret, BAT *b, str X1,str X2) {
 	char buf[BUFSIZ];
 	snprintf(buf,BUFSIZ,"%s_%s", X1,X2);
-	if ((BBPindex(buf) <= 0 && BBPrename(b, buf) != 0) || BATroles(b,X2) != GDK_SUCCEED) {
+	if ((BBPindex(buf) <= 0 && BBPrename(b->batCacheid, buf) != 0) || BATroles(b,X2) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		return -1;
 	}
 	*ret = b->batCacheid;
-	BBPkeepref(b);
+	BBPkeepref(*ret);
 	return -0;
 }
 
-static str
+str
 CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
@@ -77,7 +67,7 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bbp.bind", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
-	BBPkeepref(b);
+	BBPkeepref(b->batCacheid);
 	lhs->vtype = TYPE_bat;
 	lhs->val.bval = i;
 	return MAL_SUCCEED;
@@ -94,7 +84,7 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * it is simply removed first
  */
 
-static str
+str
 CMDbbpNames(bat *ret)
 {
 	BAT *b;
@@ -120,20 +110,20 @@ CMDbbpNames(bat *ret)
 		throw(MAL, "catalog.bbpNames", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
-static str
+str
 CMDbbpDiskSpace(lng *ret)
 {
 	*ret=  getDiskSpace();
 	return MAL_SUCCEED;
 }
-static str
+str
 CMDgetPageSize(int *ret)
 {
 	*ret= (int)  MT_pagesize();
 	return MAL_SUCCEED;
 }
 
-static str
+str
 CMDbbpName(str *ret, bat *bid)
 {
 	*ret = (str) GDKstrdup(BBP_logical(*bid));
@@ -142,7 +132,7 @@ CMDbbpName(str *ret, bat *bid)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 CMDbbpCount(bat *ret)
 {
 	BAT *b, *bn;
@@ -175,7 +165,7 @@ CMDbbpCount(bat *ret)
 /*
  * The BAT status is redundantly stored in CMDbat_info.
  */
-static str
+str
 CMDbbpLocation(bat *ret)
 {
 	BAT *b;
@@ -183,7 +173,7 @@ CMDbbpLocation(bat *ret)
 	char buf[FILENAME_MAX];
 	char cwd[FILENAME_MAX];
 
-	if (MT_getcwd(cwd, FILENAME_MAX) == NULL)
+	if (getcwd(cwd, FILENAME_MAX) == NULL)
 		throw(MAL, "catalog.bbpLocation", RUNTIME_DIR_ERROR);
 
 	b = COLnew(0, TYPE_str, getBBPsize(), TRANSIENT);
@@ -216,7 +206,7 @@ CMDbbpLocation(bat *ret)
 /*
  * The BAT dirty status:dirty => (mem != disk); diffs = not-committed
  */
-static str
+str
 CMDbbpDirty(bat *ret)
 {
 	BAT *b;
@@ -247,7 +237,7 @@ CMDbbpDirty(bat *ret)
 /*
  * The BAT status is redundantly stored in CMDbat_info.
  */
-static str
+str
 CMDbbpStatus(bat *ret)
 {
 	BAT *b;
@@ -275,7 +265,7 @@ CMDbbpStatus(bat *ret)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 CMDbbpKind(bat *ret)
 {
 	BAT *b;
@@ -306,7 +296,7 @@ CMDbbpKind(bat *ret)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 CMDbbpRefCount(bat *ret)
 {
 	BAT *b;
@@ -333,7 +323,7 @@ CMDbbpRefCount(bat *ret)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 CMDbbpLRefCount(bat *ret)
 {
 	BAT *b;
@@ -360,14 +350,14 @@ CMDbbpLRefCount(bat *ret)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 CMDbbpgetIndex(int *res, bat *bid)
 {
 	*res= *bid;
 	return MAL_SUCCEED;
 }
 
-static str
+str
 CMDgetBATrefcnt(int *res, bat *bid)
 {
 	BAT *b;
@@ -380,7 +370,7 @@ CMDgetBATrefcnt(int *res, bat *bid)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 CMDgetBATlrefcnt(int *res, bat *bid)
 {
 	BAT *b;
@@ -393,8 +383,7 @@ CMDgetBATlrefcnt(int *res, bat *bid)
 	return MAL_SUCCEED;
 }
 
-static str
-CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCATION, bat *HEAT, bat *DIRTY, bat *STATUS, bat *KIND)
+str CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCATION, bat *HEAT, bat *DIRTY, bat *STATUS, bat *KIND)
 {
 	BAT *id, *ns, *tt, *cnt, *refcnt, *lrefcnt, *location, *heat, *dirty, *status, *kind, *bn;
 	bat	i;
@@ -419,7 +408,7 @@ CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCA
 	}
 	for (i = 1; i < sz; i++) {
 		if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
-			bn = BBP_desc(i);
+			bn = BATdescriptor(i);
 			if (bn) {
 				lng l = BATcount(bn);
 				int heat_ = 0, len;
@@ -437,43 +426,34 @@ CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCA
 				}
 				if (BUNappend(id, &i, false) != GDK_SUCCEED ||
 					BUNappend(ns, BBP_logical(i), false) != GDK_SUCCEED ||
-					BUNappend(tt, BATatoms[bn->ttype].name, false) != GDK_SUCCEED ||
+					BUNappend(tt, BATatoms[BATttype(bn)].name, false) != GDK_SUCCEED ||
 					BUNappend(cnt, &l, false) != GDK_SUCCEED ||
 					BUNappend(refcnt, &refs, false) != GDK_SUCCEED ||
 					BUNappend(lrefcnt, &lrefs, false) != GDK_SUCCEED ||
 					BUNappend(location, buf, false) != GDK_SUCCEED ||
 					BUNappend(heat, &heat_, false) != GDK_SUCCEED ||
-					BUNappend(dirty, BBP_cache(i) ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", false) != GDK_SUCCEED ||
+					BUNappend(dirty, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", false) != GDK_SUCCEED ||
 					BUNappend(status, loc, false) != GDK_SUCCEED ||
 					BUNappend(kind, mode, false) != GDK_SUCCEED) {
+					BBPunfix(bn->batCacheid);
 					msg = createException(MAL, "catalog.bbp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
+				BBPunfix(bn->batCacheid);
 			}
 		}
 	}
-	*ID = id->batCacheid;
-	BBPkeepref(id);
-	*NS = ns->batCacheid;
-	BBPkeepref(ns);
-	*TT = tt->batCacheid;
-	BBPkeepref(tt);
-	*CNT = cnt->batCacheid;
-	BBPkeepref(cnt);
-	*REFCNT = refcnt->batCacheid;
-	BBPkeepref(refcnt);
-	*LREFCNT = lrefcnt->batCacheid;
-	BBPkeepref(lrefcnt);
-	*LOCATION = location->batCacheid;
-	BBPkeepref(location);
-	*HEAT = heat->batCacheid;
-	BBPkeepref(heat);
-	*DIRTY = dirty->batCacheid;
-	BBPkeepref(dirty);
-	*STATUS = status->batCacheid;
-	BBPkeepref(status);
-	*KIND = kind->batCacheid;
-	BBPkeepref(kind);
+	BBPkeepref(*ID = id->batCacheid);
+	BBPkeepref(*NS = ns->batCacheid);
+	BBPkeepref(*TT = tt->batCacheid);
+	BBPkeepref(*CNT = cnt->batCacheid);
+	BBPkeepref(*REFCNT = refcnt->batCacheid);
+	BBPkeepref(*LREFCNT = lrefcnt->batCacheid);
+	BBPkeepref(*LOCATION = location->batCacheid);
+	BBPkeepref(*HEAT = heat->batCacheid);
+	BBPkeepref(*DIRTY = dirty->batCacheid);
+	BBPkeepref(*STATUS = status->batCacheid);
+	BBPkeepref(*KIND = kind->batCacheid);
 	return MAL_SUCCEED;
 
   bailout:
@@ -491,14 +471,14 @@ CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCA
 	return msg;
 }
 
-static str
+str
 CMDsetName(str *rname, const bat *bid, str *name)
 {
 	BAT *b;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bbp.setName", INTERNAL_BAT_ACCESS);
 	}
-	if (BBPrename(b, *name) != 0) {
+	if (BBPrename(b->batCacheid, *name) != 0) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bbp.setName", GDK_EXCEPTION);
 	}
@@ -508,32 +488,3 @@ CMDsetName(str *rname, const bat *bid, str *name)
 		throw(MAL, "bbp.setName", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
-
-#include "mel.h"
-mel_func bbp_init_funcs[] = {
- pattern("bbp", "bind", CMDbbpbind, false, "Locate the BAT using its logical name", args(1,2, batargany("",2),arg("name",str))),
- command("bbp", "getIndex", CMDbbpgetIndex, false, "Retrieve the index in the BBP", args(1,2, arg("",int),batargany("b",2))),
- command("bbp", "getNames", CMDbbpNames, false, "Map BAT into its bbp name", args(1,1, batarg("",str))),
- command("bbp", "get", CMDbbp, false, "bpp", args(11,11, batarg("id",int),batarg("ns",str),batarg("tt",str),batarg("cnt",lng),batarg("refcnt",int),batarg("lrefcnt",int),batarg("location",str),batarg("heat",int),batarg("dirty",str),batarg("status",str),batarg("kind",str))),
- command("bbp", "getName", CMDbbpName, false, "Map a BAT into its internal name", args(1,2, arg("",str),batargany("b",1))),
- command("bbp", "setName", CMDsetName, false, "Rename a BAT", args(1,3, arg("",str),batargany("b",1),arg("n",str))),
- command("bbp", "getCount", CMDbbpCount, false, "Create a BAT with the cardinalities of all known BATs", args(1,1, batarg("",lng))),
- command("bbp", "getRefCount", CMDbbpRefCount, false, "Create a BAT with the (hard) reference counts", args(1,1, batarg("",int))),
- command("bbp", "getLRefCount", CMDbbpLRefCount, false, "Create a BAT with the logical reference counts", args(1,1, batarg("",int))),
- command("bbp", "getLocation", CMDbbpLocation, false, "Create a BAT with their disk locations", args(1,1, batarg("",str))),
- command("bbp", "getDirty", CMDbbpDirty, false, "Create a BAT with the dirty/ diffs/clean status", args(1,1, batarg("",str))),
- command("bbp", "getStatus", CMDbbpStatus, false, "Create a BAT with the disk/load status", args(1,1, batarg("",str))),
- command("bbp", "getKind", CMDbbpKind, false, "Create a BAT with the persistency status", args(1,1, batarg("",str))),
- command("bbp", "getRefCount", CMDgetBATrefcnt, false, "Utility for debugging MAL interpreter", args(1,2, arg("",int),batargany("b",1))),
- command("bbp", "getLRefCount", CMDgetBATlrefcnt, false, "Utility for debugging MAL interpreter", args(1,2, arg("",int),batargany("b",1))),
- command("bbp", "getDiskSpace", CMDbbpDiskSpace, false, "Estimate the amount of disk space occupied by dbpath", args(1,1, arg("",lng))),
- command("bbp", "getPageSize", CMDgetPageSize, false, "Obtain the memory page size", args(1,1, arg("",int))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_bbp_mal)
-{ mal_module("bbp", NULL, bbp_init_funcs); }

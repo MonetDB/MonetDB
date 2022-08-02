@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 import pymonetdb
 import sys
@@ -14,12 +14,11 @@ dbh = pymonetdb.connect(port=int(sys.argv[1]),database=sys.argv[2],hostname=sys.
 cursor = dbh.cursor()
 
 cursor.execute('CREATE TABLE python_int128 (i HUGEINT);')
-if cursor.execute('INSERT INTO python_int128 VALUES (123456789098765432101234567890987654321);') != 1:
-    sys.stderr.write("1 row inserted expected")
+cursor.execute('INSERT INTO python_int128 VALUES (123456789098765432101234567890987654321);')
 cursor.execute('SELECT * FROM python_int128;')
-if cursor.fetchall() != [(123456789098765432101234567890987654321,)]:
-    sys.stderr.write("Result set [(123456789098765432101234567890987654321,)] expected")
+result = cursor.fetchall()
+print(result)
+print(result[0])
+print(result[0][0])
 
 cursor.execute('DROP TABLE python_int128;')
-cursor.close()
-dbh.close()

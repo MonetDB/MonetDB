@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -88,13 +88,13 @@ MFconnectionManager(void *d)
 		if (i == 0)
 			continue;
 		if (i == -1 && errno != EINTR) {
-			Mlevelfprintf(ERROR, stderr, "failed to select on mfpipe: %s\n",
+			Mfprintf(stderr, "failed to select on mfpipe: %s\n",
 					strerror(errno));
 			break;
 		}
 		/* coverity[string_null_argument] */
 		if ((i = (int) read(mfpipe[0], &msg, sizeof(msg))) < 0) {
-			Mlevelfprintf(ERROR, stderr, "failed reading from notification pipe: %s\n",
+			Mfprintf(stderr, "failed reading from notification pipe: %s\n",
 					strerror(errno));
 			break;
 		}
@@ -116,7 +116,7 @@ MFconnectionManager(void *d)
 						len = snprintf(buf, sizeof(buf), "%s/*",
 								m->dbcv[i]->database);
 						if (len >= sizeof(buf)) {
-							Mlevelfprintf(ERROR, stderr, "buffer buf too small, "
+							Mfprintf(stderr, "buffer buf too small, "
 									"increase size in %s:%d\n",
 									__FILE__, __LINE__);
 							continue;
@@ -125,14 +125,14 @@ MFconnectionManager(void *d)
 						if (len >= 4 &&
 								buf[len - 3] == '*' && buf[len - 4] == '/')
 							buf[len - 2] = '\0';
-						if (db_glob(buf, msg + 1)) {
+						if (db_glob(buf, msg + 1) == 1) {
 							sabdb *stats;
 							Mapi tm = NULL;
 							/* match! eat away trailing / (for matching) */
 							msg[strlen(msg) - 1] = '\0';
 							stats = getRemoteDB(msg + 1);
 							if (stats == NULL) {
-								Mlevelfprintf(ERROR, stderr, "target %s cannot be resolved "
+								Mfprintf(stderr, "target %s cannot be resolved "
 										"despite being just discovered as %s\n",
 										m->dbcv[i]->database, msg + 1);
 								continue;
@@ -140,7 +140,7 @@ MFconnectionManager(void *d)
 							snprintf(buf, sizeof(buf), "%s%s",
 									stats->conns->val, stats->dbname);
 							msab_freeStatus(&stats);
-							Mlevelfprintf(INFORMATION, stdout, "setting up multiplexer "
+							Mfprintf(stdout, "setting up multiplexer "
 									"target %s->%s\n",
 									m->dbcv[i]->database, buf);
 							tm = mapi_mapiuri(buf,
@@ -149,7 +149,7 @@ MFconnectionManager(void *d)
 								m->dbcv[i]->conn = tm;
 								mapi_cache_limit(tm, -1); /* don't page */
 							} else {
-								Mlevelfprintf(ERROR, stdout, "failed to connect to %s: %s\n",
+								Mfprintf(stdout, "failed to connect to %s: %s\n",
 										buf, mapi_error_str(tm));
 								mapi_destroy(tm);
 							}
@@ -165,7 +165,7 @@ MFconnectionManager(void *d)
 						len = snprintf(buf, sizeof(buf), "%s/*",
 								m->dbcv[i]->database);
 						if (len >= sizeof(buf)) {
-							Mlevelfprintf(ERROR, stderr, "buffer buf too small, "
+							Mfprintf(stderr, "buffer buf too small, "
 									"increase size in %s:%d\n",
 									__FILE__, __LINE__);
 							continue;
@@ -174,7 +174,7 @@ MFconnectionManager(void *d)
 						if (len >= 4 &&
 								buf[len - 3] == '*' && buf[len - 4] == '/')
 							buf[len - 2] = '\0';
-						if (db_glob(buf, msg + 1)) {
+						if (db_glob(buf, msg + 1) == 1) {
 							/* reevaluate, to see if connection is still
 							 * available */
 							sabdb *walk;
@@ -182,7 +182,7 @@ MFconnectionManager(void *d)
 							Mapi tm = m->dbcv[i]->conn;
 							const char *uri = mapi_get_uri(tm);
 							if (stats == NULL) {
-								Mlevelfprintf(ERROR, stderr, "target %s can no longer "
+								Mfprintf(stderr, "target %s can no longer "
 										"be resolved\n",
 										m->dbcv[i]->database);
 								/* schedule to drop connection */
@@ -203,13 +203,13 @@ MFconnectionManager(void *d)
 							if (walk == NULL) {
 								snprintf(buf, sizeof(buf), "%s%s",
 										stats->conns->val, stats->dbname);
-								Mlevelfprintf(INFORMATION, stdout, "changing multiplexer target %s: %s->%s\n",
+								Mfprintf(stdout, "changing multiplexer target %s: %s->%s\n",
 										m->dbcv[i]->database, uri, buf);
 								tm = mapi_mapiuri(buf,
 										m->dbcv[i]->user, m->dbcv[i]->pass,
 										"sql");
 								if (mapi_reconnect(tm) != MOK) {
-									Mlevelfprintf(ERROR, stderr, "mapi_reconnect for %s "
+									Mfprintf(stderr, "mapi_reconnect for %s "
 											"failed: %s\n",
 											m->dbcv[i]->database,
 											mapi_error_str(tm));
@@ -251,7 +251,7 @@ multiplexNotifyAddedDB(const char *database)
 	snprintf(dbslash, sizeof(dbslash), "+%s/", database);
 	p = strdup(dbslash);
 	if (write(mfpipe[1], &p, sizeof(p)) != sizeof(p)) {
-		Mlevelfprintf(ERROR, stderr, "failed to write notify added message to mfpipe\n");
+		Mfprintf(stderr, "failed to write notify added message to mfpipe\n");
 		free(p);
 	}
 	/* p is freed by MFconnectionManager */
@@ -270,7 +270,7 @@ multiplexNotifyRemovedDB(const char *database)
 	snprintf(dbslash, sizeof(dbslash), "-%s/", database);
 	p = strdup(dbslash);
 	if (write(mfpipe[1], &p, sizeof(p)) != sizeof(p)) {
-		Mlevelfprintf(ERROR, stderr, "failed to write notify removed message to mfpipe\n");
+		Mfprintf(stderr, "failed to write notify removed message to mfpipe\n");
 		free(p);
 	}
 	/* p is freed by MFconnectionManager */
@@ -278,7 +278,7 @@ multiplexNotifyRemovedDB(const char *database)
 }
 
 err
-multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
+multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 {
 	multiplex *m = malloc(sizeof(multiplex));
 	multiplexlist *mpl;
@@ -317,8 +317,6 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 				free(m->dbcv[i]->user);
 				free(m->dbcv[i]);
 			}
-			fclose(m->sout);
-			fclose(m->serr);
 			free(m->dbcv);
 			free(m->pool);
 			free(m);
@@ -333,8 +331,6 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 				free(m->dbcv[i]->user);
 				free(m->dbcv[i]);
 			}
-			fclose(m->sout);
-			fclose(m->serr);
 			free(m->dbcv);
 			free(m->pool);
 			free(m);
@@ -357,8 +353,6 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 			free(m->dbcv[i]->user);
 			free(m->dbcv[i]);
 		}
-		fclose(m->sout);
-		fclose(m->serr);
 		free(m->dbcv);
 		free(m->pool);
 		free(m);
@@ -373,8 +367,6 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 				free(m->dbcv[i]->user);
 				free(m->dbcv[i]);
 			}
-			fclose(m->sout);
-			fclose(m->serr);
 			free(m->dbcv);
 			free(m->pool);
 			free(m);
@@ -397,16 +389,16 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 
 		/* create communication channel */
 		if (pipe2(mfpipe, O_CLOEXEC) != 0)
-			Mlevelfprintf(ERROR, stderr, "failed to create mfpipe: %s\n", strerror(errno));
+			Mfprintf(stderr, "failed to create mfpipe: %s\n", strerror(errno));
 		else {
 #if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
 			(void) fcntl(mfpipe[0], F_SETFD, FD_CLOEXEC);
 			(void) fcntl(mfpipe[1], F_SETFD, FD_CLOEXEC);
 #endif
-			Mlevelfprintf(INFORMATION, stdout, "starting multiplex-funnel connection manager\n");
+			Mfprintf(stdout, "starting multiplex-funnel connection manager\n");
 			if ((i = pthread_create(&mfmanager, &detach,
 									MFconnectionManager, NULL)) != 0) {
-				Mlevelfprintf(ERROR, stderr, "failed to start MFconnectionManager: %s\n",
+				Mfprintf(stderr, "failed to start MFconnectionManager: %s\n",
 						 strerror(i));
 				mfmanager = 0;
 			}
@@ -416,12 +408,12 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 	for (i = 0; i < m->dbcc; i++) {
 		sabdb *stats = getRemoteDB(m->dbcv[i]->database);
 		if (stats == NULL) {
-			Mlevelfprintf(ERROR, serr, "mfunnel: target %s cannot be resolved\n",
+			Mfprintf(serr, "mfunnel: target %s cannot be resolved\n",
 					m->dbcv[i]->database);
 			continue;
 		}
 		snprintf(buf, sizeof(buf), "%s%s", stats->conns->val, stats->dbname);
-		Mlevelfprintf(INFORMATION, sout, "mfunnel: setting up multiplexer target %s->%s\n",
+		Mfprintf(sout, "mfunnel: setting up multiplexer target %s->%s\n",
 				m->dbcv[i]->database, buf);
 		m->dbcv[i]->conn = mapi_mapiuri(buf,
 				m->dbcv[i]->user, m->dbcv[i]->pass, "sql");
@@ -448,11 +440,11 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 	snprintf(buf, sizeof(buf), "%s/.gdk_lock", name);
 	if ((m->gdklock = MT_lockf(buf, F_TLOCK)) == -1) {
 		/* locking failed, FIXME: cleanup here */
-		Mlevelfprintf(ERROR, serr, "mfunnel: another instance is already running?\n");
+		Mfprintf(serr, "mfunnel: another instance is already running?\n");
 		return(newErr("cannot lock for %s, already locked", name));
 	} else if (m->gdklock == -2) {
 		/* directory or something doesn't exist, FIXME: cleanup */
-		Mlevelfprintf(ERROR, serr, "mfunnel: unable to create %s file: %s\n",
+		Mfprintf(serr, "mfunnel: unable to create %s file: %s\n",
 				buf, strerror(errno));
 		return(newErr("cannot create lock for %s", name));
 	}
@@ -469,7 +461,7 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 		err em;
 
 	    msab_dbnameinit(NULL);
-		Mlevelfprintf(ERROR, serr, "mfunnel: unable to startup %s: %s\n",
+		Mfprintf(serr, "mfunnel: unable to startup %s: %s\n",
 				name, p);
 		em = newErr("cannot create funnel %s due to sabaoth: %s", name, p);
 		free(p);
@@ -481,7 +473,7 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 }
 
 void
-multiplexDestroy(const char *mp)
+multiplexDestroy(char *mp)
 {
 	multiplexlist *ml, *mlp;
 	multiplex *m = NULL;
@@ -505,7 +497,7 @@ multiplexDestroy(const char *mp)
 	pthread_mutex_unlock(&mpl_lock);
 
 	if (m == NULL) {
-		Mlevelfprintf(ERROR, stderr, "request to remove non-existing "
+		Mfprintf(stderr, "request to remove non-existing "
 				"multiplex-funnel: %s\n", mp);
 		return;
 	}
@@ -514,7 +506,7 @@ multiplexDestroy(const char *mp)
 	msab_dbnameinit(m->name);
 	if ((msg = msab_registerStop()) != NULL ||
 		(msg = msab_wildRetreat()) != NULL) {
-		Mlevelfprintf(ERROR, stderr, "mfunnel: %s\n", msg);
+		Mfprintf(stderr, "mfunnel: %s\n", msg);
 		free(msg);
 	}
 	msab_dbnameinit(NULL);
@@ -541,8 +533,8 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 		if (m->dbcv[i]->conn == NULL) {
 			mnstr_printf(fout, "!connection for %s is currently unresolved\n",
 					m->dbcv[i]->database);
-			mnstr_flush(fout, MNSTR_FLUSH_DATA);
-			Mlevelfprintf(ERROR, m->serr, "failed to find a provider for %s\n",
+			mnstr_flush(fout);
+			Mfprintf(m->serr, "failed to find a provider for %s\n",
 					m->dbcv[i]->database);
 			return;
 		}
@@ -551,8 +543,8 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 				mnstr_printf(fout, "!failed to establish connection "
 						"for %s: %s\n", m->dbcv[i]->database,
 						mapi_error_str(m->dbcv[i]->conn));
-				mnstr_flush(fout, MNSTR_FLUSH_DATA);
-				Mlevelfprintf(ERROR, m->serr, "mapi_reconnect for %s failed: %s\n",
+				mnstr_flush(fout);
+				Mfprintf(m->serr, "mapi_reconnect for %s failed: %s\n",
 						m->dbcv[i]->database,
 						mapi_error_str(m->dbcv[i]->conn));
 				return;
@@ -574,7 +566,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 			t = mapi_result_error(h);
 			mnstr_printf(fout, "!node %s failed: %s\n",
 					m->dbcv[i]->database, t ? t : "no response");
-			Mlevelfprintf(ERROR, m->serr, "mapi_read_response for %s failed: %s\n",
+			Mfprintf(m->serr, "mapi_read_response for %s failed: %s\n",
 					m->dbcv[i]->database, t ? t : "(no error)");
 			break;
 		}
@@ -582,7 +574,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 		if ((t = mapi_result_error(h)) != NULL) {
 			mnstr_printf(fout, "!node %s failed: %s\n",
 					m->dbcv[i]->database, t);
-			Mlevelfprintf(ERROR, m->serr, "mapi_result_error for %s: %s\n",
+			Mfprintf(m->serr, "mapi_result_error for %s: %s\n",
 					m->dbcv[i]->database, t);
 			break;
 		}
@@ -593,7 +585,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 			t = "err"; /* for cleanup code below */
 			mnstr_printf(fout, "!node %s returned a different type of result "
 					"than the previous node\n", m->dbcv[i]->database);
-			Mlevelfprintf(ERROR, m->serr, "encountered mix of result types, "
+			Mfprintf(m->serr, "encountered mix of result types, "
 					"got %d, expected %d\n", mapi_get_querytype(h), qtype);
 			break;
 		}
@@ -612,7 +604,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 					t = "err"; /* for cleanup code below */
 					mnstr_printf(fout, "!node %s has mismatch in result fields\n",
 							m->dbcv[i]->database);
-					Mlevelfprintf(ERROR, m->serr, "mapi_get_field_count inconsistent for %s: "
+					Mfprintf(m->serr, "mapi_get_field_count inconsistent for %s: "
 							"got %d, expected %d\n",
 							m->dbcv[i]->database,
 							mapi_get_field_count(h), fcnt);
@@ -633,7 +625,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 					t = "err"; /* for cleanup code below */
 					mnstr_printf(fout, "!node %s has mismatch in transaction state\n",
 							m->dbcv[i]->database);
-					Mlevelfprintf(ERROR, m->serr, "mapi_get_autocommit inconsistent for %s: "
+					Mfprintf(m->serr, "mapi_get_autocommit inconsistent for %s: "
 							"got %d, expected %d\n",
 							m->dbcv[i]->database,
 							mapi_get_autocommit(m->dbcv[i]->conn), fcnt);
@@ -643,7 +635,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 				t = "err"; /* for cleanup code below */
 				mnstr_printf(fout, "!node %s returned unhandled result type\n",
 						m->dbcv[i]->database);
-				Mlevelfprintf(ERROR, m->serr, "unhandled querytype for %s: %d\n",
+				Mfprintf(m->serr, "unhandled querytype for %s: %d\n",
 						m->dbcv[i]->database, mapi_get_querytype(h));
 				break;
 		}
@@ -653,7 +645,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 
 	/* error or empty result, just end here */
 	if (t != NULL || qtype == Q_PARSE) {
-		mnstr_flush(fout, MNSTR_FLUSH_DATA);
+		mnstr_flush(fout);
 		for (i = 0; i < m->dbcc; i++)
 			mapi_close_handle(m->dbcv[i]->hdl);
 		return;
@@ -689,7 +681,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 			mnstr_printf(fout, "&%d %c\n", Q_TRANS, fcnt ? 't' : 'f');
 			break;
 	}
-	mnstr_flush(fout, MNSTR_FLUSH_DATA);
+	mnstr_flush(fout);
 	/* finish up */
 	for (i = 0; i < m->dbcc; i++)
 		mapi_close_handle(m->dbcv[i]->hdl);
@@ -746,7 +738,7 @@ multiplexThread(void *d)
 			if (m->dbcv[i]->connupdate) {
 				if (m->dbcv[i]->newconn != NULL) {
 					/* put new connection live */
-					Mlevelfprintf(INFORMATION, m->sout, "performing deferred connection cycle "
+					Mfprintf(m->sout, "performing deferred connection cycle "
 							"for %s from %s to %s\n",
 							m->dbcv[i]->database,
 							m->dbcv[i]->conn != NULL ?
@@ -760,7 +752,7 @@ multiplexThread(void *d)
 					m->dbcv[i]->connupdate = false;
 				} else {
 					/* put new connection live */
-					Mlevelfprintf(INFORMATION, m->sout, "performing deferred connection drop "
+					Mfprintf(m->sout, "performing deferred connection drop "
 							"for %s from %s\n",
 							m->dbcv[i]->database,
 							m->dbcv[i]->conn != NULL ?
@@ -812,13 +804,13 @@ multiplexThread(void *d)
 				case 'X':
 					/* ignored, some clients just really insist on using
 					 * these */
-					mnstr_flush(c->fout, MNSTR_FLUSH_DATA);
+					mnstr_flush(c->fout);
 					continue;
 				default:
 					mnstr_printf(c->fout, "!modifier %c not supported by "
 							"multiplex-funnel\n", *buf);
-					mnstr_flush(c->fout, MNSTR_FLUSH_DATA);
-					Mlevelfprintf(ERROR, m->serr, "client attempted to perform %c "
+					mnstr_flush(c->fout);
+					Mfprintf(m->serr, "client attempted to perform %c "
 							"type query: %s\n", *buf, buf);
 					continue;
 			}
@@ -832,7 +824,7 @@ multiplexThread(void *d)
 #endif
 	}
 
-	Mlevelfprintf(INFORMATION, stdout, "stopping mfunnel '%s'\n", m->name);
+	Mfprintf(stdout, "stopping mfunnel '%s'\n", m->name);
 
 	/* free, cleanup, etc. */
 	while (m->clients != NULL) {
@@ -866,13 +858,13 @@ multiplexThread(void *d)
 	while (p != NULL) {
 		if (p->type == MEROFUN && strcmp(p->dbname, m->name) == 0) {
 			/* log everything that's still in the pipes */
-			logFD(p, 0, "MSG", p->dbname, (long long int)p->pid, _mero_logfile, 1);
+			logFD(p->out, "MSG", p->dbname, (long long int)p->pid, _mero_logfile, 1);
 			/* remove from the list */
 			q->next = p->next;
 			/* close the descriptors */
-			close(p->input[0].fd);
-			close(p->input[1].fd);
-			Mlevelfprintf(INFORMATION, stdout, "mfunnel '%s' has stopped\n", p->dbname);
+			close(p->out);
+			close(p->err);
+			Mfprintf(stdout, "mfunnel '%s' has stopped\n", p->dbname);
 			free(p->dbname);
 			pthread_mutex_destroy(&p->fork_lock);
 			free(p);
@@ -890,7 +882,7 @@ multiplexThread(void *d)
 }
 
 void
-multiplexAddClient(const char *mp, int sock, stream *fout, stream *fdin, char *name)
+multiplexAddClient(char *mp, int sock, stream *fout, stream *fdin, char *name)
 {
 	multiplex_client *w;
 	multiplex_client *n = malloc(sizeof(multiplex_client));
@@ -910,10 +902,10 @@ multiplexAddClient(const char *mp, int sock, stream *fout, stream *fdin, char *n
 	}
 	if (ml == NULL) {
 		pthread_mutex_unlock(&mpl_lock);
-		Mlevelfprintf(ERROR, stderr, "failed to find multiplex-funnel '%s' for client %s\n",
+		Mfprintf(stderr, "failed to find multiplex-funnel '%s' for client %s\n",
 				mp, name);
 		mnstr_printf(fout, "!monetdbd: internal error: could not find multiplex-funnel '%s'\n", mp);
-		mnstr_flush(fout, MNSTR_FLUSH_DATA);
+		mnstr_flush(fout);
 		close_stream(fdin);
 		close_stream(fout);
 		free(n->name);
@@ -931,10 +923,10 @@ multiplexAddClient(const char *mp, int sock, stream *fout, stream *fdin, char *n
 	}
 	pthread_mutex_unlock(&mpl_lock);
 
-	Mlevelfprintf(INFORMATION, m->sout, "mfunnel: added new client %s\n", n->name);
+	Mfprintf(m->sout, "mfunnel: added new client %s\n", n->name);
 
 	/* send client a prompt */
-	mnstr_flush(fout, MNSTR_FLUSH_DATA);
+	mnstr_flush(fout);
 }
 
 void
@@ -943,7 +935,7 @@ multiplexRemoveClient(multiplex *m, multiplex_client *c)
 	multiplex_client *w;
 	multiplex_client *p = NULL;
 
-	Mlevelfprintf(INFORMATION, m->sout, "mfunnel: removing client %s\n", c->name);
+	Mfprintf(m->sout, "mfunnel: removing client %s\n", c->name);
 
 	for (w = m->clients; w != NULL; w = w->next) {
 		if (w == c) {
@@ -962,3 +954,5 @@ multiplexRemoveClient(multiplex *m, multiplex_client *c)
 		p = w;
 	}
 }
+
+/* vim:set ts=4 sw=4 noexpandtab: */

@@ -1,3 +1,0 @@
-statement ok
-UPDATE testTable set v1 = 42 where v2 = 42
-

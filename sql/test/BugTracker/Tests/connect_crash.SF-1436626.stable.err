@@ -1,0 +1,12 @@
+stderr of test 'connect_crash.SF-1436626` in directory 'sql/test/BugTracker` itself:
+
+
+# 14:42:35 >  
+# 14:42:35 >  Mtimeout -timeout 180 /ufs/sjoerd/bin/x86_64/python connect_crash.SF-1436626.py connect_crash.SF-1436626 
+# 14:42:35 >  
+
+
+# 14:42:45 >  
+# 14:42:45 >  Done.
+# 14:42:45 >  
+

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _GDK_DELTA_H_
@@ -19,15 +19,15 @@ static inline void
 DELTAinit(BAT *b)
 {
 	BATsetcount(b, 0);
-	b->theap->free = 0;
+	b->theap.free = 0;
 	b->batInserted = 0;
-	b->tshift = ATOMelmshift(b->twidth);
+	b->tshift = ATOMelmshift(Tsize(b));
 	TRC_DEBUG(DELTA,
 		  "%s free %zu ins " BUNFMT " base %p\n",
 		  BBP_logical(b->batCacheid),
-		  b->theap->free,
+		  b->theap.free,
 		  b->batInserted,
-		  b->theap->base);
+		  b->theap.base);
 }
 
 /*
@@ -40,6 +40,6 @@ DELTAinit(BAT *b)
  * be storage-clean, but transaction-dirty). For this we have
  * DELTAdirty(b).
  */
-#define DELTAdirty(b)	((b)->batInserted < BATcount(b))
+#define DELTAdirty(b)	((b)->batInserted < BUNlast(b))
 
 #endif /* _GDK_DELTA_H_ */

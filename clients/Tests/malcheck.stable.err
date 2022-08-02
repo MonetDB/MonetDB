@@ -1,0 +1,12 @@
+stderr of test 'malcheck` in directory 'clients` itself:
+
+
+# 15:15:51 >  
+# 15:15:51 >  "./malcheck.sh" "malcheck"
+# 15:15:51 >  
+
+
+# 15:16:26 >  
+# 15:16:26 >  "Done."
+# 15:16:26 >  
+

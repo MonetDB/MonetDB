@@ -1,8 +1,0 @@
-statement ok
-function foo();
-catch NotDefinedException:str;
-	io.print("Shouldn't do this");
-	io.print(NotDefinedException);
-exit NotDefinedException;
-end foo;
-

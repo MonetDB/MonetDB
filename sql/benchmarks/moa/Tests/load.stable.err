@@ -1,0 +1,17 @@
+stderr of test 'load` in directory 'sql/benchmarks/moa` itself:
+
+
+# 21:48:35 >  
+# 21:48:35 >  Mtimeout -timeout 180 Mserver --config=/ufs/niels/.monet.conf --debug=0   --set monet_prompt= --dbname=Tests_src_benchmarks_moa --set sql_port=55755 /ufs/niels/data/sql/Linux/share/sql/catalog.mil /ufs/niels/data/sql/Linux/share/sql/sqlserver.mil load.prologue ; echo  ; echo Over..
+# 21:48:35 >  
+
+
+# 21:48:36 >  
+# 21:48:36 >  Mtimeout -timeout 60 sql_client --port=55755 < load.sql
+# 21:48:36 >  
+
+
+# 21:48:52 >  
+# 21:48:52 >  Done.
+# 21:48:52 >  
+

@@ -1,0 +1,17 @@
+stderr of test 'bram` in directory 'sql/test/ADT2006` itself:
+
+
+# 16:54:48 >  
+# 16:54:48 >  Mtimeout -timeout 180 Mserver "--config=/ufs/goncalve/scratch/MonetDB/MonetDB_Release/monetdb4/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB_Release/monetdb4/lib/MonetDB:/ufs/goncalve/scratch/MonetDB/MonetDB_Release/monetdb4/lib/MonetDB/lib:/ufs/goncalve/scratch/MonetDB/MonetDB_Release/monetdb4/lib/MonetDB/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB_Release/monetdb4/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB_Release/monetdb4/var/MonetDB/sql_logs" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB_Release/monetdb4/var/MonetDB/xquery_logs" --set mapi_port=37395 --set monet_prompt= --trace "--dbname=mTests_src_test_ADT2006" --dbinit=" module(sql_server);" ; echo ; echo Over..
+# 16:54:48 >  
+
+
+# 16:54:49 >  
+# 16:54:49 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=37395  < bram.sql
+# 16:54:49 >  
+
+
+# 16:54:49 >  
+# 16:54:49 >  Done.
+# 16:54:49 >  
+

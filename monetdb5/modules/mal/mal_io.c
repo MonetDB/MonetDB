@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -39,15 +39,11 @@
  * allow for any type to be assigned.
  */
 #include "monetdb_config.h"
-#include "mal.h"
-#include "mal_instruction.h"
-#include "mal_interpreter.h"
-#include "mutils.h"
-#include "mal_exception.h"
+#include "mal_io.h"
 
 #define MAXFORMAT 64*1024
 
-static str
+str
 io_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bstream **ret= (bstream**) getArgReference(stk,pci,0);
@@ -58,7 +54,7 @@ io_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 io_stdout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	stream **ret= (stream**) getArgReference(stk,pci,0);
@@ -91,7 +87,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 		return MAL_SUCCEED;
 	}
 	if (isaBatType(tpe) ) {
-		BAT *b;
+		BAT *b[2];
 
 		if (is_bat_nil(*(bat *) val)) {
 			if (hd)
@@ -101,27 +97,38 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 				mnstr_printf(fp, "%s", tl);
 			return MAL_SUCCEED;
 		}
-		b = BATdescriptor(*(bat *) val);
-		if (b == NULL) {
+		b[1] = BATdescriptor(*(bat *) val);
+		if (b[1] == NULL) {
 			throw(MAL, "io.print", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		if (nobat) {
 			if (hd)
 				mnstr_printf(fp, "%s", hd);
-			mnstr_printf(fp, "<%s>", BBP_logical(b->batCacheid));
+			mnstr_printf(fp, "<%s>", BBPname(b[1]->batCacheid));
 			if (tl)
 				mnstr_printf(fp, "%s", tl);
 		} else {
-			BATprint(cntxt->fdout, b);
+			b[0] = BATdense(b[1]->hseqbase, b[1]->hseqbase, BATcount(b[1]));
+			if (b[0] == NULL) {
+				BBPunfix(b[1]->batCacheid);
+				throw(MAL, "io.print", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			if (BATroles(b[0], "h") != GDK_SUCCEED) {
+				BBPunfix(b[0]->batCacheid);
+				BBPunfix(b[1]->batCacheid);
+				throw(MAL, "io.print", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			BATprintcolumns(cntxt->fdout, 2, b);
+			BBPunfix(b[0]->batCacheid);
 		}
-		BBPunfix(b->batCacheid);
+		BBPunfix(b[1]->batCacheid);
 		return MAL_SUCCEED;
 	}
 	if (hd)
 		mnstr_printf(fp, "%s", hd);
 
-	if (ATOMextern(tpe))
-		ATOMprint(tpe, *(ptr *) val, fp);
+	if (ATOMvarsized(tpe))
+		ATOMprint(tpe, *(str *) val, fp);
 	else
 		ATOMprint(tpe, val, fp);
 
@@ -130,7 +137,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 	return MAL_SUCCEED;
 }
 
-static str
+str
 IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i;
@@ -210,9 +217,9 @@ IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 
 
-static const char toofew_error[80] = OPERATION_FAILED " At least %d parameter(s) expected.\n";
-static const char format_error[80] = OPERATION_FAILED " Error in format before param %d.\n";
-static const char type_error[80] = OPERATION_FAILED " Illegal type in param %d.\n";
+static char toofew_error[80] = OPERATION_FAILED " At least %d parameter(s) expected.\n";
+static char format_error[80] = OPERATION_FAILED " Error in format before param %d.\n";
+static char type_error[80] = OPERATION_FAILED " Illegal type in param %d.\n";
 
 #define return_error(x)							\
 	do {										\
@@ -221,7 +228,7 @@ static const char type_error[80] = OPERATION_FAILED " Illegal type in param %d.\
 		throw(MAL,"io.printf", x,argc);			\
 	} while (0)
 
-static const char niltext[4] = "nil";
+static char niltext[4] = "nil";
 
 static str
 IOprintf_(str *res, str format, ...)
@@ -461,7 +468,7 @@ IOprintf_(str *res, str format, ...)
 
 #define G(X) getArgValue(stk,pci,X), getArgType(mb,pci,X)
 
-static str
+str
 IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *fmt = getArgReference_str(stk,pci,1);
@@ -488,9 +495,6 @@ IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case 9: msg= IOprintf_(&fmt2,*fmt,G(2),G(3),G(4),G(5),G(6),G(7),G(8));
 		break;
 	case 10: msg= IOprintf_(&fmt2,*fmt,G(2),G(3),G(4),G(5),G(6),G(7),G(8),G(9));
-		break;
-	default:
-		throw(MAL, "io.printf", "Too many arguments to io.printf");
 	}
 	if (msg== MAL_SUCCEED) {
 		mnstr_printf(cntxt->fdout,"%s",fmt2);
@@ -498,7 +502,7 @@ IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	return msg;
 }
-static str
+str
 IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str *fmt = getArgReference_str(stk,pci,2);
 	str fmt2 = NULL;
@@ -525,9 +529,6 @@ IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	case 10: msg= IOprintf_(&fmt2,*fmt,G(3),G(4),G(5),G(6),G(7),G(8),G(9));
 		break;
 	case 11: msg= IOprintf_(&fmt2,*fmt,G(3),G(4),G(5),G(6),G(7),G(8),G(9),G(10));
-		break;
-	default:
-		throw(MAL, "io.printf", "Too many arguments to io.printf");
 	}
 	if (msg== MAL_SUCCEED){
 		mnstr_printf(f,"%s",fmt2);
@@ -540,7 +541,7 @@ IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
  * The table printing routine implementations.
  * They merely differ in destination and order prerequisite
  */
-static str
+str
 IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *piv[MAXPARAMS];
@@ -597,7 +598,7 @@ IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * presented.
  */
 
-static str
+str
 IOexport(void *ret, bat *bid, str *fnme)
 {
 	BAT *b;
@@ -610,12 +611,12 @@ IOexport(void *ret, bat *bid, str *fnme)
 	s = open_wastream(*fnme);
 	if (s == NULL ){
 		BBPunfix(b->batCacheid);
-		throw(MAL, "io.export", "%s", mnstr_peek_error(NULL));
+		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", *fnme);
 	}
 	if (mnstr_errnr(s)) {
 		mnstr_close(s);
 		BBPunfix(b->batCacheid);
-		throw(MAL, "io.export", "%s", mnstr_peek_error(NULL));
+		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", *fnme);
 	}
     BATprintcolumns(s, 1, &b);
 	close_stream(s);
@@ -626,7 +627,7 @@ IOexport(void *ret, bat *bid, str *fnme)
 /*
  * The import command reads a single BAT from an ASCII file produced by export.
  */
-static str
+str
 IOimport(void *ret, bat *bid, str *fnme)
 {
 	BAT *b;
@@ -637,7 +638,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 	char *buf;
 	ptr t = 0;
 	size_t lt = 0;
-	FILE *fp = MT_fopen(*fnme, "r");
+	FILE *fp = fopen(*fnme, "r");
 	char msg[BUFSIZ];
 
 	(void) ret;
@@ -669,33 +670,33 @@ IOimport(void *ret, bat *bid, str *fnme)
 			BBPunfix(b->batCacheid);
 			fclose(fp);
 			GDKfree(buf);
-			throw(MAL, "io.import", OPERATION_FAILED ": fileno()");
+			throw(MAL, "io.import", OPERATION_FAILED " fileno()");
 		}
 		if (fstat(fn, &st) != 0) {
 			BBPunfix(b->batCacheid);
 			fclose(fp);
 			GDKfree(buf);
-			throw(MAL, "io.import", OPERATION_FAILED ": fstat()");
+			throw(MAL, "io.imports", OPERATION_FAILED "fstat()");
 		}
 
 		(void) fclose(fp);
 		if (st.st_size <= 0) {
 			BBPunfix(b->batCacheid);
 			GDKfree(buf);
-			throw(MAL, "io.import", OPERATION_FAILED ": empty file");
+			throw(MAL, "io.imports", OPERATION_FAILED "Empty file");
 		}
 #if SIZEOF_SIZE_T == SIZEOF_INT
-		if (st.st_size > 0x7FFFFFFF) {
+		if (st.st_size > ~ (size_t) 0) {
 			BBPunfix(b->batCacheid);
 			GDKfree(buf);
-			throw(MAL, "io.import", OPERATION_FAILED ": file too large");
+			throw(MAL, "io.imports", OPERATION_FAILED "File too large");
 		}
 #endif
 		base = cur = (char *) GDKmmap(*fnme, MMAP_SEQUENTIAL, (size_t) st.st_size);
 		if (cur == NULL) {
 			BBPunfix(b->batCacheid);
 			GDKfree(buf);
-			throw(MAL, "io.import", OPERATION_FAILED "GDKmmap()");
+			throw(MAL, "io.mport", OPERATION_FAILED "GDKmmap()");
 		}
 		end = cur + st.st_size;
 
@@ -720,8 +721,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 						BBPunfix(b->batCacheid);
 						GDKfree(buf);
 						GDKfree(t);
-						GDKmunmap(base, end - base);
-						throw(MAL, "io.import", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						throw(MAL, "io.imports", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
 					buf = tmp;
 					dst = buf + len;
@@ -745,8 +745,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 				BBPunfix(b->batCacheid);
 				GDKfree(buf);
 				GDKfree(t);
-				GDKmunmap(base, end - base);
-				throw(MAL, "io.import", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				throw(MAL, "io.imports", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			buf = tmp;
 			dst = buf + len;
@@ -815,34 +814,9 @@ IOimport(void *ret, bat *bid, str *fnme)
 
 
 
-static str
+str
 IOsetmallocsuccesscount(void *res, lng *count) {
 	(void) res;
 	GDKsetmallocsuccesscount(*count);
 	return MAL_SUCCEED;
 }
-
-#include "mel.h"
-mel_func mal_io_init_funcs[] = {
- pattern("io", "stdin", io_stdin, false, "return the input stream to the database client", args(1,1, arg("",bstream))),
- pattern("io", "stdout", io_stdout, false, "return the output stream for the database client", args(1,1, arg("",streams))),
- pattern("io", "print", IOprint_val, false, "Print a MAL value tuple .", args(1,3, arg("",void),argany("val",1),varargany("lst",0))),
- pattern("io", "print", IOtable, false, "BATs are printed with '#' for legend \nlines, and the BUNs on seperate lines \nbetween brackets, containing each to \ncomma separated values (head and tail). \nIf multiple BATs are passed for printing, \nprint() performs an implicit natural \njoin on the void head, producing a multi attribute table.", args(1,2, arg("",void),batvarargany("b1",0))),
- pattern("io", "print", IOprint_val, false, "Print a MAL value.", args(1,2, arg("",void),argany("val",1))),
- pattern("io", "print", IOprint_val, false, "Print a MAL value column .", args(1,2, arg("",void),batargany("val",1))),
- pattern("io", "printf", IOprintf, false, "Select default format ", args(1,3, arg("",void),arg("fmt",str),varargany("val",0))),
- pattern("io", "printf", IOprintf, false, "Select default format ", args(1,2, arg("",void),arg("fmt",str))),
- pattern("io", "printf", IOprintfStream, false, "Select default format ", args(1,4, arg("",void),arg("filep",streams),arg("fmt",str),varargany("val",0))),
- pattern("io", "printf", IOprintfStream, false, "Select default format ", args(1,3, arg("",void),arg("filep",streams),arg("fmt",str))),
- command("io", "export", IOexport, false, "Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it\nis put into the $DBPATH directory. Success of failure is indicated.", args(0,2, batargany("b",2),arg("filepath",str))),
- command("io", "import", IOimport, false, "Import a BAT from an ASCII dump. The tuples are appended to the\nfirst argument. Its signature must match the dump,\nelse parsing errors will occur as an exception.", args(0,2, batargany("b",2),arg("filepath",str))),
- command("io", "setmallocsuccesscount", IOsetmallocsuccesscount, false, "Set number of mallocs that are allowed to succeed.", args(1,2, arg("",void),arg("count",lng))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_mal_io_mal)
-{ mal_module("mal_io", NULL, mal_io_init_funcs); }

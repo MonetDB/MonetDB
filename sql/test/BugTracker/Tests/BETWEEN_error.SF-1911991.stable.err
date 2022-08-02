@@ -1,0 +1,17 @@
+stderr of test 'BETWEEN_error.SF-1911991` in directory 'sql/test/BugTracker` itself:
+
+
+# 09:22:38 >  
+# 09:22:38 >   Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=31237 --set xrpc_port=43099 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" "--dbinit= module(sql_server);" ; echo ; echo Over..
+# 09:22:38 >  
+
+
+# 09:22:38 >  
+# 09:22:38 >  mclient -lsql -umonetdb -Pmonetdb --host=corona --port=31237 
+# 09:22:38 >  
+
+
+# 09:22:38 >  
+# 09:22:38 >  Done.
+# 09:22:38 >  
+

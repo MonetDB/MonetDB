@@ -1,0 +1,17 @@
+stderr of test 'subselect_single_value-bug-sf-962099` in directory 'sql/test/bugs` itself:
+
+
+# 14:39:29 >  
+# 14:39:29 >  Mtimeout -timeout 180 Mserver "--config=/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./lib/MonetDB:/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./lib/bin" --set "gdk_dbfarm=/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./var/MonetDB/log" --set mapi_port=32198 --set sql_port=40084 --set xquery_port=58857 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 14:39:29 >  
+
+
+# 14:39:29 >  
+# 14:39:29 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=40084  < subselect_single_value-bug-sf-962099.sql
+# 14:39:29 >  
+
+
+# 14:39:29 >  
+# 14:39:29 >  Done.
+# 14:39:29 >  
+

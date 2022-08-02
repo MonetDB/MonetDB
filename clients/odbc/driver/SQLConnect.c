@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -72,7 +72,7 @@ get_serverinfo(ODBCDbc *dbc)
 	MapiHdl hdl;
 	char *n, *v;
 
-	if ((hdl = mapi_query(dbc->mid, "select name, value from sys.env() where name in ('monet_version', 'gdk_dbname', 'max_clients')")) == NULL)
+	if ((hdl = mapi_query(dbc->mid, "select name, value from sys.env() where name in ('monet_version', 'gdk_dbname')")) == NULL)
 		return;
 	while (mapi_fetch_row(hdl)) {
 		n = mapi_fetch_field(hdl, 0);
@@ -80,9 +80,6 @@ get_serverinfo(ODBCDbc *dbc)
 		if (strcmp(n, "monet_version") == 0) {
 			sscanf(v, "%hd.%hd.%hd",
 			       &dbc->major, &dbc->minor, &dbc->patch);
-		} else
-		if (strcmp(n, "max_clients") == 0) {
-			sscanf(v, "%hu", &dbc->maxclients);
 		} else {
 			assert(strcmp(n, "gdk_dbname") == 0);
 			assert(dbc->dbname == NULL ||
@@ -113,7 +110,7 @@ MNDBConnect(ODBCDbc *dbc,
 	    SQLSMALLINT NameLength3,
 	    const char *host,
 	    int port,
-	    const char *dbname)
+	    const char *catalog)
 {
 	SQLRETURN rc = SQL_SUCCESS;
 	char *dsn = NULL;
@@ -143,20 +140,6 @@ MNDBConnect(ODBCDbc *dbc,
 			return SQL_ERROR;
 		}
 	}
-
-#ifdef ODBCDEBUG
-	if ((ODBCdebug == NULL || *ODBCdebug == 0) && dsn && *dsn) {
-		char logfile[2048];
-		n = SQLGetPrivateProfileString(dsn, "logfile", "",
-					       logfile, sizeof(logfile),
-					       "odbc.ini");
-		if (n > 0) {
-			if (ODBCdebug)
-				free((void *) ODBCdebug); /* discard const */
-			ODBCdebug = strdup(logfile);
-		}
-	}
-#endif
 
 	if (dsn && *dsn)
 		n = SQLGetPrivateProfileString(dsn, "uid", "monetdb",
@@ -199,30 +182,30 @@ MNDBConnect(ODBCDbc *dbc,
 		pwd[NameLength3] = 0;
 	}
 
-	if (dbname == NULL || *dbname == 0) {
-		dbname = dbc->dbname;
+	if (catalog == NULL || *catalog == 0) {
+		catalog = dbc->dbname;
 	}
-	if (dbname == NULL || *dbname == 0) {
+	if (catalog == NULL || *catalog == 0) {
 		if (dsn && *dsn) {
 			n = SQLGetPrivateProfileString(dsn, "database", "", db,
 						       sizeof(db), "odbc.ini");
 			if (n > 0)
-				dbname = db;
+				catalog = db;
 		}
 	}
-	if (dbname && !*dbname)
-		dbname = NULL;
+	if (catalog && !*catalog)
+		catalog = NULL;
 
 	if (port == 0 && (s = getenv("MAPIPORT")) != NULL)
 		port = atoi(s);
 	if (port == 0 && dsn && *dsn) {
-		n = SQLGetPrivateProfileString(dsn, "port", MAPI_PORT_STR,
+		n = SQLGetPrivateProfileString(dsn, "port", "50000",
 					       buf, sizeof(buf), "odbc.ini");
 		if (n > 0)
 			port = atoi(buf);
 	}
 	if (port == 0)
-		port = MAPI_PORT;
+		port = 50000;
 
 	if (host == NULL || *host == 0) {
 		host = "localhost";
@@ -238,12 +221,12 @@ MNDBConnect(ODBCDbc *dbc,
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLConnect: DSN=%s UID=%s PWD=%s host=%s port=%d database=%s\n",
 		dsn ? dsn : "(null)", uid, pwd, host, port,
-		dbname ? dbname : "(null)");
+		catalog ? catalog : "(null)");
 #endif
 
 	/* connect to a server on host via port */
-	/* FIXME: use dbname from ODBC connect string/options here */
-	mid = mapi_connect(host, port, uid, pwd, "sql", dbname);
+	/* FIXME: use dbname/catalog from ODBC connect string/options here */
+	mid = mapi_connect(host, port, uid, pwd, "sql", catalog);
 	if (mid == NULL || mapi_error(mid)) {
 		/* Client unable to establish connection */
 		addDbcError(dbc, "08001", NULL, 0);
@@ -269,11 +252,11 @@ MNDBConnect(ODBCDbc *dbc,
 		if (dbc->host)
 			free(dbc->host);
 		dbc->host = strdup(host);
-		if (dbname)	/* dup before dbname is freed */
-			dbname = strdup(dbname);
+		if (catalog)	/* dup before dbname is freed */
+			catalog = strdup(catalog);
 		if (dbc->dbname != NULL)
 			free(dbc->dbname);
-		dbc->dbname = (char *) dbname; /* discard const */
+		dbc->dbname = (char *) catalog; /* discard const */
 		mapi_setAutocommit(mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
 		set_timezone(mid);
 		get_serverinfo(dbc);

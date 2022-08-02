@@ -1,0 +1,10 @@
+create table withonlybug (id int);
+insert into withonlybug values (42);
+insert into withonlybug select * from withonlybug;
+insert into withonlybug select * from withonlybug;
+insert into withonlybug select * from withonlybug;
+insert into withonlybug select * from withonlybug;
+insert into withonlybug select * from withonlybug;
+WITH t AS ( SELECT count(*) FROM withonlybug ) SELECT * FROM t;
+WITH t AS ( SELECT count(*) FROM withonlybug ) SELECT * FROM t;
+drop table withonlybug;

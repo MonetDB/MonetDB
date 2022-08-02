@@ -1,0 +1,24 @@
+stderr of test 'X_crash.SF-1971632` in directory 'geom/BugTracker` itself:
+
+
+# 11:50:18 >  
+# 11:50:18 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=30029 --set xrpc_port=45329 --set monet_prompt= --trace  "--dbname=mTests_BugTracker" --set mal_listing=0 "--dbinit=include geom; include sql;" ; echo ; echo Over..
+# 11:50:18 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf)
+
+# 11:50:18 >  
+# 11:50:18 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=30029 
+# 11:50:18 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-16186/.s.monetdb.34816
+QUERY = select ST_X(g) from geoms order by id;
+ERROR = !Geometry "LINESTRING (10 10, 20 20, 30 40)" not a Point
+CODE  = 38000
+
+
+# 11:50:18 >  
+# 11:50:18 >  Done.
+# 11:50:18 >  
+

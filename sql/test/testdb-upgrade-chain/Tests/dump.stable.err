@@ -1,0 +1,37 @@
+stderr of test 'dump` in directory 'sql/test/testdb-upgrade-chain` itself:
+
+
+# 15:37:18 >  
+# 15:37:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/sjoerd/Monet-stable/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=31490" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_testdb-upgrade-chain" "--set" "mal_listing=0"
+# 15:37:18 >  
+
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /ufs/sjoerd/Monet-stable/var/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_alloc_map = no
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	gdk_dbfarm = /ufs/sjoerd/Monet-stable/var/MonetDB
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31490
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_test_testdb-upgrade-chain
+# cmdline opt 	mal_listing = 0
+
+# 15:37:18 >  
+# 15:37:18 >  "/usr/bin/python" "dump.SQL.py" "dump"
+# 15:37:18 >  
+
+
+# 15:39:24 >  
+# 15:39:24 >  "Done."
+# 15:39:24 >  
+

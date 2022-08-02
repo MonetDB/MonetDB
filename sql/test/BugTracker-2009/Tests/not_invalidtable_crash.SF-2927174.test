@@ -1,3 +1,0 @@
-statement error
-select not(invalidtable.bla) from tables
-

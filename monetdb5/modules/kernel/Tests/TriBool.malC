@@ -1,0 +1,59 @@
+t := true;
+f := false;
+n := nil:bit;
+b  := bat.new(:bit);
+bl := bat.new(:bit);
+br := bat.new(:bit);
+bo := bat.new(:bit);
+ba := bat.new(:bit);
+bvo := bat.new(:bit);
+bva := bat.new(:bit);
+bov := bat.new(:bit);
+bav := bat.new(:bit);
+bl := bat.append(bl,t);
+bl := bat.append(bl,t);
+bl := bat.append(bl,t);
+bl := bat.append(bl,f);
+bl := bat.append(bl,f);
+bl := bat.append(bl,f);
+bl := bat.append(bl,n);
+bl := bat.append(bl,n);
+bl := bat.append(bl,n);
+b := bat.append(b,t);
+b := bat.append(b,f);
+b := bat.append(b,n);
+br := bat.append(br,b);
+br := bat.append(br,b);
+br := bat.append(br,b);
+
+io.print(t);
+io.print(f);
+io.print(n);
+io.print(b);
+io.print(bl,br);
+
+o := calc.or(t,t); bo := bat.append(bo,o);
+o := calc.or(t,f); bo := bat.append(bo,o);
+o := calc.or(t,n); bo := bat.append(bo,o);
+o := calc.or(f,t); bo := bat.append(bo,o);
+o := calc.or(f,f); bo := bat.append(bo,o);
+o := calc.or(f,n); bo := bat.append(bo,o);
+o := calc.or(n,t); bo := bat.append(bo,o);
+o := calc.or(n,f); bo := bat.append(bo,o);
+o := calc.or(n,n); bo := bat.append(bo,o);
+
+oo := batcalc.or(bl,br);
+io.print(bl,br, bo, oo);
+
+a := calc.and(t,t); ba := bat.append(ba,a);
+a := calc.and(t,f); ba := bat.append(ba,a);
+a := calc.and(t,n); ba := bat.append(ba,a);
+a := calc.and(f,t); ba := bat.append(ba,a);
+a := calc.and(f,f); ba := bat.append(ba,a);
+a := calc.and(f,n); ba := bat.append(ba,a);
+a := calc.and(n,t); ba := bat.append(ba,a);
+a := calc.and(n,f); ba := bat.append(ba,a);
+a := calc.and(n,n); ba := bat.append(ba,a);
+
+aa := batcalc.and(bl,br);
+io.print(bl,br, ba, aa);

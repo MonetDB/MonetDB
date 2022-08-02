@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -25,29 +25,40 @@ isCorrectInline(MalBlkPtr mb){
 }
 
 
-static bool
-OPTinlineMultiplex(MalBlkPtr mb, InstrPtr p)
-{
+static bool OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p){
 	Symbol s;
 	str mod,fcn;
 
-	int plus_one = getArgType(mb, p, p->retc) == TYPE_lng ? 1 : 0;
-	mod = VALget(&getVar(mb, getArg(p, p->retc+0+plus_one))->value);
-	fcn = VALget(&getVar(mb, getArg(p, p->retc+1+plus_one))->value);
-	if ((s = findSymbolInModule(getModule(putName(mod)), putName(fcn))) == 0)
+	mod = VALget(&getVar(mb, getArg(p, 1))->value);
+	fcn = VALget(&getVar(mb, getArg(p, 2))->value);
+	if( (s= findSymbol(cntxt->usermodule, mod,fcn)) ==0 )
 		return false;
+	if (s->def == mb)			/* avoid infinite recursion */
+		return false;
+	/*
+	 * Before we decide to propagate the inline request
+	 * to the multiplex operation, we check some basic properties
+	 * of the target function. Moreover, we apply the inline optimizer
+	 * to the target function as well.
+	 * This code should be protected against overflow due to recursive calls.
+	 * In general, this is a hard problem. For now, we just expand.
+	 */
+	(void) OPTinlineImplementation(cntxt, s->def, NULL, p);
 	return s->def->inlineProp;
 }
 
 
 str
-OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i;
-	InstrPtr q, sig;
+	InstrPtr q,sig;
 	int actions = 0;
+	char buf[256];
+	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
+	(void) p;
 	(void)stk;
 
 	for (i = 1; i < mb->stop; i++) {
@@ -59,7 +70,7 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			 * They are produced by SQL compiler.
 			 */
 			if (isMultiplex(q)) {
-				 OPTinlineMultiplex(mb,q);
+				 OPTinlineMultiplex(cntxt,mb,q);
 			} else
 			/*
 			 * Check if the function definition is tagged as being inlined.
@@ -73,16 +84,19 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	//mnstr_printf(cntxt->fdout,"inline limit %d ssize %d vtop %d vsize %d\n", mb->stop, (int)(mb->ssize), mb->vtop, (int)(mb->vsize));
-	/* Defense line against incorrect plans */
-	if( actions > 0){
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
-		if (!msg)
-			msg = chkFlow(mb);
-		if (!msg)
-			msg = chkDeclarations(mb);
-	}
-	/* keep actions taken as a fake argument*/
-	(void) pushInt(mb, pci, actions);
+    /* Defense line against incorrect plans */
+    if( actions > 0){
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
+    }
+    /* keep all actions taken as a post block comment */
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","inline",actions, usec);
+    newComment(mb,buf);
+	if( actions > 0)
+		addtoMalBlkHistory(mb);
 	return msg;
 }

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -18,8 +18,6 @@
 #include "mal_debugger.h"   /* for mdbStep() */
 #include "mal_type.h"
 #include "mal_private.h"
-#include "mal_internal.h"
-#include "mal_function.h"
 
 static lng qptimeout = 0; /* how often we print still running queries (usec) */
 
@@ -332,7 +330,6 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	}
 	if (stk->cmd && env && stk->cmd != 'f')
 		stk->cmd = env->cmd;
-	mb->starttime = GDKusec();
 	ret = runMALsequence(cntxt, mb, 1, 0, stk, env, 0);
 
 	/* pass the new debug mode to the caller */
@@ -423,7 +420,6 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 				BBPretain(lhs->val.bval);
 		}
 		stk->cmd = debug;
-		mb->starttime = GDKusec();
 		ret = runMALsequence(cntxt, mb, 1, 0, stk, 0, 0);
 		break;
 	case FACTORYsymbol:
@@ -505,8 +501,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		startedProfileQueue = 1;
 		runtimeProfileInit(cntxt, mb, stk);
 		runtimeProfileBegin(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
+		mb->starttime = GDKusec();
 		if (cntxt->sessiontimeout && mb->starttime - cntxt->session > cntxt->sessiontimeout) {
-			runtimeProfileFinish(cntxt, mb, stk);
 			if ( backup != backups) GDKfree(backup);
 			if ( garbage != garbages) GDKfree(garbage);
 			throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_SESSION_TIMEOUT);
@@ -515,19 +511,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	stkpc = startpc;
 	exceptionVar = -1;
 
-	QryCtx qry_ctx = {.querytimeout=cntxt->querytimeout, .starttime=mb->starttime};
-#ifndef NDEBUG
-	/* very short timeout */
-	QryCtx qry_ctx_abort = {.querytimeout=100, .starttime=mb->starttime};
-#endif
-	/* save, in case this function is called recursively */
-	QryCtx *qry_ctx_save = MT_thread_get_qry_ctx();
-	MT_thread_set_qry_ctx(&qry_ctx);
-	Client outer_cntxt = setClientContext(cntxt);
-
 	while (stkpc < mb->stop && stkpc != stoppc) {
 		// incomplete block being executed, requires at least signature and end statement
-		MT_thread_setalgorithm(NULL);
 		pci = getInstrPtr(mb, stkpc);
 		if (cntxt->mode == FINISHCLIENT){
 			stkpc = stoppc;
@@ -552,7 +537,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (stk->cmd == 'x' ) {
 				stk->cmd = 0;
 				stkpc = mb->stop;
-				MT_thread_set_qry_ctx(&qry_ctx_abort);
 				ret= createException(MAL, "mal.interpreter", "prematurely stopped client");
 				break;
 			}
@@ -578,7 +562,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				/* if still the same, replace lastprint with current
 				 * time and print the query */
 				if (ATOMIC_CAS(&cntxt->lastprint, &lp, t)) {
-					const char *q = cntxt->query ? cntxt->query : NULL;
+					const char *q = cntxt->getquery ? cntxt->getquery(cntxt) : NULL;
 					TRC_INFO(MAL_SERVER, "%s: query already running "LLFMT"s: %.200s\n",
 							cntxt->mythread->name,
 							(lng) (time(0) - cntxt->lastcmd),
@@ -693,12 +677,12 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					int t = getArgType(mb, pci, i);
 
 					if (isaBatType(t)) {
-						//bat bid = stk->stk[a].val.bval;
+						bat bid = stk->stk[a].val.bval;
 						t = getBatType(t);
 						assert(stk->stk[a].vtype == TYPE_bat);
-						//assert( !is_bat_nil(bid));
-					   	assert(t != TYPE_any);
-						//assert( ATOMtype(BBP_desc(bid)->ttype) == ATOMtype(t));
+						assert(is_bat_nil(bid) ||
+							   t == TYPE_any ||
+							   ATOMtype(BBP_desc(bid)->ttype) == ATOMtype(t));
 					} else {
 						assert(t == stk->stk[a].vtype);
 					}
@@ -780,13 +764,9 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				}
 				if (ret == MAL_SUCCEED && ii == pci->argc) {
 					ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
-					garbageCollector(cntxt, pci->blk, nstk, 0);
-					arg = q->retc;
-					for (ii = pci->retc; ii < pci->argc; ii++,arg++) {
-						lhs = &nstk->stk[q->argv[arg]];
-						if (lhs->vtype == TYPE_bat)
-							BBPrelease(lhs->val.bval);
-					}
+					for (ii = 0; ii < nstk->stktop; ii++)
+						if (ATOMextern(nstk->stk[ii].vtype))
+							GDKfree(nstk->stk[ii].val.pval);
 					GDKfree(nstk);
 				}
 			}
@@ -847,8 +827,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				lhs = &backup[i];
 				if (BATatoms[lhs->vtype].atomUnfix &&
 					(*BATatoms[lhs->vtype].atomUnfix)(VALget(lhs)) != GDK_SUCCEED) {
-					if (ret == MAL_SUCCEED)
-						ret = createException(MAL, "mal.propertyCheck", GDK_EXCEPTION);
+					ret = createException(MAL, "mal.propertyCheck", GDK_EXCEPTION);
 				}
 				if (ATOMextern(lhs->vtype) &&
 					lhs->val.pval &&
@@ -856,21 +835,24 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					lhs->val.pval != stk->stk[getArg(pci, i)].val.pval)
 					GDKfree(lhs->val.pval);
 			}
-			if (GDKdebug & CHECKMASK && exceptionVar < 0) {
+			if (GDKdebug & (CHECKMASK|PROPMASK) && exceptionVar < 0) {
 				BAT *b;
 
 				for (i = 0; i < pci->retc; i++) {
 					if (garbage[i] == -1 && stk->stk[getArg(pci, i)].vtype == TYPE_bat &&
 						!is_bat_nil(stk->stk[getArg(pci, i)].val.bval)) {
 						assert(stk->stk[getArg(pci, i)].val.bval > 0);
-						b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
+						b = BBPquickdesc(stk->stk[getArg(pci, i)].val.bval, false);
 						if (b == NULL) {
 							if (ret == MAL_SUCCEED)
 								ret = createException(MAL, "mal.propertyCheck", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 							continue;
 						}
-						BATassertProps(b);
-						BBPunfix(b->batCacheid);
+						b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
+						if (b) {
+							BATassertProps(b);
+							BBPunfix(b->batCacheid);
+						}
 					}
 				}
 			}
@@ -885,11 +867,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 						if (garbage[i] >= 0) {
 							bid = stk->stk[garbage[i]].val.bval;
-							if (!is_bat_nil(bid)) {
-								stk->stk[garbage[i]].val.bval = bat_nil;
-								BBPcold(bid);
-								BBPrelease(bid);
-							}
+							stk->stk[garbage[i]].val.bval = bat_nil;
+							BBPrelease(bid);
 						}
 					}
 				}
@@ -946,10 +925,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 			/* unknown exceptions lead to propagation */
 			if (exceptionVar == -1) {
-				if (cntxt->querytimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->querytimeout) {
-					freeException(ret);
-					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
-				}
+                if (cntxt->querytimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->querytimeout)
+                    ret= createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 				stkpc = mb->stop;
 				continue;
 			}
@@ -960,7 +937,9 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				v = &stk->stk[exceptionVar];
 				if (v->val.sval)
 					freeException(v->val.sval);    /* old exception*/
-				VALset(v, TYPE_str, ret);
+				v->vtype = TYPE_str;
+				v->val.sval = ret;
+				v->len = strlen(v->val.sval);
 				ret = MAL_SUCCEED;
 				MT_lock_unset(&mal_contextLock);
 			} else {
@@ -996,8 +975,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 			if (stkpc == mb->stop) {
 				if (cntxt->querytimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->querytimeout){
-					freeException(ret);
-					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+					ret= createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 					stkpc = mb->stop;
 				}
 				continue;
@@ -1186,15 +1164,16 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
 				break;
 			}
+			if (stkpc == mb->stop)
+				ret = mb->errors = createMalException(mb, stkpc, TYPE,
+					"Exception raised\n");
 			break;
 		case YIELDsymbol:     /* to be defined */
 			if( startedProfileQueue)
 				runtimeProfileFinish(cntxt, mb, stk);
 			if ( backup != backups) GDKfree(backup);
 			if ( garbage != garbages) GDKfree(garbage);
-			ret = yieldFactory(mb, pci, stkpc);
-			MT_thread_set_qry_ctx(qry_ctx_save);
-			return ret;
+			return yieldFactory(mb, pci, stkpc);
 		case RETURNsymbol:
 			/* Return from factory involves cleanup */
 
@@ -1234,14 +1213,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		}
 	}
 
-	/* restore saved values */
-	MT_thread_set_qry_ctx(qry_ctx_save);
-	setClientContext(outer_cntxt);
-
-
 	/* if we could not find the exception variable, cascade a new one */
-	/* don't add 'exception not caught' extra message for MAL sequences besides main function calls */
-	if (exceptionVar >= 0 && (ret == MAL_SUCCEED || !pcicaller)) {
+	if (exceptionVar >= 0) {
 		char nme[256];
 		snprintf(nme,256,"%s.%s[%d]", getModuleId(getInstrPtr(mb,0)), getFunctionId(getInstrPtr(mb,0)), stkpc);
 		if (ret != MAL_SUCCEED) {
@@ -1258,10 +1231,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					freeException(n);
 					freeException(ret);
 					ret = new;
-				} else {
-					freeException(ret);
-					ret = n;
-				}
+				} else ret = n;
 			}
 		} else {
 			ret = createException(MAL, nme, "Exception not caught");
@@ -1415,7 +1385,6 @@ void garbageElement(Client cntxt, ValPtr v)
 			return;
 		if (!BBP_lrefs(bid))
 			return;
-		BBPcold(bid);
 		BBPrelease(bid);
 	} else if (0 < v->vtype && v->vtype < MAXATOMS && ATOMextern(v->vtype)) {
 		GDKfree(v->val.pval);

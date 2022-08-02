@@ -1,0 +1,12 @@
+stderr of test 'tst4002` in directory 'monetdb5/optimizer` itself:
+
+
+# 15:37:24 >  
+# 15:37:24 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=47817 --set sql_port=51746 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst4002.mal </dev/null
+# 15:37:24 >  
+
+
+# 15:37:24 >  
+# 15:37:24 >  Done.
+# 15:37:24 >  
+

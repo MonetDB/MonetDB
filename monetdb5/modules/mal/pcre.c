@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -22,14 +22,10 @@
 #include <string.h>
 
 #include "mal.h"
-#include "mal_client.h"
-#include "mal_interpreter.h"
 #include "mal_exception.h"
 
 #include <wchar.h>
 #include <wctype.h>
-
-#include "gdk_strimps.h"
 
 #ifdef HAVE_LIBPCRE
 #include <pcre.h>
@@ -46,6 +42,47 @@
 
 typedef regex_t pcre;
 #endif
+
+mal_export str pcre_init(void *ret);
+
+mal_export str PCREquote(str *r, const str *v);
+mal_export str PCREmatch(bit *ret, const str *val, const str *pat);
+mal_export str PCREimatch(bit *ret, const str *val, const str *pat);
+mal_export str PCREindex(int *ret, const pcre *pat, const str *val);
+mal_export str PCREpatindex(int *ret, const str *pat, const str *val);
+mal_export str PCREreplace_wrap(str *res, const str *or, const str *pat, const str *repl, const str *flags);
+mal_export str PCREreplace_bat_wrap(bat *res, const bat *or, const str *pat, const str *repl, const str *flags);
+mal_export str PCREreplacefirst_wrap(str *res, const str *or, const str *pat, const str *repl, const str *flags);
+mal_export str PCREreplacefirst_bat_wrap(bat *res, const bat *or, const str *pat, const str *repl, const str *flags);
+mal_export str PCREsql2pcre(str *ret, const str *pat, const str *esc);
+
+mal_export str PCRElike3(bit *ret, const str *s, const str *pat, const str *esc);
+mal_export str PCRElike2(bit *ret, const str *s, const str *pat);
+mal_export str PCREnotlike3(bit *ret, const str *s, const str *pat, const str *esc);
+mal_export str PCREnotlike2(bit *ret, const str *s, const str *pat);
+mal_export str BATPCRElike(bat *ret, const bat *b, const str *pat, const str *esc);
+mal_export str BATPCRElike2(bat *ret, const bat *b, const str *pat);
+mal_export str BATPCREnotlike(bat *ret, const bat *b, const str *pat, const str *esc);
+mal_export str BATPCREnotlike2(bat *ret, const bat *b, const str *pat);
+mal_export str PCREilike3(bit *ret, const str *s, const str *pat, const str *esc);
+mal_export str PCREilike2(bit *ret, const str *s, const str *pat);
+mal_export str PCREnotilike3(bit *ret, const str *s, const str *pat, const str *esc);
+mal_export str PCREnotilike2(bit *ret, const str *s, const str *pat);
+mal_export str BATPCREilike(bat *ret, const bat *b, const str *pat, const str *esc);
+mal_export str BATPCREilike2(bat *ret, const bat *b, const str *pat);
+mal_export str BATPCREnotilike(bat *ret, const bat *b, const str *pat, const str *esc);
+mal_export str BATPCREnotilike2(bat *ret, const bat *b, const str *pat);
+
+mal_export str PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const str *esc, const bit *caseignore, const bit *anti);
+mal_export str PCRElikeselect1(bat *ret, const bat *bid, const bat *cid, const str *pat, const str *esc, const bit *anti);
+mal_export str PCRElikeselect3(bat *ret, const bat *bid, const bat *sid, const str *pat, const str *esc, const bit *anti);
+mal_export str PCRElikeselect4(bat *ret, const bat *bid, const bat *cid, const str *pat, const bit *anti);
+mal_export str PCRElikeselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, const bit *anti);
+
+mal_export str LIKEjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
+mal_export str LIKEjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
+mal_export str ILIKEjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
+mal_export str ILIKEjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
 
 /* current implementation assumes simple %keyword% [keyw%]* */
 struct RE {
@@ -228,7 +265,7 @@ mywstrncaseeq(const char *restrict s1, const uint32_t *restrict s2, size_t n2, b
 static inline int
 mystrcasecmp(const char *s1, const char *s2)
 {
-	uint32_t c1 = 0, c2 = 0;
+	uint32_t c1, c2;
 
 	for (;;) {
 		size_t nn1 = utfc8touc(&c1, s1);
@@ -256,7 +293,7 @@ mystrcasecmp(const char *s1, const char *s2)
 static inline int
 mywstrcasecmp(const char *restrict s1, const uint32_t *restrict s2)
 {
-	uint32_t c1 = 0;
+	uint32_t c1;
 
 	for (;;) {
 		size_t nn1 = utfc8touc(&c1, s1);
@@ -287,12 +324,14 @@ mywstrcasestr(const char *restrict haystack, const uint32_t *restrict wneedle, b
 	if (nlen == 0)
 		return atend ? haystack + strlen(haystack) : haystack;
 
+	size_t hlen = strlen(haystack);
+
 	while (*haystack) {
 		size_t i;
 		size_t h;
 		size_t step = 0;
 		for (i = h = 0; i < nlen; i++) {
-			uint32_t c = 0;
+			uint32_t c;
 			size_t j = utfc8touc(&c, haystack + h);
 			if (j == 0 || j == (size_t) -1)
 				return NULL;
@@ -312,6 +351,7 @@ mywstrcasestr(const char *restrict haystack, const uint32_t *restrict wneedle, b
 		if (i == nlen && (!atend || haystack[h] == 0))
 			return haystack;
 		haystack += step;
+		hlen -= step;
 	}
 	return NULL;
 }
@@ -525,7 +565,7 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 	pcre *r;
 	const char *err_p = NULL;
 	int errpos = 0;
-	int options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK | PCRE_MULTILINE;
+	int options = PCRE_UTF8 | PCRE_MULTILINE;
 	if (insensitive)
 		options |= PCRE_CASELESS;
 
@@ -538,6 +578,403 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 	return MAL_SUCCEED;
 }
 #endif
+
+/* these two defines are copies from gdk_select.c */
+
+/* scan select loop with candidates */
+#define candscanloop(TEST)												\
+	do {																\
+		TRC_DEBUG(ALGO,													\
+				  "BATselect(b=%s#"BUNFMT",s=%s,anti=%d): "				\
+				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
+				  s ? BATgetId(s) : "NULL", anti, #TEST);				\
+		for (p = 0; p < ci.ncand; p++) {								\
+			o = canditer_next(&ci);										\
+			r = (BUN) (o - off);										\
+			v = BUNtvar(bi, r);											\
+			if (TEST)													\
+				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)			\
+					goto bunins_failed;									\
+		}																\
+	} while (0)
+
+/* scan select loop without candidates */
+#define scanloop(TEST)													\
+	do {																\
+		TRC_DEBUG(ALGO,													\
+				  "BATselect(b=%s#"BUNFMT",s=%s,anti=%d): "				\
+				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
+				  s ? BATgetId(s) : "NULL", anti, #TEST);				\
+		while (p < q) {													\
+			v = BUNtvar(bi, p-off);										\
+			if (TEST) {													\
+				o = (oid) p;											\
+				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)			\
+					goto bunins_failed;									\
+			}															\
+			p++;														\
+		}																\
+	} while (0)
+
+static str
+pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool anti)
+{
+#ifdef HAVE_LIBPCRE
+	int options = PCRE_UTF8 | PCRE_MULTILINE | PCRE_DOTALL;
+	pcre *re;
+	pcre_extra *pe;
+	const char *error;
+	int errpos;
+	int ovector[9];
+#else
+	int options = REG_NEWLINE | REG_NOSUB | REG_EXTENDED;
+	regex_t re;
+	int errcode;
+#endif
+	BATiter bi = bat_iterator(b);
+	BAT *bn;
+	BUN p, q;
+	oid o, off;
+	const char *v;
+	struct canditer ci;
+
+	canditer_init(&ci, b, s);
+
+	assert(ATOMstorage(b->ttype) == TYPE_str);
+
+	if (caseignore) {
+#ifdef HAVE_LIBPCRE
+		options |= PCRE_CASELESS;
+#else
+		options |= REG_ICASE;
+#endif
+	}
+#ifdef HAVE_LIBPCRE
+	if ((re = pcre_compile(pat, options, &error, &errpos, NULL)) == NULL)
+		throw(MAL, "pcre.likeselect",
+			  OPERATION_FAILED ": compilation of pattern \"%s\" failed\n", pat);
+	pe = pcre_study(re, (s ? BATcount(s) : BATcount(b)) > JIT_COMPILE_MIN ? PCRE_STUDY_JIT_COMPILE : 0, &error);
+	if (error != NULL) {
+		pcre_free(re);
+		throw(MAL, "pcre.likeselect",
+			  OPERATION_FAILED ": studying pattern \"%s\" failed\n", pat);
+	}
+#else
+	if ((errcode = regcomp(&re, pat, options)) != 0) {
+		throw(MAL, "pcre.likeselect",
+			  OPERATION_FAILED ": compilation of pattern \"%s\" failed\n", pat);
+	}
+#endif
+	bn = COLnew(0, TYPE_oid, ci.ncand, TRANSIENT);
+	if (bn == NULL) {
+#ifdef HAVE_LIBPCRE
+		pcre_free_study(pe);
+		pcre_free(re);
+#else
+		regfree(&re);
+#endif
+		throw(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	off = b->hseqbase;
+
+	if (s && !BATtdense(s)) {
+		BUN r;
+
+#ifdef HAVE_LIBPCRE
+#define BODY     (pcre_exec(re, pe, v, (int) strlen(v), 0, 0, ovector, 9) >= 0)
+#else
+#define BODY     (regexec(&re, v, (size_t) 0, NULL, 0) != REG_NOMATCH)
+#endif
+		if (anti)
+			candscanloop(v && *v != '\200' && !BODY);
+		else
+			candscanloop(v && *v != '\200' && BODY);
+	} else {
+		if (s) {
+			assert(BATtdense(s));
+			p = (BUN) s->tseqbase;
+			q = p + BATcount(s);
+			if ((oid) p < b->hseqbase)
+				p = b->hseqbase;
+			if ((oid) q > b->hseqbase + BATcount(b))
+				q = b->hseqbase + BATcount(b);
+		} else {
+			p = off;
+			q = BUNlast(b) + off;
+		}
+		if (anti)
+			scanloop(v && *v != '\200' && !BODY);
+		else
+			scanloop(v && *v != '\200' && BODY);
+	}
+#ifdef HAVE_LIBPCRE
+	pcre_free_study(pe);
+	pcre_free(re);
+#else
+	regfree(&re);
+#endif
+	BATsetcount(bn, BATcount(bn)); /* set some properties */
+	bn->theap.dirty |= BATcount(bn) > 0;
+	bn->tsorted = true;
+	bn->trevsorted = bn->batCount <= 1;
+	bn->tkey = true;
+	bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? * (oid *) Tloc(bn, 0) : oid_nil;
+	*bnp = bn;
+	return MAL_SUCCEED;
+
+  bunins_failed:
+	BBPreclaim(bn);
+#ifdef HAVE_LIBPCRE
+	pcre_free_study(pe);
+	pcre_free(re);
+#else
+	regfree(&re);
+#endif
+	*bnp = NULL;
+	throw(MAL, "pcre.likeselect", OPERATION_FAILED);
+}
+
+static str
+re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool anti, bool use_strcmp, uint32_t esc)
+{
+	BATiter bi = bat_iterator(b);
+	BAT *bn;
+	BUN p, q;
+	oid o, off;
+	const char *v;
+	struct RE *re = NULL;
+	uint32_t *wpat = NULL;
+
+	assert(ATOMstorage(b->ttype) == TYPE_str);
+
+	bn = COLnew(0, TYPE_oid, s ? BATcount(s) : BATcount(b), TRANSIENT);
+	if (bn == NULL)
+		throw(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	off = b->hseqbase;
+
+	if (!use_strcmp) {
+		re = re_create(pat, caseignore, esc);
+		if (!re) {
+			BBPreclaim(bn);
+			*bnp = NULL;
+			throw(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+	}
+	if (s && !BATtdense(s)) {
+		struct canditer ci;
+		BUN r;
+
+		canditer_init(&ci, b, s);
+
+		if (use_strcmp) {
+			if (caseignore) {
+				wpat = utf8stoucs(pat);
+				if (wpat == NULL) {
+					BBPreclaim(bn);
+					*bnp = NULL;
+					throw(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				if (anti)
+					candscanloop(v && *v != '\200' &&
+								 mywstrcasecmp(v, wpat) != 0);
+				else
+					candscanloop(v && *v != '\200' &&
+								 mywstrcasecmp(v, wpat) == 0);
+				GDKfree(wpat);
+				wpat = NULL;
+			} else {
+				if (anti)
+					candscanloop(v && *v != '\200' &&
+								 strcmp(v, pat) != 0);
+				else
+					candscanloop(v && *v != '\200' &&
+								 strcmp(v, pat) == 0);
+			}
+		} else {
+			if (caseignore) {
+				if (anti)
+					candscanloop(v && *v != '\200' &&
+								 !re_match_ignore(v, re));
+				else
+					candscanloop(v && *v != '\200' &&
+								 re_match_ignore(v, re));
+			} else {
+				if (anti)
+					candscanloop(v && *v != '\200' &&
+								 !re_match_no_ignore(v, re));
+				else
+					candscanloop(v && *v != '\200' &&
+								 re_match_no_ignore(v, re));
+			}
+		}
+	} else {
+		if (s) {
+			assert(BATtdense(s));
+			p = (BUN) s->tseqbase;
+			q = p + BATcount(s);
+			if ((oid) p < b->hseqbase)
+				p = b->hseqbase;
+			if ((oid) q > b->hseqbase + BATcount(b))
+				q = b->hseqbase + BATcount(b);
+		} else {
+			p = off;
+			q = BUNlast(b) + off;
+		}
+		if (use_strcmp) {
+			if (caseignore) {
+				wpat = utf8stoucs(pat);
+				if (wpat == NULL) {
+					BBPreclaim(bn);
+					*bnp = NULL;
+					throw(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				if (anti)
+					scanloop(v && *v != '\200' &&
+							 mywstrcasecmp(v, wpat) != 0);
+				else
+					scanloop(v && *v != '\200' &&
+							 mywstrcasecmp(v, wpat) == 0);
+				GDKfree(wpat);
+				wpat = NULL;
+			} else {
+				if (anti)
+					scanloop(v && *v != '\200' &&
+							 strcmp(v, pat) != 0);
+				else
+					scanloop(v && *v != '\200' &&
+							 strcmp(v, pat) == 0);
+			}
+		} else {
+			if (caseignore) {
+				if (anti)
+					scanloop(v && *v != '\200' &&
+							 !re_match_ignore(v, re));
+				else
+					scanloop(v && *v != '\200' &&
+							 re_match_ignore(v, re));
+			} else {
+				if (anti)
+					scanloop(v && *v != '\200' &&
+							 !re_match_no_ignore(v, re));
+				else
+					scanloop(v && *v != '\200' &&
+							 re_match_no_ignore(v, re));
+			}
+		}
+	}
+	BATsetcount(bn, BATcount(bn)); /* set some properties */
+	bn->tsorted = true;
+	bn->trevsorted = bn->batCount <= 1;
+	bn->tkey = true;
+	bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? * (oid *) Tloc(bn, 0) : oid_nil;
+	*bnp = bn;
+	re_destroy(re);
+	return MAL_SUCCEED;
+
+  bunins_failed:
+	re_destroy(re);
+	GDKfree(wpat);
+	BBPreclaim(bn);
+	*bnp = NULL;
+	throw(MAL, "pcre.likeselect", OPERATION_FAILED);
+}
+
+#define proj_scanloop(TEST)	\
+	do {	\
+		if (b->tnonil) { \
+			for (BUN p = 0; p < q; p++) {	\
+				v = BUNtail(bi, p);	\
+				res[p] = TEST; \
+			}	\
+		} else { \
+			for (BUN p = 0; p < q; p++) {	\
+				v = BUNtail(bi, p);	\
+				if (*v == '\200') { \
+					res[p] = bit_nil; \
+					bn->tnonil = false; \
+					bn->tnil = true; \
+				} else \
+					res[p] = TEST; \
+			}	\
+		} \
+	} while (0)
+
+static str
+re_like_proj(BAT **bnp, BAT *b, const char *pat, bool caseignore, bool anti, bool use_strcmp, uint32_t esc)
+{
+	BATiter bi = bat_iterator(b);
+	BAT *bn;
+	const char *restrict v;
+	struct RE *re = NULL;
+	uint32_t *wpat = NULL;
+	BUN q = BATcount(b);
+	bit *restrict res;
+	str msg = MAL_SUCCEED;
+
+	assert(ATOMstorage(b->ttype) == TYPE_str);
+
+	bn = COLnew(b->hseqbase, TYPE_bit, q, TRANSIENT);
+	if (bn == NULL) {
+		msg = createException(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	res = (bit*) Tloc(bn, 0);
+
+	if (!use_strcmp) {
+		re = re_create(pat, caseignore, esc);
+		if (!re) {
+			msg = createException(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+	}
+
+	if (use_strcmp) {
+		if (caseignore) {
+			wpat = utf8stoucs(pat);
+			if (wpat == NULL) {
+				msg = createException(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			if (anti)
+				proj_scanloop(mywstrcasecmp(v, wpat) != 0);
+			else
+				proj_scanloop(mywstrcasecmp(v, wpat) == 0);
+		} else {
+			if (anti)
+				proj_scanloop(strcmp(v, pat) != 0);
+			else
+				proj_scanloop(strcmp(v, pat) == 0);
+		}
+	} else {
+		if (caseignore) {
+			if (anti)
+				proj_scanloop(!re_match_ignore(v, re));
+			else
+				proj_scanloop(re_match_ignore(v, re));
+		} else {
+			if (anti)
+				proj_scanloop(!re_match_no_ignore(v, re));
+			else
+				proj_scanloop(re_match_no_ignore(v, re));
+		}
+	}
+
+bailout:
+	if (bn) {
+		if (msg) {
+			BBPreclaim(bn);
+		} else {
+			BATsetcount(bn, q);
+			bn->tsorted = false;
+			bn->trevsorted = false;
+			*bnp = bn;
+		}
+	}
+	if (re)
+		re_destroy(re);
+	GDKfree(wpat);
+	return msg;
+}
 
 /* maximum number of back references and quoted \ or $ in replacement string */
 #define MAX_NR_REFS		20
@@ -700,8 +1137,7 @@ pcre_replace(str *res, const char *origin_str, const char *pattern,
 	char *tmpres;
 	int max_result;
 	int i, errpos = 0;
-	int compile_options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK;
-	int exec_options = PCRE_NOTEMPTY | PCRE_NO_UTF8_CHECK;
+	int compile_options = PCRE_UTF8, exec_options = PCRE_NOTEMPTY;
 	int *ovector, ovecsize;
 	int len_origin_str = (int) strlen(origin_str);
 	int len_replacement = (int) strlen(replacement);
@@ -803,11 +1239,11 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 				 const char *replacement, const char *flags, bool global)
 {
 #ifdef HAVE_LIBPCRE
+	BATiter origin_strsi = bat_iterator(origin_strs);
 	const char *err_p = NULL;
 	char *tmpres;
 	int i, errpos = 0;
-	int compile_options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK;
-	int exec_options = PCRE_NOTEMPTY | PCRE_NO_UTF8_CHECK;
+	int compile_options = PCRE_UTF8, exec_options = PCRE_NOTEMPTY;
 	pcre *pcre_code = NULL;
 	pcre_extra *extra;
 	BAT *tmpbat;
@@ -889,7 +1325,6 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 		throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	BATiter origin_strsi = bat_iterator(origin_strs);
 	BATloop(origin_strs, p, q) {
 		origin_str = BUNtvar(origin_strsi, p);
 		tmpres = single_replace(pcre_code, extra, origin_str,
@@ -898,7 +1333,6 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 								len_replacement, backrefs, nbackrefs, global,
 								tmpres, &max_dest_size);
 		if (tmpres == NULL || BUNappend(tmpbat, tmpres, false) != GDK_SUCCEED) {
-			bat_iterator_end(&origin_strsi);
 			pcre_free_study(extra);
 			pcre_free(pcre_code);
 			GDKfree(ovector);
@@ -908,7 +1342,6 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
-	bat_iterator_end(&origin_strsi);
 	pcre_free_study(extra);
 	pcre_free(pcre_code);
 	GDKfree(ovector);
@@ -927,6 +1360,13 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 #endif
 }
 
+str
+pcre_init(void *ret)
+{
+	(void) ret;
+	return NULL;
+}
+
 static str
 pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *flags)
 {
@@ -934,7 +1374,7 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *fl
 #ifdef HAVE_LIBPCRE
 	const char *err_p = NULL;
 	int errpos = 0;
-	int options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK;
+	int options = PCRE_UTF8;
 	pcre *re;
 #else
 	int options = REG_NOSUB;
@@ -998,7 +1438,7 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *fl
 					);
 			}
 #ifdef HAVE_LIBPCRE
-	pos = pcre_exec(re, NULL, val, (int) strlen(val), 0, PCRE_NO_UTF8_CHECK, NULL, 0);
+	pos = pcre_exec(re, NULL, val, (int) strlen(val), 0, 0, NULL, 0);
 	pcre_free(re);
 #else
 	retval = regexec(&re, val, (size_t) 0, NULL, 0);
@@ -1022,7 +1462,7 @@ static const char *pcre_specials = ".+?*()[]{}|^$\\";
 #else
 /* special characters in POSIX basic regular expressions that need to
  * be escaped */
-static const char *pcre_specials = "^.[$()|*+?{\\";
+static const char *pcre_specials = ".*[]^$\\";
 #endif
 
 /* change SQL LIKE pattern into PCRE pattern */
@@ -1149,14 +1589,14 @@ pat2pcre(str *r, const char *pat)
 /*
  * @+ Wrapping
  */
-
-static str
+#include "mal.h"
+str
 PCREreplace_wrap(str *res, const str *or, const str *pat, const str *repl, const str *flags)
 {
 	return pcre_replace(res, *or, *pat, *repl, *flags, true);
 }
 
-static str
+str
 PCREreplace_bat_wrap(bat *res, const bat *bid, const str *pat, const str *repl, const str *flags)
 {
 	BAT *b, *bn = NULL;
@@ -1167,13 +1607,19 @@ PCREreplace_bat_wrap(bat *res, const bat *bid, const str *pat, const str *repl, 
 	msg = pcre_replace_bat(&bn, b, *pat, *repl, *flags, true);
 	if (msg == MAL_SUCCEED) {
 		*res = bn->batCacheid;
-		BBPkeepref(bn);
+		BBPkeepref(*res);
 	}
 	BBPunfix(b->batCacheid);
 	return msg;
 }
 
-static str
+str
+PCREreplacefirst_wrap(str *res, const str *or, const str *pat, const str *repl, const str *flags)
+{
+	return pcre_replace(res, *or, *pat, *repl, *flags, false);
+}
+
+str
 PCREreplacefirst_bat_wrap(bat *res, const bat *bid, const str *pat, const str *repl, const str *flags)
 {
 	BAT *b,*bn = NULL;
@@ -1184,13 +1630,13 @@ PCREreplacefirst_bat_wrap(bat *res, const bat *bid, const str *pat, const str *r
 	msg = pcre_replace_bat(&bn, b, *pat, *repl, *flags, false);
 	if (msg == MAL_SUCCEED) {
 		*res = bn->batCacheid;
-		BBPkeepref(bn);
+		BBPkeepref(*res);
 	}
 	BBPunfix(b->batCacheid);
 	return msg;
 }
 
-static str
+str
 PCREmatch(bit *ret, const str *val, const str *pat)
 {
 	return pcre_match_with_flags(ret, *val, *pat,
@@ -1202,7 +1648,7 @@ PCREmatch(bit *ret, const str *val, const str *pat)
 		);
 }
 
-static str
+str
 PCREimatch(bit *ret, const str *val, const str *pat)
 {
 	return pcre_match_with_flags(ret, *val, *pat, "i"
@@ -1212,14 +1658,14 @@ PCREimatch(bit *ret, const str *val, const str *pat)
 		);
 }
 
-static str
+str
 PCREindex(int *res, const pcre *pattern, const str *s)
 {
 #ifdef HAVE_LIBPCRE
 	int v[3];
 
 	v[0] = v[1] = *res = 0;
-	if (pcre_exec(pattern, NULL, *s, (int) strlen(*s), 0, PCRE_NO_UTF8_CHECK, v, 3) >= 0) {
+	if (pcre_exec(pattern, NULL, *s, (int) strlen(*s), 0, 0, v, 3) >= 0) {
 		*res = v[1];
 	}
 	return MAL_SUCCEED;
@@ -1231,7 +1677,7 @@ PCREindex(int *res, const pcre *pattern, const str *s)
 #endif
 }
 
-static str
+str
 PCREpatindex(int *ret, const str *pat, const str *val)
 {
 #ifdef HAVE_LIBPCRE
@@ -1261,7 +1707,7 @@ PCREpatindex(int *ret, const str *pat, const str *val)
 #endif
 }
 
-static str
+str
 PCREquote(str *ret, const str *val)
 {
 	char *p;
@@ -1284,32 +1730,32 @@ PCREquote(str *ret, const str *val)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 PCREsql2pcre(str *ret, const str *pat, const str *esc)
 {
 	return sql2pcre(ret, *pat, *esc);
 }
 
 static inline str
-choose_like_path(char **ppat, bool *use_re, bool *use_strcmp, bool *empty, const char *pat, const char *esc)
+choose_like_path(char **ppat, bool *use_re, bool *use_strcmp, bool *empty, const str *pat, const str *esc)
 {
 	str res = MAL_SUCCEED;
 	*use_re = false;
 	*use_strcmp = false;
 	*empty = false;
 
-	if (strNil(pat) || strNil(esc)) {
+	if (strNil(*pat) || strNil(*esc)) {
 		*empty = true;
 	} else {
-		if (!re_is_pattern_properly_escaped(pat, (unsigned char) *esc))
+		if (!re_is_pattern_properly_escaped(*pat, (unsigned char) **esc))
 			throw(MAL, "pcre.sql2pcre", SQLSTATE(22019) ILLEGAL_ARGUMENT ": (I)LIKE pattern must not end with escape character");
-		if (is_strcmpable(pat, esc)) {
+		if (is_strcmpable(*pat, *esc)) {
 			*use_re = true;
 			*use_strcmp = true;
-		} else if (re_simple(pat, (unsigned char) *esc)) {
+		} else if (re_simple(*pat, (unsigned char) **esc)) {
 			*use_re = true;
 		} else {
-			if ((res = sql2pcre(ppat, pat, esc)) != MAL_SUCCEED)
+			if ((res = sql2pcre(ppat, *pat, *esc)) != MAL_SUCCEED)
 				return res;
 			if (strNil(*ppat)) {
 				GDKfree(*ppat);
@@ -1323,20 +1769,17 @@ choose_like_path(char **ppat, bool *use_re, bool *use_strcmp, bool *empty, const
 }
 
 static str
-PCRElike_imp(bit *ret, const str *s, const str *pat, const str *esc, const bit *isens)
+PCRElike4(bit *ret, const str *s, const str *pat, const str *esc, const bit *isens)
 {
 	str res = MAL_SUCCEED;
 	char *ppat = NULL;
-	bool use_re = false, use_strcmp = false, empty = false;
+	bool use_re = false, use_strcmp = false, isnull = false;
 	struct RE *re = NULL;
 
-	if ((res = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, *pat, *esc)) != MAL_SUCCEED)
+	if ((res = choose_like_path(&ppat, &use_re, &use_strcmp, &isnull, pat, esc)) != MAL_SUCCEED)
 		return res;
 
-	MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" : use_strcmp ? "pcrelike: pattern matching using strcmp" :
-						   use_re ? "pcrelike: pattern matching using RE" : "pcrelike: pattern matching using pcre");
-
-	if (strNil(*s) || empty) {
+	if (strNil(*s) || isnull) {
 		*ret = bit_nil;
 	} else if (use_re) {
 		if (use_strcmp) {
@@ -1357,166 +1800,177 @@ PCRElike_imp(bit *ret, const str *s, const str *pat, const str *esc, const bit *
 	return res;
 }
 
-static str
-PCRElike(bit *ret, const str *s, const str *pat, const str *esc, const bit *isens)
+str
+PCRElike3(bit *ret, const str *s, const str *pat, const str *esc)
 {
-	return PCRElike_imp(ret, s, pat, esc, isens);
+	bit no = FALSE;
+
+	return PCRElike4(ret, s, pat, esc, &no);
 }
 
-static str
-PCREnotlike(bit *ret, const str *s, const str *pat, const str *esc, const bit *isens)
+str
+PCRElike2(bit *ret, const str *s, const str *pat)
+{
+	char *esc = "";
+
+	return PCRElike3(ret, s, pat, &esc);
+}
+
+str
+PCREnotlike3(bit *ret, const str *s, const str *pat, const str *esc)
 {
 	str tmp;
 	bit r;
 
-	rethrow("str.not_like", tmp, PCRElike(&r, s, pat, esc, isens));
+	rethrow("str.not_like", tmp, PCRElike3(&r, s, pat, esc));
 	*ret = r==bit_nil?bit_nil:!r;
 	return MAL_SUCCEED;
 }
 
-static inline str
-re_like_build(struct RE **re, uint32_t **wpat, const char *pat, bool caseignore, bool use_strcmp, uint32_t esc)
+str
+PCREnotlike2(bit *ret, const str *s, const str *pat)
 {
-	if (!use_strcmp) {
-		if (!(*re = re_create(pat, caseignore, esc)))
-			return createException(MAL, "pcre.re_like_build", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	} else if (caseignore) {
-		if (!(*wpat = utf8stoucs(pat)))
-			return createException(MAL, "pcre.re_like_build", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
+	str tmp;
+	bit r;
+
+	rethrow("str.not_like", tmp, PCRElike2(&r, s, pat));
+	*ret = r==bit_nil?bit_nil:!r;
 	return MAL_SUCCEED;
 }
 
-#define proj_scanloop(TEST)	\
-	do {	\
-		if (*s == '\200') \
-			return bit_nil; \
-		else \
-			return TEST; \
-	} while (0)
-
-static inline bit
-re_like_proj_apply(const char *s, const struct RE *restrict re, const uint32_t *restrict wpat, const char *pat, bool caseignore, bool anti, bool use_strcmp)
+str
+PCREilike3(bit *ret, const str *s, const str *pat, const str *esc)
 {
-	if (use_strcmp) {
-		if (caseignore) {
-			if (anti)
-				proj_scanloop(mywstrcasecmp(s, wpat) != 0);
-			else
-				proj_scanloop(mywstrcasecmp(s, wpat) == 0);
-		} else {
-			if (anti)
-				proj_scanloop(strcmp(s, pat) != 0);
-			else
-				proj_scanloop(strcmp(s, pat) == 0);
-		}
-	} else {
-		if (caseignore) {
-			if (anti)
-				proj_scanloop(!re_match_ignore(s, re));
-			else
-				proj_scanloop(re_match_ignore(s, re));
-		} else {
-			if (anti)
-				proj_scanloop(!re_match_no_ignore(s, re));
-			else
-				proj_scanloop(re_match_no_ignore(s, re));
-		}
-	}
+	bit yes = TRUE;
+
+	return PCRElike4(ret, s, pat, esc, &yes);
 }
 
-static inline void
-re_like_clean(struct RE **re, uint32_t **wpat)
+str
+PCREilike2(bit *ret, const str *s, const str *pat)
 {
-	if (*re) {
-		re_destroy(*re);
-		*re = NULL;
-	}
-	if (*wpat) {
-		GDKfree(*wpat);
-		*wpat = NULL;
-	}
+	char *esc = "\\";
+
+	return PCREilike3(ret, s, pat, &esc);
 }
 
-#ifdef HAVE_LIBPCRE
-static inline str
-pcre_like_build(pcre **res, pcre_extra **ex, const char *ppat, bool caseignore, BUN count)
+str
+PCREnotilike3(bit *ret, const str *s, const str *pat, const str *esc)
 {
-	const char *err_p = NULL;
-	int errpos = 0;
-	int options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK | PCRE_MULTILINE | PCRE_DOTALL;
-	int pcrestopt = count > JIT_COMPILE_MIN ? PCRE_STUDY_JIT_COMPILE : 0;
+	str tmp;
+	bit r;
 
-	*res = NULL;
-	*ex = NULL;
-
-	if (caseignore) {
-		options |= PCRE_CASELESS;
-	}
-	if ((*res = pcre_compile(ppat, options, &err_p, &errpos, NULL)) == NULL)
-		return createException(MAL, "pcre.pcre_like_build", OPERATION_FAILED
-								": compilation of regular expression (%s) failed"
-								" at %d with '%s'", ppat, errpos, err_p);
-	*ex = pcre_study(*res, pcrestopt, &err_p);
-	if (err_p != NULL)
-		return createException(MAL, "pcre.pcre_like_build", OPERATION_FAILED
-								": pcre study of pattern (%s) "
-								"failed with '%s'", ppat, err_p);
+	rethrow("str.not_ilike", tmp, PCREilike3(&r, s, pat, esc));
+	*ret = r==bit_nil?bit_nil:!r;
 	return MAL_SUCCEED;
 }
-#else
-static inline str
-pcre_like_build(regex_t *res, void *ex, const char *ppat, bool caseignore, BUN count)
+
+str
+PCREnotilike2(bit *ret, const str *s, const str *pat)
 {
-	int options = REG_NEWLINE | REG_NOSUB | REG_EXTENDED;
-	int errcode;
+	str tmp;
+	bit r;
 
-	*res = (regex_t) {0};
-	(void) count;
-
-	if (caseignore) {
-		options |= REG_ICASE;
-	}
-	if ((errcode = regcomp(res, ppat, options)) != 0)
-		return createException(MAL, "pcre.pcre_like_build", OPERATION_FAILED
-							   ": compilation of regular expression (%s) failed",
-							   ppat);
-	(void) ex;
+	rethrow("str.not_ilike", tmp, PCREilike2(&r, s, pat));
+	*ret = r==bit_nil?bit_nil:!r;
 	return MAL_SUCCEED;
 }
-#endif
 
 #define PCRE_LIKE_BODY(LOOP_BODY, RES1, RES2) \
 	do { \
-		LOOP_BODY  \
-		if (*s == '\200') \
-			*ret = bit_nil; \
-		else if (pos >= 0) \
-			*ret = RES1; \
-		else if (pos == -1) \
-			*ret = RES2; \
-		else \
-			return createException(MAL, "pcre.match", OPERATION_FAILED ": matching of regular expression (%s) failed with %d", ppat, pos); \
+		if (b->tnonil) { \
+			for (BUN p = 0; p < q; p++) {	\
+				const char *restrict s = BUNtail(bi, p); \
+				LOOP_BODY  \
+				if (pos >= 0) \
+					res[p] = RES1; \
+				else if (pos == -1) \
+					res[p] = RES2; \
+				else { \
+					msg = createException(MAL, "pcre.match", OPERATION_FAILED ": matching of regular expression (%s) failed with %d", ppat, pos); \
+					goto bailout; \
+				} \
+			}	\
+		} else { \
+			for (BUN p = 0; p < q; p++) { \
+				const char *restrict s = BUNtail(bi, p); \
+				LOOP_BODY  \
+				if (*s == '\200') { \
+					res[p] = bit_nil; \
+					bn->tnonil = false; \
+					bn->tnil = true; \
+				} else { \
+					if (pos >= 0) \
+						res[p] = RES1; \
+					else if (pos == -1) \
+						res[p] = RES2; \
+					else { \
+						msg = createException(MAL, "pcre.match", OPERATION_FAILED ": matching of regular expression (%s) failed with %d", ppat, pos); \
+						goto bailout; \
+					} \
+				} \
+			} \
+		} \
 	} while(0)
 
-static inline str
-pcre_like_apply(bit *ret, const char *s,
-#ifdef HAVE_LIBPCRE
-	const pcre *re, const pcre_extra *ex
-#else
-	regex_t re, void *ex
-#endif
-, const char *ppat, bool anti)
+static str
+pcre_like(BAT **bnp, BAT *b, const char *ppat, bool caseignore, bool anti)
 {
+	BATiter bi = bat_iterator(b);
+	BUN q = BATcount(b);
 	int pos;
+	BAT *bn;
+	bit *restrict res;
+	str msg = MAL_SUCCEED;
+#ifdef HAVE_LIBPCRE
+	const char *err_p = NULL;
+	int errpos = 0;
+	int options = PCRE_UTF8 | PCRE_DOTALL;
+	pcre *re = NULL;
+#else
+	regex_t re = (regex_t) {0};
+	int options = REG_NEWLINE | REG_NOSUB | REG_EXTENDED;
+	int errcode;
+#endif
+
+	bn = COLnew(b->hseqbase, TYPE_bit, BATcount(b), TRANSIENT);
+	if (bn == NULL) {
+		msg = createException(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	res = (bit*)Tloc(bn, 0);
+
+	if (caseignore) {
+#ifdef HAVE_LIBPCRE
+		options |= PCRE_CASELESS;
+#else
+		options |= REG_ICASE;
+#endif
+	}
+	if (
+#ifdef HAVE_LIBPCRE
+		(re = pcre_compile(ppat, options, &err_p, &errpos, NULL)) == NULL
+#else
+		(errcode = regcomp(&re, ppat, options)) != 0
+#endif
+		) {
+		msg = createException(MAL, "pcre.match", OPERATION_FAILED
+								": compilation of regular expression (%s) failed"
+#ifdef HAVE_LIBPCRE
+								" at %d with '%s'", ppat, errpos, err_p
+#else
+								, ppat
+#endif
+			);
+		goto bailout;
+	}
 
 #ifdef HAVE_LIBPCRE
 #define LOOP_BODY	\
-	pos = pcre_exec(re, ex, s, (int) strlen(s), 0, PCRE_NO_UTF8_CHECK, NULL, 0);
+	pos = pcre_exec(re, NULL, s, (int) strlen(s), 0, 0, NULL, 0);
 #else
 #define LOOP_BODY	\
 	int retval = regexec(&re, s, (size_t) 0, NULL, 0); \
-	(void) ex; \
 	pos = retval == REG_NOMATCH ? -1 : (retval == REG_ENOSYS ? -2 : 0);
 #endif
 
@@ -1525,595 +1979,239 @@ pcre_like_apply(bit *ret, const char *s,
 	else
 		PCRE_LIKE_BODY(LOOP_BODY, TRUE, FALSE);
 
-	return MAL_SUCCEED;
-}
-
-static inline void
-pcre_clean(
+bailout:
 #ifdef HAVE_LIBPCRE
-	pcre **re, pcre_extra **ex) {
-	if (*re)
-		pcre_free(*re);
-	if (*ex)
-		pcre_free_study(*ex);
-	*re = NULL;
-	*ex = NULL;
+	if (re)
+		pcre_free(re);
 #else
-	regex_t *re, void *ex) {
-	regfree(re);
-	*re = (regex_t) {0};
-	(void) ex;
+	regfree(&re);
 #endif
+	if (bn) {
+		if (msg) {
+			BBPreclaim(bn);
+		} else {
+			BATsetcount(bn, BATcount(b));
+			bn->tsorted = false;
+			bn->trevsorted = false;
+			*bnp = bn;
+		}
+	}
+	return msg;
 }
 
 static str
-BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str *esc, const bit *isens, const bit *not)
+BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit *isens, const bit *not)
 {
-	str msg = MAL_SUCCEED;
-	BAT *b = NULL, *pbn = NULL, *bn = NULL;
+	str res = MAL_SUCCEED;
+	BAT *b = NULL, *bn = NULL;
 	char *ppat = NULL;
-	const char *input = NULL;
-	bool use_re = false, use_strcmp = false, empty = false, isensitive = (bool) *isens, anti = (bool) *not, has_nil = false,
-		 input_is_a_bat = isaBatType(getArgType(mb, pci, 1)), pattern_is_a_bat = isaBatType(getArgType(mb, pci, 2));
-	bat *r = getArgReference_bat(stk, pci, 0);
-	BUN q = 0;
-	bit *restrict ret = NULL;
-#ifdef HAVE_LIBPCRE
-	pcre *re = NULL;
-	pcre_extra *ex = NULL;
-#else
-	regex_t re = (regex_t) {0};
-	void *ex = NULL;
-#endif
-	struct RE *re_simple = NULL;
-	uint32_t *wpat = NULL;
-	BATiter bi = (BATiter) {0}, pi;
+	bool use_re = false, use_strcmp = false, allnulls = false;
 
-	(void) cntxt;
-	if (input_is_a_bat) {
-		bat *bid = getArgReference_bat(stk, pci, 1);
-		if (!(b = BATdescriptor(*bid))) {
-			msg = createException(MAL, "batalgebra.batpcrelike3", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			goto bailout;
-		}
-	}
-	if (pattern_is_a_bat) {
-		bat *pb = getArgReference_bat(stk, pci, 2);
-		if (!(pbn = BATdescriptor(*pb))) {
-			msg = createException(MAL, "batalgebra.batpcrelike3", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			goto bailout;
-		}
-	}
-	assert((!b || ATOMstorage(b->ttype) == TYPE_str) && (!pbn || ATOMstorage(pbn->ttype) == TYPE_str));
+	if (!(b = BATdescriptor(*bid)))
+		throw(MAL, "pcre.like3", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	q = BATcount(b ? b : pbn);
-	if (!(bn = COLnew(b ? b->hseqbase : pbn->hseqbase, TYPE_bit, q, TRANSIENT))) {
-		msg = createException(MAL, "batalgebra.batpcrelike3", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-	ret = (bit*) Tloc(bn, 0);
-
-	if (pattern_is_a_bat) {
-		pi = bat_iterator(pbn);
-		if (b)
-			bi = bat_iterator(b);
-		else
-			input = *getArgReference_str(stk, pci, 1);
-
-		for (BUN p = 0; p < q; p++) {
-			const char *next_input = b ? BUNtvar(bi, p) : input, *np = BUNtvar(pi, p);
-
-			if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, np, *esc)) != MAL_SUCCEED) {
-				bat_iterator_end(&pi);
-				if (b)
-					bat_iterator_end(&bi);
-				goto bailout;
-			}
-
-			if (use_re) {
-				if ((msg = re_like_build(&re_simple, &wpat, np, isensitive, use_strcmp, (unsigned char) **esc)) != MAL_SUCCEED) {
-					bat_iterator_end(&pi);
-					if (b)
-						bat_iterator_end(&bi);
-					goto bailout;
-				}
-				ret[p] = re_like_proj_apply(next_input, re_simple, wpat, np, isensitive, anti, use_strcmp);
-				re_like_clean(&re_simple, &wpat);
-			} else if (empty) {
-				ret[p] = bit_nil;
-			} else {
-				if ((msg = pcre_like_build(&re, &ex, ppat, isensitive, 1)) != MAL_SUCCEED) {
-					bat_iterator_end(&pi);
-					if (b)
-						bat_iterator_end(&bi);
-					goto bailout;
-				}
-				if ((msg = pcre_like_apply(&(ret[p]), next_input, re, ex, ppat, anti)) != MAL_SUCCEED) {
-					bat_iterator_end(&pi);
-					if (b)
-						bat_iterator_end(&bi);
-					goto bailout;
-				}
-				pcre_clean(&re, &ex);
-			}
-			has_nil |= is_bit_nil(ret[p]);
-			GDKfree(ppat);
-			ppat = NULL;
-		}
-		bat_iterator_end(&pi);
-		if (b)
-			bat_iterator_end(&bi);
-	} else {
-		const char *pat = *getArgReference_str(stk, pci, 2);
-		if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, pat, *esc)) != MAL_SUCCEED)
-			goto bailout;
-
-		bi = bat_iterator(b);
-		MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" : use_strcmp ? "pcrelike: pattern matching using strcmp" :
-							   use_re ? "pcrelike: pattern matching using RE" : "pcrelike: pattern matching using pcre");
-
-		if (use_re) {
-			if ((msg = re_like_build(&re_simple, &wpat, pat, isensitive, use_strcmp, (unsigned char) **esc)) != MAL_SUCCEED) {
-				bat_iterator_end(&bi);
-				goto bailout;
-			}
-			for (BUN p = 0; p < q; p++) {
-				const char *s = BUNtvar(bi, p);
-				ret[p] = re_like_proj_apply(s, re_simple, wpat, pat, isensitive, anti, use_strcmp);
-				has_nil |= is_bit_nil(ret[p]);
-			}
-		} else if (empty) {
-			for (BUN p = 0; p < q; p++)
-				ret[p] = bit_nil;
-			has_nil = true;
-		} else {
-			if ((msg = pcre_like_build(&re, &ex, ppat, isensitive, q)) != MAL_SUCCEED) {
-				bat_iterator_end(&bi);
-				goto bailout;
-			}
-			for (BUN p = 0; p < q; p++) {
-				const char *s = BUNtvar(bi, p);
-				if ((msg = pcre_like_apply(&(ret[p]), s, re, ex, ppat, anti)) != MAL_SUCCEED) {
-					bat_iterator_end(&bi);
-					goto bailout;
-				}
-				has_nil |= is_bit_nil(ret[p]);
-			}
-		}
-		bat_iterator_end(&bi);
-	}
-
-bailout:
-	GDKfree(ppat);
-	re_like_clean(&re_simple, &wpat);
-	pcre_clean(&re, &ex);
-	if (bn && !msg) {
-		BATsetcount(bn, q);
-		bn->tnil = has_nil;
-		bn->tnonil = !has_nil;
-		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = BATcount(bn) <= 1;
-		bn->trevsorted = BATcount(bn) <= 1;
-		*r = bn->batCacheid;
-		BBPkeepref(bn);
-	} else if (bn)
-		BBPreclaim(bn);
-	if (b)
+	if ((res = choose_like_path(&ppat, &use_re, &use_strcmp, &allnulls, pat, esc)) != MAL_SUCCEED) {
 		BBPunfix(b->batCacheid);
-	if (pbn)
-		BBPunfix(pbn->batCacheid);
-	return msg;
-}
-
-static str
-BATPCRElike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	const str *esc = getArgReference_str(stk, pci, 3);
-	const bit *ci = getArgReference_bit(stk, pci, 4);
-	bit no = FALSE;
-
-	return BATPCRElike_imp(cntxt, mb, stk, pci, esc, ci, &no);
-}
-
-static str
-BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	const str *esc = getArgReference_str(stk, pci, 3);
-	const bit *ci = getArgReference_bit(stk, pci, 4);
-	bit yes = TRUE;
-
-	return BATPCRElike_imp(cntxt, mb, stk, pci, esc, ci, &yes);
-}
-
-/* scan select loop with or without candidates */
-#define pcrescanloop(TEST, KEEP_NULLS)				\
-	do {	\
-		TRC_DEBUG(ALGO,			\
-				  "PCREselect(b=%s#"BUNFMT",anti=%d): "		\
-				  "scanselect %s\n", BATgetId(b), BATcount(b),	\
-				  anti, #TEST);		\
-		if (!s || BATtdense(s)) {	\
-			for (; p < q; p++) {	\
-                GDK_CHECK_TIMEOUT(timeoffset, counter,						\
-                        GOTO_LABEL_TIMEOUT_HANDLER(bailout));				\
-				const char *restrict v = BUNtvar(bi, p - off);	\
-				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))	\
-					vals[cnt++] = p;	\
-			}		\
-		} else {		\
-			for (; p < ncands; p++) {		\
-                GDK_CHECK_TIMEOUT(timeoffset, counter,						\
-                        GOTO_LABEL_TIMEOUT_HANDLER(bailout));				\
-				oid o = canditer_next(ci);		\
-				const char *restrict v = BUNtvar(bi, o - off);	\
-				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))	\
-					vals[cnt++] = o;	\
-			}		\
-		}		\
-	} while (0)
-
-#ifdef HAVE_LIBPCRE
-#define PCRE_LIKESELECT_BODY (pcre_exec(re, ex, v, (int) strlen(v), 0, PCRE_NO_UTF8_CHECK, NULL, 0) >= 0)
-#else
-#define PCRE_LIKESELECT_BODY (regexec(&re, v, (size_t) 0, NULL, 0) != REG_NOMATCH)
-#endif
-
-static str
-pcre_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN *rcnt, const char *pat, bool caseignore, bool anti, bool keep_nulls)
-{
-#ifdef HAVE_LIBPCRE
-	pcre *re = NULL;
-	pcre_extra *ex = NULL;
-#else
-	regex_t re = (regex_t) {0};
-	void *ex = NULL;
-#endif
-	BATiter bi = bat_iterator(b);
-	BUN cnt = 0, ncands = ci->ncand;
-	oid off = b->hseqbase, *restrict vals = Tloc(bn, 0);
-	str msg = MAL_SUCCEED;
-
-	size_t counter = 0;
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
-
-	if ((msg = pcre_like_build(&re, &ex, pat, caseignore, ci->ncand)) != MAL_SUCCEED)
-		goto bailout;
-
-	if (anti)
-		pcrescanloop(v && *v != '\200' && !PCRE_LIKESELECT_BODY, keep_nulls);
-	else
-		pcrescanloop(v && *v != '\200' && PCRE_LIKESELECT_BODY, keep_nulls);
-
-bailout:
-	bat_iterator_end(&bi);
-	pcre_clean(&re, &ex);
-	*rcnt = cnt;
-	return msg;
-}
-
-static str
-re_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN *rcnt, const char *pat, bool caseignore, bool anti, bool use_strcmp, uint32_t esc, bool keep_nulls)
-{
-	BATiter bi = bat_iterator(b);
-	BUN cnt = 0, ncands = ci->ncand;
-	oid off = b->hseqbase, *restrict vals = Tloc(bn, 0);
-	struct RE *re = NULL;
-	uint32_t *wpat = NULL;
-	str msg = MAL_SUCCEED;
-
-	size_t counter = 0;
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-	}
-	if ((msg = re_like_build(&re, &wpat, pat, caseignore, use_strcmp, esc)) != MAL_SUCCEED)
-		goto bailout;
-
-	if (use_strcmp) {
-		if (caseignore) {
-			if (anti)
-				pcrescanloop(v && *v != '\200' && mywstrcasecmp(v, wpat) != 0, keep_nulls);
-			else
-				pcrescanloop(v && *v != '\200' && mywstrcasecmp(v, wpat) == 0, keep_nulls);
-		} else {
-			if (anti)
-				pcrescanloop(v && *v != '\200' && strcmp(v, pat) != 0, keep_nulls);
-			else
-				pcrescanloop(v && *v != '\200' && strcmp(v, pat) == 0, keep_nulls);
-		}
-	} else {
-		if (caseignore) {
-			if (anti)
-				pcrescanloop(v && *v != '\200' && !re_match_ignore(v, re), keep_nulls);
-			else
-				pcrescanloop(v && *v != '\200' && re_match_ignore(v, re), keep_nulls);
-		} else {
-			if (anti)
-				pcrescanloop(v && *v != '\200' && !re_match_no_ignore(v, re), keep_nulls);
-			else
-				pcrescanloop(v && *v != '\200' && re_match_no_ignore(v, re), keep_nulls);
-		}
-	}
-
-bailout:
-	bat_iterator_end(&bi);
-	re_like_clean(&re, &wpat);
-	*rcnt = cnt;
-	return msg;
-}
-
-static str
-PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const str *esc, const bit *caseignore, const bit *anti)
-{
-	BAT *b, *s = NULL, *bn = NULL, *old_s = NULL;
-	str msg = MAL_SUCCEED;
-	char *ppat = NULL;
-	bool use_re = false, use_strcmp = false, empty = false;
-	bool with_strimps = false;
-	bool with_strimps_anti = false;
-	BUN p = 0, q = 0, rcnt = 0;
-	struct canditer ci;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
-	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-		msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
-
-	assert(ATOMstorage(b->ttype) == TYPE_str);
-
-	if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, *pat, *esc)) != MAL_SUCCEED)
-		goto bailout;
-
-	if (empty) {
-		if (!(bn = BATdense(0, 0, 0)))
-			msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-		goto bailout;
-	}
-	/* Since the strimp pre-filtering of a LIKE query produces a superset of the actual result the complement of that
-	 * set will necessarily reject some of the matching entries in the NOT LIKE query.
-	 *
-	 * In this case we run the PCRElikeselect as a LIKE query with strimps and return the complement of the result,
-	 * taking extra care to not return NULLs. This currently means that we do not run strimps for NOT LIKE queries if
-	 * the BAT contains NULLs.
-	 */
-	if (BAThasstrimps(b)) {
-		if (STRMPcreate(b, NULL) == GDK_SUCCEED) {
-			BAT *tmp_s = STRMPfilter(b, s, *pat, *anti);
-			if (tmp_s) {
-				old_s = s;
-				s = tmp_s;
-				if (!*anti)
-					with_strimps = true;
-				else
-					with_strimps_anti = true;
-			}
-		} else { /* If we cannot filter with the strimp just continue normally */
-			GDKclrerr();
-		}
-	}
-
-
-	MT_thread_setalgorithm(use_strcmp ? (with_strimps ? "pcrelike: pattern matching using strcmp with strimps" : (with_strimps_anti ? "pcrelike: pattern matching using strcmp with strimps anti" : "pcrelike: pattern matching using strcmp")) :
-						   use_re ? (with_strimps ? "pcrelike: pattern matching using RE with strimps" : (with_strimps_anti ? "pcrelike: patterm matching using RE with strimps anti" : "pcrelike: pattern matching using RE")) :
-						   (with_strimps ? "pcrelike: pattern matching using pcre with strimps" : (with_strimps_anti ? "pcrelike: pattermatching using pcre with strimps anti" : "pcrelike: pattern matching using pcre")));
-
-	canditer_init(&ci, b, s);
-	if (!(bn = COLnew(0, TYPE_oid, ci.ncand, TRANSIENT))) {
-		msg = createException(MAL, "algebra.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-
-	if (!s || BATtdense(s)) {
-		if (s) {
-			assert(BATtdense(s));
-			p = (BUN) s->tseqbase;
-			q = p + BATcount(s);
-			if ((oid) p < b->hseqbase)
-				p = b->hseqbase;
-			if ((oid) q > b->hseqbase + BATcount(b))
-				q = b->hseqbase + BATcount(b);
-		} else {
-			p = b->hseqbase;
-			q = BATcount(b) + b->hseqbase;
-		}
+		return res;
 	}
 
 	if (use_re) {
-		msg = re_likeselect(bn, b, s, &ci, p, q, &rcnt, *pat, *caseignore, *anti && !with_strimps_anti, use_strcmp, (unsigned char) **esc,  with_strimps_anti);
+		res = re_like_proj(&bn, b, *pat, (bool) *isens, (bool) *not, use_strcmp, (unsigned char) **esc);
+	} else if (allnulls) {
+		if (!(bn = BATconstant(b->hseqbase, TYPE_bit, ATOMnilptr(TYPE_bit), BATcount(b), TRANSIENT)))
+			res = createException(MAL, "pcre.like3", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
-		msg = pcre_likeselect(bn, b, s, &ci, p, q, &rcnt, ppat, *caseignore, *anti && !with_strimps_anti, with_strimps_anti);
+		res = pcre_like(&bn, b, ppat, (bool) *isens, (bool) *not);
 	}
 
-	if (!msg) { /* set some properties */
-		BATsetcount(bn, rcnt);
-		bn->tsorted = true;
-		bn->trevsorted = bn->batCount <= 1;
-		bn->tkey = true;
-		bn->tnil = false;
-		bn->tnonil = true;
-		bn->tseqbase = rcnt == 0 ? 0 : rcnt == 1 ? *(const oid*)Tloc(bn, 0) : rcnt == b->batCount ? b->hseqbase : oid_nil;
-		if(with_strimps_anti) {
-			/* Reverse the result taking into account the original candidate list. */
-			// BAT *rev = BATdiffcand(BATdense(b->hseqbase, 0, b->batCount), bn);
-			BAT *rev;
-			if (old_s) {
-				rev = BATdiffcand(old_s, bn);
-				assert (BATintersectcand(old_s, bn)->batCount == bn->batCount);
-				assert (rev->batCount == old_s->batCount - bn->batCount);
-			}
-
-			else
-				rev = BATnegcands(b->batCount, bn);
-			/* BAT *rev = BATnegcands(b->batCount, bn); */
-			BBPunfix(bn->batCacheid);
-			bn = rev;
-		}
-	}
-
-
-bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	if (old_s)
-		BBPunfix(old_s->batCacheid);
 	GDKfree(ppat);
-	if (bn && !msg) {
-		*ret = bn->batCacheid;
-		BBPkeepref(bn);
-	} else if (bn)
-		BBPreclaim(bn);
-	return msg;
+	BBPunfix(b->batCacheid);
+	if (res != MAL_SUCCEED)
+		return res;
+	assert(bn);
+	BBPkeepref(*ret = bn->batCacheid);
+	return MAL_SUCCEED;
 }
 
-#define APPEND(b, o)	(((oid *) b->theap->base)[b->batCount++] = (o))
-#define VALUE(s, x)		(s##vars + VarHeapVal(s##vals, (x), s##i.width))
+str
+BATPCRElike(bat *ret, const bat *bid, const str *pat, const str *esc)
+{
+	bit no = FALSE;
 
-#ifdef HAVE_LIBPCRE
-#define PCRE_EXEC \
-	do { \
-		retval = pcre_exec(pcrere, pcreex, vl, (int) strlen(vl), 0, PCRE_NO_UTF8_CHECK, NULL, 0); \
-	} while (0)
-#define PCRE_EXEC_COND (retval < 0)
-#else
-#define PCRE_EXEC \
-	do { \
-		retval = regexec(&pcrere, vl, (size_t) 0, NULL, 0); \
-	} while (0)
-#define PCRE_EXEC_COND (retval == REG_NOMATCH || retval == REG_ENOSYS)
-#endif
+	return BATPCRElike3(ret, bid, pat, esc, &no, &no);
+}
 
-/* nested loop implementation for PCRE join */
-#define pcre_join_loop(STRCMP, RE_MATCH, PCRE_COND) \
-	do { \
-		for (BUN ridx = 0; ridx < rci.ncand; ridx++) { \
-			GDK_CHECK_TIMEOUT(timeoffset, counter, \
-					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
-			ro = canditer_next(&rci); \
-			vr = VALUE(r, ro - rbase); \
-			nl = 0; \
-			use_re = use_strcmp = empty = false; \
-			if ((msg = choose_like_path(&pcrepat, &use_re, &use_strcmp, &empty, vr, esc))) \
-				goto bailout; \
-			if (!empty) { \
-				if (use_re) { \
-					if ((msg = re_like_build(&re, &wpat, vr, caseignore, use_strcmp, (unsigned char) *esc)) != MAL_SUCCEED) \
-						goto bailout; \
-				} else if (pcrepat) { \
-					if ((msg = pcre_like_build(&pcrere, &pcreex, pcrepat, caseignore, lci.ncand)) != MAL_SUCCEED) \
-						goto bailout; \
-					GDKfree(pcrepat); \
-					pcrepat = NULL; \
-				} \
-				canditer_reset(&lci); \
-				for (BUN lidx = 0; lidx < lci.ncand; lidx++) { \
-					lo = canditer_next(&lci); \
-					vl = VALUE(l, lo - lbase); \
-					if (strNil(vl)) { \
-						continue; \
-					} else if (use_re) { \
-						if (use_strcmp) { \
-							if (STRCMP) \
-								continue; \
-						} else { \
-							assert(re); \
-							if (RE_MATCH) \
-								continue; \
-						} \
-					} else { \
-						int retval; \
-						PCRE_EXEC;  \
-						if (PCRE_COND) \
-							continue; \
-					} \
-					if (BATcount(r1) == BATcapacity(r1)) { \
-						newcap = BATgrows(r1); \
-						BATsetcount(r1, BATcount(r1)); \
-						if (r2) \
-							BATsetcount(r2, BATcount(r2)); \
-						if (BATextend(r1, newcap) != GDK_SUCCEED || (r2 && BATextend(r2, newcap) != GDK_SUCCEED)) { \
-							msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-							goto bailout; \
-						} \
-						assert(!r2 || BATcapacity(r1) == BATcapacity(r2)); \
-					} \
-					if (BATcount(r1) > 0) { \
-						if (lastl + 1 != lo) \
-							r1->tseqbase = oid_nil; \
-						if (nl == 0) { \
-							if (r2) \
-								r2->trevsorted = false; \
-							if (lastl > lo) { \
-								r1->tsorted = false; \
-								r1->tkey = false; \
-							} else if (lastl < lo) { \
-								r1->trevsorted = false; \
-							} else { \
-								r1->tkey = false; \
-							} \
-						} \
-					} \
-					APPEND(r1, lo); \
-					if (r2) \
-						APPEND(r2, ro); \
-					lastl = lo; \
-					nl++; \
-				} \
-				re_like_clean(&re, &wpat); \
-				pcre_clean(&pcrere, &pcreex); \
-			} \
-			if (r2) { \
-				if (nl > 1) { \
-					r2->tkey = false; \
-					r2->tseqbase = oid_nil; \
-					r1->trevsorted = false; \
-				} else if (nl == 0) { \
-					rskipped = BATcount(r2) > 0; \
-				} else if (rskipped) { \
-					r2->tseqbase = oid_nil; \
-				} \
-			} else if (nl > 1) { \
-				r1->trevsorted = false; \
-			} \
-		} \
-	} while (0)
+str
+BATPCRElike2(bat *ret, const bat *bid, const str *pat)
+{
+	char *esc = "\\";
+
+	return BATPCRElike(ret, bid, pat, &esc);
+}
+
+str
+BATPCREnotlike(bat *ret, const bat *bid, const str *pat, const str *esc)
+{
+	bit no = FALSE;
+	bit yes = TRUE;
+
+	return BATPCRElike3(ret, bid, pat, esc, &no, &yes);
+}
+
+str
+BATPCREnotlike2(bat *ret, const bat *bid, const str *pat)
+{
+	char *esc = "\\";
+
+	return BATPCREnotlike(ret, bid, pat, &esc);
+}
+
+str
+BATPCREilike(bat *ret, const bat *bid, const str *pat, const str *esc)
+{
+	bit yes = TRUE;
+	bit no = FALSE;
+
+	return BATPCRElike3(ret, bid, pat, esc, &yes, &no);
+}
+
+str
+BATPCREilike2(bat *ret, const bat *bid, const str *pat)
+{
+	char *esc = "\\";
+
+	return BATPCREilike(ret, bid, pat, &esc);
+}
+
+str
+BATPCREnotilike(bat *ret, const bat *bid, const str *pat, const str *esc)
+{
+	bit yes = TRUE;
+
+	return BATPCRElike3(ret, bid, pat, esc, &yes, &yes);
+}
+
+str
+BATPCREnotilike2(bat *ret, const bat *bid, const str *pat)
+{
+	char *esc = "\\";
+
+	return BATPCREnotilike(ret, bid, pat, &esc);
+}
+
+str
+PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const str *esc, const bit *caseignore, const bit *anti)
+{
+	BAT *b, *s = NULL, *bn = NULL;
+	str res = MAL_SUCCEED;
+	char *ppat = NULL;
+	bool use_re = false, use_strcmp = false, empty = false;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+
+	if ((res = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, pat, esc)) != MAL_SUCCEED) {
+		BBPunfix(b->batCacheid);
+		return res;
+	}
+
+	if (use_re) {
+		res = re_likeselect(&bn, b, s, *pat, (bool) *caseignore, (bool) *anti, use_strcmp, (unsigned char) **esc);
+	} else if (empty) {
+		if (!(bn = BATdense(0, 0, 0)))
+			res = createException(MAL, "algebra.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	} else {
+		res = pcre_likeselect(&bn, b, s, ppat, (bool) *caseignore, (bool) *anti);
+	}
+	BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	GDKfree(ppat);
+	if (res != MAL_SUCCEED)
+		return res;
+	assert(bn);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+PCRElikeselect1(bat *ret, const bat *bid, const bat *cid, const str *pat, const str *esc, const bit *anti)
+{
+	const bit f = TRUE;
+	return PCRElikeselect2(ret, bid, cid, pat, esc, &f, anti);
+}
+
+str
+PCRElikeselect3(bat *ret, const bat *bid, const bat *sid, const str *pat, const str *esc, const bit *anti)
+{
+	const bit f = FALSE;
+	return PCRElikeselect2(ret, bid, sid, pat, esc, &f, anti);
+}
+
+str
+PCRElikeselect4(bat *ret, const bat *bid, const bat *cid, const str *pat, const bit *anti)
+{
+	const bit f = TRUE;
+	const str esc ="";
+	return PCRElikeselect2(ret, bid, cid, pat, &esc, &f, anti);
+}
+
+str
+PCRElikeselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, const bit *anti)
+{
+	const bit f = FALSE;
+	const str esc ="";
+	return PCRElikeselect2(ret, bid, sid, pat, &esc, &f, anti);
+}
+
+#define APPEND(b, o)	(((oid *) b->theap.base)[b->batCount++] = (o))
+#define VALUE(s, x)		(s##vars + VarHeapVal(s##vals, (x), s##width))
 
 static char *
-pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bit caseignore, bit anti)
+pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
+		 const char *esc, bool caseignore)
 {
 	struct canditer lci, rci;
-	const char *lvals, *rvals, *lvars, *rvars, *vl, *vr;
-	int rskipped = 0;			/* whether we skipped values in r */
-	oid lbase, rbase, lo, ro, lastl = 0;		/* last value inserted into r1 */
-	BUN nl, newcap;
-	char *pcrepat = NULL, *msg = MAL_SUCCEED;
+	const char *lvals, *rvals;
+	const char *lvars, *rvars;
+	int lwidth, rwidth;
+	const char *vl, *vr;
+	oid lastl = 0;		/* last value inserted into r1 */
+	BUN nl;
+	BUN newcap;
+	oid lo, ro;
+	int rskipped = 0;	/* whether we skipped values in r */
+	char *msg = MAL_SUCCEED;
 	struct RE *re = NULL;
+	char *pcrepat = NULL;
 	bool use_re = false, use_strcmp = false, empty = false;
 	uint32_t *wpat = NULL;
 #ifdef HAVE_LIBPCRE
 	pcre *pcrere = NULL;
 	pcre_extra *pcreex = NULL;
+	const char *err_p = NULL;
+	int errpos;
+	int pcreopt = PCRE_UTF8 | PCRE_MULTILINE;
+	int pcrestopt = (sl ? BATcount(sl) : BATcount(l)) > JIT_COMPILE_MIN ? PCRE_STUDY_JIT_COMPILE : 0;
 #else
-	regex_t pcrere = (regex_t) {0};
-	void *pcreex = NULL;
+	int pcrere = 0;
+	regex_t regex;
+	int options =  REG_NEWLINE | REG_NOSUB | REG_EXTENDED;
+	int errcode = -1;
 #endif
 
-	size_t counter = 0;
-	lng timeoffset = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	if (qry_ctx != NULL) {
-		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	if (caseignore) {
+#ifdef HAVE_LIBPCRE
+		pcreopt |= PCRE_CASELESS;
+#else
+		options |= REG_ICASE;
+#endif
 	}
 
 	TRC_DEBUG(ALGO,
@@ -2135,119 +2233,239 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bi
 
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(ATOMtype(l->ttype) == TYPE_str);
+	assert(sl == NULL || sl->tsorted);
+	assert(sr == NULL || sr->tsorted);
 
 	canditer_init(&lci, l, sl);
 	canditer_init(&rci, r, sr);
 
-	BATiter li = bat_iterator(l);
-	BATiter ri = bat_iterator(r);
-	lbase = l->hseqbase;
-	rbase = r->hseqbase;
-	lvals = (const char *) li.base;
-	rvals = (const char *) ri.base;
-	assert(ri.vh && r->ttype);
-	lvars = li.vh->base;
-	rvars = ri.vh->base;
+	lvals = (const char *) Tloc(l, 0);
+	rvals = (const char *) Tloc(r, 0);
+	assert(r->tvarsized && r->ttype);
+	lvars = l->tvheap->base;
+	rvars = r->tvheap->base;
+	lwidth = l->twidth;
+	rwidth = r->twidth;
 
 	r1->tkey = true;
 	r1->tsorted = true;
 	r1->trevsorted = true;
-	r1->tnil = false;
-	r1->tnonil = true;
-	if (r2) {
-		r2->tkey = true;
-		r2->tsorted = true;
-		r2->trevsorted = true;
-		r2->tnil = false;
-		r2->tnonil = true;
-	}
+	r2->tkey = true;
+	r2->tsorted = true;
+	r2->trevsorted = true;
 
-	if (anti) {
-		if (caseignore) {
-			pcre_join_loop(mywstrcasecmp(vl, wpat) == 0, re_match_ignore(vl, re), !PCRE_EXEC_COND);
-		} else {
-			pcre_join_loop(strcmp(vl, vr) == 0, re_match_no_ignore(vl, re), !PCRE_EXEC_COND);
+	/* nested loop implementation for PCRE join */
+	for (BUN ri = 0; ri < rci.ncand; ri++) {
+		ro = canditer_next(&rci);
+		vr = VALUE(r, ro - r->hseqbase);
+		use_re = false;
+		use_strcmp = false;
+		empty = false;
+
+		if ((msg = choose_like_path(&pcrepat, &use_re, &use_strcmp, &empty, (const str*)&vr, (const str*)&esc)))
+			goto bailout;
+		if (empty) {
+			continue;
+		} else if (use_re) {
+			if (use_strcmp) {
+				if (caseignore && !(wpat = utf8stoucs(vr))) {
+					msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+			} else if (!(re = re_create(vr, caseignore, (unsigned char) *esc))) {
+				msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+		} else if (pcrepat) {
+#ifdef HAVE_LIBPCRE
+			pcrere = pcre_compile(pcrepat, pcreopt, &err_p, &errpos, NULL);
+			if (pcrere == NULL) {
+				msg = createException(MAL, "pcre.join", OPERATION_FAILED
+									  ": pcre compile of pattern (%s) "
+									  "failed at %d with '%s'",
+									  pcrepat, errpos, err_p);
+				goto bailout;
+			}
+			pcreex = pcre_study(pcrere, pcrestopt, &err_p);
+			if (err_p != NULL) {
+				msg = createException(MAL, "pcre.join", OPERATION_FAILED
+									  ": pcre study of pattern (%s) "
+									  "failed with '%s'", pcrepat, err_p);
+				goto bailout;
+			}
+#else
+			if ((errcode = regcomp(&regex, pcrepat, options)) != 0) {
+				msg = createException(MAL, "pcre.join", OPERATION_FAILED
+									  ": pcre compile of pattern (%s)",
+									  pcrepat);
+				goto bailout;
+			}
+			pcrere = 1;
+#endif
+			GDKfree(pcrepat);
+			pcrepat = NULL;
 		}
-	} else {
-		if (caseignore) {
-			pcre_join_loop(mywstrcasecmp(vl, wpat) != 0, !re_match_ignore(vl, re), PCRE_EXEC_COND);
-		} else {
-			pcre_join_loop(strcmp(vl, vr) != 0, !re_match_no_ignore(vl, re), PCRE_EXEC_COND);
+		nl = 0;
+		canditer_reset(&lci);
+		for (BUN li = 0; li < lci.ncand; li++) {
+			lo = canditer_next(&lci);
+			vl = VALUE(l, lo - l->hseqbase);
+			if (strNil(vl)) {
+				continue;
+			} else if (use_re) {
+				if (use_strcmp) {
+					if (caseignore) {
+						assert(wpat);
+						if (mywstrcasecmp(vl, wpat) != 0)
+							continue;
+					} else {
+						if (strcmp(vl, vr) != 0)
+							continue;
+					}
+				} else {
+					assert(re);
+					if (caseignore) {
+						if (!re_match_ignore(vl, re))
+							continue;
+					} else {
+						if (!re_match_no_ignore(vl, re))
+							continue;
+					}
+				}
+			} else {
+				assert(pcrere);
+#ifdef HAVE_LIBPCRE
+				if (pcre_exec(pcrere, pcreex, vl, (int) strlen(vl), 0, 0, NULL, 0) < 0)
+					continue;
+#else
+				int retval = regexec(&regex, vl, (size_t) 0, NULL, 0);
+				if (retval == REG_NOMATCH || retval == REG_ENOSYS)
+					continue;
+#endif
+			}
+			if (BUNlast(r1) == BATcapacity(r1)) {
+				newcap = BATgrows(r1);
+				BATsetcount(r1, BATcount(r1));
+				BATsetcount(r2, BATcount(r2));
+				if (BATextend(r1, newcap) != GDK_SUCCEED ||
+					BATextend(r2, newcap) != GDK_SUCCEED) {
+					msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				assert(BATcapacity(r1) == BATcapacity(r2));
+			}
+			if (BATcount(r1) > 0) {
+				if (lastl + 1 != lo)
+					r1->tseqbase = oid_nil;
+				if (nl == 0) {
+					r2->trevsorted = false;
+					if (lastl > lo) {
+						r1->tsorted = false;
+						r1->tkey = false;
+					} else if (lastl < lo) {
+						r1->trevsorted = false;
+					} else {
+						r1->tkey = false;
+					}
+				}
+			}
+			APPEND(r1, lo);
+			APPEND(r2, ro);
+			lastl = lo;
+			nl++;
+		}
+		if (re) {
+			re_destroy(re);
+			re = NULL;
+		}
+		if (wpat) {
+			GDKfree(wpat);
+			wpat = NULL;
+		}
+		if (pcrere) {
+#ifdef HAVE_LIBPCRE
+			pcre_free_study(pcreex);
+			pcre_free(pcrere);
+			pcrere = NULL;
+			pcreex = NULL;
+#else
+			regfree(&regex);
+			pcrere = 0;
+#endif
+		}
+		if (nl > 1) {
+			r2->tkey = false;
+			r2->tseqbase = oid_nil;
+			r1->trevsorted = false;
+		} else if (nl == 0) {
+			rskipped = BATcount(r2) > 0;
+		} else if (rskipped) {
+			r2->tseqbase = oid_nil;
 		}
 	}
-	bat_iterator_end(&li);
-	bat_iterator_end(&ri);
-
-	assert(!r2 || BATcount(r1) == BATcount(r2));
+	assert(BATcount(r1) == BATcount(r2));
 	/* also set other bits of heap to correct value to indicate size */
 	BATsetcount(r1, BATcount(r1));
-	if (r2)
-		BATsetcount(r2, BATcount(r2));
+	BATsetcount(r2, BATcount(r2));
 	if (BATcount(r1) > 0) {
 		if (BATtdense(r1))
-			r1->tseqbase = ((oid *) r1->theap->base)[0];
-		if (r2 && BATtdense(r2))
-			r2->tseqbase = ((oid *) r2->theap->base)[0];
+			r1->tseqbase = ((oid *) r1->theap.base)[0];
+		if (BATtdense(r2))
+			r2->tseqbase = ((oid *) r2->theap.base)[0];
 	} else {
-		r1->tseqbase = 0;
-		if (r2)
-			r2->tseqbase = 0;
+		r1->tseqbase = r2->tseqbase = 0;
 	}
-	if (r2)
-		TRC_DEBUG(ALGO,
-				"pcrejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
-				BATgetId(l), BATgetId(r),
-				BATgetId(r1), BATcount(r1),
-				r1->tsorted ? "-sorted" : "",
-				r1->trevsorted ? "-revsorted" : "",
-				BATgetId(r2), BATcount(r2),
-				r2->tsorted ? "-sorted" : "",
-				r2->trevsorted ? "-revsorted" : "");
-	else
-		TRC_DEBUG(ALGO,
-			"pcrejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s\n",
-			BATgetId(l), BATgetId(r),
-			BATgetId(r1), BATcount(r1),
-			r1->tsorted ? "-sorted" : "",
-			r1->trevsorted ? "-revsorted" : "");
+	TRC_DEBUG(ALGO,
+			  "pcrejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+			  BATgetId(l), BATgetId(r),
+			  BATgetId(r1), BATcount(r1),
+			  r1->tsorted ? "-sorted" : "",
+			  r1->trevsorted ? "-revsorted" : "",
+			  BATgetId(r2), BATcount(r2),
+			  r2->tsorted ? "-sorted" : "",
+			  r2->trevsorted ? "-revsorted" : "");
 	return MAL_SUCCEED;
 
-bailout:
-	bat_iterator_end(&li);
-	bat_iterator_end(&ri);
-	GDKfree(pcrepat);
-	re_like_clean(&re, &wpat);
-	pcre_clean(&pcrere, &pcreex);
+  bailout:
+	if (re)
+		re_destroy(re);
+	if (pcrepat)
+		GDKfree(pcrepat);
+	if (wpat)
+		GDKfree(wpat);
+#ifdef HAVE_LIBPCRE
+	if (pcreex)
+		pcre_free_study(pcreex);
+	if (pcrere)
+		pcre_free(pcrere);
+#else
+	if (pcrere)
+		regfree(&regex);
+#endif
+
 	assert(msg != MAL_SUCCEED);
 	return msg;
 }
 
 static str
-PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid, bat ciid, bit anti)
+PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid,
+		 const char *esc, bool caseignore)
 {
-	BAT *left = NULL, *right = NULL, *escape = NULL, *caseignore = NULL, *candleft = NULL, *candright = NULL;
+	BAT *left = NULL, *right = NULL, *candleft = NULL, *candright = NULL;
 	BAT *result1 = NULL, *result2 = NULL;
 	char *msg = MAL_SUCCEED;
-	const char *esc = "";
-	bit ci;
-	BATiter bi;
 
 	if ((left = BATdescriptor(lid)) == NULL)
 		goto fail;
 	if ((right = BATdescriptor(rid)) == NULL)
-		goto fail;
-	if ((escape = BATdescriptor(elid)) == NULL)
-		goto fail;
-	if ((caseignore = BATdescriptor(ciid)) == NULL)
 		goto fail;
 	if (!is_bat_nil(slid) && (candleft = BATdescriptor(slid)) == NULL)
 		goto fail;
 	if (!is_bat_nil(srid) && (candright = BATdescriptor(srid)) == NULL)
 		goto fail;
 	result1 = COLnew(0, TYPE_oid, BATcount(left), TRANSIENT);
-	if (r2)
-		result2 = COLnew(0, TYPE_oid, BATcount(left), TRANSIENT);
-	if (!result1 || (r2 && !result2)) {
+	result2 = COLnew(0, TYPE_oid, BATcount(left), TRANSIENT);
+	if (result1 == NULL || result2 == NULL) {
 		msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto fail;
 	}
@@ -2257,43 +2475,22 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid, bat c
 	result1->tsorted = true;
 	result1->trevsorted = true;
 	result1->tseqbase = 0;
-	if (r2) {
-		result2->tnil = false;
-		result2->tnonil = true;
-		result2->tkey = true;
-		result2->tsorted = true;
-		result2->trevsorted = true;
-		result2->tseqbase = 0;
-	}
-	if (BATcount(escape) != 1) {
-		msg = createException(MAL, "pcre.join", SQLSTATE(42000) "At the moment, only one value is allowed for the escape input at pcre join");
-		goto fail;
-	}
-	if (BATcount(caseignore) != 1) {
-		msg = createException(MAL, "pcre.join", SQLSTATE(42000) "At the moment, only one value is allowed for the case ignore input at pcre join");
-		goto fail;
-	}
-	bi = bat_iterator(caseignore);
-	ci = *(bit*)BUNtloc(bi, 0);
-	bat_iterator_end(&bi);
-	bi = bat_iterator(escape);
-	esc = BUNtvar(bi, 0);
-	msg = pcrejoin(result1, result2, left, right, candleft, candright, esc, ci, anti);
-	bat_iterator_end(&bi);
+	result2->tnil = false;
+	result2->tnonil = true;
+	result2->tkey = true;
+	result2->tsorted = true;
+	result2->trevsorted = true;
+	result2->tseqbase = 0;
+	msg = pcrejoin(result1, result2, left, right, candleft, candright,
+				   esc, caseignore);
 	if (msg)
 		goto fail;
 	*r1 = result1->batCacheid;
-	BBPkeepref(result1);
-	if (r2) {
-		*r2 = result2->batCacheid;
-		BBPkeepref(result2);
-	}
+	*r2 = result2->batCacheid;
+	BBPkeepref(*r1);
+	BBPkeepref(*r2);
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
-	if (escape)
-		BBPunfix(escape->batCacheid);
-	if (caseignore)
-		BBPunfix(caseignore->batCacheid);
 	if (candleft)
 		BBPunfix(candleft->batCacheid);
 	if (candright)
@@ -2305,10 +2502,6 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid, bat c
 		BBPunfix(left->batCacheid);
 	if (right)
 		BBPunfix(right->batCacheid);
-	if (escape)
-		BBPunfix(escape->batCacheid);
-	if (caseignore)
-		BBPunfix(caseignore->batCacheid);
 	if (candleft)
 		BBPunfix(candleft->batCacheid);
 	if (candright)
@@ -2322,55 +2515,34 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid, bat c
 	throw(MAL, "pcre.join", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
-static str
-LIKEjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *elid, const bat *cid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
+str
+LIKEjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
 {
 	(void) nil_matches;
 	(void) estimate;
-	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *elid, *cid, *anti);
+	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *esc, 0);
 }
 
-static str
-LIKEjoin1(bat *r1, const bat *lid, const bat *rid, const bat *elid, const bat *cid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
+str
+LIKEjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
 {
 	(void) nil_matches;
 	(void) estimate;
-	return PCREjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *elid, *cid, *anti);
+	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, "", 0);
 }
 
-#include "mel.h"
-mel_atom pcre_init_atoms[] = {
- { .name="pcre", },  { .cmp=NULL }
-};
-mel_func pcre_init_funcs[] = {
- command("pcre", "index", PCREindex, false, "match a pattern, return matched position (or 0 when not found)", args(1,3, arg("",int),arg("pat",pcre),arg("s",str))),
- command("pcre", "match", PCREmatch, false, "Perl Compatible Regular Expression pattern matching against a string", args(1,3, arg("",bit),arg("s",str),arg("pat",str))),
- command("pcre", "imatch", PCREimatch, false, "Caseless Perl Compatible Regular Expression pattern matching against a string", args(1,3, arg("",bit),arg("s",str),arg("pat",str))),
- command("pcre", "patindex", PCREpatindex, false, "Location of the first POSIX pattern matching against a string", args(1,3, arg("",int),arg("pat",str),arg("s",str))),
- command("pcre", "replace", PCREreplace_wrap, false, "Replace _all_ matches of \"pattern\" in \"origin_str\" with \"replacement\".\nParameter \"flags\" accept these flags: 'i', 'm', 's', and 'x'.\n'e': if present, an empty string is considered to be a valid match\n'i': if present, the match operates in case-insensitive mode.\nOtherwise, in case-sensitive mode.\n'm': if present, the match operates in multi-line mode.\n's': if present, the match operates in \"dot-all\"\nThe specifications of the flags can be found in \"man pcreapi\"\nThe flag letters may be repeated.\nNo other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".\nReturns the replaced string, or if no matches found, the original string.", args(1,5, arg("",str),arg("origin",str),arg("pat",str),arg("repl",str),arg("flags",str))),
- command("pcre", "replace_first", PCREreplace_wrap, false, "Replace _the first_ match of \"pattern\" in \"origin_str\" with \"replacement\".\nParameter \"flags\" accept these flags: 'i', 'm', 's', and 'x'.\n'e': if present, an empty string is considered to be a valid match\n'i': if present, the match operates in case-insensitive mode.\nOtherwise, in case-sensitive mode.\n'm': if present, the match operates in multi-line mode.\n's': if present, the match operates in \"dot-all\"\nThe specifications of the flags can be found in \"man pcreapi\"\nThe flag letters may be repeated.\nNo other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".\nReturns the replaced string, or if no matches found, the original string.", args(1,5, arg("",str),arg("origin",str),arg("pat",str),arg("repl",str),arg("flags",str))),
- command("pcre", "pcre_quote", PCREquote, false, "Return a PCRE pattern string that matches the argument exactly.", args(1,2, arg("",str),arg("s",str))),
- command("pcre", "sql2pcre", PCREsql2pcre, false, "Convert a SQL like pattern with the given escape character into a PCRE pattern.", args(1,3, arg("",str),arg("pat",str),arg("esc",str))),
- command("str", "replace", PCREreplace_wrap, false, "", args(1,5, arg("",str),arg("origin",str),arg("pat",str),arg("repl",str),arg("flags",str))),
- command("batpcre", "replace", PCREreplace_bat_wrap, false, "", args(1,5, batarg("",str),batarg("orig",str),arg("pat",str),arg("repl",str),arg("flag",str))),
- command("batpcre", "replace_first", PCREreplacefirst_bat_wrap, false, "", args(1,5, batarg("",str),batarg("orig",str),arg("pat",str),arg("repl",str),arg("flag",str))),
- command("algebra", "like", PCRElike, false, "", args(1,5, arg("",bit),arg("s",str),arg("pat",str),arg("esc",str),arg("caseignore",bit))),
- command("algebra", "not_like", PCREnotlike, false, "", args(1,5, arg("",bit),arg("s",str),arg("pat",str),arg("esc",str),arg("caseignore",bit))),
- pattern("batalgebra", "like", BATPCRElike, false, "", args(1,5, batarg("",bit),batarg("s",str),arg("pat",str),arg("esc",str),arg("caseignore",bit))),
- pattern("batalgebra", "like", BATPCRElike, false, "", args(1,5, batarg("",bit),arg("s",str),batarg("pat",str),arg("esc",str),arg("caseignore",bit))),
- pattern("batalgebra", "like", BATPCRElike, false, "", args(1,5, batarg("",bit),batarg("s",str),batarg("pat",str),arg("esc",str),arg("caseignore",bit))),
- pattern("batalgebra", "not_like", BATPCREnotlike, false, "", args(1,5, batarg("",bit),batarg("s",str),arg("pat",str),arg("esc",str),arg("caseignore",bit))),
- pattern("batalgebra", "not_like", BATPCREnotlike, false, "", args(1,5, batarg("",bit),arg("s",str),batarg("pat",str),arg("esc",str),arg("caseignore",bit))),
- pattern("batalgebra", "not_like", BATPCREnotlike, false, "", args(1,5, batarg("",bit),batarg("s",str),batarg("pat",str),arg("esc",str),arg("caseignore",bit))),
- command("algebra", "likeselect", PCRElikeselect, false, "Select all head values of the first input BAT for which the\ntail value is \"like\" the given (SQL-style) pattern and for\nwhich the head value occurs in the tail of the second input\nBAT.\nInput is a dense-headed BAT, output is a dense-headed BAT with in\nthe tail the head value of the input BAT for which the\nrelationship holds.  The output BAT is sorted on the tail value.", args(1,7, batarg("",oid),batarg("b",str),batarg("s",oid),arg("pat",str),arg("esc",str),arg("caseignore",bit),arg("anti",bit))),
- command("algebra", "likejoin", LIKEjoin, false, "Join the string bat L with the pattern bat R\nwith optional candidate lists SL and SR using pattern escape string ESC\nand doing a case sensitive match.\nThe result is two aligned bats with oids of matching rows.", args(2,11, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("esc",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
- command("algebra", "likejoin", LIKEjoin1, false, "The same as LIKEjoin_esc, but only produce one output", args(1,10,batarg("",oid),batarg("l",str),batarg("r",str),batarg("esc",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_pcre_mal)
-{ mal_module("pcre", pcre_init_atoms, pcre_init_funcs); }
+str
+ILIKEjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
+{
+	(void) nil_matches;
+	(void) estimate;
+	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *esc, 1);
+}
+
+str
+ILIKEjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
+{
+	(void) nil_matches;
+	(void) estimate;
+	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, "", 1);
+}

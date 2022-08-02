@@ -1,11 +1,9 @@
-root = true
-
 # Unix-style newlines with a newline ending every file
 [*]
 end_of_line = lf
 insert_final_newline = true
 
-[*.{c,h}{,.in}]
+[*.{c,h}]
 indent_style = tab
 tab_width = 4
 indent_size = tab
@@ -13,13 +11,12 @@ trim_trailing_whitespace = true
 charset = utf-8
 max_line_length = 120
 
-[*.py{,.in}]
+[*.py]
 indent_style = space
 indent_size = 4
 trim_trailing_whitespace = true
 charset = utf-8
 
-[{CMakeLists.txt,*.cmake}{,.in}]
-indent_style = space
-indent_size = 2
-trim_trailing_whitespace = true
+[gdk/*.{c,h}]
+tab_width = 8
+max_line_length = 72

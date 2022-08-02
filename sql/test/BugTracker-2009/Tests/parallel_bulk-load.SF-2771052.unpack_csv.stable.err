@@ -1,0 +1,12 @@
+stderr of test 'parallel_bulk-load.SF-2771052.unpack_csv` in directory 'sql/test/BugTracker-2009` itself:
+
+
+# 19:04:24 >  
+# 19:04:24 >  /usr/bin/python parallel_bulk-load.SF-2771052.unpack_csv.py parallel_bulk-load.SF-2771052.unpack_csv 
+# 19:04:24 >  
+
+
+# 19:04:25 >  
+# 19:04:25 >  Done.
+# 19:04:25 >  
+

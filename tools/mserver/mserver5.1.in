@@ -60,7 +60,7 @@ should find a database.
 Shorthand for option
 .BR gdk_dbpath .
 Default value:
-.BR @CMAKE_INSTALL_FULL_LOCALSTATEDIR@/monetdb5/dbfarm/demo .
+.BR @localstatedir@/monetdb5/dbfarm/demo .
 .TP
 \fB\-\-dbextra=\fP\fIpath\fP
 Path where
@@ -69,12 +69,6 @@ should store transient data.  Default value is the
 value of the
 .B \-\-dbpath
 option.
-If the value of
-.I path
-is
-.BR in-memory ,
-transient data is not stored on disk at all but kept in memory at all
-times.
 .TP
 \fB\-\-dbtrace=\fP\fIpath\fP
 File name for the trace log file for
@@ -88,9 +82,7 @@ option.
 .TP
 \fB\-\-config=\fP\fIfile\fP
 Config file to read options from.
-This file can contain all options as can be set with the
-.B \-\-set
-flag.
+This file can contain all options as can be set with the --set flag.
 See
 .IR "CONFIG FILE FORMAT" .
 .TP
@@ -106,11 +98,6 @@ For possible options, see
 .I PARAMETERS
 sections.
 .TP
-\fB\-\-loadmodule=\fP\fImodule\fP
-Load extra module in the form of a dynamic link library (.dll or .so
-file) which should be located in the lib/monetdb5 directory.
-This option can be repeated for different modules.
-.TP
 .B \-\-help
 Print list of options.
 .TP
@@ -122,102 +109,67 @@ Run
 .I mserver5
 in-memory.
 .B No
-data will be written to disk.
-The name of the database that a client can connect to is
-.BR in-memory .
+data will be persisted.
 .TP
 \fB\-\-debug\fP[\fB=\fP\fIvalue\fP]
 .PD 0
 .TP
 \fB\-d\fP[\fIvalue\fP]
 Set debug level.  This is mostly for debugging purposes.
+The value is an integer, which can be (a bit-wise OR of):
+.EX
+          \fB1\fP = THRDMASK     = thread-specific debug output
+          \fB2\fP = CHECKMASK    = property enforcing on new BATs
+          \fB8\fP = PROPMASK     = property checking on all values:
+                             tells about wrongly set properties
+         \fB16\fP = IOMASK       = major IO activity
+         \fB32\fP = BATMASK      = BAT handling
+        \fB128\fP = PARMASK      = Thread management
+        \fB512\fP = TMMASK       = Transaction management
+       \fB1024\fP = TEMMASK      = Locks and Triggers
+       \fB4096\fP = PERFMASK     = BBP Performance (?)
+       \fB8192\fP = DELTAMASK    = Delta debugging (?)
+      \fB16384\fP = LOADMASK     = Module loading
+    \fB1048576\fP = ACCELMASK    = Accelerator debugging
+    \fB2097152\fP = ALGOMASK     = show low level algorithm chosen
+   \fB16777216\fP = NOSYNCMASK   = disable forcefully synchronizing files
+                             to disk.  If this flag is set, there is
+                             no guarantee that the database remains
+                             consistent after a crash.  DO NOT USE
+                             (unless you really don't care about your
+                             data).
+   \fB33554432\fP = DEADBEEFMASK = disable "cleaning" of freed memory
+                             in GDKfree() which only happens in a
+                             debug build (i.e. with assertions
+                             enabled) e.g., for performance
+                             measurements
+   \fB67108864\fP = ALLOCMASK    = exhaustive GDK malloc & free tracing
+                             for debugging (GDK developers, only)
+  \fB134217728\fP = OPTMASK      = trace the actions, decisions and
+                             effects of MAL optimizers
+  \fB268435456\fP = HEAPMASK     = trace/debug HEAPextend;
+                             used only for development & debugging
+  \fB536870912\fP = FORCEMITOMASK = forcefully activate mitosis even on
+                              small tables, i.e., split small tables
+                              in as many (tiny) pieces as there are
+                              cores (threads) available;
+                              this allows us to test mitosis
+                              functionality without requiring large
+                              data sets (\(em at the expense of a
+                              potentially significant interpretation
+                              overhead for unnecessarily large plans);
+                              used only for development & testing;
+                              set automatically by Mtest.py
+.EE
 The
 .I value
 together with the
 .B =
 sign is optional.  If not specified, it defaults to
-.BR 2 .
+.BR 1 .
 In the short form \fB\-d\fP, the value, if present, must immediately
 (i.e. without space) follow the option.
 The values of multiple instances of this flag are OR-ed together.
-The value is an integer, which can be (a bit-wise OR of):
-.RS
-.TP
-.B 1
-(THRDMASK) thread-specific debug output
-.TP
-.B 2
-(CHECKMASK) property checking on new BATs
-.TP
-.B 16
-(IOMASK) major IO activity
-.TP
-.B 32
-(BATMASK) BAT handling
-.TP
-.B 128
-(PARMASK) Thread management
-.TP
-.B 512
-(TMMASK) Transaction management
-.TP
-.B 1024
-(TEMMASK) Locks and Triggers
-.TP
-.B 4096
-(PERFMASK) BBP Performance (?)
-.TP
-.B 8192
-(DELTAMASK) Delta debugging (?)
-.TP
-.B 16384
-(LOADMASK) Module loading
-.TP
-.B 1048576
-(ACCELMASK) Accelerator debugging
-.TP
-.B 2097152
-(ALGOMASK) show low level algorithm chosen
-.TP
-.B 16777216
-(NOSYNCMASK) disable forcefully synchronizing files
-to disk.  If this flag is set, there is
-no guarantee that the database remains
-consistent after a crash.  DO NOT USE
-(unless you really don't care about your
-data).
-.TP
-.B 33554432
-(DEADBEEFMASK) disable "cleaning" of freed memory
-in GDKfree() which only happens in a
-debug build (i.e. with assertions
-enabled) e.g., for performance
-measurements
-.TP
-.B 67108864
-(ALLOCMASK) exhaustive GDK malloc & free tracing
-for debugging (GDK developers, only)
-.TP
-.B 134217728
-(OPTMASK) trace the actions, decisions and
-effects of MAL optimizers
-.TP
-.B 268435456
-(HEAPMASK) trace/debug HEAPextend;
-used only for development & debugging
-.B 536870912
-(FORCEMITOMASK) forcefully activate mitosis even on
-small tables, i.e., split small tables
-in as many (tiny) pieces as there are
-cores (threads) available;
-this allows us to test mitosis
-functionality without requiring large
-data sets (\(em at the expense of a
-potentially significant interpretation
-overhead for unnecessarily large plans);
-used only for development & testing;
-set automatically by Mtest.py
-.RE
 .TP
 .B \-\-algorithms
 Equivalent to \fB\-\-debug=\fP\fI(ALGOMASK)\fP.
@@ -241,25 +193,13 @@ Equivalent to \fB\-\-debug=\fP\fI(LOADMASK)\fP.
 Equivalent to \fB\-\-debug=\fP\fI(DEADBEEFMASK)\fP.
 .TP
 .B \-\-properties
-Equivalent to \fB\-\-debug=\fP\fI(CHECKMASK)\fP.
+Equivalent to \fB\-\-debug=\fP\fI(CHECKMASK | PROPMASK | BATMASK)\fP.
 .TP
 .B \-\-threads
 Equivalent to \fB\-\-debug=\fP\fI(THRDMASK | PARMASK)\fP.
 .TP
 .B \-\-transactions
 Equivalent to \fB\-\-debug=\fP\fI(TMMASK | DELTAMASK | TEMMASK)\fP.
-.TP
-.B \-\-read\-password\-initialize\-and\-exit
-Read an unencrypted password from standard input and use it to set the
-password for the
-.B monetdb
-administrator user, initialize the database, and exit.
-If the database was already initialized, the administrator password is
-not changed.
-This option is used by
-.IR monetdbd (1)
-when creating a new database with an administrator password and should
-not be used otherwise.
 .SH MSERVER5 PARAMETERS
 .I Mserver5
 instructs the GDK kernel through the MAL (MonetDB Assembler Language)
@@ -303,75 +243,9 @@ connected clients.
 The funnel capability from
 .IR monetdbd (1)
 might be a more suitable solution for such workloads.
+
 Default
 .BR 64 .
-.TP
-.B mapi_usock
-The name of the UNIX domain socket file on which the server will
-listen for connections.
-If the name contains the substring
-.BR ${PORT} ,
-that part will be replaced by the decimal representation of the TCP/IP
-port (option
-.BR mapi_port ).
-This is especially useful if the port was specified as
-.BR 0 .
-Note, there is usually a severe system-imposed length limitation on
-the name of the file.
-.TP
-.B mapi_port
-The TCP/IP port number on which the server will listen for
-connections.
-This is only used if the value of the
-.B mapi_listenaddr
-option is not equal to
-.BR none .
-Default
-.BR 50000 .
-If the value is
-.BR 0 ,
-the server will use a so called ephemeral port, i.e. one that is
-assigned by the system.
-After successfully starting to listen to a port, the value of the port
-can be retrieved from the file
-.B .conn
-inside the database 
-.RB ( \-\-dbpath )
-directory.
-.TP
-.B mapi_listenaddr
-The TCP/IP interface on which the server will listen for connections.
-Possibilites are:
-.RS
-.TP
-.B localhost
-The server listens only on the IPv4 and IPv6 loopback interface.
-This is the default.
-.TP
-.B 127.0.0.1
-The server listens only on the IPv4 loopback interface.
-.TP
-.B ::1
-The server listens only on the IPv6 loopback interface.
-.TP
-.B all
-The server listens on all IPv4 and IPv6 interfaces.
-.TP
-.B 0.0.0.0
-The server listens on all IPv4 interfaces.
-.TP
-.B ::
-The server listens on all IPv6 interfaces.
-.TP
-.B none
-The server will not listen on any TCP/IP interface (you need to use
-the UNIX domain socket interface).
-.TP
-.I hostname
-The server will listen on the interface designated by
-.I hostname
-which is looked up using the normal hostname lookup facilities.
-.RE
 .SH SQL PARAMETERS
 The SQL component of MonetDB 5 runs on top of the MAL environment.
 It has its own SQL-level specific settings.
@@ -408,7 +282,7 @@ minimal_pipe=inline,remap,deadcode,multiplex,generator,profiler,candidates,garba
 The default pipeline contains the mitosis-mergetable-reorder
 optimizers, aimed at large tables and improved access locality.
 .\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-default_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mitosis,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,wlc,garbageCollector
+default_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,pushselect,aliases,mitosis,mergetable,deadcode,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,wlc,garbageCollector
 .TP
 .B no_mitosis_pipe
 The no_mitosis pipeline is identical to the default pipeline, except
@@ -417,7 +291,7 @@ It is used mainly to make some tests work deterministically, and to
 check/debug whether "unexpected" problems are related to mitosis
 (and/or mergetable).
 .\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-no_mitosis_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,wlc,garbageCollector
+no_mitosis_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,pushselect,aliases,mergetable,deadcode,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,wlc,garbageCollector
 .TP
 .B sequential_pipe
 The sequential pipeline is identical to the default pipeline, except
@@ -425,7 +299,7 @@ that optimizers mitosis & dataflow are omitted.
 It is use mainly to make some tests work deterministically, i.e.,
 avoid ambigious output, by avoiding parallelism.
 .\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-sequential_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,wlc,garbageCollector
+sequential_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,pushselect,aliases,mergetable,deadcode,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,wlc,garbageCollector
 .RE
 .TP
 .B embedded_py

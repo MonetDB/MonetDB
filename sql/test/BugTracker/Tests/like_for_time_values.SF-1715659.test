@@ -1,5 +1,0 @@
-query I rowsort
-select now() LIKE '12:14'
-----
-0
-

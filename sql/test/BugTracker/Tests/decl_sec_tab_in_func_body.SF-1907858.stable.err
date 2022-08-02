@@ -1,0 +1,19 @@
+stderr of test 'decl_sec_tab_in_func_body.SF-1907858` in directory 'sql/test/BugTracker` itself:
+
+
+# 00:07:58 >  
+# 00:07:58 >   mserver5 "--config=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36386 --set xrpc_port=40452 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 00:07:58 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/etc/monetdb5.conf)
+
+# 00:07:58 >  
+# 00:07:58 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=36386 
+# 00:07:58 >  
+
+
+# 00:07:58 >  
+# 00:07:58 >  Done.
+# 00:07:58 >  
+

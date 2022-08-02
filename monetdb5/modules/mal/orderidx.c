@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -13,8 +13,6 @@
 #include "monetdb_config.h"
 #include "orderidx.h"
 #include "gdk.h"
-#include "mal_exception.h"
-#include "mal_function.h"
 
 #define MIN_PIECE	((BUN) 1000)	/* TODO use realistic size in production */
 
@@ -97,50 +95,33 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	/* create a temporary MAL function to sort the BAT in parallel */
 	snprintf(name, IDLENGTH, "sort%d", rand()%1000);
 	snew = newFunction(putName("user"), putName(name),
-					   FUNCTIONsymbol);
+	       FUNCTIONsymbol);
 	if(snew == NULL) {
 		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	smb = snew->def;
 	q = getInstrPtr(smb, 0);
-	if ((arg = newTmpVariable(smb, tpe)) < 0) {
-		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
+	arg = newTmpVariable(smb, tpe);
 	q= addArgument(smb, q, arg);
-	if (q == NULL || (getArg(q,0) = newTmpVariable(smb, TYPE_void)) < 0) {
-		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
+	getArg(q,0) = newTmpVariable(smb, TYPE_void);
 
 	if( resizeMalBlk(smb, 2*pieces+10) < 0)
 		goto bailout; // large enough
 	/* create the pack instruction first, as it will hold
 	 * intermediate variables */
 	pack = newInstruction(0, putName("bat"), putName("orderidx"));
-	if (pack == NULL || (pack->argv[0] = newTmpVariable(smb, TYPE_void)) < 0) {
+	if(pack == NULL) {
 		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
+	pack->argv[0] = newTmpVariable(smb, TYPE_void);
 	pack = addArgument(smb, pack, arg);
-	if (pack == NULL) {
-		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
 	setVarFixed(smb, getArg(pack, 0));
 
 	/* the costly part executed as a parallel block */
-	if ((loopvar = newTmpVariable(smb, TYPE_bit)) < 0) {
-		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
+	loopvar = newTmpVariable(smb, TYPE_bit);
 	q = newStmt(smb, putName("language"), putName("dataflow"));
-	if (q == NULL) {
-		freeInstruction(pack);
-		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
 	q->barrier = BARRIERsymbol;
 	q->argv[0] = loopvar;
 
@@ -150,20 +131,9 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	for (i = 0; i < pieces; i++) {
 		/* add slice instruction */
 		q = newInstruction(smb, putName("algebra"),putName("slice"));
-		if (q == NULL || (setDestVar(q, newTmpVariable(smb, TYPE_any))) < 0) {
-			freeInstruction(q);
-			freeInstruction(pack);
-			msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
 		setVarType(smb, getArg(q,0), tpe);
 		setVarFixed(smb, getArg(q,0));
 		q = addArgument(smb, q, arg);
-		if (q == NULL) {
-			freeInstruction(pack);
-			msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
 		pack = addArgument(smb, pack, getArg(q,0));
 		q = pushOid(smb, q, o);
 		if (i == pieces-1) {
@@ -172,31 +142,15 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 			o += step;
 		}
 		q = pushOid(smb, q, o - 1);
-		if (q == NULL) {
-			freeInstruction(pack);
-			msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
 		pushInstruction(smb, q);
 	}
 	for (i = 0; i < pieces; i++) {
 		/* add sort instruction */
 		q = newInstruction(smb, putName("algebra"), putName("orderidx"));
-		if (q == NULL || (setDestVar(q, newTmpVariable(smb, TYPE_any))) < 0) {
-			freeInstruction(q);
-			freeInstruction(pack);
-			msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
 		setVarType(smb, getArg(q, 0), tpe);
 		setVarFixed(smb, getArg(q, 0));
 		q = addArgument(smb, q, pack->argv[2+i]);
 		q = pushBit(smb, q, 1);
-		if (q == NULL) {
-			freeInstruction(pack);
-			msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
 		pack->argv[2+i] = getArg(q, 0);
 		pushInstruction(smb, q);
 	}
@@ -223,16 +177,15 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	newstk->stk[arg].vtype= TYPE_bat;
 	newstk->stk[arg].val.bval= b->batCacheid;
 	BBPretain(newstk->stk[arg].val.bval);
-	smb->starttime = GDKusec();
 	msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);
 	freeStack(newstk);
 	/* get rid of temporary MAL block */
-  bailout:
+bailout:
 	freeSymbol(snew);
 	return msg;
 }
 
-static str
+str
 OIDXcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
@@ -253,7 +206,7 @@ OIDXcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-static str
+str
 OIDXhasorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
@@ -273,7 +226,7 @@ OIDXhasorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
@@ -305,12 +258,12 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bn->tnil = false;
 	bn->tnonil = true;
 	*ret = bn->batCacheid;
-	BBPkeepref(bn);
+	BBPkeepref(*ret);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
-static str
+str
 OIDXorderidx(bat *ret, const bat *bid, const bit *stable)
 {
 	BAT *b;
@@ -327,7 +280,7 @@ OIDXorderidx(bat *ret, const bat *bid, const bit *stable)
 		throw(MAL, "algebra.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	*ret = *bid;
-	BBPkeepref(b);
+	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
 
@@ -335,7 +288,7 @@ OIDXorderidx(bat *ret, const bat *bid, const bit *stable)
  * Merge the collection of sorted OID BATs into one
  */
 
-static str
+str
 OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid;
@@ -360,10 +313,8 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == NULL)
 		throw(MAL, "bat.orderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	if (b->torderidx) {
-		BBPunfix(bid);
+	if (b->torderidx )
 		throw(MAL, "bat.orderidx", SQLSTATE(HY002) "INTERNAL ERROR, torderidx already set");
-	}
 
 	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_bte:
@@ -435,21 +386,3 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	return MAL_SUCCEED;
 }
-
-#include "mel.h"
-mel_func orderidx_init_funcs[] = {
- pattern("bat", "orderidx", OIDXcreate, false, "Introduces the OID index arrangement of ordered values", args(1,2, arg("",void),batargany("bv",1))),
- pattern("bat", "orderidx", OIDXcreate, false, "Introduces the OID index arrangement of ordered values", args(1,3, arg("",void),batargany("bv",1),arg("pieces",int))),
- pattern("bat", "orderidx", OIDXmerge, false, "Consolidates the OID index arrangement", args(1,3, arg("",void),batargany("bv",1),batvarargany("l",1))),
- pattern("bat", "hasorderidx", OIDXhasorderidx, false, "Return true if order index exists", args(1,2, arg("",bit),batargany("bv",1))),
- pattern("bat", "getorderidx", OIDXgetorderidx, false, "Return the order index if it exists", args(1,2, batarg("",oid),batargany("bv",1))),
- command("algebra", "orderidx", OIDXorderidx, false, "Create an order index", args(1,3, batargany("",1),batargany("bv",1),arg("stable",bit))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_orderidx_mal)
-{ mal_module("orderidx", NULL, orderidx_init_funcs); }

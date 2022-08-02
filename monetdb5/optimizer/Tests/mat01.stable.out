@@ -1,0 +1,155 @@
+stdout of test 'mat01` in directory 'monetdb5/optimizer` itself:
+
+
+# 11:53:46 >  
+# 11:53:46 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39582 --set sql_port=44122 --set xquery_port=52828 --set monet_prompt= --trace --dbname=mTests_src_optimizer  mat01.mal < /dev/null
+# 11:53:46 >  
+
+# MonetDB 5 server v11.10.0
+# This is an unreleased version
+# Serving database 'mTests_optimizer', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.630 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:33397/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+# the Multi Assocation Tables 
+# use two mats at the same time. 
+    mdb.List();
+    m0 := bat.new(:oid,:oid);
+    bat.append(m0,0@0);
+    m1 := bat.new(:oid,:oid);
+    bat.append(m1,1@0);
+    m2 := bat.new(:oid,:oid);
+    bat.append(m2,2@0);
+    X_39 := algebra.select(m0,0@0,2@0);
+    X_40 := algebra.select(m1,0@0,2@0);
+    X_41 := algebra.select(m2,0@0,2@0);
+    X_43 := aggr.count(X_39);
+    X_44 := aggr.count(X_40);
+    X_45 := aggr.count(X_41);
+    X_42 := mat.pack(X_43,X_44,X_45);
+    X_46 := algebra.selectNotNil(X_42);
+    i := aggr.sum(X_46);
+    s := mat.pack(X_39,X_40,X_41);
+    io.print(s);
+    io.print(i);
+    c0 := bat.new(:oid,:oid);
+    bat.append(c0,4@0);
+    c1 := bat.new(:oid,:oid);
+    bat.append(c1,5@0);
+    c := mat.pack(c0,c1);
+    bat.append(c,6@0);
+    b := mat.pack(m0,m1,m2);
+    j := algebra.join(b,c);
+    io.print(j);
+    algebra.select(m1,0@0,2@0);
+    algebra.select(m2,0@0,2@0);
+    X_50 := aggr.count(X_39);
+    X_51 := aggr.count(X_40);
+    X_52 := aggr.count(X_41);
+    X_49 := mat.pack(X_50,X_51,X_52);
+    X_53 := algebra.selectNotNil(X_49);
+    i := aggr.sum(X_53);
+    io.print(s);
+    io.print(b);
+    io.print(c);
+    d := mat.pack(m1,m2);
+    io.print(d);
+end main;
+function user.main():void;              #  0 main:void := user.main() {G}
+# the Multi Assocation Tables 
+# use two mats at the same time. 
+    mdb.List();                         #  3 _3:void := MDBlistDetail() 
+    m0{horigin=1, torigin=1} := bat.new(:oid,:oid);#  4 m0:bat[:oid,:oid] := CMDBATnew(_5:oid, _5:oid) {G}
+    bat.append(m0{horigin=1, torigin=1},0@0);#  5 _6:bat[:oid,:oid] := BKCappend_val_wrap(m0:bat[:oid,:oid], _7:oid) {G}
+    m1{horigin=1, torigin=1} := bat.new(:oid,:oid);#  6 m1:bat[:oid,:oid] := CMDBATnew(_5:oid, _5:oid) {G}
+    bat.append(m1{horigin=1, torigin=1},1@0);#  7 _9:bat[:oid,:oid] := BKCappend_val_wrap(m1:bat[:oid,:oid], _10:oid) {G}
+    m2{horigin=2, torigin=2} := bat.new(:oid,:oid);#  8 m2:bat[:oid,:oid] := CMDBATnew(_5:oid, _5:oid) {G}
+    bat.append(m2{horigin=2, torigin=2},2@0);#  9 _12:bat[:oid,:oid] := BKCappend_val_wrap(m2:bat[:oid,:oid], _13:oid) {G}
+    X_39{horigin=1} := algebra.select(m0{horigin=1, torigin=1},0@0,2@0);# 10 _39:bat[:oid,:oid] := ALGselect(m0:bat[:oid,:oid], _7:oid, _13:oid) {G}
+    X_40{horigin=2} := algebra.select(m1{horigin=1, torigin=1},0@0,2@0);# 11 _40:bat[:oid,:oid] := ALGselect(m1:bat[:oid,:oid], _7:oid, _13:oid) {G}
+    X_41{horigin=3} := algebra.select(m2{horigin=2, torigin=2},0@0,2@0);# 12 _41:bat[:oid,:oid] := ALGselect(m2:bat[:oid,:oid], _7:oid, _13:oid) {G}
+    X_43 := aggr.count(X_39{horigin=1});# 13 _43:wrd := ALGcount_bat(_39:bat[:oid,:oid]) {G}
+    X_44 := aggr.count(X_40{horigin=2});# 14 _44:wrd := ALGcount_bat(_40:bat[:oid,:oid]) {G}
+    X_45 := aggr.count(X_41{horigin=3});# 15 _45:wrd := ALGcount_bat(_41:bat[:oid,:oid]) {G}
+    X_42 := mat.pack(X_43,X_44,X_45);   # 16 _42:bat[:oid,:wrd] := MATpackValues(_43:wrd, _44:wrd, _45:wrd) {G}
+    X_46 := algebra.selectNotNil(X_42); # 17 _46:bat[:oid,:wrd] := ALGselectNotNil(_42:bat[:oid,:wrd]) {G}
+    i := aggr.sum(X_46);                # 18 i:wrd := CMDBATsum(_46:bat[:oid,:wrd]) {G}
+    s := mat.pack(X_39{horigin=1},X_40{horigin=2},X_41{horigin=3});# 19 s:bat[:oid,:oid] := MATpack(_39:bat[:oid,:oid], _40:bat[:oid,:oid], _41:bat[:oid,:oid]) {G}
+    io.print(s);                        # 20 _18:void := IOprint_val(s:bat[:oid,:oid]) {G}
+    io.print(i);                        # 21 _19:void := IOprint_val(i:wrd) 
+    c0{horigin=1, torigin=1} := bat.new(:oid,:oid);# 22 c0:bat[:oid,:oid] := CMDBATnew(_5:oid, _5:oid) {G}
+    bat.append(c0{horigin=1, torigin=1},4@0);# 23 _21:bat[:oid,:oid] := BKCappend_val_wrap(c0:bat[:oid,:oid], _22:oid) {G}
+    c1{horigin=2, torigin=2} := bat.new(:oid,:oid);# 24 c1:bat[:oid,:oid] := CMDBATnew(_5:oid, _5:oid) {G}
+    bat.append(c1{horigin=2, torigin=2},5@0);# 25 _24:bat[:oid,:oid] := BKCappend_val_wrap(c1:bat[:oid,:oid], _25:oid) {G}
+    c := mat.pack(c0{horigin=1, torigin=1},c1{horigin=2, torigin=2});# 26 c:bat[:oid,:oid] := MATpack(c0:bat[:oid,:oid], c1:bat[:oid,:oid]) {G}
+    bat.append(c,6@0);                  # 27 _27:bat[:oid,:oid] := BKCappend_val_wrap(c:bat[:oid,:oid], _28:oid) {G}
+    b := mat.pack(m0{horigin=1, torigin=1},m1{horigin=1, torigin=1},m2{horigin=2, torigin=2});# 28 b:bat[:oid,:oid] := MATpack(m0:bat[:oid,:oid], m1:bat[:oid,:oid], m2:bat[:oid,:oid]) {G}
+    j := algebra.join(b,c);             # 29 j:bat[:oid,:oid] := ALGjoin(b:bat[:oid,:oid], c:bat[:oid,:oid]) {G}
+    io.print(j);                        # 30 _30:void := IOprint_val(j:bat[:oid,:oid]) {G}
+    algebra.select(m1{horigin=1, torigin=1},0@0,2@0);# 31 _47:bat[:oid,:oid] := ALGselect(m1:bat[:oid,:oid], _7:oid, _13:oid) {G}
+    algebra.select(m2{horigin=2, torigin=2},0@0,2@0);# 32 _48:bat[:oid,:oid] := ALGselect(m2:bat[:oid,:oid], _7:oid, _13:oid) {G}
+    X_50 := aggr.count(X_39{horigin=1});# 33 _50:wrd := ALGcount_bat(_39:bat[:oid,:oid]) {G}
+    X_51 := aggr.count(X_40{horigin=2});# 34 _51:wrd := ALGcount_bat(_40:bat[:oid,:oid]) {G}
+    X_52 := aggr.count(X_41{horigin=3});# 35 _52:wrd := ALGcount_bat(_41:bat[:oid,:oid]) {G}
+    X_49 := mat.pack(X_50,X_51,X_52);   # 36 _49:bat[:oid,:wrd] := MATpackValues(_50:wrd, _51:wrd, _52:wrd) {G}
+    X_53 := algebra.selectNotNil(X_49); # 37 _53:bat[:oid,:wrd] := ALGselectNotNil(_49:bat[:oid,:wrd]) {G}
+    i := aggr.sum(X_53);                # 38 i:wrd := CMDBATsum(_53:bat[:oid,:wrd]) {G}
+    io.print(s);                        # 39 _31:void := IOprint_val(s:bat[:oid,:oid]) {G}
+    io.print(b);                        # 40 _32:void := IOprint_val(b:bat[:oid,:oid]) {G}
+    io.print(c);                        # 41 _33:void := IOprint_val(c:bat[:oid,:oid]) {G}
+    d := mat.pack(m1{horigin=1, torigin=1},m2{horigin=2, torigin=2});# 42 d:bat[:oid,:oid] := MATpack(m1:bat[:oid,:oid], m2:bat[:oid,:oid]) {G}
+    io.print(d);                        # 43 _34:void := IOprint_val(d:bat[:oid,:oid]) {G}
+end main;                               # 44  
+#-----------------#
+# h	t	  # name
+# oid	int	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 1@0,	  1@0	  ]
+[ 2@0,	  2@0	  ]
+[ 3 ]
+#-----------------#
+# h	t	  # name
+# oid	int	  # type
+#-----------------#
+[ 0@0,	  4@0	  ]
+[ 1@0,	  5@0	  ]
+[ 2@0,	  6@0	  ]
+#-----------------#
+# h	t	  # name
+# oid	int	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 1@0,	  1@0	  ]
+[ 2@0,	  2@0	  ]
+#-----------------#
+# h	t	  # name
+# oid	int	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 1@0,	  1@0	  ]
+[ 2@0,	  2@0	  ]
+#-----------------#
+# h	t	  # name
+# int	int	  # type
+#-----------------#
+[ 0@0,	  4@0	  ]
+[ 1@0,	  5@0	  ]
+[ 2@0,	  6@0	  ]
+#-----------------#
+# h	t	  # name
+# oid	int	  # type
+#-----------------#
+[ 0@0,	  1@0	  ]
+[ 1@0,	  2@0	  ]
+
+# 11:53:46 >  
+# 11:53:46 >  Done.
+# 11:53:46 >  
+

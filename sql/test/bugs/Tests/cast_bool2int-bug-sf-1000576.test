@@ -1,5 +1,0 @@
-query I rowsort
-select cast(true as smallint)
-----
-1
-

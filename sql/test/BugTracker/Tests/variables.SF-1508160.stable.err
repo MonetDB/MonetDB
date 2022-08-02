@@ -1,0 +1,25 @@
+stderr of test 'variables.SF-1508160` in directory 'sql/test/BugTracker` itself:
+
+
+# 17:12:03 >  
+# 17:12:03 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/rc/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/log" --set mapi_port=38749 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 17:12:03 >  
+
+
+# 17:12:03 >  
+# 17:12:03 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=38749  < variables.SF-1508160.sql
+# 17:12:03 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+QUERY = select explain;
+ERROR = !SELECT: identifier 'explain' unknown
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = select @explain;
+ERROR = !SELECT: '@explain' unknown
+CODE  = 42000
+
+# 17:12:03 >  
+# 17:12:03 >  Done.
+# 17:12:03 >  
+

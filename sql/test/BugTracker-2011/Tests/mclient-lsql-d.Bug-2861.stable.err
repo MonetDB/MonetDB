@@ -1,0 +1,42 @@
+stderr of test 'mclient-lsql-d.Bug-2861` in directory 'sql/test/BugTracker-2011` itself:
+
+
+# 10:06:13 >  
+# 10:06:13 >   mserver5  --debug=10 --set gdk_nr_threads=0  --set "gdk_dbfarm=/net/volund.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-Aug2011-volund.ins.cwi.nl/sql/dbfarm" --set mapi_open=true --set mapi_port=31159 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_test_BugTracker-2011" --set mal_listing=0 ; echo ; echo Over..
+# 10:06:13 >  
+
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /ufs/fabian/scratch/monetdb/Aug2011/program-x86_64/var/lib/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_alloc_map = no
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	gdk_dbfarm = /net/volund.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-Aug2011-volund.ins.cwi.nl/sql/dbfarm
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31159
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_test_BugTracker-2011
+# cmdline opt 	mal_listing = 0
+
+# 10:06:13 >  
+# 10:06:13 >  ./mclient-lsql-d.Bug-2861.SQL.sh mclient-lsql-d.Bug-2861 
+# 10:06:13 >  
+
+
+# 10:06:13 >  
+# 10:06:13 >  Mtimeout -timeout 60 mclient -lsql -ftest -i -e --host=volund --port=31159  -e -i < /net/volund.ins.cwi.nl/export/scratch1/fabian/monetdb/Aug2011/hgrepo/sql/test/BugTracker-2011/Tests/../mclient-lsql-d.Bug-2861.sql
+# 10:06:13 >  
+
+
+# 10:06:13 >  
+# 10:06:13 >  Done.
+# 10:06:13 >  
+

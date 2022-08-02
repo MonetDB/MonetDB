@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -17,8 +17,13 @@
  */
 #include "monetdb_config.h"
 #include "mal.h"
+#include <math.h>
 #include "mal_exception.h"
-#include "mal.h"
+#include "microbenchmark.h"
+
+#ifdef STATIC_CODE_ANALYSIS
+#define rand()		0
+#endif
 
 static gdk_return
 BATrandom(BAT **bn, oid *base, lng *size, int *domain, int seed)
@@ -55,17 +60,17 @@ BATrandom(BAT **bn, oid *base, lng *size, int *domain, int seed)
 	if (!is_int_nil(seed))
 		srand(seed);
 	if (is_int_nil(*domain)) {
-		for (i = 0; i < n; i++) {
+	        for (i = 0; i < n; i++) {
 			val[i] = rand();
 		}
 #if RAND_MAX < 46340	    /* 46340*46340 = 2147395600 < INT_MAX */
 	} else if (*domain > RAND_MAX + 1) {
-		for (i = 0; i < n; i++) {
+	        for (i = 0; i < n; i++) {
 			val[i] = (rand() * (RAND_MAX + 1) + rand()) % *domain;
 		}
 #endif
 	} else {
-		for (i = 0; i < n; i++) {
+	        for (i = 0; i < n; i++) {
 			val[i] = rand() % *domain;
 		}
 	}
@@ -112,7 +117,7 @@ BATuniform(BAT **bn, oid *base, lng *size, int *domain)
 	val = (int *) Tloc(b, 0);
 
 	/* create BUNs with uniform distribution */
-	for (v = 0, i = 0; i < n; i++) {
+        for (v = 0, i = 0; i < n; i++) {
 		val[i] = v;
 		if (++v >= *domain)
 			v = 0;
@@ -244,7 +249,7 @@ BATnormal(BAT **bn, oid *base, lng *size, int *domain, int *stddev, int *mean)
 	b = COLnew(*base, TYPE_int, n, TRANSIENT);
 	if (b == NULL) {
 		return GDK_FAIL;
-	}
+        }
 	if (n == 0) {
 		b->tsorted = true;
 		b->trevsorted = false;
@@ -257,8 +262,8 @@ BATnormal(BAT **bn, oid *base, lng *size, int *domain, int *stddev, int *mean)
 
 	abs = (unsigned int *) GDKmalloc(d * sizeof(unsigned int));
 	if (abs == NULL) {
-		BBPreclaim(b);
-		return GDK_FAIL;
+	        BBPreclaim(b);
+	        return GDK_FAIL;
 	}
 	rel = (flt *) abs;
 
@@ -287,16 +292,16 @@ BATnormal(BAT **bn, oid *base, lng *size, int *domain, int *stddev, int *mean)
 
 	/* create BUNs with normal distribution */
 	for (j = 0, i = 0; i < n && j < d; i++) {
-		while (j < d && abs[j] == 0)
-			j++;
-		if (j < d) {
-			val[i] = j;
-			abs[j]--;
-		}
+	        while (j < d && abs[j] == 0)
+	                j++;
+                if (j < d) {
+        	        val[i] = j;
+	                abs[j]--;
+                }
 	}
 	assert(i == n);
-	while (j < d && abs[j] == 0)
-		j++;
+        while (j < d && abs[j] == 0)
+                j++;
 	assert(j == d);
 	GDKfree(abs);
 
@@ -314,48 +319,46 @@ BATnormal(BAT **bn, oid *base, lng *size, int *domain, int *stddev, int *mean)
  * The M5 wrapper code
  */
 
-static str
+str
+MBMrandom(bat *ret, oid *base, lng *size, int *domain){
+	return MBMrandom_seed ( ret, base, size, domain, &int_nil );
+}
+
+str
 MBMrandom_seed(bat *ret, oid *base, lng *size, int *domain, const int *seed){
 	BAT *bn = NULL;
 
 	BATrandom(&bn, base, size, domain, *seed);
 	if( bn ){
-		*ret = bn->batCacheid;
-		BBPkeepref(bn);
+		BBPkeepref(*ret= bn->batCacheid);
 	} else throw(MAL, "microbenchmark.random", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
-static str
-MBMrandom(bat *ret, oid *base, lng *size, int *domain){
-	return MBMrandom_seed ( ret, base, size, domain, &int_nil );
-}
 
-static str
+str
 MBMuniform(bat *ret, oid *base, lng *size, int *domain){
 	BAT *bn = NULL;
 
 	BATuniform(&bn, base, size, domain);
 	if( bn ){
-		*ret = bn->batCacheid;
-		BBPkeepref(bn);
+		BBPkeepref(*ret= bn->batCacheid);
 	} else throw(MAL, "microbenchmark.uniform", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MBMnormal(bat *ret, oid *base, lng *size, int *domain, int *stddev, int *mean){
 	BAT *bn = NULL;
 	BATnormal(&bn, base, size, domain, stddev, mean);
 	if( bn ){
-		*ret = bn->batCacheid;
-		BBPkeepref(bn);
+		BBPkeepref(*ret= bn->batCacheid);
 	} else throw(MAL, "microbenchmark.normal", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
 
-static str
+str
 MBMmix(bat *bn, bat *batid)
 {
 	BUN n, r, i;
@@ -375,38 +378,19 @@ MBMmix(bat *bn, bat *batid)
 		*(int *) Tloc(b, idx) = val;
 	}
 
+	BBPunfix(b->batCacheid);
 	*bn = b->batCacheid;
-	BBPkeepref(b);
 
 	return MAL_SUCCEED;
 }
 
-static str
+str
 MBMskewed(bat *ret, oid *base, lng *size, int *domain, int *skew){
 	BAT *bn = NULL;
 
 	BATskewed(&bn, base, size, domain, skew);
 	if( bn ){
-		*ret = bn->batCacheid;
-		BBPkeepref(bn);
+		BBPkeepref(*ret= bn->batCacheid);
 	} else throw(MAL, "microbenchmark.skewed", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
-
-#include "mel.h"
-mel_func microbenchmark_init_funcs[] = {
- command("microbenchmark", "random", MBMrandom, false, "Create a BAT with random integer distribution; domain == nil:int ? [0:RAND_MAX] : [0,domain)", args(1,4, batarg("",int),arg("base",oid),arg("size",lng),arg("domain",int))),
- command("microbenchmark", "random", MBMrandom_seed, false, "Create a BAT with random integer distribution,\nusing given seed (seed == nil:int -> no seed used);\ndomain == nil:int ? [0:RAND_MAX] : [0,domain)", args(1,5, batarg("",int),arg("base",oid),arg("size",lng),arg("domain",int),arg("seed",int))),
- command("microbenchmark", "uniform", MBMuniform, false, "Create a BAT with uniform integer distribution", args(1,4, batarg("",int),arg("base",oid),arg("size",lng),arg("domain",int))),
- command("microbenchmark", "normal", MBMnormal, false, "Create a BAT with a normal integer distribution", args(1,6, batarg("",int),arg("base",oid),arg("size",lng),arg("domain",int),arg("stddev",int),arg("mean",int))),
- command("microbenchmark", "mix", MBMmix, false, "Mix the BUNs of this BAT", args(1,2, batarg("",int),batarg("b1",int))),
- command("microbenchmark", "skewed", MBMskewed, false, "Create a BAT with skewed integer distribution", args(1,5, batarg("",int),arg("base",oid),arg("size",lng),arg("domain",int),arg("skew",int))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_microbenchmark_mal)
-{ mal_module("microbenchmark", NULL, microbenchmark_init_funcs); }

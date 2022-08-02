@@ -1,9 +1,0 @@
-statement error
-drop table tables
-
-statement error
-drop view tables
-
-statement error
-drop table _tables
-

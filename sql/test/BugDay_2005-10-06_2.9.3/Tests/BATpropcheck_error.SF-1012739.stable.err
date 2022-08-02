@@ -1,0 +1,17 @@
+stderr of test 'BATpropcheck_error.SF-1012739` in directory 'sql/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 20:51:40 >  
+# 20:51:40 >  Mtimeout -timeout 180 Mserver "--config=/ufs/zhang/scratch/monet-stable/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/zhang/scratch/monet-stable/program/MonetDB:/ufs/zhang/scratch/monet-stable/program/lib/MonetDB:/ufs/zhang/scratch/monet-stable/sql/build/lib/MonetDB" --set "gdk_dbfarm=/ufs/zhang/scratch/monet-stable/program/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/zhang/scratch/monet-stable/program/var/MonetDB/log" --set mapi_port=35728 --set sql_port=49289 --set xquery_port=52232 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 20:51:40 >  
+
+
+# 20:51:40 >  
+# 20:51:40 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=49289  < BATpropcheck_error.SF-1012739.sql
+# 20:51:40 >  
+
+
+# 20:51:40 >  
+# 20:51:40 >  Done.
+# 20:51:40 >  
+

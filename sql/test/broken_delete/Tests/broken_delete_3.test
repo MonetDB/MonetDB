@@ -1,6 +1,0 @@
-statement ok
-insert into broken_delete values(1)
-
-statement ok
-insert into broken_delete values(5)
-

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _GDK_ATOMS_H_
@@ -45,7 +45,7 @@ typedef struct {
 	/* generic (fixed + varsized atom) ADT functions */
 	ssize_t (*atomFromStr) (const char *src, size_t *len, void **dst, bool external);
 	ssize_t (*atomToStr) (char **dst, size_t *len, const void *src, bool external);
-	void *(*atomRead) (void *dst, size_t *dstlen, stream *s, size_t cnt);
+	void *(*atomRead) (void *dst, stream *s, size_t cnt);
 	gdk_return (*atomWrite) (const void *src, stream *s, size_t cnt);
 	int (*atomCmp) (const void *v1, const void *v2);
 	BUN (*atomHash) (const void *v);
@@ -54,21 +54,19 @@ typedef struct {
 	gdk_return (*atomUnfix) (const void *atom);
 
 	/* varsized atom-only ADT functions */
-	var_t (*atomPut) (BAT *, var_t *off, const void *src);
+	var_t (*atomPut) (Heap *, var_t *off, const void *src);
 	void (*atomDel) (Heap *, var_t *atom);
 	size_t (*atomLen) (const void *atom);
-	gdk_return (*atomHeap) (Heap *, size_t);
+	void (*atomHeap) (Heap *, size_t);
 } atomDesc;
 
-#define MAXATOMS	128
-
-gdk_export atomDesc BATatoms[MAXATOMS];
+gdk_export atomDesc BATatoms[];
 gdk_export int GDKatomcnt;
 
 gdk_export int ATOMallocate(const char *nme);
 gdk_export int ATOMindex(const char *nme);
 
-gdk_export const char *ATOMname(int id);
+gdk_export str ATOMname(int id);
 gdk_export size_t ATOMlen(int id, const void *v);
 gdk_export void *ATOMnil(int id)
 	__attribute__((__malloc__));
@@ -76,6 +74,8 @@ gdk_export int ATOMprint(int id, const void *val, stream *fd);
 gdk_export char *ATOMformat(int id, const void *val);
 
 gdk_export void *ATOMdup(int id, const void *val);
+
+#define MAXATOMS	128
 
 /*
  * @- maximum atomic string lengths
@@ -194,7 +194,6 @@ gdk_export const hge hge_nil;
 gdk_export const oid oid_nil;
 gdk_export const char str_nil[2];
 gdk_export const ptr ptr_nil;
-gdk_export const uuid uuid_nil;
 
 /* derived NIL values - OIDDEPEND */
 #define bit_nil	((bit) bte_nil)
@@ -202,15 +201,15 @@ gdk_export const uuid uuid_nil;
 
 #define void_nil	oid_nil
 
-#define is_bit_nil(v)	((v) == GDK_bte_min-1)
-#define is_bte_nil(v)	((v) == GDK_bte_min-1)
-#define is_sht_nil(v)	((v) == GDK_sht_min-1)
-#define is_int_nil(v)	((v) == GDK_int_min-1)
-#define is_lng_nil(v)	((v) == GDK_lng_min-1)
+#define is_bit_nil(v)	((v) == bit_nil)
+#define is_bte_nil(v)	((v) == bte_nil)
+#define is_sht_nil(v)	((v) == sht_nil)
+#define is_int_nil(v)	((v) == int_nil)
+#define is_lng_nil(v)	((v) == lng_nil)
 #ifdef HAVE_HGE
-#define is_hge_nil(v)	((v) == GDK_hge_min-1)
+#define is_hge_nil(v)	((v) == hge_nil)
 #endif
-#define is_oid_nil(v)	((v) == ((oid) 1 << ((8 * SIZEOF_OID) - 1)))
+#define is_oid_nil(v)	((v) == oid_nil)
 #define is_flt_nil(v)	isnan(v)
 #define is_dbl_nil(v)	isnan(v)
 #define is_bat_nil(v)	(((v) & 0x7FFFFFFF) == 0) /* v == bat_nil || v == 0 */
@@ -223,14 +222,6 @@ gdk_export const uuid uuid_nil;
 #define isinf(x)	(_fpclass(x) & (_FPCLASS_NINF | _FPCLASS_PINF))
 #define isfinite(x)	_finite(x)
 #endif
-
-#ifdef HAVE_HGE
-#define is_uuid_nil(x)	((x).h == 0)
-#else
-#define is_uuid_nil(x)	(memcmp((x).u, uuid_nil.u, UUID_SIZE) == 0)
-#endif
-
-#define is_blob_nil(x)	((x)->nitems == ~(size_t)0)
 
 /*
  * @- Derived types
@@ -297,10 +288,10 @@ gdk_export const uuid uuid_nil;
  */
 
 static inline gdk_return __attribute__((__warn_unused_result__))
-ATOMputVAR(BAT *b, var_t *dst, const void *src)
+ATOMputVAR(int type, Heap *heap, var_t *dst, const void *src)
 {
-	assert(BATatoms[b->ttype].atomPut != NULL);
-	if ((*BATatoms[b->ttype].atomPut)(b, dst, src) == (var_t) -1)
+	assert(BATatoms[type].atomPut != NULL);
+	if ((*BATatoms[type].atomPut)(heap, dst, src) == 0)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -330,13 +321,11 @@ ATOMputFIX(int type, void *dst, const void *src)
 	case 8:
 		* (lng *) dst = * (lng *) src;
 		break;
-	case 16:
 #ifdef HAVE_HGE
+	case 16:
 		* (hge *) dst = * (hge *) src;
-#else
-		* (uuid *) dst = * (uuid *) src;
-#endif
 		break;
+#endif
 	default:
 		memcpy(dst, src, ATOMsize(type));
 		break;
@@ -345,17 +334,16 @@ ATOMputFIX(int type, void *dst, const void *src)
 }
 
 static inline gdk_return __attribute__((__warn_unused_result__))
-ATOMreplaceVAR(BAT *b, var_t *dst, const void *src)
+ATOMreplaceVAR(int type, Heap *heap, var_t *dst, const void *src)
 {
 	var_t loc = *dst;
-	int type = b->ttype;
 
 	assert(BATatoms[type].atomPut != NULL);
-	if ((*BATatoms[type].atomPut)(b, &loc, src) == (var_t) -1)
+	if ((*BATatoms[type].atomPut)(heap, &loc, src) == 0)
 		return GDK_FAIL;
 	if (ATOMunfix(type, dst) != GDK_SUCCEED)
 		return GDK_FAIL;
-	ATOMdel(type, b->tvheap, dst);
+	ATOMdel(type, heap, dst);
 	*dst = loc;
 	return ATOMfix(type, src);
 }
@@ -425,24 +413,24 @@ strCmp(const char *l, const char *r)
 		: strNil(l) ? -1 : strcmp(l, r);
 }
 
-static inline size_t
-VarHeapVal(const void *b, BUN p, int w)
+static inline var_t
+VarHeapValRaw(const void *b, BUN p, int w)
 {
 	switch (w) {
 	case 1:
-		return (size_t) ((const uint8_t *) b)[p] + GDK_VAROFFSET;
+		return (var_t) ((const uint8_t *) b)[p] + GDK_VAROFFSET;
 	case 2:
-		return (size_t) ((const uint16_t *) b)[p] + GDK_VAROFFSET;
-	case 4:
-		return (size_t) ((const uint32_t *) b)[p];
+		return (var_t) ((const uint16_t *) b)[p] + GDK_VAROFFSET;
 #if SIZEOF_VAR_T == 8
-	case 8:
-		return (size_t) ((const uint64_t *) b)[p];
+	case 4:
+		return (var_t) ((const uint32_t *) b)[p];
 #endif
 	default:
-		MT_UNREACHABLE();
+		return ((const var_t *) b)[p];
 	}
 }
+
+#define VarHeapVal(b,p,w)	((size_t) VarHeapValRaw(b,p,w))
 
 static inline BUN __attribute__((__pure__))
 strHash(const char *key)

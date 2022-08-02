@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -26,106 +26,79 @@
 #include "multiplex-funnel.h" /* multiplexInit */
 #include "forkmserver.h"
 
-#ifndef S_ISDIR
-#define S_ISDIR(mode)	(((mode) & _S_IFMT) == _S_IFDIR)
-#endif
-
 /**
  * The terminateProcess function tries to let the given mserver process
  * shut down gracefully within a given time-out.  If that fails, it
  * sends the deadly SIGKILL signal to the mserver process and returns.
  */
 bool
-terminateProcess(char *dbname, pid_t pid, mtype type)
+terminateProcess(dpair dp, mtype type)
 {
 	sabdb *stats;
 	char *er;
 	int i;
 	confkeyval *kv;
 
-	er = msab_getStatus(&stats, dbname);
+	er = msab_getStatus(&stats, dp->dbname);
 	if (er != NULL) {
-		Mlevelfprintf(ERROR, stderr, "cannot terminate process %lld: %s\n",
-				 (long long int)pid, er);
+		Mfprintf(stderr, "cannot terminate process %lld: %s\n",
+				 (long long int)dp->pid, er);
 		free(er);
 		return false;
 	}
 
 	if (stats == NULL) {
-		Mlevelfprintf(ERROR, stderr, "strange, process %lld serves database '%s' "
-				 "which does not exist\n", (long long int)pid, dbname);
+		Mfprintf(stderr, "strange, process %lld serves database '%s' "
+				 "which does not exist\n", (long long int)dp->pid, dp->dbname);
 		return false;
 	}
-
-	if (pid == -1) {
-		/* it's already dead */
-		msab_freeStatus(&stats);
-		return true;
-	}
-
-	if (stats->pid != pid) {
-		Mlevelfprintf(ERROR, stderr,
-			"strange, trying to kill process %lld to stop database '%s' "
-			"which seems to be served by process %lld instead\n",
-			(long long int)stats->pid,
-			dbname,
-			(long long int)pid
-		);
-		if (stats->pid >= 1 && pid < 1) {
-			/* assume the server was started by a previous merovingian */
-			pid = stats->pid;
-		} else {
-			msab_freeStatus(&stats);
-			return false;
-		}
-	}
-	assert(stats->pid == pid);
 
 	switch (stats->state) {
 	case SABdbRunning:
 		/* ok, what we expect */
 		break;
 	case SABdbCrashed:
-		Mlevelfprintf(ERROR, stderr, "cannot shut down database '%s', mserver "
+		Mfprintf(stderr, "cannot shut down database '%s', mserver "
 				 "(pid %lld) has crashed\n",
-				 dbname, (long long int)pid);
+				 dp->dbname, (long long int)dp->pid);
 		msab_freeStatus(&stats);
 		return false;
 	case SABdbInactive:
-		Mlevelfprintf(ERROR, stderr, "database '%s' appears to have shut down already\n",
-				 dbname);
+		Mfprintf(stdout, "database '%s' appears to have shut down already\n",
+				 dp->dbname);
+		fflush(stdout);
 		msab_freeStatus(&stats);
 		return false;
 	case SABdbStarting:
-		Mlevelfprintf(WARNING, stderr, "database '%s' appears to be starting up\n",
-				 dbname);
+		Mfprintf(stderr, "database '%s' appears to be starting up\n",
+				 dp->dbname);
 		/* starting up, so we'll go to the shut down phase */
 		break;
 	default:
-		Mlevelfprintf(ERROR, stderr, "unknown state: %d\n", (int)stats->state);
+		Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
 		msab_freeStatus(&stats);
 		return false;
 	}
 
 	if (type == MEROFUN) {
-		multiplexDestroy(dbname);
+		multiplexDestroy(dp->dbname);
 		msab_freeStatus(&stats);
 		return true;
 	} else if (type != MERODB) {
 		/* barf */
-		Mlevelfprintf(ERROR, stderr, "cannot stop merovingian process role: %s\n",
-				 dbname);
+		Mfprintf(stderr, "cannot stop merovingian process role: %s\n",
+				 dp->dbname);
 		msab_freeStatus(&stats);
 		return false;
 	}
 
 	/* ok, once we get here, we'll be shutting down the server */
-	Mlevelfprintf(WARNING, stdout, "sending process %lld (database '%s') the "
-			 "TERM signal\n", (long long int)pid, dbname);
-	if (kill(pid, SIGTERM) < 0) {
+	Mfprintf(stdout, "sending process %lld (database '%s') the "
+			 "TERM signal\n", (long long int)dp->pid, dp->dbname);
+	if (kill(dp->pid, SIGTERM) < 0) {
 		/* barf */
-		Mlevelfprintf(ERROR, stderr, "cannot send TERM signal to process (database '%s'): %s\n",
-				 dbname, strerror(errno));
+		Mfprintf(stderr, "cannot send TERM signal to process (database '%s')\n",
+				 dp->dbname);
 		msab_freeStatus(&stats);
 		return false;
 	}
@@ -135,14 +108,14 @@ terminateProcess(char *dbname, pid_t pid, mtype type)
 		if (stats != NULL)
 			msab_freeStatus(&stats);
 		sleep_ms(500);
-		er = msab_getStatus(&stats, dbname);
+		er = msab_getStatus(&stats, dp->dbname);
 		if (er != NULL) {
-			Mlevelfprintf(ERROR, stderr, "unexpected problem: %s\n", er);
+			Mfprintf(stderr, "unexpected problem: %s\n", er);
 			free(er);
 			/* don't die, just continue, so we KILL in the end */
 		} else if (stats == NULL) {
-			Mlevelfprintf(ERROR, stderr, "hmmmm, database '%s' suddenly doesn't exist "
-					 "any more\n", dbname);
+			Mfprintf(stderr, "hmmmm, database '%s' suddenly doesn't exist "
+					 "any more\n", dp->dbname);
 		} else {
 			switch (stats->state) {
 			case SABdbRunning:
@@ -150,24 +123,25 @@ terminateProcess(char *dbname, pid_t pid, mtype type)
 				/* ok, try again */
 				break;
 			case SABdbCrashed:
-				Mlevelfprintf(ERROR, stderr, "database '%s' crashed after SIGTERM\n",
-						  dbname);
+				Mfprintf (stderr, "database '%s' crashed after SIGTERM\n",
+						  dp->dbname);
 				msab_freeStatus(&stats);
 				return true;
 			case SABdbInactive:
-				Mlevelfprintf(INFORMATION, stdout, "database '%s' has shut down\n", dbname);
+				Mfprintf(stdout, "database '%s' has shut down\n", dp->dbname);
+				fflush(stdout);
 				msab_freeStatus(&stats);
 				return true;
 			default:
-				Mlevelfprintf(ERROR, stderr, "unknown state: %d\n", (int)stats->state);
+				Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
 				break;
 			}
 		}
 	}
-	Mlevelfprintf(WARNING, stderr, "timeout of %s seconds expired, sending process %lld"
+	Mfprintf(stderr, "timeout of %s seconds expired, sending process %lld"
 			 " (database '%s') the KILL signal\n",
-			 kv->val, (long long int)pid, dbname);
-	kill(pid, SIGKILL);
+			 kv->val, (long long int)dp->pid, dp->dbname);
+	kill(dp->pid, SIGKILL);
 	msab_freeStatus(&stats);
 	return true;
 }
@@ -181,7 +155,7 @@ terminateProcess(char *dbname, pid_t pid, mtype type)
 #define MAX_NR_ARGS 511
 
 err
-forkMserver(const char *database, sabdb** stats, bool force)
+forkMserver(char *database, sabdb** stats, bool force)
 {
 	pid_t pid;
 	char *er;
@@ -202,6 +176,7 @@ forkMserver(const char *database, sabdb** stats, bool force)
 	char dbpath[1024];
 	char dbextra_path[1024];
 	char dbtrace_path[1024];
+	char port[32];
 	char listenaddr[512];
 	char muri[512]; /* possibly undersized */
 	char usock[512];
@@ -211,6 +186,12 @@ forkMserver(const char *database, sabdb** stats, bool force)
 	char pipeline[512];
 	char memmaxsize[64];
 	char vmmaxsize[64];
+	char *readonly = NULL;
+	char *embeddedr = NULL;
+	char *embeddedpy = NULL;
+	char *embeddedc = NULL;
+	char *raw_strings = NULL;
+	char *ipv6 = NULL;
 	char *dbextra = NULL;
 	char *dbtrace = NULL;
 	char *mserver5_extra = NULL;
@@ -220,6 +201,7 @@ forkMserver(const char *database, sabdb** stats, bool force)
 	int c = 0;
 	int freec = 0;				/* from where to free entries in argv */
 	unsigned int mport;
+	char *set = "--set";
 
 	/* Find or allocate a dpair entry for this database */
 	pthread_mutex_lock(&_mero_topdp_lock);
@@ -280,14 +262,14 @@ forkMserver(const char *database, sabdb** stats, bool force)
 
 	if ((*stats)->locked) {
 		if (!force) {
-			Mlevelfprintf(WARNING, stdout, "%s '%s' is under maintenance\n",
+			Mfprintf(stdout, "%s '%s' is under maintenance\n",
 					 kv->val, database);
 			freeConfFile(ckv);
 			free(ckv);
 			pthread_mutex_unlock(&dp->fork_lock);
 			return(NO_ERR);
 		} else {
-			Mlevelfprintf(WARNING, stdout, "startup of %s under maintenance "
+			Mfprintf(stdout, "startup of %s under maintenance "
 					 "'%s' forced\n", kv->val, database);
 		}
 	}
@@ -316,7 +298,7 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		secondsToString(upmin, info.minuptime, 1);
 		secondsToString(upavg, info.avguptime, 1);
 		secondsToString(upmax, info.maxuptime, 1);
-		Mlevelfprintf(ERROR, stdout, "%s '%s' has crashed after start on %s, "
+		Mfprintf(stdout, "%s '%s' has crashed after start on %s, "
 				 "attempting restart, "
 				 "up min/avg/max: %s/%s/%s, "
 				 "crash average: %d.00 %.2f %.2f (%d-%d=%d)\n",
@@ -329,7 +311,7 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		secondsToString(upmin, info.minuptime, 1);
 		secondsToString(upavg, info.avguptime, 1);
 		secondsToString(upmax, info.maxuptime, 1);
-		Mlevelfprintf(INFORMATION, stdout, "starting %s '%s', "
+		Mfprintf(stdout, "starting %s '%s', "
 				 "up min/avg/max: %s/%s/%s, "
 				 "crash average: %d.00 %.2f %.2f (%d-%d=%d)\n",
 				 kv->val, database,
@@ -339,22 +321,14 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		break;
 	default:
 		/* this also includes SABdbStarting, which we shouldn't ever
-		 * see due to the global starting lock
-		 *
-		 * if SABdbStarting: a process (presumably mserver5) has locked
-		 * the database (i.e. the .gdk_lock file), but the server is not
-		 * ready to accept connections (i.e. there is no .started
-		 * file) */
+		 * see due to the global starting lock */
 		state = (*stats)->state;
 		msab_freeStatus(stats);
 		freeConfFile(ckv);
 		free(ckv);
 		pthread_mutex_unlock(&dp->fork_lock);
-		if (state == SABdbStarting)
-			return(newErr("unexpected state: database is locked but not yet started"));
-		else
-			return(newErr("unknown or impossible state: %d",
-						  (int)state));
+		return(newErr("unknown or impossible state: %d",
+					  (int)state));
 	}
 
 	/* create the pipes (filedescriptors) now, such that we and the
@@ -384,8 +358,8 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		/* fill in the rest of the dpair entry */
 		pthread_mutex_lock(&_mero_topdp_lock);
 
-		dp->input[0].fd = pfdo[0];
-		dp->input[1].fd = pfde[0];
+		dp->out = pfdo[0];
+		dp->err = pfde[0];
 		dp->type = MEROFUN;
 		dp->pid = getpid();
 		dp->flag = 0;
@@ -393,18 +367,15 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		pthread_mutex_unlock(&_mero_topdp_lock);
 
 		kv = findConfKey(ckv, "mfunnel");
-		if (!(f1 = fdopen(pfdo[1], "a"))) {
+		if(!(f1 = fdopen(pfdo[1], "a"))) {
 			msab_freeStatus(stats);
 			freeConfFile(ckv);
 			free(ckv);
 			pthread_mutex_unlock(&dp->fork_lock);
-			close(pfdo[1]);
-			close(pfde[1]);
 			return newErr("Failed to open file descriptor\n");
 		}
-		if (!(f2 = fdopen(pfde[1], "a"))) {
+		if(!(f2 = fdopen(pfde[1], "a"))) {
 			fclose(f1);
-			close(pfde[1]);
 			msab_freeStatus(stats);
 			freeConfFile(ckv);
 			free(ckv);
@@ -412,7 +383,7 @@ forkMserver(const char *database, sabdb** stats, bool force)
 			return newErr("Failed to open file descriptor\n");
 		}
 		if ((er = multiplexInit(database, kv->val, f1, f2)) != NO_ERR) {
-			Mlevelfprintf(ERROR, stderr, "failed to create multiplex-funnel: %s\n",
+			Mfprintf(stderr, "failed to create multiplex-funnel: %s\n",
 					 getErrMsg(er));
 			msab_freeStatus(stats);
 			freeConfFile(ckv);
@@ -445,10 +416,6 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		freeConfFile(ckv);
 		free(ckv);
 		pthread_mutex_unlock(&dp->fork_lock);
-		close(pfdo[0]);
-		close(pfdo[1]);
-		close(pfde[0]);
-		close(pfde[1]);
 		return(newErr("cannot start database '%s': no .vaultkey found "
 					  "(did you create the database with `monetdb create %s`?)",
 					  database, database));
@@ -460,15 +427,76 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		freeConfFile(ckv);
 		free(ckv);
 		pthread_mutex_unlock(&dp->fork_lock);
-		close(pfdo[0]);
-		close(pfdo[1]);
-		close(pfde[0]);
-		close(pfde[1]);
 		return(er);
 	}
 
 	mydoproxy = strcmp(getConfVal(_mero_props, "forward"), "proxy") == 0;
 
+	kv = findConfKey(ckv, "nthreads");
+	if (kv->val == NULL)
+		kv = findConfKey(_mero_db_props, "nthreads");
+	if (kv->val != NULL) {
+		snprintf(nthreads, sizeof(nthreads), "gdk_nr_threads=%s", kv->val);
+	} else {
+		nthreads[0] = '\0';
+	}
+
+	kv = findConfKey(ckv, "nclients");
+	if (kv->val == NULL)
+		kv = findConfKey(_mero_db_props, "nclients");
+	if (kv->val != NULL) {
+		snprintf(nclients, sizeof(nclients), "max_clients=%s", kv->val);
+	} else {
+		nclients[0] = '\0';
+	}
+
+	kv = findConfKey(ckv, "optpipe");
+	if (kv->val == NULL)
+		kv = findConfKey(_mero_db_props, "optpipe");
+	if (kv->val != NULL) {
+		snprintf(pipeline, sizeof(pipeline), "sql_optimizer=%s", kv->val);
+	} else {
+		pipeline[0] = '\0';
+	}
+
+	kv = findConfKey(ckv, "memmaxsize");
+	if (kv->val != NULL) {
+		snprintf(memmaxsize, sizeof(memmaxsize), "gdk_mem_maxsize=%s", kv->val);
+	} else {
+		memmaxsize[0] = '\0';
+	}
+
+	kv = findConfKey(ckv, "vmmaxsize");
+	if (kv->val != NULL) {
+		snprintf(vmmaxsize, sizeof(vmmaxsize), "gdk_vm_maxsize=%s", kv->val);
+	} else {
+		vmmaxsize[0] = '\0';
+	}
+
+	kv = findConfKey(ckv, "readonly");
+	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
+		readonly = "--readonly";
+
+	kv = findConfKey(ckv, "embedr");
+	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
+		embeddedr = "embedded_r=true";
+
+	kv = findConfKey(ckv, "embedpy3");
+	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
+		if (embeddedpy) {
+			// only one python version can be active at a time
+			msab_freeStatus(stats);
+			freeConfFile(ckv);
+			free(ckv);
+			pthread_mutex_unlock(&dp->fork_lock);
+			free(sabdbfarm);
+			return newErr("attempting to start mserver with both embedded python2 and embedded python3; only one python version can be active at a time\n");
+		}
+		embeddedpy = "embedded_py=3";
+	}
+	kv = findConfKey(ckv, "embedc");
+	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
+		embeddedc = "embedded_c=true";
 	kv = findConfKey(ckv, "dbextra");
 	if (kv != NULL && kv->val != NULL) {
 		dbextra = kv->val;
@@ -479,26 +507,40 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		dbtrace = kv->val;
 
 	kv = findConfKey(ckv, "listenaddr");
-	if (!mydoproxy && kv->val != NULL) {
-		snprintf(listenaddr, sizeof(listenaddr), "--set=mapi_listenaddr=%s", kv->val);
+	if (kv->val != NULL) {
+		if (mydoproxy) {
+			// listenaddr is only available on forwarding method
+			msab_freeStatus(stats);
+			freeConfFile(ckv);
+			free(ckv);
+			pthread_mutex_unlock(&dp->fork_lock);
+			free(sabdbfarm);
+			return newErr("attempting to start mserver with listening address while being proxied by monetdbd; this option is only possible on forward method\n");
+		}
+		snprintf(listenaddr, sizeof(listenaddr), "mapi_listenaddr=%s", kv->val);
 	} else {
 		listenaddr[0] = '\0';
 	}
 
+	kv = findConfKey(ckv, "raw_strings");
+	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
+		raw_strings="raw_strings=true";
+	}
 	mport = (unsigned int)getConfNum(_mero_props, "port");
+	ipv6 = getConfNum(_mero_props, "ipv6") == 1 ? "mapi_ipv6=true" : "mapi_ipv6=false";
 
 	/* ok, now exec that mserver we want */
 	snprintf(dbpath, sizeof(dbpath),
 			 "--dbpath=%s/%s", sabdbfarm, database);
 	free(sabdbfarm);
 	snprintf(vaultkey, sizeof(vaultkey),
-			 "--set=monet_vault_key=%s/.vaultkey", (*stats)->path);
+			 "monet_vault_key=%s/.vaultkey", (*stats)->path);
 	snprintf(muri, sizeof(muri),
-			 "--set=merovingian_uri=mapi:monetdb://%s:%u/%s",
+			 "merovingian_uri=mapi:monetdb://%s:%u/%s",
 			 _mero_hostname, mport, database);
 	argv[c++] = _mero_mserver;
 	argv[c++] = dbpath;
-	argv[c++] = muri;
+	argv[c++] = set; argv[c++] = muri;
 	if (dbextra != NULL) {
 		snprintf(dbextra_path, sizeof(dbextra_path),
 				 "--dbextra=%s", dbextra);
@@ -512,123 +554,78 @@ forkMserver(const char *database, sabdb** stats, bool force)
 	}
 
 	if (mydoproxy) {
+		argv[c++] = set; argv[c++] = "mapi_open=false";
 		/* we "proxy", so we can just solely use UNIX domain sockets
 		 * internally.  Before we hit our head, check if we can
 		 * actually use a UNIX socket (due to pathlength) */
 		if (strlen((*stats)->path) + 11 < sizeof(((struct sockaddr_un *) 0)->sun_path)) {
-			argv[c++] = "--set=mapi_listenaddr=none";
-			snprintf(usock, sizeof(usock), "--set=mapi_usock=%s/.mapi.sock",
+			snprintf(port, sizeof(port), "mapi_port=0");
+			snprintf(usock, sizeof(usock), "mapi_usock=%s/.mapi.sock",
 					 (*stats)->path);
-			argv[c++] = usock;
 		} else {
+			argv[c++] = set; argv[c++] = "mapi_autosense=true";
 			/* for logic here, see comment below */
-			argv[c++] = "--set=mapi_port=0";
-			argv[c++] = "--set=mapi_listenaddr=localhost";
-			snprintf(usock, sizeof(usock), "--set=mapi_usock=");
-			argv[c++] = usock;
+			snprintf(port, sizeof(port), "mapi_port=%u", mport + 1);
+			snprintf(usock, sizeof(usock), "mapi_usock=");
 		}
 	} else {
 		if (listenaddr[0] != '\0') {
-			argv[c++] = listenaddr;
+			argv[c++] = set; argv[c++] = listenaddr;
 		} else {
-			argv[c++] = "--set=mapi_listenaddr=localhost";
+			argv[c++] = set; argv[c++] = "mapi_open=true";
 		}
-		argv[c++] = "--set=mapi_port=0";
+		argv[c++] = set; argv[c++] = "mapi_autosense=true";
 		/* avoid this mserver binding to the same port as merovingian
 		 * but on another interface, (INADDR_ANY ... sigh) causing
 		 * endless redirects since 0.0.0.0 is not a valid address to
 		 * connect to, and hence the hostname is advertised instead */
-		snprintf(usock, sizeof(usock), "--set=mapi_usock=");
-		argv[c++] = usock;
+		snprintf(port, sizeof(port), "mapi_port=%u", mport + 1);
+		snprintf(usock, sizeof(usock), "mapi_usock=");
 	}
-	argv[c++] = vaultkey;
-
-	kv = findConfKey(ckv, "nthreads");
-	if (kv->val == NULL)
-		kv = findConfKey(_mero_db_props, "nthreads");
-	if (kv->val != NULL) {
-		snprintf(nthreads, sizeof(nthreads), "--set=gdk_nr_threads=%s", kv->val);
-		argv[c++] = nthreads;
+	argv[c++] = set; argv[c++] = ipv6;
+	argv[c++] = set; argv[c++] = port;
+	argv[c++] = set; argv[c++] = usock;
+	argv[c++] = set; argv[c++] = vaultkey;
+	if (nthreads[0] != '\0') {
+		argv[c++] = set; argv[c++] = nthreads;
 	}
-
-	kv = findConfKey(ckv, "nclients");
-	if (kv->val == NULL)
-		kv = findConfKey(_mero_db_props, "nclients");
-	if (kv->val != NULL) {
-		snprintf(nclients, sizeof(nclients), "--set=max_clients=%s", kv->val);
-		argv[c++] = nclients;
+	if (nclients[0] != '\0') {
+		argv[c++] = set; argv[c++] = nclients;
 	}
-
-	kv = findConfKey(ckv, "optpipe");
-	if (kv->val == NULL)
-		kv = findConfKey(_mero_db_props, "optpipe");
-	if (kv->val != NULL) {
-		snprintf(pipeline, sizeof(pipeline), "--set=sql_optimizer=%s", kv->val);
-		argv[c++] = pipeline;
+	if (pipeline[0] != '\0') {
+		argv[c++] = set; argv[c++] = pipeline;
 	}
-
-	kv = findConfKey(ckv, "memmaxsize");
-	if (kv->val != NULL) {
-		snprintf(memmaxsize, sizeof(memmaxsize), "--set=gdk_mem_maxsize=%s", kv->val);
-		argv[c++] = memmaxsize;
+	if (memmaxsize[0] != '\0') {
+		argv[c++] = set; argv[c++] = memmaxsize;
 	}
-
-	kv = findConfKey(ckv, "vmmaxsize");
-	if (kv->val != NULL) {
-		snprintf(vmmaxsize, sizeof(vmmaxsize), "--set=gdk_vm_maxsize=%s", kv->val);
-		argv[c++] = vmmaxsize;
+	if (vmmaxsize[0] != '\0') {
+		argv[c++] = set; argv[c++] = vmmaxsize;
 	}
-
-	kv = findConfKey(ckv, "embedr");
-	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
-		argv[c++] = "--set=embedded_r=true";
+	if (embeddedr != NULL) {
+		argv[c++] = set; argv[c++] = embeddedr;
 	}
-
-	kv = findConfKey(ckv, "embedpy3");
-	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
-		argv[c++] = "--set=embedded_py=3";
+	if (embeddedpy != NULL) {
+		argv[c++] = set; argv[c++] = embeddedpy;
 	}
-
-	kv = findConfKey(ckv, "embedc");
-	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
-		argv[c++] = "--set=embedded_c=true";
+	if (embeddedc != NULL) {
+		argv[c++] = set; argv[c++] = embeddedc;
 	}
-
-	kv = findConfKey(ckv, "readonly");
-	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
-		argv[c++] = "--readonly";
-
-	kv = findConfKey(ckv, "raw_strings");
-	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
-		argv[c++] = "--set=raw_strings=true";
+	if (readonly != NULL) {
+		argv[c++] = readonly;
 	}
-
+	if (raw_strings != NULL) {
+		argv[c++] = "--set"; argv[c++] = raw_strings;
+	}
 	/* get the rest (non-default) mserver props set in the conf file */
 	list = ckv;
-	freec = c;					/* following entries to be freed */
-
-	kv = findConfKey(ckv, "loadmodules");
-	if (kv->val == NULL)
-		kv = findConfKey(_mero_db_props, "loadmodules");
-	if (kv->val != NULL) {
-		size_t modlen;
-		for (const char *val = kv->val; *val; val += modlen) {
-			modlen = strcspn(val, ", \t");
-			if (modlen > 0) {
-				char *arg = malloc(modlen + 14);
-				snprintf(arg, modlen + 14, "--loadmodule=%.*s", (int) modlen, val);
-				argv[c++] = arg;
-			}
-			modlen += strspn(val + modlen, ", \t");
-		}
-	}
-
+	freec = c;					/* following entries to be freed if != set */
 	while (list->key != NULL) {
 		if (list->val != NULL && !defaultProperty(list->key)) {
 			if (strcmp(list->key, "gdk_debug") == 0) {
 				snprintf(property_other, sizeof(property_other), "-d%s", list->val);
 			} else {
-				snprintf(property_other, sizeof(property_other), "--set=%s=%s", list->key, list->val);
+				argv[c++] = set;
+				snprintf(property_other, sizeof(property_other), "%s=%s", list->key, list->val);
 			}
 			argv[c++] = strdup(property_other);
 		}
@@ -668,15 +665,15 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		int dup_err;
 		close(pfdo[0]);
 		dup_err = dup2(pfdo[1], 1);
-		if (dup_err == -1)
-			perror("dup2");
 		close(pfdo[1]);
 
 		close(pfde[0]);
-		dup_err = dup2(pfde[1], 2);
-		if (dup_err == -1)
+		if(dup_err == -1)
 			perror("dup2");
+		dup_err = dup2(pfde[1], 2);
 		close(pfde[1]);
+		if(dup_err == -1)
+			perror("dup2");
 
 		write_error = write(1, "arguments:", 10);
 		for (c = 0; argv[c] != NULL; c++) {
@@ -698,9 +695,9 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		exit(1);
 	} else if (pid > 0) {
 		/* parent: fine, let's add the pipes for this child */
-		dp->input[0].fd = pfdo[0];
+		dp->out = pfdo[0];
 		close(pfdo[1]);
-		dp->input[1].fd = pfde[0];
+		dp->err = pfde[0];
 		close(pfde[1]);
 		dp->type = MERODB;
 		dp->pid = pid;
@@ -708,7 +705,9 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		pthread_mutex_unlock(&_mero_topdp_lock);
 
 		while (argv[freec] != NULL) {
-			free(argv[freec++]);
+			if (argv[freec] != set)
+				free(argv[freec]);
+			freec++;
 		}
 
 		/* wait for the child to finish starting, at some point we
@@ -759,14 +758,14 @@ forkMserver(const char *database, sabdb** stats, bool force)
 			if (scen == NULL) {
 				/* we don't know what it's doing, but we don't like it
 				 * any case, so kill it */
-				(void) terminateProcess(dp->dbname, dp->pid, MERODB);
+				(void) terminateProcess(dp, MERODB);
 				msab_freeStatus(stats);
 				pthread_mutex_unlock(&dp->fork_lock);
 				return(newErr("database '%s' did not initialise the sql "
 							  "scenario", database));
 			}
 		} else if (dp->pid != -1) {
-			(void) terminateProcess(dp->dbname, dp->pid, MERODB);
+			(void) terminateProcess(dp, MERODB);
 			msab_freeStatus(stats);
 			pthread_mutex_unlock(&dp->fork_lock);
 			return(newErr(
@@ -822,7 +821,7 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		pthread_mutex_unlock(&dp->fork_lock);
 
 		if ((*stats)->locked) {
-			Mlevelfprintf(INFORMATION, stdout, "database '%s' has been put into maintenance "
+			Mfprintf(stdout, "database '%s' has been put into maintenance "
 					 "mode during startup\n", database);
 		}
 
@@ -841,3 +840,388 @@ forkMserver(const char *database, sabdb** stats, bool force)
 	pthread_mutex_unlock(&_mero_topdp_lock);
 	return(newErr("%s", strerror(e)));
 }
+
+#define BUFLEN 1024
+
+/**
+ * Fork stethoscope and detatch, after performing sanity checks. The assumption
+ * is that each mserver5 process can have at most one stethoscope process
+ * attached to it.
+ */
+err
+fork_profiler(char *dbname, sabdb **stats, char **log_path)
+{
+	pid_t pid;
+	char *error = NO_ERR;
+	char *pidfilename = NULL;
+	confkeyval *ckv = NULL, *kv;
+	size_t pidfnlen;
+	FILE *pidfile;
+	char *profiler_executable;
+	char *beat_frequency = NULL;
+	char *tmp_exe;
+	struct stat path_info;
+	int error_code;
+	dpair dp;
+
+	pthread_mutex_lock(&_mero_topdp_lock);
+	dp = _mero_topdp->next;
+	while (dp != NULL && strcmp(dp->dbname, dbname) != 0) {
+		dp = dp->next;
+	}
+	pthread_mutex_unlock(&_mero_topdp_lock);
+	if (dp == NULL)
+		return newErr("Unknown database %s", dbname);
+	pthread_mutex_lock(&dp->fork_lock);
+
+	*log_path = NULL;
+	error = msab_getStatus(stats, dbname);
+	if (error != NULL) {
+		pthread_mutex_unlock(&dp->fork_lock);
+		return error;
+	}
+
+	if (*stats == NULL) {
+		/* TODO: What now? */
+		pthread_mutex_unlock(&dp->fork_lock);
+		return newErr("Null stats for db %s", dbname);
+	}
+
+	/* Find the profiler executable. The mserver is running as
+	 * /path/to/installation/mserver5
+	 * and the profiler executable should be:
+	 * /path/to/installation/stethoscope
+	 */
+	tmp_exe = strdup(_mero_mserver);
+	if (tmp_exe == NULL) {
+		pthread_mutex_unlock(&dp->fork_lock);
+		return newErr("Cannot find the profiler executable");
+	} else {
+		char *server_filename = "mserver5";
+		char *profiler_filename = "stethoscope";
+		char *s = strstr(tmp_exe, server_filename);
+		size_t executable_len = 0;
+
+		if (s == NULL || strncmp(s, server_filename, strlen(server_filename)) != 0) {
+			pthread_mutex_unlock(&dp->fork_lock);
+			error = newErr("Unexpected executable (missing the string \"%s\")", server_filename);
+			free(tmp_exe);
+			return error;
+		}
+
+		executable_len = strlen(tmp_exe) + strlen(profiler_filename) - strlen(server_filename) + 1;
+		*s = '\0';
+		profiler_executable = malloc(executable_len);
+		snprintf(profiler_executable, executable_len, "%s%s%s",
+				 tmp_exe, profiler_filename, s + 8);
+		free(tmp_exe);
+		if (stat(profiler_executable, &path_info) == -1) {
+			error = newErr("Cannot find profiler executable");
+			goto cleanup;
+		}
+		/* free(tmp_exe); */
+	}
+
+	/* Verify that the requested db is running */
+	if ((*stats)->state != SABdbRunning) {
+		/* server is not running, shoo */
+		error = newErr("Database %s is not running.", dbname);
+		goto cleanup;
+	}
+
+	/* find the path that the profiler will be storing files */
+	ckv = getDefaultProps();
+	readAllProps(ckv, (*stats)->path);
+	kv = findConfKey(ckv, PROFILERBEATFREQ);
+	if (kv) {
+		beat_frequency = kv->val;
+	}
+	kv = findConfKey(ckv, PROFILERLOGPROPERTY);
+
+	if (kv == NULL) {
+		error = newErr("Property '"PROFILERLOGPROPERTY"' not set for db %s\n",
+					   dbname);
+		goto cleanup;
+	}
+
+	*log_path = strdup(kv->val);
+
+	/* Check that the log_path exists and create it if it does not */
+	if ((error_code = mkdir(*log_path, 0755)) == -1 &&
+		(errno != EEXIST ||
+		 (error_code = stat(*log_path, &path_info)) == -1 ||
+		 !S_ISDIR(path_info.st_mode))) {
+		/* we couldn't create a directory and there wasn't one already */
+		if (error_code == -1) {
+			char error_message[128];
+			if (strerror_r(errno, error_message, sizeof(error_message)) != 0)
+				strcpy(error_message, "unknown error");
+			error = newErr("%s: %s", *log_path, error_message);
+		} else {
+			error = newErr("File %s exists but is not a directory.", *log_path);
+		}
+		free(*log_path);
+		*log_path = NULL;
+		goto cleanup;
+	}
+
+	/* construct the filename of the pid file */
+	pidfnlen = strlen(*log_path) + strlen("/profiler.pid") + 1;
+	pidfilename = malloc(pidfnlen);
+	if (pidfilename == NULL) {
+		error = newErr("Cannot allocate buffer while starting profiler");
+		goto cleanup;
+	}
+	snprintf(pidfilename, pidfnlen, "%s/profiler.pid", *log_path);
+
+	/* Make sure another instance of stethoscope is not running. */
+	errno = 0;
+	if ((pidfile = fopen(pidfilename, "r")) != NULL) {
+		char buf[8];
+		long pid;
+		/* The pid file exists. See if a process with this pid exists,
+		 * and if yes, if it is stethoscope.
+		 */
+
+		if (fgets(buf, sizeof(buf), pidfile) == NULL) {
+			error = newErr("cannot read from pid file %s: %s\n",
+						   pidfilename, strerror(errno));
+			fclose(pidfile);
+			free(*log_path);
+			*log_path = NULL;
+			goto cleanup;
+		}
+		fclose(pidfile);
+
+		/* Verify that what we read is actually a number */
+		errno = 0;
+		pid = strtol(buf, NULL, 10);
+		if (errno != 0) {
+			error = newErr("contents of the pid file are not correct: %s\n",
+						   strerror(errno));
+			free(*log_path);
+			*log_path = NULL;
+			goto cleanup;
+		}
+
+		// Open /proc/<pid>/comm and compare the contents to "stethoscope"
+		// This of course is specific to Linux
+		size_t fn_size = strlen("/proc/comm") + 9;
+		char *filename = malloc(fn_size);
+		if (filename == NULL) {
+			error = newErr("cannot allocate %zu bytes: %s\n",
+						   fn_size, strerror(errno));
+			free(*log_path);
+			*log_path = NULL;
+			goto cleanup;
+		}
+		snprintf(filename, fn_size, "/proc/%ld/comm", pid);
+
+		FILE *comm = fopen(filename, "r");
+		if (comm == NULL) {
+			/* We cannot open the file for the process with the specified pid,
+			 * so the process is not running.
+			 */
+			free(filename);
+			goto startup;
+		}
+		char buf2[BUFLEN];
+		size_t len = fread(buf2, 1, BUFLEN, comm);
+
+		if(ferror(comm)) {
+			error = newErr("cannot read from file %s\n", filename);
+			free(filename);
+			free(*log_path);
+			fclose(comm);
+			*log_path = NULL;
+			goto cleanup;
+		}
+		if (len == BUFLEN)
+			len--;
+		buf2[len] = 0;
+
+		char expected_command[] = "stethoscope";
+		size_t command_len = strlen(expected_command);
+		if (strncmp(buf2, expected_command, command_len) == 0) {
+			error = newErr("profiler already running for %s\n", dbname);
+			free(filename);
+			free(*log_path);
+			fclose(comm);
+			*log_path = NULL;
+			goto cleanup;
+		}
+
+		fclose(comm);
+		free(filename);
+	} else if (errno == EACCES || errno == EPERM) {
+		/* We cannot open the pidfile, bail out */
+		error = newErr("pid file %s already exists, but is not accessible. Is the profiler already running?",
+					   pidfilename);
+		free(*log_path);
+		*log_path = NULL;
+		goto cleanup;
+	}
+
+  startup:
+	/* Open the pid file */
+	if ((pidfile = fopen(pidfilename, "w")) == NULL) {
+		error = newErr("unable to open %s for writing", pidfilename);
+		free(*log_path);
+		*log_path = NULL;
+		goto cleanup;
+	}
+
+	pid = fork();
+	if (pid == 0) {
+		char timestamp[20];
+		char *argv[512];
+		int arg_idx = 0;
+		size_t log_filename_len;
+		char *log_filename;
+		time_t current_time;
+		struct tm *tm_ctime;
+
+		fclose(pidfile);
+		/* construct the log output file */
+		log_filename_len = strlen(*log_path) + strlen("/proflog_") + strlen(dbname) + 26;
+		log_filename = malloc(log_filename_len);
+		if (log_filename == NULL) {
+			/* TODO What now? */
+			Mfprintf(stderr, "failed to allocate buffer\n");
+			exit(1);
+		}
+		current_time = time(NULL);
+		tm_ctime = localtime(&current_time);
+		strftime(timestamp, sizeof(timestamp), "%Y-%m-%d_%H:%M:%S", tm_ctime);
+		snprintf(log_filename, log_filename_len, "%s/proflog_%s_%s.json",
+				 *log_path, dbname, timestamp);
+
+		/* build the arguments */
+		argv[arg_idx++] = profiler_executable;
+		argv[arg_idx++] = "-j";  /* JSON output */
+		argv[arg_idx++] = "-d";
+		argv[arg_idx++] = dbname;
+		if (beat_frequency) {
+			argv[arg_idx++] = "-b";
+			argv[arg_idx++] = beat_frequency;
+		}
+		argv[arg_idx++] = "-o";
+		argv[arg_idx++] = log_filename;
+		/* execute */
+		execv(profiler_executable, argv);
+		exit(1);
+	} else {
+		/* write pid of stethoscope */
+		Mfprintf(pidfile, "%d", (int)pid);
+		fclose(pidfile);
+	}
+
+  cleanup:
+	freeConfFile(ckv);
+	free(ckv);
+	free(profiler_executable);
+	free(pidfilename);
+	pthread_mutex_unlock(&dp->fork_lock);
+	return error;
+}
+
+err
+shutdown_profiler(char *dbname, sabdb **stats)
+{
+	err error=NO_ERR;
+	confkeyval *ckv = NULL, *kv;
+	size_t pidfnlen = 0;
+	char *pidfilename = NULL;
+	FILE *pidfile;
+	char buf[BUFSIZ];
+	size_t nbytes;
+	pid_t pid;
+
+	error = msab_getStatus(stats, dbname);
+	if (error != NULL) {
+		return error;
+	}
+
+	if (*stats == NULL) {
+		/* TODO: What now? */
+		error = newErr("Null stats for db %s", dbname);
+		return error;
+	}
+
+	/* Verify that the requested db is running */
+	if ((*stats)->state != SABdbRunning) {
+		/* server is not running, shoo */
+		error = newErr("Database %s is not running.", dbname);
+		goto cleanup;
+	}
+
+	/* Find the pid file and make sure the profiler is running */
+	ckv = getDefaultProps();
+	readAllProps(ckv, (*stats)->path);
+	kv = findConfKey(ckv, PROFILERLOGPROPERTY);
+
+	if (kv == NULL) {
+		error = newErr("Property '"PROFILERLOGPROPERTY"' not set for db %s\n",
+					   dbname);
+		goto cleanup;
+	}
+
+	/* construct the filename of the pid file */
+	pidfnlen = strlen(kv->val) + strlen("/profiler.pid") + 1;
+	pidfilename = malloc(pidfnlen);
+	if (pidfilename == NULL) {
+		error = newErr("Cannot allocate buffer while shutting down of profiler");
+		goto cleanup;
+	}
+	snprintf(pidfilename, pidfnlen, "%s/profiler.pid", kv->val);
+
+	if ((pidfile = fopen(pidfilename, "r")) == NULL) {
+		error = newErr("Unable to open %s for reading", pidfilename);
+		goto cleanup;
+	}
+
+	clearerr(pidfile);
+	nbytes = fread(buf, 1, BUFSIZ, pidfile);
+
+	if (ferror(pidfile)) {
+		error = newErr("Cannot read pid (%s) from file %s", buf, pidfilename);
+		fclose(pidfile);
+		goto cleanup;
+	}
+	fclose(pidfile);
+
+	if (buf[nbytes - 1] == '\n') {
+		buf[nbytes - 1] = '\0';
+	}
+
+	pid = (pid_t)strtol(buf, NULL, 10);
+	if (pid == 0 && errno == EINVAL) {
+		error = newErr("File contents %s not a valid pid", buf);
+		goto cleanup;
+	}
+
+	if (kill(pid, SIGTERM) == -1) {
+		char error_message[BUFSIZ];
+		if (strerror_r(errno, error_message, BUFSIZ) != 0)
+			strcpy(error_message, "unknown error");
+		error = newErr("%s", error_message);
+		goto cleanup;
+	}
+
+	/* All went well. Remove the pidfile */
+	if (remove(pidfilename) != 0) {
+		error = newErr("Profiler seems to have stopped, but cannot remove pid file.");
+	}
+
+  cleanup:
+	freeConfFile(ckv);
+	free(ckv);
+	free(pidfilename);
+	if (error) {
+		msab_freeStatus(stats);
+		*stats = NULL;
+	}
+	return error;
+}
+
+/* vim:set ts=4 sw=4 noexpandtab: */

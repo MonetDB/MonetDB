@@ -1,0 +1,17 @@
+stdout of test 'msqldump--help` in directory 'clients/mapiclient` itself:
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 300 ./msqldump--help msqldump--help 
+# 16:36:12 >  
+
+
+# 16:36:12 >  
+# 16:36:12 >  Mtimeout -timeout 60 msqlsump --help
+# 16:36:12 >  
+
+
+# 16:36:12 >  
+# 16:36:12 >  Done.
+# 16:36:12 >  
+

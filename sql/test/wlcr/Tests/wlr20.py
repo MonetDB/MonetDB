@@ -2,8 +2,7 @@ try:
     from MonetDBtesting import process
 except ImportError:
     import process
-import os, sys, time
-from MonetDBtesting.sqltest import SQLTestCase
+import os, sys, socket, time
 
 dbfarm = os.getenv('GDK_DBFARM')
 tstdb = os.getenv('TSTDB')
@@ -12,53 +11,42 @@ if not tstdb or not dbfarm:
     print('No TSTDB or GDK_DBFARM in environment')
     sys.exit(1)
 
+def freeport():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind(('', 0))
+    port = sock.getsockname()[1]
+    sock.close()
+    return port
+
+cloneport = freeport()
+
 dbname = tstdb
 dbnameclone = tstdb + 'clone'
 
+# master = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+with process.server(dbname=dbnameclone, mapiport=cloneport, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as slave, \
+     process.client('sql', server = slave, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as c:
 
-with process.server(dbname=dbnameclone, mapiport='0', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as slave, \
-        SQLTestCase() as tc:
-    tc.connect(database=dbnameclone, port=slave.dbport)
-    tc.execute("call wlr.master('%s');" % dbname).assertSucceeded()
-    tc.execute("call wlr.replicate(3);").assertSucceeded()
-    tc.execute("select * from tmp;")\
-            .assertSucceeded()
-    tc.execute("call wlr.replicate(4);").assertSucceeded()
-    tc.execute("select * from tmp;")\
-            .assertSucceeded()\
-            .assertDataResultMatch([(1, 'hello'), (2, 'world')])
-    tc.execute("call wlr.replicate(6);").assertSucceeded()
-    tc.execute("select * from tmp;")\
-            .assertSucceeded()\
-            .assertDataResultMatch([(1, 'hello'), (2, 'world'), (3, 'blah'), (4, 'bloh'), (5, 'red'), (6, 'fox')])
+    #two step roll forward, where first step shouldn't do anything because already in previous test
+    cout, cerr = c.communicate('''\
+call wlr.master('%s');
+call wlr.replicate(3);
+select * from tmp;
+call wlr.replicate(4);
+select * from tmp;
+call wlr.replicate(6);
+select * from tmp;
+''' % dbname)
 
     sout, serr = slave.communicate()
+    #mout, merr = master.communicate()
 
-
-# master = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-#with process.server(dbname=dbnameclone, mapiport='0', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as slave, \
-#     process.client('sql', server = slave, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as c:
-#
-#    #two step roll forward, where first step shouldn't do anything because already in previous test
-#    cout, cerr = c.communicate('''\
-#call wlr.master('%s');
-#call wlr.replicate(3);
-#select * from tmp;
-#call wlr.replicate(4);
-#select * from tmp;
-#call wlr.replicate(6);
-#select * from tmp;
-#''' % dbname)
-#
-#    sout, serr = slave.communicate()
-#    #mout, merr = master.communicate()
-#
-#    #sys.stdout.write(mout)
-#    sys.stdout.write(sout)
-#    sys.stdout.write(cout)
-#    #sys.stderr.write(merr)
-#    sys.stderr.write(serr)
-#    sys.stderr.write(cerr)
+    #sys.stdout.write(mout)
+    sys.stdout.write(sout)
+    sys.stdout.write(cout)
+    #sys.stderr.write(merr)
+    sys.stderr.write(serr)
+    sys.stderr.write(cerr)
 
 def listfiles(path):
     sys.stdout.write("#LISTING OF THE WLR LOG FILE\n")

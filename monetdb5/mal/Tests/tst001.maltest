@@ -1,5 +1,0 @@
-query T rowsort
-io.printf("hello world\n");
-----
-hello world
-

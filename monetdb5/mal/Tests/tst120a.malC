@@ -1,0 +1,5 @@
+module top;
+function first(i:int):int; return first:= 0:int; end first;
+i:=first(1);
+i:=top.first(1);
+io.print(i);

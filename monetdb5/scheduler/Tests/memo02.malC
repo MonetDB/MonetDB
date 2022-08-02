@@ -1,0 +1,37 @@
+# The first memo driven execution
+# use a generic cost function
+include run_memo;
+
+	A:= bat.new(:oid);
+	bat.append(A,1@0);
+	B:= algebra.copy(A);
+	bat.setAccess(B,"w");
+	bat.append(B,2@0);
+	C:= algebra.copy(B);
+	bat.setAccess(C,"w");
+	bat.append(C,3@0);
+	D:= algebra.copy(C);
+	bat.setAccess(D,"w");
+	bat.append(D,3@0);
+
+	scheduler.choice();
+	T1:= algebra.projection(A,B);
+	T2:= algebra.projection(B,C);
+	T3:= algebra.projection(C,D);
+	scheduler.choice("getVolume",T1,T2,T3);
+
+	T4:= algebra.projection(T1,C);
+	T5:= algebra.projection(A,T2);
+	T6:= algebra.projection(T2,D);
+	T7:= algebra.projection(B,T3);
+	T8:= algebra.projection(C,D);
+	scheduler.choice("getVolume",T4,T5,T6,T7,T8);
+
+	T9:= algebra.projection(T4,D);
+	T10:= algebra.projection(T5,D);
+	T11:= algebra.projection(A,T6);
+	T12:= algebra.projection(A,T7);
+	T13:= algebra.projection(T1,T8);
+	scheduler.choice("getVolume",T9,T10,T11,T12,T13);
+	answer:= scheduler.pick(T9,T10,T11,T12,T13);
+	io.print(answer);

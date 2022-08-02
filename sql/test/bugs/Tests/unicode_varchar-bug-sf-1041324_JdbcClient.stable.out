@@ -1,0 +1,52 @@
+stdout of test 'unicode_varchar-bug-sf-1041324_JdbcClient` in directory 'sql/test/bugs` itself:
+
+
+# 14:10:32 >  
+# 14:10:32 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36720" "--set" "mapi_usock=/var/tmp/mtest-4024/.s.monetdb.36720" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/Monet-devel/var/MonetDB/mTests_sql_test_bugs" "--set" "embedded_r=yes"
+# 14:10:32 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_bugs', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:36720/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4024/.s.monetdb.36720
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.25'
+# Finished reading the write-ahead log 'sql_logs/sql/log.25'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+
+# 14:10:32 >  
+# 14:10:32 >  "./unicode_varchar-bug-sf-1041324_JdbcClient.SQL.sh" "unicode_varchar-bug-sf-1041324_JdbcClient"
+# 14:10:32 >  
+
+
+# 14:10:32 >  
+# 14:10:32 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h madrid -p 36720 -d mTests_sql_test_bugs -f "../../../../../../../../scratch1/sjoerd/src/MonetDB/devel/sql/test/bugs/Tests/../unicode_varchar-bug-sf-1041324.sql"
+# 14:10:32 >  
+
++--------------------------------------------------------------------------------------------------------------------------------+
+| %2                                                                                                                             |
++================================================================================================================================+
+| http://shopping.b92.net/index.php?IDS=11&ID_Group=39&ID_prod=754&PROD_NAME=Belgrade+Coffee+Shop+4&GROUP_NAME=Muzi�a+produkcija   |
++--------------------------------------------------------------------------------------------------------------------------------+
+1 row
++-----------------------+
+| %2                    |
++=======================+
+| SAVE 25¢ ON ICE CREAM  |
++-----------------------+
+1 row
+
+# 14:10:33 >  
+# 14:10:33 >  "Done."
+# 14:10:33 >  
+

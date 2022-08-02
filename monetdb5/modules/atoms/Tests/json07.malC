@@ -1,0 +1,21 @@
+js:= json.new("{\"myList\":23,\"yours\":[\"a\",\"b\"]}");
+ 
+j1:=json.keyarray(js);
+io.print(j1);
+a1:=json.valuearray(js);
+io.print(a1);
+n1:=json.keys(js);
+io.print(n1);
+v1:=json.values(js);
+io.print(v1);
+
+js:= json.new("{\"myBoolean\":true,\"myList\":[\"a\",\"b\"],\"myMap\":{\"c\":\"d\",\"a\":\"b\"},\"myObject\":\"myClass\",\"myJsonObject\":{\"myString\":\"myStringValue\"}}");
+
+j1:=json.keyarray(js);
+io.print(j1);
+a1:=json.valuearray(js);
+io.print(a1);
+n1:=json.keys(js);
+io.print(n1);
+v1:=json.values(js);
+io.print(v1);

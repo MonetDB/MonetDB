@@ -1,0 +1,47 @@
+stdout of test 'python-loader-string.Bug-6759` in directory 'sql/test/BugTracker-2019` itself:
+
+
+# 11:36:39 >  
+# 11:36:39 >  "/usr/bin/python3" "python-loader-string.Bug-6759.py" "python-loader-string.Bug-6759"
+# 11:36:39 >  
+
+#CREATE LOADER json_loader() LANGUAGE PYTHON {
+#
+#    import json
+#
+#    _emit.emit(json.loads('{"col1": ["apple", "peer"], "col2": ["orange", "banana nananana"]}'))
+#
+#};
+#CREATE TABLE tbl FROM LOADER json_loader();
+#SELECT * FROM tbl;
+% sys.tbl,	sys.tbl # table_name
+% col1,	col2 # name
+% clob,	clob # type
+% 5,	15 # length
+[ "apple",	"orange"	]
+[ "peer",	"banana nananana"	]
+START TRANSACTION;
+SET SCHEMA "sys";
+CREATE LOADER "sys"."json_loader"() LANGUAGE PYTHON
+{
+
+    import json
+
+    _emit.emit(json.loads('{"col1": ["apple", "peer"], "col2": ["orange", "banana nananana"]}'))
+
+};
+CREATE TABLE "sys"."tbl" (
+	"col1" CHARACTER LARGE OBJECT,
+	"col2" CHARACTER LARGE OBJECT
+);
+COPY 2 RECORDS INTO "sys"."tbl" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"apple"	"orange"
+"peer"	"banana nananana"
+COMMIT;
+#DROP TABLE tbl;
+#DROP LOADER json_loader;
+
+# 11:36:39 >  
+# 11:36:39 >  "Done."
+# 11:36:39 >  
+

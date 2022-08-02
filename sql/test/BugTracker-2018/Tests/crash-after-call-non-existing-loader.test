@@ -1,3 +1,0 @@
-statement error
-CREATE TABLE mytable FROM LOADER non_existing_loader()
-

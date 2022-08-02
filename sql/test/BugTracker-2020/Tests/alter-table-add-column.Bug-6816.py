@@ -1,26 +1,27 @@
-import sys, os, pymonetdb
+import sys
 
-db = os.getenv("TSTDB")
-port = int(os.getenv("MAPIPORT"))
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
-client1 = pymonetdb.connect(database=db, port=port, autocommit=True)
-cursor1 = client1.cursor()
-cursor1.execute("""
+with process.client('sql', stdin=process.PIPE, stdout=process.PIPE,
+                    stderr=process.PIPE) as c1, \
+     process.client('sql', stdin=process.PIPE, stdout=process.PIPE,
+                    stderr=process.PIPE) as c2:
+    out, err = c1.communicate('''\
 CREATE TABLE "testVarcharToClob" ("varcharColumn" varchar(255));
 INSERT INTO "testVarcharToClob" VALUES ('value1'), ('value2');
 ALTER TABLE "testVarcharToClob" add "clobColumn" TEXT NULL;
 UPDATE "testVarcharToClob" SET "clobColumn" = "varcharColumn";
 ALTER TABLE "testVarcharToClob" drop "varcharColumn";
-""")
+''')
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
-client2 = pymonetdb.connect(database=db, port=port, autocommit=True)
-cursor2 = client2.cursor()
-cursor2.execute("""
+    out, err = c2.communicate('''\
 INSERT INTO "testVarcharToClob" VALUES ('value3');
 DROP TABLE "testVarcharToClob";
-""")
-
-cursor1.close()
-client1.close()
-cursor2.close()
-client2.close()
+''')
+    sys.stdout.write(out)
+    sys.stderr.write(err)

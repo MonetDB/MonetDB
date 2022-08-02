@@ -1,0 +1,112 @@
+stdout of test 'functions-not-persist.Bug-6819` in directory 'sql/test/BugTracker-2020` itself:
+
+
+# 11:31:46 >  
+# 11:31:46 >  "/usr/bin/python3" "functions-not-persist.Bug-6819.SQL.py" "functions-not-persist.Bug-6819"
+# 11:31:46 >  
+
+#CREATE FUNCTION myfunc1(input1 INT, input2 INT) RETURNS INT BEGIN RETURN input1 + input2; END;
+#CREATE FUNCTION myfunc2(input1 INT, input2 INT) RETURNS INT LANGUAGE PYTHON {return (input1 + input2)};
+#CREATE FUNCTION myfunc3(input1 INT, input2 INT) RETURNS INT LANGUAGE PYTHON_MAP {return (input1 + input2)};
+#CREATE FUNCTION myfunc4(input1 INT, input2 INT) RETURNS INT LANGUAGE PYTHON3 {return (input1 + input2)};
+#CREATE FUNCTION myfunc5(input1 INT, input2 INT) RETURNS INT LANGUAGE PYTHON3_MAP {return (input1 + input2)};
+#CREATE FUNCTION myfunc6(input1 INT, input2 INT) RETURNS INT LANGUAGE R {return (input1 + input2)};
+#CREATE FUNCTION myfunc7(input1 INT, input2 INT) RETURNS INTEGER LANGUAGE C {
+#    result->initialize(result, input1.count);
+#    for(size_t i = 0; i < input1.count; i++) {
+#        result->data[i] = input1.data[i] + input2.data[i];
+#    }
+#};
+#SELECT CAST(myfunc1(1, 1) + myfunc2(1, 1) + myfunc3(1, 1) + myfunc4(1, 1) + myfunc5(1, 1) + myfunc6(1, 1) + myfunc7(1, 1) AS BIGINT);
+% . # table_name
+% %1 # name
+% bigint # type
+% 2 # length
+[ 14	]
+# MonetDB 5 server v11.37.0 (hg id: c997d3a05c02+)
+# This is an unreleased version
+# Serving database 'db1', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.498 GiB available main-memory of which we use 12.631 GiB
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:59451/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-171552/.s.monetdb.59451
+# MonetDB/GIS module loaded
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 58_hot_snapshot.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 61_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 81_tracer.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+# MonetDB/Python3 module loaded
+# MonetDB/R   module loaded
+#SELECT CAST(myfunc1(1, 1) + myfunc2(1, 1) + myfunc3(1, 1) + myfunc4(1, 1) + myfunc5(1, 1) + myfunc6(1, 1) + myfunc7(1, 1) AS BIGINT);
+% . # table_name
+% %1 # name
+% bigint # type
+% 2 # length
+[ 14	]
+#DROP FUNCTION myfunc1;
+#DROP FUNCTION myfunc2;
+#DROP FUNCTION myfunc3;
+#DROP FUNCTION myfunc4;
+#DROP FUNCTION myfunc5;
+#DROP FUNCTION myfunc6;
+#DROP FUNCTION myfunc7;
+# MonetDB 5 server v11.37.0 (hg id: c997d3a05c02+)
+# This is an unreleased version
+# Serving database 'db1', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.498 GiB available main-memory of which we use 12.631 GiB
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:59451/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-171552/.s.monetdb.59451
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python3 module loaded
+# MonetDB/R   module loaded
+
+# 11:31:48 >  
+# 11:31:48 >  "Done."
+# 11:31:48 >  
+

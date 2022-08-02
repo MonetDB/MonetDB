@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -37,7 +37,11 @@
 #include "mal_interpreter.h"
 
 #include "tablet.h"
+#include "streams.h"
 #include "gdk_time.h"
+#include <math.h>
+#include "blob.h"
+#include "mkey.h"
 #include "str.h"
 #include "sql_privileges.h"
 #include "sql_decimal.h"
@@ -50,251 +54,261 @@
 #include "bat/bat_storage.h"
 #include "bat/bat_utils.h"
 
-extern int sqlcleanup(backend *be, int err);
-extern sql_rel *sql_symbol2relation(backend *be, symbol *sym);
+extern int sqlcleanup(mvc *c, int err);
+extern sql_rel *sql_symbol2relation(mvc *m, symbol *sym);
 
 extern BAT *mvc_bind(mvc *m, const char *sname, const char *tname, const char *cname, int access);
 extern BAT *mvc_bind_idxbat(mvc *m, const char *sname, const char *tname, const char *iname, int access);
 
-extern str SQLmvc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLmvc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLabort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-extern str mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_add_dependency_change(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_add_column_predicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_append_column(sql_trans *t, sql_column *c, BUN offset, BAT *pos, BAT *ins);
+sql5_export str mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_append_column(sql_trans *t, sql_column *c, BAT *ins);
 
-extern str mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval);
-extern str DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval);
-extern str DELTAproject(bat *result, const bat *select, const bat *col, const bat *uid, const bat *uval);
+sql5_export str mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat *ins);
+sql5_export str DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval, const bat *ins);
+sql5_export str DELTAproject(bat *result, const bat *select, const bat *col, const bat *uid, const bat *uval, const bat *ins);
+sql5_export str DELTAbat2(bat *result, const bat *col, const bat *uid, const bat *uval);
+sql5_export str DELTAsub2(bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval);
+sql5_export str DELTAproject2(bat *result, const bat *select, const bat *col, const bat *uid, const bat *uval);
 
-extern str BATleftproject(bat *result, const bat *col, const bat *l, const bat *r);
+sql5_export str BATleftproject(bat *result, const bat *col, const bat *l, const bat *r);
 
-extern str mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-extern str mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-extern str mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_export_head_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_export_chunk_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_row_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_export_row_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_bin_import_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_peak_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_getVersion(lng *r, const int *clientid);
-extern str mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str not_unique(bit *ret, const bat *bid);
-extern str SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sql_querylog_empty(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sql_rank_grp(bat *rid, const bat *bid, const bat *gid, const bat *gpe);
-extern str sql_rank(bat *rid, const bat *bid);
-extern str sql_dense_rank_grp(bat *rid, const bat *bid, const bat *gid, const bat *gpe);
-extern str sql_dense_rank(bat *rid, const bat *bid);
-extern str SQLidentity(oid *rid, const void *i);
-extern str BATSQLidentity(bat *rid, const bat *bid);
-extern str PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp, int replace);
+sql5_export str mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_export_head_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_export_chunk_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_row_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_export_row_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_bat_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_getVersion(lng *r, const int *clientid);
+sql5_export str mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str not_unique(bit *ret, const bat *bid);
+sql5_export str SQLshrink(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str month_interval_str(int *ret, const str *s, const int *ek, const int *sk);
+sql5_export str second_interval_str(lng *res, const str *s, const int *ek, const int *sk);
+sql5_export str dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sql_sessions_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sql_querylog_empty(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sql_rank_grp(bat *rid, const bat *bid, const bat *gid, const bat *gpe);
+sql5_export str sql_rank(bat *rid, const bat *bid);
+sql5_export str sql_dense_rank_grp(bat *rid, const bat *bid, const bat *gid, const bat *gpe);
+sql5_export str sql_dense_rank(bat *rid, const bat *bid);
+sql5_export str SQLidentity(oid *rid, const void *i);
+sql5_export str BATSQLidentity(bat *rid, const bat *bid);
+sql5_export str PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp);
 sql5_export str create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols);
 sql5_export str append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols);
 
-extern str bte_dec_round_wrap(bte *res, const bte *v, const bte *r);
-extern str bte_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str bte_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str bte_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str bte_round_wrap(bte *res, const bte *v, const bte *r, const int *d, const int *s);
-extern str bte_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str bte_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str bte_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str bte_dec_round_wrap(bte *res, const bte *v, const bte *r);
+sql5_export str bte_bat_dec_round_wrap(bat *res, const bat *v, const bte *r);
+sql5_export str bte_round_wrap(bte *res, const bte *v, const int *d, const int *s, const bte *r);
+sql5_export str bte_bat_round_wrap(bat *res, const bat *v, const int *d, const int *s, const bte *r);
+sql5_export str str_2dec_bte(bte *res, const str *val, const int *d, const int *sc);
+sql5_export str batstr_2dec_bte(bat *res, const bat *val, const int *d, const int *sc);
+sql5_export str batstr_ce_2dec_bte(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
+sql5_export str bte_dec2second_interval(lng *res, const int *sc, const bte *dec, const int *ek, const int *sk);
 
+sql5_export str nil_2dec_bte(bte *res, const void *val, const int *d, const int *sc);
+sql5_export str batnil_2dec_bte(bat *res, const bat *val, const int *d, const int *sc);
+sql5_export str batnil_ce_2dec_bte(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
 
-extern str str_2dec_bte(bte *res, const str *val, const int *d, const int *sc);
-extern str batstr_2dec_bte(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str bte_dec2second_interval(lng *res, const int *sc, const bte *dec, const int *ek, const int *sk);
-extern str bte_batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sht_dec_round_wrap(sht *res, const sht *v, const sht *r);
+sql5_export str sht_bat_dec_round_wrap(bat *res, const bat *v, const sht *r);
+sql5_export str sht_round_wrap(sht *res, const sht *v, const int *d, const int *s, const bte *r);
+sql5_export str sht_bat_round_wrap(bat *res, const bat *v, const int *d, const int *s, const bte *r);
+sql5_export str str_2dec_sht(sht *res, const str *val, const int *d, const int *sc);
+sql5_export str batstr_2dec_sht(bat *res, const bat *val, const int *d, const int *sc);
+sql5_export str batstr_ce_2dec_sht(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
+sql5_export str sht_dec2second_interval(lng *res, const int *sc, const sht *dec, const int *ek, const int *sk);
 
-extern str nil_2dec_bte(bte *res, const void *val, const int *d, const int *sc);
-extern str batnil_2dec_bte(bat *res, const bat *val, const int *d, const int *sc);
+sql5_export str nil_2dec_sht(sht *res, const void *val, const int *d, const int *sc);
+sql5_export str batnil_2dec_sht(bat *res, const bat *val, const int *d, const int *sc);
+sql5_export str batnil_ce_2dec_sht(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
 
-extern str sht_dec_round_wrap(sht *res, const sht *v, const sht *r);
-extern str sht_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sht_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sht_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sht_round_wrap(sht *res, const sht *v, const bte *r, const int *d, const int *s);
-extern str sht_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sht_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sht_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str str_2dec_sht(sht *res, const str *val, const int *d, const int *sc);
-extern str batstr_2dec_sht(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sht_dec2second_interval(lng *res, const int *sc, const sht *dec, const int *ek, const int *sk);
-extern str sht_batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str int_dec_round_wrap(int *res, const int *v, const int *r);
+sql5_export str int_bat_dec_round_wrap(bat *res, const bat *v, const int *r);
+sql5_export str int_round_wrap(int *res, const int *v, const int *d, const int *s, const bte *r);
+sql5_export str int_bat_round_wrap(bat *res, const bat *v, const int *d, const int *s, const bte *r);
+sql5_export str str_2dec_int(int *res, const str *val, const int *d, const int *sc);
+sql5_export str batstr_2dec_int(bat *res, const bat *val, const int *d, const int *sc);
+sql5_export str batstr_ce_2dec_int(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
+sql5_export str int_dec2second_interval(lng *res, const int *sc, const int *dec, const int *ek, const int *sk);
 
-extern str nil_2dec_sht(sht *res, const void *val, const int *d, const int *sc);
-extern str batnil_2dec_sht(bat *res, const bat *val, const int *d, const int *sc);
+sql5_export str nil_2dec_int(int *res, const void *val, const int *d, const int *sc);
+sql5_export str batnil_2dec_int(bat *res, const bat *val, const int *d, const int *sc);
+sql5_export str batnil_ce_2dec_int(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
 
-extern str int_dec_round_wrap(int *res, const int *v, const int *r);
-extern str int_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str int_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str int_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str int_round_wrap(int *res, const int *v, const bte *r, const int *d, const int *s);
-extern str int_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str int_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str int_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str str_2dec_int(int *res, const str *val, const int *d, const int *sc);
-extern str batstr_2dec_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str int_dec2second_interval(lng *res, const int *sc, const int *dec, const int *ek, const int *sk);
-extern str int_batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str lng_dec_round_wrap(lng *res, const lng *v, const lng *r);
+sql5_export str lng_bat_dec_round_wrap(bat *res, const bat *v, const lng *r);
+sql5_export str lng_round_wrap(lng *res, const lng *v, const int *d, const int *s, const bte *r);
+sql5_export str lng_bat_round_wrap(bat *res, const bat *v, const int *d, const int *s, const bte *r);
+sql5_export str str_2dec_lng(lng *res, const str *val, const int *d, const int *sc);
+sql5_export str batstr_2dec_lng(bat *res, const bat *val, const int *d, const int *sc);
+sql5_export str batstr_ce_2dec_lng(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
+sql5_export str lng_dec2second_interval(lng *res, const int *sc, const lng *dec, const int *ek, const int *sk);
 
-extern str nil_2dec_int(int *res, const void *val, const int *d, const int *sc);
-extern str batnil_2dec_int(bat *res, const bat *val, const int *d, const int *sc);
-
-extern str lng_dec_round_wrap(lng *res, const lng *v, const lng *r);
-extern str lng_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str lng_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str lng_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str lng_round_wrap(lng *res, const lng *v, const bte *r, const int *d, const int *s);
-extern str lng_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str lng_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str lng_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str str_2dec_lng(lng *res, const str *val, const int *d, const int *sc);
-extern str batstr_2dec_lng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str lng_dec2second_interval(lng *res, const int *sc, const lng *dec, const int *ek, const int *sk);
-extern str lng_batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-extern str nil_2dec_lng(lng *res, const void *val, const int *d, const int *sc);
-extern str batnil_2dec_lng(bat *res, const bat *val, const int *d, const int *sc);
+sql5_export str nil_2dec_lng(lng *res, const void *val, const int *d, const int *sc);
+sql5_export str batnil_2dec_lng(bat *res, const bat *val, const int *d, const int *sc);
+sql5_export str batnil_ce_2dec_lng(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
 
 #ifdef HAVE_HGE
-extern str hge_dec_round_wrap(hge *res, const hge *v, const hge *r);
-extern str hge_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str hge_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str hge_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str hge_round_wrap(hge *res, const hge *v, const bte *r, const int *d, const int *s);
-extern str hge_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str hge_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str hge_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str str_2dec_hge(hge *res, const str *val, const int *d, const int *sc);
-extern str batstr_2dec_hge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str hge_dec2second_interval(lng *res, const int *sc, const hge *dec, const int *ek, const int *sk);
-extern str hge_batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str hge_dec_round_wrap(hge *res, const hge *v, const hge *r);
+sql5_export str hge_bat_dec_round_wrap(bat *res, const bat *v, const hge *r);
+sql5_export str hge_round_wrap(hge *res, const hge *v, const int *d, const int *s, const bte *r);
+sql5_export str hge_bat_round_wrap(bat *res, const bat *v, const int *d, const int *s, const bte *r);
+sql5_export str str_2dec_hge(hge *res, const str *val, const int *d, const int *sc);
+sql5_export str batstr_2dec_hge(bat *res, const bat *val, const int *d, const int *sc);
+sql5_export str batstr_ce_2dec_hge(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
+sql5_export str hge_dec2second_interval(lng *res, const int *sc, const hge *dec, const int *ek, const int *sk);
 
-extern str nil_2dec_hge(hge *res, const void *val, const int *d, const int *sc);
-extern str batnil_2dec_hge(bat *res, const bat *val, const int *d, const int *sc);
+sql5_export str nil_2dec_hge(hge *res, const void *val, const int *d, const int *sc);
+sql5_export str batnil_2dec_hge(bat *res, const bat *val, const int *d, const int *sc);
+sql5_export str batnil_ce_2dec_hge(bat *res, const bat *val, const int *d, const int *sc, const bat *r);
 #endif
 
-extern str nil_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str str_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str str_2time_timestamptz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str batstr_2time_timestamp(bat *res, const bat *v, const bat *s, const int *len);
-extern str batstr_2time_timestamptz(bat *res, const bat *v, const bat *s, const int *len, int *tz);
-extern str timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str nil_2time_timestamp(timestamp *res, const void *v, const int *len);
+sql5_export str batnil_2time_timestamp(bat *res, const bat *v, const int *len);
+sql5_export str batnil_ce_2time_timestamp(bat *res, const bat *v, const int *len, const bat *r);
+sql5_export str str_2time_timestamp(timestamp *res, const str *v, const int *len);
+sql5_export str str_2time_timestamptz(timestamp *res, const str *v, const int *len, int *tz);
+sql5_export str batstr_2time_timestamp(bat *res, const bat *v, const int *len);
+sql5_export str batstr_2time_timestamptz(bat *res, const bat *v, const int *len, int *tz);
+sql5_export str timestamp_2time_timestamp(timestamp *res, const timestamp *v, const int *len);
+sql5_export str battimestamp_2time_timestamp(bat *res, const bat *v, const int *len);
 
-extern str nil_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str str_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str str_2time_daytimetz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str batstr_2time_daytime(bat *res, const bat *v, const bat *s, const int *len);
-extern str daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str nil_2time_daytime(daytime *res, const void *v, const int *len);
+sql5_export str batnil_2time_daytime(bat *res, const bat *v, const int *len);
+sql5_export str batnil_ce_2time_daytime(bat *res, const bat *v, const int *len, const bat *r);
+sql5_export str str_2time_daytime(daytime *res, const str *v, const int *len);
+sql5_export str str_2time_daytimetz(daytime *res, const str *v, const int *len, int *tz);
+sql5_export str batstr_2time_daytime(bat *res, const bat *v, const int *len);
+sql5_export str batstr_2time_daytimetz(bat *res, const bat *v, const int *len, int *tz);
+sql5_export str daytime_2time_daytime(daytime *res, const daytime *v, const int *len);
+sql5_export str batdaytime_2time_daytime(bat *res, const bat *v, const int *len);
 
-extern str bat_date_trunc(bat *res, const str *scale, const bat *v);
-extern str date_trunc(timestamp *res, const str *scale, const timestamp *v);
+sql5_export str nil_2_timestamp(timestamp *res, const void *val);
+sql5_export str batnil_2_timestamp(bat *res, const bat *val);
+sql5_export str str_2_timestamp(timestamp *res, const str *val);
+sql5_export str batstr_2_timestamp(bat *res, const bat *val);
 
-extern str nil_2_date(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str bat_date_trunc(bat *res, const str *scale, const bat *v);
+sql5_export str date_trunc(timestamp *res, const str *scale, const timestamp *v);
 
-extern str SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str nil_2_daytime(daytime *res, const void *val);
+sql5_export str batnil_2_daytime(bat *res, const bat *val);
+sql5_export str str_2_daytime(daytime *res, const str *val);
+sql5_export str batstr_2_daytime(bat *res, const bat *val);
 
-extern str flt_dec_round_wrap(flt *res, const flt *v, const flt *r);
-extern str flt_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str flt_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str flt_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str flt_round_wrap(flt *res, const flt *v, const bte *r);
-extern str flt_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str flt_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str flt_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str flt_trunc_wrap(flt *res, const flt *v, const int *r);
+sql5_export str nil_2_date(date *res, const void *val);
+sql5_export str batnil_2_date(bat *res, const bat *val);
+sql5_export str batnil_ce_2_date(bat *res, const bat *val, const bat *r);
+sql5_export str str_2_date(date *res, const str *val);
+sql5_export str batstr_2_date(bat *res, const bat *val);
+sql5_export str batstr_ce_2_date(bat *res, const bat *val, const bat *r);
+sql5_export str SQLdate_2_str(str *res, const date *val);
 
-extern str dbl_dec_round_wrap(dbl *res, const dbl *v, const dbl *r);
-extern str dbl_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str dbl_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str dbl_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str dbl_round_wrap(dbl *res, const dbl *v, const bte *r);
-extern str dbl_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str dbl_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str dbl_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str dbl_trunc_wrap(dbl *res, const dbl *v, const int *r);
+sql5_export str str_2_blob(blob * *res, const str *val);
+sql5_export str batstr_2_blob(bat *res, const bat *val);
+sql5_export str batstr_ce_2_blob(bat *res, const bat *val, const bat *r);
+sql5_export str SQLblob_2_str(str *res, const blob * val);
+
+sql5_export str SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+sql5_export str flt_dec_round_wrap(flt *res, const flt *v, const flt *r);
+sql5_export str flt_bat_dec_round_wrap(bat *res, const bat *v, const flt *r);
+sql5_export str flt_round_wrap(flt *res, const flt *v, const bte *r);
+sql5_export str flt_bat_round_wrap(bat *res, const bat *v, const bte *r);
+sql5_export str flt_trunc_wrap(flt *res, const flt *v, const int *r);
+
+sql5_export str dbl_dec_round_wrap(dbl *res, const dbl *v, const dbl *r);
+sql5_export str dbl_bat_dec_round_wrap(bat *res, const bat *v, const dbl *r);
+sql5_export str dbl_round_wrap(dbl *res, const dbl *v, const bte *r);
+sql5_export str dbl_bat_round_wrap(bat *res, const bat *v, const bte *r);
+sql5_export str dbl_trunc_wrap(dbl *res, const dbl *v, const int *r);
 
 #define radians(x)	((x) * (3.14159265358979323846 / 180.0))
 #define degrees(x)	((x) * (180.0 / 3.14159265358979323846))
 
-extern str SQLcst_alpha_cst(dbl *res, const dbl *decl, const dbl *theta);
-extern str SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta);
-extern str SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta);
-extern str month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLcst_alpha_cst(dbl *res, const dbl *decl, const dbl *theta);
+sql5_export str SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta);
+sql5_export str SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta);
+sql5_export str month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str second_interval_daytime(lng *res, const daytime *s, const int *ek, const int *sk);
 
 #include "sql_cast.h"
 
 sql5_export str checkSQLContext(Client cntxt);
 sql5_export str getSQLContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b);
 
-extern void freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int oldvtop, int oldvid);
-extern str second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLcurrent_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLcurrent_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export void freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start);
+sql5_export str second_interval_2_daytime(daytime *res, const lng *s, const int *d);
+sql5_export str timestamp_2_daytime(daytime *res, const timestamp *v, const int *d);
+sql5_export str date_2_timestamp(timestamp *res, const date *v, const int *d);
+sql5_export str SQLcurrent_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLcurrent_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-extern str SQLflush_log(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLsuspend_log_flushing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLresume_log_flushing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLhot_snapshot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLhot_snapshot_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str STRindex_int(int *res, const str *src, const bit *u);
+sql5_export str BATSTRindex_int(bat *res, const bat *src, const bit *u);
+sql5_export str STRindex_sht(sht *res, const str *src, const bit *u);
+sql5_export str BATSTRindex_sht(bat *res, const bat *src, const bit *u);
+sql5_export str STRindex_bte(bte *res, const str *src, const bit *u);
+sql5_export str BATSTRindex_bte(bat *res, const bat *src, const bit *u);
+sql5_export str STRstrings(str *res, const str *src);
+sql5_export str BATSTRstrings(bat *res, const bat *src);
 
-extern str SQLsession_prepared_statements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLsession_prepared_statements_args(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLflush_log(void *ret);
+sql5_export str SQLsuspend_log_flushing(void *ret);
+sql5_export str SQLresume_log_flushing(void *ret);
+sql5_export str SQLhot_snapshot(void *ret, const str *tarfile);
 
-extern str SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLuser_password(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLsession_prepared_statements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLsession_prepared_statements_args(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-sql5_export str getBackendContext(Client cntxt, backend **be);
-
-#define USER_TABLE_NAME "db_user_info"
-#define SCHEMA_TABLE_NAME "schemas"
-#define USER_PASSWORD_COLUMN "password"
+sql5_export str SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _SQL_H */

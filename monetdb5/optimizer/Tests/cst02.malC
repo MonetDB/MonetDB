@@ -1,0 +1,9 @@
+# test constant expressions with strong types
+function foo();
+    X2 := calc.dbl(nil);
+    X14 := X2 + 0.0;
+	io.print(X14);
+end foo;
+
+optimizer.evaluate("user","foo");
+mdb.List("user","foo");

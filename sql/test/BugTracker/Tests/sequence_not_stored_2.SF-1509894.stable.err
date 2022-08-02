@@ -1,0 +1,17 @@
+stderr of test 'sequence_not_stored_2.SF-1509894` in directory 'sql/test/BugTracker` itself:
+
+
+# 21:26:30 >  
+# 21:26:30 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/rc/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/log" --set mapi_port=35900 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 21:26:30 >  
+
+
+# 21:26:30 >  
+# 21:26:30 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35900  < sequence_not_stored_2.SF-1509894.sql
+# 21:26:30 >  
+
+
+# 21:26:31 >  
+# 21:26:31 >  Done.
+# 21:26:31 >  
+

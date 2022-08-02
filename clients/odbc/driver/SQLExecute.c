@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -40,7 +40,6 @@ static struct msql_types {
 	{"char", SQL_WCHAR},
 	{"clob", SQL_WLONGVARCHAR},
 	{"date", SQL_TYPE_DATE},
-	{"day_interval", SQL_INTERVAL_SECOND},
 	{"decimal", SQL_DECIMAL},
 	{"double", SQL_DOUBLE},
 	{"hugeint", SQL_HUGEINT},
@@ -228,8 +227,6 @@ ODBCInitResult(ODBCStmt *stmt)
 		s = mapi_get_type(hdl, i);
 		if (s == NULL)	/* shouldn't happen */
 			s = "";
-		if (!stmt->Dbc->allow_hugeint && strcmp(s, "hugeint") == 0)
-			s = "bigint";
 		if (rec->sql_desc_type_name)
 			free(rec->sql_desc_type_name);
 		rec->sql_desc_type_name = (SQLCHAR *) strdup(s);
@@ -362,7 +359,14 @@ ODBCInitResult(ODBCStmt *stmt)
 			rec->sql_desc_length = mapi_get_len(hdl, i);
 
 		rec->sql_desc_local_type_name = NULL;
-		rec->sql_desc_catalog_name = NULL;
+		if (rec->sql_desc_catalog_name == NULL) {
+			if (stmt->Dbc->dbname) {
+				rec->sql_desc_catalog_name = (SQLCHAR *) strdup(stmt->Dbc->dbname);
+				if (rec->sql_desc_catalog_name == NULL)
+					goto nomem;
+			} else
+				rec->sql_desc_catalog_name = NULL;
+		}
 		rec->sql_desc_literal_prefix = NULL;
 		rec->sql_desc_literal_suffix = NULL;
 

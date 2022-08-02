@@ -1,0 +1,10 @@
+create table s1 (id int, v char(10));
+create table s2 (id int, v char(10));
+insert into s1 values (1,'s1');
+insert into s1 values (2,'s2');
+insert into s1 values (3,'s3');
+insert into s2 values (1,'s1');
+insert into s2 values (2,'s2');
+select s1.id from s1, s2 where s1.v between s2.v and s2.v;
+drop table s1;
+drop table s2;

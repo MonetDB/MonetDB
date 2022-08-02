@@ -1,0 +1,19 @@
+stderr of test 'blob_not_null` in directory 'sql/test/bugs` itself:
+
+
+# 09:08:32 >  
+# 09:08:32 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=34706 --set xrpc_port=46770 --set monet_prompt= --trace  "--dbname=mTests_src_test_bugs" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 09:08:32 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf)
+
+# 09:08:33 >  
+# 09:08:33 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=34706 
+# 09:08:33 >  
+
+
+# 09:08:33 >  
+# 09:08:33 >  Done.
+# 09:08:33 >  
+

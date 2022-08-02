@@ -12,7 +12,6 @@ tst010
 tst011
 tst012
 tst013
-tst017
 tst014
 tst015
 tst016
@@ -64,11 +63,12 @@ tst071
 tst072
 tst074
 tst075
-## tst077  Crashes Mconvert
+tst077
 tst100
 tst1000
+tst1002
 tst1004
-##tst101 Empty after Mconvert
+tst101
 tst1012
 tst102
 tst103
@@ -84,16 +84,16 @@ tst117
 tst115
 tst116
 tst1150
-# #tst120	files are not located in module and paths are runtime dependent
-# #tst1200
-# #tst1204
+#tst120	files are not located in module and paths are runtime dependent
+#tst1200
+#tst1204
 tst120a
 tst120b
 tst130
 tst1500
-# tst1502 Mconvert chokes on print(xs)
+tst1502
 tst1503
-tst1504		# Incorrect last print statement
+tst1504
 tst1505
 tst1506
 tst161
@@ -135,7 +135,7 @@ tst2550
 tst256
 tst2570
 tst272
-#tst275	# incorrect hash
+tst275
 tst280
 tst281
 tst292
@@ -146,6 +146,7 @@ tst302
 tst303
 tst304
 tst305
+#tst3050
 tst307
 tst308
 tst400
@@ -154,7 +155,7 @@ tst500
 tst501
 tst560
 tst611
-#tst620  word size problems on different platforms
+tst620
 tst660
 tst661
 tst662
@@ -170,6 +171,7 @@ tst802
 tst804
 tst810
 tst819
+tst830
 tst840
 tst850
 tst866
@@ -179,24 +181,33 @@ tst890
 tst900
 tst901
 tst902
+tst903
 tst904
 tst905
 tst906
 tst907
 tst908
-#tst911 micro benchmark, should move ..
+
+tst911
 tst912
 tst913
 tst914
 tst960
+
+#tests for garbage collection of strings
 tst920
 tst901a
-# #tst901b micro benchmark of optimizers
+#tst901b
+
+parseErrors
+
 dataflow01
 dataflow03
 flowchk
+
 dynamicload
 pithole
 malids
+
 # Tracer
-# # tracer00 Output is call dependent
+# tracer00 Output is call dependent

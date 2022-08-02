@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (author) M. Kersten */
@@ -16,6 +16,10 @@ stream *maleventstream = 0;
 
 /* The compile time debugging flags are turned into bit masks, akin to GDK */
 lng MALdebug;
+
+#ifdef HAVE_HGE
+int have_hge;
+#endif
 
 #include "mal_stack.h"
 #include "mal_linker.h"
@@ -34,138 +38,21 @@ lng MALdebug;
 #include "mal_resource.h"
 #include "mal_atom.h"
 
-MT_Lock     mal_contextLock = MT_LOCK_INITIALIZER(mal_contextLock);
-MT_Lock     mal_remoteLock = MT_LOCK_INITIALIZER(mal_remoteLock);
-MT_Lock     mal_profileLock = MT_LOCK_INITIALIZER(mal_profileLock);
-MT_Lock     mal_copyLock = MT_LOCK_INITIALIZER(mal_copyLock);
-MT_Lock     mal_delayLock = MT_LOCK_INITIALIZER(mal_delayLock);
-
-
-
-#ifdef HAVE_PTHREAD_H
-
-static pthread_key_t tl_client_key;
-
-static int
-initialize_tl_client_key(void)
-{
-	static bool initialized = false;
-	if (initialized)
-		return 0;
-
-	if (pthread_key_create(&tl_client_key, NULL) != 0)
-		return -1;
-
-	initialized = true;
-	return 0;
-}
-
-/* declared in mal_interpreter.h so MAL operators can access it */
-Client
-getClientContext(void)
-{
-	if (initialize_tl_client_key())
-		return NULL;
-	return (Client) pthread_getspecific(tl_client_key);
-}
-
-/* declared in mal_private.h so only the MAL interpreter core can access it */
-Client
-setClientContext(Client cntxt)
-{
-	Client old = getClientContext();
-
-	if (pthread_setspecific(tl_client_key, cntxt) != 0)
-		GDKfatal("Failed to set thread local Client context");
-
-	return old;
-}
-
-#elif defined(WIN32)
-
-static DWORD tl_client_key = 0;
-
-static int
-initialize_tl_client_key(void)
-{
-	static bool initialized = false;
-	if (initialized)
-		return 0;
-
-	DWORD key = TlsAlloc();
-	if (key == TLS_OUT_OF_INDEXES)
-		return -1;
-
-	tl_client_key = key;
-	initialized = true;
-	return 0;
-}
-
-/* declared in mal_interpreter.h so MAL operators can access it */
-Client
-getClientContext(void)
-{
-	if (initialize_tl_client_key())
-		return NULL;
-	return (Client) TlsGetValue(tl_client_key);
-}
-
-/* declared in mal_private.h so only the MAL interpreter core can access it */
-Client
-setClientContext(Client cntxt)
-{
-	Client old = getClientContext();
-
-	if (TlsSetValue(tl_client_key, cntxt) == 0)
-		GDKfatal("Failed to set thread local Client context");
-
-	return old;
-}
-
-#else
-
-#error "no pthreads and no Win32, don't know what to do"
-
-#endif
-
-const char *
-mal_version(void)
-{
-	return MONETDB5_VERSION;
-}
+MT_Lock     mal_contextLock = MT_LOCK_INITIALIZER("mal_contextLock");
+MT_Lock     mal_remoteLock = MT_LOCK_INITIALIZER("mal_remoteLock");
+MT_Lock     mal_profileLock = MT_LOCK_INITIALIZER("mal_profileLock");
+MT_Lock     mal_copyLock = MT_LOCK_INITIALIZER("mal_copyLock");
+MT_Lock     mal_delayLock = MT_LOCK_INITIALIZER("mal_delayLock");
+MT_Lock     mal_oltpLock = MT_LOCK_INITIALIZER("mal_oltpLock");
 
 /*
  * Initialization of the MAL context
  */
 
-int
-mal_init(char *modules[], bool embedded)
-{
+int mal_init(void){
 /* Any error encountered here terminates the process
  * with a message sent to stderr
  */
-	str err;
-
-	/* check that library that we're linked against is compatible with
-	 * the one we were compiled with */
-	int maj, min, patch;
-	const char *version = GDKlibversion();
-	sscanf(version, "%d.%d.%d", &maj, &min, &patch);
-	if (maj != GDK_VERSION_MAJOR || min < GDK_VERSION_MINOR) {
-		TRC_CRITICAL(MAL_SERVER, "Linked GDK library not compatible with the one this was compiled with\n");
-		TRC_CRITICAL(MAL_SERVER, "Linked version: %s, compiled version: %s\n",
-					 version, GDK_VERSION);
-		return -1;
-	}
-
-	if (initialize_tl_client_key() != 0)
-		return -1;
-
-	if ((err = AUTHinitTables(NULL)) != MAL_SUCCEED) {
-		freeException(err);
-		return -1;
-	}
-
 	if (!MCinit())
 		return -1;
 #ifndef NDEBUG
@@ -176,8 +63,8 @@ mal_init(char *modules[], bool embedded)
 #endif
 	initNamespace();
 	initParser();
-
-	err = malBootstrap(modules, embedded);
+	initHeartbeat();
+	str err = malBootstrap();
 	if (err != MAL_SUCCEED) {
 		mal_client_reset();
 #ifndef NDEBUG
@@ -188,7 +75,6 @@ mal_init(char *modules[], bool embedded)
 		return -1;
 	}
 	initProfiler();
-	initHeartbeat();
 	return 0;
 }
 
@@ -202,16 +88,16 @@ mal_init(char *modules[], bool embedded)
  * activity first.
  * This function should be called after you have issued sql_reset();
  */
-void mal_reset(void)
+void mserver_reset(void)
 {
+	str err = 0;
+
 	GDKprepareExit();
 	MCstopClients(0);
 	setHeartbeat(-1);
 	stopProfiler(0);
 	AUTHreset();
-	if (!GDKinmemory(0) && !GDKembedded()) {
-		str err = 0;
-
+	if (!GDKinmemory()) {
 		if ((err = msab_wildRetreat()) != NULL) {
 			TRC_ERROR(MAL_SERVER, "%s\n", err);
 			free(err);
@@ -254,6 +140,6 @@ void mal_reset(void)
 
 void mal_exit(int status)
 {
-	mal_reset();
+	mserver_reset();
 	exit(status);				/* properly end GDK */
 }

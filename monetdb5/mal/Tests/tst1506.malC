@@ -1,0 +1,43 @@
+	x:= bat.new(:bit);
+	x:= bat.append(x,true);
+	x:= bat.append(x,false);
+	x:= bat.append(x,nil:bit);
+	io.print(x);
+
+	Ai:= bat.new(:int);
+	bat.append(Ai,1);
+	bat.append(Ai,2);
+	bat.append(Ai,3);
+	Air:= bat.new(:int);
+	bat.append(Air,-1);
+	bat.append(Air,-2);
+	bat.append(Air,-3);
+	As:= bat.new(:str);
+	bat.append(As,"hello");
+	bat.append(As,"new");
+	bat.append(As,"world");
+	Asr:= bat.new(:str);
+	bat.append(Asr,"HELLO");
+	bat.append(Asr,"NEW");
+	bat.append(Asr,"WORLD");
+	io.print(Ai);
+	io.print(Air);
+	io.print(As);
+	io.print(Asr);
+
+io.print("ifthen group");
+#	xif0:= batcalc.ifthen(x,Ai);io.print(x,xif0);
+#	xif0:= batcalc.ifthen(x,888);io.print(x,xif0);
+	xif2:= batcalc.ifthenelse(x,Ai,Air);io.print(x,xif2);
+	xif2:= batcalc.ifthenelse(x,Ai,-999);io.print(x,xif2);
+	xif2:= batcalc.ifthenelse(x,999,Air);io.print(x,xif2);
+
+#	sif0:= batcalc.ifthen(x,As);io.print(x,sif0);
+#	sif0:= batcalc.ifthen(x,"moon");io.print(x,sif0);
+	sif2:= batcalc.ifthenelse(x,As,Asr);io.print(x,sif2);
+	sif2:= batcalc.ifthenelse(x,As,"unknown");io.print(x,sif2);
+	sif2:= batcalc.ifthenelse(x,"unknown",Asr);io.print(x,sif2);
+
+#	xif1:= batcalc.ifthen(x,false);io.print(x,xif1);
+	xif3:= batcalc.ifthenelse(x,x,true);io.print(x,x,xif3);
+	xif4:= batcalc.ifthenelse(x,1,2);io.print(x,xif4);

@@ -1,0 +1,165 @@
+stdout of test 'opt_sql_append` in directory 'monetdb5/extras/mal_optimizer_template` itself:
+
+
+# 22:58:57 >  
+# 22:58:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/manegold/_/Monet/HG/default/prefix/_/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=36275" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_extras_mal_optimizer_template" "--set" "mal_listing=0"
+# 22:58:57 >  
+
+# MonetDB 5 server v11.8.0
+# This is an unreleased version
+# Serving database 'mTests_extras_mal_optimizer_template', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.630 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:36275/
+# MonetDB/GIS module loaded
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+
+# 16:06:52 >  
+# 16:06:52 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25090" "--port=39713"
+# 16:06:52 >  
+
+#create table ttt (a int, b int, c int);
+#select optimizer;
+% .%2 # table_name
+% %2 # name
+% varchar # type
+% 15 # length
+[ "sequential_pipe"	]
+#select def from optimizers() where name = optimizer;
+% .%1 # table_name
+% def # name
+% clob # type
+% 580 # length
+[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.wlc();optimizer.garbageCollector();"	]
+#explain copy into ttt from '/tmp/xyz';
+% .explain # table_name
+% mal # name
+% clob # type
+% 235 # length
+function user.s10_0():void;
+    X_1:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';":str, "sequential_pipe":str, 22:int);
+    X_4:int := sql.mvc();
+    (X_26:bat[:int], X_27:bat[:int], X_28:bat[:int]) := sql.copy_from(0x7f371c1f09b0:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int);
+    X_30:int := sql.append(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, X_26:bat[:int]);
+    X_35:int := sql.append(X_30:int, "sys":str, "ttt":str, "b":str, X_27:bat[:int]);
+    X_38:int := sql.append(X_35:int, "sys":str, "ttt":str, "c":str, X_28:bat[:int]);
+    X_40:lng := aggr.count(X_28:bat[:int]);
+    sql.affectedRows(X_38:int, X_40:lng);
+end user.s10_0;
+#inline               actions= 0 time=1 usec 
+#candidates           actions= 1 time=14 usec 
+#remap                actions= 0 time=3 usec 
+#costModel            actions= 1 time=12 usec 
+#coercions            actions=10 time=13 usec 
+#evaluate             actions= 0 time=2 usec 
+#emptybind            actions= 0 time=4 usec 
+#pushselect           actions= 0 time=3 usec 
+#aliases              actions= 0 time=4 usec 
+#mitosis              actions= 0 time=2 usec 
+#mergetable           actions= 0 time=17 usec 
+#deadcode             actions= 0 time=5 usec 
+#aliases              actions= 0 time=4 usec 
+#constants            actions= 0 time=5 usec 
+#commonTerms          actions= 0 time=4 usec 
+#projectionpath       actions= 0 time=3 usec 
+#deadcode             actions= 0 time=4 usec 
+#reorder              actions= 1 time=19 usec 
+#reduce               actions=33 time=23 usec 
+#matpack              actions= 0 time=3 usec 
+#dataflow             actions=31 time=20 usec 
+#querylog             actions= 0 time=0 usec 
+#multiplex            actions= 0 time=3 usec 
+#generator            actions= 0 time=1 usec 
+#profiler             actions= 1 time=6 usec 
+#garbageCollector     actions= 1 time=13 usec 
+#total                actions= 1 time=245 usec 
+#declare opt_pipe_name string;
+#set opt_pipe_name = ( select optimizer );
+#declare opt_pipe_def  string;
+#set opt_pipe_def  = ( select def from optimizers() where name = opt_pipe_name );
+#set optimizer = substring(opt_pipe_def,0,length(opt_pipe_def)-length('optimizer.garbageCollector();')) || 'optimizer.sql_append();optimizer.garbageCollector();';
+#select optimizer;
+% .%2 # table_name
+% %2 # name
+% varchar # type
+% 6 # length
+[ "user_0"	]
+#select def from optimizers() where name = optimizer;
+% .%1 # table_name
+% def # name
+% clob # type
+% 603 # length
+[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.wlc();optimizer.sql_append();optimizer.garbageCollector();"	]
+#explain copy into ttt from '/tmp/xyz';
+% .explain # table_name
+% mal # name
+% clob # type
+% 235 # length
+function user.s26_0():void;
+    X_1:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';":str, "user_0":str, 22:int);
+    X_4:int := sql.mvc();
+    (X_26:bat[:int], X_27:bat[:int], X_28:bat[:int]) := sql.copy_from(0x7f371c1f09b0:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int);
+    X_30:int := sql.append(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, X_26:bat[:int]);
+    X_35:int := sql.append(X_30:int, "sys":str, "ttt":str, "b":str, X_27:bat[:int]);
+    X_40:lng := aggr.count(X_28:bat[:int]);
+    X_38:int := sql.append(X_35:int, "sys":str, "ttt":str, "c":str, X_28:bat[:int]);
+    sql.affectedRows(X_38:int, X_40:lng);
+end user.s26_0;
+#inline               actions= 0 time=1 usec 
+#candidates           actions= 1 time=14 usec 
+#remap                actions= 0 time=3 usec 
+#costModel            actions= 1 time=13 usec 
+#coercions            actions=10 time=14 usec 
+#evaluate             actions= 0 time=3 usec 
+#emptybind            actions= 0 time=3 usec 
+#pushselect           actions= 0 time=3 usec 
+#aliases              actions= 0 time=4 usec 
+#mitosis              actions= 0 time=2 usec 
+#mergetable           actions= 0 time=16 usec 
+#deadcode             actions= 0 time=4 usec 
+#aliases              actions= 0 time=4 usec 
+#constants            actions= 0 time=4 usec 
+#commonTerms          actions= 0 time=4 usec 
+#projectionpath       actions= 0 time=3 usec 
+#deadcode             actions= 0 time=4 usec 
+#reorder              actions= 1 time=19 usec 
+#reduce               actions=33 time=23 usec 
+#matpack              actions= 0 time=3 usec 
+#dataflow             actions=32 time=19 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=3 usec 
+#generator            actions= 0 time=1 usec 
+#profiler             actions= 1 time=7 usec 
+#optimizer.sql_append actions= 1 time=8 usec 
+#garbageCollector     actions= 1 time=19 usec 
+#total                actions= 1 time=261 usec 
+#drop table ttt;
+
+# 22:58:58 >  
+# 22:58:58 >  "Done."
+# 22:58:58 >  
+

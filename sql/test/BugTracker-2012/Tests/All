@@ -29,7 +29,8 @@ name_resolution_in_proc.Bug-3074
 segfault_incorrect_head.Bug-3028
 cast_varchar_to_double.Bug-3071
 table_returning_func_returns_too_many_columns.Bug-3077
-table_functions_fail_after_restart.Bug-3063
+table_functions_fail_after_restart-0.Bug-3063
+table_functions_fail_after_restart-1.Bug-3063
 user_defined_decimal_function.Bug-2992
 non_keyword_no.Bug-3079
 round-type-inference.Bug-2987
@@ -65,6 +66,7 @@ incorrect_cast_from_double_to_int.Bug-2579
 conditions_when_for_triggers_do_not_work.Bug-2073
 insert_gives_39000_program_error.Bug-3097
 create_function.Bug-3172
+currenttime.Bug-2781
 timestamp_minus_date.Bug-2977
 null_except_null.Bug-3040
 create_index_update.Bug-3098
@@ -78,8 +80,9 @@ update_crash.Bug-2655
 tuples_INTERSECT_vs_count_intersect_differs.Bug-2659
 large-number-operation-strange-results.Bug-2929
 inet-casts.Bug-3205
+fixed_limit_for_prepare.Bug-3208
 exp_bin_assertion.Bug-3209
-#querycache.Bug-3212
+querycache.Bug-3212
 url_script_test.Bug-2972
 huge_insert.Bug-2803
 huge_table_update.Bug-2803

@@ -1,5 +1,0 @@
-query I rowsort
-select count(*) from "sys"."tracelog"
-----
-0
-

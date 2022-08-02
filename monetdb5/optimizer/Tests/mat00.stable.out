@@ -1,0 +1,118 @@
+stdout of test 'mat00` in directory 'monetdb5/optimizer` itself:
+
+
+# 08:54:20 >  
+# 08:54:20 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=36757 --set sql_port=42245 --set xquery_port=56755 --set monet_prompt= --trace --dbname=mTests_src_optimizer  mat00.mal < /dev/null
+# 08:54:20 >  
+
+# MonetDB 5 server v11.10.0
+# This is an unreleased version
+# Serving database 'mTests_optimizer', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.630 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:35811/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+# the Multi Assocation Tables 
+    mdb.List();
+    m0 := bat.new(:oid,:oid);
+    bat.append(m0,0@0);
+    m1 := bat.new(:oid,:oid);
+    bat.append(m1,1@0);
+    m2 := bat.new(:oid,:oid);
+    bat.append(m2,2@0);
+    X_35 := algebra.select(m0,0@0,2@0);
+    X_36 := algebra.select(m1,0@0,2@0);
+    X_37 := algebra.select(m2,0@0,2@0);
+    X_39 := aggr.count(X_35);
+    X_40 := aggr.count(X_36);
+    X_41 := aggr.count(X_37);
+    X_38 := mat.pack(X_39,X_40,X_41);
+    X_42 := algebra.selectNotNil(X_38);
+    i := aggr.sum(X_42);
+    s := mat.pack(X_35,X_36,X_37);
+    io.print(s);
+    io.print(i);
+    c0 := bat.new(:oid,:oid);
+    bat.append(c0,4@0);
+    c1 := bat.new(:oid,:oid);
+    bat.append(c1,5@0);
+    c := mat.pack(c0,c1);
+    bat.append(c,6@0);
+    b := mat.pack(m0,m1,m2);
+    j := algebra.join(b,c);
+    io.print(j);
+    io.print(b);
+    io.print(c);
+end main;
+function user.main():void;              #  0 main:void := user.main() {G}
+# the Multi Assocation Tables 
+    mdb.List();                         #  2 _2:void := MDBlistDetail() 
+    m0{horigin=1, torigin=1} := bat.new(:oid,:oid);#  3 m0:bat[:oid,:oid] := CMDBATnew(_4:oid, _4:oid) {G}
+    bat.append(m0{horigin=1, torigin=1},0@0);#  4 _5:bat[:oid,:oid] := BKCappend_val_wrap(m0:bat[:oid,:oid], _6:oid) {G}
+    m1{horigin=2, torigin=2} := bat.new(:oid,:oid);#  5 m1:bat[:oid,:oid] := CMDBATnew(_4:oid, _4:oid) {G}
+    bat.append(m1{horigin=2, torigin=2},1@0);#  6 _8:bat[:oid,:oid] := BKCappend_val_wrap(m1:bat[:oid,:oid], _9:oid) {G}
+    m2{horigin=3, torigin=3} := bat.new(:oid,:oid);#  7 m2:bat[:oid,:oid] := CMDBATnew(_4:oid, _4:oid) {G}
+    bat.append(m2{horigin=3, torigin=3},2@0);#  8 _11:bat[:oid,:oid] := BKCappend_val_wrap(m2:bat[:oid,:oid], _12:oid) {G}
+    X_35{horigin=1} := algebra.select(m0{horigin=1, torigin=1},0@0,2@0);#  9 _35:bat[:oid,:oid] := ALGselect(m0:bat[:oid,:oid], _6:oid, _12:oid) {G}
+    X_36{horigin=2} := algebra.select(m1{horigin=2, torigin=2},0@0,2@0);# 10 _36:bat[:oid,:oid] := ALGselect(m1:bat[:oid,:oid], _6:oid, _12:oid) {G}
+    X_37{horigin=3} := algebra.select(m2{horigin=3, torigin=3},0@0,2@0);# 11 _37:bat[:oid,:oid] := ALGselect(m2:bat[:oid,:oid], _6:oid, _12:oid) {G}
+    X_39 := aggr.count(X_35{horigin=1});# 12 _39:wrd := ALGcount_bat(_35:bat[:oid,:oid]) {G}
+    X_40 := aggr.count(X_36{horigin=2});# 13 _40:wrd := ALGcount_bat(_36:bat[:oid,:oid]) {G}
+    X_41 := aggr.count(X_37{horigin=3});# 14 _41:wrd := ALGcount_bat(_37:bat[:oid,:oid]) {G}
+    X_38 := mat.pack(X_39,X_40,X_41);   # 15 _38:bat[:oid,:wrd] := MATpackValues(_39:wrd, _40:wrd, _41:wrd) {G}
+    X_42 := algebra.selectNotNil(X_38); # 16 _42:bat[:oid,:wrd] := ALGselectNotNil(_38:bat[:oid,:wrd]) {G}
+    i := aggr.sum(X_42);                # 17 i:wrd := CMDBATsum(_42:bat[:oid,:wrd]) {G}
+    s := mat.pack(X_35{horigin=1},X_36{horigin=2},X_37{horigin=3});# 18 s:bat[:oid,:oid] := MATpack(_35:bat[:oid,:oid], _36:bat[:oid,:oid], _37:bat[:oid,:oid]) {G}
+    io.print(s);                        # 19 _16:void := IOprint_val(s:bat[:oid,:oid]) {G}
+    io.print(i);                        # 20 _17:void := IOprint_val(i:wrd) 
+    c0{horigin=1, torigin=1} := bat.new(:oid,:oid);# 21 c0:bat[:oid,:oid] := CMDBATnew(_4:oid, _4:oid) {G}
+    bat.append(c0{horigin=1, torigin=1},4@0);# 22 _19:bat[:oid,:oid] := BKCappend_val_wrap(c0:bat[:oid,:oid], _20:oid) {G}
+    c1{horigin=2, torigin=2} := bat.new(:oid,:oid);# 23 c1:bat[:oid,:oid] := CMDBATnew(_4:oid, _4:oid) {G}
+    bat.append(c1{horigin=2, torigin=2},5@0);# 24 _22:bat[:oid,:oid] := BKCappend_val_wrap(c1:bat[:oid,:oid], _23:oid) {G}
+    c := mat.pack(c0{horigin=1, torigin=1},c1{horigin=2, torigin=2});# 25 c:bat[:oid,:oid] := MATpack(c0:bat[:oid,:oid], c1:bat[:oid,:oid]) {G}
+    bat.append(c,6@0);                  # 26 _25:bat[:oid,:oid] := BKCappend_val_wrap(c:bat[:oid,:oid], _26:oid) {G}
+    b := mat.pack(m0{horigin=1, torigin=1},m1{horigin=2, torigin=2},m2{horigin=3, torigin=3});# 27 b:bat[:oid,:oid] := MATpack(m0:bat[:oid,:oid], m1:bat[:oid,:oid], m2:bat[:oid,:oid]) {G}
+    j := algebra.join(b,c);             # 28 j:bat[:oid,:oid] := ALGjoin(b:bat[:oid,:oid], c:bat[:oid,:oid]) {G}
+    io.print(j);                        # 29 _28:void := IOprint_val(j:bat[:oid,:oid]) {G}
+    io.print(b);                        # 30 _29:void := IOprint_val(b:bat[:oid,:oid]) {G}
+    io.print(c);                        # 31 _30:void := IOprint_val(c:bat[:oid,:oid]) {G}
+end main;                               # 32  
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 1@0,	  1@0	  ]
+[ 2@0,	  2@0	  ]
+[ 3 ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  4@0	  ]
+[ 1@0,	  5@0	  ]
+[ 2@0,	  6@0	  ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 1@0,	  1@0	  ]
+[ 2@0,	  2@0	  ]
+#-----------------#
+# h	t	  # name
+# int	int	  # type
+#-----------------#
+[ 0@0,	  4@0	  ]
+[ 1@0,	  5@0	  ]
+[ 2@0,	  6@0	  ]
+
+# 08:54:20 >  
+# 08:54:20 >  Done.
+# 08:54:20 >  
+

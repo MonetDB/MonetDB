@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _MAL_INSTR_H
@@ -13,7 +13,7 @@
 #include "mal_stack.h"
 #include "mal_namespace.h"
 
-#define isaSignature(P)  ((P)->token >=COMMANDsymbol || (P)->token == PATTERNsymbol)
+#define isaSignature(P)  ((P)->token >=COMMANDsymbol)
 
 #ifdef HAVE_SYS_TIMES_H
 # include <sys/times.h>
@@ -22,13 +22,13 @@
 #define DEBUG_MAL_INSTR
 #define MAXARG 8				/* was 4 BEWARE the code depends on this knowledge, where? */
 #define STMT_INCREMENT 4
-#define MAL_VAR_WINDOW  16 // was 32
+#define MAL_VAR_WINDOW  32
 #define MAXLISTING (64*1024)
 
 /* Allocation of space assumes a rather exotic number of
  * arguments. Access to module and function name are cast in macros to
  * prepare for separate name space management. */
-#define getModuleId(P)		((P)->modname)
+#define getModuleId(P)		(P)->modname
 #define setModuleId(P,S)	(P)->modname= S
 #define setModuleScope(P,S)	do {(P)->modname= (S)==NULL?NULL: (S)->name;} while (0)
 
@@ -45,60 +45,64 @@
 #define getModName(M)		getModuleId(getInstrPtr(M,0))
 #define getPrgSize(M)		(M)->stop
 
-#define getVar(M,I)		(&(M)->var[I])
+#define getVar(M,I)			(&(M)->var[I])
 #define getVarType(M,I)		((M)->var[I].type)
-mal_export char* getVarName(MalBlkPtr mb, int idx);
-
-#define getVarKind(M,I)   	((M)->var[I].kind)
+#define getVarName(M,I)		((M)->var[I].id)
 #define getVarGDKType(M,I)	getGDKType((M)->var[I].type)
-#define setVarType(M,I,V)   	((M)->var[I].type = V)
-#define setVarKind(M,I,V)   	((M)->var[I].kind = V)	/* either _, X, or C */
+#define setVarType(M,I,V)   (M)->var[I].type = V
 
-#define clrVarFixed(M,I)	((M)->var[I].fixedtype = 0)
-#define setVarFixed(M,I)	((M)->var[I].fixedtype =1)
+#define clrVarFixed(M,I)		((M)->var[I].fixedtype = 0)
+#define setVarFixed(M,I)		((M)->var[I].fixedtype =1)
 #define isVarFixed(M,I)		((M)->var[I].fixedtype)
 
-#define clrVarCleanup(M,I)	((M)->var[I].cleanup = 0)
-#define setVarCleanup(M,I)	((M)->var[I].cleanup = 1)
-#define isVarCleanup(M,I)	((M)->var[I].cleanup )
+#define clrVarCleanup(M,I)		((M)->var[I].cleanup = 0)
+#define setVarCleanup(M,I)		((M)->var[I].cleanup = 1)
+#define isVarCleanup(M,I)		((M)->var[I].cleanup )
 
-#define isTmpVar(M,I)		(getVarKind(M,I) == REFMARKER)
+#define isTmpVar(M,I)			(*getVarName(M,I) == REFMARKER && *(getVarName(M,I)+1) == TMPMARKER)
 
 #define clrVarUsed(M,I)		((M)->var[I].used = 0)
 #define setVarUsed(M,I)		((M)->var[I].used = 1)
 #define isVarUsed(M,I)		((M)->var[I].used)
 
-#define clrVarDisabled(M,I)	((M)->var[I].disabled= 0 )
-#define setVarDisabled(M,I)	((M)->var[I].disabled = 1)
-#define isVarDisabled(M,I)	((M)->var[I].disabled)
+#define clrVarDisabled(M,I)		((M)->var[I].disabled= 0 )
+#define setVarDisabled(M,I)		((M)->var[I].disabled = 1)
+#define isVarDisabled(M,I)		((M)->var[I].disabled)
 
 #define clrVarInit(M,I)		((M)->var[I].initialized = 0)
 #define setVarInit(M,I)		((M)->var[I].initialized = 1)
 #define isVarInit(M,I)		((M)->var[I].initialized)
 
-#define clrVarTypedef(M,I)	((M)->var[I].typevar = 0)
-#define setVarTypedef(M,I)	((M)->var[I].typevar = 1)
-#define isVarTypedef(M,I)	((M)->var[I].typevar)
+#define clrVarTypedef(M,I)		((M)->var[I].typevar = 0)
+#define setVarTypedef(M,I)		((M)->var[I].typevar = 1)
+#define isVarTypedef(M,I)		((M)->var[I].typevar)
 
-#define clrVarConstant(M,I)	((M)->var[I].constant = 0)
-#define setVarConstant(M,I)	((M)->var[I].constant = 1)
-#define isVarConstant(M,I)	((M)->var[I].constant)
+#define clrVarUDFtype(M,I)		((M)->var[I].udftype = 0)
+#define setVarUDFtype(M,I)		((M)->var[I].udftype = 1)
+#define isVarUDFtype(M,I)		((M)->var[I].udftype)
+
+#define clrVarConstant(M,I)		((M)->var[I].constant = 0)
+#define setVarConstant(M,I)		((M)->var[I].constant = 1)
+#define isVarConstant(M,I)		((M)->var[I].constant)
 
 #define setVarDeclared(M,I,X)	((M)->var[I].declared = X )
-#define getVarDeclared(M,I)	((M)->var[I].declared)
+#define getVarDeclared(M,I)		((M)->var[I].declared)
 
 #define setVarUpdated(M,I,X)	((M)->var[I].updated = X )
-#define getVarUpdated(M,I)	((M)->var[I].updated)
+#define getVarUpdated(M,I)		((M)->var[I].updated)
 
 #define setVarEolife(M,I,X)	((M)->var[I].eolife = X )
-#define getVarEolife(M,I)	((M)->var[I].eolife)
+#define getVarEolife(M,I)		((M)->var[I].eolife)
 
-#define setVarScope(M,I,S)	((M)->var[I].depth = S)
-#define getVarScope(M,I)	((M)->var[I].depth)
+#define setVarWorker(M,I,S)		((M)->var[I].worker = S)
+#define getVarWorker(M,I)		((M)->var[I].worker)
 
-#define clrVarCList(M,I)	((M)->var[I].kind = REFMARKER)
-#define setVarCList(M,I)	((M)->var[I].kind = REFMARKERC)
-#define isVarCList(M,I)		((M)->var[I].kind  == REFMARKERC)
+#define setVarScope(M,I,S)		((M)->var[I].depth = S)
+#define getVarScope(M,I)		((M)->var[I].depth)
+
+#define clrVarCList(M,I)		((M)->var[I].id[0]= REFMARKER)
+#define setVarCList(M,I)		((M)->var[I].id[0]= REFMARKERC)
+#define isVarCList(M,I)			((M)->var[I].id[0] == REFMARKERC)
 
 #define getVarConstant(M,I)	((M)->var[I].value)
 #define getVarValue(M,I)	VALget(&(M)->var[I].value)
@@ -121,29 +125,29 @@ mal_export char* getVarName(MalBlkPtr mb, int idx);
 
 mal_export void addMalException(MalBlkPtr mb, str msg);
 mal_export void mal_instruction_reset(void);
-mal_export InstrPtr newInstruction(MalBlkPtr mb, const char *modnme, const char *fcnnme);
-mal_export InstrPtr newInstructionArgs(MalBlkPtr mb, const char *modnme, const char *fcnnme, int args);
+mal_export InstrPtr newInstruction(MalBlkPtr mb, str modnme, str fcnnme);
+mal_export InstrPtr newInstructionArgs(MalBlkPtr mb, str modnme, str fcnnme, int args);
 mal_export InstrPtr copyInstruction(InstrPtr p);
-mal_export InstrPtr copyInstructionArgs(InstrPtr p, int args);
+mal_export void oldmoveInstruction(InstrPtr dst, InstrPtr src);
 mal_export void clrInstruction(InstrPtr p);
 mal_export void freeInstruction(InstrPtr p);
 mal_export void clrFunction(InstrPtr p);
-mal_export Symbol newSymbol(const char *nme, int kind);
+mal_export Symbol newSymbol(str nme, int kind);
 mal_export void freeSymbol(Symbol s);
 mal_export void freeSymbolList(Symbol s);
 mal_export void printSignature(stream *fd, Symbol s, int flg);
 
 mal_export MalBlkPtr newMalBlk(int elements);
-mal_export void resetMalBlk(MalBlkPtr mb);
-mal_export void resetMalTypes(MalBlkPtr mb, int stop);
+mal_export void resetMalBlk(MalBlkPtr mb, int stop);
+mal_export void resetMalBlkAndFreeInstructions(MalBlkPtr mb, int stop);
 mal_export int newMalBlkStmt(MalBlkPtr mb, int elements);
 mal_export int resizeMalBlk(MalBlkPtr mb, int elements);
+mal_export int prepareMalBlk(MalBlkPtr mb, str s);
 mal_export void freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr mb);
 mal_export void addtoMalBlkHistory(MalBlkPtr mb);
-mal_export void removeMalBlkHistory(MalBlkPtr mb);
 mal_export MalBlkPtr getMalBlkHistory(MalBlkPtr mb, int idx);
-mal_export MalBlkPtr getMalBlkOptimized(MalBlkPtr mb, const char *name);
+mal_export MalBlkPtr getMalBlkOptimized(MalBlkPtr mb, str name);
 mal_export void trimMalVariables(MalBlkPtr mb, MalStkPtr stk);
 mal_export void trimMalVariables_(MalBlkPtr mb, MalStkPtr glb);
 mal_export void moveInstruction(MalBlkPtr mb, int pc, int target);
@@ -152,11 +156,14 @@ mal_export void removeInstructionBlock(MalBlkPtr mb, int pc, int cnt);
 mal_export str operatorName(int i);
 
 mal_export int findVariable(MalBlkPtr mb, const char *name);
-mal_export int findVariableLength(MalBlkPtr mb, const char *name, int len);
-mal_export malType getType(MalBlkPtr mb, const char *nme);
+mal_export int findVariableLength(MalBlkPtr mb, str name, int len);
+mal_export malType getType(MalBlkPtr mb, str nme);
 mal_export str getArgDefault(MalBlkPtr mb, InstrPtr p, int idx);
 mal_export int newVariable(MalBlkPtr mb, const char *name, size_t len, malType type);
 mal_export int cloneVariable(MalBlkPtr dst, MalBlkPtr src, int varid);
+/* generate a new variable name based on a pattern with 1 %d argument
+ * -- not used, but this is how to do it */
+/* #define renameVariable(mb, id, pattern, newid) snprintf(getVarName(mb,id),IDLENGTH,pattern,newid) */
 mal_export void setVariableType(MalBlkPtr mb, const int idx, malType type);
 mal_export int newTmpVariable(MalBlkPtr mb, malType type);
 mal_export int newTypeVariable(MalBlkPtr mb, malType type);

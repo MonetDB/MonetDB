@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -86,60 +86,48 @@ VIEWcreate(oid seq, BAT *b)
 
 	BATcheck(b, NULL);
 
-	if (b->ttype == TYPE_void) {
-		/* we don't do views on void bats */
-		return BATdense(seq, b->tseqbase, b->batCount);
-	}
-
-	bn = BATcreatedesc(seq, b->ttype, false, TRANSIENT, 0);
+	bn = BATcreatedesc(seq, b->ttype, false, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	assert(bn->theap == NULL);
 
-	MT_lock_set(&b->theaplock);
+	tp = VIEWtparent(b);
+	if ((tp == 0 && b->ttype != TYPE_void) || b->theap.copied)
+		tp = b->batCacheid;
+	assert(b->ttype != TYPE_void || !tp);
+	/* the T column descriptor is fully copied. We need copies
+	 * because in case of a mark, we are going to override a
+	 * column with a void. Take care to zero the accelerator data,
+	 * though. */
 	bn->batInserted = b->batInserted;
 	bn->batCount = b->batCount;
 	bn->batCapacity = b->batCapacity;
-	bn->batRestricted = BAT_READ;
-
-	/* the T column descriptor is fully copied except for the
-	 * accelerator data. We need copies because in case of a mark,
-	 * we are going to override a column with a void. */
-	bn->tkey = b->tkey;
-	bn->tseqbase = b->tseqbase;
-	bn->tsorted = b->tsorted;
-	bn->trevsorted = b->trevsorted;
-	bn->twidth = b->twidth;
-	bn->tshift = b->tshift;
-	bn->tnonil = b->tnonil;
-	bn->tnil = b->tnil;
-	bn->tnokey[0] = b->tnokey[0];
-	bn->tnokey[1] = b->tnokey[1];
-	bn->tnosorted = b->tnosorted;
-	bn->tnorevsorted = b->tnorevsorted;
-	bn->tminpos = b->tminpos;
-	bn->tmaxpos = b->tmaxpos;
-	bn->tunique_est = b->tunique_est;
-	bn->theap = b->theap;
-	bn->tbaseoff = b->tbaseoff;
-	bn->tvheap = b->tvheap;
-
-	tp = VIEWtparent(b);
-	if (tp == 0 && b->ttype != TYPE_void)
-		tp = b->batCacheid;
-	assert(b->ttype != TYPE_void || !tp);
-	HEAPincref(b->theap);
-	if (b->tvheap)
-		HEAPincref(b->tvheap);
-	MT_lock_unset(&b->theaplock);
+	bn->T = b->T;
 
 	if (tp)
 		BBPshare(tp);
 	if (bn->tvheap) {
+		assert(b->tvheap);
 		assert(bn->tvheap->parentid > 0);
 		BBPshare(bn->tvheap->parentid);
 	}
 
+	/* note: theap points into bn which was just overwritten
+	 * with a copy from the parent.  Clear the copied flag since
+	 * our heap was not copied from our parent(s) even if our
+	 * parent's heap was copied from its parent. */
+	bn->theap.copied = false;
+	bn->tprops = NULL;
+
+	/* correct values after copy of head and tail info */
+	if (tp)
+		bn->theap.parentid = tp;
+	BATinit_idents(bn);
+	bn->batRestricted = BAT_READ;
+	bn->thash = NULL;
+	/* imprints are shared, but the check is dynamic */
+	bn->timprints = NULL;
+	/* Order OID index */
+	bn->torderidx = NULL;
 	if (BBPcacheit(bn, true) != GDK_SUCCEED) {	/* enter in BBP */
 		if (tp) {
 			BBPunshare(tp);
@@ -148,12 +136,8 @@ VIEWcreate(oid seq, BAT *b)
 		if (bn->tvheap) {
 			BBPunshare(bn->tvheap->parentid);
 			BBPunfix(bn->tvheap->parentid);
-			HEAPdecref(bn->tvheap, false);
 		}
-		HEAPdecref(bn->theap, false);
-		MT_lock_destroy(&bn->theaplock);
 		MT_lock_destroy(&bn->batIdxLock);
-		MT_rwlock_destroy(&bn->thashlock);
 		GDKfree(bn);
 		return NULL;
 	}
@@ -169,108 +153,219 @@ VIEWcreate(oid seq, BAT *b)
  */
 
 gdk_return
-BATmaterialize(BAT *b, BUN cap)
+BATmaterialize(BAT *b)
 {
-	Heap *tail;
-	Heap *h, *vh = NULL;
+	int tt;
+	BUN cnt;
+	Heap tail;
 	BUN p, q;
 	oid t, *x;
 
 	BATcheck(b, GDK_FAIL);
 	assert(!isVIEW(b));
-	if (cap == BUN_NONE || cap < BATcapacity(b))
-		cap = BATcapacity(b);
-	if (b->ttype != TYPE_void) {
-		/* no voids; just call BATextend to make sure of capacity */
-		return BATextend(b, cap);
-	}
-
-	if ((tail = GDKmalloc(sizeof(Heap))) == NULL)
-		return GDK_FAIL;
+	tt = b->ttype;
+	cnt = BATcapacity(b);
+	tail = b->theap;
 	p = 0;
-	q = BATcount(b);
-	assert(cap >= q - p);
+	q = BUNlast(b);
+	assert(cnt >= q - p);
 	TRC_DEBUG(ALGO, "BATmaterialize(" ALGOBATFMT ")\n", ALGOBATPAR(b));
+
+	if (tt != TYPE_void) {
+		/* no voids */
+		return GDK_SUCCEED;
+	}
+	tt = TYPE_oid;
 
 	/* cleanup possible ACC's */
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 
-	*tail = (Heap) {
-		.farmid = BBPselectfarm(b->batRole, TYPE_oid, offheap),
-		.parentid = b->batCacheid,
-		.dirty = true,
-	};
-	settailname(tail, BBP_physical(b->batCacheid), TYPE_oid, 0);
-	if (HEAPalloc(tail, cap, sizeof(oid), 0) != GDK_SUCCEED) {
-		GDKfree(tail);
+	strconcat_len(b->theap.filename, sizeof(b->theap.filename),
+		      BBP_physical(b->batCacheid), ".tail", NULL);
+	if (HEAPalloc(&b->theap, cnt, sizeof(oid)) != GDK_SUCCEED) {
+		b->theap = tail;
 		return GDK_FAIL;
 	}
-	x = (oid *) tail->base;
-	t = b->tseqbase;
-	if (is_oid_nil(t)) {
-		for (p = 0; p < q; p++)
-			x[p] = oid_nil;
-	} else {
-		for (p = 0; p < q; p++)
-			x[p] = t++;
-	}
-	ATOMIC_INIT(&tail->refs, 1);
-	/* point of no return */
-	MT_lock_set(&b->theaplock);
-	assert((ATOMIC_GET(&b->theap->refs) & HEAPREFS) > 0);
-	/* can only look at tvheap when lock is held */
-	if (complex_cand(b)) {
-		assert(b->batRole == TRANSIENT);
-		if (negoid_cand(b)) {
-			assert(ccand_free(b) % SIZEOF_OID == 0);
-			BUN nexc = (BUN) (ccand_free(b) / SIZEOF_OID);
-			const oid *exc = (const oid *) ccand_first(b);
-			BUN i;
-			for (p = 0, i = 0; p < q; p++) {
-				while (i < nexc && t == exc[i]) {
-					i++;
-					t++;
-				}
-				x[p] = t++;
-			}
-		} else {
-			assert(mask_cand(b));
-			BUN nmsk = (BUN) (ccand_free(b) / sizeof(uint32_t));
-			const uint32_t *src = (const uint32_t *) ccand_first(b);
-			BUN n = 0;
-			t -= (oid) CCAND(b)->firstbit;
-			for (p = 0; p < nmsk; p++) {
-				uint32_t val = src[p];
-				if (val == 0)
-					continue;
-				for (uint32_t i = 0; i < 32; i++) {
-					if (val & (1U << i)) {
-						assert(n < q);
-						x[n++] = t + p * 32 + i;
-					}
-				}
-			}
-			assert(n == q);
-		}
-		vh = b->tvheap;
-		b->tvheap = NULL;
-	}
-	h = b->theap;
-	b->theap = tail;
-	b->tbaseoff = 0;
-	b->theap->dirty = true;
-	b->tunique_est = is_oid_nil(t) ? 1.0 : (double) b->batCount;
-	b->ttype = TYPE_oid;
-	BATsetdims(b, 0);
-	BATsetcount(b, b->batCount);
-	BATsetcapacity(b, cap);
-	MT_lock_unset(&b->theaplock);
-	HEAPdecref(h, false);
-	if (vh)
-		HEAPdecref(vh, true);
 
+	/* point of no return */
+	b->ttype = tt;
+	BATsetdims(b);
+	b->batDirtydesc = true;
+	b->theap.dirty = true;
+
+	/* So now generate [t..t+cnt-1] */
+	t = b->tseqbase;
+	x = (oid *) b->theap.base;
+	if (is_oid_nil(t)) {
+		while (p < q)
+			x[p++] = oid_nil;
+	} else if (b->tvheap) {
+		assert(b->batRole == TRANSIENT);
+		assert(b->tvheap->free % SIZEOF_OID == 0);
+		BUN nexc = (BUN) (b->tvheap->free / SIZEOF_OID);
+		const oid *exc = (const oid *) b->tvheap->base;
+		BUN i = 0;
+		while (p < q) {
+			while (i < nexc && t == exc[i]) {
+				i++;
+				t++;
+			}
+			x[p++] = t++;
+		}
+		b->tseqbase = oid_nil;
+		HEAPfree(b->tvheap, true);
+		b->tvheap = NULL;
+	} else {
+		while (p < q)
+			x[p++] = t++;
+	}
+	BATsetcount(b, b->batCount);
+
+	/* cleanup the old heaps */
+	HEAPfree(&tail, false);
+	return GDK_SUCCEED;
+}
+
+/*
+ * The @#VIEWunlink@ routine cuts a reference to the parent. Part of the view
+ * destroy sequence.
+ */
+static void
+VIEWunlink(BAT *b)
+{
+	if (b) {
+		bat tp = VIEWtparent(b);
+		bat vtp = VIEWvtparent(b);
+		BAT *tpb = NULL;
+		BAT *vtpb = NULL;
+
+		assert(b->batCacheid > 0);
+		if (tp)
+			tpb = BBP_cache(tp);
+		if (tp && !vtp)
+			vtp = tp;
+		if (vtp)
+			vtpb = BBP_cache(vtp);
+
+		if (tpb == NULL && vtpb == NULL)
+			return;
+
+		/* unlink heaps shared with parent */
+		assert(b->tvheap == NULL || b->tvheap->parentid > 0);
+		if (b->tvheap && b->tvheap->parentid != b->batCacheid)
+			b->tvheap = NULL;
+
+		/* unlink properties shared with parent */
+		if (tpb && b->tprops && b->tprops == tpb->tprops)
+			b->tprops = NULL;
+
+		/* unlink imprints shared with parent */
+		if (tpb && b->timprints && b->timprints == tpb->timprints)
+			b->timprints = NULL;
+	}
+}
+
+/*
+ * Materialize a view into a normal BAT. If it is a slice, we really
+ * want to reduce storage of the new BAT.
+ */
+gdk_return
+VIEWreset(BAT *b)
+{
+	if (b == NULL)
+		return GDK_FAIL;
+
+	bat tp = VIEWtparent(b);
+	bat tvp = VIEWvtparent(b);
+	if (tp == 0 && tvp == 0)
+		return GDK_SUCCEED;
+
+	if (tp == 0) {
+		/* only sharing the vheap */
+		assert(ATOMstorage(b->ttype) == TYPE_str);
+		return unshare_string_heap(b);
+	}
+
+	BAT *v = VIEWcreate(b->hseqbase, b);
+	if (v == NULL)
+		return GDK_FAIL;
+
+	assert(VIEWtparent(v) != b->batCacheid);
+	assert(VIEWvtparent(v) != b->batCacheid);
+
+	const char *nme = BBP_physical(b->batCacheid);
+	BUN cnt = BATcount(b);
+	Heap tail = (Heap) {
+		.farmid = BBPselectfarm(b->batRole, b->ttype, offheap),
+	};
+	strconcat_len(tail.filename, sizeof(tail.filename), nme, ".tail", NULL);
+	if (b->ttype && HEAPalloc(&tail, cnt, Tsize(b)) != GDK_SUCCEED) {
+		BBPunfix(v->batCacheid);
+		return GDK_FAIL;
+	}
+	Heap *th = NULL;
+	if (b->tvheap) {
+		th = GDKmalloc(sizeof(Heap));
+		if (th == NULL) {
+			HEAPfree(&tail, true);
+			BBPunfix(v->batCacheid);
+			return GDK_FAIL;
+		}
+		*th = (Heap) {
+			.farmid = BBPselectfarm(b->batRole, b->ttype, varheap),
+			.parentid = b->batCacheid,
+		};
+		strconcat_len(th->filename, sizeof(th->filename),
+			      nme, ".theap", NULL);
+		if (ATOMheap(b->ttype, th, cnt) != GDK_SUCCEED) {
+			HEAPfree(&tail, true);
+			GDKfree(th);
+			BBPunfix(v->batCacheid);
+			return GDK_FAIL;
+		}
+	}
+
+	BAT bak = *b;		/* backup copy */
+
+	/* start overwriting */
+	VIEWunlink(b);
+	b->tvheap = th;
+	b->theap = tail;
+	/* we empty out b completely and then fill it from v */
+	DELTAinit(b);
+	b->batCapacity = cnt;
+	b->batCopiedtodisk = false;
+	b->batDirtydesc = true;
+	b->batRestricted = BAT_WRITE;
+	b->tkey = true;
+	b->tsorted = b->trevsorted = true;
+	b->tnosorted = b->tnorevsorted = 0;
+	b->tnokey[0] = b->tnokey[1] = 0;
+	b->tnil = false;
+	b->tnonil = true;
+	if (BATappend2(b, v, NULL, false, false) != GDK_SUCCEED) {
+		/* clean up the mess */
+		if (th) {
+			HEAPfree(th, true);
+			GDKfree(th);
+		}
+		HEAPfree(&tail, true);
+		*b = bak;
+		BBPunfix(v->batCacheid);
+		return GDK_FAIL;
+	}
+	/* point of no return */
+	if (tp) {
+		BBPunshare(tp);
+		BBPunfix(tp);
+	}
+	if (tvp) {
+		BBPunshare(tvp);
+		BBPunfix(tvp);
+	}
+	BBPunfix(v->batCacheid);
 	return GDK_SUCCEED;
 }
 
@@ -283,20 +378,18 @@ void
 VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 {
 	BUN cnt;
-	BUN baseoff;
+	BATiter bi = bat_iterator(b);
 
 	if (b == NULL || view == NULL)
 		return;
 	if (h > BATcount(b))
 		h = BATcount(b);
-	baseoff = b->tbaseoff;
 	if (h < l)
 		h = l;
 	cnt = h - l;
 	view->batInserted = 0;
-	if (view->ttype != TYPE_void) {
-		view->tbaseoff = baseoff + l;
-	}
+	view->theap.base = view->ttype ? BUNtloc(bi, l) : NULL;
+	view->theap.size = tailsize(view, cnt);
 	BATsetcount(view, cnt);
 	BATsetcapacity(view, cnt);
 	if (view->tnosorted > l && view->tnosorted < l + cnt)
@@ -315,15 +408,6 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 	} else {
 		view->tnokey[0] = view->tnokey[1] = 0;
 	}
-	if (view->tminpos >= l && view->tminpos < l + cnt)
-		view->tminpos -= l;
-	else
-		view->tminpos = BUN_NONE;
-	if (view->tmaxpos >= l && view->tmaxpos < l + cnt)
-		view->tmaxpos -= l;
-	else
-		view->tmaxpos = BUN_NONE;
-	view->tkey |= cnt <= 1;
 }
 
 /*
@@ -338,24 +422,14 @@ VIEWdestroy(BAT *b)
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
-	STRMPdestroy(b);
+	PROPdestroy(b);
+	VIEWunlink(b);
 
-	MT_lock_set(&b->theaplock);
-	PROPdestroy_nolock(b);
-	/* heaps that are left after VIEWunlink are ours, so need to be
-	 * destroyed (and files deleted) */
-	if (b->theap) {
-		HEAPdecref(b->theap, b->theap->parentid == b->batCacheid);
-		b->theap = NULL;
+	if (b->ttype && !b->theap.parentid) {
+		HEAPfree(&b->theap, false);
+	} else {
+		b->theap.base = NULL;
 	}
-	if (b->tvheap) {
-		/* should never happen: if this heap exists, then it was
-		 * our own (not a view), and then it doesn't make sense
-		 * that the offset heap was a view (at least one of them
-		 * had to be) */
-		HEAPdecref(b->tvheap, b->tvheap->parentid == b->batCacheid);
-		b->tvheap = NULL;
-	}
-	MT_lock_unset(&b->theaplock);
+	b->tvheap = NULL;
 	BATfree(b);
 }

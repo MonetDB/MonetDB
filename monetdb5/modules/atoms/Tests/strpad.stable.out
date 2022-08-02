@@ -1,0 +1,63 @@
+stdout of test 'strpad` in directory 'monetdb5/modules/atoms` itself:
+
+
+# 16:40:08 >  
+# 16:40:08 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31145" "--set" "mapi_usock=/var/tmp/mtest-5336/.s.monetdb.31145" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch2/zhang/monet-install/default/debug/var/MonetDB/mTests_monetdb5_modules_atoms" "strpad.mal"
+# 16:40:08 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_atoms', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://riga.ins.cwi.nl:31145/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5336/.s.monetdb.31145
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+    a := str.lpad("hi",7);
+    io.print(a);
+    a := str.lpad("hixyäbcdef",7);
+    io.print(a);
+    a := str.lpad("hi",7,"xya");
+    io.print(a);
+    a := str.lpad("hi",7,"xyä");
+    io.print(a);
+    a := str.lpad("hi",7,"xyäbcdef");
+    io.print(a);
+    a := str.lpad("hixyäbcdef",7,"lmn");
+    io.print(a);
+    a := str.rpad("hi",7);
+    io.print(a);
+    a := str.rpad("hixyäbcdef",7);
+    io.print(a);
+    a := str.rpad("hi",7,"xya");
+    io.print(a);
+    a := str.rpad("hi",7,"xyä");
+    io.print(a);
+    a := str.rpad("hi",7,"xyäbcdef");
+    io.print(a);
+    a := str.rpad("hixyäbcdef",7,"lmn");
+    io.print(a);
+end main;
+[ "     hi" ]
+[ "hixyäbc" ]
+[ "xyaxyhi" ]
+[ "xyäxyhi" ]
+[ "xyäbchi" ]
+[ "hixyäbc" ]
+[ "hi     " ]
+[ "hixyäbc" ]
+[ "hixyaxy" ]
+[ "hixyäxy" ]
+[ "hixyäbc" ]
+[ "hixyäbc" ]
+
+# 16:40:08 >  
+# 16:40:08 >  "Done."
+# 16:40:08 >  
+

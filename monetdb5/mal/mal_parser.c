@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (c): M. L. Kersten
@@ -20,7 +20,6 @@
 #include "mal_utils.h"
 #include "mal_builder.h"
 #include "mal_type.h"
-#include "mal_session.h"
 #include "mal_private.h"
 
 #define FATALINPUT MAXERRORS+1
@@ -413,6 +412,7 @@ static int
 cstToken(Client cntxt, ValPtr cst)
 {
 	int i = 0;
+	int hex = 0;
 	str s = CURRENT(cntxt);
 
 	cst->vtype = TYPE_int;
@@ -422,8 +422,13 @@ cstToken(Client cntxt, ValPtr cst)
 		/* JSON Literal */
 		break;
 	case '"':
+		cst->vtype = TYPE_str;
 		i = stringLength(cntxt);
-		VALset(cst, TYPE_str, strCopy(cntxt, i));
+		cst->val.sval = strCopy(cntxt, i);
+		if (cst->val.sval)
+			cst->len = strlen(cst->val.sval);
+		else
+			cst->len = 0;
 		return i;
 	case '-':
 		i++;
@@ -432,21 +437,24 @@ cstToken(Client cntxt, ValPtr cst)
 	case '0':
 		if (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) {
 			/* deal with hex */
+			hex = TRUE;
 			i += 2;
 			s += 2;
+		}
+		/* fall through */
+	case '1': case '2': case '3': case '4': case '5':
+	case '6': case '7': case '8': case '9':
+		if (hex) {
 			while (isxdigit((unsigned char) *s)) {
 				i++;
 				s++;
 			}
 			goto handleInts;
-		}
-		/* fall through */
-	case '1': case '2': case '3': case '4': case '5':
-	case '6': case '7': case '8': case '9':
-		while (isdigit((unsigned char) *s)) {
-			i++;
-			s++;
-		}
+		} else
+			while (isdigit((unsigned char) *s)) {
+				i++;
+				s++;
+			}
 
 		/* fall through */
 	case '.':
@@ -475,7 +483,7 @@ cstToken(Client cntxt, ValPtr cst)
 		if (cst->vtype == TYPE_flt) {
 			size_t len = sizeof(flt);
 			float *pval = &cst->val.fval;
-			if (fltFromStr(CURRENT(cntxt), &len, &pval, false) < 0) {
+			if (fltFromStr(CURRENT(cntxt), &len, &pval, true) < 0) {
 				parseError(cntxt, GDKerrbuf);
 				return i;
 			}
@@ -483,7 +491,7 @@ cstToken(Client cntxt, ValPtr cst)
 		if (cst->vtype == TYPE_dbl) {
 			size_t len = sizeof(dbl);
 			double *pval = &cst->val.dval;
-			if (dblFromStr(CURRENT(cntxt), &len, &pval, false) < 0) {
+			if (dblFromStr(CURRENT(cntxt), &len, &pval, true) < 0) {
 				parseError(cntxt, GDKerrbuf);
 				return i;
 			}
@@ -491,7 +499,7 @@ cstToken(Client cntxt, ValPtr cst)
 		if (*s == '@') {
 			size_t len = sizeof(lng);
 			lng l, *pval = &l;
-			if (lngFromStr(CURRENT(cntxt), &len, &pval, false) < 0) {
+			if (lngFromStr(CURRENT(cntxt), &len, &pval, true) < 0) {
 				parseError(cntxt, GDKerrbuf);
 				return i;
 			}
@@ -526,14 +534,14 @@ cstToken(Client cntxt, ValPtr cst)
 			if (cst->vtype == TYPE_dbl) {
 				size_t len = sizeof(dbl);
 				dbl *pval = &cst->val.dval;
-				if (dblFromStr(CURRENT(cntxt), &len, &pval, false) < 0) {
+				if (dblFromStr(CURRENT(cntxt), &len, &pval, true) < 0) {
 					parseError(cntxt, GDKerrbuf);
 					return i;
 				}
 			} else {
 				size_t len = sizeof(lng);
 				lng *pval = &cst->val.lval;
-				if (lngFromStr(CURRENT(cntxt), &len, &pval, false) < 0) {
+				if (lngFromStr(CURRENT(cntxt), &len, &pval, true) < 0) {
 					parseError(cntxt, GDKerrbuf);
 					return i;
 				}
@@ -551,7 +559,7 @@ cstToken(Client cntxt, ValPtr cst)
 				i++;
 				s++;
 			}
-			if (hgeFromStr(CURRENT(cntxt), &len, &pval, false) < 0) {
+			if (hgeFromStr(CURRENT(cntxt), &len, &pval, true) < 0) {
 				parseError(cntxt, GDKerrbuf);
 				return i;
 			}
@@ -567,7 +575,7 @@ handleInts:
 #ifdef HAVE_HGE
 			size_t len = sizeof(hge);
 			hge l, *pval = &l;
-			if (hgeFromStr(CURRENT(cntxt), &len, &pval, false) < 0)
+			if (hgeFromStr(CURRENT(cntxt), &len, &pval, true) < 0)
 				l = hge_nil;
 
 			if ((hge) GDK_int_min <= l && l <= (hge) GDK_int_max) {
@@ -584,7 +592,7 @@ handleInts:
 #else
 			size_t len = sizeof(lng);
 			lng l, *pval = &l;
-			if (lngFromStr(CURRENT(cntxt), &len, &pval, false) < 0)
+			if (lngFromStr(CURRENT(cntxt), &len, &pval, true) < 0)
 				l = lng_nil;
 
 			if ((lng) GDK_int_min <= l && l <= (lng) GDK_int_max) {
@@ -698,7 +706,7 @@ parseTypeId(Client cntxt, int defaultType)
 	int tt;
 
 	if (s[0] == ':' && s[1] == 'b' && s[2] == 'a' && s[3] == 't' && s[4] == '[') {
-		/* parse :bat[:type] */
+		/* parse :bat[:oid,:type] */
 		advance(cntxt, 5);
 		if (currChar(cntxt) == ':') {
 			tt = simpleTypeId(cntxt);
@@ -776,30 +784,18 @@ typeElm(Client cntxt, int def)
 static void
 helpInfo(Client cntxt, str *help)
 {
-	int l = 0;
-	char c, *e, *s;
+	int l;
 
 	if (MALkeyword(cntxt, "comment", 7)) {
 		skipSpace(cntxt);
-		// The comment is either a quoted string or all characters up to the next semicolon
-		c = currChar(cntxt);
-		if (c != '"'){
-			e = s = CURRENT(cntxt);
-			for (;*e; l++, e++)
-				if (*e == ';')
-					break;
+		if ((l = stringLength(cntxt))) {
+			GDKfree(*help);
 			*help = strCopy(cntxt, l);
+			if (*help)
+				advance(cntxt, l - 1);
 			skipToEnd(cntxt);
 		} else {
-			if ((l = stringLength(cntxt))) {
-				GDKfree(*help);
-				*help = strCopy(cntxt, l);
-				if (*help)
-					advance(cntxt, l - 1);
-				skipToEnd(cntxt);
-			} else {
-				parseError(cntxt, "<string> expected\n");
-			}
+			parseError(cntxt, "<string> expected\n");
 		}
 	} else if (currChar(cntxt) != ';')
 		parseError(cntxt, "';' expected\n");
@@ -861,7 +857,7 @@ binding(Client cntxt, MalBlkPtr curBlk, InstrPtr curInstr, int flag)
 static int
 term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 {
-	int i, idx, free = 1;
+	int i, idx, flag, free = 1;
 	ValRecord cst;
 	int cstidx = -1;
 	malType tpe = TYPE_any;
@@ -880,11 +876,14 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 				tpe = typeElm(cntxt, getVarType(curBlk, cstidx));
 				if (tpe < 0)
 					return 3;
-				if(tpe != getVarType(curBlk,cstidx) ){
+				if(tpe == getVarType(curBlk,cstidx) ){
+					setVarUDFtype(curBlk, cstidx);
+				} else {
 					cstidx = defConstant(curBlk, tpe, &cst);
 					if (cstidx < 0)
 						return 3;
 					setPolymorphic(*curInstr, tpe, FALSE);
+					setVarUDFtype(curBlk, cstidx);
 					free = 0;
 				}
 			} else if (cst.vtype != getVarType(curBlk, cstidx)) {
@@ -901,6 +900,7 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 			return ret;
 		} else {
 			/* add a new constant literal, the :type could be erroneously be a coltype */
+			flag = currChar(cntxt) == ':';
 			tpe = typeElm(cntxt, cst.vtype);
 			if (tpe < 0 )
 				return 3;
@@ -908,6 +908,8 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 			if (cstidx < 0)
 				return 3;
 			setPolymorphic(*curInstr, tpe, FALSE);
+			if (flag)
+				setVarUDFtype(curBlk, cstidx);
 			*curInstr = pushArgument(curBlk, *curInstr, cstidx);
 			return ret;
 		}
@@ -946,7 +948,7 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 static int
 parseAtom(Client cntxt)
 {
-	const char *modnme = 0;
+	str modnme = 0;
 	int l, tpe;
 	char *nxt = CURRENT(cntxt);
 
@@ -962,9 +964,11 @@ parseAtom(Client cntxt)
 		tpe = TYPE_void;  /* no type qualifier */
 	else
 		tpe = parseTypeId(cntxt, TYPE_int);
-	if( ATOMindex(modnme) < 0) {
+	if( ATOMindex(modnme) >= 0)
+		parseError(cntxt, "Atom redefinition\n");
+	else {
 		if(cntxt->curprg->def->errors)
-			freeException(cntxt->curprg->def->errors);
+			GDKfree(cntxt->curprg->def->errors);
 		cntxt->curprg->def->errors = malAtomDefinition(modnme, tpe);
 	}
 	if( strcmp(modnme,"user"))
@@ -982,7 +986,7 @@ parseAtom(Client cntxt)
 static int
 parseModule(Client cntxt)
 {
-	const char *modnme = 0;
+	str modnme = 0;
 	int l;
 	char *nxt;
 
@@ -1017,8 +1021,7 @@ parseModule(Client cntxt)
 static int
 parseInclude(Client cntxt)
 {
-	const char *modnme = 0;
-	char *s;
+	str modnme = 0, s;
 	int x;
 	char *nxt;
 
@@ -1045,13 +1048,11 @@ parseInclude(Client cntxt)
 		return 0;
 	}
 
-	if (getModule(modnme) == NULL) {
-		s = loadLibrary(modnme, FALSE);
-		if (s) {
-			parseError(cntxt, s);
-			freeException(s);
-			return 0;
-		}
+	s = loadLibrary(modnme, FALSE);
+	if (s) {
+		parseError(cntxt, s);
+		freeException(s);
+		return 0;
 	}
 	if ((s = malInclude(cntxt, modnme, 0))) {
 		parseError(cntxt, s);
@@ -1081,8 +1082,7 @@ fcnHeader(Client cntxt, int kind)
 {
 	int l;
 	malType tpe;
-	const char *fnme;
-	const char *modnme = NULL;
+	str fnme, modnme = NULL;
 	char ch;
 	Symbol curPrg;
 	MalBlkPtr curBlk = 0;
@@ -1103,10 +1103,8 @@ fcnHeader(Client cntxt, int kind)
 		nextChar(cntxt); /* skip '.' */
 		modnme = fnme;
 		if( strcmp(modnme,"user") && getModule(modnme) == NULL){
-			if( globalModule(modnme) == NULL){
-				parseError(cntxt, "<module> name not defined\n");
-				return 0;
-			}
+			parseError(cntxt, "<module> name not defined\n");
+			return 0;
 		}
 		l = operatorLength(cntxt);
 		if (l == 0)
@@ -1135,9 +1133,6 @@ fcnHeader(Client cntxt, int kind)
 	cntxt->backup = cntxt->curprg;
 	cntxt->curprg = newFunction( modnme, fnme, kind);
 	if(cntxt->curprg == NULL) {
-		/* reinstate curprg to have a place for the error */
-		cntxt->curprg = cntxt->backup;
-		cntxt->backup = NULL;
 		parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return 0;
 	}
@@ -1258,12 +1253,12 @@ fcnHeader(Client cntxt, int kind)
 }
 
 static MalBlkPtr
-parseCommandPattern(Client cntxt, int kind, MALfcn address)
+parseCommandPattern(Client cntxt, int kind)
 {
 	MalBlkPtr curBlk = 0;
 	Symbol curPrg = 0;
 	InstrPtr curInstr = 0;
-	const char *modnme = NULL;
+	str modnme = NULL;
 	size_t l = 0;
 	str msg = MAL_SUCCEED;
 
@@ -1279,11 +1274,9 @@ parseCommandPattern(Client cntxt, int kind, MALfcn address)
 
 	modnme = getModuleId(getInstrPtr(curBlk, 0));
 	if (modnme && (getModule(modnme) == FALSE && strcmp(modnme,"user"))){
-		// introduce the module
-		if( globalModule(modnme) == NULL){
-			parseError(cntxt, "<module> could not be defined\n");
-			return 0;
-		}
+		parseError(cntxt, "<module> not defined\n");
+		cntxt->blkmode = 0;
+		return curBlk;
 	}
 	modnme = modnme ? modnme : cntxt->usermodule->name;
 
@@ -1299,7 +1292,7 @@ parseCommandPattern(Client cntxt, int kind, MALfcn address)
 		if( msg && ! cntxt->curprg->def->errors)
 			cntxt->curprg->def->errors = msg;
 		if(cntxt->curprg->def->errors)
-			freeException(cntxt->curprg->def->errors);
+			GDKfree(cntxt->curprg->def->errors);
 		cntxt->curprg->def->errors = cntxt->backup->def->errors;
 		cntxt->backup->def->errors = 0;
 		cntxt->curprg = cntxt->backup;
@@ -1322,7 +1315,6 @@ parseCommandPattern(Client cntxt, int kind, MALfcn address)
  * [note, command and patterns do not have a MAL block]
  */
 	if (MALkeyword(cntxt, "address", 7)) {
-		/* TO BE DEPRECATED */
 		int i;
 		i = idLength(cntxt);
 		if (i == 0) {
@@ -1339,7 +1331,7 @@ parseCommandPattern(Client cntxt, int kind, MALfcn address)
 		curBlk->binding[(i< IDLENGTH? i:IDLENGTH-1)] = 0;
 		/* avoid a clash with old temporaries */
 		advance(cntxt, i);
-		curInstr->fcn = getAddress(getModuleId(curInstr), curBlk->binding);
+		curInstr->fcn = getAddress(curBlk->binding);
 
 		if (cntxt->usermodule->isAtomModule) {
 			if (curInstr->fcn == NULL) {
@@ -1349,13 +1341,15 @@ parseCommandPattern(Client cntxt, int kind, MALfcn address)
 			malAtomProperty(curBlk, curInstr);
 		}
 		skipSpace(cntxt);
-	} else
-       if(address){
-		setModuleScope(curInstr, findModule(cntxt->usermodule, modnme));
-		setModuleId(curInstr, modnme);
-		curInstr->fcn = address;
-       }
+	} else {
+		parseError(cntxt, "'address' expected\n");
+		return 0;
+	}
 	helpInfo(cntxt, &curBlk->help);
+#ifdef HAVE_HGE
+	if (!have_hge)
+		have_hge = strcmp(modnme, "calc") == 0 && strcmp(getFunctionId(curInstr), "hge") == 0;
+#endif
 	return curBlk;
 }
 
@@ -1368,7 +1362,6 @@ parseFunction(Client cntxt, int kind)
 	if (curBlk == NULL)
 		return curBlk;
 	if (MALkeyword(cntxt, "address", 7)) {
-		/* TO BE DEPRECATED */
 		str nme;
 		int i;
 		InstrPtr curInstr = getInstrPtr(curBlk, 0);
@@ -1382,7 +1375,7 @@ parseFunction(Client cntxt, int kind)
 			parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return 0;
 		}
-		curInstr->fcn = getAddress(getModuleId(curInstr), nme);
+		curInstr->fcn = getAddress(nme);
 		GDKfree(nme);
 		if (curInstr->fcn == NULL) {
 			parseError(cntxt, "<address> not found\n");
@@ -1452,7 +1445,7 @@ parseEnd(Client cntxt)
 			cntxt->curprg->def->errors=0;
 		} else if (cntxt->curprg->def->errors) {
 			//collect all errors for reporting
-			str new = GDKmalloc(strlen(errors) + strlen(cntxt->curprg->def->errors) +16);
+			str new = GDKzalloc(strlen(errors) + strlen(cntxt->curprg->def->errors) +16);
 			if (new){
 				strcpy(new, errors);
 				if( new[strlen(new)-1] != '\n')
@@ -1473,23 +1466,14 @@ parseEnd(Client cntxt)
 			cntxt->backup = 0;
 		} else {
 			str msg;
-			if ((msg = MSinitClientPrg(cntxt,cntxt->curmodule->name,"main")) != MAL_SUCCEED) {
-				if (errors) {
-					str new = GDKmalloc(strlen(errors) + strlen(msg) + 3);
-					if (new) {
-						strcpy(new, msg);
-						if (new[strlen(new) - 1] != '\n')
-							strcat(new, "\n");
-						strcat(new, errors);
-						freeException(errors);
-						cntxt->curprg->def->errors = new;
-					} else {
-						cntxt->curprg->def->errors = errors;
-					}
-					freeException(msg);
-				} else {
+			if((msg = MSinitClientPrg(cntxt,cntxt->curmodule->name,"main")) != MAL_SUCCEED) {
+				if(!msg){
 					cntxt->curprg->def->errors = msg;
-				}
+					GDKfree(errors);
+				} else if(!errors){
+					cntxt->curprg->def->errors = errors;
+				} else
+					freeException(msg);
 				return 1;
 			}
 		}
@@ -1553,7 +1537,7 @@ parseAssign(Client cntxt, int cntrl)
 	MalBlkPtr curBlk;
 	Symbol curPrg;
 	int i = 0, l, type = TYPE_any, varid = -1;
-	const char *arg = 0;
+	str arg = 0;
 	ValRecord cst;
 
 	curPrg = cntxt->curprg;
@@ -1584,6 +1568,7 @@ parseAssign(Client cntxt, int cntrl)
 			}
 			GETvariable(freeInstruction(curInstr));
 			if (currChar(cntxt) == ':') {
+				setVarUDFtype(curBlk, varid);
 				type = typeElm(cntxt, getVarType(curBlk, varid));
 				if (type < 0)
 					goto part3;
@@ -1640,6 +1625,7 @@ parseAssign(Client cntxt, int cntrl)
 		if (!(currChar(cntxt) == ':' && CURRENT(cntxt)[1] == '=')) {
 			curInstr->argv[0] = varid;
 			if (currChar(cntxt) == ':') {
+				setVarUDFtype(curBlk, varid);
 				type = typeElm(cntxt, getVarType(curBlk, varid));
 				if (type < 0)
 					goto part3;
@@ -1770,12 +1756,12 @@ part3:
 }
 
 void
-parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines, MALfcn address)
+parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 {
 	int cntrl = 0;
 	/*Symbol curPrg= cntxt->curprg;*/
 	char c;
-	int inlineProp =0, unsafeProp = 0;
+	int inlineProp =0, unsafeProp = 0, sealedProp = 0;
 
 	(void) curPrg;
 	echoInput(cntxt);
@@ -1821,7 +1807,9 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines, MALfcn addres
 				}
 				curInstr->token= REMsymbol;
 				curInstr->barrier= 0;
-				if (VALinit(&cst, TYPE_str, start) == NULL) {
+				cst.vtype = TYPE_str;
+				cst.len = strlen(start);
+				if((cst.val.sval = GDKstrdup(start)) == NULL) {
 					parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					freeInstruction(curInstr);
 					continue;
@@ -1832,6 +1820,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines, MALfcn addres
 					continue;
 				}
 				getArg(curInstr, 0) = cstidx;
+				clrVarConstant(curBlk, getArg(curInstr, 0));
 				setVarDisabled(curBlk, getArg(curInstr, 0));
 				pushInstruction(curBlk, curInstr);
 			}
@@ -1851,15 +1840,18 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines, MALfcn addres
 			goto allLeft;
 		case 'C': case 'c':
 			if (MALkeyword(cntxt, "command", 7)) {
-				MalBlkPtr p = parseCommandPattern(cntxt, COMMANDsymbol, address);
+				MalBlkPtr p = parseCommandPattern(cntxt, COMMANDsymbol);
 				if (p) {
 					p->unsafeProp = unsafeProp;
+					p->sealedProp = sealedProp;
 				}
 				cntxt->curprg->def->unsafeProp = unsafeProp;
+				cntxt->curprg->def->sealedProp = sealedProp;
 				if (inlineProp)
 					parseError(cntxt, "<identifier> expected\n");
 				inlineProp = 0;
 				unsafeProp = 0;
+				sealedProp = 0;
 				continue;
 			}
 			if (MALkeyword(cntxt, "catch", 5)) {
@@ -1883,10 +1875,13 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines, MALfcn addres
 				cntxt->blkmode++;
 				if ((p = parseFunction(cntxt, FUNCTIONsymbol))){
 					p->unsafeProp = unsafeProp;
+					p->sealedProp = sealedProp;
 					cntxt->curprg->def->inlineProp = inlineProp;
 					cntxt->curprg->def->unsafeProp = unsafeProp;
+					cntxt->curprg->def->sealedProp = sealedProp;
 					inlineProp = 0;
 					unsafeProp = 0;
+					sealedProp = 0;
 					break;
 				}
 			} else if (MALkeyword(cntxt, "factory", 7)) {
@@ -1894,8 +1889,11 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines, MALfcn addres
 					parseError(cntxt, "parseError:INLINE ignored\n");
 				if( unsafeProp)
 					parseError(cntxt, "parseError:UNSAFE ignored\n");
+				if( sealedProp)
+					parseError(cntxt, "parseError:SEALED ignored\n");
 				inlineProp = 0;
 				unsafeProp = 0;
+				sealedProp = 0;
 				cntxt->blkmode++;
 				parseFunction(cntxt, FACTORYsymbol);
 				break;
@@ -1926,13 +1924,16 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines, MALfcn addres
 				MalBlkPtr p;
 				if( inlineProp )
 					parseError(cntxt, "parseError:INLINE ignored\n");
-				p = parseCommandPattern(cntxt, PATTERNsymbol, address);
+				p = parseCommandPattern(cntxt, PATTERNsymbol);
 				if (p) {
 					p->unsafeProp = unsafeProp;
+					p->sealedProp = sealedProp;
 				}
 				cntxt->curprg->def->unsafeProp = unsafeProp;
+				cntxt->curprg->def->sealedProp = sealedProp;
 				inlineProp = 0;
 				unsafeProp = 0;
+				sealedProp = 0;
 				continue;
 			}
 			goto allLeft;
@@ -1947,6 +1948,13 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines, MALfcn addres
 			}
 			if (MALkeyword(cntxt, "return", 6)) {
 				cntrl = RETURNsymbol;
+			}
+			goto allLeft;
+		case 's':
+			if (MALkeyword(cntxt, "sealed", 6)) {
+				sealedProp= 1;
+				skipSpace(cntxt);
+				continue;
 			}
 			goto allLeft;
 		case 'U': case 'u':

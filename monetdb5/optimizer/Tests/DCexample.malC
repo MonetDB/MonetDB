@@ -1,0 +1,15 @@
+function foo();
+    V7 := bat.new(:oid);
+    V10 := bat.new(:oid);
+    V16 := V7;
+
+    (V17,V17b) := algebra.join(V16,V7,nil:bat[:oid],nil:bat[:oid],true, 0:lng);
+    V19 := bat.new(:oid);
+    V22 := bat.new(:oid);
+    (V17,V17b) := algebra.join(V16,V22,nil:bat[:oid],nil:bat[:oid],true, 0:lng);
+	io.print("done");
+end;
+
+mdb.List("user","foo");
+optimizer.deadcode("user","foo");
+mdb.List("user","foo");

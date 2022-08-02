@@ -1,6 +1,0 @@
-statement ok
-create table test (id serial, val int)
-
-statement ok
-insert into test (val) values (1)
-

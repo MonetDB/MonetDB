@@ -1,0 +1,12 @@
+stderr of test 'ascii_io2` in directory 'monetdb5/modules/mal` itself:
+
+
+# 21:10:47 >  
+# 21:10:47 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib64/MonetDB5:/ufs/mk/monet5/Linux/lib64/MonetDB5/lib:/ufs/mk/monet5/Linux/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/sql_logs" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/xquery_logs" --set mapi_port=37620 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  ascii_io2.mal < /dev/null
+# 21:10:47 >  
+
+
+# 21:10:47 >  
+# 21:10:47 >  Done.
+# 21:10:47 >  
+

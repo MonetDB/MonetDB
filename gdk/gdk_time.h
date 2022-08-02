@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _GDK_TIME_H_
@@ -42,8 +42,6 @@ gdk_export int date_dayofweek(date dt) /* Monday=1, Sunday=7 */
 	__attribute__((__const__));
 gdk_export int date_weekofyear(date dt)
 	__attribute__((__const__));
-gdk_export int date_usweekofyear(date dt)
-	__attribute__((__const__));
 gdk_export int date_dayofyear(date dt)
 	__attribute__((__const__));
 gdk_export int date_century(date dt)
@@ -60,8 +58,6 @@ gdk_export int date_day(date dt)
 	__attribute__((__const__));
 
 gdk_export daytime daytime_create(int hour, int minute, int second, int usec)
-	__attribute__((__const__));
-gdk_export lng daytime_diff(daytime d1, daytime d2)
 	__attribute__((__const__));
 gdk_export daytime daytime_add_usec(daytime tm, lng usec)
 	__attribute__((__const__));

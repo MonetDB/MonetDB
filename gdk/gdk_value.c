@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -49,9 +49,6 @@ VALset(ValPtr v, int t, ptr p)
 	case TYPE_void:
 		v->val.oval = *(oid *) p;
 		break;
-	case TYPE_msk:
-		v->val.mval = *(msk *) p;
-		break;
 	case TYPE_bte:
 		v->val.btval = *(bte *) p;
 		break;
@@ -75,9 +72,6 @@ VALset(ValPtr v, int t, ptr p)
 		v->val.hval = *(hge *) p;
 		break;
 #endif
-	case TYPE_uuid:
-		v->val.uval = *(uuid *) p;
-		break;
 	case TYPE_str:
 		v->val.sval = (str) p;
 		break;
@@ -99,7 +93,6 @@ VALget(ValPtr v)
 {
 	switch (ATOMstorage(v->vtype)) {
 	case TYPE_void: return (void *) &v->val.oval;
-	case TYPE_msk: return (void *) &v->val.mval;
 	case TYPE_bte: return (void *) &v->val.btval;
 	case TYPE_sht: return (void *) &v->val.shval;
 	case TYPE_int: return (void *) &v->val.ival;
@@ -109,7 +102,6 @@ VALget(ValPtr v)
 #ifdef HAVE_HGE
 	case TYPE_hge: return (void *) &v->val.hval;
 #endif
-	case TYPE_uuid: return (void *) &v->val.uval;
 	case TYPE_ptr: return (void *) &v->val.pval;
 	case TYPE_str: return (void *) v->val.sval;
 	default:       return (void *) v->val.pval;
@@ -150,17 +142,19 @@ VALcopy(ValPtr d, const ValRecord *s)
 	if (!ATOMextern(s->vtype)) {
 		*d = *s;
 	} else if (s->val.pval == NULL) {
-		return VALinit(d, s->vtype, ATOMnilptr(s->vtype));
+		d->val.pval = ATOMnil(s->vtype);
+		if (d->val.pval == NULL)
+			return NULL;
+		d->vtype = s->vtype;
 	} else if (s->vtype == TYPE_str) {
-		const char *p = s->val.sval;
 		d->vtype = TYPE_str;
-		d->len = strLen(p);
-		d->val.sval = GDKmalloc(d->len);
+		d->val.sval = GDKstrdup(s->val.sval);
 		if (d->val.sval == NULL)
 			return NULL;
-		memcpy(d->val.sval, p, d->len);
+		d->len = strLen(d->val.sval);
 	} else {
-		const void *p = s->val.pval;
+		ptr p = s->val.pval;
+
 		d->vtype = s->vtype;
 		d->len = ATOMlen(d->vtype, p);
 		d->val.pval = GDKmalloc(d->len);
@@ -168,6 +162,7 @@ VALcopy(ValPtr d, const ValRecord *s)
 			return NULL;
 		memcpy(d->val.pval, p, d->len);
 	}
+	d->len = ATOMlen(d->vtype, VALptr(d));
 	return d;
 }
 
@@ -183,9 +178,6 @@ VALinit(ValPtr d, int tpe, const void *s)
 	switch (ATOMstorage(d->vtype = tpe)) {
 	case TYPE_void:
 		d->val.oval = *(const oid *) s;
-		break;
-	case TYPE_msk:
-		d->val.mval = *(const msk *) s;
 		break;
 	case TYPE_bte:
 		d->val.btval = *(const bte *) s;
@@ -210,20 +202,16 @@ VALinit(ValPtr d, int tpe, const void *s)
 		d->val.hval = *(const hge *) s;
 		break;
 #endif
-	case TYPE_uuid:
-		d->val.uval = *(const uuid *) s;
-		break;
 	case TYPE_str:
-		d->len = strLen(s);
-		d->val.sval = GDKmalloc(d->len);
+		d->val.sval = GDKstrdup(s);
 		if (d->val.sval == NULL)
 			return NULL;
-		memcpy(d->val.sval, s, d->len);
-		return d;
+		d->len = strLen(s);
+		break;
 	case TYPE_ptr:
 		d->val.pval = *(const ptr *) s;
 		d->len = ATOMlen(tpe, *(const ptr *) s);
-		return d;
+		break;
 	default:
 		assert(ATOMextern(ATOMstorage(tpe)));
 		d->len = ATOMlen(tpe, s);
@@ -233,7 +221,7 @@ VALinit(ValPtr d, int tpe, const void *s)
 		memcpy(d->val.pval, s, d->len);
 		return d;
 	}
-	d->len = ATOMsize(d->vtype);
+	d->len = ATOMlen(d->vtype, VALptr(d));
 	return d;
 }
 
@@ -258,7 +246,7 @@ VALconvert(int typ, ValPtr t)
 	dst.vtype = typ;
 
 	/* first convert into a new location */
-	if (VARconvert(&dst, t, 0, 0, 0) != GDK_SUCCEED)
+	if (VARconvert(&dst, t, 0) != GDK_SUCCEED)
 		return NULL;
 
 	/* then maybe free the old */
@@ -306,14 +294,12 @@ VALcmp(const ValRecord *p, const ValRecord *q)
 }
 
 /* Return TRUE if the value in V is NIL. */
-bool
+int
 VALisnil(const ValRecord *v)
 {
 	switch (v->vtype) {
 	case TYPE_void:
-		return true;
-	case TYPE_msk:
-		return false;
+		return 1;
 	case TYPE_bte:
 		return is_bte_nil(v->val.btval);
 	case TYPE_sht:
@@ -326,8 +312,6 @@ VALisnil(const ValRecord *v)
 	case TYPE_hge:
 		return is_hge_nil(v->val.hval);
 #endif
-	case TYPE_uuid:
-		return is_uuid_nil(v->val.uval);
 	case TYPE_flt:
 		return is_flt_nil(v->val.fval);
 	case TYPE_dbl:

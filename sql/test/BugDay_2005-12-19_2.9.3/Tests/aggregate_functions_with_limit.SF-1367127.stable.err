@@ -1,0 +1,17 @@
+stderr of test 'aggregate_functions_with_limit.SF-1367127` in directory 'sql/test/BugDay_2005-12-19_2.9.3` itself:
+
+
+# 13:09:10 >  
+# 13:09:10 >  Mtimeout -timeout 180 Mserver "--config=/ufs/zhang/scratch/monet-dev-install/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/zhang/scratch/monet-dev-install/MonetDB:/ufs/zhang/scratch/monet-dev-install/lib/MonetDB:/ufs/zhang/src/sql/build/lib/MonetDB" --set "gdk_dbfarm=/ufs/zhang/scratch/monet-dev-install/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/zhang/scratch/monet-dev-install/var/MonetDB/log" --set mapi_port=33374 --set sql_port=48034 --set xquery_port=59595 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-12-19_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 13:09:10 >  
+
+
+# 13:09:10 >  
+# 13:09:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=48034  < aggregate_functions_with_limit.SF-1367127.sql
+# 13:09:10 >  
+
+
+# 13:09:10 >  
+# 13:09:10 >  Done.
+# 13:09:10 >  
+

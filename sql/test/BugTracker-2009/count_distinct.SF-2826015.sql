@@ -1,0 +1,12 @@
+create table testdistinct (testcol varchar(24));
+insert into testdistinct values ('test');
+insert into testdistinct values ('test');
+insert into testdistinct values ('test');
+insert into testdistinct values ('other');
+insert into testdistinct values ('other');
+insert into testdistinct values ('other');
+select * from testdistinct;
+select distinct * from testdistinct;
+select count(*) from testdistinct;
+select distinct count(*) from testdistinct;
+drop table testdistinct;

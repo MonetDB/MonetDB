@@ -1,0 +1,18 @@
+stdout of test 'mixed_type.SF-917372` in directory 'sql/test/BugDay_2005-10-06_2.8` itself:
+
+
+# 14:04:34 >  
+# 14:04:34 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-390464" "--port=31391"
+# 14:04:34 >  
+
+#select cast(true+1 as bigint);
+% .%1 # table_name
+% %1 # name
+% bigint # type
+% 1 # length
+[ 2	]
+
+# 12:37:25 >  
+# 12:37:25 >  Done.
+# 12:37:25 >  
+

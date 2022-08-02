@@ -1,0 +1,13 @@
+# a test checking BAT reference counting under various situations
+	b:= bat.new(:str);
+	i:= bbp.getRefCount(b);
+	io.printf("refcount =%d\n",i);
+	j:= bbp.getLRefCount(b);
+	io.printf("lrefcount =%d\n",j);
+
+	bat.append(b,"bat B");
+	io.print(b);
+	i:= bbp.getRefCount(b);
+	io.printf("refcount =%d\n",i);
+	j:= bbp.getLRefCount(b);
+	io.printf("lrefcount =%d\n",j);

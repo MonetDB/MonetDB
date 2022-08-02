@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* In your own module, replace "UDF" & "udf" by your module's name */
@@ -29,8 +29,8 @@
 
 /* export MAL wrapper functions */
 
-udf_export str UDFreverse(str *ret, const str *arg);
-udf_export str UDFBATreverse(bat *ret, const bat *arg);
+udf_export char * UDFreverse(char **ret, const char **arg);
+udf_export char * UDFBATreverse(bat *ret, const bat *arg);
 
 /* using C macro for convenient type-expansion */
 #define UDFfuse_scalar_decl(in,out) \

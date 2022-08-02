@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -19,13 +19,14 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	int v, i, j, limit, slimit;
 	InstrPtr p,q;
 	int actions = 0;
-	InstrPtr *old = NULL;
+	InstrPtr *old;
+	char buf[256];
+	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
-	if( isOptimizerUsed(mb, pci, mergetableRef) <= 0){
-		goto wrapup;
-	}
-
+	//if ( !optimizerIsApplied(mb,"multiplex") )
+		//return 0;
+	(void) pci;
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 	for( i = 1; i < mb->stop; i++)
@@ -39,7 +40,6 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb,mb->stop) < 0)
 		throw(MAL,"optimizer.matpack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		if( getModuleId(p) == matRef  && getFunctionId(p) == packRef && isaBatType(getArgType(mb,p,1))) {
@@ -69,19 +69,23 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	}
 	for(; i<slimit; i++)
 		if (old[i])
-			pushInstruction(mb, old[i]);
+			freeInstruction(old[i]);
 	GDKfree(old);
 
-	/* Defense line against incorrect plans */
-	if( actions > 0){
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
-		if (!msg)
-			msg = chkFlow(mb);
-		if (!msg)
-			msg = chkDeclarations(mb);
-	}
+    /* Defense line against incorrect plans */
+    if( actions > 0){
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
+    }
+    /* keep all actions taken as a post block comment */
 wrapup:
-	/* keep actions taken as a fake argument*/
-	(void) pushInt(mb, pci, actions);
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","matpack",actions, usec);
+    newComment(mb,buf);
+	if( actions >= 0)
+		addtoMalBlkHistory(mb);
 	return msg;
 }

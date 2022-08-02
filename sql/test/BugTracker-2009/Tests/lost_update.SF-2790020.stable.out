@@ -1,0 +1,69 @@
+stdout of test 'lost_update.SF-2790020` in directory 'sql/test/BugTracker-2009` itself:
+
+
+# 14:42:32 >  
+# 14:42:32 >  /usr/bin/python lost_update.SF-2790020.py lost_update.SF-2790020 
+# 14:42:32 >  
+
+# MonetDB server v5.12.0, based on kernel v1.30.0
+# Serving database 'demo', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:35847/
+# MonetDB/SQL module v2.30.0 loaded
+
+[ 1	]
+[ 1	]
+# MonetDB server v5.12.0, based on kernel v1.30.0
+# Serving database 'demo', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:35847/
+# MonetDB/SQL module v2.30.0 loaded
+
+[ 1	]
+[ 1	]
+[ 1	]
+[ 2	]
+[ 4	]
+[ 8	]
+[ 16	]
+[ 32	]
+[ 64	]
+[ 128	]
+[ 256	]
+[ 512	]
+[ 1024	]
+[ 2048	]
+# MonetDB server v5.12.0, based on kernel v1.30.0
+# Serving database 'demo', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:35847/
+# MonetDB/SQL module v2.30.0 loaded
+
+% sys.lost_update_t2 # table_name
+% a # name
+% int # type
+% 1 # length
+[ 3	]
+# MonetDB server v5.12.0, based on kernel v1.30.0
+# Serving database 'demo', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:35847/
+# MonetDB/SQL module v2.30.0 loaded
+
+
+# 14:43:33 >  
+# 14:43:33 >  Done.
+# 14:43:33 >  
+

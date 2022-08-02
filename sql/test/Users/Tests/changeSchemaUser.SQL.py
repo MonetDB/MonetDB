@@ -1,56 +1,40 @@
 ###
-# Tests for schema assignments and changes for users
+# Change the default schema of a user (possible).
+# Change the default schema of a user to an unexisting schema (not possible).
+# Change the default schema for an unexisting user (not possible).
+# Drop a user that owns a schema (not possible).
 ###
 
-from MonetDBtesting.sqltest import SQLTestCase
+import os, sys
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
 
-with SQLTestCase() as mdb:
-    mdb.connect(username="monetdb", password="monetdb")
-    mdb.execute("CREATE SCHEMA library;").assertSucceeded()
-    mdb.execute("CREATE TABLE library.orders(price int, name VARCHAR(100));").assertSucceeded()
+def sql_test_client(user, passwd, input):
+    with process.client(lang="sql", user=user, passwd=passwd, communicate=True,
+                        stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE,
+                        input=input, port=int(os.getenv("MAPIPORT"))) as c:
+        c.communicate()
 
-    mdb.execute("CREATE ROLE bankAdmin;").assertSucceeded()
-    mdb.execute("CREATE SCHEMA bank AUTHORIZATION bankAdmin;").assertSucceeded()
-    mdb.execute("CREATE TABLE bank.accounts(nr int, name VARCHAR(100));").assertSucceeded()
+sql_test_client('monetdb', 'monetdb', input="""\
+ALTER USER "april" SET SCHEMA library;
+ALTER USER "april2" SET SCHEMA library; --no such user
+ALTER USER "april" SET SCHEMA library2; --no such schema
+""")
 
-    mdb.execute("CREATE USER april WITH PASSWORD 'april' name 'april' schema bank;").assertSucceeded()
-    mdb.execute("GRANT ALL ON bank.accounts to april;").assertSucceeded()
-    mdb.execute("GRANT bankAdmin to april;").assertSucceeded()
+# This is the new april, so these operations should fail.
+sql_test_client('april', 'april', input="""\
+SELECT * from bank.accounts; --no such table.
+SELECT * from library.orders; --not enough privileges.
+""")
 
-    # Check that change the default schema for an unexisting user is not possible.
-    mdb.execute('ALTER USER "april2" SET SCHEMA library;').assertFailed(err_code="42M32", err_message="ALTER USER: no such user 'april2'")
-    # Check that change the default schema of a user to an unexisting schema is not possible.
-    mdb.execute('ALTER USER "april" SET SCHEMA library2;').assertFailed(err_code="3F000", err_message="ALTER USER: no such schema 'library2'")
 
-    with SQLTestCase() as tc:
-        # Check that the admin can change the default schema of a user, and
-        #   this will take effect the next time this user logs-in.
-        tc.connect(username="april", password="april")
-        tc.execute("SELECT current_schema;").assertSucceeded().assertDataResultMatch([('bank',)])
-        tc.execute('SELECT * from accounts;').assertSucceeded()
-        mdb.execute('ALTER USER "april" SET SCHEMA library').assertSucceeded()
-        tc.connect(username="april", password="april")
-        tc.execute("SELECT current_schema;").assertSucceeded().assertDataResultMatch([('library',)])
+sql_test_client('monetdb', 'monetdb', input="""\
+ALTER USER "april" SET SCHEMA bank;
+CREATE SCHEMA forAlice AUTHORIZATION april;
+DROP user april;
+""")
 
-        # Check that after the schema change, the user no longer has direct access to tables in schema 'bank'
-        tc.execute('SELECT * from accounts;').assertFailed(err_code="42S02", err_message="SELECT: no such table 'accounts'")
-        # Check that after the schema change, the user still doesn't have access to tables in schema 'library'
-        tc.execute('SELECT * from library.orders;').assertFailed(err_code="42000", err_message="SELECT: access denied for april to table 'library.orders'")
 
-        # Check that drop a user that owns a schema is not possible.
-        mdb.connect(username="monetdb", password="monetdb")
-        mdb.execute('ALTER USER "april" SET SCHEMA bank;').assertSucceeded()
-        mdb.execute('CREATE SCHEMA forAlice AUTHORIZATION april;').assertSucceeded()
-        mdb.execute('DROP user april;').assertFailed(err_code="M1M05", err_message="DROP USER: 'april' owns a schema")
-
-    # clean up
-    mdb.execute('DROP TABLE library.orders;').assertSucceeded()
-    mdb.execute('DROP TABLE bank.accounts;').assertSucceeded()
-
-    mdb.execute('ALTER USER "april" SET SCHEMA sys;').assertSucceeded()
-    mdb.execute('DROP SCHEMA forAlice;').assertSucceeded()
-    mdb.execute('DROP SCHEMA bank;').assertSucceeded()
-    mdb.execute('DROP SCHEMA library;').assertSucceeded()
-    mdb.execute('DROP USER april;').assertSucceeded()
-    mdb.execute('DROP ROLE bankAdmin;').assertSucceeded()
 

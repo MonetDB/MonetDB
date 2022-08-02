@@ -1,0 +1,36 @@
+stderr of test 'rapi20` in directory 'sql/backends/monet5` itself:
+
+
+# 10:19:04 >  
+# 10:19:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30670" "--set" "mapi_usock=/var/tmp/mtest-43588/.s.monetdb.30670" "--set" "monet_prompt=" "--forcemito" "--dbpath=/tmp/fuckit/var/MonetDB/mTests_sql_backends_monet5" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 10:19:04 >  
+
+# builtin opt 	gdk_dbpath = /tmp/fuckit/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30670
+# cmdline opt 	mapi_usock = /var/tmp/mtest-43588/.s.monetdb.30670
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /tmp/fuckit/var/MonetDB/mTests_sql_backends_monet5
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 536870922
+
+# 10:19:04 >  
+# 10:19:04 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-43588" "--port=30670"
+# 10:19:04 >  
+
+
+# 10:19:05 >  
+# 10:19:05 >  "Done."
+# 10:19:05 >  
+

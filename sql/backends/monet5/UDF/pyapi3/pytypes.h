@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -60,10 +60,10 @@ pyapi_export int BatType_ToPyType(int);
 pyapi_export bool Python_ObtainGIL(void);
 pyapi_export bool Python_ReleaseGIL(bool);
 
-#define bte_TO_PYSCALAR(value) PyLong_FromLong(value)
-#define bit_TO_PYSCALAR(value) PyLong_FromLong(value)
-#define sht_TO_PYSCALAR(value) PyLong_FromLong(value)
-#define int_TO_PYSCALAR(value) PyLong_FromLong(value)
+#define bte_TO_PYSCALAR(value) PyInt_FromLong(value)
+#define bit_TO_PYSCALAR(value) PyInt_FromLong(value)
+#define sht_TO_PYSCALAR(value) PyInt_FromLong(value)
+#define int_TO_PYSCALAR(value) PyInt_FromLong(value)
 #define lng_TO_PYSCALAR(value) PyLong_FromLongLong(value)
 #define flt_TO_PYSCALAR(value) PyFloat_FromDouble(value)
 #define dbl_TO_PYSCALAR(value) PyFloat_FromDouble(value)

@@ -1,0 +1,17 @@
+stderr of test 'sql_server_abort.SF-1080025` in directory 'sql/test/BugDay_2005-11-09_2.9.3` itself:
+
+
+# 13:39:01 >  
+# 13:39:01 >  Mtimeout -timeout 180 Mserver "--config=/ufs/zhang/scratch/monet-stable/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/zhang/scratch/monet-stable/program/MonetDB:/ufs/zhang/scratch/monet-stable/program/lib/MonetDB:/ufs/zhang/scratch/monet-stable/sql/build/lib/MonetDB" --set "gdk_dbfarm=/ufs/zhang/scratch/monet-stable/program/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/zhang/scratch/monet-stable/program/var/MonetDB/log" --set mapi_port=32602 --set sql_port=48928 --set xquery_port=51388 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 13:39:01 >  
+
+
+# 13:39:02 >  
+# 13:39:02 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=48928  < sql_server_abort.SF-1080025.sql
+# 13:39:02 >  
+
+
+# 13:39:02 >  
+# 13:39:02 >  Done.
+# 13:39:02 >  
+

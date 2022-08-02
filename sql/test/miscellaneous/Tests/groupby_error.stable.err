@@ -1,0 +1,74 @@
+stderr of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
+
+
+# 10:56:46 >  
+# 10:56:46 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36667" "--set" "mapi_usock=/var/tmp/mtest-13678/.s.monetdb.36667" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/MonetDB/mTests_sql_test_miscellaneous" "--set" "embedded_c=true"
+# 10:56:46 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 36667
+# cmdline opt 	mapi_usock = /var/tmp/mtest-13678/.s.monetdb.36667
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/MonetDB/mTests_sql_test_miscellaneous
+# cmdline opt 	embedded_c = true
+#client2:!ERROR:ParseException:SQLparser:42000!SELECT: cannot use non GROUP BY column 'parent.number' in query results without an aggregate function
+#main thread:!ERROR:MALException:client.quit:Server stopped
+
+# 10:56:47 >  
+# 10:56:47 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13678" "--port=36667"
+# 10:56:47 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-13678/.s.monetdb.36667
+QUERY = SELECT parent."sys_id" FROM "kagami_dump"."test_task" parent INNER JOIN "kagami_dump"."test_task" child ON child."parent" = parent."sys_id" GROUP BY parent."sys_id" HAVING count(child."sys_id") >= 1 ORDER BY parent."number"; --error, parent."number" requires an aggregate function
+ERROR = !SELECT: no such column 'parent.number'
+CODE  = 42S22
+MAPI  = (monetdb) /var/tmp/mtest-561836/.s.monetdb.32526
+QUERY = SELECT col0 FROM tab0 ORDER BY sys.tab0.col0; --error, TODO
+ERROR = !TODO: column names of level >= 3
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-561836/.s.monetdb.32526
+QUERY = prepare select col0 from tab0 where (?) in (?); --error
+ERROR = !Cannot have a parameter (?) on both sides of an expression
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-54771/.s.monetdb.35007
+QUERY = prepare select ? = ALL (select ? from tab0) from tab0 t1; --error
+ERROR = !Cannot have a parameter (?) on both sides of an expression
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-109859/.s.monetdb.35986
+QUERY = prepare select 1 from tab0 where ? between ? and ?; --error
+ERROR = !Cannot have a parameter (?) on both sides of an expression
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-128195/.s.monetdb.35720
+QUERY = prepare select case when col0 = 0 then ? else ? end from tab0; --error
+ERROR = !Result type missing
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-128195/.s.monetdb.35720
+QUERY = prepare select case when col0 = 0 then ? when col0 = 1 then ? else ? end from tab0; --error
+ERROR = !Result type missing
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-143244/.s.monetdb.35226
+QUERY = prepare select ? is null from tab0; --error
+ERROR = !Could not determine type for argument number 1
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-160872/.s.monetdb.39398
+QUERY = prepare select max(?); --error
+ERROR = !MAX: parameters not allowed as arguments to aggregate functions
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-165100/.s.monetdb.38196
+QUERY = prepare select max(?) over (); --error
+ERROR = !MAX: parameters not allowed as arguments to window functions
+CODE  = 42000
+
+# 10:56:47 >  
+# 10:56:47 >  "Done."
+# 10:56:47 >  
+

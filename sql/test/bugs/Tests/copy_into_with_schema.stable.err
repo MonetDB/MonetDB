@@ -1,0 +1,19 @@
+stderr of test 'copy_into_with_schema` in directory 'sql/test/bugs` itself:
+
+
+# 09:36:07 >  
+# 09:36:07 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36838 --set xrpc_port=44581 --set monet_prompt= --trace  "--dbname=mTests_src_test_bugs" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 09:36:07 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf)
+
+# 09:36:07 >  
+# 09:36:07 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=36838 
+# 09:36:07 >  
+
+
+# 09:36:07 >  
+# 09:36:07 >  Done.
+# 09:36:07 >  
+

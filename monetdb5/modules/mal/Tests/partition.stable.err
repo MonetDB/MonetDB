@@ -1,0 +1,108 @@
+stderr of test 'partition` in directory 'monetdb5/modules/mal` itself:
+
+
+# 16:35:42 >  
+# 16:35:42 >   mserver5 "--config=/ufs/mk/monet5//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=sql_logs"   --set mapi_open=true --set xrpc_open=true --set mapi_port=34622 --set xrpc_port=40864 --set monet_prompt= --trace  --dbname=mTests_src_modules_mal  partition.mal
+# 16:35:42 >  
+
+# builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu
+# builtin opt 	gdk_version = 1.29.0
+# builtin opt 	prefix = /ufs/mk/monet5//Linux
+# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	gdk_dbname = tst
+# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
+# builtin opt 	gdk_debug = 8
+# builtin opt 	gdk_alloc_map = yes
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_admin = adm
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_welcome = yes
+# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
+# builtin opt 	monet_daemon = yes
+# builtin opt 	host = localhost
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_noheaders = no
+# builtin opt 	mapi_debug = 0
+# builtin opt 	mapi_clients = 2
+# builtin opt 	sql_debug = 0
+# builtin opt 	sql_logdir = sql_logs
+# builtin opt 	xquery_logdir = xquery_logs
+# builtin opt 	standoff_ns = http://monetdb.cwi.nl/standoff
+# builtin opt 	standoff_start = start
+# builtin opt 	standoff_end = end
+# config opt 	prefix = /ufs/mk/monet5//Linux
+# config opt 	config = ${prefix}/etc/monetdb5.conf
+# config opt 	prefix = /ufs/mk/monet5//Linux
+# config opt 	exec_prefix = ${prefix}
+# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB5/dbfarm
+# config opt 	gdk_dbname = demo
+# config opt 	gdk_alloc_map = no
+# config opt 	gdk_embedded = no
+# config opt 	gdk_debug = 0
+# config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB5:${exec_prefix}/lib/MonetDB5/lib:${exec_prefix}/lib/MonetDB5/bin
+# config opt 	monet_daemon = no
+# config opt 	monet_welcome = yes
+# config opt 	mero_msglog = ${prefix}/var/log/MonetDB/merovingian.log
+# config opt 	mero_errlog = ${prefix}/var/log/MonetDB/merovingian.log
+# config opt 	mero_timeinterval = 600
+# config opt 	mero_pidfile = ${prefix}/var/run/MonetDB/merovingian.pid
+# config opt 	mero_exittimeout = 7
+# config opt 	mero_doproxy = yes
+# config opt 	mero_discoveryttl = 600
+# config opt 	mal_init = ${exec_prefix}/lib/MonetDB5/mal_init.mal
+# config opt 	mal_listing = 2
+# config opt 	mapi_port = 50000
+# config opt 	mapi_open = false
+# config opt 	sql_logdir = sql_logs
+# cmdline opt 	config = /ufs/mk/monet5//Linux/etc/monetdb5.conf
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	monet_mod_path = /ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin
+# cmdline opt 	gdk_dbfarm = /ufs/mk/monet5//Linux/var/MonetDB5/dbfarm
+# cmdline opt 	sql_logdir = sql_logs
+# cmdline opt 	mapi_open = true
+# cmdline opt 	xrpc_open = true
+# cmdline opt 	mapi_port = 34622
+# cmdline opt 	xrpc_port = 40864
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_modules_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 09:46:29 >  
+# 09:46:29 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:29 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+QUERY = function tst();
+        b:= bat.new(:int);
+        bat.append(b,1);
+        bat.append(b,2);
+        bat.append(b,3);
+        bat.append(b,4);
+        bat.append(b,5);
+        
+        c:= bat.partition(b,2,0);
+        io.print(c);
+        d:= bat.partition(b,2,1);
+        io.print(d);
+        
+        (b1,b2):= bat.partition(b);
+        io.print(b1);
+        io.print(b2);
+        b3:= bat.partition(b);
+        io.print(b3);
+        
+        # an error should be produced
+        e:= bat.partition(b,2,-1);
+        io.print(e);
+        end tst;
+        mdb.List("user","tst");
+        tst();
+ERROR = !MALException:bat.partition:Illegal argument Illegal piece index
+
+# 09:46:29 >  
+# 09:46:29 >  "Done."
+# 09:46:29 >  
+

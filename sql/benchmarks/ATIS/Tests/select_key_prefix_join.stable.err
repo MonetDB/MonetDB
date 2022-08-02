@@ -1,0 +1,17 @@
+stderr of test 'select_key_prefix_join` in directory 'sql/benchmarks/ATIS` itself:
+
+
+# 21:13:06 >  
+# 21:13:06 >  Mtimeout -timeout 180 Mserver --config=/ufs/niels/.monet.conf --debug=0   --set monet_prompt= --dbname=Tests_src_benchmarks_ATIS --set sql_port=54799 /ufs/niels/data/sql/Linux/share/sql/catalog.mil /ufs/niels/data/sql/Linux/share/sql/sqlserver.mil ; echo  ; echo Over..
+# 21:13:06 >  
+
+
+# 21:13:06 >  
+# 21:13:06 >  Mtimeout -timeout 60 sql_client --port=54799 < select_key_prefix_join.sql
+# 21:13:06 >  
+
+
+# 21:13:07 >  
+# 21:13:07 >  Done.
+# 21:13:07 >  
+

@@ -1,0 +1,22 @@
+stderr of test 'type_dump_test.SF-989257` in directory 'sql/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 15:49:13 >  
+# 15:49:13 >  Mtimeout -timeout 300 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program/var/MonetDB/log" --set mapi_port=39585 --set sql_port=40068 --set xquery_port=56428 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 15:49:13 >  
+
+
+# 15:49:14 >  
+# 15:49:14 >  Mtimeout -timeout 180 ./type_dump_test.SF-989257.SQL type_dump_test.SF-989257 
+# 15:49:14 >  
+
+
+# 15:49:14 >  
+# 15:49:14 >  Mtimeout -timeout 60 java -jar /net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/sql/build/src/jdbc/MonetDB_JDBC.jar -h localhost -p 40068 -f ../../../../..//current/sql/src/test/BugDay_2005-10-06_2.9.3/Tests/type_dump_test.SF-989257-src.sql
+# 15:49:14 >  
+
+
+# 15:57:22 >  
+# 15:57:22 >  Done.
+# 15:57:22 >  
+

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _SQL_PARSER_H_
@@ -19,9 +19,10 @@
 #define YYDEBUG 1
 */
 
-extern int find_subgeometry_type(mvc *m, char*);
+extern int find_subgeometry_type(char*);
 extern char *token2string(tokens token);
 extern int sqlparse(mvc *m);
+extern int sqlerror(mvc *sql, const char *s);
 
 #include "mal_errors.h"		/* for SQLSTATE() */
 

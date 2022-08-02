@@ -3,8 +3,6 @@ BASETABLE
 	(card MULTI)
 	-> exps		is list of column expressions (also used for aliases)
 	-> l		(sql_table)
-	-> r 		rel_base_t { alias table name, disallowed (read access), bitvector of used columns/tid/idxs
-	-> r		rel_rename_part call puts parent merge table in there
 
 TABLE 	(card MULTI)
 	-> flags	TABLE_PROD_FUNC, TABLE_FROM_RELATION, TRIGGER_WRAPPER
@@ -73,7 +71,7 @@ SAMPLE	(card ATOM, AGGR, or MULTI (same card as lower relation))
 	-> l		is relation
 	-> flag		(0) no flags
 
-INSERT|DELETE|UPDATE|TRUNCATE 	(card ATOM, AGGR or MULTI (same card as the to be inserted/deleted/updated relation))
+INSERT|DELETE|UPDATE|TRUNCATE 	(card MULTI)
 	-> l 		is relation to modify
 	-> r		to be inserted/deleted/updated relation
 			For update the ->r projection joins in current
@@ -93,18 +91,12 @@ INSERT/UPDATE have a special case
 			relation is used as we need to keep access to
 			the bottom value relation
 
-MERGE (card ATOM, AGGR or MULTI (max card of updates))
-	-> l 		left join between the target table and the source
-	-> r		a DDL list with an insert and update/delete, or a single relation update on the target table
-	-> flag		(0) no flags
-	->exps 		empty list, ie not used
-
 Expressions
 
 e_atom 	(card ATOM)
 	-> l	literal (-> l = atom)
 	or
-	-> r	parameter ( ->r = sql_var_name -> { ->name variable name, ->sname schema of the variable }, ->type = subtype, ->flag = level)
+	-> r	parameter ( ->r = varname, ->type = subtype, ->flag = level)
 	or
 	-> f	list of atom expressions
 	or

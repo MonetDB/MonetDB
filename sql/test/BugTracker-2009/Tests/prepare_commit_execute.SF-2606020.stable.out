@@ -1,0 +1,56 @@
+stdout of test 'prepare_commit_execute.SF-2606020` in directory 'sql/test/BugTracker-2009` itself:
+
+
+# 15:00:13 >  
+# 15:00:13 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm"    --set mapi_open=true --set xrpc_open=true --set mapi_port=30796 --set xrpc_port=41543 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2009" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 15:00:13 >  
+
+# MonetDB server v5.14.0, based on kernel v1.32.0
+# Serving database 'mTests_src_test_BugTracker-2009', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:30796/
+# MonetDB/SQL module v2.32.0 loaded
+
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+
+# 12:41:45 >  
+# 12:41:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=madrid" "--port=32243"
+# 12:41:45 >  
+
+#start transaction;
+#create table pce (i int, s string);
+#commit;
+#start transaction;
+#prepare insert into pce (i,s) values (?,?); 
+#prepare insert into pce (i,s) values (?,?); 
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 4,	2,	1,	0,	0,	0 # length
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+#exec 2(1,'test 1');
+[ 1	]
+% sys.pce,	sys.pce # table_name
+% i,	s # name
+% int,	clob # type
+% 1,	6 # length
+[ 1,	"test 1"	]
+[ 1	]
+% sys.pce,	sys.pce # table_name
+% i,	s # name
+% int,	clob # type
+% 1,	6 # length
+[ 1,	"test 1"	]
+[ 2,	"test 2"	]
+
+# 15:00:14 >  
+# 15:00:14 >  Done.
+# 15:00:14 >  
+

@@ -17,7 +17,7 @@ COPY 1000 RECORDS INTO TargetParam FROM 'DATA/TargetParam.dat.bz2' USING DELIMIT
 
 COPY 1000 RECORDS INTO Rmatrix FROM 'DATA/Rmatrix.dat.bz2' USING DELIMITERS E'\t', E'\n', '"';
 
---select 'Region';
+select 'Region';
 COPY 28000 RECORDS INTO Region FROM 'DATA/Region1.dat.bz2' USING DELIMITERS E'\t', '|', '"';
 
 COPY 1000 RECORDS INTO SiteDBs FROM 'DATA/SiteDBs.dat.bz2' USING DELIMITERS E'\t', E'\n', '"';
@@ -87,7 +87,7 @@ COPY 1000 RECORDS INTO ELRedShift FROM 'DATA/ELRedShift.dat.bz2' USING DELIMITER
 
 COPY 3000 RECORDS INTO TargetInfo FROM 'DATA/TargetInfo.dat.bz2' USING DELIMITERS E'\t', E'\n', '"';
 
---select 'TiledTargetAll';
+select 'TiledTargetAll';
 COPY 815000 RECORDS INTO TiledTargetAll FROM 'DATA/TiledTargetAll.dat.bz2' USING DELIMITERS E'\t', E'\n', '"';
 
 COPY 2000 RECORDS INTO PlateX FROM 'DATA/PlateX.dat.bz2'  USING DELIMITERS E'\t', E'\n', '"';
@@ -167,4 +167,4 @@ COPY 1000 RECORDS INTO FileGroupMap FROM 'DATA/FileGroupMap.dat.bz2' USING DELIM
 
 COPY 1000 RECORDS INTO Chunk FROM 'DATA/Chunk.dat.bz2' USING DELIMITERS E'\t', E'\n', '"';
 
---select 'ALL DONE';
+select 'ALL DONE';

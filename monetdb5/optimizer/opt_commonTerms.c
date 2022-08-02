@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -17,18 +17,6 @@
 /* The key for finding common terms is that they share variables.
  * Therefore we skip all constants, except for a constant only situation.
  */
-
-/*
- * Speed up simple insert operations by skipping the common terms.
-*/
-
-static int
-isProjectConst(InstrPtr p)
-{
-	if (getModuleId(p)== algebraRef && getFunctionId(p)== projectRef)
-		return TRUE;
-	return FALSE;
-}
 
 static int
 hashInstruction(MalBlkPtr mb, InstrPtr p)
@@ -50,20 +38,18 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	int actions = 0;
 	int limit, slimit;
 	int duplicate;
-	int *alias = NULL;
-	int *hash = NULL, h;
-	int *list = NULL;
+	int *alias;
+	int *hash, h;
+	int *list;
 	str msg = MAL_SUCCEED;
 
 	InstrPtr *old = NULL;
-
-	/* catch simple insert operations */
-	if( isSimpleSQL(mb)){
-		goto wrapup;
-	}
+	char buf[256];
+	lng usec = GDKusec();
 
 	(void) cntxt;
 	(void) stk;
+	(void) pci;
 	alias = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	list = (int*) GDKzalloc(sizeof(int) * mb->stop);
 	hash = (int*) GDKzalloc(sizeof(int) * mb->vtop);
@@ -128,11 +114,6 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			pushInstruction(mb,p);
 			continue;
 		}
-		/* simple SQL bind operations need not be merged, they are cheap and/or can be duplicated eliminated elsewhere cheaper */
-		if( getModuleId(p) == sqlRef && getFunctionId(p) != tidRef){
-			pushInstruction(mb,p);
-			continue;
-		}
 
 		/* from here we have a candidate to look for a match */
 
@@ -149,7 +130,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		bailout = 1024 ;  // don't run over long collision list
 		/* Look into the hash structure for matching instructions */
 		for (j = hash[h];  j > 0 && bailout-- > 0  ; j = list[j])
-			if ( (q= getInstrPtr(mb,j)) && getFunctionId(q) == getFunctionId(p) && getModuleId(q) == getModuleId(p)){
+			if ( (q= getInstrPtr(mb,j)) && getFunctionId(q) == getFunctionId(p) && getModuleId(q) == getModuleId(p)  ){
 				TRC_DEBUG(MAL_OPTIMIZER, "Candidate[%d->%d] %d %d :%d %d %d=%d %d %d %d\n",
 					j, list[j],
 					hasSameSignature(mb, p, q),
@@ -172,7 +153,6 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					 !hasCommonResults(p, q) &&
 					 !isUnsafeFunction(q) &&
 					 !isUpdateInstruction(q) &&
-					 !isProjectConst(q) && /* disable project(x,val), as its used for the result of case statements */
 					 isLinearFlow(q)
 					) {
 					if (safetyBarrier(p, q) ){
@@ -217,19 +197,23 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	}
 	for(; i<slimit; i++)
 		if( old[i])
-			pushInstruction(mb,old[i]);
-	/* Defense line against incorrect plans */
-	if( actions > 0){
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
-		if (!msg)
-			msg = chkFlow(mb);
-		if (!msg)
-			msg = chkDeclarations(mb);
-	}
-wrapup:
-	/* keep actions taken as a fake argument*/
-	(void) pushInt(mb, pci, actions);
+			freeInstruction(old[i]);
+    /* Defense line against incorrect plans */
+    if( actions > 0){
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
+    }
+    /* keep all actions taken as a post block comment */
+	usec = GDKusec()- usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","commonTerms",actions,usec);
+    newComment(mb,buf);
+	if( actions > 0)
+		addtoMalBlkHistory(mb);
 
+  wrapup:
 	if(alias) GDKfree(alias);
 	if(list) GDKfree(list);
 	if(hash) GDKfree(hash);

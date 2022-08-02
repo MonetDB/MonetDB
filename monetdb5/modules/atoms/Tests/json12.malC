@@ -1,0 +1,35 @@
+#manipulate heterogenous json tables
+j:= bat.new(:json);
+b:= json.new("{}");
+bat.append(j,b);
+b:= json.new("{\"f1\":1}");
+bat.append(j,b);
+b:= json.new("{\"f1\":1,\"f2\":2}");
+bat.append(j,b);
+b:= json.new("{\"f1\":1,\"f2\":2,\"f1\":3}");
+bat.append(j,b);
+b:= json.new("{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}");
+bat.append(j,b);
+b:= json.new("[1,\"f2\", 2]");
+bat.append(j,b);
+
+f:bat[:json]:= mal.manifold("json","filter",j,"$.f1");
+io.print(f);
+f:bat[:json]:= mal.manifold("json","filter",j,"$.f2");
+io.print(f);
+f:bat[:json]:= mal.manifold("json","filter",j,"$.f1[0]");
+io.print(f);
+f:bat[:json]:= mal.manifold("json","filter",j,"$..f12");
+io.print(f);
+
+io.printf("#next batch\n");
+i:= bat.new(:json);
+
+f:bat[:json]:= mal.manifold("json","filter",i,0);
+io.print(f);
+f:bat[:json]:= mal.manifold("json","filter",i,1);
+io.print(f);
+f:bat[:json]:= mal.manifold("json","filter",i,2);
+io.print(f);
+f:bat[:json]:= mal.manifold("json","filter",i,3);
+io.print(f);

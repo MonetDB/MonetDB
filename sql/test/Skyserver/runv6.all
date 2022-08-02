@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 PWD=`pwd`
 SQL='mclient -lsql'
@@ -17,36 +17,11 @@ fi
 
 #Bulk-Load into SQL server...
 
-cat << EOF > .monetdb
-user=monetdb
-password=monetdb
-EOF
-
 echo Create User
 $SQL < create_user.sql
 
-cat << EOF > .monetdb
-user=skyserver
-password=skyserver
-EOF
-
 echo tables
 $SQL1 < Skyserver_tables_v6.sql
-
-cat << EOF > .monetdb
-user=monetdb
-password=monetdb
-EOF
-
-echo loading
-cat Skyserver_import_v6.sql | sed -e "s|DATA_DIR|$PWD/microsky_v6|g" | $SQL
-
-cat << EOF > .monetdb
-user=skyserver
-password=skyserver
-EOF
-
-echo Constraints
 $SQL1 < Skyserver_constraints_v6.sql
 
 echo views
@@ -55,18 +30,14 @@ $SQL1 < Skyserver_views_v6.sql
 echo functions
 $SQL1 < Skyserver_functions_v6.sql
 
+exit
 echo Cleanup
 $SQL1 < Skyserver_dropFunctions_v6.sql
+$SQL1 < Skyserver_dropMs_functions.sql
+$SQL1 < Skyserver_dropMath.sql
 $SQL1 < Skyserver_dropViews_v6.sql
 $SQL1 < Skyserver_dropConstraints_v6.sql
 $SQL1 < Skyserver_dropTables_v6.sql
 
-cat << EOF > .monetdb
-user=monetdb
-password=monetdb
-EOF
-
 echo Remove User
 $SQL < drop_user.sql
-
-rm -f .monetdb

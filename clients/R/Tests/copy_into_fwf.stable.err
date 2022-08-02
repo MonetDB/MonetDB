@@ -1,0 +1,35 @@
+stderr of test 'copy_into_fwf` in directory 'clients/R` itself:
+
+
+# 16:40:22 >  
+# 16:40:22 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30658" "--set" "mapi_usock=/var/tmp/mtest-16034/.s.monetdb.30658" "--set" "monet_prompt=" "--forcemito" "--dbpath=/tmp/fuckit/var/MonetDB/mTests_clients_R" "--set" "embedded_r=yes"
+# 16:40:22 >  
+
+# builtin opt 	gdk_dbpath = /tmp/fuckit/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30658
+# cmdline opt 	mapi_usock = /var/tmp/mtest-16034/.s.monetdb.30658
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /tmp/fuckit/var/MonetDB/mTests_clients_R
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 16:40:23 >  
+# 16:40:23 >  "R" "--vanilla" "--slave" "--args" "30658"
+# 16:40:23 >  
+
+
+# 16:40:23 >  
+# 16:40:23 >  "Done."
+# 16:40:23 >  
+

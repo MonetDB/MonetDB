@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -53,16 +53,40 @@ newODBCDbc(ODBCEnv *env)
 		addEnvError(env, "HY001", NULL, 0);
 		return NULL;
 	}
+	assert(dbc);
 
-	*dbc = (ODBCDbc) {
-		.Env = env,
-		.sql_attr_autocommit = SQL_AUTOCOMMIT_ON,	/* default is autocommit */
-		.sql_attr_metadata_id = SQL_FALSE,
-		/* add this dbc to start of the administrative linked dbc list */
-		.next = env->FirstDbc,
-		.Type = ODBC_DBC_MAGIC_NR,	/* set it valid */
-	};
+	dbc->Env = env;
+	dbc->Error = NULL;
+	dbc->RetrievedErrors = 0;
+
+	dbc->dsn = NULL;
+	dbc->uid = NULL;
+	dbc->pwd = NULL;
+	dbc->host = NULL;
+	dbc->port = 0;
+	dbc->dbname = NULL;
+
+	dbc->Connected = false;
+	dbc->has_comment = false;
+	dbc->sql_attr_autocommit = SQL_AUTOCOMMIT_ON;	/* default is autocommit */
+	dbc->sql_attr_metadata_id = SQL_FALSE;
+	dbc->sql_attr_connection_timeout = 0;
+	dbc->mid = NULL;
+	dbc->major = 0;
+	dbc->minor = 0;
+	dbc->patch = 0;
+	dbc->cachelimit = 0;
+	dbc->qtimeout = 0;
+	dbc->Mdebug = 0;
+
+	dbc->FirstStmt = NULL;
+
+	/* add this dbc to start of the administrative linked dbc list */
+	dbc->next = env->FirstDbc;
 	env->FirstDbc = dbc;
+
+	dbc->Type = ODBC_DBC_MAGIC_NR;	/* set it valid */
+
 	return dbc;
 }
 

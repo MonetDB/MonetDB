@@ -1,0 +1,133 @@
+stderr of test 'optimizers` in directory 'sql/backends/monet5` itself:
+
+
+# 03:16:16 >  
+# 03:16:16 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/manegold/_/Monet/HG/default/prefix/--disable-assert_--disable-debug_--enable-optimize/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=36613" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_backends_monet5" "--set" "mal_listing=0"
+# 03:16:16 >  
+
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /ufs/manegold/_/Monet/HG/default/prefix/--disable-assert_--disable-debug_--enable-optimize/var/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_alloc_map = no
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	gdk_dbfarm = /ufs/manegold/_/Monet/HG/default/prefix/--disable-assert_--disable-debug_--enable-optimize/var/MonetDB
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 36613
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_backends_monet5
+# cmdline opt 	mal_listing = 0
+
+MAPI  = (monetdb) /var/tmp/mtest-25442/.s.monetdb.33852
+QUERY = set optimizer='off';
+ERROR = !optimizer 'off' unknown
+CODE  = 42100
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='on';
+ERROR = !optimizer 'on' unknown
+CODE  = 42100
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='';
+ERROR = !optimizer '' unknown
+CODE  = 42100
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+ERROR = !'inline' should be the first
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='optimizer.coercions();optimizer.aliases();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+ERROR = !'inline' should be the first
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='optimizer.aliases();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+ERROR = !'inline' should be the first
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='optimizer.aliases();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+ERROR = !'inline' should be the first
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='optimizer.aliases();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+ERROR = !'inline' should be the first
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+ERROR = !'inline' should be the first
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='optimizer.projectionpath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+ERROR = !'inline' should be the first
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='optimizer.projectionpath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+ERROR = !'inline' should be the first
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+ERROR = !'inline' should be the first
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='optimizer.reduce();optimizer.garbageCollector();';
+ERROR = !'inline' should be the first
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='optimizer.garbageCollector();';
+ERROR = !'inline' should be the first
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='optimizer.costModel();optimizer.coercions();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+ERROR = !'inline' should be the first
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='optimizer.costModel();optimizer.coercions();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.garbageCollector();';
+ERROR = !'inline' should be the first
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='optimizer.inline();';
+ERROR = !'multiplex' should be used
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='optimizer.inline();optimizer.multiplex();';
+ERROR = !'deadcode' should be used at least once
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='optimizer.inline();optimizer.multiplex();optimizer.deadcode();';
+ERROR = !'garbageCollector' should be used as the last one
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='optimizer.inline();optimizer.deadcode();optimizer.multiplex();';
+ERROR = !'garbageCollector' should be used as the last one
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='optimizer.deadcode();optimizer.inline();optimizer.multiplex();optimizer.garbageCollector();';
+ERROR = !'inline' should be the first
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='optimizer.inline();optimizer.deadcode();optimizer.garbageCollector();optimizer.multiplex();';
+ERROR = !'remap' should be used
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='optimizer.inline();optimizer.multiplex();optimizer.deadcode();optimizer.garbageCollector();';
+ERROR = !'remap' should be used
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = set optimizer='optimizer.inline();optimizer.deadcode();optimizer.multiplex();optimizer.garbageCollector();';
+ERROR = !'remap' should be used
+CODE  = 42000
+
+
+
+
+
+# 03:16:17 >  
+# 03:16:17 >  "Done."
+# 03:16:17 >  
+

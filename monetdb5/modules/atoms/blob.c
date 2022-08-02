@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -30,100 +30,169 @@
  * @+ Module Definition
  */
 #include "monetdb_config.h"
-#include "mal_client.h"
-#include "mal_interpreter.h"
-#include "mal_exception.h"
+#include "blob.h"
 
-static str
+int TYPE_blob;
+
+mal_export str BLOBprelude(void *ret);
+
+mal_export int BLOBcmp(const blob *l, const blob *r);
+mal_export BUN BLOBhash(const blob *b);
+mal_export const blob *BLOBnull(void);
+mal_export var_t BLOBput(Heap *h, var_t *bun, const blob *val);
+mal_export void BLOBdel(Heap *h, var_t *index);
+mal_export size_t BLOBlength(const blob *p);
+mal_export void BLOBheap(Heap *heap, size_t capacity);
+mal_export str BLOBtoblob(blob **retval, str *s);
+mal_export str BLOBnitems(int *ret, blob **b);
+mal_export int BLOBget(Heap *h, int *bun, int *l, blob **val);
+mal_export blob * BLOBread(blob *a, stream *s, size_t cnt);
+mal_export gdk_return BLOBwrite(const blob *a, stream *s, size_t cnt);
+
+mal_export str BLOBblob_blob(blob **d, blob **s);
+mal_export str BLOBblob_fromstr(blob **b, const char **d);
+
+static blob nullval = {
+	~(size_t) 0
+};
+
+#define is_blob_nil(x)	((x)->nitems == nullval.nitems)
+
+str
+BLOBprelude(void *ret)
+{
+	(void) ret;
+	TYPE_blob = ATOMindex("blob");
+	return MAL_SUCCEED;
+}
+
+var_t
+blobsize(size_t nitems)
+{
+	if (nitems == nullval.nitems)
+		nitems = 0;
+	assert(offsetof(blob, data) + nitems <= VAR_MAX);
+	return (var_t) (offsetof(blob, data) + nitems);
+}
+
+static char hexit[] = "0123456789ABCDEF";
+
+/*
+ * @- Wrapping section
+ * This section contains the wrappers to re-use the implementation
+ * section of the blob modules from MonetDB 4.3
+ * @-
+ */
+int
+BLOBcmp(const blob *l, const blob *r)
+{
+	int c;
+	if (is_blob_nil(r))
+		return !is_blob_nil(l);
+	if (is_blob_nil(l))
+		return -1;
+	if (l->nitems < r->nitems) {
+		c = memcmp(l->data, r->data, l->nitems);
+		if (c == 0)
+			return -1;
+	} else {
+		c = memcmp(l->data, r->data, r->nitems);
+		if (c == 0)
+			return l->nitems > r->nitems;
+	}
+	return c;
+}
+
+void
+BLOBdel(Heap *h, var_t *idx)
+{
+	HEAP_free(h, *idx);
+}
+
+BUN
+BLOBhash(const blob *b)
+{
+	return (BUN) b->nitems;
+}
+
+const blob *
+BLOBnull(void)
+{
+	return &nullval;
+}
+
+blob *
+BLOBread(blob *a, stream *s, size_t cnt)
+{
+	int len;
+
+	(void) cnt;
+	assert(cnt == 1);
+	if (mnstr_readInt(s, &len) != 1)
+		return NULL;
+	if ((a = GDKmalloc(len)) == NULL)
+		return NULL;
+	if (mnstr_read(s, (char *) a, len, 1) != 1) {
+		GDKfree(a);
+		return NULL;
+	}
+	return a;
+}
+
+gdk_return
+BLOBwrite(const blob *a, stream *s, size_t cnt)
+{
+	var_t len = blobsize(a->nitems);
+
+	(void) cnt;
+	assert(cnt == 1);
+	if (!mnstr_writeInt(s, (int) len) /* 64bit: check for overflow */ ||
+		mnstr_write(s, a, len, 1) < 0)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+size_t
+BLOBlength(const blob *p)
+{
+	var_t l = blobsize(p->nitems); /* 64bit: check for overflow */
+	assert(l <= GDK_int_max);
+	return (size_t) l;
+}
+
+void
+BLOBheap(Heap *heap, size_t capacity)
+{
+	HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
+}
+
+var_t
+BLOBput(Heap *h, var_t *bun, const blob *val)
+{
+	char *base = NULL;
+
+	*bun = HEAP_malloc(h, blobsize(val->nitems));
+ 	base = h->base;
+	if (*bun) {
+		memcpy(&base[*bun], val, blobsize(val->nitems));
+		h->dirty = true;
+	}
+	return *bun;
+}
+
+str
 BLOBnitems(int *ret, blob **b)
 {
 	if (is_blob_nil(*b)) {
 		*ret = int_nil;
-	} else {
-		assert((*b)->nitems < INT_MAX);
-		*ret = (int) (*b)->nitems;
+		return MAL_SUCCEED;
 	}
+	assert((*b)->nitems <INT_MAX);
+	*ret = (int) (*b)->nitems;
 	return MAL_SUCCEED;
 }
 
-static str
-BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	BATiter bi;
-	BAT *bn = NULL, *b = NULL, *bs = NULL;
-	int *restrict vals;
-	str msg = MAL_SUCCEED;
-	bool nils = false;
-	struct canditer ci1 = {0};
-	oid off1;
-	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
-		*sid1 = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
-
-	(void) cntxt;
-	(void) mb;
-	if (!(b = BATdescriptor(*bid))) {
-		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
-	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
-		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
-	canditer_init(&ci1, b, bs);
-	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
-		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-
-	off1 = b->hseqbase;
-	bi = bat_iterator(b);
-	vals = Tloc(bn, 0);
-	if (ci1.tpe == cand_dense) {
-		for (BUN i = 0; i < ci1.ncand; i++) {
-			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const blob *b = BUNtvar(bi, p1);
-
-			if (is_blob_nil(b)) {
-				vals[i] = int_nil;
-				nils = true;
-			} else {
-				assert((int) b->nitems < INT_MAX);
-				vals[i] = (int) b->nitems;
-			}
-		}
-	} else {
-		for (BUN i = 0; i < ci1.ncand; i++) {
-			oid p1 = (canditer_next(&ci1) - off1);
-			const blob *b = BUNtvar(bi, p1);
-
-			if (is_blob_nil(b)) {
-				vals[i] = int_nil;
-				nils = true;
-			} else {
-				assert((int) b->nitems < INT_MAX);
-				vals[i] = (int) b->nitems;
-			}
-		}
-	}
-	bat_iterator_end(&bi);
-
-	BATsetcount(bn, ci1.ncand);
-	bn->tnil = nils;
-	bn->tnonil = !nils;
-	bn->tkey = BATcount(bn) <= 1;
-	bn->tsorted = BATcount(bn) <= 1;
-	bn->trevsorted = BATcount(bn) <= 1;
-	*res = bn->batCacheid;
-	BBPkeepref(bn);
-  bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (bs)
-		BBPunfix(bs->batCacheid);
-	return msg;
-}
-
-static str
+str
 BLOBtoblob(blob **retval, str *s)
 {
 	size_t len = strLen(*s);
@@ -137,7 +206,138 @@ BLOBtoblob(blob **retval, str *s)
 	return MAL_SUCCEED;
 }
 
-static str
+ssize_t
+BLOBtostr(str *tostr, size_t *l, const blob *p, bool external)
+{
+	char *s;
+	size_t i;
+	size_t expectedlen;
+
+	if (is_blob_nil(p))
+		expectedlen = external ? 4 : 2;
+	else
+		expectedlen = p->nitems * 2 + 1;
+	if (*l < expectedlen || *tostr == NULL) {
+		GDKfree(*tostr);
+		*tostr = GDKmalloc(expectedlen);
+		if (*tostr == NULL)
+			return -1;
+		*l = expectedlen;
+	}
+	if (is_blob_nil(p)) {
+		if (external) {
+			strcpy(*tostr, "nil");
+			return 3;
+		}
+		strcpy(*tostr, str_nil);
+		return 1;
+	}
+
+	s = *tostr;
+
+	for (i = 0; i < p->nitems; i++) {
+		int val = (p->data[i] >> 4) & 15;
+
+		*s++ = hexit[val];
+		val = p->data[i] & 15;
+		*s++ = hexit[val];
+	}
+	*s = '\0';
+	return (ssize_t) (s - *tostr);
+}
+
+ssize_t
+BLOBfromstr(const char *instr, size_t *l, blob **val, bool external)
+{
+	size_t i;
+	size_t nitems;
+	var_t nbytes;
+	blob *result;
+	const char *s = instr;
+
+	if (strNil(instr) || (external && strncmp(instr, "nil", 3) == 0)) {
+		nbytes = blobsize(0);
+		if (*l < nbytes || *val == NULL) {
+			GDKfree(*val);
+			if ((*val = GDKmalloc(nbytes)) == NULL)
+				return -1;
+		}
+		**val = nullval;
+		return strNil(instr) ? 1 : 3;
+	}
+
+	/* count hexits and check for hexits/space
+	 */
+	for (i = nitems = 0; instr[i]; i++) {
+		if (isxdigit((unsigned char) instr[i]))
+			nitems++;
+		else if (!isspace((unsigned char) instr[i])) {
+			GDKerror("Illegal char in blob\n");
+			return -1;
+		}
+	}
+	if (nitems % 2 != 0) {
+		GDKerror("Illegal blob length '%zu' (should be even)\n", nitems);
+		return -1;
+	}
+	nitems /= 2;
+	nbytes = blobsize(nitems);
+
+	if (*l < nbytes || *val == NULL) {
+		GDKfree(*val);
+		*val = GDKmalloc(nbytes);
+		if( *val == NULL)
+			return -1;
+		*l = (size_t) nbytes;
+	}
+	result = *val;
+	result->nitems = nitems;
+
+	/*
+	   // Read the values of the blob.
+	 */
+	for (i = 0; i < nitems; ++i) {
+		char res = 0;
+
+		for (;;) {
+			if (isdigit((unsigned char) *s)) {
+				res = *s - '0';
+			} else if (*s >= 'A' && *s <= 'F') {
+				res = 10 + *s - 'A';
+			} else if (*s >= 'a' && *s <= 'f') {
+				res = 10 + *s - 'a';
+			} else {
+				assert(isspace((unsigned char) *s));
+				s++;
+				continue;
+			}
+			break;
+		}
+		s++;
+		res <<= 4;
+		for (;;) {
+			if (isdigit((unsigned char) *s)) {
+				res += *s - '0';
+			} else if (*s >= 'A' && *s <= 'F') {
+				res += 10 + *s - 'A';
+			} else if (*s >= 'a' && *s <= 'f') {
+				res += 10 + *s - 'a';
+			} else {
+				assert(isspace((unsigned char) *s));
+				s++;
+				continue;
+			}
+			break;
+		}
+		s++;
+
+		result->data[i] = res;
+	}
+
+	return (ssize_t) (s - instr);
+}
+
+str
 BLOBblob_blob(blob **d, blob **s)
 {
 	size_t len = blobsize((*s)->nitems);
@@ -152,133 +352,12 @@ BLOBblob_blob(blob **d, blob **s)
 	return MAL_SUCCEED;
 }
 
-static str
-BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
-{
-	BAT *b = NULL, *s = NULL, *dst = NULL;
-	BATiter bi;
-	str msg = NULL;
-	struct canditer ci;
-	oid off;
-	bool nils = false;
-
-	if (sid && !is_bat_nil(*sid)) {
-		if ((s = BATdescriptor(*sid)) == NULL) {
-			msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			goto bailout;
-		}
-	} else {
-		BBPretain(*res = *bid); /* nothing to convert, return */
-		return MAL_SUCCEED;
-	}
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
-	off = b->hseqbase;
-	canditer_init(&ci, b, s);
-	if (!(dst = COLnew(ci.hseq, TYPE_blob, ci.ncand, TRANSIENT))) {
-		msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-
-	bi = bat_iterator(b);
-	if (ci.tpe == cand_dense) {
-		for (BUN i = 0; i < ci.ncand; i++) {
-			oid p = (canditer_next_dense(&ci) - off);
-			const blob *v = BUNtvar(bi, p);
-
-			if (tfastins_nocheckVAR(dst, i, v) != GDK_SUCCEED) {
-				msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				bat_iterator_end(&bi);
-				goto bailout;
-			}
-			nils |= is_blob_nil(v);
-		}
-	} else {
-		for (BUN i = 0; i < ci.ncand; i++) {
-			oid p = (canditer_next(&ci) - off);
-			const blob *v = BUNtvar(bi, p);
-
-			if (tfastins_nocheckVAR(dst, i, v) != GDK_SUCCEED) {
-				msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				bat_iterator_end(&bi);
-				goto bailout;
-			}
-			nils |= is_blob_nil(v);
-		}
-	}
-	bat_iterator_end(&bi);
-
-bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	if (dst && !msg) {
-		BATsetcount(dst, ci.ncand);
-		dst->tnil = nils;
-		dst->tnonil = !nils;
-		dst->tkey = BATcount(dst) <= 1;
-		dst->tsorted = BATcount(dst) <= 1;
-		dst->trevsorted = BATcount(dst) <= 1;
-		*res = dst->batCacheid;
-		BBPkeepref(dst);
-	} else if (dst)
-		BBPreclaim(dst);
-	return msg;
-}
-
-static str
+str
 BLOBblob_fromstr(blob **b, const char **s)
 {
 	size_t len = 0;
 
-	if (BATatoms[TYPE_blob].atomFromStr(*s, &len, (void **) b, false) < 0)
+	if (BLOBfromstr(*s, &len, b, false) < 0)
 		throw(MAL, "blob", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
-
-static str
-BLOBblob_fromstr_bulk(bat *res, const bat *bid, const bat *sid)
-{
-	BAT *b, *s = NULL, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batcalc.blob", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "batcalc.blob", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATconvert(b, s, TYPE_blob, 0, 0, 0);
-	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	if (bn == NULL)
-		throw(MAL, "batcalc.blob", GDK_EXCEPTION);
-	*res = bn->batCacheid;
-	BBPkeepref(bn);
-	return MAL_SUCCEED;
-}
-
-#include "mel.h"
-static mel_func blob_init_funcs[] = {
- command("blob", "blob", BLOBblob_blob, false, "Noop routine.", args(1,2, arg("",blob),arg("s",blob))),
- command("blob", "blob", BLOBblob_fromstr, false, "", args(1,2, arg("",blob),arg("s",str))),
- command("blob", "toblob", BLOBtoblob, false, "store a string as a blob.", args(1,2, arg("",blob),arg("v",str))),
- command("blob", "nitems", BLOBnitems, false, "get the number of bytes in this blob.", args(1,2, arg("",int),arg("b",blob))),
- pattern("batblob", "nitems", BLOBnitems_bulk, false, "", args(1,2, batarg("",int),batarg("b",blob))),
- pattern("batblob", "nitems", BLOBnitems_bulk, false, "", args(1,3, batarg("",int),batarg("b",blob),batarg("s",oid))),
- command("calc", "blob", BLOBblob_blob, false, "", args(1,2, arg("",blob),arg("b",blob))),
- command("batcalc", "blob", BLOBblob_blob_bulk, false, "", args(1,3, batarg("",blob),batarg("b",blob),batarg("s",oid))),
- command("calc", "blob", BLOBblob_fromstr, false, "", args(1,2, arg("",blob),arg("s",str))),
- command("batcalc", "blob", BLOBblob_fromstr_bulk, false, "", args(1,3, batarg("",blob),batarg("b",str),batarg("s",oid))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_blob_mal)
-{ mal_module("blob", NULL, blob_init_funcs); }

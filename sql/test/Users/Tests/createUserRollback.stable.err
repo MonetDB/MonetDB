@@ -1,0 +1,13 @@
+stderr of test 'createUserRollback` in directory 'sql/test/Users` itself:
+
+
+# 12:24:01 >  
+# 12:24:01 >  "/usr/bin/python3" "createUserRollback.SQL.py" "createUserRollback"
+# 12:24:01 >  
+
+Schema authorization error
+
+# 12:24:01 >  
+# 12:24:01 >  "Done."
+# 12:24:01 >  
+

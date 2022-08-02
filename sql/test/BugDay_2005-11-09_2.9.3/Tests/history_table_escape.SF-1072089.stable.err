@@ -1,0 +1,54 @@
+stderr of test 'history_table_escape.SF-1072089` in directory 'sql/test/BugDay_2005-11-09_2.9.3` itself:
+
+
+# 15:49:17 >  
+# 15:49:17 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=30547 --set sql_port=44105 --set xquery_port=50414 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 15:49:17 >  
+
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /ufs/fabian/scratch/ssd/monetdb/Dec2011/program-x86_64/var/lib/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_alloc_map = no
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	gdk_dbfarm = /net/sofia.ins.cwi.nl/export/scratch1/fabian/tmp/mtest-Dec2011-sofia.ins.cwi.nl/sql/dbfarm
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 39182
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_test_BugDay_2005-11-09_2.9.3
+# cmdline opt 	mal_listing = 0
+
+# 11:45:24 >  
+# 11:45:24 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=sofia" "--port=39182"
+# 11:45:24 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+QUERY = DELETE FROM history;
+ERROR = !DELETE FROM: no such table 'history'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = record SELECT 1;
+ERROR = !syntax error, unexpected IDENT in: "record"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = record SELECT 'test';
+ERROR = !syntax error, unexpected IDENT in: "record"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+QUERY = SELECT query FROM history;
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+
+
+# 15:49:19 >  
+# 15:49:19 >  Done.
+# 15:49:19 >  
+

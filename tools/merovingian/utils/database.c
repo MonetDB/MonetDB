@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* NOTE: for this file to work correctly, msab_init must be called. */
@@ -21,7 +21,7 @@
 #include "database.h"
 
 /* check if dbname matches [A-Za-z0-9-_]+ */
-char* db_validname(const char *dbname) {
+char* db_validname(char *dbname) {
 	size_t c;
 	char buf[8096];
 
@@ -46,7 +46,7 @@ char* db_validname(const char *dbname) {
 	return(NULL);
 }
 
-char* db_create(const char* dbname) {
+char* db_create(char* dbname) {
 	sabdb *stats;
 	size_t c;
 	char* e;
@@ -132,19 +132,61 @@ char* db_create(const char* dbname) {
 	/* without an .uplog file, Merovingian won't work, this
 	 * needs to be last to avoid race conditions */
 	snprintf(path, sizeof(path), "%s/%s/.uplog", dbfarm, dbname);
-	if ((f = fopen(path, "w")) == NULL) {
-		snprintf(buf, sizeof(buf), "cannot create uplog file: %s",
-				strerror(errno));
-		free(dbfarm);
-		return(strdup(buf));
-	}
-	fclose(f);
+	fclose(fopen(path, "w"));
 
 	free(dbfarm);
 	return(NULL);
 }
 
-char* db_destroy(const char* dbname) {
+/* recursive helper function to delete a directory */
+static char* deletedir(const char *dir) {
+	DIR *d;
+	struct dirent *e;
+	char buf[8192];
+	char path[4096];
+
+	d = opendir(dir);
+	if (d == NULL) {
+		/* silently return if we cannot find the directory; it's
+		 * probably already deleted */
+		if (errno == ENOENT)
+			return(NULL);
+		if (errno == ENOTDIR) {
+			if (remove(dir) != 0 && errno != ENOENT) {
+				snprintf(buf, sizeof(buf),
+					 "unable to remove file %s: %s",
+					 dir, strerror(errno));
+				return(strdup(buf));
+			}
+			return NULL;
+		}
+		snprintf(buf, sizeof(buf), "unable to open dir %s: %s",
+				dir, strerror(errno));
+		return(strdup(buf));
+	}
+	while ((e = readdir(d)) != NULL) {
+		/* ignore . and .. */
+		if (strcmp(e->d_name, ".") != 0 &&
+		    strcmp(e->d_name, "..") != 0) {
+			char* er;
+			snprintf(path, sizeof(path), "%s/%s", dir, e->d_name);
+			if ((er = deletedir(path)) != NULL) {
+				closedir(d);
+				return(er);
+			}
+		}
+	}
+	closedir(d);
+	if (rmdir(dir) == -1 && errno != ENOENT) {
+		snprintf(buf, sizeof(buf), "unable to remove directory %s: %s",
+				dir, strerror(errno));
+		return(strdup(buf));
+	}
+
+	return(NULL);
+}
+
+char* db_destroy(char* dbname) {
 	sabdb* stats;
 	char* e;
 	char buf[8096];
@@ -186,7 +228,7 @@ char* db_destroy(const char* dbname) {
 	return(NULL);
 }
 
-char* db_rename(const char *olddb, const char *newdb) {
+char* db_rename(char *olddb, char *newdb) {
 	char new[1024];
 	char buf[8096];
 	char *p;
@@ -253,7 +295,7 @@ char* db_rename(const char *olddb, const char *newdb) {
 	return(NULL);
 }
 
-char* db_lock(const char *dbname) {
+char* db_lock(char *dbname) {
 	char *e;
 	sabdb *stats;
 	char path[8096];
@@ -293,7 +335,7 @@ char* db_lock(const char *dbname) {
 	return(NULL);
 }
 
-char *db_release(const char *dbname) {
+char *db_release(char *dbname) {
 	char *e;
 	sabdb *stats;
 	char path[8096];

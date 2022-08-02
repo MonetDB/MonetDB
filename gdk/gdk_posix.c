@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -60,11 +60,7 @@
 #define MMAP_WRITABLE		(MMAP_WRITE|MMAP_COPY)
 
 #ifndef O_CLOEXEC
-#ifdef _O_NOINHERIT
-#define O_CLOEXEC _O_NOINHERIT	/* Windows */
-#else
 #define O_CLOEXEC 0
-#endif
 #endif
 
 /* Crude VM buffer management that keep a list of all memory mapped
@@ -377,7 +373,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	assert(mode & MMAP_WRITABLE);
 
 	if (*new_size < old_size) {
-#ifndef __COVERITY__	/* hide this from static code analyzer */
+#ifndef STATIC_CODE_ANALYSIS	/* hide this from static code analyzer */
 		/* shrink */
 		VALGRIND_RESIZEINPLACE_BLOCK(old_address, old_size, *new_size, 0);
 		if (munmap((char *) old_address + *new_size,
@@ -392,7 +388,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		if (path && truncate(path, *new_size) < 0)
 			TRC_WARNING(GDK, "MT_mremap(%s): truncate failed: %s\n",
 				    path, GDKstrerror(errno, (char[64]){0}, 64));
-#endif	/* !__COVERITY__ */
+#endif	/* !STATIC_CODE_ANALYSIS */
 		return old_address;
 	}
 	if (*new_size == old_size) {
@@ -539,6 +535,9 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 					/* if it failed, try alternative */
 				}
 				if (p == MAP_FAILED && path != NULL) {
+#ifdef HAVE_POSIX_FALLOCATE
+					int rt;
+#endif
 					/* write data to disk, then
 					 * mmap it to new address */
 					if (fd >= 0)
@@ -663,6 +662,9 @@ mdlopen(const char *library, int mode)
 #endif
 
 #undef _errno
+#undef stat
+#undef rmdir
+#undef mkdir
 
 #include <windows.h>
 
@@ -710,9 +712,6 @@ MT_mmap(const char *path, int mode, size_t len)
 	SECURITY_ATTRIBUTES sa;
 	HANDLE h1, h2;
 	void *ret;
-	wchar_t *wpath = utf8towchar(path);
-	if (wpath == NULL)
-		return NULL;
 
 	if (mode & MMAP_WRITE) {
 		mode0 |= FILE_APPEND_DATA | FILE_WRITE_ATTRIBUTES | FILE_WRITE_DATA;
@@ -734,23 +733,20 @@ MT_mmap(const char *path, int mode, size_t len)
 		mode3 = PAGE_READWRITE;
 		mode4 = FILE_MAP_WRITE;
 	}
-	mode2 |= FILE_ATTRIBUTE_NOT_CONTENT_INDEXED;
 	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
 	sa.bInheritHandle = TRUE;
 	sa.lpSecurityDescriptor = 0;
 
-	h1 = CreateFileW(wpath, mode0, mode1, &sa, OPEN_ALWAYS, mode2, NULL);
+	h1 = CreateFile(path, mode0, mode1, &sa, OPEN_ALWAYS, mode2, NULL);
 	if (h1 == INVALID_HANDLE_VALUE) {
-		(void) SetFileAttributesW(wpath, FILE_ATTRIBUTE_NORMAL);
-		h1 = CreateFileW(wpath, mode0, mode1, &sa, OPEN_ALWAYS, mode2, NULL);
+		(void) SetFileAttributes(path, FILE_ATTRIBUTE_NORMAL);
+		h1 = CreateFile(path, mode0, mode1, &sa, OPEN_ALWAYS, mode2, NULL);
 		if (h1 == INVALID_HANDLE_VALUE) {
-			free(wpath);
 			GDKwinerror("CreateFile('%s', %lu, %lu, &sa, %lu, %lu, NULL) failed\n",
 				    path, (unsigned long) mode0, (unsigned long) mode1, (unsigned long) OPEN_ALWAYS, (unsigned long) mode2);
 			return NULL;
 		}
 	}
-	free(wpath);
 
 	h2 = CreateFileMapping(h1, &sa, mode3, (DWORD) (((__int64) len >> 32) & LL_CONSTANT(0xFFFFFFFF)), (DWORD) (len & LL_CONSTANT(0xFFFFFFFF)), NULL);
 	if (h2 == NULL) {
@@ -915,6 +911,125 @@ dlerror(void)
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(), 0, msg, sizeof(msg), NULL);
 	return msg;
 }
+
+/* dir manipulations fail in WIN32 if file name contains trailing
+ * slashes; work around this */
+static char *
+reduce_dir_name(const char *src, char *dst, size_t cap)
+{
+	size_t len = strlen(src);
+	char *buf = dst;
+
+	if (len >= cap)
+		buf = malloc(len + 1);
+	if (buf == NULL)
+		return NULL;
+	while (--len > 0 && src[len - 1] != ':' && src[len] == DIR_SEP)
+		;
+	for (buf[++len] = 0; len > 0; buf[len] = src[len])
+		len--;
+	return buf;
+}
+
+#undef _stat64
+int
+win_stat(const char *pathname, struct _stat64 *st)
+{
+	char buf[128], *p = reduce_dir_name(pathname, buf, sizeof(buf));
+	int ret;
+
+	if (p == NULL)
+		return -1;
+	ret = _stat64(p, st);
+	if (p != buf)
+		free(p);
+	return ret;
+}
+
+int
+win_rmdir(const char *pathname)
+{
+	char buf[128], *p = reduce_dir_name(pathname, buf, sizeof(buf));
+	int ret;
+
+	if (p == NULL)
+		return -1;
+	ret = _rmdir(p);
+	if (ret < 0 && errno != ENOENT) {
+		/* it could be the <expletive deleted> indexing
+		 * service which prevents us from doing what we have a
+		 * right to do, so try again (once) */
+		TRC_DEBUG(IO_, "Retry rmdir %s\n", pathname);
+		MT_sleep_ms(100);	/* wait a little */
+		ret = _rmdir(p);
+	}
+	if (p != buf)
+		free(p);
+	return ret;
+}
+
+int
+win_unlink(const char *pathname)
+{
+	int ret = _unlink(pathname);
+	if (ret < 0) {
+		/* Vista is paranoid: we cannot delete read-only files
+		 * owned by ourselves. Vista somehow also sets these
+		 * files to read-only.
+		 */
+		(void) SetFileAttributes(pathname, FILE_ATTRIBUTE_NORMAL);
+		ret = _unlink(pathname);
+	}
+	if (ret < 0 && errno != ENOENT) {
+		/* it could be the <expletive deleted> indexing
+		 * service which prevents us from doing what we have a
+		 * right to do, so try again (once) */
+		TRC_DEBUG(IO_, "Retry unlink %s\n", pathname);
+		MT_sleep_ms(100);	/* wait a little */
+		ret = _unlink(pathname);
+	}
+	return ret;
+}
+
+#undef rename
+int
+win_rename(const char *old, const char *dst)
+{
+	int ret;
+
+	ret = rename(old, dst);
+	if (ret == 0 || (ret < 0 && errno == ENOENT))
+		return ret;
+	if (ret < 0 && errno == EEXIST) {
+		(void) win_unlink(dst);
+		ret = rename(old, dst);
+	}
+
+	if (ret < 0 && errno != ENOENT) {
+		/* it could be the <expletive deleted> indexing
+		 * service which prevents us from doing what we have a
+		 * right to do, so try again (once) */
+		TRC_DEBUG(IO_, "Retry rename %s %s\n", old, dst);
+		MT_sleep_ms(100);	/* wait a little */
+		ret = rename(old, dst);
+	}
+	return ret;
+}
+
+int
+win_mkdir(const char *pathname, const int mode)
+{
+	char buf[128], *p = reduce_dir_name(pathname, buf, sizeof(buf));
+	int ret;
+
+	(void) mode;
+	if (p == NULL)
+		return -1;
+	ret = _mkdir(p);
+	if (p != buf)
+		free(p);
+	return ret;
+}
 #endif
 
 void
@@ -936,7 +1051,7 @@ MT_sleep_ms(unsigned int ms)
 }
 
 #if !defined(HAVE_LOCALTIME_R) || !defined(HAVE_GMTIME_R) || !defined(HAVE_ASCTIME_R) || !defined(HAVE_CTIME_R)
-static MT_Lock timelock = MT_LOCK_INITIALIZER(timelock);
+static MT_Lock timelock = MT_LOCK_INITIALIZER("timelock");
 #endif
 
 #ifndef HAVE_LOCALTIME_R
@@ -996,7 +1111,7 @@ ctime_r(const time_t *restrict t, char *restrict buf)
 #endif
 
 #ifndef HAVE_STRERROR_R
-static MT_Lock strerrlock = MT_LOCK_INITIALIZER(strerrlock);
+static MT_Lock strerrlock = MT_LOCK_INITIALIZER("strerrlock");
 
 int
 strerror_r(int errnum, char *buf, size_t buflen)

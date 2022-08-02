@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -54,60 +54,60 @@ newODBCStmt(ODBCDbc *dbc)
 		return NULL;
 	}
 
-	*stmt = (ODBCStmt) {
-		.Dbc = dbc,
-		.Error = NULL,
-		.RetrievedErrors = 0,
+	stmt->Dbc = dbc;
+	stmt->Error = NULL;
+	stmt->RetrievedErrors = 0;
 
-		.State = INITED,
-		.hdl = mapi_new_handle(dbc->mid),
-		.currentRow = 0,
-		.startRow = 0,
-		.rowSetSize = 0,
-		.queryid = -1,
-		.nparams = 0,
-		.querytype = -1,
-		.rowcount = 0,
-
-		.qtimeout = dbc->qtimeout, /* inherit query timeout */
-
-		.cursorType = SQL_CURSOR_FORWARD_ONLY,
-		.cursorScrollable = SQL_NONSCROLLABLE,
-		.retrieveData = SQL_RD_ON,
-		.noScan = SQL_NOSCAN_OFF,
-
-		.AutoApplRowDescr = newODBCDesc(dbc),
-		.AutoApplParamDescr = newODBCDesc(dbc),
-		.ImplRowDescr = newODBCDesc(dbc),
-		.ImplParamDescr = newODBCDesc(dbc),
-
-		.Type = ODBC_STMT_MAGIC_NR,	/* set it valid */
-	};
-
+	stmt->State = INITED;
+	stmt->hdl = mapi_new_handle(dbc->mid);
 	if (stmt->hdl == NULL) {
 		/* Memory allocation error */
 		addDbcError(dbc, "HY001", NULL, 0);
-		destroyODBCStmt(stmt);
+		free(stmt);
 		return NULL;
 	}
-	if (stmt->AutoApplRowDescr == NULL || stmt->AutoApplParamDescr == NULL ||
+	assert(stmt->hdl);
+
+	stmt->currentRow = 0;
+	stmt->startRow = 0;
+	stmt->rowSetSize = 0;
+	stmt->queryid = -1;
+	stmt->nparams = 0;
+	stmt->querytype = -1;
+	stmt->rowcount = 0;
+
+	stmt->qtimeout = dbc->qtimeout; /* inherit query timeout */
+
+	/* add this stmt to the administrative linked stmt list */
+	stmt->next = dbc->FirstStmt;
+	dbc->FirstStmt = stmt;
+
+	stmt->cursorType = SQL_CURSOR_FORWARD_ONLY;
+	stmt->cursorScrollable = SQL_NONSCROLLABLE;
+	stmt->retrieveData = SQL_RD_ON;
+	stmt->noScan = SQL_NOSCAN_OFF;
+
+	stmt->ApplRowDescr = newODBCDesc(dbc);
+	stmt->ApplParamDescr = newODBCDesc(dbc);
+	stmt->ImplRowDescr = newODBCDesc(dbc);
+	stmt->ImplParamDescr = newODBCDesc(dbc);
+	stmt->AutoApplRowDescr = stmt->ApplRowDescr;
+	stmt->AutoApplParamDescr = stmt->ApplParamDescr;
+
+	if (stmt->ApplRowDescr == NULL || stmt->ApplParamDescr == NULL ||
 	    stmt->ImplRowDescr == NULL || stmt->ImplParamDescr == NULL) {
 		destroyODBCStmt(stmt);
 		return NULL;
 	}
 
-	stmt->AutoApplRowDescr->sql_desc_alloc_type = SQL_DESC_ALLOC_AUTO;
-	stmt->AutoApplParamDescr->sql_desc_alloc_type = SQL_DESC_ALLOC_AUTO;
+	stmt->ApplRowDescr->sql_desc_alloc_type = SQL_DESC_ALLOC_AUTO;
+	stmt->ApplParamDescr->sql_desc_alloc_type = SQL_DESC_ALLOC_AUTO;
 	stmt->ImplRowDescr->sql_desc_alloc_type = SQL_DESC_ALLOC_AUTO;
 	stmt->ImplParamDescr->sql_desc_alloc_type = SQL_DESC_ALLOC_AUTO;
 	stmt->ImplRowDescr->Stmt = stmt;
 	stmt->ImplParamDescr->Stmt = stmt;
-	stmt->ApplRowDescr = stmt->AutoApplRowDescr;
-	stmt->ApplParamDescr = stmt->AutoApplParamDescr;
 
-	/* add this stmt to the administrative linked stmt list */
-	stmt->next = dbc->FirstStmt,
-	dbc->FirstStmt = stmt;
+	stmt->Type = ODBC_STMT_MAGIC_NR;	/* set it valid */
 
 	return stmt;
 }
@@ -191,20 +191,19 @@ destroyODBCStmt(ODBCStmt *stmt)
 
 	/* remove this stmt from the dbc */
 	assert(stmt->Dbc);
+	assert(stmt->Dbc->FirstStmt);
 
 	/* search for stmt in linked list */
 	stmtp = &stmt->Dbc->FirstStmt;
 
 	while (*stmtp && *stmtp != stmt)
 		stmtp = &(*stmtp)->next;
-	/* stmtp points to location in list where stmt is found, or
-	 * *stmtp is NULL in case it wasn't there (presumably not added
-	 * yet) */
+	/* stmtp points to location in list where stmt is found */
 
-	if (*stmtp) {
-		/* now remove it from the linked list */
-		*stmtp = stmt->next;
-	}
+	assert(*stmtp == stmt);	/* we must have found it */
+
+	/* now remove it from the linked list */
+	*stmtp = stmt->next;
 
 	/* cleanup own managed data */
 	deleteODBCErrorList(&stmt->Error);

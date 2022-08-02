@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -43,12 +43,10 @@
 
 #include "monetdb_config.h"
 #include "mal.h"
-#include "gdk.h"
-#include <ctype.h>
+#include "url.h"
 #include "mal_exception.h"
-#include "str.h"
 
-typedef str url;
+static char x2c(char *what);
 
 /* SCHEME "://" AUTHORITY [ PATH ] [ "?" SEARCH ] [ "#" FRAGMENT ]
  * AUTHORITY is: [ USER [ ":" PASSWORD ] "@" ] HOST [ ":" PORT ] */
@@ -175,22 +173,6 @@ skip_search(const char *uri)
 	return uri;
 }
 
-#if 0
-/*
- * Utilities
- */
-
-static char
-x2c(char *what)
-{
-	char digit;
-
-	digit = (what[0] >= 'A' ? ((what[0] & 0xdf) - 'A') + 10 : (what[0] - '0'));
-	digit *= 16;
-	digit += (what[1] >= 'A' ? ((what[1] & 0xdf) - 'A') + 10 : (what[1] - '0'));
-	return (digit);
-}
-
 static int needEscape(char c){
 	if( isalnum((unsigned char)c) )
 		return 0;
@@ -214,7 +196,7 @@ static int needEscape(char c){
  * letters A-F.
  *
  * SIGNATURE: escape(str) : str; */
-static str
+str
 escape_str(str *retval, str s)
 {
 	int x, y;
@@ -249,7 +231,7 @@ escape_str(str *retval, str s)
 /* COMMAND "unescape": Convert hexadecimal representations to ASCII characters.
  *                     All sequences of the form "% HEX HEX" are unescaped.
  * SIGNATURE: unescape(str) : str; */
-static str
+str
 unescape_str(str *retval, str s)
 {
 	int x, y;
@@ -278,17 +260,30 @@ unescape_str(str *retval, str s)
 	}
 	return MAL_SUCCEED;
 }
-#endif
+
+/*
+ * Utilities
+ */
+
+static char
+x2c(char *what)
+{
+	char digit;
+
+	digit = (what[0] >= 'A' ? ((what[0] & 0xdf) - 'A') + 10 : (what[0] - '0'));
+	digit *= 16;
+	digit += (what[1] >= 'A' ? ((what[1] & 0xdf) - 'A') + 10 : (what[1] - '0'));
+	return (digit);
+}
 
 /*
  * Wrapping
  * Here you find the wrappers around the V4 url library included above.
  */
 
-static ssize_t
-URLfromString(const char *src, size_t *len, void **U, bool external)
+ssize_t
+URLfromString(const char *src, size_t *len, str *u, bool external)
 {
-	char **u = (char **) U;
 	size_t l = strlen(src) + 1;
 
 	if (*len < l || *u == NULL) {
@@ -308,10 +303,9 @@ URLfromString(const char *src, size_t *len, void **U, bool external)
 	return (ssize_t) l - 1;
 }
 
-static ssize_t
-URLtoString(str *s, size_t *len, const void *SRC, bool external)
+ssize_t
+URLtoString(str *s, size_t *len, const char *src, bool external)
 {
-	const char *src = SRC;
 	size_t l = strlen(src);
 
 	if (external)
@@ -338,7 +332,7 @@ URLtoString(str *s, size_t *len, const void *SRC, bool external)
 
 /* COMMAND "getAnchor": Extract an anchor (reference) from the URL
  * SIGNATURE: getAnchor(url) : str; */
-static str
+str
 URLgetAnchor(str *retval, url *val)
 {
 	const char *s;
@@ -368,7 +362,7 @@ URLgetAnchor(str *retval, url *val)
 /* COMMAND "getBasename": Extract the base of the last file name of the URL,
  *                        thus, excluding the file extension.
  * SIGNATURE: getBasename(str) : str; */
-static str
+str
 URLgetBasename(str *retval, url *val)
 {
 	const char *s;
@@ -406,9 +400,20 @@ URLgetBasename(str *retval, url *val)
 	return MAL_SUCCEED;
 }
 
+/* COMMAND "getContent": Retrieve the file referenced
+ * SIGNATURE: getContent(str) : str; */
+str
+URLgetContent(str *retval, url *Str1)
+{
+	(void) retval;
+	(void) Str1;
+
+	throw(MAL, "url.getContent", SQLSTATE(0A000) "Feature not supported");
+}
+
 /* COMMAND "getContext": Extract the path context from the URL
  * SIGNATURE: getContext(str) : str; */
-static str
+str
 URLgetContext(str *retval, url *val)
 {
 	const char *s;
@@ -438,7 +443,7 @@ URLgetContext(str *retval, url *val)
 
 /* COMMAND "getExtension": Extract the file extension of the URL
  * SIGNATURE: getExtension(str) : str; */
-static str
+str
 URLgetExtension(str *retval, url *val)
 {
 	const char *s;
@@ -473,7 +478,7 @@ URLgetExtension(str *retval, url *val)
 
 /* COMMAND "getFile": Extract the last file name of the URL
  * SIGNATURE: getFile(str) : str; */
-static str
+str
 URLgetFile(str *retval, url *val)
 {
 	const char *s;
@@ -508,7 +513,7 @@ URLgetFile(str *retval, url *val)
 
 /* COMMAND "getHost": Extract the server identity from the URL */
 /* SIGNATURE: getHost(str) : str; */
-static str
+str
 URLgetHost(str *retval, url *val)
 {
 	const char *s;
@@ -547,7 +552,7 @@ URLgetHost(str *retval, url *val)
 
 /* COMMAND "getDomain": Extract the Internet domain from the URL
  * SIGNATURE: getDomain(str) : str; */
-static str
+str
 URLgetDomain(str *retval, url *val)
 {
 	const char *s;
@@ -590,7 +595,7 @@ URLgetDomain(str *retval, url *val)
 
 /* COMMAND "getPort": Extract the port id from the URL
  * SIGNATURE: getPort(str) : str; */
-static str
+str
 URLgetPort(str *retval, url *val)
 {
 	const char *s;
@@ -623,7 +628,7 @@ URLgetPort(str *retval, url *val)
 
 /* COMMAND "getProtocol": Extract the protocol from the URL
  * SIGNATURE: getProtocol(str) : str; */
-static str
+str
 URLgetProtocol(str *retval, url *val)
 {
 	const char *s;
@@ -650,7 +655,7 @@ URLgetProtocol(str *retval, url *val)
 
 /* COMMAND "getQuery": Extract the query part from the URL
  * SIGNATURE: getQuery(str) : str; */
-static str
+str
 URLgetQuery(str *retval, url *val)
 {
 	const char *s;
@@ -687,7 +692,7 @@ URLgetQuery(str *retval, url *val)
 
 /* COMMAND "getRobotURL": Extract the location of the robot control file
  * SIGNATURE: getRobotURL(str) : str; */
-static str
+str
 URLgetRobotURL(str *retval, url *val)
 {
 	const char *s;
@@ -716,7 +721,7 @@ URLgetRobotURL(str *retval, url *val)
 
 /* COMMAND "getUser": Extract the user identity from the URL
  * SIGNATURE: getUser(str) : str; */
-static str
+str
 URLgetUser(str *retval, url *val)
 {
 	const char *s, *h, *u, *p;
@@ -753,7 +758,7 @@ URLgetUser(str *retval, url *val)
 
 /* COMMAND "isaURL": Check conformity of the URL syntax
  * SIGNATURE: isaURL(str) : bit; */
-static str
+str
 URLisaURL(bit *retval, str *val)
 {
 	if (val == NULL || *val == NULL)
@@ -765,7 +770,7 @@ URLisaURL(bit *retval, str *val)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 URLnew(url *u, str *val)
 {
 	*u = GDKstrdup(*val);
@@ -774,7 +779,7 @@ URLnew(url *u, str *val)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 URLnew3(url *u, str *protocol, str *server, str *file)
 {
 	size_t l;
@@ -787,7 +792,7 @@ URLnew3(url *u, str *protocol, str *server, str *file)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 URLnew4(url *u, str *protocol, str *server, int *port, str *file)
 {
 	str Protocol = *protocol;
@@ -811,211 +816,10 @@ URLnew4(url *u, str *protocol, str *server, int *port, str *file)
 	return MAL_SUCCEED;
 }
 
-static str URLnoop(url *u, url *val)
+str URLnoop(url *u, url *val)
 {
 	*u = GDKstrdup(*val);
 	if (*u == NULL)
 		throw(MAL, "url.noop", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
-
-
-/* Extract host identity from URL. This is a relaxed version,
- * where no exceptions is thrown when the input URL is not valid,
- * and empty string is returned instead.
- * */
-static str
-extractURLHost(str *retval, str *url, bit *no_www)
-{
-	const char *s;
-	const char *h = NULL;
-	const char *p = NULL;
-
-	if ((url != NULL || *url != NULL) && !strNil(*url)) {
-		if ((s = skip_scheme(*url)) != NULL &&
-			(s = skip_authority(s, NULL, NULL, &h, &p)) != NULL &&
-			h != NULL)
-		{
-			ssize_t l;
-			const char *pos = s;
-			const char *domain = NULL;
-			while (pos > h) {
-				if (*pos == '.') {
-					domain = pos;
-					break;
-				}
-				pos--;
-			}
-
-			if (p != NULL) {
-				l = p - h - 1;
-			} else {
-				l = s - h;
-			}
-			if (*no_www && !strncmp(h, "www.", 4)) {
-				h +=4;
-				l -=4;
-			}
-			if (domain && l > 3) {
-				if ((*retval = GDKmalloc(l + 1)) != NULL)
-					strcpy_len(*retval, h, l + 1);
-			} else {
-				*retval = GDKstrdup(str_nil);
-			}
-		} else {
-			*retval = GDKstrdup(str_nil);
-		}
-	} else {
-		*retval = GDKstrdup(str_nil);
-	}
-	if (!*retval)
-		throw(MAL, "url.getURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	return MAL_SUCCEED;
-}
-
-
-static inline str
-str_buf_copy(str *buf, size_t *buflen, const char *s, size_t l) {
-	CHECK_STR_BUFFER_LENGTH(buf, buflen, l, "url.str_buf_copy");
-	strcpy_len(*buf, s, l);
-	return MAL_SUCCEED;
-}
-
-
-// bulk version
-static str
-BATextractURLHost(bat *res, const bat *bid, bit *no_www)
-{
-	const char *s;
-	const char *host = NULL;
-	const char *port = NULL;
-	BAT *bn = NULL, *b = NULL;
-	BUN p, q;
-	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str buf = GDKmalloc(buflen);
-	str msg = MAL_SUCCEED;
-	bool nils = false;
-
-	if (buf == NULL)
-		throw(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	if (!(b = BATdescriptor(*bid))) {
-		GDKfree(buf);
-		throw(MAL, "baturl.extractURLHost", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	if ((bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT)) == NULL) {
-		GDKfree(buf);
-		BBPunfix(b->batCacheid);
-		throw(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	BATiter bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		const char *url = (const char *) BUNtvar(bi, p);
-		if (strNil(url)) {
-			if (bunfastapp_nocheckVAR(bn, str_nil) != GDK_SUCCEED) {
-				msg = createException(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL );
-				break;
-			}
-			nils = true;
-		} else {
-			if ((s = skip_scheme(url)) != NULL &&
-				(s = skip_authority(s, NULL, NULL, &host, &port)) != NULL &&
-				host != NULL)
-			{
-				ssize_t l;
-				const char *pos = s;
-				const char *domain = NULL;
-				while (pos > host) {
-					if (*pos == '.') {
-						domain = pos;
-						break;
-					}
-					pos--;
-				}
-
-				if (port != NULL) {
-					l = port - host - 1;
-				} else {
-					l = s - host;
-				}
-				if (domain && l > 3) {
-					if (*no_www && !strncmp(host, "www.", 4)) {
-						host += 4;
-						l -= 4;
-					}
-					if (l > 0) {
-						// if ((msg = str_Sub_String(&buf, &buflen, host, 0, l)) != MAL_SUCCEED)
-						// 	break;
-						if ((msg = str_buf_copy(&buf, &buflen, host, (size_t) l)) != MAL_SUCCEED)
-							break;
-						if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED) {
-							msg = createException(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL );
-							break;
-						}
-						continue;
-					}
-				}
-			}
-			// fall back insert nil str if no valid host
-			if (bunfastapp_nocheckVAR(bn, str_nil) != GDK_SUCCEED) {
-				msg = createException(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL );
-				break;
-			}
-			nils = true;
-		}
-	}
-	bat_iterator_end(&bi);
-
-	GDKfree(buf);
-	if (msg == MAL_SUCCEED) {
-		BATsetcount(bn, q);
-		bn->tnil = nils;
-		bn->tnonil = !nils;
-		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = BATcount(bn) <= 1;
-		bn->trevsorted = BATcount(bn) <= 1;
-		*res = bn->batCacheid;
-		BBPkeepref(bn);
-	}
-	BBPunfix(b->batCacheid);
-	return msg;
-}
-
-
-#include "mel.h"
-mel_atom url_init_atoms[] = {
- { .name="url", .basetype="str", .fromstr=URLfromString, .tostr=URLtoString, },  { .cmp=NULL }
-};
-mel_func url_init_funcs[] = {
- command("url", "url", URLnew, false, "Create an URL from a string literal", args(1,2, arg("",url),arg("s",str))),
- command("url", "url", URLnoop, false, "Create an URL from a string literal", args(1,2, arg("",url),arg("s",url))),
- command("calc", "url", URLnew, false, "Create an URL from a string literal", args(1,2, arg("",url),arg("s",str))),
- command("calc", "url", URLnoop, false, "Create an URL from a string literal", args(1,2, arg("",url),arg("s",url))),
- command("url", "getAnchor", URLgetAnchor, false, "Extract the URL anchor (reference)", args(1,2, arg("",str),arg("u",url))),
- command("url", "getBasename", URLgetBasename, false, "Extract the URL base file name", args(1,2, arg("",str),arg("u",url))),
- command("url", "getContext", URLgetContext, false, "Get the path context of a URL", args(1,2, arg("",str),arg("u",url))),
- command("url", "getDomain", URLgetDomain, false, "Extract Internet domain from the URL", args(1,2, arg("",str),arg("u",url))),
- command("url", "getExtension", URLgetExtension, false, "Extract the file extension of the URL", args(1,2, arg("",str),arg("u",url))),
- command("url", "getFile", URLgetFile, false, "Extract the last file name of the URL", args(1,2, arg("",str),arg("u",url))),
- command("url", "getHost", URLgetHost, false, "Extract the server name from the URL strict version", args(1,2, arg("",str),arg("u",url))),
- command("url", "getPort", URLgetPort, false, "Extract the port id from the URL", args(1,2, arg("",str),arg("u",url))),
- command("url", "getProtocol", URLgetProtocol, false, "Extract the protocol from the URL", args(1,2, arg("",str),arg("u",url))),
- command("url", "getQuery", URLgetQuery, false, "Extract the query string from the URL", args(1,2, arg("",str),arg("u",url))),
- command("url", "getUser", URLgetUser, false, "Extract the user identity from the URL", args(1,2, arg("",str),arg("u",url))),
- command("url", "getRobotURL", URLgetRobotURL, false, "Extract the location of the robot control file", args(1,2, arg("",str),arg("u",url))),
- command("url", "isaURL", URLisaURL, false, "Check conformity of the URL syntax", args(1,2, arg("",bit),arg("u",str))),
- command("url", "new", URLnew4, false, "Construct URL from protocol, host, port, and file", args(1,5, arg("",url),arg("p",str),arg("h",str),arg("prt",int),arg("f",str))),
- command("url", "new", URLnew3, false, "Construct URL from protocol, host,and file", args(1,4, arg("",url),arg("prot",str),arg("host",str),arg("fnme",str))),
- command("url", "extractURLHost", extractURLHost, false, "Extract host from a URL relaxed version", args(1,3, arg("",str),arg("u",str), arg("no_www", bit))),
- command("baturl", "extractURLHost", BATextractURLHost, false, "Extract host from BAT of URLs", args(1,3, batarg("",str), batarg("s",str), arg("no_www", bit))),
- { .imp=NULL }
-};
-#include "mal_import.h"
-#ifdef _MSC_VER
-#undef read
-#pragma section(".CRT$XCU",read)
-#endif
-LIB_STARTUP_FUNC(init_url_mal)
-{ mal_module("url", url_init_atoms, url_init_funcs); }

@@ -1,0 +1,61 @@
+#map reduce development test.
+function mvc():int;
+	return mvc:=1;
+end mvc;
+function user.s1_0():void;
+    _17 := bat.new(:lng);
+    _54 := bat.new(:lng);
+    _55 := bat.new(:lng);
+    _56 := bat.new(:lng);
+    _57 := bat.new(:lng);
+
+    _59 := remote.connect("mapi:monetdb://volund.ins.cwi.nl:50000/sn4","monetdb","monetdb","msql");
+    remote.register(_59,"user","s1_0map");
+    _66 := remote.put(_59,_54);
+    _66 := remote.exec(_59,"user","s1_0map");
+    _504 := remote.get(_59,_66);
+    remote.disconnect(_59);
+
+    _70 := remote.connect("mapi:monetdb://volund.ins.cwi.nl:50000/sn3","monetdb","monetdb","msql");
+    remote.register(_70,"user","s1_0map");
+    _73 := remote.put(_70,_55);
+    _74 := remote.exec(_70,"user","s1_0map");
+    _505 := remote.get(_70,_73);
+    remote.disconnect(_70);
+
+    _77 := remote.connect("mapi:monetdb://volund.ins.cwi.nl:50000/sn1","monetdb","monetdb","msql");
+    remote.register(_77,"user","s1_0map");
+    _80 := remote.put(_77,_56);
+    _81 := remote.exec(_77,"user","s1_0map");
+    _506 := remote.get(_77,_80);
+    remote.disconnect(_77);
+
+    _84 := remote.connect("mapi:monetdb://volund.ins.cwi.nl:50000/sn2","monetdb","monetdb","msql");
+    remote.register(_84,"user","s1_0map");
+    _87 := remote.put(_84,_57);
+    _88 := remote.exec(_84,"user","s1_0map");
+    _507 := remote.get(_84,_87);
+    remote.disconnect(_84);
+
+    _98 := bat.append(_17,_54);
+    _97 := bat.append(_98,_55);
+    _96 := bat.append(_97,_56);
+    _95 := bat.append(_96,_57);
+    io.print(_95);
+
+#COUNT/SUM
+    _19 := aggr.sum(_95);
+	io.print(_19);
+end s1_0;
+    optimizer.mergetable("user","s1_0");
+    optimizer.deadcode("user","s1_0");
+    optimizer.commonTerms("user","s1_0");
+    optimizer.projectionpath("user","s1_0");
+    optimizer.reorder("user","s1_0");
+    optimizer.deadcode("user","s1_0");
+    optimizer.reduce("user","s1_0");
+    optimizer.dataflow("user","s1_0");
+    optimizer.querylog("user","s1_0");
+    optimizer.multiplex("user","s1_0");
+    optimizer.garbageCollector("user","s1_0");
+mdb.list("user","s1_0");

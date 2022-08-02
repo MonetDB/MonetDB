@@ -20,5 +20,5 @@ rollback;
     sys.stdout.write(sout)
     sys.stderr.write(serr)
 
-#    sys.stdout.write(cout)
+    sys.stdout.write(cout)
     sys.stderr.write(cerr)

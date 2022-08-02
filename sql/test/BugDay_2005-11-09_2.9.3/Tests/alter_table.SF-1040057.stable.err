@@ -1,0 +1,17 @@
+stderr of test 'alter_table.SF-1040057` in directory 'sql/test/BugDay_2005-11-09_2.9.3` itself:
+
+
+# 11:36:40 >  
+# 11:36:40 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=35638 --set sql_port=49375 --set xquery_port=54508 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 11:36:40 >  
+
+
+# 11:36:41 >  
+# 11:36:41 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=49375  < alter_table.SF-1040057.sql
+# 11:36:41 >  
+
+
+# 11:36:41 >  
+# 11:36:41 >  Done.
+# 11:36:41 >  
+

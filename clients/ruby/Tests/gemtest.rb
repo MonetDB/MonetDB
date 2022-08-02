@@ -79,6 +79,7 @@ class Tester
 	end
 
 	def start
+		print_initialize
 		run_tests
 		print_results
 	end
@@ -117,7 +118,16 @@ class Tester
 		@error_messages.push(message) unless result
 	end
 
+	def print_initialize
+		puts ""
+		puts "# Running tests"
+		puts ""
+	end
+
 	def print_results
+		puts "Tests Failed: #{@error_messages.size}"
+		puts ""
+
 		if( @error_messages.any? )
 			puts "Errors:" 
 			@error_messages.each_with_index { |error_message, index| puts "#{index + 1}: #{error_message}" }

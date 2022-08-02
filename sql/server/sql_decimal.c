@@ -3,16 +3,15 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 
 #include "sql_decimal.h"
 
-
 DEC_TPE
-decimal_from_str(const char *dec, int* digits, int* scale, int* has_errors)
+decimal_from_str(char *dec, int* digits, int* scale, int* has_errors)
 {
 
 #ifdef HAVE_HGE
@@ -60,7 +59,12 @@ fractional_sep_first_opp:
 		// skip leading zeros in preceding digits, e.g. '0004563.1234' => '4563.1234'
 		dec++;
 		if (*dec == '.') {
-			_digits = 1; // case: 0.xyz the zero. the single preceding zero counts for one digit by convention.
+			if (dec[1] == 0) { // special case: '(0...0)0.'. We give this expression precision (1,0).
+				_digits = 1;
+				dec++;
+				goto end_state;
+			}
+
 			goto fractional_sep_first_opp;
 		}
 	}
@@ -115,14 +119,13 @@ end_state:
 
 char *
 #ifdef HAVE_HGE
-decimal_to_str(sql_allocator *sa, hge v, sql_subtype *t)
+decimal_to_str(hge v, sql_subtype *t)
 #else
-decimal_to_str(sql_allocator *sa, lng v, sql_subtype *t)
+decimal_to_str(lng v, sql_subtype *t)
 #endif
 {
 	char buf[64];
-	unsigned int scale = t->scale, i;
-	int cur = 63, neg = (v<0), done = 0;
+	int scale = t->scale, cur = 63, neg = (v<0), i, done = 0;
 
 	if (v<0) v = -v;
 
@@ -144,26 +147,6 @@ decimal_to_str(sql_allocator *sa, lng v, sql_subtype *t)
 	if (neg)
 		buf[cur--] = '-';
 	assert(cur >= -1);
-	return sa_strdup(sa, buf+cur+1);
+	return _STRDUP(buf+cur+1);
 }
 
-#ifdef HAVE_HGE
-extern hge
-#else
-extern lng
-#endif
-scale2value(int scale)
-{
-#ifdef HAVE_HGE
-	hge val = 1;
-#else
-	lng val = 1;
-#endif
-
-	if (scale < 0)
-		scale = -scale;
-	for (; scale; scale--) {
-		val = val * 10;
-	}
-	return val;
-}

@@ -1,9 +1,0 @@
-statement ok
-start transaction
-
-statement ok
-create table test1 ( no int)
-
-statement ok
-rollback
-

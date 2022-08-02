@@ -1,0 +1,20 @@
+stderr of test 'table_udf_missing_var` in directory 'sql/test/miscellaneous` itself:
+
+
+# 12:13:31 >  
+# 12:13:31 >  "/usr/bin/python3" "table_udf_missing_var.py" "table_udf_missing_var"
+# 12:13:31 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-89042/.s.monetdb.35955
+QUERY = select * from myfunc(); --error, myvar doesn't exist
+ERROR = !SELECT: identifier 'myvar' unknown
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-89327/.s.monetdb.31365
+QUERY = select myfunc2(); --error, myvar doesn't exist
+ERROR = !SELECT: identifier 'myvar' unknown
+CODE  = 42000
+
+# 12:13:31 >  
+# 12:13:31 >  "Done."
+# 12:13:31 >  
+
