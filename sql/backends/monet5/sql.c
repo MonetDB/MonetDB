@@ -123,8 +123,27 @@ sql_symbol2relation(mvc *sql, symbol *sym)
 	sql_rel *rel;
 	sql_query *query = query_create(sql);
 	int top = sql->topvars;
+	Client c = getClientContext();
+
+	if(malProfileMode > 0)
+		generic_event("sql_to_rel",
+					  (struct GenericEvent)
+					  { &(c->idx), &(c->curprg->def->tag), NULL, NULL, 0 },
+					  0);
 
 	rel = rel_semantic(query, sym);
+
+	if(malProfileMode > 0 ) {
+		generic_event("sql_to_rel",
+					 (struct GenericEvent)
+					 { &(c->idx), &(c->curprg->def->tag), NULL, NULL, rel ? 0 : 1 },
+					 1);
+		generic_event("rel_opt",
+					 (struct GenericEvent)
+					 { &(c->idx), &(c->curprg->def->tag), NULL, NULL, 0 },
+					 0);
+	}
+
 	if (rel)
 		rel = sql_processrelation(sql, rel, 1);
 	if (rel)
@@ -137,6 +156,12 @@ sql_symbol2relation(mvc *sql, symbol *sym)
 	/* On explain and plan modes, drop declared variables after generating the AST */
 	if ((sql->emod & mod_explain) || (sql->emode != m_normal && sql->emode != m_execute))
 		stack_pop_until(sql, top);
+
+	if(malProfileMode > 0)
+		generic_event("rel_opt",
+					 (struct GenericEvent)
+					 { &c->idx, &(c->curprg->def->tag), NULL, NULL, rel ? 0 : 1},
+					 1);
 	return rel;
 }
 
@@ -178,7 +203,7 @@ sqlcleanup(mvc *c, int err)
 }
 
 /*
- * The internal administration of the SQL compilation and execution state
+ * The internal administration of the MAL compiler and execution state
  * is administered by a state descriptor accessible in each phase.
  * Failure to find the state descriptor aborts the session.
  */

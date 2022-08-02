@@ -28,6 +28,7 @@
 #include "wlc.h"
 
 #include "mal_authorize.h"
+#include "mal_profiler.h"
 
 static void
 sql_create_comments(mvc *m, sql_schema *s)
@@ -127,6 +128,18 @@ mvc_fix_depend(mvc *m, sql_column *depids, struct view_t *v, int n)
 	}
 }
 
+static void
+generic_event_wrapper(str phase, ulng tid, int rc, int state)
+{
+	if(malProfileMode > 0)
+		generic_event(phase,
+					  (struct GenericEvent)
+					  { NULL, NULL, &tid, NULL, rc },
+					  state);
+}
+
+generic_event_wrapper_fptr generic_event_wrapper_f = NULL;
+
 int
 mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 {
@@ -143,7 +156,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		return -1;
 	}
 
-	if ((first = store_init(debug, store, ro, su, stk)) < 0) {
+	if ((first = store_init(debug, store, ro, su, stk, &generic_event_wrapper)) < 0) {
 		TRC_CRITICAL(SQL_TRANS, "Unable to create system tables\n");
 		return -1;
 	}
@@ -475,6 +488,17 @@ mvc_trans(mvc *m)
 	assert(!m->session->tr->active);	/* can only start a new transaction */
 	store_lock();
 	TRC_INFO(SQL_TRANS, "Starting transaction\n");
+
+	if(malProfileMode > 0)
+		generic_event("transaction",
+					  (struct GenericEvent)
+					  { &(m->clientid),
+						NULL,
+						(ulng*)&(m->session->tr->stime),
+						NULL,
+						0 },
+					  0);
+
 	schema_changed = sql_trans_begin(m->session);
 	if (m->qc && (schema_changed || m->qc->nr > m->cache || err)){
 		if (schema_changed || err) {
@@ -704,6 +728,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 
 	store_lock();
 	sql_trans *tr = m->session->tr;
+	generic_event_wrapper("rollback", (ulng)(tr->stime), 0, 0);
 	assert(m->session->tr && m->session->tr->active);	/* only abort an active transaction */
 	if (m->qc)
 		qc_clean(m->qc, false);
@@ -754,6 +779,8 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		tr->wtime == 0 ? " (no changes)" : "",
 		m->query ? ", query: " : "",
 		m->query ? m->query : "");
+
+	generic_event_wrapper("rollback", (ulng)tr->stime, 0, 1);
 	return msg;
 }
 

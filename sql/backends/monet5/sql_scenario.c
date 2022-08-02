@@ -34,6 +34,8 @@
 #include "mal_namespace.h"
 #include "mal_debugger.h"
 #include "mal_linker.h"
+#include "mal_runtime.h"
+#include "mal_utils.h"
 #include "bat5.h"
 #include "wlc.h"
 #include "wlr.h"
@@ -1018,6 +1020,7 @@ SQLparser(Client c)
 	int pstatus = 0;
 	int err = 0, opt = 0, preparedid = -1;
 	char *q = NULL;
+	oid tag = 0;
 
 	be = (backend *) c->sqlcontext;
 	if (be == 0) {
@@ -1142,6 +1145,17 @@ SQLparser(Client c)
 		goto finalize;
 	}
 
+	// generate and set the tag in the mal block of the clients current program.
+	tag = runtimeProfileSetTag(c);
+	assert(tag == c->curprg->def->tag);
+	(void) tag;
+
+	if(malProfileMode > 0)
+		generic_event("sql_parse",
+					 (struct GenericEvent)
+					 { &c->idx, &(c->curprg->def->tag), NULL, NULL, 0 },
+					 0);
+
 	if ((err = sqlparse(m)) ||
 	    /* Only forget old errors on transaction boundaries */
 	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
@@ -1169,6 +1183,15 @@ SQLparser(Client c)
 	be->q = NULL;
 	q = query_cleaned(QUERY(m->scanner));
 	m->query = q;
+
+	if(malProfileMode > 0) {
+		str escaped_query = m->query ? mal_quote(m->query, sizeof(m->query)) : NULL;
+		generic_event("sql_parse",
+					  (struct GenericEvent)
+					  { &c->idx, &(c->curprg->def->tag), NULL, escaped_query, m->query ? 0 : 1, },
+					  1);
+		GDKfree(escaped_query);
+	}
 
 	if (q == NULL) {
 		err = 1;
@@ -1233,10 +1256,23 @@ SQLparser(Client c)
 			scanner_query_processed(&(m->scanner));
 
 			err = 0;
+
+			if(malProfileMode > 0)
+				generic_event("rel_to_mal",
+							  (struct GenericEvent)
+							  { &c->idx, &(c->curprg->def->tag), NULL, NULL, m->query? 0 : 1 },
+							  0);
+
 			if (backend_callinline(be, c) < 0 ||
 			    backend_dumpstmt(be, c->curprg->def, r, 1, 0, q) < 0)
 				err = 1;
 			else opt = 1;
+
+			if(malProfileMode > 0)
+				generic_event("rel_to_mal",
+							  (struct GenericEvent)
+							  { &c->idx, &(c->curprg->def->tag), NULL, NULL, m->query? 0 : 1 },
+							  1);
 		} else {
 			/* Add the query tree to the SQL query cache
 			 * and bake a MAL program for it. */
@@ -1313,7 +1349,20 @@ SQLparser(Client c)
 
 			/* in case we had produced a non-cachable plan, the optimizer should be called */
 			if (msg == MAL_SUCCEED && opt ) {
+
+				if(malProfileMode > 0)
+					generic_event("mal_opt",
+								  (struct GenericEvent)
+								  { &c->idx, &(c->curprg->def->tag), NULL, NULL, 0 },
+								  0);
+
 				msg = SQLoptimizeQuery(c, c->curprg->def);
+
+				if(malProfileMode > 0)
+					generic_event("mal_opt",
+								  (struct GenericEvent)
+								  { &c->idx, &(c->curprg->def->tag), NULL, NULL, msg == MAL_SUCCEED? 0 : 1 },
+								  1);
 
 				if (msg != MAL_SUCCEED) {
 					str other = c->curprg->def->errors;
