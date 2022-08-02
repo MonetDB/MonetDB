@@ -81,6 +81,7 @@ epilogue(int cnt, bat *subcommit, bool locked)
 
 	while (++i < cnt) {
 		bat bid = subcommit ? subcommit[i] : i;
+		BAT *b;
 
 		if (BBP_status(bid) & BBPPERSISTENT) {
 			BBP_status_on(bid, BBPEXISTING);
@@ -95,7 +96,7 @@ epilogue(int cnt, bat *subcommit, bool locked)
 			 * but didn't due to the failure, would be a
 			 * consistency risk.
 			 */
-			BAT *b = BBP_cache(bid);
+			b = BBP_cache(bid);
 			if (b) {
 				/* check mmap modes */
 				MT_lock_set(&b->theaplock);
@@ -104,10 +105,20 @@ epilogue(int cnt, bat *subcommit, bool locked)
 				MT_lock_unset(&b->theaplock);
 			}
 		}
+		b = BBP_desc(bid);
+		if (b) {
+			MT_lock_set(&b->theaplock);
+			if (b->oldtail) {
+				ATOMIC_AND(&b->oldtail->refs, ~DELAYEDREMOVE);
+				HEAPdecref(b->oldtail, true);
+				b->oldtail = NULL;
+			}
+			MT_lock_unset(&b->theaplock);
+		}
 		if (!locked)
 			MT_lock_set(&GDKswapLock(bid));
 		if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
-			BAT *b = BBPquickdesc(bid);
+			b = BBPquickdesc(bid);
 
 			/* the unloaded ones are deleted without
 			 * loading deleted disk images */
