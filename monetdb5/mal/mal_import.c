@@ -274,7 +274,7 @@ malInclude(Client c, const char *name, int listing)
 str
 evalFile(str fname, int listing)
 {
-	Client c;
+	Client c, c_old;
 	stream *fd;
 	str filename;
 	str msg = MAL_SUCCEED;
@@ -295,13 +295,15 @@ evalFile(str fname, int listing)
 			close_stream(fd);
 		throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	c= MCinitClient(MAL_ADMIN, bs, 0);
+	c_old = setClientContext(NULL); // save context
+	c = MCinitClient(MAL_ADMIN, bs, 0);
 	if( c == NULL){
 		throw(MAL,"mal.eval","Can not create user context");
 	}
 	c->curmodule = c->usermodule = userModule();
 	if(c->curmodule == NULL) {
 		MCcloseClient(c);
+		setClientContext(c_old); // save context
 		throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	c->promptlength = 0;
@@ -309,15 +311,18 @@ evalFile(str fname, int listing)
 
 	if ( (msg = defaultScenario(c)) ) {
 		MCcloseClient(c);
+		setClientContext(c_old); // save context
 		return msg;
 	}
 	if((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
 		MCcloseClient(c);
+		setClientContext(c_old); // save context
 		return msg;
 	}
 
 	msg = runScenario(c,0);
 	MCcloseClient(c);
+	setClientContext(c_old); // save context
 	return msg;
 }
 
@@ -341,7 +346,7 @@ mal_cmdline(char *s, size_t *len)
 str
 compileString(Symbol *fcn, Client cntxt, str s)
 {
-	Client c;
+	Client c, c_old;
 	size_t len = strlen(s);
 	buffer *b;
 	str msg = MAL_SUCCEED;
@@ -380,6 +385,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	}
 	strncpy(fdin->buf, qry, len+1);
 
+	c_old = setClientContext(NULL); // save context
 	// compile in context of called for
 	c= MCinitClient(MAL_ADMIN, fdin, 0);
 	if( c == NULL){
@@ -396,6 +402,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 		GDKfree(b);
 		c->usermodule= 0;
 		MCcloseClient(c);
+		setClientContext(c_old);
 		return msg;
 	}
 
@@ -410,6 +417,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	c->usermodule= 0;
 	/* restore IO channel */
 	MCcloseClient(c);
+	setClientContext(c_old);
 	GDKfree(qry);
 	GDKfree(b);
 	return msg;
@@ -418,7 +426,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 str
 callString(Client cntxt, str s, int listing)
 {
-	Client c;
+	Client c, c_old;
 	int i;
 	size_t len = strlen(s);
 	buffer *b;
@@ -448,7 +456,8 @@ callString(Client cntxt, str s, int listing)
 		GDKfree(qry);
 		throw(MAL,"callstring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	c= MCinitClient(MAL_ADMIN, bs, cntxt->fdout);
+	c_old = setClientContext(NULL);
+	c = MCinitClient(MAL_ADMIN, bs, cntxt->fdout);
 	if( c == NULL){
 		GDKfree(b);
 		GDKfree(qry);
@@ -464,6 +473,7 @@ callString(Client cntxt, str s, int listing)
 		GDKfree(b);
 		GDKfree(qry);
 		MCcloseClient(c);
+		setClientContext(c_old);
 		return msg;
 	}
 
@@ -473,6 +483,7 @@ callString(Client cntxt, str s, int listing)
 		GDKfree(qry);
 		c->fdout = GDKstdout;
 		MCcloseClient(c);
+		setClientContext(c_old);
 		return msg;
 	}
 	msg = runScenario(c,1);
@@ -482,6 +493,7 @@ callString(Client cntxt, str s, int listing)
 		GDKfree(b);
 		GDKfree(qry);
 		MCcloseClient(c);
+		setClientContext(c_old);
 		return msg;
 	}
 	// The command may have changed the environment of the calling client.
@@ -507,6 +519,7 @@ callString(Client cntxt, str s, int listing)
 	bstream_destroy(c->fdin);
 	c->fdin = 0;
 	MCcloseClient(c);
+	setClientContext(c_old);
 	GDKfree(qry);
 	GDKfree(b);
 	return msg;

@@ -201,6 +201,16 @@ dropQRYqueue(void)
 	MT_lock_unset(&mal_delayLock);
 }
 
+oid
+runtimeProfileSetTag(Client cntxt)
+{
+	MT_lock_set(&mal_delayLock);
+	cntxt->curprg->def->tag = qtag++;
+	MT_lock_unset(&mal_delayLock);
+
+	return cntxt->curprg->def->tag;
+}
+
 /* At the start of every MAL block or SQL query */
 void
 runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
@@ -269,7 +279,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	// add new invocation
 	cntxt->idle = 0;
 	QRYqueue[qhead].mb = mb;
-	QRYqueue[qhead].tag = qtag++;
+	QRYqueue[qhead].tag = stk->tag = mb->tag;
 	QRYqueue[qhead].stk = stk;				// for status pause 'p'/running '0'/ quiting 'q'
 	QRYqueue[qhead].finished = 0;
 	QRYqueue[qhead].start = time(0);
@@ -285,7 +295,6 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	QRYqueue[qhead].status = "running";
 	QRYqueue[qhead].cntxt = cntxt;
 	QRYqueue[qhead].ticks = GDKusec();
-	stk->tag = mb->tag = QRYqueue[qhead].tag;
 	advanceQRYqueue();
 	MT_lock_unset(&mal_delayLock);
 }

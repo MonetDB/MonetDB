@@ -27,6 +27,7 @@
 #include "wlc.h"
 
 #include "mal_authorize.h"
+#include "mal_profiler.h"
 
 static void
 sql_create_comments(mvc *m, sql_schema *s)
@@ -122,6 +123,16 @@ mvc_fix_depend(mvc *m, sql_column *depids, struct view_t *v, int n)
 	}
 }
 
+static void
+generic_event_wrapper(str phase, ulng tid, int rc, int state)
+{
+	if(malProfileMode > 0)
+		generic_event(phase,
+					  (struct GenericEvent)
+					  { NULL, NULL, &tid, NULL, rc },
+					  state);
+}
+
 sql_store
 mvc_init(int debug, store_type store_tpe, int ro, int su)
 {
@@ -138,7 +149,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 		return NULL;
 	}
 
-	if ((store = store_init(debug, store_tpe, ro, su)) == NULL) {
+	if ((store = store_init(debug, store_tpe, ro, su, &generic_event_wrapper)) == NULL) {
 		keyword_exit();
 		TRC_CRITICAL(SQL_TRANS, "Unable to create system tables\n");
 		return NULL;
@@ -290,7 +301,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 
 		for (int i = 0; i < 9; i++) {
 			sql_column *col = NULL;
-			
+
 			mvc_create_column_(&col, m, t, tview[i].name, tview[i].type, tview[i].digits);
 			if (col == NULL) {
 				mvc_destroy(m);
@@ -471,6 +482,13 @@ mvc_trans(mvc *m)
 
 	TRC_INFO(SQL_TRANS, "Starting transaction\n");
 	res = sql_trans_begin(m->session);
+
+	if(malProfileMode > 0)
+		generic_event("transaction",
+					  (struct GenericEvent)
+					  { NULL, NULL, &(m->session->tr->tid), NULL, (res || err)? 1 : 0 },
+					  0);
+
 	if (m->qc && (res || err)) {
 		int seqnr = m->qc->id;
 		if (m->qc)
