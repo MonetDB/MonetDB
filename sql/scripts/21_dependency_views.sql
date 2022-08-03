@@ -157,7 +157,7 @@ GRANT SELECT ON sys.dependency_functions_on_views TO PUBLIC;
 -- Schema s has a dependency on user u.
 CREATE VIEW sys.dependency_schemas_on_users AS
 SELECT s.id AS schema_id, s.name AS schema_name, u.name AS user_name, CAST(6 AS smallint) AS depend_type
-  FROM sys.users AS u, sys.schemas AS s
+  FROM sys.db_user_info AS u, sys.schemas AS s
  WHERE u.default_schema = s.id
  ORDER BY s.name, u.name;
 

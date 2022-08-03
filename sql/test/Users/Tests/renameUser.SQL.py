@@ -65,7 +65,7 @@ with SQLTestCase() as mdb:
         mdb.execute('ALTER USER "april5" RENAME TO "april2";')\
             .assertFailed(err_code="42M32", err_message="ALTER USER: no such user 'april5'")
         mdb.execute("drop user april2;")\
-            .assertFailed(err_code="M0M27", err_message="DROP USER: no such user: 'april2'")
+            .assertFailed(err_code="0P000", err_message="DROP USER: no such user role 'april2'")
         #   create a user on a non-existing schema;
         mdb.execute("CREATE USER april2 with password 'april' name 'second april, no rights' schema library2;")\
             .assertFailed(err_code="3F000", err_message="CREATE USER: no such schema 'library2'")

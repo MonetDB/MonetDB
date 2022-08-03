@@ -504,11 +504,13 @@ ALTER TABLE sys.privilege_codes SET READ ONLY;
 GRANT SELECT ON sys.privilege_codes TO PUBLIC;
 
 
--- Utility view to list the defined roles.
+-- Utility views to list the defined roles and users.
 -- Note: sys.auths contains both users and roles as the names must be distinct.
-CREATE VIEW sys.roles AS SELECT id, name, grantor FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.db_users() u);
+CREATE VIEW sys.roles AS SELECT id, name, grantor FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.db_user_info u);
 GRANT SELECT ON sys.roles TO PUBLIC;
-
+CREATE VIEW sys.users AS SELECT name, fullname, default_schema, schema_path, max_memory, max_workers, optimizer, default_role FROM sys.db_user_info;
+GRANT SELECT ON sys.users TO PUBLIC;
+CREATE FUNCTION sys.db_users() RETURNS TABLE(name VARCHAR(2048)) RETURN SELECT name FROM sys.db_user_info;
 
 -- Utility view to list the standard variables (as defined in sys.var()) and their run-time value
 CREATE VIEW sys.var_values (var_name, value) AS

@@ -940,7 +940,6 @@ SQLworker_column(READERtask *task, int col)
 		}
 	}
 	BATsetcount(fmt[col].c, BATcount(fmt[col].c));
-	fmt[col].c->theap->dirty |= BATcount(fmt[col].c) > 0;
 
 	return 0;
 }

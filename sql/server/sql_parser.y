@@ -413,7 +413,7 @@ int yydebug=1;
 	string
 	type_alias
 	user_schema
-	user_schema_path
+	opt_schema_path
 	ustring
 	varchar
 	window_ident_clause
@@ -421,6 +421,9 @@ int yydebug=1;
 	XML_element_name
 	XML_namespace_prefix
 	XML_PI_target
+    opt_optimizer
+    opt_default_role
+    
 
 %type <l>
 	argument_list
@@ -522,6 +525,7 @@ int yydebug=1;
 	XML_element_content_and_option
 	XML_element_content_list
 	XML_value_expression_list
+    opt_schema_details_list
 
 %type <i_val>
 	_transaction_mode_list
@@ -578,11 +582,14 @@ int yydebug=1;
 	with_or_without_data
 	XML_content_option
 	XML_whitespace_option
+    opt_max_workers
+
 
 %type <l_val>
 	lngval
 	poslng
 	nonzerolng
+    opt_max_memory
 
 %type <bval>
 	create
@@ -711,6 +718,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token OVER PARTITION CURRENT EXCLUDE FOLLOWING PRECEDING OTHERS TIES RANGE UNBOUNDED GROUPS WINDOW
 
 %token X_BODY 
+%token MAX_MEMORY MAX_WORKERS OPTIMIZER
 %%
 
 sqlstmt:
@@ -1038,7 +1046,7 @@ opt_with_grant:
  ;
 
 opt_with_admin:
-	/* emtpy */		{ $$ = 0; }
+	/* emtpy */		    { $$ = 0; }
  |	WITH ADMIN OPTION	{ $$ = 1; }
  ;
 
@@ -1224,10 +1232,10 @@ alter_statement:
 	  append_string(l, $7);
 	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_SET_TABLE_SCHEMA, l ); }
- | ALTER USER ident opt_with_encrypted_password user_schema user_schema_path
+ | ALTER USER ident opt_with_encrypted_password user_schema opt_schema_path opt_default_role
 	{ dlist *l = L(), *p = L();
-	  if (!$4 && !$5 && !$6) {
-		yyerror(m, "ALTER USER: At least one property should be updatd");
+	  if (!$4 && !$5 && !$6 && !$7) {
+		yyerror(m, "ALTER USER: At least one property should be updated");
 		YYABORT;
 	  }
 	  append_string(l, $3);
@@ -1237,6 +1245,7 @@ alter_statement:
 	  append_int(p, $4 ? $4->h->next->data.i_val : 0);
 	  append_string(p, NULL);
 	  append_list(l, p);
+	  append_string(l, $7);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
  | ALTER USER ident RENAME TO ident
 	{ dlist *l = L();
@@ -1253,6 +1262,7 @@ alter_statement:
 	  append_int(p, $4);
 	  append_string(p, $10);
 	  append_list(l, p);
+	  append_string(l, NULL);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
  | ALTER SCHEMA if_exists ident RENAME TO ident
 	{ dlist *l = L();
@@ -1272,10 +1282,11 @@ user_schema:
  |  /* empty */			{ $$ = NULL; }
  ;
 
-user_schema_path:
+opt_schema_path:
 	SCHEMA PATH string	{ $$ = $3; }
  |  /* empty */			{ $$ = NULL; }
  ;
+
 
 alter_table_element:
 	opt_column ident SET DEFAULT default_value
@@ -1474,16 +1485,51 @@ role_def:
 	  append_string(l, $2);
 	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_CREATE_ROLE, l ); }
- |  USER ident WITH opt_encrypted PASSWORD string sqlNAME string SCHEMA ident user_schema_path
-	{ dlist *l = L();
+ |  USER ident WITH opt_encrypted PASSWORD string sqlNAME string opt_schema_details_list opt_max_memory opt_max_workers opt_optimizer opt_default_role
+    { dlist *l = L();
 	  append_string(l, $2);
 	  append_string(l, $6);
 	  append_string(l, $8);
-	  append_string(l, $10);
-	  append_string(l, $11);
+	  append_list(l, $9);
 	  append_int(l, $4);
+      append_lng(l, $10);
+      append_int(l, $11);
+	  append_string(l, $12);
+      append_string(l, $13);
 	  $$ = _symbol_create_list( SQL_CREATE_USER, l ); }
  ;
+
+opt_max_memory:
+    /* empty */         { $$ = 0; }
+ |  MAX_MEMORY poslng   { $$ = $2; }
+ ;
+
+opt_max_workers:
+    /* empty */         { $$ = 0; }
+ |  MAX_WORKERS posint  { $$ = $2; }
+ ;
+    
+opt_optimizer:
+    /* empty */         { $$ = NULL; }
+ |  OPTIMIZER string    { $$ = $2; }
+ ;
+
+opt_default_role:
+    /* empty */           { $$ = NULL; }
+ |  DEFAULT ROLE ident    { $$ = $3; }
+ ;
+
+opt_schema_details_list:
+    opt_schema_path     
+    { dlist *l = L();
+      append_string(l, NULL);
+      $$ = append_string(l, $1);}
+ |  SCHEMA ident opt_schema_path
+    { dlist *l = L();
+      append_string(l, $2);
+      $$ = append_string(l, $3);}
+ ;
+
 
 opt_encrypted:
     /* empty */		{ $$ = SQL_PW_UNENCRYPTED; }

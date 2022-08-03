@@ -3169,7 +3169,6 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		seen = NULL;
 	} else {
 		BUN prb;
-		BUN p;
 		BUN mask;
 		Hash hs = {0};
 
@@ -3183,7 +3182,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		    (hs.heapbckt.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap)) < 0 ||
 		    snprintf(hs.heaplink.filename, sizeof(hs.heaplink.filename), "%s.thshjnl%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heaplink.filename) ||
 		    snprintf(hs.heapbckt.filename, sizeof(hs.heapbckt.filename), "%s.thshjnb%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heapbckt.filename) ||
-		    HASHnew(&hs, bi.type, BATcount(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
+		    HASHnew(&hs, bi.type, ci.ncand, mask, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKerror("cannot allocate hash table\n");
 			HEAPfree(&hs.heaplink, true);
 			HEAPfree(&hs.heapbckt, true);
@@ -3199,15 +3198,15 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 			for (hb = HASHget(&hs, prb);
 			     hb != BUN_NONE;
 			     hb = HASHgetlink(&hs, hb)) {
-				if (cmp(v, BUNtail(bi, hb)) == 0)
+				BUN p = canditer_idx(&ci, hb) - b->hseqbase;
+				if (cmp(v, BUNtail(bi, p)) == 0)
 					break;
 			}
 			if (hb == BUN_NONE) {
-				p = o - b->hseqbase;
 				cnt++;
 				/* enter into hash table */
-				HASHputlink(&hs, p, HASHget(&hs, prb));
-				HASHput(&hs, prb, p);
+				HASHputlink(&hs, i, HASHget(&hs, prb));
+				HASHput(&hs, prb, i);
 			}
 		}
 		*cnt2 = cnt;

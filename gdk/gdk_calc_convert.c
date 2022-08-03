@@ -763,7 +763,6 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 			}
 		}
 	}
-	bn->theap->dirty = true;
 	BATsetcount(bn, ci->ncand);
 	GDKfree(dst);
 	return nils;
@@ -803,7 +802,6 @@ convert_str_var(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 			}
 		}
 	}
-	bn->theap->dirty = true;
 	BATsetcount(bn, ci->ncand);
 	GDKfree(dst);
 	return nils;

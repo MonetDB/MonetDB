@@ -3018,6 +3018,34 @@ update sys.functions set system = true where system <> true and name in ('stddev
 update sys.functions set system = true where system <> true and name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and type = 1;
 
 Running database upgrade commands:
+alter table sys.db_user_info add column max_memory bigint;
+alter table sys.db_user_info add column max_workers int;
+alter table sys.db_user_info add column optimizer varchar(1024);
+alter table sys.db_user_info add column default_role int;
+alter table sys.db_user_info add column password varchar(256);
+update sys.db_user_info u set max_memory = 0, max_workers = 0, optimizer = 'default_pipe', default_role = (select id from sys.auths a where a.name = u.name);
+-- and copying passwords
+
+Running database upgrade commands:
+drop view sys.dependency_schemas_on_users;
+drop view sys.roles;
+drop view sys.users;
+drop function sys.db_users();
+CREATE VIEW sys.roles AS SELECT id, name, grantor FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.db_user_info u);
+GRANT SELECT ON sys.roles TO PUBLIC;
+CREATE VIEW sys.users AS SELECT name, fullname, default_schema, schema_path, max_memory, max_workers, optimizer, default_role FROM sys.db_user_info;
+GRANT SELECT ON sys.users TO PUBLIC;
+CREATE FUNCTION sys.db_users() RETURNS TABLE(name varchar(2048)) RETURN SELECT name FROM sys.db_user_info;
+CREATE VIEW sys.dependency_schemas_on_users AS
+SELECT s.id AS schema_id, s.name AS schema_name, u.name AS user_name, CAST(6 AS smallint) AS depend_type
+ FROM sys.db_user_info AS u, sys.schemas AS s
+ WHERE u.default_schema = s.id
+ ORDER BY s.name, u.name;
+GRANT SELECT ON sys.dependency_schemas_on_users TO PUBLIC;
+update sys._tables set system = true where name in ('users', 'roles', 'dependency_schemas_on_users') AND schema_id = 2000;
+update sys.functions set system = true where system <> true and name in ('db_users') and schema_id = 2000 and type = 5;
+
+Running database upgrade commands:
 drop function sys.dump_database(boolean);
 drop procedure sys.dump_table_data();
 drop procedure sys.dump_table_data(string, string);
@@ -3027,6 +3055,7 @@ drop view sys.dump_sequences;
 drop view sys.dump_start_sequences;
 drop view sys.dump_tables;
 drop view sys.describe_tables;
+drop view sys.dump_create_users;
 CREATE VIEW sys.describe_partition_tables AS
  SELECT
  m_sch,
@@ -3171,6 +3200,16 @@ BEGIN
  END WHILE;
  END IF;
 END;
+CREATE VIEW sys.dump_create_users AS
+ SELECT
+ 'CREATE USER ' || sys.dq(ui.name) || ' WITH ENCRYPTED PASSWORD ' ||
+ sys.sq(sys.password_hash(ui.name)) ||
+ ' NAME ' || sys.sq(ui.fullname) || ' SCHEMA sys' || ifthenelse(ui.schema_path = '"sys"', '', ' SCHEMA PATH ' || sys.sq(ui.schema_path)) || ';' stmt,
+ ui.name user_name
+ FROM sys.db_user_info ui, sys.schemas s
+ WHERE ui.default_schema = s.id
+ AND ui.name <> 'monetdb'
+ AND ui.name <> '.snapshot';
 CREATE VIEW sys.describe_tables AS
  SELECT
  t.id o,
@@ -3256,7 +3295,7 @@ BEGIN
  INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');
  RETURN sys.dump_statements;
 END;
-update sys._tables set system = true where name in ('describe_partition_tables', 'dump_partition_tables', 'dump_sequences', 'dump_start_sequences', 'describe_tables', 'dump_tables') AND schema_id = 2000;
+update sys._tables set system = true where name in ('describe_partition_tables', 'dump_partition_tables', 'dump_sequences', 'dump_start_sequences', 'describe_tables', 'dump_tables', 'dump_create_users') AND schema_id = 2000;
 update sys.functions set system = true where system <> true and name in ('dump_table_data') and schema_id = 2000 and type = 2;
 update sys.functions set system = true where system <> true and name in ('dump_database') and schema_id = 2000 and type = 5;
 CREATE function sys.url_extract_host(url string, no_www bool) RETURNS STRING

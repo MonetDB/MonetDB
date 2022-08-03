@@ -867,8 +867,10 @@ BATdelete(BAT *b)
 {
 	bat bid = b->batCacheid;
 	BAT *loaded = BBP_cache(bid);
+	char o[10];
 
 	assert(bid > 0);
+	snprintf(o, sizeof(o), "%o", (unsigned) bid);
 	if (loaded) {
 		b = loaded;
 	}
@@ -878,9 +880,12 @@ BATdelete(BAT *b)
 	PROPdestroy_nolock(b);
 	STRMPdestroy(b);
 	TSKdestroy(b);
-	HEAPfree(b->theap, true);
-	if (b->tvheap)
+	if (b->theap) {
+		HEAPfree(b->theap, true);
+	}
+	if (b->tvheap) {
 		HEAPfree(b->tvheap, true);
+	}
 	b->batCopiedtodisk = false;
 }
 
