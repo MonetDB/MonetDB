@@ -1,5 +1,5 @@
 %global name MonetDB
-%global version 11.41.24
+%global version 11.41.26
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # Use bcond_with to add a --with option; i.e., "without" is default.
@@ -84,7 +84,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jul2021-SP6/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jul2021-SP7/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -846,6 +846,56 @@ else
 fi
 
 %changelog
+* Tue Aug 02 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.25-20220802
+- Rebuilt.
+
+* Tue Aug  2 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.25-20220802
+- gdk: When destroying a bat, make sure there are no files left over in
+  the BACKUP directory since they can cause problems when the bat id
+  gets reused.
+
+* Thu Jul 28 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.25-20220802
+- gdk: Fixed an off-by-one error in the logger which caused older log files
+  to stick around longer in the write-ahead log than necessary.
+- gdk: When an empty BAT is committed, skip writing (and synchronizing to
+  disk) the heap (tail and theap) files and write 0 for their sizes to
+  the BBP.dir file.  When reading the BBP.dir file, if an empty BAT is
+  encountered, set the sizes of those files to 0.  This fixes potential
+  issues during startup of the server (BBPcheckbats reporting errors).
+
+* Thu Jun 23 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.25-20220802
+- merovingian: When multiple identical messages are written to the log, write the
+  first one, and combine subsequent ones in a single message.
+
+* Wed Jun 22 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.25-20220802
+- gdk: Make sure heap files of transient bats get deleted when the bat is
+  destroyed.  If the bat was a partial view (sharing the vheap but not
+  the tail), the tail file wasn't deleted.
+- gdk: Various changes were made to satisfy newer compilers.
+- gdk: The batDirtydesc and batDirtyflushed Boolean values have been deprecated
+  and are no longer used.  They were both holdovers from long ago.
+- gdk: Various race conditions (data races) have been fixed.
+
+* Wed Jun 22 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.25-20220802
+- merovingian: Fixed a leak where the log file wasn't closed when it was reopened
+  after a log rotation (SIGHUP signal).
+- merovingian: Try to deal more gracefully with "inherited" mserver5 processes.
+  This includes not complaining about an "impossible state", and allowing
+  such processes to be stopped by the monetdbd process.
+- merovingian: When a transient failure occurs during processing of a new connection to
+  the monetdbd server, sleep for half a second so that if the transient
+  failure occurs again, the log file doesn't get swamped with error
+  messages.
+
+* Wed Jun 22 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.25-20220802
+- monetdb5: Various race conditions (data races) have been fixed.
+
+* Thu May 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.25-20220802
+- gdk: All accesses to the BACKUP directory need to be protected by the
+  same lock.  The lock already existed (GDKtmLock), but wasn't used
+  consistently.  This is now fixed.  Hopefully this makes the hot snapshot
+  code more reliable.
+
 * Mon Apr 25 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.23-20220425
 - Rebuilt.
 
