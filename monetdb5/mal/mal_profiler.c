@@ -237,6 +237,7 @@ render_generic_event(str msg, struct GenericEvent e, int state)
 void
 generic_event(str msg, struct GenericEvent e, int state)
 {
+	if (state == 0) return; // ignore start of non-mal event
 	if( maleventstream ) {
 		render_generic_event(msg, e, state);
 	}
@@ -648,11 +649,11 @@ profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start
 	if (pci == NULL) return;
 	if (getModuleId(pci) == myname) // ignore profiler commands from monitoring
 		return;
+	if (start == TRUE) return; // ignore start of mal event
+	if ( mb && (getPC(mb,pci) != 0)) return; // ignore event that are not PC = 0
 
 	if(maleventstream) {
-		if( mb && (getPC(mb,pci) == 0 || getPC(mb,pci) == 1) && start == FALSE) {
-			renderProfilerEvent(cntxt, mb, stk, pci, start);
-		}
+		renderProfilerEvent(cntxt, mb, stk, pci, start);
 		if (!start && pci->pc ==0)
 			profilerHeartbeatEvent("ping");
 		if (start && pci->token == ENDsymbol)
