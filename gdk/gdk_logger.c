@@ -209,8 +209,9 @@ internal_find_bat(logger *lg, log_id id, int tid)
 			}
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
+		return 0;	/* not found */
 	}
-	return 0;
+	return -1;		/* error creating hash */
 }
 
 static void
@@ -273,6 +274,9 @@ la_bat_clear(logger *lg, logaction *la, int tid)
 {
 	log_bid bid = internal_find_bat(lg, la->cid, tid);
 	BAT *b;
+
+	if (bid < 0)
+		return GDK_FAIL;
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#la_bat_clear %d\n", la->cid);
@@ -633,8 +637,9 @@ la_bat_update_count(logger *lg, log_id id, lng cnt, int tid)
 			}
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
+		return GDK_SUCCEED;
 	}
-	return GDK_SUCCEED;
+	return GDK_FAIL;
 }
 
 static gdk_return
@@ -643,6 +648,8 @@ la_bat_updates(logger *lg, logaction *la, int tid)
 	log_bid bid = internal_find_bat(lg, la->cid, tid);
 	BAT *b = NULL;
 
+	if (bid < 0)
+		return GDK_FAIL;
 	if (bid == 0)
 		return GDK_SUCCEED; /* ignore bats no longer in the catalog */
 
@@ -746,6 +753,8 @@ la_bat_destroy(logger *lg, logaction *la, int tid)
 {
 	log_bid bid = internal_find_bat(lg, la->cid, tid);
 
+	if (bid < 0)
+		return GDK_FAIL;
 	if (bid && logger_del_bat(lg, bid) != GDK_SUCCEED)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
@@ -2589,6 +2598,10 @@ log_bat_transient(logger *lg, log_id id)
 	log_bid bid = internal_find_bat(lg, id, -1);
 	logformat l;
 
+	if (bid < 0) {
+		logger_unlock(lg);
+		return GDK_FAIL;
+	}
 	l.flag = LOG_DESTROY;
 	l.id = id;
 
@@ -2887,6 +2900,8 @@ logger_add_bat(logger *lg, BAT *b, log_id id, int tid)
 	       b == lg->seqs_val ||
 	       b == lg->dseqs);
 	assert(b->batRole == PERSISTENT);
+	if (bid < 0)
+		return GDK_FAIL;
 	if (bid) {
 		if (bid != b->batCacheid) {
 			if (logger_del_bat(lg, bid) != GDK_SUCCEED)
