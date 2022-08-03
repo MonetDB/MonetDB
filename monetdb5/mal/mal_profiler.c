@@ -75,24 +75,29 @@ static void logjsonInternal(char *logbuffer, bool flush)
 }
 
 /*
- * We use a buffer (`logbuffer`) where we incrementally create the output JSON object. Initially we allocate LOGLEN (8K)
- * bytes and we keep the capacity of the buffer (`logcap`) and the length of the current string (`loglen`).
+ * We use a buffer (`logbuffer`) where we incrementally create the output JSON
+ * object. Initially we allocate LOGLEN (8K)
+ * bytes and we keep the capacity of the buffer (`logcap`) and the length of the
+ * current string (`loglen`).
  *
- * We use the `logadd` function to add data to our buffer (usually key-value pairs). This macro offers an interface similar
- * to printf.
+ * We use the `logadd` function to add data to our buffer (usually key-value
+ * pairs). This macro offers an interface similar to printf.
  *
- * The first snprintf bellow happens in a statically allocated buffer that might be much smaller than logcap. We do not
- * care. We only need to perform this snprintf to get the actual length of the string that is to be produced.
+ * The first snprintf bellow happens in a statically allocated buffer that might
+ * be much smaller than logcap. We do not care. We only need to perform this
+ * snprintf to get the actual length of the string that is to be produced.
  *
  * There are three cases:
  *
  * 1. The new string fits in the current buffer -> we just update the buffer
  *
- * 2. The new string does not fit in the current buffer, but is smaller than the capacity of the buffer -> we output the
- * current contents of the buffer and start at the beginning.
+ * 2. The new string does not fit in the current buffer, but is smaller than the
+ * capacity of the buffer -> we output the current contents of the buffer and
+ * start at the beginning.
  *
- * 3. The new string exceeds the current capacity of the buffer -> we output the current contents and reallocate the
- * buffer. The new capacity is 1.5 times the length of the new string.
+ * 3. The new string exceeds the current capacity of the buffer -> we output the
+ * current contents and reallocate the buffer. The new capacity is 1.5 times the
+ * length of the new string.
  */
 struct logbuf {
 	char *logbuffer;
@@ -166,6 +171,74 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 	va_end(va);
 	va_end(va2);
 	return true;
+}
+
+/*
+ * Generic events refer to all events that are useful to profile since the
+ * beginning of a query execution up until the MAL execution. This includes
+ * transaction events, SQL parsing, relational tree creation, unnesting,
+ * relational optimizers, rel2bin, and MAL optimizers.
+ *
+ * Profiling a generic event follows the same implementation of ProfilerEvent.
+ */
+static str
+prepare_generic_event(str phase, struct GenericEvent e, int state)
+{
+	struct logbuf logbuf = {0};
+	lng clk = GDKusec();
+	uint64_t mclk = (uint64_t)clk - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
+
+	if (logadd(&logbuf,
+			   "{"
+			   "\"version\":\""MONETDB_VERSION" (hg id: %s)\""
+			   ",\"clk\":"LLFMT
+			   ",\"mclk\":%"PRIu64""
+			   ",\"thread\":%d"
+			   ",\"face\":\"%s\""
+			   ",\"state\":\"%s\""
+			   ",\"client\":\"%d\""
+			   ",\"transaction_id\":"ULLFMT
+			   ",\"tag\":"OIDFMT
+			   ",\"query\":\"%s\""
+			   ",\"rc\":\"%d\""
+			   "}\n",
+			   mercurial_revision(),
+			   clk,
+			   mclk,
+			   THRgettid(),
+			   phase,
+			   state ? "done" : "start",
+			   e.cid ? *e.cid : 0,
+			   e.tid ? *e.tid : 0,
+			   e.tag ? *e.tag : 0,
+			   e.query ? e.query : "none",
+			   e.rc))
+		return logbuf.logbuffer;
+	else {
+		logdel(&logbuf);
+		return NULL;
+	}
+}
+
+static void
+render_generic_event(str msg, struct GenericEvent e, int state)
+{
+	str event;
+	MT_lock_set(&mal_profileLock);
+	event = prepare_generic_event(msg, e, state);
+	if( event ){
+		logjsonInternal(event, true);
+		free(event);
+	}
+	MT_lock_unset(&mal_profileLock);
+}
+
+void
+generic_event(str msg, struct GenericEvent e, int state)
+{
+	if( maleventstream ) {
+		render_generic_event(msg, e, state);
+	}
 }
 
 /* JSON rendering method of performance data.

@@ -2039,7 +2039,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 }
 
 sqlstore *
-store_init(int debug, store_type store_tpe, int readonly, int singleuser)
+store_init(int debug, store_type store_tpe, int readonly, int singleuser, generic_event_wrapper_fptr event_wrapper)
 {
 	sql_allocator *pa;
 	sqlstore *store = MNEW(sqlstore);
@@ -2077,6 +2077,8 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 
 	MT_lock_set(&store->lock);
 	MT_lock_set(&store->flush);
+
+	store->generic_event_wrapper = event_wrapper;
 
 	/* initialize empty bats */
 	switch (store_tpe) {
@@ -3485,6 +3487,8 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 {
 	sqlstore *store = tr->store;
 
+	store->generic_event_wrapper("rollback", tr->tid, 0, 0);
+
 	/* move back deleted */
 	if (tr->localtmps.dset) {
 		for(node *n=tr->localtmps.dset->h; n; ) {
@@ -3580,6 +3584,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		list_destroy(tr->depchanges);
 		tr->depchanges = NULL;
 	}
+	store->generic_event_wrapper("rollback", tr->tid, 0, 1);
 }
 
 sql_trans *
@@ -3810,6 +3815,8 @@ sql_trans_commit(sql_trans *tr)
 			}
 		}
 
+		store->generic_event_wrapper("commit", tr->tid, 0, 0);
+
 		/* log changes should only be done if there is something to log */
 		if (!tr->parent && tr->logchanges > 0) {
 			int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 1000000;
@@ -3925,6 +3932,7 @@ sql_trans_commit(sql_trans *tr)
 
 	if (ok == LOG_OK)
 		ok = clean_predicates_and_propagate_to_parent(tr);
+	store->generic_event_wrapper("commit", tr->tid, (ok == LOG_OK)? SQL_OK : SQL_ERR, 1);
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
 
@@ -6888,6 +6896,7 @@ sql_trans_end(sql_session *s, int ok)
 	}
 	store->oldest = oldest;
 	assert(list_length(store->active) == (int) ATOMIC_GET(&store->nr_active));
+	store->generic_event_wrapper("transaction", s->tr->tid, (ok == LOG_OK)? SQL_OK : SQL_ERR, 1);
 	store_unlock(store);
 	return ok;
 }

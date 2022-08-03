@@ -41,6 +41,42 @@ MT_Lock     mal_copyLock = MT_LOCK_INITIALIZER(mal_copyLock);
 MT_Lock     mal_delayLock = MT_LOCK_INITIALIZER(mal_delayLock);
 MT_Lock     mal_oltpLock = MT_LOCK_INITIALIZER(mal_oltpLock);
 
+static pthread_key_t tl_client_key;
+
+static int
+initialize_tl_client_key(void)
+{
+	static bool initialized = false;
+	if (initialized)
+		return 0;
+
+	if (pthread_key_create(&tl_client_key, NULL) != 0)
+		return -1;
+
+	initialized = true;
+	return 0;
+}
+
+Client
+getClientContext(void)
+{
+	if (initialize_tl_client_key())
+		return NULL;
+	return (Client) pthread_getspecific(tl_client_key);
+}
+
+/* declared in mal_private.h so only the MAL interpreter core can access it */
+Client
+setClientContext(Client cntxt)
+{
+	Client old = getClientContext();
+
+	if (pthread_setspecific(tl_client_key, cntxt) != 0)
+		GDKfatal("Failed to set thread local Client context");
+
+	return old;
+}
+
 const char *
 mal_version(void)
 {

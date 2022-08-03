@@ -1315,6 +1315,7 @@ void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
 void runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
 void runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
+oid runtimeProfileSetTag(Client cntxt);
 const char *sampleRef;
 const char *schedulerRef;
 const char *selectNotNilRef;

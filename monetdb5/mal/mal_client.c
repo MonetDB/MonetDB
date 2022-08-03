@@ -46,6 +46,7 @@
 #include "mal_private.h"
 #include "mal_runtime.h"
 #include "mal_authorize.h"
+#include "mal_profiler.h"
 #include "mapi_prompt.h"
 
 int MAL_MAXCLIENTS = 0;
@@ -201,6 +202,11 @@ MCexitClient(Client c)
 		c->fdout = NULL;
 		c->fdin = NULL;
 	}
+	if(malProfileMode > 0)
+		generic_event("client_connection",
+					  (struct GenericEvent) { &c->idx, NULL, NULL, NULL, 0 },
+					  1);
+	setClientContext(NULL);
 }
 
 static Client
@@ -290,8 +296,16 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 
 	MT_lock_set(&mal_contextLock);
 	c = MCnewClient();
-	if (c)
+	if (c) {
+		Client c_old = setClientContext(c);
+		(void) c_old;
+		assert(NULL == c_old);
 		c = MCinitClientRecord(c, user, fin, fout);
+		if(malProfileMode > 0)
+			generic_event("client_connection",
+						  (struct GenericEvent) { &c->idx, NULL, NULL, NULL, 0 },
+						  0);
+	}
 	MT_lock_unset(&mal_contextLock);
 	return c;
 }
