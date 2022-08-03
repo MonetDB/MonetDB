@@ -1,6 +1,11 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Tue Aug  2 2022 Sjoerd Mullender <sjoerd@acm.org>
+- When destroying a bat, make sure there are no files left over in
+  the BACKUP directory since they can cause problems when the bat id
+  gets reused.
+
 * Thu Jul 28 2022 Sjoerd Mullender <sjoerd@acm.org>
 - Fixed an off-by-one error in the logger which caused older log files
   to stick around longer in the write-ahead log than necessary.
