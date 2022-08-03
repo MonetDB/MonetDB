@@ -29,7 +29,7 @@
 QueryQueue QRYqueue;
 lng qtop;
 static lng qsize;
-static oid qtag= 1;		// A unique query identifier
+static oid qtag = 1;		// A unique query identifier
 
 void
 mal_runtime_reset(void)
@@ -108,7 +108,6 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		QRYqueue[i].query = q? GDKstrdup(q):0;
 		QRYqueue[i].status = "running";
 		QRYqueue[i].cntxt = cntxt;
-		stk->tag = mb->tag = QRYqueue[i].tag;
 	}
 	qtop += i == qtop;
 	MT_lock_unset(&mal_delayLock);
