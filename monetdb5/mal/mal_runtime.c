@@ -207,8 +207,8 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 	pci->clock = prof->ticks = GDKusec();
 
 	/* emit the instruction upon start as well */
-	if(malProfileMode > 0 )
-		profilerEvent(cntxt, mb, stk, pci, TRUE);
+	/* if(malProfileMode > 0 ) */
+	/* 	profilerEvent(cntxt, mb, stk, pci, TRUE); */
 }
 
 void
