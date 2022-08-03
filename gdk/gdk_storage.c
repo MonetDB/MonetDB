@@ -974,7 +974,8 @@ BATdelete(BAT *b)
 	STRMPdestroy(b);
 	if (b->theap) {
 		HEAPfree(b->theap, true);
-		if ((f = GDKfilepath(b->theap->farmid, BAKDIR, o, "tail1")) != NULL) {
+		if (!GDKinmemory(b->theap->farmid) &&
+		    (f = GDKfilepath(b->theap->farmid, BAKDIR, o, "tail1")) != NULL) {
 			MT_remove(f);
 			size_t i = strlen(f) - 1;
 			f[i] = '2';
@@ -990,7 +991,8 @@ BATdelete(BAT *b)
 	}
 	if (b->tvheap) {
 		HEAPfree(b->tvheap, true);
-		if ((f = GDKfilepath(b->theap->farmid, BAKDIR, o, "theap")) != NULL) {
+		if (!GDKinmemory(b->tvheap->farmid) &&
+		    (f = GDKfilepath(b->theap->farmid, BAKDIR, o, "theap")) != NULL) {
 			MT_remove(f);
 			GDKfree(f);
 		}
