@@ -196,8 +196,8 @@ prepare_generic_event(str phase, struct GenericEvent e, int state)
 			   ",\"thread\":%d"
 			   ",\"face\":\"%s\""
 			   ",\"state\":\"%s\""
-			   ",\"client\":\"%d\""
-			   ",\"transaction_id\":"ULLFMT
+			   ",\"clientid\":\"%d\""
+			   ",\"transactionid\":"ULLFMT
 			   ",\"tag\":"OIDFMT
 			   ",\"query\":\"%s\""
 			   ",\"rc\":\"%d\""
