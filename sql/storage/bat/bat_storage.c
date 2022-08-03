@@ -2855,7 +2855,7 @@ load_cs(sql_trans *tr, column_storage *cs, int type, sqlid id)
 {
 	sqlstore *store = tr->store;
 	int bid = logger_find_bat(store->logger, id);
-	if (!bid)
+	if (bid <= 0)
 		return LOG_ERR;
 	cs->bid = temp_dup(bid);
 	cs->ucnt = 0;
@@ -2960,7 +2960,7 @@ create_col(sql_trans *tr, sql_column *c)
 			if (strcmp(c->storage_type, "DICT") == 0) {
 				sqlstore *store = tr->store;
 				int bid = logger_find_bat(store->logger, -c->base.id);
-				if (!bid)
+				if (bid <= 0)
 					return LOG_ERR;
 				bat->cs.ebid = temp_dup(bid);
 				bat->cs.st = ST_DICT;
