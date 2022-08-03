@@ -2172,7 +2172,7 @@ str fstrcmp_impl(dbl *ret, str *string1, str *string2, dbl *minimum);
 void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag);
 void garbageElement(Client cntxt, ValPtr v);
 str generatorRef;
-void generic_event(str face, struct GenericEvent e, int state);
+void generic_event(str phase, struct GenericEvent e, int state);
 MALfcn getAddress(str fcnname);
 str getArgDefault(MalBlkPtr mb, InstrPtr p, int idx);
 ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
