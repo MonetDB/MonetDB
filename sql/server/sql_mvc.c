@@ -125,12 +125,12 @@ mvc_fix_depend(mvc *m, sql_column *depids, struct view_t *v, int n)
 }
 
 static void
-generic_event_wrapper(str phase, ulng tid, int rc, int state)
+generic_event_wrapper(str phase, ulng tid, lng usec, int rc, int state)
 {
 	if(malProfileMode > 0)
 		generic_event(phase,
 					  (struct GenericEvent)
-					  { NULL, NULL, &tid, NULL, rc },
+					  { NULL, NULL, &tid, NULL, usec, rc },
 					  state);
 }
 
@@ -488,10 +488,11 @@ mvc_trans(mvc *m)
 	TRC_INFO(SQL_TRANS, "Starting transaction\n");
 	res = sql_trans_begin(m->session);
 
+	m->session->tr->ts2 = GDKusec();
 	if(malProfileMode > 0)
 		generic_event("transaction",
-					 (struct GenericEvent)
-					  { NULL, NULL, &(m->session->tr->tid), NULL, (res || err)? 1 : 0 },
+					  (struct GenericEvent)
+					  { NULL, NULL, &(m->session->tr->tid), NULL, GDKusec(), (res || err)? 1 : 0 },
 					  0);
 
 	if (m->qc && (res || err)) {

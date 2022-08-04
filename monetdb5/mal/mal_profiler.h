@@ -25,6 +25,7 @@ struct GenericEvent {
 	oid* tag;
 	ulng* tid; /* transaction_id */
 	str query;
+	lng usec;
 	int rc;    /* return code */
 };
 

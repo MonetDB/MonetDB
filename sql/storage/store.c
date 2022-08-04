@@ -3579,8 +3579,7 @@ static void
 sql_trans_rollback(sql_trans *tr, bool commit_lock)
 {
 	sqlstore *store = tr->store;
-
-	store->generic_event_wrapper("rollback", tr->tid, 0, 0);
+	lng Tbegin = GDKusec();
 
 	/* move back deleted */
 	if (tr->localtmps.dset) {
@@ -3678,7 +3677,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		tr->depchanges = NULL;
 	}
 
-	store->generic_event_wrapper("rollback", tr->tid, 0, 1);
+	store->generic_event_wrapper("rollback", tr->tid, GDKusec()-Tbegin, 0, 1);
 }
 
 sql_trans *
@@ -3884,6 +3883,7 @@ sql_trans_commit(sql_trans *tr)
 {
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
+	lng Tbegin;
 
 	if (!list_empty(tr->changes)) {
 		int flush = 0;
@@ -3911,7 +3911,7 @@ sql_trans_commit(sql_trans *tr)
 			}
 		}
 
-		store->generic_event_wrapper("commit", tr->tid, 0, 0);
+		Tbegin = GDKusec();
 
 		/* log changes should only be done if there is something to log */
 		const bool log = !tr->parent && tr->logchanges > 0;
@@ -4043,7 +4043,7 @@ sql_trans_commit(sql_trans *tr)
 	if (ok == LOG_OK)
 		ok = clean_predicates_and_propagate_to_parent(tr);
 
-	store->generic_event_wrapper("commit", tr->tid, (ok == LOG_OK)? SQL_OK : SQL_ERR, 1);
+	store->generic_event_wrapper("commit", tr->tid, GDKusec()-Tbegin, (ok == LOG_OK)? SQL_OK : SQL_ERR, 1);
 
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
@@ -7079,7 +7079,7 @@ sql_trans_end(sql_session *s, int ok)
 	}
 	store->oldest = oldest;
 	assert(list_length(store->active) == (int) ATOMIC_GET(&store->nr_active));
-	store->generic_event_wrapper("transaction", s->tr->tid, (ok == LOG_OK)? SQL_OK : SQL_ERR, 1);
+	store->generic_event_wrapper("transaction", s->tr->tid, GDKusec()-(s->tr->ts2), (ok == LOG_OK)? SQL_OK : SQL_ERR, 1);
 	store_unlock(store);
 
 	return ok;
