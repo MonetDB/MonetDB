@@ -1141,7 +1141,7 @@ SQLparser(Client c)
 	c->query = query_cleaned(m->sa, QUERY(m->scanner));
 
 	if(malProfileMode > 0) {
-		str escaped_query = c->query? mal_quote(c->query, sizeof(c->query)) : NULL;
+		str escaped_query = c->query? mal_quote(c->query, strlen(c->query)) : NULL;
 		generic_event("sql_parse",
 					 (struct GenericEvent)
 					 { &c->idx, &(c->curprg->def->tag), NULL, escaped_query, c->query? 0 : 1 },
