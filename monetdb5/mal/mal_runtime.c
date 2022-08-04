@@ -389,10 +389,6 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 	}
 	/* always collect the MAL instruction execution time */
 	pci->clock = prof->ticks = GDKusec();
-
-	/* emit the instruction upon start as well */
-	if(malProfileMode > 0 )
-		profilerEvent(cntxt, mb, stk, pci, TRUE);
 }
 
 /* At the end of each MAL stmt */
@@ -421,7 +417,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	pci->calls++;
 
 	if(malProfileMode > 0 )
-		profilerEvent(cntxt, mb, stk, pci, FALSE);
+		profilerEvent(cntxt, mb, stk, pci);
 	if( cntxt->sqlprofiler )
 		sqlProfilerEvent(cntxt, mb, stk, pci);
 	if( malProfileMode < 0){
