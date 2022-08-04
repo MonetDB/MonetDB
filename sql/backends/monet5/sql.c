@@ -129,24 +129,13 @@ sql_symbol2relation(backend *be, symbol *sym)
 	int profile = be->mvc->emode == m_plan;
 	Client c = getClientContext();
 
+	Tbegin = GDKusec();
+	rel = rel_semantic(query, sym);
 	if(malProfileMode > 0 )
 		generic_event("sql_to_rel",
-					 (struct GenericEvent)
-					 { &(c->idx), &(c->curprg->def->tag), NULL, NULL, 0 },
-					 0);
-
-	rel = rel_semantic(query, sym);
-
-	if(malProfileMode > 0 ) {
-		generic_event("sql_to_rel",
-					 (struct GenericEvent)
-					 { &(c->idx), &(c->curprg->def->tag), NULL, NULL, rel ? 0 : 1 },
-					 1);
-		generic_event("rel_opt",
-					 (struct GenericEvent)
-					 { &(c->idx), &(c->curprg->def->tag), NULL, NULL, 0 },
-					 0);
-	}
+					  (struct GenericEvent)
+					  { &(c->idx), &(c->curprg->def->tag), NULL, NULL, GDKusec()-Tbegin, rel ? 0 : 1 },
+					  1);
 
 	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
 	Tbegin = GDKusec();
@@ -160,9 +149,9 @@ sql_symbol2relation(backend *be, symbol *sym)
 
 	if(malProfileMode > 0)
 		generic_event("rel_opt",
-					 (struct GenericEvent)
-					 { &c->idx, &(c->curprg->def->tag), NULL, NULL, rel ? 0 : 1},
-					 1);
+					  (struct GenericEvent)
+					  { &c->idx, &(c->curprg->def->tag), NULL, NULL, be->reloptimizer, rel ? 0 : 1},
+					  1);
 	return rel;
 }
 

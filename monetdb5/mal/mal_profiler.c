@@ -198,6 +198,7 @@ prepare_generic_event(str phase, struct GenericEvent e, int state)
 			   ",\"thread\":%d"
 			   ",\"phase\":\"%s\""
 			   ",\"state\":\"%s\""
+			   ",\"usec\":"LLFMT
 			   ",\"clientid\":\"%d\""
 			   ",\"transactionid\":"ULLFMT
 			   ",\"tag\":"OIDFMT
@@ -210,6 +211,7 @@ prepare_generic_event(str phase, struct GenericEvent e, int state)
 			   THRgettid(),
 			   phase,
 			   state ? "done" : "start",
+			   e.usec,
 			   e.cid ? *e.cid : 0,
 			   e.tid ? *e.tid : 0,
 			   e.tag ? *e.tag : 0,
