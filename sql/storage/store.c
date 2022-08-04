@@ -3580,6 +3580,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 {
 	sqlstore *store = tr->store;
 	lng Tbegin = GDKusec();
+	lng Tend;
 
 	/* move back deleted */
 	if (tr->localtmps.dset) {
@@ -3677,7 +3678,9 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		tr->depchanges = NULL;
 	}
 
-	store->generic_event_wrapper("rollback", tr->tid, GDKusec()-Tbegin, 0, 1);
+	Tend = GDKusec();
+	store->generic_event_wrapper("rollback",
+								 tr->tid, Tend-Tbegin, Tend, 0);
 }
 
 sql_trans *
@@ -3883,7 +3886,7 @@ sql_trans_commit(sql_trans *tr)
 {
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
-	lng Tbegin;
+	lng Tbegin, Tend;
 
 	if (!list_empty(tr->changes)) {
 		int flush = 0;
@@ -4043,7 +4046,9 @@ sql_trans_commit(sql_trans *tr)
 	if (ok == LOG_OK)
 		ok = clean_predicates_and_propagate_to_parent(tr);
 
-	store->generic_event_wrapper("commit", tr->tid, GDKusec()-Tbegin, (ok == LOG_OK)? SQL_OK : SQL_ERR, 1);
+	Tend = GDKusec();
+	store->generic_event_wrapper("commit",
+								 tr->tid, Tend-Tbegin, Tend, (ok == LOG_OK)? SQL_OK : SQL_ERR);
 
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
@@ -7054,6 +7059,8 @@ sql_trans_begin(sql_session *s)
 int
 sql_trans_end(sql_session *s, int ok)
 {
+	lng Tend;
+
 	TRC_DEBUG(SQL_STORE, "End of transaction: " ULLFMT "\n", s->tr->tid);
 	if (ok == SQL_OK) {
 		ok = sql_trans_commit(s->tr);
@@ -7079,7 +7086,9 @@ sql_trans_end(sql_session *s, int ok)
 	}
 	store->oldest = oldest;
 	assert(list_length(store->active) == (int) ATOMIC_GET(&store->nr_active));
-	store->generic_event_wrapper("transaction", s->tr->tid, GDKusec()-(s->tr->ts2), (ok == LOG_OK)? SQL_OK : SQL_ERR, 1);
+	Tend = GDKusec();
+	store->generic_event_wrapper("transaction",
+								 s->tr->tid, Tend-(s->tr->ts2), Tend, (ok == LOG_OK)? SQL_OK : SQL_ERR);
 	store_unlock(store);
 
 	return ok;

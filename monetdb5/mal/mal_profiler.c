@@ -184,11 +184,10 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
  * Profiling a generic event follows the same implementation of ProfilerEvent.
  */
 static str
-prepare_generic_event(str phase, struct GenericEvent e, int state)
+prepareGenericEvent(str phase, struct GenericEvent e)
 {
 	struct logbuf logbuf = {0};
-	lng clk = GDKusec();
-	uint64_t mclk = (uint64_t)clk - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
+	uint64_t mclk = (uint64_t)e.clk - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
 
 	if (logadd(&logbuf,
 			   "{"
@@ -197,7 +196,7 @@ prepare_generic_event(str phase, struct GenericEvent e, int state)
 			   ",\"mclk\":%"PRIu64""
 			   ",\"thread\":%d"
 			   ",\"phase\":\"%s\""
-			   ",\"state\":\"%s\""
+			   ",\"state\":\"done\""
 			   ",\"usec\":"LLFMT
 			   ",\"clientid\":\"%d\""
 			   ",\"transactionid\":"ULLFMT
@@ -206,11 +205,10 @@ prepare_generic_event(str phase, struct GenericEvent e, int state)
 			   ",\"rc\":\"%d\""
 			   "}\n",
 			   mercurial_revision(),
-			   clk,
+			   e.clk,
 			   mclk,
 			   THRgettid(),
 			   phase,
-			   state ? "done" : "start",
 			   e.usec,
 			   e.cid ? *e.cid : 0,
 			   e.tid ? *e.tid : 0,
@@ -225,11 +223,11 @@ prepare_generic_event(str phase, struct GenericEvent e, int state)
 }
 
 static void
-render_generic_event(str msg, struct GenericEvent e, int state)
+renderGenericEvent(str msg, struct GenericEvent e)
 {
 	str event;
 	MT_lock_set(&mal_profileLock);
-	event = prepare_generic_event(msg, e, state);
+	event = prepareGenericEvent(msg, e);
 	if( event ){
 		logjsonInternal(event, true);
 		free(event);
@@ -238,11 +236,10 @@ render_generic_event(str msg, struct GenericEvent e, int state)
 }
 
 void
-generic_event(str msg, struct GenericEvent e, int state)
+genericEvent(str msg, struct GenericEvent e)
 {
-	if( maleventstream ) {
-		render_generic_event(msg, e, state);
-	}
+	if( maleventstream )
+		renderGenericEvent(msg, e);
 }
 
 /* JSON rendering method of performance data.

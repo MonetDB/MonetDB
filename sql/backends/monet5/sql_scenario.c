@@ -971,7 +971,7 @@ SQLparser(Client c)
 	int pstatus = 0;
 	int err = 0, opt, preparedid = -1;
 	oid tag = 0;
-	lng Tbegin;
+	lng Tbegin, Tend;
 
 	c->query = NULL;
 	be = (backend *) c->sqlcontext;
@@ -1142,13 +1142,12 @@ SQLparser(Client c)
 	 */
 	be->q = NULL;
 	c->query = query_cleaned(m->sa, QUERY(m->scanner));
-
+	Tend = GDKusec();
 	if(malProfileMode > 0) {
 		str escaped_query = c->query? mal_quote(c->query, strlen(c->query)) : NULL;
-		generic_event("sql_parse",
+		genericEvent("sql_parse",
 					  (struct GenericEvent)
-					  { &c->idx, &(c->curprg->def->tag), NULL, escaped_query, GDKusec()-Tbegin, c->query? 0 : 1 },
-					  1);
+					 { &c->idx, &(c->curprg->def->tag), NULL, escaped_query, Tend-Tbegin, Tend, c->query? 0 : 1 });
 		GDKfree(escaped_query);
 	}
 
@@ -1214,11 +1213,11 @@ SQLparser(Client c)
 			else
 				opt = (m->emod & mod_exec) == 0;//1;
 
+			Tend = GDKusec();
 			if(malProfileMode > 0)
-				generic_event("rel_to_mal",
-							  (struct GenericEvent)
-							  { &c->idx, &(c->curprg->def->tag), NULL, NULL, GDKusec()-Tbegin, c->query? 0 : 1 },
-							  1);
+				genericEvent("rel_to_mal",
+							 (struct GenericEvent)
+							 { &c->idx, &(c->curprg->def->tag), NULL, NULL, Tend-Tbegin, Tend, c->query? 0 : 1 });
 		} else {
 			char *q_copy = sa_strdup(m->sa, c->query);
 
@@ -1299,12 +1298,11 @@ SQLparser(Client c)
 
 			Tbegin = GDKusec();
 			msg = SQLoptimizeQuery(c, c->curprg->def);
-
+			Tend = GDKusec();
 			if(malProfileMode > 0)
-				generic_event("mal_opt",
-							  (struct GenericEvent)
-							  { &c->idx, &(c->curprg->def->tag), NULL, NULL, GDKusec()-Tbegin, msg == MAL_SUCCEED? 0 : 1 },
-							  1);
+				genericEvent("mal_opt",
+							 (struct GenericEvent)
+							 { &c->idx, &(c->curprg->def->tag), NULL, NULL, Tend-Tbegin, Tend, msg == MAL_SUCCEED? 0 : 1 });
 
 			if (msg != MAL_SUCCEED) {
 				str other = c->curprg->def->errors;
