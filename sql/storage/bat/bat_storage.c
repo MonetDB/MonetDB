@@ -412,19 +412,19 @@ static size_t
 segs_end( segments *segs, sql_trans *tr, sql_table *table)
 {
 	size_t cnt = 0;
-
 	lock_table(tr->store, table->base.id);
-	segment *s = segs->h, *l = NULL;
-
-	if (segs->t && SEG_IS_VALID(segs->t, tr))
-		l = s = segs->t;
-
-	for(;s; s = s->next) {
-		if (SEG_IS_VALID(s, tr))
-				l = s;
+	if (segs->t) {
+		cnt = segs->t->end;
 	}
-	if (l)
-		cnt = l->end;
+	else { /* shouldn't really happen but its here just in case */
+		segment *s = segs->h;
+		while (s->next) {
+			s = s->next;
+		}
+		if (s) {
+			cnt = s->end;
+		}
+	}
 	unlock_table(tr->store, table->base.id);
 	return cnt;
 }
