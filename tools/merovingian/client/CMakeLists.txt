@@ -23,6 +23,7 @@ target_link_libraries(monetdb
   mcrypt
   msabaoth
   mutils
+  stream
   #$<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>)
   )
 
