@@ -7062,7 +7062,7 @@ sql_trans_end(sql_session *s, int ok)
 	store_unlock(store);
 	lng Tend = GDKusec();
 	store->generic_event_wrapper("transaction",
-								 s->tr->tid, Tend-(s->tr->ts2), Tend, (ok == LOG_OK)? SQL_OK : SQL_ERR);
+								 s->tr->tid, Tend-(s->tr->clk_start), Tend, (ok == LOG_OK)? SQL_OK : SQL_ERR);
 
 	return ok;
 }
