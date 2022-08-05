@@ -44,36 +44,6 @@
  * situation is COLD-abort: quit the server and restart, so you get
  * the recovered disk images.
  */
-/* in the commit prelude, the delta status in the memory image of all
- * bats is commited */
-static gdk_return
-prelude(int cnt, bat *restrict subcommit, BUN *restrict sizes)
-{
-	int i = 0;
-
-	while (++i < cnt) {
-		bat bid = subcommit ? subcommit[i] : i;
-
-		if (BBP_status(bid) & BBPPERSISTENT) {
-			BAT *b = BBP_cache(bid);
-
-			if (b == NULL && (BBP_status(bid) & BBPSWAPPED)) {
-				b = BBPquickdesc(bid);
-				if (b == NULL)
-					return GDK_FAIL;
-			}
-			if (b) {
-				MT_lock_set(&b->theaplock);
-				assert(!isVIEW(b));
-				assert(b->batRole == PERSISTENT);
-				assert(sizes == NULL || sizes[i] <= BATcount(b));
-				BATcommit(b, sizes ? sizes[i] : BUN_NONE);
-				MT_lock_unset(&b->theaplock);
-			}
-		}
-	}
-	return GDK_SUCCEED;
-}
 
 /* in the commit epilogue, the BBP-status of the bats is changed to
  * reflect their presence in the succeeded checkpoint.  Also bats from
@@ -139,8 +109,7 @@ TMcommit(void)
 
 	/* commit with the BBP globally locked */
 	BBPlock();
-	if (prelude(getBBPsize(), NULL, NULL) == GDK_SUCCEED &&
-	    BBPsync(getBBPsize(), NULL, NULL, getBBPlogno(), getBBPtransid()) == GDK_SUCCEED) {
+	if (BBPsync(getBBPsize(), NULL, NULL, getBBPlogno(), getBBPtransid()) == GDK_SUCCEED) {
 		epilogue(getBBPsize(), NULL, true);
 		ret = GDK_SUCCEED;
 	}
@@ -205,15 +174,13 @@ TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logn
 			}
 		}
 	}
-	if (prelude(cnt, subcommit, sizes) == GDK_SUCCEED) {	/* save the new bats outside the lock */
-		/* lock just prevents other global (sub-)commits */
-		MT_lock_set(&GDKtmLock);
-		if (BBPsync(cnt, subcommit, sizes, logno, transid) == GDK_SUCCEED) { /* write BBP.dir (++) */
-			epilogue(cnt, subcommit, false);
-			ret = GDK_SUCCEED;
-		}
-		MT_lock_unset(&GDKtmLock);
+	/* lock just prevents other global (sub-)commits */
+	MT_lock_set(&GDKtmLock);
+	if (BBPsync(cnt, subcommit, sizes, logno, transid) == GDK_SUCCEED) { /* write BBP.dir (++) */
+		epilogue(cnt, subcommit, false);
+		ret = GDK_SUCCEED;
 	}
+	MT_lock_unset(&GDKtmLock);
 	return ret;
 }
 
