@@ -3886,7 +3886,8 @@ sql_trans_commit(sql_trans *tr)
 {
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
-	lng Tbegin, Tend;
+	lng Tbegin = 0;
+	lng Tend = 0;
 
 	if (!list_empty(tr->changes)) {
 		int flush = 0;
