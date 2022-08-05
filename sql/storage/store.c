@@ -7034,8 +7034,6 @@ sql_trans_begin(sql_session *s)
 int
 sql_trans_end(sql_session *s, int ok)
 {
-	lng Tend = 0;
-
 	TRC_DEBUG(SQL_STORE, "End of transaction: " ULLFMT "\n", s->tr->tid);
 	if (ok == SQL_OK) {
 		ok = sql_trans_commit(s->tr);
@@ -7061,10 +7059,10 @@ sql_trans_end(sql_session *s, int ok)
 	}
 	store->oldest = oldest;
 	assert(list_length(store->active) == (int) ATOMIC_GET(&store->nr_active));
-	Tend = GDKusec();
+	store_unlock(store);
+	lng Tend = GDKusec();
 	store->generic_event_wrapper("transaction",
 								 s->tr->tid, Tend-(s->tr->ts2), Tend, (ok == LOG_OK)? SQL_OK : SQL_ERR);
-	store_unlock(store);
 
 	return ok;
 }
