@@ -184,11 +184,10 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
  * Profiling a generic event follows the same implementation of ProfilerEvent.
  */
 static str
-prepare_generic_event(str phase, struct GenericEvent e, int state)
+prepareGenericEvent(str phase, struct GenericEvent e)
 {
 	struct logbuf logbuf = {0};
-	lng clk = GDKusec();
-	uint64_t mclk = (uint64_t)clk - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
+	uint64_t mclk = (uint64_t)e.clk - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
 
 	if (logadd(&logbuf,
 			   "{"
@@ -197,7 +196,8 @@ prepare_generic_event(str phase, struct GenericEvent e, int state)
 			   ",\"mclk\":%"PRIu64""
 			   ",\"thread\":%d"
 			   ",\"phase\":\"%s\""
-			   ",\"state\":\"%s\""
+			   ",\"state\":\"done\""
+			   ",\"usec\":"LLFMT
 			   ",\"clientid\":\"%d\""
 			   ",\"transactionid\":"ULLFMT
 			   ",\"tag\":"OIDFMT
@@ -205,11 +205,11 @@ prepare_generic_event(str phase, struct GenericEvent e, int state)
 			   ",\"rc\":\"%d\""
 			   "}\n",
 			   mercurial_revision(),
-			   clk,
+			   e.clk,
 			   mclk,
 			   THRgettid(),
 			   phase,
-			   state ? "done" : "start",
+			   e.usec,
 			   e.cid ? *e.cid : 0,
 			   e.tid ? *e.tid : 0,
 			   e.tag ? *e.tag : 0,
@@ -223,11 +223,11 @@ prepare_generic_event(str phase, struct GenericEvent e, int state)
 }
 
 static void
-render_generic_event(str msg, struct GenericEvent e, int state)
+renderGenericEvent(str msg, struct GenericEvent e)
 {
 	str event;
 	MT_lock_set(&mal_profileLock);
-	event = prepare_generic_event(msg, e, state);
+	event = prepareGenericEvent(msg, e);
 	if( event ){
 		logjsonInternal(event, true);
 		free(event);
@@ -236,12 +236,10 @@ render_generic_event(str msg, struct GenericEvent e, int state)
 }
 
 void
-generic_event(str msg, struct GenericEvent e, int state)
+genericEvent(str msg, struct GenericEvent e)
 {
-	if (state == 0) return; // ignore start of non-mal event
-	if( maleventstream ) {
-		render_generic_event(msg, e, state);
-	}
+	if( maleventstream )
+		renderGenericEvent(msg, e);
 }
 
 /* JSON rendering method of performance data.
@@ -259,7 +257,7 @@ generic_event(str msg, struct GenericEvent e, int state)
  "stmt":"X_41=0@0:void := querylog.define(\"select count(*) from tables;\":str,\"default_pipe\":str,30:int);",
 */
 static str
-prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
+prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	struct logbuf logbuf;
 	str c;
@@ -273,7 +271,7 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 	 * they may appear when BARRIER blocks are executed
 	 * The default parameter should be sufficient for most practical cases.
 	 */
-	if( !start && pci->calls > HIGHWATERMARK){
+	if(pci->calls > HIGHWATERMARK){
 		if( pci->calls == 10000 || pci->calls == 100000 || pci->calls == 1000000 || pci->calls == 10000000)
 			TRC_WARNING(MAL_SERVER, "Too many calls: %d\n", pci->calls);
 		return NULL;
@@ -286,7 +284,7 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 		return NULL;
 
 	/* align the variable namings with EXPLAIN and TRACE */
-	if( pci->pc == 1 && start)
+	if(pci->pc == 1)
 		renameVariables(mb);
 
 	logbuf = (struct logbuf) {0};
@@ -337,8 +335,7 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 		} else
 			free(c);
 	}
-	if (!logadd(&logbuf, ",\"state\":\"%s\",\"usec\":"LLFMT,
-				start?"start":"done", pci->ticks))
+	if (!logadd(&logbuf, ",\"state\":\"done\",\"usec\":"LLFMT, pci->ticks))
 		goto cleanup_and_exit;
 	if (algo && !logadd(&logbuf, ",\"algorithm\":\"%s\"", algo))
 		goto cleanup_and_exit;
@@ -547,11 +544,11 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 }
 
 static void
-renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
+renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str ev;
 	MT_lock_set(&mal_profileLock);
-	ev = prepareProfilerEvent(cntxt, mb, stk, pci, start);
+	ev = prepareProfilerEvent(cntxt, mb, stk, pci);
 	if( ev ){
 		logjsonInternal(ev, true);
 		free(ev);
@@ -697,21 +694,20 @@ profilerHeartbeatEvent(char *alter)
 }
 
 void
-profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
+profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	if (stk == NULL) return;
 	if (pci == NULL) return;
 	if (getModuleId(pci) == myname) // ignore profiler commands from monitoring
 		return;
-	if (start == TRUE) return; // ignore start of mal event
 	if ( mb && (getPC(mb,pci) != 0)) return; // ignore event that are not PC = 0
 
 	if(maleventstream) {
-		renderProfilerEvent(cntxt, mb, stk, pci, start);
-		if (!start && pci->pc ==0)
+		renderProfilerEvent(cntxt, mb, stk, pci);
+		if (pci->pc == 0)
 			profilerHeartbeatEvent("ping");
-		if (start && pci->token == ENDsymbol)
+		if (pci->token == ENDsymbol)
 			profilerHeartbeatEvent("ping");
 	}
 }
@@ -762,7 +758,7 @@ openProfilerStream(Client cntxt)
 		if( c && m && s && p ) {
 			/* show the event  assuming the quadruple is aligned*/
 			MT_lock_unset(&mal_profileLock);
-			profilerEvent(c, m, s, p, 1);
+			profilerEvent(c, m, s, p);
 			MT_lock_set(&mal_profileLock);
 		}
 	}
@@ -964,7 +960,7 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		c++;
 */
 
-	ev = prepareProfilerEvent(cntxt, mb, stk, pci, 0);
+	ev = prepareProfilerEvent(cntxt, mb, stk, pci);
 	// keep it a short transaction
 	MT_lock_set(&mal_profileLock);
 	if (cntxt->profticks == NULL) {

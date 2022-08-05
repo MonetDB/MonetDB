@@ -22,9 +22,11 @@ typedef struct rusage Rusage;
 
 struct GenericEvent {
 	int* cid;  /* client_id */
-	oid* tag;
+	oid* tag;  /* tag of the assoc MAL block */
 	ulng* tid; /* transaction_id */
-	str query;
+	str query; /* statement */
+	lng usec;  /* event duration */
+	lng clk;   /* GDKusec in callside */
 	int rc;    /* return code */
 };
 
@@ -34,8 +36,8 @@ mal_export void initProfiler(void);
 mal_export str openProfilerStream(Client cntxt);
 mal_export str closeProfilerStream(Client cntxt);
 
-mal_export void profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start);
-mal_export void generic_event(str phase, struct GenericEvent e, int state);
+mal_export void profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export void genericEvent(str phase, struct GenericEvent e);
 mal_export void sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 mal_export str startProfiler(Client cntxt);
