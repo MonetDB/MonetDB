@@ -135,7 +135,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 					 (struct GenericEvent)
 					 { &(c->idx), &(c->curprg->def->tag), NULL, NULL, Tend-Tbegin, Tend, rel ? 0 : 1 });
 
-	Tbegin = GDKusec();
+	Tbegin = Tend;
 	if (rel)
 		rel = sql_processrelation(be->mvc, rel, 1, extra_opts, extra_opts);
 	if (rel)
