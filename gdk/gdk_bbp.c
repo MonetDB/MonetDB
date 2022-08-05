@@ -3405,7 +3405,7 @@ dirty_bat(bat *i, bool subcommit)
 static gdk_return
 file_move(int farmid, const char *srcdir, const char *dstdir, const char *name, const char *ext)
 {
-	if (GDKmove(farmid, srcdir, name, ext, dstdir, name, ext, true) == GDK_SUCCEED) {
+	if (GDKmove(farmid, srcdir, name, ext, dstdir, name, ext, false) == GDK_SUCCEED) {
 		return GDK_SUCCEED;
 	} else {
 		char *path;
@@ -3686,7 +3686,7 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 				mvret = heap_move(h, srcdir,
 						  subcommit ? SUBDIR : BAKDIR,
 						  nme, extnew);
-			else
+			else if (file_exists(h->farmid, srcdir, nme, ext))
 				mvret = heap_move(h, srcdir,
 						  subcommit ? SUBDIR : BAKDIR,
 						  nme, ext);
@@ -3960,7 +3960,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 				break;
 			}
 			if (BBP_status(i) & BBPEXISTING) {
-				if (b != NULL) {
+				if (b != NULL && b->batInserted > 0) {
 					if (BBPbackup(b, subcommit != NULL) != GDK_SUCCEED) {
 						if (lock)
 							MT_lock_unset(&GDKswapLock(i));
@@ -4027,6 +4027,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 				assert(sizes == NULL || bi.width == 0 || (bi.type == TYPE_msk ? ((size + 31) / 32) * 4 : size << bi.shift) <= bi.hfree);
 				if (size > bi.count) /* includes sizes==NULL */
 					size = bi.count;
+				bi.b->batInserted = size;
 				if (b && size != 0) {
 					/* wait for BBPSAVING so that we
 					 * can set it, wait for
