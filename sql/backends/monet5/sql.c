@@ -138,7 +138,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 					 { &(c->idx), &(c->curprg->def->tag), NULL, NULL, Tend-Tbegin, Tend, rel ? 0 : 1 });
 
 	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
-	Tbegin = GDKusec();
+	Tbegin = Tend;
 	if (rel)
 		rel = sql_processrelation(be->mvc, rel, profile, 1, value_based_opt, storage_based_opt);
 	if (rel)

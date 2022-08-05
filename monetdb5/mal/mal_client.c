@@ -190,8 +190,6 @@ MCresetProfiler(stream *fdout)
 void
 MCexitClient(Client c)
 {
-	lng Tend;
-
 	MCresetProfiler(c->fdout);
 	// Remove any left over constant symbols
 	if( c->curprg)
@@ -209,11 +207,12 @@ MCexitClient(Client c)
 		c->fdout = NULL;
 		c->fdin = NULL;
 	}
-	Tend = GDKusec();
-	if(malProfileMode > 0)
+	if(malProfileMode > 0) {
+		lng Tend = GDKusec();
 		genericEvent("client_connection",
 					 (struct GenericEvent)
 					 { &c->idx, NULL, NULL, NULL, Tend-(c->session), Tend, 0 });
+	}
 	setClientContext(NULL);
 }
 
