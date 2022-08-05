@@ -307,10 +307,10 @@ query T nosort
 PLAN select count(a) as x, count(*) as y from dummyme
 ----
 project (
-| group by (
-| | table("sys"."dummyme") [ "dummyme"."%TID%" NOT NULL UNIQUE ]
-| ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%1"."%1", "%1"."%1" NOT NULL as "%2"."%2" ]
-) [ "%1"."%1" NOT NULL UNIQUE as "x", "%2"."%2" NOT NULL UNIQUE as "y" ]
+| project (
+| |  [ "sys"."cnt"(clob "sys", clob "dummyme") NOT NULL as "%1"."%1" ]
+| ) [ "%1"."%1" NOT NULL, "%1"."%1" NOT NULL as "%2"."%2" ]
+) [ "%1"."%1" NOT NULL as "x", "%2"."%2" NOT NULL as "y" ]
 
 query II nosort
 select count(a) as x, count(*) as y from dummyme
@@ -320,3 +320,4 @@ select count(a) as x, count(*) as y from dummyme
 
 statement ok
 ROLLBACK
+
