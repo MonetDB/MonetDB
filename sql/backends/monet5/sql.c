@@ -121,28 +121,19 @@ sql_symbol2relation(backend *be, symbol *sym)
 {
 	sql_rel *rel;
 	sql_query *query = query_create(be->mvc);
-	lng Tbegin;
+	lng Tbegin = 0;
+	lng Tend = 0;
 	int extra_opts = be->mvc->emode != m_prepare;
 	Client c = getClientContext();
 
-	if(malProfileMode > 0 )
-		generic_event("sql_to_rel",
-					  (struct GenericEvent)
-					  { &(c->idx), &(c->curprg->def->tag), NULL, NULL, 0 },
-					  0);
-
+	Tbegin = GDKusec();
 	rel = rel_semantic(query, sym);
+	Tend = GDKusec();
 
-	if(malProfileMode > 0 ) {
-		generic_event("sql_to_rel",
-					  (struct GenericEvent)
-					  { &(c->idx), &(c->curprg->def->tag), NULL, NULL, rel ? 0 : 1 },
-					  1);
-		generic_event("rel_opt",
-					  (struct GenericEvent)
-					  { &(c->idx), &(c->curprg->def->tag), NULL, NULL, 0 },
-					  0);
-	}
+	if(malProfileMode > 0 )
+		genericEvent("sql_to_rel",
+					 (struct GenericEvent)
+					 { &(c->idx), &(c->curprg->def->tag), NULL, NULL, Tend-Tbegin, Tend, rel ? 0 : 1 });
 
 	Tbegin = GDKusec();
 	if (rel)
@@ -151,13 +142,14 @@ sql_symbol2relation(backend *be, symbol *sym)
 		rel = rel_partition(be->mvc, rel);
 	if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
 		be->no_mitosis = 1;
-	be->reloptimizer = GDKusec() - Tbegin;
+
+	Tend = GDKusec();
+	be->reloptimizer = Tend - Tbegin;
 
 	if(malProfileMode > 0)
-		generic_event("rel_opt",
+		genericEvent("rel_opt",
 					 (struct GenericEvent)
-					 { &c->idx, &(c->curprg->def->tag), NULL, NULL, rel ? 0 : 1},
-					 1);
+					 { &c->idx, &(c->curprg->def->tag), NULL, NULL, be->reloptimizer, Tend, rel ? 0 : 1});
 	return rel;
 }
 

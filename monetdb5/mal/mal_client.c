@@ -188,6 +188,8 @@ MCresetProfiler(stream *fdout)
 void
 MCexitClient(Client c)
 {
+	lng Tend;
+
 	MCresetProfiler(c->fdout);
 	// Remove any left over constant symbols
 	if( c->curprg)
@@ -205,10 +207,11 @@ MCexitClient(Client c)
 		c->fdout = NULL;
 		c->fdin = NULL;
 	}
+	Tend = GDKusec();
 	if(malProfileMode > 0)
-		generic_event("client_connection",
-					 (struct GenericEvent) { &c->idx, NULL, NULL, NULL, 0 },
-					  1);
+		genericEvent("client_connection",
+					 (struct GenericEvent)
+					 { &c->idx, NULL, NULL, NULL, Tend-(c->session), Tend, 0 });
 	setClientContext(NULL);
 }
 
@@ -303,10 +306,6 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 		(void) c_old;
 		assert(NULL == c_old);
 		c = MCinitClientRecord(c, user, fin, fout);
-		if(malProfileMode > 0)
-			generic_event("client_connection",
-						 (struct GenericEvent) { &c->idx, NULL, NULL, NULL, 0 },
-						 0);
 	}
 	MT_lock_unset(&mal_contextLock);
 	return c;
