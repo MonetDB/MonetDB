@@ -435,7 +435,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	pci->calls++;
 
 	if(malProfileMode > 0 )
-		profilerEvent(cntxt, mb, stk, pci, FALSE);
+		profilerEvent(cntxt, mb, stk, pci);
 	if( cntxt->sqlprofiler )
 		sqlProfilerEvent(cntxt, mb, stk, pci);
 	if( malProfileMode < 0){
