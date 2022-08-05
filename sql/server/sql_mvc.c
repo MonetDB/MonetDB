@@ -487,7 +487,7 @@ mvc_trans(mvc *m)
 	TRC_INFO(SQL_TRANS, "Starting transaction\n");
 	res = sql_trans_begin(m->session);
 
-	m->session->tr->ts2 = GDKusec();
+	m->session->tr->clk_start = GDKusec();
 
 	if (m->qc && (res || err)) {
 		int seqnr = m->qc->id;
