@@ -957,7 +957,8 @@ SQLparser(Client c)
 	int pstatus = 0;
 	int err = 0, opt, preparedid = -1;
 	oid tag = 0;
-	lng Tbegin, Tend;
+	lng Tbegin = 0;
+	lng Tend = 0;
 
 	c->query = NULL;
 	be = (backend *) c->sqlcontext;
@@ -1128,11 +1129,12 @@ SQLparser(Client c)
 	 */
 	be->q = NULL;
 	c->query = query_cleaned(m->sa, QUERY(m->scanner));
+
 	Tend = GDKusec();
 	if(malProfileMode > 0) {
 		str escaped_query = c->query? mal_quote(c->query, strlen(c->query)) : NULL;
 		genericEvent("sql_parse",
-					  (struct GenericEvent)
+					 (struct GenericEvent)
 					 { &c->idx, &(c->curprg->def->tag), NULL, escaped_query, Tend-Tbegin, Tend, c->query? 0 : 1 });
 		GDKfree(escaped_query);
 	}
