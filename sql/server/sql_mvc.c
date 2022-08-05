@@ -841,64 +841,6 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 	return m;
 }
 
-int
-mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
-{
-	int res = 1, reset;
-	sql_trans *tr;
-
-	TRC_DEBUG(SQL_TRANS, "MVC reset\n");
-	tr = m->session->tr;
-	if (tr && tr->parent) {
-		assert(m->session->tr->active == 0);
-		while (tr->parent->parent != NULL)
-			m->session->tr = tr = sql_trans_destroy(tr);
-	}
-	reset = sql_session_reset(m->session, 1 /*autocommit on*/);
-	if (tr && !reset)
-		res = 0;
-
-	if (m->sa)
-		m->sa = sa_reset(m->sa);
-	else
-		m->sa = sa_create(m->pa);
-	if(!m->sa)
-		res = 0;
-	m->ta = sa_reset(m->ta);
-
-	m->errstr[0] = '\0';
-
-	m->params = NULL;
-	/* reset frames to the set of global variables */
-	stack_pop_until(m, 0);
-	m->frame = 0;
-	m->sym = NULL;
-
-	m->role_id = m->user_id = -1;
-	m->emode = m_normal;
-	m->emod = mod_none;
-	if (m->reply_size != 100)
-		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "reply_size"), 100);
-	m->reply_size = 100;
-	if (m->timezone != 0)
-		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "current_timezone"), 0);
-	m->timezone = 0;
-	if (m->sql_optimizer != INT_MAX)
-		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "sql_optimizer"), INT_MAX);
-	m->sql_optimizer = INT_MAX;
-	if (m->debug != debug)
-		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "debug"), debug);
-	m->debug = debug;
-
-	m->label = 0;
-	m->cascade_action = NULL;
-	m->runs = NULL;
-	m->type = Q_PARSE;
-
-	scanner_init(&m->scanner, rs, ws);
-	return res;
-}
-
 void
 mvc_destroy(mvc *m)
 {

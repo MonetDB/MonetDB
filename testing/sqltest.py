@@ -351,6 +351,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
     def __init__(self, test_case, **kwargs):
         super().__init__(test_case, **kwargs)
         self.did_run = False
+        self.output = ''
 
     def _parse_error(self, err:str):
         err_code = None
@@ -394,7 +395,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
                             stdout=process.PIPE, stderr=process.PIPE) as p:
                         out, err = p.communicate(query)
                         if out:
-                            self.data = out
+                            self.output = out
                             self.rowcount = self._get_row_count(out)
                         if err:
                             self.test_run_error = err
@@ -406,7 +407,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
                             stdout=process.PIPE, stderr=process.PIPE) as p:
                         out, err = p.communicate()
                         if out:
-                            self.data = out
+                            self.output = out
                         if err:
                             self.test_run_error = err
                             self.err_code, self.err_message = self._parse_error(err)
@@ -417,7 +418,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
 
     def assertMatchStableOut(self, fout, ignore_headers=False):
         stable = []
-        data = list(filter(filter_junk, self.data.split('\n')))
+        data = list(filter(filter_junk, self.output.split('\n')))
         with open(fout, 'r') as f:
             stable = list(filter(filter_junk, f.read().split('\n')))
         if ignore_headers:
@@ -453,7 +454,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
         return self
 
     def assertDataResultMatch(self, expected):
-        data = list(filter(filter_junk, self.data.split('\n')))
+        data = list(filter(filter_junk, self.output.split('\n')))
         data = list(filter(filter_headers, data))
         a, b = filter_matching_blocks(expected, data)
         diff = list(difflib.unified_diff(a, b, fromfile='expected', tofile='test'))

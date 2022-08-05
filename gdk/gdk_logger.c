@@ -162,10 +162,10 @@ log_find(BAT *b, BAT *d, int val)
 static log_bid
 internal_find_bat(logger *lg, log_id id, int tid)
 {
-	BATiter cni = bat_iterator(lg->catalog_id);
 	BUN p;
 
 	if (BAThash(lg->catalog_id) == GDK_SUCCEED) {
+		BATiter cni = bat_iterator(lg->catalog_id);
 		MT_rwlock_rdlock(&cni.b->thashlock);
 		if (tid < 0) {
 			HASHloop_int(cni, cni.b->thash, p, &id) {
@@ -192,9 +192,10 @@ internal_find_bat(logger *lg, log_id id, int tid)
 			}
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
+		bat_iterator_end(&cni);
+		return 0;	/* not found */
 	}
-	bat_iterator_end(&cni);
-	return 0;
+	return -1;		/* error creating hash */
 }
 
 static void
@@ -650,8 +651,9 @@ la_bat_update_count(logger *lg, log_id id, lng cnt, int tid)
 			}
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
+		return GDK_SUCCEED;
 	}
-	return GDK_SUCCEED;
+	return GDK_FAIL;
 }
 
 static gdk_return
@@ -660,6 +662,8 @@ la_bat_updates(logger *lg, logaction *la, int tid)
 	log_bid bid = internal_find_bat(lg, la->cid, tid);
 	BAT *b = NULL;
 
+	if (bid < 0)
+		return GDK_FAIL;
 	if (bid == 0)
 		return GDK_SUCCEED; /* ignore bats no longer in the catalog */
 
@@ -751,6 +755,8 @@ la_bat_destroy(logger *lg, logaction *la, int tid)
 {
 	log_bid bid = internal_find_bat(lg, la->cid, tid);
 
+	if (bid < 0)
+		return GDK_FAIL;
 	if (bid && log_del_bat(lg, bid) != GDK_SUCCEED)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
@@ -2622,6 +2628,10 @@ log_bat_transient(logger *lg, log_id id)
 	log_bid bid = internal_find_bat(lg, id, -1);
 	logformat l;
 
+	if (bid < 0) {
+		log_unlock(lg);
+		return GDK_FAIL;
+	}
 	l.flag = LOG_DESTROY;
 	l.id = id;
 
@@ -3036,6 +3046,8 @@ log_add_bat(logger *lg, BAT *b, log_id id, int tid)
 	       b == lg->seqs_val ||
 	       b == lg->dseqs);
 	assert(b->batRole == PERSISTENT);
+	if (bid < 0)
+		return GDK_FAIL;
 	if (bid) {
 		if (bid != b->batCacheid) {
 			if (log_del_bat(lg, bid) != GDK_SUCCEED)
