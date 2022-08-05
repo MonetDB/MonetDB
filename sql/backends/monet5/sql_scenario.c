@@ -248,20 +248,6 @@ SQLprepareClient(Client c, int login)
 		}
 	} else {
 		assert(0);
-#if 0
-		be = c->sqlcontext;
-		m = be->mvc;
-		/* Only reset if there is no active transaction which
-		 * can happen when we combine sql.init with msql.
-		*/
-		if (m->session->tr->active)
-			return NULL;
-		if (mvc_reset(m, c->fdin, c->fdout, SQLdebug) < 0) {
-			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
-		backend_reset(be);
-#endif
 	}
 	MT_lock_unset(&sql_contextLock);
 	if (login) {

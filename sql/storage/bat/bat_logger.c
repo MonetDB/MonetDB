@@ -129,6 +129,14 @@ replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol
 }
 #endif
 
+static BAT *
+log_temp_descriptor(log_bid b)
+{
+	if (b <= 0)
+		return NULL;
+	return temp_descriptor(b);
+}
+
 #if defined CATALOG_JUN2020 || defined CATALOG_OCT2020 || defined CATALOG_JAN2022
 static gdk_return
 tabins(logger *lg, old_logger *old_lg, bool first, int tt, int nid, ...)
@@ -142,7 +150,7 @@ tabins(logger *lg, old_logger *old_lg, bool first, int tt, int nid, ...)
 	va_start(va, nid);
 	while ((cid = va_arg(va, int)) != 0) {
 		cval = va_arg(va, void *);
-		if ((b = temp_descriptor(log_find_bat(lg, cid))) == NULL) {
+		if ((b = log_temp_descriptor(log_find_bat(lg, cid))) == NULL) {
 			va_end(va);
 			return GDK_FAIL;
 		}
@@ -1394,18 +1402,18 @@ upgrade(old_logger *lg)
 	BAT *mapold = COLnew(0, TYPE_int, 256, TRANSIENT);
 	BAT *mapnew = COLnew(0, TYPE_int, 256, TRANSIENT);
 
-	bats[0].nmbat = temp_descriptor(old_logger_find_bat(lg, "sys_schemas_name", 0, 0));
-	bats[0].idbat = temp_descriptor(old_logger_find_bat(lg, "sys_schemas_id", 0, 0));
+	bats[0].nmbat = log_temp_descriptor(old_logger_find_bat(lg, "sys_schemas_name", 0, 0));
+	bats[0].idbat = log_temp_descriptor(old_logger_find_bat(lg, "sys_schemas_id", 0, 0));
 	bats[0].parbat = NULL;
-	bats[0].cands = temp_descriptor(old_logger_find_bat(lg, "D_sys_schemas", 0, 0));
-	bats[1].nmbat = temp_descriptor(old_logger_find_bat(lg, "sys__tables_name", 0, 0));
-	bats[1].idbat = temp_descriptor(old_logger_find_bat(lg, "sys__tables_id", 0, 0));
-	bats[1].parbat = temp_descriptor(old_logger_find_bat(lg, "sys__tables_schema_id", 0, 0));
-	bats[1].cands = temp_descriptor(old_logger_find_bat(lg, "D_sys__tables", 0, 0));
-	bats[2].nmbat = temp_descriptor(old_logger_find_bat(lg, "sys__columns_name", 0, 0));
-	bats[2].idbat = temp_descriptor(old_logger_find_bat(lg, "sys__columns_id", 0, 0));
-	bats[2].parbat = temp_descriptor(old_logger_find_bat(lg, "sys__columns_table_id", 0, 0));
-	bats[2].cands = temp_descriptor(old_logger_find_bat(lg, "D_sys__columns", 0, 0));
+	bats[0].cands = log_temp_descriptor(old_logger_find_bat(lg, "D_sys_schemas", 0, 0));
+	bats[1].nmbat = log_temp_descriptor(old_logger_find_bat(lg, "sys__tables_name", 0, 0));
+	bats[1].idbat = log_temp_descriptor(old_logger_find_bat(lg, "sys__tables_id", 0, 0));
+	bats[1].parbat = log_temp_descriptor(old_logger_find_bat(lg, "sys__tables_schema_id", 0, 0));
+	bats[1].cands = log_temp_descriptor(old_logger_find_bat(lg, "D_sys__tables", 0, 0));
+	bats[2].nmbat = log_temp_descriptor(old_logger_find_bat(lg, "sys__columns_name", 0, 0));
+	bats[2].idbat = log_temp_descriptor(old_logger_find_bat(lg, "sys__columns_id", 0, 0));
+	bats[2].parbat = log_temp_descriptor(old_logger_find_bat(lg, "sys__columns_table_id", 0, 0));
+	bats[2].cands = log_temp_descriptor(old_logger_find_bat(lg, "D_sys__columns", 0, 0));
 	if (mapold == NULL || mapnew == NULL)
 		goto bailout;
 	for (int i = 0; i < 3; i++) {
@@ -1510,11 +1518,11 @@ upgrade(old_logger *lg)
 			delidx = i;
 			continue;
 		}
-		BAT *b = temp_descriptor(old_logger_find_bat(lg, tables[i].fullname, 0, 0));
+		BAT *b = log_temp_descriptor(old_logger_find_bat(lg, tables[i].fullname, 0, 0));
 		if (b == NULL)
 			continue;
 		if (delidx >= 0) {
-			BAT *d = temp_descriptor(old_logger_find_bat(lg, delname, 0, 0));
+			BAT *d = log_temp_descriptor(old_logger_find_bat(lg, delname, 0, 0));
 			BAT *m = BATconstant(0, TYPE_msk, &(msk){false}, BATcount(b), PERSISTENT);
 			if (m == NULL) {
 				bat_destroy(d);
@@ -1545,7 +1553,7 @@ upgrade(old_logger *lg)
 		}
 		if (tables[i].hasids && mapold) {
 			BAT *b1, *b2;
-			BAT *cands = temp_descriptor(old_logger_find_bat(lg, delname, 0, 0));
+			BAT *cands = log_temp_descriptor(old_logger_find_bat(lg, delname, 0, 0));
 			if (cands) {
 				if (BATcount(cands) == 0) {
 					bat_destroy(cands);
@@ -1913,7 +1921,7 @@ bl_postversion(void *Store, void *Lg)
 		const int *ocl;	/* old eclass */
 		int *ncl;	/* new eclass */
 
-		te = temp_descriptor(log_find_bat(lg, 2014)); /* sys.types.eclass */
+		te = log_temp_descriptor(log_find_bat(lg, 2014)); /* sys.types.eclass */
 		if (te == NULL)
 			return GDK_FAIL;
 		tne = COLnew(te->hseqbase, TYPE_int, BATcount(te), PERSISTENT);
@@ -1972,7 +1980,7 @@ bl_postversion(void *Store, void *Lg)
 		BAT *b;								 /* temp variable */
 		{
 			/* new BOOLEAN column sys.functions.semantics */
-			b = temp_descriptor(log_find_bat(lg, 2017)); /* sys.functions.id */
+			b = log_temp_descriptor(log_find_bat(lg, 2017)); /* sys.functions.id */
 			BAT *sem = BATconstant(b->hseqbase, TYPE_bit, &(bit){1}, BATcount(b), PERSISTENT);
 			bat_destroy(b);
 			if (sem == NULL)
@@ -2009,14 +2017,14 @@ bl_postversion(void *Store, void *Lg)
 		}
 
 		/* sys.functions i.e. deleted rows */
-		BAT *del_funcs = temp_descriptor(log_find_bat(lg, 2016));
+		BAT *del_funcs = log_temp_descriptor(log_find_bat(lg, 2016));
 		{
 			/* move sql.degrees, sql.radians, sql.like and sql.ilike functions
 			 * from 09_like.sql and 10_math.sql script to sql_types list */
 			/* sys.functions.name */
-			BAT *func_func = temp_descriptor(log_find_bat(lg, 2018));
+			BAT *func_func = log_temp_descriptor(log_find_bat(lg, 2018));
 			/* sys.functions.schema_id */
-			BAT *func_schem = temp_descriptor(log_find_bat(lg, 2026));
+			BAT *func_schem = log_temp_descriptor(log_find_bat(lg, 2026));
 			BAT *func_tid;
 			BAT *cands;
 			if (del_funcs == NULL || func_func == NULL || func_schem == NULL) {
@@ -2074,7 +2082,7 @@ bl_postversion(void *Store, void *Lg)
 			 * sql.null, sql.all, sql.zero_or_one and sql.not_unique */
 			BAT *func_tid = BATmaskedcands(0, BATcount(del_funcs), del_funcs, false);
 			/* sys.functions.mod */
-			BAT *func_mod = temp_descriptor(log_find_bat(lg, 2020));
+			BAT *func_mod = log_temp_descriptor(log_find_bat(lg, 2020));
 			bat_destroy(del_funcs);
 			if (func_tid == NULL || func_mod == NULL) {
 				bat_destroy(func_tid);
@@ -2090,7 +2098,7 @@ bl_postversion(void *Store, void *Lg)
 				return GDK_FAIL;
 			}
 			/* sys.functions.type */
-			BAT *func_type = temp_descriptor(log_find_bat(lg, 2022));
+			BAT *func_type = log_temp_descriptor(log_find_bat(lg, 2022));
 			if (func_type == NULL) {
 				bat_destroy(func_mod);
 				bat_destroy(sqlfunc);
@@ -2106,7 +2114,7 @@ bl_postversion(void *Store, void *Lg)
 			}
 
 			/* sys.functions.func */
-			BAT *func_func = temp_descriptor(log_find_bat(lg, 2019));
+			BAT *func_func = log_temp_descriptor(log_find_bat(lg, 2019));
 			if (func_func == NULL) {
 				bat_destroy(func_mod);
 				bat_destroy(sqlaggr_func);
@@ -2204,10 +2212,10 @@ bl_postversion(void *Store, void *Lg)
 		/* create bat for new column sys.objects.sub with value NULL, then
 		 * update sys.objects set sub = nr, nr = id where nr > 2000 */
 		{
-			BAT *objs_id = temp_descriptor(log_find_bat(lg, 2111)); /* sys.objects.id */
-			BAT *objs_nr = temp_descriptor(log_find_bat(lg, 2113)); /* sys.objects.nr */
+			BAT *objs_id = log_temp_descriptor(log_find_bat(lg, 2111)); /* sys.objects.id */
+			BAT *objs_nr = log_temp_descriptor(log_find_bat(lg, 2113)); /* sys.objects.nr */
 			BAT *objs_sub = BATconstant(objs_id->hseqbase, TYPE_int, &int_nil, BATcount(objs_id), PERSISTENT);
-			BAT *b = temp_descriptor(log_find_bat(lg, 2110)); /* sys.objects */
+			BAT *b = log_temp_descriptor(log_find_bat(lg, 2110)); /* sys.objects */
 			if (objs_id == NULL || objs_nr == NULL || objs_sub == NULL || b == NULL) {
 				bat_destroy(objs_id);
 				bat_destroy(objs_nr);
@@ -2388,12 +2396,12 @@ bl_postversion(void *Store, void *Lg)
 		/* update sys.functions set mod = 'sql' where mod = 'user'; */
 		{
 			BAT *b1, *b2, *b3;
-			b1 = temp_descriptor(log_find_bat(lg, 2016)); /* sys.functions */
+			b1 = log_temp_descriptor(log_find_bat(lg, 2016)); /* sys.functions */
 			if (b1 == NULL)
 				return GDK_FAIL;
 			/* undeleted rows of sys.functions */
 			b2 = BATmaskedcands(0, BATcount(b1), b1, false);
-			b3 = temp_descriptor(log_find_bat(lg, 2020)); /* sys.functions.mod */
+			b3 = log_temp_descriptor(log_find_bat(lg, 2020)); /* sys.functions.mod */
 			bat_destroy(b1);
 			if (b2 == NULL || b3 == NULL) {
 				bat_destroy(b2);
@@ -2450,12 +2458,12 @@ bl_postversion(void *Store, void *Lg)
 		/* update sys.args set type = 'clob' where type = 'char' and type_digits = 0 and func_id > 2000 */
 		{
 			BAT *b1, *b2, *b3;
-			b1 = temp_descriptor(log_find_bat(lg, 2028)); /* sys.args */
+			b1 = log_temp_descriptor(log_find_bat(lg, 2028)); /* sys.args */
 			if (b1 == NULL)
 				return GDK_FAIL;
 			b2 = BATmaskedcands(0, BATcount(b1), b1, false);
 			bat_destroy(b1);
-			b3 = temp_descriptor(log_find_bat(lg, 2030)); /* sys.args.func_id */
+			b3 = log_temp_descriptor(log_find_bat(lg, 2030)); /* sys.args.func_id */
 			if (b2 == NULL || b3 == NULL) {
 				bat_destroy(b2);
 				bat_destroy(b3);
@@ -2465,7 +2473,7 @@ bl_postversion(void *Store, void *Lg)
 			b1 = BATselect(b3, b2, &(int){2000}, &int_nil, false, false, false);
 			bat_destroy(b2);
 			bat_destroy(b3);
-			b3 = temp_descriptor(log_find_bat(lg, 2033)); /* sys.args.type_digits */
+			b3 = log_temp_descriptor(log_find_bat(lg, 2033)); /* sys.args.type_digits */
 			if (b1 == NULL || b3 == NULL) {
 				bat_destroy(b1);
 				bat_destroy(b3);
@@ -2475,7 +2483,7 @@ bl_postversion(void *Store, void *Lg)
 			b2 = BATselect(b3, b1, &(int){0}, NULL, true, false, false);
 			bat_destroy(b3);
 			bat_destroy(b1);
-			b1 = temp_descriptor(log_find_bat(lg, 2032)); /* sys.args.type */
+			b1 = log_temp_descriptor(log_find_bat(lg, 2032)); /* sys.args.type */
 			if (b1 == NULL || b2 == NULL) {
 				bat_destroy(b1);
 				bat_destroy(b2);
@@ -2524,8 +2532,8 @@ bl_postversion(void *Store, void *Lg)
 			 * one in the catalog (so that's why we drop them and don't
 			 * convert them); we drop them by marking the relevant rows
 			 * in various catalog tables as deleted */
-			BAT *dt = temp_descriptor(log_find_bat(lg, 2067)); /* sys._tables */
-			BAT *tt = temp_descriptor(log_find_bat(lg, 2072)); /* sys._tables.type */
+			BAT *dt = log_temp_descriptor(log_find_bat(lg, 2067)); /* sys._tables */
+			BAT *tt = log_temp_descriptor(log_find_bat(lg, 2072)); /* sys._tables.type */
 			if (dt == NULL || tt == NULL) {
 				bat_destroy(dt);
 				bat_destroy(tt);
@@ -2549,7 +2557,7 @@ bl_postversion(void *Store, void *Lg)
 					mskSetVal(dt, BUNtoid(strm, p), true);
 				bat_destroy(dt);
 				BAT *ids = COLnew(0, TYPE_int, 0, TRANSIENT);
-				BAT *ti = temp_descriptor(log_find_bat(lg, 2068)); /* sys._tables.id */
+				BAT *ti = log_temp_descriptor(log_find_bat(lg, 2068)); /* sys._tables.id */
 				if (ids == NULL || ti == NULL) {
 					bat_destroy(ids);
 					bat_destroy(ti);
@@ -2585,8 +2593,8 @@ bl_postversion(void *Store, void *Lg)
 						bat_destroy(strm);
 						strm = NULL;
 					}
-					BAT *ct = temp_descriptor(log_find_bat(lg, foreign[i].tabid));
-					BAT *dc = temp_descriptor(log_find_bat(lg, foreign[i].dels));
+					BAT *ct = log_temp_descriptor(log_find_bat(lg, foreign[i].tabid));
+					BAT *dc = log_temp_descriptor(log_find_bat(lg, foreign[i].dels));
 					if (ct == NULL || dc == NULL) {
 						bat_destroy(ids);
 						bat_destroy(strm);
@@ -2617,7 +2625,7 @@ bl_postversion(void *Store, void *Lg)
 					for (BUN p = 0; p < strc->batCount; p++)
 						mskSetVal(dc, BUNtoid(strc, p), true);
 					if (foreign[i].id != 0) {
-						BAT *ci = temp_descriptor(log_find_bat(lg, foreign[i].id));
+						BAT *ci = log_temp_descriptor(log_find_bat(lg, foreign[i].id));
 						if (ci == NULL) {
 							bat_destroy(ids);
 							bat_destroy(strc);
@@ -2658,13 +2666,13 @@ bl_postversion(void *Store, void *Lg)
 		 * sys.var, and sys.db_users from SQL to MAL */
 
 		/* sys.functions i.e. deleted rows */
-		BAT *del_funcs = temp_descriptor(log_find_bat(lg, 2016));
+		BAT *del_funcs = log_temp_descriptor(log_find_bat(lg, 2016));
 		if (del_funcs == NULL)
 			return GDK_FAIL;
 		BAT *func_tid = BATmaskedcands(0, BATcount(del_funcs), del_funcs, false);
 		bat_destroy(del_funcs);
 		/* sys.functions.schema_id */
-		BAT *func_schem = temp_descriptor(log_find_bat(lg, 2026));
+		BAT *func_schem = log_temp_descriptor(log_find_bat(lg, 2026));
 		if (func_tid == NULL || func_schem == NULL) {
 			bat_destroy(func_tid);
 			bat_destroy(func_schem);
@@ -2689,7 +2697,7 @@ bl_postversion(void *Store, void *Lg)
 			return GDK_FAIL;
 		}
 		/* sys.functions.name */
-		BAT *func_name = temp_descriptor(log_find_bat(lg, 2018));
+		BAT *func_name = log_temp_descriptor(log_find_bat(lg, 2018));
 		if (func_name == NULL) {
 			bat_destroy(cands);
 			bat_destroy(funcs);
@@ -2707,7 +2715,7 @@ bl_postversion(void *Store, void *Lg)
 			return GDK_FAIL;
 		}
 		/* sys.functions.language */
-		BAT *func_lang = temp_descriptor(log_find_bat(lg, 2021));
+		BAT *func_lang = log_temp_descriptor(log_find_bat(lg, 2021));
 		if (func_lang == NULL) {
 			bat_destroy(cands);
 			bat_destroy(func_tid);
@@ -2751,7 +2759,7 @@ bl_postversion(void *Store, void *Lg)
 		 * occurred in ancient databases) */
 
 		/* sys.functions.func */
-		BAT *func_func = temp_descriptor(log_find_bat(lg, 2019));
+		BAT *func_func = log_temp_descriptor(log_find_bat(lg, 2019));
 		if (func_func == NULL) {
 			bat_destroy(func_tid);
 			bat_destroy(b2);
@@ -2791,13 +2799,13 @@ bl_postversion(void *Store, void *Lg)
 		 * selected functions */
 
 		/* sys.functions i.e. deleted rows */
-		BAT *del_funcs = temp_descriptor(log_find_bat(lg, 2016));
+		BAT *del_funcs = log_temp_descriptor(log_find_bat(lg, 2016));
 		if (del_funcs == NULL)
 			return GDK_FAIL;
 		BAT *func_tid = BATmaskedcands(0, BATcount(del_funcs), del_funcs, false);
 		bat_destroy(del_funcs);
 		/* sys.functions.schema_id */
-		BAT *func_schem = temp_descriptor(log_find_bat(lg, 2026));
+		BAT *func_schem = log_temp_descriptor(log_find_bat(lg, 2026));
 		if (func_tid == NULL || func_schem == NULL) {
 			bat_destroy(func_tid);
 			bat_destroy(func_schem);
@@ -2811,7 +2819,7 @@ bl_postversion(void *Store, void *Lg)
 			return GDK_FAIL;
 		}
 		/* sys.functions.side_effect */
-		BAT *func_se = temp_descriptor(log_find_bat(lg, 2023));
+		BAT *func_se = log_temp_descriptor(log_find_bat(lg, 2023));
 		if (func_se == NULL) {
 			bat_destroy(cands);
 			return GDK_FAIL;
@@ -2826,7 +2834,7 @@ bl_postversion(void *Store, void *Lg)
 		}
 		func_se = b;
 		/* sys.functions.func */
-		BAT *func_func = temp_descriptor(log_find_bat(lg, 2019));
+		BAT *func_func = log_temp_descriptor(log_find_bat(lg, 2019));
 		if (func_func == NULL) {
 			bat_destroy(cands);
 			bat_destroy(func_se);
@@ -2854,7 +2862,7 @@ bl_postversion(void *Store, void *Lg)
 		/* while we're at it, also change sys.env and sys.db_users to
 		 * being without side effect (legacy from ancient databases) */
 		/* sys.functions.name */
-		BAT *func_name = temp_descriptor(log_find_bat(lg, 2018));
+		BAT *func_name = log_temp_descriptor(log_find_bat(lg, 2018));
 		if (func_name == NULL) {
 			bat_destroy(cands);
 			bat_destroy(func_se);
@@ -2953,14 +2961,14 @@ bl_postversion(void *Store, void *Lg)
 		 * set minvalue to GDK_lng_min */
 
 		/* sys.sequences i.e. deleted rows */
-		BAT *del_seqs = temp_descriptor(log_find_bat(lg, 2037));
+		BAT *del_seqs = log_temp_descriptor(log_find_bat(lg, 2037));
 		if (del_seqs == NULL)
 			return GDK_FAIL;
 		BAT *seq_tid = BATmaskedcands(0, BATcount(del_seqs), del_seqs, false);
 		bat_destroy(del_seqs);
-		BAT *seq_min = temp_descriptor(log_find_bat(lg, 2042)); /* sys.sequences.minvalue */
-		BAT *seq_max = temp_descriptor(log_find_bat(lg, 2043)); /* sys.sequences.maxvalue */
-		BAT *seq_inc = temp_descriptor(log_find_bat(lg, 2044)); /* sys.sequences.increment */
+		BAT *seq_min = log_temp_descriptor(log_find_bat(lg, 2042)); /* sys.sequences.minvalue */
+		BAT *seq_max = log_temp_descriptor(log_find_bat(lg, 2043)); /* sys.sequences.maxvalue */
+		BAT *seq_inc = log_temp_descriptor(log_find_bat(lg, 2044)); /* sys.sequences.increment */
 		if (seq_tid == NULL || seq_min == NULL || seq_max == NULL || seq_inc == NULL) {
 			bat_destroy(seq_tid);
 			bat_destroy(seq_min);
@@ -3091,21 +3099,21 @@ bl_postversion(void *Store, void *Lg)
 		 * we need to find the IDs of the sys.db_user_info table and of
 		 * the sys.privileges table and its columns since none of these
 		 * have fixed IDs */
-		BAT *b = temp_descriptor(log_find_bat(lg, 2067)); /* sys._tables */
+		BAT *b = log_temp_descriptor(log_find_bat(lg, 2067)); /* sys._tables */
 		if (b == NULL)
 			return GDK_FAIL;
 		BAT *del_tabs = BATmaskedcands(0, BATcount(b), b, false);
 		bat_destroy(b);
 		if (del_tabs == NULL)
 			return GDK_FAIL;
-		b = temp_descriptor(log_find_bat(lg, 2076)); /* sys._columns */
+		b = log_temp_descriptor(log_find_bat(lg, 2076)); /* sys._columns */
 		if (b == NULL) {
 			bat_destroy(del_tabs);
 			return GDK_FAIL;
 		}
 		BAT *del_cols = BATmaskedcands(0, BATcount(b), b, false);
 		bat_destroy(b);
-		b = temp_descriptor(log_find_bat(lg, 2070)); /* sys._tables.schema_id */
+		b = log_temp_descriptor(log_find_bat(lg, 2070)); /* sys._tables.schema_id */
 		if (del_cols == NULL || b == NULL) {
 			bat_destroy(del_cols);
 			bat_destroy(b);
@@ -3117,7 +3125,7 @@ bl_postversion(void *Store, void *Lg)
 		bat_destroy(del_tabs);
 		/* cands contains undeleted rows from sys._tables for tables in
 		 * sys schema */
-		BAT *tabnme = temp_descriptor(log_find_bat(lg, 2069)); /* sys._tables.name */
+		BAT *tabnme = log_temp_descriptor(log_find_bat(lg, 2069)); /* sys._tables.name */
 		if (cands == NULL || tabnme == NULL) {
 			bat_destroy(cands);
 			bat_destroy(tabnme);
@@ -3136,7 +3144,7 @@ bl_postversion(void *Store, void *Lg)
 		b = BATselect(tabnme, cands, "privileges", NULL, true, true, false);
 		bat_destroy(tabnme);
 		bat_destroy(cands);
-		BAT *tabid = temp_descriptor(log_find_bat(lg, 2068)); /* sys._tables.id */
+		BAT *tabid = log_temp_descriptor(log_find_bat(lg, 2068)); /* sys._tables.id */
 		if (b == NULL || tabid == NULL) {
 			bat_destroy(b);
 			bat_destroy(tabid);
@@ -3145,7 +3153,7 @@ bl_postversion(void *Store, void *Lg)
 		}
 		int dbid = ((int *) tabid->theap->base)[dbpos];
 		int prid = ((int *) tabid->theap->base)[BUNtoid(b, 0)];
-		BAT *coltid = temp_descriptor(log_find_bat(lg, 2082)); /* sys._columns.table_id */
+		BAT *coltid = log_temp_descriptor(log_find_bat(lg, 2082)); /* sys._columns.table_id */
 		if (coltid == NULL) {
 			bat_destroy(b);
 			bat_destroy(del_cols);
@@ -3158,8 +3166,8 @@ bl_postversion(void *Store, void *Lg)
 		bat_destroy(tabid);
 		bat_destroy(del_cols);
 		bat_destroy(b);
-		BAT *colnr = temp_descriptor(log_find_bat(lg, 2085)); /* sys._columns.number */
-		BAT *colid = temp_descriptor(log_find_bat(lg, 2077)); /* sys._columns.id */
+		BAT *colnr = log_temp_descriptor(log_find_bat(lg, 2085)); /* sys._columns.number */
+		BAT *colid = log_temp_descriptor(log_find_bat(lg, 2077)); /* sys._columns.id */
 		if (rc != GDK_SUCCEED || colnr == NULL || colid == NULL) {
 			if (rc == GDK_SUCCEED)
 				bat_destroy(b1);
