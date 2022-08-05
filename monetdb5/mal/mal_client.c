@@ -190,7 +190,7 @@ MCresetProfiler(stream *fdout)
 void
 MCexitClient(Client c)
 {
-	lng Tend = GDKusec();
+	lng Tend;
 
 	MCresetProfiler(c->fdout);
 	// Remove any left over constant symbols
@@ -209,6 +209,7 @@ MCexitClient(Client c)
 		c->fdout = NULL;
 		c->fdin = NULL;
 	}
+	Tend = GDKusec();
 	if(malProfileMode > 0)
 		genericEvent("client_connection",
 					 (struct GenericEvent)
