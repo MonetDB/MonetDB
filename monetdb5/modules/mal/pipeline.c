@@ -1213,8 +1213,6 @@ int hash_prime_nr[32] = {
 	805306457,
 	1610612741 };
 
-//(_hash_lng(ROT64(X, 3) ^ ROT64((lng)Y, 17)))
-
 static str
 UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
