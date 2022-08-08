@@ -26,7 +26,7 @@ struct GenericEvent {
 	ulng* tid; /* transaction_id */
 	str query; /* statement */
 	ulng usec;  /* event duration */
-	lng clk;   /* GDKusec in callside */
+	ulng clk;   /* GDKusec in callside */
 	int rc;    /* return code */
 };
 
