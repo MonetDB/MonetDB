@@ -568,6 +568,49 @@ HEAPcopy(Heap *dst, Heap *src, size_t offset)
 	return GDK_FAIL;
 }
 
+char **HEAPfreeBuffer;
+MT_Lock HEAPfreeBufferLock; 
+int HEAPfreeBufferCount = 0;
+
+/*
+ * Asynchronously frees heap files
+ */
+__attribute__((__noreturn__))
+void
+HEAPfreeWorker(void* _) {
+	(void)_;
+	while (true) {
+		/* make a copy of the buffer and clean it to avoid blocking transactions for too long */
+		MT_lock_set(&HEAPfreeBufferLock);
+		char** bufferCopy = malloc(HEAPfreeBufferCount * sizeof(char*));
+		int count = HEAPfreeBufferCount;
+		for (int i = 0; i < count; i++) {
+			bufferCopy[i] = HEAPfreeBuffer[i];
+		}
+		HEAPfreeBufferCount = 0; /* clean the buffer */
+		MT_lock_unset(&HEAPfreeBufferLock);
+
+		/* free the heap files */
+		for (int i = 0; i < count; i++) {
+			char *path = bufferCopy[i];
+			if (path && MT_remove(path) != 0 && errno != ENOENT) {
+				perror(path);
+			}
+			char *pathNew = malloc((strlen(path) + 4) * sizeof(char));
+			snprintf(pathNew, sizeof(*pathNew), "%s.new", path);
+			if (MT_remove(pathNew) != 0 && errno != ENOENT) {
+				perror(pathNew);
+			}
+			GDKfree(path);
+			free(pathNew);
+		}
+
+		free(bufferCopy);
+
+		MT_sleep_ms(HEAP_FREE_WORKER_DELTA_MS);
+	}
+}
+
 /* Free the memory associated with the heap H.
  * Unlinks (removes) the associated file if the rmheap flag is set. */
 void
@@ -604,13 +647,25 @@ HEAPfree(Heap *h, bool rmheap)
 #endif
 	if (rmheap && !GDKinmemory(h->farmid)) {
 		char *path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
-		if (path && MT_remove(path) != 0 && errno != ENOENT)
-			perror(path);
-		GDKfree(path);
-		path = GDKfilepath(h->farmid, BATDIR, h->filename, "new");
-		if (path && MT_remove(path) != 0 && errno != ENOENT)
-			perror(path);
-		GDKfree(path);
+		MT_lock_set(&HEAPfreeBufferLock);
+		/* check if the buffer has space */
+		if (HEAPfreeBufferCount < HEAP_FREE_BUFFER_SIZE) {
+			HEAPfreeBuffer[HEAPfreeBufferCount++] = path;
+			MT_lock_unset(&HEAPfreeBufferLock);
+		}
+		/* in case there is no space on the buffer, free the heap synchronously */
+		else {
+			MT_lock_unset(&HEAPfreeBufferLock);
+			if (path && MT_remove(path) != 0 && errno != ENOENT) {
+				perror(path);
+			}
+			GDKfree(path);
+			path = GDKfilepath(h->farmid, BATDIR, h->filename, "new");
+			if (path && MT_remove(path) != 0 && errno != ENOENT) {
+				perror(path);
+			}
+			GDKfree(path);
+		}
 	}
 }
 
