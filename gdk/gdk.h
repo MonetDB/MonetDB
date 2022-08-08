@@ -576,6 +576,17 @@ typedef struct {
 	bat parentid;		/* cache id of VIEW parent bat */
 } Heap;
 
+/* 
+ * Instead of removing the heap files straight away, which incurs some impact on response time,
+ * we add the path to a buffer and asynchronously remove them.
+ */
+extern char **HEAPfreeBuffer; /* stores the heap filenames to remove */
+extern MT_Lock HEAPfreeBufferLock; /* controls concurrent accesses to the heap free buffer */
+extern int HEAPfreeBufferCount; /* current number of files stored in the heap free buffer */
+extern void HEAPfreeWorker(void*);
+#define HEAP_FREE_BUFFER_SIZE 1024 /* maximum heap free buffer size */
+#define HEAP_FREE_WORKER_DELTA_MS 1024 /* sleep time between worker executions (in milliseconds) */
+
 typedef struct Hash Hash;
 typedef struct Imprints Imprints;
 typedef struct Strimps Strimps;

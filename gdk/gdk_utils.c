@@ -893,6 +893,13 @@ GDKinit(opt *set, int setlen, bool embedded)
 	int i, nlen = 0;
 	char buf[16];
 
+	/* heapfree related initialization */
+	HEAPfreeBuffer = malloc(HEAP_FREE_BUFFER_SIZE * sizeof(char*));
+	MT_lock_init(&HEAPfreeBufferLock, "heap_free_buffer_lock");
+	HEAPfreeBufferCount = 0;
+	MT_Id tid;
+	MT_create_thread(&tid, HEAPfreeWorker, NULL, MT_THR_DETACHED, "HEAPfreeWorker");
+
 	ATOMIC_SET(&GDKstopped, 0);
 
 	mainpid = MT_getpid();
