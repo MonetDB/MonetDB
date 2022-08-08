@@ -365,6 +365,7 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 static void
 merge_segments(storage *s, sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
+	sqlstore* store = tr->store;
 	segment *cur = s->segs->h, *seg = NULL;
 	for (; cur; cur = cur->next) {
 		if (cur->ts == tr->tid) {
@@ -372,24 +373,47 @@ merge_segments(storage *s, sql_trans *tr, sql_change *change, ulng commit_ts, ul
 				cur->oldts = 0;
 			cur->ts = commit_ts;
 		}
-		if (cur->ts <= oldest && cur->ts < TRANSACTION_ID_BASE) { /* possibly merge range */
-			if (!seg) { /* skip first */
-				seg = cur;
-			} else if (seg->end == cur->start && seg->deleted == cur->deleted) {
-				/* merge with previous */
-				seg->end = cur->end;
-				seg->next = cur->next;
-				if (cur == s->segs->t)
-					s->segs->t = seg;
-				if (commit_ts == oldest)
-					_DELETE(cur);
-				else
-					mark4destroy(cur, change, commit_ts);
-				cur = seg;
-			} else {
-				seg = cur; /* begin of new merge */
+		if (!seg) {
+			/* first segment */
+			seg = cur;
+		}
+		else if (seg->ts < TRANSACTION_ID_BASE) {
+			/* possible merge since both deleted flags are equal */
+			if (seg->deleted == cur->deleted && cur->ts < TRANSACTION_ID_BASE) {
+				int merge = 1;
+				node *n = store->active->h;
+				for (int i = 0; i < store->active->cnt; i++, n = n->next) {
+					ulng active = ((sql_trans*)n->data)->ts;
+					if(active == seg->ts || active == cur->ts)
+						continue; /* pretent that a recently committed transaction has already committed and is no longer active */
+					if (active == tr->ts)
+						continue; /* pretent that committing transaction has already committed and is no longer active */
+					if (seg->ts < active && cur->ts < active)
+						break;
+					if (seg->ts > active && cur->ts > active)
+						continue;
+
+					assert((active > seg->ts && active < cur->ts) || (active < seg->ts && active > cur->ts));
+					/* cannot safely merge since there is an active transaction between the segments */
+					merge = false;
+					break;
+				}
+				/* merge segments */
+				if (merge) {
+					seg->end = cur->end;
+					seg->next = cur->next;
+					if (cur == s->segs->t)
+						s->segs->t = seg;
+					if (commit_ts == oldest)
+						_DELETE(cur);
+					else
+						mark4destroy(cur, change, commit_ts);
+					cur = seg;
+					continue;
+				}
 			}
 		}
+		seg = cur;
 	}
 }
 
@@ -3414,12 +3438,18 @@ static int
 log_segments(sql_trans *tr, segments *segs, sqlid id)
 {
 	/* log segments */
+	lock_table(tr->store, id);
 	for (segment *seg = segs->h; seg; seg=seg->next) {
+		unlock_table(tr->store, id);
 		if (seg->ts == tr->tid && seg->end-seg->start) {
-			if (log_segment(tr, seg, id) != LOG_OK)
+			if (log_segment(tr, seg, id) != LOG_OK) {
+				unlock_table(tr->store, id);
 				return LOG_ERR;
+			}
 		}
+		lock_table(tr->store, id);
 	}
+	unlock_table(tr->store, id);
 	return LOG_OK;
 }
 
@@ -3924,7 +3954,11 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 		return LOG_ERR;
 
 	size_t nr_appends = 0;
+
+	lock_table(tr->store, t->base.id);
 	for (segment *seg = segs->h; seg; seg=seg->next) {
+		unlock_table(tr->store, t->base.id);
+
 		if (seg->ts == tr->tid && seg->end-seg->start) {
 			if (!seg->deleted) {
 				if (log_segment(tr, seg, t->base.id) != LOG_OK)
@@ -3933,7 +3967,9 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 				nr_appends += (seg->end - seg->start);
 			}
 		}
+		lock_table(tr->store, t->base.id);
 	}
+	unlock_table(tr->store, t->base.id);
 
 	for (node *n = ol_first_node(t->columns); n && ok; n = n->next) {
 		sql_column *c = n->data;
@@ -3944,7 +3980,9 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 			continue;
 		}
 
+		lock_table(tr->store, t->base.id);
 		if (!cs->cleared) for (segment *cur = segs->h; cur && ok; cur = cur->next) {
+			unlock_table(tr->store, t->base.id);
 			if (cur->ts == tr->tid && !cur->deleted && cur->start < end) {
 				/* append col*/
 				BAT *ins = temp_descriptor(cs->bid);
@@ -3953,7 +3991,9 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 				ok = log_bat(store->logger, ins, c->base.id, cur->start, cur->end-cur->start, nr_appends);
 				bat_destroy(ins);
 			}
+			lock_table(tr->store, t->base.id);
 		}
+		unlock_table(tr->store, t->base.id);
 
 		if (cs->ebid) {
 			BAT *ins = temp_descriptor(cs->ebid);
@@ -3974,7 +4014,9 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 			column_storage *cs = ATOMIC_PTR_GET(&i->data);
 
 			if (cs) {
+				lock_table(tr->store, t->base.id);
 				for (segment *cur = segs->h; cur && ok; cur = cur->next) {
+					unlock_table(tr->store, t->base.id);
 					if (cur->ts == tr->tid && !cur->deleted && cur->start < end) {
 						/* append idx */
 						BAT *ins = temp_descriptor(cs->bid);
@@ -3983,7 +4025,9 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 						ok = log_bat(store->logger, ins, i->base.id, cur->start, cur->end-cur->start, nr_appends);
 						bat_destroy(ins);
 					}
+					lock_table(tr->store, t->base.id);
 				}
+				unlock_table(tr->store, t->base.id);
 			}
 		}
 	}
@@ -4000,8 +4044,6 @@ log_storage(sql_trans *tr, sql_table *t, storage *s)
 	int ok = LOG_OK, cleared = s->cs.cleared;
 	if (ok == LOG_OK && cleared)
 		ok =  tr_log_cs(tr, t, &s->cs, s->segs->h, t->base.id);
-	if (ok == LOG_OK)
-		ok = segments2cs(tr, s->segs, &s->cs);
 	if (ok == LOG_OK)
 		ok = log_segments(tr, s->segs, t->base.id);
 	if (ok == LOG_OK && !cleared)
