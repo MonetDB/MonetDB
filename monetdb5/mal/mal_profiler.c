@@ -196,6 +196,7 @@ prepareGenericEvent(str phase, struct GenericEvent e)
 			   ",\"thread\":%d"
 			   ",\"phase\":\"%s\""
 			   ",\"state\":\"done\""
+			   ",\"usec\":"LLFMT
 			   ",\"clientid\":\"%d\""
 			   ",\"transactionid\":"ULLFMT
 			   ",\"tag\":"OIDFMT
