@@ -192,12 +192,12 @@ prepareGenericEvent(str phase, struct GenericEvent e)
 	if (logadd(&logbuf,
 			   "{"
 			   "\"version\":\""MONETDB_VERSION" (hg id: %s)\""
-			   ",\"clk\":"LLFMT
-			   ",\"mclk\":%"PRIu64""
+			   ",\"clk\":"ULLFMT
+			   ",\"mclk\":"ULLFMT
 			   ",\"thread\":%d"
 			   ",\"phase\":\"%s\""
 			   ",\"state\":\"done\""
-			   ",\"usec\":"LLFMT
+			   ",\"usec\":"ULLFMT
 			   ",\"clientid\":\"%d\""
 			   ",\"transactionid\":"ULLFMT
 			   ",\"tag\":"OIDFMT
