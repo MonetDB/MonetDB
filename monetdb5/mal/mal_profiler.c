@@ -185,18 +185,17 @@ static str
 prepareGenericEvent(str phase, struct GenericEvent e)
 {
 	struct logbuf logbuf = {0};
-	lng clk = GDKusec();
-	uint64_t mclk = (uint64_t)clk - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
+	uint64_t mclk = (uint64_t)e.clk - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
 
 	if (logadd(&logbuf,
 			   "{"
 			   "\"version\":\""MONETDB_VERSION" (hg id: %s)\""
-			   ",\"clk\":"LLFMT
-			   ",\"mclk\":%"PRIu64""
+			   ",\"clk\":"ULLFMT
+			   ",\"mclk\":"ULLFMT
 			   ",\"thread\":%d"
 			   ",\"phase\":\"%s\""
 			   ",\"state\":\"done\""
-			   ",\"usec\":"LLFMT
+			   ",\"usec\":"ULLFMT
 			   ",\"clientid\":\"%d\""
 			   ",\"transactionid\":"ULLFMT
 			   ",\"tag\":"OIDFMT
@@ -204,10 +203,11 @@ prepareGenericEvent(str phase, struct GenericEvent e)
 			   ",\"rc\":\"%d\""
 			   "}\n",
 			   mercurial_revision(),
-			   clk,
+			   e.clk,
 			   mclk,
 			   THRgettid(),
 			   phase,
+			   e.usec,
 			   e.cid ? *e.cid : 0,
 			   e.tid ? *e.tid : 0,
 			   e.tag ? *e.tag : 0,

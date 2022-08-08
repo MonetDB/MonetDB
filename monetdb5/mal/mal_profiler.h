@@ -25,8 +25,8 @@ struct GenericEvent {
 	oid* tag;  /* tag of the assoc MAL block */
 	ulng* tid; /* transaction_id */
 	str query; /* statement */
-	lng usec;  /* event duration */
-	lng clk;   /* GDKusec in callside */
+	ulng usec;  /* event duration */
+	ulng clk;   /* GDKusec in callside */
 	int rc;    /* return code */
 };
 
