@@ -1074,6 +1074,17 @@ ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY)
 	return MAL_SUCCEED;
 }
 
+str
+mbrIntersects(bit *out, mbr** mbr1, mbr** mbr2) {
+	if (((*mbr1)->ymax < (*mbr2)->ymin) || ((*mbr1)->ymin > (*mbr2)->ymax))
+		(*out) = false;
+	else if (((*mbr1)->xmax < (*mbr2)->xmin) || ((*mbr1)->xmin > (*mbr2)->xmax))
+    	(*out) = false;
+	else
+		(*out) = true;
+	return MAL_SUCCEED;
+}
+
 /************************************************/
 /************* wkba type functions **************/
 /************************************************/
