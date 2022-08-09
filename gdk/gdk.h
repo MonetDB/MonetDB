@@ -351,6 +351,11 @@ gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *for
 #include "stream.h"
 #include "mstring.h"
 
+#ifndef SIZEOF_RTREE_COORD_T
+#define SIZEOF_RTREE_COORD_T 4
+#endif
+#include <rtree.h>
+
 #undef MIN
 #undef MAX
 #define MAX(A,B)	((A)<(B)?(B):(A))
@@ -740,6 +745,8 @@ typedef struct {
 	BUN baseoff;		/* offset in heap->base (in whole items) */
 	Heap *vheap;		/* space for the varsized data. */
 	Hash *hash;		/* hash table */
+	rtree_t *rtree;
+	
 	Imprints *imprints;	/* column imprints index */
 	Heap *orderidx;		/* order oid index */
 	Strimps *strimps;	/* string imprint index  */
