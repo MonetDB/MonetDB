@@ -3406,7 +3406,7 @@ wkbExtractPointToCoordSeq(GEOSCoordSeq *outCoordSeq, wkb *inWKB, int index) {
 }
 
 static str
-wkbMakeLineAggrArray2(wkb **outWKB, wkb **inWKB_array, int size) {
+wkbMakeLineAggrArray(wkb **outWKB, wkb **inWKB_array, int size) {
 	str msg = MAL_SUCCEED;
 	int i;
 	wkb *aWKB, *bWKB;
@@ -3535,14 +3535,14 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 
 		if (grp != lastGrp) {
 			if (lastGrp != (oid)-1) {
-				msg = wkbMakeLineAggrArray2(&lines[lastGrp], lineGroup, position);
+				msg = wkbMakeLineAggrArray(&lines[lastGrp], lineGroup, position);
 				position = 0;
 			}
 			lastGrp = grp;
 		}
 		lineGroup[position++] = inWKB;
 	}
-	msg = wkbMakeLineAggrArray2(&lines[lastGrp], lineGroup, position);
+	msg = wkbMakeLineAggrArray(&lines[lastGrp], lineGroup, position);
 
 	if (BUNappendmulti(out, lines, ngrp, false) != GDK_SUCCEED) {
 		//TODO Free out BAT
