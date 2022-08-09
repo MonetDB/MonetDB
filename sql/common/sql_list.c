@@ -92,7 +92,7 @@ list_empty(list *l)
 }
 
 static void
-node_destroy(list *l, void *data, node *n)
+node_destroy_(list *l, void *data, node *n)
 {
 	if (n->data && l->destroy) {
 		l->destroy(data, n->data);
@@ -114,7 +114,7 @@ list_destroy2(list *l, void *data)
 				node *t = n;
 
 				n = t->next;
-				node_destroy(l, data, t);
+				node_destroy_(l, data, t);
 			}
 		}
 
@@ -185,7 +185,7 @@ list_append_with_validate(list *l, void *data, void *extra, fvalidate cmp)
 			err = cmp(m->data, data, extra);
 			if(err) {
 				n->data = NULL;
-				node_destroy(l, NULL, n);
+				node_destroy_(l, NULL, n);
 				return err;
 			}
 		}
@@ -222,7 +222,7 @@ list_append_sorted(list *l, void *data, void *extra, fcmpvalidate cmp)
 			err = cmp(m->data, data, extra, &comp);
 			if(err) {
 				n->data = NULL;
-				node_destroy(l, NULL, n);
+				node_destroy_(l, NULL, n);
 				return err;
 			}
 			if(comp < 0)
@@ -353,7 +353,7 @@ list_remove_node(list *l, void *gdata, node *n)
 {
 	node *p = list_remove_node_(l, n);
 
-	node_destroy(l, gdata, n);
+	node_destroy_(l, gdata, n);
 	return p;
 }
 

@@ -86,6 +86,7 @@ target_sources(bat
   gdk_analytic.h
   gdk_tracer.c gdk_tracer.h
   gdk_strimps.c
+  gdk_rtree.c
   PUBLIC
   ${gdk_public_headers})
 
@@ -95,7 +96,8 @@ target_include_directories(bat
   $<TARGET_PROPERTY:matomic,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:mstring,INTERFACE_INCLUDE_DIRECTORIES>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>
+  "/usr/local/include/")
 
 target_link_libraries(bat
   PRIVATE
@@ -105,6 +107,7 @@ target_link_libraries(bat
   monetdb_config_header
   moptions
   mutils
+  "/usr/local/lib/librtree.a"
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>
   $<$<PLATFORM_ID:Windows>:ws2_32>
   $<$<BOOL:${KVM_FOUND}>:KVM::KVM>
