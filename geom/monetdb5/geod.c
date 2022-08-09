@@ -1166,7 +1166,6 @@ free:
 	return msg;
 }
 
-//select st_distancegeographic(q1.geom,q2.geom) from brittany_ports as q1 join wpi_ports as q2 on [q1.geom] st_dwithingeographic [q2.geom,5000];
 str
 wkbDWithinGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *d_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate, bit *anti) {
 	double distance_within = 0;
@@ -1184,19 +1183,16 @@ wkbDWithinGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat 
 	return filterJoinGeomGeomDoubleToBit(lres_id,rres_id,l_id,r_id,distance_within,ls_id,rs_id,*nil_matches,estimate,*anti,geosDistanceWithin,"geom.wkbDWithinGeographicJoin");
 }
 
-//select gml_id,st_distancegeographic(st_setsrid(st_makepoint(-4.50,48.32),4326),q1.geom) from brittany_ports as q1 where [q1.geom] st_dwithingeographic [st_setsrid(st_makepoint(-4.50,48.32),4326),5000];
 str
 wkbDWithinGeographicSelect(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, dbl *distance_within, bit *anti) {
 	return filterSelectGeomGeomDoubleToBit(outid,bid,sid,*wkb_const,*distance_within,*anti,geosDistanceWithin,"geom.wkbDWithinGeographicSelect");
 }
 
-//select q1.gml_id,q2.gml_id,st_distancegeographic(q1.geom,q2.geom) from brittany_ports as q1 join brittany_ports as q2 on [q1.geom] ST_IntersectsGeographic [q2.geom];
 str
 wkbIntersectsGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate, bit *anti) {
 	return filterJoinGeomGeomDoubleToBit(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,estimate,*anti,geosDistanceWithin,"geom.wkbIntersectsGeographicJoin");
 }
 
-//select gml_id,st_distancegeographic(st_setsrid(st_makepoint(-1.7717988686592332,48.602742696725414),4326),q1.geom) from brittany_ports as q1 where [q1.geom] ST_IntersectsGeographic [st_setsrid(st_makepoint(-1.7717988686592332,48.602742696725414),4326)];
 str
 wkbIntersectsGeographicSelect(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti) {
 	return filterSelectGeomGeomDoubleToBit(outid,bid,sid,*wkb_const,0,*anti,geosDistanceWithin,"geom.wkbIntersectsGeographicSelect");

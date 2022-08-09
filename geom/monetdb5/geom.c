@@ -16,6 +16,7 @@
 #include "geom_atoms.h"
 #include "gdk_logger.h"
 #include "mal_exception.h"
+#include "gdk_rtree.h"
 
 mbr mbrNIL = {0}; // will be initialized properly by geom prelude
 
@@ -369,7 +370,7 @@ transformCoordSeq(int idx, int coordinatesNum, PJ *P, const GEOSCoordSequence *g
 	return MAL_SUCCEED;
 }
 
-static str
+str
 transformPoint(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P)
 {
 	int coordinatesNum = 0;
@@ -409,7 +410,7 @@ transformPoint(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeome
 	return MAL_SUCCEED;
 }
 
-static str
+str
 transformLine(GEOSCoordSeq *gcs_new, const GEOSGeometry *geosGeometry, PJ *P)
 {
 	int coordinatesNum = 0;
@@ -447,7 +448,7 @@ transformLine(GEOSCoordSeq *gcs_new, const GEOSGeometry *geosGeometry, PJ *P)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 transformLineString(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P)
 {
 	GEOSCoordSeq coordSeq;
@@ -469,7 +470,7 @@ transformLineString(GEOSGeometry **transformedGeometry, const GEOSGeometry *geos
 	return ret;
 }
 
-static str
+str
 transformLinearRing(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P)
 {
 	GEOSCoordSeq coordSeq = NULL;
@@ -491,7 +492,7 @@ transformLinearRing(GEOSGeometry **transformedGeometry, const GEOSGeometry *geos
 	return ret;
 }
 
-static str
+str
 transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P, int srid)
 {
 	const GEOSGeometry *exteriorRingGeometry;
@@ -556,7 +557,7 @@ transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeo
 	return ret;
 }
 
-static str
+str
 transformMultiGeometry(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P, int srid, int geometryType)
 {
 	int geometriesNum, subGeometryType, i;
@@ -5513,11 +5514,16 @@ static mel_func geom_init_funcs[] = {
  command("geom", "IntersectsGeographicselect", wkbIntersectsGeographicSelect, false, "TODO", args(1, 5, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("anti",bit))),
  command("geom", "IntersectsGeographicjoin", wkbIntersectsGeographicJoin, false, "TODO", args(2, 9, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
 
+ command("geom", "Intersects", wkbIntersects, false, "Returns true if these Geometries 'spatially intersect in 2D'", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
+ command("geom", "Intersectsselect", wkbIntersectsSelect, false, "TODO", args(1, 5, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("anti",bit))),
+ command("geom", "Intersectsjoin", wkbIntersectsJoin, false, "TODO", args(2, 8, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
+
+ command("geom", "IntersectsMBR", mbrIntersects, false, "TODO", args(1,3, arg("",bit),arg("a",mbr),arg("b",mbr))),
+ 
  command("aggr", "Collect", wkbCollectAggr, false, "TODO", args(1, 2, arg("", wkb), batarg("val", wkb))),
  command("aggr", "subCollect", wkbCollectAggrSubGrouped, false, "TODO", args(1, 5, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batarg("e", oid), arg("skip_nils", bit))),
  command("aggr", "subCollect", wkbCollectAggrSubGroupedCand, false, "TODO", args(1, 6, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1), batarg("g", oid), arg("skip_nils", bit))),
 
- //TODO: See if we can remove (used in SQL level on 39_spatial_ref_sys.sql)
  command("geom", "hasZ", geoHasZ, false, "returns 1 if the geometry has z coordinate", args(1,2, arg("",int),arg("flags",int))),
  command("geom", "hasM", geoHasM, false, "returns 1 if the geometry has m coordinate", args(1,2, arg("",int),arg("flags",int))),
  command("geom", "getType", geoGetType, false, "returns the str representation of the geometry type", args(1,3, arg("",str),arg("flags",int),arg("format",int))),
@@ -5567,7 +5573,6 @@ static mel_func geom_init_funcs[] = {
  command("geom", "Crosses", wkbCrosses, false, "Returns TRUE if the supplied geometries have some, but not all, interior points in common.", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "Disjoint", wkbDisjoint, false, "Returns true if these Geometries are 'spatially disjoint'", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "Equals", wkbEquals, false, "Returns true if the given geometries represent the same geometry. Directionality is ignored.", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
- command("geom", "Intersects", wkbIntersects, false, "Returns true if these Geometries 'spatially intersect in 2D'", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "Overlaps", wkbOverlaps, false, "Returns TRUE if the Geometries intersect but are not completely contained by each other.", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "Relate", wkbRelate, false, "Returns true if the Geometry a 'spatially related' to Geometry b, by testing for intersection between the Interior, Boundary and Exterior of the two geometries as specified by the values in the intersectionPatternMatrix.", args(1,4, arg("",bit),arg("a",wkb),arg("b",wkb),arg("intersection_matrix_pattern",str))),
  command("geom", "Touches", wkbTouches, false, "Returns TRUE if the geometries have at least one point in common, but their interiors do not intersect.", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
@@ -5655,6 +5660,7 @@ static mel_func geom_init_funcs[] = {
  command("batgeom", "mbr", wkbMBR_bat, false, "Creates the mbr for the given wkb.", args(1,2, batarg("",mbr),batarg("",wkb))),
  command("batgeom", "coordinateFromWKB", wkbCoordinateFromWKB_bat, false, "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided geometry", args(1,3, batarg("",dbl),batarg("",wkb),arg("",int))),
  command("batgeom", "coordinateFromMBR", wkbCoordinateFromMBR_bat, false, "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided mbr", args(1,3, batarg("",dbl),batarg("",mbr),arg("",int))),
+ command("batgeom", "Transform", wkbTransform_bat, false, "Transforms a bat of geometries from one srid to another", args(1,6, batarg("",wkb),batarg("g",wkb),arg("srid_src",int),arg("srid_dst",int),arg("proj_src",str),arg("proj_dest",str))),
  command("calc", "mbr", mbrFromString, false, "", args(1,2, arg("",mbr),arg("v",str))),
  command("calc", "mbr", mbrFromMBR, false, "", args(1,2, arg("",mbr),arg("v",mbr))),
  command("calc", "wkb", wkbFromWKB, false, "It is called when adding a new geometry column to an existing table", args(1,2, arg("",wkb),arg("v",wkb))),

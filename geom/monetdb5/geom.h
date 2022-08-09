@@ -169,7 +169,15 @@ geom_export str wkbGeometryN_bat(bat *outBAT_id, bat *inBAT_id, const int* flag)
 geom_export str wkbNumGeometries(int* out, wkb** geom);
 geom_export str wkbNumGeometries_bat(bat *outBAT_id, bat *inBAT_id);
 
+str transformPoint(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P);
+str transformLine(GEOSCoordSeq *gcs_new, const GEOSGeometry *geosGeometry, PJ *P);
+str transformLineString(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P);
+str transformLinearRing(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P);
+str transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P, int srid);
+str transformMultiGeometry(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P, int srid, int geometryType);
 geom_export str wkbTransform(wkb**, wkb**, int*, int*, char**, char**);
+geom_export str wkbTransform_bat(bat *outBAT_id, bat *inBAT_id, int *srid_src, int *srid_dst, char **proj4_src_str, char **proj4_dst_str);
+geom_export str wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, int *srid_dst, char **proj4_src_str, char **proj4_dst_str);
 geom_export str wkbTranslate(wkb**, wkb**, dbl*, dbl*, dbl*);
 geom_export str wkbDelaunayTriangles(wkb**, wkb**, dbl*, int*);
 geom_export str wkbPointOnSurface(wkb**, wkb**);
@@ -208,3 +216,7 @@ geom_export str wkbCoordinateFromWKB_bat(bat *outBAT_id, bat *inBAT_id, int* coo
 geom_export str wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int* coordinateIdx);
 
 geom_export str geom_sql_upgrade(int);
+
+geom_export str wkbIntersectsJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate);
+geom_export str wkbIntersectsSelect(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti);
+geom_export str mbrIntersects(bit* out, mbr** mbr1, mbr** mbr2);
