@@ -3384,42 +3384,6 @@ wkbMakeLineAggr(wkb **outWKB, bat *bid)
 	return err;
 }
 
-/*static str
-wkbMakeLineAggrArray(wkb **outWKB, wkb **inWKB_array, int size) {
-	str msg = MAL_SUCCEED;
-	int i;
-	wkb *aWKB, *bWKB;
-
-	if (size == 0) {
-		if ((*outWKB = wkbNULLcopy()) == NULL)
-			throw(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return MAL_SUCCEED;
-	}
-	aWKB = inWKB_array[0];
-	if (size == 1) {
-		msg = wkbFromWKB(outWKB, &aWKB);
-		if (msg) {
-			freeException(msg);
-			throw(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		return MAL_SUCCEED;
-	}
-	bWKB = inWKB_array[1];
-	//create the first line using the first two geometries
-	msg = wkbMakeLine(outWKB, &aWKB, &bWKB);
-
-	// add one more segment for each following row
-	for (i = 2; msg == MAL_SUCCEED && i < size; i++) {
-		aWKB = *outWKB;
-		bWKB = inWKB_array[i];
-		*outWKB = NULL;
-
-		msg = wkbMakeLine(outWKB, &aWKB, &bWKB);
-		GDKfree(aWKB);
-	}
-	return msg;
-}*/
-
 static str
 wkbExtractPointToCoordSeq(GEOSCoordSeq *outCoordSeq, wkb *inWKB, int index) {
 	double x,y;
@@ -3467,7 +3431,6 @@ wkbMakeLineAggrArray2(wkb **outWKB, wkb **inWKB_array, int size) {
 	}
 	bWKB = inWKB_array[1];
 	//create the first line using the first two geometries
-	//msg = wkbMakeLine(outWKB, &aWKB, &bWKB);
 	outCoordSeq = GEOSCoordSeq_create(size, 2);
 
 	msg = wkbExtractPointToCoordSeq(&outCoordSeq, aWKB, 0);
