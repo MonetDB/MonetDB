@@ -27,6 +27,10 @@ cmake_dependent_option(CINTEGRATION
   "NOT WIN32"
   OFF)
 
+option(RTREE
+  "Enable support for rtrees (default=ON)"
+  ON)
+
 option(PY3INTEGRATION
   "Enable support for Python 3 integration into MonetDB (default=ON)"
   ON)
