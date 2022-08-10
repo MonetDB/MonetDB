@@ -1,0 +1,30 @@
+query R
+SELECT avg(4);
+----
+4.000
+
+query I
+SELECT count(*);
+----
+1
+
+query I
+SELECT count(*) over (order by 1);
+----
+1
+
+query R
+SELECT avg(42) over (order by 2);
+----
+42.000
+
+query I
+SELECT count(*) over (order by row_number() over ());
+----
+1
+
+query R
+SELECT avg(42) over (order by row_number() over ());
+----
+42.000
+
