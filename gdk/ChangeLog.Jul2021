@@ -1,3 +1,8 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Wed Aug 10 2022 Sjoerd Mullender <sjoerd@acm.org>
+- A bug was fixed when upgrading a database from the Oct2020 releases
+  (11.39.X) or older when the write-ahead log (WAL) was not empty and
+  contained instructions to create new tables.
+
