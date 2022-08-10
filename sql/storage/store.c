@@ -1352,6 +1352,7 @@ next_oid(sqlstore *store)
 	sqlid id = 0;
 	MT_lock_set(&store->lock);
 	id = store->obj_id++;
+	assert(id < 2000000000);
 	MT_lock_unset(&store->lock);
 	return id;
 }

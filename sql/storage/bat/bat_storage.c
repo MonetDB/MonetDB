@@ -4276,7 +4276,6 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		} else
 			rollback_segments(dbat->segs, tr, change, oldest);
 	} else if (ok == LOG_OK && !tr->parent) {
-		storage *d = dbat;
 		if (dbat->cs.ts == tr->tid) /* cleared table */
 			dbat->cs.ts = commit_ts;
 
@@ -4284,8 +4283,10 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		assert(ok == LOG_OK);
 		if (ok == LOG_OK)
 			merge_segments(dbat, tr, change, commit_ts, oldest);
-		if (ok == LOG_OK && dbat == d && oldest == commit_ts)
+		if (ok == LOG_OK && oldest == commit_ts)
 			ok = merge_storage(dbat);
+		if (dbat)
+			dbat->cs.cleared = false;
 	} else if (ok == LOG_OK && tr->parent) {/* cleanup older save points */
 		merge_segments(dbat, tr, change, commit_ts, oldest);
 		ATOMIC_PTR_SET(&t->data, savepoint_commit_storage(dbat, commit_ts));
