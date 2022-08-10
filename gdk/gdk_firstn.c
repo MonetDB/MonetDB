@@ -263,7 +263,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp, lng
 		return bn;
 	}
 	/* note, we want to do both calls */
-	if (BATordered(b) | BATordered_rev(b)) {
+	if ((BATordered(b) | BATordered_rev(b)) != 0) {
 		/* trivial: b is sorted so we just need to return the
 		 * initial or final part of it (or of the candidate
 		 * list); however, if nilslast == asc, then the nil
