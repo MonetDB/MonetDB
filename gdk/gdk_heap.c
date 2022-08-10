@@ -1037,6 +1037,8 @@ HEAP_empty(Heap *heap, size_t nprivate, int alignment)
 	assert(heap->size - head <= VAR_MAX);
 	headp->size = (size_t) (heap->size - head);
 	headp->next = 0;
+
+	heap->dirty = true;
 }
 
 gdk_return
@@ -1123,6 +1125,7 @@ HEAP_malloc(BAT *b, size_t nbytes)
 		}
 		heap = b->tvheap;
 		heap->free = newsize;
+		heap->dirty = true;
 		hheader = HEAP_index(heap, 0, HEADER);
 
 		blockp = HEAP_index(heap, block, CHUNK);
@@ -1361,6 +1364,8 @@ HEAP_recover(Heap *h, const var_t *offsets, BUN noffsets)
 		if (h->storage == STORE_MMAP) {
 			if (!(GDKdebug & NOSYNCMASK))
 				(void) MT_msync(h->base, dirty);
+			else
+				h->dirty = true;
 		} else
 			h->dirty = true;
 	}
