@@ -2061,7 +2061,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 }
 
 sqlstore *
-store_init(int debug, store_type store_tpe, int readonly, int singleuser, generic_event_wrapper_fptr event_wrapper)
+store_init(int debug, store_type store_tpe, int readonly, int singleuser, profiler_event_wrapper_fptr event_wrapper)
 {
 	sql_allocator *pa;
 	sqlstore *store = MNEW(sqlstore);
@@ -2104,7 +2104,7 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser, generi
 	MT_lock_set(&store->flush);
 	MT_lock_set(&store->lock);
 
-	store->generic_event_wrapper = event_wrapper;
+	store->profiler_event_wrapper = event_wrapper;
 
 	/* initialize empty bats */
 	switch (store_tpe) {
@@ -3679,8 +3679,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 	}
 
 	Tend = GDKusec();
-	store->generic_event_wrapper("rollback",
-								 tr->tid, Tend-Tbegin, Tend, 0);
+	store->profiler_event_wrapper("rollback", Tend, &tr->tid, 0, Tend-Tbegin);
 }
 
 sql_trans *
@@ -4020,6 +4019,7 @@ sql_trans_commit(sql_trans *tr)
 		list_destroy(tr->changes);
 		tr->changes = NULL;
 	} else if (ATOMIC_GET(&store->nr_active) == 1) { /* just me cleanup */
+		Tbegin = GDKusec();
 		MT_lock_set(&store->commit);
 		store_lock(store);
 		ulng oldest = store_timestamp(store);
@@ -4027,6 +4027,8 @@ sql_trans_commit(sql_trans *tr)
 		store_unlock(store);
 		MT_lock_unset(&store->commit);
 	}
+	else
+		Tbegin = GDKusec();
 	/* drop local temp tables with commit action CA_DROP, after cleanup */
 	if (cs_size(&tr->localtmps)) {
 		for(node *n=tr->localtmps.set->h; n; ) {
@@ -4048,8 +4050,7 @@ sql_trans_commit(sql_trans *tr)
 		ok = clean_predicates_and_propagate_to_parent(tr);
 
 	Tend = GDKusec();
-	store->generic_event_wrapper("commit",
-								 tr->tid, Tend-Tbegin, Tend, (ok == LOG_OK)? SQL_OK : SQL_ERR);
+	store->profiler_event_wrapper("commit", Tend, &tr->tid, ok==LOG_OK?0:1, Tend-Tbegin);
 
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
@@ -7087,8 +7088,7 @@ sql_trans_end(sql_session *s, int ok)
 	assert(list_length(store->active) == (int) ATOMIC_GET(&store->nr_active));
 	store_unlock(store);
 	lng Tend = GDKusec();
-	store->generic_event_wrapper("transaction",
-								 s->tr->tid, Tend-(s->tr->clk_start), Tend, (ok == LOG_OK)? SQL_OK : SQL_ERR);
+	store->profiler_event_wrapper("transaction", Tend, &s->tr->tid, ok==LOG_OK?0:1, Tend-(s->tr->clk_start));
 
 	return ok;
 }

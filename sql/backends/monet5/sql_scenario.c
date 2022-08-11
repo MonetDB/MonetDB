@@ -351,6 +351,7 @@ SQLresetClient(Client c)
 		c->state[MAL_SCENARIO_OPTIMIZE] = NULL;
 		c->state[MAL_SCENARIO_PARSER] = NULL;
 		c->sqlcontext = NULL;
+		c->query = NULL;
 		sa_destroy(pa);
 	}
 	c->state[MAL_SCENARIO_READER] = NULL;
@@ -1132,11 +1133,9 @@ SQLparser(Client c)
 
 	Tend = GDKusec();
 	if(malProfileMode > 0) {
-		str escaped_query = c->query? mal_quote(c->query, strlen(c->query)) : NULL;
-		genericEvent("sql_parse",
-					 (struct GenericEvent)
-					 { &c->idx, &(c->curprg->def->tag), NULL, escaped_query, Tend-Tbegin, Tend, c->query? 0 : 1 });
-		GDKfree(escaped_query);
+		profilerEvent((struct MalEvent) {0},
+					  (struct NonMalEvent)
+					  {"sql_parser", c, Tend, NULL, c->query?0:1, Tend-Tbegin});
 	}
 
 	if (c->query == NULL) {
@@ -1203,9 +1202,9 @@ SQLparser(Client c)
 
 			Tend = GDKusec();
 			if(malProfileMode > 0)
-				genericEvent("rel_to_mal",
-							 (struct GenericEvent)
-							 { &c->idx, &(c->curprg->def->tag), NULL, NULL, Tend-Tbegin, Tend, c->query? 0 : 1 });
+				profilerEvent((struct MalEvent) {0},
+							  (struct NonMalEvent)
+							  {"rel_to_mal", c, Tend, NULL, c->query?0:1, Tend-Tbegin});
 		} else {
 			char *q_copy = sa_strdup(m->sa, c->query);
 
@@ -1283,15 +1282,13 @@ SQLparser(Client c)
 
 		/* in case we had produced a non-cachable plan, the optimizer should be called */
 		if (msg == MAL_SUCCEED && opt ) {
-
 			Tbegin = GDKusec();
 			msg = SQLoptimizeQuery(c, c->curprg->def);
 			Tend = GDKusec();
 			if(malProfileMode > 0)
-				genericEvent("mal_opt",
-							 (struct GenericEvent)
-							 { &c->idx, &(c->curprg->def->tag), NULL, NULL, Tend-Tbegin, Tend, msg == MAL_SUCCEED? 0 : 1 });
-
+				profilerEvent((struct MalEvent) {0},
+							  (struct NonMalEvent)
+							  {"mal_opt", c, Tend, NULL, msg==MAL_SUCCEED?0:1, Tend-Tbegin});
 			if (msg != MAL_SUCCEED) {
 				str other = c->curprg->def->errors;
 				/* In debugging mode you may want to assess what went wrong in the optimizers*/
