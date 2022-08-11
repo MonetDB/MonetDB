@@ -20,15 +20,38 @@
 typedef struct rusage Rusage;
 #endif
 
-struct GenericEvent {
-	int* cid;  /* client_id */
-	oid* tag;  /* tag of the assoc MAL block */
-	ulng* tid; /* transaction_id */
-	str query; /* statement */
-	ulng usec;  /* event duration */
-	ulng clk;   /* GDKusec in callside */
-	int rc;    /* return code */
-};
+/* typedef struct nonMalEvent { */
+/* 	int* cid;  /\* client_id *\/ */
+/* 	oid* tag;  /\* tag of the assoc MAL block *\/ */
+/* 	ulng* tid; /\* transaction_id *\/ */
+/* 	str query; /\* statement *\/ */
+/* 	ulng usec; /\* event duration *\/ */
+/* 	ulng clk;  /\* GDKusec in callside *\/ */
+/* 	int rc;    /\* return code *\/ */
+/* } nonMalEvent; */
+
+/* typedef struct malEvent { */
+/* 	Client cntxt; */
+/* 	MalBlkPtr mb; */
+/* 	MalStkPtr stk; */
+/* 	InstrPtr pci; */
+/* } malEvent; */
+
+typedef struct NonMalEvent {
+	str phase;
+	Client cntxt;
+	ulng clk;
+	ulng* tid;
+	int state;
+	ulng duration;
+} NonMalEvent;
+
+typedef struct MalEvent {
+	Client cntxt;
+	MalBlkPtr mb;
+	MalStkPtr stk;
+	InstrPtr pci;
+} MalEvent;
 
 mal_export int malProfileMode;
 
@@ -36,8 +59,7 @@ mal_export void initProfiler(void);
 mal_export str openProfilerStream(Client cntxt);
 mal_export str closeProfilerStream(Client cntxt);
 
-mal_export void profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export void genericEvent(str phase, struct GenericEvent e);
+mal_export void profilerEvent(MalEvent me, NonMalEvent nme);
 mal_export void sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 mal_export str startProfiler(Client cntxt);
