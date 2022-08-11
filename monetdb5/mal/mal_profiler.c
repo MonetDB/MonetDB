@@ -38,14 +38,12 @@ static const char *myname = 0;	// avoid tracing the profiler module
  * each key:value pair or as a single line.
  * The current stethoscope implementation requires the first option and
  * also the term rendering to be set to ''
- */
-
-/* When the MAL block contains a BARRIER block we may end up with tons
+ *
+ * When the MAL block contains a BARRIER block we may end up with tons
  * of profiler events. To avoid this, we stop emitting the events
  * when we reached the HIGHWATERMARK. Leaving a message in the log.
  */
 #define HIGHWATERMARK 5
-
 
 int malProfileMode = 0;     /* global flag to indicate profiling mode */
 static oid malprofileruser;	/* keep track on who has claimed the channel */
@@ -61,14 +59,12 @@ static struct rusage prevUsage;
 
 #define LOGLEN 8192
 
-// The heart beat events should be sent to all outstanding channels.
 static void logjsonInternal(char *logbuffer, bool flush)
 {
 	size_t len;
 	len = strlen(logbuffer);
 
 	if (maleventstream) {
-		// upon request the log record is sent over the profile stream
 		(void) mnstr_write(maleventstream, logbuffer, 1, len);
 		if (flush)
 			(void) mnstr_flush(maleventstream, MNSTR_FLUSH_DATA);
@@ -175,89 +171,55 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 	return true;
 }
 
-/*
- * Generic events refer to all events that are useful to profile since the
- * beginning of a query execution up until the MAL execution. This includes
- * transaction events, SQL parsing, relational tree creation, unnesting,
- * relational optimizers, rel2bin, and MAL optimizers.
- *
- * Profiling a generic event follows the same implementation of ProfilerEvent.
- */
 static str
-prepareGenericEvent(str phase, struct GenericEvent e)
+prepareNonMalEvent(Client cntxt, str phase, ulng clk, ulng *tid, int state, ulng duration)
 {
+	oid* user = NULL;
+	oid* tag = NULL;
+	int clientid = -1;
+	str query = NULL;
 	struct logbuf logbuf = {0};
-	uint64_t mclk = (uint64_t)e.clk - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
 
-	if (logadd(&logbuf,
-			   "{"
-			   "\"version\":\""MONETDB_VERSION" (hg id: %s)\""
-			   ",\"clk\":"ULLFMT
-			   ",\"mclk\":"ULLFMT
-			   ",\"thread\":%d"
-			   ",\"phase\":\"%s\""
-			   ",\"state\":\"done\""
-			   ",\"usec\":"ULLFMT
-			   ",\"clientid\":\"%d\""
-			   ",\"transactionid\":"ULLFMT
-			   ",\"tag\":"OIDFMT
-			   ",\"query\":\"%s\""
-			   ",\"rc\":\"%d\""
-			   "}\n",
-			   mercurial_revision(),
-			   e.clk,
-			   mclk,
-			   THRgettid(),
-			   phase,
-			   e.usec,
-			   e.cid ? *e.cid : 0,
-			   e.tid ? *e.tid : 0,
-			   e.tag ? *e.tag : 0,
-			   e.query ? e.query : "none",
-			   e.rc))
-		return logbuf.logbuffer;
-	else {
-		logdel(&logbuf);
-		return NULL;
+	uint64_t mclk = (uint64_t)clk -
+		((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
+
+	if (cntxt) {
+		clientid = cntxt->idx;
+		user = &cntxt->user;
+		if (cntxt->curprg)
+			tag = &cntxt->curprg->def->tag;
+		if (cntxt->query)
+			query = mal_quote(cntxt->query, strlen(cntxt->query));
 	}
+
+	if (!logadd(&logbuf, "{\"version\":\""MONETDB_VERSION" (hg id: %s)\"", mercurial_revision()))
+		goto cleanup_and_exit;
+	if (user && !logadd(&logbuf, ", \"userid\":"OIDFMT, *user))
+		goto cleanup_and_exit;
+	if (clientid != -1 && !logadd(&logbuf, ", \"clientsessionid\":\"%d\"", clientid))
+		goto cleanup_and_exit;
+	if (!logadd(&logbuf, ", \"clk\":"ULLFMT", \"mclk\":"ULLFMT", \"thread\":%d, \"phase\":\"%s\"",
+				clk, mclk, THRgettid(), phase))
+		goto cleanup_and_exit;
+	if (tid && !logadd(&logbuf, ", \"transactionid\":"ULLFMT, *tid))
+		goto cleanup_and_exit;
+	if (tag && !logadd(&logbuf, ", \"tag\":"OIDFMT, *tag))
+		goto cleanup_and_exit;
+	if (query && !logadd(&logbuf, ", \"query\":\"%s\"", query))
+		goto cleanup_and_exit;
+	if (!logadd(&logbuf, ", \"state\":\"%s\", \"usec\":"ULLFMT"}\n",
+				state==0?"done":"error", duration))
+		goto cleanup_and_exit;
+	GDKfree(query);
+	return logbuf.logbuffer;
+ cleanup_and_exit:
+	GDKfree(query);
+	logdel(&logbuf);
+	return NULL;
 }
 
-static void
-renderGenericEvent(str msg, struct GenericEvent e)
-{
-	str event;
-	MT_lock_set(&mal_profileLock);
-	event = prepareGenericEvent(msg, e);
-	if( event ){
-		logjsonInternal(event, true);
-		free(event);
-	}
-	MT_lock_unset(&mal_profileLock);
-}
-
-void
-genericEvent(str msg, struct GenericEvent e)
-{
-	if( maleventstream )
-		renderGenericEvent(msg, e);
-}
-
-/* JSON rendering method of performance data.
- * The eventparser may assume this layout for ease of parsing
- EXAMPLE:
- {
- "event":6        ,
- "thread":3,
- "function":"user.s3_1",
- "pc":1,
- "tag":10397,
- "state":"start",
- "usec":0,
- }
- "stmt":"X_41=0@0:void := querylog.define(\"select count(*) from tables;\":str,\"default_pipe\":str,30:int);",
-*/
 static str
-prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	struct logbuf logbuf;
 	str c;
@@ -299,15 +261,18 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!logadd(&logbuf,
 				"{"				// fill in later with the event counter
 				"\"version\":\""MONETDB_VERSION" (hg id: %s)\""
-				",\"user\":"OIDFMT
+				",\"userid\":"OIDFMT
+				",\"clientsessionid\":\"%d\""
 				",\"clk\":"LLFMT
 				",\"mclk\":%"PRIu64""
 				",\"thread\":%d"
+				",\"phase\":\"mal_engine\""
 				",\"program\":\"%s.%s\""
 				",\"pc\":%d"
 				",\"tag\":"OIDFMT,
 				mercurial_revision(),
 				cntxt->user,
+				cntxt->idx,
 				usec,
 				microseconds,
 				THRgettid(),
@@ -315,11 +280,11 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				mb?getPC(mb,pci):0,
 				stk?stk->tag:0))
 		goto cleanup_and_exit;
-	if( pci->modname && !logadd(&logbuf, ",\"module\":\"%s\"", pci->modname ? pci->modname : ""))
+	if (pci->modname && !logadd(&logbuf, ",\"module\":\"%s\"", pci->modname ? pci->modname : ""))
 		goto cleanup_and_exit;
-	if( pci->fcnname && !logadd(&logbuf, ",\"function\":\"%s\"", pci->fcnname ? pci->fcnname : ""))
+	if (pci->fcnname && !logadd(&logbuf, ",\"function\":\"%s\"", pci->fcnname ? pci->fcnname : ""))
 		goto cleanup_and_exit;
-	if( pci->barrier && !logadd(&logbuf, ",\"barrier\":\"%s\"", operatorName(pci->barrier)))
+	if (pci->barrier && !logadd(&logbuf, ",\"barrier\":\"%s\"", operatorName(pci->barrier)))
 		goto cleanup_and_exit;
 	if ((pci->token < FCNcall || pci->token > PATcall) &&
 		!logadd(&logbuf, ",\"operator\":\"%s\"", operatorName(pci->token)))
@@ -339,20 +304,7 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto cleanup_and_exit;
 	if (algo && !logadd(&logbuf, ",\"algorithm\":\"%s\"", algo))
 		goto cleanup_and_exit;
-
-/* EXAMPLE MAL statement argument decomposition
- * The eventparser may assume this layout for ease of parsing
- {
- ... as above ...
- "result":{"clk":"173297139,"pc":1,"index":0,,"name":"X_6","type":"void","value":"0@0","eol":0}
- ...
- "argument":{"clk":173297139,"pc":1,"index":"2","type":"str","value":"\"default_pipe\"","eol":0},
- }
- This information can be used to determine memory footprint and variable life times.
-*/
-
-	// Also show details of the arguments for modelling
-	if(mb && pci->modname && pci->fcnname){
+	if (mb && pci->modname && pci->fcnname) {
 		int j;
 
 		if (!logadd(&logbuf, ",\"args\":["))
@@ -548,23 +500,9 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return NULL;
 }
 
-static void
-renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str ev;
-	MT_lock_set(&mal_profileLock);
-	ev = prepareProfilerEvent(cntxt, mb, stk, pci);
-	if( ev ){
-		logjsonInternal(ev, true);
-		free(ev);
-	}
-	MT_lock_unset(&mal_profileLock);
-}
-
 /* the OS details on cpu load are read from /proc/stat
  * We should use an OS define to react to the maximal cores
  */
-
 #define MAXCORES		256
 #define LASTCPU		(MAXCORES - 1)
 static struct{
@@ -625,7 +563,7 @@ getCPULoad(char cpuload[BUFSIZ]){
 			n = strlen(buf);
 		}
 	}
-  exitloop:
+ exitloop:
 
 	if (cpuload == NULL)
 		return 0;
@@ -699,20 +637,26 @@ profilerHeartbeatEvent(char *alter)
 }
 
 void
-profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+profilerEvent(MalEvent me, NonMalEvent nme)
 {
-	(void) cntxt;
-	if (stk == NULL) return;
-	if (pci == NULL) return;
-	if (getModuleId(pci) == myname) // ignore profiler commands from monitoring
-		return;
+	str event = NULL;
+	if (me.cntxt != NULL && getModuleId(me.pci) == myname) return; // ignore monitoring cmds
 
-	if(maleventstream) {
-		renderProfilerEvent(cntxt, mb, stk, pci);
-		if (pci->pc ==0)
-			profilerHeartbeatEvent("ping");
-		if (pci->token == ENDsymbol)
-			profilerHeartbeatEvent("ping");
+	if (maleventstream) {
+		MT_lock_set(&mal_profileLock);
+		if (me.mb != NULL && nme.phase == NULL) {
+			if (me.stk == NULL) return;
+			if (me.pci == NULL) return;
+			event = prepareMalEvent(me.cntxt, me.mb, me.stk, me.pci);
+		}
+		if (me.mb == NULL && nme.phase != NULL) {
+			event = prepareNonMalEvent(nme.cntxt, nme.phase, nme.clk, nme.tid, nme.state, nme.duration);
+		}
+		if (event) {
+			logjsonInternal(event, true);
+			free(event);
+		}
+		MT_lock_unset(&mal_profileLock);
 	}
 }
 
@@ -732,7 +676,7 @@ openProfilerStream(Client cntxt)
 		myname = putName("profiler");
 		logjsonInternal(monet_characteristics, true);
 	}
-	if(maleventstream){
+	if (maleventstream){
 		/* The DBA can always grab the stream, others have to wait */
 		if (cntxt->user == MAL_ADMIN) {
 			closeProfilerStream(cntxt);
@@ -753,16 +697,17 @@ openProfilerStream(Client cntxt)
 
 	MT_sleep_ms(200);
 
-	for(j = 0; j <THREADS; j++){
-		Client c = 0; MalBlkPtr m=0; MalStkPtr s = 0; InstrPtr p = 0;
+	for (j = 0; j <THREADS; j++){
+		Client c = 0; MalBlkPtr m = 0; MalStkPtr s = 0; InstrPtr p = 0;
 		c = workingset[j].cntxt;
 		m = workingset[j].mb;
 		s = workingset[j].stk;
 		p =  workingset[j].pci;
-		if( c && m && s && p ) {
+		if (c && m && s && p) {
 			/* show the event  assuming the quadruple is aligned*/
 			MT_lock_unset(&mal_profileLock);
-			profilerEvent(c, m, s, p);
+			profilerEvent((struct MalEvent) {c, m, s, p},
+						  (struct NonMalEvent) {0});
 			MT_lock_set(&mal_profileLock);
 		}
 	}
@@ -960,12 +905,12 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL | LIST_MAL_ALGO);
 	c = stmt;
 
-/* unclear why we needed this. OLD?
-	while (c && *c && (isspace((unsigned char)*c) || *c == '!'))
-		c++;
-*/
+	/* unclear why we needed this. OLD?
+	   while (c && *c && (isspace((unsigned char)*c) || *c == '!'))
+	   c++;
+	*/
 
-	ev = prepareProfilerEvent(cntxt, mb, stk, pci);
+	ev = prepareMalEvent(cntxt, mb, stk, pci);
 	// keep it a short transaction
 	MT_lock_set(&mal_profileLock);
 	if (cntxt->profticks == NULL) {
