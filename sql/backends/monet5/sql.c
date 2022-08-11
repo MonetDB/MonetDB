@@ -133,9 +133,9 @@ sql_symbol2relation(backend *be, symbol *sym)
 	Tend = GDKusec();
 
 	if(malProfileMode > 0 )
-		genericEvent("sql_to_rel",
-					 (struct GenericEvent)
-					 { &(c->idx), &(c->curprg->def->tag), NULL, NULL, Tend-Tbegin, Tend, rel ? 0 : 1 });
+		profilerEvent((struct MalEvent) {0},
+					  (struct NonMalEvent)
+					  {"sql_to_rel", c, Tend, NULL, rel?0:1, Tend-Tbegin});
 
 	Tbegin = Tend;
 	if (rel)
@@ -150,9 +150,9 @@ sql_symbol2relation(backend *be, symbol *sym)
 	be->reloptimizer = Tend - Tbegin;
 
 	if(malProfileMode > 0)
-		genericEvent("rel_opt",
-					 (struct GenericEvent)
-					 { &c->idx, &(c->curprg->def->tag), NULL, NULL, be->reloptimizer, Tend, rel ? 0 : 1});
+		profilerEvent((struct MalEvent) {0},
+					  (struct NonMalEvent)
+					  {"rel_opt", c, Tend, NULL, rel?0:1, be->reloptimizer});
 	return rel;
 }
 

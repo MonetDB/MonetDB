@@ -124,12 +124,12 @@ mvc_fix_depend(mvc *m, sql_column *depids, struct view_t *v, int n)
 }
 
 static void
-generic_event_wrapper(str phase, ulng tid, lng usec, lng clk, int rc)
+profiler_event_wrapper(str phase, lng clk, ulng *tid, int state, lng usec)
 {
 	if(malProfileMode > 0)
-		genericEvent(phase,
-					 (struct GenericEvent)
-					 { NULL, NULL, &tid, NULL, usec, clk, rc });
+		profilerEvent((struct MalEvent) {0},
+					  (struct NonMalEvent)
+					  {phase, NULL, clk, tid, state, usec});
 }
 
 sql_store
@@ -148,7 +148,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 		return NULL;
 	}
 
-	if ((store = store_init(debug, store_tpe, ro, su, &generic_event_wrapper)) == NULL) {
+	if ((store = store_init(debug, store_tpe, ro, su, &profiler_event_wrapper)) == NULL) {
 		keyword_exit();
 		TRC_CRITICAL(SQL_TRANS, "Unable to create system tables\n");
 		return NULL;
