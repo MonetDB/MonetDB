@@ -149,11 +149,16 @@ CREATE FUNCTION sys.SQ (s STRING) RETURNS STRING BEGIN RETURN '''' || sys.replac
 CREATE FUNCTION sys.DQ (s STRING) RETURNS STRING BEGIN RETURN '"' || sys.replace(s,'"','""') || '"'; END; --TODO: Figure out why this breaks with the space
 CREATE FUNCTION sys.FQN(s STRING, t STRING) RETURNS STRING BEGIN RETURN '"' || sys.replace(s,'"','""') || '"."' || sys.replace(t,'"','""') || '"'; END;
 
---We need pcre to implement a header guard which means adding the schema of an object explicitely to its identifier.
+--We need pcre to implement a header guard which means adding the schema
+--of an object explicitly to its identifier.
+--Note that we don't do a case insensitive match: the SQL layer has
+--converted all unquoted tokens to lower case, so it there is an upper
+--case value, it must have been quoted, and it should still be quoted in
+--the saved query, so that would be the only match we find.
 CREATE FUNCTION sys.replace_first(ori STRING, pat STRING, rep STRING, flg STRING) RETURNS STRING EXTERNAL NAME "pcre"."replace_first";
 CREATE FUNCTION sys.schema_guard(sch STRING, nme STRING, stmt STRING) RETURNS STRING BEGIN
 RETURN
-	SELECT sys.replace_first(stmt, '(\\s*"?' || sch ||  '"?\\s*\\.|)\\s*"?' || nme || '"?\\s*', ' ' || sys.FQN(sch, nme) || ' ', 'imsx');
+	SELECT sys.replace_first(stmt, r'(((?<!")\b' || sch || r'\b(?!"))|"' || sch || r'"\s*\.\s*)?(((?<!")\b' || nme || r'\b(?!"))|"' || nme || '")', sys.FQN(sch, nme), '');
 END;
 
 CREATE VIEW sys.describe_constraints AS
