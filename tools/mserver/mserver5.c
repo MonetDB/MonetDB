@@ -591,10 +591,6 @@ main(int argc, char **av)
 			fprintf(stderr, "!ERROR: cannot add farm\n");
 			exit(1);
 		}
-		if (GDKcreatedir(dbpath) != GDK_SUCCEED) {
-			fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbpath);
-			exit(1);
-		}
 		GDKfree(dbpath);
 	}
 
