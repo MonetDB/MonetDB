@@ -172,9 +172,8 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 static str
 prepareNonMalEvent(Client cntxt, str phase, ulng clk, ulng *tid, int state, ulng duration)
 {
-	oid* user = NULL;
 	oid* tag = NULL;
-	int clientid = -1;
+	int sessionid = -1;
 	str query = NULL;
 	struct logbuf logbuf = {0};
 
@@ -182,22 +181,19 @@ prepareNonMalEvent(Client cntxt, str phase, ulng clk, ulng *tid, int state, ulng
 		((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
 
 	if (cntxt) {
-		clientid = cntxt->idx;
-		user = &cntxt->user;
+		sessionid = cntxt->idx;
 		if (cntxt->curprg)
 			tag = &cntxt->curprg->def->tag;
 		if (cntxt->query)
 			query = mal_quote(cntxt->query, strlen(cntxt->query));
 	}
 
-	if (!logadd(&logbuf, "{\"version\":\""MONETDB_VERSION" (hg id: %s)\"", mercurial_revision()))
+	if (!logadd(&logbuf, "{\"clk\":"ULLFMT"", mclk))
 		goto cleanup_and_exit;
-	if (user && !logadd(&logbuf, ", \"userid\":"OIDFMT, *user))
+	if (sessionid != -1 && !logadd(&logbuf, ", \"sessionid\":\"%d\"", sessionid))
 		goto cleanup_and_exit;
-	if (clientid != -1 && !logadd(&logbuf, ", \"clientsessionid\":\"%d\"", clientid))
-		goto cleanup_and_exit;
-	if (!logadd(&logbuf, ", \"clk\":"ULLFMT", \"mclk\":"ULLFMT", \"thread\":%d, \"phase\":\"%s\"",
-				clk, mclk, THRgettid(), phase))
+	if (!logadd(&logbuf, ", \"thread\":%d, \"phase\":\"%s\"",
+				THRgettid(), phase))
 		goto cleanup_and_exit;
 	if (tid && !logadd(&logbuf, ", \"transactionid\":"ULLFMT, *tid))
 		goto cleanup_and_exit;
@@ -205,8 +201,9 @@ prepareNonMalEvent(Client cntxt, str phase, ulng clk, ulng *tid, int state, ulng
 		goto cleanup_and_exit;
 	if (query && !logadd(&logbuf, ", \"query\":\"%s\"", query))
 		goto cleanup_and_exit;
-	if (!logadd(&logbuf, ", \"state\":\"%s\", \"usec\":"ULLFMT"}\n",
-				state==0?"done":"error", duration))
+	if (state != 0 && !logadd(&logbuf, ", \"state\":\"error\""))
+		goto cleanup_and_exit;
+	if (!logadd(&logbuf, ", \"usec\":"ULLFMT"}\n", duration))
 		goto cleanup_and_exit;
 	GDKfree(query);
 	return logbuf.logbuffer;
@@ -222,8 +219,8 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct logbuf logbuf;
 	str c;
 	str stmtq;
-	lng usec;
-	uint64_t microseconds;
+	lng clk;
+	uint64_t mclk;
 	bool ok;
 
 	/* ignore generation of events for instructions that are called too often
@@ -244,8 +241,8 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	logbuf = (struct logbuf) {0};
 
-	usec= pci->clock;
-	microseconds = (uint64_t)usec - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
+	clk = pci->clock;
+	mclk = (uint64_t)clk - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
 	/* make profile event tuple  */
 	/* TODO: This could probably be optimized somehow to avoid the
 	 * function call to mercurial_revision().
@@ -253,21 +250,15 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// No comma at the beginning
 	if (!logadd(&logbuf,
 				"{"				// fill in later with the event counter
-				"\"version\":\""MONETDB_VERSION" (hg id: %s)\""
-				",\"userid\":"OIDFMT
-				",\"clientsessionid\":\"%d\""
-				",\"clk\":"LLFMT
-				",\"mclk\":%"PRIu64""
+				"\"sessionid\":\"%d\""
+				",\"clk\":%"PRIu64""
 				",\"thread\":%d"
 				",\"phase\":\"mal_engine\""
 				",\"program\":\"%s.%s\""
 				",\"pc\":%d"
 				",\"tag\":"OIDFMT,
-				mercurial_revision(),
-				cntxt->user,
 				cntxt->idx,
-				usec,
-				microseconds,
+				mclk,
 				THRgettid(),
 				getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)),
 				mb?getPC(mb,pci):0,
@@ -281,21 +272,9 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto cleanup_and_exit;
 	if ((pci->token < FCNcall || pci->token > PATcall) &&
 		!logadd(&logbuf, ",\"operator\":\"%s\"", operatorName(pci->token)))
-		return;
-	if (!GDKinmemory(0) && !GDKembedded()) {
-		char *uuid = NULL;
-		str c;
-		if ((c = msab_getUUID(&uuid)) == NULL) {
-			ok = logadd(&logbuf, ",\"session\":\"%s\"", uuid);
-			free(uuid);
-			if (!ok)
-				return;
-		} else
-			free(c);
-	}
-	if (!logadd(&logbuf, ",\"state\":\"done\",\"usec\":"LLFMT, pci->ticks))
-		return;
-	const char *algo = MT_thread_getalgorithm();
+		goto cleanup_and_exit;
+	if (!logadd(&logbuf, ",\"usec\":"LLFMT, pci->ticks))
+		goto cleanup_and_exit;
 	if (algo && !logadd(&logbuf, ",\"algorithm\":\"%s\"", algo))
 		goto cleanup_and_exit;
 	if (mb && pci->modname && pci->fcnname) {
