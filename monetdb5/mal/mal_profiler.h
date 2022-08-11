@@ -20,23 +20,6 @@
 typedef struct rusage Rusage;
 #endif
 
-/* typedef struct nonMalEvent { */
-/* 	int* cid;  /\* client_id *\/ */
-/* 	oid* tag;  /\* tag of the assoc MAL block *\/ */
-/* 	ulng* tid; /\* transaction_id *\/ */
-/* 	str query; /\* statement *\/ */
-/* 	ulng usec; /\* event duration *\/ */
-/* 	ulng clk;  /\* GDKusec in callside *\/ */
-/* 	int rc;    /\* return code *\/ */
-/* } nonMalEvent; */
-
-/* typedef struct malEvent { */
-/* 	Client cntxt; */
-/* 	MalBlkPtr mb; */
-/* 	MalStkPtr stk; */
-/* 	InstrPtr pci; */
-/* } malEvent; */
-
 typedef struct NonMalEvent {
 	str phase;
 	Client cntxt;
@@ -78,7 +61,6 @@ mal_export void clearTrace(Client cntxt);
 mal_export int TRACEtable(Client cntxt, BAT **r);
 mal_export str cleanupTraces(Client cntxt);
 mal_export BAT *getTrace(Client cntxt, const char *nme);
-
 
 mal_export lng getDiskSpace(void);
 mal_export lng getDiskReads(void);
