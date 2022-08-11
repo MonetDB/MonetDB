@@ -1231,7 +1231,7 @@ const char *printRef;
 void printSignature(stream *fd, Symbol s, int flg);
 void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
 const char *prodRef;
-void profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+void profilerEvent(MalEvent me, NonMalEvent nme);
 void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait);
 void profilerHeartbeatEvent(char *alter);
 const char *profilerRef;

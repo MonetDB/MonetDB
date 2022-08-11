@@ -202,11 +202,12 @@ MCexitClient(Client c)
 		c->fdout = NULL;
 		c->fdin = NULL;
 	}
+	assert(c->query == NULL);
 	if(malProfileMode > 0) {
 		lng Tend = GDKusec();
-		genericEvent("client_connection",
-					 (struct GenericEvent)
-					 { &c->idx, NULL, NULL, NULL, Tend-(c->session), Tend, 0 });
+		profilerEvent((struct MalEvent) {0},
+					  (struct NonMalEvent)
+					  {"client_connection", c, Tend,  NULL, 0, Tend-(c->session)});
 	}
 	setClientContext(NULL);
 }
