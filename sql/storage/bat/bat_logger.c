@@ -1880,6 +1880,26 @@ upgrade(old_logger *lg)
 		bat_destroy(b1);
 	}
 
+	/* add all bats that were added by processing the WAL and that have
+	 * not been deleted since to the list of new bats */
+	bids = (const int *) Tloc(lg->catalog_bid, 0);
+	for (BUN p = lg->catalog_bid->batInserted, q = lg->catalog_bid->batCount;
+		 p < q;
+		 p++) {
+		bat bid = bids[p];
+		if (BUNfnd(lg->lg->catalog_bid, &(int){bid}) != BUN_NONE) {
+			b = BATdescriptor(bid);
+			if (b) {
+				if (BATmode(b, false) != GDK_SUCCEED ||
+					BUNappend(lg->add, &(int){bid}, false) != GDK_SUCCEED) {
+					BBPunfix(bid);
+					goto bailout;
+				}
+				BBPkeepref(b);
+			}
+		}
+	}
+
 	rc = GDK_SUCCEED;
 
   bailout:

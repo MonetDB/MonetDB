@@ -729,7 +729,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				empty_cross = false; /* don't rewrite again */
 			} else if (lv != BUN_NONE && rv != BUN_NONE) {
 				set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX - lv)) ? BUN_MAX : (lv + rv)); /* overflow check */
-			} 
+			}
 		} else if (is_inter(rel->op) || is_except(rel->op)) {
 			BUN lv = need_distinct(rel) ? rel_calc_nuniques(v->sql, l, l->exps) : get_rel_count(l),
 				rv = need_distinct(rel) ? rel_calc_nuniques(v->sql, r, r->exps) : get_rel_count(r);
@@ -818,10 +818,16 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					} else if (e->type == e_cmp && e->flag == cmp_equal) {
 						/* if one of the sides is unique, the cardinality will be that exact number, but look for nulls */
 						if (!is_semantics(e) || !has_nil(el) || !has_nil(er)) {
-							if (is_unique(el)) {
+							BUN lu = 0, ru = 0;
+							prop *p = NULL;
+							if ((p = find_prop(el->p, PROP_NUNIQUES)))
+								lu = (BUN) p->value.dval;
+							if ((p = find_prop(er->p, PROP_NUNIQUES)))
+								ru = (BUN) p->value.dval;
+							if (is_unique(el) || lu > lv) {
 								BUN ncount = (is_right(rel->op) || is_full(rel->op)) ? MAX(lv, rv) : lv;
 								uniques_estimate = MIN(uniques_estimate, ncount);
-							} else if (is_unique(er)) {
+							} else if (is_unique(er) || ru > rv) {
 								BUN ncount = (is_left(rel->op) || is_full(rel->op)) ? MAX(lv, rv) : rv;
 								uniques_estimate = MIN(uniques_estimate, ncount);
 							}
@@ -863,7 +869,24 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			if (list_length(rel->exps) == 1 && (exp_is_false(rel->exps->h->data) || exp_is_null(rel->exps->h->data))) {
 				set_count_prop(v->sql->sa, rel, 0);
 			} else {
-				set_count_prop(v->sql->sa, rel, get_rel_count(l));
+				if (!list_empty(rel->exps) && !is_single(rel)) {
+					BUN cnt = get_rel_count(l), u = 1;
+					for (node *n = rel->exps->h ; n ; n = n->next) {
+						sql_exp *e = n->data, *el = e->l, *er = e->r;
+
+						/* simple expressions first */
+						if (e->type == e_cmp && e->flag == cmp_equal && exp_is_atom(er)) {
+							/* use selectivity */
+							prop *p = NULL;
+							if ((p = find_prop(el->p, PROP_NUNIQUES))) {
+								u = (BUN) p->value.dval;
+							}
+						}
+					}
+					set_count_prop(v->sql->sa, rel, cnt/u);
+				} else {
+					set_count_prop(v->sql->sa, rel, get_rel_count(l));
+				}
 			}
 		} break;
 		case op_project: {
@@ -930,8 +953,37 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			set_count_prop(v->sql->sa, rel, lv);
 		}
 	} break;
+	case op_table: {
+		sql_exp *op = rel->r;
+		if (rel->flag != TRIGGER_WRAPPER && op) {
+			sql_subfunc *f = op->f;
+			if (f->func->lang == FUNC_LANG_SQL) {
+				set_count_prop(v->sql->sa, rel, 1000 /* just some fallback value */);
+			} else if (f->func->lang == FUNC_LANG_MAL && strcmp(f->func->base.name, "storage") == 0) {
+				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of catalog */);
+			} else if (f->func->lang == FUNC_LANG_MAL && strcmp(f->func->base.name, "db_users") == 0) {
+				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of users */);
+			} else if (f->func->lang == FUNC_LANG_MAL && strncmp(f->func->base.name, "querylog", 8) == 0) {
+				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of querylog */);
+			} else if (f->func->lang == FUNC_LANG_MAL &&
+						(strcmp(f->func->base.name, "queue") == 0 ||
+						 strcmp(f->func->base.name, "optimizers") == 0 ||
+						 strcmp(f->func->base.name, "env") == 0 ||
+						 strcmp(f->func->base.name, "keywords") == 0 ||
+						 strcmp(f->func->base.name, "statistics") == 0 ||
+						 strcmp(f->func->base.name, "rejects") == 0 ||
+						 strcmp(f->func->base.name, "schemastorage") == 0 ||
+						 strncmp(f->func->base.name, "storage", 7) == 0 ||
+						 strcmp(f->func->base.name, "sessions") == 0) ) {
+				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of queue */);
+			/*} else {
+				printf("%%func needs stats : %s\n", f->func->base.name);
+				*/
+			}
+		}
+	} break;
 	/*These relations are less important for now
-	case op_table: TODO later we can tune it
+	TODO later we can tune it
 	case op_insert:
 	case op_update:
 	case op_delete:
