@@ -2640,6 +2640,25 @@ drop view sys.dump_start_sequences;
 drop view sys.dump_tables;
 drop view sys.describe_tables;
 drop view sys.dump_create_users;
+drop view sys.dump_functions;
+drop view sys.dump_triggers;
+drop function sys.schema_guard;
+drop function sys.replace_first(string, string, string, string);
+CREATE FUNCTION sys.schema_guard(sch STRING, nme STRING, stmt STRING) RETURNS STRING BEGIN
+RETURN
+ SELECT 'SET SCHEMA ' || sys.dq(sch) || '; ' || stmt;
+END;
+CREATE VIEW sys.dump_functions AS
+ SELECT f.o o, sys.schema_guard(f.sch, f.fun, f.def) stmt,
+ f.sch schema_name,
+ f.fun function_name
+ FROM sys.describe_functions f;
+CREATE VIEW sys.dump_triggers AS
+ SELECT sys.schema_guard(sch, tab, def) stmt,
+ sch schema_name,
+ tab table_name,
+ tri trigger_name
+ FROM sys.describe_triggers;
 CREATE VIEW sys.describe_partition_tables AS
  SELECT
  m_sch,
@@ -2879,9 +2898,10 @@ BEGIN
  INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');
  RETURN sys.dump_statements;
 END;
-update sys._tables set system = true where name in ('describe_partition_tables', 'dump_partition_tables', 'dump_sequences', 'dump_start_sequences', 'describe_tables', 'dump_tables', 'dump_create_users') AND schema_id = 2000;
+update sys._tables set system = true where name in ('describe_partition_tables', 'dump_partition_tables', 'dump_sequences', 'dump_start_sequences', 'describe_tables', 'dump_tables', 'dump_create_users', 'dump_functions', 'dump_triggers') AND schema_id = 2000;
 update sys.functions set system = true where system <> true and name in ('dump_table_data') and schema_id = 2000 and type = 2;
 update sys.functions set system = true where system <> true and name in ('dump_database') and schema_id = 2000 and type = 5;
+update sys.functions set system = true where system <> true and name in ('schema_guard') and schema_id = 2000 and type = 1;
 CREATE function sys.url_extract_host(url string, no_www bool) RETURNS STRING
 EXTERNAL NAME url."extractURLHost";
 GRANT EXECUTE ON FUNCTION url_extract_host(string, bool) TO PUBLIC;

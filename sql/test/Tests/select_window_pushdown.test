@@ -5,7 +5,6 @@ CREATE TABLE Test (k int, v int);
 statement ok
 INSERT INTO Test SELECT value % 10 as k, value as v FROM generate_series(1, 100);
 
-
 # simple eq filter on the partition key, must be pushed down,
 # while the flag filter cannot be safely pushed down
 query T nosort
@@ -25,14 +24,13 @@ project (
 | | | project (
 | | | | project (
 | | | | | select (
-| | | | | | table("sys"."test") [ "test"."k", "test"."v" ]
-| | | | | ) [ ("test"."k") = (int(32) "10") ]
-| | | | ) [ "test"."k" as "t1"."k", "test"."v" as "t1"."v", "sys"."mod"("test"."v", int(32) "2") as "%1"."%1", "sys"."="("%1"."%1", int(32) "0") as "t1"."flag" ]
-| | | ) [ "t1"."k", "t1"."v", "t1"."flag" ] [ "t1"."k" ASC, "t1"."v" NULLS LAST ]
-| | ) [ "t1"."k", "t1"."v", "t1"."flag", "sys"."rank"("sys"."star"(), "sys"."diff"("t1"."k"), "sys"."diff"("t1"."v")) as "t2"."rank" ]
-| ) [ ("t1"."flag") = (boolean(1) "false"), ("t2"."rank") = (int(32) "1") ]
-) [ "t1"."k" as "t2"."k", "t1"."v" as "t2"."v", "t1"."flag" as "t2"."flag", "t2"."rank" ]
-
+| | | | | | table("sys"."test") [ "test"."k" NOT NULL, "test"."v" NOT NULL UNIQUE ]
+| | | | | ) [ ("test"."k" NOT NULL) = (int(32) "10") ]
+| | | | ) [ "test"."k" NOT NULL as "t1"."k", "test"."v" NOT NULL UNIQUE as "t1"."v", "sys"."mod"("test"."v" NOT NULL UNIQUE, int(32) "2") NOT NULL as "%1"."%1", "sys"."="("%1"."%1" NOT NULL, int(32) "0") NOT NULL as "t1"."flag" ]
+| | | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL ] [ "t1"."k" ASC NOT NULL, "t1"."v" NULLS LAST NOT NULL UNIQUE ]
+| | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL, "sys"."rank"("sys"."star"(), "sys"."diff"("t1"."k" NOT NULL), "sys"."diff"("t1"."v" NOT NULL UNIQUE)) as "t2"."rank" ]
+| ) [ ("t1"."flag" NOT NULL) = (boolean(1) "false"), ("t2"."rank") = (int(32) "1") ]
+) [ "t1"."k" NOT NULL as "t2"."k", "t1"."v" NOT NULL UNIQUE as "t2"."v", "t1"."flag" NOT NULL as "t2"."flag", "t2"."rank" NOT NULL ]
 
 # simple range filter on the partition key
 query T nosort
@@ -52,14 +50,13 @@ project (
 | | | project (
 | | | | project (
 | | | | | select (
-| | | | | | table("sys"."test") [ "test"."k", "test"."v" ]
-| | | | | ) [ (int(32) "10") <= ("test"."k") <= (int(32) "50") ]
-| | | | ) [ "test"."k" as "t1"."k", "test"."v" as "t1"."v", "sys"."mod"("test"."v", int(32) "2") as "%1"."%1", "sys"."="("%1"."%1", int(32) "0") as "t1"."flag" ]
-| | | ) [ "t1"."k", "t1"."v", "t1"."flag" ] [ "t1"."k" ASC, "t1"."v" NULLS LAST ]
-| | ) [ "t1"."k", "t1"."v", "t1"."flag", "sys"."rank"("sys"."star"(), "sys"."diff"("t1"."k"), "sys"."diff"("t1"."v")) as "t2"."rank" ]
-| ) [ ("t1"."flag") = (boolean(1) "false"), ("t2"."rank") = (int(32) "1") ]
-) [ "t1"."k" as "t2"."k", "t1"."v" as "t2"."v", "t1"."flag" as "t2"."flag", "t2"."rank" ]
-
+| | | | | | table("sys"."test") [ "test"."k" NOT NULL, "test"."v" NOT NULL UNIQUE ]
+| | | | | ) [ (int(32) "10") <= ("test"."k" NOT NULL) <= (int(32) "50") ]
+| | | | ) [ "test"."k" NOT NULL as "t1"."k", "test"."v" NOT NULL UNIQUE as "t1"."v", "sys"."mod"("test"."v" NOT NULL UNIQUE, int(32) "2") NOT NULL as "%1"."%1", "sys"."="("%1"."%1" NOT NULL, int(32) "0") NOT NULL as "t1"."flag" ]
+| | | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL ] [ "t1"."k" ASC NOT NULL, "t1"."v" NULLS LAST NOT NULL UNIQUE ]
+| | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL, "sys"."rank"("sys"."star"(), "sys"."diff"("t1"."k" NOT NULL), "sys"."diff"("t1"."v" NOT NULL UNIQUE)) as "t2"."rank" ]
+| ) [ ("t1"."flag" NOT NULL) = (boolean(1) "false"), ("t2"."rank") = (int(32) "1") ]
+) [ "t1"."k" NOT NULL as "t2"."k", "t1"."v" NOT NULL UNIQUE as "t2"."v", "t1"."flag" NOT NULL as "t2"."flag", "t2"."rank" NOT NULL ]
 
 # simple not in filter on the partition key
 query T nosort
@@ -79,14 +76,13 @@ project (
 | | | project (
 | | | | project (
 | | | | | select (
-| | | | | | table("sys"."test") [ "test"."k", "test"."v" ]
-| | | | | ) [ ("test"."k") notin (int(32) "10", int(32) "20", int(32) "30") ]
-| | | | ) [ "test"."k" as "t1"."k", "test"."v" as "t1"."v", "sys"."mod"("test"."v", int(32) "2") as "%2"."%2", "sys"."="("%2"."%2", int(32) "0") as "t1"."flag" ]
-| | | ) [ "t1"."k", "t1"."v", "t1"."flag" ] [ "t1"."k" ASC, "t1"."v" NULLS LAST ]
-| | ) [ "t1"."k", "t1"."v", "t1"."flag", "sys"."rank"("sys"."star"(), "sys"."diff"("t1"."k"), "sys"."diff"("t1"."v")) as "t2"."rank" ]
-| ) [ ("t1"."flag") = (boolean(1) "false"), ("t2"."rank") = (int(32) "1") ]
-) [ "t1"."k" as "t2"."k", "t1"."v" as "t2"."v", "t1"."flag" as "t2"."flag", "t2"."rank" ]
-
+| | | | | | table("sys"."test") [ "test"."k" NOT NULL, "test"."v" NOT NULL UNIQUE ]
+| | | | | ) [ ("test"."k" NOT NULL) notin (int(32) "10", int(32) "20", int(32) "30") ]
+| | | | ) [ "test"."k" NOT NULL as "t1"."k", "test"."v" NOT NULL UNIQUE as "t1"."v", "sys"."mod"("test"."v" NOT NULL UNIQUE, int(32) "2") NOT NULL as "%2"."%2", "sys"."="("%2"."%2" NOT NULL, int(32) "0") NOT NULL as "t1"."flag" ]
+| | | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL ] [ "t1"."k" ASC NOT NULL, "t1"."v" NULLS LAST NOT NULL UNIQUE ]
+| | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL, "sys"."rank"("sys"."star"(), "sys"."diff"("t1"."k" NOT NULL), "sys"."diff"("t1"."v" NOT NULL UNIQUE)) as "t2"."rank" ]
+| ) [ ("t1"."flag" NOT NULL) = (boolean(1) "false"), ("t2"."rank") = (int(32) "1") ]
+) [ "t1"."k" NOT NULL as "t2"."k", "t1"."v" NOT NULL UNIQUE as "t2"."v", "t1"."flag" NOT NULL as "t2"."flag", "t2"."rank" NOT NULL ]
 
 # another filter also not on the partition key, must not be pushed down
 query T nosort
@@ -106,14 +102,13 @@ project (
 | | | project (
 | | | | project (
 | | | | | select (
-| | | | | | table("sys"."test") [ "test"."k", "test"."v" ]
-| | | | | ) [ ("test"."k") = (int(32) "10") ]
-| | | | ) [ "test"."k" as "t1"."k", "test"."v" as "t1"."v", "sys"."mod"("test"."v", int(32) "2") as "%1"."%1", "sys"."="("%1"."%1", int(32) "0") as "t1"."flag" ]
-| | | ) [ "t1"."k", "t1"."v", "t1"."flag" ] [ "t1"."k" ASC, "t1"."v" NULLS LAST ]
-| | ) [ "t1"."k", "t1"."v", "t1"."flag", "sys"."rank"("sys"."star"(), "sys"."diff"("t1"."k"), "sys"."diff"("t1"."v")) as "t2"."rank" ]
-| ) [ ("t1"."v") = (int(32) "15"), ("t1"."flag") = (boolean(1) "false"), ("t2"."rank") = (int(32) "1") ]
-) [ "t1"."k" as "t2"."k", "t1"."v" as "t2"."v", "t1"."flag" as "t2"."flag", "t2"."rank" ]
-
+| | | | | | table("sys"."test") [ "test"."k" NOT NULL, "test"."v" NOT NULL UNIQUE ]
+| | | | | ) [ ("test"."k" NOT NULL) = (int(32) "10") ]
+| | | | ) [ "test"."k" NOT NULL as "t1"."k", "test"."v" NOT NULL UNIQUE as "t1"."v", "sys"."mod"("test"."v" NOT NULL UNIQUE, int(32) "2") NOT NULL as "%1"."%1", "sys"."="("%1"."%1" NOT NULL, int(32) "0") NOT NULL as "t1"."flag" ]
+| | | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL ] [ "t1"."k" ASC NOT NULL, "t1"."v" NULLS LAST NOT NULL UNIQUE ]
+| | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL, "sys"."rank"("sys"."star"(), "sys"."diff"("t1"."k" NOT NULL), "sys"."diff"("t1"."v" NOT NULL UNIQUE)) as "t2"."rank" ]
+| ) [ ("t1"."v" NOT NULL UNIQUE) = (int(32) "15"), ("t1"."flag" NOT NULL) = (boolean(1) "false"), ("t2"."rank") = (int(32) "1") ]
+) [ "t1"."k" NOT NULL as "t2"."k", "t1"."v" NOT NULL UNIQUE as "t2"."v", "t1"."flag" NOT NULL as "t2"."flag", "t2"."rank" NOT NULL ]
 
 # swapping k with v just to test for hardcoded optimizations,
 # v is pushed down but not k
@@ -134,44 +129,16 @@ project (
 | | | project (
 | | | | project (
 | | | | | select (
-| | | | | | table("sys"."test") [ "test"."k", "test"."v" ]
-| | | | | ) [ ("test"."v") = (int(32) "15") ]
-| | | | ) [ "test"."k" as "t1"."k", "test"."v" as "t1"."v", "sys"."mod"("test"."v", int(32) "2") as "%1"."%1", "sys"."="("%1"."%1", int(32) "0") as "t1"."flag" ]
-| | | ) [ "t1"."k", "t1"."v", "t1"."flag" ] [ "t1"."v" NULLS LAST ]
-| | ) [ "t1"."k", "t1"."v", "t1"."flag", "sys"."rank"("sys"."star"(), "sys"."diff"("t1"."v"), "sys"."diff"("t1"."v")) as "t2"."rank" ]
-| ) [ ("t1"."flag") = (boolean(1) "false"), ("t2"."rank") = (int(32) "1"), ("t1"."k") = (int(32) "10") ]
-) [ "t1"."k" as "t2"."k", "t1"."v" as "t2"."v", "t1"."flag" as "t2"."flag", "t2"."rank" ]
-
+| | | | | | table("sys"."test") [ "test"."k" NOT NULL, "test"."v" NOT NULL UNIQUE ]
+| | | | | ) [ ("test"."v" NOT NULL UNIQUE) = (int(32) "15") ]
+| | | | ) [ "test"."k" NOT NULL as "t1"."k", "test"."v" NOT NULL UNIQUE as "t1"."v", "sys"."mod"("test"."v" NOT NULL UNIQUE, int(32) "2") NOT NULL as "%1"."%1", "sys"."="("%1"."%1" NOT NULL, int(32) "0") NOT NULL as "t1"."flag" ]
+| | | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL ] [ "t1"."v" NULLS LAST NOT NULL UNIQUE ]
+| | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL, "sys"."rank"("sys"."star"(), "sys"."diff"("t1"."v" NOT NULL UNIQUE), "sys"."diff"("t1"."v" NOT NULL UNIQUE)) as "t2"."rank" ]
+| ) [ ("t1"."flag" NOT NULL) = (boolean(1) "false"), ("t2"."rank") = (int(32) "1"), ("t1"."k" NOT NULL) = (int(32) "10") ]
+) [ "t1"."k" NOT NULL as "t2"."k", "t1"."v" NOT NULL UNIQUE as "t2"."v", "t1"."flag" NOT NULL as "t2"."flag", "t2"."rank" NOT NULL ]
 
 # performing some additional computation on the partition key,
 # filter cannot be pushed down
-plan SELECT *
-FROM (
-    SELECT k * 10 as k, v, flag, rank() OVER (PARTITION BY k ORDER BY v DESC) AS rank
-    FROM (
-        SELECT k, v, v % 2 = 0 AS flag
-        FROM Test
-    ) t1
-) t2
-WHERE rank = 1 AND NOT flag AND k = 10;
-----
-project (
-| select (
-| | project (
-| | | select (
-| | | | project (
-| | | | | project (
-| | | | | | project (
-| | | | | | | table("sys"."test") [ "test"."k", "test"."v" ]
-| | | | | | ) [ "test"."k" as "t1"."k", "test"."v" as "t1"."v", "sys"."mod"("test"."v", int(32) "2") as "%1"."%1", "sys"."="("%1"."%1", int(32) "0") as "t1"."flag" ]
-| | | | | ) [ "t1"."k", "t1"."v", "t1"."flag" ] [ "t1"."k" ASC, "t1"."v" NULLS LAST ]
-| | | | ) [ "t1"."k", "t1"."v", "t1"."flag", "sys"."rank"("sys"."star"(), "sys"."diff"("t1"."k"), "sys"."diff"("t1"."v")) as "t2"."rank" ]
-| | | ) [ ("t1"."flag") = (boolean(1) "false"), ("t2"."rank") = (int(32) "1") ]
-| | ) [ "sys"."sql_mul"("t1"."k", tinyint(4) "10") as "t2"."k", "t1"."v" as "t2"."v", "t1"."flag" as "t2"."flag", "t2"."rank" ]
-| ) [ ("t2"."k") = (bigint(36) "10") ]
-) [ "t2"."k", "t2"."v", "t2"."flag", "t2"."rank" ]
-
-
 # filter [partition column OR flag], cannot be safely pushed down
 query T nosort
 plan SELECT *
@@ -189,13 +156,12 @@ project (
 | | project (
 | | | project (
 | | | | project (
-| | | | | table("sys"."test") [ "test"."k", "test"."v" ]
-| | | | ) [ "test"."k" as "t1"."k", "test"."v" as "t1"."v", "sys"."mod"("test"."v", int(32) "2") as "%1"."%1", "sys"."="("%1"."%1", int(32) "0") as "t1"."flag" ]
-| | | ) [ "t1"."k", "t1"."v", "t1"."flag" ] [ "t1"."k" ASC, "t1"."v" NULLS LAST ]
-| | ) [ "t1"."k", "t1"."v", "t1"."flag", "sys"."rank"("sys"."star"(), "sys"."diff"("t1"."k"), "sys"."diff"("t1"."v")) as "t2"."rank" ]
-| ) [ ("t2"."rank") = (int(32) "1"), (("t1"."flag") = (boolean(1) "false")) or (("t1"."k") = (int(32) "10")) ]
-) [ "t1"."k" as "t2"."k", "t1"."v" as "t2"."v", "t1"."flag" as "t2"."flag", "t2"."rank" ]
-
+| | | | | table("sys"."test") [ "test"."k" NOT NULL, "test"."v" NOT NULL UNIQUE ]
+| | | | ) [ "test"."k" NOT NULL as "t1"."k", "test"."v" NOT NULL UNIQUE as "t1"."v", "sys"."mod"("test"."v" NOT NULL UNIQUE, int(32) "2") NOT NULL as "%1"."%1", "sys"."="("%1"."%1" NOT NULL, int(32) "0") NOT NULL as "t1"."flag" ]
+| | | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL ] [ "t1"."k" ASC NOT NULL, "t1"."v" NULLS LAST NOT NULL UNIQUE ]
+| | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL, "sys"."rank"("sys"."star"(), "sys"."diff"("t1"."k" NOT NULL), "sys"."diff"("t1"."v" NOT NULL UNIQUE)) as "t2"."rank" ]
+| ) [ ("t2"."rank") = (int(32) "1"), (("t1"."flag" NOT NULL) = (boolean(1) "false")) or (("t1"."k" NOT NULL) = (int(32) "10")) ]
+) [ "t1"."k" NOT NULL as "t2"."k", "t1"."v" NOT NULL UNIQUE as "t2"."v", "t1"."flag" NOT NULL as "t2"."flag", "t2"."rank" NOT NULL ]
 
 # filter on k and v and both are partition columns, both filters can be pushed down 
 query T nosort
@@ -215,18 +181,16 @@ project (
 | | | project (
 | | | | project (
 | | | | | select (
-| | | | | | table("sys"."test") [ "test"."k", "test"."v" ]
-| | | | | ) [ ("test"."k") <= (int(32) "10"), ("test"."v") in (int(32) "1", int(32) "2", int(32) "3") ]
-| | | | ) [ "test"."k" as "t1"."k", "test"."v" as "t1"."v", "sys"."mod"("test"."v", int(32) "2") as "%2"."%2", "sys"."="("%2"."%2", int(32) "0") as "t1"."flag" ]
-| | | ) [ "t1"."k", "t1"."v", "t1"."flag" ] [ "t1"."k" ASC, "t1"."v" NULLS LAST ]
-| | ) [ "t1"."k", "t1"."v", "t1"."flag", "sys"."rank"("sys"."star"(), "sys"."diff"("sys"."diff"("t1"."k"), "t1"."v"), "sys"."diff"("t1"."v")) as "t2"."rank" ]
-| ) [ ("t1"."flag") = (boolean(1) "false"), ("t2"."rank") = (int(32) "1") ]
-) [ "t1"."k" as "t2"."k", "t1"."v" as "t2"."v", "t1"."flag" as "t2"."flag", "t2"."rank" ]
-
+| | | | | | table("sys"."test") [ "test"."k" NOT NULL, "test"."v" NOT NULL UNIQUE ]
+| | | | | ) [ ("test"."k" NOT NULL) <= (int(32) "10"), ("test"."v" NOT NULL UNIQUE) in (int(32) "1", int(32) "2", int(32) "3") ]
+| | | | ) [ "test"."k" NOT NULL as "t1"."k", "test"."v" NOT NULL UNIQUE as "t1"."v", "sys"."mod"("test"."v" NOT NULL UNIQUE, int(32) "2") NOT NULL as "%2"."%2", "sys"."="("%2"."%2" NOT NULL, int(32) "0") NOT NULL as "t1"."flag" ]
+| | | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL ] [ "t1"."k" ASC NOT NULL, "t1"."v" NULLS LAST NOT NULL UNIQUE ]
+| | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL, "sys"."rank"("sys"."star"(), "sys"."diff"("sys"."diff"("t1"."k" NOT NULL), "t1"."v" NOT NULL UNIQUE), "sys"."diff"("t1"."v" NOT NULL UNIQUE)) as "t2"."rank" ]
+| ) [ ("t1"."flag" NOT NULL) = (boolean(1) "false"), ("t2"."rank") = (int(32) "1") ]
+) [ "t1"."k" NOT NULL as "t2"."k", "t1"."v" NOT NULL UNIQUE as "t2"."v", "t1"."flag" NOT NULL as "t2"."flag", "t2"."rank" NOT NULL ]
 
 statement ok
 DROP TABLE Test
-
 
 # test with string filters
 # (previously e_convert were not being considered)
@@ -253,14 +217,13 @@ project (
 | | | project (
 | | | | project (
 | | | | | select (
-| | | | | | table("sys"."test") [ "test"."k", "test"."v" ]
-| | | | | ) [ (char(100)["test"."k"]) = (char(100) "10") ]
-| | | | ) [ "test"."k" as "t1"."k", "test"."v" as "t1"."v", "sys"."mod"("test"."v", int(32) "2") as "%1"."%1", "sys"."="("%1"."%1", int(32) "0") as "t1"."flag" ]
-| | | ) [ "t1"."k", "t1"."v", "t1"."flag" ] [ "t1"."k" ASC, "t1"."v" NULLS LAST ]
-| | ) [ "t1"."k", "t1"."v", "t1"."flag", "sys"."rank"("sys"."star"(), "sys"."diff"("t1"."k"), "sys"."diff"("t1"."v")) as "t2"."rank" ]
-| ) [ ("t1"."flag") = (boolean(1) "false"), ("t2"."rank") = (int(32) "1") ]
-) [ "t1"."k" as "t2"."k", "t1"."v" as "t2"."v", "t1"."flag" as "t2"."flag", "t2"."rank" ]
-
+| | | | | | table("sys"."test") [ "test"."k" NOT NULL, "test"."v" NOT NULL UNIQUE ]
+| | | | | ) [ (char(100)["test"."k" NOT NULL] NOT NULL) = (char(100) "10") ]
+| | | | ) [ "test"."k" NOT NULL as "t1"."k", "test"."v" NOT NULL UNIQUE as "t1"."v", "sys"."mod"("test"."v" NOT NULL UNIQUE, int(32) "2") NOT NULL as "%1"."%1", "sys"."="("%1"."%1" NOT NULL, int(32) "0") NOT NULL as "t1"."flag" ]
+| | | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL ] [ "t1"."k" ASC NOT NULL, "t1"."v" NULLS LAST NOT NULL UNIQUE ]
+| | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL, "sys"."rank"("sys"."star"(), "sys"."diff"("t1"."k" NOT NULL), "sys"."diff"("t1"."v" NOT NULL UNIQUE)) as "t2"."rank" ]
+| ) [ ("t1"."flag" NOT NULL) = (boolean(1) "false"), ("t2"."rank") = (int(32) "1") ]
+) [ "t1"."k" NOT NULL as "t2"."k", "t1"."v" NOT NULL UNIQUE as "t2"."v", "t1"."flag" NOT NULL as "t2"."flag", "t2"."rank" NOT NULL ]
 
 # test with like-type filters
 query T nosort
@@ -280,14 +243,14 @@ project (
 | | | project (
 | | | | project (
 | | | | | select (
-| | | | | | table("sys"."test") [ "test"."k", "test"."v" ]
-| | | | | ) [ (clob["test"."k"]) FILTER "sys"."like"(clob "%10%", clob "", boolean(1) "false") ]
-| | | | ) [ "test"."k" as "t1"."k", "test"."v" as "t1"."v", "sys"."mod"("test"."v", int(32) "2") as "%1"."%1", "sys"."="("%1"."%1", int(32) "0") as "t1"."flag" ]
-| | | ) [ "t1"."k", "t1"."v", "t1"."flag" ] [ "t1"."k" ASC, "t1"."v" NULLS LAST ]
-| | ) [ "t1"."k", "t1"."v", "t1"."flag", "sys"."rank"("sys"."star"(), "sys"."diff"("t1"."k"), "sys"."diff"("t1"."v")) as "t2"."rank" ]
-| ) [ ("t1"."flag") = (boolean(1) "false"), ("t2"."rank") = (int(32) "1") ]
-) [ "t1"."k" as "t2"."k", "t1"."v" as "t2"."v", "t1"."flag" as "t2"."flag", "t2"."rank" ]
-
+| | | | | | table("sys"."test") [ "test"."k" NOT NULL, "test"."v" NOT NULL UNIQUE ]
+| | | | | ) [ (clob["test"."k" NOT NULL] NOT NULL) FILTER "sys"."like"(clob "%10%", clob "", boolean(1) "false") ]
+| | | | ) [ "test"."k" NOT NULL as "t1"."k", "test"."v" NOT NULL UNIQUE as "t1"."v", "sys"."mod"("test"."v" NOT NULL UNIQUE, int(32) "2") NOT NULL as "%1"."%1", "sys"."="("%1"."%1" NOT NULL, int(32) "0") NOT NULL as "t1"."flag" ]
+| | | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL ] [ "t1"."k" ASC NOT NULL, "t1"."v" NULLS LAST NOT NULL UNIQUE ]
+| | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL, "sys"."rank"("sys"."star"(), "sys"."diff"("t1"."k" NOT NULL), "sys"."diff"("t1"."v" NOT NULL UNIQUE)) as "t2"."rank" ]
+| ) [ ("t1"."flag" NOT NULL) = (boolean(1) "false"), ("t2"."rank") = (int(32) "1") ]
+) [ "t1"."k" NOT NULL as "t2"."k", "t1"."v" NOT NULL UNIQUE as "t2"."v", "t1"."flag" NOT NULL as "t2"."flag", "t2"."rank" NOT NULL ]
 
 statement ok
 DROP TABLE Test
+
