@@ -1,3 +1,330 @@
+monetdb (11.43.17) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#2507: SQL: Implement complementary EXTRACT functionality
+  * GH#2508: SQL:rel_optimizer apply min/max only on source table in join
+  * GH#2511: SQL: describe object
+  * GH#2512: SQL: Improve (i)like preformance on diverse stringdata
+  * GH#2516: SQL: increase cost of a like operation
+  * GH#2521: Optimise out group by operator in SQL level by constraint
+  * GH#2525: SQL: CSV Vaults
+  * GH#2526: SQL: level 3 naming
+  * GH#2605: functions to retrieve warnings from the server in Mapi
+  * GH#2608: Missing various functions used by Hibernate
+  * GH#2630: Poor performance using length(...) = length(...) in conjuction
+    with a equjoin
+  * GH#2749: Rewrite like without modifiers as = query early in the process
+  * GH#2804: binary "export": COPY <subquery> INTO
+    <list_of_binary_files_one_per_column>
+  * GH#2853: Give proper error message when starting database that needs
+    upgrade with --readonly
+  * GH#2858: use of configure conditionals on Windows not complete and
+    consistent
+  * GH#2941: please add transaction functions to php driver
+  * GH#2948: Document MonetDB's usage of indices
+  * GH#3001: Rewrite BETWEEN in column first notation, with constant
+    arguments last
+  * GH#3005: When IN is presented with a single element, optimise to =
+  * GH#3006: Keep result of UNION sorted when inputs are sorted
+  * GH#3015: SQL-92 defines BIT and BIT VARYING
+  * GH#3044: Exception handling in procedures and functions
+  * GH#3162: If we insert and delete a set of records monet db is not
+    freeing up memory
+  * GH#3187: Documentation suggests changing escape character is possible -
+    how to disable it entirely?
+  * GH#3203: allow to set user/password for funnel connections
+  * GH#3242: Steps for repair database
+  * GH#3244: Rename default database "demo"
+  * GH#3301: CHAR comparisons do not pad strings of different lengths
+  * GH#3322: Run a statement each time a connection is created via ODBC
+  * GH#3324: "copy subquery into file " doesnt support writing binary data
+    into file
+  * GH#3327: Transactional behaviour of BinaryBulkLoad
+  * GH#3355: Control the amount of (temp) space
+  * GH#3378: possible to support double x boolean type casting in the next
+    update?
+  * GH#3400: Support Backticks in SQL queries and redundant size
+    restrictions in DDL statements
+  * GH#3405: Add bulk versions of json functions
+  * GH#3410: Bogus (?) "Maximum concurrent client limit reached (65)"
+  * GH#3413: Database corrupted after few days on database restart
+  * GH#3426: Extend SQL triggers to fire on system events such as AFTER LOGON
+  * GH#3441: Explicit WITHOUT TIME ZONE
+  * GH#3499: Unresponsive mserver ("unknown state: 4" in logs on restart)
+  * GH#3501: Starting database fails because of locale settings
+  * GH#3509: add support for formatted conversion to string using function:
+    to_char(num_ts_val, 'format_mask')
+  * GH#3517: scalar function round(num) is not supported
+  * GH#3539: Configurable parsing for ETL and bulk loading
+  * GH#3548: mitosis splits an unhelpful table when applied to unions
+  * GH#3550: Distribution-adaptive grouping is gone
+  * GH#3559: Harddrive fills and crashes database during live data insertion
+    via mapi library client.
+  * GH#3569: Add support for: ALTER TABLE [schema1.]tablename ADD CONSTRAINT
+    [tbl_constr_name] CHECK (logical_expression)
+  * GH#3570: Server dies on status or start my-first-db
+  * GH#3590: string concat on a column is expensive
+  * GH#3610: exittimeout property not being honoured
+  * GH#3618: Illegal instruction thrown when releasing db
+  * GH#3668: UNIQUE INDEX constraint is not enforced during inserts and
+    updates
+  * GH#3670: COPY BINARY INTO support for inet type
+  * GH#3681: mserver5 crashes with a segfault when dumping very large
+    databases
+  * GH#3683: Mtest hangs if server console was disabled
+  * GH#3695: crashes after "GDKmmap(...) fails"
+  * GH#3722: monetdbd for Windows
+  * GH#3734: NodeJS client: Inserting backslashes into the database does not
+    work properly
+  * GH#3737: Simplify building on Windows
+  * GH#3745: COPY BINARY doesn't support copy without auto-increment column
+  * GH#3750: Hanging mserver during startup
+  * GH#3751: MonetDBD can not recover
+  * GH#3762: Different FavIcon, logo for the Bugzilla section of the website
+  * GH#3780: HAVING clause does not read AS columns?
+  * GH#3792: monetdbd sets wrong property for optimizer pipeline
+  * GH#3808: Fractional seconds precision is broken for any precision larger
+    than 3
+  * GH#3812: Using copy into to import data fails if data contains \560,
+    \561 and several other combinations of characters
+  * GH#3826: Monetdb Server crashes on concurrent schema operations
+  * GH#3846: feature request: please allow multiple NULL AS null_string
+    values for a COPY INTO line
+  * GH#3875: Adding support for DISTINCT in custom single-argument aggregates
+  * GH#3880: mserver5 crashed and fails to restart
+  * GH#3894: PIP repository points to the older version of python-monetdb
+  * GH#3907: Issue with Perl monetdb DBD plugin for DBI on a VM only
+  * GH#3914: Schema specific variables
+  * GH#3924: mserver5: sql_result.c:1650: mvc_export_operation: Assertion
+    `m->type == Q_SCHEMA || m->type == Q_TRANS' failed.
+  * GH#3934: Tables system table contain tables of the same name associated
+    with the same schema_id
+  * GH#3958: TRACE timings are misleading with CREATE TABLE statements
+  * GH#3964: colon (e.g. :x) parameters does not work in prepared statements
+  * GH#3970: Better instructions for how to generate the binary files for
+    binary copy statement
+  * GH#3982: SQL string parsing is incorrect
+  * GH#3992: unions not reusable -> plans explode
+  * GH#4002: DECIMAL HUGEINT columns in ODBC return wrong values
+  * GH#4006: monetdbd does not always properly setup a socket between an
+    mserver5 process and a MAPI client
+  * GH#4012: Extend storage() function with garbage size
+  * GH#4022: Preventing CAST( AS VARCHAR) from TEXT within WHERE part
+  * GH#4023: TOP N queries in merge tables
+  * GH#4042: Cannot connect to local or networked server with this version -
+    Tableau/Alteryx - but can via earlier version
+  * GH#4055: Cannot set a connection timeout
+  * GH#4073: Tutorial doesn't work at all. R connection fails in execution.
+    Unusable for non database people right now.
+  * GH#6067: Error messages referring to logs should say which logs
+  * GH#6122: feature request: allow some SELECT a.col IN ( b.col FROM b )
+    FROM a behavior?
+  * GH#6129: BBPinit supports no BBPfarms initially, but GDKinit doesn't
+    (and crashes)
+  * GH#6131: FK constraint violated in self table references
+  * GH#6136: some of MAPI arguments are not portable
+  * GH#6137: ALTER TABLE qname ADD COLUMN ncołumn COPY [BINARY] FROM
+    'external_file'
+  * GH#6188: Multiple calls not distinguishable in sys.queue
+  * GH#6199: Query echoing should occur before each query is executed
+  * GH#6208: Add support to specify execution of some SQL commands at login
+    time for a specific user
+  * GH#6212: querying client connections information
+  * GH#6221: error message "mvc_init: unable to create system tables..."
+    trying to start server (mserver5.bat)
+  * GH#6226: monetdbd and mserver5 options aligned
+  * GH#6241: Error while using start command
+  * GH#6333: Feature Request: Support aggregation functions FIRST() and
+    LAST()
+  * GH#6334: Need better error message when rejecting a COPY INTO from a
+    relative path
+  * GH#6376: How to install (non-C) MonetDB client packages
+  * GH#6394: Remote MAL does not accept nil:bat[:oid]
+  * GH#6396: Noticed "Memory Leak" with high concurrency and same SQL run in
+    loop
+  * GH#6464: Python loader / COPY LOADER INTO overrules defaults with NUL
+  * GH#6466: Mode measure
+  * GH#6505: Big table load with copy into crashes the db.
+  * GH#6533: SIMILAR TO regular expression matching [patch]
+  * GH#6538: transient BAT/COL/Heap-allocation fall-back to DBfarm in case
+    DBextra fails
+  * GH#6563: monetdbd should provide more fine grained control over hosts
+    allowed to connect
+  * GH#6582: CSV load only support UTF-8 encoding
+  * GH#6590: How to place database in readonly mode  without shutdown the
+    database .
+  * GH#6619: INSERT INTO table with auto_increment column needs bulk
+    execution
+  * GH#6623: sys.rejects table need improvements
+  * GH#6631: GDKfatal should exit harder
+  * GH#6655: Disallow creating duplicate unique constraints and associated
+    storage on columns which already have a unique or pkey constraint defined
+  * GH#6661: Unusual behaviour when no_mitosis_pipe flag is set
+  * GH#6667: Uninstalling MonetDB RPMs and Reinstalling after corruption
+    occurs leaves the system unusable
+  * GH#6675: Executing SQL query repeatedly, degrades performance
+  * GH#6677: MonetDB should optimize queries of the form select * from foo
+    where FALSE, select * from foo where 0 = 1, etc.
+  * GH#6692: import with COPY INTO and missing column list for csv file has
+    an unclear error message.
+  * GH#6702: Recursive CTE support (WITH Clause)
+  * GH#6707: Transaction mode forces roll back if error
+  * GH#6717: Significant changes  to GDK structures and conventions not
+    reflected in comments
+  * GH#6733: Add support for replacing db-objects when there are references
+    to them, without removing the references first
+  * GH#6742: High count of memory mapped BAT files and high disk space usage
+    on inserting data via SQL INSERT.
+  * GH#6746: Extend sys.sequences with columns showing the currentvalue and
+    datatype
+  * GH#6747: Add "LITERAL" option to COPY INTO FROM that prevents MonetDB's
+    bulk loader from (trying to) be(ing) "smart"
+  * GH#6752: Keep the original textual description in the _tables
+  * GH#6753: SQL COPY INTO FROM compressed (bz2,xz,gz) file fails
+  * GH#6760: Pulling huge data via ODBC is very slow (with standard
+    rendering of output)
+  * GH#6768: Admin handling out of date
+  * GH#6787: COPY INTO ... ON CLIENT not working on Windows
+  * GH#6801: mserver5 crashes with a segmentation fault dumping a large
+    database (> 500G)
+  * GH#6811: systemd starts database in /var/monetdb5/dbfarm while init.d
+    start db in /var/lib/monetdb
+  * GH#6823: Outdated(?) note about BAMloader branch
+  * GH#6824: libtool:   error: error: cannot install 'libMonetODBC.la' to a
+    directory not ending in /usr/local/lib
+  * GH#6825: bugzilla: Invalid local time for date in time zone:
+    Europe/Amsterdam
+  * GH#6830: While upgrading the database from MonetDB-11.27.13_PY8 to
+    MonetDB-11.35.19 we are not able to bring up the database
+  * GH#6831: Lazy Replication: Slave DB does not replicate the creation of
+    new columns
+  * GH#6832: Prepared statements admin
+  * GH#6832: Prepared statements admin
+  * GH#6834: Fails to Create A "FILE DSN" (Monetdb ODBC) under Windows 10
+    Enterprise
+  * GH#6849: Need environment variables
+  * GH#6852: Lazy Replication: Replica DB does not replicate updates any more
+  * GH#6852: Lazy Replication: Replica DB does not replicate updates any more
+  * GH#6921: DockerHub monetdb/monetdb is outdatet
+  * GH#6933: Add support for scalar function IFNULL(expr1, expr2)
+  * GH#6946: Subuniform missed in mergetable optimizer
+  * GH#6947: Create index warnings
+  * GH#6952: Add support for altering the authorization and/or owner of a
+    schema
+  * GH#6956: Mserver5 crashes on firing a query involving inner joins of
+    merge tables
+  * GH#6961: Could Mapilib have non-blocking functions to ask if the query
+    is over for mapi_send?
+  * GH#6966: dbextra=:memory: fails
+  * GH#6968: Support SET ANSI_NULLS ON | OFF
+  * GH#6975: Algorithm information should be saved in instruction
+  * GH#6984: TABLE CHECKSUM
+  * GH#7000: Scheduled query as a new feature
+  * GH#7008: monetdbd 11.35 allows to start a dbfarm created with 11.39
+  * GH#7009: MERGE does not currently support WHEN NOT MATCHED BY SOURCE
+  * GH#7014: More flexible syntax for time intervals
+  * GH#7015: Optimizers-pipeline as a global setting for a certain database
+  * GH#7040: Memory leak detected for MAPI interface
+  * GH#7244: Using MonetDb\e in C#
+  * GH#7298: Irresponsive database server after reading incomplete SQL
+    script.
+  * GH#7308: Race condition in MVCC transaction management
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 11 Aug 2022 11:51:02 +0200
+
+monetdb (11.43.17) unstable; urgency=low
+
+  * gdk: A bug was fixed when upgrading a database from the Oct2020 releases
+    (11.39.X) or older when the write-ahead log (WAL) was not empty and
+    contained instructions to create new tables.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 10 Aug 2022 11:51:02 +0200
+
+monetdb (11.43.17) unstable; urgency=low
+
+  * gdk: When destroying a bat, make sure there are no files left over in
+    the BACKUP directory since they can cause problems when the bat id
+    gets reused.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 2 Aug 2022 11:51:02 +0200
+
+monetdb (11.43.17) unstable; urgency=low
+
+  * gdk: Fixed an off-by-one error in the logger which caused older log files
+    to stick around longer in the write-ahead log than necessary.
+  * gdk: When an empty BAT is committed, skip writing (and synchronizing to
+    disk) the heap (tail and theap) files and write 0 for their sizes to
+    the BBP.dir file.  When reading the BBP.dir file, if an empty BAT is
+    encountered, set the sizes of those files to 0.  This fixes potential
+    issues during startup of the server (BBPcheckbats reporting errors).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 28 Jul 2022 11:51:02 +0200
+
+monetdb (11.43.17) unstable; urgency=low
+
+  * merovingian: When multiple identical messages are written to the log, write the
+    first one, and combine subsequent ones in a single message.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 23 Jun 2022 11:51:02 +0200
+
+monetdb (11.43.17) unstable; urgency=low
+
+  * gdk: Make sure heap files of transient bats get deleted when the bat is
+    destroyed.  If the bat was a partial view (sharing the vheap but not
+    the tail), the tail file wasn't deleted.
+  * gdk: Various changes were made to satisfy newer compilers.
+  * gdk: The batDirtydesc and batDirtyflushed Boolean values have been deprecated
+    and are no longer used.  They were both holdovers from long ago.
+  * gdk: Various race conditions (data races) have been fixed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 22 Jun 2022 11:51:02 +0200
+
+monetdb (11.43.17) unstable; urgency=low
+
+  * merovingian: Fixed a leak where the log file wasn't closed when it was reopened
+    after a log rotation (SIGHUP signal).
+  * merovingian: Try to deal more gracefully with "inherited" mserver5 processes.
+    This includes not complaining about an "impossible state", and allowing
+    such processes to be stopped by the monetdbd process.
+  * merovingian: When a transient failure occurs during processing of a new connection to
+    the monetdbd server, sleep for half a second so that if the transient
+    failure occurs again, the log file doesn't get swamped with error
+    messages.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 22 Jun 2022 11:51:02 +0200
+
+monetdb (11.43.17) unstable; urgency=low
+
+  * monetdb5: Various race conditions (data races) have been fixed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 22 Jun 2022 11:51:02 +0200
+
+monetdb (11.43.17) unstable; urgency=low
+
+  * clients: Implemented dump of global grants, that is to say, grants for COPY INTO
+    and COPY FROM which grant permission to users to write to or read from
+    files on the server (COPY INTO queries without the ON CLIENT option).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 10 Jun 2022 11:51:02 +0200
+
+monetdb (11.43.17) unstable; urgency=low
+
+  * clients: Fixed a bug where when the semicolon at the end of a COPY INTO query
+    that reads from STDIN is at exactly a 10240 byte boundary in a file,
+    the data isn't read as input for the COPY INTO but instead as a new
+    SQL query.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 31 May 2022 11:51:02 +0200
+
+monetdb (11.43.17) unstable; urgency=low
+
+  * gdk: All accesses to the BACKUP directory need to be protected by the
+    same lock.  The lock already existed (GDKtmLock), but wasn't used
+    consistently.  This is now fixed.  Hopefully this makes the hot snapshot
+    code more reliable.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 20 May 2022 11:51:02 +0200
+
 monetdb (11.43.15) unstable; urgency=low
 
   * Rebuilt.

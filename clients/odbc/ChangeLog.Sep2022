@@ -1,6 +1,24 @@
 # ChangeLog file for odbc
 # This file is updated with Maddlog
 
+* Thu Jul 28 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Improved ODBC Error/Warning messages. They now include the name of the
+  Data Source as required by the ODBC specification:
+  [MonetDB][ODBC driver VERSION][data-source-name] data-source-supplied-text
+
+* Wed Jul 27 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Improved MonetDB ODBC Data Source Configuration dialog on MS Windows by
+  hiding the typed in password text. It now shows dots for the characters.
+  This fixes request  https://github.com/MonetDB/MonetDB/issues/7314
+
+* Thu Jul 21 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Changed output of TABLE_CAT or PROCEDURE_CAT result columns as returned
+  by ODBC functions: SQLTables(), SQLColumns(), SQLPrimaryKeys(),
+  SQLForeignKeys(), SQLStatistics(), SQLTablePrivileges(),
+  SQLColumnPrivileges(), SQLProcedures() and SQLProcedureColumns().
+  They used to return the static database name but now they will return
+  NULL as MonetDB does not support CATALOG objects or qualifiers.
+
 * Thu Jul 14 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Removed the possibility to retrieve or set the CURRENT_CATALOG
   via SQLGetConnectAttr(hdbc, SQL_ATTR_CURRENT_CATALOG, ...) and
