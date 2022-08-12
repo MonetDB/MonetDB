@@ -20,8 +20,23 @@
 typedef struct rusage Rusage;
 #endif
 
+
+enum event_phase {
+	MAL_ENGINE = 0,
+	CLIENT_CONNECTION,
+	TEXT_TO_SQL,
+	SQL_TO_REL,
+	REL_OPT,
+	REL_TO_MAL,
+	MAL_OPT,
+	TRANSACTION_START = 100,
+	COMMIT,
+	ROLLBACK,
+	TRANSACTION_END
+};
+
 typedef struct NonMalEvent {
-	str phase;
+	enum event_phase phase;
 	Client cntxt;
 	ulng clk;
 	ulng* tid;
