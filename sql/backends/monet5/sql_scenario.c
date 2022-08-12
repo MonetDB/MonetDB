@@ -995,6 +995,10 @@ SQLparser(Client c)
 	m = be->mvc;
 	m->type = Q_PARSE;
 	if (be->language != 'X') {
+		// generate and set the tag in the mal block of the clients current program.
+		tag = runtimeProfileSetTag(c);
+		assert(tag == c->curprg->def->tag);
+		(void) tag;
 		if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
 			c->mode = FINISHCLIENT;
 			return msg;
@@ -1113,11 +1117,6 @@ SQLparser(Client c)
 		goto finalize;
 	}
 
-	// generate and set the tag in the mal block of the clients current program.
-	tag = runtimeProfileSetTag(c);
-	assert(tag == c->curprg->def->tag);
-	(void) tag;
-
 	Tbegin = GDKusec();
 
 	if ((err = sqlparse(m)) ||
@@ -1150,7 +1149,7 @@ SQLparser(Client c)
 	if(malProfileMode > 0) {
 		profilerEvent((struct MalEvent) {0},
 					  (struct NonMalEvent)
-					  {"sql_parser", c, Tend, NULL, c->query?0:1, Tend-Tbegin});
+					  {"sql_parser", c, Tend, NULL, NULL, c->query?0:1, Tend-Tbegin});
 	}
 
 	if (c->query == NULL) {
@@ -1209,7 +1208,7 @@ SQLparser(Client c)
 			if(malProfileMode > 0)
 				profilerEvent((struct MalEvent) {0},
 							  (struct NonMalEvent)
-							  {"rel_to_mal", c, Tend, NULL, c->query?0:1, Tend-Tbegin});
+							  {"rel_to_mal", c, Tend, NULL, NULL, c->query?0:1, Tend-Tbegin});
 		} else {
 			char *q_copy = sa_strdup(m->sa, c->query);
 
@@ -1283,7 +1282,7 @@ SQLparser(Client c)
 			if(malProfileMode > 0)
 				profilerEvent((struct MalEvent) {0},
 							  (struct NonMalEvent)
-							  {"mal_opt", c, Tend, NULL, msg==MAL_SUCCEED?0:1, Tend-Tbegin});
+							  {"mal_opt", c, Tend, NULL, NULL, msg==MAL_SUCCEED?0:1, Tend-Tbegin});
 			if (msg != MAL_SUCCEED) {
 				str other = c->curprg->def->errors;
 				/* In debugging mode you may want to assess what went wrong in the optimizers*/

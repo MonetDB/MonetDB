@@ -3584,9 +3584,9 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		list_destroy(tr->depchanges);
 		tr->depchanges = NULL;
 	}
-		Tend = GDKusec();
-	store->generic_event_wrapper("rollback",
-								 tr->tid, Tend-Tbegin, Tend, 0);
+
+	Tend = GDKusec();
+	store->profiler_event_wrapper("rollback", Tend, &tr->tid, NULL, 0, Tend-Tbegin);
 }
 
 sql_trans *
@@ -3938,8 +3938,7 @@ sql_trans_commit(sql_trans *tr)
 		ok = clean_predicates_and_propagate_to_parent(tr);
 
 	Tend = GDKusec();
-	store->generic_event_wrapper("commit",
-								 tr->tid, Tend-Tbegin, Tend, (ok == LOG_OK)? SQL_OK : SQL_ERR);
+	store->profiler_event_wrapper("commit", Tend, &tr->tid, NULL, ok, Tend-Tbegin);
 
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
@@ -6874,6 +6873,8 @@ sql_trans_begin(sql_session *s)
 	s->status = 0;
 	TRC_DEBUG(SQL_STORE, "Exit sql_trans_begin for transaction: " ULLFMT "\n", tr->tid);
 	store_unlock(store);
+	s->status = tr->status = 0;
+	store->profiler_event_wrapper("start transaction", GDKusec(), &s->tr->tid, &s->tr->ts, 0, 0);
 	return 0;
 }
 
@@ -6906,7 +6907,7 @@ sql_trans_end(sql_session *s, int ok)
 	assert(list_length(store->active) == (int) ATOMIC_GET(&store->nr_active));
 	store_unlock(store);
 	lng Tend = GDKusec();
-	store->generic_event_wrapper("transaction",
-								 s->tr->tid, Tend-(s->tr->clk_start), Tend, (ok == LOG_OK)? SQL_OK : SQL_ERR);
+	store->profiler_event_wrapper("end transaction", Tend, &s->tr->tid, &s->tr->ts, ok==SQL_OK?0:1, 0);
+
 	return ok;
 }
