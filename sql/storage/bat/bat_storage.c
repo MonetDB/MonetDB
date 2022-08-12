@@ -3914,6 +3914,11 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 					column_storage *cs = ATOMIC_PTR_GET(&i->data);
 
 					if (cs) {
+						if (cs->cleared) {
+							ok = (tr_log_cs(tr, t, cs, cur, i->base.id) == LOG_OK)? GDK_SUCCEED : GDK_FAIL;
+							continue;
+						}
+
 						/* append idx */
 						BAT *ins = temp_descriptor(cs->bid);
 						assert(ins);
