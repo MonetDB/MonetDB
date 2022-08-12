@@ -887,7 +887,7 @@ TYPE##Read(TYPE *A, size_t *dstlen, stream *s, size_t cnt)		\
 		*dstlen = cnt * sizeof(TYPE);				\
 	}								\
 	if (mnstr_read##NAME##Array(s, (CAST *) a, cnt) == 0 ||		\
-	    mnstr_errnr(s)) {						\
+	    mnstr_errnr(s) != MNSTR_NO__ERROR) {			\
 		if (a != A)						\
 			GDKfree(a);					\
 		return NULL;						\

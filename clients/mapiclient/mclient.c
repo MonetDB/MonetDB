@@ -842,7 +842,7 @@ XMLrenderer(MapiHdl hdl)
 	if (name != NULL && *name != 0)
 		XMLprattr("name", name);
 	mnstr_printf(toConsole, ">\n");
-	while (!mnstr_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
+	while (mnstr_errnr(toConsole) == MNSTR_NO__ERROR && (fields = fetch_row(hdl)) != 0) {
 		mnstr_printf(toConsole, "<row>");
 		for (i = 0; i < fields; i++) {
 			char *data = mapi_fetch_field(hdl, i);
@@ -879,7 +879,7 @@ EXPANDEDrenderer(MapiHdl hdl)
 		if (w > fieldw)
 			fieldw = w;
 	}
-	while (!mnstr_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
+	while (mnstr_errnr(toConsole) == MNSTR_NO__ERROR && (fields = fetch_row(hdl)) != 0) {
 		int valuew = 0, len;
 		++rec;
 		for (i = 0; i < fields; i++) {
@@ -940,7 +940,7 @@ CSVrenderer(MapiHdl hdl)
 		}
 		mnstr_printf(toConsole, "\n");
 	}
-	while (!mnstr_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
+	while (mnstr_errnr(toConsole) == MNSTR_NO__ERROR && (fields = fetch_row(hdl)) != 0) {
 		for (i = 0; i < fields; i++) {
 			s = mapi_fetch_field(hdl, i);
 			if (!noquote && s != NULL && s[strcspn(s, specials)] != '\0') {
@@ -1174,7 +1174,7 @@ TESTrenderer(MapiHdl hdl)
 	char *sep;
 	int i;
 
-	while (!mnstr_errnr(toConsole) && (reply = fetch_line(hdl)) != 0) {
+	while (mnstr_errnr(toConsole) == MNSTR_NO__ERROR && (reply = fetch_line(hdl)) != 0) {
 		if (*reply != '[') {
 			if (*reply == '=')
 				reply++;
@@ -1566,7 +1566,7 @@ SQLrenderer(MapiHdl hdl)
 	rows = SQLheader(hdl, len, printfields, fields != printfields);
 
 	while ((rfields = fetch_row(hdl)) != 0) {
-		if (mnstr_errnr(toConsole))
+		if (mnstr_errnr(toConsole) != MNSTR_NO__ERROR)
 			continue;
 		if (rfields != fields) {
 			mnstr_printf(stderr_stream,
@@ -1960,7 +1960,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 
 			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 		}
-	} while (!mnstr_errnr(toConsole) && (rc = mapi_next_result(hdl)) == 1);
+	} while (mnstr_errnr(toConsole) == MNSTR_NO__ERROR && (rc = mapi_next_result(hdl)) == 1);
 	/*
 	 * in case we called timerHuman() in the loop above with "total == false",
 	 * call it again with "total == true" to get the total wall-clock time
@@ -1968,7 +1968,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 	 */
 	if (timerHumanCalled)
 		timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, true);
-	if (mnstr_errnr(toConsole)) {
+	if (mnstr_errnr(toConsole) != MNSTR_NO__ERROR) {
 		mnstr_printf(stderr_stream, "write error: %s\n", mnstr_peek_error(toConsole));
 		mnstr_clearerr(toConsole);
 		errseen = true;
@@ -2709,7 +2709,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 					 * convert filename from UTF-8
 					 * to locale */
 					if ((s = open_rastream(line)) == NULL ||
-					    mnstr_errnr(s)) {
+					    mnstr_errnr(s) != MNSTR_NO__ERROR) {
 						if (s)
 							close_stream(s);
 						mnstr_printf(stderr_stream, "Cannot open %s: %s\n", line, mnstr_peek_error(NULL));
@@ -2733,7 +2733,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 					else if (strcmp(line, "stderr") == 0)
 						toConsole = stderr_stream;
 					else if ((toConsole = open_wastream(line)) == NULL ||
-						 mnstr_errnr(toConsole)) {
+						 mnstr_errnr(toConsole) != MNSTR_NO__ERROR) {
 						mnstr_printf(stderr_stream, "Cannot open %s: %s\n", line, mnstr_peek_error(toConsole));
 						if (toConsole != NULL) {
 							close_stream(toConsole);
@@ -3468,7 +3468,7 @@ main(int argc, char **argv)
 		encoding = NULL;
 	if (encoding != NULL) {
 		stream *s = iconv_wstream(toConsole, encoding, "stdout");
-		if (s == NULL || mnstr_errnr(s)) {
+		if (s == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
 			mnstr_printf(stderr_stream, "warning: cannot convert local character set %s to UTF-8\n", encoding);
 			close_stream(s);
 		} else
