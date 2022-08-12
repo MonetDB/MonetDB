@@ -308,7 +308,6 @@ typedef struct sql_trans {
 
 	ulng ts;			/* transaction start timestamp */
 	ulng tid;			/* transaction id */
-	ulng clk_start;     /* transaction start timestamp in microseconds */
 
 	sql_store store;	/* keep link into the global store */
 	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */

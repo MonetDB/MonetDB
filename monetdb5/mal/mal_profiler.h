@@ -25,6 +25,7 @@ typedef struct NonMalEvent {
 	Client cntxt;
 	ulng clk;
 	ulng* tid;
+	ulng* ts;
 	int state;
 	ulng duration;
 } NonMalEvent;
