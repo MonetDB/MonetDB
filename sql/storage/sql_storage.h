@@ -309,8 +309,8 @@ extern res_table *res_tables_remove(res_table *results, res_table *t);
 sql_export void res_tables_destroy(res_table *results);
 extern res_table *res_tables_find(res_table *results, int res_id);
 
-typedef void (*generic_event_wrapper_fptr) (str face, ulng tid, lng usec, lng clk, int rc);
-extern struct sqlstore *store_init(int debug, store_type store, int readonly, int singleuser, generic_event_wrapper_fptr event_wrapper);
+typedef void (*profiler_event_wrapper_fptr) (str phase, lng clk, ulng *tid, ulng *ts, int state, lng usec);
+extern struct sqlstore *store_init(int debug, store_type store, int readonly, int singleuser, profiler_event_wrapper_fptr event_wrapper);
 extern void store_exit(struct sqlstore *store);
 
 extern void store_suspend_log(struct sqlstore *store);

@@ -170,32 +170,32 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 }
 
 static str
-prepareNonMalEvent(Client cntxt, str phase, ulng clk, ulng *tid, int state, ulng duration)
+prepareNonMalEvent(Client cntxt, str phase, ulng clk, ulng *tid, ulng *ts, int state, ulng duration)
 {
 	oid* tag = NULL;
-	int sessionid = -1;
 	str query = NULL;
 	struct logbuf logbuf = {0};
 
 	uint64_t mclk = (uint64_t)clk -
 		((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
 
-	if (cntxt) {
-		sessionid = cntxt->idx;
-		if (cntxt->curprg)
-			tag = &cntxt->curprg->def->tag;
-		if (cntxt->query)
-			query = mal_quote(cntxt->query, strlen(cntxt->query));
-	}
+	assert(cntxt);
+	int sessionid = cntxt->idx;
+	if (cntxt->curprg)
+		tag = &cntxt->curprg->def->tag;
+	if (cntxt->query)
+		query = mal_quote(cntxt->query, strlen(cntxt->query));
 
-	if (sessionid != -1 && !logadd(&logbuf, "{\"sessionid\":\"%d\"", sessionid))
+	if (!logadd(&logbuf, "{\"sessionid\":\"%d\"", sessionid))
 		goto cleanup_and_exit;
 	if (!logadd(&logbuf, ", \"clk\":"ULLFMT"", mclk))
 		goto cleanup_and_exit;
 	if (!logadd(&logbuf, ", \"thread\":%d, \"phase\":\"%s\"",
 				THRgettid(), phase))
 		goto cleanup_and_exit;
-	if (tid && !logadd(&logbuf, ", \"transactionid\":"ULLFMT, *tid))
+	if (tid && !logadd(&logbuf, ", \"tid\":"ULLFMT, *tid))
+		goto cleanup_and_exit;
+	if (ts && !logadd(&logbuf, ", \"ts\":"ULLFMT, *ts))
 		goto cleanup_and_exit;
 	if (tag && !logadd(&logbuf, ", \"tag\":"OIDFMT, *tag))
 		goto cleanup_and_exit;
@@ -609,7 +609,7 @@ profilerEvent(MalEvent me, NonMalEvent nme)
 			event = prepareMalEvent(me.cntxt, me.mb, me.stk, me.pci);
 		}
 		if (me.mb == NULL && nme.phase != NULL) {
-			event = prepareNonMalEvent(nme.cntxt, nme.phase, nme.clk, nme.tid, nme.state, nme.duration);
+			event = prepareNonMalEvent(nme.cntxt, nme.phase, nme.clk, nme.tid, nme.ts, nme.state, nme.duration);
 		}
 		if (event) {
 			logjsonInternal(event, true);
