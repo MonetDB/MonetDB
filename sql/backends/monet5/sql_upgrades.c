@@ -4773,6 +4773,10 @@ sql_update_sep2022(Client c, mvc *sql)
 		t->system = 0;
 		t = mvc_bind_table(sql, s, "dump_create_users");
 		t->system = 0;
+		t = mvc_bind_table(sql, s, "dump_functions");
+		t->system = 0;
+		t = mvc_bind_table(sql, s, "dump_triggers");
+		t->system = 0;
 
 		pos = 0;
 		pos += snprintf(buf + pos, bufsize - pos,
@@ -4786,9 +4790,28 @@ sql_update_sep2022(Client c, mvc *sql)
 			"drop view sys.dump_start_sequences;\n"
 			"drop view sys.dump_tables;\n"
 			"drop view sys.describe_tables;\n"
-			"drop view sys.dump_create_users;\n");
+			"drop view sys.dump_create_users;\n"
+			"drop view sys.dump_functions;\n"
+			"drop view sys.dump_triggers;\n"
+			"drop function sys.schema_guard;\n"
+			"drop function sys.replace_first(string, string, string, string);\n");
 
 		pos += snprintf(buf + pos, bufsize - pos,
+			"CREATE FUNCTION sys.schema_guard(sch STRING, nme STRING, stmt STRING) RETURNS STRING BEGIN\n"
+			"RETURN\n"
+			" SELECT 'SET SCHEMA ' || sys.dq(sch) || '; ' || stmt;\n"
+			"END;\n"
+			"CREATE VIEW sys.dump_functions AS\n"
+			" SELECT f.o o, sys.schema_guard(f.sch, f.fun, f.def) stmt,\n"
+			" f.sch schema_name,\n"
+			" f.fun function_name\n"
+			" FROM sys.describe_functions f;\n"
+			"CREATE VIEW sys.dump_triggers AS\n"
+			" SELECT sys.schema_guard(sch, tab, def) stmt,\n"
+			" sch schema_name,\n"
+			" tab table_name,\n"
+			" tri trigger_name\n"
+			" FROM sys.describe_triggers;\n"
 			"CREATE VIEW sys.describe_partition_tables AS\n"
 			" SELECT\n"
 			" m_sch,\n"
@@ -5031,11 +5054,13 @@ sql_update_sep2022(Client c, mvc *sql)
 			" RETURN sys.dump_statements;\n"
 			"END;\n");
 		pos += snprintf(buf + pos, bufsize - pos,
-			"update sys._tables set system = true where name in ('describe_partition_tables', 'dump_partition_tables', 'dump_sequences', 'dump_start_sequences', 'describe_tables', 'dump_tables', 'dump_create_users') AND schema_id = 2000;\n");
+			"update sys._tables set system = true where name in ('describe_partition_tables', 'dump_partition_tables', 'dump_sequences', 'dump_start_sequences', 'describe_tables', 'dump_tables', 'dump_create_users', 'dump_functions', 'dump_triggers') AND schema_id = 2000;\n");
 		pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and name in ('dump_table_data') and schema_id = 2000 and type = %d;\n", F_PROC);
 		pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and name in ('dump_database') and schema_id = 2000 and type = %d;\n", F_UNION);
+		pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where system <> true and name in ('schema_guard') and schema_id = 2000 and type = %d;\n", F_FUNC);
 
 		/* 12_url.sql */
 		pos += snprintf(buf + pos, bufsize - pos,
