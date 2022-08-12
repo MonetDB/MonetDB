@@ -190,9 +190,9 @@ prepareNonMalEvent(Client cntxt, str phase, ulng clk, ulng *tid, int state, ulng
 			query = mal_quote(cntxt->query, strlen(cntxt->query));
 	}
 
-	if (!logadd(&logbuf, "{\"clk\":"ULLFMT"", mclk))
+	if (sessionid != -1 && !logadd(&logbuf, "{\"sessionid\":\"%d\"", sessionid))
 		goto cleanup_and_exit;
-	if (sessionid != -1 && !logadd(&logbuf, ", \"sessionid\":\"%d\"", sessionid))
+	if (!logadd(&logbuf, ", \"clk\":"ULLFMT"", mclk))
 		goto cleanup_and_exit;
 	if (!logadd(&logbuf, ", \"thread\":%d, \"phase\":\"%s\"",
 				THRgettid(), phase))
