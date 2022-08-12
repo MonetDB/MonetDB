@@ -171,8 +171,22 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 	return true;
 }
 
+static str phase_descriptions[] = {
+	[CLIENT_CONNECTION] = "client_connection",
+	[TEXT_TO_SQL]		= "text_to_sql",
+	[SQL_TO_REL]		= "sql_to_rel",
+	[REL_OPT]			= "rel_opt",
+	[REL_TO_MAL]		= "rel_to_mal",
+	[MAL_OPT]			= "rel_to_mal",
+	[MAL_ENGINE]		= "mal_engine",
+	[TRANSACTION_START]	= "trans_start",
+	[COMMIT]			= "trans_commit",
+	[ROLLBACK]			= "trans_rollback",
+	[TRANSACTION_END]	= "trans_end"
+};
+
 static str
-prepareNonMalEvent(Client cntxt, str phase, ulng clk, ulng *tid, ulng *ts, int state, ulng duration)
+prepareNonMalEvent(Client cntxt, enum event_phase phase, ulng clk, ulng *tid, ulng *ts, int state, ulng duration)
 {
 	oid* tag = NULL;
 	str query = NULL;
@@ -193,7 +207,7 @@ prepareNonMalEvent(Client cntxt, str phase, ulng clk, ulng *tid, ulng *ts, int s
 	if (!logadd(&logbuf, ", \"clk\":"ULLFMT"", mclk))
 		goto cleanup_and_exit;
 	if (!logadd(&logbuf, ", \"thread\":%d, \"phase\":\"%s\"",
-				THRgettid(), phase))
+				THRgettid(), phase_descriptions[phase]))
 		goto cleanup_and_exit;
 	if (tid && !logadd(&logbuf, ", \"tid\":"ULLFMT, *tid))
 		goto cleanup_and_exit;
@@ -260,13 +274,14 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				"\"sessionid\":\"%d\""
 				",\"clk\":%"PRIu64""
 				",\"thread\":%d"
-				",\"phase\":\"mal_engine\""
+				",\"phase\":\"%s\""
 				",\"program\":\"%s.%s\""
 				",\"pc\":%d"
 				",\"tag\":"OIDFMT,
 				cntxt->idx,
 				mclk,
 				THRgettid(),
+				phase_descriptions[MAL_ENGINE],
 				getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)),
 				mb?getPC(mb,pci):0,
 				stk?stk->tag:0))
@@ -624,12 +639,12 @@ profilerEvent(MalEvent me, NonMalEvent nme)
 
 	if (maleventstream) {
 		MT_lock_set(&mal_profileLock);
-		if (me.mb != NULL && nme.phase == NULL) {
+		if (me.mb != NULL && nme.phase == MAL_ENGINE) {
 			if (me.stk == NULL) return;
 			if (me.pci == NULL) return;
 			event = prepareMalEvent(me.cntxt, me.mb, me.stk, me.pci);
 		}
-		if (me.mb == NULL && nme.phase != NULL) {
+		if (me.mb == NULL && nme.phase != MAL_ENGINE) {
 			event = prepareNonMalEvent(nme.cntxt, nme.phase, nme.clk, nme.tid, nme.ts, nme.state, nme.duration);
 		}
 		if (event) {
