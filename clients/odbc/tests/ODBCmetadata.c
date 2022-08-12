@@ -288,7 +288,7 @@ compareResultOptClose(SQLHANDLE stmt, SQLRETURN retcode, const char * functionna
 		int line = 1;
 		int pos = 1;
 
-		fprintf(stderr, "Testing %s\nExpected (strlen=%ld):\n%s\nGotten (strlen=%ld):\n%s\n",
+		fprintf(stderr, "Testing %s\nExpected (strlen=%zu):\n%s\nGotten (strlen=%zu):\n%s\n",
 			functionname, len_expected, expected, len_outp, outp);
 
 		/* scan string to find location (line and position in line) of first character difference */
