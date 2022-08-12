@@ -135,7 +135,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 	if(malProfileMode > 0 )
 		profilerEvent((struct MalEvent) {0},
 					  (struct NonMalEvent)
-					  {"sql_to_rel", c, Tend, NULL, NULL, rel?0:1, Tend-Tbegin});
+					  {SQL_TO_REL, c, Tend, NULL, NULL, rel?0:1, Tend-Tbegin});
 
 	Tbegin = Tend;
 	if (rel)
@@ -152,7 +152,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 	if(malProfileMode > 0)
 		profilerEvent((struct MalEvent) {0},
 					  (struct NonMalEvent)
-					  {"rel_opt", c, Tend, NULL, NULL, rel?0:1, be->reloptimizer});
+					  {REL_OPT, c, Tend, NULL, NULL, rel?0:1, be->reloptimizer});
 	return rel;
 }
 

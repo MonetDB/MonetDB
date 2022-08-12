@@ -124,14 +124,14 @@ mvc_fix_depend(mvc *m, sql_column *depids, struct view_t *v, int n)
 }
 
 static void
-profiler_event_wrapper(str phase, lng clk, ulng *tid, ulng *ts, int state, lng usec)
+profiler_event_wrapper(int phase, lng clk, ulng *tid, ulng *ts, int state, lng usec)
 {
 	Client	c = getClientContext();
 
 	if(malProfileMode > 0)
 		profilerEvent((struct MalEvent) {0},
 					  (struct NonMalEvent)
-					  {phase, c, clk, tid, ts, state, usec});
+					  {(enum event_phase) phase, c, clk, tid, ts, state, usec});
 }
 
 sql_store
