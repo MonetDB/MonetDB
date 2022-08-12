@@ -1149,7 +1149,7 @@ SQLparser(Client c)
 	if(malProfileMode > 0) {
 		profilerEvent((struct MalEvent) {0},
 					  (struct NonMalEvent)
-					  {"sql_parser", c, Tend, NULL, NULL, c->query?0:1, Tend-Tbegin});
+					  {TEXT_TO_SQL, c, Tend, NULL, NULL, c->query?0:1, Tend-Tbegin});
 	}
 
 	if (c->query == NULL) {
@@ -1208,7 +1208,7 @@ SQLparser(Client c)
 			if(malProfileMode > 0)
 				profilerEvent((struct MalEvent) {0},
 							  (struct NonMalEvent)
-							  {"rel_to_mal", c, Tend, NULL, NULL, c->query?0:1, Tend-Tbegin});
+							  {REL_TO_MAL, c, Tend, NULL, NULL, c->query?0:1, Tend-Tbegin});
 		} else {
 			char *q_copy = sa_strdup(m->sa, c->query);
 
@@ -1282,7 +1282,7 @@ SQLparser(Client c)
 			if(malProfileMode > 0)
 				profilerEvent((struct MalEvent) {0},
 							  (struct NonMalEvent)
-							  {"mal_opt", c, Tend, NULL, NULL, msg==MAL_SUCCEED?0:1, Tend-Tbegin});
+							  {MAL_OPT, c, Tend, NULL, NULL, msg==MAL_SUCCEED?0:1, Tend-Tbegin});
 			if (msg != MAL_SUCCEED) {
 				str other = c->curprg->def->errors;
 				/* In debugging mode you may want to assess what went wrong in the optimizers*/

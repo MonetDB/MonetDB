@@ -207,7 +207,7 @@ MCexitClient(Client c)
 		lng Tend = GDKusec();
 		profilerEvent((struct MalEvent) {0},
 					  (struct NonMalEvent)
-					  {"client_connection", c, Tend,  NULL, 0, Tend-(c->session)});
+					  {CLIENT_CONNECTION, c, Tend,  NULL, 0, Tend-(c->session)});
 	}
 	setClientContext(NULL);
 }
