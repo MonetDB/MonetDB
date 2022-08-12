@@ -1068,7 +1068,7 @@ logger_open_output(logger *lg)
 		}
 		lg->end = 0;
 
-		if (lg->output_log == NULL || mnstr_errnr(lg->output_log)) {
+		if (lg->output_log == NULL || mnstr_errnr(lg->output_log) != MNSTR_NO__ERROR) {
 			TRC_CRITICAL(GDK, "creating %s failed: %s\n", filename, mnstr_peek_error(NULL));
 			GDKfree(new_range);
 			GDKfree(filename);
@@ -1111,7 +1111,7 @@ logger_open_input(logger *lg, char *filename, bool *filemissing)
 	lg->input_log = open_rstream(filename);
 
 	/* if the file doesn't exist, there is nothing to be read back */
-	if (lg->input_log == NULL || mnstr_errnr(lg->input_log)) {
+	if (lg->input_log == NULL || mnstr_errnr(lg->input_log) != MNSTR_NO__ERROR) {
 		logger_close_input(lg);
 		*filemissing = true;
 		return GDK_SUCCEED;

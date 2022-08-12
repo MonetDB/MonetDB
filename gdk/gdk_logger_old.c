@@ -1043,7 +1043,7 @@ logger_readlog(old_logger *lg, char *filename, bool *filemissing)
 	lg->log = open_rstream(filename);
 
 	/* if the file doesn't exist, there is nothing to be read back */
-	if (lg->log == NULL || mnstr_errnr(lg->log)) {
+	if (lg->log == NULL || mnstr_errnr(lg->log) != MNSTR_NO__ERROR) {
 		logger_close(lg);
 		GDKdebug = dbg;
 		*filemissing = true;
