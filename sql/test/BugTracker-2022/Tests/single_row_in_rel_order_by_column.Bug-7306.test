@@ -18,13 +18,9 @@ SELECT avg(42) over (order by 2);
 ----
 42.000
 
-query I
+statement error 42000!ROW_NUMBER: window functions cannot be nested
 SELECT count(*) over (order by row_number() over ());
-----
-1
 
-query R
+statement error 42000!ROW_NUMBER: window functions cannot be nested
 SELECT avg(42) over (order by row_number() over ());
-----
-42.000
 
