@@ -2858,9 +2858,7 @@ rel_simplify_count(visitor *v, sql_rel *rel)
 						append(nexps, exp_ref(sql, e));
 					} else {
 						sql_exp *ne = exp_ref(sql, count_star);
-						//n->data = ne; /* make sure we don't do this optimization twice */
 
-						//ne = exp_ref(sql, count_star);
 						if (exp_name(e))
 							exp_prop_alias(sql->sa, ne, e);
 						v->changes++;

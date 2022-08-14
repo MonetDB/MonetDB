@@ -122,6 +122,7 @@ constant-not-in
 unicode
 
 window_functions
+select_window_pushdown
 
 !NOWAL?hot_snapshot
 HAVE_LIBZ&!NOWAL?hot_snapshot_gz

@@ -4480,7 +4480,7 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int nee
 	if (!r)
 		return e;
 
-	if (is_simple_project(r->op) && is_processed(r)) {
+	if (is_simple_project(r->op) && r->l && is_processed(r)) {
 		p = r;
 		r = r->l;
 	}
