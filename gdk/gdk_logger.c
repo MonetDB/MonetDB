@@ -2269,10 +2269,12 @@ log_next_logfile(logger *lg, ulng ts)
 static void
 log_cleanup_range(logger *lg)
 {
-	logged_range *p = lg->pending;
-	if (p) {
+	if (lg->pending) {
+		logged_range *p;
 		log_lock(lg);
-		lg->pending = p->next;
+		p = lg->pending;
+		if (p)
+			lg->pending = p->next;
 		log_unlock(lg);
 		GDKfree(p);
 	}
