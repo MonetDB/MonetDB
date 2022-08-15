@@ -289,11 +289,11 @@ DEP_FUNC
 dq
 prepare_esc
 DEP_FUNC
+dq
+schema_guard
+DEP_FUNC
 dump_table_data
 dump_database
-DEP_FUNC
-fqn
-schema_guard
 DEP_FUNC
 getproj4
 st_transform
@@ -306,9 +306,6 @@ ms_round
 DEP_FUNC
 remote_table_credentials
 get_remote_table_expressions
-DEP_FUNC
-replace_first
-schema_guard
 DEP_FUNC
 sq
 get_remote_table_expressions

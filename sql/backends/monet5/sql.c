@@ -2581,7 +2581,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((tostdout = strcmp(filename,"stdout") == 0)) {
 		s = cntxt->fdout;
 	} else if (!onclient) {
-		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
+		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
 			msg=  createException(IO, "streams.open", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 			close_stream(s);
 			goto wrapup_result_set1;
@@ -2815,7 +2815,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((tostdout = strcmp(filename,"stdout") == 0)) {
 		s = cntxt->fdout;
 	} else if (!onclient) {
-		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
+		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
 			msg=  createException(IO, "streams.open", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 			close_stream(s);
 			goto wrapup_result_set;
@@ -3115,7 +3115,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			ss = open_rastream(fname);
 		}
-		if (ss == NULL || mnstr_errnr(ss)) {
+		if (ss == NULL || mnstr_errnr(ss) != MNSTR_NO__ERROR) {
 			msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 			close_stream(ss);
 			return msg;
@@ -3149,7 +3149,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			rsep = fwfrsep;
 
 			ns = stream_fwf_create(ss, ncol, widths, STREAM_FWF_FILLER);
-			if (ns == NULL || mnstr_errnr(ns)) {
+			if (ns == NULL || mnstr_errnr(ns) != MNSTR_NO__ERROR) {
 				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 				close_stream(ss);
 				free(widths);
