@@ -411,7 +411,7 @@ TKNZRdepositFile(void *r, str *fnme)
 		throw(MAL, "tokenizer.depositFile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	while (bstream_read(bs, bs->size - (bs->len - bs->pos)) != 0 &&
-		   !mnstr_errnr(bs->s) != MNSTR_NO__ERROR)
+		   mnstr_errnr(bs->s) == MNSTR_NO__ERROR)
 	{
 		s = bs->buf;
 		for (t = s; *t;) {
