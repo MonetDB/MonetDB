@@ -177,14 +177,14 @@ static str phase_descriptions[] = {
 	[REL_TO_MAL]		= "rel_to_mal",
 	[MAL_OPT]			= "rel_to_mal",
 	[MAL_ENGINE]		= "mal_engine",
-	[TRANSACTION_START]	= "trans_start",
-	[COMMIT]			= "trans_commit",
-	[ROLLBACK]			= "trans_rollback",
-	[TRANSACTION_END]	= "trans_end"
+	// [TRANSACTION_START]	= "trans_start",
+	// [COMMIT]			= "trans_commit",
+	// [ROLLBACK]			= "trans_rollback",
+	[TRANSACTION_END]	= "transaction"
 };
 
 static str
-prepareNonMalEvent(Client cntxt, enum event_phase phase, ulng clk, ulng *tid, ulng *ts, int state, ulng duration)
+prepareNonMalEvent(Client cntxt, enum event_phase phase, ulng clk, ulng *tstart, ulng *tend, int state, ulng duration)
 {
 	oid* tag = NULL;
 	str query = NULL;
@@ -207,9 +207,9 @@ prepareNonMalEvent(Client cntxt, enum event_phase phase, ulng clk, ulng *tid, ul
 	if (!logadd(&logbuf, ", \"thread\":%d, \"phase\":\"%s\"",
 				THRgettid(), phase_descriptions[phase]))
 		goto cleanup_and_exit;
-	if (tid && !logadd(&logbuf, ", \"tid\":"ULLFMT, *tid))
+	if (tstart && !logadd(&logbuf, ", \"tstart\":"ULLFMT, *tstart))
 		goto cleanup_and_exit;
-	if (ts && !logadd(&logbuf, ", \"ts\":"ULLFMT, *ts))
+	if (tend && !logadd(&logbuf, ", \"tend\":"ULLFMT, *tend))
 		goto cleanup_and_exit;
 	if (tag && !logadd(&logbuf, ", \"tag\":"OIDFMT, *tag))
 		goto cleanup_and_exit;

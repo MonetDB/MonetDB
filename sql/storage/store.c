@@ -2039,7 +2039,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 }
 
 sqlstore *
-store_init(int debug, store_type store_tpe, int readonly, int singleuser, generic_event_wrapper_fptr event_wrapper)
+store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 {
 	sql_allocator *pa;
 	sqlstore *store = MNEW(sqlstore);
@@ -2077,8 +2077,6 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser, generi
 
 	MT_lock_set(&store->lock);
 	MT_lock_set(&store->flush);
-
-	store->generic_event_wrapper = event_wrapper;
 
 	/* initialize empty bats */
 	switch (store_tpe) {
@@ -3482,19 +3480,10 @@ clean_predicates_and_propagate_to_parent(sql_trans *tr)
 	return res;
 }
 
-enum event_phase {
-	TRANSACTION_START = 7,
-	COMMIT,
-	ROLLBACK,
-	TRANSACTION_END
-};
-
 static void
 sql_trans_rollback(sql_trans *tr, bool commit_lock)
 {
 	sqlstore *store = tr->store;
-	lng Tbegin = GDKusec();
-	lng Tend;
 
 	/* move back deleted */
 	if (tr->localtmps.dset) {
@@ -3591,9 +3580,6 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		list_destroy(tr->depchanges);
 		tr->depchanges = NULL;
 	}
-
-	Tend = GDKusec();
-	store->profiler_event_wrapper(ROLLBACK, Tend, &tr->tid, NULL, 0, Tend-Tbegin);
 }
 
 sql_trans *
@@ -3799,8 +3785,6 @@ sql_trans_commit(sql_trans *tr)
 {
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
-	lng Tbegin = 0;
-	lng Tend = 0;
 
 	if (!list_empty(tr->changes)) {
 		int flush = 0;
@@ -3825,8 +3809,6 @@ sql_trans_commit(sql_trans *tr)
 				return ok == LOG_CONFLICT ? SQL_CONFLICT : SQL_ERR;
 			}
 		}
-
-		Tbegin = GDKusec();
 
 		/* log changes should only be done if there is something to log */
 		if (!tr->parent && tr->logchanges > 0) {
@@ -3943,9 +3925,6 @@ sql_trans_commit(sql_trans *tr)
 
 	if (ok == LOG_OK)
 		ok = clean_predicates_and_propagate_to_parent(tr);
-
-	Tend = GDKusec();
-	store->profiler_event_wrapper(COMMIT, Tend, &tr->tid, &tr->ts, ok, Tend-Tbegin);
 
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
@@ -6881,7 +6860,6 @@ sql_trans_begin(sql_session *s)
 	TRC_DEBUG(SQL_STORE, "Exit sql_trans_begin for transaction: " ULLFMT "\n", tr->tid);
 	store_unlock(store);
 	s->status = tr->status = 0;
-	store->profiler_event_wrapper(TRANSACTION_START, GDKusec(), &s->tr->tid, &s->tr->ts, 0, 0);
 	return 0;
 }
 
@@ -6913,8 +6891,6 @@ sql_trans_end(sql_session *s, int ok)
 	store->oldest = oldest;
 	assert(list_length(store->active) == (int) ATOMIC_GET(&store->nr_active));
 	store_unlock(store);
-	lng Tend = GDKusec();
-	store->profiler_event_wrapper(TRANSACTION_END, Tend, &s->tr->tid, &s->tr->ts, ok==SQL_OK?0:1, 0);
 
 	return ok;
 }
