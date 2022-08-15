@@ -213,7 +213,7 @@ prepareNonMalEvent(Client cntxt, enum event_phase phase, ulng clk, ulng *tstart,
 		goto cleanup_and_exit;
 	if (tag && !logadd(&logbuf, ", \"tag\":"OIDFMT, *tag))
 		goto cleanup_and_exit;
-	if (query && !logadd(&logbuf, ", \"query\":\"%s\"", query))
+	if (query && phase == TEXT_TO_SQL && !logadd(&logbuf, ", \"query\":\"%s\"", query))
 		goto cleanup_and_exit;
 	if (state != 0 && !logadd(&logbuf, ", \"state\":\"error\""))
 		goto cleanup_and_exit;
