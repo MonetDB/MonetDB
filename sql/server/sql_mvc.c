@@ -542,8 +542,8 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 			lng Tend = GDKusec();
 			Client	c = getClientContext();
 			profilerEvent((struct MalEvent) {0},
-						(struct NonMalEvent)
-						{TRANSACTION_END, c, Tend, &ts_start, &m->session->tr->ts, state == SQL_OK ? 0 : 1, Tend - Tbegin});
+						  (struct NonMalEvent)
+						  {TRANSACTION_END, c, Tend, &ts_start, &m->session->tr->ts, state == SQL_OK ? 0 : 1, Tend - Tbegin});
 		}
 		switch (state) {
 			case SQL_ERR:
