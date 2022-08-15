@@ -124,17 +124,6 @@ mvc_fix_depend(mvc *m, sql_column *depids, struct view_t *v, int n)
 	}
 }
 
-static void
-profiler_event_wrapper(int phase, lng clk, ulng *tid, ulng *ts, int state, lng usec)
-{
-	Client	c = getClientContext();
-
-	if(malProfileMode > 0)
-		profilerEvent((struct MalEvent) {0},
-					  (struct NonMalEvent)
-					  {(enum event_phase) phase, c, clk, tid, ts, state, usec});
-}
-
 sql_store
 mvc_init(int debug, store_type store_tpe, int ro, int su)
 {
@@ -151,7 +140,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 		return NULL;
 	}
 
-	if ((store = store_init(debug, store_tpe, ro, su, &profiler_event_wrapper)) == NULL) {
+	if ((store = store_init(debug, store_tpe, ro, su)) == NULL) {
 		keyword_exit();
 		TRC_CRITICAL(SQL_TRANS, "Unable to create system tables\n");
 		return NULL;
@@ -545,11 +534,28 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	}
 
 	if (!tr->parent && !name) {
-		switch (sql_trans_end(m->session, ok)) {
+		lng Tbegin;
+		ulng ts_start;
+		if(malProfileMode > 0) {
+			Tbegin = GDKusec();
+			ts_start = m->session->tr->ts;
+		}
+
+		const int state = sql_trans_end(m->session, ok);
+
+		if(malProfileMode > 0) {
+			lng Tend = GDKusec();
+			Client	c = getClientContext();
+			profilerEvent((struct MalEvent) {0},
+						(struct NonMalEvent)
+						{TRANSACTION_END, c, Tend, &ts_start, &m->session->tr->ts, state == SQL_OK ? 0 : 1, Tend - Tbegin});
+		}
+		switch (state) {
 			case SQL_ERR:
 				GDKfatal("%s transaction commit failed; exiting (kernel error: %s)", operation, GDKerrbuf);
 				break;
 			case SQL_CONFLICT:
+
 				/* transaction conflict */
 				return createException(SQL, "sql.commit", SQLSTATE(40001) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
 			default:
