@@ -3577,7 +3577,7 @@ clean_predicates_and_propagate_to_parent(sql_trans *tr)
 }
 
 enum event_phase {
-	TRANSACTION_START = 100,
+	TRANSACTION_START = 7,
 	COMMIT,
 	ROLLBACK,
 	TRANSACTION_END
