@@ -850,6 +850,9 @@ fi
 %endif
 
 %changelog
+* Mon Aug 15 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.19-20220815
+- Rebuilt.
+
 * Thu Aug 11 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.17-20220811
 - Rebuilt.
 - GH#7040: Memory leak detected for MAPI interface
