@@ -1134,7 +1134,7 @@ SQLparser(Client c)
 	if(malProfileMode > 0) {
 		profilerEvent((struct MalEvent) {0},
 					  (struct NonMalEvent)
-					  {TEXT_TO_SQL, c, Tend, NULL, NULL, c->query?0:1, Tend-Tbegin});
+					  {TEXT_TO_SQL, c, Tend, &m->session->tr->ts, NULL, c->query?0:1, Tend-Tbegin});
 	}
 
 	if (c->query == NULL) {
