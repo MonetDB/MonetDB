@@ -268,14 +268,12 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				",\"clk\":%"PRIu64""
 				",\"thread\":%d"
 				",\"phase\":\"%s\""
-				",\"program\":\"%s.%s\""
 				",\"pc\":%d"
 				",\"tag\":"OIDFMT,
 				cntxt->idx,
 				mclk,
 				THRgettid(),
 				phase_descriptions[MAL_ENGINE],
-				getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)),
 				mb?getPC(mb,pci):0,
 				stk?stk->tag:0))
 		goto cleanup_and_exit;
