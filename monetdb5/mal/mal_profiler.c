@@ -376,23 +376,6 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						BBPunfix(d->batCacheid);
 						goto cleanup_and_exit;
 					}
-#define keepprop(NME, LNME)												\
-	do {																\
-		const void *valp = BATgetprop(d, NME);							\
-		if ( valp){														\
-			cv = VALformat(valp);										\
-			if (cv) {													\
-				char *cvquote = mal_quote(cv, strlen(cv));				\
-				ok = logadd(&logbuf, ",\"%s\":\"%s\"", LNME, cvquote);	\
-				GDKfree(cv);											\
-				GDKfree(cvquote);										\
-				if (!ok) {												\
-					BBPunfix(d->batCacheid);							\
-					goto cleanup_and_exit;								\
-				}														\
-			}															\
-		}																\
-	} while (0)
 					if ((di.minpos != BUN_NONE &&
 						 !logadd(&logbuf, ",\"minpos\":\""BUNFMT"\"", di.minpos)) ||
 						(di.maxpos != BUN_NONE &&
