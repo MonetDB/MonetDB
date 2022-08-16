@@ -194,8 +194,8 @@ prepareNonMalEvent(Client cntxt, enum event_phase phase, ulng clk, ulng *tstart,
 	int sessionid = cntxt->idx;
 	if (cntxt->curprg)
 		tag = &cntxt->curprg->def->tag;
-	if (cntxt->query)
-		query = mal_quote(cntxt->query, strlen(cntxt->query));
+	if (cntxt->query && ( query = mal_quote(cntxt->query, strlen(cntxt->query)) ) == NULL)
+		return NULL;
 
 	if (!logadd(&logbuf, "{\"sessionid\":\"%d\"", sessionid))
 		goto cleanup_and_exit;
