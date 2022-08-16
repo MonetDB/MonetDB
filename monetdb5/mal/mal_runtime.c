@@ -414,7 +414,6 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	pci->clock = ticks;
 	pci->ticks = ticks - prof->ticks;
 	pci->totticks += pci->ticks;
-	pci->calls++;
 
 	if(malProfileMode > 0 )
 		profilerEvent((struct MalEvent) {cntxt, mb, stk, pci},
