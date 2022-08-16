@@ -358,31 +358,15 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						BBPunfix(d->batCacheid);
 						return;
 					}
-#define keepprop(NME, LNME)												\
-	do {																\
-		const void *valp = BATgetprop(d, NME);							\
-		if ( valp){														\
-			cv = VALformat(valp);										\
-			if (cv) {													\
-				char *cvquote = mal_quote(cv, strlen(cv));				\
-				ok = logadd(&logbuf, ",\"%s\":\"%s\"", LNME, cvquote);	\
-				GDKfree(cv);											\
-				GDKfree(cvquote);										\
-				if (!ok) {												\
-					BBPunfix(d->batCacheid);							\
-					return;												\
-				}														\
-			}															\
-		}																\
-	} while (0)
-					keepprop(GDK_MIN_VALUE,"min");
-					keepprop(GDK_MAX_VALUE,"max");
-					keepprop(GDK_MIN_POS,"minpos");
-					keepprop(GDK_MIN_POS,"minpos");
-					keepprop(GDK_MAX_POS,"maxpos");
-					keepprop(GDK_HASH_BUCKETS,"hbuckets");
-					keepprop(GDK_NUNIQUE,"nunique");
-					keepprop(GDK_UNIQUE_ESTIMATE,"nestimate");
+					if ((di.minpos != BUN_NONE &&
+						 !logadd(&logbuf, ",\"minpos\":\""BUNFMT"\"", di.minpos)) ||
+						(di.maxpos != BUN_NONE &&
+						 !logadd(&logbuf, ",\"maxpos\":\""BUNFMT"\"", di.maxpos)) ||
+						(di.unique_est != 0 &&
+						 !logadd(&logbuf, ",\"nestimate\":\"%g\"", di.unique_est))) {
+						BBPunfix(d->batCacheid);
+						goto cleanup_and_exit;
+					}
 
 					cv = VALformat(&stk->stk[getArg(pci,j)]);
 					c = strchr(cv, '>');
