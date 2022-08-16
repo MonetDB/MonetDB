@@ -37,12 +37,7 @@ static const char *myname = 0;	// avoid tracing the profiler module
  * each key:value pair or as a single line.
  * The current stethoscope implementation requires the first option and
  * also the term rendering to be set to ''
- *
- * When the MAL block contains a BARRIER block we may end up with tons
- * of profiler events. To avoid this, we stop emitting the events
- * when we reached the HIGHWATERMARK. Leaving a message in the log.
  */
-#define HIGHWATERMARK 5
 
 int malProfileMode = 0;     /* global flag to indicate profiling mode */
 static oid malprofileruser;	/* keep track on who has claimed the channel */
@@ -236,16 +231,6 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng clk;
 	uint64_t mclk;
 	bool ok;
-
-	/* ignore generation of events for instructions that are called too often
-	 * they may appear when BARRIER blocks are executed
-	 * The default parameter should be sufficient for most practical cases.
-	 */
-	if(pci->calls > HIGHWATERMARK){
-		if( pci->calls == 10000 || pci->calls == 100000 || pci->calls == 1000000 || pci->calls == 10000000)
-			TRC_WARNING(MAL_SERVER, "Too many calls: %d\n", pci->calls);
-		return;
-	}
 
 	/* The stream of events can be complete read by the DBA,
 	 * all other users can only see events assigned to their account
