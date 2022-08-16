@@ -222,12 +222,52 @@ prepareNonMalEvent(Client cntxt, enum event_phase phase, ulng clk, ulng *tstart,
 	return NULL;
 }
 
+static inline str
+format_val2json(const ValPtr res) {
+	char *buf = NULL;
+	size_t sz = 0;
+
+	bool use_external = true;
+
+	switch (res->vtype ) {
+		case TYPE_bte:
+		case TYPE_sht:
+		case TYPE_int:
+		case TYPE_flt:
+		case TYPE_dbl:
+		case TYPE_lng:
+#ifdef HAVE_HGE
+		case TYPE_hge:
+#endif
+			use_external = false;
+	}
+
+	if ((*BATatoms[res->vtype].atomToStr) (&buf, &sz, VALptr(res), use_external) < 0)
+		return NULL;
+
+	if (!use_external || res->vtype == TYPE_str)
+		return buf;
+
+	ValRecord val;
+	if (VALinit(&val, TYPE_str, buf) == NULL) {
+		GDKfree(buf);
+		return NULL;
+	}
+
+	GDKfree(buf);
+
+	char* buf2;
+	buf2 = VALformat(&val);
+	VALclear(&val);
+
+	return buf2;
+}
+
 static str
 prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	struct logbuf logbuf;
 	str c;
-	str stmtq;
 	lng clk;
 	uint64_t mclk;
 	bool ok;
@@ -416,13 +456,11 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							tname, isVarConstant(mb, getArg(pci,j)));
 				GDKfree(tname);
 				if (!ok)
-					return;
-				cv = VALformat(&stk->stk[getArg(pci,j)]);
-				stmtq = cv ? mal_quote(cv, strlen(cv)) : NULL;
-				if (stmtq)
-					ok = logadd(&logbuf, ",\"value\":\"%s\"", stmtq);
+					goto cleanup_and_exit;
+				cv = format_val2json(&stk->stk[getArg(pci,j)]);
+				if (cv)
+					ok = logadd(&logbuf, ",\"value\":%s", cv);
 				GDKfree(cv);
-				GDKfree(stmtq);
 				if (!ok)
 					return;
 			}
