@@ -15,92 +15,95 @@
 #include "mal_pipelines.h"
 #include "algebra.h"
 
-typedef struct sql_allocator {
+typedef struct mallocator {
     size_t size;
     size_t nr;
     char **blks;
     size_t used;    /* memory used in last block */
     size_t usedmem; /* used memory */
-} sql_allocator;
+} mallocator;
 
 #define SA_BLOCK 16*1024
 
-static void
-sa_destroy(sql_allocator* sa)
+extern void ma_destroy(mallocator* ma);
+void
+ma_destroy(mallocator* ma)
 {
-    for (size_t i = 0; i<sa->nr; i++) {
-        GDKfree(sa->blks[i]);
+    for (size_t i = 0; i<ma->nr; i++) {
+        GDKfree(ma->blks[i]);
     }
-    GDKfree(sa->blks);
-    GDKfree(sa);
+    GDKfree(ma->blks);
+    GDKfree(ma);
 }
 
-static sql_allocator *
-sa_create(void)
+extern mallocator * ma_create(void);
+mallocator *
+ma_create(void)
 {
-    sql_allocator *sa = (sql_allocator*)GDKmalloc(sizeof(sql_allocator));
-    if (sa == NULL)
+    mallocator *ma = (mallocator*)GDKmalloc(sizeof(mallocator));
+    if (ma == NULL)
         return NULL;
-    sa->size = 256;
-    sa->nr = 1;
-    sa->blks = (char**)GDKmalloc(sizeof(char*) * sa->size);
-    if (sa->blks == NULL) {
-        GDKfree(sa);
-        return NULL;
-    }
-    sa->blks[0] = (char*)GDKmalloc(SA_BLOCK);
-    sa->usedmem = SA_BLOCK;
-    if (sa->blks[0] == NULL) {
-        GDKfree(sa->blks);
-        GDKfree(sa);
+    ma->size = 256;
+    ma->nr = 1;
+    ma->blks = (char**)GDKmalloc(sizeof(char*) * ma->size);
+    if (ma->blks == NULL) {
+        GDKfree(ma);
         return NULL;
     }
-    sa->used = 0;
-    return sa;
+    ma->blks[0] = (char*)GDKmalloc(SA_BLOCK);
+    ma->usedmem = SA_BLOCK;
+    if (ma->blks[0] == NULL) {
+        GDKfree(ma->blks);
+        GDKfree(ma);
+        return NULL;
+    }
+    ma->used = 0;
+    return ma;
 }
 
-static void *
-sa_alloc( sql_allocator *sa, size_t sz )
+extern void * ma_alloc( mallocator *ma, size_t sz );
+void *
+ma_alloc( mallocator *ma, size_t sz )
 {
     char *r;
-    if (sz > (SA_BLOCK-sa->used)) {
+    if (sz > (SA_BLOCK-ma->used)) {
         r = GDKmalloc(sz > SA_BLOCK ? sz : SA_BLOCK);
         if (r == NULL)
             return NULL;
-        if (sa->nr >= sa->size) {
+        if (ma->nr >= ma->size) {
             char **tmp;
-            sa->size *=2;
-            tmp = (char**)GDKrealloc(sa->blks, sizeof(char*) * sa->size);
+            ma->size *=2;
+            tmp = (char**)GDKrealloc(ma->blks, sizeof(char*) * ma->size);
             if (tmp == NULL) {
-                sa->size /= 2; /* undo */
+                ma->size /= 2; /* undo */
                 GDKfree(r);
                 return NULL;
             }
-            sa->blks = tmp;
+            ma->blks = tmp;
         }
         if (sz > SA_BLOCK) {
-            sa->blks[sa->nr] = sa->blks[sa->nr-1];
-            sa->blks[sa->nr-1] = r;
-            sa->nr ++;
-            sa->usedmem += sz;
+            ma->blks[ma->nr] = ma->blks[ma->nr-1];
+            ma->blks[ma->nr-1] = r;
+            ma->nr ++;
+            ma->usedmem += sz;
         } else {
-            sa->blks[sa->nr] = r;
-            sa->nr ++;
-            sa->used = sz;
-            sa->usedmem += SA_BLOCK;
+            ma->blks[ma->nr] = r;
+            ma->nr ++;
+            ma->used = sz;
+            ma->usedmem += SA_BLOCK;
         }
     } else {
-        r = sa->blks[sa->nr-1] + sa->used;
-        sa->used += sz;
+        r = ma->blks[ma->nr-1] + ma->used;
+        ma->used += sz;
     }
     return r;
 }
 
 static char *
-sa_strdup( sql_allocator *sa, const char *s )
+ma_strdup( mallocator *ma, const char *s )
 {
 	int l = strlen(s);
-    char *r = sa_alloc(sa, l+1);
+    char *r = ma_alloc(ma, l+1);
 
     if (r)
         memcpy(r, s, l+1);
@@ -1062,7 +1065,7 @@ typedef struct hash_table {
         size_t last;
         size_t size;
         gid mask;
-		sql_allocator **allocators;
+		mallocator **allocators;
 		int nr_allocators;
 } hash_table;
 
@@ -1105,7 +1108,7 @@ ht_destroy(hash_table *ht)
 	if (ht->allocators) {
 		for(int i = 0; i<ht->nr_allocators; i++) {
 			if(ht->allocators[i])
-				sa_destroy(ht->allocators[i]);
+				ma_destroy(ht->allocators[i]);
 		}
 		GDKfree(ht->allocators);
 	}
@@ -1813,7 +1816,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		gid slot = 0; \
 		BATiter bi = bat_iterator(b); \
 		Type *vals = h->vals; \
-		sql_allocator *sa = h->allocators[P->wid]; \
+		mallocator *ma = h->allocators[P->wid]; \
 		\
 		for(BUN i = 0; i<cnt; i++) { \
 			bool fnd = 0; \
@@ -1835,7 +1838,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 					} \
 					slots--; \
 					g = ++slot; \
-					vals[g] = sa_strdup(sa, bpi); \
+					vals[g] = ma_strdup(ma, bpi); \
 					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
 						continue; \
 				} \
@@ -1884,7 +1887,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		MT_lock_unset(&u->theaplock);
 		pipeline_lock(p);
 		if (!h->allocators) {
-			h->allocators = (sql_allocator**)GDKzalloc(p->p->nr_workers*sizeof(sql_allocator*));
+			h->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*));
 			if (!h->allocators)
 				err = 1;
 			else
@@ -1893,7 +1896,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		pipeline_unlock(p);
 		assert(p->wid < p->p->nr_workers);
 		if (!h->allocators[p->wid]) {
-			h->allocators[p->wid] = sa_create();
+			h->allocators[p->wid] = ma_create();
 			if (!h->allocators[p->wid])
 				err = 1;
 		}
@@ -2110,7 +2113,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		gid slot = 0; \
 		BATiter bi = bat_iterator(b); \
 		Type *vals = h->vals; \
-		sql_allocator *sa = h->allocators[P->wid]; \
+		mallocator *ma = h->allocators[P->wid]; \
 		\
 		for(BUN i = 0; i<cnt && !msg; i++) { \
 			bool fnd = 0; \
@@ -2132,7 +2135,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 					} \
 					slots--; \
 					g = ++slot; \
-					vals[g] = sa_strdup(sa, bpi); \
+					vals[g] = ma_strdup(ma, bpi); \
 					pgids[g] = gi[i]; \
 					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
 						continue; \
@@ -2194,7 +2197,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		MT_lock_unset(&u->theaplock);
 		pipeline_lock(p);
 		if (!h->allocators) {
-			h->allocators = (sql_allocator**)GDKzalloc(p->p->nr_workers*sizeof(sql_allocator*));
+			h->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*));
 			if (!h->allocators)
 				err = 1;
 			else
@@ -2203,7 +2206,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		pipeline_unlock(p);
 		assert(p->wid < p->p->nr_workers);
 		if (!h->allocators[p->wid]) {
-			h->allocators[p->wid] = sa_create();
+			h->allocators[p->wid] = ma_create();
 			if (!h->allocators[p->wid])
 				err = 1;
 		}
