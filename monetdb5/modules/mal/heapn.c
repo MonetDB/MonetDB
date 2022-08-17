@@ -44,8 +44,8 @@ BATnegateprops(BAT *b)
 #define pipeline_lock2(r) MT_lock_set(&r->theaplock)
 #define pipeline_unlock2(r) MT_lock_unset(&r->theaplock)
 /*
- * Min/Max processing using heap structure 
- * ie array implementation 
+ * Min/Max processing using heap structure
+ * ie array implementation
  */
 typedef int (*fcmp)(void *v1, void *v2);
 typedef void *mallocator;
@@ -76,7 +76,7 @@ typedef struct subheap {
 } subheap;
 
 typedef struct heapn {
-	Sink s;		
+	Sink s;
 	size_t size;
 	size_t used;
 
@@ -111,15 +111,15 @@ subheap_down( subheap *sh, size_t q, size_t l)
 	int cmp = 0;
 	if (sh->var) {
 		void **nvals = (void**)vals;
- 		cmp = sh->cmp(nvals[q], nvals[l]); 
+ 		cmp = sh->cmp(nvals[q], nvals[l]);
 	} else
-		cmp = sh->cmp(vals+(q*sh->width), vals+(l*sh->width)); 
+		cmp = sh->cmp(vals+(q*sh->width), vals+(l*sh->width));
 
 	if (!cmp && sh->sub)
 		q = subheap_down(sh->sub, q, l);
-	else if (sh->min && cmp > 0) 
+	else if (sh->min && cmp > 0)
 		q = l;
-	else if (!sh->min && cmp < 0) 
+	else if (!sh->min && cmp < 0)
 		q = l;
 	return q;
 }
@@ -131,15 +131,15 @@ subheap_up( subheap *sh, size_t q, size_t p)
 	int cmp = 0;
 	if (sh->var) {
 		void **nvals = (void**)vals;
- 		cmp = sh->cmp(nvals[q], nvals[p]); 
+ 		cmp = sh->cmp(nvals[q], nvals[p]);
 	} else
-		cmp = sh->cmp(vals+(q*sh->width), vals+(p*sh->width)); 
+		cmp = sh->cmp(vals+(q*sh->width), vals+(p*sh->width));
 
 	if (!cmp && sh->sub)
 		q = subheap_up(sh->sub, q, p);
-	else if (sh->min && cmp < 0) 
+	else if (sh->min && cmp < 0)
 		q = p;
-	else if (!sh->min && cmp > 0) 
+	else if (!sh->min && cmp > 0)
 		q = p;
 	return q;
 }
@@ -153,16 +153,16 @@ subheap_newroot( subheap *sh, size_t p)
 	if (sh->var) {
 		void **nvals = (void**)vals;
 		void **nivals = (void**)ivals;
- 		cmp = sh->cmp(nvals[0], nivals[p]); 
+ 		cmp = sh->cmp(nvals[0], nivals[p]);
 	} else
- 		cmp = sh->cmp(vals, ivals+(p*sh->width)); 
+ 		cmp = sh->cmp(vals, ivals+(p*sh->width));
 	bool newroot = false;
 
 	if (!cmp && sh->sub)
 		newroot = subheap_newroot(sh->sub, p);
-	else if (sh->min && cmp < 0) 
+	else if (sh->min && cmp < 0)
 		newroot = true;
-	else if (!sh->min && cmp > 0) 
+	else if (!sh->min && cmp > 0)
 		newroot = true;
 	return newroot;
 }
@@ -258,27 +258,27 @@ heap_down_any( heapn *hp, int p)
 	int l = p*2+1, r = p*2+2, q = p;
 
 	if (l < (int)hp->used) {
-		int cmp = sh->cmp(vals[q], vals[l]); 
+		int cmp = sh->cmp(vals[q], vals[l]);
 
 		if (!cmp && sh->sub)
 			q = subheap_down(sh->sub, q, l);
-		else if (sh->min && cmp > 0) 
+		else if (sh->min && cmp > 0)
 			q = l;
-		else if (!sh->min && cmp < 0) 
+		else if (!sh->min && cmp < 0)
 			q = l;
 	}
 	if (r < (int)hp->used) {
-		int cmp = sh->cmp(vals[q], vals[r]); 
+		int cmp = sh->cmp(vals[q], vals[r]);
 
 		if (!cmp && sh->sub)
 			q = subheap_down(sh->sub, q, r);
-		else if (sh->min && cmp > 0) 
+		else if (sh->min && cmp > 0)
 			q = r;
-		else if (!sh->min && cmp < 0) 
+		else if (!sh->min && cmp < 0)
 			q = r;
 	}
 	if (p != q) {
-		void *v = vals[p]; 
+		void *v = vals[p];
 
 		vals[p] = vals[q];
 		vals[q] = v;
@@ -297,13 +297,13 @@ heap_up_any( heapn *hp, size_t p)
 		return p;
 	void **vals = sh->vals;
 	size_t q = (p-1)/2;
-	int cmp = sh->cmp(vals[q], vals[p]); 
+	int cmp = sh->cmp(vals[q], vals[p]);
 
 	if (!cmp && sh->sub)
 		q = subheap_up(sh->sub, q, p);
-	else if (sh->min && cmp < 0) 
+	else if (sh->min && cmp < 0)
 		q = p;
-	else if (!sh->min && cmp > 0) 
+	else if (!sh->min && cmp > 0)
 		q = p;
 
 	if (p != q) {
@@ -322,7 +322,7 @@ heap_up_any( heapn *hp, size_t p)
 }
 
 static gid
-heap_del_any( heapn *hp) 
+heap_del_any( heapn *hp)
 {
 	subheap *sh = hp->sub;
 	void **vals = sh->vals;
@@ -334,7 +334,7 @@ heap_del_any( heapn *hp)
 	return heap_down_any( hp, 0);
 }
 
-static gid 
+static gid
 heap_ins_any( heapn *hp, size_t pos)
 {
 	subheap *sh = hp->sub;
@@ -518,6 +518,8 @@ heap_type_cmp(int)
 heap_type_cmp(lng)
 heap_type_cmp(hge)
 
+#define HEAP_SINK 3
+
 /* convert into using BATsss */
 static str
 //topn_any( size_t *SZ, sel_t *sel, gid *del, gid *ins, heapn *hp, vector *in, ...)
@@ -549,7 +551,7 @@ topn_any( bat *sel, bat *del, bat *ins, bat *HP, lng *sz, bat *in, ...)
 
 	void **hpvals = sh->vals;
 	va_start(va, in);
-	sh->in = b; 
+	sh->in = b;
 	if (!sh->var)
 		sh->ivals = Tloc(sh->in, 0);
 	void **vals = sh->ivals;
@@ -561,7 +563,8 @@ topn_any( bat *sel, bat *del, bat *ins, bat *HP, lng *sz, bat *in, ...)
 	oid *sp = Tloc(S, 0);
 	oid *dp = Tloc(S, 0);
 	oid *ip = Tloc(S, 0);
-	for(subheap *nsh = sh->sub; (in = va_arg(va,bat*)) != NULL && nsh; nsh = nsh->sub) {
+	subheap *nsh = NULL;
+	for(nsh = sh->sub; (in = va_arg(va,bat*)) != NULL && nsh; nsh = nsh->sub) {
 		nsh->in = BATdescriptor(*in);
 		if (!nsh->in)
 			return createException(SQL, "heapn.topn",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -589,7 +592,7 @@ topn_any( bat *sel, bat *del, bat *ins, bat *HP, lng *sz, bat *in, ...)
 		if (hp->used < hp->size) {
 			for(i=0; i<n && hp->used < hp->size ; i++) {
 				sp[i] = i;
-				ip[i] = heap_ins_any(hp, i); 
+				ip[i] = heap_ins_any(hp, i);
 				dp[i] = -hp->used;
 			}
 			j = i;
@@ -598,28 +601,28 @@ topn_any( bat *sel, bat *del, bat *ins, bat *HP, lng *sz, bat *in, ...)
 			for(; i<n; i++) {
 				/* todo do proper var bat lookups */
 				int cmp = sh->cmp(hpvals[0], vals[i]);
-				if (cmp < 0 || (sh->sub && !cmp && subheap_newroot(sh->sub, i))) { 
+				if (cmp < 0 || (sh->sub && !cmp && subheap_newroot(sh->sub, i))) {
 					sp[j] = i;
 					dp[j] = heap_del_any(hp);
 					ip[j] = heap_ins_any(hp, i);
 					j++;
-				} 
+				}
 			}
    		} else {
 			for(; i<n; i++) {
 				int cmp = sh->cmp(hpvals[0], vals[i]);
-				if (cmp > 0 || (sh->sub && !cmp && subheap_newroot(sh->sub, i))) { 
+				if (cmp > 0 || (sh->sub && !cmp && subheap_newroot(sh->sub, i))) {
 					sp[j] = i;
 					dp[j] = heap_del_any(hp);
 					ip[j] = heap_ins_any(hp, i);
 					j++;
-				} 
+				}
 			}
 		}
 	}
 	if (!private)
 		pipeline_lock2(hps);
-	for(subheap *nsh = sh; nsh; nsh = nsh->sub)
+	for(nsh = sh; nsh; nsh = nsh->sub)
 		BBPunfix(nsh->in->batCacheid);
 	BATsetcount(S, j);
 	BATsetcount(D, j);
@@ -639,8 +642,6 @@ topn_any( bat *sel, bat *del, bat *ins, bat *HP, lng *sz, bat *in, ...)
 		pipeline_unlock1(hps);
 	return MAL_SUCCEED;
 }
-
-#define HEAP_SINK 3
 
 static void
 subheap_destroy( subheap *h)
@@ -705,7 +706,7 @@ subheap_create( heapn *hp, int type, char min /* or max */)
 			break;
 #endif
 		}
-	}	
+	}
 	//sh->length = l;
 	sh->var = (type == TYPE_str); // TODO: handle more var types
 	sh->min = min;
@@ -744,7 +745,7 @@ heapn_done( heapn *hp )
 
 #include "mel.h"
 static mel_func heapn_init_funcs[] = {
-	command("heapn", "topn", topn_any, false, "Return a candidate list with the trail of changes of the heap encoded in the deleted/inserted rows", args(3,6, 
+	command("heapn", "topn", topn_any, false, "Return a candidate list with the trail of changes of the heap encoded in the deleted/inserted rows", args(3,6,
 				batarg("sel",oid),
 				batarg("del",oid),
 				batarg("ins",oid),
@@ -756,10 +757,10 @@ static mel_func heapn_init_funcs[] = {
 	{ .imp=NULL }
 };
 
-#include "mal_import.h"                                                                                                                                                                     
-#ifdef _MSC_VER                                                                                                                                                                             
-#undef read                                                                                                                                                                                 
-#pragma section(".CRT$XCU",read)                                                                                                                                                            
-#endif                                                                                                                                                                                      
-LIB_STARTUP_FUNC(init_heapn_mal)                                                                                                                                                         
-{ mal_module("heapn", NULL, heapn_init_funcs); }     
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_heapn_mal)
+{ mal_module("heapn", NULL, heapn_init_funcs); }
