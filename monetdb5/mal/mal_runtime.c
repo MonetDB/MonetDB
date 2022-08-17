@@ -373,7 +373,7 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 	/* keep track on the instructions taken in progress for stethoscope*/
 	if(tid > 0 && tid <= THREADS){
 		tid--;
-		if(malProfileMode) {
+		if(profilerStatus) {
 			MT_lock_set(&mal_profileLock);
 			workingset[tid].cntxt = cntxt;
 			workingset[tid].mb = mb;
@@ -401,7 +401,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	/* keep track on the instructions in progress*/
 	if ( tid > 0 && tid <= THREADS) {
 		tid--;
-		if( malProfileMode) {
+		if( profilerStatus) {
 			MT_lock_set(&mal_profileLock);
 			workingset[tid] = (struct WORKINGSET) {0};
 			MT_lock_unset(&mal_profileLock);
@@ -415,15 +415,15 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	pci->ticks = ticks - prof->ticks;
 	pci->totticks += pci->ticks;
 
-	if(malProfileMode > 0 )
+	if(profilerStatus > 0 )
 		profilerEvent((struct MalEvent) {cntxt, mb, stk, pci},
 					  (struct NonMalEvent) {0});
 	if(cntxt->sqlprofiler)
 		sqlProfilerEvent(cntxt, mb, stk, pci);
-	if(malProfileMode < 0){
+	if(profilerStatus < 0){
 		/* delay profiling until you encounter start of MAL function */
 		if(getInstrPtr(mb,0) == pci)
-			malProfileMode = 1;
+			profilerStatus = 1;
 	}
 }
 
