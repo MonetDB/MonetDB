@@ -1131,7 +1131,7 @@ SQLparser(Client c)
 	c->query = query_cleaned(m->sa, QUERY(m->scanner));
 
 	Tend = GDKusec();
-	if(malProfileMode > 0) {
+	if(profilerStatus > 0) {
 		profilerEvent((struct MalEvent) {0},
 					  (struct NonMalEvent)
 					  {TEXT_TO_SQL, c, Tend, &m->session->tr->ts, NULL, c->query?0:1, Tend-Tbegin});
@@ -1200,7 +1200,7 @@ SQLparser(Client c)
 				opt = (m->emod & mod_exec) == 0;//1;
 
 			Tend = GDKusec();
-			if(malProfileMode > 0)
+			if(profilerStatus > 0)
 				profilerEvent((struct MalEvent) {0},
 							  (struct NonMalEvent)
 							  {REL_TO_MAL, c, Tend, NULL, NULL, c->query?0:1, Tend-Tbegin});
@@ -1284,7 +1284,7 @@ SQLparser(Client c)
 			Tbegin = GDKusec();
 			msg = SQLoptimizeQuery(c, c->curprg->def);
 			Tend = GDKusec();
-			if(malProfileMode > 0)
+			if(profilerStatus > 0)
 				profilerEvent((struct MalEvent) {0},
 							  (struct NonMalEvent)
 							  {MAL_OPT, c, Tend, NULL, NULL, msg==MAL_SUCCEED?0:1, Tend-Tbegin});

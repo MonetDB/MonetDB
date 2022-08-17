@@ -132,7 +132,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 	Tbegin = GDKusec();
 	rel = rel_semantic(query, sym);
 	Tend = GDKusec();
-	if(malProfileMode > 0 )
+	if(profilerStatus > 0 )
 		profilerEvent((struct MalEvent) {0},
 					  (struct NonMalEvent)
 					  {SQL_TO_REL, c, Tend, NULL, NULL, rel?0:1, Tend-Tbegin});
@@ -148,7 +148,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 	Tend = GDKusec();
 	be->reloptimizer = Tend - Tbegin;
 
-	if(malProfileMode > 0)
+	if(profilerStatus > 0)
 		profilerEvent((struct MalEvent) {0},
 					  (struct NonMalEvent)
 					  {REL_OPT, c, Tend, NULL, NULL, rel?0:1, be->reloptimizer});
