@@ -3740,7 +3740,6 @@ clear_storage(sql_trans *tr, sql_table *t, storage *s)
 {
 	if (clear_cs(tr, &s->cs, true, isTempTable(t)) == BUN_NONE)
 		return LOG_ERR;
-	s->cs.cleared = 1;
 	if (s->segs)
 		destroy_segments(s->segs);
 	if (!(s->segs = new_segments(tr, 0)))
