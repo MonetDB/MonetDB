@@ -39,8 +39,9 @@ static const char *myname = 0;	// avoid tracing the profiler module
  * also the term rendering to be set to ''
  */
 
-int malProfileMode = 0;     /* global flag to indicate profiling mode */
-static oid malprofileruser;	/* keep track on who has claimed the channel */
+int profilerStatus = 0;     /* global flag profiler status */
+int profilerMode = 0;       /* global flag profiler mode, minimal or detailed */
+static oid profilerUser;	/* keep track on who has claimed the channel */
 
 static struct timeval startup_time;
 
@@ -279,8 +280,12 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* The stream of events can be complete read by the DBA,
 	 * all other users can only see events assigned to their account
 	 */
-	if(malprofileruser!= MAL_ADMIN && malprofileruser != cntxt->user)
-		return;
+	if(profilerUser!= MAL_ADMIN && profilerUser != cntxt->user)
+		return NULL;
+
+	/* align the variable namings with EXPLAIN and TRACE */
+	if(pci->pc == 1)
+		renameVariables(mb);
 
 	logbuf = (struct logbuf) {0};
 
@@ -322,160 +327,173 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mb && pci->modname && pci->fcnname) {
 		int j;
 
-		if (!logadd(&logbuf, ",\"args\":["))
-			return;
-		for(j=0; j< pci->argc; j++){
-			int tpe = getVarType(mb, getArg(pci,j));
-			str tname = 0, cv;
-			lng total = 0;
-			BUN cnt = 0;
-			bat bid=0;
+		if (profilerMode == 0) {
+			if (!logadd(&logbuf, ",\"args\":["))
+				goto cleanup_and_exit;
+			for(j=0; j< pci->argc; j++){
+				int tpe = getVarType(mb, getArg(pci,j));
+				str tname = 0, cv;
+				lng total = 0;
+				BUN cnt = 0;
+				bat bid=0;
 
-			if (j == 0) {
-				// No comma at the beginning
-				if (!logadd(&logbuf, "{"))
-					return;
-			}
-			else {
-				if (!logadd(&logbuf, ",{"))
-					return;
-			}
-			if (!logadd(&logbuf, "\"%s\":%d,\"var\":\"%s\"",
-						j < pci->retc ? "ret" : "arg", j,
-						getVarName(mb, getArg(pci,j))))
-				return;
-			c =getVarName(mb, getArg(pci,j));
-			if(getVarSTC(mb,getArg(pci,j))){
-				InstrPtr stc = getInstrPtr(mb, getVarSTC(mb,getArg(pci,j)));
-				if (stc && getModuleId(stc) &&
-					strcmp(getModuleId(stc),"sql") ==0 &&
-					strncmp(getFunctionId(stc),"bind",4)==0 &&
-					!logadd(&logbuf, ",\"alias\":\"%s.%s.%s\"",
-							getVarConstant(mb, getArg(stc,stc->retc +1)).val.sval,
-							getVarConstant(mb, getArg(stc,stc->retc +2)).val.sval,
-							getVarConstant(mb, getArg(stc,stc->retc +3)).val.sval))
-					return;
-			}
-			if(isaBatType(tpe)){
-				BAT *d= BATdescriptor(bid = stk->stk[getArg(pci,j)].val.bval);
-				tname = getTypeName(getBatType(tpe));
-				ok = logadd(&logbuf, ",\"type\":\"bat[:%s]\"", tname);
-				GDKfree(tname);
-				if (!ok) {
-					if (d)
-						BBPunfix(d->batCacheid);
-					return;
+				if (j == 0) {
+					// No comma at the beginning
+					if (!logadd(&logbuf, "{"))
+						goto cleanup_and_exit;
 				}
-				if(d) {
-					BAT *v;
-					cnt = BATcount(d);
-					if(isVIEW(d)){
-						v= BBP_cache(VIEWtparent(d));
-						if (!logadd(&logbuf,
-									",\"view\":\"true\""
-									",\"parent\":%d"
-									",\"seqbase\":"BUNFMT
-									",\"mode\":\"%s\"",
-									VIEWtparent(d),
-									d->hseqbase,
-									v && !v->batTransient ? "persistent" : "transient")) {
-										BBPunfix(d->batCacheid);
-										return;
+				else {
+					if (!logadd(&logbuf, ",{"))
+						goto cleanup_and_exit;
+				}
+				if (!logadd(&logbuf, "\"%s\":%d,\"var\":\"%s\"",
+							j < pci->retc ? "ret" : "arg", j,
+							getVarName(mb, getArg(pci,j))))
+					goto cleanup_and_exit;
+				c =getVarName(mb, getArg(pci,j));
+				if(getVarSTC(mb,getArg(pci,j))){
+					InstrPtr stc = getInstrPtr(mb, getVarSTC(mb,getArg(pci,j)));
+					if (stc && getModuleId(stc) &&
+						strcmp(getModuleId(stc),"sql") ==0 &&
+						strncmp(getFunctionId(stc),"bind",4)==0 &&
+						!logadd(&logbuf, ",\"alias\":\"%s.%s.%s\"",
+								getVarConstant(mb, getArg(stc,stc->retc +1)).val.sval,
+								getVarConstant(mb, getArg(stc,stc->retc +2)).val.sval,
+								getVarConstant(mb, getArg(stc,stc->retc +3)).val.sval))
+						goto cleanup_and_exit;
+				}
+				if(isaBatType(tpe)){
+					BAT *d= BATdescriptor(bid = stk->stk[getArg(pci,j)].val.bval);
+					tname = getTypeName(getBatType(tpe));
+					ok = logadd(&logbuf, ",\"type\":\"bat[:%s]\"", tname);
+					GDKfree(tname);
+					if (!ok) {
+						if (d)
+							BBPunfix(d->batCacheid);
+						goto cleanup_and_exit;
+					}
+					if(d) {
+						MT_lock_set(&d->theaplock);
+						BATiter di = bat_iterator_nolock(d);
+						/* outside the lock we cannot dereference di.h or di.vh,
+						 * but we can use all values without dereference and
+						 * without further locking */
+						MT_lock_unset(&d->theaplock);
+						cnt = di.count;
+						if(isVIEW(d)){
+							BAT *v= BBP_cache(VIEWtparent(d));
+							bool vtransient = true;
+							if (v) {
+								MT_lock_set(&v->theaplock);
+								vtransient = v->batTransient;
+								MT_lock_unset(&v->theaplock);
+							}
+							if (!logadd(&logbuf,
+										",\"view\":\"true\""
+										",\"parent\":%d"
+										",\"seqbase\":"BUNFMT
+										",\"mode\":\"%s\"",
+										VIEWtparent(d),
+										d->hseqbase,
+										vtransient ? "transient" : "persistent")) {
+								BBPunfix(d->batCacheid);
+								goto cleanup_and_exit;
+							}
+						} else {
+							if (!logadd(&logbuf, ",\"mode\":\"%s\"", (di.transient ? "transient" : "persistent"))) {
+								BBPunfix(d->batCacheid);
+								goto cleanup_and_exit;
+							}
 						}
-					} else {
-						if (!logadd(&logbuf, ",\"mode\":\"%s\"", (d->batTransient ? "transient" : "persistent"))) {
+						if (!logadd(&logbuf,
+									",\"sorted\":%d"
+									",\"revsorted\":%d"
+									",\"nonil\":%d"
+									",\"nil\":%d"
+									",\"key\":%d",
+									di.sorted,
+									di.revsorted,
+									di.nonil,
+									di.nil,
+									di.key)) {
+							BBPunfix(d->batCacheid);
+							goto cleanup_and_exit;
+						}
+						if ((di.minpos != BUN_NONE &&
+							 !logadd(&logbuf, ",\"minpos\":\""BUNFMT"\"", di.minpos)) ||
+							(di.maxpos != BUN_NONE &&
+							 !logadd(&logbuf, ",\"maxpos\":\""BUNFMT"\"", di.maxpos)) ||
+							(di.unique_est != 0 &&
+							 !logadd(&logbuf, ",\"nestimate\":\"%g\"", di.unique_est))) {
+							BBPunfix(d->batCacheid);
+							goto cleanup_and_exit;
+						}
+
+						cv = VALformat(&stk->stk[getArg(pci,j)]);
+						c = strchr(cv, '>');
+						if (c)		/* unlikely that this isn't true */
+							*c = 0;
+						ok = logadd(&logbuf, ",\"file\":\"%s\"", cv + 1);
+						GDKfree(cv);
+						if (!ok) {
+							BBPunfix(d->batCacheid);
+							goto cleanup_and_exit;
+						}
+						total += cnt << di.shift;
+						if (!logadd(&logbuf, ",\"width\":%d", di.width)) {
+							BBPunfix(d->batCacheid);
+							goto cleanup_and_exit;
+						}
+						/* keeping information about the individual auxiliary heaps is helpful during analysis. */
+						MT_rwlock_rdlock(&d->thashlock);
+						if( d->thash && !logadd(&logbuf, ",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid))) {
+							MT_rwlock_rdunlock(&d->thashlock);
+							BBPunfix(d->batCacheid);
+							goto cleanup_and_exit;
+						}
+						MT_rwlock_rdunlock(&d->thashlock);
+						if( di.vh && !logadd(&logbuf, ",\"vheap\":" BUNFMT, di.vhfree)) {
+							BBPunfix(d->batCacheid);
+							goto cleanup_and_exit;
+						}
+						if( d->timprints && !logadd(&logbuf, ",\"imprints\":" LLFMT, (lng) IMPSimprintsize(d))) {
 							BBPunfix(d->batCacheid);
 							return;
 						}
+						/* if (!logadd(&logbuf, "\"debug\":\"%s\",", d->debugmessages)) goto cleanup_and_exit; */
+						BBPunfix(d->batCacheid);
 					}
 					if (!logadd(&logbuf,
-								",\"sorted\":%d"
-								",\"revsorted\":%d"
-								",\"nonil\":%d"
-								",\"nil\":%d"
-								",\"key\":%d",
-								d->tsorted,
-								d->trevsorted,
-								d->tnonil,
-								d->tnil,
-								d->tkey)) {
-						BBPunfix(d->batCacheid);
-						return;
-					}
-					if ((di.minpos != BUN_NONE &&
-						 !logadd(&logbuf, ",\"minpos\":\""BUNFMT"\"", di.minpos)) ||
-						(di.maxpos != BUN_NONE &&
-						 !logadd(&logbuf, ",\"maxpos\":\""BUNFMT"\"", di.maxpos)) ||
-						(di.unique_est != 0 &&
-						 !logadd(&logbuf, ",\"nestimate\":\"%g\"", di.unique_est))) {
-						BBPunfix(d->batCacheid);
+								",\"bid\":%d"
+								",\"count\":"BUNFMT
+								",\"size\":" LLFMT,
+								bid, cnt, total))
 						goto cleanup_and_exit;
-					}
-
-					cv = VALformat(&stk->stk[getArg(pci,j)]);
-					c = strchr(cv, '>');
-					if (c)		/* unlikely that this isn't true */
-						*c = 0;
-					ok = logadd(&logbuf, ",\"file\":\"%s\"", cv + 1);
+				} else{
+					tname = getTypeName(tpe);
+					ok = logadd(&logbuf,
+								",\"type\":\"%s\""
+								",\"const\":%d",
+								tname, isVarConstant(mb, getArg(pci,j)));
+					GDKfree(tname);
+					if (!ok)
+						goto cleanup_and_exit;
+					cv = format_val2json(&stk->stk[getArg(pci,j)]);
+					if (cv)
+						ok = logadd(&logbuf, ",\"value\":%s", cv);
 					GDKfree(cv);
-					if (!ok) {
-						BBPunfix(d->batCacheid);
-						return;
-					}
-					total += cnt << d->tshift;
-					if (!logadd(&logbuf, ",\"width\":%d", d->twidth)) {
-						BBPunfix(d->batCacheid);
-						return;
-					}
-					/* keeping information about the individual auxiliary heaps is helpful during analysis. */
-					MT_rwlock_rdlock(&d->thashlock);
-					if( d->thash && !logadd(&logbuf, ",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid))) {
-						MT_rwlock_rdunlock(&d->thashlock);
-						BBPunfix(d->batCacheid);
-						return;
-					}
-					MT_rwlock_rdunlock(&d->thashlock);
-					if( d->tvheap && !logadd(&logbuf, ",\"vheap\":" LLFMT, (lng) heapinfo(d->tvheap, d->batCacheid))) {
-						BBPunfix(d->batCacheid);
-						return;
-					}
-					if( d->timprints && !logadd(&logbuf, ",\"imprints\":" LLFMT, (lng) IMPSimprintsize(d))) {
-						BBPunfix(d->batCacheid);
-						return;
-					}
-					/* if (!logadd(&logbuf, "\"debug\":\"%s\",", d->debugmessages)) return; */
-					BBPunfix(d->batCacheid);
+					if (!ok)
+						goto cleanup_and_exit;
 				}
-				if (!logadd(&logbuf,
-							",\"bid\":%d"
-							",\"count\":"BUNFMT
-							",\"size\":" LLFMT,
-							bid, cnt, total))
-					return;
-			} else{
-				tname = getTypeName(tpe);
-				ok = logadd(&logbuf,
-							",\"type\":\"%s\""
-							",\"const\":%d",
-							tname, isVarConstant(mb, getArg(pci,j)));
-				GDKfree(tname);
-				if (!ok)
+				if (!logadd(&logbuf, ",\"eol\":%d", getVarEolife(mb,getArg(pci,j))))
 					goto cleanup_and_exit;
-				cv = format_val2json(&stk->stk[getArg(pci,j)]);
-				if (cv)
-					ok = logadd(&logbuf, ",\"value\":%s", cv);
-				GDKfree(cv);
-				if (!ok)
-					return;
+				// if (!logadd(&logbuf, ",\"fixed\":%d", isVarFixed(mb,getArg(pci,j)))) return NULL;
+				if (!logadd(&logbuf, "}"))
+					goto cleanup_and_exit;
 			}
-			if (!logadd(&logbuf, ",\"eol\":%d", getVarEolife(mb,getArg(pci,j))))
-				return;
-			// if (!logadd(&logbuf, ",\"fixed\":%d", isVarFixed(mb,getArg(pci,j)))) return;
-			if (!logadd(&logbuf, "}"))
-				return;
+			if (!logadd(&logbuf, "]")) // end marker for arguments
+				goto cleanup_and_exit;
 		}
-		if (!logadd(&logbuf, "]")) // end marker for arguments
-			return;
 	}
 	if (!logadd(&logbuf, "}\n")) // end marker
 		return;
@@ -623,13 +641,18 @@ void
 profilerEvent(MalEvent me, NonMalEvent nme)
 {
 	str event = NULL;
-	if (me.cntxt != NULL && getModuleId(me.pci) == myname) return; // ignore monitoring cmds
+	/* ignore profiler monitoring cmds */
+	if (me.cntxt != NULL && getModuleId(me.pci) == myname) return;
 
 	if (maleventstream) {
 		MT_lock_set(&mal_profileLock);
 		if (me.mb != NULL && nme.phase == MAL_ENGINE) {
 			if (me.stk == NULL) return;
 			if (me.pci == NULL) return;
+			if (profilerMode && me.mb && (getPC(me.mb, me.pci) != 0)) {
+				MT_lock_unset(&mal_profileLock);
+				return; /* minimal mode */
+			}
 			event = prepareMalEvent(me.cntxt, me.mb, me.stk, me.pci);
 		}
 		if (me.mb == NULL && nme.phase != MAL_ENGINE) {
@@ -646,7 +669,7 @@ profilerEvent(MalEvent me, NonMalEvent nme)
 /* The first scheme dumps the events on a stream (and in the pool)
  */
 str
-openProfilerStream(Client cntxt)
+openProfilerStream(Client cntxt, str s)
 {
 	int j;
 
@@ -668,9 +691,10 @@ openProfilerStream(Client cntxt)
 			throw(MAL,"profiler.start","Profiler already running, stream not available");
 		}
 	}
-	malProfileMode = -1;
+	profilerStatus = -1;
+	if (s) profilerMode = 1; 	/* Atm, just check if not NULL */
 	maleventstream = cntxt->fdout;
-	malprofileruser = cntxt->user;
+	profilerUser = cntxt->user;
 
 	// Ignore the JSON rendering mode, use compiled time version
 
@@ -703,8 +727,9 @@ closeProfilerStream(Client cntxt)
 {
 	(void) cntxt;
 	maleventstream = NULL;
-	malProfileMode = 0;
-	malprofileruser = 0;
+	profilerStatus = 0;
+	profilerMode = 0;
+	profilerUser = 0;
 	return MAL_SUCCEED;
 }
 
@@ -727,7 +752,7 @@ startProfiler(Client cntxt)
 	if (myname == 0){
 		myname = putName("profiler");
 	}
-	malProfileMode = 1;
+	profilerStatus = 1;
 	logjsonInternal(monet_characteristics, true);
 	MT_lock_unset(&mal_profileLock);
 	// reset the trace table
@@ -757,7 +782,8 @@ str
 stopProfiler(Client cntxt)
 {
 	MT_lock_set(&mal_profileLock);
-	malProfileMode = 0;
+	if (profilerStatus)
+		profilerStatus = 0;
 	setHeartbeat(0); // stop heartbeat
 	if(cntxt)
 		closeProfilerStream(cntxt);

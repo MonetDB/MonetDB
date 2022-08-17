@@ -529,21 +529,22 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	}
 
 	if (!tr->parent && !name) {
-		lng Tbegin = -1;
+		lng Tbegin = 0;
 		ulng ts_start = 0;
-		if(malProfileMode > 0) {
-			Tbegin = GDKusec();
+		bool log_usec = profilerMode == 0 || m->session->auto_commit;
+		if(profilerStatus > 0) {
+			if (log_usec) Tbegin = GDKusec();
 			ts_start = m->session->tr->ts;
 		}
 
 		const int state = sql_trans_end(m->session, ok);
 
-		if(malProfileMode > 0) {
+		if(profilerStatus > 0) {
 			lng Tend = GDKusec();
 			Client	c = getClientContext();
 			profilerEvent((struct MalEvent) {0},
 						  (struct NonMalEvent)
-						  {TRANSACTION_END, c, Tend, &ts_start, &m->session->tr->ts, state == SQL_OK ? 0 : 1, Tend - Tbegin});
+						  {TRANSACTION_END, c, Tend, &ts_start, &m->session->tr->ts, state == SQL_OK ? 0 : 1, log_usec?Tend-Tbegin:0});
 		}
 		switch (state) {
 			case SQL_ERR:

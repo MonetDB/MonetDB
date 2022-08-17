@@ -28,6 +28,9 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void) pci;
 	(void) stk;
 	(void) cntxt;
+	/* we only need the beautified version if we plan to emit events */
+	if(profilerStatus == 0 )
+		goto wrapup;
 
 	for( i=0; i< mb->stop; i++){
 		p= getInstrPtr(mb,i);

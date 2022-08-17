@@ -52,10 +52,11 @@ typedef struct MalEvent {
 	InstrPtr pci;
 } MalEvent;
 
-mal_export int malProfileMode;
+mal_export int profilerStatus;
+mal_export int profilerMode;
 
 mal_export void initProfiler(void);
-mal_export str openProfilerStream(Client cntxt);
+mal_export str openProfilerStream(Client cntxt, str s);
 mal_export str closeProfilerStream(Client cntxt);
 
 mal_export void profilerEvent(MalEvent me, NonMalEvent nme);
