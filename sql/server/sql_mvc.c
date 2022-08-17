@@ -534,8 +534,8 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	}
 
 	if (!tr->parent && !name) {
-		lng Tbegin;
-		ulng ts_start;
+		lng Tbegin = -1;
+		ulng ts_start = 0;
 		if(malProfileMode > 0) {
 			Tbegin = GDKusec();
 			ts_start = m->session->tr->ts;
