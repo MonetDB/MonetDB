@@ -2794,6 +2794,7 @@ new_logfile(logger *lg)
 		return GDK_FAIL;
 	}
 	if (( p > log_large || (lg->end*1024) > log_large )) {
+		log_lock(lg);
 		if (ATOMIC_GET(&lg->refcount) == 1) {
 			lg->id++;
 			log_close_output(lg);
@@ -2804,6 +2805,7 @@ new_logfile(logger *lg)
 			// Delegate wal rotation to next writer or last flusher.
 			lg->request_rotation = true;
 		}
+		log_unlock(lg);
 	}
 	MT_lock_unset(&lg->rotation_lock);
 	return result;
