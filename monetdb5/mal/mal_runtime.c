@@ -74,6 +74,10 @@ static
 void
 updateUserStats(Client cntxt, MalBlkPtr mb, lng ticks, time_t started, time_t finished, str query)
 {
+	// don't keep stats for context without username
+ 	if (cntxt->username == NULL)
+ 		return;
+
 	size_t idx = getUSRstatsIdx(mb, cntxt->user);
 
 	if (idx == (size_t) -1) {
@@ -81,7 +85,12 @@ updateUserStats(Client cntxt, MalBlkPtr mb, lng ticks, time_t started, time_t fi
 		return;
 	}
 
-	if (USRstats[idx].username == NULL) {
+	if (USRstats[idx].username == NULL || USRstats[idx].user != cntxt->user || strcmp(USRstats[idx].username, cntxt->username) != 0) {
+		if (USRstats[idx].username)
+			GDKfree(USRstats[idx].username);
+		if (USRstats[idx].maxquery)
+			GDKfree(USRstats[idx].maxquery);
+		clearUSRstats(idx);
 		USRstats[idx].user = cntxt->user;
 		USRstats[idx].username = GDKstrdup(cntxt->username);
 	}
@@ -91,8 +100,9 @@ updateUserStats(Client cntxt, MalBlkPtr mb, lng ticks, time_t started, time_t fi
 		USRstats[idx].started = started;
 		USRstats[idx].finished = finished;
 		USRstats[idx].maxticks = ticks;
-		GDKfree(USRstats[idx].maxquery);
-		USRstats[idx].maxquery= GDKstrdup(query);
+		if (USRstats[idx].maxquery)
+			GDKfree(USRstats[idx].maxquery);
+		USRstats[idx].maxquery = GDKstrdup(query);
 	}
 }
 

@@ -1,3 +1,0 @@
-CREATE USER "drupal" WITH PASSWORD 'drupal' NAME 'drupal admin' SCHEMA "sys";
-CREATE SCHEMA "drupal" AUTHORIZATION "drupal";
-ALTER USER "drupal" SET SCHEMA "drupal";

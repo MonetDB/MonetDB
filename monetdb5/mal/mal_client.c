@@ -272,23 +272,16 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->sqlprofiler = 0;
 	c->wlc_kind = 0;
 	c->wlc = NULL;
-	/* no authentication in embedded mode */
-	if (!GDKembedded()) {
-		str msg = AUTHgetUsername(&c->username, c);
-		if (msg)				/* shouldn't happen */
-			freeException(msg);
-	}
-
-	char name_buf[60];
-	snprintf(name_buf, sizeof(name_buf), "errorlock_" OIDFMT, user);
-	MT_lock_init(&c->error_lock, name_buf);
-
 	c->blocksize = BLOCK;
 	c->protocol = PROTOCOL_9;
 
 	c->filetrans = false;
 	c->handshake_options = NULL;
 	c->query = NULL;
+
+	char name_buf[60];
+	snprintf(name_buf, sizeof(name_buf), "errorlock_" OIDFMT, user);
+	MT_lock_init(&c->error_lock, name_buf);
 
 	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "Client%d->s", (int) (c - mal_clients));

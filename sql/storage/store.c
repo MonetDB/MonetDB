@@ -1354,6 +1354,7 @@ next_oid(sqlstore *store)
 	sqlid id = 0;
 	MT_lock_set(&store->lock);
 	id = store->obj_id++;
+	assert(id < 2000000000);
 	MT_lock_unset(&store->lock);
 	return id;
 }
@@ -5040,7 +5041,7 @@ sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_
 }
 
 int
-sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid owner)
+sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid owner, sqlid *schema_id_ptr)
 {
 	sqlstore *store = tr->store;
 	sql_schema *s = SA_ZNEW(tr->sa, sql_schema);
@@ -5071,6 +5072,8 @@ sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid ow
 		return res;
 	if ((res = sql_trans_add_dependency(tr, s->owner, ddl)))
 		return res;
+	if (schema_id_ptr)
+		*schema_id_ptr = s->base.id;
 	return res;
 }
 
@@ -5096,6 +5099,34 @@ sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name)
 	if ((res = os_del(tr->cat->schemas, tr, s->base.name, dup_base(&s->base))))
 		return res;
 	if ((res = schema_dup(tr, s, new_name, &ns)) || (res = os_add(tr->cat->schemas, tr, ns->base.name, &ns->base))) {
+		return res;
+	}
+	return res;
+}
+
+int
+sql_trans_change_schema_authorization(sql_trans *tr, sqlid id, sqlid auth_id)
+{
+	sqlstore *store = tr->store;
+	sql_table *sysschema = find_sql_table(tr, find_sql_schema(tr, "sys"), "schemas");
+	sql_schema *s = find_sql_schema_id(tr, id), *ns = NULL;
+	oid rid;
+	int res = LOG_OK;
+
+	assert(auth_id);
+	s->auth_id = auth_id;
+
+	rid = store->table_api.column_find_row(tr, find_sql_column(sysschema, "id"), &id, NULL);
+	assert(!is_oid_nil(rid));
+	if ((res = store->table_api.column_update_value(tr, find_sql_column(sysschema, "authorization"), rid, &auth_id)))
+		return res;
+
+	if (!isNew(s) && (res = sql_trans_add_dependency_change(tr, id, ddl)))
+		return res;
+	/* delete schema, add schema */
+	if ((res = os_del(tr->cat->schemas, tr, s->base.name, dup_base(&s->base))))
+		return res;
+	if ((res = schema_dup(tr, s, s->base.name, &ns)) || (res = os_add(tr->cat->schemas, tr, ns->base.name, &ns->base))) {
 		return res;
 	}
 	return res;
@@ -7000,10 +7031,9 @@ sql_trans_begin(sql_session *s)
 		return -3;
 	}
 	tr->active = 1;
-	s->tr = tr;
 
 	(void) ATOMIC_INC(&store->nr_active);
-	list_append(store->active, s);
+	list_append(store->active, tr);
 
 	TRC_DEBUG(SQL_STORE, "Exit sql_trans_begin for transaction: " ULLFMT "\n", tr->tid);
 	store_unlock(store);
@@ -7021,20 +7051,20 @@ sql_trans_end(sql_session *s, int ok)
 		sql_trans_rollback(s->tr, false);
 	}
 	assert(s->tr->active);
+	sqlstore *store = s->tr->store;
+	store_lock(store);
 	s->tr->active = 0;
 	s->tr->status = 0;
 	s->auto_commit = s->ac_on_commit;
-	sqlstore *store = s->tr->store;
-	store_lock(store);
-	list_remove_data(store->active, NULL, s);
+	list_remove_data(store->active, NULL, s->tr);
 	ATOMIC_SET(&store->lastactive, GDKusec());
 	(void) ATOMIC_DEC(&store->nr_active);
 	ulng oldest = store_get_timestamp(store);
 	if (store->active && store->active->h) {
 		for(node *n = store->active->h; n; n = n->next) {
-			sql_session *s = n->data;
-			if (s->tr->ts < oldest)
-				oldest = s->tr->ts;
+			sql_trans *tr = n->data;
+			if (tr->ts < oldest)
+				oldest = tr->ts;
 		}
 	}
 	store->oldest = oldest;

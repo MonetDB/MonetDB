@@ -1,0 +1,14 @@
+# ChangeLog file for sql
+# This file is updated with Maddlog
+
+* Fri Jul 29 2022 Sjoerd Mullender <sjoerd@acm.org>
+- The user authentication tables are now administered by the SQL layer
+  instead of the MAL layer.  This means that changing (adding, dropping,
+  altering) user and role information is now transaction-safe.
+
+* Thu Apr 21 2022 Nuno Faria <nunofpfaria@gmail.com>
+- Added the UNLOGGED TABLE feature.
+
+* Fri Feb  4 2022 Sjoerd Mullender <sjoerd@acm.org>
+- Removed functions sys.index and sys.strings.
+

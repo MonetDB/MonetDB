@@ -50,6 +50,7 @@ malBootstrap(char *modules[], bool embedded)
 		MCfreeClient(c);
 		return msg;
 	}
+
 	if( MCinitClientThread(c) < 0){
 		MCfreeClient(c);
 		throw(MAL, "malBootstrap", "Failed to create client thread");
@@ -171,6 +172,32 @@ is_exiting(void *data)
 
 static str MSserveClient(Client cntxt);
 
+
+static inline void
+cleanUpScheduleClient(Client c, Scenario s, bstream *fin, stream *fout, str *command, str *err)
+{
+	if(c) {
+		if (s) {
+			str msg = NULL;
+			if((msg = s->exitClientCmd(c)) != MAL_SUCCEED) {
+				mnstr_printf(fout, "!%s\n", msg);
+				freeException(msg);
+			}
+		}
+		MCfreeClient(c);
+	}
+	exit_streams(fin, fout);
+	if (command) {
+		GDKfree(*command);
+		*command = NULL;
+	}
+	if (err) {
+		freeException(*err);
+		*err = NULL;
+	}
+}
+
+
 void
 MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize)
 {
@@ -279,17 +306,30 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		sabdb *stats = NULL;
 
 		if (!GDKembedded()) {
+			if ((c = MCinitClient(MAL_ADMIN, NULL, NULL)) == NULL) {
+				if ( MCshutdowninprogress())
+					mnstr_printf(fout, "!system shutdown in progress, please try again later\n");
+				else
+					mnstr_printf(fout, "!maximum concurrent client limit reached "
+									   "(%d), please try again later\n", MAL_MAXCLIENTS);
+				cleanUpScheduleClient(NULL, NULL, fin, fout, &command, NULL);
+				return;
+			}
+			Scenario scenario = findScenario("sql");
+			if ((msg = scenario->initClientCmd(c)) != MAL_SUCCEED) {
+				mnstr_printf(fout, "!%s\n", msg);
+				cleanUpScheduleClient(c, scenario, fin, fout, &command, &msg);
+				return;
+			}
 			/* access control: verify the credentials supplied by the user,
 			 * no need to check for database stuff, because that is done per
 			 * database itself (one gets a redirect) */
-			err = AUTHcheckCredentials(&uid, NULL, user, passwd, challenge, algo);
-			if (err != MAL_SUCCEED) {
-				mnstr_printf(fout, "!%s\n", err);
-				exit_streams(fin, fout);
-				freeException(err);
-				GDKfree(command);
+			if ((msg = AUTHcheckCredentials(&uid, c, user, passwd, challenge, algo)) != MAL_SUCCEED) {
+				mnstr_printf(fout, "!%s\n", msg);
+				cleanUpScheduleClient(c, scenario, fin, fout, &command, &msg);
 				return;
 			}
+			cleanUpScheduleClient(c, scenario, NULL, NULL, NULL, NULL);
 		}
 
 
@@ -369,6 +409,9 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		GDKfree(command);
 		return;
 	}
+
+	// at this point username should have being verified
+	c->username = GDKstrdup(user);
 
 	GDKfree(command);
 

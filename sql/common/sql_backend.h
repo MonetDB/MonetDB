@@ -15,18 +15,20 @@
 
 typedef void (*freecode_fptr) (const char *mod, int clientid, const char *name);
 
-typedef char *(*create_user_fptr) (ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid schema_id, char *schema_path, sqlid grantor_id);
+typedef char *(*create_user_fptr) (ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid schema_id, char *schema_path, sqlid grantor_id, lng max_memory, int max_workers, str optimizer, sqlid role_id);
 typedef int  (*drop_user_fptr) (ptr mvc, char *user);
-typedef int  (*find_user_fptr) (ptr mvc, char *user);
+typedef oid  (*find_user_fptr) (ptr mvc, char *user);
 typedef void (*create_privileges_fptr) (ptr mvc, sql_schema *s);
 typedef int  (*schema_has_user_fptr) (ptr mvc, sql_schema *s);
-typedef int  (*alter_user_fptr) (ptr mvc, str user, str passwd, char enc, sqlid schema_id, char *schema_path, str oldpasswd);
+typedef int  (*alter_user_fptr) (ptr mvc, str user, str passwd, char enc, sqlid schema_id, char *schema_path, str oldpasswd, sqlid role_id);
 typedef int  (*rename_user_fptr) (ptr mvc, str olduser, str newuser);
 typedef void*  (*schema_user_dependencies) (ptr mvc, int schema_id);
 typedef void  (*create_function) (ptr mvc, str name, sql_rel *rel, sql_table *t);
 typedef int  (*resolve_function) (ptr mvc, sql_func *f, const char *fimp, bool *side_effect);
 typedef int  (*has_module_function) (ptr mvc, char *name);
 typedef void *(*create_sub_backend) (void *mvc, void *client);
+typedef int  (*find_role_fptr) (ptr mvc, char *role, sqlid *role_id);
+typedef void (*set_user_api_hooks_fptr)(ptr mvc);
 
 /* backing struct for this interface */
 typedef struct _backend_functions {
@@ -34,6 +36,7 @@ typedef struct _backend_functions {
 	create_user_fptr fcuser;
 	drop_user_fptr fduser;
 	find_user_fptr ffuser;
+	find_role_fptr ffrole;
 	create_privileges_fptr fcrpriv;
 	schema_has_user_fptr fshuser;
 	alter_user_fptr fauser;
@@ -42,20 +45,23 @@ typedef struct _backend_functions {
 	resolve_function fresolve_function;
 	has_module_function fhas_module_function;
 	create_sub_backend sub_backend;
+	set_user_api_hooks_fptr fset_user_api_hooks;
 } backend_functions;
 
 extern void backend_freecode(const char *mod, int clientid, const char *name);
 
-extern char *backend_create_user(ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid defschemid, char *schema_path, sqlid grantor);
+extern char *backend_create_user(ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid defschemid, char *schema_path, sqlid grantor, lng max_memory, int max_workers, char *optimizer, sqlid role_id);
 extern int  backend_drop_user(ptr mvc, char *user);
-extern int  backend_find_user(ptr mp, char *user);
+extern oid  backend_find_user(ptr mp, char *user);
 extern void backend_create_privileges(ptr mvc, sql_schema *s);
 extern int  backend_schema_has_user(ptr mvc, sql_schema *s);
-extern int	backend_alter_user(ptr mvc, str user, str passwd, char enc, sqlid schema_id, char *schema_path, str oldpasswd);
+extern int	backend_alter_user(ptr mvc, str user, str passwd, char enc, sqlid schema_id, char *schema_path, str oldpasswd, sqlid role_id);
 extern int	backend_rename_user(ptr mvc, str olduser, str newuser);
 extern void*	backend_schema_user_dependencies(ptr trans, sqlid schema_id);
 extern int	backend_resolve_function(ptr trans, sql_func *f, const char *fimp, bool *side_effect);
 extern int	backend_has_module(ptr M, char *name);
+extern int  backend_find_role(ptr mp, char *role, sqlid *role_id);
+extern void backend_set_user_api_hooks(ptr mvc);
 
 extern backend_functions be_funcs;
 

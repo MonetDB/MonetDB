@@ -150,9 +150,11 @@ BATupgrade(BAT *r, BAT *b, bool locked)
 		r->twidth < b->twidth) {
 		if (locked)
 			MT_lock_unset(&r->theaplock);
-		err = GDKupgradevarheap(r, (1 << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED;
+		if (r->twidth < b->twidth)
+			err = GDKupgradevarheap(r, (1L << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED;
 		if (locked)
 			MT_lock_set(&r->theaplock);
+		assert (r->twidth == b->twidth);
 	}
 	/*
 	if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
@@ -173,22 +175,23 @@ BATupgrade(BAT *r, BAT *b, bool locked)
 static void
 BATswap_heaps(BAT *u, BAT *b, Pipeline *p)
 {
-	bat parent = 0;
 	if (p)
 		pipeline_lock(p);
+	MT_lock_set(&b->theaplock);
+	Heap *h = b->tvheap;
+	HEAPincref(h);
+	bat parent = h->parentid;
+	MT_lock_unset(&b->theaplock);
 	MT_lock_set(&u->theaplock);
 	if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-		MT_lock_set(&b->theaplock);
-		Heap *h = b->tvheap;
-		HEAPincref(h);
-		MT_lock_unset(&b->theaplock);
-		parent = h->parentid;
+		BBPshare(parent);
 		HEAPdecref(u->tvheap, true);
 		u->tvheap = h;
+		h = NULL;
 	}
 	MT_lock_unset(&u->theaplock);
-	if (parent)
-		BBPshare(parent);
+	if (h)
+		HEAPdecref(h, false);
 	if (p)
 		pipeline_unlock(p);
 }
@@ -1210,8 +1213,6 @@ int hash_prime_nr[32] = {
 	402653189,
 	805306457,
 	1610612741 };
-
-//(_hash_lng(ROT64(X, 3) ^ ROT64((lng)Y, 17)))
 
 static str
 UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
@@ -3468,6 +3469,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			err = 1;
 		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
 				(!VIEWvtparent(b) || BBP_cache(VIEWvtparent(b))->batRestricted != BAT_READ))) {
+			assert(r->tvheap->parentid == r->batCacheid);
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
 			local_storage = true;

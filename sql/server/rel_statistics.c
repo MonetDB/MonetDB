@@ -870,7 +870,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				set_count_prop(v->sql->sa, rel, 0);
 			} else {
 				if (!list_empty(rel->exps) && !is_single(rel)) {
-					BUN cnt = get_rel_count(l);
+					BUN cnt = get_rel_count(l), u = 1;
 					for (node *n = rel->exps->h ; n ; n = n->next) {
 						sql_exp *e = n->data, *el = e->l, *er = e->r;
 
@@ -879,11 +879,11 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 							/* use selectivity */
 							prop *p = NULL;
 							if ((p = find_prop(el->p, PROP_NUNIQUES))) {
-								cnt = (BUN) p->value.dval;
+								u = (BUN) p->value.dval;
 							}
 						}
 					}
-					set_count_prop(v->sql->sa, rel, cnt);
+					set_count_prop(v->sql->sa, rel, cnt/u);
 				} else {
 					set_count_prop(v->sql->sa, rel, get_rel_count(l));
 				}

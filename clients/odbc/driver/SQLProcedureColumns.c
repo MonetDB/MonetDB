@@ -114,8 +114,7 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 	}
 
 	/* construct the query now */
-	querylen = 6500 + strlen(stmt->Dbc->dbname) +
-		(sch ? strlen(sch) : 0) + (prc ? strlen(prc) : 0) +
+	querylen = 6500 + (sch ? strlen(sch) : 0) + (prc ? strlen(prc) : 0) +
 		(col ? strlen(col) : 0);
 	query = malloc(querylen);
 	if (query == NULL)
@@ -150,14 +149,14 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 #define F_PROC 2
 #define F_UNION 5
 	pos += snprintf(query + pos, querylen - pos,
-		"select '%s' as \"PROCEDURE_CAT\", "
+		"select cast(null as varchar(1)) as \"PROCEDURE_CAT\", "
 		       "s.name as \"PROCEDURE_SCHEM\", "
 		       "p.name as \"PROCEDURE_NAME\", "
 		       "a.name as \"COLUMN_NAME\", "
-		       "case when a.inout = 1 then %d "
+		       "cast(case when a.inout = 1 then %d "
 			    "when p.type = %d then %d "
 			    "else %d "
-		       "end as \"COLUMN_TYPE\", "
+		       "end as smallint) as \"COLUMN_TYPE\", "
 		DATA_TYPE(a) ", "
 		TYPE_NAME(a) ", "
 		COLUMN_SIZE(a) ", "
@@ -170,12 +169,12 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 		SQL_DATA_TYPE(a) ", "
 		SQL_DATETIME_SUB(a) ", "
 		CHAR_OCTET_LENGTH(a) ", "
-		       "case when p.type = 5 and a.inout = 0 then a.number + 1 "
+		       "cast(case when p.type = 5 and a.inout = 0 then a.number + 1 "
 			    "when p.type = 5 and a.inout = 1 then a.number - x.maxout "
 			    "when p.type = 2 and a.inout = 1 then a.number + 1 "
 			    "when a.inout = 0 then 0 "
 			    "else a.number "
-		       "end as \"ORDINAL_POSITION\", "
+		       "end as integer) as \"ORDINAL_POSITION\", "
 		       "'' as \"IS_NULLABLE\", "
 			/* Only the id value uniquely identifies a specific procedure.
 			   Include it to be able to differentiate between multiple
@@ -187,7 +186,6 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 		"where s.id = p.schema_id and "
 		      "p.id = a.func_id and "
 		      "p.type in (%d, %d, %d)",
-		stmt->Dbc->dbname,
 		/* column_type: */
 		SQL_PARAM_INPUT, F_UNION, SQL_RESULT_COL, SQL_RETURN_VALUE,
 #ifdef DATA_TYPE_ARGS
