@@ -181,7 +181,9 @@ MCresetProfiler(stream *fdout)
 	if (fdout != maleventstream)
 		return;
 	MT_lock_set(&mal_profileLock);
-	maleventstream = 0;
+	maleventstream = NULL;
+	profilerStatus = 0;
+	profilerMode = 0;
 	MT_lock_unset(&mal_profileLock);
 }
 
@@ -203,7 +205,7 @@ MCexitClient(Client c)
 		c->fdin = NULL;
 	}
 	assert(c->query == NULL);
-	if(malProfileMode > 0) {
+	if(profilerStatus > 0) {
 		lng Tend = GDKusec();
 		profilerEvent((struct MalEvent) {0},
 					  (struct NonMalEvent)

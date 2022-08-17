@@ -53,20 +53,29 @@ OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
-	(void)cntxt;
-	(void)stk;
-	(void) p;
+	/* perform a single scan through the plan to determine which optimizer steps to skip */
+	for( int i=0; i<mb->stop; i++){
+		InstrPtr q = getInstrPtr(mb,i);
+		if (q->modname == sqlRef && q->fcnname == importTableRef)
+			bincopy= 1;
+		if( getModuleId(q) == generatorRef)
+			generator = 1;
+		if ( getFunctionId(q) == multiplexRef)
+			multiplex = 1;
+	}
 
-
-	msg = OPTinlineImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTremapImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTbincopyfromImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTdeadcodeImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTmultiplexImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTgeneratorImplementation(cntxt, mb, stk, p);
-	//if( msg == MAL_SUCCEED) msg = OPTprofilerImplementation(cntxt, mb, stk, p);
-	//if( msg == MAL_SUCCEED) msg = OPTcandidatesImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTgarbageCollectorImplementation(cntxt, mb, stk, p);
+	optcall(true, OPTinlineImplementation);
+	optcall(true, OPTremapImplementation);
+	optcall(bincopy, OPTbincopyfromImplementation);
+	optcall(true, OPTemptybindImplementation);
+	optcall(true, OPTdeadcodeImplementation);
+	optcall(true, OPTforImplementation);
+	optcall(true, OPTdictImplementation);
+	optcall(multiplex, OPTmultiplexImplementation);
+	optcall(generator, OPTgeneratorImplementation);
+	optcall(profilerStatus, OPTprofilerImplementation);
+	optcall(profilerStatus, OPTcandidatesImplementation);
+	optcall(true, OPTgarbageCollectorImplementation);
 
 	/* Defense line against incorrect plans  handled by optimizer steps */
 	/* keep all actions taken as a post block comment */
@@ -87,42 +96,50 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
-	(void)cntxt;
-	(void)stk;
-	(void) p;
+	/* perform a single scan through the plan to determine which optimizer steps to skip */
+	for( int i=0; i<mb->stop; i++){
+		InstrPtr q = getInstrPtr(mb,i);
+		if (q->modname == sqlRef && q->fcnname == importTableRef)
+			bincopy= 1;
+		if( getModuleId(q) == generatorRef)
+			generator = 1;
+		if ( getFunctionId(q) == multiplexRef)
+			multiplex = 1;
+	}
 
-
-	msg = OPTinlineImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTremapImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTcostModelImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTcoercionImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTaliasesImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTevaluateImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTemptybindImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTdeadcodeImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTpushselectImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTaliasesImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTmitosisImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTmergetableImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTbincopyfromImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTaliasesImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTconstantsImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTcommonTermsImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTprojectionpathImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTdeadcodeImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTreorderImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTmatpackImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTdataflowImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTquerylogImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTmultiplexImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTgeneratorImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTprofilerImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTcandidatesImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTdeadcodeImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTpostfixImplementation(cntxt, mb, stk, p);
-	// if( msg == MAL_SUCCEED) msg = OPTjitImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTwlcImplementation(cntxt, mb, stk, p);
-	if( msg == MAL_SUCCEED) msg = OPTgarbageCollectorImplementation(cntxt, mb, stk, p);
+	optcall(true, OPTinlineImplementation);
+	optcall(true, OPTremapImplementation);
+	optcall(true, OPTcostModelImplementation);
+	optcall(true, OPTcoercionImplementation);
+	optcall(true, OPTaliasesImplementation);
+	optcall(true, OPTevaluateImplementation);
+	optcall(true, OPTemptybindImplementation);
+	optcall(true, OPTdeadcodeImplementation);
+	optcall(true, OPTpushselectImplementation);
+	optcall(true, OPTaliasesImplementation);
+	optcall(true, OPTforImplementation);
+	optcall(true, OPTdictImplementation);
+	optcall(true, OPTmitosisImplementation);
+	optcall(true, OPTmergetableImplementation);
+	optcall(bincopy, OPTbincopyfromImplementation);
+	optcall(true, OPTaliasesImplementation);
+	optcall(true, OPTconstantsImplementation);
+	optcall(true, OPTcommonTermsImplementation);
+	optcall(true, OPTprojectionpathImplementation);
+	optcall(true, OPTdeadcodeImplementation);
+	optcall(true, OPTreorderImplementation);
+	optcall(true, OPTmatpackImplementation);
+	optcall(true, OPTdataflowImplementation);
+	optcall(true, OPTquerylogImplementation);
+	optcall(multiplex, OPTmultiplexImplementation);
+	optcall(generator, OPTgeneratorImplementation);
+	optcall(profilerStatus, OPTprofilerImplementation);
+	optcall(profilerStatus, OPTcandidatesImplementation);
+	optcall(true, OPTdeadcodeImplementation);
+	optcall(true, OPTpostfixImplementation);
+	// optcall(true, OPTjitImplementation);
+	optcall(true, OPTwlcImplementation);
+	optcall(true, OPTgarbageCollectorImplementation);
 
 	/* Defense line against incorrect plans  handled by optimizer steps */
 	/* keep all actions taken as a post block comment */
