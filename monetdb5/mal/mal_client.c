@@ -279,6 +279,10 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->handshake_options = NULL;
 	c->query = NULL;
 
+	char name_buf[60];
+	snprintf(name_buf, sizeof(name_buf), "errorlock_" OIDFMT, user);
+	MT_lock_init(&c->error_lock, name_buf);
+
 	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "Client%d->s", (int) (c - mal_clients));
 	MT_sema_init(&c->s, 0, name);
@@ -468,6 +472,7 @@ MCfreeClient(Client c)
 		BBPunfix(c->profstmt->batCacheid);
 		c->profticks = c->profstmt = NULL;
 	}
+	MT_lock_destroy(&c->error_lock);
 	if( c->error_row){
 		BBPunfix(c->error_row->batCacheid);
 		BBPunfix(c->error_fld->batCacheid);

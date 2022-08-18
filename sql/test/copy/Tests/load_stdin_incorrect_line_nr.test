@@ -21,8 +21,8 @@ select * from sys.rejects
 ----
 2
 1
-line 2 field isanumber 'int' expected in 'bla'
-bla@
+Row 2 column 1 'isanumber': missing integer
+NULL
 
 statement ok
 call sys.clearrejects()

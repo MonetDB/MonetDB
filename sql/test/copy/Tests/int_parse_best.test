@@ -2,15 +2,15 @@ statement ok
 start transaction
 
 statement ok
-create table t_int(i int)
+create table t_int(_ int, i int)
 
 statement ok
 copy 1 records into t_int from stdin USING DELIMITERS ',',E'\n','"' NULL AS '' best effort
 <COPY_INTO_DATA>
-""
+0,
 
 query I rowsort
-select * from t_int
+select i from t_int
 ----
 NULL
 
@@ -27,11 +27,11 @@ delete from t_int
 statement ok
 copy 2 records into t_int from stdin USING DELIMITERS ',',E'\n','"' NULL AS '' best effort
 <COPY_INTO_DATA>
-3.00
--4.0000
+0,3.00
+0,-4.0000
 
 query I nosort
-select * from t_int
+select i from t_int
 ----
 3
 -4
@@ -49,12 +49,12 @@ delete from t_int
 statement ok
 copy 3 records into t_int from stdin USING DELIMITERS ',',E'\n','"' NULL AS '' best effort
 <COPY_INTO_DATA>
-0
-5.1
-9
+0,0
+0,5.1
+0,9
 
 query I nosort
-select * from t_int
+select i from t_int
 ----
 0
 9
@@ -63,9 +63,9 @@ query IITT rowsort
 select * from sys.rejects
 ----
 2
-1
-line 2 field i 'int' expected in '5.1'
-5.1@
+2
+Row 2 column 2 'i': unexpected decimal digit '1' while parsing integer
+NULL
 
 statement ok
 call sys.clearrejects()
@@ -74,16 +74,16 @@ statement ok
 delete from t_int
 
 statement ok
-copy 5 records into t_int from stdin delimiters ',',E'\n' NULL as '""' best effort
+copy 5 records into t_int from stdin delimiters ',',E'\n' NULL as '' best effort
 <COPY_INTO_DATA>
-1
-nil
-""
-null
-abc
+0,1
+0,nil
+0,
+0,null
+0,abc
 
 query I rowsort
-select * from t_int
+select i from t_int
 ----
 1
 NULL
@@ -92,17 +92,17 @@ query IITT rowsort
 select * from sys.rejects
 ----
 2
-1
-line 2 field i 'int' expected in 'nil'
-nil@
+2
+Row 2 column 2 'i': missing integer
+NULL
 4
-1
-line 4 field i 'int' expected in 'null'
-null@
+2
+Row 4 column 2 'i': missing integer
+NULL
 5
-1
-line 5 field i 'int' expected in 'abc'
-abc@
+2
+Row 5 column 2 'i': missing integer
+NULL
 
 statement ok
 call sys.clearrejects()

@@ -5258,22 +5258,8 @@ can_use_copyparpipe(sql_rel *rel)
 	if (n == NULL)
 		return NULL;
 	sql_table *template_table = atom_argument(n, 0, TYPE_ptr)->val.pval;
-	str fname = atom_argument(n, 5, TYPE_str)->val.sval;
-	lng nrecords = atom_argument(n, 6, TYPE_lng)->val.lval;
-	int best_effort = atom_argument(n, 8, TYPE_int)->val.ival;
 	str fixed_width = atom_argument(n, 9, TYPE_str)->val.sval;
-	int on_client = atom_argument(n, 10, TYPE_int)->val.ival;
-	if (strNil(fname)) {
-		// from stdin
-		return NULL;
-	}
-	if (nrecords != -1)
-		return NULL;
-	if (best_effort)
-		return NULL;
 	if (!strNil(fixed_width))
-		return NULL;
-	if (on_client)
 		return NULL;
 
 	// The sql.copy_from operator takes as its first argument a pointer to the

@@ -35,8 +35,8 @@ with process.client('sql', text=False, stdin=process.PIPE, stdout=process.PIPE, 
 
     if retcode == 0:
         sys.stderr.write("Expected nonzero return code")
-    if not err or b'input not properly encoded UTF-8' not in err:
-        sys.stderr.write("Expected stderr to contain 'input not properly encoded UTF-8'")
+    if not err or b'incorrectly encoded UTF-8' not in err:
+        sys.stderr.write("Expected stderr to contain 'incorrectly encoded UTF-8'")
 
 with SQLTestCase() as tc:
     tc.connect(username="monetdb", password="monetdb")

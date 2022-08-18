@@ -41,9 +41,8 @@ static const char *myname = 0;	// avoid tracing the profiler module
 
 /* When the MAL block contains a BARRIER block we may end up with tons
  * of profiler events. To avoid this, we stop emitting the events
- * when we reached the HIGHWATERMARK. Leaving a message in the log.
- */
-#define HIGHWATERMARK 5
+ * when we reached the HIGHWATERMARK. Leaving a message in the log. */
+#define HIGHWATERMARK INT_MAX
 
 
 int malProfileMode = 0;     /* global flag to indicate profiling mode */
@@ -280,7 +279,7 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 */
 
 	// Also show details of the arguments for modelling
-	if(mb && pci->modname && pci->fcnname){
+	if (mb && (pci->token == ASSIGNsymbol || (pci->modname && pci->fcnname))){
 		int j;
 
 		if (!logadd(&logbuf, ",\"args\":["))

@@ -8,36 +8,45 @@
 
 #include "monetdb_config.h"
 #include "mal_interpreter.h"
+#include "mal_exception.h"
 
 #include "copy.h"
 #include "rel_copy.h"
 
-static int
-scan_octal_escape(unsigned char **rr, unsigned char **ww, unsigned char *end, int c)
+static const char *
+scan_octal_escape(struct scan_state *state, unsigned char **ww, int acc)
 {
-	unsigned char *r = *rr + 2;
-	if (r >= end || *r < '0' || *r > '7')
+	state->pos += 2;
+
+	if (state->pos >= state->end || state->pos[0] < '0' || state->pos[0] > '7')
 		goto end;
-	c = 8 * c + *r - '0';
-	r++;
-	if (r >= end || *r < '0' || *r > '7')
+	acc = 8 * acc + *state->pos++ - '0';
+	if (state->pos >= state->end || state->pos[0] < '0' || state->pos[0] > '7')
 		goto end;
-	c = 8 * c + *r - '0';
-	r++;
+	acc = 8 * acc + *state->pos++ - '0';
 end:
-	if (c > 0xFF)
-		return -1;
-	*rr = r;
-	*(*ww)++ = c;
-	return 0;
+	if (acc > 0xFF) {
+		state->escape_pending = false; // pos has already advanced beyond the backslash
+		return "octal escape out of range";
+	}
+	if (acc == 0) {
+		state->escape_pending = false; // pos has already advanced beyond the backslash
+		return "\\000 is not a valid octal escape";
+	}
+
+	*(*ww)++ = acc;
+	return NULL;
 }
 
 static int
-one_hex_digit(unsigned char **rr, unsigned char *end)
+one_hex_digit(const char **err_msg, struct scan_state *state)
 {
-	if (*rr >= end)
+	if (state->pos >= state->end) {
+		// this only occurs if for example the buffer ends in '\\' 'x'.
+		*err_msg = "incomplete hex sequence";
 		return -1;
-	unsigned int d = **rr;
+	}
+	unsigned int d = state->pos[0];
 	unsigned int d0 = d - '0';
 	unsigned int da = d - 'a';
 	unsigned int dA = d - 'A';
@@ -46,29 +55,46 @@ one_hex_digit(unsigned char **rr, unsigned char *end)
 	int vA = (dA < 6 ? dA + 11 : 0);
 	int v =  v0 | va | vA;
 
-	// If there was a match, v is one too high, otherwise it's 0.
-	*rr += v > 0;
-	return v - 1;
+	// If it's not a hex digit, v will be 0, otherwise it will be 1 too high
+	if (v > 0) {
+		state->pos++;
+		return v - 1;
+	} else {
+		*err_msg = "incomplete hex sequence";
+		return -1;
+	}
 }
 
-static int
-scan_hex_escape(unsigned char **rr, unsigned char **ww, unsigned char *end)
+static const char *
+scan_hex_escape(struct scan_state *state, unsigned char **ww)
 {
+	const char *err_msg = NULL;
 	int acc;
-	*rr += 2;
-	int d = one_hex_digit(rr, end);
-	if (d < 0)
-		return d;
-	acc = d;
-	d = one_hex_digit(rr, end);
-	if (d >= 0) {
-		acc = 16 * acc + d;
+	state->pos += 2;
+	int d = one_hex_digit(&err_msg, state);
+	assert((d < 0) == (err_msg != NULL));
+	if (err_msg) {
+		state->escape_pending = false; // pos has already advanced beyond the backslash
+		return err_msg;
 	}
-	if (acc > 0xFF)
-		return -1;
-	// rr has already been updated by one_hex_digit
+	acc = d;
+	d = one_hex_digit(&err_msg, state);
+	assert((d < 0) == (err_msg != NULL));
+	if (err_msg) {
+		state->escape_pending = false; // pos has already advanced beyond the backslash
+		return err_msg;
+	}
+	acc = 16 * acc + d;
+
+	assert(acc >= 0);
+	assert(acc < 0xFF);
+	if (acc == 0) {
+		state->escape_pending = false; // pos has already advanced beyond the backslash
+		return "\\x00 is not a valid hex escape";
+	}
+
 	*(*ww)++ = acc;
-	return 0;
+	return NULL;
 }
 
 static int
@@ -79,21 +105,32 @@ utf8cont(unsigned int n, int shift)
 	n = n | 0x80; // 0x80 == 0b1000_0000
 	return n;
 }
-static int
-scan_unicode_escape(unsigned char **rr, unsigned char **ww, unsigned char *end, int digits)
+
+static const char *
+scan_unicode_escape(struct scan_state *state, unsigned char **ww, int digits)
 {
 	unsigned int acc = 0;
-	*rr += 2;
-	if (end - *rr < digits)
-		return -1;
+	state->pos += 2;
+	if (state->end - state->pos < digits) {
+		return "incomplete unicode hex sequence";
+	}
 	for (int i = 0; i < digits; i++) {
-		int d = one_hex_digit(rr, end);
-		if (d < 0)
-			return d;
+		const char *err_msg = NULL;
+		int d = one_hex_digit(&err_msg, state);
+		assert((d < 0) == (err_msg != NULL));
+		if (err_msg) {
+			state->escape_pending = false; // pos has already advanced beyond the backslash
+			return err_msg;
+		}
 		acc = 16 * acc + d;
 	}
-	if (acc == 0)
-		return -1;
+	if (acc == 0) {
+		state->escape_pending = false; // pos has already advanced beyond the backslash
+		if (digits == 8)
+			return "\\U00000000 is not a valid unicode escape";
+		else
+			return "\\u0000 is not a valid unicode escape";
+	}
 	else if (acc <      0x80) {
 		*(*ww)++ = acc;
 	} else if (acc <  0x0800) {
@@ -104,7 +141,8 @@ scan_unicode_escape(unsigned char **rr, unsigned char **ww, unsigned char *end, 
 		*(*ww)++ = utf8cont(acc, 6);
 		*(*ww)++ = utf8cont(acc, 0);
 	} else if (acc <  0xE000) {
-		return -1; // reserved for utf16 surrogate halves
+		state->escape_pending = false; // pos has already advanced beyond the backslash
+		return "invalid unicode escape, it denotes a surrogate halve";
 	} else if (acc < 0x10000) {
 		*(*ww)++ = (acc >> 12) | 0xE0; //   0xE0 == 0b1110_0000
 		*(*ww)++ = utf8cont(acc, 6);
@@ -115,18 +153,18 @@ scan_unicode_escape(unsigned char **rr, unsigned char **ww, unsigned char *end, 
 		*(*ww)++ = utf8cont(acc, 6);
 		*(*ww)++ = utf8cont(acc, 0);
 	}
-	return 0;
+	return NULL;
 }
 
-static int
-scan_backslash_escape(unsigned char **rr, unsigned char **ww, unsigned char *end)
+static const char *
+scan_backslash_escape(struct scan_state *state, unsigned char **ww)
 {
-	unsigned char *r = *rr;
-	if (end - r < 2)
-		return -50;
-	assert(r[0] == '\\');
+	if (state->end - state->pos < 2) {
+		return "incomplete backslash escape sequence";
+	}
+	assert(state->pos[0] == '\\');
 	unsigned char c;
-	switch (r[1]) {
+	switch (state->pos[1]) {
 		case '0':
 		case '1':
 		case '2':
@@ -135,13 +173,13 @@ scan_backslash_escape(unsigned char **rr, unsigned char **ww, unsigned char *end
 		case '5':
 		case '6':
 		case '7':
-			return scan_octal_escape(rr, ww, end, r[1] - '0');
+			return scan_octal_escape(state, ww, state->pos[1] - '0');
 		case 'x':
-			return scan_hex_escape(rr, ww, end);
+			return scan_hex_escape(state, ww);
 		case 'u':
-			return scan_unicode_escape(rr, ww, end, 4);
+			return scan_unicode_escape(state, ww, 4);
 		case 'U':
-			return scan_unicode_escape(rr, ww, end, 8);
+			return scan_unicode_escape(state, ww, 8);
 		case 'a':
 			c = '\a';
 			break;
@@ -161,11 +199,11 @@ scan_backslash_escape(unsigned char **rr, unsigned char **ww, unsigned char *end
 			c = '\t';
 			break;
 		default:
-			c = r[1];
+			c = state->pos[1];
 	}
-	*rr += 2;
+	state->pos += 2;
 	*(*ww)++ = c;
-	return 0;
+	return NULL;
 }
 
 // Scan the text pointed to by 'start', replacing quote pairs with single
@@ -175,44 +213,51 @@ scan_backslash_escape(unsigned char **rr, unsigned char **ww, unsigned char *end
 // a \0 character. Return the number of bytes scanned, or < 0 on error.
 // Never scan past 'end'. Reaching 'end' is considered an error.
 // Writes the number of bytes written, excluding the '\0', to '*nwritten'.
-static int
-scan_quoted(unsigned char *start, unsigned char *end, int quote, bool backslash_escapes, int *nwritten)
+static const char *
+scan_quoted(struct scan_state *state)
 {
-	if (start == end)
-		return -30;
-	unsigned char *last = end - 1;
-	unsigned char *r = start + 1;
-	unsigned char *w = start;
+	if (state->end - state->pos < 2) {
+		return "incomplete quoted text at end";
+	}
+	unsigned char *last = state->end - 1;
+	unsigned char *w = state->pos;
 
-	while (r <= last) {
-		assert(w <= r);
-		if (*r == '\0')
-			return -31;
-		if (*r == quote) {
-			if (r < last && r[1] == quote) {
+	// skip the opening quote
+	assert(state->pos[0] == state->quote_char);
+	state->pos++;
+	state->quoted = true;
+
+	while (state->pos <= last) {
+		assert(w <= state->pos);
+		if (state->pos[0] == '\0') {
+			return "NUL character not allowed in textual data";
+		}
+		if (state->pos[0] == state->quote_char) {
+			if (state->pos < last && state->pos[1] == state->quote_char) {
 				// doubled quote, write only one
-				*w++ = quote;
-				r += 2;
+				*w++ = state->quote_char;
+				state->pos += 2;
 				continue;
 			} else {
 				// end quote found
 				*w = '\0';
-				*nwritten = w - start;
-				return r - start + 1;
+				state->pos++;
+				state->quoted = false;
+				return NULL;
 			}
-		} else if (backslash_escapes && *r == '\\') {
-			int ret = scan_backslash_escape(&r, &w, end);
-			if (ret < 0)
-				return ret;
+		} else if (state->escape_enabled && state->pos[0] == '\\') {
+			const char *err_msg = scan_backslash_escape(state, &w);
+			if (err_msg)
+				return err_msg;
 			continue;
 		} else {
 			// Some other character
-			*w++ = *r++;
+			*w++ = *state->pos++;
 			continue;
 		}
 		assert(0 /* unreachable */);
 	}
-	return -32;
+	return "incomplete quoted text";
 }
 
 // Scan the text pointed to by 'start', looking for occurrences of 'col_sep'
@@ -221,52 +266,56 @@ scan_quoted(unsigned char *start, unsigned char *end, int quote, bool backslash_
 // If 'backslash_escapes' is set, backslashes suppress the special .
 // Return the number of bytes scanned, including the separator.
 // On succesful return, write the separator found to '*sep_found'.
-static int
-scan_unquoted(unsigned char *start, unsigned char *end, int col_sep, int line_sep, bool backslash_escapes, unsigned char *sep_found)
+static const char *
+scan_unquoted_no_escapes(struct scan_state *state, unsigned char *sep_found)
 {
-	char *sep;
-
-	if (!backslash_escapes) {
-		// is there a col_sep anywhere?
-		char *pcol = memchr(start, col_sep, end - start);
-		char *pline;
-		if (pcol) {
-			// there is a col_sep. is there a line_sep before that?
-			pline = memchr(start, line_sep, pcol - (char*)start);
-		} else {
-			// there is no col_sep, is there a line_sep anywhere?
-			pline = memchr(start, line_sep, end - start);
-		}
-		// pline is either earlier than pcol or there was no pcol.
-		sep = pline ? pline : pcol;
-		if (sep) {
-			*sep_found = *sep;
-			*sep = 0;
-			return sep - (char*)start + 1;
-		} else {
-			return -40;
-		}
+	// is there a col_sep anywhere?
+	unsigned char *pcol = memchr(state->pos, state->col_sep, state->end - state->pos);
+	unsigned char *pline;
+	if (pcol) {
+		// there is a col_sep. is there a line_sep before thatstate->?
+		pline = memchr(state->pos, state->line_sep, pcol - state->pos);
+	} else {
+		// there is no col_sep, is there a line_sep anywhere?
+		pline = memchr(state->pos, state->line_sep, state->end - state->pos);
 	}
+	// pline is either earlier than pcol or there was no pcol.
+	unsigned char *sep = pline ? pline : pcol;
+	if (sep) {
+		if (memchr(state->pos, '\0', sep - state->pos) != NULL) {
+			return "NUL character not allowed in textual data";
+		}
+		*sep_found = *sep;
+		*sep = 0;
+		state->pos = sep + 1;
+		return NULL;
+	} else {
+		return "no column- or line separator found";
+	}
+}
 
-	// go over it character by character and convert backslash escapes
-	unsigned char *r = start;
-	unsigned char *w = start;
-	while (r < end) {
-		if (*r == col_sep || *r == line_sep) {
-			*sep_found = *r;
+static const char *
+scan_unquoted_with_escapes(struct scan_state *state, unsigned char *sep_found)
+{
+	unsigned char *w = state->pos;
+	while (state->pos < state->end) {
+		if (*state->pos == '\0') {
+			return "NUL character not allowed in textual data";
+		}
+		if (*state->pos == state->col_sep || *state->pos == state->line_sep) {
+			*sep_found = *state->pos++;
 			*w = 0;
-			return r - start + 1;
+			return NULL;
 		}
-		if (*r == '\\') {
-			int ret = scan_backslash_escape(&r, &w, end);
-			if (ret < 0)
-				return ret;
+		if (*state->pos == '\\') {
+			const char *err_msg = scan_backslash_escape(state, &w);
+			if (err_msg)
+				return err_msg;
 		} else {
-			*r++ = *w++;
+			*w++ = *state->pos++;
 		}
 	}
-	// no sep found is an error
-	return -40;
+	return "no column- or line separator found";
 }
 
 // Scan the text pointed to by 'start' up to the first occurrence of either
@@ -274,44 +323,80 @@ scan_unquoted(unsigned char *start, unsigned char *end, int col_sep, int line_se
 // Reaching 'end' is considered an error.
 // Remove quoting and process backslash escapes. Place a '\0' at the end of
 // the field, overwriting the separator or end quote.
-// Return the number of bytes scanned including the separator, or < 0 on
-// error. Write the separator found to '*sep_found'.
-static int
-scan_field(unsigned char *start, unsigned char *end, int col_sep, int line_sep, int quote, bool backslash_escapes, unsigned char *sep_found)
+// Return the (strictly positive) number of bytes scanned including the
+// separator, or < 0 on error. Write the separator found to '*sep_found'.
+static const char*
+scan_field(struct scan_state *state, unsigned char *sep_found)
 {
-	if (start == end)
-		return -10;
+	assert(state->pos < state->end);
+	assert(state->quoted == false);
+	assert(state->escape_pending == false);
 
-	int nread;
-	int nwritten;
-	if (quote && *start == quote) {
-
-		nread = scan_quoted(start, end, quote, backslash_escapes, &nwritten);
-		if (nread < 0)
-			return nread;
-		// scan_quoted errors out if it reaches 'end' so we know 'start[n]' exists
-		if (start[nread] == col_sep || start[nread] == line_sep) {
-			*sep_found = start[nread];
-			// nread should include the separator
-			nread += 1;
+	if (state->quote_char && state->pos[0] == state->quote_char) {
+		const char *err_msg = NULL;
+		err_msg = scan_quoted(state);
+		if (err_msg)
+			return err_msg;
+		// It's safe to access state->pos[0] because scan_quoted would have
+		// given an error if we'd reached 'end'.
+		if (state->pos[0] == state->col_sep || state->pos[0] == state->line_sep) {
+			*sep_found = *state->pos++;
 		} else {
-			// end quote must be followed by separator
-			return -11;
+			return "end quote must be followed by separator";
 		}
 	} else {
-		nread = scan_unquoted(start, end, col_sep, line_sep, backslash_escapes, sep_found);
-		if (nread < 0)
-			return nread;
-		// with scan_unquoted, nread includes the separator, now replaced with '\0'
-		nwritten = nread - 1;
+		const char *err_msg = NULL;
+		if (state->escape_enabled) {
+			err_msg = scan_unquoted_with_escapes(state, sep_found);
+		} else {
+			err_msg = scan_unquoted_no_escapes(state, sep_found);
+		}
+		if (err_msg)
+			return err_msg;
 	}
 
-	if (backslash_escapes) {
-		(void)nwritten;
-		(void)start;
-	}
+	return NULL;
+}
 
-	return nread;
+static gdk_return
+check_row_end(
+	struct error_handling *errors, struct scan_state *state,
+	int row, int col, int ncols, unsigned char sep)
+{
+	if (col == ncols - 1) {
+		// Last column. Expect LINE_SEP or COL_SEP LINE_SEP
+		if (sep == state->line_sep) {
+			return GDK_SUCCEED;
+		} else if (sep == state->col_sep) {
+			assert(state->pos > state->start && state->pos[-1] == '\0');
+			if (state->pos < state->end && state->pos[0] == state->line_sep) {
+				state->pos++;
+				return GDK_SUCCEED;
+			} else {
+				copy_report_error(errors, row, -1, "too many fields, expected %d but found more", ncols);
+				return GDK_FAIL;
+			}
+		}
+	} else {
+		// Not the last column. Expect COL_SEP
+		if (sep == state->col_sep) {
+			return GDK_SUCCEED;
+		} else if (sep == state->line_sep) {
+			copy_report_error(errors, row, -1, "too few fields, expected %d but found %d", ncols, col + 1);
+			// If we're in BEST EFFORT mode we're going to try to scan to the
+			// end of the line. But in fact we're already there and have replaced
+			// it with a \0, so the scan would actually skip the next line instead
+			// of the rest of the current line.
+			state->pos--;
+			state->pos[0] = state->line_sep;
+			return GDK_FAIL;
+		} else {
+			copy_report_error(errors, row, col, "internal error: found %d while col_sep is %d and line_sep is %d", sep, state->col_sep, state->line_sep);
+			return GDK_FAIL;
+		}
+	}
+	assert(0 && "unreachable");
+	return GDK_FAIL;
 }
 
 // Scan the memory 'start' .. 'end' for fields, unquoting and unescaping.
@@ -321,67 +406,86 @@ scan_field(unsigned char *start, unsigned char *end, int col_sep, int line_sep, 
 // for 'nrows' field indices.
 // Verify that column separators and row separators occur at the appropriate
 // moment. Verify that exactly the right amount of data is offered.
-// Return 0 on succes, < 0 on error.
 // If a field contains the null_repr, replace its index with int_nil.
-int
+// Note: we must do the NULL check BEFORE processing quotes and backslashes!
+str
 scan_fields(
-	char *data_start, int skip_amount, char *data_end,
-	int col_sep, int line_sep, int quote, bool backslash_escapes, char *null_repr,
-	int ncols, int nrows, int **columns)
+	struct error_handling *errors, struct scan_state *state,
+	char *null_repr, int ncols, int nrows, int **columns)
 {
-	if (ncols < 0 || nrows < 0)
-		return -1;
-
-	unsigned char *p = (unsigned char*)&data_start[skip_amount];
-	unsigned char *end = (unsigned char*)data_end;
 	int row = 0;
 	int col = 0;
-	while (p < end && row < nrows) {
+	size_t null_repr_len = null_repr ? strlen(null_repr) : 0;
+	while (state->pos < state->end && row < nrows) {
 		unsigned char sep = 0;
-		int n = scan_field(p, end, col_sep, line_sep, quote, backslash_escapes, &sep);
-		if (n < 0) {
-			printf("ERROR row=%d col=%d\n", row, col);
-			return n;
-		}
-		bool last_col = col == ncols - 1;
+		int field_offset;
 		bool ok;
-		if (!last_col) {
-			// must be col_sep
-			ok = (sep == col_sep);
+
+		bool field_is_null = (
+			null_repr
+			&& state->pos + null_repr_len < state->end
+			&& (state->pos[null_repr_len] == state->col_sep || state->pos[null_repr_len] == state->line_sep)
+			&& strncasecmp((char*)state->pos, null_repr, null_repr_len) == 0
+		);
+
+		if (field_is_null) {
+			field_offset = int_nil;
+			sep = state->pos[null_repr_len];
+			state->pos += null_repr_len + 1;
+			ok = true;
 		} else {
-			// either col_sep or col_sep followed by line_sep
-			if (sep == line_sep) {
-				ok = true;
-			} else if (sep == col_sep && p + n < end && p[n] == line_sep) {
-				n += 1;
+			field_offset = state->pos - state->start;
+			const char *err_msg = scan_field(state, &sep);
+			if (err_msg == NULL) {
 				ok = true;
 			} else {
+				copy_report_error(errors, row, col, "%s", err_msg);
 				ok = false;
 			}
 		}
-		if (!ok)
-			return -2;
-		bool is_null = (null_repr && strcasecmp((char*)p, null_repr) == 0);
-		int field = is_null ? int_nil : ((char*)p - data_start);
-		columns[col][row] = field;
-		p += n;
-		if (last_col) {
-			row += 1;
-			col = 0;
-		} else {
-			col += 1;
+
+		if (ok && check_row_end(errors, state, row, col, ncols, sep) == GDK_FAIL) {
+			ok = false;
 		}
+
+		if (ok) {
+			// The happy path.  Store the field and advance row and col.
+			columns[col][row] = field_offset;
+			if (col < ncols - 1) {
+				col += 1;
+			} else {
+				row += 1;
+				col = 0;
+			}
+			continue;
+		}
+
+		// An error has occurred. BEST EFFORT determines if we want to stop right now
+		const char *err = copy_check_too_many_errors(errors, "copy.splitlines");
+		if (err) {
+			// Bail out now
+			throw(MAL, "copy.splitlines", "%s", copy_error_message(errors));
+		}
+
+		// We must be in BEST EFFORT mode.
+		// Set all fields to nil and advance to the next line
+		for (int i = 0; i < ncols; i++)
+			columns[i][row] = int_nil;
+		col = 0;
+		row += 1;
+		if (find_end_of_line(state))
+			state->pos++;
 	}
 
-	if (p < end) {
-		// leftover data
-		return -3;
+	assert(state->pos == state->end || row == nrows);
+
+	if (state->pos < state->end) {
+		throw(MAL, "copy.splitlines", "leftover data at end of buffer");
 	}
-	if (row < nrows || col != 0) {
-		// too few rows
-		return -4;
+	if (row < nrows) {
+		throw(MAL, "copy.splitlines", "not enough rows found in buffer");
 	}
 
-	return 0;
+	return MAL_SUCCEED;
 }
 
