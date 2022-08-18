@@ -641,7 +641,7 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 		if (tname == NULL && tid == NULL)
 			mnstr_printf(toConsole, ";\n");
 
-		if (mnstr_errnr(toConsole))
+		if (mnstr_errnr(toConsole) != MNSTR_NO__ERROR)
 			goto bailout;
 	}
 	if (mapi_error(mid))
@@ -656,12 +656,12 @@ bailout:
 			mapi_explain_result(hdl, stderr);
 		else if (mapi_error(mid))
 			mapi_explain_query(hdl, stderr);
-		else if (!mnstr_errnr(toConsole))
+		else if (mnstr_errnr(toConsole) == MNSTR_NO__ERROR)
 			fprintf(stderr, "malloc failure\n");
 		mapi_close_handle(hdl);
 	} else if (mapi_error(mid))
 		mapi_explain(mid, stderr);
-	else if (!mnstr_errnr(toConsole))
+	else if (mnstr_errnr(toConsole) == MNSTR_NO__ERROR)
 		fprintf(stderr, "malloc failure\n");
 
 	return 1;
@@ -962,7 +962,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 		free(c_type);
 		free(c_type_digits);
 		free(c_type_scale);
-		if (mnstr_errnr(toConsole))
+		if (mnstr_errnr(toConsole) != MNSTR_NO__ERROR)
 			goto bailout;
 	}
 	if (mapi_error(mid))
@@ -1023,7 +1023,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 			mnstr_printf(toConsole, ", ");
 		dquoted_print(toConsole, c_column, NULL);
 		cnt++;
-		if (mnstr_errnr(toConsole))
+		if (mnstr_errnr(toConsole) != MNSTR_NO__ERROR)
 			goto bailout;
 	}
 	if (cnt)
@@ -1085,7 +1085,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 		} else
 			mnstr_printf(toConsole, ", ");
 		dquoted_print(toConsole, c_column, NULL);
-		if (mnstr_errnr(toConsole))
+		if (mnstr_errnr(toConsole) != MNSTR_NO__ERROR)
 			goto bailout;
 	}
 	if (cnt)
@@ -1116,12 +1116,12 @@ bailout:
 			mapi_explain_result(hdl, stderr);
 		else if (mapi_error(mid))
 			mapi_explain_query(hdl, stderr);
-		else if (!mnstr_errnr(toConsole))
+		else if (mnstr_errnr(toConsole) == MNSTR_NO__ERROR)
 			fprintf(stderr, "malloc failure\n");
 		mapi_close_handle(hdl);
 	} else if (mapi_error(mid))
 		mapi_explain(mid, stderr);
-	else if (!mnstr_errnr(toConsole))
+	else if (mnstr_errnr(toConsole) == MNSTR_NO__ERROR)
 		fprintf(stderr, "malloc failure\n");
 	if (query != NULL)
 		free(query);
@@ -1397,7 +1397,7 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 			} else
 				mnstr_printf(toConsole, ", ");
 			dquoted_print(toConsole, c_name, NULL);
-			if (mnstr_errnr(toConsole))
+			if (mnstr_errnr(toConsole) != MNSTR_NO__ERROR)
 				goto bailout;
 		}
 		mapi_close_handle(hdl);
@@ -1459,12 +1459,12 @@ bailout:
 			mapi_explain_result(hdl, stderr);
 		else if (mapi_error(mid))
 			mapi_explain_query(hdl, stderr);
-		else if (!mnstr_errnr(toConsole))
+		else if (mnstr_errnr(toConsole) == MNSTR_NO__ERROR)
 			fprintf(stderr, "malloc failure\n");
 		mapi_close_handle(hdl);
 	} else if (mapi_error(mid))
 		mapi_explain(mid, stderr);
-	else if (!mnstr_errnr(toConsole))
+	else if (mnstr_errnr(toConsole) == MNSTR_NO__ERROR)
 		fprintf(stderr, "malloc failure\n");
 bailout2:
 	if (view)
@@ -1566,7 +1566,7 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 			mnstr_printf(toConsole, " CACHE %s", cacheinc);
 		mnstr_printf(toConsole, " %sCYCLE;\n", strcmp(cycle, "true") == 0 ? "" : "NO ");
 		comment_on(toConsole, "SEQUENCE", schema, name, NULL, remark);
-		if (mnstr_errnr(toConsole)) {
+		if (mnstr_errnr(toConsole) != MNSTR_NO__ERROR) {
 			mapi_close_handle(hdl);
 			hdl = NULL;
 			goto bailout;
@@ -1588,12 +1588,12 @@ bailout:
 			mapi_explain_result(hdl, stderr);
 		else if (mapi_error(mid))
 			mapi_explain_query(hdl, stderr);
-		else if (!mnstr_errnr(toConsole))
+		else if (mnstr_errnr(toConsole) == MNSTR_NO__ERROR)
 			fprintf(stderr, "malloc failure\n");
 		mapi_close_handle(hdl);
 	} else if (mapi_error(mid))
 		mapi_explain(mid, stderr);
-	else if (!mnstr_errnr(toConsole))
+	else if (mnstr_errnr(toConsole) == MNSTR_NO__ERROR)
 		fprintf(stderr, "malloc failure\n");
 	if (sname != NULL)
 		free(sname);
@@ -1838,7 +1838,7 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 					mnstr_write(toConsole, "\n", 1, 1);
 			}
 		}
-		if (mnstr_errnr(toConsole))
+		if (mnstr_errnr(toConsole) != MNSTR_NO__ERROR)
 			goto bailout;
 	}
 	if (mapi_error(mid))
@@ -1860,12 +1860,12 @@ bailout:
 			mapi_explain_result(hdl, stderr);
 		else if (mapi_error(mid))
 			mapi_explain_query(hdl, stderr);
-		else if (!mnstr_errnr(toConsole))
+		else if (mnstr_errnr(toConsole) == MNSTR_NO__ERROR)
 			fprintf(stderr, "malloc failure\n");
 		mapi_close_handle(hdl);
 	} else if (mapi_error(mid))
 		mapi_explain(mid, stderr);
-	else if (!mnstr_errnr(toConsole))
+	else if (mnstr_errnr(toConsole) == MNSTR_NO__ERROR)
 		fprintf(stderr, "malloc failure\n");
 	if (sname != NULL)
 		free(sname);
@@ -2389,12 +2389,12 @@ bailout:
 			mapi_explain_result(hdl, stderr);
 		else if (mapi_error(mid))
 			mapi_explain_query(hdl, stderr);
-		else if (!mnstr_errnr(toConsole))
+		else if (mnstr_errnr(toConsole) == MNSTR_NO__ERROR)
 			fprintf(stderr, "malloc failure\n");
 		mapi_close_handle(hdl);
 	} else if (mapi_error(mid))
 		mapi_explain(mid, stderr);
-	else if (!mnstr_errnr(toConsole))
+	else if (mnstr_errnr(toConsole) == MNSTR_NO__ERROR)
 		fprintf(stderr, "malloc failure\n");
 	return 1;
 }
@@ -2474,7 +2474,7 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 	if (hdl == NULL || mapi_error(mid))
 		goto bailout;
 	prev_sid = 0;
-	while (!mnstr_errnr(toConsole) && mapi_fetch_row(hdl) != 0) {
+	while (mnstr_errnr(toConsole) == MNSTR_NO__ERROR && mapi_fetch_row(hdl) != 0) {
 		long sid = strtol(mapi_fetch_field(hdl, 0), NULL, 10);
 		const char *schema = mapi_fetch_field(hdl, 1);
 		char *fid = strdup(mapi_fetch_field(hdl, 2));
@@ -2497,7 +2497,7 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 
 	if (to_free)
 		free(to_free);
-	return mnstr_errnr(toConsole) != 0;
+	return mnstr_errnr(toConsole) != MNSTR_NO__ERROR;
 
 bailout:
 	if (hdl) {
@@ -2505,12 +2505,12 @@ bailout:
 			mapi_explain_result(hdl, stderr);
 		else if (mapi_error(mid))
 			mapi_explain_query(hdl, stderr);
-		else if (!mnstr_errnr(toConsole))
+		else if (mnstr_errnr(toConsole) == MNSTR_NO__ERROR)
 			fprintf(stderr, "malloc failure\n");
 		mapi_close_handle(hdl);
 	} else if (mapi_error(mid))
 		mapi_explain(mid, stderr);
-	else if (!mnstr_errnr(toConsole))
+	else if (mnstr_errnr(toConsole) == MNSTR_NO__ERROR)
 		fprintf(stderr, "malloc failure\n");
 	if (to_free)
 		free(to_free);
@@ -2962,7 +2962,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		goto bailout;
 
 	while (rc == 0 &&
-	       !mnstr_errnr(toConsole) &&
+	       mnstr_errnr(toConsole) == MNSTR_NO__ERROR &&
 	       mapi_fetch_row(hdl) != 0) {
 		char *id = strdup(mapi_fetch_field(hdl, 0));
 		char *schema = strdup(mapi_fetch_field(hdl, 1));
@@ -3010,7 +3010,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		goto bailout;
 
 	while (rc == 0 &&
-	       !mnstr_errnr(toConsole) &&
+	       mnstr_errnr(toConsole) == MNSTR_NO__ERROR &&
 	       mapi_fetch_row(hdl) != 0) {
 		const char *schema1 = mapi_fetch_field(hdl, 0);
 		const char *tname1 = mapi_fetch_field(hdl, 1);
@@ -3142,7 +3142,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		goto bailout;
 
 	while (rc == 0 &&
-	       !mnstr_errnr(toConsole) &&
+	       mnstr_errnr(toConsole) == MNSTR_NO__ERROR &&
 	       mapi_fetch_row(hdl) != 0) {
 		char *id = strdup(mapi_fetch_field(hdl, 0));
 		char *schema = strdup(mapi_fetch_field(hdl, 1));
@@ -3242,7 +3242,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			if (maxvalue)
 				mnstr_printf(toConsole, " MAXVALUE %s", maxvalue);
 			mnstr_printf(toConsole, " %sCYCLE;\n", strcmp(cycle, "true") == 0 ? "" : "NO ");
-			if (mnstr_errnr(toConsole)) {
+			if (mnstr_errnr(toConsole) != MNSTR_NO__ERROR) {
 				mapi_close_handle(hdl);
 				hdl = NULL;
 				goto bailout2;
@@ -3383,12 +3383,12 @@ bailout:
 			mapi_explain_result(hdl, stderr);
 		else if (mapi_error(mid))
 			mapi_explain_query(hdl, stderr);
-		else if (!mnstr_errnr(toConsole))
+		else if (mnstr_errnr(toConsole) == MNSTR_NO__ERROR)
 			fprintf(stderr, "malloc failure\n");
 		mapi_close_handle(hdl);
 	} else if (mapi_error(mid))
 		mapi_explain(mid, stderr);
-	else if (!mnstr_errnr(toConsole))
+	else if (mnstr_errnr(toConsole) == MNSTR_NO__ERROR)
 		fprintf(stderr, "malloc failure\n");
 
 bailout2:

@@ -3630,8 +3630,10 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		if (!commit_lock)
 			MT_lock_set(&store->commit);
 		store_lock(store);
-		ulng oldest = store_timestamp(store);
-		store_pending_changes(store, oldest);
+		if (ATOMIC_GET(&store->nr_active) == 1) { /* still just me */
+			ulng oldest = store_timestamp(store);
+			store_pending_changes(store, oldest);
+		}
 		store_unlock(store);
 		if (!commit_lock)
 			MT_lock_unset(&store->commit);
