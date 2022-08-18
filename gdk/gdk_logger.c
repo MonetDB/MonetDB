@@ -1060,7 +1060,7 @@ log_open_output(logger *lg)
 		}
 		lg->end = 0;
 
-		if (lg->output_log == NULL || mnstr_errnr(lg->output_log)) {
+		if (lg->output_log == NULL || mnstr_errnr(lg->output_log) != MNSTR_NO__ERROR) {
 			TRC_CRITICAL(GDK, "creating %s failed: %s\n", filename, mnstr_peek_error(NULL));
 			GDKfree(new_range);
 			GDKfree(filename);
@@ -1103,7 +1103,7 @@ log_open_input(logger *lg, char *filename, bool *filemissing)
 	lg->input_log = open_rstream(filename);
 
 	/* if the file doesn't exist, there is nothing to be read back */
-	if (lg->input_log == NULL || mnstr_errnr(lg->input_log)) {
+	if (lg->input_log == NULL || mnstr_errnr(lg->input_log) != MNSTR_NO__ERROR) {
 		log_close_input(lg);
 		*filemissing = true;
 		return GDK_SUCCEED;
@@ -2269,10 +2269,12 @@ log_next_logfile(logger *lg, ulng ts)
 static void
 log_cleanup_range(logger *lg)
 {
-	logged_range *p = lg->pending;
-	if (p) {
+	if (lg->pending) {
+		logged_range *p;
 		log_lock(lg);
-		lg->pending = p->next;
+		p = lg->pending;
+		if (p)
+			lg->pending = p->next;
 		log_unlock(lg);
 		GDKfree(p);
 	}
@@ -2792,6 +2794,7 @@ new_logfile(logger *lg)
 		return GDK_FAIL;
 	}
 	if (( p > log_large || (lg->end*1024) > log_large )) {
+		log_lock(lg);
 		if (ATOMIC_GET(&lg->refcount) == 1) {
 			lg->id++;
 			log_close_output(lg);
@@ -2802,6 +2805,7 @@ new_logfile(logger *lg)
 			// Delegate wal rotation to next writer or last flusher.
 			lg->request_rotation = true;
 		}
+		log_unlock(lg);
 	}
 	MT_lock_unset(&lg->rotation_lock);
 	return result;

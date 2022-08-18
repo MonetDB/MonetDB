@@ -4014,6 +4014,11 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 			column_storage *cs = ATOMIC_PTR_GET(&i->data);
 
 			if (cs) {
+				if (cs->cleared) {
+					ok = (tr_log_cs(tr, t, cs, NULL, i->base.id) == LOG_OK)? GDK_SUCCEED : GDK_FAIL;
+					continue;
+				}
+
 				lock_table(tr->store, t->base.id);
 				for (segment *cur = segs->h; cur && ok; cur = cur->next) {
 					unlock_table(tr->store, t->base.id);
