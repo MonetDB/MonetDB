@@ -23,16 +23,16 @@ typedef struct rusage Rusage;
 
 enum event_phase {
 	MAL_ENGINE = 0,
-	CLIENT_CONNECTION,
+	CLIENT_START,
+	CLIENT_END,
 	TEXT_TO_SQL,
 	SQL_TO_REL,
 	REL_OPT,
 	REL_TO_MAL,
 	MAL_OPT,
-	// TRANSACTION_START,
-	// COMMIT,
-	// ROLLBACK,
-	TRANSACTION_END
+	COMMIT,
+	ROLLBACK,
+	CONFLICT
 };
 
 typedef struct NonMalEvent {
