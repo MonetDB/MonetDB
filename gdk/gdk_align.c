@@ -97,7 +97,7 @@ VIEWcreate(oid seq, BAT *b)
 	assert(bn->theap == NULL);
 
 	MT_lock_set(&b->theaplock);
-	bn->batInserted = b->batInserted;
+	bn->batInserted = 0;
 	bn->batCount = b->batCount;
 	bn->batCapacity = b->batCapacity;
 	bn->batRestricted = BAT_READ;

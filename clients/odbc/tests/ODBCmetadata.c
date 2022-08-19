@@ -316,6 +316,39 @@ compareResultOptClose(SQLHANDLE stmt, SQLRETURN retcode, const char * functionna
 #define compareResultNoClose(stmt, retcode, functionname, expected)  compareResultOptClose(stmt, retcode, functionname, expected, 0)
 #define compareResult(stmt, retcode, functionname, expected)         compareResultOptClose(stmt, retcode, functionname, expected, 1)
 
+/*
+ * Utility function to query the gdk_nr_threads value from the server.
+ * The output of some queries (EXPLAIN, TRACE) differ when the server
+ * is started with 1 thread, as is done in our testweb.
+ */
+static int
+getNrOfServerThreads(SQLHANDLE dbc)
+{
+	SQLRETURN ret;
+	SQLHANDLE stmt;
+	SQLLEN indicator;
+	int threads = 0;
+
+	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle (STMT)");
+
+	ret = SQLExecDirect(stmt, (SQLCHAR *)
+		"SELECT cast(value as int) as val from sys.env() where name = 'gdk_nr_threads';"
+		, SQL_NTS);
+	check(ret, SQL_HANDLE_STMT, stmt, "select gdk_nr_threads");
+
+	ret = SQLFetch(stmt);
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLFetch(gdk_nr_threads)");
+	if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
+		ret = SQLGetData(stmt, 1, SQL_C_LONG, &threads, sizeof(threads), &indicator);
+		check(ret, SQL_HANDLE_STMT, stmt, "SQLGetData(gdk_nr_threads)");
+	}
+	ret = SQLCloseCursor(stmt);
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLCloseCursor");
+
+	/* fprintf(stderr, "getNrOfServerThreads: %d\n", threads); */
+	return threads;
+}
 
 int
 main(int argc, char **argv)
@@ -327,6 +360,7 @@ main(int argc, char **argv)
 	char *dsn = "MonetDB";
 	char *user = "monetdb";
 	char *pass = "monetdb";
+	int nrServerThreads = 0;
 
 	if (argc > 1)
 		dsn = argv[1];
@@ -361,7 +395,7 @@ main(int argc, char **argv)
 		"CREATE SCHEMA odbctst;\n"
 		"SET SCHEMA odbctst;\n"
 		, SQL_NTS);
-	check(ret, SQL_HANDLE_DBC, dbc, "SQLExecDirect (create and set schema script)");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect (create and set schema script)");
 
 	// create tables to populate catalog. Used for testing SQLTables(),
 	// SQLColumns(), SQLSpecialColumns(), SQLPrimaryKeys() and SQLForeignKeys()
@@ -382,7 +416,7 @@ main(int argc, char **argv)
 		", FOREIGN KEY (fkc2, fkc1) REFERENCES odbctst.pk2c (pkc2, pkc1) ON UPDATE CASCADE ON DELETE RESTRICT"
 		", FOREIGN KEY (fkc2, fkc3) REFERENCES odbctst.pk2c (pkc2, pkc1) ON UPDATE SET NULL ON DELETE NO ACTION);\n"
 		, SQL_NTS);
-	check(ret, SQL_HANDLE_DBC, dbc, "SQLExecDirect (create tables script)");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect (create tables script)");
 
 	// create indexes to populate catalog. Used for testing SQLStatistics()
 	ret = SQLExecDirect(stmt, (SQLCHAR *)
@@ -393,7 +427,7 @@ main(int argc, char **argv)
 		"CREATE INDEX tmp_nopk_twoucs_i ON tmp.tmp_nopk_twoucs (id2, name2);\n"
 		"CREATE INDEX glbl_nopk_twoucs_i ON tmp.glbl_nopk_twoucs (id2, name2);\n"
 		, SQL_NTS);
-	check(ret, SQL_HANDLE_DBC, dbc, "SQLExecDirect (create indices script)");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect (create indices script)");
 
 	// grant privileges to populate catalog. Used for testing SQLTablePrivileges() and SQLColumnPrivileges()
 	ret = SQLExecDirect(stmt, (SQLCHAR *)
@@ -409,7 +443,7 @@ main(int argc, char **argv)
 		"GRANT DELETE, INSERT ON TABLE tmp.glbl_nopk_twoucs TO monetdb;\n"
 		"GRANT SELECT (id2, name2), UPDATE (name2) ON TABLE tmp.glbl_nopk_twoucs TO monetdb;\n"
 		, SQL_NTS);
-	check(ret, SQL_HANDLE_DBC, dbc, "SQLExecDirect (add privileges script)");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect (add privileges script)");
 
 	// TODO add user procedures / functions to test SQLProcedures() and SQLProcedureColumns() more
 
@@ -427,7 +461,7 @@ main(int argc, char **argv)
 		"COMMENT ON FUNCTION sys.env() IS 'sys.env() function comment';\n"
 		"COMMENT ON FUNCTION sys.statistics() IS 'sys.statistics() function comment';\n"
 		, SQL_NTS);
-	check(ret, SQL_HANDLE_DBC, dbc, "SQLExecDirect (add comments script)");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect (add comments script)");
 
 /* run actual metadata query tests */
 	// All catalogs query. MonetDB should return no rows. Catalog qualifier not supported.
@@ -1418,8 +1452,11 @@ main(int argc, char **argv)
 		"interval minute to second	113	13	'	'	precision	1	0	2	-1	0	-1	NULL	0	0	10	13	-1	10\n"
 		"hugeint	16384	38	NULL	NULL	NULL	1	0	2	0	0	0	NULL	0	0	16384	-1	10	-1\n");
 
+
+	nrServerThreads = getNrOfServerThreads(dbc);
+
 	// test SELECT query
-	ret = SQLExecDirect(stmt, (SQLCHAR *) "SELECT * from odbctst.\"LINES\";\n", SQL_NTS);
+	ret = SQLExecDirect(stmt, (SQLCHAR *) "SELECT * from odbctst.\"LINES\";", SQL_NTS);
 	compareResult(stmt, ret, "SELECT * from odbctst.\"LINES\"",
 		"Resultset with 4 columns\n"
 		"Resultset with 0 rows\n"
@@ -1427,7 +1464,7 @@ main(int argc, char **argv)
 		"INTEGER	INTEGER	INTEGER	DECIMAL(9,3)\n");
 
 	// test PLAN SELECT query
-	ret = SQLExecDirect(stmt, (SQLCHAR *) "PLAN SELECT * from odbctst.\"LINES\";\n", SQL_NTS);
+	ret = SQLExecDirect(stmt, (SQLCHAR *) "PLAN SELECT * from odbctst.\"LINES\";", SQL_NTS);
 	compareResult(stmt, ret, "PLAN SELECT * from odbctst.\"LINES\"",
 		"Resultset with 1 columns\n"
 		"Resultset with 3 rows\n"
@@ -1438,8 +1475,9 @@ main(int argc, char **argv)
 		") [ \"LINES\".\"ORDERID\" NOT NULL UNIQUE HASHCOL , \"LINES\".\"LINES\" NOT NULL UNIQUE, \"LINES\".\"PARTID\" NOT NULL UNIQUE, \"LINES\".\"QUANTITY\" NOT NULL UNIQUE ]\n");
 
 	// test EXPLAIN SELECT query
-	ret = SQLExecDirect(stmt, (SQLCHAR *) "EXPLAIN SELECT * from odbctst.\"LINES\";\n", SQL_NTS);
+	ret = SQLExecDirect(stmt, (SQLCHAR *) "EXPLAIN SELECT * from odbctst.\"LINES\";", SQL_NTS);
 	compareResult(stmt, ret, "EXPLAIN SELECT * from odbctst.\"LINES\"",
+	    nrServerThreads > 1 ?
 		"Resultset with 1 columns\n"
 		"Resultset with 48 rows\n"
 		"mal\n"
@@ -1462,10 +1500,34 @@ main(int argc, char **argv)
 		"\n\n\n\n\n\n\n\n\n\n"
 		"\n\n\n\n\n\n\n\n\n\n"
 		"\n\n\n\n\n\n\n\n\n\n"
+		"\n\n\n"
+	    :
+		"Resultset with 1 columns\n"
+		"Resultset with 46 rows\n"
+		"mal\n"
+		"WLONGVARCHAR(174)\n"
+		"function user.main():void;\n"
+		"    X_1:void := querylog.define(\"explain select * from odbctst.\\\"LINES\\\";\":str, \"default_pipe\":str, 26:int);\n"
+		"    X_33:bat[:int] := bat.new(nil:int);\n"
+		"    X_34:bat[:int] := bat.new(nil:int);\n"
+		"    X_35:bat[:int] := bat.new(nil:int);\n"
+		"    X_36:bat[:int] := bat.new(nil:int);\n"
+		"    X_38:bat[:str] := bat.pack(\"odbctst.LINES\":str, \"odbctst.LINES\":str, \"odbctst.LINES\":str, \"odbctst.LINES\":str);\n"
+		"    X_39:bat[:str] := bat.pack(\"ORDERID\":str, \"LINES\":str, \"PARTID\":str, \"QUANTITY\":str);\n"
+		"    X_40:bat[:str] := bat.pack(\"int\":str, \"int\":str, \"int\":str, \"decimal\":str);\n"
+		"    X_41:bat[:int] := bat.pack(32:int, 32:int, 32:int, 9:int);\n"
+		"    X_42:bat[:int] := bat.pack(0:int, 0:int, 0:int, 3:int);\n"
+		"    X_37:int := sql.resultSet(X_38:bat[:str], X_39:bat[:str], X_40:bat[:str], X_41:bat[:int], X_42:bat[:int], X_33:bat[:int], X_34:bat[:int], X_35:bat[:int], X_36:bat[:int]);\n"
+		"end user.main;\n"
+		"\n\n\n\n\n\n\n\n\n\n"
+		"\n\n\n\n\n\n\n\n\n\n"
+		"\n\n\n\n\n\n\n\n\n\n"
 		"\n\n\n");
 
-	// test TRACE SELECT query. This will return two resultsets: first with the query results and next with the trace results
-	ret = SQLExecDirect(stmt, (SQLCHAR *) "TRACE SELECT * from odbctst.\"LINES\";\n", SQL_NTS);
+	// test TRACE SELECT query.
+	// This will return two resultsets: first with the query results and next with the trace results
+	// We use (and thus test) SQLMoreResults() to get the next/second result.
+	ret = SQLExecDirect(stmt, (SQLCHAR *) "TRACE SELECT * from odbctst.\"LINES\";", SQL_NTS);
 	compareResultNoClose(stmt, ret, "TRACE(1) SELECT * from odbctst.\"LINES\"",
 		"Resultset with 4 columns\n"
 		"Resultset with 0 rows\n"
@@ -1475,11 +1537,28 @@ main(int argc, char **argv)
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLMoreResults()");
 	if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
 		compareResult(stmt, ret, "TRACE(2) SELECT * from odbctst.\"LINES\"",
+		    nrServerThreads > 1 ?
 			"Resultset with 2 columns\n"
 			"Resultset with 12 rows\n"
 			"usec	statement\n"
 			"BIGINT	WLONGVARCHAR(213)\n"
 			"4	variable output\n"
+			"4	variable output\n"
+			"4	variable output\n"
+			"4	variable output\n"
+			"4	variable output\n"
+			"4	variable output\n"
+			"4	variable output\n"
+			"4	variable output\n"
+			"4	variable output\n"
+			"4	variable output\n"
+			"4	variable output\n"
+			"4	variable output\n"
+		    :
+			"Resultset with 2 columns\n"
+			"Resultset with 11 rows\n"
+			"usec	statement\n"
+			"BIGINT	WLONGVARCHAR(213)\n"
 			"4	variable output\n"
 			"4	variable output\n"
 			"4	variable output\n"
@@ -1508,8 +1587,9 @@ main(int argc, char **argv)
 		*/
 	}
 
-	// test DEBUG SELECT query. DEBUG statements are not supported in ODBC and should produce an Error
-	ret = SQLExecDirect(stmt, (SQLCHAR *) "DEBUG SELECT * from odbctst.\"LINES\";\n", SQL_NTS);
+	// test DEBUG SELECT query.
+	// DEBUG statements are *not* supported in ODBC and should produce an Error
+	ret = SQLExecDirect(stmt, (SQLCHAR *) "DEBUG SELECT * from odbctst.\"LINES\";", SQL_NTS);
 	if (ret != SQL_ERROR) {
 		/* Error: SQLstate 42000, Errnr 0, Message [MonetDB][ODBC Driver 11.45.0][MonetDB-Test]SQL debugging only supported in interactive mode in: "debug" */
 		compareResult(stmt, ret, "DEBUG SELECT * from odbctst.\"LINES\"",
@@ -1526,7 +1606,7 @@ main(int argc, char **argv)
 		"DROP INDEX tmp.tmp_nopk_twoucs_i;\n"
 		"DROP INDEX tmp.glbl_nopk_twoucs_i;\n"
 		, SQL_NTS);
-	check(ret, SQL_HANDLE_DBC, dbc, "SQLExecDirect (drop indices script)");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect (drop indices script)");
 
 	ret = SQLExecDirect(stmt, (SQLCHAR *)
 		"DROP TABLE odbctst.pk_uc;\n"
@@ -1541,7 +1621,7 @@ main(int argc, char **argv)
 		"DROP TABLE odbctst.fk2c;\n"
 		"DROP TABLE odbctst.pk2c;\n"
 		, SQL_NTS);
-	check(ret, SQL_HANDLE_DBC, dbc, "SQLExecDirect (drop tables script)");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect (drop tables script)");
 
 	// All tables in schema odbctst should now be gone, else we missed some DROP statements
 	ret = SQLTables(stmt, NULL, 0,
@@ -1557,7 +1637,7 @@ main(int argc, char **argv)
 		"SET SCHEMA sys;\n"
 		"DROP SCHEMA odbctst;\n"
 		, SQL_NTS);
-	check(ret, SQL_HANDLE_DBC, dbc, "SQLExecDirect (drop schema script)");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect (drop schema script)");
 
 	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeHandle (STMT)");
