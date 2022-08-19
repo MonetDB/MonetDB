@@ -50,13 +50,14 @@ virtualize(BAT *bn)
 	     * (const oid *) Tloc(bn, 0) + BATcount(bn) - 1 ==
 	     * (const oid *) Tloc(bn, BUNlast(bn) - 1))) {
 		/* column is dense, replace by virtual oid */
-		TRC_DEBUG(ALGO, ALGOBATFMT ",seq=" OIDFMT "\n",
-			  ALGOBATPAR(bn),
-			  BATcount(bn) > 0 ? * (const oid *) Tloc(bn, 0) : 0);
+		oid tseq;	/* work around bug in Intel compiler */
 		if (BATcount(bn) == 0)
-			bn->tseqbase = 0;
+			tseq = 0;
 		else
-			bn->tseqbase = * (const oid *) Tloc(bn, 0);
+			tseq = * (const oid *) Tloc(bn, 0);
+		TRC_DEBUG(ALGO, ALGOBATFMT ",seq=" OIDFMT "\n",
+			  ALGOBATPAR(bn), tseq);
+		bn->tseqbase = tseq;
 		if (VIEWtparent(bn)) {
 			Heap *h = GDKmalloc(sizeof(Heap));
 			bat bid = VIEWtparent(bn);
