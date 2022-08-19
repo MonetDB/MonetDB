@@ -2308,8 +2308,6 @@ store_manager(sqlstore *store)
 	MT_lock_set(&store->flush);
 
 	for (;;) {
-		int res = LOG_OK;
-
 		if (ATOMIC_GET(&store->nr_active) == 0 &&
 			(store->debug&128 || ATOMIC_GET(&store->lastactive) + IDLE_TIME < (ATOMIC_BASE_TYPE) (GDKusec() / 1000000))) {
 			MT_lock_unset(&store->flush);
@@ -2331,18 +2329,16 @@ store_manager(sqlstore *store)
 		MT_sleep_ms(sleeptime);
 		flusher.countdown_ms -= sleeptime;
 		MT_lock_set(&store->flush);
+
+		if (GDKexiting())
+			break;
+
 		if (store->logger_api.changes(store) <= 0) {
 			TRC_DEBUG(SQL_STORE, "Store flusher, no changes\n");
 			continue;
 		}
-		if (GDKexiting())
-			break;
-
 		MT_thread_setworking("flushing");
-		while (res == LOG_OK && store->logger_api.changes(store) > 0)
-			res = store_apply_deltas(store);
-
-		if (res != LOG_OK) {
+		if (store_apply_deltas(store) != LOG_OK) {
 			MT_lock_unset(&store->flush);
 			GDKfatal("write-ahead logging failure");
 		}
