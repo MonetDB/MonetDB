@@ -166,17 +166,17 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 }
 
 static str phase_descriptions[] = {
-	[CLIENT_CONNECTION] = "client_connection",
+	[CLIENT_START]		= "session_start",
+	[CLIENT_END]		= "session_end",
 	[TEXT_TO_SQL]		= "text_to_sql",
 	[SQL_TO_REL]		= "sql_to_rel",
 	[REL_OPT]			= "rel_opt",
 	[REL_TO_MAL]		= "rel_to_mal",
 	[MAL_OPT]			= "mal_opt",
 	[MAL_ENGINE]		= "mal_engine",
-	// [TRANSACTION_START]	= "trans_start",
-	// [COMMIT]			= "trans_commit",
-	// [ROLLBACK]			= "trans_rollback",
-	[TRANSACTION_END]	= "transaction"
+	[COMMIT]			= "trans_commit",
+	[ROLLBACK]			= "trans_rollback",
+	[CONFLICT]			= "trans_conflict"
 };
 
 static str
