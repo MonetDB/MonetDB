@@ -28,6 +28,7 @@
 #include "wlc.h"
 
 #include "mal_authorize.h"
+#include "mal_profiler.h"
 
 static void
 sql_create_comments(mvc *m, sql_schema *s)
@@ -144,6 +145,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 		TRC_CRITICAL(SQL_TRANS, "Unable to create system tables\n");
 		return NULL;
 	}
+
 	initialize_sql_functions_lookup(store->sa);
 
 	m = mvc_create((sql_store)store, store->sa, 0, 0, NULL, NULL);
@@ -475,6 +477,7 @@ mvc_trans(mvc *m)
 
 	TRC_INFO(SQL_TRANS, "Starting transaction\n");
 	res = sql_trans_begin(m->session);
+
 	if (m->qc && (res || err)) {
 		int seqnr = m->qc->id;
 		if (m->qc)
@@ -531,11 +534,29 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	}
 
 	if (!tr->parent && !name) {
-		switch (sql_trans_end(m->session, ok)) {
+		lng Tbegin = 0;
+		ulng ts_start = 0;
+		bool log_usec = profilerMode == 0 || m->session->auto_commit;
+		if(profilerStatus > 0) {
+			if (log_usec) Tbegin = GDKusec();
+			ts_start = m->session->tr->ts;
+		}
+
+		const int state = sql_trans_end(m->session, ok);
+
+		if(profilerStatus > 0) {
+			lng Tend = GDKusec();
+			Client	c = getClientContext();
+			profilerEvent((struct MalEvent) {0},
+						  (struct NonMalEvent)
+						  { state == SQL_CONFLICT ? CONFLICT : COMMIT , c, Tend, &ts_start, &m->session->tr->ts, state == SQL_ERR, log_usec?Tend-Tbegin:0});
+		}
+		switch (state) {
 			case SQL_ERR:
 				GDKfatal("%s transaction commit failed; exiting (kernel error: %s)", operation, GDKerrbuf);
 				break;
 			case SQL_CONFLICT:
+
 				/* transaction conflict */
 				return createException(SQL, "sql.commit", SQLSTATE(40001) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
 			default:
@@ -664,7 +685,24 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		/* make sure we do not reuse changed data */
 		if (!list_empty(tr->changes))
 			tr->status = 1;
-		(void)sql_trans_end(m->session, SQL_ERR);
+
+		
+		lng Tbegin = 0;
+		ulng ts_start = 0;
+		bool log_usec = profilerMode == 0 || m->session->auto_commit;
+		if(profilerStatus > 0) {
+			if (log_usec) Tbegin = GDKusec();
+			ts_start = m->session->tr->ts;
+		}
+		(void) sql_trans_end(m->session, SQL_ERR);
+
+		if(profilerStatus > 0) {
+			lng Tend = GDKusec();
+			Client	c = getClientContext();
+			profilerEvent((struct MalEvent) {0},
+						  (struct NonMalEvent)
+						  { ROLLBACK , c, Tend, &ts_start, &m->session->tr->ts, 0, log_usec?Tend-Tbegin:0});
+		}
 		if (chain) {
 			if (sql_trans_begin(m->session) < 0) {
 				msg = createException(SQL, "sql.rollback", SQLSTATE(40000) "ROLLBACK: finished successfully, but the session's schema could not be found while starting the next transaction");

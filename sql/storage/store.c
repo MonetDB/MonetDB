@@ -4036,6 +4036,7 @@ sql_trans_commit(sql_trans *tr)
 
 	if (ok == LOG_OK)
 		ok = clean_predicates_and_propagate_to_parent(tr);
+
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
 
@@ -7071,5 +7072,6 @@ sql_trans_end(sql_session *s, int ok)
 	store->oldest = oldest;
 	assert(list_length(store->active) == (int) ATOMIC_GET(&store->nr_active));
 	store_unlock(store);
+
 	return ok;
 }
