@@ -1,6 +1,9 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Aug 19 2022 svetlin <svetlin.stalinov@monetdbsolutions.com>
+- Added default role to create user statement
+
 * Mon Aug 15 2022 Sjoerd Mullender <sjoerd@acm.org>
 - A new function sys.url_extract_host(string, bool) which returns the
   host name from the given URL has been implemented.  The bool argument,

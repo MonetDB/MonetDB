@@ -1053,6 +1053,8 @@ log_open_output(logger *lg)
 			return GDK_FAIL;
 		}
 
+		if (lg->debug & 1)
+			fprintf(stderr, "#log_open_output: %s.%s\n", LOGFILE, id);
 		lg->output_log = open_wstream(filename);
 		if (lg->output_log) {
 			short byteorder = 1234;
@@ -1753,9 +1755,9 @@ bm_subcommit(logger *lg)
 	if (res == GDK_SUCCEED) { /* now cleanup */
 		for(i=0;i<rcnt; i++) {
 			if (lg->debug & 1) {
-				fprintf(stderr, "release %d\n", r[i]);
+				fprintf(stderr, "#release %d\n", r[i]);
 				if (BBP_lrefs(r[i]) != 2)
-					fprintf(stderr, "release %d %d\n", r[i], BBP_lrefs(r[i]));
+					fprintf(stderr, "#release %d %d\n", r[i], BBP_lrefs(r[i]));
 			}
 			BBPrelease(r[i]);
 		}
