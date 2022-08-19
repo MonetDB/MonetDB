@@ -8,10 +8,11 @@
 
 /* (c) M.L. Kersten
  * Performance tracing
- * The stethoscope/tachograph and tomograph performance monitors have exclusive access
- * to a single event stream, which avoids concurrency conflicts amongst clients.
- * It also avoid cluthered event records on the stream. Since this event stream is owned
- * by a client, we should ensure that the profiler is automatically
+ * The stethoscope/tachograph and tomograph performance monitors have exclusive
+ * access to a single event stream, which avoids concurrency conflicts amongst
+ * clients.
+ * It also avoid cluthered event records on the stream. Since this event stream
+ * is owned by a client, we should ensure that the profiler is automatically
  * reset once the owner leaves.
  */
 #include "monetdb_config.h"
@@ -39,15 +40,9 @@ static const char *myname = 0;	// avoid tracing the profiler module
  * also the term rendering to be set to ''
  */
 
-/* When the MAL block contains a BARRIER block we may end up with tons
- * of profiler events. To avoid this, we stop emitting the events
- * when we reached the HIGHWATERMARK. Leaving a message in the log.
- */
-#define HIGHWATERMARK 5
-
-
-int malProfileMode = 0;     /* global flag to indicate profiling mode */
-static oid malprofileruser;	/* keep track on who has claimed the channel */
+int profilerStatus = 0;     /* global flag profiler status */
+int profilerMode = 0;       /* global flag profiler mode, minimal or detailed */
+static oid profilerUser;	/* keep track on who has claimed the channel */
 
 static struct timeval startup_time;
 
@@ -60,14 +55,12 @@ static struct rusage prevUsage;
 
 #define LOGLEN 8192
 
-// The heart beat events should be sent to all outstanding channels.
 static void logjsonInternal(char *logbuffer, bool flush)
 {
 	size_t len;
 	len = strlen(logbuffer);
 
 	if (maleventstream) {
-		// upon request the log record is sent over the profile stream
 		(void) mnstr_write(maleventstream, logbuffer, 1, len);
 		if (flush)
 			(void) mnstr_flush(maleventstream, MNSTR_FLUSH_DATA);
@@ -75,24 +68,29 @@ static void logjsonInternal(char *logbuffer, bool flush)
 }
 
 /*
- * We use a buffer (`logbuffer`) where we incrementally create the output JSON object. Initially we allocate LOGLEN (8K)
- * bytes and we keep the capacity of the buffer (`logcap`) and the length of the current string (`loglen`).
+ * We use a buffer (`logbuffer`) where we incrementally create the output JSON
+ * object. Initially we allocate LOGLEN (8K)
+ * bytes and we keep the capacity of the buffer (`logcap`) and the length of the
+ * current string (`loglen`).
  *
- * We use the `logadd` function to add data to our buffer (usually key-value pairs). This macro offers an interface similar
- * to printf.
+ * We use the `logadd` function to add data to our buffer (usually key-value
+ * pairs). This macro offers an interface similar to printf.
  *
- * The first snprintf below happens in a statically allocated buffer that might be much smaller than logcap. We do not
- * care. We only need to perform this snprintf to get the actual length of the string that is to be produced.
+ * The first snprintf below happens in a statically allocated buffer that might
+ * be much smaller than logcap. We do not care. We only need to perform this
+ * snprintf to get the actual length of the string that is to be produced.
  *
  * There are three cases:
  *
  * 1. The new string fits in the current buffer -> we just update the buffer
  *
- * 2. The new string does not fit in the current buffer, but is smaller than the capacity of the buffer -> we output the
- * current contents of the buffer and start at the beginning.
+ * 2. The new string does not fit in the current buffer, but is smaller than the
+ * capacity of the buffer -> we output the current contents of the buffer and
+ * start at the beginning.
  *
- * 3. The new string exceeds the current capacity of the buffer -> we output the current contents and reallocate the
- * buffer. The new capacity is 1.5 times the length of the new string.
+ * 3. The new string exceeds the current capacity of the buffer -> we output the
+ * current contents and reallocate the buffer. The new capacity is 1.5 times the
+ * length of the new string.
  */
 struct logbuf {
 	char *logbuffer;
@@ -169,55 +167,133 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 	return true;
 }
 
-/* JSON rendering method of performance data.
- * The eventparser may assume this layout for ease of parsing
- EXAMPLE:
- {
- "event":6        ,
- "thread":3,
- "function":"user.s3_1",
- "pc":1,
- "tag":10397,
- "state":"start",
- "usec":0,
- }
- "stmt":"X_41=0@0:void := querylog.define(\"select count(*) from tables;\":str,\"default_pipe\":str,30:int);",
-*/
+static str phase_descriptions[] = {
+	[CLIENT_START]		= "session_start",
+	[CLIENT_END]		= "session_end",
+	[TEXT_TO_SQL]		= "text_to_sql",
+	[SQL_TO_REL]		= "sql_to_rel",
+	[REL_OPT]			= "rel_opt",
+	[REL_TO_MAL]		= "rel_to_mal",
+	[MAL_OPT]			= "mal_opt",
+	[MAL_ENGINE]		= "mal_engine",
+	[COMMIT]			= "trans_commit",
+	[ROLLBACK]			= "trans_rollback",
+	[CONFLICT]			= "trans_conflict"
+};
+
 static str
-prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
+prepareNonMalEvent(Client cntxt, enum event_phase phase, ulng clk, ulng *tstart, ulng *tend, int state, ulng duration)
+{
+	oid* tag = NULL;
+	str query = NULL;
+	struct logbuf logbuf = {0};
+
+	uint64_t mclk = (uint64_t)clk -
+		((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
+
+	assert(cntxt);
+	int sessionid = cntxt->idx;
+	if (cntxt->curprg)
+		tag = &cntxt->curprg->def->tag;
+	if (cntxt->query && ( query = mal_quote(cntxt->query, strlen(cntxt->query)) ) == NULL)
+		return NULL;
+
+	if (!logadd(&logbuf, "{\"sessionid\":\"%d\"", sessionid))
+		goto cleanup_and_exit;
+	if (!logadd(&logbuf, ", \"clk\":"ULLFMT"", mclk))
+		goto cleanup_and_exit;
+	if (!logadd(&logbuf, ", \"thread\":%d, \"phase\":\"%s\"",
+				THRgettid(), phase_descriptions[phase]))
+		goto cleanup_and_exit;
+	if (tstart && !logadd(&logbuf, ", \"tstart\":"ULLFMT, *tstart))
+		goto cleanup_and_exit;
+	if (tend && !logadd(&logbuf, ", \"tend\":"ULLFMT, *tend))
+		goto cleanup_and_exit;
+	if (tag && !logadd(&logbuf, ", \"tag\":"OIDFMT, *tag))
+		goto cleanup_and_exit;
+	if (query && phase == TEXT_TO_SQL && !logadd(&logbuf, ", \"query\":\"%s\"", query))
+		goto cleanup_and_exit;
+	if (state != 0 && !logadd(&logbuf, ", \"state\":\"error\""))
+		goto cleanup_and_exit;
+	if (!logadd(&logbuf, ", \"usec\":"ULLFMT"}\n", duration))
+		goto cleanup_and_exit;
+	GDKfree(query);
+	return logbuf.logbuffer;
+ cleanup_and_exit:
+	GDKfree(query);
+	logdel(&logbuf);
+	return NULL;
+}
+
+static inline str
+format_val2json(const ValPtr res) {
+	char *buf = NULL;
+	size_t sz = 0;
+
+	if (	BATatoms[res->vtype].atomNull &&
+			BATatoms[res->vtype].atomCmp(VALget(res), BATatoms[res->vtype].atomNull) == 0)
+		return GDKstrdup("null");
+
+	bool use_external = true;
+
+	switch (res->vtype ) {
+		case TYPE_bte:
+		case TYPE_sht:
+		case TYPE_int:
+		case TYPE_flt:
+		case TYPE_dbl:
+		case TYPE_lng:
+#ifdef HAVE_HGE
+		case TYPE_hge:
+#endif
+			use_external = false;
+	}
+
+	if ((*BATatoms[res->vtype].atomToStr) (&buf, &sz, VALptr(res), use_external) < 0)
+		return NULL;
+
+	if (!use_external || res->vtype == TYPE_str)
+		return buf;
+
+	ValRecord val;
+	if (VALinit(&val, TYPE_str, buf) == NULL) {
+		GDKfree(buf);
+		return NULL;
+	}
+
+	GDKfree(buf);
+
+	char* buf2;
+	buf2 = VALformat(&val);
+	VALclear(&val);
+
+	return buf2;
+}
+
+static str
+prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	struct logbuf logbuf;
 	str c;
-	str stmtq;
-	lng usec;
-	uint64_t microseconds;
+	lng clk;
+	uint64_t mclk;
 	bool ok;
 	const char *algo = MT_thread_getalgorithm();
-
-	/* ignore generation of events for instructions that are called too often
-	 * they may appear when BARRIER blocks are executed
-	 * The default parameter should be sufficient for most practical cases.
-	 */
-	if( !start && pci->calls > HIGHWATERMARK){
-		if( pci->calls == 10000 || pci->calls == 100000 || pci->calls == 1000000 || pci->calls == 10000000)
-			TRC_WARNING(MAL_SERVER, "Too many calls: %d\n", pci->calls);
-		return NULL;
-	}
 
 	/* The stream of events can be complete read by the DBA,
 	 * all other users can only see events assigned to their account
 	 */
-	if(malprofileruser!= MAL_ADMIN && malprofileruser != cntxt->user)
+	if(profilerUser!= MAL_ADMIN && profilerUser != cntxt->user)
 		return NULL;
 
-/* align the variable namings with EXPLAIN and TRACE */
-	if( pci->pc == 1 && start)
+	/* align the variable namings with EXPLAIN and TRACE */
+	if(pci->pc == 1)
 		renameVariables(mb);
 
 	logbuf = (struct logbuf) {0};
 
-	usec= pci->clock;
-	microseconds = (uint64_t)usec - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
+	clk = pci->clock;
+	mclk = (uint64_t)clk - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
 	/* make profile event tuple  */
 	/* TODO: This could probably be optimized somehow to avoid the
 	 * function call to mercurial_revision().
@@ -225,248 +301,202 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 	// No comma at the beginning
 	if (!logadd(&logbuf,
 				"{"				// fill in later with the event counter
-				"\"version\":\""MONETDB_VERSION" (hg id: %s)\""
-				",\"user\":"OIDFMT
-				",\"clk\":"LLFMT
-				",\"mclk\":%"PRIu64""
+				"\"sessionid\":\"%d\""
+				",\"clk\":%"PRIu64""
 				",\"thread\":%d"
-				",\"program\":\"%s.%s\""
+				",\"phase\":\"%s\""
 				",\"pc\":%d"
 				",\"tag\":"OIDFMT,
-				mercurial_revision(),
-				cntxt->user,
-				usec,
-				microseconds,
+				cntxt->idx,
+				mclk,
 				THRgettid(),
-				getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)),
+				phase_descriptions[MAL_ENGINE],
 				mb?getPC(mb,pci):0,
 				stk?stk->tag:0))
 		goto cleanup_and_exit;
-	if( pci->modname && !logadd(&logbuf, ",\"module\":\"%s\"", pci->modname ? pci->modname : ""))
+	if (pci->modname && !logadd(&logbuf, ",\"module\":\"%s\"", pci->modname ? pci->modname : ""))
 		goto cleanup_and_exit;
-	if( pci->fcnname && !logadd(&logbuf, ",\"function\":\"%s\"", pci->fcnname ? pci->fcnname : ""))
+	if (pci->fcnname && !logadd(&logbuf, ",\"function\":\"%s\"", pci->fcnname ? pci->fcnname : ""))
 		goto cleanup_and_exit;
-	if( pci->barrier && !logadd(&logbuf, ",\"barrier\":\"%s\"", operatorName(pci->barrier)))
+	if (pci->barrier && !logadd(&logbuf, ",\"barrier\":\"%s\"", operatorName(pci->barrier)))
 		goto cleanup_and_exit;
 	if ((pci->token < FCNcall || pci->token > PATcall) &&
 		!logadd(&logbuf, ",\"operator\":\"%s\"", operatorName(pci->token)))
 		goto cleanup_and_exit;
-	if (!GDKinmemory(0) && !GDKembedded()) {
-		char *uuid = NULL;
-		str c;
-		if ((c = msab_getUUID(&uuid)) == NULL) {
-			ok = logadd(&logbuf, ",\"session\":\"%s\"", uuid);
-			free(uuid);
-			if (!ok)
-				goto cleanup_and_exit;
-		} else
-			free(c);
-	}
-	if (!logadd(&logbuf, ",\"state\":\"%s\",\"usec\":"LLFMT,
-				start?"start":"done", pci->ticks))
+	if (!logadd(&logbuf, ",\"usec\":"LLFMT, pci->ticks))
 		goto cleanup_and_exit;
 	if (algo && !logadd(&logbuf, ",\"algorithm\":\"%s\"", algo))
 		goto cleanup_and_exit;
-
-/* EXAMPLE MAL statement argument decomposition
- * The eventparser may assume this layout for ease of parsing
- {
- ... as above ...
- "result":{"clk":"173297139,"pc":1,"index":0,,"name":"X_6","type":"void","value":"0@0","eol":0}
- ...
- "argument":{"clk":173297139,"pc":1,"index":"2","type":"str","value":"\"default_pipe\"","eol":0},
- }
- This information can be used to determine memory footprint and variable life times.
-*/
-
-	// Also show details of the arguments for modelling
-	if(mb && pci->modname && pci->fcnname){
+	if (mb && pci->modname && pci->fcnname) {
 		int j;
 
-		if (!logadd(&logbuf, ",\"args\":["))
-			goto cleanup_and_exit;
-		for(j=0; j< pci->argc; j++){
-			int tpe = getVarType(mb, getArg(pci,j));
-			str tname = 0, cv;
-			lng total = 0;
-			BUN cnt = 0;
-			bat bid=0;
-
-			if (j == 0) {
-				// No comma at the beginning
-				if (!logadd(&logbuf, "{"))
-					goto cleanup_and_exit;
-			}
-			else {
-				if (!logadd(&logbuf, ",{"))
-					goto cleanup_and_exit;
-			}
-			if (!logadd(&logbuf, "\"%s\":%d,\"var\":\"%s\"",
-						j < pci->retc ? "ret" : "arg", j,
-						getVarName(mb, getArg(pci,j))))
+		if (profilerMode == 0) {
+			if (!logadd(&logbuf, ",\"args\":["))
 				goto cleanup_and_exit;
-			c =getVarName(mb, getArg(pci,j));
-			if(getVarSTC(mb,getArg(pci,j))){
-				InstrPtr stc = getInstrPtr(mb, getVarSTC(mb,getArg(pci,j)));
-				if (stc && getModuleId(stc) &&
-					strcmp(getModuleId(stc),"sql") ==0 &&
-					strncmp(getFunctionId(stc),"bind",4)==0 &&
-					!logadd(&logbuf, ",\"alias\":\"%s.%s.%s\"",
-							getVarConstant(mb, getArg(stc,stc->retc +1)).val.sval,
-							getVarConstant(mb, getArg(stc,stc->retc +2)).val.sval,
-							getVarConstant(mb, getArg(stc,stc->retc +3)).val.sval))
-					goto cleanup_and_exit;
-			}
-			if(isaBatType(tpe)){
-				BAT *d= BATdescriptor(bid = stk->stk[getArg(pci,j)].val.bval);
-				tname = getTypeName(getBatType(tpe));
-				ok = logadd(&logbuf, ",\"type\":\"bat[:%s]\"", tname);
-				GDKfree(tname);
-				if (!ok) {
-					if (d)
-						BBPunfix(d->batCacheid);
-					goto cleanup_and_exit;
+			for(j=0; j< pci->argc; j++){
+				int tpe = getVarType(mb, getArg(pci,j));
+				str tname = 0, cv;
+				lng total = 0;
+				BUN cnt = 0;
+				bat bid=0;
+
+				if (j == 0) {
+					// No comma at the beginning
+					if (!logadd(&logbuf, "{"))
+						goto cleanup_and_exit;
 				}
-				if(d) {
-					MT_lock_set(&d->theaplock);
-					BATiter di = bat_iterator_nolock(d);
-					/* outside the lock we cannot dereference di.h or di.vh,
-					 * but we can use all values without dereference and
-					 * without further locking */
-					MT_lock_unset(&d->theaplock);
-					cnt = di.count;
-					if(isVIEW(d)){
-						BAT *v= BBP_cache(VIEWtparent(d));
-						bool vtransient = true;
-						if (v) {
-							MT_lock_set(&v->theaplock);
-							vtransient = v->batTransient;
-							MT_lock_unset(&v->theaplock);
+				else {
+					if (!logadd(&logbuf, ",{"))
+						goto cleanup_and_exit;
+				}
+				if (!logadd(&logbuf, "\"%s\":%d,\"var\":\"%s\"",
+							j < pci->retc ? "ret" : "arg", j,
+							getVarName(mb, getArg(pci,j))))
+					goto cleanup_and_exit;
+				c =getVarName(mb, getArg(pci,j));
+				if(getVarSTC(mb,getArg(pci,j))){
+					InstrPtr stc = getInstrPtr(mb, getVarSTC(mb,getArg(pci,j)));
+					if (stc && getModuleId(stc) &&
+						strcmp(getModuleId(stc),"sql") ==0 &&
+						strncmp(getFunctionId(stc),"bind",4)==0 &&
+						!logadd(&logbuf, ",\"alias\":\"%s.%s.%s\"",
+								getVarConstant(mb, getArg(stc,stc->retc +1)).val.sval,
+								getVarConstant(mb, getArg(stc,stc->retc +2)).val.sval,
+								getVarConstant(mb, getArg(stc,stc->retc +3)).val.sval))
+						goto cleanup_and_exit;
+				}
+				if(isaBatType(tpe)){
+					BAT *d= BATdescriptor(bid = stk->stk[getArg(pci,j)].val.bval);
+					tname = getTypeName(getBatType(tpe));
+					ok = logadd(&logbuf, ",\"type\":\"bat[:%s]\"", tname);
+					GDKfree(tname);
+					if (!ok) {
+						if (d)
+							BBPunfix(d->batCacheid);
+						goto cleanup_and_exit;
+					}
+					if(d) {
+						MT_lock_set(&d->theaplock);
+						BATiter di = bat_iterator_nolock(d);
+						/* outside the lock we cannot dereference di.h or di.vh,
+						 * but we can use all values without dereference and
+						 * without further locking */
+						MT_lock_unset(&d->theaplock);
+						cnt = di.count;
+						if(isVIEW(d)){
+							BAT *v= BBP_cache(VIEWtparent(d));
+							bool vtransient = true;
+							if (v) {
+								MT_lock_set(&v->theaplock);
+								vtransient = v->batTransient;
+								MT_lock_unset(&v->theaplock);
+							}
+							if (!logadd(&logbuf,
+										",\"view\":\"true\""
+										",\"parent\":%d"
+										",\"seqbase\":"BUNFMT
+										",\"mode\":\"%s\"",
+										VIEWtparent(d),
+										d->hseqbase,
+										vtransient ? "transient" : "persistent")) {
+								BBPunfix(d->batCacheid);
+								goto cleanup_and_exit;
+							}
+						} else {
+							if (!logadd(&logbuf, ",\"mode\":\"%s\"", (di.transient ? "transient" : "persistent"))) {
+								BBPunfix(d->batCacheid);
+								goto cleanup_and_exit;
+							}
 						}
 						if (!logadd(&logbuf,
-									",\"view\":\"true\""
-									",\"parent\":%d"
-									",\"seqbase\":"BUNFMT
-									",\"mode\":\"%s\"",
-									VIEWtparent(d),
-									d->hseqbase,
-									vtransient ? "transient" : "persistent")) {
+									",\"sorted\":%d"
+									",\"revsorted\":%d"
+									",\"nonil\":%d"
+									",\"nil\":%d"
+									",\"key\":%d",
+									di.sorted,
+									di.revsorted,
+									di.nonil,
+									di.nil,
+									di.key)) {
 							BBPunfix(d->batCacheid);
 							goto cleanup_and_exit;
 						}
-					} else {
-						if (!logadd(&logbuf, ",\"mode\":\"%s\"", (di.transient ? "transient" : "persistent"))) {
+						if ((di.minpos != BUN_NONE &&
+							 !logadd(&logbuf, ",\"minpos\":\""BUNFMT"\"", di.minpos)) ||
+							(di.maxpos != BUN_NONE &&
+							 !logadd(&logbuf, ",\"maxpos\":\""BUNFMT"\"", di.maxpos)) ||
+							(di.unique_est != 0 &&
+							 !logadd(&logbuf, ",\"nestimate\":\"%g\"", di.unique_est))) {
 							BBPunfix(d->batCacheid);
 							goto cleanup_and_exit;
 						}
+
+						cv = VALformat(&stk->stk[getArg(pci,j)]);
+						c = strchr(cv, '>');
+						if (c)		/* unlikely that this isn't true */
+							*c = 0;
+						ok = logadd(&logbuf, ",\"file\":\"%s\"", cv + 1);
+						GDKfree(cv);
+						if (!ok) {
+							BBPunfix(d->batCacheid);
+							goto cleanup_and_exit;
+						}
+						total += cnt << di.shift;
+						if (!logadd(&logbuf, ",\"width\":%d", di.width)) {
+							BBPunfix(d->batCacheid);
+							goto cleanup_and_exit;
+						}
+						/* keeping information about the individual auxiliary heaps is helpful during analysis. */
+						MT_rwlock_rdlock(&d->thashlock);
+						if( d->thash && !logadd(&logbuf, ",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid))) {
+							MT_rwlock_rdunlock(&d->thashlock);
+							BBPunfix(d->batCacheid);
+							goto cleanup_and_exit;
+						}
+						MT_rwlock_rdunlock(&d->thashlock);
+						if( di.vh && !logadd(&logbuf, ",\"vheap\":" BUNFMT, di.vhfree)) {
+							BBPunfix(d->batCacheid);
+							goto cleanup_and_exit;
+						}
+						if( d->timprints && !logadd(&logbuf, ",\"imprints\":" LLFMT, (lng) IMPSimprintsize(d))) {
+							BBPunfix(d->batCacheid);
+							goto cleanup_and_exit;
+						}
+						/* if (!logadd(&logbuf, "\"debug\":\"%s\",", d->debugmessages)) goto cleanup_and_exit; */
+						BBPunfix(d->batCacheid);
 					}
 					if (!logadd(&logbuf,
-								",\"sorted\":%d"
-								",\"revsorted\":%d"
-								",\"nonil\":%d"
-								",\"nil\":%d"
-								",\"key\":%d",
-								di.sorted,
-								di.revsorted,
-								di.nonil,
-								di.nil,
-								di.key)) {
-						BBPunfix(d->batCacheid);
+								",\"bid\":%d"
+								",\"count\":"BUNFMT
+								",\"size\":" LLFMT,
+								bid, cnt, total))
 						goto cleanup_and_exit;
-					}
-#define keepprop(NME, LNME)												\
-	do {																\
-		const void *valp = BATgetprop(d, NME);							\
-		if ( valp){														\
-			cv = VALformat(valp);										\
-			if (cv) {													\
-				char *cvquote = mal_quote(cv, strlen(cv));				\
-				ok = logadd(&logbuf, ",\"%s\":\"%s\"", LNME, cvquote);	\
-				GDKfree(cv);											\
-				GDKfree(cvquote);										\
-				if (!ok) {												\
-					BBPunfix(d->batCacheid);							\
-					goto cleanup_and_exit;								\
-				}														\
-			}															\
-		}																\
-	} while (0)
-					if ((di.minpos != BUN_NONE &&
-						 !logadd(&logbuf, ",\"minpos\":\""BUNFMT"\"", di.minpos)) ||
-						(di.maxpos != BUN_NONE &&
-						 !logadd(&logbuf, ",\"maxpos\":\""BUNFMT"\"", di.maxpos)) ||
-						(di.unique_est != 0 &&
-						 !logadd(&logbuf, ",\"nestimate\":\"%g\"", di.unique_est))) {
-						BBPunfix(d->batCacheid);
+				} else{
+					tname = getTypeName(tpe);
+					ok = logadd(&logbuf,
+								",\"type\":\"%s\""
+								",\"const\":%d",
+								tname, isVarConstant(mb, getArg(pci,j)));
+					GDKfree(tname);
+					if (!ok)
 						goto cleanup_and_exit;
-					}
-
-					cv = VALformat(&stk->stk[getArg(pci,j)]);
-					c = strchr(cv, '>');
-					if (c)		/* unlikely that this isn't true */
-						*c = 0;
-					ok = logadd(&logbuf, ",\"file\":\"%s\"", cv + 1);
+					cv = format_val2json(&stk->stk[getArg(pci,j)]);
+					if (cv)
+						ok = logadd(&logbuf, ",\"value\":%s", cv);
 					GDKfree(cv);
-					if (!ok) {
-						BBPunfix(d->batCacheid);
+					if (!ok)
 						goto cleanup_and_exit;
-					}
-					total += cnt << di.shift;
-					if (!logadd(&logbuf, ",\"width\":%d", di.width)) {
-						BBPunfix(d->batCacheid);
-						goto cleanup_and_exit;
-					}
-					/* keeping information about the individual auxiliary heaps is helpful during analysis. */
-					MT_rwlock_rdlock(&d->thashlock);
-					if( d->thash && !logadd(&logbuf, ",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid))) {
-						MT_rwlock_rdunlock(&d->thashlock);
-						BBPunfix(d->batCacheid);
-						goto cleanup_and_exit;
-					}
-					MT_rwlock_rdunlock(&d->thashlock);
-					if( di.vh && !logadd(&logbuf, ",\"vheap\":" BUNFMT, di.vhfree)) {
-						BBPunfix(d->batCacheid);
-						goto cleanup_and_exit;
-					}
-					if( d->timprints && !logadd(&logbuf, ",\"imprints\":" LLFMT, (lng) IMPSimprintsize(d))) {
-						BBPunfix(d->batCacheid);
-						goto cleanup_and_exit;
-					}
-					/* if (!logadd(&logbuf, "\"debug\":\"%s\",", d->debugmessages)) goto cleanup_and_exit; */
-					BBPunfix(d->batCacheid);
 				}
-				if (!logadd(&logbuf,
-							",\"bid\":%d"
-							",\"count\":"BUNFMT
-							",\"size\":" LLFMT,
-							bid, cnt, total))
+				if (!logadd(&logbuf, ",\"eol\":%d", getVarEolife(mb,getArg(pci,j))))
 					goto cleanup_and_exit;
-			} else{
-				tname = getTypeName(tpe);
-				ok = logadd(&logbuf,
-							",\"type\":\"%s\""
-							",\"const\":%d",
-							tname, isVarConstant(mb, getArg(pci,j)));
-				GDKfree(tname);
-				if (!ok)
-					goto cleanup_and_exit;
-				cv = VALformat(&stk->stk[getArg(pci,j)]);
-				stmtq = cv ? mal_quote(cv, strlen(cv)) : NULL;
-				if (stmtq)
-					ok = logadd(&logbuf, ",\"value\":\"%s\"", stmtq);
-				GDKfree(cv);
-				GDKfree(stmtq);
-				if (!ok)
+				// if (!logadd(&logbuf, ",\"fixed\":%d", isVarFixed(mb,getArg(pci,j)))) return NULL;
+				if (!logadd(&logbuf, "}"))
 					goto cleanup_and_exit;
 			}
-			if (!logadd(&logbuf, ",\"eol\":%d", getVarEolife(mb,getArg(pci,j))))
-				goto cleanup_and_exit;
-			// if (!logadd(&logbuf, ",\"fixed\":%d", isVarFixed(mb,getArg(pci,j)))) return NULL;
-			if (!logadd(&logbuf, "}"))
+			if (!logadd(&logbuf, "]")) // end marker for arguments
 				goto cleanup_and_exit;
 		}
-		if (!logadd(&logbuf, "]")) // end marker for arguments
-			goto cleanup_and_exit;
 	}
 	if (!logadd(&logbuf, "}\n")) // end marker
 		goto cleanup_and_exit;
@@ -476,23 +506,9 @@ prepareProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, in
 	return NULL;
 }
 
-static void
-renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
-{
-	str ev;
-	MT_lock_set(&mal_profileLock);
-	ev = prepareProfilerEvent(cntxt, mb, stk, pci, start);
-	if( ev ){
-		logjsonInternal(ev, true);
-		free(ev);
-	}
-	MT_lock_unset(&mal_profileLock);
-}
-
 /* the OS details on cpu load are read from /proc/stat
  * We should use an OS define to react to the maximal cores
  */
-
 #define MAXCORES		256
 #define LASTCPU		(MAXCORES - 1)
 static struct{
@@ -553,7 +569,7 @@ getCPULoad(char cpuload[BUFSIZ]){
 			n = strlen(buf);
 		}
 	}
-  exitloop:
+ exitloop:
 
 	if (cpuload == NULL)
 		return 0;
@@ -627,27 +643,38 @@ profilerHeartbeatEvent(char *alter)
 }
 
 void
-profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
+profilerEvent(MalEvent me, NonMalEvent nme)
 {
-	(void) cntxt;
-	if (stk == NULL) return;
-	if (pci == NULL) return;
-	if (getModuleId(pci) == myname) // ignore profiler commands from monitoring
-		return;
+	str event = NULL;
+	/* ignore profiler monitoring cmds */
+	if (me.cntxt != NULL && getModuleId(me.pci) == myname) return;
 
-	if(maleventstream) {
-		renderProfilerEvent(cntxt, mb, stk, pci, start);
-		if (!start && pci->pc ==0)
-			profilerHeartbeatEvent("ping");
-		if (start && pci->token == ENDsymbol)
-			profilerHeartbeatEvent("ping");
+	if (maleventstream) {
+		MT_lock_set(&mal_profileLock);
+		if (me.mb != NULL && nme.phase == MAL_ENGINE) {
+			if (me.stk == NULL) return;
+			if (me.pci == NULL) return;
+			if (profilerMode && me.mb && (getPC(me.mb, me.pci) != 0)) {
+				MT_lock_unset(&mal_profileLock);
+				return; /* minimal mode */
+			}
+			event = prepareMalEvent(me.cntxt, me.mb, me.stk, me.pci);
+		}
+		if (me.mb == NULL && nme.phase != MAL_ENGINE) {
+			event = prepareNonMalEvent(nme.cntxt, nme.phase, nme.clk, nme.tid, nme.ts, nme.state, nme.duration);
+		}
+		if (event) {
+			logjsonInternal(event, true);
+			free(event);
+		}
+		MT_lock_unset(&mal_profileLock);
 	}
 }
 
 /* The first scheme dumps the events on a stream (and in the pool)
  */
 str
-openProfilerStream(Client cntxt)
+openProfilerStream(Client cntxt, str s)
 {
 	int j;
 
@@ -660,7 +687,7 @@ openProfilerStream(Client cntxt)
 		myname = putName("profiler");
 		logjsonInternal(monet_characteristics, true);
 	}
-	if(maleventstream){
+	if (maleventstream){
 		/* The DBA can always grab the stream, others have to wait */
 		if (cntxt->user == MAL_ADMIN) {
 			closeProfilerStream(cntxt);
@@ -669,9 +696,10 @@ openProfilerStream(Client cntxt)
 			throw(MAL,"profiler.start","Profiler already running, stream not available");
 		}
 	}
-	malProfileMode = -1;
+	profilerStatus = -1;
+	if (s) profilerMode = 1; 	/* Atm, just check if not NULL */
 	maleventstream = cntxt->fdout;
-	malprofileruser = cntxt->user;
+	profilerUser = cntxt->user;
 
 	// Ignore the JSON rendering mode, use compiled time version
 
@@ -681,16 +709,17 @@ openProfilerStream(Client cntxt)
 
 	MT_sleep_ms(200);
 
-	for(j = 0; j <THREADS; j++){
-		Client c = 0; MalBlkPtr m=0; MalStkPtr s = 0; InstrPtr p = 0;
+	for (j = 0; j <THREADS; j++){
+		Client c = 0; MalBlkPtr m = 0; MalStkPtr s = 0; InstrPtr p = 0;
 		c = workingset[j].cntxt;
 		m = workingset[j].mb;
 		s = workingset[j].stk;
 		p =  workingset[j].pci;
-		if( c && m && s && p ) {
+		if (c && m && s && p) {
 			/* show the event  assuming the quadruple is aligned*/
 			MT_lock_unset(&mal_profileLock);
-			profilerEvent(c, m, s, p, 1);
+			profilerEvent((struct MalEvent) {c, m, s, p},
+						  (struct NonMalEvent) {0});
 			MT_lock_set(&mal_profileLock);
 		}
 	}
@@ -703,8 +732,9 @@ closeProfilerStream(Client cntxt)
 {
 	(void) cntxt;
 	maleventstream = NULL;
-	malProfileMode = 0;
-	malprofileruser = 0;
+	profilerStatus = 0;
+	profilerMode = 0;
+	profilerUser = 0;
 	return MAL_SUCCEED;
 }
 
@@ -727,7 +757,7 @@ startProfiler(Client cntxt)
 	if (myname == 0){
 		myname = putName("profiler");
 	}
-	malProfileMode = 1;
+	profilerStatus = 1;
 	logjsonInternal(monet_characteristics, true);
 	MT_lock_unset(&mal_profileLock);
 	// reset the trace table
@@ -757,8 +787,8 @@ str
 stopProfiler(Client cntxt)
 {
 	MT_lock_set(&mal_profileLock);
-	if (malProfileMode)
-		malProfileMode = 0;
+	if (profilerStatus)
+		profilerStatus = 0;
 	setHeartbeat(0); // stop heartbeat
 	if(cntxt)
 		closeProfilerStream(cntxt);
@@ -888,12 +918,12 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL | LIST_MAL_ALGO);
 	c = stmt;
 
-/* unclear why we needed this. OLD?
-	while (c && *c && (isspace((unsigned char)*c) || *c == '!'))
-		c++;
-*/
+	/* unclear why we needed this. OLD?
+	   while (c && *c && (isspace((unsigned char)*c) || *c == '!'))
+	   c++;
+	*/
 
-	ev = prepareProfilerEvent(cntxt, mb, stk, pci, 0);
+	ev = prepareMalEvent(cntxt, mb, stk, pci);
 	// keep it a short transaction
 	MT_lock_set(&mal_profileLock);
 	if (cntxt->profticks == NULL) {

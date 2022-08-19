@@ -84,8 +84,8 @@ OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	optcall(true, OPTdictImplementation);
 	optcall(multiplex, OPTmultiplexImplementation);
 	optcall(generator, OPTgeneratorImplementation);
-	optcall(malProfileMode, OPTprofilerImplementation);
-	optcall(malProfileMode, OPTcandidatesImplementation);
+	optcall(profilerStatus, OPTprofilerImplementation);
+	optcall(profilerStatus, OPTcandidatesImplementation);
 	optcall(true, OPTgarbageCollectorImplementation);
 
 	/* Defense line against incorrect plans  handled by optimizer steps */
@@ -138,8 +138,8 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	optcall(true, OPTquerylogImplementation);
 	optcall(multiplex, OPTmultiplexImplementation);
 	optcall(generator, OPTgeneratorImplementation);
-	optcall(malProfileMode, OPTprofilerImplementation);
-	optcall(malProfileMode, OPTcandidatesImplementation);
+	optcall(profilerStatus, OPTprofilerImplementation);
+	optcall(profilerStatus, OPTcandidatesImplementation);
 	optcall(true, OPTdeadcodeImplementation);
 	optcall(true, OPTpostfixImplementation);
 	// optcall(true, OPTjitImplementation);
