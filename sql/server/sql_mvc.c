@@ -549,7 +549,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 			Client	c = getClientContext();
 			profilerEvent((struct MalEvent) {0},
 						  (struct NonMalEvent)
-						  {TRANSACTION_END, c, Tend, &ts_start, &m->session->tr->ts, state == SQL_OK ? 0 : 1, log_usec?Tend-Tbegin:0});
+						  { state == SQL_CONFLICT ? CONFLICT : COMMIT , c, Tend, &ts_start, &m->session->tr->ts, state == SQL_ERR, log_usec?Tend-Tbegin:0});
 		}
 		switch (state) {
 			case SQL_ERR:
@@ -685,7 +685,24 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		/* make sure we do not reuse changed data */
 		if (!list_empty(tr->changes))
 			tr->status = 1;
-		(void)sql_trans_end(m->session, SQL_ERR);
+
+		
+		lng Tbegin = 0;
+		ulng ts_start = 0;
+		bool log_usec = profilerMode == 0 || m->session->auto_commit;
+		if(profilerStatus > 0) {
+			if (log_usec) Tbegin = GDKusec();
+			ts_start = m->session->tr->ts;
+		}
+		(void) sql_trans_end(m->session, SQL_ERR);
+
+		if(profilerStatus > 0) {
+			lng Tend = GDKusec();
+			Client	c = getClientContext();
+			profilerEvent((struct MalEvent) {0},
+						  (struct NonMalEvent)
+						  { ROLLBACK , c, Tend, &ts_start, &m->session->tr->ts, 0, log_usec?Tend-Tbegin:0});
+		}
 		if (chain) {
 			if (sql_trans_begin(m->session) < 0) {
 				msg = createException(SQL, "sql.rollback", SQLSTATE(40000) "ROLLBACK: finished successfully, but the session's schema could not be found while starting the next transaction");
