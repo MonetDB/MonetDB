@@ -47779,6 +47779,11 @@ pattern profiler.openstream():void
 CMDopenProfilerStream;
 Start profiling the events, send to output stream
 profiler
+openstream
+pattern profiler.openstream(X_0:str):void 
+CMDopenProfilerStream;
+Start profiling the events, send to output stream
+profiler
 setheartbeat
 unsafe command profiler.setheartbeat(X_0:int):void 
 CMDsetHeartbeat;

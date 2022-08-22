@@ -158,7 +158,6 @@ typedef struct {
 	/* inline statistics */
 	lng clock;					/* when the last call was started */
 	lng ticks;					/* total micro seconds spent in last call */
-	int calls;					/* number of calls made to this instruction */
 	lng totticks;				/* total time spent on this instruction. */
 	lng wbytes;					/* number of bytes produced in last instruction */
 	/* the core admin */

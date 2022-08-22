@@ -27,7 +27,7 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void) stk;
 	(void) cntxt;
 	/* we only need the beautified version if we plan to emit events */
-	if(malProfileMode == 0 )
+	if(profilerStatus == 0 )
 		goto wrapup;
 
 	for( i=0; i< mb->stop; i++){
