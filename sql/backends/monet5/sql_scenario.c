@@ -1132,8 +1132,8 @@ SQLparser(Client c)
 
 	Tend = GDKusec();
 	if(profilerStatus > 0) {
-		profilerEvent((struct MalEvent) {0},
-					  (struct NonMalEvent)
+		profilerEvent(NULL,
+					  &(struct NonMalEvent)
 					  {TEXT_TO_SQL, c, Tend, &m->session->tr->ts, NULL, c->query?0:1, Tend-Tbegin});
 	}
 
@@ -1201,8 +1201,8 @@ SQLparser(Client c)
 
 			Tend = GDKusec();
 			if(profilerStatus > 0)
-				profilerEvent((struct MalEvent) {0},
-							  (struct NonMalEvent)
+				profilerEvent(NULL,
+							  &(struct NonMalEvent)
 							  {REL_TO_MAL, c, Tend, NULL, NULL, c->query?0:1, Tend-Tbegin});
 		} else {
 			char *q_copy = sa_strdup(m->sa, c->query);
@@ -1285,8 +1285,8 @@ SQLparser(Client c)
 			msg = SQLoptimizeQuery(c, c->curprg->def);
 			Tend = GDKusec();
 			if(profilerStatus > 0)
-				profilerEvent((struct MalEvent) {0},
-							  (struct NonMalEvent)
+				profilerEvent(NULL,
+							  &(struct NonMalEvent)
 							  {MAL_OPT, c, Tend, NULL, NULL, msg==MAL_SUCCEED?0:1, Tend-Tbegin});
 			if (msg != MAL_SUCCEED) {
 				str other = c->curprg->def->errors;
