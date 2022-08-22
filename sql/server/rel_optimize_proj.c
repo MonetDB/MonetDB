@@ -1835,7 +1835,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 		node *n, *m;
 		list *lgbe = NULL, *rgbe = NULL, *gbe = NULL, *exps = NULL;
 
-		if (u->op == op_project)
+		if (u->op == op_project && !need_distinct(u))
 			u = u->l;
 
 		if (!u || !is_union(u->op) || need_distinct(u) || is_single(u) || !u->exps || rel_is_ref(u))
