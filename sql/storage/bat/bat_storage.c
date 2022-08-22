@@ -2257,8 +2257,35 @@ delta_append_bat(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *off
 	return (err)?LOG_ERR:LOG_OK;
 }
 
+// Look at the offsets and find where the replacements end and the appends begin.
+static BUN
+start_of_appends(BAT *offsets, BUN bcnt)
+{
+	BUN ocnt = BATcount(offsets);
+	if (ocnt == 0)
+		return 0;
+
+	BUN highest = *(oid*)Tloc(offsets, ocnt - 1);
+	if (highest < bcnt)
+		// all are replacements
+		return ocnt;
+
+	// reason backward to find the first append.
+	// Suppose offsets has 15 entries, bcnt == 100
+	// and the highest offset in offsets is 109.
+	BUN new_bcnt = highest + 1; // 110
+	BUN nappends = new_bcnt - bcnt; // 10
+	BUN nreplacements = ocnt - nappends; // 5
+
+	// The first append should be to position bcnt
+	assert(bcnt == *(oid*)Tloc(offsets, nreplacements));
+
+	return nreplacements;
+}
+
+
 static int
-delta_append_val(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, void *i, BUN cnt, char *storage_type, int tt)
+delta_append_val(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *offsets, void *i, BUN cnt, char *storage_type, int tt)
 {
 	void *oi = i;
 	BAT *b;
@@ -2292,6 +2319,27 @@ delta_append_val(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, void *i,
 		return LOG_ERR;
 	}
 	BUN bcnt = BATcount(b);
+
+	if (offsets) {
+		// The first few might be replacements while later items might be appends.
+		// Handle the replacements here while leaving the appends to the code below.
+		BUN nreplacements = start_of_appends(offsets, bcnt);
+
+		oid *start = Tloc(offsets, 0);
+		if (BUNreplacemulti(b, start, i, nreplacements, true) != GDK_SUCCEED) {
+			bat_destroy(b);
+			if (i != oi)
+				GDKfree(i);
+			unlock_column(tr->store, id);
+			return LOG_ERR;
+		}
+
+		// Replacements have been handled. The rest are appends.
+		assert(offset == oid_nil);
+		offset = bcnt;
+		cnt -= nreplacements;
+	}
+
 	if (bcnt > offset){
 		size_t ccnt = ((offset+cnt) > bcnt)? (bcnt - offset):cnt;
 		if (BUNreplacemultiincr(b, offset, i, ccnt, true) != GDK_SUCCEED) {
@@ -2354,7 +2402,7 @@ append_col_execute(sql_trans *tr, sql_delta **delta, sqlid id, BUN offset, BAT *
 		if (BATcount(bat))
 			ok = delta_append_bat(tr, delta, id, offset, offsets, bat, storage_type);
 	} else {
-		ok = delta_append_val(tr, delta, id, offset, incoming_data, cnt, storage_type, tt);
+		ok = delta_append_val(tr, delta, id, offset, offsets, incoming_data, cnt, storage_type, tt);
 	}
 	return ok;
 }
