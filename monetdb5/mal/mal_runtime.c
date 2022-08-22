@@ -416,8 +416,8 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	pci->totticks += pci->ticks;
 
 	if(profilerStatus > 0 )
-		profilerEvent((struct MalEvent) {cntxt, mb, stk, pci},
-					  (struct NonMalEvent) {0});
+		profilerEvent(&(struct MalEvent) {cntxt, mb, stk, pci},
+					  NULL);
 	if(cntxt->sqlprofiler)
 		sqlProfilerEvent(cntxt, mb, stk, pci);
 	if(profilerStatus < 0){

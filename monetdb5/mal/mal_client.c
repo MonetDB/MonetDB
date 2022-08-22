@@ -212,8 +212,8 @@ MCexitClient(Client c)
 	assert(c->query == NULL);
 	if(profilerStatus > 0) {
 		lng Tend = GDKusec();
-		profilerEvent((struct MalEvent) {0},
-					  (struct NonMalEvent)
+		profilerEvent(NULL,
+					  &(struct NonMalEvent)
 					  {CLIENT_END, c, Tend,  NULL, NULL, 0, Tend-(c->session)});
 	}
 	setClientContext(NULL);
@@ -309,8 +309,8 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 	}
 	MT_lock_unset(&mal_contextLock);
 
-	profilerEvent((struct MalEvent) {0},
-				  (struct NonMalEvent)
+	profilerEvent(NULL,
+				  &(struct NonMalEvent)
 				  {CLIENT_START, c, c->session,  NULL, NULL, 0, 0});
 	return c;
 }

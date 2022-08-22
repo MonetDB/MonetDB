@@ -643,25 +643,27 @@ profilerHeartbeatEvent(char *alter)
 }
 
 void
-profilerEvent(MalEvent me, NonMalEvent nme)
+profilerEvent(MalEvent *me, NonMalEvent *nme)
 {
 	str event = NULL;
+	assert(me == NULL || nme == NULL);
 	/* ignore profiler monitoring cmds */
-	if (me.cntxt != NULL && getModuleId(me.pci) == myname) return;
+	if (me != NULL && me->cntxt != NULL && getModuleId(me->pci) == myname)
+		return;
 
 	if (maleventstream) {
 		MT_lock_set(&mal_profileLock);
-		if (me.mb != NULL && nme.phase == MAL_ENGINE) {
-			if (me.stk == NULL) return;
-			if (me.pci == NULL) return;
-			if (profilerMode && me.mb && (getPC(me.mb, me.pci) != 0)) {
+		if (me != NULL && me->mb != NULL && nme == NULL) {
+			if (me->stk == NULL ||
+				me->pci == NULL ||
+				(profilerMode && me->mb && getPC(me->mb, me->pci) != 0)) {
 				MT_lock_unset(&mal_profileLock);
 				return; /* minimal mode */
 			}
-			event = prepareMalEvent(me.cntxt, me.mb, me.stk, me.pci);
+			event = prepareMalEvent(me->cntxt, me->mb, me->stk, me->pci);
 		}
-		if (me.mb == NULL && nme.phase != MAL_ENGINE) {
-			event = prepareNonMalEvent(nme.cntxt, nme.phase, nme.clk, nme.tid, nme.ts, nme.state, nme.duration);
+		if (me == NULL && nme != NULL && nme->phase != MAL_ENGINE) {
+			event = prepareNonMalEvent(nme->cntxt, nme->phase, nme->clk, nme->tid, nme->ts, nme->state, nme->duration);
 		}
 		if (event) {
 			logjsonInternal(event, true);
@@ -718,8 +720,8 @@ openProfilerStream(Client cntxt, str s)
 		if (c && m && s && p) {
 			/* show the event  assuming the quadruple is aligned*/
 			MT_lock_unset(&mal_profileLock);
-			profilerEvent((struct MalEvent) {c, m, s, p},
-						  (struct NonMalEvent) {0});
+			profilerEvent(&(struct MalEvent) {c, m, s, p},
+						  NULL);
 			MT_lock_set(&mal_profileLock);
 		}
 	}

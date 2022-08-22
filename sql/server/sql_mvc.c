@@ -547,8 +547,8 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		if(profilerStatus > 0) {
 			lng Tend = GDKusec();
 			Client	c = getClientContext();
-			profilerEvent((struct MalEvent) {0},
-						  (struct NonMalEvent)
+			profilerEvent(NULL,
+						  &(struct NonMalEvent)
 						  { state == SQL_CONFLICT ? CONFLICT : COMMIT , c, Tend, &ts_start, &m->session->tr->ts, state == SQL_ERR, log_usec?Tend-Tbegin:0});
 		}
 		switch (state) {
@@ -686,7 +686,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		if (!list_empty(tr->changes))
 			tr->status = 1;
 
-		
+
 		lng Tbegin = 0;
 		ulng ts_start = 0;
 		bool log_usec = profilerMode == 0 || m->session->auto_commit;
@@ -699,8 +699,8 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		if(profilerStatus > 0) {
 			lng Tend = GDKusec();
 			Client	c = getClientContext();
-			profilerEvent((struct MalEvent) {0},
-						  (struct NonMalEvent)
+			profilerEvent(NULL,
+						  &(struct NonMalEvent)
 						  { ROLLBACK , c, Tend, &ts_start, &m->session->tr->ts, 0, log_usec?Tend-Tbegin:0});
 		}
 		if (chain) {
