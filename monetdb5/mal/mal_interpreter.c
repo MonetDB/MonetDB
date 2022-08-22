@@ -29,8 +29,8 @@ setqptimeout(lng usecs)
 	qptimeout = usecs;
 }
 
-inline
-ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
+inline ptr
+getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 {
 	/* the C standard says: "A pointer to a union object, suitably
 	 * converted, points to each of its members (or if a member is a
@@ -39,7 +39,8 @@ ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 	return (ptr) &stk->stk[pci->argv[k]].val;
 }
 
-str malCommandCall(MalStkPtr stk, InstrPtr pci)
+static str
+malCommandCall(MalStkPtr stk, InstrPtr pci)
 {
 	str ret= MAL_SUCCEED;
 
@@ -241,14 +242,13 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 		}\
 	}
 
-int
+static inline bool
 isNotUsedIn(InstrPtr p, int start, int a)
 {
-	int k;
-	for (k = start; k < p->argc; k++)
+	for (int k = start; k < p->argc; k++)
 		if (getArg(p, k) == a)
-			return 0;
-	return 1;
+			return false;
+	return true;
 }
 
 MalStkPtr
@@ -273,7 +273,8 @@ prepareMALstack(MalBlkPtr mb, int size)
 	return stk;
 }
 
-str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
+str
+runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 {
 	MalStkPtr stk = NULL;
 	int i;
@@ -356,7 +357,8 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
  * answer to direct their actions. Or, a dataflow scheduler could step in
  * to enforce a completely different execution order.
  */
-str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk)
+str
+reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk)
 {
 	str ret;
 	int keepAlive;
@@ -449,8 +451,9 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
  * in the enclosing routine.  When we start executing the first
  * instruction, we take the wall-clock time for resource management.
  */
-str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
-				   int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
+str
+runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
+			   int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {
 	ValPtr lhs, rhs, v;
 	int i, k;
@@ -1391,7 +1394,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
  * The first step is to always safe the destination variable
  * before a function call is made.
  */
-void garbageElement(Client cntxt, ValPtr v)
+void
+garbageElement(Client cntxt, ValPtr v)
 {
 	(void) cntxt;
 	if (ATOMstorage(v->vtype) == TYPE_str) {
@@ -1440,18 +1444,17 @@ void garbageElement(Client cntxt, ValPtr v)
  * type should be saved for variables that recide on a global
  * stack frame.
  */
-void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
+void
+garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 {
-	int k;
-	ValPtr v;
-
 	assert(mb->vtop <= mb->vsize);
 	assert(stk->stktop <= stk->stksize);
 	(void) flag;
 	(void)mb;
 	(void)cntxt;
-	for (k = 0; k < stk->stktop; k++) {
+	for (int k = 0; k < stk->stktop; k++) {
 	//	if (isVarCleanup(mb, k) ){
+			ValPtr v;
 			garbageElement(cntxt, v = &stk->stk[k]);
 			v->vtype = TYPE_int;
 			v->val.ival = int_nil;

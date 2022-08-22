@@ -30,8 +30,6 @@ mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, M
 mal_export str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb, ValPtr argv[], char debug);
 mal_export void garbageElement(Client cntxt, ValPtr v);
 mal_export void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag);
-mal_export str malCommandCall(MalStkPtr stk, InstrPtr pci);
-mal_export int isNotUsedIn(InstrPtr p, int start, int a);
 
 /* defined in mal.c */
 mal_export Client getClientContext(void);
