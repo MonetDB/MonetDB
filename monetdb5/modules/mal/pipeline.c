@@ -138,7 +138,10 @@ BATnegateprops(BAT *b)
 #define pipeline_lock2(r) MT_lock_set(&r->theaplock)
 #define pipeline_unlock2(r) MT_lock_unset(&r->theaplock)
 
-static int
+extern int BATupgrade(BAT *r, BAT *b, bool locked);
+extern void BATswap_heaps(BAT *u, BAT *b, Pipeline *p);
+
+int
 BATupgrade(BAT *r, BAT *b, bool locked)
 {
 	/* if locked is true, both r and b's theaplock are locked, else
@@ -175,7 +178,7 @@ BATupgrade(BAT *r, BAT *b, bool locked)
 	return err;
 }
 
-static void
+void
 BATswap_heaps(BAT *u, BAT *b, Pipeline *p)
 {
 	if (p)

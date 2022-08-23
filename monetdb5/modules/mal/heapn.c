@@ -522,8 +522,7 @@ heap_type_cmp(hge)
 
 /* convert into using BATsss */
 static str
-//topn_any( size_t *SZ, sel_t *sel, gid *del, gid *ins, heapn *hp, vector *in, ...)
-topn_any( bat *sel, bat *del, bat *ins, bat *HP, lng *sz, bat *in, ...)
+HEAPtopn( bat *sel, bat *del, bat *ins, bat *HP, lng *sz, bat *in, ...)
 {
 	va_list va;
 	bool private = (!*HP || is_bat_nil(*HP));
@@ -656,6 +655,8 @@ subheap_destroy( subheap *h)
 static void
 heap_destroy( heapn *h)
 {
+	if (!h)
+		return;
 	if (h->sub)
 		subheap_destroy(h->sub);
 	if (h->ma)
@@ -743,15 +744,232 @@ heapn_done( heapn *hp )
 	return hp;
 }
 
+static str
+HEAPnew( bat *HP, lng *N, bat *in, bit *min, ...)
+{
+	va_list va;
+	lng n = *N;
+	heapn *hp = heapn_create( (int)n, 1);
+	BAT *b = BATdescriptor(*in);
+
+	if (!b || !hp) {
+		heap_destroy(hp);
+		return createException(SQL, "heapn.new",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	va_start(va, min);
+	subheap_create(hp, b->ttype, *min);
+	BBPunfix(b->batCacheid);
+	for(; (in = va_arg(va,bat*)) != NULL && (min = va_arg(va,bit*)) != NULL; ) {
+		BAT *b = BATdescriptor(*in);
+		if (!b) {
+			heap_destroy(hp);
+			return createException(SQL, "heapn.new",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		subheap_create(hp, b->ttype, *min);
+		BBPunfix(b->batCacheid);
+	}
+	va_end(va);
+	heapn_done(hp);
+	b = COLnew(0, TYPE_oid, 0, TRANSIENT);
+	if (!b)
+		return createException(SQL, "heapn.new",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	b->T.sink = (Sink*)hp;
+	*HP = b->batCacheid;
+	BBPkeepref(b);
+	return MAL_SUCCEED;
+}
+
+extern int BATupgrade(BAT *r, BAT *b, bool locked);
+extern void BATswap_heaps(BAT *u, BAT *b, Pipeline *p);
+
+#define project(T) \
+	if (tt == TYPE_##T) {	\
+		T *ri = Tloc(r,0);		\
+		T *bi = Tloc(b,0);		\
+							\
+		for(; i<cnt; i++) {		\
+			if (ii[i] != 0) {	\
+				gid d = di[i];	\
+				gid j = ii[i], p = size-1;		\
+												\
+				if (j<0)						\
+					j=-j;						\
+				if (d<0)						\
+					p = (-d)-1;					\
+				/* repeat the heap_del, del first, reinsert last */		\
+				if (d > 0) {											\
+					/* move up del -> 0 */								\
+					T oval = ri[size-1];								\
+																		\
+					/* move up the heap all values up until pos i */	\
+					d--;												\
+					while (d) {											\
+						T v = ri[d];									\
+																		\
+						ri[d] = oval;									\
+						oval = v;										\
+						d = (d-1)/2;									\
+					}													\
+					ri[0] = oval;										\
+				}														\
+				/* move up the heap all values from size-1 till j */	\
+				j--;													\
+				while (p>j) {											\
+					int q = (p-1)/2;									\
+					ri[p] = ri[q];										\
+					p = q;												\
+					}													\
+				assert(p == j);											\
+				ri[j] = bi[si[i]];										\
+			}															\
+		}																\
+	}
+
+
+static str
+HEAPproject(bat *rid, bat *cand, bat *del, bat *ins, bat *in, lng *n, const ptr *H)
+{
+	Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
+	BAT *r, *s = BATdescriptor(*cand), *d = BATdescriptor(*del), *i = BATdescriptor(*ins), *b = BATdescriptor(*in);
+	int err = 0;
+
+	if (!s || !d || !i || !b) {
+		if (s)
+			BBPunfix(s->batCacheid);
+		if (d)
+			BBPunfix(d->batCacheid);
+		if (i)
+			BBPunfix(i->batCacheid);
+		assert(!b);
+		throw(MAL, "heapn.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+
+	if (*rid && !is_bat_nil(*rid)) {
+		r = BATdescriptor(*rid);
+		err = (!r);
+	}
+
+	int tt = b->ttype;
+	bool private = (!r || r->T.private_bat), local_storage = false;
+
+	if (!err && r && BATcount(b)) {
+		MT_lock_set(&r->theaplock);
+		MT_lock_set(&b->theaplock);
+		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b, true)) {
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
+			err = 1;
+		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
+				(!VIEWvtparent(b) || BBP_cache(VIEWvtparent(b))->batRestricted != BAT_READ))) {
+			assert(r->tvheap->parentid == r->batCacheid);
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
+			local_storage = true;
+		} else if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
+			BATswap_heaps(r, b, p);
+		} else {
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
+		}
+	} else if (!err && !r) {
+		MT_lock_set(&b->theaplock);
+		if (ATOMvarsized(tt) && VIEWvtparent(b) && BBP_cache(VIEWvtparent(b))->batRestricted == BAT_READ) {
+			uint16_t width = b->twidth;
+			MT_lock_unset(&b->theaplock);
+			r = COLnew2(0, tt, *n, TRANSIENT, width);
+			BATswap_heaps(r, b, p);
+		} else {
+			MT_lock_unset(&b->theaplock);
+			local_storage = true;
+			r = COLnew2(0, tt, *n, TRANSIENT, b->twidth);
+			if (r->tvheap && r->tvheap->base == NULL &&
+				ATOMheap(r->ttype, r->tvheap, r->batCapacity) != GDK_SUCCEED)
+				err = 1;
+		}
+		assert(private);
+		r->T.private_bat = 1;
+	}
+	if (!private)
+		pipeline_lock1(r);
+
+	if (!err) {
+		oid *si = Tloc(s, 0);
+		oid *di = Tloc(d, 0);
+		oid *ii = Tloc(i, 0);
+		size_t i = 0;
+		BUN size = *n;
+		BUN cnt = BATcount(s);
+
+		project(bte)
+		project(sht)
+		project(int)
+		project(lng)
+		project(hge)
+		project(flt)
+		project(dbl)
+	(void)local_storage;
+		/*
+		if (local_storage) {
+			aproject_(str)
+		} else {
+			aproject(str,1,uint8_t)
+			aproject(str,2,uint16_t)
+			aproject(str,4,uint32_t)
+			aproject(str,8,var_t)
+		}
+		*/
+		if (!err) {
+			if (!private)
+				pipeline_lock2(r);
+			if (BATcount(r) < size)
+				BATsetcount(r, (size<cnt)?size:cnt);
+			BATnegateprops(r);
+			if (!private)
+				pipeline_unlock2(r);
+		}
+	}
+
+	if (!private)
+		pipeline_unlock1(r);
+	BBPunfix(s->batCacheid);
+	BBPunfix(d->batCacheid);
+	BBPunfix(i->batCacheid);
+	BBPunfix(b->batCacheid);
+	if (err)
+		throw(MAL, "heapn.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	*rid = r->batCacheid;
+	BBPkeepref(r);
+	return MAL_SUCCEED;
+}
+
 #include "mel.h"
 static mel_func heapn_init_funcs[] = {
-	command("heapn", "topn", topn_any, false, "Return a candidate list with the trail of changes of the heap encoded in the deleted/inserted rows", args(3,6,
+    command("heapn", "new", HEAPnew, false, "return new heap sink", args(1,4,
+				batarg("sink",oid),
+				arg("n",lng),
+				batvarargany("in",1),
+				arg("min", bit)
+				)
+		   ),
+	command("heapn", "topn", HEAPtopn, false, "Return a candidate list with the trail of changes of the heap encoded in the deleted/inserted rows", args(3,6,
 				batarg("sel",oid),
 				batarg("del",oid),
 				batarg("ins",oid),
 				batarg("heap",oid),
 				arg("N", lng),
 				batvarargany("in",1)
+				)
+			),
+	command("heapn", "projection", HEAPproject, false, "Project.", args(1,7,
+				batargany("",1),
+				batarg("s", oid),
+				batarg("del", oid),
+				batarg("ins", oid),
+				batargany("b",1),
+				arg("n", lng),
+				arg("pipeline", ptr)
 				)
 			),
 	{ .imp=NULL }
