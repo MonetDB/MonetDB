@@ -2639,13 +2639,14 @@ class ServerClass:
             res = mapiportre.search(connurl)
             port = res.group('port')
         else:
-            while True:
+            loadedseen = False
+            while port is None or not loadedseen:
                 line = proc.stdout.readline()
                 if not line:
                     break
                 self.outfile.write(line)
                 if 'MonetDB/SQL module loaded' in line:
-                    break
+                    loadedseen = True
                 res = mapiportre.search(line)
                 if res is not None:
                     port = res.group('port')
