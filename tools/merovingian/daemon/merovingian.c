@@ -139,6 +139,7 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 	time_t now;
 	char buf[8096];
 	ssize_t len = 0;
+	ssize_t last = 0;
 	char *p, *q;
 	struct tm *tmp;
 	char mytime[20];
@@ -149,8 +150,10 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 			ssize_t n;
 		  repeat:
 			n = read(dp->input[fd].fd, buf + len, sizeof(buf) - len - 1);
-			if (n <= 0)
+			if (n <= 0) {
+				rest = false;
 				break;
+			}
 			len += n;
 			buf[len] = 0;
 		} while (buf[len - 1] != '\n' && len < (ssize_t) sizeof(buf) - 1);
@@ -159,7 +162,7 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 		now = time(NULL);
 		tmp = localtime(&now);
 		strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp);
-		for (q = buf; *q; q = p + 1) {
+		for (q = buf + last; *q; q = p + 1) {
 			p = strchr(q, '\n');
 			if (p == NULL) {
 				if (q > buf) {
@@ -167,6 +170,7 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 					 * just continue reading */
 					len = strlen(q);
 					memmove(buf, q, len);
+					last = 0;
 					goto repeat;
 				}
 				/* we must have received a ridiculously long line */
@@ -177,6 +181,7 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 						mytime, type, dbname, pid, q);
 				break;
 			}
+			last = p + 1 - buf;
 			if (p == q) {
 				/* empty line, don't bother */
 				continue;
@@ -299,18 +304,18 @@ logListener(void *x)
 				for (int i = 0; i < nfds; i++) {
 					if (pfd[i].fd == w->input[0].fd && pfd[i].revents & POLLIN)
 						logFD(w, 0, "MSG", w->dbname,
-							  (long long int)w->pid, _mero_logfile, 0);
+							  (long long int)w->pid, _mero_logfile, false);
 					else if (pfd[i].fd == w->input[1].fd && pfd[i].revents & POLLIN)
 						logFD(w, 1, "ERR", w->dbname,
-							  (long long int)w->pid, _mero_logfile, 0);
+							  (long long int)w->pid, _mero_logfile, false);
 				}
 #else
 				if (FD_ISSET(w->input[0].fd, &readfds) != 0)
 					logFD(w, 0, "MSG", w->dbname,
-						  (long long int)w->pid, _mero_logfile, 0);
+						  (long long int)w->pid, _mero_logfile, false);
 				if (w->input[1].fd != w->input[0].fd && FD_ISSET(w->input[1].fd, &readfds) != 0)
 					logFD(w, 1, "ERR", w->dbname,
-						  (long long int)w->pid, _mero_logfile, 0);
+						  (long long int)w->pid, _mero_logfile, false);
 #endif
 				w->flag &= ~1;
 			}
