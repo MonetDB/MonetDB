@@ -302,18 +302,18 @@ logListener(void *x)
 				for (int i = 0; i < nfds; i++) {
 					if (pfd[i].fd == w->input[0].fd && pfd[i].revents & POLLIN)
 						logFD(w, 0, "MSG", w->dbname,
-							  (long long int)w->pid, _mero_logfile, 0);
+							  (long long int)w->pid, _mero_logfile, false);
 					else if (pfd[i].fd == w->input[1].fd && pfd[i].revents & POLLIN)
 						logFD(w, 1, "ERR", w->dbname,
-							  (long long int)w->pid, _mero_logfile, 0);
+							  (long long int)w->pid, _mero_logfile, false);
 				}
 #else
 				if (FD_ISSET(w->input[0].fd, &readfds) != 0)
 					logFD(w, 0, "MSG", w->dbname,
-						  (long long int)w->pid, _mero_logfile, 0);
+						  (long long int)w->pid, _mero_logfile, false);
 				if (w->input[1].fd != w->input[0].fd && FD_ISSET(w->input[1].fd, &readfds) != 0)
 					logFD(w, 1, "ERR", w->dbname,
-						  (long long int)w->pid, _mero_logfile, 0);
+						  (long long int)w->pid, _mero_logfile, false);
 #endif
 				w->flag &= ~1;
 			}
