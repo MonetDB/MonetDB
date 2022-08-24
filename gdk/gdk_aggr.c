@@ -4045,8 +4045,16 @@ BATmax(BAT *b, void *aggr)
 
 #define DO_QUANTILE_AVG(TPE)						\
 	do {								\
-		TPE low = *(TPE*) BUNtloc(bi, r + (BUN) hi);		\
-		TPE high = *(TPE*) BUNtloc(bi, r + (BUN) lo);		\
+		BUN idxlo, idxhi;					\
+		if (ords) {						\
+			idxlo = ords[r + (BUN) lo] - b->hseqbase;	\
+			idxhi = ords[r + (BUN) hi] - b->hseqbase;	\
+		} else {						\
+			idxlo = r + (BUN) lo;				\
+			idxhi = r + (BUN) hi;				\
+		}							\
+		TPE low = *(TPE*) BUNtloc(bi, idxhi);			\
+		TPE high = *(TPE*) BUNtloc(bi, idxlo);			\
 		if (is_##TPE##_nil(low) || is_##TPE##_nil(high)) {	\
 			val = dbl_nil;					\
 			nils++;						\
@@ -4213,6 +4221,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				double f = (p - r - 1) * quantile;
 				double lo = floor(f);
 				double hi = ceil(f);
+				const oid *const ords = NULL;
 				switch (ATOMbasetype(tp)) {
 				case TYPE_bte:
 					DO_QUANTILE_AVG(bte);
