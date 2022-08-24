@@ -298,7 +298,7 @@ childhandler(void)
 		while (p != NULL) {
 			if (p->pid == pid) {
 				/* log everything that's still in the pipes */
-				logFD(p, 0, "MSG", p->dbname, (long long int)p->pid, _mero_logfile, 1);
+				logFD(p, 0, "MSG", p->dbname, (long long int)p->pid, _mero_logfile, true);
 				p->pid = -1;	/* indicate the process is dead */
 
 				/* close the descriptors */
