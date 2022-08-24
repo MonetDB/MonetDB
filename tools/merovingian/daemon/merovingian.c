@@ -137,6 +137,7 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 	time_t now;
 	char buf[8096];
 	ssize_t len = 0;
+	ssize_t last = 0;
 	char *p, *q;
 	struct tm *tmp;
 	char mytime[20];
@@ -147,8 +148,10 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 			ssize_t n;
 		  repeat:
 			n = read(dp->input[fd].fd, buf + len, sizeof(buf) - len - 1);
-			if (n <= 0)
+			if (n <= 0) {
+				rest = false;
 				break;
+			}
 			len += n;
 			buf[len] = 0;
 		} while (buf[len - 1] != '\n' && len < (ssize_t) sizeof(buf) - 1);
@@ -157,7 +160,7 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 		now = time(NULL);
 		tmp = localtime(&now);
 		strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp);
-		for (q = buf; *q; q = p + 1) {
+		for (q = buf + last; *q; q = p + 1) {
 			p = strchr(q, '\n');
 			if (p == NULL) {
 				if (q > buf) {
@@ -165,6 +168,7 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 					 * just continue reading */
 					len = strlen(q);
 					memmove(buf, q, len);
+					last = 0;
 					goto repeat;
 				}
 				/* we must have received a ridiculously long line */
@@ -175,6 +179,7 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 						mytime, type, dbname, pid, q);
 				break;
 			}
+			last = p + 1 - buf;
 			if (p == q) {
 				/* empty line, don't bother */
 				continue;
