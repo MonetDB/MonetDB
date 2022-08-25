@@ -10,7 +10,6 @@
 #include "bat_logger.h"
 #include "bat_utils.h"
 #include "sql_types.h" /* EC_POS */
-#include "wlc.h"
 #include "gdk_logger_internals.h"
 #include "mutils.h"
 
@@ -3553,39 +3552,6 @@ end:
 	return ret;
 }
 
-/* Add a file to the plan which records the current wlc status, if any.
- * In particular, `wlc_batches`.
- *
- * With this information, a replica initialized from this snapshot can
- * be configured to catch up with its master by replaying later transactions.
- */
-static gdk_return __attribute__((__warn_unused_result__))
-snapshot_wlc(stream *plan, const char *db_dir)
-{
-	const char name[] = "wlr.config.in";
-	char buf[1024];
-	int len;
-
-	(void)db_dir;
-
-	if (wlc_state != WLC_RUN)
-		return GDK_SUCCEED;
-
-	len = snprintf(buf, sizeof(buf),
-		"beat=%d\n"
-		"batches=%d\n"
-		, wlc_beat, wlc_batches
-	);
-
-	if (mnstr_printf(plan, "w %d %s\n", len, name) < 0 ||
-		mnstr_write(plan, buf, 1, len) < 0) {
-		GDKerror("%s", mnstr_peek_error(plan));
-		return GDK_FAIL;
-	}
-
-	return GDK_SUCCEED;
-}
-
 static gdk_return __attribute__((__warn_unused_result__))
 snapshot_vaultkey(stream *plan, const char *db_dir)
 {
@@ -3643,10 +3609,6 @@ bl_snapshot(sqlstore *store, stream *plan)
 		goto end;
 
 	ret = snapshot_wal(bat_logger, plan, db_dir);
-	if (ret != GDK_SUCCEED)
-		goto end;
-
-	ret = snapshot_wlc(plan, db_dir);
 	if (ret != GDK_SUCCEED)
 		goto end;
 

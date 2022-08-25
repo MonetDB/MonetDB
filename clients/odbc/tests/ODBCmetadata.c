@@ -480,7 +480,7 @@ main(int argc, char **argv)
 			(SQLCHAR*)"", SQL_NTS, (SQLCHAR*)"", SQL_NTS);
 	compareResult(stmt, ret, "SQLTables (SQL_ALL_SCHEMAS)",
 		"Resultset with 5 columns\n"
-		"Resultset with 8 rows\n"
+		"Resultset with 6 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS\n"
 		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1)	WVARCHAR(1)	WVARCHAR(1)\n"
 		"NULL	json	NULL	NULL	NULL\n"
@@ -488,9 +488,7 @@ main(int argc, char **argv)
 		"NULL	odbctst	NULL	NULL	NULL\n"
 		"NULL	profiler	NULL	NULL	NULL\n"
 		"NULL	sys	NULL	NULL	NULL\n"
-		"NULL	tmp	NULL	NULL	NULL\n"
-		"NULL	wlc	NULL	NULL	NULL\n"
-		"NULL	wlr	NULL	NULL	NULL\n");
+		"NULL	tmp	NULL	NULL	NULL\n");
 
 	// All table types query. All columns except the TABLE_TYPE column should contain NULLs.
 	ret = SQLTables(stmt, (SQLCHAR*)"", SQL_NTS,
@@ -1479,7 +1477,7 @@ main(int argc, char **argv)
 	compareResult(stmt, ret, "EXPLAIN SELECT * from odbctst.\"LINES\"",
 	    nrServerThreads > 1 ?
 		"Resultset with 1 columns\n"
-		"Resultset with 48 rows\n"
+		"Resultset with 47 rows\n"
 		"mal\n"
 		"WLONGVARCHAR(174)\n"
 		"function user.main():void;\n"
@@ -1500,10 +1498,10 @@ main(int argc, char **argv)
 		"\n\n\n\n\n\n\n\n\n\n"
 		"\n\n\n\n\n\n\n\n\n\n"
 		"\n\n\n\n\n\n\n\n\n\n"
-		"\n\n\n"
+		"\n\n"
 	    :
 		"Resultset with 1 columns\n"
-		"Resultset with 46 rows\n"
+		"Resultset with 45 rows\n"
 		"mal\n"
 		"WLONGVARCHAR(174)\n"
 		"function user.main():void;\n"
@@ -1522,7 +1520,7 @@ main(int argc, char **argv)
 		"\n\n\n\n\n\n\n\n\n\n"
 		"\n\n\n\n\n\n\n\n\n\n"
 		"\n\n\n\n\n\n\n\n\n\n"
-		"\n\n\n");
+		"\n\n");
 
 	// test TRACE SELECT query.
 	// This will return two resultsets: first with the query results and next with the trace results

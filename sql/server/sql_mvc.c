@@ -25,10 +25,11 @@
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
 #include "rel_statistics.h"
-#include "wlc.h"
 
 #include "mal_authorize.h"
 #include "mal_profiler.h"
+#include "mal_exception.h"
+#include "mal_interpreter.h"
 
 static void
 sql_create_comments(mvc *m, sql_schema *s)
@@ -562,12 +563,6 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 			default:
 				break;
 		}
-		msg = WLCcommit(m->clientid);
-		if (msg != MAL_SUCCEED) {
-			if ((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-				freeException(other);
-			return msg;
-		}
 		if (chain) {
 			if (sql_trans_begin(m->session) < 0)
 				return createException(SQL, "sql.commit", SQLSTATE(40000) "%s finished successfully, but the session's schema could not be found while starting the next transaction", operation);
@@ -712,8 +707,6 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 			m->session->auto_commit = 0; /* disable auto-commit while chaining */
 		}
 	}
-	if (msg == MAL_SUCCEED)
-		msg = WLCrollback(m->clientid);
 	if (msg != MAL_SUCCEED) {
 		m->session->status = -1;
 		return msg;

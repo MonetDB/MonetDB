@@ -155,14 +155,6 @@ typedef struct CLIENT {
 	void *sqlcontext;
 
 	/*
-	 * The workload for replication/replay is saved initially as a MAL block.
-	 * It is split into the capturing part (wlc) and the replay part (wlr).
-	 * This allows a single server to act as both a master and a replica.
-	 */
-	int wlc_kind;	// used by master to characterise the compound transaction
-	MalBlkPtr wlc;
-
-	/*
 	 *	Errors during copy into are collected in a user specific column set
 	 */
 	BAT *error_row;

@@ -279,8 +279,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->profticks = c->profstmt = NULL;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	c->sqlprofiler = 0;
-	c->wlc_kind = 0;
-	c->wlc = NULL;
 	c->blocksize = BLOCK;
 	c->protocol = PROTOCOL_9;
 
@@ -487,11 +485,7 @@ MCfreeClient(Client c)
 		BBPunfix(c->error_input->batCacheid);
 		c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	}
-	if( c->wlc)
-		freeMalBlk(c->wlc);
 	c->sqlprofiler = 0;
-	c->wlc_kind = 0;
-	c->wlc = NULL;
 	free(c->handshake_options);
 	c->handshake_options = NULL;
 	MT_sema_destroy(&c->s);

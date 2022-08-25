@@ -42,7 +42,6 @@
 #include "opt_reorder.h"
 #include "opt_volcano.h"
 #include "opt_fastpath.h"
-#include "opt_wlc.h"
 #include "optimizer_private.h"
 #include "mal_interpreter.h"
 #include "mal_profiler.h"
@@ -143,7 +142,6 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	optcall(true, OPTdeadcodeImplementation);
 	optcall(true, OPTpostfixImplementation);
 	// optcall(true, OPTjitImplementation);
-	optcall(true, OPTwlcImplementation);
 	optcall(true, OPTgarbageCollectorImplementation);
 
 	/* Defense line against incorrect plans  handled by optimizer steps */

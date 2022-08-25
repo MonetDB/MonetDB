@@ -138,7 +138,7 @@ stream_export ssize_t mnstr_write(stream *restrict s, const void *restrict buf, 
 stream_export void mnstr_close(stream *s);
 stream_export void mnstr_destroy(stream *s);
 stream_export int mnstr_flush(stream *s, mnstr_flush_level flush_level); // used all over
-stream_export int mnstr_fsync(stream *s); // used in gdk_logger.c, wlc.c and store.c
+stream_export int mnstr_fsync(stream *s); // used in gdk_logger.c and store.c
 stream_export int mnstr_fgetpos(stream *restrict s, fpos_t *restrict p); // unused
 stream_export int mnstr_fsetpos(stream *restrict s, fpos_t *restrict p); // unused
 stream_export char *mnstr_name(const stream *s); // used when wrapping in mclient.c
@@ -156,7 +156,7 @@ stream_export stream *open_wstream(const char *filename); // used in gdk_logger.
 stream_export stream *open_rastream(const char *filename); // used 13 times
 
 /* open in ascii stream in write mode*/
-stream_export stream *open_wastream(const char *filename); // used in mclient.c, mapi.c, mal_io.c, wlc.c, sql.c, wlr.c
+stream_export stream *open_wastream(const char *filename); // used in mclient.c, mapi.c, mal_io.c, sql.c
 
 stream_export void close_stream(stream *s);
 
@@ -176,7 +176,7 @@ stream_export stream *compressed_stream(stream *inner, int preset);
 
 stream_export FILE *getFile(stream *s); // gdk_logger.c progress messages
 stream_export int getFileNo(stream *s);	/* fileno(getFile(s)) */ // mclient.c, gdk_logger.c progress messages
-stream_export size_t getFileSize(stream *s); // mal_import.c, sql_scenario.c, wlr.c, store.c, bat_logger.c
+stream_export size_t getFileSize(stream *s); // mal_import.c, sql_scenario.c, store.c, bat_logger.c
 
 stream_export stream *iconv_rstream(stream *restrict ss, const char *restrict charset, const char *restrict name); // mclient.c stdin
 stream_export stream *iconv_wstream(stream *restrict ss, const char *restrict charset, const char *restrict name); // mclient.c stdout

@@ -326,8 +326,6 @@ const char *updateRef;
 const char *userRef;
 const char *vectorRef;
 const char *window_boundRef;
-const char *wlcRef;
-const char *wlrRef;
 const char *zero_or_oneRef;
 /* ! please keep this list sorted for easier maintenance ! */
 
@@ -644,8 +642,6 @@ void optimizerInit(void)
 	userRef = putName("user");
 	vectorRef = putName("vector");
 	window_boundRef = putName("window_bound");
-	wlcRef = putName("wlc");
-	wlrRef = putName("wlr");
 	zero_or_oneRef = putName("zero_or_one");
 /* ! please keep this list sorted for easier maintenance ! */
 }
