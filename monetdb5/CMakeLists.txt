@@ -9,7 +9,6 @@
 add_subdirectory(mal)
 add_subdirectory(modules)
 add_subdirectory(optimizer)
-add_subdirectory(scheduler)
 add_subdirectory(tools)
 add_subdirectory(extras)
 if(WIN32)
