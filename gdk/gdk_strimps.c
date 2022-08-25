@@ -471,12 +471,14 @@ BATcheckstrimps(BAT *b)
 					ATOMIC_INIT(&hp->strimps.refs, 1);
 					hp->strimps.parentid = b->batCacheid;
 					b->tstrimps = hp;
+					hp->strimps.hasfile = true;
 					TRC_DEBUG(ACCELERATOR, "BATcheckstrimps(" ALGOBATFMT "): reusing persisted strimp\n", ALGOBATPAR(b));
 					return true;
 				}
 				close(fd);
 				/* unlink unusable file */
 				GDKunlink(hp->strimps.farmid, BATDIR, nme, "tstrimps");
+				hp->strimps.hasfile = false;
 
 			}
 		}
