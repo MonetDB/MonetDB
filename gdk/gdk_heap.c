@@ -171,6 +171,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize, size_t itemsizemmap)
 		if (itemsizemmap > itemsize)
 			h->size = MAX(1, nitems) * itemsizemmap;
 		h->base = HEAPcreatefile(NOFARM, &h->size, nme);
+		h->hasfile = true;
 		GDKfree(nme);
 	}
 	if (h->base == NULL) {
@@ -221,6 +222,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 		char *p;
 		char *path;
 
+		assert(h->hasfile);
 		TRC_DEBUG(HEAP, "Extending %s mmapped heap (%s)\n", h->storage == STORE_MMAP ? "shared" : "privately", h->filename);
 		/* extend memory mapped file */
 		if ((path = GDKfilepath(h->farmid, BATDIR, nme, ext)) == NULL) {
@@ -280,12 +282,14 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 			 * new and we can use STORE_MMAP */
 			int fd = GDKfdlocate(h->farmid, nme, "rb", ext);
 			if (fd >= 0) {
+				assert(h->hasfile);
 				existing = true;
 				close(fd);
 			} else {
 				/* no pre-existing heap file, so create a new
 				 * one */
 				h->base = HEAPcreatefile(h->farmid, &h->size, h->filename);
+				h->hasfile = true;
 				if (h->base) {
 					h->newstorage = h->storage = STORE_MMAP;
 					memcpy(h->base, bak.base, bak.free);
@@ -363,6 +367,7 @@ HEAPshrink(Heap *h, size_t size)
 	} else {
 		char *path;
 
+		assert(h->hasfile);
 		/* shrink memory mapped file */
 		/* round up to multiple of GDK_mmap_pagesize with
 		 * minimum of one */
@@ -603,14 +608,36 @@ HEAPfree(Heap *h, bool rmheap)
 	} else
 #endif
 	if (rmheap && !GDKinmemory(h->farmid)) {
-		char *path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
-		if (path && MT_remove(path) != 0 && errno != ENOENT)
-			perror(path);
-		GDKfree(path);
-		path = GDKfilepath(h->farmid, BATDIR, h->filename, "new");
-		if (path && MT_remove(path) != 0 && errno != ENOENT)
-			perror(path);
-		GDKfree(path);
+		if (h->hasfile) {
+			char *path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
+			if (path) {
+				int ret = MT_remove(path);
+				if (ret == -1) {
+					/* unexpectedly not present */
+					perror(path);
+				}
+				assert(ret == 0);
+				GDKfree(path);
+				h->hasfile = false;
+			}
+			path = GDKfilepath(h->farmid, BATDIR, h->filename, "new");
+			if (path) {
+				/* in practice, should never be present */
+				int ret = MT_remove(path);
+				if (ret == -1 && errno != ENOENT)
+					perror(path);
+				assert(ret == -1 && errno == ENOENT);
+				GDKfree(path);
+			}
+#ifndef NDEBUG
+		} else {
+			char *path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
+			/* should not be present */
+			struct stat st;
+			assert(stat(path, &st) == -1 && errno == ENOENT);
+			GDKfree(path);
+#endif
+		}
 	}
 }
 
@@ -801,6 +828,7 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	if (lock)
 		MT_lock_set(lock);
 	if (rc == GDK_SUCCEED) {
+		h->hasfile = true;
 		h->dirty = free != h->free;
 		h->wasempty = false;
 	} else {

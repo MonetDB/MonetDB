@@ -549,6 +549,8 @@ BATcheckhash(BAT *b)
 								h->heaplink.dirty = false;
 								h->heapbckt.dirty = false;
 								b->thash = h;
+								h->heapbckt.hasfile = true;
+								h->heaplink.hasfile = true;
 								TRC_DEBUG(ACCELERATOR,
 									  ALGOBATFMT ": reusing persisted hash\n", ALGOBATPAR(b));
 								MT_rwlock_wrunlock(&b->thashlock);
@@ -582,6 +584,8 @@ BATcheckhash(BAT *b)
 					/* unlink unusable file */
 					GDKunlink(h->heaplink.farmid, BATDIR, nme, "thashl");
 					GDKunlink(h->heapbckt.farmid, BATDIR, nme, "thashb");
+					h->heapbckt.hasfile = false;
+					h->heaplink.hasfile = false;
 				}
 			}
 			GDKfree(h);
@@ -605,8 +609,6 @@ BAThashsave_intern(BAT *b, bool dosync)
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	if ((h = b->thash) != NULL) {
-		Heap *hp = &h->heapbckt;
-
 #ifndef PERSISTENTHASH
 		/* no need to sync if not persistent */
 		dosync = false;
@@ -617,12 +619,14 @@ BAThashsave_intern(BAT *b, bool dosync)
 		if (!b->theap->dirty &&
 		    ((size_t *) h->heapbckt.base)[4] == BATcount(b) &&
 		    HEAPsave(&h->heaplink, h->heaplink.filename, NULL, dosync, h->heaplink.free, NULL) == GDK_SUCCEED &&
-		    HEAPsave(hp, hp->filename, NULL, dosync, hp->free, NULL) == GDK_SUCCEED) {
+		    HEAPsave(&h->heapbckt, h->heapbckt.filename, NULL, dosync, h->heapbckt.free, NULL) == GDK_SUCCEED) {
 			h->heaplink.dirty = false;
-			hp->dirty = false;
+			h->heapbckt.dirty = false;
+			h->heaplink.hasfile = true;
+			h->heapbckt.hasfile = true;
 			gdk_return rc = HASHfix(h, true, dosync);
 			TRC_DEBUG(ACCELERATOR,
-				  ALGOBATFMT ": persisting hash %s%s (" LLFMT " usec)%s\n", ALGOBATPAR(b), hp->filename, dosync ? "" : " no sync", GDKusec() - t0, rc == GDK_SUCCEED ? "" : " failed");
+				  ALGOBATFMT ": persisting hash %s%s (" LLFMT " usec)%s\n", ALGOBATPAR(b), h->heapbckt.filename, dosync ? "" : " no sync", GDKusec() - t0, rc == GDK_SUCCEED ? "" : " failed");
 		}
 		GDKclrerr();
 	}
