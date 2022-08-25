@@ -5518,6 +5518,9 @@ static mel_func geom_init_funcs[] = {
  command("geom", "Intersectsselect", wkbIntersectsSelectRTree, false, "TODO", args(1, 5, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("anti",bit))),
  command("geom", "Intersectsjoin", wkbIntersectsJoinRTree, false, "TODO", args(2, 8, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
 
+ command("geom", "Intersects_noindex", wkbIntersects, false, "Returns true if these Geometries 'spatially intersect in 2D'", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
+ command("geom", "Intersects_noindexselect", wkbIntersectsSelectNoIndex, false, "TODO", args(1, 5, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("anti",bit))),
+ command("geom", "Intersects_noindexjoin", wkbIntersectsJoinNoIndex, false, "TODO", args(2, 8, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
 
  command("geom", "IntersectsMBR", mbrIntersects, false, "TODO", args(1,3, arg("",bit),arg("a",mbr),arg("b",mbr))),
 

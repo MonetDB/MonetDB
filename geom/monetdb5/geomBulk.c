@@ -213,9 +213,13 @@ wkbIntersectsSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_
 	return filterSelectRTree(outid,bid,sid,*wkb_const,*anti,GEOSIntersects,"geom.wkbIntersectsSelectRTree");
 }
 
+str
+wkbIntersectsSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti) {
+	return filterSelectNoIndex(outid,bid,sid,*wkb_const,*anti,GEOSIntersects,"geom.wkbIntersectsSelectNoIndex");
 }
 
 static str
+filterJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, double double_flag, const bat *ls_id, const bat *rs_id, bit nil_matches, lng *estimate, char (*func) (const GEOSGeometry *, const GEOSGeometry *), const char *name)
 {
 	(void) double_flag;
 	BAT *lres = NULL, *rres = NULL, *l = NULL, *r = NULL, *ls = NULL, *rs = NULL;
@@ -385,6 +389,10 @@ wkbIntersectsJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r
 	return filterJoinRTree(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,estimate,GEOSIntersects,"geom.wkbIntersectsJoinRTree");
 }
 
+str
+wkbIntersectsJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate) {
+	return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,estimate,GEOSIntersects,"geom.wkbIntersectsJoinNoIndex");
+}
 
 /* mbr bulk function */
 /* Creates the BAT with mbrs from the BAT with geometries. */

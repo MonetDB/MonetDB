@@ -21,6 +21,7 @@ CREATE FILTER FUNCTION ST_IntersectsGeographic(geom1 Geometry, geom2 Geometry) E
 
 CREATE FUNCTION ST_IntersectsMBR(mbr1 mbr, mbr2 mbr) RETURNS bool EXTERNAL NAME geom."IntersectsMBR";
 CREATE FILTER FUNCTION ST_Intersects(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom."Intersects";
+CREATE FILTER FUNCTION ST_Intersects_NoIndex(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom."Intersects_noindex";
 -------------------------------------------------------------------------
 ------------------------- Geography functions ---------------------------
 -------------------------------------------------------------------------
