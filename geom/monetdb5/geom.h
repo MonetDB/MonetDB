@@ -217,6 +217,8 @@ geom_export str wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int* coo
 
 geom_export str geom_sql_upgrade(int);
 
+geom_export str wkbIntersectsJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate);
+geom_export str wkbIntersectsSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti);
 geom_export str wkbIntersectsJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate);
 geom_export str wkbIntersectsSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti);
 geom_export str mbrIntersects(bit* out, mbr** mbr1, mbr** mbr2);
