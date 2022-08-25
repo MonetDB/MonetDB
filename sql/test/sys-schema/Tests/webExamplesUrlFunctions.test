@@ -99,6 +99,10 @@ select sys.url_extract_host(c, true) from urlt;
 ----
 monetdb.org
 
+query T nosort
+select sys.url_extract_host('this is not a www.url.com/pliant string', true);
+----
+NULL
 
 statement ok
 drop table if exists urlt
