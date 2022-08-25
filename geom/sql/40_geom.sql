@@ -19,9 +19,8 @@ CREATE AGGREGATE ST_Collect(geom Geometry) RETURNS Geometry external name aggr."
 CREATE FILTER FUNCTION ST_DWithinGeographic(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME geom."DWithinGeographic";
 CREATE FILTER FUNCTION ST_IntersectsGeographic(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom."IntersectsGeographic";
 
-
 CREATE FUNCTION ST_IntersectsMBR(mbr1 mbr, mbr2 mbr) RETURNS bool EXTERNAL NAME geom."IntersectsMBR";
-
+CREATE FILTER FUNCTION ST_Intersects(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom."Intersects";
 -------------------------------------------------------------------------
 ------------------------- Geography functions ---------------------------
 -------------------------------------------------------------------------
@@ -128,7 +127,6 @@ CREATE FUNCTION ST_Equals(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERN
 GRANT EXECUTE ON FUNCTION ST_Equals(Geometry, Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Disjoint(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Disjoint";
 GRANT EXECUTE ON FUNCTION ST_Disjoint(Geometry, Geometry) TO PUBLIC;
-CREATE FILTER FUNCTION ST_Intersects(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom."Intersects";
 CREATE FUNCTION ST_Touches(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Touches";
 GRANT EXECUTE ON FUNCTION ST_Touches(Geometry, Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Crosses(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Crosses";
