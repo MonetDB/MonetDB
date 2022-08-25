@@ -25,10 +25,88 @@ persistRtree (BAT *b)
 	}
 }*/
 
+bool
+RTREEexists(BAT *b)
+{
+	BAT *pb;
+	bool ret;
+	if (VIEWtparent(b)) {
+		pb = BBP_cache(VIEWtparent(b));
+		assert(pb);
+	} else {
+		pb = b;
+	}
+
+	MT_lock_set(&pb->batIdxLock);
+	ret = pb->T.rtree != NULL;
+	MT_lock_unset(&pb->batIdxLock);
+
+	return ret;
+
+}
+
+//Create the RTree index
+gdk_return
+RTREEcreate (BAT *b) {
+	BAT *pb = NULL;
+	//Check for a parent BAT of wkb, load if exists
+	if (VIEWtparent(b)) {
+		pb = BBP_cache(VIEWtparent(b));
+		assert(pb);
+	} else {
+		pb = b;
+	}
+	//Check if rtree already exists
+	//TODO Check if it is on disk
+	if (pb->T.rtree == NULL) {
+		//If it doesn't exist, take the lock to create/get the rtree
+		MT_lock_set(&pb->batIdxLock);
+
+		//Try to load it from disk
+		//TODO BATcheckrtree
+
+		//First arg are dimensions: we only allow x, y
+		//Second arg are flags: split strategy and nodes-per-page
+		if ((pb->T.rtree = rtree_new(2, RTREE_DEFAULT)) == NULL) {
+			GDKerror("rtree_new failed\n");
+			return GDK_FAIL;
+		}
+		//TODO persist rtree
+		MT_lock_unset(&pb->batIdxLock);
+	}
+	return GDK_SUCCEED;
+}
+
+//Add a rectangle to the previously created RTree index
+gdk_return
+RTREEaddmbr (BAT *b, mbr_t *inMBR, BUN i) {
+	BAT *pb = NULL;
+	if (VIEWtparent(b))
+		pb = BBP_cache(VIEWtparent(b));
+	else
+		pb = b;
+	//Check if rtree already exists
+	//TODO Check if it is on disk
+	if (pb->T.rtree != NULL) {
+		rtree_id_t rtree_id = i;
+		rtree_coord_t rect[4];
+		rect[0] = inMBR->xmin;
+		rect[1] = inMBR->ymin;
+		rect[2] = inMBR->xmax;
+		rect[3] = inMBR->ymax;
+		rtree_add_rect(pb->T.rtree,rtree_id,rect);
+	}
+	else {
+		GDKerror("Tried to insert mbr into RTree that was not initialized\n");
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+
 //TODO Make this multi-thread safe? -> Only allow one thread to do rtree_new and persist the BAT, but multiple threads can add new rects to the tree
 //MBR bat
 gdk_return
-BATrtree_wkb(BAT *wkb, BAT *mbr)
+BATrtree(BAT *wkb, BAT *mbr)
 {
 	BAT *pb;
 	BATiter bi;
@@ -110,7 +188,7 @@ RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit) {
 	rtree_t *rtree = pb->T.rtree;
 	if (rtree != NULL) {
 		BUN *candidates = GDKmalloc(result_limit*sizeof(BUN));
-		memset(candidates,BUN_NONE,result_limit*sizeof(BUN));
+		memset(candidates,BUN_NONE,result_limit*sizeof(BUN*));
 
 		rtree_coord_t rect[4];
 		rect[0] = inMBR->xmin;
