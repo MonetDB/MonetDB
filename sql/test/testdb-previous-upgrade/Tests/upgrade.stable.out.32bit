@@ -3358,10 +3358,10 @@ drop view sys.schemastorage;
 drop view sys.tablestorage;
 drop view sys.storage;
 drop function sys.storage();
-drop function wlr.tick;
-drop function wlr.clock;
-drop function wlc.tick;
-drop function wlc.clock;
+drop function if exists wlr.tick;
+drop function if exists wlr.clock;
+drop function if exists wlc.tick;
+drop function if exists wlc.clock;
 drop function profiler.getlimit;
 drop view sys.rejects;
 drop function sys.rejects;
@@ -3519,14 +3519,6 @@ external name sql.copy_rejects;
 grant execute on function rejects to public;
 create view sys.rejects as select * from sys.rejects();
 create function profiler.getlimit() returns integer external name profiler.getlimit;
-create function wlc.clock() returns string
-external name wlc."getclock";
-create function wlc.tick() returns bigint
-external name wlc."gettick";
-create function wlr.clock() returns string
-external name wlr."getclock";
-create function wlr.tick() returns bigint
-external name wlr."gettick";
 create function sys."storage"()
 returns table (
  "schema" varchar(1024),
@@ -3629,8 +3621,6 @@ update sys._tables set system = true where system <> true and schema_id = (selec
 update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('storagemodelinit', 'storage', 'rejects', 'user_statistics', 'queue', 'debugflags', 'bbp', 'optimizers', 'querycache', 'optimizer_stats', 'current_sessionid', 'prepared_statements_args', 'prepared_statements', 'sessions', 'querylog_calls', 'querylog_catalog');
 update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'logging') and name = 'compinfo';
 update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'profiler') and name = 'getlimit';
-update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlc') and name in ('clock', 'tick');
-update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlr') and name in ('clock', 'tick');
 drop view sys.systemfunctions;
 drop table sys.statistics;
 drop procedure sys.analyze(int,bigint);
@@ -4052,4 +4042,27 @@ INSERT INTO sys.table_types VALUES (7, 'UNLOGGED TABLE');
 
 Running database upgrade commands:
 ALTER TABLE sys.table_types SET READ ONLY;
+
+Running database upgrade commands:
+drop procedure if exists wlc.master();
+drop procedure if exists wlc.master(string);
+drop procedure if exists wlc.stop();
+drop procedure if exists wlc.flush();
+drop procedure if exists wlc.beat(int);
+drop function if exists wlc.clock();
+drop function if exists wlc.tick();
+drop procedure if exists wlr.master(string);
+drop procedure if exists wlr.stop();
+drop procedure if exists wlr.accept();
+drop procedure if exists wlr.replicate();
+drop procedure if exists wlr.replicate(timestamp);
+drop procedure if exists wlr.replicate(tinyint);
+drop procedure if exists wlr.replicate(smallint);
+drop procedure if exists wlr.replicate(integer);
+drop procedure if exists wlr.replicate(bigint);
+drop procedure if exists wlr.beat(integer);
+drop function if exists wlr.clock();
+drop function if exists wlr.tick();
+drop schema if exists wlc;
+drop schema if exists wlr;
 

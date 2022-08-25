@@ -943,48 +943,6 @@ sql_update_nov2019(Client c, mvc *sql)
 			"drop procedure replicabeat(integer);\n"
 			"drop function replicaClock();\n"
 			"drop function replicaTick();\n"
-
-			"create schema wlc;\n"
-			"create procedure wlc.master()\n"
-			"external name wlc.master;\n"
-			"create procedure wlc.master(path string)\n"
-			"external name wlc.master;\n"
-			"create procedure wlc.stop()\n"
-			"external name wlc.stop;\n"
-			"create procedure wlc.flush()\n"
-			"external name wlc.flush;\n"
-			"create procedure wlc.beat( duration int)\n"
-			"external name wlc.\"setbeat\";\n"
-			"create function wlc.clock() returns string\n"
-			"external name wlc.\"getclock\";\n"
-			"create function wlc.tick() returns bigint\n"
-			"external name wlc.\"gettick\";\n"
-
-			"create schema wlr;\n"
-			"create procedure wlr.master(dbname string)\n"
-			"external name wlr.master;\n"
-			"create procedure wlr.stop()\n"
-			"external name wlr.stop;\n"
-			"create procedure wlr.accept()\n"
-			"external name wlr.accept;\n"
-			"create procedure wlr.replicate()\n"
-			"external name wlr.replicate;\n"
-			"create procedure wlr.replicate(pointintime timestamp)\n"
-			"external name wlr.replicate;\n"
-			"create procedure wlr.replicate(id tinyint)\n"
-			"external name wlr.replicate;\n"
-			"create procedure wlr.replicate(id smallint)\n"
-			"external name wlr.replicate;\n"
-			"create procedure wlr.replicate(id integer)\n"
-			"external name wlr.replicate;\n"
-			"create procedure wlr.replicate(id bigint)\n"
-			"external name wlr.replicate;\n"
-			"create procedure wlr.beat(duration integer)\n"
-			"external name wlr.\"setbeat\";\n"
-			"create function wlr.clock() returns string\n"
-			"external name wlr.\"getclock\";\n"
-			"create function wlr.tick() returns bigint\n"
-			"external name wlr.\"gettick\";\n"
 		);
 
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -993,20 +951,6 @@ sql_update_nov2019(Client c, mvc *sql)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('median_avg', 'quantile_avg') and type = %d;\n", (int) F_AGGR);
-	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.schemas set system = true where name in ('wlc', 'wlr');\n");
-	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlc')"
-			" and name in ('clock', 'tick') and type = %d;\n", (int) F_FUNC);
-	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlc')"
-			" and name in ('master', 'stop', 'flush', 'beat') and type = %d;\n", (int) F_PROC);
-	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlr')"
-			" and name in ('clock', 'tick') and type = %d;\n", (int) F_FUNC);
-	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlr')"
-			" and name in ('master', 'stop', 'accept', 'replicate', 'beat') and type = %d;\n", (int) F_PROC);
 
 	/* 39_analytics.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -4194,10 +4138,10 @@ sql_update_jan2022(Client c, mvc *sql)
 					"drop view sys.tablestorage;\n"
 					"drop view sys.storage;\n"
 					"drop function sys.storage();\n"
-					"drop function wlr.tick;\n"
-					"drop function wlr.clock;\n"
-					"drop function wlc.tick;\n"
-					"drop function wlc.clock;\n"
+					"drop function if exists wlr.tick;\n"
+					"drop function if exists wlr.clock;\n"
+					"drop function if exists wlc.tick;\n"
+					"drop function if exists wlc.clock;\n"
 					"drop function profiler.getlimit;\n"
 					"drop view sys.rejects;\n"
 					"drop function sys.rejects;\n"
@@ -4355,14 +4299,6 @@ sql_update_jan2022(Client c, mvc *sql)
 					"grant execute on function rejects to public;\n"
 					"create view sys.rejects as select * from sys.rejects();\n"
 					"create function profiler.getlimit() returns integer external name profiler.getlimit;\n"
-					"create function wlc.clock() returns string\n"
-					"external name wlc.\"getclock\";\n"
-					"create function wlc.tick() returns bigint\n"
-					"external name wlc.\"gettick\";\n"
-					"create function wlr.clock() returns string\n"
-					"external name wlr.\"getclock\";\n"
-					"create function wlr.tick() returns bigint\n"
-					"external name wlr.\"gettick\";\n"
 					"create function sys.\"storage\"()\n"
 					"returns table (\n"
 					" \"schema\" varchar(1024),\n"
@@ -4465,8 +4401,6 @@ sql_update_jan2022(Client c, mvc *sql)
 					"update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('storagemodelinit', 'storage', 'rejects', 'user_statistics', 'queue', 'debugflags', 'bbp', 'optimizers', 'querycache', 'optimizer_stats', 'current_sessionid', 'prepared_statements_args', 'prepared_statements', 'sessions', 'querylog_calls', 'querylog_catalog');\n"
 					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'logging') and name = 'compinfo';\n"
 					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'profiler') and name = 'getlimit';\n"
-					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlc') and name in ('clock', 'tick');\n"
-					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'wlr') and name in ('clock', 'tick');\n"
 		);
 
 	/* 99_system.sql */
@@ -5131,6 +5065,65 @@ bailout:
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_default(Client c, mvc *sql)
+{
+	size_t bufsize = 65536, pos = 0;
+	char *err = NULL, *buf = GDKmalloc(bufsize);
+	res_table *output;
+	BAT *b;
+
+	(void) sql;
+	if (buf == NULL)
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	/* if sys.db_user_info does not have a column password, we need to
+	 * add a bunch of columns */
+	pos = snprintf(buf, bufsize,
+				   "select id from sys.schemas where name in ('wlc', 'wlr');\n");
+	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)) == NULL) {
+		if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) > 0) {
+			sql_schema *wl = mvc_bind_schema(sql, "wlc");
+			if (wl)
+				wl->system = 0;
+			wl = mvc_bind_schema(sql, "wlr");
+			if (wl)
+				wl->system = 0;
+
+			pos = 0;
+			pos += snprintf(buf + pos, bufsize - pos,
+						"drop procedure if exists wlc.master();\n"
+						"drop procedure if exists wlc.master(string);\n"
+						"drop procedure if exists wlc.stop();\n"
+						"drop procedure if exists wlc.flush();\n"
+						"drop procedure if exists wlc.beat(int);\n"
+						"drop function if exists wlc.clock();\n"
+						"drop function if exists wlc.tick();\n"
+						"drop procedure if exists wlr.master(string);\n"
+						"drop procedure if exists wlr.stop();\n"
+						"drop procedure if exists wlr.accept();\n"
+						"drop procedure if exists wlr.replicate();\n"
+						"drop procedure if exists wlr.replicate(timestamp);\n"
+						"drop procedure if exists wlr.replicate(tinyint);\n"
+						"drop procedure if exists wlr.replicate(smallint);\n"
+						"drop procedure if exists wlr.replicate(integer);\n"
+						"drop procedure if exists wlr.replicate(bigint);\n"
+						"drop procedure if exists wlr.beat(integer);\n"
+						"drop function if exists wlr.clock();\n"
+						"drop function if exists wlr.tick();\n"
+						"drop schema if exists wlc;\n"
+						"drop schema if exists wlr;\n");
+			assert(pos < bufsize);
+			printf("Running database upgrade commands:\n%s\n", buf);
+			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+		}
+		res_table_destroy(output);
+		output = NULL;
+	}
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -5327,6 +5320,12 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_sep2022(c, m)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		return -1;
+	}
+
+	if ((err = sql_update_default(c, m)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		return -1;

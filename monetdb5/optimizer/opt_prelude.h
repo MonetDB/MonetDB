@@ -326,8 +326,6 @@ mal_export  const char *updateRef;
 mal_export  const char *userRef;
 mal_export  const char *vectorRef;
 mal_export  const char *window_boundRef;
-mal_export  const char *wlcRef;
-mal_export  const char *wlrRef;
 mal_export  const char *zero_or_oneRef;
 /* ! please keep this list sorted for easier maintenance ! */
 #endif

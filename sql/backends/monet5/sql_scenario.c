@@ -40,8 +40,6 @@
 #include "mal_linker.h"
 #include "mal_utils.h"
 #include "bat5.h"
-#include "wlc.h"
-#include "wlr.h"
 #include "msabaoth.h"
 #include "gdk_time.h"
 #include "optimizer.h"
@@ -565,12 +563,6 @@ SQLinit(Client c)
 		SQLstore = NULL;
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Starting log manager failed");
-	}
-	if (wlc_state == WLC_STARTUP && GDKgetenv_istrue("wlc_enabled") && (msg = WLCinit()) != MAL_SUCCEED) {
-		mvc_exit(SQLstore);
-		SQLstore = NULL;
-		MT_lock_unset(&sql_contextLock);
-		return msg;
 	}
 
 	MT_lock_unset(&sql_contextLock);

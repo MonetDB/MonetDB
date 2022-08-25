@@ -447,10 +447,6 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 
 	if ( getModuleId(p) == sqlcatalogRef)
 		return TRUE;
-	if ( getModuleId(p) == wlrRef)
-		return TRUE;
-	if ( getModuleId(p) == wlcRef)
-		return TRUE;
 	if ( getModuleId(p) == remoteRef)
 		return TRUE;
 	return FALSE;

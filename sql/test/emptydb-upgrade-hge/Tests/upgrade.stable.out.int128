@@ -3268,3 +3268,26 @@ INSERT INTO sys.table_types VALUES (7, 'UNLOGGED TABLE');
 Running database upgrade commands:
 ALTER TABLE sys.table_types SET READ ONLY;
 
+Running database upgrade commands:
+drop procedure if exists wlc.master();
+drop procedure if exists wlc.master(string);
+drop procedure if exists wlc.stop();
+drop procedure if exists wlc.flush();
+drop procedure if exists wlc.beat(int);
+drop function if exists wlc.clock();
+drop function if exists wlc.tick();
+drop procedure if exists wlr.master(string);
+drop procedure if exists wlr.stop();
+drop procedure if exists wlr.accept();
+drop procedure if exists wlr.replicate();
+drop procedure if exists wlr.replicate(timestamp);
+drop procedure if exists wlr.replicate(tinyint);
+drop procedure if exists wlr.replicate(smallint);
+drop procedure if exists wlr.replicate(integer);
+drop procedure if exists wlr.replicate(bigint);
+drop procedure if exists wlr.beat(integer);
+drop function if exists wlr.clock();
+drop function if exists wlr.tick();
+drop schema if exists wlc;
+drop schema if exists wlr;
+
