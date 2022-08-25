@@ -16,15 +16,129 @@
 #include "gdk_rtree.h"
 
 /********** Geo Update **********/
+//TODO SRID check could come earlier?
+//TODO The BUN_NONE is not correctly retrieved in search function
 static str
-filterSelectGeomGeomToBitIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, bit anti, char (*func) (const GEOSGeometry *, const GEOSGeometry *), const char *name)
+filterSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, bit anti, char (*func) (const GEOSGeometry *, const GEOSGeometry *), const char *name)
 {
 	BAT *out = NULL, *b = NULL, *s = NULL;
 	BATiter b_iter;
 	struct canditer ci;
 	GEOSGeom col_geom, const_geom;
 
-	//Check if the geometry is null and convert to GEOS
+	if ((const_geom = wkb2geos(wkb_const)) == NULL) {
+		if ((out = BATdense(0, 0, 0)) == NULL)
+			throw(MAL, name, GDK_EXCEPTION);
+		*outid = out->batCacheid;
+		BBPkeepref(out);
+		return MAL_SUCCEED;
+	}
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if (sid && !is_bat_nil(*sid) && !(s = BATdescriptor(*sid))) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+
+	canditer_init(&ci, b, s);
+	b_iter = bat_iterator(b);
+
+	if ((out = COLnew(0, ATOMindex("oid"), ci.ncand, TRANSIENT)) == NULL) {
+		BBPunfix(b->batCacheid);
+		if (s)
+			BBPunfix(s->batCacheid);
+		throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	/*if (!RTREEexists(b)) {
+		if (RTREEcreate(b) != GDK_SUCCEED) {
+			//TODO What to do?
+			throw(MAL, name, "Failed to initialize RTree");
+		}
+		for (BUN j = 0; j < BATcount(b); j++) {
+			wkb *inWKB = (wkb *) BUNtvar(b_iter, j - b->hseqbase);
+			mbr *inMBR = NULL;
+			wkbMBR(&inMBR, &inWKB);
+
+			if (RTREEaddmbr(b,(mbr_t*)inMBR,j) != GDK_SUCCEED) {
+				//TODO Cleanup
+			}
+			GDKfree(inMBR);
+			inMBR = NULL;
+		}
+	}*/
+
+	//Calculate the MBR for the constant geometry
+	mbr *const_mbr = NULL;
+	wkbMBR(&const_mbr,&wkb_const);
+
+	//Get a candidate list from searching on the rtree with the constant mbr
+	BUN* results_rtree = NULL;
+	if (RTREEexists(b))
+		results_rtree = RTREEsearch(b,(mbr_t*)const_mbr, b->batCount);
+
+	//Cycle through rtree candidates
+	//If there is a original candidate list, make sure the rtree cand is in there
+	//Then do the actual calculation for the geo predicate using the GEOS func
+	for (int i = 0; results_rtree[i] != BUN_NONE; i++) {
+		BUN cand = results_rtree[i];
+		//If we have a candidate list that is not dense, we need to check if the rtree candidate is also on the original candidate list
+		//TODO Check w Stefanos
+		if (ci.tpe != cand_dense) {
+			//If the original candidate list does not contain the rtree cand, move on to next one
+			if (!canditer_contains(&ci,cand))
+				continue;
+		}
+		const wkb *col_wkb = BUNtvar(b_iter, cand - b->hseqbase);
+		if ((col_geom = wkb2geos(col_wkb)) == NULL)
+			throw(MAL, name, SQLSTATE(38000) "WKB2Geos operation failed");
+		if (GEOSGetSRID(col_geom) != GEOSGetSRID(const_geom)) {
+			GEOSGeom_destroy(col_geom);
+			GEOSGeom_destroy(const_geom);
+			bat_iterator_end(&b_iter);
+			BBPunfix(b->batCacheid);
+			if (s)
+				BBPunfix(s->batCacheid);
+			BBPreclaim(out);
+			throw(MAL, name, SQLSTATE(38000) "Geometries of different SRID");
+		}
+		//GEOS function returns 1 on true, 0 on false and 2 on exception
+		//TODO Deal with exception of GEOS func?
+		bit cond = ((*func)(col_geom, const_geom) == 1);
+		if (cond != anti) {
+			if (BUNappend(out, (oid*) &cand, false) != GDK_SUCCEED) {
+				if (col_geom)
+					GEOSGeom_destroy(col_geom);
+				if (const_geom)
+					GEOSGeom_destroy(const_geom);
+				bat_iterator_end(&b_iter);
+				BBPunfix(b->batCacheid);
+				if (s)
+					BBPunfix(s->batCacheid);
+				BBPreclaim(out);
+				throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+		}
+		GEOSGeom_destroy(col_geom);
+	}
+	GEOSGeom_destroy(const_geom);
+	bat_iterator_end(&b_iter);
+	BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	*outid = out->batCacheid;
+	BBPkeepref(out);
+	return MAL_SUCCEED;
+}
+
+static str
+filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, bit anti, char (*func) (const GEOSGeometry *, const GEOSGeometry *), const char *name)
+{
+	BAT *out = NULL, *b = NULL, *s = NULL;
+	BATiter b_iter;
+	struct canditer ci;
+	GEOSGeom col_geom, const_geom;
+
 	if ((const_geom = wkb2geos(wkb_const)) == NULL) {
 		if ((out = BATdense(0, 0, 0)) == NULL)
 			throw(MAL, name, GDK_EXCEPTION);
@@ -39,6 +153,10 @@ filterSelectGeomGeomToBitIndex(bat* outid, const bat *bid , const bat *sid, wkb 
 		BBPunfix(b->batCacheid);
 		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
+
+	canditer_init(&ci, b, s);
+	b_iter = bat_iterator(b);
+
 	if ((out = COLnew(0, ATOMindex("oid"), ci.ncand, TRANSIENT)) == NULL) {
 		BBPunfix(b->batCacheid);
 		if (s)
@@ -46,34 +164,11 @@ filterSelectGeomGeomToBitIndex(bat* outid, const bat *bid , const bat *sid, wkb 
 		throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	//Calculate the MBR for the constant geometry
-	mbr *const_mbr = NULL;
-	wkbMBR(&const_mbr,&wkb_const);
-
-	//Get a candidate list from searching on the rtree with the constant mbr
-	BUN* results_rtree = RTREEsearch(b,(mbr_t*)const_mbr, b->batCount);
-
-	canditer_init(&ci, b, s);
-	b_iter = bat_iterator(b);
-
-	//Intersect prev_cands with rtree_cands
-	//Cycle through rtree_cands
-	//		if there is prev_cands -> bin search
-	//		if there is not -> just cycle through rtree_cands
-
 	for (BUN i = 0; i < ci.ncand; i++) {
-		oid c_oid = canditer_next(&ci);
-
-		int i = 0;
-		while (results_rtree[i] != BUN_NONE && results_rtree[i] != c_oid) {
-			i++;
-		}
-		if (results_rtree[i] == BUN_NONE)
-			continue;
-
-		const wkb *col_wkb = BUNtvar(b_iter, c_oid - b->hseqbase);
+		oid cand = canditer_next(&ci) - b->hseqbase;
+		const wkb *col_wkb = BUNtvar(b_iter, cand);
 		if ((col_geom = wkb2geos(col_wkb)) == NULL)
-			continue;
+			throw(MAL, name, SQLSTATE(38000) "WKB2Geos operation failed");
 		if (GEOSGetSRID(col_geom) != GEOSGetSRID(const_geom)) {
 			GEOSGeom_destroy(col_geom);
 			GEOSGeom_destroy(const_geom);
@@ -84,12 +179,11 @@ filterSelectGeomGeomToBitIndex(bat* outid, const bat *bid , const bat *sid, wkb 
 			BBPreclaim(out);
 			throw(MAL, name, SQLSTATE(38000) "Geometries of different SRID");
 		}
-
-		//GEOS functino returns 1 on true, 0 on false and 2 on exception
-		char ret = ((*func)(col_geom, const_geom));
-		bit cond = (ret == 1);
+		//GEOS function returns 1 on true, 0 on false and 2 on exception
+		//TODO Deal with exception of GEOS func?
+		bit cond = ((*func)(col_geom, const_geom) == 1);
 		if (cond != anti) {
-			if (BUNappend(out, &c_oid, false) != GDK_SUCCEED) {
+			if (BUNappend(out, (oid*) &cand, false) != GDK_SUCCEED) {
 				if (col_geom)
 					GEOSGeom_destroy(col_geom);
 				if (const_geom)
@@ -102,7 +196,6 @@ filterSelectGeomGeomToBitIndex(bat* outid, const bat *bid , const bat *sid, wkb 
 				throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
-		//TODO Deal with exception?
 		GEOSGeom_destroy(col_geom);
 	}
 	GEOSGeom_destroy(const_geom);
@@ -116,13 +209,15 @@ filterSelectGeomGeomToBitIndex(bat* outid, const bat *bid , const bat *sid, wkb 
 }
 
 str
-wkbIntersectsSelect(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti) {
-	return filterSelectGeomGeomToBitIndex(outid,bid,sid,*wkb_const,*anti,GEOSIntersects,"geom.wkbIntersectsSelect");
+wkbIntersectsSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti) {
+	return filterSelectRTree(outid,bid,sid,*wkb_const,*anti,GEOSIntersects,"geom.wkbIntersectsSelectRTree");
+}
+
 }
 
 static str
-filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, double double_flag, const bat *ls_id, const bat *rs_id, bit nil_matches, lng *estimate, char (*func) (const GEOSGeometry *, const GEOSGeometry *, double), const char *name)
 {
+	(void) double_flag;
 	BAT *lres = NULL, *rres = NULL, *l = NULL, *r = NULL, *ls = NULL, *rs = NULL;
 	BATiter l_iter, r_iter;
 	str msg = MAL_SUCCEED;
@@ -207,7 +302,7 @@ filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const
 				goto free;
 			}
 			//Apply the (Geom, Geom) -> bit function
-			bit cond = ((*func)(l_geom, r_geom, double_flag) == '1');
+			bit cond = ((*func)(l_geom, r_geom) == '1');
 			if (cond != anti) {
 				if (BUNappend(lres, &l_oid, false) != GDK_SUCCEED || BUNappend(rres, &r_oid, false) != GDK_SUCCEED) {
 					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -269,9 +364,25 @@ free:
 	return msg;
 }
 
+static str
+filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, double double_flag, const bat *ls_id, const bat *rs_id, bit nil_matches, lng *estimate, char (*func) (const GEOSGeometry *, const GEOSGeometry *), const char *name) {
+	(void) lres_id;
+	(void) rres_id;
+	(void) l_id;
+	(void) r_id;
+	(void) double_flag;
+	(void) ls_id;
+	(void) rs_id;
+	(void) nil_matches;
+	(void) estimate;
+	(void) func;
+	(void) name;
+	return MAL_SUCCEED;
+}
+
 str
-wkbIntersectsJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate) {
-	return filterJoinGeomGeomDoubleToBit(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,estimate,GEOSDistanceWithin,"geom.wkbIntersectsJoin");
+wkbIntersectsJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate) {
+	return filterJoinRTree(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,estimate,GEOSIntersects,"geom.wkbIntersectsJoinRTree");
 }
 
 
@@ -297,9 +408,8 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 		throw(MAL, "batgeom.mbr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	//iterator over the BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+	BATloop(inBAT, p, q) {
 		str err = NULL;
 
 		inWKB = (wkb *) BUNtvar(inBAT_iter, p);
@@ -325,7 +435,7 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 	*outBAT_id = outBAT->batCacheid;
 
 	//Build RTree index using the mbr's we just calculated, on the wkb BAT
-	BATrtree_wkb(inBAT,outBAT);
+	BATrtree(inBAT,outBAT);
 	BBPkeepref(outBAT);
 
 	return MAL_SUCCEED;
