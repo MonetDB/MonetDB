@@ -1,6 +1,14 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Aug 25 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Extended system view sys.users with columns: schema_path, max_memory,
+  max_workers, optimizer and default_role.
+  Extended system table sys.db_user_info with columns: schema_path,
+  max_memory, max_workers, optimizer, default_role and password.
+  The password is encrypted. This table can only be queried when the
+  user has been granted the select privilege from monetdb.
+
 * Fri Aug 19 2022 svetlin <svetlin.stalinov@monetdbsolutions.com>
 - Added default role to create user statement
 
