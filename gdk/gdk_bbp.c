@@ -3532,14 +3532,20 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 			 * the BAKDIR, move the heap (preferably with
 			 * .new extension) to the correct backup
 			 * directory */
-			if (file_exists(h->farmid, srcdir, nme, extnew))
+			if (file_exists(h->farmid, srcdir, nme, extnew)) {
 				mvret = heap_move(h, srcdir,
 						  subcommit ? SUBDIR : BAKDIR,
 						  nme, extnew);
-			else if (file_exists(h->farmid, srcdir, nme, ext))
+			} else if (file_exists(h->farmid, srcdir, nme, ext)) {
 				mvret = heap_move(h, srcdir,
 						  subcommit ? SUBDIR : BAKDIR,
 						  nme, ext);
+				if (mvret == GDK_SUCCEED) {
+					/* file no longer in "standard"
+					 * location */
+					h->hasfile = false;
+				}
+			}
 		} else if (subcommit) {
 			/* if subcommit, we may need to move an
 			 * already made backup from BAKDIR to

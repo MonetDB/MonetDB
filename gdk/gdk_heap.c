@@ -833,6 +833,8 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		h->wasempty = false;
 	} else {
 		h->dirty = true;
+		if (store != STORE_MMAP)
+			h->hasfile = false;
 	}
 	if (lock)
 		MT_lock_unset(lock);
