@@ -84,7 +84,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jul2021-SP7/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jul2021-SP8/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -846,6 +846,31 @@ else
 fi
 
 %changelog
+* Fri Aug 26 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.27-20220826
+- Rebuilt.
+
+* Wed Aug 24 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.27-20220826
+- merovingian: In certain cases (when an mserver5 process exits right after producing
+  a message) the log message was logged over and over again, causing
+  monetdbd to use 100% CPU.  This has been fixed.
+
+* Fri Aug 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.27-20220826
+- sql: Fixed a busy loop in the code that applies the write-ahead log when
+  there are log files that cannot yet be cleaned due to active
+  transactions.  This loop can become nasty when mserver5 is exiting.
+
+* Wed Aug 10 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.27-20220826
+- gdk: A bug was fixed when upgrading a database from the Oct2020 releases
+  (11.39.X) or older when the write-ahead log (WAL) was not empty and
+  contained instructions to create new tables.
+
+* Thu Aug 04 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.27-20220826
+- gdk: Avoid logging of failure to backup files that didn't need to be backed
+  up in the first place.
+
+* Wed Aug 03 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.27-20220826
+- gdk: Avoid an attempt to access a file when the database is in memory.
+
 * Tue Aug 02 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.25-20220802
 - Rebuilt.
 

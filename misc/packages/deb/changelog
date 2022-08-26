@@ -1,3 +1,46 @@
+monetdb (11.41.27) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 26 Aug 2022 10:15:38 +0200
+
+monetdb (11.41.27) unstable; urgency=low
+
+  * merovingian: In certain cases (when an mserver5 process exits right after producing
+    a message) the log message was logged over and over again, causing
+    monetdbd to use 100% CPU.  This has been fixed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 24 Aug 2022 10:15:38 +0200
+
+monetdb (11.41.27) unstable; urgency=low
+
+  * sql: Fixed a busy loop in the code that applies the write-ahead log when
+    there are log files that cannot yet be cleaned due to active
+    transactions.  This loop can become nasty when mserver5 is exiting.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 19 Aug 2022 10:15:38 +0200
+
+monetdb (11.41.27) unstable; urgency=low
+
+  * gdk: A bug was fixed when upgrading a database from the Oct2020 releases
+    (11.39.X) or older when the write-ahead log (WAL) was not empty and
+    contained instructions to create new tables.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 10 Aug 2022 10:15:38 +0200
+
+monetdb (11.41.27) unstable; urgency=low
+
+  * gdk: Avoid logging of failure to backup files that didn't need to be backed
+    up in the first place.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 04 Aug 2022 10:15:38 +0200
+
+monetdb (11.41.27) unstable; urgency=low
+
+  * gdk: Avoid an attempt to access a file when the database is in memory.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 03 Aug 2022 10:15:38 +0200
+
 monetdb (11.41.25) unstable; urgency=low
 
   * Rebuilt.
