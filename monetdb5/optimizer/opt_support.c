@@ -388,8 +388,7 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		return TRUE;
 
 	if ( (getModuleId(p) == batRef || getModuleId(p)==sqlRef) &&
-		 (getFunctionId(p) == setAccessRef ||
-	 	  getFunctionId(p) == setWriteModeRef ))
+		 (getFunctionId(p) == setAccessRef ))
 		return TRUE;
 
 	if (getModuleId(p) == malRef && getFunctionId(p) == multiplexRef)

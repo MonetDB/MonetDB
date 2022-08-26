@@ -1,9 +1,0 @@
-statement error
-function foo();
-RKA:bat[:int]:= bat.new(:int,1048576);
-bat.append(RKA,360:int);
-io.print(RKA);
-#the next one should fail
-bat.setWriteMode(RKB);
-end foo;
-
