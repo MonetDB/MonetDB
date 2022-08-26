@@ -275,7 +275,6 @@ const char *semijoinRef;
 const char *seriesRef;
 const char *setAccessRef;
 const char *setVariableRef;
-const char *setWriteModeRef;
 const char *set_protocolRef;
 const char *singleRef;
 const char *sinkRef;
@@ -591,7 +590,6 @@ void optimizerInit(void)
 	seriesRef = putName("series");
 	setAccessRef = putName("setAccess");
 	setVariableRef = putName("setVariable");
-	setWriteModeRef= putName("setWriteMode");
 	set_protocolRef= putName("set_protocol");
 	singleRef = putName("single");
 	sinkRef = putName("sink");
