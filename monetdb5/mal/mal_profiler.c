@@ -60,11 +60,9 @@ static void logjsonInternal(char *logbuffer, bool flush)
 	size_t len;
 	len = strlen(logbuffer);
 
-	if (maleventstream) {
-		(void) mnstr_write(maleventstream, logbuffer, 1, len);
-		if (flush)
-			(void) mnstr_flush(maleventstream, MNSTR_FLUSH_DATA);
-	}
+	(void) mnstr_write(maleventstream, logbuffer, 1, len);
+	if (flush)
+		(void) mnstr_flush(maleventstream, MNSTR_FLUSH_DATA);
 }
 
 /*
@@ -295,10 +293,6 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	clk = pci->clock;
 	mclk = (uint64_t)clk - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
 	/* make profile event tuple  */
-	/* TODO: This could probably be optimized somehow to avoid the
-	 * function call to mercurial_revision().
-	 */
-	// No comma at the beginning
 	if (!logadd(&logbuf,
 				"{"				// fill in later with the event counter
 				"\"sessionid\":\"%d\""
@@ -651,8 +645,8 @@ profilerEvent(MalEvent *me, NonMalEvent *nme)
 	if (me != NULL && me->cntxt != NULL && getModuleId(me->pci) == myname)
 		return;
 
+	MT_lock_set(&mal_profileLock);
 	if (maleventstream) {
-		MT_lock_set(&mal_profileLock);
 		if (me != NULL && me->mb != NULL && nme == NULL) {
 			if (me->stk == NULL ||
 				me->pci == NULL ||
@@ -669,8 +663,8 @@ profilerEvent(MalEvent *me, NonMalEvent *nme)
 			logjsonInternal(event, true);
 			free(event);
 		}
-		MT_lock_unset(&mal_profileLock);
 	}
+	MT_lock_unset(&mal_profileLock);
 }
 
 /* The first scheme dumps the events on a stream (and in the pool)
@@ -752,10 +746,11 @@ startProfiler(Client cntxt)
 #endif
 	(void) cntxt;
 
+	MT_lock_set(&mal_profileLock);
 	if(maleventstream){
+		MT_lock_unset(&mal_profileLock);
 		throw(MAL,"profiler.start","Profiler already running, stream not available");
 	}
-	MT_lock_set(&mal_profileLock);
 	if (myname == 0){
 		myname = putName("profiler");
 	}
