@@ -1342,7 +1342,6 @@ str setScenario(Client c, str nme);
 const char *setVariableRef;
 void setVariableScope(MalBlkPtr mb);
 void setVariableType(MalBlkPtr mb, const int idx, malType type);
-const char *setWriteModeRef;
 const char *set_protocolRef;
 void setprofilerlimit(int limit);
 void showAllScenarios(stream *f);
