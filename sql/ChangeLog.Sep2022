@@ -1,6 +1,18 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Aug 26 2022 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
+- Extended the built-in profiler to emit non-MAL events related to query
+  compilation, optimization, transactions and client connections. To
+  minimize, simplify and optimize the process of generating and processing
+  profiler output, only the events marking the end of an operation are
+  emitted in most cases and the emitted json messages themselves are
+  trimmed down to their essential fields. Furthermore the MAL instruction
+  profiler.openstream now has an overload that takes a single string
+  argument which can be set to "min" to turn on the profiler in minimal
+  mode which causes it to only emit general events and excludes individual
+  MAL instruction execution events from the profiler streams.
+
 * Thu Aug 25 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Extended system view sys.users with columns: schema_path, max_memory,
   max_workers, optimizer and default_role.
