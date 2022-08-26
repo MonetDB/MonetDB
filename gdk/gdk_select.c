@@ -69,6 +69,7 @@ virtualize(BAT *bn)
 			settailname(h, BBP_physical(bn->batCacheid), TYPE_oid, 0);
 			h->parentid = bn->batCacheid;
 			h->base = NULL;
+			h->hasfile = false;
 			ATOMIC_INIT(&h->refs, 1);
 			HEAPdecref(bn->theap, false);
 			bn->theap = h;
