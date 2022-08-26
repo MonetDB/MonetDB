@@ -6,3 +6,10 @@
   (11.39.X) or older when the write-ahead log (WAL) was not empty and
   contained instructions to create new tables.
 
+* Thu Aug 04 2022 Sjoerd Mullender <sjoerd@acm.org>
+- Avoid logging of failure to backup files that didn't need to be backed
+  up in the first place.
+
+* Wed Aug 03 2022 Sjoerd Mullender <sjoerd@acm.org>
+- Avoid an attempt to access a file when the database is in memory.
+

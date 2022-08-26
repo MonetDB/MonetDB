@@ -1,3 +1,8 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Aug 19 2022 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a busy loop in the code that applies the write-ahead log when
+  there are log files that cannot yet be cleaned due to active
+  transactions.  This loop can become nasty when mserver5 is exiting.
+
