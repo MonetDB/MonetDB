@@ -309,8 +309,8 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			} else
 				res = EPB;
 		}
-	} else if (is_topn(rel->op) && (l && (!is_simple_project(l->op) || list_empty(l->r)))) {
-		bool safe = !has_groupby(rel->l); /* no partitioning after a group by */
+	} else if (is_topn(rel->op) && (l /*&& (!is_simple_project(l->op) || list_empty(l->r))*/)) {
+		bool safe = true;//!has_groupby(rel->l); /* no partitioning after a group by */
 		if (rel->l)
 			res = rel_partition_(sql, rel->l, safe?SPB:pb);
 		if (safe) {
@@ -325,8 +325,10 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 				res = EPB;
 		}
 	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_topn(rel->op) || is_sample(rel->op)) {
+		/*
 		if (pb && is_simple_project(rel->op) && rel->r)
 			return 0;
+			*/
 		//if (pb && exps_have_unsafe(rel->exps, 1))
 		if (pb && (is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1))
 			return 0;
