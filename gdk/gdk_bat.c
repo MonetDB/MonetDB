@@ -706,6 +706,13 @@ BATdestroy(BAT *b)
 		ATOMIC_DESTROY(&b->theap->refs);
 		GDKfree(b->theap);
 	}
+	if (b->oldtail) {
+		/* the bat has not been committed, so we cannot remove
+		 * the old tail file */
+		ATOMIC_AND(&b->oldtail->refs, ~DELAYEDREMOVE);
+		HEAPdecref(b->oldtail, false);
+		b->oldtail = NULL;
+	}
 	GDKfree(b);
 }
 
@@ -2175,8 +2182,8 @@ backup_new(Heap *hp, bool lock)
 	struct stat st;
 
 	/* check for an existing X.new in BATDIR, BAKDIR and SUBDIR */
-	batpath = GDKfilepath(hp->farmid, BATDIR, hp->filename, ".new");
-	bakpath = GDKfilepath(hp->farmid, BAKDIR, hp->filename, ".new");
+	batpath = GDKfilepath(hp->farmid, BATDIR, hp->filename, "new");
+	bakpath = GDKfilepath(hp->farmid, BAKDIR, hp->filename, "new");
 	if (batpath != NULL && bakpath != NULL) {
 		/* file actions here interact with the global commits */
 		if (lock)

@@ -741,7 +741,7 @@ read_tar_block(stream *s, char *block, err *error)
 {
 	ssize_t nread = mnstr_read(s, block, 1, TAR_BLOCK_SIZE);
 	if (nread <= 0) {
-		if (mnstr_errnr(s) != 0) {
+		if (mnstr_errnr(s) != MNSTR_NO__ERROR) {
 			/* failure */
 			char *err = mnstr_error(s);
 			*error = newErr("Read error (%zd): %s", nread, err);

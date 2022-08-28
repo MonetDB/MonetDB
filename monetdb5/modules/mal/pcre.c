@@ -1157,6 +1157,12 @@ PCREreplace_wrap(str *res, const str *or, const str *pat, const str *repl, const
 }
 
 static str
+PCREreplacefirst_wrap(str *res, const str *or, const str *pat, const str *repl, const str *flags)
+{
+	return pcre_replace(res, *or, *pat, *repl, *flags, false);
+}
+
+static str
 PCREreplace_bat_wrap(bat *res, const bat *bid, const str *pat, const str *repl, const str *flags)
 {
 	BAT *b, *bn = NULL;
@@ -2348,7 +2354,7 @@ mel_func pcre_init_funcs[] = {
  command("pcre", "imatch", PCREimatch, false, "Caseless Perl Compatible Regular Expression pattern matching against a string", args(1,3, arg("",bit),arg("s",str),arg("pat",str))),
  command("pcre", "patindex", PCREpatindex, false, "Location of the first POSIX pattern matching against a string", args(1,3, arg("",int),arg("pat",str),arg("s",str))),
  command("pcre", "replace", PCREreplace_wrap, false, "Replace _all_ matches of \"pattern\" in \"origin_str\" with \"replacement\".\nParameter \"flags\" accept these flags: 'i', 'm', 's', and 'x'.\n'e': if present, an empty string is considered to be a valid match\n'i': if present, the match operates in case-insensitive mode.\nOtherwise, in case-sensitive mode.\n'm': if present, the match operates in multi-line mode.\n's': if present, the match operates in \"dot-all\"\nThe specifications of the flags can be found in \"man pcreapi\"\nThe flag letters may be repeated.\nNo other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".\nReturns the replaced string, or if no matches found, the original string.", args(1,5, arg("",str),arg("origin",str),arg("pat",str),arg("repl",str),arg("flags",str))),
- command("pcre", "replace_first", PCREreplace_wrap, false, "Replace _the first_ match of \"pattern\" in \"origin_str\" with \"replacement\".\nParameter \"flags\" accept these flags: 'i', 'm', 's', and 'x'.\n'e': if present, an empty string is considered to be a valid match\n'i': if present, the match operates in case-insensitive mode.\nOtherwise, in case-sensitive mode.\n'm': if present, the match operates in multi-line mode.\n's': if present, the match operates in \"dot-all\"\nThe specifications of the flags can be found in \"man pcreapi\"\nThe flag letters may be repeated.\nNo other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".\nReturns the replaced string, or if no matches found, the original string.", args(1,5, arg("",str),arg("origin",str),arg("pat",str),arg("repl",str),arg("flags",str))),
+ command("pcre", "replace_first", PCREreplacefirst_wrap, false, "Replace _the first_ match of \"pattern\" in \"origin_str\" with \"replacement\".\nParameter \"flags\" accept these flags: 'i', 'm', 's', and 'x'.\n'e': if present, an empty string is considered to be a valid match\n'i': if present, the match operates in case-insensitive mode.\nOtherwise, in case-sensitive mode.\n'm': if present, the match operates in multi-line mode.\n's': if present, the match operates in \"dot-all\"\nThe specifications of the flags can be found in \"man pcreapi\"\nThe flag letters may be repeated.\nNo other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".\nReturns the replaced string, or if no matches found, the original string.", args(1,5, arg("",str),arg("origin",str),arg("pat",str),arg("repl",str),arg("flags",str))),
  command("pcre", "pcre_quote", PCREquote, false, "Return a PCRE pattern string that matches the argument exactly.", args(1,2, arg("",str),arg("s",str))),
  command("pcre", "sql2pcre", PCREsql2pcre, false, "Convert a SQL like pattern with the given escape character into a PCRE pattern.", args(1,3, arg("",str),arg("pat",str),arg("esc",str))),
  command("str", "replace", PCREreplace_wrap, false, "", args(1,5, arg("",str),arg("origin",str),arg("pat",str),arg("repl",str),arg("flags",str))),

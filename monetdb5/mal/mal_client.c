@@ -183,7 +183,9 @@ MCresetProfiler(stream *fdout)
 	if (fdout != maleventstream)
 		return;
 	MT_lock_set(&mal_profileLock);
-	maleventstream = 0;
+	maleventstream = NULL;
+	profilerStatus = 0;
+	profilerMode = 0;
 	MT_lock_unset(&mal_profileLock);
 }
 
@@ -206,6 +208,13 @@ MCexitClient(Client c)
 		}
 		c->fdout = NULL;
 		c->fdin = NULL;
+	}
+	assert(c->query == NULL);
+	if(profilerStatus > 0) {
+		lng Tend = GDKusec();
+		profilerEvent(NULL,
+					  &(struct NonMalEvent)
+					  {CLIENT_END, c, Tend,  NULL, NULL, 0, Tend-(c->session)});
 	}
 	setClientContext(NULL);
 }
@@ -270,8 +279,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->profticks = c->profstmt = NULL;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	c->sqlprofiler = 0;
-	c->wlc_kind = 0;
-	c->wlc = NULL;
 	c->blocksize = BLOCK;
 	c->protocol = PROTOCOL_9;
 
@@ -296,7 +303,6 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 
 	MT_lock_set(&mal_contextLock);
 	c = MCnewClient();
-
 	if (c) {
 		Client c_old = setClientContext(c);
 		(void) c_old;
@@ -304,6 +310,10 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 		c = MCinitClientRecord(c, user, fin, fout);
 	}
 	MT_lock_unset(&mal_contextLock);
+
+	profilerEvent(NULL,
+				  &(struct NonMalEvent)
+				  {CLIENT_START, c, c->session,  NULL, NULL, 0, 0});
 	return c;
 }
 
@@ -480,11 +490,7 @@ MCfreeClient(Client c)
 		BBPunfix(c->error_input->batCacheid);
 		c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	}
-	if( c->wlc)
-		freeMalBlk(c->wlc);
 	c->sqlprofiler = 0;
-	c->wlc_kind = 0;
-	c->wlc = NULL;
 	free(c->handshake_options);
 	c->handshake_options = NULL;
 	MT_sema_destroy(&c->s);

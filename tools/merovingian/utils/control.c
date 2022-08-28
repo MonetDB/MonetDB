@@ -567,7 +567,7 @@ char* control_send_callback(
 		while ((nread = mnstr_read(s, buf, 1, sizeof(buf))) > 0) {
 			callback(buf, (size_t)nread, cb_private);
 		}
-		if (mnstr_errnr(s))
+		if (mnstr_errnr(s) != MNSTR_NO__ERROR)
 			msg = mnstr_error(s);
 	} while (0);
 	if (bs)

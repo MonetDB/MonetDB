@@ -276,7 +276,6 @@ const char *semijoinRef;
 const char *seriesRef;
 const char *setAccessRef;
 const char *setVariableRef;
-const char *setWriteModeRef;
 const char *set_protocolRef;
 const char *singleRef;
 const char *sinkRef;
@@ -328,8 +327,6 @@ const char *updateRef;
 const char *userRef;
 const char *vectorRef;
 const char *window_boundRef;
-const char *wlcRef;
-const char *wlrRef;
 const char *zero_or_oneRef;
 /* ! please keep this list sorted for easier maintenance ! */
 
@@ -596,7 +593,6 @@ void optimizerInit(void)
 	seriesRef = putName("series");
 	setAccessRef = putName("setAccess");
 	setVariableRef = putName("setVariable");
-	setWriteModeRef= putName("setWriteMode");
 	set_protocolRef= putName("set_protocol");
 	singleRef = putName("single");
 	sinkRef = putName("sink");
@@ -648,8 +644,6 @@ void optimizerInit(void)
 	userRef = putName("user");
 	vectorRef = putName("vector");
 	window_boundRef = putName("window_bound");
-	wlcRef = putName("wlc");
-	wlrRef = putName("wlr");
 	zero_or_oneRef = putName("zero_or_one");
 /* ! please keep this list sorted for easier maintenance ! */
 }

@@ -110,6 +110,7 @@ BATcheckorderidx(BAT *b)
 					close(fd);
 					ATOMIC_INIT(&hp->refs, 1);
 					b->torderidx = hp;
+					hp->hasfile = true;
 					TRC_DEBUG(ACCELERATOR, "BATcheckorderidx(" ALGOBATFMT "): reusing persisted orderidx\n", ALGOBATPAR(b));
 					MT_lock_unset(&b->batIdxLock);
 					return true;
@@ -117,6 +118,7 @@ BATcheckorderidx(BAT *b)
 				close(fd);
 				/* unlink unusable file */
 				GDKunlink(hp->farmid, BATDIR, nme, "torderidx");
+				hp->hasfile = false;
 			}
 		}
 		GDKfree(hp);

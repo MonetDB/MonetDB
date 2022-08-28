@@ -316,21 +316,21 @@ has its own SQL-level specific settings.
    **default_pipe**
       The default pipeline contains the mitosis-mergetable-reorder
       optimizers, aimed at large tables and improved access locality.
-      default_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mitosis,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,wlc,garbageCollector
+      default_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mitosis,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,garbageCollector
 
    **no_mitosis_pipe**
       The no_mitosis pipeline is identical to the default pipeline,
       except that optimizer mitosis is omitted. It is used mainly to
       make some tests work deterministically, and to check/debug whether
       "unexpected" problems are related to mitosis (and/or mergetable).
-      no_mitosis_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,wlc,garbageCollector
+      no_mitosis_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,garbageCollector
 
    **sequential_pipe**
       The sequential pipeline is identical to the default pipeline,
       except that optimizers mitosis & dataflow are omitted. It is use
       mainly to make some tests work deterministically, i.e., avoid
       ambigious output, by avoiding parallelism.
-      sequential_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,wlc,garbageCollector
+      sequential_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,garbageCollector
 
 **embedded_py**
    Enable embedded Python. This means Python code can be called from

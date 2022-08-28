@@ -612,7 +612,7 @@ IOexport(void *ret, bat *bid, str *fnme)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "io.export", "%s", mnstr_peek_error(NULL));
 	}
-	if (mnstr_errnr(s)) {
+	if (mnstr_errnr(s) != MNSTR_NO__ERROR) {
 		mnstr_close(s);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "io.export", "%s", mnstr_peek_error(NULL));

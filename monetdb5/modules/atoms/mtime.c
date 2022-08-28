@@ -930,16 +930,14 @@ static str
 str_to_timestamp(timestamp *ret, str *s, str *format, const char *type, const char *malfunc)
 {
 	struct tm tm = (struct tm) {0};
-	time_t t;
 
 	if (strNil(*s) || strNil(*format)) {
 		*ret = timestamp_nil;
 		return MAL_SUCCEED;
 	}
-	t = time(NULL);
-	localtime_r(&t, &tm);
 	tm.tm_sec = tm.tm_min = tm.tm_hour = 0;
 	tm.tm_isdst = -1;
+	tm.tm_mday = 1;
 	if (strptime(*s, *format, &tm) == NULL)
 		throw(MAL, malfunc,
 			  "format '%s', doesn't match %s '%s'", *format, type, *s);

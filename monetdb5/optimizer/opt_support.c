@@ -389,7 +389,6 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 
 	if ( (getModuleId(p) == batRef || getModuleId(p)==sqlRef) &&
 		 (getFunctionId(p) == setAccessRef ||
-	 	  getFunctionId(p) == setWriteModeRef ||
 		  getFunctionId(p) == singleRef))
 		return TRUE;
 
@@ -446,10 +445,6 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		return TRUE;
 
 	if ( getModuleId(p) == sqlcatalogRef)
-		return TRUE;
-	if ( getModuleId(p) == wlrRef)
-		return TRUE;
-	if ( getModuleId(p) == wlcRef)
 		return TRUE;
 	if ( getModuleId(p) == remoteRef)
 		return TRUE;

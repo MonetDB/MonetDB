@@ -1037,7 +1037,7 @@ static ATOMIC_FLAG mapi_initialized = ATOMIC_FLAG_INIT;
 
 #define check_stream(mid, s, msg, e)					\
 	do {								\
-		if ((s) == NULL || mnstr_errnr(s)) {			\
+		if ((s) == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {	\
 			if (msg != NULL) mapi_log_record(mid, msg);	\
 			mapi_log_record(mid, mnstr_peek_error(s));	\
 			mapi_log_record(mid, __func__);			\
@@ -1474,7 +1474,7 @@ mapi_log(Mapi mid, const char *nme)
 	if (nme == NULL)
 		return MOK;
 	mid->tracelog = open_wastream(nme);
-	if (mid->tracelog == NULL || mnstr_errnr(mid->tracelog)) {
+	if (mid->tracelog == NULL || mnstr_errnr(mid->tracelog) != MNSTR_NO__ERROR) {
 		if (mid->tracelog)
 			close_stream(mid->tracelog);
 		mid->tracelog = NULL;

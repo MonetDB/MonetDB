@@ -570,7 +570,8 @@ typedef struct {
 	bool cleanhash;		/* string heaps must clean hash */
 	bool dirty;		/* specific heap dirty marker */
 	bool remove;		/* remove storage file when freeing */
-	bool wasempty;	    /* heap was empty when last saved/created */
+	bool wasempty;		/* heap was empty when last saved/created */
+	bool hasfile;		/* .filename exists on disk */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bat parentid;		/* cache id of VIEW parent bat */

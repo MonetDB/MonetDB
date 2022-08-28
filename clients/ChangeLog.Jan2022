@@ -1,14 +1,3 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
-* Fri Jun 10 2022 Sjoerd Mullender <sjoerd@acm.org>
-- Implemented dump of global grants, that is to say, grants for COPY INTO
-  and COPY FROM which grant permission to users to write to or read from
-  files on the server (COPY INTO queries without the ON CLIENT option).
-
-* Tue May 31 2022 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed a bug where when the semicolon at the end of a COPY INTO query
-  that reads from STDIN is at exactly a 10240 byte boundary in a file,
-  the data isn't read as input for the COPY INTO but instead as a new
-  SQL query.
-

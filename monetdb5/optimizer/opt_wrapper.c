@@ -55,7 +55,6 @@
 #include "opt_volcano.h"
 #include "opt_fastpath.h"
 #include "opt_strimps.h"
-#include "opt_wlc.h"
 #include "optimizer_private.h"
 
 // keep the optimizer list sorted
@@ -101,7 +100,6 @@ static struct {
 	{"reorder", &OPTreorderImplementation,0,0},
 	{"strimps", &OPTstrimpsImplementation,0,0},
 	{"volcano", &OPTvolcanoImplementation,0,0},
-	{"wlc", &OPTwlcImplementation,0,0},
 	{0,0,0,0}
 };
 static int codehash[256];

@@ -449,6 +449,7 @@ vheapinit(BAT *b, const char *buf, unsigned bbpversion, const char *filename, in
 		.dirty = false,
 		.parentid = b->batCacheid,
 		.farmid = BBPselectfarm(PERSISTENT, b->ttype, varheap),
+		.hasfile = free > 0,
 	};
 	strconcat_len(b->tvheap->filename, sizeof(b->tvheap->filename),
 		      filename, ".theap", NULL);
@@ -560,6 +561,7 @@ heapinit(BAT *b, const char *buf,
 	/* (properties & 0x0200) is the old tdense flag */
 	b->tseqbase = (properties & 0x0200) == 0 || base >= (uint64_t) oid_nil ? oid_nil : (oid) base;
 	b->theap->free = (size_t) free;
+	b->theap->hasfile = free > 0;
 	/* set heap size to match capacity */
 	if (b->ttype == TYPE_msk) {
 		/* round up capacity to multiple of 32 */
@@ -3531,14 +3533,20 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 			 * the BAKDIR, move the heap (preferably with
 			 * .new extension) to the correct backup
 			 * directory */
-			if (file_exists(h->farmid, srcdir, nme, extnew))
+			if (file_exists(h->farmid, srcdir, nme, extnew)) {
 				mvret = heap_move(h, srcdir,
 						  subcommit ? SUBDIR : BAKDIR,
 						  nme, extnew);
-			else if (file_exists(h->farmid, srcdir, nme, ext))
+			} else if (file_exists(h->farmid, srcdir, nme, ext)) {
 				mvret = heap_move(h, srcdir,
 						  subcommit ? SUBDIR : BAKDIR,
 						  nme, ext);
+				if (mvret == GDK_SUCCEED) {
+					/* file no longer in "standard"
+					 * location */
+					h->hasfile = false;
+				}
+			}
 		} else if (subcommit) {
 			/* if subcommit, we may need to move an
 			 * already made backup from BAKDIR to

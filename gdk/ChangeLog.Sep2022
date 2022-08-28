@@ -2,7 +2,7 @@
 # This file is updated with Maddlog
 
 * Fri Jul 29 2022 Sjoerd Mullender <sjoerd@acm.org>
-- The abort_on_error paramter of all GDK-level functions has been removed.
+- The abort_on_error parameter of all GDK-level functions has been removed.
   Errors (e.g. overflow) now also results in an error.
 
 * Wed Jul 13 2022 Sjoerd Mullender <sjoerd@acm.org>

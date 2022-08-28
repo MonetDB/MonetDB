@@ -275,7 +275,7 @@ main(int argc, char **argv)
 	mnstr_flush(out, MNSTR_FLUSH_DATA);
 
 	mapi_destroy(mid);
-	if (mnstr_errnr(out)) {
+	if (mnstr_errnr(out) != MNSTR_NO__ERROR) {
 		char *err = mnstr_error(out);
 		fprintf(stderr, "%s: %s\n", argv[0], err);
 		free(err);

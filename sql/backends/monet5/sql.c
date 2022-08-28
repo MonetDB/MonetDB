@@ -125,22 +125,36 @@ sql_symbol2relation(backend *be, symbol *sym)
 {
 	sql_rel *rel;
 	sql_query *query = query_create(be->mvc);
-	lng Tbegin;
+	lng Tbegin, Tend;
 	int value_based_opt = be->mvc->emode != m_prepare, storage_based_opt;
 	int profile = be->mvc->emode == m_plan;
+	Client c = getClientContext();
 
-	rel = rel_semantic(query, sym);
-	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
 	Tbegin = GDKusec();
+	rel = rel_semantic(query, sym);
+	Tend = GDKusec();
+	if(profilerStatus > 0 )
+		profilerEvent(NULL,
+					  &(struct NonMalEvent)
+					  {SQL_TO_REL, c, Tend, NULL, NULL, rel?0:1, Tend-Tbegin});
+
+	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
+	Tbegin = Tend;
 	if (rel)
 		rel = sql_processrelation(be->mvc, rel, profile, 1, value_based_opt, storage_based_opt);
 	if (rel)
-		rel_partition(be->mvc, rel);
+		rel = rel_partition(be->mvc, rel);
 	if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
 		be->no_mitosis = 1;
 	if (rel && (be->mvc->emode != m_plan || (GDKdebug & FORCEMITOMASK) == 0))
 		rel = rel_physical(be->mvc, rel);
-	be->reloptimizer = GDKusec() - Tbegin;
+	Tend = GDKusec();
+	be->reloptimizer = Tend - Tbegin;
+
+	if(profilerStatus > 0)
+		profilerEvent(NULL,
+					  &(struct NonMalEvent)
+					  {REL_OPT, c, Tend, NULL, NULL, rel?0:1, be->reloptimizer});
 	return rel;
 }
 
@@ -172,7 +186,7 @@ sqlcleanup(backend *be, int err)
 }
 
 /*
- * The internal administration of the SQL compilation and execution state
+ * The internal administration of the MAL compiler and execution state
  * is administered by a state descriptor accessible in each phase.
  * Failure to find the state descriptor aborts the session.
  */
@@ -2584,7 +2598,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((tostdout = strcmp(filename,"stdout") == 0)) {
 		s = cntxt->fdout;
 	} else if (!onclient) {
-		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
+		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
 			msg=  createException(IO, "streams.open", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 			close_stream(s);
 			goto wrapup_result_set1;
@@ -2818,7 +2832,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((tostdout = strcmp(filename,"stdout") == 0)) {
 		s = cntxt->fdout;
 	} else if (!onclient) {
-		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
+		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
 			msg=  createException(IO, "streams.open", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 			close_stream(s);
 			goto wrapup_result_set;
@@ -3118,7 +3132,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			ss = open_rastream(fname);
 		}
-		if (ss == NULL || mnstr_errnr(ss)) {
+		if (ss == NULL || mnstr_errnr(ss) != MNSTR_NO__ERROR) {
 			msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 			close_stream(ss);
 			return msg;
@@ -3152,7 +3166,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			rsep = fwfrsep;
 
 			ns = stream_fwf_create(ss, ncol, widths, STREAM_FWF_FILLER);
-			if (ns == NULL || mnstr_errnr(ns)) {
+			if (ns == NULL || mnstr_errnr(ns) != MNSTR_NO__ERROR) {
 				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 				close_stream(ss);
 				free(widths);
@@ -5063,7 +5077,7 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	return MAL_SUCCEED;
 }
 
-#include "wlr.h"
+
 #include "sql_cat.h"
 #include "sql_rank.h"
 #include "sql_user.h"
@@ -5898,77 +5912,6 @@ pattern("sql", "password", SQLuser_password, false, "Return password hash of use
  pattern("bataggr", "not_exist", SQLnot_exist, false, "", args(1,2, batarg("",bit), batargany("b",1))),
  pattern("aggr", "subnot_exist", SQLsubnot_exist, false, "", args(1,5, batarg("",bit),batargany("b",0),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
  pattern("aggr", "subnot_exist", SQLsubnot_exist, false, "", args(1,6, batarg("",bit),batargany("b",0),batarg("g",oid),batarg("e",oid),batarg("s",oid),arg("no_nil",bit))),
- /* wlr */
- pattern("wlr", "master", WLRmaster, true, "Initialize the replicator thread", args(0,1, arg("dbname",str))),
- pattern("wlr", "stop", WLRstop, true, "Stop the replicator thread", noargs),
- pattern("wlr", "accept", WLRaccept, true, "Accept failing transaction", noargs),
- pattern("wlr", "replicate", WLRreplicate, true, "Continue to keep the replica in sink", noargs),
- pattern("wlr", "replicate", WLRreplicate, true, "Roll the snapshot forward to an up-to-date clone", args(0,1, arg("ts",timestamp))),
- pattern("wlr", "replicate", WLRreplicate, true, "Roll the snapshot forward to a specific transaction id", args(0,1, arg("id",bte))),
- pattern("wlr", "replicate", WLRreplicate, true, "Roll the snapshot forward to a specific transaction id", args(0,1, arg("id",sht))),
- pattern("wlr", "replicate", WLRreplicate, true, "Roll the snapshot forward to a specific transaction id", args(0,1, arg("id",int))),
- pattern("wlr", "replicate", WLRreplicate, true, "Roll the snapshot forward to a specific transaction id", args(0,1, arg("id",lng))),
- pattern("wlr", "getMaster", WLRgetmaster, false, "What is the current master database", args(1,1, arg("",str))),
- pattern("wlr", "setbeat", WLRsetbeat, true, "Threshold (in seconds) for re-running queries", args(0,1, arg("dur",int))),
- pattern("wlr", "getclock", WLRgetclock, false, "Timestamp of last replicated transaction.", args(1,1, arg("",str))),
- pattern("wlr", "gettick", WLRgettick, false, "Transaction identifier of the last replicated transaction.", args(1,1, arg("",lng))),
- pattern("wlr", "transaction", WLRtransaction, false, "Mark the beginning of the work unit which can be a compound transaction", args(0,3, arg("tid",lng),arg("started",str),arg("user",str))),
- pattern("wlr", "commit", WLRcommit, false, "Mark the end of the work unit", noargs),
- pattern("wlr", "rollback", WLRrollback, false, "Mark the end of the work unit", noargs),
- pattern("wlr", "catalog", WLRcatalog, false, "A catalog changing query", args(0,1, arg("q",str))),
- pattern("wlr", "action", WLRaction, false, "A query producing updates", args(0,1, arg("q",str))),
- pattern("wlr", "append", WLRappend, false, "Apply the insertions in the workload-capture-replay list", args(1,7, arg("",int),arg("sname",str),arg("tname",str),arg("cname",str),arg("offset", oid), batarg("pos", oid), varargany("ins",0))),
- pattern("wlr", "update", WLRupdate, false, "Apply the update in the workload-capture-replay list", args(1,6, arg("",int),arg("sname",str),arg("tname",str),arg("cname",str),arg("tid",oid),argany("val",0))),
- pattern("wlr", "delete", WLRdelete, false, "Apply the deletions in the workload-capture-replay list", args(1,4, arg("",int),arg("sname",str),arg("tname",str),vararg("b",oid))),
- pattern("wlr", "clear_table", WLRclear_table, false, "Destroy the tuples in the table", args(1,4, arg("",int),arg("sname",str),arg("tname",str),arg("restart_sequences",int))),
- pattern("wlr", "create_seq", WLRgeneric, false, "Catalog operation create_seq", args(0,3, arg("sname",str),arg("seqname",str),arg("action",int))),
- pattern("wlr", "alter_seq", WLRgeneric, false, "Catalog operation alter_seq", args(0,3, arg("sname",str),arg("seqname",str),arg("val",lng))),
- pattern("wlr", "alter_seq", WLRgeneric, false, "Catalog operation alter_seq", args(0,4, arg("sname",str),arg("seqname",str),arg("seq",ptr),batarg("val",lng))),
- pattern("wlr", "drop_seq", WLRgeneric, false, "Catalog operation drop_seq", args(0,3, arg("sname",str),arg("nme",str),arg("action",int))),
- pattern("wlr", "create_schema", WLRgeneric, false, "Catalog operation create_schema", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
- pattern("wlr", "drop_schema", WLRgeneric, false, "Catalog operation drop_schema", args(0,3, arg("sname",str),arg("ifexists",int),arg("action",int))),
- pattern("wlr", "create_table", WLRgeneric, false, "Catalog operation create_table", args(0,3, arg("sname",str),arg("tname",str),arg("temp",int))),
- pattern("wlr", "create_view", WLRgeneric, false, "Catalog operation create_view", args(0,4, arg("sname",str),arg("tname",str),arg("temp",int),arg("replace",int))),
- pattern("wlr", "drop_table", WLRgeneric, false, "Catalog operation drop_table", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
- pattern("wlr", "drop_view", WLRgeneric, false, "Catalog operation drop_view", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
- pattern("wlr", "drop_constraint", WLRgeneric, false, "Catalog operation drop_constraint", args(0,5, arg("sname",str),arg("tname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
- pattern("wlr", "alter_table", WLRgeneric, false, "Catalog operation alter_table", args(0,3, arg("sname",str),arg("tname",str),arg("action",int))),
- pattern("wlr", "create_type", WLRgeneric, false, "Catalog operation create_type", args(0,3, arg("sname",str),arg("nme",str),arg("impl",str))),
- pattern("wlr", "drop_type", WLRgeneric, false, "Catalog operation drop_type", args(0,3, arg("sname",str),arg("nme",str),arg("action",int))),
- pattern("wlr", "grant_roles", WLRgeneric, false, "Catalog operation grant_roles", args(0,4, arg("sname",str),arg("auth",str),arg("grantor",int),arg("admin",int))),
- pattern("wlr", "revoke_roles", WLRgeneric, false, "Catalog operation revoke_roles", args(0,4, arg("sname",str),arg("auth",str),arg("grantor",int),arg("admin",int))),
- pattern("wlr", "grant", WLRgeneric, false, "Catalog operation grant", args(0,7, arg("sname",str),arg("tbl",str),arg("grantee",str),arg("privs",int),arg("cname",str),arg("gr",int),arg("grantor",int))),
- pattern("wlr", "revoke", WLRgeneric, false, "Catalog operation revoke", args(0,7, arg("sname",str),arg("tbl",str),arg("grantee",str),arg("privs",int),arg("cname",str),arg("grant",int),arg("grantor",int))),
- pattern("wlr", "grant_function", WLRgeneric, false, "Catalog operation grant_function", args(0,6, arg("sname",str),arg("fcnid",int),arg("grantee",str),arg("privs",int),arg("grant",int),arg("grantor",int))),
- pattern("wlr", "revoke_function", WLRgeneric, false, "Catalog operation revoke_function", args(0,6, arg("sname",str),arg("fcnid",int),arg("grantee",str),arg("privs",int),arg("grant",int),arg("grantor",int))),
- pattern("wlr", "create_user", WLRgeneric, false, "Catalog operation create_user", args(0,5, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("fullname",str))),
- pattern("wlr", "drop_user", WLRgeneric, false, "Catalog operation drop_user", args(0,2, arg("sname",str),arg("action",int))),
- pattern("wlr", "drop_user", WLRgeneric, false, "Catalog operation drop_user", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
- pattern("wlr", "alter_user", WLRgeneric, false, "Catalog operation alter_user", args(0,5, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("oldpasswrd",str))),
- pattern("wlr", "rename_user", WLRgeneric, false, "Catalog operation rename_user", args(0,3, arg("sname",str),arg("newnme",str),arg("action",int))),
- pattern("wlr", "create_role", WLRgeneric, false, "Catalog operation create_role", args(0,3, arg("sname",str),arg("role",str),arg("grator",int))),
- pattern("wlr", "drop_role", WLRgeneric, false, "Catalog operation drop_role", args(0,3, arg("auth",str),arg("role",str),arg("action",int))),
- pattern("wlr", "drop_role", WLRgeneric, false, "Catalog operation drop_role", args(0,2, arg("role",str),arg("action",int))),
- pattern("wlr", "drop_index", WLRgeneric, false, "Catalog operation drop_index", args(0,3, arg("sname",str),arg("iname",str),arg("action",int))),
- pattern("wlr", "drop_function", WLRgeneric, false, "Catalog operation drop_function", args(0,5, arg("sname",str),arg("fname",str),arg("fid",int),arg("type",int),arg("action",int))),
- pattern("wlr", "create_function", WLRgeneric, false, "Catalog operation create_function", args(0,3, arg("sname",str),arg("fname",str),arg("replace",int))),
- pattern("wlr", "create_trigger", WLRgeneric, false, "Catalog operation create_trigger", args(0,11, arg("sname",str),arg("tname",str),arg("triggername",str),arg("time",int),arg("orientation",int),arg("event",int),arg("old",str),arg("new",str),arg("cond",str),arg("qry",str),arg("replace",int))),
- pattern("wlr", "drop_trigger", WLRgeneric, false, "Catalog operation drop_trigger", args(0,3, arg("sname",str),arg("nme",str),arg("ifexists",int))),
- pattern("wlr", "alter_add_table", WLRgeneric, false, "Catalog operation alter_add_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),
- pattern("wlr", "alter_del_table", WLRgeneric, false, "Catalog operation alter_del_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),
- pattern("wlr", "alter_set_table", WLRgeneric, false, "Catalog operation alter_set_table", args(0,3, arg("sname",str),arg("tnme",str),arg("access",int))),
- pattern("wlr", "alter_add_range_partition", WLRgeneric, false, "Catalog operation alter_add_range_partition", args(0,8, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("min",str),arg("max",str),arg("nills",bit),arg("update",int))),
- pattern("wlr", "comment_on", WLRgeneric, false, "Catalog operation comment_on", args(0,2, arg("objid",int),arg("remark",str))),
- pattern("wlr", "rename_schema", WLRgeneric, false, "Catalog operation rename_schema", args(0,2, arg("sname",str),arg("newnme",str))),
- pattern("wlr", "rename_table", WLRgeneric, false, "Catalog operation rename_table", args(0,4, arg("osname",str),arg("nsname",str),arg("otname",str),arg("ntname",str))),
- pattern("wlr", "rename_column", WLRgeneric, false, "Catalog operation rename_column", args(0,4, arg("sname",str),arg("tname",str),arg("cname",str),arg("newnme",str))),
- pattern("wlr", "transaction_release", WLRgeneric, false, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
- pattern("wlr", "transaction_commit", WLRgeneric, false, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
- pattern("wlr", "transaction_rollback", WLRgeneric, false, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
- pattern("wlr", "transaction_begin", WLRgeneric, false, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
- pattern("wlr", "transaction", WLRgeneric, true, "Start an autocommit transaction", noargs),
- pattern("wlr", "alter_add_value_partition", WLRgeneric, false, "Catalog operation alter_add_value_partition", args(0,6, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("nills",bit),arg("update",int))),
- pattern("wlr", "alter_add_value_partition", WLRgeneric, false, "Catalog operation alter_add_value_partition", args(0,7, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("nills",bit),arg("update",int),vararg("arg",str))),
  /* sqlcatalog */
  pattern("sqlcatalog", "create_seq", SQLcreate_seq, false, "Catalog operation create_seq", args(0,4, arg("sname",str),arg("seqname",str),arg("seq",ptr),arg("action",int))),
  pattern("sqlcatalog", "alter_seq", SQLalter_seq, false, "Catalog operation alter_seq", args(0,4, arg("sname",str),arg("seqname",str),arg("seq",ptr),arg("val",lng))),

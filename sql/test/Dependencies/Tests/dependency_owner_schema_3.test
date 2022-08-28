@@ -38,12 +38,6 @@ DEP_SCHEMA
 monetdb
 tmp
 DEP_SCHEMA
-monetdb
-wlc
-DEP_SCHEMA
-monetdb
-wlr
-DEP_SCHEMA
 
 query TTT rowsort
 SELECT t.name, v.name, 'DEP_VIEW' from sys.tables as t, sys.tables as v, sys.dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by t.name, v.name
@@ -289,11 +283,11 @@ DEP_FUNC
 dq
 prepare_esc
 DEP_FUNC
+dq
+schema_guard
+DEP_FUNC
 dump_table_data
 dump_database
-DEP_FUNC
-fqn
-schema_guard
 DEP_FUNC
 getproj4
 st_transform
@@ -306,9 +300,6 @@ ms_round
 DEP_FUNC
 remote_table_credentials
 get_remote_table_expressions
-DEP_FUNC
-replace_first
-schema_guard
 DEP_FUNC
 sq
 get_remote_table_expressions

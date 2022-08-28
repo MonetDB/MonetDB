@@ -4498,13 +4498,15 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int nee
 			if (needs_distinct)
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: with DISTINCT ORDER BY expressions must appear in select list");
 			e = rel_project_add_exp(sql, p, e);
-			for (node *n = p->exps->h ; n ; n = n->next) {
-				sql_exp *ee = n->data;
+			if (r) {
+				for (node *n = p->exps->h ; n ; n = n->next) {
+					sql_exp *ee = n->data;
 
-				if (ee->card > r->card) {
-					if (exp_name(ee) && !has_label(ee))
-						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(ee));
-					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+					if (ee->card > r->card) {
+						if (exp_name(ee) && !has_label(ee))
+							return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(ee));
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+					}
 				}
 			}
 		}
@@ -4613,7 +4615,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int needs_distinct,
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
 
-				e = rel_order_by_column_exp(query, &rel, col, needs_distinct, sql_sel | sql_orderby | (f & sql_group_totals));
+				e = rel_order_by_column_exp(query, &rel, col, needs_distinct, sql_sel | sql_orderby | (f & sql_group_totals) | (f & sql_window));
 			}
 			if (!e)
 				return NULL;

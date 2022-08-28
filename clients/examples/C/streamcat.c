@@ -163,7 +163,7 @@ int cmd_read(char *argv[])
 		croak(1, "Unknown opener '%s'", opener_name);
 
 	s = opener(filename);
-	if (s == NULL || mnstr_errnr(s)) {
+	if (s == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
 		char *msg = mnstr_error(s);
 		croak(2, "Opener %s failed: %s", opener_name, msg ? msg : "<no error message>");
 	}
@@ -199,7 +199,7 @@ int cmd_read(char *argv[])
 		}
 		if (wrapper != NULL)
 			s = wrapper(s, parms);
-		if (s == NULL || mnstr_errnr(s)) {
+		if (s == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
 			char *msg = mnstr_error(s);
 			croak(2, "Opener %s failed: %s", opener_name, msg ? msg : "<no error message>");
 		}
@@ -268,7 +268,7 @@ int cmd_write(char *argv[])
 		croak(1, "Unknown opener '%s'", opener_name);
 
 	s = opener(filename);
-	if (s == NULL || mnstr_errnr(s)) {
+	if (s == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
 		char *msg = mnstr_error(NULL);
 		croak(2, "Opener %s failed: %s", opener_name, msg ? msg : "");
 	}
@@ -312,7 +312,7 @@ int cmd_write(char *argv[])
 		}
 		if (wrapper != NULL)
 			s = wrapper(s, parms);
-		if (s == NULL || mnstr_errnr(s)) {
+		if (s == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
 			char *msg = mnstr_error(s);
 			croak(2, "Opener %s failed: %s", opener_name, msg ? msg : "<no error message>");
 		}

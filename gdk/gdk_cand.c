@@ -1098,6 +1098,8 @@ canditer_slice(const struct canditer *ci, BUN lo, BUN hi)
 		return BATdense(0, 0, 0);
 	if (hi > ci->ncand)
 		hi = ci->ncand;
+	if (hi - lo == 1)
+		return BATdense(0, canditer_idx(ci, lo), 1);
 	switch (ci->tpe) {
 	case cand_materialized:
 		if (ci->s) {

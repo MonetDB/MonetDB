@@ -36,6 +36,54 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one
 		return GDK_FAIL;
 	}
 
+	/* first some special cases */
+	if (ci1.ncand == 0 || ci2.ncand == 0) {
+		if ((bn1 = BATdense(0, 0, 0)) == NULL)
+			return GDK_FAIL;
+		if (r2p) {
+			if ((bn2 = BATdense(0, 0, 0)) == NULL) {
+				BBPreclaim(bn1);
+				return GDK_FAIL;
+			}
+			*r2p = bn2;
+		}
+		*r1p = bn1;
+		return GDK_SUCCEED;
+	}
+	if (ci2.ncand == 1) {
+		if ((bn1 = canditer_slice(&ci1, 0, ci1.ncand)) == NULL)
+			return GDK_FAIL;
+		if (r2p) {
+			if (ci1.ncand == 1) {
+				bn2 = canditer_slice(&ci2, 0, ci2.ncand);
+			} else {
+				bn2 = BATconstant(0, TYPE_oid, &ci2.seq, ci1.ncand, TRANSIENT);
+			}
+			if (bn2 == NULL) {
+				BBPreclaim(bn1);
+				return GDK_FAIL;
+			}
+			*r2p = bn2;
+		}
+		*r1p = bn1;
+		return GDK_SUCCEED;
+	}
+	if (ci1.ncand == 1) {
+		bn1 = BATconstant(0, TYPE_oid, &ci1.seq, ci2.ncand, TRANSIENT);
+		if (bn1 == NULL)
+			return GDK_FAIL;
+		if (r2p) {
+			bn2 = canditer_slice(&ci2, 0, ci2.ncand);
+			if (bn2 == NULL) {
+				BBPreclaim(bn1);
+				return GDK_FAIL;
+			}
+			*r2p = bn2;
+		}
+		*r1p = bn1;
+		return GDK_SUCCEED;
+	}
+
 	bn1 = COLnew(0, TYPE_oid, ci1.ncand * ci2.ncand, TRANSIENT);
 	if (r2p)
 		bn2 = COLnew(0, TYPE_oid, ci1.ncand * ci2.ncand, TRANSIENT);

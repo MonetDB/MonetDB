@@ -448,7 +448,7 @@ DFLOWworker(void *T)
 #endif
 
 			q_enqueue(flow->done, fe);
-			if ( fnxt == 0 && malProfileMode) {
+			if ( fnxt == 0 && profilerStatus) {
 				profilerHeartbeatEvent("wait");
 			}
 		}
