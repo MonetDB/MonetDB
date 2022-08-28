@@ -126,17 +126,11 @@ query T python .explain.function_histogram
 EXPLAIN select * from oblo OFFSET 2
 ----
 algebra.projection
-5
+2
 algebra.subslice
-2
-bat.new
-2
+1
 bat.pack
 5
-language.pipelines
-1
-pipeline.counter
-1
 querylog.define
 1
 sql.bind
@@ -283,16 +277,24 @@ user.main
 query T python .explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a LIMIT 2
 ----
-algebra.firstn
-1
 algebra.projection
-4
+2
 algebra.sort
 1
-algebra.subslice
-1
+bat.new
+2
 bat.pack
 5
+heapn.new
+1
+heapn.projection
+4
+heapn.topn
+2
+language.pipelines
+1
+pipeline.counter
+1
 querylog.define
 1
 sql.bind
@@ -309,16 +311,26 @@ user.main
 query T python .explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a LIMIT 2 OFFSET 1
 ----
-algebra.firstn
-1
 algebra.projection
-4
+3
 algebra.sort
 1
 algebra.subslice
 1
+bat.new
+2
 bat.pack
 5
+heapn.new
+1
+heapn.projection
+4
+heapn.topn
+2
+language.pipelines
+1
+pipeline.counter
+1
 querylog.define
 1
 sql.bind
@@ -335,16 +347,26 @@ user.main
 query T python .explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a LIMIT 1 OFFSET 2
 ----
-algebra.firstn
-1
 algebra.projection
-4
+3
 algebra.sort
 1
 algebra.subslice
 1
+bat.new
+2
 bat.pack
 5
+heapn.new
+1
+heapn.projection
+4
+heapn.topn
+2
+language.pipelines
+1
+pipeline.counter
+1
 querylog.define
 1
 sql.bind
