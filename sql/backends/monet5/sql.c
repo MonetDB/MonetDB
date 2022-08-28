@@ -143,7 +143,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 	if (rel)
 		rel = sql_processrelation(be->mvc, rel, profile, 1, value_based_opt, storage_based_opt);
 	if (rel)
-		rel = rel_partition(be->mvc, rel);
+		rel_partition(be->mvc, rel);
 	if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
 		be->no_mitosis = 1;
 	if (rel && (be->mvc->emode != m_plan || (GDKdebug & FORCEMITOMASK) == 0))
