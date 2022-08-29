@@ -55,12 +55,6 @@ extern void * ma_alloc( mallocator *ma, size_t sz );
 typedef lng gid;
 typedef lng sel_t;
 
-static int
-str_cmp(str s1, str s2)
-{
-    return strcmp(s1,s2);
-}
-
 typedef struct subheap {
 	fcmp cmp;		/* cmp function for complex types */
 	//lenfptr length;		/* length function for complex types */
@@ -750,7 +744,7 @@ subheap_create( heapn *hp, int type, char min /* or max */)
 	sh->type = type;
 	sh->width = ATOMsize(type);
 	if (type == TYPE_str) {
-		sh->cmp = (fcmp)str_cmp;
+		sh->cmp = (fcmp)strCmp;
 	}
 	if (!sh->cmp) {
 		switch(sh->width) {
