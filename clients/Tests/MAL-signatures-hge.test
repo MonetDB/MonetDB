@@ -44169,10 +44169,20 @@ command copy.buf2str(X_0:bat[:bte]):str
 COPYbuf2str;
 turn bat[:bte] into str
 copy
+defer_close
+unsafe command copy.defer_close(X_0:streams):bat[:bit] 
+COPYdefer_close_stream;
+close stream when returned bat is destroyed
+copy
 fixlines
-unsafe command copy.fixlines(X_0:bat[:bte], X_1:bat[:bte], X_2:str, X_3:str, X_4:bit) (X_5:bat[:bte], X_6:bat[:bte], X_7:lng) 
+unsafe command copy.fixlines(X_0:bat[:bte], X_1:bat[:bte], X_2:str, X_3:str, X_4:bit, X_5:bat[:oid], X_6:lng, X_7:lng) (X_8:bat[:bte], X_9:bat[:bte], X_10:lng) 
 COPYfixlines;
 Copy bytes from 'right' to 'left' to complete the final line of 'left'. Return left line count and bytes copied
+copy
+from_stdin
+unsafe command copy.from_stdin(X_0:lng, X_1:lng, X_2:bit, X_3:str, X_4:str, X_5:bit):streams 
+COPYfrom_stdin;
+read FROM STDIN
 copy
 get_blocksize
 unsafe command copy.get_blocksize():int 
@@ -44185,64 +44195,99 @@ COPYget_parallel;
 get the id of the current COPY INTO implementation
 copy
 parse_decimal
-command copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:bte):bat[:bte] 
+command copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:bte, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str):bat[:bte] 
 COPYparse_decimal_bte;
 Parse as a decimal
 copy
 parse_decimal
-command copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:hge):bat[:hge] 
+command copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:hge, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str):bat[:hge] 
 COPYparse_decimal_hge;
 Parse as a decimal
 copy
 parse_decimal
-command copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:int):bat[:int] 
+command copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:int, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str):bat[:int] 
 COPYparse_decimal_int;
 Parse as a decimal
 copy
 parse_decimal
-command copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:lng):bat[:lng] 
+command copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:lng, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str):bat[:lng] 
 COPYparse_decimal_lng;
 Parse as a decimal
 copy
 parse_decimal
-command copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:sht):bat[:sht] 
+command copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:sht, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str):bat[:sht] 
 COPYparse_decimal_sht;
 Parse as a decimal
 copy
 parse_generic
-pattern copy.parse_generic(X_0:bat[:bte], X_1:bat[:int], X_2:any_1):bat[:any_1] 
+pattern copy.parse_generic(X_0:bat[:bte], X_1:bat[:int], X_2:any_1, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:any_1] 
 COPYparse_generic;
 Parse using GDK's atomFromStr
 copy
 parse_integer
-command copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:bte):bat[:bte] 
+command copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:bte, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:bte] 
 COPYparse_integer_bte;
 Parse as an integer
 copy
 parse_integer
-command copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:hge):bat[:hge] 
+command copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:hge, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:hge] 
 COPYparse_integer_hge;
 Parse as an integer
 copy
 parse_integer
-command copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:int):bat[:int] 
+command copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:int] 
 COPYparse_integer_int;
 Parse as an integer
 copy
 parse_integer
-command copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:lng):bat[:lng] 
+command copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:lng, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:lng] 
 COPYparse_integer_lng;
 Parse as an integer
 copy
 parse_integer
-command copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:sht):bat[:sht] 
+command copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:sht, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:sht] 
 COPYparse_integer_sht;
 Parse as an integer
+copy
+parse_string
+command copy.parse_string(X_0:bat[:bte], X_1:bat[:int], X_2:any_1, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:any_1] 
+COPYparse_string;
+Parse using GDK's atomFromStr
 copy
 read
 unsafe command copy.read(X_0:streams, X_1:lng, X_2:bat[:bte]):streams 
 COPYread;
 Read 'block_size' bytes into 'block' from 's'
+copy
+request_upload
+unsafe command copy.request_upload(X_0:str, X_1:bit):streams 
+COPYrequest_upload;
+request MAPI file upload
+copy
+scale
+unsafe command copy.scale(X_0:bat[:bte], X_1:int, X_2:bat[:oid], X_3:lng, X_4:int, X_5:str):bat[:bte] 
+COPYscale_bte;
+scale by a power of 10
+copy
+scale
+unsafe command copy.scale(X_0:bat[:hge], X_1:int, X_2:bat[:oid], X_3:lng, X_4:int, X_5:str):bat[:hge] 
+COPYscale_hge;
+scale by a power of 10
+copy
+scale
+unsafe command copy.scale(X_0:bat[:int], X_1:int, X_2:bat[:oid], X_3:lng, X_4:int, X_5:str):bat[:int] 
+COPYscale_int;
+scale by a power of 10
+copy
+scale
+unsafe command copy.scale(X_0:bat[:lng], X_1:int, X_2:bat[:oid], X_3:lng, X_4:int, X_5:str):bat[:lng] 
+COPYscale_lng;
+scale by a power of 10
+copy
+scale
+unsafe command copy.scale(X_0:bat[:sht], X_1:int, X_2:bat[:oid], X_3:lng, X_4:int, X_5:str):bat[:sht] 
+COPYscale_sht;
+scale by a power of 10
 copy
 set_blocksize
 unsafe command copy.set_blocksize(X_0:int):int 
@@ -44260,7 +44305,7 @@ COPYskiplines;
 Skip the first N lines in the buffer
 copy
 splitlines
-pattern copy.splitlines(X_0:bat[:bte], X_1:lng, X_2:str, X_3:str, X_4:str, X_5:str, X_6:bit):bat[:int]... 
+pattern copy.splitlines(X_0:bat[:bte], X_1:lng, X_2:lng, X_3:str, X_4:str, X_5:str, X_6:str, X_7:bat[:oid], X_8:bit):bat[:int]... 
 COPYsplitlines;
 Find the fields of the individual columns
 copy
@@ -45723,6 +45768,21 @@ new
 pattern hash.new(X_0:any_1, X_1:int, X_2:bat[:any_2]):bat[:any_1] 
 UHASHnew;
 (empty)
+heapn
+new
+pattern heapn.new(X_0:lng, X_1:any...):bat[:oid] 
+HEAPnew;
+return new heap sink
+heapn
+projection
+command heapn.projection(X_0:bat[:oid], X_1:bat[:oid], X_2:bat[:oid], X_3:bat[:any_1], X_4:lng, X_5:ptr):bat[:any_1] 
+HEAPproject;
+Project.
+heapn
+topn
+pattern heapn.topn(X_0:lng, X_1:any...) (X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:oid], X_5:bat[:oid]) 
+HEAPtopn;
+Return a candidate list with the trail of changes of the heap encoded in the deleted/inserted rows
 iaggr
 count
 command iaggr.count(X_0:bat[:any], X_1:bat[:oid]):lng 
