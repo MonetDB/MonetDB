@@ -1379,6 +1379,9 @@ wrapup:
 	return msg;
 }
 
+#ifdef _MSC_VER
+#define wcsdup _wcsdup
+#endif
 static str
 PYAPI3PyAPIprelude(void) {
 	MT_lock_set(&pyapiLock);
@@ -1393,23 +1396,38 @@ PYAPI3PyAPIprelude(void) {
 		/* introduced in 3.8, we use it for 3.9 and later */
 		PyStatus status;
 		PyConfig config;
+		wchar_t *pyhome = NULL;
 
-		PyConfig_InitPythonConfig(&config);
-		config.isolated = 1;
-		status = PyConfig_SetArgv(&config, 1, argv);
-		if (PyStatus_Exception(status)) {
-			MT_lock_unset(&pyapiLock);
-			throw(MAL, "pyapi3.eval", SQLSTATE(PY000) "Python initialization failed.");
-		}
-		status = Py_InitializeFromConfig(&config);
-		if (PyStatus_Exception(status)) {
-			MT_lock_unset(&pyapiLock);
-			throw(MAL, "pyapi3.eval", SQLSTATE(PY000) "Python initialization failed.");
-		}
+		/* first figure out where Python was installed */
+		PyConfig_InitIsolatedConfig(&config);
+		status = PyConfig_Read(&config);
+		if (!PyStatus_Exception(status))
+			pyhome = wcsdup(config.prefix);
 		PyConfig_Clear(&config);
+		/* now really configure the Python subsystem, using the Python
+		 * prefix directory as its home
+		 * if we don't set config.home, sys.path will not be set
+		 * correctly on Windows and initialization will fail */
+		PyConfig_InitIsolatedConfig(&config);
+		status = PyConfig_SetArgv(&config, 1, argv);
+		if (!PyStatus_Exception(status))
+			status = PyConfig_SetString(&config, &config.home, pyhome);
+		free(pyhome);
+		if (!PyStatus_Exception(status))
+			status = PyConfig_Read(&config);
+		if (!PyStatus_Exception(status))
+			status = Py_InitializeFromConfig(&config);
+		PyConfig_Clear(&config);
+		if (PyStatus_Exception(status)) {
+			MT_lock_unset(&pyapiLock);
+			throw(MAL, "pyapi3.eval",
+				  SQLSTATE(PY000) "Python initialization failed: %s: %s",
+				  status.func ? status.func : "PYAPI3PyAPIprelude",
+				  status.err_msg ? status.err_msg : "");
+		}
 #else
 		/* PySys_SetArgvEx deprecated in 3.11 */
-		Py_Initialize();
+		Py_InitializeEx(0);
 		PySys_SetArgvEx(1, argv, 0);
 #endif
 
