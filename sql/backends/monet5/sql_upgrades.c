@@ -4643,7 +4643,7 @@ sql_update_sep2022(Client c, mvc *sql)
 				char *user_esc = NULL;
 				char *pass_esc = NULL;
 				if (strchr(user, '\'') != NULL) {
-					char *user_esc = GDKmalloc(strlen(user) * 2 + 1);
+					user_esc = GDKmalloc(strlen(user) * 2 + 1);
 					if (user_esc == NULL) {
 						bat_iterator_end(&ui);
 						bat_iterator_end(&pi);
@@ -4661,7 +4661,7 @@ sql_update_sep2022(Client c, mvc *sql)
 					user_esc[k] = '\0';
 				}
 				if (strchr(pass, '\'') != NULL) {
-					char *pass_esc = GDKmalloc(strlen(pass) * 2 + 1);
+					pass_esc = GDKmalloc(strlen(pass) * 2 + 1);
 					if (pass_esc == NULL) {
 						bat_iterator_end(&ui);
 						bat_iterator_end(&pi);
