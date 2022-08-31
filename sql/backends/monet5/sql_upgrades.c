@@ -4574,54 +4574,50 @@ sql_update_sep2022(Client c, mvc *sql)
 			if (BUNfnd(d, &i) == BUN_NONE) {
 				const char *user = BUNtvar(ui, i);
 				const char *pass = BUNtvar(pi, i);
-				char *user_esc = NULL;
-				char *pass_esc = NULL;
-				if (strchr(user, '\'') != NULL) {
-					char *user_esc = GDKmalloc(strlen(user) * 2 + 1);
-					if (user_esc == NULL) {
-						bat_iterator_end(&ui);
-						bat_iterator_end(&pi);
-						BBPunfix(u->batCacheid);
-						BBPunfix(p->batCacheid);
-						BBPunfix(d->batCacheid);
-						throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				if (pos + 4 * (strlen(user) + strlen(pass)) + 64 >= bufsize) {
+					char *nbuf = GDKrealloc(buf, bufsize + 65536);
+					if (nbuf == NULL) {
+						err = createException(SQL, __func__, MAL_MALLOC_FAIL);
+						break;
 					}
-					size_t k = 0;
-					for (size_t j = 0; user[j]; j++) {
-						if (user[j] == '\'')
-							user_esc[k++] = '\'';
-						user_esc[k++] = user[j];
-					}
-					user_esc[k] = '\0';
-				}
-				if (strchr(pass, '\'') != NULL) {
-					char *pass_esc = GDKmalloc(strlen(pass) * 2 + 1);
-					if (pass_esc == NULL) {
-						bat_iterator_end(&ui);
-						bat_iterator_end(&pi);
-						BBPunfix(u->batCacheid);
-						BBPunfix(p->batCacheid);
-						BBPunfix(d->batCacheid);
-						GDKfree(user_esc);
-						throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					}
-					size_t k = 0;
-					for (size_t j = 0; pass[j]; j++) {
-						if (pass[j] == '\'')
-							pass_esc[k++] = '\'';
-						pass_esc[k++] = pass[j];
-					}
-					pass_esc[k] = '\0';
+					buf = nbuf;
+					bufsize += 65536;
 				}
 				pos += snprintf(buf + pos, bufsize - pos,
-								"update sys.db_user_info set password = r'%s' where name = r'%s';\n", pass_esc ? pass_esc : pass, user_esc ? user_esc : user);
-				GDKfree(user_esc);
-				GDKfree(pass_esc);
+								"update sys.db_user_info set password = e'");
+				for (const char *p = pass; *p; p++) {
+					if (*p < '\040' || *p >= '\177') {
+						/* control character or high bit set */
+						pos += snprintf(buf + pos, bufsize - pos,
+										"\\%03o", (unsigned char) *p);
+					} else {
+						if (*p == '\\' || *p == '\'')
+							buf[pos++] = *p;
+						buf[pos++] = *p;
+					}
+				}
+				pos += snprintf(buf + pos, bufsize - pos,
+								"' where name = e'");
+				for (const char *p = user; *p; p++) {
+					if (*p < '\040' || *p >= '\177') {
+						/* control character or high bit set */
+						pos += snprintf(buf + pos, bufsize - pos,
+										"\\%03o", (unsigned char) *p);
+					} else {
+						if (*p == '\\' || *p == '\'')
+							buf[pos++] = *p;
+						buf[pos++] = *p;
+					}
+				}
+				pos += snprintf(buf + pos, bufsize - pos,
+								"';\n");
 			}
 		}
-		assert(pos < bufsize);
-		printf("Running database upgrade commands:\n%.*s-- and copying passwords\n\n", endprint, buf);
-		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+		if (err == MAL_SUCCEED) {
+			assert(pos < bufsize);
+			printf("Running database upgrade commands:\n%.*s-- and copying passwords\n\n", endprint, buf);
+			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+		}
 		bat_iterator_end(&ui);
 		bat_iterator_end(&pi);
 		bat authbats[4];
