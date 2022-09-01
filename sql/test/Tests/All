@@ -143,6 +143,7 @@ savepoints2
 union
 ## Queries from the old AS3AP benchmark.
 ## Since we don't have the data, let's just execute the queries here
-## Commented-out queries suffer from the problem reported in Issue #7023
 as3ap
+
+orderby-nulls-first-last
 

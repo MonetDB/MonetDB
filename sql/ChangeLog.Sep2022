@@ -22,7 +22,9 @@
   user has been granted the select privilege from monetdb.
 
 * Fri Aug 19 2022 svetlin <svetlin.stalinov@monetdbsolutions.com>
-- Added default role to create user statement
+- CREATE USER statement has been extended to take more optional arguments
+  like MAX_MEMORY, MAX_WORKERS, OPTIMIZER, DEFAULT ROLE. ALTER USER statement
+  has also been extended with DEFAULT ROLE.
 
 * Mon Aug 15 2022 Sjoerd Mullender <sjoerd@acm.org>
 - A new function sys.url_extract_host(string, bool) which returns the

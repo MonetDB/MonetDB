@@ -124,9 +124,11 @@ SQLSetPos(SQLHSTMT StatementHandle,
 	switch (Operation) {
 	case SQL_POSITION:
 		if (RowNumber == 0) {
-			/* Invalid cursor position */
-			addStmtError(stmt, "HY109", NULL, 0);
-			return SQL_ERROR;
+			/* If RowNumber is 0, the operation applies to every
+			 * row in the rowset.
+			 * In this case set it to the first row, so 1.
+			 */
+			RowNumber = 1;
 		}
 		if (mapi_seek_row(stmt->hdl, stmt->startRow + RowNumber - 1,
 				  MAPI_SEEK_SET) != MOK) {

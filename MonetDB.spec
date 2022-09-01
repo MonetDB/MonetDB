@@ -355,6 +355,9 @@ developer.
 
 %files client-tests
 %defattr(-,root,root)
+%{_bindir}/ODBCStmtAttr
+%{_bindir}/ODBCgetInfo
+%{_bindir}/ODBCmetadata
 %{_bindir}/arraytest
 %{_bindir}/bincopydata
 %{_bindir}/odbcsample1
@@ -366,8 +369,6 @@ developer.
 %{_bindir}/smack01
 %{_bindir}/streamcat
 %{_bindir}/testcondvar
-%{_bindir}/testgetinfo
-%{_bindir}/testStmtAttr
 %{_bindir}/malsample.pl
 %{_bindir}/sqlsample.php
 %{_bindir}/sqlsample.pl

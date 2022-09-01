@@ -387,6 +387,7 @@ static void ctl_handle_client(
 						pid = stats->pid;
 						mtype = MERODB;
 						msab_freeStatus(&stats);
+						stats = NULL;
 					}
 				}
 				// At this point pid may have been set from a dpair or from msab_getStatus()

@@ -15,7 +15,6 @@ target_sources(kernel
   mmath.c mmath_private.h
   bat5.c
   algebra.c algebra.h
-  status.c
   group.c group.h
   aggr.c
   batmmath.c

@@ -1,6 +1,10 @@
 # ChangeLog file for odbc
 # This file is updated with Maddlog
 
+* Thu Sep  1 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Improved SQLSetPos(). It now allows RowNumber to be 0 when Operation
+  is SQL_POSITION.
+
 * Thu Jul 28 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Improved ODBC Error/Warning messages. They now include the name of the
   Data Source as required by the ODBC specification:
