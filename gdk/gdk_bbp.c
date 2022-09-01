@@ -2422,7 +2422,7 @@ BBPinsert(BAT *bn)
 	/* fill in basic BBP fields for the new bat */
 
 	bn->batCacheid = i;
-	bn->creator_tid = MT_getpid();
+	bn->creator_tid = pid;
 
 	MT_lock_set(&GDKswapLock(i));
 	BBP_status_set(i, BBPDELETING|BBPHOT);
@@ -2430,7 +2430,7 @@ BBPinsert(BAT *bn)
 	BBP_desc(i) = bn;
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
 	BBP_lrefs(i) = 0;	/* ie. no logical refs */
-	BBP_pid(i) = MT_getpid();
+	BBP_pid(i) = pid;
 	MT_lock_unset(&GDKswapLock(i));
 
 	if (*BBP_bak(i) == 0)
@@ -2557,9 +2557,7 @@ bbpclear(bat i, bool lock)
 void
 BBPclear(bat i, bool lock)
 {
-	MT_Id pid = MT_getpid();
-
-	lock &= locked_by == 0 || locked_by != pid;
+	lock &= locked_by == 0 || locked_by != MT_getpid();
 	if (BBPcheck(i)) {
 		bbpclear(i, lock);
 	}
@@ -3824,7 +3822,6 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 
 	if (ret == GDK_SUCCEED) {
 		int idx = 0;
-		bool lock = locked_by == 0 || locked_by != MT_getpid();
 
 		while (++idx < cnt) {
 			bat i = subcommit ? subcommit[idx] : idx;
