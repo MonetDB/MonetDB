@@ -177,40 +177,42 @@ PIPELINEworker(void *T)
 	GDKsetbuf(t->errbuf);		/* where to leave errors */
 	t->errbuf = NULL;
 
-	for (;;) {
-		/* wait until we are allowed to start working */
-		Pipelines *s = q_dequeue(t->q);
-		Pipeline *p = (Pipeline*)GDKmalloc(sizeof(Pipeline));
+	Pipeline *p = (Pipeline*)GDKmalloc(sizeof(Pipeline));
+	if (p != NULL) {
+		for (;;) {
+			/* wait until we are allowed to start working */
+			Pipelines *s = q_dequeue(t->q);
 
-		if (!s || !p || GDKexiting() || ATOMIC_GET(&exiting)) {
-			if (p)
-				GDKfree(p);
-			break;
+			if (!s || GDKexiting() || ATOMIC_GET(&exiting)) {
+				break;
+			}
+			t->flag = RUNNING;
+
+			MalStkPtr stk = stack_copy(s->stk, s->start);
+
+			*p = (Pipeline) {
+				.p = s,
+				.wid = (int) ATOMIC_INC(&s->workers),
+				.wls = NULL,
+			};
+			stk->stk[s->mb->stmt[s->start]->argv[1]].val.ival = PIPELINEnext_counter(p);
+			stk->stk[s->mb->stmt[s->start]->argv[2]].val.pval = p;
+			/* the maxparts (arg 3) is generated ie constant value on the stack */
+			str error = runMALsequence(s->cntxt, s->mb, s->start, s->stop, stk, 0, 0);
+			PIPELINEclear_counter(p);
+			if (error) {
+				void *null = NULL;
+				/* only collect one error (from one thread, needed for stable testing) */
+				if (!ATOMIC_PTR_CAS(&s->error, &null, error))
+					freeException(error);
+				GDKerrbuf[0] = 0;
+			}
+			freeStack(stk);
+			if (p->wls)
+				GDKfree(p->wls);
+			MT_sema_up(&s->s);
 		}
-		t->flag = RUNNING;
-
-		MalStkPtr stk = stack_copy(s->stk, s->start);
-
-		p->p = s;
-		p->wid = (int) ATOMIC_INC(&s->workers);
-		p->wls = NULL;
-		stk->stk[s->mb->stmt[s->start]->argv[1]].val.ival = PIPELINEnext_counter(p);
-		stk->stk[s->mb->stmt[s->start]->argv[2]].val.pval = p;
-		/* the maxparts (arg 3) is generated ie constant value on the stack */
-		str error = runMALsequence(s->cntxt, s->mb, s->start, s->stop, stk, 0, 0);
-		PIPELINEclear_counter(p);
-		if (error) {
-			void *null = NULL;
-			/* only collect one error (from one thread, needed for stable testing) */
-			if (!ATOMIC_PTR_CAS(&s->error, &null, error))
-				freeException(error);
-			GDKerrbuf[0] = 0;
-		}
-		freeStack(stk);
-		if (p->wls)
-			GDKfree(p->wls);
 		GDKfree(p);
-		MT_sema_up(&s->s);
 	}
 	GDKfree(GDKerrbuf);
 	GDKsetbuf(0);
