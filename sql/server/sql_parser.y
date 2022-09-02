@@ -2792,6 +2792,7 @@ opt_on_location:
   ;
 
 copyfrom_stmt:
+//  1    2      3    4     5                6    7                8               9               10       11         12              13              14
     COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_escape opt_null_string opt_best_effort opt_fwf_widths
 	{ dlist *l = L();
 	  append_list(l, $4);
@@ -2806,6 +2807,7 @@ copyfrom_stmt:
 	  append_int(l, $9);
 	  append_int(l, $11);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
+//  1    2      3    4     5               6    7      8               9        10         11              12
   | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_escape opt_null_string opt_best_effort 
 	{ dlist *l = L();
 	  append_list(l, $4);
@@ -2820,11 +2822,13 @@ copyfrom_stmt:
 	  append_int(l, 0);
 	  append_int(l, $10);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
+//  1    2         3    4     5    6
   | COPY sqlLOADER INTO qname FROM func_ref
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_symbol(l, $6);
 	  $$ = _symbol_create_list( SQL_COPYLOADER, l ); }
+//   1    2              3      4    5     6               7    8                9
    | COPY opt_endianness BINARY INTO qname opt_column_list FROM string_commalist opt_on_location 
 	{ dlist *l = L();
 	  append_list(l, $5);
@@ -2833,6 +2837,7 @@ copyfrom_stmt:
 	  append_int(l, $9);
 	  append_int(l, $2);
 	  $$ = _symbol_create_list( SQL_BINCOPYFROM, l ); }
+//  1    2                    3    4      5               6        7
   | COPY query_expression_def INTO string opt_on_location opt_seps opt_null_string
 	{ dlist *l = L();
 	  append_symbol(l, $2);
@@ -2841,6 +2846,7 @@ copyfrom_stmt:
 	  append_string(l, $7);
 	  append_int(l, $5);
 	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
+//  1    2                    3    4      5        6
   | COPY query_expression_def INTO STDOUT opt_seps opt_null_string
 	{ dlist *l = L();
 	  append_symbol(l, $2);
