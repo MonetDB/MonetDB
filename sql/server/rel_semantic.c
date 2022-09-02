@@ -178,9 +178,10 @@ rel_semantic(sql_query *query, symbol *s)
 	case SQL_TRUNCATE:
 	case SQL_MERGE:
 	case SQL_COPYFROM:
-	case SQL_BINCOPYFROM:
-	case SQL_COPYLOADER:
 	case SQL_COPYTO:
+	case SQL_BINCOPYFROM:
+	case SQL_BINCOPYTO:
+	case SQL_COPYLOADER:
 		return rel_updates(query, s);
 
 	case SQL_WITH:

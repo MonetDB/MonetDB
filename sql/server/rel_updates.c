@@ -1920,6 +1920,59 @@ copyto(sql_query *query, symbol *sq, const char *filename, dlist *seps, const ch
 	return rel_output(sql, r, tsep_e, rsep_e, ssep_e, ns_e, fname_e, oncl_e);
 }
 
+static sql_rel *
+bincopyto(sql_query *query, symbol *qry, endianness endian, dlist *filenames, int on_client)
+{
+	mvc *sql = query->sql;
+
+	// First emit code for the subquery.
+	// Don't know what this is for, copy pasted it from copyto():
+	exp_kind ek = { type_value, card_relation, TRUE};
+	sql_rel *sub = rel_subquery(query, qry, ek);
+	if (!sub)
+		return NULL;
+	// Again, copy-pasted. copyto() uses this to check for duplicate column names
+	// but we don't care about that here.
+	sub = rel_project(sql->sa, sub, rel_projections(sql, sub, NULL, 1, 0));
+
+	sql_rel *rel = rel_create(sql->sa);
+	list *exps = new_exp_list(sql->sa);
+	if (!rel || !exps)
+		return NULL;
+
+	append(exps, exp_atom_int(sql->sa, endian));
+	append(exps, exp_atom_int(sql->sa, on_client));
+
+	for (dnode *n = filenames->h; n != NULL; n = n->next) {
+		const char *filename = n->data.sval;
+		// Again, copied from copyto()
+		if (!on_client && filename) {
+			struct stat fs;
+			if (!copy_allowed(sql, 0))
+				return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
+						"COPY INTO file requires database administrator rights, "
+						"use 'COPY ... INTO file ON CLIENT' instead");
+			if (filename && !MT_path_absolute(filename))
+				return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO ON SERVER: filename must "
+						"have absolute path: %s", filename);
+			if (lstat(filename, &fs) == 0)
+				return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO ON SERVER: file already "
+						"exists: %s", filename);
+		}
+		append(exps, exp_atom_clob(sql->sa, filename));
+	}
+
+	rel->l = sub;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = ddl_output;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+
+	return rel;
+}
+
 sql_exp *
 rel_parse_val(mvc *m, sql_schema *sch, char *query, sql_subtype *tpe, char emode, sql_rel *from)
 {
@@ -2057,6 +2110,18 @@ rel_updates(sql_query *query, symbol *s)
 
 		ret = copyto(query, l->h->data.sym, l->h->next->data.sval, l->h->next->next->data.lval, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
+	}
+		break;
+	case SQL_BINCOPYTO:
+	{
+		dlist *l = s->data.lval;
+		symbol *qry = l->h->data.sym;
+		endianness endian = l->h->next->data.i_val;
+		dlist *files = l->h->next->next->data.lval;
+		int on_client = l->h->next->next->next->data.i_val;
+
+		ret = bincopyto(query, qry, endian, files, on_client);
+		sql->type = Q_UPDATE; // doesn't really update but it sure doesn't return a result set
 	}
 		break;
 	case SQL_INSERT:
