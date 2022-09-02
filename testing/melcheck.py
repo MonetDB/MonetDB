@@ -100,7 +100,8 @@ def checkcommand(imp, mod, fcn, decl, retc, argc, args):
             print('const return pointer in implementation {} for command {}.{} (arg {})'.format(imp, mod, fcn, i))
         if ctype != cmaltype:
             if cmaltype != 'str' or ctype != 'char' or cres.group(0).count('*') != 2:
-                print('type mismatch for arg {} in implementation {} for command {}.{}'.format(i, imp, mod, fcn))
+                print('type mismatch for arg {} in implementation {} for command {}.{}: ctype={}, maltype={}'
+                    .format(i, imp, mod, fcn, ctype, cmaltype))
         pos = res.end(0)
         cpos = cres.end(0)
 

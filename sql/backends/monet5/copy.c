@@ -557,9 +557,9 @@ static mel_func copy_init_funcs[] = {
 	batargany("", 1),
 	batarg("block", bte), batarg("offsets", int), argany("type", 1), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
- command("copy", "parse_string", COPYparse_string, false, "Parse using GDK's atomFromStr", args(1, 8,
-	batargany("", 1),
-	batarg("block", bte), batarg("offsets", int), argany("type", 1), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
+ command("copy", "parse_string", COPYparse_string, false, "Parse as a string with given max width", args(1, 8,
+	batarg("", str),
+	batarg("block", bte), batarg("offsets", int), arg("maxlen", int), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
  command("copy", "parse_decimal", COPYparse_decimal_bte, false, "Parse as a decimal", args(1, 10,
 	 batarg("", bte),
