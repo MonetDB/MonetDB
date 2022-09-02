@@ -4562,6 +4562,7 @@ rel_topn_prepare_pp(backend *be, sql_rel *rel, stmt *all)
 			int tt = t->type->localtype;
 			q = pushNil(be->mb, q, tt);
 			q = pushBit(be->mb, q, !is_ascending(e));
+			q = pushBit(be->mb, q, nulls_last(e));
 
 			if (q == NULL)
 				return NULL;
@@ -4724,7 +4725,8 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 			orderbycolstmt = column(be, orderbycolstmt);
 			q = pushArgument(be->mb, q, orderbycolstmt->nr);
 			q = pushBit(be->mb, q, !is_ascending(orderbycole));
-			// TODO handle distinct, nulls_last(orderbycole)
+			q = pushBit(be->mb, q, nulls_last(orderbycole));
+			// TODO handle distinct
 			append(osl, orderbycolstmt);
 			append(osl, orderbycole);
 		}
@@ -4762,6 +4764,7 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 		sql_exp *e = n->next->data;
 		q = pushArgument(be->mb, q, s->nr);
 		q = pushBit(be->mb, q, !is_ascending(e));
+		q = pushBit(be->mb, q, nulls_last(e));
 	}
 	int sel = getArg(q, 0);
 	int del = getArg(q, 1);

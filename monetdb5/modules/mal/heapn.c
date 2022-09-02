@@ -82,11 +82,11 @@ typedef struct heapn {
 } heapn;
 
 extern heapn *heapn_create( int size, bool shared);
-extern heapn *heapn_subheap( heapn *hp, int type, char min /* or max */);
+extern heapn *heapn_subheap( heapn *hp, int type, bool min /* or max */, bool nulls_last);
 extern heapn *heapn_done( heapn *hp ); /* done creating subheaps */
 
 static heapn *_heap_create( int size, bool shared );
-static subheap *subheap_create( heapn *hp, int type, char min /* or max */);
+static subheap *subheap_create( heapn *hp, int type, bool min /* or max */, bool nulls_last);
 
 #define HEAP_INIT(h) if (h->sub->vals == NULL) _heap_init(h);
 
@@ -508,11 +508,19 @@ heap_type(hge)
 heap_type(flt)
 heap_type(dbl)
 
-#define heap_type_cmp(T)				\
-static int						\
+/* The 2 have 2 compare functions one for nil as largest value (default) and one for nil as smallest value */
+
+#define heap_type_cmp(T)						\
+static int										\
+T##_cmp##_nsmall( T *v1, T *v2 )					\
+{												\
+	return (is_##T##_nil(*v1)?(!is_##T##_nil(*v2)?-1:0):(is_##T##_nil(*v2)?1:(*v1<*v2?-1:((*v1==*v2)?0:1))));	\
+}												\
+												\
+static int										\
 T##_cmp( T *v1, T *v2 )					\
-{							\
-	return *v1>*v2?1:(*v1==*v2)?0:-1;					\
+{												\
+	return (is_##T##_nil(*v1)?(!is_##T##_nil(*v2)?1:0):(is_##T##_nil(*v2)?-1:(*v1<*v2?-1:((*v1==*v2)?0:1))));	\
 }
 
 heap_type_cmp(bte)
@@ -548,18 +556,19 @@ heap_destroy( heapn *h)
 }
 
 static BAT *
-HEAPnew_topn( MalStkPtr s, InstrPtr p, heapn *hp, lng n, BAT *b, bit min)
+HEAPnew_topn( MalStkPtr s, InstrPtr p, heapn *hp, lng n, BAT *b, bit min, bit nulls_last)
 {
-	subheap_create(hp, b->ttype, min);
-	for(int cur = 8; cur < p->argc; cur+=2) {
+	subheap_create(hp, b->ttype, min, nulls_last);
+	for(int cur = 9; cur < p->argc; cur+=3) {
 		bat *in = getArgReference_bat(s, p, cur);
 		min = *getArgReference_bit(s, p, cur+1);
+		nulls_last = *getArgReference_bit(s, p, cur+2);
 		BAT *b = BATdescriptor(*in);
 		if (!b) {
 			heap_destroy(hp);
 			return NULL;
 		}
-		subheap_create(hp, b->ttype, min);
+		subheap_create(hp, b->ttype, min, nulls_last);
 		BBPunfix(b->batCacheid);
 	}
 	heapn_done(hp);
@@ -573,7 +582,7 @@ HEAPnew_topn( MalStkPtr s, InstrPtr p, heapn *hp, lng n, BAT *b, bit min)
 
 /* convert into using BATsss */
 static str
-/* PATTERN HEAPtopn( bat *sel, bat *del, bat *ins, bat *HP, lng *sz, bat *in, bit *min, ...) */
+/* PATTERN HEAPtopn( bat *sel, bat *del, bat *ins, bat *HP, lng *sz, bat *in, bit *min, bit *nulls_last, ...) */
 HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	(void)cntxt; (void)m;
@@ -585,6 +594,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	Pipeline *pp = *(Pipeline**)getArgReference_ptr(s, p, 5);
 	bat *in = getArgReference_bat(s, p, 6);
 	bit min = *getArgReference_bit(s, p, 7);
+	bit nulls_last = *getArgReference_bit(s, p, 8);
 	bool private = (!*HP || is_bat_nil(*HP));
 	BAT *hps, *b = BATdescriptor(*in);
 
@@ -594,7 +604,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	if (private) {
 		lng n = *getArgReference_lng(s, p, 4);
 		heapn *hp = heapn_create(n, 0);
-		hps = HEAPnew_topn(s, p, hp, n, b, min);
+		hps = HEAPnew_topn(s, p, hp, n, b, min, nulls_last);
 		if (!hps) {
 			BBPunfix(b->batCacheid);
 			return createException(SQL, "heapn.topn",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -633,8 +643,8 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	oid *dp = Tloc(D, 0);
 	oid *ip = Tloc(I, 0);
 	subheap *nsh = NULL;
-	int cur = 8;
-	for(nsh = sh->sub; cur < p->argc; nsh = nsh->sub, cur += 2) {
+	int cur = 9;
+	for(nsh = sh->sub; cur < p->argc; nsh = nsh->sub, cur += 3) {
 		bat *in = getArgReference_bat(s, p, cur);
 		nsh->in = BATdescriptor(*in);
 		if (!nsh->in) {
@@ -737,38 +747,82 @@ _heap_create( int size, bool shared )
 	return h;
 }
 
+static int
+strCmp_nsmall(char *v1, char *v2)
+{
+	if (strNil(v1)) {
+		if (!strNil(v2))
+			return -1;
+		else
+			return 0;
+	} else if (strNil(v2)) {
+		return 1;
+	}
+	return strCmp(v1, v2);
+}
+
 static subheap *
-subheap_create( heapn *hp, int type, char min /* or max */)
+subheap_create( heapn *hp, int type, bool min /* or max */, bool nulls_last)
 {
 	subheap *sh = (subheap*)GDKzalloc(sizeof(subheap));
 	sh->type = type;
 	sh->width = ATOMsize(type);
 	if (type == TYPE_str) {
-		sh->cmp = (fcmp)strCmp;
+		if ((nulls_last && min) || (!nulls_last && !min)) {
+			sh->cmp = (fcmp)strCmp_nsmall;
+		} else {
+			sh->cmp = (fcmp)strCmp;
+		}
 	}
 	if (!sh->cmp) {
-		switch(sh->width) {
-		case 1:
-			sh->cmp = (fcmp)&bte_cmp;
-			break;
-		case 2:
-			sh->cmp = (fcmp)&sht_cmp;
-			break;
-		case 4:
-			sh->cmp = (fcmp)&int_cmp;
-			if (type == TYPE_flt)
-				sh->cmp = (fcmp)&flt_cmp;
-			break;
-		case 8:
-			sh->cmp = (fcmp)&lng_cmp;
-			if (type == TYPE_dbl)
-				sh->cmp = (fcmp)&dbl_cmp;
-			break;
-#ifdef HAVE_HGE
-		case 16:
-			sh->cmp = (fcmp)&hge_cmp;
-			break;
-#endif
+		if ((nulls_last && min) || (!nulls_last && !min)) {
+			switch(sh->width) {
+			case 1:
+				sh->cmp = (fcmp)&bte_cmp_nsmall;
+				break;
+			case 2:
+				sh->cmp = (fcmp)&sht_cmp_nsmall;
+				break;
+			case 4:
+				sh->cmp = (fcmp)&int_cmp_nsmall;
+				if (type == TYPE_flt)
+					sh->cmp = (fcmp)&flt_cmp_nsmall;
+				break;
+			case 8:
+				sh->cmp = (fcmp)&lng_cmp_nsmall;
+				if (type == TYPE_dbl)
+					sh->cmp = (fcmp)&dbl_cmp_nsmall;
+				break;
+	#ifdef HAVE_HGE
+			case 16:
+				sh->cmp = (fcmp)&hge_cmp_nsmall;
+				break;
+	#endif
+			}
+		} else {
+			switch(sh->width) {
+			case 1:
+				sh->cmp = (fcmp)&bte_cmp;
+				break;
+			case 2:
+				sh->cmp = (fcmp)&sht_cmp;
+				break;
+			case 4:
+				sh->cmp = (fcmp)&int_cmp;
+				if (type == TYPE_flt)
+					sh->cmp = (fcmp)&flt_cmp;
+				break;
+			case 8:
+				sh->cmp = (fcmp)&lng_cmp;
+				if (type == TYPE_dbl)
+					sh->cmp = (fcmp)&dbl_cmp;
+				break;
+	#ifdef HAVE_HGE
+			case 16:
+				sh->cmp = (fcmp)&hge_cmp;
+				break;
+	#endif
+			}
 		}
 	}
 	//sh->length = l;
@@ -792,9 +846,9 @@ heapn_create( int size, bool shared )
 }
 
 heapn *
-heapn_subheap( heapn *hp, int type, char min /* or max */)
+heapn_subheap( heapn *hp, int type, bool min /* or max */, bool nulls_last)
 {
-	(void)subheap_create(hp, type, min);
+	(void)subheap_create(hp, type, min, nulls_last);
 	return hp;
 }
 
@@ -808,13 +862,14 @@ heapn_done( heapn *hp )
 }
 
 static BAT *
-HEAPnew_new( MalBlkPtr m, MalStkPtr s, InstrPtr p, heapn *hp, lng n, int tt,  bit min)
+HEAPnew_new( MalBlkPtr m, MalStkPtr s, InstrPtr p, heapn *hp, lng n, int tt,  bit min, bit nulls_last)
 {
-	subheap_create(hp, tt, min);
-	for(int cur = 4; cur < p->argc; cur+=2) {
+	subheap_create(hp, tt, min, nulls_last);
+	for(int cur = 5; cur < p->argc; cur+=3) {
 		tt = getArgType(m, p, cur);
 		min = *getArgReference_bit(s, p, cur+1);
-		subheap_create(hp, tt, min);
+		nulls_last = *getArgReference_bit(s, p, cur+2);
+		subheap_create(hp, tt, min, nulls_last);
 	}
 	heapn_done(hp);
 	BAT *b = COLnew(0, TYPE_oid, n, TRANSIENT);
@@ -835,6 +890,7 @@ HEAPnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	lng n = *getArgReference_lng(s, p, 1);
 	int tt = getArgType(m, p, 2);
 	bit min = *getArgReference_bit(s, p, 3);
+	bit nulls_last = *getArgReference_bit(s, p, 4);
 
 	heapn *hp = heapn_create( (int)n, 1);
 	BAT *b = NULL;
@@ -843,7 +899,7 @@ HEAPnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		heap_destroy(hp);
 		return createException(SQL, "heapn.new",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	b = HEAPnew_new(m, s, p, hp, n, tt, min);
+	b = HEAPnew_new(m, s, p, hp, n, tt, min, nulls_last);
 	if (!b)
 		return createException(SQL, "heapn.new",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*HP = b->batCacheid;
@@ -1144,7 +1200,8 @@ static mel_func heapn_init_funcs[] = {
 				batarg("sink",oid),
 				arg("n",lng),
 				vararg("in",any)/*,
-				vararg("min", bit)
+				vararg("min", bit),
+				vararg("nulls_last", bit)
 				*/
 				)
 		   ),
@@ -1155,7 +1212,8 @@ static mel_func heapn_init_funcs[] = {
 				sharedbatarg("heap",oid),
 				arg("N", lng),
 				vararg("in",any)/*,
-				vararg("min", bit)
+				vararg("min", bit),
+				vararg("nulls_last", bit)
 				*/
 				)
 			),
