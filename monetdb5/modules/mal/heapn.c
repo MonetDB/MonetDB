@@ -47,7 +47,9 @@ BATnegateprops(BAT *b)
  * Min/Max processing using heap structure
  * ie array implementation
  */
-typedef int (*fcmp)(void *v1, void *v2);
+typedef int (*fcmp)(void *v1, void *v2, void *hp);
+typedef int (*fcmp2)(void *v1, void *v2);
+typedef void *(*fnil)();
 typedef void *mallocator;
 extern void ma_destroy(mallocator* ma);
 extern mallocator * ma_create(void);
@@ -57,7 +59,8 @@ typedef lng sel_t;
 
 typedef struct subheap {
 	fcmp cmp;		/* cmp function for complex types */
-	//lenfptr length;		/* length function for complex types */
+	fcmp2 cmp2;		/* cmp function for complex types */
+	fnil nilptr;		/* is nil */
 
 	void *vals;		/* array values */
 	void *ivals;		/* input pointer */
@@ -68,6 +71,7 @@ typedef struct subheap {
 	int width;
 	bool min;	/* or max heap */
 	bool var;
+	bool external;
 } subheap;
 
 typedef struct heapn {
@@ -106,9 +110,9 @@ subheap_down( subheap *sh, size_t q, size_t l)
 	int cmp = 0;
 	if (sh->var) {
 		void **nvals = (void**)vals;
- 		cmp = sh->cmp(nvals[q], nvals[l]);
+ 		cmp = sh->cmp(nvals[q], nvals[l], sh);
 	} else
-		cmp = sh->cmp(vals+(q*sh->width), vals+(l*sh->width));
+		cmp = sh->cmp(vals+(q*sh->width), vals+(l*sh->width), sh);
 
 	if (!cmp && sh->sub)
 		q = subheap_down(sh->sub, q, l);
@@ -126,9 +130,9 @@ subheap_up( subheap *sh, size_t q, size_t p)
 	int cmp = 0;
 	if (sh->var) {
 		void **nvals = (void**)vals;
- 		cmp = sh->cmp(nvals[q], nvals[p]);
+ 		cmp = sh->cmp(nvals[q], nvals[p], sh);
 	} else
-		cmp = sh->cmp(vals+(q*sh->width), vals+(p*sh->width));
+		cmp = sh->cmp(vals+(q*sh->width), vals+(p*sh->width), sh);
 
 	if (!cmp && sh->sub)
 		q = subheap_up(sh->sub, q, p);
@@ -148,9 +152,9 @@ subheap_newroot( subheap *sh, size_t p)
 	if (sh->var) {
 		void *val = BUNtvar(sh->bi, p);
 		void **nvals = (void**)vals;
- 		cmp = sh->cmp(nvals[0], val);
+ 		cmp = sh->cmp(nvals[0], val, sh);
 	} else
- 		cmp = sh->cmp(vals, ivals+(p*sh->width));
+ 		cmp = sh->cmp(vals, ivals+(p*sh->width), sh);
 	bool newroot = false;
 
 	if (!cmp && sh->sub)
@@ -261,7 +265,7 @@ heap_down_any( heapn *hp, int p)
 	int l = p*2+1, r = p*2+2, q = p;
 
 	if (l < (int)hp->used) {
-		int cmp = sh->cmp(vals[q], vals[l]);
+		int cmp = sh->cmp(vals[q], vals[l], sh);
 
 		if (!cmp && sh->sub)
 			q = subheap_down(sh->sub, q, l);
@@ -271,7 +275,7 @@ heap_down_any( heapn *hp, int p)
 			q = l;
 	}
 	if (r < (int)hp->used) {
-		int cmp = sh->cmp(vals[q], vals[r]);
+		int cmp = sh->cmp(vals[q], vals[r], sh);
 
 		if (!cmp && sh->sub)
 			q = subheap_down(sh->sub, q, r);
@@ -300,7 +304,7 @@ heap_up_any( heapn *hp, size_t p)
 		return p+1;
 	void **vals = sh->vals;
 	size_t q = (p-1)/2;
-	int cmp = sh->cmp(vals[q], vals[p]);
+	int cmp = sh->cmp(vals[q], vals[p], sh);
 
 	if (!cmp && sh->sub)
 		q = subheap_up(sh->sub, q, p);
@@ -512,14 +516,16 @@ heap_type(dbl)
 
 #define heap_type_cmp(T)						\
 static int										\
-T##_cmp##_nsmall( T *v1, T *v2 )					\
+T##_cmp##_nsmall( T *v1, T *v2, void *sh)		\
 {												\
+	(void)sh;									\
 	return (is_##T##_nil(*v1)?(!is_##T##_nil(*v2)?-1:0):(is_##T##_nil(*v2)?1:(*v1<*v2?-1:((*v1==*v2)?0:1))));	\
 }												\
 												\
 static int										\
-T##_cmp( T *v1, T *v2 )					\
+T##_cmp( T *v1, T *v2, void *sh )				\
 {												\
+	(void)sh;									\
 	return (is_##T##_nil(*v1)?(!is_##T##_nil(*v2)?1:0):(is_##T##_nil(*v2)?-1:(*v1<*v2?-1:((*v1==*v2)?0:1))));	\
 }
 
@@ -684,7 +690,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		}
 		if (sh->min) {
 			for(; i<cnt; i++) {
-				int cmp = sh->cmp(hpvals[0], BUNtvar(sh->bi, i));
+				int cmp = sh->cmp(hpvals[0], BUNtvar(sh->bi, i), sh);
 				if (cmp < 0 || (sh->sub && !cmp && subheap_newroot(sh->sub, i))) {
 					sp[j] = i;
 					dp[j] = heap_del_any(hp);
@@ -694,7 +700,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			}
    		} else {
 			for(; i<cnt; i++) {
-				int cmp = sh->cmp(hpvals[0], BUNtvar(sh->bi, i));
+				int cmp = sh->cmp(hpvals[0], BUNtvar(sh->bi, i), sh);
 				if (cmp > 0 || (sh->sub && !cmp && subheap_newroot(sh->sub, i))) {
 					sp[j] = i;
 					dp[j] = heap_del_any(hp);
@@ -748,8 +754,9 @@ _heap_create( int size, bool shared )
 }
 
 static int
-strCmp_nsmall(char *v1, char *v2)
+strCmp_nsmall(char *v1, char *v2, void *sh)
 {
+	(void)sh;
 	if (strNil(v1)) {
 		if (!strNil(v2))
 			return -1;
@@ -761,17 +768,47 @@ strCmp_nsmall(char *v1, char *v2)
 	return strCmp(v1, v2);
 }
 
+static int
+strCmp_nlarge(char *v1, char *v2, void *sh)
+{
+	(void)sh;
+	return strCmp(v1, v2);
+}
+
+static int
+any_cmp_nsmall( void *v1, void *v2, void *SH)
+{
+	subheap *sh = SH;
+	if (sh->cmp2(v1, sh->nilptr()) == 0) {
+		if (sh->cmp2(v2, sh->nilptr()) != 0)
+			return -1;
+		else
+			return 0;
+	} else if (sh->cmp2(v2, sh->nilptr()) == 0) {
+		return 1;
+	}
+	return sh->cmp2(v1, v2);
+}
+
+static int
+any_cmp_nlarge( void *v1, void *v2, void *SH)
+{
+	subheap *sh = SH;
+	return sh->cmp2(v1, v2);
+}
+
 static subheap *
 subheap_create( heapn *hp, int type, bool min /* or max */, bool nulls_last)
 {
 	subheap *sh = (subheap*)GDKzalloc(sizeof(subheap));
 	sh->type = type;
 	sh->width = ATOMsize(type);
+	sh->var = ATOMvarsized(type);
 	if (type == TYPE_str) {
 		if ((nulls_last && min) || (!nulls_last && !min)) {
 			sh->cmp = (fcmp)strCmp_nsmall;
 		} else {
-			sh->cmp = (fcmp)strCmp;
+			sh->cmp = (fcmp)strCmp_nlarge;
 		}
 	}
 	if (!sh->cmp) {
@@ -825,8 +862,14 @@ subheap_create( heapn *hp, int type, bool min /* or max */, bool nulls_last)
 			}
 		}
 	}
-	//sh->length = l;
-	sh->var = (type == TYPE_str); // TODO: handle more var types
+	if (!sh->cmp) {
+		sh->nilptr = (fnil)ATOMnilptr(type);
+		sh->cmp2 = (fcmp2)ATOMcompare(type);
+		if ((nulls_last && min) || (!nulls_last && !min))
+			sh->cmp = (fcmp)any_cmp_nsmall;
+		else
+			sh->cmp = (fcmp)any_cmp_nlarge;
+	}
 	sh->min = min;
 
 	if (!hp->sub)
