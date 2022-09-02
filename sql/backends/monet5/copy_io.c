@@ -130,7 +130,9 @@ from_stdin_read(void *restrict private, void *restrict buf, size_t elmsize, size
 
 	char *orig_buf = buf;
 	size_t orig_cnt = cnt;
-	while (cnt > 0 && state->lines_left > 0 && (bs->pos < bs->len || !bs->eof)) {
+	// While want to read more
+	while (cnt > 0 && state->lines_left > 0) {
+		// Replenish buffer if needed
 		if (bs->pos == bs->len) {
 			ssize_t nread = bstream_next(bs);
 			if (nread > 0)
@@ -150,7 +152,12 @@ from_stdin_read(void *restrict private, void *restrict buf, size_t elmsize, size
 				state->ws = NULL;
 				return -1;
 			}
-			// Maybe we reached eof, check again
+			if (nread == 0) {
+				// Client says EOF.. should we leaf bs->eof as true or clear it?
+				state->bs = NULL;
+				state->ws = NULL;
+				break;
+			}
 			continue;
 		}
 		assert(bs->pos < bs->len);
