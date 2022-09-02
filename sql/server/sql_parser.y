@@ -213,6 +213,7 @@ int yydebug=1;
 	comparison_predicate
 	control_statement
 	copyfrom_stmt
+	copyto_stmt
 	create_statement
 	datetime_funcs
 	dealloc
@@ -2709,6 +2710,7 @@ update_statement:
  | update_stmt
  | merge_stmt
  | copyfrom_stmt
+ | copyto_stmt
  ;
 
 transaction_statement:
@@ -2837,8 +2839,11 @@ copyfrom_stmt:
 	  append_int(l, $9);
 	  append_int(l, $2);
 	  $$ = _symbol_create_list( SQL_BINCOPYFROM, l ); }
+  ;
+
+copyto_stmt:
 //  1    2                    3    4      5               6        7
-  | COPY query_expression_def INTO string opt_on_location opt_seps opt_null_string
+    COPY query_expression_def INTO string opt_on_location opt_seps opt_null_string
 	{ dlist *l = L();
 	  append_symbol(l, $2);
 	  append_string(l, $4);
@@ -2855,6 +2860,14 @@ copyfrom_stmt:
 	  append_string(l, $6);
 	  append_int(l, 0);
 	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
+//  1    2                    3    4              5      6                7
+  | COPY query_expression_def INTO opt_endianness BINARY string_commalist opt_on_location
+	{ dlist *l = L();
+	  append_symbol(l, $2);
+	  append_int(l, $4);
+	  append_list(l, $6);
+	  append_int(l, $7);
+	  $$ = _symbol_create_list( SQL_BINCOPYTO, l ); }
   ;
 
 opt_fwf_widths:
@@ -6290,6 +6303,7 @@ char *token2string(tokens token)
 	SQL(ATOM);
 	SQL(BETWEEN);
 	SQL(BINCOPYFROM);
+	SQL(BINCOPYTO);
 	SQL(BINOP);
 	SQL(CACHE);
 	SQL(CALL);
