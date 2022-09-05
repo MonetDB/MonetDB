@@ -2922,7 +2922,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		return rel2bin_antijoin(be, rel, refs);
 
 	int neededpp = rel->spb && get_need_pipeline(be);
-	if (rel->partition == 1) {
+	if (rel->partition == 1 || rel->op == op_anti) {
 		if (rel->r) { /* first construct the right sub relation */
 			right = subrel_bin(be, rel->r, refs);
 			right = subrel_project(be, right, refs, rel->r);
