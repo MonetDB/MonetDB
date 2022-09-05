@@ -132,6 +132,7 @@ mal_export  const char *evalRef;
 mal_export  const char *execRef;
 mal_export  const char *expandRef;
 mal_export  const char *exportOperationRef;
+mal_export  const char *export_bin_columnRef;
 mal_export  const char *export_tableRef;
 mal_export  const char *fetchRef;
 mal_export  const char *findRef;
