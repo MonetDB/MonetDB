@@ -1853,32 +1853,6 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 }
 
 static sql_rel *
-rel_output(mvc *sql, sql_rel *l, sql_exp *sep, sql_exp *rsep, sql_exp *ssep, sql_exp *null_string, sql_exp *file, sql_exp *onclient)
-{
-	sql_rel *rel = rel_create(sql->sa);
-	list *exps = new_exp_list(sql->sa);
-	if(!rel || !exps)
-		return NULL;
-
-	append(exps, sep);
-	append(exps, rsep);
-	append(exps, ssep);
-	append(exps, null_string);
-	if (file) {
-		append(exps, file);
-		append(exps, onclient);
-	}
-	rel->l = l;
-	rel->r = NULL;
-	rel->op = op_ddl;
-	rel->flag = ddl_output;
-	rel->exps = exps;
-	rel->card = 0;
-	rel->nrcols = 0;
-	return rel;
-}
-
-static sql_rel *
 copyto(sql_query *query, symbol *sq, const char *filename, dlist *seps, const char *null_string, int onclient)
 {
 	mvc *sql = query->sql;
@@ -1917,7 +1891,29 @@ copyto(sql_query *query, symbol *sq, const char *filename, dlist *seps, const ch
 					 "exists: %s", filename);
 	}
 
-	return rel_output(sql, r, tsep_e, rsep_e, ssep_e, ns_e, fname_e, oncl_e);
+	sql_rel *rel = rel_create(sql->sa);
+	list *exps = new_exp_list(sql->sa);
+	if(!rel || !exps)
+		return NULL;
+
+	// With regular COPY INTO <file>, the first argument is a string.
+	// With COPY INTO BINARY, it is an int.
+	append(exps, tsep_e);
+	append(exps, rsep_e);
+	append(exps, ssep_e);
+	append(exps, ns_e);
+	if (fname_e) {
+		append(exps, fname_e);
+		append(exps, oncl_e);
+	}
+	rel->l = r;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = ddl_output;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+	return rel;
 }
 
 static sql_rel *
@@ -1940,6 +1936,8 @@ bincopyto(sql_query *query, symbol *qry, endianness endian, dlist *filenames, in
 	if (!rel || !exps)
 		return NULL;
 
+	// With regular COPY INTO <file>, the first argument is a string.
+	// With COPY INTO BINARY, it is an int.
 	append(exps, exp_atom_int(sql->sa, endian));
 	append(exps, exp_atom_int(sql->sa, on_client));
 
