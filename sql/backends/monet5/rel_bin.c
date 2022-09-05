@@ -5784,43 +5784,78 @@ rel2bin_truncate(backend *be, sql_rel *rel)
 	return truncate;
 }
 
+static ValPtr take_atom_arg(node **n, int expected_type) {
+	sql_exp *e = (*n)->data;
+	atom *a = e->l;
+	assert(a->tpe.type->localtype == expected_type);
+	assert(!a->isnull);
+	*n = (*n)->next;
+	return &a->data;
+}
+
 static stmt *
 rel2bin_output(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
-	node *n;
-	const char *tsep, *rsep, *ssep, *ns, *fn = NULL;
-	atom *tatom, *ratom, *satom, *natom;
-	int onclient = 0;
-	stmt *s = NULL, *fns = NULL, *res = NULL;
+	stmt *sub = NULL, *fns = NULL, *res = NULL;
 	list *slist = sa_list(sql->sa);
 
 	if (rel->l)  /* first construct the sub relation */
-		s = subrel_bin(be, rel->l, refs);
-	s = subrel_project(be, s, refs, rel->l);
-	if (!s)
+		sub = subrel_bin(be, rel->l, refs);
+	sub = subrel_project(be, sub, refs, rel->l);
+	if (!sub)
 		return NULL;
 
 	if (!rel->exps)
-		return s;
-	n = rel->exps->h;
-	tatom = ((sql_exp*) n->data)->l;
-	tsep  = sa_strdup(sql->sa, tatom->isnull ? "" : tatom->data.val.sval);
-	ratom = ((sql_exp*) n->next->data)->l;
-	rsep  = sa_strdup(sql->sa, ratom->isnull ? "" : ratom->data.val.sval);
-	satom = ((sql_exp*) n->next->next->data)->l;
-	ssep  = sa_strdup(sql->sa, satom->isnull ? "" : satom->data.val.sval);
-	natom = ((sql_exp*) n->next->next->next->data)->l;
-	ns    = sa_strdup(sql->sa, natom->isnull ? "" : natom->data.val.sval);
+		return sub;
 
-	if (n->next->next->next->next) {
-		fn = E_ATOM_STRING(n->next->next->next->next->data);
-		fns = stmt_atom_string(be, sa_strdup(sql->sa, fn));
-		onclient = E_ATOM_INT(n->next->next->next->next->next->data);
+	list *arglist = rel->exps;
+	node *argnode = arglist->h;
+	atom *a = ((sql_exp*)argnode->data)->l;
+	int tpe = a->tpe.type->localtype;
+
+	// With regular COPY INTO <file>, the first argument is a string.
+	// With COPY INTO BINARY, it is an int.
+	if (tpe == TYPE_str) {
+		atom *tatom = ((sql_exp*) argnode->data)->l;
+		const char *tsep  = sa_strdup(sql->sa, tatom->isnull ? "" : tatom->data.val.sval);
+		atom *ratom = ((sql_exp*) argnode->next->data)->l;
+		const char *rsep  = sa_strdup(sql->sa, ratom->isnull ? "" : ratom->data.val.sval);
+		atom *satom = ((sql_exp*) argnode->next->next->data)->l;
+		const char *ssep  = sa_strdup(sql->sa, satom->isnull ? "" : satom->data.val.sval);
+		atom *natom = ((sql_exp*) argnode->next->next->next->data)->l;
+		const char *ns = sa_strdup(sql->sa, natom->isnull ? "" : natom->data.val.sval);
+
+		const char *fn = NULL;
+		int onclient = 0;
+		if (argnode->next->next->next->next) {
+			fn = E_ATOM_STRING(argnode->next->next->next->next->data);
+			fns = stmt_atom_string(be, sa_strdup(sql->sa, fn));
+			onclient = E_ATOM_INT(argnode->next->next->next->next->next->data);
+		}
+		stmt *export = stmt_export(be, sub, tsep, rsep, ssep, ns, onclient, fns);
+		list_append(slist, export);
+	} else if (tpe == TYPE_int) {
+		endianness endian = take_atom_arg(&argnode, TYPE_int)->val.ival;
+		int on_client = take_atom_arg(&argnode, TYPE_int)->val.ival;
+		assert(sub->type == st_list);
+		list *collist = sub->op4.lval;
+		for (node *colnode = collist->h; colnode; colnode = colnode->next) {
+			stmt *colstmt = colnode->data;
+			assert(argnode != NULL);
+			const char *filename = take_atom_arg(&argnode, TYPE_str)->val.sval;
+			stmt *export = stmt_export_bin(be, colstmt, endian, filename, on_client);
+			list_append(slist, export);
+		}
+		assert(argnode == NULL);
+
+	} else {
+		assert(0 && "unimplemented export statement type");
+		return sub;
 	}
-	list_append(slist, stmt_export(be, s, tsep, rsep, ssep, ns, onclient, fns));
-	if (s->type == st_list && ((stmt*)s->op4.lval->h->data)->nrcols != 0) {
-		res = stmt_aggr(be, s->op4.lval->h->data, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
+
+	if (sub->type == st_list && ((stmt*)sub->op4.lval->h->data)->nrcols != 0) {
+		res = stmt_aggr(be, sub->op4.lval->h->data, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
 	} else {
 		res = stmt_atom_lng(be, 1);
 	}

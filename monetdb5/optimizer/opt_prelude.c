@@ -135,6 +135,7 @@ const char *evalRef;
 const char *execRef;
 const char *expandRef;
 const char *exportOperationRef;
+const char *export_bin_columnRef;
 const char *export_tableRef;
 const char *fetchRef;
 const char *findRef;
@@ -450,6 +451,7 @@ void optimizerInit(void)
 	execRef = putName("exec");
 	expandRef = putName("expand");
 	exportOperationRef = putName("exportOperation");
+	export_bin_columnRef = "export_bin_column";
 	export_tableRef = putName("export_table");
 	fetchRef = putName("fetch");
 	findRef = putName("find");

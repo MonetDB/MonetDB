@@ -2610,6 +2610,27 @@ stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char 
 }
 
 stmt *
+stmt_export_bin(backend *be, stmt *colstmt, endianness endian, const char *filename, int on_client)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q;
+
+
+	q = newStmt(mb, sqlRef, export_bin_columnRef);
+	pushArgument(mb, q, colstmt->nr);
+	pushInt(mb, q, endian);
+	pushStr(mb, q, filename);
+	pushInt(mb, q, on_client);
+
+	stmt *s = stmt_create(be->mvc->sa, st_export);
+	if (!s)
+		return NULL;
+
+	s->q = q;
+	return s;
+}
+
+stmt *
 stmt_trans(backend *be, int type, stmt *chain, stmt *name)
 {
 	MalBlkPtr mb = be->mb;
