@@ -627,7 +627,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	subheap *sh = hp->sub;
 
 	if (!private) {
-		while(hps->unused != pp->wid) ;
+		while(hps->unused != pp->wid) MT_sleep_ms(10);
 	}
 
 	if (!private)
@@ -1141,7 +1141,7 @@ HEAPproject(bat *rid, bat *cand, bat *del, bat *ins, bat *in, lng *n, const ptr 
 	bool private = (!r || r->T.private_bat), local_storage = false;
 
 	if (!private) {
-		while(r->unused != p->wid) ;
+		while(r->unused != p->wid) MT_sleep_ms(10);
 	}
 
 	if (!err && r && BATcount(b)) {
