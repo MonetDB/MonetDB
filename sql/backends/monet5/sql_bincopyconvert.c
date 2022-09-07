@@ -17,7 +17,7 @@
 #include "mal_interpreter.h"
 
 static str
-convert_bit(void *dst_, void *src_, size_t count, bool byteswap)
+validate_bit(void *dst_, void *src_, size_t count, bool byteswap)
 {
 	(void)byteswap;
 	unsigned char *dst = dst_;
@@ -32,7 +32,7 @@ convert_bit(void *dst_, void *src_, size_t count, bool byteswap)
 }
 
 static str
-convert_sht(void *dst_, void *src_, size_t count, bool byteswap)
+byteswap_sht(void *dst_, void *src_, size_t count, bool byteswap)
 {
 	assert(byteswap); // otherwise, why call us?
 	sht *dst = dst_;
@@ -43,7 +43,7 @@ convert_sht(void *dst_, void *src_, size_t count, bool byteswap)
 }
 
 static str
-convert_int(void *dst_, void *src_, size_t count, bool byteswap)
+byteswap_int(void *dst_, void *src_, size_t count, bool byteswap)
 {
 	assert(byteswap); // otherwise, why call us?
 	int *dst = dst_;
@@ -54,7 +54,7 @@ convert_int(void *dst_, void *src_, size_t count, bool byteswap)
 }
 
 static str
-convert_lng(void *dst_, void *src_, size_t count, bool byteswap)
+byteswap_lng(void *dst_, void *src_, size_t count, bool byteswap)
 {
 	assert(byteswap); // otherwise, why call us?
 	lng *dst = dst_;
@@ -66,7 +66,7 @@ convert_lng(void *dst_, void *src_, size_t count, bool byteswap)
 
 #ifdef HAVE_HGE
 static str
-convert_hge(void *dst_, void *src_, size_t count, bool byteswap)
+byteswap_hge(void *dst_, void *src_, size_t count, bool byteswap)
 {
 	assert(byteswap); // otherwise, why call us?
 	hge *dst = dst_;
@@ -78,7 +78,7 @@ convert_hge(void *dst_, void *src_, size_t count, bool byteswap)
 #endif
 
 static str
-convert_flt(void *dst_, void *src_, size_t count, bool byteswap)
+byteswap_flt(void *dst_, void *src_, size_t count, bool byteswap)
 {
 	// Verify that size and alignment requirements of flt do not exceed int
 	assert(sizeof(uint32_t) == sizeof(flt));
@@ -93,7 +93,7 @@ convert_flt(void *dst_, void *src_, size_t count, bool byteswap)
 }
 
 static str
-convert_dbl(void *dst_, void *src_, size_t count, bool byteswap)
+byteswap_dbl(void *dst_, void *src_, size_t count, bool byteswap)
 {
 	// Verify that size and alignment requirements of dbl do not exceed lng
 	assert(sizeof(uint64_t) == sizeof(dbl));
@@ -109,7 +109,7 @@ convert_dbl(void *dst_, void *src_, size_t count, bool byteswap)
 
 
 static str
-convert_date(void *dst_, void *src_, size_t count, bool byteswap)
+decode_date(void *dst_, void *src_, size_t count, bool byteswap)
 {
 	date *dst = dst_;
 	copy_binary_date *src = src_;
@@ -127,7 +127,26 @@ convert_date(void *dst_, void *src_, size_t count, bool byteswap)
 }
 
 static str
-convert_time(void *dst_, void *src_, size_t count, bool byteswap)
+encode_date(void *dst_, void *src_, size_t count, bool byteswap)
+{
+	copy_binary_date *dst = dst_;
+	date *src = src_;
+	for (size_t i = 0; i < count; i++) {
+		date dt = *src++;
+		int16_t year = date_year(dt);
+		if (byteswap)
+			year = copy_binary_byteswap16(year);
+		*dst++ = (copy_binary_date){
+			.day = date_day(dt),
+			.month = date_month(dt),
+			.year = year,
+		};
+	}
+	return MAL_SUCCEED;
+}
+
+static str
+decode_time(void *dst_, void *src_, size_t count, bool byteswap)
 {
 	daytime *dst = dst_;
 	copy_binary_time *src = src_;
@@ -145,7 +164,27 @@ convert_time(void *dst_, void *src_, size_t count, bool byteswap)
 }
 
 static str
-convert_timestamp(void *dst_, void *src_, size_t count, bool byteswap)
+encode_time(void *dst_, void *src_, size_t count, bool byteswap)
+{
+	copy_binary_time *dst = dst_;
+	daytime *src = src_;
+	for (size_t i = 0; i < count; i++) {
+		daytime tm = *src++;
+		uint32_t ms = daytime_usec(tm);
+		if (byteswap)
+			ms = copy_binary_byteswap32(ms);
+		*dst++ = (copy_binary_time){
+			.ms = ms,
+			.seconds = daytime_sec(tm),
+			.minutes = daytime_min(tm),
+			.hours = daytime_hour(tm),
+		};
+	}
+	return MAL_SUCCEED;
+}
+
+static str
+decode_timestamp(void *dst_, void *src_, size_t count, bool byteswap)
 {
 	timestamp *dst = dst_;
 	copy_binary_timestamp *src = src_;
@@ -160,6 +199,39 @@ convert_timestamp(void *dst_, void *src_, size_t count, bool byteswap)
 		daytime tm = daytime_create(incoming.time.hours, incoming.time.minutes, incoming.time.seconds, incoming.time.ms);
 		timestamp value = timestamp_create(dt, tm);
 		*dst++ = value;
+	}
+	return MAL_SUCCEED;
+}
+
+
+static str
+encode_timestamp(void *dst_, void *src_, size_t count, bool byteswap)
+{
+	copy_binary_timestamp *dst = dst_;
+	timestamp *src = src_;
+	for (size_t i = 0; i < count; i++) {
+		timestamp value = *src++;
+		date dt = timestamp_date(value);
+		daytime tm = timestamp_daytime(value);
+		int16_t year = date_year(dt);
+		uint32_t ms = daytime_usec(tm);
+		if (byteswap) {
+			ms = copy_binary_byteswap32(ms);
+			year = copy_binary_byteswap16(year);
+		}
+		*dst++ = (copy_binary_timestamp) {
+			.time = {
+				.ms = ms,
+				.seconds = daytime_sec(tm),
+				.minutes = daytime_min(tm),
+				.hours = daytime_hour(tm),
+			},
+			.date = {
+				.day = date_day(dt),
+				.month = date_month(dt),
+				.year = year,
+			},
+		};
 	}
 	return MAL_SUCCEED;
 }
@@ -292,25 +364,25 @@ static struct type_record_t type_recs[] = {
 	// no conversion, no byteswapping
 	{ "bte", "bte", .decoder=NULL, },
 	{ "uuid", "uuid", .decoder=NULL, },
-	// no conversion and no byteswapping but we must do range checking
-	{ "bit", "bit", .trivial_if_no_byteswap=false, .decoder=convert_bit, },
+	// no conversion and no byteswapping but we must do range checking on loading
+	{ "bit", "bit", .trivial_if_no_byteswap=false, .decoder=validate_bit, .encoder=NULL},
 	//
-	{ "sht", "sht", .trivial_if_no_byteswap=true, .decoder=convert_sht, },
-	{ "int", "int", .trivial_if_no_byteswap=true, .decoder=convert_int, },
-	{ "lng", "lng", .trivial_if_no_byteswap=true, .decoder=convert_lng, },
-	{ "flt", "flt", .trivial_if_no_byteswap=true, .decoder=convert_flt, },
-	{ "dbl", "dbl", .trivial_if_no_byteswap=true, .decoder=convert_dbl, },
+	{ "sht", "sht", .trivial_if_no_byteswap=true, .decoder=byteswap_sht, .encoder=byteswap_sht},
+	{ "int", "int", .trivial_if_no_byteswap=true, .decoder=byteswap_int, .encoder=byteswap_int},
+	{ "lng", "lng", .trivial_if_no_byteswap=true, .decoder=byteswap_lng, .encoder=byteswap_lng},
+	{ "flt", "flt", .trivial_if_no_byteswap=true, .decoder=byteswap_flt, .encoder=byteswap_flt},
+	{ "dbl", "dbl", .trivial_if_no_byteswap=true, .decoder=byteswap_dbl, .encoder=byteswap_dbl},
 #ifdef HAVE_HGE
-	{ "hge", "hge", .trivial_if_no_byteswap=true, .decoder=convert_hge, },
+	{ "hge", "hge", .trivial_if_no_byteswap=true, .decoder=byteswap_hge, .encoder=byteswap_hge},
 #endif
 	//
 	{ "str", "str", .loader=load_zero_terminated_text },
 	{ "url", "url", .loader=load_zero_terminated_text },
 	{ "json", "json", .loader=load_zero_terminated_text },
 	//
-	{ "date", "date", .decoder=convert_date, .record_size=sizeof(copy_binary_date), },
-	{ "daytime", "daytime", .decoder=convert_time, .record_size=sizeof(copy_binary_time), },
-	{ "timestamp", "timestamp", .decoder=convert_timestamp, .record_size=sizeof(copy_binary_timestamp), },
+	{ "date", "date", .decoder=decode_date, .encoder=encode_date, .record_size=sizeof(copy_binary_date), },
+	{ "daytime", "daytime", .decoder=decode_time, .encoder=encode_time, .record_size=sizeof(copy_binary_time), },
+	{ "timestamp", "timestamp", .decoder=decode_timestamp, .encoder=encode_timestamp, .record_size=sizeof(copy_binary_timestamp), },
 };
 
 
