@@ -2610,7 +2610,7 @@ stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char 
 }
 
 stmt *
-stmt_export_bin(backend *be, stmt *colstmt, endianness endian, const char *filename, int on_client)
+stmt_export_bin(backend *be, stmt *colstmt, bool byteswap, const char *filename, int on_client)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
@@ -2618,7 +2618,7 @@ stmt_export_bin(backend *be, stmt *colstmt, endianness endian, const char *filen
 
 	q = newStmt(mb, sqlRef, export_bin_columnRef);
 	pushArgument(mb, q, colstmt->nr);
-	pushInt(mb, q, endian);
+	pushBit(mb, q, byteswap);
 	pushStr(mb, q, filename);
 	pushInt(mb, q, on_client);
 

@@ -172,7 +172,7 @@ extern stmt *stmt_replace(backend *be, stmt *c, stmt *id, stmt *val);
 extern stmt *stmt_table_clear(backend *be, sql_table *t, int restart_sequences);
 
 extern stmt *stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, int onclient, stmt *file);
-extern stmt *stmt_export_bin(backend *be, stmt *colstmt, endianness endian, const char *filename, int on_client);
+extern stmt *stmt_export_bin(backend *be, stmt *colstmt, bool byteswap, const char *filename, int on_client);
 extern stmt *stmt_trans(backend *b, int type, stmt *chain, stmt *name);
 extern stmt *stmt_catalog(backend *be, int type, stmt *args);
 
