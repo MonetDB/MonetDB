@@ -233,6 +233,7 @@ append_text(BAT *bat, char *start)
 static str
 load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached)
 {
+	const char *mal_operator = "sql.importColumn";
 	str msg = MAL_SUCCEED;
 	bstream *bs = NULL;
 
@@ -287,7 +288,7 @@ end:
 
 
 
-static struct type_rec type_recs[] = {
+static struct type_record_t type_recs[] = {
 	// no conversion, no byteswapping
 	{ "bte", "bte", .decoder=NULL, },
 	{ "uuid", "uuid", .decoder=NULL, },
@@ -313,11 +314,11 @@ static struct type_rec type_recs[] = {
 };
 
 
-struct type_rec*
-find_type_rec(str name)
+type_record_t*
+find_type_rec(const char *name)
 {
-	struct type_rec *end = (struct type_rec*)((char *)type_recs + sizeof(type_recs));
-	for (struct type_rec *t = &type_recs[0]; t < end; t++)
+	struct type_record_t *end = (struct type_record_t*)((char *)type_recs + sizeof(type_recs));
+	for (struct type_record_t *t = &type_recs[0]; t < end; t++)
 		if (strcmp(t->method, name) == 0)
 			return t;
 	return NULL;
