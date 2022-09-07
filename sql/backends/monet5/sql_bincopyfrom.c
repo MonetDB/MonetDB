@@ -217,7 +217,7 @@ import_column(backend *be, bat *ret, BUN *retcnt, str method, bool byteswap, str
 	int eof_reached = -1; // 1 = read to the end; 0 = stopped reading early; -1 = unset, a bug.
 
 	// This one is not managed by the end: block
-	stream *s;
+	stream *s = NULL;
 
 	// Set safe values
 	*ret = 0;
@@ -325,8 +325,7 @@ end:
 static str
 dump_trivial(BAT *b, stream *s)
 {
-	int tpe = BATttype(b);
-	assert(!ATOMvarsized(tpe));
+	assert(!ATOMvarsized(BATttype(b)));
 
 	return write_out(Tloc(b, 0), Tloc(b, BATcount(b)), s);
 }

@@ -5787,7 +5787,7 @@ rel2bin_truncate(backend *be, sql_rel *rel)
 static ValPtr take_atom_arg(node **n, int expected_type) {
 	sql_exp *e = (*n)->data;
 	atom *a = e->l;
-	assert(a->tpe.type->localtype == expected_type);
+	assert(a->tpe.type->localtype == expected_type); (void) expected_type;
 	assert(!a->isnull);
 	*n = (*n)->next;
 	return &a->data;
