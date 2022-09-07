@@ -5837,6 +5837,11 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 		list_append(slist, export);
 	} else if (tpe == TYPE_int) {
 		endianness endian = take_atom_arg(&argnode, TYPE_int)->val.ival;
+#ifdef WORDS_BIGENDIAN
+		bool do_byteswap = endian == endian_little;
+#else
+		bool do_byteswap = endian == endian_big;
+#endif
 		int on_client = take_atom_arg(&argnode, TYPE_int)->val.ival;
 		assert(sub->type == st_list);
 		list *collist = sub->op4.lval;
@@ -5844,7 +5849,7 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 			stmt *colstmt = colnode->data;
 			assert(argnode != NULL);
 			const char *filename = take_atom_arg(&argnode, TYPE_str)->val.sval;
-			stmt *export = stmt_export_bin(be, colstmt, endian, filename, on_client);
+			stmt *export = stmt_export_bin(be, colstmt, do_byteswap, filename, on_client);
 			list_append(slist, export);
 		}
 		assert(argnode == NULL);
