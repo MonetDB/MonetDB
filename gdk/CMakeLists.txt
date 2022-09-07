@@ -40,7 +40,11 @@ target_sources(bat
   PRIVATE
   gdk_select.c
   gdk_calc.c gdk_calc.h
-  gdk_calc_addsub.c gdk_calc_mul.c gdk_calc_div.c gdk_calc_mod.c gdk_calc_convert.c gdk_calc_compare.c
+gdk_calc_addsub.c gdk_calc_mul.c gdk_calc_div.c gdk_calc_mod.c gdk_calc_convert.c
+gdk_calc_compare_lt.c gdk_calc_compare_gt.c
+gdk_calc_compare_le.c gdk_calc_compare_ge.c
+gdk_calc_compare_eq.c gdk_calc_compare_ne.c
+gdk_calc_compare_generic.c
   gdk_calc_compare.h gdk_calc_private.h
   gdk_ssort.c gdk_ssort_impl.h
   gdk_aggr.c
