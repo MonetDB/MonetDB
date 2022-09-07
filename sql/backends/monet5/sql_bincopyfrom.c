@@ -21,7 +21,7 @@
 
 
 static str
-BATattach_as_bytes(BAT *bat, stream *s, bool byteswap, BUN rows_estimate, str (*fixup)(void*,void*,bool), int *eof_seen)
+load_trivial(BAT *bat, stream *s, BUN rows_estimate, int *eof_seen)
 {
 	str msg = MAL_SUCCEED;
 	int tt = BATttype(bat);
@@ -46,7 +46,7 @@ BATattach_as_bytes(BAT *bat, stream *s, bool byteswap, BUN rows_estimate, str (*
 		BUN validCount = bat->batCount;
 		BUN newCount = validCount + n;
 		if (BATextend(bat, newCount) != GDK_SUCCEED)
-			bailout("BATattach_as_bytes: %s", GDK_EXCEPTION);
+			bailout("load_trivial: %s", GDK_EXCEPTION);
 
 		// Read into the newly allocated space
 		char *start = Tloc(bat, validCount);
@@ -55,18 +55,17 @@ BATattach_as_bytes(BAT *bat, stream *s, bool byteswap, BUN rows_estimate, str (*
 		while (cur < end) {
 			ssize_t nread = mnstr_read(s, cur, 1, end - cur);
 			if (nread < 0)
-				bailout("BATattach_as_bytes: %s", mnstr_peek_error(s));
+				bailout("load_trivial: %s", mnstr_peek_error(s));
 			if (nread == 0) {
 				eof = true;
 				size_t tail = (cur - start) % asz;
 				if (tail != 0) {
-					bailout("BATattach_as_bytes: final item incomplete: %d bytes instead of %d", (int) tail, (int) asz);
+					bailout("load_trivial: final item incomplete: %d bytes instead of %d", (int) tail, (int) asz);
 				}
 				end = cur;
 			}
 			cur += (size_t) nread;
 		}
-		msg = fixup(start, end, byteswap);
 		if (msg != NULL)
 			goto end;
 		BUN actualCount = validCount + (end - start) / asz;
@@ -93,10 +92,15 @@ end:
 }
 
 static str
-BATattach_fixed_width(BAT *bat, stream *s, bool byteswap, str (*convert)(void*,void*,void*,void*,bool), size_t record_size, int *eof_reached)
+load_fixed_width(BAT *bat, stream *s, bool byteswap, bincopy_decoder_t convert, size_t record_size, int *eof_reached)
 {
 	str msg = MAL_SUCCEED;
 	bstream *bs = NULL;
+
+	if (record_size == 0) {
+		int tt = BATttype(bat);
+		record_size = (size_t) ATOMsize(tt);
+	}
 
 	size_t chunk_size = 1<<20;
 	assert(record_size > 0);
@@ -122,10 +126,7 @@ BATattach_fixed_width(BAT *bat, stream *s, bool byteswap, str (*convert)(void*,v
 		if (BATextend(bat, newCount) != GDK_SUCCEED)
 			bailout("%s", GDK_EXCEPTION);
 
-		msg = convert(
-			Tloc(bat, count), Tloc(bat, newCount),
-			&bs->buf[bs->pos], &bs->buf[bs->pos + extent],
-			byteswap);
+		msg = convert(Tloc(bat, count), &bs->buf[bs->pos], n, byteswap);
 		if (msg != MAL_SUCCEED)
 			goto end;
 		BATsetcount(bat, newCount);
@@ -165,15 +166,21 @@ load_column(struct type_rec *rec, const char *name, BAT *bat, stream *s, bool by
 
 	orig_count = BATcount(bat);
 
-	if (rec->loader != NULL) {
+	// cannot have loader AND converter
+	assert(rec->decoder == NULL || rec->loader == NULL);
+
+	// loaders cannot be trivial
+	assert( rec->loader == NULL || !rec->trivial_if_no_byteswap);
+
+	if (rec->loader) {
 		msg = rec->loader(bat, s, eof_reached);
-	} else if (rec->convert_in_place != NULL) {
-		msg = BATattach_as_bytes(bat, s, byteswap, rows_estimate, rec->convert_in_place, eof_reached);
-	} else if (rec->convert_fixed_width != NULL) {
-		msg = BATattach_fixed_width(bat, s, byteswap, rec->convert_fixed_width, rec->record_size, eof_reached);
+	} else if (rec->decoder == NULL || (rec->trivial_if_no_byteswap && !byteswap)) {
+		// load the bytes directly into the bat, as-is
+		msg = load_trivial(bat, s, rows_estimate, eof_reached);
 	} else {
-		*eof_reached = 0;
-		bailout("invalid loader configuration for '%s'", rec->method);
+		// load the bytes into an intermediate buffer and use the converter to
+		// move them to the BAT
+		msg = load_fixed_width(bat, s, byteswap, rec->decoder, rec->record_size, eof_reached);
 	}
 
 	new_count = BATcount(bat);
