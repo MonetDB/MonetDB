@@ -170,7 +170,7 @@ load_column(type_record_t *rec, const char *name, BAT *bat, stream *s, bool byte
 
 	orig_count = BATcount(bat);
 
-	// cannot have loader AND converter
+	// cannot have loader AND decoder
 	assert(rec->decoder == NULL || rec->loader == NULL);
 
 	// loaders cannot be trivial
@@ -303,21 +303,13 @@ mvc_bin_import_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 
 
-
-
 static str
-dump_trivial(BAT *b, stream *s)
+write_out(const char *start, const char *end, stream *s)
 {
 	const char *mal_operator = "sql.export_bin_column";
 	str msg = MAL_SUCCEED;
 
-	int tpe = BATttype(b);
-	assert(!ATOMvarsized(tpe));
-
-	char *start = Tloc(b, 0);
-	char *end = Tloc(b, BATcount(b));
-
-	char *p = start;
+	const char *p = start;
 	while (p < end) {
 		ssize_t nwritten = mnstr_write(s, p, 1, end - p);
 		if (nwritten < 0)
@@ -326,21 +318,55 @@ dump_trivial(BAT *b, stream *s)
 			bailout("Unexpected EOF on %s", mnstr_name(s));
 		p += nwritten;
 	}
-
 end:
 	return msg;
+}
+
+static str
+dump_trivial(BAT *b, stream *s)
+{
+	int tpe = BATttype(b);
+	assert(!ATOMvarsized(tpe));
+
+	return write_out(Tloc(b, 0), Tloc(b, BATcount(b)), s);
 }
 
 static str
 dump_fixed_width(BAT *b, stream *s, bool byteswap, bincopy_encoder_t encoder, size_t record_size)
 {
 	const char *mal_operator = "sql.export_bin_column";
-	(void)b;
-	(void)s;
-	(void)byteswap;
-	(void)encoder;
-	(void)record_size;
-	throw(SQL, mal_operator, "dump_fixed_width not implemented");
+	str msg = MAL_SUCCEED;
+	char *buffer = NULL;
+
+	if (record_size == 0) {
+		int tt = BATttype(b);
+		record_size = (size_t) ATOMsize(tt);
+	}
+	size_t buffer_size = 1024 * 1024;
+	BUN batch_size = buffer_size / record_size;
+	if (batch_size > BATcount(b))
+		batch_size = BATcount(b);
+	buffer_size = batch_size * record_size;
+	buffer = GDKmalloc(buffer_size);
+	if (buffer == NULL)
+		bailout(MAL_MALLOC_FAIL);
+
+	BUN n;
+	for (BUN pos = 0; pos < BATcount(b); pos += n) {
+		n = BATcount(b) - pos;
+		if (n > batch_size)
+			n = batch_size;
+		msg = encoder(buffer, Tloc(b, pos), n, byteswap);
+		if (msg != MAL_SUCCEED)
+			goto end;
+		msg = write_out(buffer, buffer + n * record_size, s);
+		if (msg != MAL_SUCCEED)
+			goto end;
+	}
+
+end:
+	GDKfree(buffer);
+	return msg;
 }
 
 static str
@@ -348,14 +374,14 @@ dump_column(const struct type_record_t *rec, BAT *b, bool byteswap, stream *s)
 {
 	str msg = MAL_SUCCEED;
 
-	// cannot have loader AND converter
-	assert(rec->decoder == NULL || rec->loader == NULL);
+	// cannot have dumper AND encoder
+	assert(rec->encoder == NULL || rec->dumper == NULL);
 
-	// loaders cannot be trivial
-	assert( rec->loader == NULL || !rec->trivial_if_no_byteswap);
+	// dumpers cannot be trivial
+	assert( rec->dumper == NULL || !rec->trivial_if_no_byteswap);
 
 	// Temporary measure while not all dumpers have been implemented
-	assert(rec->dumper || rec->encoder || rec->trivial_if_no_byteswap || BATttype(b) == TYPE_bit);
+	assert(rec->dumper || rec->encoder || BATttype(b) == TYPE_bit);
 
 	if (rec->dumper) {
 		msg = rec->dumper(b, s);
