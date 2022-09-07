@@ -70,6 +70,7 @@ typedef struct subheap {
 	int type;
 	int width;
 	bool min;	/* or max heap */
+	bool nlarge;
 	bool var;
 	bool external;
 } subheap;
@@ -358,8 +359,55 @@ heap_ins_any( heapn *hp, size_t pos)
 	return heap_up_any(hp, p);
 }
 
+static int heap_up_lng( heapn *hp, size_t p);
+
+static gid
+heap_ins_void( heapn *hp, size_t pos, oid val)
+{
+	subheap *sh = hp->sub;
+	oid *vals = sh->vals;
+	size_t p = hp->used;
+
+	assert(p < hp->size);
+	vals[p] = val;
+	if (sh->sub)
+		subheap_ins( sh->sub, pos, p);
+	hp->used++;
+	return heap_up_lng(hp, p);
+}
+
 #define any_min_op(cmp) cmp < 0
 #define any_max_op(cmp) cmp > 0
+
+/* The 2 have 2 compare functions one for nil as largest value (default) and one for nil as smallest value */
+
+#define type_cmp(T,l,r) (is_##T##_nil(l)?(!is_##T##_nil(r)?1:0):(is_##T##_nil(r)?-1:(l<r?-1:((l==r)?0:1))))
+
+#define type_cmp_nsmall(T,l,r) (is_##T##_nil(l)?(!is_##T##_nil(r)?-1:0):(is_##T##_nil(r)?1:(l<r?-1:((l==r)?0:1))))
+
+#define heap_type_cmp(T)						\
+static int										\
+T##_cmp##_nsmall( T *v1, T *v2, void *sh)		\
+{												\
+	(void)sh;									\
+	return (is_##T##_nil(*v1)?(!is_##T##_nil(*v2)?-1:0):(is_##T##_nil(*v2)?1:(*v1<*v2?-1:((*v1==*v2)?0:1))));	\
+}												\
+												\
+static int										\
+T##_cmp( T *v1, T *v2, void *sh )				\
+{												\
+	(void)sh;									\
+	return (is_##T##_nil(*v1)?(!is_##T##_nil(*v2)?1:0):(is_##T##_nil(*v2)?-1:(*v1<*v2?-1:((*v1==*v2)?0:1))));	\
+}
+
+heap_type_cmp(bte)
+heap_type_cmp(sht)
+heap_type_cmp(int)
+heap_type_cmp(lng)
+heap_type_cmp(hge)
+heap_type_cmp(flt)
+heap_type_cmp(dbl)
+
 
 #define heap_type(T) 						\
 								\
@@ -371,7 +419,7 @@ heap_down_##T( heapn *hp, size_t p)				\
 	size_t l = p*2+1, r = p*2+2, q = p;			\
 								\
 	if (l < hp->used) {					\
-		T cmp = (vals[q] - vals[l]); 			\
+		T cmp = sh->nlarge?type_cmp(T, vals[q] , vals[l]):type_cmp_nsmall(T, vals[q], vals[l]); 			\
 								\
 		if (!cmp && sh->sub)				\
 			q = subheap_down(sh->sub, q, l);	\
@@ -381,7 +429,7 @@ heap_down_##T( heapn *hp, size_t p)				\
 			q = l;					\
 	}							\
 	if (r < hp->used) {					\
-		T cmp = (vals[q] - vals[r]); 			\
+		T cmp = sh->nlarge?type_cmp(T, vals[q] , vals[r]):type_cmp_nsmall(T, vals[q], vals[r]); 			\
 								\
 		if (!cmp && sh->sub)				\
 			q = subheap_down(sh->sub, q, r);	\
@@ -410,7 +458,7 @@ heap_up_##T( heapn *hp, size_t p)				\
 		return p+1;					\
 	T *vals = sh->vals;					\
 	size_t q = (p-1)/2;					\
-	T cmp = (vals[q] - vals[p]); 				\
+	T cmp = sh->nlarge?type_cmp(T, vals[q] , vals[p]):type_cmp_nsmall(T, vals[q], vals[p]); 			\
 								\
 	if (!cmp && sh->sub)					\
 		q = subheap_up(sh->sub, q, p);			\
@@ -481,9 +529,32 @@ topn_##T( size_t n, oid *sel, oid *del, oid *ins, heapn *hp)			\
 		}					\
 		j = i;					\
 	}						\
-	if (sh->min) {					\
+	if (sh->nlarge) {					\
+		if (sh->min) {					\
+			for(; i<n; i++) {						\
+				int c = type_cmp(T, hpvals[0], vals[i]);	\
+				if (c < 0 || (sh->sub && c == 0 && subheap_newroot(sh->sub, i))) {	\
+					sel[j] = i;					\
+					del[j] = heap_del_##T(hp);			\
+					ins[j] = heap_ins_##T(hp, i);			\
+					j++;						\
+				}				\
+			}					\
+		} else {					\
+			for(; i<n; i++) {						\
+				int c = type_cmp(T, hpvals[0], vals[i]);	\
+				if (c > 0 || (sh->sub && c == 0 && subheap_newroot(sh->sub, i))) {	\
+					sel[j] = i;					\
+					del[j] = heap_del_##T(hp);			\
+					ins[j] = heap_ins_##T(hp, i);			\
+					j++;						\
+				}				\
+			}					\
+		} \
+	} else if (sh->min) {					\
 		for(; i<n; i++) {						\
-			if (hpvals[0] < vals[i] || (sh->sub && hpvals[0] == vals[i] && subheap_newroot(sh->sub, i))) {	\
+			int c = type_cmp_nsmall(T, hpvals[0], vals[i]);	\
+			if (c < 0 || (sh->sub && c == 0 && subheap_newroot(sh->sub, i))) {	\
 				sel[j] = i;					\
 				del[j] = heap_del_##T(hp);			\
 				ins[j] = heap_ins_##T(hp, i);			\
@@ -492,7 +563,8 @@ topn_##T( size_t n, oid *sel, oid *del, oid *ins, heapn *hp)			\
 		}					\
 	} else {					\
 		for(; i<n; i++) {						\
-			if (hpvals[0] > vals[i] || (sh->sub && hpvals[0] == vals[i] && subheap_newroot(sh->sub, i))) {	\
+			int c = type_cmp_nsmall(T, hpvals[0], vals[i]);	\
+			if (c > 0 || (sh->sub && c == 0 && subheap_newroot(sh->sub, i))) {	\
 				sel[j] = i;					\
 				del[j] = heap_del_##T(hp);			\
 				ins[j] = heap_ins_##T(hp, i);			\
@@ -511,31 +583,6 @@ heap_type(lng)
 heap_type(hge)
 heap_type(flt)
 heap_type(dbl)
-
-/* The 2 have 2 compare functions one for nil as largest value (default) and one for nil as smallest value */
-
-#define heap_type_cmp(T)						\
-static int										\
-T##_cmp##_nsmall( T *v1, T *v2, void *sh)		\
-{												\
-	(void)sh;									\
-	return (is_##T##_nil(*v1)?(!is_##T##_nil(*v2)?-1:0):(is_##T##_nil(*v2)?1:(*v1<*v2?-1:((*v1==*v2)?0:1))));	\
-}												\
-												\
-static int										\
-T##_cmp( T *v1, T *v2, void *sh )				\
-{												\
-	(void)sh;									\
-	return (is_##T##_nil(*v1)?(!is_##T##_nil(*v2)?1:0):(is_##T##_nil(*v2)?-1:(*v1<*v2?-1:((*v1==*v2)?0:1))));	\
-}
-
-heap_type_cmp(bte)
-heap_type_cmp(sht)
-heap_type_cmp(int)
-heap_type_cmp(lng)
-heap_type_cmp(hge)
-heap_type_cmp(flt)
-heap_type_cmp(dbl)
 
 #define HEAP_SINK 3
 
@@ -584,6 +631,47 @@ HEAPnew_topn( MalStkPtr s, InstrPtr p, heapn *hp, lng n, BAT *b, bit min, bit nu
 	else
 		heap_destroy(hp);
 	return b;
+}
+
+static int
+topn_void( size_t n, oid *sel, oid *del, oid *ins, heapn *hp)
+{
+	size_t i = 0, j = 0;
+
+	subheap *sh = hp->sub;
+	oid *hpvals = sh->vals;
+	oid val = sh->bi.tseq;
+
+	if (hp->used < hp->size) {
+		for(i=0; i<n && hp->used < hp->size ; i++) {
+			sel[i] = i;
+			ins[i] = heap_ins_void(hp, i, val+i);
+			del[i] = hp->size+1;
+		}
+		j = i;
+	}
+	if (sh->min) {
+		for(; i<n; i++) {
+			int c = hpvals[0] - val+i;
+			if (c < 0 || (sh->sub && c == 0 && subheap_newroot(sh->sub, i))) {
+				sel[j] = i;
+				del[j] = heap_del_lng(hp);
+				ins[j] = heap_ins_void(hp, i, val+i);
+				j++;
+			}
+		}
+	} else {
+		for(; i<n; i++) {
+			int c = hpvals[0] - val + i;
+			if (c > 0 || (sh->sub && c == 0 && subheap_newroot(sh->sub, i))) {
+				sel[j] = i;
+				del[j] = heap_del_lng(hp);
+				ins[j] = heap_ins_void(hp, i, val+i);
+				j++;
+			}
+		}
+	}
+	return j;
 }
 
 /* convert into using BATsss */
@@ -658,19 +746,27 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				hps->unused++;
 			return createException(SQL, "heapn.topn",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		if (!nsh->var)
+		if (!nsh->var &&nsh->in->ttype)
 			nsh->ivals = Tloc(nsh->in, 0);
 		else
 			nsh->bi = bat_iterator(nsh->in);
 		assert(cnt == BATcount(nsh->in) && nsh->min == *getArgReference_bit(s, p, cur+1));
 	}
-	if (ATOMstorage(b->ttype) == TYPE_bte) {
+	if (!b->ttype) {
+		j = topn_void(cnt, sp, dp, ip, hp);
+	} else if (ATOMstorage(b->ttype) == TYPE_bte) {
 		j = topn_bte(cnt, sp, dp, ip, hp);
 	} else if (ATOMstorage(b->ttype) == TYPE_sht) {
 		j = topn_sht(cnt, sp, dp, ip, hp);
 	} else if (b->ttype == TYPE_int) {
 		j = topn_int(cnt, sp, dp, ip, hp);
+	} else if (b->ttype == TYPE_date) {
+		j = topn_int(cnt, sp, dp, ip, hp);
 	} else if (b->ttype == TYPE_lng) {
+		j = topn_lng(cnt, sp, dp, ip, hp);
+	} else if (b->ttype == TYPE_daytime) {
+		j = topn_lng(cnt, sp, dp, ip, hp);
+	} else if (b->ttype == TYPE_timestamp) {
 		j = topn_lng(cnt, sp, dp, ip, hp);
 	} else if (b->ttype == TYPE_hge) {
 		j = topn_hge(cnt, sp, dp, ip, hp);
@@ -757,14 +853,6 @@ static int
 strCmp_nsmall(char *v1, char *v2, void *sh)
 {
 	(void)sh;
-	if (strNil(v1)) {
-		if (!strNil(v2))
-			return -1;
-		else
-			return 0;
-	} else if (strNil(v2)) {
-		return 1;
-	}
 	return strCmp(v1, v2);
 }
 
@@ -772,6 +860,14 @@ static int
 strCmp_nlarge(char *v1, char *v2, void *sh)
 {
 	(void)sh;
+	if (strNil(v1)) {
+		if (!strNil(v2))
+			return 1;
+		else
+			return 0;
+	} else if (strNil(v2)) {
+		return -1;
+	}
 	return strCmp(v1, v2);
 }
 
@@ -779,14 +875,6 @@ static int
 any_cmp_nsmall( void *v1, void *v2, void *SH)
 {
 	subheap *sh = SH;
-	if (sh->cmp2(v1, sh->nilptr()) == 0) {
-		if (sh->cmp2(v2, sh->nilptr()) != 0)
-			return -1;
-		else
-			return 0;
-	} else if (sh->cmp2(v2, sh->nilptr()) == 0) {
-		return 1;
-	}
 	return sh->cmp2(v1, v2);
 }
 
@@ -794,6 +882,14 @@ static int
 any_cmp_nlarge( void *v1, void *v2, void *SH)
 {
 	subheap *sh = SH;
+	if (sh->cmp2(v1, sh->nilptr()) == 0) {
+		if (sh->cmp2(v2, sh->nilptr()) != 0)
+			return 1;
+		else
+			return 0;
+	} else if (sh->cmp2(v2, sh->nilptr()) == 0) {
+		return -1;
+	}
 	return sh->cmp2(v1, v2);
 }
 
@@ -837,6 +933,7 @@ subheap_create( heapn *hp, int type, bool min /* or max */, bool nulls_last)
 	#endif
 			}
 		} else {
+			sh->nlarge = true;
 			switch(sh->width) {
 			case 1:
 				sh->cmp = (fcmp)&bte_cmp;
