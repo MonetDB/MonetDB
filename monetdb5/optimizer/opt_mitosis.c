@@ -181,7 +181,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			/* the number of pieces affects SF-100, going beyond 8x increases
 			 * the optimizer costs beyond the execution time
 			 */
-			pieces = threads * ((int) ceil((double)rowcnt / m));
+			pieces = ((int) ceil((double)rowcnt / m / threads));
+			if (pieces <= threads)
+				pieces = threads;
 		} else if (rowcnt > MINPARTCNT) {
 		/* exploit parallelism, but ensure minimal partition size to
 		 * limit overhead */
