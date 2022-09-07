@@ -34,7 +34,7 @@ validate_bit(void *dst_, void *src_, size_t count, bool byteswap)
 static str
 byteswap_sht(void *dst_, void *src_, size_t count, bool byteswap)
 {
-	assert(byteswap); // otherwise, why call us?
+	assert(byteswap); (void)byteswap; // otherwise, why call us?
 	sht *dst = dst_;
 	const sht *src = src_;
 	for (size_t i = 0; i < count; i++)
@@ -45,7 +45,7 @@ byteswap_sht(void *dst_, void *src_, size_t count, bool byteswap)
 static str
 byteswap_int(void *dst_, void *src_, size_t count, bool byteswap)
 {
-	assert(byteswap); // otherwise, why call us?
+	assert(byteswap); (void)byteswap; // otherwise, why call us?
 	int *dst = dst_;
 	const int *src = src_;
 	for (size_t i = 0; i < count; i++)
@@ -56,7 +56,7 @@ byteswap_int(void *dst_, void *src_, size_t count, bool byteswap)
 static str
 byteswap_lng(void *dst_, void *src_, size_t count, bool byteswap)
 {
-	assert(byteswap); // otherwise, why call us?
+	assert(byteswap); (void)byteswap; // otherwise, why call us?
 	lng *dst = dst_;
 	const lng *src = src_;
 	for (size_t i = 0; i < count; i++)
@@ -68,7 +68,7 @@ byteswap_lng(void *dst_, void *src_, size_t count, bool byteswap)
 static str
 byteswap_hge(void *dst_, void *src_, size_t count, bool byteswap)
 {
-	assert(byteswap); // otherwise, why call us?
+	assert(byteswap); (void)byteswap; // otherwise, why call us?
 	hge *dst = dst_;
 	const hge *src = src_;
 	for (size_t i = 0; i < count; i++)
@@ -84,7 +84,7 @@ byteswap_flt(void *dst_, void *src_, size_t count, bool byteswap)
 	assert(sizeof(uint32_t) == sizeof(flt));
 	assert(sizeof(struct { char dummy; uint32_t ui; }) >= sizeof(struct { char dummy; flt f; }));
 
-	assert(byteswap); // otherwise, why call us?
+	assert(byteswap); (void)byteswap; // otherwise, why call us?
 	int *dst = dst_;
 	const int *src = src_;
 	for (size_t i = 0; i < count; i++)
@@ -99,7 +99,7 @@ byteswap_dbl(void *dst_, void *src_, size_t count, bool byteswap)
 	assert(sizeof(uint64_t) == sizeof(dbl));
 	assert(sizeof(struct { char dummy; uint64_t ui; }) >= sizeof(struct { char dummy; dbl f; }));
 
-	assert(byteswap); // otherwise, why call us?
+	assert(byteswap); (void)byteswap; // otherwise, why call us?
 	lng *dst = dst_;
 	const lng *src = src_;
 	for (size_t i = 0; i < count; i++)
