@@ -38,23 +38,30 @@
 typedef str (*bincopy_decoder_t)(void *dst,void *src, size_t count, bool byteswap);
 typedef str (*bincopy_loader_t)(BAT *bat, stream *s, int *eof_reached);
 
-struct type_rec {
+typedef str (*bincopy_encoder_t)(void *dst, void *src, size_t count, bool byteswap);
+typedef str (*bincopy_dumper_t)(BAT *bat, stream *s);
+
+struct type_record_t {
 	char *method;
 	char *gdk_type;
 	size_t record_size;
 	bool trivial_if_no_byteswap;
+
 	bincopy_decoder_t decoder;
 	bincopy_loader_t loader;
-};
 
-extern struct type_rec *find_type_rec(str name);
+	bincopy_encoder_t encoder;
+	bincopy_dumper_t dumper;
+};
+typedef const struct type_record_t type_record_t;
+
+extern type_record_t *find_type_rec(const char *name);
 
 
 #define bailout(...) do { \
-		msg = createException(MAL, "sql.importColumn", SQLSTATE(42000) __VA_ARGS__); \
+		msg = createException(MAL, mal_operator, SQLSTATE(42000) __VA_ARGS__); \
 		goto end; \
 	} while (0)
-
 
 
 #endif
