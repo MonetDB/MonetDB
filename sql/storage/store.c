@@ -4161,15 +4161,11 @@ static int
 sql_trans_drop_any_comment(sql_trans *tr, sqlid id)
 {
 	sqlstore *store = tr->store;
-	sql_schema *sys;
-	sql_column *id_col;
 	sql_table *comments;
+	sql_column *id_col;
 	oid row;
 
-	sys = find_sql_schema(tr, "sys");
-	assert(sys);
-
-	comments = find_sql_table(tr, sys, "comments");
+	comments = find_sql_table(tr, find_sql_schema(tr, "sys"), "comments");
 	if (!comments) /* for example during upgrades */
 		return 0;
 
@@ -4880,8 +4876,9 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 					  const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect)
 {
 	sqlstore *store = tr->store;
-	sql_table *sysfunc = find_sql_table(tr, find_sql_schema(tr, "sys"), "functions");
-	sql_table *sysarg = find_sql_table(tr, find_sql_schema(tr, "sys"), "args");
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_table *sysfunc = find_sql_table(tr, syss, "functions");
+	sql_table *sysarg = find_sql_table(tr, syss, "args");
 	node *n;
 	int number = 0, ftype = (int) type, flang = (int) lang, res = LOG_OK;
 	bit semantics = TRUE;
