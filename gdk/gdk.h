@@ -378,8 +378,8 @@ gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *for
 #define THRDMASK	(1)
 #define CHECKMASK	(1<<1)
 #define CHECKDEBUG	if (GDKdebug & CHECKMASK)
-#define PROPMASK	(1<<3)
-#define PROPDEBUG	if (GDKdebug & PROPMASK)
+#define PROPMASK	(1<<3)	/* unused */
+#define PROPDEBUG	if (GDKdebug & PROPMASK) /* unused */
 #define IOMASK		(1<<4)
 #define BATMASK		(1<<5)
 #define PARMASK		(1<<7)
@@ -570,7 +570,8 @@ typedef struct {
 	bool cleanhash;		/* string heaps must clean hash */
 	bool dirty;		/* specific heap dirty marker */
 	bool remove;		/* remove storage file when freeing */
-	bool wasempty;	    /* heap was empty when last saved/created */
+	bool wasempty;		/* heap was empty when last saved/created */
+	bool hasfile;		/* .filename exists on disk */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bat parentid;		/* cache id of VIEW parent bat */
@@ -681,7 +682,6 @@ gdk_export bool VALisnil(const ValRecord *v);
  *           bool   batCopiedtodisk;  // BAT is saved on disk?
  *           // dynamic BAT properties
  *           int    batHeat;          // heat of BAT in the BBP
- *           bool   batDirtydesc;     // BAT descriptor specific dirty flag
  *           Heap*  batBuns;          // Heap where the buns are stored
  *           // DELTA status
  *           BUN    batInserted;      // first inserted BUN
@@ -692,7 +692,6 @@ gdk_export bool VALisnil(const ValRecord *v);
  *           bool   tkey;             // tail values are unique
  *           bool   tnonil;           // tail has no nils
  *           bool   tsorted;          // are tail values currently ordered?
- *           bool   tvarsized;        // for speed: tail type is varsized?
  *           // Tail storage
  *           int    tloc;             // byte-offset in BUN for tail elements
  *           Heap   *theap;           // heap for varsized tail values
@@ -726,8 +725,7 @@ typedef struct {
 	uint16_t width;		/* byte-width of the atom array */
 	int8_t type;		/* type id. */
 	uint8_t shift;		/* log2 of bun width */
-	bool varsized:1,	/* varsized/void (true) or fixedsized (false) */
-		key:1,		/* no duplicate values present */
+	bool key:1,		/* no duplicate values present */
 		nonil:1,	/* there are no nils in the column */
 		nil:1,		/* there is a nil in the column */
 		sorted:1,	/* column is sorted in ascending order */
@@ -774,19 +772,19 @@ typedef enum {
 	BAT_APPEND,		  /* only reads and appends allowed */
 } restrict_t;
 
-/* batDirtydesc: should be set (true) if any of the following fields
- * have changed since the bat was last saved: hseqbase, batRestricted,
- * batTransient, batCount, and the theap properties tkey, tseqbase,
- * tsorted, trevsorted, twidth, tshift, tnonil, tnil, tnokey, tnosorted,
- * tnorevsorted, tminpos, tmaxpos, and tunique_est; in addition, the
- * value should be set if the BBP field BBP_logical(bid) is changed.
- *
- * theaplock: this lock should be held when reading or writing any of
- * the fields mentioned above for batDirtydesc, and also when reading or
- * writing any of the following fields: batDirtydesc, theap, tvheap,
- * batInserted, batCapacity.  There is no need for the lock if the bat
- * cannot possibly be modified concurrently, e.g. when it is new and not
- * yet returned to the interpreter or during system initialization. */
+/* theaplock: this lock should be held when reading or writing any of
+ * the fields that are saved in the BBP.dir file (plus any, if any, that
+ * share bitfields with any of the fields), i.e. hseqbase,
+ * batRestricted, batTransient, batCount, and the theap properties tkey,
+ * tseqbase, tsorted, trevsorted, twidth, tshift, tnonil, tnil, tnokey,
+ * tnosorted, tnorevsorted, tminpos, tmaxpos, and tunique_est, also when
+ * BBP_logical(bid) is changed, and also when reading or writing any of
+ * the following fields: theap, tvheap, batInserted, batCapacity.  There
+ * is no need for the lock if the bat cannot possibly be modified
+ * concurrently, e.g. when it is new and not yet returned to the
+ * interpreter or during system initialization.
+ * If multiple bats need to be locked at the same time by the same
+ * thread, first lock the view, then the view's parent(s). */
 typedef struct BAT {
 	/* static bat properties */
 	oid hseqbase;		/* head seq base */
@@ -798,9 +796,7 @@ typedef struct BAT {
 	restrict_t batRestricted:2; /* access privileges */
 	bool
 	 batTransient:1,	/* should the BAT persist on disk? */
-	 batCopiedtodisk:1,	/* once written */
-	 batDirtyflushed:1,	/* was dirty before commit started? */
-	 batDirtydesc:1;	/* bat descriptor dirty marker */
+	 batCopiedtodisk:1;	/* once written */
 	uint16_t selcnt;	/* how often used in equi select without hash */
 	uint16_t unused; 	/* value=0 for now (sneakily used by mat.c) */
 	int batSharecnt;	/* incoming view count */
@@ -815,12 +811,12 @@ typedef struct BAT {
 	MT_Lock theaplock;	/* lock protecting heap reference changes */
 	MT_RWLock thashlock;	/* lock specifically for hash management */
 	MT_Lock batIdxLock;	/* lock to manipulate other indexes/properties */
+	Heap *oldtail;		/* old tail heap, to be destroyed after commit */
 } BAT;
 
 /* macros to hide complexity of the BAT structure */
 #define ttype		T.type
 #define tkey		T.key
-#define tvarsized	T.varsized
 #define tseqbase	T.seq
 #define tsorted		T.sorted
 #define trevsorted	T.revsorted
@@ -917,6 +913,111 @@ gdk_export void HEAPincref(Heap *h);
 	(((x)->theap && (x)->theap->parentid != (x)->batCacheid) ||	\
 	 ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid))
 
+/*
+ * @+ BAT Buffer Pool
+ * @multitable @columnfractions 0.08 0.7
+ * @item int
+ * @tab BBPfix (bat bi)
+ * @item int
+ * @tab BBPunfix (bat bi)
+ * @item int
+ * @tab BBPretain (bat bi)
+ * @item int
+ * @tab BBPrelease (bat bi)
+ * @item bat
+ * @tab BBPindex  (str nme)
+ * @item BAT*
+ * @tab BATdescriptor (bat bi)
+ * @end multitable
+ *
+ * The BAT Buffer Pool module contains the code to manage the storage
+ * location of BATs.
+ *
+ * The remaining BBP tables contain status information to load, swap
+ * and migrate the BATs. The core table is BBPcache which contains a
+ * pointer to the BAT descriptor with its heaps.  A zero entry means
+ * that the file resides on disk. Otherwise it has been read or mapped
+ * into memory.
+ *
+ * BATs loaded into memory are retained in a BAT buffer pool.  They
+ * retain their position within the cache during their life cycle,
+ * which make indexing BATs a stable operation.
+ *
+ * The BBPindex routine checks if a BAT with a certain name is
+ * registered in the buffer pools. If so, it returns its BAT id.  The
+ * BATdescriptor routine has a BAT id parameter, and returns a pointer
+ * to the corresponding BAT record (after incrementing the reference
+ * count). The BAT will be loaded into memory, if necessary.
+ *
+ * The structure of the BBP file obeys the tuple format for GDK.
+ *
+ * The status and BAT persistency information is encoded in the status
+ * field.
+ */
+typedef struct {
+	BAT *cache;		/* if loaded: BAT* handle */
+	char *logical;		/* logical name (may point at bak) */
+	char bak[16];		/* logical name backup (tmp_%o) */
+	BAT *desc;		/* the BAT descriptor */
+	char *options;		/* A string list of options */
+#if SIZEOF_VOID_P == 4
+	char physical[20];	/* dir + basename for storage */
+#else
+	char physical[24];	/* dir + basename for storage */
+#endif
+	bat next;		/* next BBP slot in linked list */
+	int refs;		/* in-memory references on which the loaded status of a BAT relies */
+	int lrefs;		/* logical references on which the existence of a BAT relies */
+	ATOMIC_TYPE status;	/* status mask used for spin locking */
+	MT_Id pid;		/* creator of this bat while "private" */
+} BBPrec;
+
+gdk_export bat BBPlimit;
+#if SIZEOF_VOID_P == 4
+#define N_BBPINIT	1000
+#define BBPINITLOG	11
+#else
+#define N_BBPINIT	10000
+#define BBPINITLOG	14
+#endif
+#define BBPINIT		(1 << BBPINITLOG)
+/* absolute maximum number of BATs is N_BBPINIT * BBPINIT
+ * this also gives the longest possible "physical" name and "bak" name
+ * of a BAT: the "bak" name is "tmp_%o", so at most 14 + \0 bytes on 64
+ * bit architecture and 11 + \0 on 32 bit architecture; the physical
+ * name is a bit more complicated, but the longest possible name is 22 +
+ * \0 bytes (16 + \0 on 32 bits), the longest possible extension adds
+ * another 17 bytes (.thsh(grp|uni)(l|b)%08x) */
+gdk_export BBPrec *BBP[N_BBPINIT];
+
+/* fast defines without checks; internal use only  */
+#define BBP_record(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)]
+#define BBP_cache(i)	BBP_record(i).cache
+#define BBP_logical(i)	BBP_record(i).logical
+#define BBP_bak(i)	BBP_record(i).bak
+#define BBP_next(i)	BBP_record(i).next
+#define BBP_physical(i)	BBP_record(i).physical
+#define BBP_options(i)	BBP_record(i).options
+#define BBP_desc(i)	BBP_record(i).desc
+#define BBP_refs(i)	BBP_record(i).refs
+#define BBP_lrefs(i)	BBP_record(i).lrefs
+#define BBP_status(i)	((unsigned) ATOMIC_GET(&BBP_record(i).status))
+#define BBP_pid(i)	BBP_record(i).pid
+#define BATgetId(b)	BBP_logical((b)->batCacheid)
+#define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
+
+#define BBPRENAME_ALREADY	(-1)
+#define BBPRENAME_ILLEGAL	(-2)
+#define BBPRENAME_LONG		(-3)
+#define BBPRENAME_MEMORY	(-4)
+
+gdk_export void BBPlock(void);
+gdk_export void BBPunlock(void);
+gdk_export void BBPtmlock(void);
+gdk_export void BBPtmunlock(void);
+
+gdk_export BAT *BBPquickdesc(bat b);
+
 /* BAT iterator, also protects use of BAT heaps with reference counts.
  *
  * A BAT iterator has to be used with caution, but it does have to be
@@ -965,6 +1066,8 @@ typedef struct BATiter {
 	int8_t type;
 	oid tseq;
 	BUN hfree, vhfree;
+	BUN nokey[2];
+	BUN nosorted, norevsorted;
 	BUN minpos, maxpos;
 	double unique_est;
 	bool key:1,
@@ -974,7 +1077,6 @@ typedef struct BATiter {
 		revsorted:1,
 		hdirty:1,
 		vhdirty:1,
-		dirtydesc:1,
 		copiedtodisk:1,
 		transient:1;
 	restrict_t restricted:2;
@@ -1011,6 +1113,10 @@ bat_iterator_nolock(BAT *b)
 				  (size_t) b->batCount << b->tshift :
 				 0,
 			.vhfree = b->tvheap ? b->tvheap->free : 0,
+			.nokey[0] = b->tnokey[0],
+			.nokey[1] = b->tnokey[1],
+			.nosorted = b->tnosorted,
+			.norevsorted = b->tnorevsorted,
 			.minpos = isview ? BUN_NONE : b->tminpos,
 			.maxpos = isview ? BUN_NONE : b->tmaxpos,
 			.unique_est = b->tunique_est,
@@ -1023,7 +1129,6 @@ bat_iterator_nolock(BAT *b)
 			.hdirty = b->theap->parentid == b->batCacheid && b->theap->dirty,
 			/* also, if there is no vheap, it's not dirty */
 			.vhdirty = b->tvheap && b->tvheap->parentid == b->batCacheid && b->tvheap->dirty,
-			.dirtydesc = b->batDirtydesc,
 			.copiedtodisk = b->batCopiedtodisk,
 			.transient = b->batTransient,
 			.restricted = b->batRestricted,
@@ -1041,7 +1146,25 @@ bat_iterator(BAT *b)
 	/* needs matching bat_iterator_end */
 	BATiter bi;
 	if (b) {
+		BAT *pb = NULL, *pvb = NULL;
+		/* for a view, always first lock the view and then the
+		 * parent(s)
+		 * note that a varsized bat can have two different
+		 * parents and that the parent for the tail can itself
+		 * have a parent for its vheap (which would have to be
+		 * our own vheap parent), so lock the vheap after the
+		 * tail */
 		MT_lock_set(&b->theaplock);
+		if (b->theap->parentid != b->batCacheid) {
+			pb = BBP_desc(b->theap->parentid);
+			MT_lock_set(&pb->theaplock);
+		}
+		if (b->tvheap &&
+		    b->tvheap->parentid != b->batCacheid &&
+		    b->tvheap->parentid != b->theap->parentid) {
+			pvb = BBP_desc(b->tvheap->parentid);
+			MT_lock_set(&pvb->theaplock);
+		}
 		bi = bat_iterator_nolock(b);
 #ifndef NDEBUG
 		bi.locked = true;
@@ -1049,6 +1172,10 @@ bat_iterator(BAT *b)
 		HEAPincref(bi.h);
 		if (bi.vh)
 			HEAPincref(bi.vh);
+		if (pvb)
+			MT_lock_unset(&pvb->theaplock);
+		if (pb)
+			MT_lock_unset(&pb->theaplock);
 		MT_lock_unset(&b->theaplock);
 	} else {
 		bi = (BATiter) {
@@ -1159,6 +1286,7 @@ gdk_export gdk_return BATextend(BAT *b, BUN newcap)
 /* internal */
 gdk_export uint8_t ATOMelmshift(int sz)
 	__attribute__((__const__));
+gdk_export const char *BATtailname(const BAT *b);
 
 gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 	__attribute__((__warn_unused_result__));
@@ -1228,8 +1356,8 @@ typedef var_t stridx_t;
 #define BUNtmsk(bi,p)	Tmsk(&(bi), (p))
 #define BUNtloc(bi,p)	(assert((bi).type != TYPE_msk), ((void *) ((char *) (bi).base + ((p) << (bi).shift))))
 #define BUNtpos(bi,p)	Tpos(&(bi),p)
-#define BUNtvar(bi,p)	(assert((bi).type && (bi).b->tvarsized), (void *) ((bi).vh->base+BUNtvaroff(bi,p)))
-#define BUNtail(bi,p)	((bi).type?(bi).b->tvarsized?BUNtvar(bi,p):(bi).type==TYPE_msk?BUNtmsk(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
+#define BUNtvar(bi,p)	(assert((bi).type && (bi).vh), (void *) ((bi).vh->base+BUNtvaroff(bi,p)))
+#define BUNtail(bi,p)	((bi).type?(bi).vh?BUNtvar(bi,p):(bi).type==TYPE_msk?BUNtmsk(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
 
 #define BATcount(b)	((b)->batCount)
 
@@ -1301,16 +1429,9 @@ gdk_export restrict_t BATgetaccess(BAT *b);
 
 
 #define BATdirty(b)	(!(b)->batCopiedtodisk ||			\
-			 (b)->batDirtydesc ||				\
 			 (b)->theap->dirty ||				\
 			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
-#define BATdirtybi(bi)	(!(bi).copiedtodisk ||	\
-			 (bi).dirtydesc ||	\
-			 (bi).hdirty ||		\
-			 (bi).vhdirty)
-#define BATdirtydata(b)	(!(b)->batCopiedtodisk ||			\
-			 (b)->theap->dirty ||				\
-			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
+#define BATdirtybi(bi)	(!(bi).copiedtodisk || (bi).hdirty || (bi).vhdirty)
 
 #define BATcapacity(b)	(b)->batCapacity
 /*
@@ -1418,6 +1539,8 @@ gdk_export void GDKqsort(void *restrict h, void *restrict t, const void *restric
 /* BAT is dense (i.e., BATtvoid() is true and tseqbase is not NIL) */
 #define BATtdense(b)	(!is_oid_nil((b)->tseqbase) &&			\
 			 ((b)->tvheap == NULL || (b)->tvheap->free == 0))
+#define BATtdensebi(bi)	(!is_oid_nil((bi)->tseq) &&			\
+			 ((bi)->vh == NULL || (bi)->vhfree == 0))
 /* BATtvoid: BAT can be (or actually is) represented by TYPE_void */
 #define BATtvoid(b)	(BATtdense(b) || (b)->ttype==TYPE_void)
 #define BATtkey(b)	((b)->tkey || BATtdense(b))
@@ -1429,8 +1552,6 @@ BATsettrivprop(BAT *b)
 {
 	assert(!is_oid_nil(b->hseqbase));
 	assert(is_oid_nil(b->tseqbase) || ATOMtype(b->ttype) == TYPE_oid);
-	if (!b->batDirtydesc)
-		return;
 	if (b->ttype == TYPE_void) {
 		if (is_oid_nil(b->tseqbase)) {
 			b->tnonil = b->batCount == 0;
@@ -1445,23 +1566,29 @@ BATsettrivprop(BAT *b)
 		}
 		b->tsorted = true;
 	} else if (b->batCount <= 1) {
+		b->tnosorted = b->tnorevsorted = 0;
+		b->tnokey[0] = b->tnokey[1] = 0;
+		b->tunique_est = (double) b->batCount;
 		if (ATOMlinear(b->ttype)) {
 			b->tsorted = true;
 			b->trevsorted = true;
 		}
 		b->tkey = true;
 		if (b->batCount == 0) {
+			b->tminpos = BUN_NONE;
+			b->tmaxpos = BUN_NONE;
 			b->tnonil = true;
 			b->tnil = false;
 			if (b->ttype == TYPE_oid) {
 				b->tseqbase = 0;
 			}
 		} else if (b->ttype == TYPE_oid) {
-			/* b->batCount == 1 */
 			oid sqbs = ((const oid *) b->theap->base)[b->tbaseoff];
 			if (is_oid_nil(sqbs)) {
 				b->tnonil = false;
 				b->tnil = true;
+				b->tminpos = BUN_NONE;
+				b->tmaxpos = BUN_NONE;
 			} else {
 				b->tnonil = true;
 				b->tnil = false;
@@ -1469,10 +1596,23 @@ BATsettrivprop(BAT *b)
 				b->tmaxpos = 0;
 			}
 			b->tseqbase = sqbs;
+		} else if ((b->tvheap
+			    ? ATOMcmp(b->ttype,
+				      b->tvheap->base + VarHeapVal(Tloc(b, 0), 0, b->twidth),
+				      ATOMnilptr(b->ttype))
+			    : ATOMcmp(b->ttype, Tloc(b, 0),
+				      ATOMnilptr(b->ttype))) == 0) {
+			/* the only value is NIL */
+			b->tminpos = BUN_NONE;
+			b->tmaxpos = BUN_NONE;
+		} else {
+			/* the only value is both min and max */
+			b->tminpos = 0;
+			b->tmaxpos = 0;
 		}
 	} else if (b->batCount == 2 && ATOMlinear(b->ttype)) {
 		int c;
-		if (b->tvarsized)
+		if (b->tvheap)
 			c = ATOMcmp(b->ttype,
 				    b->tvheap->base + VarHeapVal(Tloc(b, 0), 0, b->twidth),
 				    b->tvheap->base + VarHeapVal(Tloc(b, 0), 1, b->twidth));
@@ -1485,123 +1625,12 @@ BATsettrivprop(BAT *b)
 		b->tkey = c != 0;
 		b->tnokey[0] = 0;
 		b->tnokey[1] = !b->tkey;
+		b->tunique_est = (double) (1 + b->tkey);
 	} else if (!ATOMlinear(b->ttype)) {
 		b->tsorted = false;
 		b->trevsorted = false;
 	}
 }
-
-/*
- * @+ BAT Buffer Pool
- * @multitable @columnfractions 0.08 0.7
- * @item int
- * @tab BBPfix (bat bi)
- * @item int
- * @tab BBPunfix (bat bi)
- * @item int
- * @tab BBPretain (bat bi)
- * @item int
- * @tab BBPrelease (bat bi)
- * @item str
- * @tab BBPname (bat bi)
- * @item bat
- * @tab BBPindex  (str nme)
- * @item BAT*
- * @tab BATdescriptor (bat bi)
- * @end multitable
- *
- * The BAT Buffer Pool module contains the code to manage the storage
- * location of BATs.
- *
- * The remaining BBP tables contain status information to load, swap
- * and migrate the BATs. The core table is BBPcache which contains a
- * pointer to the BAT descriptor with its heaps.  A zero entry means
- * that the file resides on disk. Otherwise it has been read or mapped
- * into memory.
- *
- * BATs loaded into memory are retained in a BAT buffer pool.  They
- * retain their position within the cache during their life cycle,
- * which make indexing BATs a stable operation.
- *
- * The BBPindex routine checks if a BAT with a certain name is
- * registered in the buffer pools. If so, it returns its BAT id.  The
- * BATdescriptor routine has a BAT id parameter, and returns a pointer
- * to the corresponding BAT record (after incrementing the reference
- * count). The BAT will be loaded into memory, if necessary.
- *
- * The structure of the BBP file obeys the tuple format for GDK.
- *
- * The status and BAT persistency information is encoded in the status
- * field.
- */
-typedef struct {
-	BAT *cache;		/* if loaded: BAT* handle */
-	char *logical;		/* logical name (may point at bak) */
-	char bak[16];		/* logical name backup (tmp_%o) */
-	BAT *desc;		/* the BAT descriptor */
-	char *options;		/* A string list of options */
-#if SIZEOF_VOID_P == 4
-	char physical[20];	/* dir + basename for storage */
-#else
-	char physical[24];	/* dir + basename for storage */
-#endif
-	bat next;		/* next BBP slot in linked list */
-	int refs;		/* in-memory references on which the loaded status of a BAT relies */
-	int lrefs;		/* logical references on which the existence of a BAT relies */
-	ATOMIC_TYPE status;	/* status mask used for spin locking */
-	MT_Id pid;		/* creator of this bat while "private" */
-} BBPrec;
-
-gdk_export bat BBPlimit;
-#if SIZEOF_VOID_P == 4
-#define N_BBPINIT	1000
-#define BBPINITLOG	11
-#else
-#define N_BBPINIT	10000
-#define BBPINITLOG	14
-#endif
-#define BBPINIT		(1 << BBPINITLOG)
-/* absolute maximum number of BATs is N_BBPINIT * BBPINIT
- * this also gives the longest possible "physical" name and "bak" name
- * of a BAT: the "bak" name is "tmp_%o", so at most 14 + \0 bytes on 64
- * bit architecture and 11 + \0 on 32 bit architecture; the physical
- * name is a bit more complicated, but the longest possible name is 22 +
- * \0 bytes (16 + \0 on 32 bits), the longest possible extension adds
- * another 17 bytes (.thsh(grp|uni)(l|b)%08x) */
-gdk_export BBPrec *BBP[N_BBPINIT];
-
-/* fast defines without checks; internal use only  */
-#define BBP_record(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)]
-#define BBP_cache(i)	BBP_record(i).cache
-#define BBP_logical(i)	BBP_record(i).logical
-#define BBP_bak(i)	BBP_record(i).bak
-#define BBP_next(i)	BBP_record(i).next
-#define BBP_physical(i)	BBP_record(i).physical
-#define BBP_options(i)	BBP_record(i).options
-#define BBP_desc(i)	BBP_record(i).desc
-#define BBP_refs(i)	BBP_record(i).refs
-#define BBP_lrefs(i)	BBP_record(i).lrefs
-#define BBP_status(i)	((unsigned) ATOMIC_GET(&BBP_record(i).status))
-#define BBP_pid(i)	BBP_record(i).pid
-#define BATgetId(b)	BBP_logical((b)->batCacheid)
-#define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
-
-/* macros that nicely check parameters */
-#define BBPstatus(i)	(BBPcheck(i) ? BBP_status(i) : 0)
-#define BBPrefs(i)	(BBPcheck(i) ? BBP_refs(i) : -1)
-#define BBPcache(i)	(BBPcheck(i) ? BBP_cache(i) : (BAT*) NULL)
-#define BBPname(i)	(BBPcheck(i) ? BBP_logical(i) : "")
-
-#define BBPRENAME_ALREADY	(-1)
-#define BBPRENAME_ILLEGAL	(-2)
-#define BBPRENAME_LONG		(-3)
-#define BBPRENAME_MEMORY	(-4)
-
-gdk_export void BBPlock(void);
-
-gdk_export void BBPunlock(void);
-
-gdk_export BAT *BBPquickdesc(bat b);
 
 /*
  * @- GDK error handling
@@ -1734,7 +1763,7 @@ tfastins_nocheck(BAT *b, BUN p, const void *v)
 		;
 	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
 		mskSetVal(b, p, * (msk *) v);
-	} else if (b->tvarsized) {
+	} else if (b->tvheap) {
 		return tfastins_nocheckVAR(b, p, v);
 	} else {
 		return tfastins_nocheckFIX(b, p, v);
@@ -1839,9 +1868,10 @@ gdk_export lng IMPSimprintsize(BAT *b);
 
 /* Strimps exported functions */
 gdk_export gdk_return STRMPcreate(BAT *b, BAT *s);
-gdk_export BAT *STRMPfilter(BAT *b, BAT *s, const char *q);
+gdk_export BAT *STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils);
 gdk_export void STRMPdestroy(BAT *b);
 gdk_export bool BAThasstrimps(BAT *b);
+gdk_export gdk_return BATsetstrimps(BAT *b);
 
 /* The ordered index structure */
 
@@ -2063,16 +2093,14 @@ gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict si
  * @tab BATcommit (BAT *b)
  * @item BAT *
  * @tab BATfakeCommit (BAT *b)
- * @item BAT *
- * @tab BATundo (BAT *b)
  * @end multitable
  *
  * The BAT keeps track of updates with respect to a 'previous state'.
- * Do not confuse 'previous state' with 'stable' or
- * 'commited-on-disk', because these concepts are not always the
- * same. In particular, they diverge when BATcommit, BATfakecommit,
- * and BATundo are called explictly, bypassing the normal global
- * TMcommit protocol (some applications need that flexibility).
+ * Do not confuse 'previous state' with 'stable' or 'commited-on-disk',
+ * because these concepts are not always the same. In particular, they
+ * diverge when BATcommit and BATfakecommit are called explicitly,
+ * bypassing the normal global TMcommit protocol (some applications need
+ * that flexibility).
  *
  * BATcommit make the current BAT state the new 'stable state'.  This
  * happens inside the global TMcommit on all persistent BATs previous
@@ -2088,7 +2116,6 @@ gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict si
  */
 gdk_export void BATcommit(BAT *b, BUN size);
 gdk_export void BATfakeCommit(BAT *b);
-gdk_export void BATundo(BAT *b);
 
 /*
  * @+ BAT Alignment and BAT views
@@ -2301,39 +2328,39 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 #define CHECK_QRY_TIMEOUT_MASK	(CHECK_QRY_TIMEOUT_STEP - 1)
 
 #define TIMEOUT_MSG "Timeout was reached!"
+#define EXITING_MSG "Server is exiting!"
 
-#define TIMEOUT_HANDLER(rtpe)			\
-	do {					\
-		GDKerror(TIMEOUT_MSG);		\
-		return rtpe;			\
+#define TIMEOUT_HANDLER(rtpe)						\
+	do {								\
+		GDKerror("%s\n", GDKexiting() ? EXITING_MSG : TIMEOUT_MSG); \
+		return rtpe;						\
 	} while(0)
 
-#define GOTO_LABEL_TIMEOUT_HANDLER(label)	\
-	do {					\
-		GDKerror(TIMEOUT_MSG);		\
-		goto label;			\
+#define GOTO_LABEL_TIMEOUT_HANDLER(label)				\
+	do {								\
+		GDKerror("%s\n", GDKexiting() ? EXITING_MSG : TIMEOUT_MSG); \
+		goto label;						\
 	} while(0)
 
 #define GDK_CHECK_TIMEOUT_BODY(timeoffset, callback)		\
 	do {							\
-		if (timeoffset && GDKusec() > timeoffset) {	\
+		if (GDKexiting() ||				\
+		    (timeoffset && GDKusec() > timeoffset)) {	\
 			callback;				\
 		}						\
 	} while (0)
 
 #define GDK_CHECK_TIMEOUT(timeoffset, counter, callback)		\
 	do {								\
-		if (timeoffset) {					\
-			if (counter > CHECK_QRY_TIMEOUT_STEP) {		\
-				GDK_CHECK_TIMEOUT_BODY(timeoffset, callback); \
-				counter = 0;				\
-			} else {					\
-				counter++;				\
-			}						\
+		if (counter > CHECK_QRY_TIMEOUT_STEP) {			\
+			GDK_CHECK_TIMEOUT_BODY(timeoffset, callback);	\
+			counter = 0;					\
+		} else {						\
+			counter++;					\
 		}							\
 	} while (0)
 
-/* here are some useful construct to iterate a number of times (the
+/* here are some useful constructs to iterate a number of times (the
  * REPEATS argument--only evaluated once) and checking for a timeout
  * every once in a while; the TIMEOFFSET value is a variable of type lng
  * which is either 0 or the GDKusec() compatible time after which the
@@ -2346,19 +2373,19 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
  * on each iteration */
 #define TIMEOUT_LOOP_IDX(IDX, REPEATS, TIMEOFFSET)			\
 	for (BUN REPS = (IDX = 0, (REPEATS)); REPS > 0; REPS = 0) /* "loops" at most once */ \
-		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET ? -1 : TIMEOFFSET) \
+		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET) ? -1 : TIMEOFFSET) \
 			for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
 
 /* declare and use IDX as a loop variable, initializing it to 0 and
  * incrementing it on each iteration */
 #define TIMEOUT_LOOP_IDX_DECL(IDX, REPEATS, TIMEOFFSET)			\
 	for (BUN IDX = 0, REPS = (REPEATS); REPS > 0; REPS = 0) /* "loops" at most once */ \
-		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET ? -1 : TIMEOFFSET) \
+		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET) ? -1 : TIMEOFFSET) \
 			for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
 
 /* there is no user-visible loop variable */
 #define TIMEOUT_LOOP(REPEATS, TIMEOFFSET)				\
-	for (BUN CTR1 = 0, REPS = (REPEATS), END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET ? -1 : TIMEOFFSET) \
+	for (BUN CTR1 = 0, REPS = (REPEATS), END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && TIMEOFFSET >= 0; CTR1++, TIMEOFFSET = GDKexiting() || (TIMEOFFSET > 0 && GDKusec() > TIMEOFFSET) ? -1 : TIMEOFFSET) \
 		for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++)
 
 /* break out of the loop (cannot use do/while trick here) */

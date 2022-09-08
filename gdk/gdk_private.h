@@ -78,7 +78,7 @@ bool BATiscand(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BAT *BATload_intern(bat bid, bool lock)
 	__attribute__((__visibility__("hidden")));
-gdk_return BATmaterialize(BAT *b)
+gdk_return BATmaterialize(BAT *b, BUN cap)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 void BATrmprop(BAT *b, enum prop_t idx)
@@ -251,10 +251,10 @@ void persistOIDX(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void PROPdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
+void PROPdestroy_nolock(BAT *b)
+	__attribute__((__visibility__("hidden")));
 gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, struct canditer *lci, struct canditer *rci, bool li, bool hi, bool anti, bool symmetric, BUN maxsize)
 	__attribute__((__warn_unused_result__))
-	__attribute__((__visibility__("hidden")));
-const char *gettailname(const BAT *b)
 	__attribute__((__visibility__("hidden")));
 void settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width)
 	__attribute__((__visibility__("hidden")));
@@ -281,7 +281,7 @@ BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 
 static inline const char *
-gettailnamebi(const BATiter *bi)
+BATITERtailname(const BATiter *bi)
 {
 	if (bi->type == TYPE_str) {
 		switch (bi->width) {
@@ -390,7 +390,7 @@ ilog2(BUN x)
 	b->hseqbase,							\
 	ATOMname(b->ttype),						\
 	b->ttype==TYPE_str?b->twidth==1?"1":b->twidth==2?"2":b->twidth==4?"4":"8":"", \
-	!b->batTransient ? "P" : b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T", \
+	!b->batTransient ? "P" : b->theap && b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T", \
 	BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "", \
 	b->tsorted ? "S" : b->tnosorted ? "!s" : "",			\
 	b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "",		\
@@ -398,7 +398,7 @@ ilog2(BUN x)
 	b->tnonil ? "N" : "",						\
 	b->thash ? "H" : "",						\
 	b->torderidx ? "O" : "",					\
-	b->timprints ? "I" : b->theap->parentid && BBP_cache(b->theap->parentid)->timprints ? "(I)" : ""
+	b->timprints ? "I" : b->theap && b->theap->parentid && BBP_cache(b->theap->parentid)->timprints ? "(I)" : ""
 /* use ALGOOPTBAT* when BAT is optional (can be NULL) */
 #define ALGOOPTBATFMT	"%s%s" BUNFMT "%s" OIDFMT "%s%s%s%s%s%s%s%s%s%s%s%s%s"
 #define ALGOOPTBATPAR(b)						\
@@ -412,7 +412,7 @@ ilog2(BUN x)
 	b ? b->ttype==TYPE_str?b->twidth==1?"1":b->twidth==2?"2":b->twidth==4?"4":"8":"" : "", \
 	b ? "]" : "",							\
 	b ? !b->batTransient ? "P" : b->theap && b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T" : "", \
-	b ? BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "" : "", \
+	b ? BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && b->tvheap && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "" : "", \
 	b ? b->tsorted ? "S" : b->tnosorted ? "!s" : "" : "",		\
 	b ? b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "" : "",	\
 	b ? b->tkey ? "K" : b->tnokey[1] ? "!k" : "" : "",		\
@@ -493,7 +493,8 @@ extern MT_Lock GDKtmLock;
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
 
 #define HEAPREMOVE	((ATOMIC_BASE_TYPE) 1 << 63)
-#define HEAPREFS	(((ATOMIC_BASE_TYPE) 1 << 63) - 1)
+#define DELAYEDREMOVE	((ATOMIC_BASE_TYPE) 1 << 62)
+#define HEAPREFS	(((ATOMIC_BASE_TYPE) 1 << 62) - 1)
 
 /* when the number of updates to a BAT is less than 1 in this number, we
  * keep the unique_est property */

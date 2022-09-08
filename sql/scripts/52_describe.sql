@@ -149,11 +149,12 @@ CREATE FUNCTION sys.SQ (s STRING) RETURNS STRING BEGIN RETURN '''' || sys.replac
 CREATE FUNCTION sys.DQ (s STRING) RETURNS STRING BEGIN RETURN '"' || sys.replace(s,'"','""') || '"'; END; --TODO: Figure out why this breaks with the space
 CREATE FUNCTION sys.FQN(s STRING, t STRING) RETURNS STRING BEGIN RETURN '"' || sys.replace(s,'"','""') || '"."' || sys.replace(t,'"','""') || '"'; END;
 
---We need pcre to implement a header guard which means adding the schema of an object explicitely to its identifier.
-CREATE FUNCTION sys.replace_first(ori STRING, pat STRING, rep STRING, flg STRING) RETURNS STRING EXTERNAL NAME "pcre"."replace_first";
+-- Some creation queries are stored in the catalog.  If these queries
+-- were originally executed in some schema and don't themselves contain
+-- that schema, we need to first switch to that schema.
 CREATE FUNCTION sys.schema_guard(sch STRING, nme STRING, stmt STRING) RETURNS STRING BEGIN
 RETURN
-	SELECT sys.replace_first(stmt, '(\\s*"?' || sch ||  '"?\\s*\\.|)\\s*"?' || nme || '"?\\s*', ' ' || sys.FQN(sch, nme) || ' ', 'imsx');
+	SELECT 'SET SCHEMA ' || sys.dq(sch) || '; ' || stmt;
 END;
 
 CREATE VIEW sys.describe_constraints AS
@@ -299,7 +300,7 @@ CREATE VIEW sys.describe_tables AS
 				''
 		END opt
 	FROM sys.schemas s, sys.table_types ts, sys.tables t
-	WHERE ts.table_type_name IN ('TABLE', 'VIEW', 'MERGE TABLE', 'REMOTE TABLE', 'REPLICA TABLE')
+	WHERE ts.table_type_name IN ('TABLE', 'VIEW', 'MERGE TABLE', 'REMOTE TABLE', 'REPLICA TABLE', 'UNLOGGED TABLE')
 		AND t.system = FALSE
 		AND s.id = t.schema_id
 		AND ts.table_type_id = t.type

@@ -143,11 +143,13 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 		if (HEAPalloc(&h->heaplink, size, h->width, 0) != GDK_SUCCEED)
 			return GDK_FAIL;
 		h->heaplink.free = size * h->width;
+		h->heaplink.dirty = true;
 		h->Link = h->heaplink.base;
 	}
 	if (HEAPalloc(&h->heapbckt, mask + HASH_HEADER_SIZE * SIZEOF_SIZE_T / h->width, h->width, 0) != GDK_SUCCEED)
 		return GDK_FAIL;
 	h->heapbckt.free = mask * h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
+	h->heapbckt.dirty = true;
 	h->nbucket = mask;
 	if (mask & (mask - 1)) {
 		h->mask2 = hashmask(mask);
@@ -239,6 +241,8 @@ HASHupgradehashheap(BAT *b)
 				BUN2type v = ((BUN2type *) h->Bckt)[i];
 				((BUN4type *) h->Bckt)[i] = v == BUN2_NONE ? BUN4_NONE : v;
 			}
+			h->heapbckt.dirty = true;
+			h->heaplink.dirty = true;
 			break;
 		}
 #endif
@@ -262,6 +266,8 @@ HASHupgradehashheap(BAT *b)
 				BUN2type v = ((BUN2type *) h->Bckt)[i];
 				((BUN8type *) h->Bckt)[i] = v == BUN2_NONE ? BUN8_NONE : v;
 			}
+			h->heapbckt.dirty = true;
+			h->heaplink.dirty = true;
 			break;
 #endif
 		case BUN4:
@@ -279,6 +285,8 @@ HASHupgradehashheap(BAT *b)
 				BUN4type v = ((BUN4type *) h->Bckt)[i];
 				((BUN8type *) h->Bckt)[i] = v == BUN4_NONE ? BUN8_NONE : v;
 			}
+			h->heapbckt.dirty = true;
+			h->heaplink.dirty = true;
 			break;
 		}
 		break;
@@ -541,6 +549,8 @@ BATcheckhash(BAT *b)
 								h->heaplink.dirty = false;
 								h->heapbckt.dirty = false;
 								b->thash = h;
+								h->heapbckt.hasfile = true;
+								h->heaplink.hasfile = true;
 								TRC_DEBUG(ACCELERATOR,
 									  ALGOBATFMT ": reusing persisted hash\n", ALGOBATPAR(b));
 								MT_rwlock_wrunlock(&b->thashlock);
@@ -574,6 +584,8 @@ BATcheckhash(BAT *b)
 					/* unlink unusable file */
 					GDKunlink(h->heaplink.farmid, BATDIR, nme, "thashl");
 					GDKunlink(h->heapbckt.farmid, BATDIR, nme, "thashb");
+					h->heapbckt.hasfile = false;
+					h->heaplink.hasfile = false;
 				}
 			}
 			GDKfree(h);
@@ -597,8 +609,6 @@ BAThashsave_intern(BAT *b, bool dosync)
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	if ((h = b->thash) != NULL) {
-		Heap *hp = &h->heapbckt;
-
 #ifndef PERSISTENTHASH
 		/* no need to sync if not persistent */
 		dosync = false;
@@ -609,12 +619,14 @@ BAThashsave_intern(BAT *b, bool dosync)
 		if (!b->theap->dirty &&
 		    ((size_t *) h->heapbckt.base)[4] == BATcount(b) &&
 		    HEAPsave(&h->heaplink, h->heaplink.filename, NULL, dosync, h->heaplink.free, NULL) == GDK_SUCCEED &&
-		    HEAPsave(hp, hp->filename, NULL, dosync, hp->free, NULL) == GDK_SUCCEED) {
+		    HEAPsave(&h->heapbckt, h->heapbckt.filename, NULL, dosync, h->heapbckt.free, NULL) == GDK_SUCCEED) {
 			h->heaplink.dirty = false;
-			hp->dirty = false;
+			h->heapbckt.dirty = false;
+			h->heaplink.hasfile = true;
+			h->heapbckt.hasfile = true;
 			gdk_return rc = HASHfix(h, true, dosync);
 			TRC_DEBUG(ACCELERATOR,
-				  ALGOBATFMT ": persisting hash %s%s (" LLFMT " usec)%s\n", ALGOBATPAR(b), hp->filename, dosync ? "" : " no sync", GDKusec() - t0, rc == GDK_SUCCEED ? "" : " failed");
+				  ALGOBATFMT ": persisting hash %s%s (" LLFMT " usec)%s\n", ALGOBATPAR(b), h->heapbckt.filename, dosync ? "" : " no sync", GDKusec() - t0, rc == GDK_SUCCEED ? "" : " failed");
 		}
 		GDKclrerr();
 	}
@@ -963,7 +975,6 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	MT_lock_set(&b->theaplock);
 	if (h->nunique == BATcount(b) && !b->tkey) {
 		b->tkey = true;
-		b->batDirtydesc = true;
 	}
 	MT_lock_unset(&b->theaplock);
 	TRC_DEBUG_IF(ACCELERATOR) {
@@ -975,6 +986,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 
   bailout:
 	bat_iterator_end(&bi);
+	HEAPfree(&h->heaplink, true);
+	HEAPfree(&h->heapbckt, true);
 	GDKfree(h);
 	return NULL;
 }

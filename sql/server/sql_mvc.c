@@ -24,9 +24,12 @@
 #include "rel_semantic.h"
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
-#include "wlc.h"
+#include "rel_statistics.h"
 
 #include "mal_authorize.h"
+#include "mal_profiler.h"
+#include "mal_exception.h"
+#include "mal_interpreter.h"
 
 static void
 sql_create_comments(mvc *m, sql_schema *s)
@@ -143,6 +146,8 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 		TRC_CRITICAL(SQL_TRANS, "Unable to create system tables\n");
 		return NULL;
 	}
+
+	initialize_sql_functions_lookup(store->sa);
 
 	m = mvc_create((sql_store)store, store->sa, 0, 0, NULL, NULL);
 	if (!m) {
@@ -290,7 +295,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 
 		for (int i = 0; i < 9; i++) {
 			sql_column *col = NULL;
-			
+
 			mvc_create_column_(&col, m, t, tview[i].name, tview[i].type, tview[i].digits);
 			if (col == NULL) {
 				mvc_destroy(m);
@@ -402,6 +407,8 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 		return NULL;
 	}
 
+	// set SQL user callbacks in MAL authorization
+	sql_set_user_api_hooks(m);
 	mvc_destroy(m);
 	return store;
 }
@@ -471,6 +478,7 @@ mvc_trans(mvc *m)
 
 	TRC_INFO(SQL_TRANS, "Starting transaction\n");
 	res = sql_trans_begin(m->session);
+
 	if (m->qc && (res || err)) {
 		int seqnr = m->qc->id;
 		if (m->qc)
@@ -527,21 +535,33 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	}
 
 	if (!tr->parent && !name) {
-		switch (sql_trans_end(m->session, ok)) {
+		lng Tbegin = 0;
+		ulng ts_start = 0;
+		bool log_usec = profilerMode == 0 || m->session->auto_commit;
+		if(profilerStatus > 0) {
+			if (log_usec) Tbegin = GDKusec();
+			ts_start = m->session->tr->ts;
+		}
+
+		const int state = sql_trans_end(m->session, ok);
+
+		if(profilerStatus > 0) {
+			lng Tend = GDKusec();
+			Client	c = getClientContext();
+			profilerEvent(NULL,
+						  &(struct NonMalEvent)
+						  { state == SQL_CONFLICT ? CONFLICT : COMMIT , c, Tend, &ts_start, &m->session->tr->ts, state == SQL_ERR, log_usec?Tend-Tbegin:0});
+		}
+		switch (state) {
 			case SQL_ERR:
 				GDKfatal("%s transaction commit failed; exiting (kernel error: %s)", operation, GDKerrbuf);
 				break;
 			case SQL_CONFLICT:
+
 				/* transaction conflict */
 				return createException(SQL, "sql.commit", SQLSTATE(40001) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
 			default:
 				break;
-		}
-		msg = WLCcommit(m->clientid);
-		if (msg != MAL_SUCCEED) {
-			if ((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-				freeException(other);
-			return msg;
 		}
 		if (chain) {
 			if (sql_trans_begin(m->session) < 0)
@@ -562,11 +582,10 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		while (tr->parent != NULL && ok == SQL_OK) {
 			if ((ok = sql_trans_commit(tr)) == SQL_ERR)
 				GDKfatal("%s transaction commit failed; exiting (kernel error: %s)", operation, GDKerrbuf);
-			tr = sql_trans_destroy(tr);
+			m->session->tr = tr = sql_trans_destroy(tr);
 		}
 		while (tr->parent != NULL)
-			tr = sql_trans_destroy(tr);
-		m->session->tr = tr;
+			m->session->tr = tr = sql_trans_destroy(tr);
 		if (ok != SQL_OK)
 			msg = createException(SQL, "sql.commit", SQLSTATE(40001) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
 	}
@@ -640,7 +659,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 			/* make sure we do not reuse changed data */
 			if (!list_empty(tr->changes))
 				tr->status = 1;
-			tr = sql_trans_destroy(tr);
+			m->session->tr = tr = sql_trans_destroy(tr);
 		}
 		/* start a new transaction after rolling back */
 		if (!(m->session->tr = tr = sql_trans_create(m->store, tr, name))) {
@@ -657,12 +676,28 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	} else {
 		/* first release all intermediate savepoints */
 		while (tr->parent != NULL)
-			tr = sql_trans_destroy(tr);
-		m->session-> tr = tr;
+			m->session-> tr = tr = sql_trans_destroy(tr);
 		/* make sure we do not reuse changed data */
 		if (!list_empty(tr->changes))
 			tr->status = 1;
-		(void)sql_trans_end(m->session, SQL_ERR);
+
+
+		lng Tbegin = 0;
+		ulng ts_start = 0;
+		bool log_usec = profilerMode == 0 || m->session->auto_commit;
+		if(profilerStatus > 0) {
+			if (log_usec) Tbegin = GDKusec();
+			ts_start = m->session->tr->ts;
+		}
+		(void) sql_trans_end(m->session, SQL_ERR);
+
+		if(profilerStatus > 0) {
+			lng Tend = GDKusec();
+			Client	c = getClientContext();
+			profilerEvent(NULL,
+						  &(struct NonMalEvent)
+						  { ROLLBACK , c, Tend, &ts_start, &m->session->tr->ts, 0, log_usec?Tend-Tbegin:0});
+		}
 		if (chain) {
 			if (sql_trans_begin(m->session) < 0) {
 				msg = createException(SQL, "sql.rollback", SQLSTATE(40000) "ROLLBACK: finished successfully, but the session's schema could not be found while starting the next transaction");
@@ -672,8 +707,6 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 			m->session->auto_commit = 0; /* disable auto-commit while chaining */
 		}
 	}
-	if (msg == MAL_SUCCEED)
-		msg = WLCrollback(m->clientid);
 	if (msg != MAL_SUCCEED) {
 		m->session->status = -1;
 		return msg;
@@ -716,10 +749,9 @@ mvc_release(mvc *m, const char *name)
 		/* commit all intermediate savepoints */
 		if (sql_trans_commit(tr) != SQL_OK)
 			GDKfatal("release savepoints should not fail");
-		tr = sql_trans_destroy(tr);
+		m->session->tr = tr = sql_trans_destroy(tr);
 	}
-	_DELETE(tr->name); /* name will no longer be used */
-	m->session->tr = tr;
+	_DELETE(m->session->tr->name); /* name will no longer be used */
 	m->session->status = tr->status;
 	if (!(m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name))) {
 		msg = createException(SQL, "sql.release", SQLSTATE(40000) "RELEASE: finished successfully, but the session's schema could not be found on the current transaction");
@@ -826,64 +858,6 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 	return m;
 }
 
-int
-mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
-{
-	int res = 1, reset;
-	sql_trans *tr;
-
-	TRC_DEBUG(SQL_TRANS, "MVC reset\n");
-	tr = m->session->tr;
-	if (tr && tr->parent) {
-		assert(m->session->tr->active == 0);
-		while (tr->parent->parent != NULL)
-			tr = sql_trans_destroy(tr);
-	}
-	reset = sql_session_reset(m->session, 1 /*autocommit on*/);
-	if (tr && !reset)
-		res = 0;
-
-	if (m->sa)
-		m->sa = sa_reset(m->sa);
-	else
-		m->sa = sa_create(m->pa);
-	if(!m->sa)
-		res = 0;
-	m->ta = sa_reset(m->ta);
-
-	m->errstr[0] = '\0';
-
-	m->params = NULL;
-	/* reset frames to the set of global variables */
-	stack_pop_until(m, 0);
-	m->frame = 0;
-	m->sym = NULL;
-
-	m->role_id = m->user_id = -1;
-	m->emode = m_normal;
-	m->emod = mod_none;
-	if (m->reply_size != 100)
-		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "reply_size"), 100);
-	m->reply_size = 100;
-	if (m->timezone != 0)
-		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "current_timezone"), 0);
-	m->timezone = 0;
-	if (m->sql_optimizer != INT_MAX)
-		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "sql_optimizer"), INT_MAX);
-	m->sql_optimizer = INT_MAX;
-	if (m->debug != debug)
-		sqlvar_set_number(find_global_var(m, mvc_bind_schema(m, "sys"), "debug"), debug);
-	m->debug = debug;
-
-	m->label = 0;
-	m->cascade_action = NULL;
-	m->runs = NULL;
-	m->type = Q_PARSE;
-
-	scanner_init(&m->scanner, rs, ws);
-	return res;
-}
-
 void
 mvc_destroy(mvc *m)
 {
@@ -895,7 +869,7 @@ mvc_destroy(mvc *m)
 		if (m->session->tr->active)
 			(void)sql_trans_end(m->session, SQL_ERR);
 		while (tr->parent)
-			tr = sql_trans_destroy(tr);
+			m->session->tr = tr = sql_trans_destroy(tr);
 	}
 	sql_session_destroy(m->session);
 
@@ -999,10 +973,9 @@ mvc_first_column(mvc *m, sql_table *t)
 sql_key *
 mvc_bind_key(mvc *m, sql_schema *s, const char *kname)
 {
-	sql_base *b = os_find_name(s->keys, m->session->tr, kname);
-	sql_key *k = (sql_key*)b;
+	sql_key *k = schema_find_key(m->session->tr, s, kname);
 
-	if (!b)
+	if (!k)
 		return NULL;
 	TRC_DEBUG(SQL_TRANS, "Bind key: %s.%s\n", s->base.name, kname);
 	return k;
@@ -1011,11 +984,10 @@ mvc_bind_key(mvc *m, sql_schema *s, const char *kname)
 sql_idx *
 mvc_bind_idx(mvc *m, sql_schema *s, const char *iname)
 {
-	sql_base *b = os_find_name(s->idxs, m->session->tr, iname);
+	sql_idx *i = schema_find_idx(m->session->tr, s, iname);
 
-	if (!b)
+	if (!i)
 		return NULL;
-	sql_idx *i = (sql_idx*)b;
 	TRC_DEBUG(SQL_TRANS, "Bind index: %s.%s\n", s->base.name, iname);
 	return i;
 }
@@ -1060,13 +1032,12 @@ mvc_bind_ukey(sql_table *t, list *colnames)
 sql_trigger *
 mvc_bind_trigger(mvc *m, sql_schema *s, const char *tname)
 {
-	sql_base *b = os_find_name(s->triggers, m->session->tr, tname);
+	sql_trigger *t = schema_find_trigger(m->session->tr, s, tname);
 
-	if (!b)
+	if (!t)
 		return NULL;
-	sql_trigger *trigger = (sql_trigger*)b;
 	TRC_DEBUG(SQL_TRANS, "Bind trigger: %s.%s\n", s->base.name, tname);
-	return trigger;
+	return t;
 }
 
 int
@@ -1118,7 +1089,7 @@ int
 mvc_create_schema(mvc *m, const char *name, sqlid auth_id, sqlid owner)
 {
 	TRC_DEBUG(SQL_TRANS, "Create schema: %s %d %d\n", name, auth_id, owner);
-	return sql_trans_create_schema(m->session->tr, name, auth_id, owner);
+	return sql_trans_create_schema(m->session->tr, name, auth_id, owner, NULL);
 }
 
 int
@@ -1541,6 +1512,13 @@ mvc_is_duplicate_eliminated(mvc *m, sql_column *col)
 {
 	TRC_DEBUG(SQL_TRANS, "Is duplicate eliminated: %s\n", col->base.name);
 	return sql_trans_is_duplicate_eliminated(m->session->tr, col);
+}
+
+int
+mvc_col_stats(mvc *m, sql_column *col, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max)
+{
+	TRC_DEBUG(SQL_TRANS, "Retrieving column stats for: %s\n", col->base.name);
+	return sql_trans_col_stats(m->session->tr, col, nonil, unique, unique_est, min, max);
 }
 
 int

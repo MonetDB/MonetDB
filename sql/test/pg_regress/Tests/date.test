@@ -1253,8 +1253,10 @@ SELECT date '1/18/1999'
 statement error
 SELECT date '18/1/1999'
 
-statement error
+query T rowsort
 SELECT date '01/02/03'
+----
+0001-02-03
 
 statement error
 SELECT date '19990108'
@@ -1271,8 +1273,10 @@ SELECT date 'J2451187'
 statement error
 SELECT date 'January 8, 99 BC'
 
-statement error
+query T rowsort
 SELECT date '99-Jan-08'
+----
+0099-01-08
 
 query T rowsort
 SELECT date '1999-Jan-08'
@@ -1297,8 +1301,10 @@ SELECT date '99-08-Jan'
 statement error
 SELECT date '1999-08-Jan'
 
-statement error
+query T rowsort
 SELECT date '99 Jan 08'
+----
+0099-01-08
 
 query T rowsort
 SELECT date '1999 Jan 08'
@@ -1311,8 +1317,10 @@ SELECT date '08 Jan 99'
 statement error
 SELECT date '08 Jan 1999'
 
-statement error
+query T rowsort
 SELECT date 'Jan 08 99'
+----
+0099-01-08
 
 query T rowsort
 SELECT date 'Jan 08 1999'
@@ -1325,8 +1333,10 @@ SELECT date '99 08 Jan'
 statement error
 SELECT date '1999 08 Jan'
 
-statement error
+query T rowsort
 SELECT date '99-01-08'
+----
+0099-01-08
 
 query T rowsort
 SELECT date '1999-01-08'
@@ -1345,16 +1355,20 @@ SELECT date '01-08-99'
 statement error
 SELECT date '01-08-1999'
 
-statement error
+query T rowsort
 SELECT date '99-08-01'
+----
+0099-08-01
 
 query T rowsort
 SELECT date '1999-08-01'
 ----
 1999-08-01
 
-statement error
+query T rowsort
 SELECT date '99 01 08'
+----
+0099-01-08
 
 query T rowsort
 SELECT date '1999 01 08'
@@ -1373,312 +1387,10 @@ SELECT date '01 08 99'
 statement error
 SELECT date '01 08 1999'
 
-statement error
+query T rowsort
 SELECT date '99 08 01'
-
-query T rowsort
-SELECT date '1999 08 01'
 ----
-1999-08-01
-
-query T rowsort
-SELECT date 'January 8, 1999'
-----
-1999-01-08
-
-query T rowsort
-SELECT date '1999-01-08'
-----
-1999-01-08
-
-query T rowsort
-SELECT date '1999-01-18'
-----
-1999-01-18
-
-statement error
-SELECT date '1/8/1999'
-
-statement error
-SELECT date '1/18/1999'
-
-statement error
-SELECT date '18/1/1999'
-
-statement error
-SELECT date '01/02/03'
-
-statement error
-SELECT date '19990108'
-
-statement error
-SELECT date '990108'
-
-statement error
-SELECT date '1999.008'
-
-statement error
-SELECT date 'J2451187'
-
-statement error
-SELECT date 'January 8, 99 BC'
-
-statement error
-SELECT date '99-Jan-08'
-
-query T rowsort
-SELECT date '1999-Jan-08'
-----
-1999-01-08
-
-statement error
-SELECT date '08-Jan-99'
-
-statement error
-SELECT date '08-Jan-1999'
-
-statement error
-SELECT date 'Jan-08-99'
-
-statement error
-SELECT date 'Jan-08-1999'
-
-statement error
-SELECT date '99-08-Jan'
-
-statement error
-SELECT date '1999-08-Jan'
-
-statement error
-SELECT date '99 Jan 08'
-
-query T rowsort
-SELECT date '1999 Jan 08'
-----
-1999-01-08
-
-statement error
-SELECT date '08 Jan 99'
-
-statement error
-SELECT date '08 Jan 1999'
-
-statement error
-SELECT date 'Jan 08 99'
-
-query T rowsort
-SELECT date 'Jan 08 1999'
-----
-1999-01-08
-
-statement error
-SELECT date '99 08 Jan'
-
-statement error
-SELECT date '1999 08 Jan'
-
-statement error
-SELECT date '99-01-08'
-
-query T rowsort
-SELECT date '1999-01-08'
-----
-1999-01-08
-
-statement error
-SELECT date '08-01-99'
-
-statement error
-SELECT date '08-01-1999'
-
-statement error
-SELECT date '01-08-99'
-
-statement error
-SELECT date '01-08-1999'
-
-statement error
-SELECT date '99-08-01'
-
-query T rowsort
-SELECT date '1999-08-01'
-----
-1999-08-01
-
-statement error
-SELECT date '99 01 08'
-
-query T rowsort
-SELECT date '1999 01 08'
-----
-1999-01-08
-
-statement error
-SELECT date '08 01 99'
-
-statement error
-SELECT date '08 01 1999'
-
-statement error
-SELECT date '01 08 99'
-
-statement error
-SELECT date '01 08 1999'
-
-statement error
-SELECT date '99 08 01'
-
-query T rowsort
-SELECT date '1999 08 01'
-----
-1999-08-01
-
-query T rowsort
-SELECT date 'January 8, 1999'
-----
-1999-01-08
-
-query T rowsort
-SELECT date '1999-01-08'
-----
-1999-01-08
-
-query T rowsort
-SELECT date '1999-01-18'
-----
-1999-01-18
-
-statement error
-SELECT date '1/8/1999'
-
-statement error
-SELECT date '1/18/1999'
-
-statement error
-SELECT date '18/1/1999'
-
-statement error
-SELECT date '01/02/03'
-
-statement error
-SELECT date '19990108'
-
-statement error
-SELECT date '990108'
-
-statement error
-SELECT date '1999.008'
-
-statement error
-SELECT date 'J2451187'
-
-statement error
-SELECT date 'January 8, 99 BC'
-
-statement error
-SELECT date '99-Jan-08'
-
-query T rowsort
-SELECT date '1999-Jan-08'
-----
-1999-01-08
-
-statement error
-SELECT date '08-Jan-99'
-
-statement error
-SELECT date '08-Jan-1999'
-
-statement error
-SELECT date 'Jan-08-99'
-
-statement error
-SELECT date 'Jan-08-1999'
-
-statement error
-SELECT date '99-08-Jan'
-
-statement error
-SELECT date '1999-08-Jan'
-
-statement error
-SELECT date '99 Jan 08'
-
-query T rowsort
-SELECT date '1999 Jan 08'
-----
-1999-01-08
-
-statement error
-SELECT date '08 Jan 99'
-
-statement error
-SELECT date '08 Jan 1999'
-
-statement error
-SELECT date 'Jan 08 99'
-
-query T rowsort
-SELECT date 'Jan 08 1999'
-----
-1999-01-08
-
-statement error
-SELECT date '99 08 Jan'
-
-statement error
-SELECT date '1999 08 Jan'
-
-statement error
-SELECT date '99-01-08'
-
-query T rowsort
-SELECT date '1999-01-08'
-----
-1999-01-08
-
-statement error
-SELECT date '08-01-99'
-
-statement error
-SELECT date '08-01-1999'
-
-statement error
-SELECT date '01-08-99'
-
-statement error
-SELECT date '01-08-1999'
-
-statement error
-SELECT date '99-08-01'
-
-query T rowsort
-SELECT date '1999-08-01'
-----
-1999-08-01
-
-statement error
-SELECT date '99 01 08'
-
-query T rowsort
-SELECT date '1999 01 08'
-----
-1999-01-08
-
-statement error
-SELECT date '08 01 99'
-
-statement error
-SELECT date '08 01 1999'
-
-statement error
-SELECT date '01 08 99'
-
-statement error
-SELECT date '01 08 1999'
-
-statement error
-SELECT date '99 08 01'
+0099-08-01
 
 query T rowsort
 SELECT date '1999 08 01'
@@ -1729,17 +1441,17 @@ SELECT sql_add(current_date, 24*60*60.0) - sql_sub(current_date, 24*60*60.0) AS 
 query I rowsort
 SELECT EXTRACT(CENTURY FROM DATE '0101-12-31 BC')
 ----
-2
+-2
 
 query I rowsort
 SELECT EXTRACT(CENTURY FROM DATE '0100-12-31 BC')
 ----
-1
+-1
 
 query I rowsort
 SELECT EXTRACT(CENTURY FROM DATE '0001-12-31 BC')
 ----
-1
+-1
 
 query I rowsort
 SELECT EXTRACT(CENTURY FROM DATE '0001-01-01')
@@ -1823,12 +1535,12 @@ SELECT EXTRACT(DECADE FROM DATE '0002-12-31 BC')
 query I rowsort
 SELECT EXTRACT(DECADE FROM DATE '0011-01-01 BC')
 ----
-1
+-1
 
 query I rowsort
 SELECT EXTRACT(DECADE FROM DATE '0012-12-31 BC')
 ----
-1
+-1
 
 statement error
 SELECT EXTRACT(CENTURY FROM NOW())>=21 AS True
@@ -1891,6 +1603,16 @@ SELECT DATE_TRUNC('DECADE', DATE '0004-12-25')
 
 statement error
 SELECT DATE_TRUNC('DECADE', DATE '0002-12-31 BC')
+
+query T rowsort
+SELECT STR_TO_DATE('1995-04', '%Y-%m');
+----
+1995-04-01
+
+query T rowsort
+SELECT STR_TO_DATE('1995', '%Y');
+----
+1995-01-01
 
 statement ok
 DROP TABLE DATE_TBL

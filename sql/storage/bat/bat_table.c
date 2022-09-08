@@ -33,24 +33,17 @@ full_column(sql_trans *tr, sql_column *c)
 		b := b.replace(u);
 	*/
 	sqlstore *store = tr->store;
-	BAT *b = store->storage_api.bind_col(tr, c, RDONLY);
-	BAT *ui = store->storage_api.bind_col(tr, c, RD_UPD_ID);
+	BAT *b = store->storage_api.bind_col(tr, c, RDONLY), *ui = NULL, *uv = NULL;
+	int res = store->storage_api.bind_updates(tr, c, &ui, &uv);
 
-	if (!b || !ui) {
+	if (!b || !ui || !uv || res == LOG_ERR) {
 		bat_destroy(b);
 		bat_destroy(ui);
+		bat_destroy(uv);
 		return NULL;
 	}
 	if (BATcount(ui)) {
-		BAT *uv = store->storage_api.bind_col(tr, c, RD_UPD_VAL), *r;
-
-		if (!uv) {
-			bat_destroy(b);
-			bat_destroy(ui);
-			return NULL;
-		}
-
-		r = COLcopy(b, b->ttype, true, TRANSIENT);
+		BAT *r = COLcopy(b, b->ttype, true, TRANSIENT);
 		bat_destroy(b);
 		b = r;
 		if (!b || BATreplace(b, ui, uv, true) != GDK_SUCCEED) {
@@ -59,9 +52,9 @@ full_column(sql_trans *tr, sql_column *c)
 			bat_destroy(uv);
 			return NULL;
 		}
-		bat_destroy(uv);
 	}
 	bat_destroy(ui);
+	bat_destroy(uv);
 	return b;
 }
 
@@ -430,9 +423,9 @@ table_fetch_value(res_table *rt, sql_column *c)
 	BAT *b = (BAT*)rt->cols[c->colnr].p;
 	BATiter bi = bat_iterator_nolock(b);
 	assert(b->ttype && b->ttype != TYPE_msk);
-	if (b->tvarsized)
+	if (bi.vh)
 		return BUNtvar(bi, rt->cur_row);
-	return Tloc(b, rt->cur_row);
+	return BUNtloc(bi, rt->cur_row);
 	//return (void*)BUNtail(bi, rt->cur_row);
 }
 

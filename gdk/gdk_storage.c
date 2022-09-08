@@ -625,16 +625,6 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
  * merely copies the data into place.  Failure to read or write the
  * BAT results in a NULL, otherwise it returns the BAT pointer.
  */
-static void
-DESCclean(BAT *b)
-{
-	b->batDirtyflushed = DELTAdirty(b);
-	b->batDirtydesc = false;
-	b->theap->dirty = false;
-	if (b->tvheap)
-		b->tvheap->dirty = false;
-}
-
 static BAT *
 DESCload(int i)
 {
@@ -651,18 +641,22 @@ DESCload(int i)
 		return NULL;
 	}
 
+	MT_lock_set(&b->theaplock);
 	tt = b->ttype;
-	if ((tt < 0 && (tt = ATOMindex(s = ATOMunknown_name(tt))) < 0)) {
-		GDKerror("atom '%s' unknown, in BAT '%s'.\n", s, nme);
-		return NULL;
+	if (tt < 0) {
+		if ((tt = ATOMindex(s = ATOMunknown_name(tt))) < 0) {
+			MT_lock_unset(&b->theaplock);
+			GDKerror("atom '%s' unknown, in BAT '%s'.\n", s, nme);
+			return NULL;
+		}
+		b->ttype = tt;
 	}
-	b->ttype = tt;
 
 	/* reconstruct mode from BBP status (BATmode doesn't flush
 	 * descriptor, so loaded mode may be stale) */
 	b->batTransient = (BBP_status(b->batCacheid) & BBPPERSISTENT) == 0;
 	b->batCopiedtodisk = true;
-	DESCclean(b);
+	MT_lock_unset(&b->theaplock);
 	return b;
 }
 
@@ -689,7 +683,7 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
-	const char *tail = gettailnamebi(bi);
+	const char *tail = BATITERtailname(bi);
 	if (bi->type != TYPE_void && bi->base == NULL) {
 		assert(BBP_status(b->batCacheid) & BBPSWAPPED);
 		if (dosync && !(GDKdebug & NOSYNCMASK)) {
@@ -734,11 +728,11 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 			}
 		}
 	} else {
-		if (!bi->copiedtodisk || bi->dirtydesc || bi->hdirty)
+		if (!bi->copiedtodisk || bi->hdirty)
 			if (err == GDK_SUCCEED && bi->type)
 				err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree, &b->theaplock);
 		if (bi->vh
-		    && (!bi->copiedtodisk || bi->dirtydesc || bi->vhdirty)
+		    && (!bi->copiedtodisk || bi->vhdirty)
 		    && ATOMvarsized(bi->type)
 		    && err == GDK_SUCCEED)
 			err = HEAPsave(bi->vh, nme, "theap", dosync, bi->vhfree, &b->theaplock);
@@ -757,15 +751,11 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 		if (size != b->batCount || b->batInserted < b->batCount) {
 			/* if the sizes don't match, the BAT must be dirty */
 			b->batCopiedtodisk = false;
-			b->batDirtyflushed = true;
-			b->batDirtydesc = true;
 			b->theap->dirty = true;
 			if (b->tvheap)
 				b->tvheap->dirty = true;
 		} else {
 			b->batCopiedtodisk = true;
-			b->batDirtyflushed = DELTAdirty(b);
-			b->batDirtydesc = false;
 		}
 		MT_lock_unset(&b->theaplock);
 		if (b->thash && b->thash != (Hash *) 1)
@@ -810,7 +800,9 @@ BATload_intern(bat bid, bool lock)
 	/* LOAD bun heap */
 	if (b->ttype != TYPE_void) {
 		b->theap->storage = b->theap->newstorage = STORE_INVALID;
-		if (HEAPload(b->theap, b->theap->filename, NULL, b->batRestricted == BAT_READ) != GDK_SUCCEED) {
+		if ((b->batCount == 0 ?
+		     HEAPalloc(b->theap, b->batCapacity, b->twidth, ATOMsize(b->ttype)) :
+		     HEAPload(b->theap, b->theap->filename, NULL, b->batRestricted == BAT_READ)) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
 			return NULL;
 		}
@@ -827,7 +819,9 @@ BATload_intern(bat bid, bool lock)
 	/* LOAD tail heap */
 	if (ATOMvarsized(b->ttype)) {
 		b->tvheap->storage = b->tvheap->newstorage = STORE_INVALID;
-		if (HEAPload(b->tvheap, nme, "theap", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
+		if ((b->tvheap->free == 0 ?
+		     ATOMheap(b->ttype, b->tvheap, b->batCapacity) :
+		     HEAPload(b->tvheap, nme, "theap", b->batRestricted == BAT_READ)) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
 			HEAPfree(b->tvheap, false);
 			return NULL;
@@ -841,7 +835,6 @@ BATload_intern(bat bid, bool lock)
 	}
 
 	/* initialize descriptor */
-	b->batDirtydesc = false;
 	b->theap->parentid = b->batCacheid;
 
 	/* load succeeded; register it in BBP */
@@ -874,19 +867,24 @@ BATdelete(BAT *b)
 {
 	bat bid = b->batCacheid;
 	BAT *loaded = BBP_cache(bid);
+	char o[10];
 
 	assert(bid > 0);
+	snprintf(o, sizeof(o), "%o", (unsigned) bid);
 	if (loaded) {
 		b = loaded;
 	}
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
-	PROPdestroy(b);
+	PROPdestroy_nolock(b);
 	STRMPdestroy(b);
-	HEAPfree(b->theap, true);
-	if (b->tvheap)
+	if (b->theap) {
+		HEAPfree(b->theap, true);
+	}
+	if (b->tvheap) {
 		HEAPfree(b->tvheap, true);
+	}
 	b->batCopiedtodisk = false;
 }
 

@@ -209,7 +209,6 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 			b->trevsorted = false;
 		if (BATtdense(b))
 			b->tkey = true;
-		b->batDirtydesc = true;
 
 		if (offset > 0) {
 			BBPunfix(bv->batCacheid);
@@ -941,7 +940,6 @@ SQLworker_column(READERtask *task, int col)
 		}
 	}
 	BATsetcount(fmt[col].c, BATcount(fmt[col].c));
-	fmt[col].c->theap->dirty |= BATcount(fmt[col].c) > 0;
 
 	return 0;
 }
@@ -1839,10 +1837,13 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 			/* producer should stop */
 			task.maxrow = cnt;
 			task.state = ENDOFCOPY;
+			task.ateof = true;
 		}
 		if (task.ateof && task.top[task.cur] < task.limit && cnt != task.maxrow)
 			break;
 		task.top[task.cur] = 0;
+		if (cnt == task.maxrow)
+			task.ateof = true;
 		MT_sema_up(&task.producer);
 	}
 
@@ -1850,7 +1851,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 
 	cnt = BATcount(task.as->format[firstcol].c);
 
-	task.ateof = true;
 	task.state = ENDOFCOPY;
 /*	TRC_DEBUG(MAL_SERVER, "Activate sync on disk\n");*/
 

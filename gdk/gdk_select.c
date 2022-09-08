@@ -50,13 +50,14 @@ virtualize(BAT *bn)
 	     * (const oid *) Tloc(bn, 0) + BATcount(bn) - 1 ==
 	     * (const oid *) Tloc(bn, BATcount(bn) - 1))) {
 		/* column is dense, replace by virtual oid */
-		TRC_DEBUG(ALGO, ALGOBATFMT ",seq=" OIDFMT "\n",
-			  ALGOBATPAR(bn),
-			  BATcount(bn) > 0 ? * (const oid *) Tloc(bn, 0) : 0);
+		oid tseq;	/* work around bug in Intel compiler */
 		if (BATcount(bn) == 0)
-			bn->tseqbase = 0;
+			tseq = 0;
 		else
-			bn->tseqbase = * (const oid *) Tloc(bn, 0);
+			tseq = * (const oid *) Tloc(bn, 0);
+		TRC_DEBUG(ALGO, ALGOBATFMT ",seq=" OIDFMT "\n",
+			  ALGOBATPAR(bn), tseq);
+		bn->tseqbase = tseq;
 		if (VIEWtparent(bn)) {
 			Heap *h = GDKmalloc(sizeof(Heap));
 			bat bid = VIEWtparent(bn);
@@ -68,6 +69,7 @@ virtualize(BAT *bn)
 			settailname(h, BBP_physical(bn->batCacheid), TYPE_oid, 0);
 			h->parentid = bn->batCacheid;
 			h->base = NULL;
+			h->hasfile = false;
 			ATOMIC_INIT(&h->refs, 1);
 			HEAPdecref(bn->theap, false);
 			bn->theap = h;
@@ -79,7 +81,6 @@ virtualize(BAT *bn)
 		bn->theap->storage = bn->theap->newstorage = STORE_MEM;
 		bn->theap->size = 0;
 		bn->ttype = TYPE_void;
-		bn->tvarsized = true;
 		bn->twidth = 0;
 		bn->tshift = 0;
 	}
@@ -1110,8 +1111,10 @@ scanselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				/* range bounded on left */		\
 				if (!li) {				\
 					/* open range on left */	\
-					if (*(TYPE*)tl == MAXVALUE##TYPE) \
+					if (*(TYPE*)tl == MAXVALUE##TYPE) { \
+						bat_iterator_end(&bi);	\
 						return BATdense(0, 0, 0); \
+					}				\
 					/* vl < x === vl+1 <= x */	\
 					vl.v_##TYPE = NEXTVALUE##TYPE(*(TYPE*)tl); \
 					li = true;			\
@@ -1128,8 +1131,10 @@ scanselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				/* range bounded on right */		\
 				if (!hi) {				\
 					/* open range on right */	\
-					if (*(TYPE*)th == MINVALUE##TYPE) \
+					if (*(TYPE*)th == MINVALUE##TYPE) { \
+						bat_iterator_end(&bi);	\
 						return BATdense(0, 0, 0); \
+					}				\
 					/* x < vh === x <= vh-1 */	\
 					vh.v_##TYPE = PREVVALUE##TYPE(*(TYPE*)th); \
 					hi = true;			\
@@ -1142,8 +1147,10 @@ scanselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				th = &vh.v_##TYPE;			\
 				hval = true;				\
 			}						\
-			if (*(TYPE*)tl > *(TYPE*)th)			\
+			if (*(TYPE*)tl > *(TYPE*)th) {			\
+				bat_iterator_end(&bi);			\
 				return BATdense(0, 0, 0);		\
+			}						\
 		}							\
 		assert(lval);						\
 		assert(hval);						\
@@ -1603,7 +1610,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		}
 		wanthash = havehash ||
-			(!bi.transient &&
+			((!bi.transient ||
+			  (b->batRole == PERSISTENT && GDKinmemory(0))) &&
 			 ATOMsize(bi.type) >= sizeof(BUN) / 4 &&
 			 bi.count * (ATOMsize(bi.type) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2);
 		if (!wanthash) {
@@ -1655,7 +1663,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			MT_lock_unset(&pb->theaplock);
 		}
 		if (!phash &&
-		    (!pbi.transient || wantphash) &&
+		    (!pbi.transient ||
+		     wantphash ||
+		     (pb->batRole == PERSISTENT && GDKinmemory(0))) &&
 		    pbi.count == bi.count &&
 		    BAThash(pb) == GDK_SUCCEED) {
 			MT_rwlock_rdlock(&pb->thashlock);
@@ -1741,7 +1751,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		BUN low = 0;
 		BUN high = bi.count;
 
-		if (BATtdense(b)) {
+		if (BATtdensebi(&bi)) {
 			/* positional */
 			/* we expect nonil to be set, in which case we
 			 * already know that we're not dealing with a
@@ -2231,15 +2241,15 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	t = ATOMtype(li.type);
 	t = ATOMbasetype(t);
 
-	if (l->tvarsized && li.type) {
-		assert(rl->tvarsized && rli.type);
-		assert(rh->tvarsized && rhi.type);
+	if (li.vh && li.type) {
+		assert(rli.vh && rli.type);
+		assert(rhi.vh && rhi.type);
 		lvars = li.vh->base;
 		rlvars = rli.vh->base;
 		rhvars = rhi.vh->base;
 	} else {
-		assert(!rl->tvarsized || !rli.type);
-		assert(!rh->tvarsized || !rhi.type);
+		assert(rli.vh == NULL);
+		assert(rhi.vh == NULL);
 		lvars = rlvars = rhvars = NULL;
 	}
 

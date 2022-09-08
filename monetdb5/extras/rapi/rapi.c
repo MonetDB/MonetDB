@@ -119,7 +119,6 @@
 			prev = *p;													\
 		}																\
 		BATsetcount(b, cnt);											\
-		BATsettrivprop(b);												\
 	} while (0)
 
 // DATE epoch differs betwen MonetDB (00-01-01) and R (1970-01-01)
@@ -340,6 +339,7 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 				}
 			}
 		}
+		BATsetcount(b, cnt);
 		break;
 	}
 	default:
@@ -351,10 +351,6 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 		}
 	}
 
-	if (b) {
-		BATsetcount(b, cnt);
-		BBPkeepref(b);
-	}
 	return b;
 }
 
@@ -473,10 +469,12 @@ static char *RAPIinitialize(void) {
 	if ((e = RAPIinstalladdons()) != 0) {
 		return e;
 	}
+#if R_VERSION < R_Version(4,2,0)
 	// patch R internals to disallow quit and system. Setting them to NULL produces an error.
 	SET_INTERNAL(install("quit"), R_NilValue);
 	// install.packages() uses system2 to call gcc etc., so we cannot disable it (perhaps store the pointer somewhere just for that?)
 	//SET_INTERNAL(install("system"), R_NilValue);
+#endif
 
 	rapiInitialized = true;
 	return NULL;
@@ -820,6 +818,7 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 		// bat return
 		if (isaBatType(getArgType(mb,pci,i))) {
 			*getArgReference_bat(stk, pci, i) = b->batCacheid;
+			BBPkeepref(b);
 		} else { // single value return, only for non-grouped aggregations
 			BATiter li = bat_iterator(b);
 			if (VALinit(&stk->stk[pci->argv[i]], bat_type,
@@ -829,6 +828,7 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 				goto wrapup;
 			}
 			bat_iterator_end(&li);
+			BBPunfix(b->batCacheid);
 		}
 		msg = MAL_SUCCEED;
 	}
@@ -902,9 +902,7 @@ RAPIloopback(void *query) {
 	return ScalarLogical(1);
 }
 
-static str RAPIprelude(void *ret) {
-	(void) ret;
-
+static str RAPIprelude(void) {
 	if (RAPIEnabled()) {
 		MT_lock_set(&rapiLock);
 		/* startup internal R environment  */
@@ -931,7 +929,6 @@ static mel_func rapi_init_funcs[] = {
  pattern("rapi", "eval", RAPIevalStd, false, "Execute a simple R script value", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("rapi", "subeval_aggr", RAPIevalAggr, false, "grouped aggregates through R", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("rapi", "eval_aggr", RAPIevalAggr, false, "grouped aggregates through R", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
- command("rapi", "prelude", RAPIprelude, false, "", args(1,1, arg("",void))),
  pattern("batrapi", "eval", RAPIevalStd, false, "Execute a simple R script value", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("batrapi", "eval", RAPIevalStd, false, "Execute a simple R script value", args(1,4, varargany("",0),arg("card", lng), arg("fptr",ptr),arg("expr",str))),
  pattern("batrapi", "subeval_aggr", RAPIevalAggr, false, "grouped aggregates through R", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
@@ -944,4 +941,4 @@ static mel_func rapi_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_rapi_mal)
-{ mal_module("rapi", NULL, rapi_init_funcs); }
+{ mal_module2("rapi", NULL, rapi_init_funcs, RAPIprelude, NULL); }

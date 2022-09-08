@@ -57,6 +57,12 @@ terminateProcess(char *dbname, pid_t pid, mtype type)
 		return false;
 	}
 
+	if (pid == -1) {
+		/* it's already dead */
+		msab_freeStatus(&stats);
+		return true;
+	}
+
 	if (stats->pid != pid) {
 		Mlevelfprintf(ERROR, stderr,
 			"strange, trying to kill process %lld to stop database '%s' "
@@ -65,8 +71,13 @@ terminateProcess(char *dbname, pid_t pid, mtype type)
 			dbname,
 			(long long int)pid
 		);
-		msab_freeStatus(&stats);
-		return false;
+		if (stats->pid >= 1 && pid < 1) {
+			/* assume the server was started by a previous merovingian */
+			pid = stats->pid;
+		} else {
+			msab_freeStatus(&stats);
+			return false;
+		}
 	}
 	assert(stats->pid == pid);
 
@@ -113,8 +124,8 @@ terminateProcess(char *dbname, pid_t pid, mtype type)
 			 "TERM signal\n", (long long int)pid, dbname);
 	if (kill(pid, SIGTERM) < 0) {
 		/* barf */
-		Mlevelfprintf(ERROR, stderr, "cannot send TERM signal to process (database '%s')\n",
-				 dbname);
+		Mlevelfprintf(ERROR, stderr, "cannot send TERM signal to process (database '%s'): %s\n",
+				 dbname, strerror(errno));
 		msab_freeStatus(&stats);
 		return false;
 	}
@@ -328,14 +339,22 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		break;
 	default:
 		/* this also includes SABdbStarting, which we shouldn't ever
-		 * see due to the global starting lock */
+		 * see due to the global starting lock
+		 *
+		 * if SABdbStarting: a process (presumably mserver5) has locked
+		 * the database (i.e. the .gdk_lock file), but the server is not
+		 * ready to accept connections (i.e. there is no .started
+		 * file) */
 		state = (*stats)->state;
 		msab_freeStatus(stats);
 		freeConfFile(ckv);
 		free(ckv);
 		pthread_mutex_unlock(&dp->fork_lock);
-		return(newErr("unknown or impossible state: %d",
-					  (int)state));
+		if (state == SABdbStarting)
+			return(newErr("unexpected state: database is locked but not yet started"));
+		else
+			return(newErr("unknown or impossible state: %d",
+						  (int)state));
 	}
 
 	/* create the pipes (filedescriptors) now, such that we and the
@@ -365,8 +384,8 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		/* fill in the rest of the dpair entry */
 		pthread_mutex_lock(&_mero_topdp_lock);
 
-		dp->out = pfdo[0];
-		dp->err = pfde[0];
+		dp->input[0].fd = pfdo[0];
+		dp->input[1].fd = pfde[0];
 		dp->type = MEROFUN;
 		dp->pid = getpid();
 		dp->flag = 0;
@@ -379,10 +398,13 @@ forkMserver(const char *database, sabdb** stats, bool force)
 			freeConfFile(ckv);
 			free(ckv);
 			pthread_mutex_unlock(&dp->fork_lock);
+			close(pfdo[1]);
+			close(pfde[1]);
 			return newErr("Failed to open file descriptor\n");
 		}
 		if (!(f2 = fdopen(pfde[1], "a"))) {
 			fclose(f1);
+			close(pfde[1]);
 			msab_freeStatus(stats);
 			freeConfFile(ckv);
 			free(ckv);
@@ -423,6 +445,10 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		freeConfFile(ckv);
 		free(ckv);
 		pthread_mutex_unlock(&dp->fork_lock);
+		close(pfdo[0]);
+		close(pfdo[1]);
+		close(pfde[0]);
+		close(pfde[1]);
 		return(newErr("cannot start database '%s': no .vaultkey found "
 					  "(did you create the database with `monetdb create %s`?)",
 					  database, database));
@@ -434,6 +460,10 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		freeConfFile(ckv);
 		free(ckv);
 		pthread_mutex_unlock(&dp->fork_lock);
+		close(pfdo[0]);
+		close(pfdo[1]);
+		close(pfde[0]);
+		close(pfde[1]);
 		return(er);
 	}
 
@@ -638,15 +668,15 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		int dup_err;
 		close(pfdo[0]);
 		dup_err = dup2(pfdo[1], 1);
+		if (dup_err == -1)
+			perror("dup2");
 		close(pfdo[1]);
 
 		close(pfde[0]);
-		if (dup_err == -1)
-			perror("dup2");
 		dup_err = dup2(pfde[1], 2);
-		close(pfde[1]);
 		if (dup_err == -1)
 			perror("dup2");
+		close(pfde[1]);
 
 		write_error = write(1, "arguments:", 10);
 		for (c = 0; argv[c] != NULL; c++) {
@@ -668,9 +698,9 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		exit(1);
 	} else if (pid > 0) {
 		/* parent: fine, let's add the pipes for this child */
-		dp->out = pfdo[0];
+		dp->input[0].fd = pfdo[0];
 		close(pfdo[1]);
-		dp->err = pfde[0];
+		dp->input[1].fd = pfde[0];
 		close(pfde[1]);
 		dp->type = MERODB;
 		dp->pid = pid;
@@ -811,5 +841,3 @@ forkMserver(const char *database, sabdb** stats, bool force)
 	pthread_mutex_unlock(&_mero_topdp_lock);
 	return(newErr("%s", strerror(e)));
 }
-
-/* vim:set ts=4 sw=4 noexpandtab: */

@@ -32,6 +32,7 @@ set(sql_public_headers
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/sql_parser.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/sql_privileges.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_optimizer.h>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_rewriter.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_partition.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_prop.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_exp.h>
@@ -99,8 +100,6 @@ set(include_sql_files
   46_profiler
   52_describe
   58_hot_snapshot
-  60_wlcr
-  61_wlcr
   75_storagemodel
   76_dump
   80_statistics
@@ -145,7 +144,6 @@ target_sources(sql
   sql_strimps.c sql_strimps.h
   sql_time.c
   sql_bincopyfrom.c
-  wlr.c wlr.h
   sql_datetrunc.c
   sql_rank.c sql_rank.h
   sql_subquery.c sql_subquery.h

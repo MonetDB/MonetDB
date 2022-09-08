@@ -41,6 +41,7 @@ MNDBTables(ODBCStmt *stmt,
 
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
+	size_t pos = 0;
 
 	/* convert input string parameters to normal null terminated C
 	 * strings */
@@ -62,11 +63,11 @@ MNDBTables(ODBCStmt *stmt,
 #endif
 
 	/* SQLTables returns a table with the following columns:
-	   VARCHAR      table_cat
-	   VARCHAR      table_schem
-	   VARCHAR      table_name
-	   VARCHAR      table_type
-	   VARCHAR      remarks
+	   VARCHAR      TABLE_CAT
+	   VARCHAR      TABLE_SCHEM
+	   VARCHAR      TABLE_NAME
+	   VARCHAR      TABLE_TYPE
+	   VARCHAR      REMARKS
 	 */
 
 	/* Check first on the special cases */
@@ -75,13 +76,13 @@ MNDBTables(ODBCStmt *stmt,
 	    CatalogName &&
 	    strcmp((char *) CatalogName, SQL_ALL_CATALOGS) == 0) {
 		/* Special case query to fetch all Catalog names. */
-		query = strdup("select e.value as table_cat, "
-				      "cast(null as varchar(1)) as table_schem, "
-				      "cast(null as varchar(1)) as table_name, "
-				      "cast(null as varchar(1)) as table_type, "
-				      "cast(null as varchar(1)) as remarks "
-			       "from sys.env() e "
-			       "where e.name = 'gdk_dbname'");
+		/* All columns except the TABLE_CAT column contain NULLs. */
+		query = strdup("select cast(null as varchar(1)) as \"TABLE_CAT\", "
+				      "cast(null as varchar(1)) as \"TABLE_SCHEM\", "
+				      "cast(null as varchar(1)) as \"TABLE_NAME\", "
+				      "cast(null as varchar(1)) as \"TABLE_TYPE\", "
+				      "cast(null as varchar(1)) as \"REMARKS\" "
+			       "where 1=2");  /* return no rows */
 		if (query == NULL)
 			goto nomem;
 	} else if (NameLength1 == 0 &&
@@ -89,15 +90,16 @@ MNDBTables(ODBCStmt *stmt,
 		   SchemaName &&
 		   strcmp((char *) SchemaName, SQL_ALL_SCHEMAS) == 0) {
 		/* Special case query to fetch all Schema names. */
-		query = strdup("select cast(null as varchar(1)) as table_cat, "
-				      "name as table_schem, "
-				      "cast(null as varchar(1)) as table_name, "
-				      "cast(null as varchar(1)) as table_type, "
+		/* All columns except the TABLE_SCHEM column contain NULLs. */
+		query = strdup("select cast(null as varchar(1)) as \"TABLE_CAT\", "
+				      "name as \"TABLE_SCHEM\", "
+				      "cast(null as varchar(1)) as \"TABLE_NAME\", "
+				      "cast(null as varchar(1)) as \"TABLE_TYPE\", "
 			       /* ODBC says remarks column contains
 				* NULL even though MonetDB supports
-				* schema remarks */
-				      "cast(null as varchar(1)) as remarks "
-			       "from sys.schemas order by table_schem");
+				* schema remarks. We must comply with ODBC */
+				      "cast(null as varchar(1)) as \"REMARKS\" "
+			       "from sys.schemas order by \"TABLE_SCHEM\"");
 		if (query == NULL)
 			goto nomem;
 	} else if (NameLength1 == 0 &&
@@ -106,18 +108,18 @@ MNDBTables(ODBCStmt *stmt,
 		   TableType &&
 		   strcmp((char *) TableType, SQL_ALL_TABLE_TYPES) == 0) {
 		/* Special case query to fetch all Table type names. */
-		query = strdup("select cast(null as varchar(1)) as table_cat, "
-				      "cast(null as varchar(1)) as table_schem, "
-				      "cast(null as varchar(1)) as table_name, "
-				      "table_type_name as table_type, "
-				      "cast(null as varchar(1)) as remarks "
-			       "from sys.table_types order by table_type");
+		/* All columns except the TABLE_TYPE column contain NULLs. */
+		query = strdup("select cast(null as varchar(1)) as \"TABLE_CAT\", "
+				      "cast(null as varchar(1)) as \"TABLE_SCHEM\", "
+				      "cast(null as varchar(1)) as \"TABLE_NAME\", "
+				      "table_type_name as \"TABLE_TYPE\", "
+				      "cast(null as varchar(1)) as \"REMARKS\" "
+			       "from sys.table_types order by \"TABLE_TYPE\"");
 		if (query == NULL)
 			goto nomem;
 	} else {
 		/* no special case argument values */
 		size_t querylen;
-		size_t pos = 0;
 
 		if (stmt->Dbc->sql_attr_metadata_id == SQL_FALSE) {
 			if (NameLength2 > 0) {
@@ -152,7 +154,7 @@ MNDBTables(ODBCStmt *stmt,
 		}
 
 		/* construct the query now */
-		querylen = 2000 + strlen(stmt->Dbc->dbname) +
+		querylen = 2000 +
 			(sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0) +
 			((NameLength4 + 1) / 5) * 67;
 		query = malloc(querylen);
@@ -160,17 +162,16 @@ MNDBTables(ODBCStmt *stmt,
 			goto nomem;
 
 		pos += snprintf(query + pos, querylen - pos,
-		       "select '%s' as table_cat, "
-			      "s.name as table_schem, "
-			      "t.name as table_name, "
-		              "tt.table_type_name as table_type, "
-			      "%s as remarks "
+		       "select cast(null as varchar(1)) as \"TABLE_CAT\", "
+			      "s.name as \"TABLE_SCHEM\", "
+			      "t.name as \"TABLE_NAME\", "
+		              "tt.table_type_name as \"TABLE_TYPE\", "
+			      "%s as \"REMARKS\" "
 		       "from sys.schemas s, "
 			    "sys.tables t%s, "
 		            "sys.table_types tt "
 		       "where s.id = t.schema_id and "
 		             "t.type = tt.table_type_id",
-			stmt->Dbc->dbname,
 			stmt->Dbc->has_comment ? "c.remark" : "cast(null as varchar(1))",
 			stmt->Dbc->has_comment ? " left outer join sys.comments c on c.id = t.id" : "");
 		assert(pos < 1900);
@@ -198,7 +199,10 @@ MNDBTables(ODBCStmt *stmt,
 		}
 
 		if (NameLength4 > 0) {
-			/* filtering requested on table type */
+			/* filtering requested on table type(s)
+			 * each table type can be enclosed in single quotation marks (')
+			 * or unquoted, for example, 'TABLE', 'VIEW' or TABLE, VIEW.
+			 */
 			char buf[32];	/* the longest string is "GLOBAL TEMPORARY TABLE" */
 			int i;
 			size_t j;
@@ -232,8 +236,11 @@ MNDBTables(ODBCStmt *stmt,
 		}
 
 		/* add the ordering */
-		pos += strcpy_len(query + pos, " order by table_type, table_schem, table_name", querylen - pos);
+		pos += strcpy_len(query + pos, " order by \"TABLE_TYPE\", \"TABLE_SCHEM\", \"TABLE_NAME\"", querylen - pos);
+		assert(pos < querylen);
 	}
+
+	/* debug: fprintf(stdout, "SQLTables query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */
 
 	/* query the MonetDB data dictionary tables */
 	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, SQL_NTS);

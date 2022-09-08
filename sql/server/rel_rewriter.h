@@ -37,8 +37,6 @@ try_remove_empty_select(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-extern sql_rel *rewrite_reset_used(visitor *v, sql_rel *rel);
-
 extern int find_member_pos(list *l, sql_table *t);
 extern sql_column *name_find_column(sql_rel *rel, const char *rname, const char *name, int pnr, sql_rel **bt);
 
@@ -48,5 +46,8 @@ extern int kc_column_cmp(sql_kc *kc, sql_column *c);
 extern int exps_unique(mvc *sql, sql_rel *rel, list *exps);
 
 extern sql_column *exp_find_column(sql_rel *rel, sql_exp *exp, int pnr);
+
+extern BUN get_rel_count(sql_rel *rel);
+extern void set_count_prop(sql_allocator *sa, sql_rel *rel, BUN val);
 
 #endif /*_REL_REWRITER_H_*/

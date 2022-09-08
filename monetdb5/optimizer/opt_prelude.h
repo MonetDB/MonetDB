@@ -273,7 +273,6 @@ mal_export  const char *semijoinRef;
 mal_export  const char *seriesRef;
 mal_export  const char *setAccessRef;
 mal_export  const char *setVariableRef;
-mal_export  const char *setWriteModeRef;
 mal_export  const char *set_protocolRef;
 mal_export  const char *singleRef;
 mal_export  const char *sinkRef;
@@ -326,8 +325,6 @@ mal_export  const char *updateRef;
 mal_export  const char *userRef;
 mal_export  const char *vectorRef;
 mal_export  const char *window_boundRef;
-mal_export  const char *wlcRef;
-mal_export  const char *wlrRef;
 mal_export  const char *zero_or_oneRef;
 /* ! please keep this list sorted for easier maintenance ! */
 #endif

@@ -1,5 +1,5 @@
 %global name MonetDB
-%global version 11.44.0
+%global version 11.46.0
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # Use bcond_with to add a --with option; i.e., "without" is default.
@@ -81,7 +81,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jan2022-SP2/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jan2022-SP4/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -355,6 +355,9 @@ developer.
 
 %files client-tests
 %defattr(-,root,root)
+%{_bindir}/ODBCStmtAttr
+%{_bindir}/ODBCgetInfo
+%{_bindir}/ODBCmetadata
 %{_bindir}/arraytest
 %{_bindir}/bincopydata
 %{_bindir}/odbcsample1
@@ -365,8 +368,7 @@ developer.
 %{_bindir}/smack00
 %{_bindir}/smack01
 %{_bindir}/streamcat
-%{_bindir}/testgetinfo
-%{_bindir}/testStmtAttr
+%{_bindir}/testcondvar
 %{_bindir}/malsample.pl
 %{_bindir}/sqlsample.php
 %{_bindir}/sqlsample.pl
@@ -825,7 +827,6 @@ install -d -m 0775 %{buildroot}%{_rundir}/monetdb
 rm -f %{buildroot}%{_libdir}/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_opt_sql_append.so
-rm -f %{buildroot}%{_libdir}/monetdb5/lib_run_*.so
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_microbenchmark*.so
 rm -f %{buildroot}%{_libdir}/monetdb5/lib_udf*.so
 rm -f %{buildroot}%{_bindir}/monetdb_mtest.sh
@@ -848,6 +849,106 @@ fi
 %endif
 
 %changelog
+* Fri Aug 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.21-20220819
+- Rebuilt.
+
+* Mon Aug 15 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.19-20220815
+- Rebuilt.
+
+* Thu Aug 11 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.17-20220811
+- Rebuilt.
+- GH#7040: Memory leak detected for MAPI interface
+- GH#7298: Irresponsive database server after reading incomplete SQL
+  script.
+- GH#7308: Race condition in MVCC transaction management
+
+* Wed Aug 10 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.17-20220811
+- gdk: A bug was fixed when upgrading a database from the Oct2020 releases
+  (11.39.X) or older when the write-ahead log (WAL) was not empty and
+  contained instructions to create new tables.
+
+* Tue Aug  2 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.17-20220811
+- gdk: When destroying a bat, make sure there are no files left over in
+  the BACKUP directory since they can cause problems when the bat id
+  gets reused.
+
+* Thu Jul 28 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.17-20220811
+- gdk: Fixed an off-by-one error in the logger which caused older log files
+  to stick around longer in the write-ahead log than necessary.
+- gdk: When an empty BAT is committed, skip writing (and synchronizing to
+  disk) the heap (tail and theap) files and write 0 for their sizes to
+  the BBP.dir file.  When reading the BBP.dir file, if an empty BAT is
+  encountered, set the sizes of those files to 0.  This fixes potential
+  issues during startup of the server (BBPcheckbats reporting errors).
+
+* Thu Jun 23 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.17-20220811
+- merovingian: When multiple identical messages are written to the log, write the
+  first one, and combine subsequent ones in a single message.
+
+* Wed Jun 22 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.17-20220811
+- gdk: Make sure heap files of transient bats get deleted when the bat is
+  destroyed.  If the bat was a partial view (sharing the vheap but not
+  the tail), the tail file wasn't deleted.
+- gdk: Various changes were made to satisfy newer compilers.
+- gdk: The batDirtydesc and batDirtyflushed Boolean values have been deprecated
+  and are no longer used.  They were both holdovers from long ago.
+- gdk: Various race conditions (data races) have been fixed.
+
+* Wed Jun 22 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.17-20220811
+- merovingian: Fixed a leak where the log file wasn't closed when it was reopened
+  after a log rotation (SIGHUP signal).
+- merovingian: Try to deal more gracefully with "inherited" mserver5 processes.
+  This includes not complaining about an "impossible state", and allowing
+  such processes to be stopped by the monetdbd process.
+- merovingian: When a transient failure occurs during processing of a new connection to
+  the monetdbd server, sleep for half a second so that if the transient
+  failure occurs again, the log file doesn't get swamped with error
+  messages.
+
+* Wed Jun 22 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.17-20220811
+- monetdb5: Various race conditions (data races) have been fixed.
+
+* Fri Jun 10 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.17-20220811
+- clients: Implemented dump of global grants, that is to say, grants for COPY INTO
+  and COPY FROM which grant permission to users to write to or read from
+  files on the server (COPY INTO queries without the ON CLIENT option).
+
+* Tue May 31 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.17-20220811
+- clients: Fixed a bug where when the semicolon at the end of a COPY INTO query
+  that reads from STDIN is at exactly a 10240 byte boundary in a file,
+  the data isn't read as input for the COPY INTO but instead as a new
+  SQL query.
+
+* Fri May 20 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.17-20220811
+- gdk: All accesses to the BACKUP directory need to be protected by the
+  same lock.  The lock already existed (GDKtmLock), but wasn't used
+  consistently.  This is now fixed.  Hopefully this makes the hot snapshot
+  code more reliable.
+
+* Fri May 20 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.15-20220520
+- Rebuilt.
+- GH#7036: Generate column names instead of labels
+
+* Thu May 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.15-20220520
+- gdk: All accesses to the BACKUP directory need to be protected by the
+  same lock.  The lock already existed (GDKtmLock), but wasn't used
+  consistently.  This is now fixed.  Hopefully this makes the hot snapshot
+  code more reliable.
+
+* Tue May 10 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.15-20220520
+- gdk: When exiting, long running instructions are aborted using the same
+  mechanism that is used for query timeouts.
+
+* Mon Apr 25 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.15-20220520
+- sql: GLOBAL TEMPORARY tables are now treated like LOCAL TEMPORARY tables
+  as far as the table content is concerned.  The schema information
+  stays global.  This fixes an issue with concurrent access and cleanup
+  of stale data.
+
+* Thu Apr 14 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.15-20220520
+- sql: The NO CONSTRAINT option of the COPY INTO query has been removed.
+  It didn't work and it was never a good idea anyway.
+
 * Fri Apr 01 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.13-20220401
 - Rebuilt.
 - GH#7278: BUG when there is more than one field/filter in the having

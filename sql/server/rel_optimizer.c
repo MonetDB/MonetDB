@@ -13,6 +13,7 @@
 #include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_propagate.h"
+#include "rel_statistics.h"
 #include "sql_privileges.h"
 
 static sql_rel *
@@ -51,7 +52,6 @@ rel_properties(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-
 typedef struct {
 	atom *lval;
 	atom *hval;
@@ -89,7 +89,7 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 			return sql_error(v->sql, 02, SQLSTATE(42000) "The %s '%s.%s' should have at least one table associated",
 							 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), pt->s->base.name, pt->base.name);
 		/* Do not include empty partitions */
-		if (isTable(pt) && pt->access == TABLE_READONLY && !store->storage_api.count_col(v->sql->session->tr, ol_first_node(pt->columns)->data, 0))
+		if (isTable(pt) && pt->access == TABLE_READONLY && !store->storage_api.count_col(v->sql->session->tr, ol_first_node(pt->columns)->data, 10)) /* count active rows only */
 			continue;
 
 		if (!table_privs(v->sql, pt, PRIV_SELECT)) /* Test for privileges */
@@ -655,13 +655,15 @@ const sql_optimizer pre_sql_optimizers[] = {
 
 /* these optimizers/rewriters only run once after the cycle loop */
 const sql_optimizer post_sql_optimizers[] = {
-	{22, "push_select_up", bind_push_select_up}, /* run rel_push_select_up only once at the end to avoid an infinite optimization loop */
-	{23, "setjoins_2_joingroupby", bind_setjoins_2_joingroupby},
+	{22, "setjoins_2_joingroupby", bind_setjoins_2_joingroupby},
 	/* Merge table rewrites may introduce remote or replica tables */
-	/* At the moment, make sure the remote table rewriters always run last */
-	{24, "rewrite_remote", bind_rewrite_remote},
-	{25, "rewrite_replica", bind_rewrite_replica},
-	{26, "remote_func", bind_remote_func},
+	/* At the moment, make sure the remote table rewriters always run after the merge table one */
+	{23, "rewrite_remote", bind_rewrite_remote},
+	{24, "rewrite_replica", bind_rewrite_replica},
+	{25, "remote_func", bind_remote_func},
+	{26, "get_statistics", bind_get_statistics}, /* gather statistics */
+	{27, "join_order2", bind_join_order2}, /* run join order one more time with statistics */
+	{28, "final_optimization_loop", bind_final_optimization_loop}, /* run select and group by order with statistics gathered  */
 	{ 0, NULL, NULL}
 	/* If an optimizer is going to be added, don't forget to update NSQLREWRITERS macro */
 };
@@ -745,7 +747,8 @@ run_optimizer_set(visitor *v, sql_optimizer_run *runs, sql_rel *rel, global_prop
 sql_rel *
 rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt)
 {
-	global_props gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = 0};
+	global_props gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = 0,
+									  .has_special_modify = rel && is_modify(rel->op) && rel->flag&UPD_COMP};
 	visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt, .changes = 1, .data = &gp };
 
 	if (!(rel = rel_keep_renames(sql, rel)))
@@ -754,7 +757,7 @@ rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_ba
 	sql->runs = !(GDKdebug & FORCEMITOMASK) && profile ? sa_zalloc(sql->sa, NSQLREWRITERS * sizeof(sql_optimizer_run)) : NULL;
 	for ( ;rel && gp.opt_cycle < 20 && v.changes; gp.opt_cycle++) {
 		v.changes = 0;
-		gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = gp.opt_cycle};
+		gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = gp.opt_cycle, .has_special_modify = gp.has_special_modify};
 		rel = rel_visitor_topdown(&v, rel, &rel_properties); /* collect relational tree properties */
 		gp.opt_level = calculate_opt_level(sql, rel);
 		if (gp.opt_level == 0 && !gp.needs_mergetable_rewrite)

@@ -897,7 +897,7 @@ static inline sql_rel *
 rel_merge_select_rse(visitor *v, sql_rel *rel)
 {
 	/* only execute once per select */
-	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->exps && !rel->used) {
+	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->exps && !is_rel_merge_select_rse_used(rel->used)) {
 		node *n, *o;
 		list *nexps = new_exp_list(v->sql->sa);
 
@@ -920,7 +920,7 @@ rel_merge_select_rse(visitor *v, sql_rel *rel)
 			}
 		}
 		rel->exps = nexps;
-		rel->used = 1;
+		rel->used |= rel_merge_select_rse_used;
 	}
 	return rel;
 }
@@ -946,8 +946,6 @@ rel_optimize_select_and_joins_bottomup(visitor *v, global_props *gp, sql_rel *re
 {
 	v->data = &gp->opt_cycle;
 	rel = rel_visitor_bottomup(v, rel, &rel_optimize_select_and_joins_bottomup_);
-	if (gp->opt_cycle == 1)
-		rel = rel_visitor_bottomup(v, rel, &rewrite_reset_used); /* reset used flag, used by rel_merge_select_rse */
 	v->data = gp;
 	return rel;
 }
@@ -1678,7 +1676,7 @@ exp_count(int *cnt, sql_exp *e)
 	}
 }
 
-static int
+int
 exp_keyvalue(sql_exp *e)
 {
 	int cnt = 0;
@@ -2008,7 +2006,7 @@ find_fk( mvc *sql, list *rels, list *exps)
 					djn->data = je;
 				}
 				je->p = p = prop_create(sql->sa, PROP_JOINIDX, je->p);
-				p->value = idx;
+				p->value.pval = idx;
 			}
 		}
 	}
@@ -2447,6 +2445,19 @@ bind_join_order(visitor *v, global_props *gp)
 	int flag = v->sql->sql_optimizer;
 	return gp->opt_level == 1 && !gp->cnt[op_update] && (gp->cnt[op_join] || gp->cnt[op_left] ||
 		   gp->cnt[op_right] || gp->cnt[op_full]) && (flag & join_order) ? rel_join_order : NULL;
+}
+
+/* this join order is to be done once after statistics are gathered */
+run_optimizer
+bind_join_order2(visitor *v, global_props *gp)
+{
+	/*int flag = v->sql->sql_optimizer;
+	return gp->opt_level == 1 && !gp->has_special_modify && !gp->cnt[op_update] && (gp->cnt[op_join] || gp->cnt[op_left] ||
+		   gp->cnt[op_right] || gp->cnt[op_full]) && (flag & join_order) ? rel_join_order : NULL;*/
+	/* TODO we have to propagate count statistics here */
+	(void) v;
+	(void) gp;
+	return NULL;
 }
 
 
@@ -3109,6 +3120,94 @@ rel_simplify_fk_joins(visitor *v, sql_rel *rel)
 }
 
 /*
+ * Gets the column expressions of a diff function and adds them to "columns".
+ * The diff function has two possible argument types: either a sql_exp representing a column
+ * or a sql_exp representing another diff function, therefore this function is recursive.
+ */
+static void
+get_diff_function_columns(sql_exp *diffExp, list *columns) {
+	list *args = diffExp->l;
+
+	for (node *arg = args->h; arg; arg = arg->next) {
+		sql_exp *exp = arg->data;
+
+		// diff function
+		if (exp->type == e_func) {
+			get_diff_function_columns(exp, columns);
+		}
+		// column
+		else {
+			list_append(columns, exp);
+		}
+	}
+}
+
+/*
+ * Builds a list of aggregation key columns to be used by the select push down algorithm, namely for
+ * window functions. Returns NULL if the window function does not partition by any column
+ */
+static list *
+get_aggregation_key_columns(sql_allocator *sa, sql_rel *r) {
+	for (node* n = r->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (e->type == e_func) {
+			sql_subfunc *f = e->f;
+
+			// aggregation function
+			if (!strcmp(f->func->base.name, "rank")) {
+				list* rankArguments = e->l;
+				// the partition key is the second argument
+				sql_exp *partitionExp = rankArguments->h->next->data;
+
+				// check if the key contains any columns, i.e., is a diff function
+				if (partitionExp->type == e_func) {
+					// get columns to list
+					list *aggColumns = sa_list(sa);
+					get_diff_function_columns(partitionExp, aggColumns);
+					return aggColumns;
+				}
+				// the function has no aggregation columns (e_atom of boolean)
+				else {
+					return NULL;
+				}
+
+			}
+		}
+	}
+	return NULL;
+}
+
+/*
+ * Checks if a filter column is also used as an aggregation key, so it can be later safely pushed down.
+ */
+static int
+filter_column_in_aggregation_columns(sql_exp *column, list *aggColumns) {
+	/* check if it is a column or an e_convert, and get the actual column if it is the latter */
+	if (column->type == e_convert) {
+		column = column->l;
+	}
+
+	char *tableName = column->l;
+	char *columnName = column->r;
+
+	for (node *n = aggColumns->h; n; n = n->next) {
+		sql_exp *aggCol = n->data;
+		char *aggColTableName = aggCol->l;
+		char *aggColColumnName = aggCol->r;
+
+		if (!strcmp(tableName, aggColTableName) && !strcmp(columnName, aggColColumnName)) {
+			/* match */
+			return 1;
+		}
+	}
+
+	/* no matches found */
+	return 0;
+}
+
+
+/*
  * Push select down, pushes the selects through (simple) projections. Also
  * it cleans up the projections which become useless.
  *
@@ -3260,6 +3359,56 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 			if (opl != pl)
 				set_processed(pl);
 		}
+
+		/* push filters if they match the aggregation key on a window function */
+		else if (pl && pl->op != op_ddl && exps_have_unsafe(r->exps, 0)) {
+			set_processed(pl);
+			/* list of aggregation key columns */
+			list *aggColumns = get_aggregation_key_columns(v->sql->sa, r);
+
+			/* aggregation keys found, check if any filter matches them */
+			if (aggColumns) {
+				for (n = exps->h; n;) {
+					node *next = n->next;
+					sql_exp *e = n->data, *ne = NULL;
+
+					if (e->type == e_cmp) {
+						/* simple comparison filter */
+						if (e->flag == cmp_gt || e->flag == cmp_gte || e->flag == cmp_lte || e->flag == cmp_lt
+							|| e->flag == cmp_equal || e->flag == cmp_notequal || e->flag == cmp_in || e->flag == cmp_notin
+							|| (e->flag == cmp_filter && ((list*)e->l)->cnt == 1)) {
+							sql_exp* column;
+							/* the column in 'like' filters is stored inside a list */
+							if (e->flag == cmp_filter) {
+								column = ((list*)e->l)->h->data;
+							}
+							else {
+								column = e->l;
+							}
+
+							/* check if the expression matches any aggregation key, meaning we can
+							   try to safely push it down */
+							if (filter_column_in_aggregation_columns(column, aggColumns)) {
+								ne = exp_push_down_prj(v->sql, e, r, pl);
+
+								/* can we move it down */
+								if (ne && ne != e && pl->exps) {
+									if (!is_select(pl->op) || rel_is_ref(pl))
+										r->l = pl = rel_select(v->sql->sa, pl, NULL);
+									rel_select_add_exp(v->sql->sa, pl, ne);
+									list_remove_node(exps, NULL, n);
+									v->changes++;
+								}
+							}
+						}
+					}
+					n = next;
+				}
+
+				/* cleanup list */
+				list_destroy(aggColumns);
+			}
+		}
 	}
 
 	/* try push select under set relation */
@@ -3345,7 +3494,7 @@ find_index(sql_allocator *sa, sql_rel *rel, sql_rel *sub, list **EXPS)
 
 		if ((p = find_prop(e->p, PROP_HASHIDX)) != NULL) {
 			list *exps, *cols;
-			sql_idx *i = p->value;
+			sql_idx *i = p->value.pval;
 			fcmp cmp = (fcmp)&sql_column_kc_cmp;
 
 			/* join indices are only interesting for joins */
@@ -3429,7 +3578,7 @@ rel_use_index(visitor *v, sql_rel *rel)
 				p = find_prop(e->p, PROP_HASHCOL);
 				if (!p)
 					e->p = p = prop_create(v->sql->sa, PROP_HASHCOL, e->p);
-				p->value = i;
+				p->value.pval = i;
 			}
 		}
 		/* add the remaining exps to the new exp list */
@@ -3445,70 +3594,6 @@ rel_use_index(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static int
-score_se_base(visitor *v, sql_rel *rel, sql_exp *e)
-{
-	int res = 0;
-	sql_subtype *t = exp_subtype(e);
-	sql_column *c = NULL;
-
-	/* can we find out if the underlying table is sorted */
-	if ((c = exp_find_column(rel, e, -2)) && v->storage_based_opt && mvc_is_sorted(v->sql, c))
-		res += 600;
-
-	/* prefer the shorter var types over the longer ones */
-	res += sql_class_base_score(v, c, t, is_equality_or_inequality_exp(e->flag)); /* smaller the type, better */
-	return res;
-}
-
-static int
-score_se(visitor *v, sql_rel *rel, sql_exp *e)
-{
-	int score = 0;
-	if (e->type == e_cmp && !is_complex_exp(e->flag)) {
-		sql_exp *l = e->l;
-
-		while (l->type == e_cmp) { /* go through nested comparisons */
-			sql_exp *ll;
-
-			if (l->flag == cmp_filter || l->flag == cmp_or)
-				ll = ((list*)l->l)->h->data;
-			else
-				ll = l->l;
-			if (ll->type != e_cmp)
-				break;
-			l = ll;
-		}
-		score += score_se_base(v, rel, l);
-	}
-	score += exp_keyvalue(e);
-	return score;
-}
-
-static inline sql_rel *
-rel_select_order(visitor *v, sql_rel *rel)
-{
-	int *scores = NULL;
-	sql_exp **exps = NULL;
-
-	if (is_select(rel->op) && list_length(rel->exps) > 1) {
-		node *n;
-		int i, nexps = list_length(rel->exps);
-		scores = SA_NEW_ARRAY(v->sql->ta, int, nexps);
-		exps = SA_NEW_ARRAY(v->sql->ta, sql_exp*, nexps);
-
-		for (i = 0, n = rel->exps->h; n; i++, n = n->next) {
-			exps[i] = n->data;
-			scores[i] = score_se(v, rel, n->data);
-		}
-		GDKqsort(scores, exps, NULL, nexps, sizeof(int), sizeof(void *), TYPE_int, true, true);
-
-		for (i = 0, n = rel->exps->h; n; i++, n = n->next)
-			n->data = exps[i];
-	}
-
-	return rel;
-}
 
 static sql_rel *
 rel_optimize_select_and_joins_topdown_(visitor *v, sql_rel *rel)
@@ -3524,8 +3609,6 @@ rel_optimize_select_and_joins_topdown_(visitor *v, sql_rel *rel)
 	rel = rel_push_select_down(v, rel);
 	if (rel && rel->l && (is_select(rel->op) || is_join(rel->op)))
 		rel = rel_use_index(v, rel);
-
-	rel = rel_select_order(v, rel);
 	return rel;
 }
 
@@ -3803,81 +3886,4 @@ bind_push_func_and_select_down(visitor *v, global_props *gp)
 	return gp->opt_level == 1 && (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right]
 			|| gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti] || gp->cnt[op_select])
 			&& (flag & push_func_and_select_down) ? rel_push_func_and_select_down : NULL;
-}
-
-
-static bool
-point_select_on_unique_column(sql_rel *rel)
-{
-	if (is_select(rel->op) && !list_empty(rel->exps)) {
-		for (node *n = rel->exps->h; n ; n = n->next) {
-			sql_exp *e = n->data, *el = e->l, *er = e->r, *found = NULL;
-
-			if (is_compare(e->type) && e->flag == cmp_equal) {
-				if (is_numeric_upcast(el))
-					el = el->l;
-				if (is_numeric_upcast(er))
-					er = er->l;
-				if (is_alias(el->type) && exp_is_atom(er) && (found = rel_find_exp(rel->l, el)) &&
-					is_unique(found) && (!is_semantics(e) || !has_nil(found) || !has_nil(er)))
-					return true;
-				if (is_alias(er->type) && exp_is_atom(el) && (found = rel_find_exp(rel->l, er)) &&
-					is_unique(found) && (!is_semantics(e) || !has_nil(el) || !has_nil(found)))
-					return true;
-			}
-		}
-	}
-	return false;
-}
-
-/*
- * A point select on an unique column reduces the number of rows to 1. If the same select is under a
- * join, the opposite side's select can be pushed above the join.
- */
-static sql_rel *
-rel_push_select_up_(visitor *v, sql_rel *rel)
-{
-	if ((is_join(rel->op) || is_semi(rel->op)) && !is_single(rel)) {
-		sql_rel *l = rel->l, *r = rel->r;
-		bool can_pushup_left = is_select(l->op) && !rel_is_ref(l) && !is_single(l),
-			 can_pushup_right = is_select(r->op) && !rel_is_ref(r) && !is_single(r) && !is_semi(rel->op);
-
-		if (can_pushup_left || can_pushup_right) {
-			if (can_pushup_left)
-				can_pushup_left = point_select_on_unique_column(r);
-			if (can_pushup_right)
-				can_pushup_right = point_select_on_unique_column(l);
-
-			/* if both selects retrieve one row each, it's not worth it to push both up */
-			if (can_pushup_left && !can_pushup_right) {
-				sql_rel *nrel = rel_dup_copy(v->sql->sa, rel);
-				nrel->l = l->l;
-				rel = rel_inplace_select(rel, nrel, l->exps);
-				assert(is_select(rel->op));
-				v->changes++;
-			} else if (!can_pushup_left && can_pushup_right) {
-				sql_rel *nrel = rel_dup_copy(v->sql->sa, rel);
-				nrel->r = r->l;
-				rel = rel_inplace_select(rel, nrel, r->exps);
-				assert(is_select(rel->op));
-				v->changes++;
-			}
-		}
-	}
-	return rel;
-}
-
-static sql_rel *
-rel_push_select_up(visitor *v, global_props *gp, sql_rel *rel)
-{
-	(void) gp;
-	return rel_visitor_topdown(v, rel, &rel_push_select_up_);
-}
-
-run_optimizer
-bind_push_select_up(visitor *v, global_props *gp)
-{
-	int flag = v->sql->sql_optimizer;
-	return gp->opt_level == 1 && gp->cnt[op_select] && (gp->cnt[op_join] || gp->cnt[op_left] ||
-		   gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti]) && (flag & push_select_up) ? rel_push_select_up : NULL;
 }

@@ -36,10 +36,7 @@
 	do {								\
 		if (__builtin_##op##_overflow(lft, rgt, &(dst)) ||	\
 		    (dst) < -(max) || (dst) > (max)) {			\
-			if (abort_on_error)				\
-				on_overflow;				\
-			(dst) = nil;					\
-			nils++;						\
+			on_overflow;					\
 		}							\
 	} while (0)
 #endif	/* HAVE___BUILTIN_ADD_OVERFLOW */
@@ -51,19 +48,13 @@
 	do {							\
 		if ((rgt) < 1) {				\
 			if (-(max) - (rgt) > (lft)) {		\
-				if (abort_on_error)		\
-					on_overflow;		\
-				(dst) = TYPE3##_nil;		\
-				nils++;				\
+				on_overflow;			\
 			} else {				\
 				(dst) = (TYPE3) (lft) + (rgt);	\
 			}					\
 		} else {					\
 			if ((max) - (rgt) < (lft)) {		\
-				if (abort_on_error)		\
-					on_overflow;		\
-				(dst) = TYPE3##_nil;		\
-				nils++;				\
+				on_overflow;			\
 			} else {				\
 				(dst) = (TYPE3) (lft) + (rgt);	\
 			}					\
@@ -91,19 +82,13 @@
 	do {							\
 		if ((rgt) < 1) {				\
 			if ((max) + (rgt) < (lft)) {		\
-				if (abort_on_error)		\
-					on_overflow;		\
-				(dst) = TYPE3##_nil;		\
-				nils++;				\
+				on_overflow;			\
 			} else {				\
 				(dst) = (TYPE3) (lft) - (rgt);	\
 			}					\
 		} else {					\
 			if (-(max) + (rgt) > (lft)) {		\
-				if (abort_on_error)		\
-					on_overflow;		\
-				(dst) = TYPE3##_nil;		\
-				nils++;				\
+				on_overflow;			\
 			} else {				\
 				(dst) = (TYPE3) (lft) - (rgt);	\
 			}					\
@@ -132,10 +117,7 @@
 		TYPE4 c = (TYPE4) (lft) * (rgt);			\
 		if (c < (TYPE4) -(max) ||				\
 		    c > (TYPE4) (max)) {				\
-			if (abort_on_error)				\
-				on_overflow;				\
-			(dst) = TYPE3##_nil;				\
-			nils++;						\
+			on_overflow;					\
 		} else {						\
 			(dst) = (TYPE3) c;				\
 		}							\
@@ -154,23 +136,22 @@
 #ifdef HAVE_HGE
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	MULI4_WITH_CHECK(lft, rgt, lng, dst, max, hge, on_overflow)
-#else
-#if defined(HAVE__MUL128)
+#elif defined(HAVE___INT128)
+#define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
+	MULI4_WITH_CHECK(lft, rgt, lng, dst, max, __int128, on_overflow)
+#elif defined(_MSC_VER) && defined(_M_AMD64) && !defined(__INTEL_COMPILER)
 #include <intrin.h>
 #pragma intrinsic(_mul128)
-#define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)		\
-	do {							\
-		lng clo, chi;					\
-		clo = _mul128((lng) (lft), (lng) (rgt), &chi);	\
-		if ((chi == 0 && clo >= 0 && clo <= (max)) ||	\
-		    (chi == -1 && clo < 0 && clo >= -(max))) {	\
-			(dst) = clo;				\
-		} else {					\
-			if (abort_on_error)			\
-				on_overflow;			\
-			(dst) = lng_nil;			\
-			nils++;					\
-		}						\
+#define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
+	do {								\
+		__int64 clo, chi;					\
+		clo = _mul128((__int64) (lft), (__int64) (rgt), &chi);	\
+		if ((chi == 0 && clo >= 0 && clo <= (max)) ||		\
+		    (chi == -1 && clo < 0 && clo >= -(max))) {		\
+			(dst) = (lng) clo;				\
+		} else {						\
+			on_overflow;					\
+		}							\
 	} while (0)
 #else
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
@@ -199,13 +180,9 @@
 		     (c) <= (ulng) (max))) {				\
 			(dst) = sign * (lng) c;				\
 		} else {						\
-			if (abort_on_error)				\
-				on_overflow;				\
-			(dst) = lng_nil;				\
-			nils++;						\
+			on_overflow;					\
 		}							\
 	} while (0)
-#endif
 #endif	/* HAVE_HGE */
 #endif
 #define MULF4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
@@ -242,10 +219,7 @@
 		    (c) <= (uhge) (max)) {				\
 			(dst) = sign * (hge) c;				\
 		} else {						\
-			if (abort_on_error)				\
-				on_overflow;				\
-			(dst) = hge_nil;				\
-			nils++;						\
+			on_overflow;					\
 		}							\
 	} while (0)
 #endif	/* HAVE___BUILTIN_ADD_OVERFLOW */
@@ -315,17 +289,17 @@ BUN dofsum(const void *restrict values, oid seqb,
 		    struct canditer *restrict ci,
 		    void *restrict results, BUN ngrp, int tp1, int tp2,
 		    const oid *restrict gids,
-		    oid min, oid max, bool skip_nils, bool abort_on_error,
-		    bool nil_if_empty)
+		    oid min, oid max, bool skip_nils, bool nil_if_empty)
 	__attribute__((__visibility__("hidden")));
 
-/* format strings for the seven/eight basic types we deal with */
+/* format strings for the seven/eight basic types we deal with
+ * these are only used in error messages */
 #define FMTbte	"%d"
 #define FMTsht	"%d"
 #define FMTint	"%d"
 #define FMTlng	LLFMT
 #ifdef HAVE_HGE
-#define FMThge	"%.40g"
+#define FMThge	"%.40Lg (approx. value)"
 #endif
 #define FMTflt	"%.9g"
 #define FMTdbl	"%.17g"
@@ -338,7 +312,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 #define CSTint
 #define CSTlng
 #ifdef HAVE_HGE
-#define CSThge  (dbl)
+#define CSThge  (long double)
 #endif
 #define CSTflt
 #define CSTdbl
@@ -604,16 +578,12 @@ BUN dofsum(const void *restrict values, oid seqb,
 					nils++;				\
 					((TYPE3 *) dst)[k] = TYPE3##_nil; \
 				} else if (CHECK(v1, v2)) {		\
-					if (abort_on_error) {		\
-						GDKerror("%s: shift operand too large in " \
-							 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
-							 func,		\
-							 CST##TYPE1 v1,	\
-							 CST##TYPE2 v2); \
-						goto checkfail;		\
-					}				\
-					((TYPE3 *)dst)[k] = TYPE3##_nil; \
-					nils++;				\
+					GDKerror("%s: shift operand too large in " \
+						 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
+						 func,			\
+						 CST##TYPE1 v1,		\
+						 CST##TYPE2 v2);	\
+					goto checkfail;			\
 				} else {				\
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\
@@ -631,16 +601,12 @@ BUN dofsum(const void *restrict values, oid seqb,
 					nils++;				\
 					((TYPE3 *) dst)[k] = TYPE3##_nil; \
 				} else if (CHECK(v1, v2)) {		\
-					if (abort_on_error) {		\
-						GDKerror("%s: shift operand too large in " \
-							 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
-							 func,		\
-							 CST##TYPE1 v1,	\
-							 CST##TYPE2 v2); \
-						goto checkfail;		\
-					}				\
-					((TYPE3 *)dst)[k] = TYPE3##_nil; \
-					nils++;				\
+					GDKerror("%s: shift operand too large in " \
+						 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
+						 func,			\
+						 CST##TYPE1 v1,		\
+						 CST##TYPE2 v2);	\
+					goto checkfail;			\
 				} else {				\
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\

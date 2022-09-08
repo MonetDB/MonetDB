@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 #include "rel_rewriter.h"
 #include "rel_exp.h"
+#include "rel_dump.h"
 #include "rel_basetable.h"
 
 /* simplify expressions, such as not(not(x)) */
@@ -221,7 +222,11 @@ rewrite_simplify(visitor *v, uint8_t cycle, bool value_based_opt, sql_rel *rel)
 				rel->r = NULL;
 				rel->op = op_select;
 			}
+			/* make sure the single expression is false, so the generate NULL values won't match */
+			rel->exps->h->data = exp_atom_bool(v->sql->sa, 0);
 			rel->l = rel_project(v->sql->sa, NULL, nexps);
+			set_count_prop(v->sql->sa, rel->l, 1);
+			set_count_prop(v->sql->sa, rel, 0);
 			rel->card = CARD_ATOM;
 			v->changes++;
 		}
@@ -229,14 +234,6 @@ rewrite_simplify(visitor *v, uint8_t cycle, bool value_based_opt, sql_rel *rel)
 	if (is_join(rel->op) && list_empty(rel->exps))
 		rel->exps = NULL; /* crossproduct */
 	return try_remove_empty_select(v, rel);
-}
-
-sql_rel *
-rewrite_reset_used(visitor *v, sql_rel *rel)
-{
-	(void) v;
-	rel->used = 0;
-	return rel;
 }
 
 int
@@ -474,7 +471,7 @@ exps_unique(mvc *sql, sql_rel *rel, list *exps)
 		if (!is_unique(e)) { /* ignore unique columns */
 			need_check++;
 			if (!k && (p = find_prop(e->p, PROP_HASHCOL))) /* at the moment, use only one k */
-				k = p->value;
+				k = p->value.pval;
 		}
 	}
 	if (!need_check) /* all have unique property return */
@@ -502,4 +499,26 @@ exps_unique(mvc *sql, sql_rel *rel, list *exps)
 			return rel_is_unique(rel);
 	}
 	return 0;
+}
+
+BUN
+get_rel_count(sql_rel *rel)
+{
+	prop *found = find_prop(rel->p, PROP_COUNT);
+	return found ? found->value.lval : BUN_NONE;
+}
+
+void
+set_count_prop(sql_allocator *sa, sql_rel *rel, BUN val)
+{
+	if (val != BUN_NONE) {
+		prop *found = find_prop(rel->p, PROP_COUNT);
+
+		if (found) {
+			found->value.lval = val;
+		} else {
+			prop *p = rel->p = prop_create(sa, PROP_COUNT, rel->p);
+			p->value.lval = val;
+		}
+	}
 }

@@ -103,7 +103,7 @@ rewrite_replica(mvc *sql, list *exps, sql_table *t, sql_table *p, int remote_pro
 	if (remote_prop && p && isRemote(p)) {
 		char *local_name = sa_strconcat(sql->sa, sa_strconcat(sql->sa, p->s->base.name, "."), p->base.name);
 		prop *p = r->p = prop_create(sql->sa, PROP_REMOTE, r->p);
-		p->value = local_name;
+		p->value.pval = local_name;
 	}
 	return r;
 }
@@ -227,7 +227,7 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 		if (t && isRemote(t) && (p = find_prop(rel->p, PROP_REMOTE)) == NULL) {
 			char *local_name = sa_strconcat(v->sql->sa, sa_strconcat(v->sql->sa, t->s->base.name, "."), t->base.name);
 			p = rel->p = prop_create(v->sql->sa, PROP_REMOTE, rel->p);
-			p->value = local_name;
+			p->value.pval = local_name;
 		}
 	} break;
 	case op_table:
@@ -271,7 +271,7 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 		if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) &&
 			(pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
 			find_prop(r->p, PROP_REMOTE) == NULL) {
-			visitor rv = { .sql = v->sql, .data = pl->value };
+			visitor rv = { .sql = v->sql, .data = pl->value.pval };
 
 			if (!(r = rel_visitor_bottomup(&rv, r, &rel_rewrite_replica_)) && v->sql->session->status)
 				return NULL;
@@ -281,7 +281,7 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 		} else if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) &&
 			find_prop(l->p, PROP_REMOTE) == NULL &&
 			(pr = find_prop(r->p, PROP_REMOTE)) != NULL) {
-			visitor rv = { .sql = v->sql, .data = pr->value };
+			visitor rv = { .sql = v->sql, .data = pr->value.pval };
 
 			if (!(l = rel_visitor_bottomup(&rv, l, &rel_rewrite_replica_)) && v->sql->session->status)
 				return NULL;
@@ -295,7 +295,7 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 
 		if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
 			r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL &&
-			strcmp(pl->value, pr->value) == 0) {
+			strcmp(pl->value.pval, pr->value.pval) == 0) {
 			l->p = prop_remove(l->p, pl);
 			r->p = prop_remove(r->p, pr);
 			if (!find_prop(rel->p, PROP_REMOTE)) {
@@ -330,7 +330,7 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
 			if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
 				r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL &&
-				strcmp(pl->value, pr->value) == 0) {
+				strcmp(pl->value.pval, pr->value.pval) == 0) {
 				l->p = prop_remove(l->p, pl);
 				r->p = prop_remove(r->p, pr);
 				if (!find_prop(rel->p, PROP_REMOTE)) {
@@ -364,10 +364,10 @@ rel_remote_func_(visitor *v, sql_rel *rel)
 {
 	(void) v;
 
-	int rused = 1 << 2; /* Don't modify the same relation twice */
-	if (rel->used & rused)
+	/* Don't modify the same relation twice */
+	if (is_rel_remote_func_used(rel->used))
 		return rel;
-	rel->used |= rused;
+	rel->used |= rel_remote_func_used;
 
 	if (find_prop(rel->p, PROP_REMOTE) != NULL) {
 		list *exps = rel_projections(v->sql, rel, NULL, 1, 1);

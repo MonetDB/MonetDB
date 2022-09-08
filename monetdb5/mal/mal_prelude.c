@@ -216,7 +216,7 @@ addFunctions(mel_func *fcn){
 		mod = putName(fcn->mod);
 		c = getModule(mod);
 		if( c == NULL){
-			if (globalModule(mod=putName(fcn->mod)) == NULL)
+			if (globalModule(mod) == NULL)
 				throw(LOADER, "addFunctions", "Module %s can not be created", fcn->mod);
 			c = getModule(mod);
 		}
@@ -417,7 +417,7 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp, const ch
 }
 
 static str
-malPrelude(Client c, int listing)
+malPrelude(Client c, int listing, int *sql, int *mapi)
 {
 	int i;
 	str msg = MAL_SUCCEED;
@@ -434,6 +434,7 @@ malPrelude(Client c, int listing)
 
 	/* Add the signatures, where we now have access to all atoms */
 	for(i = 0; i<mel_modules; i++) {
+		(void) putName(mel_module[i].name);
 		if (!malLibraryEnabled(mel_module[i].name))
 			continue;
 		if (mel_module[i].funcs) {
@@ -444,8 +445,14 @@ malPrelude(Client c, int listing)
 				return msg;
 
 			/* mapi should be last, and sql last before mapi */
-			if (strcmp(mel_module[i].name, "sql") == 0 || strcmp(mel_module[i].name, "mapi") == 0)
+			if (strcmp(mel_module[i].name, "sql") == 0) {
+				*sql = i;
 				continue;
+			}
+			if (strcmp(mel_module[i].name, "mapi") == 0) {
+				*mapi = i;
+				continue;
+			}
 			if (!mel_module[i].inits) {
 				msg = initModule(c, mel_module[i].name);
 				if (msg)
@@ -453,13 +460,10 @@ malPrelude(Client c, int listing)
 			}
 		}
 		if (mel_module[i].inits) {
-			msg = mel_module[i].inits();
-			if (msg)
-				return msg;
 			/* mapi should be last, and sql last before mapi */
 			if (strcmp(mel_module[i].name, "sql") == 0 || strcmp(mel_module[i].name, "mapi") == 0)
 				continue;
-			msg = initModule(c, mel_module[i].name);
+			msg = mel_module[i].inits();
 			if (msg)
 				return msg;
 		}
@@ -468,12 +472,12 @@ malPrelude(Client c, int listing)
 }
 
 str
-malIncludeModules(Client c, char *modules[], int listing, int no_mapi_server)
+malIncludeModules(Client c, char *modules[], int listing, bool no_mapi_server)
 {
-	int i;
 	str msg;
+	int sql = -1, mapi = -1;
 
-	for(i = 0; modules[i]; i++) {
+	for (int i = 0; modules[i]; i++) {
 		/* load library */
 		if (!malLibraryEnabled(modules[i]))
 			continue;
@@ -481,13 +485,22 @@ malIncludeModules(Client c, char *modules[], int listing, int no_mapi_server)
 			return msg;
 	}
 	/* load the mal code for these modules and execute preludes */
-	if ((msg = malPrelude(c, listing)) != NULL)
+	if ((msg = malPrelude(c, listing, &sql, &mapi)) != NULL)
 		return msg;
-	msg = initModule(c, "sql");
-	if (msg)
-		return msg;
-	if (!no_mapi_server) {
-		msg = initModule(c, "mapi");
+	/* mapi should be last, and sql last before mapi */
+	if (sql >= 0) {
+		if (mel_module[sql].inits)
+			msg = mel_module[sql].inits();
+		else
+			msg = initModule(c, "sql");
+		if (msg)
+			return msg;
+	}
+	if (!no_mapi_server && mapi >= 0) {
+		if (mel_module[mapi].inits)
+			msg = mel_module[mapi].inits();
+		else
+			msg = initModule(c, "mapi");
 		if (msg)
 			return msg;
 	}

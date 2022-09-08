@@ -170,7 +170,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 static BUN								\
 convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 		      struct canditer *restrict ci,			\
-		      oid candoff, bool abort_on_error, bool *reduce)	\
+		      oid candoff, bool *reduce)			\
 {									\
 	BUN i, nils = 0;						\
 	oid x;								\
@@ -188,14 +188,10 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				dst[i] = oid_nil;			\
 				nils++;					\
 			} else if (src[x] < 0) {			\
-				if (abort_on_error)			\
-					CONV_OVERFLOW(TYPE1, "oid", src[i]); \
-				*reduce = true;				\
-				dst[i] = oid_nil;			\
-				nils++;					\
-			} else if (is_oid_nil((dst[i] = (oid) src[x])) && \
-				   abort_on_error)			\
+				CONV_OVERFLOW(TYPE1, "oid", src[i]);	\
+			} else if (is_oid_nil((dst[i] = (oid) src[x]))) { \
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
+			}						\
 		}							\
 		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	} else {							\
@@ -205,14 +201,10 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				dst[i] = oid_nil;			\
 				nils++;					\
 			} else if (src[x] < 0) {			\
-				if (abort_on_error)			\
-					CONV_OVERFLOW(TYPE1, "oid", src[x]); \
-				*reduce = true;				\
-				dst[i] = oid_nil;			\
-				nils++;					\
-			} else if (is_oid_nil((dst[i] = (oid) src[x])) && \
-				   abort_on_error)			\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
+			} else if (is_oid_nil((dst[i] = (oid) src[x]))) { \
+				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
+			}						\
 		}							\
 		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
@@ -223,7 +215,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 static BUN								\
 convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 		      struct canditer *restrict ci,			\
-		      oid candoff, bool abort_on_error, bool *reduce)	\
+		      oid candoff, bool *reduce)			\
 {									\
 	BUN i, nils = 0;						\
 	oid x;								\
@@ -242,14 +234,10 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				nils++;					\
 			} else if (src[x] < 0 ||			\
 				   src[x] > (TYPE1) GDK_oid_max) {	\
-				if (abort_on_error)			\
-					CONV_OVERFLOW(TYPE1, "oid", src[x]); \
-				*reduce = true;				\
-				dst[i] = oid_nil;			\
-				nils++;					\
-			} else if (is_oid_nil((dst[i] = (oid) src[x])) && \
-				   abort_on_error)			\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
+			} else if (is_oid_nil((dst[i] = (oid) src[x])))	{ \
+				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
+			}						\
 		}							\
 		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	} else {							\
@@ -260,14 +248,10 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				nils++;					\
 			} else if (src[x] < 0 ||			\
 				   src[x] > (TYPE1) GDK_oid_max) {	\
-				if (abort_on_error)			\
-					CONV_OVERFLOW(TYPE1, "oid", src[x]); \
-				*reduce = true;				\
-				dst[i] = oid_nil;			\
-				nils++;					\
-			} else if (is_oid_nil((dst[i] = (oid) src[x])) && \
-				   abort_on_error)			\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
+			} else if (is_oid_nil((dst[i] = (oid) src[x]))) { \
+				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
+			}						\
 		}							\
 		TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(BUN_NONE));	\
 	}								\
@@ -293,7 +277,6 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 			  uint8_t scale1,				\
 			  uint8_t scale2,				\
 			  uint8_t precision,				\
-			  bool abort_on_error,				\
 			  bool *reduce)					\
 {									\
 	BUN i;								\
@@ -326,11 +309,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 				} else if (v < min || v > max ||	\
 					   (precision &&		\
 					    (v >= prec || v <= -prec))) { \
-					if (abort_on_error)		\
-						CONV_OVERFLOW_PREC(TYPE1, #TYPE2, v, scale2, precision); \
-					dst[i] = TYPE2##_nil;		\
-					nils++;				\
-					*reduce = true;			\
+					CONV_OVERFLOW_PREC(TYPE1, #TYPE2, v, scale2, precision); \
 				} else {				\
 					dst[i] = (TYPE2) v;		\
 				}					\
@@ -346,11 +325,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 				} else if (v < min || v > max ||	\
 					   (precision &&		\
 					    (v >= prec || v <= -prec))) { \
-					if (abort_on_error)		\
-						CONV_OVERFLOW_PREC(TYPE1, #TYPE2, src[x], scale2, precision); \
-					dst[i] = TYPE2##_nil;		\
-					nils++;				\
-					*reduce = true;			\
+					CONV_OVERFLOW_PREC(TYPE1, #TYPE2, src[x], scale2, precision); \
 				} else {				\
 					dst[i] = (TYPE2) v * mul;	\
 				}					\
@@ -368,11 +343,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 					if (v < min || v > max ||	\
 					    (precision &&		\
 					     (v >= prec || v <= -prec))) { \
-						if (abort_on_error)	\
-							CONV_OVERFLOW_PREC(TYPE1, #TYPE2, src[x], scale2, precision); \
-						dst[i] = TYPE2##_nil;	\
-						nils++;			\
-						*reduce = true;		\
+						CONV_OVERFLOW_PREC(TYPE1, #TYPE2, src[x], scale2, precision); \
 					} else {			\
 						dst[i] = (TYPE2) v;	\
 					}				\
@@ -391,11 +362,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src,			\
 				if (v < min || v > max ||		\
 				    (precision &&			\
 				     (v >= prec || v <= -prec))) {	\
-					if (abort_on_error)		\
-						CONV_OVERFLOW_PREC(TYPE1, #TYPE2, src[x], scale2, precision); \
-					dst[i] = TYPE2##_nil;		\
-					nils++;				\
-					*reduce = true;			\
+					CONV_OVERFLOW_PREC(TYPE1, #TYPE2, src[x], scale2, precision); \
 				} else {				\
 					dst[i] = (TYPE2) v * mul;	\
 				}					\
@@ -414,7 +381,7 @@ static BUN								\
 convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 			  struct canditer *restrict ci,			\
 			  oid candoff, uint8_t scale2, uint8_t precision, \
-			  bool abort_on_error, bool *reduce)		\
+			  bool *reduce)					\
 {									\
 	BUN i, nils = 0;						\
 	oid x;								\
@@ -438,18 +405,14 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 				dst[i] = TYPE2##_nil;			\
 				nils++;					\
 			} else if (v < (TYPE1) min || v > (TYPE1) max) { \
-				if (abort_on_error)			\
-					CONV_OVERFLOW_PREC(TYPE1, #TYPE2, v, scale2, precision); \
-				dst[i] = TYPE2##_nil;			\
-				nils++;					\
+				CONV_OVERFLOW_PREC(TYPE1, #TYPE2, v, scale2, precision); \
 			} else {					\
 				ldouble m = (ldouble) v * mul;		\
 				dst[i] = (TYPE2) rounddbl(m);		\
-				if ((is_##TYPE2##_nil(dst[i]) ||	\
-				     (precision &&			\
-				      (dst[i] >= prec ||		\
-				       dst[i] <= -prec))) &&		\
-				    abort_on_error)			\
+				if (is_##TYPE2##_nil(dst[i]) ||		\
+				    (precision &&			\
+				     (dst[i] >= prec ||			\
+				      dst[i] <= -prec)))		\
 					CONV_OVERFLOW_PREC(TYPE1, #TYPE2, v, scale2, precision); \
 			}						\
 		}							\
@@ -462,18 +425,14 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 				dst[i] = TYPE2##_nil;			\
 				nils++;					\
 			} else if (v < (TYPE1) min || v > (TYPE1) max) { \
-				if (abort_on_error)			\
-					CONV_OVERFLOW_PREC(TYPE1, #TYPE2, v, scale2, precision); \
-				dst[i] = TYPE2##_nil;			\
-				nils++;					\
+				CONV_OVERFLOW_PREC(TYPE1, #TYPE2, v, scale2, precision); \
 			} else {					\
 				ldouble m = (ldouble) v * mul;		\
 				dst[i] = (TYPE2) rounddbl(m);		\
-				if ((is_##TYPE2##_nil(dst[i]) ||	\
-				     (precision &&			\
-				      (dst[i] >= prec ||		\
-				       dst[i] <= -prec))) &&		\
-				    abort_on_error)			\
+				if (is_##TYPE2##_nil(dst[i]) ||		\
+				    (precision &&			\
+				     (dst[i] >= prec ||			\
+				      dst[i] <= -prec)))		\
 					CONV_OVERFLOW_PREC(TYPE1, #TYPE2, v, scale2, precision); \
 			}						\
 		}							\
@@ -763,7 +722,7 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 				goto bailout;
 			}
 		}
-	} else if (bi->b->tvarsized) {
+	} else if (bi->b->tvheap) {
 		assert(bi->type != TYPE_void);
 		CAND_LOOP_IDX(ci, i) {
 			x = canditer_next(ci) - candoff;
@@ -804,7 +763,6 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 			}
 		}
 	}
-	bn->theap->dirty = true;
 	BATsetcount(bn, ci->ncand);
 	GDKfree(dst);
 	return nils;
@@ -814,9 +772,47 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 }
 
 static BUN
-convert_str_any(BATiter *bi, int tp, void *restrict dst,
-		struct canditer *restrict ci,
-		oid candoff, bool abort_on_error)
+convert_str_var(BATiter *bi, BAT *bn, struct canditer *restrict ci)
+{
+	int tp = bn->ttype;
+	oid candoff = bi->b->hseqbase;
+	void *dst = 0;
+	size_t len = 0;
+	BUN nils = 0;
+	BUN i;
+	const void *nil = ATOMnilptr(tp);
+	const char *restrict src;
+	ssize_t (*atomfromstr)(const char *, size_t *, ptr *, bool) = BATatoms[tp].atomFromStr;
+	oid x;
+
+	CAND_LOOP_IDX(ci, i) {
+		x = canditer_next(ci) - candoff;
+		src = BUNtvar(*bi, x);
+		if (strNil(src)) {
+			nils++;
+			if (tfastins_nocheckVAR(bn, i, nil) != GDK_SUCCEED) {
+				goto bailout;
+			}
+		} else {
+			ssize_t l;
+			if ((l = (*atomfromstr)(src, &len, &dst, false)) < 0 ||
+			    l < (ssize_t) strlen(src) ||
+			    tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED) {
+				goto bailout;
+			}
+		}
+	}
+	BATsetcount(bn, ci->ncand);
+	GDKfree(dst);
+	return nils;
+  bailout:
+	GDKfree(dst);
+	return BUN_NONE + 2;
+}
+
+static BUN
+convert_str_fix(BATiter *bi, int tp, void *restrict dst,
+		struct canditer *restrict ci, oid candoff)
 {
 	BUN nils = 0;
 	const void *nil = ATOMnilptr(tp);
@@ -837,8 +833,6 @@ convert_str_any(BATiter *bi, int tp, void *restrict dst,
 				v = 0;
 			else if (strcmp(s, "1") == 0)
 				v = 1;
-			else if (!abort_on_error)
-				v = 0;
 			else
 				goto conversion_failed;
 			mask |= v << j;
@@ -863,10 +857,7 @@ convert_str_any(BATiter *bi, int tp, void *restrict dst,
 			void *d = dst;
 			if ((l = (*atomfromstr)(s, &len, &d, false)) < 0 ||
 			    l < (ssize_t) strlen(s)) {
-				if (abort_on_error) {
-					goto conversion_failed;
-				}
-				memcpy(dst, nil, len);
+				goto conversion_failed;
 			}
 			assert(len == ATOMsize(tp));
 			if (ATOMcmp(tp, dst, nil) == 0)
@@ -902,7 +893,7 @@ convert_str_any(BATiter *bi, int tp, void *restrict dst,
 static BUN
 convert_void_any(oid seq, BAT *bn,
 		 struct canditer *restrict ci,
-		 oid candoff, bool abort_on_error, bool *reduce)
+		 oid candoff, bool *reduce)
 {
 	BUN nils = 0;
 	BUN i;
@@ -930,12 +921,10 @@ convert_void_any(oid seq, BAT *bn,
 			CAND_LOOP_IDX(ci, i) {
 				x = canditer_next(ci) - candoff;
 				if (seq + x > GDK_bte_max) {
-					if (abort_on_error)
-						CONV_OVERFLOW(oid, "bte", seq + x);
-					((bte *) dst)[i] = bte_nil;
-					nils++;
-				} else
+					CONV_OVERFLOW(oid, "bte", seq + x);
+				} else {
 					((bte *) dst)[i] = (bte) (seq + x);
+				}
 			}
 		}
 		break;
@@ -943,12 +932,10 @@ convert_void_any(oid seq, BAT *bn,
 		CAND_LOOP_IDX(ci, i) {
 			x = canditer_next(ci) - candoff;
 			if (seq + x > GDK_sht_max) {
-				if (abort_on_error)
-					CONV_OVERFLOW(oid, "sht", seq + x);
-				((sht *) dst)[i] = sht_nil;
-				nils++;
-			} else
+				CONV_OVERFLOW(oid, "sht", seq + x);
+			} else {
 				((sht *) dst)[i] = (sht) (seq + x);
+			}
 		}
 		break;
 	case TYPE_int:
@@ -956,10 +943,7 @@ convert_void_any(oid seq, BAT *bn,
 			x = canditer_next(ci) - candoff;
 #if SIZEOF_OID > SIZEOF_INT
 			if (seq + x > GDK_int_max) {
-				if (abort_on_error)
-					CONV_OVERFLOW(oid, "int", seq + x);
-				((int *) dst)[i] = int_nil;
-				nils++;
+				CONV_OVERFLOW(oid, "int", seq + x);
 			} else
 #endif
 				((int *) dst)[i] = (int) (seq + x);
@@ -1017,7 +1001,7 @@ convert_void_any(oid seq, BAT *bn,
 static BUN
 convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		       struct canditer *restrict ci,
-		       oid candoff, bool abort_on_error, bool *reduce,
+		       oid candoff, bool *reduce,
 		       uint8_t scale1, uint8_t scale2, uint8_t precision)
 {
 	assert(scale1 < (uint8_t) (sizeof(scales) / sizeof(scales[0])));
@@ -1065,45 +1049,40 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			return convert_bte_bte(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_sht:
 			return convert_bte_sht(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			if (dtp == TYPE_oid)
 				return convert_bte_oid(src, dst, ci,
-						       candoff, abort_on_error,
+						       candoff,
 						       reduce);
 #endif
 			return convert_bte_int(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (dtp == TYPE_oid)
 				return convert_bte_oid(src, dst, ci,
-						       candoff, abort_on_error,
+						       candoff,
 						       reduce);
 #endif
 			return convert_bte_lng(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return convert_bte_hge(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 #endif
 		case TYPE_flt:
 			return convert_bte_flt(src, dst, ci, candoff,
@@ -1128,45 +1107,40 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			return convert_sht_bte(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_sht:
 			return convert_sht_sht(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			if (dtp == TYPE_oid)
 				return convert_sht_oid(src, dst, ci,
-						       candoff, abort_on_error,
+						       candoff,
 						       reduce);
 #endif
 			return convert_sht_int(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (dtp == TYPE_oid)
 				return convert_sht_oid(src, dst, ci,
-						       candoff, abort_on_error,
+						       candoff,
 						       reduce);
 #endif
 			return convert_sht_lng(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return convert_sht_hge(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 #endif
 		case TYPE_flt:
 			return convert_sht_flt(src, dst, ci, candoff,
@@ -1192,45 +1166,40 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			return convert_int_bte(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_sht:
 			return convert_int_sht(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			if (dtp == TYPE_oid)
 				return convert_int_oid(src, dst, ci,
-						       candoff, abort_on_error,
+						       candoff,
 						       reduce);
 #endif
 			return convert_int_int(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (dtp == TYPE_oid)
 				return convert_int_oid(src, dst, ci,
-						       candoff, abort_on_error,
+						       candoff,
 						       reduce);
 #endif
 			return convert_int_lng(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return convert_int_hge(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 #endif
 		case TYPE_flt:
 			return convert_int_flt(src, dst, ci, candoff,
@@ -1256,45 +1225,40 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			return convert_lng_bte(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_sht:
 			return convert_lng_sht(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			if (dtp == TYPE_oid)
 				return convert_lng_oid(src, dst, ci,
-						       candoff, abort_on_error,
+						       candoff,
 						       reduce);
 #endif
 			return convert_lng_int(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (dtp == TYPE_oid)
 				return convert_lng_oid(src, dst, ci,
-						       candoff, abort_on_error,
+						       candoff,
 						       reduce);
 #endif
 			return convert_lng_lng(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return convert_lng_hge(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 #endif
 		case TYPE_flt:
 			return convert_lng_flt(src, dst, ci, candoff,
@@ -1321,35 +1285,29 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			return convert_hge_bte(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_sht:
 			return convert_hge_sht(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_int:
 			return convert_hge_int(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_lng:
 			return convert_hge_lng(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_hge:
 			return convert_hge_hge(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_oid:
-			return convert_hge_oid(src, dst, ci, candoff,
-					       abort_on_error, reduce);
+			return convert_hge_oid(src, dst, ci, candoff, reduce);
 		case TYPE_flt:
 			return convert_hge_flt(src, dst, ci, candoff,
 					       scale1,
@@ -1374,41 +1332,36 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			}
 			return convert_flt_bte(src, dst, ci, candoff,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_sht:
 			return convert_flt_sht(src, dst, ci, candoff,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			if (dtp == TYPE_oid)
 				return convert_flt_oid(src, dst, ci,
-						       candoff, abort_on_error,
+						       candoff,
 						       reduce);
 #endif
 			return convert_flt_int(src, dst, ci, candoff,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (dtp == TYPE_oid)
 				return convert_flt_oid(src, dst, ci,
-						       candoff, abort_on_error,
+						       candoff,
 						       reduce);
 #endif
 			return convert_flt_lng(src, dst, ci, candoff,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return convert_flt_hge(src, dst, ci, candoff,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 #endif
 		case TYPE_flt:
 			return convert_flt_flt(src, dst, ci, candoff,
@@ -1433,46 +1386,40 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			}
 			return convert_dbl_bte(src, dst, ci, candoff,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_sht:
 			return convert_dbl_sht(src, dst, ci, candoff,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			if (dtp == TYPE_oid)
 				return convert_dbl_oid(src, dst, ci,
-						       candoff, abort_on_error,
+						       candoff,
 						       reduce);
 #endif
 			return convert_dbl_int(src, dst, ci, candoff,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (dtp == TYPE_oid)
 				return convert_dbl_oid(src, dst, ci,
-						       candoff, abort_on_error,
+						       candoff,
 						       reduce);
 #endif
 			return convert_dbl_lng(src, dst, ci, candoff,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return convert_dbl_hge(src, dst, ci, candoff,
 					       scale2,
-					       precision,
-					       abort_on_error, reduce);
+					       precision, reduce);
 #endif
 		case TYPE_flt:
 			return convert_dbl_flt(src, dst, ci, candoff,
-					       0, 0,
-					       abort_on_error, reduce);
+					       0, 0, reduce);
 		case TYPE_dbl:
 			return convert_dbl_dbl(src, dst, ci, candoff,
 					       0,
@@ -1486,7 +1433,7 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 }
 
 BAT *
-BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error,
+BATconvert(BAT *b, BAT *s, int tp,
 	   uint8_t scale1, uint8_t scale2, uint8_t precision)
 {
 	lng t0 = 0;
@@ -1534,7 +1481,7 @@ BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error,
 		return NULL;
 	}
 	if (ATOMstorage(tp) == TYPE_msk) {
-		if (BATtdense(b)) {
+		if (BATtdensebi(&bi)) {
 			/* dense to msk is easy: all values 1, except
 			 * maybe the first */
 			bn = BATconstant(ci.hseq, tp, &(msk){1}, ci.ncand,
@@ -1560,15 +1507,17 @@ BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error,
 
 	if (bi.type == TYPE_void)
 		nils = convert_void_any(b->tseqbase, bn,
-					&ci, b->hseqbase,
-					abort_on_error, &reduce);
+					&ci, b->hseqbase, &reduce);
 	else if (tp == TYPE_str)
 		nils = convert_any_str(&bi, bn, &ci);
 	else if (bi.type == TYPE_str) {
 		reduce = true;
-		nils = convert_str_any(&bi, tp, Tloc(bn, 0),
-				       &ci, b->hseqbase,
-				       abort_on_error);
+		if (ATOMvarsized(tp)) {
+			nils = convert_str_var(&bi, bn, &ci);
+		} else {
+			nils = convert_str_fix(&bi, tp, Tloc(bn, 0),
+					       &ci, b->hseqbase);
+		}
 	} else if (ATOMstorage(bi.type) == TYPE_msk &&
 		   ATOMstorage(tp) == TYPE_msk) {
 		if (BATappend(bn, b, s, false) != GDK_SUCCEED)
@@ -1576,8 +1525,7 @@ BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error,
 	} else {
 		nils = convert_typeswitchloop(bi.base, bi.type,
 					      Tloc(bn, 0), tp,
-					      &ci, b->hseqbase,
-					      abort_on_error, &reduce,
+					      &ci, b->hseqbase, &reduce,
 					      scale1, scale2, precision);
 	}
 
@@ -1621,7 +1569,7 @@ BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error,
 }
 
 gdk_return
-VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error,
+VARconvert(ValPtr ret, const ValRecord *v,
 	   uint8_t scale1, uint8_t scale2, uint8_t precision)
 {
 	ptr p;
@@ -1631,7 +1579,7 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error,
 	if (ret->vtype == TYPE_msk) {
 		ValRecord tmp;
 		tmp.vtype = TYPE_bit;
-		if (VARconvert(&tmp, v, abort_on_error, scale1, scale2, precision) != GDK_SUCCEED)
+		if (VARconvert(&tmp, v, scale1, scale2, precision) != GDK_SUCCEED)
 			return GDK_FAIL;
 		if (is_bte_nil(tmp.val.btval)) {
 			GDKerror("22003!cannot convert nil to msk.\n");
@@ -1643,7 +1591,7 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error,
 		ValRecord tmp;
 		tmp.vtype = TYPE_bit;
 		tmp.val.btval = v->val.mval;
-		if (VARconvert(ret, &tmp, abort_on_error, scale1, scale2, precision) != GDK_SUCCEED)
+		if (VARconvert(ret, &tmp, scale1, scale2, precision) != GDK_SUCCEED)
 			return GDK_FAIL;
 	} else if (ret->vtype == TYPE_str) {
 		if (v->vtype == TYPE_void ||
@@ -1668,8 +1616,7 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error,
 			}
 		}
 	} else if (ret->vtype == TYPE_void) {
-		if (abort_on_error &&
-		    ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0) {
+		if (ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0) {
 			GDKerror("22003!cannot convert non-nil to void.\n");
 			return GDK_FAIL;
 		}
@@ -1731,7 +1678,7 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error,
 		nils = convert_typeswitchloop(VALptr(v), v->vtype,
 					      VALget(ret), ret->vtype,
 					      &(struct canditer){.tpe=cand_dense, .ncand=1},
-					      0, abort_on_error, &reduce,
+					      0, &reduce,
 					      scale1, scale2, precision);
 		if (nils < BUN_NONE)
 			ret->len = ATOMlen(ret->vtype, VALptr(ret));

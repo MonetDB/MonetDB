@@ -898,6 +898,8 @@ def GetBitsAndModsAndThreads(env) :
         while True:
             proc.poll()
             if proc.returncode is not None:
+                qOut = proc.stdout.read()
+                qErr = proc.stderr.read()
                 break
             if os.path.exists(os.path.join(dbpath, '.started')):
                 break
@@ -2844,4 +2846,3 @@ if __name__ == "__main__":
 
 #       END
 #############################################################################
-# vim: set ts=4 sw=4 expandtab:

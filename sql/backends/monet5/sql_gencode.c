@@ -318,7 +318,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0, p, o;
 	Symbol backup = NULL;
-	const char *local_tbl = prp->value;
+	const char *local_tbl = prp->value.pval;
 	node *n;
 	int i, q, v, res = 0, added_to_cache = 0,  *lret, *rret;
 	size_t len = 1024, nr;
@@ -1416,6 +1416,12 @@ _rel_print(mvc *sql, sql_rel *rel)
 	list *refs = sa_list(sql->sa);
 	rel_print_refs(sql, GDKstdout, rel, 0, refs, 1);
 	rel_print_(sql, GDKstdout, rel, 0, refs, 1);
+	mnstr_printf(GDKstdout, "\n");
+}
+
+void
+_exp_print(mvc *sql, sql_exp *e) {
+	exp_print(sql, GDKstdout, e, 0, NULL, 1, 0);
 	mnstr_printf(GDKstdout, "\n");
 }
 

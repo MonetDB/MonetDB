@@ -286,6 +286,40 @@ exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
 }
 
 sql_exp *
+exp_in_aggr(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
+{
+	sql_subfunc *a_func = NULL;
+	sql_exp *e = le;
+
+	if (is_tuple) {
+		list *l = exp_get_values(e);
+		e = l->h->data;
+	}
+	if (!(a_func = sql_bind_func(sql, "sys", anyequal ? "anyequal" : "allnotequal", exp_subtype(e), exp_subtype(e), F_AGGR, true)))
+		return sql_error(sql, 02, SQLSTATE(42000) "(NOT) IN operator on type %s missing", exp_subtype(e) ? exp_subtype(e)->type->base.name : "unknown");
+	e = exp_aggr2(sql->sa, le, vals, a_func, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
+	if (e) {
+		unsigned int exps_card = CARD_ATOM;
+
+		/* ignore the cardinalites of sub-relations */
+		if (vals->type == e_atom && vals->f) {
+			for (node *n = ((list*)vals->f)->h ; n ; n = n->next) {
+				sql_exp *next = n->data;
+
+				if (!exp_is_rel(next) && exps_card < next->card)
+					exps_card = next->card;
+			}
+		} else if (!exp_is_rel(vals))
+			exps_card = vals->card;
+
+		e->card = MAX(le->card, exps_card);
+		if (!has_nil(le) && !has_nil(vals))
+			set_has_no_nil(e);
+	}
+	return e;
+}
+
+sql_exp *
 exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char *compareop, int quantifier)
 {
 	sql_subfunc *cmp_func = sql_bind_func(sql, "sys", compareop, exp_subtype(le), exp_subtype(le), F_FUNC, true);
@@ -356,6 +390,8 @@ exp_rank_op( sql_allocator *sa, list *l, list *gbe, list *obe, sql_subfunc *f )
 	e->l = l;
 	e->r = append(append(sa_list(sa), gbe), obe);
 	e->f = f;
+	if (!f->func->s && strcmp(f->func->base.name, "count") == 0)
+		set_has_no_nil(e);
 	e->semantics = f->func->semantics;
 	return e;
 }
@@ -704,7 +740,6 @@ exp_propagate(sql_allocator *sa, sql_exp *ne, sql_exp *oe)
 		set_unique(ne);
 	if (is_basecol(oe))
 		set_basecol(ne);
-	ne->flag = oe->flag; /* needed if the referenced column is a parameter without type set yet */
 	ne->p = prop_copy(sa, oe->p);
 	return ne;
 }
@@ -1109,20 +1144,15 @@ exp_cmp( sql_exp *e1, sql_exp *e2)
 	return (e1 == e2)?0:-1;
 }
 
-#define alias_cmp(e1, e2) \
-	do { \
-		if (e1->alias.rname && e2->alias.rname && strcmp(e1->alias.rname, e2->alias.rname) == 0) \
-			return strcmp(e1->alias.name, e2->alias.name); \
-		if (!e1->alias.rname && !e2->alias.rname && e1->alias.label == e2->alias.label && e1->alias.name && e2->alias.name) \
-			return strcmp(e1->alias.name, e2->alias.name); \
-	} while (0);
-
 int
 exp_equal( sql_exp *e1, sql_exp *e2)
 {
 	if (e1 == e2)
 		return 0;
-	alias_cmp(e1, e2);
+	if (e1->alias.rname && e2->alias.rname && strcmp(e1->alias.rname, e2->alias.rname) == 0)
+		return strcmp(e1->alias.name, e2->alias.name);
+	if (!e1->alias.rname && !e2->alias.rname && e1->alias.label == e2->alias.label && e1->alias.name && e2->alias.name)
+		return strcmp(e1->alias.name, e2->alias.name);
 	return -1;
 }
 
@@ -1393,27 +1423,6 @@ exps_any_match(list *l, sql_exp *e)
 	for (node *n = l->h; n ; n = n->next) {
 		sql_exp *ne = (sql_exp *) n->data;
 		if (exp_match_exp(ne, e))
-			return ne;
-	}
-	return NULL;
-}
-
-static int
-exp_no_alias(sql_exp *e1, sql_exp *e2)
-{
-	alias_cmp(e1, e2);
-	/* at least one of the expressions don't have an alias, so there's a match */
-	return 0;
-}
-
-sql_exp *
-exps_any_match_same_or_no_alias(list *l, sql_exp *e)
-{
-	if (!l)
-		return NULL;
-	for (node *n = l->h; n ; n = n->next) {
-		sql_exp *ne = (sql_exp *) n->data;
-		if ((exp_match(ne, e) || exp_refers(ne, e) || exp_match_exp(ne, e)) && exp_no_alias(e, ne) == 0)
 			return ne;
 	}
 	return NULL;
@@ -2443,7 +2452,7 @@ exp_unsafe(sql_exp *e, int allow_identity)
 	case e_func: {
 		sql_subfunc *f = e->f;
 
-		if (IS_ANALYTIC(f->func) || (!allow_identity && is_identity(e, NULL)))
+		if (IS_ANALYTIC(f->func) || !LANG_INT_OR_MAL(f->func->lang) || f->func->side_effect || (!allow_identity && is_identity(e, NULL)))
 			return 1;
 		return exps_have_unsafe(e->l, allow_identity);
 	} break;

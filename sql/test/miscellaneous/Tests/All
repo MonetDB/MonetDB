@@ -1,3 +1,4 @@
+unlogged
 column_aliases
 declared_tables
 trace_test
@@ -25,3 +26,4 @@ NOT_ASSERT?sqlfuncnames
 sequences
 analyze_test
 blobs
+temp_tables

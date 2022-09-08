@@ -76,57 +76,56 @@ BATcheckorderidx(BAT *b)
 
 	if (b == NULL)
 		return false;
-	/* we don't need the lock just to read the value b->torderidx */
+	MT_lock_set(&b->batIdxLock);
 	if (b->torderidx == (Heap *) 1) {
-		/* but when we want to change it, we need the lock */
+		Heap *hp;
+		const char *nme = BBP_physical(b->batCacheid);
+		int fd;
+
 		assert(!GDKinmemory(b->theap->farmid));
-		MT_lock_set(&b->batIdxLock);
-		if (b->torderidx == (Heap *) 1) {
-			Heap *hp;
-			const char *nme = BBP_physical(b->batCacheid);
-			int fd;
+		b->torderidx = NULL;
+		if ((hp = GDKzalloc(sizeof(*hp))) != NULL &&
+		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) >= 0) {
+			strconcat_len(hp->filename,
+				      sizeof(hp->filename),
+				      nme, ".torderidx", NULL);
+			hp->storage = hp->newstorage = STORE_INVALID;
 
-			b->torderidx = NULL;
-			if ((hp = GDKzalloc(sizeof(*hp))) != NULL &&
-			    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) >= 0) {
-				strconcat_len(hp->filename,
-					      sizeof(hp->filename),
-					      nme, ".torderidx", NULL);
-				hp->storage = hp->newstorage = STORE_INVALID;
+			/* check whether a persisted orderidx can be found */
+			if ((fd = GDKfdlocate(hp->farmid, nme, "rb+", "torderidx")) >= 0) {
+				struct stat st;
+				oid hdata[ORDERIDXOFF];
 
-				/* check whether a persisted orderidx can be found */
-				if ((fd = GDKfdlocate(hp->farmid, nme, "rb+", "torderidx")) >= 0) {
-					struct stat st;
-					oid hdata[ORDERIDXOFF];
-
-					if (read(fd, hdata, sizeof(hdata)) == sizeof(hdata) &&
-					    hdata[0] == (
+				if (read(fd, hdata, sizeof(hdata)) == sizeof(hdata) &&
+				    hdata[0] == (
 #ifdef PERSISTENTIDX
-						    ((oid) 1 << 24) |
+					    ((oid) 1 << 24) |
 #endif
-						    ORDERIDX_VERSION) &&
-					    hdata[1] == (oid) BATcount(b) &&
-					    (hdata[2] == 0 || hdata[2] == 1) &&
-					    fstat(fd, &st) == 0 &&
-					    st.st_size >= (off_t) (hp->size = hp->free = (ORDERIDXOFF + hdata[1]) * SIZEOF_OID) &&
-					    HEAPload(hp, nme, "torderidx", false) == GDK_SUCCEED) {
-						close(fd);
-						ATOMIC_INIT(&hp->refs, 1);
-						b->torderidx = hp;
-						TRC_DEBUG(ACCELERATOR, "BATcheckorderidx(" ALGOBATFMT "): reusing persisted orderidx\n", ALGOBATPAR(b));
-						MT_lock_unset(&b->batIdxLock);
-						return true;
-					}
+					    ORDERIDX_VERSION) &&
+				    hdata[1] == (oid) BATcount(b) &&
+				    (hdata[2] == 0 || hdata[2] == 1) &&
+				    fstat(fd, &st) == 0 &&
+				    st.st_size >= (off_t) (hp->size = hp->free = (ORDERIDXOFF + hdata[1]) * SIZEOF_OID) &&
+				    HEAPload(hp, nme, "torderidx", false) == GDK_SUCCEED) {
 					close(fd);
-					/* unlink unusable file */
-					GDKunlink(hp->farmid, BATDIR, nme, "torderidx");
+					ATOMIC_INIT(&hp->refs, 1);
+					b->torderidx = hp;
+					hp->hasfile = true;
+					TRC_DEBUG(ACCELERATOR, "BATcheckorderidx(" ALGOBATFMT "): reusing persisted orderidx\n", ALGOBATPAR(b));
+					MT_lock_unset(&b->batIdxLock);
+					return true;
 				}
+				close(fd);
+				/* unlink unusable file */
+				GDKunlink(hp->farmid, BATDIR, nme, "torderidx");
+				hp->hasfile = false;
 			}
-			GDKfree(hp);
-			GDKclrerr();	/* we're not currently interested in errors */
 		}
-		MT_lock_unset(&b->batIdxLock);
+		GDKfree(hp);
+		GDKclrerr();	/* we're not currently interested in errors */
 	}
+	MT_lock_unset(&b->batIdxLock);
+
 	ret = b->torderidx != NULL;
 	if (ret)
 		TRC_DEBUG(ACCELERATOR, "BATcheckorderidx(" ALGOBATFMT "): already has orderidx, waited " LLFMT " usec\n", ALGOBATPAR(b), GDKusec() - t);
@@ -150,6 +149,7 @@ createOIDXheap(BAT *b, bool stable)
 		return NULL;
 	}
 	m->free = (BATcount(b) + ORDERIDXOFF) * SIZEOF_OID;
+	m->dirty = true;
 
 	mv = (oid *) m->base;
 	*mv++ = ORDERIDX_VERSION;
@@ -201,7 +201,6 @@ BATorderidx(BAT *b, bool stable)
 			if (!b->tsorted) {
 				b->tsorted = true;
 				b->tnosorted = 0;
-				b->batDirtydesc = true;
 			}
 			MT_lock_unset(&b->theaplock);
 		} else {
@@ -379,6 +378,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		return GDK_FAIL;
 	}
 	m->free = (BATcount(b) + ORDERIDXOFF) * SIZEOF_OID;
+	m->dirty = true;
 
 	mv = (oid *) m->base;
 	*mv++ = ORDERIDX_VERSION;

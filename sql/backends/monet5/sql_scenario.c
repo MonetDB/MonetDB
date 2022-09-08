@@ -32,14 +32,14 @@
 #include "mal.h"
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
+#include "mal_runtime.h"
 #include "mal_parser.h"
 #include "mal_builder.h"
 #include "mal_namespace.h"
 #include "mal_debugger.h"
 #include "mal_linker.h"
+#include "mal_utils.h"
 #include "bat5.h"
-#include "wlc.h"
-#include "wlr.h"
 #include "msabaoth.h"
 #include "gdk_time.h"
 #include "optimizer.h"
@@ -246,20 +246,6 @@ SQLprepareClient(Client c, int login)
 		}
 	} else {
 		assert(0);
-#if 0
-		be = c->sqlcontext;
-		m = be->mvc;
-		/* Only reset if there is no active transaction which
-		 * can happen when we combine sql.init with msql.
-		*/
-		if (m->session->tr->active)
-			return NULL;
-		if (mvc_reset(m, c->fdin, c->fdout, SQLdebug) < 0) {
-			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
-		backend_reset(be);
-#endif
 	}
 	MT_lock_unset(&sql_contextLock);
 	if (login) {
@@ -272,6 +258,9 @@ SQLprepareClient(Client c, int login)
 				goto bailout1;
 			case -3:
 				msg = createException(SQL,"sql.initClient", SQLSTATE(42000) "The user's default schema was not found, this session is going to terminate");
+				goto bailout1;
+			case -4:
+				msg = createException(SQL,"sql.initClient", SQLSTATE(42000) "The user's default role was not found, this session is going to terminate");
 				goto bailout1;
 			default:
 				break;
@@ -360,6 +349,7 @@ SQLresetClient(Client c)
 		c->state[MAL_SCENARIO_OPTIMIZE] = NULL;
 		c->state[MAL_SCENARIO_PARSER] = NULL;
 		c->sqlcontext = NULL;
+		c->query = NULL;
 		sa_destroy(pa);
 	}
 	c->state[MAL_SCENARIO_READER] = NULL;
@@ -573,12 +563,6 @@ SQLinit(Client c)
 		SQLstore = NULL;
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Starting log manager failed");
-	}
-	if (wlc_state == WLC_STARTUP && GDKgetenv_istrue("wlc_enabled") && (msg = WLCinit()) != MAL_SUCCEED) {
-		mvc_exit(SQLstore);
-		SQLstore = NULL;
-		MT_lock_unset(&sql_contextLock);
-		return msg;
 	}
 
 	MT_lock_unset(&sql_contextLock);
@@ -965,6 +949,9 @@ SQLparser(Client c)
 	int oldvtop, oldstop, oldvid, ok;
 	int pstatus = 0;
 	int err = 0, opt, preparedid = -1;
+	oid tag = 0;
+	lng Tbegin = 0;
+	lng Tend = 0;
 
 	c->query = NULL;
 	be = (backend *) c->sqlcontext;
@@ -985,6 +972,10 @@ SQLparser(Client c)
 	m = be->mvc;
 	m->type = Q_PARSE;
 	if (be->language != 'X') {
+		// generate and set the tag in the mal block of the clients current program.
+		tag = runtimeProfileSetTag(c);
+		assert(tag == c->curprg->def->tag);
+		(void) tag;
 		if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
 			c->mode = FINISHCLIENT;
 			return msg;
@@ -1103,6 +1094,8 @@ SQLparser(Client c)
 		goto finalize;
 	}
 
+	Tbegin = GDKusec();
+
 	if ((err = sqlparse(m)) ||
 	    /* Only forget old errors on transaction boundaries */
 	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
@@ -1128,6 +1121,13 @@ SQLparser(Client c)
 	 */
 	be->q = NULL;
 	c->query = query_cleaned(m->sa, QUERY(m->scanner));
+
+	Tend = GDKusec();
+	if(profilerStatus > 0) {
+		profilerEvent(NULL,
+					  &(struct NonMalEvent)
+					  {TEXT_TO_SQL, c, Tend, &m->session->tr->ts, NULL, c->query?0:1, Tend-Tbegin});
+	}
 
 	if (c->query == NULL) {
 		err = 1;
@@ -1184,10 +1184,18 @@ SQLparser(Client c)
 				}
 			}
 
+			Tbegin = GDKusec();
+
 			if (backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0)
 				err = 1;
 			else
 				opt = (m->emod & mod_exec) == 0;//1;
+
+			Tend = GDKusec();
+			if(profilerStatus > 0)
+				profilerEvent(NULL,
+							  &(struct NonMalEvent)
+							  {REL_TO_MAL, c, Tend, NULL, NULL, c->query?0:1, Tend-Tbegin});
 		} else {
 			char *q_copy = sa_strdup(m->sa, c->query);
 
@@ -1265,8 +1273,13 @@ SQLparser(Client c)
 
 		/* in case we had produced a non-cachable plan, the optimizer should be called */
 		if (msg == MAL_SUCCEED && opt ) {
+			Tbegin = GDKusec();
 			msg = SQLoptimizeQuery(c, c->curprg->def);
-
+			Tend = GDKusec();
+			if(profilerStatus > 0)
+				profilerEvent(NULL,
+							  &(struct NonMalEvent)
+							  {MAL_OPT, c, Tend, NULL, NULL, msg==MAL_SUCCEED?0:1, Tend-Tbegin});
 			if (msg != MAL_SUCCEED) {
 				str other = c->curprg->def->errors;
 				/* In debugging mode you may want to assess what went wrong in the optimizers*/

@@ -72,7 +72,7 @@ get_serverinfo(ODBCDbc *dbc)
 	MapiHdl hdl;
 	char *n, *v;
 
-	if ((hdl = mapi_query(dbc->mid, "select name, value from sys.env() where name in ('monet_version', 'gdk_dbname')")) == NULL)
+	if ((hdl = mapi_query(dbc->mid, "select name, value from sys.env() where name in ('monet_version', 'gdk_dbname', 'max_clients')")) == NULL)
 		return;
 	while (mapi_fetch_row(hdl)) {
 		n = mapi_fetch_field(hdl, 0);
@@ -80,6 +80,9 @@ get_serverinfo(ODBCDbc *dbc)
 		if (strcmp(n, "monet_version") == 0) {
 			sscanf(v, "%hd.%hd.%hd",
 			       &dbc->major, &dbc->minor, &dbc->patch);
+		} else
+		if (strcmp(n, "max_clients") == 0) {
+			sscanf(v, "%hu", &dbc->maxclients);
 		} else {
 			assert(strcmp(n, "gdk_dbname") == 0);
 			assert(dbc->dbname == NULL ||
@@ -110,7 +113,7 @@ MNDBConnect(ODBCDbc *dbc,
 	    SQLSMALLINT NameLength3,
 	    const char *host,
 	    int port,
-	    const char *catalog)
+	    const char *dbname)
 {
 	SQLRETURN rc = SQL_SUCCESS;
 	char *dsn = NULL;
@@ -196,19 +199,19 @@ MNDBConnect(ODBCDbc *dbc,
 		pwd[NameLength3] = 0;
 	}
 
-	if (catalog == NULL || *catalog == 0) {
-		catalog = dbc->dbname;
+	if (dbname == NULL || *dbname == 0) {
+		dbname = dbc->dbname;
 	}
-	if (catalog == NULL || *catalog == 0) {
+	if (dbname == NULL || *dbname == 0) {
 		if (dsn && *dsn) {
 			n = SQLGetPrivateProfileString(dsn, "database", "", db,
 						       sizeof(db), "odbc.ini");
 			if (n > 0)
-				catalog = db;
+				dbname = db;
 		}
 	}
-	if (catalog && !*catalog)
-		catalog = NULL;
+	if (dbname && !*dbname)
+		dbname = NULL;
 
 	if (port == 0 && (s = getenv("MAPIPORT")) != NULL)
 		port = atoi(s);
@@ -235,12 +238,12 @@ MNDBConnect(ODBCDbc *dbc,
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLConnect: DSN=%s UID=%s PWD=%s host=%s port=%d database=%s\n",
 		dsn ? dsn : "(null)", uid, pwd, host, port,
-		catalog ? catalog : "(null)");
+		dbname ? dbname : "(null)");
 #endif
 
 	/* connect to a server on host via port */
-	/* FIXME: use dbname/catalog from ODBC connect string/options here */
-	mid = mapi_connect(host, port, uid, pwd, "sql", catalog);
+	/* FIXME: use dbname from ODBC connect string/options here */
+	mid = mapi_connect(host, port, uid, pwd, "sql", dbname);
 	if (mid == NULL || mapi_error(mid)) {
 		/* Client unable to establish connection */
 		addDbcError(dbc, "08001", NULL, 0);
@@ -266,11 +269,11 @@ MNDBConnect(ODBCDbc *dbc,
 		if (dbc->host)
 			free(dbc->host);
 		dbc->host = strdup(host);
-		if (catalog)	/* dup before dbname is freed */
-			catalog = strdup(catalog);
+		if (dbname)	/* dup before dbname is freed */
+			dbname = strdup(dbname);
 		if (dbc->dbname != NULL)
 			free(dbc->dbname);
-		dbc->dbname = (char *) catalog; /* discard const */
+		dbc->dbname = (char *) dbname; /* discard const */
 		mapi_setAutocommit(mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
 		set_timezone(mid);
 		get_serverinfo(dbc);

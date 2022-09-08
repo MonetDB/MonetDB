@@ -304,6 +304,14 @@ def remove(file):
         os.remove(file)
     except FileNotFoundError:
         pass
+    except IsADirectoryError:
+        shutil.rmtree(file, ignore_errors=True)
+    except PermissionError:
+        # on Windows we get a weird error from os.remove on a directory
+        if os.name == "nt":
+            shutil.rmtree(file, ignore_errors=True)
+        else:
+            Warn('could not remove {}'.format(file))
     except:
         Warn('could not remove {}'.format(file))
 
@@ -680,11 +688,12 @@ def CreateHtmlIndex (env, ssout, sserr, *body) :
 
         if TSTDIR:
             header = Text(TSTDIR)
-            if URLPREFIX:
+            if REV:
                 header = Element('a',
                                  {'href': '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF),
                                   'target': '%s_%s_body' % (DISTVER, TSTDIR),
-                                  'class': 'black'},
+                                  'class': 'black',
+                                  'title': TSTDIR},
                                  header)
             th = Element('th', {'class': 'header'}, header)
             if os.path.exists('SingleServer.out.html'):
@@ -919,7 +928,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, result) :
         bugno = res.group('bugno')
         text.addchildren([
                 Text(' ('),
-                Element('a', {'href': 'http://bugs.monetdb.org/%s' % bugno,
+                Element('a', {'href': 'https://github.com/MonetDB/MonetDB/issues/%s' % bugno,
                               'target': '_blank'},
                         Text('Bugzilla')),
                 Text(')')])
@@ -946,7 +955,7 @@ def CreateSrcIndex (env, TST, EXT) :
     TSTSRCDIR = env['TSTSRCDIR']
     TSTDIR    = env['TSTDIR']
 
-    if URLPREFIX:
+    if REV:
         framesrc = '%s%s/%s/%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, TST, EXT)
     else:
         f = openutf8(".%s.nosrc.index.html" % TST, "w")
@@ -1000,7 +1009,7 @@ def CreateSrcIndex (env, TST, EXT) :
     for s in listdir(TSTSRCDIR):
         if s.startswith(TST):
             slink = Text(s)
-            if URLPREFIX:
+            if REV:
                 slink = Element('a',
                                 {'href': '%s%s/%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, s),
                                  'target': '%s_%s_%s_body' % (DISTVER, TSTDIR, TST)},
@@ -1047,7 +1056,8 @@ def AddHref (href, target, linktext, diff) :
         klass = 'warning'
     else:
         klass = 'good'
-    a = Element('a', {'href': href, 'target': target, 'class': klass},
+    a = Element('a', {'href': href, 'target': target, 'class': klass,
+                      'title': linktext},
                 Text(linktext))
     if klass == 'good':
         return [Text('('), a, Text(')')]
@@ -1286,6 +1296,7 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
         os.environ['TSTTRGDIR'] = TSTTRGDIR
         os.environ['RELSRCDIR'] = env['RELSRCDIR']
         os.environ['HAVE_HGE'] = CONDITIONALS['HAVE_HGE']
+        os.environ['HAVE_SHP'] = CONDITIONALS['HAVE_SHP']
         os.environ['TST_BITS'] = env['TST_BITS']
         if 'TSTDATAPATH' not in os.environ and TSTDATAPATH:
             env['TSTDATAPATH'] = TSTDATAPATH
@@ -1384,8 +1395,8 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                         break
                     dbh = pymonetdb.connect(username='monetdb',
                                             password='monetdb',
-                                            hostname='localhost',
-                                            port=pSrvr.port,
+                                            hostname=HOST,
+                                            port=int(pSrvr.port),
                                             database=TSTDB,
                                             autocommit=True)
                     crs = dbh.cursor()
@@ -1398,15 +1409,16 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     if not testweb:
                         print('\nGlobal testing timeout reached\n')
                         break
-                    tt, FtOut, FtErr, bodyline, reason = 0,F_SKIP,F_SKIP,None,"as the global timeout has been reached"
+                    tt, FtOut, FtErr, bodyline, reason = -1,F_SKIP,F_SKIP,None,"as the global timeout has been reached"
                 else:
                     os.environ['TST'] = TST
                     tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress)
                     alllinks.extend(links)
-                if tt:
+                if tt >= 0:
                     t = "%7.3f" % tt
                 else:
                     t = '-.---'
+                    tt = 0
                 TIMES.append((TSTDIR, TST, t, tt, FtOut, FtErr, reason))
                 td += tt
                 FdOut = max(FdOut,FtOut)
@@ -1677,6 +1689,8 @@ def GetBitsAndModsAndThreads(env) :
             while True:
                 proc.poll()
                 if proc.returncode is not None:
+                    qOut = proc.stdout.read()
+                    qErr = proc.stderr.read()
                     break
                 if os.path.exists(os.path.join(dbpath, '.started')):
                     break
@@ -1759,7 +1773,7 @@ def GetBitsAndModsAndThreads(env) :
         if not env['TST_BITS'] or not env['TST_MODS']:
             print(' '.join(cmd) + "\n\n", file=sys.stderr, end='')
             print(qOut, file=sys.stderr, end='')
-            print.write(file=sys.stderr)
+            print(file=sys.stderr)
             print(qErr, file=sys.stderr, flush=True)
             rtrn = 1
     else:
@@ -1876,7 +1890,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
     links = []                  # symlinks we make
     threads = None              # set if we override number of threads
 
-    TX = 0
+    TX = -1
     EXT = CALL = SERVER = ""
     x  = isexecutable(TST)
     if not x[0]:
@@ -2036,6 +2050,25 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
                             break
                 if reason is not None:
                     break
+            elif cond.startswith('R_VERSION>='):
+                rversion = os.path.join('@LIBR_INCLUDE_DIRS@', 'Rversion.h')
+                if os.path.exists(rversion):
+                    with openutf8(rversion, 'r') as f:
+                        res = re.search('#define R_VERSION (?P<rversion>\d+)', f.read())
+                        if res is not None:
+                            r_version = res.group('rversion')
+                            req_version = cond[11:].split('.')
+                            req_version = int(req_version[0]) * 65536 + int(req_version[1]) * 256 + int(req_version[2])
+                            if not negate:
+                                if int(r_version) < req_version:
+                                    reason = "R version too low"
+                                    elem = SkipTest(env, TST, EXT, reason, length)
+                                    break
+                            else:
+                                if int(r_version) >= req_version:
+                                    reason = "R version too high"
+                                    elem = SkipTest(env, TST, EXT, reason, length)
+                                    break
             elif cond not in CONDITIONALS:
                 reason = "as conditional '%s' is unknown." % cond
                 elem = SkipTest(env, TST, EXT, reason, length)
@@ -2263,7 +2296,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
                 res = bugre.search(TST)
                 if res is not None:
                     bugno = res.group('bugno')
-                    tst = '%s<a target="_blank" href="http://bugs.monetdb.org/%s">%s</a>%s' % (TST[:res.start(0)+1], bugno, res.group(0)[1:], TST[res.end(0):])
+                    tst = '%s<a target="_blank" href="https://github.com/MonetDB/MonetDB/issues/%s">%s</a>%s' % (TST[:res.start(0)+1], bugno, res.group(0)[1:], TST[res.end(0):])
                 else:
                     tst = TST
         out = openutf8('%s.test.out' % TST).read()
@@ -2348,14 +2381,14 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
                     else:
                         prred('ERROR')
                 if verbosity == 0 and (FailedOut > F_WARN or FailedErr > F_WARN):
-                    print(':', os.path.join(TSTDIR, TST + EXT))
+                    print(':', os.path.join(TSTDIR, TSTSUFF, TST + EXT))
                 elif verbosity == 1:
                     print()
         elif FailedOut > F_WARN or FailedErr > F_WARN:
             print()
             print('========================================')
             prred('ERROR: ')
-            print(os.path.join(TSTDIR, TST + EXT))
+            print(os.path.join(TSTDIR, TSTSUFF, TST + EXT))
             print('========================================')
             with openutf8(TestErrFile, 'r') as f:
                 print(f.read())
@@ -2606,13 +2639,14 @@ class ServerClass:
             res = mapiportre.search(connurl)
             port = res.group('port')
         else:
-            while True:
+            loadedseen = False
+            while port is None or not loadedseen:
                 line = proc.stdout.readline()
                 if not line:
                     break
                 self.outfile.write(line)
                 if 'MonetDB/SQL module loaded' in line:
-                    break
+                    loadedseen = True
                 res = mapiportre.search(line)
                 if res is not None:
                     port = res.group('port')
@@ -2799,6 +2833,30 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                 cmd = [os.path.join(".", TST + EXT), TST]
                 returncode = RunIt(cmd, False, "", ClntOut, ClntErr, TIMEOUT)
             elif CALL == "python":
+                # do clean up between tests if no dependent tests
+                # borrow clean up function from sqllogictest
+                if not os.path.exists(TST+'.reqtests'):
+                    import MonetDBtesting.sqllogictest as sqllogictest
+                    with sqllogictest.SQLLogic(out=ClntErr) as sql:
+                        try:
+                            sql.connect(username=user or 'monetdb',
+                                        password=passwd or 'monetdb',
+                                        hostname=HOST,
+                                        port=int(pSrvr.port),
+                                        database=TSTDB,
+                                        language='sql',
+                                        timeout=TIMEOUT)
+                        except KeyboardInterrupt:
+                            raise
+                        except:
+                            returncode = 'error'
+                        else:
+                            try:
+                                sql.drop()
+                            except KeyboardInterrupt:
+                                raise
+                            except:
+                                pass
                 cmd = [sys.executable, TST + EXT, TST]
                 returncode = RunIt(cmd, False, "", ClntOut, ClntErr, TIMEOUT)
             elif CALL in ["mal", "malXs"]:
@@ -2833,8 +2891,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                     try:
                         sql.connect(username=user or 'monetdb',
                                     password=passwd or 'monetdb',
-                                    hostname='localhost',
-                                    port=int(env['MAPIPORT']),
+                                    hostname=HOST,
+                                    port=int(pSrvr.port),
                                     database=TSTDB,
                                     language=lang,
                                     timeout=TIMEOUT)
@@ -3282,7 +3340,7 @@ if 'HTMLTITLE' in os.environ:
 else:
     HTMLTITLE = "{} results on {} ({})".format(THISFILE, HOST, DISTVER)       #"+ ("`date`")"
 
-URLPREFIX = 'http://dev.monetdb.org/hg/MonetDB/file/'
+URLPREFIX = 'https://dev.monetdb.org/hg/MonetDB/file/'
 
 par = {}
 dft = {}
@@ -3438,6 +3496,7 @@ def main(argv) :
             mserver5_opts.extend(['--set', a])
             if a == 'sql_debug=128':
                 CONDITIONALS['NOWAL'] = True
+                os.environ['NOWAL'] = 'True'
     if opts.loadmodule:
         for a in opts.loadmodule:
             mserver5_opts.extend(['--loadmodule', a])
@@ -3716,26 +3775,28 @@ def main(argv) :
     global REV
     global URLPREFIX
     REV = opts.revision
-    if REV is None:             # no --revision option: try to find out
-        try:
-            with process.Popen(['hg', 'id', '-i'],
-                               stdout=process.PIPE,
-                               text=True) as proc:
-                out, err = proc.communicate()
-            if proc.returncode == 0:
-                REV = out.strip()
-            proc = None
-        except KeyboardInterrupt:
-            raise
-        except:
-            pass
-    # fix up URLPREFIX
-    if REV:
-        URLPREFIX += '%s/' % REV.split()[0].rstrip('+')
-        os.environ['REVISION'] = REV
-    else:
-        # if no revision known, can't refer to repository
-        URLPREFIX = None
+    if produce_html and CONDITIONALS['MERCURIAL']:
+        if REV is None:             # no --revision option: try to find out
+            try:
+                with process.Popen(['hg', 'id', '-i'],
+                                   stdout=process.PIPE,
+                                   stderr=process.PIPE,
+                                   text=True) as proc:
+                    out, err = proc.communicate()
+                if proc.returncode == 0:
+                    REV = out.strip()
+                proc = None
+            except KeyboardInterrupt:
+                raise
+            except:
+                pass
+        # fix up URLPREFIX
+        if REV:
+            URLPREFIX += '%s/' % REV.split()[0].rstrip('+')
+            os.environ['REVISION'] = REV
+        else:
+            # if no revision known, can't refer to repository
+            URLPREFIX = None
 
     global SOCK, HOST
     try:                        # try/finally to clean up sockdir
@@ -4149,7 +4210,7 @@ VALUES (%s, '%s', '%s', '%s',
                 prgreen('OK')
             print()
             print('failed={}, skipped={}'.format(Failed, len(Failure[F_SKIP])))
-            if produce_html and Failed:
+            if produce_html and (Failed or errseen):
                 print('see {}'.format(urllib.parse.urlunsplit(('file','',urllib.request.pathname2url(os.path.join(TSTTRGBASE, TSTPREF, "index.html")),'',''))))
             print('Ran {} tests in {:7.3f}s'.format(num_tests - len(Failure[F_SKIP]), t_))
         elif Failed:
@@ -4219,4 +4280,3 @@ if __name__ == "__main__":
 
 #       END
 #############################################################################
-# vim: set ts=4 sw=4 expandtab:

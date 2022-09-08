@@ -24,6 +24,9 @@
 #include "sql_optimizer.h"
 #include "sql_datetime.h"
 #include "sql_partition.h"
+#include "rel_unnest.h"
+#include "rel_optimizer.h"
+#include "rel_statistics.h"
 #include "rel_partition.h"
 #include "rel_select.h"
 #include "rel_rel.h"
@@ -121,19 +124,34 @@ sql_symbol2relation(backend *be, symbol *sym)
 {
 	sql_rel *rel;
 	sql_query *query = query_create(be->mvc);
-	lng Tbegin;
-	int extra_opts = be->mvc->emode != m_prepare;
+	lng Tbegin, Tend;
+	int value_based_opt = be->mvc->emode != m_prepare, storage_based_opt;
 	int profile = be->mvc->emode == m_plan;
+	Client c = getClientContext();
 
-	rel = rel_semantic(query, sym);
 	Tbegin = GDKusec();
+	rel = rel_semantic(query, sym);
+	Tend = GDKusec();
+	if(profilerStatus > 0 )
+		profilerEvent(NULL,
+					  &(struct NonMalEvent)
+					  {SQL_TO_REL, c, Tend, NULL, NULL, rel?0:1, Tend-Tbegin});
+
+	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
+	Tbegin = Tend;
 	if (rel)
-		rel = sql_processrelation(be->mvc, rel, profile, 1, extra_opts, extra_opts);
+		rel = sql_processrelation(be->mvc, rel, profile, 1, value_based_opt, storage_based_opt);
 	if (rel)
 		rel = rel_partition(be->mvc, rel);
 	if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
 		be->no_mitosis = 1;
-	be->reloptimizer = GDKusec() - Tbegin;
+	Tend = GDKusec();
+	be->reloptimizer = Tend - Tbegin;
+
+	if(profilerStatus > 0)
+		profilerEvent(NULL,
+					  &(struct NonMalEvent)
+					  {REL_OPT, c, Tend, NULL, NULL, rel?0:1, be->reloptimizer});
 	return rel;
 }
 
@@ -165,7 +183,7 @@ sqlcleanup(backend *be, int err)
 }
 
 /*
- * The internal administration of the SQL compilation and execution state
+ * The internal administration of the MAL compiler and execution state
  * is administered by a state descriptor accessible in each phase.
  * Failure to find the state descriptor aborts the session.
  */
@@ -1249,13 +1267,9 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			h = cnt;
 
 		if (upd) {
-			sql_updates* updates = store->storage_api.bind_updates(m->session->tr, c);
-
-			if (!updates)
+			BAT *ui = NULL, *uv = NULL;
+			if (store->storage_api.bind_updates(m->session->tr, c, &ui, &uv) == LOG_ERR)
 				throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update columns");
-			BAT *ui = updates->ui;
-			BAT *uv = updates->uv;
-			GDKfree(updates);
 
 			h--;
 			BAT* bn = BATselect(ui, NULL, &l, &h, true, true, false);
@@ -1331,17 +1345,15 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	else if (upd) { /*unpartitioned access to update bats*/
-		sql_updates* updates = store->storage_api.bind_updates(m->session->tr, c);
-
-		if (!updates)
+		BAT *ui = NULL, *uv = NULL;
+		if (store->storage_api.bind_updates(m->session->tr, c, &ui, &uv) == LOG_ERR)
 			throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update columns");
 
 		bat *uvl = getArgReference_bat(stk, pci, 1);
-		BBPkeepref(updates->ui);
-		BBPkeepref(updates->uv);
-		*bid = updates->ui->batCacheid;
-		*uvl = updates->uv->batCacheid;
-		GDKfree(updates);
+		BBPkeepref(ui);
+		BBPkeepref(uv);
+		*bid = ui->batCacheid;
+		*uvl = uv->batCacheid;
 	}
 	else { /*unpartitioned access to base column*/
 		int coltype = getBatType(getArgType(mb, pci, 0));
@@ -1565,16 +1577,19 @@ str
 mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int upd = (pci->argc == 7 || pci->argc == 9);
-	BAT *b = NULL, *bn;
+	BAT *b = NULL;
 	bat *bid = getArgReference_bat(stk, pci, 0);
-	int coltype = getBatType(getArgType(mb, pci, 0));
 	mvc *m = NULL;
 	str msg;
-	const char *sname = *getArgReference_str(stk, pci, 2 + upd);
-	const char *tname = *getArgReference_str(stk, pci, 3 + upd);
-	const char *iname = *getArgReference_str(stk, pci, 4 + upd);
-	int access = *getArgReference_int(stk, pci, 5 + upd);
+	const char *sname	= *getArgReference_str(stk, pci, 2 + upd);
+	const char *tname	= *getArgReference_str(stk, pci, 3 + upd);
+	const char *iname	= *getArgReference_str(stk, pci, 4 + upd);
+	const int	access	= *getArgReference_int(stk, pci, 5 + upd);
 
+	const bool partitioned_access = pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int;
+
+	/* This doesn't work with quick access for now... */
+	assert(access != QUICK);
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
@@ -1583,102 +1598,69 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_table *t = mvc_bind_table(m, s, tname);
 	if (t && !isTable(t))
-		throw(SQL, "sql.tid", SQLSTATE(42000) "%s '%s' is not persistent",
+		throw(SQL, "sql.bindidx", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	sql_idx *i = mvc_bind_idx(m, s, iname);
-	b = mvc_bind_idxbat(m, sname, tname, iname, access);
-	if (b && b->ttype && b->ttype != coltype) {
-		BBPunfix(b->batCacheid);
-		throw(SQL,"sql.bind",SQLSTATE(42000) "Index column type mismatch %s.%s.%s",sname,tname,iname);
-	}
-	if (b) {
-		if (pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int) {
-			BUN cnt = store->storage_api.count_idx(m->session->tr, i, 0), psz;
-			/* partitioned access */
-			int part_nr = *getArgReference_int(stk, pci, 6 + upd);
-			int nr_parts = *getArgReference_int(stk, pci, 7 + upd);
 
-			if (access == 0) {
-				BUN l, h;
-				psz = cnt ? (cnt / nr_parts) : 0;
-				l = part_nr * psz;
-				if (l > cnt)
-					l = cnt;
-				h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
-				if (h > cnt)
-					h = cnt;
-				bn = BATslice(b, l, h);
-				if(bn == NULL){
-					BBPunfix(b->batCacheid);
-					throw(SQL, "sql.bindidx", GDK_EXCEPTION);
-				}
-				BAThseqbase(bn, l);
-			} else {
-				/* BAT b holds the UPD_ID bat */
-				oid l, h;
-				cnt = store->storage_api.count_idx(m->session->tr, i, 0);
-				psz = cnt ? (cnt / nr_parts) : 0;
-				l = part_nr * psz;
-				if (l > cnt)
-					l = cnt;
-				h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
-				if (h > cnt)
-					h = cnt;
-				h--;
-				bn = BATselect(b, NULL, &l, &h, true, true, false);
-				if(bn == NULL) {
-					BBPunfix(b->batCacheid);
-					throw(SQL, "sql.bindidx", GDK_EXCEPTION);
-				}
-			}
-			BBPunfix(b->batCacheid);
-			b = bn;
-		} else if (upd) {
-			BAT *uv = mvc_bind_idxbat(m, sname, tname, iname, RD_UPD_VAL);
-			bat *uvl = getArgReference_bat(stk, pci, 1);
-			if ( uv == NULL){
-				BBPunfix(b->batCacheid);
-				throw(SQL,"sql.bindidx",SQLSTATE(42000) "Cannot access index column %s.%s.%s",sname,tname,iname);
-			}
-			*bid = b->batCacheid;
-			BBPkeepref(b);
-			*uvl = uv->batCacheid;
-			BBPkeepref(uv);
-			return MAL_SUCCEED;
-		}
+	if (partitioned_access) {
+		/* partitioned access */
+		int part_nr = *getArgReference_int(stk, pci, 6 + upd);
+		int nr_parts = *getArgReference_int(stk, pci, 7 + upd);
+		BUN cnt = store->storage_api.count_idx(m->session->tr, i, 0), psz;
+		oid l, h;
+		psz = cnt ? (cnt / nr_parts) : 0;
+		l = part_nr * psz;
+		if (l > cnt)
+			l = cnt;
+		h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
+		if (h > cnt)
+			h = cnt;
+
 		if (upd) {
+			BAT *ui = NULL, *uv = NULL;
+			if (store->storage_api.bind_updates_idx(m->session->tr, i, &ui, &uv) == LOG_ERR)
+				throw(SQL,"sql.bindidx",SQLSTATE(HY005) "Cannot access the update columns");
+
+			h--;
+			BAT* bn = BATselect(ui, NULL, &l, &h, true, true, false);
+			if(bn == NULL) {
+				BBPunfix(ui->batCacheid);
+				BBPunfix(uv->batCacheid);
+				throw(SQL, "sql.bindidx", GDK_EXCEPTION);
+			}
+
 			bat *uvl = getArgReference_bat(stk, pci, 1);
 
-			if (BATcount(b)) {
-				BAT *uv = mvc_bind_idxbat(m, sname, tname, iname, RD_UPD_VAL);
-				BAT *ui = mvc_bind_idxbat(m, sname, tname, iname, RD_UPD_ID);
-				BAT *id, *vl;
-				if ( ui == NULL || uv == NULL) {
+			if (BATcount(bn)) {
+				BAT *id;
+				BAT *vl;
+				if (ui == NULL || uv == NULL) {
 					bat_destroy(uv);
 					bat_destroy(ui);
-					BBPunfix(b->batCacheid);
+					BBPunfix(bn->batCacheid);
 					throw(SQL,"sql.bindidx",SQLSTATE(42000) "Cannot access index column %s.%s.%s",sname,tname,iname);
 				}
-				id = BATproject(b, ui);
-				vl = BATproject(b, uv);
+				assert(uv->batCount == ui->batCount);
+				id = BATproject(bn, ui);
+				vl = BATproject(bn, uv);
 				bat_destroy(ui);
 				bat_destroy(uv);
 				if (id == NULL || vl == NULL) {
+					BBPunfix(bn->batCacheid);
 					bat_destroy(id);
 					bat_destroy(vl);
-					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.bindidx", GDK_EXCEPTION);
 				}
 				if ( BATcount(id) != BATcount(vl)){
-					BBPunfix(b->batCacheid);
+					BBPunfix(bn->batCacheid);
 					bat_destroy(id);
 					bat_destroy(vl);
 					throw(SQL, "sql.bindidx", SQLSTATE(0000) "Inconsistent BAT count");
 				}
-				*bid = id->batCacheid;
 				BBPkeepref(id);
-				*uvl = vl->batCacheid;
 				BBPkeepref(vl);
+				*bid = id->batCacheid;
+				*uvl = vl->batCacheid;
 			} else {
 				*bid = e_bat(TYPE_oid);
 				*uvl = e_bat((i->type==join_idx)?TYPE_oid:TYPE_lng);
@@ -1691,16 +1673,49 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					throw(SQL, "sql.bindidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			}
-			BBPunfix(b->batCacheid);
 		} else {
-			*bid = b->batCacheid;
-			BBPkeepref(b);
+			int idxtype = getBatType(getArgType(mb, pci, 0));
+			b = store->storage_api.bind_idx(m->session->tr, i, access);
+
+			if (b && b->ttype && b->ttype != idxtype) {
+				BBPunfix(b->batCacheid);
+				throw(SQL,"sql.bindidx",SQLSTATE(42000) "Index type mismatch %s.%s.%s",sname,tname,iname);
+			}
+
+			BAT* bn = BATslice(b, l, h);
+			if(bn == NULL) {
+				BBPunfix(b->batCacheid);
+				throw(SQL, "sql.bindidx", GDK_EXCEPTION);
+			}
+			BAThseqbase(bn, l);
+			BBPunfix(b->batCacheid);
+			BBPkeepref(bn);
+			*bid = bn->batCacheid;
 		}
-		return MAL_SUCCEED;
 	}
-	if (sname)
-		throw(SQL, "sql.bindidx", SQLSTATE(HY005) "Cannot access column descriptor %s for %s.%s", iname, sname, tname);
-	throw(SQL, "sql.bindidx", SQLSTATE(HY005) "Cannot access column descriptor %s for %s", iname, tname);
+	else if (upd) { /*unpartitioned access to update bats*/
+		BAT *ui = NULL, *uv = NULL;
+		if (store->storage_api.bind_updates_idx(m->session->tr, i, &ui, &uv) == LOG_ERR)
+			throw(SQL,"sql.bindidx",SQLSTATE(HY005) "Cannot access the update columns");
+
+		bat *uvl = getArgReference_bat(stk, pci, 1);
+		BBPkeepref(ui);
+		BBPkeepref(uv);
+		*bid = ui->batCacheid;
+		*uvl = uv->batCacheid;
+	}
+	else { /*unpartitioned access to base index*/
+		int idxtype = getBatType(getArgType(mb, pci, 0));
+		b = store->storage_api.bind_idx(m->session->tr, i, access);
+
+		if (b && b->ttype && b->ttype != idxtype) {
+			BBPunfix(b->batCacheid);
+			throw(SQL,"sql.bindidx",SQLSTATE(42000) "Index type mismatch %s.%s.%s",sname,tname,iname);
+		}
+		BBPkeepref(b);
+		*bid = b->batCacheid;
+	}
+	return MAL_SUCCEED;
 }
 
 str
@@ -2580,7 +2595,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((tostdout = strcmp(filename,"stdout") == 0)) {
 		s = cntxt->fdout;
 	} else if (!onclient) {
-		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
+		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
 			msg=  createException(IO, "streams.open", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 			close_stream(s);
 			goto wrapup_result_set1;
@@ -2814,7 +2829,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((tostdout = strcmp(filename,"stdout") == 0)) {
 		s = cntxt->fdout;
 	} else if (!onclient) {
-		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
+		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
 			msg=  createException(IO, "streams.open", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 			close_stream(s);
 			goto wrapup_result_set;
@@ -3075,7 +3090,6 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *be;
 	BAT **b = NULL;
-	ssize_t len = 0;
 	sql_table *t = *(sql_table **) getArgReference(stk, pci, pci->retc + 0);
 	const char *tsep = *getArgReference_str(stk, pci, pci->retc + 1);
 	const char *rsep = *getArgReference_str(stk, pci, pci->retc + 2);
@@ -3085,7 +3099,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng sz = *getArgReference_lng(stk, pci, pci->retc + 6);
 	lng offset = *getArgReference_lng(stk, pci, pci->retc + 7);
 	int besteffort = *getArgReference_int(stk, pci, pci->retc + 8);
-	char *fixed_widths = *getArgReference_str(stk, pci, pci->retc + 9);
+	const char *fixed_widths = *getArgReference_str(stk, pci, pci->retc + 9);
 	int onclient = *getArgReference_int(stk, pci, pci->retc + 10);
 	bool escape = *getArgReference_int(stk, pci, pci->retc + 11);
 	str msg = MAL_SUCCEED;
@@ -3111,52 +3125,25 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, besteffort, true, escape);
 	} else {
 		if (onclient) {
-			mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-			if (offset > 1 && rsep && rsep[0] == '\n' && rsep[1] == '\0') {
-				/* only let client skip simple lines */
-				mnstr_printf(be->mvc->scanner.ws, "r " LLFMT " %s\n",
-					     offset, fname);
-				offset = 0;
-			} else {
-				mnstr_printf(be->mvc->scanner.ws, "r 0 %s\n", fname);
-			}
-			msg = MAL_SUCCEED;
-			mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
-			while (!be->mvc->scanner.rs->eof)
-				bstream_next(be->mvc->scanner.rs);
-			ss = be->mvc->scanner.rs->s;
-			char buf[80];
-			if ((len = mnstr_readline(ss, buf, sizeof(buf))) > 1) {
-				if (buf[0] == '!' && buf[6] == '!')
-					msg = createException(IO, "sql.copy_from", "%.7s%s: %s", buf, fname, buf+7);
-				else
-					msg = createException(IO, "sql.copy_from", "%s: %s", fname, buf);
-				while (buf[len - 1] != '\n' &&
-				       (len = mnstr_readline(ss, buf, sizeof(buf))) > 0)
-					;
-				/* read until flush marker */
-				while (mnstr_read(ss, buf, 1, sizeof(buf)) > 0)
-					;
-				return msg;
-			}
+			ss = mapi_request_upload(fname, false, be->mvc->scanner.rs, be->mvc->scanner.ws);
 		} else {
 			ss = open_rastream(fname);
-			if (ss == NULL || mnstr_errnr(ss)) {
-				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
-				close_stream(ss);
-				return msg;
-			}
+		}
+		if (ss == NULL || mnstr_errnr(ss) != MNSTR_NO__ERROR) {
+			msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
+			close_stream(ss);
+			return msg;
 		}
 
 		if (!strNil(fixed_widths)) {
 			size_t ncol = 0, current_width_entry = 0, i;
 			size_t *widths;
-			char* val_start = fixed_widths;
+			const char* val_start = fixed_widths;
 			size_t width_len = strlen(fixed_widths);
 			stream *ns;
 
 			for (i = 0; i < width_len; i++) {
-				if (fixed_widths[i] == '|') {
+				if (fixed_widths[i] == STREAM_FWF_FIELD_SEP) {
 					ncol++;
 				}
 			}
@@ -3167,7 +3154,6 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			for (i = 0; i < width_len; i++) {
 				if (fixed_widths[i] == STREAM_FWF_FIELD_SEP) {
-					fixed_widths[i] = '\0';
 					widths[current_width_entry++] = (size_t) strtoll(val_start, NULL, 10);
 					val_start = fixed_widths + i + 1;
 				}
@@ -3177,7 +3163,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			rsep = fwfrsep;
 
 			ns = stream_fwf_create(ss, ncol, widths, STREAM_FWF_FILLER);
-			if (ns == NULL || mnstr_errnr(ns)) {
+			if (ns == NULL || mnstr_errnr(ns) != MNSTR_NO__ERROR) {
 				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 				close_stream(ss);
 				free(widths);
@@ -3195,12 +3181,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, besteffort, false, escape);
-		if (onclient) {
-			mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-			mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
-			be->mvc->scanner.rs->eof = s->eof;
-			s->s = NULL;
-		}
+		// This also closes ss:
 		bstream_destroy(s);
 	}
 	if (b && !msg)
@@ -3220,7 +3201,7 @@ not_unique(bit *ret, const bat *bid)
 
 	*ret = FALSE;
 	BATiter bi = bat_iterator(b);
-	if (bi.key || BATtdense(b) || bi.count <= 1) {
+	if (bi.key || BATtdensebi(&bi) || bi.count <= 1) {
 		bat_iterator_end(&bi);
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
@@ -3764,7 +3745,7 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 		BBPunfix(b->batCacheid);
 		throw(SQL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	if (BATtdense(b)) {
+	if (BATtdensebi(&bi)) {
 		BATloop(b, p, q) {
 			if (BUNappend(r, &rank, false) != GDK_SUCCEED)
 				goto bailout;
@@ -4083,19 +4064,19 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							/*printf(" indices "BUNFMT, bs->thash?bs->thash->heap.size:0); */
 							/*printf("\n"); */
 							bitval = bsi.sorted;
-							if (!bitval && bs->tnosorted == 0)
+							if (!bitval && bsi.nosorted == 0)
 								bitval = bit_nil;
 							if (BUNappend(sort, &bitval, false) != GDK_SUCCEED)
 								goto bailout;
 
 							bitval = bsi.revsorted;
-							if (!bitval && bs->tnorevsorted == 0)
+							if (!bitval && bsi.norevsorted == 0)
 								bitval = bit_nil;
 							if (BUNappend(revsort, &bitval, false) != GDK_SUCCEED)
 								goto bailout;
 
 							bitval = BATtkey(bs);
-							if (!bitval && bs->tnokey[0] == 0 && bs->tnokey[1] == 0)
+							if (!bitval && bsi.nokey[0] == 0 && bsi.nokey[1] == 0)
 								bitval = bit_nil;
 							if (BUNappend(key, &bitval, false) != GDK_SUCCEED)
 								goto bailout;
@@ -4179,17 +4160,17 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								/*printf(" indices "BUNFMT, bs->thash?bs->thash->heaplink.size+bs->thash->heapbckt.size:0); */
 								/*printf("\n"); */
 								bitval = bsi.sorted;
-								if (!bitval && bs->tnosorted == 0)
+								if (!bitval && bsi.nosorted == 0)
 									bitval = bit_nil;
 								if (BUNappend(sort, &bitval, false) != GDK_SUCCEED)
 									goto bailout;
 								bitval = bsi.revsorted;
-								if (!bitval && bs->tnorevsorted == 0)
+								if (!bitval && bsi.norevsorted == 0)
 									bitval = bit_nil;
 								if (BUNappend(revsort, &bitval, false) != GDK_SUCCEED)
 									goto bailout;
 								bitval = BATtkey(bs);
-								if (!bitval && bs->tnokey[0] == 0 && bs->tnokey[1] == 0)
+								if (!bitval && bsi.nokey[0] == 0 && bsi.nokey[1] == 0)
 									bitval = bit_nil;
 								if (BUNappend(key, &bitval, false) != GDK_SUCCEED)
 									goto bailout;
@@ -4891,11 +4872,11 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if (isTempTable(t))
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Cannot vaccum column from temporary table");
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 	if (c->storage_type)
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Cannot vaccum compressed column");
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
 
 	return do_str_column_vacuum(tr, c, sname, tname, cname);
 }
@@ -5028,11 +5009,11 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if (isTempTable(t))
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Cannot vaccum column from temporary table");
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 	if (c->storage_type)
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Cannot vaccum compressed column");
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
 
 	if (!(sname_copy = GDKstrdup(sname)) || !(tname_copy = GDKstrdup(tname)) || !(cname_copy = GDKstrdup(cname))) {
 		GDKfree(sname_copy);
@@ -5083,7 +5064,7 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if (isTempTable(t))
-		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "Cannot vaccum column from temporary table");
+		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
 		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
 
@@ -5094,7 +5075,6 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 }
 
 
-#include "wlr.h"
 #include "sql_cat.h"
 #include "sql_rank.h"
 #include "sql_user.h"
@@ -5108,6 +5088,31 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 #include "for.h"
 #include "dict.h"
 #include "mel.h"
+
+
+str
+SQLuser_password(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = NULL;
+	str *password = getArgReference_str(stk, pci, 0);
+	const char *username = *getArgReference_str(stk, pci, 1);
+
+	(void) password;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	if (cntxt->username != username) {
+		// only MAL_ADMIN and user himself can access password
+		if ((msg = AUTHrequireAdmin(cntxt)) != MAL_SUCCEED)
+			return msg;
+	}
+	*password = monet5_password_hash(m, username);
+	return MAL_SUCCEED;
+}
+
 static mel_func sql_init_funcs[] = {
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,3, arg("",str),arg("delay",bte),arg("force",bit))),
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,3, arg("",str),arg("delay",sht),arg("force",bit))),
@@ -5197,9 +5202,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "argRecord", SQLargRecord, false, "Glue together the calling sequence", args(1,2, arg("",str),varargany("a",0))),
  pattern("sql", "sql_variables", sql_variables, false, "return the table with session variables", args(4,4, batarg("sname",str),batarg("name",str),batarg("type",str),batarg("value",str))),
  pattern("sql", "sessions", sql_sessions_wrap, false, "SQL export table of active sessions, their timeouts and idle status", args(9,9, batarg("id",int),batarg("user",str),batarg("start",timestamp),batarg("idle",timestamp),batarg("optmizer",str),batarg("stimeout",int),batarg("qtimeout",int),batarg("wlimit",int),batarg("mlimit",int))),
- pattern("sql", "db_users", db_users_wrap, false, "return table of users with sql scenario", args(1,1, batarg("",str))),
- pattern("sql", "password", db_password_wrap, false, "Return password hash of user", args(1,2, arg("",str),arg("user",str))),
- pattern("batsql", "password", db_password_wrap, false, "Return password hash of user", args(1,2, batarg("",str),batarg("user",str))),
+pattern("sql", "password", SQLuser_password, false, "Return password hash of user", args(1,2, arg("",str),arg("user",str))),
  pattern("sql", "rt_credentials", sql_rt_credentials_wrap, false, "Return the remote table credentials for the given table", args(3,4, batarg("uri",str),batarg("username",str),batarg("hash",str),arg("tablename",str))),
  pattern("sql", "dump_cache", dump_cache, false, "dump the content of the query cache", args(2,2, batarg("query",str),batarg("count",int))),
  pattern("sql", "dump_opt_stats", dump_opt_stats, false, "dump the optimizer rewrite statistics", args(2,2, batarg("rewrite",str),batarg("count",int))),
@@ -5378,10 +5381,6 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "current_timestamp", SQLcurrent_timestamp, false, "Get the clients current timestamp", args(1,1, arg("",timestamp))),
  pattern("calc", "date", nil_2_date, false, "cast to date", args(1,2, arg("",date),arg("v",void))),
  pattern("batcalc", "date", nil_2_date, false, "cast to date", args(1,2, batarg("",date),batarg("v",oid))),
- pattern("calc", "date", str_2_date, false, "cast to date", args(1,2, arg("",date),arg("v",str))),
- command("batcalc", "date", batstr_2_date, false, "cast to date", args(1,3, batarg("",date),batarg("v",str),batarg("s",oid))),
- command("calc", "blob", str_2_blob, false, "cast to blob", args(1,2, arg("",blob),arg("v",str))),
- command("batcalc", "blob", batstr_2_blob, false, "cast to blob", args(1,3, batarg("",blob),batarg("v",str),batarg("s",oid))),
  pattern("calc", "str", SQLstr_cast, false, "cast to string and check for overflow", args(1,7, arg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),argany("v",1),arg("digits",int))),
  pattern("batcalc", "str", SQLbatstr_cast, false, "cast to string and check for overflow", args(1,8, batarg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),batargany("v",1),batarg("s",oid),arg("digits",int))),
  pattern("calc", "month_interval", month_interval_str, false, "cast str to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",str),arg("ek",int),arg("sk",int))),
@@ -5886,18 +5885,18 @@ static mel_func sql_init_funcs[] = {
  pattern("batsql", "all", SQLall_cmp, false, "if !cmp then false, (nl or nr) then nil, else true", args(1,4, batarg("",bit),batarg("cmp",bit),arg("nl",bit),batarg("nr",bit))),
  pattern("batsql", "all", SQLall_cmp, false, "if !cmp then false, (nl or nr) then nil, else true", args(1,4, batarg("",bit),batarg("cmp",bit),batarg("nl",bit),arg("nr",bit))),
  pattern("batsql", "all", SQLall_cmp, false, "if !cmp then false, (nl or nr) then nil, else true", args(1,4, batarg("",bit),batarg("cmp",bit),batarg("nl",bit),batarg("nr",bit))),
- pattern("aggr", "anyequal", SQLanyequal, false, "if any value in r is equal to l return true, else if r has nil nil else false", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
- pattern("bataggr", "anyequal", SQLanyequal, false, "", args(1,3, batarg("",bit),batargany("l",1),batargany("r",1))),
- pattern("aggr", "allnotequal", SQLallnotequal, false, "if all values in r are not equal to l return true, else if r has nil nil else false", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
- pattern("bataggr", "allnotequal", SQLallnotequal, false, "", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
- pattern("aggr", "subanyequal", SQLanyequal_grp, false, "if any value in r is equal to l return true, else if r has nil nil else false", args(1,6, batarg("",bit),batargany("l",1),batargany("r",1),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
- pattern("aggr", "subanyequal", SQLanyequal_grp, false, "if any value in r is equal to l return true, else if r has nil nil else false; with candidate list", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("g",oid),batarg("e",oid),batarg("s",oid),arg("no_nil",bit))),
- pattern("aggr", "subanyequal", SQLanyequal_grp2, false, "if any value in r is equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then false", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("rid",oid),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
- pattern("aggr", "subanyequal", SQLanyequal_grp2, false, "if any value in r is equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then false; with candidate list", args(1,8, batarg("",bit),batargany("l",1),batargany("r",1),batarg("rid",oid),batarg("g",oid),batarg("e",oid),batarg("s",oid),arg("no_nil",bit))),
- pattern("aggr", "suballnotequal", SQLallnotequal_grp, false, "if all values in r are not equal to l return true, else if r has nil nil else false", args(1,6, batarg("",bit),batargany("l",1),batargany("r",1),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
- pattern("aggr", "suballnotequal", SQLallnotequal_grp, false, "if all values in r are not equal to l return true, else if r has nil nil else false; with candidate list", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("g",oid),batarg("e",oid),batarg("s",oid),arg("no_nil",bit))),
- pattern("aggr", "suballnotequal", SQLallnotequal_grp2, false, "if all values in r are not equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then true", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("rid",oid),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
- pattern("aggr", "suballnotequal", SQLallnotequal_grp2, false, "if all values in r are not equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then true; with candidate list", args(1,8, batarg("",bit),batargany("l",1),batargany("r",1),batarg("rid",oid),batarg("g",oid),batarg("e",oid),batarg("s",oid),arg("no_nil",bit))),
+ pattern("aggr", "anyequal", SQLanyequal, false, "if any value in r is equal to l, return true, else if r has nil, return nil, else return false", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
+ pattern("bataggr", "anyequal", SQLanyequal, false, "if any value in r is equal to l, return true, else if r has nil, return nil, else return false", args(1,3, batarg("",bit),batargany("l",1),batargany("r",1))),
+ pattern("aggr", "allnotequal", SQLallnotequal, false, "if all values in r are not equal to l, return true, else if r has nil, return nil, else return false", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
+ pattern("bataggr", "allnotequal", SQLallnotequal, false, "if all values in r are not equal to l, return true, else if r has nil, return nil, else return false", args(1,3, arg("",bit),batargany("l",1),batargany("r",1))),
+ pattern("aggr", "subanyequal", SQLanyequal_grp, false, "if any value in r is equal to l, return true, else if r has nil, return nil, else return false", args(1,6, batarg("",bit),batargany("l",1),batargany("r",1),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
+// pattern("aggr", "subanyequal", SQLanyequal_grp, false, "if any value in r is equal to l, return true, else if r has nil, return nil, else return false; with candidate list", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("g",oid),batarg("e",oid),batarg("s",oid),arg("no_nil",bit))),
+ pattern("aggr", "subanyequal", SQLanyequal_grp2, false, "if any value in r is equal to l, return true, else if r has nil, return nil, else return false, except if rid is nil (ie empty) then return false", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("rid",oid),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
+ pattern("aggr", "subanyequal", SQLanyequal_grp2, false, "if any value in r is equal to l, return true, else if r has nil, return nil, else return false, except if rid is nil (ie empty) then return false; with candidate list", args(1,8, batarg("",bit),batargany("l",1),batargany("r",1),batarg("rid",oid),batarg("g",oid),batarg("e",oid),batarg("s",oid),arg("no_nil",bit))),
+ pattern("aggr", "suballnotequal", SQLallnotequal_grp, false, "if all values in r are not equal to l, return true, else if r has nil, return nil else return false", args(1,6, batarg("",bit),batargany("l",1),batargany("r",1),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
+// pattern("aggr", "suballnotequal", SQLallnotequal_grp, false, "if all values in r are not equal to l, return true, else if r has nil, return nil else return false; with candidate list", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("g",oid),batarg("e",oid),batarg("s",oid),arg("no_nil",bit))),
+ pattern("aggr", "suballnotequal", SQLallnotequal_grp2, false, "if all values in r are not equal to l, return true, else if r has nil return nil, else return false, except if rid is nil (ie empty) then return true", args(1,7, batarg("",bit),batargany("l",1),batargany("r",1),batarg("rid",oid),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
+ pattern("aggr", "suballnotequal", SQLallnotequal_grp2, false, "if all values in r are not equal to l, return true, else if r has nil return nil, else return false, except if rid is nil (ie empty) then return true; with candidate list", args(1,8, batarg("",bit),batargany("l",1),batargany("r",1),batarg("rid",oid),batarg("g",oid),batarg("e",oid),batarg("s",oid),arg("no_nil",bit))),
  pattern("aggr", "exist", SQLexist, false, "", args(1,2, arg("",bit), argany("b",1))),
  pattern("bataggr", "exist", SQLexist, false, "", args(1,2, batarg("",bit), argany("b",1))),
  pattern("bataggr", "exist", SQLexist, false, "", args(1,2, arg("",bit), batargany("b",1))),
@@ -5910,77 +5909,6 @@ static mel_func sql_init_funcs[] = {
  pattern("bataggr", "not_exist", SQLnot_exist, false, "", args(1,2, batarg("",bit), batargany("b",1))),
  pattern("aggr", "subnot_exist", SQLsubnot_exist, false, "", args(1,5, batarg("",bit),batargany("b",0),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
  pattern("aggr", "subnot_exist", SQLsubnot_exist, false, "", args(1,6, batarg("",bit),batargany("b",0),batarg("g",oid),batarg("e",oid),batarg("s",oid),arg("no_nil",bit))),
- /* wlr */
- pattern("wlr", "master", WLRmaster, true, "Initialize the replicator thread", args(0,1, arg("dbname",str))),
- pattern("wlr", "stop", WLRstop, true, "Stop the replicator thread", noargs),
- pattern("wlr", "accept", WLRaccept, true, "Accept failing transaction", noargs),
- pattern("wlr", "replicate", WLRreplicate, true, "Continue to keep the replica in sink", noargs),
- pattern("wlr", "replicate", WLRreplicate, true, "Roll the snapshot forward to an up-to-date clone", args(0,1, arg("ts",timestamp))),
- pattern("wlr", "replicate", WLRreplicate, true, "Roll the snapshot forward to a specific transaction id", args(0,1, arg("id",bte))),
- pattern("wlr", "replicate", WLRreplicate, true, "Roll the snapshot forward to a specific transaction id", args(0,1, arg("id",sht))),
- pattern("wlr", "replicate", WLRreplicate, true, "Roll the snapshot forward to a specific transaction id", args(0,1, arg("id",int))),
- pattern("wlr", "replicate", WLRreplicate, true, "Roll the snapshot forward to a specific transaction id", args(0,1, arg("id",lng))),
- pattern("wlr", "getMaster", WLRgetmaster, false, "What is the current master database", args(1,1, arg("",str))),
- pattern("wlr", "setbeat", WLRsetbeat, true, "Threshold (in seconds) for re-running queries", args(0,1, arg("dur",int))),
- pattern("wlr", "getclock", WLRgetclock, false, "Timestamp of last replicated transaction.", args(1,1, arg("",str))),
- pattern("wlr", "gettick", WLRgettick, false, "Transaction identifier of the last replicated transaction.", args(1,1, arg("",lng))),
- pattern("wlr", "transaction", WLRtransaction, false, "Mark the beginning of the work unit which can be a compound transaction", args(0,3, arg("tid",lng),arg("started",str),arg("user",str))),
- pattern("wlr", "commit", WLRcommit, false, "Mark the end of the work unit", noargs),
- pattern("wlr", "rollback", WLRrollback, false, "Mark the end of the work unit", noargs),
- pattern("wlr", "catalog", WLRcatalog, false, "A catalog changing query", args(0,1, arg("q",str))),
- pattern("wlr", "action", WLRaction, false, "A query producing updates", args(0,1, arg("q",str))),
- pattern("wlr", "append", WLRappend, false, "Apply the insertions in the workload-capture-replay list", args(1,7, arg("",int),arg("sname",str),arg("tname",str),arg("cname",str),arg("offset", oid), batarg("pos", oid), varargany("ins",0))),
- pattern("wlr", "update", WLRupdate, false, "Apply the update in the workload-capture-replay list", args(1,6, arg("",int),arg("sname",str),arg("tname",str),arg("cname",str),arg("tid",oid),argany("val",0))),
- pattern("wlr", "delete", WLRdelete, false, "Apply the deletions in the workload-capture-replay list", args(1,4, arg("",int),arg("sname",str),arg("tname",str),vararg("b",oid))),
- pattern("wlr", "clear_table", WLRclear_table, false, "Destroy the tuples in the table", args(1,4, arg("",int),arg("sname",str),arg("tname",str),arg("restart_sequences",int))),
- pattern("wlr", "create_seq", WLRgeneric, false, "Catalog operation create_seq", args(0,3, arg("sname",str),arg("seqname",str),arg("action",int))),
- pattern("wlr", "alter_seq", WLRgeneric, false, "Catalog operation alter_seq", args(0,3, arg("sname",str),arg("seqname",str),arg("val",lng))),
- pattern("wlr", "alter_seq", WLRgeneric, false, "Catalog operation alter_seq", args(0,4, arg("sname",str),arg("seqname",str),arg("seq",ptr),batarg("val",lng))),
- pattern("wlr", "drop_seq", WLRgeneric, false, "Catalog operation drop_seq", args(0,3, arg("sname",str),arg("nme",str),arg("action",int))),
- pattern("wlr", "create_schema", WLRgeneric, false, "Catalog operation create_schema", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
- pattern("wlr", "drop_schema", WLRgeneric, false, "Catalog operation drop_schema", args(0,3, arg("sname",str),arg("ifexists",int),arg("action",int))),
- pattern("wlr", "create_table", WLRgeneric, false, "Catalog operation create_table", args(0,3, arg("sname",str),arg("tname",str),arg("temp",int))),
- pattern("wlr", "create_view", WLRgeneric, false, "Catalog operation create_view", args(0,4, arg("sname",str),arg("tname",str),arg("temp",int),arg("replace",int))),
- pattern("wlr", "drop_table", WLRgeneric, false, "Catalog operation drop_table", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
- pattern("wlr", "drop_view", WLRgeneric, false, "Catalog operation drop_view", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
- pattern("wlr", "drop_constraint", WLRgeneric, false, "Catalog operation drop_constraint", args(0,5, arg("sname",str),arg("tname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
- pattern("wlr", "alter_table", WLRgeneric, false, "Catalog operation alter_table", args(0,3, arg("sname",str),arg("tname",str),arg("action",int))),
- pattern("wlr", "create_type", WLRgeneric, false, "Catalog operation create_type", args(0,3, arg("sname",str),arg("nme",str),arg("impl",str))),
- pattern("wlr", "drop_type", WLRgeneric, false, "Catalog operation drop_type", args(0,3, arg("sname",str),arg("nme",str),arg("action",int))),
- pattern("wlr", "grant_roles", WLRgeneric, false, "Catalog operation grant_roles", args(0,4, arg("sname",str),arg("auth",str),arg("grantor",int),arg("admin",int))),
- pattern("wlr", "revoke_roles", WLRgeneric, false, "Catalog operation revoke_roles", args(0,4, arg("sname",str),arg("auth",str),arg("grantor",int),arg("admin",int))),
- pattern("wlr", "grant", WLRgeneric, false, "Catalog operation grant", args(0,7, arg("sname",str),arg("tbl",str),arg("grantee",str),arg("privs",int),arg("cname",str),arg("gr",int),arg("grantor",int))),
- pattern("wlr", "revoke", WLRgeneric, false, "Catalog operation revoke", args(0,7, arg("sname",str),arg("tbl",str),arg("grantee",str),arg("privs",int),arg("cname",str),arg("grant",int),arg("grantor",int))),
- pattern("wlr", "grant_function", WLRgeneric, false, "Catalog operation grant_function", args(0,6, arg("sname",str),arg("fcnid",int),arg("grantee",str),arg("privs",int),arg("grant",int),arg("grantor",int))),
- pattern("wlr", "revoke_function", WLRgeneric, false, "Catalog operation revoke_function", args(0,6, arg("sname",str),arg("fcnid",int),arg("grantee",str),arg("privs",int),arg("grant",int),arg("grantor",int))),
- pattern("wlr", "create_user", WLRgeneric, false, "Catalog operation create_user", args(0,5, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("fullname",str))),
- pattern("wlr", "drop_user", WLRgeneric, false, "Catalog operation drop_user", args(0,2, arg("sname",str),arg("action",int))),
- pattern("wlr", "drop_user", WLRgeneric, false, "Catalog operation drop_user", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
- pattern("wlr", "alter_user", WLRgeneric, false, "Catalog operation alter_user", args(0,5, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("oldpasswrd",str))),
- pattern("wlr", "rename_user", WLRgeneric, false, "Catalog operation rename_user", args(0,3, arg("sname",str),arg("newnme",str),arg("action",int))),
- pattern("wlr", "create_role", WLRgeneric, false, "Catalog operation create_role", args(0,3, arg("sname",str),arg("role",str),arg("grator",int))),
- pattern("wlr", "drop_role", WLRgeneric, false, "Catalog operation drop_role", args(0,3, arg("auth",str),arg("role",str),arg("action",int))),
- pattern("wlr", "drop_role", WLRgeneric, false, "Catalog operation drop_role", args(0,2, arg("role",str),arg("action",int))),
- pattern("wlr", "drop_index", WLRgeneric, false, "Catalog operation drop_index", args(0,3, arg("sname",str),arg("iname",str),arg("action",int))),
- pattern("wlr", "drop_function", WLRgeneric, false, "Catalog operation drop_function", args(0,5, arg("sname",str),arg("fname",str),arg("fid",int),arg("type",int),arg("action",int))),
- pattern("wlr", "create_function", WLRgeneric, false, "Catalog operation create_function", args(0,3, arg("sname",str),arg("fname",str),arg("replace",int))),
- pattern("wlr", "create_trigger", WLRgeneric, false, "Catalog operation create_trigger", args(0,11, arg("sname",str),arg("tname",str),arg("triggername",str),arg("time",int),arg("orientation",int),arg("event",int),arg("old",str),arg("new",str),arg("cond",str),arg("qry",str),arg("replace",int))),
- pattern("wlr", "drop_trigger", WLRgeneric, false, "Catalog operation drop_trigger", args(0,3, arg("sname",str),arg("nme",str),arg("ifexists",int))),
- pattern("wlr", "alter_add_table", WLRgeneric, false, "Catalog operation alter_add_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),
- pattern("wlr", "alter_del_table", WLRgeneric, false, "Catalog operation alter_del_table", args(0,5, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("action",int))),
- pattern("wlr", "alter_set_table", WLRgeneric, false, "Catalog operation alter_set_table", args(0,3, arg("sname",str),arg("tnme",str),arg("access",int))),
- pattern("wlr", "alter_add_range_partition", WLRgeneric, false, "Catalog operation alter_add_range_partition", args(0,8, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("min",str),arg("max",str),arg("nills",bit),arg("update",int))),
- pattern("wlr", "comment_on", WLRgeneric, false, "Catalog operation comment_on", args(0,2, arg("objid",int),arg("remark",str))),
- pattern("wlr", "rename_schema", WLRgeneric, false, "Catalog operation rename_schema", args(0,2, arg("sname",str),arg("newnme",str))),
- pattern("wlr", "rename_table", WLRgeneric, false, "Catalog operation rename_table", args(0,4, arg("osname",str),arg("nsname",str),arg("otname",str),arg("ntname",str))),
- pattern("wlr", "rename_column", WLRgeneric, false, "Catalog operation rename_column", args(0,4, arg("sname",str),arg("tname",str),arg("cname",str),arg("newnme",str))),
- pattern("wlr", "transaction_release", WLRgeneric, false, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
- pattern("wlr", "transaction_commit", WLRgeneric, false, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
- pattern("wlr", "transaction_rollback", WLRgeneric, false, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
- pattern("wlr", "transaction_begin", WLRgeneric, false, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
- pattern("wlr", "transaction", WLRgeneric, true, "Start an autocommit transaction", noargs),
- pattern("wlr", "alter_add_value_partition", WLRgeneric, false, "Catalog operation alter_add_value_partition", args(0,6, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("nills",bit),arg("update",int))),
- pattern("wlr", "alter_add_value_partition", WLRgeneric, false, "Catalog operation alter_add_value_partition", args(0,7, arg("sname",str),arg("mtnme",str),arg("psnme",str),arg("ptnme",str),arg("nills",bit),arg("update",int),vararg("arg",str))),
  /* sqlcatalog */
  pattern("sqlcatalog", "create_seq", SQLcreate_seq, false, "Catalog operation create_seq", args(0,4, arg("sname",str),arg("seqname",str),arg("seq",ptr),arg("action",int))),
  pattern("sqlcatalog", "alter_seq", SQLalter_seq, false, "Catalog operation alter_seq", args(0,4, arg("sname",str),arg("seqname",str),arg("seq",ptr),arg("val",lng))),
@@ -6002,10 +5930,10 @@ static mel_func sql_init_funcs[] = {
  pattern("sqlcatalog", "revoke", SQLrevoke, false, "Catalog operation revoke", args(0,7, arg("sname",str),arg("tbl",str),arg("grantee",str),arg("privs",int),arg("cname",str),arg("grant",int),arg("grantor",int))),
  pattern("sqlcatalog", "grant_function", SQLgrant_function, false, "Catalog operation grant_function", args(0,6, arg("sname",str),arg("fcnid",int),arg("grantee",str),arg("privs",int),arg("grant",int),arg("grantor",int))),
  pattern("sqlcatalog", "revoke_function", SQLrevoke_function, false, "Catalog operation revoke_function", args(0,6, arg("sname",str),arg("fcnid",int),arg("grantee",str),arg("privs",int),arg("grant",int),arg("grantor",int))),
- pattern("sqlcatalog", "create_user", SQLcreate_user, false, "Catalog operation create_user", args(0,6, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("schemapath",str),arg("fullname",str))),
+ pattern("sqlcatalog", "create_user", SQLcreate_user, false, "Catalog operation create_user", args(0,10, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("schemapath",str),arg("fullname",str), arg("max_memory", lng), arg("max_workers", int), arg("optimizer", str), arg("default_role", str))),
  pattern("sqlcatalog", "drop_user", SQLdrop_user, false, "Catalog operation drop_user", args(0,2, arg("sname",str),arg("action",int))),
  pattern("sqlcatalog", "drop_user", SQLdrop_user, false, "Catalog operation drop_user", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
- pattern("sqlcatalog", "alter_user", SQLalter_user, false, "Catalog operation alter_user", args(0,6, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("schemapath",str),arg("oldpasswrd",str))),
+ pattern("sqlcatalog", "alter_user", SQLalter_user, false, "Catalog operation alter_user", args(0,7, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("schemapath",str),arg("oldpasswrd",str),arg("role",str))),
  pattern("sqlcatalog", "rename_user", SQLrename_user, false, "Catalog operation rename_user", args(0,3, arg("sname",str),arg("newnme",str),arg("action",int))),
  pattern("sqlcatalog", "create_role", SQLcreate_role, false, "Catalog operation create_role", args(0,3, arg("sname",str),arg("role",str),arg("grator",int))),
  pattern("sqlcatalog", "drop_role", SQLdrop_role, false, "Catalog operation drop_role", args(0,3, arg("auth",str),arg("role",str),arg("action",int))),

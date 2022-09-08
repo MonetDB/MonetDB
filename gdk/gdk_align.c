@@ -97,7 +97,7 @@ VIEWcreate(oid seq, BAT *b)
 	assert(bn->theap == NULL);
 
 	MT_lock_set(&b->theaplock);
-	bn->batInserted = b->batInserted;
+	bn->batInserted = 0;
 	bn->batCount = b->batCount;
 	bn->batCapacity = b->batCapacity;
 	bn->batRestricted = BAT_READ;
@@ -106,7 +106,6 @@ VIEWcreate(oid seq, BAT *b)
 	 * accelerator data. We need copies because in case of a mark,
 	 * we are going to override a column with a void. */
 	bn->tkey = b->tkey;
-	bn->tvarsized = b->tvarsized;
 	bn->tseqbase = b->tseqbase;
 	bn->tsorted = b->tsorted;
 	bn->trevsorted = b->trevsorted;
@@ -148,6 +147,7 @@ VIEWcreate(oid seq, BAT *b)
 		}
 		if (bn->tvheap) {
 			BBPunshare(bn->tvheap->parentid);
+			BBPunfix(bn->tvheap->parentid);
 			HEAPdecref(bn->tvheap, false);
 		}
 		HEAPdecref(bn->theap, false);
@@ -169,9 +169,8 @@ VIEWcreate(oid seq, BAT *b)
  */
 
 gdk_return
-BATmaterialize(BAT *b)
+BATmaterialize(BAT *b, BUN cap)
 {
-	BUN cnt;
 	Heap *tail;
 	Heap *h, *vh = NULL;
 	BUN p, q;
@@ -179,17 +178,18 @@ BATmaterialize(BAT *b)
 
 	BATcheck(b, GDK_FAIL);
 	assert(!isVIEW(b));
+	if (cap == BUN_NONE || cap < BATcapacity(b))
+		cap = BATcapacity(b);
 	if (b->ttype != TYPE_void) {
-		/* no voids */
-		return GDK_SUCCEED;
+		/* no voids; just call BATextend to make sure of capacity */
+		return BATextend(b, cap);
 	}
 
-	cnt = BATcapacity(b);
 	if ((tail = GDKmalloc(sizeof(Heap))) == NULL)
 		return GDK_FAIL;
 	p = 0;
 	q = BATcount(b);
-	assert(cnt >= q - p);
+	assert(cap >= q - p);
 	TRC_DEBUG(ALGO, "BATmaterialize(" ALGOBATFMT ")\n", ALGOBATPAR(b));
 
 	/* cleanup possible ACC's */
@@ -203,7 +203,7 @@ BATmaterialize(BAT *b)
 		.dirty = true,
 	};
 	settailname(tail, BBP_physical(b->batCacheid), TYPE_oid, 0);
-	if (HEAPalloc(tail, cnt, sizeof(oid), 0) != GDK_SUCCEED) {
+	if (HEAPalloc(tail, cap, sizeof(oid), 0) != GDK_SUCCEED) {
 		GDKfree(tail);
 		return GDK_FAIL;
 	}
@@ -264,66 +264,14 @@ BATmaterialize(BAT *b)
 	b->tunique_est = is_oid_nil(t) ? 1.0 : (double) b->batCount;
 	b->ttype = TYPE_oid;
 	BATsetdims(b, 0);
-	b->batDirtydesc = true;
 	BATsetcount(b, b->batCount);
+	BATsetcapacity(b, cap);
 	MT_lock_unset(&b->theaplock);
 	HEAPdecref(h, false);
 	if (vh)
 		HEAPdecref(vh, true);
 
 	return GDK_SUCCEED;
-}
-
-/*
- * The @#VIEWunlink@ routine cuts a reference to the parent. Part of the view
- * destroy sequence.
- */
-static void
-VIEWunlink(BAT *b)
-{
-	if (b) {
-		MT_lock_set(&b->theaplock);
-
-		bat tp = VIEWtparent(b);
-		bat vtp = VIEWvtparent(b);
-		BAT *tpb = NULL;
-		BAT *vtpb = NULL;
-
-		if (tp)
-			tpb = BBP_cache(tp);
-		if (tp && !vtp)
-			vtp = tp;
-		if (vtp)
-			vtpb = BBP_cache(vtp);
-
-		if (tpb == NULL && vtpb == NULL) {
-			MT_lock_unset(&b->theaplock);
-			return;
-		}
-
-		/* unlink heaps shared with parent */
-		if (b->theap && b->theap->parentid != b->batCacheid) {
-			HEAPdecref(b->theap, false);
-			b->theap = NULL;
-		}
-		assert(b->tvheap == NULL || b->tvheap->parentid > 0);
-		if (b->tvheap && b->tvheap->parentid != b->batCacheid) {
-			HEAPdecref(b->tvheap, false);
-			b->tvheap = NULL;
-		}
-
-		MT_lock_unset(&b->theaplock);
-
-		MT_lock_set(&b->batIdxLock);
-		/* unlink imprints shared with parent */
-		if (b->timprints &&
-		    b->timprints != (Imprints *) 1 &&
-		    b->timprints->imprints.parentid != b->batCacheid) {
-			IMPSdecref(b->timprints, false);
-			b->timprints = NULL;
-		}
-		MT_lock_unset(&b->batIdxLock);
-	}
 }
 
 /*
@@ -391,16 +339,21 @@ VIEWdestroy(BAT *b)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	STRMPdestroy(b);
-	PROPdestroy(b);
-	VIEWunlink(b);
 
 	MT_lock_set(&b->theaplock);
+	PROPdestroy_nolock(b);
+	/* heaps that are left after VIEWunlink are ours, so need to be
+	 * destroyed (and files deleted) */
 	if (b->theap) {
-		HEAPdecref(b->theap, false);
+		HEAPdecref(b->theap, b->theap->parentid == b->batCacheid);
 		b->theap = NULL;
 	}
 	if (b->tvheap) {
-		HEAPdecref(b->tvheap, false);
+		/* should never happen: if this heap exists, then it was
+		 * our own (not a view), and then it doesn't make sense
+		 * that the offset heap was a view (at least one of them
+		 * had to be) */
+		HEAPdecref(b->tvheap, b->tvheap->parentid == b->batCacheid);
 		b->tvheap = NULL;
 	}
 	MT_lock_unset(&b->theaplock);

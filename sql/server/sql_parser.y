@@ -413,7 +413,7 @@ int yydebug=1;
 	string
 	type_alias
 	user_schema
-	user_schema_path
+	opt_schema_path
 	ustring
 	varchar
 	window_ident_clause
@@ -421,6 +421,9 @@ int yydebug=1;
 	XML_element_name
 	XML_namespace_prefix
 	XML_PI_target
+    opt_optimizer
+    opt_default_role
+    
 
 %type <l>
 	argument_list
@@ -522,6 +525,7 @@ int yydebug=1;
 	XML_element_content_and_option
 	XML_element_content_list
 	XML_value_expression_list
+    opt_schema_details_list
 
 %type <i_val>
 	_transaction_mode_list
@@ -578,11 +582,14 @@ int yydebug=1;
 	with_or_without_data
 	XML_content_option
 	XML_whitespace_option
+    opt_max_workers
+
 
 %type <l_val>
 	lngval
 	poslng
 	nonzerolng
+    opt_max_memory
 
 %type <bval>
 	create
@@ -594,7 +601,6 @@ int yydebug=1;
 	opt_best_effort
 	opt_brackets
 	opt_chain
-	opt_constraint
 	opt_distinct
 	opt_escape
 	opt_grant_for
@@ -684,7 +690,7 @@ CONTINUE CURRENT CURSOR FOUND GOTO GO LANGUAGE
 SQLCODE SQLERROR UNDER WHENEVER
 */
 
-%token TEMP TEMPORARY MERGE REMOTE REPLICA
+%token TEMP TEMPORARY MERGE REMOTE REPLICA UNLOGGED
 %token<sval> ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE COMMENT NULLS FIRST LAST
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
@@ -712,6 +718,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token OVER PARTITION CURRENT EXCLUDE FOLLOWING PRECEDING OTHERS TIES RANGE UNBOUNDED GROUPS WINDOW
 
 %token X_BODY 
+%token MAX_MEMORY MAX_WORKERS OPTIMIZER
 %%
 
 sqlstmt:
@@ -1039,7 +1046,7 @@ opt_with_grant:
  ;
 
 opt_with_admin:
-	/* emtpy */		{ $$ = 0; }
+	/* emtpy */		    { $$ = 0; }
  |	WITH ADMIN OPTION	{ $$ = 1; }
  ;
 
@@ -1225,10 +1232,10 @@ alter_statement:
 	  append_string(l, $7);
 	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_SET_TABLE_SCHEMA, l ); }
- | ALTER USER ident opt_with_encrypted_password user_schema user_schema_path
+ | ALTER USER ident opt_with_encrypted_password user_schema opt_schema_path opt_default_role
 	{ dlist *l = L(), *p = L();
-	  if (!$4 && !$5 && !$6) {
-		yyerror(m, "ALTER USER: At least one property should be updatd");
+	  if (!$4 && !$5 && !$6 && !$7) {
+		yyerror(m, "ALTER USER: At least one property should be updated");
 		YYABORT;
 	  }
 	  append_string(l, $3);
@@ -1238,6 +1245,7 @@ alter_statement:
 	  append_int(p, $4 ? $4->h->next->data.i_val : 0);
 	  append_string(p, NULL);
 	  append_list(l, p);
+	  append_string(l, $7);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
  | ALTER USER ident RENAME TO ident
 	{ dlist *l = L();
@@ -1254,6 +1262,7 @@ alter_statement:
 	  append_int(p, $4);
 	  append_string(p, $10);
 	  append_list(l, p);
+	  append_string(l, NULL);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
  | ALTER SCHEMA if_exists ident RENAME TO ident
 	{ dlist *l = L();
@@ -1273,10 +1282,11 @@ user_schema:
  |  /* empty */			{ $$ = NULL; }
  ;
 
-user_schema_path:
+opt_schema_path:
 	SCHEMA PATH string	{ $$ = $3; }
  |  /* empty */			{ $$ = NULL; }
  ;
+
 
 alter_table_element:
 	opt_column ident SET DEFAULT default_value
@@ -1475,16 +1485,51 @@ role_def:
 	  append_string(l, $2);
 	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_CREATE_ROLE, l ); }
- |  USER ident WITH opt_encrypted PASSWORD string sqlNAME string SCHEMA ident user_schema_path
-	{ dlist *l = L();
+ |  USER ident WITH opt_encrypted PASSWORD string sqlNAME string opt_schema_details_list opt_max_memory opt_max_workers opt_optimizer opt_default_role
+    { dlist *l = L();
 	  append_string(l, $2);
 	  append_string(l, $6);
 	  append_string(l, $8);
-	  append_string(l, $10);
-	  append_string(l, $11);
+	  append_list(l, $9);
 	  append_int(l, $4);
+      append_lng(l, $10);
+      append_int(l, $11);
+	  append_string(l, $12);
+      append_string(l, $13);
 	  $$ = _symbol_create_list( SQL_CREATE_USER, l ); }
  ;
+
+opt_max_memory:
+    /* empty */         { $$ = 0; }
+ |  MAX_MEMORY poslng   { $$ = $2; }
+ ;
+
+opt_max_workers:
+    /* empty */         { $$ = 0; }
+ |  MAX_WORKERS posint  { $$ = $2; }
+ ;
+    
+opt_optimizer:
+    /* empty */         { $$ = NULL; }
+ |  OPTIMIZER string    { $$ = $2; }
+ ;
+
+opt_default_role:
+    /* empty */           { $$ = NULL; }
+ |  DEFAULT ROLE ident    { $$ = $3; }
+ ;
+
+opt_schema_details_list:
+    opt_schema_path     
+    { dlist *l = L();
+      append_string(l, NULL);
+      $$ = append_string(l, $1);}
+ |  SCHEMA ident opt_schema_path
+    { dlist *l = L();
+      append_string(l, $2);
+      $$ = append_string(l, $3);}
+ ;
+
 
 opt_encrypted:
     /* empty */		{ $$ = SQL_PW_UNENCRYPTED; }
@@ -1552,6 +1597,19 @@ table_def:
 	  append_int(l, commit_action);
 	  append_string(l, $7);
 	  append_list(l, $8);
+	  append_int(l, $3);
+	  append_symbol(l, NULL); /* only used for merge table */
+	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
+ |  UNLOGGED TABLE if_not_exists qname table_content_source
+	{ int commit_action = CA_COMMIT, tpe = SQL_UNLOGGED_TABLE;
+	  dlist *l = L();
+
+	  append_int(l, tpe);
+	  append_list(l, $4);
+	  append_symbol(l, $5);
+	  append_int(l, commit_action);
+	  append_string(l, NULL);
+	  append_list(l, NULL);
 	  append_int(l, $3);
 	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
@@ -2734,7 +2792,7 @@ opt_on_location:
   ;
 
 copyfrom_stmt:
-    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_escape opt_null_string opt_best_effort opt_constraint opt_fwf_widths
+    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_escape opt_null_string opt_best_effort opt_fwf_widths
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2744,12 +2802,11 @@ copyfrom_stmt:
 	  append_list(l, $2);
 	  append_string(l, $12);
 	  append_int(l, $13);
-	  append_int(l, $14);
-	  append_list(l, $15);
+	  append_list(l, $14);
 	  append_int(l, $9);
 	  append_int(l, $11);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_escape opt_null_string opt_best_effort opt_constraint
+  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_escape opt_null_string opt_best_effort 
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2759,7 +2816,6 @@ copyfrom_stmt:
 	  append_list(l, $2);
 	  append_string(l, $11);
 	  append_int(l, $12);
-	  append_int(l, $13);
 	  append_list(l, NULL);
 	  append_int(l, 0);
 	  append_int(l, $10);
@@ -2769,12 +2825,11 @@ copyfrom_stmt:
 	  append_list(l, $4);
 	  append_symbol(l, $6);
 	  $$ = _symbol_create_list( SQL_COPYLOADER, l ); }
-   | COPY opt_endianness BINARY INTO qname opt_column_list FROM string_commalist opt_on_location opt_constraint
+   | COPY opt_endianness BINARY INTO qname opt_column_list FROM string_commalist opt_on_location 
 	{ dlist *l = L();
 	  append_list(l, $5);
 	  append_list(l, $6);
 	  append_list(l, $8);
-	  append_int(l, $10);
 	  append_int(l, $9);
 	  append_int(l, $2);
 	  $$ = _symbol_create_list( SQL_BINCOPYFROM, l ); }
@@ -2883,11 +2938,6 @@ opt_escape:
 opt_best_effort:
 	/* empty */	{ $$ = FALSE; }
  |  	BEST EFFORT	{ $$ = TRUE; }
- ;
-
-opt_constraint:
-	/* empty */	{ $$ = TRUE; }
- |  	NO CONSTRAINT	{ $$ = FALSE; }
  ;
 
 string_commalist:
@@ -5468,6 +5518,7 @@ non_reserved_word:
 | STORAGE	{ $$ = sa_strdup(SA, "storage"); }
 | TEMP		{ $$ = sa_strdup(SA, "temp"); }
 | TEMPORARY	{ $$ = sa_strdup(SA, "temporary"); }
+| UNLOGGED	{ $$ = sa_strdup(SA, "unlogged"); }
 | sqlTEXT	{ $$ = sa_strdup(SA, "text"); }
 | SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }
 | TYPE		{ $$ = sa_strdup(SA, "type"); }

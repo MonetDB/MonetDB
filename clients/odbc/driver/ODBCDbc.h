@@ -65,6 +65,7 @@ typedef struct tODBCDRIVERDBC {
 	int cachelimit;		/* cache limit we requested */
 	SQLULEN qtimeout;	/* current query timeout */
 	short major, minor, patch; /* version of server */
+	SQLUSMALLINT maxclients;   /* mserver5 max_clients value */
 	int Mdebug;
 
 	/* Dbc children: list of ODBC Statement handles created within
@@ -73,7 +74,6 @@ typedef struct tODBCDRIVERDBC {
 	   include files */
 	struct tODBCDRIVERSTMT *FirstStmt;	/* first in list or NULL */
 } ODBCDbc;
-
 
 
 /*

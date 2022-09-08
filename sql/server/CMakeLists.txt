@@ -9,7 +9,7 @@
 BISON_TARGET(sqlparser
   sql_parser.y
   ${CMAKE_CURRENT_BINARY_DIR}/sql_parser.tab.c
-  COMPILE_FLAGS "-d -p sql"
+  COMPILE_FLAGS "-d -p sql -Wno-conflicts-sr -Wno-conflicts-rr"
   DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/sql_parser.tab.h)
 
 add_library(sqlserver STATIC)
@@ -46,6 +46,7 @@ target_sources(sqlserver
   rel_rewriter.c
   rel_unnest.c
   rel_optimizer.c
+  rel_statistics.c rel_statistics_functions.c
   rel_optimize_exps.c
   rel_optimize_others.c
   rel_optimize_proj.c
@@ -63,6 +64,7 @@ target_sources(sqlserver
   rel_rewriter.h
   rel_unnest.h
   rel_optimizer.h
+  rel_statistics.h
   rel_optimizer_private.h
   rel_partition.h
   rel_prop.h

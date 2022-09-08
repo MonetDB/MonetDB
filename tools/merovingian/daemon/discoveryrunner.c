@@ -178,7 +178,7 @@ getRemoteDB(const char *database)
 	pdb = &dummy;
 	while (rdb != NULL) {
 		snprintf(mfullname, sizeof(mfullname), "%s/", rdb->fullname);
-		if (db_glob(mdatabase, mfullname) == 1) {
+		if (db_glob(mdatabase, mfullname)) {
 			/* create a fake sabdb struct, chain where necessary */
 			if (walk != NULL) {
 				walk = walk->next = malloc(sizeof(sabdb));
@@ -592,5 +592,3 @@ discoveryRunner(void *d)
 	free(ckv);
 	return NULL;
 }
-
-/* vim:set ts=4 sw=4 noexpandtab: */

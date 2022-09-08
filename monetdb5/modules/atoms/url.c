@@ -948,7 +948,7 @@ BATextractURLHost(bat *res, const bat *bid, bit *no_www)
 					if (l > 0) {
 						// if ((msg = str_Sub_String(&buf, &buflen, host, 0, l)) != MAL_SUCCEED)
 						// 	break;
-						if ((msg = str_buf_copy(&buf, &buflen, host, (size_t) l)) != MAL_SUCCEED)
+						if ((msg = str_buf_copy(&buf, &buflen, host, (size_t) (l + 1))) != MAL_SUCCEED)
 							break;
 						if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED) {
 							msg = createException(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL );

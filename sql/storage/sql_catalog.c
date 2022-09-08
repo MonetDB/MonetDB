@@ -166,6 +166,22 @@ sql_trans_find_key(sql_trans *tr, sqlid id)
 	return NULL;
 }
 
+sql_key *
+schema_find_key(sql_trans *tr, sql_schema *s, const char *name)
+{
+	sql_base *b = os_find_name(s->keys, tr, name);
+
+	if (!b && tr->tmp == s && tr->localtmps.set) { /* for localtmps search tables */
+		for(node *n = tr->localtmps.set->h; n; n = n->next) {
+			sql_table *t = n->data;
+			sql_key *o = find_sql_key(t, name);
+			if (o)
+				return o;
+		}
+	}
+	return (sql_key*)b;
+}
+
 sql_idx *
 find_sql_idx(sql_table *t, const char *iname)
 {
@@ -187,6 +203,22 @@ sql_trans_find_idx(sql_trans *tr, sqlid id)
 			return (sql_idx*)bi;
 	}
 	return NULL;
+}
+
+sql_idx *
+schema_find_idx(sql_trans *tr, sql_schema *s, const char *name)
+{
+	sql_base *b = os_find_name(s->idxs, tr, name);
+
+	if (!b && tr->tmp == s && tr->localtmps.set) { /* for localtmps search tables */
+		for(node *n = tr->localtmps.set->h; n; n = n->next) {
+			sql_table *t = n->data;
+			sql_idx *o = find_sql_idx(t, name);
+			if (o)
+				return o;
+		}
+	}
+	return (sql_idx*)b;
 }
 
 sql_column *
@@ -311,6 +343,15 @@ sql_trans_find_func(sql_trans *tr, sqlid id)
 	return NULL;
 }
 
+static sql_trigger *
+find_sql_trigger(sql_table *t, const char *tname)
+{
+	node *n = ol_find_name(t->triggers, tname);
+	if (n)
+		return n->data;
+	return NULL;
+}
+
 sql_trigger *
 sql_trans_find_trigger(sql_trans *tr, sqlid id)
 {
@@ -323,6 +364,22 @@ sql_trans_find_trigger(sql_trans *tr, sqlid id)
 			return (sql_trigger*)bt;
 	}
 	return NULL;
+}
+
+sql_trigger *
+schema_find_trigger(sql_trans *tr, sql_schema *s, const char *name)
+{
+	sql_base *b = os_find_name(s->triggers, tr, name);
+
+	if (!b && tr->tmp == s && tr->localtmps.set) { /* for localtmps search tables */
+		for(node *n = tr->localtmps.set->h; n; n = n->next) {
+			sql_table *t = n->data;
+			sql_trigger *o = find_sql_trigger(t, name);
+			if (o)
+				return o;
+		}
+	}
+	return (sql_trigger*)b;
 }
 
 void*

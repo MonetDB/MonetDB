@@ -829,7 +829,6 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	rend = BATcount(r);
 	lvals = (const int *) li.base;
 	rvals = (const int *) ri.base;
-	assert(!r->tvarsized || !ri.type);
 	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1148,7 +1147,6 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	rend = BATcount(r);
 	lvals = (const lng *) li.base;
 	rvals = (const lng *) ri.base;
-	assert(!r->tvarsized || !ri.type);
 	size_t counter = 0;
 	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1819,12 +1817,12 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	} else {
 		rvals = ri.base;
 	}
-	if (l->tvarsized && li.type) {
-		assert(r->tvarsized && ri.type);
+	if (li.vh && li.type) {
+		assert(ri.vh && ri.type);
 		lvars = li.vh->base;
 		rvars = ri.vh->base;
 	} else {
-		assert(!r->tvarsized || !ri.type);
+		assert(ri.vh == NULL);
 		lvars = rvars = NULL;
 	}
 
@@ -2682,11 +2680,11 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		t = TYPE_void;
 
 	lvals = (const char *) li.base;
-	if (l->tvarsized && li.type) {
-		assert(r->tvarsized && ri.type);
+	if (li.vh && li.type) {
+		assert(ri.vh && ri.type);
 		lvars = li.vh->base;
 	} else {
-		assert(!r->tvarsized || !ri.type);
+		assert(ri.vh == NULL);
 		lvars = NULL;
 	}
 	/* offset to convert BUN to OID for value in right column */
@@ -2759,7 +2757,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			  "existing hash%s\n",
 			  ALGOBATPAR(r),
 			  swapped ? " (swapped)" : "");
-	} else if (BATtdense(r)) {
+	} else if (BATtdensebi(&ri)) {
 		/* no hash, just dense lookup */
 		MT_thread_setalgorithm(swapped ? "hashjoin on dense (swapped)" : "hashjoin on dense");
 	} else {
@@ -2778,7 +2776,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		GDKerror("Hash disappeared for "ALGOBATFMT"\n", ALGOBATPAR(r));
 		goto bailout;
 	}
-	assert(hsh != NULL || BATtdense(r));
+	assert(hsh != NULL || BATtdensebi(&ri));
 	if (hsh) {
 		TRC_DEBUG(ALGO, "hash for " ALGOBATFMT ": nbucket " BUNFMT ", nunique " BUNFMT ", nheads " BUNFMT "\n", ALGOBATPAR(r), hsh->nbucket, hsh->nunique, hsh->nheads);
 	}
@@ -2802,7 +2800,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 						       false, false, __func__, t0);
 				}
 			}
-		} else if (!BATtdense(r)) {
+		} else if (!BATtdensebi(&ri)) {
 			for (rb = HASHget(hsh, HASHprobe(hsh, nil));
 			     rb != BUN_NONE;
 			     rb = HASHgetlink(hsh, rb)) {
@@ -2852,7 +2850,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
 					GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			lo = canditer_next(lci);
-			if (BATtdense(l))
+			if (BATtdensebi(&li))
 				lval = lo - l->hseqbase + l->tseqbase;
 			else if (li.type != TYPE_void)
 				v = VALUE(l, lo - l->hseqbase);
@@ -2879,7 +2877,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 						break;
 				}
 			} else if (hsh == NULL) {
-				assert(BATtdense(r));
+				assert(BATtdensebi(&ri));
 				ro = *(const oid *) v;
 				if (ro >= r->tseqbase &&
 				    ro < r->tseqbase + r->batCount) {
@@ -3093,7 +3091,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 	assert(bi.type != TYPE_void);
 
 	bvals = bi.base;
-	if (b->tvarsized && bi.type)
+	if (bi.vh && bi.type)
 		bvars = bi.vh->base;
 	else
 		bvars = NULL;
@@ -3171,7 +3169,6 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		seen = NULL;
 	} else {
 		BUN prb;
-		BUN p;
 		BUN mask;
 		Hash hs = {0};
 
@@ -3185,7 +3182,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		    (hs.heapbckt.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap)) < 0 ||
 		    snprintf(hs.heaplink.filename, sizeof(hs.heaplink.filename), "%s.thshjnl%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heaplink.filename) ||
 		    snprintf(hs.heapbckt.filename, sizeof(hs.heapbckt.filename), "%s.thshjnb%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heapbckt.filename) ||
-		    HASHnew(&hs, bi.type, BATcount(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
+		    HASHnew(&hs, bi.type, ci.ncand, mask, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKerror("cannot allocate hash table\n");
 			HEAPfree(&hs.heaplink, true);
 			HEAPfree(&hs.heapbckt, true);
@@ -3201,15 +3198,15 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 			for (hb = HASHget(&hs, prb);
 			     hb != BUN_NONE;
 			     hb = HASHgetlink(&hs, hb)) {
-				if (cmp(v, BUNtail(bi, hb)) == 0)
+				BUN p = canditer_idx(&ci, hb) - b->hseqbase;
+				if (cmp(v, BUNtail(bi, p)) == 0)
 					break;
 			}
 			if (hb == BUN_NONE) {
-				p = o - b->hseqbase;
 				cnt++;
 				/* enter into hash table */
-				HASHputlink(&hs, p, HASHget(&hs, prb));
-				HASHput(&hs, prb, p);
+				HASHputlink(&hs, i, HASHget(&hs, prb));
+				HASHput(&hs, prb, i);
 			}
 		}
 		*cnt2 = cnt;
@@ -3424,17 +3421,17 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 
 	lvals = BATtvoid(l) ? NULL : (const char *) li.base;
 	rvals = BATtvoid(r) ? NULL : (const char *) ri.base;
-	if (l->tvarsized && li.type) {
-		assert(r->tvarsized && ri.type);
+	if (li.vh && li.type) {
+		assert(ri.vh && ri.type);
 		lvars = li.vh->base;
 		rvars = ri.vh->base;
 	} else {
-		assert(!r->tvarsized || !ri.type);
+		assert(ri.vh == NULL);
 		lvars = rvars = NULL;
 	}
 
 	if (BATtvoid(l)) {
-		if (!BATtdense(l)) {
+		if (!BATtdensebi(&li)) {
 			/* trivial: nils don't match anything */
 			bat_iterator_end(&li);
 			bat_iterator_end(&ri);
@@ -3444,7 +3441,7 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 		loff = (lng) l->tseqbase - (lng) l->hseqbase;
 	}
 	if (BATtvoid(r)) {
-		if (!BATtdense(r)) {
+		if (!BATtdensebi(&ri)) {
 			/* trivial: nils don't match anything */
 			bat_iterator_end(&li);
 			bat_iterator_end(&ri);
@@ -4250,7 +4247,6 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BUN nr;
 	oid lo, ro;
 	bool lskipped = false;	/* whether we skipped values in l */
-	BUN nils = 0;		/* needed for XXX_WITH_CHECK macros */
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -4357,7 +4353,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	lvals = (const char *) li.base;
 	rvals = (const char *) ri.base;
-	assert(!r->tvarsized);
+	assert(ri.vh == NULL);
 
 	assert(lvals != NULL);
 	assert(rvals != NULL);
@@ -4464,11 +4460,27 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				break;
 			}
 #else
+#ifdef HAVE___INT128_T
+			case TYPE_lng: {
+				if (is_lng_nil(*(const lng *) vr))
+					continue;
+				__int128_t v1 = (__int128_t) *(const lng *) vr, v2;
+				v2 = v1;
+				v1 -= *(const lng *)c1;
+				if (*(const lng *)vl <= v1 &&
+				    (!linc || *(const lng *)vl != v1))
+					continue;
+				v2 += *(const lng *)c2;
+				if (*(const lng *)vl >= v2 &&
+				    (!hinc || *(const lng *)vl != v2))
+					continue;
+				break;
+			}
+#else
 			case TYPE_lng: {
 				if (is_lng_nil(*(const lng *) vr))
 					continue;
 				lng v1, v2;
-				bool abort_on_error = true;
 				SUB_WITH_CHECK(*(const lng *)vr,
 					       *(const lng *)c1,
 					       lng, v1,
@@ -4493,12 +4505,12 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			}
 #endif
 #endif
+#endif
 #ifdef HAVE_HGE
 			case TYPE_hge: {
 				if (is_hge_nil(*(const hge *) vr))
 					continue;
 				hge v1, v2;
-				bool abort_on_error = true;
 				SUB_WITH_CHECK(*(const hge *)vr,
 					       *(const hge *)c1,
 					       hge, v1,
@@ -4541,7 +4553,6 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				if (is_dbl_nil(*(const dbl *) vr))
 					continue;
 				dbl v1, v2;
-				bool abort_on_error = true;
 				SUB_WITH_CHECK(*(const dbl *)vr,
 					       *(const dbl *)c1,
 					       dbl, v1,

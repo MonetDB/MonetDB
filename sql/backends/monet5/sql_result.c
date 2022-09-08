@@ -701,7 +701,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 
 	if (!bs)
 		throw(IO, "sql.copy_from", SQLSTATE(42000) "No stream (pointer) provided");
-	if (mnstr_errnr(bs->s)) {
+	if (mnstr_errnr(bs->s) != MNSTR_NO__ERROR) {
 		mnstr_error_kind errnr = mnstr_errnr(bs->s);
 		char *stream_msg = mnstr_error(bs->s);
 		msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Stream not open %s: %s", mnstr_error_kind_name(errnr), stream_msg ? stream_msg : "unknown error");
@@ -820,7 +820,7 @@ static int
 mvc_export_binary_bat(stream *s, BAT* bn)
 {
 	BATiter bni = bat_iterator(bn);
-	bool sendtheap = bni.type != TYPE_void, sendtvheap = sendtheap && bn->tvarsized;
+	bool sendtheap = bni.type != TYPE_void, sendtvheap = sendtheap && bni.vh;
 
 	if (mnstr_printf(s, /*JSON*/"{"
 					 "\"version\":1,"
@@ -841,7 +841,7 @@ mvc_export_binary_bat(stream *s, BAT* bn)
 					 bni.sorted, bni.revsorted,
 					 bni.key,
 					 bni.nonil,
-					 BATtdense(bn),
+					 BATtdensebi(&bni),
 					 bn->batCount,
 					 sendtheap ? (size_t)bni.count << bni.shift : 0,
 					 sendtvheap && bni.count > 0 ? bni.vhfree : 0) < 0) {
@@ -1464,7 +1464,7 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order
 		bat_iterator_end(&fmt[i].ci);
 	TABLETdestroy_format(&as);
 	GDKfree(tres);
-	if (mnstr_errnr(s))
+	if (mnstr_errnr(s) != MNSTR_NO__ERROR)
 		return -4;
 	if (ok < 0)
 		return ok;
