@@ -94,7 +94,10 @@ RTREEaddmbr (BAT *b, mbr_t *inMBR, BUN i) {
 		rect[1] = inMBR->ymin;
 		rect[2] = inMBR->xmax;
 		rect[3] = inMBR->ymax;
+		//TODO Is this lock really needed? Test rtreelib concurrency
+		MT_lock_set(&pb->batIdxLock);
 		rtree_add_rect(pb->T.rtree,rtree_id,rect);
+		MT_lock_unset(&pb->batIdxLock);
 	}
 	else {
 		GDKerror("Tried to insert mbr into RTree that was not initialized\n");
@@ -188,7 +191,7 @@ RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit) {
 	rtree_t *rtree = pb->T.rtree;
 	if (rtree != NULL) {
 		BUN *candidates = GDKmalloc(result_limit*sizeof(BUN));
-		memset(candidates,BUN_NONE,result_limit*sizeof(BUN*));
+		memset(candidates,BUN_NONE,result_limit*sizeof(BUN));
 
 		rtree_coord_t rect[4];
 		rect[0] = inMBR->xmin;

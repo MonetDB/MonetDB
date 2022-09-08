@@ -50,13 +50,13 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, b
 		throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	/*if (!RTREEexists(b)) {
+	if (!RTREEexists(b)) {
 		if (RTREEcreate(b) != GDK_SUCCEED) {
 			//TODO What to do?
 			throw(MAL, name, "Failed to initialize RTree");
 		}
 		for (BUN j = 0; j < BATcount(b); j++) {
-			wkb *inWKB = (wkb *) BUNtvar(b_iter, j - b->hseqbase);
+			wkb *inWKB = (wkb *) BUNtvar(b_iter, j + b->hseqbase);
 			mbr *inMBR = NULL;
 			wkbMBR(&inMBR, &inWKB);
 
@@ -66,7 +66,7 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, b
 			GDKfree(inMBR);
 			inMBR = NULL;
 		}
-	}*/
+	}
 
 	//Calculate the MBR for the constant geometry
 	mbr *const_mbr = NULL;
@@ -80,7 +80,8 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, b
 	//Cycle through rtree candidates
 	//If there is a original candidate list, make sure the rtree cand is in there
 	//Then do the actual calculation for the geo predicate using the GEOS func
-	for (int i = 0; results_rtree[i] != BUN_NONE; i++) {
+	//TODO Change literal of BUN_NONE to BUN_NONE in loop condition
+	for (int i = 0; results_rtree[i] != 18446744073709551615U && i < (int) b->batCount; i++) {
 		BUN cand = results_rtree[i];
 		//If we have a candidate list that is not dense, we need to check if the rtree candidate is also on the original candidate list
 		//TODO Check w Stefanos
@@ -89,7 +90,7 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, b
 			if (!canditer_contains(&ci,cand))
 				continue;
 		}
-		const wkb *col_wkb = BUNtvar(b_iter, cand - b->hseqbase);
+		const wkb *col_wkb = BUNtvar(b_iter, cand + b->hseqbase);
 		if ((col_geom = wkb2geos(col_wkb)) == NULL)
 			throw(MAL, name, SQLSTATE(38000) "WKB2Geos operation failed");
 		if (GEOSGetSRID(col_geom) != GEOSGetSRID(const_geom)) {
