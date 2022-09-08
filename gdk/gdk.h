@@ -2322,7 +2322,7 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
  */
 #define MAXPARAMS	32
 
-#define CHECK_QRY_TIMEOUT_SHIFT	16
+#define CHECK_QRY_TIMEOUT_SHIFT	14
 #define CHECK_QRY_TIMEOUT_STEP	(1 << CHECK_QRY_TIMEOUT_SHIFT)
 #define CHECK_QRY_TIMEOUT_MASK	(CHECK_QRY_TIMEOUT_STEP - 1)
 
