@@ -45,6 +45,7 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 	size_t querylen;
 	size_t pos = 0;
 	char *sch = NULL, *tab = NULL;
+	bool addTmpQuery = false;
 
 	/* deal with SQL_NTS and SQL_NULL_DATA */
 	fixODBCstring(CatalogName, NameLength1, SQLSMALLINT,
@@ -60,6 +61,12 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 		addStmtError(stmt, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}
+	if (NameLength3 == 0) {
+		/* Invalid string or buffer length */
+		addStmtError(stmt, "HY090", NULL, 0);
+		return SQL_ERROR;
+	}
+
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n",
 		(int) NameLength1, CatalogName ? (char *) CatalogName : "",
@@ -99,35 +106,41 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 		}
 	}
 
+	/* determine if we need to add a query against the tmp.* tables */
+	addTmpQuery = (SchemaName == NULL)
+		   || (SchemaName != NULL
+			&& (strcmp((const char *) SchemaName, "tmp") == 0
+			 || strchr((const char *) SchemaName, '%') != NULL
+			 || strchr((const char *) SchemaName, '_') != NULL));
+
 	/* construct the query */
-	querylen = 1000 + strlen(stmt->Dbc->dbname) + (sch ? strlen(sch) : 0) +
-		(tab ? strlen(tab) : 0);
+	querylen = 1000 + (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0);
+	if (addTmpQuery)
+		querylen *= 2;
 	query = malloc(querylen);
 	if (query == NULL)
 		goto nomem;
 
 	/* SQLPrimaryKeys returns a table with the following columns:
-	   VARCHAR      table_cat
-	   VARCHAR      table_schem
-	   VARCHAR      table_name NOT NULL
-	   VARCHAR      column_name NOT NULL
-	   SMALLINT     key_seq NOT NULL
-	   VARCHAR      pk_name
-	 */
+	   VARCHAR      TABLE_CAT
+	   VARCHAR      TABLE_SCHEM
+	   VARCHAR      TABLE_NAME NOT NULL
+	   VARCHAR      COLUMN_NAME NOT NULL
+	   SMALLINT     KEY_SEQ NOT NULL
+	   VARCHAR      PK_NAME
+	*/
 	pos += snprintf(query + pos, querylen - pos,
-	       "select '%s' as table_cat, "
-		      "s.name as table_schem, "
-		      "t.name as table_name, "
-		      "kc.name as column_name, "
-		      "cast(kc.nr + 1 as smallint) as key_seq, "
-		      "k.name as pk_name "
-	       "from sys.schemas s, sys.tables t, "
-		    "sys.keys k, sys.objects kc "
-	       "where k.id = kc.id and "
+		"select cast(null as varchar(1)) as \"TABLE_CAT\", "
+			"s.name as \"TABLE_SCHEM\", "
+			"t.name as \"TABLE_NAME\", "
+			"kc.name as \"COLUMN_NAME\", "
+			"cast(kc.nr + 1 as smallint) as \"KEY_SEQ\", "
+			"k.name as \"PK_NAME\" "
+		"from sys.keys k, sys.objects kc, sys._tables t, sys.schemas s "
+		"where k.type = 0 and "
+		     "k.id = kc.id and "
 		     "k.table_id = t.id and "
-		     "t.schema_id = s.id and "
-		     "k.type = 0",
-		stmt->Dbc->dbname);
+		     "t.schema_id = s.id");
 	assert(pos < 800);
 
 	/* Construct the selection condition query part */
@@ -141,16 +154,57 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 	if (sch) {
 		/* filtering requested on schema name */
 		pos += snprintf(query + pos, querylen - pos, " and %s", sch);
-		free(sch);
 	}
 	if (tab) {
 		/* filtering requested on table name */
 		pos += snprintf(query + pos, querylen - pos, " and %s", tab);
-		free(tab);
 	}
 
+	if (addTmpQuery) {
+		/* we must also include the keys of local temporary tables
+		   which are stored in tmp.keys, tmp.objects and tmp._tables */
+		pos += snprintf(query + pos, querylen - pos,
+			" UNION ALL "
+			"select cast(null as varchar(1)) as \"TABLE_CAT\", "
+				"s.name as \"TABLE_SCHEM\", "
+				"t.name as \"TABLE_NAME\", "
+				"kc.name as \"COLUMN_NAME\", "
+				"cast(kc.nr + 1 as smallint) as \"KEY_SEQ\", "
+				"k.name as \"PK_NAME\" "
+			"from tmp.keys k, tmp.objects kc, tmp._tables t, sys.schemas s "
+			"where k.type = 0 and "
+			     "k.id = kc.id and "
+			     "k.table_id = t.id and "
+			     "t.schema_id = s.id");
+
+		/* Construct the selection condition query part */
+		if (NameLength1 > 0 && CatalogName != NULL) {
+			/* filtering requested on catalog name */
+			if (strcmp((char *) CatalogName, stmt->Dbc->dbname) != 0) {
+				/* catalog name does not match the database name, so return no rows */
+				pos += snprintf(query + pos, querylen - pos, " and 1=2");
+			}
+		}
+		if (sch) {
+			/* filtering requested on schema name */
+			pos += snprintf(query + pos, querylen - pos, " and %s", sch);
+		}
+		if (tab) {
+			/* filtering requested on table name */
+			pos += snprintf(query + pos, querylen - pos, " and %s", tab);
+		}
+	}
+
+	if (sch)
+		free(sch);
+	if (tab)
+		free(tab);
+
 	/* add the ordering */
-	pos += strcpy_len(query + pos, " order by table_schem, table_name, key_seq", querylen - pos);
+	pos += strcpy_len(query + pos, " order by \"TABLE_SCHEM\", \"TABLE_NAME\", \"KEY_SEQ\"", querylen - pos);
+	assert(pos < querylen);
+
+	/* debug: fprintf(stdout, "SQLPrimaryKeys query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */
 
 	/* query the MonetDB data dictionary tables */
 	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);

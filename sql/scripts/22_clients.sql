@@ -6,7 +6,8 @@
 
 create function sys.password_hash (username string)
 	returns string
-	external name sql.password;
+    external name sql.password;
+	-- return select password from users where name = username;
 
 create function sys.remote_table_credentials (tablename string)
 returns table ("uri" string, "username" string, "hash" string)

@@ -70,9 +70,19 @@ static const char *FunctionBasePath(void)
 
 static MT_Lock pyapiLock = MT_LOCK_INITIALIZER(pyapiLock);
 static bool pyapiInitialized = false;
+static PyDateTime_CAPI *PYAPI3_DateTimeAPI;
 
 bool PYAPI3PyAPIInitialized(void) {
 	return pyapiInitialized;
+}
+
+PyDateTime_CAPI *get_DateTimeAPI(void) {
+	return PYAPI3_DateTimeAPI;
+}
+
+void init_DateTimeAPI(void) {
+	PyDateTime_IMPORT;
+	PYAPI3_DateTimeAPI = PyDateTimeAPI;
 }
 
 #ifdef HAVE_FORK
@@ -1239,6 +1249,10 @@ returnvalues:
 					msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			bat_iterator_end(&li);
+			BBPunfix(b->batCacheid);
+			b = NULL;
+			if (msg != MAL_SUCCEED)
+				goto wrapup;
 		}
 		if (argnode) {
 			argnode = argnode->next;
@@ -1365,17 +1379,58 @@ wrapup:
 	return msg;
 }
 
-str
-PYAPI3PyAPIprelude(void *ret) {
-	(void) ret;
+#ifdef _MSC_VER
+#define wcsdup _wcsdup
+#endif
+static str
+PYAPI3PyAPIprelude(void) {
 	MT_lock_set(&pyapiLock);
 	if (!pyapiInitialized) {
-		wchar_t* program = Py_DecodeLocale("mserver5", NULL);
-		wchar_t* argv[] = { program };
+		wchar_t* program = L"mserver5";
+		wchar_t* argv[] = { program, NULL };
 		str msg = MAL_SUCCEED;
 		PyObject *tmp;
-		Py_Initialize();
+
+		static_assert(PY_MAJOR_VERSION == 3, "Python 3.X required");
+#if PY_MINOR_VERSION >= 9
+		/* introduced in 3.8, we use it for 3.9 and later */
+		PyStatus status;
+		PyConfig config;
+		wchar_t *pyhome = NULL;
+
+		/* first figure out where Python was installed */
+		PyConfig_InitIsolatedConfig(&config);
+		status = PyConfig_Read(&config);
+		if (!PyStatus_Exception(status))
+			pyhome = wcsdup(config.prefix);
+		PyConfig_Clear(&config);
+		/* now really configure the Python subsystem, using the Python
+		 * prefix directory as its home
+		 * if we don't set config.home, sys.path will not be set
+		 * correctly on Windows and initialization will fail */
+		PyConfig_InitIsolatedConfig(&config);
+		status = PyConfig_SetArgv(&config, 1, argv);
+		if (!PyStatus_Exception(status))
+			status = PyConfig_SetString(&config, &config.home, pyhome);
+		free(pyhome);
+		if (!PyStatus_Exception(status))
+			status = PyConfig_Read(&config);
+		if (!PyStatus_Exception(status))
+			status = Py_InitializeFromConfig(&config);
+		PyConfig_Clear(&config);
+		if (PyStatus_Exception(status)) {
+			MT_lock_unset(&pyapiLock);
+			throw(MAL, "pyapi3.eval",
+				  SQLSTATE(PY000) "Python initialization failed: %s: %s",
+				  status.func ? status.func : "PYAPI3PyAPIprelude",
+				  status.err_msg ? status.err_msg : "");
+		}
+#else
+		/* PySys_SetArgvEx deprecated in 3.11 */
+		Py_InitializeEx(0);
 		PySys_SetArgvEx(1, argv, 0);
+#endif
+
 		_import_array();
 		msg = _connection_init();
 		if (msg != MAL_SUCCEED) {
@@ -1391,6 +1446,7 @@ PYAPI3PyAPIprelude(void *ret) {
 		_loader_init();
 		tmp = PyUnicode_FromString("marshal");
 		marshal_module = PyImport_Import(tmp);
+		init_DateTimeAPI();
 		Py_DECREF(tmp);
 		if (marshal_module == NULL) {
 			MT_lock_unset(&pyapiLock);
@@ -1716,7 +1772,6 @@ static mel_func pyapi3_init_funcs[] = {
  pattern("pyapi3", "eval_aggr", PYAPI3PyAPIevalAggr, true, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("pyapi3", "eval_loader", PYAPI3PyAPIevalLoader, true, "loader functions through Python", args(1,3, varargany("",0),arg("fptr",ptr),arg("expr",str))),
  pattern("pyapi3", "eval_loader", PYAPI3PyAPIevalLoader, true, "loader functions through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
- command("pyapi3", "prelude", PYAPI3PyAPIprelude, false, "", args(1,1, arg("",void))),
  pattern("batpyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script value", args(1,4, varargany("",0),arg("fptr", ptr), arg("expr",str),varargany("arg",0))),
  pattern("batpyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script value", args(1,4, varargany("",0),arg("card", lng), arg("fptr",ptr),arg("expr",str))),
  pattern("batpyapi3", "subeval_aggr", PYAPI3PyAPIevalAggr, true, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
@@ -1738,4 +1793,4 @@ static mel_func pyapi3_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_pyapi3_mal)
-{ mal_module("pyapi3", NULL, pyapi3_init_funcs); }
+{ mal_module2("pyapi3", NULL, pyapi3_init_funcs, PYAPI3PyAPIprelude, NULL); }

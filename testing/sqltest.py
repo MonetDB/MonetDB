@@ -15,6 +15,14 @@ import inspect
 TSTDB=os.getenv("TSTDB")
 MAPIPORT=os.getenv("MAPIPORT")
 
+from pathlib import Path
+from typing import Optional
+class UnsafeDirectoryHandler(pymonetdb.SafeDirectoryHandler):
+    def secure_resolve(self, filename: str) -> Optional[Path]:
+        return Path(filename).resolve()
+
+transfer_handler = UnsafeDirectoryHandler('.')
+
 def equals(a, b) -> bool:
     if type(a) is type(b):
         return a==b
@@ -145,6 +153,8 @@ class PyMonetDBConnectionContext(object):
                                          port=self.port,
                                          database=self.database,
                                          autocommit=True)
+                self.dbh.set_uploader(transfer_handler)
+                self.dbh.set_downloader(transfer_handler)
             else:
                 self.dbh = malmapi.Connection()
                 self.dbh.connect(
@@ -244,8 +254,15 @@ class TestCaseResult(object):
                     msgs.append( "expected to fail with error code {} but failed with error code {}".format(err_code, self.err_code))
             if err_message:
                 if self.err_message:
-                    if err_message.lower() != self.err_message.lower():
-                        msgs.append("expected to fail with error message '{}' but failed with error message '{}'".format(err_message, self.err_message))
+                    if type(err_message) is type(''):
+                        if err_message.lower() != self.err_message.lower():
+                            msgs.append("expected to fail with error message '{}' but failed with error message '{}'".format(err_message, self.err_message))
+                    else:
+                        for em in err_message:
+                            if em.lower() == self.err_message.lower():
+                                break
+                        else:
+                            msgs.append("expected to fail with error message '{}' but failed with error message '{}'".format(err_message, self.err_message))
                 else:
                     msgs.append("expected to fail with error message '{}' but got '{}'".format(err_message, self.err_message))
             if len(msgs) > 0:
@@ -269,23 +286,28 @@ class TestCaseResult(object):
     def assertResultHashTo(self, hash_value):
         raise NotImplementedError
 
-    def assertValue(self, row, col, val):
-        """Assert on a value matched against row, col in the result"""
+    def assertValue(self, val, row=0, col=0):
+        """Assert on a value. Optionally matched against row, col in the result"""
         received = None
-        row = int(row)
-        col = int(col)
-        try:
-            received = self.data[row][col]
-        except IndexError:
-            pass
+        if type(self.data) == list:
+            row = int(row)
+            col = int(col)
+            try:
+                received = self.data[row][col]
+            except IndexError:
+                pass
+        else:
+            received = self.data
+
         if type(val) is type(received):
             if val != received:
-                msg = 'expected "{}", received "{}" in row={}, col={}'.format(val, received, row, col)
+                msg = 'expected "{}", received "{}"'.format(val, received)
                 self.fail(msg, data=self.data)
         else:
             # handle type mismatch
-            msg = 'expected type {} and value "{}", received type {} and value "{}" in row={}, col={}'.format(type(val), str(val), type(received), str(received), row, col)
+            msg = 'expected type {} and value "{}", received type {} and value "{}"'.format(type(val), str(val), type(received), str(received))
             self.fail(msg, data=self.data)
+
         return self
 
     def assertDataResultMatch(self, data=[], index=None):
@@ -329,6 +351,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
     def __init__(self, test_case, **kwargs):
         super().__init__(test_case, **kwargs)
         self.did_run = False
+        self.output = ''
 
     def _parse_error(self, err:str):
         err_code = None
@@ -372,7 +395,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
                             stdout=process.PIPE, stderr=process.PIPE) as p:
                         out, err = p.communicate(query)
                         if out:
-                            self.data = out
+                            self.output = out
                             self.rowcount = self._get_row_count(out)
                         if err:
                             self.test_run_error = err
@@ -384,9 +407,10 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
                             stdout=process.PIPE, stderr=process.PIPE) as p:
                         out, err = p.communicate()
                         if out:
-                            self.data = out
+                            self.output = out
                         if err:
                             self.test_run_error = err
+                            self.err_code, self.err_message = self._parse_error(err)
                 self.did_run = True
             except Exception as e:
                 raise SystemExit(e)
@@ -394,7 +418,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
 
     def assertMatchStableOut(self, fout, ignore_headers=False):
         stable = []
-        data = list(filter(filter_junk, self.data.split('\n')))
+        data = list(filter(filter_junk, self.output.split('\n')))
         with open(fout, 'r') as f:
             stable = list(filter(filter_junk, f.read().split('\n')))
         if ignore_headers:
@@ -430,7 +454,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
         return self
 
     def assertDataResultMatch(self, expected):
-        data = list(filter(filter_junk, self.data.split('\n')))
+        data = list(filter(filter_junk, self.output.split('\n')))
         data = list(filter(filter_headers, data))
         a, b = filter_matching_blocks(expected, data)
         diff = list(difflib.unified_diff(a, b, fromfile='expected', tofile='test'))

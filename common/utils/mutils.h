@@ -35,14 +35,14 @@
 #define MONETDB_MODE (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 #define MONETDB_DIRMODE		(MONETDB_MODE | S_IXUSR | S_IXGRP | S_IXOTH)
 
+#ifdef NATIVE_WIN32
+
+#include <stdio.h>
+
 #define F_TEST	3		/* test a region for other processes locks.  */
 #define F_TLOCK	2		/* test and lock a region for exclusive use */
 #define F_ULOCK	0		/* unlock a previously locked region */
 #define F_LOCK	1		/* lock a region for exclusive use */
-
-#ifdef NATIVE_WIN32
-
-#include <stdio.h>
 
 struct DIR;
 

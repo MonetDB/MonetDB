@@ -354,6 +354,7 @@ BATcheckimprints(BAT *b)
 						imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
 						close(fd);
 						imprints->imprints.parentid = b->batCacheid;
+						imprints->imprints.hasfile = true;
 						ATOMIC_INIT(&imprints->imprints.refs, 1);
 						b->timprints = imprints;
 						TRC_DEBUG(ACCELERATOR, ALGOBATFMT " reusing persisted imprints\n", ALGOBATPAR(b));
@@ -364,6 +365,7 @@ BATcheckimprints(BAT *b)
 					close(fd);
 					/* unlink unusable file */
 					GDKunlink(imprints->imprints.farmid, BATDIR, nme, "timprints");
+					imprints->imprints.hasfile = false;
 				}
 			}
 			GDKfree(imprints);
@@ -629,6 +631,7 @@ BATimprints(BAT *b)
 		((size_t *) imprints->imprints.base)[2] = (size_t) imprints->dictcnt;
 		((size_t *) imprints->imprints.base)[3] = (size_t) bi.count;
 		imprints->imprints.parentid = b->batCacheid;
+		imprints->imprints.dirty = true;
 		MT_lock_set(&b->theaplock);
 		if (b->batCount != bi.count) {
 			/* bat changed under our feet, can't use imprints */

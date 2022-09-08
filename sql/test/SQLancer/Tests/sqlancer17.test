@@ -55,33 +55,32 @@ SELECT -7 NOT BETWEEN 0.4 AND v19.vc0 FROM v19
 ----
 
 statement ok
-create or replace view v20(vc0,vc1) as (select sql_max(1, 1), vc0 from ((select 2) intersect all (select 4)) v0(vc0) where 1 not between v0.vc0 and v0.vc0)
+create or replace view v20(vc0,vc1) as (select sql_max(1, 1), vc0 from ((values (1),(3),(4),(5)) intersect all (values (1),(4),(5),(6))) v0(vc0) where 1 not between v0.vc0 and v0.vc0)
 
 query I rowsort
-SELECT v20.vc0 FROM v20 WHERE 7 > v20.vc0 and v20.vc1 between 3 and 5
+SELECT v20.vc0 FROM v20 WHERE 4 > v20.vc0 and v20.vc1 between 3 and 5
 ----
+1
+1
 
-# '7 > v20.vc0' doesn't get pushed, while 'v20.vc1 between 3 and 5' does
 query T nosort
-plan SELECT 1 FROM v20 WHERE 7 > v20.vc0 and v20.vc1 between 3 and 5
+plan SELECT 1 FROM v20 WHERE 4 > v20.vc0 and v20.vc1 between 3 and 5
 ----
 project (
-| select (
-| | project (
-| | | intersect (
-| | | | project (
-| | | | | select (
-| | | | | |  [ boolean(1) "true" as "%1"."%1" ]
-| | | | | ) [ (tinyint(2) "2") ! <= (tinyint(2) "1") ! <= (tinyint(2) "2"), (tinyint(3) "3") <= (tinyint(2) "2") <= (tinyint(2) "5") ]
-| | | | ) [ tinyint(2) "2" as "v0"."vc0" ],
-| | | | project (
-| | | | | select (
-| | | | | |  [ boolean(1) "true" as "%2"."%2" ]
-| | | | | ) [ (tinyint(3) "4") ! <= (tinyint(2) "1") ! <= (tinyint(3) "4"), (tinyint(3) "3") <= (tinyint(3) "4") <= (tinyint(2) "5") ]
-| | | | ) [ tinyint(3) "4" as "v0"."vc0" ]
-| | | ) [ "v0"."vc0" NOT NULL ]
-| | ) [ "sys"."sql_max"(tinyint(1) "1", tinyint(1) "1") NOT NULL as "v20"."vc0" ]
-| ) [ (tinyint(3) "7") > ("v20"."vc0" NOT NULL) ]
+| project (
+| | intersect (
+| | | project (
+| | | | select (
+| | | | |  [  [ tinyint(3) "1", tinyint(3) "3", tinyint(3) "4", tinyint(3) "5" ] as "%1"."%1" ]
+| | | | ) [ ("%1"."%1" NOT NULL) ! <= (tinyint(3) "1") ! <= ("%1"."%1" NOT NULL), (tinyint(3) "3") <= ("%1"."%1" NOT NULL) <= (tinyint(3) "5") ]
+| | | ) [ "%1"."%1" NOT NULL as "v0"."vc0" ],
+| | | project (
+| | | | select (
+| | | | |  [  [ tinyint(3) "1", tinyint(3) "4", tinyint(3) "5", tinyint(3) "6" ] as "%6"."%6" ]
+| | | | ) [ ("%6"."%6" NOT NULL) ! <= (tinyint(3) "1") ! <= ("%6"."%6" NOT NULL), (tinyint(3) "3") <= ("%6"."%6" NOT NULL) <= (tinyint(3) "5") ]
+| | | ) [ "%6"."%6" NOT NULL as "v0"."vc0" ]
+| | ) [ "v0"."vc0" NOT NULL ]
+| ) [ "sys"."sql_max"(tinyint(1) "1", tinyint(1) "1") NOT NULL as "v20"."vc0" ]
 ) [ tinyint(1) "1" ]
 
 statement ok

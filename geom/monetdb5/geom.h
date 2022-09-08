@@ -38,7 +38,6 @@ geom_export str geoHasZ(int* res, int* info);
 geom_export str geoHasM(int* res, int* info);
 geom_export str geoGetType(char** res, int* info, int* flag);
 
-geom_export str geom_prelude(void *ret);
 geom_export str geom_epilogue(void *ret);
 
 geom_export str mbrFromString(mbr **w, const char **src);

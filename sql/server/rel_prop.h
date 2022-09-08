@@ -10,7 +10,10 @@
 #define _REL_PROP_H_
 
 typedef enum rel_prop {
-	PROP_COUNT,
+	PROP_COUNT,     /* Number of expect rows for the relation */
+	PROP_NUNIQUES,  /* Estimated number of distinct rows for the expression */
+	PROP_MIN,       /* min value if available */
+	PROP_MAX,       /* max value if available */
 	PROP_JOINIDX,   /* could use join idx */
 	PROP_HASHIDX,   /* is hash idx */
 	PROP_HASHCOL,   /* could use hash idx */
@@ -21,7 +24,11 @@ typedef enum rel_prop {
 
 typedef struct prop {
 	rel_prop kind;  /* kind of property */
-	void *value;    /* property value */
+	union {
+		BUN lval; /* property with simple counts */
+		dbl dval; /* property with estimate */
+		void *pval; /* property value */
+	} value;
 	struct prop *p; /* some relations may have many properties, which are kept in a chain list */
 } prop;
 
@@ -29,6 +36,7 @@ extern prop * prop_create( sql_allocator *sa, rel_prop kind, prop *pre );
 extern prop * prop_copy( sql_allocator *sa, prop *p);
 extern prop * prop_remove( prop *plist, prop *p);
 extern prop * find_prop( prop *p, rel_prop kind);
+extern void * find_prop_and_get(prop *p, rel_prop kind);
 extern const char * propkind2string( prop *p);
 extern char * propvalue2string(sql_allocator *sa, prop *p);
 

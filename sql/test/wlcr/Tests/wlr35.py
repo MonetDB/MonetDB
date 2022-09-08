@@ -17,7 +17,7 @@ dbnameclone = tstdb + 'clone'
 
 with process.server(dbname=dbnameclone, mapiport='0', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as slave, \
         SQLTestCase() as tc:
-    tc.connect(database=dbnameclone, port=tc.dbport)
+    tc.connect(database=dbnameclone, port=slave.dbport)
     tc.execute("call wlr.replicate(9);").assertSucceeded()
     tc.execute("select * from tmp;")\
             .assertSucceeded()\

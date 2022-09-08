@@ -53,7 +53,7 @@ BATunique(BAT *b, BAT *s)
 	(void) BATordered(b);
 	(void) BATordered_rev(b);
 	BATiter bi = bat_iterator(b);
-	if (bi.key || ci.ncand <= 1 || BATtdense(b)) {
+	if (bi.key || ci.ncand <= 1 || BATtdensebi(&bi)) {
 		/* trivial: already unique */
 		bn = canditer_slice(&ci, 0, ci.ncand);
 		bat_iterator_end(&bi);
@@ -99,7 +99,7 @@ BATunique(BAT *b, BAT *s)
 		return NULL;
 	}
 	vals = bi.base;
-	if (b->tvarsized && bi.type)
+	if (bi.vh && bi.type)
 		vars = bi.vh->base;
 	else
 		vars = NULL;
@@ -174,7 +174,8 @@ BATunique(BAT *b, BAT *s)
 		TIMEOUT_CHECK(timeoffset,
 			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed));
 	} else if (BATcheckhash(b) ||
-		   (!bi.transient &&
+		   ((!bi.transient ||
+		     (b->batRole == PERSISTENT && GDKinmemory(0))) &&
 		    ci.ncand == bi.count &&
 		    BAThash(b) == GDK_SUCCEED)) {
 		BUN lo = 0;
@@ -287,7 +288,6 @@ BATunique(BAT *b, BAT *s)
 			assert(b->tnokey[0] == 0);
 			assert(b->tnokey[1] == 0);
 			b->tkey = true;
-			b->batDirtydesc = true;
 		}
 		MT_lock_unset(&b->theaplock);
 	}

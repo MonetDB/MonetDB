@@ -114,7 +114,6 @@ typedef enum {
 	COMP( SQL_EXECUTION )			\
 	COMP( SQL_STORE )			\
 						\
-	COMP( MAL_WLC )				\
 	COMP( MAL_REMOTE )			\
 	COMP( MAL_MAPI )			\
 	COMP( MAL_SERVER )			\

@@ -746,9 +746,6 @@ IDXdrop(mvc *sql, const char *sname, const char *tname, const char *iname, void 
 			throw(SQL,"sql.drop_index", SQLSTATE(HY005) "Column can not be accessed");
 	}
 
-	/* TODO: This should be removed when strimps are better integrated with imprints */
-	if (func == IMPSdestroy && b->ttype == TYPE_str)
-		func = STRMPdestroy;
 	func(b);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -771,7 +768,8 @@ drop_index(mvc *sql, char *sname, char *iname)
 		throw(SQL,"sql.drop_index", SQLSTATE(42S12) "DROP INDEX: cannot drop index '%s', because the constraint '%s' depends on it", iname, i->key->base.name);
 	if (i->type == ordered_idx || i->type == imprints_idx) {
 		sql_kc *ic = i->columns->h->data;
-		if ((msg = IDXdrop(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, i->type == ordered_idx ? OIDXdestroy : IMPSdestroy)))
+		sql_class icls = ic->c->type.type->eclass;
+		if ((msg = IDXdrop(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, i->type == ordered_idx ? OIDXdestroy : (icls == EC_STRING ? STRMPdestroy : IMPSdestroy))))
 			return msg;
 	}
 	switch (mvc_drop_idx(sql, s, i)) {
@@ -1283,9 +1281,15 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 						throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access imprints index %s_%s_%s", s->base.name, t->base.name, i->base.name);
 				}
 				if(b->ttype == TYPE_str) {
-					if (t->access != TABLE_READONLY)
+					if (t->access != TABLE_READONLY) {
+						BBPunfix(b->batCacheid);
 						throw(SQL, "sql.alter_TABLE", SQLSTATE(HY005) "Cannot create string imprint index %s on non read only table %s.%s", i->base.name, s->base.name, t->base.name);
-					r = STRMPcreate(b, NULL);
+					}
+
+					/* We signal that we want a strimp on b. It will be created the next time it is needed, i.e. by
+					 * PCRElikeselect.
+					 */
+					r = BATsetstrimps(b);
 				}
 				else {
 					r = BATimprints(b);
@@ -1742,9 +1746,13 @@ SQLcreate_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *schema = SaveArgReference(stk, pci, 4);
 	char *schema_path = SaveArgReference(stk, pci, 5);
 	char *fullname = SaveArgReference(stk, pci, 6);
+	lng max_memory = *getArgReference_lng(stk, pci, 7);
+	int max_workers = *getArgReference_int(stk, pci, 8);
+	char *optimizer = SaveArgReference(stk, pci, 9);
+	char *default_role = SaveArgReference(stk, pci, 10);
 
 	initcontext();
-	msg = sql_create_user(sql, sname, passwd, enc, fullname, schema, schema_path);
+	msg = sql_create_user(sql, sname, passwd, enc, fullname, schema, schema_path, max_memory, max_workers, optimizer, default_role);
 	return msg;
 }
 
@@ -1769,9 +1777,10 @@ SQLalter_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *schema = SaveArgReference(stk, pci, 4);
 	char *schema_path = SaveArgReference(stk, pci, 5);
 	char *oldpasswd = SaveArgReference(stk, pci, 6);
+	char *role = SaveArgReference(stk, pci, 7);
 
 	initcontext();
-	msg = sql_alter_user(sql, sname, passwd, enc, schema, schema_path, oldpasswd);
+	msg = sql_alter_user(sql, sname, passwd, enc, schema, schema_path, oldpasswd, role);
 
 	return msg;
 }

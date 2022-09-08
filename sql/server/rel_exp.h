@@ -15,6 +15,8 @@
 #include "sql_semantic.h"
 #include "rel_prop.h"
 
+#define LANG_INT_OR_MAL(l)  ((l)==FUNC_LANG_INT || (l)==FUNC_LANG_MAL)
+
 #define new_exp_list(sa) sa_list(sa)
 #define exp2list(sa,e)   append(sa_list(sa),e)
 
@@ -39,6 +41,7 @@ extern sql_exp *exp_filter(sql_allocator *sa, list *l, list *r, sql_subfunc *f, 
 extern sql_exp *exp_or(sql_allocator *sa, list *l, list *r, int anti);
 extern sql_exp *exp_in(sql_allocator *sa, sql_exp *l, list *r, int cmptype);
 extern sql_exp *exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple);
+extern sql_exp *exp_in_aggr(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple);
 extern sql_exp *exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char *compareop, int quantifier);
 
 #define exp_fromtype(e)	((list*)e->r)->h->data
@@ -141,7 +144,6 @@ extern int exp_match( sql_exp *e1, sql_exp *e2);
 extern sql_exp* exps_find_exp( list *l, sql_exp *e);
 extern int exp_match_exp( sql_exp *e1, sql_exp *e2);
 extern sql_exp* exps_any_match(list *l, sql_exp *e);
-extern sql_exp *exps_any_match_same_or_no_alias(list *l, sql_exp *e);
 /* match just the column (cmp equality) expressions */
 extern int exp_match_col_exps( sql_exp *e, list *l);
 extern int exps_match_col_exps( sql_exp *e1, sql_exp *e2);

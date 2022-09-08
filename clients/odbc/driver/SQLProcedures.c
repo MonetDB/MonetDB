@@ -63,14 +63,16 @@ MNDBProcedures(ODBCStmt *stmt,
 #endif
 
 	/* SQLProcedures returns a table with the following columns:
-	   VARCHAR      procedure_cat
-	   VARCHAR      procedure_schem
-	   VARCHAR      procedure_name NOT NULL
-	   n/a          num_input_params (reserved for future use)
-	   n/a          num_output_params (reserved for future use)
-	   n/a          num_result_sets (reserved for future use)
-	   VARCHAR      remarks
-	   SMALLINT     procedure_type
+	   VARCHAR      PROCEDURE_CAT
+	   VARCHAR      PROCEDURE_SCHEM
+	   VARCHAR      PROCEDURE_NAME NOT NULL
+	   N/A          NUM_INPUT_PARAMS (Reserved for future use)
+	   N/A          NUM_OUTPUT_PARAMS (Reserved for future use)
+	   N/A          NUM_RESULT_SETS (Reserved for future use)
+	   VARCHAR      REMARKS
+	   SMALLINT     PROCEDURE_TYPE
+	   VARCHAR      SPECIFIC_NAME	(Note this is a MonetDB extension, needed to differentiate between overloaded procedure/function names)
+					(similar to JDBC DatabaseMetaData methods getProcedures() and getFunctions())
 	 */
 
 	if (stmt->Dbc->sql_attr_metadata_id == SQL_FALSE) {
@@ -105,37 +107,39 @@ MNDBProcedures(ODBCStmt *stmt,
 		}
 	}
 
-	querylen = 1000 + strlen(stmt->Dbc->dbname) +
-		(sch ? strlen(sch) : 0) + (pro ? strlen(pro) : 0);
+	querylen = 1000 + (sch ? strlen(sch) : 0) + (pro ? strlen(pro) : 0);
 	query = malloc(querylen);
 	if (query == NULL)
 		goto nomem;
 
-/* see sql_catalog.h */
+/* see sql/include/sql_catalog.h */
 #define F_FUNC 1
 #define F_PROC 2
 #define F_UNION 5
-#define FUNC_LANG_SQL 2
 	pos += snprintf(query + pos, querylen - pos,
-		 "select '%s' as procedure_cat, "
-			"s.name as procedure_schem, "
-			"p.name as procedure_name, "
-			"0 as num_input_params, "
-			"0 as num_output_params, "
-			"0 as num_result_sets, "
-			"%s as remarks, "
-			"cast(case when p.type = %d then %d else %d end as smallint) as procedure_type "
-		 "from sys.schemas as s, "
-		      "sys.functions as p%s "
-		 "where p.schema_id = s.id and "
-		       "p.language >= %d and "
-		       "p.type in (%d, %d, %d)",
-		 stmt->Dbc->dbname,
-		 stmt->Dbc->has_comment ? "c.remark" : "cast(null as varchar(1))",
-		 F_PROC, SQL_PT_PROCEDURE, SQL_PT_FUNCTION,
-		 stmt->Dbc->has_comment ? " left outer join sys.comments c on p.id = c.id" : "",
-		 FUNC_LANG_SQL, F_FUNC, F_PROC, F_UNION);
-	assert(pos < 800);
+		"select cast(null as varchar(1)) as \"PROCEDURE_CAT\", "
+			"s.name as \"PROCEDURE_SCHEM\", "
+			"p.name as \"PROCEDURE_NAME\", "
+			"0 as \"NUM_INPUT_PARAMS\", "
+			"0 as \"NUM_OUTPUT_PARAMS\", "
+			"0 as \"NUM_RESULT_SETS\", "
+			"%s as \"REMARKS\", "
+			"cast(case when p.type = %d then %d else %d end as smallint) as \"PROCEDURE_TYPE\", "
+			/* Only the id value uniquely identifies a specific procedure.
+			   Include it to be able to differentiate between multiple
+			   overloaded procedures with the same name and schema */
+			"cast(p.id as varchar(10)) AS \"SPECIFIC_NAME\" "
+		"from sys.schemas as s, "
+		     "sys.functions as p%s "
+		"where p.schema_id = s.id and "
+		      "p.type in (%d, %d, %d)",
+		stmt->Dbc->has_comment ? "c.remark" : "cast(null as varchar(1))",
+		F_PROC, SQL_PT_PROCEDURE, SQL_PT_FUNCTION,
+		/* from clause: */
+		stmt->Dbc->has_comment ? " left outer join sys.comments c on c.id = p.id" : "",
+		/* where clause: */
+		F_FUNC, F_PROC, F_UNION);
+	assert(pos < 900);
 
 	/* Construct the selection condition query part */
 	if (NameLength1 > 0 && CatalogName != NULL) {
@@ -157,7 +161,10 @@ MNDBProcedures(ODBCStmt *stmt,
 	}
 
 	/* add the ordering (exclude procedure_cat as it is the same for all rows) */
-	pos += strcpy_len(query + pos, " order by procedure_schem, procedure_name", querylen - pos);
+	pos += strcpy_len(query + pos, " order by \"PROCEDURE_SCHEM\", \"PROCEDURE_NAME\", \"SPECIFIC_NAME\"", querylen - pos);
+	assert(pos < querylen);
+
+	/* debug: fprintf(stdout, "SQLProcedures query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */
 
 	/* query the MonetDB data dictionary tables */
 	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);

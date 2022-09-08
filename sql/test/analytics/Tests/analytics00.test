@@ -1869,10 +1869,10 @@ project (
 | project (
 | | project (
 | | | project (
-| | | | table("sys"."myorders") [ "myorders"."o_custkey" NOT NULL, "myorders"."o_totalprice" NOT NULL, "myorders"."o_orderdate" NOT NULL ]
-| | | ) [ "myorders"."o_custkey" NOT NULL, "myorders"."o_totalprice" NOT NULL, "sys"."month"("myorders"."o_orderdate" NOT NULL) NOT NULL as "%1"."%1" ]
-| | ) [ "myorders"."o_custkey" NOT NULL, "myorders"."o_totalprice" NOT NULL, "%1"."%1" NOT NULL ] [ "myorders"."o_custkey" ASC NOT NULL, "%1"."%1" ASC NOT NULL ]
-| ) [ "%1"."%1" NOT NULL, "sys"."diff"("myorders"."o_custkey" NOT NULL) as "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL) as "%3"."%3", "sys"."min"("myorders"."o_totalprice" NOT NULL, "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL), int(9) "0", "sys"."window_bound"("%2"."%2", "%3"."%3", int(9) "0", int(9) "0", int(9) "0", bigint(64) "9223372036854775807"), "sys"."window_bound"("%2"."%2", "%3"."%3", int(9) "0", int(9) "5", int(9) "0", bigint(64) "0")) as "%4"."%4" ]
+| | | | table("sys"."myorders") [ "myorders"."o_custkey" NOT NULL UNIQUE, "myorders"."o_totalprice" NOT NULL UNIQUE, "myorders"."o_orderdate" NOT NULL UNIQUE ]
+| | | ) [ "myorders"."o_custkey" NOT NULL UNIQUE, "myorders"."o_totalprice" NOT NULL UNIQUE, "sys"."month"("myorders"."o_orderdate" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ]
+| | ) [ "myorders"."o_custkey" NOT NULL UNIQUE, "myorders"."o_totalprice" NOT NULL UNIQUE, "%1"."%1" NOT NULL ] [ "myorders"."o_custkey" ASC NOT NULL UNIQUE, "%1"."%1" ASC NOT NULL ]
+| ) [ "%1"."%1" NOT NULL, "sys"."diff"("myorders"."o_custkey" NOT NULL UNIQUE) as "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL) as "%3"."%3", "sys"."min"("myorders"."o_totalprice" NOT NULL UNIQUE, "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL), int(9) "0", "sys"."window_bound"("%2"."%2", "%3"."%3", int(9) "0", int(9) "0", int(9) "0", bigint(64) "9223372036854775807"), "sys"."window_bound"("%2"."%2", "%3"."%3", int(9) "0", int(9) "5", int(9) "0", bigint(64) "0")) as "%4"."%4" ]
 ) [ "%4"."%4" ]
 
 query R rowsort
@@ -1888,10 +1888,10 @@ project (
 | project (
 | | project (
 | | | project (
-| | | | table("sys"."myorders") [ "myorders"."o_totalprice" NOT NULL, "myorders"."o_orderdate" NOT NULL ]
-| | | ) [ "myorders"."o_totalprice" NOT NULL, "sys"."day"("myorders"."o_orderdate" NOT NULL) NOT NULL as "%1"."%1" ]
-| | ) [ "myorders"."o_totalprice" NOT NULL, "%1"."%1" NOT NULL ] [ "%1"."%1" ASC NOT NULL ]
-| ) [ "%1"."%1" NOT NULL, boolean(1) "false" as "%2"."%2", "sys"."max"("myorders"."o_totalprice" NOT NULL, "%2"."%2" NOT NULL, "sys"."diff"("%1"."%1" NOT NULL), int(9) "1", "sys"."window_bound"("%1"."%1" ASC NOT NULL, int(9) "1", int(9) "0", int(9) "0", int(32) "2"), "sys"."window_bound"("%1"."%1" ASC NOT NULL, int(9) "1", int(9) "5", int(9) "0", int(32) "0")) as "%3"."%3" ]
+| | | | table("sys"."myorders") [ "myorders"."o_totalprice" NOT NULL UNIQUE, "myorders"."o_orderdate" NOT NULL UNIQUE ]
+| | | ) [ "myorders"."o_totalprice" NOT NULL UNIQUE, "sys"."day"("myorders"."o_orderdate" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ]
+| | ) [ "myorders"."o_totalprice" NOT NULL UNIQUE, "%1"."%1" NOT NULL ] [ "%1"."%1" ASC NOT NULL ]
+| ) [ "%1"."%1" NOT NULL, boolean(1) "false" as "%2"."%2", "sys"."max"("myorders"."o_totalprice" NOT NULL UNIQUE, "%2"."%2" NOT NULL, "sys"."diff"("%1"."%1" NOT NULL), int(9) "1", "sys"."window_bound"("%1"."%1" ASC NOT NULL, int(9) "1", int(9) "0", int(9) "0", int(32) "2"), "sys"."window_bound"("%1"."%1" ASC NOT NULL, int(9) "1", int(9) "5", int(9) "0", int(32) "0")) as "%3"."%3" ]
 ) [ "%3"."%3" ]
 
 query R rowsort
@@ -1907,11 +1907,11 @@ project (
 | project (
 | | project (
 | | | project (
-| | | | table("sys"."myorders") [ "myorders"."o_totalprice" NOT NULL, "myorders"."o_orderdate" NOT NULL ]
-| | | ) [ "myorders"."o_totalprice" NOT NULL, "sys"."year"("myorders"."o_orderdate" NOT NULL) NOT NULL as "%1"."%1" ]
-| | ) [ "myorders"."o_totalprice" NOT NULL, "%1"."%1" NOT NULL ] [ "%1"."%1" ASC NOT NULL ]
-| ) [ "%1"."%1" NOT NULL, boolean(1) "false" as "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL) as "%3"."%3", "sys"."count"("myorders"."o_totalprice" NOT NULL, boolean(1) "true", "%2"."%2" NOT NULL, "sys"."diff"("%1"."%1" NOT NULL), int(9) "2", "sys"."window_bound"("%3"."%3", int(9) "2", int(9) "0", int(9) "0", tinyint(2) "2"), "sys"."window_bound"("%3"."%3", int(9) "2", int(9) "3", int(9) "0", bigint(64) "9223372036854775807")) as "%4"."%4" ]
-) [ "%4"."%4" ]
+| | | | table("sys"."myorders") [ "myorders"."o_totalprice" NOT NULL UNIQUE, "myorders"."o_orderdate" NOT NULL UNIQUE ]
+| | | ) [ "myorders"."o_totalprice" NOT NULL UNIQUE, "sys"."year"("myorders"."o_orderdate" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ]
+| | ) [ "myorders"."o_totalprice" NOT NULL UNIQUE, "%1"."%1" NOT NULL ] [ "%1"."%1" ASC NOT NULL ]
+| ) [ "%1"."%1" NOT NULL, boolean(1) "false" as "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL) as "%3"."%3", "sys"."count"("myorders"."o_totalprice" NOT NULL UNIQUE, boolean(1) "true", "%2"."%2" NOT NULL, "sys"."diff"("%1"."%1" NOT NULL), int(9) "2", "sys"."window_bound"("%3"."%3", int(9) "2", int(9) "0", int(9) "0", tinyint(2) "2"), "sys"."window_bound"("%3"."%3", int(9) "2", int(9) "3", int(9) "0", bigint(64) "9223372036854775807")) NOT NULL as "%4"."%4" ]
+) [ "%4"."%4" NOT NULL ]
 
 query I rowsort
 SELECT COUNT(o_totalprice) OVER (ORDER BY EXTRACT(YEAR FROM o_orderdate) GROUPS BETWEEN 2 PRECEDING AND UNBOUNDED FOLLOWING) FROM myorders
@@ -1922,3 +1922,8 @@ SELECT COUNT(o_totalprice) OVER (ORDER BY EXTRACT(YEAR FROM o_orderdate) GROUPS 
 statement ok
 rollback
 
+statement error 42000!ROW_NUMBER: window functions cannot be nested
+SELECT avg(42) over (order by row_number() over ())
+
+statement error 42000!ROW_NUMBER: window functions cannot be nested
+SELECT avg(42) over (partition by row_number() over ())

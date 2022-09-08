@@ -309,5 +309,3 @@ setProp(const char *path, const char *key, const char *val)
 
 	return(NULL);
 }
-
-/* vim:set ts=4 sw=4 noexpandtab: */

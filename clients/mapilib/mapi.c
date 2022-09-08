@@ -1037,7 +1037,7 @@ static ATOMIC_FLAG mapi_initialized = ATOMIC_FLAG_INIT;
 
 #define check_stream(mid, s, msg, e)					\
 	do {								\
-		if ((s) == NULL || mnstr_errnr(s)) {			\
+		if ((s) == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {	\
 			if (msg != NULL) mapi_log_record(mid, msg);	\
 			mapi_log_record(mid, mnstr_peek_error(s));	\
 			mapi_log_record(mid, __func__);			\
@@ -1046,15 +1046,15 @@ static ATOMIC_FLAG mapi_initialized = ATOMIC_FLAG_INIT;
 			return (e);					\
 		}							\
 	} while (0)
-#define REALLOC(p, c)						\
-	do {							\
-		if (p) {					\
-			void *tmp = (p);			\
-			(p) = realloc((p), (c) * sizeof(*(p)));	\
-			if ((p) == NULL)			\
-				free(tmp);			\
-		} else						\
-			(p) = malloc((c) * sizeof(*(p)));	\
+#define REALLOC(p, c)							\
+	do {								\
+		if (p) {						\
+			void *tmp = realloc((p), (c) * sizeof(*(p)));	\
+			if (tmp == NULL)				\
+				free(p);				\
+			(p) = tmp;					\
+		} else							\
+			(p) = malloc((c) * sizeof(*(p)));		\
 	} while (0)
 
 /*
@@ -1474,7 +1474,7 @@ mapi_log(Mapi mid, const char *nme)
 	if (nme == NULL)
 		return MOK;
 	mid->tracelog = open_wastream(nme);
-	if (mid->tracelog == NULL || mnstr_errnr(mid->tracelog)) {
+	if (mid->tracelog == NULL || mnstr_errnr(mid->tracelog) != MNSTR_NO__ERROR) {
 		if (mid->tracelog)
 			close_stream(mid->tracelog);
 		mid->tracelog = NULL;
@@ -3443,13 +3443,14 @@ mapi_prepare(Mapi mid, const char *cmd)
 	do {							\
 		/* note: k==strlen(hdl->query) */		\
 		if (k+len >= lim) {				\
-			char *q = hdl->query;			\
 			lim = k + len + MAPIBLKSIZE;		\
-			hdl->query = realloc(hdl->query, lim);	\
-			if (hdl->query == NULL) {		\
-				free(q);			\
+			char *q = realloc(hdl->query, lim);	\
+			if (q == NULL) {			\
+				free(hdl->query);		\
+				hdl->query = NULL;		\
 				return;				\
 			}					\
+			hdl->query = q;				\
 		}						\
 	} while (0)
 
@@ -3583,14 +3584,15 @@ mapi_param_store(MapiHdl hdl)
 				val = mapi_quote(buf, 1);
 				/* note: k==strlen(hdl->query) */
 				if (k + strlen(val) + 3 >= lim) {
-					char *q = hdl->query;
 					lim = k + strlen(val) + 3 + MAPIBLKSIZE;
-					hdl->query = realloc(hdl->query, lim);
-					if (hdl->query == NULL) {
-						free(q);
+					char *q = realloc(hdl->query, lim);
+					if (q == NULL) {
+						free(hdl->query);
+						hdl->query = NULL;
 						free(val);
 						return;
 					}
+					hdl->query = q;
 				}
 				snprintf(hdl->query + k, lim - k, "'%s'", val);
 				free(val);
@@ -3599,14 +3601,15 @@ mapi_param_store(MapiHdl hdl)
 				val = mapi_quote((char *) src, hdl->params[i].sizeptr ? *hdl->params[i].sizeptr : -1);
 				/* note: k==strlen(hdl->query) */
 				if (k + strlen(val) + 3 >= lim) {
-					char *q = hdl->query;
 					lim = k + strlen(val) + 3 + MAPIBLKSIZE;
-					hdl->query = realloc(hdl->query, lim);
-					if (hdl->query == NULL) {
-						free(q);
+					char *q = realloc(hdl->query, lim);
+					if (q == NULL) {
+						free(hdl->query);
+						hdl->query = NULL;
 						free(val);
 						return;
 					}
+					hdl->query = q;
 				}
 				snprintf(hdl->query + k, lim - k, "'%s'", val);
 				free(val);

@@ -38,8 +38,12 @@ typedef enum _mtype {
 } mtype;
 
 typedef struct _dpair {
-	int out;          /* where to read stdout messages from */
-	int err;          /* where to read stderr messages from */
+	struct _dpair_input {
+		int fd;
+		int cnt;
+		char buf[8096];
+		time_t ts;
+	} input[2];
 	mtype type;       /* type of process */
 	short flag;		  /* flag internal to logListener */
 	pid_t pid;        /* this process' id */
@@ -51,7 +55,7 @@ typedef struct _dpair {
 char *newErr(_In_z_ _Printf_format_string_ const char *fmt, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
 bool terminateProcess(char *dbname, pid_t pid, mtype type);
-void logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream, int rest);
+void logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FILE *stream, bool rest);
 
 loglevel getLogLevel(void);
 void setLogLevel(loglevel level);
@@ -86,5 +90,3 @@ extern confkeyval *_mero_db_props;
 extern confkeyval *_mero_props;
 
 #endif
-
-/* vim:set ts=4 sw=4 noexpandtab: */

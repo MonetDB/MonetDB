@@ -69,11 +69,6 @@ typedef struct subrids {
 	void *rids;
 } subrids;
 
-typedef struct sql_updates {
-	BAT* ui;
-	BAT* uv;
-} sql_updates;
-
 /* returns table rids, for the given select ranges */
 typedef rids *(*rids_select_fptr)( sql_trans *tr, sql_column *key, const void *key_value_low, const void *key_value_high, ...);
 
@@ -136,7 +131,8 @@ typedef struct table_functions {
 -- binds for column,idx (rdonly, inserts, updates) and delets
 */
 typedef void *(*bind_col_fptr) (sql_trans *tr, sql_column *c, int access);
-typedef void *(*bind_updates_fptr) (sql_trans *tr, sql_column *c);
+typedef int (*bind_updates_fptr) (sql_trans *tr, sql_column *c, BAT **ui, BAT **uv);
+typedef int (*bind_updates_idx_fptr) (sql_trans *tr, sql_idx *c, BAT **ui, BAT **uv);
 typedef void *(*bind_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef void *(*bind_cands_fptr) (sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr);
 
@@ -160,6 +156,7 @@ typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef size_t (*dcount_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*min_max_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
+typedef int (*proprec_col_fptr) (sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max);
 
 /*
 -- create the necessary storage resources for columns, indices and tables
@@ -217,13 +214,12 @@ typedef int (*col_compress_fptr) (sql_trans *tr, sql_column *c, storage_type st,
 */
 typedef int (*update_table_fptr) (sql_trans *tr, sql_table *ft, sql_table *tt);
 
-typedef void (*temp_del_tab_fptr) (sql_trans *tr, sql_table *ft);
-
 /* backing struct for this interface */
 typedef struct store_functions {
 
 	bind_col_fptr bind_col;
 	bind_updates_fptr bind_updates;
+	bind_updates_idx_fptr bind_updates_idx;
 	bind_idx_fptr bind_idx;
 	bind_cands_fptr bind_cands;
 
@@ -246,6 +242,7 @@ typedef struct store_functions {
 	prop_col_fptr sorted_col;
 	prop_col_fptr unique_col;
 	prop_col_fptr double_elim_col; /* varsize col with double elimination */
+	proprec_col_fptr col_stats;
 
 	col_dup_fptr col_dup;
 	idx_dup_fptr idx_dup;
@@ -269,26 +266,25 @@ typedef struct store_functions {
 	upgrade_col_fptr upgrade_col;
 	upgrade_idx_fptr upgrade_idx;
 	upgrade_del_fptr upgrade_del;
-	temp_del_tab_fptr temp_del_tab;
 	swap_bats_fptr swap_bats;
 } store_functions;
 
-typedef int (*logger_create_fptr) (struct sqlstore *store, int debug, const char *logdir, int catalog_version);
+typedef int (*log_create_fptr) (struct sqlstore *store, int debug, const char *logdir, int catalog_version);
 
-typedef void (*logger_destroy_fptr) (struct sqlstore *store);
-typedef int (*logger_flush_fptr) (struct sqlstore *store, lng save_id);
-typedef int (*logger_activate_fptr) (struct sqlstore *store);
+typedef void (*log_destroy_fptr) (struct sqlstore *store);
+typedef int (*log_flush_fptr) (struct sqlstore *store, lng save_id);
+typedef int (*log_activate_fptr) (struct sqlstore *store);
 typedef int (*logger_cleanup_fptr) (struct sqlstore *store);
 
-typedef int (*logger_changes_fptr)(struct sqlstore *store);
+typedef int (*log_changes_fptr)(struct sqlstore *store);
 typedef int (*logger_get_sequence_fptr) (struct sqlstore *store, int seq, lng *id);
 
 typedef int (*log_isnew_fptr)(struct sqlstore *store);
-typedef int (*log_tstart_fptr) (struct sqlstore *store, bool flush);
+typedef int (*log_tstart_fptr) (struct sqlstore *store, bool flush, ulng *log_file_id);
 typedef int (*log_tend_fptr) (struct sqlstore *store);
-typedef int (*log_tdone_fptr) (struct sqlstore *store, ulng commit_ts);
+typedef int (*log_tflush_fptr) (struct sqlstore *store, ulng log_file_id, ulng commit_tis);
 typedef lng (*log_save_id_fptr) (struct sqlstore *store);
-typedef int (*log_sequence_fptr) (struct sqlstore *store, int seq, lng id);
+typedef int (*log_tsequence_fptr) (struct sqlstore *store, int seq, lng id);
 
 /*
 -- List which parts of which files must be included in a hot snapshot.
@@ -306,12 +302,12 @@ typedef int (*log_sequence_fptr) (struct sqlstore *store, int seq, lng id);
 typedef gdk_return (*logger_get_snapshot_files_fptr)(struct sqlstore *store, stream *plan);
 
 typedef struct logger_functions {
-	logger_create_fptr create;
-	logger_destroy_fptr destroy;
-	logger_flush_fptr flush;
-	logger_activate_fptr activate;
+	log_create_fptr create;
+	log_destroy_fptr destroy;
+	log_flush_fptr flush;
+	log_activate_fptr activate;
 
-	logger_changes_fptr changes;
+	log_changes_fptr changes;
 	logger_get_sequence_fptr get_sequence;
 
 	logger_get_snapshot_files_fptr get_snapshot_files;
@@ -319,9 +315,9 @@ typedef struct logger_functions {
 	log_isnew_fptr log_isnew;
 	log_tstart_fptr log_tstart;
 	log_tend_fptr log_tend;
-	log_tdone_fptr log_tdone;
+	log_tflush_fptr log_tflush;
 	log_save_id_fptr log_save_id;
-	log_sequence_fptr log_sequence;
+	log_tsequence_fptr log_tsequence;
 } logger_functions;
 
 /* we need to add an interface for result_tables later */
@@ -372,8 +368,9 @@ extern int sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func
 extern void sql_trans_update_tables(sql_trans *tr, sql_schema *s);
 extern void sql_trans_update_schemas(sql_trans *tr);
 
-extern int sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid owner);
+extern int sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid owner, sqlid *schema_id_ptr);
 extern int sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name);
+extern int sql_trans_change_schema_authorization(sql_trans *tr, sqlid id, sqlid auth_id);
 extern int sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action);
 
 sql_export int sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system, int persistence, int commit_action, int sz, bte properties);
@@ -401,6 +398,7 @@ extern int sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage
 extern int sql_trans_is_sorted(sql_trans *tr, sql_column *col);
 extern int sql_trans_is_unique(sql_trans *tr, sql_column *col);
 extern int sql_trans_is_duplicate_eliminated(sql_trans *tr, sql_column *col);
+extern int sql_trans_col_stats(sql_trans *tr, sql_column *col, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max);
 extern size_t sql_trans_dist_count(sql_trans *tr, sql_column *col);
 extern int sql_trans_ranges(sql_trans *tr, sql_column *col, void **min, void **max);
 
@@ -467,6 +465,7 @@ extern int sql_trans_copy_column(sql_trans *tr, sql_table *t, sql_column *c, sql
 extern int sql_trans_copy_key(sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres);
 extern int sql_trans_copy_idx(sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires);
 extern int sql_trans_copy_trigger(sql_trans *tr, sql_table *t, sql_trigger *tri, sql_trigger **tres);
+extern sql_table *globaltmp_instantiate(sql_trans *tr, sql_table *t);
 
 #define NR_TABLE_LOCKS 64
 #define NR_COLUMN_LOCKS 512

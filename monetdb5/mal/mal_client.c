@@ -44,6 +44,7 @@
 #include "mal_parser.h"
 #include "mal_namespace.h"
 #include "mal_private.h"
+#include "mal_interpreter.h"
 #include "mal_runtime.h"
 #include "mal_authorize.h"
 #include "mapi_prompt.h"
@@ -85,6 +86,7 @@ MCinit(void)
 	}
 	for (int i = 0; i < MAL_MAXCLIENTS; i++){
 		ATOMIC_INIT(&mal_clients[i].lastprint, 0);
+		mal_clients[i].idx = -1; /* indicate it's available */
 	}
 	return true;
 }
@@ -138,14 +140,15 @@ MCnewClient(void)
 	Client c;
 
 	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
-		if (c->mode == FREECLIENT) {
-			c->mode = RUNCLIENT;
+		if (c->idx == -1)
 			break;
-		}
 	}
 
 	if (c == mal_clients + MAL_MAXCLIENTS)
 		return NULL;
+
+	assert(c->mode == FREECLIENT);
+	c->mode = RUNCLIENT;
 	c->idx = (int) (c - mal_clients);
 	return c;
 }
@@ -180,7 +183,9 @@ MCresetProfiler(stream *fdout)
 	if (fdout != maleventstream)
 		return;
 	MT_lock_set(&mal_profileLock);
-	maleventstream = 0;
+	maleventstream = NULL;
+	profilerStatus = 0;
+	profilerMode = 0;
 	MT_lock_unset(&mal_profileLock);
 }
 
@@ -204,6 +209,14 @@ MCexitClient(Client c)
 		c->fdout = NULL;
 		c->fdin = NULL;
 	}
+	assert(c->query == NULL);
+	if(profilerStatus > 0) {
+		lng Tend = GDKusec();
+		profilerEvent(NULL,
+					  &(struct NonMalEvent)
+					  {CLIENT_END, c, Tend,  NULL, NULL, 0, Tend-(c->session)});
+	}
+	setClientContext(NULL);
 }
 
 static Client
@@ -222,6 +235,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->fdin = fin ? fin : bstream_create(GDKstdin, 0);
 	if ( c->fdin == NULL){
 		c->mode = FREECLIENT;
+		c->idx = -1;
 		TRC_ERROR(MAL_SERVER, "No stdin channel available\n");
 		return NULL;
 	}
@@ -255,8 +269,9 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 		if (fin == NULL) {
 			c->fdin->s = NULL;
 			bstream_destroy(c->fdin);
-			c->mode = FREECLIENT;
 		}
+		c->mode = FREECLIENT;
+		c->idx = -1;
 		return NULL;
 	}
 	c->promptlength = strlen(prompt);
@@ -264,14 +279,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->profticks = c->profstmt = NULL;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	c->sqlprofiler = 0;
-	c->wlc_kind = 0;
-	c->wlc = NULL;
-	/* no authentication in embedded mode */
-	if (!GDKembedded()) {
-		str msg = AUTHgetUsername(&c->username, c);
-		if (msg)				/* shouldn't happen */
-			freeException(msg);
-	}
 	c->blocksize = BLOCK;
 	c->protocol = PROTOCOL_9;
 
@@ -292,9 +299,17 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 
 	MT_lock_set(&mal_contextLock);
 	c = MCnewClient();
-	if (c)
+	if (c) {
+		Client c_old = setClientContext(c);
+		(void) c_old;
+		assert(NULL == c_old);
 		c = MCinitClientRecord(c, user, fin, fout);
+	}
 	MT_lock_unset(&mal_contextLock);
+
+	profilerEvent(NULL,
+				  &(struct NonMalEvent)
+				  {CLIENT_START, c, c->session,  NULL, NULL, 0, 0});
 	return c;
 }
 
@@ -387,6 +402,16 @@ MCforkClient(Client father)
 	return son;
 }
 
+static bool shutdowninprogress = false;
+
+bool
+MCshutdowninprogress(void){
+	MT_lock_set(&mal_contextLock);
+	bool ret = shutdowninprogress;
+	MT_lock_unset(&mal_contextLock);
+	return ret;
+}
+
 /*
  * When a client needs to be terminated then the file descriptors for
  * its input/output are simply closed.  This leads to a graceful
@@ -401,9 +426,14 @@ MCforkClient(Client father)
 void
 MCfreeClient(Client c)
 {
-	if( c->mode == FREECLIENT)
+	MT_lock_set(&mal_contextLock);
+	if( c->mode == FREECLIENT) {
+		assert(c->idx == -1);
+		MT_lock_unset(&mal_contextLock);
 		return;
+	}
 	c->mode = FINISHCLIENT;
+	MT_lock_unset(&mal_contextLock);
 
 	MCexitClient(c);
 
@@ -455,15 +485,18 @@ MCfreeClient(Client c)
 		BBPunfix(c->error_input->batCacheid);
 		c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	}
-	if( c->wlc)
-		freeMalBlk(c->wlc);
 	c->sqlprofiler = 0;
-	c->wlc_kind = 0;
-	c->wlc = NULL;
 	free(c->handshake_options);
 	c->handshake_options = NULL;
 	MT_sema_destroy(&c->s);
-	c->mode = MCshutdowninprogress()? BLOCKCLIENT: FREECLIENT;
+	MT_lock_set(&mal_contextLock);
+	if (shutdowninprogress) {
+		c->mode = BLOCKCLIENT;
+	} else {
+		c->mode = FREECLIENT;
+		c->idx = -1;
+	}
+	MT_lock_unset(&mal_contextLock);
 }
 
 /*
@@ -481,27 +514,23 @@ MCfreeClient(Client c)
  * When the server is about to shutdown, we should softly terminate
  * all outstanding session.
  */
-static volatile int shutdowninprogress = 0;
-
-int
-MCshutdowninprogress(void){
-	return shutdowninprogress;
-}
-
 void
 MCstopClients(Client cntxt)
 {
-	Client c = mal_clients;
-
 	MT_lock_set(&mal_contextLock);
-	for(c = mal_clients;  c < mal_clients+MAL_MAXCLIENTS; c++)
-	if (cntxt != c){
-		if (c->mode == RUNCLIENT)
-			c->mode = FINISHCLIENT;
-		else if (c->mode == FREECLIENT)
-			c->mode = BLOCKCLIENT;
+	for (int i = 0; i < MAL_MAXCLIENTS; i++) {
+		Client c = mal_clients + i;
+		if (cntxt != c) {
+			if (c->mode == RUNCLIENT)
+				c->mode = FINISHCLIENT;
+			else if (c->mode == FREECLIENT) {
+				assert(c->idx == -1);
+				c->idx = i;
+				c->mode = BLOCKCLIENT;
+			}
+		}
 	}
-	shutdowninprogress =1;
+	shutdowninprogress = true;
 	MT_lock_unset(&mal_contextLock);
 }
 

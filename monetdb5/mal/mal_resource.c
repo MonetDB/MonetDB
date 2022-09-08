@@ -66,13 +66,15 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 
 	(void)mb;
 	if (stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
-		b = BATdescriptor( stk->stk[getArg(pci, i)].val.bval);
+		bat bid = stk->stk[getArg(pci, i)].val.bval;
+		if (!BBPcheck(bid))
+			return 0;
+		b = BBP_desc(bid);
 		if (b == NULL)
 			return 0;
 		MT_lock_set(&b->theaplock);
 		if (flag && isVIEW(b)) {
 			MT_lock_unset(&b->theaplock);
-			BBPunfix(b->batCacheid);
 			return 0;
 		}
 
@@ -93,7 +95,6 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 		if( t > itotal)
 			itotal = t;
 		//total = total > (lng)(MEMORY_THRESHOLD ) ? (lng)(MEMORY_THRESHOLD ) : total;
-		BBPunfix(b->batCacheid);
 		if ( total < itotal)
 			total = itotal;
 	}
@@ -146,10 +147,12 @@ MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng 
 		memorypool -= argclaim;
 		stk->workers++;
 		stk->memory += argclaim;
+		MT_lock_set(&mal_delayLock);
 		if( mb->workers < stk->workers)
 			mb->workers = stk->workers;
 		if( mb->memory < stk->memory)
 			mb->memory = stk->memory;
+		MT_lock_unset(&mal_delayLock);
 		MT_lock_unset(&admissionLock);
 		return 0;
 	}

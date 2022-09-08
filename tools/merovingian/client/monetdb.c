@@ -26,6 +26,7 @@
 #include "control.h"
 #include "msabaoth.h"
 #include "mutils.h"
+#include "stream.h"
 #include <string.h> /* strerror */
 #include <sys/stat.h> /* mkdir, stat, umask */
 #include <sys/types.h> /* mkdir, readdir */
@@ -820,8 +821,7 @@ command_status(int argc, char *argv[])
 		prev = NULL;
 		while (stats != NULL) {
 			if (stats->locked == curLock &&
-					(curLock ||
-					 (!curLock && stats->state == curMode)))
+					(curLock || stats->state == curMode))
 			{
 				sabdb *next = stats->next;
 				stats->next = neworig;
@@ -2383,6 +2383,11 @@ main(int argc, char *argv[])
 		TERMWIDTH = ws.ws_col;
 #endif
 
+	if (mnstr_init() < 0) {
+		fprintf(stderr, "monetdb: cannot initialize stream library\n");
+		return 1;
+	}
+
 	/* Start handling the arguments.
 	 * monetdb [monetdb_options] command [options] [database [...]]
 	 * this means we first scout for monetdb_options which stops as soon
@@ -2584,5 +2589,3 @@ main(int argc, char *argv[])
 
 	return retval;
 }
-
-/* vim:set ts=4 sw=4 noexpandtab: */

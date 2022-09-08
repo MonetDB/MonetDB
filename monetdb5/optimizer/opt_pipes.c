@@ -118,7 +118,6 @@ static struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
-	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -154,7 +153,6 @@ static struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
-	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -162,6 +160,8 @@ static struct PIPELINES {
 	{"default_fast",
 	 "optimizer.defaultfast()",
 	 "stable", NULL, 1},
+/* Apr2022 update. I disabled the volcano_pipe because it has issues on it */
+#if 0
 /*
  * Volcano style execution produces a sequence of blocks from the source relation
  */
@@ -196,10 +196,10 @@ static struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
-	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
+#endif
 /* The no_mitosis pipe line is (and should be kept!) identical to the
  * default pipeline, except that optimizer mitosis is omitted.  It is
  * used mainly to make some tests work deterministically, and to check
@@ -239,7 +239,6 @@ static struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
-	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -283,7 +282,6 @@ static struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
-	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},

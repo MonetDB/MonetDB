@@ -70,7 +70,6 @@ if(NOT HAVE_SYS_SOCKET_H)
     set(CMAKE_EXTRA_INCLUDE_FILES "winsock.h")
   endif()
 endif()
-set(CMAKE_REQUIRED_INCLUDES "/usr/include")
 
 monetdb_configure_sizes()
 
@@ -183,6 +182,3 @@ add_subdirectory(documentation)
 if(CMAKE_SUMMARY)
   monetdb_cmake_summary()
 endif()
-
-
-# vim: set ts=2:sw=2:et

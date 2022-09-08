@@ -530,10 +530,9 @@ RMTquery(MapiHdl *ret, const char *func, Mapi conn, const char *query) {
 	return(MAL_SUCCEED);
 }
 
-static str RMTprelude(void *ret) {
+static str RMTprelude(void) {
 	unsigned int type = 0;
 
-	(void)ret;
 #ifdef WORDS_BIGENDIAN
 	type |= RMTT_B_ENDIAN;
 #else
@@ -1525,7 +1524,7 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "remote.bincopyto", MAL_MALLOC_FAIL);
 
 	sendtheap = b->ttype != TYPE_void;
-	sendtvheap = sendtheap && b->tvarsized;
+	sendtvheap = sendtheap && b->tvheap;
 	if (isVIEW(b) && sendtvheap && VIEWvtparent(b) && BATcount(b) < BATcount(BBP_cache(VIEWvtparent(b)))) {
 		if ((b = BATdescriptor(bid)) == NULL) {
 			BBPunfix(bid);
@@ -1559,7 +1558,7 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			vi.sorted, vi.revsorted,
 			vi.key,
 			vi.nonil,
-			BATtdense(v),
+			BATtdensebi(&vi),
 			vi.count,
 			sendtheap ? (size_t)vi.count << vi.shift : 0,
 			sendtvheap && vi.count > 0 ? vi.vhfree : 0
@@ -1683,7 +1682,6 @@ RMTregisterSupervisor(int *ret, str *sup_uuid, str *query_uuid) {
 
 #include "mel.h"
 mel_func remote_init_funcs[] = {
- command("remote", "prelude", RMTprelude, false, "initialise the remote module", args(1,1, arg("",void))),
  command("remote", "epilogue", RMTepilogue, false, "release the resources held by the remote module", args(1,1, arg("",void))),
  command("remote", "resolve", RMTresolve, false, "resolve a pattern against Merovingian and return the URIs", args(1,2, batarg("",str),arg("pattern",str))),
  pattern("remote", "connect", RMTconnect, false, "returns a newly created connection for uri, using user name and password", args(1,5, arg("",str),arg("uri",str),arg("user",str),arg("passwd",str),arg("scen",str))),
@@ -1693,9 +1691,7 @@ mel_func remote_init_funcs[] = {
  pattern("remote", "get", RMTget, false, "retrieves a copy of remote object ident", args(1,3, argany("",0),arg("conn",str),arg("ident",str))),
  pattern("remote", "put", RMTput, false, "copies object to the remote site and returns its identifier", args(1,3, arg("",str),arg("conn",str),argany("object",0))),
  pattern("remote", "register", RMTregister, false, "register <mod>.<fcn> at the remote site", args(1,4, arg("",str),arg("conn",str),arg("mod",str),arg("fcn",str))),
- pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> and returns the handle to its result", args(1,4, arg("",str),arg("conn",str),arg("mod",str),arg("func",str))),
  pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> and returns the handle to its result", args(1,4, vararg("",str),arg("conn",str),arg("mod",str),arg("func",str))),
- pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result", args(1,5, arg("",str),arg("conn",str),arg("mod",str),arg("func",str),vararg("",str))),
  pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result", args(1,5, vararg("",str),arg("conn",str),arg("mod",str),arg("func",str),vararg("",str))),
  pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> using the argument list of remote objects and applying function pointer rcb as callback to handle any results.", args(0,5, arg("conn",str),arg("mod",str),arg("func",str),arg("rcb",ptr), vararg("",str))),
  pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> using the argument list of remote objects and ignoring results.", args(0,4, arg("conn",str),arg("mod",str),arg("func",str), vararg("",str))),
@@ -1713,6 +1709,6 @@ mel_func remote_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_remote_mal)
-{ mal_module("remote", NULL, remote_init_funcs); }
+{ mal_module2("remote", NULL, remote_init_funcs, RMTprelude, NULL); }
 
 #endif

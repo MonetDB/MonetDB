@@ -39,17 +39,6 @@
 #else
 # define stream_export extern
 #endif
-#ifndef HAVE_HGE
-# ifdef HAVE___INT128
-#  define HAVE_HGE 1
-typedef __int128 hge;
-# else
-#  ifdef HAVE___INT128_T
-#   define HAVE_HGE 1
-typedef __int128_t hge;
-#  endif
-# endif
-#endif
 
 /* Defines to help the compiler check printf-style format arguments.
  * These defines are also in our config.h, but we repeat them here so
@@ -149,7 +138,7 @@ stream_export ssize_t mnstr_write(stream *restrict s, const void *restrict buf, 
 stream_export void mnstr_close(stream *s);
 stream_export void mnstr_destroy(stream *s);
 stream_export int mnstr_flush(stream *s, mnstr_flush_level flush_level); // used all over
-stream_export int mnstr_fsync(stream *s); // used in gdk_logger.c, wlc.c and store.c
+stream_export int mnstr_fsync(stream *s); // used in gdk_logger.c and store.c
 stream_export int mnstr_fgetpos(stream *restrict s, fpos_t *restrict p); // unused
 stream_export int mnstr_fsetpos(stream *restrict s, fpos_t *restrict p); // unused
 stream_export char *mnstr_name(const stream *s); // used when wrapping in mclient.c
@@ -167,7 +156,7 @@ stream_export stream *open_wstream(const char *filename); // used in gdk_logger.
 stream_export stream *open_rastream(const char *filename); // used 13 times
 
 /* open in ascii stream in write mode*/
-stream_export stream *open_wastream(const char *filename); // used in mclient.c, mapi.c, mal_io.c, wlc.c, sql.c, wlr.c
+stream_export stream *open_wastream(const char *filename); // used in mclient.c, mapi.c, mal_io.c, sql.c
 
 stream_export void close_stream(stream *s);
 
@@ -187,7 +176,7 @@ stream_export stream *compressed_stream(stream *inner, int preset);
 
 stream_export FILE *getFile(stream *s); // gdk_logger.c progress messages
 stream_export int getFileNo(stream *s);	/* fileno(getFile(s)) */ // mclient.c, gdk_logger.c progress messages
-stream_export size_t getFileSize(stream *s); // mal_import.c, sql_scenario.c, wlr.c, store.c, bat_logger.c
+stream_export size_t getFileSize(stream *s); // mal_import.c, sql_scenario.c, store.c, bat_logger.c
 
 stream_export stream *iconv_rstream(stream *restrict ss, const char *restrict charset, const char *restrict name); // mclient.c stdin
 stream_export stream *iconv_wstream(stream *restrict ss, const char *restrict charset, const char *restrict name); // mclient.c stdout
@@ -230,26 +219,12 @@ stream_export buffer *mnstr_get_buffer(stream *s);
 stream_export stream *block_stream(stream *s); // mapi.c, mal_mapi.c, client.c, merovingian
 stream_export bool isa_block_stream(const stream *s); // mapi.c, mal_client.c, remote.c, sql_scenario.c/sqlReader, sql_scan.c
 stream_export stream *bs_stream(stream *s); // unused
-stream_export void set_prompting(stream *block_stream, const char *prompt, stream *prompt_stream);
-
 
 typedef enum {
 	PROTOCOL_AUTO = 0, // unused
 	PROTOCOL_9 = 1, // mal_mapi.c, mal_client.c;
 	PROTOCOL_COLUMNAR = 3 // sql_result.c
 } protocol_version;
-
-typedef enum {
-	COMPRESSION_NONE = 0, // mal_mapi.c
-	COMPRESSION_SNAPPY = 1, // mcrypt.c, mal_mapi.c
-	COMPRESSION_LZ4 = 2, // same
-	COMPRESSION_AUTO = 255 // never used
-} compression_method;
-
-stream_export stream *block_stream2(stream *s, size_t bufsiz, compression_method comp); // mal_mapi.c
-stream_export int bs2_resizebuf(stream *ss, size_t bufsiz); // sql_result.c
-stream_export buffer bs2_buffer(stream *s); // sql_result.c
-stream_export void bs2_setpos(stream *ss, size_t pos); // sql_result.c
 
 
 /* read block of data including the end of block marker */
@@ -287,7 +262,8 @@ stream_export stream *stream_blackhole_create(void); // never used
 
 stream_export stream *stream_fwf_create(stream *restrict s, size_t num_fields, size_t *restrict widths, char filler); // sql.c
 
-
 stream_export stream *create_text_stream(stream *s);
+
+stream_export stream *mapi_request_upload(const char *filename, bool binary, bstream *rs, stream *ws);
 
 #endif /*_STREAM_H_*/

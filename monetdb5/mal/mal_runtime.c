@@ -74,6 +74,10 @@ static
 void
 updateUserStats(Client cntxt, MalBlkPtr mb, lng ticks, time_t started, time_t finished, str query)
 {
+	// don't keep stats for context without username
+ 	if (cntxt->username == NULL)
+ 		return;
+
 	size_t idx = getUSRstatsIdx(mb, cntxt->user);
 
 	if (idx == (size_t) -1) {
@@ -81,7 +85,12 @@ updateUserStats(Client cntxt, MalBlkPtr mb, lng ticks, time_t started, time_t fi
 		return;
 	}
 
-	if (USRstats[idx].username == NULL) {
+	if (USRstats[idx].username == NULL || USRstats[idx].user != cntxt->user || strcmp(USRstats[idx].username, cntxt->username) != 0) {
+		if (USRstats[idx].username)
+			GDKfree(USRstats[idx].username);
+		if (USRstats[idx].maxquery)
+			GDKfree(USRstats[idx].maxquery);
+		clearUSRstats(idx);
 		USRstats[idx].user = cntxt->user;
 		USRstats[idx].username = GDKstrdup(cntxt->username);
 	}
@@ -91,8 +100,9 @@ updateUserStats(Client cntxt, MalBlkPtr mb, lng ticks, time_t started, time_t fi
 		USRstats[idx].started = started;
 		USRstats[idx].finished = finished;
 		USRstats[idx].maxticks = ticks;
-		GDKfree(USRstats[idx].maxquery);
-		USRstats[idx].maxquery= GDKstrdup(query);
+		if (USRstats[idx].maxquery)
+			GDKfree(USRstats[idx].maxquery);
+		USRstats[idx].maxquery = GDKstrdup(query);
 	}
 }
 
@@ -189,6 +199,15 @@ dropQRYqueue(void)
 	MT_lock_unset(&mal_delayLock);
 }
 
+oid
+runtimeProfileSetTag(Client cntxt) {
+	MT_lock_set(&mal_delayLock);
+	cntxt->curprg->def->tag = qtag++;
+	MT_lock_unset(&mal_delayLock);
+
+	return cntxt->curprg->def->tag;
+}
+
 /* At the start of every MAL block or SQL query */
 void
 runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
@@ -246,7 +265,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	// add new invocation
 	cntxt->idle = 0;
 	QRYqueue[qhead].mb = mb;
-	QRYqueue[qhead].tag = stk->tag = mb->tag = qtag++;
+	QRYqueue[qhead].tag = stk->tag = mb->tag;
 	QRYqueue[qhead].stk = stk;				// for status pause 'p'/running '0'/ quiting 'q'
 	QRYqueue[qhead].finished = 0;
 	QRYqueue[qhead].start = time(0);
@@ -352,16 +371,16 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 
 	assert(pci);
 	/* keep track on the instructions taken in progress for stethoscope*/
-	if( tid > 0 && tid <= THREADS){
+	if(tid > 0 && tid <= THREADS){
 		tid--;
-		if( malProfileMode) {
+		if(profilerStatus) {
 			MT_lock_set(&mal_profileLock);
 			workingset[tid].cntxt = cntxt;
 			workingset[tid].mb = mb;
 			workingset[tid].stk = stk;
 			workingset[tid].pci = pci;
 			MT_lock_unset(&mal_profileLock);
-		} else{
+		} else {
 			workingset[tid].cntxt = cntxt;
 			workingset[tid].mb = mb;
 			workingset[tid].stk = stk;
@@ -370,10 +389,6 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 	}
 	/* always collect the MAL instruction execution time */
 	pci->clock = prof->ticks = GDKusec();
-
-	/* emit the instruction upon start as well */
-	if(malProfileMode > 0 )
-		profilerEvent(cntxt, mb, stk, pci, TRUE);
 }
 
 /* At the end of each MAL stmt */
@@ -386,7 +401,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	/* keep track on the instructions in progress*/
 	if ( tid > 0 && tid <= THREADS) {
 		tid--;
-		if( malProfileMode) {
+		if( profilerStatus) {
 			MT_lock_set(&mal_profileLock);
 			workingset[tid] = (struct WORKINGSET) {0};
 			MT_lock_unset(&mal_profileLock);
@@ -399,16 +414,16 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	pci->clock = ticks;
 	pci->ticks = ticks - prof->ticks;
 	pci->totticks += pci->ticks;
-	pci->calls++;
 
-	if(malProfileMode > 0 )
-		profilerEvent(cntxt, mb, stk, pci, FALSE);
-	if( cntxt->sqlprofiler )
+	if(profilerStatus > 0 )
+		profilerEvent(&(struct MalEvent) {cntxt, mb, stk, pci},
+					  NULL);
+	if(cntxt->sqlprofiler)
 		sqlProfilerEvent(cntxt, mb, stk, pci);
-	if( malProfileMode < 0){
+	if(profilerStatus < 0){
 		/* delay profiling until you encounter start of MAL function */
-		if( getInstrPtr(mb,0) == pci)
-			malProfileMode = 1;
+		if(getInstrPtr(mb,0) == pci)
+			profilerStatus = 1;
 	}
 }
 

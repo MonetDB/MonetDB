@@ -388,7 +388,7 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	    BUNappend(bk, "tident", false) != GDK_SUCCEED ||
 	    BUNappend(bv, b->tident, false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tdense", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) BATtdense(b), buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) BATtdensebi(&bi), buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tseqbase", false) != GDK_SUCCEED ||
 	    BUNappend(bv, oidtostr(bi.tseq, bf, sizeof(bf)), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tsorted", false) != GDK_SUCCEED ||
@@ -398,15 +398,15 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	    BUNappend(bk, "tkey", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t) bi.key, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tvarsized", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) b->tvarsized, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) (bi.type == TYPE_void || bi.vh != NULL), buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnosorted", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->tnosorted, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa(bi.nosorted, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnorevsorted", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->tnorevsorted, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa(bi.norevsorted, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnokey[0]", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->tnokey[0], buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa(bi.nokey[0], buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnokey[1]", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->tnokey[1], buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa(bi.nokey[1], buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnonil", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(bi.nonil, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnil", false) != GDK_SUCCEED ||
@@ -418,8 +418,6 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	    BUNappend(bv, local_utoa(bi.hfree, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batCopiedtodisk", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t) bi.copiedtodisk, buf), false) != GDK_SUCCEED ||
-	    BUNappend(bk, "batDirtydesc", false) != GDK_SUCCEED ||
-	    BUNappend(bv, bi.dirtydesc ? "dirty" : "clean", false) != GDK_SUCCEED ||
 
 	    BUNappend(bk, "theap.dirty", false) != GDK_SUCCEED ||
 	    BUNappend(bv, bi.hdirty ? "dirty" : "clean", false) != GDK_SUCCEED ||
@@ -922,10 +920,9 @@ retryRead:
 			m = 0;
 			break;
 		case 'e':
-		{
 			/* terminate the execution for ordinary functions only */
 			if (strncmp("exit", b, 4) == 0) {
-			case 'x':
+		case 'x':
 				if (!(getInstrPtr(mb, 0)->token == FACcall)) {
 					stk->cmd = 'x';
 					cntxt->prompt = oldprompt;
@@ -933,7 +930,6 @@ retryRead:
 				}
 			}
 			return;
-		}
 		case 'q':
 		{
 			MalStkPtr su;
@@ -977,8 +973,7 @@ retryRead:
 				modname = b;
 				fcnname = strchr(b, '.');
 				if (fcnname) {
-					*fcnname = 0;
-					fcnname++;
+					*fcnname++ = 0;
 				}
 				fsym = findModule(cntxt->usermodule, putName(modname));
 
@@ -1024,9 +1019,12 @@ retryRead:
 				skipBlanc(cntxt, b);
 				mod = b;
 				skipWord(cntxt, b);
-				*b = 0;
-				fcn = b + 1;
-				if ((w = strchr(b + 1, '\n')))
+				if (*b) {
+					*b = 0;
+					fcn = b + 1;
+				} else
+					fcn = b;
+				if ((w = strchr(fcn, '\n')))
 					*w = 0;
 				mnstr_printf(out, "#trap %s.%s\n", mod, fcn);
 			}
@@ -1224,11 +1222,12 @@ retryRead:
 			skipWord(cntxt, b);
 			t = b;
 			skipNonBlanc(cntxt, t);
-			*t = 0;
-			/* you can identify a start and length */
-			t++;
-			skipBlanc(cntxt, t);
-			if (isdigit((unsigned char) *t)) {
+			if (*t) {
+				*t++ = 0;
+				/* you can identify a start and length */
+				skipBlanc(cntxt, t);
+			}
+			if (*t && isdigit((unsigned char) *t)) {
 				size = (BUN) atol(t);
 				skipWord(cntxt, t);
 				if (isdigit((unsigned char) *t))

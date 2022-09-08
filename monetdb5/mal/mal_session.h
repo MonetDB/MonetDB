@@ -12,8 +12,7 @@
 #include "mal_scenario.h"
 #include "mal_resolve.h"
 
-mal_export str malBootstrap(char *modules[], int embedded);
-mal_export str MSserveClient(Client cntxt);
+mal_export str malBootstrap(char *modules[], bool embedded);
 mal_export str MSinitClientPrg(Client cntxt, const char *mod, const char *nme);
 mal_export void MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize);
 

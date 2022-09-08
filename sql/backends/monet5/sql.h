@@ -230,11 +230,6 @@ extern str bat_date_trunc(bat *res, const str *scale, const bat *v);
 extern str date_trunc(timestamp *res, const str *scale, const timestamp *v);
 
 extern str nil_2_date(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str str_2_date(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str batstr_2_date(bat *res, const bat *val, const bat *s);
-
-extern str str_2_blob(blob * *res, const str *val);
-extern str batstr_2_blob(bat *res, const bat *val, const bat *sid);
 
 extern str SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -294,7 +289,12 @@ extern str SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 extern str SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLuser_password(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str getBackendContext(Client cntxt, backend **be);
+
+#define USER_TABLE_NAME "db_user_info"
+#define SCHEMA_TABLE_NAME "schemas"
+#define USER_PASSWORD_COLUMN "password"
 
 #endif /* _SQL_H */

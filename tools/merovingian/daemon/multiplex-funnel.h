@@ -53,5 +53,3 @@ void multiplexNotifyAddedDB(const char *database);
 void multiplexNotifyRemovedDB(const char *database);
 
 #endif
-
-/* vim:set ts=4 sw=4 noexpandtab: */

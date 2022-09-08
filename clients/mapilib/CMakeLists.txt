@@ -17,7 +17,6 @@ add_library(mapi
 target_sources(mapi
   PRIVATE
   mapi.c
-  mapi_prompt.h
   PUBLIC
   $<BUILD_INTERFACE:$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/mapi.h>
   $<BUILD_INTERFACE:$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/mapi_querytype.h>
@@ -87,5 +86,3 @@ if(WIN32)
     DESTINATION ${CMAKE_INSTALL_LIBDIR}
     OPTIONAL)
 endif()
-
-# vim: set ts=2:sw=2:et

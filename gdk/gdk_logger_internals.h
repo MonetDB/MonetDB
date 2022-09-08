@@ -9,6 +9,8 @@
 #ifndef _LOGGER_INTERNALS_H_
 #define _LOGGER_INTERNALS_H_
 
+#define FLUSH_QUEUE_SIZE 2048 /* maximum size of the flush queue, i.e. maximum number of transactions committing simultaneously */
+
 typedef struct logged_range_t {
 	ulng id;			/* log file id */
 	int first_tid;		/* first */
@@ -26,11 +28,11 @@ struct logger {
 	int saved_tid;		/* id of transaction which was flushed out (into BBP storage)  */
 	bool flushing;
 	bool flushnow;
+	bool request_rotation;
 	logged_range *pending;
 	logged_range *current;
 
-	int row_insert_nrcols;	/* nrcols == 0 no rowinsert, log_update will include the logformat */
-
+	lng total_cnt; /* When logging the content of a bats in multiple runs, total_cnt is used the very first to signal this and keep track in the logging*/
 	bool inmemory;
 	char *fn;
 	char *dir;
@@ -42,6 +44,8 @@ struct logger {
 	stream *input_log;	/* current stream to flush */
 	lng end;		/* end of pre-allocated blocks for faster f(data)sync */
 
+	ATOMIC_TYPE refcount; /* Number of active writers and flushers in the logger */ // TODO check refcount in c->log and c->end
+	MT_Lock rotation_lock;
 	MT_Lock lock;
 	/* Store log_bids (int) to circumvent trouble with reference counting */
 	BAT *catalog_bid;	/* int bid column */
@@ -63,6 +67,14 @@ struct logger {
 
 	void *buf;
 	size_t bufsize;
+
+	/* flush variables */
+	unsigned int flush_queue[FLUSH_QUEUE_SIZE]; /* circular array with the current transactions' ids waiting to be flushed */
+	int flush_queue_begin; /* start index of the queue */
+	int flush_queue_length; /* length of the queue */
+	MT_Sema flush_queue_semaphore; /*to protect the queue against ring buffer overflows */
+	MT_Lock flush_queue_lock; /* to protect the queue against concurrent reads and writes */
+	MT_Lock flush_lock; /* so only one transaction can flush to disk at any given time */
 };
 
 struct old_logger {
@@ -96,6 +108,6 @@ struct old_logger {
 	BAT *del;		/* bat ids of bats being deleted by upgrade */
 };
 
-gdk_return logger_create_types_file(logger *lg, const char *filename, bool append);
+gdk_return log_create_types_file(logger *lg, const char *filename, bool append);
 
 #endif /* _LOGGER_INTERNALS_H_ */

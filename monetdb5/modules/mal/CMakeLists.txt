@@ -28,7 +28,6 @@ target_sources(malmodules
   mdb.c
   pcre.c
   mat.c
-  wlc.c
   mal_mapi.c
   remote.c remote.h
   txtsim.c
@@ -40,9 +39,7 @@ target_sources(malmodules
   tracer.c
   projectionpath.c
   tablet.c tablet.h
-  batcalc.c calc.c
-  PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/wlc.h)
+  batcalc.c calc.c)
 
 target_include_directories(malmodules
   PRIVATE
@@ -68,5 +65,4 @@ target_link_libraries(malmodules
 
 set_target_properties(malmodules
   PROPERTIES
-  POSITION_INDEPENDENT_CODE ON
-  PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/wlc.h)
+  POSITION_INDEPENDENT_CODE ON)

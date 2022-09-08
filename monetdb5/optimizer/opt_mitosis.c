@@ -15,7 +15,8 @@
 str
 OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, limit, slimit, estimate = 0, pieces = 1, mito_parts = 0, mito_size = 0, row_size = 0, mt = -1;
+	int i, j, limit, slimit, estimate = 0, pieces = 1, mito_parts = 0, mito_size = 0, row_size = 0, mt = -1, nr_cols = 0,
+		nr_aggrs = 0;
 	str schema = 0, table = 0;
 	BUN r = 0, rowcnt = 0;	/* table should be sizeable to consider parallel execution*/
 	InstrPtr p, q, *old, target = 0;
@@ -51,6 +52,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		if (p->retc == 2 && isMatJoinOp(p))
 			maxslices = threads;
 
+		nr_aggrs += (p->argc > 2 && getModuleId(p) == aggrRef);
+
 		if (p->argc > 2 && getModuleId(p) == aggrRef &&
 				getFunctionId(p) != subcountRef &&
 				getFunctionId(p) != subminRef &&
@@ -71,7 +74,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 		/* do not split up floating point bat that is being summed */
 		if (p->retc == 1 &&
-			(((p->argc == 6 || p->argc == 7) &&
+			(((p->argc == 5 || p->argc == 6) &&
 			  getModuleId(p) == aggrRef &&
 			  getFunctionId(p) == subsumRef) ||
 			 (p->argc == 4 &&
@@ -113,10 +116,13 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		 * single subplan should ideally fit together.
 		 */
 		r = getRowCnt(mb, getArg(p, 0));
+		if (r == rowcnt)
+			nr_cols++;
 		if (r > rowcnt) {
 			/* the rowsize depends on the column types, assume void-headed */
 			row_size = ATOMsize(getBatType(getArgType(mb,p,0)));
 			rowcnt = r;
+			nr_cols = 1;
 			target = p;
 			estimate++;
 			r = 0;
@@ -151,6 +157,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	if (cntxt->memorylimit == 0 || pieces <= 1){
 */
 	if (pieces <= 1){
+		/* improve memory usage estimation */
+		if (nr_cols > 1 || nr_aggrs > 1)
+			argsize = (nr_cols + nr_aggrs) * sizeof(lng);
 		/* We haven't assigned the number of pieces.
 		 * Determine the memory available for this client
 		 */
@@ -181,11 +190,13 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			/* the number of pieces affects SF-100, going beyond 8x increases
 			 * the optimizer costs beyond the execution time
 			 */
-			pieces = 4 * (int) ceil((double)rowcnt / m / threads);
+			pieces = ((int) ceil((double)rowcnt / m / threads));
+			if (pieces <= threads)
+				pieces = threads;
 		} else if (rowcnt > MINPARTCNT) {
 		/* exploit parallelism, but ensure minimal partition size to
 		 * limit overhead */
-			pieces = 4 * (int) ceil(MIN((double)rowcnt / MINPARTCNT, threads));
+			pieces = MIN((int) ceil((double)rowcnt / MINPARTCNT), threads);
 		}
 	}
 

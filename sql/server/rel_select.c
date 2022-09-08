@@ -2062,7 +2062,10 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		if (!e) {
 			if (add_select && rel && *rel && !is_project((*rel)->op) && !is_select((*rel)->op) && !is_base((*rel)->op))
 				*rel = rel_select(sql->sa, *rel, NULL);
-			e = exp_in_func(sql, le, values, (sc->token == SQL_IN), is_tuple);
+			if ((rel && *rel) || exp_has_rel(le) || exp_has_rel(values))
+				e = exp_in_func(sql, le, values, (sc->token == SQL_IN), is_tuple);
+			else
+				e = exp_in_aggr(sql, le, values, (sc->token == SQL_IN), is_tuple);
 		}
 	}
 	return e;
@@ -4477,7 +4480,7 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int nee
 	if (!r)
 		return e;
 
-	if (is_simple_project(r->op) && is_processed(r)) {
+	if (is_simple_project(r->op) && r->l && is_processed(r)) {
 		p = r;
 		r = r->l;
 	}
@@ -4495,13 +4498,15 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int nee
 			if (needs_distinct)
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: with DISTINCT ORDER BY expressions must appear in select list");
 			e = rel_project_add_exp(sql, p, e);
-			for (node *n = p->exps->h ; n ; n = n->next) {
-				sql_exp *ee = n->data;
+			if (r) {
+				for (node *n = p->exps->h ; n ; n = n->next) {
+					sql_exp *ee = n->data;
 
-				if (ee->card > r->card) {
-					if (exp_name(ee) && !has_label(ee))
-						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(ee));
-					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+					if (ee->card > r->card) {
+						if (exp_name(ee) && !has_label(ee))
+							return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(ee));
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+					}
 				}
 			}
 		}
@@ -4610,7 +4615,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int needs_distinct,
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
 
-				e = rel_order_by_column_exp(query, &rel, col, needs_distinct, sql_sel | sql_orderby | (f & sql_group_totals));
+				e = rel_order_by_column_exp(query, &rel, col, needs_distinct, sql_sel | sql_orderby | (f & sql_group_totals) | (f & sql_window));
 			}
 			if (!e)
 				return NULL;
@@ -5551,7 +5556,7 @@ rel_where_groupby_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, int *gro
 		rel = rel_groupby(sql, rel, gbe);
 		if (sets && list_length(sets) > 1) { /* if there is only one combination, there is no reason to generate unions */
 			prop *p = prop_create(sql->sa, PROP_GROUPINGS, rel->p);
-			p->value = sets;
+			p->value.pval = sets;
 			rel->p = p;
 		}
 	}

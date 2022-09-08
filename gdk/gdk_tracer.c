@@ -32,6 +32,8 @@ static ATOMIC_TYPE cur_adapter = ATOMIC_VAR_INIT(DEFAULT_ADAPTER);
 
 static log_level_t cur_flush_level = DEFAULT_FLUSH_LEVEL;
 
+static bool write_to_tracer = false;
+
 #define GENERATE_LOG_LEVEL(COMP) DEFAULT_LOG_LEVEL,
 log_level_t lvl_per_component[] = {
 	FOREACH_COMP(GENERATE_LOG_LEVEL)
@@ -81,6 +83,14 @@ static const char *level_str[] = {
 		## __VA_ARGS__);
 
 
+#define GDK_TRACER_RESET_OUTPUT()					\
+	do {								\
+		write_to_tracer = false;				\
+		for (int i = 0; i < (int) COMPONENTS_COUNT; i++) {	\
+			write_to_tracer = write_to_tracer || lvl_per_component[i] > DEFAULT_LOG_LEVEL; \
+		}							\
+	} while(0)
+
 static inline char *
 get_timestamp(char *datetime, size_t dtsz)
 {
@@ -99,6 +109,7 @@ static gdk_return
 GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
 {
 	if (dbtrace == NULL) {
+		write_to_tracer = false;
 		if (dbpath == NULL) {
 			active_tracer = stderr;
 			return GDK_SUCCEED;
@@ -109,6 +120,7 @@ GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
 			goto too_long;
 		}
 	} else {
+		write_to_tracer = true;
 		if (strcpy_len(file_name, dbtrace, sizeof(file_name))
 		    >= sizeof(file_name)) {
 			goto too_long;
@@ -140,7 +152,6 @@ _GDKtracer_init_basic_adptr(void)
 	return GDKtracer_init_trace_file(GDKgetenv("gdk_dbpath"),
 					 GDKgetenv("gdk_dbtrace"));
 }
-
 
 static void
 set_level_for_layer(int layer, int lvl)
@@ -179,6 +190,9 @@ set_level_for_layer(int layer, int lvl)
 			}
 		}
 	}
+	MT_lock_set(&GDKtracer_lock);
+	GDK_TRACER_RESET_OUTPUT();
+	MT_lock_unset(&GDKtracer_lock);
 }
 
 static inline adapter_t
@@ -310,6 +324,7 @@ GDKtracer_set_component_level(const char *comp, const char *lvl)
 	if (file_name[0] == 0) {
 		_GDKtracer_init_basic_adptr();
 	}
+	write_to_tracer = write_to_tracer || level > DEFAULT_LOG_LEVEL;
 	MT_lock_unset(&GDKtracer_lock);
 
 	lvl_per_component[component] = level;
@@ -340,6 +355,10 @@ GDKtracer_reset_component_level(const char *comp)
 		return GDK_FAIL;
 	}
 	lvl_per_component[component] = DEFAULT_LOG_LEVEL;
+	MT_lock_set(&GDKtracer_lock);
+	GDK_TRACER_RESET_OUTPUT();
+	MT_lock_unset(&GDKtracer_lock);
+
 	return GDK_SUCCEED;
 }
 
@@ -530,7 +549,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 			MT_thread_getname(), func, level_str[level] + 2,
 			msg, syserr ? ": " : "",
 			syserr ? syserr : "");
-		if (active_tracer == NULL || active_tracer == stderr)
+		if (active_tracer == NULL || active_tracer == stderr || !write_to_tracer)
 			return;
 	}
 	if (active_tracer == NULL)

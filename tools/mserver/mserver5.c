@@ -524,7 +524,7 @@ main(int argc, char **av)
 					usage(prog, -1);
 				}
 			} else {
-				debug |= 1;
+				debug |= CHECKMASK;
 			}
 			break;
 		case 'r':
@@ -591,16 +591,12 @@ main(int argc, char **av)
 			fprintf(stderr, "!ERROR: cannot add farm\n");
 			exit(1);
 		}
-		if (GDKcreatedir(dbpath) != GDK_SUCCEED) {
-			fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbpath);
-			exit(1);
-		}
 		GDKfree(dbpath);
 	}
 
 	if (dbtrace) {
 		/* GDKcreatedir makes sure that all parent directories of dbtrace exist */
-		if (GDKcreatedir(dbtrace) != GDK_SUCCEED) {
+		if (!inmemory && GDKcreatedir(dbtrace) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbtrace);
 			exit(1);
 		}
@@ -804,7 +800,7 @@ main(int argc, char **av)
 	}
 
 	modules[mods++] = 0;
-	if (mal_init(modules, 0)) {
+	if (mal_init(modules, false)) {
 		/* don't show this as a crash */
 		if (!GDKinmemory(0))
 			msab_registerStop();

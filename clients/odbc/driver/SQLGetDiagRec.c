@@ -43,7 +43,7 @@ MNDBGetDiagRec(SQLSMALLINT HandleType,
 	       SQLSMALLINT *TextLengthPtr)
 {
 	ODBCError *err;
-	SQLRETURN retCode;
+	ODBCDbc *dbc = NULL;
 	char *msg;
 	SQLSMALLINT msgLen;
 
@@ -56,19 +56,25 @@ MNDBGetDiagRec(SQLSMALLINT HandleType,
 		break;
 	case SQL_HANDLE_DBC:
 		/* Check if this struct is still valid/alive */
-		if (!isValidDbc((ODBCDbc *) Handle))
+		dbc = (ODBCDbc *) Handle;
+		if (!isValidDbc(dbc))
 			return SQL_INVALID_HANDLE;
-		err = getDbcError((ODBCDbc *) Handle);
+		err = getDbcError(dbc);
 		break;
 	case SQL_HANDLE_STMT:
 		/* Check if this struct is still valid/alive */
 		if (!isValidStmt((ODBCStmt *) Handle))
 			return SQL_INVALID_HANDLE;
 		err = getStmtError((ODBCStmt *) Handle);
+		dbc = ((ODBCStmt *) Handle)->Dbc;
 		break;
 	case SQL_HANDLE_DESC:
-		/* not yet supported */
-		return Handle ? SQL_NO_DATA : SQL_INVALID_HANDLE;
+		/* Check if this struct is still valid/alive */
+		if (!isValidDesc((ODBCDesc *) Handle))
+			return SQL_INVALID_HANDLE;
+		err = getDescError((ODBCDesc *) Handle);
+		dbc = ((ODBCDesc *) Handle)->Dbc;
+		break;
 	default:
 		return SQL_INVALID_HANDLE;
 	}
@@ -81,7 +87,6 @@ MNDBGetDiagRec(SQLSMALLINT HandleType,
 		return SQL_ERROR;
 
 	err = getErrorRec(err, RecNumber);
-
 	/* Check the error object from the handle, it may be NULL when
 	 * no (more) errors are available
 	 */
@@ -103,23 +108,26 @@ MNDBGetDiagRec(SQLSMALLINT HandleType,
 		*NativeErrorPtr = getNativeErrorCode(err);
 
 	msg = getMessage(err);
-	retCode = SQL_SUCCESS;
 
 	/* first write the error message prefix text:
-	 * [MonetDB][ODBC driver VERSION]; this is
-	 * required by the ODBC spec and used to
-	 * determine where the error originated
+	 * [MonetDB][ODBC driver VERSION][DSN]
+	 * this is required by the ODBC spec:
+	 * https://docs.microsoft.com/en-us/sql/odbc/reference/develop-app/diagnostic-messages
+	 * and used to determine where the error originated
 	 */
-	msgLen = (SQLSMALLINT) strconcat_len((char *) MessageText, BufferLength, ODBCErrorMsgPrefix, msg, NULL);
-	if (MessageText == NULL || msgLen >= BufferLength) {
-		/* it didn't fit */
-		retCode = SQL_SUCCESS_WITH_INFO;
-	}
+	if (dbc && dbc->dsn)
+		msgLen = (SQLSMALLINT) strconcat_len((char *) MessageText, BufferLength, ODBCErrorMsgPrefix, "[", dbc->dsn, "]", msg, NULL);
+	else
+		msgLen = (SQLSMALLINT) strconcat_len((char *) MessageText, BufferLength, ODBCErrorMsgPrefix, msg, NULL);
 
 	if (TextLengthPtr)
-		*TextLengthPtr = (SQLSMALLINT) (msgLen + ODBCErrorMsgPrefixLength);
+		*TextLengthPtr = msgLen;
 
-	return retCode;
+	if (MessageText == NULL || msgLen >= BufferLength) {
+		/* it didn't fit */
+		return SQL_SUCCESS_WITH_INFO;
+	}
+	return SQL_SUCCESS;
 }
 
 SQLRETURN SQL_API

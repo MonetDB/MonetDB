@@ -330,7 +330,7 @@ BATdiffcand(BAT *a, BAT *b)
 			while (!is_oid_nil(ob) && ob < oa) {
 				ob = canditer_next(&cib);
 			}
-			if (!is_oid_nil(ob) && oa < ob)
+			if (is_oid_nil(ob) || oa < ob)
 				*p++ = oa;
 		}
 	}
@@ -398,7 +398,7 @@ count_mask_bits(const struct canditer *ci, BUN lo, BUN hi)
 	return n;
 }
 
-/* initialize a candidate iterator, return number of iterations */
+/* initialize a candidate iterator */
 void
 canditer_init(struct canditer *ci, BAT *b, BAT *s)
 {
@@ -1098,6 +1098,8 @@ canditer_slice(const struct canditer *ci, BUN lo, BUN hi)
 		return BATdense(0, 0, 0);
 	if (hi > ci->ncand)
 		hi = ci->ncand;
+	if (hi - lo == 1)
+		return BATdense(0, canditer_idx(ci, lo), 1);
 	switch (ci->tpe) {
 	case cand_materialized:
 		if (ci->s) {
@@ -1330,7 +1332,6 @@ BATnegcands(BUN nr, BAT *odels)
 		memcpy(r, (const oid *) bi.base + lo, sizeof(oid) * (hi - lo));
 	}
 	bat_iterator_end(&bi);
-	bn->batDirtydesc = true;
 	assert(bn->tvheap == NULL);
 	bn->tvheap = dels;
 	BATsetcount(bn, bn->batCount - (hi - lo));
@@ -1430,7 +1431,6 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 		HEAPfree(msks, true);
 		GDKfree(msks);
 	}
-	bn->batDirtydesc = true;
 	BATsetcount(bn, cnt);
 	TRC_DEBUG(ALGO, "hseq=" OIDFMT ", masked=" ALGOBATFMT ", selected=%s"
 		  " -> " ALGOBATFMT "\n",

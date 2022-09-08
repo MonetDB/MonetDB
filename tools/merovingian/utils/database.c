@@ -132,7 +132,13 @@ char* db_create(const char* dbname) {
 	/* without an .uplog file, Merovingian won't work, this
 	 * needs to be last to avoid race conditions */
 	snprintf(path, sizeof(path), "%s/%s/.uplog", dbfarm, dbname);
-	fclose(fopen(path, "w"));
+	if ((f = fopen(path, "w")) == NULL) {
+		snprintf(buf, sizeof(buf), "cannot create uplog file: %s",
+				strerror(errno));
+		free(dbfarm);
+		return(strdup(buf));
+	}
+	fclose(f);
 
 	free(dbfarm);
 	return(NULL);

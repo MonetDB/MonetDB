@@ -3136,7 +3136,7 @@ lsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 		   struct canditer *restrict ci1,
 		   struct canditer *restrict ci2,
 		   oid candoff1, oid candoff2,
-		   bool abort_on_error, const char *func)
+		   const char *func)
 {
 	BUN i, j, k;
 	BUN nils = 0;
@@ -3304,7 +3304,7 @@ lsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 }
 
 BAT *
-BATcalclsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, bool abort_on_error)
+BATcalclsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 {
 	lng t0 = 0;
 	BAT *bn;
@@ -3335,7 +3335,7 @@ BATcalclsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, bool abort_on_error)
 				  b2i.base, b2i.type, true,
 				  Tloc(bn, 0),
 				  &ci1, &ci2, b1->hseqbase, b2->hseqbase,
-				  abort_on_error, __func__);
+				  __func__);
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
 
@@ -3363,7 +3363,7 @@ BATcalclsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, bool abort_on_error)
 }
 
 BAT *
-BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, bool abort_on_error)
+BATcalclshcst(BAT *b, const ValRecord *v, BAT *s)
 {
 	lng t0 = 0;
 	BAT *bn;
@@ -3389,7 +3389,7 @@ BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, bool abort_on_error)
 				  &ci,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				  b->hseqbase, 0,
-				  abort_on_error, __func__);
+				  __func__);
 	bat_iterator_end(&bi);
 
 	if (nils == BUN_NONE) {
@@ -3414,7 +3414,7 @@ BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, bool abort_on_error)
 }
 
 BAT *
-BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, bool abort_on_error)
+BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s)
 {
 	lng t0 = 0;
 	BAT *bn;
@@ -3440,7 +3440,7 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, bool abort_on_error)
 				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				  &ci,
 				  0, b->hseqbase,
-				  abort_on_error, __func__);
+				  __func__);
 	bat_iterator_end(&bi);
 
 	if (nils == BUN_NONE) {
@@ -3465,8 +3465,7 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, bool abort_on_error)
 }
 
 gdk_return
-VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
-	   bool abort_on_error)
+VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	ret->vtype = lft->vtype;
 	if (lsh_typeswitchloop(VALptr(lft), lft->vtype, false,
@@ -3474,7 +3473,7 @@ VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 			       VALget(ret),
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
-			       0, 0, abort_on_error, __func__) == BUN_NONE)
+			       0, 0, __func__) == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -3491,7 +3490,7 @@ rsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 		   struct canditer *restrict ci1,
 		   struct canditer *restrict ci2,
 		   oid candoff1, oid candoff2,
-		   bool abort_on_error, const char *restrict func)
+		   const char *restrict func)
 {
 	BUN i, j, k;
 	BUN nils = 0;
@@ -3659,7 +3658,7 @@ rsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 }
 
 BAT *
-BATcalcrsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, bool abort_on_error)
+BATcalcrsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 {
 	lng t0 = 0;
 	BAT *bn;
@@ -3690,7 +3689,7 @@ BATcalcrsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, bool abort_on_error)
 				  b2i.base, b2i.type, true,
 				  Tloc(bn, 0),
 				  &ci1, &ci2, b1->hseqbase, b2->hseqbase,
-				  abort_on_error, __func__);
+				  __func__);
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
 
@@ -3718,7 +3717,7 @@ BATcalcrsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, bool abort_on_error)
 }
 
 BAT *
-BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, bool abort_on_error)
+BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s)
 {
 	lng t0 = 0;
 	BAT *bn;
@@ -3744,7 +3743,7 @@ BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, bool abort_on_error)
 				  &ci,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				  b->hseqbase, 0,
-				  abort_on_error, __func__);
+				  __func__);
 	bat_iterator_end(&bi);
 
 	if (nils == BUN_NONE) {
@@ -3769,7 +3768,7 @@ BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, bool abort_on_error)
 }
 
 BAT *
-BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, bool abort_on_error)
+BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s)
 {
 	lng t0 = 0;
 	BAT *bn;
@@ -3795,7 +3794,7 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, bool abort_on_error)
 				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				  &ci,
 				  0, b->hseqbase,
-				  abort_on_error, __func__);
+				  __func__);
 	bat_iterator_end(&bi);
 
 	if (nils == BUN_NONE) {
@@ -3820,8 +3819,7 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, bool abort_on_error)
 }
 
 gdk_return
-VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
-	   bool abort_on_error)
+VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	ret->vtype = lft->vtype;
 	if (rsh_typeswitchloop(VALptr(lft), lft->vtype, false,
@@ -3829,7 +3827,7 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 			       VALget(ret),
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
-			       0, 0, abort_on_error, __func__) == BUN_NONE)
+			       0, 0, __func__) == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -4375,7 +4373,7 @@ BATcalcifthenelse_intern(BATiter *bi,
 
 	dst = (void *) Tloc(bn, 0);
 	k = l = 0;
-	if (bn->tvarsized) {
+	if (bn->tvheap) {
 		assert((heap1 != NULL && width1 > 0) || (width1 == 0 && incr1 == 0));
 		assert((heap2 != NULL && width2 > 0) || (width2 == 0 && incr2 == 0));
 		if (ATOMstorage(bi->type) == TYPE_msk) {
@@ -4615,7 +4613,6 @@ BATcalcifthenelse_intern(BATiter *bi,
 	}
 
 	BATsetcount(bn, cnt);
-	bn->theap->dirty = true;
 
 	bn->tsorted = cnt <= 1;
 	bn->trevsorted = cnt <= 1;
