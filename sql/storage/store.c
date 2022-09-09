@@ -2293,9 +2293,8 @@ store_pending_changes(sqlstore *store, ulng oldest)
 			node *next = n->next;
 			sql_change *c = n->data;
 
-			if (!c->cleanup) {
-				_DELETE(c);
-			} else if (c->cleanup && c->cleanup(store, c, oldest)) {
+			assert(c->cleanup);
+			if (c->cleanup(store, c, oldest)) {
 				list_remove_node(store->changes, store, n);
 				_DELETE(c);
 			} else if (c->ts < oldest_changes) {
