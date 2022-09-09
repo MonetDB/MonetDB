@@ -4329,6 +4329,15 @@ read_file(MapiHdl hdl, uint64_t off, char *filename, bool binary)
 	(void) read_line(mid);
 }
 
+
+static void
+compute_sigint_handler(int signum)
+{
+	if (signum == SIGINT) {
+		printf("Caught sigint while computing. Ignoring\n");
+	}
+}
+
 /* Read ahead and cache data read.  Depending on the second argument,
    reading may stop at the first non-header and non-error line, or at
    a prompt.
@@ -4348,6 +4357,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 	char *line;
 	Mapi mid;
 	struct MapiResultSet *result;
+	void (*prev_handler)(int);
 
 	mid = hdl->mid;
 	assert(mid->active == hdl);
@@ -4357,16 +4367,32 @@ read_into_cache(MapiHdl hdl, int lookahead)
 		check_stream(mid, mid->to, "write error on stream", mid->error);
 	}
 	if ((result = hdl->active) == NULL)
+
+	prev_handler = signal(SIGINT, compute_sigint_handler);
+	if (prev_handler == SIG_ERR) {
+		perror("mapi_execute_internal: could not install signal handler");
+		prev_handler = NULL;
+	}
 		result = hdl->result;	/* may also be NULL */
+
 	for (;;) {
 		line = read_line(mid);
 		if (line == NULL) {
 			if (mid->from && mnstr_eof(mid->from)) {
 				mapi_log_record(mid, "unexpected end of file");
 				mapi_log_record(mid, __func__);
+
+				if (prev_handler && signal(SIGINT, prev_handler) == SIG_ERR) {
+					perror("mapi_execute_internal: Could not restore previous handler.");
+				}
 				close_connection(mid);
+
 				return mapi_setError(mid, "unexpected end of file", __func__, MERROR);
 			}
+			if (prev_handler && signal(SIGINT, prev_handler) == SIG_ERR) {
+				perror("mapi_execute_internal: Could not restore previous handler.");
+			}
+
 			return mid->error;
 		}
 		switch (*line) {
@@ -4417,6 +4443,10 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				}
 				continue;
 			}
+			if (prev_handler && signal(SIGINT, prev_handler) == SIG_ERR) {
+				perror("mapi_execute_internal: Could not restore previous handler.");
+			}
+
 			return mid->error;
 		case '!':
 			/* start a new result set if we don't have one
@@ -4452,10 +4482,18 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			if (lookahead > 0 &&
 			    (result->querytype == -1 /* unknown (not SQL) */ ||
 			     result->querytype == Q_TABLE ||
-			     result->querytype == Q_UPDATE))
+			     result->querytype == Q_UPDATE)) {
+				if (prev_handler && signal(SIGINT, prev_handler) == SIG_ERR) {
+					perror("mapi_execute_internal: Could not restore previous handler.");
+				}
+
 				return mid->error;
+			}
 			break;
 		}
+	}
+	if (prev_handler && signal(SIGINT, prev_handler) == SIG_ERR) {
+		perror("mapi_execute_internal: Could not restore previous handler.");
 	}
 }
 
@@ -4514,6 +4552,7 @@ mapi_execute_internal(MapiHdl hdl)
 	mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
 	check_stream(mid, mid->to, "write error on stream", mid->error);
 	mid->active = hdl;
+
 	return MOK;
 }
 
