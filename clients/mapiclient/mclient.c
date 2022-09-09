@@ -1444,7 +1444,8 @@ SQLrenderer(MapiHdl hdl)
 	stopped = false;
 	prev_handler = signal(SIGINT, renderer_sigint_handler);
 	if (prev_handler == SIG_ERR) {
-		perror("SQLrenderer: Could not install handler");
+		perror("SQLrenderer: Could not install signal handler");
+		prev_handler = NULL;
 	}
 
 	total = 0;
@@ -1666,7 +1667,7 @@ SQLrenderer(MapiHdl hdl)
 	}
 	mnstr_printf(toConsole, "\n");
 
-	if (signal(SIGINT, prev_handler) == SIG_ERR) {
+	if (prev_handler && signal(SIGINT, prev_handler) == SIG_ERR) {
 		perror("SQLrenderer: Could not restore previous handler.");
 	}
 	free(len);
@@ -2406,8 +2407,8 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 			if (mode != MAL)
 				while (length > 0 &&
 				       (*line == '\f' ||
-					*line == '\n' ||
-					*line == ' ')) {
+						*line == '\n' ||
+						*line == ' ')) {
 					line++;
 					length--;
 				}
