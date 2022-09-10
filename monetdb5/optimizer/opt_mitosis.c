@@ -16,7 +16,7 @@ str
 OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, limit, slimit, estimate = 0, pieces = 1, mito_parts = 0, mito_size = 0, row_size = 0, mt = -1, nr_cols = 0,
-		nr_aggrs = 0;
+		nr_aggrs = 0, nr_maps = 0;
 	str schema = 0, table = 0;
 	BUN r = 0, rowcnt = 0;	/* table should be sizeable to consider parallel execution*/
 	InstrPtr p, q, *old, target = 0;
@@ -53,6 +53,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			maxslices = threads;
 
 		nr_aggrs += (p->argc > 2 && getModuleId(p) == aggrRef);
+		nr_maps += (isMapOp(p));
 
 		if (p->argc > 2 && getModuleId(p) == aggrRef &&
 				getFunctionId(p) != subcountRef &&
@@ -158,8 +159,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 */
 	if (pieces <= 1){
 		/* improve memory usage estimation */
-		if (nr_cols > 1 || nr_aggrs > 1)
-			argsize = (nr_cols + nr_aggrs) * sizeof(lng);
+		if (nr_cols > 1 || nr_aggrs > 1 || nr_maps > 1)
+			argsize = (nr_cols + nr_aggrs + nr_maps) * sizeof(lng);
 		/* We haven't assigned the number of pieces.
 		 * Determine the memory available for this client
 		 */
