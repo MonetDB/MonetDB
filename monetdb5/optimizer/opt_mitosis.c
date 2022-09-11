@@ -173,7 +173,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		else {
 			memclaim= MCmemoryClaim();
 			if(memclaim == GDK_mem_maxsize){
-				m = GDK_mem_maxsize / (size_t) MCactiveClients() / argsize;
+				m = GDK_mem_maxsize / (size_t) MAL_MAXCLIENTS  / argsize;
 			} else
 				m = (GDK_mem_maxsize - memclaim) / argsize;
 		}
@@ -191,7 +191,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			/* the number of pieces affects SF-100, going beyond 8x increases
 			 * the optimizer costs beyond the execution time
 			 */
-			pieces = ((int) ceil((double)rowcnt / m / threads));
+			pieces = ((int) ceil((double)rowcnt / (m / threads)));
 			if (pieces <= threads)
 				pieces = threads;
 		} else if (rowcnt > MINPARTCNT) {
