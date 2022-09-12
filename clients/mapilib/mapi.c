@@ -4359,6 +4359,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 	struct MapiResultSet *result;
 	void (*prev_handler)(int);
 
+	prev_handler = NULL;
 	mid = hdl->mid;
 	assert(mid->active == hdl);
 	if (hdl->needmore) {
