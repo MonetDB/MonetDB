@@ -2850,7 +2850,7 @@ copyto_stmt:
 	  append_list(l, $6);
 	  append_string(l, $7);
 	  append_int(l, $5);
-	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
+	  $$ = _symbol_create_list( SQL_COPYINTO, l ); }
 //  1    2                    3    4      5        6
   | COPY query_expression_def INTO STDOUT opt_seps opt_null_string
 	{ dlist *l = L();
@@ -2859,7 +2859,7 @@ copyto_stmt:
 	  append_list(l, $5);
 	  append_string(l, $6);
 	  append_int(l, 0);
-	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
+	  $$ = _symbol_create_list( SQL_COPYINTO, l ); }
 //  1    2                    3    4              5      6                7
   | COPY query_expression_def INTO opt_endianness BINARY string_commalist opt_on_location
 	{ dlist *l = L();
@@ -2867,7 +2867,7 @@ copyto_stmt:
 	  append_int(l, $4);
 	  append_list(l, $6);
 	  append_int(l, $7);
-	  $$ = _symbol_create_list( SQL_BINCOPYTO, l ); }
+	  $$ = _symbol_create_list( SQL_BINCOPYINTO, l ); }
   ;
 
 opt_fwf_widths:
@@ -6303,7 +6303,7 @@ char *token2string(tokens token)
 	SQL(ATOM);
 	SQL(BETWEEN);
 	SQL(BINCOPYFROM);
-	SQL(BINCOPYTO);
+	SQL(BINCOPYINTO);
 	SQL(BINOP);
 	SQL(CACHE);
 	SQL(CALL);
@@ -6320,7 +6320,7 @@ char *token2string(tokens token)
 	SQL(CONSTRAINT);
 	SQL(COPYFROM);
 	SQL(COPYLOADER);
-	SQL(COPYTO);
+	SQL(COPYINTO);
 	SQL(CREATE_FUNC);
 	SQL(CREATE_INDEX);
 	SQL(CREATE_ROLE);

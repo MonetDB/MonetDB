@@ -2097,7 +2097,7 @@ rel_updates(sql_query *query, symbol *s)
 		sql->type = Q_SCHEMA;
 	}
 		break;
-	case SQL_COPYTO:
+	case SQL_COPYINTO:
 	{
 		dlist *l = s->data.lval;
 
@@ -2105,7 +2105,7 @@ rel_updates(sql_query *query, symbol *s)
 		sql->type = Q_UPDATE;
 	}
 		break;
-	case SQL_BINCOPYTO:
+	case SQL_BINCOPYINTO:
 	{
 		dlist *l = s->data.lval;
 		symbol *qry = l->h->data.sym;
