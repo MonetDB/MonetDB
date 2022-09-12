@@ -191,4 +191,11 @@ typedef enum {
 	endian_native = 3,
 } endianness;
 
+#ifdef WORDS_BIGENDIAN
+#define OUR_ENDIANNESS endian_big
+#else
+#define OUR_ENDIANNESS endian_little
+#endif
+
+
 #endif

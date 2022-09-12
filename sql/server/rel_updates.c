@@ -1763,12 +1763,7 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int on
 	if (!collist)
 		return NULL;
 
-	bool do_byteswap =
-		#ifdef WORDS_BIGENDIAN
-			endian == endian_little;
-		#else
-			endian == endian_big;
-		#endif
+	bool do_byteswap = (endian != endian_native && endian != OUR_ENDIANNESS);
 
 	f->res = table_column_types(sql->sa, t);
  	sql_find_subtype(&strtpe, "varchar", 0, 0);
