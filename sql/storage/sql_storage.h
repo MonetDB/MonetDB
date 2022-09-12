@@ -342,6 +342,7 @@ extern lng store_hot_snapshot_to_stream(struct sqlstore *store, stream *s);
 extern ulng store_function_counter(struct sqlstore *store);
 
 extern ulng store_oldest(struct sqlstore *store);
+extern ulng *store_get_active(struct sqlstore *store);
 extern ulng store_get_timestamp(struct sqlstore *store);
 extern void store_manager(struct sqlstore *store);
 
@@ -496,6 +497,8 @@ typedef struct sqlstore {
 	int debug;				/* debug mask */
 	store_type active_type;
 	list *changes;			/* pending changes to cleanup */
+	list *changesBlocks; 	/* aggregates changes in blocks to speed up iteration while cleaning up */
+	node *lastProcessedChange; /* pointer to the last processed change for changesBlocks */
 	sql_hash *dependencies; /* pending dependencies created to cleanup */
 	sql_hash *depchanges;	/* pending dependencies changes to cleanup */
 	list *seqchanges;		/* pending sequence number changes to be add to the first commiting transaction */
@@ -531,6 +534,12 @@ typedef struct sql_change {
 	tc_commit_fptr commit;	/* callback to commit or rollback the changes */
 	tc_cleanup_fptr cleanup;/* callback to cleanup changes */
 } sql_change;
+
+typedef struct sql_change_block {
+	node *start; /* pointer to the start of the block */
+	node *end; /* pointer to the end of the block */
+	ulng ts; /* for block building purposes it could have been the timestamp of any sql_change in block, however we store the oldest one to help compute the store->oldest_pending */
+} sql_change_block;
 
 extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log);
 extern int tr_version_of_parent(sql_trans *tr, ulng ts);
