@@ -410,7 +410,7 @@ export_column(backend *be, BAT *b, bool byteswap, str filename, bool onclient)
 
 	if (onclient) {
 		(void)be;
-		assert(0 && "on client not implemented yet");
+		s = mapi_request_download(filename, true, be->mvc->scanner.rs, be->mvc->scanner.ws);
 	} else {
 		s = open_wstream(filename);
 	}
