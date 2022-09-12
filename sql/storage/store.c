@@ -2235,7 +2235,7 @@ id_hash_clear_older(sql_hash *h, ulng oldest)
 	if (h->entries == 0)
 		return;
 	for (int i = 0; i < h->size; i++) {
-		sql_hash_e *e = h->buckets[i], *c = NULL, *first = NULL;
+		sql_hash_e *e = h->buckets[i], *last = NULL, *first = NULL;
 
 		while (e) {
 			sql_hash_e *next = e->chain;
@@ -2246,16 +2246,16 @@ id_hash_clear_older(sql_hash *h, ulng oldest)
 				_DELETE(e);
 				h->entries--;
 			} else {
-				if (c)
-					c->chain = e;
+				if (last)
+					last->chain = e;
 				else
 					first = e;
-				c = e;
+				last = e;
 			}
 			e = next;
 		}
-		if (c)
-			c->chain = NULL;
+		if (last)
+			last->chain = NULL;
 		h->buckets[i] = first;
 	}
 }
@@ -2263,7 +2263,7 @@ id_hash_clear_older(sql_hash *h, ulng oldest)
 static void
 store_pending_changes(sqlstore *store, ulng oldest)
 {
-	ulng oldest_changes = store_get_timestamp(store);
+	ulng oldest_changes = store_get_timestamp(store);	
 	if (!list_empty(store->changes)) { /* lets first cleanup old stuff */
 		for(node *n=store->changes->h; n; ) {
 			node *next = n->next;
