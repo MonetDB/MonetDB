@@ -5837,11 +5837,7 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 		list_append(slist, export);
 	} else if (tpe == TYPE_int) {
 		endianness endian = take_atom_arg(&argnode, TYPE_int)->val.ival;
-#ifdef WORDS_BIGENDIAN
-		bool do_byteswap = endian == endian_little;
-#else
-		bool do_byteswap = endian == endian_big;
-#endif
+		bool do_byteswap = (endian != endian_native && endian != OUR_ENDIANNESS);
 		int on_client = take_atom_arg(&argnode, TYPE_int)->val.ival;
 		assert(sub->type == st_list);
 		list *collist = sub->op4.lval;
