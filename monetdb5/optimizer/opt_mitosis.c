@@ -173,7 +173,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		else {
 			memclaim= MCmemoryClaim();
 			if(memclaim == GDK_mem_maxsize){
-				m = GDK_mem_maxsize / (size_t) MAL_MAXCLIENTS  / argsize;
+				m = GDK_mem_maxsize / (size_t) MCactiveClients()  / argsize;
 			} else
 				m = (GDK_mem_maxsize - memclaim) / argsize;
 		}
@@ -197,7 +197,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		} else if (rowcnt > MINPARTCNT) {
 		/* exploit parallelism, but ensure minimal partition size to
 		 * limit overhead */
-			pieces = MIN((int) ceil((double)rowcnt / MINPARTCNT), threads);
+			pieces = MIN((int) ceil((double)rowcnt / MINPARTCNT), 4 * threads);
 		}
 	}
 
