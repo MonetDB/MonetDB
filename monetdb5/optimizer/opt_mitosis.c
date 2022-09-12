@@ -11,6 +11,9 @@
 #include "mal_interpreter.h"
 #include "gdk_utils.h"
 
+#define MIN_SLIZE_SIZE 100000	/* minimal record count per partition */
+#define MAX_SLICES2THREADS_RATIO 4	/* There should be at most this multiple more of slices then threads */
+
 
 str
 OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -187,17 +190,17 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			 * i.e., (threads*(rowcnt/pieces) <= m),
 			 * i.e., (rowcnt/pieces <= m/threads),
 			 * i.e., (pieces => rowcnt/(m/threads))
-			 * (assuming that (m > threads*MINPARTCNT)) */
+			 * (assuming that (m > threads*MIN_SLIZE_SIZE)) */
 			/* the number of pieces affects SF-100, going beyond 8x increases
 			 * the optimizer costs beyond the execution time
 			 */
 			pieces = ((int) ceil((double)rowcnt / (m / threads)));
 			if (pieces <= threads)
 				pieces = threads;
-		} else if (rowcnt > MINPARTCNT) {
+		} else if (rowcnt > MIN_SLIZE_SIZE) {
 		/* exploit parallelism, but ensure minimal partition size to
 		 * limit overhead */
-			pieces = MIN((int) ceil((double)rowcnt / MINPARTCNT), 4 * threads);
+			pieces = MIN((int) ceil((double)rowcnt / MIN_SLIZE_SIZE), MAX_SLICES2THREADS_RATIO * threads);
 		}
 	}
 
