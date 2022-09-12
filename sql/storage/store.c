@@ -3944,10 +3944,15 @@ sql_trans_commit(sql_trans *tr)
 				ok = store->logger_api.log_tend(store); /* wal end */
 		}
 		store_lock(store);
-		commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
-		if (tr->parent)
+
+		if (tr->parent) {
+			commit_ts = oldest = tr->parent->tid;
 			tr->parent->logchanges += tr->logchanges;
-		oldest = tr->parent ? commit_ts : store_oldest(store);
+		}
+		else {
+			commit_ts = store_timestamp(store);
+			oldest = store_oldest(store);
+		}
 		tr->logchanges = 0;
 		TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
 		/* apply committed changes */
