@@ -57,7 +57,7 @@ function(monetdb_default_compiler_options)
       add_option_if_available("-Wundef")
       add_option_if_available("-Wformat=2")
       add_option_if_available("-Wformat-overflow=1")
-      add_option_if_available("-Wno-format-truncation")
+      #add_option_if_available("-Wno-format-truncation")
       add_option_if_available("-Wno-format-nonliteral")
       #add_option_if_available("-Wformat-signedness") 	-- numpy messes this up
       add_option_if_available("-Wno-cast-function-type")

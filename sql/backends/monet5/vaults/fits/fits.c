@@ -683,7 +683,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fitsfile *fptr;  /* pointer to the FITS file */
 	int status = 0, i, j, hdutype, hdunum = 1, cnum = 0, bitpixnumber = 0;
 	oid fid, tid, cid, rid = oid_nil;
-	char tname[BUFSIZ], *tname_low = NULL, *s, bname[BUFSIZ], stmt[BUFSIZ];
+	char tname[BUFSIZ], *tname_low = NULL, *s, bname[BUFSIZ-100], stmt[BUFSIZ];
 	long tbcol; /* type long used by fits library */
 	char cname[BUFSIZ], tform[BUFSIZ], tunit[BUFSIZ], tnull[BUFSIZ], tdisp[BUFSIZ];
 	char *esc_cname, *esc_tform, *esc_tunit;
@@ -758,7 +758,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* SQL table name - the name of FITS extention */
 		fits_read_key(fptr, TSTRING, "EXTNAME", tname, NULL, &status);
 		if (status) {
-			snprintf(tname, BUFSIZ, "%s_%d", bname, i);
+			snprintf(tname, sizeof(tname), "%s_%d", bname, i);
 			tname_low = toLower(tname);
 			status = 0;
 		}else  { /* check table name for existence in the fits catalog */
@@ -768,7 +768,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			/* or as regular SQL table */
 			tbl = mvc_bind_table(m, sch, tname_low);
 			if (!is_oid_nil(rid) || tbl) {
-				snprintf(tname, BUFSIZ, "%s_%d", bname, i);
+				snprintf(tname, sizeof(tname), "%s_%d", bname, i);
 				tname_low = toLower(tname);
 			}
 		}
@@ -880,7 +880,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				fits_close_file(fptr, &status);
 				throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			snprintf(stmt, BUFSIZ, FITS_INS_COL, (int)cid, esc_cname, esc_tform, esc_tunit, j, (int)tid);
+			snprintf(stmt, sizeof(stmt), FITS_INS_COL, (int)cid, esc_cname, esc_tform, esc_tunit, j, (int)tid);
 			GDKfree(esc_tunit);
 			GDKfree(esc_tform);
 			GDKfree(esc_cname);
