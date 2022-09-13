@@ -4368,13 +4368,13 @@ read_into_cache(MapiHdl hdl, int lookahead)
 		check_stream(mid, mid->to, "write error on stream", mid->error);
 	}
 	if ((result = hdl->active) == NULL)
+		result = hdl->result;	/* may also be NULL */
 
 	prev_handler = signal(SIGINT, compute_sigint_handler);
 	if (prev_handler == SIG_ERR) {
 		perror("mapi_execute_internal: could not install signal handler");
 		prev_handler = NULL;
 	}
-		result = hdl->result;	/* may also be NULL */
 
 	for (;;) {
 		line = read_line(mid);
@@ -4492,9 +4492,6 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			}
 			break;
 		}
-	}
-	if (prev_handler && signal(SIGINT, prev_handler) == SIG_ERR) {
-		perror("mapi_execute_internal: Could not restore previous handler.");
 	}
 }
 
