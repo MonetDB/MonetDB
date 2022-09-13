@@ -4506,18 +4506,6 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	return ok;
 }
 
-static int
-gc_delta( sql_store Store, sql_change *change, ulng oldest)
-{
-	sqlstore *store = Store;
-	sql_delta *n = change->data;
-	(void)store;
-	(void)oldest;
-
-	destroy_delta(n, true);
-	return 1;
-}
-
 /* only rollback (content version) case for now */
 static int
 gc_col( sqlstore *store, sql_change *change, ulng oldest, bool cleanup)
@@ -4534,26 +4522,20 @@ gc_col( sqlstore *store, sql_change *change, ulng oldest, bool cleanup)
 		return 0;
 	sql_delta *d = (sql_delta*)change->data;
 	if (d->next) {
-		int ok = LOG_OK;
 
 		assert(!cleanup);
 		if (d->cs.ts > oldest)
-			return ok; /* cannot cleanup yet */
+			return LOG_OK; /* cannot cleanup yet */
 
-		sql_delta *n = d->next;
-		if (n->cs.ucnt && !n->cs.merged) {
-			lock_column(store, c->base.id); /* lock for concurrent updates (appends) */
-			ok = merge_delta(n);
-			unlock_column(store, c->base.id);
-		} else if (d && d->cs.ucnt && !d->cs.merged) {
-			lock_column(store, c->base.id); /* lock for concurrent updates (appends) */
-			ok = merge_delta(d);
-			unlock_column(store, c->base.id);
-		}
+		// d is oldest reachable delta
+		if (d->next) // Unreachable can immediately be destroyed.
+			destroy_delta(d->next, true);
+
 		d->next = NULL;
-		change->cleanup = &gc_delta;
-		change->data = n;
-		return ok;
+		lock_column(store, c->base.id); /* lock for concurrent updates (appends) */
+		(void) merge_delta(d);
+		unlock_column(store, c->base.id);
+		return LOG_OK;
 	}
 	if (cleanup)
 		column_destroy(store, c);
@@ -4588,26 +4570,20 @@ gc_idx( sqlstore *store, sql_change *change, ulng oldest, bool cleanup)
 		return 0;
 	sql_delta *d = (sql_delta*)change->data;
 	if (d->next) {
-		int ok = LOG_OK;
 
 		assert(!cleanup);
 		if (d->cs.ts > oldest)
-			return ok; /* cannot cleanup yet */
+			return LOG_OK; /* cannot cleanup yet */
 
-		sql_delta *n = d->next;
-		if (n->cs.ucnt && !n->cs.merged) {
-			lock_column(store, i->base.id); /* lock for concurrent updates (appends) */
-			ok = merge_delta(n);
-			unlock_column(store, i->base.id);
-		} else if (d && d->cs.ucnt && !d->cs.merged) {
-			lock_column(store, i->base.id); /* lock for concurrent updates (appends) */
-			ok = merge_delta(d);
-			unlock_column(store, i->base.id);
-		}
+		// d is oldest reachable delta
+		if (d->next) // Unreachable can immediately be destroyed.
+			destroy_delta(d->next, true);
+
 		d->next = NULL;
-		change->cleanup = &gc_delta;
-		change->data = n;
-		return ok;
+		lock_column(store, i->base.id); /* lock for concurrent updates (appends) */
+		(void) merge_delta(d);
+		unlock_column(store, i->base.id);
+		return LOG_OK;
 	}
 	if (cleanup)
 		idx_destroy(store, i);
