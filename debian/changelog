@@ -1,3 +1,308 @@
+monetdb (11.45.1) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#6982: Wrong constraint name in error message of constraint violation
+  * GH#7209: Configuration option for merovingian.log
+  * GH#7225: Invalid memory access when extending a BAT during appends
+  * GH#7227: Date calculations, bug or feature
+  * GH#7273: Concurrent reads and writes causes "BATproject2: does not match
+    always" error
+  * GH#7282: call sys.dump_table_data(); fails
+  * GH#7285: C-UDFs: aggr_group.count has wrong value (number of input rows
+    instead of number of groups).
+  * GH#7296: Implictly cast a timestamp string to DATE when appropriate
+  * GH#7297: Parsing partial dates behaves unpredictable
+  * GH#7306: ODBC Driver Assertion `stmt->Dbc->FirstStmt' Failed
+  * GH#7314: ODBC Driver : please mask/hide password
+  * GH#7318: distinct in a subquery not working properly
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 13 Sep 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * odbc: Improved SQLSetPos(). It now allows RowNumber to be 0 when Operation
+    is SQL_POSITION.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Thu, 1 Sep 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * sql: Extended the built-in profiler to emit non-MAL events related to query
+    compilation, optimization, transactions and client connections. To
+    minimize, simplify and optimize the process of generating and processing
+    profiler output, only the events marking the end of an operation are
+    emitted in most cases and the emitted json messages themselves are
+    trimmed down to their essential fields. Furthermore the MAL instruction
+    profiler.openstream now has an overload that takes a single string
+    argument which can be set to "min" to turn on the profiler in minimal
+    mode which causes it to only emit general events and excludes individual
+    MAL instruction execution events from the profiler streams.
+
+ -- Lucas Pereira <lucas.pereira@monetdbsolutions.com>  Fri, 26 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * sql: Extended system view sys.users with columns: schema_path, max_memory,
+    max_workers, optimizer and default_role.
+    Extended system table sys.db_user_info with columns: schema_path,
+    max_memory, max_workers, optimizer, default_role and password.
+    The password is encrypted. This table can only be queried when the
+    user has been granted the select privilege from monetdb.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Thu, 25 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * gdk: The median_avg and quantile_avg returned bogus results in the
+    non-grouped case (i.e. something like SELECT sys.median_avg(i) FROM t).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 24 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * merovingian: In certain cases (when an mserver5 process exits right after producing
+    a message) the log message was logged over and over again, causing
+    monetdbd to use 100% CPU.  This has been fixed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 24 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * sql: CREATE USER statement has been extended to take more optional arguments
+    like MAX_MEMORY, MAX_WORKERS, OPTIMIZER, DEFAULT ROLE. ALTER USER statement
+    has also been extended with DEFAULT ROLE.
+
+ -- svetlin <svetlin.stalinov@monetdbsolutions.com>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * sql: A new function sys.url_extract_host(string, bool) which returns the
+    host name from the given URL has been implemented.  The bool argument,
+    if true, causes the www. prefix to be removed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * gdk: The abort_on_error parameter of all GDK-level functions has been removed.
+    Errors (e.g. overflow) now also results in an error.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * sql: The user authentication tables are now administered by the SQL layer
+    instead of the MAL layer.  This means that changing (adding, dropping,
+    altering) user and role information is now transaction-safe.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * odbc: Improved ODBC Error/Warning messages. They now include the name of the
+    Data Source as required by the ODBC specification:
+    [MonetDB][ODBC driver VERSION][data-source-name] data-source-supplied-text
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * odbc: Improved MonetDB ODBC Data Source Configuration dialog on MS Windows by
+    hiding the typed in password text. It now shows dots for the characters.
+    This fixes request  https://github.com/MonetDB/MonetDB/issues/7314
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * odbc: Changed output of TABLE_CAT or PROCEDURE_CAT result columns as returned
+    by ODBC functions: SQLTables(), SQLColumns(), SQLPrimaryKeys(),
+    SQLForeignKeys(), SQLStatistics(), SQLTablePrivileges(),
+    SQLColumnPrivileges(), SQLProcedures() and SQLProcedureColumns().
+    They used to return the static database name but now they will return
+    NULL as MonetDB does not support CATALOG objects or qualifiers.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * odbc: Removed the possibility to retrieve or set the CURRENT_CATALOG
+    via SQLGetConnectAttr(hdbc, SQL_ATTR_CURRENT_CATALOG, ...) and
+    SQLSetConnectAttr(hdbc, SQL_ATTR_CURRENT_CATALOG, ...) as MonetDB does
+    not support CATALOG objects (no SQL support for: CREATE CATALOG abc
+    or SET CATALOG abc) and therefore there is no CURRENT_CATALOG.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * gdk: Implemented BC/AD (and BCE/CE) suffixes when parsing dates.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * odbc: Corrected ODBC functions SQLTablePrivileges() and SQLColumnPrivileges()
+    for local temporary tables located in schema tmp. They did not return
+    any rows when the temporary table had privileges set. Now they do return
+    rows as expected.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * odbc: Improved SQLProcedures() and SQLProcedureColumns(). They now list
+    information also for all built-in system procedures and functions, not
+    only those created via SQL. Also corrected the value of ORDINAL_POSITION
+    for scalar function arguments. It would start at 2 instead of 1.
+  * odbc: Extended output of SQLProcedures() and SQLProcedureColumns() resultsets
+    with an extra column SPECIFIC_NAME. This column contains the name which
+    uniquely identifies this procedure or function within its schema. As
+    MonetDB supports overloaded procedures and functions, the combination of
+    PROCEDURE_SCHEM and PROCEDURE_NAME is not enough to uniquely identify
+    a procedure or function. This extra column allows you to correctly
+    match the corresponding rows returned by SQLProcedureColumns() with the
+    specific rows of SQLProcedures(). This extra column SPECIFIC_NAME is
+    implemented similar to the JDBC DatabaseMetaData methods getProcedures()
+    and getProcedureColumns().
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * odbc: For SQLForeignKeys() corrected the output of columns UPDATE_RULE and
+    DELETE_RULE. These columns used to always return 3 (= SQL_NO_ACTION)
+    but now they will report the action codes as specified in the FOREIGN KEY
+    CONSTRAINT construction.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * odbc: Fixed issue in function SQLProcedureColumns(). When the argument ColumnName
+    was not empty it generated an invalid SQL query which failed with error:
+     SELECT: no such column 'c.name'. This has been resolved.
+  * odbc: Corrected implementation of SQLGetInfo(hdbc, SQL_MAX_DRIVER_CONNECTIONS, ...).
+    It used to always return 64. Now it returns the value from the MonetDB server.
+  * odbc: Changed the column names case of the result sets as returned by
+    SQLTables(), SQLColumns(), SQLSpecialColumns(), SQLPrimaryKeys(),
+    SQLForeignKeys(), SQLStatistics(), SQLTablePrivileges(),
+    SQLColumnPrivileges(), SQLProcedures() and SQLProcedureColumns(). The
+    column names where all in lowercase but the ODBC specification defines
+    them in uppercase, so changed them to uppercase.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * gdk: The interface for using strimps has not changed (create an imprint index
+    on a column of a read only table), but now construction happens at the
+    beginning of the first query that uses the strimp and is performed in
+    a multithreaded manner.
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * odbc: Corrected SQLSpecialColumns(..., SQL_BEST_ROWID, ...). Previously it only
+    returned rows when the table had a primary key. Now it also returns
+    rows when a table has a unique constraint.
+  * odbc: Corrected SQLStatistics(..., SQL_INDEX_ALL, ...). Previously it only
+    returned rows when the table had a primary or unique key. Now it also
+    returns rows for indices which are not based on a key.
+  * odbc: Corrected SQLStatistics(..., SQL_ENSURE). It now returns CARDINALITY
+    information for columns based on a primary/unique key. Previously it
+    always returned NULL for the CARDINALITY result column.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * gdk: Implemented the use of strimps for NOT LIKE queries. The idea is to
+    run the corresponding LIKE query using strimps and take the complement
+    of the result. We keep around NULL values both during strimp filtering
+    and during the pcre part of the LIKE query so that they get discarded
+    automatically when we take the complement.
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * monetdb5: Disabled volcano pipeline due to known issues.
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * odbc: Corrected ODBC functions SQLPrimaryKeys(), SQLSpecialColumns() and
+    SQLStatistics() for local temporary tables located in schema tmp. They did
+    not return any rows when the temp table had a primary or unique key or
+    index. Now they do return rows as expected.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * sql: Added the UNLOGGED TABLE feature.
+
+ -- Nuno Faria <nunofpfaria@gmail.com>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * gdk: The function BBPkeepref now gets a BAT pointer as argument instead of
+    a bat id.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * gdk: Get rid of macro Tsize, use ->twidth instead.
+  * gdk: Get rid of macro BUNlast, just use BATcount instead.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * merovingian: Added "loglevel" property for monetdbd logging (to merovingian.log).
+    The loglevel can be set to: error or warning or information or debug.
+    The loglevel property can be changed dynamically via command:
+     monetdbd set loglevel=warning /path/to/dbfarm
+    Default the loglevel is set to: information
+    When loglevel is error, only errors are logged.
+    When loglevel is warning, errors and warnings are logged.
+    When loglevel is information, errors and warnings and information messages
+    are logged.  When loglevel is debug, all messages are logged.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * merovingian: There is now a loadmodules property that can be used to add --loadmodule
+    arguments to the mserver5 command line.  See the monetdb and mserver5
+    manual pages.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * sql: Removed functions sys.index and sys.strings.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * gdk: The BLOB type has been moved into the GDK layer.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 19 Aug 2022 11:15:27 +0200
+
+monetdb (11.45.1) unstable; urgency=low
+
+  * gdk: When adding or subtracting months from a date or timestamp value,
+    clamp the result to the calculated month instead of wrapping to the
+    beginning of the next month.  See bug 7227.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 19 Aug 2022 11:15:27 +0200
+
 monetdb (11.43.21) unstable; urgency=low
 
   * Rebuilt.
