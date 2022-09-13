@@ -4127,8 +4127,7 @@ merge_cs( column_storage *cs)
 		temp_destroy(cs->uvbid);
 		cs->uibid = e_bat(TYPE_oid);
 		cs->uvbid = e_bat(cur->ttype);
-		if (cs->uibid == BID_NIL || cs->uvbid == BID_NIL)
-			ok = LOG_ERR;
+		assert(cs->uibid != BID_NIL && cs->uvbid != BID_NIL); // Should be pre-allocated.
 		cs->ucnt = 0;
 		bat_destroy(ui);
 		bat_destroy(uv);
@@ -4192,7 +4191,7 @@ savepoint_commit_delta( sql_delta *delta, ulng commit_ts)
 	return delta;
 }
 
-static int
+static void
 rollback_delta(sql_trans *tr, sql_delta *delta, int type)
 {
 	(void)tr;
@@ -4202,10 +4201,8 @@ rollback_delta(sql_trans *tr, sql_delta *delta, int type)
 		temp_destroy(delta->cs.uvbid);
 		delta->cs.uibid = e_bat(TYPE_oid);
 		delta->cs.uvbid = e_bat(type);
-		if (delta->cs.uibid == BID_NIL || delta->cs.uvbid == BID_NIL)
-			return LOG_ERR;
+		assert(delta->cs.uibid != BID_NIL && delta->cs.uvbid != BID_NIL); // Should be pre-allocated.
 	}
-	return LOG_OK;
 }
 
 static int
@@ -4237,7 +4234,7 @@ commit_update_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 			}
 		} else { /* rollback */
 			if (c->t->commit_action == CA_COMMIT/* || c->t->commit_action == CA_PRESERVE*/) {
-				ok = rollback_delta(tr, delta, c->type.type->localtype);
+				rollback_delta(tr, delta, c->type.type->localtype);
 			} else if (clear_cs(tr, &delta->cs, true, isTempTable(c->t)) == BUN_NONE) {
 				ok = LOG_ERR; /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
 			}
@@ -4348,7 +4345,7 @@ commit_update_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
 			}
 		} else { /* rollback */
 			if (i->t->commit_action == CA_COMMIT/* || i->t->commit_action == CA_PRESERVE*/) {
-				ok = rollback_delta(tr, delta, type);
+				rollback_delta(tr, delta, type);
 			} else if (clear_cs(tr, &delta->cs, true, isTempTable(i->t)) == BUN_NONE) {
 				ok = LOG_ERR; /* CA_DELETE as CA_DROP's are gone already */
 			}
