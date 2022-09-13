@@ -4508,7 +4508,7 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 
 /* only rollback (content version) case for now */
 static int
-gc_col( sqlstore *store, sql_change *change, ulng oldest, bool cleanup)
+gc_col( sqlstore *store, sql_change *change, ulng oldest, bool drop)
 {
 	sql_column *c = (sql_column*)change->obj;
 
@@ -4523,7 +4523,7 @@ gc_col( sqlstore *store, sql_change *change, ulng oldest, bool cleanup)
 	sql_delta *d = (sql_delta*)change->data;
 	if (d->next) {
 
-		assert(!cleanup);
+		assert(!drop);
 		if (d->cs.ts > oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
@@ -4537,7 +4537,7 @@ gc_col( sqlstore *store, sql_change *change, ulng oldest, bool cleanup)
 		unlock_column(store, c->base.id);
 		return LOG_OK;
 	}
-	if (cleanup)
+	if (drop)
 		column_destroy(store, c);
 	return 1;
 }
@@ -4556,7 +4556,7 @@ tc_gc_drop_col( sql_store Store, sql_change *change, ulng oldest)
 }
 
 static int
-gc_idx( sqlstore *store, sql_change *change, ulng oldest, bool cleanup)
+gc_idx( sqlstore *store, sql_change *change, ulng oldest, bool drop)
 {
 	sql_idx *i = (sql_idx*)change->obj;
 
@@ -4571,7 +4571,7 @@ gc_idx( sqlstore *store, sql_change *change, ulng oldest, bool cleanup)
 	sql_delta *d = (sql_delta*)change->data;
 	if (d->next) {
 
-		assert(!cleanup);
+		assert(!drop);
 		if (d->cs.ts > oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
@@ -4585,7 +4585,7 @@ gc_idx( sqlstore *store, sql_change *change, ulng oldest, bool cleanup)
 		unlock_column(store, i->base.id);
 		return LOG_OK;
 	}
-	if (cleanup)
+	if (drop)
 		idx_destroy(store, i);
 	return 1;
 }
