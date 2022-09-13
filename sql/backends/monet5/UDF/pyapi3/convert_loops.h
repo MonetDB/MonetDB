@@ -117,7 +117,7 @@
 			if (batstore == STORE_MMAPABS) {                                   \
 				/* If we are taking data from a MMAP file, set the filename to \
 				 * the absolute path */                                        \
-				char address[100];                                             \
+				char address[sizeof(bat->theap->filename)-4];                  \
 				GDKmmapfile(address, sizeof(address), ret->mmap_id);           \
 				strconcat_len(bat->theap->filename,                            \
 							  sizeof(bat->theap->filename),                    \

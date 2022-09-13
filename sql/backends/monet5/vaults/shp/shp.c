@@ -194,13 +194,14 @@ SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	str fname = *(str*)getArgReference(stk, pci, 1);
 	/* SHP-level descriptor */
-	char buf[BUFSIZ], temp_buf[BUFSIZ], *s=buf;
+	char buf[BUFSIZ], temp_buf[BUFSIZ-100], *s=buf;
 	int  i=0, shpid = 0;
 	oid fid, rid = oid_nil;
 	GDALWConnection shp_conn;
 	GDALWConnection * shp_conn_ptr = NULL;
 	GDALWSimpleFieldDef * field_definitions;
 	GDALWSpatialInfo spatial_info;
+	size_t pos;
 
 	char *nameToLowerCase = NULL;
 
@@ -270,18 +271,19 @@ SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* create the table that will store the data of the shape file */
 	temp_buf[0]='\0';
+	pos = 0;
 	for (i=0 ; i<shp_conn.numFieldDefinitions ; i++) {
 		nameToLowerCase = toLower(field_definitions[i].fieldName);
 		if (strcmp(field_definitions[i].fieldType, "Integer") == 0) {
-			sprintf(temp_buf + strlen(temp_buf), "\"%s\" INT, ", nameToLowerCase);
+			pos += snprintf(temp_buf + pos, sizeof(temp_buf) - pos, "\"%s\" INT, ", nameToLowerCase);
 		} else if (strcmp(field_definitions[i].fieldType, "Real") == 0) {
-			sprintf(temp_buf + strlen(temp_buf), "\"%s\" FLOAT, ", nameToLowerCase);
+			pos += snprintf(temp_buf + pos, sizeof(temp_buf) - pos, "\"%s\" FLOAT, ", nameToLowerCase);
 #if 0
 		} else if (strcmp(field_definitions[i].fieldType, "Date") == 0) {
-			sprintf(temp_buf + strlen(temp_buf), "\"%s\" STRING, ", nameToLowerCase);
+			pos += snprintf(temp_buf + pos, sizeof(temp_buf) - pos, "\"%s\" STRING, ", nameToLowerCase);
 #endif
-        	} else
-			sprintf(temp_buf + strlen(temp_buf), "\"%s\" STRING, ", nameToLowerCase);
+		} else
+			pos += snprintf(temp_buf + pos, sizeof(temp_buf) - pos, "\"%s\" STRING, ", nameToLowerCase);
 		GDKfree(nameToLowerCase);
 	}
 
