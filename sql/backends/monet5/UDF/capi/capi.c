@@ -443,9 +443,9 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	size_t i = 0, j = 0;
 	char argbuf[64];
 	char buf[8192];
-	char fname[BUFSIZ];
-	char oname[BUFSIZ];
-	char libname[BUFSIZ];
+	char *fname;
+	char *oname;
+	char *libname;
 	char error_buf[BUFSIZ];
 	char total_error_buf[8192];
 	size_t error_buffer_position = 0;
@@ -681,7 +681,6 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		// we place the temporary files in the DELDIR directory
 		// because this will be removed again upon server startup
 		const int RANDOM_NAME_SIZE = 32;
-		char *path = NULL;
 		const char *prefix = TEMPDIR_NAME DIR_SEP_STR;
 		size_t prefix_size = strlen(prefix);
 		char *deldirpath;
@@ -693,27 +692,27 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 										   (sizeof(valid_path_characters) - 1)];
 		}
 		buf[i] = '\0';
-		path = GDKfilepath(0, BATDIR, buf, "c");
-		if (!path) {
+		fname = GDKfilepath(0, BATDIR, buf, "c");
+		if (fname == NULL) {
 			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 			goto wrapup;
 		}
-		strcpy(fname, path);
-		strcpy(oname, fname);
+		oname = GDKstrdup(fname);
+		if (oname == NULL) {
+			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+			goto wrapup;
+		}
 		oname[strlen(oname) - 1] = 'o';
-		GDKfree(path);
 
 		memmove(buf + strlen(SO_PREFIX) + prefix_size, buf + prefix_size,
 				i + 1 - prefix_size);
 		memcpy(buf + prefix_size, SO_PREFIX, sizeof(char) * strlen(SO_PREFIX));
-		path =
+		libname =
 			GDKfilepath(0, BATDIR, buf, SO_EXT[0] == '.' ? &SO_EXT[1] : SO_EXT);
-		if (!path) {
+		if (libname == NULL) {
 			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 			goto wrapup;
 		}
-		strcpy(libname, path);
-		GDKfree(path);
 
 		// if DELDIR directory does not exist, create it
 		deldirpath = GDKfilepath(0, NULL, TEMPDIR, NULL);
@@ -879,6 +878,8 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		// we use popen to capture any error output
 		snprintf(buf, sizeof(buf), "%s %s -c -fPIC %s %s -o %s 2>&1 >/dev/null",
 				 c_compiler, extra_cflags ? extra_cflags : "", compilation_flags, fname, oname);
+		GDKfree(fname);
+		fname = NULL;
 		compiler = popen(buf, "r");
 		if (!compiler) {
 			msg = createException(MAL, "cudf.eval", "Failed popen");
@@ -886,10 +887,10 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		}
 		// read the error stream into the error buffer until the compiler is
 		// done
-		while (fgets(error_buf, sizeof(error_buf) - 1, compiler)) {
+		while (fgets(error_buf, sizeof(error_buf), compiler)) {
 			size_t error_size = strlen(error_buf);
 			snprintf(total_error_buf + error_buffer_position,
-					 sizeof(total_error_buf) - error_buffer_position - 1, "%s",
+					 sizeof(total_error_buf) - error_buffer_position, "%s",
 					 error_buf);
 			error_buffer_position += error_size;
 			if (error_buffer_position >= sizeof(total_error_buf)) break;
@@ -912,15 +913,17 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 		snprintf(buf, sizeof(buf), "%s %s %s -shared -o %s 2>&1 >/dev/null", c_compiler,
 			extra_ldflags ? extra_ldflags : "", oname, libname);
+		GDKfree(oname);
+		oname = NULL;
 		compiler = popen(buf, "r");
 		if (!compiler) {
 			msg = createException(MAL, "cudf.eval", "Failed popen");
 			goto wrapup;
 		}
-		while (fgets(error_buf, sizeof(error_buf) - 1, compiler)) {
+		while (fgets(error_buf, sizeof(error_buf), compiler)) {
 			size_t error_size = strlen(error_buf);
 			snprintf(total_error_buf + error_buffer_position,
-					 sizeof(total_error_buf) - error_buffer_position - 1, "%s",
+					 sizeof(total_error_buf) - error_buffer_position, "%s",
 					 error_buf);
 			error_buffer_position += error_size;
 			if (error_buffer_position >= sizeof(total_error_buf)) break;
@@ -937,6 +940,8 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		}
 
 		handle = dlopen(libname, RTLD_LAZY);
+		GDKfree(libname);
+		libname = NULL;
 		if (!handle) {
 			msg = createException(MAL, "cudf.eval",
 								  "Failed to open shared library: %s.",
@@ -1588,6 +1593,9 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 wrapup:
 	// cleanup
 	// remove the signal handler, if any was set
+	GDKfree(fname);
+	GDKfree(oname);
+	GDKfree(libname);
 	if (option_enable_mprotect) {
 		if (sa.sa_sigaction) {
 			(void) sigaction(SIGSEGV, &oldsa, NULL);
