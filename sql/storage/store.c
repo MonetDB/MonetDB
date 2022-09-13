@@ -2269,6 +2269,7 @@ store_pending_changes(sqlstore *store, ulng oldest)
 			node *next = n->next;
 			sql_change *c = n->data;
 
+			assert(c->cleanup);
 			if (c->cleanup(store, c, oldest)) {
 				list_remove_node(store->changes, store, n);
 				_DELETE(c);
