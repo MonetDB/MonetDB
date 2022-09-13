@@ -2011,15 +2011,13 @@ dup_cs(sql_trans *tr, column_storage *ocs, column_storage *cs, int type, int tem
 	return LOG_OK;
 }
 
-static int
+static void
 destroy_delta(sql_delta *b, bool recursive)
 {
-	int ok = LOG_OK;
-
 	if (--b->cs.refcnt > 0)
-		return LOG_OK;
+		return;
 	if (recursive && b->next)
-		ok = destroy_delta(b->next, true);
+		destroy_delta(b->next, true);
 	if (b->cs.uibid)
 		temp_destroy(b->cs.uibid);
 	if (b->cs.uvbid)
@@ -2030,7 +2028,6 @@ destroy_delta(sql_delta *b, bool recursive)
 		temp_destroy(b->cs.ebid);
 	b->cs.bid = b->cs.ebid = b->cs.uibid = b->cs.uvbid = 0;
 	_DELETE(b);
-	return ok;
 }
 
 static sql_delta *
@@ -3609,11 +3606,10 @@ static int
 destroy_col(sqlstore *store, sql_column *c)
 {
 	(void)store;
-	int ok = LOG_OK;
 	if (ATOMIC_PTR_GET(&c->data))
-		ok = destroy_delta(ATOMIC_PTR_GET(&c->data), true);
+		destroy_delta(ATOMIC_PTR_GET(&c->data), true);
 	ATOMIC_PTR_SET(&c->data, NULL);
-	return ok;
+	return LOG_OK;
 }
 
 static int
@@ -3640,11 +3636,10 @@ static int
 destroy_idx(sqlstore *store, sql_idx *i)
 {
 	(void)store;
-	int ok = LOG_OK;
 	if (ATOMIC_PTR_GET(&i->data))
-		ok = destroy_delta(ATOMIC_PTR_GET(&i->data), true);
+		destroy_delta(ATOMIC_PTR_GET(&i->data), true);
 	ATOMIC_PTR_SET(&i->data, NULL);
-	return ok;
+	return LOG_OK;
 }
 
 static int
