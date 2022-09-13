@@ -84,6 +84,14 @@ mapi_export MapiMsg mapi_reconnect(Mapi mid)
 	__attribute__((__nonnull__(1)));
 mapi_export MapiMsg mapi_ping(Mapi mid)
 	__attribute__((__nonnull__(1)));
+mapi_export void mapi_setfilecallback2(
+	Mapi mid,
+	char *(*getfunc)(void *priv, const char *filename,
+			 bool binary, uint64_t offset, size_t *size),
+	char *(*putfunc)(void *priv, const char *filename, bool binary,
+			 const void *data, size_t size),
+	void *priv)
+	__attribute__((__nonnull__(1)));
 mapi_export void mapi_setfilecallback(
 	Mapi mid,
 	char *(*getfunc)(void *priv, const char *filename,
