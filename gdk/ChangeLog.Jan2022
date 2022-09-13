@@ -1,7 +1,0 @@
-# ChangeLog file for GDK
-# This file is updated with Maddlog
-
-* Wed Aug 24 2022 Sjoerd Mullender <sjoerd@acm.org>
-- The median_avg and quantile_avg returned bogus results in the
-  non-grouped case (i.e. something like SELECT sys.median_avg(i) FROM t).
-
