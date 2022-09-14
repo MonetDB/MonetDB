@@ -256,8 +256,8 @@ char* db_rename(const char *olddb, const char *newdb) {
 char* db_lock(const char *dbname) {
 	char *e;
 	sabdb *stats;
-	char path[8096];
-	char buf[8096];
+	char path[FILENAME_MAX];
+	char buf[sizeof(path) + 512];
 	FILE *f;
 
 	/* the argument is the database to take under maintenance, see
@@ -296,8 +296,8 @@ char* db_lock(const char *dbname) {
 char *db_release(const char *dbname) {
 	char *e;
 	sabdb *stats;
-	char path[8096];
-	char buf[8096];
+	char path[FILENAME_MAX];
+	char buf[sizeof(path) + 512];
 
 	/* the argument is the database to take under maintenance, see
 	 * what Sabaoth can tell us about it */

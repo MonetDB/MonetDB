@@ -48,7 +48,7 @@
 static void
 leavedb(char *name)
 {
-	char buf[128];
+	char buf[sizeof(_mero_hostname) + 128];
 	snprintf(buf, sizeof(buf),
 			"LEAV %s mapi:monetdb://%s:%u/",
 			name, _mero_hostname,
@@ -94,7 +94,7 @@ setURI(sabdb *stats)
 static void
 anncdbS(sabdb *stats)
 {
-	char buf[128];
+	char buf[sizeof(_mero_hostname) + 128];
 	confkeyval *props = getDefaultProps();
 	char *shared;
 	readProps(props, stats->path);
