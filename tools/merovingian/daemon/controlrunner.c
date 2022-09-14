@@ -237,7 +237,7 @@ static void ctl_handle_client(
 	 * going to handle the traffic and negotiations, instead of the
 	 * client thread that just goes inside this program here. */
 	char buf[8096];
-	char buf2[8096];
+	char buf2[8096 + 50];
 	char *p, *q;
 	sabdb *stats;
 	int pos = 0;
@@ -456,7 +456,7 @@ static void ctl_handle_client(
 							 * on failure */
 							char *err;
 							char *sadbfarm;
-							char buf3[8092];
+							char buf3[8092+50];
 
 							close(pipes[1]);
 							dup2(pipes[0], 0);
