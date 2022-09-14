@@ -796,7 +796,7 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 
 		if (!k || ol_add(t->keys, &k->base) ||
 		    os_add(s->keys, tr, k->base.name, dup_base(&k->base)) ||
-			os_add(tr->cat->objects, tr, k->base.name, dup_base(&k->base))) {
+			(isGlobal(t) && os_add(tr->cat->objects, tr, k->base.name, dup_base(&k->base)))) {
 			table_destroy(store, t);
 			return NULL;
 		}
@@ -2235,7 +2235,7 @@ id_hash_clear_older(sql_hash *h, ulng oldest)
 	if (h->entries == 0)
 		return;
 	for (int i = 0; i < h->size; i++) {
-		sql_hash_e *e = h->buckets[i], *c = NULL, *first = NULL;
+		sql_hash_e *e = h->buckets[i], *last = NULL, *first = NULL;
 
 		while (e) {
 			sql_hash_e *next = e->chain;
@@ -2246,16 +2246,16 @@ id_hash_clear_older(sql_hash *h, ulng oldest)
 				_DELETE(e);
 				h->entries--;
 			} else {
-				if (c)
-					c->chain = e;
+				if (last)
+					last->chain = e;
 				else
 					first = e;
-				c = e;
+				last = e;
 			}
 			e = next;
 		}
-		if (c)
-			c->chain = NULL;
+		if (last)
+			last->chain = NULL;
 		h->buckets[i] = first;
 	}
 }
@@ -2263,12 +2263,13 @@ id_hash_clear_older(sql_hash *h, ulng oldest)
 static void
 store_pending_changes(sqlstore *store, ulng oldest)
 {
-	ulng oldest_changes = store_get_timestamp(store);
+	ulng oldest_changes = store_get_timestamp(store);	
 	if (!list_empty(store->changes)) { /* lets first cleanup old stuff */
 		for(node *n=store->changes->h; n; ) {
 			node *next = n->next;
 			sql_change *c = n->data;
 
+			assert(c->cleanup);
 			if (c->cleanup(store, c, oldest)) {
 				list_remove_node(store->changes, store, n);
 				_DELETE(c);
@@ -2919,9 +2920,8 @@ key_dup(sql_trans *tr, sql_key *k, sql_table *t, sql_key **kres)
 		list_append(nk->columns, kc_dup(tr, okc, t));
 	}
 
-	if (isGlobal(t) &&
-			((res = os_add(t->s->keys, tr, nk->base.name, dup_base(&nk->base))) ||
-			 (res = os_add(tr->cat->objects, tr, nk->base.name, dup_base(&nk->base))))) {
+	if ((res = os_add(t->s->keys, tr, nk->base.name, dup_base(&nk->base))) ||
+		(isGlobal(t) && (res = os_add(tr->cat->objects, tr, nk->base.name, dup_base(&nk->base))))) {
 		return res;
 	}
 	*kres = nk;
@@ -3377,7 +3377,7 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires)
 	if ((res = ol_add(t->idxs, &ni->base)))
 		return res;
 
-	if (isGlobal(t) && (res = os_add(t->s->idxs, tr, ni->base.name, dup_base(&ni->base))))
+	if ((res = os_add(t->s->idxs, tr, ni->base.name, dup_base(&ni->base))))
 		return res;
 	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql functions depending on the table */
 		return res;
@@ -3448,7 +3448,7 @@ sql_trans_copy_trigger( sql_trans *tr, sql_table *t, sql_trigger *tri, sql_trigg
 	if ((res = ol_add(t->triggers, &nt->base)))
 		return res;
 
-	if (isGlobal(t) && (res = os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base))))
+	if ((res = os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base))))
 		return res;
 	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql functions depending on the table */
 		return res;
@@ -3945,10 +3945,15 @@ sql_trans_commit(sql_trans *tr)
 				ok = store->logger_api.log_tend(store); /* wal end */
 		}
 		store_lock(store);
-		commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
-		if (tr->parent)
+
+		if (tr->parent) {
+			commit_ts = oldest = tr->parent->tid;
 			tr->parent->logchanges += tr->logchanges;
-		oldest = tr->parent ? commit_ts : store_oldest(store);
+		}
+		else {
+			commit_ts = store_timestamp(store);
+			oldest = store_oldest(store);
+		}
 		tr->logchanges = 0;
 		TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
 		/* apply committed changes */
@@ -4162,15 +4167,11 @@ static int
 sql_trans_drop_any_comment(sql_trans *tr, sqlid id)
 {
 	sqlstore *store = tr->store;
-	sql_schema *sys;
-	sql_column *id_col;
 	sql_table *comments;
+	sql_column *id_col;
 	oid row;
 
-	sys = find_sql_schema(tr, "sys");
-	assert(sys);
-
-	comments = find_sql_table(tr, sys, "comments");
+	comments = find_sql_table(tr, find_sql_schema(tr, "sys"), "comments");
 	if (!comments) /* for example during upgrades */
 		return 0;
 
@@ -4229,9 +4230,8 @@ sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 	}
 
 	/* remove idx from schema and table */
-	if (isGlobal(i->t))
-		if ((res = os_del(i->t->s->idxs, tr, i->base.name, dup_base(&i->base))))
-			return res;
+	if ((res = os_del(i->t->s->idxs, tr, i->base.name, dup_base(&i->base))))
+		return res;
 	if (!isNew(i) && (res = sql_trans_add_dependency_change(tr, i->base.id, ddl)))
 		return res;
 	if ((res = sql_trans_drop_dependencies(tr, i->base.id)))
@@ -4279,12 +4279,10 @@ sys_drop_key(sql_trans *tr, sql_key *k, int drop_action)
 			return res;
 	}
 	/* remove key from schema */
-	if (isGlobal(k->t)) {
-		if ((res = os_del(k->t->s->keys, tr, k->base.name, dup_base(&k->base))))
-			return res;
-		if ((res = os_del(tr->cat->objects, tr, k->base.name, dup_base(&k->base))))
-			return res;
-	}
+	if ((res = os_del(k->t->s->keys, tr, k->base.name, dup_base(&k->base))))
+		return res;
+	if (isGlobal(k->t) && (res = os_del(tr->cat->objects, tr, k->base.name, dup_base(&k->base))))
+		return res;
 	if (k->t->pkey == (sql_ukey*)k)
 		k->t->pkey = NULL;
 
@@ -4411,9 +4409,8 @@ sys_drop_trigger(sql_trans *tr, sql_trigger * i)
 			return res;
 	}
 	/* remove trigger from schema */
-	if (isGlobal(i->t))
-		if ((res = os_del(i->t->s->triggers, tr, i->base.name, dup_base(&i->base))))
-			return res;
+	if ((res = os_del(i->t->s->triggers, tr, i->base.name, dup_base(&i->base))))
+		return res;
 	if (!isNew(i) && (res = sql_trans_add_dependency_change(tr, i->base.id, ddl)))
 		return res;
 	if ((res = sql_trans_drop_dependencies(tr, i->base.id)))
@@ -4885,8 +4882,9 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 					  const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect)
 {
 	sqlstore *store = tr->store;
-	sql_table *sysfunc = find_sql_table(tr, find_sql_schema(tr, "sys"), "functions");
-	sql_table *sysarg = find_sql_table(tr, find_sql_schema(tr, "sys"), "args");
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_table *sysfunc = find_sql_table(tr, syss, "functions");
+	sql_table *sysarg = find_sql_table(tr, syss, "args");
 	node *n;
 	int number = 0, ftype = (int) type, flang = (int) lang, res = LOG_OK;
 	bit semantics = TRUE;
@@ -6347,7 +6345,7 @@ sql_trans_create_ukey(sql_key **kres, sql_trans *tr, sql_table *t, const char *n
 	if ((res = ol_add(t->keys, &nk->base)))
 		return res;
 	if ((res = os_add(t->s->keys, tr, nk->base.name, dup_base(&nk->base))) ||
-		(res = os_add(tr->cat->objects, tr, nk->base.name, dup_base(&nk->base))))
+		(isGlobal(t) && (res = os_add(tr->cat->objects, tr, nk->base.name, dup_base(&nk->base)))))
 		return res;
 
 	if ((res = store->table_api.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, &nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey : &neg, &action)))
@@ -6396,7 +6394,7 @@ sql_trans_create_fkey(sql_fkey **kres, sql_trans *tr, sql_table *t, const char *
 	if ((res = ol_add(t->keys, &nk->base)))
 		return res;
 	if ((res = os_add(t->s->keys, tr, nk->base.name, dup_base(&nk->base))) ||
-		(res = os_add(tr->cat->objects, tr, nk->base.name, dup_base(&nk->base))))
+		(isGlobal(t) && (res = os_add(tr->cat->objects, tr, nk->base.name, dup_base(&nk->base)))))
 		return res;
 
 	if ((res = store->table_api.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, &nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey : &neg, &action)))

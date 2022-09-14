@@ -480,7 +480,7 @@ main(int argc, char *argv[])
 	kv->val = strdup("default_pipe");
 	{ /* nrthreads */
 		int ncpus = -1;
-		char cnt[8];
+		char cnt[11];
 
 #if defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
 		/* this works on Linux, Solaris and AIX */
