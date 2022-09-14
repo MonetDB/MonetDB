@@ -170,7 +170,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	clk = GDKusec();
 	const char *id = getFunctionId(p);
-	for (i=codehash[*id]; codes[i].nme; i++){
+	for (i=codehash[(unsigned char) *id]; codes[i].nme; i++){
 		if (codes[i].nme[0] == *id && strcmp(codes[i].nme, getFunctionId(p)) == 0){
 			msg = (str)(*(codes[i].fcn))(cntxt, mb, stk, p);
 			clk = GDKusec() - clk;

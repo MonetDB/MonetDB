@@ -639,14 +639,14 @@ msab_pickSecret(char **generated_secret)
 	}
 
 	if ((fd = MT_open(pathbuf, O_CREAT | O_WRONLY | O_CLOEXEC)) == -1) {
-		char err[512];
+		char err[FILENAME_MAX + 512];
 		snprintf(err, sizeof(err), "unable to open '%s': %s",
 				 pathbuf, strerror(errno));
 		free(secret);
 		return strdup(err);
 	}
 	if ((f = fdopen(fd, "w")) == NULL) {
-		char err[512];
+		char err[FILENAME_MAX + 512];
 		snprintf(err, sizeof(err), "unable to open '%s': %s",
 				 pathbuf, strerror(errno));
 		close(fd);
