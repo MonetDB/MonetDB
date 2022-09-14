@@ -2273,6 +2273,12 @@ id_hash_clear_older(sql_hash *h, ulng oldest)
 	}
 }
 
+typedef struct sql_change_block {
+	node *start; /* pointer to the start of the block */
+	node *end; /* pointer to the end of the block */
+	ulng ts; /* for block building purposes it could have been the timestamp of any sql_change in block, however we store the oldest one to help compute the store->oldest_pending */
+} sql_change_block;
+
 /*
  * Add the newly added changes into the store->changesBlocks structure,
  * either by merging with existing blocks or by creating new blocks.
