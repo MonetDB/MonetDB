@@ -1777,18 +1777,13 @@ dep_hash_destroy(sql_hash *h)
 static sqlstore *
 store_load(sqlstore *store, sql_allocator *pa)
 {
-	sql_allocator *sa;
 	sql_trans *tr;
 	sql_table *t, *types, *functions, *arguments;
 	sql_schema *s;
 	lng lng_store_oid;
 
+	assert(pa);
 	store->sa = pa;
-	sa = sa_create(pa);
-	if (!sa || !store->sa) {
-		TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
-		return NULL;
-	}
 
 	store->first = store->logger_api.log_isnew(store);
 
