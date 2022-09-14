@@ -56,7 +56,7 @@ PyObject *PyLong_FromHge(hge h)
 		z->ob_digit[i] = result;
 	}
 	if (h < 0) {
-#if PY_MINOR_VERSION >= 9
+#ifdef Py_SET_SIZE
 		Py_SET_SIZE(z, -Py_SIZE(z));
 #else
 		Py_SIZE(z) = -(Py_SIZE(z));

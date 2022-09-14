@@ -465,7 +465,7 @@ RMTfindconn(connection *ret, const char *conn) {
  * The encoding of the type allows for ease of type checking later on.
  */
 static inline str
-RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
+RMTgetId(char *buf, size_t buflen, MalBlkPtr mb, InstrPtr p, int arg) {
 	InstrPtr f;
 	const char *mod;
 	char *var;
@@ -484,7 +484,7 @@ RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
 	if (rt == NULL)
 		throw(MAL, "remote.put", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	snprintf(buf, BUFSIZ, "rmt%u_%s_%s", (unsigned) ATOMIC_ADD(&idtag, 1), var, rt);
+	snprintf(buf, buflen, "rmt%u_%s_%s", (unsigned) ATOMIC_ADD(&idtag, 1), var, rt);
 
 	GDKfree(rt);
 	return(MAL_SUCCEED);
@@ -975,7 +975,7 @@ static str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  */
 static str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, tmp;
-	char ident[BUFSIZ];
+	char ident[512];
 	connection c;
 	ValPtr v;
 	int type;
@@ -999,7 +999,7 @@ static str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	MT_lock_set(&c->lock);
 
 	/* get a free, typed identifier for the remote host */
-	tmp = RMTgetId(ident, mb, pci, 2);
+	tmp = RMTgetId(ident, sizeof(ident), mb, pci, 2);
 	if (tmp != MAL_SUCCEED) {
 		MT_lock_unset(&c->lock);
 		return tmp;
@@ -1176,8 +1176,8 @@ static str RMTregisterInternal(Client cntxt, char** fcn_id, const char *conn, co
 	MT_lock_set(&c->lock);
 
 	/* get a free, typed identifier for the remote host */
-	char ident[BUFSIZ];
-	tmp = RMTgetId(ident, sym->def, getInstrPtr(sym->def, 0), 0);
+	char ident[512];
+	tmp = RMTgetId(ident, sizeof(ident), sym->def, getInstrPtr(sym->def, 0), 0);
 	if (tmp != MAL_SUCCEED) {
 		MT_lock_unset(&c->lock);
 		return tmp;

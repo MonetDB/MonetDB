@@ -3315,7 +3315,10 @@ ODBCStore(ODBCStmt *stmt,
 		case SQL_C_INTERVAL_SECOND:
 			snprintf(data, sizeof(data), "%s%0*u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, (unsigned int) ival.intval.day_second.second);
 			assigns(buf, bufpos, buflen, data, stmt);
-			if (ival.intval.day_second.fraction && ivalprec > 0) {
+			/* if ivalprec > 16, the digits that are used by
+			 * the server are all 0, so we don't need to
+			 * write them */
+			if (ival.intval.day_second.fraction && ivalprec > 0 && ivalprec < 17) {
 				snprintf(data, sizeof(data), ".%0*u", ivalprec, (unsigned int) ival.intval.day_second.fraction);
 				assigns(buf, bufpos, buflen, data, stmt);
 			}
@@ -3331,7 +3334,7 @@ ODBCStore(ODBCStmt *stmt,
 		case SQL_C_INTERVAL_DAY_TO_SECOND:
 			snprintf(data, sizeof(data), "%s%0*u %02u:%02u:%02u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, (unsigned int) ival.intval.day_second.day, (unsigned int) ival.intval.day_second.hour, (unsigned int) ival.intval.day_second.minute, (unsigned int) ival.intval.day_second.second);
 			assigns(buf, bufpos, buflen, data, stmt);
-			if (ival.intval.day_second.fraction && ivalprec > 0) {
+			if (ival.intval.day_second.fraction && ivalprec > 0 && ivalprec < 17) {
 				snprintf(data, sizeof(data), ".%0*u", ivalprec, (unsigned int) ival.intval.day_second.fraction);
 				assigns(buf, bufpos, buflen, data, stmt);
 			}
@@ -3343,7 +3346,7 @@ ODBCStore(ODBCStmt *stmt,
 		case SQL_C_INTERVAL_HOUR_TO_SECOND:
 			snprintf(data, sizeof(data), "%s%0*u:%02u:%02u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, (unsigned int) ival.intval.day_second.hour, (unsigned int) ival.intval.day_second.minute, (unsigned int) ival.intval.day_second.second);
 			assigns(buf, bufpos, buflen, data, stmt);
-			if (ival.intval.day_second.fraction && ivalprec > 0) {
+			if (ival.intval.day_second.fraction && ivalprec > 0 && ivalprec < 17) {
 				snprintf(data, sizeof(data), ".%0*u", ivalprec, (unsigned int) ival.intval.day_second.fraction);
 				assigns(buf, bufpos, buflen, data, stmt);
 			}
@@ -3351,7 +3354,7 @@ ODBCStore(ODBCStmt *stmt,
 		case SQL_C_INTERVAL_MINUTE_TO_SECOND:
 			snprintf(data, sizeof(data), "%s%0*u:%02u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, (unsigned int) ival.intval.day_second.minute, (unsigned int) ival.intval.day_second.second);
 			assigns(buf, bufpos, buflen, data, stmt);
-			if (ival.intval.day_second.fraction && ivalprec > 0) {
+			if (ival.intval.day_second.fraction && ivalprec > 0 && ivalprec < 17) {
 				snprintf(data, sizeof(data), ".%0*u", ivalprec, (unsigned int) ival.intval.day_second.fraction);
 				assigns(buf, bufpos, buflen, data, stmt);
 			}

@@ -94,11 +94,11 @@
 
 /* we inherit LT and GT from gdk_calc_private.h */
 
-#define nLTbte(a, b)	(!is_bte_nil(b) && (is_bte_nil(a) || (a) < (b)))
-#define nLTsht(a, b)	(!is_sht_nil(b) && (is_sht_nil(a) || (a) < (b)))
-#define nLTint(a, b)	(!is_int_nil(b) && (is_int_nil(a) || (a) < (b)))
-#define nLTlng(a, b)	(!is_lng_nil(b) && (is_lng_nil(a) || (a) < (b)))
-#define nLThge(a, b)	(!is_hge_nil(b) && (is_hge_nil(a) || (a) < (b)))
+#define nLTbte(a, b)	(!is_bte_nil(a) && (is_bte_nil(b) || (a) < (b)))
+#define nLTsht(a, b)	(!is_sht_nil(a) && (is_sht_nil(b) || (a) < (b)))
+#define nLTint(a, b)	(!is_int_nil(a) && (is_int_nil(b) || (a) < (b)))
+#define nLTlng(a, b)	(!is_lng_nil(a) && (is_lng_nil(b) || (a) < (b)))
+#define nLThge(a, b)	(!is_hge_nil(a) && (is_hge_nil(b) || (a) < (b)))
 
 #define nGTbte(a, b)	(!is_bte_nil(b) && (is_bte_nil(a) || (a) > (b)))
 #define nGTsht(a, b)	(!is_sht_nil(b) && (is_sht_nil(a) || (a) > (b)))

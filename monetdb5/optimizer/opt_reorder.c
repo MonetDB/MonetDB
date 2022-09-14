@@ -32,6 +32,8 @@
 #include "opt_mitosis.h"
 
 
+#define MAXSLICES 1024		/* to be refined */
+
 /* Insert the instruction immediately after a previous instruction that
  * generated an argument needed.
  * If non can be found, add it to the end.

@@ -846,6 +846,11 @@ do_daytime_precision_tostr(char *buf, size_t len, const daytime dt,
 	else if (precision < 6) {
 		for (int i = 6; i > precision; i--)
 			usec /= 10;
+#if defined(__GNUC__) && __GNUC__ < 9 && __GNUC__ > 4
+/* the %0*d format gives an incorrect warning in gcc on at least gcc 8.3.1
+ * old gcc (at least 4.8.5) does not have the option */
+GCC_Pragma("GCC diagnostic ignored \"-Wformat-truncation\"")
+#endif
 		return snprintf(buf, len, "%02d:%02d:%02d.%0*d", hour, min, sec, precision, usec);
 	} else {
 		ssize_t l = snprintf(buf, len, "%02d:%02d:%02d.%06d", hour, min, sec, usec);

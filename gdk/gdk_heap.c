@@ -602,9 +602,10 @@ HEAPfree(Heap *h, bool rmheap)
 	if (h->storage == STORE_MMAPABS)  {
 		/* heap is stored in a mmap() file, but h->filename
 		 * is the absolute path */
-		if (MT_remove(h->filename) != 0 && errno != ENOENT) {
-			perror(h->filename);
-		}
+		char *path = GDKfilepath(0, BATDIR, h->filename, NULL);
+		if (path && MT_remove(path) != 0 && errno != ENOENT)
+			perror(path);
+		GDKfree(path);
 	} else
 #endif
 	if (rmheap && !GDKinmemory(h->farmid)) {

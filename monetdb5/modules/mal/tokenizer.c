@@ -104,7 +104,7 @@ TKNZRopen(void *ret, str *in)
 	int depth;
 	bat r;
 	bat idx;
-	char batname[134];
+	char batname[sizeof(name) + 20];
 	BAT *b;
 
 	(void) ret;
@@ -132,7 +132,7 @@ TKNZRopen(void *ret, str *in)
 	/* now we are sure that none overwrites the tokenizer table*/
 	MT_lock_unset(&mal_contextLock);
 
-	snprintf(name, 128, "%s", *in);
+	snprintf(name, sizeof(name), "%s", *in);
 
 	snprintf(batname, sizeof(batname), "%s_index", name);
 	idx = BBPindex(batname);
@@ -246,7 +246,7 @@ static str
 TKNZRappend(oid *pos, str *s)
 {
 	str url;
-	char batname[132];
+	char batname[sizeof(name) + 20];
 	str parts[MAX_TKNZR_DEPTH];
 	str msg;
 	int i, new, depth;

@@ -12,7 +12,6 @@
 #include "opt_support.h"
 
 #define MAXSLICES 1024		/* to be refined */
-#define MINPARTCNT 100000	/* minimal record count per partition */
 
 extern str OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 

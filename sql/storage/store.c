@@ -2235,7 +2235,7 @@ id_hash_clear_older(sql_hash *h, ulng oldest)
 	if (h->entries == 0)
 		return;
 	for (int i = 0; i < h->size; i++) {
-		sql_hash_e *e = h->buckets[i], *c = NULL, *first = NULL;
+		sql_hash_e *e = h->buckets[i], *last = NULL, *first = NULL;
 
 		while (e) {
 			sql_hash_e *next = e->chain;
@@ -2246,16 +2246,16 @@ id_hash_clear_older(sql_hash *h, ulng oldest)
 				_DELETE(e);
 				h->entries--;
 			} else {
-				if (c)
-					c->chain = e;
+				if (last)
+					last->chain = e;
 				else
 					first = e;
-				c = e;
+				last = e;
 			}
 			e = next;
 		}
-		if (c)
-			c->chain = NULL;
+		if (last)
+			last->chain = NULL;
 		h->buckets[i] = first;
 	}
 }
@@ -2263,12 +2263,13 @@ id_hash_clear_older(sql_hash *h, ulng oldest)
 static void
 store_pending_changes(sqlstore *store, ulng oldest)
 {
-	ulng oldest_changes = store_get_timestamp(store);
+	ulng oldest_changes = store_get_timestamp(store);	
 	if (!list_empty(store->changes)) { /* lets first cleanup old stuff */
 		for(node *n=store->changes->h; n; ) {
 			node *next = n->next;
 			sql_change *c = n->data;
 
+			assert(c->cleanup);
 			if (c->cleanup(store, c, oldest)) {
 				list_remove_node(store->changes, store, n);
 				_DELETE(c);
@@ -3944,10 +3945,15 @@ sql_trans_commit(sql_trans *tr)
 				ok = store->logger_api.log_tend(store); /* wal end */
 		}
 		store_lock(store);
-		commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
-		if (tr->parent)
+
+		if (tr->parent) {
+			commit_ts = oldest = tr->parent->tid;
 			tr->parent->logchanges += tr->logchanges;
-		oldest = tr->parent ? commit_ts : store_oldest(store);
+		}
+		else {
+			commit_ts = store_timestamp(store);
+			oldest = store_oldest(store);
+		}
 		tr->logchanges = 0;
 		TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
 		/* apply committed changes */
@@ -4161,15 +4167,11 @@ static int
 sql_trans_drop_any_comment(sql_trans *tr, sqlid id)
 {
 	sqlstore *store = tr->store;
-	sql_schema *sys;
-	sql_column *id_col;
 	sql_table *comments;
+	sql_column *id_col;
 	oid row;
 
-	sys = find_sql_schema(tr, "sys");
-	assert(sys);
-
-	comments = find_sql_table(tr, sys, "comments");
+	comments = find_sql_table(tr, find_sql_schema(tr, "sys"), "comments");
 	if (!comments) /* for example during upgrades */
 		return 0;
 
@@ -4880,8 +4882,9 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 					  const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect)
 {
 	sqlstore *store = tr->store;
-	sql_table *sysfunc = find_sql_table(tr, find_sql_schema(tr, "sys"), "functions");
-	sql_table *sysarg = find_sql_table(tr, find_sql_schema(tr, "sys"), "args");
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_table *sysfunc = find_sql_table(tr, syss, "functions");
+	sql_table *sysarg = find_sql_table(tr, syss, "args");
 	node *n;
 	int number = 0, ftype = (int) type, flang = (int) lang, res = LOG_OK;
 	bit semantics = TRUE;

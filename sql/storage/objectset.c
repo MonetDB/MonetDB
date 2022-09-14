@@ -599,7 +599,7 @@ tc_gc_objectversion(sql_store store, sql_change *change, ulng oldest)
 	assert(!change->handled);
 	objectversion *ov = (objectversion*)change->data;
 
-	if (oldest && oldest >= TRANSACTION_ID_BASE)
+	if (oldest >= TRANSACTION_ID_BASE)
 		return 0;
 	int res = os_cleanup( (sqlstore*) store, ov, oldest);
 	change->handled = (res)?true:false;
