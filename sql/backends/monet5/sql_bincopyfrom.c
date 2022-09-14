@@ -327,7 +327,7 @@ convert_timestamp(void *dst_start, void *dst_end, void *src_start, void *src_end
 
 
 static str
-convert_and_validate(char *text)
+convert_and_validate_utf8(char *text)
 {
 	unsigned char *r = (unsigned char*)text;
 	unsigned char *w = r;
@@ -375,29 +375,18 @@ bad_utf8:
 	return createException(SQL, "BATattach_stream", SQLSTATE(42000) "malformed utf-8 byte sequence");
 }
 
-static str
-append_text(BAT *bat, char *start)
-{
-	str msg = convert_and_validate(start);
-	if (msg != MAL_SUCCEED)
-		return msg;
-
-	if (BUNappend(bat, start, false) != GDK_SUCCEED)
-		return createException(SQL, "sql.importColumn", GDK_EXCEPTION);
-
-	return MAL_SUCCEED;
-}
-
 // Load items from the stream and put them in the BAT.
 // Because it's text read from a binary stream, we replace \r\n with \n.
-// We don't have to validate the utf-8 structure because BUNappend does that for us.
 static str
 load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached)
 {
 	str msg = MAL_SUCCEED;
 	bstream *bs = NULL;
+	int tpe = BATttype(bat);
+	void *buffer = NULL;
+	size_t buffer_len = 0;
 
-	// convert_and_validate() above counts on the following property to hold:
+	// convert_and_validate_utf8() above counts on the following property to hold:
 	assert(strNil((const char[2]){ 0x80, 0 }));
 
 	bs = bstream_create(s, 1 << 20);
@@ -419,9 +408,24 @@ load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached)
 		char *buf_end = &bs->buf[bs->len];
 		char *start, *end;
 		for (start = buf_start; (end = memchr(start, '\0', buf_end - start)) != NULL; start = end + 1) {
-			msg = append_text(bat, start);
+			char *value;
+			msg = convert_and_validate_utf8(start);
 			if (msg != NULL)
 				goto end;
+			if (tpe == TYPE_str) {
+				value = start;
+			} else {
+				ssize_t n = ATOMfromstr(tpe, &buffer, &buffer_len, start, false);
+				if (n <= 0) {
+					msg = createException(SQL, "sql.importColumn", GDK_EXCEPTION);
+					goto end;
+				}
+				value = buffer;
+			}
+			if (BUNappend(bat, value, false) != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.importColumn", GDK_EXCEPTION);
+				goto end;
+			}
 		}
 		bs->pos = start - buf_start;
 	}
@@ -432,6 +436,7 @@ load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached)
 
 end:
 	*eof_reached = 0;
+	GDKfree(buffer);
 	if (bs != NULL) {
 		*eof_reached = (int)bs->eof;
 		bs->s = NULL;
