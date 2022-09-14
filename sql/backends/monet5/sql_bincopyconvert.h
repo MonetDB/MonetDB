@@ -36,10 +36,10 @@
 //    the BAT.
 
 typedef str (*bincopy_decoder_t)(void *dst,void *src, size_t count, bool byteswap);
-typedef str (*bincopy_loader_t)(BAT *bat, stream *s, int *eof_reached);
+typedef str (*bincopy_loader_t)(BAT *bat, stream *s, int *eof_reached, bool byteswap);
 
 typedef str (*bincopy_encoder_t)(void *dst, void *src, size_t count, bool byteswap);
-typedef str (*bincopy_dumper_t)(BAT *bat, stream *s);
+typedef str (*bincopy_dumper_t)(BAT *bat, stream *s, bool byteswap);
 
 struct type_record_t {
 	char *method;

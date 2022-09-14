@@ -289,8 +289,9 @@ bad_utf8:
 // Load items from the stream and put them in the BAT.
 // Because it's text read from a binary stream, we replace \r\n with \n.
 static str
-load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached)
+load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached, bool byteswap)
 {
+	(void)byteswap;
 	const char *mal_operator = "sql.importColumn";
 	str msg = MAL_SUCCEED;
 	bstream *bs = NULL;

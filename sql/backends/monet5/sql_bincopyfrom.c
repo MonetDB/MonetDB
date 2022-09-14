@@ -177,7 +177,7 @@ load_column(type_record_t *rec, const char *name, BAT *bat, stream *s, bool byte
 	assert( rec->loader == NULL || !rec->trivial_if_no_byteswap);
 
 	if (rec->loader) {
-		msg = rec->loader(bat, s, eof_reached);
+		msg = rec->loader(bat, s, eof_reached, byteswap);
 	} else if (rec->decoder == NULL || (rec->trivial_if_no_byteswap && !byteswap)) {
 		// load the bytes directly into the bat, as-is
 		msg = load_trivial(bat, s, rows_estimate, eof_reached);
@@ -383,7 +383,7 @@ dump_column(const struct type_record_t *rec, BAT *b, bool byteswap, stream *s)
 	assert(rec->dumper || rec->encoder || BATttype(b) == TYPE_bit);
 
 	if (rec->dumper) {
-		msg = rec->dumper(b, s);
+		msg = rec->dumper(b, s, byteswap);
 	} else if (rec->encoder == NULL || (rec->trivial_if_no_byteswap && !byteswap)) {
 		msg = dump_trivial(b, s);
 	} else {
