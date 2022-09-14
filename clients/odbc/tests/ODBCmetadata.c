@@ -1081,6 +1081,26 @@ main(int argc, char **argv)
 		"NULL	tmp	glbl_nopk_twoucs	name2	_SYSTEM	monetdb	SELECT	NO\n"
 		"NULL	tmp	glbl_nopk_twoucs	name2	_SYSTEM	monetdb	UPDATE	NO\n");
 
+	// sys.storagemodelinput
+	ret = SQLSpecialColumns(stmt, SQL_BEST_ROWID, (SQLCHAR*)"", SQL_NTS,
+			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"storagemodelinput", SQL_NTS,
+			SQL_SCOPE_SESSION, SQL_NO_NULLS);
+	compareResult(stmt, ret, "SQLSpecialColumns (sys, storagemodelinput)",
+		"Resultset with 8 columns\n"
+		"Resultset with 10 rows\n"
+		"SCOPE	COLUMN_NAME	DATA_TYPE	TYPE_NAME	COLUMN_SIZE	BUFFER_LENGTH	DECIMAL_DIGITS	PSEUDO_COLUMN\n"
+		"SMALLINT	WVARCHAR(1024)	SMALLINT	WCHAR(25)	INTEGER	INTEGER	SMALLINT	SMALLINT\n"
+		"1	schema	-9	VARCHAR	1024	2048	NULL	1\n"
+		"1	table	-9	VARCHAR	1024	2048	NULL	1\n"
+		"1	column	-9	VARCHAR	1024	2048	NULL	1\n"
+		"1	type	-9	VARCHAR	1024	2048	NULL	1\n"
+		"1	typewidth	4	INTEGER	32	11	0	1\n"
+		"1	count	-5	BIGINT	64	20	0	1\n"
+		"1	distinct	-5	BIGINT	64	20	0	1\n"
+		"1	atomwidth	4	INTEGER	32	11	0	1\n"
+		"1	reference	-7	BOOLEAN	1	1	NULL	1\n"
+		"1	isacolumn	-7	BOOLEAN	1	1	NULL	1\n");
+
 	// odbctst.CUSTOMERS, odbctst.ORDERS and odbctst.LINES
 	/* next tests are copied from code examples on https://docs.microsoft.com/en-us/sql/odbc/reference/syntax/sqlforeignkeys-function?view=sql-server-ver15 */
 	ret = SQLPrimaryKeys(stmt, NULL, 0, NULL, 0, (SQLCHAR*)"ORDERS", SQL_NTS);

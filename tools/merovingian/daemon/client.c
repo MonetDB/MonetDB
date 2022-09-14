@@ -62,7 +62,7 @@ handleClient(void *data)
 	char *user = NULL, *algo = NULL, *passwd = NULL, *lang = NULL;
 	char *database = NULL, *s;
 	char dbmod[64];
-	char host[512];
+	char host[512+16+1];
 	char port[16];
 	sabdb *top = NULL;
 	sabdb *stat = NULL;
