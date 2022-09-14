@@ -443,9 +443,9 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	size_t i = 0, j = 0;
 	char argbuf[64];
 	char buf[8192];
-	char *fname;
-	char *oname;
-	char *libname;
+	char *fname = NULL;
+	char *oname = NULL;
+	char *libname = NULL;
 	char error_buf[BUFSIZ];
 	char total_error_buf[8192];
 	size_t error_buffer_position = 0;
