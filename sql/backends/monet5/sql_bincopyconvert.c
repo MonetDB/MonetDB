@@ -358,12 +358,30 @@ end:
 	return msg;
 }
 
+static str
+dump_zero_terminated_text(BAT *bat, stream *s, bool byteswap)
+{
+	(void)byteswap;
+	const char *mal_operator = "sql.export_bin_column";
+	str msg = MAL_SUCCEED;
+	int tpe = BATttype(bat);
+	assert(ATOMstorage(tpe) == TYPE_str);
+	assert(mnstr_isbinary(s));
 
 
+	BUN end = BATcount(bat);
+	BATiter bi = bat_iterator(bat);
+	for (BUN p = 0; p < end; p++) {
+		const char *v = BUNtvar(bi, p);
+		if (mnstr_writeStr(s, v) < 0 || mnstr_writeBte(s, 0) < 0) {
+			bailout("%s", mnstr_peek_error(s));
+		}
+	}
 
-
-
-
+end:
+	bat_iterator_end(&bi);
+	return msg;
+}
 
 
 static struct type_record_t type_recs[] = {
@@ -381,10 +399,10 @@ static struct type_record_t type_recs[] = {
 #ifdef HAVE_HGE
 	{ "hge", "hge", .trivial_if_no_byteswap=true, .decoder=byteswap_hge, .encoder=byteswap_hge},
 #endif
-	//
-	{ "str", "str", .loader=load_zero_terminated_text },
-	{ "url", "url", .loader=load_zero_terminated_text },
-	{ "json", "json", .loader=load_zero_terminated_text },
+	// \0-terminated text records
+	{ "str", "str", .loader=load_zero_terminated_text, .dumper=dump_zero_terminated_text },
+	{ "url", "url", .loader=load_zero_terminated_text, .dumper=dump_zero_terminated_text },
+	{ "json", "json", .loader=load_zero_terminated_text, .dumper=dump_zero_terminated_text },
 	//
 	{ "date", "date", .decoder=decode_date, .encoder=encode_date, .record_size=sizeof(copy_binary_date), },
 	{ "daytime", "daytime", .decoder=decode_time, .encoder=encode_time, .record_size=sizeof(copy_binary_time), },
