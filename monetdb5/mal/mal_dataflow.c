@@ -449,33 +449,15 @@ DFLOWworker(void *T)
 			}
 		MT_lock_unset(&flow->flowlock);
 
-			q_enqueue(flow->done, fe);
-			if ( fnxt == 0 && profilerStatus) {
-				profilerHeartbeatEvent("wait");
-			}
-		}
-		MT_lock_set(&dataflowLock);
-		if (GDKexiting() || ATOMIC_GET(&exiting)) {
-			MT_lock_unset(&dataflowLock);
-			break;
-		}
-		if (free_count >= free_max) {
-			t->flag = EXITED;
-			t->next = exited_workers;
-			exited_workers = t->self;
-			MT_lock_unset(&dataflowLock);
-			break;
-		}
-		free_count++;
-		t->flag = FREE;
-		assert(free_workers != t->self);
-		t->next = free_workers;
-		free_workers = t->self;
-		MT_lock_unset(&dataflowLock);
-		MT_sema_down(&t->s);
-		if (GDKexiting() || ATOMIC_GET(&exiting))
-			break;
-		assert(t->flag == WAITING);
+		q_enqueue(flow->done, fe);
+        if ( fnxt == 0 && profilerStatus) {
+            int last;
+            MT_lock_set(&todo->l);
+            last = todo->last;
+            MT_lock_unset(&todo->l);
+            if (last == 0)
+                profilerHeartbeatEvent("wait");
+        }
 	}
 	GDKfree(GDKerrbuf);
 	GDKsetbuf(0);

@@ -1298,7 +1298,6 @@ SQLparser(Client c)
 					goto finalize;
 				}
 			}
-		}
 		//printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_ALL);
 		/* we know more in this case than chkProgram(c->fdout, c->usermodule, c->curprg->def); */
 		if (msg == MAL_SUCCEED && c->curprg->def->errors) {
