@@ -47,9 +47,11 @@ struct type_record_t {
 	size_t record_size;
 	bool trivial_if_no_byteswap;
 
+	bool decoder_trivial;
 	bincopy_decoder_t decoder;
 	bincopy_loader_t loader;
 
+	bool encoder_trivial;
 	bincopy_encoder_t encoder;
 	bincopy_dumper_t dumper;
 };

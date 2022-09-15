@@ -168,23 +168,25 @@ load_column(type_record_t *rec, const char *name, BAT *bat, stream *s, bool byte
 	str msg = MAL_SUCCEED;
 	BUN rows_added;
 
+	bincopy_loader_t loader = rec->loader;
+	bincopy_decoder_t decoder = rec->decoder;
+	bool trivial = rec->decoder_trivial;
+
+	// sanity check
+	assert( (loader != NULL) + (decoder != NULL) + trivial == 1);
+
+	if (rec->trivial_if_no_byteswap && !byteswap)
+		decoder = NULL;
+
 	orig_count = BATcount(bat);
 
-	// cannot have loader AND decoder
-	assert(rec->decoder == NULL || rec->loader == NULL);
-
-	// loaders cannot be trivial
-	assert( rec->loader == NULL || !rec->trivial_if_no_byteswap);
-
-	if (rec->loader) {
-		msg = rec->loader(bat, s, eof_reached, byteswap);
-	} else if (rec->decoder == NULL || (rec->trivial_if_no_byteswap && !byteswap)) {
-		// load the bytes directly into the bat, as-is
-		msg = load_trivial(bat, s, rows_estimate, eof_reached);
-	} else {
-		// load the bytes into an intermediate buffer and use the converter to
-		// move them to the BAT
+	if (loader) {
+		msg = loader(bat, s, eof_reached, byteswap);
+	} else if (decoder) {
 		msg = load_fixed_width(bat, s, byteswap, rec->decoder, rec->record_size, eof_reached);
+		// load the bytes directly into the bat, as-is
+	} else {
+		msg = load_trivial(bat, s, rows_estimate, eof_reached);
 	}
 
 	new_count = BATcount(bat);
@@ -373,21 +375,22 @@ dump_column(const struct type_record_t *rec, BAT *b, bool byteswap, stream *s)
 {
 	str msg = MAL_SUCCEED;
 
-	// cannot have dumper AND encoder
-	assert(rec->encoder == NULL || rec->dumper == NULL);
+	bincopy_dumper_t dumper = rec->dumper;
+	bincopy_encoder_t encoder = rec->encoder;
+	bool trivial = rec->encoder_trivial;
 
-	// dumpers cannot be trivial
-	assert( rec->dumper == NULL || !rec->trivial_if_no_byteswap);
+	// sanity check
+	assert( (dumper != NULL) + (encoder != NULL) + trivial == 1);
 
-	// Temporary measure while not all dumpers have been implemented
-	assert(rec->dumper || rec->encoder || BATttype(b) == TYPE_bit);
+	if (rec->trivial_if_no_byteswap && !byteswap)
+		encoder = NULL;
 
-	if (rec->dumper) {
+	if (dumper) {
 		msg = rec->dumper(b, s, byteswap);
-	} else if (rec->encoder == NULL || (rec->trivial_if_no_byteswap && !byteswap)) {
-		msg = dump_trivial(b, s);
-	} else {
+	} else if (encoder) {
 		msg = dump_fixed_width(b, s, byteswap, rec->encoder, rec->record_size);
+	} else {
+		msg = dump_trivial(b, s);
 	}
 
 	return msg;

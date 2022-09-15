@@ -385,12 +385,15 @@ end:
 
 
 static struct type_record_t type_recs[] = {
+
 	// no conversion, no byteswapping
-	{ "bte", "bte", .decoder=NULL, },
-	{ "uuid", "uuid", .decoder=NULL, },
+	{ "bte", "bte", .encoder_trivial=true, .decoder_trivial=true},
+	{ "uuid", "uuid", .encoder_trivial=true, .decoder_trivial=true},
+
 	// no conversion and no byteswapping but we must do range checking on loading
-	{ "bit", "bit", .trivial_if_no_byteswap=false, .decoder=validate_bit, .encoder=NULL},
-	//
+	{ "bit", "bit", .trivial_if_no_byteswap=false, .decoder=validate_bit, .encoder_trivial=true},
+
+	// vanilla integer types
 	{ "sht", "sht", .trivial_if_no_byteswap=true, .decoder=byteswap_sht, .encoder=byteswap_sht},
 	{ "int", "int", .trivial_if_no_byteswap=true, .decoder=byteswap_int, .encoder=byteswap_int},
 	{ "lng", "lng", .trivial_if_no_byteswap=true, .decoder=byteswap_lng, .encoder=byteswap_lng},
@@ -399,11 +402,13 @@ static struct type_record_t type_recs[] = {
 #ifdef HAVE_HGE
 	{ "hge", "hge", .trivial_if_no_byteswap=true, .decoder=byteswap_hge, .encoder=byteswap_hge},
 #endif
+
 	// \0-terminated text records
 	{ "str", "str", .loader=load_zero_terminated_text, .dumper=dump_zero_terminated_text },
 	{ "url", "url", .loader=load_zero_terminated_text, .dumper=dump_zero_terminated_text },
 	{ "json", "json", .loader=load_zero_terminated_text, .dumper=dump_zero_terminated_text },
-	//
+
+	// temporal types have record size different from the underlying gdk type
 	{ "date", "date", .decoder=decode_date, .encoder=encode_date, .record_size=sizeof(copy_binary_date), },
 	{ "daytime", "daytime", .decoder=decode_time, .encoder=encode_time, .record_size=sizeof(copy_binary_time), },
 	{ "timestamp", "timestamp", .decoder=decode_timestamp, .encoder=encode_timestamp, .record_size=sizeof(copy_binary_timestamp), },
