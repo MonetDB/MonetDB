@@ -136,7 +136,6 @@ sql_symbol2relation(backend *be, symbol *sym)
 					  (struct NonMalEvent)
 					  {SQL_TO_REL, c, Tend, NULL, NULL, rel?0:1, Tend-Tbegin});
 
-	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
 	Tbegin = Tend;
 	if (rel)
 		rel = sql_processrelation(be->mvc, rel, extra_opts, extra_opts);
