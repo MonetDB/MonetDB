@@ -63,6 +63,7 @@ class DataMaker:
 
 def run_test(side, testcase):
     code, expected_result = testcase
+    assert '@ON@' in code
     # generate the query
     data_maker = DataMaker()
     data_maker.additionally('ON', 'ON ' + side.upper())
@@ -247,7 +248,7 @@ SELECT COUNT(id) FROM foo WHERE CAST(id AS REAL) + 0.5 = d;
 
 INTEGER_TYPES = ("""
 CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT);
-COPY BINARY INTO foo FROM @tinyints@, @smallints@, @ints@, @bigints@;
+COPY BINARY INTO foo FROM @tinyints@, @smallints@, @ints@, @bigints@ @ON@;
 
 WITH
 enlarged AS ( -- first go to the largest type
@@ -285,7 +286,7 @@ ORDER BY t_s, s_i, i_b
 
 HUGE_INTS = ("""
 CREATE TABLE foo(b BIGINT, h HUGEINT);
-COPY BINARY INTO foo FROM @bigints@, @hugeints@;
+COPY BINARY INTO foo FROM @bigints@, @hugeints@ @ON@;
 
 WITH
 enlarged AS (
@@ -415,7 +416,7 @@ OR    u IS NULL
 
 LITTLE_ENDIANS = ("""
 CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT, f FLOAT(4), d DOUBLE);
-COPY LITTLE ENDIAN BINARY INTO foo FROM @le_tinyints@, @le_smallints@, @le_ints@, @le_bigints@, @le_floats@, @le_doubles@;
+COPY LITTLE ENDIAN BINARY INTO foo FROM @le_tinyints@, @le_smallints@, @le_ints@, @le_bigints@, @le_floats@, @le_doubles@ @ON@;
 
 WITH
 enlarged AS ( -- first go to the largest type
@@ -458,7 +459,7 @@ ORDER BY t_s, s_i, i_b, f_d
 
 BIG_ENDIANS = ("""
 CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT, f FLOAT(4), d DOUBLE);
-COPY BIG ENDIAN BINARY INTO foo FROM @be_tinyints@, @be_smallints@, @be_ints@, @be_bigints@, @be_floats@, @be_doubles@;
+COPY BIG ENDIAN BINARY INTO foo FROM @be_tinyints@, @be_smallints@, @be_ints@, @be_bigints@, @be_floats@, @be_doubles@ @ON@;
 
 WITH
 enlarged AS ( -- first go to the largest type
@@ -501,7 +502,7 @@ ORDER BY t_s, s_i, i_b, f_d
 
 NATIVE_ENDIANS = ("""
 CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT, f FLOAT(4), d DOUBLE);
-COPY NATIVE ENDIAN BINARY INTO foo FROM @ne_tinyints@, @ne_smallints@, @ne_ints@, @ne_bigints@, @ne_floats@, @ne_doubles@;
+COPY NATIVE ENDIAN BINARY INTO foo FROM @ne_tinyints@, @ne_smallints@, @ne_ints@, @ne_bigints@, @ne_floats@, @ne_doubles@ @ON@;
 
 WITH
 enlarged AS ( -- first go to the largest type
