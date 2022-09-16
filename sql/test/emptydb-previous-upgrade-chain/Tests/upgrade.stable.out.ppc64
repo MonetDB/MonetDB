@@ -4050,6 +4050,10 @@ Running database upgrade commands:
 ALTER TABLE sys.table_types SET READ ONLY;
 
 Running database upgrade commands:
+grant execute on function sys.tracelog to public;
+grant select on sys.tracelog to public;
+
+Running database upgrade commands:
 drop procedure if exists wlc.master();
 drop procedure if exists wlc.master(string);
 drop procedure if exists wlc.stop();
