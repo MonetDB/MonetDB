@@ -5054,6 +5054,24 @@ sql_update_sep2022(Client c, mvc *sql)
 		}
 	}
 
+	/* 16_tracelog */
+	pos = snprintf(buf, bufsize, "select f.id from sys.schemas s, sys.functions f, sys.auths a, sys.privileges p, sys.auths g, sys.function_types ft, sys.privilege_codes pc where s.id = f.schema_id and f.id = p.obj_id and p.auth_id = a.id and p.grantor = g.id and p.privileges = pc.privilege_code_id and f.type = ft.function_type_id and s.name = 'sys' and f.name = 'tracelog' and ft.function_type_keyword = 'FUNCTION';\n");
+	assert(pos < bufsize);
+	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)))
+		goto bailout;
+	if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 0) {
+		pos = snprintf(buf, bufsize,
+					   "grant execute on function sys.tracelog to public;\n"
+					   "grant select on sys.tracelog to public;\n");
+		assert(pos < bufsize);
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+	}
+	res_table_destroy(output);
+	output = NULL;
+	if (err != MAL_SUCCEED)
+		return err;
+
 bailout:
 	if (output)
 		res_table_destroy(output);
