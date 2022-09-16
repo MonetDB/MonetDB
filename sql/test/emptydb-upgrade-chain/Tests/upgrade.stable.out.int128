@@ -3343,3 +3343,7 @@ INSERT INTO sys.table_types VALUES (7, 'UNLOGGED TABLE');
 Running database upgrade commands:
 ALTER TABLE sys.table_types SET READ ONLY;
 
+Running database upgrade commands:
+grant execute on function sys.tracelog to public;
+grant select on sys.tracelog to public;
+
