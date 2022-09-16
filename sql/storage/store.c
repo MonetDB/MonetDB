@@ -19,7 +19,7 @@
 #include "bat/bat_logger.h"
 
 /* version 05.23.02 of catalog */
-#define CATALOG_VERSION 52302	/* first after Jan2022 */
+#define CATALOG_VERSION 52302	/* first in Sep2022 */
 
 static int sys_drop_table(sql_trans *tr, sql_table *t, int drop_action);
 
@@ -2258,7 +2258,7 @@ id_hash_clear_older(sql_hash *h, ulng oldest)
 static void
 store_pending_changes(sqlstore *store, ulng oldest)
 {
-	ulng oldest_changes = store_get_timestamp(store);	
+	ulng oldest_changes = store_get_timestamp(store);
 	if (!list_empty(store->changes)) { /* lets first cleanup old stuff */
 		for(node *n=store->changes->h; n; ) {
 			node *next = n->next;
