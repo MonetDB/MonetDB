@@ -624,7 +624,7 @@ drop_trigger(mvc *sql, char *sname, char *tname, int if_exists)
 	return MAL_SUCCEED;
 }
 
-static char *
+char *
 drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 {
 	sql_schema *s = NULL;
@@ -675,7 +675,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 	return mvc_drop_table(sql, s, t, drop_action);
 }
 
-static char *
+char *
 drop_view(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 {
 	sql_table *t = NULL;
@@ -1106,7 +1106,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 {
 	sql_schema *s = NULL;
