@@ -4018,7 +4018,6 @@ sql_trans_commit(sql_trans *tr)
 			}
 			n = next;
 		}
-		tr->ts = commit_ts;
 		store_unlock(store);
 		MT_lock_unset(&store->commit);
 		list_destroy(tr->changes);

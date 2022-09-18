@@ -410,8 +410,6 @@ merge_segments(storage *s, sql_trans *tr, sql_change *change, ulng commit_ts, ul
 				node *n = store->active->h;
 				for (int i = 0; i < store->active->cnt; i++, n = n->next) {
 					ulng active = ((sql_trans*)n->data)->ts;
-					if(active == seg->ts || active == cur->ts)
-						continue; /* pretent that a recently committed transaction has already committed and is no longer active */
 					if (active == tr->ts)
 						continue; /* pretent that committing transaction has already committed and is no longer active */
 					if (seg->ts < active && cur->ts < active)
