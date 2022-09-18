@@ -4018,6 +4018,7 @@ sql_trans_commit(sql_trans *tr)
 			}
 			n = next;
 		}
+		tr->active = 2; /* small hack enabling to signal that this transaction has committed */
 		store_unlock(store);
 		MT_lock_unset(&store->commit);
 		list_destroy(tr->changes);
