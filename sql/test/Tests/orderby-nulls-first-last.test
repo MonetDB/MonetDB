@@ -8,7 +8,6 @@
 -- sql/test/SQLancer/Tests/sqlancer05.test
 -- sql/test/SQLancer/Tests/sqlancer11.test
 
-
 statement ok
 create table obn (cti tinyint, cbi bigint, crl real, cdl double, cch char(44), cvc varchar(99), cstr string, ctm time, cdt date, cts timestamp(0))
 
@@ -281,7 +280,6 @@ NULL
 3
 2
 
-
 query I nosort
 select cbi from obn order by cbi
 ----
@@ -403,7 +401,6 @@ NULL
 3
 2
 
-
 query R nosort
 select crl from obn order by crl
 ----
@@ -512,7 +509,6 @@ NULL
 4.000
 3.000
 2.000
-
 
 query R nosort
 select cdl from obn order by cdl
@@ -640,7 +636,6 @@ NULL
 4.000
 3.000
 
-
 query T nosort
 select cch from obn order by cch
 ----
@@ -749,7 +744,6 @@ NULL
 c9c
 c4c
 c3c
-
 
 query T nosort
 select cvc from obn order by cvc
@@ -865,7 +859,6 @@ vc9
 vc4
 vc3
 
-
 query T nosort
 select cstr from obn order by cstr
 ----
@@ -977,7 +970,6 @@ str4
 str3
 str2
 str12
-
 
 query T nosort
 select ctm from obn order by ctm
@@ -1097,7 +1089,6 @@ NULL
 03:03:03
 02:02:02
 
-
 query T nosort
 select cdt from obn order by cdt
 ----
@@ -1215,7 +1206,6 @@ NULL
 2004-04-04
 2003-03-03
 2002-02-02
-
 
 query T nosort
 select cts from obn order by cts
@@ -1337,7 +1327,6 @@ NULL
 2004-04-04 04:04:04
 2003-03-03 03:03:03
 2002-02-02 02:02:02
-
 
 statement ok
 drop table obn
