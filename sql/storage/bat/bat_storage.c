@@ -412,9 +412,9 @@ merge_segments(storage *s, sql_trans *tr, sql_change *change, ulng commit_ts, ul
 					sql_trans* other = ((sql_trans*)n->data);
 					ulng active = other->ts;
 					if(other->active == 2)
-						continue; /* pretent that an other recently committed transaction is no longer active */
+						continue; /* pretend that another recently committed transaction is no longer active */
 					if (active == tr->ts)
-						continue; /* pretent that committing transaction has already committed and is no longer active */
+						continue; /* pretend that committing transaction has already committed and is no longer active */
 					if (seg->ts < active && cur->ts < active)
 						break;
 					if (seg->ts > active && cur->ts > active)
