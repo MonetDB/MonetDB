@@ -1,43 +1,43 @@
-import pyodbc
-import time
-from multiprocessing import Pool
-import random
+import os, random, pymonetdb
+from concurrent.futures import ThreadPoolExecutor
 
-CONN_STR = 'DRIVER={/libMonetODBC.so};HOST=localhost;PORT=50000;DATABASE=devdb;UID=monetdb;PWD=monetdb'
-QUERIES = [
-    "select * from test limit 1",
-    "insert into test values (0, 0, 0, 0, 0)",
-]
-DURATION = 30
-CLIENTS = 16
+init    =   '''
+            drop table if exists foo;
+            create table foo (c1 int, c2 int, c3 int, c4 int, c5 int);
+            '''
 
-def run(_):
-    commits = 0
-    errors = 0
-    conn = pyodbc.connect(CONN_STR)
-    conn.autocommit = True
-    cursor = conn.cursor()
-    cursor.execute("set optimizer = 'default_fast'")
+queries =   [
+            "select * from foo limit 1;",
+            "insert into foo values (0, 0, 0, 0, 0);",
+            ]
 
-    begin = time.time()
-    while time.time() - begin < DURATION:
-        try:
-            cursor.execute(QUERIES[random.randint(0, len(QUERIES)-1)])
-        except:
-            print('error')
-            errors += 1
-        commits += 1
+nr_clients  = 16
+nr_queries  = 2000
 
-    return commits, errors
+h   = os.getenv('MAPIHOST')
+p   = int(os.getenv('MAPIPORT'))
+db  = os.getenv('TSTDB')
 
-conn = pyodbc.connect(CONN_STR)
-conn.autocommit = True
+conn = pymonetdb.connect(hostname=h, port=p,database=db, autocommit=True)
 cursor = conn.cursor()
-cursor.execute('create table if not exists test (c1 int, c2 int, c3 int, c4 int, c5 int)')
 
-pool = Pool(CLIENTS)
-results = pool.map(run, [None for _ in range(CLIENTS)])
-total = sum([x[0] for x in results])
-errors = sum([x[1] for x in results])
-print(f'{round(total / DURATION, 2)} tx/s')
-print(errors)
+try:
+    cursor.execute(init)
+except Exception as e:
+            print(e)
+            exit(1)
+
+def client(_):
+    conn = pymonetdb.connect(hostname=h, port=p,database=db, autocommit=True)
+    cursor = conn.cursor()
+    cursor.execute("set optimizer = 'default_fast';")
+
+    for x in range(0, nr_queries):
+        try:
+            cursor.execute(queries[random.randint(0, len(queries)-1)])
+        except Exception as e:
+            print(e)
+            exit(1)
+
+with ThreadPoolExecutor(nr_clients) as pool:
+    pool.map(client, range(nr_clients))
