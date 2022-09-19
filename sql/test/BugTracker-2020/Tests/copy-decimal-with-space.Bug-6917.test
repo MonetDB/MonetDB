@@ -19,7 +19,7 @@ copy 10 records into tmpcopy from stdin delimiters ',','\n'
 0,890
 
 query IR nosort
-select * from tmpcopy;
+select * from tmpcopy
 ----
 0
 1.200
@@ -43,10 +43,10 @@ select * from tmpcopy;
 890.000
 
 statement error
-copy 1 records into tmpcopy from stdin delimiters ',','\n';
+copy 1 records into tmpcopy from stdin delimiters ',','\n'
 <COPY_INTO_DATA>
 0,12.3456
 
 statement ok
-rollback;
+rollback
 

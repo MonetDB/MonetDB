@@ -1,4 +1,5 @@
 hash-threshold 110
+
 statement ok
 CREATE TABLE "sys"."myt" (
 	"column_id" INTEGER,

@@ -43,3 +43,4 @@ SELECT k FROM test
 @connection(id=1)
 statement ok
 DROP TABLE test
+

@@ -1,11 +1,11 @@
 statement ok
-create table sys.t7282 ("nr" INTEGER  PRIMARY KEY, "val1" INTEGER);
+create table sys.t7282 ("nr" INTEGER  PRIMARY KEY, "val1" INTEGER)
 
 statement ok rowcount 3
-insert into sys.t7282 values (1, 23), (2, 45), (3, 67);
+insert into sys.t7282 values (1, 23), (2, 45), (3, 67)
 
 query II nosort
-select * from sys.t7282;
+select * from sys.t7282
 ----
 1
 23
@@ -15,16 +15,16 @@ select * from sys.t7282;
 67
 
 statement ok
-create schema test;
+create schema test
 
 statement ok
-create table test.t7282 ("mk" VARCHAR(3) PRIMARY KEY, "val2" INTEGER);
+create table test.t7282 ("mk" VARCHAR(3) PRIMARY KEY, "val2" INTEGER)
 
 statement ok rowcount 2
-insert into test.t7282 values ('a', 23), ('b', 45);
+insert into test.t7282 values ('a', 23), ('b', 45)
 
 query TI nosort
-select * from test.t7282;
+select * from test.t7282
 ----
 a
 23
@@ -32,13 +32,13 @@ b
 45
 
 statement ok
-delete from dump_statements;
+delete from dump_statements
 
 statement ok
-call sys.dump_table_data();
+call sys.dump_table_data()
 
 query IT nosort
-select * from dump_statements;
+select * from dump_statements
 ----
 1
 COPY 3 RECORDS INTO "sys"."t7282"("nr", "val1") FROM STDIN USING DELIMITERS '|',E'\n','"';
@@ -57,17 +57,16 @@ COPY 2 RECORDS INTO "test"."t7282"("mk", "val2") FROM STDIN USING DELIMITERS '|'
 
 # remove one of the tables with the same name
 statement ok
-drop table sys.t7282;
-
-
-statement ok
-delete from dump_statements;
+drop table sys.t7282
 
 statement ok
-call sys.dump_table_data();
+delete from dump_statements
+
+statement ok
+call sys.dump_table_data()
 
 query IT nosort
-select * from dump_statements;
+select * from dump_statements
 ----
 1
 COPY 2 RECORDS INTO "test"."t7282"("mk", "val2") FROM STDIN USING DELIMITERS '|',E'\n','"';
@@ -78,7 +77,8 @@ COPY 2 RECORDS INTO "test"."t7282"("mk", "val2") FROM STDIN USING DELIMITERS '|'
 
 # cleanup
 statement ok
-drop table test.t7282;
+drop table test.t7282
 
 statement ok
-drop schema test;
+drop schema test
+

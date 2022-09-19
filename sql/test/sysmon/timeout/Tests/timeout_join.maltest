@@ -19,7 +19,6 @@ clients.setQryTimeoutMicro(qto);
 qto:= 0:lng;
 clients.setQryTimeoutMicro(qto);
 
-
 statement error
 int_a:=bat.new(:int);
 int_b:=bat.new(:int);
@@ -40,3 +39,4 @@ clients.setQryTimeoutMicro(qto);
 (vg_a,xg_b):=algebra.join(int_a,int_b,nil:bat,nil:bat,false,nil:lng);
 qto:= 0:lng;
 clients.setQryTimeoutMicro(qto);
+

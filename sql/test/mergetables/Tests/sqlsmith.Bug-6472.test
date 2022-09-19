@@ -1,5 +1,5 @@
 statement ok
-CREATE TABLE my_dims ("name"    VARCHAR(64),"length"  INTEGER);
+CREATE TABLE my_dims ("name"    VARCHAR(64),"length"  INTEGER)
 
 query TIT rowsort
 select
@@ -50,5 +50,5 @@ where EXISTS (
 ----
 
 statement ok
-DROP TABLE my_dims;
+DROP TABLE my_dims
 

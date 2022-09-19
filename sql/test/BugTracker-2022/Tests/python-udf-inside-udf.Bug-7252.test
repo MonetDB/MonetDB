@@ -47,3 +47,4 @@ DROP FUNCTION ups
 @connection(id=2)
 statement ok
 DROP FUNCTION pyfunc
+

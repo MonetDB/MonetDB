@@ -482,3 +482,4 @@ NULL
 
 statement ok
 DROP TABLE t0
+

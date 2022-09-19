@@ -2908,8 +2908,13 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                 raise
                             except:
                                 pass
+                        defines = []
+                        if lang == 'sql' and os.path.exists(TST+'.test.in'):
+                            for key in ('TSTDATAPATH', 'TSTSRCBASE', 'TSTSRCDIR', 'TSTTRGDIR', 'UTSTSRCDIR'):
+                                if key in env:
+                                    defines.append('{}={}'.format(key, env[key]))
                         try:
-                            sql.parse(TST+EXT, approve=open(TST+'.newtest','w') if approve else None)
+                            sql.parse(TST+EXT, approve=open(TST+'.newtest','w') if approve else None, defines=defines)
                         except sqllogictest.SQLLogicSyntaxError:
                             pass
                         except BrokenPipeError:

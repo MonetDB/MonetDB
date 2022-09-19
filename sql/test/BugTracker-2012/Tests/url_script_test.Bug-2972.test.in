@@ -129,7 +129,7 @@ statement ok
 create table t2972(u url)
 
 statement ok
-insert into t2972 values ('$UTSTSRCDIR/url_script_test.Bug-2972.txt')
+insert into t2972 values ('$QUTSTSRCDIR/url_script_test.Bug-2972.txt')
 
 statement error
 select getContent(u) from t2972

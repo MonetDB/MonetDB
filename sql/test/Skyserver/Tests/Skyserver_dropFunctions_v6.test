@@ -372,3 +372,4 @@ DROP FUNCTION fObj
 
 statement ok
 COMMIT
+
