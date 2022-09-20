@@ -4739,8 +4739,10 @@ sql_update_sep2022(Client c, mvc *sql)
 	}
 	res_table_destroy(output);
 	output = NULL;
-	if (err != MAL_SUCCEED)
+	if (err != MAL_SUCCEED) {
+		GDKfree(buf);
 		return err;
+	}
 
 	/* if 'describe_partition_tables' system view doesn't use 'vals'
 	 * CTE, re-create it; while we're at it, also update the sequence
@@ -5071,8 +5073,10 @@ sql_update_sep2022(Client c, mvc *sql)
 	}
 	res_table_destroy(output);
 	output = NULL;
-	if (err != MAL_SUCCEED)
+	if (err != MAL_SUCCEED) {
+		GDKfree(buf);
 		return err;
+	}
 
 	/* 10_sys_schema_extensions */
 	/* if the keyword LOCKED is in the list of keywords, upgrade */
@@ -5096,8 +5100,10 @@ sql_update_sep2022(Client c, mvc *sql)
 	}
 	res_table_destroy(output);
 	output = NULL;
-	if (err != MAL_SUCCEED)
+	if (err != MAL_SUCCEED) {
+		GDKfree(buf);
 		return err;
+	}
 
 	/* if the table type UNLOGGED TABLE is not in the list of table
 	 * types, upgrade */
@@ -5137,8 +5143,10 @@ sql_update_sep2022(Client c, mvc *sql)
 	}
 	res_table_destroy(output);
 	output = NULL;
-	if (err != MAL_SUCCEED)
+	if (err != MAL_SUCCEED) {
+		GDKfree(buf);
 		return err;
+	}
 
 bailout:
 	if (output)
