@@ -3114,7 +3114,7 @@ log_tstart(logger *lg, bool flushnow, ulng *log_file_id)
 {
 	MT_lock_set(&lg->rotation_lock);
 	log_lock(lg);
-	if (flushnow || lg->request_rotation) {
+	if (flushnow || (lg->request_rotation && ATOMIC_GET(&lg->refcount) == 0)) {
 		lg->id++;
 		log_close_output(lg);
 		/* start new file */
