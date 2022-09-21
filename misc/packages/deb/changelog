@@ -1,3 +1,45 @@
+monetdb (11.45.3) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 21 Sep 2022 09:39:01 +0200
+
+monetdb (11.45.3) unstable; urgency=low
+
+  * clients: Dumping of function GRANTs was improved by adding the types of the
+    function (and procedure) arguments.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 21 Sep 2022 09:39:01 +0200
+
+monetdb (11.45.3) unstable; urgency=low
+
+  * sql: The function sys.tracelog is now executable by anyone.  The function
+    (and view of the same name) returns the tracing information of a query
+    that was prepended with the TRACE keyword.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 21 Sep 2022 09:39:01 +0200
+
+monetdb (11.45.3) unstable; urgency=low
+
+  * gdk: Fixed a bug in ORDER BY with both NULLS LAST and LIMIT when the ordering
+    was on an interger or integer-like column and NULL values are present.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 19 Sep 2022 09:39:01 +0200
+
+monetdb (11.45.3) unstable; urgency=low
+
+  * sql: Fixed a bug in COPY BINARY INTO where the input wasn't checked
+    thoroughly enough.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 19 Sep 2022 09:39:01 +0200
+
+monetdb (11.45.3) unstable; urgency=low
+
+  * gdk: The median_avg and quantile_avg returned bogus results in the
+    non-grouped case (i.e. something like SELECT sys.median_avg(i) FROM t).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 13 Sep 2022 09:39:01 +0200
+
 monetdb (11.45.1) unstable; urgency=low
 
   * Rebuilt.
