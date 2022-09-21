@@ -1,3 +1,8 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Sep 21 2022 Sjoerd Mullender <sjoerd@acm.org>
+- The function sys.tracelog is now executable by anyone.  The function
+  (and view of the same name) returns the tracing information of a query
+  that was prepended with the TRACE keyword.
+
