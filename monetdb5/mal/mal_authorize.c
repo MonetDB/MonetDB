@@ -98,12 +98,10 @@ AUTHcommit(void)
  * after the GDK kernel has been initialized.
  */
 str
-AUTHinitTables(const char *passwd) {
+AUTHinitTables(void) {
 	bat bid;
 	int isNew = 1;
 	str msg = MAL_SUCCEED;
-
-	(void) passwd;
 
 	/* skip loading if already loaded */
 	if (rt_key != NULL && rt_deleted != NULL)

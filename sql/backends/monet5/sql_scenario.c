@@ -79,7 +79,7 @@ int SQLdebug = 0;
 static const char *sqlinit = NULL;
 static MT_Lock sql_contextLock = MT_LOCK_INITIALIZER(sql_contextLock);
 
-static str SQLinit(Client c);
+static str SQLinit(Client c, const char *initpasswd);
 
 str
 //SQLprelude(void *ret)
@@ -87,6 +87,10 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str tmp;
 	Scenario ms, s = getFreeScenario();
+	/* HACK ALERT: temporarily use sqlcontext to pass the initial
+	 * password to the prelude function */
+	const char *initpasswd = cntxt->sqlcontext;
+	cntxt->sqlcontext = NULL;
 
 	(void) mb;
 	(void) stk;
@@ -137,7 +141,7 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		.callbackCmd = MALcallback,
 	};
 
-	tmp = SQLinit(cntxt);
+	tmp = SQLinit(cntxt, initpasswd);
 	if (tmp != MAL_SUCCEED) {
 		TRC_CRITICAL(SQL_PARSER, "Fatal error during initialization: %s\n", tmp);
 		if (!GDKembedded()) {
@@ -365,7 +369,7 @@ SQLresetClient(Client c)
 MT_Id sqllogthread;
 
 static str
-SQLinit(Client c)
+SQLinit(Client c, const char *initpasswd)
 {
 	const char *debug_str = GDKgetenv("sql_debug");
 	char *msg = MAL_SUCCEED, *other = MAL_SUCCEED;
@@ -398,7 +402,7 @@ SQLinit(Client c)
 	if (readonly)
 		SQLdebug |= 32;
 
-	if ((SQLstore = mvc_init(SQLdebug, GDKinmemory(0) ? store_mem : store_bat, readonly, single_user)) == NULL) {
+	if ((SQLstore = mvc_init(SQLdebug, GDKinmemory(0) ? store_mem : store_bat, readonly, single_user, initpasswd)) == NULL) {
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Catalogue initialization failed");
 	}
