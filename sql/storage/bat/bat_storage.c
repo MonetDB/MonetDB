@@ -14,6 +14,7 @@
 #include "gdk_atoms.h"
 #include "matomic.h"
 
+#define FATAL_MERGE_FAILURE "Out Of Memory during critical merge operation: %s"
 #define inTransaction(tr,t) (isLocalTemp(t))
 
 static int log_update_col( sql_trans *tr, sql_change *c);
@@ -4097,11 +4098,9 @@ log_storage(sql_trans *tr, sql_table *t, storage *s)
 	return ok;
 }
 
-static int
-merge_cs( column_storage *cs)
+static void
+merge_cs( column_storage *cs, const char* caller)
 {
-	int ok = LOG_OK;
-
 	if (cs->bid && cs->ucnt) {
 		BAT *cur = temp_descriptor(cs->bid);
 		BAT *ui = temp_descriptor(cs->uibid);
@@ -4111,7 +4110,7 @@ merge_cs( column_storage *cs)
 			bat_destroy(ui);
 			bat_destroy(uv);
 			bat_destroy(cur);
-			return LOG_ERR;
+			GDKfatal(FATAL_MERGE_FAILURE, caller);
 		}
 		assert(BATcount(ui) == BATcount(uv));
 
@@ -4121,7 +4120,7 @@ merge_cs( column_storage *cs)
 			bat_destroy(ui);
 			bat_destroy(uv);
 			bat_destroy(cur);
-			return LOG_ERR;
+			GDKfatal(FATAL_MERGE_FAILURE, caller);
 		}
 		/* cleanup the old deltas */
 		temp_destroy(cs->uibid);
@@ -4136,41 +4135,26 @@ merge_cs( column_storage *cs)
 	}
 	cs->cleared = 0;
 	cs->merged = 1;
-	return ok;
-}
-
-static inline int
-_merge_delta( sql_delta *obat)
-{
-	int ok = LOG_OK;
-
-	if (obat && obat->next && !obat->cs.merged && (ok = _merge_delta(obat->next)) != LOG_OK)
-		return ok;
-	return merge_cs(&obat->cs);
+	return;
 }
 
 static void
-merge_delta( sql_delta *obat) {
-	/*
-	 * _merge_delta might only fail in extreme corner cases in which
-	 * merge_cs fails because of impending transgressions of memory capacity.
-	 * However this does not warrant an error from merge_delta as it is an
-	 * opportunistic cleanup of the delta's which in absence does not cause data corruption.
-	 * So the wrapper merge_delta can safely return void.
-	 * */
-	(void) _merge_delta(obat);
+merge_delta( sql_delta *obat)
+{
+	if (obat && obat->next && !obat->cs.merged)
+		merge_delta(obat->next);
+	merge_cs(&obat->cs, __func__);
 }
 
-static int
+static void
 merge_storage(storage *tdb)
 {
-	int ok = merge_cs(&tdb->cs);
+	merge_cs(&tdb->cs, __func__);
 
 	if (tdb->next) {
-		ok = destroy_storage(tdb->next);
+		destroy_storage(tdb->next);
 		tdb->next = NULL;
 	}
-	return ok;
 }
 
 static sql_delta *
@@ -4492,10 +4476,11 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 
 		ok = segments2cs(tr, dbat->segs, &dbat->cs);
 		assert(ok == LOG_OK);
-		if (ok == LOG_OK)
+		if (ok == LOG_OK) {
 			merge_segments(dbat, tr, change, commit_ts, oldest);
-		if (ok == LOG_OK && oldest == commit_ts)
-			ok = merge_storage(dbat);
+			if (oldest == commit_ts)
+				merge_storage(dbat);
+		}
 		if (dbat)
 			dbat->cs.cleared = false;
 	} else if (ok == LOG_OK && tr->parent) {/* cleanup older save points */
