@@ -1,7 +1,0 @@
-# ChangeLog file for sql
-# This file is updated with Maddlog
-
-* Mon Sep 19 2022 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed a bug in COPY BINARY INTO where the input wasn't checked
-  thoroughly enough.
-
