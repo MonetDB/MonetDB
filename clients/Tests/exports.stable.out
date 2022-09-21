@@ -1208,7 +1208,7 @@ const char *not_uniqueRef;
 const char *nth_valueRef;
 const char *ntileRef;
 const char *oidRef;
-str openProfilerStream(Client cntxt, str s);
+str openProfilerStream(Client cntxt, int m);
 const char *openRef;
 str operatorName(int i);
 void opt_pipes_reset(void);

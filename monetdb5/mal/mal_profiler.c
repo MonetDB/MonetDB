@@ -670,7 +670,7 @@ profilerEvent(MalEvent *me, NonMalEvent *nme)
 /* The first scheme dumps the events on a stream (and in the pool)
  */
 str
-openProfilerStream(Client cntxt, str s)
+openProfilerStream(Client cntxt, int m)
 {
 	int j;
 
@@ -693,7 +693,9 @@ openProfilerStream(Client cntxt, str s)
 		}
 	}
 	profilerStatus = -1;
-	if (s) profilerMode = 1; 	/* Atm, just check if not NULL */
+	/* 4 activates minimal mode. 1 and 3 were used in prev MonetDB versions */
+	/* else default is 0 of global var profilerMode */
+	if (m == 4) profilerMode = 1;
 	maleventstream = cntxt->fdout;
 	profilerUser = cntxt->user;
 

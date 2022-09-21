@@ -901,11 +901,12 @@ fi
   minimize, simplify and optimize the process of generating and processing
   profiler output, only the events marking the end of an operation are
   emitted in most cases and the emitted json messages themselves are
-  trimmed down to their essential fields. Furthermore the MAL instruction
-  profiler.openstream now has an overload that takes a single string
-  argument which can be set to "min" to turn on the profiler in minimal
-  mode which causes it to only emit general events and excludes individual
-  MAL instruction execution events from the profiler streams.
+  trimmed down to their essential fields. Furthermore, the MAL instruction
+  profiler.openstream now requires an integer as a single argument, "0" for
+  default behaviour or "4" to turn on the profiler in minimal mode,
+  which causes it to only emit general events and excludes individual MAL
+  instruction execution events from the profiler streams.
+  The MAL instruction profiler.openstream with zero arguments is deprecated.
 
 * Thu Aug 25 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.45.1-20220913
 - sql: Extended system view sys.users with columns: schema_path, max_memory,
