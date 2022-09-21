@@ -3096,13 +3096,12 @@ log_create_col(sql_trans *tr, sql_change *change)
 }
 
 static int
-commit_create_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
+commit_create_col_( sql_trans *tr, sql_table *t, sql_base *base, sql_delta *delta, ulng commit_ts, ulng oldest)
 {
 	int ok = LOG_OK;
 	(void)oldest;
 
-	if(!isTempTable(c->t)) {
-		sql_delta *delta = ATOMIC_PTR_GET(&c->data);
+	if(!isTempTable(t)) {
 		assert(delta->cs.ts == tr->tid);
 		delta->cs.ts = commit_ts;
 
@@ -3110,7 +3109,7 @@ commit_create_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 		if (!delta->cs.merged)
 			ok = merge_delta(delta);
 		if (!tr->parent)
-			c->base.new = 0;
+			base->new = 0;
 	}
 	return ok;
 }
@@ -3119,9 +3118,10 @@ static int
 commit_create_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	sql_column *c = (sql_column*)change->obj;
+	sql_delta *delta = ATOMIC_PTR_GET(&c->data);
 	if (!tr->parent)
 		c->base.new = 0;
-	return commit_create_col_( tr, c, commit_ts, oldest);
+	return commit_create_col_( tr, c->t, &c->base, delta, commit_ts, oldest);
 }
 
 /* will be called for new idx's and when new index columns are created */
@@ -3199,13 +3199,12 @@ log_create_idx(sql_trans *tr, sql_change *change)
 }
 
 static int
-commit_create_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
+commit_create_idx_( sql_trans *tr, sql_table *t, sql_base *base, sql_delta *delta, ulng commit_ts, ulng oldest)
 {
 	int ok = LOG_OK;
 	(void)oldest;
 
-	if(!isTempTable(i->t)) {
-		sql_delta *delta = ATOMIC_PTR_GET(&i->data);
+	if(!isTempTable(t)) {
 		assert(delta->cs.ts == tr->tid);
 		delta->cs.ts = commit_ts;
 
@@ -3213,7 +3212,7 @@ commit_create_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
 		if (!delta->cs.merged)
 			ok = merge_delta(delta);
 		if (!tr->parent)
-			i->base.new = 0;
+			base->new = 0;
 	}
 	return ok;
 }
@@ -3222,9 +3221,10 @@ static int
 commit_create_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	sql_idx *i = (sql_idx*)change->obj;
+	sql_delta *delta = ATOMIC_PTR_GET(&i->data);
 	if (!tr->parent)
 		i->base.new = 0;
-	return commit_create_idx_(tr, i, commit_ts, oldest);
+	return commit_create_idx_( tr, i->t, &i->base, delta, commit_ts, oldest);
 }
 
 static int
@@ -3461,15 +3461,17 @@ commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		if (ok == LOG_OK) {
 			for(node *n = ol_first_node(t->columns); n && ok == LOG_OK; n = n->next) {
 				sql_column *c = n->data;
+				sql_delta *delta = ATOMIC_PTR_GET(&c->data);
 
-				ok = commit_create_col_(tr, c, commit_ts, oldest);
+				ok = commit_create_col_(tr, c->t, &c->base, delta, commit_ts, oldest);
 			}
 			if (t->idxs) {
 				for(node *n = ol_first_node(t->idxs); n && ok == LOG_OK; n = n->next) {
 					sql_idx *i = n->data;
+					sql_delta *delta = ATOMIC_PTR_GET(&i->data);
 
-					if (ATOMIC_PTR_GET(&i->data))
-						ok = commit_create_idx_(tr, i, commit_ts, oldest);
+					if (delta)
+						ok = commit_create_idx_(tr, i->t, &i->base, delta, commit_ts, oldest);
 				}
 			}
 			if (!tr->parent)
