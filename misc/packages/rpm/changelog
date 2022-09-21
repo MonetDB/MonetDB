@@ -1,3 +1,27 @@
+* Wed Sep 21 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.3-20220921
+- Rebuilt.
+
+* Wed Sep 21 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.3-20220921
+- clients: Dumping of function GRANTs was improved by adding the types of the
+  function (and procedure) arguments.
+
+* Wed Sep 21 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.3-20220921
+- sql: The function sys.tracelog is now executable by anyone.  The function
+  (and view of the same name) returns the tracing information of a query
+  that was prepended with the TRACE keyword.
+
+* Mon Sep 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.3-20220921
+- gdk: Fixed a bug in ORDER BY with both NULLS LAST and LIMIT when the ordering
+  was on an interger or integer-like column and NULL values are present.
+
+* Mon Sep 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.3-20220921
+- sql: Fixed a bug in COPY BINARY INTO where the input wasn't checked
+  thoroughly enough.
+
+* Tue Sep 13 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.3-20220921
+- gdk: The median_avg and quantile_avg returned bogus results in the
+  non-grouped case (i.e. something like SELECT sys.median_avg(i) FROM t).
+
 * Tue Sep 13 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.1-20220913
 - Rebuilt.
 - GH#6982: Wrong constraint name in error message of constraint violation
