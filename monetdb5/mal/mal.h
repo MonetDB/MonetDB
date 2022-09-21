@@ -72,7 +72,7 @@ mal_export MT_Lock  mal_profileLock ;
 mal_export MT_Lock  mal_copyLock ;
 mal_export MT_Lock  mal_delayLock ;
 
-mal_export int mal_init(char *modules[], bool embedded);
+mal_export int mal_init(char *modules[], bool embedded, const char *initpasswd);
 mal_export _Noreturn void mal_exit(int status);
 mal_export void mal_reset(void);
 mal_export const char *mal_version(void);

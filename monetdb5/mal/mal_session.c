@@ -27,7 +27,7 @@
  * The startup script is run as user Admin.
  */
 str
-malBootstrap(char *modules[], bool embedded)
+malBootstrap(char *modules[], bool embedded, const char *initpasswd)
 {
 	Client c;
 	str msg = MAL_SUCCEED;
@@ -55,7 +55,7 @@ malBootstrap(char *modules[], bool embedded)
 		MCfreeClient(c);
 		throw(MAL, "malBootstrap", "Failed to create client thread");
 	}
-	if ((msg = malIncludeModules(c, modules, 0, embedded)) != MAL_SUCCEED) {
+	if ((msg = malIncludeModules(c, modules, 0, embedded, initpasswd)) != MAL_SUCCEED) {
 		MCfreeClient(c);
 		return msg;
 	}
