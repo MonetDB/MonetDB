@@ -33,3 +33,4 @@ clients.setQryTimeoutMicro(qto);
 
 statement ok
 factories.shutdown("user","random")
+

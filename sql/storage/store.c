@@ -3993,7 +3993,7 @@ sql_trans_commit(sql_trans *tr)
 			}
 			n = next;
 		}
-		tr->ts = commit_ts;
+		tr->active = 2; /* small hack enabling to signal that this transaction has committed */
 		store_unlock(store);
 		/* flush the log structure */
 		if (log) {

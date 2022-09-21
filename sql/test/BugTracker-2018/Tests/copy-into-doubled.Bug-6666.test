@@ -13,10 +13,10 @@ copy 1 records into "t1" from stdin
 1
 
 query I rowsort
-select count(*) from "t1";
+select count(*) from "t1"
 ----
 1
 
 statement ok
-drop table "t1";
+drop table "t1"
 

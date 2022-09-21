@@ -542,7 +542,7 @@ create view v21(vc0) as (values (greatest(cast(42 as real), ((0.353)*(-3))))) wi
 statement ok
 create view v24(vc0) as (values (0.22)) with check option
 
-query TI nosort
+query II nosort
 select ((sum(all least(((((0.32)-(0.33))) -(0.43)), -(cast(3 as bigint)))))>>2), 1 from v21
 join v18 on ((v18.vc0)>(cast(((0.33)
 -(0.222)) as double))) inner join (select distinct replace(sql_min(rtrim('便竼E*P'),
