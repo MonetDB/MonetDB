@@ -2611,24 +2611,42 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		  "AND p.grantable = go.id "
 		"ORDER BY s.name, t.name, c.name, a.name, g.name, p.grantable";
 	const char *function_grants =
-		"SELECT s.name, f.name, a.name, "
-		       "pc.privilege_code_name, "
-		       "g.name, go.opt, "
-		       "ft.function_type_keyword "
-		"FROM sys.schemas s, sys.functions f, "
-		     "sys.auths a, sys.privileges p, sys.auths g, "
-		     "sys.function_types ft, "
-		     "sys.privilege_codes pc, "
-		     "(VALUES (0, ''), (1, ' WITH GRANT OPTION')) AS go (id, opt) "
-		"WHERE s.id = f.schema_id "
+		"SELECT f.id, "
+			   "s.name, "
+			   "f.name, "
+			   "a.type, "
+			   "a.type_digits, "
+			   "a.type_scale, "
+			   "a.inout, "
+			   "a.number, "
+			   "au.name, "
+			   "pc.privilege_code_name, "
+			   "go.opt, "
+			   "ft.function_type_keyword "
+		"FROM sys.schemas s, "
+			 "sys.functions f LEFT OUTER JOIN sys.args a ON f.id = a.func_id, "
+			 "sys.auths au, "
+			 "sys.privileges p, "
+			 "sys.auths g, "
+			 "sys.function_types ft, "
+			 "sys.privilege_codes pc, "
+			 "(VALUES (0, ''), (1, ' WITH GRANT OPTION')) AS go (id, opt) "
+		"WHERE NOT f.system "
+		  "AND s.id = f.schema_id "
 		  "AND f.id = p.obj_id "
-		  "AND p.auth_id = a.id "
+		  "AND p.auth_id = au.id "
 		  "AND p.grantor = g.id "
 		  "AND p.privileges = pc.privilege_code_id "
 		  "AND f.type = ft.function_type_id "
-		  "AND NOT f.system "
 		  "AND p.grantable = go.id "
-		"ORDER BY s.name, f.name, a.name, g.name, p.grantable";
+		"ORDER BY s.name, "
+				 "f.name, "
+				 "au.name, "
+				 "g.name, "
+				 "p.grantable, "
+				 "f.id, "
+				 "a.inout DESC, "
+				 "a.number";
 	const char *global_grants =
 		"SELECT a.name, pc.grnt, g.name, go.opt "
 		"FROM sys.privileges p, "
@@ -2758,6 +2776,9 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 	char *curschema = NULL;
 	MapiHdl hdl = NULL;
 	int rc = 0;
+	int lastfid = 0;
+	const char *sep;
+	bool hashge = has_hugeint(mid);
 
 	/* start a transaction for the dump */
 	mnstr_printf(toConsole, "%s;\n", start_trx);
@@ -3269,7 +3290,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		if (priv == 79) {
 			mnstr_printf(toConsole, " ALL PRIVILEGES");
 		} else {
-			const char *sep = "";
+			sep = "";
 
 			if (priv & 1) {
 				mnstr_printf(toConsole, "%s SELECT", sep);
@@ -3327,7 +3348,11 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		dquoted_print(toConsole, cname, ") ON ");
 		dquoted_print(toConsole, schema, ".");
 		dquoted_print(toConsole, tname, " TO ");
-		dquoted_print(toConsole, aname, grantable);
+		if (strcmp(aname, "public") == 0) {
+			mnstr_printf(toConsole, "PUBLIC%s", grantable);
+		} else {
+			dquoted_print(toConsole, aname, grantable);
+		}
 		mnstr_printf(toConsole, ";\n");
 	}
 	if (mapi_error(mid))
@@ -3338,21 +3363,44 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 	    mapi_error(mid))
 		goto bailout;
 
+	sep = "";
 	while (mapi_fetch_row(hdl) != 0) {
-		const char *schema = mapi_fetch_field(hdl, 0);
-		const char *fname = mapi_fetch_field(hdl, 1);
-		const char *aname = mapi_fetch_field(hdl, 2);
-		const char *priv = mapi_fetch_field(hdl, 3);
-		const char *grantable = mapi_fetch_field(hdl, 5);
-		const char *ftype = mapi_fetch_field(hdl, 6);
+		const char *fid = mapi_fetch_field(hdl, 0);
+		const char *schema = mapi_fetch_field(hdl, 1);
+		const char *fname = mapi_fetch_field(hdl, 2);
+		const char *argtype = mapi_fetch_field(hdl, 3);
+		const char *argdigits = mapi_fetch_field(hdl, 4);
+		const char *argscale = mapi_fetch_field(hdl, 5);
+		const char *arginout = mapi_fetch_field(hdl, 6);
+		const char *argnumber = mapi_fetch_field(hdl, 7);
+		const char *aname = mapi_fetch_field(hdl, 8);
+		const char *priv = mapi_fetch_field(hdl, 9);
+		const char *grantable = mapi_fetch_field(hdl, 10);
+		const char *ftype = mapi_fetch_field(hdl, 11);
 
 		if (sname != NULL && strcmp(schema, sname) != 0)
 			continue;
-		mnstr_printf(toConsole, "GRANT %s ON %s ", priv, ftype);
-		dquoted_print(toConsole, schema, ".");
-		dquoted_print(toConsole, fname, " TO ");
-		dquoted_print(toConsole, aname, grantable);
-		mnstr_printf(toConsole, ";\n");
+		int thisfid = atoi(fid);
+		if (lastfid != thisfid) {
+			lastfid = thisfid;
+			sep = "";
+			mnstr_printf(toConsole, "GRANT %s ON %s ", priv, ftype);
+			dquoted_print(toConsole, schema, ".");
+			dquoted_print(toConsole, fname, "(");
+		}
+		if (arginout != NULL && strcmp(arginout, "1") == 0) {
+			mnstr_printf(toConsole, "%s", sep);
+			dump_type(mid, toConsole, argtype, argdigits, argscale, hashge);
+			sep = ", ";
+		} else if (argnumber == NULL || strcmp(argnumber, "0") == 0) {
+			mnstr_printf(toConsole, ") TO ");
+			if (strcmp(aname, "public") == 0) {
+				mnstr_printf(toConsole, "PUBLIC%s", grantable);
+			} else {
+				dquoted_print(toConsole, aname, grantable);
+			}
+			mnstr_printf(toConsole, ";\n");
+		}
 	}
 	if (mapi_error(mid))
 		goto bailout;

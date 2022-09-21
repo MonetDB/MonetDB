@@ -2,24 +2,23 @@
 
 @connection(id=1, username=monetdb, password=monetdb)
 statement ok
-CREATE TABLE Test (k int);
+CREATE TABLE Test (k int)
 
 @connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 1
 
 @connection(id=1)
 statement ok
-INSERT INTO Test SELECT value FROM generate_series(1, 11);
+INSERT INTO Test SELECT value FROM generate_series(1, 11)
 
 @connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 1
-
 
 # TEST INSERTS
 # the four uncommitted transactions create four new segments, appended to the tail of the segment list;
@@ -47,41 +46,41 @@ begin transaction
 
 @connection(id=1)
 statement ok
-INSERT INTO Test VALUES (11);
+INSERT INTO Test VALUES (11)
 
 @connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 2
 
 @connection(id=2)
 statement ok
-INSERT INTO Test VALUES (12);
+INSERT INTO Test VALUES (12)
 
 @connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 3
 
 @connection(id=3)
 statement ok
-INSERT INTO Test VALUES (13), (14);
+INSERT INTO Test VALUES (13), (14)
 
 @connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 4
 
 @connection(id=4)
 statement ok
-INSERT INTO Test VALUES (15);
+INSERT INTO Test VALUES (15)
 
 @connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 5
 
@@ -90,8 +89,8 @@ statement ok
 commit
 
 @connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 5
 
@@ -100,8 +99,8 @@ statement ok
 commit
 
 @connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 5
 
@@ -110,20 +109,20 @@ statement ok
 commit
 
 @connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 4
 
 @connection(id=1)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,5,6,7,8,9,10,11,13,14,15
 
 @connection(id=2)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,5,6,7,8,9,10,12
 
@@ -132,17 +131,16 @@ statement ok
 commit
 
 @connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 1
 
 @connection(id=1)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
-
 
 # TEST DELETES
 # the first transaction is read only;
@@ -159,8 +157,8 @@ statement ok
 DELETE FROM Test WHERE k = 5
 
 @connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 3
 
@@ -169,20 +167,20 @@ statement ok
 DELETE FROM Test WHERE k = 7
 
 @connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 5
 
 @connection(id=1)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
 
 @connection(id=2)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,6,8,9,10,11,12,13,14,15
 
@@ -191,20 +189,20 @@ statement ok
 DELETE FROM Test WHERE k = 6
 
 @connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 3
 
 @connection(id=1)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
 
 @connection(id=2)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,8,9,10,11,12,13,14,15
 
@@ -213,11 +211,10 @@ statement ok
 commit
 
 @connection(id=1)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,8,9,10,11,12,13,14,15
-
 
 # TEST FILLING HOLES
 # there are currently 3 segments, with the middle one referring to three deleted rows;
@@ -236,33 +233,33 @@ begin transaction
 
 @connection(id=2)
 statement ok
-INSERT INTO TEST VALUES (16);
+INSERT INTO TEST VALUES (16)
 
 @connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 4
 
 @connection(id=2)
 statement ok
-INSERT INTO TEST VALUES (17);
+INSERT INTO TEST VALUES (17)
 
 @connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 4
 
 @connection(id=1)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,8,9,10,11,12,13,14,15
 
 @connection(id=2)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,16,17,8,9,10,11,12,13,14,15
 
@@ -271,36 +268,36 @@ statement ok
 commit
 
 @connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 4
 
 @connection(id=1)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,16,17,8,9,10,11,12,13,14,15
 
 @connection(id=2)
 statement ok
-INSERT INTO TEST VALUES (18);
+INSERT INTO TEST VALUES (18)
 
 @connection(id=1)
-query I
-SELECT segments FROM sys.deltas('sys', 'test');
+query I nosort
+SELECT segments FROM sys.deltas('sys', 'test')
 ----
 1
 
 @connection(id=1)
-query T
-SELECT listagg(k) FROM test;
+query T nosort
+SELECT listagg(k) FROM test
 ----
 1,2,3,4,16,17,18,8,9,10,11,12,13,14,15
-
 
 # CLEANUP
 
 @connection(id=1)
 statement ok
-DROP TABLE Test;
+DROP TABLE Test
+

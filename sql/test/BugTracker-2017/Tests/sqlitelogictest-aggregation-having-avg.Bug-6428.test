@@ -31,3 +31,4 @@ DROP TABLE tab0
 
 statement ok
 ROLLBACK
+

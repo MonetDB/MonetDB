@@ -45,3 +45,4 @@ query T rowsort
 io.print(x_1)
 ----
 1
+

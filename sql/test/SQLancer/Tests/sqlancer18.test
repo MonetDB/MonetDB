@@ -679,3 +679,4 @@ SELECT c0 FROM tmp.t2
 
 statement ok
 DROP TABLE t2
+
