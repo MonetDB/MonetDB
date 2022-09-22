@@ -54,7 +54,7 @@ select regexp_replace('foo', 'f o o', 'XYZ')
 ----
 foo
 
-# regex option - not extended
+# regex option - extended
 query T rowsort
 select regexp_replace('foo', 'f o o', 'XYZ', 'x')
 ----
