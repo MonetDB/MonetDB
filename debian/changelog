@@ -1,3 +1,9 @@
+monetdb (11.45.5) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 22 Sep 2022 17:59:36 +0200
+
 monetdb (11.45.3) unstable; urgency=low
 
   * Rebuilt.
