@@ -3056,7 +3056,6 @@ create_col(sql_trans *tr, sql_column *c)
 				if(bat->cs.uvbid == BID_NIL)
 					ok = LOG_ERR;
 			}
-			bat->cs.alter = 1;
 		} else {
 			BAT *b = bat_new(type, c->t->sz, PERSISTENT);
 			if (!b) {
@@ -3108,9 +3107,8 @@ commit_create_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 		delta->cs.ts = commit_ts;
 
 		assert(delta->next == NULL);
-		if (!delta->cs.alter && !delta->cs.merged)
+		if (!delta->cs.merged)
 			ok = merge_delta(delta);
-		delta->cs.alter = 0;
 		if (!tr->parent)
 			c->base.new = 0;
 	}
@@ -3171,8 +3169,6 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		}
 
 		bat->cs.ucnt = 0;
-		if (!isNew(c))
-			bat->cs.alter = 1;
 
 		if (!new) {
 			bat->cs.uibid = e_bat(TYPE_oid);
@@ -3214,7 +3210,7 @@ commit_create_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
 		delta->cs.ts = commit_ts;
 
 		assert(delta->next == NULL);
-		if (!delta->cs.alter && !delta->cs.merged)
+		if (!delta->cs.merged)
 			ok = merge_delta(delta);
 		if (!tr->parent)
 			i->base.new = 0;
