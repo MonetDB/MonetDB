@@ -4047,33 +4047,6 @@ log_update_col( sql_trans *tr, sql_change *change)
 }
 
 static int
-commit_update_col_( sql_trans *tr, sql_table *t, sql_base* base, sql_delta *delta, int type, ulng commit_ts, ulng oldest)
-{
-	int ok = LOG_OK;
-
-	(void)oldest;
-	if (isTempTable(t)) {
-		if (commit_ts) { /* commit */
-			if (t->commit_action == CA_COMMIT || t->commit_action == CA_PRESERVE) {
-				if (!delta->cs.merged)
-					ok = merge_delta(delta);
-			} else if (clear_cs(tr, &delta->cs, true, isTempTable(t)) == BUN_NONE) {
-				ok = LOG_ERR; /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
-			}
-		} else { /* rollback */
-			if (t->commit_action == CA_COMMIT/* || t->commit_action == CA_PRESERVE*/) {
-				ok = rollback_delta(tr, delta, type);
-			} else if (clear_cs(tr, &delta->cs, true, isTempTable(t)) == BUN_NONE) {
-				ok = LOG_ERR; /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
-			}
-		}
-		if (!tr->parent)
-			t->base.new = base->new = 0;
-	}
-	return ok;
-}
-
-static int
 tc_gc_rollbacked( sql_store Store, sql_change *change, ulng oldest)
 {
 	sqlstore *store = Store;
@@ -4103,71 +4076,13 @@ tc_gc_rollbacked_storage( sql_store Store, sql_change *change, ulng oldest)
 	return 0;
 }
 
-
 static int
-commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
+commit_update_delta( sql_trans *tr, sql_change *change, sql_table* t, sql_base* base, ATOMIC_PTR_TYPE* data, int type, ulng commit_ts, ulng oldest)
 {
-
-	sql_column *c = (sql_column*)change->obj;
-	sql_base* base = &c->base;
-	sql_table* t = c->t;
-	ATOMIC_PTR_TYPE* data = &c->data;
-	int type = c->type.type->localtype;
 
 	int ok = LOG_OK;
 	sql_delta *delta = ATOMIC_PTR_GET(data);
 
-	if (isTempTable(t))
-		return commit_update_col_(tr, t, base, delta, type, commit_ts, oldest);
-	if (commit_ts)
-		delta->cs.ts = commit_ts;
-	if (!commit_ts) { /* rollback */
-		sql_delta *d = change->data, *o = ATOMIC_PTR_GET(data);
-
-		if (change->ts && t->base.new) /* handled by create col */
-			return ok;
-		if (o != d) {
-			while(o && o->next != d)
-				o = o->next;
-		}
-		if (o == ATOMIC_PTR_GET(data))
-			ATOMIC_PTR_SET(data, d->next);
-		else
-			o->next = d->next;
-		change->cleanup = &tc_gc_rollbacked;
-	} else if (ok == LOG_OK && !tr->parent) {
-		/* merge deltas */
-		while (delta && delta->cs.ts > oldest)
-			delta = delta->next;
-		if (ok == LOG_OK && delta && !delta->cs.merged && delta->cs.ts <= oldest) {
-			lock_column(tr->store, base->id); /* lock for concurrent updates (appends) */
-			ok = merge_delta(delta);
-			unlock_column(tr->store, base->id);
-		}
-	} else if (ok == LOG_OK && tr->parent) /* move delta into older and cleanup current save points */
-		ATOMIC_PTR_SET(data, savepoint_commit_delta(delta, commit_ts));
-	return ok;
-}
-
-static int
-log_update_idx( sql_trans *tr, sql_change *change)
-{
-	sql_idx *i = (sql_idx*)change->obj;
-
-	if (!isTempTable(i->t) && !tr->parent) { /* don't write save point commits */
-		storage *s = ATOMIC_PTR_GET(&i->t->data);
-		sql_delta *d = ATOMIC_PTR_GET(&i->data);
-		return tr_log_cs(tr, i->t, &d->cs, s->segs->h, i->base.id);
-	}
-	return LOG_OK;
-}
-
-static int
-commit_update_idx_( sql_trans *tr, sql_table *t, sql_base* base, sql_delta *delta, int type, ulng commit_ts, ulng oldest)
-{
-	int ok = LOG_OK;
-
-	(void)oldest;
 	if (isTempTable(t)) {
 		if (commit_ts) { /* commit */
 			if (t->commit_action == CA_COMMIT || t->commit_action == CA_PRESERVE) {
@@ -4185,24 +4100,9 @@ commit_update_idx_( sql_trans *tr, sql_table *t, sql_base* base, sql_delta *delt
 		}
 		if (!tr->parent)
 			t->base.new = base->new = 0;
+
+		return ok;
 	}
-	return ok;
-}
-
-static int
-commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
-{
-	sql_idx *i = (sql_idx*)change->obj;
-	sql_base* base = &i->base;
-	sql_table* t = i->t;
-	ATOMIC_PTR_TYPE* data = &i->data;
-	int type = (oid_index(i->type))?TYPE_oid:TYPE_lng;
-
-	int ok = LOG_OK;
-	sql_delta *delta = ATOMIC_PTR_GET(data);
-
-	if (isTempTable(t))
-		return commit_update_idx_(tr, t, base, delta, type, commit_ts, oldest);
 	if (commit_ts)
 		delta->cs.ts = commit_ts;
 	if (!commit_ts) { /* rollback */
@@ -4231,6 +4131,44 @@ commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	} else if (ok == LOG_OK && tr->parent) /* move delta into older and cleanup current save points */
 		ATOMIC_PTR_SET(data, savepoint_commit_delta(delta, commit_ts));
 	return ok;
+}
+
+static int
+commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
+{
+
+	sql_column *c = (sql_column*)change->obj;
+	sql_base* base = &c->base;
+	sql_table* t = c->t;
+	ATOMIC_PTR_TYPE* data = &c->data;
+	int type = c->type.type->localtype;
+
+	return commit_update_delta(tr, change, t, base, data, type, commit_ts, oldest);
+}
+
+static int
+log_update_idx( sql_trans *tr, sql_change *change)
+{
+	sql_idx *i = (sql_idx*)change->obj;
+
+	if (!isTempTable(i->t) && !tr->parent) { /* don't write save point commits */
+		storage *s = ATOMIC_PTR_GET(&i->t->data);
+		sql_delta *d = ATOMIC_PTR_GET(&i->data);
+		return tr_log_cs(tr, i->t, &d->cs, s->segs->h, i->base.id);
+	}
+	return LOG_OK;
+}
+
+static int
+commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
+{
+	sql_idx *i = (sql_idx*)change->obj;
+	sql_base* base = &i->base;
+	sql_table* t = i->t;
+	ATOMIC_PTR_TYPE* data = &i->data;
+	int type = (oid_index(i->type))?TYPE_oid:TYPE_lng;
+
+	return commit_update_delta(tr, change, t, base, data, type, commit_ts, oldest);
 }
 
 static storage *
