@@ -692,10 +692,20 @@ openProfilerStream(Client cntxt, int m)
 			throw(MAL,"profiler.start","Profiler already running, stream not available");
 		}
 	}
-	profilerStatus = -1;
-	/* 4 activates minimal mode. 1 and 3 were used in prev MonetDB versions */
-	/* else default is 0 of global var profilerMode */
-	if (m == 4) profilerMode = 1;
+	/* 4 activates profiler in minimal mode. 1 and 3 were used in prev MonetDB versions */
+	/* 0 activates profiler in detailed mode */
+	switch (m) {
+	    case 0:
+			profilerStatus = -1;
+			break;
+	    case 4:
+			profilerStatus = -1;
+			profilerMode = 1;
+			break;
+	    default:
+			MT_lock_unset(&mal_profileLock);
+			throw(MAL,"profiler.openstream","Undefined profiler mode option");
+	}
 	maleventstream = cntxt->fdout;
 	profilerUser = cntxt->user;
 

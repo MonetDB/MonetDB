@@ -51,9 +51,10 @@ CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	(void) stk;
 	(void) pc;
 	int m = 0;
-	if (getArgType(mb, pc, 1) == TYPE_int && (pc->argc == 1 || pc->argc == 2)) {
+	if (pc->argc == 2 && getArgType(mb, pc, 1) == TYPE_int)
 		m = *getArgReference_int(stk, pc, 1);
-	}
+	else if (pc->argc > 2)
+		m = -1;
 	return openProfilerStream(cntxt, m);
 }
 
