@@ -2122,13 +2122,13 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 
 	query_len = snprintf(query, query_size,
 		      "SELECT f.id, "
-			     "f.func, "
-			     "f.language, "
-			     "f.type, "
-			     "s.name, "
-			     "f.name, "
-			     "ft.function_type_keyword, "
-			     "fl.language_keyword, "
+					 "f.func, "
+					 "f.language, "
+					 "f.type, "
+					 "s.name, "
+					 "f.name, "
+					 "ft.function_type_keyword, "
+					 "fl.language_keyword, "
 		             "c.remark "
 		      "FROM sys.functions f "
 			   "JOIN sys.schemas s ON f.schema_id = s.id "
@@ -2536,7 +2536,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		has_schema_path(mid) ?
 		"SELECT ui.name, "
 		       "ui.fullname, "
-		       "password_hash(ui.name), "
+		       "sys.password_hash(ui.name), "
 		       "s.name, "
 			   "ui.schema_path "
 		"FROM sys.db_user_info ui, "
@@ -2547,7 +2547,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		"ORDER BY ui.name" :
 		"SELECT ui.name, "
 		       "ui.fullname, "
-		       "password_hash(ui.name), "
+		       "sys.password_hash(ui.name), "
 		       "s.name, "
 			   "cast(null as clob) "
 		"FROM sys.db_user_info ui, "
