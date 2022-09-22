@@ -855,6 +855,9 @@ fi
 %endif
 
 %changelog
+* Thu Sep 22 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.5-20220922
+- Rebuilt.
+
 * Wed Sep 21 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.3-20220921
 - Rebuilt.
 
