@@ -2266,8 +2266,8 @@ store_pending_changes(sqlstore *store, ulng oldest)
 			if (c->cleanup(store, c, oldest)) {
 				list_remove_node(store->changes, store, n);
 				_DELETE(c);
-			} else if (c->ts < oldest_changes) {
-				oldest_changes = c->ts;
+			} else if (c->foobar_ts < oldest_changes) {
+				oldest_changes = c->foobar_ts;
 			}
 			n = next;
 		}
@@ -3598,7 +3598,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 
 			if (c->commit)
 				c->commit(tr, c, 0 /* ie rollback */, oldest);
-			c->ts = commit_ts;
+			c->foobar_ts = commit_ts;
 		}
 		store_pending_changes(store, oldest);
 		for(node *n=nl->h; n; n = n->next) {
@@ -3960,7 +3960,7 @@ sql_trans_commit(sql_trans *tr)
 				ok = c->commit(tr, c, commit_ts, oldest);
 			else
 				c->obj->new = 0;
-			c->ts = commit_ts;
+			c->foobar_ts = commit_ts;
 		}
 		/* propagate transaction dependencies to the storage only if other transactions are running */
 		if (ok == LOG_OK && !tr->parent && ATOMIC_GET(&store->nr_active) > 1) {

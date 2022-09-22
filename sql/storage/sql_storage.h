@@ -523,7 +523,7 @@ typedef struct sql_dependency_change {
 
 typedef struct sql_change {
 	sql_base *obj;
-	ulng ts;        /* commit/rollback timestamp */
+	ulng foobar_ts;        /* commit/rollback timestamp */
 	void *data;	/* data changes */
 	bool committed;	/* commit or rollback */
 	bool handled;	/* handled in commit */
