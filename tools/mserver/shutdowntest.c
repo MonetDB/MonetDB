@@ -245,7 +245,7 @@ static str monetdb_initialize(void) {
 		}
 	}
 	/* make sure the authorisation BATs are loaded */
-	if ((retval = AUTHinitTables(NULL)) != MAL_SUCCEED) {
+	if ((retval = AUTHinitTables()) != MAL_SUCCEED) {
 		/* don't show this as a crash */
 		err = msab_registerStop();
 		if (err)
@@ -257,7 +257,7 @@ static str monetdb_initialize(void) {
 	char *modules[2];
 	modules[0] = "sql";
 	modules[1] = 0;
-	if (mal_init(modules, true) != 0) { // mal_init() does not return meaningful codes on failure
+	if (mal_init(modules, true, NULL) != 0) { // mal_init() does not return meaningful codes on failure
 		retval = GDKstrdup("mal_init() failed");
 		goto cleanup;
 	}

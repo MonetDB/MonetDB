@@ -83,7 +83,7 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 			return msg;
 		}
 	}
-	if ((msg = AUTHinitTables(NULL)) != MAL_SUCCEED)
+	if ((msg = AUTHinitTables()) != MAL_SUCCEED)
 		return msg;
 
 	if (!MCinit())
@@ -124,7 +124,7 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 		return msg;
 	}
 	char *modules[5] = { "embedded", "sql", "generator", "udf" };
-	if ((msg = malIncludeModules(c, modules, 0, !with_mapi_server)) != MAL_SUCCEED) {
+	if ((msg = malIncludeModules(c, modules, 0, !with_mapi_server, NULL)) != MAL_SUCCEED) {
 		MCcloseClient(c);
 		setClientContext(c_old); // restore context
 		return msg;
