@@ -34,3 +34,4 @@ concurrent_merge_tables
 
 mergetabledependencies
 replicatabledependencies
+merge-tables-limitations
