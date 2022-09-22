@@ -4091,6 +4091,7 @@ merge_cs( column_storage *cs, const char* caller)
 			bat_destroy(uv);
 			bat_destroy(cur);
 			GDKfatal(FATAL_MERGE_FAILURE, caller);
+			return;
 		}
 		assert(BATcount(ui) == BATcount(uv));
 
@@ -4101,6 +4102,7 @@ merge_cs( column_storage *cs, const char* caller)
 			bat_destroy(uv);
 			bat_destroy(cur);
 			GDKfatal(FATAL_MERGE_FAILURE, caller);
+			return;
 		}
 		/* cleanup the old deltas */
 		temp_destroy(cs->uibid);
@@ -4245,7 +4247,7 @@ commit_update_delta( sql_trans *tr, sql_change *change, sql_table* t, sql_base* 
 	if (!commit_ts) { /* rollback */
 		sql_delta *d = change->data, *o = ATOMIC_PTR_GET(data);
 
-		if (change->ts && t->base.new) /* handled by create col */
+		if (change->foobar_ts && t->base.new) /* handled by create col */
 			return LOG_OK;
 		if (o != d) {
 			while(o && o->next != d)
@@ -4380,7 +4382,7 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	lock_table(tr->store, t->base.id);
 	if (!commit_ts) { /* rollback */
 		if (dbat->cs.ts == tr->tid) {
-			if (change->ts && t->base.new) { /* handled by the create table */
+			if (change->foobar_ts && t->base.new) { /* handled by the create table */
 				unlock_table(tr->store, t->base.id);
 				return ok;
 			}
