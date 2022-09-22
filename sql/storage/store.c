@@ -21,8 +21,6 @@
 /* version 05.23.02 of catalog */
 #define CATALOG_VERSION 52302	/* first in Sep2022 */
 
-static int sys_drop_table(sql_trans *tr, sql_table *t, int drop_action);
-
 ulng
 store_function_counter(sqlstore *store)
 {
