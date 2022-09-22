@@ -3116,7 +3116,6 @@ create_col(sql_trans *tr, sql_column *c)
 				if(bat->cs.uvbid == BID_NIL)
 					ok = LOG_ERR;
 			}
-			bat->cs.alter = 1;
 		} else {
 			BAT *b = bat_new(type, c->t->sz, PERSISTENT);
 			if (!b) {
@@ -3157,22 +3156,20 @@ log_create_col(sql_trans *tr, sql_change *change)
 }
 
 static int
-commit_create_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
+commit_create_delta( sql_trans *tr, sql_table *t, sql_base *base, sql_delta *delta, ulng commit_ts, ulng oldest)
 {
 	int ok = LOG_OK;
 	(void)oldest;
 
-	if(!isTempTable(c->t)) {
-		sql_delta *delta = ATOMIC_PTR_GET(&c->data);
+	if(!isTempTable(t)) {
 		assert(delta->cs.ts == tr->tid);
 		delta->cs.ts = commit_ts;
 
 		assert(delta->next == NULL);
-		if (!delta->cs.alter && !delta->cs.merged)
+		if (!delta->cs.merged)
 			ok = merge_delta(delta);
-		delta->cs.alter = 0;
 		if (!tr->parent)
-			c->base.new = 0;
+			base->new = 0;
 	}
 	return ok;
 }
@@ -3181,9 +3178,10 @@ static int
 commit_create_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	sql_column *c = (sql_column*)change->obj;
+	sql_delta *delta = ATOMIC_PTR_GET(&c->data);
 	if (!tr->parent)
 		c->base.new = 0;
-	return commit_create_col_( tr, c, commit_ts, oldest);
+	return commit_create_delta( tr, c->t, &c->base, delta, commit_ts, oldest);
 }
 
 /* will be called for new idx's and when new index columns are created */
@@ -3231,8 +3229,6 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		}
 
 		bat->cs.ucnt = 0;
-		if (!isNew(c))
-			bat->cs.alter = 1;
 
 		if (!new) {
 			bat->cs.uibid = e_bat(TYPE_oid);
@@ -3263,32 +3259,13 @@ log_create_idx(sql_trans *tr, sql_change *change)
 }
 
 static int
-commit_create_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
-{
-	int ok = LOG_OK;
-	(void)oldest;
-
-	if(!isTempTable(i->t)) {
-		sql_delta *delta = ATOMIC_PTR_GET(&i->data);
-		assert(delta->cs.ts == tr->tid);
-		delta->cs.ts = commit_ts;
-
-		assert(delta->next == NULL);
-		if (!delta->cs.alter && !delta->cs.merged)
-			ok = merge_delta(delta);
-		if (!tr->parent)
-			i->base.new = 0;
-	}
-	return ok;
-}
-
-static int
 commit_create_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	sql_idx *i = (sql_idx*)change->obj;
+	sql_delta *delta = ATOMIC_PTR_GET(&i->data);
 	if (!tr->parent)
 		i->base.new = 0;
-	return commit_create_idx_(tr, i, commit_ts, oldest);
+	return commit_create_delta( tr, i->t, &i->base, delta, commit_ts, oldest);
 }
 
 static int
@@ -3525,15 +3502,17 @@ commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		if (ok == LOG_OK) {
 			for(node *n = ol_first_node(t->columns); n && ok == LOG_OK; n = n->next) {
 				sql_column *c = n->data;
+				sql_delta *delta = ATOMIC_PTR_GET(&c->data);
 
-				ok = commit_create_col_(tr, c, commit_ts, oldest);
+				ok = commit_create_delta(tr, c->t, &c->base, delta, commit_ts, oldest);
 			}
 			if (t->idxs) {
 				for(node *n = ol_first_node(t->idxs); n && ok == LOG_OK; n = n->next) {
 					sql_idx *i = n->data;
+					sql_delta *delta = ATOMIC_PTR_GET(&i->data);
 
-					if (ATOMIC_PTR_GET(&i->data))
-						ok = commit_create_idx_(tr, i, commit_ts, oldest);
+					if (delta)
+						ok = commit_create_delta(tr, i->t, &i->base, delta, commit_ts, oldest);
 				}
 			}
 			if (!tr->parent)
@@ -4170,34 +4149,6 @@ log_update_col( sql_trans *tr, sql_change *change)
 }
 
 static int
-commit_update_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
-{
-	int ok = LOG_OK;
-	sql_delta *delta = ATOMIC_PTR_GET(&c->data);
-
-	(void)oldest;
-	if (isTempTable(c->t)) {
-		if (commit_ts) { /* commit */
-			if (c->t->commit_action == CA_COMMIT || c->t->commit_action == CA_PRESERVE) {
-				if (!delta->cs.merged)
-					ok = merge_delta(delta);
-			} else if (clear_cs(tr, &delta->cs, true, isTempTable(c->t)) == BUN_NONE) {
-				ok = LOG_ERR; /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
-			}
-		} else { /* rollback */
-			if (c->t->commit_action == CA_COMMIT/* || c->t->commit_action == CA_PRESERVE*/) {
-				ok = rollback_delta(tr, delta, c->type.type->localtype);
-			} else if (clear_cs(tr, &delta->cs, true, isTempTable(c->t)) == BUN_NONE) {
-				ok = LOG_ERR; /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
-			}
-		}
-		if (!tr->parent)
-			c->t->base.new = c->base.new = 0;
-	}
-	return ok;
-}
-
-static int
 tc_gc_rollbacked( sql_store Store, sql_change *change, ulng oldest)
 {
 	sqlstore *store = Store;
@@ -4227,29 +4178,46 @@ tc_gc_rollbacked_storage( sql_store Store, sql_change *change, ulng oldest)
 	return 0;
 }
 
-
 static int
-commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
+commit_update_delta( sql_trans *tr, sql_change *change, sql_table* t, sql_base* base, ATOMIC_PTR_TYPE* data, int type, ulng commit_ts, ulng oldest)
 {
-	int ok = LOG_OK;
-	sql_column *c = (sql_column*)change->obj;
-	sql_delta *delta = ATOMIC_PTR_GET(&c->data);
 
-	if (isTempTable(c->t))
-		return commit_update_col_(tr, c, commit_ts, oldest);
+	int ok = LOG_OK;
+	sql_delta *delta = ATOMIC_PTR_GET(data);
+
+	if (isTempTable(t)) {
+		if (commit_ts) { /* commit */
+			if (t->commit_action == CA_COMMIT || t->commit_action == CA_PRESERVE) {
+				if (!delta->cs.merged)
+					ok = merge_delta(delta);
+			} else if (clear_cs(tr, &delta->cs, true, isTempTable(t)) == BUN_NONE) {
+				ok = LOG_ERR; /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
+			}
+		} else { /* rollback */
+			if (t->commit_action == CA_COMMIT/* || t->commit_action == CA_PRESERVE*/) {
+				ok = rollback_delta(tr, delta, type);
+			} else if (clear_cs(tr, &delta->cs, true, isTempTable(t)) == BUN_NONE) {
+				ok = LOG_ERR; /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
+			}
+		}
+		if (!tr->parent)
+			t->base.new = base->new = 0;
+
+		return ok;
+	}
 	if (commit_ts)
 		delta->cs.ts = commit_ts;
 	if (!commit_ts) { /* rollback */
-		sql_delta *d = change->data, *o = ATOMIC_PTR_GET(&c->data);
+		sql_delta *d = change->data, *o = ATOMIC_PTR_GET(data);
 
-		if (change->ts && c->t->base.new) /* handled by create col */
+		if (change->ts && t->base.new) /* handled by create col */
 			return ok;
 		if (o != d) {
 			while(o && o->next != d)
 				o = o->next;
 		}
-		if (o == ATOMIC_PTR_GET(&c->data))
-			ATOMIC_PTR_SET(&c->data, d->next);
+		if (o == ATOMIC_PTR_GET(data))
+			ATOMIC_PTR_SET(data, d->next);
 		else
 			o->next = d->next;
 		change->cleanup = &tc_gc_rollbacked;
@@ -4258,13 +4226,26 @@ commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		while (delta && delta->cs.ts > oldest)
 			delta = delta->next;
 		if (ok == LOG_OK && delta && !delta->cs.merged && delta->cs.ts <= oldest) {
-			lock_column(tr->store, c->base.id); /* lock for concurrent updates (appends) */
+			lock_column(tr->store, base->id); /* lock for concurrent updates (appends) */
 			ok = merge_delta(delta);
-			unlock_column(tr->store, c->base.id);
+			unlock_column(tr->store, base->id);
 		}
 	} else if (ok == LOG_OK && tr->parent) /* move delta into older and cleanup current save points */
-		ATOMIC_PTR_SET(&c->data, savepoint_commit_delta(delta, commit_ts));
+		ATOMIC_PTR_SET(data, savepoint_commit_delta(delta, commit_ts));
 	return ok;
+}
+
+static int
+commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
+{
+
+	sql_column *c = (sql_column*)change->obj;
+	sql_base* base = &c->base;
+	sql_table* t = c->t;
+	ATOMIC_PTR_TYPE* data = &c->data;
+	int type = c->type.type->localtype;
+
+	return commit_update_delta(tr, change, t, base, data, type, commit_ts, oldest);
 }
 
 static int
@@ -4281,71 +4262,15 @@ log_update_idx( sql_trans *tr, sql_change *change)
 }
 
 static int
-commit_update_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
-{
-	int ok = LOG_OK;
-	sql_delta *delta = ATOMIC_PTR_GET(&i->data);
-	int type = (oid_index(i->type))?TYPE_oid:TYPE_lng;
-
-	(void)oldest;
-	if (isTempTable(i->t)) {
-		if (commit_ts) { /* commit */
-			if (i->t->commit_action == CA_COMMIT || i->t->commit_action == CA_PRESERVE) {
-				if (!delta->cs.merged)
-					ok = merge_delta(delta);
-			} else if (clear_cs(tr, &delta->cs, true, isTempTable(i->t)) == BUN_NONE) {
-				ok = LOG_ERR; /* CA_DELETE as CA_DROP's are gone already */
-			}
-		} else { /* rollback */
-			if (i->t->commit_action == CA_COMMIT/* || i->t->commit_action == CA_PRESERVE*/) {
-				ok = rollback_delta(tr, delta, type);
-			} else if (clear_cs(tr, &delta->cs, true, isTempTable(i->t)) == BUN_NONE) {
-				ok = LOG_ERR; /* CA_DELETE as CA_DROP's are gone already */
-			}
-		}
-		if (!tr->parent)
-			i->t->base.new = i->base.new = 0;
-	}
-	return ok;
-}
-
-static int
 commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
-	int ok = LOG_OK;
 	sql_idx *i = (sql_idx*)change->obj;
-	sql_delta *delta = ATOMIC_PTR_GET(&i->data);
+	sql_base* base = &i->base;
+	sql_table* t = i->t;
+	ATOMIC_PTR_TYPE* data = &i->data;
+	int type = (oid_index(i->type))?TYPE_oid:TYPE_lng;
 
-	if (isTempTable(i->t))
-		return commit_update_idx_( tr, i, commit_ts, oldest);
-	if (commit_ts)
-		delta->cs.ts = commit_ts;
-	if (!commit_ts) { /* rollback */
-		sql_delta *d = change->data, *o = ATOMIC_PTR_GET(&i->data);
-
-		if (change->ts && i->t->base.new) /* handled by create col */
-			return ok;
-		if (o != d) {
-			while(o && o->next != d)
-				o = o->next;
-		}
-		if (o == ATOMIC_PTR_GET(&i->data))
-			ATOMIC_PTR_SET(&i->data, d->next);
-		else
-			o->next = d->next;
-		change->cleanup = &tc_gc_rollbacked;
-	} else if (ok == LOG_OK && !tr->parent) {
-		/* merge deltas */
-		while (delta && delta->cs.ts > oldest)
-			delta = delta->next;
-		if (ok == LOG_OK && delta && !delta->cs.merged && delta->cs.ts <= oldest) {
-			lock_column(tr->store, i->base.id); /* lock for concurrent updates (appends) */
-			ok = merge_delta(delta);
-			unlock_column(tr->store, i->base.id);
-		}
-	} else if (ok == LOG_OK && tr->parent) /* cleanup older save points */
-		ATOMIC_PTR_SET(&i->data, savepoint_commit_delta(delta, commit_ts));
-	return ok;
+	return commit_update_delta(tr, change, t, base, data, type, commit_ts, oldest);
 }
 
 static storage *
