@@ -2877,6 +2877,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                 pass
                         try:
                             sql.parse(TST+EXT, approve=open(TST+'.newtest','w') if approve else None)
+                        except KeyboardInterrupt:
+                            raise
                         except sqllogictest.SQLLogicSyntaxError:
                             pass
                         except BrokenPipeError:
@@ -2885,6 +2887,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                         except ConnectionResetError:
                             # server crash?
                             pass
+                        except:
+                            # something went wrong, we don't know what
+                            # print a stack trace and continue
+                            sys.excepthook(*sys.exc_info())
             elif CALL in ["sql", "sqlXs"]:
                 TSTs = []
                 if CALL == "sql":
