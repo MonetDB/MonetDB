@@ -365,7 +365,7 @@ dump_zero_terminated_text(BAT *bat, stream *s, bool byteswap)
 	const char *mal_operator = "sql.export_bin_column";
 	str msg = MAL_SUCCEED;
 	int tpe = BATttype(bat);
-	assert(ATOMstorage(tpe) == TYPE_str);
+	assert(ATOMstorage(tpe) == TYPE_str); (void)tpe;
 	assert(mnstr_isbinary(s));
 
 
