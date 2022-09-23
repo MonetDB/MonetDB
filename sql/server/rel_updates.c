@@ -1746,7 +1746,6 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int on
 	sql_exp *import;
 	sql_subfunc *f = sql_find_func(sql, "sys", "copyfrom", 3, F_UNION, true, NULL);
 	list *collist;
-	int i;
 
 	assert(f);
 	if (!copy_allowed(sql, 1))
@@ -1773,35 +1772,25 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int on
 		exp_atom_int(sql->sa, onclient)),
 		exp_atom_bool(sql->sa, do_byteswap));
 
-	// create the list of files that is passed to the function as parameter
-	for (i = 0; i < ol_length(t->columns); i++) {
-		// we have one file per column, however, because we have column selection that file might be NULL
-		// first, check if this column number is present in the passed in the parameters
-		int found = 0;
-		dn = files->h;
-		for (n = collist->h; n && dn; n = n->next, dn = dn->next) {
-			sql_column *c = n->data;
-			if (i == c->colnr) {
-				// this column number was present in the input arguments; pass in the file name
-				append(args, exp_atom_str(sql->sa, dn->data.sval, &strtpe));
-				found = 1;
-				break;
-			}
-		}
-		if (!found) {
-			// this column was not present in the input arguments; pass in NULL
-			append(args, exp_atom_str(sql->sa, NULL, &strtpe));
-		}
+	for (dn = files->h; dn; dn = dn->next) {
+		char *filename = dn->data.sval;
+		append(args, exp_atom_str(sql->sa, filename, &strtpe));
 	}
 
 	import = exp_op(sql->sa,  args, f);
 
 	exps = new_exp_list(sql->sa);
-	for (n = ol_first_node(t->columns); n; n = n->next) {
+	for (n = collist->h; n; n = n->next) {
 		sql_column *c = n->data;
 		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0));
 	}
 	res = rel_table_func(sql->sa, NULL, import, exps, TABLE_PROD_FUNC);
+
+	exps = rel_inserts(sql, t, res, collist, 1, 1, "COPY BINARY INTO");
+	if(!exps)
+		return NULL;
+	res = rel_project(sql->sa, res, exps);
+
 	res = rel_insert_table(query, t, t->base.name, res);
 	return res;
 }
