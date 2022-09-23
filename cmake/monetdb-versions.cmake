@@ -52,7 +52,7 @@ set(MAPI_VERSION "${MAPI_VERSION_MAJOR}.${MAPI_VERSION_MINOR}.${MAPI_VERSION_PAT
 # version of the MONETDB5 library (subdirectory monetdb5, not including extras or sql)
 set(MONETDB5_VERSION_MAJOR "33")
 set(MONETDB5_VERSION_MINOR "0")
-set(MONETDB5_VERSION_PATCH "0")
+set(MONETDB5_VERSION_PATCH "1")
 set(MONETDB5_VERSION "${MONETDB5_VERSION_MAJOR}.${MONETDB5_VERSION_MINOR}.${MONETDB5_VERSION_PATCH}")
 
 # version of the MONETDBE library (subdirectory tools/monetdbe)
