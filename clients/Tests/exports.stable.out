@@ -931,7 +931,6 @@ const char *decompressRef;
 int defConstant(MalBlkPtr mb, int type, ValPtr cst);
 const char *defineRef;
 void delArgument(InstrPtr p, int varid);
-void delName(const char *nme, size_t len);
 const char *deleteRef;
 void deleteSymbol(Module scope, Symbol prg);
 const char *deltaRef;
