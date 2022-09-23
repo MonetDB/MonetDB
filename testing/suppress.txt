@@ -1,6 +1,6 @@
-# when running testing with sanatizer use
+# when running testing with sanitizer use
 # export ASAN_OPTIONS=print_suppressions=0
-# export LSAN_OPTIONS=suppressions=$src/testing/suppres.txt 
+# export LSAN_OPTIONS=suppressions=$src/testing/suppress.txt
 # This is a known leak.
 leak:PyObject_Malloc
 leak:PyMem_Malloc
