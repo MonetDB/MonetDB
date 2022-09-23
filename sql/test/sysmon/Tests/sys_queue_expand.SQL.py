@@ -69,11 +69,11 @@ def main():
         [p.join() for p in jobs]
 
         # sys.queue() should have been expanded from 4 to 8, so we should be able
-        #   to have 7 queries in the queue
+        #   to have 8 queries in the queue
         mstcur.execute('select 6')
         mstcur.execute('select 7')
         query = 'select count(*) from sys.queue()'
-        expected_res = 7
+        expected_res = 8
         rowcnt = mstcur.execute(query)
         res = mstcur.fetchall()
         if rowcnt != 1 or res[0][0] != expected_res:
