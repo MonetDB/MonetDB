@@ -42,6 +42,7 @@ bincopy_uuids_on_client
 bincopy_uuids_on_server
 
 bincopy_invalid_json
+bincopy_default_values
 
 bincopy_little_endians_on_client
 bincopy_little_endians_on_server

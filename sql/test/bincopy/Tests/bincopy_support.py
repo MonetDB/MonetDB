@@ -647,3 +647,23 @@ ORDER BY t_s, s_i, i_b, f_d
 LIMIT 4;
 ;
 """, [f"true,true,true,true,{NRECS}"])
+
+
+DEFAULT_VALUES = ("""
+CREATE SEQUENCE seq START WITH 10;
+CREATE TABLE foo(
+    s SERIAL,
+    d INT DEFAULT 42,
+    n INT DEFAULT NEXT VALUE FOR seq,
+    i INT
+);
+
+COPY BINARY INTO foo(i)
+FROM @ints@ @ON@;
+
+SELECT
+    COUNT(DISTINCT s) AS distinct_s,
+    SUM(d) AS sum_d,
+    SUM(n) AS sum_n
+FROM foo;
+""", [f"{NRECS},{42*NRECS},{8 * NRECS + NRECS * (NRECS + 1) // 2 }"])
