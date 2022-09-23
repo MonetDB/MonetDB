@@ -19,9 +19,7 @@
 #include "bat/bat_logger.h"
 
 /* version 05.23.02 of catalog */
-#define CATALOG_VERSION 52302	/* first after Jan2022 */
-
-static int sys_drop_table(sql_trans *tr, sql_table *t, int drop_action);
+#define CATALOG_VERSION 52302	/* first in Sep2022 */
 
 ulng
 store_function_counter(sqlstore *store)
@@ -567,10 +565,11 @@ load_column(sql_trans *tr, sql_table *t, res_table *rt_cols)
 static int
 load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 {
-	sql_table *ranges = find_sql_table(tr, syss, "range_partitions");
 	oid rid;
 	rids *rs;
 	sqlstore *store = tr->store;
+	sql_table *ranges = find_sql_table(tr, syss, "range_partitions");
+	assert(ranges);
 
 	rs = store->table_api.rids_select(tr, find_sql_column(ranges, "table_id"), &pt->member, &pt->member, NULL);
 	if ((rid = store->table_api.rids_next(rs)) != oid_nil) {
@@ -595,9 +594,11 @@ static int
 load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 {
 	sqlstore *store = tr->store;
-	sql_table *values = find_sql_table(tr, syss, "value_partitions");
 	list *vals = NULL;
 	oid rid;
+	sql_table *values = find_sql_table(tr, syss, "value_partitions");
+	assert(values);
+
 	rids *rs = store->table_api.rids_select(tr, find_sql_column(values, "table_id"), &pt->member, &pt->member, NULL);
 
 	vals = SA_LIST(tr->sa, (fdestroy) &part_value_destroy);
@@ -724,6 +725,8 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 	TRC_DEBUG(SQL_STORE, "Load table: %s\n", t->base.name);
 
 	sql_table *partitions = find_sql_table(tr, syss, "table_partitions");
+	assert(partitions);
+
 	if (rt_parts->cur_row < rt_parts->nr_rows) {
 		ntid = *(sqlid*)store->table_api.table_fetch_value(rt_parts, find_sql_column(partitions, "table_id"));
 		if (ntid == tid) {
@@ -1250,6 +1253,15 @@ load_trans(sql_trans* tr)
 	bool ok = true;
 
 	TRC_DEBUG(SQL_STORE, "Load transaction\n");
+	assert(sysschema);
+	assert(systables);
+	assert(sysparts);
+	assert(syscols);
+	assert(sysidx);
+	assert(syskeys);
+	assert(systriggers);
+	assert(sysobjects);
+	assert(sysschema_ids);
 
 	res_table *rt_schemas = store->table_api.table_orderby(tr, sysschema, NULL, NULL, NULL, NULL, sysschema_ids, NULL);
 	res_table *rt_tables = store->table_api.table_orderby(tr, systables, NULL, NULL, NULL, NULL,
@@ -1777,18 +1789,13 @@ dep_hash_destroy(sql_hash *h)
 static sqlstore *
 store_load(sqlstore *store, sql_allocator *pa)
 {
-	sql_allocator *sa;
 	sql_trans *tr;
 	sql_table *t, *types, *functions, *arguments;
 	sql_schema *s;
 	lng lng_store_oid;
 
+	assert(pa);
 	store->sa = pa;
-	sa = sa_create(pa);
-	if (!sa || !store->sa) {
-		TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
-		return NULL;
-	}
 
 	store->first = store->logger_api.log_isnew(store);
 
@@ -2263,7 +2270,7 @@ id_hash_clear_older(sql_hash *h, ulng oldest)
 static void
 store_pending_changes(sqlstore *store, ulng oldest)
 {
-	ulng oldest_changes = store_get_timestamp(store);	
+	ulng oldest_changes = store_get_timestamp(store);
 	if (!list_empty(store->changes)) { /* lets first cleanup old stuff */
 		for(node *n=store->changes->h; n; ) {
 			node *next = n->next;
@@ -3998,7 +4005,7 @@ sql_trans_commit(sql_trans *tr)
 			}
 			n = next;
 		}
-		tr->ts = commit_ts;
+		tr->active = 2; /* small hack enabling to signal that this transaction has committed */
 		store_unlock(store);
 		/* flush the log structure */
 		if (log) {
@@ -4531,11 +4538,13 @@ sys_drop_part(sql_trans *tr, sql_part *pt, int drop_action)
 		return res;
 	if (isRangePartitionTable(mt)) {
 		sql_table *ranges = find_sql_table(tr, syss, "range_partitions");
+		assert(ranges);
 		oid rid = store->table_api.column_find_row(tr, find_sql_column(ranges, "table_id"), &pt->member, NULL);
 		if ((res = store->table_api.table_delete(tr, ranges, rid)))
 			return res;
 	} else if (isListPartitionTable(mt)) {
 		sql_table *values = find_sql_table(tr, syss, "value_partitions");
+		assert(values);
 		rids *rs = store->table_api.rids_select(tr, find_sql_column(values, "table_id"), &pt->member, &pt->member, NULL);
 		for (oid rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
 			if ((res = store->table_api.table_delete(tr, values, rid))) {
@@ -4617,7 +4626,9 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 
 	if (isRangePartitionTable(t) || isListPartitionTable(t)) {
 		sql_table *partitions = find_sql_table(tr, syss, "table_partitions");
+		assert(partitions);
 		sql_column *pcols = find_sql_column(partitions, "table_id");
+		assert(pcols);
 		rids *rs = store->table_api.rids_select(tr, pcols, &t->base.id, &t->base.id, NULL);
 		oid poid;
 		if ((poid = store->table_api.rids_next(rs)) != oid_nil) {
@@ -5290,6 +5301,10 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	ptr ok;
 	sql_table *dup = NULL;
 
+	assert(sysobj);
+	assert(partitions);
+	assert(ranges);
+
 	vmin = vmax = (ValRecord) {.vtype = TYPE_void,};
 
 	if ((res = new_table(tr, mt, &dup)))
@@ -5424,6 +5439,10 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	oid rid;
 	int localtype = tpe.type->localtype, i = 0, res = LOG_OK;
 	sql_table *dup = NULL;
+
+	assert(sysobj);
+	assert(partitions);
+	assert(values);
 
 	if ((res = new_table(tr, mt, &dup)))
 		return res;
@@ -5693,6 +5712,7 @@ sql_trans_set_partition_table(sql_trans *tr, sql_table *t)
 	if (t && (isRangePartitionTable(t) || isListPartitionTable(t))) {
 		sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 		sql_table *partitions = find_sql_table(tr, syss, "table_partitions");
+		assert(partitions);
 		sqlid next = next_oid(tr->store);
 		if (isPartitionedByColumnTable(t)) {
 			assert(t->part.pcol);
@@ -5732,7 +5752,7 @@ create_sql_ukey(sqlstore *store, sql_allocator *sa, sql_table *t, const char *na
 	sql_ukey *tk;
 
 	nk = (kt != fkey) ? (sql_key *) SA_ZNEW(sa, sql_ukey) : (sql_key *) SA_ZNEW(sa, sql_fkey);
- 	tk = (sql_ukey *) nk;
+	tk = (sql_ukey *) nk;
 	assert(name);
 
 	base_init(sa, &nk->base, next_oid(store), true, name);

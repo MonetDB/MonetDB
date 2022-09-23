@@ -14,3 +14,6 @@ create function sys.tracelog()
 	external name sql.dump_trace;
 
 create view sys.tracelog as select * from sys.tracelog();
+
+grant execute on function sys.tracelog to public;
+grant select on sys.tracelog to public;

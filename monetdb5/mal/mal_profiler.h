@@ -56,7 +56,7 @@ mal_export int profilerStatus;
 mal_export int profilerMode;
 
 mal_export void initProfiler(void);
-mal_export str openProfilerStream(Client cntxt, str s);
+mal_export str openProfilerStream(Client cntxt, int m);
 mal_export str closeProfilerStream(Client cntxt);
 
 mal_export void profilerEvent(MalEvent *me, NonMalEvent *nme);

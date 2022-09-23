@@ -53,3 +53,4 @@ DROP TABLE a
 @connection(id=1)
 statement ok
 ROLLBACK
+
