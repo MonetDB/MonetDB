@@ -138,7 +138,7 @@ static const char *findName(const char *nme, size_t len, bool allocate)
 }
 
 const char *getName(const char *nme) {
-	return findName(nme, strlen(nme), false);
+	return findName(nme, nme?strlen(nme):0, false);
 }
 
 const char *getNameLen(const char *nme, size_t len)
@@ -147,7 +147,7 @@ const char *getNameLen(const char *nme, size_t len)
 }
 
 const char *putName(const char *nme) {
-	return findName(nme, strlen(nme), true);
+	return findName(nme, nme?strlen(nme):0, true);
 }
 
 const char *putNameLen(const char *nme, size_t len)
