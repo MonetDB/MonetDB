@@ -173,7 +173,7 @@ load_column(type_record_t *rec, const char *name, BAT *bat, stream *s, bool byte
 	bool trivial = rec->decoder_trivial;
 
 	// sanity check
-	assert( (loader != NULL) + (decoder != NULL) + trivial == 1);
+	assert( (loader != NULL) + (decoder != NULL) + trivial == 1); (void)trivial;
 
 	if (rec->trivial_if_no_byteswap && !byteswap)
 		decoder = NULL;
@@ -380,7 +380,7 @@ dump_column(const struct type_record_t *rec, BAT *b, bool byteswap, stream *s)
 	bool trivial = rec->encoder_trivial;
 
 	// sanity check
-	assert( (dumper != NULL) + (encoder != NULL) + trivial == 1);
+	assert( (dumper != NULL) + (encoder != NULL) + trivial == 1); (void)trivial;
 
 	if (rec->trivial_if_no_byteswap && !byteswap)
 		encoder = NULL;
