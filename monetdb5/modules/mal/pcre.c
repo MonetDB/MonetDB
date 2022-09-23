@@ -667,7 +667,8 @@ single_replace(pcre *pcre_code, pcre_extra *extra,
 				len_result += addlen;
 			}
 		}
-		offset = ovector[1];
+		// In case of an empty match just advance the offset by 1
+		offset = ovector[0] == ovector[1] ? ovector[1] + 1 : ovector[1];
 	} while (offset < len_origin_str && global);
 	if (offset < len_origin_str) {
 		addlen = len_origin_str - offset;
