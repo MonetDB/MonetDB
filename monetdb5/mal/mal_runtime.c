@@ -34,7 +34,7 @@ static oid qtag= 1;		// A unique query identifier
 UserStats  USRstats = NULL;
 size_t usrstatscnt = 0;
 
-static void
+static inline void
 clearUSRstats(size_t idx)
 {
 	USRstats[idx] = (struct USERSTAT){0};
@@ -87,10 +87,8 @@ updateUserStats(Client cntxt, MalBlkPtr mb, lng ticks, time_t started, time_t fi
 	}
 
 	if (USRstats[idx].username == NULL || USRstats[idx].user != cntxt->user || strcmp(USRstats[idx].username, cntxt->username) != 0) {
-		if (USRstats[idx].username)
-			GDKfree(USRstats[idx].username);
-		if (USRstats[idx].maxquery)
-			GDKfree(USRstats[idx].maxquery);
+		GDKfree(USRstats[idx].username);
+		GDKfree(USRstats[idx].maxquery);
 		clearUSRstats(idx);
 		USRstats[idx].user = cntxt->user;
 		USRstats[idx].username = GDKstrdup(cntxt->username);
@@ -101,8 +99,7 @@ updateUserStats(Client cntxt, MalBlkPtr mb, lng ticks, time_t started, time_t fi
 		USRstats[idx].started = started;
 		USRstats[idx].finished = finished;
 		USRstats[idx].maxticks = ticks;
-		if (USRstats[idx].maxquery)
-			GDKfree(USRstats[idx].maxquery);
+		GDKfree(USRstats[idx].maxquery);
 		USRstats[idx].maxquery = GDKstrdup(query);
 	}
 }
@@ -147,7 +144,7 @@ isaSQLquery(MalBlkPtr mb){
  */
 
 /* clear the next entry for a new call unless it is a running query */
-static void
+static inline void
 clearQRYqueue(size_t idx)
 {
 	QRYqueue[idx] = (struct QRYQUEUE){0};
@@ -246,7 +243,8 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			QRYqueue[j].finished = 0;
 			QRYqueue[j].start = time(0);
 			q = isaSQLquery(mb);
-			QRYqueue[j].query = q? GDKstrdup(q):0;
+			GDKfree(QRYqueue[j].query);
+			QRYqueue[j].query = GDKstrdup(q); /* NULL in, NULL out */
 			GDKfree(QRYqueue[j].username);
 			if (!GDKembedded())
 				QRYqueue[j].username = GDKstrdup(cntxt->username);
