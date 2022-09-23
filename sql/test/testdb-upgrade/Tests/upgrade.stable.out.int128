@@ -3364,3 +3364,15 @@ drop function if exists wlr.tick();
 drop schema if exists wlc;
 drop schema if exists wlr;
 
+Running database upgrade commands:
+create function sys.regexp_replace(ori string, pat string, rep string, flg string)
+returns string external name pcre.replace;
+grant execute on function regexp_replace(string, string, string, string) to public;
+create function sys.regexp_replace(ori string, pat string, rep string)
+returns string
+begin
+ return sys.regexp_replace(ori, pat, rep, '');
+end;
+grant execute on function regexp_replace(string, string, string) to public;
+update sys.functions set system = true where system <> true and name = 'regexp_replace' and schema_id = 2000 and type = 1;
+
