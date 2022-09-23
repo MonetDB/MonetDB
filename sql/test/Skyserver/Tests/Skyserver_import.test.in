@@ -47,8 +47,6 @@ statement ok
 COPY 1000 RECORDS INTO Glossary FROM '$QTSTSRCDIR/../microsky/Glossary1.dat.bz2' USING DELIMITERS E'\t', '|'
 
 statement ok
- 
-
 COPY 1000 RECORDS INTO Algorithm FROM '$QTSTSRCDIR/../microsky/Algorithm1.dat.bz2' USING DELIMITERS E'\t', '$', '"'
 
 statement ok
@@ -242,3 +240,4 @@ COPY 1000 RECORDS INTO Chunk FROM '$QTSTSRCDIR/../microsky/Chunk.dat.bz2' USING 
 
 statement ok
 COMMIT
+

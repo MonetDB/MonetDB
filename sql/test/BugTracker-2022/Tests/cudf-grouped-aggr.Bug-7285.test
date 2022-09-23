@@ -59,3 +59,4 @@ SELECT x, sum(y), jit_sum(y) FROM tab GROUP BY x
 
 statement ok
 ROLLBACK
+

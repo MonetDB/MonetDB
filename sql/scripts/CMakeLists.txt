@@ -27,6 +27,7 @@ install(FILES
   42_md5sum.sql
   45_uuid.sql
   46_profiler.sql
+  47_regexp.sql
   52_describe.sql
   58_hot_snapshot.sql
   75_storagemodel.sql

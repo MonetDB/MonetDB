@@ -98,6 +98,7 @@ set(include_sql_files
   42_md5sum
   45_uuid
   46_profiler
+  47_regexp
   52_describe
   58_hot_snapshot
   75_storagemodel

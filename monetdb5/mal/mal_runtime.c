@@ -23,11 +23,12 @@
 #include "mal_listing.h"
 #include "mal_authorize.h"
 #include "mal_resource.h"
+#include "mal_internal.h"
 #include "mal_private.h"
 
 
 QueryQueue QRYqueue = NULL;
-size_t qsize = 0, qhead = 0, qtail = 0;
+size_t qsize = 0;
 static oid qtag= 1;		// A unique query identifier
 
 UserStats  USRstats = NULL;
@@ -153,34 +154,6 @@ clearQRYqueue(size_t idx)
 }
 
 static void
-advanceQRYqueue(void)
-{
-	bool found_empty_slot = false;
-
-	while (!found_empty_slot) {
-		qhead++;
-		if( qhead == qsize)
-			qhead = 0;
-		if( qtail == qhead)
-			qtail++;
-		if( qtail == qsize)
-			qtail = 0;
-		/* clean out the element */
-		str s = QRYqueue[qhead].query;
-		if (!s || QRYqueue[qhead].status == 0 || (QRYqueue[qhead].status[0] != 'r' && QRYqueue[qhead].status[0] != 'p')) {
-			/* don't wipe them when they are still running, prepared, or paused */
-			/* The upper layer has assured there is at least one slot available */
-			if (s) {
-				GDKfree(s);
-				GDKfree(QRYqueue[qhead].username);
-				clearQRYqueue(qhead);
-			}
-			found_empty_slot = true;
-		}
-	}
-}
-
-static void
 dropQRYqueue(void)
 {
 	size_t i;
@@ -194,8 +167,6 @@ dropQRYqueue(void)
 	QRYqueue = NULL;
 	qsize = 0;
 	qtag = 1;
-	qhead = 0;
-	qtail = 0;
 	MT_lock_unset(&mal_delayLock);
 }
 
@@ -212,6 +183,7 @@ runtimeProfileSetTag(Client cntxt) {
 void
 runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
+	static size_t qlast = 0;
 	size_t i, paused = 0;
 	str q;
 
@@ -240,12 +212,8 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			return;
 		}
 	}
-	assert(qhead < qsize);
-	i=qtail;
-	while (i != qhead){
+	for (i = 0; i < qsize; i++) {
 		paused += QRYqueue[i].status && (QRYqueue[i].status[0] == 'p' || QRYqueue[i].status[0] == 'r'); /* running, prepared or paused */
-		if (++i >= qsize)
-			i = 0;
 	}
 	if( qsize - paused < (size_t) MAL_MAXCLIENTS){
 		qsize += MAL_MAXCLIENTS;
@@ -264,24 +232,34 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 
 	// add new invocation
 	cntxt->idle = 0;
-	QRYqueue[qhead].mb = mb;
-	QRYqueue[qhead].tag = stk->tag = mb->tag;
-	QRYqueue[qhead].stk = stk;				// for status pause 'p'/running '0'/ quiting 'q'
-	QRYqueue[qhead].finished = 0;
-	QRYqueue[qhead].start = time(0);
-	q = isaSQLquery(mb);
-	QRYqueue[qhead].query = q? GDKstrdup(q):0;
-	GDKfree(QRYqueue[qhead].username);
-	if (!GDKembedded())
-		QRYqueue[qhead].username = GDKstrdup(cntxt->username);
-	QRYqueue[qhead].idx = cntxt->idx;
-	/* give the MB upperbound by addition of 1 MB */
-	QRYqueue[qhead].memory = 1 + (int) (stk->memory / LL_CONSTANT(1048576)); /* Convert to MB */
-	QRYqueue[qhead].workers = (int) 1;	/* this is the first one */
-	QRYqueue[qhead].status = "running";
-	QRYqueue[qhead].cntxt = cntxt;
-	QRYqueue[qhead].ticks = GDKusec();
-	advanceQRYqueue();
+	for (i = 0; i < qsize; i++) {
+		size_t j = qlast;
+		if (++qlast >= qsize)
+			qlast = 0;
+		if (QRYqueue[j].query == NULL ||
+			QRYqueue[j].status == 0 ||
+			(QRYqueue[j].status[0] != 'r' &&
+			 QRYqueue[j].status[0] != 'p')) {
+			QRYqueue[j].mb = mb;
+			QRYqueue[j].tag = stk->tag = mb->tag;
+			QRYqueue[j].stk = stk;				// for status pause 'p'/running '0'/ quiting 'q'
+			QRYqueue[j].finished = 0;
+			QRYqueue[j].start = time(0);
+			q = isaSQLquery(mb);
+			QRYqueue[j].query = q? GDKstrdup(q):0;
+			GDKfree(QRYqueue[j].username);
+			if (!GDKembedded())
+				QRYqueue[j].username = GDKstrdup(cntxt->username);
+			QRYqueue[j].idx = cntxt->idx;
+			/* give the MB upperbound by addition of 1 MB */
+			QRYqueue[j].memory = 1 + (int) (stk->memory / LL_CONSTANT(1048576)); /* Convert to MB */
+			QRYqueue[j].workers = (int) 1;	/* this is the first one */
+			QRYqueue[j].status = "running";
+			QRYqueue[j].cntxt = cntxt;
+			QRYqueue[j].ticks = GDKusec();
+			break;
+		}
+	}
 	MT_lock_unset(&mal_delayLock);
 }
 
@@ -301,8 +279,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	if (stk->up)
 		return;
 	MT_lock_set(&mal_delayLock);
-	i=qtail;
-	while (i != qhead){
+	for (i = 0; i < qsize; i++) {
 		if (QRYqueue[i].stk == stk){
 			QRYqueue[i].status = "finished";
 			QRYqueue[i].finished = time(0);
@@ -319,8 +296,6 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			found = true;
 			break;
 		}
-		if (++i >= qsize)
-			i = 0;
 	}
 
 	// every query that has been started has an entry in QRYqueue.  If this
@@ -330,8 +305,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		assert(0);
 		TRC_INFO_IF(MAL_SERVER) {
 			TRC_INFO_ENDIF(MAL_SERVER, "runtimeProfilerFinish: stk (%p) not found in QRYqueue", stk);
-			i = qtail;
-			while (i != qhead){
+			for (i = 0; i < qsize; i++) {
 				// print some info. of queries not "finished"
 				if (strcmp(QRYqueue[i].status, "finished") != 0) {
 					TRC_INFO_ENDIF(MAL_SERVER, "QRYqueue[%zu]: stk(%p), tag("OIDFMT"), username(%s), start(%ld), status(%s), query(%s)",
@@ -339,8 +313,6 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 								   QRYqueue[i].username, QRYqueue[i].start,
 								   QRYqueue[i].status, QRYqueue[i].query);
 				}
-				if (++i >= qsize)
-					i = 0;
 			}
 		}
 	}

@@ -736,10 +736,10 @@ main(int argc, char **av)
 		}
 	}
 
+	char secret[1024];
 	{
 		/* unlock the vault, first see if we can find the file which
 		 * holds the secret */
-		char secret[1024];
 		char *secretp = secret;
 		FILE *secretf;
 		size_t len;
@@ -788,23 +788,19 @@ main(int argc, char **av)
 				exit(1);
 			}
 			*secretp = '\0';
-			err = AUTHinitTables(secret);
-			msab_registerStop();
-			if (err != MAL_SUCCEED) {
-				fprintf(stderr, "%s\n", err);
-				freeException(err);
-				exit(1);
-			}
-			exit(0);
 		}
 	}
 
 	modules[mods++] = 0;
-	if (mal_init(modules, false)) {
+	if (mal_init(modules, false, readpwdxit ? secret : NULL)) {
 		/* don't show this as a crash */
 		if (!GDKinmemory(0))
 			msab_registerStop();
 		return 1;
+	}
+	if (readpwdxit) {
+		msab_registerStop();
+		return 0;
 	}
 
 	emergencyBreakpoint();
