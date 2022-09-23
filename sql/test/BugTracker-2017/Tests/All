@@ -27,7 +27,7 @@ dce_bug-6177
 default-insert-update.Bug-6249
 crash_on_NULL_ptr.Bug-6130
 sqlsmith01
-HAVE_GEOM&HAVE_NETCDF?sqlsmith02
+HAVE_GEOM?sqlsmith02
 HAVE_GEOM?sqlsmith03
 sqlsmith04
 nested_with.Bug-6187
