@@ -998,7 +998,7 @@ GDKinit(opt *set, int setlen, bool embedded)
 	else
 #endif
 	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
-	if (BBPinit() != GDK_SUCCEED)
+	if (BBPinit(first) != GDK_SUCCEED)
 		return GDK_FAIL;
 	first = false;
 

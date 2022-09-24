@@ -110,8 +110,18 @@ struct BBPfarm_t BBPfarms[MAXFARMS];
 static MT_Lock BBPnameLock = MT_LOCK_INITIALIZER(BBPnameLock);
 static bat *BBP_hash = NULL;		/* BBP logical name hash buckets */
 static bat BBP_mask = 0;		/* number of buckets = & mask */
-static MT_Lock GDKcacheLock = MT_LOCK_INITIALIZER(GDKcacheLock);
-static bat BBP_free;
+#define BBP_THREADMASK	64
+#if SIZEOF_SIZE_T == 8
+#define threadmask(y)	((int) (mix_lng(y) & BBP_THREADMASK))
+#else
+#define threadmask(y)	((int) (mix_int(y) & BBP_THREADMASK))
+#endif
+static struct {
+	MT_Lock cache;
+	bat free;
+} GDKbbpLock[BBP_THREADMASK + 1];
+#define GDKcacheLock(y)	GDKbbpLock[y].cache
+#define BBP_free(y)	GDKbbpLock[y].free
 
 static gdk_return BBPfree(BAT *b);
 static void BBPdestroy(BAT *b);
@@ -281,7 +291,8 @@ BBPlock(void)
 	}
 
 	MT_lock_set(&GDKtmLock);
-	MT_lock_set(&GDKcacheLock);
+	for (i = 0; i <= BBP_THREADMASK; i++)
+		MT_lock_set(&GDKcacheLock(i));
 	for (i = 0; i <= BBP_BATMASK; i++)
 		MT_lock_set(&GDKswapLock(i));
 	locked_by = MT_getpid();
@@ -296,14 +307,16 @@ BBPunlock(void)
 
 	for (i = BBP_BATMASK; i >= 0; i--)
 		MT_lock_unset(&GDKswapLock(i));
-	MT_lock_unset(&GDKcacheLock);
+	for (i = BBP_THREADMASK; i >= 0; i--)
+		MT_lock_unset(&GDKcacheLock(i));
 	locked_by = 0;
 	MT_lock_unset(&GDKtmLock);
 }
 
 static gdk_return
-BBPinithash(bat size)
+BBPinithash(int j, bat size)
 {
+	assert(j >= 0 && j <= BBP_THREADMASK);
 	for (BBP_mask = 1; (BBP_mask << 1) <= BBPlimit; BBP_mask <<= 1)
 		;
 	BBP_hash = (bat *) GDKzalloc(BBP_mask * sizeof(bat));
@@ -320,8 +333,10 @@ BBPinithash(bat size)
 				BBP_insert(size);
 			}
 		} else {
-			BBP_next(size) = BBP_free;
-			BBP_free = size;
+			BBP_next(size) = BBP_free(j);
+			BBP_free(j) = size;
+			if (++j > BBP_THREADMASK)
+				j = 0;
 		}
 	}
 	return GDK_SUCCEED;
@@ -355,7 +370,7 @@ BBPselectfarm(role_t role, int type, enum heaptype hptype)
 }
 
 static gdk_return
-BBPextend(bool buildhash, bat newsize)
+BBPextend(int idx, bool buildhash, bat newsize)
 {
 	if (newsize >= N_BBPINIT * BBPINIT) {
 		GDKerror("trying to extend BAT pool beyond the "
@@ -380,10 +395,12 @@ BBPextend(bool buildhash, bat newsize)
 	}
 
 	if (buildhash) {
+		int i;
 		GDKfree(BBP_hash);
 		BBP_hash = NULL;
-		BBP_free = 0;
-		if (BBPinithash(newsize) != GDK_SUCCEED)
+		for (i = 0; i <= BBP_THREADMASK; i++)
+			BBP_free(i) = 0;
+		if (BBPinithash(idx, newsize) != GDK_SUCCEED)
 			return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -774,7 +791,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 
 		if (b.batCacheid >= (bat) ATOMIC_GET(&BBPsize)) {
 			if ((bat) ATOMIC_GET(&BBPsize) + 1 >= BBPlimit &&
-			    BBPextend(false, b.batCacheid + 1) != GDK_SUCCEED)
+			    BBPextend(0, false, b.batCacheid + 1) != GDK_SUCCEED)
 				goto bailout;
 			ATOMIC_SET(&BBPsize, b.batCacheid + 1);
 		}
@@ -1520,7 +1537,7 @@ BBPmanager(void *dummy)
 static MT_Id manager;
 
 gdk_return
-BBPinit(void)
+BBPinit(bool first)
 {
 	FILE *fp = NULL;
 	struct stat st;
@@ -1544,6 +1561,15 @@ BBPinit(void)
 	 * (somewhat simpler) relation with the size of the "bak"
 	 * array */
 	static_assert((uint64_t) N_BBPINIT * BBPINIT < (UINT64_C(1) << (3 * (sizeof(BBP[0][0].bak) - 5))), "\"bak\" array in BBPrec is too small");
+
+	if (first) {
+		for (i = 0; i <= BBP_THREADMASK; i++) {
+			char name[MT_NAME_LEN];
+			snprintf(name, sizeof(name), "GDKcacheLock%d", i);
+			MT_lock_init(&GDKbbpLock[i].cache, name);
+			GDKbbpLock[i].free = 0;
+		}
+	}
 
 	if (!GDKinmemory(0)) {
 		str bbpdirstr, backupbbpdirstr;
@@ -1662,7 +1688,7 @@ BBPinit(void)
 	}
 
 	/* allocate BBP records */
-	if (BBPextend(false, bbpsize) != GDK_SUCCEED) {
+	if (BBPextend(0, false, bbpsize) != GDK_SUCCEED) {
 		GDKdebug = dbg;
 		return GDK_FAIL;
 	}
@@ -1681,7 +1707,7 @@ BBPinit(void)
 	}
 
 	MT_lock_set(&BBPnameLock);
-	if (BBPinithash((bat) ATOMIC_GET(&BBPsize)) != GDK_SUCCEED) {
+	if (BBPinithash(0, (bat) ATOMIC_GET(&BBPsize)) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "BBPinithash failed");
 		MT_lock_unset(&BBPnameLock);
 #ifdef GDKLIBRARY_HASHASH
@@ -2354,26 +2380,49 @@ BBPgetsubdir(str s, bat i)
 	*s = 0;
 }
 
-/* The free list is empty.  We create a new entry by either just
- * increasing BBPsize (up to BBPlimit) or extending the BBP (which
- * increases BBPlimit).
- *
- * Note that this is the only place in normal, multi-threaded operation
- * where BBPsize is assigned a value (never decreasing), that the
- * assignment happens after any necessary memory was allocated and
- * initialized, and that this happens when the BBPnameLock is held. */
+/* 
+ * Extends the bpp list of some thread by reserving from the common pool,
+ * increasing the common pool if it runs out of space.
+ */
 static gdk_return
-maybeextend(void)
-{
-	bat size = (bat) ATOMIC_GET(&BBPsize);
-	if (size >= BBPlimit &&
-	    BBPextend(true, size + 1) != GDK_SUCCEED) {
-		/* nothing available */
-		return GDK_FAIL;
-	} else {
-		ATOMIC_SET(&BBPsize, size + 1);
-		BBP_free = size;
+extendThreadBbpList(int idx) {
+	/* release the current gdkcachelock first to avoid dealocks when extending the common pool */
+	MT_lock_unset(&GDKcacheLock(idx));
+	MT_lock_set(&BBPnameLock);
+	MT_lock_set(&GDKcacheLock(idx));
+
+	/* thread list was already extended by another concurrent transaction */
+	if (BBP_free(idx) > 0) {
+		MT_lock_unset(&BBPnameLock);
+		return GDK_SUCCEED;
 	}
+
+	bat size = (bat) ATOMIC_GET(&BBPsize);
+	/* if the common pool has no more space, extend it */
+	if (size >= BBPlimit) {
+		/* acquire all gdkcachelocks in the same order */
+		for (int i = 0; i <= BBP_THREADMASK; i++) {
+			if (i != idx) {
+				MT_lock_set(&GDKcacheLock(i));
+			}
+		}
+		/* extend the common pool */
+		gdk_return r = BBPextend(idx, true, size + 1);
+		/* release all gdkcachelocks */
+		for (int i = BBP_THREADMASK; i >= 0; i--) {
+			if (i != idx) {
+				MT_lock_unset(&GDKcacheLock(i));
+			}
+		}
+		if (r != GDK_SUCCEED) {
+			return GDK_FAIL;
+		}
+	}
+	ATOMIC_SET(&BBPsize, size + 1);
+
+	/* extend the thread list */
+	BBP_free(idx) = size;
+	MT_lock_unset(&BBPnameLock);
 	return GDK_SUCCEED;
 }
 
@@ -2386,36 +2435,28 @@ BBPinsert(BAT *bn)
 	char dirname[24];
 	bat i;
 	int len = 0;
+	int idx = threadmask(pid);
 
 	/* critical section: get a new BBP entry */
 	if (lock) {
-		MT_lock_set(&GDKcacheLock);
+		MT_lock_set(&GDKcacheLock(idx));
 	}
 
-	/* find an empty slot */
-	if (BBP_free <= 0) {
-		/* we need to extend the BBP */
-		gdk_return r = GDK_SUCCEED;
-		MT_lock_set(&BBPnameLock);
-		/* check again in case some other thread extended
-		 * while we were waiting */
-		if (BBP_free <= 0) {
-			r = maybeextend();
-		}
-		MT_lock_unset(&BBPnameLock);
+	if (BBP_free(idx) <= 0) {
+		/* does not have free ids, get from the common pool */
+		gdk_return r = extendThreadBbpList(idx);
 		if (r != GDK_SUCCEED) {
-			if (lock) {
-				MT_lock_unset(&GDKcacheLock);
-			}
+			GDKerror("Extend BBplist failed.\n");
 			return 0;
 		}
 	}
-	i = BBP_free;
+
+	i = BBP_free(idx);
 	assert(i > 0);
-	BBP_free = BBP_next(i);
+	BBP_free(idx) = BBP_next(i);
 
 	if (lock) {
-		MT_lock_unset(&GDKcacheLock);
+		MT_lock_unset(&GDKcacheLock(idx));
 	}
 	/* rest of the work outside the lock */
 
@@ -2523,13 +2564,13 @@ BBPuncacheit(bat i, bool unloaddesc)
  * BBPclear removes a BAT from the BBP directory forever.
  */
 static inline void
-bbpclear(bat i, bool lock)
+bbpclear(bat i, int idx, bool lock)
 {
 	TRC_DEBUG(BAT_, "clear %d (%s)\n", (int) i, BBP_logical(i));
 	BBPuncacheit(i, true);
 	TRC_DEBUG(BAT_, "set to unloading %d\n", i);
 	if (lock) {
-		MT_lock_set(&GDKcacheLock);
+		MT_lock_set(&GDKcacheLock(idx));
 		MT_lock_set(&GDKswapLock(i));
 	}
 
@@ -2547,19 +2588,20 @@ bbpclear(bat i, bool lock)
 		GDKfree(BBP_logical(i));
 	BBP_status_set(i, 0);
 	BBP_logical(i) = NULL;
-	BBP_next(i) = BBP_free;
-	BBP_free = i;
+	BBP_next(i) = BBP_free(idx);
+	BBP_free(idx) = i;
 	BBP_pid(i) = ~(MT_Id)0; /* not zero, not a valid thread id */
 	if (lock)
-		MT_lock_unset(&GDKcacheLock);
+		MT_lock_unset(&GDKcacheLock(idx));
 }
 
 void
 BBPclear(bat i, bool lock)
 {
-	lock &= locked_by == 0 || locked_by != MT_getpid();
+	MT_Id pid = MT_getpid();
+	lock &= locked_by == 0 || locked_by != pid;
 	if (BBPcheck(i)) {
-		bbpclear(i, lock);
+		bbpclear(i, threadmask(pid), lock);
 	}
 }
 
@@ -4381,7 +4423,9 @@ gdk_bbp_reset(void)
 {
 	int i;
 
-	BBP_free = 0;
+	for (i = 0; i <= BBP_THREADMASK; i++) {
+		GDKbbpLock[i].free = 0;
+	}
 	while (BBPlimit > 0) {
 		BBPlimit -= BBPINIT;
 		assert(BBPlimit >= 0);
