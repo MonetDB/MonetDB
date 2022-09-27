@@ -480,16 +480,3 @@ end:
 		BBPunfix(b->batCacheid);
 	return msg;
 }
-
-str
-mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	// At some point we should remove all traces of importTable.
-	// Until then, an error message.
-	(void)cntxt;
-	(void)mb;
-	(void)stk;
-	(void)pci;
-
-	return createException(MAL, "mvc_bin_import_table_wrap", "MAL operator sql.importTable should have been replaced with sql.importColumn");
-}
