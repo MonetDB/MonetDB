@@ -2805,14 +2805,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                     Srvr.append('--dbextra=in-memory')
                 if os.path.isfile(TST + '.options5'):
                     Srvr.extend(openutf8(TST + '.options5').read().split())
-
-                if env.get('MULTIFARM'):
-                    Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
-                    shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
-                                  ignore_errors = True)
-                    os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
-                elif env.get('TRANS_INMEM'):
-                    Srvr.append('--dbextra=in-memory')
                 Srvr.extend(mserver5_opts)
                 pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'))
                 pSrvr.LaunchIt()
