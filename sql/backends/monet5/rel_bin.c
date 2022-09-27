@@ -1109,6 +1109,140 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 	return res;
 }
 
+static stmt *
+emit_loadcolumn(backend *be, stmt *importTable_args[], int *count_var, node *file_node, node *type_node)
+{
+	MalBlkPtr mb = be->mb;
+
+	sql_exp *file_exp = file_node->data;
+	stmt *file_stmt = exp_bin(be, file_exp, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+	sql_subtype *subtype = type_node->data;
+	int data_type = subtype->type->localtype;
+	int bat_type = newBatType(data_type);
+
+	// The sql.importColumn operator takes a 'method' string to determine how to
+	// load the data. This leaves the door open to have multiple loaders for the
+	// same backend type, for example nul- and newline terminated strings.
+	// For the time being we just use the name of the storage type as the method
+	// name.
+	const char *method = ATOMname(data_type);
+
+	//  arg("sname",str),arg("tname",str),arg("onclient",int),arg("bswap",bit)
+	stmt *onclient_arg = importTable_args[2];
+	stmt *bswap_arg = importTable_args[3];
+
+
+	int new_count_var = newTmpVariable(mb, TYPE_oid);
+
+	InstrPtr p = newStmt(mb, sqlRef, importColumnRef);
+	setArgType(mb, p, 0, bat_type);
+	p = pushReturn(mb, p, new_count_var);
+	//
+	p = pushStr(mb, p, method);
+	p = pushArgument(mb, p, bswap_arg->nr);
+	p = pushArgument(mb, p, file_stmt->nr);
+	p = pushArgument(mb, p, onclient_arg->nr);
+	if (*count_var < 0)
+		p = pushOid(mb, p, 0);
+	else
+		p = pushArgument(mb, p, *count_var);
+
+	*count_var = new_count_var;
+
+	stmt *s = stmt_magic(be, subtype, p);
+	return s;
+}
+
+static int
+node_type_score(node *n)
+{
+	sql_subtype *st = n->data;
+	int tpe = st->type->localtype;
+	int stpe = ATOMstorage(tpe);
+	int score = stpe + (stpe == TYPE_bit);
+	return score;
+}
+
+static stmt*
+exp2bin_copyfrombinary(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int depth)
+{
+	(void)depth;
+	mvc *sql = be->mvc;
+	assert(left == NULL); (void)left;
+	assert(right == NULL); (void)right;
+	assert(isel == NULL); (void)isel;
+	(void)be;
+	(void)fe;
+	sql_subfunc *f = fe->f;
+
+	list *arg_list = fe->l;
+	list *type_list = f->res;
+
+	// There are four arguments preceding the list of files.
+	// Translate them and remember the variable number of the result.
+	assert(4 + list_length(type_list) == list_length(arg_list));
+	node *argnode = arg_list->h;
+	stmt *arg_stmts[4] = { 0 };
+	for (int i = 0; i < 4; i++) {
+		sql_exp *arg_exp = argnode->data;
+		arg_stmts[i] = exp_bin(be, arg_exp, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		argnode = argnode->next;
+	}
+
+	// If it's on server we can optimize a little
+	bool onserver = false;
+	node *onclient_arg = arg_list->h->next->next;
+	sql_exp *onclient_exp = onclient_arg->data;
+	if (onclient_exp->type == e_atom) {
+		atom *onclient_atom = onclient_exp->l;
+		int onclient = onclient_atom->data.val.ival;
+		onserver = (onclient == 0);
+	}
+
+	node *const first_file = argnode;
+	node *const first_type = type_list->h;
+	node *file, *type;
+
+	// The first column we load determines the number of rows.
+	// We pass it on to the other columns.
+	// The first column to load should therefore be an 'easy' one.
+	// We identify columns by their type node.
+	node *prototype_file = first_file;
+	node *prototype_type = first_type;
+	int score = node_type_score(prototype_type);
+	for (file = first_file->next, type = first_type->next; file && type; file = file->next, type = type->next) {
+		int sc = node_type_score(type);
+		if (sc < score) {
+			prototype_file = file;
+			prototype_type = type;
+			score = sc;
+		}
+	}
+
+	// Emit the columns
+	int count_var = -1;
+	list *columns = sa_list(sql->sa);
+	stmt *prototype_stmt = emit_loadcolumn(be, arg_stmts, &count_var, prototype_file, prototype_type);
+	if (!prototype_stmt)
+		return NULL;
+	int orig_count_var = count_var;
+	for (file = first_file, type = first_type; file && type; file = file->next, type = type->next) {
+		stmt *s;
+		if (type == prototype_type) {
+			s = prototype_stmt;
+		} else {
+			s = emit_loadcolumn(be, arg_stmts, &count_var, file, type);
+			if (!s)
+				return NULL;
+		}
+		list_append(columns, s);
+		if (onserver)
+			count_var = orig_count_var;
+	}
+
+	return stmt_list(be, columns);
+}
+
 stmt *
 exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, int reduce, int push)
 {
@@ -1262,16 +1396,19 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		}
 		assert(!e->r);
 		if (strcmp(mod, "") == 0 && strcmp(fimp, "") == 0) {
-			if (strcmp(f->func->base.name, "star") == 0) {
+			const char *fname = f->func->base.name;
+			if (strcmp(fname, "star") == 0) {
 				if (!left)
 					return const_column(be, stmt_bool(be, 1));
 				return left->op4.lval->h->data;
-			} if (strcmp(f->func->base.name, "case") == 0)
+			} if (strcmp(fname, "case") == 0)
 				return exp2bin_case(be, e, left, right, sel, depth);
-			if (strcmp(f->func->base.name, "casewhen") == 0)
+			if (strcmp(fname, "casewhen") == 0)
 				return exp2bin_casewhen(be, e, left, right, sel, depth);
-			if (strcmp(f->func->base.name, "coalesce") == 0)
+			if (strcmp(fname, "coalesce") == 0)
 				return exp2bin_coalesce(be, e, left, right, sel, depth);
+			if (strcmp(fname, "copyfrombinary") == 0)
+				return exp2bin_copyfrombinary(be, e, left, right, sel, depth);
 		}
 		if (!list_empty(exps)) {
 			unsigned nrcols = 0;
