@@ -1387,7 +1387,7 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                                         openutf8(os.path.join(TSTTRGDIR, 'SingleServer.err'), 'a'),
                                         0,
                                         pollfile,
-                                        inmem)
+                                        inmem=inmem)
                     os.chdir(TSTTRGDIR)
                     pSrvr.LaunchIt()
                     if pSrvr.port is None:
