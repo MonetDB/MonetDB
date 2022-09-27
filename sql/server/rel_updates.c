@@ -1744,8 +1744,9 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int on
 	list *exps, *args;
 	sql_subtype strtpe;
 	sql_exp *import;
-	sql_subfunc *f = sql_find_func(sql, "sys", "copyfrom", 3, F_UNION, true, NULL);
+	sql_subfunc *f = sql_find_func(sql, "sys", "copyfrombinary", 3, F_UNION, true, NULL);
 	list *collist;
+	list *typelist;
 
 	assert(f);
 	if (!copy_allowed(sql, 1))
@@ -1758,13 +1759,18 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int on
 	if (files == NULL)
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: must specify files");
 
-	collist = check_table_columns(sql, t, columns, "COPY BINARY INTO", tname);
-	if (!collist)
-		return NULL;
-
 	bool do_byteswap = (endian != endian_native && endian != OUR_ENDIANNESS);
 
-	f->res = table_column_types(sql->sa, t);
+	typelist = sa_list(sql->sa);
+	collist = check_table_columns(sql, t, columns, "COPY BINARY INTO", tname);
+	if (!collist || !typelist)
+		return NULL;
+	for (node *n = collist->h; n; n = n->next) {
+		sql_column *c = n->data;
+		sa_list_append(sql->sa, typelist, &c->type);
+	}
+	f->res = typelist;
+
  	sql_find_subtype(&strtpe, "varchar", 0, 0);
 	args = append( append( append( append( new_exp_list(sql->sa),
 		exp_atom_str(sql->sa, t->s?t->s->base.name:NULL, &strtpe)),
