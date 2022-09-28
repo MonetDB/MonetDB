@@ -25,7 +25,7 @@ import os
 import sys
 import shutil
 import re
-import random
+import secrets
 import time
 import socket
 import struct
@@ -347,8 +347,6 @@ import argparse
 
 import threading
 
-randomPortRepeat = 9
-
 (F_SKIP, F_OK, F_WARN, F_SOCK, F_ERROR, F_TIME, F_ABRT, F_RECU, F_SEGV) = range(9)
 
 FAILURES = {
@@ -607,8 +605,6 @@ stylesheet = Element('style', None, Text('''
 '''))
 
 TIMES = []
-
-random.seed(time.time())
 
 #TODO:
 #class TimeoutError:
@@ -1315,6 +1311,7 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     #TODO:
                     # add "something" to HTML output
                     return td, elem, max(FdOut, FdErr), interrupted, test_progress
+            keyfile = os.path.join(LogDBdir, '.vaultkey')
             if os.path.isabs(LogDBdir) and not os.path.exists(LogDBdir):
                 try:
                     os.makedirs(LogDBdir)
@@ -1323,6 +1320,12 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     #TODO:
                     # add "something" to HTML output
                     return td, elem, max(FdOut, FdErr), interrupted, test_progress
+                else:
+                    if not initdb:
+                        vaultkey = secrets.token_urlsafe(32).encode('ascii')
+                        with open(keyfile, 'wb') as vault:
+                            vault.write(vaultkey)
+                            vault.write(b'\0' * (48 - len(vaultkey)))
             if initdb:
                 import zipfile
                 try:
@@ -1342,8 +1345,12 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     # add "something" to HTML output
                     return td, elem, max(FdOut, FdErr), interrupted, test_progress
                 z.close()
+                if os.path.exists(keyfile):
+                    vaultopt = ['--set', 'monet_vault_key={}'.format(keyfile)]
+                else:
+                    vaultopt = []
                 if not oneserver:
-                    pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + mserver5_opts, open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'))
+                    pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + vaultopt + mserver5_opts, open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'))
                     pSrvr.LaunchIt()
                     pSrvr.terminate()
         if not os.path.exists(TSTTRGDIR):
@@ -1375,6 +1382,8 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     else:
                         cmd = splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + mserver5_opts + options
                         pollfile = os.path.join(LogDBdir, '.started')
+                    if os.path.exists(keyfile):
+                        cmd.extend(['--set', 'monet_vault_key={}'.format(keyfile)])
                     if env.get('MULTIFARM'):
                         cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
                         shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
@@ -2796,6 +2805,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                             break
                 dbpath = os.path.join(env['GDK_DBFARM'], TSTDB)
                 Srvr.append('--dbpath=%s' % dbpath)
+                if os.path.exists(os.path.join(dbpath, '.vaultkey')):
+                    Srvr.extend(['--set',
+                                 'monet_vault_key={}'.format(os.path.join(dbpath, '.vaultkey'))])
                 if env.get('MULTIFARM'):
                     Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
                     shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'),
