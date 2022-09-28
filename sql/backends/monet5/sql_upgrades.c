@@ -582,6 +582,7 @@ sql_update_apr2019(Client c, mvc *sql, const char *prev_schema)
 
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -1209,36 +1210,25 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"create aggregate quantile_avg(val DOUBLE, q DOUBLE) returns DOUBLE\n"
 			" external name \"aggr\".\"quantile_avg\";\n"
 			"GRANT EXECUTE ON AGGREGATE quantile_avg(DOUBLE, DOUBLE) TO PUBLIC;\n");
-#ifdef HAVE_HGE
-	if (have_hge) {
-		pos += snprintf(buf + pos, bufsize - pos,
-				"create aggregate median_avg(val HUGEINT) returns DOUBLE\n"
-				" external name \"aggr\".\"median_avg\";\n"
-				"GRANT EXECUTE ON AGGREGATE median_avg(HUGEINT) TO PUBLIC;\n"
-				"create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE\n"
-				" external name \"aggr\".\"quantile_avg\";\n"
-				"GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;\n");
-	}
-#endif
 	/* 60/61_wlcr signatures migrations */
 	pos += snprintf(buf + pos, bufsize - pos,
-			"drop procedure master();\n"
-			"drop procedure master(string);\n"
-			"drop procedure stopmaster();\n"
-			"drop procedure masterbeat(int);\n"
-			"drop function masterClock();\n"
-			"drop function masterTick();\n"
-			"drop procedure replicate();\n"
-			"drop procedure replicate(timestamp);\n"
-			"drop procedure replicate(string);\n"
-			"drop procedure replicate(string, timestamp);\n"
-			"drop procedure replicate(string, tinyint);\n"
-			"drop procedure replicate(string, smallint);\n"
-			"drop procedure replicate(string, integer);\n"
-			"drop procedure replicate(string, bigint);\n"
-			"drop procedure replicabeat(integer);\n"
-			"drop function replicaClock();\n"
-			"drop function replicaTick();\n"
+			"drop procedure if exists master();\n"
+			"drop procedure if exists master(string);\n"
+			"drop procedure if exists stopmaster();\n"
+			"drop procedure if exists masterbeat(int);\n"
+			"drop function if exists masterClock();\n"
+			"drop function if exists masterTick();\n"
+			"drop procedure if exists replicate();\n"
+			"drop procedure if exists replicate(timestamp);\n"
+			"drop procedure if exists replicate(string);\n"
+			"drop procedure if exists replicate(string, timestamp);\n"
+			"drop procedure if exists replicate(string, tinyint);\n"
+			"drop procedure if exists replicate(string, smallint);\n"
+			"drop procedure if exists replicate(string, integer);\n"
+			"drop procedure if exists replicate(string, bigint);\n"
+			"drop procedure if exists replicabeat(integer);\n"
+			"drop function if exists replicaClock();\n"
+			"drop function if exists replicaTick();\n"
 
 			"create schema wlc;\n"
 			"create procedure wlc.master()\n"
