@@ -423,6 +423,9 @@ class server(Popen):
             dbfarm = _dbfarm
         dbpath = os.path.join(dbfarm, dbname)
         cmd.append('--dbpath=%s' % dbpath)
+        if os.path.exists(os.path.join(dbpath, '.vaultkey')):
+            cmd.extend(['--set',
+                        'monet_vault_key={}'.format(os.path.join(dbpath, '.vaultkey'))])
         for i in range(len(cmd)):
             if cmd[i].startswith('--dbextra='):
                 dbextra_path = cmd[i][10:]
