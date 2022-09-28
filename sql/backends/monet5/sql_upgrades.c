@@ -966,44 +966,7 @@ sql_update_mar2018(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"INSERT INTO sys.function_languages VALUES (4, 'C', 'C'), (12, 'C++', 'CPP');\n"
 		);
 
-	/* 60_wlcr.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"create procedure master()\n"
-			"external name wlc.master;\n"
-			"create procedure master(path string)\n"
-			"external name wlc.master;\n"
-			"create procedure stopmaster()\n"
-			"external name wlc.stopmaster;\n"
-			"create procedure masterbeat( duration int)\n"
-			"external name wlc.\"setmasterbeat\";\n"
-			"create function masterClock() returns string\n"
-			"external name wlc.\"getmasterclock\";\n"
-			"create function masterTick() returns bigint\n"
-			"external name wlc.\"getmastertick\";\n"
-			"create procedure replicate()\n"
-			"external name wlr.replicate;\n"
-			"create procedure replicate(pointintime timestamp)\n"
-			"external name wlr.replicate;\n"
-			"create procedure replicate(dbname string)\n"
-			"external name wlr.replicate;\n"
-			"create procedure replicate(dbname string, pointintime timestamp)\n"
-			"external name wlr.replicate;\n"
-			"create procedure replicate(dbname string, id tinyint)\n"
-			"external name wlr.replicate;\n"
-			"create procedure replicate(dbname string, id smallint)\n"
-			"external name wlr.replicate;\n"
-			"create procedure replicate(dbname string, id integer)\n"
-			"external name wlr.replicate;\n"
-			"create procedure replicate(dbname string, id bigint)\n"
-			"external name wlr.replicate;\n"
-			"create procedure replicabeat(duration integer)\n"
-			"external name wlr.\"setreplicabeat\";\n"
-			"create function replicaClock() returns string\n"
-			"external name wlr.\"getreplicaclock\";\n"
-			"create function replicaTick() returns bigint\n"
-			"external name wlr.\"getreplicatick\";\n"
-			"update sys.functions set system = true where name in ('master', 'stopmaster', 'masterbeat', 'masterclock', 'mastertick', 'replicate', 'replicabeat', 'replicaclock', 'replicatick') and schema_id = (select id from sys.schemas where name = 'sys');\n"
-		);
+/* removed upgrade of WLC/WLR since it is removed again in a later upgrade */
 
 	/* comments */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1014,6 +977,7 @@ sql_update_mar2018(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 		);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -1522,6 +1486,7 @@ sql_update_apr2019(Client c, mvc *sql, const char *prev_schema)
 			"update sys._columns set type_digits = 1048576 where name = 'query' and table_id in (select id from sys._tables t where t.name = 'tables' and t.schema_id in (select id from sys.schemas s where s.name = 'sys'));\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -2152,36 +2117,25 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"create aggregate quantile_avg(val DOUBLE, q DOUBLE) returns DOUBLE\n"
 			" external name \"aggr\".\"quantile_avg\";\n"
 			"GRANT EXECUTE ON AGGREGATE quantile_avg(DOUBLE, DOUBLE) TO PUBLIC;\n");
-#ifdef HAVE_HGE
-	if (have_hge) {
-		pos += snprintf(buf + pos, bufsize - pos,
-				"create aggregate median_avg(val HUGEINT) returns DOUBLE\n"
-				" external name \"aggr\".\"median_avg\";\n"
-				"GRANT EXECUTE ON AGGREGATE median_avg(HUGEINT) TO PUBLIC;\n"
-				"create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE\n"
-				" external name \"aggr\".\"quantile_avg\";\n"
-				"GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;\n");
-	}
-#endif
 	/* 60/61_wlcr signatures migrations */
 	pos += snprintf(buf + pos, bufsize - pos,
-			"drop procedure master();\n"
-			"drop procedure master(string);\n"
-			"drop procedure stopmaster();\n"
-			"drop procedure masterbeat(int);\n"
-			"drop function masterClock();\n"
-			"drop function masterTick();\n"
-			"drop procedure replicate();\n"
-			"drop procedure replicate(timestamp);\n"
-			"drop procedure replicate(string);\n"
-			"drop procedure replicate(string, timestamp);\n"
-			"drop procedure replicate(string, tinyint);\n"
-			"drop procedure replicate(string, smallint);\n"
-			"drop procedure replicate(string, integer);\n"
-			"drop procedure replicate(string, bigint);\n"
-			"drop procedure replicabeat(integer);\n"
-			"drop function replicaClock();\n"
-			"drop function replicaTick();\n"
+			"drop procedure if exists master();\n"
+			"drop procedure if exists master(string);\n"
+			"drop procedure if exists stopmaster();\n"
+			"drop procedure if exists masterbeat(int);\n"
+			"drop function if exists masterClock();\n"
+			"drop function if exists masterTick();\n"
+			"drop procedure if exists replicate();\n"
+			"drop procedure if exists replicate(timestamp);\n"
+			"drop procedure if exists replicate(string);\n"
+			"drop procedure if exists replicate(string, timestamp);\n"
+			"drop procedure if exists replicate(string, tinyint);\n"
+			"drop procedure if exists replicate(string, smallint);\n"
+			"drop procedure if exists replicate(string, integer);\n"
+			"drop procedure if exists replicate(string, bigint);\n"
+			"drop procedure if exists replicabeat(integer);\n"
+			"drop function if exists replicaClock();\n"
+			"drop function if exists replicaTick();\n"
 
 			"create schema wlc;\n"
 			"create procedure wlc.master()\n"
