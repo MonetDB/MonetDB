@@ -2088,49 +2088,53 @@ AS_CASE([$have_lidar],
 [yes|auto], [
 	# liblas >= 1.8.0 required
 	LIBLAS_VERSION_REQUIRED_MIN=1.8.0
-	LIBLAS_CONFIG=''
-	# locate liblas-config
-	AS_VAR_IF([have_liblas], [no], [], [
-		AS_CASE([$have_liblas],
-		[yes|auto], [XPATH="$PATH"],
+	PKG_CHECK_MODULES([LIBLAS],
+		[liblas >= $LIBLAS_VERSION_REQUIRED_MIN],
+		[have_liblas=yes],
 		[
-			XPATH="$have_liblas/bin"
-			have_liblas=yes])
-		AC_PATH_PROG([LIBLAS_CONFIG], [liblas-config], [], [$XPATH])
-		AS_VAR_IF([LIBLAS_CONFIG], [],
-			[AS_VAR_IF([have_liblas], [yes],
-				[AC_MSG_ERROR([liblas-config not found in $XPATH])],
+		LIBLAS_CONFIG=''
+		# locate liblas-config
+		AS_VAR_IF([have_liblas], [no], [], [
+			AS_CASE([$have_liblas],
+			[yes|auto], [XPATH="$PATH"],
+			[
+				XPATH="$have_liblas/bin"
+				have_liblas=yes])
+			AC_PATH_PROG([LIBLAS_CONFIG], [liblas-config], [], [$XPATH])
+			AS_VAR_IF([LIBLAS_CONFIG], [],
+				[AS_VAR_IF([have_liblas], [yes],
+					[AC_MSG_ERROR([liblas-config not found in $XPATH])],
+					[have_liblas=no
+					 why_not_liblas="(liblas-config not found)"])])])
+		# check the version of liblas
+		AS_VAR_IF([have_liblas], [no], [], [
+			AC_MSG_CHECKING([for liblas >= $LIBLAS_VERSION_REQUIRED_MIN])
+			LIBLAS_VERSION=`$LIBLAS_CONFIG --version`
+			AC_MSG_RESULT([found $LIBLAS_VERSION])
+			AS_VERSION_COMPARE([$LIBLAS_VERSION], [$LIBLAS_VERSION_REQUIRED_MIN],
+				[AS_VAR_IF([have_liblas], [yes],
+					[AC_MSG_ERROR([liblas version $LIBLAS_VERSION is too old])],
+					[have_liblas=no
+					 why_not_liblas="(liblas version $LIBLAS_VERSION is older than required version $LIBLAS_VERSION_REQUIRED_MIN)"])])])
+		# read include dirs, libs and cflags
+		AS_VAR_IF([have_liblas], [no], [], [
+			LIBLAS_CFLAGS=`$LIBLAS_CONFIG --includes`
+			LIBLAS_LIBS=`$LIBLAS_CONFIG --libs`])
+		# liblas-config and liblas/capi/liblas.h could be in different
+		# packages (think Ubuntu) so we need to test for them both
+		AS_VAR_IF([have_liblas], [no], [], [
+			save_CPPFLAGS="$CPPFLAGS"
+			save_LDFLAGS="$LDFLAGS"
+			save_LIBS="$LIBS"
+			CPPFLAGS="$CPPFLAGS $LIBLAS_CFLAGS"
+			LDFLAGS="$LDFLAGS $LIBLAS_LIBS"
+			LIBS=""
+			AC_CHECK_HEADER([liblas/capi/liblas.h], [],
 				[have_liblas=no
-				 why_not_liblas="(liblas-config not found)"])])])
-	# check the version if liblas
-	AS_VAR_IF([have_liblas], [no], [], [
-		AC_MSG_CHECKING([for liblas >= $LIBLAS_VERSION_REQUIRED_MIN])
-		LIBLAS_VERSION=`$LIBLAS_CONFIG --version`
-		AC_MSG_RESULT([found $LIBLAS_VERSION])
-		AS_VERSION_COMPARE([$LIBLAS_VERSION], [$LIBLAS_VERSION_REQUIRED_MIN],
-			[AS_VAR_IF([have_liblas], [yes],
-				[AC_MSG_ERROR([liblas version $LIBLAS_VERSION is too old])],
-				[have_liblas=no
-				 why_not_liblas="(liblas version $LIBLAS_VERSION is older than required version $LIBLAS_VERSION_REQUIRED_MIN)"])])])
-	# read include dirs, libs and cflags
-	AS_VAR_IF([have_liblas], [no], [], [
-		LIBLAS_INCS=`$LIBLAS_CONFIG --includes`
-		LIBLAS_LIBS=`$LIBLAS_CONFIG --libs`])
-	# liblas-config and liblas/capi/liblas.h could be in different
-	# packages (think Ubuntu) so we need to test for them both
-	AS_VAR_IF([have_liblas], [no], [], [
-		save_CPPFLAGS="$CPPFLAGS"
-		save_LDFLAGS="$LDFLAGS"
-		save_LIBS="$LIBS"
-		CPPFLAGS="$CPPFLAGS $LIBLAS_INCS"
-		LDFLAGS="$LDFLAGS $LIBLAS_LIBS"
-		LIBS=""
-		AC_CHECK_HEADER([liblas/capi/liblas.h], [],
-			[have_liblas=no
-			 why_not_liblas="(liblas/capi/liblas.h header file not found)"])
-		CPPFLAGS="$save_CPPFLAGS"
-		LDFLAGS="$save_LDFLAGS"
-		LIBS="$save_LIBS"])
+				 why_not_liblas="(liblas/capi/liblas.h header file not found)"])
+			CPPFLAGS="$save_CPPFLAGS"
+			LDFLAGS="$save_LDFLAGS"
+			LIBS="$save_LIBS"])])
 	# if lidar is enabled and liblas was not found abort
 	AS_VAR_IF([have_liblas], [no], [
 		AS_VAR_IF([have_lidar], [yes],
