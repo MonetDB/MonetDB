@@ -201,7 +201,6 @@ static str monetdb_initialize(void) {
 		/* unlock the vault, first see if we can find the file which
 		 * holds the secret */
 		char secret[1024];
-		char *secretp = secret;
 		FILE *secretf;
 		size_t len;
 
@@ -235,7 +234,7 @@ static str monetdb_initialize(void) {
 			}
 			fclose(secretf);
 		}
-		if ((retval = AUTHunlockVault(secretp)) != MAL_SUCCEED) {
+		if ((retval = AUTHunlockVault(secret)) != MAL_SUCCEED) {
 			/* don't show this as a crash */
 			err = msab_registerStop();
 			if (err)
