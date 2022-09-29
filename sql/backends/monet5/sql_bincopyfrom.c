@@ -94,7 +94,7 @@ end:
 }
 
 static str
-load_fixed_width(BAT *bat, stream *s, bool byteswap, bincopy_decoder_t convert, size_t record_size, int *eof_reached)
+load_fixed_width(BAT *bat, stream *s, int width, bool byteswap, bincopy_decoder_t convert, size_t record_size, int *eof_reached)
 {
 	const char *mal_operator = "sql.importColumn";
 	str msg = MAL_SUCCEED;
@@ -129,7 +129,7 @@ load_fixed_width(BAT *bat, stream *s, bool byteswap, bincopy_decoder_t convert, 
 		if (BATextend(bat, newCount) != GDK_SUCCEED)
 			bailout("%s", GDK_EXCEPTION);
 
-		msg = convert(Tloc(bat, count), &bs->buf[bs->pos], n, byteswap);
+		msg = convert(Tloc(bat, count), &bs->buf[bs->pos], n, width, byteswap);
 		if (msg != MAL_SUCCEED)
 			goto end;
 		BATsetcount(bat, newCount);
@@ -161,7 +161,7 @@ end:
 
 
 static str
-load_column(type_record_t *rec, const char *name, BAT *bat, stream *s, bool byteswap, BUN rows_estimate, int *eof_reached)
+load_column(type_record_t *rec, const char *name, BAT *bat, stream *s, int width, bool byteswap, BUN rows_estimate, int *eof_reached)
 {
 	const char *mal_operator = "sql.importColumn";
 	BUN orig_count, new_count;
@@ -181,9 +181,9 @@ load_column(type_record_t *rec, const char *name, BAT *bat, stream *s, bool byte
 	orig_count = BATcount(bat);
 
 	if (loader) {
-		msg = loader(bat, s, eof_reached, byteswap);
+		msg = loader(bat, s, eof_reached, width, byteswap);
 	} else if (decoder) {
-		msg = load_fixed_width(bat, s, byteswap, rec->decoder, rec->record_size, eof_reached);
+		msg = load_fixed_width(bat, s, width, byteswap, rec->decoder, rec->record_size, eof_reached);
 		// load the bytes directly into the bat, as-is
 	} else {
 		msg = load_trivial(bat, s, rows_estimate, eof_reached);
@@ -205,7 +205,7 @@ load_column(type_record_t *rec, const char *name, BAT *bat, stream *s, bool byte
 /* Import a single file into a new BAT.
  */
 static str
-import_column(backend *be, bat *ret, BUN *retcnt, str method, bool byteswap, str path, int onclient,  BUN nrows)
+import_column(backend *be, bat *ret, BUN *retcnt, str method, int width, bool byteswap, str path, int onclient,  BUN nrows)
 {
 	// In this function we create the BAT and open the file, and tidy
 	// up when things go wrong. The actual work happens in load_column().
@@ -249,7 +249,7 @@ import_column(backend *be, bat *ret, BUN *retcnt, str method, bool byteswap, str
 	}
 
 	// Do the work
-	msg = load_column(rec, path, bat, s, byteswap, nrows, &eof_reached);
+	msg = load_column(rec, path, bat, s, width, byteswap, nrows, &eof_reached);
 	if (eof_reached != 0 && eof_reached != 1) {
 		if (msg)
 			bailout("internal error in sql.importColumn: eof_reached not set (%s). Earlier error: %s", method, msg);
@@ -291,16 +291,17 @@ mvc_bin_import_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	bat *ret = getArgReference_bat(stk, pci, 0);
 	BUN *retcnt = getArgReference_oid(stk, pci, 1);
 
-	assert(pci->argc == 7);
+	assert(pci->argc == 8);
 	str method = *getArgReference_str(stk, pci, 2);
-	bit byteswap = *getArgReference_bit(stk, pci, 3);
-	str path = *getArgReference_str(stk, pci, 4);
-	int onclient = *getArgReference_int(stk, pci, 5);
-	BUN nrows = *getArgReference_oid(stk, pci, 6);
+	int width = *getArgReference_int(stk, pci, 3);
+	bit byteswap = *getArgReference_bit(stk, pci, 4);
+	str path = *getArgReference_str(stk, pci, 5);
+	int onclient = *getArgReference_int(stk, pci, 6);
+	BUN nrows = *getArgReference_oid(stk, pci, 7);
 
 	backend *be = cntxt->sqlcontext;
 
-	return import_column(be, ret, retcnt, method, byteswap, path, onclient, nrows);
+	return import_column(be, ret, retcnt, method, width, byteswap, path, onclient, nrows);
 }
 
 
@@ -357,7 +358,7 @@ dump_fixed_width(BAT *b, stream *s, bool byteswap, bincopy_encoder_t encoder, si
 		n = BATcount(b) - pos;
 		if (n > batch_size)
 			n = batch_size;
-		msg = encoder(buffer, Tloc(b, pos), n, byteswap);
+		msg = encoder(buffer, Tloc(b, pos), n, 0, byteswap);
 		if (msg != MAL_SUCCEED)
 			goto end;
 		msg = write_out(buffer, buffer + n * record_size, s);

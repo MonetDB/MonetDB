@@ -17,8 +17,9 @@
 #include "mal_interpreter.h"
 
 static str
-validate_bit(void *dst_, void *src_, size_t count, bool byteswap)
+validate_bit(void *dst_, void *src_, size_t count, int width, bool byteswap)
 {
+	(void)width;
 	(void)byteswap;
 	unsigned char *dst = dst_;
 	const unsigned char *src = src_;
@@ -31,55 +32,83 @@ validate_bit(void *dst_, void *src_, size_t count, bool byteswap)
 	return MAL_SUCCEED;
 }
 
+#define VALIDATE_DECIMAL(TYP) do { \
+		if (width) { \
+			TYP m = 1; \
+			for (int i = 0; i < width; i++) \
+				m *= 10; \
+			dst = dst_; \
+			for (size_t i = 0; i < count; i++) { \
+				if (dst[i] >= m || dst[i] <= -m) \
+					throw(SQL, "convert", SQLSTATE(22003) "decimal out of range"); \
+			} \
+		} \
+    } while (0)
+
+
 static str
-byteswap_sht(void *dst_, void *src_, size_t count, bool byteswap)
+byteswap_sht(void *dst_, void *src_, size_t count, int width, bool byteswap)
 {
 	assert(byteswap); (void)byteswap; // otherwise, why call us?
 	sht *dst = dst_;
 	const sht *src = src_;
 	for (size_t i = 0; i < count; i++)
 		*dst++ = copy_binary_byteswap16(*src++);
+
+	VALIDATE_DECIMAL(sht);
+
 	return MAL_SUCCEED;
 }
 
 static str
-byteswap_int(void *dst_, void *src_, size_t count, bool byteswap)
+byteswap_int(void *dst_, void *src_, size_t count, int width, bool byteswap)
 {
 	assert(byteswap); (void)byteswap; // otherwise, why call us?
 	int *dst = dst_;
 	const int *src = src_;
 	for (size_t i = 0; i < count; i++)
 		*dst++ = copy_binary_byteswap32(*src++);
+
+	VALIDATE_DECIMAL(int);
+
 	return MAL_SUCCEED;
 }
 
 static str
-byteswap_lng(void *dst_, void *src_, size_t count, bool byteswap)
+byteswap_lng(void *dst_, void *src_, size_t count, int width, bool byteswap)
 {
 	assert(byteswap); (void)byteswap; // otherwise, why call us?
 	lng *dst = dst_;
 	const lng *src = src_;
 	for (size_t i = 0; i < count; i++)
 		*dst++ = copy_binary_byteswap64(*src++);
+
+	VALIDATE_DECIMAL(lng);
+
 	return MAL_SUCCEED;
 }
 
 #ifdef HAVE_HGE
 static str
-byteswap_hge(void *dst_, void *src_, size_t count, bool byteswap)
+byteswap_hge(void *dst_, void *src_, size_t count, int width, bool byteswap)
 {
 	assert(byteswap); (void)byteswap; // otherwise, why call us?
 	hge *dst = dst_;
 	const hge *src = src_;
 	for (size_t i = 0; i < count; i++)
 		*dst++ = copy_binary_byteswap128(*src++);
+
+	VALIDATE_DECIMAL(hge);
+
 	return MAL_SUCCEED;
 }
 #endif
 
 static str
-byteswap_flt(void *dst_, void *src_, size_t count, bool byteswap)
+byteswap_flt(void *dst_, void *src_, size_t count, int width, bool byteswap)
 {
+	(void)width;
+
 	// Verify that size and alignment requirements of flt do not exceed int
 	assert(sizeof(uint32_t) == sizeof(flt));
 	assert(sizeof(struct { char dummy; uint32_t ui; }) >= sizeof(struct { char dummy; flt f; }));
@@ -93,8 +122,10 @@ byteswap_flt(void *dst_, void *src_, size_t count, bool byteswap)
 }
 
 static str
-byteswap_dbl(void *dst_, void *src_, size_t count, bool byteswap)
+byteswap_dbl(void *dst_, void *src_, size_t count, int width, bool byteswap)
 {
+	(void)width;
+
 	// Verify that size and alignment requirements of dbl do not exceed lng
 	assert(sizeof(uint64_t) == sizeof(dbl));
 	assert(sizeof(struct { char dummy; uint64_t ui; }) >= sizeof(struct { char dummy; dbl f; }));
@@ -109,8 +140,10 @@ byteswap_dbl(void *dst_, void *src_, size_t count, bool byteswap)
 
 
 static str
-decode_date(void *dst_, void *src_, size_t count, bool byteswap)
+decode_date(void *dst_, void *src_, size_t count, int width, bool byteswap)
 {
+	(void)width;
+
 	date *dst = dst_;
 	copy_binary_date *src = src_;
 
@@ -127,8 +160,9 @@ decode_date(void *dst_, void *src_, size_t count, bool byteswap)
 }
 
 static str
-encode_date(void *dst_, void *src_, size_t count, bool byteswap)
+encode_date(void *dst_, void *src_, size_t count, int width, bool byteswap)
 {
+	(void)width;
 	copy_binary_date *dst = dst_;
 	date *src = src_;
 	for (size_t i = 0; i < count; i++) {
@@ -146,8 +180,10 @@ encode_date(void *dst_, void *src_, size_t count, bool byteswap)
 }
 
 static str
-decode_time(void *dst_, void *src_, size_t count, bool byteswap)
+decode_time(void *dst_, void *src_, size_t count, int width, bool byteswap)
 {
+	(void)width;
+
 	daytime *dst = dst_;
 	copy_binary_time *src = src_;
 
@@ -164,8 +200,9 @@ decode_time(void *dst_, void *src_, size_t count, bool byteswap)
 }
 
 static str
-encode_time(void *dst_, void *src_, size_t count, bool byteswap)
+encode_time(void *dst_, void *src_, size_t count, int width, bool byteswap)
 {
+	(void)width;
 	copy_binary_time *dst = dst_;
 	daytime *src = src_;
 	for (size_t i = 0; i < count; i++) {
@@ -184,8 +221,10 @@ encode_time(void *dst_, void *src_, size_t count, bool byteswap)
 }
 
 static str
-decode_timestamp(void *dst_, void *src_, size_t count, bool byteswap)
+decode_timestamp(void *dst_, void *src_, size_t count, int width, bool byteswap)
 {
+	(void)width;
+
 	timestamp *dst = dst_;
 	copy_binary_timestamp *src = src_;
 
@@ -205,8 +244,10 @@ decode_timestamp(void *dst_, void *src_, size_t count, bool byteswap)
 
 
 static str
-encode_timestamp(void *dst_, void *src_, size_t count, bool byteswap)
+encode_timestamp(void *dst_, void *src_, size_t count, int width, bool byteswap)
 {
+	(void)width;
+
 	copy_binary_timestamp *dst = dst_;
 	timestamp *src = src_;
 	for (size_t i = 0; i < count; i++) {
@@ -289,8 +330,9 @@ bad_utf8:
 // Load items from the stream and put them in the BAT.
 // Because it's text read from a binary stream, we replace \r\n with \n.
 static str
-load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached, bool byteswap)
+load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached, int width, bool byteswap)
 {
+	(void)width;
 	(void)byteswap;
 	const char *mal_operator = "sql.importColumn";
 	str msg = MAL_SUCCEED;
