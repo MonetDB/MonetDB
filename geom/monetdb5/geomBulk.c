@@ -15,9 +15,7 @@
 #include "geom_atoms.h"
 #include "gdk_rtree.h"
 
-/********** Geo Update **********/
-//TODO SRID check could come earlier?
-//TODO The BUN_NONE is not correctly retrieved in search function
+/********** Geo Update Start **********/
 static str
 filterSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, bit anti, char (*func) (const GEOSGeometry *, const GEOSGeometry *), const char *name)
 {
@@ -26,6 +24,7 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, b
 	struct canditer ci;
 	GEOSGeom col_geom, const_geom;
 
+	//WKB constant is NULL
 	if ((const_geom = wkb2geos(wkb_const)) == NULL) {
 		if ((out = BATdense(0, 0, 0)) == NULL)
 			throw(MAL, name, GDK_EXCEPTION);
@@ -33,16 +32,18 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, b
 		BBPkeepref(out);
 		return MAL_SUCCEED;
 	}
+
+	//Get BAT, BATiter and candidate list
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (sid && !is_bat_nil(*sid) && !(s = BATdescriptor(*sid))) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-
 	canditer_init(&ci, b, s);
 	b_iter = bat_iterator(b);
 
+	//Result BAT
 	if ((out = COLnew(0, ATOMindex("oid"), ci.ncand, TRANSIENT)) == NULL) {
 		BBPunfix(b->batCacheid);
 		if (s)
@@ -50,6 +51,8 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, b
 		throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
+	//TODO First thread that gets here should build the whole tree (using the parent BAT array)
+	//TODO The lock on the check should not be released
 	if (!RTREEexists(b)) {
 		if (RTREEcreate(b) != GDK_SUCCEED) {
 			//TODO What to do?
@@ -73,16 +76,19 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, b
 	wkbMBR(&const_mbr,&wkb_const);
 
 	//Get a candidate list from searching on the rtree with the constant mbr
+	//Note: the candidates returned from RTREEsearch are BUNs not OIDs
 	BUN* results_rtree = NULL;
 	if (RTREEexists(b))
 		results_rtree = RTREEsearch(b,(mbr_t*)const_mbr, b->batCount);
 
 	//Cycle through rtree candidates
 	//If there is a original candidate list, make sure the rtree cand is in there
-	//Then do the actual calculation for the geo predicate using the GEOS func
-	//TODO Change literal of BUN_NONE to BUN_NONE in loop condition
+	//Then do the actual calculation for the predicate using the GEOS function
+
+	//TODO Change literal value of BUN_NONE to BUN_NONE in loop condition
 	for (int i = 0; results_rtree[i] != 18446744073709551615U && i < (int) b->batCount; i++) {
-		BUN cand = results_rtree[i];
+		oid cand = results_rtree[i];
+
 		//If we have a candidate list that is not dense, we need to check if the rtree candidate is also on the original candidate list
 		//TODO Check w Stefanos
 		if (ci.tpe != cand_dense) {
@@ -90,7 +96,7 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, b
 			if (!canditer_contains(&ci,cand))
 				continue;
 		}
-		const wkb *col_wkb = BUNtvar(b_iter, cand + b->hseqbase);
+		const wkb *col_wkb = BUNtvar(b_iter, cand - b->hseqbase);
 		if ((col_geom = wkb2geos(col_wkb)) == NULL)
 			throw(MAL, name, SQLSTATE(38000) "WKB2Geos operation failed");
 		if (GEOSGetSRID(col_geom) != GEOSGetSRID(const_geom)) {
@@ -104,14 +110,11 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, b
 			throw(MAL, name, SQLSTATE(38000) "Geometries of different SRID");
 		}
 		//GEOS function returns 1 on true, 0 on false and 2 on exception
-		//TODO Deal with exception of GEOS func?
 		bit cond = ((*func)(col_geom, const_geom) == 1);
 		if (cond != anti) {
 			if (BUNappend(out, (oid*) &cand, false) != GDK_SUCCEED) {
-				if (col_geom)
-					GEOSGeom_destroy(col_geom);
-				if (const_geom)
-					GEOSGeom_destroy(const_geom);
+				GEOSGeom_destroy(col_geom);
+				GEOSGeom_destroy(const_geom);
 				bat_iterator_end(&b_iter);
 				BBPunfix(b->batCacheid);
 				if (s)
@@ -140,6 +143,7 @@ filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const,
 	struct canditer ci;
 	GEOSGeom col_geom, const_geom;
 
+	//WKB constant is NULL
 	if ((const_geom = wkb2geos(wkb_const)) == NULL) {
 		if ((out = BATdense(0, 0, 0)) == NULL)
 			throw(MAL, name, GDK_EXCEPTION);
@@ -148,16 +152,17 @@ filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const,
 		return MAL_SUCCEED;
 	}
 
+	//Get BAT, BATiter and candidate list
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (sid && !is_bat_nil(*sid) && !(s = BATdescriptor(*sid))) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-
 	canditer_init(&ci, b, s);
 	b_iter = bat_iterator(b);
 
+	//Result BAT
 	if ((out = COLnew(0, ATOMindex("oid"), ci.ncand, TRANSIENT)) == NULL) {
 		BBPunfix(b->batCacheid);
 		if (s)
@@ -166,8 +171,8 @@ filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const,
 	}
 
 	for (BUN i = 0; i < ci.ncand; i++) {
-		oid cand = canditer_next(&ci) - b->hseqbase;
-		const wkb *col_wkb = BUNtvar(b_iter, cand);
+		BUN cand = canditer_next(&ci);
+		const wkb *col_wkb = BUNtvar(b_iter, cand - b->hseqbase);
 		if ((col_geom = wkb2geos(col_wkb)) == NULL)
 			throw(MAL, name, SQLSTATE(38000) "WKB2Geos operation failed");
 		if (GEOSGetSRID(col_geom) != GEOSGetSRID(const_geom)) {
@@ -181,7 +186,6 @@ filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const,
 			throw(MAL, name, SQLSTATE(38000) "Geometries of different SRID");
 		}
 		//GEOS function returns 1 on true, 0 on false and 2 on exception
-		//TODO Deal with exception of GEOS func?
 		bit cond = ((*func)(col_geom, const_geom) == 1);
 		if (cond != anti) {
 			if (BUNappend(out, (oid*) &cand, false) != GDK_SUCCEED) {
@@ -395,8 +399,9 @@ wkbIntersectsJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat 
 	return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,estimate,GEOSIntersects,"geom.wkbIntersectsJoinNoIndex");
 }
 
-/* mbr bulk function */
-/* Creates the BAT with mbrs from the BAT with geometries. */
+//MBR bulk function
+//Creates the BAT with MBRs from the input BAT with WKB geometries
+//Also creates the RTree structure and saves it on the WKB input BAT
 str
 wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 {
@@ -406,12 +411,9 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 	BUN p = 0, q = 0;
 	BATiter inBAT_iter;
 
-	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
 		throw(MAL, "batgeom.mbr", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-
-	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("mbr"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.mbr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -443,10 +445,10 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 
 	*outBAT_id = outBAT->batCacheid;
 
-	//Build RTree index using the mbr's we just calculated, on the wkb BAT
+	//Build RTree index using the mbr's we just calculated, and save it on the wkb BAT
 	BATrtree(inBAT,outBAT);
-	BBPkeepref(outBAT);
 
+	BBPkeepref(outBAT);
 	return MAL_SUCCEED;
 }
 
@@ -671,7 +673,7 @@ clean:
 	return msg;
 }
 
-/********** Geo Update **********/
+/********** Geo Update End **********/
 
 /*******************************/
 /********** One input **********/
