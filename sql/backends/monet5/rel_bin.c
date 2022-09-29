@@ -1162,7 +1162,7 @@ emit_loadcolumn(backend *be, stmt *importTable_args[], int *count_var, node *fil
 
 	*count_var = new_count_var;
 
-	stmt *s = stmt_magic(be, subtype, p);
+	stmt *s = stmt_blackbox_result(be, p, 0, subtype);
 	return s;
 }
 
