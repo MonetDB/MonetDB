@@ -246,6 +246,9 @@ class SQLLogic:
                     # check whether failed as expected
                     err_code_received, err_msg_received = utils.parse_mapi_err_msg(msg)
                     if expected_err_code and expected_err_msg and err_code_received and err_msg_received:
+                        if expected_err_msg.endswith('...') and expected_err_code == err_code_received and err_msg_received.lower().startswith(expected_err_msg[:expected_err_msg.find('...')].lower()):
+                            result.append(err_code_received + '!' + expected_err_msg)
+                            return result
                         result.append(err_code_received + '!' + err_msg_received)
                         if expected_err_code == err_code_received and expected_err_msg.lower() == err_msg_received.lower():
                             return result
@@ -254,7 +257,10 @@ class SQLLogic:
                             result.append(err_code_received + '!')
                             if expected_err_code == err_code_received:
                                 return result
-                        if expected_err_msg and err_msg_received:
+                        elif expected_err_msg and err_msg_received:
+                            if expected_err_msg.endswith('...') and err_msg_received.lower().startswith(expected_err_msg[:expected_err_msg.find('...')].lower()):
+                                result.append(expected_err_msg)
+                                return result
                             result.append(err_msg_received)
                             if expected_err_msg.lower() == err_msg_received.lower():
                                 return result
