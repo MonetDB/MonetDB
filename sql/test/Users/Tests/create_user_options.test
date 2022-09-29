@@ -179,6 +179,73 @@ alter user testu03 schema path '"sys"'
 statement ok
 drop user testu03
 -- it still does not work, after: alter user testu03 schema path '"sys"'
--- so possibly a bug in the dependencies data
 
+-- try to drop the schema first
+statement ok
+drop schema testu03
+
+statement ok
+drop user testu03
+
+statement error 2BM37!DROP SCHEMA: unable to drop schema 'testu05b' (there are database users using it as session's default schema)
+drop schema testu05b
+
+statement ok
+alter user testu05b set schema sys
+
+statement ok
+drop schema testu05b
+
+statement ok
+drop user testu05b
+
+statement error 2BM37!DROP SCHEMA: unable to drop schema 'testu06' (there are database users using it as session's default schema)
+drop schema testu06
+
+statement ok
+alter user testu06 set schema sys
+
+statement ok
+drop schema testu06
+
+statement ok
+drop user testu06
+
+statement error 2BM37!DROP SCHEMA: unable to drop schema 'testu07' (there are database users using it as session's default schema)
+drop schema testu07
+
+statement ok
+alter user testu07 set schema sys
+
+statement ok
+drop schema testu07
+
+statement ok
+drop user testu07
+
+statement error 2BM37!DROP SCHEMA: unable to drop schema 'testu08b' (there are database users using it as session's default schema)
+drop schema testu08b
+
+statement ok
+alter user testu08b set schema sys
+
+statement ok
+drop schema testu08b
+
+statement ok
+drop user testu08b
+
+statement ok
+drop schema testu09
+
+statement ok
+drop user testu09
+
+query TII rowsort
+select name, authorization > 3, owner > 3 from sys.schemas where not system and name like 'test%' order by name
+----
+
+query TTITIITI rowsort
+select name, fullname, default_schema > 2000, schema_path, max_memory, max_workers, optimizer, default_role > 2000 from sys.users where name like 'test%' order by name
+----
 
