@@ -237,7 +237,7 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"CREATE USER",
 	 "Create a new database user",
-	 "CREATE USER ident WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string NAME string SCHEMA ident [SCHEMA PATH string]\n"
+	 "CREATE USER ident WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string NAME string [SCHEMA ident] [SCHEMA PATH string]\n"
 	 "[MAX_MEMORY poslng] [MAX_WORKERS posint] [OPTIMIZER string] [DEFAULT ROLE ident]",
 	 "ident",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/"},
