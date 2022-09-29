@@ -5,10 +5,10 @@ statement ok
 CREATE TABLE foo(i INT)
 
 statement ok
-COPY BIG ENDIAN BINARY INTO foo FROM E'$QTSTSRCDIR/be123.bin'
+COPY BIG ENDIAN BINARY INTO foo FROM E'$QTSTTRGDIR/be123.bin'
 
 statement ok
-COPY BIG ENDIAN BINARY INTO foo FROM E'$QTSTSRCDIR/maxint.bin'
+COPY BIG ENDIAN BINARY INTO foo FROM E'$QTSTTRGDIR/maxint.bin'
 
 query I nosort
 SELECT i FROM foo
@@ -30,7 +30,7 @@ statement ok
 CREATE TABLE foo(d DECIMAL(8,2))
 
 statement ok
-COPY BIG ENDIAN BINARY INTO foo FROM E'$QTSTSRCDIR/be123.bin'
+COPY BIG ENDIAN BINARY INTO foo FROM E'$QTSTTRGDIR/be123.bin'
 
 query T nosort
 SELECT CAST(d AS TEXT) FROM foo
@@ -40,7 +40,7 @@ SELECT CAST(d AS TEXT) FROM foo
 0.03
 
 statement error
-COPY BIG ENDIAN BINARY INTO foo FROM E'$QTSTSRCDIR/maxint.bin'
+COPY BIG ENDIAN BINARY INTO foo FROM E'$QTSTTRGDIR/maxint.bin'
 
 statement ok
 ROLLBACK
