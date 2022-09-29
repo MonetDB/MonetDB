@@ -1,0 +1,47 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE foo(i INT)
+
+statement ok
+COPY BIG ENDIAN BINARY INTO foo FROM E'$QTSTSRCDIR/be123.bin'
+
+statement ok
+COPY BIG ENDIAN BINARY INTO foo FROM E'$QTSTSRCDIR/maxint.bin'
+
+query I nosort
+SELECT i FROM foo
+----
+1
+2
+3
+2147483647
+2147483647
+2147483647
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE foo(d DECIMAL(8,2))
+
+statement ok
+COPY BIG ENDIAN BINARY INTO foo FROM E'$QTSTSRCDIR/be123.bin'
+
+query T nosort
+SELECT CAST(d AS TEXT) FROM foo
+----
+0.01
+0.02
+0.03
+
+statement error
+COPY BIG ENDIAN BINARY INTO foo FROM E'$QTSTSRCDIR/maxint.bin'
+
+statement ok
+ROLLBACK
+
