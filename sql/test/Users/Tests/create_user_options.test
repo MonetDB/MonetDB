@@ -1,10 +1,10 @@
 -- test syntax: CREATE USER user_name WITH [ ENCRYPTED | UNENCRYPTED ] PASSWORD 'user_password' NAME 'full name'
 --    [SCHEMA schema_name] [SCHEMA PATH string] [MAX_MEMORY bytes] [MAX_WORKERS count] [OPTIMIZER optimizer] [DEFAULT ROLE ident]
 
-statement error 42000!syntax error in: "create user testu01;"
+statement error 42000!syntax error in: "create user testu01...
 create user testu01;
 
-statement error 42000!syntax error in: "create user testu02 with password 'testu02';"
+statement error 42000!syntax error in: "create user testu02 with password 'testu02'...
 create user testu02 with password 'testu02';
 
 statement ok
