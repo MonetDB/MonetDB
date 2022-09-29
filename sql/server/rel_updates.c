@@ -1765,6 +1765,16 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int on
 	collist = check_table_columns(sql, t, columns, "COPY BINARY INTO", tname);
 	if (!collist || !typelist)
 		return NULL;
+
+	int column_count = list_length(collist);
+	int file_count = dlist_length(files);
+	if (column_count != file_count) {
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY BINARY INTO: "
+			"number of files does not match number of columns: "
+			"%d files, %d columns",
+			file_count, column_count);
+	}
+
 	for (node *n = collist->h; n; n = n->next) {
 		sql_column *c = n->data;
 		sa_list_append(sql->sa, typelist, &c->type);
