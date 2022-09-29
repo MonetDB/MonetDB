@@ -2385,7 +2385,7 @@ BBPgetsubdir(str s, bat i)
  * increasing the common pool if it runs out of space.
  */
 static gdk_return
-extendThreadBbpList(int idx) {
+maybeextend(int idx) {
 	/* release the current gdkcachelock first to avoid dealocks when extending the common pool */
 	MT_lock_unset(&GDKcacheLock(idx));
 	MT_lock_set(&BBPnameLock);
@@ -2444,7 +2444,7 @@ BBPinsert(BAT *bn)
 
 	if (BBP_free(idx) <= 0) {
 		/* does not have free ids, get from the common pool */
-		gdk_return r = extendThreadBbpList(idx);
+		gdk_return r = maybeextend(idx);
 		if (r != GDK_SUCCEED) {
 			GDKerror("Extend BBplist failed.\n");
 			return 0;
