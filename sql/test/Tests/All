@@ -6,9 +6,6 @@ comment-on
 comment-auth-1
 USER=user_a&PASSWD=user_a?comment-auth-2
 
-bincopycollist-prepare
-bincopycollist
-
 example
 #example-queries
 #example-drop
