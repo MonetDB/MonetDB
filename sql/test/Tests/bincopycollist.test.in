@@ -27,13 +27,8 @@ START TRANSACTION
 statement ok
 CREATE TABLE intvals (x INTEGER, y INTEGER, z INTEGER)
 
-statement ok
+statement error
 COPY BINARY INTO intvals (x, x) FROM (E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/bincopyint.bin')
-
-query I nosort
-SELECT count(*) FROM intvals
-----
-10
 
 statement ok
 ROLLBACK
