@@ -233,7 +233,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		size_t j = qlast;
 		if (++qlast >= qsize)
 			qlast = 0;
-		if (QRYqueue[j].query == NULL ||
+		if (QRYqueue[j].stk == NULL ||
 			QRYqueue[j].status == 0 ||
 			(QRYqueue[j].status[0] != 'r' &&
 			 QRYqueue[j].status[0] != 'p')) {
