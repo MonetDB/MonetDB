@@ -1,9 +1,17 @@
 import struct
 import os
 
-f = open(os.path.join(os.getenv('TSTTRGDIR'), 'bincopyint.bin'), 'wb')
+target_dir = os.getenv('TSTTRGDIR')
 
-for i in range(10):
-    f.write(struct.pack('@i', i))
+testdata = dict(
+    maxint=b'\x7f\xff\xff\xff\x7f\xff\xff\xff\x7f\xff\xff\xff',
+    strings=b'one\x00two\x00three\x00',
+    be456=b'\x00\x00\x00\x04\x00\x00\x00\x05\x00\x00\x00\x06',
+    be123=b'\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03',
+    bincopyint=struct.pack('10i', *range(10)),
+)
 
-f.close()
+for name, content in testdata.items():
+    filename = os.path.join(target_dir, name + '.bin')
+    with open(filename, 'wb') as f:
+        f.write(content)
