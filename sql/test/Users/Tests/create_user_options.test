@@ -183,9 +183,11 @@ drop user testu03
 -- try to drop the schema first
 statement ok
 drop schema testu03
+-- it succeeds
 
 statement ok
 drop user testu03
+-- finally it works
 
 statement error 2BM37!DROP SCHEMA: unable to drop schema 'testu05b' (there are database users using it as session's default schema)
 drop schema testu05b
@@ -238,8 +240,9 @@ drop user testu08b
 statement ok
 drop schema testu09
 
-statement ok
+statement error 0P000!DROP USER: no such user role 'testu09'
 drop user testu09
+-- this user was already dropped, see above
 
 query TII rowsort
 select name, authorization > 3, owner > 3 from sys.schemas where not system and name like 'test%' order by name
