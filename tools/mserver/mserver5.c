@@ -740,7 +740,6 @@ main(int argc, char **av)
 	{
 		/* unlock the vault, first see if we can find the file which
 		 * holds the secret */
-		char *secretp = secret;
 		FILE *secretf;
 		size_t len;
 
@@ -779,6 +778,7 @@ main(int argc, char **av)
 			exit(1);
 		}
 		if (readpwdxit) {
+			char *secretp;
 			if (fgets(secret, (int) sizeof(secret), stdin) == NULL) {
 				fprintf(stderr, "!ERROR: no password read\n");
 				exit(1);
