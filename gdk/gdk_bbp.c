@@ -110,7 +110,7 @@ struct BBPfarm_t BBPfarms[MAXFARMS];
 static MT_Lock BBPnameLock = MT_LOCK_INITIALIZER(BBPnameLock);
 static bat *BBP_hash = NULL;		/* BBP logical name hash buckets */
 static bat BBP_mask = 0;		/* number of buckets = & mask */
-#define BBP_THREADMASK	64
+#define BBP_THREADMASK	((1 << 6) - 1) /* = 64 - 1 */
 #if SIZEOF_SIZE_T == 8
 #define threadmask(y)	((int) (mix_lng(y) & BBP_THREADMASK))
 #else
