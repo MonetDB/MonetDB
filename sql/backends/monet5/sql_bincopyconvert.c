@@ -332,7 +332,6 @@ bad_utf8:
 static str
 load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached, int width, bool byteswap)
 {
-	(void)width;
 	(void)byteswap;
 	const char *mal_operator = "sql.importColumn";
 	str msg = MAL_SUCCEED;
@@ -368,6 +367,13 @@ load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached, int width, bool
 			if (msg != NULL)
 					goto end;
 			if (tpe == TYPE_str) {
+					if (width > 0) {
+						int w = UTF8_strwidth(start);
+						if (w > width) {
+							msg = createException(SQL, "sql.importColumn", "string too wide for column");
+							goto end;
+						}
+					}
 					value = start;
 			} else {
 					ssize_t n = ATOMfromstr(tpe, &buffer, &buffer_len, start, false);
