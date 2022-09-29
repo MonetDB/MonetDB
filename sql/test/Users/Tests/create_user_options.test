@@ -1,0 +1,117 @@
+-- test syntax: CREATE USER user_name WITH [ ENCRYPTED | UNENCRYPTED ] PASSWORD 'user_password' NAME 'full name'
+--    [SCHEMA schema_name] [SCHEMA PATH string] [MAX_MEMORY bytes] [MAX_WORKERS count] [OPTIMIZER optimizer] [DEFAULT ROLE ident]
+
+statement error 42000!syntax error in: "create user testu01;"
+create user testu01;
+
+statement error 42000!syntax error in: "create user testu02 with password 'testu02';"
+create user testu02 with password 'testu02';
+
+statement ok
+create user testu03 with password e'test\tu03' name e'Test\bu03'
+
+statement ok
+create user testu04 with password r'test\tu04' name r'Test\bu04' schema tmp
+
+statement error M0M27!CREATE USER: 42000!A schema in the path must be within '"'
+create user testu05a with password r'test\tu05' name r'Test\bu05' schema PATH 'sys,tmp'
+
+statement ok
+create user testu05b with password r'test\tu05' name r'Test\bu05' schema PATH '"sys","tmp"'
+
+statement ok
+create user testu06 with password r'test\tu06' name r'Test\bu06' max_MEMORY 123456789
+-- statement should be allowed but we get: error 42000!syntax error in: "create user testu06 with password r'test\tu06' name r'Test\bu06' max_memory"
+
+statement ok
+create user testu07 with password r'test\tu07' name r'Test\bu07' max_WORKERS 123
+--statement should be allowed but we get: error 42000!syntax error in: "create user testu07 with password r'test\tu07' name r'Test\bu07' max_workers"
+
+statement error 42000!syntax error in: "create user testu08a with password r'test\tu08' name r'Test\bu08' optimizer"
+create user testu08a with password r'test\tu08' name r'Test\bu08' Optimizer minimal_pipe
+
+statement ok
+create user testu08b with password r'test\tu08' name r'Test\bu08' Optimizer 'minimal_pipe'
+-- statement should be allowed but we get: error 42000!syntax error in: "create user testu08b with password r'test\tu08' name r'Test\bu08' optimizer"
+
+statement ok
+create role testR1
+
+statement ok
+create user testu09 with password r'test\tu09' name r'Test\bu09' DEFAULT role testR1
+
+
+query TTITIITI rowsort
+select name, fullname, default_schema > 2000, schema_path, max_memory, max_workers, optimizer, default_role > 2000 from sys.users where name like 'test%'
+----
+testu03
+Test@u03
+1
+"sys"
+0
+0
+default_pipe
+1
+testu04
+Test\bu04
+1
+"sys"
+0
+0
+default_pipe
+1
+testu05b
+Test\bu05
+1
+"sys","tmp"
+0
+0
+default_pipe
+1
+testu09
+Test\bu09
+1
+"sys"
+0
+0
+default_pipe
+1
+
+
+--cleanup
+statement ok
+drop user testu09
+
+statement ok
+drop role testR1
+
+statement ok
+drop user testu08b
+
+statement error 0P000!DROP USER: no such user role 'testu08a'
+drop user testu08a
+
+statement ok
+drop user testu07
+
+statement ok
+drop user testu06
+
+statement ok
+drop user testu05b
+
+statement error 0P000!DROP USER: no such user role 'testu05a'
+drop user testu05a
+
+statement ok
+drop user testu04
+
+statement error M1M05!DROP USER: 'testu03' owns a schema
+drop user testu03
+
+statement error 0P000!DROP USER: no such user role 'testu02'
+drop user testu02
+
+statement error 0P000!DROP USER: no such user role 'testu01'
+drop user testu01
+
