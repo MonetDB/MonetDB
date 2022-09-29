@@ -491,7 +491,7 @@ stmt_temp(backend *be, sql_subtype *t)
 }
 
 stmt *
-stmt_magic(backend *be, sql_subtype *t, InstrPtr q)
+stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t)
 {
 	if (q == NULL)
 		return NULL;
@@ -499,8 +499,8 @@ stmt_magic(backend *be, sql_subtype *t, InstrPtr q)
 	s->op4.typeval = *t;
 	s->nrcols = 1;
 	s->q = q;
-	s->nr = getDestVar(q);
-	s->flag = 0;
+	s->nr = getArg(q, retnr);
+	s->flag = retnr;
 	return s;
 }
 

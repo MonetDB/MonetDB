@@ -247,7 +247,7 @@ extern stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, i
 extern stmt *stmt_direct_func(backend *be, InstrPtr q);
 extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
 
-extern stmt *stmt_magic(backend *be, sql_subtype *t, InstrPtr q);
+extern stmt *stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t);
 
 extern stmt *stmt_alias(backend *be, stmt *op1, const char *tname, const char *name);
 
