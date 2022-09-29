@@ -5107,7 +5107,7 @@ bailout:
 }
 
 static str
-sql_update_default(Client c, mvc *sql)
+sql_update_default(Client c, mvc *sql, sql_schema *s)
 {
 	size_t bufsize = 65536, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
@@ -5118,8 +5118,7 @@ sql_update_default(Client c, mvc *sql)
 	if (buf == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	/* if sys.db_user_info does not have a column password, we need to
-	 * add a bunch of columns */
+	/* wlc/wlr support was removed */
 	pos = snprintf(buf, bufsize,
 				   "select id from sys.schemas where name in ('wlc', 'wlr');\n");
 	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)) == NULL) {
@@ -5161,6 +5160,41 @@ sql_update_default(Client c, mvc *sql)
 		res_table_destroy(output);
 		output = NULL;
 	}
+
+	/* new function sys.regexp_replace */
+	sql_allocator *old_sa = sql->sa;
+	if ((sql->sa = sa_create(sql->pa)) != NULL) {
+		list *l;
+		if ((l = sa_list(sql->sa)) != NULL) {
+			sql_subtype tp;
+			sql_find_subtype(&tp, "varchar", 0, 0);
+			list_append(l, &tp);
+			list_append(l, &tp);
+			list_append(l, &tp);
+			list_append(l, &tp);
+			if (!sql_bind_func_(sql, s->base.name, "regexp_replace", l, F_FUNC, true)) {
+				pos = snprintf(buf, bufsize,
+							   "create function sys.regexp_replace(ori string, pat string, rep string, flg string)\n"
+							   "returns string external name pcre.replace;\n"
+							   "grant execute on function regexp_replace(string, string, string, string) to public;\n"
+							   "create function sys.regexp_replace(ori string, pat string, rep string)\n"
+							   "returns string\n"
+							   "begin\n"
+							   " return sys.regexp_replace(ori, pat, rep, '');\n"
+							   "end;\n"
+							   "grant execute on function regexp_replace(string, string, string) to public;\n"
+							   "update sys.functions set system = true where system <> true and name = 'regexp_replace' and schema_id = 2000 and type = %d;\n",
+							   F_FUNC);
+				assert(pos < bufsize);
+				sql->session->status = 0;
+				sql->errstr[0] = '\0';
+				printf("Running database upgrade commands:\n%s\n", buf);
+				err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+			}
+			sa_destroy(sql->sa);
+		}
+	}
+	sql->sa = old_sa;
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -5366,7 +5400,7 @@ SQLupgrades(Client c, mvc *m)
 		return -1;
 	}
 
-	if ((err = sql_update_default(c, m)) != NULL) {
+	if ((err = sql_update_default(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		return -1;

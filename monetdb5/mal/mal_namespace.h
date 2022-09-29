@@ -14,6 +14,5 @@ mal_export const char *putName(const char *nme);
 mal_export const char *putNameLen(const char *nme, size_t len);
 mal_export const char *getName(const char *nme);
 mal_export const char *getNameLen(const char *nme, size_t len);
-mal_export void delName(const char *nme, size_t len);
 
 #endif /* _MAL_NAMESPACE_H */

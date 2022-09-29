@@ -53,7 +53,6 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 		/* unlock the vault, first see if we can find the file which
 		 * holds the secret */
 		char secret[1024];
-		char *secretp = secret;
 		FILE *secretf;
 		size_t len;
 
@@ -78,7 +77,7 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 					"(%zu), enlarge your vault key!\n", len);
 			}
 		}
-		if ((msg = AUTHunlockVault(secretp)) != MAL_SUCCEED) {
+		if ((msg = AUTHunlockVault(secret)) != MAL_SUCCEED) {
 			/* don't show this as a crash */
 			return msg;
 		}

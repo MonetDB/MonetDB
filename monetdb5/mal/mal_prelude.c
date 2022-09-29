@@ -241,7 +241,7 @@ addFunctions(mel_func *fcn){
 		/* keep the comment around, setting the static avoid freeing the string accidentally , saving on duplicate documentation in the code. */
 		mb->statichelp = mb->help = fcn->comment;
 
-		sig= newInstructionArgs(mb, fcn->mod, fcn->fcn, fcn->argc + (fcn->retc == 0));
+		sig= newInstructionArgs(mb, mod, putName(fcn->fcn), fcn->argc + (fcn->retc == 0));
 		sig->retc = 0;
 		sig->argc = 0;
 		sig->token = fcn->command?COMMANDsymbol:PATTERNsymbol;
@@ -345,6 +345,7 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp, const ch
 	s = newSymbol(fcn, command ? COMMANDsymbol:PATTERNsymbol );
 	if (s == NULL)
 		return MEL_ERR;
+	fcn = s->name;
 	mb = s->def;
 	(void)comment;
 	if (fname)
