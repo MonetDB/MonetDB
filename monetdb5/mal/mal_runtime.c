@@ -37,7 +37,7 @@ size_t usrstatscnt = 0;
 static inline void
 clearUSRstats(size_t idx)
 {
-	USRstats[idx] = (struct USERSTAT){0};
+	USRstats[idx] = (struct USERSTAT) {0};
 }
 
 /*
@@ -45,8 +45,7 @@ clearUSRstats(size_t idx)
  * For a new 'user' return a new free slot.
  * If USRstats is full, extend it.
  */
-static
-size_t
+static size_t
 getUSRstatsIdx(MalBlkPtr mb, oid user)
 {
 	size_t i = 0;
@@ -71,8 +70,7 @@ getUSRstatsIdx(MalBlkPtr mb, oid user)
 	return usrstatscnt - MAL_MAXCLIENTS;
 }
 
-static
-void
+static void
 updateUserStats(Client cntxt, MalBlkPtr mb, lng ticks, time_t started, time_t finished, str query)
 {
 	// don't keep stats for context without username
@@ -95,7 +93,7 @@ updateUserStats(Client cntxt, MalBlkPtr mb, lng ticks, time_t started, time_t fi
 	}
 	USRstats[idx].querycount++;
 	USRstats[idx].totalticks += ticks;
-	if( ticks >= USRstats[idx].maxticks && query){
+	if (ticks >= USRstats[idx].maxticks && query) {
 		USRstats[idx].started = started;
 		USRstats[idx].finished = finished;
 		USRstats[idx].maxticks = ticks;
@@ -112,7 +110,7 @@ dropUSRstats(void)
 {
 	size_t i;
 	MT_lock_set(&mal_delayLock);
-	for(i = 0; i < usrstatscnt; i++){
+	for(i = 0; i < usrstatscnt; i++) {
 		GDKfree(USRstats[i].username);
 		GDKfree(USRstats[i].maxquery);
 		clearUSRstats(i);
@@ -124,14 +122,14 @@ dropUSRstats(void)
 }
 
 static str
-isaSQLquery(MalBlkPtr mb){
-	int i;
-	InstrPtr p;
-	if (mb)
-	for ( i = 1; i< mb->stop; i++){
-		p = getInstrPtr(mb,i);
-		if ( getModuleId(p) && idcmp(getModuleId(p), "querylog") == 0 && idcmp(getFunctionId(p),"define")==0)
-			return getVarConstant(mb,getArg(p,1)).val.sval;
+isaSQLquery(MalBlkPtr mb)
+{
+	if (mb) {
+		for (int i = 1; i< mb->stop; i++) {
+			InstrPtr p = getInstrPtr(mb,i);
+			if (getModuleId(p) && idcmp(getModuleId(p), "querylog") == 0 && idcmp(getFunctionId(p),"define")==0)
+				return getVarConstant(mb,getArg(p,1)).val.sval;
+		}
 	}
 	return NULL;
 }
@@ -147,15 +145,14 @@ isaSQLquery(MalBlkPtr mb){
 static inline void
 clearQRYqueue(size_t idx)
 {
-	QRYqueue[idx] = (struct QRYQUEUE){0};
+	QRYqueue[idx] = (struct QRYQUEUE) {0};
 }
 
 static void
 dropQRYqueue(void)
 {
-	size_t i;
 	MT_lock_set(&mal_delayLock);
-	for(i = 0; i < qsize; i++){
+	for(size_t i = 0; i < qsize; i++) {
 		GDKfree(QRYqueue[i].query);
 		GDKfree(QRYqueue[i].username);
 		clearQRYqueue(i);
@@ -168,7 +165,8 @@ dropQRYqueue(void)
 }
 
 oid
-runtimeProfileSetTag(Client cntxt) {
+runtimeProfileSetTag(Client cntxt)
+{
 	MT_lock_set(&mal_delayLock);
 	cntxt->curprg->def->tag = qtag++;
 	MT_lock_unset(&mal_delayLock);
@@ -190,20 +188,20 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		return;
 	MT_lock_set(&mal_delayLock);
 
-	if(USRstats == NULL){
+	if (USRstats == NULL) {
 		usrstatscnt = MAL_MAXCLIENTS;
 		USRstats = (UserStats) GDKzalloc( sizeof (struct USERSTAT) * usrstatscnt);
-		if(USRstats == NULL) {
+		if (USRstats == NULL) {
 			addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
 			MT_lock_unset(&mal_delayLock);
 			return;
 		}
 	}
 
-	if ( QRYqueue == NULL) {
+	if (QRYqueue == NULL) {
 		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= MAL_MAXCLIENTS));
 
-		if ( QRYqueue == NULL){
+		if (QRYqueue == NULL) {
 			addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
 			MT_lock_unset(&mal_delayLock);
 			return;
@@ -212,11 +210,11 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	for (i = 0; i < qsize; i++) {
 		paused += QRYqueue[i].status && (QRYqueue[i].status[0] == 'p' || QRYqueue[i].status[0] == 'r'); /* running, prepared or paused */
 	}
-	if( qsize - paused < (size_t) MAL_MAXCLIENTS){
+	if (qsize - paused < (size_t) MAL_MAXCLIENTS) {
 		qsize += MAL_MAXCLIENTS;
 		QueryQueue tmp;
 		tmp = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * qsize);
-		if ( tmp == NULL){
+		if (tmp == NULL) {
 			addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
 			qsize -= MAL_MAXCLIENTS; /* undo increment */
 			MT_lock_unset(&mal_delayLock);
@@ -234,7 +232,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		if (++qlast >= qsize)
 			qlast = 0;
 		if (QRYqueue[j].stk == NULL ||
-			QRYqueue[j].status == 0 ||
+			QRYqueue[j].status == NULL ||
 			(QRYqueue[j].status[0] != 'r' &&
 			 QRYqueue[j].status[0] != 'p')) {
 			QRYqueue[j].mb = mb;
@@ -278,15 +276,15 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		return;
 	MT_lock_set(&mal_delayLock);
 	for (i = 0; i < qsize; i++) {
-		if (QRYqueue[i].stk == stk){
+		if (QRYqueue[i].stk == stk) {
 			QRYqueue[i].status = "finished";
 			QRYqueue[i].finished = time(0);
 			QRYqueue[i].workers = mb->workers;
 			/* give the MB upperbound by addition of 1 MB */
 			QRYqueue[i].memory = 1 + (int)(mb->memory / LL_CONSTANT(1048576));
-			QRYqueue[i].cntxt = 0;
-			QRYqueue[i].stk = 0;
-			QRYqueue[i].mb = 0;
+			QRYqueue[i].cntxt = NULL;
+			QRYqueue[i].stk = NULL;
+			QRYqueue[i].mb = NULL;
 			QRYqueue[i].ticks = GDKusec() - QRYqueue[i].ticks;
 			updateUserStats(cntxt, mb, QRYqueue[i].ticks, QRYqueue[i].start, QRYqueue[i].finished, QRYqueue[i].query);
 			// assume that the user is now idle
@@ -341,9 +339,9 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 
 	assert(pci);
 	/* keep track on the instructions taken in progress for stethoscope*/
-	if(tid > 0 && tid <= THREADS){
+	if (tid > 0 && tid <= THREADS) {
 		tid--;
-		if(profilerStatus) {
+		if (profilerStatus) {
 			MT_lock_set(&mal_profileLock);
 			workingset[tid].cntxt = cntxt;
 			workingset[tid].mb = mb;
@@ -369,9 +367,9 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	lng ticks = GDKusec();
 
 	/* keep track on the instructions in progress*/
-	if ( tid > 0 && tid <= THREADS) {
+	if (tid > 0 && tid <= THREADS) {
 		tid--;
-		if( profilerStatus) {
+		if (profilerStatus) {
 			MT_lock_set(&mal_profileLock);
 			workingset[tid] = (struct WORKINGSET) {0};
 			MT_lock_unset(&mal_profileLock);
@@ -385,14 +383,14 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	pci->ticks = ticks - prof->ticks;
 	pci->totticks += pci->ticks;
 
-	if(profilerStatus > 0 )
+	if (profilerStatus > 0 )
 		profilerEvent(&(struct MalEvent) {cntxt, mb, stk, pci},
 					  NULL);
-	if(cntxt->sqlprofiler)
+	if (cntxt->sqlprofiler)
 		sqlProfilerEvent(cntxt, mb, stk, pci);
-	if(profilerStatus < 0){
+	if (profilerStatus < 0) {
 		/* delay profiling until you encounter start of MAL function */
-		if(getInstrPtr(mb,0) == pci)
+		if (getInstrPtr(mb,0) == pci)
 			profilerStatus = 1;
 	}
 }
@@ -406,14 +404,16 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
  */
 
 lng
-getBatSpace(BAT *b){
+getBatSpace(BAT *b)
+{
 	lng space=0;
-	if( b == NULL)
+	if (b == NULL)
 		return 0;
 	space += BATcount(b) << b->tshift;
-	if( space){
+	if (space) {
 		MT_lock_set(&b->theaplock);
-		if( b->tvheap) space += heapinfo(b->tvheap, b->batCacheid);
+		if (b->tvheap)
+			space += heapinfo(b->tvheap, b->batCacheid);
 		MT_lock_unset(&b->theaplock);
 		MT_rwlock_rdlock(&b->thashlock);
 		space += hashinfo(b->thash, b->batCacheid);
@@ -423,13 +423,14 @@ getBatSpace(BAT *b){
 	return space;
 }
 
-lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
+lng
+getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 {
 	int i, limit;
 	lng vol = 0;
 	BAT *b;
 
-	if( stk == NULL)
+	if (stk == NULL)
 		return 0;
 	limit = rd ? pci->argc : pci->retc;
 	i = rd ? pci->retc : 0;
@@ -444,10 +445,9 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 			cnt = BATcount(b);
 			/* Usually reading views cost as much as full bats.
 			   But when we output a slice that is not the case. */
-			if( rd)
+			if (rd)
 				vol += (!isVIEW(b) && !VIEWtparent(b)) ? tailsize(b, cnt) : 0;
-			else
-			if( !isVIEW(b))
+			else if (!isVIEW(b))
 				vol += tailsize(b, cnt);
 		}
 	}
