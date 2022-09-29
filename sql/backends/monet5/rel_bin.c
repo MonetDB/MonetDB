@@ -1126,6 +1126,18 @@ emit_loadcolumn(backend *be, stmt *importTable_args[], int *count_var, node *fil
 	// For the time being we just use the name of the storage type as the method
 	// name.
 	const char *method = ATOMname(data_type);
+	int width;
+
+	switch (subtype->type->eclass) {
+		case EC_DEC:
+		case EC_STRING:
+			width = subtype->digits;
+			break;
+		default:
+			width = 0;
+			break;
+	}
+
 
 	//  arg("sname",str),arg("tname",str),arg("onclient",int),arg("bswap",bit)
 	stmt *onclient_arg = importTable_args[2];
@@ -1139,6 +1151,7 @@ emit_loadcolumn(backend *be, stmt *importTable_args[], int *count_var, node *fil
 	p = pushReturn(mb, p, new_count_var);
 	//
 	p = pushStr(mb, p, method);
+	p = pushInt(mb, p, width);
 	p = pushArgument(mb, p, bswap_arg->nr);
 	p = pushArgument(mb, p, file_stmt->nr);
 	p = pushArgument(mb, p, onclient_arg->nr);
