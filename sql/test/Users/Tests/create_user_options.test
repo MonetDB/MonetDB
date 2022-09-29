@@ -21,18 +21,15 @@ create user testu05b with password r'test\tu05' name r'Test\bu05' schema PATH '"
 
 statement ok
 create user testu06 with password r'test\tu06' name r'Test\bu06' max_MEMORY 123456789
--- statement should be allowed but we get: error 42000!syntax error in: "create user testu06 with password r'test\tu06' name r'Test\bu06' max_memory"
 
 statement ok
 create user testu07 with password r'test\tu07' name r'Test\bu07' max_WORKERS 123
---statement should be allowed but we get: error 42000!syntax error in: "create user testu07 with password r'test\tu07' name r'Test\bu07' max_workers"
 
-statement error 42000!syntax error in: "create user testu08a with password r'test\tu08' name r'Test\bu08' optimizer"
+statement error 42000!syntax error in: "create user testu08a with password r'test\tu08' name r'Test\bu08' optimizer mini"
 create user testu08a with password r'test\tu08' name r'Test\bu08' Optimizer minimal_pipe
 
 statement ok
 create user testu08b with password r'test\tu08' name r'Test\bu08' Optimizer 'minimal_pipe'
--- statement should be allowed but we get: error 42000!syntax error in: "create user testu08b with password r'test\tu08' name r'Test\bu08' optimizer"
 
 statement ok
 create role testR1
@@ -42,7 +39,7 @@ create user testu09 with password r'test\tu09' name r'Test\bu09' DEFAULT role te
 
 
 query TTITIITI rowsort
-select name, fullname, default_schema > 2000, schema_path, max_memory, max_workers, optimizer, default_role > 2000 from sys.users where name like 'test%'
+select name, fullname, default_schema > 2000, schema_path, max_memory, max_workers, optimizer, default_role > 2000 from sys.users where name like 'test%' order by name
 ----
 testu03
 Test@u03
@@ -68,6 +65,30 @@ Test\bu05
 0
 default_pipe
 1
+testu06
+Test\bu06
+1
+"sys"
+123456789
+0
+default_pipe
+1
+testu07
+Test\bu07
+1
+"sys"
+0
+123
+default_pipe
+1
+testu08b
+Test\bu08
+1
+"sys"
+0
+0
+minimal_pipe
+1
 testu09
 Test\bu09
 1
@@ -87,18 +108,22 @@ drop role testR1
 
 statement ok
 drop user testu08b
+-- it should be possible to drop a successful created user but instead I get: error M1M05!DROP USER: 'testu08b' owns a schema
 
 statement error 0P000!DROP USER: no such user role 'testu08a'
 drop user testu08a
 
 statement ok
 drop user testu07
+-- it should be possible to drop a successful created user but instead I get: error M1M05!DROP USER: 'testu07' owns a schema
 
 statement ok
 drop user testu06
+-- it should be possible to drop a successful created user but instead I get: error M1M05!DROP USER: 'testu06' owns a schema
 
 statement ok
 drop user testu05b
+-- it should be possible to drop a successful created user but instead I get: error M1M05!DROP USER: 'testu05b' owns a schema
 
 statement error 0P000!DROP USER: no such user role 'testu05a'
 drop user testu05a
@@ -106,12 +131,54 @@ drop user testu05a
 statement ok
 drop user testu04
 
-statement error M1M05!DROP USER: 'testu03' owns a schema
+statement ok
 drop user testu03
+-- it should be possible to drop a successful created user but instead I get: error M1M05!DROP USER: 'testu03' owns a schema
 
 statement error 0P000!DROP USER: no such user role 'testu02'
 drop user testu02
 
 statement error 0P000!DROP USER: no such user role 'testu01'
 drop user testu01
+
+
+-- strangely some create user statements also create a schema implicitly !!! show them
+query TII rowsort
+select name, authorization > 3, owner > 3 from sys.schemas where not system and name like 'test%' order by name
+----
+testu03
+1
+0
+testu05b
+1
+0
+testu06
+1
+0
+testu07
+1
+0
+testu08b
+1
+0
+testu09
+1
+0
+
+-- how can we now drop those users? change the default schema value? try it
+statement ok
+alter user testu03 set schema sys
+
+statement ok
+drop user testu03
+-- it does not work, after: alter user testu03 set schema sys
+
+statement ok
+alter user testu03 schema path '"sys"'
+
+statement ok
+drop user testu03
+-- it still does not work, after: alter user testu03 schema path '"sys"'
+-- so possibly a bug in the dependencies data
+
 
