@@ -15,6 +15,7 @@
 #include "gdk.h"
 #include "mal_backend.h"
 #include "mal_interpreter.h"
+#include "mstring.h"
 
 static str
 validate_bit(void *dst_, void *src_, size_t count, int width, bool byteswap)
@@ -280,58 +281,7 @@ encode_timestamp(void *dst_, void *src_, size_t count, int width, bool byteswap)
 	return MAL_SUCCEED;
 }
 
-
-static str
-convert_and_validate_utf8(char *text)
-{
-	unsigned char *r = (unsigned char*)text;
-	unsigned char *w = r;
-
-	if (*r == 0x80 && *(r+1) == 0) {
-		// Technically a utf-8 violation, but we treat it as the NULL marker
-		// GDK does so as well so we can just pass it on.
-		// load_zero_terminated_text() below contains an assert to ensure
-		// this remains the case.
-		return MAL_SUCCEED;
-	}
-
-	while (*r != 0) {
-		unsigned char c = *w++ = *r++;
-
-		if (c == '\r' && *r == '\n') {
-			w--;
-			continue;
-		}
-		if ((c & 0x80) == 0x00) // 1xxx_xxxx: standalone byte
-			continue;
-		if ((c & 0xF8) == 0xF0) // 1111_0xxx
-			goto expect3;
-		if ((c & 0xF0) == 0xE0) // 1110_xxxx
-			goto expect2;
-		if ((c & 0xE0) == 0xC0) // 110x_xxxx
-			goto expect1;
-		goto bad_utf8;
-
-expect3:
-		if (((*w++ = *r++) & 0x80) != 0x80)
-			goto bad_utf8;
-expect2:
-		if (((*w++ = *r++) & 0x80) != 0x80)
-			goto bad_utf8;
-expect1:
-		if (((*w++ = *r++) & 0x80) != 0x80)
-			goto bad_utf8;
-
-	}
-	*w = '\0';
-	return MAL_SUCCEED;
-
-bad_utf8:
-	return createException(SQL, "BATattach_stream", SQLSTATE(42000) "malformed utf-8 byte sequence");
-}
-
-// Load items from the stream and put them in the BAT.
-// Because it's text read from a binary stream, we replace \r\n with \n.
+// Load NUL-terminated items from the stream and put them in the BAT.
 static str
 load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached, int width, bool byteswap)
 {
@@ -366,9 +316,10 @@ load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached, int width, bool
 		char *start, *end;
 		for (start = buf_start; (end = memchr(start, '\0', buf_end - start)) != NULL; start = end + 1) {
 			char *value;
-			msg = convert_and_validate_utf8(start);
-			if (msg != NULL)
-					goto end;
+			if (!checkUTF8(start)) {
+				msg = createException(SQL, "load_zero_terminated_text", SQLSTATE(42000) "malformed utf-8 byte sequence");
+				goto end;
+			}
 			if (tpe == TYPE_str) {
 					if (width > 0) {
 						int w = UTF8_strwidth(start);

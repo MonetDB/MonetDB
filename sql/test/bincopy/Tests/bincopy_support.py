@@ -177,7 +177,7 @@ COPY BINARY INTO foo(id, s) FROM @ints@, @broken_strings@ @ON@;
 NEWLINE_STRINGS = (r"""
 CREATE TABLE foo(id INT NOT NULL, s TEXT);
 COPY BINARY INTO foo(id, s) FROM @ints@, @newline_strings@ @ON@;
-SELECT COUNT(id) FROM foo WHERE s = (E'RN\nR\r' || id);
+SELECT COUNT(id) FROM foo WHERE s = (E'RN\r\nR\r' || id);
 """, [f"{NRECS}"])
 
 NULL_STRINGS = ("""
