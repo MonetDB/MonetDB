@@ -144,8 +144,7 @@ target_sources(sql
   sql_orderidx.c sql_orderidx.h
   sql_strimps.c sql_strimps.h
   sql_time.c
-  sql_bincopyfrom.c
-  sql_bincopyconvert.c sql_bincopyconvert.h
+  sql_bincopy.c sql_bincopyconvert.c sql_bincopyconvert.h
   sql_datetrunc.c
   sql_rank.c sql_rank.h
   sql_subquery.c sql_subquery.h
