@@ -21,17 +21,18 @@ validate_bit(void *dst_, void *src_, size_t count, int width, bool byteswap)
 {
 	(void)width;
 	(void)byteswap;
-	unsigned char *dst = dst_;
+	bit *dst = dst_;
 	const unsigned char *src = src_;
 
 	for (size_t i = 0; i < count; i++) {
 		if (*src > 1)
 			throw(SQL, "convert_bit", SQLSTATE(22003) "invalid boolean byte value: %d", *src);
-		*dst++ = *src++;
+		*dst++ = (bit)*src++;
 	}
 	return MAL_SUCCEED;
 }
 
+// width is only nonzero for DECIMAL types. For plain integer types it is 0.
 #define VALIDATE_DECIMAL(TYP) do { \
 		if (width) { \
 			TYP m = 1; \
@@ -109,7 +110,8 @@ byteswap_flt(void *dst_, void *src_, size_t count, int width, bool byteswap)
 {
 	(void)width;
 
-	// Verify that size and alignment requirements of flt do not exceed int
+	// Verify that size and alignment requirements of flt do not exceed int.
+	// This is important because we use the int32 byteswap to byteswap the floats.
 	assert(sizeof(uint32_t) == sizeof(flt));
 	assert(sizeof(struct { char dummy; uint32_t ui; }) >= sizeof(struct { char dummy; flt f; }));
 
@@ -127,6 +129,7 @@ byteswap_dbl(void *dst_, void *src_, size_t count, int width, bool byteswap)
 	(void)width;
 
 	// Verify that size and alignment requirements of dbl do not exceed lng
+	// This is important because we use the int64 byteswap to byteswap the doubles.
 	assert(sizeof(uint64_t) == sizeof(dbl));
 	assert(sizeof(struct { char dummy; uint64_t ui; }) >= sizeof(struct { char dummy; dbl f; }));
 
@@ -415,7 +418,6 @@ dump_zero_terminated_text(BAT *bat, stream *s, bool byteswap)
 	int tpe = BATttype(bat);
 	assert(ATOMstorage(tpe) == TYPE_str); (void)tpe;
 	assert(mnstr_isbinary(s));
-
 
 	BUN end = BATcount(bat);
 	BATiter bi = bat_iterator(bat);

@@ -105,6 +105,7 @@ load_fixed_width(BAT *bat, stream *s, int width, bool byteswap, bincopy_decoder_
 		record_size = (size_t) ATOMsize(tt);
 	}
 
+	// Read whole number of records
 	size_t chunk_size = 1<<20;
 	assert(record_size > 0);
 	chunk_size -= chunk_size % record_size;
@@ -184,8 +185,8 @@ load_column(type_record_t *rec, const char *name, BAT *bat, stream *s, int width
 		msg = loader(bat, s, eof_reached, width, byteswap);
 	} else if (decoder) {
 		msg = load_fixed_width(bat, s, width, byteswap, rec->decoder, rec->record_size, eof_reached);
-		// load the bytes directly into the bat, as-is
 	} else {
+		// load the bytes directly into the bat, as-is
 		msg = load_trivial(bat, s, rows_estimate, eof_reached);
 	}
 
@@ -217,8 +218,6 @@ import_column(backend *be, bat *ret, BUN *retcnt, str method, int width, bool by
 	int gdk_type;
 	BAT *bat = NULL;
 	int eof_reached = -1; // 1 = read to the end; 0 = stopped reading early; -1 = unset, a bug.
-
-	// This one is not managed by the end: block
 	stream *s = NULL;
 
 	// Set safe values
