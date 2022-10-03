@@ -48544,6 +48544,16 @@ unsafe pattern sql.exportResult(X_0:streams, X_1:int):void
 mvc_export_result_wrap;
 Export a result (in order) to stream s
 sql
+export_bin_column
+unsafe pattern sql.export_bin_column(X_0:any_1, X_1:bit, X_2:str, X_3:int):lng 
+mvc_bin_export_column_wrap;
+export column as binary
+sql
+export_bin_column
+unsafe pattern sql.export_bin_column(X_0:bat[:any_1], X_1:bit, X_2:str, X_3:int):lng 
+mvc_bin_export_column_wrap;
+export column as binary
+sql
 export_table
 unsafe pattern sql.export_table(X_0:str, X_1:str, X_2:str, X_3:str, X_4:str, X_5:str, X_6:int, X_7:bat[:str], X_8:bat[:str], X_9:bat[:str], X_10:bat[:int], X_11:bat[:int], X_12:any...):int 
 mvc_export_row_wrap;
@@ -48590,7 +48600,7 @@ SQLhot_snapshot_wrap;
 Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client
 sql
 importColumn
-pattern sql.importColumn(X_0:str, X_1:bit, X_2:str, X_3:int, X_4:oid) (X_5:bat[:any], X_6:oid) 
+pattern sql.importColumn(X_0:str, X_1:int, X_2:bit, X_3:str, X_4:int, X_5:oid) (X_6:bat[:any], X_7:oid) 
 mvc_bin_import_column_wrap;
 Import a column from the given file
 sql
