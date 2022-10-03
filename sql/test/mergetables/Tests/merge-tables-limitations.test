@@ -72,7 +72,6 @@ ALTER TABLE tst.mtbl ADD TABLE tmp.mtbl
 statement error 42000!ALTER TABLE: a MERGE TABLE can't be a child of itself
 ALTER TABLE tst.mtbl ADD TABLE tst.mtbl
 
-
 statement ok
 CREATE REPLICA TABLE tmp.rtbl (c1 int)
 -- this succeeds strangely
@@ -135,7 +134,6 @@ select * from tst.mtbl
 
 statement ok
 ALTER TABLE tst.mtbl DROP TABLE tst.rtbl
-
 
 statement ok
 CREATE UNLOGGED TABLE tmp.utbl (c1 int)
@@ -200,7 +198,6 @@ select * from tst.mtbl
 statement ok
 ALTER TABLE tst.mtbl DROP TABLE tst.utbl
 
-
 statement ok
 CREATE REMOTE TABLE tmp.rmtbl (c1 int) ON 'mapi:monetdb://localhost:50000/demo'
 -- this succeeds strangely
@@ -264,7 +261,6 @@ select * from tst.mtbl
 statement ok
 ALTER TABLE tst.mtbl DROP TABLE tst.rmtbl
 
-
 statement ok
 CREATE LOCAL TEMP TABLE tmp.lttbl (c1 int) ON COMMIT PRESERVE ROWS
 
@@ -293,7 +289,6 @@ ALTER TABLE tmp.mtbl ADD TABLE tmp.lttbl
 statement error 42000!ALTER TABLE: can't add/drop a temporary table into a MERGE TABLE
 ALTER TABLE tst.mtbl ADD TABLE tmp.lttbl
 
-
 statement ok
 CREATE GLOBAL TEMP TABLE tmp.gttbl (c1 int) ON COMMIT PRESERVE ROWS
 
@@ -321,7 +316,6 @@ ALTER TABLE tmp.mtbl ADD TABLE tmp.gttbl
 
 statement error 42000!ALTER TABLE: can't add/drop a temporary table into a MERGE TABLE
 ALTER TABLE tst.mtbl ADD TABLE tmp.gttbl
-
 
 --cleanup
 query TT rowsort
