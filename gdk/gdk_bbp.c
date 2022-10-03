@@ -2569,6 +2569,7 @@ bbpclear(bat i, int idx, bool lock)
 	TRC_DEBUG(BAT_, "clear %d (%s)\n", (int) i, BBP_logical(i));
 	BBPuncacheit(i, true);
 	TRC_DEBUG(BAT_, "set to unloading %d\n", i);
+	MT_lock_set(&BBPnameLock);
 	if (lock) {
 		MT_lock_set(&GDKcacheLock(idx));
 		MT_lock_set(&GDKswapLock(i));
@@ -2580,9 +2581,7 @@ bbpclear(bat i, int idx, bool lock)
 	if (lock)
 		MT_lock_unset(&GDKswapLock(i));
 	if (!BBPtmpcheck(BBP_logical(i))) {
-		MT_lock_set(&BBPnameLock);
 		BBP_delete(i);
-		MT_lock_unset(&BBPnameLock);
 	}
 	if (BBP_logical(i) != BBP_bak(i))
 		GDKfree(BBP_logical(i));
@@ -2593,6 +2592,7 @@ bbpclear(bat i, int idx, bool lock)
 	BBP_pid(i) = ~(MT_Id)0; /* not zero, not a valid thread id */
 	if (lock)
 		MT_lock_unset(&GDKcacheLock(idx));
+	MT_lock_unset(&BBPnameLock);
 }
 
 void
