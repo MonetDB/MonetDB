@@ -670,7 +670,7 @@ profilerEvent(MalEvent *me, NonMalEvent *nme)
 /* The first scheme dumps the events on a stream (and in the pool)
  */
 str
-openProfilerStream(Client cntxt, str s)
+openProfilerStream(Client cntxt, int m)
 {
 	int j;
 
@@ -692,8 +692,20 @@ openProfilerStream(Client cntxt, str s)
 			throw(MAL,"profiler.start","Profiler already running, stream not available");
 		}
 	}
-	profilerStatus = -1;
-	if (s) profilerMode = 1; 	/* Atm, just check if not NULL */
+	/* 4 activates profiler in minimal mode. 1 and 3 were used in prev MonetDB versions */
+	/* 0 activates profiler in detailed mode */
+	switch (m) {
+	    case 0:
+			profilerStatus = -1;
+			break;
+	    case 4:
+			profilerStatus = -1;
+			profilerMode = 1;
+			break;
+	    default:
+			MT_lock_unset(&mal_profileLock);
+			throw(MAL,"profiler.openstream","Undefined profiler mode option");
+	}
 	maleventstream = cntxt->fdout;
 	profilerUser = cntxt->user;
 

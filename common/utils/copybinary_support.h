@@ -86,6 +86,40 @@ uhge copy_binary_byteswap128(uhge value) {
 }
 #endif
 
+static inline copy_binary_date
+copy_binary_byteswap_date(copy_binary_date value)
+{
+	return (copy_binary_date) {
+		.day = value.day,
+		.month = value.month,
+		.year = copy_binary_byteswap16(value.year),
+	};
+}
+
+static inline copy_binary_time
+copy_binary_byteswap_time(copy_binary_time value)
+{
+	return (copy_binary_time) {
+		.ms = copy_binary_byteswap32(value.ms),
+		.seconds = value.seconds,
+		.minutes = value.minutes,
+		.hours = value.hours,
+		.padding = value.padding,
+	};
+}
+
+static inline copy_binary_timestamp
+copy_binary_byteswap_timestamp(copy_binary_timestamp value)
+{
+	return (copy_binary_timestamp) {
+		.time = copy_binary_byteswap_time(value.time),
+		.date = copy_binary_byteswap_date(value.date),
+	};
+}
+
+
+
+
 // These macros are used to convert a value in-place.
 // This makes it possible to also convert timestamp structs.
 

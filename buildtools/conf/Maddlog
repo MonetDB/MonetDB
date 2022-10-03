@@ -74,10 +74,6 @@ vcs_current_branch() {
     if [[ "$vcs_kind" == "hg" ]] ; then
         tag=$(hg branch)
     else
-        if [[ ! -d "$root_dir/.git" ]] ; then
-            echo "Cannot use this script in a git worktree" >&2
-            exit 2
-        fi
         tag=$(git rev-parse --abbrev-ref HEAD)
         tag=${tag#branches/}
         if [[ "$tag" == "master" ]] ; then

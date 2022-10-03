@@ -7,7 +7,7 @@
 #]]
 
 if(CINTEGRATION)
-  # TODO add code too regenerate the cheader.text.h file
+  # TODO add code to regenerate the cheader.text.h file
   add_library(capi MODULE)
 
   target_sources(capi

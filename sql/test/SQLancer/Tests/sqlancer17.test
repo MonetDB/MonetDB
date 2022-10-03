@@ -497,7 +497,7 @@ SELECT c0 FROM t2
 statement ok
 DROP TABLE t2
 
-query T nosort
+query I nosort
 VALUES (CASE WHEN 5 = ANY(SELECT -1) THEN 2 END)
 ----
 NULL
@@ -778,3 +778,4 @@ SELECT 0, MIN(2) > 2 FROM (SELECT 1) vx(vc0)
 ----
 0
 0
+

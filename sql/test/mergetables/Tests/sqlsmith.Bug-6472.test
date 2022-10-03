@@ -1,3 +1,6 @@
+statement ok
+CREATE TABLE my_dims ("name"    VARCHAR(64),"length"  INTEGER)
+
 query TIT rowsort
 select
   subq_0.c1 as c0,
@@ -31,7 +34,7 @@ where EXISTS (
       ref_3.length as c3,
       ref_5.rkey as c4
     from
-      sys.netcdf_dims as ref_3
+      my_dims as ref_3
           inner join tmp._columns as ref_4
             left join tmp.keys as ref_5
             on (true)
@@ -45,4 +48,7 @@ where EXISTS (
             or (true))
     where true)
 ----
+
+statement ok
+DROP TABLE my_dims
 

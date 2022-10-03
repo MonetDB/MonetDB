@@ -126,7 +126,7 @@ mvc_fix_depend(mvc *m, sql_column *depids, struct view_t *v, int n)
 }
 
 sql_store
-mvc_init(int debug, store_type store_tpe, int ro, int su)
+mvc_init(int debug, store_type store_tpe, int ro, int su, const char *initpasswd)
 {
 	sqlstore *store = NULL;
 	sql_schema *s;
@@ -357,7 +357,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 		} else {
 			sql_create_env(m, s);
 			sql_create_comments(m, s);
-			sql_create_privileges(m, s);
+			sql_create_privileges(m, s, initpasswd);
 		}
 
 		if ((msg = mvc_commit(m, 0, NULL, false)) != MAL_SUCCEED) {

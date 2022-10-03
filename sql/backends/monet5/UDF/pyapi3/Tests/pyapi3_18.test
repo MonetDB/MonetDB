@@ -58,7 +58,6 @@ SELECT pyapi_timestamp(d) FROM timestamp_table
 ----
 2000-01-01 12:00:00.000001
 
-
 statement ok
 CREATE TABLE decimal_table(d DECIMAL(10, 3))
 

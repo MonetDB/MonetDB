@@ -21,6 +21,7 @@ typedef enum tokens {
 	SQL_ATOM,
 	SQL_BETWEEN,
 	SQL_BINCOPYFROM,
+	SQL_BINCOPYINTO,
 	SQL_BINOP,
 	SQL_CACHE,
 	SQL_CALL,
@@ -37,7 +38,7 @@ typedef enum tokens {
 	SQL_CONSTRAINT,
 	SQL_COPYFROM,
 	SQL_COPYLOADER,
-	SQL_COPYTO,
+	SQL_COPYINTO,
 	SQL_CREATE_FUNC,
 	SQL_CREATE_INDEX,
 	SQL_CREATE_ROLE,
@@ -189,5 +190,12 @@ typedef enum {
 	endian_little = 1,
 	endian_native = 3,
 } endianness;
+
+#ifdef WORDS_BIGENDIAN
+#define OUR_ENDIANNESS endian_big
+#else
+#define OUR_ENDIANNESS endian_little
+#endif
+
 
 #endif

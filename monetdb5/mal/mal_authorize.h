@@ -20,7 +20,7 @@ mal_export str AUTHcheckCredentials(oid *ret, Client c, const char *user, const 
 mal_export str AUTHgetUsername(str *ret, Client c);
 mal_export str AUTHgetPasswordHash(str *ret, Client c, const char *username);
 
-mal_export str AUTHinitTables(const char *passwd);
+mal_export str AUTHinitTables(void);
 
 mal_export str AUTHaddRemoteTableCredentials(const char *local_table, const char *localuser, const char *uri, const char *remoteuser, const char *pass, bool pw_encrypted);
 mal_export str AUTHgetRemoteTableCredentials(const char *local_table, str *uri, str *username, str *password);

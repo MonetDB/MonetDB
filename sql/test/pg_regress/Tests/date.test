@@ -1605,12 +1605,12 @@ statement error
 SELECT DATE_TRUNC('DECADE', DATE '0002-12-31 BC')
 
 query T rowsort
-SELECT STR_TO_DATE('1995-04', '%Y-%m');
+SELECT STR_TO_DATE('1995-04', '%Y-%m')
 ----
 1995-04-01
 
 query T rowsort
-SELECT STR_TO_DATE('1995', '%Y');
+SELECT STR_TO_DATE('1995', '%Y')
 ----
 1995-01-01
 

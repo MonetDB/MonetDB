@@ -1497,7 +1497,7 @@ main(int argc, char **argv)
 	compareResult(stmt, ret, "EXPLAIN SELECT * from odbctst.\"LINES\"",
 	    nrServerThreads > 1 ?
 		"Resultset with 1 columns\n"
-		"Resultset with 47 rows\n"
+		"Resultset with 46 rows\n"
 		"mal\n"
 		"WLONGVARCHAR(174)\n"
 		"function user.main():void;\n"
@@ -1518,10 +1518,10 @@ main(int argc, char **argv)
 		"\n\n\n\n\n\n\n\n\n\n"
 		"\n\n\n\n\n\n\n\n\n\n"
 		"\n\n\n\n\n\n\n\n\n\n"
-		"\n\n"
+		"\n"
 	    :
 		"Resultset with 1 columns\n"
-		"Resultset with 45 rows\n"
+		"Resultset with 44 rows\n"
 		"mal\n"
 		"WLONGVARCHAR(174)\n"
 		"function user.main():void;\n"
@@ -1540,7 +1540,7 @@ main(int argc, char **argv)
 		"\n\n\n\n\n\n\n\n\n\n"
 		"\n\n\n\n\n\n\n\n\n\n"
 		"\n\n\n\n\n\n\n\n\n\n"
-		"\n\n");
+		"\n");
 
 	// test TRACE SELECT query.
 	// This will return two resultsets: first with the query results and next with the trace results

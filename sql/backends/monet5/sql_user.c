@@ -496,7 +496,7 @@ monet5_password_hash(mvc *m, const char *username)
 }
 
 static void
-monet5_create_privileges(ptr _mvc, sql_schema *s)
+monet5_create_privileges(ptr _mvc, sql_schema *s, const char *initpasswd)
 {
 	sql_schema *sys;
 	sql_table *t = NULL;
@@ -525,7 +525,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 
 	sqlstore *store = m->session->tr->store;
 	char *username = "monetdb";
-	char *password = mcrypt_BackendSum("monetdb", strlen("monetdb"));
+	char *password = initpasswd ? mcrypt_BackendSum(initpasswd, strlen(initpasswd)) : mcrypt_BackendSum("monetdb", strlen("monetdb"));
 	char *hash = NULL;
 	if ((err = AUTHGeneratePasswordHash(&hash, password)) != MAL_SUCCEED) {
 		TRC_CRITICAL(SQL_TRANS, "generate password hash failure");

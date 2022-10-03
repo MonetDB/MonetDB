@@ -138,31 +138,16 @@ static const char *findName(const char *nme, size_t len, bool allocate)
 }
 
 const char *getName(const char *nme) {
-	return findName(nme, strlen(nme), false);
+	return findName(nme, nme?strlen(nme):0, false);
 }
 
 const char *getNameLen(const char *nme, size_t len)
 {
 	return findName(nme, len, false);
 }
-/*
- * Name deletion from the namespace is tricky, because there may
- * be multiple threads active on the structure. Moreover, the
- * symbol may be picked up by a concurrent thread and stored
- * somewhere.
- * To avoid all these problems, the namespace should become
- * private to each Client, but this would mean expensive look ups
- * deep into the kernel to access the context.
- */
-void delName(const char *nme, size_t len){
-	const char *n;
-	n= getNameLen(nme,len);
-	if( nme[0]==0 || n == 0) return ;
-	/*Namespace garbage collection not available yet */
-}
 
 const char *putName(const char *nme) {
-	return findName(nme, strlen(nme), true);
+	return findName(nme, nme?strlen(nme):0, true);
 }
 
 const char *putNameLen(const char *nme, size_t len)

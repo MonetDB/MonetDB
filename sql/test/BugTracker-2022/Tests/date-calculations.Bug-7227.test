@@ -17,3 +17,4 @@ query T nosort
 select date '2020-02-29' + interval '1' year
 ----
 2021-02-28
+

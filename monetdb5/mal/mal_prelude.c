@@ -71,7 +71,7 @@ mal_module(const char *name, mel_atom *atoms, mel_func *funcs)
 }
 
 static char *
-initModule(Client c, const char *name)
+initModule(Client c, const char *name, const char *initpasswd)
 {
 	char *msg = MAL_SUCCEED;
 
@@ -92,6 +92,12 @@ initModule(Client c, const char *name)
 				(void)ret;
 			} else if (pci && pci->token == PATTERNsymbol) {
 				assert(pci->fcn != NULL);
+				if (strcmp(name, "sql") == 0) {
+					/* HACK ALERT: temporarily use sqlcontext to pass
+					 * the initial password to the prelude function */
+					assert(c->sqlcontext == NULL);
+					c->sqlcontext = (void *) initpasswd;
+				}
 				msg = (*pci->fcn)(c, NULL, NULL, NULL);
 			}
 		}
@@ -235,7 +241,7 @@ addFunctions(mel_func *fcn){
 		/* keep the comment around, setting the static avoid freeing the string accidentally , saving on duplicate documentation in the code. */
 		mb->statichelp = mb->help = fcn->comment;
 
-		sig= newInstructionArgs(mb, fcn->mod, fcn->fcn, fcn->argc + (fcn->retc == 0));
+		sig= newInstructionArgs(mb, mod, putName(fcn->fcn), fcn->argc + (fcn->retc == 0));
 		sig->retc = 0;
 		sig->argc = 0;
 		sig->token = fcn->command?COMMANDsymbol:PATTERNsymbol;
@@ -339,6 +345,7 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp, const ch
 	s = newSymbol(fcn, command ? COMMANDsymbol:PATTERNsymbol );
 	if (s == NULL)
 		return MEL_ERR;
+	fcn = s->name;
 	mb = s->def;
 	(void)comment;
 	if (fname)
@@ -454,7 +461,7 @@ malPrelude(Client c, int listing, int *sql, int *mapi)
 				continue;
 			}
 			if (!mel_module[i].inits) {
-				msg = initModule(c, mel_module[i].name);
+				msg = initModule(c, mel_module[i].name, NULL);
 				if (msg)
 					return msg;
 			}
@@ -472,7 +479,7 @@ malPrelude(Client c, int listing, int *sql, int *mapi)
 }
 
 str
-malIncludeModules(Client c, char *modules[], int listing, bool no_mapi_server)
+malIncludeModules(Client c, char *modules[], int listing, bool no_mapi_server, const char *initpasswd)
 {
 	str msg;
 	int sql = -1, mapi = -1;
@@ -492,15 +499,15 @@ malIncludeModules(Client c, char *modules[], int listing, bool no_mapi_server)
 		if (mel_module[sql].inits)
 			msg = mel_module[sql].inits();
 		else
-			msg = initModule(c, "sql");
+			msg = initModule(c, "sql", initpasswd);
 		if (msg)
 			return msg;
 	}
-	if (!no_mapi_server && mapi >= 0) {
+	if (!no_mapi_server && mapi >= 0 && initpasswd == NULL) {
 		if (mel_module[mapi].inits)
 			msg = mel_module[mapi].inits();
 		else
-			msg = initModule(c, "mapi");
+			msg = initModule(c, "mapi", NULL);
 		if (msg)
 			return msg;
 	}

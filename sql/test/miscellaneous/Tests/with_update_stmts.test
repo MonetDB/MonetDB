@@ -9,7 +9,7 @@ with "v1" as (select 1 as "c1"),
 statement error
 with "v1" as (select 1 as "c1"),
      "v2" as (select 'a' as "c2")
-     insert into "testme" values ("v1"."c1", "v2"."c2");
+     insert into "testme" values ("v1"."c1", "v2"."c2")
 
 query IT rowsort
 select "aa", "bb" from "testme"

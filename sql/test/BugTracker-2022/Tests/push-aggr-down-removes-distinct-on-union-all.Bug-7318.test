@@ -25,3 +25,4 @@ query I nosort
 select count(*) from (select distinct n from fub) as subq
 ----
 3
+

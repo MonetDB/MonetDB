@@ -60,10 +60,10 @@ backend_find_user(ptr m, char *user)
 }
 
 void
-backend_create_privileges(ptr mvc, sql_schema *s)
+backend_create_privileges(ptr mvc, sql_schema *s, const char *initpasswd)
 {
 	if (be_funcs.fcrpriv != NULL)
-		be_funcs.fcrpriv(mvc, s);
+		be_funcs.fcrpriv(mvc, s, initpasswd);
 }
 
 int

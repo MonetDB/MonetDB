@@ -20,13 +20,13 @@ statement ok
 COMMENT ON COLUMN foo.tab.i IS 'ii'
 
 statement ok
-CREATE VIEW sel AS SELECT * FROM foo."tab";
+CREATE VIEW sel AS SELECT * FROM foo."tab"
 
 statement ok
 COMMENT ON VIEW sel IS 'phew'
 
 statement ok
-CREATE VIEW "SEL" AS SELECT * FROM sel;
+CREATE VIEW "SEL" AS SELECT * FROM sel
 
 statement ok
 CREATE INDEX idx ON tab(j,i)
@@ -41,31 +41,31 @@ statement ok
 COMMENT ON SEQUENCE counter IS 'counting'
 
 statement ok
-CREATE FUNCTION f() RETURNS INT BEGIN RETURN 42; END;
+CREATE FUNCTION f() RETURNS INT BEGIN RETURN 42; END
 
 statement ok
 COMMENT ON FUNCTION f() IS '0 parms'
 
 statement ok
-CREATE FUNCTION f(i INT) RETURNS INT BEGIN RETURN 43; END;
+CREATE FUNCTION f(i INT) RETURNS INT BEGIN RETURN 43; END
 
 statement ok
 COMMENT ON FUNCTION f(INT) IS '1 parm'
 
 statement ok
-CREATE FUNCTION f(i INT, j INT) RETURNS INT BEGIN RETURN 44; END;
+CREATE FUNCTION f(i INT, j INT) RETURNS INT BEGIN RETURN 44; END
 
 statement ok
 COMMENT ON FUNCTION f(INTEGER, INTEGER) IS '2 parms'
 
 statement ok
-CREATE FUNCTION f(i INT, j INT, k INT) RETURNS INT BEGIN RETURN 45; END;
+CREATE FUNCTION f(i INT, j INT, k INT) RETURNS INT BEGIN RETURN 45; END
 
 statement ok
-CREATE FUNCTION f(i INT, j INT, k INT, l INT) RETURNS INT BEGIN RETURN 45; END;
+CREATE FUNCTION f(i INT, j INT, k INT, l INT) RETURNS INT BEGIN RETURN 45; END
 
 statement ok
-CREATE PROCEDURE g() BEGIN DELETE FROM tab WHERE FALSE; END;
+CREATE PROCEDURE g() BEGIN DELETE FROM tab WHERE FALSE; END
 
 statement ok
 COMMENT ON PROCEDURE g() IS 'proc'
@@ -78,14 +78,14 @@ SET SCHEMA "sys";
 CREATE SCHEMA "foo" AUTHORIZATION "monetdb";
 CREATE SEQUENCE "foo"."counter" AS BIGINT;
 CREATE TABLE "foo"."tab" ("i" INTEGER, "j" DECIMAL(4,2));
-SET SCHEMA "foo"; create view sel as select * from foo."tab";
-SET SCHEMA "foo"; create view "SEL" as select * from sel;
-SET SCHEMA "foo"; create function f() returns int begin return 42; end;
-SET SCHEMA "foo"; create function f(i int) returns int begin return 43; end;
-SET SCHEMA "foo"; create function f(i int, j int) returns int begin return 44; end;
-SET SCHEMA "foo"; create function f(i int, j int, k int) returns int begin return 45; end;
-SET SCHEMA "foo"; create function f(i int, j int, k int, l int) returns int begin return 45; end;
-SET SCHEMA "foo"; create procedure g() begin delete from tab where false; end;
+SET SCHEMA "foo"; create view sel as select * from foo."tab"@;
+SET SCHEMA "foo"; create view "SEL" as select * from sel@;
+SET SCHEMA "foo"; create function f() returns int begin return 42; end@;
+SET SCHEMA "foo"; create function f(i int) returns int begin return 43; end@;
+SET SCHEMA "foo"; create function f(i int, j int) returns int begin return 44; end@;
+SET SCHEMA "foo"; create function f(i int, j int, k int) returns int begin return 45; end@;
+SET SCHEMA "foo"; create function f(i int, j int, k int, l int) returns int begin return 45; end@;
+SET SCHEMA "foo"; create procedure g() begin delete from tab where false; end@;
 ALTER SEQUENCE "foo"."counter" RESTART WITH 1 NO CYCLE;
 CREATE INDEX "idx" ON "foo"."tab"(j,i);
 COMMENT ON COLUMN "foo"."tab"."i" IS 'ii';

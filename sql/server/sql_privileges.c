@@ -982,7 +982,7 @@ sql_rename_user(mvc *sql, char *olduser, char *newuser)
 }
 
 int
-sql_create_privileges(mvc *m, sql_schema *s)
+sql_create_privileges(mvc *m, sql_schema *s, const char *initpasswd)
 {
 	int pub, su, p, zero = 0;
 	sql_table *t = NULL, *privs = NULL;
@@ -991,7 +991,7 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	sql_trans *tr = m->session->tr;
 
 	// create db_user_info tbl
-	backend_create_privileges(m, s);
+	backend_create_privileges(m, s, initpasswd);
 
 	mvc_create_table(&t, m, s, "user_role", tt_table, 1, SQL_PERSIST, 0, -1, 0);
 	mvc_create_column_(&col, m, t, "login_id", "int", 32);

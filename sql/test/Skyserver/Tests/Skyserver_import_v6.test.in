@@ -189,3 +189,4 @@ COPY 91 RECORDS INTO Zone FROM '$QTSTSRCDIR/../microsky_v6/Zone.dat.bz2' USING D
 
 statement ok
 COMMIT
+

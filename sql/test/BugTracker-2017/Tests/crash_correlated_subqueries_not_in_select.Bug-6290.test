@@ -71,3 +71,4 @@ NULL
 
 statement ok
 ROLLBACK
+

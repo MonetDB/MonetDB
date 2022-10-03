@@ -2,12 +2,12 @@ statement ok
 START TRANSACTION
 
 query T rowsort
-select boatname from "voyages";
+select boatname from "voyages"
 ----
 8115 values hashing to e250b5eddf6d4a5bc476a042557e7ab7
 
 query T rowsort
-select distinct boatname from "voyages";
+select distinct boatname from "voyages"
 ----
 1521 values hashing to ebbc1e305e37b4d778f2a14358b2bd27
 
@@ -16,23 +16,23 @@ select count(*) from craftsmen c, passengers p
 where c.trip = p.trip and exists
 (select 1 from voyages v
 where c.trip = v.trip and v.boatname = 'AMSTERDAM'
-and v.departure_harbour ='Texel');
+and v.departure_harbour ='Texel')
 ----
 1305366
 
 query I rowsort
 select count(*) from craftsmen c, passengers p
-where c.trip = p.trip and exists (select 1) ;
+where c.trip = p.trip and exists (select 1) 
 ----
 1308285
 
 query I rowsort
-select count(*) from craftsmen c ;
+select count(*) from craftsmen c 
 ----
 2349
 
 query I rowsort
-select count(*) from craftsmen c where exists (select 1) ;
+select count(*) from craftsmen c where exists (select 1) 
 ----
 2349
 
@@ -43,7 +43,7 @@ CUME_DIST() OVER ( PARTITION BY trip ORDER BY tonnage nulls first ) as CumeDistG
 CUME_DIST() OVER ( PARTITION BY trip ORDER BY tonnage nulls last ) as CumeDistGroup2,
 PERCENT_RANK() OVER ( PARTITION BY trip ORDER BY tonnage nulls first ) as PercentRankGroup1,
 PERCENT_RANK() OVER ( PARTITION BY trip ORDER BY tonnage nulls last ) as PercentRankGroup2
-FROM voyages WHERE particulars LIKE '%_recked%';
+FROM voyages WHERE particulars LIKE '%_recked%'
 ----
 3580 values hashing to d9abc22d57fbc867138a99831b426fa8
 
@@ -53,7 +53,7 @@ CUME_DIST() OVER ( ORDER BY tonnage nulls first ) as CumeDistGroup1,
 CUME_DIST() OVER ( ORDER BY tonnage nulls last ) as CumeDistGroup2,
 PERCENT_RANK() OVER ( ORDER BY tonnage nulls first ) as PercentRankGroup1,
 PERCENT_RANK() OVER ( ORDER BY tonnage nulls last ) as PercentRankGroup2
-FROM voyages WHERE particulars LIKE '%_recked%';
+FROM voyages WHERE particulars LIKE '%_recked%'
 ----
 1432 values hashing to e6c06ab2f2514389b6ad904d76571427
 
@@ -61,7 +61,7 @@ query RR rowsort
 SELECT
 CUME_DIST() OVER ( PARTITION BY trip ) as CumeDistGroup1,
 PERCENT_RANK() OVER (PARTITION BY trip ) as PercentRankGroup1
-FROM voyages WHERE particulars LIKE '%_recked%';
+FROM voyages WHERE particulars LIKE '%_recked%'
 ----
 716 values hashing to f740d6f825dc439231ba8c008c0a495d
 

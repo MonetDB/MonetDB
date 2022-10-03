@@ -29,11 +29,29 @@
  * arguments. Access to module and function name are cast in macros to
  * prepare for separate name space management. */
 #define getModuleId(P)		((P)->modname)
-#define setModuleId(P,S)	(P)->modname= S
+#ifdef NDEBUG
+#define setModuleId(P,S)	do { (P)->modname = (S); } while (0)
+#else
+static inline void
+setModuleId(InstrPtr p, const char *s)
+{
+	assert(s == getName(s));
+	p->modname = s;
+}
+#endif
 #define setModuleScope(P,S)	do {(P)->modname= (S)==NULL?NULL: (S)->name;} while (0)
 
-#define getFunctionId(P)	(P)->fcnname
-#define setFunctionId(P,S)	(P)->fcnname= S
+#define getFunctionId(P)	((P)->fcnname)
+#ifdef NDEBUG
+#define setFunctionId(P,S)	do { (P)->fcnname = (S); } while (0)
+#else
+static inline void
+setFunctionId(InstrPtr p, const char *s)
+{
+	assert(s == getName(s));
+	p->fcnname = s;
+}
+#endif
 #define garbageControl(P)	((P)->gc & GARBAGECONTROL)
 
 #define getInstrPtr(M,I)	(M)->stmt[I]

@@ -85,7 +85,6 @@ QOToptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #include "mel.h"
 static mel_func optimizer_init_funcs[] = {
  optwrapper_pattern("aliases", "Alias removal optimizer"),
- optwrapper_pattern("bincopyfrom", "Parallellize column loading"),
  optwrapper_pattern("coercions", "Handle simple type coercions"),
  optwrapper_pattern("commonTerms", "Common sub-expression optimizer"),
  optwrapper_pattern("candidates", "Mark candidate list variables"),

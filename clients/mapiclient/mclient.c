@@ -3045,13 +3045,15 @@ getfile(void *data, const char *filename, bool binary,
 }
 
 static char *
-putfile(void *data, const char *filename, const void *buf, size_t bufsize)
+putfile(void *data, const char *filename, bool binary, const void *buf, size_t bufsize)
 {
 	struct privdata *priv = data;
 
 	if (filename != NULL) {
-		if ((priv->f = open_wastream(filename)) == NULL)
+		stream *s = binary ? open_wstream(filename) : open_wastream(filename);
+		if (s == NULL)
 			return (char*)mnstr_peek_error(NULL);
+		priv->f = s;
 #ifdef HAVE_ICONV
 		if (encoding) {
 			stream *f = priv->f;
@@ -3559,7 +3561,7 @@ main(int argc, char **argv)
 
 	struct privdata priv;
 	priv = (struct privdata) {0};
-	mapi_setfilecallback(mid, getfile, putfile, &priv);
+	mapi_setfilecallback2(mid, getfile, putfile, &priv);
 
 	if (logfile)
 		mapi_log(mid, logfile);

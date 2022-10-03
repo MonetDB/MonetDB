@@ -37,6 +37,8 @@ query TT rowsort
 select username, query from sys.queue() order by query
 ----
 monetdb
+select 5@;
+monetdb
 select 6@;
 monetdb
 select 7@;

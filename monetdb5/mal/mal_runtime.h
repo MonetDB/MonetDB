@@ -39,7 +39,6 @@ typedef struct QRYQUEUE{
 	time_t start;
 	time_t finished;
 } *QueryQueue;
-mal_export size_t qhead, qtail, qsize;
 
 /* We keep a few statistics per user to identify unexpected behavior */
 typedef struct USERSTAT{

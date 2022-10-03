@@ -1,0 +1,7 @@
+# when running testing with sanitizer use
+# export ASAN_OPTIONS=print_suppressions=0
+# export LSAN_OPTIONS=suppressions=$src/testing/suppress.txt
+# This is a known leak.
+leak:libcrypto
+leak:libgomp
+leak:python

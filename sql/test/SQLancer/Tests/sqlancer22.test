@@ -83,15 +83,15 @@ query I nosort
 select rank() over (order by ((select mct20.c0) union all (select interval '1' day))) from mct20
 ----
 
-query I nosort
+query T nosort
 select sum(((select mct20.c0) union all (select interval '1' day))) over () from mct20
 ----
 
-query I nosort
+query T nosort
 select sum(((select interval '2' day) union all (select interval '1' day))) over () from mct20
 ----
 
-query I nosort
+query T nosort
 select max(((select mct20.c0) union all (select interval '1' day))) over () from mct20
 ----
 
@@ -811,3 +811,4 @@ select x FROM (VALUES (1),(2),(3)) x(x) where ((select 3 union all select 3)) in
 
 statement error GDK reported error: BATsubcross: more than one match
 select x FROM (VALUES (1),(2),(3)) x(x) where (2, (select 3 union all select 3)) in (select 2,3)
+

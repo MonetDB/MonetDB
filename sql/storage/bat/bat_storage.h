@@ -20,7 +20,6 @@ typedef struct column_storage {
 	int uvbid;		/* bat with values of updates */
 	storage_type st; /* ST_DEFAULT, ST_DICT, ST_FOR */
 	bool cleared;
-	bool alter;		/* set when the delta is created for an alter statement */
 	bool merged;	/* only merge changes once */
 	size_t ucnt;	/* number of updates */
 	ulng ts;		/* version timestamp */

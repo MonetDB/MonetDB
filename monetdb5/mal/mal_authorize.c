@@ -50,8 +50,7 @@ static AUTHCallbackCntx authCallbackCntx = {
 
 void AUTHreset(void)
 {
-	if (vaultKey != NULL)
-		GDKfree(vaultKey);
+	GDKfree(vaultKey);
 	vaultKey = NULL;
 }
 
@@ -98,12 +97,10 @@ AUTHcommit(void)
  * after the GDK kernel has been initialized.
  */
 str
-AUTHinitTables(const char *passwd) {
+AUTHinitTables(void) {
 	bat bid;
 	int isNew = 1;
 	str msg = MAL_SUCCEED;
-
-	(void) passwd;
 
 	/* skip loading if already loaded */
 	if (rt_key != NULL && rt_deleted != NULL)
@@ -416,8 +413,7 @@ AUTHunlockVault(const char *password)
 	/* even though I think this function should be called only once, it
 	 * is not of real extra efforts to avoid a mem-leak if it is used
 	 * multiple times */
-	if (vaultKey != NULL)
-		GDKfree(vaultKey);
+	GDKfree(vaultKey);
 
 	if ((vaultKey = GDKstrdup(password)) == NULL)
 		throw(MAL, "unlockVault", SQLSTATE(HY013) MAL_MALLOC_FAIL " vault key");
@@ -504,7 +500,7 @@ AUTHcypherValue(str *ret, const char *value)
 	keylen = strlen(vaultKey);
 
 	/* XOR all characters.  If we encounter a 'zero' char after the XOR
-	 * operation, escape it with an 'one' char. */
+	 * operation, escape it with a 'one' char. */
 	for (; *s != '\0'; s++) {
 		*w = *s ^ vaultKey[(s - value) % keylen];
 		if (*w == '\0') {

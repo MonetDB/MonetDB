@@ -22,6 +22,10 @@ if not os.path.exists(archive):
     sys.exit(1)
 
 # unpackage database
+try:
+    os.remove(os.path.join(db, '.vaultkey'))
+except FileNotFoundError:
+    pass
 with zipfile.ZipFile(archive) as z:
     z.extractall(path=db)
 

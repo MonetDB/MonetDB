@@ -14,6 +14,7 @@
 #include "mal_runtime.h"
 #include "gdk_time.h"
 #include "mal_exception.h"
+#include "mal_internal.h"
 
 /* (c) M.L. Kersten
  * The queries currently in execution are returned to the front-end for managing expensive ones.
@@ -197,8 +198,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	MT_lock_set(&mal_delayLock);
-	size_t i = qtail;
-	while (i != qhead){
+	for (size_t i = 0; i < qsize; i++) {
 		if( QRYqueue[i].query && (cntxt->user == MAL_ADMIN ||
 					strcmp(cntxt->username, QRYqueue[i].username) == 0) ){
 			qtag = (lng) QRYqueue[i].tag;
@@ -250,8 +250,6 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				 BUNappend(memory, &mem, false) != GDK_SUCCEED)
 				goto bailout;
 		}
-		if (++i >= qsize)
-			i = 0;
 	}
 	MT_lock_unset(&mal_delayLock);
 	*t = tag->batCacheid;
@@ -309,8 +307,7 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	oid ctag = (oid) tag;
 	MT_lock_set(&mal_delayLock);
-	size_t i = qtail;
-	while (i != qhead) {
+	for (size_t i = 0; i < qsize; i++) {
 		if (QRYqueue[i].tag == ctag) {
 			if (QRYqueue[i].stk) {
 				QRYqueue[i].stk->status = 'p';
@@ -319,8 +316,6 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			break; /* the tag was found, but the query could have already finished */
 		}
-		if (++i >= qsize)
-			i = 0;
 	}
 	MT_lock_unset(&mal_delayLock);
 	return set ? MAL_SUCCEED : createException(MAL, "SYSMONpause", SQLSTATE(42000) "Tag " LLFMT " unknown", tag);
@@ -347,8 +342,7 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	oid ctag = (oid) tag;
 	MT_lock_set(&mal_delayLock);
-	size_t i = qtail;
-	while (i != qhead) {
+	for (size_t i = 0; i < qsize; i++) {
 		if (QRYqueue[i].tag == ctag) {
 			if (QRYqueue[i].stk) {
 				QRYqueue[i].stk->status = 0;
@@ -357,8 +351,6 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			break; /* the tag was found, but the query could have already finished */
 		}
-		if (++i >= qsize)
-			i = 0;
 	}
 	MT_lock_unset(&mal_delayLock);
 	return set ? MAL_SUCCEED : createException(MAL, "SYSMONresume", SQLSTATE(42000) "Tag " LLFMT " unknown", tag);
@@ -385,8 +377,7 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	oid ctag = (oid) tag;
 	MT_lock_set(&mal_delayLock);
-	size_t i = qtail;
-	while (i != qhead) {
+	for (size_t i = 0; i < qsize; i++) {
 		if (QRYqueue[i].tag == ctag) {
 			if (QRYqueue[i].stk) {
 				QRYqueue[i].stk->status = 'q';
@@ -395,8 +386,6 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			break; /* the tag was found, but the query could have already finished */
 		}
-		if (++i >= qsize)
-			i = 0;
 	}
 	MT_lock_unset(&mal_delayLock);
 	return set ? MAL_SUCCEED : createException(MAL, "SYSMONstop", SQLSTATE(42000) "Tag " LLFMT " unknown", tag);

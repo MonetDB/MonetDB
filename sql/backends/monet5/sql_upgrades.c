@@ -4673,8 +4673,10 @@ sql_update_sep2022(Client c, mvc *sql)
 	}
 	res_table_destroy(output);
 	output = NULL;
-	if (err != MAL_SUCCEED)
+	if (err != MAL_SUCCEED) {
+		GDKfree(buf);
 		return err;
+	}
 
 	/* if 'describe_partition_tables' system view doesn't use 'vals'
 	 * CTE, re-create it; while we're at it, also update the sequence
@@ -5005,8 +5007,10 @@ sql_update_sep2022(Client c, mvc *sql)
 	}
 	res_table_destroy(output);
 	output = NULL;
-	if (err != MAL_SUCCEED)
+	if (err != MAL_SUCCEED) {
+		GDKfree(buf);
 		return err;
+	}
 
 	/* 10_sys_schema_extensions */
 	/* if the keyword LOCKED is in the list of keywords, upgrade */
@@ -5030,8 +5034,10 @@ sql_update_sep2022(Client c, mvc *sql)
 	}
 	res_table_destroy(output);
 	output = NULL;
-	if (err != MAL_SUCCEED)
+	if (err != MAL_SUCCEED) {
+		GDKfree(buf);
 		return err;
+	}
 
 	/* if the table type UNLOGGED TABLE is not in the list of table
 	 * types, upgrade */
@@ -5053,6 +5059,45 @@ sql_update_sep2022(Client c, mvc *sql)
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 	}
+	res_table_destroy(output);
+	output = NULL;
+
+	/* 16_tracelog */
+	pos = snprintf(buf, bufsize,
+				   "select f.id "
+				   "from sys.schemas s, "
+						"sys.functions f, "
+						"sys.auths a, "
+						"sys.privileges p, "
+						"sys.auths g, "
+						"sys.function_types ft, "
+						"sys.privilege_codes pc "
+				   "where s.id = f.schema_id "
+					 "and f.id = p.obj_id "
+					 "and p.auth_id = a.id "
+					 "and p.grantor = g.id "
+					 "and p.privileges = pc.privilege_code_id "
+					 "and f.type = ft.function_type_id "
+					 "and s.name = 'sys' "
+					 "and f.name = 'tracelog' "
+					 "and ft.function_type_keyword = 'FUNCTION';\n");
+	assert(pos < bufsize);
+	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)))
+		goto bailout;
+	if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 0) {
+		pos = snprintf(buf, bufsize,
+					   "grant execute on function sys.tracelog to public;\n"
+					   "grant select on sys.tracelog to public;\n");
+		assert(pos < bufsize);
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+	}
+	res_table_destroy(output);
+	output = NULL;
+	if (err != MAL_SUCCEED) {
+		GDKfree(buf);
+		return err;
+	}
 
 bailout:
 	if (output)
@@ -5062,7 +5107,7 @@ bailout:
 }
 
 static str
-sql_update_default(Client c, mvc *sql)
+sql_update_default(Client c, mvc *sql, sql_schema *s)
 {
 	size_t bufsize = 65536, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
@@ -5073,8 +5118,7 @@ sql_update_default(Client c, mvc *sql)
 	if (buf == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	/* if sys.db_user_info does not have a column password, we need to
-	 * add a bunch of columns */
+	/* wlc/wlr support was removed */
 	pos = snprintf(buf, bufsize,
 				   "select id from sys.schemas where name in ('wlc', 'wlr');\n");
 	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)) == NULL) {
@@ -5116,6 +5160,41 @@ sql_update_default(Client c, mvc *sql)
 		res_table_destroy(output);
 		output = NULL;
 	}
+
+	/* new function sys.regexp_replace */
+	sql_allocator *old_sa = sql->sa;
+	if ((sql->sa = sa_create(sql->pa)) != NULL) {
+		list *l;
+		if ((l = sa_list(sql->sa)) != NULL) {
+			sql_subtype tp;
+			sql_find_subtype(&tp, "varchar", 0, 0);
+			list_append(l, &tp);
+			list_append(l, &tp);
+			list_append(l, &tp);
+			list_append(l, &tp);
+			if (!sql_bind_func_(sql, s->base.name, "regexp_replace", l, F_FUNC, true)) {
+				pos = snprintf(buf, bufsize,
+							   "create function sys.regexp_replace(ori string, pat string, rep string, flg string)\n"
+							   "returns string external name pcre.replace;\n"
+							   "grant execute on function regexp_replace(string, string, string, string) to public;\n"
+							   "create function sys.regexp_replace(ori string, pat string, rep string)\n"
+							   "returns string\n"
+							   "begin\n"
+							   " return sys.regexp_replace(ori, pat, rep, '');\n"
+							   "end;\n"
+							   "grant execute on function regexp_replace(string, string, string) to public;\n"
+							   "update sys.functions set system = true where system <> true and name = 'regexp_replace' and schema_id = 2000 and type = %d;\n",
+							   F_FUNC);
+				assert(pos < bufsize);
+				sql->session->status = 0;
+				sql->errstr[0] = '\0';
+				printf("Running database upgrade commands:\n%s\n", buf);
+				err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+			}
+			sa_destroy(sql->sa);
+		}
+	}
+	sql->sa = old_sa;
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -5321,7 +5400,7 @@ SQLupgrades(Client c, mvc *m)
 		return -1;
 	}
 
-	if ((err = sql_update_default(c, m)) != NULL) {
+	if ((err = sql_update_default(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		return -1;

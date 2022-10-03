@@ -139,7 +139,7 @@ mal_version(void)
  */
 
 int
-mal_init(char *modules[], bool embedded)
+mal_init(char *modules[], bool embedded, const char *initpasswd)
 {
 /* Any error encountered here terminates the process
  * with a message sent to stderr
@@ -161,7 +161,7 @@ mal_init(char *modules[], bool embedded)
 	if (initialize_tl_client_key() != 0)
 		return -1;
 
-	if ((err = AUTHinitTables(NULL)) != MAL_SUCCEED) {
+	if ((err = AUTHinitTables()) != MAL_SUCCEED) {
 		freeException(err);
 		return -1;
 	}
@@ -177,7 +177,7 @@ mal_init(char *modules[], bool embedded)
 	initNamespace();
 	initParser();
 
-	err = malBootstrap(modules, embedded);
+	err = malBootstrap(modules, embedded, initpasswd);
 	if (err != MAL_SUCCEED) {
 		mal_client_reset();
 #ifndef NDEBUG

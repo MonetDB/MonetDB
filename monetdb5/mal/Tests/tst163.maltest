@@ -19,3 +19,4 @@ statement error
 io.print(j)
 ----
 nil
+

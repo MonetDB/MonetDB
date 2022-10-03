@@ -1,19 +1,20 @@
 statement ok
 CREATE FUNCTION foo(t INT) RETURNS STRING BEGIN
 RETURN  CASE WHEN t IN (10, 20, 30) THEN 'YES' ELSE 'NO' END;
-END;
+END
 
 query T rowsort
-select foo(10);
+select foo(10)
 ----
 YES
 
 statement ok
 CREATE FUNCTION nfoo(t INT) RETURNS STRING BEGIN
 RETURN  CASE WHEN t NOT IN (10, 20, 30) THEN 'YES' ELSE 'NO' END;
-END;
+END
 
 query T rowsort
-select nfoo(10);
+select nfoo(10)
 ----
 NO
+

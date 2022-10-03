@@ -28,9 +28,12 @@ extern str SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 extern str SQLcreate_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
 extern str SQLcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
 extern str SQLdrop_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
+extern str drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists);
 extern str SQLdrop_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
+extern str drop_view(mvc *sql, char *sname, char *tname, int drop_action, int if_exists);
 extern str SQLdrop_constraint(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
 extern str SQLalter_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
+extern str alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t);
 extern str SQLcreate_type(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
 extern str SQLdrop_type(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
 extern str SQLgrant_roles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;

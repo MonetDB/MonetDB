@@ -76,3 +76,4 @@ DROP TABLE sys.myfunctions
 
 statement ok
 ROLLBACK
+
