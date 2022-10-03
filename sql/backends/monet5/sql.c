@@ -4374,7 +4374,7 @@ SQLhot_snapshot_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	// tell client to open file, copy pasted from mvc_export_table_wrap
 	mnstr_write(s, PROMPT3, sizeof(PROMPT3) - 1, 1);
-	mnstr_printf(s, "w %s\n", filename);
+	mnstr_printf(s, "wb %s\n", filename);
 	mnstr_flush(s, MNSTR_FLUSH_DATA);
 	if ((sz = mnstr_readline(mvc->scanner.rs->s, buf, sizeof(buf))) > 1) {
 		/* non-empty line indicates failure on client */
@@ -5189,12 +5189,13 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "exportChunk", mvc_export_chunk_wrap, true, "Export a chunk of the result set (in order) to stream s", args(1,3, arg("",void),arg("s",streams),arg("res_id",int))),
  pattern("sql", "exportChunk", mvc_export_chunk_wrap, true, "Export a chunk of the result set (in order) to stream s", args(1,5, arg("",void),arg("s",streams),arg("res_id",int),arg("offset",int),arg("nr",int))),
  pattern("sql", "exportOperation", mvc_export_operation_wrap, true, "Export result of schema/transaction queries", args(1,1, arg("",void))),
+ pattern("sql", "export_bin_column", mvc_bin_export_column_wrap, true, "export column as binary", args(1, 5, arg("", lng), batargany("col", 1), arg("byteswap", bit), arg("filename", str), arg("onclient", int))),
+ pattern("sql", "export_bin_column", mvc_bin_export_column_wrap, true, "export column as binary", args(1, 5, arg("", lng), argany("val", 1), arg("byteswap", bit), arg("filename", str), arg("onclient", int))),
  pattern("sql", "affectedRows", mvc_affected_rows_wrap, true, "export the number of affected rows by the current query", args(1,3, arg("",int),arg("mvc",int),arg("nr",lng))),
  pattern("sql", "copy_from", mvc_import_table_wrap, true, "Import a table from bstream s with the \ngiven tuple and seperators (sep/rsep)", args(1,13, batvarargany("",0),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("best",int),arg("fwf",str),arg("onclient",int),arg("escape",int))),
  //we use bat.single now
  //pattern("sql", "single", CMDBATsingle, false, "", args(1,2, batargany("",2),argany("x",2))),
- pattern("sql", "importTable", mvc_bin_import_table_wrap, true, "Import a table from the files (fname)", args(1,6, batvarargany("",0),arg("sname",str),arg("tname",str),arg("onclient",int),arg("bswap",bit),vararg("fname",str))),
- pattern("sql", "importColumn", mvc_bin_import_column_wrap, false, "Import a column from the given file", args(2, 7, batargany("", 0),arg("", oid), arg("method",str),arg("bswap",bit),arg("path",str),arg("onclient",int),arg("nrows",oid))),
+ pattern("sql", "importColumn", mvc_bin_import_column_wrap, false, "Import a column from the given file", args(2, 8, batargany("", 0),arg("", oid), arg("method",str),arg("width",int),arg("bswap",bit),arg("path",str),arg("onclient",int),arg("nrows",oid))),
  command("aggr", "not_unique", not_unique, false, "check if the tail sorted bat b doesn't have unique tail values", args(1,2, arg("",bit),batarg("b",oid))),
  command("sql", "optimizers", getPipeCatalog, false, "", args(3,3, batarg("",str),batarg("",str),batarg("",str))),
  pattern("sql", "optimizer_updates", SQLoptimizersUpdate, false, "", noargs),

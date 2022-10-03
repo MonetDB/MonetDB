@@ -2933,7 +2933,6 @@ bl_postversion(void *Store, void *Lg)
 		funcs = COLnew(0, TYPE_str, 5, TRANSIENT);
 		if (funcs == NULL ||
 			BUNappend(funcs, "copy_from", false) != GDK_SUCCEED ||
-			BUNappend(funcs, "importTable", false) != GDK_SUCCEED ||
 			BUNappend(funcs, "next_value", false) != GDK_SUCCEED ||
 			BUNappend(funcs, "update_schemas", false) != GDK_SUCCEED ||
 			BUNappend(funcs, "update_tables", false) != GDK_SUCCEED) {
