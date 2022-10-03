@@ -1,3 +1,38 @@
+monetdb (11.43.23) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 03 Oct 2022 13:43:58 +0200
+
+monetdb (11.43.23) unstable; urgency=low
+
+  * gdk: Fixed a bug in ORDER BY with both NULLS LAST and LIMIT when the ordering
+    was on an interger or integer-like column and NULL values are present.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 19 Sep 2022 13:43:58 +0200
+
+monetdb (11.43.23) unstable; urgency=low
+
+  * sql: Fixed a bug in COPY BINARY INTO where the input wasn't checked
+    thoroughly enough.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 19 Sep 2022 13:43:58 +0200
+
+monetdb (11.43.23) unstable; urgency=low
+
+  * gdk: The median_avg and quantile_avg returned bogus results in the
+    non-grouped case (i.e. something like SELECT sys.median_avg(i) FROM t).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 24 Aug 2022 13:43:58 +0200
+
+monetdb (11.43.23) unstable; urgency=low
+
+  * merovingian: In certain cases (when an mserver5 process exits right after producing
+    a message) the log message was logged over and over again, causing
+    monetdbd to use 100% CPU.  This has been fixed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 24 Aug 2022 13:43:58 +0200
+
 monetdb (11.43.21) unstable; urgency=low
 
   * Rebuilt.
