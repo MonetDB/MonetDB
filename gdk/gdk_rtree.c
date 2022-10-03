@@ -6,24 +6,60 @@
 //TODO The check for hasrtree should look into the parent BAT, not just compare the BAT->rtree to NULL
 
 // Persist rtree to disk if the conditions are right
-/*static void
+static void
 persistRtree (BAT *b)
-{*/
+{
 	/* Conditions to persist the RTree:
 	 * - BAT has to be persistent
 	 * - No deleted rows (when does batInserted update?)
 	 * - The heap is not dirty -> no new values
 	 * - DB Farm is persistent i.e. not in memory
 	 */
-/*	if ((BBP_status(b->batCacheid) & BBPEXISTING)
+	if ((BBP_status(b->batCacheid) & BBPEXISTING)
 	     && b->batInserted == b->batCount
 	     && !b->theap->dirty
 	     && !GDKinmemory(b->theap->farmid)) {
+		//TODO Necessary?
 		BBPfix(b->batCacheid);
-		//char name[MT_NAME_LEN];
-		//snprintf(name, sizeof(name), "rtreesync%d", b->batCacheid);
+		rtree_t *rtree = b->T.rtree;
+
+		if (rtree) {
+			const char *filename = "rtree";
+			const char *ext = "new";
+			int farmid = b->theap->farmid;
+
+			int fd = GDKfdlocate(farmid, filename, "w", ext);
+			FILE *file_write = fdopen(fd,"w");
+
+			if (file_write != NULL) {
+				int err;
+				if ((err = rtree_bsrt_write(rtree,file_write)) != 0) {
+					GDKerror("%s", rtree_strerror(err));
+					fclose(file_write);
+					BBPunfix(b->batCacheid);
+					return;
+				}
+
+
+				if (!(GDKdebug & NOSYNCMASK)) {
+	#if defined(NATIVE_WIN32)
+					_commit(fd);
+	#elif defined(HAVE_FDATASYNC)
+					fdatasync(fd);
+	#elif defined(HAVE_FSYNC)
+					fsync(fd);
+	#endif
+				}
+				fclose(file_write);
+			}
+			else {
+				GDKerror("%s",strerror(errno));
+				close(fd);
+			}
+		}
+		BBPunfix(b->batCacheid);
 	}
-}*/
+}
 
 bool
 RTREEexists(BAT *b)
@@ -71,7 +107,7 @@ RTREEcreate (BAT *b) {
 			GDKerror("rtree_new failed\n");
 			return GDK_FAIL;
 		}
-		//TODO persist rtree
+		persistRtree(pb);
 		MT_lock_unset(&pb->batIdxLock);
 	}
 	return GDK_SUCCEED;
@@ -106,7 +142,6 @@ RTREEaddmbr (BAT *b, mbr_t *inMBR, BUN i) {
 	return GDK_SUCCEED;
 }
 
-//TODO Make this multi-thread safe? -> Only allow one thread to do rtree_new and persist the BAT, but multiple threads can add new rects to the tree
 //MBR bat
 gdk_return
 BATrtree(BAT *wkb, BAT *mbr)
@@ -158,7 +193,7 @@ BATrtree(BAT *wkb, BAT *mbr)
 		}
 		bat_iterator_end(&bi);
 		pb->T.rtree = rtree;
-		//TODO persist rtree
+		persistRtree(pb);
 		MT_lock_unset(&pb->batIdxLock);
 	}
 	//TODO Check if the rtree is complete in case of already existing rtree (not NULL)
