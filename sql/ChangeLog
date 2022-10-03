@@ -1,6 +1,16 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Sep 30 2022 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- When loading data using COPY BINARY INTO, apply default values instead of just
+  inserting NULLs.
+- When loading data using COPY BINARY INTO, validate DECIMAL(n,k) and
+  VARCHAR(n) column width.
+- When loading data using COPY BINARY INTO, string used to have their line
+  endings converted from CR LF to LF. Do not do this, it is the responsibility
+  of the client.
+- Implement dumping binary data using COPY SELECT ... INTO BINARY <file>.
+
 * Thu Aug 25 2022 Sjoerd Mullender <sjoerd@acm.org>
 - Removed code for Workload Capture and Replace.  The code was
   experimental, and it didn't work out.  A different approach will
