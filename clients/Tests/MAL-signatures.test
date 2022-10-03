@@ -35684,16 +35684,6 @@ pattern optimizer.aliases(X_0:str, X_1:str):str
 OPTwrapper;
 Alias removal optimizer
 optimizer
-bincopyfrom
-pattern optimizer.bincopyfrom():str 
-OPTwrapper;
-(empty)
-optimizer
-bincopyfrom
-pattern optimizer.bincopyfrom(X_0:str, X_1:str):str 
-OPTwrapper;
-Parallellize column loading
-optimizer
 candidates
 pattern optimizer.candidates():str 
 OPTwrapper;
@@ -37003,11 +36993,6 @@ importColumn
 pattern sql.importColumn(X_0:str, X_1:bit, X_2:str, X_3:int, X_4:oid) (X_5:bat[:any], X_6:oid) 
 mvc_bin_import_column_wrap;
 Import a column from the given file
-sql
-importTable
-unsafe pattern sql.importTable(X_0:str, X_1:str, X_2:int, X_3:bit, X_4:str...):bat[:any]... 
-mvc_bin_import_table_wrap;
-Import a table from the files (fname)
 sql
 include
 unsafe pattern sql.include(X_0:str):void 
