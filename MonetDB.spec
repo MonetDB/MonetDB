@@ -81,7 +81,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jan2022-SP4/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jan2022-SP5/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -850,6 +850,26 @@ fi
 %endif
 
 %changelog
+* Mon Oct 03 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.23-20221003
+- Rebuilt.
+
+* Mon Sep 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.23-20221003
+- gdk: Fixed a bug in ORDER BY with both NULLS LAST and LIMIT when the ordering
+  was on an interger or integer-like column and NULL values are present.
+
+* Mon Sep 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.23-20221003
+- sql: Fixed a bug in COPY BINARY INTO where the input wasn't checked
+  thoroughly enough.
+
+* Wed Aug 24 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.23-20221003
+- gdk: The median_avg and quantile_avg returned bogus results in the
+  non-grouped case (i.e. something like SELECT sys.median_avg(i) FROM t).
+
+* Wed Aug 24 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.23-20221003
+- merovingian: In certain cases (when an mserver5 process exits right after producing
+  a message) the log message was logged over and over again, causing
+  monetdbd to use 100% CPU.  This has been fixed.
+
 * Fri Aug 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.43.21-20220819
 - Rebuilt.
 
