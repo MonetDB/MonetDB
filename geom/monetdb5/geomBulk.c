@@ -51,24 +51,8 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, b
 		throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	//TODO First thread that gets here should build the whole tree (using the parent BAT array)
-	//TODO The lock on the check should not be released
 	if (!RTREEexists(b)) {
-		if (RTREEcreate(b) != GDK_SUCCEED) {
-			//TODO What to do?
-			throw(MAL, name, "Failed to initialize RTree");
-		}
-		for (BUN j = 0; j < BATcount(b); j++) {
-			wkb *inWKB = (wkb *) BUNtvar(b_iter, j + b->hseqbase);
-			mbr *inMBR = NULL;
-			wkbMBR(&inMBR, &inWKB);
-
-			if (RTREEaddmbr(b,(mbr_t*)inMBR,j) != GDK_SUCCEED) {
-				//TODO Cleanup
-			}
-			GDKfree(inMBR);
-			inMBR = NULL;
-		}
+		//TODO Do we create RTree on the first thread that gets here?
 	}
 
 	//Calculate the MBR for the constant geometry
