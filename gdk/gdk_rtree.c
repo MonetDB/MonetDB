@@ -3,6 +3,8 @@
 #include "gdk_private.h"
 #include "gdk_rtree.h"
 
+//TODO Why use BBPselectfarm?
+
 // Persist rtree to disk if the conditions are right
 static gdk_return
 persistRtree (BAT *b)
@@ -22,12 +24,10 @@ persistRtree (BAT *b)
 		rtree_t *rtree = b->T.rtree;
 
 		if (rtree) {
-			//TODO Change the filename and ext
-			const char *filename = "rtree";
-			const char *ext = "new";
+			const char * filename = BBP_physical(b->batCacheid);
 			int farmid = b->theap->farmid;
 
-			int fd = GDKfdlocate(farmid, filename, "w", ext);
+			int fd = GDKfdlocate(farmid, filename, "w", "bsrt");
 			FILE *file_stream = fdopen(fd,"w");
 
 			if (file_stream != NULL) {
@@ -64,14 +64,11 @@ persistRtree (BAT *b)
 
 static gdk_return
 BATcheckrtree(BAT *b) {
-	//TODO When do you load from disk?
-	//TODO Lock
-
-	//TODO Change the filename and ext
-	const char *filename = "rtree";
-	const char *ext = "new";
+	const char * filename = BBP_physical(b->batCacheid);
 	int farmid = b->theap->farmid;
-	int fd = GDKfdlocate(farmid, filename, "r", ext);
+	int fd = GDKfdlocate(farmid, filename, "r", "bsrt");
+
+	//Do we have the rtree on file?
 	if (fd == -1)
 		return GDK_SUCCEED;
 
@@ -115,7 +112,6 @@ RTREEexists(BAT *b)
 
 }
 
-//MBR bat
 gdk_return
 BATrtree(BAT *wkb, BAT *mbr)
 {
@@ -123,8 +119,6 @@ BATrtree(BAT *wkb, BAT *mbr)
 	BATiter bi;
 	rtree_t *rtree = NULL;
 	struct canditer ci;
-
-	//TODO check for MBR type
 
 	//Check for a parent BAT of wkb, load if exists
 	if (VIEWtparent(wkb)) {
