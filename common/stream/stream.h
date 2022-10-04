@@ -265,5 +265,6 @@ stream_export stream *stream_fwf_create(stream *restrict s, size_t num_fields, s
 stream_export stream *create_text_stream(stream *s);
 
 stream_export stream *mapi_request_upload(const char *filename, bool binary, bstream *rs, stream *ws);
+stream_export stream *mapi_request_download(const char *filename, bool binary, bstream *rs, stream *ws);
 
 #endif /*_STREAM_H_*/

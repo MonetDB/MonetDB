@@ -1,0 +1,49 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE foo(t TEXT);
+
+statement ok
+COPY BIG ENDIAN BINARY INTO foo(t) FROM E'$QTSTTRGDIR/strings.bin'
+
+query T nosort
+SELECT t FROM foo
+----
+one
+two
+three
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE foo(t VARCHAR(5));
+
+statement ok
+COPY BIG ENDIAN BINARY INTO foo(t) FROM E'$QTSTTRGDIR/strings.bin'
+
+query T nosort
+SELECT t FROM foo
+----
+one
+two
+three
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE foo(t VARCHAR(4));
+
+statement error
+COPY BIG ENDIAN BINARY INTO foo(t) FROM E'$QTSTTRGDIR/strings.bin'
+
+statement ok
+ROLLBACK

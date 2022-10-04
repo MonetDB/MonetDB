@@ -23,7 +23,7 @@ random_timestamp(struct rng *rng)
 		.date = {
 			.day = 0, // determine later
 			.month = 1 + rng_next(rng) % 12,
-			.year = 2030 - (int16_t)rng_next(rng),
+			.year = 2030 - (int16_t)rng_next(rng) % 2300,
 		},
 	};
 
@@ -32,11 +32,11 @@ random_timestamp(struct rng *rng)
 		31, 30, 31, 31,
 		30, 31, 30, 31,
 	};
-	uint32_t year = ts.date.year;
+	int16_t year = ts.date.year;
 	uint32_t days = durations[ts.date.month];
 	bool leap_year = (
 		days == 28 &&
-		year % 4 == 0 &&
+		year > 0 && year % 4 == 0 &&
 		(year % 100 != 0 || year % 400 == 0)
 	);
 	if (leap_year)
