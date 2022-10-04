@@ -3,6 +3,7 @@
 #endif
 #include <rtree.h>
 
+//TODO REMOVE
 typedef struct mbr_t {
 	float xmin;
 	float ymin;
@@ -10,13 +11,8 @@ typedef struct mbr_t {
 	float ymax;
 
 } mbr_t;
-//TODO REMOVE
 
 gdk_export bool RTREEexists(BAT *b);
 gdk_export gdk_return BATrtree(BAT *wkb, BAT* mbr);
 gdk_export void RTREEdestroy(BAT *b);
 gdk_export BUN* RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit);
-
-//TODO Necessary?
-gdk_export gdk_return RTREEcreate (BAT *b);
-gdk_export gdk_return RTREEaddmbr (BAT *pb, mbr_t *inMBR, BUN i);

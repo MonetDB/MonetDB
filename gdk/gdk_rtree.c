@@ -3,10 +3,8 @@
 #include "gdk_private.h"
 #include "gdk_rtree.h"
 
-//TODO The check for hasrtree should look into the parent BAT, not just compare the BAT->rtree to NULL
-
 // Persist rtree to disk if the conditions are right
-static void
+static gdk_return
 persistRtree (BAT *b)
 {
 	/* Conditions to persist the RTree:
@@ -24,22 +22,22 @@ persistRtree (BAT *b)
 		rtree_t *rtree = b->T.rtree;
 
 		if (rtree) {
+			//TODO Change the filename and ext
 			const char *filename = "rtree";
 			const char *ext = "new";
 			int farmid = b->theap->farmid;
 
 			int fd = GDKfdlocate(farmid, filename, "w", ext);
-			FILE *file_write = fdopen(fd,"w");
+			FILE *file_stream = fdopen(fd,"w");
 
-			if (file_write != NULL) {
+			if (file_stream != NULL) {
 				int err;
-				if ((err = rtree_bsrt_write(rtree,file_write)) != 0) {
+				if ((err = rtree_bsrt_write(rtree,file_stream)) != 0) {
 					GDKerror("%s", rtree_strerror(err));
-					fclose(file_write);
+					fclose(file_stream);
 					BBPunfix(b->batCacheid);
-					return;
+					return GDK_FAIL;
 				}
-
 
 				if (!(GDKdebug & NOSYNCMASK)) {
 	#if defined(NATIVE_WIN32)
@@ -50,17 +48,53 @@ persistRtree (BAT *b)
 					fsync(fd);
 	#endif
 				}
-				fclose(file_write);
+				fclose(file_stream);
 			}
 			else {
 				GDKerror("%s",strerror(errno));
 				close(fd);
+				return GDK_FAIL;
 			}
 		}
 		BBPunfix(b->batCacheid);
 	}
+	//TODO Should we just return sucess if the rtree is not persisted?
+	return GDK_SUCCEED;
 }
 
+static gdk_return
+BATcheckrtree(BAT *b) {
+	//TODO When do you load from disk?
+	//TODO Lock
+
+	//TODO Change the filename and ext
+	const char *filename = "rtree";
+	const char *ext = "new";
+	int farmid = b->theap->farmid;
+	int fd = GDKfdlocate(farmid, filename, "r", ext);
+	if (fd == -1)
+		return GDK_SUCCEED;
+
+	FILE *file_stream = fdopen(fd,"r");
+	if (file_stream != NULL) {
+		rtree_t* rtree = rtree_bsrt_read(file_stream);
+		if (!rtree) {
+			GDKerror("%s", errno != 0 ? strerror(errno) : "Failed rtree_bsrt_read");
+			fclose(file_stream);
+			return GDK_FAIL;
+		}
+		b->T.rtree = rtree;
+		fclose(file_stream);
+	}
+	else {
+		GDKerror("%s",strerror(errno));
+		close(fd);
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+
+//Check if RTree exists
 bool
 RTREEexists(BAT *b)
 {
@@ -79,67 +113,6 @@ RTREEexists(BAT *b)
 
 	return ret;
 
-}
-
-//Create the RTree index
-gdk_return
-RTREEcreate (BAT *b) {
-	BAT *pb = NULL;
-	//Check for a parent BAT of wkb, load if exists
-	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
-		assert(pb);
-	} else {
-		pb = b;
-	}
-	//Check if rtree already exists
-	//TODO Check if it is on disk
-	if (pb->T.rtree == NULL) {
-		//If it doesn't exist, take the lock to create/get the rtree
-		MT_lock_set(&pb->batIdxLock);
-
-		//Try to load it from disk
-		//TODO BATcheckrtree
-
-		//First arg are dimensions: we only allow x, y
-		//Second arg are flags: split strategy and nodes-per-page
-		if ((pb->T.rtree = rtree_new(2, RTREE_DEFAULT)) == NULL) {
-			GDKerror("rtree_new failed\n");
-			return GDK_FAIL;
-		}
-		persistRtree(pb);
-		MT_lock_unset(&pb->batIdxLock);
-	}
-	return GDK_SUCCEED;
-}
-
-//Add a rectangle to the previously created RTree index
-gdk_return
-RTREEaddmbr (BAT *b, mbr_t *inMBR, BUN i) {
-	BAT *pb = NULL;
-	if (VIEWtparent(b))
-		pb = BBP_cache(VIEWtparent(b));
-	else
-		pb = b;
-	//Check if rtree already exists
-	//TODO Check if it is on disk
-	if (pb->T.rtree != NULL) {
-		rtree_id_t rtree_id = i;
-		rtree_coord_t rect[4];
-		rect[0] = inMBR->xmin;
-		rect[1] = inMBR->ymin;
-		rect[2] = inMBR->xmax;
-		rect[3] = inMBR->ymax;
-		//TODO Is this lock really needed? Test rtreelib concurrency
-		MT_lock_set(&pb->batIdxLock);
-		rtree_add_rect(pb->T.rtree,rtree_id,rect);
-		MT_lock_unset(&pb->batIdxLock);
-	}
-	else {
-		GDKerror("Tried to insert mbr into RTree that was not initialized\n");
-		return GDK_FAIL;
-	}
-	return GDK_SUCCEED;
 }
 
 //MBR bat
@@ -162,13 +135,15 @@ BATrtree(BAT *wkb, BAT *mbr)
 	}
 
 	//Check if rtree already exists
-	//TODO Check if it is on disk
 	if (pb->T.rtree == NULL) {
 		//If it doesn't exist, take the lock to create/get the rtree
 		MT_lock_set(&pb->batIdxLock);
 
 		//Try to load it from disk
-		//TODO BATcheckrtree
+		if (BATcheckrtree(pb) == GDK_SUCCEED && pb->T.rtree != NULL) {
+			MT_lock_unset(&pb->batIdxLock);
+			return GDK_SUCCEED;
+		}
 
 		//First arg are dimensions: we only allow x, y
 		//Second arg are flags: split strategy and nodes-per-page
@@ -196,7 +171,6 @@ BATrtree(BAT *wkb, BAT *mbr)
 		persistRtree(pb);
 		MT_lock_unset(&pb->batIdxLock);
 	}
-	//TODO Check if the rtree is complete in case of already existing rtree (not NULL)
 	return GDK_SUCCEED;
 }
 
