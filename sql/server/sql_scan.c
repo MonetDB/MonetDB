@@ -278,6 +278,9 @@ scanner_init_keywords(void)
 	failed += keywords_insert("SESSION_USER", SESSION_USER);
 	failed += keywords_insert("CURRENT_SCHEMA", CURRENT_SCHEMA);
 	failed += keywords_insert("SESSION", sqlSESSION);
+	failed += keywords_insert("MAX_MEMORY", MAX_MEMORY);
+	failed += keywords_insert("MAX_WORKERS", MAX_WORKERS);
+	failed += keywords_insert("OPTIMIZER", OPTIMIZER);
 
 	failed += keywords_insert("RIGHT", RIGHT);
 	failed += keywords_insert("SCHEMA", SCHEMA);

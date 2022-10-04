@@ -213,6 +213,7 @@ int yydebug=1;
 	comparison_predicate
 	control_statement
 	copyfrom_stmt
+	copyto_stmt
 	create_statement
 	datetime_funcs
 	dealloc
@@ -1492,10 +1493,10 @@ role_def:
 	  append_string(l, $8);
 	  append_list(l, $9);
 	  append_int(l, $4);
-      append_lng(l, $10);
-      append_int(l, $11);
+	  append_lng(l, $10);
+	  append_int(l, $11);
 	  append_string(l, $12);
-      append_string(l, $13);
+	  append_string(l, $13);
 	  $$ = _symbol_create_list( SQL_CREATE_USER, l ); }
  ;
 
@@ -2709,6 +2710,7 @@ update_statement:
  | update_stmt
  | merge_stmt
  | copyfrom_stmt
+ | copyto_stmt
  ;
 
 transaction_statement:
@@ -2792,6 +2794,7 @@ opt_on_location:
   ;
 
 copyfrom_stmt:
+//  1    2      3    4     5                6    7                8               9               10       11         12              13              14
     COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_escape opt_null_string opt_best_effort opt_fwf_widths
 	{ dlist *l = L();
 	  append_list(l, $4);
@@ -2806,6 +2809,7 @@ copyfrom_stmt:
 	  append_int(l, $9);
 	  append_int(l, $11);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
+//  1    2      3    4     5               6    7      8               9        10         11              12
   | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_escape opt_null_string opt_best_effort 
 	{ dlist *l = L();
 	  append_list(l, $4);
@@ -2820,11 +2824,13 @@ copyfrom_stmt:
 	  append_int(l, 0);
 	  append_int(l, $10);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
+//  1    2         3    4     5    6
   | COPY sqlLOADER INTO qname FROM func_ref
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_symbol(l, $6);
 	  $$ = _symbol_create_list( SQL_COPYLOADER, l ); }
+//   1    2              3      4    5     6               7    8                9
    | COPY opt_endianness BINARY INTO qname opt_column_list FROM string_commalist opt_on_location 
 	{ dlist *l = L();
 	  append_list(l, $5);
@@ -2833,14 +2839,19 @@ copyfrom_stmt:
 	  append_int(l, $9);
 	  append_int(l, $2);
 	  $$ = _symbol_create_list( SQL_BINCOPYFROM, l ); }
-  | COPY query_expression_def INTO string opt_on_location opt_seps opt_null_string
+  ;
+
+copyto_stmt:
+//  1    2                    3    4      5               6        7
+    COPY query_expression_def INTO string opt_on_location opt_seps opt_null_string
 	{ dlist *l = L();
 	  append_symbol(l, $2);
 	  append_string(l, $4);
 	  append_list(l, $6);
 	  append_string(l, $7);
 	  append_int(l, $5);
-	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
+	  $$ = _symbol_create_list( SQL_COPYINTO, l ); }
+//  1    2                    3    4      5        6
   | COPY query_expression_def INTO STDOUT opt_seps opt_null_string
 	{ dlist *l = L();
 	  append_symbol(l, $2);
@@ -2848,7 +2859,15 @@ copyfrom_stmt:
 	  append_list(l, $5);
 	  append_string(l, $6);
 	  append_int(l, 0);
-	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
+	  $$ = _symbol_create_list( SQL_COPYINTO, l ); }
+//  1    2                    3    4              5      6                7
+  | COPY query_expression_def INTO opt_endianness BINARY string_commalist opt_on_location
+	{ dlist *l = L();
+	  append_symbol(l, $2);
+	  append_int(l, $4);
+	  append_list(l, $6);
+	  append_int(l, $7);
+	  $$ = _symbol_create_list( SQL_BINCOPYINTO, l ); }
   ;
 
 opt_fwf_widths:
@@ -5474,17 +5493,19 @@ non_reserved_word:
 | ACTION	{ $$ = sa_strdup(SA, "action"); }
 | ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
 | AUTO_COMMIT	{ $$ = sa_strdup(SA, "auto_commit"); }
-| BIG	{ $$ = sa_strdup(SA, "big"); }
+| BIG		{ $$ = sa_strdup(SA, "big"); }
 | CACHE		{ $$ = sa_strdup(SA, "cache"); }
 | CENTURY	{ $$ = sa_strdup(SA, "century"); }
 | CLIENT	{ $$ = sa_strdup(SA, "client"); }
 | COMMENT	{ $$ = sa_strdup(SA, "comment"); }
 | DATA 		{ $$ = sa_strdup(SA, "data"); }
-| DECADE	{ $$ = sa_strdup(SA, "decade"); }
-| ENDIAN		{ $$ = sa_strdup(SA, "endian"); }
-| EPOCH		{ $$ = sa_strdup(SA, "epoch"); }
 | SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
+| DECADE	{ $$ = sa_strdup(SA, "decade"); }
 | DIAGNOSTICS 	{ $$ = sa_strdup(SA, "diagnostics"); }
+| DOW 		{ $$ = sa_strdup(SA, "dow"); }
+| DOY 		{ $$ = sa_strdup(SA, "doy"); }
+| ENDIAN	{ $$ = sa_strdup(SA, "endian"); }
+| EPOCH		{ $$ = sa_strdup(SA, "epoch"); }
 | SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
 | FIRST		{ $$ = sa_strdup(SA, "first"); }
 | GEOMETRY	{ $$ = sa_strdup(SA, "geometry"); }
@@ -5493,14 +5514,17 @@ non_reserved_word:
 | KEY		{ $$ = sa_strdup(SA, "key"); }
 | LAST		{ $$ = sa_strdup(SA, "last"); }
 | LEVEL		{ $$ = sa_strdup(SA, "level"); }
-| LITTLE		{ $$ = sa_strdup(SA, "little"); }
+| LITTLE	{ $$ = sa_strdup(SA, "little"); }
+| MAX_MEMORY	{ $$ = sa_strdup(SA, "max_memory"); }
 | MAXVALUE	{ $$ = sa_strdup(SA, "maxvalue"); }
-| MINMAX	{ $$ = sa_strdup(SA, "MinMax"); }
+| MAX_WORKERS	{ $$ = sa_strdup(SA, "max_workers"); }
+| MINMAX	{ $$ = sa_strdup(SA, "minmax"); }
 | MINVALUE	{ $$ = sa_strdup(SA, "minvalue"); }
 | sqlNAME	{ $$ = sa_strdup(SA, "name"); }
-| NATIVE		{ $$ = sa_strdup(SA, "native"); }
+| NATIVE	{ $$ = sa_strdup(SA, "native"); }
 | NULLS		{ $$ = sa_strdup(SA, "nulls"); }
 | OBJECT	{ $$ = sa_strdup(SA, "object"); }
+| OPTIMIZER	{ $$ = sa_strdup(SA, "optimizer"); }
 | OPTIONS	{ $$ = sa_strdup(SA, "options"); }
 | PASSWORD	{ $$ = sa_strdup(SA, "password"); }
 | PATH		{ $$ = sa_strdup(SA, "path"); }
@@ -5518,13 +5542,11 @@ non_reserved_word:
 | STORAGE	{ $$ = sa_strdup(SA, "storage"); }
 | TEMP		{ $$ = sa_strdup(SA, "temp"); }
 | TEMPORARY	{ $$ = sa_strdup(SA, "temporary"); }
-| UNLOGGED	{ $$ = sa_strdup(SA, "unlogged"); }
 | sqlTEXT	{ $$ = sa_strdup(SA, "text"); }
 | SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }
 | TYPE		{ $$ = sa_strdup(SA, "type"); }
+| UNLOGGED	{ $$ = sa_strdup(SA, "unlogged"); }
 | WEEK 		{ $$ = sa_strdup(SA, "week"); }
-| DOW 		{ $$ = sa_strdup(SA, "dow"); }
-| DOY 		{ $$ = sa_strdup(SA, "doy"); }
 | ZONE		{ $$ = sa_strdup(SA, "zone"); }
 
 /* SQL/XML non reserved words */
@@ -6284,6 +6306,7 @@ char *token2string(tokens token)
 	SQL(ATOM);
 	SQL(BETWEEN);
 	SQL(BINCOPYFROM);
+	SQL(BINCOPYINTO);
 	SQL(BINOP);
 	SQL(CACHE);
 	SQL(CALL);
@@ -6300,7 +6323,7 @@ char *token2string(tokens token)
 	SQL(CONSTRAINT);
 	SQL(COPYFROM);
 	SQL(COPYLOADER);
-	SQL(COPYTO);
+	SQL(COPYINTO);
 	SQL(CREATE_FUNC);
 	SQL(CREATE_INDEX);
 	SQL(CREATE_ROLE);

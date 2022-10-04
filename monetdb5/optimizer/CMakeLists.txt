@@ -12,7 +12,6 @@ target_sources(optimizer
   PRIVATE
   optimizer.c optimizer.h optimizer_private.h
   opt_aliases.c opt_aliases.h
-  opt_bincopyfrom.c opt_bincopyfrom.h
   opt_coercion.c opt_coercion.h
   opt_commonTerms.c opt_commonTerms.h
   opt_candidates.c opt_candidates.h

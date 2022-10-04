@@ -331,6 +331,42 @@ bailout:
 }
 
 static bool
+has_schema_max_memory(Mapi mid)
+{
+	MapiHdl hdl;
+	bool ret;
+	static int answer = -1;
+
+	if (answer >= 0)
+		return answer;
+
+	if ((hdl = mapi_query(mid, "select id from sys._columns where table_id = (select id from sys._tables where name = 'db_user_info' and schema_id = (select id from sys.schemas where name = 'sys')) and name = 'max_memory'")) == NULL ||
+	    mapi_error(mid))
+		goto bailout;
+	ret = mapi_get_row_count(hdl) == 1;
+	while ((mapi_fetch_row(hdl)) != 0) {
+		if (mapi_error(mid))
+			goto bailout;
+	}
+	if (mapi_error(mid))
+		goto bailout;
+	mapi_close_handle(hdl);
+	answer = ret;
+	return ret;
+
+bailout:
+	if (hdl) {
+		if (mapi_result_error(hdl))
+			mapi_explain_result(hdl, stderr);
+		else
+			mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+	} else
+		mapi_explain(mid, stderr);
+	return false;
+}
+
+static bool
 has_table_partitions(Mapi mid)
 {
 	MapiHdl hdl;
@@ -2534,11 +2570,28 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		"ORDER BY s.name, t.sqlname";
 	const char *users =
 		has_schema_path(mid) ?
+		has_schema_max_memory(mid) ?
 		"SELECT ui.name, "
 		       "ui.fullname, "
 		       "sys.password_hash(ui.name), "
 		       "s.name, "
-			   "ui.schema_path "
+			   "ui.schema_path, "
+			   "ui.max_memory, "
+			   "ui.max_workers, "
+			   "ui.optimizer, "
+			   "au.name "
+		"FROM sys.db_user_info ui LEFT OUTER JOIN sys.auths au on ui.default_role = au.id, "
+		     "sys.schemas s "
+		"WHERE ui.default_schema = s.id "
+		  "AND ui.name <> 'monetdb' "
+		  "AND ui.name <> '.snapshot' "
+		"ORDER BY ui.name" :
+		"SELECT ui.name, "
+		       "ui.fullname, "
+		       "sys.password_hash(ui.name), "
+		       "s.name, "
+			   "ui.schema_path, "
+			   "0, 0, 'default_pipe', cast(null as clob) "
 		"FROM sys.db_user_info ui, "
 		     "sys.schemas s "
 		"WHERE ui.default_schema = s.id "
@@ -2549,7 +2602,8 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		       "ui.fullname, "
 		       "sys.password_hash(ui.name), "
 		       "s.name, "
-			   "cast(null as clob) "
+			   "cast(null as clob), "
+			   "0, 0, 'default_pipe', cast(null as clob) "
 		"FROM sys.db_user_info ui, "
 		     "sys.schemas s "
 		"WHERE ui.default_schema = s.id "
@@ -2824,6 +2878,10 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			const char *pwhash = mapi_fetch_field(hdl, 2);
 			const char *sname = mapi_fetch_field(hdl, 3);
 			const char *spath = mapi_fetch_field(hdl, 4);
+			const char *mmemory = mapi_fetch_field(hdl, 5);
+			const char *mworkers = mapi_fetch_field(hdl, 6);
+			const char *optimizer = mapi_fetch_field(hdl, 7);
+			const char *defrole = mapi_fetch_field(hdl, 8);
 
 			mnstr_printf(toConsole, "CREATE USER ");
 			dquoted_print(toConsole, uname, " ");
@@ -2836,6 +2894,20 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			if (spath && strcmp(spath, "\"sys\"") != 0) {
 				mnstr_printf(toConsole, " SCHEMA PATH ");
 				squoted_print(toConsole, spath, '\'', false);
+			}
+			if (mmemory && strcmp(mmemory, "0") != 0) {
+				mnstr_printf(toConsole, " MAX_MEMORY %s", mmemory);
+			}
+			if (mworkers && strcmp(mworkers, "0") != 0) {
+				mnstr_printf(toConsole, " MAX_WORKERS %s", mworkers);
+			}
+			if (optimizer && strcmp(optimizer, "default_pipe") != 0) {
+				mnstr_printf(toConsole, " OPTIMIZER ");
+				squoted_print(toConsole, optimizer, '\'', false);
+			}
+			if (defrole && strcmp(defrole, uname) != 0) {
+				mnstr_printf(toConsole, " DEFAULT ROLE ");
+				dquoted_print(toConsole, defrole, NULL);
 			}
 			mnstr_printf(toConsole, ";\n");
 		}

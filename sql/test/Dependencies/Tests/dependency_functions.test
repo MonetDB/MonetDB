@@ -76,6 +76,9 @@ DEP_FUNC
 ms_trunc
 ms_round
 DEP_FUNC
+regexp_replace
+regexp_replace
+DEP_FUNC
 remote_table_credentials
 get_remote_table_expressions
 DEP_FUNC
@@ -127,6 +130,9 @@ st_transform
 DEP_FUNC
 ms_trunc
 ms_round
+DEP_FUNC
+regexp_replace
+regexp_replace
 DEP_FUNC
 remote_table_credentials
 get_remote_table_expressions

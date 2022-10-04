@@ -59,3 +59,4 @@ query T rowsort
 select regexp_replace('foo', 'f o o', 'XYZ', 'x')
 ----
 XYZ
+
