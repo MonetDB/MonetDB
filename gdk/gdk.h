@@ -746,7 +746,7 @@ typedef struct {
 	Heap *vheap;		/* space for the varsized data. */
 	Hash *hash;		/* hash table */
 	rtree_t *rtree;
-	
+
 	Imprints *imprints;	/* column imprints index */
 	Heap *orderidx;		/* order oid index */
 	Strimps *strimps;	/* string imprint index  */
@@ -1860,6 +1860,22 @@ gdk_export BAT *STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 gdk_export void STRMPdestroy(BAT *b);
 gdk_export bool BAThasstrimps(BAT *b);
 gdk_export gdk_return BATsetstrimps(BAT *b);
+
+/* Rtree structure functions */
+//TODO REMOVE
+typedef struct mbr_t {
+	float xmin;
+	float ymin;
+	float xmax;
+	float ymax;
+
+} mbr_t;
+
+gdk_export bool RTREEexists(BAT *b);
+gdk_export gdk_return BATrtree(BAT *wkb, BAT* mbr);
+gdk_export void RTREEdestroy(BAT *b);
+gdk_export BUN* RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit);
+gdk_export void RTREEdestroy(BAT *b);
 
 /* The ordered index structure */
 

@@ -13,7 +13,6 @@
 #include "geom.h"
 #include "geod.h"
 #include "geom_atoms.h"
-#include "gdk_rtree.h"
 
 /********** Geo Update Start **********/
 static str

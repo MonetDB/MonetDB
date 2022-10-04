@@ -1,24 +1,30 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include "gdk_rtree.h"
 
 //TODO Why use BBPselectfarm?
+//TODO Do we need to guard against dirty heap and deleted rows?
+//TODO Where do put the RTREEdestroy calls? We should invalidate on updates, deletes and inserts
+
+/* Conditions to create and persist the RTree:
+ * - BAT has to be persistent
+ * - No deleted rows (when does batInserted update?)
+ * - The heap is not dirty -> no new values
+ * - DB Farm is persistent i.e. not in memory
+ */
+static bool
+RTreecreatecheck (BAT *b) {
+	return ((BBP_status(b->batCacheid) & BBPEXISTING)
+	     	&& b->batInserted == b->batCount
+	     	&& !b->theap->dirty
+	     	&& !GDKinmemory(b->theap->farmid));
+}
 
 // Persist rtree to disk if the conditions are right
 static gdk_return
 persistRtree (BAT *b)
 {
-	/* Conditions to persist the RTree:
-	 * - BAT has to be persistent
-	 * - No deleted rows (when does batInserted update?)
-	 * - The heap is not dirty -> no new values
-	 * - DB Farm is persistent i.e. not in memory
-	 */
-	if ((BBP_status(b->batCacheid) & BBPEXISTING)
-	     && b->batInserted == b->batCount
-	     && !b->theap->dirty
-	     && !GDKinmemory(b->theap->farmid)) {
+	if (RTreecreatecheck(b)) {
 		//TODO Necessary?
 		BBPfix(b->batCacheid);
 		rtree_t *rtree = b->T.rtree;
@@ -129,7 +135,7 @@ BATrtree(BAT *wkb, BAT *mbr)
 	}
 
 	//Check if rtree already exists
-	if (pb->T.rtree == NULL) {
+	if (pb->T.rtree == NULL && RTreecreatecheck(pb)) {
 		//If it doesn't exist, take the lock to create/get the rtree
 		MT_lock_set(&pb->batIdxLock);
 
@@ -166,6 +172,29 @@ BATrtree(BAT *wkb, BAT *mbr)
 		MT_lock_unset(&pb->batIdxLock);
 	}
 	return GDK_SUCCEED;
+}
+
+void
+RTREEdestroy(BAT *b)
+{
+	BAT *pb;
+	if (VIEWtparent(b)) {
+		pb = BBP_cache(VIEWtparent(b));
+		assert(pb);
+	} else {
+		pb = b;
+	}
+
+	if (pb && pb->T.rtree) {
+		MT_lock_set(&pb->batIdxLock);
+		rtree_destroy(pb->T.rtree);
+		pb->T.rtree = NULL;
+		GDKunlink(pb->theap->farmid,
+			  BATDIR,
+			  BBP_physical(b->batCacheid),
+			  "bsrt");
+		MT_lock_unset(&b->batIdxLock);
+	}
 }
 
 struct results_rtree {
