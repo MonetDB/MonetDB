@@ -4011,6 +4011,7 @@ sql_trans_commit(sql_trans *tr)
 			n = next;
 		}
 		tr->active = 2; /* small hack enabling to signal that this transaction has committed */
+		tr->ts = commit_ts; /* fix profiler output */
 		store_unlock(store);
 		/* flush the log structure */
 		if (log) {
