@@ -66,7 +66,7 @@ GDKrebuild_segment_tree(oid ncount, oid data_size, BAT *st, void **segment_tree,
 				has_nils = true;			\
 				rb[k] = TPE##_nil;			\
 			} else {					\
-				UPCAST nval = (UPCAST) LNG_HGE;		\
+				UPCAST nval = (UPCAST) (LNG_HGE);	\
 				VALIDATION /* validation must come after null check */ \
 				if (nval >= ncnt) {			\
 					rb[k] = (TPE)(j + 1);		\
@@ -178,9 +178,9 @@ GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *n, int tpe, const void *restrict
 #ifdef HAVE_HGE
 		case TYPE_hge:
 #if SIZEOF_OID == SIZEOF_INT
-			ANALYTICAL_NTILE_MULTI_IMP(hge, (val > (hge) GDK_int_max) ? GDK_int_max : (lng) val, lng);
+			ANALYTICAL_NTILE_MULTI_IMP(hge, val > (hge) GDK_int_max ? GDK_int_max : (lng) val, lng);
 #else
-			ANALYTICAL_NTILE_MULTI_IMP(hge, (val > (hge) GDK_lng_max) ? GDK_lng_max : (lng) val, BUN);
+			ANALYTICAL_NTILE_MULTI_IMP(hge, val > (hge) GDK_lng_max ? GDK_lng_max : (lng) val, BUN);
 #endif
 		break;
 #endif
