@@ -133,6 +133,7 @@ mapi_request_upload(const char *filename, bool binary, bstream *bs, stream *ws)
 	}
 	s = create_stream("ONCLIENT");
 	if (!s) {
+		free(state);			/* no chance to free through destroy function */
 		msg = mnstr_peek_error(NULL);
 		goto end;
 	}
