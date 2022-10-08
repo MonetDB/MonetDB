@@ -27,3 +27,4 @@ sequences
 analyze_test
 blobs
 temp_tables
+anti_join_plan
