@@ -203,7 +203,7 @@ BATmaterialize(BAT *b, BUN cap)
 		.dirty = true,
 	};
 	settailname(tail, BBP_physical(b->batCacheid), TYPE_oid, 0);
-	if (HEAPalloc(tail, cap, sizeof(oid), 0) != GDK_SUCCEED) {
+	if (HEAPalloc(tail, cap, sizeof(oid)) != GDK_SUCCEED) {
 		GDKfree(tail);
 		return GDK_FAIL;
 	}
