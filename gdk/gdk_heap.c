@@ -674,21 +674,23 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	if (trunc) {
 		/* round up mmap heap sizes to GDK_mmap_pagesize
 		 * segments, also add some slack */
-		size_t truncsize = ((size_t) (h->free * 1.05) + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
 		int fd;
 
-		if (truncsize == 0)
-			truncsize = GDK_mmap_pagesize; /* minimum of one page */
-		if (truncsize < h->size &&
-		    (fd = GDKfdlocate(h->farmid, nme, "mrb+", ext)) >= 0) {
-			ret = ftruncate(fd, truncsize);
-			TRC_DEBUG(HEAP,
-				  "ftruncate(file=%s.%s, size=%zu) = %d\n",
-				  nme, ext, truncsize, ret);
-			close(fd);
-			if (ret == 0) {
-				h->size = truncsize;
+		if (minsize == 0)
+			minsize = GDK_mmap_pagesize; /* minimum of one page */
+		if ((fd = GDKfdlocate(h->farmid, nme, "rb+", ext)) >= 0) {
+			struct stat stb;
+			if (fstat(fd, &stb) == 0 &&
+			    stb.st_size > (off_t) minsize) {
+				ret = ftruncate(fd, minsize);
+				TRC_DEBUG(HEAP,
+					  "ftruncate(file=%s.%s, size=%zu) = %d\n",
+					  nme, ext, minsize, ret);
+				if (ret == 0) {
+					h->size = minsize;
+				}
 			}
+			close(fd);
 		}
 	}
 
