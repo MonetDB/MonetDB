@@ -703,7 +703,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 				  nme, ".tstrimps",
 				  NULL) >= sizeof(r->strimps.filename) ||
 		    HEAPalloc(&r->strimps, BATcount(b) * sizeof(uint64_t) + sz,
-			      sizeof(uint8_t), 0) != GDK_SUCCEED) {
+			      sizeof(uint8_t)) != GDK_SUCCEED) {
 			GDKfree(r);
 			return NULL;
 		}

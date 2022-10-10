@@ -1267,7 +1267,7 @@ fixhashashbat(BAT *b)
 		return GDK_FAIL;
 	}
 	*h2 = *b->theap;
-	if (HEAPalloc(h2, b->batCapacity, b->twidth, 0) != GDK_SUCCEED) {
+	if (HEAPalloc(h2, b->batCapacity, b->twidth) != GDK_SUCCEED) {
 		GDKfree(h2);
 		GDKfree(vh2);
 		GDKfree(srcdir);
