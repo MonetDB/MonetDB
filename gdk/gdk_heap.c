@@ -139,6 +139,7 @@ HEAPgrow(Heap **hp, size_t size, bool mayshare)
 gdk_return
 HEAPalloc(Heap *h, size_t nitems, size_t itemsize, size_t itemsizemmap)
 {
+	(void) itemsizemmap;
 	h->base = NULL;
 	h->size = 1;
 	if (itemsize) {
@@ -168,8 +169,6 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize, size_t itemsizemmap)
 		if (nme == NULL)
 			return GDK_FAIL;
 		h->storage = STORE_MMAP;
-		if (itemsizemmap > itemsize)
-			h->size = MAX(1, nitems) * itemsizemmap;
 		h->base = HEAPcreatefile(NOFARM, &h->size, nme);
 		GDKfree(nme);
 	}
@@ -288,7 +287,8 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 				h->base = HEAPcreatefile(h->farmid, &h->size, h->filename);
 				if (h->base) {
 					h->newstorage = h->storage = STORE_MMAP;
-					memcpy(h->base, bak.base, bak.free);
+					if (bak.free > 0)
+						memcpy(h->base, bak.base, bak.free);
 					HEAPfree(&bak, false);
 					return GDK_SUCCEED;
 				}
