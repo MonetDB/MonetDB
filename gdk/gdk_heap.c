@@ -283,7 +283,8 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 				h->base = HEAPcreatefile(h->farmid, &h->size, h->filename);
 				if (h->base) {
 					h->newstorage = h->storage = STORE_MMAP;
-					memcpy(h->base, bak.base, bak.free);
+					if (bak.free > 0)
+						memcpy(h->base, bak.base, bak.free);
 					HEAPfree(&bak, false);
 					return GDK_SUCCEED;
 				}
