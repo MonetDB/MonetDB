@@ -84,6 +84,16 @@
 #ifndef S_ISDIR
 #define S_ISDIR(mode)	(((mode) & _S_IFMT) == _S_IFDIR)
 #endif
+#ifndef O_CLOEXEC
+#ifdef _O_NOINHERIT
+#define O_CLOEXEC _O_NOINHERIT	/* Windows */
+#else
+#define O_CLOEXEC 0
+#endif
+#endif
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
 
 /*
  * The BBP has a fixed address, so re-allocation due to a growing BBP
@@ -970,6 +980,17 @@ BBPcheckbats(unsigned bbpversion)
 				GDKfree(path);
 				return GDK_FAIL;
 			}
+			size_t hfree = b->theap->free;
+			hfree = (hfree + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
+			if (hfree == 0)
+				hfree = GDK_mmap_pagesize;
+			if (statb.st_size > (off_t) hfree) {
+				int fd;
+				if ((fd = MT_open(path, O_RDWR | O_CLOEXEC | O_BINARY)) >= 0) {
+					(void) ftruncate(fd, hfree);
+					(void) close(fd);
+				}
+			}
 			GDKfree(path);
 		}
 		if (b->tvheap != NULL && b->tvheap->free > 0) {
@@ -986,6 +1007,17 @@ BBPcheckbats(unsigned bbpversion)
 				GDKerror("file %s too small (expected %zu, actual %zu)\n", path, b->tvheap->free, (size_t) statb.st_size);
 				GDKfree(path);
 				return GDK_FAIL;
+			}
+			size_t hfree = b->tvheap->free;
+			hfree = (hfree + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
+			if (hfree == 0)
+				hfree = GDK_mmap_pagesize;
+			if (statb.st_size > (off_t) hfree) {
+				int fd;
+				if ((fd = MT_open(path, O_RDWR | O_CLOEXEC | O_BINARY)) >= 0) {
+					(void) ftruncate(fd, hfree);
+					(void) close(fd);
+				}
 			}
 			GDKfree(path);
 		}
