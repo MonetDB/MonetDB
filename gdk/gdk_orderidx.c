@@ -142,7 +142,7 @@ createOIDXheap(BAT *b, bool stable)
 	    strconcat_len(m->filename, sizeof(m->filename),
 			  BBP_physical(b->batCacheid), ".torderidx",
 			  NULL) >= sizeof(m->filename) ||
-	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID, 0) != GDK_SUCCEED) {
+	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID) != GDK_SUCCEED) {
 		GDKfree(m);
 		return NULL;
 	}
@@ -369,7 +369,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 	    (m->farmid = BBPselectfarm(b->batRole, bi.type, orderidxheap)) < 0 ||
 	    strconcat_len(m->filename, sizeof(m->filename),
 			  nme, ".torderidx", NULL) >= sizeof(m->filename) ||
-	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID, 0) != GDK_SUCCEED) {
+	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID) != GDK_SUCCEED) {
 		GDKfree(m);
 		MT_lock_unset(&b->batIdxLock);
 		bat_iterator_end(&bi);
