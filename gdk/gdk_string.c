@@ -71,7 +71,7 @@ strHeap(Heap *d, size_t cap)
 
 	cap = MAX(cap, BATTINY);
 	size = GDK_STRHASHTABLE * sizeof(stridx_t) + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
-	return HEAPalloc(d, size, 1, 1);
+	return HEAPalloc(d, size, 1);
 }
 
 

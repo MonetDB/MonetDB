@@ -1309,7 +1309,7 @@ BATnegcands(BUN nr, BAT *odels)
 	strconcat_len(dels->filename, sizeof(dels->filename),
 		      nme, ".theap", NULL);
 
-    	if (HEAPalloc(dels, hi - lo + (sizeof(ccand_t)/sizeof(oid)), sizeof(oid), 0) != GDK_SUCCEED) {
+    	if (HEAPalloc(dels, hi - lo + (sizeof(ccand_t)/sizeof(oid)), sizeof(oid)) != GDK_SUCCEED) {
 		GDKfree(dels);
 		BBPreclaim(bn);
         	return NULL;
@@ -1376,7 +1376,7 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 		      nme, ".theap", NULL);
 
 	nmask = (nr + 31) / 32;
-    	if (HEAPalloc(msks, nmask + (sizeof(ccand_t)/sizeof(uint32_t)), sizeof(uint32_t), 0) != GDK_SUCCEED) {
+    	if (HEAPalloc(msks, nmask + (sizeof(ccand_t)/sizeof(uint32_t)), sizeof(uint32_t)) != GDK_SUCCEED) {
 		GDKfree(msks);
 		BBPreclaim(bn);
         	return NULL;
@@ -1488,7 +1488,7 @@ BATunmask(BAT *b)
 		    HEAPalloc(dels,
 			      cnt * 32 - bi.count
 			      + sizeof(ccand_t) / sizeof(oid),
-			      sizeof(oid), 0) != GDK_SUCCEED) {
+			      sizeof(oid)) != GDK_SUCCEED) {
 			GDKfree(dels);
 			BBPreclaim(bn);
 			bat_iterator_end(&bi);

@@ -84,6 +84,16 @@
 #ifndef S_ISDIR
 #define S_ISDIR(mode)	(((mode) & _S_IFMT) == _S_IFDIR)
 #endif
+#ifndef O_CLOEXEC
+#ifdef _O_NOINHERIT
+#define O_CLOEXEC _O_NOINHERIT	/* Windows */
+#else
+#define O_CLOEXEC 0
+#endif
+#endif
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
 
 /*
  * The BBP has a fixed address, so re-allocation due to a growing BBP
@@ -907,7 +917,6 @@ BBPcheckbats(unsigned bbpversion)
 			path = GDKfilepath(0, BATDIR, b->theap->filename, NULL);
 			if (path == NULL)
 				return GDK_FAIL;
-#if 1
 			/* first check string offset heap with width,
 			 * then without */
 			if (MT_stat(path, &statb) < 0) {
@@ -932,43 +941,21 @@ BBPcheckbats(unsigned bbpversion)
 					return GDK_FAIL;
 				}
 			}
-#else
-			/* first check string offset heap without width,
-			 * then with */
-#ifdef GDKLIBRARY_TAILN
-			/* if bbpversion > GDKLIBRARY_TAILN, the offset heap can
-			 * exist with either name .tail1 (etc) or .tail, if <=
-			 * GDKLIBRARY_TAILN, only with .tail */
-			char tailsave = 0;
-			size_t taillen = 0;
-			if (b->ttype == TYPE_str &&
-			    b->twidth < SIZEOF_VAR_T) {
-				/* old version: .tail, not .tail1, .tail2, .tail4 */
-				taillen = strlen(path) - 1;
-				tailsave = path[taillen];
-				path[taillen] = 0;
-			}
-#endif
-			if (MT_stat(path, &statb) < 0
-#ifdef GDKLIBRARY_TAILN
-			    && bbpversion > GDKLIBRARY_TAILN
-			    && b->ttype == TYPE_str
-			    && b->twidth < SIZEOF_VAR_T
-			    && (path[taillen] = tailsave) != 0
-			    && MT_stat(path, &statb) < 0
-#endif
-				) {
-
-				GDKsyserror("cannot stat file %s (expected size %zu)\n",
-					    path, b->theap->free);
-				GDKfree(path);
-				return GDK_FAIL;
-			}
-#endif
 			if ((size_t) statb.st_size < b->theap->free) {
 				GDKerror("file %s too small (expected %zu, actual %zu)\n", path, b->theap->free, (size_t) statb.st_size);
 				GDKfree(path);
 				return GDK_FAIL;
+			}
+			size_t hfree = b->theap->free;
+			hfree = (hfree + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
+			if (hfree == 0)
+				hfree = GDK_mmap_pagesize;
+			if (statb.st_size > (off_t) hfree) {
+				int fd;
+				if ((fd = MT_open(path, O_RDWR | O_CLOEXEC | O_BINARY)) >= 0) {
+					(void) ftruncate(fd, hfree);
+					(void) close(fd);
+				}
 			}
 			GDKfree(path);
 		}
@@ -986,6 +973,17 @@ BBPcheckbats(unsigned bbpversion)
 				GDKerror("file %s too small (expected %zu, actual %zu)\n", path, b->tvheap->free, (size_t) statb.st_size);
 				GDKfree(path);
 				return GDK_FAIL;
+			}
+			size_t hfree = b->tvheap->free;
+			hfree = (hfree + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
+			if (hfree == 0)
+				hfree = GDK_mmap_pagesize;
+			if (statb.st_size > (off_t) hfree) {
+				int fd;
+				if ((fd = MT_open(path, O_RDWR | O_CLOEXEC | O_BINARY)) >= 0) {
+					(void) ftruncate(fd, hfree);
+					(void) close(fd);
+				}
 			}
 			GDKfree(path);
 		}
@@ -1269,7 +1267,7 @@ fixhashashbat(BAT *b)
 		return GDK_FAIL;
 	}
 	*h2 = *b->theap;
-	if (HEAPalloc(h2, b->batCapacity, b->twidth, 0) != GDK_SUCCEED) {
+	if (HEAPalloc(h2, b->batCapacity, b->twidth) != GDK_SUCCEED) {
 		GDKfree(h2);
 		GDKfree(vh2);
 		GDKfree(srcdir);
