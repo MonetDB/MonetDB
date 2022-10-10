@@ -280,7 +280,7 @@ COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 		cap /= 8;	/* 8 values per byte */
 
 	/* alloc the main heaps */
-	if (tt && HEAPalloc(bn->theap, cap, bn->twidth, ATOMsize(bn->ttype)) != GDK_SUCCEED) {
+	if (tt && HEAPalloc(bn->theap, cap, bn->twidth) != GDK_SUCCEED) {
 		goto bailout;
 	}
 

@@ -564,7 +564,7 @@ BATimprints(BAT *b)
 			      pages * (imprints->bits / 8) + /* imps */
 			      sizeof(uint64_t) + /* padding for alignment */
 			      pages * sizeof(cchdc_t), /* dict */
-			      1, 1) != GDK_SUCCEED) {
+			      1) != GDK_SUCCEED) {
 			MT_lock_unset(&b->batIdxLock);
 			bat_iterator_end(&bi);
 			GDKfree(imprints);

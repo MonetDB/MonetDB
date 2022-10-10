@@ -194,7 +194,7 @@ BUN HASHmask(BUN cnt)
 	__attribute__((__visibility__("hidden")));
 gdk_return HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 	__attribute__((__visibility__("hidden")));
-gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize, size_t itemsizemmap)
+gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPcopy(Heap *dst, Heap *src, size_t offset)
