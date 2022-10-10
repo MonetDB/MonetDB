@@ -1,10 +1,10 @@
 -- test syntax: CREATE USER user_name WITH [ ENCRYPTED | UNENCRYPTED ] PASSWORD 'user_password' NAME 'full name'
 --    [SCHEMA schema_name] [SCHEMA PATH string] [MAX_MEMORY bytes] [MAX_WORKERS count] [OPTIMIZER optimizer] [DEFAULT ROLE ident]
 
-statement error 42000!syntax error in: "create user testu01...
+statement error 42000!syntax error...
 create user testu01;
 
-statement error 42000!syntax error in: "create user testu02 with password 'testu02'...
+statement error 42000!syntax error...
 create user testu02 with password 'testu02';
 
 statement ok
@@ -25,7 +25,7 @@ create user testu06 with password r'test\tu06' name r'Test\bu06' max_MEMORY 1234
 statement ok
 create user testu07 with password r'test\tu07' name r'Test\bu07' max_WORKERS 123
 
-statement error 42000!syntax error in: "create user testu08a with password r'test\tu08' name r'Test\bu08' optimizer mini"
+statement error 42000!syntax error...
 create user testu08a with password r'test\tu08' name r'Test\bu08' Optimizer minimal_pipe
 
 statement ok

@@ -107,7 +107,7 @@ HEAPgrow(Heap **hp, size_t size, bool mayshare)
 			.wasempty = old->wasempty,
 		};
 		memcpy(new->filename, old->filename, sizeof(new->filename));
-		if (HEAPalloc(new, size, 1, 1) == GDK_SUCCEED) {
+		if (HEAPalloc(new, size, 1) == GDK_SUCCEED) {
 			ATOMIC_INIT(&new->refs, 1 | (refs & HEAPREMOVE));
 			new->free = old->free;
 			new->cleanhash = old->cleanhash;
@@ -137,9 +137,8 @@ HEAPgrow(Heap **hp, size_t size, bool mayshare)
  * Windows, it actually always performs I/O which is not nice).
  */
 gdk_return
-HEAPalloc(Heap *h, size_t nitems, size_t itemsize, size_t itemsizemmap)
+HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 {
-	(void) itemsizemmap;
 	h->base = NULL;
 	h->size = 1;
 	if (itemsize) {
@@ -459,7 +458,7 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 		.wasempty = old->wasempty,
 	};
 	settailname(new, BBP_physical(b->batCacheid), b->ttype, width);
-	if (HEAPalloc(new, newsize, 1, 1) != GDK_SUCCEED) {
+	if (HEAPalloc(new, newsize, 1) != GDK_SUCCEED) {
 		GDKfree(new);
 		return GDK_FAIL;
 	}
@@ -563,7 +562,7 @@ HEAPcopy(Heap *dst, Heap *src, size_t offset)
 {
 	if (offset > src->free)
 		offset = src->free;
-	if (HEAPalloc(dst, src->free - offset, 1, 1) == GDK_SUCCEED) {
+	if (HEAPalloc(dst, src->free - offset, 1) == GDK_SUCCEED) {
 		dst->free = src->free - offset;
 		memcpy(dst->base, src->base + offset, src->free - offset);
 		dst->cleanhash = src->cleanhash;
@@ -999,7 +998,7 @@ HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int alignment)
 		size_t total = 100 + nbytes + nprivate + sizeof(HEADER) + sizeof(CHUNK);
 
 		total = roundup_8(total);
-		if (HEAPalloc(heap, total, 1, 1) != GDK_SUCCEED)
+		if (HEAPalloc(heap, total, 1) != GDK_SUCCEED)
 			return GDK_FAIL;
 		heap->free = heap->size;
 	}
