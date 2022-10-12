@@ -321,7 +321,7 @@ void GDKreset(int status);
 void GDKsetdebug(int debug);
 gdk_return GDKsetenv(const char *name, const char *value);
 void GDKsetmallocsuccesscount(lng count);
-ssize_t GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len);
+ssize_t GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len, char quote);
 str GDKstrdup(const char *s) __attribute__((__malloc__)) __attribute__((__warn_unused_result__));
 str GDKstrndup(const char *s, size_t n) __attribute__((__malloc__)) __attribute__((__warn_unused_result__));
 gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_level);

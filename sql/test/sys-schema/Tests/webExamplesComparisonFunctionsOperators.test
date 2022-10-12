@@ -494,7 +494,7 @@ select not_like('abc', '_c#_', '#', false) as tru
 1
 
 query I rowsort
-select not_like('aabbccdd', '%bc\\_d%', '\\', false) as tru
+select not_like('aabbccdd', R'%bc\_d%', R'\', false) as tru
 ----
 1
 
@@ -504,7 +504,7 @@ select not_like('aabbccdd', '%bc_d%', '', false) as fals
 0
 
 query I rowsort
-select not_like('aabbccdd', '%bc\\_d%', '\\', false) as tru
+select not_like('aabbccdd', R'%bc\_d%', R'\', false) as tru
 ----
 1
 
@@ -554,7 +554,7 @@ select not_like('aabbccdd', '%bc_d%', '', true) as fals
 0
 
 query I rowsort
-select not_like('aabbccdd', '%bc\\_d%', '\\', true) as tru
+select not_like('aabbccdd', R'%bc\_d%', R'\', true) as tru
 ----
 1
 
