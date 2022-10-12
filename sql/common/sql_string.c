@@ -107,25 +107,6 @@ sql_strdup(char *s)
 	return r;
 }
 
-char *
-sql_escape_str(sql_allocator *sa, const char *s)
-{
-	size_t l = strlen(s);
-	char *res, *r = SA_NEW_ARRAY(sa, char, (l * 2) + 1);
-
-	res = r;
-	if (res) {
-		while (*s) {
-			if (*s == '\'' || *s == '\\') {
-				*r++ = '\\';
-			}
-			*r++ = *s++;
-		}
-		*r = '\0';
-	}
-	return res;
-}
-
 const char *
 sql_escape_ident(sql_allocator *sa, const char *s)
 {

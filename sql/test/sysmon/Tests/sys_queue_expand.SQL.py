@@ -41,7 +41,7 @@ def main():
         mstcur.execute(query)
 
         query = 'select username, status, query from sys.queue() where status = \'running\' order by query'
-        expected_res = [('monetdb', 'running', 'select username, status, query from sys.queue() where status = \\\'running\\\' order by query\n;')]
+        expected_res = [('monetdb', 'running', 'select username, status, query from sys.queue() where status = \'running\' order by query\n;')]
         rowcnt = mstcur.execute(query)
         res = mstcur.fetchall()
         if rowcnt != len(expected_res) or res != expected_res:
