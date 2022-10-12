@@ -3,9 +3,11 @@
 #include "gdk_private.h"
 
 //TODO Why use BBPselectfarm?
-//TODO Do we need to guard against dirty heap and deleted rows?
-//TODO Where do put the RTREEdestroy calls? We should invalidate on updates, deletes and inserts
 
+//TODO Do we need to guard against dirty heap and deleted rows? -> Panos only does this for persisting, not creating
+//TODO Where do put the RTREEdestroy calls? We should invalidate on updates, deletes and inserts -> Check Panos impl
+
+//TODO Re-check the conditions
 /* Conditions to create and persist the RTree:
  * - BAT has to be persistent
  * - No deleted rows (when does batInserted update?)
@@ -13,21 +15,41 @@
  * - DB Farm is persistent i.e. not in memory
  */
 static bool
-RTreecreatecheck (BAT *b) {
+RTREEcreatecheck (BAT *b) {
 	return ((BBP_status(b->batCacheid) & BBPEXISTING)
 	     	&& b->batInserted == b->batCount
 	     	&& !b->theap->dirty
 	     	&& !GDKinmemory(b->theap->farmid));
 }
 
+void
+RTREEdecref(RTree *rtree)
+{
+	ATOMIC_BASE_TYPE refs = ATOMIC_DEC(&rtree->refs);
+	//If RTree is marked for destruction and there are no refs, destroy the RTree
+	if (rtree->destroy && refs == 0) {
+		ATOMIC_DESTROY(&rtree->refs);
+		rtree_destroy(rtree->rtree);
+		rtree->rtree = NULL;
+		rtree = NULL;
+	}
+
+}
+
+void
+RTREEincref(RTree *rtree)
+{
+	ATOMIC_INC(&rtree->refs);
+}
+
 // Persist rtree to disk if the conditions are right
 static gdk_return
 persistRtree (BAT *b)
 {
-	if (RTreecreatecheck(b)) {
+	if (RTREEcreatecheck(b)) {
 		//TODO Necessary?
 		BBPfix(b->batCacheid);
-		rtree_t *rtree = b->T.rtree;
+		rtree_t *rtree = b->trtree->rtree;
 
 		if (rtree) {
 			const char * filename = BBP_physical(b->batCacheid);
@@ -86,7 +108,7 @@ BATcheckrtree(BAT *b) {
 			fclose(file_stream);
 			return GDK_FAIL;
 		}
-		b->T.rtree = rtree;
+		b->trtree->rtree = rtree;
 		fclose(file_stream);
 	}
 	else {
@@ -94,6 +116,8 @@ BATcheckrtree(BAT *b) {
 		close(fd);
 		return GDK_FAIL;
 	}
+	b->trtree->destroy = false;
+	ATOMIC_INIT(&b->trtree->refs, 1);
 	return GDK_SUCCEED;
 }
 
@@ -111,7 +135,7 @@ RTREEexists(BAT *b)
 	}
 
 	MT_lock_set(&pb->batIdxLock);
-	ret = pb->T.rtree != NULL;
+	ret = pb->trtree->rtree != NULL;
 	MT_lock_unset(&pb->batIdxLock);
 
 	return ret;
@@ -135,12 +159,12 @@ BATrtree(BAT *wkb, BAT *mbr)
 	}
 
 	//Check if rtree already exists
-	if (pb->T.rtree == NULL && RTreecreatecheck(pb)) {
+	if (pb->trtree->rtree == NULL && RTREEcreatecheck(pb)) {
 		//If it doesn't exist, take the lock to create/get the rtree
 		MT_lock_set(&pb->batIdxLock);
 
 		//Try to load it from disk
-		if (BATcheckrtree(pb) == GDK_SUCCEED && pb->T.rtree != NULL) {
+		if (BATcheckrtree(pb) == GDK_SUCCEED && pb->trtree->rtree != NULL) {
 			MT_lock_unset(&pb->batIdxLock);
 			return GDK_SUCCEED;
 		}
@@ -167,13 +191,37 @@ BATrtree(BAT *wkb, BAT *mbr)
 			rtree_add_rect(rtree,rtree_id,rect);
 		}
 		bat_iterator_end(&bi);
-		pb->T.rtree = rtree;
+		pb->trtree->rtree = rtree;
+		pb->trtree->destroy = false;
+		ATOMIC_INIT(&pb->trtree->refs, 1);
 		persistRtree(pb);
 		MT_lock_unset(&pb->batIdxLock);
 	}
 	return GDK_SUCCEED;
 }
 
+//Free the RTree from memory,
+void
+RTREEfree(BAT *b)
+{
+	BAT *pb;
+	if (VIEWtparent(b)) {
+		pb = BBP_cache(VIEWtparent(b));
+		assert(pb);
+	} else {
+		pb = b;
+	}
+
+	if (pb && pb->trtree->rtree) {
+		MT_lock_set(&pb->batIdxLock);
+		//Mark the RTree for destruction
+		pb->trtree->destroy = true;
+		RTREEdecref(pb->trtree);
+		MT_lock_unset(&b->batIdxLock);
+	}
+}
+
+//Free the RTree from memory, unlink the file associated with it
 void
 RTREEdestroy(BAT *b)
 {
@@ -185,14 +233,19 @@ RTREEdestroy(BAT *b)
 		pb = b;
 	}
 
-	if (pb && pb->T.rtree) {
+	//TODO When there is a RTree index on file (i.e. not loaded yet) and this method is called, we should unlink the file (no need to touch refs)
+	if (pb && pb->trtree->rtree) {
 		MT_lock_set(&pb->batIdxLock);
-		rtree_destroy(pb->T.rtree);
-		pb->T.rtree = NULL;
-		GDKunlink(pb->theap->farmid,
-			  BATDIR,
-			  BBP_physical(b->batCacheid),
-			  "bsrt");
+		//Mark the RTree for destruction
+		pb->trtree->destroy = true;
+		RTREEdecref(pb->trtree);
+		//If the farm is in-memory, don't unlink the file (there is no file in that case)
+		if (GDKinmemory(pb->theap->farmid)) {
+			GDKunlink(pb->theap->farmid,
+			  	BATDIR,
+			  	BBP_physical(b->batCacheid),
+			  	"bsrt");
+		}
 		MT_lock_unset(&b->batIdxLock);
 	}
 }
@@ -220,8 +273,21 @@ RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit) {
 	} else {
 		pb = b;
 	}
-	rtree_t *rtree = pb->T.rtree;
+
+	//Try to load if there is an RTree index on file
+	MT_lock_set(&pb->batIdxLock);
+	if (pb->trtree == NULL) {
+		if (BATcheckrtree(pb) != GDK_SUCCEED) {
+			MT_lock_unset(&pb->batIdxLock);
+			return NULL;
+		}
+	}
+	MT_lock_unset(&pb->batIdxLock);
+
+	rtree_t *rtree = pb->trtree->rtree;
 	if (rtree != NULL) {
+		//Increase ref, we're gonna use the index
+		RTREEincref(pb->trtree);
 		BUN *candidates = GDKmalloc(result_limit*sizeof(BUN));
 		memset(candidates,BUN_NONE,result_limit*sizeof(BUN));
 
@@ -235,6 +301,8 @@ RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit) {
 		results.results_left = result_limit;
 		results.candidates = candidates;
 		rtree_search(rtree, (const rtree_coord_t*) rect, f, &results);
+		//Finished using the index, decrease ref
+		RTREEdecref(pb->trtree);
 		return candidates;
 	} else
 		return NULL;
