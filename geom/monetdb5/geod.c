@@ -7,6 +7,12 @@
 
 const double earth_radius = 6371.009;
 const double earth_radius_meters = 6371009;
+#ifndef M_PI
+#define M_PI	((double) 3.14159265358979323846)	/* pi */
+#endif
+#ifndef M_PI_2
+#define M_PI_2      1.57079632679489661923132169163975144   /* pi/2           */
+#endif
 
 /* Converts a longitude value in degrees to radians */
 static double
