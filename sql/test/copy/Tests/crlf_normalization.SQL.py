@@ -26,7 +26,7 @@ def run_test(name, data_delimiter, copy_delimiter):
     DROP TABLE IF EXISTS foo;
     CREATE TABLE foo(i INT, t TEXT);
         COPY INTO foo FROM {r_escape(file_name)}
-        USING DELIMITERS ',', '{copy_delimiter}';
+        USING DELIMITERS ',', E'{copy_delimiter}';
     SELECT i, LENGTH(t) FROM foo;
     """
     with process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
