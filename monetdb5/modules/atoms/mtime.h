@@ -177,7 +177,7 @@ timestamp_century(const timestamp t)
 #define timestamp_to_msec_since_epoch(t) is_timestamp_nil(t) ? lng_nil : (timestamp_diff(t, unixepoch) / 1000)
 
 #define sql_year(m) is_int_nil(m) ? int_nil : m / 12
-#define sql_month(m) is_int_nil(m) ? int_nil : m % 12
+#define sql_month(m) is_bte_nil(m) ? bte_nil : m % 12
 #define sql_day(m) is_lng_nil(m) ? lng_nil : m / (24*60*60*1000)
 #define sql_hours(m) is_lng_nil(m) ? int_nil : (int) ((m % (24*60*60*1000)) / (60*60*1000))
 #define sql_minutes(m) is_lng_nil(m) ? int_nil : (int) ((m % (60*60*1000)) / (60*1000))

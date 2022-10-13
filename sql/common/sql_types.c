@@ -1353,7 +1353,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "decade", "mtime", "decade", FALSE, FALSE, SCALE_FIX, 0, INT, 1, DTE);
 	sql_create_func(sa, "year", "mtime", "year", FALSE, FALSE, SCALE_FIX, 0, INT, 1, DTE);
 	sql_create_func(sa, "quarter", "mtime", "quarter", FALSE, FALSE, SCALE_FIX, 0, INT, 1, DTE);
-	sql_create_func(sa, "month", "mtime", "month", FALSE, FALSE, SCALE_FIX, 0, INT, 1, DTE);
+	sql_create_func(sa, "month", "mtime", "month", FALSE, FALSE, SCALE_FIX, 0, BTE, 1, DTE);
 	sql_create_func(sa, "day", "mtime", "day", FALSE, FALSE, SCALE_FIX, 0, INT, 1, DTE);
 	sql_create_func(sa, "dayofyear", "mtime", "dayofyear", FALSE, FALSE, SCALE_FIX, 0, INT, 1, DTE);
 	sql_create_func(sa, "weekofyear", "mtime", "weekofyear", FALSE, FALSE, SCALE_FIX, 0, INT, 1, DTE);
@@ -1376,7 +1376,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "decade", "mtime", "decade", FALSE, FALSE, SCALE_FIX, 0, INT, 1, TMESTAMP);
 	sql_create_func(sa, "year", "mtime", "year", FALSE, FALSE, SCALE_FIX, 0, INT, 1, TMESTAMP);
 	sql_create_func(sa, "quarter", "mtime", "quarter", FALSE, FALSE, SCALE_FIX, 0, INT, 1, TMESTAMP);
-	sql_create_func(sa, "month", "mtime", "month", FALSE, FALSE, SCALE_FIX, 0, INT, 1, TMESTAMP);
+	sql_create_func(sa, "month", "mtime", "month", FALSE, FALSE, SCALE_FIX, 0, BTE, 1, TMESTAMP);
 	sql_create_func(sa, "day", "mtime", "day", FALSE, FALSE, SCALE_FIX, 0, INT, 1, TMESTAMP);
 	sql_create_func(sa, "hour", "mtime", "hours", FALSE, FALSE, SCALE_FIX, 0, INT, 1, TMESTAMP);
 	sql_create_func(sa, "minute", "mtime", "minutes", FALSE, FALSE, SCALE_FIX, 0, INT, 1, TMESTAMP);
@@ -1387,7 +1387,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "decade", "mtime", "decade", FALSE, FALSE, SCALE_FIX, 0, INT, 1, TMESTAMPTZ);
 	sql_create_func(sa, "year", "mtime", "year", FALSE, FALSE, SCALE_FIX, 0, INT, 1, TMESTAMPTZ);
 	sql_create_func(sa, "quarter", "mtime", "quarter", FALSE, FALSE, SCALE_FIX, 0, INT, 1, TMESTAMPTZ);
-	sql_create_func(sa, "month", "mtime", "month", FALSE, FALSE, SCALE_FIX, 0, INT, 1, TMESTAMPTZ);
+	sql_create_func(sa, "month", "mtime", "month", FALSE, FALSE, SCALE_FIX, 0, BTE, 1, TMESTAMPTZ);
 	sql_create_func(sa, "day", "mtime", "day", FALSE, FALSE, SCALE_FIX, 0, INT, 1, TMESTAMPTZ);
 	sql_create_func(sa, "hour", "mtime", "hours", FALSE, FALSE, SCALE_FIX, 0, INT, 1, TMESTAMPTZ);
 	sql_create_func(sa, "minute", "mtime", "minutes", FALSE, FALSE, SCALE_FIX, 0, INT, 1, TMESTAMPTZ);
@@ -1395,7 +1395,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "epoch_ms", "mtime", "epoch_ms", FALSE, FALSE, SCALE_NONE, 3, BigDEC, 1, TMESTAMPTZ);
 
 	sql_create_func(sa, "year", "mtime", "year", FALSE, FALSE, SCALE_NONE, 0, INT, 1, MONINT);
-	sql_create_func(sa, "month", "mtime", "month", FALSE, FALSE, SCALE_NONE, 0, INT, 1, MONINT);
+	sql_create_func(sa, "month", "mtime", "month", FALSE, FALSE, SCALE_NONE, 0, BTE, 1, MONINT);
 	sql_create_func(sa, "day", "mtime", "day", FALSE, FALSE, SCALE_NONE, 0, LNG, 1, DAYINT);
 	sql_create_func(sa, "hour", "mtime", "hours", FALSE, FALSE, SCALE_NONE, 0, INT, 1, DAYINT);
 	sql_create_func(sa, "minute", "mtime", "minutes", FALSE, FALSE, SCALE_NONE, 0, INT, 1, DAYINT);
