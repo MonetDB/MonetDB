@@ -19,4 +19,3 @@ insert into c (a, b) values (1, 2)
 statement ok
 rollback
 
-

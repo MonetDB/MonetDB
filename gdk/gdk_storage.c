@@ -801,7 +801,7 @@ BATload_intern(bat bid, bool lock)
 	if (b->ttype != TYPE_void) {
 		b->theap->storage = b->theap->newstorage = STORE_INVALID;
 		if ((b->batCount == 0 ?
-		     HEAPalloc(b->theap, b->batCapacity, b->twidth, ATOMsize(b->ttype)) :
+		     HEAPalloc(b->theap, b->batCapacity, b->twidth) :
 		     HEAPload(b->theap, b->theap->filename, NULL, b->batRestricted == BAT_READ)) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
 			return NULL;

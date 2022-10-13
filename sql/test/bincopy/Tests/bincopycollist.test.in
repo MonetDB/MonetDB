@@ -25,7 +25,7 @@ statement ok
 START TRANSACTION
 
 statement ok
-CREATE TABLE intvals(x INTEGER, y INTEGER);
+CREATE TABLE intvals(x INTEGER, y INTEGER)
 
 statement ok
 COPY BIG ENDIAN BINARY INTO intvals FROM (E'$QTSTTRGDIR/be123.bin', E'$QTSTTRGDIR/be456.bin')
@@ -76,7 +76,6 @@ COPY BINARY INTO intvals (a) FROM (E'$QTSTTRGDIR/bincopyint.bin')
 statement ok
 ROLLBACK
 
-
 statement ok
 START TRANSACTION
 
@@ -88,7 +87,6 @@ COPY BINARY INTO intvals FROM (E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/binc
 
 statement ok
 ROLLBACK
-
 
 statement ok
 START TRANSACTION

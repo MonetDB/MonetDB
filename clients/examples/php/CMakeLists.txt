@@ -6,10 +6,8 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
 #]]
 
-if(TESTING)
-  install(FILES
-    sqlsample.php
-    PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
-    DESTINATION ${CMAKE_INSTALL_BINDIR}
-    COMPONENT clienttest)
-endif()
+install(FILES
+  sqlsample.php
+  PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT clienttest)

@@ -482,7 +482,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	int stkpc = 0;
 	RuntimeProfileRecord runtimeProfile, runtimeProfileFunction;
 	lng lastcheck = 0;
-	int	startedProfileQueue = 0;
+	bool startedProfileQueue = false;
 #define CHECKINTERVAL 1000 /* how often do we check for client disconnect */
 	runtimeProfile.ticks = runtimeProfileFunction.ticks = 0;
 
@@ -521,7 +521,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 	/* also produce event record for start of function */
 	if (startpc == 1 &&  startpc < mb->stop ){
-		startedProfileQueue = 1;
+		startedProfileQueue = true;
 		runtimeProfileInit(cntxt, mb, stk);
 		runtimeProfileBegin(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
 		if (cntxt->sessiontimeout && mb->starttime - cntxt->session > cntxt->sessiontimeout) {

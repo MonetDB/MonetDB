@@ -8,42 +8,40 @@
 
 include_directories($<$<BOOL:${ODBC_FOUND}>:${ODBC_INCLUDE_DIRS}>)
 
-if(TESTING)
-  add_executable(ODBCgetInfo
-    ODBCgetInfo.c)
-  target_link_libraries(ODBCgetInfo
-    PRIVATE
-    ODBC::ODBC)
+add_executable(ODBCgetInfo
+  ODBCgetInfo.c)
+target_link_libraries(ODBCgetInfo
+  PRIVATE
+  ODBC::ODBC)
 
-  add_executable(ODBCStmtAttr
-    ODBCStmtAttr.c)
+add_executable(ODBCStmtAttr
+  ODBCStmtAttr.c)
 
-  target_link_libraries(ODBCStmtAttr
-    PRIVATE
-    ODBC::ODBC)
+target_link_libraries(ODBCStmtAttr
+  PRIVATE
+  ODBC::ODBC)
 
-  add_executable(ODBCmetadata
-    ODBCmetadata.c)
+add_executable(ODBCmetadata
+  ODBCmetadata.c)
 
-  target_link_libraries(ODBCmetadata
-    PRIVATE
-    ODBC::ODBC)
+target_link_libraries(ODBCmetadata
+  PRIVATE
+  ODBC::ODBC)
 
-  install(TARGETS
-    ODBCgetInfo
-    ODBCStmtAttr
-    ODBCmetadata
-    RUNTIME
-    DESTINATION
-    ${CMAKE_INSTALL_BINDIR}
-    COMPONENT clienttest)
+install(TARGETS
+  ODBCgetInfo
+  ODBCStmtAttr
+  ODBCmetadata
+  RUNTIME
+  DESTINATION
+  ${CMAKE_INSTALL_BINDIR}
+  COMPONENT clienttest)
 
-  if(WIN32)
-    install(FILES
-      $<TARGET_PDB_FILE:ODBCgetInfo>
-      $<TARGET_PDB_FILE:ODBCStmtAttr>
-      $<TARGET_PDB_FILE:ODBCmetadata>
-      DESTINATION ${CMAKE_INSTALL_BINDIR}
-      OPTIONAL)
-  endif()
+if(WIN32)
+  install(FILES
+    $<TARGET_PDB_FILE:ODBCgetInfo>
+    $<TARGET_PDB_FILE:ODBCStmtAttr>
+    $<TARGET_PDB_FILE:ODBCmetadata>
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    OPTIONAL)
 endif()

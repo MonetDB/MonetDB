@@ -140,13 +140,13 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 		h->width = HASHwidth(size);
 
 	if (!bcktonly) {
-		if (HEAPalloc(&h->heaplink, size, h->width, 0) != GDK_SUCCEED)
+		if (HEAPalloc(&h->heaplink, size, h->width) != GDK_SUCCEED)
 			return GDK_FAIL;
 		h->heaplink.free = size * h->width;
 		h->heaplink.dirty = true;
 		h->Link = h->heaplink.base;
 	}
-	if (HEAPalloc(&h->heapbckt, mask + HASH_HEADER_SIZE * SIZEOF_SIZE_T / h->width, h->width, 0) != GDK_SUCCEED)
+	if (HEAPalloc(&h->heapbckt, mask + HASH_HEADER_SIZE * SIZEOF_SIZE_T / h->width, h->width) != GDK_SUCCEED)
 		return GDK_FAIL;
 	h->heapbckt.free = mask * h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 	h->heapbckt.dirty = true;
@@ -778,7 +778,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	strconcat_len(h->heapbckt.filename, sizeof(h->heapbckt.filename),
 		      nme, ".", ext, "b", NULL);
 	if (HEAPalloc(&h->heaplink, hascand ? ci->ncand : BATcapacity(b),
-		      h->width, 0) != GDK_SUCCEED) {
+		      h->width) != GDK_SUCCEED) {
 		GDKfree(h);
 		bat_iterator_end(&bi);
 		return NULL;

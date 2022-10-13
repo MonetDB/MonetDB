@@ -283,7 +283,7 @@ BEGIN
           SET COPY_INTO_STMT = (COPY_INTO_STMT || ', ' || sys.DQ(cname));
           SET SELECT_DATA_STMT = (SELECT_DATA_STMT || '|| ''|'' || ' || sys.prepare_esc(cname, ctype));
         END WHILE;
-        SET COPY_INTO_STMT = (COPY_INTO_STMT || ') FROM STDIN USING DELIMITERS ''|'',E''\\n'',''"'';');
+        SET COPY_INTO_STMT = (COPY_INTO_STMT || R') FROM STDIN USING DELIMITERS ''|'',E''\n'',''"'';');
         SET SELECT_DATA_STMT = (SELECT_DATA_STMT || ' FROM ' || sys.FQN(sch, tbl));
         INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, COPY_INTO_STMT);
         CALL sys.EVAL('INSERT INTO sys.dump_statements ' || SELECT_DATA_STMT || ';');

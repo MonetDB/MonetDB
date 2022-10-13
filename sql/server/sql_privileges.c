@@ -775,7 +775,7 @@ mvc_set_schema(mvc *m, char *schema)
 }
 
 char *
-sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, char *schema, char *schema_path, lng max_memory, int max_workers, char *optimizer, char *role)
+sql_create_user(mvc *sql, char *user, char *passwd, bool enc, char *fullname, char *schema, char *schema_path, lng max_memory, int max_workers, char *optimizer, char *role)
 {
 	char *err;
 	sql_schema *s = NULL;
@@ -934,7 +934,7 @@ sql_drop_user(mvc *sql, char *user)
 }
 
 char *
-sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char *schema_path, char *oldpasswd, char *role)
+sql_alter_user(mvc *sql, char *user, char *passwd, bool enc, char *schema, char *schema_path, char *oldpasswd, char *role)
 {
 	sql_schema *s = NULL;
 	sqlid schema_id = 0;

@@ -80,12 +80,6 @@ target_link_libraries(example_connections
     monetdbe)
 add_test(run_example_connections example_connections)
 
-add_executable(example_proxy example_proxy.c)
-target_link_libraries(example_proxy
-  PRIVATE
-    monetdb_config_header
-    monetdbe)
-
 if(WITH_CMOCKA)
   add_executable(cmocka_test cmocka_test.c test_helper.c)
   target_include_directories(cmocka_test PRIVATE "${CMOCKA_INCLUDE_DIR}")
@@ -99,6 +93,12 @@ if(WITH_CMOCKA)
 endif()
 
 if (TESTING)
+  add_executable(example_proxy example_proxy.c)
+  target_link_libraries(example_proxy
+    PRIVATE
+    monetdb_config_header
+    monetdbe)
+
   install(TARGETS
     example_proxy
     DESTINATION ${CMAKE_INSTALL_BINDIR}

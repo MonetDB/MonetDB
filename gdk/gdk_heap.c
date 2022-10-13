@@ -107,7 +107,7 @@ HEAPgrow(Heap **hp, size_t size, bool mayshare)
 			.wasempty = old->wasempty,
 		};
 		memcpy(new->filename, old->filename, sizeof(new->filename));
-		if (HEAPalloc(new, size, 1, 1) == GDK_SUCCEED) {
+		if (HEAPalloc(new, size, 1) == GDK_SUCCEED) {
 			ATOMIC_INIT(&new->refs, 1 | (refs & HEAPREMOVE));
 			new->free = old->free;
 			new->cleanhash = old->cleanhash;
@@ -137,7 +137,7 @@ HEAPgrow(Heap **hp, size_t size, bool mayshare)
  * Windows, it actually always performs I/O which is not nice).
  */
 gdk_return
-HEAPalloc(Heap *h, size_t nitems, size_t itemsize, size_t itemsizemmap)
+HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 {
 	h->base = NULL;
 	h->size = 1;
@@ -168,8 +168,6 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize, size_t itemsizemmap)
 		if (nme == NULL)
 			return GDK_FAIL;
 		h->storage = STORE_MMAP;
-		if (itemsizemmap > itemsize)
-			h->size = MAX(1, nitems) * itemsizemmap;
 		h->base = HEAPcreatefile(NOFARM, &h->size, nme);
 		h->hasfile = true;
 		GDKfree(nme);
@@ -292,7 +290,8 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 				h->hasfile = true;
 				if (h->base) {
 					h->newstorage = h->storage = STORE_MMAP;
-					memcpy(h->base, bak.base, bak.free);
+					if (bak.free > 0)
+						memcpy(h->base, bak.base, bak.free);
 					HEAPfree(&bak, false);
 					return GDK_SUCCEED;
 				}
@@ -459,7 +458,7 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 		.wasempty = old->wasempty,
 	};
 	settailname(new, BBP_physical(b->batCacheid), b->ttype, width);
-	if (HEAPalloc(new, newsize, 1, 1) != GDK_SUCCEED) {
+	if (HEAPalloc(new, newsize, 1) != GDK_SUCCEED) {
 		GDKfree(new);
 		return GDK_FAIL;
 	}
@@ -563,7 +562,7 @@ HEAPcopy(Heap *dst, Heap *src, size_t offset)
 {
 	if (offset > src->free)
 		offset = src->free;
-	if (HEAPalloc(dst, src->free - offset, 1, 1) == GDK_SUCCEED) {
+	if (HEAPalloc(dst, src->free - offset, 1) == GDK_SUCCEED) {
 		dst->free = src->free - offset;
 		memcpy(dst->base, src->base + offset, src->free - offset);
 		dst->cleanhash = src->cleanhash;
@@ -702,21 +701,23 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	if (trunc) {
 		/* round up mmap heap sizes to GDK_mmap_pagesize
 		 * segments, also add some slack */
-		size_t truncsize = ((size_t) (h->free * 1.05) + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
 		int fd;
 
-		if (truncsize == 0)
-			truncsize = GDK_mmap_pagesize; /* minimum of one page */
-		if (truncsize < h->size &&
-		    (fd = GDKfdlocate(h->farmid, nme, "mrb+", ext)) >= 0) {
-			ret = ftruncate(fd, truncsize);
-			TRC_DEBUG(HEAP,
-				  "ftruncate(file=%s.%s, size=%zu) = %d\n",
-				  nme, ext, truncsize, ret);
-			close(fd);
-			if (ret == 0) {
-				h->size = truncsize;
+		if (minsize == 0)
+			minsize = GDK_mmap_pagesize; /* minimum of one page */
+		if ((fd = GDKfdlocate(h->farmid, nme, "rb+", ext)) >= 0) {
+			struct stat stb;
+			if (fstat(fd, &stb) == 0 &&
+			    stb.st_size > (off_t) minsize) {
+				ret = ftruncate(fd, minsize);
+				TRC_DEBUG(HEAP,
+					  "ftruncate(file=%s.%s, size=%zu) = %d\n",
+					  nme, ext, minsize, ret);
+				if (ret == 0) {
+					h->size = minsize;
+				}
 			}
+			close(fd);
 		}
 	}
 
@@ -997,7 +998,7 @@ HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int alignment)
 		size_t total = 100 + nbytes + nprivate + sizeof(HEADER) + sizeof(CHUNK);
 
 		total = roundup_8(total);
-		if (HEAPalloc(heap, total, 1, 1) != GDK_SUCCEED)
+		if (HEAPalloc(heap, total, 1) != GDK_SUCCEED)
 			return GDK_FAIL;
 		heap->free = heap->size;
 	}

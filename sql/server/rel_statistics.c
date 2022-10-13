@@ -1165,6 +1165,8 @@ rel_select_order(visitor *v, sql_rel *rel)
 
 		for (i = 0, n = rel->exps->h; n; i++, n = n->next) {
 			exps[i] = n->data;
+			if (find_prop(exps[i]->p, PROP_HASHCOL))
+				return rel;
 			scores[i] = score_se(v, rel, n->data);
 		}
 		GDKqsort(scores, exps, NULL, nexps, sizeof(int), sizeof(void *), TYPE_int, true, true);

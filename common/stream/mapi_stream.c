@@ -155,6 +155,7 @@ setup_transfer(const char *req, const char *filename, bstream *bs, stream *ws)
 	}
 	s = create_stream("ONCLIENT");
 	if (!s) {
+		free(state);			/* no chance to free through destroy function */
 		msg = mnstr_peek_error(NULL);
 		goto end;
 	}

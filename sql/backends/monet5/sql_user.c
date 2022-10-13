@@ -352,7 +352,7 @@ parse_schema_path_str(mvc *m, str schema_path, bool build) /* this function for 
 }
 
 static str
-monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid schema_id, str schema_path, sqlid grantorid, lng max_memory, int max_workers, str optimizer, sqlid role_id)
+monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid schema_id, str schema_path, sqlid grantorid, lng max_memory, int max_workers, str optimizer, sqlid role_id)
 {
 	mvc *m = (mvc *) _mvc;
 	oid rid;
@@ -566,7 +566,7 @@ monet5_schema_has_user(ptr _mvc, sql_schema *s)
 }
 
 static int
-monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str schema_path, str oldpasswd, sqlid
+monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str schema_path, str oldpasswd, sqlid
 		role_id)
 {
 	mvc *m = (mvc *) _mvc;

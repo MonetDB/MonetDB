@@ -900,7 +900,7 @@ open_wstream(const char *filename)
 	stream *c = compressed_stream(s, 0);
 	if (c == NULL) {
 		close_stream(s);
-		file_remove(filename);
+		(void) file_remove(filename);
 	}
 
 	return c;
@@ -940,7 +940,7 @@ open_wastream(const char *filename)
 	stream *t = create_text_stream(s);
 	if (t == NULL) {
 		close_stream(s);
-		file_remove(filename);
+		(void) file_remove(filename);
 	}
 
 	return t;

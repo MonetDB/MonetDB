@@ -53,36 +53,51 @@ target_link_libraries(mserver5
   $<$<BOOL:${MALLOC_FOUND}>:Malloc::Malloc>
   Threads::Threads)
 
-add_executable(shutdowntest)
-target_sources(shutdowntest
-  PRIVATE
-  shutdowntest.c)
+if(TESTING)
+  add_executable(shutdowntest)
+  target_sources(shutdowntest
+    PRIVATE
+    shutdowntest.c)
 
-target_include_directories(shutdowntest
-  PRIVATE
-  $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:malmodules,INTERFACE_INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:atoms,INTERFACE_INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:sql,INTERFACE_INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:sqlinclude,INTERFACE_INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:sqlserver,INTERFACE_INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:sqlcommon,INTERFACE_INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:sqlstorage,INTERFACE_INCLUDE_DIRECTORIES>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+  target_include_directories(shutdowntest
+    PRIVATE
+    $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:malmodules,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:atoms,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:sql,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:sqlinclude,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:sqlserver,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:sqlcommon,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:sqlstorage,INTERFACE_INCLUDE_DIRECTORIES>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
-target_link_libraries(shutdowntest
-  PRIVATE
-  monetdb_config_header
-  matomic
-  moptions
-  sql
-  mutils
-  bat
-  stream
-  monetdb5
-  $<$<NOT:$<PLATFORM_ID:Windows>>:m>
-  $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
-  Threads::Threads)
+  target_link_libraries(shutdowntest
+    PRIVATE
+    monetdb_config_header
+    matomic
+    moptions
+    sql
+    mutils
+    bat
+    stream
+    monetdb5
+    $<$<NOT:$<PLATFORM_ID:Windows>>:m>
+    $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
+    Threads::Threads)
+
+  install(TARGETS
+    shutdowntest
+    RUNTIME
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT clienttest)
+
+  if(WIN32)
+    install(FILES
+      $<TARGET_PDB_FILE:shutdowntest>
+      DESTINATION ${CMAKE_INSTALL_BINDIR}
+      OPTIONAL)
+  endif()
+endif()
 
 install(TARGETS
   mserver5
@@ -96,12 +111,6 @@ install(TARGETS
   PUBLIC_HEADER
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
-install(TARGETS
-  shutdowntest
-  RUNTIME
-  DESTINATION ${CMAKE_INSTALL_BINDIR}
-  COMPONENT clienttest)
 
 configure_file(mserver5.1.in
   ${CMAKE_CURRENT_BINARY_DIR}/mserver5.1 @ONLY)
@@ -130,7 +139,6 @@ install(FILES
 if(WIN32)
   install(FILES
     $<TARGET_PDB_FILE:mserver5>
-    $<TARGET_PDB_FILE:shutdowntest>
     DESTINATION ${CMAKE_INSTALL_BINDIR}
     OPTIONAL)
 endif()

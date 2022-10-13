@@ -1269,7 +1269,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 						free(nquery);
 						nquery = q;
 						q += n;
-					} else if (strcmp(func->name, "user") == 0) {
+					} else if (strcmp(func->name, "user") == 0 && nargs == 0) {
 						length += (dbc->Connected && dbc->uid ? strlen(dbc->uid) : 0) + 3 - pr;
 						q = malloc(length);
 						if (q == NULL) {
@@ -1280,7 +1280,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 						free(nquery);
 						nquery = q;
 						q += n;
-					} else if (strcmp(func->name, "database") == 0) {
+					} else if (strcmp(func->name, "database") == 0 && nargs == 0) {
 						length += (dbc->Connected && dbc->dbname ? strlen(dbc->dbname) : 0) + 3 - pr;
 						q = malloc(length);
 						if (q == NULL) {
@@ -1291,7 +1291,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 						free(nquery);
 						nquery = q;
 						q += n;
-					} else if (strcmp(func->name, "convert") == 0) {
+					} else if (strcmp(func->name, "convert") == 0 && nargs == 2) {
 						struct convert *c;
 						for (c = convert; c->odbc; c++) {
 							if (strncasecmp(c->odbc, args[1].argstart, args[1].arglen) == 0 &&
