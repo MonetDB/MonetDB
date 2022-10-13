@@ -1328,6 +1328,24 @@ NULL
 2003-03-03 03:03:03
 2002-02-02 02:02:02
 
+query T nosort
+select o.cts from obn o left outer join obn r on (o.cbi = r.cbi) order by o.cts desc nulls first limit 5 offset 1
+----
+NULL
+2012-12-12 12:12:12
+2009-09-09 09:09:09
+2004-04-04 04:04:04
+2003-03-03 03:03:03
+
+query T nosort
+select o.cts from obn o left outer join (select cbi from obn where cbi > 2) r on (o.cbi = r.cbi) order by o.cts desc nulls first limit 5 offset 1
+----
+NULL
+2012-12-12 12:12:12
+2009-09-09 09:09:09
+2004-04-04 04:04:04
+2003-03-03 03:03:03
+
 statement ok
 drop table obn
 

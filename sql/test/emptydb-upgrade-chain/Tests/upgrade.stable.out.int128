@@ -3052,3 +3052,200 @@ end;
 grant execute on function regexp_replace(string, string, string) to public;
 update sys.functions set system = true where system <> true and name = 'regexp_replace' and schema_id = 2000 and type = 1;
 
+Running database upgrade commands:
+drop function if exists sys.dump_database(boolean);
+drop procedure if exists sys.dump_table_data();
+drop procedure if exists sys.dump_table_data(string, string);
+drop view if exists sys.dump_tables;
+drop view if exists sys.dump_comments;
+drop function if exists sys.prepare_esc(string, string);
+drop view if exists sys.dump_partition_tables;
+drop view if exists sys.dump_create_users;
+drop view if exists sys.describe_tables;
+drop function if exists sys.get_remote_table_expressions(string, string);
+drop function if exists sys.sq(string);
+CREATE FUNCTION sys.SQ (s STRING) RETURNS STRING BEGIN RETURN '''' || sys.replace(s,'''','''''') || ''''; END;
+CREATE FUNCTION sys.get_remote_table_expressions(s STRING, t STRING) RETURNS STRING BEGIN
+ RETURN SELECT ' ON ' || sys.SQ(uri) || ' WITH USER ' || sys.SQ(username) || ' ENCRYPTED PASSWORD ' || sys.SQ("hash") FROM sys.remote_table_credentials(s ||'.' || t);
+END;
+CREATE VIEW sys.describe_tables AS
+ SELECT
+ t.id o,
+ s.name sch,
+ t.name tab,
+ ts.table_type_name typ,
+ (SELECT
+ ' (' ||
+ GROUP_CONCAT(
+ sys.DQ(c.name) || ' ' ||
+ sys.describe_type(c.type, c.type_digits, c.type_scale) ||
+ ifthenelse(c."null" = 'false', ' NOT NULL', '')
+ , ', ') || ')'
+ FROM sys._columns c
+ WHERE c.table_id = t.id) col,
+ CASE ts.table_type_name
+ WHEN 'REMOTE TABLE' THEN
+ sys.get_remote_table_expressions(s.name, t.name)
+ WHEN 'MERGE TABLE' THEN
+ sys.get_merge_table_partition_expressions(t.id)
+ WHEN 'VIEW' THEN
+ sys.schema_guard(s.name, t.name, t.query)
+ ELSE
+ ''
+ END opt
+ FROM sys.schemas s, sys.table_types ts, sys.tables t
+ WHERE ts.table_type_name IN ('TABLE', 'VIEW', 'MERGE TABLE', 'REMOTE TABLE', 'REPLICA TABLE', 'UNLOGGED TABLE')
+ AND t.system = FALSE
+ AND s.id = t.schema_id
+ AND ts.table_type_id = t.type
+ AND s.name <> 'tmp';
+CREATE VIEW sys.dump_create_users AS
+ SELECT
+ 'CREATE USER ' || sys.dq(ui.name) || ' WITH ENCRYPTED PASSWORD ' ||
+ sys.sq(sys.password_hash(ui.name)) ||
+ ' NAME ' || sys.sq(ui.fullname) || ' SCHEMA sys' || ifthenelse(ui.schema_path = '"sys"', '', ' SCHEMA PATH ' || sys.sq(ui.schema_path)) || ';' stmt,
+ ui.name user_name
+ FROM sys.db_user_info ui, sys.schemas s
+ WHERE ui.default_schema = s.id
+ AND ui.name <> 'monetdb'
+ AND ui.name <> '.snapshot';
+CREATE VIEW sys.dump_partition_tables AS
+ SELECT
+ 'ALTER TABLE ' || sys.FQN(m_sch, m_tbl) || ' ADD TABLE ' || sys.FQN(p_sch, p_tbl) ||
+ CASE
+ WHEN tpe = 'VALUES' THEN ' AS PARTITION IN (' || pvalues || ')'
+ WHEN tpe = 'RANGE' THEN ' AS PARTITION FROM ' || ifthenelse(minimum IS NOT NULL, sys.SQ(minimum), 'RANGE MINVALUE') || ' TO ' || ifthenelse(maximum IS NOT NULL, sys.SQ(maximum), 'RANGE MAXVALUE')
+ WHEN tpe = 'FOR NULLS' THEN ' AS PARTITION FOR NULL VALUES'
+ ELSE '' --'READ ONLY'
+ END ||
+ CASE WHEN tpe in ('VALUES', 'RANGE') AND with_nulls THEN ' WITH NULL VALUES' ELSE '' END ||
+ ';' stmt,
+ m_sch merge_schema_name,
+ m_tbl merge_table_name,
+ p_sch partition_schema_name,
+ p_tbl partition_table_name
+ FROM sys.describe_partition_tables;
+CREATE VIEW sys.dump_tables AS
+ SELECT
+ t.o o,
+ CASE
+ WHEN t.typ <> 'VIEW' THEN
+ 'CREATE ' || t.typ || ' ' || sys.FQN(t.sch, t.tab) || t.col || t.opt || ';'
+ ELSE
+ t.opt
+ END stmt,
+ t.sch schema_name,
+ t.tab table_name
+ FROM sys.describe_tables t;
+CREATE VIEW sys.dump_comments AS
+ SELECT 'COMMENT ON ' || c.tpe || ' ' || c.fqn || ' IS ' || sys.SQ(c.rem) || ';' stmt FROM sys.describe_comments c;
+CREATE FUNCTION sys.prepare_esc(s STRING, t STRING) RETURNS STRING
+BEGIN
+ RETURN
+ CASE
+ WHEN (t = 'varchar' OR t ='char' OR t = 'clob' OR t = 'json' OR t = 'geometry' OR t = 'url') THEN
+ 'CASE WHEN ' || sys.DQ(s) || ' IS NULL THEN ''null'' ELSE ' || 'sys.esc(' || sys.DQ(s) || ')' || ' END'
+ ELSE
+ 'CASE WHEN ' || sys.DQ(s) || ' IS NULL THEN ''null'' ELSE CAST(' || sys.DQ(s) || ' AS STRING) END'
+ END;
+END;
+CREATE PROCEDURE sys.dump_table_data(sch STRING, tbl STRING)
+BEGIN
+ DECLARE tid INT;
+ SET tid = (SELECT MIN(t.id) FROM sys.tables t, sys.schemas s WHERE t.name = tbl AND t.schema_id = s.id AND s.name = sch);
+ IF tid IS NOT NULL THEN
+ DECLARE k INT;
+ DECLARE m INT;
+ SET k = (SELECT MIN(c.id) FROM sys.columns c WHERE c.table_id = tid);
+ SET m = (SELECT MAX(c.id) FROM sys.columns c WHERE c.table_id = tid);
+ IF k IS NOT NULL AND m IS NOT NULL THEN
+ DECLARE cname STRING;
+ DECLARE ctype STRING;
+ DECLARE _cnt INT;
+ SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);
+ SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);
+ SET _cnt = (SELECT count FROM sys.storage(sch, tbl, cname));
+ IF _cnt > 0 THEN
+ DECLARE COPY_INTO_STMT STRING;
+ DECLARE SELECT_DATA_STMT STRING;
+ SET COPY_INTO_STMT = 'COPY ' || _cnt || ' RECORDS INTO ' || sys.FQN(sch, tbl) || '(' || sys.DQ(cname);
+ SET SELECT_DATA_STMT = 'SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), ' || sys.prepare_esc(cname, ctype);
+ WHILE (k < m) DO
+ SET k = (SELECT MIN(c.id) FROM sys.columns c WHERE c.table_id = tid AND c.id > k);
+ SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);
+ SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);
+ SET COPY_INTO_STMT = (COPY_INTO_STMT || ', ' || sys.DQ(cname));
+ SET SELECT_DATA_STMT = (SELECT_DATA_STMT || '|| ''|'' || ' || sys.prepare_esc(cname, ctype));
+ END WHILE;
+ SET COPY_INTO_STMT = (COPY_INTO_STMT || R') FROM STDIN USING DELIMITERS ''|'',E''\n'',''"'';');
+ SET SELECT_DATA_STMT = (SELECT_DATA_STMT || ' FROM ' || sys.FQN(sch, tbl));
+ INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, COPY_INTO_STMT);
+ CALL sys.EVAL('INSERT INTO sys.dump_statements ' || SELECT_DATA_STMT || ';');
+ END IF;
+ END IF;
+ END IF;
+ END;
+CREATE PROCEDURE sys.dump_table_data()
+BEGIN
+ DECLARE i INT;
+ SET i = (SELECT MIN(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system);
+ IF i IS NOT NULL THEN
+ DECLARE M INT;
+ SET M = (SELECT MAX(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system);
+ DECLARE sch STRING;
+ DECLARE tbl STRING;
+ WHILE i IS NOT NULL AND i <= M DO
+ SET sch = (SELECT s.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
+ SET tbl = (SELECT t.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
+ CALL sys.dump_table_data(sch, tbl);
+ SET i = (SELECT MIN(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system AND t.id > i);
+ END WHILE;
+ END IF;
+END;
+CREATE FUNCTION sys.dump_database(describe BOOLEAN) RETURNS TABLE(o int, stmt STRING)
+BEGIN
+ SET SCHEMA sys;
+ TRUNCATE sys.dump_statements;
+ INSERT INTO sys.dump_statements VALUES (1, 'START TRANSACTION;');
+ INSERT INTO sys.dump_statements VALUES (2, 'SET SCHEMA "sys";');
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_roles;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_users;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_schemas;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_user_defined_types;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_add_schemas_to_users;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_grant_user_privileges;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_sequences;
+ --functions and table-likes can be interdependent. They should be inserted in the order of their catalogue id.
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(ORDER BY stmts.o), stmts.s
+ FROM (
+ SELECT f.o, f.stmt FROM sys.dump_functions f
+ UNION ALL
+ SELECT t.o, t.stmt FROM sys.dump_tables t
+ ) AS stmts(o, s);
+ -- dump table data before adding constraints and fixing sequences
+ IF NOT DESCRIBE THEN
+ CALL sys.dump_table_data();
+ END IF;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_start_sequences;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_defaults;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_constraint_type;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_indices;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_foreign_keys;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_partition_tables;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_triggers;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_comments;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_grants;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_grants;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_function_grants;
+ --TODO Improve performance of dump_table_data.
+ --TODO loaders ,procedures, window and filter sys.functions.
+ --TODO look into order dependent group_concat
+ INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');
+ RETURN sys.dump_statements;
+END;
+update sys.functions set system = true where system <> true and name in ('sq', 'get_remote_table_expressions', 'prepare_esc') and schema_id = 2000 and type = 1;
+update sys._tables set system = true where system <> true and name in ('describe_tables', 'dump_create_users', 'dump_partition_tables', 'dump_comments', 'dump_tables') and schema_id = 2000;
+update sys.functions set system = true where system <> true and name = 'dump_table_data' and schema_id = 2000 and type = 2;
+update sys.functions set system = true where system <> true and name = 'dump_database' and schema_id = 2000 and type = 5;
+GRANT SELECT ON sys.describe_tables TO PUBLIC;
+

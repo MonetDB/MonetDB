@@ -745,8 +745,6 @@ scanner_string(mvc *c, int quote, bool escapes)
 		lc->yycur += pos;
 		/* check for quote escaped quote: Obscure SQL Rule */
 		if (cur == quote && rs->buf[yycur + pos] == quote) {
-			if (escapes)
-				rs->buf[yycur + pos - 1] = '\\';
 			lc->yycur++;
 			continue;
 		}
@@ -1384,8 +1382,8 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 		case 'E':
 			assert(yylval->sval[1] == '\'');
 			GDKstrFromStr((unsigned char *) str,
-				      (unsigned char *) yylval->sval + 2,
-				      lc->yycur-lc->yysval - 2);
+						  (unsigned char *) yylval->sval + 2,
+						  lc->yycur-lc->yysval - 2, '\'');
 			quote = '\'';
 			break;
 		case 'u':
@@ -1428,8 +1426,9 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 				*dst = 0;
 			} else {
 				GDKstrFromStr((unsigned char *)str,
-					      (unsigned char *)yylval->sval + 1,
-					      lc->yycur - lc->yysval - 1);
+							  (unsigned char *)yylval->sval + 1,
+							  lc->yycur - lc->yysval - 1,
+							  '\'');
 			}
 			break;
 		}
