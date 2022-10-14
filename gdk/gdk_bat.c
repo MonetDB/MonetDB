@@ -587,6 +587,7 @@ BATclear(BAT *b, bool force)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	STRMPdestroy(b);
+	RTREEdestroy(b);
 	PROPdestroy(b);
 
 	/* we must dispose of all inserted atoms */
@@ -668,6 +669,7 @@ BATfree(BAT *b)
 	IMPSfree(b);
 	OIDXfree(b);
 	STRMPfree(b);
+	RTREEfree(b);
 	MT_lock_set(&b->theaplock);
 	if (nunique != BUN_NONE) {
 		b->tunique_est = (double) nunique;
@@ -1284,6 +1286,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
 	STRMPdestroy(b); 	/* TODO: use STRMPappendBitstring */
+	RTREEdestroy(b);
 	return GDK_SUCCEED;
 }
 
@@ -1518,6 +1521,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		OIDXdestroy(b);
 		IMPSdestroy(b);
 		STRMPdestroy(b);
+		RTREEdestroy(b);
 
 		if (b->tvheap && b->ttype) {
 			var_t _d;
