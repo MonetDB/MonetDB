@@ -108,20 +108,38 @@ BATcheckrtree(BAT *b) {
 			fclose(file_stream);
 			return GDK_FAIL;
 		}
+		b->trtree = GDKmalloc(sizeof(struct RTree));
 		b->trtree->rtree = rtree;
+		b->trtree->destroy = false;
+		ATOMIC_INIT(&b->trtree->refs, 1);
 		fclose(file_stream);
+		return GDK_SUCCEED;
 	}
 	else {
 		GDKerror("%s",strerror(errno));
 		close(fd);
 		return GDK_FAIL;
 	}
-	b->trtree->destroy = false;
-	ATOMIC_INIT(&b->trtree->refs, 1);
-	return GDK_SUCCEED;
+}
+
+//Check if RTree exists on file (previously created index)
+static bool
+RTREEexistsonfile(BAT *b) {
+	const char * filename = BBP_physical(b->batCacheid);
+	int farmid = b->theap->farmid;
+	int fd = GDKfdlocate(farmid, filename, "r", "bsrt");
+
+	//Do we have the rtree on file?
+	if (fd == -1)
+		return false;
+	else {
+		close(fd);
+		return true;
+	}
 }
 
 //Check if RTree exists
+//We also check if it exists on file. If the index is not loaded, it will be
 bool
 RTREEexists(BAT *b)
 {
@@ -135,11 +153,23 @@ RTREEexists(BAT *b)
 	}
 
 	MT_lock_set(&pb->batIdxLock);
-	ret = pb->trtree->rtree != NULL;
+	ret = (pb->trtree != NULL || RTREEexistsonfile(pb));
 	MT_lock_unset(&pb->batIdxLock);
 
 	return ret;
 
+}
+
+bool
+RTREEexists_bid(bat *bid)
+{
+	BAT *b;
+	bool ret;
+	if ((b = BATdescriptor(*bid)) == NULL)
+		return false;
+	ret = RTREEexists(b);
+	BBPunfix(b->batCacheid);
+	return ret;
 }
 
 gdk_return
@@ -159,12 +189,12 @@ BATrtree(BAT *wkb, BAT *mbr)
 	}
 
 	//Check if rtree already exists
-	if (pb->trtree->rtree == NULL && RTREEcreatecheck(pb)) {
+	if (pb->trtree == NULL && RTREEcreatecheck(pb)) {
 		//If it doesn't exist, take the lock to create/get the rtree
 		MT_lock_set(&pb->batIdxLock);
 
 		//Try to load it from disk
-		if (BATcheckrtree(pb) == GDK_SUCCEED && pb->trtree->rtree != NULL) {
+		if (BATcheckrtree(pb) == GDK_SUCCEED && pb->trtree != NULL) {
 			MT_lock_unset(&pb->batIdxLock);
 			return GDK_SUCCEED;
 		}
@@ -191,12 +221,14 @@ BATrtree(BAT *wkb, BAT *mbr)
 			rtree_add_rect(rtree,rtree_id,rect);
 		}
 		bat_iterator_end(&bi);
+		pb->trtree = GDKmalloc(sizeof(struct RTree));
 		pb->trtree->rtree = rtree;
 		pb->trtree->destroy = false;
 		ATOMIC_INIT(&pb->trtree->refs, 1);
 		persistRtree(pb);
 		MT_lock_unset(&pb->batIdxLock);
 	}
+	//TODO What do we do when the conditions are not right for creating the index? Or when it already exists?
 	return GDK_SUCCEED;
 }
 
