@@ -50,19 +50,13 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, b
 		throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	if (!RTREEexists(b)) {
-		//TODO Do we create RTree on the first thread that gets here?
-	}
-
 	//Calculate the MBR for the constant geometry
 	mbr *const_mbr = NULL;
 	wkbMBR(&const_mbr,&wkb_const);
 
 	//Get a candidate list from searching on the rtree with the constant mbr
 	//Note: the candidates returned from RTREEsearch are BUNs not OIDs
-	BUN* results_rtree = NULL;
-	if (RTREEexists(b))
-		results_rtree = RTREEsearch(b,(mbr_t*)const_mbr, b->batCount);
+	BUN* results_rtree = RTREEsearch(b,(mbr_t*)const_mbr, b->batCount);
 
 	//Cycle through rtree candidates
 	//If there is a original candidate list, make sure the rtree cand is in there
@@ -124,7 +118,7 @@ filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const,
 	BAT *out = NULL, *b = NULL, *s = NULL;
 	BATiter b_iter;
 	struct canditer ci;
-	GEOSGeom col_geom, const_geom;
+	GEOSGeom const_geom, col_geom;
 
 	//WKB constant is NULL
 	if ((const_geom = wkb2geos(wkb_const)) == NULL) {
@@ -186,6 +180,7 @@ filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const,
 		}
 		GEOSGeom_destroy(col_geom);
 	}
+
 	GEOSGeom_destroy(const_geom);
 	bat_iterator_end(&b_iter);
 	BBPunfix(b->batCacheid);
@@ -198,7 +193,11 @@ filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const,
 
 str
 wkbIntersectsSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti) {
-	return filterSelectRTree(outid,bid,sid,*wkb_const,*anti,GEOSIntersects,"geom.wkbIntersectsSelectRTree");
+	//If there is an RTree on memory or on file, use the RTree method. Otherwise, use the no index version.
+	if (RTREEexists_bid((bat*)bid))
+		return filterSelectRTree(outid,bid,sid,*wkb_const,*anti,GEOSIntersects,"geom.wkbIntersectsSelectRTree");
+	else
+		return filterSelectNoIndex(outid,bid,sid,*wkb_const,*anti,GEOSIntersects,"geom.wkbIntersectsSelectNoIndex");
 }
 
 str

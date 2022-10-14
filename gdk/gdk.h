@@ -1874,6 +1874,7 @@ typedef struct mbr_t {
 } mbr_t;
 
 gdk_export bool RTREEexists(BAT *b);
+gdk_export bool RTREEexists_bid(bat *bid);
 gdk_export gdk_return BATrtree(BAT *wkb, BAT* mbr);
 gdk_export BUN* RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit);
 gdk_export void RTREEdestroy(BAT *b);
