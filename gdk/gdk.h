@@ -1879,8 +1879,8 @@ gdk_export gdk_return BATrtree(BAT *wkb, BAT* mbr);
 gdk_export BUN* RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit);
 gdk_export void RTREEdestroy(BAT *b);
 gdk_export void RTREEfree(BAT *b);
-gdk_export void RTREEdecref(RTree *rtree);
-gdk_export void RTREEincref(RTree *rtree);
+gdk_export void RTREEdecref(BAT *b);
+gdk_export void RTREEincref(BAT *b);
 
 /* The ordered index structure */
 

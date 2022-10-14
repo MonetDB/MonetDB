@@ -3,6 +3,7 @@
 #include "gdk_private.h"
 
 //TODO Why use BBPselectfarm?
+//TODO Check if we need to input RTREEdestroy into drop_index func in sql_cat.c
 
 //TODO Do we need to guard against dirty heap and deleted rows? -> Panos only does this for persisting, not creating
 //TODO Where do put the RTREEdestroy calls? We should invalidate on updates, deletes and inserts -> Check Panos impl
@@ -23,23 +24,23 @@ RTREEcreatecheck (BAT *b) {
 }
 
 void
-RTREEdecref(RTree *rtree)
+RTREEdecref(BAT *b)
 {
-	ATOMIC_BASE_TYPE refs = ATOMIC_DEC(&rtree->refs);
+	ATOMIC_BASE_TYPE refs = ATOMIC_DEC(&b->trtree->refs);
 	//If RTree is marked for destruction and there are no refs, destroy the RTree
-	if (rtree->destroy && refs == 0) {
-		ATOMIC_DESTROY(&rtree->refs);
-		rtree_destroy(rtree->rtree);
-		rtree->rtree = NULL;
-		rtree = NULL;
+	if (b->trtree->destroy && refs == 0) {
+		ATOMIC_DESTROY(&b->trtree->refs);
+		rtree_destroy(b->trtree->rtree);
+		b->trtree->rtree = NULL;
+		b->trtree = NULL;
 	}
 
 }
 
 void
-RTREEincref(RTree *rtree)
+RTREEincref(BAT *b)
 {
-	ATOMIC_INC(&rtree->refs);
+	ATOMIC_INC(&b->trtree->refs);
 }
 
 // Persist rtree to disk if the conditions are right
@@ -248,7 +249,7 @@ RTREEfree(BAT *b)
 		MT_lock_set(&pb->batIdxLock);
 		//Mark the RTree for destruction
 		pb->trtree->destroy = true;
-		RTREEdecref(pb->trtree);
+		RTREEdecref(pb);
 		MT_lock_unset(&b->batIdxLock);
 	}
 }
@@ -266,13 +267,13 @@ RTREEdestroy(BAT *b)
 	}
 
 	//TODO When there is a RTree index on file (i.e. not loaded yet) and this method is called, we should unlink the file (no need to touch refs)
-	if (pb && pb->trtree->rtree) {
+	if (pb && pb->trtree) {
 		MT_lock_set(&pb->batIdxLock);
 		//Mark the RTree for destruction
 		pb->trtree->destroy = true;
-		RTREEdecref(pb->trtree);
+		RTREEdecref(pb);
 		//If the farm is in-memory, don't unlink the file (there is no file in that case)
-		if (GDKinmemory(pb->theap->farmid)) {
+		if (!GDKinmemory(pb->theap->farmid)) {
 			GDKunlink(pb->theap->farmid,
 			  	BATDIR,
 			  	BBP_physical(b->batCacheid),
@@ -319,7 +320,7 @@ RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit) {
 	rtree_t *rtree = pb->trtree->rtree;
 	if (rtree != NULL) {
 		//Increase ref, we're gonna use the index
-		RTREEincref(pb->trtree);
+		RTREEincref(pb);
 		BUN *candidates = GDKmalloc(result_limit*sizeof(BUN));
 		memset(candidates,BUN_NONE,result_limit*sizeof(BUN));
 
@@ -334,7 +335,7 @@ RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit) {
 		results.candidates = candidates;
 		rtree_search(rtree, (const rtree_coord_t*) rect, f, &results);
 		//Finished using the index, decrease ref
-		RTREEdecref(pb->trtree);
+		RTREEdecref(pb);
 		return candidates;
 	} else
 		return NULL;
