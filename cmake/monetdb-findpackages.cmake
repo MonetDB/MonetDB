@@ -19,7 +19,7 @@ else()
 endif()
 
 if (RTREE)
-  find_package(rtree)
+  find_package(RTree)
 endif()
 
 if(WITH_LZMA)
