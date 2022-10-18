@@ -273,6 +273,39 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 	return base;
 }
 
+static str
+fmtRemark(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str t, int flg, str base, size_t len)
+{
+	int i;
+	char aux[64]; //no mal opt func name is bigger then this
+	str arg;
+
+	if (getFunctionId(pci)) {
+		snprintf(aux, 64, "%-39s", getFunctionId(pci));
+		if (!copystring(&t, aux, &len))
+			return base;
+	}
+	for (i = pci->retc; i < pci->argc; i++) {
+		arg = renderTerm(mb, stk, pci, i, flg);
+		if (arg) {
+			if (i == 1) {
+				snprintf(aux, 64, "%d actions", atoi(arg));
+			}
+			else if (i == 2) {
+				snprintf(aux, 64, "%ld usec", atol(arg));
+			}
+			if (!copystring(&t, aux, &len)) {
+				GDKfree(arg);
+				return base;
+			}
+			GDKfree(arg);
+		}
+		if (i < pci->argc -1 && !copystring(&t, " ", &len))
+			return base;
+	}
+	return base;
+}
+
 str
 operatorName(int i)
 {
@@ -404,6 +437,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		}
 		return fcnDefinition(mb, p, t, flg, base, len + (t - base));
 	case REMsymbol:
+		return fmtRemark(mb, stk, p, t, flg, base, len);
 	case NOOPsymbol:
 		if (!copystring(&t, "#", &len))
 			return base;
@@ -436,7 +470,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			return base;
 	}
 	for (i = p->retc; i < p->argc; i++) {
-		arg= renderTerm(mb, stk, p, i, flg);
+		arg = renderTerm(mb, stk, p, i, flg);
 		if (arg) {
 			if (!copystring(&t, arg, &len)) {
 				GDKfree(arg);
