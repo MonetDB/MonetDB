@@ -283,7 +283,7 @@ fmtRemark(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str t, int flg, str base, s
 	//optimizer remark, i=1 actions field, i=2 usec field
 	if (pci && pci->argc == 3) {
 		if (getFunctionId(pci)) {
-			snprintf(aux, 128, "%-39s %d actions %ld usec",
+			snprintf(aux, 128, "%-36s %d actions %ld usec",
 					 getFunctionId(pci),
 					 atoi(renderTerm(mb, stk, pci, 1, flg)),
 					 atol(renderTerm(mb, stk, pci, 2, flg)));
