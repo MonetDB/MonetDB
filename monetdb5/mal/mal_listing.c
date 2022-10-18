@@ -276,33 +276,32 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 static str
 fmtRemark(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str t, int flg, str base, size_t len)
 {
-	int i;
-	char aux[64]; //no mal opt func name is bigger then this
-	str arg;
+	char aux[128]; //no mal opt func name is bigger then this
 
-	if (getFunctionId(pci)) {
-		snprintf(aux, 64, "%-39s", getFunctionId(pci));
-		if (!copystring(&t, aux, &len))
-			return base;
-	}
-	for (i = pci->retc; i < pci->argc; i++) {
-		arg = renderTerm(mb, stk, pci, i, flg);
-		if (arg) {
-			if (i == 1) {
-				snprintf(aux, 64, "%d actions", atoi(arg));
-			}
-			else if (i == 2) {
-				snprintf(aux, 64, "%ld usec", atol(arg));
-			}
-			if (!copystring(&t, aux, &len)) {
-				GDKfree(arg);
+	if (!copystring(&t, "# ", &len))
+		return base;
+	//optimizer remark, i=1 actions field, i=2 usec field
+	if (pci && pci->argc == 3) {
+		if (getFunctionId(pci)) {
+			snprintf(aux, 128, "%-39s %d actions %ld usec",
+					 getFunctionId(pci),
+					 atoi(renderTerm(mb, stk, pci, 1, flg)),
+					 atol(renderTerm(mb, stk, pci, 2, flg)));
+			if (!copystring(&t, aux, &len))
 				return base;
-			}
-			GDKfree(arg);
 		}
-		if (i < pci->argc -1 && !copystring(&t, " ", &len))
-			return base;
 	}
+	else if (pci->argc == 1) {
+		if (getFunctionId(pci)) {
+			if (!copystring(&t, getFunctionId(pci), &len))
+				return base;
+		}
+	}
+	else if (getVar(mb, getArg(pci, 0))->value.val.sval &&
+			 getVar(mb, getArg(pci, 0))->value.len > 0 &&
+			 !copystring(&t, getVar(mb, getArg(pci, 0))->value.val.sval, &len))
+		return base;
+
 	return base;
 }
 
