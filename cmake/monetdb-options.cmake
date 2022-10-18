@@ -27,8 +27,8 @@ cmake_dependent_option(CINTEGRATION
   "NOT WIN32"
   OFF)
 
-option(RTREE
-  "Enable support for rtrees (default=ON)"
+option(WITH_RTREE
+  "Enable support for rtrees (librtree; default=ON)"
   ON)
 
 option(PY3INTEGRATION
