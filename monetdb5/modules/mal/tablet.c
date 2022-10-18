@@ -821,7 +821,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 			size_t slen = strlen(s) + 1;
 			char *data = slen <= sizeof(buf) ? buf : GDKmalloc(strlen(s) + 1);
 			if (data == NULL ||
-				GDKstrFromStr((unsigned char *) data, (unsigned char *) s, strlen(s)) < 0)
+				GDKstrFromStr((unsigned char *) data, (unsigned char *) s, strlen(s), '\0') < 0)
 				adt = NULL;
 			else
 				adt = fmt->frstr(fmt, fmt->adt, data);

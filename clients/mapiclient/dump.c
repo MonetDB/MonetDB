@@ -3390,7 +3390,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			}
 			if (priv & 64) {
 				mnstr_printf(toConsole, "%s TRUNCATE", sep);
-				sep = ",";
+				// sep = ",";		/* sep will be overwritten after this */
 			}
 		}
 		mnstr_printf(toConsole, " ON TABLE ");
