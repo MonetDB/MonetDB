@@ -16,7 +16,7 @@ include(FindPackageHandleStandardArgs)
 
 find_package_handle_standard_args(RTree REQUIRED_VARS RTREE_LIBRARY RTREE_INCLUDE_DIR)
 
-if(RTREE_FOUND)
+if(RTREE_FOUND AND NOT TARGET rtree:rtree)
   add_library(rtree::rtree UNKNOWN IMPORTED)
   set_target_properties(rtree::rtree
     PROPERTIES
