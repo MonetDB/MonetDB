@@ -18,7 +18,7 @@ else()
   find_package(Python3 COMPONENTS Interpreter Development NumPy)
 endif()
 
-if (RTREE)
+if(WITH_RTREE)
   find_package(RTree)
 endif()
 
