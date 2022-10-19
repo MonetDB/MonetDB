@@ -2,21 +2,18 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-//TODO Why use BBPselectfarm?
 //TODO Check if we need to input RTREEdestroy into drop_index func in sql_cat.c
-
-//TODO Do we need to guard against dirty heap and deleted rows? -> Panos only does this for persisting, not creating
-//TODO Where do put the RTREEdestroy calls? We should invalidate on updates, deletes and inserts -> Check Panos impl
+//TODO Should you check if the parent BAT is null?
 
 //TODO Re-check the conditions
-/* Conditions to create and persist the RTree:
+/* Conditions to persist the RTree:
  * - BAT has to be persistent
  * - No deleted rows (when does batInserted update?)
  * - The heap is not dirty -> no new values
  * - DB Farm is persistent i.e. not in memory
  */
 static bool
-RTREEcreatecheck (BAT *b) {
+RTREEpersistcheck (BAT *b) {
 	return ((BBP_status(b->batCacheid) & BBPEXISTING)
 	     	&& b->batInserted == b->batCount
 	     	&& !b->theap->dirty
@@ -47,7 +44,7 @@ RTREEincref(BAT *b)
 static gdk_return
 persistRtree (BAT *b)
 {
-	if (RTREEcreatecheck(b)) {
+	if (RTREEpersistcheck(b)) {
 		//TODO Necessary?
 		BBPfix(b->batCacheid);
 		rtree_t *rtree = b->trtree->rtree;
@@ -141,6 +138,7 @@ RTREEexistsonfile(BAT *b) {
 
 //Check if RTree exists
 //We also check if it exists on file. If the index is not loaded, it will be
+//TODO Check for destroy -> it does not exist if destroy
 bool
 RTREEexists(BAT *b)
 {
@@ -190,7 +188,7 @@ BATrtree(BAT *wkb, BAT *mbr)
 	}
 
 	//Check if rtree already exists
-	if (pb->trtree == NULL && RTREEcreatecheck(pb)) {
+	if (pb->trtree == NULL) {
 		//If it doesn't exist, take the lock to create/get the rtree
 		MT_lock_set(&pb->batIdxLock);
 
@@ -229,7 +227,7 @@ BATrtree(BAT *wkb, BAT *mbr)
 		persistRtree(pb);
 		MT_lock_unset(&pb->batIdxLock);
 	}
-	//TODO What do we do when the conditions are not right for creating the index? Or when it already exists?
+	//TODO What do we do when the conditions are not right for creating the index?
 	return GDK_SUCCEED;
 }
 
@@ -245,7 +243,7 @@ RTREEfree(BAT *b)
 		pb = b;
 	}
 
-	if (pb && pb->trtree->rtree) {
+	if (pb && pb->trtree) {
 		MT_lock_set(&pb->batIdxLock);
 		//Mark the RTree for destruction
 		pb->trtree->destroy = true;
@@ -266,9 +264,8 @@ RTREEdestroy(BAT *b)
 		pb = b;
 	}
 
-	//TODO When there is a RTree index on file (i.e. not loaded yet) and this method is called, we should unlink the file (no need to touch refs)
-	if (pb && pb->trtree) {
-		MT_lock_set(&pb->batIdxLock);
+	MT_lock_set(&pb->batIdxLock);
+	if (pb->trtree) {
 		//Mark the RTree for destruction
 		pb->trtree->destroy = true;
 		RTREEdecref(pb);
@@ -279,8 +276,18 @@ RTREEdestroy(BAT *b)
 			  	BBP_physical(b->batCacheid),
 			  	"bsrt");
 		}
-		MT_lock_unset(&b->batIdxLock);
 	}
+	//If the rtree is not loaded (pb->trtree is null), but there is a file with the index (from previous execution),
+	//we should remove the file
+	else if (RTREEexistsonfile(pb)) {
+		if (!GDKinmemory(pb->theap->farmid)) {
+			GDKunlink(pb->theap->farmid,
+			  	BATDIR,
+			  	BBP_physical(b->batCacheid),
+			  	"bsrt");
+		}
+	}
+	MT_lock_unset(&b->batIdxLock);
 }
 
 struct results_rtree {
