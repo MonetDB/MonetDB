@@ -15,6 +15,7 @@
 #include "gdk.h"
 #include "mal_exception.h"
 #include "mal_function.h"
+#include "opt_prelude.h"
 
 #define MIN_PIECE	((BUN) 1000)	/* TODO use realistic size in production */
 
@@ -149,7 +150,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	o = 0;
 	for (i = 0; i < pieces; i++) {
 		/* add slice instruction */
-		q = newInstruction(smb, putName("algebra"),putName("slice"));
+		q = newInstruction(smb, algebraRef, putName("slice"));
 		if (q == NULL || (setDestVar(q, newTmpVariable(smb, TYPE_any))) < 0) {
 			freeInstruction(q);
 			freeInstruction(pack);
@@ -181,7 +182,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	}
 	for (i = 0; i < pieces; i++) {
 		/* add sort instruction */
-		q = newInstruction(smb, putName("algebra"), putName("orderidx"));
+		q = newInstruction(smb, algebraRef, putName("orderidx"));
 		if (q == NULL || (setDestVar(q, newTmpVariable(smb, TYPE_any))) < 0) {
 			freeInstruction(q);
 			freeInstruction(pack);

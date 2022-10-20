@@ -84,7 +84,7 @@ typedef struct CLIENT {
 	BAT *profstmt;
 	BAT *profevents;
 
-	ATOMIC_TYPE	lastprint;	/* when we last printed the query, to be depricated */
+	ATOMIC_TYPE	lastprint;	/* when we last printed the query, to be deprecated */
 	/*
 	 * Communication channels for the interconnect are stored here.
 	 * It is perfectly legal to have a client without input stream.
