@@ -496,13 +496,6 @@ new_segments(sql_trans *tr, size_t cnt)
 	return n;
 }
 
-static segments*
-dup_segments(segments *s)
-{
-	sql_ref_inc(&s->r);
-	return s;
-}
-
 static int
 temp_dup_cs(column_storage *cs, ulng tid, int type)
 {
@@ -2354,15 +2347,11 @@ delta_append_val(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, void *i,
 }
 
 static int
-dup_storage( sql_trans *tr, storage *obat, storage *bat, int temp)
+dup_storage( sql_trans *tr, storage *obat, storage *bat)
 {
-	if (temp) {
-		if (!(bat->segs = new_segments(tr, 0)))
-			return LOG_ERR;
-	} else {
-		bat->segs = dup_segments(obat->segs);
-	}
-	return dup_cs(tr, &obat->cs, &bat->cs, TYPE_msk, temp);
+	if (!(bat->segs = new_segments(tr, 0)))
+		return LOG_ERR;
+	return dup_cs(tr, &obat->cs, &bat->cs, TYPE_msk, 1);
 }
 
 static int
@@ -2671,40 +2660,53 @@ segments_conflict(sql_trans *tr, segments *segs, int uncommitted)
 	return 0;
 }
 
+static int clear_storage(sql_trans *tr, sql_table *t, storage *s);
+
 static storage *
 bind_del_data(sql_trans *tr, sql_table *t, bool *clear)
 {
 	storage *obat = ATOMIC_PTR_GET(&t->data);
 
-	if (isTempTable(t) && !(obat = temp_tab_timestamp_storage(tr, t)))
-		return NULL;
+	if (isTempTable(t)) {
+		if (!(obat = temp_tab_timestamp_storage(tr, t)))
+			return NULL;
 
-	if (obat->cs.ts == tr->tid)
+		assert(obat->cs.ts == tr->tid);
+
+		if (clear && clear_storage(tr, t, obat)  != LOG_OK)
+			return NULL;
+
 		return obat;
-	if ((!tr->parent || !tr_version_of_parent(tr, obat->cs.ts)) && obat->cs.ts >= TRANSACTION_ID_BASE && !isTempTable(t)) {
-		/* abort */
-		if (clear)
-			*clear = true;
-		return NULL;
 	}
-	if (!isTempTable(t) && !clear)
+
+	if (obat->cs.ts != tr->tid)
+		if (!tr->parent || !tr_version_of_parent(tr, obat->cs.ts))
+			if (obat->cs.ts >= TRANSACTION_ID_BASE && !isTempTable(t)) {
+				/* abort */
+				if (clear)
+					*clear = true;
+				return NULL;
+			}
+
+	if (!clear)
 		return obat;
-	if (!isTempTable(t) && clear && segments_conflict(tr, obat->segs, 1)) {
+
+	/* remainder is only to handle clear */
+	if (segments_conflict(tr, obat->segs, 1)) {
 		*clear = true;
 		return NULL;
 	}
-
-	assert(!isTempTable(t));
 	if (!(obat = timestamp_storage(tr, ATOMIC_PTR_GET(&t->data))))
 		return NULL;
 	storage *bat = ZNEW(storage);
 	if (!bat)
 		return NULL;
 	bat->cs.refcnt = 1;
-	if (dup_storage(tr, obat, bat, clear || isTempTable(t) /* for clear and temp create empty storage */) != LOG_OK) {
+	if (dup_storage(tr, obat, bat) != LOG_OK) {
 		destroy_storage(bat);
 		return NULL;
 	}
+	bat->cs.cleared = true;
 	bat->cs.ts = tr->tid;
 	/* only one writer else abort */
 	bat->next = obat;
