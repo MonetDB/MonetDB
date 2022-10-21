@@ -351,7 +351,6 @@ runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	}
 	if (stk->cmd && env && stk->cmd != 'f')
 		stk->cmd = env->cmd;
-	cntxt->starttime = GDKusec();
 	ret = runMALsequence(cntxt, mb, 1, 0, stk, env, 0);
 
 	/* pass the new debug mode to the caller */
