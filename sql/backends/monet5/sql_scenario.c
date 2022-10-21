@@ -1252,7 +1252,7 @@ SQLparser(Client c)
 				qc_clean(m->qc);
 			}
 			/* For deallocate statements just export a simple output */
-			if (!GDKembedded() && (err = mvc_export_operation(be, c->fdout, "", c->curprg->def->starttime, c->curprg->def->optimize)) < 0) {
+			if (!GDKembedded() && (err = mvc_export_operation(be, c->fdout, "", c->starttime, c->curprg->def->optimize)) < 0) {
 				msg = createException(PARSE, "SQLparser", SQLSTATE(45000) "Export operation failed: %s", mvc_export_error(be, c->fdout, err));
 				MSresetInstructions(c->curprg->def, oldstop);
 				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);

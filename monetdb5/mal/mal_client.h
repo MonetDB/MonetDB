@@ -69,6 +69,7 @@ typedef struct CLIENT {
 	int		memorylimit;		/* Memory claim highwater mark, 0 = no limit */
 	lng 	querytimeout;		/* query abort after x usec, 0 = no limit*/
 	lng	    sessiontimeout;		/* session abort after x usec, 0 = no limit */
+	lng starttime; /* track when the query started, for resource management */
 
 	time_t  login;  	/* Time when this session started */
 	lng 	session;	/* usec since start of server */
