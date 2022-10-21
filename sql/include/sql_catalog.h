@@ -777,6 +777,7 @@ extern sql_key *schema_find_key(sql_trans *tr, sql_schema *s, const char *name);
 extern sql_idx *find_sql_idx(sql_table *t, const char *kname);
 extern sql_idx *sql_trans_find_idx(sql_trans *tr, sqlid id);
 extern sql_idx *schema_find_idx(sql_trans *tr, sql_schema *s, const char *name);
+extern sql_idx *schema_find_idx_id(sql_trans *tr, sql_schema *s, sqlid id);
 
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
 
