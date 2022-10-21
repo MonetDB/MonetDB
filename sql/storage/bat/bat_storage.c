@@ -2665,7 +2665,7 @@ static int clear_storage(sql_trans *tr, sql_table *t, storage *s);
 static storage *
 bind_del_data(sql_trans *tr, sql_table *t, bool *clear)
 {
-	storage *obat = ATOMIC_PTR_GET(&t->data);
+	storage *obat;
 
 	if (isTempTable(t)) {
 		if (!(obat = temp_tab_timestamp_storage(tr, t)))
@@ -2678,6 +2678,8 @@ bind_del_data(sql_trans *tr, sql_table *t, bool *clear)
 
 		return obat;
 	}
+
+	obat = ATOMIC_PTR_GET(&t->data);
 
 	if (obat->cs.ts != tr->tid)
 		if (!tr->parent || !tr_version_of_parent(tr, obat->cs.ts))
