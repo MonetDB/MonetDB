@@ -953,7 +953,8 @@ BBPcheckbats(unsigned bbpversion)
 			if (statb.st_size > (off_t) hfree) {
 				int fd;
 				if ((fd = MT_open(path, O_RDWR | O_CLOEXEC | O_BINARY)) >= 0) {
-					(void) ftruncate(fd, hfree);
+					if (ftruncate(fd, hfree) == -1)
+						perror("ftruncate");
 					(void) close(fd);
 				}
 			}
@@ -981,7 +982,8 @@ BBPcheckbats(unsigned bbpversion)
 			if (statb.st_size > (off_t) hfree) {
 				int fd;
 				if ((fd = MT_open(path, O_RDWR | O_CLOEXEC | O_BINARY)) >= 0) {
-					(void) ftruncate(fd, hfree);
+					if (ftruncate(fd, hfree) == -1)
+						perror("ftruncate");
 					(void) close(fd);
 				}
 			}
