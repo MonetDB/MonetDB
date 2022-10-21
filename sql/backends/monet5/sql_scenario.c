@@ -1126,7 +1126,7 @@ SQLparser(Client c)
 	be->q = NULL;
 	c->query = query_cleaned(m->sa, QUERY(m->scanner));
 
-	Tend = GDKusec();
+	c->starttime = Tend = GDKusec();
 	if(profilerStatus > 0) {
 		profilerEvent(NULL,
 					  &(struct NonMalEvent)
