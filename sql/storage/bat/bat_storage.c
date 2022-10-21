@@ -2683,7 +2683,7 @@ bind_del_data(sql_trans *tr, sql_table *t, bool *clear)
 
 	if (obat->cs.ts != tr->tid)
 		if (!tr->parent || !tr_version_of_parent(tr, obat->cs.ts))
-			if (obat->cs.ts >= TRANSACTION_ID_BASE && !isTempTable(t)) {
+			if (obat->cs.ts >= TRANSACTION_ID_BASE) {
 				/* abort */
 				if (clear)
 					*clear = true;
