@@ -274,7 +274,7 @@ ALGselect2(bat *result, const bat *bid, const bat *sid, const void *low, const v
 	derefStr(b, low);
 	derefStr(b, high);
 	nilptr = ATOMnilptr(b->ttype);
-	if (*li == 1 && *hi == 1 &&
+	if (*li == 1 && *hi == 1 && nilptr != NULL &&
 		ATOMcmp(b->ttype, low, nilptr) == 0 &&
 		ATOMcmp(b->ttype, high, nilptr) == 0) {
 		/* special case: equi-select for NIL */
@@ -317,16 +317,18 @@ ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, cons
 	/* here we don't need open ended parts with nil */
 	if (!nanti) {
 		const void *nilptr = ATOMnilptr(b->ttype);
-		if (nli == 1 && ATOMcmp(b->ttype, low, nilptr) == 0) {
-			low = high;
-			nli = 0;
+		if (nilptr) {
+			if (nli == 1 && ATOMcmp(b->ttype, low, nilptr) == 0) {
+				low = high;
+				nli = 0;
+			}
+			if (nhi == 1 && ATOMcmp(b->ttype, high, nilptr) == 0) {
+				high = low;
+				nhi = 0;
+			}
+			if (ATOMcmp(b->ttype, low, high) == 0 && ATOMcmp(b->ttype, high, nilptr) == 0) /* ugh sql nil != nil */
+				nanti = 1;
 		}
-		if (nhi == 1 && ATOMcmp(b->ttype, high, nilptr) == 0) {
-			high = low;
-			nhi = 0;
-		}
-		if (ATOMcmp(b->ttype, low, high) == 0 && ATOMcmp(b->ttype, high, nilptr) == 0) /* ugh sql nil != nil */
-			nanti = 1;
 	}
 
 	bn = BATselect(b, s, low, high, nli, nhi, nanti);
@@ -385,7 +387,7 @@ ALGselectNotNil(bat *result, const bat *bid)
 		throw(MAL, "algebra.selectNotNil", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	MT_lock_set(&b->theaplock);
-	bool bnonil = b->tnonil;
+	bool bnonil = b->tnonil || b->ttype == TYPE_msk;
 	MT_lock_unset(&b->theaplock);
 	if (!bnonil) {
 		BAT *s;
