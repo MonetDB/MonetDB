@@ -550,7 +550,7 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts 
 	mdbe->c->curmodule = mdbe->c->usermodule = userModule();
 	mdbe->c->workerlimit = monetdbe_workers_internal(mdbe, opts);
 	mdbe->c->memorylimit = monetdbe_memory_internal(mdbe, opts);
-	mdbe->c->querytimeout = monetdbe_querytimeout_internal(mdbe, opts);
+	mdbe->c->qryctx.querytimeout = monetdbe_querytimeout_internal(mdbe, opts);
 	mdbe->c->sessiontimeout = monetdbe_sessiontimeout_internal(mdbe, opts);
 	if (mdbe->msg)
 		goto cleanup;
@@ -854,7 +854,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 		return -2;
 	}
 	stk->keepAlive = TRUE;
-	c->starttime = GDKusec();
+	c->qryctx.starttime = GDKusec();
 	if ( (mdbe->msg = runMALsequence(c, mb, 1, 0, stk, 0, 0)) != MAL_SUCCEED ) {
 		freeStack(stk);
 		freeSymbol(c->curprg);

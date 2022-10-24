@@ -258,9 +258,9 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;
 	c->memorylimit = 0;
-	c->querytimeout = 0;
+	c->qryctx.querytimeout = 0;
 	c->sessiontimeout = 0;
-	c->starttime = 0;
+	c->qryctx.starttime = 0;
 	c->itrace = 0;
 	c->errbuf = 0;
 
@@ -382,7 +382,7 @@ MCforkClient(Client father)
 		strcpy_len(father->optimizer, son->optimizer, sizeof(father->optimizer));
 		son->workerlimit = father->workerlimit;
 		son->memorylimit = father->memorylimit;
-		son->querytimeout = father->querytimeout;
+		son->qryctx.querytimeout = father->qryctx.querytimeout;
 		son->sessiontimeout = father->sessiontimeout;
 
 		if (son->prompt)
@@ -462,7 +462,7 @@ MCfreeClient(Client c)
 	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;
 	c->memorylimit = 0;
-	c->querytimeout = 0;
+	c->qryctx.querytimeout = 0;
 	c->sessiontimeout = 0;
 	c->user = oid_nil;
 	if( c->username){
