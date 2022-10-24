@@ -702,7 +702,7 @@ MALparser(Client c)
 	/* now the parsing is done we should advance the stream */
 	c->fdin->pos += c->yycur;
 	c->yycur = 0;
-	c->starttime = GDKusec();
+	c->qryctx.starttime = GDKusec();
 
 	/* check for unfinished blocks */
 	if(!c->curprg->def->errors && c->blkmode)
