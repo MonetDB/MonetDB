@@ -141,13 +141,10 @@ VIEWcreate(oid seq, BAT *b)
 	}
 
 	if (BBPcacheit(bn, true) != GDK_SUCCEED) {	/* enter in BBP */
-		if (tp) {
+		if (tp)
 			BBPunshare(tp);
-			BBPunfix(tp);
-		}
 		if (bn->tvheap) {
 			BBPunshare(bn->tvheap->parentid);
-			BBPunfix(bn->tvheap->parentid);
 			HEAPdecref(bn->tvheap, false);
 		}
 		HEAPdecref(bn->theap, false);

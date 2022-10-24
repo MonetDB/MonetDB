@@ -6204,26 +6204,20 @@ sql_rel *
 rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **loader_function)
 {
 	mvc *sql = query->sql;
-	list *exps = NULL, *tl;
-	exp_kind ek = { type_value, card_relation, TRUE };
 	sql_rel *sq = NULL;
-	sql_exp *e = NULL;
-	symbol *sym = fcall, *subquery = NULL;
-	dnode *l = sym->data.lval->h, *n;
+	dnode *l = fcall->data.lval->h;
 	char *sname = qname_schema(l->data.lval);
 	char *fname = qname_schema_object(l->data.lval);
-	char *tname = NULL;
-	sql_subfunc *sf;
 
-	tl = sa_list(sql->sa);
-	exps = sa_list(sql->sa);
+	list *tl = sa_list(sql->sa);
+	list *exps = sa_list(sql->sa);
 	if (l->next)
 		l = l->next; /* skip distinct */
 	if (l->next) { /* table call with subquery */
 		if (l->next->type == type_symbol || l->next->type == type_list) {
-			exp_kind iek = {type_value, card_column, TRUE};
-			list *exps = sa_list(sql->sa);
 			int count = 0;
+			symbol *subquery = NULL;
+			dnode *n = NULL;
 
 			if (l->next->type == type_symbol)
 				n = l->next;
@@ -6239,11 +6233,14 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: The input for the loader function '%s' must be either a single sub query, or a list of values", fname);
 
 			if (subquery) {
+				exp_kind ek = { type_value, card_relation, TRUE };
 				if (!(sq = rel_subquery(query, subquery, ek)))
 					return NULL;
 			} else {
+				exp_kind ek = { type_value, card_column, TRUE };
+				list *exps = sa_list(sql->sa);
 				for ( ; n; n = n->next) {
-					sql_exp *e = rel_value_exp(query, NULL, n->data.sym, sql_sel | sql_from, iek);
+					sql_exp *e = rel_value_exp(query, NULL, n->data.sym, sql_sel | sql_from, ek);
 
 					if (!e)
 						return NULL;
@@ -6257,14 +6254,15 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 		for (node *en = sq->exps->h; en; en = en->next) {
 			sql_exp *e = en->data;
 
-			append(exps, e = exp_alias_or_copy(sql, tname, exp_name(e), NULL, e));
+			append(exps, e = exp_alias_or_copy(sql, NULL, exp_name(e), NULL, e));
 			append(tl, exp_subtype(e));
 		}
 	}
 
+	sql_exp *e = NULL;
 	if (!(e = find_table_function(sql, sname, fname, exps, tl, F_LOADER)))
 		return NULL;
-	sf = e->f;
+	sql_subfunc *sf = e->f;
 	if (sq) {
 		for (node *n = sq->exps->h, *m = sf->func->ops->h ; n && m ; n = n->next, m = m->next) {
 			sql_exp *e = (sql_exp*) n->data;

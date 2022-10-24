@@ -137,7 +137,7 @@ sql_fix_system_tables(Client c, mvc *sql)
 	}
 
 	assert(pos < bufsize);
-	printf("Running database upgrade commands:\n%s\n", buf);
+	printf("Running database upgrade commands to update system tables.\n\n");
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */

@@ -81,7 +81,8 @@ MNDBColumnPrivileges(ODBCStmt *stmt,
 		if (NameLength4 > 0) {
 			col = ODBCParsePV("tc", "cname",
 					  (const char *) ColumnName,
-					  (size_t) NameLength4);
+					  (size_t) NameLength4,
+					  stmt->Dbc);
 			if (col == NULL)
 				goto nomem;
 		}

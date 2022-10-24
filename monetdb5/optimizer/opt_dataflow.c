@@ -20,10 +20,6 @@
  * relevant if multiple tasks kan be handled at the same time.
  * Also simple expressions dont have to be executed in parallel.
  *
- * The garbagesink contains variables whose endoflife is within
- * a dataflow block and who are used concurrently.
- * They are garbage collected at the end of the parallel block.
- *
  * The dataflow analysis centers around the read/write use patterns of
  * the variables and the occurrence of side-effect bearing functions.
  * Any such function should break the dataflow block as it may rely

@@ -430,7 +430,7 @@ export_column(backend *be, BAT *b, bool byteswap, str filename, bool onclient)
 	}
 
 end:
-	mnstr_close(s);
+	close_stream(s);
 	return msg;
 }
 

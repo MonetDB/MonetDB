@@ -74,7 +74,6 @@ virtualize(BAT *bn)
 			HEAPdecref(bn->theap, false);
 			bn->theap = h;
 			BBPunshare(bid);
-			BBPunfix(bid);
 		} else {
 			HEAPfree(bn->theap, true);
 		}

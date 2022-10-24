@@ -1074,6 +1074,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 			 * ESCAPE '\\'
 			 */
 			char esc;
+			const char *s;
 			p += 7;
 			while (*p == ' ')
 				p++;
@@ -1106,7 +1107,13 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				length = (size_t) snprintf(q, length, "%.*s ESCAPE '''' %s", n, nquery, p);
 				break;
 			case '\\':
-				length = (size_t) snprintf(q, length, "%.*s ESCAPE r'\\' %s", n, nquery, p);
+				/* raw strings prefix syntax is only supported by servers since Jun2020 (11.37) */
+				if (dbc->major == 11 && dbc->minor >= 37) {
+					s = "%.*s ESCAPE r'\\'";
+				} else {
+					s = "%.*s ESCAPE '\\\\'";
+				}
+				length = (size_t) snprintf(q, length, s, n, nquery, p);
 				break;
 			default:
 				length = (size_t) snprintf(q, length, "%.*s ESCAPE '%c' %s", n, nquery, esc, p);
@@ -1256,7 +1263,8 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 						for (r = func->repl; *r; r++) {
 							if (*r == '\1' || *r == '\2' || *r == '\3' || *r == '\4') {
 								assert(*r <= func->nargs);
-								if (args[*r - 1].argstart[0] == '\'')
+								/* raw strings prefix syntax is only supported by servers since Jun2020 (11.37) */
+								if (args[*r - 1].argstart[0] == '\'' && dbc->major == 11 && dbc->minor >= 37)
 									q[pr++] = 'r';
 								strncpy(q + pr, args[*r - 1].argstart, args[*r - 1].arglen);
 								pr += (int) args[*r - 1].arglen;
@@ -1350,7 +1358,7 @@ ODBCParseOA(const char *tab, const char *col, const char *arg, size_t len)
 }
 
 char *
-ODBCParsePV(const char *tab, const char *col, const char *arg, size_t len)
+ODBCParsePV(const char *tab, const char *col, const char *arg, size_t len, const ODBCDbc *dbc)
 {
 	size_t i;
 	char *res;
@@ -1371,7 +1379,13 @@ ODBCParsePV(const char *tab, const char *col, const char *arg, size_t len)
 			res[i++] = *s;
 		res[i++] = *s;
 	}
-	for (s = "' escape r'\\'"; *s; s++)
+	/* raw strings prefix syntax is only supported by servers since Jun2020 (11.37) */
+	if (dbc->major == 11 && dbc->minor >= 37) {
+		s = "' escape r'\\'";
+	} else {
+		s = "' escape '\\\\'";
+	}
+	for (; *s; s++)
 		res[i++] = *s;
 	res[i] = 0;
 	return res;

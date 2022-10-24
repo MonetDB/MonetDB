@@ -71,21 +71,24 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 		if (NameLength2 > 0) {
 			sch = ODBCParsePV("s", "name",
 					  (const char *) SchemaName,
-					  (size_t) NameLength2);
+					  (size_t) NameLength2,
+					  stmt->Dbc);
 			if (sch == NULL)
 				goto nomem;
 		}
 		if (NameLength3 > 0) {
 			prc = ODBCParsePV("p", "name",
 					  (const char *) ProcName,
-					  (size_t) NameLength3);
+					  (size_t) NameLength3,
+					  stmt->Dbc);
 			if (prc == NULL)
 				goto nomem;
 		}
 		if (NameLength4 > 0) {
 			col = ODBCParsePV("a", "name",
 					  (const char *) ColumnName,
-					  (size_t) NameLength4);
+					  (size_t) NameLength4,
+					  stmt->Dbc);
 			if (col == NULL)
 				goto nomem;
 		}

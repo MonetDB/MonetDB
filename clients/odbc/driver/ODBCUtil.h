@@ -31,6 +31,7 @@
 #define _H_ODBCUTIL
 
 #include "ODBCGlobal.h"
+#include "ODBCDbc.h"
 
 
 /*
@@ -145,7 +146,7 @@ extern const char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR 
 #endif
 
 char *ODBCParseOA(const char *tab, const char *col, const char *arg, size_t len);
-char *ODBCParsePV(const char *tab, const char *col, const char *arg, size_t len);
+char *ODBCParsePV(const char *tab, const char *col, const char *arg, size_t len, const ODBCDbc *dbc);
 char *ODBCParseID(const char *tab, const char *col, const char *arg, size_t len);
 
 /* SQL_DESC_CONCISE_TYPE, SQL_DESC_DATETIME_INTERVAL_CODE, and

@@ -854,7 +854,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 		return -2;
 	}
 	stk->keepAlive = TRUE;
-	mb->starttime = GDKusec();
+	c->starttime = GDKusec();
 	if ( (mdbe->msg = runMALsequence(c, mb, 1, 0, stk, 0, 0)) != MAL_SUCCEED ) {
 		freeStack(stk);
 		freeSymbol(c->curprg);
