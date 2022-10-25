@@ -34454,60 +34454,10 @@ command json.values(X_0:json):bat[:json]
 JSONvalueTable;
 Expands the outermost JSON values.
 language
-assert
-unsafe command language.assert(X_0:bit, X_1:str):void 
-MALassertBit;
-(empty)
-language
-assert
-unsafe command language.assert(X_0:int, X_1:str):void 
-MALassertInt;
-(empty)
-language
-assert
-unsafe command language.assert(X_0:lng, X_1:str):void 
-MALassertLng;
-(empty)
-language
-assert
-unsafe command language.assert(X_0:oid, X_1:str):void 
-MALassertOid;
-(empty)
-language
-assert
-unsafe command language.assert(X_0:sht, X_1:str):void 
-MALassertSht;
-(empty)
-language
-assert
-unsafe command language.assert(X_0:str, X_1:str):void 
-MALassertStr;
-(empty)
-language
-assert
-unsafe pattern language.assert(X_0:any_1, X_1:str, X_2:str, X_3:any_2):void 
-MALassertTriple;
-Assertion test.
-language
 block
 pattern language.block(X_0:int, X_1:any...):int 
 deblockdataflow;
 Block on availability of all variables w, and then pass on v
-language
-call
-pattern language.call(X_0:bat[:str]):void 
-CMDcallBAT;
-Evaluate a program stored in a BAT.
-language
-call
-pattern language.call(X_0:str, X_1:str):void 
-CMDcallFunction;
-(empty)
-language
-call
-pattern language.call(X_0:str):void 
-CMDcallString;
-Evaluate a MAL string program.
 language
 dataflow
 pattern language.dataflow():bit 
@@ -34518,26 +34468,6 @@ pass
 pattern language.pass(X_0:any_1):void 
 MALpass;
 Cheap instruction to disgard storage while retaining the dataflow dependency
-language
-raise
-unsafe command language.raise(X_0:str):str 
-CMDraise;
-Raise an exception labeled @with a specific message.
-language
-register
-pattern language.register(X_0:str, X_1:str, X_2:str, X_3:str):void 
-CMDregisterFunction;
-Compile the code string to MAL and register it as a function.
-language
-sink
-pattern language.sink(X_0:any...):void 
-MALgarbagesink;
-Variables to be considered together when triggering garbage collection.@Used in the dataflow blocks to avoid early release of values.
-language
-source
-pattern language.source(X_0:str):void 
-CMDevalFile;
-Merge the instructions stored in the file with the current program.
 logging
 compinfo
 pattern logging.compinfo() (X_0:bat[:int], X_1:bat[:str], X_2:bat[:str]) 

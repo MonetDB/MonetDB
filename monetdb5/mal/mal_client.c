@@ -260,6 +260,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->memorylimit = 0;
 	c->querytimeout = 0;
 	c->sessiontimeout = 0;
+	c->starttime = 0;
 	c->itrace = 0;
 	c->errbuf = 0;
 

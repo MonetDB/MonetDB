@@ -25,49 +25,6 @@ static malType getPolyType(malType t, int *polytype);
 static int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR]);
 static int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 
-/*
- * We found the proper function. Copy some properties. In particular,
- * determine the calling strategy, i.e. FCNcall, CMDcall, FACcall, PATcall
- * Beware that polymorphic functions may produce type-incorrect clones.
- * This piece of code may be shared by the separate binder
- */
-#define bindFunction(s, p, idx, mb)									\
-	do {															\
-		if (p->token == ASSIGNsymbol) {								\
-			switch (getSignature(s)->token) {						\
-			case COMMANDsymbol:										\
-				p->token = CMDcall;									\
-				p->fcn = getSignature(s)->fcn;      /* C implementation mandatory */ \
-				if (p->fcn == NULL) {								\
-					if(!silent)  mb->errors = createMalException(mb, idx, TYPE, \
-										"object code for command %s.%s missing", \
-										p->modname, p->fcnname);	\
-					p->typechk = TYPE_UNKNOWN;						\
-					goto wrapup;									\
-				}													\
-				break;												\
-			case PATTERNsymbol:										\
-				p->token = PATcall;									\
-				p->fcn = getSignature(s)->fcn;      /* C implementation optional */	\
-				break;												\
-			case FACTORYsymbol:										\
-				p->token = FACcall;									\
-				p->fcn = getSignature(s)->fcn;      /* C implementation optional */	\
-				break;												\
-			case FUNCTIONsymbol:									\
-				p->token = FCNcall;									\
-				if (getSignature(s)->fcn)							\
-					p->fcn = getSignature(s)->fcn;     /* C implementation optional */ \
-				break;												\
-			default: {												\
-					if(!silent) mb->errors = createMalException(mb, idx, MAL, \
-										"MALresolve: unexpected token type"); \
-				goto wrapup;										\
-			}														\
-			}														\
-			p->blk = s->def;										\
-		}															\
-	} while (0)
 
 /*
  * Since we now know the storage type of the receiving variable, we can
@@ -76,7 +33,7 @@ static int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 #define prepostProcess(tp, p, b, mb)					\
 	do {												\
 		if( isaBatType(tp) ||							\
-			ATOMtype(tp) == TYPE_str ||				\
+			ATOMtype(tp) == TYPE_str ||					\
 			(!isPolyType(tp) && tp < TYPE_any &&		\
 			 tp >= 0 && ATOMextern(tp))) {				\
 			getInstrPtr(mb, 0)->gc |= GARBAGECONTROL;	\
@@ -406,9 +363,51 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		if (mb->errors) {
 			p->typechk = TYPE_UNKNOWN;
 			goto wrapup;
-		}															\
+		}
 		 */
-		bindFunction(s, p, idx, mb);
+
+		/*
+		 * We found the proper function. Copy some properties. In
+		 * particular, determine the calling strategy, i.e. FCNcall,
+		 * CMDcall, FACcall, PATcall Beware that polymorphic functions
+		 * may produce type-incorrect clones.  This piece of code may be
+		 * shared by the separate binder
+		 */
+		if (p->token == ASSIGNsymbol) {
+			switch (getSignature(s)->token) {
+			case COMMANDsymbol:
+				p->token = CMDcall;
+				p->fcn = getSignature(s)->fcn;      /* C implementation mandatory */
+				if (p->fcn == NULL) {
+					if (!silent)
+						mb->errors = createMalException(mb, idx, TYPE,
+										"object code for command %s.%s missing",
+										p->modname, p->fcnname);
+					p->typechk = TYPE_UNKNOWN;
+					goto wrapup;
+				}
+				break;
+			case PATTERNsymbol:
+				p->token = PATcall;
+				p->fcn = getSignature(s)->fcn;      /* C implementation optional */
+				break;
+			case FACTORYsymbol:
+				p->token = FACcall;
+				p->fcn = getSignature(s)->fcn;      /* C implementation optional */
+				break;
+			case FUNCTIONsymbol:
+				p->token = FCNcall;
+				if (getSignature(s)->fcn)
+					p->fcn = getSignature(s)->fcn;     /* C implementation optional */
+				break;
+			default:
+				if (!silent)
+					mb->errors = createMalException(mb, idx, MAL,
+										"MALresolve: unexpected token type");
+				goto wrapup;
+			}
+			p->blk = s->def;
+		}
 
 		if (returntype != returns)
 			GDKfree(returntype);

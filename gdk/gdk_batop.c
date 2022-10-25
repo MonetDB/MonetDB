@@ -46,7 +46,6 @@ unshare_varsized_heap(BAT *b)
 		MT_lock_unset(&b->theaplock);
 		HEAPdecref(oh, false);
 		BBPunshare(parent);
-		BBPunfix(parent);
 	}
 	return GDK_SUCCEED;
 }
@@ -85,10 +84,8 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		/* we can share the vheaps, so we then only need to
 		 * append the offsets */
 		MT_lock_set(&b->theaplock);
-		if (b->tvheap->parentid != b->batCacheid) {
+		if (b->tvheap->parentid != b->batCacheid)
 			BBPunshare(b->tvheap->parentid);
-			BBPunfix(b->tvheap->parentid);
-		}
 		HEAPdecref(b->tvheap, b->tvheap->parentid == b->batCacheid);
 		HEAPincref(ni->vh);
 		b->tvheap = ni->vh;
@@ -353,10 +350,8 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		 * is read-only, we replace b's vheap with a reference
 		 * to n's */
 		MT_lock_set(&b->theaplock);
-		if (b->tvheap->parentid != b->batCacheid) {
+		if (b->tvheap->parentid != b->batCacheid)
 			BBPunshare(b->tvheap->parentid);
-			BBPunfix(b->tvheap->parentid);
-		}
 		BBPshare(ni->vh->parentid);
 		HEAPdecref(b->tvheap, true);
 		HEAPincref(ni->vh);
@@ -419,7 +414,6 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		b->tvheap = h;
 		MT_lock_unset(&b->theaplock);
 		HEAPdecref(oh, false);
-		BBPunfix(parid);
 	}
 	if (BATcount(b) == 0 && BATatoms[b->ttype].atomFix == NULL &&
 	    ci->tpe == cand_dense && ci->ncand == ni->count) {
@@ -1135,7 +1129,8 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	(void) BATcheckhash(b);
 
 	MT_lock_set(&b->theaplock);
-	if (!force && (b->batRestricted != BAT_WRITE || b->batSharecnt > 0)) {
+	if (!force && (b->batRestricted != BAT_WRITE ||
+		       (ATOMIC_GET(&b->theap->refs) & HEAPREFS) > 1)) {
 		MT_lock_unset(&b->theaplock);
 		bat_iterator_end(&ni);
 		GDKerror("access denied to %s, aborting.\n", BATgetId(b));

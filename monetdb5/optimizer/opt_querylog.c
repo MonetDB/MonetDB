@@ -62,7 +62,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	q = newStmt(mb, "clients", "getUsername");
 	name= getArg(q,0)= newVariable(mb,"name",4,TYPE_str);
 	defineQuery = addArgument(mb,defineQuery,name);
-	q = newStmt(mb, "mtime", "current_timestamp");
+	q = newStmt(mb, mtimeRef, "current_timestamp");
 	start= getArg(q,0)= newVariable(mb,"start",5,TYPE_timestamp);
 	defineQuery = addArgument(mb,defineQuery,start);
 	pushInstruction(mb, defineQuery);
@@ -74,14 +74,14 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	arg= getArg(q,0)= newVariable(mb,"args",4,TYPE_str);
 
 
-	q = newStmt(mb, "alarm", "usec");
+	q = newStmt(mb, alarmRef, "usec");
 	xtime = getArg(q,0)= newVariable(mb,"xtime",5,TYPE_lng);
 	user = newVariable(mb,"user",4,TYPE_lng);
 	nice = newVariable(mb,"nice",4,TYPE_lng);
 	sys = newVariable(mb,"sys",3,TYPE_lng);
 	idle = newVariable(mb,"idle",4,TYPE_lng);
 	iowait = newVariable(mb,"iowait",6,TYPE_lng);
-	q = newStmt(mb, "profiler", "cpustats");
+	q = newStmt(mb, profilerRef, "cpustats");
 	q->retc= q->argc =0;
 	q = pushReturn(mb,q,user);
 	q = pushReturn(mb,q,nice);
@@ -99,19 +99,19 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			(idcmp(getFunctionId(p),"exportValue")==0 ||
 			 idcmp(getFunctionId(p),"exportResult")==0  ) ) {
 
-			q = newStmt(mb, "alarm", "usec");
-			r = newStmt(mb, calcRef, "-");
+			q = newStmt(mb, alarmRef, "usec");
+			r = newStmt(mb, calcRef, minusRef);
 			r = pushArgument(mb, r, getArg(q,0));
 			r = pushArgument(mb, r, xtime);
 			getArg(r,0)=xtime;
 
-			q = newStmt(mb, "alarm", "usec");
+			q = newStmt(mb, alarmRef, "usec");
 			rtime= getArg(q,0)= newVariable(mb,"rtime",5,TYPE_lng);
 			pushInstruction(mb,p);
 			continue;
 		}
 		if ( getModuleId(p) == sqlRef && getFunctionId(p) == resultSetRef && isaBatType(getVarType(mb,getArg(p,3)))){
-			q = newStmt(mb, "aggr", "count");
+			q = newStmt(mb, aggrRef, countRef);
 			getArg(q,0) = tuples;
 			(void) pushArgument(mb,q, getArg(p,3));
 			pushInstruction(mb,p);
@@ -119,26 +119,26 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		}
 		if ( p->token== ENDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol){
 			if ( rtime == 0){
-				q = newStmt(mb, "alarm", "usec");
-				r = newStmt(mb, calcRef, "-");
+				q = newStmt(mb, alarmRef, "usec");
+				r = newStmt(mb, calcRef, minusRef);
 				r = pushArgument(mb, r, getArg(q,0));
 				r = pushArgument(mb, r, xtime);
 				getArg(r,0)=xtime;
-				q = newStmt(mb, "alarm", "usec");
+				q = newStmt(mb, alarmRef, "usec");
 				rtime= getArg(q,0)= newVariable(mb,"rtime",5,TYPE_lng);
 			}
-			q = newStmt(mb, "alarm", "usec");
-			r = newStmt(mb, calcRef, "-");
+			q = newStmt(mb, alarmRef, "usec");
+			r = newStmt(mb, calcRef, minusRef);
 			r = pushArgument(mb, r, getArg(q,0));
 			r = pushArgument(mb, r, rtime);
 			getArg(r,0)=rtime;
 			/*
 			 * Post execution statistics gathering
 			 */
-			q = newStmt(mb, "mtime", "current_timestamp");
+			q = newStmt(mb, mtimeRef, "current_timestamp");
 			finish= getArg(q,0)= newVariable(mb,"finish",6,TYPE_any);
 
-			q = newStmt(mb, "profiler", "cpuload");
+			q = newStmt(mb, profilerRef, "cpuload");
 			load = newVariable(mb,"load",4,TYPE_int);
 			getArg(q,0)= load;
 			io = newVariable(mb,"io",2,TYPE_int);
@@ -165,7 +165,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		pushInstruction(mb,p);
 		if (p->barrier == YIELDsymbol){
 			/* the factory yield may return */
-			q = newStmt(mb, "mtime", "current_timestamp");
+			q = newStmt(mb, mtimeRef, "current_timestamp");
 			start= getArg(q,0)= newVariable(mb,"start",5,TYPE_any);
 			q = newStmtArgs(mb, sqlRef, "argRecord", old[0]->argc);
 			for ( argc=1; argc < old[0]->argc; argc++)
@@ -176,10 +176,10 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			q = newAssignment(mb);
 			q = pushLng(mb,q,0);
 			tuples= getArg(q,0)= newVariable(mb,"tuples",6,TYPE_lng);
-			newFcnCall(mb,"profiler","setMemoryFlag");
+			newFcnCall(mb,profilerRef,"setMemoryFlag");
 			q->argc--;
 			pushLng(mb,q,1);
-			q = newStmt(mb, "alarm", "usec");
+			q = newStmt(mb, alarmRef, "usec");
 			xtime = getArg(q,0)= newVariable(mb,"xtime",5,TYPE_lng);
 		}
 	}
