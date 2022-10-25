@@ -799,7 +799,6 @@ typedef struct BAT {
 	 batCopiedtodisk:1;	/* once written */
 	uint16_t selcnt;	/* how often used in equi select without hash */
 	uint16_t unused; 	/* value=0 for now (sneakily used by mat.c) */
-	int batSharecnt;	/* incoming view count */
 
 	/* delta status administration */
 	BUN batInserted;	/* start of inserted elements */
@@ -2162,11 +2161,15 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 
 #define ALIGNapp(x, f, e)						\
 	do {								\
-		if (!(f) && ((x)->batRestricted == BAT_READ ||		\
-			     (x)->batSharecnt > 0)) {			\
-			GDKerror("access denied to %s, aborting.\n",	\
-				 BATgetId(x));				\
-			return (e);					\
+		if (!(f)) {						\
+			MT_lock_set(&(x)->theaplock);			\
+			if ((x)->batRestricted == BAT_READ ||		\
+		  	   ((ATOMIC_GET(&(x)->theap->refs) & HEAPREFS) > 1)) { \
+				GDKerror("access denied to %s, aborting.\n", BATgetId(x)); \
+				MT_lock_unset(&(x)->theaplock);		\
+				return (e);				\
+			}						\
+			MT_lock_unset(&(x)->theaplock);			\
 		}							\
 	} while (false)
 

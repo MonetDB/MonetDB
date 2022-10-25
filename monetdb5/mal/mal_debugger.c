@@ -86,8 +86,10 @@ printBATproperties(stream *f, BAT *b)
 			BATcount(b), BBP_lrefs(b->batCacheid));
 	if (BBP_refs(b->batCacheid) - 1)
 		mnstr_printf(f, " refs=%d ", BBP_refs(b->batCacheid));
-	if (b->batSharecnt)
-		mnstr_printf(f, " views=%d", b->batSharecnt);
+	if (b->theap->refs)
+		mnstr_printf(f, " views=%lld", ATOMIC_GET(&b->theap->refs));
+	if (b->tvheap->refs)
+		mnstr_printf(f, " shared vheaps=%lld", ATOMIC_GET(&b->tvheap->refs));
 	if (b->theap->parentid != b->batCacheid)
 		mnstr_printf(f, "view on %s ", BBP_logical(b->theap->parentid));
 }
@@ -361,8 +363,6 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	    BUNappend(bv, local_itoa((ssize_t) b->batCacheid, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tparentid", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t) bi.h->parentid, buf), false) != GDK_SUCCEED ||
-	    BUNappend(bk, "batSharecnt", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) b->batSharecnt, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batCount", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa((size_t) bi.count, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batCapacity", false) != GDK_SUCCEED ||

@@ -2478,10 +2478,10 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&iterdig);
 	bat_iterator_end(&iterscl);
 	/* now send it to the channel cntxt->fdout */
-	if (!msg && (ok = mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, true, mb->starttime, mb->optimize)) < 0)
+	if (!msg && (ok = mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, true, cntxt->starttime, mb->optimize)) < 0)
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, cntxt->fdout, ok));
   wrapup_result_set:
-	mb->starttime = 0;
+	cntxt->starttime = 0;
 	mb->optimize = 0;
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
@@ -2618,7 +2618,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto wrapup_result_set1;
 		}
 	}
-	if ((ok = mvc_export_result(cntxt->sqlcontext, s, res, tostdout, mb->starttime, mb->optimize)) < 0) {
+	if ((ok = mvc_export_result(cntxt->sqlcontext, s, res, tostdout, cntxt->starttime, mb->optimize)) < 0) {
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, s, ok));
 		if (!onclient && !tostdout)
 			close_stream(s);
@@ -2635,7 +2635,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		close_stream(s);
 	}
   wrapup_result_set1:
-	mb->starttime = 0;
+	cntxt->starttime = 0;
 	mb->optimize = 0;
 	if( order) BBPunfix(order->batCacheid);
 	if( tbl) BBPunfix(tblId);
@@ -2715,10 +2715,10 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&itertpe);
 	bat_iterator_end(&iterdig);
 	bat_iterator_end(&iterscl);
-	if (!msg && (ok = mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, true, mb->starttime, mb->optimize)) < 0)
+	if (!msg && (ok = mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, true, cntxt->starttime, mb->optimize)) < 0)
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, cntxt->fdout, ok));
   wrapup_result_set:
-	mb->starttime = 0;
+	cntxt->starttime = 0;
 	mb->optimize = 0;
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
@@ -2851,7 +2851,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto wrapup_result_set;
 		}
 	}
-	if ((ok = mvc_export_result(cntxt->sqlcontext, s, res, strcmp(filename, "stdout") == 0, mb->starttime, mb->optimize)) < 0) {
+	if ((ok = mvc_export_result(cntxt->sqlcontext, s, res, strcmp(filename, "stdout") == 0, cntxt->starttime, mb->optimize)) < 0) {
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, s, ok));
 		if (!onclient && !tostdout)
 			close_stream(s);
@@ -2868,7 +2868,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		close_stream(s);
 	}
   wrapup_result_set:
-	mb->starttime = 0;
+	cntxt->starttime = 0;
 	mb->optimize = 0;
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
@@ -2928,8 +2928,8 @@ mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(mtype == TYPE_lng);
 	nr = *getArgReference_lng(stk, pci, 2);
 	b = cntxt->sqlcontext;
-	ok = mvc_export_affrows(b, b->out, nr, "", mb->tag, mb->starttime, mb->optimize);
-	mb->starttime = 0;
+	ok = mvc_export_affrows(b, b->out, nr, "", mb->tag, cntxt->starttime, mb->optimize);
+	cntxt->starttime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
 		throw(SQL, "sql.affectedRows", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(b, b->out, ok));
@@ -2949,8 +2949,8 @@ mvc_export_head_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	b = cntxt->sqlcontext;
-	ok = mvc_export_head(b, *s, res_id, FALSE, TRUE, mb->starttime, mb->optimize);
-	mb->starttime = 0;
+	ok = mvc_export_head(b, *s, res_id, FALSE, TRUE, cntxt->starttime, mb->optimize);
+	cntxt->starttime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
 		throw(SQL, "sql.exportHead", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(b, *s, ok));
@@ -2971,8 +2971,8 @@ mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	b = cntxt->sqlcontext;
 	sout = pci->argc > 5 ? cntxt->fdout : *s;
-	ok = mvc_export_result(b, sout, res_id, false, mb->starttime, mb->optimize);
-	mb->starttime = 0;
+	ok = mvc_export_result(b, sout, res_id, false, cntxt->starttime, mb->optimize);
+	cntxt->starttime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
 		throw(SQL, "sql.exportResult", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(b, sout, ok));
@@ -3018,8 +3018,8 @@ mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	b = cntxt->sqlcontext;
-	ok = mvc_export_operation(b, b->out, "", mb->starttime, mb->optimize);
-	mb->starttime = 0;
+	ok = mvc_export_operation(b, b->out, "", cntxt->starttime, mb->optimize);
+	cntxt->starttime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
 		throw(SQL, "sql.exportOperation", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(b, b->out, ok));
@@ -3048,22 +3048,22 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	// scalar values are single-column result sets
 	if ((res_id = mvc_result_table(be, mb->tag, 1, Q_TABLE, NULL)) < 0) {
-		mb->starttime = 0;
+		cntxt->starttime = 0;
 		mb->optimize = 0;
 		throw(SQL, "sql.exportValue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if ((ok = mvc_result_value(be, tn, cn, type, digits, scale, p, mtype)) < 0) {
-		mb->starttime = 0;
+		cntxt->starttime = 0;
 		mb->optimize = 0;
 		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, be->out, ok));
 	}
 	if (be->output_format == OFMT_NONE) {
-		mb->starttime = 0;
+		cntxt->starttime = 0;
 		mb->optimize = 0;
 		return MAL_SUCCEED;
 	}
-	ok = mvc_export_result(be, be->out, res_id, true, mb->starttime, mb->optimize);
-	mb->starttime = 0;
+	ok = mvc_export_result(be, be->out, res_id, true, cntxt->starttime, mb->optimize);
+	cntxt->starttime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
 		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, be->out, ok));
@@ -4639,7 +4639,6 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (!nmb)
 		return createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	nmb->starttime = mb->starttime;
 	mod = *getArgReference_str(stk, pci, arg++);
 	fcn = *getArgReference_str(stk, pci, arg++);
 	npci = newStmtArgs(nmb, mod, fcn, pci->argc);
