@@ -31,9 +31,9 @@ cursor = conn.cursor()
 
 try:
     cursor.execute(init)
-except  Exception as e:
-            print(e)
-            exit(1)
+except Exception as e:
+    print(e)
+    exit(1)
 
 def client(_):
     conn = pymonetdb.connect(hostname=h, port=p,database=db, autocommit=True)
