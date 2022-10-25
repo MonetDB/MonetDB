@@ -646,7 +646,7 @@ func1(MTIMEtimestamp_quarter,"timestamp_quarter", timestamp, int,
 	  timestamp_quarter, SETFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEtimestamp_month, "timestamp_month", timestamp, int,
+func1(MTIMEtimestamp_month, "timestamp_month", timestamp, bte,
 	  timestamp_month, SETFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
