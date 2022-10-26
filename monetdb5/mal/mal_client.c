@@ -431,7 +431,7 @@ MCshutdowninprogress(void){
  * child can not close a parent.
  */
 void
-MCfreeClient(Client c)
+MCcloseClient(Client c)
 {
 	MT_lock_set(&mal_contextLock);
 	if( c->mode == FREECLIENT) {
@@ -575,12 +575,6 @@ MCmemoryClaim(void)
 	if(active == 0 ||  claim  * LL_CONSTANT(1048576) >= GDK_mem_maxsize)
 		return GDK_mem_maxsize;
 	return claim * LL_CONSTANT(1048576);
-}
-
-void
-MCcloseClient(Client c)
-{
-	MCfreeClient(c);
 }
 
 str
