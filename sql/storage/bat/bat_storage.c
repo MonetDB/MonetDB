@@ -3755,8 +3755,6 @@ clear_del(sql_trans *tr, sql_table *t, int in_transaction)
 	}
 	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
 		trans_add(tr, &t->base, bat, &tc_gc_del, &commit_update_del, isTempTable(t)?NULL:&log_update_del);
-	if (clear && ok == LOG_OK)
-		return clear_storage(tr, t, bat);
 	if (ok == LOG_ERR)
 		return BUN_NONE;
 	if (ok == LOG_CONFLICT)
