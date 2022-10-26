@@ -55,11 +55,15 @@ ClientRec *mal_clients = NULL;
 void
 mal_client_reset(void)
 {
-	MAL_MAXCLIENTS = 0;
 	if (mal_clients) {
+		for (int i = 0; i < MAL_MAXCLIENTS; i++) {
+			ATOMIC_DESTROY(&mal_clients[i].lastprint);
+			ATOMIC_DESTROY(&mal_clients[i].qryctx.datasize);
+		}
 		GDKfree(mal_clients);
 		mal_clients = NULL;
 	}
+	MAL_MAXCLIENTS = 0;
 }
 
 bool
@@ -86,6 +90,7 @@ MCinit(void)
 	}
 	for (int i = 0; i < MAL_MAXCLIENTS; i++){
 		ATOMIC_INIT(&mal_clients[i].lastprint, 0);
+		ATOMIC_INIT(&mal_clients[i].qryctx.datasize, 0);
 		mal_clients[i].idx = -1; /* indicate it's available */
 	}
 	return true;
@@ -261,6 +266,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->qryctx.querytimeout = 0;
 	c->sessiontimeout = 0;
 	c->qryctx.starttime = 0;
+	ATOMIC_SET(&c->qryctx.datasize, 0);
 	c->itrace = 0;
 	c->errbuf = 0;
 
