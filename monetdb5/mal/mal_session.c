@@ -39,34 +39,34 @@ malBootstrap(char *modules[], bool embedded, const char *initpasswd)
 	assert(c != NULL);
 	c->curmodule = c->usermodule = userModule();
 	if(c->usermodule == NULL) {
-		MCfreeClient(c);
+		MCcloseClient(c);
 		throw(MAL, "malBootstrap", "Failed to initialize client MAL module");
 	}
 	if ( (msg = defaultScenario(c)) ) {
-		MCfreeClient(c);
+		MCcloseClient(c);
 		return msg;
 	}
 	if((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
-		MCfreeClient(c);
+		MCcloseClient(c);
 		return msg;
 	}
 
 	if( MCinitClientThread(c) < 0){
-		MCfreeClient(c);
+		MCcloseClient(c);
 		throw(MAL, "malBootstrap", "Failed to create client thread");
 	}
 	if ((msg = malIncludeModules(c, modules, 0, embedded, initpasswd)) != MAL_SUCCEED) {
-		MCfreeClient(c);
+		MCcloseClient(c);
 		return msg;
 	}
 	pushEndInstruction(c->curprg->def);
 	msg = chkProgram(c->usermodule, c->curprg->def);
 	if ( msg != MAL_SUCCEED || (msg= c->curprg->def->errors) != MAL_SUCCEED ) {
-		MCfreeClient(c);
+		MCcloseClient(c);
 		return msg;
 	}
 	msg = MALengine(c);
-	MCfreeClient(c);
+	MCcloseClient(c);
 	return msg;
 }
 
@@ -184,7 +184,7 @@ cleanUpScheduleClient(Client c, Scenario s, bstream *fin, stream *fout, str *com
 				freeException(msg);
 			}
 		}
-		MCfreeClient(c);
+		MCcloseClient(c);
 	}
 	exit_streams(fin, fout);
 	if (command) {
