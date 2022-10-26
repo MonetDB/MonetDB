@@ -276,7 +276,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	}
 	c->promptlength = strlen(prompt);
 
-	c->profticks = c->profstmt = NULL;
+	c->profticks = c->profstmt = c->profevents = NULL;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	c->sqlprofiler = 0;
 	c->wlc_kind = 0;
@@ -478,7 +478,8 @@ MCfreeClient(Client c)
 	if( c->profticks){
 		BBPunfix(c->profticks->batCacheid);
 		BBPunfix(c->profstmt->batCacheid);
-		c->profticks = c->profstmt = NULL;
+		BBPunfix(c->profevents->batCacheid);
+		c->profticks = c->profstmt = c->profevents = NULL;
 	}
 	if( c->error_row){
 		BBPunfix(c->error_row->batCacheid);
