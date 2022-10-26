@@ -208,6 +208,8 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 	bool filetrans = false;
 	Client c;
 
+	MT_thread_set_qry_ctx(NULL);
+
 	/* decode BIG/LIT:user:{cypher}passwordchal:lang:database: line */
 
 	/* byte order */
@@ -315,6 +317,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 				cleanUpScheduleClient(NULL, NULL, fin, fout, &command, NULL);
 				return;
 			}
+			MT_thread_set_qry_ctx(&c->qryctx);
 			Scenario scenario = findScenario("sql");
 			if ((msg = scenario->initClientCmd(c)) != MAL_SUCCEED) {
 				mnstr_printf(fout, "!%s\n", msg);
@@ -330,6 +333,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 				return;
 			}
 			cleanUpScheduleClient(c, scenario, NULL, NULL, NULL, NULL);
+			MT_thread_set_qry_ctx(NULL);
 		}
 
 
@@ -372,6 +376,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			GDKfree(command);
 			return;
 		}
+		MT_thread_set_qry_ctx(&c->qryctx);
 		c->filetrans = filetrans;
 		c->handshake_options = handshake_opts ? strdup(handshake_opts) : NULL;
 		/* move this back !! */
@@ -381,6 +386,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 				mnstr_printf(fout, "!could not allocate space\n");
 				exit_streams(fin, fout);
 				GDKfree(command);
+				MT_thread_set_qry_ctx(NULL);
 				return;
 			}
 		}
@@ -398,6 +404,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 					           "run mserver5 with --set %s=yes to change this.\n", mal_enableflag);
 			exit_streams(fin, fout);
 			GDKfree(command);
+			MT_thread_set_qry_ctx(NULL);
 			return;
 		}
 	}
@@ -407,6 +414,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		exit_streams(fin, fout);
 		freeException(msg);
 		GDKfree(command);
+		MT_thread_set_qry_ctx(NULL);
 		return;
 	}
 
@@ -439,6 +447,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		exit_streams(fin, fout);
 		freeException(msg);
 	}
+	MT_thread_set_qry_ctx(NULL);
 }
 
 /*
