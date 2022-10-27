@@ -534,15 +534,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	stkpc = startpc;
 	exceptionVar = -1;
 
-#ifndef NDEBUG
-	/* very short timeout */
-	QryCtx qry_ctx_abort = {.querytimeout=100, .starttime=cntxt->qryctx.starttime};
-#endif
-	/* save, in case this function is called recursively */
-	QryCtx *qry_ctx_save = MT_thread_get_qry_ctx();
-	MT_thread_set_qry_ctx(&cntxt->qryctx);
-	Client outer_cntxt = setClientContext(cntxt);
-
 	while (stkpc < mb->stop && stkpc != stoppc) {
 		// incomplete block being executed, requires at least signature and end statement
 		MT_thread_setalgorithm(NULL);
@@ -570,7 +561,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (stk->cmd == 'x' ) {
 				stk->cmd = 0;
 				stkpc = mb->stop;
-				MT_thread_set_qry_ctx(&qry_ctx_abort);
 				ret= createException(MAL, "mal.interpreter", "prematurely stopped client");
 				break;
 			}
@@ -1214,7 +1204,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (garbage != garbages)
 				GDKfree(garbage);
 			ret = yieldFactory(mb, pci, stkpc);
-			MT_thread_set_qry_ctx(qry_ctx_save);
 			return ret;
 		case RETURNsymbol:
 			/* Return from factory involves cleanup */
@@ -1254,11 +1243,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			stkpc= mb->stop;
 		}
 	}
-
-	/* restore saved values */
-	MT_thread_set_qry_ctx(qry_ctx_save);
-	setClientContext(outer_cntxt);
-
 
 	/* if we could not find the exception variable, cascade a new one */
 	/* don't add 'exception not caught' extra message for MAL sequences besides main function calls */
