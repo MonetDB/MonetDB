@@ -927,7 +927,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, result) :
                 Text(' ('),
                 Element('a', {'href': 'https://github.com/MonetDB/MonetDB/issues/%s' % bugno,
                               'target': '_blank'},
-                        Text('Bugzilla')),
+                        Text('Bug tracker')),
                 Text(')')])
     html = Element('html', {},
                    Element('head', {},
@@ -3360,7 +3360,7 @@ if 'HTMLTITLE' in os.environ:
 else:
     HTMLTITLE = "{} results on {} ({})".format(THISFILE, HOST, DISTVER)       #"+ ("`date`")"
 
-URLPREFIX = 'https://dev.monetdb.org/hg/MonetDB/file/'
+URLPREFIX = 'https://www.monetdb.org/hg/MonetDB/file/'
 
 par = {}
 dft = {}
