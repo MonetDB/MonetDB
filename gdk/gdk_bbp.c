@@ -2916,6 +2916,10 @@ decref(bat i, bool logical, bool lock, const char *func)
 			BBP_status_off(i, BBPUNLOADING);
 		}
 	}
+	if (tp)
+		decref(tp, false, lock, func);
+	if (tvp)
+		decref(tvp, false, lock, func);
 	return refs;
 }
 
@@ -2931,13 +2935,6 @@ BBPrelease(bat i)
 	return decref(i, true, true, __func__);
 }
 
-/*
- * M5 often changes the physical ref into a logical reference.  This
- * state change consist of the sequence BBPretain(b);BBPunfix(b).
- * A faster solution is given below, because it does not trigger the
- * BBP management actions, such as garbage collecting the bats.
- * [first step, initiate code change]
- */
 void
 BBPkeepref(BAT *b)
 {
@@ -3202,9 +3199,9 @@ BBPdestroy(BAT *b)
 
 	/* parent released when completely done with child */
 	if (tp)
-		BBPunshare(tp);
+		BBPrelease(tp);
 	if (vtp)
-		BBPunshare(vtp);
+		BBPrelease(vtp);
 }
 
 static gdk_return
@@ -3231,9 +3228,9 @@ BBPfree(BAT *b)
 
 	/* parent released when completely done with child */
 	if (ret == GDK_SUCCEED && tp)
-		BBPunshare(tp);
+		BBPrelease(tp);
 	if (ret == GDK_SUCCEED && vtp)
-		BBPunshare(vtp);
+		BBPrelease(vtp);
 	return ret;
 }
 

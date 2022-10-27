@@ -55,11 +55,15 @@ ClientRec *mal_clients = NULL;
 void
 mal_client_reset(void)
 {
-	MAL_MAXCLIENTS = 0;
 	if (mal_clients) {
+		for (int i = 0; i < MAL_MAXCLIENTS; i++) {
+			ATOMIC_DESTROY(&mal_clients[i].lastprint);
+			ATOMIC_DESTROY(&mal_clients[i].qryctx.datasize);
+		}
 		GDKfree(mal_clients);
 		mal_clients = NULL;
 	}
+	MAL_MAXCLIENTS = 0;
 }
 
 bool
@@ -86,6 +90,7 @@ MCinit(void)
 	}
 	for (int i = 0; i < MAL_MAXCLIENTS; i++){
 		ATOMIC_INIT(&mal_clients[i].lastprint, 0);
+		ATOMIC_INIT(&mal_clients[i].qryctx.datasize, 0);
 		mal_clients[i].idx = -1; /* indicate it's available */
 	}
 	return true;
@@ -258,9 +263,10 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;
 	c->memorylimit = 0;
-	c->querytimeout = 0;
+	c->qryctx.querytimeout = 0;
 	c->sessiontimeout = 0;
-	c->starttime = 0;
+	c->qryctx.starttime = 0;
+	ATOMIC_SET(&c->qryctx.datasize, 0);
 	c->itrace = 0;
 	c->errbuf = 0;
 
@@ -382,7 +388,7 @@ MCforkClient(Client father)
 		strcpy_len(father->optimizer, son->optimizer, sizeof(father->optimizer));
 		son->workerlimit = father->workerlimit;
 		son->memorylimit = father->memorylimit;
-		son->querytimeout = father->querytimeout;
+		son->qryctx.querytimeout = father->qryctx.querytimeout;
 		son->sessiontimeout = father->sessiontimeout;
 
 		if (son->prompt)
@@ -425,7 +431,7 @@ MCshutdowninprogress(void){
  * child can not close a parent.
  */
 void
-MCfreeClient(Client c)
+MCcloseClient(Client c)
 {
 	MT_lock_set(&mal_contextLock);
 	if( c->mode == FREECLIENT) {
@@ -462,7 +468,7 @@ MCfreeClient(Client c)
 	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;
 	c->memorylimit = 0;
-	c->querytimeout = 0;
+	c->qryctx.querytimeout = 0;
 	c->sessiontimeout = 0;
 	c->user = oid_nil;
 	if( c->username){
@@ -569,12 +575,6 @@ MCmemoryClaim(void)
 	if(active == 0 ||  claim  * LL_CONSTANT(1048576) >= GDK_mem_maxsize)
 		return GDK_mem_maxsize;
 	return claim * LL_CONSTANT(1048576);
-}
-
-void
-MCcloseClient(Client c)
-{
-	MCfreeClient(c);
 }
 
 str
