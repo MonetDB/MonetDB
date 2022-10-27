@@ -76,6 +76,7 @@ typedef struct DATAFLOW {
 	int *edges;         /* dependency graph */
 	MT_Lock flowlock;   /* lock to protect the above */
 	Queue *done;        /* instructions handled */
+	bool set_qry_ctx;
 } *DataFlow, DataFlowRec;
 
 static struct worker {
@@ -325,6 +326,8 @@ DFLOWworker(void *T)
 		assert(t->flag == RUNNING);
 		cntxt = ATOMIC_PTR_GET(&t->cntxt);
 		while (1) {
+			MT_thread_set_qry_ctx(NULL);
+			setClientContext(NULL);
 			if (fnxt == 0) {
 				MT_thread_setworking(NULL);
 				cntxt = ATOMIC_PTR_GET(&t->cntxt);
@@ -354,6 +357,8 @@ DFLOWworker(void *T)
 			assert(fe);
 			flow = fe->flow;
 			assert(flow);
+			MT_thread_set_qry_ctx(flow->set_qry_ctx ? &flow->cntxt->qryctx : NULL);
+			setClientContext(flow->cntxt);
 
 			/* whenever we have a (concurrent) error, skip it */
 			if (ATOMIC_PTR_GET(&flow->error)) {
@@ -906,6 +911,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	flow->cntxt = cntxt;
 	flow->mb = mb;
 	flow->stk = stk;
+	flow->set_qry_ctx = MT_thread_get_qry_ctx() != NULL;
 
 	/* keep real block count, exclude brackets */
 	flow->start = startpc + 1;

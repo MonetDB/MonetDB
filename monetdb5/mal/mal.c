@@ -30,6 +30,7 @@ lng MALdebug;
 #include "msabaoth.h"
 #include "mal_dataflow.h"
 #include "mal_private.h"
+#include "mal_internal.h"
 #include "mal_runtime.h"
 #include "mal_resource.h"
 #include "mal_atom.h"

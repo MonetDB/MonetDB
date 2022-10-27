@@ -18,6 +18,7 @@
 #include "mal_builder.h"
 #include "msabaoth.h"
 #include "mal_private.h"
+#include "mal_internal.h"
 #include "gdk.h"	/* for opendir and friends */
 
 /*
@@ -36,6 +37,7 @@ malBootstrap(char *modules[], bool embedded, const char *initpasswd)
 	if(c == NULL) {
 		throw(MAL, "malBootstrap", "Failed to initialize client");
 	}
+	MT_thread_set_qry_ctx(NULL);
 	assert(c != NULL);
 	c->curmodule = c->usermodule = userModule();
 	if(c->usermodule == NULL) {
@@ -209,6 +211,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 	Client c;
 
 	MT_thread_set_qry_ctx(NULL);
+	setClientContext(NULL);
 
 	/* decode BIG/LIT:user:{cypher}passwordchal:lang:database: line */
 
@@ -317,7 +320,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 				cleanUpScheduleClient(NULL, NULL, fin, fout, &command, NULL);
 				return;
 			}
-			MT_thread_set_qry_ctx(&c->qryctx);
 			Scenario scenario = findScenario("sql");
 			if ((msg = scenario->initClientCmd(c)) != MAL_SUCCEED) {
 				mnstr_printf(fout, "!%s\n", msg);
@@ -333,7 +335,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 				return;
 			}
 			cleanUpScheduleClient(c, scenario, NULL, NULL, NULL, NULL);
-			MT_thread_set_qry_ctx(NULL);
 		}
 
 
@@ -376,7 +377,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			GDKfree(command);
 			return;
 		}
-		MT_thread_set_qry_ctx(&c->qryctx);
 		c->filetrans = filetrans;
 		c->handshake_options = handshake_opts ? strdup(handshake_opts) : NULL;
 		/* move this back !! */
@@ -384,9 +384,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			c->curmodule = c->usermodule = userModule();
 			if(c->curmodule  == NULL) {
 				mnstr_printf(fout, "!could not allocate space\n");
-				exit_streams(fin, fout);
-				GDKfree(command);
-				MT_thread_set_qry_ctx(NULL);
+				cleanUpScheduleClient(c, NULL, fin, fout, &command, &msg);
 				return;
 			}
 		}
@@ -402,19 +400,14 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 
 			mnstr_printf(fout, "!only the 'monetdb' user can use non-sql languages. "
 					           "run mserver5 with --set %s=yes to change this.\n", mal_enableflag);
-			exit_streams(fin, fout);
-			GDKfree(command);
-			MT_thread_set_qry_ctx(NULL);
+			cleanUpScheduleClient(c, NULL, fin, fout, &command, &msg);
 			return;
 		}
 	}
 
 	if((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
 		mnstr_printf(fout, "!could not allocate space\n");
-		exit_streams(fin, fout);
-		freeException(msg);
-		GDKfree(command);
-		MT_thread_set_qry_ctx(NULL);
+		cleanUpScheduleClient(c, NULL, fin, fout, &command, &msg);
 		return;
 	}
 
@@ -447,7 +440,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		exit_streams(fin, fout);
 		freeException(msg);
 	}
-	MT_thread_set_qry_ctx(NULL);
 }
 
 /*
