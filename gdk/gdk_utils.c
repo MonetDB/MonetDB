@@ -897,6 +897,9 @@ GDKinit(opt *set, int setlen, bool embedded)
 
 	mainpid = MT_getpid();
 
+	if (BBPchkfarms() != GDK_SUCCEED)
+		return GDK_FAIL;
+
 	if (GDKinmemory(0)) {
 		dbpath = dbtrace = NULL;
 	} else {

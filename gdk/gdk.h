@@ -541,6 +541,7 @@ typedef size_t BUN;
 typedef enum {
 	PERSISTENT = 0,
 	TRANSIENT,
+	SYSTRANS,
 } role_t;
 
 /* Heap storage modes */
