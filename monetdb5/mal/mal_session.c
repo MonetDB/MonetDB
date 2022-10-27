@@ -39,34 +39,34 @@ malBootstrap(char *modules[], bool embedded, const char *initpasswd)
 	assert(c != NULL);
 	c->curmodule = c->usermodule = userModule();
 	if(c->usermodule == NULL) {
-		MCfreeClient(c);
+		MCcloseClient(c);
 		throw(MAL, "malBootstrap", "Failed to initialize client MAL module");
 	}
 	if ( (msg = defaultScenario(c)) ) {
-		MCfreeClient(c);
+		MCcloseClient(c);
 		return msg;
 	}
 	if((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
-		MCfreeClient(c);
+		MCcloseClient(c);
 		return msg;
 	}
 
 	if( MCinitClientThread(c) < 0){
-		MCfreeClient(c);
+		MCcloseClient(c);
 		throw(MAL, "malBootstrap", "Failed to create client thread");
 	}
 	if ((msg = malIncludeModules(c, modules, 0, embedded, initpasswd)) != MAL_SUCCEED) {
-		MCfreeClient(c);
+		MCcloseClient(c);
 		return msg;
 	}
 	pushEndInstruction(c->curprg->def);
 	msg = chkProgram(c->usermodule, c->curprg->def);
 	if ( msg != MAL_SUCCEED || (msg= c->curprg->def->errors) != MAL_SUCCEED ) {
-		MCfreeClient(c);
+		MCcloseClient(c);
 		return msg;
 	}
 	msg = MALengine(c);
-	MCfreeClient(c);
+	MCcloseClient(c);
 	return msg;
 }
 
@@ -184,7 +184,7 @@ cleanUpScheduleClient(Client c, Scenario s, bstream *fin, stream *fout, str *com
 				freeException(msg);
 			}
 		}
-		MCfreeClient(c);
+		MCcloseClient(c);
 	}
 	exit_streams(fin, fout);
 	if (command) {
@@ -207,6 +207,8 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 	str msg = MAL_SUCCEED;
 	bool filetrans = false;
 	Client c;
+
+	MT_thread_set_qry_ctx(NULL);
 
 	/* decode BIG/LIT:user:{cypher}passwordchal:lang:database: line */
 
@@ -315,6 +317,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 				cleanUpScheduleClient(NULL, NULL, fin, fout, &command, NULL);
 				return;
 			}
+			MT_thread_set_qry_ctx(&c->qryctx);
 			Scenario scenario = findScenario("sql");
 			if ((msg = scenario->initClientCmd(c)) != MAL_SUCCEED) {
 				mnstr_printf(fout, "!%s\n", msg);
@@ -330,6 +333,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 				return;
 			}
 			cleanUpScheduleClient(c, scenario, NULL, NULL, NULL, NULL);
+			MT_thread_set_qry_ctx(NULL);
 		}
 
 
@@ -372,6 +376,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			GDKfree(command);
 			return;
 		}
+		MT_thread_set_qry_ctx(&c->qryctx);
 		c->filetrans = filetrans;
 		c->handshake_options = handshake_opts ? strdup(handshake_opts) : NULL;
 		/* move this back !! */
@@ -381,6 +386,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 				mnstr_printf(fout, "!could not allocate space\n");
 				exit_streams(fin, fout);
 				GDKfree(command);
+				MT_thread_set_qry_ctx(NULL);
 				return;
 			}
 		}
@@ -398,6 +404,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 					           "run mserver5 with --set %s=yes to change this.\n", mal_enableflag);
 			exit_streams(fin, fout);
 			GDKfree(command);
+			MT_thread_set_qry_ctx(NULL);
 			return;
 		}
 	}
@@ -407,6 +414,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		exit_streams(fin, fout);
 		freeException(msg);
 		GDKfree(command);
+		MT_thread_set_qry_ctx(NULL);
 		return;
 	}
 
@@ -439,6 +447,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		exit_streams(fin, fout);
 		freeException(msg);
 	}
+	MT_thread_set_qry_ctx(NULL);
 }
 
 /*
@@ -702,7 +711,7 @@ MALparser(Client c)
 	/* now the parsing is done we should advance the stream */
 	c->fdin->pos += c->yycur;
 	c->yycur = 0;
-	c->starttime = GDKusec();
+	c->qryctx.starttime = GDKusec();
 
 	/* check for unfinished blocks */
 	if(!c->curprg->def->errors && c->blkmode)

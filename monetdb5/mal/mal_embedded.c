@@ -104,7 +104,7 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 		throw(MAL, "malEmbeddedBoot", "Failed to initialize client");
 	c->workerlimit = workerlimit;
 	c->memorylimit = memorylimit;
-	c->querytimeout = querytimeout * 1000000;	// from sec to usec
+	c->qryctx.querytimeout = querytimeout * 1000000;	// from sec to usec
 	c->sessiontimeout = sessiontimeout * 1000000;
 	c->curmodule = c->usermodule = userModule();
 	if(c->usermodule == NULL) {

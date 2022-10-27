@@ -177,6 +177,11 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		return GDK_FAIL;
 	}
 	h->newstorage = h->storage;
+	if (h->farmid == 1) {
+		QryCtx *qc = MT_thread_get_qry_ctx();
+		if (qc)
+			ATOMIC_ADD(&qc->datasize, h->size);
+	}
 	return GDK_SUCCEED;
 }
 
@@ -201,6 +206,8 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 gdk_return
 HEAPextend(Heap *h, size_t size, bool mayshare)
 {
+	size_t osize = h->size;
+
 	if (size <= h->size)
 		return GDK_SUCCEED;	/* nothing to do */
 
@@ -239,6 +246,11 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 		if (p) {
 			h->size = size;
 			h->base = p;
+			if (h->farmid == 1) {
+				QryCtx *qc = MT_thread_get_qry_ctx();
+				if (qc)
+					ATOMIC_ADD(&qc->datasize, size - osize);
+			}
  			return GDK_SUCCEED; /* success */
  		}
 		failure = "GDKmremap() failed";
@@ -262,8 +274,14 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 			h->base = GDKrealloc(h->base, size);
 			TRC_DEBUG(HEAP, "Extending malloced heap %s %zu %zu %p %p\n", h->filename, size, h->size, bak.base, h->base);
 			h->size = size;
-			if (h->base)
+			if (h->base) {
+				if (h->farmid == 1) {
+					QryCtx *qc = MT_thread_get_qry_ctx();
+					if (qc)
+						ATOMIC_ADD(&qc->datasize, size - osize);
+				}
 				return GDK_SUCCEED; /* success */
+			}
 			/* bak.base is still valid and may get restored */
 			failure = "h->storage == STORE_MEM && !must_map && !h->base";
 		}
@@ -293,6 +311,11 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 					if (bak.free > 0)
 						memcpy(h->base, bak.base, bak.free);
 					HEAPfree(&bak, false);
+					if (h->farmid == 1) {
+						QryCtx *qc = MT_thread_get_qry_ctx();
+						if (qc)
+							ATOMIC_ADD(&qc->datasize, size);
+					}
 					return GDK_SUCCEED;
 				}
 				GDKclrerr();
@@ -391,6 +414,11 @@ HEAPshrink(Heap *h, size_t size)
 			  h->filename, h->size, size, h->base, p);
 	}
 	if (p) {
+		if (h->farmid == 1) {
+			QryCtx *qc = MT_thread_get_qry_ctx();
+			if (qc)
+				ATOMIC_SUB(&qc->datasize, h->size - size);
+		}
 		h->size = size;
 		h->base = p;
 		return GDK_SUCCEED;
@@ -578,6 +606,11 @@ void
 HEAPfree(Heap *h, bool rmheap)
 {
 	if (h->base) {
+		if (h->farmid == 1) {
+			QryCtx *qc = MT_thread_get_qry_ctx();
+			if (qc)
+				ATOMIC_SUB(&qc->datasize, h->size);
+		}
 		if (h->storage == STORE_MEM) {	/* plain memory */
 			TRC_DEBUG(HEAP, "HEAPfree %s %zu %p\n", h->filename, h->size, h->base);
 			GDKfree(h->base);
@@ -764,6 +797,11 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		return GDK_FAIL; /* file could  not be read satisfactorily */
 
 	h->dirty = false;	/* we just read it, so it's clean */
+	if (h->farmid == 1) {
+		QryCtx *qc = MT_thread_get_qry_ctx();
+		if (qc)
+			ATOMIC_ADD(&qc->datasize, h->size);
+	}
 	return GDK_SUCCEED;
 }
 
