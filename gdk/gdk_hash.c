@@ -777,6 +777,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		      nme, ".", ext, "l", NULL);
 	strconcat_len(h->heapbckt.filename, sizeof(h->heapbckt.filename),
 		      nme, ".", ext, "b", NULL);
+	h->heapbckt.parentid = b->batCacheid;
+	h->heaplink.parentid = b->batCacheid;
 	if (HEAPalloc(&h->heaplink, hascand ? ci->ncand : BATcapacity(b),
 		      h->width) != GDK_SUCCEED) {
 		GDKfree(h);
@@ -968,8 +970,6 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		break;
 	}
 	bat_iterator_end(&bi);
-	h->heapbckt.parentid = b->batCacheid;
-	h->heaplink.parentid = b->batCacheid;
 	/* if the number of unique values is equal to the bat count,
 	 * all values are necessarily distinct */
 	MT_lock_set(&b->theaplock);
