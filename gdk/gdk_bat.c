@@ -2808,6 +2808,8 @@ BATassertProps(BAT *b)
 				mask = (BUN) 1 << 16;
 			else
 				mask = HASHmask(b->batCount);
+			hs->heapbckt.parentid = b->batCacheid;
+			hs->heaplink.parentid = b->batCacheid;
 			if ((hs->heaplink.farmid = BBPselectfarm(
 				     TRANSIENT, b->ttype, hashheap)) < 0 ||
 			    (hs->heapbckt.farmid = BBPselectfarm(
