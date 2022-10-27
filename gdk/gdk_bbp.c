@@ -1108,7 +1108,7 @@ BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror)
 			GDKerror("no newline allowed in directory name\n");
 		return GDK_FAIL;
 	}
-	if (rolemask == 0 || (rolemask & 1 && BBPfarms[0].dirname != NULL)) {
+	if (rolemask == 0 || (rolemask & 1 && BBPfarms[0].roles != 0)) {
 		if (logerror)
 			GDKerror("bad rolemask\n");
 		return GDK_FAIL;
@@ -1179,6 +1179,36 @@ BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror)
 	if (logerror)
 		GDKerror("too many farms\n");
 	return GDK_FAIL;
+}
+
+gdk_return
+BBPchkfarms(void)
+{
+	const char *dir = NULL;
+	uint32_t rolemask = 0;
+	if ((BBPfarms[0].roles & 1) == 0) {
+		GDKerror("Must at least call BBPaddfarms for once for persistent data\n");
+		return GDK_FAIL;
+	}
+	for (int i = 0; i < MAXFARMS; i++) {
+		if (BBPfarms[i].roles != 0) {
+			dir = BBPfarms[i].dirname;
+			rolemask |= BBPfarms[i].roles;
+		}
+	}
+	if (dir == NULL)
+		dir = "in-memory";
+	if ((rolemask & (1U << TRANSIENT)) == 0) {
+		gdk_return rc = BBPaddfarm(dir, 1U << TRANSIENT, true);
+		if (rc != GDK_SUCCEED)
+			return rc;
+	}
+	if ((rolemask & (1U << SYSTRANS)) == 0) {
+		gdk_return rc = BBPaddfarm(dir, 1U << SYSTRANS, true);
+		if (rc != GDK_SUCCEED)
+			return rc;
+	}
+	return GDK_SUCCEED;
 }
 
 #ifdef GDKLIBRARY_HASHASH
