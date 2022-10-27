@@ -12,6 +12,15 @@ BEGIN
 	RETURN 1;
 END
 
+statement ok
+select mmtest02()
+
+query TI nosort
+SELECT * FROM mmtest01
+----
+1
+NULL
+
 query I nosort
 SELECT count(*) as count
 FROM sys.dependency_columns_on_functions
@@ -29,6 +38,96 @@ id
 mmtest02
 1
 7
+
+# as only 1 column is specified in the function mmtest02 we expect only 1 dependency, instead we get 2 columns returned
+
+
+# an extra test to check what happens when no columns are listed in the insert statement
+statement ok
+CREATE OR REPLACE FUNCTION mmtest03()
+RETURNS int
+BEGIN
+	INSERT INTO mmtest01 VALUES (2, NULL);
+	RETURN 1;
+END
+
+statement ok
+select mmtest03()
+
+query TI nosort
+SELECT * FROM mmtest01
+----
+1
+NULL
+2
+NULL
+
+query TTII nosort
+SELECT table_name, function_name, function_type, depend_type
+FROM sys.dependency_tables_on_functions
+WHERE table_name LIKE 'mmtest01'
+ORDER BY table_name
+----
+mmtest01
+mmtest02
+1
+7
+mmtest01
+mmtest03
+1
+7
+
+query TTII nosort
+SELECT name, function_name, function_type, depend_type
+FROM sys.dependency_columns_on_functions
+WHERE function_name LIKE 'mmtest03'
+ORDER BY name
+----
+
+# as no columns are specified in the function mmtest03 we expect also 0 dependencies here, instead we get 2 columns returned
+
+
+# also check what happens when you specify DELETE instead of INSERT
+statement ok
+CREATE OR REPLACE FUNCTION mmtest04()
+RETURNS int
+BEGIN
+	DELETE FROM mmtest01;
+	RETURN 1;
+END
+
+statement ok
+select mmtest04()
+
+query TI nosort
+SELECT * FROM mmtest01
+----
+
+query TTII nosort
+SELECT table_name, function_name, function_type, depend_type
+FROM sys.dependency_tables_on_functions
+WHERE table_name LIKE 'mmtest01'
+ORDER BY table_name
+----
+mmtest01
+mmtest02
+1
+7
+mmtest01
+mmtest03
+1
+7
+mmtest01
+mmtest04
+1
+7
+
+query TTII nosort
+SELECT name, function_name, function_type, depend_type
+FROM sys.dependency_columns_on_functions
+WHERE function_name LIKE 'mmtest04'
+ORDER BY name
+----
 
 statement ok
 ROLLBACK
