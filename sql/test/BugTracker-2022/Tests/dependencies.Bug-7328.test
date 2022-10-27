@@ -1,0 +1,35 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE mmtest01 ( id int, name text)
+
+statement ok
+CREATE OR REPLACE FUNCTION mmtest02()
+RETURNS int
+BEGIN
+	INSERT INTO mmtest01(id) VALUES (1);
+	RETURN 1;
+END
+
+query I nosort
+SELECT count(*) as count
+FROM sys.dependency_columns_on_functions
+WHERE function_name LIKE 'mmtest02'
+----
+1
+
+query TTII nosort
+SELECT name, function_name, function_type, depend_type
+FROM sys.dependency_columns_on_functions
+WHERE function_name LIKE 'mmtest02'
+ORDER BY name
+----
+id
+mmtest02
+1
+7
+
+statement ok
+ROLLBACK
+
