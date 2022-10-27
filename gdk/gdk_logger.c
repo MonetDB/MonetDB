@@ -1244,7 +1244,7 @@ log_read_transaction(logger *lg)
 		GDKdebug = dbg;
 
 	if (cands)
-		GDKfree(cands);
+		BBPunfix(cands->batCacheid);
 	if (!ok)
 		return LOG_EOF;
 	return err;
