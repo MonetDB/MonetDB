@@ -972,6 +972,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	if (h->nunique == BATcount(b) && !b->tkey) {
 		b->tkey = true;
 	}
+	if (ci->ncand == BATcount(b))
+		b->tunique_est = (double) h->nunique;
 	MT_lock_unset(&b->theaplock);
 	TRC_DEBUG_IF(ACCELERATOR) {
 		TRC_DEBUG_ENDIF(ACCELERATOR,
@@ -1127,12 +1129,15 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 	h->heaplink.dirty = true;
 }
 
-void
+BUN
 HASHappend(BAT *b, BUN i, const void *v)
 {
+	BUN nunique;
 	MT_rwlock_wrlock(&b->thashlock);
 	HASHappend_locked(b, i, v);
+	nunique = b->thash ? b->thash->nunique : 0;
 	MT_rwlock_wrunlock(&b->thashlock);
+	return nunique;
 }
 
 /* insert value v at position p into the hash table of b */
@@ -1211,12 +1216,15 @@ HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 	}
 }
 
-void
+BUN
 HASHinsert(BATiter *bi, BUN p, const void *v)
 {
+	BUN nunique;
 	MT_rwlock_wrlock(&bi->b->thashlock);
 	HASHinsert_locked(bi, p, v);
+	nunique = bi->b->thash ? bi->b->thash->nunique : 0;
 	MT_rwlock_wrunlock(&bi->b->thashlock);
+	return nunique;
 }
 
 /* delete value v at position p from the hash table of b */
@@ -1304,12 +1312,15 @@ HASHdelete_locked(BATiter *bi, BUN p, const void *v)
 		h->nunique--;
 }
 
-void
+BUN
 HASHdelete(BATiter *bi, BUN p, const void *v)
 {
+	BUN nunique;
 	MT_rwlock_wrlock(&bi->b->thashlock);
 	HASHdelete_locked(bi, p, v);
+	nunique = bi->b->thash ? bi->b->thash->nunique : 0;
 	MT_rwlock_wrunlock(&bi->b->thashlock);
+	return nunique;
 }
 
 BUN
