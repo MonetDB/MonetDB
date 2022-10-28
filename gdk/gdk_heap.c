@@ -314,7 +314,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 					if (h->farmid == 1) {
 						QryCtx *qc = MT_thread_get_qry_ctx();
 						if (qc)
-							ATOMIC_ADD(&qc->datasize, size);
+							ATOMIC_ADD(&qc->datasize, h->size);
 					}
 					return GDK_SUCCEED;
 				}
