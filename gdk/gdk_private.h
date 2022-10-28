@@ -96,6 +96,9 @@ ValPtr BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 gdk_return BBPcacheit(BAT *bn, bool lock)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
+gdk_return BBPchkfarms(void)
+	__attribute__((__warn_unused_result__))
+	__attribute__((__visibility__("hidden")));
 void BBPclear(bat bid, bool lock)
 	__attribute__((__visibility__("hidden")));
 void BBPdump(void)		/* never called: for debugging only */

@@ -108,7 +108,7 @@ lognew(struct logbuf *logbuf)
 static inline void
 logdel(struct logbuf *logbuf)
 {
-	free(logbuf->logbuffer);
+	GDKfree(logbuf->logbuffer);
 	logbuf->logbuffer = NULL;
 }
 
@@ -142,7 +142,7 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 			logbuf->logcap = (size_t) tmp_len + (size_t) tmp_len/2;
 			if (logbuf->logcap < LOGLEN)
 				logbuf->logcap = LOGLEN;
-			alloc_buff = realloc(logbuf->logbuffer, logbuf->logcap);
+			alloc_buff = GDKrealloc(logbuf->logbuffer, logbuf->logcap);
 			if (alloc_buff == NULL) {
 				TRC_ERROR(MAL_SERVER, "Profiler JSON buffer reallocation failure\n");
 				logdel(logbuf);
@@ -661,7 +661,7 @@ profilerEvent(MalEvent *me, NonMalEvent *nme)
 		}
 		if (event) {
 			logjsonInternal(event, true);
-			free(event);
+			GDKfree(event);
 		}
 	}
 	MT_lock_unset(&mal_profileLock);
@@ -829,15 +829,10 @@ _cleanupProfiler(Client cntxt)
 	cntxt->profticks = cntxt->profstmt = cntxt->profevents = NULL;
 }
 
-static BAT *
+static inline BAT *
 TRACEcreate(int tt)
 {
-	BAT *b;
-
-	b = COLnew(0, tt, 1 << 10, TRANSIENT);
-	if (b == NULL)
-		return NULL;
-	return b;
+	return COLnew(0, tt, 1 << 10, TRANSIENT);
 }
 
 static void
@@ -942,8 +937,7 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	errors += BUNappend(cntxt->profticks, &pci->ticks, false) != GDK_SUCCEED;
 	errors += BUNappend(cntxt->profstmt, c, false) != GDK_SUCCEED;
-	if( ev)
-		errors += BUNappend(cntxt->profevents, ev, false) != GDK_SUCCEED;
+	errors += BUNappend(cntxt->profevents, ev ? ev : str_nil, false) != GDK_SUCCEED;
 	if (errors > 0) {
 		/* stop profiling if an error occurred */
 		cntxt->sqlprofiler = FALSE;
@@ -951,7 +945,7 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	MT_lock_unset(&mal_profileLock);
 	GDKfree(stmt);
-	if(ev) free(ev);
+	GDKfree(ev);
 }
 
 lng
