@@ -23,6 +23,8 @@ static int sqlformaterror(mvc *sql, _In_z_ _Printf_format_string_ const char *fo
 
 static void *ma_alloc(sql_allocator *sa, size_t sz);
 static void ma_free(void *p);
+static inline symbol*
+makeAtomNode(mvc *m, const char* type, const char* val, unsigned int digits, unsigned int scale);
 
 #include <unistd.h>
 #include <string.h>
@@ -156,6 +158,7 @@ uescape_xform(char *restrict s, const char *restrict esc)
 	s[j] = 0;
 	return s;
 }
+
 %}
 /* KNOWN NOT DONE OF sql'99
  *
@@ -4839,18 +4842,12 @@ literal:
 		  sql_find_subtype(&t, "double", 51, 0 );
 		  $$ = _newAtomNode(atom_float(SA, &t, val)); }
  |  sqlDATE string
-		{ sql_subtype t;
-		  atom *a;
-		  int r;
-
- 		  r = sql_find_subtype(&t, "date", 0, 0 );
-		  if (!r || (a = atom_general(SA, &t, $2)) == NULL) {
-			sqlformaterror(m, SQLSTATE(22007) "Incorrect date value (%s)", $2);
-			$$ = NULL;
-			YYABORT;
-		  } else {
-		  	$$ = _newAtomNode(a);
-		} }
+        {
+            symbol* node = makeAtomNode(m, "date", $2, 0, 0);
+            if (node == NULL)
+                YYABORT;
+            $$ = node;
+        }
  |  odbc_date_escape
  |  TIME time_precision tz string
 		{ sql_subtype t;
@@ -6255,22 +6252,30 @@ XML_aggregate:
 	}
  ;
 
-odbc_date_escape: '{' DATE_ESCAPE_PREFIX string '}'
-		{ sql_subtype t;
-		  atom *a;
-		  int r;
-
- 		  r = sql_find_subtype(&t, "date", 0, 0 );
-		  if (!r || (a = atom_general(SA, &t, $3)) == NULL) {
-			sqlformaterror(m, SQLSTATE(22007) "Incorrect date value (%s)", $3);
-			$$ = NULL;
-			YYABORT;
-		  } else {
-		  	$$ = _newAtomNode(a);
-		} }
-;
+odbc_date_escape:
+    '{' DATE_ESCAPE_PREFIX string '}'
+        {
+            symbol* node = makeAtomNode(m, "date", $3, 0, 0);
+            if (node == NULL)
+                YYABORT;
+            $$ = node;
+        }
+    ;
 
 %%
+
+static inline symbol*
+makeAtomNode(mvc *m, const char* type, const char* val, unsigned int digits, unsigned int scale) {
+    sql_subtype t;
+    atom *a;
+    int r = sql_find_subtype(&t, type, digits, scale);
+    if (!r || (a = atom_general(m->sa, &t, val)) == NULL) {
+        sqlformaterror(m, SQLSTATE(22007) "Incorrect %s value (%s)", type, val);
+        return NULL;
+    }
+    return _newAtomNode(a);
+}
+
 int find_subgeometry_type(mvc *m, char* geoSubType) {
 	int subType = 0;
 	if(strcmp(geoSubType, "point") == 0 )
