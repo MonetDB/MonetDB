@@ -1005,6 +1005,7 @@ gdk_return
 BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 {
 	BUN p;
+	BUN nunique = 0;
 
 	BATcheck(b, GDK_FAIL);
 
@@ -1024,6 +1025,8 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	MT_lock_set(&b->theaplock);
 	ALIGNapp(b, force, GDK_FAIL);
 	MT_lock_unset(&b->theaplock);
+	/* load hash so that we can maintain it */
+	(void) BATcheckhash(b);
 
 	if (b->ttype == TYPE_void && BATtdense(b)) {
 		const oid *ovals = values;
@@ -1227,6 +1230,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 					HASHappend_locked(b, p, t);
 					p++;
 				}
+				nunique = b->thash ? b->thash->nunique : 0;
 			}
 			MT_rwlock_wrunlock(&b->thashlock);
 		} else if (ATOMstorage(b->ttype) == TYPE_msk) {
@@ -1272,6 +1276,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				}
 				p++;
 			}
+			nunique = b->thash ? b->thash->nunique : 0;
 			MT_rwlock_wrunlock(&b->thashlock);
 		}
 		MT_lock_set(&b->theaplock);
@@ -1291,10 +1296,13 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			}
 			p++;
 		}
+		nunique = b->thash ? b->thash->nunique : 0;
 		MT_rwlock_wrunlock(&b->thashlock);
 	}
 	MT_lock_set(&b->theaplock);
 	BATsetcount(b, p);
+	if (nunique != 0)
+		b->tunique_est = (double) nunique;
 	MT_lock_unset(&b->theaplock);
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
@@ -1317,6 +1325,7 @@ BUNdelete(BAT *b, oid o)
 	BATiter bi = bat_iterator_nolock(b);
 	const void *val;
 	bool locked = false;
+	BUN nunique;
 
 	assert(!is_oid_nil(b->hseqbase) || BATcount(b) == 0);
 	if (o < b->hseqbase || o >= b->hseqbase + BATcount(b)) {
@@ -1330,6 +1339,9 @@ BUNdelete(BAT *b, oid o)
 		return GDK_FAIL;
 	}
 	TRC_DEBUG(ALGO, ALGOBATFMT " deleting oid " OIDFMT "\n", ALGOBATPAR(b), o);
+	/* load hash so that we can maintain it */
+	(void) BATcheckhash(b);
+
 	val = BUNtail(bi, p);
 	/* writing the values should be locked, reading could be done
 	 * unlocked (since we're the only thread that should be changing
@@ -1342,7 +1354,7 @@ BUNdelete(BAT *b, oid o)
 	MT_lock_unset(&b->theaplock);
 	if (ATOMunfix(b->ttype, val) != GDK_SUCCEED)
 		return GDK_FAIL;
-	HASHdelete(&bi, p, val);
+	nunique = HASHdelete(&bi, p, val);
 	ATOMdel(b->ttype, b->tvheap, (var_t *) BUNtloc(bi, p));
 	if (p != BATcount(b) - 1 &&
 	    (b->ttype != TYPE_void || BATtdense(b))) {
@@ -1359,9 +1371,9 @@ BUNdelete(BAT *b, oid o)
 			mskClr(b, BATcount(b) - 1);
 		} else {
 			val = Tloc(b, BATcount(b) - 1);
-			HASHdelete(&bi, BATcount(b) - 1, val);
+			nunique = HASHdelete(&bi, BATcount(b) - 1, val);
 			memcpy(Tloc(b, p), val, b->twidth);
-			HASHinsert(&bi, p, val);
+			nunique = HASHinsert(&bi, p, val);
 			MT_lock_set(&b->theaplock);
 			locked = true;
 			if (b->tminpos == BATcount(b) - 1)
@@ -1384,7 +1396,9 @@ BUNdelete(BAT *b, oid o)
 	if (b->tnorevsorted >= p)
 		b->tnorevsorted = 0;
 	b->batCount--;
-	if (BATcount(b) < gdk_unique_estimate_keep_fraction)
+	if (nunique != 0)
+		b->tunique_est = (double) nunique;
+	else if (BATcount(b) < gdk_unique_estimate_keep_fraction)
 		b->tunique_est = 0;
 	if (b->batCount <= 1) {
 		/* some trivial properties */
@@ -1441,6 +1455,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		b->tunique_est = 0;
 	}
 	MT_lock_unset(&b->theaplock);
+	/* load hash so that we can maintain it */
+	(void) BATcheckhash(b);
 	MT_rwlock_wrlock(&b->thashlock);
 	for (BUN i = 0; i < count; i++) {
 		BUN p = autoincr ? positions[0] - b->hseqbase + i : positions[i] - b->hseqbase;
@@ -1687,8 +1703,11 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			b->tnonil = t && ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0;
 		MT_lock_unset(&b->theaplock);
 	}
+	BUN nunique = b->thash ? b->thash->nunique : 0;
 	MT_rwlock_wrunlock(&b->thashlock);
 	MT_lock_set(&b->theaplock);
+	if (nunique != 0)
+		b->tunique_est = (double) nunique;
 	b->tminpos = bi.minpos;
 	b->tmaxpos = bi.maxpos;
 	b->theap->dirty = true;
