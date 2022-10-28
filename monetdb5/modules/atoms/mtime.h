@@ -168,7 +168,7 @@ timestamp_century(const timestamp t)
 }
 #define timestamp_decade(t) is_timestamp_nil(t) ? int_nil : date_year(timestamp_date(t)) / 10
 #define timestamp_year(t) date_year(timestamp_date(t))
-#define timestamp_quarter(t) is_timestamp_nil(t) ? int_nil : (date_month(timestamp_date(t)) - 1) / 3 + 1
+#define timestamp_quarter(t) is_timestamp_nil(t) ? bte_nil : (date_month(timestamp_date(t)) - 1) / 3 + 1
 #define timestamp_month(t) date_month(timestamp_date(t))
 #define timestamp_day(t) date_day(timestamp_date(t))
 #define timestamp_hours(t) daytime_hour(timestamp_daytime(t))
@@ -177,7 +177,7 @@ timestamp_century(const timestamp t)
 #define timestamp_to_msec_since_epoch(t) is_timestamp_nil(t) ? lng_nil : (timestamp_diff(t, unixepoch) / 1000)
 
 #define sql_year(m) is_int_nil(m) ? int_nil : m / 12
-#define sql_month(m) is_bte_nil(m) ? bte_nil : m % 12
+#define sql_month(m) is_int_nil(m) ? int_nil : m % 12
 #define sql_day(m) is_lng_nil(m) ? lng_nil : m / (24*60*60*1000)
 #define sql_hours(m) is_lng_nil(m) ? int_nil : (int) ((m % (24*60*60*1000)) / (60*60*1000))
 #define sql_minutes(m) is_lng_nil(m) ? int_nil : (int) ((m % (60*60*1000)) / (60*1000))
