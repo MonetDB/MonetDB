@@ -914,7 +914,7 @@ monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 	if (!mdbe->msg)
 		res = monetdbe_open_internal(mdbe, opts);
 
-	if (res == 0 && is_remote)
+	if (res == 0 && is_remote && !mdbe->msg)
 		res = monetdbe_open_remote(mdbe, opts);
 
 	MT_lock_unset(&embedded_lock);

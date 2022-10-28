@@ -138,6 +138,30 @@ if(PYTHON3_LIBDIR)
     utils.py
     DESTINATION ${PYTHON3_LIBDIR}/MonetDBtesting
     COMPONENT pytesting)
+
+  if(BUILD_TESTING_PACKAGE)
+    set(pypackagedir "${CMAKE_BINARY_DIR}/pytesting/src/MonetDBtesting")
+    make_directory(${pypackagedir})
+    install(FILES
+      process.py
+      __init__.py
+      ${CMAKE_CURRENT_BINARY_DIR}/listexports.py
+      exportutils.py
+      melcheck.py
+      sqllogictest.py
+      explain.py
+      mapicursor.py
+      malmapi.py
+      helpers.py
+      sqltest.py
+      utils.py
+      DESTINATION ${pypackagedir})
+
+    configure_file(pyproject.toml.in
+      ${pypackagedir}
+      @ONLY)
+
+  endif()
 endif()
 
 if(WIN32)

@@ -1218,7 +1218,7 @@ log_read_transaction(logger *lg)
 			else {
 				if (l.id > 0) {
 					// START OF LOG_BAT_GROUP
-					cands = COLnew(0, TYPE_void, 0, TRANSIENT);
+					cands = COLnew(0, TYPE_void, 0, SYSTRANS);
 					if (!cands)
 						err = LOG_ERR;
 				}
@@ -1244,7 +1244,7 @@ log_read_transaction(logger *lg)
 		GDKdebug = dbg;
 
 	if (cands)
-		GDKfree(cands);
+		BBPunfix(cands->batCacheid);
 	if (!ok)
 		return LOG_EOF;
 	return err;
@@ -1527,8 +1527,8 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts, 
 	BUN ocnt = BATcount(catalog_bid);
 	nbids = logbat_new(TYPE_int, ocnt-cleanup, PERSISTENT);
 	noids = logbat_new(TYPE_int, ocnt-cleanup, PERSISTENT);
-	ncnts = logbat_new(TYPE_lng, ocnt-cleanup, TRANSIENT);
-	nlids = logbat_new(TYPE_lng, ocnt-cleanup, TRANSIENT);
+	ncnts = logbat_new(TYPE_lng, ocnt-cleanup, SYSTRANS);
+	nlids = logbat_new(TYPE_lng, ocnt-cleanup, SYSTRANS);
 	ndels = logbat_new(TYPE_oid, BATcount(dcatalog)-cleanup, PERSISTENT);
 
 	if (nbids == NULL || noids == NULL || ncnts == NULL || nlids == NULL || ndels == NULL) {
@@ -1996,12 +1996,12 @@ log_load(int debug, const char *fn, const char *logdir, logger *lg, char filenam
 		BBPretain(lg->catalog_id->batCacheid);
 		BBPretain(lg->dcatalog->batCacheid);
 	}
-	lg->catalog_cnt = logbat_new(TYPE_lng, 1, TRANSIENT);
+	lg->catalog_cnt = logbat_new(TYPE_lng, 1, SYSTRANS);
 	if (lg->catalog_cnt == NULL) {
 		GDKerror("failed to create catalog_cnt bat");
 		goto error;
 	}
-	lg->catalog_lid = logbat_new(TYPE_lng, 1, TRANSIENT);
+	lg->catalog_lid = logbat_new(TYPE_lng, 1, SYSTRANS);
 	if (lg->catalog_lid == NULL) {
 		GDKerror("failed to create catalog_lid bat");
 		goto error;

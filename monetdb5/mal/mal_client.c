@@ -44,6 +44,7 @@
 #include "mal_parser.h"
 #include "mal_namespace.h"
 #include "mal_private.h"
+#include "mal_internal.h"
 #include "mal_interpreter.h"
 #include "mal_runtime.h"
 #include "mal_authorize.h"
@@ -194,7 +195,7 @@ MCresetProfiler(stream *fdout)
 	MT_lock_unset(&mal_profileLock);
 }
 
-void
+static void
 MCexitClient(Client c)
 {
 	MCresetProfiler(c->fdout);
@@ -221,7 +222,6 @@ MCexitClient(Client c)
 					  &(struct NonMalEvent)
 					  {CLIENT_END, c, Tend,  NULL, NULL, 0, Tend-(c->session)});
 	}
-	setClientContext(NULL);
 }
 
 static Client
@@ -283,7 +283,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	}
 	c->promptlength = strlen(prompt);
 
-	c->profticks = c->profstmt = NULL;
+	c->profticks = c->profstmt = c->profevents = NULL;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	c->sqlprofiler = 0;
 	c->blocksize = BLOCK;
@@ -311,12 +311,14 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 		(void) c_old;
 		assert(NULL == c_old);
 		c = MCinitClientRecord(c, user, fin, fout);
+		MT_thread_set_qry_ctx(&c->qryctx);
 	}
 	MT_lock_unset(&mal_contextLock);
 
-	profilerEvent(NULL,
-				  &(struct NonMalEvent)
-				  {CLIENT_START, c, c->session,  NULL, NULL, 0, 0});
+	if (c)
+		profilerEvent(NULL,
+					  &(struct NonMalEvent)
+					  {CLIENT_START, c, c->session,  NULL, NULL, 0, 0});
 	return c;
 }
 
@@ -483,7 +485,8 @@ MCcloseClient(Client c)
 	if( c->profticks){
 		BBPunfix(c->profticks->batCacheid);
 		BBPunfix(c->profstmt->batCacheid);
-		c->profticks = c->profstmt = NULL;
+		BBPunfix(c->profevents->batCacheid);
+		c->profticks = c->profstmt = c->profevents = NULL;
 	}
 	if( c->error_row){
 		BBPunfix(c->error_row->batCacheid);
@@ -495,6 +498,8 @@ MCcloseClient(Client c)
 	c->sqlprofiler = 0;
 	free(c->handshake_options);
 	c->handshake_options = NULL;
+	setClientContext(NULL);
+	MT_thread_set_qry_ctx(NULL);
 	MT_sema_destroy(&c->s);
 	MT_lock_set(&mal_contextLock);
 	if (shutdowninprogress) {
