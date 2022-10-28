@@ -377,6 +377,7 @@ int yydebug=1;
 	XML_query
 	XML_text
 	XML_validate
+    odbc_date_escape
 
 %type <type>
 	data_type
@@ -670,7 +671,7 @@ int yydebug=1;
 %left UNION EXCEPT INTERSECT CORRESPONDING
 %left JOIN CROSS LEFT FULL RIGHT INNER NATURAL
 %left WITH DATA
-%left <operation> '(' ')'
+%left <operation> '(' ')' '{' '}'
 
 %left <operation> NOT
 %left <operation> '='
@@ -720,6 +721,8 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token X_BODY 
 %token MAX_MEMORY MAX_WORKERS OPTIMIZER
+/* escape sequence tokens */
+%token<sval> DATE_ESCAPE_PREFIX
 %%
 
 sqlstmt:
@@ -4848,6 +4851,7 @@ literal:
 		  } else {
 		  	$$ = _newAtomNode(a);
 		} }
+ |  odbc_date_escape
  |  TIME time_precision tz string
 		{ sql_subtype t;
 		  atom *a;
@@ -5566,6 +5570,9 @@ non_reserved_word:
 | STRIP		{ $$ = sa_strdup(SA, "strip"); }
 | URI		{ $$ = sa_strdup(SA, "uri"); }
 | WHITESPACE	{ $$ = sa_strdup(SA, "whitespace"); }
+
+/* escape sequence non reserved words */
+| DATE_ESCAPE_PREFIX { $$ = sa_strdup(SA, "d"); }
 ;
 
 lngval:
@@ -6247,6 +6254,21 @@ XML_aggregate:
 	  $$ = _symbol_create_list( SQL_AGGR, aggr);
 	}
  ;
+
+odbc_date_escape: '{' DATE_ESCAPE_PREFIX string '}'
+		{ sql_subtype t;
+		  atom *a;
+		  int r;
+
+ 		  r = sql_find_subtype(&t, "date", 0, 0 );
+		  if (!r || (a = atom_general(SA, &t, $3)) == NULL) {
+			sqlformaterror(m, SQLSTATE(22007) "Incorrect date value (%s)", $3);
+			$$ = NULL;
+			YYABORT;
+		  } else {
+		  	$$ = _newAtomNode(a);
+		} }
+;
 
 %%
 int find_subgeometry_type(mvc *m, char* geoSubType) {
