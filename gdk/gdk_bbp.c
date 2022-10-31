@@ -145,8 +145,8 @@ static ATOMIC_TYPE BBPtransid = ATOMIC_VAR_INIT(0);
 	(!VIEWtparent(b) && (ATOMIC_GET(&(b)->theap->refs) & HEAPREFS) == 1)
 
 #define BATshared(b) \
-	((!VIEWtparent(b) && ((ATOMIC_GET(&(b)->theap->refs) & HEAPREFS) > 1)) || \
-	 ((b)->tvheap && (!VIEWvtparent(b) && (ATOMIC_GET(&(b)->tvheap->refs) & HEAPREFS) > 1)))
+	((!VIEWtparent(b) && (ATOMIC_GET(&(b)->theap->refs) & HEAPREFS) > 1) || \
+	 ((b)->tvheap && !VIEWvtparent(b) && (ATOMIC_GET(&(b)->tvheap->refs) & HEAPREFS) > 1))
 
 static void
 BBP_insert(bat i)
@@ -2850,7 +2850,7 @@ decref(bat i, bool logical, bool lock, const char *func)
 		}
 		/* cannot release last logical ref if still shared */
 		// but we could still have a bat iterator on it
-		//assert(BATnot_shared(BBP_desc(i)) || refs > 0);
+		//assert(!BATshared(BBP_desc(i)) || refs > 0);
 	} else {
 		if (BBP_refs(i) == 0) {
 			GDKerror("%s: %s does not have pointer fixes.\n", func, BBP_logical(i));
