@@ -1,0 +1,4 @@
+query T rowsort
+select {d '2022-10-31'}
+----
+2022-10-31
