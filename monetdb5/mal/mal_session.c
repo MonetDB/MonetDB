@@ -559,11 +559,11 @@ MSserveClient(Client c)
 	}
 	*/
 
-	MCcloseClient(c);
 	if (c->usermodule /*&& strcmp(c->usermodule->name, "user") == 0*/) {
 		freeModule(c->usermodule);
 		c->usermodule = NULL;
 	}
+	MCcloseClient(c);
 	return MAL_SUCCEED;
 }
 
