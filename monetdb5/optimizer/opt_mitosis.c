@@ -70,8 +70,10 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			}
 
 		/* rtree functions should not be optimized by mitosis (single-threaded execution) */
-		if ( getModuleId(p) == rtreeRef)
+		if ( getModuleId(p) == rtreeRef){
+			pieces = 0;
 			goto bailout;
+		}
 
 		/* do not split up floating point bat that is being summed */
 		if (p->retc == 1 &&

@@ -14,23 +14,16 @@
 #include "geod.h"
 #include "geom_atoms.h"
 
+//TODO Is GEOSDistanceWithin(g1,g2,0) the same (performance) as GEOSIntersects(g1,g2)?
+
 /********** Geo Update Start **********/
 static str
-filterSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, bit anti, char (*func) (const GEOSGeometry *, const GEOSGeometry *), const char *name)
+filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_geom, mbr *const_mbr, double distance, bit anti, char (*func) (const GEOSGeometry *, const GEOSGeometry *, double), const char *name)
 {
 	BAT *out = NULL, *b = NULL, *s = NULL;
 	BATiter b_iter;
 	struct canditer ci;
-	GEOSGeom col_geom, const_geom;
-
-	//WKB constant is NULL
-	if ((const_geom = wkb2geos(wkb_const)) == NULL) {
-		if ((out = BATdense(0, 0, 0)) == NULL)
-			throw(MAL, name, GDK_EXCEPTION);
-		*outid = out->batCacheid;
-		BBPkeepref(out);
-		return MAL_SUCCEED;
-	}
+	GEOSGeom col_geom;
 
 	//Get BAT, BATiter and candidate list
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -50,19 +43,13 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, b
 		throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	//Calculate the MBR for the constant geometry
-	mbr *const_mbr = NULL;
-	wkbMBR(&const_mbr,&wkb_const);
-
 	//Get a candidate list from searching on the rtree with the constant mbr
-	//Note: the candidates returned from RTREEsearch are BUNs not OIDs
 	BUN* results_rtree = RTREEsearch(b,(mbr_t*)const_mbr, b->batCount);
 
+	//TODO Change literal value of BUN_NONE to BUN_NONE in loop condition
 	//Cycle through rtree candidates
 	//If there is a original candidate list, make sure the rtree cand is in there
 	//Then do the actual calculation for the predicate using the GEOS function
-
-	//TODO Change literal value of BUN_NONE to BUN_NONE in loop condition
 	for (int i = 0; results_rtree[i] != 18446744073709551615U && i < (int) b->batCount; i++) {
 		oid cand = results_rtree[i];
 
@@ -87,7 +74,7 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, b
 			throw(MAL, name, SQLSTATE(38000) "Geometries of different SRID");
 		}
 		//GEOS function returns 1 on true, 0 on false and 2 on exception
-		bit cond = ((*func)(col_geom, const_geom) == 1);
+		bit cond = ((*func)(col_geom, const_geom, distance) == 1);
 		if (cond != anti) {
 			if (BUNappend(out, (oid*) &cand, false) != GDK_SUCCEED) {
 				GEOSGeom_destroy(col_geom);
@@ -113,12 +100,12 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, b
 }
 
 static str
-filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, bit anti, char (*func) (const GEOSGeometry *, const GEOSGeometry *), const char *name)
+filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, double distance, bit anti, char (*func) (const GEOSGeometry *, const GEOSGeometry *, double), const char *name)
 {
 	BAT *out = NULL, *b = NULL, *s = NULL;
 	BATiter b_iter;
 	struct canditer ci;
-	GEOSGeom const_geom, col_geom;
+	GEOSGeom col_geom, const_geom;
 
 	//WKB constant is NULL
 	if ((const_geom = wkb2geos(wkb_const)) == NULL) {
@@ -163,7 +150,7 @@ filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const,
 			throw(MAL, name, SQLSTATE(38000) "Geometries of different SRID");
 		}
 		//GEOS function returns 1 on true, 0 on false and 2 on exception
-		bit cond = ((*func)(col_geom, const_geom) == 1);
+		bit cond = ((*func)(col_geom, const_geom, distance) == 1);
 		if (cond != anti) {
 			if (BUNappend(out, (oid*) &cand, false) != GDK_SUCCEED) {
 				if (col_geom)
@@ -194,15 +181,62 @@ filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const,
 str
 wkbIntersectsSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti) {
 	//If there is an RTree on memory or on file, use the RTree method. Otherwise, use the no index version.
-	if (RTREEexists_bid((bat*)bid))
-		return filterSelectRTree(outid,bid,sid,*wkb_const,*anti,GEOSIntersects,"geom.wkbIntersectsSelectRTree");
+	if (RTREEexists_bid((bat*)bid)) {
+		//Calculate MBR of constant geometry first
+		GEOSGeom const_geom;
+		if ((const_geom = wkb2geos(*wkb_const)) == NULL) {
+			BAT *out = NULL;
+			if ((out = BATdense(0, 0, 0)) == NULL)
+				throw(MAL, "geom.wkbIntersectsSelectRTree", GDK_EXCEPTION);
+			*outid = out->batCacheid;
+			BBPkeepref(out);
+			return MAL_SUCCEED;
+		}
+		//Calculate the MBR for the constant geometry
+		mbr *const_mbr = NULL;
+		wkbMBR(&const_mbr,wkb_const);
+
+		return filterSelectRTree(outid,bid,sid,const_geom,const_mbr,0,*anti,GEOSDistanceWithin,"geom.wkbIntersectsSelectRTree");
+	}
 	else
-		return filterSelectNoIndex(outid,bid,sid,*wkb_const,*anti,GEOSIntersects,"geom.wkbIntersectsSelectNoIndex");
+		return filterSelectNoIndex(outid,bid,sid,*wkb_const,0,*anti,GEOSDistanceWithin,"geom.wkbIntersectsSelectNoIndex");
+}
+
+str
+wkbDWithinSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, double* distance, bit *anti) {
+	//If there is an RTree on memory or on file, use the RTree method. Otherwise, use the no index version.
+	if (RTREEexists_bid((bat*)bid)) {
+		//Calculate MBR of constant geometry first
+		GEOSGeom const_geom;
+		if ((const_geom = wkb2geos(*wkb_const)) == NULL) {
+			BAT *out = NULL;
+			if ((out = BATdense(0, 0, 0)) == NULL)
+				throw(MAL, "geom.wkbDWithinSelectRTree", GDK_EXCEPTION);
+			*outid = out->batCacheid;
+			BBPkeepref(out);
+			return MAL_SUCCEED;
+		}
+		//Calculate the MBR for the constant geometry
+		mbr *const_mbr = NULL;
+		wkbMBR(&const_mbr,wkb_const);
+
+		//We expand the bounding box to cover the "distance within" area
+		//And use GEOSIntersects with the expanded bounding box
+		//TODO This expansion is too much
+		const_mbr->xmin -=(*distance);
+		const_mbr->ymin -=(*distance);
+		const_mbr->xmax +=(*distance);
+		const_mbr->ymax +=(*distance);
+
+		return filterSelectRTree(outid,bid,sid,const_geom,const_mbr,*distance,*anti,GEOSDistanceWithin,"geom.wkbDWithinSelectRTree");
+	}
+	else
+		return filterSelectNoIndex(outid,bid,sid,*wkb_const,*distance,*anti,GEOSDistanceWithin,"geom.wkbDWithinSelectNoIndex");
 }
 
 str
 wkbIntersectsSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti) {
-	return filterSelectNoIndex(outid,bid,sid,*wkb_const,*anti,GEOSIntersects,"geom.wkbIntersectsSelectNoIndex");
+	return filterSelectNoIndex(outid,bid,sid,*wkb_const,0,*anti,GEOSDistanceWithin,"geom.wkbIntersectsSelectNoIndex");
 }
 
 static str
@@ -374,6 +408,12 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 str
 wkbIntersectsJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate) {
 	return filterJoinRTree(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,estimate,GEOSIntersects,"geom.wkbIntersectsJoinRTree");
+}
+
+str
+wkbDWithinJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, double *distance, bit *nil_matches, lng *estimate) {
+	(void) distance;
+	return filterJoinRTree(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,estimate,GEOSIntersects,"geom.wkbDWithinJoinRTree");
 }
 
 str
