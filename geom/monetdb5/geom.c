@@ -5517,13 +5517,15 @@ static mel_func geom_init_funcs[] = {
  command("rtree", "Intersectsselect", wkbIntersectsSelectRTree, false, "TODO", args(1, 5, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("anti",bit))),
  command("rtree", "Intersectsjoin", wkbIntersectsJoinRTree, false, "TODO", args(2, 8, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
 
- //command("rtree", "DWithin", wkbIntersects, false, "Returns true if these Geometries 'spatially intersect in 2D'", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
- //command("rtree", "DWithinselect", wkbIntersectsSelectRTree, false, "TODO", args(1, 5, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("anti",bit))),
- //command("rtree", "DWithinjoin", wkbIntersectsJoinRTree, false, "TODO", args(2, 8, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
+ command("rtree", "DWithin", wkbDWithin, false, "Returns true if these Geometries 'spatially intersect in 2D'", args(1,4, arg("",bit),arg("a",wkb),arg("b",wkb),arg("dst",dbl))),
+ command("rtree", "DWithinselect", wkbDWithinSelectRTree, false, "TODO", args(1, 6, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("dst",dbl), arg("anti",bit))),
+ command("rtree", "DWithinjoin", wkbDWithinJoinRTree, false, "TODO", args(2, 9, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("sl",oid),batarg("sr",oid), arg("dst",dbl),arg("nil_matches",bit),arg("estimate",lng))),
 
  command("geom", "Intersects_noindex", wkbIntersects, false, "Returns true if these Geometries 'spatially intersect in 2D'", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "Intersects_noindexselect", wkbIntersectsSelectNoIndex, false, "TODO", args(1, 5, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("anti",bit))),
  command("geom", "Intersects_noindexjoin", wkbIntersectsJoinNoIndex, false, "TODO", args(2, 8, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
+
+ command("geom", "DWithin", wkbDWithin, false, "Returns true if the two geometries are within the specifies distance from each other", args(1,4, arg("",bit),arg("a",wkb),arg("b",wkb),arg("dst",dbl))),
 
  command("geom", "IntersectsMBR", mbrIntersects, false, "TODO", args(1,3, arg("",bit),arg("a",mbr),arg("b",mbr))),
 
@@ -5586,7 +5588,6 @@ static mel_func geom_init_funcs[] = {
  command("geom", "Within", wkbWithin, false, "Returns TRUE if the geometry A is completely inside geometry B", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "Covers", wkbCovers, false, "Returns TRUE if no point of geometry B is outside geometry A", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "CoveredBy", wkbCoveredBy, false, "Returns TRUE if no point of geometry A is outside geometry B", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
- command("geom", "DWithin", wkbDWithin, false, "Returns true if the two geometries are within the specifies distance from each other", args(1,4, arg("",bit),arg("a",wkb),arg("b",wkb),arg("dst",dbl))),
  command("geom", "DWithin2", wkbDWithinMbr, false, "" /* <<< desc TODO */, args(1,6, arg("",bit),arg("a",wkb),arg("b",wkb),arg("a_mbr",mbr),arg("b_mbr",mbr),arg("dst",dbl))),
  command("geom", "GeometryN", wkbGeometryN, false, "Returns the 1-based Nth geometry if the geometry is a GEOMETRYCOLLECTION, (MULTI)POINT, (MULTI)LINESTRING, MULTICURVE or (MULTI)POLYGON. Otherwise, return NULL", args(1,3, arg("",wkb),arg("g",wkb),arg("n",int))),
  command("geom", "NumGeometries", wkbNumGeometries, false, "Returns the number of geometries", args(1,2, arg("",int),arg("g",wkb))),
