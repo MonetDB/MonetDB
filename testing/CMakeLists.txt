@@ -140,8 +140,8 @@ if(PYTHON3_LIBDIR)
     COMPONENT pytesting)
 
   if(BUILD_TESTING_PACKAGE)
-    set(pypackagedir "${CMAKE_BINARY_DIR}/pytesting/src/MonetDBtesting")
-    make_directory(${pypackagedir})
+    set(pypackagedir "${CMAKE_BINARY_DIR}/pytesting/src")
+    make_directory("${pypackagedir}/MonetDBtesting")
     install(FILES
       process.py
       __init__.py
@@ -155,10 +155,10 @@ if(PYTHON3_LIBDIR)
       helpers.py
       sqltest.py
       utils.py
-      DESTINATION ${pypackagedir})
+      DESTINATION "${pypackagedir}/MonetDBtesting")
 
     configure_file(pyproject.toml.in
-      ${pypackagedir}
+      "${pypackagedir}/pyproject.toml"
       @ONLY)
 
   endif()
