@@ -146,7 +146,7 @@ static ATOMIC_TYPE BBPtransid = ATOMIC_VAR_INIT(0);
 
 #define BATshared(b) \
 	((!VIEWtparent(b) && (ATOMIC_GET(&(b)->theap->refs) & HEAPREFS) > 1) || \
-	 ((b)->tvheap && !VIEWvtparent(b) && (ATOMIC_GET(&(b)->tvheap->refs) & HEAPREFS) > 1)
+	 ((b)->tvheap && !VIEWvtparent(b) && (ATOMIC_GET(&(b)->tvheap->refs) & HEAPREFS) > 1))
 
 static void
 BBP_insert(bat i)
