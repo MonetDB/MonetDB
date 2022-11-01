@@ -2,3 +2,13 @@ query T rowsort
 select {d '2022-10-31'}
 ----
 2022-10-31
+
+query T rowsort
+select {t '12:15:31'}
+----
+12:15:31
+
+query T rowsort
+select {t '12:15:31.073400'}
+----
+12:15:31.073400

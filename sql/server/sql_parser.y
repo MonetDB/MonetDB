@@ -381,6 +381,7 @@ int yydebug=1;
 	XML_text
 	XML_validate
     odbc_date_escape
+    odbc_time_escape
 
 %type <type>
 	data_type
@@ -725,7 +726,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token X_BODY 
 %token MAX_MEMORY MAX_WORKERS OPTIMIZER
 /* escape sequence tokens */
-%token<sval> DATE_ESCAPE_PREFIX
+%token<sval> DATE_ESCAPE_PREFIX TIME_ESCAPE_PREFIX
 %%
 
 sqlstmt:
@@ -4862,6 +4863,7 @@ literal:
 		  } else {
 		  	$$ = _newAtomNode(a);
 		} }
+ |  odbc_time_escape
  |  TIMESTAMP timestamp_precision tz string
 		{ sql_subtype t;
 		  atom *a;
@@ -5570,6 +5572,7 @@ non_reserved_word:
 
 /* escape sequence non reserved words */
 | DATE_ESCAPE_PREFIX { $$ = sa_strdup(SA, "d"); }
+| TIME_ESCAPE_PREFIX { $$ = sa_strdup(SA, "t"); }
 ;
 
 lngval:
@@ -6256,6 +6259,17 @@ odbc_date_escape:
     '{' DATE_ESCAPE_PREFIX string '}'
         {
             symbol* node = makeAtomNode(m, "date", $3, 0, 0);
+            if (node == NULL)
+                YYABORT;
+            $$ = node;
+        }
+    ;
+
+odbc_time_escape:
+    '{' TIME_ESCAPE_PREFIX string '}'
+        {
+            unsigned int pr = time_precision($3) + 1;
+            symbol* node = makeAtomNode(m, "time", $3, pr, 0);
             if (node == NULL)
                 YYABORT;
             $$ = node;

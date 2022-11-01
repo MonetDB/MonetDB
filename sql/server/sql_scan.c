@@ -522,6 +522,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("GEOMETRYCOLLECTIONZM", GEOMETRYSUBTYPE);
 	// escape sequence keywords
 	failed += keywords_insert("d", DATE_ESCAPE_PREFIX);
+	failed += keywords_insert("t", TIME_ESCAPE_PREFIX);
 
 	return failed;
 }
