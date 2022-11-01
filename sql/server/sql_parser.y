@@ -382,6 +382,7 @@ int yydebug=1;
 	XML_validate
     odbc_date_escape
     odbc_time_escape
+    odbc_timestamp_escape
 
 %type <type>
 	data_type
@@ -726,7 +727,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token X_BODY 
 %token MAX_MEMORY MAX_WORKERS OPTIMIZER
 /* escape sequence tokens */
-%token<sval> DATE_ESCAPE_PREFIX TIME_ESCAPE_PREFIX
+%token<sval> DATE_ESCAPE_PREFIX TIME_ESCAPE_PREFIX TIMESTAMP_ESCAPE_PREFIX
 %%
 
 sqlstmt:
@@ -4877,6 +4878,7 @@ literal:
 		  } else {
 		  	$$ = _newAtomNode(a);
 		} }
+ |  odbc_timestamp_escape
  |  interval_expression
  |  blob string
 		{ sql_subtype t;
@@ -5573,6 +5575,7 @@ non_reserved_word:
 /* escape sequence non reserved words */
 | DATE_ESCAPE_PREFIX { $$ = sa_strdup(SA, "d"); }
 | TIME_ESCAPE_PREFIX { $$ = sa_strdup(SA, "t"); }
+| TIMESTAMP_ESCAPE_PREFIX { $$ = sa_strdup(SA, "ts"); }
 ;
 
 lngval:
@@ -6268,8 +6271,20 @@ odbc_date_escape:
 odbc_time_escape:
     '{' TIME_ESCAPE_PREFIX string '}'
         {
-            unsigned int pr = time_precision($3) + 1;
+            unsigned int pr = get_time_precision($3) + 1;
             symbol* node = makeAtomNode(m, "time", $3, pr, 0);
+            if (node == NULL)
+                YYABORT;
+            $$ = node;
+        }
+    ;
+
+odbc_timestamp_escape:
+    '{' TIMESTAMP_ESCAPE_PREFIX string '}'
+        {
+            unsigned int pr = get_timestamp_precision($3);
+            pr = pr ? (pr + 1) : (pr + 6);
+            symbol* node = makeAtomNode(m, "timestamp", $3, pr, 0);
             if (node == NULL)
                 YYABORT;
             $$ = node;
