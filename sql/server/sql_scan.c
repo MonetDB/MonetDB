@@ -523,6 +523,7 @@ scanner_init_keywords(void)
 	// escape sequence keywords
 	failed += keywords_insert("d", DATE_ESCAPE_PREFIX);
 	failed += keywords_insert("t", TIME_ESCAPE_PREFIX);
+	failed += keywords_insert("ts", TIMESTAMP_ESCAPE_PREFIX);
 
 	return failed;
 }

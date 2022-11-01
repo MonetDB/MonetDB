@@ -397,7 +397,12 @@ int digits2ek( int digits)
 
 
 int
-parse_time(const char* val, unsigned int* hr, unsigned int* mn, unsigned int* sc, unsigned long* fr, unsigned int* pr)
+parse_time(const char* val,
+	   	unsigned int* hr,
+	   	unsigned int* mn,
+	   	unsigned int* sc,
+	   	unsigned long* fr,
+	   	unsigned int* pr)
 {
 	int n;
 	const char* p = val;
@@ -415,8 +420,35 @@ parse_time(const char* val, unsigned int* hr, unsigned int* mn, unsigned int* sc
 }
 
 
+int
+parse_timestamp(const char* val,
+	   	unsigned int* yr,
+	   	unsigned int* mt,
+	   	unsigned int* dy,
+	   	unsigned int* hr,
+	   	unsigned int* mn,
+	   	unsigned int* sc,
+	   	unsigned long* fr,
+	   	unsigned int* pr)
+{
+	int n;
+	const char* p = val;
+	if (sscanf(p, "%u-%u-%u %u:%u:%u%n",
+			   	yr, mt, dy, hr, mn, sc, &n) >= 6) {
+		p += n;
+		if (*p == '.') {
+			char* e;
+			p++;
+			*fr = strtoul(p, &e, 10);
+			if (e > p)
+				*pr = (unsigned int) (e - p);
+		}
+	}
+	return -1;
+}
+
 unsigned int
-time_precision(const char* val)
+get_time_precision(const char* val)
 {
 	unsigned int hr;
 	unsigned int mn;
@@ -427,3 +459,17 @@ time_precision(const char* val)
 	return pr;
 }
 
+unsigned int
+get_timestamp_precision(const char* val)
+{
+	unsigned int yr;
+	unsigned int mt;
+	unsigned int dy;
+	unsigned int hr;
+	unsigned int mn;
+	unsigned int sc;
+	unsigned long fr;
+	unsigned int pr = 0;
+	parse_timestamp(val, &yr, &mt, &dy, &hr, &mn, &sc, &fr, &pr);
+	return pr;
+}

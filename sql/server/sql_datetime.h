@@ -53,7 +53,26 @@ char *datetime_field(itype field);
 int inttype2digits( int sk, int ek );
 int digits2sk( int digits);
 int digits2ek( int digits );
-int parse_time(const char* val, unsigned int* hr, unsigned int* mn, unsigned int* sc, unsigned long* fr, unsigned int* pr);
-unsigned int time_precision(const char* val);
+int
+parse_time(const char* val,
+		unsigned int* hr,
+		unsigned int* mn,
+		unsigned int* sc,
+		unsigned long* fr,
+		unsigned int* pr);
+unsigned int
+get_time_precision(const char* val);
+int
+parse_timestamp(const char* val,
+	   	unsigned int* yr,
+	   	unsigned int* mt,
+	   	unsigned int* dy,
+	   	unsigned int* hr,
+	   	unsigned int* mn,
+	   	unsigned int* sc,
+	   	unsigned long* fr,
+	   	unsigned int* pr);
+unsigned int
+get_timestamp_precision(const char* val);
 
 #endif /*_SQL_DATETIME_H_*/
