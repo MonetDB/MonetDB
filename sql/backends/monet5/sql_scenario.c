@@ -878,6 +878,10 @@ SQLreader(Client c)
 					if (msg)
 						break;
 					commit_done = true;
+					if (c->idle == 0 && (m->session->tr == NULL || !m->session->tr->active)) {
+						/* now the session is idle */
+						c->idle = time(0);
+					}
 				}
 
 				if (go && ((!blocked && mnstr_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || mnstr_flush(c->fdout, MNSTR_FLUSH_DATA))) {
