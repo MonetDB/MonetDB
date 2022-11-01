@@ -394,3 +394,36 @@ int digits2ek( int digits)
 		ek = isec;
 	return ek;
 }
+
+
+int
+parse_time(const char* val, unsigned int* hr, unsigned int* mn, unsigned int* sc, unsigned long* fr, unsigned int* pr)
+{
+	int n;
+	const char* p = val;
+	if (sscanf(p, "%u:%u:%u%n", hr, mn, sc, &n) >= 3) {
+		p += n;
+		if (*p == '.') {
+			char* e;
+			p++;
+			*fr = strtoul(p, &e, 10);
+			if (e > p)
+				*pr = (unsigned int) (e - p);
+		}
+	}
+	return -1;
+}
+
+
+unsigned int
+time_precision(const char* val)
+{
+	unsigned int hr;
+	unsigned int mn;
+	unsigned int sc;
+	unsigned long fr;
+	unsigned int pr = 0;
+	parse_time(val, &hr, &mn, &sc, &fr, &pr);
+	return pr;
+}
+
