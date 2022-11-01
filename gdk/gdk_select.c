@@ -1668,6 +1668,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		     wantphash ||
 		     (pb->batRole == PERSISTENT && GDKinmemory(0))) &&
 		    pbi.count == bi.count &&
+		    (pbi.unique_est == 0 ||
+		     pbi.unique_est >= pbi.count / no_hash_select_fraction) &&
 		    BAThash(pb) == GDK_SUCCEED) {
 			MT_rwlock_rdlock(&pb->thashlock);
 			if (pb->thash)

@@ -3,3 +3,4 @@ crash_on_concurrent_use.SF-1411926
 segments-corruption
 read-segment-after-free
 smart-segment-merge
+many-concurrent-client-connections

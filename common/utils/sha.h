@@ -160,6 +160,7 @@ typedef struct SHA256Context {
     int Corrupted;                  /* Cumulative corruption code */
 } SHA256Context;
 
+#define USE_32BIT_ONLY
 /*
  *  This structure will hold context information for the SHA-512
  *  hashing operation.
