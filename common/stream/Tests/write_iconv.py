@@ -18,13 +18,14 @@ def run_streamcat(text, enc):
     cmd = ['streamcat', 'write', tf.path(), 'wstream', f'iconv:{enc}']
     proc = subprocess.run(cmd, input=utf8_text)
     if proc.returncode != 0:
-        print(f"command {cmd} exited with status {proc.returncode} for input {utf8_text!r} ({text!r})", file=sys.stderr)
+        print(f"command {cmd}\nexited with status {proc.returncode}\nfor input {utf8_text!r} ({text!r})", file=sys.stderr)
         sys.exit(1)
     output = tf.read()
     os.remove(tf.path())
 
     if output != expected:
-        raise Exception(f"command {cmd} with input {utf8_text!r} yielded {output!r}, expected {expected!r}")
+        print(f"command {cmd}\nwith input {utf8_text!r} ({text!r})\nyielded {output!r}, expected {expected!r}", file=sys.stderr)
+        sys.exit(1)
 
 
 text = "MøNëTDB"
