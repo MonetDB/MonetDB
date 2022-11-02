@@ -623,7 +623,8 @@ HEAPfree(Heap *h, bool rmheap)
 			size_t id;
 			sscanf(h->filename, "%zu", &id);
 			GDKreleasemmap(h->base, h->size, id);
-			rmheap = true;
+			/* the heap has already been removed */
+			rmheap = false;
 #endif
 		} else if (h->storage != STORE_NOWN) {	/* mapped file, or STORE_PRIV */
 			gdk_return ret = GDKmunmap(h->base, h->size);
