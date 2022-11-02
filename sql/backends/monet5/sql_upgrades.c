@@ -302,7 +302,7 @@ sql_update_hugeint(Client c, mvc *sql)
 static str
 sql_update_shp(Client c)
 {
-	const char *query = "create procedure SHPattach(fname string) external name shp.attach;\ncreate procedure SHPload(fid integer) external name shp.import;\ncreate procedure SHPload(fid integer, filter geometry) external name shp.import;\nupdate sys.functions set system = true where schema_id = 2000 and name in ('shpattach', 'shpload');\n";
+	const char *query = "create procedure SHPLoad(fname string, schemaname string, tablename string) external name shp.load;\ncreate procedure SHPLoad(fname string, tablename string) external name shp.load;update sys.functions set system = true where schema_id = 2000 and name in ('shpload');";
 	printf("Running database upgrade commands:\n%s\n", query);
 	return SQLstatementIntern(c, query, "update", true, false, NULL);
 }
