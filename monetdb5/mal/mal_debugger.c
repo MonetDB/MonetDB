@@ -87,9 +87,9 @@ printBATproperties(stream *f, BAT *b)
 	if (BBP_refs(b->batCacheid) - 1)
 		mnstr_printf(f, " refs=%d ", BBP_refs(b->batCacheid));
 	if (b->theap->refs)
-		mnstr_printf(f, " views=%lld", ATOMIC_GET(&b->theap->refs));
+		mnstr_printf(f, " views=%llu", ATOMIC_GET(&b->theap->refs));
 	if (b->tvheap->refs)
-		mnstr_printf(f, " shared vheaps=%lld", ATOMIC_GET(&b->tvheap->refs));
+		mnstr_printf(f, " shared vheaps=%llu", ATOMIC_GET(&b->tvheap->refs));
 	if (b->theap->parentid != b->batCacheid)
 		mnstr_printf(f, "view on %s ", BBP_logical(b->theap->parentid));
 }
