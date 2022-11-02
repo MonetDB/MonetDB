@@ -618,10 +618,13 @@ HEAPfree(Heap *h, bool rmheap)
 		} else if (h->storage == STORE_CMEM) {
 			//heap is stored in regular C memory rather than GDK memory,so we call free()
 			free(h->base);
+#ifdef HAVE_FORK
 		} else if (h->storage == STORE_MMAPABS) {
 			size_t id;
 			sscanf(h->filename, "%zu", &id);
 			GDKreleasemmap(h->base, h->size, id);
+			rmheap = true;
+#endif
 		} else if (h->storage != STORE_NOWN) {	/* mapped file, or STORE_PRIV */
 			gdk_return ret = GDKmunmap(h->base, h->size);
 
@@ -635,16 +638,6 @@ HEAPfree(Heap *h, bool rmheap)
 		}
 	}
 	h->base = NULL;
-#ifdef HAVE_FORK
-	if (h->storage == STORE_MMAPABS)  {
-		/* heap is stored in a mmap() file, but h->filename
-		 * is the absolute path */
-		char *path = GDKfilepath(0, BATDIR, h->filename, NULL);
-		if (path && MT_remove(path) != 0 && errno != ENOENT)
-			perror(path);
-		GDKfree(path);
-	} else
-#endif
 	if (rmheap && !GDKinmemory(h->farmid)) {
 		if (h->hasfile) {
 			char *path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
