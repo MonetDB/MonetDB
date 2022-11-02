@@ -72,6 +72,9 @@ static const char *FunctionBasePath(char *buf, size_t len)
 		}
 	}
 #else
+	/* not used except on Windows */
+	(void) buf;
+	(void) len;
 	if (basepath == NULL) {
 		basepath = getenv("HOME");
 	}
