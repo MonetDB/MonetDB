@@ -113,3 +113,4 @@ HAVE_GEOM?filter_error
 in
 rtrim_bug
 savepoint-release
+rse_bug
