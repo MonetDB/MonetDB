@@ -56,12 +56,26 @@ static void ComputeParallelAggregation(AggrParams *p);
 static str CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  size_t retcols, oid seqbase);
 
-static const char *FunctionBasePath(void)
+static const char *FunctionBasePath(char *buf, size_t len)
 {
 	const char *basepath = GDKgetenv("function_basepath");
+#ifdef NATIVE_WIN32
+	if (basepath == NULL) {
+		const wchar_t *home = _wgetenv(L"HOME");
+		if (home) {
+			char *path = wchartoutf8(home);
+			if (path) {
+				strcpy_len(buf, path, len);
+				free(path);
+				basepath = buf;
+			}
+		}
+	}
+#else
 	if (basepath == NULL) {
 		basepath = getenv("HOME");
 	}
+#endif
 	if (basepath == NULL) {
 		basepath = "";
 	}
@@ -580,7 +594,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 				snprintf(address, 1000, "%s", exprStr);
 			} else {
 				// relative path
-				snprintf(address, 1000, "%s/%s", FunctionBasePath(), exprStr);
+				snprintf(address, 1000, "%s/%s", FunctionBasePath((char[256]){0}, 256), exprStr);
 			}
 			if (MT_stat(address, &buffer) < 0) {
 				msg = createException(
