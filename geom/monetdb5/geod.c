@@ -21,7 +21,6 @@ deg2RadLongitude(double lon_degrees)
 	//Convert
 	double lon = M_PI * lon_degrees / 180.0;
 	//Normalize
-	//TODO PostGIS code, refactor
 	if (lon == -1.0 * M_PI)
 		return M_PI;
 	if (lon == -2.0 * M_PI)
@@ -51,7 +50,6 @@ deg2RadLatitude(double lat_degrees)
 	//Convert
 	double lat = M_PI * lat_degrees / 180.0;
 	//Normalize
-	//TODO PostGIS code, refactor
 	if (lat > 2.0 * M_PI)
 		lat = remainder(lat, 2.0 * M_PI);
 
@@ -91,7 +89,6 @@ rad2DegLongitude(double lon_radians)
 	//Convert
 	double lon = lon_radians * 180.0 / M_PI;
 	//Normalize
-	//TODO PostGIS code, refactor
 	if (lon > 360.0)
 		lon = remainder(lon, 360.0);
 
@@ -122,7 +119,6 @@ rad2DegLatitude(double lat_radians)
 	//Convert
 	double lat = lat_radians * 180.0 / M_PI;
 	//Normalize
-	//TODO PostGIS code, refactor
 	if (lat > 360.0)
 		lat = remainder(lat, 360.0);
 
@@ -171,11 +167,9 @@ geoLinesFromGeom(GEOSGeom geom)
 	const GEOSCoordSequence *gcs = GEOSGeom_getCoordSeq(geom);
 	GeoLines geo;
 	geo.pointCount = GEOSGeomGetNumPoints(geom);
-	//TODO Malloc fail exception?
 	geo.points = GDKmalloc(sizeof(GeoPoint) * geo.pointCount);
 	for (int i = 0; i < geo.pointCount; i++)
 		GEOSCoordSeq_getXY(gcs, i, &geo.points[i].lon, &geo.points[i].lat);
-	//TODO Calculate Boundind Box on initializion?
 	geo.bbox = NULL;
 	return geo;
 }
@@ -217,7 +211,6 @@ geoPointFromLatLon(double lon, double lat)
 static str
 freeGeoLines(GeoLines lines) {
 	str msg = MAL_SUCCEED;
-	//TODO Check if frees are correctly done
 	GDKfree(lines.points);
 	if (lines.bbox)
 		GDKfree(lines.bbox);
@@ -227,7 +220,6 @@ freeGeoLines(GeoLines lines) {
 static str
 freeGeoPolygon(GeoPolygon polygon) {
 	str msg = MAL_SUCCEED;
-	//TODO Check if frees are correctly done
 	msg = freeGeoLines(polygon.exteriorRing);
 	if (polygon.bbox)
 		GDKfree(polygon.bbox);
@@ -248,7 +240,6 @@ cartPointFromXYZ(double x, double y, double z)
 	return cart;
 }
 
-//TODO Move this to first-level functions
 /* Converts Well-Known Bytes into Geos Geometries, if they are not NULL and have the same SRID (used for geographic functions) */
 static str
 wkbGetComplatibleGeometries(wkb **a, wkb **b, GEOSGeom *ga, GEOSGeom *gb)
@@ -264,12 +255,11 @@ wkbGetComplatibleGeometries(wkb **a, wkb **b, GEOSGeom *ga, GEOSGeom *gb)
 	(*gb) = wkb2geos(*b);
 	if ((*ga) == NULL || (*gb) == NULL)
 		err = createException(MAL, "geom.wkbGetComplatibleGeometries", SQLSTATE(38000) "Geos operation wkb2geos failed");
-	//TODO Uncomment this
-	/*else if (GEOSGetSRID((*ga)) != GEOSGetSRID(*gb)) {
+	else if (GEOSGetSRID((*ga)) != GEOSGetSRID(*gb)) {
 		GEOSGeom_destroy(*ga);
 		GEOSGeom_destroy(*gb);
 		err = createException(MAL, "geom.wkbGetComplatibleGeometries", SQLSTATE(38000) "Geometries of different SRID");
-	}*/
+	}
 	return err;
 }
 
@@ -522,7 +512,6 @@ geoDistancePointLine(GeoPoint point, GeoLines lines)
 	for (int i = 0; i < lines.pointCount-1; i++) {
 		distancePoint = geoDistancePointPoint(point, lines.points[i]);
 		distancePerpendicular = calculatePerpendicularDistance(point,lines.points[i],lines.points[i+1]);
-		//TODO Is this the best way of comparing these three distances?
 		if (distancePoint < min_distance)
 			min_distance = distancePoint;
 		if (distancePerpendicular < min_distance)
@@ -561,7 +550,6 @@ geoDistanceLineLine(GeoLines line1, GeoLines line2)
 	return min_distance;
 }
 
-//TODO Implement intersection ourselves so we don't use GEOS?
 /* Checks if a Point is within a Polygon */
 static bool
 pointWithinPolygon(GeoPolygon polygon, GeoPoint point)

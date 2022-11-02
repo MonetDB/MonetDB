@@ -4970,6 +4970,7 @@ SQLupgrades(Client c, mvc *m)
 #endif
 
 #ifdef HAVE_SHP
+	//TODO FIX
 	if (backend_has_module(&(int){0}, "shp")) {
 		sql_find_subtype(&tp, "varchar", 0, 0);
 		if (!sql_bind_func(m, s->base.name, "shpattach", &tp, NULL, F_PROC, true)) {
