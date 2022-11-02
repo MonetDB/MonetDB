@@ -10,7 +10,7 @@ USER='monetdb'
 PASSWORD='monetdb'
 JDBC_EXTRA_ARGS=os.getenv('JDBC_EXTRA_ARGS', default='')
 
-URL=f"jdbc:monetdb://{HOST}:{MAPIPORT}/{TSTDB}?user=monetdb&password=monetdb{JDBC_EXTRA_ARGS}"
+URL=f"jdbc:monetdb://{HOST}:{MAPIPORT}/{TSTDB}?user={USER}&password={PASSWORD}{JDBC_EXTRA_ARGS}"
 
 cmd = ['java', 'JDBC_API_Tester', URL]
 try:
