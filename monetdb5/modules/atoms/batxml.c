@@ -1147,6 +1147,7 @@ BATXMLconcat(bat *ret, const bat *bid, const bat *rid)
 	bat_iterator_end(&ri);
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
+	BBPunfix(r->batCacheid);
 	return MAL_SUCCEED;
   bunins_failed:
 	bat_iterator_end(&bi);
