@@ -20,26 +20,38 @@ def run_streamcat(text, enc, expected_error = None):
     filename = tf.write(enc_text)
 
     cmd = ['streamcat', 'read', filename, 'rstream', f'iconv:{enc}']
-    descr = f"command {cmd} with input {enc_text!r}"
+    descr = f"command {cmd}\nwith input {enc_text!r}"
     proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output = proc.stdout
     os.remove(filename)
 
+    def show_stderr():
+        if proc.stderr:
+            print("--- STDERR ---", file=sys.stderr)
+            sys.stderr.buffer.write(proc.stderr)
+            # if proc.stderr.endswith(b'\n'):
+        else:
+            print("--- NOTHING ON STDERR ---", file=sys.stderr)
+
     if expected_error:
         if proc.returncode == 0:
-            print(f"{descr} exited without expected error", file=sys.stderr)
+            print(f"{descr}\nexited without expected error", file=sys.stderr)
+            show_stderr()
             sys.exit(1)
         elif expected_error not in proc.stderr:
-            print(f"{descr} failed as expected but stderr does not contain {expected_error!r}", file=sys.stderr)
+            print(f"{descr}\nfailed as expected but stderr does not contain {expected_error!r}:", file=sys.stderr)
+            show_stderr()
             sys.exit(1)
         else:
             return
 
     if proc.returncode != 0:
-        print(f"{descr} exited with status {proc.returncode}", file=sys.stderr)
+        print(f"{descr}\nexited with status {proc.returncode}", file=sys.stderr)
+        show_stderr()
         sys.exit(1)
     if output != expected:
-        print(f"{descr} yielded {output!r}, expected {expected!r}")
+        print(f"{descr}\nyielded {output!r}, expected {expected!r}", file=sys.stderr)
+        show_stderr()
         sys.exit(1)
 
 
