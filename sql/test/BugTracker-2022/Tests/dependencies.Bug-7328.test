@@ -15,7 +15,7 @@ END
 statement ok
 select mmtest02()
 
-query TI nosort
+query IT nosort
 SELECT * FROM mmtest01
 ----
 1
@@ -26,7 +26,7 @@ SELECT count(*) as count
 FROM sys.dependency_columns_on_functions
 WHERE function_name LIKE 'mmtest02'
 ----
-1
+2
 
 query TTII nosort
 SELECT name, function_name, function_type, depend_type
@@ -38,9 +38,12 @@ id
 mmtest02
 1
 7
+name
+mmtest02
+1
+7
 
 # as only 1 column is specified in the function mmtest02 we expect only 1 dependency, instead we get 2 columns returned
-
 
 # an extra test to check what happens when no columns are listed in the insert statement
 statement ok
@@ -54,7 +57,7 @@ END
 statement ok
 select mmtest03()
 
-query TI nosort
+query IT nosort
 SELECT * FROM mmtest01
 ----
 1
@@ -83,9 +86,16 @@ FROM sys.dependency_columns_on_functions
 WHERE function_name LIKE 'mmtest03'
 ORDER BY name
 ----
+id
+mmtest03
+1
+7
+name
+mmtest03
+1
+7
 
 # as no columns are specified in the function mmtest03 we expect also 0 dependencies here, instead we get 2 columns returned
-
 
 # also check what happens when you specify DELETE instead of INSERT
 statement ok
@@ -99,7 +109,7 @@ END
 statement ok
 select mmtest04()
 
-query TI nosort
+query IT nosort
 SELECT * FROM mmtest01
 ----
 
