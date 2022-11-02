@@ -145,8 +145,8 @@ static ATOMIC_TYPE BBPtransid = ATOMIC_VAR_INIT(0);
 	(!VIEWtparent(b) && (ATOMIC_GET(&(b)->theap->refs) & HEAPREFS) == 1)
 
 #define BATshared(b) \
-	((!VIEWtparent(b) && ((ATOMIC_GET(&(b)->theap->refs) & HEAPREFS) > 1)) || \
-	 ((b)->tvheap && (!VIEWvtparent(b) && (ATOMIC_GET(&(b)->tvheap->refs) & HEAPREFS) > 1)))
+	((!VIEWtparent(b) && (ATOMIC_GET(&(b)->theap->refs) & HEAPREFS) > 1) || \
+	 ((b)->tvheap && !VIEWvtparent(b) && (ATOMIC_GET(&(b)->tvheap->refs) & HEAPREFS) > 1))
 
 static void
 BBP_insert(bat i)
@@ -960,7 +960,8 @@ BBPcheckbats(unsigned bbpversion)
 			if (statb.st_size > (off_t) hfree) {
 				int fd;
 				if ((fd = MT_open(path, O_RDWR | O_CLOEXEC | O_BINARY)) >= 0) {
-					(void) ftruncate(fd, hfree);
+					if (ftruncate(fd, hfree) == -1)
+						perror("ftruncate");
 					(void) close(fd);
 				}
 			}
@@ -988,7 +989,8 @@ BBPcheckbats(unsigned bbpversion)
 			if (statb.st_size > (off_t) hfree) {
 				int fd;
 				if ((fd = MT_open(path, O_RDWR | O_CLOEXEC | O_BINARY)) >= 0) {
-					(void) ftruncate(fd, hfree);
+					if (ftruncate(fd, hfree) == -1)
+						perror("ftruncate");
 					(void) close(fd);
 				}
 			}
@@ -1108,7 +1110,7 @@ BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror)
 			GDKerror("no newline allowed in directory name\n");
 		return GDK_FAIL;
 	}
-	if (rolemask == 0 || (rolemask & 1 && BBPfarms[0].dirname != NULL)) {
+	if (rolemask == 0 || (rolemask & 1 && BBPfarms[0].roles != 0)) {
 		if (logerror)
 			GDKerror("bad rolemask\n");
 		return GDK_FAIL;
@@ -1179,6 +1181,36 @@ BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror)
 	if (logerror)
 		GDKerror("too many farms\n");
 	return GDK_FAIL;
+}
+
+gdk_return
+BBPchkfarms(void)
+{
+	const char *dir = NULL;
+	uint32_t rolemask = 0;
+	if ((BBPfarms[0].roles & 1) == 0) {
+		GDKerror("Must at least call BBPaddfarms for once for persistent data\n");
+		return GDK_FAIL;
+	}
+	for (int i = 0; i < MAXFARMS; i++) {
+		if (BBPfarms[i].roles != 0) {
+			dir = BBPfarms[i].dirname;
+			rolemask |= BBPfarms[i].roles;
+		}
+	}
+	if (dir == NULL)
+		dir = "in-memory";
+	if ((rolemask & (1U << TRANSIENT)) == 0) {
+		gdk_return rc = BBPaddfarm(dir, 1U << TRANSIENT, true);
+		if (rc != GDK_SUCCEED)
+			return rc;
+	}
+	if ((rolemask & (1U << SYSTRANS)) == 0) {
+		gdk_return rc = BBPaddfarm(dir, 1U << SYSTRANS, true);
+		if (rc != GDK_SUCCEED)
+			return rc;
+	}
+	return GDK_SUCCEED;
 }
 
 #ifdef GDKLIBRARY_HASHASH
@@ -2818,7 +2850,7 @@ decref(bat i, bool logical, bool lock, const char *func)
 		}
 		/* cannot release last logical ref if still shared */
 		// but we could still have a bat iterator on it
-		//assert(BATnot_shared(BBP_desc(i)) || refs > 0);
+		//assert(!BATshared(BBP_desc(i)) || refs > 0);
 	} else {
 		if (BBP_refs(i) == 0) {
 			GDKerror("%s: %s does not have pointer fixes.\n", func, BBP_logical(i));
@@ -2916,6 +2948,10 @@ decref(bat i, bool logical, bool lock, const char *func)
 			BBP_status_off(i, BBPUNLOADING);
 		}
 	}
+	if (tp)
+		decref(tp, false, lock, func);
+	if (tvp)
+		decref(tvp, false, lock, func);
 	return refs;
 }
 
@@ -2931,13 +2967,6 @@ BBPrelease(bat i)
 	return decref(i, true, true, __func__);
 }
 
-/*
- * M5 often changes the physical ref into a logical reference.  This
- * state change consist of the sequence BBPretain(b);BBPunfix(b).
- * A faster solution is given below, because it does not trigger the
- * BBP management actions, such as garbage collecting the bats.
- * [first step, initiate code change]
- */
 void
 BBPkeepref(BAT *b)
 {
@@ -3202,9 +3231,9 @@ BBPdestroy(BAT *b)
 
 	/* parent released when completely done with child */
 	if (tp)
-		BBPunshare(tp);
+		BBPrelease(tp);
 	if (vtp)
-		BBPunshare(vtp);
+		BBPrelease(vtp);
 }
 
 static gdk_return
@@ -3231,9 +3260,9 @@ BBPfree(BAT *b)
 
 	/* parent released when completely done with child */
 	if (ret == GDK_SUCCEED && tp)
-		BBPunshare(tp);
+		BBPrelease(tp);
 	if (ret == GDK_SUCCEED && vtp)
-		BBPunshare(vtp);
+		BBPrelease(vtp);
 	return ret;
 }
 

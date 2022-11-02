@@ -1328,7 +1328,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	nil = ATOMnilptr(t);
 	/* can we use the base type? */
 	t = ATOMbasetype(t);
-	lnil = ATOMcmp(t, tl, nil) == 0; /* low value = nil? */
+	lnil = nil && ATOMcmp(t, tl, nil) == 0; /* low value = nil? */
 
 	if (!lnil && th != NULL && (!li || !hi) && !anti && ATOMcmp(t, tl, th) == 0) {
 		/* upper and lower bound of range are equal and we
@@ -1353,6 +1353,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if (th == NULL)
 			hi = li;
 		th = tl;
+		hval = true;
+	} else if (nil == NULL) {
 		hval = true;
 	} else {
 		hval = ATOMcmp(t, th, nil) != 0;
@@ -1666,6 +1668,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		     wantphash ||
 		     (pb->batRole == PERSISTENT && GDKinmemory(0))) &&
 		    pbi.count == bi.count &&
+		    (pbi.unique_est == 0 ||
+		     pbi.unique_est >= pbi.count / no_hash_select_fraction) &&
 		    BAThash(pb) == GDK_SUCCEED) {
 			MT_rwlock_rdlock(&pb->thashlock);
 			if (pb->thash)

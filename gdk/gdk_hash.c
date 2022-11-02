@@ -777,6 +777,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		      nme, ".", ext, "l", NULL);
 	strconcat_len(h->heapbckt.filename, sizeof(h->heapbckt.filename),
 		      nme, ".", ext, "b", NULL);
+	h->heapbckt.parentid = b->batCacheid;
+	h->heaplink.parentid = b->batCacheid;
 	if (HEAPalloc(&h->heaplink, hascand ? ci->ncand : BATcapacity(b),
 		      h->width) != GDK_SUCCEED) {
 		GDKfree(h);
@@ -968,14 +970,14 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		break;
 	}
 	bat_iterator_end(&bi);
-	h->heapbckt.parentid = b->batCacheid;
-	h->heaplink.parentid = b->batCacheid;
 	/* if the number of unique values is equal to the bat count,
 	 * all values are necessarily distinct */
 	MT_lock_set(&b->theaplock);
 	if (h->nunique == BATcount(b) && !b->tkey) {
 		b->tkey = true;
 	}
+	if (ci->ncand == BATcount(b))
+		b->tunique_est = (double) h->nunique;
 	MT_lock_unset(&b->theaplock);
 	TRC_DEBUG_IF(ACCELERATOR) {
 		TRC_DEBUG_ENDIF(ACCELERATOR,
@@ -1131,12 +1133,15 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 	h->heaplink.dirty = true;
 }
 
-void
+BUN
 HASHappend(BAT *b, BUN i, const void *v)
 {
+	BUN nunique;
 	MT_rwlock_wrlock(&b->thashlock);
 	HASHappend_locked(b, i, v);
+	nunique = b->thash ? b->thash->nunique : 0;
 	MT_rwlock_wrunlock(&b->thashlock);
+	return nunique;
 }
 
 /* insert value v at position p into the hash table of b */
@@ -1215,12 +1220,15 @@ HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 	}
 }
 
-void
+BUN
 HASHinsert(BATiter *bi, BUN p, const void *v)
 {
+	BUN nunique;
 	MT_rwlock_wrlock(&bi->b->thashlock);
 	HASHinsert_locked(bi, p, v);
+	nunique = bi->b->thash ? bi->b->thash->nunique : 0;
 	MT_rwlock_wrunlock(&bi->b->thashlock);
+	return nunique;
 }
 
 /* delete value v at position p from the hash table of b */
@@ -1308,12 +1316,15 @@ HASHdelete_locked(BATiter *bi, BUN p, const void *v)
 		h->nunique--;
 }
 
-void
+BUN
 HASHdelete(BATiter *bi, BUN p, const void *v)
 {
+	BUN nunique;
 	MT_rwlock_wrlock(&bi->b->thashlock);
 	HASHdelete_locked(bi, p, v);
+	nunique = bi->b->thash ? bi->b->thash->nunique : 0;
 	MT_rwlock_wrunlock(&bi->b->thashlock);
+	return nunique;
 }
 
 BUN

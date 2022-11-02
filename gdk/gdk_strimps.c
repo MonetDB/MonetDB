@@ -433,6 +433,7 @@ BATcheckstrimps(BAT *b)
 			strconcat_len(hp->strimps.filename,
 				      sizeof(hp->strimps.filename),
 				      nme, ".tstrimps", NULL);
+			hp->strimps.parentid = b->batCacheid;
 
 			/* check whether a persisted strimp can be found */
 			if ((fd = GDKfdlocate(hp->strimps.farmid, nme, "rb+", "tstrimps")) >= 0) {
@@ -469,7 +470,6 @@ BATcheckstrimps(BAT *b)
 
 					close(fd);
 					ATOMIC_INIT(&hp->strimps.refs, 1);
-					hp->strimps.parentid = b->batCacheid;
 					b->tstrimps = hp;
 					hp->strimps.hasfile = true;
 					TRC_DEBUG(ACCELERATOR, "BATcheckstrimps(" ALGOBATFMT "): reusing persisted strimp\n", ALGOBATPAR(b));
@@ -701,6 +701,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 		if ((r = GDKzalloc(sizeof(Strimps))) == NULL ||
 		    (r->strimps.farmid =
 		     BBPselectfarm(b->batRole, b->ttype, strimpheap)) < 0 ||
+		    (r->strimps.parentid = b->batCacheid) <= 0 ||
 		    strconcat_len(r->strimps.filename, sizeof(r->strimps.filename),
 				  nme, ".tstrimps",
 				  NULL) >= sizeof(r->strimps.filename) ||

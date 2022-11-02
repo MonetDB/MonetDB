@@ -32,6 +32,7 @@
 #include "mal_parser.h"
 #include "mal_authorize.h"
 #include "mal_private.h"
+#include "mal_internal.h"
 #include "mal_session.h"
 #include "mal_utils.h"
 
@@ -275,6 +276,7 @@ str
 compileString(Symbol *fcn, Client cntxt, str s)
 {
 	Client c, c_old;
+	QryCtx *qc_old;
 	size_t len = strlen(s);
 	buffer *b;
 	str msg = MAL_SUCCEED;
@@ -314,11 +316,14 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	strncpy(fdin->buf, qry, len+1);
 
 	c_old = setClientContext(NULL); // save context
+	qc_old = MT_thread_get_qry_ctx();
 	// compile in context of called for
 	c = MCinitClient(MAL_ADMIN, fdin, 0);
 	if( c == NULL){
 		GDKfree(qry);
 		GDKfree(b);
+		setClientContext(c_old); // restore context
+		MT_thread_set_qry_ctx(qc_old);
 		throw(MAL,"mal.eval","Can not create user context");
 	}
 	c->curmodule = c->usermodule = cntxt->usermodule;
@@ -331,6 +336,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 		c->usermodule= 0;
 		MCcloseClient(c);
 		setClientContext(c_old); // restore context
+		MT_thread_set_qry_ctx(qc_old);
 		return msg;
 	}
 
@@ -346,6 +352,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	/* restore IO channel */
 	MCcloseClient(c);
 	setClientContext(c_old); // restore context
+	MT_thread_set_qry_ctx(qc_old);
 	GDKfree(qry);
 	GDKfree(b);
 	return msg;
