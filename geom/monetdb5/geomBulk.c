@@ -14,9 +14,8 @@
 #include "geod.h"
 #include "geom_atoms.h"
 
-//TODO Is GEOSDistanceWithin(g1,g2,0) the same (performance) as GEOSIntersects(g1,g2)?
-
 /********** Geo Update Start **********/
+#ifdef HAVE_RTREE
 static str
 filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_geom, mbr *const_mbr, double distance, bit anti, char (*func) (const GEOSGeometry *, const GEOSGeometry *, double), const char *name)
 {
@@ -45,6 +44,13 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 
 	//Get a candidate list from searching on the rtree with the constant mbr
 	BUN* results_rtree = RTREEsearch(b,(mbr_t*)const_mbr, b->batCount);
+	if (results_rtree == NULL) {
+		BBPunfix(b->batCacheid);
+		if (s)
+			BBPunfix(s->batCacheid);
+		BBPreclaim(out);
+		throw(MAL, name, "RTreesearch failed, returned NULL candidates");
+	}
 
 	//TODO Change literal value of BUN_NONE to BUN_NONE in loop condition
 	//Cycle through rtree candidates
@@ -52,9 +58,7 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 	//Then do the actual calculation for the predicate using the GEOS function
 	for (int i = 0; results_rtree[i] != 18446744073709551615U && i < (int) b->batCount; i++) {
 		oid cand = results_rtree[i];
-
 		//If we have a candidate list that is not dense, we need to check if the rtree candidate is also on the original candidate list
-		//TODO Check w Stefanos
 		if (ci.tpe != cand_dense) {
 			//If the original candidate list does not contain the rtree cand, move on to next one
 			if (!canditer_contains(&ci,cand))
@@ -98,6 +102,7 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 	BBPkeepref(out);
 	return MAL_SUCCEED;
 }
+#endif
 
 static str
 filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, double distance, bit anti, char (*func) (const GEOSGeometry *, const GEOSGeometry *, double), const char *name)
@@ -180,6 +185,7 @@ filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const,
 
 str
 wkbIntersectsSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti) {
+#ifdef HAVE_RTREE
 	//If there is an RTree on memory or on file, use the RTree method. Otherwise, use the no index version.
 	if (RTREEexists_bid((bat*)bid)) {
 		//Calculate MBR of constant geometry first
@@ -200,10 +206,14 @@ wkbIntersectsSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_
 	}
 	else
 		return filterSelectNoIndex(outid,bid,sid,*wkb_const,0,*anti,GEOSDistanceWithin,"geom.wkbIntersectsSelectNoIndex");
+#else
+	return filterSelectNoIndex(outid,bid,sid,*wkb_const,0,*anti,GEOSDistanceWithin,"geom.wkbIntersectsSelectNoIndex");
+#endif
 }
 
 str
 wkbDWithinSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, double* distance, bit *anti) {
+#ifdef HAVE_RTREE
 	//If there is an RTree on memory or on file, use the RTree method. Otherwise, use the no index version.
 	if (RTREEexists_bid((bat*)bid)) {
 		//Calculate MBR of constant geometry first
@@ -222,7 +232,8 @@ wkbDWithinSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_con
 
 		//We expand the bounding box to cover the "distance within" area
 		//And use GEOSIntersects with the expanded bounding box
-		//TODO This expansion is too much
+		//This expands the box too much
+		//But better to get more false candidates than not getting a true candidate
 		const_mbr->xmin -=(*distance);
 		const_mbr->ymin -=(*distance);
 		const_mbr->xmax +=(*distance);
@@ -232,11 +243,19 @@ wkbDWithinSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_con
 	}
 	else
 		return filterSelectNoIndex(outid,bid,sid,*wkb_const,*distance,*anti,GEOSDistanceWithin,"geom.wkbDWithinSelectNoIndex");
+#else
+	return filterSelectNoIndex(outid,bid,sid,*wkb_const,*distance,*anti,GEOSDistanceWithin,"geom.wkbDWithinSelectNoIndex");
+#endif
 }
 
 str
 wkbIntersectsSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti) {
 	return filterSelectNoIndex(outid,bid,sid,*wkb_const,0,*anti,GEOSDistanceWithin,"geom.wkbIntersectsSelectNoIndex");
+}
+
+str
+wkbDWithinSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, double *distance, bit *anti) {
+	return filterSelectNoIndex(outid,bid,sid,*wkb_const,*distance,*anti,GEOSDistanceWithin,"geom.wkbIntersectsSelectNoIndex");
 }
 
 static str
@@ -389,6 +408,7 @@ free:
 	return msg;
 }
 
+#ifdef HAVE_RTREE
 static str
 filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, double double_flag, const bat *ls_id, const bat *rs_id, bit nil_matches, lng *estimate, char (*func) (const GEOSGeometry *, const GEOSGeometry *), const char *name) {
 	(void) lres_id;
@@ -404,21 +424,35 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 	(void) name;
 	return MAL_SUCCEED;
 }
+#endif
 
 str
 wkbIntersectsJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate) {
+#ifdef HAVE_RTREE
 	return filterJoinRTree(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,estimate,GEOSIntersects,"geom.wkbIntersectsJoinRTree");
+#else
+	return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,estimate,GEOSIntersects,"geom.wkbIntersectsJoinNoIndex");
+#endif
 }
 
 str
 wkbDWithinJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, double *distance, bit *nil_matches, lng *estimate) {
 	(void) distance;
-	return filterJoinRTree(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,estimate,GEOSIntersects,"geom.wkbDWithinJoinRTree");
+#ifdef HAVE_RTREE
+	return filterJoinRTree(lres_id,rres_id,l_id,r_id,*distance,ls_id,rs_id,*nil_matches,estimate,GEOSIntersects,"geom.wkbDWithinJoinRTree");
+#else
+	return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,*distance,ls_id,rs_id,*nil_matches,estimate,GEOSIntersects,"geom.wkbDWithinJoinNoIndex");
+#endif
 }
 
 str
 wkbIntersectsJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate) {
 	return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,estimate,GEOSIntersects,"geom.wkbIntersectsJoinNoIndex");
+}
+
+str
+wkbDWithinJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, double *distance, bit *nil_matches, lng *estimate) {
+	return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,*distance,ls_id,rs_id,*nil_matches,estimate,GEOSIntersects,"geom.wkbDWithinJoinNoIndex");
 }
 
 //MBR bulk function
@@ -467,9 +501,10 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 
 	*outBAT_id = outBAT->batCacheid;
 
+#ifdef HAVE_RTREE
 	//Build RTree index using the mbr's we just calculated, and save it on the wkb BAT
 	BATrtree(inBAT,outBAT);
-
+#endif
 	BBPkeepref(outBAT);
 	return MAL_SUCCEED;
 }
@@ -484,6 +519,16 @@ wkbTransform_bat(bat *outBAT_id, bat *inBAT_id, int *srid_src, int *srid_dst, ch
 str
 wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, int *srid_dst, char **proj4_src_str, char **proj4_dst_str)
 {
+#ifndef HAVE_PROJ
+	*outBAT_id = NULL;
+	(void) inBAT_id;
+	(void) s_id;
+	(void) srid_src;
+	(void) srid_dst;
+	(void) proj4_src_str;
+	(void) proj4_dst_str;
+	throw(MAL, "geom.Transform", SQLSTATE(38000) "PROJ library not found");
+#else
 	BAT *outBAT = NULL, *inBAT = NULL, *s = NULL;;
 	BATiter inBAT_iter;
 	str err = MAL_SUCCEED;
@@ -607,6 +652,7 @@ wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, i
 	BBPkeepref(outBAT);
 
 	return MAL_SUCCEED;
+#endif
 }
 
 /* ST_DistanceGeographic Bulk function */
@@ -692,6 +738,7 @@ clean:
 		BBPunfix(a->batCacheid);
 	if (b)
 		BBPunfix(b->batCacheid);
+	BBPunfix(out->batCacheid);
 	return msg;
 }
 

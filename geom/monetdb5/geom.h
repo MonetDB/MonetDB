@@ -226,4 +226,7 @@ geom_export str wkbIntersectsSelectRTree(bat* outid, const bat *bid , const bat 
 geom_export str wkbDWithinJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, double *distance, bit *nil_matches, lng *estimate);
 geom_export str wkbDWithinSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, double *distance, bit *anti);
 
+str wkbDWithinJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, double *distance, bit *nil_matches, lng *estimate);
+str wkbDWithinSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, double *distance, bit *anti);
+
 geom_export str mbrIntersects(bit* out, mbr** mbr1, mbr** mbr2);
