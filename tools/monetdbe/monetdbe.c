@@ -2289,11 +2289,11 @@ remote_cleanup:
 			char *prev_base;
 			size_t prev_size;
 			prev_base = bn->theap->base;
-			prev_size = bn->theap->size;
+			prev_size = bn->theap->free;
 
 			//BAT heap base to input[i]->data
 			bn->theap->base = input[i]->data;
-			bn->theap->size = tailsize(bn, cnt);
+			bn->theap->free = tailsize(bn, cnt);
 
 			//BATsetdims(bn); called in COLnew
 			BATsetcapacity(bn, cnt);
@@ -2312,14 +2312,14 @@ remote_cleanup:
 
 			if (store->storage_api.append_col(m->session->tr, c, offset, pos, bn, cnt, TYPE_bat) != 0) {
 				bn->theap->base = prev_base;
-				bn->theap->size = prev_size;
+				bn->theap->free = prev_size;
 				BBPreclaim(bn);
 				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append BAT"));
 				goto cleanup;
 			}
 
 			bn->theap->base = prev_base;
-			bn->theap->size = prev_size;
+			bn->theap->free = prev_size;
 			BBPreclaim(bn);
 		} else if (mtype == TYPE_str) {
 			char **d = (char**)v;
