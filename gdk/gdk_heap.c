@@ -45,6 +45,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
+#include "gdk_interprocess.h"
 #include "mutils.h"
 
 static void *
@@ -606,7 +607,7 @@ void
 HEAPfree(Heap *h, bool rmheap)
 {
 	if (h->base) {
-		if (h->farmid == 1) {
+		if (h->farmid == 1 && (h->storage == STORE_MEM || h->storage == STORE_MMAP || h->storage == STORE_PRIV)) {
 			QryCtx *qc = MT_thread_get_qry_ctx();
 			if (qc)
 				ATOMIC_SUB(&qc->datasize, h->size);
@@ -617,7 +618,11 @@ HEAPfree(Heap *h, bool rmheap)
 		} else if (h->storage == STORE_CMEM) {
 			//heap is stored in regular C memory rather than GDK memory,so we call free()
 			free(h->base);
-		} else {	/* mapped file, or STORE_PRIV */
+		} else if (h->storage == STORE_MMAPABS) {
+			size_t id;
+			sscanf(h->filename, "%zu", &id);
+			GDKreleasemmap(h->base, h->size, id);
+		} else if (h->storage != STORE_NOWN) {	/* mapped file, or STORE_PRIV */
 			gdk_return ret = GDKmunmap(h->base, h->size);
 
 			if (ret != GDK_SUCCEED) {
