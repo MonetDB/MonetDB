@@ -47,8 +47,6 @@ GEOSGeom_getCollectionType (int GEOSGeom_type) {
 }
 
 /* Group By operation. Joins geometries together in the same group into a MultiGeometry */
-//TODO Check if the SRID is consistent within a group (right now we only use the first SRID)
-//TODO The number of candidates is getting wrong here
 str
 wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
 {
@@ -94,7 +92,6 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 		b = sortedinput;
 		g = sortedgroups;
 		BBPunfix(sortedorder->batCacheid);
-
 	}
 	else {
 		BBPunfix(sortedgroups->batCacheid);
@@ -121,7 +118,6 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	}
 
 	//Intermediate array for all the geometries in a group
-	//TODO Change allocation size
 	if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ci.ncand)) == NULL) {
 		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		BBPunfix(out->batCacheid);
@@ -133,6 +129,8 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	if (g && !BATtdense(g))
 		gids = (const oid *)Tloc(g, 0);
 	bi = bat_iterator(b);
+	//SRID for collection
+	int srid = 0;
 
 	for (BUN i = 0; i < ci.ncand; i++) {
 		oid o = canditer_next(&ci);
@@ -140,21 +138,19 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 		oid grp = gids ? gids[p] : g ? min + (oid)p : 0;
 		wkb *inWKB = (wkb *)BUNtvar(bi, p);
 		GEOSGeom inGEOM = wkb2geos(inWKB);
-		//int srid = 0;
+
 
 		if (grp != lastGrp) {
 			if (lastGrp != (oid)-1) {
 				//Finish the previous group, move on to the next one
 				collection = GEOSGeom_createCollection(geomCollectionType, unionGroup, (unsigned int) geomCount);
-				//TODO Set SRID for collection
+				GEOSSetSRID(collection,srid);
 				//Save collection to unions array as wkb
 				unions[lastGrp] = geos2wkb(collection);
 
-				//TODO Frees for the previous group (am I missing the GEOSGeom_destroy call for unionGroup[i])?
 				GEOSGeom_destroy(collection);
 				GDKfree(unionGroup);
 
-				//TODO Change allocation size
 				if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ci.ncand)) == NULL) {
 					msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					//Frees
@@ -176,7 +172,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 			geomCount = 0;
 			lastGrp = grp;
 			geomCollectionType = GEOSGeom_getCollectionType(GEOSGeomTypeId(inGEOM));
-			//srid = GEOSGetSRID(inGEOM);
+			srid = GEOSGetSRID(inGEOM);
 		}
 		unionGroup[geomCount] = inGEOM;
 		geomCount += 1;
@@ -185,6 +181,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	}
 	//Last collection
 	collection = GEOSGeom_createCollection(geomCollectionType, unionGroup, (unsigned int) geomCount);
+	GEOSSetSRID(collection,srid);
 	unions[lastGrp] = geos2wkb(collection);
 
 	GEOSGeom_destroy(collection);
@@ -253,12 +250,15 @@ wkbCollectAggr (wkb **out, const bat *bid) {
 		BBPunfix(b->batCacheid);
 		return msg;
 	}
+	int srid = -1;
 
 	BATiter bi = bat_iterator(b);
 	for (BUN i = 0; i < count; i++) {
 		oid p = i + b->hseqbase;
 		wkb *inWKB = (wkb *)BUNtvar(bi, p);
 		unionGroup[i] = wkb2geos(inWKB);
+		if (srid == -1)
+			srid = GEOSGetSRID(unionGroup[i]);
 
 		//Set collection type on first geometry
 		if (geomCollectionType == -1)
@@ -268,6 +268,7 @@ wkbCollectAggr (wkb **out, const bat *bid) {
 			geomCollectionType = GEOS_GEOMETRYCOLLECTION;
 	}
 	collection = GEOSGeom_createCollection(geomCollectionType, unionGroup, (unsigned int) count);
+	GEOSSetSRID(collection,srid);
 	//Result
 	(*out) = geos2wkb(collection);
 	if (*out == NULL)
@@ -5525,7 +5526,9 @@ static mel_func geom_init_funcs[] = {
  command("geom", "Intersects_noindexselect", wkbIntersectsSelectNoIndex, false, "TODO", args(1, 5, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("anti",bit))),
  command("geom", "Intersects_noindexjoin", wkbIntersectsJoinNoIndex, false, "TODO", args(2, 8, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
 
- command("geom", "DWithin", wkbDWithin, false, "Returns true if the two geometries are within the specifies distance from each other", args(1,4, arg("",bit),arg("a",wkb),arg("b",wkb),arg("dst",dbl))),
+ command("geom", "DWithin_noindex", wkbDWithin, false, "Returns true if the two geometries are within the specifies distance from each other", args(1,4, arg("",bit),arg("a",wkb),arg("b",wkb),arg("dst",dbl))),
+ command("geom", "DWithinselect_noindex", wkbDWithinSelectRTree, false, "TODO", args(1, 6, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("dst",dbl), arg("anti",bit))),
+ command("geom", "DWithinjoin_noindex", wkbDWithinJoinRTree, false, "TODO", args(2, 9, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("sl",oid),batarg("sr",oid), arg("dst",dbl),arg("nil_matches",bit),arg("estimate",lng))),
 
  command("geom", "IntersectsMBR", mbrIntersects, false, "TODO", args(1,3, arg("",bit),arg("a",mbr),arg("b",mbr))),
 

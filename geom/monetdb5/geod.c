@@ -1094,6 +1094,7 @@ filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const
 				else
 					continue;
 			}
+			//TODO Do we need to do this check for every element?
 			if (GEOSGetSRID(l_geom) != GEOSGetSRID(r_geom)) {
 				msg = createException(MAL, name, SQLSTATE(38000) "Geometries of different SRID");
 				bat_iterator_end(&l_iter);
