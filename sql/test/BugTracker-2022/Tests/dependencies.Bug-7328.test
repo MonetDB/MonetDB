@@ -43,7 +43,7 @@ mmtest02
 1
 7
 
-# as only 1 column is specified in the function mmtest02 we expect only 1 dependency, instead we get 2 columns returned
+# even when only 1 column is specified in the function mmtest02 body, the insert statement depends on all (2) columns of a table
 
 # an extra test to check what happens when no columns are listed in the insert statement
 statement ok
@@ -95,7 +95,7 @@ mmtest03
 1
 7
 
-# as no columns are specified in the function mmtest03 we expect also 0 dependencies here, instead we get 2 columns returned
+# even when 0 columns are specified in the function mmtest03 body, the insert statement depends on all (2) columns of a table
 
 # also check what happens when you specify DELETE instead of INSERT
 statement ok
