@@ -113,14 +113,14 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	//All unions for output BAT
 	if ((unions = GDKzalloc(sizeof(wkb *) * ngrp)) == NULL) {
 		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		BBPunfix(out->batCacheid);
+		BBPreclaim(out);
 		goto free;
 	}
 
 	//Intermediate array for all the geometries in a group
 	if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ci.ncand)) == NULL) {
 		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		BBPunfix(out->batCacheid);
+		BBPreclaim(out);
 		if (unions)
 			GDKfree(unions);
 		goto free;
@@ -188,7 +188,6 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	GDKfree(unionGroup);
 
 	if (BUNappendmulti(out, unions, ngrp, false) != GDK_SUCCEED) {
-		//TODO Free out BAT
 		msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
 		bat_iterator_end(&bi);
 		if (unions) {
@@ -219,6 +218,7 @@ free:
 		BBPunfix(g->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	BBPreclaim(out);
 	return msg;
 }
 
@@ -228,7 +228,6 @@ wkbCollectAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *ei
 	return wkbCollectAggrSubGroupedCand(out, bid, gid, eid, NULL, skip_nils);
 }
 
-//TODO Use this for the grouped version, just need to separate the groups and then call this one
 str
 wkbCollectAggr (wkb **out, const bat *bid) {
 	str msg = MAL_SUCCEED;
@@ -3325,7 +3324,6 @@ wkbMakeLine(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
 		GEOSCoordSeq_destroy(outCoordSeq);
 	GEOSGeom_destroy(geom1Geometry);
 	GEOSGeom_destroy(geom2Geometry);
-
 	return err;
 }
 
@@ -3513,14 +3511,14 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 	//Create an array of WKB to hold the results of the MakeLine
 	if ((lines = GDKzalloc(sizeof(wkb *) * ngrp)) == NULL) {
 		msg = createException(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		BBPunfix(out->batCacheid);
+		BBPreclaim(out);
 		goto free;
 	}
 
 	//Create an array of WKB to hold the points to be made into a line (for one group at a time)
 	if ((lineGroup = GDKzalloc(sizeof(wkb*) * ci.ncand)) == NULL) {
 		msg = createException(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		BBPunfix(out->batCacheid);
+		BBPreclaim(out);
 		goto free;
 	}
 
@@ -3546,7 +3544,6 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 	msg = wkbMakeLineAggrArray(&lines[lastGrp], lineGroup, position);
 
 	if (BUNappendmulti(out, lines, ngrp, false) != GDK_SUCCEED) {
-		//TODO Free out BAT
 		msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
 		bat_iterator_end(&bi);
 		goto free;
@@ -3569,6 +3566,7 @@ free:
 		BBPunfix(g->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	BBPreclaim(out);
 	return msg;
 }
 
