@@ -10,23 +10,22 @@
 ------------------------- Geography functions ---------------------------
 -------------------------------------------------------------------------
 CREATE FUNCTION ST_DistanceGeographic(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom."DistanceGeographic";
-GRANT EXECUTE ON FUNCTION ST_DistanceGeographic(Geometry, Geometry) TO PUBLIC;
-CREATE FUNCTION ST_CoversGeographic(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."CoversGeographic";
-GRANT EXECUTE ON FUNCTION ST_CoversGeographic(Geometry, Geometry) TO PUBLIC;
-
-CREATE AGGREGATE ST_Collect(geom Geometry) RETURNS Geometry external name aggr."Collect";
-
 CREATE FILTER FUNCTION ST_DWithinGeographic(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME geom."DWithinGeographic";
 CREATE FILTER FUNCTION ST_IntersectsGeographic(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom."IntersectsGeographic";
 
-CREATE FUNCTION ST_IntersectsMBR(mbr1 mbr, mbr2 mbr) RETURNS bool EXTERNAL NAME geom."IntersectsMBR";
+-------------------------------------------------------------------------
+----------------------- New Geometry functions --------------------------
+-------------------------------------------------------------------------
+CREATE AGGREGATE ST_Collect(geom Geometry) RETURNS Geometry external name aggr."Collect";
+
 CREATE FILTER FUNCTION ST_Intersects(geom1 Geometry, geom2 Geometry) EXTERNAL NAME rtree."Intersects";
 CREATE FILTER FUNCTION ST_Intersects_NoIndex(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom."Intersects_noindex";
 
 CREATE FILTER FUNCTION ST_DWithin(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME rtree."DWithin";
 CREATE FUNCTION ST_DWithin_NoIndex(geom1 Geometry, geom2 Geometry, distance double) RETURNS boolean EXTERNAL NAME geom."DWithin";
+
 -------------------------------------------------------------------------
-------------------------- Geography functions ---------------------------
+------------------------- Old Geom functions ----------------------------
 -------------------------------------------------------------------------
 
 -- make sure you load the geom module before loading this sql module
