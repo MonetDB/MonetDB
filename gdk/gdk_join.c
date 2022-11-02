@@ -3170,7 +3170,10 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 	} else {
 		BUN prb;
 		BUN mask;
-		Hash hs = {0};
+		Hash hs = {
+			.heapbckt.parentid = b->batCacheid,
+			.heaplink.parentid = b->batCacheid,
+		};
 
 		GDKclrerr();	/* not interested in BAThash errors */
 		algomsg = "new partial hash";
