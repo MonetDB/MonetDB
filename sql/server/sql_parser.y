@@ -384,6 +384,7 @@ int yydebug=1;
     odbc_time_escape
     odbc_timestamp_escape
     odbc_guid_escape
+    odbc_literal_escape
 
 %type <type>
 	data_type
@@ -4881,6 +4882,7 @@ literal:
 		} }
  |  odbc_timestamp_escape
  |  interval_expression
+ |  odbc_literal_escape
  |  blob string
 		{ sql_subtype t;
 		  atom *a= 0;
@@ -6302,6 +6304,10 @@ odbc_guid_escape:
                 YYABORT;
             $$ = node;
         }
+    ;
+
+odbc_literal_escape:
+     '{' interval_expression '}' {$$ = $2;}
     ;
 
 %%

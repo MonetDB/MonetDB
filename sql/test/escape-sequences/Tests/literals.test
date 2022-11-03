@@ -29,3 +29,8 @@ query T rowsort
 select {guid 'e751f9e0-2cee-4eca-b0c2-1cf108cebd18'}
 ----
 e751f9e0-2cee-4eca-b0c2-1cf108cebd18
+
+query T rowsort
+select {interval '1' day}
+----
+1
