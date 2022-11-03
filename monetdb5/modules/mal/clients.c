@@ -107,7 +107,7 @@ static str
 CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret=  getArgReference_bat(stk,pci,0);
-	bat *ret2=  getArgReference_bat(stk,pci,0);
+	bat *ret2=  getArgReference_bat(stk,pci,1);
 	BAT *b = COLnew(0, TYPE_str, 12, TRANSIENT);
 	BAT *bn = COLnew(0, TYPE_str, 12, TRANSIENT);
 	char buf[32]; /* 32 bytes are enough */
