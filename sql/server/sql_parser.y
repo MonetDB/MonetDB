@@ -24,7 +24,7 @@ static int sqlformaterror(mvc *sql, _In_z_ _Printf_format_string_ const char *fo
 static void *ma_alloc(sql_allocator *sa, size_t sz);
 static void ma_free(void *p);
 static inline symbol*
-makeAtomNode(mvc *m, const char* type, const char* val, unsigned int digits, unsigned int scale);
+makeAtomNode(mvc *m, const char* type, const char* val, unsigned int digits, unsigned int scale, bool bind);
 
 #include <unistd.h>
 #include <string.h>
@@ -383,6 +383,7 @@ int yydebug=1;
     odbc_date_escape
     odbc_time_escape
     odbc_timestamp_escape
+    odbc_guid_escape
 
 %type <type>
 	data_type
@@ -727,7 +728,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token X_BODY 
 %token MAX_MEMORY MAX_WORKERS OPTIMIZER
 /* escape sequence tokens */
-%token<sval> DATE_ESCAPE_PREFIX TIME_ESCAPE_PREFIX TIMESTAMP_ESCAPE_PREFIX
+%token<sval> DATE_ESCAPE_PREFIX TIME_ESCAPE_PREFIX TIMESTAMP_ESCAPE_PREFIX GUID_ESCAPE_PREFIX
 %%
 
 sqlstmt:
@@ -4845,7 +4846,7 @@ literal:
 		  $$ = _newAtomNode(atom_float(SA, &t, val)); }
  |  sqlDATE string
         {
-            symbol* node = makeAtomNode(m, "date", $2, 0, 0);
+            symbol* node = makeAtomNode(m, "date", $2, 0, 0, false);
             if (node == NULL)
                 YYABORT;
             $$ = node;
@@ -4955,6 +4956,7 @@ literal:
 		  }
 		  $$ = _newAtomNode(a);
 		}
+ |  odbc_guid_escape
  |  BOOL_FALSE
 		{ sql_subtype t;
 		  sql_find_subtype(&t, "boolean", 0, 0 );
@@ -5576,6 +5578,7 @@ non_reserved_word:
 | DATE_ESCAPE_PREFIX { $$ = sa_strdup(SA, "d"); }
 | TIME_ESCAPE_PREFIX { $$ = sa_strdup(SA, "t"); }
 | TIMESTAMP_ESCAPE_PREFIX { $$ = sa_strdup(SA, "ts"); }
+| GUID_ESCAPE_PREFIX { $$ = sa_strdup(SA, "guid"); }
 ;
 
 lngval:
@@ -6261,7 +6264,7 @@ XML_aggregate:
 odbc_date_escape:
     '{' DATE_ESCAPE_PREFIX string '}'
         {
-            symbol* node = makeAtomNode(m, "date", $3, 0, 0);
+            symbol* node = makeAtomNode(m, "date", $3, 0, 0, false);
             if (node == NULL)
                 YYABORT;
             $$ = node;
@@ -6272,7 +6275,7 @@ odbc_time_escape:
     '{' TIME_ESCAPE_PREFIX string '}'
         {
             unsigned int pr = get_time_precision($3) + 1;
-            symbol* node = makeAtomNode(m, "time", $3, pr, 0);
+            symbol* node = makeAtomNode(m, "time", $3, pr, 0, false);
             if (node == NULL)
                 YYABORT;
             $$ = node;
@@ -6284,7 +6287,17 @@ odbc_timestamp_escape:
         {
             unsigned int pr = get_timestamp_precision($3);
             pr = pr ? (pr + 1) : (pr + 6);
-            symbol* node = makeAtomNode(m, "timestamp", $3, pr, 0);
+            symbol* node = makeAtomNode(m, "timestamp", $3, pr, 0, false);
+            if (node == NULL)
+                YYABORT;
+            $$ = node;
+        }
+    ;
+
+odbc_guid_escape:
+    '{' GUID_ESCAPE_PREFIX string '}'
+        {
+            symbol* node = makeAtomNode(m, "uuid", $3, 0, 0, true);
             if (node == NULL)
                 YYABORT;
             $$ = node;
@@ -6294,12 +6307,22 @@ odbc_timestamp_escape:
 %%
 
 static inline symbol*
-makeAtomNode(mvc *m, const char* type, const char* val, unsigned int digits, unsigned int scale) {
-    sql_subtype t;
+makeAtomNode(mvc *m, const char* typename, const char* val, unsigned int digits, unsigned int scale, bool bind) {
+    sql_subtype sub_t;
     atom *a;
-    int r = sql_find_subtype(&t, type, digits, scale);
-    if (!r || (a = atom_general(m->sa, &t, val)) == NULL) {
-        sqlformaterror(m, SQLSTATE(22007) "Incorrect %s value (%s)", type, val);
+    int r;
+    if (bind) {
+        sql_type* t = NULL;
+        if (!(t = mvc_bind_type(m, typename))) {
+            sqlformaterror(m, SQLSTATE(22000) "Type (%s) unknown", typename);
+            return NULL;
+        }
+        sql_init_subtype(&sub_t, t, 0, 0);
+    } else {
+        r = sql_find_subtype(&sub_t, typename, digits, scale);
+    }
+    if (!r || (a = atom_general(m->sa, &sub_t, val)) == NULL) {
+        sqlformaterror(m, SQLSTATE(22007) "Incorrect %s value (%s)", typename, val);
         return NULL;
     }
     return _newAtomNode(a);
