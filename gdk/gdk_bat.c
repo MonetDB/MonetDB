@@ -2317,7 +2317,7 @@ BATsetaccess(BAT *b, restrict_t newmode)
 	BATcheck(b, NULL);
 	if (newmode != BAT_READ &&
 	    (isVIEW(b) || (ATOMIC_GET(&b->theap->refs) & HEAPREFS) > 1)) {
-		BAT *bn = COLcopy(b, b->ttype, true, TRANSIENT);
+		BAT *bn = COLcopy(b, b->ttype, true, b->batRole);
 		BBPunfix(b->batCacheid);
 		if (bn == NULL)
 			return NULL;
