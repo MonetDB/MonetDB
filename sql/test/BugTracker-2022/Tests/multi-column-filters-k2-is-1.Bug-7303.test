@@ -1,0 +1,48 @@
+-- Performance issue 7303 is split in 2 tests, such that they can be run separately and execution timing be compared
+
+statement ok
+CREATE TABLE t7303 (k1 int, k2 int, k1k2 varchar(22))
+
+-- fill table with k2 set to 1 for all rows
+statement ok
+INSERT INTO t7303
+SELECT value AS k1, 1 AS k2, value || '.' || 1 AS k1k2 -- concatenated k1 and 1
+FROM generate_series(1, 1000000)
+
+-- not sure if this index is actually created
+statement ok
+CREATE INDEX t7303_index on t7303 (k1, k2)
+
+query IIT nosort
+SELECT * FROM t7303 LIMIT 3
+----
+1
+1
+1.1
+2
+1
+2.1
+3
+1
+3.1
+
+-- multiple columns filtering
+-- this used to be a performance problem (due to very long collision chain of oids for hash on k2)
+query IIT nosort
+SELECT * FROM t7303 WHERE k1 = 555555 AND k2 = 1
+----
+555555
+1
+555555.1
+
+-- single column filtering
+query IIT nosort
+SELECT * FROM t7303 WHERE k1k2 = '555555.1'
+----
+555555
+1
+555555.1
+
+statement ok
+DROP TABLE t7303
+

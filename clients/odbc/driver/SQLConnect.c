@@ -121,7 +121,6 @@ MNDBConnect(ODBCDbc *dbc,
 	char pwd[32];
 	char buf[256];
 	char db[32];
-	char *s;
 	int n;
 	Mapi mid;
 
@@ -151,9 +150,23 @@ MNDBConnect(ODBCDbc *dbc,
 					       logfile, sizeof(logfile),
 					       "odbc.ini");
 		if (n > 0) {
-			if (ODBCdebug)
-				free((void *) ODBCdebug); /* discard const */
+			free((void *) ODBCdebug); /* discard const */
+#ifdef NATIVE_WIN32
+			size_t attrlen = strlen(logfile);
+			SQLWCHAR *wattr = malloc((attrlen + 1) * sizeof(SQLWCHAR));
+			if (ODBCutf82wchar(logfile,
+					   (SQLINTEGER) attrlen,
+					   wattr,
+					   (SQLLEN) ((attrlen + 1) * sizeof(SQLWCHAR)),
+					   NULL,
+					   NULL)) {
+				free(wattr);
+				wattr = NULL;
+			}
+			ODBCdebug = wattr;
+#else
 			ODBCdebug = strdup(logfile);
+#endif
 		}
 	}
 #endif
@@ -213,8 +226,15 @@ MNDBConnect(ODBCDbc *dbc,
 	if (dbname && !*dbname)
 		dbname = NULL;
 
+#ifdef NATIVE_WIN32
+	wchar_t *s;
+	if (port == 0 && (s = _wgetenv(L"MAPIPORT")) != NULL)
+		port = _wtoi(s);
+#else
+	char *s;
 	if (port == 0 && (s = getenv("MAPIPORT")) != NULL)
 		port = atoi(s);
+#endif
 	if (port == 0 && dsn && *dsn) {
 		n = SQLGetPrivateProfileString(dsn, "port", MAPI_PORT_STR,
 					       buf, sizeof(buf), "odbc.ini");
