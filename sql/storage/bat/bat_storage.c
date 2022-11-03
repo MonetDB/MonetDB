@@ -474,7 +474,7 @@ new_segments(sql_trans *tr, size_t cnt)
 static int
 temp_dup_cs(column_storage *cs, ulng tid, int type)
 {
-	BAT *b = bat_new(type, 1024, TRANSIENT);
+	BAT *b = bat_new(type, 1024, SYSTRANS);
 	if (!b)
 		return LOG_ERR;
 	bat_set_access(b, BAT_READ);
@@ -838,8 +838,8 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 	int err = 0;
 	BAT *uv = *UV;
 	BUN cnt = BATcount(ui)+BATcount(oi);
-	BAT *ni = bat_new(TYPE_oid, cnt, TRANSIENT);
-	BAT *nv = uv?bat_new(uv->ttype, cnt, TRANSIENT):NULL;
+	BAT *ni = bat_new(TYPE_oid, cnt, SYSTRANS);
+	BAT *nv = uv?bat_new(uv->ttype, cnt, SYSTRANS):NULL;
 
 	if (!ni || (uv && !nv)) {
 		bat_destroy(ni);
@@ -1244,7 +1244,7 @@ dict_append_bat(sql_trans *tr, sql_delta **batp, BAT *i)
 				}
 				if (cs->ucnt) {
 					BAT *ui = NULL, *uv = NULL;
-					BAT *nb = COLcopy(b, b->ttype, true, TRANSIENT);
+					BAT *nb = COLcopy(b, b->ttype, true, SYSTRANS);
 					bat_destroy(b);
 					if (!nb || cs_real_update_bats(cs, &ui, &uv) != LOG_OK) {
 						bat_destroy(nb);
@@ -1351,7 +1351,7 @@ for_append_bat(column_storage *cs, BAT *i, char *storage_type)
 		if (!newoffsets) { /* decompress */
 			if (cs->ucnt) {
 				BAT *ui = NULL, *uv = NULL;
-				BAT *nb = COLcopy(b, b->ttype, true, TRANSIENT);
+				BAT *nb = COLcopy(b, b->ttype, true, SYSTRANS);
 				bat_destroy(b);
 				if (!nb || cs_real_update_bats(cs, &ui, &uv) != LOG_OK) {
 					bat_destroy(nb);
@@ -1418,7 +1418,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 			return LOG_ERR;
 		}
 	} else if (updates && updates->ttype == TYPE_void && !complex_cand(updates)) { /* dense later use optimized log structure */
-		updates = COLcopy(updates, TYPE_oid, true /* make sure we get a oid col */, TRANSIENT);
+		updates = COLcopy(updates, TYPE_oid, true /* make sure we get a oid col */, SYSTRANS);
 		if (!updates) {
 			if (otids != tids)
 				bat_destroy(tids);
@@ -1499,7 +1499,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 					BUN lend = end < seg->end?end:seg->end;
 					if (seg->ts == tr->tid && !seg->deleted) {
 						if (!ins) {
-							ins = COLnew(0, TYPE_msk, ucnt, TRANSIENT);
+							ins = COLnew(0, TYPE_msk, ucnt, SYSTRANS);
 							if (!ins)
 								res = LOG_ERR;
 							else {
@@ -1543,7 +1543,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 					/* check for inplace updates */
 					if (seg->ts == tr->tid && !seg->deleted) {
 						if (!ins) {
-							ins = COLnew(0, TYPE_msk, ucnt, TRANSIENT);
+							ins = COLnew(0, TYPE_msk, ucnt, SYSTRANS);
 							if (!ins) {
 								res = LOG_ERR;
 								break;
@@ -1583,7 +1583,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 					/* check for inplace updates */
 					if (seg->ts == tr->tid && !seg->deleted) {
 						if (!ins) {
-							ins = COLnew(0, TYPE_msk, ucnt, TRANSIENT);
+							ins = COLnew(0, TYPE_msk, ucnt, SYSTRANS);
 							if (!ins) {
 								res = LOG_ERR;
 								break;
@@ -1639,8 +1639,8 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 
 				if (res == LOG_OK) {
 					const void *upd = NULL;
-					nui = bat_new(TYPE_oid, cs->ucnt + ucnt - cnt, TRANSIENT);
-					nuv = bat_new(uv->ttype, cs->ucnt + ucnt - cnt, TRANSIENT);
+					nui = bat_new(TYPE_oid, cs->ucnt + ucnt - cnt, SYSTRANS);
+					nuv = bat_new(uv->ttype, cs->ucnt + ucnt - cnt, SYSTRANS);
 
 					if (!nui || !nuv) {
 						res = LOG_ERR;
@@ -4555,7 +4555,7 @@ add_offsets(BUN slot, size_t nr, size_t total, BUN *offset, BAT **offsets)
 		return LOG_OK;
 	}
 	if (!*offsets) {
-		*offsets = COLnew(0, TYPE_oid, total, TRANSIENT);
+		*offsets = COLnew(0, TYPE_oid, total, SYSTRANS);
 		if (!*offsets)
 			return LOG_ERR;
 	}
@@ -4812,7 +4812,7 @@ segments2cands(storage *S, sql_trans *tr, sql_table *t, size_t start, size_t end
 		return BATdense(start, start, end-start);
 	}
 
-	BAT *b = COLnew(0, TYPE_msk, nr, TRANSIENT), *bn = NULL;
+	BAT *b = COLnew(0, TYPE_msk, nr, SYSTRANS), *bn = NULL;
 	if (!b) {
 		unlock_table(tr->store, t->base.id);
 		return NULL;
