@@ -90,8 +90,7 @@ ic_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cn
 				/* not enough space in output buffer */
 				break;
 			default:
-				/* cannot happen (according to manual) */
-				mnstr_set_error(s, MNSTR_WRITE_ERROR, "iconv internal error %d", errno);
+				mnstr_set_error_errno(s, MNSTR_WRITE_ERROR, "iconv reported an error");
 				goto bailout;
 			}
 		}
@@ -153,7 +152,7 @@ ic_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 			}
 			if (iconv(ic->cd, NULL, NULL, &outbuf, &outbytesleft) == (size_t) -1) {
 				/* some error occurred */
-				mnstr_set_error(s, MNSTR_READ_ERROR, "unspecified iconv error occurred");
+				mnstr_set_error_errno(s, MNSTR_READ_ERROR, "iconv reported an error");
 				return -1;
 			}
 			goto exit_func;	/* double break */
@@ -176,8 +175,7 @@ ic_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 				 * the buffer */
 				goto exit_func;
 			default:
-				/* cannot happen (according to manual) */
-				mnstr_set_error(s, MNSTR_READ_ERROR, "inconv stream: internal error");
+				mnstr_set_error_errno(s, MNSTR_READ_ERROR, "iconv reported an error");
 				return -1;
 			}
 		}
