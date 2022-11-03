@@ -1,0 +1,47 @@
+-- Performance issue 7303 is split in 2 tests, such that they can be run separately and execution timing be compared
+
+statement ok
+CREATE TABLE t7303 (k1 int, k2 int, k1k2 varchar(22))
+
+-- fill table with k2 having unique values for all rows
+statement ok
+INSERT INTO t7303
+SELECT value AS k1, value AS k2, value || '.' || value AS k1k2 -- concatenated k1 and k2
+FROM generate_series(1, 1000000)
+
+-- not sure if this index is actually created
+statement ok
+CREATE INDEX t7303_index on t7303 (k1, k2)
+
+query IIT nosort
+SELECT * FROM t7303 LIMIT 3
+----
+1
+1
+1.1
+2
+2
+2.2
+3
+3
+3.3
+
+-- multiple columns filtering
+query IIT nosort
+SELECT * FROM t7303 WHERE k1 = 555555 AND k2 = 555555
+----
+555555
+555555
+555555.555555
+
+-- single column filtering
+query IIT nosort
+SELECT * FROM t7303 WHERE k1k2 = '555555.555555'
+----
+555555
+555555
+555555.555555
+
+statement ok
+DROP TABLE t7303
+
