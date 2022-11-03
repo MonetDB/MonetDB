@@ -2140,7 +2140,11 @@ struct sql_types ODBC_c_types[] = {
 
 #ifdef ODBCDEBUG
 
+#ifdef NATIVE_WIN32
+const wchar_t *ODBCdebug;
+#else
 const char *ODBCdebug;
+#endif
 static char unknown[32];
 
 char *
@@ -2711,15 +2715,26 @@ ODBCLOG(const char *fmt, ...)
 
 	va_start(ap, fmt);
 	if (ODBCdebug == NULL) {
+#ifdef NATIVE_WIN32
+		if ((ODBCdebug = _wgetenv(L"ODBCDEBUG")) == NULL)
+			ODBCdebug = _wcsdup(L"");
+		else
+			ODBCdebug = _wcsdup(ODBCdebug);
+#else
 		if ((ODBCdebug = getenv("ODBCDEBUG")) == NULL)
 			ODBCdebug = strdup("");
 		else
 			ODBCdebug = strdup(ODBCdebug);
+#endif
 	}
 	if (ODBCdebug != NULL && *ODBCdebug != 0) {
 		FILE *f;
 
+#ifdef NATIVE_WIN32
+		f = _wfopen(ODBCdebug, L"a");
+#else
 		f = fopen(ODBCdebug, "a");
+#endif
 		if (f) {
 			vfprintf(f, fmt, ap);
 			fclose(f);
