@@ -351,10 +351,12 @@ gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *for
 #include "stream.h"
 #include "mstring.h"
 
+#ifdef HAVE_RTREE
 #ifndef SIZEOF_RTREE_COORD_T
 #define SIZEOF_RTREE_COORD_T 4
 #endif
 #include <rtree.h>
+#endif
 
 #undef MIN
 #undef MAX
