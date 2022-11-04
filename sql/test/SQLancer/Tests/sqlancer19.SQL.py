@@ -8,7 +8,7 @@ db = os.environ['TSTDB']
 
 with SQLTestCase() as cli:
     cli.connect(username="monetdb", password="monetdb")
-    cli.execute("""
+    cli.execute(f"""
     START TRANSACTION;
     CREATE TABLE "t0" ("c0" INTERVAL SECOND NOT NULL, "c1" JSON);
     INSERT INTO "t0" VALUES (INTERVAL '9' SECOND, '""');
@@ -29,21 +29,21 @@ with SQLTestCase() as cli:
     INSERT INTO "t5" VALUES (0.928, NULL),(0.974, NULL),(NULL, false),(3.000, NULL),(NULL, false),(NULL, false),(NULL, true),(0.897, NULL),
     (0.646, NULL),(0.145, true),(0.848, false),(NULL, false);
     CREATE TABLE "t6" ("c1" CLOB);
-    INSERT INTO "t6" VALUES('3'), ('8ጮk|1*'), ('27'), ('Vrx^qA齀'), ('J'), ('18'), ('>*4嘁pAP'), ('+Jm*W0{'), ('>V鷓'), ('BW5z'), ('.#OJruk'),
+    INSERT INTO "t6" VALUES('3'), ('8ጮk|1*'), ('27'), ('Vrx^qA齀'), ('J'), ('18'), ('>*4嘁pAP'), ('+Jm*W0{{'), ('>V鷓'), ('BW5z'), ('.#OJruk'),
     ('lU1覃Nlm'), (NULL), ('968786590');
     CREATE TABLE "t7" ("c0" SMALLINT);
     INSERT INTO "t7" VALUES (0),(0),(3),(3),(7),(-1),(5),(NULL),(5),(0),(5),(6),(4),(4),(4),(6),(7),(-7),(0),(1),(5),(9),(9),(8),(0);
     COMMIT;
 
     START TRANSACTION;
-    CREATE REMOTE TABLE "rt1" ("c0" BINARY LARGE OBJECT,"c1" BIGINT) ON 'mapi:monetdb://localhost:%s/%s/sys/t1';
-    CREATE REMOTE TABLE "rt2" ("c0" TINYINT NOT NULL,"c2" DATE) ON 'mapi:monetdb://localhost:%s/%s/sys/t2';
-    CREATE REMOTE TABLE "rt3" ("c0" BIGINT,"c1" INTERVAL MONTH) ON 'mapi:monetdb://localhost:%s/%s/sys/t3';
-    CREATE REMOTE TABLE "rt4" ("c0" BIGINT PRIMARY KEY,"c1" INTERVAL MONTH) ON 'mapi:monetdb://localhost:%s/%s/sys/t4';
-    CREATE REMOTE TABLE "rt5" ("c0" DECIMAL(18,3),"c1" BOOLEAN) ON 'mapi:monetdb://localhost:%s/%s/sys/t5';
-    CREATE REMOTE TABLE "rt6" ("c1" CLOB) ON 'mapi:monetdb://localhost:%s/%s/sys/t6';
-    CREATE REMOTE TABLE "rt7" ("c0" SMALLINT) ON 'mapi:monetdb://localhost:%s/%s/sys/t7';
-    COMMIT;""" % (port, db, port, db, port, db, port, db, port, db, port, db, port, db)).assertSucceeded()
+    CREATE REMOTE TABLE "rt1" ("c0" BINARY LARGE OBJECT,"c1" BIGINT) ON 'mapi:monetdb://localhost:{port}/{db}/sys/t1';
+    CREATE REMOTE TABLE "rt2" ("c0" TINYINT NOT NULL,"c2" DATE) ON 'mapi:monetdb://localhost:{port}/{db}/sys/t2';
+    CREATE REMOTE TABLE "rt3" ("c0" BIGINT,"c1" INTERVAL MONTH) ON 'mapi:monetdb://localhost:{port}/{db}/sys/t3';
+    CREATE REMOTE TABLE "rt4" ("c0" BIGINT PRIMARY KEY,"c1" INTERVAL MONTH) ON 'mapi:monetdb://localhost:{port}/{db}/sys/t4';
+    CREATE REMOTE TABLE "rt5" ("c0" DECIMAL(18,3),"c1" BOOLEAN) ON 'mapi:monetdb://localhost:{port}/{db}/sys/t5';
+    CREATE REMOTE TABLE "rt6" ("c1" CLOB) ON 'mapi:monetdb://localhost:{port}/{db}/sys/t6';
+    CREATE REMOTE TABLE "rt7" ("c0" SMALLINT) ON 'mapi:monetdb://localhost:{port}/{db}/sys/t7';
+    COMMIT;""").assertSucceeded()
 
     cli.execute("START TRANSACTION;")
     cli.execute('SELECT json."integer"(JSON \'1\') FROM t3;') \

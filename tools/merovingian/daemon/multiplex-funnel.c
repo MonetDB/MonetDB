@@ -317,6 +317,8 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 				free(m->dbcv[i]->user);
 				free(m->dbcv[i]);
 			}
+			fclose(m->sout);
+			fclose(m->serr);
 			free(m->dbcv);
 			free(m->pool);
 			free(m);
@@ -331,6 +333,8 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 				free(m->dbcv[i]->user);
 				free(m->dbcv[i]);
 			}
+			fclose(m->sout);
+			fclose(m->serr);
 			free(m->dbcv);
 			free(m->pool);
 			free(m);
@@ -353,6 +357,8 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 			free(m->dbcv[i]->user);
 			free(m->dbcv[i]);
 		}
+		fclose(m->sout);
+		fclose(m->serr);
 		free(m->dbcv);
 		free(m->pool);
 		free(m);
@@ -367,6 +373,8 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 				free(m->dbcv[i]->user);
 				free(m->dbcv[i]);
 			}
+			fclose(m->sout);
+			fclose(m->serr);
 			free(m->dbcv);
 			free(m->pool);
 			free(m);
@@ -858,12 +866,12 @@ multiplexThread(void *d)
 	while (p != NULL) {
 		if (p->type == MEROFUN && strcmp(p->dbname, m->name) == 0) {
 			/* log everything that's still in the pipes */
-			logFD(p->out, "MSG", p->dbname, (long long int)p->pid, _mero_logfile, 1);
+			logFD(p, 0, "MSG", p->dbname, (long long int)p->pid, _mero_logfile, true);
 			/* remove from the list */
 			q->next = p->next;
 			/* close the descriptors */
-			close(p->out);
-			close(p->err);
+			close(p->input[0].fd);
+			close(p->input[1].fd);
 			Mlevelfprintf(INFORMATION, stdout, "mfunnel '%s' has stopped\n", p->dbname);
 			free(p->dbname);
 			pthread_mutex_destroy(&p->fork_lock);

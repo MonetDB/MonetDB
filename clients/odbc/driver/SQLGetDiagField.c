@@ -60,27 +60,27 @@ MNDBGetDiagField(SQLSMALLINT HandleType,
 		/* Check if this struct is still valid/alive */
 		if (!isValidEnv((ODBCEnv *) Handle))
 			return SQL_INVALID_HANDLE;
-		err = ((ODBCEnv *) Handle)->Error;
+		err = getEnvError((ODBCEnv *) Handle);
 		break;
 	case SQL_HANDLE_DBC:
 		/* Check if this struct is still valid/alive */
 		dbc = (ODBCDbc *) Handle;
 		if (!isValidDbc(dbc))
 			return SQL_INVALID_HANDLE;
-		err = dbc->Error;
+		err = getDbcError(dbc);
 		break;
 	case SQL_HANDLE_STMT:
 		/* Check if this struct is still valid/alive */
 		if (!isValidStmt((ODBCStmt *) Handle))
 			return SQL_INVALID_HANDLE;
-		err = ((ODBCStmt *) Handle)->Error;
+		err = getStmtError((ODBCStmt *) Handle);
 		dbc = ((ODBCStmt *) Handle)->Dbc;
 		break;
 	case SQL_HANDLE_DESC:
 		/* Check if this struct is still valid/alive */
 		if (!isValidDesc((ODBCDesc *) Handle))
 			return SQL_INVALID_HANDLE;
-		err = ((ODBCDesc *) Handle)->Error;
+		err = getDescError((ODBCDesc *) Handle);
 		dbc = ((ODBCDesc *) Handle)->Dbc;
 		break;
 	default:
@@ -143,15 +143,26 @@ MNDBGetDiagField(SQLSMALLINT HandleType,
 		copyDiagString(msg, DiagInfoPtr, BufferLength, StringLengthPtr);
 		return SQL_SUCCESS;
 	}
-#if 0
-/* not clear yet what to return here */
-	case SQL_DIAG_MESSAGE_TEXT: {		/* SQLCHAR* */
-		char msg[1024];
-		snprintf(msg, sizeof(msg), "");
-		copyDiagString(msg, DiagInfoPtr, BufferLength, StringLengthPtr);
+	case SQL_DIAG_MESSAGE_TEXT:{		/* SQLCHAR* */
+		char *msg = getMessage(err);
+
+		/* first write the error message prefix text:
+		 * [MonetDB][ODBC driver VERSION][DSN]
+		 * this is required by the ODBC spec:
+		 * https://docs.microsoft.com/en-us/sql/odbc/reference/develop-app/diagnostic-messages
+		 * and used to determine where the error originated
+		 */
+		SQLSMALLINT msgLen;
+		if (dbc && dbc->dsn)
+			msgLen = (SQLSMALLINT) strconcat_len((char *) DiagInfoPtr, BufferLength, ODBCErrorMsgPrefix, "[", dbc->dsn, "]", msg, NULL);
+		else
+			msgLen = (SQLSMALLINT) strconcat_len((char *) DiagInfoPtr, BufferLength, ODBCErrorMsgPrefix, msg, NULL);
+		if (StringLengthPtr)
+			*StringLengthPtr = msgLen;
+		if (DiagInfoPtr == NULL || msgLen >= BufferLength)
+			return SQL_SUCCESS_WITH_INFO;
 		return SQL_SUCCESS;
 	}
-#endif
 	case SQL_DIAG_NATIVE:			/* SQLINTEGER */
 		*(SQLINTEGER *) DiagInfoPtr = getNativeErrorCode(err);
 		return SQL_SUCCESS;

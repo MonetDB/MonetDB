@@ -90,7 +90,6 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
-	size_t querylen;
 	size_t pos = 0;
 	char *sch = NULL, *tab = NULL;
 
@@ -163,8 +162,10 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 	   SMALLINT     PSEUDO_COLUMN
 	*/
 	if (IdentifierType == SQL_BEST_ROWID) {
+		size_t querylen;
+
 		/* determine if we need to add a query against the tmp.* tables */
-		bool addTmpQuery = (SchemaName == NULL)
+		bool inclTmpKey = (SchemaName == NULL)
 				|| (SchemaName != NULL
 				 && (strcmp((const char *) SchemaName, "tmp") == 0
 				  || strchr((const char *) SchemaName, '%') != NULL
@@ -204,38 +205,141 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 		}
 
 		/* construct the query */
-		querylen = 5000 + strlen(stmt->Dbc->dbname) +
-			(sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0);
-		if (addTmpQuery)
-			querylen *= 2;
+		querylen = 6000 + (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0);
 		query = malloc(querylen);
 		if (query == NULL)
 			goto nomem;
 
+		/* When there is a PK for the table we return the pkey columns.
+		 * When there is No PK but there are multiple unique constraints, we need to pick one.
+		 * In the current implementation we return the first uc (lowest sys.keys.id).
+		 * When there is no PK or unique constraints and it is not a
+		 * view, we return all the columns of the table.
+		 *
+		 * Instead of the first uc (in case of multiple) we could potentially use the uc which has
+		 *  a) the least number of columns and
+		 *  b) the most efficient datatype (integers) or smallest total(size in bytes).
+		 * That's much more complex to do in SQL than the current implementation.
+		 * The current implementation (picking first uc) is fast and
+		 * gives a correct result, hence preferred.
+		 */
+
+		/* 1st cte: syskeys */
+		pos += strcpy_len(query + pos,
+			"with syskeys as ("
+			/* all pkeys */
+			"SELECT \"id\", \"table_id\" FROM \"sys\".\"keys\" WHERE \"type\" = 0 "
+			"UNION ALL "
+			/* and first unique constraint of a table when table has no pkey */
+			"SELECT \"id\", \"table_id\" FROM \"sys\".\"keys\" WHERE \"type\" = 1 "
+			"AND \"table_id\" NOT IN (select \"table_id\" from \"sys\".\"keys\" where \"type\" = 0) "
+			"AND (\"table_id\", \"id\") IN (select \"table_id\", min(\"id\") from \"sys\".\"keys\" where \"type\" = 1 group by \"table_id\"))",
+			querylen - pos);
+		if (inclTmpKey) {
+			/* we must also include the primary key or unique constraint of local temporary tables which are stored in tmp.keys */
+			/* 2nd cte: tmpkeys */
+			pos += strcpy_len(query + pos,
+			", tmpkeys as ("
+			"SELECT \"id\", \"table_id\" FROM \"tmp\".\"keys\" WHERE \"type\" = 0 "
+			"UNION ALL "
+			"SELECT \"id\", \"table_id\" FROM \"tmp\".\"keys\" WHERE \"type\" = 1 "
+			"AND \"table_id\" NOT IN (select \"table_id\" from \"tmp\".\"keys\" where \"type\" = 0) "
+			"AND (\"table_id\", \"id\") IN (select \"table_id\", min(\"id\") from \"tmp\".\"keys\" where \"type\" = 1 group by \"table_id\"))",
+			querylen - pos);
+		}
+		/* 3rd cte: tableids */
+		pos += strcpy_len(query + pos,
+			", tableids as ("
+			"SELECT t.\"id\" "
+			"FROM \"sys\".\"tables\" t "
+			"JOIN \"sys\".\"schemas\" s ON t.\"schema_id\" = s.\"id\" "
+			"WHERE t.\"type\" NOT IN (1, 11)",	/* exclude all VIEWs and SYSTEM VIEWs */
+			querylen - pos);
+		/* add the selection condition */
+		if (NameLength1 > 0 && CatalogName != NULL) {
+			/* filtering requested on catalog name */
+			if (strcmp((char *) CatalogName, stmt->Dbc->dbname) != 0) {
+				/* catalog name does not match the database name, so return no rows */
+				pos += strcpy_len(query + pos, " and 1=2", querylen - pos);
+			}
+		}
+		if (sch) {
+			/* filtering requested on schema name */
+			pos += snprintf(query + pos, querylen - pos, " and %s", sch);
+		}
+		if (tab) {
+			/* filtering requested on table name */
+			pos += snprintf(query + pos, querylen - pos, " and %s", tab);
+		}
+		/* 4th cte: cols, this unions 2 (or 4 when inclTmpKey == true) select queries */
+		pos += strcpy_len(query + pos,
+			"), cols as ("
+			"SELECT c.\"name\", c.\"type\", c.\"type_digits\", c.\"type_scale\", o.\"nr\" "
+			"FROM syskeys k "
+			"JOIN tableids t ON k.\"table_id\" = t.\"id\" "
+			"JOIN \"sys\".\"objects\" o ON k.\"id\" = o.\"id\" "
+			"JOIN \"sys\".\"_columns\" c ON (k.\"table_id\" = c.\"table_id\" AND o.\"name\" = c.\"name\")",
+			querylen - pos);
+		/* add an extra selection when SQL_NO_NULLS is requested */
+		if (Nullable == SQL_NO_NULLS) {
+			pos += strcpy_len(query + pos, " WHERE c.\"null\" = false", querylen - pos);
+		}
+		if (inclTmpKey) {
+			/* we must also include the primary key or unique constraint of local temporary tables
+			 * which are stored in tmp.keys, tmp.objects, tmp._tables and tmp._columns */
+			pos += strcpy_len(query + pos,
+			" UNION ALL "
+			"SELECT c.\"name\", c.\"type\", c.\"type_digits\", c.\"type_scale\", o.\"nr\" "
+			"FROM tmpkeys k "
+			"JOIN tableids t ON k.\"table_id\" = t.\"id\" "
+			"JOIN \"tmp\".\"objects\" o ON k.\"id\" = o.\"id\" "
+			"JOIN \"tmp\".\"_columns\" c ON (k.\"table_id\" = c.\"table_id\" AND o.\"name\" = c.\"name\")",
+			querylen - pos);
+			/* add an extra selection when SQL_NO_NULLS is requested */
+			if (Nullable == SQL_NO_NULLS) {
+				pos += strcpy_len(query + pos, " WHERE c.\"null\" = false", querylen - pos);
+			}
+		}
+		/* when there is No PK and No unique constraints, we should return all columns of the table */
+		pos += strcpy_len(query + pos,
+			" UNION ALL "
+			"SELECT c.\"name\", c.\"type\", c.\"type_digits\", c.\"type_scale\", c.\"number\" "
+			"FROM tableids t "
+			"JOIN \"sys\".\"_columns\" c ON t.\"id\" = c.\"table_id\" "
+			"WHERE t.\"id\" NOT IN (SELECT \"table_id\" FROM \"sys\".\"keys\" WHERE \"type\" in (0, 1))",
+			querylen - pos);
+		/* add an extra selection when SQL_NO_NULLS is requested */
+		if (Nullable == SQL_NO_NULLS) {
+			pos += strcpy_len(query + pos, " AND c.\"null\" = false", querylen - pos);
+		}
+		if (inclTmpKey) {
+			pos += strcpy_len(query + pos,
+			" UNION ALL "
+			"SELECT c.\"name\", c.\"type\", c.\"type_digits\", c.\"type_scale\", c.\"number\" "
+			"FROM tableids t "
+			"JOIN \"tmp\".\"_columns\" c ON t.\"id\" = c.\"table_id\" "
+			"WHERE t.\"id\" NOT IN (SELECT \"table_id\" FROM \"tmp\".\"keys\" WHERE \"type\" in (0, 1))",
+			querylen - pos);
+			/* add an extra selection when SQL_NO_NULLS is requested */
+			if (Nullable == SQL_NO_NULLS) {
+				pos += strcpy_len(query + pos, " AND c.\"null\" = false", querylen - pos);
+			}
+		}
+		/* the final select query */
 		/* Note: SCOPE is SQL_SCOPE_TRANSACTION */
 		/* Note: PSEUDO_COLUMN is SQL_PC_NOT_PSEUDO */
 		pos += snprintf(query + pos, querylen - pos,
-			"with sc as ("
-			"select t.id as table_id, k.type as type, "
-			       "cast(%d as smallint) as scope, "
-			       "c.name as column_name, "
+			") SELECT "
+			"cast(%d AS smallint) AS \"SCOPE\", "
+			"c.\"name\" AS \"COLUMN_NAME\", "
 			DATA_TYPE(c) ", "
 			TYPE_NAME(c) ", "
 			COLUMN_SIZE(c) ", "
 			BUFFER_LENGTH(c) ", "
 			DECIMAL_DIGITS(c) ", "
-			       "cast(%d as smallint) as pseudo_column "
-			 "from sys.schemas s, "
-			      "sys._tables t, "
-			      "sys._columns c, "
-			      "sys.keys k, "
-			      "sys.objects kc "
-			 "where s.id = t.schema_id and "
-			       "t.id = c.table_id and "
-			       "t.id = k.table_id and "
-			       "c.name = kc.name and "
-			       "kc.id = k.id and "
-			       "k.type in (0, 1)",	/* primary key (type = 0), unique key (type = 1) */
+			"cast(%d AS smallint) AS \"PSEUDO_COLUMN\" "
+			"FROM cols c "
+			"ORDER BY \"SCOPE\", c.\"nr\", \"COLUMN_NAME\"",
 			/* scope: */
 			SQL_SCOPE_TRANSACTION,
 #ifdef DATA_TYPE_ARGS
@@ -255,175 +359,20 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 #endif
 			/* pseudo_column: */
 			SQL_PC_NOT_PSEUDO);
-		assert(pos < 4300);
-		/* TODO: improve the SQL to get the correct result:
-		   - only one set of unique constraint columns should be
-		     returned when multiple unique constraints are available
-		     for this table. Return the smallest/best one only.
-		   TODO: optimize SQL:
-		   - when no SchemaName is set (see above) also no
-		     filtering on SCHEMA NAME and join with table
-		     SCHEMAS is needed!
-		 */
-
-		/* add the selection condition */
-		if (NameLength1 > 0 && CatalogName != NULL) {
-			/* filtering requested on catalog name */
-			if (strcmp((char *) CatalogName, stmt->Dbc->dbname) != 0) {
-				/* catalog name does not match the database name, so return no rows */
-				pos += snprintf(query + pos, querylen - pos, " and 1=2");
-			}
-		}
-		if (sch) {
-			/* filtering requested on schema name */
-			pos += snprintf(query + pos, querylen - pos, " and %s", sch);
-		}
-		if (tab) {
-			/* filtering requested on table name */
-			pos += snprintf(query + pos, querylen - pos, " and %s", tab);
-		}
-
-		/* add an extra selection when SQL_NO_NULLS is requested */
-		if (Nullable == SQL_NO_NULLS) {
-			pos += strcpy_len(query + pos, " and c.\"null\" = false", querylen - pos);
-		}
-
-		pos += strcpy_len(query + pos,
-			"), "
-			"tid as ("
-			   "select table_id as tid "
-			    "from sys.keys "
-			    "where type = 0"
-			") "
-			, querylen - pos);
-
-		if (addTmpQuery) {
-			/* we must also include the primary key or unique
-			   constraint of local temporary tables which are stored
-			   in tmp.keys, tmp.objects, tmp._tables and tmp._columns */
-
-			/* Note: SCOPE is SQL_SCOPE_TRANSACTION */
-			/* Note: PSEUDO_COLUMN is SQL_PC_NOT_PSEUDO */
-			pos += snprintf(query + pos, querylen - pos,
-				", tmpsc as ("
-				"select t.id as table_id, k.type as type, "
-				       "cast(%d as smallint) as scope, "
-				       "c.name as column_name, "
-				DATA_TYPE(c) ", "
-				TYPE_NAME(c) ", "
-				COLUMN_SIZE(c) ", "
-				BUFFER_LENGTH(c) ", "
-				DECIMAL_DIGITS(c) ", "
-				       "cast(%d as smallint) as pseudo_column "
-				 "from sys.schemas s, "
-				      "tmp._tables t, "
-				      "tmp._columns c, "
-				      "tmp.keys k, "
-				      "tmp.objects kc "
-				 "where s.id = t.schema_id and "
-				       "t.id = c.table_id and "
-				       "t.id = k.table_id and "
-				       "c.name = kc.name and "
-				       "kc.id = k.id and "
-				       "k.type in (0, 1)",	/* primary key (type = 0), unique key (type = 1) */
-				/* scope: */
-				SQL_SCOPE_TRANSACTION,
-#ifdef DATA_TYPE_ARGS
-				DATA_TYPE_ARGS,
-#endif
-#ifdef TYPE_NAME_ARGS
-				TYPE_NAME_ARGS,
-#endif
-#ifdef COLUMN_SIZE_ARGS
-				COLUMN_SIZE_ARGS,
-#endif
-#ifdef BUFFER_SIZE_ARGS
-				BUFFER_SIZE_ARGS,
-#endif
-#ifdef DECIMAL_DIGITS_ARGS
-				DECIMAL_DIGITS_ARGS,
-#endif
-				/* pseudo_column: */
-				SQL_PC_NOT_PSEUDO);
-
-			/* add the selection condition */
-			if (NameLength1 > 0 && CatalogName != NULL) {
-				/* filtering requested on catalog name */
-				if (strcmp((char *) CatalogName, stmt->Dbc->dbname) != 0) {
-					/* catalog name does not match the database name, so return no rows */
-					pos += snprintf(query + pos, querylen - pos, " and 1=2");
-				}
-			}
-			if (sch) {
-				/* filtering requested on schema name */
-				pos += snprintf(query + pos, querylen - pos, " and %s", sch);
-			}
-			if (tab) {
-				/* filtering requested on table name */
-				pos += snprintf(query + pos, querylen - pos, " and %s", tab);
-			}
-
-			/* add an extra selection when SQL_NO_NULLS is requested */
-			if (Nullable == SQL_NO_NULLS) {
-				pos += strcpy_len(query + pos, " and c.\"null\" = false", querylen - pos);
-			}
-
-			pos += strcpy_len(query + pos,
-				"), "
-				"tmptid as ("
-				   "select table_id as tid "
-				    "from tmp.keys "
-				    "where type = 0"
-				") "
-				, querylen - pos);
-		}
-		assert(pos < (querylen - 500));
 
 		if (sch)
 			free(sch);
 		if (tab)
 			free(tab);
 
-		pos += strcpy_len(query + pos,
-			"select sc.scope as \"SCOPE\", "
-			       "sc.column_name AS \"COLUMN_NAME\", sc.\"DATA_TYPE\", "
-			       "sc.\"TYPE_NAME\", sc.\"COLUMN_SIZE\", "
-			       "sc.\"BUFFER_LENGTH\", sc.\"DECIMAL_DIGITS\", "
-			       "sc.pseudo_column as \"PSEUDO_COLUMN\""
-			"from sc "
-			/* condition to only return the primary key if one exists for the table */
-			"where (sc.type = 0 and sc.table_id in (select tid from tid)) "
-			   "or (sc.type = 1 and sc.table_id not in (select tid from tid))"
-			/* TODO: when sc.type = 1 (so unique constraint) and
-			   more than 1 unique constraint exists, only select
-			   the keys.id which has the least/best columns */
-			, querylen - pos);
-		if (addTmpQuery) {
-			pos += strcpy_len(query + pos,
-				" UNION ALL "
-				"select tmpsc.scope as \"SCOPE\", "
-				       "tmpsc.column_name AS \"COLUMN_NAME\", tmpsc.\"DATA_TYPE\", "
-				       "tmpsc.\"TYPE_NAME\", tmpsc.\"COLUMN_SIZE\", "
-				       "tmpsc.\"BUFFER_LENGTH\", tmpsc.\"DECIMAL_DIGITS\", "
-				       "tmpsc.pseudo_column as \"PSEUDO_COLUMN\""
-				"from tmpsc "
-				/* condition to only return the primary key if one exists for the table */
-				"where (tmpsc.type = 0 and tmpsc.table_id in (select tid from tmptid)) "
-				   "or (tmpsc.type = 1 and tmpsc.table_id not in (select tid from tmptid))"
-				/* TODO: when sc.type = 1 (so unique constraint) and
-				   more than 1 unique constraint exists, only select
-				   the keys.id which has the least/best columns */
-				, querylen - pos);
-		}
-		/* ordering on SCOPE not needed (since it is constant) */
-
 		if (pos >= querylen)
 			fprintf(stderr, "pos >= querylen, %zu > %zu\n", pos, querylen);
+		assert(pos < querylen);
 	} else {
 		assert(IdentifierType == SQL_ROWVER);
 		/* The backend does not have such info available */
 		/* create just a query which results in zero rows */
-		/* Note: pseudo_column is sql_pc_unknown is 0 */
+		/* Note: PSEUDO_COLUMN is SQL_PC_UNKNOWN is 0 */
 		query = strdup("select cast(null as smallint) as \"SCOPE\", "
 				      "cast('' as varchar(1)) as \"COLUMN_NAME\", "
 				      "cast(1 as smallint) as \"DATA_TYPE\", "
@@ -438,7 +387,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 		pos = strlen(query);
 	}
 
-	/* debug: fprintf(stdout, "SQLSpecialColumns SQL:\n%s\n\n", query); */
+	/* debug: fprintf(stdout, "SQLSpecialColumns query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */
 
 	/* query the MonetDB data dictionary tables */
 	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);

@@ -30533,16 +30533,6 @@ eval
 pattern batcapi.eval(X_0:ptr, X_1:bit, X_2:str, X_3:any...):any... 
 CUDFevalStd;
 Execute a simple CUDF script value
-batcapi
-eval_aggr
-pattern batcapi.eval_aggr(X_0:ptr, X_1:bit, X_2:str, X_3:any...):any... 
-CUDFevalAggr;
-grouped aggregates through CUDF
-batcapi
-subeval_aggr
-pattern batcapi.subeval_aggr(X_0:ptr, X_1:bit, X_2:str, X_3:any...):any... 
-CUDFevalAggr;
-grouped aggregates through CUDF
 batcolor
 blue
 command batcolor.blue(X_0:bat[:color]):bat[:int] 
@@ -33318,11 +33308,6 @@ ntile
 pattern batsql.ntile(X_0:bat[:any], X_1:bat[:any_1], X_2:any_2, X_3:any_3):bat[:any_1] 
 SQLntile;
 return the groups divided as equally as possible
-batsql
-password
-pattern batsql.password(X_0:bat[:str]):bat[:str] 
-db_password_wrap;
-Return password hash of user
 batsql
 percent_rank
 pattern batsql.percent_rank(X_0:bat[:any_1], X_1:any_2, X_2:any_3):bat[:dbl] 
@@ -43799,25 +43784,10 @@ pattern capi.subeval_aggr(X_0:ptr, X_1:bit, X_2:str, X_3:any...):any...
 CUDFevalAggr;
 grouped aggregates through CUDF
 clients
-addUser
-unsafe pattern clients.addUser(X_0:str, X_1:str):oid 
-CLTaddUser;
-Allow user with password access to the given scenarios
-clients
 backendsum
 command clients.backendsum(X_0:str):str 
 CLTbackendsum;
 Return hex string representation of the currently used hash of the given string
-clients
-changePassword
-unsafe pattern clients.changePassword(X_0:str, X_1:str):void 
-CLTchangePassword;
-Change the password for the current user
-clients
-changeUsername
-unsafe pattern clients.changeUsername(X_0:str, X_1:str):void 
-CLTchangeUsername;
-Change the username of the user into the new string
 clients
 checkPermission
 pattern clients.checkPermission(X_0:str, X_1:str):void 
@@ -43859,11 +43829,6 @@ pattern clients.getUsername():str
 CLTgetUsername;
 Return the username of the currently logged in user
 clients
-getUsers
-pattern clients.getUsers() (X_0:bat[:oid], X_1:bat[:str]) 
-CLTgetUsers;
-return a BAT with user id and one with name available in the system
-clients
 getprofile
 pattern clients.getprofile() (X_0:str, X_1:int, X_2:int, X_3:int, X_4:int) 
 CLTgetProfile;
@@ -43884,11 +43849,6 @@ unsafe pattern clients.quit(X_0:int):void
 CLTquit;
 Terminate the session for a single client using a soft error.@It is the privilege of the console user.
 clients
-removeUser
-unsafe pattern clients.removeUser(X_0:str):void 
-CLTremoveUser;
-Remove the given user from the system
-clients
 ripemd160sum
 command clients.ripemd160sum(X_0:str):str 
 CLTripemd160sum;
@@ -43898,11 +43858,6 @@ setListing
 unsafe pattern clients.setListing(X_0:int):int 
 CLTsetListing;
 Turn on/off echo of MAL instructions:@1 - echo input,@2 - show mal instruction,@4 - show details of type resolutoin, @8 - show binding information.
-clients
-setPassword
-unsafe pattern clients.setPassword(X_0:str, X_1:str):void 
-CLTsetPassword;
-Set the password for the given user
 clients
 setQryTimeoutMicro
 unsafe pattern clients.setQryTimeoutMicro(X_0:lng):void 
@@ -46064,65 +46019,10 @@ command json.values(X_0:json):bat[:json]
 JSONvalueTable;
 Expands the outermost JSON values.
 language
-assert
-unsafe command language.assert(X_0:bit, X_1:str):void 
-MALassertBit;
-(empty)
-language
-assert
-unsafe command language.assert(X_0:hge, X_1:str):void 
-MALassertHge;
-(empty)
-language
-assert
-unsafe command language.assert(X_0:int, X_1:str):void 
-MALassertInt;
-(empty)
-language
-assert
-unsafe command language.assert(X_0:lng, X_1:str):void 
-MALassertLng;
-(empty)
-language
-assert
-unsafe command language.assert(X_0:oid, X_1:str):void 
-MALassertOid;
-(empty)
-language
-assert
-unsafe command language.assert(X_0:sht, X_1:str):void 
-MALassertSht;
-(empty)
-language
-assert
-unsafe command language.assert(X_0:str, X_1:str):void 
-MALassertStr;
-(empty)
-language
-assert
-unsafe pattern language.assert(X_0:any_1, X_1:str, X_2:str, X_3:any_2):void 
-MALassertTriple;
-Assertion test.
-language
 block
 pattern language.block(X_0:int, X_1:any...):int 
 deblockdataflow;
 Block on availability of all variables w, and then pass on v
-language
-call
-pattern language.call(X_0:bat[:str]):void 
-CMDcallBAT;
-Evaluate a program stored in a BAT.
-language
-call
-pattern language.call(X_0:str, X_1:str):void 
-CMDcallFunction;
-(empty)
-language
-call
-pattern language.call(X_0:str):void 
-CMDcallString;
-Evaluate a MAL string program.
 language
 dataflow
 pattern language.dataflow():bit 
@@ -46133,26 +46033,6 @@ pass
 pattern language.pass(X_0:any_1):void 
 MALpass;
 Cheap instruction to disgard storage while retaining the dataflow dependency
-language
-raise
-unsafe command language.raise(X_0:str):str 
-CMDraise;
-Raise an exception labeled @with a specific message.
-language
-register
-pattern language.register(X_0:str, X_1:str, X_2:str, X_3:str):void 
-CMDregisterFunction;
-Compile the code string to MAL and register it as a function.
-language
-sink
-pattern language.sink(X_0:any...):void 
-MALgarbagesink;
-Variables to be considered together when triggering garbage collection.@Used in the dataflow blocks to avoid early release of values.
-language
-source
-pattern language.source(X_0:str):void 
-CMDevalFile;
-Merge the instructions stored in the file with the current program.
 logging
 compinfo
 pattern logging.compinfo() (X_0:bat[:int], X_1:bat[:str], X_2:bat[:str]) 
@@ -47304,16 +47184,6 @@ pattern optimizer.aliases(X_0:str, X_1:str):str
 OPTwrapper;
 Alias removal optimizer
 optimizer
-bincopyfrom
-pattern optimizer.bincopyfrom():str 
-OPTwrapper;
-(empty)
-optimizer
-bincopyfrom
-pattern optimizer.bincopyfrom(X_0:str, X_1:str):str 
-OPTwrapper;
-Parallellize column loading
-optimizer
 candidates
 pattern optimizer.candidates():str 
 OPTwrapper;
@@ -47704,16 +47574,6 @@ pattern optimizer.strimps(X_0:str, X_1:str):str
 OPTwrapper;
 Use strimps index if appropriate
 optimizer
-wlc
-pattern optimizer.wlc():str 
-OPTwrapper;
-(empty)
-optimizer
-wlc
-pattern optimizer.wlc(X_0:str, X_1:str):str 
-OPTwrapper;
-Inject the workload capture-replay primitives
-optimizer
 wrapper
 pattern optimizer.wrapper():str 
 OPTwrapper;
@@ -47756,7 +47616,7 @@ Replace _all_ matches of "pattern" in "origin_str" with "replacement".@Parameter
 pcre
 replace_first
 command pcre.replace_first(X_0:str, X_1:str, X_2:str, X_3:str):str 
-PCREreplace_wrap;
+PCREreplacefirst_wrap;
 Replace _the first_ match of "pattern" in "origin_str" with "replacement".@Parameter "flags" accept these flags: 'i', 'm', 's', and 'x'.@'e': if present, an empty string is considered to be a valid match@'i': if present, the match operates in case-insensitive mode.@Otherwise, in case-sensitive mode.@'m': if present, the match operates in multi-line mode.@'s': if present, the match operates in "dot-all"@The specifications of the flags can be found in "man pcreapi"@The flag letters may be repeated.@No other letters than 'e', 'i', 'm', 's' and 'x' are allowed in "flags".@Returns the replaced string, or if no matches found, the original string.
 pcre
 sql2pcre
@@ -47821,6 +47681,11 @@ Fetch any pending performance events
 profiler
 openstream
 pattern profiler.openstream():void 
+CMDopenProfilerStream;
+Start profiling the events, send to output stream
+profiler
+openstream
+pattern profiler.openstream(X_0:int):void 
 CMDopenProfilerStream;
 Start profiling the events, send to output stream
 profiler
@@ -48444,11 +48309,6 @@ command sql.date_trunc(X_0:str, X_1:timestamp):timestamp
 date_trunc;
 Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)
 sql
-db_users
-pattern sql.db_users():bat[:str] 
-db_users_wrap;
-return table of users with sql scenario
-sql
 delete
 unsafe pattern sql.delete(X_0:int, X_1:str, X_2:str, X_3:any):int 
 mvc_delete_wrap;
@@ -48609,6 +48469,16 @@ unsafe pattern sql.exportResult(X_0:streams, X_1:int):void
 mvc_export_result_wrap;
 Export a result (in order) to stream s
 sql
+export_bin_column
+unsafe pattern sql.export_bin_column(X_0:any_1, X_1:bit, X_2:str, X_3:int):lng 
+mvc_bin_export_column_wrap;
+export column as binary
+sql
+export_bin_column
+unsafe pattern sql.export_bin_column(X_0:bat[:any_1], X_1:bit, X_2:str, X_3:int):lng 
+mvc_bin_export_column_wrap;
+export column as binary
+sql
 export_table
 unsafe pattern sql.export_table(X_0:str, X_1:str, X_2:str, X_3:str, X_4:str, X_5:str, X_6:int, X_7:bat[:str], X_8:bat[:str], X_9:bat[:str], X_10:bat[:int], X_11:bat[:int], X_12:any...):int 
 mvc_export_row_wrap;
@@ -48655,14 +48525,9 @@ SQLhot_snapshot_wrap;
 Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client
 sql
 importColumn
-pattern sql.importColumn(X_0:str, X_1:bit, X_2:str, X_3:int, X_4:oid) (X_5:bat[:any], X_6:oid) 
+pattern sql.importColumn(X_0:str, X_1:int, X_2:bit, X_3:str, X_4:int, X_5:oid) (X_6:bat[:any], X_7:oid) 
 mvc_bin_import_column_wrap;
 Import a column from the given file
-sql
-importTable
-unsafe pattern sql.importTable(X_0:str, X_1:str, X_2:int, X_3:bit, X_4:str...):bat[:any]... 
-mvc_bin_import_table_wrap;
-Import a table from the files (fname)
 sql
 include
 unsafe pattern sql.include(X_0:str):void 
@@ -48761,7 +48626,7 @@ getPipeCatalog;
 sql
 password
 pattern sql.password(X_0:str):str 
-db_password_wrap;
+SQLuser_password;
 Return password hash of user
 sql
 percent_rank
@@ -49435,7 +49300,7 @@ SQLalter_table;
 Catalog operation alter_table
 sqlcatalog
 alter_user
-pattern sqlcatalog.alter_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str, X_5:str):void 
+pattern sqlcatalog.alter_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str, X_5:str, X_6:str):void 
 SQLalter_user;
 Catalog operation alter_user
 sqlcatalog
@@ -49480,7 +49345,7 @@ SQLcreate_type;
 Catalog operation create_type
 sqlcatalog
 create_user
-pattern sqlcatalog.create_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str, X_5:str):void 
+pattern sqlcatalog.create_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str, X_5:str, X_6:lng, X_7:int, X_8:str, X_9:str):void 
 SQLcreate_user;
 Catalog operation create_user
 sqlcatalog
@@ -49603,71 +49468,6 @@ revoke_roles
 pattern sqlcatalog.revoke_roles(X_0:str, X_1:str, X_2:int, X_3:int):void 
 SQLrevoke_roles;
 Catalog operation revoke_roles
-status
-batStatistics
-command status.batStatistics() (X_0:bat[:str], X_1:bat[:str]) 
-SYSgdkEnv;
-Show distribution of bats by kind
-status
-cpuStatistics
-command status.cpuStatistics() (X_0:bat[:str], X_1:bat[:lng]) 
-SYScpuStatistics;
-Global cpu usage information
-status
-getThreads
-command status.getThreads() (X_0:bat[:int], X_1:bat[:str]) 
-SYSgdkThread;
-Produce overview of active threads
-status
-ioStatistics
-command status.ioStatistics() (X_0:bat[:str], X_1:bat[:lng]) 
-SYSioStatistics;
-Global IO activity information
-status
-memStatistics
-command status.memStatistics() (X_0:bat[:str], X_1:bat[:lng]) 
-SYSmemStatistics;
-Global memory usage information
-status
-memUsage
-command status.memUsage(X_0:lng) (X_1:bat[:str], X_2:bat[:lng]) 
-SYSmem_usage;
-Get a split-up of how much memory blocks are in use
-status
-mem_cursize
-command status.mem_cursize():lng 
-SYSgetmem_cursize;
-The amount of physical swapspace in KB that is currently in use
-status
-mem_maxsize
-command status.mem_maxsize():lng 
-SYSgetmem_maxsize;
-The maximum usable amount of physical swapspace in KB (target only)
-status
-mem_maxsize
-command status.mem_maxsize(X_0:lng):void 
-SYSsetmem_maxsize;
-Set the maximum usable amount of physical swapspace in KB
-status
-vmStatistics
-command status.vmStatistics(X_0:lng) (X_1:bat[:str], X_2:bat[:lng]) 
-SYSvm_usage;
-Get a split-up of how much virtual memory blocks are in use
-status
-vm_cursize
-command status.vm_cursize():lng 
-SYSgetvm_cursize;
-The amount of logical VM space in KB that is currently in use
-status
-vm_maxsize
-command status.vm_maxsize():lng 
-SYSgetvm_maxsize;
-The maximum usable amount of logical VM space in KB (target only)
-status
-vm_maxsize
-command status.vm_maxsize(X_0:lng):void 
-SYSsetvm_maxsize;
-Set the maximum usable amount of physical swapspace in KB
 str
 ascii
 command str.ascii(X_0:str):int 
@@ -50228,701 +50028,6 @@ uuid
 command uuid.uuid(X_0:str):uuid 
 UUIDstr2uuid;
 Coerce a string to a uuid, validating its format
-wlc
-action
-pattern wlc.action(X_0:str):void 
-WLCaction;
-Keep the database changing queries for replay. 
-wlc
-alter_add_range_partition
-pattern wlc.alter_add_range_partition(X_0:str, X_1:str, X_2:str, X_3:str, X_4:str, X_5:str, X_6:bit, X_7:int):void 
-WLCgeneric;
-Catalog operation alter_add_range_partition
-wlc
-alter_add_table
-pattern wlc.alter_add_table(X_0:str, X_1:str, X_2:str, X_3:str, X_4:int):void 
-WLCgeneric;
-Catalog operation alter_add_table
-wlc
-alter_add_value_partition
-pattern wlc.alter_add_value_partition(X_0:str, X_1:str, X_2:str, X_3:str, X_4:bit, X_5:int):void 
-WLCgeneric;
-Catalog operation alter_add_value_partition
-wlc
-alter_add_value_partition
-pattern wlc.alter_add_value_partition(X_0:str, X_1:str, X_2:str, X_3:str, X_4:bit, X_5:int, X_6:str...):void 
-WLCgeneric;
-Catalog operation alter_add_value_partition
-wlc
-alter_del_table
-pattern wlc.alter_del_table(X_0:str, X_1:str, X_2:str, X_3:str, X_4:int):void 
-WLCgeneric;
-Catalog operation alter_del_table
-wlc
-alter_seq
-pattern wlc.alter_seq(X_0:str, X_1:str, X_2:lng):void 
-WLCgeneric;
-Catalog operation alter_seq
-wlc
-alter_seq
-pattern wlc.alter_seq(X_0:str, X_1:str, X_2:ptr, X_3:bat[:lng]):void 
-WLCgeneric;
-Catalog operation alter_seq
-wlc
-alter_set_table
-pattern wlc.alter_set_table(X_0:str, X_1:str, X_2:int):void 
-WLCgeneric;
-Catalog operation alter_set_table
-wlc
-alter_table
-pattern wlc.alter_table(X_0:str, X_1:str, X_2:int):void 
-WLCgeneric;
-Catalog operation alter_table
-wlc
-alter_user
-pattern wlc.alter_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str):void 
-WLCgeneric;
-Catalog operation alter_user
-wlc
-append
-pattern wlc.append(X_0:str, X_1:str, X_2:str, X_3:any):int 
-WLCappend;
-Keep the insertions in the workload-capture-replay list
-wlc
-catalog
-pattern wlc.catalog(X_0:str):void 
-WLCcatalog;
-Keep the catalog changing queries for replay. 
-wlc
-clear_table
-pattern wlc.clear_table(X_0:str, X_1:str, X_2:int):int 
-WLCclear_table;
-Keep the deletions in the workload-capture-replay list
-wlc
-comment_on
-pattern wlc.comment_on(X_0:int, X_1:str):void 
-WLCgeneric;
-Catalog operation comment_on
-wlc
-commit
-pattern wlc.commit():void 
-WLCcommitCmd;
-Commit the workload-capture-replay record
-wlc
-commit
-pattern wlc.commit():void 
-WLCcommitCmd;
-Mark the end of the work unit
-wlc
-create_function
-pattern wlc.create_function(X_0:str, X_1:str, X_2:int):void 
-WLCgeneric;
-Catalog operation create_function
-wlc
-create_role
-pattern wlc.create_role(X_0:str, X_1:str, X_2:int):void 
-WLCgeneric;
-Catalog operation create_role
-wlc
-create_schema
-pattern wlc.create_schema(X_0:str, X_1:str, X_2:int):void 
-WLCgeneric;
-Catalog operation create_schema
-wlc
-create_seq
-pattern wlc.create_seq(X_0:str, X_1:str, X_2:int):void 
-WLCgeneric;
-Catalog operation create_seq
-wlc
-create_table
-pattern wlc.create_table(X_0:str, X_1:str, X_2:int):void 
-WLCgeneric;
-Catalog operation create_table
-wlc
-create_trigger
-pattern wlc.create_trigger(X_0:str, X_1:str, X_2:str, X_3:int, X_4:int, X_5:int, X_6:str, X_7:str, X_8:str, X_9:str, X_10:int):void 
-WLCgeneric;
-Catalog operation create_trigger
-wlc
-create_type
-pattern wlc.create_type(X_0:str, X_1:str, X_2:str):void 
-WLCgeneric;
-Catalog operation create_type
-wlc
-create_user
-pattern wlc.create_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str):void 
-WLCgeneric;
-Catalog operation create_user
-wlc
-create_view
-pattern wlc.create_view(X_0:str, X_1:str, X_2:int, X_3:int):void 
-WLCgeneric;
-Catalog operation create_view
-wlc
-delete
-pattern wlc.delete(X_0:str, X_1:str, X_2:any):int 
-WLCdelete;
-Keep the deletions in the workload-capture-replay list
-wlc
-drop_constraint
-pattern wlc.drop_constraint(X_0:str, X_1:str, X_2:str, X_3:int, X_4:int):void 
-WLCgeneric;
-Catalog operation drop_constraint
-wlc
-drop_function
-pattern wlc.drop_function(X_0:str, X_1:str, X_2:int, X_3:int, X_4:int):void 
-WLCgeneric;
-Catalog operation drop_function
-wlc
-drop_index
-pattern wlc.drop_index(X_0:str, X_1:str, X_2:int):void 
-WLCgeneric;
-Catalog operation drop_index
-wlc
-drop_role
-pattern wlc.drop_role(X_0:str, X_1:int):void 
-WLCgeneric;
-Catalog operation drop_role
-wlc
-drop_role
-pattern wlc.drop_role(X_0:str, X_1:str, X_2:int):void 
-WLCgeneric;
-Catalog operation drop_role
-wlc
-drop_schema
-pattern wlc.drop_schema(X_0:str, X_1:int, X_2:int):void 
-WLCgeneric;
-Catalog operation drop_schema
-wlc
-drop_seq
-pattern wlc.drop_seq(X_0:str, X_1:str, X_2:int):void 
-WLCgeneric;
-Catalog operation drop_seq
-wlc
-drop_table
-pattern wlc.drop_table(X_0:str, X_1:str, X_2:int, X_3:int):void 
-WLCgeneric;
-Catalog operation drop_table
-wlc
-drop_trigger
-pattern wlc.drop_trigger(X_0:str, X_1:str, X_2:int):void 
-WLCgeneric;
-Catalog operation drop_trigger
-wlc
-drop_type
-pattern wlc.drop_type(X_0:str, X_1:str, X_2:int):void 
-WLCgeneric;
-Catalog operation drop_type
-wlc
-drop_user
-pattern wlc.drop_user(X_0:str, X_1:int):void 
-WLCgeneric;
-Catalog operation drop_user
-wlc
-drop_user
-pattern wlc.drop_user(X_0:str, X_1:str, X_2:int):void 
-WLCgeneric;
-Catalog operation drop_user
-wlc
-drop_view
-pattern wlc.drop_view(X_0:str, X_1:str, X_2:int, X_3:int):void 
-WLCgeneric;
-Catalog operation drop_view
-wlc
-epilogue
-command wlc.epilogue():void 
-WLCepilogue;
-release the resources held by the wlc module
-wlc
-flush
-unsafe pattern wlc.flush():void 
-WLCflush;
-Flush current log buffer
-wlc
-getbeat
-pattern wlc.getbeat(X_0:int):str 
-WLCgetbeat;
-Maximal delay for transaction log flushing
-wlc
-getclock
-pattern wlc.getclock():str 
-WLCgetclock;
-Timestamp of last update transaction
-wlc
-gettick
-pattern wlc.gettick():lng 
-WLCgettick;
-Transaction identifier of the last committed transaction
-wlc
-grant
-pattern wlc.grant(X_0:str, X_1:str, X_2:str, X_3:int, X_4:str, X_5:int, X_6:int):void 
-WLCgeneric;
-Catalog operation grant
-wlc
-grant_function
-pattern wlc.grant_function(X_0:str, X_1:int, X_2:str, X_3:int, X_4:int, X_5:int):void 
-WLCgeneric;
-Catalog operation grant_function
-wlc
-grant_roles
-pattern wlc.grant_roles(X_0:str, X_1:str, X_2:int, X_3:int):void 
-WLCgeneric;
-Catalog operation grant_roles
-wlc
-init
-pattern wlc.init():void 
-WLCinitCmd;
-Test for running as master
-wlc
-master
-unsafe pattern wlc.master():void 
-WLCmaster;
-Activate the workload-capture-replay process
-wlc
-master
-unsafe pattern wlc.master(X_0:str):void 
-WLCmaster;
-Activate the workload-capture-replay process. Use a different location for the logs.
-wlc
-query
-pattern wlc.query(X_0:str):void 
-WLCquery;
-Keep the queries for replay.
-wlc
-rename_column
-pattern wlc.rename_column(X_0:str, X_1:str, X_2:str, X_3:str):void 
-WLCgeneric;
-Catalog operation rename_column
-wlc
-rename_schema
-pattern wlc.rename_schema(X_0:str, X_1:str):void 
-WLCgeneric;
-Catalog operation rename_schema
-wlc
-rename_table
-pattern wlc.rename_table(X_0:str, X_1:str, X_2:str, X_3:str):void 
-WLCgeneric;
-Catalog operation rename_table
-wlc
-rename_user
-pattern wlc.rename_user(X_0:str, X_1:str, X_2:int):void 
-WLCgeneric;
-Catalog operation rename_user
-wlc
-revoke
-pattern wlc.revoke(X_0:str, X_1:str, X_2:str, X_3:int, X_4:str, X_5:int, X_6:int):void 
-WLCgeneric;
-Catalog operation revoke
-wlc
-revoke_function
-pattern wlc.revoke_function(X_0:str, X_1:int, X_2:str, X_3:int, X_4:int, X_5:int):void 
-WLCgeneric;
-Catalog operation revoke_function
-wlc
-revoke_roles
-pattern wlc.revoke_roles(X_0:str, X_1:str, X_2:int, X_3:int):void 
-WLCgeneric;
-Catalog operation revoke_roles
-wlc
-rollback
-pattern wlc.rollback():void 
-WLCcommitCmd;
-Rollback the workload-capture-replay record
-wlc
-rollback
-pattern wlc.rollback():void 
-WLCrollbackCmd;
-Mark the end of the work unit
-wlc
-setbeat
-unsafe pattern wlc.setbeat(X_0:int):void 
-WLCsetbeat;
-Maximal delay for transaction log flushing
-wlc
-stop
-unsafe pattern wlc.stop():void 
-WLCstop;
-Stop capturing the logs
-wlc
-transaction
-unsafe pattern wlc.transaction():void 
-WLCgeneric;
-Start an autocommit transaction
-wlc
-transaction_begin
-pattern wlc.transaction_begin(X_0:int, X_1:str):void 
-WLCgeneric;
-A transaction statement (type can be commit,release,rollback or start)
-wlc
-transaction_commit
-pattern wlc.transaction_commit(X_0:int, X_1:str):void 
-WLCgeneric;
-A transaction statement (type can be commit,release,rollback or start)
-wlc
-transaction_release
-pattern wlc.transaction_release(X_0:int, X_1:str):void 
-WLCgeneric;
-A transaction statement (type can be commit,release,rollback or start)
-wlc
-transaction_rollback
-pattern wlc.transaction_rollback(X_0:int, X_1:str):void 
-WLCgeneric;
-A transaction statement (type can be commit,release,rollback or start)
-wlc
-update
-pattern wlc.update(X_0:str, X_1:str, X_2:str, X_3:any, X_4:any):int 
-WLCupdate;
-Keep the update in the workload-capture-replay list
-wlr
-accept
-unsafe pattern wlr.accept():void 
-WLRaccept;
-Accept failing transaction
-wlr
-action
-pattern wlr.action(X_0:str):void 
-WLRaction;
-A query producing updates
-wlr
-alter_add_range_partition
-pattern wlr.alter_add_range_partition(X_0:str, X_1:str, X_2:str, X_3:str, X_4:str, X_5:str, X_6:bit, X_7:int):void 
-WLRgeneric;
-Catalog operation alter_add_range_partition
-wlr
-alter_add_table
-pattern wlr.alter_add_table(X_0:str, X_1:str, X_2:str, X_3:str, X_4:int):void 
-WLRgeneric;
-Catalog operation alter_add_table
-wlr
-alter_add_value_partition
-pattern wlr.alter_add_value_partition(X_0:str, X_1:str, X_2:str, X_3:str, X_4:bit, X_5:int):void 
-WLRgeneric;
-Catalog operation alter_add_value_partition
-wlr
-alter_add_value_partition
-pattern wlr.alter_add_value_partition(X_0:str, X_1:str, X_2:str, X_3:str, X_4:bit, X_5:int, X_6:str...):void 
-WLRgeneric;
-Catalog operation alter_add_value_partition
-wlr
-alter_del_table
-pattern wlr.alter_del_table(X_0:str, X_1:str, X_2:str, X_3:str, X_4:int):void 
-WLRgeneric;
-Catalog operation alter_del_table
-wlr
-alter_seq
-pattern wlr.alter_seq(X_0:str, X_1:str, X_2:lng):void 
-WLRgeneric;
-Catalog operation alter_seq
-wlr
-alter_seq
-pattern wlr.alter_seq(X_0:str, X_1:str, X_2:ptr, X_3:bat[:lng]):void 
-WLRgeneric;
-Catalog operation alter_seq
-wlr
-alter_set_table
-pattern wlr.alter_set_table(X_0:str, X_1:str, X_2:int):void 
-WLRgeneric;
-Catalog operation alter_set_table
-wlr
-alter_table
-pattern wlr.alter_table(X_0:str, X_1:str, X_2:int):void 
-WLRgeneric;
-Catalog operation alter_table
-wlr
-alter_user
-pattern wlr.alter_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str):void 
-WLRgeneric;
-Catalog operation alter_user
-wlr
-append
-pattern wlr.append(X_0:str, X_1:str, X_2:str, X_3:oid, X_4:bat[:oid], X_5:any...):int 
-WLRappend;
-Apply the insertions in the workload-capture-replay list
-wlr
-catalog
-pattern wlr.catalog(X_0:str):void 
-WLRcatalog;
-A catalog changing query
-wlr
-clear_table
-pattern wlr.clear_table(X_0:str, X_1:str, X_2:int):int 
-WLRclear_table;
-Destroy the tuples in the table
-wlr
-comment_on
-pattern wlr.comment_on(X_0:int, X_1:str):void 
-WLRgeneric;
-Catalog operation comment_on
-wlr
-commit
-pattern wlr.commit():void 
-WLRcommit;
-Mark the end of the work unit
-wlr
-create_function
-pattern wlr.create_function(X_0:str, X_1:str, X_2:int):void 
-WLRgeneric;
-Catalog operation create_function
-wlr
-create_role
-pattern wlr.create_role(X_0:str, X_1:str, X_2:int):void 
-WLRgeneric;
-Catalog operation create_role
-wlr
-create_schema
-pattern wlr.create_schema(X_0:str, X_1:str, X_2:int):void 
-WLRgeneric;
-Catalog operation create_schema
-wlr
-create_seq
-pattern wlr.create_seq(X_0:str, X_1:str, X_2:int):void 
-WLRgeneric;
-Catalog operation create_seq
-wlr
-create_table
-pattern wlr.create_table(X_0:str, X_1:str, X_2:int):void 
-WLRgeneric;
-Catalog operation create_table
-wlr
-create_trigger
-pattern wlr.create_trigger(X_0:str, X_1:str, X_2:str, X_3:int, X_4:int, X_5:int, X_6:str, X_7:str, X_8:str, X_9:str, X_10:int):void 
-WLRgeneric;
-Catalog operation create_trigger
-wlr
-create_type
-pattern wlr.create_type(X_0:str, X_1:str, X_2:str):void 
-WLRgeneric;
-Catalog operation create_type
-wlr
-create_user
-pattern wlr.create_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str):void 
-WLRgeneric;
-Catalog operation create_user
-wlr
-create_view
-pattern wlr.create_view(X_0:str, X_1:str, X_2:int, X_3:int):void 
-WLRgeneric;
-Catalog operation create_view
-wlr
-delete
-pattern wlr.delete(X_0:str, X_1:str, X_2:oid...):int 
-WLRdelete;
-Apply the deletions in the workload-capture-replay list
-wlr
-drop_constraint
-pattern wlr.drop_constraint(X_0:str, X_1:str, X_2:str, X_3:int, X_4:int):void 
-WLRgeneric;
-Catalog operation drop_constraint
-wlr
-drop_function
-pattern wlr.drop_function(X_0:str, X_1:str, X_2:int, X_3:int, X_4:int):void 
-WLRgeneric;
-Catalog operation drop_function
-wlr
-drop_index
-pattern wlr.drop_index(X_0:str, X_1:str, X_2:int):void 
-WLRgeneric;
-Catalog operation drop_index
-wlr
-drop_role
-pattern wlr.drop_role(X_0:str, X_1:int):void 
-WLRgeneric;
-Catalog operation drop_role
-wlr
-drop_role
-pattern wlr.drop_role(X_0:str, X_1:str, X_2:int):void 
-WLRgeneric;
-Catalog operation drop_role
-wlr
-drop_schema
-pattern wlr.drop_schema(X_0:str, X_1:int, X_2:int):void 
-WLRgeneric;
-Catalog operation drop_schema
-wlr
-drop_seq
-pattern wlr.drop_seq(X_0:str, X_1:str, X_2:int):void 
-WLRgeneric;
-Catalog operation drop_seq
-wlr
-drop_table
-pattern wlr.drop_table(X_0:str, X_1:str, X_2:int, X_3:int):void 
-WLRgeneric;
-Catalog operation drop_table
-wlr
-drop_trigger
-pattern wlr.drop_trigger(X_0:str, X_1:str, X_2:int):void 
-WLRgeneric;
-Catalog operation drop_trigger
-wlr
-drop_type
-pattern wlr.drop_type(X_0:str, X_1:str, X_2:int):void 
-WLRgeneric;
-Catalog operation drop_type
-wlr
-drop_user
-pattern wlr.drop_user(X_0:str, X_1:int):void 
-WLRgeneric;
-Catalog operation drop_user
-wlr
-drop_user
-pattern wlr.drop_user(X_0:str, X_1:str, X_2:int):void 
-WLRgeneric;
-Catalog operation drop_user
-wlr
-drop_view
-pattern wlr.drop_view(X_0:str, X_1:str, X_2:int, X_3:int):void 
-WLRgeneric;
-Catalog operation drop_view
-wlr
-getMaster
-pattern wlr.getMaster():str 
-WLRgetmaster;
-What is the current master database
-wlr
-getclock
-pattern wlr.getclock():str 
-WLRgetclock;
-Timestamp of last replicated transaction.
-wlr
-gettick
-pattern wlr.gettick():lng 
-WLRgettick;
-Transaction identifier of the last replicated transaction.
-wlr
-grant
-pattern wlr.grant(X_0:str, X_1:str, X_2:str, X_3:int, X_4:str, X_5:int, X_6:int):void 
-WLRgeneric;
-Catalog operation grant
-wlr
-grant_function
-pattern wlr.grant_function(X_0:str, X_1:int, X_2:str, X_3:int, X_4:int, X_5:int):void 
-WLRgeneric;
-Catalog operation grant_function
-wlr
-grant_roles
-pattern wlr.grant_roles(X_0:str, X_1:str, X_2:int, X_3:int):void 
-WLRgeneric;
-Catalog operation grant_roles
-wlr
-master
-unsafe pattern wlr.master(X_0:str):void 
-WLRmaster;
-Initialize the replicator thread
-wlr
-rename_column
-pattern wlr.rename_column(X_0:str, X_1:str, X_2:str, X_3:str):void 
-WLRgeneric;
-Catalog operation rename_column
-wlr
-rename_schema
-pattern wlr.rename_schema(X_0:str, X_1:str):void 
-WLRgeneric;
-Catalog operation rename_schema
-wlr
-rename_table
-pattern wlr.rename_table(X_0:str, X_1:str, X_2:str, X_3:str):void 
-WLRgeneric;
-Catalog operation rename_table
-wlr
-rename_user
-pattern wlr.rename_user(X_0:str, X_1:str, X_2:int):void 
-WLRgeneric;
-Catalog operation rename_user
-wlr
-replicate
-unsafe pattern wlr.replicate():void 
-WLRreplicate;
-Continue to keep the replica in sink
-wlr
-replicate
-unsafe pattern wlr.replicate(X_0:bte):void 
-WLRreplicate;
-Roll the snapshot forward to a specific transaction id
-wlr
-replicate
-unsafe pattern wlr.replicate(X_0:int):void 
-WLRreplicate;
-Roll the snapshot forward to a specific transaction id
-wlr
-replicate
-unsafe pattern wlr.replicate(X_0:lng):void 
-WLRreplicate;
-Roll the snapshot forward to a specific transaction id
-wlr
-replicate
-unsafe pattern wlr.replicate(X_0:sht):void 
-WLRreplicate;
-Roll the snapshot forward to a specific transaction id
-wlr
-replicate
-unsafe pattern wlr.replicate(X_0:timestamp):void 
-WLRreplicate;
-Roll the snapshot forward to an up-to-date clone
-wlr
-revoke
-pattern wlr.revoke(X_0:str, X_1:str, X_2:str, X_3:int, X_4:str, X_5:int, X_6:int):void 
-WLRgeneric;
-Catalog operation revoke
-wlr
-revoke_function
-pattern wlr.revoke_function(X_0:str, X_1:int, X_2:str, X_3:int, X_4:int, X_5:int):void 
-WLRgeneric;
-Catalog operation revoke_function
-wlr
-revoke_roles
-pattern wlr.revoke_roles(X_0:str, X_1:str, X_2:int, X_3:int):void 
-WLRgeneric;
-Catalog operation revoke_roles
-wlr
-rollback
-pattern wlr.rollback():void 
-WLRrollback;
-Mark the end of the work unit
-wlr
-setbeat
-unsafe pattern wlr.setbeat(X_0:int):void 
-WLRsetbeat;
-Threshold (in seconds) for re-running queries
-wlr
-stop
-unsafe pattern wlr.stop():void 
-WLRstop;
-Stop the replicator thread
-wlr
-transaction
-unsafe pattern wlr.transaction():void 
-WLRgeneric;
-Start an autocommit transaction
-wlr
-transaction
-pattern wlr.transaction(X_0:lng, X_1:str, X_2:str):void 
-WLRtransaction;
-Mark the beginning of the work unit which can be a compound transaction
-wlr
-transaction_begin
-pattern wlr.transaction_begin(X_0:int, X_1:str):void 
-WLRgeneric;
-A transaction statement (type can be commit,release,rollback or start)
-wlr
-transaction_commit
-pattern wlr.transaction_commit(X_0:int, X_1:str):void 
-WLRgeneric;
-A transaction statement (type can be commit,release,rollback or start)
-wlr
-transaction_release
-pattern wlr.transaction_release(X_0:int, X_1:str):void 
-WLRgeneric;
-A transaction statement (type can be commit,release,rollback or start)
-wlr
-transaction_rollback
-pattern wlr.transaction_rollback(X_0:int, X_1:str):void 
-WLRgeneric;
-A transaction statement (type can be commit,release,rollback or start)
-wlr
-update
-pattern wlr.update(X_0:str, X_1:str, X_2:str, X_3:oid, X_4:any):int 
-WLRupdate;
-Apply the update in the workload-capture-replay list
 xml
 aggr
 command xml.aggr(X_0:bat[:xml]):xml 

@@ -1,0 +1,1351 @@
+-- tests voor ORDER BY x [ ASC | DESC ] NULLS { FIRST | LAST }  [ LIMIT n ]  [ OFFSET n ]
+
+-- FYI: other scripts where NULLS [ FIRST | LAST ] are tested:
+-- sql/test/analytics/Tests/analytics13.test
+-- sql/test/miscellaneous/Tests/groupings.test
+-- sql/test/subquery/Tests/subquery3.test
+-- sql/test/subquery/Tests/subquery4.test
+-- sql/test/SQLancer/Tests/sqlancer05.test
+-- sql/test/SQLancer/Tests/sqlancer11.test
+
+statement ok
+create table obn (cti tinyint, cbi bigint, crl real, cdl double, cch char(44), cvc varchar(99), cstr string, ctm time, cdt date, cts timestamp(0))
+
+statement ok rowcount 1
+insert into obn values(4,4,4,4,'c4c','vc4','str4','04:04:04','2004-04-04','2004-04-04 04:04:04')
+
+statement ok rowcount 1
+insert into obn values(9,9,9,9,'c9c','vc9','str9','09:09:09','2009-09-09','2009-09-09 09:09:09')
+
+statement ok rowcount 1
+insert into obn values(null,null,null,null,null,null,null,null,null,null)
+
+statement ok rowcount 1
+insert into obn values(12,12,12,12,'c12c','vc12','str12','12:12:12','2012-12-12','2012-12-12 12:12:12')
+
+statement ok rowcount 1
+insert into obn values(3,3,3,3,'c3c','vc3','str3','03:03:03','2003-03-03','2003-03-03 03:03:03')
+
+statement ok rowcount 1
+insert into obn values(null,null,null,null,null,null,null,null,null,null)
+
+statement ok rowcount 1
+insert into obn values(2,2,2,2,'c2c','vc2','str2','02:02:02','2002-02-02','2002-02-02 02:02:02')
+
+query IIRRTTTTTT nosort
+select * from obn
+----
+4
+4
+4.000
+4.000
+c4c
+vc4
+str4
+04:04:04
+2004-04-04
+2004-04-04 04:04:04
+9
+9
+9.000
+9.000
+c9c
+vc9
+str9
+09:09:09
+2009-09-09
+2009-09-09 09:09:09
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+12
+12
+12.000
+12.000
+c12c
+vc12
+str12
+12:12:12
+2012-12-12
+2012-12-12 12:12:12
+3
+3
+3.000
+3.000
+c3c
+vc3
+str3
+03:03:03
+2003-03-03
+2003-03-03 03:03:03
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+2
+2
+2.000
+2.000
+c2c
+vc2
+str2
+02:02:02
+2002-02-02
+2002-02-02 02:02:02
+
+query IIRRTTTTTT nosort
+select * from obn order by cti
+----
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+2
+2
+2.000
+2.000
+c2c
+vc2
+str2
+02:02:02
+2002-02-02
+2002-02-02 02:02:02
+3
+3
+3.000
+3.000
+c3c
+vc3
+str3
+03:03:03
+2003-03-03
+2003-03-03 03:03:03
+4
+4
+4.000
+4.000
+c4c
+vc4
+str4
+04:04:04
+2004-04-04
+2004-04-04 04:04:04
+9
+9
+9.000
+9.000
+c9c
+vc9
+str9
+09:09:09
+2009-09-09
+2009-09-09 09:09:09
+12
+12
+12.000
+12.000
+c12c
+vc12
+str12
+12:12:12
+2012-12-12
+2012-12-12 12:12:12
+
+query I nosort
+select cti from obn order by cti nulls first
+----
+NULL
+NULL
+2
+3
+4
+9
+12
+
+query I nosort
+select cti from obn order by cti nulls last
+----
+2
+3
+4
+9
+12
+NULL
+NULL
+
+query I nosort
+select cti from obn order by cti nulls last limit 6
+----
+2
+3
+4
+9
+12
+NULL
+
+query I nosort
+select cti from obn order by cti nulls last limit 4 offset 2
+----
+4
+9
+12
+NULL
+
+query I nosort
+select cti from obn order by cti nulls last offset 3
+----
+9
+12
+NULL
+NULL
+
+query I nosort
+select cti from obn order by cti desc
+----
+12
+9
+4
+3
+2
+NULL
+NULL
+
+query I nosort
+select cti from obn order by cti desc nulls last
+----
+12
+9
+4
+3
+2
+NULL
+NULL
+
+query I nosort
+select cti from obn order by cti desc nulls first
+----
+NULL
+NULL
+12
+9
+4
+3
+2
+
+query I nosort
+select cti from obn order by cti desc nulls first limit 5
+----
+NULL
+NULL
+12
+9
+4
+
+query I nosort
+select cti from obn order by cti desc nulls first offset 1
+----
+NULL
+12
+9
+4
+3
+2
+
+query I nosort
+select cbi from obn order by cbi
+----
+NULL
+NULL
+2
+3
+4
+9
+12
+
+query I nosort
+select cbi from obn order by cbi nulls first
+----
+NULL
+NULL
+2
+3
+4
+9
+12
+
+query I nosort
+select cbi from obn order by cbi nulls last
+----
+2
+3
+4
+9
+12
+NULL
+NULL
+
+query I nosort
+select cbi from obn order by cbi nulls last limit 5
+----
+2
+3
+4
+9
+12
+
+query I nosort
+select cbi from obn order by cbi nulls last limit 4 offset 2
+----
+4
+9
+12
+NULL
+
+query I nosort
+select cbi from obn order by cbi nulls last offset 2
+----
+4
+9
+12
+NULL
+NULL
+
+query I nosort
+select cbi from obn order by cbi desc
+----
+12
+9
+4
+3
+2
+NULL
+NULL
+
+query I nosort
+select cbi from obn order by cbi desc nulls last
+----
+12
+9
+4
+3
+2
+NULL
+NULL
+
+query I nosort
+select cbi from obn order by cbi desc nulls first
+----
+NULL
+NULL
+12
+9
+4
+3
+2
+
+query I nosort
+select cbi from obn order by cbi desc nulls first limit 6
+----
+NULL
+NULL
+12
+9
+4
+3
+
+query I nosort
+select cbi from obn order by cbi desc nulls first limit 5 offset 1
+----
+NULL
+12
+9
+4
+3
+
+query I nosort
+select cbi from obn order by cbi desc nulls first offset 1
+----
+NULL
+12
+9
+4
+3
+2
+
+query R nosort
+select crl from obn order by crl
+----
+NULL
+NULL
+2.000
+3.000
+4.000
+9.000
+12.000
+
+query R nosort
+select crl from obn order by crl nulls first
+----
+NULL
+NULL
+2.000
+3.000
+4.000
+9.000
+12.000
+
+query R nosort
+select crl from obn order by crl nulls last
+----
+2.000
+3.000
+4.000
+9.000
+12.000
+NULL
+NULL
+
+query R nosort
+select crl from obn order by crl nulls last limit 4
+----
+2.000
+3.000
+4.000
+9.000
+
+query R nosort
+select crl from obn order by crl nulls last limit 4 offset 2
+----
+4.000
+9.000
+12.000
+NULL
+
+query R nosort
+select crl from obn order by crl desc
+----
+12.000
+9.000
+4.000
+3.000
+2.000
+NULL
+NULL
+
+query R nosort
+select crl from obn order by crl desc nulls last
+----
+12.000
+9.000
+4.000
+3.000
+2.000
+NULL
+NULL
+
+query R nosort
+select crl from obn order by crl desc nulls first
+----
+NULL
+NULL
+12.000
+9.000
+4.000
+3.000
+2.000
+
+query R nosort
+select crl from obn order by crl desc nulls first limit 5
+----
+NULL
+NULL
+12.000
+9.000
+4.000
+
+query R nosort
+select crl from obn order by crl desc nulls first limit 4 offset 1
+----
+NULL
+12.000
+9.000
+4.000
+
+query R nosort
+select crl from obn order by crl desc nulls first offset 1
+----
+NULL
+12.000
+9.000
+4.000
+3.000
+2.000
+
+query R nosort
+select cdl from obn order by cdl
+----
+NULL
+NULL
+2.000
+3.000
+4.000
+9.000
+12.000
+
+query R nosort
+select cdl from obn order by cdl nulls first
+----
+NULL
+NULL
+2.000
+3.000
+4.000
+9.000
+12.000
+
+query R nosort
+select cdl from obn order by cdl nulls first limit 5
+----
+NULL
+NULL
+2.000
+3.000
+4.000
+
+query R nosort
+select cdl from obn order by cdl nulls last
+----
+2.000
+3.000
+4.000
+9.000
+12.000
+NULL
+NULL
+
+query R nosort
+select cdl from obn order by cdl nulls last offset 3
+----
+9.000
+12.000
+NULL
+NULL
+
+query R nosort
+select cdl from obn order by cdl desc
+----
+12.000
+9.000
+4.000
+3.000
+2.000
+NULL
+NULL
+
+query R nosort
+select cdl from obn order by cdl desc nulls last
+----
+12.000
+9.000
+4.000
+3.000
+2.000
+NULL
+NULL
+
+query R nosort
+select cdl from obn order by cdl desc nulls last limit 6
+----
+12.000
+9.000
+4.000
+3.000
+2.000
+NULL
+
+query R nosort
+select cdl from obn order by cdl desc nulls last limit 3 offset 3
+----
+3.000
+2.000
+NULL
+
+query R nosort
+select cdl from obn order by cdl desc nulls last offset 3
+----
+3.000
+2.000
+NULL
+NULL
+
+query R nosort
+select cdl from obn order by cdl desc nulls first
+----
+NULL
+NULL
+12.000
+9.000
+4.000
+3.000
+2.000
+
+query R nosort
+select cdl from obn order by cdl desc nulls first limit 5
+----
+NULL
+NULL
+12.000
+9.000
+4.000
+
+query R nosort
+select cdl from obn order by cdl desc nulls first limit 5 offset 1
+----
+NULL
+12.000
+9.000
+4.000
+3.000
+
+query T nosort
+select cch from obn order by cch
+----
+NULL
+NULL
+c12c
+c2c
+c3c
+c4c
+c9c
+
+query T nosort
+select cch from obn order by cch nulls first
+----
+NULL
+NULL
+c12c
+c2c
+c3c
+c4c
+c9c
+
+query T nosort
+select cch from obn order by cch nulls first offset 1
+----
+NULL
+c12c
+c2c
+c3c
+c4c
+c9c
+
+query T nosort
+select cch from obn order by cch nulls last
+----
+c12c
+c2c
+c3c
+c4c
+c9c
+NULL
+NULL
+
+query T nosort
+select cch from obn order by cch nulls last limit 6
+----
+c12c
+c2c
+c3c
+c4c
+c9c
+NULL
+
+query T nosort
+select cch from obn order by cch nulls last limit 4 offset 4
+----
+c9c
+NULL
+NULL
+
+query T nosort
+select cch from obn order by cch desc
+----
+c9c
+c4c
+c3c
+c2c
+c12c
+NULL
+NULL
+
+query T nosort
+select cch from obn order by cch desc nulls last
+----
+c9c
+c4c
+c3c
+c2c
+c12c
+NULL
+NULL
+
+query T nosort
+select cch from obn order by cch desc nulls first
+----
+NULL
+NULL
+c9c
+c4c
+c3c
+c2c
+c12c
+
+query T nosort
+select cch from obn order by cch desc nulls first limit 4
+----
+NULL
+NULL
+c9c
+c4c
+
+query T nosort
+select cch from obn order by cch desc nulls first limit 4 offset 1
+----
+NULL
+c9c
+c4c
+c3c
+
+query T nosort
+select cvc from obn order by cvc
+----
+NULL
+NULL
+vc12
+vc2
+vc3
+vc4
+vc9
+
+query T nosort
+select cvc from obn order by cvc nulls first
+----
+NULL
+NULL
+vc12
+vc2
+vc3
+vc4
+vc9
+
+query T nosort
+select cvc from obn order by cvc nulls last
+----
+vc12
+vc2
+vc3
+vc4
+vc9
+NULL
+NULL
+
+query T nosort
+select cvc from obn order by cvc nulls last limit 4
+----
+vc12
+vc2
+vc3
+vc4
+
+query T nosort
+select cvc from obn order by cvc nulls last limit 4 offset 2
+----
+vc3
+vc4
+vc9
+NULL
+
+query T nosort
+select cvc from obn order by cvc nulls last offset 4
+----
+vc9
+NULL
+NULL
+
+query T nosort
+select cvc from obn order by cvc desc
+----
+vc9
+vc4
+vc3
+vc2
+vc12
+NULL
+NULL
+
+query T nosort
+select cvc from obn order by cvc desc nulls last
+----
+vc9
+vc4
+vc3
+vc2
+vc12
+NULL
+NULL
+
+query T nosort
+select cvc from obn order by cvc desc nulls last limit 5
+----
+vc9
+vc4
+vc3
+vc2
+vc12
+
+query T nosort
+select cvc from obn order by cvc desc nulls first
+----
+NULL
+NULL
+vc9
+vc4
+vc3
+vc2
+vc12
+
+query T nosort
+select cvc from obn order by cvc desc nulls first limit 4
+----
+NULL
+NULL
+vc9
+vc4
+
+query T nosort
+select cvc from obn order by cvc desc nulls first limit 4 offset 1
+----
+NULL
+vc9
+vc4
+vc3
+
+query T nosort
+select cstr from obn order by cstr
+----
+NULL
+NULL
+str12
+str2
+str3
+str4
+str9
+
+query T nosort
+select cstr from obn order by cstr nulls first
+----
+NULL
+NULL
+str12
+str2
+str3
+str4
+str9
+
+query T nosort
+select cstr from obn order by cstr nulls last
+----
+str12
+str2
+str3
+str4
+str9
+NULL
+NULL
+
+query T nosort
+select cstr from obn order by cstr nulls last limit 6
+----
+str12
+str2
+str3
+str4
+str9
+NULL
+
+query T nosort
+select cstr from obn order by cstr nulls last limit 6 offset 3
+----
+str4
+str9
+NULL
+NULL
+
+query T nosort
+select cstr from obn order by cstr desc
+----
+str9
+str4
+str3
+str2
+str12
+NULL
+NULL
+
+query T nosort
+select cstr from obn order by cstr desc nulls last
+----
+str9
+str4
+str3
+str2
+str12
+NULL
+NULL
+
+query T nosort
+select cstr from obn order by cstr desc nulls first
+----
+NULL
+NULL
+str9
+str4
+str3
+str2
+str12
+
+query T nosort
+select cstr from obn order by cstr desc nulls first limit 6
+----
+NULL
+NULL
+str9
+str4
+str3
+str2
+
+query T nosort
+select cstr from obn order by cstr desc nulls first limit 4 offset 1
+----
+NULL
+str9
+str4
+str3
+
+query T nosort
+select cstr from obn order by cstr desc nulls first offset 1
+----
+NULL
+str9
+str4
+str3
+str2
+str12
+
+query T nosort
+select ctm from obn order by ctm
+----
+NULL
+NULL
+02:02:02
+03:03:03
+04:04:04
+09:09:09
+12:12:12
+
+query T nosort
+select ctm from obn order by ctm nulls first
+----
+NULL
+NULL
+02:02:02
+03:03:03
+04:04:04
+09:09:09
+12:12:12
+
+query T nosort
+select ctm from obn order by ctm nulls last
+----
+02:02:02
+03:03:03
+04:04:04
+09:09:09
+12:12:12
+NULL
+NULL
+
+query T nosort
+select ctm from obn order by ctm nulls last limit 4
+----
+02:02:02
+03:03:03
+04:04:04
+09:09:09
+
+query T nosort
+select ctm from obn order by ctm nulls last limit 4 offset 2
+----
+04:04:04
+09:09:09
+12:12:12
+NULL
+
+query T nosort
+select ctm from obn order by ctm nulls last offset 2
+----
+04:04:04
+09:09:09
+12:12:12
+NULL
+NULL
+
+query T nosort
+select ctm from obn order by ctm desc
+----
+12:12:12
+09:09:09
+04:04:04
+03:03:03
+02:02:02
+NULL
+NULL
+
+query T nosort
+select ctm from obn order by ctm desc nulls last
+----
+12:12:12
+09:09:09
+04:04:04
+03:03:03
+02:02:02
+NULL
+NULL
+
+query T nosort
+select ctm from obn order by ctm desc nulls first
+----
+NULL
+NULL
+12:12:12
+09:09:09
+04:04:04
+03:03:03
+02:02:02
+
+query T nosort
+select ctm from obn order by ctm desc nulls first limit 5
+----
+NULL
+NULL
+12:12:12
+09:09:09
+04:04:04
+
+query T nosort
+select ctm from obn order by ctm desc nulls first limit 4 offset 1
+----
+NULL
+12:12:12
+09:09:09
+04:04:04
+
+query T nosort
+select ctm from obn order by ctm desc nulls first offset 1
+----
+NULL
+12:12:12
+09:09:09
+04:04:04
+03:03:03
+02:02:02
+
+query T nosort
+select cdt from obn order by cdt
+----
+NULL
+NULL
+2002-02-02
+2003-03-03
+2004-04-04
+2009-09-09
+2012-12-12
+
+query T nosort
+select cdt from obn order by cdt nulls first
+----
+NULL
+NULL
+2002-02-02
+2003-03-03
+2004-04-04
+2009-09-09
+2012-12-12
+
+query T nosort
+select cdt from obn order by cdt nulls last
+----
+2002-02-02
+2003-03-03
+2004-04-04
+2009-09-09
+2012-12-12
+NULL
+NULL
+
+query T nosort
+select cdt from obn order by cdt nulls last limit 5
+----
+2002-02-02
+2003-03-03
+2004-04-04
+2009-09-09
+2012-12-12
+
+query T nosort
+select cdt from obn order by cdt nulls last limit 3 offset 3
+----
+2009-09-09
+2012-12-12
+NULL
+
+query T nosort
+select cdt from obn order by cdt nulls last offset 3
+----
+2009-09-09
+2012-12-12
+NULL
+NULL
+
+query T nosort
+select cdt from obn order by cdt desc
+----
+2012-12-12
+2009-09-09
+2004-04-04
+2003-03-03
+2002-02-02
+NULL
+NULL
+
+query T nosort
+select cdt from obn order by cdt desc nulls last
+----
+2012-12-12
+2009-09-09
+2004-04-04
+2003-03-03
+2002-02-02
+NULL
+NULL
+
+query T nosort
+select cdt from obn order by cdt desc nulls first
+----
+NULL
+NULL
+2012-12-12
+2009-09-09
+2004-04-04
+2003-03-03
+2002-02-02
+
+query T nosort
+select cdt from obn order by cdt desc nulls first limit 5
+----
+NULL
+NULL
+2012-12-12
+2009-09-09
+2004-04-04
+
+query T nosort
+select cdt from obn order by cdt desc nulls first limit 5 offset 1
+----
+NULL
+2012-12-12
+2009-09-09
+2004-04-04
+2003-03-03
+
+query T nosort
+select cdt from obn order by cdt desc nulls first offset 1
+----
+NULL
+2012-12-12
+2009-09-09
+2004-04-04
+2003-03-03
+2002-02-02
+
+query T nosort
+select cts from obn order by cts
+----
+NULL
+NULL
+2002-02-02 02:02:02
+2003-03-03 03:03:03
+2004-04-04 04:04:04
+2009-09-09 09:09:09
+2012-12-12 12:12:12
+
+query T nosort
+select cts from obn order by cts nulls first
+----
+NULL
+NULL
+2002-02-02 02:02:02
+2003-03-03 03:03:03
+2004-04-04 04:04:04
+2009-09-09 09:09:09
+2012-12-12 12:12:12
+
+query T nosort
+select cts from obn order by cts nulls first limit 6
+----
+NULL
+NULL
+2002-02-02 02:02:02
+2003-03-03 03:03:03
+2004-04-04 04:04:04
+2009-09-09 09:09:09
+
+query T nosort
+select cts from obn order by cts nulls first limit 5 offset 1
+----
+NULL
+2002-02-02 02:02:02
+2003-03-03 03:03:03
+2004-04-04 04:04:04
+2009-09-09 09:09:09
+
+query T nosort
+select cts from obn order by cts nulls last
+----
+2002-02-02 02:02:02
+2003-03-03 03:03:03
+2004-04-04 04:04:04
+2009-09-09 09:09:09
+2012-12-12 12:12:12
+NULL
+NULL
+
+query T nosort
+select cts from obn order by cts nulls last offset 4
+----
+2012-12-12 12:12:12
+NULL
+NULL
+
+query T nosort
+select cts from obn order by cts desc
+----
+2012-12-12 12:12:12
+2009-09-09 09:09:09
+2004-04-04 04:04:04
+2003-03-03 03:03:03
+2002-02-02 02:02:02
+NULL
+NULL
+
+query T nosort
+select cts from obn order by cts desc nulls last
+----
+2012-12-12 12:12:12
+2009-09-09 09:09:09
+2004-04-04 04:04:04
+2003-03-03 03:03:03
+2002-02-02 02:02:02
+NULL
+NULL
+
+query T nosort
+select cts from obn order by cts desc nulls first
+----
+NULL
+NULL
+2012-12-12 12:12:12
+2009-09-09 09:09:09
+2004-04-04 04:04:04
+2003-03-03 03:03:03
+2002-02-02 02:02:02
+
+query T nosort
+select cts from obn order by cts desc nulls first limit 6
+----
+NULL
+NULL
+2012-12-12 12:12:12
+2009-09-09 09:09:09
+2004-04-04 04:04:04
+2003-03-03 03:03:03
+
+query T nosort
+select cts from obn order by cts desc nulls first limit 5 offset 1
+----
+NULL
+2012-12-12 12:12:12
+2009-09-09 09:09:09
+2004-04-04 04:04:04
+2003-03-03 03:03:03
+
+query T nosort
+select cts from obn order by cts desc nulls first offset 1
+----
+NULL
+2012-12-12 12:12:12
+2009-09-09 09:09:09
+2004-04-04 04:04:04
+2003-03-03 03:03:03
+2002-02-02 02:02:02
+
+query T nosort
+select o.cts from obn o left outer join obn r on (o.cbi = r.cbi) order by o.cts desc nulls first limit 5 offset 1
+----
+NULL
+2012-12-12 12:12:12
+2009-09-09 09:09:09
+2004-04-04 04:04:04
+2003-03-03 03:03:03
+
+query T nosort
+select o.cts from obn o left outer join (select cbi from obn where cbi > 2) r on (o.cbi = r.cbi) order by o.cts desc nulls first limit 5 offset 1
+----
+NULL
+2012-12-12 12:12:12
+2009-09-09 09:09:09
+2004-04-04 04:04:04
+2003-03-03 03:03:03
+
+statement ok
+drop table obn
+

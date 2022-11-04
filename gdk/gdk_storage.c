@@ -683,7 +683,7 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
-	const char *tail = gettailnamebi(bi);
+	const char *tail = BATITERtailname(bi);
 	if (bi->type != TYPE_void && bi->base == NULL) {
 		assert(BBP_status(b->batCacheid) & BBPSWAPPED);
 		if (dosync && !(GDKdebug & NOSYNCMASK)) {
@@ -800,7 +800,9 @@ BATload_intern(bat bid, bool lock)
 	/* LOAD bun heap */
 	if (b->ttype != TYPE_void) {
 		b->theap->storage = b->theap->newstorage = STORE_INVALID;
-		if (HEAPload(b->theap, b->theap->filename, NULL, b->batRestricted == BAT_READ) != GDK_SUCCEED) {
+		if ((b->batCount == 0 ?
+		     HEAPalloc(b->theap, b->batCapacity, b->twidth) :
+		     HEAPload(b->theap, b->theap->filename, NULL, b->batRestricted == BAT_READ)) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
 			return NULL;
 		}
@@ -817,7 +819,9 @@ BATload_intern(bat bid, bool lock)
 	/* LOAD tail heap */
 	if (ATOMvarsized(b->ttype)) {
 		b->tvheap->storage = b->tvheap->newstorage = STORE_INVALID;
-		if (HEAPload(b->tvheap, nme, "theap", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
+		if ((b->tvheap->free == 0 ?
+		     ATOMheap(b->ttype, b->tvheap, b->batCapacity) :
+		     HEAPload(b->tvheap, nme, "theap", b->batRestricted == BAT_READ)) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
 			HEAPfree(b->tvheap, false);
 			return NULL;
@@ -863,8 +867,10 @@ BATdelete(BAT *b)
 {
 	bat bid = b->batCacheid;
 	BAT *loaded = BBP_cache(bid);
+	char o[12];
 
 	assert(bid > 0);
+	snprintf(o, sizeof(o), "%o", (unsigned) bid);
 	if (loaded) {
 		b = loaded;
 	}
@@ -874,9 +880,12 @@ BATdelete(BAT *b)
 	PROPdestroy_nolock(b);
 	STRMPdestroy(b);
 	RTREEdestroy(b);
-	HEAPfree(b->theap, true);
-	if (b->tvheap)
+	if (b->theap) {
+		HEAPfree(b->theap, true);
+	}
+	if (b->tvheap) {
 		HEAPfree(b->tvheap, true);
+	}
 	b->batCopiedtodisk = false;
 }
 

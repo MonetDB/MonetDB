@@ -10,7 +10,11 @@
 #include "type_conversion.h"
 #include "unicode.h"
 
+#if PY_MINOR_VERSION >= 11
+#include <cpython/longintrepr.h>
+#else
 #include <longintrepr.h>
+#endif
 
 bool pyapi3_string_copy(const char *source, char *dest, size_t max_size, bool allow_unicode)
 {
@@ -51,8 +55,13 @@ PyObject *PyLong_FromHge(hge h)
 		prev = prev - ((prev >> (PyLong_SHIFT * i)) << (PyLong_SHIFT * i));
 		z->ob_digit[i] = result;
 	}
-	if (h < 0)
+	if (h < 0) {
+#ifdef Py_SET_SIZE
+		Py_SET_SIZE(z, -Py_SIZE(z));
+#else
 		Py_SIZE(z) = -(Py_SIZE(z));
+#endif
+	}
 	return (PyObject *)z;
 }
 #endif

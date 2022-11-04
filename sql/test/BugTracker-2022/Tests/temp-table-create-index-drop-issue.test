@@ -1,0 +1,176 @@
+query TIIII rowsort
+select name, type, commit_action, access, temporary from sys.tables where not system and schema_id in (select id from sys.schemas where name = 'tmp')
+----
+
+query T rowsort
+select name from tmp.idxs where table_id in (select id from sys.tables where not system) union all select name from sys.idxs where table_id in (select id from sys.tables where not system)
+----
+
+query III rowsort
+SELECT id, depend_id, depend_type FROM sys.dependencies WHERE (id, depend_id, depend_type) NOT IN (SELECT v.id, v.used_by_id, v.depend_type FROM sys.dependencies_vw v)
+----
+
+query IIII rowsort
+SELECT auth_id, privileges, grantor, grantable FROM sys.privileges WHERE (obj_id) NOT IN (SELECT id FROM (SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys._tables UNION ALL SELECT id FROM sys._columns UNION ALL SELECT id FROM sys.functions) as t)
+----
+
+statement ok
+CREATE GLOBAL TEMP TABLE tmp.glbl_nopk_twoucs (id2 INT NOT NULL UNIQUE, name2 VARCHAR(99) UNIQUE)
+
+query TIIII rowsort
+select name, type, commit_action, access, temporary from sys.tables where not system and schema_id in (select id from sys.schemas where name = 'tmp')
+----
+glbl_nopk_twoucs
+20
+1
+0
+1
+
+query T rowsort
+select name from tmp.idxs where table_id in (select id from sys.tables where not system) union all select name from sys.idxs where table_id in (select id from sys.tables where not system)
+----
+glbl_nopk_twoucs_id2_unique
+glbl_nopk_twoucs_name2_unique
+
+statement ok
+CREATE INDEX glbl_nopk_twoucs_i ON tmp.glbl_nopk_twoucs (id2, name2)
+
+query T rowsort
+select name from tmp.idxs where table_id in (select id from sys.tables where not system) union all select name from sys.idxs where table_id in (select id from sys.tables where not system)
+----
+glbl_nopk_twoucs_i
+glbl_nopk_twoucs_id2_unique
+glbl_nopk_twoucs_name2_unique
+
+statement ok
+DROP INDEX glbl_nopk_twoucs_i
+
+query T rowsort
+select name from tmp.idxs where table_id in (select id from sys.tables where not system) union all select name from sys.idxs where table_id in (select id from sys.tables where not system)
+----
+glbl_nopk_twoucs_id2_unique
+glbl_nopk_twoucs_name2_unique
+
+statement ok
+DROP TABLE tmp.glbl_nopk_twoucs
+
+query TIIII rowsort
+select name, type, commit_action, access, temporary from sys.tables where not system and schema_id in (select id from sys.schemas where name = 'tmp')
+----
+
+query T rowsort
+select name from tmp.idxs where table_id in (select id from sys.tables where not system) union all select name from sys.idxs where table_id in (select id from sys.tables where not system)
+----
+
+query III rowsort
+SELECT id, depend_id, depend_type FROM sys.dependencies WHERE (id, depend_id, depend_type) NOT IN (SELECT v.id, v.used_by_id, v.depend_type FROM sys.dependencies_vw v)
+----
+
+query IIII rowsort
+SELECT auth_id, privileges, grantor, grantable FROM sys.privileges WHERE (obj_id) NOT IN (SELECT id FROM (SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys._tables UNION ALL SELECT id FROM sys._columns UNION ALL SELECT id FROM sys.functions) as t)
+----
+
+statement ok
+DROP TABLE IF EXISTS tmp_nopk_twoucs
+
+query TIIII rowsort
+select name, type, commit_action, access, temporary from sys.tables where not system and schema_id in (select id from sys.schemas where name = 'tmp')
+----
+
+query T rowsort
+select name from tmp.idxs where table_id in (select id from sys.tables where not system)
+----
+
+statement ok
+CREATE LOCAL TEMP TABLE tmp_nopk_twoucs (id2 INT NOT NULL UNIQUE, name2 VARCHAR(99) UNIQUE)
+
+query TIIII rowsort
+select name, type, commit_action, access, temporary from sys.tables where not system and schema_id in (select id from sys.schemas where name = 'tmp')
+----
+tmp_nopk_twoucs
+30
+1
+0
+1
+
+query T rowsort
+select name from tmp.idxs where table_id in (select id from sys.tables where not system)
+----
+tmp_nopk_twoucs_id2_unique
+tmp_nopk_twoucs_name2_unique
+
+statement ok
+DROP TABLE tmp_nopk_twoucs
+
+query TIIII rowsort
+select name, type, commit_action, access, temporary from sys.tables where not system and schema_id in (select id from sys.schemas where name = 'tmp')
+----
+
+query T rowsort
+select name from tmp.idxs where table_id in (select id from sys.tables where not system)
+----
+
+query III rowsort
+SELECT id, depend_id, depend_type FROM sys.dependencies WHERE (id, depend_id, depend_type) NOT IN (SELECT v.id, v.used_by_id, v.depend_type FROM sys.dependencies_vw v)
+----
+
+-- next is the situation which fails
+statement ok
+CREATE LOCAL TEMP TABLE tmp_nopk_twoucs (id2 INT NOT NULL UNIQUE, name2 VARCHAR(99) UNIQUE)
+
+statement ok
+GRANT INSERT, DELETE ON TABLE tmp.tmp_nopk_twoucs TO monetdb
+
+query TIIII rowsort
+select name, type, commit_action, access, temporary from sys.tables where not system and schema_id in (select id from sys.schemas where name = 'tmp')
+----
+tmp_nopk_twoucs
+30
+1
+0
+1
+
+query T rowsort
+select name from tmp.idxs where table_id in (select id from sys.tables where not system) union all select name from sys.idxs where table_id in (select id from sys.tables where not system)
+----
+tmp_nopk_twoucs_id2_unique
+tmp_nopk_twoucs_name2_unique
+
+statement ok
+CREATE INDEX tmp_nopk_twoucs_i ON tmp.tmp_nopk_twoucs (id2, name2)
+
+query T rowsort
+select name from tmp.idxs where table_id in (select id from sys.tables where not system) union all select name from sys.idxs where table_id in (select id from sys.tables where not system)
+----
+tmp_nopk_twoucs_i
+tmp_nopk_twoucs_id2_unique
+tmp_nopk_twoucs_name2_unique
+
+statement ok
+DROP INDEX tmp_nopk_twoucs_i
+
+query T rowsort
+select name from tmp.idxs where table_id in (select id from sys.tables where not system) union all select name from sys.idxs where table_id in (select id from sys.tables where not system)
+----
+tmp_nopk_twoucs_id2_unique
+tmp_nopk_twoucs_name2_unique
+
+statement ok
+DROP TABLE tmp_nopk_twoucs
+
+query TIIII rowsort
+select name, type, commit_action, access, temporary from sys.tables where not system and schema_id in (select id from sys.schemas where name = 'tmp')
+----
+
+query T rowsort
+select name from tmp.idxs where table_id in (select id from sys.tables where not system) union all select name from sys.idxs where table_id in (select id from sys.tables where not system)
+----
+
+query III rowsort
+SELECT id, depend_id, depend_type FROM sys.dependencies WHERE (id, depend_id, depend_type) NOT IN (SELECT v.id, v.used_by_id, v.depend_type FROM sys.dependencies_vw v)
+----
+
+query IIII rowsort
+SELECT auth_id, privileges, grantor, grantable FROM sys.privileges WHERE (obj_id) NOT IN (SELECT id FROM (SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys._tables UNION ALL SELECT id FROM sys._columns UNION ALL SELECT id FROM sys.functions) as t)
+----
+

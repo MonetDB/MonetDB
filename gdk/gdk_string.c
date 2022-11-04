@@ -71,7 +71,7 @@ strHeap(Heap *d, size_t cap)
 
 	cap = MAX(cap, BATTINY);
 	size = GDK_STRHASHTABLE * sizeof(stridx_t) + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
-	return HEAPalloc(d, size, 1, 1);
+	return HEAPalloc(d, size, 1);
 }
 
 
@@ -333,7 +333,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 #endif
 
 ssize_t
-GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len)
+GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len, char quote)
 {
 	unsigned char *p = dst;
 	const unsigned char *cur = src, *end = src + len;
@@ -470,7 +470,6 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 		} else if ((c = *cur) == '\\') {
 			escaped = true;
 			continue;
-#if 0
 		} else if (c == quote && cur[1] == quote) {
 			assert(c != 0);
 			if (unlikely(n > 0))
@@ -478,7 +477,6 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 			*p++ = quote;
 			cur++;
 			continue;
-#endif
 		}
 
 		if (n > 0) {
@@ -598,7 +596,8 @@ strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst, 
 
 	return GDKstrFromStr((unsigned char *) *dst,
 			     (const unsigned char *) start,
-			     (ssize_t) (cur - start));
+			     (ssize_t) (cur - start),
+			     '\0');
 }
 
 /*

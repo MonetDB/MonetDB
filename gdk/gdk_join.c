@@ -2662,6 +2662,9 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	bool lskipped = false;	/* whether we skipped values in l */
 	Hash *restrict hsh = NULL;
 	bool locked = false;
+	BUN maxsize;
+	BAT *r1 = NULL;
+	BAT *r2 = NULL;
 
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 
@@ -2696,19 +2699,6 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		return nomatch(r1p, r2p, l, r, lci,
 			       nil_on_miss, only_misses, __func__, t0);
 	}
-
-	BUN maxsize = joininitresults(r1p, r2p, lci->ncand, rci->ncand,
-				      li.key, ri.key, semi | max_one,
-				      nil_on_miss, only_misses, min_one,
-				      estimate);
-	if (maxsize == BUN_NONE) {
-		bat_iterator_end(&li);
-		bat_iterator_end(&ri);
-		return GDK_FAIL;
-	}
-
-	BAT *r1 = *r1p;
-	BAT *r2 = r2p ? *r2p : NULL;
 
 	rl = rci->seq - r->hseqbase;
 	rh = canditer_last(rci) + 1 - r->hseqbase;
@@ -2818,6 +2808,17 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			}
 		}
 	}
+
+	maxsize = joininitresults(r1p, r2p, lci->ncand, rci->ncand,
+				  li.key, ri.key, semi | max_one,
+				  nil_on_miss, only_misses, min_one,
+				  estimate);
+	if (maxsize == BUN_NONE) {
+		goto bailout;
+	}
+
+	r1 = *r1p;
+	r2 = r2p ? *r2p : NULL;
 
 	/* basic properties will be adjusted if necessary later on,
 	 * they were initially set by joininitresults() */
@@ -3169,9 +3170,11 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		seen = NULL;
 	} else {
 		BUN prb;
-		BUN p;
 		BUN mask;
-		Hash hs = {0};
+		Hash hs = {
+			.heapbckt.parentid = b->batCacheid,
+			.heaplink.parentid = b->batCacheid,
+		};
 
 		GDKclrerr();	/* not interested in BAThash errors */
 		algomsg = "new partial hash";
@@ -3183,7 +3186,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		    (hs.heapbckt.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap)) < 0 ||
 		    snprintf(hs.heaplink.filename, sizeof(hs.heaplink.filename), "%s.thshjnl%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heaplink.filename) ||
 		    snprintf(hs.heapbckt.filename, sizeof(hs.heapbckt.filename), "%s.thshjnb%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heapbckt.filename) ||
-		    HASHnew(&hs, bi.type, BATcount(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
+		    HASHnew(&hs, bi.type, ci.ncand, mask, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKerror("cannot allocate hash table\n");
 			HEAPfree(&hs.heaplink, true);
 			HEAPfree(&hs.heapbckt, true);
@@ -3199,15 +3202,15 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 			for (hb = HASHget(&hs, prb);
 			     hb != BUN_NONE;
 			     hb = HASHgetlink(&hs, hb)) {
-				if (cmp(v, BUNtail(bi, hb)) == 0)
+				BUN p = canditer_idx(&ci, hb) - b->hseqbase;
+				if (cmp(v, BUNtail(bi, p)) == 0)
 					break;
 			}
 			if (hb == BUN_NONE) {
-				p = o - b->hseqbase;
 				cnt++;
 				/* enter into hash table */
-				HASHputlink(&hs, p, HASHget(&hs, prb));
-				HASHput(&hs, prb, p);
+				HASHputlink(&hs, i, HASHget(&hs, prb));
+				HASHput(&hs, prb, i);
 			}
 		}
 		*cnt2 = cnt;

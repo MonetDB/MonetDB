@@ -9,7 +9,6 @@
 #include "monetdb_config.h"
 #include "opt_fastpath.h"
 #include "opt_aliases.h"
-#include "opt_bincopyfrom.h"
 #include "opt_coercion.h"
 #include "opt_commonTerms.h"
 #include "opt_candidates.h"
@@ -42,7 +41,6 @@
 #include "opt_reorder.h"
 #include "opt_volcano.h"
 #include "opt_fastpath.h"
-#include "opt_wlc.h"
 #include "optimizer_private.h"
 #include "mal_interpreter.h"
 #include "mal_profiler.h"
@@ -62,13 +60,11 @@ str
 OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int bincopy = 0, generator = 0, multiplex = 0, actions = 0;
+	int generator = 0, multiplex = 0, actions = 0;
 
 	/* perform a single scan through the plan to determine which optimizer steps to skip */
 	for( int i=0; i<mb->stop; i++){
 		InstrPtr q = getInstrPtr(mb,i);
-		if (q->modname == sqlRef && q->fcnname == importTableRef)
-			bincopy= 1;
 		if( getModuleId(q) == generatorRef)
 			generator = 1;
 		if ( getFunctionId(q) == multiplexRef)
@@ -77,15 +73,14 @@ OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 
 	optcall(true, OPTinlineImplementation);
 	optcall(true, OPTremapImplementation);
-	optcall(bincopy, OPTbincopyfromImplementation);
 	optcall(true, OPTemptybindImplementation);
 	optcall(true, OPTdeadcodeImplementation);
 	optcall(true, OPTforImplementation);
 	optcall(true, OPTdictImplementation);
 	optcall(multiplex, OPTmultiplexImplementation);
 	optcall(generator, OPTgeneratorImplementation);
-	optcall(malProfileMode, OPTprofilerImplementation);
-	optcall(malProfileMode, OPTcandidatesImplementation);
+	optcall(profilerStatus, OPTprofilerImplementation);
+	optcall(profilerStatus, OPTcandidatesImplementation);
 	optcall(true, OPTgarbageCollectorImplementation);
 
 	/* Defense line against incorrect plans  handled by optimizer steps */
@@ -99,13 +94,11 @@ str
 OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int bincopy = 0, generator = 0, multiplex = 0, actions = 0;
+	int generator = 0, multiplex = 0, actions = 0;
 
 	/* perform a single scan through the plan to determine which optimizer steps to skip */
 	for( int i=0; i<mb->stop; i++){
 		InstrPtr q = getInstrPtr(mb,i);
-		if (q->modname == sqlRef && q->fcnname == importTableRef)
-			bincopy= 1;
 		if( getModuleId(q) == generatorRef)
 			generator = 1;
 		if ( getFunctionId(q) == multiplexRef)
@@ -126,7 +119,6 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	optcall(true, OPTdictImplementation);
 	optcall(true, OPTmitosisImplementation);
 	optcall(true, OPTmergetableImplementation);
-	optcall(bincopy, OPTbincopyfromImplementation);
 	optcall(true, OPTaliasesImplementation);
 	optcall(true, OPTconstantsImplementation);
 	optcall(true, OPTcommonTermsImplementation);
@@ -138,12 +130,11 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	optcall(true, OPTquerylogImplementation);
 	optcall(multiplex, OPTmultiplexImplementation);
 	optcall(generator, OPTgeneratorImplementation);
-	optcall(malProfileMode, OPTprofilerImplementation);
-	optcall(malProfileMode, OPTcandidatesImplementation);
+	optcall(profilerStatus, OPTprofilerImplementation);
+	optcall(profilerStatus, OPTcandidatesImplementation);
 	optcall(true, OPTdeadcodeImplementation);
 	optcall(true, OPTpostfixImplementation);
 	// optcall(true, OPTjitImplementation);
-	optcall(true, OPTwlcImplementation);
 	optcall(true, OPTgarbageCollectorImplementation);
 
 	/* Defense line against incorrect plans  handled by optimizer steps */

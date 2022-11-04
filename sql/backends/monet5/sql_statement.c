@@ -491,6 +491,21 @@ stmt_temp(backend *be, sql_subtype *t)
 }
 
 stmt *
+stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t)
+{
+	if (q == NULL)
+		return NULL;
+	stmt *s = stmt_create(be->mvc->sa, st_result);
+	s->op4.typeval = *t;
+	s->nrcols = 1;
+	s->q = q;
+	s->nr = getArg(q, retnr);
+	s->flag = retnr;
+	return s;
+}
+
+
+stmt *
 stmt_tid(backend *be, sql_table *t, int partition)
 {
 	int tt = TYPE_oid;
@@ -1038,6 +1053,7 @@ stmt_result(backend *be, stmt *s, int nr)
 		ns->nr = s->nr;
 	}
 	ns->op1 = s;
+	ns->op4.typeval = *sql_bind_localtype("oid");
 	ns->flag = nr;
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
@@ -2465,6 +2481,10 @@ stmt_rs_column(backend *be, stmt *rs, int i, sql_subtype *tpe)
 		s->q = q;
 		s->nr = getArg(q, s->flag);
 		return s;
+	} else if (rs->type == st_list) {
+		list *cols = rs->op4.lval;
+		if (i < list_length(cols))
+			return list_fetch(cols, i);
 	}
 	return NULL;
 }
@@ -2607,6 +2627,27 @@ stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char 
 		return s;
 	}
 	return NULL;
+}
+
+stmt *
+stmt_export_bin(backend *be, stmt *colstmt, bool byteswap, const char *filename, int on_client)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q;
+
+
+	q = newStmt(mb, sqlRef, export_bin_columnRef);
+	pushArgument(mb, q, colstmt->nr);
+	pushBit(mb, q, byteswap);
+	pushStr(mb, q, filename);
+	pushInt(mb, q, on_client);
+
+	stmt *s = stmt_create(be->mvc->sa, st_export);
+	if (!s)
+		return NULL;
+
+	s->q = q;
+	return s;
 }
 
 stmt *
@@ -3834,10 +3875,11 @@ tail_type(stmt *st)
 			/* fall through */
 		case st_reorder:
 		case st_group:
-		case st_result:
 		case st_tid:
 		case st_mirror:
 			return sql_bind_localtype("oid");
+		case st_result:
+			return &st->op4.typeval;
 		case st_table_clear:
 			return sql_bind_localtype("lng");
 		case st_aggr:

@@ -153,7 +153,6 @@ tst401
 tst500
 tst501
 tst560
-tst611
 #tst620  word size problems on different platforms
 tst660
 tst661
@@ -170,7 +169,6 @@ tst802
 tst804
 tst810
 tst819
-tst830
 tst840
 tst850
 tst866

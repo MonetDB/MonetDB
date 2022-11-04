@@ -838,6 +838,8 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 		GDKfree(usockfilenew);
 #endif
 
+	fflush(stdout);
+
 	return MAL_SUCCEED;
 }
 

@@ -406,7 +406,7 @@ invoke_editor(int cnt, int key) {
 	}
 
 	fclose(fp);
-	MT_remove(template);
+	(void) MT_remove(template);
 
 	return 0;
 
@@ -414,7 +414,7 @@ bailout:
 	if (fp)
 		fclose(fp);
 	free(read_buff);
-	MT_remove(template);
+	(void) MT_remove(template);
 	return 1;
 }
 

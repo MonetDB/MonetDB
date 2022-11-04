@@ -132,7 +132,13 @@ char* db_create(const char* dbname) {
 	/* without an .uplog file, Merovingian won't work, this
 	 * needs to be last to avoid race conditions */
 	snprintf(path, sizeof(path), "%s/%s/.uplog", dbfarm, dbname);
-	fclose(fopen(path, "w"));
+	if ((f = fopen(path, "w")) == NULL) {
+		snprintf(buf, sizeof(buf), "cannot create uplog file: %s",
+				strerror(errno));
+		free(dbfarm);
+		return(strdup(buf));
+	}
+	fclose(f);
 
 	free(dbfarm);
 	return(NULL);
@@ -250,8 +256,8 @@ char* db_rename(const char *olddb, const char *newdb) {
 char* db_lock(const char *dbname) {
 	char *e;
 	sabdb *stats;
-	char path[8096];
-	char buf[8096];
+	char path[FILENAME_MAX];
+	char buf[sizeof(path) + 512];
 	FILE *f;
 
 	/* the argument is the database to take under maintenance, see
@@ -290,8 +296,8 @@ char* db_lock(const char *dbname) {
 char *db_release(const char *dbname) {
 	char *e;
 	sabdb *stats;
-	char path[8096];
-	char buf[8096];
+	char path[FILENAME_MAX];
+	char buf[sizeof(path) + 512];
 
 	/* the argument is the database to take under maintenance, see
 	 * what Sabaoth can tell us about it */

@@ -132,7 +132,7 @@ gdk_export ssize_t fltFromStr(const char *src, size_t *len, flt **dst, bool exte
 gdk_export ssize_t fltToStr(str *dst, size_t *len, const flt *src, bool external);
 gdk_export ssize_t dblFromStr(const char *src, size_t *len, dbl **dst, bool external);
 gdk_export ssize_t dblToStr(str *dst, size_t *len, const dbl *src, bool external);
-gdk_export ssize_t GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len);
+gdk_export ssize_t GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len, char quote);
 gdk_export ssize_t strFromStr(const char *restrict src, size_t *restrict len, str *restrict dst, bool external);
 gdk_export size_t escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int quote);
 gdk_export size_t escapedStr(char *restrict dst, const char *restrict src, size_t dstlen, const char *sep1, const char *sep2, int quote);

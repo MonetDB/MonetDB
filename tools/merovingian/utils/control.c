@@ -146,6 +146,7 @@ control_setup(
 
 			control->fdin = block_stream(socket_rstream(control->sock, "client in"));
 			if (control->fdin == NULL) {
+				closesocket(control->sock);
 				snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: %s", mnstr_peek_error(NULL));
 				return strdup(control->sbuf);
 			}
@@ -566,7 +567,7 @@ char* control_send_callback(
 		while ((nread = mnstr_read(s, buf, 1, sizeof(buf))) > 0) {
 			callback(buf, (size_t)nread, cb_private);
 		}
-		if (mnstr_errnr(s))
+		if (mnstr_errnr(s) != MNSTR_NO__ERROR)
 			msg = mnstr_error(s);
 	} while (0);
 	if (bs)

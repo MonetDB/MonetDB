@@ -21,7 +21,6 @@
  * The optimizer used so far
 */
 #include "opt_aliases.h"
-#include "opt_bincopyfrom.h"
 #include "opt_coercion.h"
 #include "opt_commonTerms.h"
 #include "opt_candidates.h"
@@ -55,7 +54,6 @@
 #include "opt_volcano.h"
 #include "opt_fastpath.h"
 #include "opt_strimps.h"
-#include "opt_wlc.h"
 #include "optimizer_private.h"
 
 // keep the optimizer list sorted
@@ -66,7 +64,6 @@ static struct {
 	lng timing;
 } codes[] = {
 	{"aliases", &OPTaliasesImplementation,0,0},
-	{"bincopyfrom", &OPTbincopyfromImplementation,0,0},
 	{"candidates", &OPTcandidatesImplementation,0,0},
 	{"coercions", &OPTcoercionImplementation,0,0},
 	{"commonTerms", &OPTcommonTermsImplementation,0,0},
@@ -101,7 +98,6 @@ static struct {
 	{"reorder", &OPTreorderImplementation,0,0},
 	{"strimps", &OPTstrimpsImplementation,0,0},
 	{"volcano", &OPTvolcanoImplementation,0,0},
-	{"wlc", &OPTwlcImplementation,0,0},
 	{0,0,0,0}
 };
 static int codehash[256];
@@ -172,7 +168,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	clk = GDKusec();
 	const char *id = getFunctionId(p);
-	for (i=codehash[*id]; codes[i].nme; i++){
+	for (i=codehash[(unsigned char) *id]; codes[i].nme; i++){
 		if (codes[i].nme[0] == *id && strcmp(codes[i].nme, getFunctionId(p)) == 0){
 			msg = (str)(*(codes[i].fcn))(cntxt, mb, stk, p);
 			clk = GDKusec() - clk;

@@ -1,0 +1,108 @@
+statement ok
+drop table if exists urlt
+
+statement ok
+create table urlt (c url)
+
+statement ok
+insert into urlt values ('https://me@www.monetdb.org:458/Doc/Abc.html?lang=nl&sort=asc#example')
+
+query T nosort
+select c from urlt
+----
+https://me@www.monetdb.org:458/Doc/Abc.html?lang=nl&sort=asc#example
+
+query T nosort
+select sys.getanchor(c) from urlt
+----
+example
+
+query T nosort
+select sys.getbasename(c) from urlt
+----
+Abc
+
+query T nosort
+select sys.getcontext(c) from urlt
+----
+/Doc/Abc.html
+
+query T nosort
+select sys.getdomain(c) from urlt
+----
+org
+
+query T nosort
+select sys.getextension(c) from urlt
+----
+html
+
+query T nosort
+select sys.getfile(c) from urlt
+----
+Abc.html
+
+query T nosort
+select sys.gethost(c) from urlt
+----
+www.monetdb.org
+
+query T nosort
+select sys.getport(c) from urlt
+----
+458
+
+query T nosort
+select sys.getprotocol(c) from urlt
+----
+https
+
+query T nosort
+select sys.getquery(c) from urlt
+----
+lang=nl&sort=asc
+
+query T nosort
+select sys.getroboturl(c) from urlt
+----
+https://me@www.monetdb.org:458/robots.txt
+
+query T nosort
+select sys.getuser(c) from urlt
+----
+me
+
+query I nosort
+select sys.isaurl(c) from urlt
+----
+1
+
+query T nosort
+select sys.newurl('https', 'usr@www.a.com:123', 'docs/index.html')
+----
+https://usr@www.a.com:123/docs/index.html
+
+query T nosort
+select sys.newurl('https', 'www.a.com', 5567, 'docs/index.html')
+----
+https://www.a.com:5567/docs/index.html
+
+# new Sep2022 function: sys.url_extract_host(url string, no_www bool)
+query T nosort
+select sys.url_extract_host(c, false) from urlt
+----
+www.monetdb.org
+
+query T nosort
+select sys.url_extract_host(c, true) from urlt
+----
+monetdb.org
+
+query T nosort
+select sys.url_extract_host('this is not a www.url.com/pliant string', true)
+----
+NULL
+
+statement ok
+drop table if exists urlt
+

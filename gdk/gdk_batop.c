@@ -46,7 +46,6 @@ unshare_varsized_heap(BAT *b)
 		MT_lock_unset(&b->theaplock);
 		HEAPdecref(oh, false);
 		BBPunshare(parent);
-		BBPunfix(parent);
 	}
 	return GDK_SUCCEED;
 }
@@ -144,6 +143,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 				}
 				memcpy(b->tvheap->base + toff, ni->vh->base, ni->vhfree);
 				b->tvheap->free = toff + ni->vhfree;
+				b->tvheap->dirty = true;
 				MT_lock_unset(&b->theaplock);
 			}
 		}
@@ -313,7 +313,13 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 	for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
 		HASHappend_locked(b, r, b->tvheap->base + VarHeapVal(Tloc(b, 0), r, b->twidth));
 	}
+	BUN nunique = b->thash ? b->thash->nunique : 0;
 	MT_rwlock_wrunlock(&b->thashlock);
+	if (nunique != 0) {
+		MT_lock_set(&b->theaplock);
+		b->tunique_est = (double) nunique;
+		MT_lock_unset(&b->theaplock);
+	}
 	return GDK_SUCCEED;
 }
 
@@ -385,7 +391,13 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		     i++) {
 			HASHappend_locked(b, i, b->tvheap->base + *(var_t *) Tloc(b, i));
 		}
+		BUN nunique = b->thash ? b->thash->nunique : 0;
 		MT_rwlock_wrunlock(&b->thashlock);
+		if (nunique != 0) {
+			MT_lock_set(&b->theaplock);
+			b->tunique_est = (double) nunique;
+			MT_lock_unset(&b->theaplock);
+		}
 		return GDK_SUCCEED;
 	}
 	/* b and n do not share their vheap, so we need to copy data */
@@ -406,7 +418,8 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 			GDKfree(h);
 			return GDK_FAIL;
 		}
-		BBPunshare(b->tvheap->parentid);
+		bat parid = b->tvheap->parentid;
+		BBPunshare(parid);
 		ATOMIC_INIT(&h->refs, 1);
 		MT_lock_set(&b->theaplock);
 		Heap *oh = b->tvheap;
@@ -462,9 +475,12 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 			r++;
 		}
 	}
+	BUN nunique = b->thash ? b->thash->nunique : 0;
 	MT_rwlock_wrunlock(&b->thashlock);
 	MT_lock_set(&b->theaplock);
 	BATsetcount(b, r);
+	if (nunique != 0)
+		b->tunique_est = (double) nunique;
 	MT_lock_unset(&b->theaplock);
 	return GDK_SUCCEED;
 }
@@ -771,10 +787,10 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		}
 	}
 
-	r = BATcount(b);
-
 	/* property setting */
 	MT_lock_set(&b->theaplock);
+	r = BATcount(b);
+
 	if (BATcount(b) == 0) {
 		b->tsorted = ni.sorted;
 		b->trevsorted = ni.revsorted;
@@ -886,9 +902,13 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			}
 			TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		}
+		BUN nunique;
+		nunique = b->thash ? b->thash->nunique : 0;
 		MT_rwlock_wrunlock(&b->thashlock);
 		MT_lock_set(&b->theaplock);
 		BATsetcount(b, b->batCount + ci.ncand);
+		if (nunique != 0)
+			b->tunique_est = (double) nunique;
 		MT_lock_unset(&b->theaplock);
 	}
 
@@ -1088,6 +1108,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 {
 	lng t0 = GDKusec();
 	oid pos = oid_nil;
+	BUN nunique = 0;
 
 	if (b == NULL || b->ttype == TYPE_void || n == NULL) {
 		return GDK_SUCCEED;
@@ -1131,7 +1152,8 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	(void) BATcheckhash(b);
 
 	MT_lock_set(&b->theaplock);
-	if (!force && (b->batRestricted != BAT_WRITE || b->batSharecnt > 0)) {
+	if (!force && (b->batRestricted != BAT_WRITE ||
+		       (ATOMIC_GET(&b->theap->refs) & HEAPREFS) > 1)) {
 		MT_lock_unset(&b->theaplock);
 		bat_iterator_end(&ni);
 		GDKerror("access denied to %s, aborting.\n", BATgetId(b));
@@ -1332,6 +1354,8 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 
 		}
 		if (locked) {
+			if (b->thash)
+				nunique = b->thash->nunique;
 			MT_rwlock_wrunlock(&b->thashlock);
 			locked = false;
 		}
@@ -1486,6 +1510,8 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 		if (b->thash != NULL) {
 			for (BUN i = pos, j = pos + ni.count; i < j; i++)
 				HASHinsert_locked(&bi, i, Tloc(b, i));
+			if (b->thash)
+				nunique = b->thash->nunique;
 		}
 		MT_rwlock_wrunlock(&b->thashlock);
 		locked = false;
@@ -1629,12 +1655,16 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			HASHinsert_locked(&bi, updid, new);
 		}
 		if (locked) {
+			if (b->thash)
+				nunique = b->thash->nunique;
 			MT_rwlock_wrunlock(&b->thashlock);
 			locked = false;
 		}
 	}
 	bat_iterator_end(&ni);
 	MT_lock_set(&b->theaplock);
+	if (nunique != 0)
+		b->tunique_est = (double) nunique;
 	b->tminpos = bi.minpos;
 	b->tmaxpos = bi.maxpos;
 	b->theap->dirty = true;
@@ -2800,7 +2830,6 @@ PROPdestroy_nolock(BAT *b)
 
 	b->tprops = NULL;
 	while (p) {
-		/* only set dirty if a saved property is changed */
 		n = p->next;
 		VALclear(&p->v);
 		GDKfree(p);

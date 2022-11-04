@@ -41,7 +41,7 @@ def main():
         mstcur.execute(query)
 
         query = 'select username, status, query from sys.queue() where status = \'running\' order by query'
-        expected_res = [('monetdb', 'running', 'select username, status, query from sys.queue() where status = \\\'running\\\' order by query\n;')]
+        expected_res = [('monetdb', 'running', 'select username, status, query from sys.queue() where status = \'running\' order by query\n;')]
         rowcnt = mstcur.execute(query)
         res = mstcur.fetchall()
         if rowcnt != len(expected_res) or res != expected_res:
@@ -55,7 +55,7 @@ def main():
         # Check the long running query, but lets first wait for a moment for the
         #   workers to start with their queries
         mstcur.execute('call sys.sleep(1000)')
-        query = 'select username, status, query from sys.queue() where query like \'call sys.sleep(5000)%\' order by query'
+        query = 'select username, status, query from sys.queue() where query like \'call sys.sleep('+SLEEP_TIME+')%\' order by query'
         expected_res = [
         ('monetdb', 'running', 'call sys.sleep('+SLEEP_TIME+')\n;'),
         ('monetdb', 'running', 'call sys.sleep('+SLEEP_TIME+')\n;'),
@@ -68,12 +68,13 @@ def main():
         # Exit the completed processes
         [p.join() for p in jobs]
 
-        # sys.queue() should have been expanded from 4 to 8, so we should be able
-        #   to have 7 queries in the queue
+        # sys.queue() should have been expanded from 4 to 8, so we
+        #   should be able to have 8 queries in the queue
         mstcur.execute('select 6')
         mstcur.execute('select 7')
+        mstcur.execute('select 8')
         query = 'select count(*) from sys.queue()'
-        expected_res = 7
+        expected_res = 8
         rowcnt = mstcur.execute(query)
         res = mstcur.fetchall()
         if rowcnt != 1 or res[0][0] != expected_res:

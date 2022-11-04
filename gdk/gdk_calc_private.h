@@ -633,3 +633,21 @@ typedef long double ldouble;
 #define rounddbl(x)	roundl(x)
 #endif
 #endif
+
+
+
+#define absbte(x)	abs(x)
+#define abssht(x)	abs(x)
+#define absint(x)	abs(x)
+#define abslng(x)	llabs(x)
+#define abshge(x)	ABSOLUTE(x)
+
+BAT *
+BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp,
+		 BUN (*typeswitchloop)(const void *, int, bool,
+				       const void *, int, bool,
+				       void *restrict, int,
+				       struct canditer *restrict,
+				       struct canditer *restrict,
+				       oid, oid, const char *),
+		 const char *func);

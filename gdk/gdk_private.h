@@ -96,6 +96,9 @@ ValPtr BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 gdk_return BBPcacheit(BAT *bn, bool lock)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
+gdk_return BBPchkfarms(void)
+	__attribute__((__warn_unused_result__))
+	__attribute__((__visibility__("hidden")));
 void BBPclear(bat bid, bool lock)
 	__attribute__((__visibility__("hidden")));
 void BBPdump(void)		/* never called: for debugging only */
@@ -173,7 +176,7 @@ gdk_return GDKtracer_init(const char *dbname, const char *dbtrace)
 	__attribute__((__visibility__("hidden")));
 gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
-void HASHappend(BAT *b, BUN i, const void *v)
+BUN HASHappend(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHappend_locked(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
@@ -181,11 +184,11 @@ void HASHfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 bool HASHgonebad(BAT *b, const void *v)
 	__attribute__((__visibility__("hidden")));
-void HASHdelete(BATiter *bi, BUN p, const void *v)
+BUN HASHdelete(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHdelete_locked(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
-void HASHinsert(BATiter *bi, BUN p, const void *v)
+BUN HASHinsert(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
@@ -194,7 +197,7 @@ BUN HASHmask(BUN cnt)
 	__attribute__((__visibility__("hidden")));
 gdk_return HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 	__attribute__((__visibility__("hidden")));
-gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize, size_t itemsizemmap)
+gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPcopy(Heap *dst, Heap *src, size_t offset)
@@ -256,8 +259,6 @@ void PROPdestroy_nolock(BAT *b)
 gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, struct canditer *lci, struct canditer *rci, bool li, bool hi, bool anti, bool symmetric, BUN maxsize)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-const char *gettailname(const BAT *b)
-	__attribute__((__visibility__("hidden")));
 void settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width)
 	__attribute__((__visibility__("hidden")));
 void strCleanHash(Heap *hp, bool rebuild)
@@ -283,7 +284,7 @@ BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 
 static inline const char *
-gettailnamebi(const BATiter *bi)
+BATITERtailname(const BATiter *bi)
 {
 	if (bi->type == TYPE_str) {
 		switch (bi->width) {
@@ -392,7 +393,7 @@ ilog2(BUN x)
 	b->hseqbase,							\
 	ATOMname(b->ttype),						\
 	b->ttype==TYPE_str?b->twidth==1?"1":b->twidth==2?"2":b->twidth==4?"4":"8":"", \
-	!b->batTransient ? "P" : b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T", \
+	!b->batTransient ? "P" : b->theap && b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T", \
 	BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "", \
 	b->tsorted ? "S" : b->tnosorted ? "!s" : "",			\
 	b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "",		\
@@ -400,7 +401,7 @@ ilog2(BUN x)
 	b->tnonil ? "N" : "",						\
 	b->thash ? "H" : "",						\
 	b->torderidx ? "O" : "",					\
-	b->timprints ? "I" : b->theap->parentid && BBP_cache(b->theap->parentid)->timprints ? "(I)" : ""
+	b->timprints ? "I" : b->theap && b->theap->parentid && BBP_cache(b->theap->parentid)->timprints ? "(I)" : ""
 /* use ALGOOPTBAT* when BAT is optional (can be NULL) */
 #define ALGOOPTBATFMT	"%s%s" BUNFMT "%s" OIDFMT "%s%s%s%s%s%s%s%s%s%s%s%s%s"
 #define ALGOOPTBATPAR(b)						\
@@ -503,7 +504,8 @@ extern MT_Lock GDKtmLock;
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
 
 #define HEAPREMOVE	((ATOMIC_BASE_TYPE) 1 << 63)
-#define HEAPREFS	(((ATOMIC_BASE_TYPE) 1 << 63) - 1)
+#define DELAYEDREMOVE	((ATOMIC_BASE_TYPE) 1 << 62)
+#define HEAPREFS	(((ATOMIC_BASE_TYPE) 1 << 62) - 1)
 
 /* when the number of updates to a BAT is less than 1 in this number, we
  * keep the unique_est property */

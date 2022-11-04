@@ -65,16 +65,13 @@ class SQLLogicConnection(object):
 
 
 def is_copyfrom_stmt(stmt:[str]=[]):
-    try:
-        index = stmt.index('<COPY_INTO_DATA>')
-        return True
-    except ValueError:
-        pass
-    return False
+    return '<COPY_INTO_DATA>' in stmt
 
 def prepare_copyfrom_stmt(stmt:[str]=[]):
     index = stmt.index('<COPY_INTO_DATA>')
     head = stmt[:index]
+    if stmt[index-1].endswith(';'):
+        stmt[index-1] = stmt[index-1][:-1]
     # check for escape character (single period)
     tail = []
     for l in stmt[index+1:]:
@@ -82,9 +79,11 @@ def prepare_copyfrom_stmt(stmt:[str]=[]):
             tail.append('')
         else:
             tail.append(l)
-    head = '\n'.join(head) + ';'
+    head = '\n'.join(head)
+    if not head.endswith(';'):
+        head += ';'
     tail='\n'.join(tail)
-    return head + '\n' + tail, head
+    return head + '\n' + tail, head, stmt
 
 class SQLLogic:
     def __init__(self, report=None, out=sys.stdout):
@@ -101,6 +100,7 @@ class SQLLogic:
         self.approve = None
         self.threshold = 100
         self.seenerr = False
+        self.__last = ''
 
     def __enter__(self):
         return self
@@ -246,6 +246,9 @@ class SQLLogic:
                     # check whether failed as expected
                     err_code_received, err_msg_received = utils.parse_mapi_err_msg(msg)
                     if expected_err_code and expected_err_msg and err_code_received and err_msg_received:
+                        if expected_err_msg.endswith('...') and expected_err_code == err_code_received and err_msg_received.lower().startswith(expected_err_msg[:expected_err_msg.find('...')].lower()):
+                            result.append(err_code_received + '!' + expected_err_msg)
+                            return result
                         result.append(err_code_received + '!' + err_msg_received)
                         if expected_err_code == err_code_received and expected_err_msg.lower() == err_msg_received.lower():
                             return result
@@ -254,7 +257,10 @@ class SQLLogic:
                             result.append(err_code_received + '!')
                             if expected_err_code == err_code_received:
                                 return result
-                        if expected_err_msg and err_msg_received:
+                        elif expected_err_msg and err_msg_received:
+                            if expected_err_msg.endswith('...') and err_msg_received.lower().startswith(expected_err_msg[:expected_err_msg.find('...')].lower()):
+                                result.append(expected_err_msg)
+                                return result
                             result.append(err_msg_received)
                             if expected_err_msg.lower() == err_msg_received.lower():
                                 return result
@@ -579,24 +585,37 @@ class SQLLogic:
         if defines:
             for define in defines:
                 key, val = define.split('=', 1)
-                defs.append((re.compile(r'\$' + key.strip() + r'\b'),
-                             val.strip().replace('\\', r'\\')))
-        self.defines = defs
+                key = key.strip()
+                val = val.strip()
+                defs.append((re.compile(r'\$(' + key + r'\b|{' + key + '})'),
+                             val, key))
+        self.defines = sorted(defs, key=lambda x: (-len(x[1]), x[1], x[2]))
         self.lines = []
 
     def readline(self):
         self.line += 1
         origline = line = self.file.readline()
-        for key, val in self.defines:
-            line = key.sub(val, line)
+        for reg, val, key in self.defines:
+            line = reg.sub(val.replace('\\', r'\\'), line)
         if self.approve:
             self.lines.append((origline, line))
         return line
 
-    def writeline(self, line=''):
+    def writeline(self, line='', replace=False):
         if self.approve:
+            if not line and self.__last == '':
+                return
+            self.__last = line
             if not line.endswith('\n'):
                 line = line + '\n'
+            if replace:
+                for reg, val, key in self.defines:
+                    # line = line.replace('\''+val.replace('\\', '\\\\'),
+                    #                     '\'${Q'+key+'}')
+                    # line = line.replace(val, '${'+key+'}')
+                    line = line.replace('\''+val.replace('\\', '\\\\'),
+                                        '\'$Q'+key)
+                    line = line.replace(val, '$'+key)
             i = 0
             while i < len(self.lines):
                 if self.lines[i][1] == line:
@@ -645,9 +664,14 @@ class SQLLogic:
             line = self.readline()
             if not line:
                 break
-            if line[0] == '#': # skip mal comments
-                if self.approve:
-                    self.approve.write(line)
+            if line.startswith('#'): # skip mal comments
+                self.writeline(line.rstrip('\n'))
+                continue
+            if self.language == 'sql' and line.startswith('--'):
+                self.writeline(line.rstrip('\n'))
+                continue
+            if line == '\n':
+                self.writeline()
                 continue
             conn = None
             # look for connection string
@@ -694,15 +718,17 @@ class SQLLogic:
                     statement.append(line.rstrip('\n'))
                 if not skipping:
                     if is_copyfrom_stmt(statement):
-                        stmt, stmt_less_data = prepare_copyfrom_stmt(statement)
+                        stmt, stmt_less_data, statement = prepare_copyfrom_stmt(statement)
                         result = self.exec_statement(stmt, expectok, err_stmt=stmt_less_data, expected_err_code=expected_err_code, expected_err_msg=expected_err_msg, expected_rowcount=expected_rowcount, conn=conn, verbose=verbose)
                     else:
+                        if self.language == 'sql' and statement[-1].endswith(';'):
+                            statement[-1] = statement[-1][:-1]
                         result = self.exec_statement('\n'.join(statement), expectok, expected_err_code=expected_err_code, expected_err_msg=expected_err_msg, expected_rowcount=expected_rowcount, conn=conn, verbose=verbose)
                     self.writeline(' '.join(result))
                 else:
                     self.writeline(stline)
                 for line in statement:
-                    self.writeline(line)
+                    self.writeline(line, replace=True)
                 self.writeline()
             elif words[0] == 'query':
                 columns = words[1]
@@ -725,6 +751,8 @@ class SQLLogic:
                     if not line or line == '\n' or line.startswith('----'):
                         break
                     query.append(line.rstrip('\n'))
+                if self.language == 'sql' and query[-1].endswith(';'):
+                    query[-1] = query[-1][:-1]
                 if not line.startswith('----'):
                     self.raise_error('---- expected')
                 line = self.readline()
@@ -746,7 +774,7 @@ class SQLLogic:
                     result1, result2 = self.exec_query('\n'.join(query), columns, sorting, pyscript, hashlabel, nresult, hash, expected, conn=conn, verbose=verbose)
                     self.writeline(' '.join(result1))
                     for line in query:
-                        self.writeline(line)
+                        self.writeline(line, replace=True)
                     self.writeline('----')
                     for line in result2:
                         self.writeline(line)

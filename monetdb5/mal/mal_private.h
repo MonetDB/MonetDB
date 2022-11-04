@@ -14,10 +14,6 @@
 
 #ifdef _MAL_CLIENT_H_
 /* _MAL_CLIENT_H_ is defined in the same file as Client */
-void MCexitClient(Client c)
-	__attribute__((__visibility__("hidden")));
-void MCfreeClient(Client c)
-	__attribute__((__visibility__("hidden")));
 bool MCinit(void)
 	__attribute__((__visibility__("hidden")));
 int MCinitClientThread(Client c)

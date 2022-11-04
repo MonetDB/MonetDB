@@ -25,7 +25,7 @@ import os
 import sys
 import shutil
 import re
-import random
+import secrets
 import time
 import socket
 import struct
@@ -305,7 +305,13 @@ def remove(file):
     except FileNotFoundError:
         pass
     except IsADirectoryError:
-        shutil.rmtree(file)
+        shutil.rmtree(file, ignore_errors=True)
+    except PermissionError:
+        # on Windows we get a weird error from os.remove on a directory
+        if os.name == "nt":
+            shutil.rmtree(file, ignore_errors=True)
+        else:
+            Warn('could not remove {}'.format(file))
     except:
         Warn('could not remove {}'.format(file))
 
@@ -341,9 +347,7 @@ import argparse
 
 import threading
 
-randomPortRepeat = 9
-
-(F_SKIP, F_OK, F_WARN, F_SOCK, F_ERROR, F_TIME, F_ABRT, F_RECU, F_SEGV) = range(9)
+(F_SKIP, F_OK, F_WARN, F_SOCK, F_ERROR, F_TIME, F_ABRT, F_RECU, F_SEGV, F_FAIL) = range(10)
 
 FAILURES = {
     F_SKIP  : ("F_SKIP",  '-'),
@@ -355,6 +359,7 @@ FAILURES = {
     F_ABRT  : ("F_ABRT",  'A'),
     F_RECU  : ("F_RECU",  'R'),
     F_SEGV  : ("F_SEGV",  'C'),
+    F_FAIL  : ("F_FAIL",  'F'),
 }
 
 CONDITIONALS = {
@@ -601,8 +606,6 @@ stylesheet = Element('style', None, Text('''
 '''))
 
 TIMES = []
-
-random.seed(time.time())
 
 #TODO:
 #class TimeoutError:
@@ -924,7 +927,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, result) :
                 Text(' ('),
                 Element('a', {'href': 'https://github.com/MonetDB/MonetDB/issues/%s' % bugno,
                               'target': '_blank'},
-                        Text('Bugzilla')),
+                        Text('Bug tracker')),
                 Text(')')])
     html = Element('html', {},
                    Element('head', {},
@@ -1048,6 +1051,8 @@ def AddHref (href, target, linktext, diff) :
         klass = 'segfault'
     elif diff == F_WARN:
         klass = 'warning'
+    elif diff == F_FAIL:
+        klass = 'error'
     else:
         klass = 'good'
     a = Element('a', {'href': href, 'target': target, 'class': klass,
@@ -1290,6 +1295,7 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
         os.environ['TSTTRGDIR'] = TSTTRGDIR
         os.environ['RELSRCDIR'] = env['RELSRCDIR']
         os.environ['HAVE_HGE'] = CONDITIONALS['HAVE_HGE']
+        os.environ['HAVE_SHP'] = CONDITIONALS['HAVE_SHP']
         os.environ['TST_BITS'] = env['TST_BITS']
         if 'TSTDATAPATH' not in os.environ and TSTDATAPATH:
             env['TSTDATAPATH'] = TSTDATAPATH
@@ -1308,6 +1314,7 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     #TODO:
                     # add "something" to HTML output
                     return td, elem, max(FdOut, FdErr), interrupted, test_progress
+            keyfile = os.path.join(LogDBdir, '.vaultkey')
             if os.path.isabs(LogDBdir) and not os.path.exists(LogDBdir):
                 try:
                     os.makedirs(LogDBdir)
@@ -1316,6 +1323,12 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     #TODO:
                     # add "something" to HTML output
                     return td, elem, max(FdOut, FdErr), interrupted, test_progress
+                else:
+                    if not initdb:
+                        vaultkey = secrets.token_urlsafe(32).encode('ascii')
+                        with open(keyfile, 'wb') as vault:
+                            vault.write(vaultkey)
+                            vault.write(b'\0' * (48 - len(vaultkey)))
             if initdb:
                 import zipfile
                 try:
@@ -1335,8 +1348,12 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     # add "something" to HTML output
                     return td, elem, max(FdOut, FdErr), interrupted, test_progress
                 z.close()
+                if os.path.exists(keyfile):
+                    vaultopt = ['--set', 'monet_vault_key={}'.format(keyfile)]
+                else:
+                    vaultopt = []
                 if not oneserver:
-                    pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + mserver5_opts, open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'))
+                    pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + vaultopt + mserver5_opts, open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'))
                     pSrvr.LaunchIt()
                     pSrvr.terminate()
         if not os.path.exists(TSTTRGDIR):
@@ -1368,6 +1385,8 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     else:
                         cmd = splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + mserver5_opts + options
                         pollfile = os.path.join(LogDBdir, '.started')
+                    if os.path.exists(keyfile):
+                        cmd.extend(['--set', 'monet_vault_key={}'.format(keyfile)])
                     if env.get('MULTIFARM'):
                         cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
                         shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
@@ -1380,11 +1399,12 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                                         openutf8(os.path.join(TSTTRGDIR, 'SingleServer.err'), 'a'),
                                         0,
                                         pollfile,
-                                        inmem)
+                                        inmem=inmem)
                     os.chdir(TSTTRGDIR)
                     pSrvr.LaunchIt()
                     if pSrvr.port is None:
                         print('\nFailed to start server.\n')
+                        FdOut = FdErr = F_FAIL
                         break
                     dbh = pymonetdb.connect(username='monetdb',
                                             password='monetdb',
@@ -1671,17 +1691,20 @@ def GetBitsAndModsAndThreads(env) :
     setpgrp = True
     with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
                        stderr=process.PIPE, text=True) as proc:
+        stderr = proc.stderr
         proc.stdout = process._BufferedPipe(proc.stdout)
         proc.stderr = process._BufferedPipe(proc.stderr)
         proc.killed = False
         proc.onechild = True
-        t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
+        t = Timer(float(par['TIMEOUT']), killProc, args = [proc, stderr, cmd])
         qOut = qErr = None
         try:
             t.start()
             while True:
                 proc.poll()
                 if proc.returncode is not None:
+                    qOut = proc.stdout.read()
+                    qErr = proc.stderr.read()
                     break
                 if os.path.exists(os.path.join(dbpath, '.started')):
                     break
@@ -1722,7 +1745,7 @@ def GetBitsAndModsAndThreads(env) :
         finally:
             t.cancel()
             if proc.returncode is None:
-                killProc(proc, proc.stderr, cmd)
+                killProc(proc, stderr, cmd)
                 proc.wait()
             if procdebug:
                 print('GetBitsAndModsAndThreads: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode))
@@ -1764,7 +1787,7 @@ def GetBitsAndModsAndThreads(env) :
         if not env['TST_BITS'] or not env['TST_MODS']:
             print(' '.join(cmd) + "\n\n", file=sys.stderr, end='')
             print(qOut, file=sys.stderr, end='')
-            print.write(file=sys.stderr)
+            print(file=sys.stderr)
             print(qErr, file=sys.stderr, flush=True)
             rtrn = 1
     else:
@@ -2041,6 +2064,25 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
                             break
                 if reason is not None:
                     break
+            elif cond.startswith('R_VERSION>='):
+                rversion = os.path.join('@LIBR_INCLUDE_DIRS@', 'Rversion.h')
+                if os.path.exists(rversion):
+                    with openutf8(rversion, 'r') as f:
+                        res = re.search('#define R_VERSION (?P<rversion>\d+)', f.read())
+                        if res is not None:
+                            r_version = res.group('rversion')
+                            req_version = cond[11:].split('.')
+                            req_version = int(req_version[0]) * 65536 + int(req_version[1]) * 256 + int(req_version[2])
+                            if not negate:
+                                if int(r_version) < req_version:
+                                    reason = "R version too low"
+                                    elem = SkipTest(env, TST, EXT, reason, length)
+                                    break
+                            else:
+                                if int(r_version) >= req_version:
+                                    reason = "R version too high"
+                                    elem = SkipTest(env, TST, EXT, reason, length)
+                                    break
             elif cond not in CONDITIONALS:
                 reason = "as conditional '%s' is unknown." % cond
                 elem = SkipTest(env, TST, EXT, reason, length)
@@ -2611,13 +2653,14 @@ class ServerClass:
             res = mapiportre.search(connurl)
             port = res.group('port')
         else:
-            while True:
+            loadedseen = False
+            while port is None or not loadedseen:
                 line = proc.stdout.readline()
                 if not line:
                     break
                 self.outfile.write(line)
                 if 'MonetDB/SQL module loaded' in line:
-                    break
+                    loadedseen = True
                 res = mapiportre.search(line)
                 if res is not None:
                     port = res.group('port')
@@ -2767,6 +2810,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                             break
                 dbpath = os.path.join(env['GDK_DBFARM'], TSTDB)
                 Srvr.append('--dbpath=%s' % dbpath)
+                if os.path.exists(os.path.join(dbpath, '.vaultkey')):
+                    Srvr.extend(['--set',
+                                 'monet_vault_key={}'.format(os.path.join(dbpath, '.vaultkey'))])
                 if env.get('MULTIFARM'):
                     Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
                     shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'),
@@ -2776,14 +2822,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                     Srvr.append('--dbextra=in-memory')
                 if os.path.isfile(TST + '.options5'):
                     Srvr.extend(openutf8(TST + '.options5').read().split())
-
-                if env.get('MULTIFARM'):
-                    Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
-                    shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
-                                  ignore_errors = True)
-                    os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
-                elif env.get('TRANS_INMEM'):
-                    Srvr.append('--dbextra=in-memory')
                 Srvr.extend(mserver5_opts)
                 pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'))
                 pSrvr.LaunchIt()
@@ -2804,6 +2842,30 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                 cmd = [os.path.join(".", TST + EXT), TST]
                 returncode = RunIt(cmd, False, "", ClntOut, ClntErr, TIMEOUT)
             elif CALL == "python":
+                # do clean up between tests if no dependent tests
+                # borrow clean up function from sqllogictest
+                if not os.path.exists(TST+'.reqtests'):
+                    import MonetDBtesting.sqllogictest as sqllogictest
+                    with sqllogictest.SQLLogic(out=ClntErr) as sql:
+                        try:
+                            sql.connect(username=user or 'monetdb',
+                                        password=passwd or 'monetdb',
+                                        hostname=HOST,
+                                        port=int(pSrvr.port),
+                                        database=TSTDB,
+                                        language='sql',
+                                        timeout=TIMEOUT)
+                        except KeyboardInterrupt:
+                            raise
+                        except:
+                            returncode = 'error'
+                        else:
+                            try:
+                                sql.drop()
+                            except KeyboardInterrupt:
+                                raise
+                            except:
+                                pass
                 cmd = [sys.executable, TST + EXT, TST]
                 returncode = RunIt(cmd, False, "", ClntOut, ClntErr, TIMEOUT)
             elif CALL in ["mal", "malXs"]:
@@ -2855,8 +2917,15 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                 raise
                             except:
                                 pass
+                        defines = []
+                        if lang == 'sql' and os.path.exists(TST+'.test.in'):
+                            for key in ('TSTDATAPATH', 'TSTSRCBASE', 'TSTSRCDIR', 'TSTTRGDIR', 'UTSTSRCDIR'):
+                                if key in env:
+                                    defines.append('{}={}'.format(key, env[key]))
                         try:
-                            sql.parse(TST+EXT, approve=open(TST+'.newtest','w') if approve else None)
+                            sql.parse(TST+EXT, approve=open(TST+'.newtest','w') if approve else None, defines=defines)
+                        except KeyboardInterrupt:
+                            raise
                         except sqllogictest.SQLLogicSyntaxError:
                             pass
                         except BrokenPipeError:
@@ -2865,6 +2934,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                         except ConnectionResetError:
                             # server crash?
                             pass
+                        except:
+                            # something went wrong, we don't know what
+                            # print a stack trace and continue
+                            sys.excepthook(*sys.exc_info())
             elif CALL in ["sql", "sqlXs"]:
                 TSTs = []
                 if CALL == "sql":
@@ -3287,7 +3360,7 @@ if 'HTMLTITLE' in os.environ:
 else:
     HTMLTITLE = "{} results on {} ({})".format(THISFILE, HOST, DISTVER)       #"+ ("`date`")"
 
-URLPREFIX = 'https://dev.monetdb.org/hg/MonetDB/file/'
+URLPREFIX = 'https://www.monetdb.org/hg/MonetDB/file/'
 
 par = {}
 dft = {}
@@ -3443,6 +3516,7 @@ def main(argv) :
             mserver5_opts.extend(['--set', a])
             if a == 'sql_debug=128':
                 CONDITIONALS['NOWAL'] = True
+                os.environ['NOWAL'] = 'True'
     if opts.loadmodule:
         for a in opts.loadmodule:
             mserver5_opts.extend(['--loadmodule', a])

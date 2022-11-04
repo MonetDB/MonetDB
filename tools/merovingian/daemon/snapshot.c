@@ -48,9 +48,10 @@ const char *VALID_EXTENSIONS[] = {
 
 static char*
 snapshot_database_stream_helper(
-	void *priv, const char *filename,
+	void *priv, const char *filename, bool binary,
 	 const void *data, size_t size)
 {
+	(void)binary; // old servers request ascii because the protocol didn't support binary yet
 	if (size == 0)
 		return NULL;
 
@@ -115,7 +116,7 @@ snapshot_database_stream(char *dbname, stream *s)
 		goto bailout;
 	}
 
-	mapi_setfilecallback(conn, NULL, snapshot_database_stream_helper, &ss);
+	mapi_setfilecallback2(conn, NULL, snapshot_database_stream_helper, &ss);
 
 	handle = mapi_prepare(conn, "CALL sys.hot_snapshot('/root/dummy', 0)");
 	if (handle == NULL || mapi_error(conn)) {
@@ -741,7 +742,7 @@ read_tar_block(stream *s, char *block, err *error)
 {
 	ssize_t nread = mnstr_read(s, block, 1, TAR_BLOCK_SIZE);
 	if (nread <= 0) {
-		if (mnstr_errnr(s) != 0) {
+		if (mnstr_errnr(s) != MNSTR_NO__ERROR) {
 			/* failure */
 			char *err = mnstr_error(s);
 			*error = newErr("Read error (%zd): %s", nread, err);

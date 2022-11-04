@@ -1473,7 +1473,7 @@ sqltypeinit( sql_allocator *sa)
 	f->varres = 1;
 
 	/* bincopyfrom */
-	f = sql_create_union(sa, "copyfrom", "sql", "importTable", TRUE, SCALE_FIX, 0, TABLE, 3, STR, STR, INT);
+	f = sql_create_union(sa, "copyfrombinary", "", "", TRUE, SCALE_FIX, 0, TABLE, 3, STR, STR, INT);
 	f->varres = 1;
 
 	/* sys_update_schemas, sys_update_tables */

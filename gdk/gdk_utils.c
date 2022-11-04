@@ -897,6 +897,9 @@ GDKinit(opt *set, int setlen, bool embedded)
 
 	mainpid = MT_getpid();
 
+	if (BBPchkfarms() != GDK_SUCCEED)
+		return GDK_FAIL;
+
 	if (GDKinmemory(0)) {
 		dbpath = dbtrace = NULL;
 	} else {
@@ -1088,8 +1091,14 @@ GDKinit(opt *set, int setlen, bool embedded)
 	free(n);
 
 	GDKnr_threads = GDKgetenv_int("gdk_nr_threads", 0);
-	if (GDKnr_threads == 0)
+	if (GDKnr_threads == 0) {
 		GDKnr_threads = MT_check_nr_cores();
+		snprintf(buf, sizeof(buf), "%d", GDKnr_threads);
+		if (GDKsetenv("gdk_nr_threads", buf) != GDK_SUCCEED) {
+			TRC_CRITICAL(GDK, "GDKsetenv gdk_nr_threads failed");
+			return GDK_FAIL;
+		}
+	}
 
 	if (!GDKinmemory(0)) {
 		if ((p = GDKgetenv("gdk_dbpath")) != NULL &&

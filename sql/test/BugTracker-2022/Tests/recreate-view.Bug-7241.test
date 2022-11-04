@@ -6,7 +6,7 @@ INSERT INTO t7240(val) VALUES (1), (2), (3)
 
 query I rowsort
 SELECT * FROM t7240
------
+----
 1
 2
 3
@@ -16,7 +16,7 @@ CREATE OR REPLACE VIEW v7240 AS (SELECT * FROM t7240)
 
 query I rowsort
 SELECT * FROM v7240
------
+----
 1
 2
 3
@@ -27,7 +27,7 @@ CREATE OR REPLACE VIEW v7240 AS (SELECT * FROM v7240)
 
 query I rowsort
 SELECT * FROM v7240
------
+----
 1
 2
 3
@@ -50,3 +50,4 @@ DROP VIEW v7240
 
 statement ok
 DROP TABLE t7240
+

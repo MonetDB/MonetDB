@@ -496,3 +496,4 @@ SELECT *
 
 statement ok
 COMMIT
+

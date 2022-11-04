@@ -306,6 +306,7 @@ old_logger_find_bat(old_logger *lg, const char *name, char tpe, oid id)
 				}
 			}
 			MT_rwlock_rdunlock(&cni.b->thashlock);
+			return 0; /* not found */
 		}
 	} else {
 		BATiter cni = bat_iterator_nolock(lg->catalog_oid);
@@ -324,9 +325,10 @@ old_logger_find_bat(old_logger *lg, const char *name, char tpe, oid id)
 				}
 			}
 			MT_rwlock_rdunlock(&cni.b->thashlock);
+			return 0; /* not found */
 		}
 	}
-	return 0;
+	return -1;		/* BAThash failed */
 }
 
 static gdk_return
@@ -334,6 +336,9 @@ la_bat_clear(old_logger *lg, logaction *la)
 {
 	log_bid bid = old_logger_find_bat(lg, la->name, la->tpe, la->cid);
 	BAT *b;
+
+	if (bid < 0)
+		return GDK_FAIL;
 
 	if (lg->lg->debug & 1)
 		fprintf(stderr, "#la_bat_clear %s\n", NAME(la->name, la->tpe, la->cid));
@@ -384,7 +389,7 @@ log_read_seq(old_logger *lg, logformat *l)
 	return LOG_OK;
 }
 
-static int
+static log_return
 log_read_id(old_logger *lg, char *tpe, oid *id)
 {
 	lng lid;
@@ -402,6 +407,8 @@ static log_return
 log_read_updates(old_logger *lg, trans *tr, logformat *l, char *name, int tpe, oid id, int pax)
 {
 	log_bid bid = old_logger_find_bat(lg, name, tpe, id);
+	if (bid < 0)
+		return LOG_ERR;
 	BAT *b = BATdescriptor(bid);
 	log_return res = LOG_OK;
 	int ht = -1, tt = -1, tseq = 0;
@@ -618,6 +625,8 @@ la_bat_updates(old_logger *lg, logaction *la)
 	log_bid bid = old_logger_find_bat(lg, la->name, la->tpe, la->cid);
 	BAT *b;
 
+	if (bid < 0)
+		return GDK_FAIL;
 	if (bid == 0)
 		return GDK_SUCCEED; /* ignore bats no longer in the catalog */
 
@@ -697,6 +706,8 @@ la_bat_destroy(old_logger *lg, logaction *la)
 {
 	log_bid bid = old_logger_find_bat(lg, la->name, la->tpe, la->cid);
 
+	if (bid < 0)
+		return GDK_FAIL;
 	if (bid) {
 		BUN p;
 
@@ -1025,7 +1036,7 @@ logger_readlog(old_logger *lg, char *filename, bool *filemissing)
 	lg->log = open_rstream(filename);
 
 	/* if the file doesn't exist, there is nothing to be read back */
-	if (lg->log == NULL || mnstr_errnr(lg->log)) {
+	if (lg->log == NULL || mnstr_errnr(lg->log) != MNSTR_NO__ERROR) {
 		logger_close(lg);
 		GDKdebug = dbg;
 		*filemissing = true;
@@ -1379,7 +1390,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 	catalog_tpe = BBPindex(bak);
 	t = BATdescriptor(catalog_tpe);
 	if (t == NULL) {
-		t = logbat_new(TYPE_bte, BATSIZE, TRANSIENT);
+		t = logbat_new(TYPE_bte, BATSIZE, SYSTRANS);
 		if (t == NULL
 		    ||BBPrename(t, bak) < 0) {
 			BBPunfix(b->batCacheid);
@@ -1405,7 +1416,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 	catalog_oid = BBPindex(bak);
 	o = BATdescriptor(catalog_oid);
 	if (o == NULL) {
-		o = logbat_new(TYPE_lng, BATSIZE, TRANSIENT);
+		o = logbat_new(TYPE_lng, BATSIZE, SYSTRANS);
 		if (o == NULL
 		    ||BBPrename(o, bak) < 0) {
 			BBPunfix(b->batCacheid);
@@ -1435,7 +1446,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 		/* older database: create dcatalog and convert
 		 * catalog_bid and catalog_nme to
 		 * dense-headed */
-		d = logbat_new(TYPE_oid, BATSIZE, TRANSIENT);
+		d = logbat_new(TYPE_oid, BATSIZE, SYSTRANS);
 		if (d == NULL) {
 			GDKerror("Logger_new: cannot create dcatalog bat");
 			BBPunfix(b->batCacheid);
@@ -1481,16 +1492,18 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 			goto error;
 	}
 
-	lg->freed = logbat_new(TYPE_int, 1, TRANSIENT);
+	lg->freed = logbat_new(TYPE_int, 1, SYSTRANS);
 	if (lg->freed == NULL) {
 		GDKerror("Logger_new: failed to create freed bat");
 		goto error;
 	}
 	snapshots_bid = old_logger_find_bat(lg, "snapshots_bid", 0, 0);
+	if (snapshots_bid < 0)
+		goto error;
 	if (snapshots_bid == 0) {
-		lg->snapshots_bid = logbat_new(TYPE_int, 1, TRANSIENT);
-		lg->snapshots_tid = logbat_new(TYPE_int, 1, TRANSIENT);
-		lg->dsnapshots = logbat_new(TYPE_oid, 1, TRANSIENT);
+		lg->snapshots_bid = logbat_new(TYPE_int, 1, SYSTRANS);
+		lg->snapshots_tid = logbat_new(TYPE_int, 1, SYSTRANS);
+		lg->dsnapshots = logbat_new(TYPE_oid, 1, SYSTRANS);
 		if (lg->snapshots_bid == NULL ||
 		    lg->snapshots_tid == NULL ||
 		    lg->dsnapshots == NULL) {
@@ -1501,6 +1514,8 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 		bat snapshots_tid = old_logger_find_bat(lg, "snapshots_tid", 0, 0);
 		bat dsnapshots = old_logger_find_bat(lg, "dsnapshots", 0, 0);
 
+		if (snapshots_tid < 0 || dsnapshots < 0)
+			goto error;
 		GDKdebug &= ~CHECKMASK;
 		lg->snapshots_bid = BATdescriptor(snapshots_bid);
 		if (lg->snapshots_bid == NULL) {
@@ -1524,7 +1539,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 				goto error;
 			BBPretain(dsnapshots);
 		} else {
-			lg->dsnapshots = logbat_new(TYPE_oid, 1, TRANSIENT);
+			lg->dsnapshots = logbat_new(TYPE_oid, 1, SYSTRANS);
 			if (lg->dsnapshots == NULL) {
 				GDKerror("Logger_new: cannot create dsnapshot bat");
 				goto error;
@@ -1671,8 +1686,8 @@ logger_new(logger *lg, const char *fn, const char *logdir, FILE *fp, int version
 		.id = 1,
 	};
 
-	old_lg->add = COLnew(0, TYPE_int, 0, TRANSIENT);
-	old_lg->del = COLnew(0, TYPE_int, 0, TRANSIENT);
+	old_lg->add = COLnew(0, TYPE_int, 0, SYSTRANS);
+	old_lg->del = COLnew(0, TYPE_int, 0, SYSTRANS);
 	if (old_lg->add == NULL || old_lg->del == NULL) {
 		TRC_CRITICAL(GDK, "cannot allocate temporary bats\n");
 		goto bailout;
@@ -1914,6 +1929,8 @@ logger_add_bat(old_logger *lg, BAT *b, const char *name, char tpe, oid id)
 	       b == lg->seqs_val ||
 	       b == lg->dseqs);
 	assert(b->batRole == PERSISTENT);
+	if (bid < 0)
+		return GDK_FAIL;
 	if (bid) {
 		if (bid != b->batCacheid) {
 			if (logger_del_bat(lg, bid) != GDK_SUCCEED)

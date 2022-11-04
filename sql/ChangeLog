@@ -1,9 +1,22 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Thu Apr 21 2022 Nuno Faria <nunofpfaria@gmail.com>
-- Added the UNLOGGED TABLE feature.
+* Thu Nov  3 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- System views sys.dependency_tables_on_functions and
+  dependency_views_on_functions have been extended with column: function_id.
 
-* Fri Feb  4 2022 Sjoerd Mullender <sjoerd@acm.org>
-- Removed functions sys.index and sys.strings.
+* Fri Sep 30 2022 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- When loading data using COPY BINARY INTO, apply default values instead of just
+  inserting NULLs.
+- When loading data using COPY BINARY INTO, validate DECIMAL(n,k) and
+  VARCHAR(n) column width.
+- When loading data using COPY BINARY INTO, string used to have their line
+  endings converted from CR LF to LF. Do not do this, it is the responsibility
+  of the client.
+- Implement dumping binary data using COPY SELECT ... INTO BINARY <file>.
+
+* Thu Aug 25 2022 Sjoerd Mullender <sjoerd@acm.org>
+- Removed code for Workload Capture and Replace.  The code was
+  experimental, and it didn't work out.  A different approach will
+  be taken.
 

@@ -71,11 +71,14 @@
 #if defined(HAVE_FORK)
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore)                               \
 	{                                                                          \
-		bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                      \
+		bat = COLnew(seqbase, TYPE_void, 0, TRANSIENT);                        \
 		if (bat == NULL) {                                                     \
 			msg = createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "Cannot create column"); \
 			goto wrapup;                                                       \
 		}                                                                      \
+		bat->ttype = TYPE_##mtpe;                                              \
+		bat->twidth = ATOMsize(TYPE_##mtpe);                                   \
+		bat->tshift = ATOMelmshift(b->twidth);                                 \
 		bat->tnil = false;                                                     \
 		bat->tnonil = true;                                                    \
 		bat->tkey = false;                                                     \
@@ -97,30 +100,26 @@
 			nancheck_##mtpe(bat);                                              \
 		}                                                                      \
                                                                                \
-		/*When we create a BAT a small part of memory is allocated, free it*/  \
-		GDKfree(bat->theap->base);                                             \
+		assert(bat->theap->base == NULL);                                      \
 		bat->theap->base =                                                     \
 			&data[(index_offset * ret->count) * ret->memory_size];             \
-		bat->theap->size = ret->count * ret->memory_size;                      \
-		bat->theap->free =                                                     \
-			bat->theap->size; /*There are no free places in the array*/        \
+		bat->theap->free = ret->count * ret->memory_size;                      \
 		bat->theap->dirty = true;                                              \
 		/*If index_offset > 0, we are mapping part of a multidimensional */    \
 		/* array.*/                                                            \
 		/*The entire array will be cleared when the part with index_offset=0 */\
 		/* is freed*/                                                          \
 		/*So we set this part of the mapping to 'NOWN'*/                       \
-		if (index_offset > 0)                                                  \
+		if (index_offset > 0) {                                                \
+			bat->theap->size = bat->theap->free;                               \
 			bat->theap->storage = STORE_NOWN;                                  \
-		else {                                                                 \
+		} else {                                                               \
+			bat->theap->size = ret->array_size ? ret->array_size : bat->theap->free; \
 			bat->theap->storage = batstore;                                    \
 			if (batstore == STORE_MMAPABS) {                                   \
-				/* If we are taking data from a MMAP file, set the filename to \
-				 * the absolute path */                                        \
-				char address[100];                                             \
-				GDKmmapfile(address, sizeof(address), ret->mmap_id);           \
+				/* Communicate the id to the GDK layer */                      \
 				snprintf(bat->theap->filename, sizeof(bat->theap->filename),   \
-					"%s%c%s.tmp", BATDIR, DIR_SEP, address);                   \
+						 LLFMT, ret->mmap_id);                                 \
 				ret->mmap_id = -1;                                             \
 			}                                                                  \
 		}                                                                      \
@@ -136,11 +135,14 @@
 #else
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore)                               \
 	{                                                                          \
-		bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                      \
+		bat = COLnew(seqbase, TYPE_void, 0, TRANSIENT);                        \
 		if (bat == NULL) {                                                     \
 			msg = createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "Cannot create column");     \
 			goto wrapup;                                                       \
 		}                                                                      \
+		bat->ttype = TYPE_##mtpe;                                              \
+		bat->twidth = ATOMsize(TYPE_##mtpe);                                   \
+		bat->tshift = ATOMelmshift(b->twidth);                                 \
 		bat->tnil = false;                                                     \
 		bat->tnonil = true;                                                    \
 		bat->tkey = false;                                                     \
@@ -161,22 +163,21 @@
 			bat->tnonil = false;                                               \
 			nancheck_##mtpe(bat);                                              \
 		}                                                                      \
-		/*When we create a BAT a small part of memory is allocated, free it*/  \
-		GDKfree(bat->theap->base);                                             \
+		assert(bat->theap->base == NULL);                                      \
 		bat->theap->base =                                                     \
 			&data[(index_offset * ret->count) * ret->memory_size];             \
-		bat->theap->size = ret->count * ret->memory_size;                      \
-		bat->theap->free =                                                     \
-			bat->theap->size; /*There are no free places in the array*/        \
+		bat->theap->free = ret->count * ret->memory_size;                      \
 		bat->theap->dirty = true;                                              \
 		/*If index_offset > 0, we are mapping part of a multidimensional */    \
 		/* array.*/                                                            \
 		/*The entire array will be cleared when the part with index_offset=0 */\
 		/* is freed*/                                                          \
 		/*So we set this part of the mapping to 'NOWN'*/                       \
-		if (index_offset > 0)                                                  \
+		if (index_offset > 0) {                                                \
+			bat->theap->size = bat->theap->free;                               \
 			bat->theap->storage = STORE_NOWN;                                  \
-		else {                                                                 \
+		} else {                                                               \
+			bat->theap->size = ret->array_size ? ret->array_size : bat->theap->free; \
 			bat->theap->storage = batstore;                                    \
 		}                                                                      \
 		bat->theap->newstorage = STORE_MEM;                                    \

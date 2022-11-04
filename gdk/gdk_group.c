@@ -1034,7 +1034,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		GDKfree(pgrp);
 	} else if (g == NULL &&
 		   (BATcheckhash(b) ||
-		    (!bi.transient &&
+		    ((!bi.transient ||
+		      (b->batRole == PERSISTENT && GDKinmemory(0))) &&
 		     BAThash(b) == GDK_SUCCEED) ||
 		    (/* DISABLES CODE */ (0) &&
 		     (parent = VIEWtparent(b)) != 0 &&
@@ -1170,6 +1171,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GDKerror("cannot allocate hash table\n");
 			goto error;
 		}
+		hs->heapbckt.parentid = b->batCacheid;
+		hs->heaplink.parentid = b->batCacheid;
 		if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshgrpl%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
 		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshgrpb%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heapbckt.filename) ||
 		    HASHnew(hs, bi.type, BATcount(b), nbucket, BUN_NONE, false) != GDK_SUCCEED) {
