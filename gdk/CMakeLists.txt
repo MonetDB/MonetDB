@@ -95,7 +95,7 @@ target_include_directories(bat
   $<TARGET_PROPERTY:stream,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:matomic,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:mstring,INTERFACE_INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:rtree::rtree,INTERFACE_INCLUDE_DIRECTORIES>
+  $<$<BOOL:${RTREE_FOUND}>:$<TARGET_PROPERTY:rtree::rtree,INTERFACE_INCLUDE_DIRECTORIES>>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
 
@@ -107,7 +107,7 @@ target_link_libraries(bat
   monetdb_config_header
   moptions
   mutils
-  rtree::rtree
+  $<$<BOOL:${RTREE_FOUND}>:rtree::rtree>
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>
   $<$<PLATFORM_ID:Windows>:ws2_32>
   $<$<BOOL:${KVM_FOUND}>:KVM::KVM>
