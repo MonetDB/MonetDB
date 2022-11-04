@@ -1885,11 +1885,12 @@ gdk_export bool RTREEexists(BAT *b);
 gdk_export bool RTREEexists_bid(bat *bid);
 gdk_export gdk_return BATrtree(BAT *wkb, BAT* mbr);
 gdk_export BUN* RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit);
-gdk_export void RTREEdestroy(BAT *b);
-gdk_export void RTREEfree(BAT *b);
 gdk_export void RTREEdecref(BAT *b);
 gdk_export void RTREEincref(BAT *b);
 #endif
+
+gdk_export void RTREEdestroy(BAT *b);
+gdk_export void RTREEfree(BAT *b);
 
 /* The ordered index structure */
 
