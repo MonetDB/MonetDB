@@ -384,7 +384,7 @@ int yydebug=1;
     odbc_time_escape
     odbc_timestamp_escape
     odbc_guid_escape
-    odbc_literal_escape
+    odbc_interval_escape
 
 %type <type>
 	data_type
@@ -3783,6 +3783,21 @@ like_exp:
 		$$ = _symbol_create_list(SQL_ESCAPE, l);
 	  }
 	}
+ // odbc like escape
+ |  scalar_exp '{' ESCAPE string '}'
+    {
+        const char* esc = $4;
+        if (_strlen(esc) != 1) {
+		    sqlformaterror(m, SQLSTATE(22019) "%s", "ESCAPE must be one character");
+            $$= NULL;
+            YYABORT;
+        } else {
+            dlist *l = L();
+            append_symbol(l, $1);
+            append_string(l, esc);
+            $$ = _symbol_create_list(SQL_ESCAPE, l);
+        }
+    }
  ;
 
 test_for_null:
@@ -4882,7 +4897,7 @@ literal:
 		} }
  |  odbc_timestamp_escape
  |  interval_expression
- |  odbc_literal_escape
+ |  odbc_interval_escape
  |  blob string
 		{ sql_subtype t;
 		  atom *a= 0;
@@ -6306,11 +6321,13 @@ odbc_guid_escape:
         }
     ;
 
-odbc_literal_escape:
+odbc_interval_escape:
      '{' interval_expression '}' {$$ = $2;}
     ;
 
+
 %%
+
 
 static inline symbol*
 makeAtomNode(mvc *m, const char* typename, const char* val, unsigned int digits, unsigned int scale, bool bind) {
