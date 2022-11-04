@@ -10,17 +10,22 @@
 ------------------------- Geography functions ---------------------------
 -------------------------------------------------------------------------
 CREATE FUNCTION ST_DistanceGeographic(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom."DistanceGeographic";
-GRANT EXECUTE ON FUNCTION ST_DistanceGeographic(Geometry, Geometry) TO PUBLIC;
-CREATE FUNCTION ST_CoversGeographic(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."CoversGeographic";
-GRANT EXECUTE ON FUNCTION ST_CoversGeographic(Geometry, Geometry) TO PUBLIC;
-
-CREATE AGGREGATE ST_Collect(geom Geometry) RETURNS Geometry external name aggr."Collect";
-
 CREATE FILTER FUNCTION ST_DWithinGeographic(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME geom."DWithinGeographic";
 CREATE FILTER FUNCTION ST_IntersectsGeographic(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom."IntersectsGeographic";
 
 -------------------------------------------------------------------------
-------------------------- Geography functions ---------------------------
+----------------------- New Geometry functions --------------------------
+-------------------------------------------------------------------------
+CREATE AGGREGATE ST_Collect(geom Geometry) RETURNS Geometry external name aggr."Collect";
+
+CREATE FILTER FUNCTION ST_Intersects(geom1 Geometry, geom2 Geometry) EXTERNAL NAME rtree."Intersects";
+CREATE FILTER FUNCTION ST_Intersects_NoIndex(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom."Intersects_noindex";
+
+CREATE FILTER FUNCTION ST_DWithin(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME rtree."DWithin";
+CREATE FILTER FUNCTION ST_DWithin_NoIndex(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME geom."DWithin_noindex";
+
+-------------------------------------------------------------------------
+------------------------- Old Geom functions ----------------------------
 -------------------------------------------------------------------------
 
 -- make sure you load the geom module before loading this sql module
@@ -125,8 +130,6 @@ CREATE FUNCTION ST_Equals(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERN
 GRANT EXECUTE ON FUNCTION ST_Equals(Geometry, Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Disjoint(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Disjoint";
 GRANT EXECUTE ON FUNCTION ST_Disjoint(Geometry, Geometry) TO PUBLIC;
-CREATE FUNCTION ST_Intersects(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Intersects";
-GRANT EXECUTE ON FUNCTION ST_Intersects(Geometry, Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Touches(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Touches";
 GRANT EXECUTE ON FUNCTION ST_Touches(Geometry, Geometry) TO PUBLIC;
 CREATE FUNCTION ST_Crosses(geom1 Geometry, geom2 Geometry) RETURNS boolean EXTERNAL NAME geom."Crosses";
@@ -512,8 +515,6 @@ GRANT EXECUTE ON FUNCTION ST_CoveredBy(Geometry, Geometry) TO PUBLIC;
 --CREATE FUNCTION ST_LineCrossingDirection RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Distance(geog1 Geometry, geog2 Geometry) RETURNS double EXTERNAL NAME geom."Distance"
 --CREATE FUNCTION ST_Distance(geog1 Geometry, geog2 Geometry, use_spheroid boolean) RETURNS double EXTERNAL NAME geom."Distance"
-CREATE FUNCTION ST_DWithin(geom1 Geometry, geom2 Geometry, dst double) RETURNS boolean EXTERNAL NAME geom."DWithin";
-GRANT EXECUTE ON FUNCTION ST_DWithin(Geometry, Geometry, double) TO PUBLIC;
 CREATE FUNCTION ST_DWithin2(geom1 Geometry, geom2 Geometry, bbox1 mbr, bbox2 mbr, dst double) RETURNS boolean EXTERNAL NAME geom."DWithin2";
 GRANT EXECUTE ON FUNCTION ST_DWithin2(Geometry, Geometry, mbr, mbr, double) TO PUBLIC;
 --CREATE FUNCTION ST_HausdorffDistance RETURNS EXTERNAL NAME

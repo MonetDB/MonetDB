@@ -264,6 +264,7 @@ mal_export  const char *rollbackRef;
 mal_export  const char *row_numberRef;
 mal_export  const char *rpcRef;
 mal_export  const char *rsColumnRef;
+mal_export  const char *rtreeRef;
 mal_export  const char *sampleRef;
 mal_export  const char *schedulerRef;
 mal_export  const char *selectNotNilRef;

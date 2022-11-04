@@ -18,6 +18,10 @@ else()
   find_package(Python3 COMPONENTS Interpreter Development NumPy)
 endif()
 
+if(WITH_RTREE)
+  find_package(RTree)
+endif()
+
 if(WITH_LZMA)
   find_package(Lzma)
 endif()

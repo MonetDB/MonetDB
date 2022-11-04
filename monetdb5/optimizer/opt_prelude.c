@@ -266,6 +266,7 @@ const char *rollbackRef;
 const char *row_numberRef;
 const char *rpcRef;
 const char *rsColumnRef;
+const char *rtreeRef;
 const char *sampleRef;
 const char *schedulerRef;
 const char *selectNotNilRef;
@@ -584,6 +585,7 @@ void optimizerInit(void)
 	row_numberRef = putName("row_number");
 	rpcRef = putName("rpc");
 	rsColumnRef = putName("rsColumn");
+	rtreeRef = putName("rtree");
 	sampleRef= putName("sample");
 	schedulerRef = putName("scheduler");
 	selectNotNilRef = putName("selectNotNil");
