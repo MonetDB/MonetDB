@@ -348,4 +348,14 @@ RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit) {
 	} else
 		return NULL;
 }
+#else
+void
+RTREEdestroy(BAT *b) {
+	(void) b;
+}
+
+void
+RTREEfree(BAT *b) {
+	(void) b;
+}
 #endif
