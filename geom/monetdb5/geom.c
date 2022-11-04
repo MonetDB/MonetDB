@@ -56,6 +56,8 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	const oid *gids = NULL;
 	str msg = MAL_SUCCEED;
 	const char *err;
+	//SRID for collection
+	int srid = 0;
 
 	oid min, max;
 	BUN ngrp;
@@ -129,8 +131,6 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	if (g && !BATtdense(g))
 		gids = (const oid *)Tloc(g, 0);
 	bi = bat_iterator(b);
-	//SRID for collection
-	int srid = 0;
 
 	for (BUN i = 0; i < ci.ncand; i++) {
 		oid o = canditer_next(&ci);
