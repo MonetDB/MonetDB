@@ -586,7 +586,10 @@ typedef struct {
 typedef struct Hash Hash;
 typedef struct Imprints Imprints;
 typedef struct Strimps Strimps;
+
+#ifdef HAVE_RTREE
 typedef struct RTree RTree;
+#endif
 
 /*
  * @+ Binary Association Tables
@@ -748,8 +751,9 @@ typedef struct {
 	BUN baseoff;		/* offset in heap->base (in whole items) */
 	Heap *vheap;		/* space for the varsized data. */
 	Hash *hash;		/* hash table */
-	RTree *rtree;
-
+#ifdef HAVE_RTREE
+	RTree *rtree;		/* rtree geometric index */
+#endif
 	Imprints *imprints;	/* column imprints index */
 	Heap *orderidx;		/* order oid index */
 	Strimps *strimps;	/* string imprint index  */
@@ -845,8 +849,9 @@ typedef struct BAT {
 #define timprints	T.imprints
 #define tprops		T.props
 #define tstrimps	T.strimps
+#ifdef HAVE_RTREE
 #define trtree		T.rtree
-
+#endif
 
 /* some access functions for the bitmask type */
 static inline void
@@ -1866,6 +1871,7 @@ gdk_export bool BAThasstrimps(BAT *b);
 gdk_export gdk_return BATsetstrimps(BAT *b);
 
 /* Rtree structure functions */
+#ifdef HAVE_RTREE
 //TODO REMOVE
 typedef struct mbr_t {
 	float xmin;
@@ -1883,6 +1889,7 @@ gdk_export void RTREEdestroy(BAT *b);
 gdk_export void RTREEfree(BAT *b);
 gdk_export void RTREEdecref(BAT *b);
 gdk_export void RTREEincref(BAT *b);
+#endif
 
 /* The ordered index structure */
 
