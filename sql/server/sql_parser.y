@@ -2318,6 +2318,8 @@ call_statement:
 
 call_procedure_statement:
 	CALL func_ref		 	{$$ = _symbol_create_symbol(SQL_CALL, $2);}
+    // odbc procedure call escape
+    | '{' '[' '?' '=' ']' CALL func_ref '}' {$$ = _symbol_create_symbol(SQL_CALL, $7);}
     ;
 
 routine_invocation: 
