@@ -12,6 +12,7 @@
  * - The heap is not dirty -> no new values
  * - DB Farm is persistent i.e. not in memory
  */
+#ifdef HAVE_RTREE
 static bool
 RTREEpersistcheck (BAT *b) {
 	return ((BBP_status(b->batCacheid) & BBPEXISTING)
@@ -347,3 +348,4 @@ RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit) {
 	} else
 		return NULL;
 }
+#endif
