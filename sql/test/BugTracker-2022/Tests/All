@@ -8,3 +8,4 @@ pkey-restart.Bug-7263
 delete-update.Bug-7267
 having-clauses.Bug-7278
 temp-table-create-index-drop-issue
+values.Bug-7336
