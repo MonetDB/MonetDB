@@ -877,14 +877,15 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 						/* simple expressions first */
 						if (e->type == e_cmp && e->flag == cmp_equal && exp_is_atom(er)) {
 							/* use selectivity */
-							prop *p = NULL;
+							prop *p;
 							if ((p = find_prop(el->p, PROP_NUNIQUES))) {
 								u = (BUN) p->value.dval;
+								break;
 							}
 						}
 					}
 					/* u is an *estimate*, so don't set count_prop to 0 unless cnt is 0 */
-					set_count_prop(v->sql->sa, rel, cnt == 0 ? 0 : u > cnt ? 1 : cnt/u);
+					set_count_prop(v->sql->sa, rel, cnt == 0 ? 0 : u == 0 || u > cnt ? 1 : cnt/u);
 				} else {
 					set_count_prop(v->sql->sa, rel, get_rel_count(l));
 				}
