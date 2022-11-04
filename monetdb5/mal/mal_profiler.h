@@ -20,13 +20,46 @@
 typedef struct rusage Rusage;
 #endif
 
-mal_export int malProfileMode;
+
+enum event_phase {
+	MAL_ENGINE = 0,
+	CLIENT_START,
+	CLIENT_END,
+	TEXT_TO_SQL,
+	SQL_TO_REL,
+	REL_OPT,
+	REL_TO_MAL,
+	MAL_OPT,
+	COMMIT,
+	ROLLBACK,
+	CONFLICT
+};
+
+typedef struct NonMalEvent {
+	enum event_phase phase;
+	Client cntxt;
+	ulng clk;
+	ulng* tid;
+	ulng* ts;
+	int state;
+	ulng duration;
+} NonMalEvent;
+
+typedef struct MalEvent {
+	Client cntxt;
+	MalBlkPtr mb;
+	MalStkPtr stk;
+	InstrPtr pci;
+} MalEvent;
+
+mal_export int profilerStatus;
+mal_export int profilerMode;
 
 mal_export void initProfiler(void);
-mal_export str openProfilerStream(Client cntxt);
+mal_export str openProfilerStream(Client cntxt, int m);
 mal_export str closeProfilerStream(Client cntxt);
 
-mal_export void profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start);
+mal_export void profilerEvent(MalEvent *me, NonMalEvent *nme);
 mal_export void sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 mal_export str startProfiler(Client cntxt);
@@ -45,7 +78,6 @@ mal_export void clearTrace(Client cntxt);
 mal_export int TRACEtable(Client cntxt, BAT **r);
 mal_export str cleanupTraces(Client cntxt);
 mal_export BAT *getTrace(Client cntxt, const char *nme);
-
 
 mal_export lng getDiskSpace(void);
 mal_export lng getDiskReads(void);

@@ -2915,10 +2915,10 @@ STRprelude(void)
 	if (UTF8_toUpperFrom == NULL) {
 		size_t i;
 
-		UTF8_toUpperFrom = COLnew(0, TYPE_int, sizeof(UTF8_toUpper) / sizeof(UTF8_toUpper[0]), TRANSIENT);
-		UTF8_toUpperTo = COLnew(0, TYPE_int, sizeof(UTF8_toUpper) / sizeof(UTF8_toUpper[0]), TRANSIENT);
-		UTF8_toLowerFrom = COLnew(0, TYPE_int, sizeof(UTF8_toLower) / sizeof(UTF8_toLower[0]), TRANSIENT);
-		UTF8_toLowerTo = COLnew(0, TYPE_int, sizeof(UTF8_toLower) / sizeof(UTF8_toLower[0]), TRANSIENT);
+		UTF8_toUpperFrom = COLnew(0, TYPE_int, sizeof(UTF8_toUpper) / sizeof(UTF8_toUpper[0]), SYSTRANS);
+		UTF8_toUpperTo = COLnew(0, TYPE_int, sizeof(UTF8_toUpper) / sizeof(UTF8_toUpper[0]), SYSTRANS);
+		UTF8_toLowerFrom = COLnew(0, TYPE_int, sizeof(UTF8_toLower) / sizeof(UTF8_toLower[0]), SYSTRANS);
+		UTF8_toLowerTo = COLnew(0, TYPE_int, sizeof(UTF8_toLower) / sizeof(UTF8_toLower[0]), SYSTRANS);
 		if (UTF8_toUpperFrom == NULL || UTF8_toUpperTo == NULL ||
 			UTF8_toLowerFrom == NULL || UTF8_toLowerTo == NULL) {
 			goto bailout;

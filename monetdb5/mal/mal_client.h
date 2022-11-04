@@ -67,8 +67,8 @@ typedef struct CLIENT {
 	char	optimizer[IDLENGTH];/* The optimizer pipe preferred for this session */
 	int 	workerlimit;		/* maximum number of workthreads processing a query */
 	int		memorylimit;		/* Memory claim highwater mark, 0 = no limit */
-	lng 	querytimeout;		/* query abort after x usec, 0 = no limit*/
 	lng	    sessiontimeout;		/* session abort after x usec, 0 = no limit */
+	QryCtx  qryctx;				/* per query limitations */
 
 	time_t  login;  	/* Time when this session started */
 	lng 	session;	/* usec since start of server */
@@ -84,7 +84,7 @@ typedef struct CLIENT {
 	BAT *profstmt;
 	BAT *profevents;
 
-	ATOMIC_TYPE	lastprint;	/* when we last printed the query, to be depricated */
+	ATOMIC_TYPE	lastprint;	/* when we last printed the query, to be deprecated */
 	/*
 	 * Communication channels for the interconnect are stored here.
 	 * It is perfectly legal to have a client without input stream.
@@ -153,14 +153,6 @@ typedef struct CLIENT {
 	 * contexts at the same time are in use.
 	 */
 	void *sqlcontext;
-
-	/*
-	 * The workload for replication/replay is saved initially as a MAL block.
-	 * It is split into the capturing part (wlc) and the replay part (wlr).
-	 * This allows a single server to act as both a master and a replica.
-	 */
-	int wlc_kind;	// used by master to characterise the compound transaction
-	MalBlkPtr wlc;
 
 	/*
 	 *	Errors during copy into are collected in a user specific column set

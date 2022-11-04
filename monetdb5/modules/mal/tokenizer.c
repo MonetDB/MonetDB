@@ -104,7 +104,7 @@ TKNZRopen(void *ret, str *in)
 	int depth;
 	bat r;
 	bat idx;
-	char batname[134];
+	char batname[sizeof(name) + 20];
 	BAT *b;
 
 	(void) ret;
@@ -124,7 +124,7 @@ TKNZRopen(void *ret, str *in)
 	}
 	tokenDepth = 0;
 
-	TRANS = COLnew(0, TYPE_str, MAX_TKNZR_DEPTH + 1, TRANSIENT);
+	TRANS = COLnew(0, TYPE_str, MAX_TKNZR_DEPTH + 1, SYSTRANS);
 	if (TRANS == NULL) {
 		MT_lock_unset(&mal_contextLock);
 		throw(MAL, "tokenizer.open", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -132,7 +132,7 @@ TKNZRopen(void *ret, str *in)
 	/* now we are sure that none overwrites the tokenizer table*/
 	MT_lock_unset(&mal_contextLock);
 
-	snprintf(name, 128, "%s", *in);
+	snprintf(name, sizeof(name), "%s", *in);
 
 	snprintf(batname, sizeof(batname), "%s_index", name);
 	idx = BBPindex(batname);
@@ -246,7 +246,7 @@ static str
 TKNZRappend(oid *pos, str *s)
 {
 	str url;
-	char batname[132];
+	char batname[sizeof(name) + 20];
 	str parts[MAX_TKNZR_DEPTH];
 	str msg;
 	int i, new, depth;
@@ -401,7 +401,7 @@ TKNZRdepositFile(void *r, str *fnme)
 	fs = open_rastream(buf);
 	if (fs == NULL)
 		throw(MAL, "tokenizer.depositFile", "%s", mnstr_peek_error(NULL));
-	if (mnstr_errnr(fs)) {
+	if (mnstr_errnr(fs) != MNSTR_NO__ERROR) {
 		close_stream(fs);
 		throw(MAL, "tokenizer.depositFile", "%s", mnstr_peek_error(NULL));
 	}
@@ -411,7 +411,7 @@ TKNZRdepositFile(void *r, str *fnme)
 		throw(MAL, "tokenizer.depositFile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	while (bstream_read(bs, bs->size - (bs->len - bs->pos)) != 0 &&
-		   !mnstr_errnr(bs->s))
+		   mnstr_errnr(bs->s) == MNSTR_NO__ERROR)
 	{
 		s = bs->buf;
 		for (t = s; *t;) {

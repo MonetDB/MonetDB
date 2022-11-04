@@ -45,7 +45,6 @@ static struct PIPELINES {
 	{"minimal_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
-	 "optimizer.bincopyfrom();"
 	 "optimizer.emptybind();"
 	 "optimizer.deadcode();"
 	 "optimizer.for();"
@@ -61,7 +60,6 @@ static struct PIPELINES {
 	{"minimal_strimps_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
-	 "optimizer.bincopyfrom();"
 	 "optimizer.aliases();"
 	 "optimizer.constants();"
 	 "optimizer.deadcode();"
@@ -101,7 +99,6 @@ static struct PIPELINES {
 	 "optimizer.dict();"
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
-	 "optimizer.bincopyfrom();"
 	 "optimizer.aliases();"
 	 "optimizer.constants();"
 	 "optimizer.commonTerms();"
@@ -118,7 +115,6 @@ static struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
-	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -136,7 +132,6 @@ static struct PIPELINES {
 	 "optimizer.aliases();"
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
-	 "optimizer.bincopyfrom();"
 	 "optimizer.aliases();"
 	 "optimizer.constants();"
 	 "optimizer.commonTerms();"
@@ -154,7 +149,6 @@ static struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
-	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -180,7 +174,6 @@ static struct PIPELINES {
 	 "optimizer.aliases();"
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
-	 "optimizer.bincopyfrom();"
 	 "optimizer.aliases();"
 	 "optimizer.constants();"
 	 "optimizer.commonTerms();"
@@ -198,7 +191,6 @@ static struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
-	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -225,7 +217,6 @@ static struct PIPELINES {
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"
 	 "optimizer.mergetable();"
-	 "optimizer.bincopyfrom();"
 	 "optimizer.aliases();"
 	 "optimizer.constants();"
 	 "optimizer.commonTerms();"
@@ -242,7 +233,6 @@ static struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
-	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -270,7 +260,6 @@ static struct PIPELINES {
 	 "optimizer.for();"
 	 "optimizer.dict();"
 	 "optimizer.mergetable();"
-	 "optimizer.bincopyfrom();"
 	 "optimizer.aliases();"
 	 "optimizer.constants();"
 	 "optimizer.commonTerms();"
@@ -286,7 +275,6 @@ static struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
-	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -436,7 +424,7 @@ static str
 validatePipe(MalBlkPtr mb)
 {
 	int mitosis = FALSE, deadcode = FALSE, mergetable = FALSE, multiplex = FALSE;
-	int bincopyfrom = FALSE, garbage = FALSE, generator = FALSE, remap =  FALSE;
+	int garbage = FALSE, generator = FALSE, remap =  FALSE;
 	int i;
 	InstrPtr p;
 
@@ -460,8 +448,6 @@ validatePipe(MalBlkPtr mb)
 				remap = TRUE;
 			else if (strcmp(fname, "mitosis") == 0)
 				mitosis = TRUE;
-			else if (strcmp(fname, "bincopyfrom") == 0)
-				bincopyfrom = TRUE;
 			else if (strcmp(fname, "mergetable") == 0)
 				mergetable = TRUE;
 			else if (strcmp(fname, "multiplex") == 0)
@@ -488,8 +474,6 @@ validatePipe(MalBlkPtr mb)
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'remap' should be used\n");
 	if (generator == FALSE)
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'generator' should be used\n");
-	if (bincopyfrom == FALSE)
-		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'bincopyfrom' should be used\n");
 
 	return MAL_SUCCEED;
 }

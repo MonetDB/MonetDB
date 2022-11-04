@@ -579,7 +579,7 @@ sql_grant_role(mvc *m, str grantee, str role, sqlid grantor, int admin)
 	if (is_oid_nil(rid))
 		throw(SQL, "sql.grant_role", SQLSTATE(M1M05) "GRANT: no such role '%s' or grantee '%s'", role, grantee);
 	role_id = store->table_api.column_find_sqlid(m->session->tr, auths_id, rid);
-	if (backend_find_user(m, role) >= 0)
+	if (!is_oid_nil(backend_find_user(m, role)))
 		throw(SQL,"sql.grant_role", SQLSTATE(M1M05) "GRANT: '%s' is a USER not a ROLE", role);
 	if (!admin_privs(grantor) && !role_granting_privs(m, rid, role_id, grantor))
 		throw(SQL,"sql.grant_role", SQLSTATE(0P000) "GRANT: Insufficient privileges to grant ROLE '%s'", role);
@@ -775,27 +775,45 @@ mvc_set_schema(mvc *m, char *schema)
 }
 
 char *
-sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, char *schema, char *schema_path)
+sql_create_user(mvc *sql, char *user, char *passwd, bool enc, char *fullname, char *schema, char *schema_path, lng max_memory, int max_workers, char *optimizer, char *role)
 {
 	char *err;
 	sql_schema *s = NULL;
 	sqlid schema_id = 0;
+	sqlid role_id = 0;
+
+	if (role)
+		if (backend_find_role(sql, role, &role_id) < 0)
+			throw(SQL,"sql.create_user", SQLSTATE(42M31) "CREATE USER: no such role '%s'", role);
 
 	if (!admin_privs(sql->user_id) && !admin_privs(sql->role_id))
 		throw(SQL,"sql.create_user", SQLSTATE(42M31) "Insufficient privileges to create user '%s'", user);
 
-	if (backend_find_user(sql, user) >= 0)
-		throw(SQL,"sql.create_user", SQLSTATE(42M31) "CREATE USER: user '%s' already exists", user);	
+	if (!is_oid_nil(backend_find_user(sql, user)))
+		throw(SQL,"sql.create_user", SQLSTATE(42M31) "CREATE USER: user '%s' already exists", user);
 
-	if (!(s = find_sql_schema(sql->session->tr, schema)))
-		throw(SQL,"sql.create_user", SQLSTATE(3F000) "CREATE USER: no such schema '%s'", schema);
-	schema_id = s->base.id;
-	if (!isNew(s) && sql_trans_add_dependency(sql->session->tr, schema_id, ddl) != LOG_OK)
-		throw(SQL, "sql.create_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (schema) {
+		if (!(s = find_sql_schema(sql->session->tr, schema)))
+			throw(SQL,"sql.create_user", SQLSTATE(3F000) "CREATE USER: no such schema '%s'", schema);
+		schema_id = s->base.id;
+		if (!isNew(s) && sql_trans_add_dependency(sql->session->tr, schema_id, ddl) != LOG_OK)
+			throw(SQL, "sql.create_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	} else {
+		// look for an existing schema matching user
+		if ((s = find_sql_schema(sql->session->tr, user))) {
+			schema_id = s->base.id;
+			if (!isNew(s) && sql_trans_add_dependency(sql->session->tr, schema_id, ddl) != LOG_OK)
+				throw(SQL, "sql.create_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+	}
+
+
 	if (sql_trans_add_dependency(sql->session->tr, sql->user_id, ddl) != LOG_OK)
 		throw(SQL, "sql.create_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	if ((err = backend_create_user(sql, user, passwd, enc, fullname, schema_id, schema_path, sql->user_id)) != NULL)
+	if ((err = backend_create_user(sql, user, passwd, enc, fullname, schema_id, schema_path, sql->user_id, max_memory,
+					max_workers, optimizer, role_id)) != NULL)
 	{
 		/* strip off MAL exception decorations */
 		char *r;
@@ -811,6 +829,7 @@ sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, ch
 		_DELETE(err);
 		return r;
 	}
+
 	return NULL;
 }
 
@@ -915,10 +934,15 @@ sql_drop_user(mvc *sql, char *user)
 }
 
 char *
-sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char *schema_path, char *oldpasswd)
+sql_alter_user(mvc *sql, char *user, char *passwd, bool enc, char *schema, char *schema_path, char *oldpasswd, char *role)
 {
 	sql_schema *s = NULL;
 	sqlid schema_id = 0;
+	sqlid role_id = 0;
+
+	if (role)
+		if (backend_find_role(sql, role, &role_id) < 0)
+			throw(SQL,"sql.create_user", SQLSTATE(42M31) "ALTER USER: no such role '%s'", role);
 
 	/* we may be called from MAL (nil) */
 	if (strNil(user))
@@ -928,7 +952,7 @@ sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char 
 	if (!admin_privs(sql->user_id) && !admin_privs(sql->role_id) && user != NULL && strcmp(user, get_string_global_var(sql, "current_user")) != 0)
 		throw(SQL,"sql.alter_user", SQLSTATE(M1M05) "Insufficient privileges to change user '%s'", user);
 
-	if (user != NULL && backend_find_user(sql, user) < 0)
+	if (user != NULL && is_oid_nil(backend_find_user(sql, user)))
 		throw(SQL,"sql.alter_user", SQLSTATE(42M32) "ALTER USER: no such user '%s'", user);
 	if (schema) {
 		if (!(s = find_sql_schema(sql->session->tr, schema)))
@@ -937,7 +961,7 @@ sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char 
 		if (!isNew(s) && sql_trans_add_dependency(sql->session->tr, s->base.id, ddl) != LOG_OK)
 			throw(SQL, "sql.alter_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	if (backend_alter_user(sql, user, passwd, enc, schema_id, schema_path, oldpasswd) == FALSE)
+	if (backend_alter_user(sql, user, passwd, enc, schema_id, schema_path, oldpasswd, role_id) == FALSE)
 		throw(SQL,"sql.alter_user", SQLSTATE(M0M27) "%s", sql->errstr);
 	return NULL;
 }
@@ -948,9 +972,9 @@ sql_rename_user(mvc *sql, char *olduser, char *newuser)
 	if (!admin_privs(sql->user_id) && !admin_privs(sql->role_id))
 		throw(SQL,"sql.rename_user", SQLSTATE(M1M05) "ALTER USER: insufficient privileges to rename user '%s'", olduser);
 
-	if (backend_find_user(sql, olduser) < 0)
+	if (is_oid_nil(backend_find_user(sql, olduser)))
 		throw(SQL,"sql.rename_user", SQLSTATE(42M32) "ALTER USER: no such user '%s'", olduser);
-	if (backend_find_user(sql, newuser) >= 0)
+	if (!is_oid_nil(backend_find_user(sql, newuser)))
 		throw(SQL,"sql.rename_user", SQLSTATE(42M31) "ALTER USER: user '%s' already exists", newuser);
 	if (backend_rename_user(sql, olduser, newuser) == FALSE)
 		throw(SQL,"sql.rename_user", SQLSTATE(M1M05) "%s", sql->errstr);
@@ -958,15 +982,16 @@ sql_rename_user(mvc *sql, char *olduser, char *newuser)
 }
 
 int
-sql_create_privileges(mvc *m, sql_schema *s)
+sql_create_privileges(mvc *m, sql_schema *s, const char *initpasswd)
 {
-	int pub, p, zero = 0;
+	int pub, su, p, zero = 0;
 	sql_table *t = NULL, *privs = NULL;
 	sql_column *col = NULL;
 	sql_subfunc *f = NULL;
 	sql_trans *tr = m->session->tr;
 
-	backend_create_privileges(m, s);
+	// create db_user_info tbl
+	backend_create_privileges(m, s, initpasswd);
 
 	mvc_create_table(&t, m, s, "user_role", tt_table, 1, SQL_PERSIST, 0, -1, 0);
 	mvc_create_column_(&col, m, t, "login_id", "int", 32);
@@ -991,6 +1016,7 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	sql_create_auth_id(m, USER_MONETDB, "monetdb");
 
 	pub = ROLE_PUBLIC;
+	su = USER_MONETDB;
 	p = PRIV_SELECT;
 	privs = find_sql_table(tr, s, "privileges");
 
@@ -1037,6 +1063,10 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 	t = find_sql_table(tr, s, "value_partitions");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
+	// restrict access to db_user_info to monetdb role
+	t = find_sql_table(tr, s, "db_user_info");
+	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &su, &p, &zero, &zero);
+
 
 	p = PRIV_EXECUTE;
 	f = sql_bind_func_(m, s->base.name, "env", NULL, F_UNION, true);
@@ -1063,4 +1093,10 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	*/
 
 	return 0;
+}
+
+void
+sql_set_user_api_hooks(mvc *m)
+{
+	backend_set_user_api_hooks(m);
 }

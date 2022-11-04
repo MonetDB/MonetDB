@@ -107,7 +107,7 @@ static str
 CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret=  getArgReference_bat(stk,pci,0);
-	bat *ret2=  getArgReference_bat(stk,pci,0);
+	bat *ret2=  getArgReference_bat(stk,pci,1);
 	BAT *b = COLnew(0, TYPE_str, 12, TRANSIENT);
 	BAT *bn = COLnew(0, TYPE_str, 12, TRANSIENT);
 	char buf[32]; /* 32 bytes are enough */
@@ -226,7 +226,7 @@ CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mal_clients[idx].mode == FREECLIENT)
 		msg = createException(MAL,"clients.stop","Session not active anymore");
 	else
-		mal_clients[idx].querytimeout = 1; /* stop client in one microsecond */
+		mal_clients[idx].qryctx.querytimeout = 1; /* stop client in one microsecond */
 	/* this forces the designated client to stop at the next instruction */
 	MT_lock_unset(&mal_contextLock);
 	return msg;
@@ -354,7 +354,7 @@ CLTstopSession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mal_clients[idx].mode == FREECLIENT) {
 		msg = createException(MAL,"clients.stopSession","Session not active anymore");
 	} else {
-		mal_clients[idx].querytimeout = 1; /* stop client in one microsecond */
+		mal_clients[idx].qryctx.querytimeout = 1; /* stop client in one microsecond */
 		mal_clients[idx].sessiontimeout = 1; /* stop client session */
 	}
 	MT_lock_unset(&mal_contextLock);
@@ -463,7 +463,7 @@ CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		if (pci->argc == 3)
 			mal_clients[idx].sessiontimeout = sto * 1000000;
-		mal_clients[idx].querytimeout = qto * 1000000;
+		mal_clients[idx].qryctx.querytimeout = qto * 1000000;
 	}
 	MT_lock_unset(&mal_contextLock);
 	return msg;
@@ -505,7 +505,7 @@ CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else {
 		/* when testing (FORCEMITOMASK), reduce timeout of 1 sec to 1 msec */
 		lng timeout_micro = GDKdebug & FORCEMITOMASK && qto == 1 ? 1000 : (lng) qto * 1000000;
-		mal_clients[idx].querytimeout = timeout_micro;
+		mal_clients[idx].qryctx.querytimeout = timeout_micro;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx->querytimeout = timeout_micro;
 	}
@@ -531,7 +531,7 @@ CLTqueryTimeoutMicro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mal_clients[idx].mode == FREECLIENT)
 		msg = createException(MAL,"clients.queryTimeout","Session not active anymore");
 	else {
-		mal_clients[idx].querytimeout = qto;
+		mal_clients[idx].qryctx.querytimeout = qto;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx->querytimeout = qto;
 	}
@@ -592,7 +592,7 @@ CLTgetProfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	if (!(*opt = GDKstrdup(cntxt->optimizer)))
 		throw(MAL, "clients.getProfile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	*qto = (int)(cntxt->querytimeout / 1000000);
+	*qto = (int)(cntxt->qryctx.querytimeout / 1000000);
 	*sto = (int)(cntxt->sessiontimeout / 1000000);
 	*wlim = cntxt->workerlimit;
 	*mlim = cntxt->memorylimit;
@@ -709,25 +709,6 @@ static str CLTbackendsum(str *ret, str *pw) {
 	return MAL_SUCCEED;
 }
 
-static str CLTaddUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	oid *ret = getArgReference_oid(stk, pci, 0);
-	str *usr = getArgReference_str(stk, pci, 1);
-	str *pw = getArgReference_str(stk, pci, 2);
-
-	(void)mb;
-
-	return AUTHaddUser(ret, cntxt, *usr, *pw);
-}
-
-static str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str *usr;
-	(void)mb;
-
-	usr = getArgReference_str(stk, pci, 1);
-
-	return AUTHremoveUser(cntxt, *usr);
-}
-
 static str CLTgetUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *ret = getArgReference_str(stk, pci, 0);
 	(void)mb;
@@ -742,33 +723,6 @@ static str CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	(void)mb;
 
 	return AUTHgetPasswordHash(ret, cntxt, *user);
-}
-
-static str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str *old = getArgReference_str(stk, pci, 1);
-	str *new = getArgReference_str(stk, pci, 2);
-
-	(void)mb;
-
-	return AUTHchangeUsername(cntxt, *old, *new);
-}
-
-static str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str *old = getArgReference_str(stk, pci, 1);
-	str *new = getArgReference_str(stk, pci, 2);
-
-	(void)mb;
-
-	return AUTHchangePassword(cntxt, *old, *new);
-}
-
-static str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str *usr = getArgReference_str(stk, pci, 1);
-	str *new = getArgReference_str(stk, pci, 2);
-
-	(void)mb;
-
-	return AUTHsetPassword(cntxt, *usr, *new);
 }
 
 static str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -786,24 +740,6 @@ static str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	msg = AUTHcheckCredentials(&id, cntxt, *usr, pwd, ch, algo);
 	free(pwd);
 	return msg;
-}
-
-static str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	bat *ret1 = getArgReference_bat(stk, pci, 0);
-	bat *ret2 = getArgReference_bat(stk, pci, 1);
-	BAT *uid, *nme;
-	str tmp;
-
-	(void)mb;
-
-	tmp = AUTHgetUsers(&uid, &nme, cntxt);
-	if (tmp)
-		return tmp;
-	*ret1 = uid->batCacheid;
-	BBPkeepref(uid);
-	*ret2 = nme->batCacheid;
-	BBPkeepref(nme);
-	return(MAL_SUCCEED);
 }
 
 str
@@ -922,7 +858,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			timeout = (int)(c->sessiontimeout / 1000000);
 			if (BUNappend(sessiontimeout, &timeout, false) != GDK_SUCCEED)
 				goto bailout;
-			timeout = (int)(c->querytimeout / 1000000);
+			timeout = (int)(c->qryctx.querytimeout / 1000000);
 			if (BUNappend(querytimeout, &timeout, false) != GDK_SUCCEED)
 				goto bailout;
 			if( c->idle){
@@ -1033,15 +969,9 @@ mel_func clients_init_funcs[] = {
  command("clients", "sha2sum", CLTsha2sum, false, "Return hex string representation of the SHA-2 hash with bits of the given string", args(1,3, arg("",str),arg("pw",str),arg("bits",int))),
  command("clients", "ripemd160sum", CLTripemd160sum, false, "Return hex string representation of the RIPEMD160 hash of the given string", args(1,2, arg("",str),arg("pw",str))),
  command("clients", "backendsum", CLTbackendsum, false, "Return hex string representation of the currently used hash of the given string", args(1,2, arg("",str),arg("pw",str))),
- pattern("clients", "addUser", CLTaddUser, true, "Allow user with password access to the given scenarios", args(1,3, arg("",oid),arg("nme",str),arg("pw",str))),
- pattern("clients", "removeUser", CLTremoveUser, true, "Remove the given user from the system", args(1,2, arg("",void),arg("nme",str))),
  pattern("clients", "getUsername", CLTgetUsername, false, "Return the username of the currently logged in user", args(1,1, arg("",str))),
  pattern("clients", "getPasswordHash", CLTgetPasswordHash, false, "Return the password hash of the given user", args(1,2, arg("",str),arg("user",str))),
- pattern("clients", "changeUsername", CLTchangeUsername, true, "Change the username of the user into the new string", args(1,3, arg("",void),arg("old",str),arg("new",str))),
- pattern("clients", "changePassword", CLTchangePassword, true, "Change the password for the current user", args(1,3, arg("",void),arg("old",str),arg("new",str))),
- pattern("clients", "setPassword", CLTsetPassword, true, "Set the password for the given user", args(1,3, arg("",void),arg("user",str),arg("pass",str))),
  pattern("clients", "checkPermission", CLTcheckPermission, false, "Check permission for a user, requires hashed password (backendsum)", args(1,3, arg("",void),arg("usr",str),arg("pw",str))),
- pattern("clients", "getUsers", CLTgetUsers, false, "return a BAT with user id and one with name available in the system", args(2,2, batarg("",oid),batarg("",str))),
  pattern("clients", "current_sessionid", CLTgetSessionID, false, "return current session ID", args(1,1, arg("",int))),
  { .imp=NULL }
 };

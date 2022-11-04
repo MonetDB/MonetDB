@@ -16,3 +16,6 @@ view_privs_chain
 unknown_user
 userCallFunction
 withGrantOption
+user_default_role
+user_default_schema
+create_user_options

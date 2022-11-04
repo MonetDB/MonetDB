@@ -1,0 +1,247 @@
+-- test syntax: CREATE USER user_name WITH [ ENCRYPTED | UNENCRYPTED ] PASSWORD 'user_password' NAME 'full name'
+--    [SCHEMA schema_name] [SCHEMA PATH string] [MAX_MEMORY bytes] [MAX_WORKERS count] [OPTIMIZER optimizer] [DEFAULT ROLE ident]
+
+statement error 42000!syntax error...
+create user testu01;
+
+statement error 42000!syntax error...
+create user testu02 with password 'testu02';
+
+statement ok
+create user testu03 with password e'test\tu03' name e'Test\bu03'
+
+statement ok
+create user testu04 with password r'test\tu04' name r'Test\bu04' schema tmp
+
+statement error M0M27!CREATE USER: 42000!A schema in the path must be within '"'
+create user testu05a with password r'test\tu05' name r'Test\bu05' schema PATH 'sys,tmp'
+
+statement ok
+create user testu05b with password r'test\tu05' name r'Test\bu05' schema PATH '"sys","tmp"'
+
+statement ok
+create user testu06 with password r'test\tu06' name r'Test\bu06' max_MEMORY 123456789
+
+statement ok
+create user testu07 with password r'test\tu07' name r'Test\bu07' max_WORKERS 123
+
+statement error 42000!syntax error...
+create user testu08a with password r'test\tu08' name r'Test\bu08' Optimizer minimal_pipe
+
+statement ok
+create user testu08b with password r'test\tu08' name r'Test\bu08' Optimizer 'minimal_pipe'
+
+statement ok
+create role testR1
+
+statement ok
+create user testu09 with password r'test\tu09' name r'Test\bu09' DEFAULT role testR1
+
+
+query TTITIITI rowsort
+select name, fullname, default_schema > 2000, schema_path, max_memory, max_workers, optimizer, default_role > 2000 from sys.users where name like 'test%' order by name
+----
+testu03
+Test@u03
+1
+"sys"
+0
+0
+default_pipe
+1
+testu04
+Test\bu04
+1
+"sys"
+0
+0
+default_pipe
+1
+testu05b
+Test\bu05
+1
+"sys","tmp"
+0
+0
+default_pipe
+1
+testu06
+Test\bu06
+1
+"sys"
+123456789
+0
+default_pipe
+1
+testu07
+Test\bu07
+1
+"sys"
+0
+123
+default_pipe
+1
+testu08b
+Test\bu08
+1
+"sys"
+0
+0
+minimal_pipe
+1
+testu09
+Test\bu09
+1
+"sys"
+0
+0
+default_pipe
+1
+
+
+--cleanup
+statement ok
+drop user testu09
+
+statement ok
+drop role testR1
+
+statement error M1M05!DROP USER: 'testu08b' owns a schema
+drop user testu08b
+
+statement error 0P000!DROP USER: no such user role 'testu08a'
+drop user testu08a
+
+statement error M1M05!DROP USER: 'testu07' owns a schema
+drop user testu07
+
+statement error M1M05!DROP USER: 'testu06' owns a schema
+drop user testu06
+
+statement error M1M05!DROP USER: 'testu05b' owns a schema
+drop user testu05b
+
+statement error 0P000!DROP USER: no such user role 'testu05a'
+drop user testu05a
+
+statement ok
+drop user testu04
+
+statement error M1M05!DROP USER: 'testu03' owns a schema
+drop user testu03
+
+statement error 0P000!DROP USER: no such user role 'testu02'
+drop user testu02
+
+statement error 0P000!DROP USER: no such user role 'testu01'
+drop user testu01
+
+
+-- note: create user statements without SCHEMA ... also create a schema implicitly !!! show them
+query TII rowsort
+select name, authorization > 3, owner > 3 from sys.schemas where not system and name like 'test%' order by name
+----
+testu03
+1
+0
+testu05b
+1
+0
+testu06
+1
+0
+testu07
+1
+0
+testu08b
+1
+0
+testu09
+1
+0
+
+-- how can we now drop those users? change the default schema value? try it
+statement ok
+alter user testu03 set schema sys
+
+statement error M1M05!DROP USER: 'testu03' owns a schema
+drop user testu03
+
+statement ok
+alter user testu03 schema path '"sys"'
+
+statement error M1M05!DROP USER: 'testu03' owns a schema
+drop user testu03
+
+-- try to drop the schema first
+statement ok
+drop schema testu03
+-- it succeeds
+
+statement ok
+drop user testu03
+-- finally the created user (and implictly created schema) can be dropped
+
+statement error 2BM37!DROP SCHEMA: unable to drop schema 'testu05b' (there are database users using it as session's default schema)
+drop schema testu05b
+
+statement ok
+alter user testu05b set schema sys
+
+statement ok
+drop schema testu05b
+
+statement ok
+drop user testu05b
+
+statement error 2BM37!DROP SCHEMA: unable to drop schema 'testu06' (there are database users using it as session's default schema)
+drop schema testu06
+
+statement ok
+alter user testu06 set schema sys
+
+statement ok
+drop schema testu06
+
+statement ok
+drop user testu06
+
+statement error 2BM37!DROP SCHEMA: unable to drop schema 'testu07' (there are database users using it as session's default schema)
+drop schema testu07
+
+statement ok
+alter user testu07 set schema sys
+
+statement ok
+drop schema testu07
+
+statement ok
+drop user testu07
+
+statement error 2BM37!DROP SCHEMA: unable to drop schema 'testu08b' (there are database users using it as session's default schema)
+drop schema testu08b
+
+statement ok
+alter user testu08b set schema sys
+
+statement ok
+drop schema testu08b
+
+statement ok
+drop user testu08b
+
+statement ok
+drop schema testu09
+
+statement error 0P000!DROP USER: no such user role 'testu09'
+drop user testu09
+-- this user was already dropped, see above
+
+query TII rowsort
+select name, authorization > 3, owner > 3 from sys.schemas where not system and name like 'test%' order by name
+----
+
+query TTITIITI rowsort
+select name, fullname, default_schema > 2000, schema_path, max_memory, max_workers, optimizer, default_role > 2000 from sys.users where name like 'test%' order by name
+----
+

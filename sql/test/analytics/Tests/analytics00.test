@@ -1922,3 +1922,9 @@ SELECT COUNT(o_totalprice) OVER (ORDER BY EXTRACT(YEAR FROM o_orderdate) GROUPS 
 statement ok
 rollback
 
+statement error 42000!ROW_NUMBER: window functions cannot be nested
+SELECT avg(42) over (order by row_number() over ())
+
+statement error 42000!ROW_NUMBER: window functions cannot be nested
+SELECT avg(42) over (partition by row_number() over ())
+

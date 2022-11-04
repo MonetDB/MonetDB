@@ -39,7 +39,6 @@ typedef struct QRYQUEUE{
 	time_t start;
 	time_t finished;
 } *QueryQueue;
-mal_export size_t qhead, qtail, qsize;
 
 /* We keep a few statistics per user to identify unexpected behavior */
 typedef struct USERSTAT{
@@ -63,6 +62,7 @@ typedef struct WORKINGSET{
 
 mal_export Workingset workingset[THREADS];
 
+mal_export oid runtimeProfileSetTag(Client cntxt);
 mal_export void runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
 mal_export void runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
 mal_export void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);

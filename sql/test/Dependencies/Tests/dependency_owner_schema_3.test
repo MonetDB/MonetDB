@@ -38,17 +38,11 @@ DEP_SCHEMA
 monetdb
 tmp
 DEP_SCHEMA
-monetdb
-wlc
-DEP_SCHEMA
-monetdb
-wlr
-DEP_SCHEMA
 
 query TTT rowsort
 SELECT t.name, v.name, 'DEP_VIEW' from sys.tables as t, sys.tables as v, sys.dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by t.name, v.name
 ----
-651 values hashing to fcf545c1dde0da41e4ac6e7dd57e59fb
+654 values hashing to c1625b745d5b152775c4672ef35a4978
 
 query TTT rowsort
 SELECT t.name, i.name, 'DEP_INDEX' from sys.tables as t, sys.idxs as i where i.table_id = t.id and i.name not in (select name from sys.keys) and t.type in (0, 10, 20, 30) order by t.name, i.name
@@ -89,6 +83,9 @@ DEP_FUNC
 comments
 describe_table
 DEP_FUNC
+db_user_info
+db_users
+DEP_FUNC
 dump_statements
 dump_database
 DEP_FUNC
@@ -126,7 +123,7 @@ DEP_FUNC
 query TTT rowsort
 SELECT c.name, v.name, 'DEP_VIEW' from sys.columns as c, sys.tables as v, sys.dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by c.name, v.name
 ----
-2274 values hashing to f4b96600fba0faf630ad83449eaa46b0
+2289 values hashing to e640ec7c86f357c8f9135af496fc3b2b
 
 query TTT rowsort
 SELECT c.name, k.name, 'DEP_KEY' from sys.columns as c,  sys.objects as kc, sys.keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name
@@ -193,7 +190,7 @@ SELECT c.name, i.name, 'DEP_INDEX' from sys.columns as c,  sys.objects as kc, sy
 query TTT rowsort
 SELECT c.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.columns as c, sys.dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name
 ----
-270 values hashing to cffffcc5c307d9fbc2f33b06858b20fa
+273 values hashing to 9ef14ef0bd961ee521581c23fdc30a09
 
 query TTT rowsort
 SELECT c.name, tri.name, 'DEP_TRIGGER' from sys.columns as c, sys.objects as tri, sys.dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by c.name, tri.name
@@ -286,11 +283,11 @@ DEP_FUNC
 dq
 prepare_esc
 DEP_FUNC
+dq
+schema_guard
+DEP_FUNC
 dump_table_data
 dump_database
-DEP_FUNC
-fqn
-schema_guard
 DEP_FUNC
 getproj4
 st_transform
@@ -301,11 +298,11 @@ DEP_FUNC
 ms_trunc
 ms_round
 DEP_FUNC
+regexp_replace
+regexp_replace
+DEP_FUNC
 remote_table_credentials
 get_remote_table_expressions
-DEP_FUNC
-replace_first
-schema_guard
 DEP_FUNC
 sq
 get_remote_table_expressions

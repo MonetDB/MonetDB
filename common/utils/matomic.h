@@ -161,7 +161,7 @@ typedef __declspec(align(8)) volatile ATOMIC_BASE_TYPE ATOMIC_TYPE;
 /* should we use _InterlockedExchangeAdd64(var, 0) instead? */
 #endif
 #define ATOMIC_SET(var, val)	_InterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_XCG(var, val)	_InterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_XCG(var, val)	((ATOMIC_BASE_TYPE) _InterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val)))
 static inline bool
 ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
 {
@@ -173,35 +173,35 @@ ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
 	return false;
 }
 #define ATOMIC_CAS(var, exp, des)	ATOMIC_CAS(var, exp, (ATOMIC_BASE_TYPE) (des))
-#define ATOMIC_ADD(var, val)	_InterlockedExchangeAdd64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_SUB(var, val)	_InterlockedExchangeAdd64(var, -(val))
-#define ATOMIC_INC(var)			_InterlockedIncrement64(var)
-#define ATOMIC_DEC(var)			_InterlockedDecrement64(var)
-#define ATOMIC_OR(var, val)		_InterlockedOr64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_AND(var, val)	_InterlockedAnd64(var, (ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_ADD(var, val)	((ATOMIC_BASE_TYPE) _InterlockedExchangeAdd64(var, (LONG64) (val)))
+#define ATOMIC_SUB(var, val)	((ATOMIC_BASE_TYPE) _InterlockedExchangeAdd64(var, -(LONG64) (val)))
+#define ATOMIC_INC(var)			((ATOMIC_BASE_TYPE) _InterlockedIncrement64(var))
+#define ATOMIC_DEC(var)			((ATOMIC_BASE_TYPE) _InterlockedDecrement64(var))
+#define ATOMIC_OR(var, val)		((ATOMIC_BASE_TYPE) _InterlockedOr64(var, (ATOMIC_BASE_TYPE) (val)))
+#define ATOMIC_AND(var, val)	((ATOMIC_BASE_TYPE) _InterlockedAnd64(var, (ATOMIC_BASE_TYPE) (val)))
 
 #else
 
 #ifdef DECLSPEC_NOINITALL
 #define ATOMIC_GET(var)			((ATOMIC_BASE_TYPE) _InlineInterlockedExchangeAdd64(var, 0))
 #define ATOMIC_SET(var, val)	_InlineInterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_XCG(var, val)	_InlineInterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_ADD(var, val)	_InlineInterlockedExchangeAdd64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_SUB(var, val)	_InlineInterlockedExchangeAdd64(var, -(val))
-#define ATOMIC_INC(var)			_InlineInterlockedIncrement64(var)
-#define ATOMIC_DEC(var)			_InlineInterlockedDecrement64(var)
-#define ATOMIC_OR(var, val)		_InlineInterlockedOr64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_AND(var, val)	_InlineInterlockedAnd64(var, (ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_XCG(var, val)	((ATOMIC_BASE_TYPE) _InlineInterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val)))
+#define ATOMIC_ADD(var, val)	((ATOMIC_BASE_TYPE) _InlineInterlockedExchangeAdd64(var, (LONG64) (val)))
+#define ATOMIC_SUB(var, val)	((ATOMIC_BASE_TYPE) _InlineInterlockedExchangeAdd64(var, -(LONG64) (val)))
+#define ATOMIC_INC(var)			((ATOMIC_BASE_TYPE) _InlineInterlockedIncrement64(var))
+#define ATOMIC_DEC(var)			((ATOMIC_BASE_TYPE) _InlineInterlockedDecrement64(var))
+#define ATOMIC_OR(var, val)		((ATOMIC_BASE_TYPE) _InlineInterlockedOr64(var, (ATOMIC_BASE_TYPE) (val)))
+#define ATOMIC_AND(var, val)	((ATOMIC_BASE_TYPE) _InlineInterlockedAnd64(var, (ATOMIC_BASE_TYPE) (val)))
 #else
 #define ATOMIC_GET(var)			((ATOMIC_BASE_TYPE) _InterlockedExchangeAdd64(var, 0))
 #define ATOMIC_SET(var, val)	_InterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_XCG(var, val)	_InterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_ADD(var, val)	_InterlockedExchangeAdd64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_SUB(var, val)	_InterlockedExchangeAdd64(var, -(val))
-#define ATOMIC_INC(var)			_InterlockedIncrement64(var)
-#define ATOMIC_DEC(var)			_InterlockedDecrement64(var)
-#define ATOMIC_OR(var, val)		_InterlockedOr64(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_AND(var, val)	_InterlockedAnd64(var, (ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_XCG(var, val)	((ATOMIC_BASE_TYPE) _InterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val)))
+#define ATOMIC_ADD(var, val)	((ATOMIC_BASE_TYPE) _InterlockedExchangeAdd64(var, (LONG64) (val)))
+#define ATOMIC_SUB(var, val)	((ATOMIC_BASE_TYPE) _InterlockedExchangeAdd64(var, -(LONG64) (val)))
+#define ATOMIC_INC(var)			((ATOMIC_BASE_TYPE) _InterlockedIncrement64(var))
+#define ATOMIC_DEC(var)			((ATOMIC_BASE_TYPE) _InterlockedDecrement64(var))
+#define ATOMIC_OR(var, val)		((ATOMIC_BASE_TYPE) _InterlockedOr64(var, (ATOMIC_BASE_TYPE) (val)))
+#define ATOMIC_AND(var, val)	((ATOMIC_BASE_TYPE) _InterlockedAnd64(var, (ATOMIC_BASE_TYPE) (val)))
 #endif
 static inline bool
 ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)

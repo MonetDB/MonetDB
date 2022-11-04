@@ -66,14 +66,16 @@ MNDBTablePrivileges(ODBCStmt *stmt,
 		if (NameLength2 > 0) {
 			sch = ODBCParsePV("s", "name",
 					  (const char *) SchemaName,
-					  (size_t) NameLength2);
+					  (size_t) NameLength2,
+					  stmt->Dbc);
 			if (sch == NULL)
 				goto nomem;
 		}
 		if (NameLength3 > 0) {
 			tab = ODBCParsePV("t", "name",
 					  (const char *) TableName,
-					  (size_t) NameLength3);
+					  (size_t) NameLength3,
+					  stmt->Dbc);
 			if (tab == NULL)
 				goto nomem;
 		}
@@ -95,8 +97,7 @@ MNDBTablePrivileges(ODBCStmt *stmt,
 	}
 
 	/* construct the query now */
-	querylen = 1200 + strlen(stmt->Dbc->dbname) +
-		(sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0);
+	querylen = 1000 + (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0);
 	query = malloc(querylen);
 	if (query == NULL)
 		goto nomem;
@@ -112,7 +113,7 @@ MNDBTablePrivileges(ODBCStmt *stmt,
 	 */
 
 	pos += snprintf(query + pos, querylen - pos,
-		"select '%s' as \"TABLE_CAT\", "
+		"select cast(null as varchar(1)) as \"TABLE_CAT\", "
 			"s.name as \"TABLE_SCHEM\", "
 			"t.name as \"TABLE_NAME\", "
 			"case a.id "
@@ -129,18 +130,21 @@ MNDBTablePrivileges(ODBCStmt *stmt,
 			     "when 0 then 'NO' "
 			     "end as \"IS_GRANTABLE\" "
 		"from sys.schemas s, "
-		      "sys._tables t, "
-		      "sys.auths a, "
-		      "sys.privileges p, "
-		      "sys.auths g, "
-		      "%s "
+		     /* next union all subquery is much more efficient than using sys.tables */
+		     "(select t1.id, t1.name, t1.schema_id from sys._tables as t1"
+		     " where not t1.system"	/* exclude system tables and views */
+		     " union all"
+		     " select t2.id, t2.name, t2.schema_id from tmp._tables as t2)"
+		     " as t(id, name, schema_id), "
+		     "sys.auths a, "
+		     "sys.privileges p, "
+		     "sys.auths g, "
+		     "%s "
 		"where p.obj_id = t.id and "
 		      "p.auth_id = a.id and "
 		      "t.schema_id = s.id and "
-		      "not t.system and "
 		      "p.grantor = g.id and "
 		      "p.privileges = pc.privilege_code_id",
-		stmt->Dbc->dbname,
 		/* a server that supports sys.comments also supports
 		 * sys.privilege_codes */
 		stmt->Dbc->has_comment ? "sys.privilege_codes as pc" :
@@ -150,7 +154,7 @@ MNDBTablePrivileges(ODBCStmt *stmt,
 			     "(8, 'DELETE'), "
 			     "(16, 'EXECUTE'), "
 			     "(32, 'GRANT')) as pc(privilege_code_id, privilege_code_name)");
-	assert(pos < 1000);
+	assert(pos < 900);
 
 	/* Construct the selection condition query part */
 	if (NameLength1 > 0 && CatalogName != NULL) {
@@ -173,6 +177,9 @@ MNDBTablePrivileges(ODBCStmt *stmt,
 
 	/* add the ordering (exclude table_cat as it is the same for all rows) */
 	pos += strcpy_len(query + pos, " order by \"TABLE_SCHEM\", \"TABLE_NAME\", \"PRIVILEGE\", \"GRANTEE\"", querylen - pos);
+	assert(pos < querylen);
+
+	/* debug: fprintf(stdout, "SQLTablePrivileges query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */
 
 	/* query the MonetDB data dictionary tables */
 	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);

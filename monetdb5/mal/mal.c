@@ -30,6 +30,7 @@ lng MALdebug;
 #include "msabaoth.h"
 #include "mal_dataflow.h"
 #include "mal_private.h"
+#include "mal_internal.h"
 #include "mal_runtime.h"
 #include "mal_resource.h"
 #include "mal_atom.h"
@@ -39,6 +40,94 @@ MT_Lock     mal_remoteLock = MT_LOCK_INITIALIZER(mal_remoteLock);
 MT_Lock     mal_profileLock = MT_LOCK_INITIALIZER(mal_profileLock);
 MT_Lock     mal_copyLock = MT_LOCK_INITIALIZER(mal_copyLock);
 MT_Lock     mal_delayLock = MT_LOCK_INITIALIZER(mal_delayLock);
+
+
+
+#ifdef HAVE_PTHREAD_H
+
+static pthread_key_t tl_client_key;
+
+static int
+initialize_tl_client_key(void)
+{
+	static bool initialized = false;
+	if (initialized)
+		return 0;
+
+	if (pthread_key_create(&tl_client_key, NULL) != 0)
+		return -1;
+
+	initialized = true;
+	return 0;
+}
+
+/* declared in mal_interpreter.h so MAL operators can access it */
+Client
+getClientContext(void)
+{
+	if (initialize_tl_client_key())
+		return NULL;
+	return (Client) pthread_getspecific(tl_client_key);
+}
+
+/* declared in mal_private.h so only the MAL interpreter core can access it */
+Client
+setClientContext(Client cntxt)
+{
+	Client old = getClientContext();
+
+	if (pthread_setspecific(tl_client_key, cntxt) != 0)
+		GDKfatal("Failed to set thread local Client context");
+
+	return old;
+}
+
+#elif defined(WIN32)
+
+static DWORD tl_client_key = 0;
+
+static int
+initialize_tl_client_key(void)
+{
+	static bool initialized = false;
+	if (initialized)
+		return 0;
+
+	DWORD key = TlsAlloc();
+	if (key == TLS_OUT_OF_INDEXES)
+		return -1;
+
+	tl_client_key = key;
+	initialized = true;
+	return 0;
+}
+
+/* declared in mal_interpreter.h so MAL operators can access it */
+Client
+getClientContext(void)
+{
+	if (initialize_tl_client_key())
+		return NULL;
+	return (Client) TlsGetValue(tl_client_key);
+}
+
+/* declared in mal_private.h so only the MAL interpreter core can access it */
+Client
+setClientContext(Client cntxt)
+{
+	Client old = getClientContext();
+
+	if (TlsSetValue(tl_client_key, cntxt) == 0)
+		GDKfatal("Failed to set thread local Client context");
+
+	return old;
+}
+
+#else
+
+#error "no pthreads and no Win32, don't know what to do"
+
+#endif
 
 const char *
 mal_version(void)
@@ -51,7 +140,7 @@ mal_version(void)
  */
 
 int
-mal_init(char *modules[], bool embedded)
+mal_init(char *modules[], bool embedded, const char *initpasswd)
 {
 /* Any error encountered here terminates the process
  * with a message sent to stderr
@@ -70,7 +159,10 @@ mal_init(char *modules[], bool embedded)
 		return -1;
 	}
 
-	if ((err = AUTHinitTables(NULL)) != MAL_SUCCEED) {
+	if (initialize_tl_client_key() != 0)
+		return -1;
+
+	if ((err = AUTHinitTables()) != MAL_SUCCEED) {
 		freeException(err);
 		return -1;
 	}
@@ -86,7 +178,7 @@ mal_init(char *modules[], bool embedded)
 	initNamespace();
 	initParser();
 
-	err = malBootstrap(modules, embedded);
+	err = malBootstrap(modules, embedded, initpasswd);
 	if (err != MAL_SUCCEED) {
 		mal_client_reset();
 #ifndef NDEBUG

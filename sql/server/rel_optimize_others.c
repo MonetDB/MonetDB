@@ -1033,7 +1033,7 @@ bind_dce(visitor *v, global_props *gp)
 
 
 static int
-topn_sample_save_exps( list *exps )
+topn_sample_safe_exps( list *exps, bool nil_limit )
 {
 	/* Limit only expression lists are always save */
 	if (list_length(exps) == 1)
@@ -1041,7 +1041,7 @@ topn_sample_save_exps( list *exps )
 	for (node *n = exps->h; n; n = n->next ) {
 		sql_exp *e = n->data;
 
-		if (!e || e->type != e_atom)
+		if (!e || e->type != e_atom || (!nil_limit && exp_is_null(e)))
 			return 0;
 	}
 	return 1;
@@ -1081,9 +1081,9 @@ sum_limit_offset(mvc *sql, sql_rel *rel)
 static sql_rel *
 rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 {
-	sql_rel *rp = NULL, *r = rel->l;
+	sql_rel *rp = NULL, *r = rel->l, *rpp = NULL;
 
-	if ((is_topn(rel->op) || is_sample(rel->op)) && topn_sample_save_exps(rel->exps)) {
+	if ((is_topn(rel->op) || is_sample(rel->op)) && topn_sample_safe_exps(rel->exps, true)) {
 		sql_rel *(*func) (sql_allocator *, sql_rel *, list *) = is_topn(rel->op) ? rel_topn : rel_sample;
 
 		/* nested topN relations */
@@ -1152,6 +1152,9 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 			return rel;
 		}
 
+		if (!topn_sample_safe_exps(rel->exps, false))
+			return rel;
+
 		/* duplicate topn/sample direct under union or crossproduct */
 		if (r && !rel_is_ref(r) && r->l && r->r && ((is_union(r->op) && r->exps) || (r->op == op_join && list_empty(r->exps)))) {
 			sql_rel *u = r, *x;
@@ -1185,7 +1188,7 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 		}
 
 		/* duplicate topn/sample + [ project-order ] under union */
-		if (r)
+		if (r && !rp)
 			rp = r->l;
 		if (r && r->exps && is_simple_project(r->op) && !rel_is_ref(r) && !list_empty(r->r) && r->l && is_union(rp->op)) {
 			sql_rel *u = rp, *ou = u, *x, *ul = u->l, *ur = u->r;
@@ -1267,6 +1270,50 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 			rel->l = ur;
 			v->changes++;
 			return rel;
+		}
+		/* a  left outer join b order by a.* limit L, can be copied into a */
+		/* topn ( project (orderby)( optional project ( left ())
+		 * rel    r                                     rp */
+		if (r && !rp)
+			rp = r->l;
+		if (r && rp && is_simple_project(rp->op) && !rp->r && rp->l)
+			rpp = rp->l;
+		if (r && r->exps && is_simple_project(r->op) && !rel_is_ref(r) && r->r && r->l && ((!rpp && is_left(rp->op)) ||
+				(rpp && is_left(rpp->op)))) {
+			sql_rel *lj = rpp?rpp:rp;
+			sql_rel *l = lj->l;
+			list *obes = r->r, *nobes = sa_list(v->sql->sa);
+			int fnd = 1;
+			for (node *n = obes->h; n && fnd; n = n->next) {
+				sql_exp *obe = n->data;
+				int asc = is_ascending(obe);
+				int nl = nulls_last(obe);
+				/* only simple rename expressions */
+				sql_exp *pe = exps_find_exp(r->exps, obe);
+				if (pe && rpp)
+					pe = exps_find_exp(rp->exps, pe);
+				if (pe)
+					pe = rel_find_exp(l, pe);
+				if (pe) {
+					pe = exp_ref(v->sql, pe);
+					if (asc)
+						set_ascending(pe);
+					if (nl)
+						set_nulls_last(pe);
+					append(nobes, pe);
+				}
+				else
+					fnd = 0;
+			}
+			if (fnd && ((is_topn(rel->op) && !is_topn(l->op)) || (is_sample(rel->op) && !is_sample(l->op)))) {
+				/* inject topn */
+				/* Todo add order by */
+				sql_rel *ob = lj->l = rel_project(v->sql->sa, lj->l, rel_projections(v->sql, lj->l, NULL, 1, 1));
+				ob->r = nobes;
+				lj->l = func(v->sql->sa, lj->l, sum_limit_offset(v->sql, rel));
+				v->changes++;
+				return rel;
+			}
 		}
 	}
 	return rel;

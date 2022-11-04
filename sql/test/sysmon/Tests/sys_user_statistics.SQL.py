@@ -1,6 +1,6 @@
 ###
 # Check that the sys.user_statistics() function works, i.e. it correctly logs
-#   new users and their query count and maxquery
+# new users and their query count and maxquery
 ###
 from MonetDBtesting.sqltest import SQLTestCase
 

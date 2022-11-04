@@ -97,7 +97,7 @@ VIEWcreate(oid seq, BAT *b)
 	assert(bn->theap == NULL);
 
 	MT_lock_set(&b->theaplock);
-	bn->batInserted = b->batInserted;
+	bn->batInserted = 0;
 	bn->batCount = b->batCount;
 	bn->batCapacity = b->batCapacity;
 	bn->batRestricted = BAT_READ;
@@ -141,10 +141,8 @@ VIEWcreate(oid seq, BAT *b)
 	}
 
 	if (BBPcacheit(bn, true) != GDK_SUCCEED) {	/* enter in BBP */
-		if (tp) {
+		if (tp)
 			BBPunshare(tp);
-			BBPunfix(tp);
-		}
 		if (bn->tvheap) {
 			BBPunshare(bn->tvheap->parentid);
 			HEAPdecref(bn->tvheap, false);
@@ -202,7 +200,7 @@ BATmaterialize(BAT *b, BUN cap)
 		.dirty = true,
 	};
 	settailname(tail, BBP_physical(b->batCacheid), TYPE_oid, 0);
-	if (HEAPalloc(tail, cap, sizeof(oid), 0) != GDK_SUCCEED) {
+	if (HEAPalloc(tail, cap, sizeof(oid)) != GDK_SUCCEED) {
 		GDKfree(tail);
 		return GDK_FAIL;
 	}

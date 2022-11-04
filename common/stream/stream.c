@@ -72,11 +72,25 @@ static struct tl_error_buf *get_tl_error_buf(void);
 
 static pthread_key_t tl_error_key;
 
+static void
+clear_main_tl_error_buf(void)
+{
+	void *p = pthread_getspecific(tl_error_key);
+	if (p != NULL) {
+		pthread_setspecific(tl_error_key, NULL);
+		free(p);
+	}
+}
+
 static int
 tl_error_init(void)
 {
 	if (pthread_key_create(&tl_error_key, free) != 0)
 		return -1;
+	// Turns out the destructor registered with pthread_key_create() does not
+	// always run for the main thread. This atexit hook clears the main thread's
+	// error buffer to avoid this being reported as a memory leak.
+	atexit(clear_main_tl_error_buf);
 	return 0;
 }
 
@@ -886,7 +900,7 @@ open_wstream(const char *filename)
 	stream *c = compressed_stream(s, 0);
 	if (c == NULL) {
 		close_stream(s);
-		file_remove(filename);
+		(void) file_remove(filename);
 	}
 
 	return c;
@@ -926,7 +940,7 @@ open_wastream(const char *filename)
 	stream *t = create_text_stream(s);
 	if (t == NULL) {
 		close_stream(s);
-		file_remove(filename);
+		(void) file_remove(filename);
 	}
 
 	return t;
@@ -940,9 +954,7 @@ isa_block_stream(const stream *s)
 	assert(s != NULL);
 	return s &&
 		((s->read == bs_read ||
-		  s->write == bs_write) ||
-		 (s->read == bs2_read ||
-		  s->write == bs2_write));
+		  s->write == bs_write));
 }
 
 

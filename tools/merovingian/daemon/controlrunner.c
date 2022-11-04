@@ -48,7 +48,7 @@
 static void
 leavedb(char *name)
 {
-	char buf[128];
+	char buf[sizeof(_mero_hostname) + 128];
 	snprintf(buf, sizeof(buf),
 			"LEAV %s mapi:monetdb://%s:%u/",
 			name, _mero_hostname,
@@ -94,7 +94,7 @@ setURI(sabdb *stats)
 static void
 anncdbS(sabdb *stats)
 {
-	char buf[128];
+	char buf[sizeof(_mero_hostname) + 128];
 	confkeyval *props = getDefaultProps();
 	char *shared;
 	readProps(props, stats->path);
@@ -144,7 +144,7 @@ recvWithTimeout(int msgsock, stream *fdin, char *buf, size_t buflen)
 		/* stream.h is sooo broken :( */
 		memset(buf, '\0', buflen);
 		ret = mnstr_read_block(fdin, buf, buflen - 1, 1);
-		return(ret >= 0 ? (int)strlen(buf) : mnstr_errnr(fdin) != 0 ? -1 : 0);
+		return(ret >= 0 ? (int)strlen(buf) : mnstr_errnr(fdin) != MNSTR_NO__ERROR ? -1 : 0);
 	} else {
 		return(recv(msgsock, buf, buflen, 0));
 	}
@@ -237,7 +237,7 @@ static void ctl_handle_client(
 	 * going to handle the traffic and negotiations, instead of the
 	 * client thread that just goes inside this program here. */
 	char buf[8096];
-	char buf2[8096];
+	char buf2[8096 + 50];
 	char *p, *q;
 	sabdb *stats;
 	int pos = 0;
@@ -387,6 +387,7 @@ static void ctl_handle_client(
 						pid = stats->pid;
 						mtype = MERODB;
 						msab_freeStatus(&stats);
+						stats = NULL;
 					}
 				}
 				// At this point pid may have been set from a dpair or from msab_getStatus()
@@ -455,7 +456,7 @@ static void ctl_handle_client(
 							 * on failure */
 							char *err;
 							char *sadbfarm;
-							char buf3[8092];
+							char buf3[8092+50];
 
 							close(pipes[1]);
 							dup2(pipes[0], 0);
@@ -676,7 +677,7 @@ static void ctl_handle_client(
 				Mlevelfprintf(INFORMATION, _mero_ctlout, "Start snapshot of database '%s' to file '%s'\n", q, dest);
 				char *e = snapshot_database_to(q, dest);
 				if (e != NULL) {
-					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: snapshot database '%s' to %s failed: %s",
+					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: snapshot database '%s' to %s failed: %s\n",
 						origin, q, dest, getErrMsg(e));
 					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
 					send_client("!");
@@ -691,7 +692,7 @@ static void ctl_handle_client(
 				char *dest = NULL;
 				char *e = snapshot_default_filename(&dest, q);
 				if (e != NULL) {
-					Mlevelfprintf(INFORMATION, _mero_ctlerr, "%s: snapshot database '%s': %s",
+					Mlevelfprintf(INFORMATION, _mero_ctlerr, "%s: snapshot database '%s': %s\n",
 						origin, q, getErrMsg(e));
 					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
 					send_client("!");
@@ -700,7 +701,7 @@ static void ctl_handle_client(
 					Mlevelfprintf(INFORMATION, _mero_ctlout, "Start snapshot of database '%s' to file '%s'\n", q, dest);
 					e = snapshot_database_to(q, dest);
 					if (e != NULL) {
-						Mlevelfprintf(ERROR, _mero_ctlerr, "%s: snapshot database '%s' to %s failed: %s",
+						Mlevelfprintf(ERROR, _mero_ctlerr, "%s: snapshot database '%s' to %s failed: %s\n",
 							origin, q, dest, getErrMsg(e));
 						len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
 						send_client("!");
@@ -750,7 +751,7 @@ static void ctl_handle_client(
 				if (wrapper)
 					mnstr_destroy(wrapper);
 				if (e != NULL) {
-					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: streaming snapshot database '%s' failed: %s",
+					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: streaming snapshot database '%s' failed: %s\n",
 						origin, q, getErrMsg(e));
 					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
 					send_client("!");
@@ -767,7 +768,7 @@ static void ctl_handle_client(
 				Mlevelfprintf(INFORMATION, _mero_ctlout, "Start restore snapshot of database '%s' from file '%s'\n", q, source);
 				char *e = snapshot_restore_from(q, source);
 				if (e != NULL) {
-					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: restore  database '%s' from snapshot %s failed: %s",
+					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: restore  database '%s' from snapshot %s failed: %s\n",
 						origin, q, source, getErrMsg(e));
 					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
 					send_client("!");
@@ -797,7 +798,7 @@ static void ctl_handle_client(
 				struct snapshot *snaps = NULL;
 				char *e = snapshot_list(&nsnaps, &snaps);
 				if (e != NULL) {
-					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: snapshot list failed: %s", origin, getErrMsg(e));
+					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: snapshot list failed: %s\n", origin, getErrMsg(e));
 					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
 					send_client("!");
 					freeErr(e);
@@ -1175,7 +1176,7 @@ controlRunner(void *d)
 
 	do {
 		if ((p = malloc(sizeof(int))) == NULL) {
-			Mlevelfprintf(ERROR, _mero_ctlerr, "malloc failed");
+			Mlevelfprintf(ERROR, _mero_ctlerr, "malloc failed\n");
 			break;
 		}
 		/* limit waiting time in order to check whether we need to exit */
@@ -1215,9 +1216,24 @@ controlRunner(void *d)
 			free(p);
 			if (_mero_keep_listening == 0)
 				break;
-			if (errno != EINTR) {
-				Mlevelfprintf(ERROR, _mero_ctlerr, "error during accept: %s",
+			switch (errno) {
+			case EMFILE:
+			case ENFILE:
+			case ENOBUFS:
+			case ENOMEM:
+				/* transient failure, wait a little and continue */
+				Mlevelfprintf(ERROR, _mero_ctlerr, "error during accept: %s\n",
 						strerror(errno));
+				sleep_ms(500);
+				break;
+			case EINTR:
+				/* interrupted */
+				break;
+			default:
+				/* anything else */
+				Mlevelfprintf(ERROR, _mero_ctlerr, "error during accept: %s\n",
+						strerror(errno));
+				break;
 			}
 			continue;
 		}

@@ -1,0 +1,256 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE mmtest01 ( id int, name text)
+
+statement ok
+CREATE OR REPLACE FUNCTION mmtest02()
+RETURNS int
+BEGIN
+	INSERT INTO mmtest01(id) VALUES (1);
+	RETURN 1;
+END
+
+statement ok
+select mmtest02()
+
+query IT nosort
+SELECT * FROM mmtest01
+----
+1
+NULL
+
+query I nosort
+SELECT count(*) as count
+FROM sys.dependency_columns_on_functions
+WHERE function_name LIKE 'mmtest02'
+----
+2
+
+query TTII nosort
+SELECT name, function_name, function_type, depend_type
+FROM sys.dependency_columns_on_functions
+WHERE function_name LIKE 'mmtest02'
+ORDER BY name
+----
+id
+mmtest02
+1
+7
+name
+mmtest02
+1
+7
+
+# even when only 1 column is specified in the function mmtest02 body, the insert statement depends on all (2) columns of a table
+
+# an extra test to check what happens when no columns are listed in the insert statement
+statement ok
+CREATE OR REPLACE FUNCTION mmtest03()
+RETURNS int
+BEGIN
+	INSERT INTO mmtest01 VALUES (2, NULL);
+	RETURN 1;
+END
+
+statement ok
+select mmtest03()
+
+query IT nosort
+SELECT * FROM mmtest01
+----
+1
+NULL
+2
+NULL
+
+query TTII nosort
+SELECT table_name, function_name, function_type, depend_type
+FROM sys.dependency_tables_on_functions
+WHERE table_name LIKE 'mmtest01'
+ORDER BY table_name
+----
+mmtest01
+mmtest02
+1
+7
+mmtest01
+mmtest03
+1
+7
+
+query TTII nosort
+SELECT name, function_name, function_type, depend_type
+FROM sys.dependency_columns_on_functions
+WHERE function_name LIKE 'mmtest03'
+ORDER BY name
+----
+id
+mmtest03
+1
+7
+name
+mmtest03
+1
+7
+
+# even when 0 columns are specified in the function mmtest03 body, the insert statement depends on all (2) columns of a table
+
+# also check what happens when you specify UPDATE instead of INSERT
+statement ok
+CREATE OR REPLACE FUNCTION mmtest04()
+RETURNS int
+BEGIN
+	UPDATE mmtest01 SET name = 'update 1 col';
+	RETURN 1;
+END
+
+statement ok
+select mmtest04()
+
+query IT nosort
+SELECT * FROM mmtest01
+----
+1
+update 1 col
+2
+update 1 col
+
+query TTII nosort
+SELECT name, function_name, function_type, depend_type
+FROM sys.dependency_columns_on_functions
+WHERE function_name LIKE 'mmtest04'
+ORDER BY name
+----
+id
+mmtest04
+1
+7
+name
+mmtest04
+1
+7
+
+# also check what happens when you specify SELECT instead of INSERT
+statement ok
+CREATE OR REPLACE FUNCTION mmtest05()
+RETURNS int
+BEGIN
+	RETURN SELECT max(id) as id FROM mmtest01;
+END
+
+statement ok
+select mmtest05()
+
+query TTII nosort
+SELECT name, function_name, function_type, depend_type
+FROM sys.dependency_columns_on_functions
+WHERE function_name LIKE 'mmtest05'
+ORDER BY name
+----
+id
+mmtest05
+1
+7
+
+# also check what happens when you specify DELETE instead of INSERT
+statement ok
+CREATE OR REPLACE FUNCTION mmtest06()
+RETURNS int
+BEGIN
+	DELETE FROM mmtest01;
+	RETURN 1;
+END
+
+statement ok
+select mmtest06()
+
+query IT nosort
+SELECT * FROM mmtest01
+----
+
+query TTII nosort
+SELECT name, function_name, function_type, depend_type
+FROM sys.dependency_columns_on_functions
+WHERE function_name LIKE 'mmtest06'
+ORDER BY name
+----
+
+statement ok
+CREATE OR REPLACE FUNCTION mmtest07()
+RETURNS int
+BEGIN
+	DELETE FROM mmtest01 WHERE name like '%test';
+	RETURN 1;
+END
+
+statement ok
+select mmtest07()
+
+query IT nosort
+SELECT * FROM mmtest01
+----
+
+query TTII nosort
+SELECT name, function_name, function_type, depend_type
+FROM sys.dependency_columns_on_functions
+WHERE function_name LIKE 'mmtest07'
+ORDER BY name
+----
+name
+mmtest07
+1
+7
+
+query TTII nosort
+SELECT table_name, function_name, function_type, depend_type
+FROM sys.dependency_tables_on_functions
+WHERE table_name LIKE 'mmtest01'
+ORDER BY table_name, function_name
+----
+mmtest01
+mmtest02
+1
+7
+mmtest01
+mmtest03
+1
+7
+mmtest01
+mmtest04
+1
+7
+mmtest01
+mmtest05
+1
+7
+mmtest01
+mmtest06
+1
+7
+mmtest01
+mmtest07
+1
+7
+
+statement ok
+DROP TABLE mmtest01 CASCADE
+
+query TTII nosort
+SELECT table_name, function_name, function_type, depend_type
+FROM sys.dependency_tables_on_functions
+WHERE table_name LIKE 'mmtest01'
+ORDER BY table_name, function_name
+----
+
+query TTII nosort
+SELECT name, function_name, function_type, depend_type
+FROM sys.dependency_columns_on_functions
+WHERE function_name LIKE 'mmtest0_'
+ORDER BY function_name, name
+----
+
+statement ok
+ROLLBACK
+

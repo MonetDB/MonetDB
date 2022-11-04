@@ -1,0 +1,391 @@
+-- This script test creation of merge tables in schemas tmp and tst,
+-- and creation of other (replica, remote, unlogged, view) tables in schemas tmp and tst,
+-- and adding them as partitions to the created merge tables in schemas tmp and tst.
+-- Many of them should generate an error as it is not allowed. This is tested also.
+
+statement ok
+CREATE SCHEMA tst
+
+statement ok
+SET SCHEMA tst
+
+statement ok
+CREATE VIEW tst.my_tables as
+ select (select name from sys.schemas s where s.id = t.schema_id) as schema, name, query, type, system, commit_action, access, temporary from tables t where not system
+
+statement error 42000!CREATE TABLE: cannot create persistent table 'tbl' in the schema 'tmp'
+CREATE TABLE tmp.tbl (c1 int)
+
+statement ok
+CREATE MERGE TABLE tmp.mtbl (c1 int)
+-- this succeeds strangely
+
+query TTTIIIII nosort
+select * from tst.my_tables where name = 'mtbl'
+----
+tmp
+mtbl
+NULL
+3
+0
+0
+0
+0
+
+statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
+select * from tmp.mtbl
+----
+
+statement error 42S02!ALTER TABLE: can't alter temporary table 'mtbl'
+ALTER TABLE tmp.mtbl ADD TABLE tmp.mtbl
+
+statement ok
+CREATE MERGE TABLE tst.mtbl (c1 int)
+
+query TTTIIIII nosort
+select * from tst.my_tables where name = 'mtbl'
+----
+tmp
+mtbl
+NULL
+3
+0
+0
+0
+0
+tst
+mtbl
+NULL
+3
+0
+0
+0
+0
+
+statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
+select * from tst.mtbl
+----
+
+statement error 42000!ALTER TABLE: can't add/drop a temporary table into a MERGE TABLE
+ALTER TABLE tst.mtbl ADD TABLE tmp.mtbl
+
+statement error 42000!ALTER TABLE: a MERGE TABLE can't be a child of itself
+ALTER TABLE tst.mtbl ADD TABLE tst.mtbl
+
+statement ok
+CREATE REPLICA TABLE tmp.rtbl (c1 int)
+-- this succeeds strangely
+
+query TTTIIIII nosort
+select * from tst.my_tables where name = 'rtbl'
+----
+tmp
+rtbl
+NULL
+6
+0
+0
+0
+0
+
+statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
+select * from tmp.rtbl
+----
+
+statement error 42S02!ALTER TABLE: can't alter temporary table 'mtbl'
+ALTER TABLE tmp.mtbl ADD TABLE tmp.rtbl
+
+statement error 42000!ALTER TABLE: can't add/drop a temporary table into a MERGE TABLE
+ALTER TABLE tst.mtbl ADD TABLE tmp.rtbl
+
+statement ok
+CREATE REPLICA TABLE tst.rtbl (c1 int)
+
+query TTTIIIII nosort
+select * from tst.my_tables where name = 'rtbl'
+----
+tmp
+rtbl
+NULL
+6
+0
+0
+0
+0
+tst
+rtbl
+NULL
+6
+0
+0
+0
+0
+
+statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
+select * from tst.rtbl
+----
+
+statement ok
+ALTER TABLE tst.mtbl ADD TABLE tst.rtbl
+
+statement error 42000!The REPLICA TABLE 'tst.rtbl' should have at least one table associated
+select * from tst.mtbl
+----
+
+statement ok
+ALTER TABLE tst.mtbl DROP TABLE tst.rtbl
+
+statement ok
+CREATE UNLOGGED TABLE tmp.utbl (c1 int)
+-- this succeeds strangely
+
+query TTTIIIII nosort
+select * from tst.my_tables where name = 'utbl'
+----
+tmp
+utbl
+NULL
+7
+0
+0
+0
+0
+
+query I nosort
+select * from tmp.utbl
+----
+
+statement error 42S02!ALTER TABLE: can't alter temporary table 'mtbl'
+ALTER TABLE tmp.mtbl ADD TABLE tmp.utbl
+
+statement error 42000!ALTER TABLE: can't add/drop a temporary table into a MERGE TABLE
+ALTER TABLE tst.mtbl ADD TABLE tmp.utbl
+
+statement ok
+CREATE UNLOGGED TABLE tst.utbl (c1 int)
+
+query TTTIIIII nosort
+select * from tst.my_tables where name = 'utbl'
+----
+tmp
+utbl
+NULL
+7
+0
+0
+0
+0
+tst
+utbl
+NULL
+7
+0
+0
+0
+0
+
+query I nosort
+select * from tst.utbl
+----
+
+statement ok
+ALTER TABLE tst.mtbl ADD TABLE tst.utbl
+
+query I nosort
+select * from tst.mtbl
+----
+
+statement ok
+ALTER TABLE tst.mtbl DROP TABLE tst.utbl
+
+statement ok
+CREATE REMOTE TABLE tmp.rmtbl (c1 int) ON 'mapi:monetdb://localhost:50000/demo'
+-- this succeeds strangely
+
+query TTTIIIII nosort
+select * from tst.my_tables where name = 'rmtbl'
+----
+tmp
+rmtbl
+mapi:monetdb://localhost:50000/demo
+5
+0
+0
+0
+0
+
+statement error Exception occurred in the remote server, please check the log there
+select * from tmp.rmtbl
+----
+
+statement error 42S02!ALTER TABLE: can't alter temporary table 'mtbl'
+ALTER TABLE tmp.mtbl ADD TABLE tmp.rmtbl
+
+statement error 42000!ALTER TABLE: can't add/drop a temporary table into a MERGE TABLE
+ALTER TABLE tst.mtbl ADD TABLE tmp.rmtbl
+
+statement ok
+CREATE REMOTE TABLE tst.rmtbl (c1 int) ON 'mapi:monetdb://localhost:50000/demo'
+
+query TTTIIIII nosort
+select * from tst.my_tables where name = 'rmtbl'
+----
+tmp
+rmtbl
+mapi:monetdb://localhost:50000/demo
+5
+0
+0
+0
+0
+tst
+rmtbl
+mapi:monetdb://localhost:50000/demo
+5
+0
+0
+0
+0
+
+statement error Exception occurred in the remote server, please check the log there
+select * from tst.rmtbl
+----
+
+statement ok
+ALTER TABLE tst.mtbl ADD TABLE tst.rmtbl
+
+statement error Exception occurred in the remote server, please check the log there
+select * from tst.mtbl
+----
+
+statement ok
+ALTER TABLE tst.mtbl DROP TABLE tst.rmtbl
+
+statement ok
+CREATE LOCAL TEMP TABLE tmp.lttbl (c1 int) ON COMMIT PRESERVE ROWS
+
+statement error 3F000!CREATE TABLE: local temporary tables should be stored in the 'tmp' schema
+CREATE LOCAL TEMP TABLE tst.lttbl (c1 int) ON COMMIT PRESERVE ROWS
+
+query TTTIIIII nosort
+select * from tst.my_tables where name = 'lttbl'
+----
+tmp
+lttbl
+NULL
+30
+0
+2
+0
+1
+
+query I nosort
+select * from tmp.lttbl
+----
+
+statement error 42S02!ALTER TABLE: can't alter temporary table 'mtbl'
+ALTER TABLE tmp.mtbl ADD TABLE tmp.lttbl
+
+statement error 42000!ALTER TABLE: can't add/drop a temporary table into a MERGE TABLE
+ALTER TABLE tst.mtbl ADD TABLE tmp.lttbl
+
+statement ok
+CREATE GLOBAL TEMP TABLE tmp.gttbl (c1 int) ON COMMIT PRESERVE ROWS
+
+statement error CREATE TABLE: global temporary tables should be stored in the 'tmp' schema
+CREATE GLOBAL TEMP TABLE tst.gttbl (c1 int) ON COMMIT PRESERVE ROWS
+
+query TTTIIIII nosort
+select * from tst.my_tables where name = 'gttbl'
+----
+tmp
+gttbl
+NULL
+20
+0
+2
+0
+1
+
+query I nosort
+select * from tmp.gttbl
+----
+
+statement error 42S02!ALTER TABLE: can't alter temporary table 'mtbl'
+ALTER TABLE tmp.mtbl ADD TABLE tmp.gttbl
+
+statement error 42000!ALTER TABLE: can't add/drop a temporary table into a MERGE TABLE
+ALTER TABLE tst.mtbl ADD TABLE tmp.gttbl
+
+--cleanup
+query TT rowsort
+select schema, name from tst.my_tables order by 1,2
+----
+tmp
+gttbl
+tmp
+lttbl
+tmp
+mtbl
+tmp
+rmtbl
+tmp
+rtbl
+tmp
+utbl
+tst
+mtbl
+tst
+my_tables
+tst
+rmtbl
+tst
+rtbl
+tst
+utbl
+
+statement ok
+DROP TABLE tmp.gttbl
+
+statement ok
+DROP TABLE tmp.lttbl
+
+statement ok
+DROP TABLE tmp.mtbl
+
+statement ok
+DROP TABLE tmp.rmtbl
+
+statement ok
+DROP TABLE tmp.rtbl
+
+statement ok
+DROP TABLE tmp.utbl
+
+statement ok
+DROP TABLE tst.mtbl
+
+statement ok
+DROP TABLE tst.rmtbl
+
+statement ok
+DROP TABLE tst.rtbl
+
+statement ok
+DROP TABLE tst.utbl
+
+query TT rowsort
+select schema, name from tst.my_tables order by 1,2
+----
+tst
+my_tables
+
+statement ok
+DROP VIEW tst.my_tables
+
+statement ok
+SET SCHEMA sys
+
+statement ok
+DROP SCHEMA tst CASCADE
+

@@ -1,9 +1,0 @@
-# ChangeLog file for clients
-# This file is updated with Maddlog
-
-* Tue May 31 2022 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed a bug where when the semicolon at the end of a COPY INTO query
-  that reads from STDIN is at exactly a 10240 byte boundary in a file,
-  the data isn't read as input for the COPY INTO but instead as a new
-  SQL query.
-

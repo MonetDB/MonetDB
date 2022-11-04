@@ -1,0 +1,62 @@
+# for the regex options look into `man 3 pcreapi` 
+
+# basic
+query T rowsort
+select regexp_replace('foobarbaz', 'b(..)', 'XY')
+----
+fooXYXY
+
+# regex options - capture groups
+query T rowsort
+select regexp_replace('foobarbaz', 'b(..)', R'X\1Y')
+----
+fooXarYXazY
+
+# regex options - case sensitive
+query T rowsort
+select regexp_replace('fooBarBaz', 'b(..)', 'XY')
+----
+fooBarBaz
+
+# regex options - case insensitive
+query T rowsort
+select regexp_replace('fooBarBaz', 'b(..)', 'XY', 'i')
+----
+fooXYXY
+
+# regex options - no dotall
+query T rowsort
+select regexp_replace(E'foo\nbar', 'foo.+', 'XYZ')
+----
+foo@bar
+
+# regex options - dotall
+query T rowsort
+select regexp_replace(E'foo\nbar', 'foo.+', 'XYZ', 's')
+----
+XYZ
+
+# regex options - no multiline
+query T rowsort
+select regexp_replace(E'foo\nbar', '^(foo).*$', 'XYZ')
+----
+foo@bar
+
+# regex options - multiline
+query T rowsort
+select regexp_replace(E'foo\nbar', '^(foo).*$', 'XYZ', 'm')
+----
+XYZ@bar
+
+# regex option - not extended
+query T rowsort
+select regexp_replace('foo', 'f o o', 'XYZ')
+----
+foo
+
+# regex option - not extended
+query T rowsort
+select regexp_replace('foo', 'f o o', 'XYZ', 'x')
+----
+XYZ
+

@@ -35,10 +35,11 @@ backend_freecode(const char *mod, int clientid, const char *name)
 }
 
 char *
-backend_create_user(ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid defschemid, char *schema_path, sqlid grantor)
+backend_create_user(ptr mvc, char *user, char *passwd, bool enc, char *fullname, sqlid defschemid, char *schema_path, sqlid grantor, lng max_memory, int max_workers, char *optimizer, sqlid role_id)
 {
 	if (be_funcs.fcuser != NULL)
-		return(be_funcs.fcuser(mvc, user, passwd, enc, fullname, defschemid, schema_path, grantor));
+		return(be_funcs.fcuser(mvc, user, passwd, enc, fullname, defschemid, schema_path, grantor, max_memory,
+					max_workers, optimizer, role_id));
 	return(NULL);
 }
 
@@ -50,7 +51,7 @@ backend_drop_user(ptr mvc, char *user)
 	return FALSE;
 }
 
-int
+oid
 backend_find_user(ptr m, char *user)
 {
 	if (be_funcs.ffuser != NULL)
@@ -59,10 +60,10 @@ backend_find_user(ptr m, char *user)
 }
 
 void
-backend_create_privileges(ptr mvc, sql_schema *s)
+backend_create_privileges(ptr mvc, sql_schema *s, const char *initpasswd)
 {
 	if (be_funcs.fcrpriv != NULL)
-		be_funcs.fcrpriv(mvc, s);
+		be_funcs.fcrpriv(mvc, s, initpasswd);
 }
 
 int
@@ -74,11 +75,11 @@ backend_schema_has_user(ptr mvc, sql_schema *s)
 }
 
 int
-backend_alter_user(ptr mvc, str user, str passwd, char enc,
-				   sqlid schema_id, char *schema_path, str oldpasswd)
+backend_alter_user(ptr mvc, str user, str passwd, bool enc,
+				   sqlid schema_id, char *schema_path, str oldpasswd, sqlid role_id)
 {
 	if (be_funcs.fauser != NULL)
-		return(be_funcs.fauser(mvc, user, passwd, enc, schema_id, schema_path, oldpasswd));
+		return(be_funcs.fauser(mvc, user, passwd, enc, schema_id, schema_path, oldpasswd, role_id));
 	return(FALSE);
 }
 
@@ -112,4 +113,20 @@ backend_has_module(ptr M, char *name)
 	if (be_funcs.fhas_module_function != NULL)
 		return be_funcs.fhas_module_function(M, name);
 	return 0;
+}
+
+int
+backend_find_role(ptr mvc, char *name, sqlid *role_id)
+{
+	if (be_funcs.ffrole != NULL)
+		return be_funcs.ffrole(mvc, name, role_id);
+	return 0;
+}
+
+
+void
+backend_set_user_api_hooks(ptr mvc)
+{
+	if (be_funcs.fset_user_api_hooks != NULL)
+		be_funcs.fset_user_api_hooks(mvc);
 }

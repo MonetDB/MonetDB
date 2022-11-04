@@ -8,60 +8,32 @@
 
 include_directories($<$<BOOL:${ODBC_FOUND}>:${ODBC_INCLUDE_DIRS}>)
 
-if(TESTING)
-  add_executable(odbcsample1
-    odbcsample1.c)
+add_executable(odbcsample1
+  odbcsample1.c)
 
-  target_link_libraries(odbcsample1
-    PRIVATE
-    ODBC::ODBC)
+target_link_libraries(odbcsample1
+  PRIVATE
+  ODBC::ODBC)
 
-  add_executable(testgetinfo
-    testgetinfo.c)
-  target_link_libraries(testgetinfo
-    PRIVATE
-    ODBC::ODBC)
+add_executable(arraytest
+  arraytest.c)
 
-  add_executable(arraytest
-    arraytest.c)
+target_link_libraries(arraytest
+  PRIVATE
+  ODBC::ODBC)
 
-  target_link_libraries(arraytest
-    PRIVATE
-    ODBC::ODBC)
+install(TARGETS
+  odbcsample1
+  arraytest
+  RUNTIME
+  DESTINATION
+  ${CMAKE_INSTALL_BINDIR}
+  COMPONENT clienttest)
 
-  add_executable(testStmtAttr
-    testStmtAttr.c)
-
-  target_link_libraries(testStmtAttr
-    PRIVATE
-    ODBC::ODBC)
-
-  add_executable(metadata
-    metadata.c)
-
-  target_link_libraries(metadata
-    PRIVATE
-    ODBC::ODBC)
-
-  install(TARGETS
-    odbcsample1
-    testgetinfo
-    arraytest
-    testStmtAttr
-    metadata
-    RUNTIME
-    DESTINATION
-    ${CMAKE_INSTALL_BINDIR}
-    COMPONENT clienttest)
-
-  if(WIN32)
-    install(FILES
-      $<TARGET_PDB_FILE:odbcsample1>
-      $<TARGET_PDB_FILE:testgetinfo>
-      $<TARGET_PDB_FILE:arraytest>
-      $<TARGET_PDB_FILE:testStmtAttr>
-      $<TARGET_PDB_FILE:metadata>
-      DESTINATION ${CMAKE_INSTALL_BINDIR}
-      OPTIONAL)
-  endif()
+if(WIN32)
+  install(FILES
+    $<TARGET_PDB_FILE:odbcsample1>
+    $<TARGET_PDB_FILE:arraytest>
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    OPTIONAL)
 endif()

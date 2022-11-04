@@ -1835,7 +1835,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 		node *n, *m;
 		list *lgbe = NULL, *rgbe = NULL, *gbe = NULL, *exps = NULL;
 
-		if (u->op == op_project)
+		if (u->op == op_project && !need_distinct(u))
 			u = u->l;
 
 		if (!u || !is_union(u->op) || need_distinct(u) || is_single(u) || !u->exps || rel_is_ref(u))
@@ -2845,21 +2845,32 @@ rel_simplify_count(visitor *v, sql_rel *rel)
 		/* With multiple count(*), use exp_ref to reduce the number of calls to this aggregate */
 		if (ncountstar > 1) {
 			sql_exp *count_star = NULL;
+			sql_rel *nrel = rel_project(v->sql->sa, rel, NULL);
+			list *aexps = sa_list(v->sql->sa), *nexps = sa_list(v->sql->sa);
+			nrel->exps = nexps;
 			for (node *n = rel->exps->h; n ; n = n->next) {
 				sql_exp *e = n->data;
 
 				if (exp_aggr_is_count(e) && !need_distinct(e) && list_length(e->l) == 0) {
 					if (!count_star) {
 						count_star = e;
+						append(aexps, e);
+						append(nexps, exp_ref(sql, e));
 					} else {
 						sql_exp *ne = exp_ref(sql, count_star);
+
 						if (exp_name(e))
 							exp_prop_alias(sql->sa, ne, e);
-						n->data = ne;
 						v->changes++;
+						append(nexps, ne);
 					}
+				} else {
+					append(aexps, e);
+					append(nexps, exp_ref(sql, e));
 				}
 			}
+			rel->exps = aexps;
+			return nrel;
 		}
 	}
 	return rel;

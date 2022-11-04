@@ -79,21 +79,24 @@ MNDBColumns(ODBCStmt *stmt,
 		if (NameLength2 > 0) {
 			sch = ODBCParsePV("s", "name",
 					  (const char *) SchemaName,
-					  (size_t) NameLength2);
+					  (size_t) NameLength2,
+					  stmt->Dbc);
 			if (sch == NULL)
 				goto nomem;
 		}
 		if (NameLength3 > 0) {
 			tab = ODBCParsePV("t", "name",
 					  (const char *) TableName,
-					  (size_t) NameLength3);
+					  (size_t) NameLength3,
+					  stmt->Dbc);
 			if (tab == NULL)
 				goto nomem;
 		}
 		if (NameLength4 > 0) {
 			col = ODBCParsePV("c", "name",
 					  (const char *) ColumnName,
-					  (size_t) NameLength4);
+					  (size_t) NameLength4,
+					  stmt->Dbc);
 			if (col == NULL)
 				goto nomem;
 		}
@@ -122,7 +125,7 @@ MNDBColumns(ODBCStmt *stmt,
 	}
 
 	/* construct the query now */
-	querylen = 6500 + strlen(stmt->Dbc->dbname) + (sch ? strlen(sch) : 0) +
+	querylen = 6500 + (sch ? strlen(sch) : 0) +
 		(tab ? strlen(tab) : 0) + (col ? strlen(col) : 0);
 	query = malloc(querylen);
 	if (query == NULL)
@@ -150,7 +153,7 @@ MNDBColumns(ODBCStmt *stmt,
 	 */
 
 	pos += snprintf(query + pos, querylen - pos,
-		"select '%s' as \"TABLE_CAT\", "
+		"select cast(null as varchar(1)) as \"TABLE_CAT\", "
 		       "s.name as \"TABLE_SCHEM\", "
 		       "t.name as \"TABLE_NAME\", "
 		       "c.name as \"COLUMN_NAME\", "
@@ -179,7 +182,6 @@ MNDBColumns(ODBCStmt *stmt,
 		      "sys.columns c%s "
 		 "where s.id = t.schema_id and "
 		       "t.id = c.table_id",
-		stmt->Dbc->dbname,
 #ifdef DATA_TYPE_ARGS
 		DATA_TYPE_ARGS,
 #endif
@@ -244,6 +246,9 @@ MNDBColumns(ODBCStmt *stmt,
 
 	/* add the ordering (exclude table_cat as it is the same for all rows) */
 	pos += strcpy_len(query + pos, " order by \"TABLE_SCHEM\", \"TABLE_NAME\", \"ORDINAL_POSITION\"", querylen - pos);
+	assert(pos < querylen);
+
+	/* debug: fprintf(stdout, "SQLColumns query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */
 
 	/* query the MonetDB data dictionary tables */
 	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);

@@ -927,8 +927,10 @@ struct MapiStruct {
 	stream *from, *to;
 	uint32_t index;		/* to mark the log records */
 	void *filecontentprivate;
+	void *filecontentprivate_old;
 	char *(*getfilecontent)(void *, const char *, bool, uint64_t, size_t *);
-	char *(*putfilecontent)(void *, const char *, const void *, size_t);
+	char *(*putfilecontent)(void *, const char *, bool, const void *, size_t);
+	char *(*putfilecontent_old)(void *, const char *, const void *, size_t);
 };
 
 struct MapiResultSet {
@@ -1037,7 +1039,7 @@ static ATOMIC_FLAG mapi_initialized = ATOMIC_FLAG_INIT;
 
 #define check_stream(mid, s, msg, e)					\
 	do {								\
-		if ((s) == NULL || mnstr_errnr(s)) {			\
+		if ((s) == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {	\
 			if (msg != NULL) mapi_log_record(mid, msg);	\
 			mapi_log_record(mid, mnstr_peek_error(s));	\
 			mapi_log_record(mid, __func__);			\
@@ -1474,7 +1476,7 @@ mapi_log(Mapi mid, const char *nme)
 	if (nme == NULL)
 		return MOK;
 	mid->tracelog = open_wastream(nme);
-	if (mid->tracelog == NULL || mnstr_errnr(mid->tracelog)) {
+	if (mid->tracelog == NULL || mnstr_errnr(mid->tracelog) != MNSTR_NO__ERROR) {
 		if (mid->tracelog)
 			close_stream(mid->tracelog);
 		mid->tracelog = NULL;
@@ -3178,7 +3180,7 @@ mapi_disconnect(Mapi mid)
  * than the requested offset, the first call to the callback function
  * may return NULL.
  *
- * char *putfile(void *private, const char *filename,
+ * char *putfile(void *private, const char *filename, bool binary,
  *               const void *data, size_t size);
  * Send data to a file.
  *
@@ -3187,6 +3189,9 @@ mapi_disconnect(Mapi mid)
  *           mapi_setfilecallback;
  * filename - the file to be written, files are always written as text
  *            files;
+ * binary - if set, the data to be written is binary and the file
+ *          should therefore be opened in binary mode, otherwise the
+ *          data is UTF-8 encoded text;
  * data - the data to be written;
  * size - the size of the data to be written.
  *
@@ -3201,10 +3206,40 @@ mapi_disconnect(Mapi mid)
  * called again for the same file.  Otherwise, the callback function
  * returns NULL.
  *
- * Note, there is no support for binary files.  All files written
- * using this callback function are text files.  All data sent to the
- * callback function is encoded in UTF-8.  Note also that multibyte
- * sequences may be split over two calls.
+ * Note also that multibyte sequences may be split over two calls.
+ */
+void
+mapi_setfilecallback2(Mapi mid,
+		     char *(*getfilecontent)(void *,
+					     const char *, bool,
+					     uint64_t, size_t *),
+		     char *(*putfilecontent)(void *,
+					     const char *, bool,
+					     const void *, size_t),
+		     void *filecontentprivate)
+{
+	mid->getfilecontent = getfilecontent;
+	mid->putfilecontent = putfilecontent;
+	mid->filecontentprivate = filecontentprivate;
+	mid->putfilecontent_old = NULL;
+	mid->filecontentprivate_old = NULL;
+}
+
+static char *
+putfilecontent_wrap(void *priv, const char *filename, bool binary, const void *data, size_t size)
+{
+	Mapi mid = priv;
+	void *priv_old = mid->filecontentprivate_old;
+	if (filename && binary)
+		return "Client does not support writing binary files";
+	return mid->putfilecontent_old(priv_old, filename, data, size);
+}
+
+/* DEPRECATED. Set callback function to retrieve or send file content for COPY
+ * INTO queries.
+ *
+ * Deprecated because it does not support binary downloads.
+ * Use mapi_setfilecallback2 instead.
  */
 void
 mapi_setfilecallback(Mapi mid,
@@ -3217,8 +3252,10 @@ mapi_setfilecallback(Mapi mid,
 		     void *filecontentprivate)
 {
 	mid->getfilecontent = getfilecontent;
-	mid->putfilecontent = putfilecontent;
-	mid->filecontentprivate = filecontentprivate;
+	mid->putfilecontent = putfilecontent_wrap;
+	mid->filecontentprivate = mid;
+	mid->putfilecontent_old = putfilecontent;
+	mid->filecontentprivate_old = filecontentprivate;
 }
 
 #define testBinding(hdl,fnr)						\
@@ -4174,7 +4211,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 }
 
 static void
-write_file(MapiHdl hdl, char *filename)
+write_file(MapiHdl hdl, char *filename, bool binary)
 {
 	Mapi mid = hdl->mid;
 	char *line;
@@ -4194,7 +4231,7 @@ write_file(MapiHdl hdl, char *filename)
 		mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
 		return;
 	}
-	line = mid->putfilecontent(mid->filecontentprivate, filename, NULL, 0);
+	line = mid->putfilecontent(mid->filecontentprivate, filename, binary, NULL, 0);
 	free(filename);
 	if (line != NULL) {
 		if (strchr(line, '\n'))
@@ -4207,11 +4244,11 @@ write_file(MapiHdl hdl, char *filename)
 	while ((len = mnstr_read(mid->from, data, 1, sizeof(data))) > 0) {
 		if (line == NULL)
 			line = mid->putfilecontent(mid->filecontentprivate,
-						   NULL, data, len);
+						   NULL, binary, data, len);
 	}
 	if (line == NULL)
 		line = mid->putfilecontent(mid->filecontentprivate,
-					   NULL, NULL, 0);
+					   NULL, binary, NULL, 0);
 	if (line && strchr(line, '\n'))
 		line = "incorrect response from application";
 	mnstr_printf(mid->to, "%s\n", line ? line : "");
@@ -4384,13 +4421,14 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			} else if (line[1] == PROMPT3[1] && line[2] == '\0') {
 				mid->active = hdl;
 				line = read_line(mid);
+				bool binary = false;
 				/* rb FILE
 				 * r OFF FILE
-				 * w ???
+				 * w FILE
+				 * wb FILE
 				 */
 				switch (*line++) {
 				case 'r': {
-					bool binary = false;
 					uint64_t off = 0;
 					if (*line == 'b') {
 						line++;
@@ -4407,12 +4445,16 @@ read_into_cache(MapiHdl hdl, int lookahead)
 					break;
 				}
 				case 'w':
+					if (*line == 'b') {
+						line++;
+						binary = true;
+					}
 					if (*line++ != ' ') {
 						mnstr_printf(mid->to, "!HY000!unrecognized command from server\n");
 						mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
 						break;
 					}
-					write_file(hdl, strdup(line));
+					write_file(hdl, strdup(line), binary);
 					break;
 				}
 				continue;

@@ -162,10 +162,10 @@ log_find(BAT *b, BAT *d, int val)
 static log_bid
 internal_find_bat(logger *lg, log_id id, int tid)
 {
-	BATiter cni = bat_iterator(lg->catalog_id);
 	BUN p;
 
 	if (BAThash(lg->catalog_id) == GDK_SUCCEED) {
+		BATiter cni = bat_iterator(lg->catalog_id);
 		MT_rwlock_rdlock(&cni.b->thashlock);
 		if (tid < 0) {
 			HASHloop_int(cni, cni.b->thash, p, &id) {
@@ -192,9 +192,10 @@ internal_find_bat(logger *lg, log_id id, int tid)
 			}
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
+		bat_iterator_end(&cni);
+		return 0;	/* not found */
 	}
-	bat_iterator_end(&cni);
-	return 0;
+	return -1;		/* error creating hash */
 }
 
 static void
@@ -284,7 +285,7 @@ log_write_id(logger *lg, int id)
 	return GDK_FAIL;
 }
 
-static int
+static log_return
 log_read_id(logger *lg, log_id *id)
 {
 	assert(!lg->inmemory);
@@ -650,8 +651,9 @@ la_bat_update_count(logger *lg, log_id id, lng cnt, int tid)
 			}
 		}
 		MT_rwlock_rdunlock(&cni.b->thashlock);
+		return GDK_SUCCEED;
 	}
-	return GDK_SUCCEED;
+	return GDK_FAIL;
 }
 
 static gdk_return
@@ -660,6 +662,8 @@ la_bat_updates(logger *lg, logaction *la, int tid)
 	log_bid bid = internal_find_bat(lg, la->cid, tid);
 	BAT *b = NULL;
 
+	if (bid < 0)
+		return GDK_FAIL;
 	if (bid == 0)
 		return GDK_SUCCEED; /* ignore bats no longer in the catalog */
 
@@ -751,6 +755,8 @@ la_bat_destroy(logger *lg, logaction *la, int tid)
 {
 	log_bid bid = internal_find_bat(lg, la->cid, tid);
 
+	if (bid < 0)
+		return GDK_FAIL;
 	if (bid && log_del_bat(lg, bid) != GDK_SUCCEED)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
@@ -1047,6 +1053,8 @@ log_open_output(logger *lg)
 			return GDK_FAIL;
 		}
 
+		if (lg->debug & 1)
+			fprintf(stderr, "#log_open_output: %s.%s\n", LOGFILE, id);
 		lg->output_log = open_wstream(filename);
 		if (lg->output_log) {
 			short byteorder = 1234;
@@ -1054,7 +1062,7 @@ log_open_output(logger *lg)
 		}
 		lg->end = 0;
 
-		if (lg->output_log == NULL || mnstr_errnr(lg->output_log)) {
+		if (lg->output_log == NULL || mnstr_errnr(lg->output_log) != MNSTR_NO__ERROR) {
 			TRC_CRITICAL(GDK, "creating %s failed: %s\n", filename, mnstr_peek_error(NULL));
 			GDKfree(new_range);
 			GDKfree(filename);
@@ -1097,7 +1105,7 @@ log_open_input(logger *lg, char *filename, bool *filemissing)
 	lg->input_log = open_rstream(filename);
 
 	/* if the file doesn't exist, there is nothing to be read back */
-	if (lg->input_log == NULL || mnstr_errnr(lg->input_log)) {
+	if (lg->input_log == NULL || mnstr_errnr(lg->input_log) != MNSTR_NO__ERROR) {
 		log_close_input(lg);
 		*filemissing = true;
 		return GDK_SUCCEED;
@@ -1210,7 +1218,7 @@ log_read_transaction(logger *lg)
 			else {
 				if (l.id > 0) {
 					// START OF LOG_BAT_GROUP
-					cands = COLnew(0, TYPE_void, 0, TRANSIENT);
+					cands = COLnew(0, TYPE_void, 0, SYSTRANS);
 					if (!cands)
 						err = LOG_ERR;
 				}
@@ -1236,7 +1244,7 @@ log_read_transaction(logger *lg)
 		GDKdebug = dbg;
 
 	if (cands)
-		GDKfree(cands);
+		BBPunfix(cands->batCacheid);
 	if (!ok)
 		return LOG_EOF;
 	return err;
@@ -1519,8 +1527,8 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts, 
 	BUN ocnt = BATcount(catalog_bid);
 	nbids = logbat_new(TYPE_int, ocnt-cleanup, PERSISTENT);
 	noids = logbat_new(TYPE_int, ocnt-cleanup, PERSISTENT);
-	ncnts = logbat_new(TYPE_lng, ocnt-cleanup, TRANSIENT);
-	nlids = logbat_new(TYPE_lng, ocnt-cleanup, TRANSIENT);
+	ncnts = logbat_new(TYPE_lng, ocnt-cleanup, SYSTRANS);
+	nlids = logbat_new(TYPE_lng, ocnt-cleanup, SYSTRANS);
 	ndels = logbat_new(TYPE_oid, BATcount(dcatalog)-cleanup, PERSISTENT);
 
 	if (nbids == NULL || noids == NULL || ncnts == NULL || nlids == NULL || ndels == NULL) {
@@ -1747,9 +1755,9 @@ bm_subcommit(logger *lg)
 	if (res == GDK_SUCCEED) { /* now cleanup */
 		for(i=0;i<rcnt; i++) {
 			if (lg->debug & 1) {
-				fprintf(stderr, "release %d\n", r[i]);
+				fprintf(stderr, "#release %d\n", r[i]);
 				if (BBP_lrefs(r[i]) != 2)
-					fprintf(stderr, "release %d %d\n", r[i], BBP_lrefs(r[i]));
+					fprintf(stderr, "#release %d %d\n", r[i], BBP_lrefs(r[i]));
 			}
 			BBPrelease(r[i]);
 		}
@@ -1988,12 +1996,12 @@ log_load(int debug, const char *fn, const char *logdir, logger *lg, char filenam
 		BBPretain(lg->catalog_id->batCacheid);
 		BBPretain(lg->dcatalog->batCacheid);
 	}
-	lg->catalog_cnt = logbat_new(TYPE_lng, 1, TRANSIENT);
+	lg->catalog_cnt = logbat_new(TYPE_lng, 1, SYSTRANS);
 	if (lg->catalog_cnt == NULL) {
 		GDKerror("failed to create catalog_cnt bat");
 		goto error;
 	}
-	lg->catalog_lid = logbat_new(TYPE_lng, 1, TRANSIENT);
+	lg->catalog_lid = logbat_new(TYPE_lng, 1, SYSTRANS);
 	if (lg->catalog_lid == NULL) {
 		GDKerror("failed to create catalog_lid bat");
 		goto error;
@@ -2255,7 +2263,7 @@ log_next_logfile(logger *lg, ulng ts)
 {
 	if (!lg->pending || !lg->pending->next)
 		return 0;
-	if (lg->pending->last_ts < ts)
+	if (lg->pending->last_ts <= ts)
 		return lg->pending->id;
 	return 0;
 }
@@ -2263,10 +2271,12 @@ log_next_logfile(logger *lg, ulng ts)
 static void
 log_cleanup_range(logger *lg)
 {
-	logged_range *p = lg->pending;
-	if (p) {
+	if (lg->pending) {
+		logged_range *p;
 		log_lock(lg);
-		lg->pending = p->next;
+		p = lg->pending;
+		if (p)
+			lg->pending = p->next;
 		log_unlock(lg);
 		GDKfree(p);
 	}
@@ -2373,6 +2383,8 @@ log_flush(logger *lg, ulng ts)
 lng
 log_changes(logger *lg)
 {
+	if (LOG_DISABLED(lg))
+		return 0;
 	MT_lock_set(&lg->rotation_lock);
 	lng changes = lg->id - lg->saved_id - 1;
 	MT_lock_unset(&lg->rotation_lock);
@@ -2620,6 +2632,10 @@ log_bat_transient(logger *lg, log_id id)
 	log_bid bid = internal_find_bat(lg, id, -1);
 	logformat l;
 
+	if (bid < 0) {
+		log_unlock(lg);
+		return GDK_FAIL;
+	}
 	l.flag = LOG_DESTROY;
 	l.id = id;
 
@@ -2780,6 +2796,7 @@ new_logfile(logger *lg)
 		return GDK_FAIL;
 	}
 	if (( p > log_large || (lg->end*1024) > log_large )) {
+		log_lock(lg);
 		if (ATOMIC_GET(&lg->refcount) == 1) {
 			lg->id++;
 			log_close_output(lg);
@@ -2790,6 +2807,7 @@ new_logfile(logger *lg)
 			// Delegate wal rotation to next writer or last flusher.
 			lg->request_rotation = true;
 		}
+		log_unlock(lg);
 	}
 	MT_lock_unset(&lg->rotation_lock);
 	return result;
@@ -2963,20 +2981,20 @@ log_tsequence(logger *lg, int seq, lng val)
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= inserted) {
 		assert(lg->seqs_val->hseqbase == 0);
-		if (BUNreplace(lg->seqs_val, p, &val, false) != GDK_SUCCEED) {
+		if (BUNreplace(lg->seqs_val, p, &val, true) != GDK_SUCCEED) {
 			log_unlock(lg);
 			return GDK_FAIL;
 		}
 	} else {
 		if (p != BUN_NONE) {
 			oid pos = p;
-			if (BUNappend(lg->dseqs, &pos, false) != GDK_SUCCEED) {
+			if (BUNappend(lg->dseqs, &pos, true) != GDK_SUCCEED) {
 				log_unlock(lg);
 				return GDK_FAIL;
 			}
 		}
-		if (BUNappend(lg->seqs_id, &seq, false) != GDK_SUCCEED ||
-		    BUNappend(lg->seqs_val, &val, false) != GDK_SUCCEED) {
+		if (BUNappend(lg->seqs_id, &seq, true) != GDK_SUCCEED ||
+		    BUNappend(lg->seqs_val, &val, true) != GDK_SUCCEED) {
 			log_unlock(lg);
 			return GDK_FAIL;
 		}
@@ -3034,6 +3052,8 @@ log_add_bat(logger *lg, BAT *b, log_id id, int tid)
 	       b == lg->seqs_val ||
 	       b == lg->dseqs);
 	assert(b->batRole == PERSISTENT);
+	if (bid < 0)
+		return GDK_FAIL;
 	if (bid) {
 		if (bid != b->batCacheid) {
 			if (log_del_bat(lg, bid) != GDK_SUCCEED)
@@ -3046,10 +3066,10 @@ log_add_bat(logger *lg, BAT *b, log_id id, int tid)
 	if (lg->debug & 1)
 		fprintf(stderr, "#create %d\n", id);
 	assert(log_find(lg->catalog_bid, lg->dcatalog, bid) == BUN_NONE);
-	if (BUNappend(lg->catalog_bid, &bid, false) != GDK_SUCCEED ||
-	    BUNappend(lg->catalog_id, &id, false) != GDK_SUCCEED ||
-	    BUNappend(lg->catalog_cnt, &cnt, false) != GDK_SUCCEED ||
-	    BUNappend(lg->catalog_lid, &lid, false) != GDK_SUCCEED)
+	if (BUNappend(lg->catalog_bid, &bid, true) != GDK_SUCCEED ||
+	    BUNappend(lg->catalog_id, &id, true) != GDK_SUCCEED ||
+	    BUNappend(lg->catalog_cnt, &cnt, true) != GDK_SUCCEED ||
+	    BUNappend(lg->catalog_lid, &lid, true) != GDK_SUCCEED)
 		return GDK_FAIL;
 	lg->cnt++;
 	BBPretain(bid);
@@ -3073,7 +3093,7 @@ log_del_bat(logger *lg, log_bid bid)
 	assert(lg->catalog_lid->hseqbase == 0);
 	if (BUNreplace(lg->catalog_lid, p, &lid, false) != GDK_SUCCEED)
 		return GDK_FAIL;
-	if (BUNappend(lg->dcatalog, &pos, false) == GDK_SUCCEED) {
+	if (BUNappend(lg->dcatalog, &pos, true) == GDK_SUCCEED) {
 		lg->deleted++;
 		return GDK_SUCCEED;
 	}
@@ -3094,7 +3114,7 @@ log_tstart(logger *lg, bool flushnow, ulng *log_file_id)
 {
 	MT_lock_set(&lg->rotation_lock);
 	log_lock(lg);
-	if (flushnow || lg->request_rotation) {
+	if (flushnow || (lg->request_rotation && ATOMIC_GET(&lg->refcount) == 0)) {
 		lg->id++;
 		log_close_output(lg);
 		/* start new file */

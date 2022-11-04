@@ -22,7 +22,7 @@ COPY 1347 RECORDS INTO ratings FROM E'$QTSTDATAPATH/netflix_data/movies.csv' USI
 statement ok
 CREATE LOADER tryaloader() LANGUAGE PYTHON {
     _emit.emit({'movie_id': 1, 'release_year': 1926, 'title': 'A horror movie'});
-};
+}
 
 statement error
 COPY LOADER INTO ratings FROM tryaloader()

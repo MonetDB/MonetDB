@@ -55,7 +55,8 @@ file_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t 
 	if (elmsize && cnt) {
 		size_t rc = fwrite(buf, elmsize, cnt, fp);
 
-		if (!rc && ferror(fp)) {
+		if (rc != cnt) {
+			// only happens if fwrite encountered an error.
 			mnstr_set_error_errno(s, MNSTR_WRITE_ERROR, "write error");
 			return -1;
 		}

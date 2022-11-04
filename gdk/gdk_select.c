@@ -50,13 +50,14 @@ virtualize(BAT *bn)
 	     * (const oid *) Tloc(bn, 0) + BATcount(bn) - 1 ==
 	     * (const oid *) Tloc(bn, BATcount(bn) - 1))) {
 		/* column is dense, replace by virtual oid */
-		TRC_DEBUG(ALGO, ALGOBATFMT ",seq=" OIDFMT "\n",
-			  ALGOBATPAR(bn),
-			  BATcount(bn) > 0 ? * (const oid *) Tloc(bn, 0) : 0);
+		oid tseq;	/* work around bug in Intel compiler */
 		if (BATcount(bn) == 0)
-			bn->tseqbase = 0;
+			tseq = 0;
 		else
-			bn->tseqbase = * (const oid *) Tloc(bn, 0);
+			tseq = * (const oid *) Tloc(bn, 0);
+		TRC_DEBUG(ALGO, ALGOBATFMT ",seq=" OIDFMT "\n",
+			  ALGOBATPAR(bn), tseq);
+		bn->tseqbase = tseq;
 		if (VIEWtparent(bn)) {
 			Heap *h = GDKmalloc(sizeof(Heap));
 			bat bid = VIEWtparent(bn);
@@ -68,11 +69,11 @@ virtualize(BAT *bn)
 			settailname(h, BBP_physical(bn->batCacheid), TYPE_oid, 0);
 			h->parentid = bn->batCacheid;
 			h->base = NULL;
+			h->hasfile = false;
 			ATOMIC_INIT(&h->refs, 1);
 			HEAPdecref(bn->theap, false);
 			bn->theap = h;
 			BBPunshare(bid);
-			BBPunfix(bid);
 		} else {
 			HEAPfree(bn->theap, true);
 		}
@@ -1327,7 +1328,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	nil = ATOMnilptr(t);
 	/* can we use the base type? */
 	t = ATOMbasetype(t);
-	lnil = ATOMcmp(t, tl, nil) == 0; /* low value = nil? */
+	lnil = nil && ATOMcmp(t, tl, nil) == 0; /* low value = nil? */
 
 	if (!lnil && th != NULL && (!li || !hi) && !anti && ATOMcmp(t, tl, th) == 0) {
 		/* upper and lower bound of range are equal and we
@@ -1352,6 +1353,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if (th == NULL)
 			hi = li;
 		th = tl;
+		hval = true;
+	} else if (nil == NULL) {
 		hval = true;
 	} else {
 		hval = ATOMcmp(t, th, nil) != 0;
@@ -1608,7 +1611,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		}
 		wanthash = havehash ||
-			(!bi.transient &&
+			((!bi.transient ||
+			  (b->batRole == PERSISTENT && GDKinmemory(0))) &&
 			 ATOMsize(bi.type) >= sizeof(BUN) / 4 &&
 			 bi.count * (ATOMsize(bi.type) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2);
 		if (!wanthash) {
@@ -1660,8 +1664,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			MT_lock_unset(&pb->theaplock);
 		}
 		if (!phash &&
-		    (!pbi.transient || wantphash) &&
+		    (!pbi.transient ||
+		     wantphash ||
+		     (pb->batRole == PERSISTENT && GDKinmemory(0))) &&
 		    pbi.count == bi.count &&
+		    (pbi.unique_est == 0 ||
+		     pbi.unique_est >= pbi.count / no_hash_select_fraction) &&
 		    BAThash(pb) == GDK_SUCCEED) {
 			MT_rwlock_rdlock(&pb->thashlock);
 			if (pb->thash)

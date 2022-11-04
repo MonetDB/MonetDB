@@ -354,6 +354,7 @@ BATcheckimprints(BAT *b)
 						imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
 						close(fd);
 						imprints->imprints.parentid = b->batCacheid;
+						imprints->imprints.hasfile = true;
 						ATOMIC_INIT(&imprints->imprints.refs, 1);
 						b->timprints = imprints;
 						TRC_DEBUG(ACCELERATOR, ALGOBATFMT " reusing persisted imprints\n", ALGOBATPAR(b));
@@ -364,6 +365,7 @@ BATcheckimprints(BAT *b)
 					close(fd);
 					/* unlink unusable file */
 					GDKunlink(imprints->imprints.farmid, BATDIR, nme, "timprints");
+					imprints->imprints.hasfile = false;
 				}
 			}
 			GDKfree(imprints);
@@ -501,6 +503,7 @@ BATimprints(BAT *b)
 		pages = (((size_t) bi.count * bi.width) + IMPS_PAGE - 1) / IMPS_PAGE;
 		imprints->imprints.farmid = BBPselectfarm(b->batRole, bi.type,
 							  imprintsheap);
+		imprints->imprints.parentid = b->batCacheid;
 
 #define SMP_SIZE 2048
 		s1 = BATsample_with_seed(b, SMP_SIZE, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
@@ -562,7 +565,7 @@ BATimprints(BAT *b)
 			      pages * (imprints->bits / 8) + /* imps */
 			      sizeof(uint64_t) + /* padding for alignment */
 			      pages * sizeof(cchdc_t), /* dict */
-			      1, 1) != GDK_SUCCEED) {
+			      1) != GDK_SUCCEED) {
 			MT_lock_unset(&b->batIdxLock);
 			bat_iterator_end(&bi);
 			GDKfree(imprints);
@@ -628,7 +631,7 @@ BATimprints(BAT *b)
 		((size_t *) imprints->imprints.base)[1] = (size_t) imprints->impcnt;
 		((size_t *) imprints->imprints.base)[2] = (size_t) imprints->dictcnt;
 		((size_t *) imprints->imprints.base)[3] = (size_t) bi.count;
-		imprints->imprints.parentid = b->batCacheid;
+		imprints->imprints.dirty = true;
 		MT_lock_set(&b->theaplock);
 		if (b->batCount != bi.count) {
 			/* bat changed under our feet, can't use imprints */

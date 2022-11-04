@@ -4613,7 +4613,6 @@ BATcalcifthenelse_intern(BATiter *bi,
 	}
 
 	BATsetcount(bn, cnt);
-	bn->theap->dirty = true;
 
 	bn->tsorted = cnt <= 1;
 	bn->trevsorted = cnt <= 1;

@@ -72,7 +72,7 @@ mal_export MT_Lock  mal_profileLock ;
 mal_export MT_Lock  mal_copyLock ;
 mal_export MT_Lock  mal_delayLock ;
 
-mal_export int mal_init(char *modules[], bool embedded);
+mal_export int mal_init(char *modules[], bool embedded, const char *initpasswd);
 mal_export _Noreturn void mal_exit(int status);
 mal_export void mal_reset(void);
 mal_export const char *mal_version(void);
@@ -158,7 +158,6 @@ typedef struct {
 	/* inline statistics */
 	lng clock;					/* when the last call was started */
 	lng ticks;					/* total micro seconds spent in last call */
-	int calls;					/* number of calls made to this instruction */
 	lng totticks;				/* total time spent on this instruction. */
 	lng wbytes;					/* number of bytes produced in last instruction */
 	/* the core admin */
@@ -194,7 +193,6 @@ typedef struct MALBLK {
 	/* During the run we keep track on the maximum number of concurrent threads and memory claim */
 	int		workers;
 	lng		memory;
-	lng starttime;			/* track when the query started, for resource management */
 	lng runtime;			/* average execution time of block in ticks */
 	int calls;				/* number of calls */
 	lng optimize;			/* total optimizer time */

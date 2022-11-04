@@ -114,8 +114,7 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 			 || strchr((const char *) SchemaName, '_') != NULL));
 
 	/* construct the query */
-	querylen = 1000 + strlen(stmt->Dbc->dbname) +
-		(sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0);
+	querylen = 1000 + (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0);
 	if (addTmpQuery)
 		querylen *= 2;
 	query = malloc(querylen);
@@ -131,7 +130,7 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 	   VARCHAR      PK_NAME
 	*/
 	pos += snprintf(query + pos, querylen - pos,
-		"select '%s' as \"TABLE_CAT\", "
+		"select cast(null as varchar(1)) as \"TABLE_CAT\", "
 			"s.name as \"TABLE_SCHEM\", "
 			"t.name as \"TABLE_NAME\", "
 			"kc.name as \"COLUMN_NAME\", "
@@ -141,8 +140,7 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 		"where k.type = 0 and "
 		     "k.id = kc.id and "
 		     "k.table_id = t.id and "
-		     "t.schema_id = s.id",
-		stmt->Dbc->dbname);
+		     "t.schema_id = s.id");
 	assert(pos < 800);
 
 	/* Construct the selection condition query part */
@@ -167,7 +165,7 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 		   which are stored in tmp.keys, tmp.objects and tmp._tables */
 		pos += snprintf(query + pos, querylen - pos,
 			" UNION ALL "
-			"select '%s' as \"TABLE_CAT\", "
+			"select cast(null as varchar(1)) as \"TABLE_CAT\", "
 				"s.name as \"TABLE_SCHEM\", "
 				"t.name as \"TABLE_NAME\", "
 				"kc.name as \"COLUMN_NAME\", "
@@ -177,8 +175,7 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 			"where k.type = 0 and "
 			     "k.id = kc.id and "
 			     "k.table_id = t.id and "
-			     "t.schema_id = s.id",
-			stmt->Dbc->dbname);
+			     "t.schema_id = s.id");
 
 		/* Construct the selection condition query part */
 		if (NameLength1 > 0 && CatalogName != NULL) {
@@ -197,7 +194,6 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 			pos += snprintf(query + pos, querylen - pos, " and %s", tab);
 		}
 	}
-	assert(pos < (querylen - 43));
 
 	if (sch)
 		free(sch);
@@ -206,8 +202,9 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 
 	/* add the ordering */
 	pos += strcpy_len(query + pos, " order by \"TABLE_SCHEM\", \"TABLE_NAME\", \"KEY_SEQ\"", querylen - pos);
+	assert(pos < querylen);
 
-	/* debug: fprintf(stdout, "SQLPrimaryKeys SQL:\n%s\n\n", query); */
+	/* debug: fprintf(stdout, "SQLPrimaryKeys query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */
 
 	/* query the MonetDB data dictionary tables */
 	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);

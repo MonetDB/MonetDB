@@ -29,8 +29,8 @@ setqptimeout(lng usecs)
 	qptimeout = usecs;
 }
 
-inline
-ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
+inline ptr
+getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 {
 	/* the C standard says: "A pointer to a union object, suitably
 	 * converted, points to each of its members (or if a member is a
@@ -39,39 +39,47 @@ ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 	return (ptr) &stk->stk[pci->argv[k]].val;
 }
 
-str malCommandCall(MalStkPtr stk, InstrPtr pci)
+static str
+malCommandCall(MalStkPtr stk, InstrPtr pci)
 {
 	str ret= MAL_SUCCEED;
 
 	switch (pci->argc) {
-	case 0: ret = (*pci->fcn)();
+	case 0:
+		ret = (*pci->fcn)();
 		break;
-	case 1: ret = (*pci->fcn)(
+	case 1:
+		ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0));
 		break;
-	case 2: ret = (*pci->fcn)(
+	case 2:
+		ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1));
 		break;
-	case 3: ret = (*pci->fcn)(
+	case 3:
+		ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2));
 		break;
-	case 4: ret = (*pci->fcn)(
+	case 4:
+		ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
 			getArgReference(stk, pci, 3));
 		break;
-	case 5: ret = (*pci->fcn)(
+	case 5:
+		ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
 			getArgReference(stk, pci, 3),
 			getArgReference(stk, pci, 4));
 		break;
-	case 6: ret = (*pci->fcn)(
+	case 6:
+		ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -79,7 +87,8 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 4),
 			getArgReference(stk, pci, 5));
 		break;
-	case 7: ret = (*pci->fcn)(
+	case 7:
+		ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -88,7 +97,8 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 5),
 			getArgReference(stk, pci, 6));
 		break;
-	case 8: ret = (*pci->fcn)(
+	case 8:
+		ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -98,7 +108,8 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 6),
 			getArgReference(stk, pci, 7));
 		break;
-	case 9: ret = (*pci->fcn)(
+	case 9:
+		ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -109,7 +120,8 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 7),
 			getArgReference(stk, pci, 8));
 		break;
-	case 10: ret = (*pci->fcn)(
+	case 10:
+		ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -121,7 +133,8 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 8),
 			getArgReference(stk, pci, 9));
 		break;
-	case 11: ret = (*pci->fcn)(
+	case 11:
+		ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -134,7 +147,8 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 9),
 			getArgReference(stk, pci, 10));
 		break;
-	case 12: ret = (*pci->fcn)(
+	case 12:
+		ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -148,7 +162,8 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 10),
 			getArgReference(stk, pci, 11));
 		break;
-	case 13: ret = (*pci->fcn)(
+	case 13:
+		ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -163,7 +178,8 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 11),
 			getArgReference(stk, pci, 12));
 		break;
-	case 14: ret = (*pci->fcn)(
+	case 14:
+		ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -179,7 +195,8 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 12),
 			getArgReference(stk, pci, 13));
 		break;
-	case 15: ret = (*pci->fcn)(
+	case 15:
+		ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -196,7 +213,8 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 13),
 			getArgReference(stk, pci, 14));
 		break;
-	case 16: ret = (*pci->fcn)(
+	case 16:
+		ret = (*pci->fcn)(
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -225,37 +243,38 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
  * Also we cannot overwrite values on the stack as this maybe part of a
  * sequence of factory calls.
  */
-#define initStack(S, R)\
-	for (i = S; i < mb->vtop; i++) {\
-		lhs = &stk->stk[i];\
-		if (isVarConstant(mb, i) > 0) {\
-			if (!isVarDisabled(mb, i)) {\
-				rhs = &getVarConstant(mb, i);\
-				if(VALcopy(lhs, rhs) == NULL) \
-					R = 0; \
-			}\
-		} else {\
-			lhs->vtype = getVarGDKType(mb, i);\
-			lhs->val.pval = 0;\
-			lhs->len = 0;\
-		}\
-	}
+#define initStack(S, R)								\
+	do {											\
+		for (int i = (S); i < mb->vtop; i++) {		\
+			lhs = &stk->stk[i];						\
+			if (isVarConstant(mb, i) > 0) {			\
+				if (!isVarDisabled(mb, i)) {		\
+					rhs = &getVarConstant(mb, i);	\
+					if(VALcopy(lhs, rhs) == NULL)	\
+						R = 0;						\
+				}									\
+			} else {								\
+				lhs->vtype = getVarGDKType(mb, i);	\
+				lhs->val.pval = 0;					\
+				lhs->len = 0;						\
+			}										\
+		}											\
+	} while (0)
 
-int
+static inline bool
 isNotUsedIn(InstrPtr p, int start, int a)
 {
-	int k;
-	for (k = start; k < p->argc; k++)
+	for (int k = start; k < p->argc; k++)
 		if (getArg(p, k) == a)
-			return 0;
-	return 1;
+			return false;
+	return true;
 }
 
 MalStkPtr
 prepareMALstack(MalBlkPtr mb, int size)
 {
 	MalStkPtr stk = NULL;
-	int i, res = 1;
+	int res = 1;
 	ValPtr lhs, rhs;
 
 	stk = newGlobalStack(size);
@@ -273,10 +292,10 @@ prepareMALstack(MalBlkPtr mb, int size)
 	return stk;
 }
 
-str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
+str
+runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 {
 	MalStkPtr stk = NULL;
-	int i;
 	ValPtr lhs, rhs;
 	str ret;
 	(void) mbcaller;
@@ -332,7 +351,6 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	}
 	if (stk->cmd && env && stk->cmd != 'f')
 		stk->cmd = env->cmd;
-	mb->starttime = GDKusec();
 	ret = runMALsequence(cntxt, mb, 1, 0, stk, env, 0);
 
 	/* pass the new debug mode to the caller */
@@ -342,7 +360,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 		garbageCollector(cntxt, mb, stk, env != stk);
 	if (stk && stk != env)
 		freeStack(stk);
-	if (ret == MAL_SUCCEED && cntxt->querytimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->querytimeout)
+	if (ret == MAL_SUCCEED && cntxt->qryctx.querytimeout && cntxt->qryctx.starttime && GDKusec()- cntxt->qryctx.starttime > cntxt->qryctx.querytimeout)
 		throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 	return ret;
 }
@@ -356,7 +374,8 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
  * answer to direct their actions. Or, a dataflow scheduler could step in
  * to enforce a completely different execution order.
  */
-str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk)
+str
+reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk)
 {
 	str ret;
 	int keepAlive;
@@ -385,7 +404,6 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 {
 	MalStkPtr stk = NULL;
 	str ret = MAL_SUCCEED;
-	int i;
 	ValPtr lhs;
 	InstrPtr pci = getInstrPtr(mb, 0);
 
@@ -415,7 +433,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		assert(stk);
-		for (i = pci->retc; i < pci->argc; i++) {
+		for (int i = pci->retc; i < pci->argc; i++) {
 			lhs = &stk->stk[pci->argv[i]];
 			if (VALcopy(lhs, argv[i]) == NULL)
 				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -423,7 +441,6 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 				BBPretain(lhs->val.bval);
 		}
 		stk->cmd = debug;
-		mb->starttime = GDKusec();
 		ret = runMALsequence(cntxt, mb, 1, 0, stk, 0, 0);
 		break;
 	case FACTORYsymbol:
@@ -437,7 +454,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	}
 	if (stk)
 		garbageCollector(cntxt, mb, stk, TRUE);
-	if ( ret == MAL_SUCCEED && cntxt->querytimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->querytimeout)
+	if (ret == MAL_SUCCEED && cntxt->qryctx.querytimeout && cntxt->qryctx.starttime && GDKusec()- cntxt->qryctx.starttime > cntxt->qryctx.querytimeout)
 		throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 	return ret;
 }
@@ -449,11 +466,11 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
  * in the enclosing routine.  When we start executing the first
  * instruction, we take the wall-clock time for resource management.
  */
-str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
-				   int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
+str
+runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
+			   int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {
 	ValPtr lhs, rhs, v;
-	int i, k;
 	InstrPtr pci = 0;
 	int exceptionVar;
 	str ret = MAL_SUCCEED, localGDKerrbuf= GDKerrbuf;
@@ -463,7 +480,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	int stkpc = 0;
 	RuntimeProfileRecord runtimeProfile, runtimeProfileFunction;
 	lng lastcheck = 0;
-	int	startedProfileQueue = 0;
+	bool startedProfileQueue = false;
 #define CHECKINTERVAL 1000 /* how often do we check for client disconnect */
 	runtimeProfile.ticks = runtimeProfileFunction.ticks = 0;
 
@@ -486,7 +503,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			garbage = garbages;
 			memset(garbages, 0, sizeof(garbages));
 		}
-	} else if ( mb->maxarg > 16 ){
+	} else if (mb->maxarg > 16 ){
 		backup = GDKmalloc(mb->maxarg * sizeof(ValRecord));
 		garbage = (int*)GDKzalloc(mb->maxarg * sizeof(int));
 		if( backup == NULL || garbage == NULL) {
@@ -501,28 +518,21 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	}
 
 	/* also produce event record for start of function */
-	if ( startpc == 1 &&  startpc < mb->stop ){
-		startedProfileQueue = 1;
+	if (startpc == 1 &&  startpc < mb->stop ){
+		startedProfileQueue = true;
 		runtimeProfileInit(cntxt, mb, stk);
 		runtimeProfileBegin(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
-		if (cntxt->sessiontimeout && mb->starttime - cntxt->session > cntxt->sessiontimeout) {
+		if (cntxt->sessiontimeout && cntxt->qryctx.starttime - cntxt->session > cntxt->sessiontimeout) {
 			runtimeProfileFinish(cntxt, mb, stk);
-			if ( backup != backups) GDKfree(backup);
-			if ( garbage != garbages) GDKfree(garbage);
+			if (backup != backups)
+				GDKfree(backup);
+			if (garbage != garbages)
+				GDKfree(garbage);
 			throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_SESSION_TIMEOUT);
 		}
 	}
 	stkpc = startpc;
 	exceptionVar = -1;
-
-	QryCtx qry_ctx = {.querytimeout=cntxt->querytimeout, .starttime=mb->starttime};
-#ifndef NDEBUG
-	/* very short timeout */
-	QryCtx qry_ctx_abort = {.querytimeout=100, .starttime=mb->starttime};
-#endif
-	/* save, in case this function is called recursively */
-	QryCtx *qry_ctx_save = MT_thread_get_qry_ctx();
-	MT_thread_set_qry_ctx(&qry_ctx);
 
 	while (stkpc < mb->stop && stkpc != stoppc) {
 		// incomplete block being executed, requires at least signature and end statement
@@ -538,11 +548,11 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		if (cntxt->itrace || stk->status) {
 			if (stk->status == 'p'){
 				// execution is paused
-				while ( stk->status == 'p')
+				while (stk->status == 'p')
 					MT_sleep_ms(50);
 				continue;
 			}
-			if ( stk->status == 'q')
+			if (stk->status == 'q')
 				stk->cmd = 'x';
 
 			if (stk->cmd == 0)
@@ -551,7 +561,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (stk->cmd == 'x' ) {
 				stk->cmd = 0;
 				stkpc = mb->stop;
-				MT_thread_set_qry_ctx(&qry_ctx_abort);
 				ret= createException(MAL, "mal.interpreter", "prematurely stopped client");
 				break;
 			}
@@ -579,9 +588,9 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				if (ATOMIC_CAS(&cntxt->lastprint, &lp, t)) {
 					const char *q = cntxt->query ? cntxt->query : NULL;
 					TRC_INFO(MAL_SERVER, "%s: query already running "LLFMT"s: %.200s\n",
-							cntxt->mythread->name,
-							(lng) (time(0) - cntxt->lastcmd),
-							q ? q : "");
+							 cntxt->mythread->name,
+							 (lng) (time(0) - cntxt->lastcmd),
+							 q ? q : "");
 				}
 			}
 		}
@@ -606,11 +615,11 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		 * garbage collected are identified. In the post-execution
 		 * phase they are removed.
 		 */
-		for (i = 0; i < pci->retc; i++)
+		for (int i = 0; i < pci->retc; i++)
 			backup[i] = stk->stk[getArg(pci, i)];
 
 		if (garbageControl(pci)) {
-			for (i = 0; i < pci->argc; i++) {
+			for (int i = 0; i < pci->argc; i++) {
 				int a = getArg(pci, i);
 
 				if (stk->stk[a].vtype == TYPE_bat && getEndScope(mb, a) == stkpc && isNotUsedIn(pci, i + 1, a))
@@ -639,7 +648,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			 * they are used will cause errors in multi-assignment
 			 * statements.
 			 */
-			for (k = 0, i = pci->retc; k < pci->retc && i < pci->argc; i++, k++) {
+			for (int k = 0, i = pci->retc; k < pci->retc && i < pci->argc; i++, k++) {
 				lhs = &stk->stk[pci->argv[k]];
 				rhs = &stk->stk[pci->argv[i]];
 				if(VALcopy(lhs, rhs) == NULL) {
@@ -659,7 +668,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				if (ret == MAL_SUCCEED) {
 					/* check that the types of actual results match
 					 * expected results */
-					for (i = 0; i < pci->retc; i++) {
+					for (int i = 0; i < pci->retc; i++) {
 						int a = getArg(pci, i);
 						int t = getArgType(mb, pci, i);
 
@@ -671,7 +680,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 							assert(is_bat_nil(bid) ||
 								   t == TYPE_any ||
 								   ATOMtype(_b->ttype) == ATOMtype(t));
-							if(_b) BBPunfix(bid);
+							if(_b)
+								BBPunfix(bid);
 						} else {
 							assert(t == stk->stk[a].vtype);
 						}
@@ -687,7 +697,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (ret == MAL_SUCCEED) {
 				/* check that the types of actual results match
 				 * expected results */
-				for (i = 0; i < pci->retc; i++) {
+				for (int i = 0; i < pci->retc; i++) {
 					int a = getArg(pci, i);
 					int t = getArgType(mb, pci, i);
 
@@ -730,66 +740,66 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				ret = runFactory(cntxt, pci->blk, mb, stk, pci);
 			}
 			break;
-		case FCNcall:
+		case FCNcall: {
 			/*
 			 * MAL function calls are relatively expensive,
 			 * because they have to assemble a new stack frame and
 			 * do housekeeping, such as garbagecollection of all
 			 * non-returned values.
 			 */
-			{	MalStkPtr nstk;
-				InstrPtr q;
-				int ii, arg;
+			MalStkPtr nstk;
+			InstrPtr q;
+			int ii, arg;
 
-				stk->pcup = stkpc;
-				nstk = prepareMALstack(pci->blk, pci->blk->vsize);
-				if (nstk == 0){
-					ret= createException(MAL,"mal.interpreter",MAL_STACK_FAIL);
-					break;
-				}
+			stk->pcup = stkpc;
+			nstk = prepareMALstack(pci->blk, pci->blk->vsize);
+			if (nstk == 0){
+				ret= createException(MAL,"mal.interpreter",MAL_STACK_FAIL);
+				break;
+			}
 
-				/*safeguardStack*/
-				nstk->stkdepth = nstk->stksize + stk->stkdepth;
-				nstk->calldepth = stk->calldepth + 1;
-				nstk->up = stk;
-				if (nstk->calldepth > 256) {
-					ret= createException(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
+			/*safeguardStack*/
+			nstk->stkdepth = nstk->stksize + stk->stkdepth;
+			nstk->calldepth = stk->calldepth + 1;
+			nstk->up = stk;
+			if (nstk->calldepth > 256) {
+				ret= createException(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
+				GDKfree(nstk);
+				break;
+			}
+			if ((unsigned)nstk->stkdepth > THREAD_STACK_SIZE / sizeof(mb->var[0]) / 4 && THRhighwater()){
+				/* we are running low on stack space */
+				ret= createException(MAL, "mal.interpreter", MAL_STACK_FAIL);
+				GDKfree(nstk);
+				break;
+			}
+
+			/* copy arguments onto destination stack */
+			q= getInstrPtr(pci->blk,0);
+			arg = q->retc;
+			for (ii = pci->retc; ii < pci->argc; ii++,arg++) {
+				lhs = &nstk->stk[q->argv[arg]];
+				rhs = &stk->stk[pci->argv[ii]];
+				if(VALcopy(lhs, rhs) == NULL) {
 					GDKfree(nstk);
+					ret = createException(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
 					break;
-				}
-				if ((unsigned)nstk->stkdepth > THREAD_STACK_SIZE / sizeof(mb->var[0]) / 4 && THRhighwater()){
-					/* we are running low on stack space */
-					ret= createException(MAL, "mal.interpreter", MAL_STACK_FAIL);
-					GDKfree(nstk);
-					break;
-				}
-
-				/* copy arguments onto destination stack */
-				q= getInstrPtr(pci->blk,0);
+				} else if (lhs->vtype == TYPE_bat)
+					BBPretain(lhs->val.bval);
+			}
+			if (ret == MAL_SUCCEED && ii == pci->argc) {
+				ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
+				garbageCollector(cntxt, pci->blk, nstk, 0);
 				arg = q->retc;
 				for (ii = pci->retc; ii < pci->argc; ii++,arg++) {
 					lhs = &nstk->stk[q->argv[arg]];
-					rhs = &stk->stk[pci->argv[ii]];
-					if(VALcopy(lhs, rhs) == NULL) {
-						GDKfree(nstk);
-						ret = createException(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
-						break;
-					} else if (lhs->vtype == TYPE_bat)
-						BBPretain(lhs->val.bval);
+					if (lhs->vtype == TYPE_bat)
+						BBPrelease(lhs->val.bval);
 				}
-				if (ret == MAL_SUCCEED && ii == pci->argc) {
-					ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
-					garbageCollector(cntxt, pci->blk, nstk, 0);
-					arg = q->retc;
-					for (ii = pci->retc; ii < pci->argc; ii++,arg++) {
-						lhs = &nstk->stk[q->argv[arg]];
-						if (lhs->vtype == TYPE_bat)
-							BBPrelease(lhs->val.bval);
-					}
-					GDKfree(nstk);
-				}
+				GDKfree(nstk);
 			}
 			break;
+		}
 		case NOOPsymbol:
 		case REMsymbol:
 			break;
@@ -800,7 +810,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
 			if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
 				garbageCollector(cntxt, mb, stk, TRUE);
-			if (cntxt->querytimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->querytimeout){
+			if (cntxt->qryctx.querytimeout && cntxt->qryctx.starttime && GDKusec()- cntxt->qryctx.starttime > cntxt->qryctx.querytimeout){
 				freeException(ret); /* overrule exception */
 				ret= createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 				break;
@@ -821,7 +831,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				ret = createException(MAL,"interpreter", "failed instruction2str");
 			}
 			// runtimeProfileBegin already sets the time in the instruction
-			if (cntxt->querytimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->querytimeout){
+			if (cntxt->qryctx.querytimeout && cntxt->qryctx.starttime && GDKusec()- cntxt->qryctx.starttime > cntxt->qryctx.querytimeout){
 				freeException(ret);	/* in case it's set */
 				ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 				break;
@@ -841,8 +851,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		/* check for strong debugging after each MAL statement */
 		/* when we find a timeout situation, then the result is already known
 		 * and assigned,  the backup version is not removed*/
-		if ( pci->token != FACcall && ret== MAL_SUCCEED) {
-			for (i = 0; i < pci->retc; i++) {
+		if (pci->token != FACcall && ret== MAL_SUCCEED) {
+			for (int i = 0; i < pci->retc; i++) {
 				lhs = &backup[i];
 				if (BATatoms[lhs->vtype].atomUnfix &&
 					(*BATatoms[lhs->vtype].atomUnfix)(VALget(lhs)) != GDK_SUCCEED) {
@@ -858,7 +868,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (GDKdebug & CHECKMASK && exceptionVar < 0) {
 				BAT *b;
 
-				for (i = 0; i < pci->retc; i++) {
+				for (int i = 0; i < pci->retc; i++) {
 					if (garbage[i] == -1 && stk->stk[getArg(pci, i)].vtype == TYPE_bat &&
 						!is_bat_nil(stk->stk[getArg(pci, i)].val.bval)) {
 						assert(stk->stk[getArg(pci, i)].val.bval > 0);
@@ -876,7 +886,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 			/* general garbage collection */
 			if (ret == MAL_SUCCEED && garbageControl(pci)) {
-				for (i = 0; i < pci->argc; i++) {
+				for (int i = 0; i < pci->argc; i++) {
 					int a = getArg(pci, i);
 
 					if (isaBatType(getArgType(mb, pci, i))) {
@@ -945,7 +955,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 			/* unknown exceptions lead to propagation */
 			if (exceptionVar == -1) {
-				if (cntxt->querytimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->querytimeout) {
+				if (cntxt->qryctx.querytimeout && cntxt->qryctx.starttime && GDKusec()- cntxt->qryctx.starttime > cntxt->qryctx.querytimeout) {
 					freeException(ret);
 					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 				}
@@ -994,7 +1004,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				}
 			}
 			if (stkpc == mb->stop) {
-				if (cntxt->querytimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->querytimeout){
+				if (cntxt->qryctx.querytimeout && cntxt->qryctx.starttime && GDKusec()- cntxt->qryctx.starttime > cntxt->qryctx.querytimeout){
 					freeException(ret);
 					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 					stkpc = mb->stop;
@@ -1189,10 +1199,11 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		case YIELDsymbol:     /* to be defined */
 			if( startedProfileQueue)
 				runtimeProfileFinish(cntxt, mb, stk);
-			if ( backup != backups) GDKfree(backup);
-			if ( garbage != garbages) GDKfree(garbage);
+			if (backup != backups)
+				GDKfree(backup);
+			if (garbage != garbages)
+				GDKfree(garbage);
 			ret = yieldFactory(mb, pci, stkpc);
-			MT_thread_set_qry_ctx(qry_ctx_save);
 			return ret;
 		case RETURNsymbol:
 			/* Return from factory involves cleanup */
@@ -1205,7 +1216,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				if (env != NULL && pcicaller != NULL) {
 					InstrPtr pp = pci;
 					pci = pcicaller;
-					for (i = 0; i < pci->retc; i++) {
+					for (int i = 0; i < pci->retc; i++) {
 						rhs = &stk->stk[pp->argv[i]];
 						lhs = &env->stk[pci->argv[i]];
 						if(VALcopy(lhs, rhs) == NULL) {
@@ -1226,13 +1237,12 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		default:
 			stkpc++;
 		}
-		if (cntxt->querytimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->querytimeout){
+		if (cntxt->qryctx.querytimeout && cntxt->qryctx.starttime && GDKusec()- cntxt->qryctx.starttime > cntxt->qryctx.querytimeout){
 			if (ret == MAL_SUCCEED)
 				ret= createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 			stkpc= mb->stop;
 		}
 	}
-	MT_thread_set_qry_ctx(qry_ctx_save);
 
 	/* if we could not find the exception variable, cascade a new one */
 	/* don't add 'exception not caught' extra message for MAL sequences besides main function calls */
@@ -1262,10 +1272,12 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			ret = createException(MAL, nme, "Exception not caught");
 		}
 	}
-	if( startedProfileQueue)
+	if (startedProfileQueue)
 		runtimeProfileFinish(cntxt, mb, stk);
-	if ( backup != backups) GDKfree(backup);
-	if ( garbage != garbages) GDKfree(garbage);
+	if (backup != backups)
+		GDKfree(backup);
+	if (garbage != garbages)
+		GDKfree(garbage);
 	return ret;
 }
 
@@ -1386,7 +1398,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
  * The first step is to always safe the destination variable
  * before a function call is made.
  */
-void garbageElement(Client cntxt, ValPtr v)
+void
+garbageElement(Client cntxt, ValPtr v)
 {
 	(void) cntxt;
 	if (ATOMstorage(v->vtype) == TYPE_str) {
@@ -1435,21 +1448,20 @@ void garbageElement(Client cntxt, ValPtr v)
  * type should be saved for variables that recide on a global
  * stack frame.
  */
-void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
+void
+garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 {
-	int k;
-	ValPtr v;
-
 	assert(mb->vtop <= mb->vsize);
 	assert(stk->stktop <= stk->stksize);
 	(void) flag;
 	(void)mb;
 	(void)cntxt;
-	for (k = 0; k < stk->stktop; k++) {
-	//	if (isVarCleanup(mb, k) ){
+	for (int k = 0; k < stk->stktop; k++) {
+		//	if (isVarCleanup(mb, k) ){
+			ValPtr v;
 			garbageElement(cntxt, v = &stk->stk[k]);
 			v->vtype = TYPE_int;
 			v->val.ival = int_nil;
-	//	}
+		//	}
 	}
 }

@@ -1,0 +1,26 @@
+query R nosort
+SELECT avg(4)
+----
+4.000
+
+query I nosort
+SELECT count(*)
+----
+1
+
+query I nosort
+SELECT count(*) over (order by 1)
+----
+1
+
+query R nosort
+SELECT avg(42) over (order by 2)
+----
+42.000
+
+statement error 42000!ROW_NUMBER: window functions cannot be nested
+SELECT count(*) over (order by row_number() over ())
+
+statement error 42000!ROW_NUMBER: window functions cannot be nested
+SELECT avg(42) over (order by row_number() over ())
+

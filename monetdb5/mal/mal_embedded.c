@@ -29,6 +29,7 @@
 #include "mal_client.h"
 #include "mal_dataflow.h"
 #include "mal_private.h"
+#include "mal_internal.h"
 #include "mal_runtime.h"
 #include "mal_atom.h"
 #include "mal_resource.h"
@@ -43,7 +44,8 @@ static bool embeddedinitialized = false;
 str
 malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiontimeout, bool with_mapi_server)
 {
-	Client c;
+	Client c, c_old;
+	QryCtx *qc_old;
 	str msg = MAL_SUCCEED;
 
 	if( embeddedinitialized )
@@ -53,7 +55,6 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 		/* unlock the vault, first see if we can find the file which
 		 * holds the secret */
 		char secret[1024];
-		char *secretp = secret;
 		FILE *secretf;
 		size_t len;
 
@@ -78,12 +79,12 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 					"(%zu), enlarge your vault key!\n", len);
 			}
 		}
-		if ((msg = AUTHunlockVault(secretp)) != MAL_SUCCEED) {
+		if ((msg = AUTHunlockVault(secret)) != MAL_SUCCEED) {
 			/* don't show this as a crash */
 			return msg;
 		}
 	}
-	if ((msg = AUTHinitTables(NULL)) != MAL_SUCCEED)
+	if ((msg = AUTHinitTables()) != MAL_SUCCEED)
 		return msg;
 
 	if (!MCinit())
@@ -99,42 +100,55 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 	initParser();
 	initHeartbeat();
 	// initResource();
-
+	c_old = setClientContext(NULL); //save context
+	qc_old = MT_thread_get_qry_ctx();
 	c = MCinitClient((oid) 0, 0, 0);
 	if(c == NULL)
 		throw(MAL, "malEmbeddedBoot", "Failed to initialize client");
 	c->workerlimit = workerlimit;
 	c->memorylimit = memorylimit;
-	c->querytimeout = querytimeout * 1000000;	// from sec to usec
+	c->qryctx.querytimeout = querytimeout * 1000000;	// from sec to usec
 	c->sessiontimeout = sessiontimeout * 1000000;
 	c->curmodule = c->usermodule = userModule();
 	if(c->usermodule == NULL) {
 		MCcloseClient(c);
+		setClientContext(c_old); // restore context
+		MT_thread_set_qry_ctx(qc_old);
 		throw(MAL, "malEmbeddedBoot", "Failed to initialize client MAL module");
 	}
 	if ( (msg = defaultScenario(c)) ) {
 		MCcloseClient(c);
+		setClientContext(c_old); // restore context
+		MT_thread_set_qry_ctx(qc_old);
 		return msg;
 	}
 	if ((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
 		MCcloseClient(c);
+		setClientContext(c_old); // restore context
+		MT_thread_set_qry_ctx(qc_old);
 		return msg;
 	}
 	char *modules[5] = { "embedded", "sql", "generator", "udf" };
-	if ((msg = malIncludeModules(c, modules, 0, !with_mapi_server)) != MAL_SUCCEED) {
+	if ((msg = malIncludeModules(c, modules, 0, !with_mapi_server, NULL)) != MAL_SUCCEED) {
 		MCcloseClient(c);
+		setClientContext(c_old); // restore context
+		MT_thread_set_qry_ctx(qc_old);
 		return msg;
 	}
 	pushEndInstruction(c->curprg->def);
 	msg = chkProgram(c->usermodule, c->curprg->def);
 	if ( msg != MAL_SUCCEED || (msg= c->curprg->def->errors) != MAL_SUCCEED ) {
 		MCcloseClient(c);
+		setClientContext(c_old); // restore context
+		MT_thread_set_qry_ctx(qc_old);
 		return msg;
 	}
 	msg = MALengine(c);
 	if (msg == MAL_SUCCEED)
 		embeddedinitialized = true;
 	MCcloseClient(c);
+	setClientContext(c_old); // restore context
+	MT_thread_set_qry_ctx(qc_old);
 	initProfiler();
 	return msg;
 }

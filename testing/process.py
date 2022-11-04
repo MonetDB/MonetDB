@@ -370,6 +370,8 @@ class server(Popen):
             cmd = ['mserver5',
                    '--set', ipv6 and 'mapi_listenaddr=all' or 'mapi_listenaddr=0.0.0.0',
                    '--set', 'gdk_nr_threads=1']
+        if os.getenv('NOWAL'):
+            cmd.extend(['--set', 'sql_debug=128'])
         if verbose:
             sys.stdout.write('Default server: ' + ' '.join(cmd +  args) + '\n')
         if notrace and '--trace' in cmd:
@@ -421,6 +423,9 @@ class server(Popen):
             dbfarm = _dbfarm
         dbpath = os.path.join(dbfarm, dbname)
         cmd.append('--dbpath=%s' % dbpath)
+        if os.path.exists(os.path.join(dbpath, '.vaultkey')):
+            cmd.extend(['--set',
+                        'monet_vault_key={}'.format(os.path.join(dbpath, '.vaultkey'))])
         for i in range(len(cmd)):
             if cmd[i].startswith('--dbextra='):
                 dbextra_path = cmd[i][10:]

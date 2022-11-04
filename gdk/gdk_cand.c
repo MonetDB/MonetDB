@@ -1098,6 +1098,8 @@ canditer_slice(const struct canditer *ci, BUN lo, BUN hi)
 		return BATdense(0, 0, 0);
 	if (hi > ci->ncand)
 		hi = ci->ncand;
+	if (hi - lo == 1)
+		return BATdense(0, canditer_idx(ci, lo), 1);
 	switch (ci->tpe) {
 	case cand_materialized:
 		if (ci->s) {
@@ -1306,8 +1308,9 @@ BATnegcands(BUN nr, BAT *odels)
 	}
 	strconcat_len(dels->filename, sizeof(dels->filename),
 		      nme, ".theap", NULL);
+    	dels->parentid = bn->batCacheid;
 
-    	if (HEAPalloc(dels, hi - lo + (sizeof(ccand_t)/sizeof(oid)), sizeof(oid), 0) != GDK_SUCCEED) {
+    	if (HEAPalloc(dels, hi - lo + (sizeof(ccand_t)/sizeof(oid)), sizeof(oid)) != GDK_SUCCEED) {
 		GDKfree(dels);
 		BBPreclaim(bn);
         	return NULL;
@@ -1317,7 +1320,6 @@ BATnegcands(BUN nr, BAT *odels)
 	*c = (ccand_t) {
 		.type = CAND_NEGOID,
 	};
-    	dels->parentid = bn->batCacheid;
 	dels->free = sizeof(ccand_t) + sizeof(oid) * (hi - lo);
 	dels->dirty = true;
 	BATiter bi = bat_iterator(odels);
@@ -1372,9 +1374,10 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 	}
 	strconcat_len(msks->filename, sizeof(msks->filename),
 		      nme, ".theap", NULL);
+    	msks->parentid = bn->batCacheid;
 
 	nmask = (nr + 31) / 32;
-    	if (HEAPalloc(msks, nmask + (sizeof(ccand_t)/sizeof(uint32_t)), sizeof(uint32_t), 0) != GDK_SUCCEED) {
+    	if (HEAPalloc(msks, nmask + (sizeof(ccand_t)/sizeof(uint32_t)), sizeof(uint32_t)) != GDK_SUCCEED) {
 		GDKfree(msks);
 		BBPreclaim(bn);
         	return NULL;
@@ -1384,7 +1387,6 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 		.type = CAND_MSK,
 //		.mask = true,
 	};
-    	msks->parentid = bn->batCacheid;
 	msks->free = sizeof(ccand_t) + nmask * sizeof(uint32_t);
 	msks->dirty = true;
 	uint32_t *r = (uint32_t*)(msks->base + sizeof(ccand_t));
@@ -1481,18 +1483,18 @@ BATunmask(BAT *b)
 		    strconcat_len(dels->filename, sizeof(dels->filename),
 				  BBP_physical(bn->batCacheid), ".theap",
 				  NULL) >= sizeof(dels->filename) ||
+		    (dels->parentid = bn->batCacheid) <= 0 ||
 		    (dels->farmid = BBPselectfarm(TRANSIENT, TYPE_void,
 						  varheap)) == -1 ||
 		    HEAPalloc(dels,
 			      cnt * 32 - bi.count
 			      + sizeof(ccand_t) / sizeof(oid),
-			      sizeof(oid), 0) != GDK_SUCCEED) {
+			      sizeof(oid)) != GDK_SUCCEED) {
 			GDKfree(dels);
 			BBPreclaim(bn);
 			bat_iterator_end(&bi);
 			return NULL;
 		}
-		dels->parentid = bn->batCacheid;
 		* (ccand_t *) dels->base = (ccand_t) {
 			.type = CAND_NEGOID,
 		};

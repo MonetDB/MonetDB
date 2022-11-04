@@ -109,7 +109,7 @@ log_bid
 e_bat(int type)
 {
 	if (ebats[type] == NULL &&
-	    (ebats[type] = bat_new(type, 0, TRANSIENT)) == NULL)
+	    (ebats[type] = bat_new(type, 0, SYSTRANS)) == NULL)
 		return BID_NIL;
 	return temp_create(ebats[type]);
 }
@@ -118,7 +118,7 @@ BAT *
 e_BAT(int type)
 {
 	if (ebats[type] == NULL &&
-	    (ebats[type] = bat_new(type, 0, TRANSIENT)) == NULL)
+	    (ebats[type] = bat_new(type, 0, SYSTRANS)) == NULL)
 		return NULL;
 	return temp_descriptor(ebats[type]->batCacheid);
 }
@@ -131,7 +131,7 @@ bat_utils_init(void)
 
 	for (t=1; t<GDKatomcnt; t++) {
 		if (t != TYPE_bat && BATatoms[t].name[0]) {
-			ebats[t] = bat_new(t, 0, TRANSIENT);
+			ebats[t] = bat_new(t, 0, SYSTRANS);
 			if(ebats[t] == NULL) {
 				for (t = t - 1; t >= 1; t--)
 					bat_destroy(ebats[t]);

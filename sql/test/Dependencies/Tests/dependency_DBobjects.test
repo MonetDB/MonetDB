@@ -100,12 +100,6 @@ DEP_SCHEMA
 monetdb
 tmp
 DEP_SCHEMA
-monetdb
-wlc
-DEP_SCHEMA
-monetdb
-wlr
-DEP_SCHEMA
 
 query TTT rowsort
 SELECT t.name, v.name, 'DEP_VIEW' from sys.tables as t, sys.tables as v, sys.dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type = 1 order by t.name, v.name
@@ -173,6 +167,9 @@ describe_function
 DEP_FUNC
 comments
 describe_table
+DEP_FUNC
+db_user_info
+db_users
 DEP_FUNC
 dump_statements
 dump_database
@@ -301,7 +298,7 @@ DEP_INDEX
 query TTT rowsort
 SELECT c.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.columns as c, sys.dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name
 ----
-279 values hashing to 4c42714c4678cb65faf29e6a113e146b
+282 values hashing to 8d0090d6eae4b3d86a5e259f1a9eea58
 
 query TTT rowsort
 SELECT c.name, tri.name, 'DEP_TRIGGER' from sys.columns as c, sys.triggers as tri, sys.dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by c.name, tri.name
@@ -409,14 +406,14 @@ DEP_FUNC
 dq
 prepare_esc
 DEP_FUNC
+dq
+schema_guard
+DEP_FUNC
 dump_table_data
 dump_database
 DEP_FUNC
 f1
 f2
-DEP_FUNC
-fqn
-schema_guard
 DEP_FUNC
 getproj4
 st_transform
@@ -427,11 +424,11 @@ DEP_FUNC
 ms_trunc
 ms_round
 DEP_FUNC
+regexp_replace
+regexp_replace
+DEP_FUNC
 remote_table_credentials
 get_remote_table_expressions
-DEP_FUNC
-replace_first
-schema_guard
 DEP_FUNC
 sq
 get_remote_table_expressions

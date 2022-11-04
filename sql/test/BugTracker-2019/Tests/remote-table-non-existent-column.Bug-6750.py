@@ -5,7 +5,6 @@ try:
 except ImportError:
     import process
 
-
 with tempfile.TemporaryDirectory() as farm_dir:
     os.makedirs(os.path.join(farm_dir, 'node1'))
     with process.server(mapiport='0', dbname='node1', dbfarm=os.path.join(farm_dir, 'node1'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as prc1:

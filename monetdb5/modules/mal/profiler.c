@@ -50,7 +50,12 @@ CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	(void) mb;
 	(void) stk;
 	(void) pc;
-	return openProfilerStream(cntxt);
+	int m = 0;
+	if (pc->argc == 2 && getArgType(mb, pc, 1) == TYPE_int)
+		m = *getArgReference_int(stk, pc, 1);
+	else if (pc->argc > 2)
+		m = -1;
+	return openProfilerStream(cntxt, m);
 }
 
 static str
@@ -90,7 +95,7 @@ CMDstartTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	renameVariables(mb); // to keep in sink with explain
+	renameVariables(mb); // to keep in sync with explain
 	return startTrace(cntxt);
 }
 
@@ -222,6 +227,7 @@ mel_func profiler_init_funcs[] = {
  command("profiler", "getlimit", CMDgetprofilerlimit, false, "Get profiler limit", args(1,1, arg("",int))),
  command("profiler", "setlimit", CMDsetprofilerlimit, true, "Set profiler limit", args(1,2, arg("",void),arg("l",int))),
  pattern("profiler", "openstream", CMDopenProfilerStream, false, "Start profiling the events, send to output stream", args(1,1, arg("",void))),
+ pattern("profiler", "openstream", CMDopenProfilerStream, false, "Start profiling the events, send to output stream", args(1,2, arg("",void), arg("m",int))),
  pattern("profiler", "closestream", CMDcloseProfilerStream, false, "Stop offline proviling", args(1,1, arg("",void))),
  command("profiler", "noop", CMDnoopProfiler, false, "Fetch any pending performance events", args(1,1, arg("",void))),
  pattern("profiler", "getTrace", CMDgetTrace, false, "Get the trace details of a specific event", args(1,2, batargany("",1),arg("e",str))),

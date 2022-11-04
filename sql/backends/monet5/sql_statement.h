@@ -172,6 +172,7 @@ extern stmt *stmt_replace(backend *be, stmt *c, stmt *id, stmt *val);
 extern stmt *stmt_table_clear(backend *be, sql_table *t, int restart_sequences);
 
 extern stmt *stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, int onclient, stmt *file);
+extern stmt *stmt_export_bin(backend *be, stmt *colstmt, bool byteswap, const char *filename, int on_client);
 extern stmt *stmt_trans(backend *b, int type, stmt *chain, stmt *name);
 extern stmt *stmt_catalog(backend *be, int type, stmt *args);
 
@@ -245,6 +246,8 @@ extern stmt *stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *op, stmt* 
 extern stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
 extern stmt *stmt_direct_func(backend *be, InstrPtr q);
 extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
+
+extern stmt *stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t);
 
 extern stmt *stmt_alias(backend *be, stmt *op1, const char *tname, const char *name);
 
