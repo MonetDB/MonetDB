@@ -22,7 +22,7 @@ CREATE FILTER FUNCTION ST_Intersects(geom1 Geometry, geom2 Geometry) EXTERNAL NA
 CREATE FILTER FUNCTION ST_Intersects_NoIndex(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom."Intersects_noindex";
 
 CREATE FILTER FUNCTION ST_DWithin(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME rtree."DWithin";
-CREATE FILTER FUNCTION ST_DWithin_NoIndex(geom1 Geometry, geom2 Geometry, distance double) RETURNS boolean EXTERNAL NAME geom."DWithin_noindex";
+CREATE FILTER FUNCTION ST_DWithin_NoIndex(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME geom."DWithin_noindex";
 
 -------------------------------------------------------------------------
 ------------------------- Old Geom functions ----------------------------
