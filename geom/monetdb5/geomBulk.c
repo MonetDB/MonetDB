@@ -14,9 +14,648 @@
 #include "geod.h"
 #include "geom_atoms.h"
 
-/********** Geo Update **********/
+/********** Geo Update Start **********/
+#ifdef HAVE_RTREE
+static str
+filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_geom, mbr *const_mbr, double distance, bit anti, char (*func) (const GEOSGeometry *, const GEOSGeometry *, double), const char *name)
+{
+	BAT *out = NULL, *b = NULL, *s = NULL;
+	BATiter b_iter;
+	struct canditer ci;
+	GEOSGeom col_geom;
 
-//TODO: Rename these functions with Stefanos
+	//Get BAT, BATiter and candidate list
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if (sid && !is_bat_nil(*sid) && !(s = BATdescriptor(*sid))) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	canditer_init(&ci, b, s);
+	b_iter = bat_iterator(b);
+
+	//Result BAT
+	if ((out = COLnew(0, ATOMindex("oid"), ci.ncand, TRANSIENT)) == NULL) {
+		BBPunfix(b->batCacheid);
+		if (s)
+			BBPunfix(s->batCacheid);
+		throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	//Get a candidate list from searching on the rtree with the constant mbr
+	BUN* results_rtree = RTREEsearch(b,(mbr_t*)const_mbr, b->batCount);
+	if (results_rtree == NULL) {
+		BBPunfix(b->batCacheid);
+		if (s)
+			BBPunfix(s->batCacheid);
+		BBPreclaim(out);
+		throw(MAL, name, "RTreesearch failed, returned NULL candidates");
+	}
+
+	//TODO Change literal value of BUN_NONE to BUN_NONE in loop condition
+	//Cycle through rtree candidates
+	//If there is a original candidate list, make sure the rtree cand is in there
+	//Then do the actual calculation for the predicate using the GEOS function
+	for (int i = 0; results_rtree[i] != 18446744073709551615U && i < (int) b->batCount; i++) {
+		oid cand = results_rtree[i];
+		//If we have a candidate list that is not dense, we need to check if the rtree candidate is also on the original candidate list
+		if (ci.tpe != cand_dense) {
+			//If the original candidate list does not contain the rtree cand, move on to next one
+			if (!canditer_contains(&ci,cand))
+				continue;
+		}
+		const wkb *col_wkb = BUNtvar(b_iter, cand - b->hseqbase);
+		if ((col_geom = wkb2geos(col_wkb)) == NULL)
+			throw(MAL, name, SQLSTATE(38000) "WKB2Geos operation failed");
+		if (GEOSGetSRID(col_geom) != GEOSGetSRID(const_geom)) {
+			GEOSGeom_destroy(col_geom);
+			GEOSGeom_destroy(const_geom);
+			bat_iterator_end(&b_iter);
+			BBPunfix(b->batCacheid);
+			if (s)
+				BBPunfix(s->batCacheid);
+			BBPreclaim(out);
+			throw(MAL, name, SQLSTATE(38000) "Geometries of different SRID");
+		}
+		//GEOS function returns 1 on true, 0 on false and 2 on exception
+		bit cond = ((*func)(col_geom, const_geom, distance) == 1);
+		if (cond != anti) {
+			if (BUNappend(out, (oid*) &cand, false) != GDK_SUCCEED) {
+				GEOSGeom_destroy(col_geom);
+				GEOSGeom_destroy(const_geom);
+				bat_iterator_end(&b_iter);
+				BBPunfix(b->batCacheid);
+				if (s)
+					BBPunfix(s->batCacheid);
+				BBPreclaim(out);
+				throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+		}
+		GEOSGeom_destroy(col_geom);
+	}
+	GEOSGeom_destroy(const_geom);
+	bat_iterator_end(&b_iter);
+	BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	*outid = out->batCacheid;
+	BBPkeepref(out);
+	return MAL_SUCCEED;
+}
+#endif
+
+static str
+filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, double distance, bit anti, char (*func) (const GEOSGeometry *, const GEOSGeometry *, double), const char *name)
+{
+	BAT *out = NULL, *b = NULL, *s = NULL;
+	BATiter b_iter;
+	struct canditer ci;
+	GEOSGeom col_geom, const_geom;
+
+	//WKB constant is NULL
+	if ((const_geom = wkb2geos(wkb_const)) == NULL) {
+		if ((out = BATdense(0, 0, 0)) == NULL)
+			throw(MAL, name, GDK_EXCEPTION);
+		*outid = out->batCacheid;
+		BBPkeepref(out);
+		return MAL_SUCCEED;
+	}
+
+	//Get BAT, BATiter and candidate list
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if (sid && !is_bat_nil(*sid) && !(s = BATdescriptor(*sid))) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	canditer_init(&ci, b, s);
+	b_iter = bat_iterator(b);
+
+	//Result BAT
+	if ((out = COLnew(0, ATOMindex("oid"), ci.ncand, TRANSIENT)) == NULL) {
+		BBPunfix(b->batCacheid);
+		if (s)
+			BBPunfix(s->batCacheid);
+		throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	for (BUN i = 0; i < ci.ncand; i++) {
+		BUN cand = canditer_next(&ci);
+		const wkb *col_wkb = BUNtvar(b_iter, cand - b->hseqbase);
+		if ((col_geom = wkb2geos(col_wkb)) == NULL)
+			throw(MAL, name, SQLSTATE(38000) "WKB2Geos operation failed");
+		if (GEOSGetSRID(col_geom) != GEOSGetSRID(const_geom)) {
+			GEOSGeom_destroy(col_geom);
+			GEOSGeom_destroy(const_geom);
+			bat_iterator_end(&b_iter);
+			BBPunfix(b->batCacheid);
+			if (s)
+				BBPunfix(s->batCacheid);
+			BBPreclaim(out);
+			throw(MAL, name, SQLSTATE(38000) "Geometries of different SRID");
+		}
+		//GEOS function returns 1 on true, 0 on false and 2 on exception
+		bit cond = ((*func)(col_geom, const_geom, distance) == 1);
+		if (cond != anti) {
+			if (BUNappend(out, (oid*) &cand, false) != GDK_SUCCEED) {
+				if (col_geom)
+					GEOSGeom_destroy(col_geom);
+				if (const_geom)
+					GEOSGeom_destroy(const_geom);
+				bat_iterator_end(&b_iter);
+				BBPunfix(b->batCacheid);
+				if (s)
+					BBPunfix(s->batCacheid);
+				BBPreclaim(out);
+				throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+		}
+		GEOSGeom_destroy(col_geom);
+	}
+
+	GEOSGeom_destroy(const_geom);
+	bat_iterator_end(&b_iter);
+	BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	*outid = out->batCacheid;
+	BBPkeepref(out);
+	return MAL_SUCCEED;
+}
+
+str
+wkbIntersectsSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti) {
+#ifdef HAVE_RTREE
+	//If there is an RTree on memory or on file, use the RTree method. Otherwise, use the no index version.
+	if (RTREEexists_bid((bat*)bid)) {
+		//Calculate MBR of constant geometry first
+		GEOSGeom const_geom;
+		if ((const_geom = wkb2geos(*wkb_const)) == NULL) {
+			BAT *out = NULL;
+			if ((out = BATdense(0, 0, 0)) == NULL)
+				throw(MAL, "geom.wkbIntersectsSelectRTree", GDK_EXCEPTION);
+			*outid = out->batCacheid;
+			BBPkeepref(out);
+			return MAL_SUCCEED;
+		}
+		//Calculate the MBR for the constant geometry
+		mbr *const_mbr = NULL;
+		wkbMBR(&const_mbr,wkb_const);
+
+		return filterSelectRTree(outid,bid,sid,const_geom,const_mbr,0,*anti,GEOSDistanceWithin,"geom.wkbIntersectsSelectRTree");
+	}
+	else
+		return filterSelectNoIndex(outid,bid,sid,*wkb_const,0,*anti,GEOSDistanceWithin,"geom.wkbIntersectsSelectNoIndex");
+#else
+	return filterSelectNoIndex(outid,bid,sid,*wkb_const,0,*anti,GEOSDistanceWithin,"geom.wkbIntersectsSelectNoIndex");
+#endif
+}
+
+str
+wkbDWithinSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, double* distance, bit *anti) {
+#ifdef HAVE_RTREE
+	//If there is an RTree on memory or on file, use the RTree method. Otherwise, use the no index version.
+	if (RTREEexists_bid((bat*)bid)) {
+		//Calculate MBR of constant geometry first
+		GEOSGeom const_geom;
+		if ((const_geom = wkb2geos(*wkb_const)) == NULL) {
+			BAT *out = NULL;
+			if ((out = BATdense(0, 0, 0)) == NULL)
+				throw(MAL, "geom.wkbDWithinSelectRTree", GDK_EXCEPTION);
+			*outid = out->batCacheid;
+			BBPkeepref(out);
+			return MAL_SUCCEED;
+		}
+		//Calculate the MBR for the constant geometry
+		mbr *const_mbr = NULL;
+		wkbMBR(&const_mbr,wkb_const);
+
+		//We expand the bounding box to cover the "distance within" area
+		//And use GEOSIntersects with the expanded bounding box
+		//This expands the box too much
+		//But better to get more false candidates than not getting a true candidate
+		const_mbr->xmin -=(*distance);
+		const_mbr->ymin -=(*distance);
+		const_mbr->xmax +=(*distance);
+		const_mbr->ymax +=(*distance);
+
+		return filterSelectRTree(outid,bid,sid,const_geom,const_mbr,*distance,*anti,GEOSDistanceWithin,"geom.wkbDWithinSelectRTree");
+	}
+	else
+		return filterSelectNoIndex(outid,bid,sid,*wkb_const,*distance,*anti,GEOSDistanceWithin,"geom.wkbDWithinSelectNoIndex");
+#else
+	return filterSelectNoIndex(outid,bid,sid,*wkb_const,*distance,*anti,GEOSDistanceWithin,"geom.wkbDWithinSelectNoIndex");
+#endif
+}
+
+str
+wkbIntersectsSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti) {
+	return filterSelectNoIndex(outid,bid,sid,*wkb_const,0,*anti,GEOSDistanceWithin,"geom.wkbIntersectsSelectNoIndex");
+}
+
+str
+wkbDWithinSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, double *distance, bit *anti) {
+	return filterSelectNoIndex(outid,bid,sid,*wkb_const,*distance,*anti,GEOSDistanceWithin,"geom.wkbIntersectsSelectNoIndex");
+}
+
+static str
+filterJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, double double_flag, const bat *ls_id, const bat *rs_id, bit nil_matches, lng *estimate, char (*func) (const GEOSGeometry *, const GEOSGeometry *), const char *name)
+{
+	(void) double_flag;
+	BAT *lres = NULL, *rres = NULL, *l = NULL, *r = NULL, *ls = NULL, *rs = NULL;
+	BATiter l_iter, r_iter;
+	str msg = MAL_SUCCEED;
+	struct canditer l_ci, r_ci;
+	GEOSGeom l_geom, r_geom;
+	GEOSGeom *l_geoms = NULL, *r_geoms = NULL;
+	bool anti = false;
+
+	//get the input BATs
+	if ((l = BATdescriptor(*l_id)) == NULL || (r = BATdescriptor(*r_id)) == NULL) {
+		if (l)
+			BBPunfix(l->batCacheid);
+		if (r)
+			BBPunfix(r->batCacheid);
+		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	//get the candidate lists
+	if (ls_id && !is_bat_nil(*ls_id) && !(ls = BATdescriptor(*ls_id)) && rs_id && !is_bat_nil(*rs_id) && !(rs = BATdescriptor(*rs_id))) {
+		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto free;
+	}
+	canditer_init(&l_ci, l, ls);
+	canditer_init(&r_ci, r, rs);
+	//create new BATs for the output
+	if (is_lng_nil(*estimate) || *estimate == 0)
+		*estimate = l_ci.ncand;
+	if ((lres = COLnew(0, ATOMindex("oid"), *estimate, TRANSIENT)) == NULL) {
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto free;
+	}
+	if ((rres = COLnew(0, ATOMindex("oid"), *estimate, TRANSIENT)) == NULL) {
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto free;
+	}
+
+	//Allocate arrays for reutilizing GEOS type conversion
+	if ((l_geoms = GDKmalloc(l_ci.ncand * sizeof(GEOSGeometry *))) == NULL || (r_geoms = GDKmalloc(r_ci.ncand * sizeof(GEOSGeometry *))) == NULL) {
+		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto free;
+	}
+
+	l_iter = bat_iterator(l);
+	r_iter = bat_iterator(r);
+
+	//Convert wkb to GEOS only once
+	for (BUN i = 0; i < l_ci.ncand; i++) {
+		oid l_oid = canditer_next(&l_ci);
+		l_geoms[i] = wkb2geos((const wkb*) BUNtvar(l_iter, l_oid - l->hseqbase));
+	}
+	for (BUN j = 0; j < r_ci.ncand; j++) {
+		oid r_oid = canditer_next(&r_ci);
+		r_geoms[j] = wkb2geos((const wkb*)BUNtvar(r_iter, r_oid - r->hseqbase));
+	}
+
+	canditer_reset(&l_ci);
+	for (BUN i = 0; i < l_ci.ncand; i++) {
+		oid l_oid = canditer_next(&l_ci);
+		l_geom = l_geoms[i];
+		if (!nil_matches && l_geom == NULL)
+			continue;
+		canditer_reset(&r_ci);
+		for (BUN j = 0; j < r_ci.ncand; j++) {
+			oid r_oid = canditer_next(&r_ci);
+			r_geom = r_geoms[j];
+			//Null handling
+			if (r_geom == NULL) {
+				if (nil_matches && l_geom == NULL) {
+					if (BUNappend(lres, &l_oid, false) != GDK_SUCCEED || BUNappend(rres, &r_oid, false) != GDK_SUCCEED) {
+						msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						bat_iterator_end(&l_iter);
+						bat_iterator_end(&r_iter);
+						goto free;
+					}
+				}
+				else
+					continue;
+			}
+			if (GEOSGetSRID(l_geom) != GEOSGetSRID(r_geom)) {
+				msg = createException(MAL, name, SQLSTATE(38000) "Geometries of different SRID");
+				bat_iterator_end(&l_iter);
+				bat_iterator_end(&r_iter);
+				goto free;
+			}
+			//Apply the (Geom, Geom) -> bit function
+			bit cond = ((*func)(l_geom, r_geom) == '1');
+			if (cond != anti) {
+				if (BUNappend(lres, &l_oid, false) != GDK_SUCCEED || BUNappend(rres, &r_oid, false) != GDK_SUCCEED) {
+					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					bat_iterator_end(&l_iter);
+					bat_iterator_end(&r_iter);
+					goto free;
+				}
+			}
+		}
+	}
+	if (l_geoms) {
+		for (BUN i = 0; i < l_ci.ncand; i++) {
+			GEOSGeom_destroy(l_geoms[i]);
+		}
+		GDKfree(l_geoms);
+	}
+	if (r_geoms) {
+		for (BUN i = 0; i < r_ci.ncand; i++) {
+			GEOSGeom_destroy(r_geoms[i]);
+		}
+		GDKfree(r_geoms);
+	}
+	bat_iterator_end(&l_iter);
+	bat_iterator_end(&r_iter);
+	BBPunfix(l->batCacheid);
+	BBPunfix(r->batCacheid);
+	if (ls)
+		BBPunfix(ls->batCacheid);
+	if (rs)
+		BBPunfix(rs->batCacheid);
+	*lres_id = lres->batCacheid;
+	BBPkeepref(lres);
+	*rres_id = rres->batCacheid;
+	BBPkeepref(rres);
+	return MAL_SUCCEED;
+free:
+	if (l_geoms) {
+		for (BUN i = 0; i < l_ci.ncand; i++) {
+			GEOSGeom_destroy(l_geoms[i]);
+		}
+		GDKfree(l_geoms);
+	}
+	if (r_geoms) {
+		for (BUN i = 0; i < r_ci.ncand; i++) {
+			GEOSGeom_destroy(r_geoms[i]);
+		}
+		GDKfree(r_geoms);
+	}
+	BBPunfix(l->batCacheid);
+	BBPunfix(r->batCacheid);
+	if (ls)
+		BBPunfix(ls->batCacheid);
+	if (rs)
+		BBPunfix(rs->batCacheid);
+	if (lres)
+		BBPreclaim(lres);
+	if (rres)
+		BBPreclaim(rres);
+	return msg;
+}
+
+#ifdef HAVE_RTREE
+static str
+filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, double double_flag, const bat *ls_id, const bat *rs_id, bit nil_matches, lng *estimate, char (*func) (const GEOSGeometry *, const GEOSGeometry *), const char *name) {
+	(void) lres_id;
+	(void) rres_id;
+	(void) l_id;
+	(void) r_id;
+	(void) double_flag;
+	(void) ls_id;
+	(void) rs_id;
+	(void) nil_matches;
+	(void) estimate;
+	(void) func;
+	(void) name;
+	return MAL_SUCCEED;
+}
+#endif
+
+str
+wkbIntersectsJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate) {
+#ifdef HAVE_RTREE
+	return filterJoinRTree(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,estimate,GEOSIntersects,"geom.wkbIntersectsJoinRTree");
+#else
+	return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,estimate,GEOSIntersects,"geom.wkbIntersectsJoinNoIndex");
+#endif
+}
+
+str
+wkbDWithinJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, double *distance, bit *nil_matches, lng *estimate) {
+	(void) distance;
+#ifdef HAVE_RTREE
+	return filterJoinRTree(lres_id,rres_id,l_id,r_id,*distance,ls_id,rs_id,*nil_matches,estimate,GEOSIntersects,"geom.wkbDWithinJoinRTree");
+#else
+	return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,*distance,ls_id,rs_id,*nil_matches,estimate,GEOSIntersects,"geom.wkbDWithinJoinNoIndex");
+#endif
+}
+
+str
+wkbIntersectsJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate) {
+	return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,estimate,GEOSIntersects,"geom.wkbIntersectsJoinNoIndex");
+}
+
+str
+wkbDWithinJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, double *distance, bit *nil_matches, lng *estimate) {
+	return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,*distance,ls_id,rs_id,*nil_matches,estimate,GEOSIntersects,"geom.wkbDWithinJoinNoIndex");
+}
+
+//MBR bulk function
+//Creates the BAT with MBRs from the input BAT with WKB geometries
+//Also creates the RTree structure and saves it on the WKB input BAT
+str
+wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
+{
+	BAT *outBAT = NULL, *inBAT = NULL;
+	wkb *inWKB = NULL;
+	mbr *outMBR = NULL;
+	BUN p = 0, q = 0;
+	BATiter inBAT_iter;
+
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		throw(MAL, "batgeom.mbr", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("mbr"), BATcount(inBAT), TRANSIENT)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+		throw(MAL, "batgeom.mbr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	inBAT_iter = bat_iterator(inBAT);
+	BATloop(inBAT, p, q) {
+		str err = NULL;
+
+		inWKB = (wkb *) BUNtvar(inBAT_iter, p);
+		if ((err = wkbMBR(&outMBR, &inWKB)) != MAL_SUCCEED) {
+			bat_iterator_end(&inBAT_iter);
+			BBPunfix(inBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
+			return err;
+		}
+		if (BUNappend(outBAT, outMBR, false) != GDK_SUCCEED) {
+			bat_iterator_end(&inBAT_iter);
+			BBPunfix(inBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
+			GDKfree(outMBR);
+			throw(MAL, "batgeom.mbr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		GDKfree(outMBR);
+		outMBR = NULL;
+	}
+	bat_iterator_end(&inBAT_iter);
+	BBPunfix(inBAT->batCacheid);
+
+	*outBAT_id = outBAT->batCacheid;
+
+#ifdef HAVE_RTREE
+	//Build RTree index using the mbr's we just calculated, and save it on the wkb BAT
+	BATrtree(inBAT,outBAT);
+#endif
+	BBPkeepref(outBAT);
+	return MAL_SUCCEED;
+}
+
+/* ST_Transform Bulk function */
+str
+wkbTransform_bat(bat *outBAT_id, bat *inBAT_id, int *srid_src, int *srid_dst, char **proj4_src_str, char **proj4_dst_str)
+{
+	return wkbTransform_bat_cand(outBAT_id,inBAT_id,NULL,srid_src,srid_dst,proj4_src_str,proj4_dst_str);
+}
+
+str
+wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, int *srid_dst, char **proj4_src_str, char **proj4_dst_str)
+{
+#ifndef HAVE_PROJ
+	*outBAT_id = NULL;
+	(void) inBAT_id;
+	(void) s_id;
+	(void) srid_src;
+	(void) srid_dst;
+	(void) proj4_src_str;
+	(void) proj4_dst_str;
+	throw(MAL, "geom.Transform", SQLSTATE(38000) "PROJ library not found");
+#else
+	BAT *outBAT = NULL, *inBAT = NULL, *s = NULL;;
+	BATiter inBAT_iter;
+	str err = MAL_SUCCEED;
+	struct canditer ci;
+
+	PJ *P;
+	GEOSGeom geosGeometry, transformedGeosGeometry;
+	const wkb *geomWKB = NULL;
+	wkb *transformedWKB;
+	int geometryType = -1;
+
+	if (is_int_nil(*srid_src) ||
+	    is_int_nil(*srid_dst) ||
+	    strNil(*proj4_src_str) ||
+	    strNil(*proj4_dst_str)) {
+		//TODO: What do we return here?
+		return MAL_SUCCEED;
+	}
+
+	if (strcmp(*proj4_src_str, "null") == 0)
+		throw(MAL, "batgeom.Transform", SQLSTATE(38000) "Cannot find in spatial_ref_sys srid %d\n", *srid_src);
+	if (strcmp(*proj4_dst_str, "null") == 0)
+		throw(MAL, "batgeom.Transform", SQLSTATE(38000) "Cannot find in spatial_ref_sys srid %d\n", *srid_dst);
+	if (strcmp(*proj4_src_str, *proj4_dst_str) == 0) {
+		//TODO: Return a copy of the input BAT
+		return MAL_SUCCEED;
+	}
+
+	//Create PROJ transformation object with PROJ strings passed as argument
+	P = proj_create_crs_to_crs(PJ_DEFAULT_CTX,
+                               *proj4_src_str,
+                               *proj4_dst_str,
+                               NULL);
+	if (P==0)
+        throw(MAL, "batgeom.Transform", SQLSTATE(38000) "PROJ initialization failed");
+
+	//get the descriptor of the BAT
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		proj_destroy(P);
+		throw(MAL, "batgeom.Transform", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+
+	//create a new for the output BAT
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+		proj_destroy(P);
+		throw(MAL, "batgeom.Transform", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	//check for candidate lists
+	if (s_id && !is_bat_nil(*s_id) && !(s = BATdescriptor(*s_id))) {
+		BBPunfix(inBAT->batCacheid);
+		BBPunfix(outBAT->batCacheid);
+		proj_destroy(P);
+		throw(MAL, "batgeom.Transform", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	canditer_init(&ci, inBAT, s);
+
+	//iterator over the input BAT
+	inBAT_iter = bat_iterator(inBAT);
+	for (BUN i = 0; i < ci.ncand && err == MAL_SUCCEED; i++) {
+		oid p = (canditer_next(&ci) - inBAT->hseqbase);
+		geomWKB = (wkb *) BUNtvar(inBAT_iter, p);
+
+		if (geomWKB == NULL) {
+			bat_iterator_end(&inBAT_iter);
+			BBPunfix(inBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
+			if (s)
+				BBPunfix(s->batCacheid);
+			throw(MAL, "batgeom.Transform", SQLSTATE(38000) "One of the wkb geometries is null");
+		}
+
+		/* get the geosGeometry from the wkb */
+		geosGeometry = wkb2geos(geomWKB);
+		/* get the type of the geometry */
+		geometryType = GEOSGeomTypeId(geosGeometry) + 1;
+
+		//TODO: No collection?
+		switch (geometryType) {
+		case wkbPoint_mdb:
+			err = transformPoint(&transformedGeosGeometry, geosGeometry, P);
+			break;
+		case wkbLineString_mdb:
+			err = transformLineString(&transformedGeosGeometry, geosGeometry, P);
+			break;
+		case wkbLinearRing_mdb:
+			err = transformLinearRing(&transformedGeosGeometry, geosGeometry, P);
+			break;
+		case wkbPolygon_mdb:
+			err = transformPolygon(&transformedGeosGeometry, geosGeometry, P, *srid_dst);
+			break;
+		case wkbMultiPoint_mdb:
+		case wkbMultiLineString_mdb:
+		case wkbMultiPolygon_mdb:
+			err = transformMultiGeometry(&transformedGeosGeometry, geosGeometry, P, *srid_dst, geometryType);
+			break;
+		default:
+			transformedGeosGeometry = NULL;
+			err = createException(MAL, "batgeom.Transform", SQLSTATE(38000) "Geos unknown geometry type");
+		}
+
+		if (err == MAL_SUCCEED && transformedGeosGeometry) {
+			/* set the new srid */
+			GEOSSetSRID(transformedGeosGeometry, *srid_dst);
+			/* get the wkb */
+			if ((transformedWKB = geos2wkb(transformedGeosGeometry)) == NULL)
+				err = createException(MAL, "batgeom.Transform", SQLSTATE(38000) "Geos operation geos2wkb failed");
+			/* destroy the geos geometries */
+			GEOSGeom_destroy(transformedGeosGeometry);
+		}
+		GEOSGeom_destroy(geosGeometry);
+	}
+	proj_destroy(P);
+	bat_iterator_end(&inBAT_iter);
+
+	BBPunfix(inBAT->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	*outBAT_id = outBAT->batCacheid;
+	BBPkeepref(outBAT);
+
+	return MAL_SUCCEED;
+#endif
+}
+
+/* ST_DistanceGeographic Bulk function */
 str
 wkbDistanceGeographic_bat(bat *out_id, bat *a_id, bat *b_id)
 {
@@ -99,10 +738,11 @@ clean:
 		BBPunfix(a->batCacheid);
 	if (b)
 		BBPunfix(b->batCacheid);
+	BBPunfix(out->batCacheid);
 	return msg;
 }
 
-/********** Geo Update **********/
+/********** Geo Update End **********/
 
 /*******************************/
 /********** One input **********/
@@ -1531,59 +2171,6 @@ wkbFilter_bat_geom(bat *BATfiltered_id, bat *BAToriginal_id, wkb **geomWKB)
 }
 
 /* MBR */
-
-/* Creates the BAT with mbrs from the BAT with geometries. */
-str
-wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
-{
-	BAT *outBAT = NULL, *inBAT = NULL;
-	wkb *inWKB = NULL;
-	mbr *outMBR = NULL;
-	BUN p = 0, q = 0;
-	BATiter inBAT_iter;
-
-	//get the descriptor of the BAT
-	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.mbr", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-
-	//create a new BAT for the output
-	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("mbr"), BATcount(inBAT), TRANSIENT)) == NULL) {
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.mbr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	//iterator over the BAT
-	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
-		str err = NULL;
-
-		inWKB = (wkb *) BUNtvar(inBAT_iter, p);
-		if ((err = wkbMBR(&outMBR, &inWKB)) != MAL_SUCCEED) {
-			bat_iterator_end(&inBAT_iter);
-			BBPunfix(inBAT->batCacheid);
-			BBPunfix(outBAT->batCacheid);
-			return err;
-		}
-		if (BUNappend(outBAT, outMBR, false) != GDK_SUCCEED) {
-			bat_iterator_end(&inBAT_iter);
-			BBPunfix(inBAT->batCacheid);
-			BBPunfix(outBAT->batCacheid);
-			GDKfree(outMBR);
-			throw(MAL, "batgeom.mbr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		GDKfree(outMBR);
-		outMBR = NULL;
-	}
-	bat_iterator_end(&inBAT_iter);
-
-	BBPunfix(inBAT->batCacheid);
-	*outBAT_id = outBAT->batCacheid;
-	BBPkeepref(outBAT);
-	return MAL_SUCCEED;
-}
-
-
 str
 wkbCoordinateFromWKB_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 {

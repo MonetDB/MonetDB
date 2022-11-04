@@ -11,7 +11,7 @@ const double earth_radius_meters = 6371009;
 #define M_PI	((double) 3.14159265358979323846)	/* pi */
 #endif
 #ifndef M_PI_2
-#define M_PI_2	((double) 3.14159265358979323846)	/* pi */
+#define M_PI_2      1.57079632679489661923132169163975144   /* pi/2           */
 #endif
 
 /* Converts a longitude value in degrees to radians */
@@ -21,7 +21,6 @@ deg2RadLongitude(double lon_degrees)
 	//Convert
 	double lon = M_PI * lon_degrees / 180.0;
 	//Normalize
-	//TODO PostGIS code, refactor
 	if (lon == -1.0 * M_PI)
 		return M_PI;
 	if (lon == -2.0 * M_PI)
@@ -51,7 +50,6 @@ deg2RadLatitude(double lat_degrees)
 	//Convert
 	double lat = M_PI * lat_degrees / 180.0;
 	//Normalize
-	//TODO PostGIS code, refactor
 	if (lat > 2.0 * M_PI)
 		lat = remainder(lat, 2.0 * M_PI);
 
@@ -91,7 +89,6 @@ rad2DegLongitude(double lon_radians)
 	//Convert
 	double lon = lon_radians * 180.0 / M_PI;
 	//Normalize
-	//TODO PostGIS code, refactor
 	if (lon > 360.0)
 		lon = remainder(lon, 360.0);
 
@@ -122,7 +119,6 @@ rad2DegLatitude(double lat_radians)
 	//Convert
 	double lat = lat_radians * 180.0 / M_PI;
 	//Normalize
-	//TODO PostGIS code, refactor
 	if (lat > 360.0)
 		lat = remainder(lat, 360.0);
 
@@ -171,11 +167,9 @@ geoLinesFromGeom(GEOSGeom geom)
 	const GEOSCoordSequence *gcs = GEOSGeom_getCoordSeq(geom);
 	GeoLines geo;
 	geo.pointCount = GEOSGeomGetNumPoints(geom);
-	//TODO Malloc fail exception?
 	geo.points = GDKmalloc(sizeof(GeoPoint) * geo.pointCount);
 	for (int i = 0; i < geo.pointCount; i++)
 		GEOSCoordSeq_getXY(gcs, i, &geo.points[i].lon, &geo.points[i].lat);
-	//TODO Calculate Boundind Box on initializion?
 	geo.bbox = NULL;
 	return geo;
 }
@@ -217,7 +211,6 @@ geoPointFromLatLon(double lon, double lat)
 static str
 freeGeoLines(GeoLines lines) {
 	str msg = MAL_SUCCEED;
-	//TODO Check if frees are correctly done
 	GDKfree(lines.points);
 	if (lines.bbox)
 		GDKfree(lines.bbox);
@@ -227,7 +220,6 @@ freeGeoLines(GeoLines lines) {
 static str
 freeGeoPolygon(GeoPolygon polygon) {
 	str msg = MAL_SUCCEED;
-	//TODO Check if frees are correctly done
 	msg = freeGeoLines(polygon.exteriorRing);
 	if (polygon.bbox)
 		GDKfree(polygon.bbox);
@@ -248,7 +240,6 @@ cartPointFromXYZ(double x, double y, double z)
 	return cart;
 }
 
-//TODO Move this to first-level functions
 /* Converts Well-Known Bytes into Geos Geometries, if they are not NULL and have the same SRID (used for geographic functions) */
 static str
 wkbGetComplatibleGeometries(wkb **a, wkb **b, GEOSGeom *ga, GEOSGeom *gb)
@@ -264,12 +255,11 @@ wkbGetComplatibleGeometries(wkb **a, wkb **b, GEOSGeom *ga, GEOSGeom *gb)
 	(*gb) = wkb2geos(*b);
 	if ((*ga) == NULL || (*gb) == NULL)
 		err = createException(MAL, "geom.wkbGetComplatibleGeometries", SQLSTATE(38000) "Geos operation wkb2geos failed");
-	//TODO Uncomment this
-	/*else if (GEOSGetSRID((*ga)) != GEOSGetSRID(*gb)) {
+	else if (GEOSGetSRID((*ga)) != GEOSGetSRID(*gb)) {
 		GEOSGeom_destroy(*ga);
 		GEOSGeom_destroy(*gb);
 		err = createException(MAL, "geom.wkbGetComplatibleGeometries", SQLSTATE(38000) "Geometries of different SRID");
-	}*/
+	}
 	return err;
 }
 
@@ -516,20 +506,19 @@ calculatePerpendicularDistance(GeoPoint p_geo, GeoPoint l1_geo, GeoPoint l2_geo)
    The returned distance is the minimum distance between the point and the line vertices
    and the perpendicular projection of the point in each line segment.  */
 static double
-geoDistancePointLine(GeoPoint point, GeoLines lines)
+geoDistancePointLine(GeoPoint point, GeoLines lines, double distance_min_limit)
 {
 	double distancePoint, distancePerpendicular, min_distance = INT_MAX;
 	for (int i = 0; i < lines.pointCount-1; i++) {
 		distancePoint = geoDistancePointPoint(point, lines.points[i]);
 		distancePerpendicular = calculatePerpendicularDistance(point,lines.points[i],lines.points[i+1]);
-		//TODO Is this the best way of comparing these three distances?
 		if (distancePoint < min_distance)
 			min_distance = distancePoint;
 		if (distancePerpendicular < min_distance)
 			min_distance = distancePerpendicular;
 		//Shortcut, if the geometries are already at their minimum distance
-		if (min_distance == 0)
-			return 0;
+		if (min_distance <= distance_min_limit)
+			return min_distance;
 	}
 	distancePoint = geoDistancePointPoint(point, lines.points[lines.pointCount-1]);
 	return distancePoint < min_distance ? distancePoint : min_distance;
@@ -537,16 +526,16 @@ geoDistancePointLine(GeoPoint point, GeoLines lines)
 
 /* Distance between two Lines. */
 static double
-geoDistanceLineLine(GeoLines line1, GeoLines line2)
+geoDistanceLineLine(GeoLines line1, GeoLines line2, double distance_min_limit)
 {
 	double distance, min_distance = INT_MAX;
 	for (int i = 0; i < line1.pointCount; i++) {
-		distance = geoDistancePointLine(line1.points[i], line2);
+		distance = geoDistancePointLine(line1.points[i], line2, distance_min_limit);
 		if (distance < min_distance)
 			min_distance = distance;
 		//Shortcut, if the geometries are already at their minimum distance
-		if (min_distance == 0)
-			return 0;
+		if (min_distance <= distance_min_limit)
+			return min_distance;
 	}
 	for (int i = 0; i < line2.pointCount; i++) {
 		for (int j = 0; j < line1.pointCount - 1; j++) {
@@ -554,14 +543,13 @@ geoDistanceLineLine(GeoLines line1, GeoLines line2)
 			if (distance < min_distance)
 				min_distance = distance;
 			//Shortcut, if the geometries are already at their minimum distance
-			if (min_distance == 0)
-				return 0;
+			if (min_distance <= distance_min_limit)
+				return min_distance;
 		}
 	}
 	return min_distance;
 }
 
-//TODO Implement intersection ourselves so we don't use GEOS?
 /* Checks if a Point is within a Polygon */
 static bool
 pointWithinPolygon(GeoPolygon polygon, GeoPoint point)
@@ -627,7 +615,7 @@ pointWithinPolygon(GeoPolygon polygon, GeoPoint point)
 
 /* Distance between Point and Polygon.*/
 static double
-geoDistancePointPolygon(GeoPoint point, GeoPolygon polygon)
+geoDistancePointPolygon(GeoPoint point, GeoPolygon polygon, double distance_min_limit)
 {
 	//Check if point is in polygon
 	if (pointWithinPolygon(polygon, point))
@@ -636,13 +624,13 @@ geoDistancePointPolygon(GeoPoint point, GeoPolygon polygon)
 	//Calculate distance from Point to the exterior and interior rings of the polygon
 	double distance, min_distance = INT_MAX;
 	//First, calculate distance to the exterior ring
-	min_distance = geoDistancePointLine(point, polygon.exteriorRing);
+	min_distance = geoDistancePointLine(point, polygon.exteriorRing, distance_min_limit);
 	//Then, calculate distance to the interior rings
 	for (int i = 0; i < polygon.interiorRingsCount; i++) {
 		//Shortcut, if the geometries are already at their minimum distance
-		if (min_distance == 0)
-			return 0;
-		distance = geoDistancePointLine(point, polygon.interiorRings[i]);
+		if (min_distance <= distance_min_limit)
+			return min_distance;
+		distance = geoDistancePointLine(point, polygon.interiorRings[i], distance_min_limit);
 		if (distance < min_distance)
 			min_distance = distance;
 	}
@@ -651,16 +639,16 @@ geoDistancePointPolygon(GeoPoint point, GeoPolygon polygon)
 
 /* Distance between Line and Polygon. */
 static double
-geoDistanceLinePolygon(GeoLines line, GeoPolygon polygon)
+geoDistanceLinePolygon(GeoLines line, GeoPolygon polygon, double distance_min_limit)
 {
 	double distance, min_distance = INT_MAX;
 	//Calculate distance to all start vertices of the line
 	for (int i = 0; i < line.pointCount; i++) {
-		distance = geoDistancePointPolygon(line.points[i], polygon);
+		distance = geoDistancePointPolygon(line.points[i], polygon, distance_min_limit);
 
 		//Short-cut in case the point is within the polygon
-		if (distance == 0)
-			return 0;
+		if (distance <= distance_min_limit)
+			return distance;
 
 		if (distance < min_distance)
 			min_distance = distance;
@@ -670,21 +658,21 @@ geoDistanceLinePolygon(GeoLines line, GeoPolygon polygon)
 
 /* Distance between two Polygons. */
 static double
-geoDistancePolygonPolygon(GeoPolygon polygon1, GeoPolygon polygon2)
+geoDistancePolygonPolygon(GeoPolygon polygon1, GeoPolygon polygon2, double distance_min_limit)
 {
 	double distance1, distance2;
 	//Calculate the distance between the exterior ring of polygon1 and all segments of polygon2 (including the interior rings)
-	distance1 = geoDistanceLinePolygon(polygon1.exteriorRing, polygon2);
+	distance1 = geoDistanceLinePolygon(polygon1.exteriorRing, polygon2, distance_min_limit);
 	//Shortcut, if the geometries are already at their minimum distance
-	if (distance1 == 0)
-		return 0;
-	distance2 = geoDistanceLinePolygon(polygon2.exteriorRing, polygon1);
+	if (distance1 <= distance_min_limit)
+		return distance1;
+	distance2 = geoDistanceLinePolygon(polygon2.exteriorRing, polygon1, distance_min_limit);
 	return distance1 < distance2 ? distance1 : distance2;
 }
 
 /* Distance between two (non-collection) geometries. */
 static double
-geoDistanceSingle(GEOSGeom aGeom, GEOSGeom bGeom)
+geoDistanceSingle(GEOSGeom aGeom, GEOSGeom bGeom, double distance_min_limit)
 {
 	int dimA, dimB;
 	double distance = INT_MAX;
@@ -699,60 +687,63 @@ geoDistanceSingle(GEOSGeom aGeom, GEOSGeom bGeom)
 		/* Point and Line/LinearRing */
 		GeoPoint a = geoPointFromGeom(aGeom);
 		GeoLines b = geoLinesFromGeom(bGeom);
-		distance = geoDistancePointLine(a, b);
+		distance = geoDistancePointLine(a, b, distance_min_limit);
 		freeGeoLines(b);
 	} else if (dimA == 1 && dimB == 0) {
 		/* Line/LinearRing and Point */
 		GeoLines a = geoLinesFromGeom(aGeom);
 		GeoPoint b = geoPointFromGeom(bGeom);
-		distance = geoDistancePointLine(b, a);
+		distance = geoDistancePointLine(b, a, distance_min_limit);
 		freeGeoLines(a);
 	} else if (dimA == 1 && dimB == 1) {
 		/* Line/LinearRing and Line/LinearRing */
 		GeoLines a = geoLinesFromGeom(aGeom);
 		GeoLines b = geoLinesFromGeom(bGeom);
-		distance = geoDistanceLineLine(a, b);
+		distance = geoDistanceLineLine(a, b, distance_min_limit);
 		freeGeoLines(a);
 		freeGeoLines(b);
 	} else if (dimA == 0 && dimB == 2) {
 		/* Point and Polygon */
 		GeoPoint a = geoPointFromGeom(aGeom);
 		GeoPolygon b = geoPolygonFromGeom(bGeom);
-		distance = geoDistancePointPolygon(a, b);
+		distance = geoDistancePointPolygon(a, b, distance_min_limit);
 		freeGeoPolygon(b);
 	} else if (dimA == 2 && dimB == 0) {
 		/* Polygon and Point */
 		GeoPolygon a = geoPolygonFromGeom(aGeom);
 		GeoPoint b = geoPointFromGeom(bGeom);
-		distance = geoDistancePointPolygon(b, a);
+		distance = geoDistancePointPolygon(b, a, distance_min_limit);
 		freeGeoPolygon(a);
 	} else if (dimA == 1 && dimB == 2) {
 		/* Line/LinearRing and Polygon */
 		GeoLines a = geoLinesFromGeom(aGeom);
 		GeoPolygon b = geoPolygonFromGeom(bGeom);
-		distance = geoDistanceLinePolygon(a, b);
+		distance = geoDistanceLinePolygon(a, b, distance_min_limit);
 		freeGeoLines(a);
 		freeGeoPolygon(b);
 	} else if (dimA == 2 && dimB == 1) {
 		/* Polygon and Line/LinearRing */
 		GeoPolygon a = geoPolygonFromGeom(aGeom);
 		GeoLines b = geoLinesFromGeom(bGeom);
-		distance = geoDistanceLinePolygon(b, a);
+		distance = geoDistanceLinePolygon(b, a, distance_min_limit);
 		freeGeoPolygon(a);
 		freeGeoLines(b);
 	} else if (dimA == 2 && dimB == 2) {
 		/* Polygon and Polygon */
 		GeoPolygon a = geoPolygonFromGeom(aGeom);
 		GeoPolygon b = geoPolygonFromGeom(bGeom);
-		distance = geoDistancePolygonPolygon(a, b);
+		distance = geoDistancePolygonPolygon(a, b, distance_min_limit);
 		freeGeoPolygon(a);
 		freeGeoPolygon(b);
 	}
 	return distance;
 }
 
+//The distance_min_limit argument is used for DWithin and Intersects.
+//If we get to the minimum distance for the predicate, return immediatly
+//It is equal to 0 if the operation is Distance
 static double
-geoDistanceInternal(GEOSGeom a, GEOSGeom b)
+geoDistanceInternal(GEOSGeom a, GEOSGeom b, double distance_min_limit)
 {
 	int numGeomsA = GEOSGetNumGeometries(a), numGeomsB = GEOSGetNumGeometries(b);
 	double distance, min_distance = INT_MAX;
@@ -761,10 +752,10 @@ geoDistanceInternal(GEOSGeom a, GEOSGeom b)
 		geo1 = (GEOSGeometry *)GEOSGetGeometryN((const GEOSGeometry *)a, i);
 		for (int j = 0; j < numGeomsB; j++) {
 			geo2 = (GEOSGeometry *)GEOSGetGeometryN((const GEOSGeometry *)b, j);
-			distance = geoDistanceSingle(geo1, geo2);
-			//Shortcut, if the geometries are already at their minimum distance
-			if (distance == 0)
-				return 0;
+			distance = geoDistanceSingle(geo1, geo2, distance_min_limit);
+			//Shortcut, if the geometries are already at their minimum distance (0 in the case of normal Distance)
+			if (distance <= distance_min_limit)
+				return distance;
 			if (distance < min_distance)
 				min_distance = distance;
 		}
@@ -784,7 +775,7 @@ wkbDistanceGeographic(dbl *out, wkb **a, wkb **b)
 	GEOSGeom ga, gb;
 	err = wkbGetComplatibleGeometries(a, b, &ga, &gb);
 	if (ga && gb) {
-		(*out) = geoDistanceInternal(ga, gb);
+		(*out) = geoDistanceInternal(ga, gb, 0);
 	}
 	GEOSGeom_destroy(ga);
 	GEOSGeom_destroy(gb);
@@ -804,7 +795,7 @@ wkbDWithinGeographic(bit *out, wkb **a, wkb **b, dbl *d)
 	double distance;
 	err = wkbGetComplatibleGeometries(a, b, &ga, &gb);
 	if (ga && gb) {
-		distance = geoDistanceInternal(ga, gb);
+		distance = geoDistanceInternal(ga, gb, *d);
 		(*out) = (distance <= (*d));
 	}
 	GEOSGeom_destroy(ga);
@@ -825,7 +816,7 @@ wkbIntersectsGeographic(bit *out, wkb **a, wkb **b)
 	double distance;
 	err = wkbGetComplatibleGeometries(a, b, &ga, &gb);
 	if (ga && gb) {
-		distance = geoDistanceInternal(ga, gb);
+		distance = geoDistanceInternal(ga, gb, 0);
 		(*out) = (distance == 0);
 	}
 	GEOSGeom_destroy(ga);
@@ -942,7 +933,7 @@ wkbCoversGeographic(bit *out, wkb **a, wkb **b)
 
 static inline bit
 geosDistanceWithin (GEOSGeom geom1, GEOSGeom geom2, dbl distance_within) {
-	dbl distance = geoDistanceInternal(geom1, geom2);
+	dbl distance = geoDistanceInternal(geom1, geom2, distance_within);
 	return distance <= distance_within;
 }
 
@@ -1103,6 +1094,7 @@ filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const
 				else
 					continue;
 			}
+			//TODO Do we need to do this check for every element?
 			if (GEOSGetSRID(l_geom) != GEOSGetSRID(r_geom)) {
 				msg = createException(MAL, name, SQLSTATE(38000) "Geometries of different SRID");
 				bat_iterator_end(&l_iter);
@@ -1172,7 +1164,6 @@ free:
 	return msg;
 }
 
-//select st_distancegeographic(q1.geom,q2.geom) from brittany_ports as q1 join wpi_ports as q2 on [q1.geom] st_dwithingeographic [q2.geom,5000];
 str
 wkbDWithinGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *d_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate, bit *anti) {
 	double distance_within = 0;
@@ -1190,19 +1181,16 @@ wkbDWithinGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat 
 	return filterJoinGeomGeomDoubleToBit(lres_id,rres_id,l_id,r_id,distance_within,ls_id,rs_id,*nil_matches,estimate,*anti,geosDistanceWithin,"geom.wkbDWithinGeographicJoin");
 }
 
-//select gml_id,st_distancegeographic(st_setsrid(st_makepoint(-4.50,48.32),4326),q1.geom) from brittany_ports as q1 where [q1.geom] st_dwithingeographic [st_setsrid(st_makepoint(-4.50,48.32),4326),5000];
 str
 wkbDWithinGeographicSelect(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, dbl *distance_within, bit *anti) {
 	return filterSelectGeomGeomDoubleToBit(outid,bid,sid,*wkb_const,*distance_within,*anti,geosDistanceWithin,"geom.wkbDWithinGeographicSelect");
 }
 
-//select q1.gml_id,q2.gml_id,st_distancegeographic(q1.geom,q2.geom) from brittany_ports as q1 join brittany_ports as q2 on [q1.geom] ST_IntersectsGeographic [q2.geom];
 str
 wkbIntersectsGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate, bit *anti) {
 	return filterJoinGeomGeomDoubleToBit(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,estimate,*anti,geosDistanceWithin,"geom.wkbIntersectsGeographicJoin");
 }
 
-//select gml_id,st_distancegeographic(st_setsrid(st_makepoint(-1.7717988686592332,48.602742696725414),4326),q1.geom) from brittany_ports as q1 where [q1.geom] ST_IntersectsGeographic [st_setsrid(st_makepoint(-1.7717988686592332,48.602742696725414),4326)];
 str
 wkbIntersectsGeographicSelect(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti) {
 	return filterSelectGeomGeomDoubleToBit(outid,bid,sid,*wkb_const,0,*anti,geosDistanceWithin,"geom.wkbIntersectsGeographicSelect");

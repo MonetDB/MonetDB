@@ -47,8 +47,6 @@ GEOSGeom_getCollectionType (int GEOSGeom_type) {
 }
 
 /* Group By operation. Joins geometries together in the same group into a MultiGeometry */
-//TODO Check if the SRID is consistent within a group (right now we only use the first SRID)
-//TODO The number of candidates is getting wrong here
 str
 wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
 {
@@ -58,6 +56,8 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	const oid *gids = NULL;
 	str msg = MAL_SUCCEED;
 	const char *err;
+	//SRID for collection
+	int srid = 0;
 
 	oid min, max;
 	BUN ngrp;
@@ -94,7 +94,6 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 		b = sortedinput;
 		g = sortedgroups;
 		BBPunfix(sortedorder->batCacheid);
-
 	}
 	else {
 		BBPunfix(sortedgroups->batCacheid);
@@ -116,15 +115,14 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	//All unions for output BAT
 	if ((unions = GDKzalloc(sizeof(wkb *) * ngrp)) == NULL) {
 		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		BBPunfix(out->batCacheid);
+		BBPreclaim(out);
 		goto free;
 	}
 
 	//Intermediate array for all the geometries in a group
-	//TODO Change allocation size
 	if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ci.ncand)) == NULL) {
 		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		BBPunfix(out->batCacheid);
+		BBPreclaim(out);
 		if (unions)
 			GDKfree(unions);
 		goto free;
@@ -140,21 +138,19 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 		oid grp = gids ? gids[p] : g ? min + (oid)p : 0;
 		wkb *inWKB = (wkb *)BUNtvar(bi, p);
 		GEOSGeom inGEOM = wkb2geos(inWKB);
-		//int srid = 0;
+
 
 		if (grp != lastGrp) {
 			if (lastGrp != (oid)-1) {
 				//Finish the previous group, move on to the next one
 				collection = GEOSGeom_createCollection(geomCollectionType, unionGroup, (unsigned int) geomCount);
-				//TODO Set SRID for collection
+				GEOSSetSRID(collection,srid);
 				//Save collection to unions array as wkb
 				unions[lastGrp] = geos2wkb(collection);
 
-				//TODO Frees for the previous group (am I missing the GEOSGeom_destroy call for unionGroup[i])?
 				GEOSGeom_destroy(collection);
 				GDKfree(unionGroup);
 
-				//TODO Change allocation size
 				if ((unionGroup = GDKzalloc(sizeof(GEOSGeom) * ci.ncand)) == NULL) {
 					msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					//Frees
@@ -176,7 +172,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 			geomCount = 0;
 			lastGrp = grp;
 			geomCollectionType = GEOSGeom_getCollectionType(GEOSGeomTypeId(inGEOM));
-			//srid = GEOSGetSRID(inGEOM);
+			srid = GEOSGetSRID(inGEOM);
 		}
 		unionGroup[geomCount] = inGEOM;
 		geomCount += 1;
@@ -185,13 +181,13 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	}
 	//Last collection
 	collection = GEOSGeom_createCollection(geomCollectionType, unionGroup, (unsigned int) geomCount);
+	GEOSSetSRID(collection,srid);
 	unions[lastGrp] = geos2wkb(collection);
 
 	GEOSGeom_destroy(collection);
 	GDKfree(unionGroup);
 
 	if (BUNappendmulti(out, unions, ngrp, false) != GDK_SUCCEED) {
-		//TODO Free out BAT
 		msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
 		bat_iterator_end(&bi);
 		if (unions) {
@@ -222,6 +218,7 @@ free:
 		BBPunfix(g->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	BBPreclaim(out);
 	return msg;
 }
 
@@ -231,7 +228,6 @@ wkbCollectAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *ei
 	return wkbCollectAggrSubGroupedCand(out, bid, gid, eid, NULL, skip_nils);
 }
 
-//TODO Use this for the grouped version, just need to separate the groups and then call this one
 str
 wkbCollectAggr (wkb **out, const bat *bid) {
 	str msg = MAL_SUCCEED;
@@ -253,12 +249,15 @@ wkbCollectAggr (wkb **out, const bat *bid) {
 		BBPunfix(b->batCacheid);
 		return msg;
 	}
+	int srid = -1;
 
 	BATiter bi = bat_iterator(b);
 	for (BUN i = 0; i < count; i++) {
 		oid p = i + b->hseqbase;
 		wkb *inWKB = (wkb *)BUNtvar(bi, p);
 		unionGroup[i] = wkb2geos(inWKB);
+		if (srid == -1)
+			srid = GEOSGetSRID(unionGroup[i]);
 
 		//Set collection type on first geometry
 		if (geomCollectionType == -1)
@@ -268,6 +267,7 @@ wkbCollectAggr (wkb **out, const bat *bid) {
 			geomCollectionType = GEOS_GEOMETRYCOLLECTION;
 	}
 	collection = GEOSGeom_createCollection(geomCollectionType, unionGroup, (unsigned int) count);
+	GEOSSetSRID(collection,srid);
 	//Result
 	(*out) = geos2wkb(collection);
 	if (*out == NULL)
@@ -369,7 +369,7 @@ transformCoordSeq(int idx, int coordinatesNum, PJ *P, const GEOSCoordSequence *g
 	return MAL_SUCCEED;
 }
 
-static str
+str
 transformPoint(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P)
 {
 	int coordinatesNum = 0;
@@ -409,7 +409,7 @@ transformPoint(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeome
 	return MAL_SUCCEED;
 }
 
-static str
+str
 transformLine(GEOSCoordSeq *gcs_new, const GEOSGeometry *geosGeometry, PJ *P)
 {
 	int coordinatesNum = 0;
@@ -447,7 +447,7 @@ transformLine(GEOSCoordSeq *gcs_new, const GEOSGeometry *geosGeometry, PJ *P)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 transformLineString(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P)
 {
 	GEOSCoordSeq coordSeq;
@@ -469,7 +469,7 @@ transformLineString(GEOSGeometry **transformedGeometry, const GEOSGeometry *geos
 	return ret;
 }
 
-static str
+str
 transformLinearRing(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P)
 {
 	GEOSCoordSeq coordSeq = NULL;
@@ -491,7 +491,7 @@ transformLinearRing(GEOSGeometry **transformedGeometry, const GEOSGeometry *geos
 	return ret;
 }
 
-static str
+str
 transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P, int srid)
 {
 	const GEOSGeometry *exteriorRingGeometry;
@@ -556,7 +556,7 @@ transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeo
 	return ret;
 }
 
-static str
+str
 transformMultiGeometry(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P, int srid, int geometryType)
 {
 	int geometriesNum, subGeometryType, i;
@@ -3324,7 +3324,6 @@ wkbMakeLine(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
 		GEOSCoordSeq_destroy(outCoordSeq);
 	GEOSGeom_destroy(geom1Geometry);
 	GEOSGeom_destroy(geom2Geometry);
-
 	return err;
 }
 
@@ -3512,14 +3511,14 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 	//Create an array of WKB to hold the results of the MakeLine
 	if ((lines = GDKzalloc(sizeof(wkb *) * ngrp)) == NULL) {
 		msg = createException(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		BBPunfix(out->batCacheid);
+		BBPreclaim(out);
 		goto free;
 	}
 
 	//Create an array of WKB to hold the points to be made into a line (for one group at a time)
 	if ((lineGroup = GDKzalloc(sizeof(wkb*) * ci.ncand)) == NULL) {
 		msg = createException(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		BBPunfix(out->batCacheid);
+		BBPreclaim(out);
 		goto free;
 	}
 
@@ -3545,7 +3544,6 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 	msg = wkbMakeLineAggrArray(&lines[lastGrp], lineGroup, position);
 
 	if (BUNappendmulti(out, lines, ngrp, false) != GDK_SUCCEED) {
-		//TODO Free out BAT
 		msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
 		bat_iterator_end(&bi);
 		goto free;
@@ -3568,6 +3566,7 @@ free:
 		BBPunfix(g->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	BBPreclaim(out);
 	return msg;
 }
 
@@ -5513,11 +5512,28 @@ static mel_func geom_init_funcs[] = {
  command("geom", "IntersectsGeographicselect", wkbIntersectsGeographicSelect, false, "TODO", args(1, 5, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("anti",bit))),
  command("geom", "IntersectsGeographicjoin", wkbIntersectsGeographicJoin, false, "TODO", args(2, 9, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
 
+ command("rtree", "Intersects", wkbIntersects, false, "Returns true if these Geometries 'spatially intersect in 2D'", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
+ command("rtree", "Intersectsselect", wkbIntersectsSelectRTree, false, "TODO", args(1, 5, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("anti",bit))),
+ command("rtree", "Intersectsjoin", wkbIntersectsJoinRTree, false, "TODO", args(2, 8, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
+
+ command("rtree", "DWithin", wkbDWithin, false, "Returns true if these Geometries 'spatially intersect in 2D'", args(1,4, arg("",bit),arg("a",wkb),arg("b",wkb),arg("dst",dbl))),
+ command("rtree", "DWithinselect", wkbDWithinSelectRTree, false, "TODO", args(1, 6, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("dst",dbl), arg("anti",bit))),
+ command("rtree", "DWithinjoin", wkbDWithinJoinRTree, false, "TODO", args(2, 9, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("sl",oid),batarg("sr",oid), arg("dst",dbl),arg("nil_matches",bit),arg("estimate",lng))),
+
+ command("geom", "Intersects_noindex", wkbIntersects, false, "Returns true if these Geometries 'spatially intersect in 2D'", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
+ command("geom", "Intersects_noindexselect", wkbIntersectsSelectNoIndex, false, "TODO", args(1, 5, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("anti",bit))),
+ command("geom", "Intersects_noindexjoin", wkbIntersectsJoinNoIndex, false, "TODO", args(2, 8, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
+
+ command("geom", "DWithin_noindex", wkbDWithin, false, "Returns true if the two geometries are within the specifies distance from each other", args(1,4, arg("",bit),arg("a",wkb),arg("b",wkb),arg("dst",dbl))),
+ command("geom", "DWithinselect_noindex", wkbDWithinSelectRTree, false, "TODO", args(1, 6, batarg("", oid), batarg("b", wkb), batarg("s", oid), arg("c", wkb), arg("dst",dbl), arg("anti",bit))),
+ command("geom", "DWithinjoin_noindex", wkbDWithinJoinRTree, false, "TODO", args(2, 9, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("sl",oid),batarg("sr",oid), arg("dst",dbl),arg("nil_matches",bit),arg("estimate",lng))),
+
+ command("geom", "IntersectsMBR", mbrIntersects, false, "TODO", args(1,3, arg("",bit),arg("a",mbr),arg("b",mbr))),
+
  command("aggr", "Collect", wkbCollectAggr, false, "TODO", args(1, 2, arg("", wkb), batarg("val", wkb))),
  command("aggr", "subCollect", wkbCollectAggrSubGrouped, false, "TODO", args(1, 5, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batarg("e", oid), arg("skip_nils", bit))),
  command("aggr", "subCollect", wkbCollectAggrSubGroupedCand, false, "TODO", args(1, 6, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batargany("e", 1), batarg("g", oid), arg("skip_nils", bit))),
 
- //TODO: See if we can remove (used in SQL level on 39_spatial_ref_sys.sql)
  command("geom", "hasZ", geoHasZ, false, "returns 1 if the geometry has z coordinate", args(1,2, arg("",int),arg("flags",int))),
  command("geom", "hasM", geoHasM, false, "returns 1 if the geometry has m coordinate", args(1,2, arg("",int),arg("flags",int))),
  command("geom", "getType", geoGetType, false, "returns the str representation of the geometry type", args(1,3, arg("",str),arg("flags",int),arg("format",int))),
@@ -5567,14 +5583,12 @@ static mel_func geom_init_funcs[] = {
  command("geom", "Crosses", wkbCrosses, false, "Returns TRUE if the supplied geometries have some, but not all, interior points in common.", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "Disjoint", wkbDisjoint, false, "Returns true if these Geometries are 'spatially disjoint'", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "Equals", wkbEquals, false, "Returns true if the given geometries represent the same geometry. Directionality is ignored.", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
- command("geom", "Intersects", wkbIntersects, false, "Returns true if these Geometries 'spatially intersect in 2D'", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "Overlaps", wkbOverlaps, false, "Returns TRUE if the Geometries intersect but are not completely contained by each other.", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "Relate", wkbRelate, false, "Returns true if the Geometry a 'spatially related' to Geometry b, by testing for intersection between the Interior, Boundary and Exterior of the two geometries as specified by the values in the intersectionPatternMatrix.", args(1,4, arg("",bit),arg("a",wkb),arg("b",wkb),arg("intersection_matrix_pattern",str))),
  command("geom", "Touches", wkbTouches, false, "Returns TRUE if the geometries have at least one point in common, but their interiors do not intersect.", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "Within", wkbWithin, false, "Returns TRUE if the geometry A is completely inside geometry B", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "Covers", wkbCovers, false, "Returns TRUE if no point of geometry B is outside geometry A", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
  command("geom", "CoveredBy", wkbCoveredBy, false, "Returns TRUE if no point of geometry A is outside geometry B", args(1,3, arg("",bit),arg("a",wkb),arg("b",wkb))),
- command("geom", "DWithin", wkbDWithin, false, "Returns true if the two geometries are within the specifies distance from each other", args(1,4, arg("",bit),arg("a",wkb),arg("b",wkb),arg("dst",dbl))),
  command("geom", "DWithin2", wkbDWithinMbr, false, "" /* <<< desc TODO */, args(1,6, arg("",bit),arg("a",wkb),arg("b",wkb),arg("a_mbr",mbr),arg("b_mbr",mbr),arg("dst",dbl))),
  command("geom", "GeometryN", wkbGeometryN, false, "Returns the 1-based Nth geometry if the geometry is a GEOMETRYCOLLECTION, (MULTI)POINT, (MULTI)LINESTRING, MULTICURVE or (MULTI)POLYGON. Otherwise, return NULL", args(1,3, arg("",wkb),arg("g",wkb),arg("n",int))),
  command("geom", "NumGeometries", wkbNumGeometries, false, "Returns the number of geometries", args(1,2, arg("",int),arg("g",wkb))),
@@ -5655,6 +5669,7 @@ static mel_func geom_init_funcs[] = {
  command("batgeom", "mbr", wkbMBR_bat, false, "Creates the mbr for the given wkb.", args(1,2, batarg("",mbr),batarg("",wkb))),
  command("batgeom", "coordinateFromWKB", wkbCoordinateFromWKB_bat, false, "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided geometry", args(1,3, batarg("",dbl),batarg("",wkb),arg("",int))),
  command("batgeom", "coordinateFromMBR", wkbCoordinateFromMBR_bat, false, "returns xmin (=1), ymin (=2), xmax (=3) or ymax(=4) of the provided mbr", args(1,3, batarg("",dbl),batarg("",mbr),arg("",int))),
+ command("batgeom", "Transform", wkbTransform_bat, false, "Transforms a bat of geometries from one srid to another", args(1,6, batarg("",wkb),batarg("g",wkb),arg("srid_src",int),arg("srid_dst",int),arg("proj_src",str),arg("proj_dest",str))),
  command("calc", "mbr", mbrFromString, false, "", args(1,2, arg("",mbr),arg("v",str))),
  command("calc", "mbr", mbrFromMBR, false, "", args(1,2, arg("",mbr),arg("v",mbr))),
  command("calc", "wkb", wkbFromWKB, false, "It is called when adding a new geometry column to an existing table", args(1,2, arg("",wkb),arg("v",wkb))),
