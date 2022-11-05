@@ -1466,13 +1466,13 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 								unsigned int digits = (lt->digits > rt->digits) ? lt->digits : rt->digits;
 
 #ifdef HAVE_HGE
-								if (res->type->radix == 10 && digits > 39)
-									digits = 39;
+								if (res->type->radix == 10 && digits > 38)
+									digits = 38;
 								if (res->type->radix == 2 && digits > 128)
 									digits = 128;
 #else
-								if (res->type->radix == 10 && digits > 19)
-									digits = 19;
+								if (res->type->radix == 10 && digits > 18)
+									digits = 18;
 								if (res->type->radix == 2 && digits > 64)
 									digits = 64;
 #endif
