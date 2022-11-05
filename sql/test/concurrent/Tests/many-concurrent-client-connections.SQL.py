@@ -1,5 +1,10 @@
 import os, pymonetdb
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+
+if os.uname().sysname == 'Linux':
+    executor = ProcessPoolExecutor
+else:
+    executor = ThreadPoolExecutor
 
 h   = os.getenv('MAPIHOST')
 p   = int(os.getenv('MAPIPORT'))
@@ -16,5 +21,5 @@ def client(_):
         conn.close()
 
 
-with ProcessPoolExecutor(nr_clients) as pool:
+with executor(nr_clients) as pool:
     pool.map(client, range(nr_clients))

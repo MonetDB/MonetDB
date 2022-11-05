@@ -2855,8 +2855,10 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 							mnstr_printf(toConsole, "none\n");
 							break;
 						}
-					} else
+					} else {
 						setFormatter(line);
+						mapi_set_size_header(mid, strcmp(line, "raw") == 0);
+					}
 					continue;
 				case 't':
 					while (my_isspace(line[length - 1]))
@@ -3569,12 +3571,15 @@ main(int argc, char **argv)
 	mapi_trace(mid, trace);
 	if (output) {
 		setFormatter(output);
+		mapi_set_size_header(mid, strcmp(output, "raw") == 0);
 		free(output);
 	} else {
 		if (mode == SQL) {
 			setFormatter("sql");
+			mapi_set_size_header(mid, false);
 		} else {
 			setFormatter("raw");
+			mapi_set_size_header(mid, true);
 		}
 	}
 	/* give the user a welcome message with some general info */
