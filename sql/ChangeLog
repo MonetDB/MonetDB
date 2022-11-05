@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Nov  3 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- System views sys.dependency_tables_on_functions and
+  dependency_views_on_functions have been extended with column: function_id.
+
 * Fri Sep 30 2022 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
 - When loading data using COPY BINARY INTO, apply default values instead of just
   inserting NULLs.
