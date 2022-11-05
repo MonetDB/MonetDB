@@ -5407,12 +5407,56 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 							" INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');\n"
 							" RETURN sys.dump_statements;\n"
 							"END;\n"
- 							"update sys.functions set system = true where system <> true and name in ('sq', 'get_remote_table_expressions', 'prepare_esc') and schema_id = 2000 and type = %d;\n"
- 							"update sys._tables set system = true where system <> true and name in ('describe_tables', 'dump_create_users', 'dump_partition_tables', 'dump_comments', 'dump_tables') and schema_id = 2000;\n"
+							"update sys.functions set system = true where system <> true and name in ('sq', 'get_remote_table_expressions', 'prepare_esc') and schema_id = 2000 and type = %d;\n"
+							"update sys._tables set system = true where system <> true and name in ('describe_tables', 'dump_create_users', 'dump_partition_tables', 'dump_comments', 'dump_tables') and schema_id = 2000;\n"
 							"update sys.functions set system = true where system <> true and name = 'dump_table_data' and schema_id = 2000 and type = %d;\n"
 							"update sys.functions set system = true where system <> true and name = 'dump_database' and schema_id = 2000 and type = %d;\n"
 							"GRANT SELECT ON sys.describe_tables TO PUBLIC;\n",
 							F_FUNC, F_PROC, F_UNION);
+			assert(pos < bufsize);
+			printf("Running database upgrade commands:\n%s\n", buf);
+			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+		}
+		res_table_destroy(output);
+		output = NULL;
+	}
+
+	/* Add new column 'function_id' to views
+	 * sys.dependency_tables_on_functions and dependency_views_on_functions */
+	pos = snprintf(buf, bufsize,
+				   "SELECT id FROM sys._columns where name = 'function_id' "
+				   "and table_id in (select id FROM sys._tables where system "
+				   "and name in ('dependency_tables_on_functions','dependency_views_on_functions') "
+				   "and schema_id = 2000);\n");
+	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)) == NULL) {
+		if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) != 2) {
+			sql_table *t;
+			if ((t = mvc_bind_table(sql, s, "dependency_tables_on_functions")) != NULL)
+				t->system = 0;
+			if ((t = mvc_bind_table(sql, s, "dependency_views_on_functions")) != NULL)
+				t->system = 0;
+			pos = 0;
+			pos += snprintf(buf + pos, bufsize - pos,
+							"drop view if exists sys.dependency_tables_on_functions;\n"
+							"drop view if exists sys.dependency_views_on_functions;\n"
+							"CREATE VIEW sys.dependency_tables_on_functions AS\n"
+							"SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name,"
+							" f.id AS function_id, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type\n"
+							"  FROM sys.functions AS f, sys.tables AS t, sys.dependencies AS dep\n"
+							" WHERE t.id = dep.id AND f.id = dep.depend_id\n"
+							"   AND dep.depend_type = 7 AND f.type <> 2 AND t.type NOT IN (1, 11)\n"
+							" ORDER BY t.name, t.schema_id, f.name, f.id;\n"
+							"GRANT SELECT ON sys.dependency_tables_on_functions TO PUBLIC;\n"
+							"CREATE VIEW sys.dependency_views_on_functions AS\n"
+							"SELECT v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name,"
+							" f.id AS function_id, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type\n"
+							"  FROM sys.functions AS f, sys.tables AS v, sys.dependencies AS dep\n"
+							" WHERE v.id = dep.id AND f.id = dep.depend_id\n"
+							"   AND dep.depend_type = 7 AND f.type <> 2 AND v.type IN (1, 11)\n"
+							" ORDER BY v.name, v.schema_id, f.name, f.id;\n"
+							"GRANT SELECT ON sys.dependency_views_on_functions TO PUBLIC;\n"
+							"update sys._tables set system = true where system <> true and name in "
+							"('dependency_tables_on_functions','dependency_views_on_functions') and schema_id = 2000;\n");
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
