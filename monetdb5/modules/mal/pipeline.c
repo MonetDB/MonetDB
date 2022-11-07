@@ -421,12 +421,12 @@ bailout:
 		if (cmp(val,nil) != 0 && BATcount(b)) {							\
 			T t = BUNtvar(bi, 0);										\
 			if (cmp(t,nil) == 0) {										\
-				if (BUNreplace(b, 0, val, false) != GDK_SUCCEED)		\
+				if (BUNreplace(b, 0, val, true) != GDK_SUCCEED)		    \
 					err = createException(SQL, "2 aggr." #f,			\
 						SQLSTATE(HY013) MAL_MALLOC_FAIL);				\
 			} else														\
 				if (f(t, val) == val)									\
-					if (BUNreplace(b, 0, val, false) != GDK_SUCCEED)	\
+					if (BUNreplace(b, 0, val, true) != GDK_SUCCEED)	    \
 						err = createException(SQL, "1 aggr." #f,		\
 							SQLSTATE(HY013) MAL_MALLOC_FAIL);			\
 			MT_lock_set(&b->theaplock);									\
@@ -434,7 +434,7 @@ bailout:
 			b->tnonil = true;											\
 			MT_lock_unset(&b->theaplock);								\
 		} else if (BATcount(b) == 0) {									\
-			if (BUNappend(b, val, false) != GDK_SUCCEED)				\
+			if (BUNappend(b, val, true) != GDK_SUCCEED)				    \
 				err = createException(SQL, "3 aggr." #f,				\
 					SQLSTATE(HY013) MAL_MALLOC_FAIL);					\
 		}																\
