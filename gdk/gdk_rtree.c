@@ -125,13 +125,16 @@ BATcheckrtree(BAT *b) {
 static bool
 RTREEexistsonfile(BAT *b) {
 	const char * filename = BBP_physical(b->batCacheid);
+
+	if (!b->theap) return false;
+
 	int farmid = b->theap->farmid;
 	int fd = GDKfdlocate(farmid, filename, "r", "bsrt");
 
 	//Do we have the rtree on file?
-	if (fd == -1)
+	if (fd == -1) {
 		return false;
-	else {
+	} else {
 		close(fd);
 		return true;
 	}
