@@ -1,7 +1,7 @@
 import os, pymonetdb
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
-if os.uname().sysname == 'Linux':
+if os.name == 'posix' and os.uname().sysname == 'Linux':
     executor = ProcessPoolExecutor
 else:
     executor = ThreadPoolExecutor
