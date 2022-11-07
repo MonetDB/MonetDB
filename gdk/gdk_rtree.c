@@ -302,7 +302,7 @@ static int
 f (rtree_id_t id, void *context) {
 	struct results_rtree *results_rtree = (struct results_rtree *) context;
 	results_rtree->candidates[results_rtree->results_next++] = (BUN) id;
-	results_rtree->results_left -= 1;
+	--results_rtree->results_left;
 	return results_rtree->results_left <= 0;
 }
 
@@ -330,21 +330,26 @@ RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit) {
 	if (rtree != NULL) {
 		//Increase ref, we're gonna use the index
 		RTREEincref(pb);
-		BUN *candidates = GDKmalloc(result_limit*sizeof(BUN));
-		memset(candidates,BUN_NONE,result_limit*sizeof(BUN));
+		BUN *candidates = GDKmalloc((result_limit + 1) * SIZEOF_BUN);
+		memset(candidates, 0, (result_limit + 1) * SIZEOF_BUN);
 
 		rtree_coord_t rect[4];
 		rect[0] = inMBR->xmin;
 		rect[1] = inMBR->ymin;
 		rect[2] = inMBR->xmax;
 		rect[3] = inMBR->ymax;
+
 		struct results_rtree results;
 		results.results_next = 0;
 		results.results_left = result_limit;
 		results.candidates = candidates;
+
 		rtree_search(rtree, (const rtree_coord_t*) rect, f, &results);
+		candidates[result_limit - results.results_left] = BUN_NONE;
+
 		//Finished using the index, decrease ref
 		RTREEdecref(pb);
+
 		return candidates;
 	} else
 		return NULL;
