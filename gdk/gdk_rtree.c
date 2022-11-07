@@ -284,12 +284,10 @@ RTREEdestroy(BAT *b)
 	//If the rtree is not loaded (pb->trtree is null), but there is a file with the index (from previous execution),
 	//we should remove the file
 	else if (RTREEexistsonfile(pb)) {
-		if (!GDKinmemory(pb->theap->farmid)) {
-			GDKunlink(pb->theap->farmid,
-			  	BATDIR,
-			  	BBP_physical(b->batCacheid),
-			  	"bsrt");
-		}
+		GDKunlink(pb->theap->farmid,
+			BATDIR,
+			BBP_physical(b->batCacheid),
+			"bsrt");
 	}
 	MT_lock_unset(&b->batIdxLock);
 }
