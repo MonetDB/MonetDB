@@ -38,7 +38,7 @@ RTREEdecref(BAT *b)
 void
 RTREEincref(BAT *b)
 {
-	ATOMIC_INC(&b->trtree->refs);
+	(void) ATOMIC_INC(&b->trtree->refs);
 }
 
 // Persist rtree to disk if the conditions are right
