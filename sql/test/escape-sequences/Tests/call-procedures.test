@@ -1,2 +1,2 @@
 statement ok
-{[?=] call setworkerlimit(12)}
+{call setworkerlimit(12)}
