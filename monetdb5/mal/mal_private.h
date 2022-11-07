@@ -14,10 +14,6 @@
 
 #ifdef _MAL_CLIENT_H_
 /* _MAL_CLIENT_H_ is defined in the same file as Client */
-void MCexitClient(Client c)
-	__attribute__((__visibility__("hidden")));
-void MCfreeClient(Client c)
-	__attribute__((__visibility__("hidden")));
 bool MCinit(void)
 	__attribute__((__visibility__("hidden")));
 int MCinitClientThread(Client c)
@@ -40,9 +36,6 @@ int yieldResult(MalBlkPtr mb, InstrPtr p, int pc)
 str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc)
 	__attribute__((__visibility__("hidden")));
 str callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[],char flag)
-	__attribute__((__visibility__("hidden")));
-
-Client setClientContext(Client cntxt)
 	__attribute__((__visibility__("hidden")));
 #endif
 

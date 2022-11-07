@@ -32,13 +32,21 @@ static void
 ODBCLOG(const char *fmt, ...)
 {
 	va_list ap;
+#ifdef NATIVE_WIN32
+	wchar_t *s = _wgetenv(L"ODBCDEBUG");
+#else
 	char *s = getenv("ODBCDEBUG");
+#endif
 
 	va_start(ap, fmt);
 	if (s && *s) {
 		FILE *f;
 
+#ifdef NATIVE_WIN32
+		f = _wfopen(s, L"a");
+#else
 		f = fopen(s, "a");
+#endif
 		if (f) {
 			vfprintf(f, fmt, ap);
 			fclose(f);

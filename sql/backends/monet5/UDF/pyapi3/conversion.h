@@ -22,6 +22,7 @@ typedef struct {
 	PyObject *numpy_mask; // PyArrayObject* with mask (NULL if there is no mask)
 	void *array_data;	 // void* pointer to data
 	bool *mask_data;	  // bool* pointer to mask data
+	size_t array_size;
 	size_t count;		  // amount of return elements
 	size_t memory_size;   // memory size of each element
 	lng mmap_id;
@@ -32,6 +33,7 @@ typedef struct {
 typedef struct {
 	void *dataptr;			  // pointer to input data
 	BAT *bat;				  // pointer to input BAT
+	BAT *conv_bat;			  // converted input BAT
 	int bat_type;			  // BAT type as TYPE_<type>
 	sql_subtype *sql_subtype; // SQL typename (for _column_types)
 	size_t count;			  // amount of elements in BAT

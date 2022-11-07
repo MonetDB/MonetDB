@@ -88,7 +88,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
 
             node1_cur.execute("SELECT i FROM foo ORDER BY i")
             res = node1_cur.fetchall()
-            if res != [(10,), (20,)]:
-                sys.stderr.write(f"[(10), (20)] expected, {res} received")
+            if res not in ([(10,), (20,)], [(20,), (50,)]):
+                sys.stderr.write(f"[(10,), (20,)] or [(20,), (50,)] expected, {res} received")
             node1_cur.close()
             node1_conn.close()

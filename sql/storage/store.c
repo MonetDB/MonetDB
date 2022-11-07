@@ -2927,8 +2927,9 @@ key_dup(sql_trans *tr, sql_key *k, sql_table *t, sql_key **kres)
 		list_append(nk->columns, kc_dup(tr, okc, t));
 	}
 
-	if ((res = os_add(t->s->keys, tr, nk->base.name, dup_base(&nk->base))) ||
-		(isGlobal(t) && (res = os_add(tr->cat->objects, tr, nk->base.name, dup_base(&nk->base))))) {
+	if (isGlobal(t) &&
+			((res = os_add(t->s->keys, tr, nk->base.name, dup_base(&nk->base))) ||
+		     (res = os_add(tr->cat->objects, tr, nk->base.name, dup_base(&nk->base))))) {
 		return res;
 	}
 	*kres = nk;
@@ -3384,7 +3385,7 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires)
 	if ((res = ol_add(t->idxs, &ni->base)))
 		return res;
 
-	if ((res = os_add(t->s->idxs, tr, ni->base.name, dup_base(&ni->base))))
+	if (isGlobal(t) && (res = os_add(t->s->idxs, tr, ni->base.name, dup_base(&ni->base))))
 		return res;
 	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql functions depending on the table */
 		return res;
@@ -3455,6 +3456,7 @@ sql_trans_copy_trigger( sql_trans *tr, sql_table *t, sql_trigger *tri, sql_trigg
 	if ((res = ol_add(t->triggers, &nt->base)))
 		return res;
 
+	assert(isGlobal(t));
 	if ((res = os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base))))
 		return res;
 	if ((res = store_reset_sql_functions(tr, t->base.id))) /* reset sql functions depending on the table */
@@ -4238,7 +4240,7 @@ sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 	}
 
 	/* remove idx from schema and table */
-	if ((res = os_del(i->t->s->idxs, tr, i->base.name, dup_base(&i->base))))
+	if (isGlobal(i->t) && (res = os_del(i->t->s->idxs, tr, i->base.name, dup_base(&i->base))))
 		return res;
 	if (!isNew(i) && (res = sql_trans_add_dependency_change(tr, i->base.id, ddl)))
 		return res;
@@ -4287,7 +4289,7 @@ sys_drop_key(sql_trans *tr, sql_key *k, int drop_action)
 			return res;
 	}
 	/* remove key from schema */
-	if ((res = os_del(k->t->s->keys, tr, k->base.name, dup_base(&k->base))))
+	if (isGlobal(k->t) && (res = os_del(k->t->s->keys, tr, k->base.name, dup_base(&k->base))))
 		return res;
 	if (isGlobal(k->t) && (res = os_del(tr->cat->objects, tr, k->base.name, dup_base(&k->base))))
 		return res;
@@ -6652,7 +6654,7 @@ sql_trans_create_idx(sql_idx **i, sql_trans *tr, sql_table *t, const char *name,
 
 	if ((res = ol_add(t->idxs, &ni->base)))
 		return res;
-	if ((res = os_add(t->s->idxs, tr, ni->base.name, dup_base(&ni->base))))
+	if (isGlobal(t) && (res = os_add(t->s->idxs, tr, ni->base.name, dup_base(&ni->base))))
 		return res;
 
 	ATOMIC_PTR_INIT(&ni->data, NULL);
@@ -6693,18 +6695,16 @@ int
 sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 {
 	sqlstore *store = tr->store;
-	sql_base *b = os_find_id(s->idxs, tr, id);
+	sql_idx *i = schema_find_idx_id(tr, s, id);
 	int res = LOG_OK;
 
-	if (!b) /* already dropped */
+	if (!i) /* already dropped */
 		return res;
 
-	sql_idx *i = (sql_idx*)b;
 	sql_table *t = NULL;
-
 	if ((res = new_table(tr, i->t, &t)))
 		return res;
-	i = (sql_idx*)os_find_id(t->s->idxs, tr, id); /* fetch updated idx */
+	i = schema_find_idx_id(tr, s, id); /* fetch updated idx */
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
 		sqlid *local_id = MNEW(sqlid);
@@ -6776,6 +6776,7 @@ sql_trans_create_trigger(sql_trigger **tres, sql_trans *tr, sql_table *t, const 
 		nt->condition = SA_STRDUP(tr->sa, condition);
 	nt->statement = SA_STRDUP(tr->sa, statement);
 
+	assert(isGlobal(t));
 	if ((res = ol_add(t->triggers, &nt->base)) ||
 		(res = os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base))))
 		return res;

@@ -134,6 +134,8 @@
 #define PTW32 1
 #endif
 
+#include "matomic.h"
+
 /* debug and errno integers */
 gdk_export int GDKdebug;
 gdk_export void GDKsetdebug(int debug);
@@ -161,8 +163,9 @@ enum MT_thr_detach { MT_THR_JOINABLE, MT_THR_DETACHED };
 typedef int64_t lng;
 
 typedef struct QryCtx {
-	const lng starttime;
+	lng starttime;
 	lng querytimeout;
+	ATOMIC_TYPE datasize;
 } QryCtx;
 
 gdk_export bool MT_thread_init(void);

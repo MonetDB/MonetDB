@@ -201,7 +201,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 			goto wrapup;
 		} else {
 			BAT *ret_bat = NULL;
-			msg = ConvertFromSQLType(inp->bat, inp->sql_subtype, &ret_bat,
+			msg = ConvertFromSQLType(b, inp->sql_subtype, &ret_bat,
 									 &inp->bat_type);
 			if (msg != MAL_SUCCEED) {
 				freeException(msg);
@@ -500,7 +500,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 		goto wrapup;
 	}
 	if (b != inp->bat)
-		BBPunfix(b->batCacheid);
+		inp->conv_bat = b;		/* still in use, free later */
 	return vararray;
 wrapup:
 	*return_message = msg;
@@ -1131,6 +1131,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 	if (ConvertableSQLType(type)) {
 		BAT *result;
 		msg = ConvertToSQLType(NULL, b, type, &result, &bat_type);
+		BBPunfix(b->batCacheid);
 		if (msg != MAL_SUCCEED) {
 			goto wrapup;
 		}
@@ -1242,6 +1243,7 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 		}
 		if (res == MAL_SUCCEED) {
 			*ret_bat = BATdescriptor(result);
+			BBPrelease(result);
 			*ret_type = TYPE_dbl;
 		} else {
 			*ret_bat = NULL;

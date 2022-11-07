@@ -38,6 +38,7 @@
 #include "monetdb_config.h"
 #include "tablet.h"
 #include "mapi_prompt.h"
+#include "mal_internal.h"
 
 #include <string.h>
 #include <ctype.h>
@@ -634,6 +635,7 @@ typedef struct {
 	int besteffort;
 	bte *rowerror;
 	int errorcnt;
+	bool set_qry_ctx;
 } READERtask;
 
 static void
@@ -1076,6 +1078,8 @@ SQLworker(void *arg)
 	GDKsetbuf(GDKmalloc(GDKMAXERRLEN));	/* where to leave errors */
 	GDKclrerr();
 	task->errbuf = GDKerrbuf;
+	MT_thread_set_qry_ctx(task->set_qry_ctx ? &task->cntxt->qryctx : NULL);
+	setClientContext(task->cntxt);
 
 	MT_sema_down(&task->sema);
 	while (task->top[task->cur] >= 0) {
@@ -1126,6 +1130,8 @@ SQLworker(void *arg)
   do_return:
 	GDKfree(GDKerrbuf);
 	GDKsetbuf(0);
+	MT_thread_set_qry_ctx(NULL);
+	setClientContext(NULL);
 }
 
 static void
@@ -1239,6 +1245,8 @@ SQLproducer(void *p)
 		return;
 	}
 
+	MT_thread_set_qry_ctx(task->set_qry_ctx ? &task->cntxt->qryctx : NULL);
+	setClientContext(task->cntxt);
 	rdfa = mkdfa((const unsigned char *) rsep, rseplen);
 	if (rdfa == NULL) {
 		tablet_error(task, lng_nil, lng_nil, int_nil, "cannot allocate memory", "");
@@ -1426,6 +1434,8 @@ SQLproducer(void *p)
 			MT_sema_down(&task->producer);
 			if (cnt == task->maxrow) {
 				GDKfree(rdfa);
+				MT_thread_set_qry_ctx(NULL);
+				setClientContext(NULL);
 				return;
 			}
 		} else {
@@ -1438,6 +1448,8 @@ SQLproducer(void *p)
 				blocked[(cur + 1) % MAXBUFFERS] = false;
 				if (task->state == ENDOFCOPY) {
 					GDKfree(rdfa);
+					MT_thread_set_qry_ctx(NULL);
+					setClientContext(NULL);
 					return;
 				}
 			}
@@ -1459,6 +1471,8 @@ SQLproducer(void *p)
 				MT_sema_down(&task->producer);
 /*				TRC_DEBUG(MAL_SERVER, "Producer delivered all\n");*/
 				GDKfree(rdfa);
+				MT_thread_set_qry_ctx(NULL);
+				setClientContext(NULL);
 				return;
 			}
 		}
@@ -1468,11 +1482,15 @@ SQLproducer(void *p)
 		if (task->ateof && !more) {
 /*			TRC_DEBUG(MAL_SERVER, "Producer encountered eof\n");*/
 			GDKfree(rdfa);
+			MT_thread_set_qry_ctx(NULL);
+			setClientContext(NULL);
 			return;
 		}
 		/* consumers ask us to stop? */
 		if (task->state == ENDOFCOPY) {
 			GDKfree(rdfa);
+			MT_thread_set_qry_ctx(NULL);
+			setClientContext(NULL);
 			return;
 		}
 		bufcnt[cur] = cnt;
@@ -1487,6 +1505,9 @@ SQLproducer(void *p)
 		task->b->pos += partial;
 	}
 	GDKfree(rdfa);
+	MT_thread_set_qry_ctx(NULL);
+	setClientContext(NULL);
+
 	return;
 
   badutf8:
@@ -1541,6 +1562,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		.from_stdin = from_stdin,
 		.as = as,
 		.escape = escape,		/* TODO: implement feature!!! */
+		.set_qry_ctx = MT_thread_get_qry_ctx() != NULL,
 	};
 
 	/* create the reject tables */

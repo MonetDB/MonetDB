@@ -884,7 +884,12 @@ dlopen(const char *file, int mode)
 {
 	(void) mode;
 	if (file != NULL) {
-		return (void *) LoadLibrary(file);
+		wchar_t *wfile = utf8towchar(file);
+		if (wfile == NULL)
+			return NULL;
+		void *ret = LoadLibraryW(wfile);
+		free(wfile);
+		return ret;
 	}
 	return GetModuleHandle(NULL);
 }

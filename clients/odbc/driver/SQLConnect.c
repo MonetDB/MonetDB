@@ -39,34 +39,6 @@
 #endif
 
 static void
-set_timezone(Mapi mid)
-{
-	char buf[128];
-	time_t t, lt, gt;
-	struct tm *tmp;
-	long tzone;
-	MapiHdl hdl;
-
-	/* figure out our current timezone */
-	t = time(NULL);
-	tmp = gmtime(&t);
-	gt = mktime(tmp);
-	tmp = localtime(&t);
-	lt = mktime(tmp);
-	tzone = (long) (gt - lt);
-	if (tzone < 0)
-		snprintf(buf, sizeof(buf),
-			 "SET TIME ZONE INTERVAL '+%02ld:%02ld' HOUR TO MINUTE",
-			 -tzone / 3600, (-tzone % 3600) / 60);
-	else
-		snprintf(buf, sizeof(buf),
-			 "SET TIME ZONE INTERVAL '-%02ld:%02ld' HOUR TO MINUTE",
-			 tzone / 3600, (tzone % 3600) / 60);
-	if ((hdl = mapi_query(mid, buf)) != NULL)
-		mapi_close_handle(hdl);
-}
-
-static void
 get_serverinfo(ODBCDbc *dbc)
 {
 	MapiHdl hdl;
@@ -121,7 +93,6 @@ MNDBConnect(ODBCDbc *dbc,
 	char pwd[32];
 	char buf[256];
 	char db[32];
-	char *s;
 	int n;
 	Mapi mid;
 
@@ -151,9 +122,23 @@ MNDBConnect(ODBCDbc *dbc,
 					       logfile, sizeof(logfile),
 					       "odbc.ini");
 		if (n > 0) {
-			if (ODBCdebug)
-				free((void *) ODBCdebug); /* discard const */
+			free((void *) ODBCdebug); /* discard const */
+#ifdef NATIVE_WIN32
+			size_t attrlen = strlen(logfile);
+			SQLWCHAR *wattr = malloc((attrlen + 1) * sizeof(SQLWCHAR));
+			if (ODBCutf82wchar(logfile,
+					   (SQLINTEGER) attrlen,
+					   wattr,
+					   (SQLLEN) ((attrlen + 1) * sizeof(SQLWCHAR)),
+					   NULL,
+					   NULL)) {
+				free(wattr);
+				wattr = NULL;
+			}
+			ODBCdebug = wattr;
+#else
 			ODBCdebug = strdup(logfile);
+#endif
 		}
 	}
 #endif
@@ -213,8 +198,15 @@ MNDBConnect(ODBCDbc *dbc,
 	if (dbname && !*dbname)
 		dbname = NULL;
 
+#ifdef NATIVE_WIN32
+	wchar_t *s;
+	if (port == 0 && (s = _wgetenv(L"MAPIPORT")) != NULL)
+		port = _wtoi(s);
+#else
+	char *s;
 	if (port == 0 && (s = getenv("MAPIPORT")) != NULL)
 		port = atoi(s);
+#endif
 	if (port == 0 && dsn && *dsn) {
 		n = SQLGetPrivateProfileString(dsn, "port", MAPI_PORT_STR,
 					       buf, sizeof(buf), "odbc.ini");
@@ -243,7 +235,12 @@ MNDBConnect(ODBCDbc *dbc,
 
 	/* connect to a server on host via port */
 	/* FIXME: use dbname from ODBC connect string/options here */
-	mid = mapi_connect(host, port, uid, pwd, "sql", dbname);
+	mid = mapi_mapi(host, port, uid, pwd, "sql", dbname);
+	if (mid) {
+		mapi_setAutocommit(mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
+		mapi_set_size_header(mid, true);
+		mapi_reconnect(mid);
+	}
 	if (mid == NULL || mapi_error(mid)) {
 		/* Client unable to establish connection */
 		addDbcError(dbc, "08001", NULL, 0);
@@ -274,10 +271,7 @@ MNDBConnect(ODBCDbc *dbc,
 		if (dbc->dbname != NULL)
 			free(dbc->dbname);
 		dbc->dbname = (char *) dbname; /* discard const */
-		mapi_setAutocommit(mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
-		set_timezone(mid);
 		get_serverinfo(dbc);
-		mapi_set_size_header(mid, true);
 		/* set timeout after we're connected */
 		mapi_timeout(mid, dbc->sql_attr_connection_timeout * 1000);
 	}

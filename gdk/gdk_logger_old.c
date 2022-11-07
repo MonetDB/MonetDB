@@ -1390,7 +1390,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 	catalog_tpe = BBPindex(bak);
 	t = BATdescriptor(catalog_tpe);
 	if (t == NULL) {
-		t = logbat_new(TYPE_bte, BATSIZE, TRANSIENT);
+		t = logbat_new(TYPE_bte, BATSIZE, SYSTRANS);
 		if (t == NULL
 		    ||BBPrename(t, bak) < 0) {
 			BBPunfix(b->batCacheid);
@@ -1416,7 +1416,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 	catalog_oid = BBPindex(bak);
 	o = BATdescriptor(catalog_oid);
 	if (o == NULL) {
-		o = logbat_new(TYPE_lng, BATSIZE, TRANSIENT);
+		o = logbat_new(TYPE_lng, BATSIZE, SYSTRANS);
 		if (o == NULL
 		    ||BBPrename(o, bak) < 0) {
 			BBPunfix(b->batCacheid);
@@ -1446,7 +1446,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 		/* older database: create dcatalog and convert
 		 * catalog_bid and catalog_nme to
 		 * dense-headed */
-		d = logbat_new(TYPE_oid, BATSIZE, TRANSIENT);
+		d = logbat_new(TYPE_oid, BATSIZE, SYSTRANS);
 		if (d == NULL) {
 			GDKerror("Logger_new: cannot create dcatalog bat");
 			BBPunfix(b->batCacheid);
@@ -1492,7 +1492,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 			goto error;
 	}
 
-	lg->freed = logbat_new(TYPE_int, 1, TRANSIENT);
+	lg->freed = logbat_new(TYPE_int, 1, SYSTRANS);
 	if (lg->freed == NULL) {
 		GDKerror("Logger_new: failed to create freed bat");
 		goto error;
@@ -1501,9 +1501,9 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 	if (snapshots_bid < 0)
 		goto error;
 	if (snapshots_bid == 0) {
-		lg->snapshots_bid = logbat_new(TYPE_int, 1, TRANSIENT);
-		lg->snapshots_tid = logbat_new(TYPE_int, 1, TRANSIENT);
-		lg->dsnapshots = logbat_new(TYPE_oid, 1, TRANSIENT);
+		lg->snapshots_bid = logbat_new(TYPE_int, 1, SYSTRANS);
+		lg->snapshots_tid = logbat_new(TYPE_int, 1, SYSTRANS);
+		lg->dsnapshots = logbat_new(TYPE_oid, 1, SYSTRANS);
 		if (lg->snapshots_bid == NULL ||
 		    lg->snapshots_tid == NULL ||
 		    lg->dsnapshots == NULL) {
@@ -1539,7 +1539,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 				goto error;
 			BBPretain(dsnapshots);
 		} else {
-			lg->dsnapshots = logbat_new(TYPE_oid, 1, TRANSIENT);
+			lg->dsnapshots = logbat_new(TYPE_oid, 1, SYSTRANS);
 			if (lg->dsnapshots == NULL) {
 				GDKerror("Logger_new: cannot create dsnapshot bat");
 				goto error;
@@ -1686,8 +1686,8 @@ logger_new(logger *lg, const char *fn, const char *logdir, FILE *fp, int version
 		.id = 1,
 	};
 
-	old_lg->add = COLnew(0, TYPE_int, 0, TRANSIENT);
-	old_lg->del = COLnew(0, TYPE_int, 0, TRANSIENT);
+	old_lg->add = COLnew(0, TYPE_int, 0, SYSTRANS);
+	old_lg->del = COLnew(0, TYPE_int, 0, SYSTRANS);
 	if (old_lg->add == NULL || old_lg->del == NULL) {
 		TRC_CRITICAL(GDK, "cannot allocate temporary bats\n");
 		goto bailout;

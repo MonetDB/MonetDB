@@ -141,6 +141,7 @@ createOIDXheap(BAT *b, bool stable)
 
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
 	    (m->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) < 0 ||
+	    (m->parentid = b->batCacheid) <= 0 ||
 	    strconcat_len(m->filename, sizeof(m->filename),
 			  BBP_physical(b->batCacheid), ".torderidx",
 			  NULL) >= sizeof(m->filename) ||
@@ -369,6 +370,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 	}
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
 	    (m->farmid = BBPselectfarm(b->batRole, bi.type, orderidxheap)) < 0 ||
+	    (m->parentid = b->batCacheid) <= 0 ||
 	    strconcat_len(m->filename, sizeof(m->filename),
 			  nme, ".torderidx", NULL) >= sizeof(m->filename) ||
 	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID) != GDK_SUCCEED) {

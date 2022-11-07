@@ -56,12 +56,29 @@ static void ComputeParallelAggregation(AggrParams *p);
 static str CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  size_t retcols, oid seqbase);
 
-static const char *FunctionBasePath(void)
+static const char *FunctionBasePath(char *buf, size_t len)
 {
 	const char *basepath = GDKgetenv("function_basepath");
+#ifdef NATIVE_WIN32
+	if (basepath == NULL) {
+		const wchar_t *home = _wgetenv(L"HOME");
+		if (home) {
+			char *path = wchartoutf8(home);
+			if (path) {
+				strcpy_len(buf, path, len);
+				free(path);
+				basepath = buf;
+			}
+		}
+	}
+#else
+	/* not used except on Windows */
+	(void) buf;
+	(void) len;
 	if (basepath == NULL) {
 		basepath = getenv("HOME");
 	}
+#endif
 	if (basepath == NULL) {
 		basepath = "";
 	}
@@ -183,7 +200,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 	char *mmap_ptr;
 	QueryStruct *query_ptr = NULL;
 	int query_sem = -1;
-	int mmap_id = -1;
+	lng mmap_id = -1;
 	size_t memory_size = 0;
 	bool child_process = false;
 	bool holds_gil = !mapped;
@@ -528,6 +545,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 					goto wrapup;
 				}
 				ret->array_data = mmap_ptrs[i + 3];
+				ret->array_size = mmap_sizes[i + 3];
 				ret->mask_data = NULL;
 				ret->numpy_array = NULL;
 				ret->numpy_mask = NULL;
@@ -580,7 +598,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 				snprintf(address, 1000, "%s", exprStr);
 			} else {
 				// relative path
-				snprintf(address, 1000, "%s/%s", FunctionBasePath(), exprStr);
+				snprintf(address, 1000, "%s/%s", FunctionBasePath((char[256]){0}, 256), exprStr);
 			}
 			if (MT_stat(address, &buffer) < 0) {
 				msg = createException(
@@ -1151,6 +1169,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 				ret->count = PyArray_DIMS((PyArrayObject *)ret->numpy_array)[0];
 				ret->array_data =
 					PyArray_DATA((PyArrayObject *)ret->numpy_array);
+				ret->array_size = ret->memory_size * ret->count;
 			}
 
 			descr->npy_type = ret->result_type;
@@ -1338,6 +1357,8 @@ wrapup:
 		PyInput *inp = &pyinput_values[i - (pci->retc + 2 + has_card_arg)];
 		if (inp->bat != NULL)
 			BBPunfix(inp->bat->batCacheid);
+		if (inp->conv_bat != NULL)
+			BBPunfix(inp->conv_bat->batCacheid); /* delayed free */
 	}
 	if (pResult != NULL && gstate == 0) {
 		// if there is a pResult here, we are running single threaded (LANGUAGE

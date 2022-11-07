@@ -188,7 +188,11 @@ static enum {
 } ordering;
 
 /* Value of POSIXLY_CORRECT environment variable.  */
+#ifdef NATIVE_WIN32
+static wchar_t *posixly_correct;
+#else
 static char *posixly_correct;
+#endif
 
 #ifdef	__GNU_LIBRARY__
 /* We want to avoid inclusion of string.h with non-GNU libraries
@@ -370,7 +374,11 @@ _getopt_initialize(int argc, char *const *argv, const char *optstring)
 
 	nextchar = NULL;
 
+#ifdef NATIVE_WIN32
+	posixly_correct = _wgetenv(L"POSIXLY_CORRECT");
+#else
 	posixly_correct = getenv("POSIXLY_CORRECT");
+#endif
 
 	/* Determine how to handle the ordering of options and nonoptions.  */
 

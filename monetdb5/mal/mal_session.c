@@ -18,6 +18,7 @@
 #include "mal_builder.h"
 #include "msabaoth.h"
 #include "mal_private.h"
+#include "mal_internal.h"
 #include "gdk.h"	/* for opendir and friends */
 
 /*
@@ -36,37 +37,38 @@ malBootstrap(char *modules[], bool embedded, const char *initpasswd)
 	if(c == NULL) {
 		throw(MAL, "malBootstrap", "Failed to initialize client");
 	}
+	MT_thread_set_qry_ctx(NULL);
 	assert(c != NULL);
 	c->curmodule = c->usermodule = userModule();
 	if(c->usermodule == NULL) {
-		MCfreeClient(c);
+		MCcloseClient(c);
 		throw(MAL, "malBootstrap", "Failed to initialize client MAL module");
 	}
 	if ( (msg = defaultScenario(c)) ) {
-		MCfreeClient(c);
+		MCcloseClient(c);
 		return msg;
 	}
 	if((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
-		MCfreeClient(c);
+		MCcloseClient(c);
 		return msg;
 	}
 
 	if( MCinitClientThread(c) < 0){
-		MCfreeClient(c);
+		MCcloseClient(c);
 		throw(MAL, "malBootstrap", "Failed to create client thread");
 	}
 	if ((msg = malIncludeModules(c, modules, 0, embedded, initpasswd)) != MAL_SUCCEED) {
-		MCfreeClient(c);
+		MCcloseClient(c);
 		return msg;
 	}
 	pushEndInstruction(c->curprg->def);
 	msg = chkProgram(c->usermodule, c->curprg->def);
 	if ( msg != MAL_SUCCEED || (msg= c->curprg->def->errors) != MAL_SUCCEED ) {
-		MCfreeClient(c);
+		MCcloseClient(c);
 		return msg;
 	}
 	msg = MALengine(c);
-	MCfreeClient(c);
+	MCcloseClient(c);
 	return msg;
 }
 
@@ -184,7 +186,7 @@ cleanUpScheduleClient(Client c, Scenario s, bstream *fin, stream *fout, str *com
 				freeException(msg);
 			}
 		}
-		MCfreeClient(c);
+		MCcloseClient(c);
 	}
 	exit_streams(fin, fout);
 	if (command) {
@@ -207,6 +209,9 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 	str msg = MAL_SUCCEED;
 	bool filetrans = false;
 	Client c;
+
+	MT_thread_set_qry_ctx(NULL);
+	setClientContext(NULL);
 
 	/* decode BIG/LIT:user:{cypher}passwordchal:lang:database: line */
 
@@ -379,8 +384,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			c->curmodule = c->usermodule = userModule();
 			if(c->curmodule  == NULL) {
 				mnstr_printf(fout, "!could not allocate space\n");
-				exit_streams(fin, fout);
-				GDKfree(command);
+				cleanUpScheduleClient(c, NULL, fin, fout, &command, &msg);
 				return;
 			}
 		}
@@ -396,17 +400,14 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 
 			mnstr_printf(fout, "!only the 'monetdb' user can use non-sql languages. "
 					           "run mserver5 with --set %s=yes to change this.\n", mal_enableflag);
-			exit_streams(fin, fout);
-			GDKfree(command);
+			cleanUpScheduleClient(c, NULL, fin, fout, &command, &msg);
 			return;
 		}
 	}
 
 	if((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
 		mnstr_printf(fout, "!could not allocate space\n");
-		exit_streams(fin, fout);
-		freeException(msg);
-		GDKfree(command);
+		cleanUpScheduleClient(c, NULL, fin, fout, &command, &msg);
 		return;
 	}
 
@@ -702,7 +703,7 @@ MALparser(Client c)
 	/* now the parsing is done we should advance the stream */
 	c->fdin->pos += c->yycur;
 	c->yycur = 0;
-	c->starttime = GDKusec();
+	c->qryctx.starttime = GDKusec();
 
 	/* check for unfinished blocks */
 	if(!c->curprg->def->errors && c->blkmode)

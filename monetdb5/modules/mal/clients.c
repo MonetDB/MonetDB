@@ -107,7 +107,7 @@ static str
 CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret=  getArgReference_bat(stk,pci,0);
-	bat *ret2=  getArgReference_bat(stk,pci,0);
+	bat *ret2=  getArgReference_bat(stk,pci,1);
 	BAT *b = COLnew(0, TYPE_str, 12, TRANSIENT);
 	BAT *bn = COLnew(0, TYPE_str, 12, TRANSIENT);
 	char buf[32]; /* 32 bytes are enough */
@@ -226,7 +226,7 @@ CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mal_clients[idx].mode == FREECLIENT)
 		msg = createException(MAL,"clients.stop","Session not active anymore");
 	else
-		mal_clients[idx].querytimeout = 1; /* stop client in one microsecond */
+		mal_clients[idx].qryctx.querytimeout = 1; /* stop client in one microsecond */
 	/* this forces the designated client to stop at the next instruction */
 	MT_lock_unset(&mal_contextLock);
 	return msg;
@@ -354,7 +354,7 @@ CLTstopSession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mal_clients[idx].mode == FREECLIENT) {
 		msg = createException(MAL,"clients.stopSession","Session not active anymore");
 	} else {
-		mal_clients[idx].querytimeout = 1; /* stop client in one microsecond */
+		mal_clients[idx].qryctx.querytimeout = 1; /* stop client in one microsecond */
 		mal_clients[idx].sessiontimeout = 1; /* stop client session */
 	}
 	MT_lock_unset(&mal_contextLock);
@@ -463,7 +463,7 @@ CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		if (pci->argc == 3)
 			mal_clients[idx].sessiontimeout = sto * 1000000;
-		mal_clients[idx].querytimeout = qto * 1000000;
+		mal_clients[idx].qryctx.querytimeout = qto * 1000000;
 	}
 	MT_lock_unset(&mal_contextLock);
 	return msg;
@@ -505,7 +505,7 @@ CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else {
 		/* when testing (FORCEMITOMASK), reduce timeout of 1 sec to 1 msec */
 		lng timeout_micro = GDKdebug & FORCEMITOMASK && qto == 1 ? 1000 : (lng) qto * 1000000;
-		mal_clients[idx].querytimeout = timeout_micro;
+		mal_clients[idx].qryctx.querytimeout = timeout_micro;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx->querytimeout = timeout_micro;
 	}
@@ -531,7 +531,7 @@ CLTqueryTimeoutMicro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mal_clients[idx].mode == FREECLIENT)
 		msg = createException(MAL,"clients.queryTimeout","Session not active anymore");
 	else {
-		mal_clients[idx].querytimeout = qto;
+		mal_clients[idx].qryctx.querytimeout = qto;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx->querytimeout = qto;
 	}
@@ -592,7 +592,7 @@ CLTgetProfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	if (!(*opt = GDKstrdup(cntxt->optimizer)))
 		throw(MAL, "clients.getProfile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	*qto = (int)(cntxt->querytimeout / 1000000);
+	*qto = (int)(cntxt->qryctx.querytimeout / 1000000);
 	*sto = (int)(cntxt->sessiontimeout / 1000000);
 	*wlim = cntxt->workerlimit;
 	*mlim = cntxt->memorylimit;
@@ -858,7 +858,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			timeout = (int)(c->sessiontimeout / 1000000);
 			if (BUNappend(sessiontimeout, &timeout, false) != GDK_SUCCEED)
 				goto bailout;
-			timeout = (int)(c->querytimeout / 1000000);
+			timeout = (int)(c->qryctx.querytimeout / 1000000);
 			if (BUNappend(querytimeout, &timeout, false) != GDK_SUCCEED)
 				goto bailout;
 			if( c->idle){

@@ -1496,13 +1496,15 @@ str
 wkbCoordinateFromWKB_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 {
 	str err = NULL;
-	int inBAT_mbr_id = 0;	//the id of the bat with the mbrs
+	bat inBAT_mbr_id = 0;	//the id of the bat with the mbrs
 
 	if ((err = wkbMBR_bat(&inBAT_mbr_id, inBAT_id)) != MAL_SUCCEED) {
 		return err;
 	}
 	//call the bulk version of wkbCoordinateFromMBR
-	return wkbCoordinateFromMBR_bat(outBAT_id, &inBAT_mbr_id, coordinateIdx);
+	err = wkbCoordinateFromMBR_bat(outBAT_id, &inBAT_mbr_id, coordinateIdx);
+	BBPrelease(inBAT_mbr_id);
+	return err;
 }
 
 str

@@ -124,7 +124,7 @@ TKNZRopen(void *ret, str *in)
 	}
 	tokenDepth = 0;
 
-	TRANS = COLnew(0, TYPE_str, MAX_TKNZR_DEPTH + 1, TRANSIENT);
+	TRANS = COLnew(0, TYPE_str, MAX_TKNZR_DEPTH + 1, SYSTRANS);
 	if (TRANS == NULL) {
 		MT_lock_unset(&mal_contextLock);
 		throw(MAL, "tokenizer.open", SQLSTATE(HY013) MAL_MALLOC_FAIL);

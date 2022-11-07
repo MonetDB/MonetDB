@@ -15,7 +15,6 @@
 void
 parse_dotmonetdb(DotMonetdb *dotfile)
 {
-	char *cfile;
 	FILE *config = NULL;
 	char buf[FILENAME_MAX];
 
@@ -29,10 +28,43 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 	 * (3 is standard shell syntax: use XDG_CONFIG_HOME if set, else use
 	 * $HOME/.config in its place)
 	 */
+#ifdef NATIVE_WIN32
+	wchar_t *cfile;
+	wchar_t wbuf[FILENAME_MAX];
+#define CF	"%ls"				/* format to print cfile */
+
+	if ((cfile = _wgetenv(L"DOTMONETDBFILE")) == NULL) {
+		/* no environment variable: use a default */
+		cfile = L".monetdb";
+		if ((config = _wfopen(cfile, L"r")) == NULL) {
+			const wchar_t *xdg = _wgetenv(L"XDG_CONFIG_HOME");
+			const wchar_t *home = _wgetenv(L"HOME");
+			int len = -1;
+			cfile = wbuf;
+			if (xdg != NULL)
+				len = _snwprintf(wbuf, sizeof(wbuf), L"%ls%lcmonetdb", xdg, DIR_SEP);
+			else if (home != NULL)
+				len = _snwprintf(wbuf, sizeof(wbuf), L"%ls%lc.config%lcmonetdb", home, DIR_SEP, DIR_SEP);
+			if (len == -1 || len >= FILENAME_MAX || (config = _wfopen(wbuf, L"r")) == NULL) {
+				if (home) {
+					len = _snwprintf(wbuf, sizeof(wbuf), L"%ls%lc.monetdb", home, DIR_SEP);
+					if (len >= 0 && len < FILENAME_MAX)
+						config = _wfopen(wbuf, L"r");
+				}
+			}
+		}
+	} else if (*cfile != 0 && (config = _wfopen(cfile, L"r")) == NULL) {
+		fprintf(stderr, "failed to open file '%ls': %s\n",
+			cfile, strerror(errno));
+	}
+#else
+	char *cfile;
+#define CF	"%s"				/* format to print cfile */
+
 	if ((cfile = getenv("DOTMONETDBFILE")) == NULL) {
 		/* no environment variable: use a default */
 		cfile = ".monetdb";
-		if ((config = MT_fopen(cfile, "r")) == NULL) {
+		if ((config = fopen(cfile, "r")) == NULL) {
 			const char *xdg = getenv("XDG_CONFIG_HOME");
 			const char *home = getenv("HOME");
 			int len = -1;
@@ -41,18 +73,19 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 				len = snprintf(buf, sizeof(buf), "%s%cmonetdb", xdg, DIR_SEP);
 			else if (home != NULL)
 				len = snprintf(buf, sizeof(buf), "%s%c.config%cmonetdb", home, DIR_SEP, DIR_SEP);
-			if (len == -1 || len >= FILENAME_MAX || (config = MT_fopen(buf, "r")) == NULL) {
+			if (len == -1 || len >= FILENAME_MAX || (config = fopen(buf, "r")) == NULL) {
 				if (home) {
 					len = snprintf(buf, sizeof(buf), "%s%c.monetdb", home, DIR_SEP);
 					if (len >= 0 && len < FILENAME_MAX)
-						config = MT_fopen(buf, "r");
+						config = fopen(buf, "r");
 				}
 			}
 		}
-	} else if (*cfile != 0 && (config = MT_fopen(cfile, "r")) == NULL) {
+	} else if (*cfile != 0 && (config = fopen(cfile, "r")) == NULL) {
 		fprintf(stderr, "failed to open file '%s': %s\n",
 			cfile, strerror(errno));
 	}
+#endif
 
 	*dotfile = (DotMonetdb) {0};
 
@@ -67,7 +100,7 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 			if (buf[0] == '\0' || buf[0] == '#')
 				continue;
 			if ((q = strchr(buf, '=')) == NULL) {
-				fprintf(stderr, "%s:%d: syntax error: %s\n",
+				fprintf(stderr, CF ":%d: syntax error: %s\n",
 					cfile, line, buf);
 				continue;
 			}
@@ -91,7 +124,7 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 				/* make sure we don't set garbage */
 				if (strcmp(q, "sql") != 0 &&
 				    strcmp(q, "mal") != 0) {
-					fprintf(stderr, "%s:%d: unsupported "
+					fprintf(stderr, CF ":%d: unsupported "
 						"language: %s\n",
 						cfile, line, q);
 				}
@@ -118,7 +151,7 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 				q = NULL;
 			}
 			if (q != NULL)
-				fprintf(stderr, "%s:%d: unknown property: %s\n",
+				fprintf(stderr, CF ":%d: unknown property: %s\n",
 					cfile, line, buf);
 		}
 		fclose(config);

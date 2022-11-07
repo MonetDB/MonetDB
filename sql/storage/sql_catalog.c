@@ -221,6 +221,23 @@ schema_find_idx(sql_trans *tr, sql_schema *s, const char *name)
 	return (sql_idx*)b;
 }
 
+sql_idx *
+schema_find_idx_id(sql_trans *tr, sql_schema *s, sqlid id)
+{
+	sql_base *b = os_find_id(s->idxs, tr, id);
+
+	if (!b && tr->tmp == s && tr->localtmps.set) { /* for localtmps search tables */
+		for(node *n = tr->localtmps.set->h; n; n = n->next) {
+			sql_table *t = n->data;
+			node *o = ol_find_id(t->idxs, id);
+			if (o)
+				return (sql_idx*)o->data;
+		}
+	}
+	return (sql_idx*)b;
+}
+
+
 sql_column *
 find_sql_column(sql_table *t, const char *cname)
 {

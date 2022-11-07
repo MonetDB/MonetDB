@@ -288,7 +288,7 @@ SQLprepareClient(Client c, int login)
 				}
 				m->reply_size = value;
 			} else if (sscanf(tok, "size_header=%d", &value) == 1) {
-					be->sizeheader = value != 0;
+				be->sizeheader = value != 0;
 			} else if (sscanf(tok, "columnar_protocol=%d", &value) == 1) {
 				c->protocol = (value != 0) ? PROTOCOL_COLUMNAR : PROTOCOL_9;
 			} else if (sscanf(tok, "time_zone=%d", &value) == 1) {
@@ -880,6 +880,10 @@ SQLreader(Client c)
 					if (msg)
 						break;
 					commit_done = true;
+					if (c->idle == 0 && (m->session->tr == NULL || !m->session->tr->active)) {
+						/* now the session is idle */
+						c->idle = time(0);
+					}
 				}
 
 				if (go && ((!blocked && mnstr_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || mnstr_flush(c->fdout, MNSTR_FLUSH_DATA))) {
@@ -1128,7 +1132,7 @@ SQLparser(Client c)
 	be->q = NULL;
 	c->query = query_cleaned(m->sa, QUERY(m->scanner));
 
-	c->starttime = Tend = GDKusec();
+	c->qryctx.starttime = Tend = GDKusec();
 	if(profilerStatus > 0) {
 		profilerEvent(NULL,
 					  &(struct NonMalEvent)
@@ -1254,7 +1258,7 @@ SQLparser(Client c)
 				qc_clean(m->qc);
 			}
 			/* For deallocate statements just export a simple output */
-			if (!GDKembedded() && (err = mvc_export_operation(be, c->fdout, "", c->starttime, c->curprg->def->optimize)) < 0) {
+			if (!GDKembedded() && (err = mvc_export_operation(be, c->fdout, "", c->qryctx.starttime, c->curprg->def->optimize)) < 0) {
 				msg = createException(PARSE, "SQLparser", SQLSTATE(45000) "Export operation failed: %s", mvc_export_error(be, c->fdout, err));
 				MSresetInstructions(c->curprg->def, oldstop);
 				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
