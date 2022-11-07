@@ -157,8 +157,8 @@ stack_copy(MalStkPtr stk, int start)
 			} else {
 				VALinit(lhs, rhs->vtype, ATOMnilptr(rhs->vtype));
 			}
-			if (rhs->vtype == TYPE_bat && rhs->val.bval)
-				BBPretain(rhs->val.bval);
+			if (lhs->vtype == TYPE_bat && lhs->val.bval)
+				BBPretain(lhs->val.bval);
 		}
 	}
 	return n;
