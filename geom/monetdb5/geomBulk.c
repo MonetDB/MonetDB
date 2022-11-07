@@ -56,7 +56,7 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 	//Cycle through rtree candidates
 	//If there is a original candidate list, make sure the rtree cand is in there
 	//Then do the actual calculation for the predicate using the GEOS function
-	for (int i = 0; results_rtree[i] != 18446744073709551615U && i < (int) b->batCount; i++) {
+	for (int i = 0; results_rtree[i] != BUN_NONE && i < (int) b->batCount; i++) {
 		oid cand = results_rtree[i];
 		//If we have a candidate list that is not dense, we need to check if the rtree candidate is also on the original candidate list
 		if (ci.tpe != cand_dense) {
