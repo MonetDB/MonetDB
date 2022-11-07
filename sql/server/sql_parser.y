@@ -380,11 +380,6 @@ int yydebug=1;
 	XML_query
 	XML_text
 	XML_validate
-    odbc_date_escape
-    odbc_time_escape
-    odbc_timestamp_escape
-    odbc_guid_escape
-    odbc_interval_escape
 
 %type <type>
 	data_type
@@ -728,8 +723,22 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token X_BODY 
 %token MAX_MEMORY MAX_WORKERS OPTIMIZER
-/* escape sequence tokens */
-%token<sval> DATE_ESCAPE_PREFIX TIME_ESCAPE_PREFIX TIMESTAMP_ESCAPE_PREFIX GUID_ESCAPE_PREFIX
+/* odbc escape prefix tokens */
+%token <sval>
+    DATE_ESCAPE_PREFIX
+    TIME_ESCAPE_PREFIX
+    TIMESTAMP_ESCAPE_PREFIX
+    GUID_ESCAPE_PREFIX
+    ODBC_FUNC_ESCAPE_PREFIX
+/* odbc symbolic types */
+%type <sym>
+    odbc_date_escape
+    odbc_time_escape
+    odbc_timestamp_escape
+    odbc_guid_escape
+    odbc_interval_escape
+    odbc_scalar_func_escape
+    odbc_scalar_func
 %%
 
 sqlstmt:
@@ -4127,6 +4136,7 @@ value_exp:
  |  param
  |  string_funcs
  |  XML_value_function
+ |  odbc_scalar_func_escape
  ;
 
 param:
@@ -5598,6 +5608,7 @@ non_reserved_word:
 | TIME_ESCAPE_PREFIX { $$ = sa_strdup(SA, "t"); }
 | TIMESTAMP_ESCAPE_PREFIX { $$ = sa_strdup(SA, "ts"); }
 | GUID_ESCAPE_PREFIX { $$ = sa_strdup(SA, "guid"); }
+| ODBC_FUNC_ESCAPE_PREFIX { $$ = sa_strdup(SA, "fn"); }
 ;
 
 lngval:
@@ -6327,6 +6338,13 @@ odbc_interval_escape:
      '{' interval_expression '}' {$$ = $2;}
     ;
 
+odbc_scalar_func_escape:
+    '{' ODBC_FUNC_ESCAPE_PREFIX odbc_scalar_func '}' {$$ = $3;}
+;
+
+odbc_scalar_func:
+    func_ref { $$ = $1;}
+;
 
 %%
 
