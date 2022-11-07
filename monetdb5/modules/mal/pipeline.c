@@ -313,6 +313,7 @@ PPrecv(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				msg = createException(MAL, "pipeline.recv", GDK_EXCEPTION);
 				goto bailout;
 			}
+			ATOMunfix(tpe, mailbox);
 			if (ATOMputFIX(tpe, mailbox, ATOMnilptr(tpe)) != GDK_SUCCEED) {
 				msg = createException(MAL, "pipeline.recv", GDK_EXCEPTION);
 				goto bailout;
