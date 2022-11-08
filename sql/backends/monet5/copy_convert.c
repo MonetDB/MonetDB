@@ -152,14 +152,14 @@ COPYparse_string(
 	int colwidth = *maxlen;
 	int n;
 
+	copy_init_error_handling(&errors, *failures_bat, *starting_row, *col_no, *col_name);
+
 	if (!block_bat || !offsets_bat)
 		bailout(fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	parsed_bat = COLnew(0, TYPE_str, BATcount(offsets_bat), TRANSIENT);
 	if (!parsed_bat)
 		bailout(fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	copy_init_error_handling(&errors, *failures_bat, *starting_row, *col_no, *col_name);
 
 	n = BATcount(offsets_bat);
 	for (int i = 0; i < n; i++) {
