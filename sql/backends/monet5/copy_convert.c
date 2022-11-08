@@ -199,6 +199,7 @@ COPYparse_string(
 	parsed_bat->trevsorted = false;
 
 end:
+	copy_destroy_error_handling(&errors);
 	if (parsed_bat) {
 		if (msg == MAL_SUCCEED) {
 			*parsed_bat_id = parsed_bat->batCacheid;
