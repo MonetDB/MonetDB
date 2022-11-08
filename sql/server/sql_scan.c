@@ -520,12 +520,13 @@ scanner_init_keywords(void)
 	failed += keywords_insert("MULTILINESTRINGZM", GEOMETRYSUBTYPE);
 	failed += keywords_insert("MULTIPOLYGONZM", GEOMETRYSUBTYPE);
 	failed += keywords_insert("GEOMETRYCOLLECTIONZM", GEOMETRYSUBTYPE);
-	// escape sequence keywords
+	// odbc keywords
 	failed += keywords_insert("d", DATE_ESCAPE_PREFIX);
 	failed += keywords_insert("t", TIME_ESCAPE_PREFIX);
 	failed += keywords_insert("ts", TIMESTAMP_ESCAPE_PREFIX);
 	failed += keywords_insert("guid", GUID_ESCAPE_PREFIX);
 	failed += keywords_insert("fn", ODBC_FUNC_ESCAPE_PREFIX);
+	failed += keywords_insert("SQL_INTERVAL_DAY", SQL_INTERVAL_DAY);
 
 	return failed;
 }
