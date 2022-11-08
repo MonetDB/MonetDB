@@ -287,7 +287,7 @@ SQLprepareClient(Client c, int login)
 				}
 				m->reply_size = value;
 			} else if (sscanf(tok, "size_header=%d", &value) == 1) {
-					be->sizeheader = value != 0;
+				be->sizeheader = value != 0;
 			} else if (sscanf(tok, "columnar_protocol=%d", &value) == 1) {
 				c->protocol = (value != 0) ? PROTOCOL_COLUMNAR : PROTOCOL_9;
 			} else if (sscanf(tok, "time_zone=%d", &value) == 1) {
