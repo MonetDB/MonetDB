@@ -6393,6 +6393,8 @@ odbc_scalar_func:
           append_symbol(l, $3);
           append_type(l, &$5);
           $$ = _symbol_create_list( SQL_CAST, l ); }
+    | USER '(' ')'
+        { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_user"))); }
 ;
 
 odbc_data_type:
