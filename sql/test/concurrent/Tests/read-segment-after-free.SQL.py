@@ -3,7 +3,7 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import time
 from pymonetdb.exceptions import OperationalError
 
-if os.uname().sysname == 'Linux':
+if os.name == 'posix' and os.uname().sysname == 'Linux':
     executor = ProcessPoolExecutor
 else:
     executor = ThreadPoolExecutor

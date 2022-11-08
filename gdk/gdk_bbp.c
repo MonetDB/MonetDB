@@ -815,8 +815,8 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 
 		BAT *bn;
 		Heap *hn;
-		if ((bn = GDKzalloc(sizeof(BAT))) == NULL ||
-		    (hn = GDKzalloc(sizeof(Heap))) == NULL) {
+		if ((bn = GDKmalloc(sizeof(BAT))) == NULL ||
+		    (hn = GDKmalloc(sizeof(Heap))) == NULL) {
 			GDKfree(bn);
 			TRC_CRITICAL(GDK, "cannot allocate memory for BAT.");
 			goto bailout;

@@ -26,6 +26,7 @@ expectraw = f'''% sys.utf8test # table_name
 % s # name
 % varchar # type
 % 32 # length
+% 50 0 # typesizes
 [ "{text1}"\t]
 [ "{text2}"\t]
 '''

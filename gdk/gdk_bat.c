@@ -608,6 +608,8 @@ BATclear(BAT *b, bool force)
 			}
 			*th = (Heap) {
 				.farmid = b->tvheap->farmid,
+				.parentid = b->tvheap->parentid,
+				.dirty = true,
 			};
 			strcpy_len(th->filename, b->tvheap->filename, sizeof(th->filename));
 			if (ATOMheap(b->ttype, th, 0) != GDK_SUCCEED) {
@@ -615,8 +617,6 @@ BATclear(BAT *b, bool force)
 				return GDK_FAIL;
 			}
 			ATOMIC_INIT(&th->refs, 1);
-			th->parentid = b->tvheap->parentid;
-			th->dirty = true;
 			HEAPdecref(b->tvheap, false);
 			b->tvheap = th;
 		}
@@ -2549,6 +2549,8 @@ BATassertProps(BAT *b)
 	/* general BAT sanity */
 	assert(b != NULL);
 	assert(b->batCacheid > 0);
+	assert(b->batCacheid < getBBPsize());
+	assert(b == BBP_cache(b->batCacheid));
 	assert(b->batCount >= b->batInserted);
 
 	/* headless */
