@@ -723,6 +723,49 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token X_BODY 
 %token MAX_MEMORY MAX_WORKERS OPTIMIZER
+/* odbc data type tokens */
+%token <sval>
+		SQL_BIGINT
+		SQL_BINARY
+		SQL_BIT
+		SQL_CHAR
+		SQL_DATE
+		SQL_DECIMAL
+		SQL_DOUBLE
+		SQL_FLOAT
+		SQL_GUID
+		SQL_HUGEINT
+		SQL_INTEGER
+		SQL_INTERVAL_DAY
+		SQL_INTERVAL_DAY_TO_HOUR
+		SQL_INTERVAL_DAY_TO_MINUTE
+		SQL_INTERVAL_DAY_TO_SECOND
+		SQL_INTERVAL_HOUR
+		SQL_INTERVAL_HOUR_TO_MINUTE
+		SQL_INTERVAL_HOUR_TO_SECOND
+		SQL_INTERVAL_MINUTE
+		SQL_INTERVAL_MINUTE_TO_SECOND
+		SQL_INTERVAL_MONTH
+		SQL_INTERVAL_SECOND
+		SQL_INTERVAL_YEAR
+		SQL_INTERVAL_YEAR_TO_MONTH
+		SQL_LONGVARBINARY
+		SQL_LONGVARCHAR
+		SQL_NUMERIC
+		SQL_REAL
+		SQL_SMALLINT
+		SQL_TIME
+		SQL_TIMESTAMP
+		SQL_TINYINT
+		SQL_VARBINARY
+		SQL_VARCHAR
+		SQL_WCHAR
+		SQL_WLONGVARCHAR
+		SQL_WVARCHAR
+
+%type <type>
+	odbc_data_type
+    
 /* odbc escape prefix tokens */
 %token <sval>
     DATE_ESCAPE_PREFIX
@@ -730,6 +773,7 @@ SQLCODE SQLERROR UNDER WHENEVER
     TIMESTAMP_ESCAPE_PREFIX
     GUID_ESCAPE_PREFIX
     ODBC_FUNC_ESCAPE_PREFIX
+
 /* odbc symbolic types */
 %type <sym>
     odbc_date_escape
@@ -6344,6 +6388,88 @@ odbc_scalar_func_escape:
 
 odbc_scalar_func:
     func_ref { $$ = $1;}
+    | CONVERT '(' search_condition ',' odbc_data_type ')'
+        { dlist *l = L();
+          append_symbol(l, $3);
+          append_type(l, &$5);
+          $$ = _symbol_create_list( SQL_CAST, l ); }
+;
+
+odbc_data_type:
+    SQL_BIGINT
+        { sql_find_subtype(&$$, "bigint", 0, 0); }
+    | SQL_BINARY
+        { sql_find_subtype(&$$, "blob", 0, 0); }
+    | SQL_BIT
+        { sql_find_subtype(&$$, "boolean", 0, 0); }
+    | SQL_CHAR
+        { sql_find_subtype(&$$, "character", 1, 0); }
+    | SQL_DATE
+        { sql_find_subtype(&$$, "date", 0, 0); }
+    | SQL_DECIMAL
+        { sql_find_subtype(&$$, "decimal", 18, 3); }
+    | SQL_DOUBLE
+        { sql_find_subtype(&$$, "double", 0, 0); }
+    | SQL_FLOAT
+        { sql_find_subtype(&$$, "double", 0, 0); }
+    | SQL_GUID
+        { sql_find_subtype(&$$, "uuid", 0, 0); }
+    | SQL_HUGEINT
+        { sql_find_subtype(&$$, "hugeint", 0, 0); }
+    | SQL_INTEGER
+        { sql_find_subtype(&$$, "int", 0, 0); }
+    | SQL_INTERVAL_YEAR
+        { sql_find_subtype(&$$, "month_interval", 1, 0); }
+    | SQL_INTERVAL_YEAR_TO_MONTH
+        { sql_find_subtype(&$$, "month_interval", 2, 0); }
+    | SQL_INTERVAL_MONTH
+        { sql_find_subtype(&$$, "month_interval", 3, 0); }
+    | SQL_INTERVAL_DAY
+        { sql_find_subtype(&$$, "day_interval", 4, 0); }
+    | SQL_INTERVAL_DAY_TO_HOUR
+        { sql_find_subtype(&$$, "sec_interval", 5, 0); }
+    | SQL_INTERVAL_DAY_TO_MINUTE
+        { sql_find_subtype(&$$, "sec_interval", 6, 0); }
+    | SQL_INTERVAL_DAY_TO_SECOND
+        { sql_find_subtype(&$$, "sec_interval", 7, 0); }
+    | SQL_INTERVAL_HOUR
+        { sql_find_subtype(&$$, "sec_interval", 8, 0); }
+    | SQL_INTERVAL_HOUR_TO_MINUTE
+        { sql_find_subtype(&$$, "sec_interval", 9, 0); }
+    | SQL_INTERVAL_HOUR_TO_SECOND
+        { sql_find_subtype(&$$, "sec_interval", 10, 0); }
+    | SQL_INTERVAL_MINUTE
+        { sql_find_subtype(&$$, "sec_interval", 11, 0); }
+    | SQL_INTERVAL_MINUTE_TO_SECOND
+        { sql_find_subtype(&$$, "sec_interval", 12, 0); }
+    | SQL_INTERVAL_SECOND
+        { sql_find_subtype(&$$, "sec_interval", 13, 0); }
+    | SQL_LONGVARBINARY
+        { sql_find_subtype(&$$, "blob", 0, 0); }
+    | SQL_LONGVARCHAR
+        { sql_find_subtype(&$$, "clob", 0, 0); }
+    | SQL_NUMERIC
+        { sql_find_subtype(&$$, "decimal", 18, 3); }
+    | SQL_REAL
+        { sql_find_subtype(&$$, "real", 0, 0); }
+    | SQL_SMALLINT
+        { sql_find_subtype(&$$, "smallint", 0, 0); }
+    | SQL_TIME
+        { sql_find_subtype(&$$, "time", 0, 0); }
+    | SQL_TIMESTAMP
+        { sql_find_subtype(&$$, "timestamp", 0, 0); }
+    | SQL_TINYINT
+        { sql_find_subtype(&$$, "tinyint", 0, 0); }
+    | SQL_VARBINARY
+        { sql_find_subtype(&$$, "blob", 0, 0); }
+    | SQL_VARCHAR
+        { sql_find_subtype(&$$, "clob", 0, 0); }
+    | SQL_WCHAR
+        { sql_find_subtype(&$$, "char", 1, 0); }
+    | SQL_WLONGVARCHAR
+        { sql_find_subtype(&$$, "clob", 0, 0); }
+    | SQL_WVARCHAR
+        { sql_find_subtype(&$$, "clob", 0, 0); }
 ;
 
 %%
