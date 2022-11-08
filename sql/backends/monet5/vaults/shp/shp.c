@@ -386,7 +386,8 @@ unfree:
 	return msg;
 }
 
-static str SHPloadInternal (Client cntxt, MalBlkPtr mb, str filename, str schemaname, str tablename) {
+static str SHPloadInternal (Client cntxt, MalBlkPtr mb, str filename, str schemaname, str tablename, bool onclient) {
+	(void) onclient;
 	str msg = MAL_SUCCEED;
 	mvc *m = NULL;
 	sql_schema *sch = NULL;
@@ -456,20 +457,28 @@ str SHPloadSchema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str schemaname = *(str *)getArgReference(stk, pci, 2);
 	/* Output table name (argument 3) */
 	str tablename = *(str *)getArgReference(stk, pci, 3);
-	return SHPloadInternal(cntxt,mb,filename,schemaname,tablename);
+	/* On client flag (argument 4) */
+	bit onclient = pci->argc == 5 ? *getArgReference_bit(stk, pci, 4) : false;
+
+	return SHPloadInternal(cntxt, mb, filename, schemaname, tablename, onclient);
 }
 
 str SHPload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* Shapefile name (argument 1) */
 	str filename = *(str *)getArgReference(stk, pci, 1);
-	/* Output table name (argument 3) */
+	/* Output table name (argument 2) */
 	str tablename = *(str *)getArgReference(stk, pci, 2);
-	return SHPloadInternal(cntxt,mb,filename,"sys",tablename);
+	/* On client flag (argument 3) */
+	bit onclient = pci->argc == 4 ? *getArgReference_bit(stk, pci, 3) : false;
+
+	return SHPloadInternal(cntxt, mb, filename, "sys", tablename, onclient);
 }
 
 #include "mel.h"
 static mel_func shp_init_funcs[] = {
+	pattern("shp", "load", SHPloadSchema, false, "Import an ESRI Shapefile into a new table, on a certain schema", args(1, 5, arg("", void), arg("filename", str), arg("schemaname", str), arg("tablename", str), arg("onclientFlag", bit))),
 	pattern("shp", "load", SHPloadSchema, false, "Import an ESRI Shapefile into a new table, on a certain schema", args(1, 4, arg("", void), arg("filename", str), arg("schemaname", str), arg("tablename", str))),
+	pattern("shp", "load", SHPload, false, "Import an ESRI Shapefile into a new table, on the sys schema", args(1, 4, arg("", void), arg("filename", str), arg("tablename", str), arg("onclientFlag", bit))),
 	pattern("shp", "load", SHPload, false, "Import an ESRI Shapefile into a new table, on the sys schema", args(1, 3, arg("", void), arg("filename", str), arg("tablename", str))),
 	{.imp = NULL}};
 #include "mal_import.h"
