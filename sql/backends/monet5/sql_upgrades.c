@@ -155,6 +155,7 @@ check_sys_tables(Client c, mvc *m, sql_schema *s)
 		/* tests a few internal functions: the last one created, the
 		 * first one created, and one of the first ones created after
 		 * the geom module */
+		{ "quarter",           "quarter",       "date", F_FUNC, },
 		{ "sys_update_tables", "update_tables", NULL,   F_PROC, },
 		{ "length",            "nitems",        "blob", F_FUNC, },
 		{ "isnull",            "isnil",         "void", F_FUNC, },
@@ -191,6 +192,20 @@ check_sys_tables(Client c, mvc *m, sql_schema *s)
 				bat_iterator_end(&bi);
 			}
 			BBPunfix(b->batCacheid);
+		}
+		if (i == 0) {
+			snprintf(buf, sizeof(buf), "select args.type from functions join sys.args on functions.id = args.func_id where functions.name = '%s' and inout = 0;\n", tests[i].name);
+			err = SQLstatementIntern(c, buf, "quarter", true, false, &output);
+			if (err)
+				return err;
+			if ((b = BATdescriptor(output->cols[0].b)) != NULL) {
+				if (BATcount(b) > 0) {
+					BATiter bi = bat_iterator(b);
+					needsystabfix = strcmp((str) BUNtvar(bi, 0), "int") == 0;
+					bat_iterator_end(&bi);
+				}
+				BBPunfix(b->batCacheid);
+			}
 		}
 		res_table_destroy(output);
 		if (needsystabfix)
