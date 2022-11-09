@@ -1,0 +1,8 @@
+query II rowsort
+select *
+from { oj (select 1 as a) as t1
+left outer join (select 1 as a) as t2
+on t1.a=t2.a }
+----
+1
+1

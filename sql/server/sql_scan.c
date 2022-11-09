@@ -526,6 +526,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("ts", ODBC_TIMESTAMP_ESCAPE_PREFIX);
 	failed += keywords_insert("guid", ODBC_GUID_ESCAPE_PREFIX);
 	failed += keywords_insert("fn", ODBC_FUNC_ESCAPE_PREFIX);
+	failed += keywords_insert("oj", ODBC_OJ_ESCAPE_PREFIX);
 	failed += keywords_insert("SQL_BIGINT", SQL_BIGINT);
 	failed += keywords_insert("SQL_BINARY", SQL_BINARY);
 	failed += keywords_insert("SQL_BIT", SQL_BIT);

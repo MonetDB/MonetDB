@@ -773,6 +773,7 @@ SQLCODE SQLERROR UNDER WHENEVER
     ODBC_TIMESTAMP_ESCAPE_PREFIX
     ODBC_GUID_ESCAPE_PREFIX
     ODBC_FUNC_ESCAPE_PREFIX
+    ODBC_OJ_ESCAPE_PREFIX
 
 /* odbc symbolic types */
 %type <sym>
@@ -3258,7 +3259,15 @@ joined_table:
 	  append_symbol(l, $5);
 	  append_symbol(l, NULL);
 	  $$ = _symbol_create_list( SQL_JOIN, l); }
-  ;
+ | '{' ODBC_OJ_ESCAPE_PREFIX table_ref outer_join_type OUTER JOIN table_ref join_spec '}'
+	{ dlist *l = L();
+	  append_symbol(l, $3);
+	  append_int(l, 0);
+	  append_int(l, $4 + 1);
+	  append_symbol(l, $7);
+	  append_symbol(l, $8);
+	  $$ = _symbol_create_list( SQL_JOIN, l); }
+  ; 
 
 join_type:
     /* empty */			{ $$ = 0; }
@@ -5647,12 +5656,13 @@ non_reserved_word:
 | URI		{ $$ = sa_strdup(SA, "uri"); }
 | WHITESPACE	{ $$ = sa_strdup(SA, "whitespace"); }
 
-/* escape sequence non reserved words */
+/* odbc escape sequence non reserved words */
 | ODBC_DATE_ESCAPE_PREFIX { $$ = sa_strdup(SA, "d"); }
 | ODBC_TIME_ESCAPE_PREFIX { $$ = sa_strdup(SA, "t"); }
 | ODBC_TIMESTAMP_ESCAPE_PREFIX { $$ = sa_strdup(SA, "ts"); }
 | ODBC_GUID_ESCAPE_PREFIX { $$ = sa_strdup(SA, "guid"); }
 | ODBC_FUNC_ESCAPE_PREFIX { $$ = sa_strdup(SA, "fn"); }
+| ODBC_OJ_ESCAPE_PREFIX { $$ = sa_strdup(SA, "oj"); }
 ;
 
 lngval:

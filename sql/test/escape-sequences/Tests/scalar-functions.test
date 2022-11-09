@@ -8,6 +8,7 @@ select length((select { fn database() })) > 0
 ----
 1
 
+# this function maps 1:1
 query I rowsort
 select { fn abs(-3) }
 ----
