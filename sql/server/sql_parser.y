@@ -768,10 +768,10 @@ SQLCODE SQLERROR UNDER WHENEVER
     
 /* odbc escape prefix tokens */
 %token <sval>
-    DATE_ESCAPE_PREFIX
-    TIME_ESCAPE_PREFIX
-    TIMESTAMP_ESCAPE_PREFIX
-    GUID_ESCAPE_PREFIX
+    ODBC_DATE_ESCAPE_PREFIX
+    ODBC_TIME_ESCAPE_PREFIX
+    ODBC_TIMESTAMP_ESCAPE_PREFIX
+    ODBC_GUID_ESCAPE_PREFIX
     ODBC_FUNC_ESCAPE_PREFIX
 
 /* odbc symbolic types */
@@ -5648,10 +5648,10 @@ non_reserved_word:
 | WHITESPACE	{ $$ = sa_strdup(SA, "whitespace"); }
 
 /* escape sequence non reserved words */
-| DATE_ESCAPE_PREFIX { $$ = sa_strdup(SA, "d"); }
-| TIME_ESCAPE_PREFIX { $$ = sa_strdup(SA, "t"); }
-| TIMESTAMP_ESCAPE_PREFIX { $$ = sa_strdup(SA, "ts"); }
-| GUID_ESCAPE_PREFIX { $$ = sa_strdup(SA, "guid"); }
+| ODBC_DATE_ESCAPE_PREFIX { $$ = sa_strdup(SA, "d"); }
+| ODBC_TIME_ESCAPE_PREFIX { $$ = sa_strdup(SA, "t"); }
+| ODBC_TIMESTAMP_ESCAPE_PREFIX { $$ = sa_strdup(SA, "ts"); }
+| ODBC_GUID_ESCAPE_PREFIX { $$ = sa_strdup(SA, "guid"); }
 | ODBC_FUNC_ESCAPE_PREFIX { $$ = sa_strdup(SA, "fn"); }
 ;
 
@@ -6336,7 +6336,7 @@ XML_aggregate:
  ;
 
 odbc_date_escape:
-    '{' DATE_ESCAPE_PREFIX string '}'
+    '{' ODBC_DATE_ESCAPE_PREFIX string '}'
         {
             symbol* node = makeAtomNode(m, "date", $3, 0, 0, false);
             if (node == NULL)
@@ -6346,7 +6346,7 @@ odbc_date_escape:
     ;
 
 odbc_time_escape:
-    '{' TIME_ESCAPE_PREFIX string '}'
+    '{' ODBC_TIME_ESCAPE_PREFIX string '}'
         {
             unsigned int pr = get_time_precision($3) + 1;
             symbol* node = makeAtomNode(m, "time", $3, pr, 0, false);
@@ -6357,7 +6357,7 @@ odbc_time_escape:
     ;
 
 odbc_timestamp_escape:
-    '{' TIMESTAMP_ESCAPE_PREFIX string '}'
+    '{' ODBC_TIMESTAMP_ESCAPE_PREFIX string '}'
         {
             unsigned int pr = get_timestamp_precision($3);
             pr = pr ? (pr + 1) : (pr + 6);
@@ -6369,7 +6369,7 @@ odbc_timestamp_escape:
     ;
 
 odbc_guid_escape:
-    '{' GUID_ESCAPE_PREFIX string '}'
+    '{' ODBC_GUID_ESCAPE_PREFIX string '}'
         {
             symbol* node = makeAtomNode(m, "uuid", $3, 0, 0, true);
             if (node == NULL)
