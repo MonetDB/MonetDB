@@ -285,6 +285,37 @@ wkbCollectAggr (wkb **out, const bat *bid) {
 	return msg;
 }
 
+str
+wkbCollect (wkb **out, wkb **a, wkb **b) {
+	str err = MAL_SUCCEED;
+	GEOSGeom ga, gb, collection;
+	GEOSGeom *collect = NULL;
+	int type_a, type_b;
+	int srid;
+
+	if ((err = wkbGetCompatibleGeometries(a, b, &ga, &gb)) != MAL_SUCCEED)
+		throw(MAL,"geom.Collect", "%s", err);
+	if ((collect = GDKmalloc(sizeof(GEOSGeom) * 2)) == NULL) {
+		throw(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	collect[0] = ga;
+	collect[1] = gb;
+	srid = GEOSGetSRID(ga);
+	type_a = GEOSGeomTypeId(ga);
+	type_b = GEOSGeomTypeId(gb);
+
+	if (type_a == type_b)
+		collection = GEOSGeom_createCollection(GEOSGeom_getCollectionType(type_a), collect, (unsigned int) 2);
+	else
+		collection = GEOSGeom_createCollection(GEOS_GEOMETRYCOLLECTION, collect, (unsigned int) 2);
+
+	if ((*out = geos2wkb(collection)) == NULL)
+		err = createException(MAL, "geom.Collect", SQLSTATE(38000) "Geos operation geos2wkb failed");
+	GEOSGeom_destroy(ga);
+	GEOSGeom_destroy(gb);
+	return err;
+}
 /**
  * Start of old geom module
  **/
@@ -5529,6 +5560,8 @@ static mel_func geom_init_funcs[] = {
  command("geom", "DWithinjoin_noindex", wkbDWithinJoinRTree, false, "TODO", args(2, 9, batarg("lr",oid),batarg("rr",oid), batarg("a", wkb), batarg("b", wkb), batarg("sl",oid),batarg("sr",oid), arg("dst",dbl),arg("nil_matches",bit),arg("estimate",lng))),
 
  command("geom", "IntersectsMBR", mbrIntersects, false, "TODO", args(1,3, arg("",bit),arg("a",mbr),arg("b",mbr))),
+
+ command("geom", "Collect", wkbCollect, false, "TODO", args(1,3, arg("",wkb),arg("a",wkb),arg("b",wkb))),
 
  command("aggr", "Collect", wkbCollectAggr, false, "TODO", args(1, 2, arg("", wkb), batarg("val", wkb))),
  command("aggr", "subCollect", wkbCollectAggrSubGrouped, false, "TODO", args(1, 5, batarg("", wkb), batarg("val", wkb), batarg("g", oid), batarg("e", oid), arg("skip_nils", bit))),
