@@ -3039,7 +3039,7 @@ bailout:
 static str
 STRbatSubstitutecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	const bit *rep = getArgReference_bit(stk, pci, 0);
+	const bit *rep = getArgReference_bit(stk, pci, 4);
 	return STRbatSubstitutecst_imp(cntxt, mb, stk, pci, 6, rep);
 }
 
