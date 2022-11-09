@@ -178,7 +178,7 @@ check_sys_tables(Client c, mvc *m, sql_schema *s)
 		if (f == NULL)
 			throw(SQL, __func__, "cannot find procedure sys.%s(%s)", tests[i].name, tests[i].type ? tests[i].type : "");
 		sqlid id = f->func->base.id;
-		char buf[128];
+		char buf[256];
 		snprintf(buf, sizeof(buf), "select id from sys.functions where name = '%s' and func = '%s' and schema_id = 2000;\n", tests[i].name, tests[i].func);
 		res_table *output = NULL;
 		char *err = SQLstatementIntern(c, buf, "update", true, false, &output);
