@@ -241,8 +241,8 @@ cartPointFromXYZ(double x, double y, double z)
 }
 
 /* Converts Well-Known Bytes into Geos Geometries, if they are not NULL and have the same SRID (used for geographic functions) */
-static str
-wkbGetComplatibleGeometries(wkb **a, wkb **b, GEOSGeom *ga, GEOSGeom *gb)
+str
+wkbGetCompatibleGeometries(wkb **a, wkb **b, GEOSGeom *ga, GEOSGeom *gb)
 {
 	str err = MAL_SUCCEED;
 
@@ -773,7 +773,7 @@ wkbDistanceGeographic(dbl *out, wkb **a, wkb **b)
 {
 	str err = MAL_SUCCEED;
 	GEOSGeom ga, gb;
-	err = wkbGetComplatibleGeometries(a, b, &ga, &gb);
+	err = wkbGetCompatibleGeometries(a, b, &ga, &gb);
 	if (ga && gb) {
 		(*out) = geoDistanceInternal(ga, gb, 0);
 	}
@@ -793,7 +793,7 @@ wkbDWithinGeographic(bit *out, wkb **a, wkb **b, dbl *d)
 	str err = MAL_SUCCEED;
 	GEOSGeom ga, gb;
 	double distance;
-	err = wkbGetComplatibleGeometries(a, b, &ga, &gb);
+	err = wkbGetCompatibleGeometries(a, b, &ga, &gb);
 	if (ga && gb) {
 		distance = geoDistanceInternal(ga, gb, *d);
 		(*out) = (distance <= (*d));
@@ -814,7 +814,7 @@ wkbIntersectsGeographic(bit *out, wkb **a, wkb **b)
 	str err = MAL_SUCCEED;
 	GEOSGeom ga, gb;
 	double distance;
-	err = wkbGetComplatibleGeometries(a, b, &ga, &gb);
+	err = wkbGetCompatibleGeometries(a, b, &ga, &gb);
 	if (ga && gb) {
 		distance = geoDistanceInternal(ga, gb, 0);
 		(*out) = (distance == 0);
@@ -917,7 +917,7 @@ wkbCoversGeographic(bit *out, wkb **a, wkb **b)
 {
 	str err = MAL_SUCCEED;
 	GEOSGeom ga, gb;
-	err = wkbGetComplatibleGeometries(a, b, &ga, &gb);
+	err = wkbGetCompatibleGeometries(a, b, &ga, &gb);
 	if (ga && gb)
 		(*out) = geoCoversInternal(ga, gb);
 

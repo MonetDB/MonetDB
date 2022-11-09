@@ -26,7 +26,7 @@ typedef struct GeoLines
     BoundingBox* bbox;
 } GeoLines;
 
-//Geographic polygon 
+//Geographic polygon
 typedef struct GeoPolygon
 {
     GeoLines exteriorRing;
@@ -49,6 +49,8 @@ typedef struct CartPoint2D
     double y;
 } CartPoint2D;
 
+str wkbGetCompatibleGeometries(wkb **a, wkb **b, GEOSGeom *ga, GEOSGeom *gb);
+
 /* Geographic functions */
 str wkbCoversGeographic(bit* out, wkb** a, wkb** b);
 
@@ -62,9 +64,5 @@ str wkbDWithinGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const 
 str wkbIntersectsGeographic(bit* out, wkb** a, wkb** b);
 str wkbIntersectsGeographicSelect(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti);
 str wkbIntersectsGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate, bit *anti);
-
-str wkbCollectAggr (wkb **out, const bat *bid);
-str wkbCollectAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
-str wkbCollectAggrSubGroupedCand(bat* outid, const bat* bid, const bat* gid, const bat* eid, const bat* sid, const bit* skip_nils);
 
 str geodeticEdgeBoundingBox(const CartPoint3D* p1, const CartPoint3D* p2, BoundingBox* mbox);
