@@ -45,7 +45,7 @@ NULL
 0
 0
 
-statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
+statement error 42000!MERGE TABLE 'tst'.'mtbl' should have at least one table associated
 select * from tst.mtbl
 ----
 
@@ -87,14 +87,14 @@ NULL
 0
 0
 
-statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
+statement error 42000!REPLICA TABLE 'tst'.'rtbl' should have at least one table associated
 select * from tst.rtbl
 ----
 
 statement ok
 ALTER TABLE tst.mtbl ADD TABLE tst.rtbl
 
-statement error 42000!The REPLICA TABLE 'tst.rtbl' should have at least one table associated
+statement error 42000!REPLICA TABLE 'tst'.'rtbl' should have at least one table associated
 select * from tst.mtbl
 ----
 
