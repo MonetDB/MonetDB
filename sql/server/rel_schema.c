@@ -1352,8 +1352,8 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		return sql_error(sql, 02, SQLSTATE(42S01) "%s TABLE: name '%s' already declared", action, name);
 	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	} else if (temp == SQL_PERSIST && isTempSchema(s)){
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: cannot create persistent table '%s' in the schema '%s'", name, s->base.name);
+	} else if ((temp == SQL_PERSIST || temp == SQL_MERGE_TABLE || temp == SQL_REMOTE || temp == SQL_REPLICA_TABLE || temp == SQL_UNLOGGED_TABLE) && isTempSchema(s)) {
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: cannot create persistent table '%s' in the schema '%s'", TABLE_TYPE_DESCRIPTION(tt, properties), name, s->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) {
 		/* table element list */
 		dnode *n;
