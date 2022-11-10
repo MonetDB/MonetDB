@@ -179,7 +179,9 @@ check_sys_tables(Client c, mvc *m, sql_schema *s)
 			throw(SQL, __func__, "cannot find procedure sys.%s(%s)", tests[i].name, tests[i].type ? tests[i].type : "");
 		sqlid id = f->func->base.id;
 		char buf[256];
-		snprintf(buf, sizeof(buf), "select id from sys.functions where name = '%s' and func = '%s' and schema_id = 2000;\n", tests[i].name, tests[i].func);
+		snprintf(buf, sizeof(buf),
+				 "select id from sys.functions where name = '%s' and func = '%s' and schema_id = 2000;\n",
+				 tests[i].name, tests[i].func);
 		res_table *output = NULL;
 		char *err = SQLstatementIntern(c, buf, "update", true, false, &output);
 		if (err)
@@ -193,8 +195,11 @@ check_sys_tables(Client c, mvc *m, sql_schema *s)
 			}
 			BBPunfix(b->batCacheid);
 		}
+		res_table_destroy(output);
 		if (i == 0) {
-			snprintf(buf, sizeof(buf), "select args.type from functions join sys.args on functions.id = args.func_id where functions.name = '%s' and inout = 0;\n", tests[i].name);
+			snprintf(buf, sizeof(buf),
+					 "select args.type from functions join args on functions.id = args.func_id where functions.name = '%s' and inout = 0;\n",
+					 tests[i].name);
 			err = SQLstatementIntern(c, buf, "quarter", true, false, &output);
 			if (err)
 				return err;
@@ -206,8 +211,8 @@ check_sys_tables(Client c, mvc *m, sql_schema *s)
 				}
 				BBPunfix(b->batCacheid);
 			}
+			res_table_destroy(output);
 		}
-		res_table_destroy(output);
 		if (needsystabfix)
 			return sql_fix_system_tables(c, m);
 	}
