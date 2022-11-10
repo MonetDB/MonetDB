@@ -6415,7 +6415,7 @@ odbc_data_type:
     | SQL_BIT
         { sql_find_subtype(&$$, "boolean", 0, 0); }
     | SQL_CHAR
-        { sql_find_subtype(&$$, "character", 1, 0); }
+        { sql_find_subtype(&$$, "char", 1, 0); }
     | SQL_DATE
         { sql_find_subtype(&$$, "date", 0, 0); }
     | SQL_DECIMAL
@@ -6425,7 +6425,14 @@ odbc_data_type:
     | SQL_FLOAT
         { sql_find_subtype(&$$, "double", 0, 0); }
     | SQL_GUID
-        { sql_find_subtype(&$$, "uuid", 0, 0); }
+        {
+            sql_type* t = NULL;
+            if (!(t = mvc_bind_type(m, "uuid"))) {
+                sqlformaterror(m, SQLSTATE(22000) "Type uuid unknown");
+                YYABORT;
+            }
+            sql_init_subtype(&$$, t, 0, 0);
+        }
     | SQL_HUGEINT
         { sql_find_subtype(&$$, "hugeint", 0, 0); }
     | SQL_INTEGER
