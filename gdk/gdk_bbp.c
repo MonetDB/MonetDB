@@ -3217,12 +3217,12 @@ BBPdestroy(BAT *b)
 			}
 		}
 	}
-	if (tp != 0) {
-		HEAPdecref(b->theap, false);
+	if (b->theap) {
+		HEAPdecref(b->theap, tp == 0);
 		b->theap = NULL;
 	}
-	if (vtp != 0) {
-		HEAPdecref(b->tvheap, false);
+	if (b->tvheap) {
+		HEAPdecref(b->tvheap, vtp == 0);
 		b->tvheap = NULL;
 	}
 	BATdelete(b);
