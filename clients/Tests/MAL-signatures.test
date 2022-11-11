@@ -23015,12 +23015,12 @@ MTIMEdate_to_str_bulk_p2;
 (empty)
 batmtime
 day
-pattern batmtime.day(X_0:bat[:date]):bat[:int] 
+pattern batmtime.day(X_0:bat[:date]):bat[:bte] 
 MTIMEdate_extract_day_bulk;
 (empty)
 batmtime
 day
-pattern batmtime.day(X_0:bat[:date], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.day(X_0:bat[:date], X_1:bat[:oid]):bat[:bte] 
 MTIMEdate_extract_day_bulk;
 (empty)
 batmtime
@@ -23035,32 +23035,32 @@ MTIMEsql_day_bulk;
 (empty)
 batmtime
 day
-pattern batmtime.day(X_0:bat[:timestamp]):bat[:int] 
+pattern batmtime.day(X_0:bat[:timestamp]):bat[:bte] 
 MTIMEtimestamp_day_bulk;
 (empty)
 batmtime
 day
-pattern batmtime.day(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.day(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:bte] 
 MTIMEtimestamp_day_bulk;
 (empty)
 batmtime
 dayofweek
-pattern batmtime.dayofweek(X_0:bat[:date]):bat[:int] 
+pattern batmtime.dayofweek(X_0:bat[:date]):bat[:bte] 
 MTIMEdate_extract_dayofweek_bulk;
 (empty)
 batmtime
 dayofweek
-pattern batmtime.dayofweek(X_0:bat[:date], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.dayofweek(X_0:bat[:date], X_1:bat[:oid]):bat[:bte] 
 MTIMEdate_extract_dayofweek_bulk;
 (empty)
 batmtime
 dayofyear
-pattern batmtime.dayofyear(X_0:bat[:date]):bat[:int] 
+pattern batmtime.dayofyear(X_0:bat[:date]):bat[:sht] 
 MTIMEdate_extract_dayofyear_bulk;
 (empty)
 batmtime
 dayofyear
-pattern batmtime.dayofyear(X_0:bat[:date], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.dayofyear(X_0:bat[:date], X_1:bat[:oid]):bat[:sht] 
 MTIMEdate_extract_dayofyear_bulk;
 (empty)
 batmtime
@@ -23245,12 +23245,12 @@ MTIMEtimestamp_extract_epoch_ms_bulk;
 (empty)
 batmtime
 hours
-pattern batmtime.hours(X_0:bat[:daytime]):bat[:int] 
+pattern batmtime.hours(X_0:bat[:daytime]):bat[:bte] 
 MTIMEdaytime_extract_hours_bulk;
 (empty)
 batmtime
 hours
-pattern batmtime.hours(X_0:bat[:daytime], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.hours(X_0:bat[:daytime], X_1:bat[:oid]):bat[:bte] 
 MTIMEdaytime_extract_hours_bulk;
 (empty)
 batmtime
@@ -23265,22 +23265,22 @@ MTIMEsql_hours_bulk;
 (empty)
 batmtime
 hours
-pattern batmtime.hours(X_0:bat[:timestamp]):bat[:int] 
+pattern batmtime.hours(X_0:bat[:timestamp]):bat[:bte] 
 MTIMEtimestamp_hours_bulk;
 (empty)
 batmtime
 hours
-pattern batmtime.hours(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.hours(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:bte] 
 MTIMEtimestamp_hours_bulk;
 (empty)
 batmtime
 minutes
-pattern batmtime.minutes(X_0:bat[:daytime]):bat[:int] 
+pattern batmtime.minutes(X_0:bat[:daytime]):bat[:bte] 
 MTIMEdaytime_extract_minutes_bulk;
 (empty)
 batmtime
 minutes
-pattern batmtime.minutes(X_0:bat[:daytime], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.minutes(X_0:bat[:daytime], X_1:bat[:oid]):bat[:bte] 
 MTIMEdaytime_extract_minutes_bulk;
 (empty)
 batmtime
@@ -23295,22 +23295,22 @@ MTIMEsql_minutes_bulk;
 (empty)
 batmtime
 minutes
-pattern batmtime.minutes(X_0:bat[:timestamp]):bat[:int] 
+pattern batmtime.minutes(X_0:bat[:timestamp]):bat[:bte] 
 MTIMEtimestamp_minutes_bulk;
 (empty)
 batmtime
 minutes
-pattern batmtime.minutes(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.minutes(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:bte] 
 MTIMEtimestamp_minutes_bulk;
 (empty)
 batmtime
 month
-pattern batmtime.month(X_0:bat[:date]):bat[:int] 
+pattern batmtime.month(X_0:bat[:date]):bat[:bte] 
 MTIMEdate_extract_month_bulk;
 (empty)
 batmtime
 month
-pattern batmtime.month(X_0:bat[:date], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.month(X_0:bat[:date], X_1:bat[:oid]):bat[:bte] 
 MTIMEdate_extract_month_bulk;
 (empty)
 batmtime
@@ -23325,32 +23325,32 @@ MTIMEsql_month_bulk;
 (empty)
 batmtime
 month
-pattern batmtime.month(X_0:bat[:timestamp]):bat[:int] 
+pattern batmtime.month(X_0:bat[:timestamp]):bat[:bte] 
 MTIMEtimestamp_month_bulk;
 (empty)
 batmtime
 month
-pattern batmtime.month(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.month(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:bte] 
 MTIMEtimestamp_month_bulk;
 (empty)
 batmtime
 quarter
-pattern batmtime.quarter(X_0:bat[:date]):bat[:int] 
+pattern batmtime.quarter(X_0:bat[:date]):bat[:bte] 
 MTIMEdate_extract_quarter_bulk;
 (empty)
 batmtime
 quarter
-pattern batmtime.quarter(X_0:bat[:date], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.quarter(X_0:bat[:date], X_1:bat[:oid]):bat[:bte] 
 MTIMEdate_extract_quarter_bulk;
 (empty)
 batmtime
 quarter
-pattern batmtime.quarter(X_0:bat[:timestamp]):bat[:int] 
+pattern batmtime.quarter(X_0:bat[:timestamp]):bat[:bte] 
 MTIMEtimestamp_quarter_bulk;
 (empty)
 batmtime
 quarter
-pattern batmtime.quarter(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.quarter(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:bte] 
 MTIMEtimestamp_quarter_bulk;
 (empty)
 batmtime
@@ -23715,22 +23715,22 @@ MTIMEtimestamp_to_str_bulk_p2;
 (empty)
 batmtime
 usweekofyear
-pattern batmtime.usweekofyear(X_0:bat[:date]):bat[:int] 
+pattern batmtime.usweekofyear(X_0:bat[:date]):bat[:bte] 
 MTIMEdate_extract_usweekofyear_bulk;
 (empty)
 batmtime
 usweekofyear
-pattern batmtime.usweekofyear(X_0:bat[:date], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.usweekofyear(X_0:bat[:date], X_1:bat[:oid]):bat[:bte] 
 MTIMEdate_extract_usweekofyear_bulk;
 (empty)
 batmtime
 weekofyear
-pattern batmtime.weekofyear(X_0:bat[:date]):bat[:int] 
+pattern batmtime.weekofyear(X_0:bat[:date]):bat[:bte] 
 MTIMEdate_extract_weekofyear_bulk;
 (empty)
 batmtime
 weekofyear
-pattern batmtime.weekofyear(X_0:bat[:date], X_1:bat[:oid]):bat[:int] 
+pattern batmtime.weekofyear(X_0:bat[:date], X_1:bat[:oid]):bat[:bte] 
 MTIMEdate_extract_weekofyear_bulk;
 (empty)
 batmtime
@@ -35345,7 +35345,7 @@ MTIMEdate_to_str;
 create a string from the date, using the specified format (see man strftime)
 mtime
 day
-command mtime.day(X_0:date):int 
+command mtime.day(X_0:date):bte 
 MTIMEdate_extract_day;
 extracts day from date 
 mtime
@@ -35355,17 +35355,17 @@ MTIMEsql_day;
 (empty)
 mtime
 day
-command mtime.day(X_0:timestamp):int 
+command mtime.day(X_0:timestamp):bte 
 MTIMEtimestamp_day;
 (empty)
 mtime
 dayofweek
-command mtime.dayofweek(X_0:date):int 
+command mtime.dayofweek(X_0:date):bte 
 MTIMEdate_extract_dayofweek;
 Returns the current day of the week@where 1=monday, .., 7=sunday
 mtime
 dayofyear
-command mtime.dayofyear(X_0:date):int 
+command mtime.dayofyear(X_0:date):sht 
 MTIMEdate_extract_dayofyear;
 Returns N where d is the Nth day@of the year (january 1 returns 1)
 mtime
@@ -35430,7 +35430,7 @@ MTIMEtimestamp_extract_epoch_ms;
 (empty)
 mtime
 hours
-command mtime.hours(X_0:daytime):int 
+command mtime.hours(X_0:daytime):bte 
 MTIMEdaytime_extract_hours;
 extracts hour from daytime
 mtime
@@ -35440,7 +35440,7 @@ MTIMEsql_hours;
 (empty)
 mtime
 hours
-command mtime.hours(X_0:timestamp):int 
+command mtime.hours(X_0:timestamp):bte 
 MTIMEtimestamp_hours;
 (empty)
 mtime
@@ -35450,7 +35450,7 @@ MTIMElocal_timezone_msec;
 get the local timezone in seconds
 mtime
 minutes
-command mtime.minutes(X_0:daytime):int 
+command mtime.minutes(X_0:daytime):bte 
 MTIMEdaytime_extract_minutes;
 extracts minutes from daytime
 mtime
@@ -35460,12 +35460,12 @@ MTIMEsql_minutes;
 (empty)
 mtime
 minutes
-command mtime.minutes(X_0:timestamp):int 
+command mtime.minutes(X_0:timestamp):bte 
 MTIMEtimestamp_minutes;
 (empty)
 mtime
 month
-command mtime.month(X_0:date):int 
+command mtime.month(X_0:date):bte 
 MTIMEdate_extract_month;
 extracts month from date
 mtime
@@ -35475,17 +35475,17 @@ MTIMEsql_month;
 (empty)
 mtime
 month
-command mtime.month(X_0:timestamp):int 
+command mtime.month(X_0:timestamp):bte 
 MTIMEtimestamp_month;
 (empty)
 mtime
 quarter
-command mtime.quarter(X_0:date):int 
+command mtime.quarter(X_0:date):bte 
 MTIMEdate_extract_quarter;
 extracts quarter from date
 mtime
 quarter
-command mtime.quarter(X_0:timestamp):int 
+command mtime.quarter(X_0:timestamp):bte 
 MTIMEtimestamp_quarter;
 (empty)
 mtime
@@ -35560,12 +35560,12 @@ MTIMEtimestamp_to_str;
 create a string from the time, using the specified format (see man strftime)
 mtime
 usweekofyear
-command mtime.usweekofyear(X_0:date):int 
+command mtime.usweekofyear(X_0:date):bte 
 MTIMEdate_extract_usweekofyear;
 Returns the week number in the year, US style.
 mtime
 weekofyear
-command mtime.weekofyear(X_0:date):int 
+command mtime.weekofyear(X_0:date):bte 
 MTIMEdate_extract_weekofyear;
 Returns the week number in the year.
 mtime
