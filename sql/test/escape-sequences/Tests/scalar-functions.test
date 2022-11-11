@@ -200,3 +200,8 @@ query R
 select { fn atan2(1,2) }
 ----
 0.464
+
+query T
+select { fn char(100) }
+----
+d
