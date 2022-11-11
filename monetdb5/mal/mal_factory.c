@@ -122,6 +122,8 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 	}
 	if (mb->errors)
 		throw(MAL, "factory.call", PROGRAM_GENERAL);
+	QryCtx *qc = MT_thread_get_qry_ctx();
+	MT_thread_set_qry_ctx(NULL);
 	if (firstcall ){
 		/* initialize the stack */
 		for(i= psig->argc; i< mb->vtop; i++) {
@@ -144,6 +146,7 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 	 } else {
 		msg = reenterMAL(cntxt, mb, pl->pc, -1, pl->stk);
 	}
+	MT_thread_set_qry_ctx(qc);
 	/* propagate change in debugging status */
 	if (cmd && pl->stk && pl->stk->cmd != cmd && cmd != 'x')
 		for (; stk; stk = stk->up)

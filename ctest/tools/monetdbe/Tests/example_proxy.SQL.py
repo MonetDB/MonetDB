@@ -24,7 +24,7 @@ lines = results.stdout.splitlines()
 
 if len(lines) != 3:
     print(results.stdout)
-    print("Too many output lines.")
+    print("Received {} lines, expected 3".format(len(lines)))
     exit(1)
 
 def test_equal(expected, received):

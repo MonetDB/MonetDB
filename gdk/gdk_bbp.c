@@ -141,6 +141,13 @@ static ATOMIC_TYPE BBPtransid = ATOMIC_VAR_INIT(0);
 
 #define BBPnamecheck(s) (BBPtmpcheck(s) ? strtol((s) + 4, NULL, 8) : 0)
 
+#define BATno_shared_heap(b) \
+	(!VIEWtparent(b) && (ATOMIC_GET(&(b)->theap->refs) & HEAPREFS) == 1)
+
+#define BATshared(b) \
+	((!VIEWtparent(b) && (ATOMIC_GET(&(b)->theap->refs) & HEAPREFS) > 1) || \
+	 ((b)->tvheap && !VIEWvtparent(b) && (ATOMIC_GET(&(b)->tvheap->refs) & HEAPREFS) > 1))
+
 static void
 BBP_insert(bat i)
 {
@@ -808,8 +815,8 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 
 		BAT *bn;
 		Heap *hn;
-		if ((bn = GDKzalloc(sizeof(BAT))) == NULL ||
-		    (hn = GDKzalloc(sizeof(Heap))) == NULL) {
+		if ((bn = GDKmalloc(sizeof(BAT))) == NULL ||
+		    (hn = GDKmalloc(sizeof(Heap))) == NULL) {
 			GDKfree(bn);
 			TRC_CRITICAL(GDK, "cannot allocate memory for BAT.");
 			goto bailout;
@@ -953,7 +960,8 @@ BBPcheckbats(unsigned bbpversion)
 			if (statb.st_size > (off_t) hfree) {
 				int fd;
 				if ((fd = MT_open(path, O_RDWR | O_CLOEXEC | O_BINARY)) >= 0) {
-					(void) ftruncate(fd, hfree);
+					if (ftruncate(fd, hfree) == -1)
+						perror("ftruncate");
 					(void) close(fd);
 				}
 			}
@@ -981,7 +989,8 @@ BBPcheckbats(unsigned bbpversion)
 			if (statb.st_size > (off_t) hfree) {
 				int fd;
 				if ((fd = MT_open(path, O_RDWR | O_CLOEXEC | O_BINARY)) >= 0) {
-					(void) ftruncate(fd, hfree);
+					if (ftruncate(fd, hfree) == -1)
+						perror("ftruncate");
 					(void) close(fd);
 				}
 			}
@@ -1101,7 +1110,7 @@ BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror)
 			GDKerror("no newline allowed in directory name\n");
 		return GDK_FAIL;
 	}
-	if (rolemask == 0 || (rolemask & 1 && BBPfarms[0].dirname != NULL)) {
+	if (rolemask == 0 || (rolemask & 1 && BBPfarms[0].roles != 0)) {
 		if (logerror)
 			GDKerror("bad rolemask\n");
 		return GDK_FAIL;
@@ -1172,6 +1181,36 @@ BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror)
 	if (logerror)
 		GDKerror("too many farms\n");
 	return GDK_FAIL;
+}
+
+gdk_return
+BBPchkfarms(void)
+{
+	const char *dir = NULL;
+	uint32_t rolemask = 0;
+	if ((BBPfarms[0].roles & 1) == 0) {
+		GDKerror("Must at least call BBPaddfarms for once for persistent data\n");
+		return GDK_FAIL;
+	}
+	for (int i = 0; i < MAXFARMS; i++) {
+		if (BBPfarms[i].roles != 0) {
+			dir = BBPfarms[i].dirname;
+			rolemask |= BBPfarms[i].roles;
+		}
+	}
+	if (dir == NULL)
+		dir = "in-memory";
+	if ((rolemask & (1U << TRANSIENT)) == 0) {
+		gdk_return rc = BBPaddfarm(dir, 1U << TRANSIENT, true);
+		if (rc != GDK_SUCCEED)
+			return rc;
+	}
+	if ((rolemask & (1U << SYSTRANS)) == 0) {
+		gdk_return rc = BBPaddfarm(dir, 1U << SYSTRANS, true);
+		if (rc != GDK_SUCCEED)
+			return rc;
+	}
+	return GDK_SUCCEED;
 }
 
 #ifdef GDKLIBRARY_HASHASH
@@ -1465,7 +1504,7 @@ BBPtrim(bool aggressive)
 		    BBP_lrefs(bid) != 0 &&
 		    (b = BBP_cache(bid)) != NULL) {
 			MT_lock_set(&b->theaplock);
-			if (b->batSharecnt == 0 &&
+			if (!BATshared(b) &&
 			    !isVIEW(b) &&
 			    (!BATdirty(b) || (aggressive && b->theap->storage == STORE_MMAP && (b->tvheap == NULL || b->tvheap->storage == STORE_MMAP))) /*&&
 			    (BBP_status(bid) & BBPPERSISTENT ||
@@ -1847,21 +1886,19 @@ BBPexit(void)
 				BAT *b = BBP_desc(i);
 
 				if (b) {
-					if (b->batSharecnt > 0) {
+					if (BATshared(b)) {
 						skipped = true;
 						continue;
 					}
 					MT_lock_set(&b->theaplock);
 					bat tp = VIEWtparent(b);
 					if (tp != 0) {
-						BBP_desc(tp)->batSharecnt--;
 						--BBP_lrefs(tp);
 						HEAPdecref(b->theap, false);
 						b->theap = NULL;
 					}
 					tp = VIEWvtparent(b);
 					if (tp != 0) {
-						BBP_desc(tp)->batSharecnt--;
 						--BBP_lrefs(tp);
 						HEAPdecref(b->tvheap, false);
 						b->tvheap = NULL;
@@ -2205,8 +2242,6 @@ BBPdump(void)
 			fprintf(stderr, ", no descriptor\n");
 			continue;
 		}
-		if (b->batSharecnt > 0)
-			fprintf(stderr, " shares=%d", b->batSharecnt);
 		if (b->theap) {
 			if (b->theap->parentid != b->batCacheid) {
 				fprintf(stderr, " Theap -> %d", b->theap->parentid);
@@ -2772,17 +2807,12 @@ BBPshare(bat parent)
 
 	assert(parent > 0);
 	(void) incref(parent, true, lock);
-	if (lock)
-		MT_lock_set(&GDKswapLock(parent));
-	++BBP_cache(parent)->batSharecnt;
 	assert(BBP_refs(parent) > 0);
-	if (lock)
-		MT_lock_unset(&GDKswapLock(parent));
 	(void) BATdescriptor(parent);
 }
 
 static inline int
-decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const char *func)
+decref(bat i, bool logical, bool lock, const char *func)
 {
 	int refs = 0, lrefs;
 	bool swap = false;
@@ -2799,18 +2829,6 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));
-	if (releaseShare) {
-		assert(BBP_lrefs(i) > 0);
-		if (BBP_desc(i)->batSharecnt == 0) {
-			GDKerror("%s: %s does not have any shares.\n", func, BBP_logical(i));
-			assert(0);
-		} else {
-			--BBP_desc(i)->batSharecnt;
-		}
-		if (lock)
-			MT_lock_unset(&GDKswapLock(i));
-		return refs;
-	}
 
 	while (BBP_status(i) & BBPUNLOADING) {
 		if (lock)
@@ -2831,7 +2849,8 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 			refs = --BBP_lrefs(i);
 		}
 		/* cannot release last logical ref if still shared */
-		assert(BBP_desc(i)->batSharecnt == 0 || refs > 0);
+		// but we could still have a bat iterator on it
+		//assert(!BATshared(BBP_desc(i)) || refs > 0);
 	} else {
 		if (BBP_refs(i) == 0) {
 			GDKerror("%s: %s does not have pointer fixes.\n", func, BBP_logical(i));
@@ -2888,7 +2907,7 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 		 /* cannot unload in-memory data */
 		 !GDKinmemory(farmid) &&
 		 /* do not unload views or parents of views */
-		 b->batSharecnt == 0 &&
+		 !BATshared(b) &&
 		 b->batCacheid == b->theap->parentid &&
 		 (b->tvheap == NULL || b->batCacheid == b->tvheap->parentid))
 	      : (BBP_status(i) & BBPTMP)))) {
@@ -2929,34 +2948,25 @@ decref(bat i, bool logical, bool releaseShare, bool recurse, bool lock, const ch
 			BBP_status_off(i, BBPUNLOADING);
 		}
 	}
-	if (recurse) {
-		if (tp)
-			decref(tp, false, false, true, lock, func);
-		if (tvp)
-			decref(tvp, false, false, true, lock, func);
-	}
+	if (tp)
+		decref(tp, false, lock, func);
+	if (tvp)
+		decref(tvp, false, lock, func);
 	return refs;
 }
 
 int
 BBPunfix(bat i)
 {
-	return decref(i, false, false, true, true, __func__);
+	return decref(i, false, true, __func__);
 }
 
 int
 BBPrelease(bat i)
 {
-	return decref(i, true, false, true, true, __func__);
+	return decref(i, true, true, __func__);
 }
 
-/*
- * M5 often changes the physical ref into a logical reference.  This
- * state change consist of the sequence BBPretain(b);BBPunfix(b).
- * A faster solution is given below, because it does not trigger the
- * BBP management actions, such as garbage collecting the bats.
- * [first step, initiate code change]
- */
 void
 BBPkeepref(BAT *b)
 {
@@ -2974,7 +2984,7 @@ BBPkeepref(BAT *b)
 	if (BATsetaccess(b, BAT_READ) == NULL)
 		return;		/* already decreffed */
 
-	refs = decref(i, false, false, true, lock, __func__);
+	refs = decref(i, false, lock, __func__);
 	(void) refs;
 	assert(refs >= 0);
 }
@@ -3046,8 +3056,8 @@ BATdescriptor(bat i)
 void
 BBPunshare(bat parent)
 {
-	(void) decref(parent, false, true, true, true, __func__);
-	(void) decref(parent, true, false, true, true, __func__);
+	(void) decref(parent, true, true, __func__);
+	(void) decref(parent, false, true, __func__);
 }
 
 /*
@@ -3071,7 +3081,7 @@ BBPreclaim(BAT *b)
 
 	assert(BBP_refs(i) == 1);
 
-	return decref(i, false, false, true, lock, __func__) < 0;
+	return decref(i, false, lock, __func__) < 0;
 }
 
 /*
@@ -3196,7 +3206,7 @@ BBPdestroy(BAT *b)
 	if (tp == 0) {
 		/* bats that get destroyed must unfix their atoms */
 		gdk_return (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
-		assert(b->batSharecnt == 0);
+		assert(BATno_shared_heap(b));
 		if (tunfix) {
 			BUN p, q;
 			BATiter bi = bat_iterator_nolock(b);
@@ -3207,12 +3217,12 @@ BBPdestroy(BAT *b)
 			}
 		}
 	}
-	if (tp != 0) {
-		HEAPdecref(b->theap, false);
+	if (b->theap) {
+		HEAPdecref(b->theap, tp == 0);
 		b->theap = NULL;
 	}
-	if (vtp != 0) {
-		HEAPdecref(b->tvheap, false);
+	if (b->tvheap) {
+		HEAPdecref(b->tvheap, vtp == 0);
 		b->tvheap = NULL;
 	}
 	BATdelete(b);
@@ -3221,9 +3231,9 @@ BBPdestroy(BAT *b)
 
 	/* parent released when completely done with child */
 	if (tp)
-		BBPunshare(tp);
+		BBPrelease(tp);
 	if (vtp)
-		BBPunshare(vtp);
+		BBPrelease(vtp);
 }
 
 static gdk_return
@@ -3250,9 +3260,9 @@ BBPfree(BAT *b)
 
 	/* parent released when completely done with child */
 	if (ret == GDK_SUCCEED && tp)
-		BBPunshare(tp);
+		BBPrelease(tp);
 	if (ret == GDK_SUCCEED && vtp)
-		BBPunshare(vtp);
+		BBPrelease(vtp);
 	return ret;
 }
 

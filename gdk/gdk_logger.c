@@ -1218,7 +1218,7 @@ log_read_transaction(logger *lg)
 			else {
 				if (l.id > 0) {
 					// START OF LOG_BAT_GROUP
-					cands = COLnew(0, TYPE_void, 0, TRANSIENT);
+					cands = COLnew(0, TYPE_void, 0, SYSTRANS);
 					if (!cands)
 						err = LOG_ERR;
 				}
@@ -1244,7 +1244,7 @@ log_read_transaction(logger *lg)
 		GDKdebug = dbg;
 
 	if (cands)
-		GDKfree(cands);
+		BBPunfix(cands->batCacheid);
 	if (!ok)
 		return LOG_EOF;
 	return err;
@@ -1527,8 +1527,8 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts, 
 	BUN ocnt = BATcount(catalog_bid);
 	nbids = logbat_new(TYPE_int, ocnt-cleanup, PERSISTENT);
 	noids = logbat_new(TYPE_int, ocnt-cleanup, PERSISTENT);
-	ncnts = logbat_new(TYPE_lng, ocnt-cleanup, TRANSIENT);
-	nlids = logbat_new(TYPE_lng, ocnt-cleanup, TRANSIENT);
+	ncnts = logbat_new(TYPE_lng, ocnt-cleanup, SYSTRANS);
+	nlids = logbat_new(TYPE_lng, ocnt-cleanup, SYSTRANS);
 	ndels = logbat_new(TYPE_oid, BATcount(dcatalog)-cleanup, PERSISTENT);
 
 	if (nbids == NULL || noids == NULL || ncnts == NULL || nlids == NULL || ndels == NULL) {
@@ -1996,12 +1996,12 @@ log_load(int debug, const char *fn, const char *logdir, logger *lg, char filenam
 		BBPretain(lg->catalog_id->batCacheid);
 		BBPretain(lg->dcatalog->batCacheid);
 	}
-	lg->catalog_cnt = logbat_new(TYPE_lng, 1, TRANSIENT);
+	lg->catalog_cnt = logbat_new(TYPE_lng, 1, SYSTRANS);
 	if (lg->catalog_cnt == NULL) {
 		GDKerror("failed to create catalog_cnt bat");
 		goto error;
 	}
-	lg->catalog_lid = logbat_new(TYPE_lng, 1, TRANSIENT);
+	lg->catalog_lid = logbat_new(TYPE_lng, 1, SYSTRANS);
 	if (lg->catalog_lid == NULL) {
 		GDKerror("failed to create catalog_lid bat");
 		goto error;
@@ -2981,20 +2981,20 @@ log_tsequence(logger *lg, int seq, lng val)
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= inserted) {
 		assert(lg->seqs_val->hseqbase == 0);
-		if (BUNreplace(lg->seqs_val, p, &val, false) != GDK_SUCCEED) {
+		if (BUNreplace(lg->seqs_val, p, &val, true) != GDK_SUCCEED) {
 			log_unlock(lg);
 			return GDK_FAIL;
 		}
 	} else {
 		if (p != BUN_NONE) {
 			oid pos = p;
-			if (BUNappend(lg->dseqs, &pos, false) != GDK_SUCCEED) {
+			if (BUNappend(lg->dseqs, &pos, true) != GDK_SUCCEED) {
 				log_unlock(lg);
 				return GDK_FAIL;
 			}
 		}
-		if (BUNappend(lg->seqs_id, &seq, false) != GDK_SUCCEED ||
-		    BUNappend(lg->seqs_val, &val, false) != GDK_SUCCEED) {
+		if (BUNappend(lg->seqs_id, &seq, true) != GDK_SUCCEED ||
+		    BUNappend(lg->seqs_val, &val, true) != GDK_SUCCEED) {
 			log_unlock(lg);
 			return GDK_FAIL;
 		}
@@ -3066,10 +3066,10 @@ log_add_bat(logger *lg, BAT *b, log_id id, int tid)
 	if (lg->debug & 1)
 		fprintf(stderr, "#create %d\n", id);
 	assert(log_find(lg->catalog_bid, lg->dcatalog, bid) == BUN_NONE);
-	if (BUNappend(lg->catalog_bid, &bid, false) != GDK_SUCCEED ||
-	    BUNappend(lg->catalog_id, &id, false) != GDK_SUCCEED ||
-	    BUNappend(lg->catalog_cnt, &cnt, false) != GDK_SUCCEED ||
-	    BUNappend(lg->catalog_lid, &lid, false) != GDK_SUCCEED)
+	if (BUNappend(lg->catalog_bid, &bid, true) != GDK_SUCCEED ||
+	    BUNappend(lg->catalog_id, &id, true) != GDK_SUCCEED ||
+	    BUNappend(lg->catalog_cnt, &cnt, true) != GDK_SUCCEED ||
+	    BUNappend(lg->catalog_lid, &lid, true) != GDK_SUCCEED)
 		return GDK_FAIL;
 	lg->cnt++;
 	BBPretain(bid);
@@ -3093,7 +3093,7 @@ log_del_bat(logger *lg, log_bid bid)
 	assert(lg->catalog_lid->hseqbase == 0);
 	if (BUNreplace(lg->catalog_lid, p, &lid, false) != GDK_SUCCEED)
 		return GDK_FAIL;
-	if (BUNappend(lg->dcatalog, &pos, false) == GDK_SUCCEED) {
+	if (BUNappend(lg->dcatalog, &pos, true) == GDK_SUCCEED) {
 		lg->deleted++;
 		return GDK_SUCCEED;
 	}

@@ -1300,16 +1300,20 @@ BATnegcands(BUN nr, BAT *odels)
 		return bn;
 
 	nme = BBP_physical(bn->batCacheid);
-	if ((dels = (Heap*)GDKzalloc(sizeof(Heap))) == NULL ||
-	    (dels->farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap)) < 0){
-		GDKfree(dels);
+	if ((dels = GDKmalloc(sizeof(Heap))) == NULL){
 		BBPreclaim(bn);
 		return NULL;
 	}
+	*dels = (Heap) {
+		.farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap),
+		.parentid = bn->batCacheid,
+		.dirty = true,
+	};
 	strconcat_len(dels->filename, sizeof(dels->filename),
 		      nme, ".theap", NULL);
 
-    	if (HEAPalloc(dels, hi - lo + (sizeof(ccand_t)/sizeof(oid)), sizeof(oid)) != GDK_SUCCEED) {
+    	if (dels->farmid < 0 ||
+	    HEAPalloc(dels, hi - lo + (sizeof(ccand_t)/sizeof(oid)), sizeof(oid)) != GDK_SUCCEED) {
 		GDKfree(dels);
 		BBPreclaim(bn);
         	return NULL;
@@ -1319,9 +1323,7 @@ BATnegcands(BUN nr, BAT *odels)
 	*c = (ccand_t) {
 		.type = CAND_NEGOID,
 	};
-    	dels->parentid = bn->batCacheid;
 	dels->free = sizeof(ccand_t) + sizeof(oid) * (hi - lo);
-	dels->dirty = true;
 	BATiter bi = bat_iterator(odels);
 	if (bi.type == TYPE_void) {
 		oid *r = (oid *) (dels->base + sizeof(ccand_t));
@@ -1366,17 +1368,21 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 		return bn;
 
 	nme = BBP_physical(bn->batCacheid);
-	if ((msks = (Heap*)GDKzalloc(sizeof(Heap))) == NULL ||
-	    (msks->farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap)) < 0){
-		GDKfree(msks);
+	if ((msks = GDKmalloc(sizeof(Heap))) == NULL){
 		BBPreclaim(bn);
 		return NULL;
 	}
+	*msks = (Heap) {
+		.farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap),
+		.parentid = bn->batCacheid,
+		.dirty = true,
+	};
 	strconcat_len(msks->filename, sizeof(msks->filename),
 		      nme, ".theap", NULL);
 
 	nmask = (nr + 31) / 32;
-    	if (HEAPalloc(msks, nmask + (sizeof(ccand_t)/sizeof(uint32_t)), sizeof(uint32_t)) != GDK_SUCCEED) {
+    	if (msks->farmid < 0 ||
+	    HEAPalloc(msks, nmask + (sizeof(ccand_t)/sizeof(uint32_t)), sizeof(uint32_t)) != GDK_SUCCEED) {
 		GDKfree(msks);
 		BBPreclaim(bn);
         	return NULL;
@@ -1386,9 +1392,7 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 		.type = CAND_MSK,
 //		.mask = true,
 	};
-    	msks->parentid = bn->batCacheid;
 	msks->free = sizeof(ccand_t) + nmask * sizeof(uint32_t);
-	msks->dirty = true;
 	uint32_t *r = (uint32_t*)(msks->base + sizeof(ccand_t));
 	BATiter bi = bat_iterator(masked);
 	if (selected) {
@@ -1479,22 +1483,26 @@ BATunmask(BAT *b)
 			return NULL;
 		}
 		Heap *dels;
-		if ((dels = GDKzalloc(sizeof(Heap))) == NULL ||
-		    strconcat_len(dels->filename, sizeof(dels->filename),
-				  BBP_physical(bn->batCacheid), ".theap",
-				  NULL) >= sizeof(dels->filename) ||
-		    (dels->farmid = BBPselectfarm(TRANSIENT, TYPE_void,
-						  varheap)) == -1 ||
-		    HEAPalloc(dels,
-			      cnt * 32 - bi.count
-			      + sizeof(ccand_t) / sizeof(oid),
-			      sizeof(oid)) != GDK_SUCCEED) {
+		if ((dels = GDKmalloc(sizeof(Heap))) == NULL) {
+			BBPreclaim(bn);
+			return NULL;
+		}
+		*dels = (Heap) {
+			.farmid = BBPselectfarm(TRANSIENT, TYPE_void, varheap),
+			.parentid = bn->batCacheid,
+			.dirty = true,
+		};
+		strconcat_len(dels->filename, sizeof(dels->filename),
+			      BBP_physical(bn->batCacheid), ".theap", NULL);
+
+		if (dels->farmid < 0 ||
+		    HEAPalloc(dels, cnt * 32 - bi.count
+			      + sizeof(ccand_t) / sizeof(oid), sizeof(oid)) != GDK_SUCCEED) {
 			GDKfree(dels);
 			BBPreclaim(bn);
 			bat_iterator_end(&bi);
 			return NULL;
 		}
-		dels->parentid = bn->batCacheid;
 		* (ccand_t *) dels->base = (ccand_t) {
 			.type = CAND_NEGOID,
 		};

@@ -44,6 +44,7 @@
 #include "mal_parser.h"
 #include "mal_namespace.h"
 #include "mal_private.h"
+#include "mal_internal.h"
 #include "mal_interpreter.h"
 #include "mal_runtime.h"
 #include "mal_authorize.h"
@@ -55,11 +56,15 @@ ClientRec *mal_clients = NULL;
 void
 mal_client_reset(void)
 {
-	MAL_MAXCLIENTS = 0;
 	if (mal_clients) {
+		for (int i = 0; i < MAL_MAXCLIENTS; i++) {
+			ATOMIC_DESTROY(&mal_clients[i].lastprint);
+			ATOMIC_DESTROY(&mal_clients[i].qryctx.datasize);
+		}
 		GDKfree(mal_clients);
 		mal_clients = NULL;
 	}
+	MAL_MAXCLIENTS = 0;
 }
 
 bool
@@ -86,6 +91,7 @@ MCinit(void)
 	}
 	for (int i = 0; i < MAL_MAXCLIENTS; i++){
 		ATOMIC_INIT(&mal_clients[i].lastprint, 0);
+		ATOMIC_INIT(&mal_clients[i].qryctx.datasize, 0);
 		mal_clients[i].idx = -1; /* indicate it's available */
 	}
 	return true;
@@ -189,7 +195,7 @@ MCresetProfiler(stream *fdout)
 	MT_lock_unset(&mal_profileLock);
 }
 
-void
+static void
 MCexitClient(Client c)
 {
 	MCresetProfiler(c->fdout);
@@ -216,7 +222,6 @@ MCexitClient(Client c)
 					  &(struct NonMalEvent)
 					  {CLIENT_END, c, Tend,  NULL, NULL, 0, Tend-(c->session)});
 	}
-	setClientContext(NULL);
 }
 
 static Client
@@ -258,8 +263,10 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;
 	c->memorylimit = 0;
-	c->querytimeout = 0;
+	c->qryctx.querytimeout = 0;
 	c->sessiontimeout = 0;
+	c->qryctx.starttime = 0;
+	ATOMIC_SET(&c->qryctx.datasize, 0);
 	c->itrace = 0;
 	c->errbuf = 0;
 
@@ -276,7 +283,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	}
 	c->promptlength = strlen(prompt);
 
-	c->profticks = c->profstmt = NULL;
+	c->profticks = c->profstmt = c->profevents = NULL;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	c->sqlprofiler = 0;
 	c->blocksize = BLOCK;
@@ -304,12 +311,14 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 		(void) c_old;
 		assert(NULL == c_old);
 		c = MCinitClientRecord(c, user, fin, fout);
+		MT_thread_set_qry_ctx(&c->qryctx);
 	}
 	MT_lock_unset(&mal_contextLock);
 
-	profilerEvent(NULL,
-				  &(struct NonMalEvent)
-				  {CLIENT_START, c, c->session,  NULL, NULL, 0, 0});
+	if (c)
+		profilerEvent(NULL,
+					  &(struct NonMalEvent)
+					  {CLIENT_START, c, c->session,  NULL, NULL, 0, 0});
 	return c;
 }
 
@@ -381,7 +390,7 @@ MCforkClient(Client father)
 		strcpy_len(father->optimizer, son->optimizer, sizeof(father->optimizer));
 		son->workerlimit = father->workerlimit;
 		son->memorylimit = father->memorylimit;
-		son->querytimeout = father->querytimeout;
+		son->qryctx.querytimeout = father->qryctx.querytimeout;
 		son->sessiontimeout = father->sessiontimeout;
 
 		if (son->prompt)
@@ -424,7 +433,7 @@ MCshutdowninprogress(void){
  * child can not close a parent.
  */
 void
-MCfreeClient(Client c)
+MCcloseClient(Client c)
 {
 	MT_lock_set(&mal_contextLock);
 	if( c->mode == FREECLIENT) {
@@ -461,7 +470,7 @@ MCfreeClient(Client c)
 	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;
 	c->memorylimit = 0;
-	c->querytimeout = 0;
+	c->qryctx.querytimeout = 0;
 	c->sessiontimeout = 0;
 	c->user = oid_nil;
 	if( c->username){
@@ -476,7 +485,8 @@ MCfreeClient(Client c)
 	if( c->profticks){
 		BBPunfix(c->profticks->batCacheid);
 		BBPunfix(c->profstmt->batCacheid);
-		c->profticks = c->profstmt = NULL;
+		BBPunfix(c->profevents->batCacheid);
+		c->profticks = c->profstmt = c->profevents = NULL;
 	}
 	if( c->error_row){
 		BBPunfix(c->error_row->batCacheid);
@@ -488,6 +498,9 @@ MCfreeClient(Client c)
 	c->sqlprofiler = 0;
 	free(c->handshake_options);
 	c->handshake_options = NULL;
+	setClientContext(NULL);
+	MT_thread_set_qry_ctx(NULL);
+	assert(c->qryctx.datasize == 0);
 	MT_sema_destroy(&c->s);
 	MT_lock_set(&mal_contextLock);
 	if (shutdowninprogress) {
@@ -568,12 +581,6 @@ MCmemoryClaim(void)
 	if(active == 0 ||  claim  * LL_CONSTANT(1048576) >= GDK_mem_maxsize)
 		return GDK_mem_maxsize;
 	return claim * LL_CONSTANT(1048576);
-}
-
-void
-MCcloseClient(Client c)
-{
-	MCfreeClient(c);
 }
 
 str
