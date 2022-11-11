@@ -1,0 +1,4 @@
+query T
+select { fn char(100) }
+----
+d
