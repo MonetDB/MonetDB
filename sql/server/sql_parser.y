@@ -6398,6 +6398,7 @@ odbc_scalar_func_escape:
 
 odbc_scalar_func:
     func_ref { $$ = $1;}
+    | string_funcs { $$ = $1;}
     | CONVERT '(' search_condition ',' odbc_data_type ')'
         { dlist *l = L();
           append_symbol(l, $3);
