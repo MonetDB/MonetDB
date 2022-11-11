@@ -1224,9 +1224,13 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				continue;
 			}
 
-			const void *old = BUNtvar(bi, updid);
+			/* it is possible that a previous run was killed
+			 * after an update (with a mmapped tail file)
+			 * but before that was committed, then the
+			 * offset may point outside of the vheap */
+			const void *old = BUNtvaroff(bi, updid) < bi.vhfree ? BUNtvar(bi, updid) : NULL;
 
-			if (atomcmp(old, new) == 0) {
+			if (old && atomcmp(old, new) == 0) {
 				/* replacing with the same value:
 				 * nothing to do */
 				continue;
@@ -1234,9 +1238,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 
 			bool isnil = atomcmp(new, nil) == 0;
 			anynil |= isnil;
-			if (b->tnil &&
-			    !anynil &&
-			    atomcmp(old, nil) == 0) {
+			if (old == NULL ||
+			    (b->tnil &&
+			     !anynil &&
+			     atomcmp(old, nil) == 0)) {
 				/* if old value is nil and no new
 				 * value is, we're not sure anymore
 				 * about the nil property, so we must
@@ -1251,8 +1256,9 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 					/* new value is larger than
 					 * previous largest */
 					bi.maxpos = updid;
-				} else if (atomcmp(BUNtvar(bi, bi.maxpos), old) == 0 &&
-					   atomcmp(new, old) != 0) {
+				} else if (old == NULL ||
+					   (atomcmp(BUNtvar(bi, bi.maxpos), old) == 0 &&
+					    atomcmp(new, old) != 0)) {
 					/* old value is equal to
 					 * largest and new value is
 					 * smaller, so we don't know
@@ -1267,8 +1273,9 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 					/* new value is smaller than
 					 * previous smallest */
 					bi.minpos = updid;
-				} else if (atomcmp(BUNtvar(bi, bi.minpos), old) == 0 &&
-					   atomcmp(new, old) != 0) {
+				} else if (old == NULL ||
+					   (atomcmp(BUNtvar(bi, bi.minpos), old) == 0 &&
+					    atomcmp(new, old) != 0)) {
 					/* old value is equal to
 					 * smallest and new value is
 					 * larger, so we don't know
@@ -1281,7 +1288,12 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				MT_rwlock_wrlock(&b->thashlock);
 				locked = true;
 			}
-			HASHdelete_locked(&bi, updid, old);
+			if (old)
+				HASHdelete_locked(&bi, updid, old);
+			else if (b->thash) {
+				doHASHdestroy(b, b->thash);
+				b->thash = NULL;
+			}
 
 			var_t d;
 			switch (b->twidth) {
