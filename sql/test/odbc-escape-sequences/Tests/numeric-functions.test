@@ -1,0 +1,10 @@
+# this function maps 1:1
+query I rowsort
+select { fn abs(-3) }
+----
+3
+
+query R
+select { fn atan2(1,2) }
+----
+0.464
