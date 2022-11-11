@@ -1764,7 +1764,7 @@ mskfnd(BAT *b, msk v)
 {
 	BUN p, q;
 
-	if (* (msk *) v) {
+	if (v) {
 		/* find a 1 value */
 		for (p = 0, q = (BATcount(b) + 31) / 32; p < q; p++) {
 			if (((uint32_t *) b->theap->base)[p] != 0) {
