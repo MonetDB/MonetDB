@@ -1066,7 +1066,7 @@ typedef struct hash_table {
 
 		struct hash_table *p;	/* parent hash */
         int bits;
-        size_t last;
+        ATOMIC_TYPE last;
         size_t size;
         gid mask;
 		mallocator **allocators;
