@@ -1413,23 +1413,9 @@ PYAPI3PyAPIprelude(void) {
 		/* introduced in 3.8, we use it for 3.9 and later */
 		PyStatus status;
 		PyConfig config;
-		wchar_t *pyhome = NULL;
 
-		/* first figure out where Python was installed */
-		PyConfig_InitIsolatedConfig(&config);
-		status = PyConfig_Read(&config);
-		if (!PyStatus_Exception(status))
-			pyhome = wcsdup(config.prefix);
-		PyConfig_Clear(&config);
-		/* now really configure the Python subsystem, using the Python
-		 * prefix directory as its home
-		 * if we don't set config.home, sys.path will not be set
-		 * correctly on Windows and initialization will fail */
 		PyConfig_InitIsolatedConfig(&config);
 		status = PyConfig_SetArgv(&config, 1, argv);
-		if (!PyStatus_Exception(status))
-			status = PyConfig_SetString(&config, &config.home, pyhome);
-		free(pyhome);
 		if (!PyStatus_Exception(status))
 			status = PyConfig_Read(&config);
 		if (!PyStatus_Exception(status))
