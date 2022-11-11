@@ -6405,6 +6405,13 @@ odbc_scalar_func:
           $$ = _symbol_create_list( SQL_CAST, l ); }
     | USER '(' ')'
         { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_user"))); }
+    | CHARACTER '(' search_condition ')'
+		{ dlist *l = L(); 
+		  append_list( l, append_string(L(), sa_strdup(SA, "code")));
+	      append_int(l, FALSE); /* ignore distinct */
+          append_symbol(l, $3);
+          $$ = _symbol_create_list( SQL_UNOP, l ); 
+		}
 ;
 
 odbc_data_type:
