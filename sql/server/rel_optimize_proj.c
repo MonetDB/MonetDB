@@ -3298,7 +3298,7 @@ has_no_selectivity(mvc *sql, sql_rel *rel)
 	case op_select:
 		return false;
 	}
-	return rel;
+	return true;
 }
 
 static sql_rel *

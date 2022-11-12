@@ -166,11 +166,12 @@ loadLibrary(const char *filename, int flag)
 	const char *s;
 	int idx;
 	const char *mod_path = GDKgetenv("monet_mod_path");
-	int is_mod;
+	bool is_mod;
+	bool is_monetdb5 = strcmp(filename, "monetdb5") == 0;
 
-	is_mod = (strcmp(filename, "monetdb5") != 0 && strcmp(filename, "embedded") != 0);
+	is_mod = (!is_monetdb5 && strcmp(filename, "embedded") != 0);
 
-	if (lastfile == 0 && strcmp(filename, "monetdb5") != 0 && strcmp(filename, "embedded") != 0) { /* first load reference to local functions */
+	if (lastfile == 0 && is_mod) { /* first load reference to local functions */
 		str msg = loadLibrary("monetdb5", flag);
 		if (msg != MAL_SUCCEED)
 			return msg;
@@ -208,9 +209,9 @@ loadLibrary(const char *filename, int flag)
 			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR "Library filename path is too large");
 
 #ifdef __APPLE__
-		handle = mdlopen(nme, RTLD_NOW | RTLD_GLOBAL);
+		handle = mdlopen(is_monetdb5 ? NULL : nme, RTLD_NOW | RTLD_GLOBAL);
 #else
-		handle = dlopen(nme, RTLD_NOW | RTLD_GLOBAL);
+		handle = dlopen(is_monetdb5 ? NULL : nme, RTLD_NOW | RTLD_GLOBAL);
 #endif
 		if (!handle) {
 			if (flag)
@@ -268,7 +269,8 @@ loadLibrary(const char *filename, int flag)
 	}
 
 	if (handle == NULL) {
-		if (strcmp(filename, "monetdb5") != 0 && strcmp(filename, "sql") != 0
+		if (!is_monetdb5
+			&& strcmp(filename, "sql") != 0
 			&& strcmp(filename, "generator") != 0
 #ifdef HAVE_GEOM
 			&& strcmp(filename, "geom") != 0

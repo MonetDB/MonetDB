@@ -1,3 +1,5 @@
+Running database upgrade commands to update system tables.
+
 Running database upgrade commands:
 drop procedure if exists wlc.master();
 drop procedure if exists wlc.master(string);

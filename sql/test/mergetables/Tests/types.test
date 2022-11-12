@@ -13,7 +13,7 @@ ALTER TABLE complete ADD TABLE part1
 statement error 3F000!ALTER MERGE TABLE: to be added table column type doesn't match MERGE TABLE definition
 ALTER TABLE complete ADD TABLE part2
 
-statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
+statement error 42000!MERGE TABLE 'sys'.'complete' should have at least one table associated
 SELECT * FROM COMPLETE
 
 statement ok

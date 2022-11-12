@@ -28,7 +28,7 @@ alter table mys.smalltable add table part1
 statement error 42S02!ALTER TABLE: no such table 'mys'.'part1'
 alter table mys.smalltable add table mys.part1
 
-statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
+statement error 42000!MERGE TABLE 'mys'.'smalltable' should have at least one table associated
 select * from mys.smalltable
 
 statement ok

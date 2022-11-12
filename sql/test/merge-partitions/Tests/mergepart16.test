@@ -22,7 +22,7 @@ CREATE TABLE subt4 (a int, b varchar(32))
 statement error 42000!INSERT INTO: list partitioned table 'testnestedpartitions' has no partitions set
 INSERT INTO testnestedpartitions VALUES (1, 'ups')
 
-statement error 42000!The RANGE PARTITION TABLE sys.subnested1 should have at least one table associated
+statement error 42000!RANGE PARTITION TABLE 'sys'.'subnested1' should have at least one table associated
 ALTER TABLE testnestedpartitions ADD TABLE subnested1 AS PARTITION IN ('1', '2', '3')
 
 statement ok
@@ -82,7 +82,7 @@ ok
 1
 ok
 
-statement error 42000!The RANGE PARTITION TABLE sys.subnested2 should have at least one table associated
+statement error 42000!RANGE PARTITION TABLE 'sys'.'subnested2' should have at least one table associated
 ALTER TABLE testnestedpartitions ADD TABLE subnested2 AS PARTITION IN ('3', '4', '5')
 
 statement ok

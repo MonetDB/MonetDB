@@ -392,8 +392,10 @@ sql_create_auth_id(mvc *m, sqlid id, str auth)
 	if (!is_oid_nil(store->table_api.column_find_row(m->session->tr, auth_name, auth, NULL)))
 		return false;
 
-	if ((log_res = store->table_api.table_insert(m->session->tr, auths, &id, &auth, &grantor)) != LOG_OK)
-		throw(SQL, "sql.create_auth_id", SQLSTATE(42000) "CREATE AUTH: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+	if ((log_res = store->table_api.table_insert(m->session->tr, auths, &id, &auth, &grantor)) != LOG_OK) {
+		(void)createException(SQL, "sql.create_auth_id", SQLSTATE(42000) "CREATE AUTH: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+		return false;
+	}
 	return true;
 }
 

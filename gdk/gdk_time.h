@@ -38,13 +38,13 @@ gdk_export date date_add_month(date dt, int months)
 #define date_add_year(d, y)		date_add_month(d, (y) * 12)
 gdk_export int date_diff(date d1, date d2)
 	__attribute__((__const__));
-gdk_export int date_dayofweek(date dt) /* Monday=1, Sunday=7 */
+gdk_export bte date_dayofweek(date dt) /* Monday=1, Sunday=7 */
 	__attribute__((__const__));
-gdk_export int date_weekofyear(date dt)
+gdk_export bte date_weekofyear(date dt)
 	__attribute__((__const__));
-gdk_export int date_usweekofyear(date dt)
+gdk_export bte date_usweekofyear(date dt)
 	__attribute__((__const__));
-gdk_export int date_dayofyear(date dt)
+gdk_export sht date_dayofyear(date dt)
 	__attribute__((__const__));
 gdk_export int date_century(date dt)
 	__attribute__((__const__));
@@ -52,11 +52,11 @@ gdk_export int date_decade(date dt)
 	__attribute__((__const__));
 gdk_export int date_year(date dt)
 	__attribute__((__const__));
-gdk_export int date_quarter(date dt)
+gdk_export bte date_quarter(date dt)
 	__attribute__((__const__));
-gdk_export int date_month(date dt)
+gdk_export bte date_month(date dt)
 	__attribute__((__const__));
-gdk_export int date_day(date dt)
+gdk_export bte date_day(date dt)
 	__attribute__((__const__));
 
 gdk_export daytime daytime_create(int hour, int minute, int second, int usec)
@@ -75,9 +75,9 @@ gdk_export daytime daytime_add_usec_modulo(daytime tm, lng usec)
 #define daytime_add_sec_modulo(t, s)	daytime_add_usec_modulo(t, (s)*LL_CONSTANT(1000000))
 #define daytime_add_min_modulo(t, m)	daytime_add_sec_modulo(t, (m) * 60)
 #define daytime_add_hour_modulo(t, h)	daytime_add_min_modulo(t, (h) * 60)
-gdk_export int daytime_hour(daytime tm)
+gdk_export bte daytime_hour(daytime tm)
 	__attribute__((__const__));
-gdk_export int daytime_min(daytime tm)
+gdk_export bte daytime_min(daytime tm)
 	__attribute__((__const__));
 gdk_export int daytime_sec(daytime tm)
 	__attribute__((__const__));
