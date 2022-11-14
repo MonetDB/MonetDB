@@ -197,6 +197,7 @@
 #cmakedefine HAVE_GEOM 1
 #cmakedefine HAVE_SHP 1
 #cmakedefine HAVE_LIBPY3 1
+#cmakedefine HAVE_OPENSSL 1
 
 // #cmakedefine SOCKET_LIBRARIES
 #cmakedefine HAVE_GETADDRINFO 1

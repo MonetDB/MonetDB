@@ -66,6 +66,7 @@ target_link_libraries(stream
   $<$<BOOL:${LZ4_FOUND}>:LZ4::LZ4>
   $<$<BOOL:${SNAPPY_FOUND}>:SNAPPY::SNAPPY>
   $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>
+  $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::SSL>
   matomic
   monetdb_config_header
   $<$<PLATFORM_ID:Windows>:ws2_32>
