@@ -3,7 +3,7 @@ select { fn ascii('d') }
 ----
 100
 
-# TODO
+# TODO not implemented
 # query I
 # select { fn bit_length('a') }
 # ----

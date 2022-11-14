@@ -92,4 +92,4 @@ select { fn round((select pi()), 3) }
 query R
 select { fn truncate((select pi()), 3) }
 ----
-3.142
+3.141

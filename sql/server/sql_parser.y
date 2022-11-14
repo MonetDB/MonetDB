@@ -6456,6 +6456,14 @@ odbc_scalar_func:
           append_symbol(l, $3);
           $$ = _symbol_create_list( SQL_UNOP, l ); 
 		}
+    | TRUNCATE '(' search_condition ',' search_condition ')'
+		{ dlist *l = L(); 
+		  append_list( l, append_string(L(), sa_strdup(SA, "ms_trunc")));
+	      append_int(l, FALSE); /* ignore distinct */
+          append_symbol(l, $3);
+          append_symbol(l, $5);
+	  	  $$ = _symbol_create_list( SQL_BINOP, l ); 
+		}
 ;
 
 odbc_data_type:
