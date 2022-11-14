@@ -2089,7 +2089,6 @@ BUNtoid(BAT *b, BUN p)
 /*
  * @+ Transaction Management
  */
-gdk_export gdk_return TMcommit(void);
 gdk_export gdk_return TMsubcommit(BAT *bl);
 gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno, lng transid);
 
