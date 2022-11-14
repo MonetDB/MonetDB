@@ -1323,24 +1323,6 @@ GDKreset(int status)
 	GDKtracer_stop();
 }
 
-/* coverity[+kill] */
-void
-GDKexit(int status)
-{
-	if (!GDKinmemory(0) && GET_GDKLOCK(PERSISTENT) == NULL) {
-		/* stop GDKtracer */
-		GDKtracer_stop();
-
-		/* no database lock, so no threads, so exit now */
-		if (!GDKembedded())
-			exit(status);
-	}
-	GDKprepareExit();
-	GDKreset(status);
-	if (!GDKembedded())
-		exit(status);
-}
-
 /*
  * All semaphores used by the application should be mentioned here.
  * They are initialized during system initialization.

@@ -112,7 +112,6 @@ gdk_export void GDKsetmallocsuccesscount(lng count);
  * the transient BATs should be removed.  The buffer pool manager
  * takes care of this.
  */
-gdk_export void GDKexit(int status);
 gdk_export bool GDKexiting(void);
 
 gdk_export void GDKprepareExit(void);

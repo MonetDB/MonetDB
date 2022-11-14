@@ -275,7 +275,6 @@ gdk_return GDKcreatedir(const char *nme);
 gdk_return GDKcreatesem(int id, int count, int *semid);
 int GDKdebug;
 bool GDKembedded(void);
-void GDKexit(int status);
 bool GDKexiting(void);
 _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...) __attribute__((__format__(__printf__, 1, 2)));
 jmp_buf GDKfataljump;
