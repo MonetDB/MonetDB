@@ -2350,9 +2350,9 @@ log_flush(logger *lg, ulng ts)
 		}
 		/* we read the full file because skipping is impossible with current log format */
 		log_lock(lg);
-		lg->flushing = 1;
+		lg->flushing = true;
 		res = log_read_transaction(lg);
-		lg->flushing = 0;
+		lg->flushing = false;
 		log_unlock(lg);
 		if (res == LOG_EOF) {
 			log_close_input(lg);
@@ -2860,7 +2860,7 @@ left_truncate_flush_queue(logger *lg, int limit) {
 		MT_sema_up(&lg->flush_queue_semaphore);
 }
 
-static int
+static bool
 number_in_flush_queue(logger *lg, unsigned int number) {
 	MT_lock_set(&lg->flush_queue_lock);
 	const int fql = lg->flush_queue_length;
@@ -2868,10 +2868,10 @@ number_in_flush_queue(logger *lg, unsigned int number) {
 	for (int i = 0; i < fql; i++) {
 		const int idx = (lg->flush_queue_begin + i) % FLUSH_QUEUE_SIZE;
 		if (lg->flush_queue[idx] == number) {
-			return 1;
+			return true;
 		}
 	}
-	return 0;
+	return false;
 }
 
 static int
