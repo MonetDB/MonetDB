@@ -249,8 +249,6 @@ void mal_reset(void)
  * terminate this way.
  * We should also ensure that no new client enters the scene while shutting down.
  * For this we mark the client records as BLOCKCLIENT.
- *
- * Beware, mal_exit is also called during a SIGTERM from the monetdb tool
  */
 
 void mal_exit(int status)
