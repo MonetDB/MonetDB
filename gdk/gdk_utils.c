@@ -1214,8 +1214,6 @@ GDKprepareExit(void)
 	}
 }
 
-static MT_Lock GDKthreadLock = MT_LOCK_INITIALIZER(GDKthreadLock);
-
 void
 GDKreset(int status)
 {
@@ -1249,7 +1247,6 @@ GDKreset(int status)
 	if (status == 0) {
 		/* they had their chance, now kill them */
 		bool killed = false;
-		MT_lock_set(&GDKthreadLock);
 		for (Thread t = GDKthreads; t < GDKthreads + THREADS; t++) {
 			MT_Id victim;
 			if ((victim = (MT_Id) ATOMIC_GET(&t->pid)) != 0) {
@@ -1315,7 +1312,6 @@ GDKreset(int status)
 
 		memset(THRdata, 0, sizeof(THRdata));
 		gdk_bbp_reset();
-		MT_lock_unset(&GDKthreadLock);
 	}
 	ATOMunknown_clean();
 
