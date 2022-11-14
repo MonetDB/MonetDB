@@ -413,7 +413,6 @@ void *THRgetdata(int);
 int THRgettid(void);
 int THRhighwater(void);
 void THRsetdata(int, void *);
-gdk_return TMcommit(void);
 gdk_return TMsubcommit(BAT *bl);
 gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno, lng transid);
 void VALclear(ValPtr v);
