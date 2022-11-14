@@ -2860,11 +2860,19 @@ left_truncate_flush_queue(logger *lg, int limit) {
 		MT_sema_up(&lg->flush_queue_semaphore);
 }
 
-static bool
-number_in_flush_queue(logger *lg, unsigned int number) {
+static inline int
+flush_queue_length(logger *lg)
+{
 	MT_lock_set(&lg->flush_queue_lock);
 	const int fql = lg->flush_queue_length;
 	MT_lock_unset(&lg->flush_queue_lock);
+	return fql;
+}
+
+static bool
+number_in_flush_queue(logger *lg, unsigned int number)
+{
+	const int fql = flush_queue_length(lg);
 	for (int i = 0; i < fql; i++) {
 		const int idx = (lg->flush_queue_begin + i) % FLUSH_QUEUE_SIZE;
 		if (lg->flush_queue[idx] == number) {
@@ -2872,14 +2880,6 @@ number_in_flush_queue(logger *lg, unsigned int number) {
 		}
 	}
 	return false;
-}
-
-static int
-flush_queue_length(logger *lg) {
-	MT_lock_set(&lg->flush_queue_lock);
-	const int fql = lg->flush_queue_length;
-	MT_lock_unset(&lg->flush_queue_lock);
-	return fql;
 }
 
 static gdk_return
