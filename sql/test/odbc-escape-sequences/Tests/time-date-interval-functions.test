@@ -18,7 +18,7 @@ select length(cast((select { fn curtime() }) as varchar(100))) > 0
 ----
 1
 
-# TODO
+# TODO not implemented
 # query T rowsort
 # select { fn dayname('2022-11-11') }
 # ----
@@ -44,21 +44,20 @@ select { fn extract(day from date'2022-01-01') }
 ----
 1
 
-# TODO "hour" ?
-#query T rowsort
-#select { fn hour(time'12:00:00') }
-#----
-#12
+query T rowsort
+select { fn hour(time'12:00:00') }
+----
+12
 
-# query I rowsort
-# select { fn minute(time'12:15:00') }
-# ----
-# 15
+query I rowsort
+select { fn minute(time'12:15:00') }
+----
+15
 
-# query I rowsort
-# select { fn month(date'2022-11-14') }
-# ----
-# 11
+query I rowsort
+select { fn month(date'2022-11-14') }
+----
+11
 
 # TODO not implemented
 # query T rowsort
@@ -76,10 +75,10 @@ select { fn quarter(date'2022-11-14') }
 ----
 4
 
-# query I rowsort
-# select { fn second(time'12:30:33') }
-# ----
-# 33
+query I rowsort
+select { fn second(time'12:30:33') }
+----
+33
 
 
 # TODO not implemented
@@ -100,7 +99,7 @@ select { fn week(date'2022-11-14') }
 ----
 46
 
-# query I rowsort
-# select { fn year(date'2022-11-14') }
-# ----
-# 2022
+query I rowsort
+select { fn year(date'2022-11-14') }
+----
+2022
