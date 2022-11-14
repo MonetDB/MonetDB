@@ -1409,8 +1409,10 @@ PYAPI3PyAPIprelude(void) {
 		PyObject *tmp;
 
 		static_assert(PY_MAJOR_VERSION == 3, "Python 3.X required");
-#if PY_MINOR_VERSION >= 9
-		/* introduced in 3.8, we use it for 3.9 and later */
+#if PY_MINOR_VERSION >= 11
+		/* introduced in 3.8, we use it for 3.11 and later
+		 * on Windows, this code does not work with 3.10, it needs more
+		 * complex initialization */
 		PyStatus status;
 		PyConfig config;
 
