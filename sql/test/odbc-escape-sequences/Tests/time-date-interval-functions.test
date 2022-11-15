@@ -18,11 +18,10 @@ select length(cast((select { fn curtime() }) as varchar(100))) > 0
 ----
 1
 
-# TODO not implemented
-# query T rowsort
-# select { fn dayname('2022-11-11') }
-# ----
-# Friday
+query T rowsort
+select { fn dayname('2022-11-11') }
+----
+Friday
 
 query I rowsort
 select { fn dayofmonth('2022-11-11') }
