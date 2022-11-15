@@ -724,7 +724,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token X_BODY 
 %token MAX_MEMORY MAX_WORKERS OPTIMIZER
 /* odbc tokens */
-%token DAYNAME
+%token DAYNAME MONTHNAME
 /* odbc data type tokens */
 %token <sval>
 		SQL_BIGINT
@@ -5667,6 +5667,7 @@ non_reserved_word:
 | ODBC_FUNC_ESCAPE_PREFIX { $$ = sa_strdup(SA, "fn"); }
 | ODBC_OJ_ESCAPE_PREFIX { $$ = sa_strdup(SA, "oj"); }
 | DAYNAME { $$ = sa_strdup(SA, "dayname"); }
+| MONTHNAME { $$ = sa_strdup(SA, "monthname"); }
 ;
 
 lngval:
@@ -6429,6 +6430,14 @@ odbc_datetime_func:
 	      append_int(l, FALSE); /* ignore distinct */
           append_symbol(l, $3);
           append_symbol(l, makeAtomNode(m, "char", "%A", 2, 0, false));
+          $$ = _symbol_create_list( SQL_BINOP, l ); 
+		}
+    | MONTHNAME '(' search_condition ')'
+		{ dlist *l = L(); 
+		  append_list( l, append_string(L(), sa_strdup(SA, "date_to_str")));
+	      append_int(l, FALSE); /* ignore distinct */
+          append_symbol(l, $3);
+          append_symbol(l, makeAtomNode(m, "char", "%B", 2, 0, false));
           $$ = _symbol_create_list( SQL_BINOP, l ); 
 		}
     | MONTH '(' search_condition ')'
