@@ -528,6 +528,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("fn", ODBC_FUNC_ESCAPE_PREFIX);
 	failed += keywords_insert("oj", ODBC_OJ_ESCAPE_PREFIX);
 	failed += keywords_insert("DAYNAME", DAYNAME);
+	failed += keywords_insert("MONTHNAME", MONTHNAME);
 	failed += keywords_insert("SQL_BIGINT", SQL_BIGINT);
 	failed += keywords_insert("SQL_BINARY", SQL_BINARY);
 	failed += keywords_insert("SQL_BIT", SQL_BIT);

@@ -58,11 +58,10 @@ select { fn month(date'2022-11-14') }
 ----
 11
 
-# TODO not implemented
-# query T rowsort
-# select { fn monthname(date'2022-11-14') }
-# ----
-# November
+query T rowsort
+select { fn monthname(date'2022-11-14') }
+----
+November
 
 query I rowsort
 select length(cast((select { fn now() }) as varchar(100))) > 0
