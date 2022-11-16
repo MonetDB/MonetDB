@@ -168,7 +168,7 @@ timestamp_century(const timestamp t)
 }
 #define timestamp_decade(t) is_timestamp_nil(t) ? int_nil : date_year(timestamp_date(t)) / 10
 #define timestamp_year(t) date_year(timestamp_date(t))
-#define timestamp_quarter(t) is_timestamp_nil(t) ? int_nil : (date_month(timestamp_date(t)) - 1) / 3 + 1
+#define timestamp_quarter(t) is_timestamp_nil(t) ? bte_nil : (date_month(timestamp_date(t)) - 1) / 3 + 1
 #define timestamp_month(t) date_month(timestamp_date(t))
 #define timestamp_day(t) date_day(timestamp_date(t))
 #define timestamp_hours(t) daytime_hour(timestamp_daytime(t))

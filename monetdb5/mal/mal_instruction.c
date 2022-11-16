@@ -118,29 +118,11 @@ newMalBlk(int elements)
 		GDKfree(mb);
 		return NULL;
 	}
-	mb->var = v;
-	mb->vtop = 0;
-	mb->vid = 0;
-	mb->vsize = elements;
-	mb->help = NULL;
-	mb->statichelp = NULL;
-	mb->binding[0] = 0;
-	mb->tag = 0;
-	mb->workers = 0;
-	mb->memory = 0;
-	mb->errors = NULL;
-	mb->alternative = NULL;
-	mb->history = NULL;
-	mb->keephistory = 0;
-	mb->maxarg = MAXARG;		/* the minimum for each instruction */
-	mb->inlineProp = 0;
-	mb->unsafeProp = 0;
-	mb->replica = NULL;
-	mb->starttime = 0;
-	mb->runtime = 0;
-	mb->calls = 0;
-	mb->optimize = 0;
-	mb->stmt = NULL;
+	*mb = (MalBlkRecord) {
+		.var = v,
+		.vsize = elements,
+		.maxarg = MAXARG,		/* the minimum for each instruction */
+	};
 	if (newMalBlkStmt(mb, elements) < 0) {
 		GDKfree(mb->var);
 		GDKfree(mb->stmt);
@@ -478,8 +460,8 @@ newInstructionArgs(MalBlkPtr mb, const char *modnme, const char *fcnnme, int arg
 		 * Furthermore, failure to allocate such a small data structure indicates we are in serious trouble.
 		 * The only way out is declare it a fatal error, terminate the system to avoid crashes in all kind of places.
 		 */
-		GDKerror(SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		mal_exit(1);
+		GDKfatal(SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		exit(1);
 	}
 	p->maxarg = args;
 	p->typechk = TYPE_UNKNOWN;

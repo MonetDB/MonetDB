@@ -63,6 +63,7 @@ SQLDisconnect(SQLHDBC ConnectionHandle)
 	dbc->Mdebug = 0;
 	dbc->Connected = false;
 	dbc->has_comment = false;
+	dbc->raw_strings = false;
 
 	return SQL_SUCCESS;
 }

@@ -410,26 +410,6 @@ gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *for
 #define FORCEMITOMASK	(1<<29)
 #define FORCEMITODEBUG	if (GDKdebug & FORCEMITOMASK)
 
-/*
- * @- GDK session handling
- * @multitable @columnfractions 0.08 0.7
- * @item int
- * @tab GDKinit (char *db, char *dbpath, int allocmap)
- * @item int
- * @tab GDKexit (int status)
- * @end multitable
- *
- * The session is bracketed by GDKinit and GDKexit. Initialization
- * involves setting up the administration for database access, such as
- * memory allocation for the database buffer pool.  During the exit
- * phase any pending transaction is aborted and the database is freed
- * for access by other users.  A zero is returned upon encountering an
- * erroneous situation.
- *
- * @- Definitions
- * The interface definitions for the application programs are shown
- * below.  The global variables should not be modified directly.
- */
 #ifndef TRUE
 #define TRUE		true
 #define FALSE		false
@@ -541,6 +521,7 @@ typedef size_t BUN;
 typedef enum {
 	PERSISTENT = 0,
 	TRANSIENT,
+	SYSTRANS,
 } role_t;
 
 /* Heap storage modes */
@@ -799,7 +780,6 @@ typedef struct BAT {
 	 batCopiedtodisk:1;	/* once written */
 	uint16_t selcnt;	/* how often used in equi select without hash */
 	uint16_t unused; 	/* value=0 for now (sneakily used by mat.c) */
-	int batSharecnt;	/* incoming view count */
 
 	/* delta status administration */
 	BUN batInserted;	/* start of inserted elements */
@@ -1569,46 +1549,51 @@ BATsettrivprop(BAT *b)
 		b->tnosorted = b->tnorevsorted = 0;
 		b->tnokey[0] = b->tnokey[1] = 0;
 		b->tunique_est = (double) b->batCount;
+		b->tkey = true;
 		if (ATOMlinear(b->ttype)) {
 			b->tsorted = true;
 			b->trevsorted = true;
-		}
-		b->tkey = true;
-		if (b->batCount == 0) {
-			b->tminpos = BUN_NONE;
-			b->tmaxpos = BUN_NONE;
-			b->tnonil = true;
-			b->tnil = false;
-			if (b->ttype == TYPE_oid) {
-				b->tseqbase = 0;
-			}
-		} else if (b->ttype == TYPE_oid) {
-			oid sqbs = ((const oid *) b->theap->base)[b->tbaseoff];
-			if (is_oid_nil(sqbs)) {
-				b->tnonil = false;
-				b->tnil = true;
+			if (b->batCount == 0) {
+				b->tminpos = BUN_NONE;
+				b->tmaxpos = BUN_NONE;
+				b->tnonil = true;
+				b->tnil = false;
+				if (b->ttype == TYPE_oid) {
+					b->tseqbase = 0;
+				}
+			} else if (b->ttype == TYPE_oid) {
+				oid sqbs = ((const oid *) b->theap->base)[b->tbaseoff];
+				if (is_oid_nil(sqbs)) {
+					b->tnonil = false;
+					b->tnil = true;
+					b->tminpos = BUN_NONE;
+					b->tmaxpos = BUN_NONE;
+				} else {
+					b->tnonil = true;
+					b->tnil = false;
+					b->tminpos = 0;
+					b->tmaxpos = 0;
+				}
+				b->tseqbase = sqbs;
+			} else if ((b->tvheap
+				    ? ATOMcmp(b->ttype,
+					      b->tvheap->base + VarHeapVal(Tloc(b, 0), 0, b->twidth),
+					      ATOMnilptr(b->ttype))
+				    : ATOMcmp(b->ttype, Tloc(b, 0),
+					      ATOMnilptr(b->ttype))) == 0) {
+				/* the only value is NIL */
 				b->tminpos = BUN_NONE;
 				b->tmaxpos = BUN_NONE;
 			} else {
-				b->tnonil = true;
-				b->tnil = false;
+				/* the only value is both min and max */
 				b->tminpos = 0;
 				b->tmaxpos = 0;
 			}
-			b->tseqbase = sqbs;
-		} else if ((b->tvheap
-			    ? ATOMcmp(b->ttype,
-				      b->tvheap->base + VarHeapVal(Tloc(b, 0), 0, b->twidth),
-				      ATOMnilptr(b->ttype))
-			    : ATOMcmp(b->ttype, Tloc(b, 0),
-				      ATOMnilptr(b->ttype))) == 0) {
-			/* the only value is NIL */
+		} else {
+			b->tsorted = false;
+			b->trevsorted = false;
 			b->tminpos = BUN_NONE;
 			b->tmaxpos = BUN_NONE;
-		} else {
-			/* the only value is both min and max */
-			b->tminpos = 0;
-			b->tmaxpos = 0;
 		}
 	} else if (b->batCount == 2 && ATOMlinear(b->ttype)) {
 		int c;
@@ -1629,6 +1614,8 @@ BATsettrivprop(BAT *b)
 	} else if (!ATOMlinear(b->ttype)) {
 		b->tsorted = false;
 		b->trevsorted = false;
+		b->tminpos = BUN_NONE;
+		b->tmaxpos = BUN_NONE;
 	}
 }
 
@@ -2082,7 +2069,6 @@ BUNtoid(BAT *b, BUN p)
 /*
  * @+ Transaction Management
  */
-gdk_export gdk_return TMcommit(void);
 gdk_export gdk_return TMsubcommit(BAT *bl);
 gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno, lng transid);
 
@@ -2162,11 +2148,15 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 
 #define ALIGNapp(x, f, e)						\
 	do {								\
-		if (!(f) && ((x)->batRestricted == BAT_READ ||		\
-			     (x)->batSharecnt > 0)) {			\
-			GDKerror("access denied to %s, aborting.\n",	\
-				 BATgetId(x));				\
-			return (e);					\
+		if (!(f)) {						\
+			MT_lock_set(&(x)->theaplock);			\
+			if ((x)->batRestricted == BAT_READ ||		\
+		  	   ((ATOMIC_GET(&(x)->theap->refs) & HEAPREFS) > 1)) { \
+				GDKerror("access denied to %s, aborting.\n", BATgetId(x)); \
+				MT_lock_unset(&(x)->theaplock);		\
+				return (e);				\
+			}						\
+			MT_lock_unset(&(x)->theaplock);			\
 		}							\
 	} while (false)
 
