@@ -86,7 +86,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			freeInstruction(p);
 			continue;
 		}
-		int done = 0;
+		bool done = false;
 		for(j=p->retc; j< p->argc; j++){
 			k = getArg(p,j);
 			if (varisdict[k]) { // maybe we could delay this usage
@@ -104,7 +104,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					dictunique[l] = dictunique[k];
 					pushInstruction(mb,r);
 					freeInstruction(p);
-					done = 1;
+					done = true;
 					break;
 				} else if (p->argc == 2 && p->retc == 1 && p->barrier == ASSIGNsymbol) {
 					/* a = b */
@@ -113,7 +113,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					vardictvalue[l] = vardictvalue[k];
 					dictunique[l] = dictunique[k];
 					freeInstruction(p);
-					done = 1;
+					done = true;
 					break;
 				} else if (getModuleId(p) == algebraRef && getFunctionId(p) == subsliceRef) {
 					/* pos = subslice(col, l, h) with col = dict.decompress(o,u)
@@ -122,7 +122,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					getArg(r, j) = varisdict[k];
 					pushInstruction(mb,r);
 					freeInstruction(p);
-					done = 1;
+					done = true;
 					break;
 				} else if ((getModuleId(p) == batRef && getFunctionId(p) == mirrorRef) || (getModuleId(p) == batcalcRef && getFunctionId(p) == identityRef)) {
 					/* id = mirror/identity(col) with col = dict.decompress(o,u)
@@ -131,7 +131,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					getArg(r, j) = varisdict[k];
 					pushInstruction(mb,r);
 					freeInstruction(p);
-					done = 1;
+					done = true;
 					break;
 				} else if (isSelect(p)) {
 					if (getFunctionId(p) == thetaselectRef) {
@@ -194,7 +194,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						pushInstruction(mb,t);
 					}
 					freeInstruction(p);
-					done = 1;
+					done = true;
 					break;
 				} else if (j == 2 && p->argc > j+1 && getModuleId(p) == algebraRef && getFunctionId(p) == joinRef
 						&& varisdict[getArg(p, j+1)] && vardictvalue[k] == vardictvalue[getArg(p, j+1)]) {
@@ -208,7 +208,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					getArg(r, j+1) = varisdict[l];
 					pushInstruction(mb,r);
 					freeInstruction(p);
-					done = 1;
+					done = true;
 					break;
 				} else if (j == 2 && p->argc > j+1 && getModuleId(p) == algebraRef && getFunctionId(p) == joinRef
 						&& varisdict[getArg(p, j+1)] && vardictvalue[k] != vardictvalue[getArg(p, j+1)]) {
@@ -230,7 +230,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					r = addArgument(mb, r, getArg(p, 7));
 					pushInstruction(mb,r);
 					freeInstruction(p);
-					done = 1;
+					done = true;
 					break;
 				} else if ((isMapOp(p) || isMap2Op(p)) && allConstExcept(mb, p, j)) {
 					/* batcalc.-(1, col) with col = dict.decompress(o,u)
@@ -248,7 +248,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					dictunique[l] = 0;
 					pushInstruction(mb,r);
 					freeInstruction(p);
-					done = 1;
+					done = true;
 					break;
 				} else if (getModuleId(p) == groupRef &&
 						(getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef ||
@@ -281,7 +281,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					getArg(r, j) = input;
 					pushInstruction(mb,r);
 					freeInstruction(p);
-					done = 1;
+					done = true;
 					break;
 				} else {
 					/* need to decompress */

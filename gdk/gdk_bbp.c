@@ -4432,7 +4432,6 @@ gdk_add_callback(char *name, gdk_callback_func *f, int argc, void *argv[], int
 {
 
 	gdk_callback *callback = NULL;
-	gdk_callback *p = callback_list.head;
 
 	if (!(callback = GDKmalloc(sizeof(gdk_callback) + sizeof(void *) * argc))) {
 		TRC_CRITICAL(GDK, "Failed to allocate memory!");
@@ -4451,6 +4450,7 @@ gdk_add_callback(char *name, gdk_callback_func *f, int argc, void *argv[], int
 	}
 
 	MT_lock_set(&GDKCallbackListLock);
+	gdk_callback *p = callback_list.head;
 	if (p) {
 		int cnt = 1;
 		do {
@@ -4484,12 +4484,13 @@ gdk_add_callback(char *name, gdk_callback_func *f, int argc, void *argv[], int
 gdk_return
 gdk_remove_callback(char *cb_name, gdk_callback_func *argsfree)
 {
-	gdk_callback *curr = callback_list.head;
 	gdk_callback *prev = NULL;
 	gdk_return res = GDK_FAIL;
+
+	MT_lock_set(&GDKCallbackListLock);
+	gdk_callback *curr = callback_list.head;
 	while(curr) {
 		if (strcmp(cb_name, curr->name) == 0) {
-			MT_lock_set(&GDKCallbackListLock);
 			if (curr == callback_list.head && prev == NULL) {
 				callback_list.head = curr->next;
 			} else {
@@ -4501,12 +4502,12 @@ gdk_remove_callback(char *cb_name, gdk_callback_func *argsfree)
 			curr = NULL;
 			callback_list.cnt -=1;
 			res = GDK_SUCCEED;
-			MT_lock_unset(&GDKCallbackListLock);
 		} else {
 			prev = curr;
 			curr = curr->next;
 		}
 	}
+	MT_lock_unset(&GDKCallbackListLock);
 	return res;
 }
 
@@ -4530,9 +4531,9 @@ should_call(gdk_callback *cb)
 static void
 BBPcallbacks(void)
 {
+	MT_lock_set(&GDKCallbackListLock);
 	gdk_callback *next = callback_list.head;
 
-	MT_lock_set(&GDKCallbackListLock);
 	while (next) {
 		if(should_call(next))
 			do_callback(next);

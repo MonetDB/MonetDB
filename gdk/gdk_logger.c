@@ -2350,9 +2350,9 @@ log_flush(logger *lg, ulng ts)
 		}
 		/* we read the full file because skipping is impossible with current log format */
 		log_lock(lg);
-		lg->flushing = 1;
+		lg->flushing = true;
 		res = log_read_transaction(lg);
-		lg->flushing = 0;
+		lg->flushing = false;
 		log_unlock(lg);
 		if (res == LOG_EOF) {
 			log_close_input(lg);
@@ -2860,26 +2860,26 @@ left_truncate_flush_queue(logger *lg, int limit) {
 		MT_sema_up(&lg->flush_queue_semaphore);
 }
 
-static int
-number_in_flush_queue(logger *lg, unsigned int number) {
-	MT_lock_set(&lg->flush_queue_lock);
-	const int fql = lg->flush_queue_length;
-	MT_lock_unset(&lg->flush_queue_lock);
-	for (int i = 0; i < fql; i++) {
-		const int idx = (lg->flush_queue_begin + i) % FLUSH_QUEUE_SIZE;
-		if (lg->flush_queue[idx] == number) {
-			return 1;
-		}
-	}
-	return 0;
-}
-
-static int
-flush_queue_length(logger *lg) {
+static inline int
+flush_queue_length(logger *lg)
+{
 	MT_lock_set(&lg->flush_queue_lock);
 	const int fql = lg->flush_queue_length;
 	MT_lock_unset(&lg->flush_queue_lock);
 	return fql;
+}
+
+static bool
+number_in_flush_queue(logger *lg, unsigned int number)
+{
+	const int fql = flush_queue_length(lg);
+	for (int i = 0; i < fql; i++) {
+		const int idx = (lg->flush_queue_begin + i) % FLUSH_QUEUE_SIZE;
+		if (lg->flush_queue[idx] == number) {
+			return true;
+		}
+	}
+	return false;
 }
 
 static gdk_return
