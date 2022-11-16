@@ -550,7 +550,7 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts 
 	mdbe->c->curmodule = mdbe->c->usermodule = userModule();
 	mdbe->c->workerlimit = monetdbe_workers_internal(mdbe, opts);
 	mdbe->c->memorylimit = monetdbe_memory_internal(mdbe, opts);
-	mdbe->c->querytimeout = monetdbe_querytimeout_internal(mdbe, opts);
+	mdbe->c->qryctx.querytimeout = monetdbe_querytimeout_internal(mdbe, opts);
 	mdbe->c->sessiontimeout = monetdbe_sessiontimeout_internal(mdbe, opts);
 	if (mdbe->msg)
 		goto cleanup;
@@ -854,7 +854,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 		return -2;
 	}
 	stk->keepAlive = TRUE;
-	mb->starttime = GDKusec();
+	c->qryctx.starttime = GDKusec();
 	if ( (mdbe->msg = runMALsequence(c, mb, 1, 0, stk, 0, 0)) != MAL_SUCCEED ) {
 		freeStack(stk);
 		freeSymbol(c->curprg);
@@ -914,7 +914,7 @@ monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 	if (!mdbe->msg)
 		res = monetdbe_open_internal(mdbe, opts);
 
-	if (res == 0 && is_remote)
+	if (res == 0 && is_remote && !mdbe->msg)
 		res = monetdbe_open_remote(mdbe, opts);
 
 	MT_lock_unset(&embedded_lock);
@@ -2289,11 +2289,11 @@ remote_cleanup:
 			char *prev_base;
 			size_t prev_size;
 			prev_base = bn->theap->base;
-			prev_size = bn->theap->size;
+			prev_size = bn->theap->free;
 
 			//BAT heap base to input[i]->data
 			bn->theap->base = input[i]->data;
-			bn->theap->size = tailsize(bn, cnt);
+			bn->theap->free = tailsize(bn, cnt);
 
 			//BATsetdims(bn); called in COLnew
 			BATsetcapacity(bn, cnt);
@@ -2312,14 +2312,14 @@ remote_cleanup:
 
 			if (store->storage_api.append_col(m->session->tr, c, offset, pos, bn, cnt, TYPE_bat) != 0) {
 				bn->theap->base = prev_base;
-				bn->theap->size = prev_size;
+				bn->theap->free = prev_size;
 				BBPreclaim(bn);
 				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append BAT"));
 				goto cleanup;
 			}
 
 			bn->theap->base = prev_base;
-			bn->theap->size = prev_size;
+			bn->theap->free = prev_size;
 			BBPreclaim(bn);
 		} else if (mtype == TYPE_str) {
 			char **d = (char**)v;

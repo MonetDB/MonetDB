@@ -503,6 +503,7 @@ BATimprints(BAT *b)
 		pages = (((size_t) bi.count * bi.width) + IMPS_PAGE - 1) / IMPS_PAGE;
 		imprints->imprints.farmid = BBPselectfarm(b->batRole, bi.type,
 							  imprintsheap);
+		imprints->imprints.parentid = b->batCacheid;
 
 #define SMP_SIZE 2048
 		s1 = BATsample_with_seed(b, SMP_SIZE, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
@@ -630,7 +631,6 @@ BATimprints(BAT *b)
 		((size_t *) imprints->imprints.base)[1] = (size_t) imprints->impcnt;
 		((size_t *) imprints->imprints.base)[2] = (size_t) imprints->dictcnt;
 		((size_t *) imprints->imprints.base)[3] = (size_t) bi.count;
-		imprints->imprints.parentid = b->batCacheid;
 		imprints->imprints.dirty = true;
 		MT_lock_set(&b->theaplock);
 		if (b->batCount != bi.count) {

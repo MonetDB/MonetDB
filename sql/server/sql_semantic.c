@@ -1071,11 +1071,11 @@ result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
 		if (l->type->radix == 10 && r->type->radix == 10) {
 			digits = scale + (sql_max(l->digits - l->scale, r->digits - r->scale));
 #ifdef HAVE_HGE
-			if (digits > 39) {
-				digits = 39;
+			if (digits > 38) {
+				digits = 38;
 #else
-			if (digits > 19) {
-				digits = 19;
+			if (digits > 18) {
+				digits = 18;
 #endif
 				scale = MIN(scale, digits - 1);
 			}

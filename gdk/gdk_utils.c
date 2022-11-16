@@ -897,6 +897,9 @@ GDKinit(opt *set, int setlen, bool embedded)
 
 	mainpid = MT_getpid();
 
+	if (BBPchkfarms() != GDK_SUCCEED)
+		return GDK_FAIL;
+
 	if (GDKinmemory(0)) {
 		dbpath = dbtrace = NULL;
 	} else {
@@ -1211,8 +1214,6 @@ GDKprepareExit(void)
 	}
 }
 
-static MT_Lock GDKthreadLock = MT_LOCK_INITIALIZER(GDKthreadLock);
-
 void
 GDKreset(int status)
 {
@@ -1246,7 +1247,6 @@ GDKreset(int status)
 	if (status == 0) {
 		/* they had their chance, now kill them */
 		bool killed = false;
-		MT_lock_set(&GDKthreadLock);
 		for (Thread t = GDKthreads; t < GDKthreads + THREADS; t++) {
 			MT_Id victim;
 			if ((victim = (MT_Id) ATOMIC_GET(&t->pid)) != 0) {
@@ -1312,30 +1312,11 @@ GDKreset(int status)
 
 		memset(THRdata, 0, sizeof(THRdata));
 		gdk_bbp_reset();
-		MT_lock_unset(&GDKthreadLock);
 	}
 	ATOMunknown_clean();
 
 	/* stop GDKtracer */
 	GDKtracer_stop();
-}
-
-/* coverity[+kill] */
-void
-GDKexit(int status)
-{
-	if (!GDKinmemory(0) && GET_GDKLOCK(PERSISTENT) == NULL) {
-		/* stop GDKtracer */
-		GDKtracer_stop();
-
-		/* no database lock, so no threads, so exit now */
-		if (!GDKembedded())
-			exit(status);
-	}
-	GDKprepareExit();
-	GDKreset(status);
-	if (!GDKembedded())
-		exit(status);
 }
 
 /*
