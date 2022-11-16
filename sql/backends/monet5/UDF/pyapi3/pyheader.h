@@ -35,6 +35,7 @@
 #undef _XOPEN_SOURCE
 #undef _POSIX_C_SOURCE
 #define __deprecated__
+#define deprecated(s)
 #ifdef _DEBUG
 #undef _DEBUG
 #include <Python.h>
@@ -43,6 +44,7 @@
 #include <Python.h>
 #endif
 #undef __deprecated__
+#undef deprecated
 
 // Numpy Library
 #ifdef __COVERITY__
