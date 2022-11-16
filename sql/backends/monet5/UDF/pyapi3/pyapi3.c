@@ -1374,12 +1374,39 @@ PYAPI3PyAPIprelude(void *ret) {
 	(void) ret;
 	MT_lock_set(&pyapiLock);
 	if (!pyapiInitialized) {
-		wchar_t* program = Py_DecodeLocale("mserver5", NULL);
-		wchar_t* argv[] = { program };
+		wchar_t* program = L"mserver5";
+		wchar_t* argv[] = { program, NULL };
 		str msg = MAL_SUCCEED;
 		PyObject *tmp;
-		Py_Initialize();
+
+		static_assert(PY_MAJOR_VERSION == 3, "Python 3.X required");
+#if PY_MINOR_VERSION >= 11
+		/* introduced in 3.8, we use it for 3.11 and later
+		 * on Windows, this code does not work with 3.10, it needs more
+		 * complex initialization */
+		PyStatus status;
+		PyConfig config;
+
+		PyConfig_InitIsolatedConfig(&config);
+		status = PyConfig_SetArgv(&config, 1, argv);
+		if (!PyStatus_Exception(status))
+			status = PyConfig_Read(&config);
+		if (!PyStatus_Exception(status))
+			status = Py_InitializeFromConfig(&config);
+		PyConfig_Clear(&config);
+		if (PyStatus_Exception(status)) {
+			MT_lock_unset(&pyapiLock);
+			throw(MAL, "pyapi3.eval",
+				  SQLSTATE(PY000) "Python initialization failed: %s: %s",
+				  status.func ? status.func : "PYAPI3PyAPIprelude",
+				  status.err_msg ? status.err_msg : "");
+		}
+#else
+		/* PySys_SetArgvEx deprecated in 3.11 */
+		Py_InitializeEx(0);
 		PySys_SetArgvEx(1, argv, 0);
+#endif
+
 		_import_array();
 		msg = _connection_init();
 		if (msg != MAL_SUCCEED) {
