@@ -149,22 +149,6 @@ main(void)
 	let_run();
 	check(3, 1, 0);
 
-	// when using signal, we need to trigger them three times
-	clear();
-	for (int i = 0; i < NN; i++)
-		states[i].permits = 1;
-	let_run();
-	check(0, 0, 3);
-	MT_cond_signal(&condvar);
-	let_run();
-	check(1, 1, 2);
-	MT_cond_signal(&condvar);
-	let_run();
-	check(2, 1, 1);
-	MT_cond_signal(&condvar);
-	let_run();
-	check(3, 1, 0);
-
 	for (int i = 0; i < NN; i++) {
 		states[i].terminate = true;
 	}
