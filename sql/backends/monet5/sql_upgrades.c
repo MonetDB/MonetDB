@@ -300,9 +300,21 @@ sql_update_hugeint(Client c, mvc *sql)
 
 #ifdef HAVE_SHP
 static str
-sql_update_shp(Client c)
+sql_create_shp(Client c)
 {
-	const char *query = "create procedure SHPLoad(fname string, schemaname string, tablename string) external name shp.load;\ncreate procedure SHPLoad(fname string, tablename string) external name shp.load;update sys.functions set system = true where schema_id = 2000 and name in ('shpload');";
+	//Create the new SHPload procedures
+	const char *query = "create procedure SHPLoad(fname string, schemaname string, tablename string) external name shp.load;\n"
+		"create procedure SHPLoad(fname string, tablename string) external name shp.load;\n"
+		"update sys.functions set system = true where schema_id = 2000 and name in ('shpload');";
+	printf("Running database upgrade commands:\n%s\n", query);
+	return SQLstatementIntern(c, query, "update", true, false, NULL);
+}
+
+static str
+sql_drop_shp(Client c)
+{
+	//Drop the old SHP procedures (upgrade from version before shpload upgrade)
+	const char *query = "drop procedure SHPattach(string); drop procedure SHPload(integer); drop procedure SHPload(integer, geometry);";
 	printf("Running database upgrade commands:\n%s\n", query);
 	return SQLstatementIntern(c, query, "update", true, false, NULL);
 }
@@ -5500,10 +5512,21 @@ SQLupgrades(Client c, mvc *m)
 	//TODO FIX
 	if (backend_has_module(&(int){0}, "shp")) {
 		sql_find_subtype(&tp, "varchar", 0, 0);
-		if (!sql_bind_func(m, s->base.name, "shpattach", &tp, NULL, F_PROC, true)) {
-			m->session->status = 0; /* if the function was not found clean the error */
+		//Drop old SHP procedures
+		if (sql_bind_func(m, s->base.name, "shpattach", &tp, NULL, F_PROC, true)) {
+			if ((err = sql_drop_shp(c)) != NULL) {
+				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+				freeException(err);
+				return -1;
+			}
+		}
+		m->session->status = 0; /* if the shpattach function was not found clean the error */
+		m->errstr[0] = '\0';
+		//Create new SHP procedures
+		if (!sql_bind_func(m, s->base.name, "shpload", &tp, &tp, F_PROC, true)) {
+			m->session->status = 0; /* if the shpload function was not found clean the error */
 			m->errstr[0] = '\0';
-			if ((err = sql_update_shp(c)) != NULL) {
+			if ((err = sql_create_shp(c)) != NULL) {
 				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 				freeException(err);
 				return -1;
