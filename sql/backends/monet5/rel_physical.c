@@ -13,6 +13,7 @@
 #include "rel_exp.h"
 #include "rel_rel.h"
 
+#if 0
 static sql_subfunc *
 find_func( mvc *sql, char *name, list *exps )
 {
@@ -63,6 +64,7 @@ rel_find_aggr_exp(mvc *sql, sql_rel *rel, list *exps, sql_exp *e, char *name)
 	}
 	return NULL;
 }
+#endif
 
 static sql_exp *
 find_aggr_exp(mvc *sql, list *exps, char *name)
@@ -118,6 +120,7 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 }
 
 
+#if 0
 /* TODO for count we need remove useless 'converts' etc */
 /* rewrite avg into sum/count */
 static sql_rel *
@@ -272,14 +275,14 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 	}
 	return rel;
 }
-
+#endif
 
 sql_rel *
 rel_physical(mvc *sql, sql_rel *rel)
 {
 	visitor v = { .sql = sql };
 
-	rel = rel_visitor_bottomup(&v, rel, &rel_avg_rewrite);
+//	rel = rel_visitor_bottomup(&v, rel, &rel_avg_rewrite);
 	rel = rel_visitor_bottomup(&v, rel, &rel_count_gt_zero); /* the select > 0 should be done before using the values */
 	return rel;
 }

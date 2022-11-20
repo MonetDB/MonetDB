@@ -3225,9 +3225,11 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		pipeline_lock2(cn);
 		BATnegateprops(cn);
 		pipeline_unlock2(cn);
-		BATsetcount(bn, max);
-		BATsetcount(rn, max);
-		BATsetcount(cn, max);
+		if (BATcount(bn) < max) {
+			BATsetcount(bn, max);
+			BATsetcount(rn, max);
+			BATsetcount(cn, max);
+		}
 	}
 
 	BBPunfix(b->batCacheid);

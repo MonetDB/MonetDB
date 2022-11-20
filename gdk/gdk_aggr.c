@@ -2090,7 +2090,8 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	if (cn == NULL)
 		GDKfree(cnts);
 	else {
-		BATsetcount(cn, ngrp);
+		if (BATcount(cn) < ngrp)
+			BATsetcount(cn, ngrp);
 		cn->tkey = BATcount(cn) <= 1;
 		cn->tsorted = BATcount(cn) <= 1;
 		cn->trevsorted = BATcount(cn) <= 1;
@@ -2105,7 +2106,8 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 				dbls[i] /= fac;
 		}
 	}
-	BATsetcount(bn, ngrp);
+	if (BATcount(bn) < ngrp)
+		BATsetcount(bn, ngrp);
 	bn->tkey = BATcount(bn) <= 1;
 	bn->tsorted = BATcount(bn) <= 1;
 	bn->trevsorted = BATcount(bn) <= 1;
@@ -2155,7 +2157,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 	lng *rems;
 	lng *cnts;
 
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
+	if ((err = BATgroupaggrinit2(true, b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);
 		return GDK_FAIL;
 	}
@@ -2573,9 +2575,11 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 #endif
 	}
 	bat_iterator_end(&bi);
-	BATsetcount(bn, ngrp);
-	BATsetcount(rn, ngrp);
-	BATsetcount(cn, ngrp);
+	if (BATcount(bn) < ngrp) {
+		BATsetcount(bn, ngrp);
+		BATsetcount(rn, ngrp);
+		BATsetcount(cn, ngrp);
+	}
 	bn->tnonil = !bn->tnil;
 	rn->tnonil = !rn->tnil;
 	cn->tnonil = !cn->tnil;

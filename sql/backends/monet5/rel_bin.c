@@ -4603,6 +4603,13 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			if (!_2phases)
 				aggrstmt->nr = getArg(aggrstmt->q, 0) = *(int*)m->data;
 			m = m->next;
+			if (!_2phases && is_aggr(aggrexp->type)) {
+				sql_subfunc *sf = aggrexp->f;
+				if (strcmp(sf->func->base.name, "avg") == 0) {
+					getArg(aggrstmt->q, 1) = *(int*)m->data;
+					m = m->next;
+				}
+			}
 		}
 		if (be->pipeline && aggrstmt)
 			aggrstmt->q->inout = 0;
