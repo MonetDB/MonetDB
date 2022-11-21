@@ -1,12 +1,3 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
-* Wed Nov  9 2022 Sjoerd Mullender <sjoerd@acm.org>
-- Memory leaks have been fixed.
-
-* Mon Oct 10 2022 Sjoerd Mullender <sjoerd@acm.org>
-- Offset heaps (.tailN files) were growing too fast and unnecessarily
-  under certain conditions.  This has been fixed.  Also, when such too
-  large files are now loaded into the system, it is recognized they are
-  too large and they are truncated to a more reasonable size.
-
