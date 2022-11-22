@@ -403,7 +403,7 @@ ilog2(BUN x)
 	b->tnonil ? "N" : "",						\
 	b->thash ? "H" : "",						\
 	b->torderidx ? "O" : "",					\
-	b->timprints ? "I" : b->theap && b->theap->parentid && BBP_cache(b->theap->parentid)->timprints ? "(I)" : ""
+	b->timprints ? "I" : b->theap && b->theap->parentid && BBP_desc(b->theap->parentid)->timprints ? "(I)" : ""
 /* use ALGOOPTBAT* when BAT is optional (can be NULL) */
 #define ALGOOPTBATFMT	"%s%s" BUNFMT "%s" OIDFMT "%s%s%s%s%s%s%s%s%s%s%s%s%s"
 #define ALGOOPTBATPAR(b)						\
@@ -424,7 +424,7 @@ ilog2(BUN x)
 	b && b->tnonil ? "N" : "",					\
 	b && b->thash ? "H" : "",					\
 	b && b->torderidx ? "O" : "",					\
-	b ? b->timprints ? "I" : b->theap && b->theap->parentid && BBP_cache(b->theap->parentid) && BBP_cache(b->theap->parentid)->timprints ? "(I)" : "" : ""
+	b ? b->timprints ? "I" : b->theap && b->theap->parentid && BBP_desc(b->theap->parentid) && BBP_desc(b->theap->parentid)->timprints ? "(I)" : "" : ""
 
 #ifdef __SANITIZE_THREAD__
 #define BBP_BATMASK	31

@@ -805,7 +805,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	    bi.restricted == BAT_READ &&
 	    ATOMstorage(b->ttype) != TYPE_msk && /* no view on TYPE_msk */
 	    (!VIEWtparent(b) ||
-	     BBP_cache(VIEWtparent(b))->batRestricted == BAT_READ)) {
+	     BBP_desc(VIEWtparent(b))->batRestricted == BAT_READ)) {
 		bn = VIEWcreate(b->hseqbase, b);
 		if (bn == NULL) {
 			bat_iterator_end(&bi);
@@ -829,12 +829,12 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			/* oops, we need to fix/unfix atoms */
 			slowcopy = true;
 		} else if (bi.h && bi.h->parentid != b->batCacheid &&
-			   BATcapacity(BBP_cache(bi.h->parentid)) > bi.count + bi.count) {
+			   BATcapacity(BBP_desc(bi.h->parentid)) > bi.count + bi.count) {
 			/* reduced slice view: do not copy too much
 			 * garbage */
 			slowcopy = true;
 		} else if (bi.vh && bi.vh->parentid != b->batCacheid &&
-			   BATcount(BBP_cache(bi.vh->parentid)) > bi.count + bi.count) {
+			   BATcount(BBP_desc(bi.vh->parentid)) > bi.count + bi.count) {
 			/* reduced vheap view: do not copy too much
 			 * garbage; this really is a heuristic since the
 			 * vheap could be used completely, even if the
@@ -1994,15 +1994,18 @@ BATkey(BAT *b, bool flag)
 	if (flag && VIEWtparent(b)) {
 		/* if a view is key, then so is the parent if the two
 		 * are aligned */
-		BAT *bp = BBP_cache(VIEWtparent(b));
-		MT_lock_set(&bp->theaplock);
-		if (BATcount(b) == BATcount(bp) &&
-		    ATOMtype(BATttype(b)) == ATOMtype(BATttype(bp)) &&
-		    !BATtkey(bp) &&
-		    ((BATtvoid(b) && BATtvoid(bp) && b->tseqbase == bp->tseqbase) ||
-		     BATcount(b) == 0))
-			rc = BATkey(bp, true);
-		MT_lock_unset(&bp->theaplock);
+		BAT *bp = BATdescriptor(VIEWtparent(b));
+		if (bp != NULL) {
+			MT_lock_set(&bp->theaplock);
+			if (BATcount(b) == BATcount(bp) &&
+			    ATOMtype(BATttype(b)) == ATOMtype(BATttype(bp)) &&
+			    !BATtkey(bp) &&
+			    ((BATtvoid(b) && BATtvoid(bp) && b->tseqbase == bp->tseqbase) ||
+			     BATcount(b) == 0))
+				rc = BATkey(bp, true);
+			MT_lock_unset(&bp->theaplock);
+			BBPunfix(bp->batCacheid);
+		}
 	}
 	return rc;
 }
