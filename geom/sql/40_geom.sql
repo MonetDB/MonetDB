@@ -10,19 +10,25 @@
 ------------------------- Geography functions ---------------------------
 -------------------------------------------------------------------------
 CREATE FUNCTION ST_DistanceGeographic(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom."DistanceGeographic";
+GRANT EXECUTE ON FUNCTION ST_DistanceGeographic(Geometry, Geometry) TO PUBLIC;
 CREATE FILTER FUNCTION ST_DWithinGeographic(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME geom."DWithinGeographic";
+GRANT EXECUTE ON FUNCTION ST_DWithinGeographic(Geometry, Geometry, double) TO PUBLIC;
 CREATE FILTER FUNCTION ST_IntersectsGeographic(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom."IntersectsGeographic";
+GRANT EXECUTE ON FUNCTION ST_IntersectsGeographic(Geometry, Geometry) TO PUBLIC;
 
 -------------------------------------------------------------------------
 ----------------------- New Geometry functions --------------------------
 -------------------------------------------------------------------------
 CREATE AGGREGATE ST_Collect(geom Geometry) RETURNS Geometry external name aggr."Collect";
-
+GRANT EXECUTE ON AGGREGATE ST_Collect(Geometry) TO PUBLIC;
 CREATE FILTER FUNCTION ST_Intersects(geom1 Geometry, geom2 Geometry) EXTERNAL NAME rtree."Intersects";
+GRANT EXECUTE ON FILTER ST_Intersects(Geometry, Geometry) TO PUBLIC;
 CREATE FILTER FUNCTION ST_Intersects_NoIndex(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom."Intersects_noindex";
-
+GRANT EXECUTE ON FILTER ST_Intersects_NoIndex(Geometry, Geometry) TO PUBLIC;
 CREATE FILTER FUNCTION ST_DWithin(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME rtree."DWithin";
+GRANT EXECUTE ON FILTER ST_DWithin(Geometry, Geometry, double) TO PUBLIC;
 CREATE FILTER FUNCTION ST_DWithin_NoIndex(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME geom."DWithin_noindex";
+GRANT EXECUTE ON FILTER ST_DWithin_NoIndex(Geometry, Geometry, double) TO PUBLIC;
 
 -------------------------------------------------------------------------
 ------------------------- Old Geom functions ----------------------------
@@ -332,6 +338,7 @@ CREATE FUNCTION ST_MakePointM(x double, y double, m double) RETURNS Geometry EXT
 GRANT EXECUTE ON FUNCTION ST_MakePointM(double, double, double) TO PUBLIC;
 --CREATE FUNCTION ST_MakeLine(geometry set geoms)?????
 CREATE AGGREGATE ST_MakeLine(geom Geometry) RETURNS Geometry external name aggr."MakeLine";
+GRANT EXECUTE ON AGGREGATE ST_MakeLine(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_MakeLine(geom1 Geometry, geom2 Geometry) RETURNS Geometry external name geom."MakeLine"; --two single geometries
 GRANT EXECUTE ON FUNCTION ST_MakeLine(Geometry, Geometry) TO PUBLIC;
 --CREATE FUNCTION ST_MakeLine(geoms_arr Geometry[]) RETURNS Geometry external name geom."MakeLine";
