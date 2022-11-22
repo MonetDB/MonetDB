@@ -3856,7 +3856,7 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (!(b = store->storage_api.bind_col(m->session->tr, c, RDONLY)))
 			throw(SQL, "sql.drop_hash", SQLSTATE(HY005) "Cannot access column descriptor");
-		if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
+		if (VIEWtparent(b) && (nb = BBP_desc(VIEWtparent(b)))) {
 			BBPunfix(b->batCacheid);
 			if (!(b = BATdescriptor(nb->batCacheid)))
 				throw(SQL, "sql.drop_hash", SQLSTATE(HY005) "Cannot access column descriptor");

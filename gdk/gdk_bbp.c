@@ -2726,9 +2726,7 @@ void
 BBPcold(bat i)
 {
 	if (!is_bat_nil(i)) {
-		BAT *b = BBP_cache(i);
-		if (b == NULL)
-			b = BBP_desc(i);
+		BAT *b = BBP_desc(i);
 		if (b == NULL || b->batRole == PERSISTENT)
 			BBP_status_off(i, BBPHOT);
 	}

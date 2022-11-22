@@ -1801,7 +1801,7 @@ BATslice(BAT *b, BUN l, BUN h)
 	}
 	restrict_t prestricted;
 	if (bi.restricted == BAT_READ && VIEWtparent(b)) {
-		BAT *pb = BBP_cache(VIEWtparent(b));
+		BAT *pb = BBP_desc(VIEWtparent(b));
 		MT_lock_set(&pb->theaplock);
 		prestricted = pb->batRestricted;
 		MT_lock_unset(&pb->theaplock);
@@ -2359,12 +2359,15 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		return GDK_SUCCEED;
 	}
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
-		if (b->tbaseoff != pb->tbaseoff ||
-		    BATcount(b) != BATcount(pb) ||
-		    b->hseqbase != pb->hseqbase ||
-		    BATatoms[b->ttype].atomCmp != BATatoms[pb->ttype].atomCmp)
+		pb = BATdescriptor(VIEWtparent(b));
+		if (pb != NULL &&
+		    (b->tbaseoff != pb->tbaseoff ||
+		     BATcount(b) != BATcount(pb) ||
+		     b->hseqbase != pb->hseqbase ||
+		     BATatoms[b->ttype].atomCmp != BATatoms[pb->ttype].atomCmp)) {
+			BBPunfix(pb->batCacheid);
 			pb = NULL;
+		}
 	} else {
 		pb = b;
 	}
@@ -2448,6 +2451,8 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			  ALGOOPTBATPAR(g), reverse, nilslast, stable,
 			  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn),
 			  ALGOOPTBATPAR(on), GDKusec() - t0);
+		if (pb != NULL && pb != b)
+			BBPunfix(pb->batCacheid);
 		return GDK_SUCCEED;
 	} else if (oidxh) {
 		HEAPdecref(oidxh, false);
@@ -2464,9 +2469,11 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		}
 		if (pb) {
 			bat_iterator_end(&pbi);
+			if (pb != b)
+				BBPunfix(pb->batCacheid);
 			pbi = bat_iterator(NULL);
+			pb = NULL;
 		}
-		pb = NULL;
 	} else {
 		bn = COLcopy(b, b->ttype, true, TRANSIENT);
 	}
@@ -2561,6 +2568,8 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 				  stable, ALGOOPTBATPAR(bn),
 				  ALGOOPTBATPAR(gn), ALGOOPTBATPAR(on),
 				  GDKusec() - t0);
+			if (pb != NULL && pb != b)
+				BBPunfix(pb->batCacheid);
 			return GDK_SUCCEED;
 		}
 		assert(g->ttype == TYPE_oid);
@@ -2683,6 +2692,8 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		  reverse, nilslast, stable, ALGOOPTBATPAR(bn),
 		  ALGOOPTBATPAR(gn), ALGOOPTBATPAR(on),
 		  g ? "grouped " : "", GDKusec() - t0);
+	if (pb && pb != b)
+		BBPunfix(pb->batCacheid);
 	return GDK_SUCCEED;
 
   error:
@@ -2693,6 +2704,8 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		HEAPdecref(oidxh, false);
 	if (bn)
 		BBPunfix(bn->batCacheid);
+	if (pb && pb != b)
+		BBPunfix(pb->batCacheid);
 	BBPreclaim(on);
 	if (sorted)
 		*sorted = NULL;
@@ -3069,19 +3082,22 @@ BATcount_no_nil(BAT *b, BAT *s)
 			assert(!b->tnil);
 			b->tnil = false;
 		}
-		MT_lock_unset(&b->theaplock);
 		bat pbid = VIEWtparent(b);
+		MT_lock_unset(&b->theaplock);
 		if (pbid) {
-			BAT *pb = BBP_cache(pbid);
-			MT_lock_set(&pb->theaplock);
-			if (cnt == BATcount(pb) &&
-			    bi.h == pb->theap &&
-			    !pb->tnonil) {
-				pb->tnonil = true;
-				assert(!pb->tnil);
-				pb->tnil = false;
+			BAT *pb = BATdescriptor(pbid);
+			if (pb) {
+				MT_lock_set(&pb->theaplock);
+				if (cnt == BATcount(pb) &&
+				    bi.h == pb->theap &&
+				    !pb->tnonil) {
+					pb->tnonil = true;
+					assert(!pb->tnil);
+					pb->tnil = false;
+				}
+				MT_lock_unset(&pb->theaplock);
+				BBPunfix(pb->batCacheid);
 			}
-			MT_lock_unset(&pb->theaplock);
 		}
 	}
 	bat_iterator_end(&bi);

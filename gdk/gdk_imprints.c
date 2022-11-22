@@ -303,7 +303,7 @@ BATcheckimprints(BAT *b)
 
 	if (VIEWtparent(b)) {
 		assert(b->timprints == NULL);
-		b = BBP_cache(VIEWtparent(b));
+		b = BATdescriptor(VIEWtparent(b));
 	}
 
 	if (b->timprints == (Imprints *) 1) {
@@ -359,6 +359,8 @@ BATcheckimprints(BAT *b)
 						b->timprints = imprints;
 						TRC_DEBUG(ACCELERATOR, ALGOBATFMT " reusing persisted imprints\n", ALGOBATPAR(b));
 						MT_lock_unset(&b->batIdxLock);
+						if (bi.b != b)
+							BBPunfix(b->batCacheid);
 						bat_iterator_end(&bi);
 						return true;
 					}
@@ -373,6 +375,8 @@ BATcheckimprints(BAT *b)
 		}
 		MT_lock_unset(&b->batIdxLock);
 	}
+	if (bi.b != b)
+		BBPunfix(b->batCacheid);
 	bat_iterator_end(&bi);
 	ret = b->timprints != NULL;
 	if( ret)
@@ -444,6 +448,7 @@ gdk_return
 BATimprints(BAT *b)
 {
 	BAT *s1 = NULL, *s2 = NULL, *s3 = NULL, *s4 = NULL;
+	bat unfix = 0;
 	Imprints *imprints;
 	BATiter bi;
 	lng t0 = GDKusec();
@@ -464,10 +469,14 @@ BATimprints(BAT *b)
 		/* views always keep null pointer and need to obtain
 		 * the latest imprint from the parent at query time */
 		s2 = b;		/* remember for ACCELDEBUG print */
-		b = BBP_cache(VIEWtparent(b));
-		assert(b);
-		if (BATcheckimprints(b))
+		b = BATdescriptor(VIEWtparent(b));
+		if (b == NULL)
+			return GDK_FAIL;
+		unfix = b->batCacheid; /* bat to be unfixed */
+		if (BATcheckimprints(b)) {
+			BBPunfix(unfix);
 			return GDK_SUCCEED;
+		}
 	}
 	bi = bat_iterator(b);
 	MT_lock_set(&b->batIdxLock);
@@ -495,6 +504,8 @@ BATimprints(BAT *b)
 		imprints = GDKzalloc(sizeof(Imprints));
 		if (imprints == NULL) {
 			bat_iterator_end(&bi);
+			if (unfix)
+				BBPunfix(unfix);
 			return GDK_FAIL;
 		}
 		strconcat_len(imprints->imprints.filename,
@@ -510,6 +521,8 @@ BATimprints(BAT *b)
 		if (s1 == NULL) {
 			GDKfree(imprints);
 			bat_iterator_end(&bi);
+			if (unfix)
+				BBPunfix(unfix);
 			return GDK_FAIL;
 		}
 		s2 = BATunique(b, s1);
@@ -517,6 +530,8 @@ BATimprints(BAT *b)
 			BBPunfix(s1->batCacheid);
 			GDKfree(imprints);
 			bat_iterator_end(&bi);
+			if (unfix)
+				BBPunfix(unfix);
 			return GDK_FAIL;
 		}
 		s3 = BATproject(s2, b);
@@ -525,6 +540,8 @@ BATimprints(BAT *b)
 			BBPunfix(s2->batCacheid);
 			GDKfree(imprints);
 			bat_iterator_end(&bi);
+			if (unfix)
+				BBPunfix(unfix);
 			return GDK_FAIL;
 		}
 		s3->tkey = true;	/* we know is unique on tail now */
@@ -534,6 +551,8 @@ BATimprints(BAT *b)
 			BBPunfix(s3->batCacheid);
 			GDKfree(imprints);
 			bat_iterator_end(&bi);
+			if (unfix)
+				BBPunfix(unfix);
 			return GDK_FAIL;
 		}
 		/* s4 now is ordered and unique on tail */
@@ -573,9 +592,13 @@ BATimprints(BAT *b)
 			BBPunfix(s2->batCacheid);
 			BBPunfix(s3->batCacheid);
 			BBPunfix(s4->batCacheid);
-			if (b->timprints != NULL)
+			if (b->timprints != NULL) {
+				if (unfix)
+					BBPunfix(unfix);
 				return GDK_SUCCEED; /* we were beaten to it */
-			GDKerror("memory allocation error");
+			}
+			if (unfix)
+				BBPunfix(unfix);
 			return GDK_FAIL;
 		}
 		imprints->bins = imprints->imprints.base + IMPRINTS_HEADER_SIZE * SIZEOF_SIZE_T;
@@ -646,6 +669,8 @@ BATimprints(BAT *b)
 			BBPunfix(s4->batCacheid);
 			GDKerror("Imprints creation aborted due to concurrent change to bat\n");
 			TRC_DEBUG(ACCELERATOR, "failed imprints construction: bat %s changed, " LLFMT " usec\n", BATgetId(b), GDKusec() - t0);
+			if (unfix)
+				BBPunfix(unfix);
 			return GDK_FAIL;
 		}
 		ATOMIC_INIT(&imprints->imprints.refs, 1);
@@ -678,6 +703,8 @@ BATimprints(BAT *b)
 		BBPunfix(s3->batCacheid);
 		BBPunfix(s4->batCacheid);
 	}
+	if (unfix)
+		BBPunfix(unfix);
 	return GDK_SUCCEED;
 }
 

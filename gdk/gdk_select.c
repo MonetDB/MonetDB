@@ -105,6 +105,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	BUN l, h, d = 0;
 	oid seq;
 	int (*cmp)(const void *, const void *);
+	BAT *b2 = NULL;
 
 	size_t counter = 0;
 	lng timeoffset = 0;
@@ -119,8 +120,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	h = canditer_last(ci) + 1 - seq;
 
 	*algo = "hashselect";
-	if (phash) {
-		BAT *b2 = BBP_cache(VIEWtparent(bi->b));
+	if (phash && (b2 = BATdescriptor(VIEWtparent(bi->b))) != NULL) {
 		*algo = "hashselect on parent";
 		TRC_DEBUG(ALGO, ALGOBATFMT
 			  " using parent(" ALGOBATFMT ") "
@@ -137,6 +137,8 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	if (!havehash) {
 		if (BAThash(bi->b) != GDK_SUCCEED) {
 			BBPreclaim(bn);
+			if (b2)
+				BBPunfix(b2->batCacheid);
 			return NULL;
 		}
 		MT_rwlock_rdlock(&bi->b->thashlock);
@@ -184,6 +186,8 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		}
 	}
 	MT_rwlock_rdunlock(&bi->b->thashlock);
+	if (b2)
+		BBPunfix(b2->batCacheid);
 	BATsetcount(bn, cnt);
 	bn->tkey = true;
 	if (cnt > 1) {
@@ -202,6 +206,8 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 
   bailout:
 	MT_rwlock_rdunlock(&bi->b->thashlock);
+	if (b2)
+		BBPunfix(b2->batCacheid);
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -217,8 +223,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				while (p < ncand && o < e) {		\
 					v = src[o-hseq];		\
 					if ((ADD) == NULL) {		\
-						BBPreclaim(bn);		\
-						return BUN_NONE;	\
+						goto bailout;		\
 					}				\
 					cnt++;				\
 					p++;				\
@@ -228,8 +233,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				while (p < ncand && o < e) {		\
 					v = src[o-hseq];		\
 					if ((ADD) == NULL) {		\
-						BBPreclaim(bn);		\
-						return BUN_NONE;	\
+						goto bailout;		\
 					}				\
 					cnt += (TEST) != 0;		\
 					p++;				\
@@ -253,8 +257,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				while (p < ncand && o < e) {		\
 					v = src[o-hseq];		\
 					if ((ADD) == NULL) {		\
-						BBPreclaim(bn);		\
-						return BUN_NONE;	\
+						goto bailout;		\
 					}				\
 					cnt++;				\
 					p++;				\
@@ -264,8 +267,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				while (p < ncand && o < e) {		\
 					v = src[o-hseq];		\
 					if ((ADD) == NULL) {		\
-						BBPreclaim(bn);		\
-						return BUN_NONE;	\
+						goto bailout;		\
 					}				\
 					cnt += (TEST) != 0;		\
 					p++;				\
@@ -391,6 +393,8 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 		if (anti ?						\
 		    vl < imp_min && vh > imp_max :			\
 		    vl > imp_max || vh < imp_min) {			\
+			if (pbat)					\
+				BBPunfix(pbat->batCacheid);		\
 			return 0;					\
 		}							\
 	} while (false)
@@ -439,8 +443,7 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 							 * (dbl) (ncand-p) * 1.1 + 1024), \
 							maximum);	\
 					if (dst == NULL) {		\
-						BBPreclaim(bn);		\
-						return BUN_NONE;	\
+						goto bailout;		\
 					}				\
 					cnt++;				\
 				}					\
@@ -538,6 +541,7 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 	BUN p;								\
 	BUN pr_off = 0;							\
 	bat parent = 0;							\
+	BAT *pbat = NULL;						\
 	(void) li;							\
 	(void) hi;							\
 	(void) lval;							\
@@ -554,10 +558,15 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 	}								\
 	if (imprints && imprints->imprints.parentid != bi->b->batCacheid) {	\
 		parent = imprints->imprints.parentid;			\
-		BAT *pbat = BBP_cache(parent);				\
-		assert(pbat);						\
-		basesrc = (const TYPE *) Tloc(pbat, 0);			\
-		pr_off = (BUN) (src - basesrc);				\
+		pbat = BATdescriptor(parent);				\
+		if (pbat == NULL) {					\
+			/* can't load parent: don't use imprints */	\
+			imprints = NULL;				\
+			basesrc = src;					\
+		} else {						\
+			basesrc = (const TYPE *) Tloc(pbat, 0);		\
+			pr_off = (BUN) (src - basesrc);			\
+		}							\
 	} else {							\
 		basesrc = src;						\
 	}								\
@@ -581,8 +590,12 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 	} else {							\
 		choose(NAME, ISDENSE, v >= vl && v <= vh, TYPE);	\
 	}								\
+	if (pbat)							\
+		BBPunfix(pbat->batCacheid);				\
 	return cnt;							\
   bailout:								\
+	if (pbat)							\
+		BBPunfix(pbat->batCacheid);				\
 	BBPreclaim(bn);							\
 	return BUN_NONE;						\
 }
@@ -1593,7 +1606,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	BAT *pb;
 	BATiter pbi;
 	if (parent > 0)
-		pb = BBP_cache(parent);
+		pb = BATdescriptor(parent);
 	else
 		pb = NULL;
 	pbi = bat_iterator(pb);
@@ -1710,8 +1723,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if ((oidxh = b->torderidx) != NULL)
 			HEAPincref(oidxh);
 		MT_lock_unset(&b->batIdxLock);
-		if (oidxh == NULL && parent) {
-			BAT *pb = BBP_cache(parent);
+		if (oidxh == NULL && pb) {
 			(void) BATcheckorderidx(pb);
 			MT_lock_set(&pb->batIdxLock);
 			if ((oidxh = pb->torderidx) != NULL) {
@@ -1875,6 +1887,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					HEAPdecref(oidxh, false);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&pbi);
+					if (pb)
+						BBPunfix(pb->batCacheid);
 					return NULL;
 				}
 
@@ -1916,6 +1930,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 		bat_iterator_end(&bi);
 		bat_iterator_end(&pbi);
+		if (pb)
+			BBPunfix(pb->batCacheid);
 		return bn;
 	}
 
@@ -1931,7 +1947,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		} else if (b->thash->nunique == bi.count)
 			estimate = 1;
 	}
-	if (estimate == BUN_NONE && (bi.key || (parent != 0 && BBP_cache(parent)->tkey))) {
+	if (estimate == BUN_NONE && (bi.key || (pb != NULL && pb->tkey))) {
 		/* exact result size in special cases */
 		if (equi) {
 			estimate = 1;
@@ -2020,6 +2036,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 		bat_iterator_end(&bi);
 		bat_iterator_end(&pbi);
+		if (pb)
+			BBPunfix(pb->batCacheid);
 		return NULL;
 	}
 
@@ -2067,6 +2085,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 	bat_iterator_end(&bi);
 	bat_iterator_end(&pbi);
+	if (pb)
+		BBPunfix(pb->batCacheid);
 
 	bn = virtualize(bn);
 	MT_thread_setalgorithm(algo);
@@ -2264,6 +2284,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		MT_lock_unset(&l->batIdxLock);
 #if 0 /* needs checking */
 		if (oidxh == NULL && VIEWtparent(l)) {
+/* if enabled, need to fix/unfix parent bat */
 			BAT *pb = BBP_cache(VIEWtparent(l));
 			(void) BATcheckorderidx(pb);
 			MT_lock_set(&pb->batIdxLock);
@@ -2398,11 +2419,13 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		cnt = BATcount(r1);
 		assert(r2 == NULL || BATcount(r1) == BATcount(r2));
-	} else if (!anti && !symmetric &&
-		   /* DISABLES CODE */ (0) && imprintable(li.type) &&
+	} else if (/* DISABLES CODE */ (0) &&
+		   !anti && !symmetric &&
+		   imprintable(li.type) &&
 		   (BATcount(rl) > 2 ||
 		    !li.transient ||
 		    (VIEWtparent(l) != 0 &&
+/* if enabled, need to fix/unfix parent bat */
 		     (tmp = BBP_cache(VIEWtparent(l))) != NULL &&
 		     /* batTransient access needs to be protected */
 		     !tmp->batTransient) ||
