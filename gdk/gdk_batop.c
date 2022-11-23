@@ -40,12 +40,11 @@ unshare_varsized_heap(BAT *b)
 		}
 		ATOMIC_INIT(&h->refs, 1);
 		MT_lock_set(&b->theaplock);
-		int parent = b->tvheap->parentid;
 		Heap *oh = b->tvheap;
 		b->tvheap = h;
 		MT_lock_unset(&b->theaplock);
+		BBPrelease(oh->parentid);
 		HEAPdecref(oh, false);
-		BBPunshare(parent);
 	}
 	return GDK_SUCCEED;
 }
@@ -84,13 +83,14 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		/* we can share the vheaps, so we then only need to
 		 * append the offsets */
 		MT_lock_set(&b->theaplock);
-		if (b->tvheap->parentid != b->batCacheid)
-			BBPunshare(b->tvheap->parentid);
-		HEAPdecref(b->tvheap, b->tvheap->parentid == b->batCacheid);
+		bat bid = b->tvheap->parentid;
+		HEAPdecref(b->tvheap, bid == b->batCacheid);
 		HEAPincref(ni->vh);
 		b->tvheap = ni->vh;
 		MT_lock_unset(&b->theaplock);
-		BBPshare(ni->vh->parentid);
+		BBPretain(ni->vh->parentid);
+		if (bid != b->batCacheid)
+			BBPrelease(bid);
 		toff = 0;
 		MT_thread_setalgorithm("share vheap");
 	} else {
@@ -356,13 +356,14 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		 * is read-only, we replace b's vheap with a reference
 		 * to n's */
 		MT_lock_set(&b->theaplock);
-		if (b->tvheap->parentid != b->batCacheid)
-			BBPunshare(b->tvheap->parentid);
-		BBPshare(ni->vh->parentid);
+		bat bid = b->tvheap->parentid;
 		HEAPdecref(b->tvheap, true);
 		HEAPincref(ni->vh);
 		b->tvheap = ni->vh;
 		MT_lock_unset(&b->theaplock);
+		BBPretain(ni->vh->parentid);
+		if (bid != b->batCacheid)
+			BBPrelease(bid);
 	}
 	if (b->tvheap == ni->vh) {
 		/* if b and n use the same vheap, we only need to copy
@@ -418,13 +419,13 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 			GDKfree(h);
 			return GDK_FAIL;
 		}
-		bat parid = b->tvheap->parentid;
-		BBPunshare(parid);
 		ATOMIC_INIT(&h->refs, 1);
 		MT_lock_set(&b->theaplock);
 		Heap *oh = b->tvheap;
 		b->tvheap = h;
 		MT_lock_unset(&b->theaplock);
+		if (oh->parentid != b->batCacheid)
+			BBPrelease(oh->parentid);
 		HEAPdecref(oh, false);
 	}
 	if (BATcount(b) == 0 && BATatoms[b->ttype].atomFix == NULL &&
