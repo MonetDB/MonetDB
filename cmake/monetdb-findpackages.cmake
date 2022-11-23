@@ -80,6 +80,23 @@ if(GEOM)
   find_package(Geos)
 endif()
 
+if(PARQUET)
+    find_package(PkgConfig REQUIRED)
+    pkg_search_module(GLIB REQUIRED glib-2.0)
+
+    include_directories(${GLIB_INCLUDE_DIRS})
+    link_directories(${GLIB_LIBRARY_DIRS})
+
+    add_definitions(${GLIB_CFLAGS_OTHER})
+
+    find_package(Arrow CONFIG REQUIRED)
+    find_package(Parquet CONFIG REQUIRED
+        PATHS ${Arrow_DIR} 
+        NO_DEFAULT_PATH
+    )
+endif()
+
+
 if(SHP)
   if(NOT GEOS_FOUND)
     message(STATUS "Disable SHP, geom module required for ESRI Shapefile vault")

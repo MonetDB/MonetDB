@@ -79,6 +79,7 @@ SANITIZER       Enable support for the GCC address sanitizer (default=OFF)
 SHP             Enable support for ESRI Shapefiles
 STRICT          Enable strict compiler flags (default=ON for development sources, OFF for tarball installation)
 TESTING         Enable support for testing
+PARQUET         Enable support Apache Parquet files
 WITH_BZ2        Include bz2 support
 WITH_CMOCKA     Include cmocka support (default=OFF)
 WITH_CURL       Include curl support

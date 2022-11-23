@@ -189,6 +189,7 @@
 #cmakedefine HAVE_PROJ 1
 #cmakedefine HAVE_SNAPPY 1
 #cmakedefine HAVE_FITS 1
+#cmakedefine HAVE_PARQUET 1
 #cmakedefine HAVE_VALGRIND 1
 #cmakedefine HAVE_NETCDF 1
 #cmakedefine HAVE_READLINE 1
