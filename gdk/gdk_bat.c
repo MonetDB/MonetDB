@@ -589,6 +589,8 @@ BATclear(BAT *b, bool force)
 	STRMPdestroy(b);
 	PROPdestroy(b);
 
+	bat tvp = 0;
+
 	/* we must dispose of all inserted atoms */
 	MT_lock_set(&b->theaplock);
 	if (force && BATatoms[b->ttype].atomDel == NULL) {
@@ -615,6 +617,7 @@ BATclear(BAT *b, bool force)
 				MT_lock_unset(&b->theaplock);
 				return GDK_FAIL;
 			}
+			tvp = b->tvheap->parentid;
 			ATOMIC_INIT(&th->refs, 1);
 			HEAPdecref(b->tvheap, false);
 			b->tvheap = th;
@@ -644,6 +647,8 @@ BATclear(BAT *b, bool force)
 	b->theap->dirty = true;
 	BATsettrivprop(b);
 	MT_lock_unset(&b->theaplock);
+	if (tvp != 0 && tvp != b->batCacheid)
+		BBPrelease(tvp);
 	return GDK_SUCCEED;
 }
 
@@ -805,7 +810,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	    bi.restricted == BAT_READ &&
 	    ATOMstorage(b->ttype) != TYPE_msk && /* no view on TYPE_msk */
 	    (!VIEWtparent(b) ||
-	     BBP_cache(VIEWtparent(b))->batRestricted == BAT_READ)) {
+	     BBP_desc(VIEWtparent(b))->batRestricted == BAT_READ)) {
 		bn = VIEWcreate(b->hseqbase, b);
 		if (bn == NULL) {
 			bat_iterator_end(&bi);
@@ -814,6 +819,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		if (tt != bn->ttype) {
 			bn->ttype = tt;
 			if (bn->tvheap && !ATOMvarsized(tt)) {
+				if (bn->tvheap->parentid != bn->batCacheid)
+					BBPrelease(bn->tvheap->parentid);
 				HEAPdecref(bn->tvheap, false);
 				bn->tvheap = NULL;
 			}
@@ -829,12 +836,12 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			/* oops, we need to fix/unfix atoms */
 			slowcopy = true;
 		} else if (bi.h && bi.h->parentid != b->batCacheid &&
-			   BATcapacity(BBP_cache(bi.h->parentid)) > bi.count + bi.count) {
+			   BATcapacity(BBP_desc(bi.h->parentid)) > bi.count + bi.count) {
 			/* reduced slice view: do not copy too much
 			 * garbage */
 			slowcopy = true;
 		} else if (bi.vh && bi.vh->parentid != b->batCacheid &&
-			   BATcount(BBP_cache(bi.vh->parentid)) > bi.count + bi.count) {
+			   BATcount(BBP_desc(bi.vh->parentid)) > bi.count + bi.count) {
 			/* reduced vheap view: do not copy too much
 			 * garbage; this really is a heuristic since the
 			 * vheap could be used completely, even if the
@@ -1797,7 +1804,7 @@ mskfnd(BAT *b, msk v)
 {
 	BUN p, q;
 
-	if (* (msk *) v) {
+	if (v) {
 		/* find a 1 value */
 		for (p = 0, q = (BATcount(b) + 31) / 32; p < q; p++) {
 			if (((uint32_t *) b->theap->base)[p] != 0) {
@@ -1994,15 +2001,18 @@ BATkey(BAT *b, bool flag)
 	if (flag && VIEWtparent(b)) {
 		/* if a view is key, then so is the parent if the two
 		 * are aligned */
-		BAT *bp = BBP_cache(VIEWtparent(b));
-		MT_lock_set(&bp->theaplock);
-		if (BATcount(b) == BATcount(bp) &&
-		    ATOMtype(BATttype(b)) == ATOMtype(BATttype(bp)) &&
-		    !BATtkey(bp) &&
-		    ((BATtvoid(b) && BATtvoid(bp) && b->tseqbase == bp->tseqbase) ||
-		     BATcount(b) == 0))
-			rc = BATkey(bp, true);
-		MT_lock_unset(&bp->theaplock);
+		BAT *bp = BATdescriptor(VIEWtparent(b));
+		if (bp != NULL) {
+			MT_lock_set(&bp->theaplock);
+			if (BATcount(b) == BATcount(bp) &&
+			    ATOMtype(BATttype(b)) == ATOMtype(BATttype(bp)) &&
+			    !BATtkey(bp) &&
+			    ((BATtvoid(b) && BATtvoid(bp) && b->tseqbase == bp->tseqbase) ||
+			     BATcount(b) == 0))
+				rc = BATkey(bp, true);
+			MT_lock_unset(&bp->theaplock);
+			BBPunfix(bp->batCacheid);
+		}
 	}
 	return rc;
 }
@@ -2198,9 +2208,14 @@ backup_new(Heap *hp, bool lock)
 	char *batpath, *bakpath;
 	struct stat st;
 
+	char *bak_filename = NULL;
+	if ((bak_filename = strrchr(hp->filename, DIR_SEP)) != NULL)
+		bak_filename++;
+	else
+		bak_filename = hp->filename;
 	/* check for an existing X.new in BATDIR, BAKDIR and SUBDIR */
 	batpath = GDKfilepath(hp->farmid, BATDIR, hp->filename, "new");
-	bakpath = GDKfilepath(hp->farmid, BAKDIR, hp->filename, "new");
+	bakpath = GDKfilepath(hp->farmid, BAKDIR, bak_filename, "new");
 	if (batpath != NULL && bakpath != NULL) {
 		/* file actions here interact with the global commits */
 		if (lock)

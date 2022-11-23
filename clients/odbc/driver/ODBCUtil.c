@@ -887,6 +887,11 @@ static struct convert {
 char *
 ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN noscan)
 {
+	/* we only need to read limited amounts of data into these
+	 * buffers (timestamp, interval, function name), so 128 bytes is
+	 * plenty long enough */
+	char buf[128], buf2[128];
+
 	if (noscan != SQL_NOSCAN_ON) {
 		char *nquery;
 		bool quoted = false, rawstring = false, dquoted = false;
@@ -926,93 +931,83 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 			if (query[i] != '{')
 				continue;
 			size_t n = 0;
-			char *s;
-			if (sscanf((const char *) query + i, "{ ts '%m[0-9:. -]' }%zn", &s, &n) >= 1 && n > 0) {
+			if (sscanf((const char *) query + i, "{ ts '%127[0-9:. -]' }%zn", buf, &n) >= 1 && n > 0) {
 				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
-				size_t len = strlen(s) + strlen(rest);
+				size_t len = strlen(buf) + strlen(rest);
 				nquery = malloc(i + len + 13);
 				snprintf(nquery, i + len + 13,
 					 "%.*sTIMESTAMP '%s'%s",
-					 (int) i, query, s, rest);
-				free(s);
+					 (int) i, query, buf, rest);
 				free(rest);
 				return nquery;
 			}
-			if (sscanf((const char *) query + i, "{ t '%m[0-9:]' }%zn", &s, &n) >= 1 && n > 0) {
+			if (sscanf((const char *) query + i, "{ t '%127[0-9:]' }%zn", buf, &n) >= 1 && n > 0) {
 				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
-				size_t len = strlen(s) + strlen(rest);
+				size_t len = strlen(buf) + strlen(rest);
 				nquery = malloc(i + len + 8);
 				snprintf(nquery, i + len + 8,
 					 "%.*sTIME '%s'%s",
-					 (int) i, query, s, rest);
-				free(s);
+					 (int) i, query, buf, rest);
 				free(rest);
 				return nquery;
 			}
-			if (sscanf((const char *) query + i, "{ d '%m[0-9-]' }%zn", &s, &n) >= 1 && n > 0) {
+			if (sscanf((const char *) query + i, "{ d '%127[0-9-]' }%zn", buf, &n) >= 1 && n > 0) {
 				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
-				size_t len = strlen(s) + strlen(rest);
+				size_t len = strlen(buf) + strlen(rest);
 				nquery = malloc(i + len + 8);
 				snprintf(nquery, i + len + 8,
 					 "%.*sDATE '%s'%s",
-					 (int) i, query, s, rest);
-				free(s);
+					 (int) i, query, buf, rest);
 				free(rest);
 				return nquery;
 			}
-			if (sscanf((const char *) query + i, "{ guid '%m[0-9a-fA-F-]' }%zn", &s, &n) >= 1 && n > 0) {
+			if (sscanf((const char *) query + i, "{ guid '%127[0-9a-fA-F-]' }%zn", buf, &n) >= 1 && n > 0) {
 				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
-				size_t len = strlen(s) + strlen(rest);
+				size_t len = strlen(buf) + strlen(rest);
 				nquery = malloc(i + len + 8);
 				snprintf(nquery, i + len + 8,
 					 "%.*sUUID '%s'%s",
-					 (int) i, query, s, rest);
-				free(s);
+					 (int) i, query, buf, rest);
 				free(rest);
 				return nquery;
 			}
-			if (sscanf((const char *) query + i, "{ escape '%m[^']' }%zn", &s, &n) >= 1 && n > 0) {
+			if (sscanf((const char *) query + i, "{ escape '%127[^']' }%zn", buf, &n) >= 1 && n > 0) {
 				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
-				size_t len = strlen(s) + strlen(rest);
+				size_t len = strlen(buf) + strlen(rest);
 				nquery = malloc(i + len + 10);
 				snprintf(nquery, i + len + 10,
 					 "%.*sESCAPE '%s'%s",
-					 (int) i, query, s, rest);
-				free(s);
+					 (int) i, query, buf, rest);
 				free(rest);
 				return nquery;
 			}
-			char *s2;
-			if (sscanf((const char *) query + i, "{ interval '%m[^']' %m[a-zA-Z ] }%zn", &s, &s2, &n) >= 2 && n > 0) {
+			if (sscanf((const char *) query + i, "{ interval '%127[^']' %127[a-zA-Z ] }%zn", buf, buf2, &n) >= 2 && n > 0) {
 				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
-				size_t len = strlen(s) + strlen(s2) + strlen(rest);
+				size_t len = strlen(buf) + strlen(buf2) + strlen(rest);
 				nquery = malloc(i + len + 14);
 				snprintf(nquery, i + len + 14,
 					 "%.*sINTERVAL '%s' %s %s",
-					 (int) i, query, s, s2, rest);
-				free(s);
+					 (int) i, query, buf, buf2, rest);
 				free(rest);
 				return nquery;
 			}
-			if (sscanf((const char *) query + i, "{ interval + '%m[^']' %m[a-zA-Z ] }%zn", &s, &s2, &n) >= 2 && n > 0) {
+			if (sscanf((const char *) query + i, "{ interval + '%127[^']' %127[a-zA-Z ] }%zn", buf, buf2, &n) >= 2 && n > 0) {
 				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
-				size_t len = strlen(s) + strlen(s2) + strlen(rest);
+				size_t len = strlen(buf) + strlen(buf2) + strlen(rest);
 				nquery = malloc(i + len + 15);
 				snprintf(nquery, i + len + 15,
 					 "%.*sINTERVAL +'%s' %s %s",
-					 (int) i, query, s, s2, rest);
-				free(s);
+					 (int) i, query, buf, buf2, rest);
 				free(rest);
 				return nquery;
 			}
-			if (sscanf((const char *) query + i, "{ interval - '%m[^']' %m[a-zA-Z ] }%zn", &s, &s2, &n) >= 2 && n > 0) {
+			if (sscanf((const char *) query + i, "{ interval - '%127[^']' %127[a-zA-Z ] }%zn", buf, buf2, &n) >= 2 && n > 0) {
 				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
-				size_t len = strlen(s) + strlen(s2) + strlen(rest);
+				size_t len = strlen(buf) + strlen(buf2) + strlen(rest);
 				nquery = malloc(i + len + 15);
 				snprintf(nquery, i + len + 15,
 					 "%.*sINTERVAL -'%s' %s %s",
-					 (int) i, query, s, s2, rest);
-				free(s);
+					 (int) i, query, buf, buf2, rest);
 				free(rest);
 				return nquery;
 			}
@@ -1114,7 +1109,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(rest);
 				continue;
 			}
-			if (sscanf((const char *) query + i, "{ fn %m[a-zA-Z0-9_] ( %zn", &s, &n) >= 1 && n > 0) {
+			if (sscanf((const char *) query + i, "{ fn %127[a-zA-Z0-9_] ( %zn", buf, &n) >= 1 && n > 0) {
 				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
 				size_t arglen = 0;
 				size_t lastarg = 0;
@@ -1188,7 +1183,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 						if (nparen != 0 || seenarg)
 							break;
 						for (struct scalars *func = scalars; func->name; func++) {
-							if (strcasecmp(func->name, s) == 0 && func->nargs == nargs) {
+							if (strcasecmp(func->name, buf) == 0 && func->nargs == nargs) {
 								const char *repl = func->repl;
 								const char *repl2 = "";
 								const char *repl3 = "";
@@ -1196,7 +1191,6 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 								const char *p2 = ")";
 								const char *quote = "";
 								size_t repl3len = 0;
-								free(s);
 								if (repl == NULL) {
 									if (strcmp(func->name, "user") == 0) {
 										repl = dbc->uid;
@@ -1233,7 +1227,6 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 						seenarg = true;
 					}
 				}
-				free(s);
 				free(rest);
 				continue;
 			}

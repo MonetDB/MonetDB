@@ -120,8 +120,8 @@ static const char *findName(const char *nme, size_t len, bool allocate)
 		struct namespace *ns = GDKmalloc(sizeof(struct namespace));
 		if (ns == NULL) {
 			/* error we cannot recover from */
-			TRC_CRITICAL(MAL_SERVER, MAL_MALLOC_FAIL "\n");
-			mal_exit(1);
+			GDKfatal(MAL_MALLOC_FAIL);
+			exit(1);
 		}
 		ns->next = namespace;
 		ns->count = 0;
