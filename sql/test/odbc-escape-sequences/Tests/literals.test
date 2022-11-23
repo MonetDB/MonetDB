@@ -26,7 +26,7 @@ select {ts '2022-02-17 02:08:12'}
 2022-02-17 02:08:12
 
 query T rowsort
-select {guid 'e751f9e0-2cee-4eca-b0c2-1cf108cebd18'}
+select { guid 'e751f9e0-2cee-4eca-b0c2-1cf108cebd18' }
 ----
 e751f9e0-2cee-4eca-b0c2-1cf108cebd18
 
