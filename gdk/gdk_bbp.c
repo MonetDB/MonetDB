@@ -61,13 +61,6 @@
  * Bats use have two kinds of references: logical and physical
  * (pointer) ones.  The logical references are administered by
  * BBPretain/BBPrelease, the physical ones by BBPfix/BBPunfix.
- *
- * @item share counting
- * Views use the heaps of there parent bats. To save guard this, the
- * parent has a shared counter, which is incremented and decremented
- * using BBPshare and BBPunshare. These functions make sure the parent
- * is memory resident as required because of the 'pointer' sharing.
- * @end table
  */
 
 #include "monetdb_config.h"
@@ -1306,6 +1299,7 @@ fixhashashbat(BAT *b)
 		return GDK_FAIL;
 	}
 	*h2 = *b->theap;
+	h2->base = NULL;
 	if (HEAPalloc(h2, b->batCapacity, b->twidth) != GDK_SUCCEED) {
 		GDKfree(h2);
 		GDKfree(vh2);
@@ -1917,7 +1911,7 @@ BBPexit(void)
 	} while (skipped);
 	GDKfree(BBP_hash);
 	BBP_hash = NULL;
-	// these need to be NULL, otherwise no new ones get created
+	/* these need to be NULL, otherwise no new ones get created */
 	backup_files = 0;
 	backup_dir = 0;
 	backup_subdir = 0;
@@ -2726,9 +2720,7 @@ void
 BBPcold(bat i)
 {
 	if (!is_bat_nil(i)) {
-		BAT *b = BBP_cache(i);
-		if (b == NULL)
-			b = BBP_desc(i);
+		BAT *b = BBP_desc(i);
 		if (b == NULL || b->batRole == PERSISTENT)
 			BBP_status_off(i, BBPHOT);
 	}
@@ -2800,24 +2792,12 @@ BBPretain(bat i)
 	return incref(i, true, lock);
 }
 
-void
-BBPshare(bat parent)
-{
-	bool lock = locked_by == 0 || locked_by != MT_getpid();
-
-	assert(parent > 0);
-	(void) incref(parent, true, lock);
-	assert(BBP_refs(parent) > 0);
-	(void) BATdescriptor(parent);
-}
-
 static inline int
 decref(bat i, bool logical, bool lock, const char *func)
 {
 	int refs = 0, lrefs;
 	bool swap = false;
 	bool locked = false;
-	bat tp = 0, tvp = 0;
 	int farmid = 0;
 	BAT *b;
 
@@ -2856,15 +2836,11 @@ decref(bat i, bool logical, bool lock, const char *func)
 			GDKerror("%s: %s does not have pointer fixes.\n", func, BBP_logical(i));
 			assert(0);
 		} else {
-			assert(b == NULL || b->theap == NULL || BBP_refs(b->theap->parentid) > 0);
-			assert(b == NULL || b->tvheap == NULL || BBP_refs(b->tvheap->parentid) > 0);
 			refs = --BBP_refs(i);
 			if (b && refs == 0) {
 				MT_lock_set(&b->theaplock);
 				locked = true;
-				tp = VIEWtparent(b);
-				tvp = VIEWvtparent(b);
-				if (tp || tvp)
+				if (VIEWtparent(b) || VIEWvtparent(b))
 					BBP_status_on(i, BBPHOT);
 			}
 		}
@@ -2948,10 +2924,6 @@ decref(bat i, bool logical, bool lock, const char *func)
 			BBP_status_off(i, BBPUNLOADING);
 		}
 	}
-	if (tp)
-		decref(tp, false, lock, func);
-	if (tvp)
-		decref(tvp, false, lock, func);
 	return refs;
 }
 
@@ -2996,30 +2968,6 @@ BATdescriptor(bat i)
 
 	if (BBPcheck(i)) {
 		bool lock = locked_by == 0 || locked_by != MT_getpid();
-		/* parent bats get a single fix for all physical
-		 * references of a view and in order to do that
-		 * properly, we must incref the parent bats always
-		 * before our own incref, then after that decref them if
-		 * we were not the first */
-		int tp = 0, tvp = 0;
-		if ((b = BBP_desc(i)) != NULL) {
-			MT_lock_set(&b->theaplock);
-			tp = b->theap->parentid;
-			tvp = b->tvheap ? b->tvheap->parentid : 0;
-			MT_lock_unset(&b->theaplock);
-			if (tp != i) {
-				if (BATdescriptor(tp) == NULL) {
-					return NULL;
-				}
-			}
-			if (tvp != 0 && tvp != i) {
-				if (BATdescriptor(tvp) == NULL) {
-					if (tp != i)
-						BBPunfix(tp);
-					return NULL;
-				}
-			}
-		}
 		if (lock) {
 			for (;;) {
 				MT_lock_set(&GDKswapLock(i));
@@ -3030,8 +2978,7 @@ BATdescriptor(bat i)
 				BBPspin(i, __func__, BBPUNSTABLE|BBPLOADING);
 			}
 		}
-		int refs;
-		if ((refs = incref(i, false, false)) > 0) {
+		if (incref(i, false, false) > 0) {
 			b = BBP_cache(i);
 			if (b == NULL)
 				b = getBBPdescriptor(i);
@@ -3041,23 +2988,8 @@ BATdescriptor(bat i)
 		}
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i));
-		if (refs != 1) {
-			/* unfix both in case of failure (<= 0) and when
-			 * not the first (> 1) */
-			if (tp != 0 && tp != i)
-				BBPunfix(tp);
-			if (tvp != 0 && tvp != i)
-				BBPunfix(tvp);
-		}
 	}
 	return b;
-}
-
-void
-BBPunshare(bat parent)
-{
-	(void) decref(parent, true, true, __func__);
-	(void) decref(parent, false, true, __func__);
 }
 
 /*
@@ -3206,7 +3138,6 @@ BBPdestroy(BAT *b)
 	if (tp == 0) {
 		/* bats that get destroyed must unfix their atoms */
 		gdk_return (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
-		assert(BATno_shared_heap(b));
 		if (tunfix) {
 			BUN p, q;
 			BATiter bi = bat_iterator_nolock(b);
@@ -3217,29 +3148,27 @@ BBPdestroy(BAT *b)
 			}
 		}
 	}
-	if (tp != 0) {
-		HEAPdecref(b->theap, false);
+	if (b->theap) {
+		HEAPdecref(b->theap, tp == 0);
 		b->theap = NULL;
+		if (tp != 0)
+			BBPrelease(tp);
 	}
-	if (vtp != 0) {
-		HEAPdecref(b->tvheap, false);
+	if (b->tvheap) {
+		HEAPdecref(b->tvheap, vtp == 0);
 		b->tvheap = NULL;
+		if (vtp != 0)
+			BBPrelease(vtp);
 	}
 	BATdelete(b);
 
 	BBPclear(b->batCacheid, true);	/* if destroyed; de-register from BBP */
-
-	/* parent released when completely done with child */
-	if (tp)
-		BBPrelease(tp);
-	if (vtp)
-		BBPrelease(vtp);
 }
 
 static gdk_return
 BBPfree(BAT *b)
 {
-	bat bid = b->batCacheid, tp = VIEWtparent(b), vtp = VIEWvtparent(b);
+	bat bid = b->batCacheid;
 	gdk_return ret;
 
 	assert(bid > 0);
@@ -3257,12 +3186,6 @@ BBPfree(BAT *b)
 	TRC_DEBUG(BAT_, "turn off unloading %d\n", bid);
 	BBP_status_off(bid, BBPUNLOADING);
 	BBP_unload_dec();
-
-	/* parent released when completely done with child */
-	if (ret == GDK_SUCCEED && tp)
-		BBPrelease(tp);
-	if (ret == GDK_SUCCEED && vtp)
-		BBPrelease(vtp);
 	return ret;
 }
 
@@ -4431,7 +4354,6 @@ gdk_add_callback(char *name, gdk_callback_func *f, int argc, void *argv[], int
 {
 
 	gdk_callback *callback = NULL;
-	gdk_callback *p = callback_list.head;
 
 	if (!(callback = GDKmalloc(sizeof(gdk_callback) + sizeof(void *) * argc))) {
 		TRC_CRITICAL(GDK, "Failed to allocate memory!");
@@ -4450,10 +4372,11 @@ gdk_add_callback(char *name, gdk_callback_func *f, int argc, void *argv[], int
 	}
 
 	MT_lock_set(&GDKCallbackListLock);
+	gdk_callback *p = callback_list.head;
 	if (p) {
 		int cnt = 1;
 		do {
-			// check if already added
+			/* check if already added */
 			if (strcmp(callback->name, p->name) == 0) {
 				MT_lock_unset(&GDKCallbackListLock);
 				GDKfree(callback);
@@ -4483,12 +4406,13 @@ gdk_add_callback(char *name, gdk_callback_func *f, int argc, void *argv[], int
 gdk_return
 gdk_remove_callback(char *cb_name, gdk_callback_func *argsfree)
 {
-	gdk_callback *curr = callback_list.head;
 	gdk_callback *prev = NULL;
 	gdk_return res = GDK_FAIL;
+
+	MT_lock_set(&GDKCallbackListLock);
+	gdk_callback *curr = callback_list.head;
 	while(curr) {
 		if (strcmp(cb_name, curr->name) == 0) {
-			MT_lock_set(&GDKCallbackListLock);
 			if (curr == callback_list.head && prev == NULL) {
 				callback_list.head = curr->next;
 			} else {
@@ -4500,12 +4424,12 @@ gdk_remove_callback(char *cb_name, gdk_callback_func *argsfree)
 			curr = NULL;
 			callback_list.cnt -=1;
 			res = GDK_SUCCEED;
-			MT_lock_unset(&GDKCallbackListLock);
 		} else {
 			prev = curr;
 			curr = curr->next;
 		}
 	}
+	MT_lock_unset(&GDKCallbackListLock);
 	return res;
 }
 
@@ -4529,9 +4453,9 @@ should_call(gdk_callback *cb)
 static void
 BBPcallbacks(void)
 {
+	MT_lock_set(&GDKCallbackListLock);
 	gdk_callback *next = callback_list.head;
 
-	MT_lock_set(&GDKCallbackListLock);
 	while (next) {
 		if(should_call(next))
 			do_callback(next);

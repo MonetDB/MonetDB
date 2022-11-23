@@ -717,12 +717,13 @@ la_bat_destroy(old_logger *lg, logaction *la)
 		if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
 			oid pos = (oid) p;
 #ifndef NDEBUG
-			assert(BBP_desc(bid)->batRole == PERSISTENT);
-			assert(0 <= BBP_desc(bid)->theap->farmid && BBP_desc(bid)->theap->farmid < MAXFARMS);
-			assert(BBPfarms[BBP_desc(bid)->theap->farmid].roles & (1 << PERSISTENT));
-			if (BBP_desc(bid)->tvheap) {
-				assert(0 <= BBP_desc(bid)->tvheap->farmid && BBP_desc(bid)->tvheap->farmid < MAXFARMS);
-				assert(BBPfarms[BBP_desc(bid)->tvheap->farmid].roles & (1 << PERSISTENT));
+			BAT *b = BBP_desc(bid);
+			assert(b->batRole == PERSISTENT);
+			assert(0 <= b->theap->farmid && b->theap->farmid < MAXFARMS);
+			assert(BBPfarms[b->theap->farmid].roles & (1 << PERSISTENT));
+			if (b->tvheap) {
+				assert(0 <= b->tvheap->farmid && b->tvheap->farmid < MAXFARMS);
+				assert(BBPfarms[b->tvheap->farmid].roles & (1 << PERSISTENT));
 			}
 #endif
 			if (BUNappend(lg->dsnapshots, &pos, false) != GDK_SUCCEED)

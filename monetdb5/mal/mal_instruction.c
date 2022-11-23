@@ -460,8 +460,8 @@ newInstructionArgs(MalBlkPtr mb, const char *modnme, const char *fcnnme, int arg
 		 * Furthermore, failure to allocate such a small data structure indicates we are in serious trouble.
 		 * The only way out is declare it a fatal error, terminate the system to avoid crashes in all kind of places.
 		 */
-		GDKerror(SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		mal_exit(1);
+		GDKfatal(SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		exit(1);
 	}
 	p->maxarg = args;
 	p->typechk = TYPE_UNKNOWN;
