@@ -112,8 +112,6 @@ bat BBPinsert(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 int BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
-void BBPunshare(bat b)
-	__attribute__((__visibility__("hidden")));
 BUN binsearch(const oid *restrict indir, oid offset, int type, const void *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const void *restrict v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
 BUN binsearch_bte(const oid *restrict indir, oid offset, const bte *restrict vals, BUN lo, BUN hi, bte v, int ordering, int last)
@@ -403,7 +401,7 @@ ilog2(BUN x)
 	b->tnonil ? "N" : "",						\
 	b->thash ? "H" : "",						\
 	b->torderidx ? "O" : "",					\
-	b->timprints ? "I" : b->theap && b->theap->parentid && BBP_desc(b->theap->parentid)->timprints ? "(I)" : ""
+	b->timprints ? "I" : b->theap && b->theap->parentid && BBP_desc(b->theap->parentid) && BBP_desc(b->theap->parentid)->timprints ? "(I)" : ""
 /* use ALGOOPTBAT* when BAT is optional (can be NULL) */
 #define ALGOOPTBATFMT	"%s%s" BUNFMT "%s" OIDFMT "%s%s%s%s%s%s%s%s%s%s%s%s%s"
 #define ALGOOPTBATPAR(b)						\

@@ -304,6 +304,8 @@ BATcheckimprints(BAT *b)
 	if (VIEWtparent(b)) {
 		assert(b->timprints == NULL);
 		b = BATdescriptor(VIEWtparent(b));
+		if (b == NULL)
+			return false;
 	}
 
 	if (b->timprints == (Imprints *) 1) {

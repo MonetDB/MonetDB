@@ -60,7 +60,6 @@ virtualize(BAT *bn)
 		bn->tseqbase = tseq;
 		if (VIEWtparent(bn)) {
 			Heap *h = GDKmalloc(sizeof(Heap));
-			bat bid = VIEWtparent(bn);
 			if (h == NULL) {
 				BBPunfix(bn->batCacheid);
 				return NULL;
@@ -71,9 +70,10 @@ virtualize(BAT *bn)
 			h->base = NULL;
 			h->hasfile = false;
 			ATOMIC_INIT(&h->refs, 1);
+			if (bn->theap->parentid != bn->batCacheid)
+				BBPrelease(bn->theap->parentid);
 			HEAPdecref(bn->theap, false);
 			bn->theap = h;
-			BBPunshare(bid);
 		} else {
 			HEAPfree(bn->theap, true);
 		}
@@ -1645,7 +1645,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
-	if (equi && !havehash && parent != 0) {
+	if (equi && !havehash && pb != NULL) {
 		/* use parent hash if it already exists and if either
 		 * a quick check shows the value we're looking for
 		 * does not occur, or if it is cheaper to check the

@@ -589,6 +589,8 @@ BATclear(BAT *b, bool force)
 	STRMPdestroy(b);
 	PROPdestroy(b);
 
+	bat tvp = 0;
+
 	/* we must dispose of all inserted atoms */
 	MT_lock_set(&b->theaplock);
 	if (force && BATatoms[b->ttype].atomDel == NULL) {
@@ -615,6 +617,7 @@ BATclear(BAT *b, bool force)
 				MT_lock_unset(&b->theaplock);
 				return GDK_FAIL;
 			}
+			tvp = b->tvheap->parentid;
 			ATOMIC_INIT(&th->refs, 1);
 			HEAPdecref(b->tvheap, false);
 			b->tvheap = th;
@@ -644,6 +647,8 @@ BATclear(BAT *b, bool force)
 	b->theap->dirty = true;
 	BATsettrivprop(b);
 	MT_lock_unset(&b->theaplock);
+	if (tvp != 0 && tvp != b->batCacheid)
+		BBPrelease(tvp);
 	return GDK_SUCCEED;
 }
 
@@ -814,6 +819,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		if (tt != bn->ttype) {
 			bn->ttype = tt;
 			if (bn->tvheap && !ATOMvarsized(tt)) {
+				if (bn->tvheap->parentid != bn->batCacheid)
+					BBPrelease(bn->tvheap->parentid);
 				HEAPdecref(bn->tvheap, false);
 				bn->tvheap = NULL;
 			}
