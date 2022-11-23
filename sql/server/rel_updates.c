@@ -21,6 +21,7 @@
 #include "sql_symbol.h"
 #include "rel_prop.h"
 
+
 static sql_exp *
 insert_value(sql_query *query, sql_column *c, sql_rel **r, symbol *s, const char* action)
 {
@@ -1658,6 +1659,15 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				return NULL;
 			}
 
+			// Parquet file COPY INTO.
+			char *dot = strrchr(fname, '.');
+			if (dot && !strcmp(dot, ".parquet")) {
+				char *fn = ATOMformat(TYPE_str, fname);
+				sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: parquet copy into not implemented");
+				GDKfree(fn);
+				return NULL;
+			}
+
 			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, best_effort, fwf_widths, onclient, escape);
 
 			if (!rel)
@@ -1864,6 +1874,7 @@ copyto(sql_query *query, symbol *sq, const char *filename, dlist *seps, const ch
 	exp_kind ek = {type_value, card_relation, TRUE};
 	sql_rel *r = rel_subquery(query, sq, ek);
 
+
 	if (!r)
 		return NULL;
 	r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 0));
@@ -1970,6 +1981,7 @@ bincopyto(sql_query *query, symbol *qry, endianness endian, dlist *filenames, in
 
 	return rel;
 }
+
 
 sql_exp *
 rel_parse_val(mvc *m, sql_schema *sch, char *query, sql_subtype *tpe, char emode, sql_rel *from)

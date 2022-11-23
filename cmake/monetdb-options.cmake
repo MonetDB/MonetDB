@@ -136,3 +136,7 @@ option(CMAKE_SUMMARY
 option(CMAKE_UNITTESTS
   "Build and run the unittest for the build system"
   OFF)
+
+option(PARQUET
+  "Add support for Apache Parquet files"
+  OFF)
