@@ -12,9 +12,9 @@
 CREATE FUNCTION ST_DistanceGeographic(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom."DistanceGeographic";
 GRANT EXECUTE ON FUNCTION ST_DistanceGeographic(Geometry, Geometry) TO PUBLIC;
 CREATE FILTER FUNCTION ST_DWithinGeographic(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME geom."DWithinGeographic";
-GRANT EXECUTE ON FUNCTION ST_DWithinGeographic(Geometry, Geometry, double) TO PUBLIC;
+GRANT EXECUTE ON FILTER ST_DWithinGeographic(Geometry, Geometry, double) TO PUBLIC;
 CREATE FILTER FUNCTION ST_IntersectsGeographic(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom."IntersectsGeographic";
-GRANT EXECUTE ON FUNCTION ST_IntersectsGeographic(Geometry, Geometry) TO PUBLIC;
+GRANT EXECUTE ON FILTER ST_IntersectsGeographic(Geometry, Geometry) TO PUBLIC;
 
 -------------------------------------------------------------------------
 ----------------------- New Geometry functions --------------------------
