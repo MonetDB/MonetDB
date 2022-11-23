@@ -1286,14 +1286,14 @@ def CheckPort(port) :
     host = os.environ['HOST']
     try:
         S1.bind((host,port))
-    except socket.error as err:
+    except OSError as err:
         Serrno = err.errno
         Serrstr = err.strerror
         S1.close();
         host = 'localhost'
         try:
             S0.bind((host,port))
-        except socket.error as err:
+        except OSError as err:
             Serrno = err.errno
             Serrstr = err.strerror
             S0.close()
@@ -1716,7 +1716,7 @@ def mapi_ping(port) :
             data = sock.recv(len)
             # we don't send
             return True
-        except socket.error:
+        except OSError:
             pass
         time.sleep(wait)
     return False
@@ -2238,7 +2238,7 @@ if sys.platform == 'linux2' and CONDITIONALS['CROSS_COMPILING']:
 # see if we can use UNIX sockets
 try:
     server = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-except (socket.error, AttributeError):
+except (OSError, AttributeError):
     # apparently not
     SOCK = False
 else:
@@ -2659,7 +2659,7 @@ def main(argv) :
     s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
     try:
         s.bind(('::1', int(env['MAPIPORT'])))
-    except socket.error as err:
+    except OSError as err:
         CONDITIONALS['HAVE_IPV6'] = '' # False
     else:
         CONDITIONALS['HAVE_IPV6'] = '#' # True

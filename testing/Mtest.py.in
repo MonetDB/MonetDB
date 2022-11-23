@@ -2740,7 +2740,7 @@ def mapi_ping(port) :
             data = sock.recv(len)
             # we don't send
             return True
-        except socket.error:
+        except OSError:
             pass
         time.sleep(wait)
     return False
@@ -3266,7 +3266,7 @@ else:
 # see if we can use UNIX sockets
 try:
     server = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-except (socket.error, AttributeError):
+except (OSError, AttributeError):
     # apparently not
     SOCK = False
 else:
@@ -3725,7 +3725,7 @@ def main(argv) :
     try:
         with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
             s.bind(('::1', 0))
-    except socket.error as err:
+    except OSError as err:
         CONDITIONALS['HAVE_IPV6'] = False
     else:
         CONDITIONALS['HAVE_IPV6'] = True

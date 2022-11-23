@@ -4,3 +4,4 @@ segments-corruption
 read-segment-after-free
 smart-segment-merge
 many-concurrent-client-connections
+truncate-insert-flood

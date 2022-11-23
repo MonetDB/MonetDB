@@ -131,20 +131,20 @@ class Connection(object):
                     self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
                     self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                     self.socket.settimeout(self.connect_timeout)
-                except socket.error as msg:
+                except OSError as msg:
                     logger.info(msg)
                     self.socket = None
                     continue
                 try:
                     self.socket.connect(sa)
-                except socket.error as msg:
+                except OSError as msg:
                     logger.info(msg.strerror)
                     self.socket.close()
                     self.socket = None
                     continue
                 break
             if self.socket is None:
-                raise socket.error("Connection refused")
+                raise OSError("Connection refused")
         else:
             self.socket = socket.socket(socket.AF_UNIX)
             self.socket.settimeout(self.connect_timeout)

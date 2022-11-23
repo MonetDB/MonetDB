@@ -3941,8 +3941,9 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 		res = BUNtail(bi, bi.minpos);
 	} else {
 		oid pos;
-		BAT *pb = NULL;
+		BAT *pb = BATdescriptor(VIEWtparent(b));
 		Heap *oidxh = NULL;
+		bool usepoidx = false;
 
 		if (BATcheckorderidx(b)) {
 			MT_lock_set(&b->batIdxLock);
@@ -3952,8 +3953,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 			MT_lock_unset(&b->batIdxLock);
 		}
 		if (oidxh == NULL &&
-		    VIEWtparent(b) &&
-		    (pb = BBP_cache(VIEWtparent(b))) != NULL &&
+		    pb != NULL &&
 		    BATcheckorderidx(pb)) {
 			/* no lock on b needed since it's a view */
 			MT_lock_set(&pb->batIdxLock);
@@ -3963,6 +3963,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 			    pb->hseqbase == b->hseqbase &&
 			    (oidxh = pb->torderidx) != NULL) {
 				HEAPincref(oidxh);
+				usepoidx = true;
 			}
 			MT_lock_unset(&pb->batIdxLock);
 			MT_lock_unset(&pb->theaplock);
@@ -3971,7 +3972,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 			const oid *ords = (const oid *) oidxh->base + ORDERIDXOFF;
 			BUN r;
 			if (!bi.nonil) {
-				MT_thread_setalgorithm(pb ? "binsearch on parent oidx" : "binsearch on oidx");
+				MT_thread_setalgorithm(usepoidx ? "binsearch on parent oidx" : "binsearch on oidx");
 				r = binsearch(ords, 0, bi.type, bi.base,
 					      bi.vh ? bi.vh->base : NULL,
 					      bi.width, 0, bi.count,
@@ -3992,17 +3993,15 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 				/* no non-nil values */
 				pos = oid_nil;
 			} else {
-				MT_thread_setalgorithm(pb ? "using parent oidx" : "using oidx");
+				MT_thread_setalgorithm(usepoidx ? "using parent oidx" : "using oidx");
 				pos = ords[r];
 			}
 			HEAPdecref(oidxh, false);
 		} else {
 			Imprints *imprints = NULL;
-			if ((VIEWtparent(b) == 0 ||
-			     bi.count == BATcount(BBP_cache(VIEWtparent(b)))) &&
+			if ((pb == NULL || bi.count == BATcount(pb)) &&
 			    BATcheckimprints(b)) {
-				if (VIEWtparent(b)) {
-					BAT *pb = BBP_cache(VIEWtparent(b));
+				if (pb != NULL) {
 					MT_lock_set(&pb->batIdxLock);
 					imprints = pb->timprints;
 					if (imprints != NULL)
@@ -4048,10 +4047,8 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 			MT_lock_set(&b->theaplock);
 			if (bi.count == BATcount(b) && bi.h == b->theap)
 				b->tminpos = bi.minpos;
-			bat pbid = VIEWtparent(b);
 			MT_lock_unset(&b->theaplock);
-			if (pbid) {
-				BAT *pb = BBP_cache(pbid);
+			if (pb) {
 				MT_lock_set(&pb->theaplock);
 				if (bi.count == BATcount(pb) &&
 				    bi.h == pb->theap)
@@ -4059,6 +4056,8 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 				MT_lock_unset(&pb->theaplock);
 			}
 		}
+		if (pb)
+			BBPunfix(pb->batCacheid);
 	}
 	if (aggr == NULL) {
 		s = ATOMlen(bi.type, res);
@@ -4097,24 +4096,26 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 {
 	const void *res = NULL;
 	size_t s;
-	BATiter bi;
 	lng t0 = 0;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if (!ATOMlinear(b->ttype)) {
+		/* there is no such thing as a largest value if you
+		 * can't compare values */
 		GDKerror("non-linear type");
 		return NULL;
 	}
-	bi = bat_iterator(b);
+	BATiter bi = bat_iterator(b);
 	if (bi.count == 0) {
 		res = ATOMnilptr(bi.type);
 	} else if (bi.maxpos != BUN_NONE) {
 		res = BUNtail(bi, bi.maxpos);
 	} else {
 		oid pos;
-		BAT *pb = NULL;
+		BAT *pb = BATdescriptor(VIEWtparent(b));
 		Heap *oidxh = NULL;
+		bool usepoidx = false;
 
 		if (BATcheckorderidx(b)) {
 			MT_lock_set(&b->batIdxLock);
@@ -4124,8 +4125,7 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 			MT_lock_unset(&b->batIdxLock);
 		}
 		if (oidxh == NULL &&
-		    VIEWtparent(b) &&
-		    (pb = BBP_cache(VIEWtparent(b))) != NULL &&
+		    pb != NULL &&
 		    BATcheckorderidx(pb)) {
 			/* no lock on b needed since it's a view */
 			MT_lock_set(&pb->batIdxLock);
@@ -4135,6 +4135,7 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 			    pb->hseqbase == b->hseqbase &&
 			    (oidxh = pb->torderidx) != NULL) {
 				HEAPincref(oidxh);
+				usepoidx = true;
 			}
 			MT_lock_unset(&pb->batIdxLock);
 			MT_lock_unset(&pb->theaplock);
@@ -4142,7 +4143,7 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 		if (oidxh != NULL) {
 			const oid *ords = (const oid *) oidxh->base + ORDERIDXOFF;
 
-			MT_thread_setalgorithm(pb ? "using parent oidx" : "using oids");
+			MT_thread_setalgorithm(usepoidx ? "using parent oidx" : "using oids");
 			pos = ords[bi.count - 1];
 			/* nils are first, ie !skipnil, check for nils */
 			if (!skipnil) {
@@ -4156,11 +4157,9 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 			HEAPdecref(oidxh, false);
 		} else {
 			Imprints *imprints = NULL;
-			if ((VIEWtparent(b) == 0 ||
-			     BATcount(b) == BATcount(BBP_cache(VIEWtparent(b)))) &&
+			if ((pb == NULL || bi.count == BATcount(pb)) &&
 			    BATcheckimprints(b)) {
-				if (VIEWtparent(b)) {
-					BAT *pb = BBP_cache(VIEWtparent(b));
+				if (pb != NULL) {
 					MT_lock_set(&pb->batIdxLock);
 					imprints = pb->timprints;
 					if (imprints != NULL)
@@ -4206,15 +4205,17 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 			MT_lock_set(&b->theaplock);
 			if (bi.count == BATcount(b) && bi.h == b->theap)
 				b->tmaxpos = bi.maxpos;
-			bat pbid = VIEWtparent(b);
-			if (pbid) {
-				BAT *pb = BBP_cache(pbid);
+			MT_lock_unset(&b->theaplock);
+			if (pb) {
+				MT_lock_set(&pb->theaplock);
 				if (bi.count == BATcount(pb) &&
 				    bi.h == pb->theap)
 					pb->tmaxpos = bi.maxpos;
+				MT_lock_unset(&pb->theaplock);
 			}
-			MT_lock_unset(&b->theaplock);
 		}
+		if (pb)
+			BBPunfix(pb->batCacheid);
 	}
 	if (aggr == NULL) {
 		s = ATOMlen(bi.type, res);
@@ -4497,19 +4498,21 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		}
 		if (oidxh == NULL &&
 		    VIEWtparent(b) &&
-		    (pb = BBP_cache(VIEWtparent(b))) != NULL &&
-		    BATcheckorderidx(pb)) {
-			/* no lock on b needed since it's a view */
-			MT_lock_set(&pb->batIdxLock);
-			MT_lock_set(&pb->theaplock);
-			if (pb->tbaseoff == b->tbaseoff &&
-			    BATcount(pb) == BATcount(b) &&
-			    pb->hseqbase == b->hseqbase &&
-			    (oidxh = pb->torderidx) != NULL) {
-				HEAPincref(oidxh);
+		    (pb = BATdescriptor(VIEWtparent(b))) != NULL) {
+			if (BATcheckorderidx(pb)) {
+				/* no lock on b needed since it's a view */
+				MT_lock_set(&pb->batIdxLock);
+				MT_lock_set(&pb->theaplock);
+				if (pb->tbaseoff == b->tbaseoff &&
+				    BATcount(pb) == BATcount(b) &&
+				    pb->hseqbase == b->hseqbase &&
+				    (oidxh = pb->torderidx) != NULL) {
+					HEAPincref(oidxh);
+				}
+				MT_lock_unset(&pb->batIdxLock);
+				MT_lock_unset(&pb->theaplock);
 			}
-			MT_lock_unset(&pb->batIdxLock);
-			MT_lock_unset(&pb->theaplock);
+			BBPunfix(pb->batCacheid);
 		}
 		if (oidxh != NULL) {
 			MT_thread_setalgorithm(pb ? "using parent oidx" : "using oids");

@@ -186,13 +186,15 @@ BATswap_heaps(BAT *u, BAT *b, Pipeline *p)
 	MT_lock_set(&b->theaplock);
 	Heap *h = b->tvheap;
 	HEAPincref(h);
-	bat parent = h->parentid;
 	MT_lock_unset(&b->theaplock);
 	MT_lock_set(&u->theaplock);
+	bat old = 0, new = 0;
 	if (ATOMvarsized(u->ttype) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
-		BBPshare(parent);
+		if (u->tvheap->parentid != u->batCacheid)
+			old = u->tvheap->parentid;
 		HEAPdecref(u->tvheap, true);
 		u->tvheap = h;
+		new = h->parentid;
 		h = NULL;
 	}
 	MT_lock_unset(&u->theaplock);
@@ -200,6 +202,10 @@ BATswap_heaps(BAT *u, BAT *b, Pipeline *p)
 		HEAPdecref(h, false);
 	if (p)
 		pipeline_unlock(p);
+	if (new)
+		BBPretain(new);
+	if (old)
+		BBPrelease(old);
 }
 
 static str

@@ -222,7 +222,6 @@ int BBPrelease(bat b);
 int BBPrename(BAT *b, const char *nme);
 int BBPretain(bat b);
 gdk_return BBPsave(BAT *b);
-void BBPshare(bat b);
 gdk_return BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng transid);
 void BBPtmlock(void);
 void BBPtmunlock(void);
