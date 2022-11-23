@@ -44250,9 +44250,9 @@ COPYparse_integer_sht;
 Parse as an integer
 copy
 parse_string
-command copy.parse_string(X_0:bat[:bte], X_1:bat[:int], X_2:any_1, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:any_1] 
+command copy.parse_string(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:str] 
 COPYparse_string;
-Parse using GDK's atomFromStr
+Parse as a string with given max width
 copy
 read
 unsafe command copy.read(X_0:streams, X_1:lng, X_2:bat[:bte]):streams 

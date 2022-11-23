@@ -5127,7 +5127,7 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %2,	%1,	id # name
 % char,	bigint,	int # type
 % 19,	1,	1 # length
-% .%2,	sys.%1,	sys.users # table_name
+% .%2,	.%1,	.users # table_name
 % %2,	%1,	name # name
 % char,	bigint,	varchar # type
 % 19,	1,	0 # length
