@@ -2187,8 +2187,8 @@ backup_new(Heap *hp, bool lock)
 	struct stat st;
 
 	/* check for an existing X.new in BATDIR, BAKDIR and SUBDIR */
-	batpath = GDKfilepath(hp->farmid, BATDIR, hp->filename, ".new");
-	bakpath = GDKfilepath(hp->farmid, BAKDIR, hp->filename, ".new");
+	batpath = GDKfilepath(hp->farmid, BATDIR, hp->filename, "new");
+	bakpath = GDKfilepath(hp->farmid, BAKDIR, hp->filename, "new");
 	if (batpath != NULL && bakpath != NULL) {
 		/* file actions here interact with the global commits */
 		if (lock)
