@@ -6577,7 +6577,7 @@ static inline symbol*
 makeAtomNode(mvc *m, const char* typename, const char* val, unsigned int digits, unsigned int scale, bool bind) {
     sql_subtype sub_t;
     atom *a;
-    int r;
+    int sub_t_found = 0;
     if (bind) {
         sql_type* t = NULL;
         if (!(t = mvc_bind_type(m, typename))) {
@@ -6586,9 +6586,9 @@ makeAtomNode(mvc *m, const char* typename, const char* val, unsigned int digits,
         }
         sql_init_subtype(&sub_t, t, 0, 0);
     } else {
-        r = sql_find_subtype(&sub_t, typename, digits, scale);
+        sub_t_found = sql_find_subtype(&sub_t, typename, digits, scale);
     }
-    if (!r || (a = atom_general(m->sa, &sub_t, val)) == NULL) {
+    if ((!bind && !sub_t_found) || (a = atom_general(m->sa, &sub_t, val)) == NULL) {
         sqlformaterror(m, SQLSTATE(22007) "Incorrect %s value (%s)", typename, val);
         return NULL;
     }
