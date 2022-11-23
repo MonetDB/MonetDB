@@ -81,19 +81,21 @@ if(GEOM)
 endif()
 
 if(PARQUET)
-    find_package(PkgConfig REQUIRED)
-    pkg_search_module(GLIB REQUIRED glib-2.0)
-
-    include_directories(${GLIB_INCLUDE_DIRS})
-    link_directories(${GLIB_LIBRARY_DIRS})
-
-    add_definitions(${GLIB_CFLAGS_OTHER})
-
-    find_package(Arrow CONFIG REQUIRED)
-    find_package(Parquet CONFIG REQUIRED
-        PATHS ${Arrow_DIR} 
-        NO_DEFAULT_PATH
-    )
+  find_package(PkgConfig REQUIRED)
+  pkg_search_module(GLIB REQUIRED glib-2.0)
+  include_directories(${GLIB_INCLUDE_DIRS})
+  link_directories(${GLIB_LIBRARY_DIRS})
+  add_definitions(${GLIB_CFLAGS_OTHER})
+  find_package(Arrow REQUIRED CONFIG)
+  find_package(Parquet REQUIRED CONFIG
+    PATHS ${Arrow_DIR}
+    NO_DEFAULT_PATH
+  )
+  if (Parquet_FOUND)
+    message(STATUS "Parquet FOUND")
+  else()
+    message(STATUS "Parquet NOT FOUND")
+  endif()
 endif()
 
 
