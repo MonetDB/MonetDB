@@ -1,5 +1,6 @@
 call-procedures
 convert-functions
+HAVE_HGE?convert-func-hge
 literals
 like-sequences
 numeric-functions
