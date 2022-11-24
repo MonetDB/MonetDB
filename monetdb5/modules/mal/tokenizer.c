@@ -200,7 +200,8 @@ TKNZRclose(void *r)
 	if (TRANS == NULL)
 		throw(MAL, "tokenizer", "no tokenizer store open");
 
-	TMsubcommit(TRANS);
+	if (TMsubcommit(TRANS) != GDK_SUCCEED)
+		throw(MAL, "tokenizer", GDK_EXCEPTION);
 
 	for (i = 0; i < tokenDepth; i++) {
 		BBPunfix(tokenBAT[i].idx->batCacheid);

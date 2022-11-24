@@ -84,7 +84,9 @@ AUTHcommit(void)
 	blist[4] = rt_hashedpwd->batCacheid;
 	assert(rt_deleted);
 	blist[5] = rt_deleted->batCacheid;
-	TMsubcommit_list(blist, NULL, 6, getBBPlogno(), getBBPtransid());
+	if (TMsubcommit_list(blist, NULL, 6, getBBPlogno(), getBBPtransid()) != GDK_SUCCEED)
+		throw(MAL, "AUTHcommit", GDK_EXCEPTION);
+	return MAL_SUCCEED;
 }
 
 /*
