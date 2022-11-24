@@ -408,7 +408,7 @@ AUTHgetUsername(str *username, Client cntxt)
 static str
 AUTHgetPasswordHashLocked(str *ret, Client cntxt, const char *username)
 {
-	str tmp;
+	str tmp = NULL;
 	str msg;
 	str passwd = NULL;
 
