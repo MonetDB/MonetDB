@@ -44,6 +44,7 @@
 #include "mal_interpreter.h"
 #include "mal_linker.h"
 #include "mal_exception.h"
+#include "mal_internal.h"
 
 #define MAX_TKNZR_DEPTH 256
 #define INDEX MAX_TKNZR_DEPTH
