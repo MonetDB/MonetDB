@@ -245,13 +245,13 @@ NCDFattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	msg = getSQLContext(cntxt, mb, &m, NULL);
 	if (msg)
-        return msg;
+		return msg;
 
 	tr = m->session->tr;
 	sqlstore *store = tr->store;
 	sch = mvc_bind_schema(m, "sys");
 	if ( !sch )
-        return createException(MAL, "netcdf.attach", SQLSTATE(NC000) "Cannot get schema sys\n");
+		return createException(MAL, "netcdf.attach", SQLSTATE(NC000) "Cannot get schema sys\n");
 
 	tfiles = mvc_bind_table(m, sch, "netcdf_files");
 	tdims = mvc_bind_table(m, sch, "netcdf_dims");
@@ -261,7 +261,7 @@ NCDFattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (tfiles == NULL || tdims == NULL || tvars == NULL ||
 	    tvardim == NULL || tattrs == NULL)
-        return createException(MAL, "netcdf.attach", SQLSTATE(NC000) "Catalog table missing\n");
+		return createException(MAL, "netcdf.attach", SQLSTATE(NC000) "Catalog table missing\n");
 
 	/* check if the file is already attached */
 	col = mvc_bind_column(m, tfiles, "location");
@@ -271,11 +271,11 @@ NCDFattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* Open NetCDF file  */
 	if ((retval = nc_open(fname, NC_NOWRITE, &ncid)))
-        return createException(MAL, "netcdf.test", SQLSTATE(NC000) "Cannot open NetCDF \
+		return createException(MAL, "netcdf.test", SQLSTATE(NC000) "Cannot open NetCDF \
 file %s: %s", fname, nc_strerror(retval));
 
 	if ((retval = nc_inq(ncid, &ndims, &nvars, &ngatts, &unlimdim)))
-        return createException(MAL, "netcdf.test", SQLSTATE(NC000) "Cannot read NetCDF \
+		return createException(MAL, "netcdf.test", SQLSTATE(NC000) "Cannot read NetCDF \
 header: %s", nc_strerror(retval));
 
 	/* Insert row into netcdf_files table */
@@ -331,9 +331,9 @@ header: %s", nc_strerror(retval));
 								   vidx, nc_strerror(retval));
 
     	/* Check if this is coordinate variable */
-        if ( (vndims == 1) && ( strcmp(vname, dims[vdims[0]]) == 0 ))
+		if ( (vndims == 1) && ( strcmp(vname, dims[vdims[0]]) == 0 ))
 	        coord_dim_id = vdims[0];
-        else coord_dim_id = -1;
+		else coord_dim_id = -1;
 
 		esc_str0 = SQLescapeString(vname);
 		if (!esc_str0) {
@@ -345,27 +345,27 @@ header: %s", nc_strerror(retval));
 		GDKfree(esc_str0);
 	    if ( ( msg = SQLstatementIntern(cntxt, s, "netcdf.attach", TRUE, FALSE, NULL))
 			 != MAL_SUCCEED )
-            goto finish;
+			goto finish;
 
 	    if ( coord_dim_id < 0 ){
 	        for (i = 0; i < vndims; i++){
-                snprintf(buf, BUFSIZ, INSVARDIM, vidx, vdims[i], (int)fid, i);
-                if ( ( msg = SQLstatementIntern(cntxt, s, "netcdf.attach", TRUE, FALSE, NULL))
+				snprintf(buf, BUFSIZ, INSVARDIM, vidx, vdims[i], (int)fid, i);
+				if ( ( msg = SQLstatementIntern(cntxt, s, "netcdf.attach", TRUE, FALSE, NULL))
 					 != MAL_SUCCEED )
-                	goto finish;
+					goto finish;
 	        }
 	    }
 
     	if ( vnatts > 0 ) { /* fill in netcdf_attrs table */
 
-            for (aidx = 0; aidx < vnatts; aidx++){
-                if ((retval = nc_inq_attname(ncid,vidx,aidx,aname)))
-                    return createException(MAL, "netcdf.attach",
+			for (aidx = 0; aidx < vnatts; aidx++){
+				if ((retval = nc_inq_attname(ncid,vidx,aidx,aname)))
+					return createException(MAL, "netcdf.attach",
 										   SQLSTATE(NC000) "Cannot read attribute %d of variable %d: %s",
 										   aidx, vidx, nc_strerror(retval));
 
 				if ((retval = nc_inq_att(ncid,vidx,aname,&atype,&alen)))
-                    return createException(MAL, "netcdf.attach",
+					return createException(MAL, "netcdf.attach",
 										   SQLSTATE(NC000) "Cannot read attribute %s type and length: %s",
 										   aname, nc_strerror(retval));
 
@@ -544,7 +544,7 @@ header: %s", nc_strerror(retval));
 		GDKfree(esc_str0);
 
 		printf("global: '%s'\n", s);
-        if ( ( msg = SQLstatementIntern(cntxt, s, "netcdf.attach", TRUE, FALSE, NULL))
+		if ( ( msg = SQLstatementIntern(cntxt, s, "netcdf.attach", TRUE, FALSE, NULL))
 			 != MAL_SUCCEED )
 	        goto finish;
 
@@ -555,9 +555,9 @@ finish:
     nc_close(ncid);
 
     if (dims != NULL ){
-        for (didx = 0; didx < ndims; didx++)
-            GDKfree(dims[didx]);
-        GDKfree(dims);
+		for (didx = 0; didx < ndims; didx++)
+			GDKfree(dims[didx]);
+		GDKfree(dims);
     }
 
 	return msg;
@@ -582,8 +582,8 @@ NCDFimportVarStmt(str *sciqlstmt, str *fname, int *varid)
 
 	/* Open NetCDF file  */
 	if ((retval = nc_open(*fname, NC_NOWRITE, &ncid)))
-        return createException(MAL, "netcdf.importvar",
-            SQLSTATE(NC000) "Cannot open NetCDF file %s: %s", *fname, nc_strerror(retval));
+		return createException(MAL, "netcdf.importvar",
+							   SQLSTATE(NC000) "Cannot open NetCDF file %s: %s", *fname, nc_strerror(retval));
 
 	if ( (retval = nc_inq_var(ncid, *varid, vname, &vtype, &vndims, vdims, &vnatts)))
 	    return createException(MAL, "netcdf.attach",
@@ -688,8 +688,8 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 		val_rep[i] = grp_rep[i] = 1;
 		for (j = 0; j < i; j++)
 			grp_rep[i] *= dlen[j];
-        for (j = i + 1; j < vndims; j++)
-            val_rep[i] *= dlen[j];
+		for (j = i + 1; j < vndims; j++)
+			val_rep[i] *= dlen[j];
 	}
 
 	for (i = 0; i < vndims; i++) {
