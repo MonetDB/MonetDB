@@ -138,15 +138,12 @@ TRACERcomp_info(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
     // Fill the BATs
-    MT_lock_set(&mal_delayLock);
 	if(GDKtracer_fill_comp_info(id, component, log_level) != GDK_SUCCEED) {
-		MT_lock_unset(&mal_delayLock);
 		BBPunfix(id->batCacheid);
 		BBPunfix(component->batCacheid);
 		BBPunfix(log_level->batCacheid);
 		throw(MAL, "logging.compinfo", GDK_EXCEPTION);
 	}
-    MT_lock_unset(&mal_delayLock);
 
     *i = id->batCacheid;
     BBPkeepref(id);
