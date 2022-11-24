@@ -44,10 +44,6 @@ select { fn convert('a338a15d-0422-4242-a7f0-65316edae19a', SQL_GUID) }
 ----
 a338a15d-0422-4242-a7f0-65316edae19a
 
-query I rowsort
-select { fn convert(1, SQL_HUGEINT) }
-----
-1
 
 query I rowsort
 select { fn convert(1, SQL_INTEGER) }
