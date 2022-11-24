@@ -227,6 +227,7 @@ const char *setVariableRef;
 const char *singleRef;
 const char *sliceRef;
 const char *slicerRef;
+const char *slicesRef;
 const char *sortRef;
 const char *sqlcatalogRef;
 const char *sqlRef;
@@ -482,6 +483,7 @@ void optimizerInit(void)
 	singleRef = putName("single");
 	sliceRef = putName("slice");
 	slicerRef = putName("slicer");
+	slicesRef = putName("slices");
 	sortRef = putName("sort");
 	sqlcatalogRef = putName("sqlcatalog");
 	sqlRef = putName("sql");

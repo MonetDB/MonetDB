@@ -26,7 +26,6 @@
 #include "mal_builder.h"
 #include "opt_prelude.h"
 
-#define SLICES 32
 static void
 set_need_pipeline(backend *be)
 {
@@ -2698,6 +2697,44 @@ get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
 	return new_exps;
 }
 
+//#define SLICES 32
+#define PP_MIN_SIZE (64*1024)
+#define PP_MAX_SIZE (128*1024)
+static int
+pp_nr_slices(sql_rel *rel)
+{
+	BUN est = get_rel_count(rel);
+
+	if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max)
+		est = 85000000;
+
+	int nr_slices = 1;
+
+	if (est < PP_MIN_SIZE)
+		nr_slices = 1;
+	else if (est/GDKnr_threads < PP_MIN_SIZE)
+		nr_slices = est/PP_MIN_SIZE;
+	else
+	    nr_slices =	est/PP_MAX_SIZE;
+	if (nr_slices == 0)
+		return 1;
+	assert(nr_slices > 0);
+	return nr_slices;
+}
+
+static int
+pp_dynamic_slices(backend *be, stmt *sub)
+{
+	if (sub && sub->cand)
+		sub  = subrel_project(be, sub, NULL, NULL);
+	node *n = sub->op4.lval->h;
+	stmt *sc = n->data;
+
+	sc = column(be, sc);
+	sc = stmt_slices(be, sc);
+	return sc->nr;
+}
+
 static stmt *
 rel2bin_join(backend *be, sql_rel *rel, list *refs)
 {
@@ -2714,7 +2751,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			right = subrel_project(be, right, refs, rel->r);
 		}
 		if (rel->spb)
-			set_pipeline(be, pp_create(be, SLICES*GDKnr_threads));
+			set_pipeline(be, pp_create(be, pp_nr_slices(rel->l)));
 		if (rel->l) { /* first construct the left sub relation */
 			left = subrel_bin(be, rel->l, refs);
 			left = subrel_project(be, left, refs, rel->l);
@@ -2725,7 +2762,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			left = subrel_project(be, left, refs, rel->l);
 		}
 		if (rel->spb && rel->partition == 2)
-			set_pipeline(be, pp_create(be, SLICES*GDKnr_threads));
+			set_pipeline(be, pp_create(be, pp_nr_slices(rel->r)));
 		if (rel->r) { /* first construct the right sub relation */
 			right = subrel_bin(be, rel->r, refs);
 			right = subrel_project(be, right, refs, rel->r);
@@ -2738,9 +2775,9 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 
 	if (neededpp && !rel->partition) {
 		assert(0);
-		stmt *pp = pp_create(be, SLICES*GDKnr_threads);
-		set_pipeline(be, pp);
 		/* left or right ?? */
+		stmt *pp = pp_dynamic(be, pp_dynamic_slices(be, left));
+		set_pipeline(be, pp);
 		left = rel2bin_slicer(be, left, 1);
 	}
 	/*
@@ -3067,14 +3104,14 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			right = subrel_project(be, right, refs, rel->r);
 		}
 		if (rel->spb)
-			set_pipeline(be, pp_create(be, SLICES*GDKnr_threads));
+			set_pipeline(be, pp_create(be, pp_nr_slices(rel->l)));
 		if (rel->l) /* first construct the left sub relation */
 			left = subrel_bin(be, rel->l, refs);
 	} else {
 		if (rel->l) /* first construct the left sub relation */
 			left = subrel_bin(be, rel->l, refs);
 		if (rel->spb && rel->partition == 2)
-			set_pipeline(be, pp_create(be, SLICES*GDKnr_threads));
+			set_pipeline(be, pp_create(be, pp_nr_slices(rel->r)));
 		if (rel->r) { /* first construct the right sub relation */
 			right = subrel_bin(be, rel->r, refs);
 			right = subrel_project(be, right, refs, rel->r);
@@ -3097,9 +3134,9 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 	if (neededpp && !rel->partition) {
 		assert(0);
-		stmt *pp = pp_create(be, SLICES*GDKnr_threads);
-		set_pipeline(be, pp);
 		/* left or right ?? */
+		stmt *pp = pp_dynamic(be, pp_dynamic_slices(be, left));
+		set_pipeline(be, pp);
 		left = rel2bin_slicer(be, left, 1);
 	}
 	/*
@@ -4464,7 +4501,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		if (!rel->spb || pp_can_not_start(be->mvc, rel->l)) {
 			set_need_pipeline(be);
 		} else {
-			pp = pp_create(be, SLICES*GDKnr_threads);
+			pp = pp_create(be, pp_nr_slices(rel->l));
 			//pp -> op4.lval = shared;
 			set_pipeline(be, pp);
 		}
@@ -4480,7 +4517,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		pp = get_pipeline(be);
 	if (df2 && !pp) {
 		(void)get_need_pipeline(be);
-		set_pipeline(be, pp = pp_create(be, SLICES*GDKnr_threads));
+		set_pipeline(be, pp = pp_dynamic(be, pp_dynamic_slices(be, sub)));
 		sub = rel2bin_slicer(be, sub, 1);
 	}
 
@@ -4626,7 +4663,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	if (pp)
 		cursub = rel_pp_groupby(be, rel, gbexps, grp, ext, cnt, cursub, pp, shared, _2phases);
 	if (neededpp) {
-		set_pipeline(be, pp_create(be, SLICES*GDKnr_threads));
+		set_pipeline(be, pp_dynamic(be, pp_dynamic_slices(be, cursub)));
 		cursub = rel2bin_slicer(be, cursub, 1);
 	}
 	return cursub;
@@ -4809,7 +4846,7 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 	stmt *pp = get_pipeline(be);
 	if (!pp) {
 		(void)get_need_pipeline(be);
-		set_pipeline(be, pp = pp_create(be, SLICES*GDKnr_threads));
+		set_pipeline(be, pp = pp_dynamic(be, pp_dynamic_slices(be, sub)));
 		sub = rel2bin_slicer(be, sub, 1);
 	}
 
@@ -5003,7 +5040,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 		if (!rel->spb) {
 			set_need_pipeline(be);
 		} else {
-			stmt *pp = pp_create(be, SLICES*GDKnr_threads);
+			stmt *pp = pp_create(be, pp_nr_slices(rel->l));
 			set_pipeline(be, pp);
 		}
 	}
@@ -5029,7 +5066,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 		pp = get_pipeline(be);
 	if (df2 && !pp) {
 		(void)get_need_pipeline(be);
-		set_pipeline(be, pp = pp_create(be, SLICES*GDKnr_threads));
+		set_pipeline(be, pp = pp_dynamic(be, pp_dynamic_slices(be, sub)));
 		sub = rel2bin_slicer(be, sub, 1);
 	}
 
@@ -5073,7 +5110,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 			sub = rel_pp_topn(be, projectresults, sub, pp, o, l);
 	}
 	if (neededpp && !get_pipeline(be)) {
-		set_pipeline(be, pp_create(be, SLICES*GDKnr_threads));
+		set_pipeline(be, pp_dynamic(be, pp_dynamic_slices(be, sub)));
 		sub = rel2bin_slicer(be, sub, 1);
 	}
 	return sub;
@@ -7899,7 +7936,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		}
 	} else if (rel->spb && neededpp) {
 		assert(!is_groupby(rel->op) && !is_join(rel->op));
-		set_pipeline(be, pp_create(be, SLICES*GDKnr_threads));
+		set_pipeline(be, pp_dynamic(be, pp_dynamic_slices(be, s)));
 		s = rel2bin_slicer(be, s, 1);
 	}
 	return s;

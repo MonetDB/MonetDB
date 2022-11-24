@@ -703,7 +703,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			BBPunfix(b->batCacheid);
 			return createException(SQL, "heapn.topn",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-       	hps->T.private_bat = 1;
+		hps->T.private_bat = 1;
 		*HP = hps->batCacheid;
 	} else {
 		hps = BATdescriptor(*HP);

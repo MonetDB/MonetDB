@@ -505,6 +505,8 @@ BUN
 get_rel_count(sql_rel *rel)
 {
 	prop *found = find_prop(rel->p, PROP_COUNT);
+	if (!found && rel && is_simple_project(rel->op) && rel->l)
+		return get_rel_count(rel->l);
 	return found ? found->value.lval : BUN_NONE;
 }
 

@@ -1497,7 +1497,7 @@ main(int argc, char **argv)
 	compareResult(stmt, ret, "EXPLAIN SELECT * from odbctst.\"LINES\"",
 	    nrServerThreads > 1 ?
 		"Resultset with 1 columns\n"
-		"Resultset with 46 rows\n"
+		"Resultset with 43 rows\n"
 		"mal\n"
 		"WLONGVARCHAR(174)\n"
 		"function user.main():void;\n"
@@ -1515,9 +1515,9 @@ main(int argc, char **argv)
 		"\n"
 		"    X_37:int := sql.resultSet(X_38:bat[:str], X_39:bat[:str], X_40:bat[:str], X_41:bat[:int], X_42:bat[:int], X_33:bat[:int], X_34:bat[:int], X_35:bat[:int], X_36:bat[:int]);\n"
 		"end user.main;\n"
-		"\n\n\n\n\n\n\n\n\n\n"
-		"\n\n\n\n\n\n\n\n\n\n"
-		"\n\n\n\n\n\n\n\n\n\n"
+		"\n\n\n\n\n\n\n\n\n"
+		"\n\n\n\n\n\n\n\n\n"
+		"\n\n\n\n\n\n\n\n\n"
 		"\n"
 	    :
 		"Resultset with 1 columns\n"

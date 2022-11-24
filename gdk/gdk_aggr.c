@@ -1886,7 +1886,8 @@ BATprod(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty,
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) bi.base;	\
 		for (i = 0; i < ngrp; i++)				\
-			dbls[i] = 0;					\
+			if (cnts[i] == 0)				\
+				dbls[i] = 0;				\
 		TIMEOUT_LOOP(ci.ncand, timeoffset) {			\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			if (gids == NULL ||				\

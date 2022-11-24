@@ -48363,6 +48363,11 @@ slice
 pattern slicer.slice(X_0:int) (X_1:bat[:any_1], X_2:bat[:any_1]) 
 SLICERslice;
 (empty)
+slicer
+slices
+pattern slicer.slices(X_0:bat[:any_1]):int 
+SLICERslices;
+(empty)
 sql
 affectedRows
 unsafe pattern sql.affectedRows(X_0:int, X_1:lng):int 

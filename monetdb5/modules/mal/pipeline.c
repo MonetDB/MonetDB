@@ -1029,7 +1029,7 @@ typedef lng gid;
 
 typedef ATOMIC_TYPE hash_key_t;
 
-#define HT_MIN_SIZE 1024*64
+#define HT_MIN_SIZE 1024*64*8
 #define HT_MAX_SIZE 1024*1024*1024
 
 typedef int (*fcmp)(void *v1, void *v2);
@@ -3684,6 +3684,27 @@ SLICERslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
+SLICERslices(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	/* return nr of slices */
+	(void)cntxt;
+	(void)mb;
+	int *res = getArgReference_int(stk, pci, 0);
+	bat *bid = getArgReference_bat(stk, pci, 1);
+	BAT *b = BATdescriptor(*bid);
+	if (!b)
+		return createException(SQL, "slicer.slices",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	BUN cnt = BATcount(b);
+
+	if (cnt < SLICE_SIZE)
+		*res = 1;
+	else
+		*res = (cnt+SLICE_SIZE-1)/SLICE_SIZE;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+static str
 ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_nils)
 {
 	BAT *b, *s = NULL;
@@ -3878,6 +3899,7 @@ static mel_func pipeline_init_funcs[] = {
  pattern("hash", "new", UHASHnew, false, "", args(1,3, batargany("sink",1),argany("tt",1),arg("size",int))),
  pattern("hash", "new", UHASHnew, false, "", args(1,4, batargany("sink",1),argany("tt",1),arg("size",int), batargany("p",2))),
  pattern("slicer", "slice", SLICERslice, false, "", args(2,3, batargany("slice",1), batargany("b",1), arg("nr",int))),
+ pattern("slicer", "slices", SLICERslices, false, "", args(1,2, arg("slices", int), batargany("b",1))),
 
  command("iaggr", "count", ALGcount_bat, false, "Return the current size (in number of elements) in a BAT.", args(1,2, arg("",lng),batargany("b",0))),
  command("iaggr", "count", ALGcount_nil, false, "Return the number of elements currently in a BAT ignores\nBUNs with nil-tail iff ignore_nils==TRUE.", args(1,3, arg("",lng),batargany("b",0),arg("ignore_nils",bit))),

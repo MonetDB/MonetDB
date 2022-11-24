@@ -287,6 +287,8 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	s->maxparts = maxparts;
 	s->master_counter = 0;
 	s->nr_workers = GDKnr_threads;
+	if (maxparts > 0)
+		s->nr_workers = MIN(maxparts, GDKnr_threads);
 	ATOMIC_INIT(&s->workers, -1);
 	ATOMIC_PTR_INIT(&s->error, NULL);
 

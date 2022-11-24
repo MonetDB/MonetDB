@@ -245,6 +245,7 @@ extern stmt *stmt_order(backend *be, stmt *s, int direction, int nullslast);
 extern stmt *stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_ids, stmt *orderby_grp);
 extern stmt *stmt_slice(backend *be, stmt *col, stmt *limit);
 extern stmt *stmt_slicer(backend *be, stmt *col, int slicer);
+extern stmt *stmt_slices(backend *be, stmt *col); /* call mal nr of slices */
 
 extern stmt *stmt_convert(backend *sa, stmt *v, stmt *sel, sql_subtype *from, sql_subtype *to);
 extern stmt *stmt_unop(backend *be, stmt *op1, stmt *sel, sql_subfunc *op);
@@ -278,6 +279,7 @@ extern stmt *const_column(backend *ba, stmt *val);
 extern stmt *stmt_fetch(backend *ba, stmt *val);
 
 extern stmt *pp_create(backend *ba, int nrparts); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */
+extern stmt *pp_dynamic(backend *ba, int input); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */
 extern int pp_jump(backend *ba, stmt *pp, int nrparts);    /* redo: label := part < nrparts; */
 extern int pp_end(backend *ba, stmt *pp);    /* exit: label ; */
 

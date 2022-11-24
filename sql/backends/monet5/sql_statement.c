@@ -4569,8 +4569,8 @@ stmt_fetch(backend *be, stmt *val)
 	return NULL;
 }
 
-stmt *
-pp_create(backend *be, int nrparts)
+static stmt *
+pp_create_nrparts_or_dynamic(backend *be, int nrparts, int input)
 {
 	InstrPtr q = newStmtArgs(be->mb, languageRef, "pipelines", 4);
 	if (q == NULL)
@@ -4578,7 +4578,10 @@ pp_create(backend *be, int nrparts)
 	q->barrier = BARRIERsymbol;
 	q = pushReturn(be->mb, q, newTmpVariable(be->mb, TYPE_int));
 	q = pushReturn(be->mb, q, newTmpVariable(be->mb, TYPE_ptr));
-	q = pushInt(be->mb, q, nrparts);
+	if (input >= 0 && nrparts == 0)
+		q = pushArgument(be->mb, q, input);
+	else
+		q = pushInt(be->mb, q, nrparts);
 
 	be->nrparts = nrparts;
 	be->pp = getArg(q, 1); /* counter */
@@ -4589,7 +4592,10 @@ pp_create(backend *be, int nrparts)
 	r->barrier = LEAVEsymbol;
 	getArg(r, 0) = label;
 	r = pushArgument(be->mb, r, be->pp);
-	r = pushInt(be->mb, r, nrparts);
+	if (input >= 0 && nrparts == 0)
+		r = pushArgument(be->mb, r, input);
+	else
+		r = pushInt(be->mb, r, nrparts);
 
 	if (r && q) {
 		stmt *s = stmt_create(be->mvc->sa, st_none);
@@ -4599,6 +4605,18 @@ pp_create(backend *be, int nrparts)
 		return s;
 	}
 	return NULL;
+}
+
+stmt *
+pp_create(backend *be, int nrparts)
+{
+	return pp_create_nrparts_or_dynamic(be, nrparts, -1);
+}
+
+stmt *
+pp_dynamic(backend *be, int input)
+{
+	return pp_create_nrparts_or_dynamic(be, 0, input);
 }
 
 stmt *
@@ -4630,6 +4648,28 @@ stmt_slicer(backend *be, stmt *col, int slicer)
 	ns->q = q;
 	ns->nr = getArg(q, 0);
 	ns->op4.typeval = *tp;
+	return ns;
+}
+
+stmt *
+stmt_slices(backend *be, stmt *col)
+{
+	InstrPtr q = newStmt(be->mb, slicerRef, slicesRef);
+	q = pushArgument(be->mb, q, col->nr);
+
+	stmt *ns = stmt_create(be->mvc->sa, st_result); /* ?? */
+	if (ns == NULL) {
+		freeInstruction(q);
+		return NULL;
+	}
+
+	ns->op1 = col;
+	ns->nrcols = 1;
+	ns->key = 1;
+	ns->aggr = 1;
+	ns->q = q;
+	ns->nr = getArg(q, 0);
+	ns->op4.typeval = *sql_bind_localtype("int");
 	return ns;
 }
 
@@ -4679,7 +4719,9 @@ pp_jump(backend *be, stmt *label, int nrparts)
 	r->barrier = REDOsymbol;
 	getArg(r, 0) = label->nr;
 	r = pushArgument(be->mb, r, getArg(label->q, 1)); /* current nr */
-	r = pushInt(be->mb, r, nrparts);
+	r = pushArgument(be->mb, r, getArg(label->q, 3)); /* nrparts */
+	(void)nrparts;
+	//r = pushInt(be->mb, r, nrparts);
 	if (r)
 		return 0;
 	return -1;

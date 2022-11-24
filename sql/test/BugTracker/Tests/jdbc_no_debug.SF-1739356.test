@@ -50,6 +50,8 @@ querylog.define
 1
 slicer.slice
 1
+slicer.slices
+1
 sql.bind
 2
 sql.mvc

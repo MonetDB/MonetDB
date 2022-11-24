@@ -26,12 +26,19 @@ rel_getcount(mvc *sql, sql_rel *rel)
 
 		if (t && isTable(t)) {
 			sqlstore *store = sql->session->tr->store;
-			return (lng)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, 0);
+			lng nr =  (lng)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, 0);
+			assert(nr >= 0);
+			return nr;
 		}
 		return 0;
 	}
+	case op_groupby:
+		if (rel->l && rel->r)
+			return rel_getcount(sql, rel->l);
+		return 1;
 	default:
-		assert(0);
+		if (rel->l)
+			return rel_getcount(sql, rel->l);
 		return 0;
 	}
 }
@@ -311,6 +318,8 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		}
 	} else if (is_topn(rel->op) && (l /*&& (!is_simple_project(l->op) || list_empty(l->r))*/)) {
 		bool safe = true;//!has_groupby(rel->l); /* no partitioning after a group by */
+		if (rel->l)
+			safe = (rel_getcount(sql, rel->l) > 1);
 		if (rel->l)
 			res = rel_partition_(sql, rel->l, safe?SPB:pb);
 		if (safe) {
