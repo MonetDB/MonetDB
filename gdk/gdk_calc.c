@@ -2512,7 +2512,7 @@ BATcalcxor(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		return NULL;
 	}
 
-        bn = COLnew(ci1.hseq, b1->ttype, ci1.ncand, TRANSIENT);
+	bn = COLnew(ci1.hseq, b1->ttype, ci1.ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	if (ci1.ncand == 0)

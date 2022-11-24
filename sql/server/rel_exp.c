@@ -1867,11 +1867,11 @@ exp_cmp_exp_is_false(sql_exp* e) {
     case cmp_lt:
     case cmp_equal:
     case cmp_notequal:
-        return exp_regular_cmp_exp_is_false(e);
+		return exp_regular_cmp_exp_is_false(e);
     case cmp_or:
-        return exp_or_exp_is_false(e);
+		return exp_or_exp_is_false(e);
     default:
-        return false;
+		return false;
 	}
 }
 
