@@ -13,8 +13,12 @@ if(Parquet_FOUND)
     monetdb5
     bat
     sqlinclude
-    Arrow
-    Parquet
+    arrow_shared 
+    arrow-glib 
+    gobject-2.0 
+    glib-2.0 
+    parquet_shared 
+    parquet-glib
   )
 
   install(TARGETS
