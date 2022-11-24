@@ -87,8 +87,8 @@ UF(UDFarrayfuse_,UI,UO,)  ( UO *res, const UI *one, const UI *two, BUN n )
 /* type-specific core algorithm on BATs */
 static char *
 UF(UDFBATfuse_,UI,UO,)  ( const BAT *bres, BAT *bone, BAT *btwo, BUN n,
-                          bit *two_tail_sorted_unsigned,
-                          bit *two_tail_revsorted_unsigned )
+						  bit *two_tail_sorted_unsigned,
+						  bit *two_tail_revsorted_unsigned )
 {
 	UI *one = NULL, *two = NULL;
 	UO *res = NULL;

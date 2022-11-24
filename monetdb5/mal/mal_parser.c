@@ -39,11 +39,11 @@ lastline(Client cntxt)
 {
     str s = CURRENT(cntxt);
     if (NL(*s))
-        s++;
+		s++;
     while (s > cntxt->fdin->buf && !NL(*s))
-        s--;
+		s--;
     if (NL(*s))
-        s++;
+		s++;
     return s;
 }
 

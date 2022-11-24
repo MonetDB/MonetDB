@@ -849,7 +849,7 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s1, BAT *s2
 
 		if ((is_oid_nil(b1->tseqbase) || is_oid_nil(b2->tseqbase))
 #ifdef NIL_MATCHES_FLAG
-                        && !nil_matches
+		    && !nil_matches
 #endif
 		   )
 			res = TPE_nil;

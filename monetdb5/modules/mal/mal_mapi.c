@@ -35,6 +35,7 @@
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 #include "mal_authorize.h"
+#include "mal_internal.h"
 #include "msabaoth.h"
 #include "mcrypt.h"
 #include "stream.h"

@@ -2745,7 +2745,7 @@ stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char 
 		if (file->nr < 0)
 			return NULL;
 		fnr = file->nr;
-        } else {
+	} else {
 		q = newAssignment(mb);
 		q = pushStr(mb,q,"stdout");
 		fnr = getArg(q,0);

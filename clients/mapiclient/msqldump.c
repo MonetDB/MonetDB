@@ -106,9 +106,9 @@ main(int argc, char **argv)
 #endif
 
 	parse_dotmonetdb(&dotfile);
-        user = dotfile.user;
-        passwd = dotfile.passwd;
-        dbname = dotfile.dbname;
+	user = dotfile.user;
+	passwd = dotfile.passwd;
+	dbname = dotfile.dbname;
 	host = dotfile.host;
 	port = dotfile.port;
 

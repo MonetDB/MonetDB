@@ -44,6 +44,7 @@
 #include "mal_interpreter.h"
 #include "mal_linker.h"
 #include "mal_exception.h"
+#include "mal_internal.h"
 
 #define MAX_TKNZR_DEPTH 256
 #define INDEX MAX_TKNZR_DEPTH
@@ -200,7 +201,8 @@ TKNZRclose(void *r)
 	if (TRANS == NULL)
 		throw(MAL, "tokenizer", "no tokenizer store open");
 
-	TMsubcommit(TRANS);
+	if (TMsubcommit(TRANS) != GDK_SUCCEED)
+		throw(MAL, "tokenizer", GDK_EXCEPTION);
 
 	for (i = 0; i < tokenDepth; i++) {
 		BBPunfix(tokenBAT[i].idx->batCacheid);

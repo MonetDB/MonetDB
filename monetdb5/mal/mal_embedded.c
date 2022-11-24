@@ -176,7 +176,7 @@ malEmbeddedReset(void) //remove extra modules and set to non-initialized again
 	stopProfiler(0);
 	AUTHreset();
 	if (!GDKinmemory(0) && !GDKembedded()) {
-            	str err = 0;
+		str err = 0;
 
 		if ((err = msab_wildRetreat()) != NULL) {
 			TRC_ERROR(MAL_SERVER, "%s\n", err);

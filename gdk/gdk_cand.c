@@ -1316,7 +1316,7 @@ BATnegcands(BUN nr, BAT *odels)
 	    HEAPalloc(dels, hi - lo + (sizeof(ccand_t)/sizeof(oid)), sizeof(oid)) != GDK_SUCCEED) {
 		GDKfree(dels);
 		BBPreclaim(bn);
-        	return NULL;
+		return NULL;
 	}
 	ATOMIC_INIT(&dels->refs, 1);
 	c = (ccand_t *) dels->base;
@@ -1385,7 +1385,7 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 	    HEAPalloc(msks, nmask + (sizeof(ccand_t)/sizeof(uint32_t)), sizeof(uint32_t)) != GDK_SUCCEED) {
 		GDKfree(msks);
 		BBPreclaim(bn);
-        	return NULL;
+		return NULL;
 	}
 	c = (ccand_t *) msks->base;
 	*c = (ccand_t) {

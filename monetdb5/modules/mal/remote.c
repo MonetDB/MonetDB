@@ -101,6 +101,8 @@ typedef struct _connection {
 #endif
 #include <unistd.h> /* gethostname */
 
+static MT_Lock mal_remoteLock = MT_LOCK_INITIALIZER(mal_remoteLock);
+
 static connection conns = NULL;
 static unsigned char localtype = 0177;
 

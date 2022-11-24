@@ -25,6 +25,7 @@
 #include "mal_runtime.h"
 #include "mal_utils.h"
 #include "mal_resource.h"
+#include "mal_internal.h"
 
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>

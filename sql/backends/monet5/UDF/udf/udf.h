@@ -34,7 +34,7 @@ udf_export str UDFBATreverse(bat *ret, const bat *arg);
 
 /* using C macro for convenient type-expansion */
 #define UDFfuse_scalar_decl(in,out) \
-        udf_export char * UDFfuse_##in##_##out(out *ret, const in *one, const in *two)
+		udf_export char * UDFfuse_##in##_##out(out *ret, const in *one, const in *two)
 UDFfuse_scalar_decl(bte, sht);
 UDFfuse_scalar_decl(sht, int);
 UDFfuse_scalar_decl(int, lng);

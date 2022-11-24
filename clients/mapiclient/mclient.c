@@ -3256,14 +3256,14 @@ main(int argc, char **argv)
 
 	/* parse config file first, command line options override */
 	parse_dotmonetdb(&dotfile);
-        user = dotfile.user;
-        passwd = dotfile.passwd;
+	user = dotfile.user;
+	passwd = dotfile.passwd;
 	dbname = dotfile.dbname;
-        language = dotfile.language;
+	language = dotfile.language;
 	host = dotfile.host;
 	save_history = dotfile.save_history;
-        output = dotfile.output;
-        pagewidth = dotfile.pagewidth;
+	output = dotfile.output;
+	pagewidth = dotfile.pagewidth;
 	port = dotfile.port;
 	pagewidthset = pagewidth != 0;
 	if (language) {

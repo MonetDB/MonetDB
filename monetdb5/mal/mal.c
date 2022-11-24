@@ -36,7 +36,6 @@ lng MALdebug;
 #include "mal_atom.h"
 
 MT_Lock     mal_contextLock = MT_LOCK_INITIALIZER(mal_contextLock);
-MT_Lock     mal_remoteLock = MT_LOCK_INITIALIZER(mal_remoteLock);
 MT_Lock     mal_profileLock = MT_LOCK_INITIALIZER(mal_profileLock);
 MT_Lock     mal_copyLock = MT_LOCK_INITIALIZER(mal_copyLock);
 MT_Lock     mal_delayLock = MT_LOCK_INITIALIZER(mal_delayLock);
