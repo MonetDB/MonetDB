@@ -66,11 +66,7 @@ mal_export stream	*maleventstream;
 #define GRPperformance (DEADBEEFMASK)
 #define GRPforcemito (FORCEMITOMASK | NOSYNCMASK)
 
-mal_export MT_Lock  mal_contextLock;
-mal_export MT_Lock  mal_remoteLock;
-mal_export MT_Lock  mal_profileLock ;
-mal_export MT_Lock  mal_copyLock ;
-mal_export MT_Lock  mal_delayLock ;
+mal_export MT_Lock mal_contextLock;
 
 mal_export int mal_init(char *modules[], bool embedded, const char *initpasswd);
 mal_export _Noreturn void mal_exit(int status);
@@ -122,13 +118,12 @@ typedef struct VARRECORD {
 	char kind;				/* Could be either _, X or C to stamp the variable type */
 	malType type;				/* internal type signature */
 	bool constant:1,
-            typevar:1,
-            fixedtype:1,
-            //FREE SPOT NOW:1,
-            cleanup:1,
-            initialized:1,
-            used:1,
-            disabled:1;
+		typevar:1,
+		fixedtype:1,
+		cleanup:1,
+		initialized:1,
+		used:1,
+		disabled:1;
 	short depth;				/* scope block depth, set to -1 if not used */
 	ValRecord value;
 	int declared;				/* pc index when it was first assigned */
