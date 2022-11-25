@@ -110,6 +110,17 @@ ma_strdup( mallocator *ma, const char *s )
     return r;
 }
 
+static char *
+ma_copy( mallocator *ma, const void *s, int l )
+{
+    char *r = ma_alloc(ma, l);
+
+    if (r)
+        memcpy(r, s, l);
+    return r;
+}
+
+
 static void
 BATnegateprops(BAT *b)
 {
@@ -1034,6 +1045,7 @@ typedef ATOMIC_TYPE hash_key_t;
 
 typedef int (*fcmp)(void *v1, void *v2);
 typedef lng (*fhsh)(void *v);
+typedef size_t (*flen)(void *v);
 
 static int
 str_cmp(str s1, str s2)
@@ -1065,6 +1077,7 @@ typedef struct hash_table {
         int width;
 		fcmp cmp;
 		fhsh hsh;
+		flen len;
 
         void *vals;			/* hash(ed) values */
         hash_key_t *gids;   /* chain of gids (k, ie mark used/-k mark used and value filled) */
@@ -1149,6 +1162,8 @@ _ht_create( int type, int size, hash_table *p)
 		h->hsh = (fhsh)str_hsh;
 	} else {
 		h->cmp = (fcmp)ATOMcompare(type);
+		h->hsh = (fhsh)BATatoms[type].atomHash;
+		h->len = (flen)BATatoms[type].atomLen;
 	}
 	return _ht_init(h);
 }
@@ -1804,7 +1819,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
 			bool fnd = 0; \
 			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
-			gid k = (gid)str_hsh(bpi)&h->mask; \
+			gid k = (gid)h->hsh(bpi)&h->mask; \
 			gid g = 0; \
 			\
 			for(; !fnd; ) { \
@@ -1833,7 +1848,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 	}
 
 #define agroup_(Type,P) \
-	if (tt == TYPE_##Type) { \
+	if (ATOMstorage(tt) == TYPE_str) { \
 		int slots = 0; \
 		gid slot = 0; \
 		BATiter bi = bat_iterator(b); \
@@ -1861,6 +1876,43 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 					slots--; \
 					g = ++slot; \
 					vals[g] = ma_strdup(ma, bpi); \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+						continue; \
+				} \
+				fnd = 1; \
+			} \
+			gp[i] = g-1; \
+		} \
+		bat_iterator_end(&bi); \
+	} else \
+	if (ATOMvarsized(tt)) { \
+		int slots = 0; \
+		gid slot = 0; \
+		BATiter bi = bat_iterator(b); \
+		char **vals = h->vals; \
+		mallocator *ma = h->allocators[P->wid]; \
+		\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+			bool fnd = 0; \
+			void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+			gid k = (gid)h->hsh(bpi)&h->mask; \
+			gid g = 0; \
+			\
+			for(; !fnd; ) { \
+				g = ATOMIC_GET(h->gids+k); \
+				for(;g && (vals[g] && h->cmp(vals[g], bpi) != 0);) { \
+					k++; \
+					k &= h->mask; \
+					g = ATOMIC_GET(h->gids+k); \
+				} \
+				if (!g) { \
+					if (slots == 0) { \
+						slots = private?1:PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
+					} \
+					slots--; \
+					g = ++slot; \
+					vals[g] = ma_copy(ma, bpi, h->len(bpi)); \
 					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
 						continue; \
 				} \
@@ -2106,7 +2158,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
 			bool fnd = 0; \
 			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
-			gid k = (gid)combine(gi[i], str_hsh(bpi))&h->mask; \
+			gid k = (gid)combine(gi[i], h->hsh(bpi))&h->mask; \
 			gid g = 0; \
 			\
 			for(; !fnd; ) { \
@@ -2136,7 +2188,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	}
 
 #define aderive_(Type, P) \
-	if (tt == TYPE_##Type) { \
+	if (ATOMstorage(tt) == TYPE_str) { \
 		int slots = 0; \
 		gid slot = 0; \
 		BATiter bi = bat_iterator(b); \
@@ -2164,6 +2216,44 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 					slots--; \
 					g = ++slot; \
 					vals[g] = ma_strdup(ma, bpi); \
+					pgids[g] = gi[i]; \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+						continue; \
+				} \
+				fnd = 1; \
+			} \
+			gp[i] = g-1; \
+		} \
+		bat_iterator_end(&bi); \
+	} else \
+	if (ATOMvarsized(tt)) { \
+		int slots = 0; \
+		gid slot = 0; \
+		BATiter bi = bat_iterator(b); \
+		Type *vals = h->vals; \
+		mallocator *ma = h->allocators[P->wid]; \
+		\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, timeoffset) { \
+			bool fnd = 0; \
+			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+			gid k = (gid)combine(gi[i], h->hsh(bpi))&h->mask; \
+			gid g = 0; \
+			\
+			for(; !fnd; ) { \
+				g = ATOMIC_GET(h->gids+k); \
+				for(;g && (pgids[g] != gi[i] || (vals[g] && h->cmp(vals[g], bpi) != 0));) { \
+					k++; \
+					k &= h->mask; \
+					g = ATOMIC_GET(h->gids+k); \
+				} \
+				if (!g) { \
+					if (slots == 0) { \
+						slots = private?1:PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
+					} \
+					slots--; \
+					g = ++slot; \
+					vals[g] = ma_copy(ma, bpi, h->len(bpi)); \
 					pgids[g] = gi[i]; \
 					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
 						continue; \
@@ -2447,7 +2537,7 @@ LALGsubslice(bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, l
 	}
 
 #define aproject(Type,w,Toff) \
-	if (ATOMstorage(tt) == TYPE_##Type && b->twidth == w) { \
+	if ((ATOMvarsized(tt) || ATOMstorage(tt) == TYPE_##Type) && b->twidth == w) { \
 		Toff *v = Tloc(b, 0); \
 		Toff *o = Tloc(r, 0); \
 		if (g->ttype == TYPE_void) { \
@@ -2462,7 +2552,7 @@ LALGsubslice(bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, l
 
 /* runs locked ie resizes should work */
 #define aproject_(Type) \
-	if (ATOMstorage(tt) == TYPE_##Type) { \
+	if ((ATOMvarsized(tt) || ATOMstorage(tt) == TYPE_##Type)) { \
 		BATiter bi = bat_iterator(b); \
 		int ins = 0; \
 		if (g->ttype == TYPE_void) { \
