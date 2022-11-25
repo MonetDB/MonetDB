@@ -3123,12 +3123,18 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				pipeline_unlock1(bn);
 			throw(MAL, "aggr.avg", GDK_EXCEPTION);
 		}
+		pipeline_lock2(bn);
+		BATnegateprops(bn);
+		pipeline_unlock2(bn);
 	} else if (pci->retc == 3 && pci->argc == 7) {
 		if (BATgroupavg3(&bn, &rn, &cn, b, g, NULL, NULL, true, bn != NULL) != GDK_SUCCEED) {
 			if (!private)
 				pipeline_unlock1(bn);
 			throw(MAL, "aggr.avg", GDK_EXCEPTION);
 		}
+		pipeline_lock2(bn);
+		BATnegateprops(bn);
+		pipeline_unlock2(bn);
 	} else if (pci->retc == 3 && pci->argc == 9) {
 		if (bn->batCount < max &&
 			(BATextend(bn, max) != GDK_SUCCEED ||
@@ -3700,6 +3706,9 @@ SLICERslices(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*res = 1;
 	else
 		*res = (cnt+SLICE_SIZE-1)/SLICE_SIZE;
+	FORCEMITODEBUG
+	if (*res < GDKnr_threads)
+		*res = GDKnr_threads;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

@@ -2716,6 +2716,9 @@ pp_nr_slices(sql_rel *rel)
 		nr_slices = est/PP_MIN_SIZE;
 	else
 	    nr_slices =	est/PP_MAX_SIZE;
+	FORCEMITODEBUG
+	if (nr_slices < GDKnr_threads)
+		nr_slices = GDKnr_threads;
 	if (nr_slices == 0)
 		return 1;
 	assert(nr_slices > 0);

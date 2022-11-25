@@ -13,6 +13,7 @@
 #include "rel_prop.h"
 #include "rel_dump.h"
 #include "rel_select.h"
+#include "rel_rewriter.h"
 
 static lng
 rel_getcount(mvc *sql, sql_rel *rel)
@@ -39,6 +40,8 @@ rel_getcount(mvc *sql, sql_rel *rel)
 	default:
 		if (rel->l)
 			return rel_getcount(sql, rel->l);
+		if (rel->p)
+			return get_rel_count(rel);
 		return 0;
 	}
 }
