@@ -1,4 +1,4 @@
 transaction-conflict.Bug-7228
-temp-table-index.Bug
-rerun-temp-table-index-crashes-server.Bug
-rerun-temp-table-index-fails-to-restart-server.Bug
+KNOWNFAIL?temp-table-index.Bug
+KNOWNFAIL?rerun-temp-table-index-crashes-server.Bug
+KNOWNFAIL?rerun-temp-table-index-fails-to-restart-server.Bug
