@@ -4246,9 +4246,9 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 		/* foreach column add predicate */
 		stmt_add_column_predicate(be, c->c);
 
-        // foreach column aggregate the nonil (literally 'null') values.
-        // mind that null values are valid fkeys with undefined value so
-        // we won't have an entry for them in the idx_inserts col
+		// foreach column aggregate the nonil (literally 'null') values.
+		// mind that null values are valid fkeys with undefined value so
+		// we won't have an entry for them in the idx_inserts col
 		s = list_fetch(inserts, c->c->colnr);
 		nonil_rows = stmt_selectnonil(be, s, nonil_rows);
 	}

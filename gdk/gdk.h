@@ -2069,8 +2069,10 @@ BUNtoid(BAT *b, BUN p)
 /*
  * @+ Transaction Management
  */
-gdk_export gdk_return TMsubcommit(BAT *bl);
-gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno, lng transid);
+gdk_export gdk_return TMsubcommit(BAT *bl)
+	__attribute__((__warn_unused_result__));
+gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno, lng transid)
+	__attribute__((__warn_unused_result__));
 
 /*
  * @- Delta Management
