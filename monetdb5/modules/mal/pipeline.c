@@ -3208,7 +3208,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(pg->batCacheid);
 
 	if (pci->retc == 2 && (pci->argc == 6 || pci->argc == 7)) {
-		if (BATgroupavg(&bn, &cn, b, g, NULL, NULL, TYPE_dbl, true, 0) != GDK_SUCCEED) {
+		if (BATgroupavg2(&bn, &cn, b, g, NULL, NULL, TYPE_dbl, max, true, 0) != GDK_SUCCEED) {
 			if (!private)
 				pipeline_unlock1(bn);
 			throw(MAL, "aggr.avg", GDK_EXCEPTION);

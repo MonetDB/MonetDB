@@ -1917,11 +1917,11 @@ BATprod(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty,
 		}							\
 	} while (0)
 
-/* There are three functions that are used for calculating averages.
- * The first one (BATgroupavg) returns averages as a floating point
- * value, the other two (BATgroupavg3 and BATgroupavg3combine) work
- * together to return averages in the domain type (which should be an
- * integer type). */
+/* There are four functions that are used for calculating averages.  The
+ * first two (BATgroupavg, BATgroupavg2) return averages as a floating
+ * point value, the other two (BATgroupavg3 and BATgroupavg3combine)
+ * work together to return averages in the domain type (which should be
+ * an integer type). */
 
 /* Calculate group averages with optional candidates list.  The average
  * that is calculated is returned in a dbl, independent of the type of
@@ -1929,12 +1929,12 @@ BATprod(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty,
  * point which could potentially losse bits during processing
  * (e.g. average of 2**62 and a billion 1's). */
 gdk_return
-BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, int scale)
+BATgroupavg2(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, BUN ngrp, bool skip_nils, int scale)
 {
 	const oid *restrict gids;
 	oid gid;
 	oid min, max;
-	BUN i, ngrp;
+	BUN i;
 	BUN nils = 0;
 	lng *restrict rems = NULL;
 	lng *restrict cnts = NULL;
@@ -1957,10 +1957,12 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	(void) tp;		/* compatibility (with other BATgroup*
 				 * functions) argument */
 
-	if ((err = BATgroupaggrinit2(true, b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
+	if ((err = BATgroupaggrinit2(true, b, g, e, s, &min, &max, &i, &ci)) != NULL) {
 		GDKerror("%s\n", err);
 		return GDK_FAIL;
 	}
+	if (ngrp == BUN_NONE || ngrp < i)
+		ngrp = i;
 	if (g == NULL) {
 		GDKerror("b and g must be aligned\n");
 		return GDK_FAIL;
@@ -2135,6 +2137,12 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 		GDKfree(cnts);
 	}
 	return GDK_FAIL;
+}
+
+gdk_return
+BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, int scale)
+{
+	return BATgroupavg2(bnp, cntsp, b, g, e, s, tp, BUN_NONE, skip_nils, scale);
 }
 
 /* An exact numeric average of a bunch of values consists of three
