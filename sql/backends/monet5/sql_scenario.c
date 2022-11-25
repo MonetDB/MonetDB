@@ -1100,6 +1100,7 @@ SQLparser(Client c)
 		}
 		in->pos = in->len;	/* HACK: should use parsed length */
 		msg = createException(SQL, "SQLparser", SQLSTATE(42000) "Unrecognized X command: %s\n", in->buf + in->pos);
+		in->pos = in->len; // consume the command
 		goto finalize;
 	}
 	if (be->language !='S') {
