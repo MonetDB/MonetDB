@@ -9,3 +9,6 @@ delete-update.Bug-7267
 having-clauses.Bug-7278
 temp-table-create-index-drop-issue
 values.Bug-7336
+temp-table-index.Bug
+rerun-temp-table-index-crashes-server.Bug
+rerun-temp-table-index-fails-to-restart-server.Bug
