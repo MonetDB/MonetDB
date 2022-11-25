@@ -3598,7 +3598,6 @@ BBPcheckBBPdir(bool subcommit)
 			fclose(fp);
 			return;
 		}
-		assert(hashash == 0);
 		assert(b.batCacheid < (bat) ATOMIC_GET(&BBPsize));
 		assert(BBP_desc(b.batCacheid) != NULL);
 		assert(b.hseqbase <= GDK_oid_max);
