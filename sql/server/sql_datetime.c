@@ -329,10 +329,13 @@ int inttype2digits( int sk, int ek )
 		if(ek == iyear)
 			return 1;
 		return 2;
+	case iquarter:
 	case imonth:
 		return 3;
+	case iweek:
 	case iday:
 		switch(ek) {
+		case iweek:
 		case iday:
 			return 4;
 		case ihour:
@@ -472,4 +475,60 @@ get_timestamp_precision(const char* val)
 	unsigned int pr = 0;
 	parse_timestamp(val, &yr, &mt, &dy, &hr, &mn, &sc, &fr, &pr);
 	return pr;
+}
+
+
+int
+process_odbc_interval(mvc *sql, itype interval, int val, sql_subtype *t, lng *i)
+{
+	assert(sql);
+	int mul = 1;
+	int d = inttype2digits(interval, interval);
+	switch (interval) {
+		case iyear:
+			mul *= 12;
+			/* fall through */
+		case iquarter:
+			mul *= 3;
+			/* fall through */
+		case imonth:
+			break;
+		case iweek:
+			mul *= 7;
+			/* fall through */
+		case iday:
+			mul *= 24;
+			/* fall through */
+		case ihour:
+			mul *= 60;
+			/* fall through */
+		case imin:
+			mul *= 60000;
+			/* fall through */
+		case isec:
+			break;
+		default:
+			snprintf(sql->errstr, ERRSIZE, _("Internal error: bad interval qualifier (%d)\n"), interval);
+			return -1;
+	}
+
+	// check for overflow
+	if (((lng) abs(val) * mul) > GDK_lng_max) {
+		snprintf(sql->errstr, ERRSIZE, _("Overflow\n"));
+		return -1;
+	}
+	// compute value month or sec interval
+	*i += val * mul;
+
+	int r = 0;
+	if (d < 4){
+		r = sql_find_subtype(t, "month_interval", d, 0);
+	} else if (d == 4) {
+		r = sql_find_subtype(t, "day_interval", d, 0);
+	} else {
+		r = sql_find_subtype(t, "sec_interval", d, 0);
+	}
+	if (!r)
+		return -1;
+	return 0;
 }
