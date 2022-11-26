@@ -529,6 +529,8 @@ scanner_init_keywords(void)
 	failed += keywords_insert("oj", ODBC_OJ_ESCAPE_PREFIX);
 	failed += keywords_insert("DAYNAME", DAYNAME);
 	failed += keywords_insert("MONTHNAME", MONTHNAME);
+	failed += keywords_insert("TIMESTAMPADD", TIMESTAMPADD);
+	failed += keywords_insert("TIMESTAMPDIFF", TIMESTAMPDIFF);
 	failed += keywords_insert("SQL_BIGINT", SQL_BIGINT);
 	failed += keywords_insert("SQL_BINARY", SQL_BINARY);
 	failed += keywords_insert("SQL_BIT", SQL_BIT);
@@ -566,6 +568,15 @@ scanner_init_keywords(void)
 	failed += keywords_insert("SQL_WCHAR", SQL_WCHAR);
 	failed += keywords_insert("SQL_WLONGVARCHAR", SQL_WLONGVARCHAR);
 	failed += keywords_insert("SQL_WVARCHAR", SQL_WVARCHAR);
+	failed += keywords_insert("SQL_TSI_FRAC_SECOND", SQL_TSI_FRAC_SECOND);
+	failed += keywords_insert("SQL_TSI_SECOND", SQL_TSI_SECOND);
+	failed += keywords_insert("SQL_TSI_MINUTE", SQL_TSI_MINUTE);
+	failed += keywords_insert("SQL_TSI_HOUR", SQL_TSI_HOUR);
+	failed += keywords_insert("SQL_TSI_DAY", SQL_TSI_DAY);
+	failed += keywords_insert("SQL_TSI_WEEK", SQL_TSI_WEEK);
+	failed += keywords_insert("SQL_TSI_MONTH", SQL_TSI_MONTH);
+	failed += keywords_insert("SQL_TSI_QUARTER", SQL_TSI_QUARTER);
+	failed += keywords_insert("SQL_TSI_YEAR", SQL_TSI_YEAR);
 
 	return failed;
 }

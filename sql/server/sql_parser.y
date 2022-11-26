@@ -724,7 +724,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token X_BODY 
 %token MAX_MEMORY MAX_WORKERS OPTIMIZER
 /* odbc tokens */
-%token DAYNAME MONTHNAME
+%token DAYNAME MONTHNAME TIMESTAMPADD TIMESTAMPDIFF
 /* odbc data type tokens */
 %token <sval>
 		SQL_BIGINT
@@ -775,7 +775,10 @@ SQLCODE SQLERROR UNDER WHENEVER
         SQL_TSI_YEAR
 
 %type <type>
-	odbc_data_type
+	odbc_data_type 
+
+%type <i_val>
+    odbc_tsi_qualifier
     
 /* odbc escape prefix tokens */
 %token <sval>
@@ -796,6 +799,7 @@ SQLCODE SQLERROR UNDER WHENEVER
     odbc_scalar_func_escape
     odbc_scalar_func
     odbc_datetime_func
+
 %%
 
 sqlstmt:
@@ -5677,6 +5681,8 @@ non_reserved_word:
 | ODBC_OJ_ESCAPE_PREFIX { $$ = sa_strdup(SA, "oj"); }
 | DAYNAME { $$ = sa_strdup(SA, "dayname"); }
 | MONTHNAME { $$ = sa_strdup(SA, "monthname"); }
+| TIMESTAMPADD { $$ = sa_strdup(SA, "timestampadd"); }
+| TIMESTAMPDIFF { $$ = sa_strdup(SA, "timestampdiff"); }
 ;
 
 lngval:
@@ -6463,6 +6469,22 @@ odbc_datetime_func:
           append_symbol(l, $3);
           $$ = _symbol_create_list( SQL_UNOP, l ); 
 		}
+    | TIMESTAMPADD '(' odbc_tsi_qualifier ',' intval ',' search_condition ')'
+		{ dlist *l = L(); 
+          // TODO sql_add or custom func ?
+		  append_list( l, append_string(L(), sa_strdup(SA, "sql_add")));
+	      append_int(l, FALSE); /* ignore distinct */
+          sql_subtype t; 
+	  	  lng i = 0;
+          if (process_odbc_interval(m, $3, $5, &t, &i) < 0) {
+		    yyerror(m, "incorrect interval");
+			$$ = NULL;
+			YYABORT;
+          }
+          append_symbol(l, _newAtomNode(atom_int(SA, &t, i)));
+          append_symbol(l, $7);
+          $$ = _symbol_create_list( SQL_BINOP, l ); 
+		}
 ;
 
 
@@ -6578,6 +6600,30 @@ odbc_data_type:
     | SQL_WVARCHAR
         { sql_find_subtype(&$$, "clob", 0, 0); }
 ;
+
+odbc_tsi_qualifier:
+    SQL_TSI_FRAC_SECOND
+        { $$ = insec; }
+    | SQL_TSI_SECOND
+        { $$ = isec; }
+    | SQL_TSI_MINUTE
+        { $$ = imin; }
+    | SQL_TSI_HOUR
+        { $$ = ihour; }
+    | SQL_TSI_DAY
+        { $$ = iday; }
+    | SQL_TSI_WEEK
+        { $$ = iweek; }
+    | SQL_TSI_MONTH
+        { $$ = imonth; }
+    | SQL_TSI_QUARTER
+        { $$ = iquarter; }
+    | SQL_TSI_YEAR
+        { $$ = iyear; }
+
+;
+
+
 
 %%
 

@@ -101,3 +101,8 @@ query I rowsort
 select { fn year(date'2022-11-14') }
 ----
 2022
+
+query T rowsort
+select { fn timestampadd(SQL_TSI_HOUR, 1, timestamp'2022-11-14 12:12:12') }
+----
+2022-11-14 13:12:12

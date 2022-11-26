@@ -25,7 +25,8 @@ typedef enum inttype {
 	idoy,
 	icentury,
 	idecade,
-	iepoch
+	iepoch,
+	insec
 } itype;
 
 int parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek, int *sp, int *ep);
@@ -74,5 +75,7 @@ parse_timestamp(const char* val,
 	   	unsigned int* pr);
 unsigned int
 get_timestamp_precision(const char* val);
+int
+process_odbc_interval(mvc *sql, itype interval, int val, sql_subtype *t, lng *i);
 
 #endif /*_SQL_DATETIME_H_*/
