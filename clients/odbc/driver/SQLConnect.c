@@ -44,8 +44,9 @@ get_serverinfo(ODBCDbc *dbc)
 	MapiHdl hdl;
 	char *n, *v;
 
-	if ((hdl = mapi_query(dbc->mid, "select name, value from sys.env() where name in ('monet_version', 'gdk_dbname', 'max_clients')")) == NULL)
+	if ((hdl = mapi_query(dbc->mid, "select name, value from sys.env() where name in ('monet_version', 'gdk_dbname', 'max_clients', 'raw_strings')")) == NULL)
 		return;
+	dbc->raw_strings = false;
 	while (mapi_fetch_row(hdl)) {
 		n = mapi_fetch_field(hdl, 0);
 		v = mapi_fetch_field(hdl, 1);
@@ -55,6 +56,8 @@ get_serverinfo(ODBCDbc *dbc)
 		} else
 		if (strcmp(n, "max_clients") == 0) {
 			sscanf(v, "%hu", &dbc->maxclients);
+		} else if (strcmp(n, "raw_strings") == 0) {
+			dbc->raw_strings = strcmp(v, "true") == 0;
 		} else {
 			assert(strcmp(n, "gdk_dbname") == 0);
 			assert(dbc->dbname == NULL ||

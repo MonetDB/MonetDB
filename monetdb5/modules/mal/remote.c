@@ -101,6 +101,8 @@ typedef struct _connection {
 #endif
 #include <unistd.h> /* gethostname */
 
+static MT_Lock mal_remoteLock = MT_LOCK_INITIALIZER(mal_remoteLock);
+
 static connection conns = NULL;
 static unsigned char localtype = 0177;
 
@@ -1525,7 +1527,7 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	sendtheap = b->ttype != TYPE_void;
 	sendtvheap = sendtheap && b->tvheap;
-	if (isVIEW(b) && sendtvheap && VIEWvtparent(b) && BATcount(b) < BATcount(BBP_cache(VIEWvtparent(b)))) {
+	if (isVIEW(b) && sendtvheap && VIEWvtparent(b) && BATcount(b) < BATcount(BBP_desc(VIEWvtparent(b)))) {
 		if ((b = BATdescriptor(bid)) == NULL) {
 			BBPunfix(bid);
 			throw(MAL, "remote.bincopyto", RUNTIME_OBJECT_MISSING);

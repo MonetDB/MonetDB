@@ -2284,6 +2284,89 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 	return e;
 }
 
+static sql_exp *
+exp_set_type(sql_allocator *sa, sql_exp *te, sql_exp *e)
+{
+	if (te->type == e_convert) {
+		if (e->type == e_column)  {
+				return exp_convert(sa, e, exp_subtype(e), exp_subtype(te));
+		} else {
+			e->tpe = *exp_subtype(te);
+			if (e->l)
+				e->l = atom_set_type(sa, e->l, &e->tpe);
+		}
+	}
+	return e;
+}
+
+static sql_rel *
+rel_set_type(visitor *v, sql_rel *rel)
+{
+	if (is_project(rel->op) && rel->l) {
+		if (is_set(rel->op)) {
+			sql_rel *l = rel->l, *r = rel->r;
+			list *exps = l->exps;
+			while(exps) {
+				for(node *n = exps->h, *m = rel->exps->h; n && m; n = n->next, m = m->next) {
+					sql_exp *e = n->data;
+					sql_subtype *t = exp_subtype(e);
+
+					if (t && !t->type->localtype)
+						n->data = exp_set_type(v->sql->sa, m->data, e);
+				}
+				if (exps != r->exps)
+					exps = r->exps;
+				else
+					exps = NULL;
+			}
+		} else if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l) {
+			list *exps = rel->exps;
+			while(exps) {
+				for(node *n = exps->h; n; n = n->next) {
+					sql_exp *te = n->data;
+					if (te->type == e_convert) {
+						sql_exp *l = te->l;
+						if (l->type == e_column) {
+							sql_exp *e = rel_find_exp(rel->l, l);
+							sql_subtype *t = exp_subtype(e);
+
+							if (t && !t->type->localtype) {
+								if (e && e->type == e_column) {
+									sql_rel *l = rel->l;
+									if (is_project(l->op)) {
+										for(node *n = l->exps->h; n; n = n->next) {
+											if (n->data == e) {
+												n->data = exp_convert(v->sql->sa, e, t, exp_subtype(te));
+												break;
+											}
+										}
+									}
+								} else {
+									e->tpe = *exp_subtype(te);
+									if (e->l)
+										e->l = atom_set_type(v->sql->sa, e->l, &e->tpe);
+								}
+							}
+						}
+					} else if (te->type == e_atom && !te->f) {
+						sql_subtype *t = exp_subtype(te);
+						if (t && !t->type->localtype) {
+							te->tpe = *sql_bind_localtype("bte");
+							if (te->l)
+								te->l = atom_set_type(v->sql->sa, te->l, &te->tpe);
+						}
+					}
+				}
+				if (is_groupby(rel->op) && exps != rel->r)
+					exps = rel->r;
+				else
+					exps = NULL;
+			}
+		}
+	}
+	return rel;
+}
+
 static list*
 aggrs_split_args(mvc *sql, list *aggrs, list *exps, int is_groupby_list)
 {
@@ -4157,5 +4240,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_fix_count);	/* fix count inside a left join (adds a project (if (cnt IS null) then (0) else (cnt)) */
 	rel = rel_visitor_bottomup(&v, rel, &rel_unnest_projects);
 	rel = rel_exp_visitor_bottomup(&v, rel, &exp_reset_card_and_freevar_set_physical_type, false);
+	rel = rel_visitor_topdown(&v, rel, &rel_set_type);
 	return rel;
 }
