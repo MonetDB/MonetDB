@@ -410,26 +410,6 @@ gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *for
 #define FORCEMITOMASK	(1<<29)
 #define FORCEMITODEBUG	if (GDKdebug & FORCEMITOMASK)
 
-/*
- * @- GDK session handling
- * @multitable @columnfractions 0.08 0.7
- * @item int
- * @tab GDKinit (char *db, char *dbpath, int allocmap)
- * @item int
- * @tab GDKexit (int status)
- * @end multitable
- *
- * The session is bracketed by GDKinit and GDKexit. Initialization
- * involves setting up the administration for database access, such as
- * memory allocation for the database buffer pool.  During the exit
- * phase any pending transaction is aborted and the database is freed
- * for access by other users.  A zero is returned upon encountering an
- * erroneous situation.
- *
- * @- Definitions
- * The interface definitions for the application programs are shown
- * below.  The global variables should not be modified directly.
- */
 #ifndef TRUE
 #define TRUE		true
 #define FALSE		false
@@ -2089,9 +2069,10 @@ BUNtoid(BAT *b, BUN p)
 /*
  * @+ Transaction Management
  */
-gdk_export gdk_return TMcommit(void);
-gdk_export gdk_return TMsubcommit(BAT *bl);
-gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno, lng transid);
+gdk_export gdk_return TMsubcommit(BAT *bl)
+	__attribute__((__warn_unused_result__));
+gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno, lng transid)
+	__attribute__((__warn_unused_result__));
 
 /*
  * @- Delta Management

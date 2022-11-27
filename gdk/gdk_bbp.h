@@ -85,7 +85,6 @@ gdk_export int BBPretain(bat b);
 gdk_export int BBPrelease(bat b);
 gdk_export void BBPkeepref(BAT *b)
 	__attribute__((__nonnull__(1)));
-gdk_export void BBPshare(bat b);
 gdk_export void BBPcold(bat i);
 
 #define BBP_status_set(bid, mode)			\
