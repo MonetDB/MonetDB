@@ -946,6 +946,7 @@ typedef struct {
 	char physical[24];	/* dir + basename for storage */
 #endif
 	bat next;		/* next BBP slot in linked list */
+	int pidx;		/* preferred index of associated thread mask */
 	int refs;		/* in-memory references on which the loaded status of a BAT relies */
 	int lrefs;		/* logical references on which the existence of a BAT relies */
 	ATOMIC_TYPE status;	/* status mask used for spin locking */
@@ -976,6 +977,7 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 #define BBP_logical(i)	BBP_record(i).logical
 #define BBP_bak(i)	BBP_record(i).bak
 #define BBP_next(i)	BBP_record(i).next
+#define BBP_pidx(i)	BBP_record(i).pidx
 #define BBP_physical(i)	BBP_record(i).physical
 #define BBP_options(i)	BBP_record(i).options
 #define BBP_desc(i)	BBP_record(i).desc
