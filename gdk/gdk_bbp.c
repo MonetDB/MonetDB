@@ -324,9 +324,8 @@ BBPunlock(void)
 }
 
 static gdk_return
-BBPinithash(int j, bat size)
+BBPinithash(bat size)
 {
-	assert(j >= 0 && j <= BBP_THREADMASK);
 	for (BBP_mask = 1; (BBP_mask << 1) <= BBPlimit; BBP_mask <<= 1)
 		;
 	BBP_hash = (bat *) GDKzalloc(BBP_mask * sizeof(bat));
@@ -338,15 +337,8 @@ BBPinithash(int j, bat size)
 	while (--size > 0) {
 		const char *s = BBP_logical(size);
 
-		if (s) {
-			if (*s != '.' && !BBPtmpcheck(s)) {
-				BBP_insert(size);
-			}
-		} else {
-			BBP_next(size) = BBP_free(j);
-			BBP_free(j) = size;
-			if (++j > BBP_THREADMASK)
-				j = 0;
+		if (s && *s != '.' && !BBPtmpcheck(s)) {
+			BBP_insert(size);
 		}
 	}
 	return GDK_SUCCEED;
@@ -380,7 +372,7 @@ BBPselectfarm(role_t role, int type, enum heaptype hptype)
 }
 
 static gdk_return
-BBPextend(int idx, bool buildhash, bat newsize)
+BBPextend(bool buildhash, bat newsize)
 {
 	if (newsize >= N_BBPINIT * BBPINIT) {
 		GDKerror("trying to extend BAT pool beyond the "
@@ -405,12 +397,9 @@ BBPextend(int idx, bool buildhash, bat newsize)
 	}
 
 	if (buildhash) {
-		int i;
 		GDKfree(BBP_hash);
 		BBP_hash = NULL;
-		for (i = 0; i <= BBP_THREADMASK; i++)
-			BBP_free(i) = 0;
-		if (BBPinithash(idx, newsize) != GDK_SUCCEED)
+		if (BBPinithash(newsize) != GDK_SUCCEED)
 			return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -801,7 +790,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 
 		if (b.batCacheid >= (bat) ATOMIC_GET(&BBPsize)) {
 			if ((bat) ATOMIC_GET(&BBPsize) + 1 >= BBPlimit &&
-			    BBPextend(0, false, b.batCacheid + 1) != GDK_SUCCEED)
+			    BBPextend(false, b.batCacheid + 1) != GDK_SUCCEED)
 				goto bailout;
 			ATOMIC_SET(&BBPsize, b.batCacheid + 1);
 		}
@@ -1719,7 +1708,7 @@ BBPinit(bool first)
 	}
 
 	/* allocate BBP records */
-	if (BBPextend(0, false, bbpsize) != GDK_SUCCEED) {
+	if (BBPextend(false, bbpsize) != GDK_SUCCEED) {
 		GDKdebug = dbg;
 		return GDK_FAIL;
 	}
@@ -1738,7 +1727,7 @@ BBPinit(bool first)
 	}
 
 	MT_lock_set(&BBPnameLock);
-	if (BBPinithash(0, (bat) ATOMIC_GET(&BBPsize)) != GDK_SUCCEED) {
+	if (BBPinithash((bat) ATOMIC_GET(&BBPsize)) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "BBPinithash failed");
 		MT_lock_unset(&BBPnameLock);
 #ifdef GDKLIBRARY_HASHASH
@@ -2427,28 +2416,20 @@ maybeextend(int idx) {
 	bat size = (bat) ATOMIC_GET(&BBPsize);
 	/* if the common pool has no more space, extend it */
 	if (size >= BBPlimit) {
-		/* acquire all gdkcachelocks in the same order */
-		for (int i = 0; i <= BBP_THREADMASK; i++) {
-			if (i != idx) {
-				MT_lock_set(&GDKcacheLock(i));
-			}
-		}
 		/* extend the common pool */
-		gdk_return r = BBPextend(idx, true, size + 1);
-		/* release all gdkcachelocks */
-		for (int i = BBP_THREADMASK; i >= 0; i--) {
-			if (i != idx) {
-				MT_lock_unset(&GDKcacheLock(i));
-			}
-		}
+		gdk_return r = BBPextend(true, size + 1);
 		if (r != GDK_SUCCEED) {
 			return GDK_FAIL;
 		}
 	}
-	ATOMIC_SET(&BBPsize, size + 1);
 
 	/* extend the thread list */
 	BBP_free(idx) = size;
+	if (idx != threadmask((lng) size))
+		BBP_pidx(size) = idx;
+
+	ATOMIC_SET(&BBPsize, size + 1);
+
 	MT_lock_unset(&BBPnameLock);
 	return GDK_SUCCEED;
 }
@@ -2628,7 +2609,8 @@ BBPclear(bat i, bool lock)
 	MT_Id pid = MT_getpid();
 	lock &= locked_by == 0 || locked_by != pid;
 	if (BBPcheck(i)) {
-		bbpclear(i, threadmask(pid), lock);
+		int idx = BBP_pidx(i)?BBP_pidx(i):threadmask((lng) i);
+		bbpclear(i, idx, lock);
 	}
 }
 
