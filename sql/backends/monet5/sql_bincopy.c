@@ -21,6 +21,12 @@
 #include "copybinary_support.h"
 
 
+#define bailout(...) do { \
+		msg = createException(MAL, mal_operator, SQLSTATE(42000) __VA_ARGS__); \
+		goto end; \
+	} while (0)
+
+
 static str
 load_trivial(BAT *bat, stream *s, BUN rows_estimate, int *eof_seen)
 {
@@ -325,19 +331,23 @@ end:
 }
 
 static str
-dump_trivial(BAT *b, stream *s)
+dump_trivial(BAT *b, stream *s, BUN start, BUN length)
 {
 	assert(!ATOMvarsized(BATttype(b)));
-
-	return write_out(Tloc(b, 0), Tloc(b, BATcount(b)), s);
+	BUN end = start + length;
+	assert(end <= BATcount(b));
+	return write_out(Tloc(b, start), Tloc(b, end), s);
 }
 
 static str
-dump_fixed_width(BAT *b, stream *s, bool byteswap, bincopy_encoder_t encoder, size_t record_size)
+dump_fixed_width(BAT *b, stream *s, BUN start, BUN length, bool byteswap, bincopy_encoder_t encoder, size_t record_size)
 {
 	const char *mal_operator = "sql.export_bin_column";
 	str msg = MAL_SUCCEED;
 	char *buffer = NULL;
+
+	BUN end = start + length;
+	assert(end <= BATcount(b));
 
 	if (record_size == 0) {
 		int tt = BATttype(b);
@@ -345,16 +355,16 @@ dump_fixed_width(BAT *b, stream *s, bool byteswap, bincopy_encoder_t encoder, si
 	}
 	size_t buffer_size = 1024 * 1024;
 	BUN batch_size = buffer_size / record_size;
-	if (batch_size > BATcount(b))
-		batch_size = BATcount(b);
+	if (batch_size > length)
+		batch_size = length;
 	buffer_size = batch_size * record_size;
 	buffer = GDKmalloc(buffer_size);
 	if (buffer == NULL)
 		bailout(MAL_MALLOC_FAIL);
 
 	BUN n;
-	for (BUN pos = 0; pos < BATcount(b); pos += n) {
-		n = BATcount(b) - pos;
+	for (BUN pos = start; pos < end; pos += n) {
+		n = end - pos;
 		if (n > batch_size)
 			n = batch_size;
 		msg = encoder(buffer, Tloc(b, pos), n, 0, byteswap);
@@ -370,8 +380,8 @@ end:
 	return msg;
 }
 
-static str
-dump_column(const struct type_record_t *rec, BAT *b, bool byteswap, stream *s)
+str
+dump_binary_column(const struct type_record_t *rec, BAT *b, BUN start, BUN length, bool byteswap, stream *s)
 {
 	str msg = MAL_SUCCEED;
 
@@ -386,11 +396,11 @@ dump_column(const struct type_record_t *rec, BAT *b, bool byteswap, stream *s)
 		encoder = NULL;
 
 	if (dumper) {
-		msg = rec->dumper(b, s, byteswap);
+		msg = rec->dumper(b, s, start, length, byteswap);
 	} else if (encoder) {
-		msg = dump_fixed_width(b, s, byteswap, rec->encoder, rec->record_size);
+		msg = dump_fixed_width(b, s, start, length, byteswap, rec->encoder, rec->record_size);
 	} else {
-		msg = dump_trivial(b, s);
+		msg = dump_trivial(b, s, start, length);
 	}
 
 	return msg;
@@ -421,7 +431,7 @@ export_column(backend *be, BAT *b, bool byteswap, str filename, bool onclient)
 		bailout("%s", mnstr_peek_error(NULL));
 	}
 
-	msg = dump_column(rec, b, byteswap, s);
+	msg = dump_binary_column(rec, b, 0, BATcount(b), byteswap, s);
 
 	if (s && msg == MAL_SUCCEED) {
 		if (mnstr_flush(s, MNSTR_FLUSH_DATA) != 0) {

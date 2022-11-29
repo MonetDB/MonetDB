@@ -185,7 +185,7 @@ doChallenge(void *data)
 	}
 
 	// Send the challenge over the block stream
-	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:sql=%d:",
+	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:sql=%d:BINARY=1:",
 			challenge,
 			mcrypt_getHashAlgorithms(),
 #ifdef WORDS_BIGENDIAN
