@@ -17,6 +17,13 @@
 #include "mal_interpreter.h"
 #include "mstring.h"
 
+
+#define bailout(...) do { \
+		msg = createException(MAL, mal_operator, SQLSTATE(42000) __VA_ARGS__); \
+		goto end; \
+	} while (0)
+
+
 static str
 validate_bit(void *dst_, void *src_, size_t count, int width, bool byteswap)
 {
@@ -361,7 +368,7 @@ end:
 }
 
 static str
-dump_zero_terminated_text(BAT *bat, stream *s, bool byteswap)
+dump_zero_terminated_text(BAT *bat, stream *s, BUN start, BUN length, bool byteswap)
 {
 	(void)byteswap;
 	const char *mal_operator = "sql.export_bin_column";
@@ -370,9 +377,11 @@ dump_zero_terminated_text(BAT *bat, stream *s, bool byteswap)
 	assert(ATOMstorage(tpe) == TYPE_str); (void)tpe;
 	assert(mnstr_isbinary(s));
 
-	BUN end = BATcount(bat);
+
+	BUN end = start + length;
+	assert(end <= BATcount(bat));
 	BATiter bi = bat_iterator(bat);
-	for (BUN p = 0; p < end; p++) {
+	for (BUN p = start; p < end; p++) {
 		const char *v = BUNtvar(bi, p);
 		if (mnstr_writeStr(s, v) < 0 || mnstr_writeBte(s, 0) < 0) {
 			bailout("%s", mnstr_peek_error(s));
@@ -424,4 +433,10 @@ find_type_rec(const char *name)
 		if (strcmp(t->method, name) == 0)
 			return t;
 	return NULL;
+}
+
+bool
+can_dump_binary_column(const type_record_t *rec)
+{
+	return rec->encoder_trivial || rec->dumper || rec->encoder;
 }
