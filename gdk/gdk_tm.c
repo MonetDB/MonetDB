@@ -187,12 +187,12 @@ TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logn
 		}
 	}
 	/* lock just prevents other global (sub-)commits */
-	MT_lock_set(&GDKtmLock);
+	BBPtmlock();
 	if (BBPsync(cnt, subcommit, sizes, logno, transid) == GDK_SUCCEED) { /* write BBP.dir (++) */
 		epilogue(cnt, subcommit, false);
 		ret = GDK_SUCCEED;
 	}
-	MT_lock_unset(&GDKtmLock);
+	BBPtmunlock();
 	return ret;
 }
 
