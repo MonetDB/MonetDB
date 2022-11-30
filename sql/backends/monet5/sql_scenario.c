@@ -1095,8 +1095,10 @@ SQLparser(Client c)
 		}
 		if (strncmp(in->buf + in->pos, "quit", 4) == 0) {
 			c->mode = FINISHCLIENT;
+			in->pos = in->len;	/* HACK: should use parsed length */
 			return MAL_SUCCEED;
 		}
+		in->pos = in->len;	/* HACK: should use parsed length */
 		msg = createException(SQL, "SQLparser", SQLSTATE(42000) "Unrecognized X command: %s\n", in->buf + in->pos);
 		goto finalize;
 	}
