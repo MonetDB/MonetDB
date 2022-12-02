@@ -6485,6 +6485,22 @@ odbc_datetime_func:
           append_symbol(l, $7);
           $$ = _symbol_create_list( SQL_BINOP, l ); 
 		}
+    | TIMESTAMPDIFF '(' odbc_tsi_qualifier ',' intval ',' search_condition ')'
+		{ dlist *l = L(); 
+          // TODO sql_diff or custom func ?
+		  append_list( l, append_string(L(), sa_strdup(SA, "sql_sub")));
+	      append_int(l, FALSE); /* ignore distinct */
+          sql_subtype t; 
+	  	  lng i = 0;
+          if (process_odbc_interval(m, $3, $5, &t, &i) < 0) {
+		    yyerror(m, "incorrect interval");
+			$$ = NULL;
+			YYABORT;
+          }
+          append_symbol(l, $7);
+          append_symbol(l, _newAtomNode(atom_int(SA, &t, i)));
+          $$ = _symbol_create_list( SQL_BINOP, l ); 
+		}
 ;
 
 
