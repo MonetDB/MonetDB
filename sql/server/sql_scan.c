@@ -528,6 +528,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("fn", ODBC_FUNC_ESCAPE_PREFIX);
 	failed += keywords_insert("oj", ODBC_OJ_ESCAPE_PREFIX);
 	failed += keywords_insert("DAYNAME", DAYNAME);
+	failed += keywords_insert("IFNULL", IFNULL);
 	failed += keywords_insert("MONTHNAME", MONTHNAME);
 	failed += keywords_insert("TIMESTAMPADD", TIMESTAMPADD);
 	failed += keywords_insert("TIMESTAMPDIFF", TIMESTAMPDIFF);

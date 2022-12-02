@@ -724,7 +724,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token X_BODY 
 %token MAX_MEMORY MAX_WORKERS OPTIMIZER
 /* odbc tokens */
-%token DAYNAME MONTHNAME TIMESTAMPADD TIMESTAMPDIFF
+%token DAYNAME MONTHNAME TIMESTAMPADD TIMESTAMPDIFF IFNULL
 /* odbc data type tokens */
 %token <sval>
 		SQL_BIGINT
@@ -5683,6 +5683,7 @@ non_reserved_word:
 | MONTHNAME { $$ = sa_strdup(SA, "monthname"); }
 | TIMESTAMPADD { $$ = sa_strdup(SA, "timestampadd"); }
 | TIMESTAMPDIFF { $$ = sa_strdup(SA, "timestampdiff"); }
+| IFNULL { $$ = sa_strdup(SA, "ifnull"); }
 ;
 
 lngval:
@@ -6531,6 +6532,12 @@ odbc_scalar_func:
           append_symbol(l, $5);
 	  	  $$ = _symbol_create_list( SQL_BINOP, l ); 
 		}
+    | IFNULL '(' search_condition ',' search_condition ')'
+        { dlist *l = L();
+          append_symbol( l, $3);
+          append_symbol( l, $5);
+		  $$ = _symbol_create_list(SQL_COALESCE, l);
+        }
 ;
 
 odbc_data_type:
