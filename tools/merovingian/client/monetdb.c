@@ -129,17 +129,17 @@ command_help(int argc, char *argv[])
 		printf("Options:\n");
 		printf("  -a  kill all known databases\n");
 	} else if (strcmp(argv[1], "set") == 0) {
-		printf("Usage: monetdb set property=value database [database ...]\n");
-		printf("  sets property to value for the given database\n");
+		printf("Usage: monetdb set property=value [database ...]\n");
+		printf("  sets property to value for the given database(s), or all\n");
 		printf("  for a list of properties, use `monetdb get all`\n");
 	} else if (strcmp(argv[1], "get") == 0) {
 		printf("Usage: monetdb get <\"all\" | property,...> [database ...]\n");
 		printf("  gets value for property for the given database, or\n");
 		printf("  retrieves all properties for the given database\n");
 	} else if (strcmp(argv[1], "inherit") == 0) {
-		printf("Usage: monetdb inherit property database [database ...]\n");
+		printf("Usage: monetdb inherit property [database ...]\n");
 		printf("  unsets property, reverting to its inherited value from\n");
-		printf("  the default configuration for the given database\n");
+		printf("  the default configuration for the given database(s), or all\n");
 	} else if (strcmp(argv[1], "discover") == 0) {
 		printf("Usage: monetdb discover [expression]\n");
 		printf("  Lists the remote databases discovered by the MonetDB\n");
@@ -1151,6 +1151,7 @@ static _Noreturn void command_set(int argc, char *argv[], meroset type);
 static void
 command_set(int argc, char *argv[], meroset type)
 {
+	bool doall = true;
 	char *p = NULL;
 	char property[24] = "";
 	int i;
@@ -1162,7 +1163,7 @@ command_set(int argc, char *argv[], meroset type)
 	char *e;
 	int fails = 0;
 
-	if (argc >= 1 && argc <= 2) {
+	if (argc == 1) {
 		/* print help message for this command */
 		command_help(2, &argv[-1]);
 		exit(1);
@@ -1210,6 +1211,8 @@ command_set(int argc, char *argv[], meroset type)
 			}
 			argv[i] = NULL;
 		}
+		else
+			doall = false;
 	}
 
 	if (property[0] == '\0') {
@@ -1223,9 +1226,14 @@ command_set(int argc, char *argv[], meroset type)
 		free(e);
 		exit(2);
 	}
-	stats = globMatchDBS(&fails, argc, argv, &orig, argv[0]);
-	msab_freeStatus(&orig);
-	orig = stats;
+
+	/* look at the arguments and evaluate them based on a glob (hence we
+	 * listed all databases before) */
+	if (!doall) {
+		stats = globMatchDBS(&fails, argc, argv, &orig, "get");
+		msab_freeStatus(&orig);
+		orig = stats;
+	}
 
 	if (orig == NULL) {
 		/* error already printed by globMatchDBS */
