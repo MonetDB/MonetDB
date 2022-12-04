@@ -45659,6 +45659,11 @@ pattern inspect.getComment(X_0:str, X_1:str):bat[:str]
 INSPECTgetComment;
 Returns the function help information.
 inspect
+getDatabaseName
+command inspect.getDatabaseName():str 
+INSPECTgetDatabaseName;
+Return database name
+inspect
 getDefinition
 pattern inspect.getDefinition(X_0:str, X_1:str):bat[:str] 
 INSPECTgetDefinition;
