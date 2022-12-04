@@ -254,7 +254,8 @@ _initQlog(void)
 	}
 
 	QLOG_init = true;
-	TMsubcommit_list(commitlist, NULL, committop, getBBPlogno(), getBBPtransid());
+	if (TMsubcommit_list(commitlist, NULL, committop, getBBPlogno(), getBBPtransid()) != GDK_SUCCEED)
+		throw(MAL, "querylog.init", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 
@@ -341,7 +342,8 @@ QLOGempty(void *ret)
 	BATclear(QLOG_calls_cpuload,true);
 	BATclear(QLOG_calls_iowait,true);
 
-	TMsubcommit_list(commitlist, NULL, committop, getBBPlogno(), getBBPtransid());
+	if (TMsubcommit_list(commitlist, NULL, committop, getBBPlogno(), getBBPtransid()) != GDK_SUCCEED)
+		msg = createException(MAL, "querylog.empty", GDK_EXCEPTION);
 	MT_lock_unset(&QLOGlock);
 	return MAL_SUCCEED;
 }
@@ -380,9 +382,10 @@ QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL, "querylog.append", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
-	TMsubcommit_list(commitlist, NULL, committop, getBBPlogno(), getBBPtransid());
+	if (TMsubcommit_list(commitlist, NULL, committop, getBBPlogno(), getBBPtransid()) != GDK_SUCCEED)
+		msg = createException(MAL, "querylog", GDK_EXCEPTION);
 	MT_lock_unset(&QLOGlock);
-	return MAL_SUCCEED;
+	return msg;
 }
 
 static str
@@ -441,9 +444,10 @@ QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		MT_lock_unset(&QLOGlock);
 		throw(MAL, "querylog.call", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	TMsubcommit_list(commitlist, NULL, committop, getBBPlogno(), getBBPtransid());
+	if (TMsubcommit_list(commitlist, NULL, committop, getBBPlogno(), getBBPtransid()) != GDK_SUCCEED)
+		msg = createException(MAL, "querylog", GDK_EXCEPTION);
 	MT_lock_unset(&QLOGlock);
-	return MAL_SUCCEED;
+	return msg;
 }
 
 #include "mel.h"

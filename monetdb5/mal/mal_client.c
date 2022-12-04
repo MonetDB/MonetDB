@@ -315,7 +315,7 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 	}
 	MT_lock_unset(&mal_contextLock);
 
-	if (c)
+	if (c && profilerStatus > 0)
 		profilerEvent(NULL,
 					  &(struct NonMalEvent)
 					  {CLIENT_START, c, c->session,  NULL, NULL, 0, 0});

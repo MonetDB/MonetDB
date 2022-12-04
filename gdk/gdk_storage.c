@@ -743,10 +743,12 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 		if (b->theap != bi->h) {
 			assert(b->theap->dirty);
 			b->theap->wasempty = bi->h->wasempty;
+			b->theap->hasfile |= bi->h->hasfile;
 		}
 		if (b->tvheap && b->tvheap != bi->vh) {
 			assert(b->tvheap->dirty);
 			b->tvheap->wasempty = bi->vh->wasempty;
+			b->tvheap->hasfile |= bi->vh->hasfile;
 		}
 		if (size != b->batCount || b->batInserted < b->batCount) {
 			/* if the sizes don't match, the BAT must be dirty */
