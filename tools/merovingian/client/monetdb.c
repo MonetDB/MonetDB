@@ -642,7 +642,7 @@ simple_argv_cmd(char *cmd, sabdb *dbs, char *merocmd,
  * for performing merocmd action.
  */
 static int
-simple_command(int argc, char *argv[], char *merocmd, char *successmsg, bool glob)
+simple_command(int argc, char *argv[], char *merocmd, char *successmsg)
 {
 	int i;
 	sabdb *orig = NULL;
@@ -669,31 +669,17 @@ simple_command(int argc, char *argv[], char *merocmd, char *successmsg, bool glo
 		}
 	}
 
-	if (glob) {
-		if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
-			fprintf(stderr, "%s: %s\n", argv[0], e);
-			free(e);
-			exit(2);
-		}
-		stats = globMatchDBS(&fails, argc, argv, &orig, argv[0]);
-		msab_freeStatus(&orig);
-		orig = stats;
-
-		if (orig == NULL)
-			return 1;
-	} else {
-		for (i = 1; i < argc; i++) {
-			if (argv[i] != NULL) {
-				/* maintain input order */
-				if (orig == NULL) {
-					stats = orig = calloc(1, sizeof(sabdb));
-				} else {
-					stats = stats->next = calloc(1, sizeof(sabdb));
-				}
-				stats->dbname = strdup(argv[i]);
-			}
-		}
+	if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
+		fprintf(stderr, "%s: %s\n", argv[0], e);
+		free(e);
+		exit(2);
 	}
+	stats = globMatchDBS(&fails, argc, argv, &orig, argv[0]);
+	msab_freeStatus(&orig);
+	orig = stats;
+
+	if (orig == NULL)
+		return 1;
 
 	simple_argv_cmd(argv[0], orig, merocmd, successmsg, NULL);
 	msab_freeStatus(&orig);
@@ -1693,13 +1679,13 @@ command_destroy(int argc, char *argv[])
 static int
 command_lock(int argc, char *argv[])
 {
-	return simple_command(argc, argv, "lock", "put database under maintenance", true);
+	return simple_command(argc, argv, "lock", "put database under maintenance");
 }
 
 static int
 command_release(int argc, char *argv[])
 {
-	return simple_command(argc, argv, "release", "taken database out of maintenance mode", true);
+	return simple_command(argc, argv, "release", "taken database out of maintenance mode");
 }
 
 /* Snapshot this single database to the given file */
