@@ -86,17 +86,21 @@ command_help(int argc, char *argv[])
 		printf("Options:\n");
 		printf("  -f  do not ask for confirmation, destroy right away\n");
 	} else if (strcmp(argv[1], "lock") == 0) {
-		printf("Usage: monetdb lock database [database ...]\n");
+		printf("Usage: monetdb lock [-a] database [database ...]\n");
 		printf("  Puts the given database in maintenance mode.  A database\n");
 		printf("  under maintenance can only be connected to by the DBA.\n");
 		printf("  A database which is under maintenance is not started\n");
 		printf("  automatically.  Use the \"release\" command to bring\n");
 		printf("  the database back for normal usage.\n");
+		printf("Options:\n");
+		printf("  -a  locks all known databases\n");
 	} else if (strcmp(argv[1], "release") == 0) {
-		printf("Usage: monetdb release database [database ...]\n");
+		printf("Usage: monetdb release [-a] database [database ...]\n");
 		printf("  Brings back a database from maintenance mode.  A released\n");
 		printf("  database is available again for normal use.  Use the\n");
 		printf("  \"lock\" command to take a database under maintenance.\n");
+		printf("Options:\n");
+		printf("  -a  releases all known databases\n");
 	} else if (strcmp(argv[1], "status") == 0) {
 		printf("Usage: monetdb status [-lc] [expression ...]\n");
 		printf("  Shows the state of a given glob-style database match, or\n");
@@ -649,7 +653,7 @@ simple_command(int argc, char *argv[], char *merocmd, char *successmsg)
 	sabdb *stats = NULL;
 	char *e;
 	int fails = 0;
-
+	bool doall = false;
 	if (argc == 1) {
 		/* print help message for this command */
 		command_help(2, &argv[-1]);
@@ -662,7 +666,11 @@ simple_command(int argc, char *argv[], char *merocmd, char *successmsg)
 			argv[i] = NULL;
 			break;
 		}
-		if (argv[i][0] == '-') {
+		if (strcmp(argv[i], "-a") == 0) {
+			doall = true;
+			break;
+		}
+		else if (argv[i][0] == '-') {
 			fprintf(stderr, "%s: unknown option: %s\n", argv[0], argv[i]);
 			command_help(argc + 1, &argv[-1]);
 			exit(1);
@@ -674,9 +682,12 @@ simple_command(int argc, char *argv[], char *merocmd, char *successmsg)
 		free(e);
 		exit(2);
 	}
-	stats = globMatchDBS(&fails, argc, argv, &orig, argv[0]);
-	msab_freeStatus(&orig);
-	orig = stats;
+
+	if (!doall) {
+		stats = globMatchDBS(&fails, argc, argv, &orig, argv[0]);
+		msab_freeStatus(&orig);
+		orig = stats;
+	}
 
 	if (orig == NULL)
 		return 1;
