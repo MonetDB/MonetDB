@@ -1258,11 +1258,12 @@ command_set(int argc, char *argv[], meroset type)
 		exit(state);
 	}
 
+	if (type == INHERIT) {
+		strncat(property, "=", sizeof(property) - strlen(property) - 1);
+		p = property;
+	}
+
 	for (stats = orig; stats != NULL; stats = stats->next) {
-		if (type == INHERIT) {
-			strncat(property, "=", sizeof(property) - strlen(property) - 1);
-			p = property;
-		}
 		out = control_send(&res, mero_host, mero_port,
 				stats->dbname, p, false, mero_pass);
 		if (out != NULL || strcmp(res, "OK") != 0) {
