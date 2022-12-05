@@ -275,15 +275,37 @@ static volatile MT_Id locked_by = 0;
 static int BBPunloadCnt = 0;
 static MT_Lock GDKunloadLock = MT_LOCK_INITIALIZER(GDKunloadLock);
 
+/* GDKtmLock protects all accesses and changes to BAKDIR and SUBDIR
+ * must use BBPtmlock()/BBPtmunlock() to set/unset the lock */
+static MT_Lock GDKtmLock = MT_LOCK_INITIALIZER(GDKtmLock);
+static char *lockfile;
+static int lockfd;
+
 void
 BBPtmlock(void)
 {
 	MT_lock_set(&GDKtmLock);
+	if (GDKinmemory(0))
+		return;
+	/* also use an external lock file to synchronize with external
+	 * programs */
+	if (lockfile == NULL) {
+		lockfile = GDKfilepath(0, NULL, ".tm_lock", NULL);
+		if (lockfile == NULL)
+			return;
+	}
+	lockfd = MT_lockf(lockfile, F_LOCK);
 }
 
 void
 BBPtmunlock(void)
 {
+	if (lockfile && lockfd >= 0) {
+		assert(!GDKinmemory(0));
+		MT_lockf(lockfile, F_ULOCK);
+		close(lockfd);
+		lockfd = -1;
+	}
 	MT_lock_unset(&GDKtmLock);
 }
 
@@ -300,7 +322,7 @@ BBPlock(void)
 		MT_lock_set(&GDKunloadLock);
 	}
 
-	MT_lock_set(&GDKtmLock);
+	BBPtmlock();
 	for (i = 0; i <= BBP_THREADMASK; i++)
 		MT_lock_set(&GDKcacheLock(i));
 	for (i = 0; i <= BBP_BATMASK; i++)
@@ -320,7 +342,7 @@ BBPunlock(void)
 	for (i = BBP_THREADMASK; i >= 0; i--)
 		MT_lock_unset(&GDKcacheLock(i));
 	locked_by = 0;
-	MT_lock_unset(&GDKtmLock);
+	BBPtmunlock();
 }
 
 static gdk_return
@@ -1594,11 +1616,11 @@ BBPinit(bool first)
 	if (!GDKinmemory(0)) {
 		str bbpdirstr, backupbbpdirstr;
 
-		MT_lock_set(&GDKtmLock);
+		BBPtmlock();
 
 		if (!(bbpdirstr = GDKfilepath(0, BATDIR, "BBP", "dir"))) {
 			TRC_CRITICAL(GDK, "GDKmalloc failed\n");
-			MT_lock_unset(&GDKtmLock);
+			BBPtmunlock();
 			GDKdebug = dbg;
 			return GDK_FAIL;
 		}
@@ -1606,7 +1628,7 @@ BBPinit(bool first)
 		if (!(backupbbpdirstr = GDKfilepath(0, BAKDIR, "BBP", "dir"))) {
 			GDKfree(bbpdirstr);
 			TRC_CRITICAL(GDK, "GDKmalloc failed\n");
-			MT_lock_unset(&GDKtmLock);
+			BBPtmunlock();
 			GDKdebug = dbg;
 			return GDK_FAIL;
 		}
@@ -1615,7 +1637,7 @@ BBPinit(bool first)
 			GDKfree(bbpdirstr);
 			GDKfree(backupbbpdirstr);
 			TRC_CRITICAL(GDK, "cannot remove directory %s\n", TEMPDIR);
-			MT_lock_unset(&GDKtmLock);
+			BBPtmunlock();
 			GDKdebug = dbg;
 			return GDK_FAIL;
 		}
@@ -1624,7 +1646,7 @@ BBPinit(bool first)
 			GDKfree(bbpdirstr);
 			GDKfree(backupbbpdirstr);
 			TRC_CRITICAL(GDK, "cannot remove directory %s\n", DELDIR);
-			MT_lock_unset(&GDKtmLock);
+			BBPtmunlock();
 			GDKdebug = dbg;
 			return GDK_FAIL;
 		}
@@ -1634,7 +1656,7 @@ BBPinit(bool first)
 			GDKfree(bbpdirstr);
 			GDKfree(backupbbpdirstr);
 			TRC_CRITICAL(GDK, "cannot properly recover_subdir process %s.", SUBDIR);
-			MT_lock_unset(&GDKtmLock);
+			BBPtmunlock();
 			GDKdebug = dbg;
 			return GDK_FAIL;
 		}
@@ -1645,14 +1667,14 @@ BBPinit(bool first)
 			if (recover_dir(0, MT_stat(bbpdirstr, &st) == 0) != GDK_SUCCEED) {
 				GDKfree(bbpdirstr);
 				GDKfree(backupbbpdirstr);
-				MT_lock_unset(&GDKtmLock);
+				BBPtmunlock();
 				goto bailout;
 			}
 			if ((fp = GDKfilelocate(0, "BBP", "r", "dir")) == NULL) {
 				GDKfree(bbpdirstr);
 				GDKfree(backupbbpdirstr);
 				TRC_CRITICAL(GDK, "cannot open recovered BBP.dir.");
-				MT_lock_unset(&GDKtmLock);
+				BBPtmunlock();
 				GDKdebug = dbg;
 				return GDK_FAIL;
 			}
@@ -1666,7 +1688,7 @@ BBPinit(bool first)
 				if (BBPdir_init() != GDK_SUCCEED) {
 					GDKfree(bbpdirstr);
 					GDKfree(backupbbpdirstr);
-					MT_lock_unset(&GDKtmLock);
+					BBPtmunlock();
 					goto bailout;
 				}
 			} else if (GDKmove(0, BATDIR, "BBP", "bak", BATDIR, "BBP", "dir", true) == GDK_SUCCEED)
@@ -1676,14 +1698,14 @@ BBPinit(bool first)
 				GDKsyserror("cannot open BBP.dir");
 				GDKfree(bbpdirstr);
 				GDKfree(backupbbpdirstr);
-				MT_lock_unset(&GDKtmLock);
+				BBPtmunlock();
 				goto bailout;
 			}
 		}
 		assert(fp != NULL);
 		GDKfree(bbpdirstr);
 		GDKfree(backupbbpdirstr);
-		MT_lock_unset(&GDKtmLock);
+		BBPtmunlock();
 	}
 
 	/* scan the BBP.dir to obtain current size */
@@ -1740,9 +1762,9 @@ BBPinit(bool first)
 
 	/* will call BBPrecover if needed */
 	if (!GDKinmemory(0)) {
-		MT_lock_set(&GDKtmLock);
+		BBPtmlock();
 		gdk_return rc = BBPprepare(false);
-		MT_lock_unset(&GDKtmLock);
+		BBPtmunlock();
 		if (rc != GDK_SUCCEED) {
 #ifdef GDKLIBRARY_HASHASH
 			GDKfree(hashbats);

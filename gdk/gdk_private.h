@@ -476,7 +476,6 @@ extern batlock_t GDKbatLock[BBP_BATMASK + 1];
 extern size_t GDK_mmap_minsize_persistent; /* size after which we use memory mapped files for persistent heaps */
 extern size_t GDK_mmap_minsize_transient; /* size after which we use memory mapped files for transient heaps */
 extern size_t GDK_mmap_pagesize; /* mmap granularity */
-extern MT_Lock GDKtmLock;
 
 #define BATcheck(tst, err)				\
 	do {						\
