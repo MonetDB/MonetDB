@@ -41,6 +41,7 @@ def extract(f):
     decls = []
 
     data = exportutils.preprocess(f, include=False)
+    data = re.sub(r'"[^"\\]*(\\.[^"\\]*)*"', '""', data)
 
     res = expre.search(data)
     while res is not None:
