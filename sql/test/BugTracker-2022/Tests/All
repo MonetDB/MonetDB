@@ -21,3 +21,4 @@ values.Bug-7336
 temp-table-index.Bug
 rerun-temp-table-index-crashes-server.Bug
 rerun-temp-table-index-fails-to-restart-server.Bug
+distinct-crash.Bug-7342
