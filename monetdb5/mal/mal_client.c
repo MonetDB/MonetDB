@@ -267,6 +267,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->sessiontimeout = 0;
 	c->qryctx.starttime = 0;
 	ATOMIC_SET(&c->qryctx.datasize, 0);
+	c->qryctx.maxmem = 0;
 	c->itrace = 0;
 	c->errbuf = 0;
 
