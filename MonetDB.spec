@@ -850,6 +850,11 @@ fi
 %endif
 
 %changelog
+* Mon Dec 05 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.11-20221205
+- Rebuilt.
+- GH#7342: column which datatype is double couldn't group or aggregation
+  in version 11.45.7
+
 * Mon Nov 28 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.9-20221128
 - Rebuilt.
 - GH#7330: Creating temporary table fails after reconnect

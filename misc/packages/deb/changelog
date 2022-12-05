@@ -1,3 +1,11 @@
+monetdb (11.45.11) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7342: column which datatype is double couldn't group or aggregation
+    in version 11.45.7
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 05 Dec 2022 14:07:46 +0100
+
 monetdb (11.45.9) unstable; urgency=low
 
   * Rebuilt.
