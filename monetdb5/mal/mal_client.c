@@ -572,13 +572,13 @@ MCmemoryClaim(void)
 	Client cntxt = mal_clients;
 
 	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++)
-	if( cntxt->idle == 0 && cntxt->mode == RUNCLIENT){
-		if(cntxt->memorylimit){
-			claim += cntxt->memorylimit;
-			active ++;
-		} else
-			return GDK_mem_maxsize;
-	}
+		if( cntxt->idle == 0 && cntxt->mode == RUNCLIENT){
+			if(cntxt->memorylimit){
+				claim += cntxt->memorylimit;
+				active ++;
+			} else
+				return GDK_mem_maxsize;
+		}
 	if(active == 0 ||  claim  * LL_CONSTANT(1048576) >= GDK_mem_maxsize)
 		return GDK_mem_maxsize;
 	return claim * LL_CONSTANT(1048576);
