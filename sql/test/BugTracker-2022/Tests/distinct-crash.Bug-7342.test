@@ -1,0 +1,20 @@
+statement ok
+create table foo (d double)
+
+statement ok
+insert into foo values(10.0),(23.456),(3242.435)
+
+query R rowsort
+select d+10 as column2 from (select d, d + 10 as column1 from foo) tfoo
+----
+20.000
+3252.435
+33.456
+
+query R rowsort
+select distinct d+10 as column2 from (select d, d + 10 as column1 from foo) tfoo
+----
+20.000
+3252.435
+33.456
+
