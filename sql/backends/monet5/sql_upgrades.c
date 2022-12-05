@@ -378,7 +378,7 @@ sql_update_storagemodel(Client c, mvc *sql, bool oct2020_upgrade)
 	/* new 75_storagemodel.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 		/* drop objects in reverse order of original creation of old 75_storagemodel.sql */
-		"drop view if exists sys.tablestoragemodel;\n"
+		"drop view if exists sys.tablestoragemodel cascade;\n"
 		"drop view if exists sys.storagemodel cascade;\n"
 		"drop function if exists sys.storagemodel() cascade;\n");
 
