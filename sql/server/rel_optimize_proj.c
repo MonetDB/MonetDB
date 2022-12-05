@@ -1618,8 +1618,6 @@ rel_simplify_groupby_columns(visitor *v, sql_rel *rel)
 											}
 										}
 										col = c; /* 'c' is a column reference from the left relation */
-										if (col->type == e_column)
-											exp_setalias(col, col->l, col->r); /* zap alias */
 										done = true;
 									} else {
 										exp = c; /* maybe a nested function call, let's continue searching */
