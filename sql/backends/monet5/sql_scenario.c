@@ -269,6 +269,11 @@ SQLprepareClient(Client c, int login)
 			default:
 				break;
 		}
+		lng maxmem;
+		if (monet5_user_get_max_memory(m, m->user_id, &maxmem) == 0)
+			c->qryctx.maxmem = (ATOMIC_BASE_TYPE) (maxmem > 0 ? maxmem : 0);
+		else
+			c->qryctx.maxmem = 0;
 	}
 
 	if (c->handshake_options) {
