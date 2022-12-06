@@ -267,6 +267,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->sessiontimeout = 0;
 	c->qryctx.starttime = 0;
 	ATOMIC_SET(&c->qryctx.datasize, 0);
+	c->qryctx.maxmem = 0;
 	c->itrace = 0;
 	c->errbuf = 0;
 
@@ -571,13 +572,13 @@ MCmemoryClaim(void)
 	Client cntxt = mal_clients;
 
 	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++)
-	if( cntxt->idle == 0 && cntxt->mode == RUNCLIENT){
-		if(cntxt->memorylimit){
-			claim += cntxt->memorylimit;
-			active ++;
-		} else
-			return GDK_mem_maxsize;
-	}
+		if( cntxt->idle == 0 && cntxt->mode == RUNCLIENT){
+			if(cntxt->memorylimit){
+				claim += cntxt->memorylimit;
+				active ++;
+			} else
+				return GDK_mem_maxsize;
+		}
 	if(active == 0 ||  claim  * LL_CONSTANT(1048576) >= GDK_mem_maxsize)
 		return GDK_mem_maxsize;
 	return claim * LL_CONSTANT(1048576);
