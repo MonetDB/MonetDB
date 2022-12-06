@@ -51,7 +51,7 @@ GDKuniqueid(size_t offset)
 }
 
 //! Create a memory mapped file if it does not exist and open it
-/* id: The unique identifier of the memory mapped file (use GDKuniquemmapid to get a unique identifier)
+/* id: The unique identifier of the memory mapped file (use GDKuniqueid to get a unique identifier)
  * size: Minimum required size of the file
  * return: Return value pointing into the file, NULL if not successful
 */
@@ -67,11 +67,12 @@ GDKinitmmap(size_t id, size_t size, size_t *return_size)
 	GDKmmapfile(address, sizeof(address), id);
 
 	/* round up to multiple of GDK_mmap_pagesize with a
-	 * minimum of one
-	 size = (maxsize + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
-	 if (size == 0)
-	 size = GDK_mmap_pagesize; */
-	path = GDKfilepath(0, BATDIR, address, "tmp");
+	 * minimum of one */
+	size = (size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
+	if (size == 0)
+		size = GDK_mmap_pagesize;
+	int farmid = BBPselectfarm(TRANSIENT, TYPE_bte, dataheap);
+	path = GDKfilepath(farmid, BATDIR, address, "tmp");
 	if (path == NULL) {
 		return NULL;
 	}
@@ -113,7 +114,8 @@ GDKreleasemmap(void *ptr, size_t size, size_t id)
 	if (GDKmunmap(ptr, size) != GDK_SUCCEED) {
 		return GDK_FAIL;
 	}
-	path = GDKfilepath(0, BATDIR, address, "tmp");
+	int farmid = BBPselectfarm(TRANSIENT, TYPE_bte, dataheap);
+	path = GDKfilepath(farmid, BATDIR, address, "tmp");
 	if (path == NULL) {
 		return GDK_FAIL;
 	}
