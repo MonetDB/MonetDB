@@ -50,9 +50,13 @@ MNDBNativeSql(ODBCDbc *dbc,
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\"\n", (int) TextLength1, (char *) InStatementText);
 #endif
-
-	query = ODBCTranslateSQL(dbc, InStatementText, (size_t) TextLength1,
-				 SQL_NOSCAN_OFF);
+	if (dbc->minor >= 46)
+		query = (char *) InStatementText;
+	else
+		query = ODBCTranslateSQL(dbc,
+			       	InStatementText,
+			       	(size_t) TextLength1,
+				SQL_NOSCAN_OFF);
 	if (query == NULL) {
 		/* Memory allocation error */
 		addDbcError(dbc, "HY001", NULL, 0);
@@ -61,7 +65,8 @@ MNDBNativeSql(ODBCDbc *dbc,
 	copyString(query, strlen(query), OutStatementText, BufferLength,
 		   TextLength2Ptr, SQLINTEGER, addDbcError, dbc,
 		   free(query); return SQL_ERROR);
-	free(query);
+	if (query != (char *) InStatementText)
+		free(query);
 
 	return dbc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }
