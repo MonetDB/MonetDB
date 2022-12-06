@@ -133,10 +133,12 @@ TABLETcreate_bats(Tablet *as, BUN est)
 		fmt[i].c = void_bat_create(fmt[i].adt, est);
 		if (!fmt[i].c) {
 			while (i > 0) {
-				if (!fmt[--i].skip)
+				if (!fmt[--i].skip) {
 					BBPreclaim(fmt[i].c);
+					fmt[i].c = NULL;
+				}
 			}
-			throw(SQL, "copy", "Failed to create bat of size " BUNFMT "\n", as->nr);
+			throw(SQL, "copy", "Failed to create bat of size " BUNFMT "\n", est);
 		}
 		fmt[i].ci = bat_iterator_nolock(fmt[i].c);
 		nr++;
