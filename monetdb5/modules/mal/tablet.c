@@ -249,10 +249,9 @@ tablet_skip_string(char *s, char quote, bool escape)
 static int
 TABLET_error(stream *s)
 {
-	char *err = mnstr_error(s);
-	/* use free as stream allocates outside GDK */
+	const char *err = mnstr_peek_error(s);
 	if (err)
-		free(err);
+		TRC_ERROR(MAL_SERVER, "Stream error: %s\n", err);
 	return -1;
 }
 
