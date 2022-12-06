@@ -217,7 +217,6 @@ bat BBPlimit;
 void BBPlock(void);
 BAT *BBPquickdesc(bat b);
 int BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn, int *hashash, char *batname, char *filename, char **options);
-int BBPreclaim(BAT *b);
 int BBPrelease(bat b);
 int BBPrename(BAT *b, const char *nme);
 int BBPretain(bat b);
