@@ -166,6 +166,7 @@ typedef struct QryCtx {
 	lng starttime;
 	lng querytimeout;
 	ATOMIC_TYPE datasize;
+	ATOMIC_BASE_TYPE maxmem;
 } QryCtx;
 
 gdk_export bool MT_thread_init(void);
