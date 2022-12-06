@@ -54,8 +54,14 @@ ODBCExecDirect(ODBCStmt *stmt, const SQLCHAR *StatementText, SQLINTEGER TextLeng
 			stmt->Dbc->qtimeout = stmt->qtimeout;
 	}
 
-	query = ODBCTranslateSQL(stmt->Dbc, StatementText, (size_t) TextLength,
-				 stmt->noScan);
+	if (stmt->Dbc->minor >= 46)
+		query = (char *) StatementText;
+	else
+		query = ODBCTranslateSQL(
+				stmt->Dbc,
+			       	StatementText,
+			       	(size_t) TextLength,
+				stmt->noScan);
 	if (query == NULL) {
 		/* Memory allocation error */
 		addStmtError(stmt, "HY001", NULL, 0);
@@ -81,7 +87,8 @@ ODBCExecDirect(ODBCStmt *stmt, const SQLCHAR *StatementText, SQLINTEGER TextLeng
 		stmt->Dbc->cachelimit = 100;
 	}
 	ret = mapi_query_handle(hdl, query);
-	free(query);
+	if (query != (char *) StatementText)
+		free(query);
 	switch (ret) {
 	case MOK:
 		break;
