@@ -50,6 +50,17 @@ GDKuniqueid(size_t offset)
 	return (size_t) ATOMIC_ADD(&interprocess_unique_id, (ATOMIC_BASE_TYPE) offset);
 }
 
+//! snprintf the file name of a memory mapped file (as created by GDKinitmmap)
+/* buffer: The buffer to write the name to
+ * max: The maxsize of the buffer (should be at least ~10 characters)
+ * id: Identifier of the file
+*/
+static inline void
+GDKmmapfile(char *buffer, size_t max, size_t id)
+{
+	snprintf(buffer, max, "pymmap%zu", id);
+}
+
 //! Create a memory mapped file if it does not exist and open it
 /* id: The unique identifier of the memory mapped file (use GDKuniqueid to get a unique identifier)
  * size: Minimum required size of the file
@@ -124,18 +135,6 @@ GDKreleasemmap(void *ptr, size_t size, size_t id)
 		GDKsyserror("cannot remove '%s'", path);
 	GDKfree(path);
 	return ret < 0 ? GDK_FAIL : GDK_SUCCEED;
-}
-
-//! snprintf the file name of a memory mapped file (as created by GDKinitmmap)
-/* buffer: The buffer to write the name to
- * max: The maxsize of the buffer (should be at least ~10 characters)
- * id: Identifier of the file
-*/
-gdk_return
-GDKmmapfile(char *buffer, size_t max, size_t id)
-{
-	snprintf(buffer, max, "pymmap%zu", id);
-	return GDK_SUCCEED;
 }
 
 static gdk_return
