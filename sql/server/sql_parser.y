@@ -6609,7 +6609,7 @@ odbc_data_type:
     | SQL_TIME
         { sql_find_subtype(&$$, "time", 0, 0); }
     | SQL_TIMESTAMP
-        { sql_find_subtype(&$$, "timestamp", 0, 0); }
+        { sql_find_subtype(&$$, "timestamp", 6, 0); }
     | SQL_TINYINT
         { sql_find_subtype(&$$, "tinyint", 0, 0); }
     | SQL_VARBINARY

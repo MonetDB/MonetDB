@@ -107,6 +107,12 @@ select { fn timestampadd(SQL_TSI_HOUR, 1, timestamp'2022-11-14 12:12:12') }
 ----
 2022-11-14 13:12:12
 
+# corner case 
+query T rowsort
+select { fn timestampadd(SQL_TSI_DAY, 1, time'12:12:12') }
+----
+2022-11-14 13:12:12
+
 query T rowsort
 select { fn timestampdiff(SQL_TSI_HOUR, 1, timestamp'2022-11-14 12:12:12') }
 ----
