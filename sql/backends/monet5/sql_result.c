@@ -856,25 +856,18 @@ create_prepare_result(backend *b, cq *q, int nrows)
 		error = -1;
 
 	wrapup:
-		if (btype)
-			BBPunfix(btype->batCacheid);
-		if (bdigits)
-			BBPunfix(bdigits->batCacheid);
-		if (bimpl)
-			BBPunfix(bimpl->batCacheid);
-		if (bscale)
-			BBPunfix(bscale->batCacheid);
-		if (bschema)
-			BBPunfix(bschema->batCacheid);
-		if (btable)
-			BBPunfix(btable->batCacheid);
-		if (bcolumn)
-			BBPunfix(bcolumn->batCacheid);
+		BBPreclaim(btype);
+		BBPreclaim(bdigits);
+		BBPreclaim(bimpl);
+		BBPreclaim(bscale);
+		BBPreclaim(bschema);
+		BBPreclaim(btable);
+		BBPreclaim(bcolumn);
 		if (error < 0 && b->results) {
 			res_table_destroy(b->results);
 			b->results = NULL;
-		} else if (order)
-			BBPunfix(order->batCacheid);
+		} else
+			BBPreclaim(order);
 		return error;
 }
 
@@ -1561,8 +1554,7 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng star
 static int
 export_error(BAT *order)
 {
-	if (order)
-		BBPunfix(order->batCacheid);
+	BBPreclaim(order);
 	return -4;
 }
 

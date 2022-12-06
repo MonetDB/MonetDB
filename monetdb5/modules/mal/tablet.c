@@ -81,8 +81,7 @@ TABLETdestroy_format(Tablet *as)
 	Column *fmt = as->format;
 
 	for (p = 0; p < as->nr_attrs; p++) {
-		if (fmt[p].c)
-			BBPunfix(fmt[p].c->batCacheid);
+		BBPreclaim(fmt[p].c);
 		if (fmt[p].data)
 			GDKfree(fmt[p].data);
 	}
@@ -1528,14 +1527,10 @@ create_rejects_table(Client cntxt)
 		cntxt->error_msg = COLnew(0, TYPE_str, 0, TRANSIENT);
 		cntxt->error_input = COLnew(0, TYPE_str, 0, TRANSIENT);
 		if (cntxt->error_row == NULL || cntxt->error_fld == NULL || cntxt->error_msg == NULL || cntxt->error_input == NULL) {
-			if (cntxt->error_row)
-				BBPunfix(cntxt->error_row->batCacheid);
-			if (cntxt->error_fld)
-				BBPunfix(cntxt->error_fld->batCacheid);
-			if (cntxt->error_msg)
-				BBPunfix(cntxt->error_msg->batCacheid);
-			if (cntxt->error_input)
-				BBPunfix(cntxt->error_input->batCacheid);
+			BBPreclaim(cntxt->error_row);
+			BBPreclaim(cntxt->error_fld);
+			BBPreclaim(cntxt->error_msg);
+			BBPreclaim(cntxt->error_input);
 			cntxt->error_row = cntxt->error_fld = cntxt->error_msg = cntxt->error_input = NULL;
 		}
 	}

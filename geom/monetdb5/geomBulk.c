@@ -84,8 +84,7 @@ bailout:
 		bat_iterator_end(&bi);
 		BBPunfix(b->batCacheid);
 	}
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (dst && !msg) {
 		BATsetcount(dst, ci.ncand);
 		dst->tnil = nils;
@@ -176,8 +175,7 @@ bailout:
 		bat_iterator_end(&bi);
 		BBPunfix(b->batCacheid);
 	}
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (dst && !msg) {
 		BATsetcount(dst, ci.ncand);
 		dst->tnil = nils;
@@ -779,10 +777,8 @@ wkbBox2D_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	bat_iterator_end(&bBAT_iter);
 
   clean:
-	if (aBAT)
-		BBPunfix(aBAT->batCacheid);
-	if (bBAT)
-		BBPunfix(bBAT->batCacheid);
+	BBPreclaim(aBAT);
+	BBPreclaim(bBAT);
 
 	return ret;
 }
@@ -840,10 +836,8 @@ wkbContains_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	bat_iterator_end(&bBAT_iter);
 
   clean:
-	if (aBAT)
-		BBPunfix(aBAT->batCacheid);
-	if (bBAT)
-		BBPunfix(bBAT->batCacheid);
+	BBPreclaim(aBAT);
+	BBPreclaim(bBAT);
 
 	return ret;
 }
@@ -1076,14 +1070,10 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
 	if (mBAT)
 		bat_iterator_end(&mBAT_iter);
   clean:
-	if (xBAT)
-		BBPunfix(xBAT->batCacheid);
-	if (yBAT)
-		BBPunfix(yBAT->batCacheid);
-	if (zBAT)
-		BBPunfix(zBAT->batCacheid);
-	if (mBAT)
-		BBPunfix(mBAT->batCacheid);
+	BBPreclaim(xBAT);
+	BBPreclaim(yBAT);
+	BBPreclaim(zBAT);
+	BBPreclaim(mBAT);
 
 	return ret;
 }
@@ -1194,10 +1184,8 @@ wkbDistance_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	bat_iterator_end(&aBAT_iter);
 	bat_iterator_end(&bBAT_iter);
   clean:
-	if (aBAT)
-		BBPunfix(aBAT->batCacheid);
-	if (bBAT)
-		BBPunfix(bBAT->batCacheid);
+	BBPreclaim(aBAT);
+	BBPreclaim(bBAT);
 
 	return ret;
 
@@ -1518,10 +1506,8 @@ wkbMakeLine_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	aBAT = BATdescriptor(*aBAT_id);
 	bBAT = BATdescriptor(*bBAT_id);
 	if (aBAT == NULL || bBAT == NULL) {
-		if (aBAT)
-			BBPunfix(aBAT->batCacheid);
-		if (bBAT)
-			BBPunfix(bBAT->batCacheid);
+		BBPreclaim(aBAT);
+		BBPreclaim(bBAT);
 		throw(MAL, "batgeom.MakeLine", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	//check if the BATs are aligned
@@ -1590,10 +1576,8 @@ wkbUnion_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	aBAT = BATdescriptor(*aBAT_id);
 	bBAT = BATdescriptor(*bBAT_id);
 	if (aBAT == NULL || bBAT == NULL) {
-		if (aBAT)
-			BBPunfix(aBAT->batCacheid);
-		if (bBAT)
-			BBPunfix(bBAT->batCacheid);
+		BBPreclaim(aBAT);
+		BBPreclaim(bBAT);
 		throw(MAL, "batgeom.Union", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	//check if the BATs are aligned

@@ -993,9 +993,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 				}
 				GDKfree(split_bats);
 			}
-			if (aggr_group != NULL) {
-				BBPunfix(aggr_group->batCacheid);
-			}
+			BBPreclaim(aggr_group);
 			if (msg != MAL_SUCCEED) {
 				goto wrapup;
 			}
@@ -1355,10 +1353,8 @@ wrapup:
 	// Cleanup input BATs
 	for (i = pci->retc + 2 + has_card_arg; i < pci->argc; i++) {
 		PyInput *inp = &pyinput_values[i - (pci->retc + 2 + has_card_arg)];
-		if (inp->bat != NULL)
-			BBPunfix(inp->bat->batCacheid);
-		if (inp->conv_bat != NULL)
-			BBPunfix(inp->conv_bat->batCacheid); /* delayed free */
+		BBPreclaim(inp->bat);
+		BBPreclaim(inp->conv_bat); /* delayed free */
 	}
 	if (pResult != NULL && gstate == 0) {
 		// if there is a pResult here, we are running single threaded (LANGUAGE
