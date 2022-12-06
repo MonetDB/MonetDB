@@ -590,6 +590,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 					BBPunfix(fmt[j].c->batCacheid);
 				}
 				GDKfree(fmt[i].data);
+				GDKfree(fmt);
 				throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			fmt[i].c = NULL;

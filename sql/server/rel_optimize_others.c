@@ -84,7 +84,7 @@ rel_find_ref( sql_rel *r)
  * The result should again used in a projection.
  */
 static list *
-exps_push_down_prj(mvc *sql, list *exps, sql_rel *f, sql_rel *t)
+exps_push_down_prj(mvc *sql, list *exps, sql_rel *f, sql_rel *t, bool keepalias)
 {
 	node *n;
 	list *nl = new_exp_list(sql->sa);
@@ -96,6 +96,8 @@ exps_push_down_prj(mvc *sql, list *exps, sql_rel *f, sql_rel *t)
 		if (!narg)
 			return NULL;
 		narg = exp_propagate(sql->sa, narg, arg);
+		if (!keepalias && narg->type == e_column)
+			exp_setalias(narg, narg->l, narg->r);
 		append(nl, narg);
 	}
 	return nl;
@@ -155,7 +157,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			list *l = NULL, *r = NULL;
 
-			if (!(l = exps_push_down_prj(sql, e->l, f, t)) || !(r = exps_push_down_prj(sql, e->r, f, t)))
+			if (!(l = exps_push_down_prj(sql, e->l, f, t, true)) || !(r = exps_push_down_prj(sql, e->r, f, t, true)))
 				return NULL;
 			if (e->flag == cmp_filter) {
 				ne = exp_filter(sql->sa, l, r, e->f, is_anti(e));
@@ -165,7 +167,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			list *r = NULL;
 
-			if (!(l = exp_push_down_prj(sql, e->l, f, t)) || !(r = exps_push_down_prj(sql, e->r, f, t)))
+			if (!(l = exp_push_down_prj(sql, e->l, f, t)) || !(r = exps_push_down_prj(sql, e->r, f, t, true)))
 				return NULL;
 			ne = exp_in(sql->sa, l, r, e->flag);
 		} else {
@@ -193,7 +195,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		if (e->type == e_func && exp_unsafe(e,0))
 			return NULL;
 		if (!list_empty(l)) {
-			nl = exps_push_down_prj(sql, l, f, t);
+			nl = exps_push_down_prj(sql, l, f, t, false);
 			if (!nl)
 				return NULL;
 		}
@@ -207,7 +209,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		list *l = e->f, *nl = NULL;
 
 		if (!list_empty(l)) {
-			nl = exps_push_down_prj(sql, l, f, t);
+			nl = exps_push_down_prj(sql, l, f, t, false);
 			if (!nl)
 				return NULL;
 			ne = exp_values(sql->sa, nl);
