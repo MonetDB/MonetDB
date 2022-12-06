@@ -541,9 +541,8 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		throw(IO, "sql.copy_from", SQLSTATE(42000) "No stream (pointer) provided");
 	if (mnstr_errnr(bs->s) != MNSTR_NO__ERROR) {
 		mnstr_error_kind errnr = mnstr_errnr(bs->s);
-		char *stream_msg = mnstr_error(bs->s);
+		const char *stream_msg = mnstr_peek_error(bs->s);
 		msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Stream not open %s: %s", mnstr_error_kind_name(errnr), stream_msg ? stream_msg : "unknown error");
-		free(stream_msg);
 		return msg;
 	}
 	if (offset < 0 || offset > (lng) BUN_MAX)
