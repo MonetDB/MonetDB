@@ -32390,11 +32390,6 @@ CLTsetPrintTimeout;
 Print running query every so many seconds.
 clients
 setquerytimeout
-unsafe pattern clients.setquerytimeout(X_0:bte, X_1:int):void 
-CLTqueryTimeout;
-(empty)
-clients
-setquerytimeout
 unsafe pattern clients.setquerytimeout(X_0:int):void 
 CLTqueryTimeout;
 (empty)
@@ -32404,20 +32399,10 @@ unsafe pattern clients.setquerytimeout(X_0:int, X_1:int):void
 CLTqueryTimeout;
 A query is aborted after q seconds (q=0 means run undisturbed).
 clients
-setquerytimeout
-unsafe pattern clients.setquerytimeout(X_0:sht, X_1:int):void 
-CLTqueryTimeout;
-(empty)
-clients
 setsession
 unsafe pattern clients.setsession(X_0:lng):void 
 CLTsetSessionTimeout;
 Abort a session after  n seconds.
-clients
-setsessiontimeout
-unsafe pattern clients.setsessiontimeout(X_0:bte, X_1:int):void 
-CLTsessionTimeout;
-(empty)
 clients
 setsessiontimeout
 unsafe pattern clients.setsessiontimeout(X_0:int):void 
@@ -32428,11 +32413,6 @@ setsessiontimeout
 unsafe pattern clients.setsessiontimeout(X_0:int, X_1:int):void 
 CLTsessionTimeout;
 Set the session timeout for a particulat session id
-clients
-setsessiontimeout
-unsafe pattern clients.setsessiontimeout(X_0:sht, X_1:int):void 
-CLTsessionTimeout;
-(empty)
 clients
 settimeout
 unsafe pattern clients.settimeout(X_0:lng):void 
@@ -32465,12 +32445,12 @@ CLTsha2sum;
 Return hex string representation of the SHA-2 hash with bits of the given string
 clients
 shutdown
-unsafe pattern clients.shutdown(X_0:int):str 
+unsafe pattern clients.shutdown(X_0:bte):str 
 CLTshutdown;
 (empty)
 clients
 shutdown
-unsafe pattern clients.shutdown(X_0:int, X_1:bit):str 
+unsafe pattern clients.shutdown(X_0:bte, X_1:bit):str 
 CLTshutdown;
 Close all other client connections. Return if it succeeds.@If forced is set then always stop the system the hard way
 clients
@@ -32480,19 +32460,9 @@ CLTstop;
 Stop the query execution at the next eligble statement.
 clients
 stopsession
-unsafe pattern clients.stopsession(X_0:bte):void 
-CLTstopSession;
-(empty)
-clients
-stopsession
 unsafe pattern clients.stopsession(X_0:int):void 
 CLTstopSession;
 Stop a particular session
-clients
-stopsession
-unsafe pattern clients.stopsession(X_0:sht):void 
-CLTstopSession;
-(empty)
 clients
 suspend
 unsafe pattern clients.suspend(X_0:int):void 
