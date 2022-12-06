@@ -74,13 +74,8 @@ MNDBPrepare(ODBCStmt *stmt,
 	}
 
 	fixODBCstring(StatementText, TextLength, SQLINTEGER, addStmtError, stmt, return SQL_ERROR);
-	if (stmt->Dbc->minor >= 46)
-		query = (char *) StatementText;
-	else
-		query = ODBCTranslateSQL(stmt->Dbc,
-			       	StatementText,
-			       	(size_t) TextLength,
-				stmt->noScan);
+	query = ODBCTranslateSQL(stmt->Dbc, StatementText, (size_t) TextLength,
+				 stmt->noScan);
 	if (query == NULL) {
 		/* Memory allocation error */
 		addStmtError(stmt, "HY001", NULL, 0);
@@ -92,15 +87,13 @@ MNDBPrepare(ODBCStmt *stmt,
 	size_t querylen = strlen(query) + 9;
 	s = malloc(querylen);
 	if (s == NULL) {
-		if (query != (char *) StatementText)
-			free(query);
+		free(query);
 		/* Memory allocation error */
 		addStmtError(stmt, "HY001", NULL, 0);
 		return SQL_ERROR;
 	}
 	strconcat_len(s, querylen, "prepare ", query, NULL);
-	if (query != (char *) StatementText)
-		free(query);
+	free(query);
 
 	ODBCResetStmt(stmt);
 
