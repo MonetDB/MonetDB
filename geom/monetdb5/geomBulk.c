@@ -808,9 +808,16 @@ wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, i
 			GEOSSetSRID(transformedGeosGeometry, *srid_dst);
 			/* get the wkb */
 			if ((transformedWKB = geos2wkb(transformedGeosGeometry)) == NULL)
-				err = createException(MAL, "batgeom.Transform", SQLSTATE(38000) "Geos operation geos2wkb failed");
+				throw(MAL, "batgeom.Transform", SQLSTATE(38000) "Geos operation geos2wkb failed");
+			else {
+				if (BUNappend(outBAT, transformedWKB, false) != GDK_SUCCEED) {
+					throw(MAL, "batgeom.Transform", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+			}
+
 			/* destroy the geos geometries */
 			GEOSGeom_destroy(transformedGeosGeometry);
+
 		}
 		GEOSGeom_destroy(geosGeometry);
 	}
