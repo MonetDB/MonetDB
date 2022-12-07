@@ -79,6 +79,7 @@ typedef struct heapn {
 	Sink s;
 	size_t size;
 	size_t used;
+	ATOMIC_TYPE counter;
 
 	mallocator *ma;	/* allocator for variable data */
 
@@ -713,14 +714,14 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	assert(hp && hp->s.type == HEAP_SINK);
 	HEAP_INIT(hp);
 	subheap *sh = hp->sub;
+	int nxt = (int)ATOMIC_INC(&hp->counter);
 
 	if (!private) {
-		while(hps->unused != pp->wid) MT_sleep_ms(10);
+		while(hps->unused != nxt && !ATOMIC_PTR_GET(&pp->p->error)) MT_sleep_ms(10);
 	}
 
 	if (!private)
 		pipeline_lock1(hps);
-	/* lock ? */
 
 	void **hpvals = sh->vals;
 	sh->in = b;
@@ -731,6 +732,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	size_t cnt = BATcount(sh->in), i = 0, j = 0;
 
 	BAT *S = COLnew(0, TYPE_oid, cnt, TRANSIENT);
+	S->unused = hps->unused;
 	BAT *D = COLnew(0, TYPE_oid, cnt, TRANSIENT);
 	BAT *I = COLnew(0, TYPE_oid, cnt, TRANSIENT);
 	oid *sp = Tloc(S, 0);
@@ -742,8 +744,10 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		bat *in = getArgReference_bat(s, p, cur);
 		nsh->in = BATdescriptor(*in);
 		if (!nsh->in) {
-			if (!private)
+			if (!private) {
 				hps->unused++;
+				pipeline_unlock1(hps);
+			}
 			return createException(SQL, "heapn.topn",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if (!nsh->var &&nsh->in->ttype)
@@ -828,10 +832,10 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	if (!private)
 		pipeline_unlock2(hps);
 	if (!private)
+		hps->unused++;
+	if (!private)
 		pipeline_unlock1(hps);
 	BBPkeepref(hps);
-	if (!private)
-		hps->unused++;
 	return MAL_SUCCEED;
 }
 
@@ -843,9 +847,9 @@ _heap_create( int size, bool shared )
 	h->s.destroy = (sink_destroy)heap_destroy;
 	h->s.type = HEAP_SINK;
 	h->shared = shared;
-
 	h->size = size;
 	h->used = 0;
+	ATOMIC_INIT(&h->counter, -1);
 	return h;
 }
 
@@ -1238,7 +1242,7 @@ HEAPproject(bat *rid, bat *cand, bat *del, bat *ins, bat *in, lng *n, const ptr 
 	bool private = (!r || r->T.private_bat), local_storage = false;
 
 	if (!private) {
-		while(r->unused != p->wid) MT_sleep_ms(10);
+		while(r->unused != s->unused && !ATOMIC_PTR_GET(&p->p->error)) MT_sleep_ms(10);
 	}
 
 	if (!err && r && BATcount(b)) {

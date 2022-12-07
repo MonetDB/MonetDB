@@ -270,6 +270,7 @@ PIPELINESinitialize(void)
 str
 runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxparts, MalStkPtr stk)
 {
+	int restart = 0;
 	if (!pipelines_initialized)
 		PIPELINESinitialize();
 	Pipelines *s = GDKmalloc(sizeof(Pipelines));
@@ -287,6 +288,7 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	s->maxparts = maxparts;
 	s->master_counter = 0;
 	s->nr_workers = GDKnr_threads;
+	s->status = 0;
 	if (maxparts > 0)
 		s->nr_workers = MIN(maxparts, GDKnr_threads);
 	ATOMIC_INIT(&s->workers, -1);
@@ -322,7 +324,10 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	ATOMIC_DESTROY(&s->workers);
 	ATOMIC_PTR_DESTROY(&s->error);
 	MT_cond_destroy(&s->cond);
+	restart = (!err && s->status);
 	GDKfree(s);
+	if (restart)
+		return runMALpipelines(cntxt, mb, startpc, stoppc, maxparts, stk);
 	return err;
 }
 

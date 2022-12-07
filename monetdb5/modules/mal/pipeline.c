@@ -1078,6 +1078,7 @@ typedef struct hash_table {
 		fcmp cmp;
 		fhsh hsh;
 		flen len;
+		int rehash;
 
         void *vals;			/* hash(ed) values */
         hash_key_t *gids;   /* chain of gids (k, ie mark used/-k mark used and value filled) */
@@ -1156,6 +1157,7 @@ _ht_create( int type, int size, hash_table *p)
 	h->type = type;
 	h->width = ATOMsize(type);
 	h->last = 0;
+	h->rehash = 0;
 	h->p = p;
 	if (type == TYPE_str) {
 		h->cmp = (fcmp)str_cmp;
@@ -1178,6 +1180,15 @@ ht_create(int type, int size, hash_table *p)
         return _ht_create(type, size, p);
 }
 
+static void
+ht_rehash(hash_table *ht)
+{
+	ht->rehash = 1;
+	if (ht->p)
+		ht_rehash(ht->p);
+}
+
+#define hash_rehash(ht, p, err) { p->p->status = 1; ht_rehash(ht); err = -11; break; }
 
 #define _hash_bit(X)  ((unsigned int)X)
 #define _hash_bte(X)  ((unsigned int)X)
@@ -1265,6 +1276,7 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
+/* TODO unique: rehash iff to many probes need to be done, in the linear chain */
 #define unique(Type) \
 	if (tt == TYPE_##Type) { \
 		Type *bp = Tloc(b, 0); \
@@ -1355,6 +1367,7 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		} \
 	}
 
+/* todo handle all any types */
 #define aunique(Type) \
 	if (tt == TYPE_##Type) { \
 		BATiter bi = bat_iterator(b); \
@@ -1460,6 +1473,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 	return MAL_SUCCEED;
 }
 
+/* TODO gunique: rehash iff to many probes need to be done, in the linear chain */
 #define gunique(Type) \
 	if (tt == TYPE_##Type) { \
 		Type *bp = Tloc(b, 0); \
@@ -1553,6 +1567,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 		} \
 	}
 
+/* todo handle all any types */
 #define gaunique(Type) \
 	if (tt == TYPE_##Type) { \
 		BATiter bi = bat_iterator(b); \
@@ -1687,6 +1702,8 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 					if (slots == 0) { \
 						slots = private?1:PRE_CLAIM; \
 						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
+						if (((slot*3)/2) >= (gid)h->size) \
+							hash_rehash(h, p, err); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -1724,6 +1741,8 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 					if (slots == 0) { \
 						slots = private?1:PRE_CLAIM; \
 						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
+						if (((slot*3)/2) >= (gid)h->size) \
+							hash_rehash(h, p, err); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -1759,6 +1778,8 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 						if (slots == 0) { \
 							slots = private?1:PRE_CLAIM; \
 							slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
+							if (((slot*3)/2) >= (gid)h->size) \
+								hash_rehash(h, p, err); \
 						} \
 						slots--; \
 						g = ++slot; \
@@ -1796,6 +1817,8 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 					if (slots == 0) { \
 						slots = private?1:PRE_CLAIM; \
 						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
+						if (((slot*3)/2) >= (gid)h->size) \
+							hash_rehash(h, p, err); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -1833,6 +1856,8 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 					if (slots == 0) { \
 						slots = private?1:PRE_CLAIM; \
 						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
+						if (((slot*3)/2) >= (gid)h->size) \
+							hash_rehash(h, p, err); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -1872,6 +1897,8 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 					if (slots == 0) { \
 						slots = private?1:PRE_CLAIM; \
 						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
+						if (((slot*3)/2) >= (gid)h->size) \
+							hash_rehash(h, p, err); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -1909,6 +1936,8 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 					if (slots == 0) { \
 						slots = private?1:PRE_CLAIM; \
 						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
+						if (((slot*3)/2) >= (gid)h->size) \
+							hash_rehash(h, p, err); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -2032,7 +2061,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		}
 	}
 	TIMEOUT_CHECK(timeoffset, throw(MAL, "group.group", GDK_EXCEPTION));
-	if (err)
+	if (err || p->p->status)
 		throw(MAL, "group.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	return MAL_SUCCEED;
 }
@@ -2060,6 +2089,8 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 					if (slots == 0) { \
 						slots = private?1:PRE_CLAIM; \
 						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
+						if (((slot*3)/2) >= (gid)h->size) \
+							hash_rehash(h, p, err); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -2097,6 +2128,8 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 					if (slots == 0) { \
 						slots = private?1:PRE_CLAIM; \
 						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
+						if (((slot*3)/2) >= (gid)h->size) \
+							hash_rehash(h, p, err); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -2134,6 +2167,8 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 					if (slots == 0) { \
 						slots = private?1:PRE_CLAIM; \
 						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
+						if (((slot*3)/2) >= (gid)h->size) \
+							hash_rehash(h, p, err); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -2172,6 +2207,8 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 					if (slots == 0) { \
 						slots = private?1:PRE_CLAIM; \
 						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
+						if (((slot*3)/2) >= (gid)h->size) \
+							hash_rehash(h, p, err); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -2212,6 +2249,8 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 					if (slots == 0) { \
 						slots = private?1:PRE_CLAIM; \
 						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
+						if (((slot*3)/2) >= (gid)h->size) \
+							hash_rehash(h, p, err); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -2250,6 +2289,8 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 					if (slots == 0) { \
 						slots = private?1:PRE_CLAIM; \
 						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
+						if (((slot*3)/2) >= (gid)h->size) \
+							hash_rehash(h, p, err); \
 					} \
 					slots--; \
 					g = ++slot; \
@@ -2388,7 +2429,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		}
 	}
 	TIMEOUT_CHECK(timeoffset, throw(MAL, "group.derive", GDK_EXCEPTION));
-	if (err)
+	if (err || p->p->status)
 		throw(MAL, "group.derive", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	return MAL_SUCCEED;
 }

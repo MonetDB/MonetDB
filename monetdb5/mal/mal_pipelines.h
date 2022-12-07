@@ -25,6 +25,7 @@ typedef struct Pipelines {
 	ATOMIC_TYPE workers;
 	ATOMIC_TYPE master_counter;
 	int counters[THREADS];
+	int status;
 	MT_Cond cond;
 } Pipelines;
 
