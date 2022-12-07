@@ -1348,6 +1348,20 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "sql_add", "mtime", "time_add_msec_interval", FALSE, FALSE, SCALE_NONE, 0, TME, 2, TME, SECINT);
 	sql_create_func(sa, "sql_add", "mtime", "time_add_msec_interval", FALSE, FALSE, SCALE_NONE, 0, TMETZ, 2, TMETZ, SECINT);
 
+	// odbc timestampadd
+	sql_create_func(sa, "timestampadd", "mtime", "timestamp_add_msec_interval", FALSE, FALSE, SCALE_NONE, 0, TMESTAMP, 2, TMESTAMP, SECINT);
+	sql_create_func(sa, "timestampadd", "mtime", "timestamp_add_msec_interval", FALSE, FALSE, SCALE_NONE, 0, TMESTAMP, 2, TMESTAMP, DAYINT);
+	sql_create_func(sa, "timestampadd", "mtime", "timestamp_add_month_interval", FALSE, FALSE, SCALE_NONE, 0, TMESTAMP, 2, TMESTAMP, MONINT);
+	sql_create_func(sa, "timestampadd", "mtime", "timestamp_add_msec_interval", FALSE, FALSE, SCALE_NONE, 0, TMESTAMPTZ, 2, TMESTAMPTZ, SECINT);
+	sql_create_func(sa, "timestampadd", "mtime", "timestamp_add_msec_interval", FALSE, FALSE, SCALE_NONE, 0, TMESTAMPTZ, 2, TMESTAMPTZ, DAYINT);
+	sql_create_func(sa, "timestampadd", "mtime", "timestamp_add_month_interval", FALSE, FALSE, SCALE_NONE, 0, TMESTAMPTZ, 2, TMESTAMPTZ, MONINT);
+	// corner cases as described in microsoft odbc timestampadd spec
+	sql_create_func(sa, "timestampadd", "mtime", "odbc_timestamp_add_msec_time", FALSE, FALSE, SCALE_NONE, 0, TMESTAMP, 2, TME, DAYINT);
+	sql_create_func(sa, "timestampadd", "mtime", "odbc_timestamp_add_month_time", FALSE, FALSE, SCALE_NONE, 0, TMESTAMP, 2, TME, MONINT);
+	sql_create_func(sa, "timestampadd", "mtime", "odbc_timestamp_add_msec_date", FALSE, FALSE, SCALE_NONE, 0, TMESTAMP, 2, DTE, SECINT);
+	// odbc timestampdiff
+	// end odbc
+
 	sql_create_func(sa, "local_timezone", "mtime", "local_timezone", FALSE, FALSE, SCALE_FIX, 0, SECINT, 0);
 
 	sql_create_func(sa, "century", "mtime", "century", FALSE, FALSE, SCALE_FIX, 0, INT, 1, DTE);

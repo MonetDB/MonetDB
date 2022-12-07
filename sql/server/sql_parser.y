@@ -6472,8 +6472,7 @@ odbc_datetime_func:
 		}
     | TIMESTAMPADD '(' odbc_tsi_qualifier ',' intval ',' search_condition ')'
 		{ dlist *l = L(); 
-          // TODO sql_add or custom func ?
-		  append_list( l, append_string(L(), sa_strdup(SA, "sql_add")));
+		  append_list( l, append_string(L(), sa_strdup(SA, "timestampadd")));
 	      append_int(l, FALSE); /* ignore distinct */
           sql_subtype t; 
 	  	  lng i = 0;
@@ -6482,8 +6481,8 @@ odbc_datetime_func:
 			$$ = NULL;
 			YYABORT;
           }
-          append_symbol(l, _newAtomNode(atom_int(SA, &t, i)));
           append_symbol(l, $7);
+          append_symbol(l, _newAtomNode(atom_int(SA, &t, i)));
           $$ = _symbol_create_list( SQL_BINOP, l ); 
 		}
     | TIMESTAMPDIFF '(' odbc_tsi_qualifier ',' intval ',' search_condition ')'
