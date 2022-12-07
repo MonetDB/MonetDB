@@ -1,3 +1,8 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Wed Dec  7 2022 Sjoerd Mullender <sjoerd@acm.org>
+- A bug was fixed when dealing with copy-on-write memory maps.  These can
+  occur for some bats used by the write-ahead log code when they grow
+  large enough.
+
