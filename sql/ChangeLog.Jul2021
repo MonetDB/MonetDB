@@ -1,3 +1,12 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Dec  7 2022 Sjoerd Mullender <sjoerd@acm.org>
+- A bug was fixed when optimizing combining of range select
+  subexpressions.
+- If there was an error in one of the special commands to the server
+  (e.g. setting the reply size for result sets), the server could get
+  into an infinite loop.  This has been fixed.
+- Fixed a double cleanup after a failed allocation in COPY INTO.  The
+  double cleanup could cause a crash due to a race condition it enabled.
+
