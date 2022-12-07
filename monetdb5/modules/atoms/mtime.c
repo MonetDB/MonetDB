@@ -523,6 +523,26 @@ func2(MTIMEtimestamp_add_msec_interval, "timestamp_add_msec_interval",
 	  GET_NEXT_VAR, GET_NEXT_VAR,
 	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
+func2(MTIMEodbc_timestamp_add_msec_interval_time, "odbc_timestamp_add_msec_interval_time",
+	  daytime, lng, timestamp, odbc_timestamp_add_msec_interval_time, func2_except,
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEodbc_timestamp_add_month_interval_time, "odbc_timestamp_add_month_interval_time",
+	  daytime, int, timestamp, odbc_timestamp_add_month_interval_time, func2_except,
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEodbc_timestamp_add_msec_interval_date, "odbc_timestamp_add_msec_interval_date",
+	  date, lng, timestamp, odbc_timestamp_add_msec_interval_date, func2_except,
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+
+
 func2(MTIMEtimestamp_sub_month_interval, "timestamp_sub_month_interval",
 	  timestamp, int, timestamp, timestamp_sub_month_interval, func2_except,
 	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
@@ -1101,6 +1121,7 @@ static mel_func mtime_init_funcs[] = {
  pattern("batmtime", "timestamp_sub_month_interval", MTIMEtimestamp_sub_month_interval_bulk, false, "", args(1,5, batarg("",timestamp),batarg("t",timestamp),batarg("s",int),batarg("s1",oid),batarg("s2",oid))),
  pattern("batmtime", "timestamp_sub_month_interval", MTIMEtimestamp_sub_month_interval_bulk_p1, false, "", args(1,4, batarg("",timestamp),arg("t",timestamp),batarg("s",int),batarg("s",oid))),
  pattern("batmtime", "timestamp_sub_month_interval", MTIMEtimestamp_sub_month_interval_bulk_p2, false, "", args(1,4, batarg("",timestamp),batarg("t",timestamp),arg("s",int),batarg("s",oid))),
+ // --
  command("mtime", "timestamp_add_month_interval", MTIMEtimestamp_add_month_interval, false, "Add months to a timestamp", args(1,3, arg("",timestamp),arg("t",timestamp),arg("s",int))),
  pattern("batmtime", "timestamp_add_month_interval", MTIMEtimestamp_add_month_interval_bulk, false, "", args(1,3, batarg("",timestamp),batarg("t",timestamp),batarg("s",int))),
  pattern("batmtime", "timestamp_add_month_interval", MTIMEtimestamp_add_month_interval_bulk_p1, false, "", args(1,3, batarg("",timestamp),arg("t",timestamp),batarg("s",int))),
@@ -1108,6 +1129,31 @@ static mel_func mtime_init_funcs[] = {
  pattern("batmtime", "timestamp_add_month_interval", MTIMEtimestamp_add_month_interval_bulk, false, "", args(1,5, batarg("",timestamp),batarg("t",timestamp),batarg("s",int),batarg("s1",oid),batarg("s2",oid))),
  pattern("batmtime", "timestamp_add_month_interval", MTIMEtimestamp_add_month_interval_bulk_p1, false, "", args(1,4, batarg("",timestamp),arg("t",timestamp),batarg("s",int),batarg("s",oid))),
  pattern("batmtime", "timestamp_add_month_interval", MTIMEtimestamp_add_month_interval_bulk_p2, false, "", args(1,4, batarg("",timestamp),batarg("t",timestamp),arg("s",int),batarg("s",oid))),
+// odbc timestampadd corner cases
+ command("mtime", "odbc_timestamp_add_msec_time", MTIMEodbc_timestamp_add_msec_interval_time, false, "", args(1,3, arg("",timestamp),arg("t", daytime),arg("ms",lng))),
+ pattern("batmtime", "odbc_timestamp_add_msec_time", MTIMEodbc_timestamp_add_msec_interval_time_bulk, false, "", args(1,3, batarg("",timestamp),batarg("t",daytime),batarg("ms",lng))),
+ pattern("batmtime", "odbc_timestamp_add_msec_time", MTIMEodbc_timestamp_add_msec_interval_time_bulk_p1, false, "", args(1,3, batarg("",timestamp),arg("t",daytime),batarg("ms",lng))),
+ pattern("batmtime", "odbc_timestamp_add_msec_time", MTIMEodbc_timestamp_add_msec_interval_time_bulk_p2, false, "", args(1,3, batarg("",timestamp),batarg("t",daytime),arg("ms",lng))),
+ pattern("batmtime", "odbc_timestamp_add_msec_time", MTIMEodbc_timestamp_add_msec_interval_time_bulk, false, "", args(1,5, batarg("",timestamp),batarg("t",daytime), batarg("ms",lng),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "odbc_timestamp_add_msec_time", MTIMEodbc_timestamp_add_msec_interval_time_bulk_p1, false, "", args(1,4, batarg("",timestamp),arg("t", daytime),batarg("ms",lng),batarg("s",oid))),
+ pattern("batmtime", "odbc_timestamp_add_msec_time", MTIMEodbc_timestamp_add_msec_interval_time_bulk_p2, false, "", args(1,4, batarg("",timestamp),batarg("t", daytime),arg("ms",lng),batarg("s",oid))),
+ // --
+ command("mtime", "odbc_timestamp_add_month_time", MTIMEodbc_timestamp_add_month_interval_time, false, "Add months to a time", args(1,3, arg("",timestamp),arg("t",daytime),arg("s",int))),
+ pattern("batmtime", "odbc_timestamp_add_month_time", MTIMEodbc_timestamp_add_month_interval_time_bulk, false, "", args(1,3, batarg("",timestamp),batarg("t",daytime),batarg("s",int))),
+ pattern("batmtime", "odbc_timestamp_add_month_time", MTIMEodbc_timestamp_add_month_interval_time_bulk_p1, false, "", args(1,3, batarg("",timestamp),arg("t",daytime),batarg("s",int))),
+ pattern("batmtime", "odbc_timestamp_add_month_time", MTIMEodbc_timestamp_add_month_interval_time_bulk_p2, false, "", args(1,3, batarg("",timestamp),batarg("t",daytime),arg("s",int))),
+ pattern("batmtime", "odbc_timestamp_add_month_time", MTIMEodbc_timestamp_add_month_interval_time_bulk, false, "", args(1,5, batarg("",timestamp),batarg("t",daytime),batarg("s",int),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "odbc_timestamp_add_month_time", MTIMEodbc_timestamp_add_month_interval_time_bulk_p1, false, "", args(1,4, batarg("",timestamp),arg("t",daytime),batarg("s",int),batarg("s",oid))),
+ pattern("batmtime", "odbc_timestamp_add_month_time", MTIMEodbc_timestamp_add_month_interval_time_bulk_p2, false, "", args(1,4, batarg("",timestamp),batarg("t",daytime),arg("s",int),batarg("s",oid))),
+ // --
+ command("mtime", "odbc_timestamp_add_msec_date", MTIMEodbc_timestamp_add_msec_interval_date, false, "", args(1,3, arg("",timestamp),arg("d", date),arg("ms",lng))),
+ pattern("batmtime", "odbc_timestamp_add_msec_date", MTIMEodbc_timestamp_add_msec_interval_date_bulk, false, "", args(1,3, batarg("",timestamp),batarg("d",date),batarg("ms",lng))),
+ pattern("batmtime", "odbc_timestamp_add_msec_date", MTIMEodbc_timestamp_add_msec_interval_date_bulk_p1, false, "", args(1,3, batarg("",timestamp),arg("d",date),batarg("ms",lng))),
+ pattern("batmtime", "odbc_timestamp_add_msec_date", MTIMEodbc_timestamp_add_msec_interval_date_bulk_p2, false, "", args(1,3, batarg("",timestamp),batarg("d",date),arg("ms",lng))),
+ pattern("batmtime", "odbc_timestamp_add_msec_date", MTIMEodbc_timestamp_add_msec_interval_date_bulk, false, "", args(1,5, batarg("",timestamp),batarg("d",date), batarg("ms",lng),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "odbc_timestamp_add_msec_date", MTIMEodbc_timestamp_add_msec_interval_date_bulk_p1, false, "", args(1,4, batarg("",timestamp),arg("d", date),batarg("ms",lng),batarg("s",oid))),
+ pattern("batmtime", "odbc_timestamp_add_msec_date", MTIMEodbc_timestamp_add_msec_interval_date_bulk_p2, false, "", args(1,4, batarg("",timestamp),batarg("d", date),arg("ms",lng),batarg("s",oid))),
+// end odbc timestampadd corner cases
  command("mtime", "time_sub_msec_interval", MTIMEtime_sub_msec_interval, false, "Subtract seconds from a time", args(1,3, arg("",daytime),arg("t",daytime),arg("ms",lng))),
  pattern("batmtime", "time_sub_msec_interval", MTIMEtime_sub_msec_interval_bulk, false, "", args(1,3, batarg("",daytime),batarg("t",daytime),batarg("ms",lng))),
  pattern("batmtime", "time_sub_msec_interval", MTIMEtime_sub_msec_interval_bulk_p1, false, "", args(1,3, batarg("",daytime),arg("t",daytime),batarg("ms",lng))),
