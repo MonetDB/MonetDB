@@ -137,8 +137,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	if (!havehash) {
 		if (BAThash(bi->b) != GDK_SUCCEED) {
 			BBPreclaim(bn);
-			if (b2)
-				BBPunfix(b2->batCacheid);
+			BBPreclaim(b2);
 			return NULL;
 		}
 		MT_rwlock_rdlock(&bi->b->thashlock);
@@ -186,8 +185,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		}
 	}
 	MT_rwlock_rdunlock(&bi->b->thashlock);
-	if (b2)
-		BBPunfix(b2->batCacheid);
+	BBPreclaim(b2);
 	BATsetcount(bn, cnt);
 	bn->tkey = true;
 	if (cnt > 1) {
@@ -206,8 +204,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 
   bailout:
 	MT_rwlock_rdunlock(&bi->b->thashlock);
-	if (b2)
-		BBPunfix(b2->batCacheid);
+	BBPreclaim(b2);
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -1887,8 +1884,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					HEAPdecref(oidxh, false);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&pbi);
-					if (pb)
-						BBPunfix(pb->batCacheid);
+					BBPreclaim(pb);
 					return NULL;
 				}
 
@@ -1930,8 +1926,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 		bat_iterator_end(&bi);
 		bat_iterator_end(&pbi);
-		if (pb)
-			BBPunfix(pb->batCacheid);
+		BBPreclaim(pb);
 		return bn;
 	}
 
@@ -2036,8 +2031,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 		bat_iterator_end(&bi);
 		bat_iterator_end(&pbi);
-		if (pb)
-			BBPunfix(pb->batCacheid);
+		BBPreclaim(pb);
 		return NULL;
 	}
 
@@ -2085,8 +2079,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 	bat_iterator_end(&bi);
 	bat_iterator_end(&pbi);
-	if (pb)
-		BBPunfix(pb->batCacheid);
+	BBPreclaim(pb);
 
 	bn = virtualize(bn);
 	MT_thread_setalgorithm(algo);

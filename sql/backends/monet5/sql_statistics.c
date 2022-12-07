@@ -351,8 +351,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							BUNappend(sorted, &issorted, false) != GDK_SUCCEED ||
 							BUNappend(revsorted, &isrevsorted, false) != GDK_SUCCEED) {
 							bat_iterator_end(&posi);
-							if (re)
-								BBPunfix(re->batCacheid);
+							BBPreclaim(re);
 							goto bailout;
 						}
 
@@ -414,8 +413,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							BBPunfix(fb->batCacheid);
 						} else if (BUNappend(minval, str_nil, false) != GDK_SUCCEED || BUNappend(maxval, str_nil, false) != GDK_SUCCEED) {
 							bat_iterator_end(&posi);
-							if (re)
-								BBPunfix(re->batCacheid);
+							BBPreclaim(re);
 							goto bailout;
 						} else if (re) {
 							bat_iterator_end(&posi);

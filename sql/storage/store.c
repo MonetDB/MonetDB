@@ -2445,9 +2445,7 @@ tar_write_header(stream *tarfile, const char *path, time_t mtime, size_t size)
 	tar_write_header_field(&chksum, 8, "%06o", sum);
 
 	if (mnstr_write(tarfile, buf, TAR_BLOCK_SIZE, 1) != 1) {
-		char *err = mnstr_error(tarfile);
-		GDKerror("error writing tar header %s: %s", path, err);
-		free(err);
+		GDKerror("error writing tar header %s: %s", path, mnstr_peek_error(tarfile));
 		return GDK_FAIL;
 	}
 
@@ -2530,9 +2528,7 @@ tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *content
 		ssize_t chunk = (to_read <= bufsize) ? to_read : bufsize;
 		ssize_t nbytes = mnstr_read(contents, buf, 1, chunk);
 		if (nbytes != chunk) {
-			char *err = mnstr_error(contents);
-			GDKerror("Read only %zd/%zd bytes of component %s: %s", nbytes, chunk, path, err);
-			free(err);
+			GDKerror("Read only %zd/%zd bytes of component %s: %s", nbytes, chunk, path, mnstr_peek_error(contents));
 			goto end;
 		}
 		ret = tar_write(tarfile, buf, chunk);

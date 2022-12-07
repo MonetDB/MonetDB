@@ -656,9 +656,9 @@ class SQLLogic:
         self.approve = approve
         self.initfile(f, defines)
         if self.language == 'sql':
-            self.crs.execute(f'call sys.setsession(cast({self.timeout or 0} as bigint))')
+            self.crs.execute(f'call sys.setsessiontimeout({self.timeout or 0})')
         else:
-            self.crs.execute(f'clients.setsession({self.timeout or 0}:lng)')
+            self.crs.execute(f'clients.setsessiontimeout({self.timeout or 0}:int)')
         while True:
             skipping = False
             line = self.readline()

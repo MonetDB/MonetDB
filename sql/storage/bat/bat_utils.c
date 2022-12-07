@@ -20,8 +20,7 @@ bat_fix(BAT *b)
 void
 bat_destroy(BAT *b)
 {
-	if (b)
-		BBPunfix(b->batCacheid);
+	BBPreclaim(b);
 }
 
 BAT *

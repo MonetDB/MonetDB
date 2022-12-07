@@ -114,8 +114,8 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	if (b == 0 || bn == 0){
-		if ( b != 0) BBPunfix(b->batCacheid);
-		if ( bn != 0) BBPunfix(bn->batCacheid);
+		BBPreclaim(b);
+		BBPreclaim(bn);
 		throw(MAL, "clients.info", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -192,8 +192,12 @@ CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int idx = cntxt->idx;
 	(void) mb;		/* fool compiler */
 
-	if ( pci->argc == 2 && cntxt->user == MAL_ADMIN)
-		idx = *getArgReference_int(stk,pci,1);
+	if (pci->argc == 2) {
+		if (cntxt->user == MAL_ADMIN)
+			idx = *getArgReference_int(stk,pci,1);
+		else
+			throw(MAL, "clients.quit", SQLSTATE(42000) "Administrator rights required");
+	}
 
 	if ( idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"clients.quit", "Illegal session id");
@@ -208,7 +212,7 @@ CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-/* Stopping a client in a softmanner by setting the time out marker */
+/* Stopping a client in a soft manner by setting the time out marker */
 static str
 CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -216,8 +220,10 @@ CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 
 	(void) mb;
-	if (cntxt->user == MAL_ADMIN)
-		idx = *getArgReference_int(stk,pci,1);
+	if (cntxt->user != MAL_ADMIN)
+		throw(MAL, "clients.stop", SQLSTATE(42000) "Administrator rights required");
+
+	idx = *getArgReference_int(stk,pci,1);
 
 	if ( idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"clients.stop","Illegal session id");
@@ -239,9 +245,13 @@ CLTsetoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str opt, msg = MAL_SUCCEED;
 
 	(void) mb;
-	if( pci->argc == 3 && cntxt->user == MAL_ADMIN){
-		idx = *getArgReference_int(stk,pci,1);
-		opt = *getArgReference_str(stk,pci,2);
+	if (pci->argc == 3) {
+		if (cntxt->user == MAL_ADMIN){
+			idx = *getArgReference_int(stk,pci,1);
+			opt = *getArgReference_str(stk,pci,2);
+		} else {
+			throw(MAL, "clients.setoptimizer", SQLSTATE(42000) "Administrator rights required");
+		}
 	} else {
 		opt = *getArgReference_str(stk,pci,1);
 	}
@@ -271,9 +281,13 @@ CLTsetworkerlimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int idx = cntxt->idx, limit;
 
 	(void) mb;
-	if (pci->argc == 3 && cntxt->user == MAL_ADMIN){
-		idx = *getArgReference_int(stk,pci,1);
-		limit = *getArgReference_int(stk,pci,2);
+	if (pci->argc == 3) {
+		if (cntxt->user == MAL_ADMIN) {
+			idx = *getArgReference_int(stk,pci,1);
+			limit = *getArgReference_int(stk,pci,2);
+		} else {
+			throw(MAL, "clients.setworkerlimit", SQLSTATE(42000) "Administrator rights required");
+		}
 	} else {
 		limit = *getArgReference_int(stk,pci,1);
 	}
@@ -301,9 +315,13 @@ CLTsetmemorylimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int idx = cntxt->idx, limit;
 
 	(void) mb;
-	if (pci->argc == 3 && cntxt->user == MAL_ADMIN){
-		idx = *getArgReference_sht(stk,pci,1);
-		limit = *getArgReference_int(stk,pci,2);
+	if (pci->argc == 3) {
+		if (cntxt->user == MAL_ADMIN) {
+			idx = *getArgReference_sht(stk,pci,1);
+			limit = *getArgReference_int(stk,pci,2);
+		} else {
+			throw(MAL, "clients.setmemorylimit", SQLSTATE(42000) "Administrator rights required");
+		}
 	} else {
 		limit = *getArgReference_int(stk,pci,1);
 	}
@@ -331,22 +349,12 @@ CLTstopSession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	int idx = cntxt->idx;
+	(void) mb;
 
-	if (cntxt->user == MAL_ADMIN) {
-		switch( getArgType(mb,pci,1)){
-		case TYPE_bte:
-			idx = *getArgReference_bte(stk,pci,1);
-			break;
-		case TYPE_sht:
-			idx = *getArgReference_sht(stk,pci,1);
-			break;
-		case TYPE_int:
-			idx = *getArgReference_int(stk,pci,1);
-			break;
-		default:
-			throw(MAL,"clients.stopSession","Unexpected index type");
-		}
+	if (cntxt->user != MAL_ADMIN) {
+		throw(MAL, "clients.stopsession", SQLSTATE(42000) "Administrator rights required");
 	}
+	idx = *getArgReference_int(stk,pci,1);
 	if( idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"clients.stopSession","Illegal session id");
 
@@ -369,8 +377,10 @@ CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	int idx = cntxt->idx;
 
-	if (cntxt->user == MAL_ADMIN)
-		idx = *getArgReference_int(stk,pci,1);
+	if (cntxt->user != MAL_ADMIN)
+		throw(MAL, "clients.suspend", SQLSTATE(42000) "Administrator rights required");
+
+	idx = *getArgReference_int(stk,pci,1);
 	(void) mb;
 
 	if( idx < 0 || idx > MAL_MAXCLIENTS)
@@ -391,8 +401,10 @@ CLTwakeup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	int idx = cntxt->idx;
 
-	if (cntxt->user == MAL_ADMIN)
-		idx = *getArgReference_int(stk,pci,1);
+	if (cntxt->user != MAL_ADMIN)
+		throw(MAL, "clients.wakeup", SQLSTATE(42000) "Administrator rights required");
+
+	idx = *getArgReference_int(stk,pci,1);
 	(void) mb;
 
 	if( idx < 0 || idx > MAL_MAXCLIENTS)
@@ -475,33 +487,26 @@ CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	int qto, idx = cntxt->idx;
+	(void) mb;
 
-	if (cntxt->user == MAL_ADMIN && pci->argc == 3){
-		switch( getArgType(mb,pci,1)){
-		case TYPE_bte:
-			idx = *getArgReference_bte(stk,pci,1);
-			break;
-		case TYPE_sht:
-			idx = *getArgReference_sht(stk,pci,1);
-			break;
-		case TYPE_int:
+	if (pci->argc == 3) {
+		if (cntxt->user == MAL_ADMIN) {
 			idx = *getArgReference_int(stk,pci,1);
-			break;
-		default:
-			throw(MAL,"clients.queryTimeout","Unexpected index type");
+			qto = *getArgReference_int(stk,pci,2);
+		} else {
+			throw(MAL, "clients.setquerytimeout", SQLSTATE(42000) "Administrator rights required");
 		}
-		qto = *getArgReference_int(stk,pci,2);
 	} else {
 		qto = *getArgReference_int(stk,pci,1);
 	}
 	if (is_int_nil(qto))
-		throw(MAL,"clients.queryTimeout","Query timeout cannot be NULL");
+		throw(MAL,"clients.setquerytimeout","Query timeout cannot be NULL");
 	if( qto < 0)
-		throw(MAL,"clients.queryTimeout","Query timeout should be >= 0");
+		throw(MAL,"clients.setquerytimeout","Query timeout should be >= 0");
 
 	MT_lock_set(&mal_contextLock);
 	if (mal_clients[idx].mode == FREECLIENT)
-		msg = createException(MAL,"clients.queryTimeout","Session not active anymore");
+		msg = createException(MAL,"clients.setquerytimeout","Session not active anymore");
 	else {
 		/* when testing (FORCEMITOMASK), reduce timeout of 1 sec to 1 msec */
 		lng timeout_micro = GDKdebug & FORCEMITOMASK && qto == 1 ? 1000 : (lng) qto * 1000000;
@@ -545,35 +550,28 @@ CLTsessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	int sto = -1, idx = cntxt->idx;
+	(void) mb;
 
-	if(cntxt->user == MAL_ADMIN && pci->argc == 3){
-		switch( getArgType(mb,pci,1)){
-		case TYPE_bte:
-			idx = *getArgReference_bte(stk,pci,1);
-			break;
-		case TYPE_sht:
-			idx = *getArgReference_sht(stk,pci,1);
-			break;
-		case TYPE_int:
+	if (pci->argc == 3) {
+		if (cntxt->user == MAL_ADMIN) {
 			idx = *getArgReference_int(stk,pci,1);
-			break;
-		default:
-			throw(MAL,"clients.sessionTimeout","Unexpected index type");
+			sto = *getArgReference_int(stk,pci,2);
+		} else {
+			throw(MAL, "clients.setsessiontimeout", SQLSTATE(42000) "Administrator rights required");
 		}
-		sto = *getArgReference_int(stk,pci,2);
 	} else {
 		sto = *getArgReference_int(stk,pci,1);
 	}
 	if (is_int_nil(sto))
-		throw(MAL,"clients.sessionTimeout","Session timeout cannot be NULL");
+		throw(MAL,"clients.setsessiontimeout","Session timeout cannot be NULL");
 	if( sto < 0)
-		throw(MAL,"clients.sessionTimeout","Session timeout should be >= 0");
+		throw(MAL,"clients.setsessiontimeout","Session timeout should be >= 0");
 	if( idx < 0 || idx > MAL_MAXCLIENTS)
-		throw(MAL,"clients.sessionTimeout","Illegal session id %d", idx);
+		throw(MAL,"clients.setsessiontimeout","Illegal session id %d", idx);
 
 	MT_lock_set(&mal_contextLock);
 	if (mal_clients[idx].mode == FREECLIENT)
-		msg = createException(MAL,"clients.sessionTimeout","Session not active anymore");
+		msg = createException(MAL,"clients.setsessiontimeout","Session not active anymore");
 	else
 		mal_clients[idx].sessiontimeout = (lng) sto * 1000000;
 	MT_lock_unset(&mal_contextLock);
@@ -754,20 +752,11 @@ CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		force = *getArgReference_bit(stk,pci,2);
 
 	(void) mb;
-	switch( getArgType(mb,pci,1)){
-	case TYPE_bte:
-		delay = *getArgReference_bte(stk,pci,1);
-		break;
-	case TYPE_sht:
-		delay = *getArgReference_sht(stk,pci,1);
-		break;
-	default:
-		delay = *getArgReference_int(stk,pci,1);
-		break;
-	}
+
+	delay = *getArgReference_bte(stk,pci,1);
 
 	if (cntxt->user != MAL_ADMIN)
-		throw(MAL,"mal.shutdown", "Administrator rights required");
+		throw(MAL,"mal.shutdown", SQLSTATE(42000) "Administrator rights required");
 	if (is_int_nil(delay))
 		throw(MAL,"mal.shutdown", "Delay cannot be NULL");
 	if (delay < 0)
@@ -824,16 +813,16 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (id == NULL || user == NULL || login == NULL || sessiontimeout == NULL || idle == NULL || querytimeout == NULL ||
 	   opt == NULL || wlimit == NULL || mlimit == NULL ){
-		if ( id) BBPunfix(id->batCacheid);
-		if ( user) BBPunfix(user->batCacheid);
-		if ( login) BBPunfix(login->batCacheid);
-		if ( sessiontimeout) BBPunfix(sessiontimeout->batCacheid);
-		if ( querytimeout) BBPunfix(querytimeout->batCacheid);
-		if ( idle) BBPunfix(idle->batCacheid);
+		BBPreclaim(id);
+		BBPreclaim(user);
+		BBPreclaim(login);
+		BBPreclaim(sessiontimeout);
+		BBPreclaim(querytimeout);
+		BBPreclaim(idle);
 
-		if ( opt) BBPunfix(opt->batCacheid);
-		if ( wlimit) BBPunfix(wlimit->batCacheid);
-		if ( mlimit) BBPunfix(mlimit->batCacheid);
+		BBPreclaim(opt);
+		BBPreclaim(wlimit);
+		BBPreclaim(mlimit);
 		throw(SQL,"sql.sessions", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -945,12 +934,8 @@ mel_func clients_init_funcs[] = {
  pattern("clients", "settimeout", CLTsetTimeout, true, "Abort a query after q seconds (q=0 means run undisturbed).\nThe session timeout aborts the connection after spending too\nmany seconds on query processing.", args(1,3, arg("",void),arg("q",lng),arg("s",lng))),
  pattern("clients", "setQryTimeoutMicro", CLTqueryTimeoutMicro, true, "", args(1,2, arg("",void),arg("n",lng))),
  pattern("clients", "setquerytimeout", CLTqueryTimeout, true, "", args(1,2, arg("",void),arg("n",int))),
- pattern("clients", "setquerytimeout", CLTqueryTimeout, true, "", args(1,3, arg("",void),arg("sid",bte),arg("n",int))),
- pattern("clients", "setquerytimeout", CLTqueryTimeout, true, "", args(1,3, arg("",void),arg("sid",sht),arg("n",int))),
  pattern("clients", "setquerytimeout", CLTqueryTimeout, true, "A query is aborted after q seconds (q=0 means run undisturbed).", args(1,3, arg("",void),arg("sid",int),arg("n",int))),
  pattern("clients", "setsessiontimeout", CLTsessionTimeout, true, "", args(1,2, arg("",void),arg("n",int))),
- pattern("clients", "setsessiontimeout", CLTsessionTimeout, true, "", args(1,3, arg("",void),arg("sid",bte),arg("n",int))),
- pattern("clients", "setsessiontimeout", CLTsessionTimeout, true, "", args(1,3, arg("",void),arg("sid",sht),arg("n",int))),
  pattern("clients", "setsessiontimeout", CLTsessionTimeout, true, "Set the session timeout for a particulat session id", args(1,3, arg("",void),arg("sid",int),arg("n",int))),
  pattern("clients", "setoptimizer", CLTsetoptimizer, true, "", args(1,2, arg("",void),arg("opt",str))),
  pattern("clients", "setoptimizer", CLTsetoptimizer, true, "Set the session optimizer", args(1,3, arg("",void),arg("sid",int),arg("opt",str))),
@@ -958,12 +943,10 @@ mel_func clients_init_funcs[] = {
  pattern("clients", "setworkerlimit", CLTsetworkerlimit, true, "Limit the number of worker threads per query", args(1,3, arg("",void),arg("sid",int),arg("n",int))),
  pattern("clients", "setmemorylimit", CLTsetmemorylimit, true, "", args(1,2, arg("",void),arg("n",int))),
  pattern("clients", "setmemorylimit", CLTsetmemorylimit, true, "Limit the memory claim in MB per query", args(1,3, arg("",void),arg("sid",int),arg("n",int))),
- pattern("clients", "stopsession", CLTstopSession, true, "", args(1,2, arg("",void),arg("sid",bte))),
- pattern("clients", "stopsession", CLTstopSession, true, "", args(1,2, arg("",void),arg("sid",sht))),
  pattern("clients", "stopsession", CLTstopSession, true, "Stop a particular session", args(1,2, arg("",void),arg("sid",int))),
  command("clients", "setprinttimeout", CLTsetPrintTimeout, true, "Print running query every so many seconds.", args(1,2, arg("",void),arg("n",int))),
- pattern("clients", "shutdown", CLTshutdown, true, "", args(1,2, arg("",str),arg("delay",int))),
- pattern("clients", "shutdown", CLTshutdown, true, "Close all other client connections. Return if it succeeds.\nIf forced is set then always stop the system the hard way", args(1,3, arg("",str),arg("delay",int),arg("forced",bit))),
+ pattern("clients", "shutdown", CLTshutdown, true, "", args(1,2, arg("",str),arg("delay",bte))),
+ pattern("clients", "shutdown", CLTshutdown, true, "Close all other client connections. Return if it succeeds.\nIf forced is set then always stop the system the hard way", args(1,3, arg("",str),arg("delay",bte),arg("forced",bit))),
  command("clients", "md5sum", CLTmd5sum, false, "Return hex string representation of the MD5 hash of the given string", args(1,2, arg("",str),arg("pw",str))),
  command("clients", "sha1sum", CLTsha1sum, false, "Return hex string representation of the SHA-1 hash of the given string", args(1,2, arg("",str),arg("pw",str))),
  command("clients", "sha2sum", CLTsha2sum, false, "Return hex string representation of the SHA-2 hash with bits of the given string", args(1,3, arg("",str),arg("pw",str),arg("bits",int))),

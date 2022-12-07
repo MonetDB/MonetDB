@@ -398,9 +398,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 
 		assert(memory_size > 0);
 		// create the shared memory for the header
-		MT_lock_set(&pyapiLock);
 		mmap_ptrs[0] = GDKinitmmap(mmap_id + 0, memory_size, &mmap_sizes[0]);
-		MT_lock_unset(&pyapiLock);
 		if (mmap_ptrs[0] == NULL) {
 			msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
 			goto wrapup;
@@ -419,10 +417,8 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 		}
 
 		// create the shared memory space for queries
-		MT_lock_set(&pyapiLock);
 		mmap_ptrs[1] = GDKinitmmap(mmap_id + 1, sizeof(QueryStruct),
 						 &mmap_sizes[1]);
-		MT_lock_unset(&pyapiLock);
 		if (mmap_ptrs[1] == NULL) {
 			msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
 			goto wrapup;
@@ -536,10 +532,8 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 
 				// get the shared memory address for this return value
 				assert(total_size > 0);
-				MT_lock_set(&pyapiLock);
 				mmap_ptrs[i + 3] = GDKinitmmap(mmap_id + i + 3, total_size,
 											   &mmap_sizes[i + 3]);
-				MT_lock_unset(&pyapiLock);
 				if (mmap_ptrs[i + 3] == NULL) {
 					msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
 					goto wrapup;
@@ -554,11 +548,9 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 					size_t mask_size = ret->count * sizeof(bool);
 
 					assert(mask_size > 0);
-					MT_lock_set(&pyapiLock);
 					mmap_ptrs[pci->retc + (i + 3)] = GDKinitmmap(
 						mmap_id + pci->retc + (i + 3), mask_size,
 						&mmap_sizes[pci->retc + (i + 3)]);
-					MT_lock_unset(&pyapiLock);
 					if (mmap_ptrs[pci->retc + (i + 3)] == NULL) {
 						msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
 						goto wrapup;
@@ -993,9 +985,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 				}
 				GDKfree(split_bats);
 			}
-			if (aggr_group != NULL) {
-				BBPunfix(aggr_group->batCacheid);
-			}
+			BBPreclaim(aggr_group);
 			if (msg != MAL_SUCCEED) {
 				goto wrapup;
 			}
@@ -1355,10 +1345,8 @@ wrapup:
 	// Cleanup input BATs
 	for (i = pci->retc + 2 + has_card_arg; i < pci->argc; i++) {
 		PyInput *inp = &pyinput_values[i - (pci->retc + 2 + has_card_arg)];
-		if (inp->bat != NULL)
-			BBPunfix(inp->bat->batCacheid);
-		if (inp->conv_bat != NULL)
-			BBPunfix(inp->conv_bat->batCacheid); /* delayed free */
+		BBPreclaim(inp->bat);
+		BBPreclaim(inp->conv_bat); /* delayed free */
 	}
 	if (pResult != NULL && gstate == 0) {
 		// if there is a pResult here, we are running single threaded (LANGUAGE

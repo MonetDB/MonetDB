@@ -198,11 +198,10 @@ internal_find_bat(logger *lg, log_id id, int tid)
 	return -1;		/* error creating hash */
 }
 
-static void
+static inline void
 logbat_destroy(BAT *b)
 {
-	if (b)
-		BBPunfix(b->batCacheid);
+	BBPreclaim(b);
 }
 
 static BAT *
@@ -1243,8 +1242,7 @@ log_read_transaction(logger *lg)
 	if (!lg->flushing)
 		GDKdebug = dbg;
 
-	if (cands)
-		BBPunfix(cands->batCacheid);
+	BBPreclaim(cands);
 	if (!ok)
 		return LOG_EOF;
 	return err;

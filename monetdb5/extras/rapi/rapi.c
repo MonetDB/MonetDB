@@ -884,8 +884,7 @@ RAPIloopback(void *query) {
 				BAT *b = BATdescriptor(output->cols[i].b);
 				if (b == NULL || !(varvalue = bat_to_sexp(b, TYPE_any))) {
 					UNPROTECT(i + 3);
-					if (b)
-						BBPunfix(b->batCacheid);
+					BBPreclaim(b);
 					return ScalarString(RSTR("Conversion error"));
 				}
 				BBPunfix(b->batCacheid);

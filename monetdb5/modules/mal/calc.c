@@ -656,8 +656,7 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	}
 	r = (*sumprod)(VALget(ret), ret->vtype, b, s, true, nil_if_empty, inout);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (r != GDK_SUCCEED)
 		return mythrow(MAL, func, OPERATION_FAILED);
 	return MAL_SUCCEED;
@@ -709,8 +708,7 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = sid != NULL && !is_bat_nil(*sid) ? BATdescriptor(*sid) : NULL;
 	if (b == NULL ||
 		(sid != NULL && !is_bat_nil(*sid) && s == NULL)) {
-		if (b)
-			BBPunfix(b->batCacheid);
+		BBPreclaim(b);
 		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	inout &= !is_lng_nil((*cnt));
@@ -757,15 +755,11 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (cnt)
 			*cnt = lng_nil;
 	}
-	if (avgs)
-		BBPunfix(avgs->batCacheid);
-	if (rems)
-		BBPunfix(rems->batCacheid);
-	if (cnts)
-		BBPunfix(cnts->batCacheid);
+	BBPreclaim(avgs);
+	BBPreclaim(rems);
+	BBPreclaim(cnts);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (rc != GDK_SUCCEED)
 		return mythrow(MAL, "aggr.avg", OPERATION_FAILED);
 	return MAL_SUCCEED;
@@ -787,12 +781,9 @@ CMDBATavg3comb(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	r = BATdescriptor(*rid);
 	c = BATdescriptor(*cid);
 	if (b == NULL || r == NULL || c == NULL) {
-		if (b)
-			BBPunfix(b->batCacheid);
-		if (r)
-			BBPunfix(r->batCacheid);
-		if (c)
-			BBPunfix(c->batCacheid);
+		BBPreclaim(b);
+		BBPreclaim(r);
+		BBPreclaim(c);
 		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	avgs = BATgroupavg3combine(b, r, c, NULL, NULL, TRUE);
@@ -816,8 +807,7 @@ CMDBATavg3comb(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		VALset(ret, ret->vtype, (ptr)ATOMnilptr(ret->vtype));
 	}
-	if (avgs)
-		BBPunfix(avgs->batCacheid);
+	BBPreclaim(avgs);
 	BBPunfix(b->batCacheid);
 	BBPunfix(r->batCacheid);
 	BBPunfix(c->batCacheid);
@@ -881,10 +871,8 @@ CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert((separator && !sep) || (!separator && sep));
 	r = BATstr_group_concat(ret, b, s, sep, true, nil_if_empty, separator);
 	BBPunfix(b->batCacheid);
-	if (sep)
-		BBPunfix(sep->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(sep);
+	BBPreclaim(s);
 	if (r != GDK_SUCCEED)
 		return mythrow(MAL, "aggr.str_group_concat", OPERATION_FAILED);
 	return MAL_SUCCEED;

@@ -476,7 +476,6 @@ mvc_bin_export_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		*ret = BATcount(b);
 
 end:
-	if (b)
-		BBPunfix(b->batCacheid);
+	BBPreclaim(b);
 	return msg;
 }

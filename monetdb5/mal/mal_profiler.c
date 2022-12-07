@@ -366,8 +366,7 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					ok = logadd(&logbuf, ",\"type\":\"bat[:%s]\"", tname);
 					GDKfree(tname);
 					if (!ok) {
-						if (d)
-							BBPunfix(d->batCacheid);
+						BBPreclaim(d);
 						goto cleanup_and_exit;
 					}
 					if(d) {
@@ -821,12 +820,9 @@ stopProfiler(Client cntxt)
 static void
 _cleanupProfiler(Client cntxt)
 {
-	if (cntxt->profticks)
-		BBPunfix(cntxt->profticks->batCacheid);
-	if (cntxt->profstmt)
-		BBPunfix(cntxt->profstmt->batCacheid);
-	if (cntxt->profevents)
-		BBPunfix(cntxt->profevents->batCacheid);
+	BBPreclaim(cntxt->profticks);
+	BBPreclaim(cntxt->profstmt);
+	BBPreclaim(cntxt->profevents);
 	cntxt->profticks = cntxt->profstmt = cntxt->profevents = NULL;
 }
 

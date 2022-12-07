@@ -180,8 +180,7 @@ UUIDisaUUID_bulk(bat *ret, const bat *bid)
 	bn->tkey = false;
 	bat_iterator_end(&bi);
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
+	BBPreclaim(b);
 	if (bn) {					/* implies msg==MAL_SUCCEED */
 		*ret = bn->batCacheid;
 		BBPkeepref(bn);
@@ -253,10 +252,8 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	bat_iterator_end(&bi);
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (dst) {					/* implies msg==MAL_SUCCEED */
 		BATsetcount(dst, ci.ncand);
 		dst->tnil = nils;
@@ -342,10 +339,8 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	bat_iterator_end(&bi);
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (dst && !msg) {
 		BATsetcount(dst, ci.ncand);
 		dst->tnil = nils;
@@ -440,10 +435,8 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 	bat_iterator_end(&bi);
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (dst && !msg) {
 		BATsetcount(dst, ci.ncand);
 		dst->tnil = nils;

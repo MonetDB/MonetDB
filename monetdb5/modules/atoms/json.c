@@ -2008,8 +2008,7 @@ JSONargumentlist(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	if (error || bats == 0) {
 		for (i = pci->retc; i < pci->argc; i++)
-			if (bl[i])
-				BBPunfix(bl[i]->batCacheid);
+			BBPreclaim(bl[i]);
 		GDKfree(bl);
 		return NULL;
 	}
@@ -2022,8 +2021,7 @@ JSONfreeArgumentlist(BAT **bl, InstrPtr pci)
 	int i;
 
 	for (i = pci->retc; i < pci->argc; i++)
-		if (bl[i])
-			BBPunfix(bl[i]->batCacheid);
+		BBPreclaim(bl[i]);
 	GDKfree(bl);
 }
 
@@ -2278,8 +2276,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 
 	bv = BATdescriptor(*values);
 	if (bv == NULL) {
-		if (bk)
-			BBPunfix(bk->batCacheid);
+		BBPreclaim(bk);
 		throw(MAL, "json.fold", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	tpe = bv->ttype;
@@ -2287,8 +2284,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 	if (id) {
 		bo = BATdescriptor(*id);
 		if (bo == NULL) {
-			if (bk)
-				BBPunfix(bk->batCacheid);
+			BBPreclaim(bk);
 			BBPunfix(bv->batCacheid);
 			throw(MAL, "json.nest", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
@@ -2376,20 +2372,16 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 		row[1] = ']';
 		row[2] = 0;
 	}
-	if (bo)
-		BBPunfix(bo->batCacheid);
-	if (bk)
-		BBPunfix(bk->batCacheid);
+	BBPreclaim(bo);
+	BBPreclaim(bk);
 	BBPunfix(bv->batCacheid);
 	*ret = row;
 	return MAL_SUCCEED;
 
   memfail:
 	GDKfree(row);
-	if (bo)
-		BBPunfix(bo->batCacheid);
-	if (bk)
-		BBPunfix(bk->batCacheid);
+	BBPreclaim(bo);
+	BBPreclaim(bk);
 	BBPunfix(bv->batCacheid);
 	throw(MAL, "json.fold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
@@ -2851,8 +2843,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
   out:
 	if (bn)
 		bn->theap->dirty |= BATcount(bn) > 0;
-	if (t2)
-		BBPunfix(t2->batCacheid);
+	BBPreclaim(t2);
 	if (freeb)
 		BBPunfix(b->batCacheid);
 	if (freeg)
@@ -2890,14 +2881,10 @@ JSONsubjsoncand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_n
 	} else {
 		err = JSONjsonaggr(&bn, b, g, e, s, *skip_nils);
 	}
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (g)
-		BBPunfix(g->batCacheid);
-	if (e)
-		BBPunfix(e->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(g);
+	BBPreclaim(e);
+	BBPreclaim(s);
 	if (err != NULL)
 		throw(MAL, "aggr.subjson", "%s", err);
 

@@ -309,9 +309,7 @@ PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 wrapup:
 	if (cols) {
 		for (i = 0; i < ncols; i++) {
-			if (cols[i].b) {
-				BBPunfix(cols[i].b->batCacheid);
-			}
+			BBPreclaim(cols[i].b);
 			if (cols[i].name) {
 				GDKfree(cols[i].name);
 			}

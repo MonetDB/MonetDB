@@ -81,8 +81,7 @@ TABLETdestroy_format(Tablet *as)
 	Column *fmt = as->format;
 
 	for (p = 0; p < as->nr_attrs; p++) {
-		if (fmt[p].c)
-			BBPunfix(fmt[p].c->batCacheid);
+		BBPreclaim(fmt[p].c);
 		if (fmt[p].data)
 			GDKfree(fmt[p].data);
 	}
@@ -134,10 +133,12 @@ TABLETcreate_bats(Tablet *as, BUN est)
 		fmt[i].c = void_bat_create(fmt[i].adt, est);
 		if (!fmt[i].c) {
 			while (i > 0) {
-				if (!fmt[--i].skip)
+				if (!fmt[--i].skip) {
 					BBPreclaim(fmt[i].c);
+					fmt[i].c = NULL;
+				}
 			}
-			throw(SQL, "copy", "Failed to create bat of size " BUNFMT "\n", as->nr);
+			throw(SQL, "copy", "Failed to create bat of size " BUNFMT "\n", est);
 		}
 		fmt[i].ci = bat_iterator_nolock(fmt[i].c);
 		nr++;
@@ -248,10 +249,9 @@ tablet_skip_string(char *s, char quote, bool escape)
 static int
 TABLET_error(stream *s)
 {
-	char *err = mnstr_error(s);
-	/* use free as stream allocates outside GDK */
+	const char *err = mnstr_peek_error(s);
 	if (err)
-		free(err);
+		TRC_ERROR(MAL_SERVER, "Stream error: %s\n", err);
 	return -1;
 }
 
@@ -1526,14 +1526,10 @@ create_rejects_table(Client cntxt)
 		cntxt->error_msg = COLnew(0, TYPE_str, 0, TRANSIENT);
 		cntxt->error_input = COLnew(0, TYPE_str, 0, TRANSIENT);
 		if (cntxt->error_row == NULL || cntxt->error_fld == NULL || cntxt->error_msg == NULL || cntxt->error_input == NULL) {
-			if (cntxt->error_row)
-				BBPunfix(cntxt->error_row->batCacheid);
-			if (cntxt->error_fld)
-				BBPunfix(cntxt->error_fld->batCacheid);
-			if (cntxt->error_msg)
-				BBPunfix(cntxt->error_msg->batCacheid);
-			if (cntxt->error_input)
-				BBPunfix(cntxt->error_input->batCacheid);
+			BBPreclaim(cntxt->error_row);
+			BBPreclaim(cntxt->error_fld);
+			BBPreclaim(cntxt->error_msg);
+			BBPreclaim(cntxt->error_input);
 			cntxt->error_row = cntxt->error_fld = cntxt->error_msg = cntxt->error_input = NULL;
 		}
 	}

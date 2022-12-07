@@ -1,13 +1,3 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
-* Wed Nov  9 2022 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed a crash when the server runs out of client contexts (i.e. more
-  concurrent clients than the server is configured to handle).
-- A race condition in the SHA hash code was fixed which resulted in
-  occasional failed connection attempts when they occurred concurrently.
-
-* Wed Oct 19 2022 Sjoerd Mullender <sjoerd@acm.org>
-- Fix a bug where the MAL optimizer would use the starttime of the
-  previous query to determine whether a query timeout occurred.
-
