@@ -6487,8 +6487,7 @@ odbc_datetime_func:
 		}
     | TIMESTAMPDIFF '(' odbc_tsi_qualifier ',' intval ',' search_condition ')'
 		{ dlist *l = L(); 
-          // TODO sql_diff or custom func ?
-		  append_list( l, append_string(L(), sa_strdup(SA, "sql_sub")));
+		  append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff")));
 	      append_int(l, FALSE); /* ignore distinct */
           sql_subtype t; 
 	  	  lng i = 0;
