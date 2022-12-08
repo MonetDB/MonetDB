@@ -6485,19 +6485,24 @@ odbc_datetime_func:
           append_symbol(l, _newAtomNode(atom_int(SA, &t, i)));
           $$ = _symbol_create_list( SQL_BINOP, l ); 
 		}
-    | TIMESTAMPDIFF '(' odbc_tsi_qualifier ',' intval ',' search_condition ')'
+    | TIMESTAMPDIFF '(' odbc_tsi_qualifier ',' search_condition ',' search_condition ')'
 		{ dlist *l = L(); 
-		  append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff")));
-	      append_int(l, FALSE); /* ignore distinct */
-          sql_subtype t; 
-	  	  lng i = 0;
-          if (process_odbc_interval(m, $3, $5, &t, &i) < 0) {
-		    yyerror(m, "incorrect interval");
-			$$ = NULL;
-			YYABORT;
+          switch($3) {
+            // TODO implement other cases
+            case iyear:
+            case iquarter:
+            case imonth:
+            case iweek:
+            case iday:
+            case ihour:
+            case imin:
+            case isec:
+            default:
+		        append_list( l, append_string(L(), sa_strdup(SA, "odbc_timestampdiff_sec")));
           }
+	      append_int(l, FALSE); /* ignore distinct */
           append_symbol(l, $7);
-          append_symbol(l, _newAtomNode(atom_int(SA, &t, i)));
+          append_symbol(l, $5);
           $$ = _symbol_create_list( SQL_BINOP, l ); 
 		}
 ;
