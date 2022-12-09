@@ -547,7 +547,7 @@ BATextend(BAT *b, BUN newcap)
 	if (b->theap->base) {
 		TRC_DEBUG(HEAP, "HEAPgrow in BATextend %s %zu %zu\n",
 			  b->theap->filename, b->theap->size, theap_size);
-		rc = HEAPgrow(&b->theaplock, &b->theap, theap_size, b->batRestricted == BAT_READ);
+		rc = HEAPgrow(&b->theap, theap_size, b->batRestricted == BAT_READ);
 		if (rc == GDK_SUCCEED)
 			b->batCapacity = newcap;
 	} else {
