@@ -269,6 +269,11 @@ SQLprepareClient(Client c, int login)
 			default:
 				break;
 		}
+		lng maxmem;
+		if (monet5_user_get_max_memory(m, m->user_id, &maxmem) == 0)
+			c->qryctx.maxmem = (ATOMIC_BASE_TYPE) (maxmem > 0 ? maxmem : 0);
+		else
+			c->qryctx.maxmem = 0;
 	}
 
 	if (c->handshake_options) {
@@ -1018,12 +1023,12 @@ SQLparser(Client c)
 		if (n == 2 || n == 3) {
 			if (n == 2)
 				len = m->reply_size;
+			in->pos = in->len;	/* HACK: should use parsed length */
 			if ((ok = mvc_export_chunk(be, out, v, off, len < 0 ? BUN_NONE : (BUN) len)) < 0) {
 				msg = createException(SQL, "SQLparser", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, out, ok));
 				goto finalize;
 			}
 
-			in->pos = in->len;	/* HACK: should use parsed length */
 			return MAL_SUCCEED;
 		}
 		if (strncmp(in->buf + in->pos, "close ", 6) == 0) {
@@ -1090,8 +1095,10 @@ SQLparser(Client c)
 		}
 		if (strncmp(in->buf + in->pos, "quit", 4) == 0) {
 			c->mode = FINISHCLIENT;
+			in->pos = in->len;	/* HACK: should use parsed length */
 			return MAL_SUCCEED;
 		}
+		in->pos = in->len;	/* HACK: should use parsed length */
 		msg = createException(SQL, "SQLparser", SQLSTATE(42000) "Unrecognized X command: %s\n", in->buf + in->pos);
 		goto finalize;
 	}

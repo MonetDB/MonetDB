@@ -116,10 +116,8 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*res = bn->batCacheid;
 	BBPkeepref(bn);
   bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (bs)
-		BBPunfix(bs->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(bs);
 	return msg;
 }
 
@@ -211,10 +209,8 @@ BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
 	bat_iterator_end(&bi);
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (dst && !msg) {
 		BATsetcount(dst, ci.ncand);
 		dst->tnil = nils;
@@ -252,8 +248,7 @@ BLOBblob_fromstr_bulk(bat *res, const bat *bid, const bat *sid)
 	}
 	bn = BATconvert(b, s, TYPE_blob, 0, 0, 0);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (bn == NULL)
 		throw(MAL, "batcalc.blob", GDK_EXCEPTION);
 	*res = bn->batCacheid;

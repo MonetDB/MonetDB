@@ -2789,8 +2789,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 					GDKfree(hsh);
 					bat_iterator_end(&li);
 					bat_iterator_end(&ri);
-					if (b)
-						BBPunfix(b->batCacheid);
+					BBPreclaim(b);
 					return nomatch(r1p, r2p, l, r, lci,
 						       false, false, __func__, t0);
 				}
@@ -2806,8 +2805,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 						MT_rwlock_rdunlock(&r->thashlock);
 					bat_iterator_end(&li);
 					bat_iterator_end(&ri);
-					if (b)
-						BBPunfix(b->batCacheid);
+					BBPreclaim(b);
 					return nomatch(r1p, r2p, l, r, lci,
 						       false, false,
 						       __func__, t0);
@@ -3036,8 +3034,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
 		  GDKusec() - t0);
 
-	if (b)
-		BBPunfix(b->batCacheid);
+	BBPreclaim(b);
 	return GDK_SUCCEED;
 
   bailout:
@@ -3052,8 +3049,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	}
 	BBPreclaim(r1);
 	BBPreclaim(r2);
-	if (b)
-		BBPunfix(b->batCacheid);
+	BBPreclaim(b);
 	return GDK_FAIL;
 }
 
@@ -3806,22 +3802,18 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	if (l->ttype == TYPE_msk || mask_cand(l)) {
 		l = BATunmask(l);
-		if (lp != NULL)
-			BBPunfix(lp->batCacheid);
+		BBPreclaim(lp);
 		if (l == NULL) {
-			if (rp != NULL)
-				BBPunfix(rp->batCacheid);
+			BBPreclaim(rp);
 			return GDK_FAIL;
 		}
 		lp = l;
 	}
 	if (r->ttype == TYPE_msk || mask_cand(r)) {
 		r = BATunmask(r);
-		if (rp != NULL)
-			BBPunfix(rp->batCacheid);
+		BBPreclaim(rp);
 		if (r == NULL) {
-			if (lp != NULL)
-				BBPunfix(lp->batCacheid);
+			BBPreclaim(lp);
 			return GDK_FAIL;
 		}
 		rp = r;
@@ -3974,8 +3966,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					     r1, NULL, NULL, false, false, false);
 				BBPunfix(r1->batCacheid);
 				if (rc != GDK_SUCCEED) {
-					if (r2)
-						BBPunfix(r2->batCacheid);
+					BBPreclaim(r2);
 					goto doreturn;
 				}
 				*r1p = r1 = tmp;
@@ -4000,10 +3991,8 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		      not_in, max_one, min_one, estimate, t0, false, rhash, prhash,
 		      rcand, func);
   doreturn:
-	if (lp != NULL)
-		BBPunfix(lp->batCacheid);
-	if (rp != NULL)
-		BBPunfix(rp->batCacheid);
+	BBPreclaim(lp);
+	BBPreclaim(rp);
 	return rc;
 }
 
@@ -4172,22 +4161,18 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 
 	if (l->ttype == TYPE_msk || mask_cand(l)) {
 		l = BATunmask(l);
-		if (lp != NULL)
-			BBPunfix(lp->batCacheid);
+		BBPreclaim(lp);
 		if (l == NULL) {
-			if (rp != NULL)
-				BBPunfix(rp->batCacheid);
+			BBPreclaim(rp);
 			return GDK_FAIL;
 		}
 		lp = l;
 	}
 	if (r->ttype == TYPE_msk || mask_cand(r)) {
 		r = BATunmask(r);
-		if (rp != NULL)
-			BBPunfix(rp->batCacheid);
+		BBPreclaim(rp);
 		if (r == NULL) {
-			if (lp != NULL)
-				BBPunfix(lp->batCacheid);
+			BBPreclaim(lp);
 			return GDK_FAIL;
 		}
 		rp = r;
@@ -4288,10 +4273,8 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 			      __func__);
 	}
   doreturn:
-	if (lp != NULL)
-		BBPunfix(lp->batCacheid);
-	if (rp != NULL)
-		BBPunfix(rp->batCacheid);
+	BBPreclaim(lp);
+	BBPreclaim(rp);
 	return rc;
 }
 

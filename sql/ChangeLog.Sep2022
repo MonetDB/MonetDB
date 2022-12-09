@@ -1,7 +1,3 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Wed Nov  9 2022 Sjoerd Mullender <sjoerd@acm.org>
-- Improved the handling of the "idle" value in the sys.sessions function
-  and view.
-

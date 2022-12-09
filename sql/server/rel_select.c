@@ -520,6 +520,46 @@ nary_function_arg_types_2str(mvc *sql, list* types, int N)
 	return arg_list;
 }
 
+/*
+ * TODO
+ * keep array file_loader struct, ie name, add_table_column_types, and load.
+ * needs register name, funcitons (from parquet etc files)
+ * fl_register(char *name, functions);
+ * file_loader *fl_find(char *ext);
+ */
+
+static char *
+file_loader_add_table_column_types(sql_subfunc *f, sql_allocator *sa, sql_exp *e)
+{
+	if (!exp_is_atom(e))
+		return "Filename missing";
+	atom *a = e->l;
+	if (a->data.vtype != TYPE_str || !a->data.val.sval)
+		return "Filename missing";
+	char *filename = a->data.val.sval;
+	char *ext = strrchr(filename, '.');
+	if (ext)
+		ext=ext+1;
+	printf("file_loader add column types '%s' ext %s\n", filename, ext?ext:"");
+	(void)f;
+	(void)sa;
+	(void)e;
+	/* ext -> call back */
+	/*
+	node *n;
+	list *types = sa_list(sa);
+
+	if (ol_first_node(t->columns)) for (n = ol_first_node(t->columns); n; n = n->next) {
+		sql_column *c = n->data;
+		if (c->base.name[0] != '%')
+			append(types, &c->type);
+	}
+	return types;
+	f->res = types;
+	*/
+	return NULL;
+}
+
 sql_exp *
 find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sql_ftype type)
 {
@@ -531,8 +571,15 @@ find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sq
 	assert(type == F_UNION || type == F_LOADER);
 	if ((f = bind_func_(sql, sname, fname, tl, type, false, &found))) {
 		list *nexps = exps;
-		if (list_empty(tl) || f->func->vararg || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1)))
+		if (list_empty(tl) || f->func->vararg || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1))) {
+			if (list_length(exps) == 1 && f && f->func->varres && strlen(f->func->mod) == 0 && strlen(f->func->imp) == 0 && strcmp(fname, "file_loader") == 0) {
+				sql_exp *file = exps->h->data;
+				char *err = file_loader_add_table_column_types(f, sql->sa, file);
+				if (err)
+					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: file_loader function type resolutions failed '%s'", err);
+			}
 			return exp_op(sql->sa, nexps, f);
+		}
 		found = false;
 	}
 	sql->session->status = 0; /* reset error */
@@ -598,9 +645,9 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 	if (l->next)
 		l = l->next; /* skip distinct */
 	if (l->next) { /* table call with subquery */
+		int is_value = 1;
 		if (l->next->type == type_symbol || l->next->type == type_list) {
 			exp_kind iek = {type_value, card_set, TRUE};
-			list *exps = sa_list(sql->sa);
 			int count = 0;
 
 			if (l->next->type == type_symbol)
@@ -620,6 +667,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 			if (subquery) {
 				if (!(sq = rel_subquery(query, subquery, ek)))
 					return NULL;
+				is_value = 0;
 			} else {
 				for ( ; n; n = n->next) {
 					sql_exp *e = rel_value_exp(query, &outer, n->data.sym, sql_sel | sql_from, iek);
@@ -627,8 +675,10 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 					if (!e)
 						return NULL;
 					append(exps, e);
+					is_value &= exp_is_atom(e);
 				}
-				sq = rel_project(sql->sa, NULL, exps);
+				if (!is_value || (lateral && outer))
+					sq = rel_project(sql->sa, NULL, exps);
 				if (lateral && outer) {
 					sq = rel_crossproduct(sql->sa, sq, outer, op_join);
 					set_dependent(sq);
@@ -636,13 +686,20 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 				}
 			}
 		}
-		if (!sq || (!lateral && outer))
+		if (!is_value && (!sq || (!lateral && outer)))
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such table returning function %s%s%s'%s'", sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname);
-		for (node *en = sq->exps->h; en; en = en->next) {
-			sql_exp *e = en->data;
+		if (!is_value) {
+			if (list_length(exps))
+				exps = sa_list(sql->sa);
+			for (node *en = sq->exps->h; en; en = en->next) {
+				sql_exp *e = en->data;
 
-			append(exps, e=exp_alias_or_copy(sql, tname, exp_name(e), NULL, e));
-			append(tl, exp_subtype(e));
+				append(exps, e=exp_alias_or_copy(sql, tname, exp_name(e), NULL, e));
+				append(tl, exp_subtype(e));
+			}
+		} else {
+			for (node *en = exps->h; en; en = en->next)
+				append(tl, exp_subtype(en->data));
 		}
 	}
 

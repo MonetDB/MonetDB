@@ -116,11 +116,10 @@ def run_test(side, testcase):
                 err_msg = massage(err_msg)
             tr.assertFailed(err_code, err_msg)
         for outfile, expected in data_maker.outfiles():
-            safe_maximum = 1024 * 1024 * 1024
             if not os.path.exists(outfile):
                 tr.fail(f'Output file {outfile} was not created')
-            expected_content = open(expected, 'rb').read(safe_maximum)
-            content = open(outfile, 'rb').read(safe_maximum)
+            expected_content = open(expected, 'rb').read()
+            content = open(outfile, 'rb').read()
             if len(content) != len(expected_content):
                 tr.fail(f'Outfile {outfile} has wrong length: {len(content)}, expected {len(expected_content)}')
             elif content != expected_content:
