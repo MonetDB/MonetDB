@@ -558,8 +558,7 @@ IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		val = getArgReference(stk, pci, i);
 		if (!isaBatType(tpe)) {
 			while (--i >= 1)
-				if (piv[i] != NULL)
-					BBPunfix(piv[i]->batCacheid);
+				BBPreclaim(piv[i]);
 			throw(MAL, "io.table", ILLEGAL_ARGUMENT " BAT expected");
 		}
 		if ((piv[i] = BATdescriptor(*(bat *) val)) == NULL) {

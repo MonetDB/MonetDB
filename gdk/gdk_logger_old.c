@@ -194,11 +194,10 @@ log_find(BAT *b, BAT *d, int val)
 	return BUN_NONE;
 }
 
-static void
+static inline void
 logbat_destroy(BAT *b)
 {
-	if (b)
-		BBPunfix(b->batCacheid);
+	BBPreclaim(b);
 }
 
 static BAT *
@@ -1396,8 +1395,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 		    ||BBPrename(t, bak) < 0) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(n->batCacheid);
-			if (t)
-				BBPunfix(t->batCacheid);
+			BBPreclaim(t);
 			GDKerror("inconsistent database, catalog_tpe does not exist");
 			goto error;
 		}
@@ -1419,12 +1417,11 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 	if (o == NULL) {
 		o = logbat_new(TYPE_lng, BATSIZE, SYSTRANS);
 		if (o == NULL
-		    ||BBPrename(o, bak) < 0) {
+		    || BBPrename(o, bak) < 0) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(n->batCacheid);
 			BBPunfix(t->batCacheid);
-			if (o)
-				BBPunfix(o->batCacheid);
+			BBPreclaim(o);
 			GDKerror("inconsistent database, catalog_oid does not exist");
 			goto error;
 		}

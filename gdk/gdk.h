@@ -738,8 +738,7 @@ typedef struct {
 #define GDKLIBRARY_TAILN	061043U /* first in Jul2021: str offset heaps names don't take width into account */
 #define GDKLIBRARY_HASHASH	061044U /* first in Jul2021: hashash bit in string heaps */
 #define GDKLIBRARY_HSIZE	061045U /* first in Jan2022: heap "size" values */
-/* if the version number is updated, also fix snapshot_bats() in bat_logger.c */
-#define GDKLIBRARY		061046U /* first after Jan2022 */
+#define GDKLIBRARY		061046U /* first in Sep2022 */
 
 /* The batRestricted field indicates whether a BAT is readonly.
  * we have modes: BAT_WRITE  = all permitted
