@@ -1,3 +1,8 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Thu Dec  8 2022 Sjoerd Mullender <sjoerd@acm.org>
+- When extending a bat failed, the capacity had been updated already and
+  was therefore too large.  This could then later cause a crash.  This has
+  been fixed by only updating the capacity if the extend succeeded.
+
