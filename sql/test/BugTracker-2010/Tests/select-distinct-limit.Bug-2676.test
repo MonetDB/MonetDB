@@ -37,7 +37,7 @@ select distinct id from t2676
 4
 
 query I rowsort
-select distinct id from t2676 limit 2
+select distinct id from t2676 order by id asc limit 2
 ----
 1
 2

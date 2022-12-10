@@ -201,7 +201,7 @@ PIPELINEworker(void *T)
 			stk->stk[s->mb->stmt[s->start]->argv[1]].val.ival = PIPELINEnext_counter(p);
 			stk->stk[s->mb->stmt[s->start]->argv[2]].val.pval = p;
 			/* the maxparts (arg 3) is generated ie constant value on the stack */
-			str error = runMALsequence(s->cntxt, s->mb, s->start, s->stop, stk, 0, 0);
+			str error = runMALsequence(s->cntxt, s->mb, s->start+1, s->stop, stk, 0, 0);
 			PIPELINEclear_counter(p);
 			if (error) {
 				void *null = NULL;
@@ -274,13 +274,9 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	if (!pipelines_initialized)
 		PIPELINESinitialize();
 	Pipelines *s = GDKmalloc(sizeof(Pipelines));
-	MalBlkPtr nmb = copyMalBlk(mb);
-	if (!s || !nmb) {
-		if (s)
-			GDKfree(s);
+	if (!s)
 		throw(MAL, "pipelines", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	s->mb = nmb;
+	s->mb = mb;
 	s->cntxt = cntxt;
 	s->start = startpc;
 	s->stop = stoppc;
@@ -291,15 +287,9 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	s->status = 0;
 	if (maxparts > 0)
 		s->nr_workers = MIN(maxparts, GDKnr_threads);
+	/* initialize with direct increment of all threads at once */
 	ATOMIC_INIT(&s->workers, -1);
 	ATOMIC_PTR_INIT(&s->error, NULL);
-
-	s->mb = nmb;
-	/* fix endless call of runMALpipelines but use as loop for parts */
-	nmb->stmt[startpc]->fcn = NULL;
-	nmb->stmt[startpc]->token = ASSIGNsymbol;
-	getModuleId(nmb->stmt[startpc]) = NULL;
-	getFunctionId(nmb->stmt[startpc]) = NULL;
 
 	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "PIPELINE%d", cntxt->idx);
@@ -312,21 +302,19 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	for (int i = 0; i < s->nr_workers; i++)
 		q_enqueue(workers[i].q, s);
 
-	//stk->stk[nmb->stmt[startpc]->argv[0]].val.btval = FALSE; /* end barrier */
 	/* wait for result */
 	for (int i = 0; i < s->nr_workers; i++)
 		MT_sema_down(&s->s);
 	MT_sema_destroy(&s->s);
 	MT_lock_destroy(&s->l);
 	str err = ATOMIC_PTR_GET(&s->error);
-	freeMalBlk(s->mb);
 	ATOMIC_DESTROY(&s->counter);
 	ATOMIC_DESTROY(&s->workers);
 	ATOMIC_PTR_DESTROY(&s->error);
 	MT_cond_destroy(&s->cond);
 	restart = (!err && s->status);
 	GDKfree(s);
-	if (restart)
+	if (restart) /* TODO move into new loop around pipeline */
 		return runMALpipelines(cntxt, mb, startpc, stoppc, maxparts, stk);
 	return err;
 }

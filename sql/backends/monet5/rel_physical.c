@@ -13,7 +13,6 @@
 #include "rel_exp.h"
 #include "rel_rel.h"
 
-#if 0
 static sql_subfunc *
 find_func( mvc *sql, char *name, list *exps )
 {
@@ -64,7 +63,6 @@ rel_find_aggr_exp(mvc *sql, sql_rel *rel, list *exps, sql_exp *e, char *name)
 	}
 	return NULL;
 }
-#endif
 
 static sql_exp *
 find_aggr_exp(mvc *sql, list *exps, char *name)
@@ -120,7 +118,6 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 }
 
 
-#if 0
 /* TODO for count we need remove useless 'converts' etc */
 /* rewrite avg into sum/count */
 static sql_rel *
@@ -191,6 +188,10 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 
 			cnt_d = cnt;
 
+			sql_subtype *avg_t = exp_subtype(avg);
+			sql_subtype *dbl_t = sql_bind_localtype("dbl");
+			if (subtype_cmp(avg_t, dbl_t) == 0 || EC_INTERVAL(avg_t->type->eclass)) {
+
 			args = new_exp_list(sql->sa);
 			append(args, cnt);
 			append(args, exp_atom_lng(sql->sa, 0));
@@ -207,8 +208,6 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 			assert(ifthen);
 			cnt_d = exp_op(sql->sa, args, ifthen);
 
-			sql_subtype *avg_t = exp_subtype(avg);
-			sql_subtype *dbl_t = sql_bind_localtype("dbl");
 			if (subtype_cmp(avg_t, dbl_t) == 0) {
 				cnt_d = exp_convert(sql->sa, cnt, exp_subtype(cnt), dbl_t);
 				sum = exp_convert(sql->sa, sum, exp_subtype(sum), dbl_t);
@@ -233,6 +232,14 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 			div = find_func(sql, "sql_div", args);
 			assert(div);
 			navg = exp_op(sql->sa, args, div);
+			} else {
+				args = sa_list(sql->sa);
+				append(args, sum);
+				append(args, cnt_d);
+				div = find_func(sql, "num_div", args);
+				assert(div);
+				navg = exp_op(sql->sa, args, div);
+			}
 
 			if (subtype_cmp(exp_subtype(avg), exp_subtype(navg)) != 0)
 				navg = exp_convert(sql->sa, navg, exp_subtype(navg), exp_subtype(avg));
@@ -275,14 +282,13 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 	}
 	return rel;
 }
-#endif
 
 sql_rel *
 rel_physical(mvc *sql, sql_rel *rel)
 {
 	visitor v = { .sql = sql };
 
-//	rel = rel_visitor_bottomup(&v, rel, &rel_avg_rewrite);
+	rel = rel_visitor_bottomup(&v, rel, &rel_avg_rewrite);
 	rel = rel_visitor_bottomup(&v, rel, &rel_count_gt_zero); /* the select > 0 should be done before using the values */
 	return rel;
 }

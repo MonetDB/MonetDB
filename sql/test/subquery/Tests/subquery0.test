@@ -8,7 +8,7 @@ statement ok rowcount 10
 INSERT INTO _subqueries VALUES (0), (1), (2), (3), (4), (5), (6), (7), (8), (9)
 
 query I rowsort
-SELECT * FROM (SELECT * FROM _subqueries LIMIT 5) AS result
+SELECT * FROM (SELECT * FROM _subqueries order by i asc LIMIT 5) AS result
 ----
 0
 1

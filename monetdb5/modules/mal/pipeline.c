@@ -288,7 +288,7 @@ PPsend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "pipeline.send", GDK_EXCEPTION);
 		goto bailout;
 	}
-	*metadata = p->p->counters[p->wid] + 1;
+	*metadata = pp->counters[p->wid] + 1;
 
 	MT_cond_broadcast(&pp->cond);
 	(void)cntxt;
@@ -345,20 +345,20 @@ PPrecv(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		// value is not in yet, is there still hope?
 		bool sender_still_running = false;
 		for (int i = 0; i < p->p->nr_workers; i++) {
-			if (p->p->counters[i] == myself - 1) {
+			if (pp->counters[i] == myself - 1) {
 				sender_still_running = true;
 				break;
 			}
 		}
 		if (!sender_still_running) {
-			// fprintf(stderr, "Iteration %d failed to recv from channel %s because no message was sent\n", p->p->counters[p->wid], ch_name);
+			// fprintf(stderr, "Iteration %d failed to recv from channel %s because no message was sent\n", pp->counters[p->wid], ch_name);
 			msg = createException(MAL, "pipeline.recv", SQLSTATE(42000)"iteration %d neglected to send a message to %d", myself - 1, myself);
 			break;
 		}
 
 		// if (*metadata != prev) {
 		// 	prev = *metadata;
-		// 	fprintf(stderr, "Iteration %d waiting to recv from channel %s [currently ", p->p->counters[p->wid], ch_name);
+		// 	fprintf(stderr, "Iteration %d waiting to recv from channel %s [currently ", pp->counters[p->wid], ch_name);
 		// 	if (is_int_nil(*metadata))
 		// 		fprintf(stderr, "empty]\n");
 		// 	else

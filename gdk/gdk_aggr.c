@@ -3256,7 +3256,6 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 
 #define AVERAGE_FLOATTYPE(TYPE)						\
 	do {								\
-		double a = 0;						\
 		TYPE x;							\
 		TIMEOUT_LOOP(ci.ncand, timeoffset) {			\
 			i = canditer_next(&ci) - b->hseqbase;		\
@@ -3275,6 +3274,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale, bool inout)
 {
 	lng n = 0, r = 0;
 	BUN i = 0;
+	double a = 0;
 #ifdef HAVE_HGE
 	hge sum = 0;
 #else
@@ -3287,7 +3287,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale, bool inout)
 		double iprt, fprt; /* integer and fraction parts */
 		n = (lng) *vals;
 		if (n > 0) {
-			double a = *avg;
+			a = *avg;
 			assert(!is_dbl_nil(a));
 			if (scale != 0)
 				a *= pow(10.0, (double) scale);
