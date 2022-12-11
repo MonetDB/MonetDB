@@ -2841,6 +2841,34 @@ bind_no_view(BAT *b, bool quick)
 }
 
 static int
+set_min_max_col(sql_trans *tr, sql_column *c, char *min, char *max)
+{
+	int ok = 0;
+	assert(tr->active);
+	if (!c || !ATOMIC_PTR_GET(&c->data) || !isTable(c->t) || !c->t->s)
+		return 0;
+	lock_column(tr->store, c->base.id);
+	if (min) {
+		_DELETE(c->min);
+		size_t minlen = ATOMlen(c->type.type->localtype, min);
+		if (!(c->min = GDKmalloc(minlen))) {
+			memcpy(c->min, min, minlen);
+			ok = 1;
+		}
+	}
+	if (max) {
+		_DELETE(c->max);
+		size_t maxlen = ATOMlen(c->type.type->localtype, max);
+		if (!(c->max = GDKmalloc(maxlen))) {
+			memcpy(c->max, max, maxlen);
+			ok = 1;
+		}
+	}
+	unlock_column(tr->store, c->base.id);
+	return ok;
+}
+
+static int
 min_max_col(sql_trans *tr, sql_column *c)
 {
 	int ok = 0;
@@ -3016,9 +3044,13 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 
 			if ((EC_NUMBER(eclass) || EC_VARCHAR(eclass) || EC_TEMP_NOFRAC(eclass) || eclass == EC_DATE) &&
 				d->cs.ucnt == 0 && (bi.minpos != BUN_NONE || bi.maxpos != BUN_NONE)) {
-				if (bi.minpos != BUN_NONE && VALinit(min, bi.type, BUNtail(bi, bi.minpos)))
+				if (c->min && VALinit(min, bi.type, c->min))
 					ok |= 1;
-				if (bi.maxpos != BUN_NONE && VALinit(max, bi.type, BUNtail(bi, bi.maxpos)))
+				else if (bi.minpos != BUN_NONE && VALinit(min, bi.type, BUNtail(bi, bi.minpos)))
+					ok |= 1;
+				if (c->max && VALinit(max, bi.type, c->max))
+					ok |= 2;
+				else if (bi.maxpos != BUN_NONE && VALinit(max, bi.type, BUNtail(bi, bi.maxpos)))
 					ok |= 2;
 			}
 			if (d->cs.ucnt == 0) {
@@ -5041,6 +5073,7 @@ bat_storage_init( store_functions *sf)
 	sf->count_idx = &count_idx;
 	sf->dcount_col = &dcount_col;
 	sf->min_max_col = &min_max_col;
+	sf->set_min_max_col = &set_min_max_col;
 	sf->sorted_col = &sorted_col;
 	sf->unique_col = &unique_col;
 	sf->double_elim_col = &double_elim_col;
