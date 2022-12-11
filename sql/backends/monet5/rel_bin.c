@@ -4495,6 +4495,9 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	bool df2 = (SQLrunning && rel->parallel && rel_groupby_pp(rel, _2phases));
 	int neededpp = rel->partition && get_need_pipeline(be);
 
+	// TODO: if aggr on full table (ie basetable under this relation, piggy back aggr results into properties
+	sql_rel *p = rel->l;
+	int is_base = (p && is_basetable(p->op));
 //	if (rel_single_distinct(rel))
 
 	stmt *pp = NULL;
@@ -4665,6 +4668,31 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	stmt_set_nrcols(cursub);
 	if (pp)
 		cursub = rel_pp_groupby(be, rel, gbexps, grp, ext, cnt, cursub, pp, shared, _2phases);
+	if (pp && is_base && !rel->r && cursub) { /* for now just piggy back global aggregation on basetables */
+		for( n = aggrs->h, m = cursub->op4.lval->h; n && m; n = n->next, m = m->next ) {
+			sql_exp *aggrexp = n->data;
+			stmt *s = m->data;
+			if (is_aggr(aggrexp->type) && !need_distinct(aggrexp)) {
+				int min = 1;
+				sql_subfunc *sf = aggrexp->f;
+				list *l = aggrexp->l;
+				if (list_length(l) == 1) {
+					sql_exp *e = l->h->data;
+					sql_column *c = exp_find_column(rel, e, -2);
+					if (c && (strcmp(sf->func->base.name, "min") == 0 || ((min=strcmp(sf->func->base.name, "max")) == 0))) {
+						/* gen sql.set_min/set_max('schema','table','column', getArg(m->nr, 0) ) */
+						char *fname = min?"set_min":"set_max";
+
+						InstrPtr q = newStmt(be->mb, sqlRef, fname);
+						q = pushStr(be->mb, q, c->t->s->base.name);
+						q = pushStr(be->mb, q, c->t->base.name);
+						q = pushStr(be->mb, q, c->base.name);
+						(void) pushArgument(be->mb, q, getArg(s->q, 0));
+					}
+				}
+			}
+		}
+	}
 	if (neededpp) {
 		set_pipeline(be, pp_dynamic(be, pp_dynamic_slices(be, cursub)));
 		cursub = rel2bin_slicer(be, cursub, 1);

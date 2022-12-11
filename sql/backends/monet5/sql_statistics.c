@@ -19,6 +19,64 @@ analysis by optimizers.
 #include "sql_statistics.h"
 
 str
+sql_set_min(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str sch = NULL, tbl = NULL, col = NULL, msg = MAL_SUCCEED;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	sch = *getArgReference_str(stk, pci, 1);
+	tbl = *getArgReference_str(stk, pci, 2);
+	col = *getArgReference_str(stk, pci, 3);
+
+	sql_schema *s = mvc_bind_schema(m, sch);
+	sql_table *t = s?mvc_bind_table(m, s, tbl):NULL;
+	sql_column *c = t?mvc_bind_column(m, t, col):NULL;
+	if (!c || !t || !s)
+		throw(SQL, "sql.set_min", SQLSTATE(42000) "Cannot not find Column '%s.%s.%s'", sch, tbl, col);
+	if (getArgType(mb, pci, 4) != c->type.type->localtype)
+		throw(SQL, "sql.set_min", SQLSTATE(42000) "Wrong value type '%s'", BATatoms[getArgType(mb, pci, 4)].name);
+	ptr val = getArgReference(stk, pci, 4);
+	sql_trans *tr = m->session->tr;
+    sqlstore *store = tr->store;
+    store->storage_api.set_min_max_col(tr, c, val, NULL);
+	return msg;
+}
+
+str
+sql_set_max(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str sch = NULL, tbl = NULL, col = NULL, msg = MAL_SUCCEED;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	sch = *getArgReference_str(stk, pci, 1);
+	tbl = *getArgReference_str(stk, pci, 2);
+	col = *getArgReference_str(stk, pci, 3);
+
+	sql_schema *s = mvc_bind_schema(m, sch);
+	sql_table *t = s?mvc_bind_table(m, s, tbl):NULL;
+	sql_column *c = t?mvc_bind_column(m, t, col):NULL;
+	if (!c || !t || !s)
+		throw(SQL, "sql.set_max", SQLSTATE(42000) "Cannot not find Column '%s.%s.%s'", sch, tbl, col);
+	if (getArgType(mb, pci, 4) != c->type.type->localtype)
+		throw(SQL, "sql.set_max", SQLSTATE(42000) "Wrong value type '%s'", BATatoms[getArgType(mb, pci, 4)].name);
+	ptr val = getArgReference(stk, pci, 4);
+	sql_trans *tr = m->session->tr;
+    sqlstore *store = tr->store;
+    store->storage_api.set_min_max_col(tr, c, NULL, val);
+	return msg;
+}
+
+str
 sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
