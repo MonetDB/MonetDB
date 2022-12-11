@@ -2851,7 +2851,7 @@ set_min_max_col(sql_trans *tr, sql_column *c, char *min, char *max)
 	if (min) {
 		_DELETE(c->min);
 		size_t minlen = ATOMlen(c->type.type->localtype, min);
-		if (!(c->min = GDKmalloc(minlen))) {
+		if ((c->min = GDKmalloc(minlen)) != NULL) {
 			memcpy(c->min, min, minlen);
 			ok = 1;
 		}
@@ -2859,7 +2859,7 @@ set_min_max_col(sql_trans *tr, sql_column *c, char *min, char *max)
 	if (max) {
 		_DELETE(c->max);
 		size_t maxlen = ATOMlen(c->type.type->localtype, max);
-		if (!(c->max = GDKmalloc(maxlen))) {
+		if ((c->max = GDKmalloc(maxlen)) != NULL) {
 			memcpy(c->max, max, maxlen);
 			ok = 1;
 		}
