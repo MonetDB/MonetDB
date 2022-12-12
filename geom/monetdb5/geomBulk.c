@@ -211,7 +211,7 @@ wkbIntersectsSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_
 }
 
 str
-wkbDWithinSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, double* distance, bit *anti) {
+wkbDWithinSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, dbl* distance, bit *anti) {
 #ifdef HAVE_RTREE
 	//If there is an RTree on memory or on file, use the RTree method. Otherwise, use the no index version.
 	if (RTREEexists_bid((bat*)bid)) {
@@ -606,7 +606,7 @@ wkbIntersectsJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r
 }
 
 str
-wkbDWithinJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, double *distance, bit *nil_matches, lng *estimate, bit *anti) {
+wkbDWithinJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, dbl *distance, bit *nil_matches, lng *estimate, bit *anti) {
 #ifdef HAVE_RTREE
 	if (RTREEexists_bid((bat*)l_id) && RTREEexists_bid((bat*)r_id))
 		return filterJoinRTree(lres_id,rres_id,l_id,r_id,*distance,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin,"geom.wkbDWithinJoinRTree");
