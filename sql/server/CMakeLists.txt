@@ -110,7 +110,8 @@ target_link_libraries(sqlserver
   bat
   sqlcommon
   sqlinclude
-  sqlstorage)
+  sqlstorage
+  parquet_lib)
 
 target_compile_definitions(sqlserver
   PRIVATE

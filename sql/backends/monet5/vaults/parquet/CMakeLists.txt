@@ -1,5 +1,5 @@
 if(Parquet_FOUND)
-  add_library(parquet_lib MODULE)
+  add_library(parquet_lib MODULE SHARED)
 
   target_sources(parquet_lib
     PRIVATE
