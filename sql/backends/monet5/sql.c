@@ -1119,14 +1119,10 @@ bailout1:
 	bat_iterator_end(&schi);
 	bat_iterator_end(&seqi);
 bailout:
-	if (scheb)
-		BBPunfix(scheb->batCacheid);
-	if (sches)
-		BBPunfix(sches->batCacheid);
-	if (seqb)
-		BBPunfix(seqb->batCacheid);
-	if (seqs)
-		BBPunfix(seqs->batCacheid);
+	BBPreclaim(scheb);
+	BBPreclaim(sches);
+	BBPreclaim(seqb);
+	BBPreclaim(seqs);
 	if (bn && !msg) {
 		BATsetcount(bn, ci1.ncand);
 		bn->tnil = nils;
@@ -2003,31 +1999,26 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tpe == TYPE_bat && (b = BATdescriptor(*(bat *) ins)) == NULL)
 		throw(SQL, "sql.delete", SQLSTATE(HY005) "Cannot access column descriptor");
 	if (tpe != TYPE_bat || (b->ttype != TYPE_oid && b->ttype != TYPE_void && b->ttype != TYPE_msk)) {
-		if (b)
-			BBPunfix(b->batCacheid);
+		BBPreclaim(b);
 		throw(SQL, "sql.delete", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL) {
-		if (b)
-			BBPunfix(b->batCacheid);
+		BBPreclaim(b);
 		throw(SQL, "sql.delete", SQLSTATE(3F000) "Schema missing %s",sname);
 	}
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL) {
-		if (b)
-			BBPunfix(b->batCacheid);
+		BBPreclaim(b);
 		throw(SQL, "sql.delete", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	}
 	if (!isTable(t)) {
-		if (b)
-			BBPunfix(b->batCacheid);
+		BBPreclaim(b);
 		throw(SQL, "sql.delete", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	}
 	sqlstore *store = m->session->tr->store;
 	log_res = store->storage_api.delete_tab(m->session->tr, t, b, tpe);
-	if (b)
-		BBPunfix(b->batCacheid);
+	BBPreclaim(b);
 	if (log_res != LOG_OK)
 		throw(SQL, "sql.delete", SQLSTATE(42000) "Delete failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;
@@ -2263,14 +2254,12 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 			 * values */
 			if (!nu_val || (res = setwritable(res)) == NULL ||
 			    BATreplace(res, os, nu_val, false) != GDK_SUCCEED) {
-				if (res)
-					BBPunfix(res->batCacheid);
+				BBPreclaim(res);
 				BBPunfix(os->batCacheid);
 				BBPunfix(s->batCacheid);
 				BBPunfix(u_id->batCacheid);
 				BBPunfix(u_val->batCacheid);
-				if (nu_val)
-					BBPunfix(nu_val->batCacheid);
+				BBPreclaim(nu_val);
 				throw(MAL, "sql.delta", GDK_EXCEPTION);
 			}
 			BBPunfix(nu_val->batCacheid);
@@ -2304,14 +2293,10 @@ BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
 	r = BATdescriptor(*R);
 	res = COLnew(0, TYPE_oid, cnt, TRANSIENT);
 	if (!c || !l || !r || !res) {
-		if (c)
-			BBPunfix(c->batCacheid);
-		if (l)
-			BBPunfix(l->batCacheid);
-		if (r)
-			BBPunfix(r->batCacheid);
-		if (res)
-			BBPunfix(res->batCacheid);
+		BBPreclaim(c);
+		BBPreclaim(l);
+		BBPreclaim(r);
+		BBPreclaim(res);
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	p = (oid*)Tloc(res,0);
@@ -2637,7 +2622,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   wrapup_result_set1:
 	cntxt->qryctx.starttime = 0;
 	mb->optimize = 0;
-	if( order) BBPunfix(order->batCacheid);
+	BBPreclaim(order);
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
 	if( tpe) BBPunfix(tpeId);
@@ -3544,9 +3529,9 @@ sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(uris);
 	GDKfree(unames);
 	GDKfree(hashs);
-	if (urib) BBPunfix(urib->batCacheid);
-	if (unameb) BBPunfix(unameb->batCacheid);
-	if (hashb) BBPunfix(hashb->batCacheid);
+	BBPreclaim(urib);
+	BBPreclaim(unameb);
+	BBPreclaim(hashb);
 	return msg;
 }
 
@@ -3856,7 +3841,7 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (!(b = store->storage_api.bind_col(m->session->tr, c, RDONLY)))
 			throw(SQL, "sql.drop_hash", SQLSTATE(HY005) "Cannot access column descriptor");
-		if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
+		if (VIEWtparent(b) && (nb = BBP_desc(VIEWtparent(b)))) {
 			BBPunfix(b->batCacheid);
 			if (!(b = BATdescriptor(nb->batCacheid)))
 				throw(SQL, "sql.drop_hash", SQLSTATE(HY005) "Cannot access column descriptor");
@@ -4224,40 +4209,23 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
   bailout:
 	bat_iterator_end(&bsi);
-	if (sch)
-		BBPunfix(sch->batCacheid);
-	if (tab)
-		BBPunfix(tab->batCacheid);
-	if (col)
-		BBPunfix(col->batCacheid);
-	if (mode)
-		BBPunfix(mode->batCacheid);
-	if (loc)
-		BBPunfix(loc->batCacheid);
-	if (cnt)
-		BBPunfix(cnt->batCacheid);
-	if (type)
-		BBPunfix(type->batCacheid);
-	if (atom)
-		BBPunfix(atom->batCacheid);
-	if (size)
-		BBPunfix(size->batCacheid);
-	if (heap)
-		BBPunfix(heap->batCacheid);
-	if (indices)
-		BBPunfix(indices->batCacheid);
-	if (phash)
-		BBPunfix(phash->batCacheid);
-	if (imprints)
-		BBPunfix(imprints->batCacheid);
-	if (sort)
-		BBPunfix(sort->batCacheid);
-	if (revsort)
-		BBPunfix(revsort->batCacheid);
-	if (key)
-		BBPunfix(key->batCacheid);
-	if (oidx)
-		BBPunfix(oidx->batCacheid);
+	BBPreclaim(sch);
+	BBPreclaim(tab);
+	BBPreclaim(col);
+	BBPreclaim(mode);
+	BBPreclaim(loc);
+	BBPreclaim(cnt);
+	BBPreclaim(type);
+	BBPreclaim(atom);
+	BBPreclaim(size);
+	BBPreclaim(heap);
+	BBPreclaim(indices);
+	BBPreclaim(phash);
+	BBPreclaim(imprints);
+	BBPreclaim(sort);
+	BBPreclaim(revsort);
+	BBPreclaim(key);
+	BBPreclaim(oidx);
 	if (!msg)
 		msg = createException(SQL, "sql.storage", GDK_EXCEPTION);
 	return msg;
@@ -4833,8 +4801,7 @@ do_str_column_vacuum(sql_trans *tr, sql_column *c, char *sname, char *tname, cha
 		}
 	}
 	BBPunfix(b->batCacheid);
-	if (bn)
-		BBPunfix(bn->batCacheid);
+	BBPreclaim(bn);
 	return MAL_SUCCEED;
 }
 

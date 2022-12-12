@@ -398,9 +398,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 
 		assert(memory_size > 0);
 		// create the shared memory for the header
-		MT_lock_set(&pyapiLock);
 		mmap_ptrs[0] = GDKinitmmap(mmap_id + 0, memory_size, &mmap_sizes[0]);
-		MT_lock_unset(&pyapiLock);
 		if (mmap_ptrs[0] == NULL) {
 			msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
 			goto wrapup;
@@ -419,10 +417,8 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 		}
 
 		// create the shared memory space for queries
-		MT_lock_set(&pyapiLock);
 		mmap_ptrs[1] = GDKinitmmap(mmap_id + 1, sizeof(QueryStruct),
 						 &mmap_sizes[1]);
-		MT_lock_unset(&pyapiLock);
 		if (mmap_ptrs[1] == NULL) {
 			msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
 			goto wrapup;
@@ -536,10 +532,8 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 
 				// get the shared memory address for this return value
 				assert(total_size > 0);
-				MT_lock_set(&pyapiLock);
 				mmap_ptrs[i + 3] = GDKinitmmap(mmap_id + i + 3, total_size,
 											   &mmap_sizes[i + 3]);
-				MT_lock_unset(&pyapiLock);
 				if (mmap_ptrs[i + 3] == NULL) {
 					msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
 					goto wrapup;
@@ -554,11 +548,9 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 					size_t mask_size = ret->count * sizeof(bool);
 
 					assert(mask_size > 0);
-					MT_lock_set(&pyapiLock);
 					mmap_ptrs[pci->retc + (i + 3)] = GDKinitmmap(
 						mmap_id + pci->retc + (i + 3), mask_size,
 						&mmap_sizes[pci->retc + (i + 3)]);
-					MT_lock_unset(&pyapiLock);
 					if (mmap_ptrs[pci->retc + (i + 3)] == NULL) {
 						msg = createException(MAL, "pyapi3.eval", GDK_EXCEPTION);
 						goto wrapup;
@@ -993,9 +985,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 				}
 				GDKfree(split_bats);
 			}
-			if (aggr_group != NULL) {
-				BBPunfix(aggr_group->batCacheid);
-			}
+			BBPreclaim(aggr_group);
 			if (msg != MAL_SUCCEED) {
 				goto wrapup;
 			}
@@ -1355,10 +1345,8 @@ wrapup:
 	// Cleanup input BATs
 	for (i = pci->retc + 2 + has_card_arg; i < pci->argc; i++) {
 		PyInput *inp = &pyinput_values[i - (pci->retc + 2 + has_card_arg)];
-		if (inp->bat != NULL)
-			BBPunfix(inp->bat->batCacheid);
-		if (inp->conv_bat != NULL)
-			BBPunfix(inp->conv_bat->batCacheid); /* delayed free */
+		BBPreclaim(inp->bat);
+		BBPreclaim(inp->conv_bat); /* delayed free */
 	}
 	if (pResult != NULL && gstate == 0) {
 		// if there is a pResult here, we are running single threaded (LANGUAGE
@@ -1413,27 +1401,15 @@ PYAPI3PyAPIprelude(void) {
 		PyObject *tmp;
 
 		static_assert(PY_MAJOR_VERSION == 3, "Python 3.X required");
-#if PY_MINOR_VERSION >= 9
-		/* introduced in 3.8, we use it for 3.9 and later */
+#if PY_MINOR_VERSION >= 11
+		/* introduced in 3.8, we use it for 3.11 and later
+		 * on Windows, this code does not work with 3.10, it needs more
+		 * complex initialization */
 		PyStatus status;
 		PyConfig config;
-		wchar_t *pyhome = NULL;
 
-		/* first figure out where Python was installed */
-		PyConfig_InitIsolatedConfig(&config);
-		status = PyConfig_Read(&config);
-		if (!PyStatus_Exception(status))
-			pyhome = wcsdup(config.prefix);
-		PyConfig_Clear(&config);
-		/* now really configure the Python subsystem, using the Python
-		 * prefix directory as its home
-		 * if we don't set config.home, sys.path will not be set
-		 * correctly on Windows and initialization will fail */
 		PyConfig_InitIsolatedConfig(&config);
 		status = PyConfig_SetArgv(&config, 1, argv);
-		if (!PyStatus_Exception(status))
-			status = PyConfig_SetString(&config, &config.home, pyhome);
-		free(pyhome);
 		if (!PyStatus_Exception(status))
 			status = PyConfig_Read(&config);
 		if (!PyStatus_Exception(status))

@@ -1640,9 +1640,7 @@ wrapup:
 	}
 	if (input_bats) {
 		for(i = 0; i < input_count + extra_inputs; i++) {
-			if (input_bats[i]) {
-				BBPunfix(input_bats[i]->batCacheid);
-			}
+			BBPreclaim(input_bats[i]);
 		}
 		GDKfree(input_bats);
 	}

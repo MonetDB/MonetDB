@@ -106,9 +106,9 @@ main(int argc, char **argv)
 #endif
 
 	parse_dotmonetdb(&dotfile);
-        user = dotfile.user;
-        passwd = dotfile.passwd;
-        dbname = dotfile.dbname;
+	user = dotfile.user;
+	passwd = dotfile.passwd;
+	dbname = dotfile.dbname;
 	host = dotfile.host;
 	port = dotfile.port;
 
@@ -276,9 +276,7 @@ main(int argc, char **argv)
 
 	mapi_destroy(mid);
 	if (mnstr_errnr(out) != MNSTR_NO__ERROR) {
-		char *err = mnstr_error(out);
-		fprintf(stderr, "%s: %s\n", argv[0], err);
-		free(err);
+		fprintf(stderr, "%s: %s\n", argv[0], mnstr_peek_error(out));
 		return 1;
 	}
 

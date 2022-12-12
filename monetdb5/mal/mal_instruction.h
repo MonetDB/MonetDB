@@ -198,17 +198,18 @@ mal_export malType destinationType(MalBlkPtr mb, InstrPtr p);
 mal_export void setPolymorphic(InstrPtr p, int tpe, int force);
 /* Utility macros to inspect an instruction */
 #define functionStart(X) ((X)->token == FUNCTIONsymbol || \
-              (X)->token == COMMANDsymbol || \
-              (X)->token == FACTORYsymbol )
+						  (X)->token == COMMANDsymbol ||  \
+						  (X)->token == FACTORYsymbol )
 #define patternStart(X)  ((X)->token == PATTERNsymbol)
 #define functionExit(X)  ((X)->token == ENDsymbol)
 
 #define blockStart(X)   ((X)->barrier && (((X)->barrier == BARRIERsymbol || \
-             (X)->barrier == CATCHsymbol )))
+										   (X)->barrier == CATCHsymbol )))
 #define blockExit(X) ((X)->barrier == EXITsymbol)
 #define blockReturn(X) ((X)->barrier == RETURNsymbol)
-#define blockCntrl(X) ( (X)->barrier== LEAVEsymbol ||  \
-             (X)->barrier== REDOsymbol || (X)->barrier== RETURNsymbol )
+#define blockCntrl(X) ((X)->barrier== LEAVEsymbol ||	\
+					   (X)->barrier== REDOsymbol ||		\
+					   (X)->barrier== RETURNsymbol )
 #define isLinearFlow(X)  (!(blockStart(X) || blockExit(X) || \
 				(X)->barrier== LEAVEsymbol ||  (X)->barrier== REDOsymbol ))
 
