@@ -4672,18 +4672,24 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		for( n = aggrs->h, m = cursub->op4.lval->h; n && m; n = n->next, m = m->next ) {
 			sql_exp *aggrexp = n->data;
 			stmt *s = m->data;
-			if (is_aggr(aggrexp->type) && !need_distinct(aggrexp)) {
+			if (is_aggr(aggrexp->type)) {
 				int min = 1;
 				sql_subfunc *sf = aggrexp->f;
 				list *l = aggrexp->l;
 				if (list_length(l) == 1) {
 					sql_exp *e = l->h->data;
 					sql_column *c = exp_find_column(rel, e, -2);
-					if (c && (strcmp(sf->func->base.name, "min") == 0 || ((min=strcmp(sf->func->base.name, "max")) == 0))) {
+					if (c && (strcmp(sf->func->base.name, "min") == 0 || ((min=strcmp(sf->func->base.name, "max")) == 0)) && !need_distinct(aggrexp)) {
 						/* gen sql.set_min/set_max('schema','table','column', getArg(m->nr, 0) ) */
 						char *fname = min?"set_min":"set_max";
 
 						InstrPtr q = newStmt(be->mb, sqlRef, fname);
+						q = pushStr(be->mb, q, c->t->s->base.name);
+						q = pushStr(be->mb, q, c->t->base.name);
+						q = pushStr(be->mb, q, c->base.name);
+						(void) pushArgument(be->mb, q, getArg(s->q, 0));
+					} else if (c && (strcmp(sf->func->base.name, "count") == 0) && need_distinct(aggrexp)) {
+						InstrPtr q = newStmt(be->mb, sqlRef, "set_count_distinct");
 						q = pushStr(be->mb, q, c->t->s->base.name);
 						q = pushStr(be->mb, q, c->t->base.name);
 						q = pushStr(be->mb, q, c->base.name);
