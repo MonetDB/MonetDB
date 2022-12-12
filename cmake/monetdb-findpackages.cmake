@@ -55,7 +55,7 @@ if(WITH_LZ4)
 endif()
 
 if(WITH_PROJ)
-  find_package(Proj)
+  find_package(Proj 9.0)
 endif()
 
 if(WITH_SNAPPY)
