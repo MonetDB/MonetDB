@@ -30,12 +30,12 @@ GROUP BY id
 ----
 LINESTRING (0 0, 5 5)
 LINESTRING (10 10, 20 20)
-LINESTRING (30 30)
+POINT (30 30)
 
 # row aggregation
 query T rowsort
 SELECT
-    ST_MAKELINE(points)
+    ST_MAKELINE(p1, p2)
 FROM (
     VALUES
         (ST_GeomFromText('POINT(0 0)'), ST_GeomFromText('POINT(10 10)')),
