@@ -169,12 +169,14 @@ geom_export str wkbGeometryN_bat(bat *outBAT_id, bat *inBAT_id, const int* flag)
 geom_export str wkbNumGeometries(int* out, wkb** geom);
 geom_export str wkbNumGeometries_bat(bat *outBAT_id, bat *inBAT_id);
 
+#ifdef HAVE_PROJ
 str transformPoint(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P);
 str transformLine(GEOSCoordSeq *gcs_new, const GEOSGeometry *geosGeometry, PJ *P);
 str transformLineString(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P);
 str transformLinearRing(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P);
 str transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P, int srid);
 str transformMultiGeometry(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P, int srid, int geometryType);
+#endif
 geom_export str wkbTransform(wkb**, wkb**, int*, int*, char**, char**);
 geom_export str wkbTransform_bat(bat *outBAT_id, bat *inBAT_id, int *srid_src, int *srid_dst, char **proj4_src_str, char **proj4_dst_str);
 geom_export str wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, int *srid_dst, char **proj4_src_str, char **proj4_dst_str);
