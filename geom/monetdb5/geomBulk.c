@@ -692,7 +692,7 @@ str
 wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, int *srid_dst, char **proj4_src_str, char **proj4_dst_str)
 {
 #ifndef HAVE_PROJ
-	*outBAT_id = NULL;
+	*outBAT_id = 0;
 	(void) inBAT_id;
 	(void) s_id;
 	(void) srid_src;
