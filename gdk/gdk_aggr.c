@@ -1975,8 +1975,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
   bailout:
 	bat_iterator_end(&bi);
   bailout1:
-	if (bn)
-		BBPunfix(bn->batCacheid);
+	BBPreclaim(bn);
 	GDKfree(rems);
 	if (cntsp) {
 		BBPreclaim(*cntsp);
@@ -3720,8 +3719,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 				MT_lock_unset(&pb->theaplock);
 			}
 		}
-		if (pb)
-			BBPunfix(pb->batCacheid);
+		BBPreclaim(pb);
 	}
 	if (aggr == NULL) {
 		s = ATOMlen(bi.type, res);
@@ -3873,8 +3871,7 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 				MT_lock_unset(&pb->theaplock);
 			}
 		}
-		if (pb)
-			BBPunfix(pb->batCacheid);
+		BBPreclaim(pb);
 	}
 	if (aggr == NULL) {
 		s = ATOMlen(bi.type, res);
@@ -4240,8 +4237,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		}
 		if (oidxh != NULL)
 			HEAPdecref(oidxh, false);
-		if (t1)
-			BBPunfix(t1->batCacheid);
+		BBPreclaim(t1);
 		gdk_return rc = BUNappend(bn, v, false);
 		bat_iterator_end(&bi);
 		if (rc != GDK_SUCCEED)
@@ -4272,8 +4268,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		BBPunfix(b->batCacheid);
 	if (g && g != origg)
 		BBPunfix(g->batCacheid);
-	if (bn)
-		BBPunfix(bn->batCacheid);
+	BBPreclaim(bn);
 	return NULL;
 }
 

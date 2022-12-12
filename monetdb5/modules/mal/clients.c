@@ -114,8 +114,8 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	if (b == 0 || bn == 0){
-		if ( b != 0) BBPunfix(b->batCacheid);
-		if ( bn != 0) BBPunfix(bn->batCacheid);
+		BBPreclaim(b);
+		BBPreclaim(bn);
 		throw(MAL, "clients.info", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -813,16 +813,16 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (id == NULL || user == NULL || login == NULL || sessiontimeout == NULL || idle == NULL || querytimeout == NULL ||
 	   opt == NULL || wlimit == NULL || mlimit == NULL ){
-		if ( id) BBPunfix(id->batCacheid);
-		if ( user) BBPunfix(user->batCacheid);
-		if ( login) BBPunfix(login->batCacheid);
-		if ( sessiontimeout) BBPunfix(sessiontimeout->batCacheid);
-		if ( querytimeout) BBPunfix(querytimeout->batCacheid);
-		if ( idle) BBPunfix(idle->batCacheid);
+		BBPreclaim(id);
+		BBPreclaim(user);
+		BBPreclaim(login);
+		BBPreclaim(sessiontimeout);
+		BBPreclaim(querytimeout);
+		BBPreclaim(idle);
 
-		if ( opt) BBPunfix(opt->batCacheid);
-		if ( wlimit) BBPunfix(wlimit->batCacheid);
-		if ( mlimit) BBPunfix(mlimit->batCacheid);
+		BBPreclaim(opt);
+		BBPreclaim(wlimit);
+		BBPreclaim(mlimit);
 		throw(SQL,"sql.sessions", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
