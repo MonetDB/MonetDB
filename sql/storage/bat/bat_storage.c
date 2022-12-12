@@ -2841,13 +2841,25 @@ bind_no_view(BAT *b, bool quick)
 }
 
 static int
-set_min_max_col(sql_trans *tr, sql_column *c, char *min, char *max)
+set_stats_col(sql_trans *tr, sql_column *c, double *unique_est, char *min, char *max)
 {
 	int ok = 0;
 	assert(tr->active);
 	if (!c || !ATOMIC_PTR_GET(&c->data) || !isTable(c->t) || !c->t->s)
 		return 0;
 	lock_column(tr->store, c->base.id);
+	if (unique_est) {
+		sql_delta *d;
+		if ((d = ATOMIC_PTR_GET(&c->data)) && d->cs.st == ST_DEFAULT) {
+			BAT *b;
+			if ((b = bind_col(tr, c, RDONLY)) && (b = bind_no_view(b, false))) {
+				MT_lock_set(&b->theaplock);
+				b->tunique_est = *unique_est;
+				MT_lock_unset(&b->theaplock);
+				bat_destroy(b);
+			}
+		}
+	}
 	if (min) {
 		_DELETE(c->min);
 		size_t minlen = ATOMlen(c->type.type->localtype, min);
@@ -5073,7 +5085,7 @@ bat_storage_init( store_functions *sf)
 	sf->count_idx = &count_idx;
 	sf->dcount_col = &dcount_col;
 	sf->min_max_col = &min_max_col;
-	sf->set_min_max_col = &set_min_max_col;
+	sf->set_stats_col = &set_stats_col;
 	sf->sorted_col = &sorted_col;
 	sf->unique_col = &unique_col;
 	sf->double_elim_col = &double_elim_col;
