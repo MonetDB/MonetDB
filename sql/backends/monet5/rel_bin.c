@@ -8000,7 +8000,7 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 	mvc *sql = be->mvc;
 	list *refs = sa_list(sql->sa);
 	mapi_query_t sqltype = sql->type;
-	stmt *s;
+	stmt *s = NULL;
 
 	be->join_idx = 0;
 	be->rowcount = 0;
