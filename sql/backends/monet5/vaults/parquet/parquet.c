@@ -23,3 +23,24 @@ struct parquet_file open_file(char* filename) {
 
     return file;
 }
+
+
+struct parquet_table_metadata get_table_metadata(struct parquet_file file) {
+    /* This shouldn't be possible, but check it for good measure */
+    if(file.reader == NULL) {
+        /* Throw error */
+    }
+
+    GError *table_error;
+    GArrowTable *table = gparquet_arrow_file_reader_read_table(file.reader, &table_error);
+
+    if(table_error) {
+        printf("%s", table_error->message);
+    }
+
+    guint64 n_rows = garrow_table_get_n_rows(table);
+
+    struct parquet_table_metadata metadata = {"foo", n_rows};
+
+    return metadata;
+}
