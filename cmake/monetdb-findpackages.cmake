@@ -81,7 +81,7 @@ endif()
 find_package(KVM)
 
 if(GEOM)
-  find_package(Geos 3.10.2)
+  find_package(Geos 3.10.0)
 endif()
 
 if(SHP)
