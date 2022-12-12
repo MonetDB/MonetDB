@@ -736,8 +736,8 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if (ATOMcmp(lvi.type, v, BUNtail(lvi, p)) != 0)
 						p--;
 				} else if (p != BUN_NONE && op[0] == '>' && !op[1]) {
-                    if (ATOMcmp(lvi.type, v, BUNtail(lvi, p)) != 0)
-                        op = ">=";
+					if (ATOMcmp(lvi.type, v, BUNtail(lvi, p)) != 0)
+						op = ">=";
 				}
 			}
 			if (p != BUN_NONE) {

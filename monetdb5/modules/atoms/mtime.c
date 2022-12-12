@@ -188,8 +188,7 @@ bailout: 																\
 		bat_iterator_end(&b1i);											\
 		BBPunfix(b1->batCacheid);										\
 	}																	\
-	if (s)																\
-		BBPunfix(s->batCacheid);										\
+	BBPreclaim(s);														\
 	if (bn) {															\
 		if (msg)														\
 			BBPreclaim(bn);												\
@@ -306,14 +305,10 @@ bailout: 																\
 	CLEAR_EXTRA_MULTI(res);												\
 	bat_iterator_end(&b1i);												\
 	bat_iterator_end(&b2i);												\
-	if (b1)																\
-		BBPunfix(b1->batCacheid);										\
-	if (b2) 															\
-		BBPunfix(b2->batCacheid);										\
-	if (s1)																\
-		BBPunfix(s1->batCacheid);										\
-	if (s2) 															\
-		BBPunfix(s2->batCacheid);										\
+	BBPreclaim(b1);														\
+	BBPreclaim(b2);														\
+	BBPreclaim(s1);														\
+	BBPreclaim(s2);														\
 	if (bn) {															\
 		if (msg)														\
 			BBPreclaim(bn);												\
@@ -390,8 +385,7 @@ bailout: 																\
 		bat_iterator_end(&b2i);											\
 		BBPunfix(b2->batCacheid);										\
 	}																	\
-	if (s2) 															\
-		BBPunfix(s2->batCacheid);										\
+	BBPreclaim(s2);														\
 	if (bn) {															\
 		if (msg)														\
 			BBPreclaim(bn);												\
@@ -468,8 +462,7 @@ bailout: 																\
 		bat_iterator_end(&b1i);											\
 		BBPunfix(b1->batCacheid);										\
 	}																	\
-	if (s1) 															\
-		BBPunfix(s1->batCacheid);										\
+	BBPreclaim(s1);														\
 	if (bn) {															\
 		if (msg)														\
 			BBPreclaim(bn);												\
@@ -574,31 +567,31 @@ func1(MTIMEdate_extract_year, "date_year", date, int,
 	  date_year, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdate_extract_quarter, "date_quarter", date, int,
+func1(MTIMEdate_extract_quarter, "date_quarter", date, bte,
 	  date_quarter, SETFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdate_extract_month, "date_month", date, int,
+func1(MTIMEdate_extract_month, "date_month", date, bte,
 	  date_month, SETFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdate_extract_day, "date_day", date, int,
+func1(MTIMEdate_extract_day, "date_day", date, bte,
 	  date_day, SETFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdate_extract_dayofyear, "date_dayofyear", date, int,
+func1(MTIMEdate_extract_dayofyear, "date_dayofyear", date, sht,
 	  date_dayofyear, SETFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdate_extract_weekofyear, "date_weekofyear", date, int,
+func1(MTIMEdate_extract_weekofyear, "date_weekofyear", date, bte,
 	  date_weekofyear, SETFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdate_extract_usweekofyear, "date_usweekofyear", date, int,
+func1(MTIMEdate_extract_usweekofyear, "date_usweekofyear", date, bte,
 	  date_usweekofyear, SETFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdate_extract_dayofweek, "date_dayofweek", date, int,
+func1(MTIMEdate_extract_dayofweek, "date_dayofweek", date, bte,
 	  date_dayofweek, SETFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
@@ -606,11 +599,11 @@ func1(MTIMEdate_extract_epoch_ms, "epoch_ms", date, lng,
 	  date_to_msec_since_epoch, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdaytime_extract_hours, "daytime_hour", daytime, int,
+func1(MTIMEdaytime_extract_hours, "daytime_hour", daytime, bte,
 	  daytime_hour, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEdaytime_extract_minutes, "daytime_minutes", daytime, int,
+func1(MTIMEdaytime_extract_minutes, "daytime_minutes", daytime, bte,
 	  daytime_min, SETFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
@@ -642,23 +635,23 @@ func1(MTIMEtimestamp_year, "timestamp_year", timestamp, int,
 	  timestamp_year, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEtimestamp_quarter,"timestamp_quarter", timestamp, int,
+func1(MTIMEtimestamp_quarter,"timestamp_quarter", timestamp, bte,
 	  timestamp_quarter, SETFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEtimestamp_month, "timestamp_month", timestamp, int,
+func1(MTIMEtimestamp_month, "timestamp_month", timestamp, bte,
 	  timestamp_month, SETFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEtimestamp_day, "timestamp_day", timestamp, int,
+func1(MTIMEtimestamp_day, "timestamp_day", timestamp, bte,
 	  timestamp_day, SETFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEtimestamp_hours, "timestamp_hours", timestamp, int,
+func1(MTIMEtimestamp_hours, "timestamp_hours", timestamp, bte,
 	  timestamp_hours, SETFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func1(MTIMEtimestamp_minutes, "timestamp_minutes", timestamp, int,
+func1(MTIMEtimestamp_minutes, "timestamp_minutes", timestamp, bte,
 	  timestamp_minutes, SETFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
@@ -1146,24 +1139,24 @@ static mel_func mtime_init_funcs[] = {
  command("mtime", "year", MTIMEdate_extract_year, false, "extracts year from date.", args(1,2, arg("",int),arg("d",date))),
  pattern("batmtime", "year", MTIMEdate_extract_year_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
  pattern("batmtime", "year", MTIMEdate_extract_year_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),
- command("mtime", "quarter", MTIMEdate_extract_quarter, false, "extracts quarter from date", args(1,2, arg("",int),arg("d",date))),
- pattern("batmtime", "quarter", MTIMEdate_extract_quarter_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
- pattern("batmtime", "quarter", MTIMEdate_extract_quarter_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),
- command("mtime", "month", MTIMEdate_extract_month, false, "extracts month from date", args(1,2, arg("",int),arg("d",date))),
- pattern("batmtime", "month", MTIMEdate_extract_month_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
- pattern("batmtime", "month", MTIMEdate_extract_month_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),
- command("mtime", "day", MTIMEdate_extract_day, false, "extracts day from date ", args(1,2, arg("",int),arg("d",date))),
- pattern("batmtime", "day", MTIMEdate_extract_day_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
- pattern("batmtime", "day", MTIMEdate_extract_day_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),
+ command("mtime", "quarter", MTIMEdate_extract_quarter, false, "extracts quarter from date", args(1,2, arg("",bte),arg("d",date))),
+ pattern("batmtime", "quarter", MTIMEdate_extract_quarter_bulk, false, "", args(1,2, batarg("",bte),batarg("d",date))),
+ pattern("batmtime", "quarter", MTIMEdate_extract_quarter_bulk, false, "", args(1,3, batarg("",bte),batarg("d",date),batarg("s",oid))),
+ command("mtime", "month", MTIMEdate_extract_month, false, "extracts month from date", args(1,2, arg("",bte),arg("d",date))),
+ pattern("batmtime", "month", MTIMEdate_extract_month_bulk, false, "", args(1,2, batarg("",bte),batarg("d",date))),
+ pattern("batmtime", "month", MTIMEdate_extract_month_bulk, false, "", args(1,3, batarg("",bte),batarg("d",date),batarg("s",oid))),
+ command("mtime", "day", MTIMEdate_extract_day, false, "extracts day from date ", args(1,2, arg("",bte),arg("d",date))),
+ pattern("batmtime", "day", MTIMEdate_extract_day_bulk, false, "", args(1,2, batarg("",bte),batarg("d",date))),
+ pattern("batmtime", "day", MTIMEdate_extract_day_bulk, false, "", args(1,3, batarg("",bte),batarg("d",date),batarg("s",oid))),
  command("mtime", "epoch_ms", MTIMEdate_extract_epoch_ms, false, "", args(1,2, arg("",lng),arg("d",date))),
  pattern("batmtime", "epoch_ms", MTIMEdate_extract_epoch_ms_bulk, false, "", args(1,2, batarg("",lng),batarg("d",date))),
  pattern("batmtime", "epoch_ms", MTIMEdate_extract_epoch_ms_bulk, false, "", args(1,3, batarg("",lng),batarg("d",date),batarg("s",oid))),
- command("mtime", "hours", MTIMEdaytime_extract_hours, false, "extracts hour from daytime", args(1,2, arg("",int),arg("h",daytime))),
- pattern("batmtime", "hours", MTIMEdaytime_extract_hours_bulk, false, "", args(1,2, batarg("",int),batarg("d",daytime))),
- pattern("batmtime", "hours", MTIMEdaytime_extract_hours_bulk, false, "", args(1,3, batarg("",int),batarg("d",daytime),batarg("s",oid))),
- command("mtime", "minutes", MTIMEdaytime_extract_minutes, false, "extracts minutes from daytime", args(1,2, arg("",int),arg("d",daytime))),
- pattern("batmtime", "minutes", MTIMEdaytime_extract_minutes_bulk, false, "", args(1,2, batarg("",int),batarg("d",daytime))),
- pattern("batmtime", "minutes", MTIMEdaytime_extract_minutes_bulk, false, "", args(1,3, batarg("",int),batarg("d",daytime),batarg("s",oid))),
+ command("mtime", "hours", MTIMEdaytime_extract_hours, false, "extracts hour from daytime", args(1,2, arg("",bte),arg("h",daytime))),
+ pattern("batmtime", "hours", MTIMEdaytime_extract_hours_bulk, false, "", args(1,2, batarg("",bte),batarg("d",daytime))),
+ pattern("batmtime", "hours", MTIMEdaytime_extract_hours_bulk, false, "", args(1,3, batarg("",bte),batarg("d",daytime),batarg("s",oid))),
+ command("mtime", "minutes", MTIMEdaytime_extract_minutes, false, "extracts minutes from daytime", args(1,2, arg("",bte),arg("d",daytime))),
+ pattern("batmtime", "minutes", MTIMEdaytime_extract_minutes_bulk, false, "", args(1,2, batarg("",bte),batarg("d",daytime))),
+ pattern("batmtime", "minutes", MTIMEdaytime_extract_minutes_bulk, false, "", args(1,3, batarg("",bte),batarg("d",daytime),batarg("s",oid))),
  command("mtime", "sql_seconds", MTIMEdaytime_extract_sql_seconds, false, "extracts seconds (with fractional milliseconds) from daytime", args(1,2, arg("",int),arg("d",daytime))),
  pattern("batmtime", "sql_seconds", MTIMEdaytime_extract_sql_seconds_bulk, false, "", args(1,2, batarg("",int),batarg("d",daytime))),
  pattern("batmtime", "sql_seconds", MTIMEdaytime_extract_sql_seconds_bulk, false, "", args(1,3, batarg("",int),batarg("d",daytime),batarg("s",oid))),
@@ -1184,18 +1177,18 @@ static mel_func mtime_init_funcs[] = {
  pattern("batmtime", "diff", MTIMEdate_diff_bulk, false, "", args(1,5, batarg("",lng),batarg("val1",date),batarg("val2",date),batarg("s1",oid),batarg("s2",oid))),
  pattern("batmtime", "diff", MTIMEdate_diff_bulk_p1, false, "", args(1,4, batarg("",lng),arg("val1",date),batarg("val2",date),batarg("s",oid))),
  pattern("batmtime", "diff", MTIMEdate_diff_bulk_p2, false, "", args(1,4, batarg("",lng),batarg("val1",date),arg("val2",date),batarg("s",oid))),
- command("mtime", "dayofyear", MTIMEdate_extract_dayofyear, false, "Returns N where d is the Nth day\nof the year (january 1 returns 1)", args(1,2, arg("",int),arg("d",date))),
- pattern("batmtime", "dayofyear", MTIMEdate_extract_dayofyear_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
- pattern("batmtime", "dayofyear", MTIMEdate_extract_dayofyear_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),
- command("mtime", "weekofyear", MTIMEdate_extract_weekofyear, false, "Returns the week number in the year.", args(1,2, arg("",int),arg("d",date))),
- pattern("batmtime", "weekofyear", MTIMEdate_extract_weekofyear_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
- pattern("batmtime", "weekofyear", MTIMEdate_extract_weekofyear_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),
- command("mtime", "usweekofyear", MTIMEdate_extract_usweekofyear, false, "Returns the week number in the year, US style.", args(1,2, arg("",int),arg("d",date))),
- pattern("batmtime", "usweekofyear", MTIMEdate_extract_usweekofyear_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
- pattern("batmtime", "usweekofyear", MTIMEdate_extract_usweekofyear_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),
- command("mtime", "dayofweek", MTIMEdate_extract_dayofweek, false, "Returns the current day of the week\nwhere 1=monday, .., 7=sunday", args(1,2, arg("",int),arg("d",date))),
- pattern("batmtime", "dayofweek", MTIMEdate_extract_dayofweek_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
- pattern("batmtime", "dayofweek", MTIMEdate_extract_dayofweek_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),
+ command("mtime", "dayofyear", MTIMEdate_extract_dayofyear, false, "Returns N where d is the Nth day\nof the year (january 1 returns 1)", args(1,2, arg("",sht),arg("d",date))),
+ pattern("batmtime", "dayofyear", MTIMEdate_extract_dayofyear_bulk, false, "", args(1,2, batarg("",sht),batarg("d",date))),
+ pattern("batmtime", "dayofyear", MTIMEdate_extract_dayofyear_bulk, false, "", args(1,3, batarg("",sht),batarg("d",date),batarg("s",oid))),
+ command("mtime", "weekofyear", MTIMEdate_extract_weekofyear, false, "Returns the week number in the year.", args(1,2, arg("",bte),arg("d",date))),
+ pattern("batmtime", "weekofyear", MTIMEdate_extract_weekofyear_bulk, false, "", args(1,2, batarg("",bte),batarg("d",date))),
+ pattern("batmtime", "weekofyear", MTIMEdate_extract_weekofyear_bulk, false, "", args(1,3, batarg("",bte),batarg("d",date),batarg("s",oid))),
+ command("mtime", "usweekofyear", MTIMEdate_extract_usweekofyear, false, "Returns the week number in the year, US style.", args(1,2, arg("",bte),arg("d",date))),
+ pattern("batmtime", "usweekofyear", MTIMEdate_extract_usweekofyear_bulk, false, "", args(1,2, batarg("",bte),batarg("d",date))),
+ pattern("batmtime", "usweekofyear", MTIMEdate_extract_usweekofyear_bulk, false, "", args(1,3, batarg("",bte),batarg("d",date),batarg("s",oid))),
+ command("mtime", "dayofweek", MTIMEdate_extract_dayofweek, false, "Returns the current day of the week\nwhere 1=monday, .., 7=sunday", args(1,2, arg("",bte),arg("d",date))),
+ pattern("batmtime", "dayofweek", MTIMEdate_extract_dayofweek_bulk, false, "", args(1,2, batarg("",bte),batarg("d",date))),
+ pattern("batmtime", "dayofweek", MTIMEdate_extract_dayofweek_bulk, false, "", args(1,3, batarg("",bte),batarg("d",date),batarg("s",oid))),
  command("mtime", "diff", MTIMEtimestamp_diff_msec, false, "returns the number of milliseconds\nbetween 'val1' and 'val2'.", args(1,3, arg("",lng),arg("val1",timestamp),arg("val2",timestamp))),
  pattern("batmtime", "diff", MTIMEtimestamp_diff_msec_bulk, false, "", args(1,3, batarg("",lng),batarg("val1",timestamp),batarg("val2",timestamp))),
  pattern("batmtime", "diff", MTIMEtimestamp_diff_msec_bulk_p1, false, "", args(1,3, batarg("",lng),arg("val1",timestamp),batarg("val2",timestamp))),
@@ -1257,21 +1250,21 @@ static mel_func mtime_init_funcs[] = {
  command("mtime", "year", MTIMEtimestamp_year, false, "", args(1,2, arg("",int),arg("t",timestamp))),
  pattern("batmtime", "year", MTIMEtimestamp_year_bulk, false, "", args(1,2, batarg("",int),batarg("t",timestamp))),
  pattern("batmtime", "year", MTIMEtimestamp_year_bulk, false, "", args(1,3, batarg("",int),batarg("t",timestamp),batarg("s",oid))),
- command("mtime", "quarter", MTIMEtimestamp_quarter, false, "", args(1,2, arg("",int),arg("t",timestamp))),
- pattern("batmtime", "quarter", MTIMEtimestamp_quarter_bulk, false, "", args(1,2, batarg("",int),batarg("t",timestamp))),
- pattern("batmtime", "quarter", MTIMEtimestamp_quarter_bulk, false, "", args(1,3, batarg("",int),batarg("t",timestamp),batarg("s",oid))),
- command("mtime", "month", MTIMEtimestamp_month, false, "", args(1,2, arg("",int),arg("t",timestamp))),
- pattern("batmtime", "month", MTIMEtimestamp_month_bulk, false, "", args(1,2, batarg("",int),batarg("t",timestamp))),
- pattern("batmtime", "month", MTIMEtimestamp_month_bulk, false, "", args(1,3, batarg("",int),batarg("t",timestamp),batarg("s",oid))),
- command("mtime", "day", MTIMEtimestamp_day, false, "", args(1,2, arg("",int),arg("t",timestamp))),
- pattern("batmtime", "day", MTIMEtimestamp_day_bulk, false, "", args(1,2, batarg("",int),batarg("t",timestamp))),
- pattern("batmtime", "day", MTIMEtimestamp_day_bulk, false, "", args(1,3, batarg("",int),batarg("t",timestamp),batarg("s",oid))),
- command("mtime", "hours", MTIMEtimestamp_hours, false, "", args(1,2, arg("",int),arg("t",timestamp))),
- pattern("batmtime", "hours", MTIMEtimestamp_hours_bulk, false, "", args(1,2, batarg("",int),batarg("t",timestamp))),
- pattern("batmtime", "hours", MTIMEtimestamp_hours_bulk, false, "", args(1,3, batarg("",int),batarg("t",timestamp),batarg("s",oid))),
- command("mtime", "minutes", MTIMEtimestamp_minutes, false, "", args(1,2, arg("",int),arg("t",timestamp))),
- pattern("batmtime", "minutes", MTIMEtimestamp_minutes_bulk, false, "", args(1,2, batarg("",int),batarg("t",timestamp))),
- pattern("batmtime", "minutes", MTIMEtimestamp_minutes_bulk, false, "", args(1,3, batarg("",int),batarg("t",timestamp),batarg("s",oid))),
+ command("mtime", "quarter", MTIMEtimestamp_quarter, false, "", args(1,2, arg("",bte),arg("t",timestamp))),
+ pattern("batmtime", "quarter", MTIMEtimestamp_quarter_bulk, false, "", args(1,2, batarg("",bte),batarg("t",timestamp))),
+ pattern("batmtime", "quarter", MTIMEtimestamp_quarter_bulk, false, "", args(1,3, batarg("",bte),batarg("t",timestamp),batarg("s",oid))),
+ command("mtime", "month", MTIMEtimestamp_month, false, "", args(1,2, arg("",bte),arg("t",timestamp))),
+ pattern("batmtime", "month", MTIMEtimestamp_month_bulk, false, "", args(1,2, batarg("",bte),batarg("t",timestamp))),
+ pattern("batmtime", "month", MTIMEtimestamp_month_bulk, false, "", args(1,3, batarg("",bte),batarg("t",timestamp),batarg("s",oid))),
+ command("mtime", "day", MTIMEtimestamp_day, false, "", args(1,2, arg("",bte),arg("t",timestamp))),
+ pattern("batmtime", "day", MTIMEtimestamp_day_bulk, false, "", args(1,2, batarg("",bte),batarg("t",timestamp))),
+ pattern("batmtime", "day", MTIMEtimestamp_day_bulk, false, "", args(1,3, batarg("",bte),batarg("t",timestamp),batarg("s",oid))),
+ command("mtime", "hours", MTIMEtimestamp_hours, false, "", args(1,2, arg("",bte),arg("t",timestamp))),
+ pattern("batmtime", "hours", MTIMEtimestamp_hours_bulk, false, "", args(1,2, batarg("",bte),batarg("t",timestamp))),
+ pattern("batmtime", "hours", MTIMEtimestamp_hours_bulk, false, "", args(1,3, batarg("",bte),batarg("t",timestamp),batarg("s",oid))),
+ command("mtime", "minutes", MTIMEtimestamp_minutes, false, "", args(1,2, arg("",bte),arg("t",timestamp))),
+ pattern("batmtime", "minutes", MTIMEtimestamp_minutes_bulk, false, "", args(1,2, batarg("",bte),batarg("t",timestamp))),
+ pattern("batmtime", "minutes", MTIMEtimestamp_minutes_bulk, false, "", args(1,3, batarg("",bte),batarg("t",timestamp),batarg("s",oid))),
  command("mtime", "sql_seconds", MTIMEtimestamp_sql_seconds, false, "", args(1,2, arg("",int),arg("t",timestamp))),
  pattern("batmtime", "sql_seconds", MTIMEtimestamp_sql_seconds_bulk, false, "", args(1,2, batarg("",int),batarg("d",timestamp))),
  pattern("batmtime", "sql_seconds", MTIMEtimestamp_sql_seconds_bulk, false, "", args(1,3, batarg("",int),batarg("d",timestamp),batarg("s",oid))),
