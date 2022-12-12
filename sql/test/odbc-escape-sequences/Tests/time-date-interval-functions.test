@@ -107,11 +107,6 @@ select { fn timestampadd(SQL_TSI_HOUR, 1, timestamp'2022-11-14 12:12:12') }
 ----
 2022-11-14 13:12:12
 
-query T rowsort
-select { fn timestampdiff(SQL_TSI_SECOND, timestamp'2022-12-12 12:00:00', timestamp'2022-12-12 12:00:30') }
-----
-0:00:30
-
 # corner cases
 query T rowsort
 select sql_sub({fn timestampadd(SQL_TSI_HOUR, 1, time'12:12:12')}, timestampadd(time'12:12:12', interval '1' hour))
@@ -122,3 +117,48 @@ query T rowsort
 select sql_sub({fn timestampadd(SQL_TSI_HOUR, 1, date'2022-12-12')}, timestampadd(date'2022-12-12', interval '1' hour))
 ----
 0:00:00
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_SECOND, timestamp'2022-12-12 12:00:00', timestamp'2022-12-12 12:00:30') }
+----
+30
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_SECOND, date'2022-12-12', timestamp'2022-12-12 00:00:30') }
+----
+30
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_SECOND, timestamp'2022-12-11 23:59:30', date'2022-12-12') }
+----
+30
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_MINUTE, timestamp'2022-12-12 12:00:00', timestamp'2022-12-12 12:01:00') }
+----
+1
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_MINUTE, date'2022-12-12', timestamp'2022-12-12 00:01:00') }
+----
+1
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_MINUTE, timestamp'2022-12-11 23:59:00', date'2022-12-12') }
+----
+1
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_HOUR, timestamp'2022-12-12 12:00:00', timestamp'2022-12-12 13:00:00') }
+----
+1
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_HOUR, date'2022-12-12', timestamp'2022-12-12 01:00:00') }
+----
+1
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_HOUR, timestamp'2022-12-11 23:00:00', date'2022-12-12') }
+----
+1

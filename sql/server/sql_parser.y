@@ -6495,10 +6495,14 @@ odbc_datetime_func:
             case iweek:
             case iday:
             case ihour:
+		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_hour")));
+                break;
             case imin:
+		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_min")));
+                break;
             case isec:
             default:
-		        append_list( l, append_string(L(), sa_strdup(SA, "odbc_timestampdiff_sec")));
+		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_sec")));
           }
 	      append_int(l, FALSE); /* ignore distinct */
           append_symbol(l, $7);
@@ -6628,9 +6632,7 @@ odbc_data_type:
 ;
 
 odbc_tsi_qualifier:
-    SQL_TSI_FRAC_SECOND
-        { $$ = insec; }
-    | SQL_TSI_SECOND
+    SQL_TSI_SECOND
         { $$ = isec; }
     | SQL_TSI_MINUTE
         { $$ = imin; }
@@ -6646,10 +6648,7 @@ odbc_tsi_qualifier:
         { $$ = iquarter; }
     | SQL_TSI_YEAR
         { $$ = iyear; }
-
 ;
-
-
 
 %%
 
