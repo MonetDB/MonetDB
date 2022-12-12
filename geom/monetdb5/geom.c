@@ -291,7 +291,6 @@ wkbCollect (wkb **out, wkb **a, wkb **b) {
 	GEOSGeom ga, gb, collection;
 	GEOSGeom *collect = NULL;
 	int type_a, type_b;
-	int srid;
 
 	if ((err = wkbGetCompatibleGeometries(a, b, &ga, &gb)) != MAL_SUCCEED)
 		throw(MAL,"geom.Collect", "%s", err);
@@ -301,7 +300,7 @@ wkbCollect (wkb **out, wkb **a, wkb **b) {
 
 	collect[0] = ga;
 	collect[1] = gb;
-	srid = GEOSGetSRID(ga);
+	//int srid = GEOSGetSRID(ga);
 	type_a = GEOSGeomTypeId(ga);
 	type_b = GEOSGeomTypeId(gb);
 
