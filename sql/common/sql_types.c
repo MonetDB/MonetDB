@@ -1323,6 +1323,8 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "sql_sub", "mtime", "diff", FALSE, FALSE, SCALE_FIX, 0, SECINT, 2, TME, TME);
 	sql_create_func(sa, "sql_sub", "mtime", "diff", FALSE, FALSE, SCALE_NONE, 0, SECINT, 2, TMESTAMPTZ, TMESTAMPTZ);
 	sql_create_func(sa, "sql_sub", "mtime", "diff", FALSE, FALSE, SCALE_FIX, 0, SECINT, 2, TMESTAMP, TMESTAMP);
+	sql_create_func(sa, "timestampdiff", "mtime", "diff", FALSE, FALSE, SCALE_NONE, 0, SECINT, 2, TMESTAMPTZ, TMESTAMPTZ);
+	sql_create_func(sa, "timestampdiff", "mtime", "diff", FALSE, FALSE, SCALE_FIX, 0, SECINT, 2, TMESTAMP, TMESTAMP);
 
 	sql_create_func(sa, "sql_sub", "mtime", "date_sub_msec_interval", FALSE, FALSE, SCALE_NONE, 0, DTE, 2, DTE, SECINT);
 	sql_create_func(sa, "sql_sub", "mtime", "date_sub_msec_interval", FALSE, FALSE, SCALE_NONE, 0, DTE, 2, DTE, DAYINT);
@@ -1359,26 +1361,48 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "timestampadd", "mtime", "odbc_timestamp_add_msec_time", FALSE, FALSE, SCALE_NONE, 0, TMESTAMP, 2, TME, DAYINT);
 	sql_create_func(sa, "timestampadd", "mtime", "odbc_timestamp_add_month_time", FALSE, FALSE, SCALE_NONE, 0, TMESTAMP, 2, TME, MONINT);
 	sql_create_func(sa, "timestampadd", "mtime", "odbc_timestamp_add_msec_date", FALSE, FALSE, SCALE_NONE, 0, TMESTAMP, 2, DTE, SECINT);
-	// odbc timestampdiff
+	// odbc timestampdiff variants
 	sql_create_func(sa, "timestampdiff_sec", "mtime", "timestampdiff_sec", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, TMESTAMPTZ, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_sec", "mtime", "timestampdiff_sec", FALSE, FALSE, SCALE_FIX, 0, LNG, 2, TMESTAMP, TMESTAMP);
 	sql_create_func(sa, "timestampdiff_sec", "mtime", "timestampdiff_sec", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, DTE, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_sec", "mtime", "timestampdiff_sec", FALSE, FALSE, SCALE_FIX, 0, LNG, 2, DTE, TMESTAMP);
 	sql_create_func(sa, "timestampdiff_sec", "mtime", "timestampdiff_sec", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, TMESTAMPTZ, DTE);
 	sql_create_func(sa, "timestampdiff_sec", "mtime", "timestampdiff_sec", FALSE, FALSE, SCALE_FIX, 0, LNG, 2, TMESTAMP, DTE);
+	// --
 	sql_create_func(sa, "timestampdiff_min", "mtime", "timestampdiff_min", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, TMESTAMPTZ, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_min", "mtime", "timestampdiff_min", FALSE, FALSE, SCALE_FIX, 0, LNG, 2, TMESTAMP, TMESTAMP);
 	sql_create_func(sa, "timestampdiff_min", "mtime", "timestampdiff_min", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, DTE, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_min", "mtime", "timestampdiff_min", FALSE, FALSE, SCALE_FIX, 0, LNG, 2, DTE, TMESTAMP);
 	sql_create_func(sa, "timestampdiff_min", "mtime", "timestampdiff_min", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, TMESTAMPTZ, DTE);
 	sql_create_func(sa, "timestampdiff_min", "mtime", "timestampdiff_min", FALSE, FALSE, SCALE_FIX, 0, LNG, 2, TMESTAMP, DTE);
+	// --
 	sql_create_func(sa, "timestampdiff_hour", "mtime", "timestampdiff_hour", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, TMESTAMPTZ, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_hour", "mtime", "timestampdiff_hour", FALSE, FALSE, SCALE_FIX, 0, LNG, 2, TMESTAMP, TMESTAMP);
 	sql_create_func(sa, "timestampdiff_hour", "mtime", "timestampdiff_hour", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, DTE, TMESTAMPTZ);
 	sql_create_func(sa, "timestampdiff_hour", "mtime", "timestampdiff_hour", FALSE, FALSE, SCALE_FIX, 0, LNG, 2, DTE, TMESTAMP);
 	sql_create_func(sa, "timestampdiff_hour", "mtime", "timestampdiff_hour", FALSE, FALSE, SCALE_NONE, 0, LNG, 2, TMESTAMPTZ, DTE);
 	sql_create_func(sa, "timestampdiff_hour", "mtime", "timestampdiff_hour", FALSE, FALSE, SCALE_FIX, 0, LNG, 2, TMESTAMP, DTE);
-	// TODO corner cases as described in microsoft odbc timestampdiff spec
+	// --
+	sql_create_func(sa, "timestampdiff_day", "mtime", "timestampdiff_day", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TMESTAMPTZ);
+	sql_create_func(sa, "timestampdiff_day", "mtime", "timestampdiff_day", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TMESTAMP, TMESTAMP);
+	sql_create_func(sa, "timestampdiff_day", "mtime", "timestampdiff_day", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TME, TMESTAMPTZ);
+	sql_create_func(sa, "timestampdiff_day", "mtime", "timestampdiff_day", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TME, TMESTAMP);
+	sql_create_func(sa, "timestampdiff_day", "mtime", "timestampdiff_day", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TME);
+	sql_create_func(sa, "timestampdiff_day", "mtime", "timestampdiff_day", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TMESTAMP, TME);
+	// --
+	sql_create_func(sa, "timestampdiff_week", "mtime", "timestampdiff_week", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TMESTAMPTZ);
+	sql_create_func(sa, "timestampdiff_week", "mtime", "timestampdiff_week", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TMESTAMP, TMESTAMP);
+	sql_create_func(sa, "timestampdiff_week", "mtime", "timestampdiff_week", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TME, TMESTAMPTZ);
+	sql_create_func(sa, "timestampdiff_week", "mtime", "timestampdiff_week", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TME, TMESTAMP);
+	sql_create_func(sa, "timestampdiff_week", "mtime", "timestampdiff_week", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TME);
+	sql_create_func(sa, "timestampdiff_week", "mtime", "timestampdiff_week", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TMESTAMP, TME);
+	// --
+	sql_create_func(sa, "timestampdiff_month", "mtime", "timestampdiff_month", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TMESTAMPTZ);
+	sql_create_func(sa, "timestampdiff_month", "mtime", "timestampdiff_month", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TMESTAMP, TMESTAMP);
+	sql_create_func(sa, "timestampdiff_month", "mtime", "timestampdiff_month", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TME, TMESTAMPTZ);
+	sql_create_func(sa, "timestampdiff_month", "mtime", "timestampdiff_month", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TME, TMESTAMP);
+	sql_create_func(sa, "timestampdiff_month", "mtime", "timestampdiff_month", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TME);
+	sql_create_func(sa, "timestampdiff_month", "mtime", "timestampdiff_month", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TMESTAMP, TME);
 
 	// end odbc
 
