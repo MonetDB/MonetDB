@@ -103,18 +103,20 @@ allows to do wildcard matches. For details on the syntax, see
       destroy a running database, bring it down first using the **stop**
       command.
 
-**lock**\ *database*\ **[**\ *database*\ **...]**
-   Puts the given database in maintenance mode. A database under
-   maintenance can only be connected to by an administrator account (by
-   default the *monetdb* account). A database which is under maintenance
-   is not started automatically by *monetdbd*\ (1), the MonetDB Database
-   Server, when clients request for it. Use the **release** command to
-   bring the database back for normal usage. To start a database which
-   is under maintenance for administrator access, the **start** command
-   can be used.
+**lock [-a]**\ *database*\ **[**\ *database*\ **...]**
+   Puts the given database(s), or, when **-a** is supplied, all
+   databases in maintenance mode. A database under maintenance can only
+   be connected to by an administrator account (by default the *monetdb*
+   account). A database which is under maintenance is not started
+   automatically by *monetdbd*\ (1), the MonetDB Database Server, when
+   clients request for it. Use the **release** command to bring the
+   database back for normal usage. To start a database which is under
+   maintenance for administrator access, the **start** command can be
+   used.
 
-**release**\ *database*\ **[**\ *database*\ **...]**
-   Brings back a database from maintenance mode. A released database is
+**release [-a]**\ *database*\ **[**\ *database*\ **...]**
+   Brings the given database(s), or, when **-a** is supplied, all
+   databases back from maintenance mode. A released database is
    available again for normal use by any client, and is started on
    demand. Use the **lock** command to take a database under
    maintenance.
@@ -235,9 +237,9 @@ successful.
    Source indicates where the current value comes from, e.g. the
    configuration file, or a local override.
 
-**set**\ *property*\ **=**\ *value*\ *database*\ **[**\ *database*\ **...]**
-   Sets property to value for the given database. For a list of
-   properties, run **monetdb get all**. Most properties require the
+**set**\ *property*\ **=**\ *value*\ **[**\ *database*\ **...]**
+   Sets property to value for the given database(s), or all. For a list
+   of properties, run **monetdb get all**. Most properties require the
    database to be stopped when set.
 
    **shared=<yes|no\|**\ *tag*\ **>**
@@ -285,9 +287,9 @@ successful.
       and translates to a **--loadmodule=**\ *module*\ **option to**
       *mserver5*\ (1) for each of the modules in the list.
 
-**inherit**\ *property*\ *database*\ **[**\ *database*\ **...]**
+**inherit**\ *property*\ **[**\ *database*\ **...]**
    Like set, but unsets the database-local value, and reverts to inherit
-   from the default again.
+   from the default again for the given database(s), or all.
 
 **discover [**\ *expression*\ **]**
    Returns a list of remote monetdbds and database URIs that were
