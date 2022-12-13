@@ -212,3 +212,38 @@ query I rowsort
 select { fn timestampdiff(SQL_TSI_MONTH, (select now - interval '1' month), time'10:00:00') }
 ----
 1
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_QUARTER, timestamp'2022-08-02 22:00:00', timestamp'2022-12-12 00:00:00') }
+----
+1
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_QUARTER, timestamp'2021-08-02 22:00:00', timestamp'2022-12-12 00:00:00') }
+----
+5
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_QUARTER, time'22:00:00', (select now + interval '1' year)) }
+----
+4
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_QUARTER, (select now - interval '1' year), time'22:00:00') }
+----
+4
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_YEAR, timestamp'2021-08-02 22:00:00', timestamp'2022-12-12 00:00:00') }
+----
+1
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_YEAR, (select now - interval '1' year), time'22:00:00') }
+----
+1
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_YEAR, time'22:00:00', (select now + interval '1' year)) }
+----
+1

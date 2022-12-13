@@ -1403,6 +1403,20 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "timestampdiff_month", "mtime", "timestampdiff_month", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TME, TMESTAMP);
 	sql_create_func(sa, "timestampdiff_month", "mtime", "timestampdiff_month", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TME);
 	sql_create_func(sa, "timestampdiff_month", "mtime", "timestampdiff_month", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TMESTAMP, TME);
+	// --
+	sql_create_func(sa, "timestampdiff_quarter", "mtime", "timestampdiff_quarter", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TMESTAMPTZ);
+	sql_create_func(sa, "timestampdiff_quarter", "mtime", "timestampdiff_quarter", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TMESTAMP, TMESTAMP);
+	sql_create_func(sa, "timestampdiff_quarter", "mtime", "timestampdiff_quarter", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TME, TMESTAMPTZ);
+	sql_create_func(sa, "timestampdiff_quarter", "mtime", "timestampdiff_quarter", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TME, TMESTAMP);
+	sql_create_func(sa, "timestampdiff_quarter", "mtime", "timestampdiff_quarter", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TME);
+	sql_create_func(sa, "timestampdiff_quarter", "mtime", "timestampdiff_quarter", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TMESTAMP, TME);
+	// --
+	sql_create_func(sa, "timestampdiff_year", "mtime", "timestampdiff_year", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TMESTAMPTZ);
+	sql_create_func(sa, "timestampdiff_year", "mtime", "timestampdiff_year", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TMESTAMP, TMESTAMP);
+	sql_create_func(sa, "timestampdiff_year", "mtime", "timestampdiff_year", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TME, TMESTAMPTZ);
+	sql_create_func(sa, "timestampdiff_year", "mtime", "timestampdiff_year", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TME, TMESTAMP);
+	sql_create_func(sa, "timestampdiff_year", "mtime", "timestampdiff_year", FALSE, FALSE, SCALE_NONE, 0, INT, 2, TMESTAMPTZ, TME);
+	sql_create_func(sa, "timestampdiff_year", "mtime", "timestampdiff_year", FALSE, FALSE, SCALE_FIX, 0, INT, 2, TMESTAMP, TME);
 
 	// end odbc
 
