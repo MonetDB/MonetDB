@@ -132,7 +132,7 @@ int
 main(void)
 {
 	const struct CMUnitTest tests[] = {
-        cmocka_unit_test(create_table_test),
+		cmocka_unit_test(create_table_test),
 		cmocka_unit_test(populate_table_test),
 		cmocka_unit_test(query_table_test),
 		cmocka_unit_test(query_table_test2),

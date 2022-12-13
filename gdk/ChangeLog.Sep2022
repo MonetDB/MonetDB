@@ -1,16 +1,8 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
-* Wed Nov  9 2022 Sjoerd Mullender <sjoerd@acm.org>
-- On Windows, use the wide-character interface of system calls when
-  dealing with the environment (i.e. file names and getenv()).
-- Memory leaks have been fixed.
-- Improved maintenance of the estimated number of distinct values in BATs.
-  The estimate helps in deciding which low-level algorithm to use.
-
-* Mon Oct 10 2022 Sjoerd Mullender <sjoerd@acm.org>
-- Offset heaps (.tailN files) were growing too fast and unnecessarily
-  under certain conditions.  This has been fixed.  Also, when such too
-  large files are now loaded into the system, it is recognized they are
-  too large and they are truncated to a more reasonable size.
+* Thu Dec  8 2022 Sjoerd Mullender <sjoerd@acm.org>
+- When extending a bat failed, the capacity had been updated already and
+  was therefore too large.  This could then later cause a crash.  This has
+  been fixed by only updating the capacity if the extend succeeded.
 

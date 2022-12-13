@@ -850,10 +850,8 @@ bailout:
 		BBPkeepref(bn);
 	} else if (bn)
 		BBPreclaim(bn);
-	if (left)
-		BBPunfix(left->batCacheid);
-	if (right)
-		BBPunfix(right->batCacheid);
+	BBPreclaim(left);
+	BBPreclaim(right);
 	return msg;
 }
 
@@ -878,14 +876,10 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 	pos = BATdescriptor(*pid);
 	len = BATdescriptor(*lid);
 	if (qgram == NULL || id == NULL || pos == NULL || len == NULL) {
-		if (qgram)
-			BBPunfix(qgram->batCacheid);
-		if (id)
-			BBPunfix(id->batCacheid);
-		if (pos)
-			BBPunfix(pos->batCacheid);
-		if (len)
-			BBPunfix(len->batCacheid);
+		BBPreclaim(qgram);
+		BBPreclaim(id);
+		BBPreclaim(pos);
+		BBPreclaim(len);
 		throw(MAL, "txtsim.qgramselfjoin", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 

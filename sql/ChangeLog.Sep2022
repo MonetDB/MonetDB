@@ -1,7 +1,7 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Wed Nov  9 2022 Sjoerd Mullender <sjoerd@acm.org>
-- Improved the handling of the "idle" value in the sys.sessions function
-  and view.
+* Wed Dec  7 2022 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed a double cleanup after a failed allocation in COPY INTO.  The
+  double cleanup could cause a crash due to a race condition it enabled.
 

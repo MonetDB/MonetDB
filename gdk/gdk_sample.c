@@ -83,16 +83,16 @@ OIDTreeToBATAntiset(struct oidtreenode *node, BAT *bn, oid start, oid stop)
 	oid noid;
 
 	if (node->left != NULL)
-        	OIDTreeToBATAntiset(node->left, bn, start, node->o);
+		OIDTreeToBATAntiset(node->left, bn, start, node->o);
 	else
 		for (noid = start; noid < node->o; noid++)
 			((oid *) bn->theap->base)[bn->batCount++] = noid;
 
-        if (node->right != NULL)
+	if (node->right != NULL)
  		OIDTreeToBATAntiset(node->right, bn, node->o + 1, stop);
 	else
 		for (noid = node->o+1; noid < stop; noid++)
-                        ((oid *) bn->theap->base)[bn->batCount++] = noid;
+			((oid *) bn->theap->base)[bn->batCount++] = noid;
 }
 
 static BAT *

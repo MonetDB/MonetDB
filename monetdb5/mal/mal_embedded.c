@@ -176,7 +176,7 @@ malEmbeddedReset(void) //remove extra modules and set to non-initialized again
 	stopProfiler(0);
 	AUTHreset();
 	if (!GDKinmemory(0) && !GDKembedded()) {
-            	str err = 0;
+		str err = 0;
 
 		if ((err = msab_wildRetreat()) != NULL) {
 			TRC_ERROR(MAL_SERVER, "%s\n", err);
@@ -214,8 +214,6 @@ malEmbeddedReset(void) //remove extra modules and set to non-initialized again
  * terminate this way.
  * We should also ensure that no new client enters the scene while shutting down.
  * For this we mark the client records as BLOCKCLIENT.
- *
- * Beware, mal_exit is also called during a SIGTERM from the monetdb tool
  */
 
 void

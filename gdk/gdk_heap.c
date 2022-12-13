@@ -180,8 +180,16 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	h->newstorage = h->storage;
 	if (h->farmid == 1) {
 		QryCtx *qc = MT_thread_get_qry_ctx();
-		if (qc)
-			ATOMIC_ADD(&qc->datasize, h->size);
+		ATOMIC_BASE_TYPE sz = 0;
+		if (qc) {
+			sz = ATOMIC_ADD(&qc->datasize, h->size);
+			sz += h->size;
+			if (qc->maxmem > 0 && sz > qc->maxmem) {
+				HEAPfree(h, true);
+				GDKerror("Query using too much memory.\n");
+				return GDK_FAIL;
+			}
+		}
 	}
 	return GDK_SUCCEED;
 }
@@ -249,8 +257,15 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 			h->base = p;
 			if (h->farmid == 1) {
 				QryCtx *qc = MT_thread_get_qry_ctx();
-				if (qc)
-					ATOMIC_ADD(&qc->datasize, size - osize);
+				ATOMIC_BASE_TYPE sz = 0;
+				if (qc) {
+					sz = ATOMIC_ADD(&qc->datasize, size - osize);
+					sz += size - osize;
+					if (qc->maxmem > 0 && sz > qc->maxmem) {
+						GDKerror("Query using too much memory.\n");
+						return GDK_FAIL;
+					}
+				}
 			}
  			return GDK_SUCCEED; /* success */
  		}
@@ -278,8 +293,15 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 			if (h->base) {
 				if (h->farmid == 1) {
 					QryCtx *qc = MT_thread_get_qry_ctx();
-					if (qc)
-						ATOMIC_ADD(&qc->datasize, size - osize);
+					ATOMIC_BASE_TYPE sz = 0;
+					if (qc) {
+						sz = ATOMIC_ADD(&qc->datasize, size - osize);
+						sz += size - osize;
+						if (qc->maxmem > 0 && sz > qc->maxmem) {
+							GDKerror("Query using too much memory.\n");
+							return GDK_FAIL;
+						}
+					}
 				}
 				return GDK_SUCCEED; /* success */
 			}
@@ -314,8 +336,15 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 					HEAPfree(&bak, false);
 					if (h->farmid == 1) {
 						QryCtx *qc = MT_thread_get_qry_ctx();
-						if (qc)
-							ATOMIC_ADD(&qc->datasize, h->size);
+						ATOMIC_BASE_TYPE sz = 0;
+						if (qc) {
+							sz = ATOMIC_ADD(&qc->datasize, h->size);
+							sz += h->size;
+							if (qc->maxmem > 0 && sz > qc->maxmem) {
+								GDKerror("Query using too much memory.\n");
+								return GDK_FAIL;
+							}
+						}
 					}
 					return GDK_SUCCEED;
 				}
@@ -687,7 +716,7 @@ HEAPdecref(Heap *h, bool remove)
 		GDKfree(h);
 		break;
 	case 1:
-		if (ATOMIC_GET(&h->refs) & DELAYEDREMOVE) {
+		if (refs & DELAYEDREMOVE) {
 			/* only reference left is b->oldtail */
 			HEAPfree(h, false);
 		}
@@ -798,8 +827,16 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	h->dirty = false;	/* we just read it, so it's clean */
 	if (h->farmid == 1) {
 		QryCtx *qc = MT_thread_get_qry_ctx();
-		if (qc)
-			ATOMIC_ADD(&qc->datasize, h->size);
+		ATOMIC_BASE_TYPE sz = 0;
+		if (qc) {
+			sz = ATOMIC_ADD(&qc->datasize, h->size);
+			sz += h->size;
+			if (qc->maxmem > 0 && sz > qc->maxmem) {
+				HEAPfree(h, true);
+				GDKerror("Query using too much memory.\n");
+				return GDK_FAIL;
+			}
+		}
 	}
 	return GDK_SUCCEED;
 }

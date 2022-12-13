@@ -26,7 +26,7 @@
 static FILE *active_tracer;
 MT_Lock GDKtracer_lock = MT_LOCK_INITIALIZER(GDKtracer_lock);
 
-static char file_name[FILENAME_MAX];
+static char *file_name;
 
 static ATOMIC_TYPE cur_adapter = ATOMIC_VAR_INIT(DEFAULT_ADAPTER);
 
@@ -86,8 +86,8 @@ static const char *level_str[] = {
 #define GDK_TRACER_RESET_OUTPUT()					\
 	do {								\
 		write_to_tracer = false;				\
-		for (int i = 0; i < (int) COMPONENTS_COUNT; i++) {	\
-			write_to_tracer = write_to_tracer || lvl_per_component[i] > DEFAULT_LOG_LEVEL; \
+		for (int i = 0; !write_to_tracer && i < (int) COMPONENTS_COUNT; i++) {	\
+			write_to_tracer = lvl_per_component[i] > DEFAULT_LOG_LEVEL; \
 		}							\
 	} while(0)
 
@@ -108,31 +108,54 @@ get_timestamp(char *datetime, size_t dtsz)
 static gdk_return
 GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
 {
+	char *fn;
+
+	/* we use malloc/free instead of GDKmalloc/GDKfree to avoid
+	 * possible recursion */
 	if (dbtrace == NULL) {
 		write_to_tracer = false;
 		if (dbpath == NULL) {
 			active_tracer = stderr;
 			return GDK_SUCCEED;
 		}
-		if (strconcat_len(file_name, sizeof(file_name),
-				  dbpath, DIR_SEP_STR, FILE_NAME, NULL)
-		    >= sizeof(file_name)) {
+		size_t fnl = strlen(dbpath) + strlen(DIR_SEP_STR) + strlen(FILE_NAME) + 1;
+		fn = malloc(fnl);
+		if (fn == NULL) {
+			GDK_TRACER_EXCEPTION("malloc failure\n");
+			active_tracer = stderr;
+			return GDK_FAIL;
+		}
+		if (strconcat_len(fn, fnl, dbpath, DIR_SEP_STR, FILE_NAME, NULL)
+		    >= fnl) {
+			/* cannot happen */
 			goto too_long;
 		}
 	} else {
 		write_to_tracer = true;
-		if (strcpy_len(file_name, dbtrace, sizeof(file_name))
-		    >= sizeof(file_name)) {
+		size_t fnl = strlen(dbtrace) + 1;
+		fn = malloc(fnl);
+		if (fn == NULL) {
+			GDK_TRACER_EXCEPTION("malloc failure\n");
+			active_tracer = stderr;
+			return GDK_FAIL;
+		}
+		if (strcpy_len(fn, dbtrace, fnl)
+		    >= fnl) {
+			/* cannot happen */
 			goto too_long;
 		}
 	}
+	free(file_name);
+	file_name = fn;
 
 	active_tracer = MT_fopen(file_name, "a");
 
 	if (active_tracer == NULL) {
 		GDK_TRACER_EXCEPTION("Failed to open %s: %s\n", file_name,
 				     GDKstrerror(errno, (char[64]){0}, 64));
-		file_name[0] = 0; /* uninitialize */
+		/* uninitialize */
+		free(file_name);
+		file_name = NULL;
 		active_tracer = stderr;
 		return GDK_FAIL;
 	}
@@ -141,7 +164,9 @@ GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
 
   too_long:
 	GDK_TRACER_EXCEPTION("path name for dbtrace file too long\n");
-	file_name[0] = 0; /* uninitialize */
+	/* uninitialize */
+	free(file_name);
+	file_name = NULL;
 	active_tracer = stderr;
 	return GDK_FAIL;
 }
@@ -161,7 +186,7 @@ set_level_for_layer(int layer, int lvl)
 
 	// make sure we initialize before changing the component level
 	MT_lock_set(&GDKtracer_lock);
-	if (file_name[0] == 0) {
+	if (file_name == NULL) {
 		_GDKtracer_init_basic_adptr();
 	}
 	MT_lock_unset(&GDKtracer_lock);
@@ -321,10 +346,10 @@ GDKtracer_set_component_level(const char *comp, const char *lvl)
 
 	// make sure we initialize before changing the component level
 	MT_lock_set(&GDKtracer_lock);
-	if (file_name[0] == 0) {
+	if (file_name == NULL) {
 		_GDKtracer_init_basic_adptr();
 	}
-	write_to_tracer = write_to_tracer || level > DEFAULT_LOG_LEVEL;
+	write_to_tracer |= level > DEFAULT_LOG_LEVEL;
 	MT_lock_unset(&GDKtracer_lock);
 
 	lvl_per_component[component] = level;

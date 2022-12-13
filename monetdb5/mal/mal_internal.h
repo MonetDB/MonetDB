@@ -18,3 +18,7 @@ Client setClientContext(Client cntxt)
 	__attribute__((__visibility__("hidden")));
 
 extern size_t qsize;
+
+extern MT_Lock mal_profileLock;
+extern MT_Lock mal_copyLock;
+extern MT_Lock mal_delayLock;

@@ -118,18 +118,10 @@ doHASHdestroy(BAT *b, Hash *hs)
 			  BBP_physical(b->batCacheid),
 			  "thashb");
 	} else if (hs) {
-		bat p = VIEWtparent(b);
-		BAT *hp = NULL;
-
-		if (p)
-			hp = BBP_cache(p);
-
-		if (!hp || hs != hp->thash) {
-			TRC_DEBUG(ACCELERATOR, ALGOBATFMT ": removing%s hash\n", ALGOBATPAR(b), *(size_t *) hs->heapbckt.base & (1 << 24) ? " persisted" : "");
-			HEAPfree(&hs->heapbckt, true);
-			HEAPfree(&hs->heaplink, true);
-			GDKfree(hs);
-		}
+		TRC_DEBUG(ACCELERATOR, ALGOBATFMT ": removing%s hash\n", ALGOBATPAR(b), *(size_t *) hs->heapbckt.base & (1 << 24) ? " persisted" : "");
+		HEAPfree(&hs->heapbckt, true);
+		HEAPfree(&hs->heaplink, true);
+		GDKfree(hs);
 	}
 }
 
