@@ -836,13 +836,13 @@ wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, i
 
 /* ST_DistanceGeographic Bulk function */
 str
-wkbDistanceGeographic_bat(bat *out_id, bat *a_id, bat *b_id)
+wkbDistanceGeographic_bat(bat *out_id, const bat *a_id, const bat *b_id)
 {
 	return wkbDistanceGeographic_bat_cand(out_id,a_id,b_id,NULL,NULL);
 }
 
 str
-wkbDistanceGeographic_bat_cand(bat *out_id, bat *a_id, bat *b_id, bat *s1_id, bat *s2_id)
+wkbDistanceGeographic_bat_cand(bat *out_id, const bat *a_id, const bat *b_id, const bat *s1_id, const bat *s2_id)
 {
 	BAT *out = NULL, *a = NULL, *b = NULL, *s1 = NULL, *s2 = NULL;
 	BATiter a_iter, b_iter;

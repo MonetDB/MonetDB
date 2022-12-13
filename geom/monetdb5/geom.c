@@ -285,8 +285,8 @@ wkbCollectAggr (wkb **out, const bat *bid) {
 	return msg;
 }
 
-str
-wkbCollect (wkb **out, wkb **a, wkb **b) {
+static str
+wkbCollect (wkb **out, wkb * const *a, wkb * const *b) {
 	str err = MAL_SUCCEED;
 	GEOSGeom ga, gb, collection;
 	GEOSGeom *collect = NULL;

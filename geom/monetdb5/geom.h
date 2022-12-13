@@ -236,4 +236,3 @@ geom_export str mbrIntersects(bit* out, mbr** mbr1, mbr** mbr2);
 geom_export str wkbCollectAggr (wkb **out, const bat *bid);
 geom_export str wkbCollectAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
 geom_export str wkbCollectAggrSubGroupedCand(bat* outid, const bat* bid, const bat* gid, const bat* eid, const bat* sid, const bit* skip_nils);
-geom_export str wkbCollect (wkb **out, wkb **a, wkb **b);
