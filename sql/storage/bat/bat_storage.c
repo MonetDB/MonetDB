@@ -149,14 +149,17 @@ new_segment(segment *o, sql_trans *tr, size_t cnt)
 		n->ts = tr->tid;
 		n->oldts = 0;
 		n->deleted = false;
-		n->start = 0;
-		n->next = NULL;
-		n->prev = NULL;
 		if (o) {
 			n->start = o->end;
-			o->next = n;
+			n->end = o->end + cnt;
+		} else {
+			n->start = 0;
+			n->end = cnt;
 		}
-		n->end = n->start + cnt;
+		n->next = NULL;
+		n->prev = NULL;
+		if (o)
+			o->next = n;
 	}
 	return n;
 }

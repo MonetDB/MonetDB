@@ -1814,7 +1814,7 @@ BATslice(BAT *b, BUN l, BUN h)
 		bn = VIEWcreate(b->hseqbase + low, b);
 		if (bn == NULL)
 			goto doreturn;
-		VIEWbounds(b, bn, l, h);
+		VIEWboundsbi(&bi, bn, l, h);
 	} else {
 		/* create a new BAT and put everything into it */
 		BUN p = l;

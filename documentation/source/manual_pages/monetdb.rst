@@ -56,10 +56,9 @@ COMMANDS
 
 The commands for the *monetdb* utility are **create**, **destroy**,
 **lock**, **release**, **status**, **start**, **stop**, **kill**,
-**profilerstart**, **profilerstop**, **snapshot**, **set**, **get**,
-**inherit**, **discover**, **help**, and **version**. The commands
-facilitate adding, removing, maintaining, starting and stopping a
-database inside the MonetDB Database Server.
+**snapshot**, **set**, **get**, **inherit**, **discover**, **help**, and
+**version**. The commands facilitate adding, removing, maintaining,
+starting and stopping a database inside the MonetDB Database Server.
 
 For all commands, database arguments can be glob-like expressions. This
 allows to do wildcard matches. For details on the syntax, see
@@ -186,7 +185,7 @@ successful.
 **monetdb snapshot write**\ *dbname*
    Takes a snapshot of the given database and writes it to stdout.
 
-**monetdb snapshot create [-t**\ *targetfile*\ **]**\ *dbname*\ **[**\ *dbname*\ **..]**
+**monetdb snapshot create [-t**\ *targetfile*\ **]**\ *dbname*\ **[**\ *dbname*\ **...]**
    Takes a snapshot of the given databases. Here, *dbname* can be either
    the name of a single database or a pattern such as *staging\**
    indicating multiple databases to snapshot. Unless **-t** is given,
@@ -200,7 +199,7 @@ successful.
    be somewhere under *snapshotdir* but which does not have to follow
    any particular naming convention.
 
-**monetdb snapshot list [**\ *dbname*\ **..]**
+**monetdb snapshot list [**\ *dbname*\ **...]**
    Lists the snapshots for the given databases, or all databases if none
    is given, showing the snapshot id, the time the snapshot was taken
    and the (compressed) size of the snapshot file. Only snapshots
@@ -220,11 +219,11 @@ successful.
    *snapshotid* is a full path. When **-f** is given, no confirmation is
    asked when overwriting an existing database.
 
-**monetdb snapshot destroy [-f]**\ *name*\ **@**\ *tag*\ **..**
+**monetdb snapshot destroy [-f]**\ *name*\ **@**\ *tag*\ **[**\ *name*\ **@**\ *tag*\ **...]**
    Delete the listed snapshots from the *snapshotdir* directory. When
    **-f** is given, no confirmation is asked.
 
-**monetdb snapshot destroy [-f] -r**\ *N*\ *dbname*\ **..**
+**monetdb snapshot destroy [-f] -r**\ *N*\ *dbname*\ **[**\ *dbname*\ **...]**
    Delete all but the *N* latest snapshots for the given databases.
    Again, *dbname* can be a pattern such as *staging\** or even *\** to
    work on all snapshotted databases. When **-f** is given, no
@@ -279,6 +278,12 @@ successful.
    **raw_strings=**\ <**yes**\ \|\ **no**>
       Defines how the server interprets literal strings. See the
       *mserver5*\ (1) manpage for more details.
+
+   **loadmodules=**\ *module-list*
+      Enable the modules in *module-list* for the given database. The
+      *module-list* is a comma or space separated list of module names
+      and translates to a **--loadmodule=**\ *module*\ **option to**
+      *mserver5*\ (1) for each of the modules in the list.
 
 **inherit**\ *property*\ *database*\ **[**\ *database*\ **...]**
    Like set, but unsets the database-local value, and reverts to inherit
