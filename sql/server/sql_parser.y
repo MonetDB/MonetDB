@@ -6492,8 +6492,14 @@ odbc_datetime_func:
             case iyear:
             case iquarter:
             case imonth:
+		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_month")));
+                break;
             case iweek:
+		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_week")));
+                break;
             case iday:
+		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_day")));
+                break;
             case ihour:
 		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_hour")));
                 break;
@@ -6501,8 +6507,11 @@ odbc_datetime_func:
 		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_min")));
                 break;
             case isec:
-            default:
 		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_sec")));
+                break;
+            default:
+                // diff in ms
+		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff")));
           }
 	      append_int(l, FALSE); /* ignore distinct */
           append_symbol(l, $7);

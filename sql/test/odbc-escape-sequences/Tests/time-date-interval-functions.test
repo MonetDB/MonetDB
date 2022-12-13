@@ -162,3 +162,53 @@ query I rowsort
 select { fn timestampdiff(SQL_TSI_HOUR, timestamp'2022-12-11 23:00:00', date'2022-12-12') }
 ----
 1
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_DAY, timestamp'2022-12-11 22:00:00', timestamp'2022-12-12 00:00:00') }
+----
+1
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_DAY, time'22:00:00', (select current_date)) }
+----
+0
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_DAY, (select current_date), time'22:00:00') }
+----
+0
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_WEEK, timestamp'2022-12-02 22:00:00', timestamp'2022-12-12 00:00:00') }
+----
+1
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_WEEK, time'22:00:00', (select now + (interval '1' day)*7)) }
+----
+1
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_WEEK, time'22:00:00', (select now + (interval '1' day)*7)) }
+----
+1
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_MONTH, timestamp'2022-11-02 22:00:00', timestamp'2022-12-12 00:00:00') }
+----
+1
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_MONTH, timestamp'2021-12-02 22:00:00', timestamp'2022-12-12 00:00:00') }
+----
+12
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_MONTH, time'22:00:00', (select now + interval '1' month)) }
+----
+1
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_MONTH, (select now - interval '1' month), time'10:00:00') }
+----
+1
