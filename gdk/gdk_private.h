@@ -29,7 +29,8 @@ enum heaptype {
 	hashheap,
 	imprintsheap,
 	orderidxheap,
-	strimpheap
+	strimpheap,
+	dataheap
 };
 
 gdk_return ATOMheap(int id, Heap *hp, size_t cap)

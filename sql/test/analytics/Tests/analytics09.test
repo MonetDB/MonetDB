@@ -131,54 +131,54 @@ select avg(sum(aa)) over () from analytics group by aa
 6.571
 
 query I rowsort
-select cast(sum(aa) * count(aa) / avg(aa) over (rows between current row and unbounded following) as bigint) from analytics group by aa
+select cast(sum(aa) * count(aa) / avg(aa) over (order by aa desc rows between current row and unbounded following) as bigint) from analytics group by aa
 ----
-0
-1
 1
 1
 1
 2
-3
+2
+2
+5
 NULL
 
 query RRIR rowsort
-select avg(sum(aa)) over (),
+select avg(sum(aa)) over ( order by aa desc),
        avg(sum(aa)) over (rows unbounded preceding),
        cast(sum(aa) * count(aa) / avg(aa) over (rows between current row and unbounded following) as bigint),
        avg(sum(aa)) over (range unbounded preceding) from analytics group by aa
 ----
+11.500
+11.500
+2
 6.571
-10.500
-3
-6.571
-6.571
+15.000
 15.000
 2
 6.571
 6.571
-6.333
-1
-6.571
-6.571
-6.400
-1
-6.571
-6.571
 6.571
 1
 6.571
 6.571
-7.000
-1
 6.571
-6.571
-7.000
 NULL
 6.571
+7.333
+7.333
+5
 6.571
-7.667
-0
+7.600
+7.600
+1
+6.571
+8.500
+8.500
+1
+6.571
+9.667
+9.667
+2
 6.571
 
 query II rowsort

@@ -392,6 +392,7 @@ MCforkClient(Client father)
 		son->workerlimit = father->workerlimit;
 		son->memorylimit = father->memorylimit;
 		son->qryctx.querytimeout = father->qryctx.querytimeout;
+		son->qryctx.maxmem = father->qryctx.maxmem;
 		son->sessiontimeout = father->sessiontimeout;
 
 		if (son->prompt)

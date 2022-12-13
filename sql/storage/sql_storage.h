@@ -155,6 +155,7 @@ typedef size_t (*count_col_fptr) (sql_trans *tr, sql_column *c, int access);
 typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef size_t (*dcount_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*min_max_col_fptr) (sql_trans *tr, sql_column *c);
+typedef int (*set_stats_col_fptr) (sql_trans *tr, sql_column *c, double *unique_est, char *min, char *max);
 typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*proprec_col_fptr) (sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max);
 
@@ -239,6 +240,7 @@ typedef struct store_functions {
 	count_idx_fptr count_idx;
 	dcount_col_fptr dcount_col;
 	min_max_col_fptr min_max_col;
+	set_stats_col_fptr set_stats_col;
 	prop_col_fptr sorted_col;
 	prop_col_fptr unique_col;
 	prop_col_fptr double_elim_col; /* varsize col with double elimination */

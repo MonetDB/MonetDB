@@ -3039,30 +3039,6 @@ BATdescriptor(bat i)
 }
 
 /*
- * BBPreclaim is a user-exported function; the common way to destroy a
- * BAT the hard way.
- *
- * Return values:
- * -1 = bat cannot be unloaded (it has more than your own memory fix)
- *  0 = unloaded successfully
- *  1 = unload failed (due to write-to-disk failure)
- */
-int
-BBPreclaim(BAT *b)
-{
-	bat i;
-	bool lock = locked_by == 0 || locked_by != MT_getpid();
-
-	if (b == NULL)
-		return -1;
-	i = b->batCacheid;
-
-	assert(BBP_refs(i) == 1);
-
-	return decref(i, false, lock, __func__) < 0;
-}
-
-/*
  * BBPdescriptor checks whether BAT needs loading and does so if
  * necessary. You must have at least one fix on the BAT before calling
  * this.
