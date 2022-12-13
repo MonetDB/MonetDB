@@ -242,7 +242,7 @@ cartPointFromXYZ(double x, double y, double z)
 
 /* Converts Well-Known Bytes into Geos Geometries, if they are not NULL and have the same SRID (used for geographic functions) */
 str
-wkbGetCompatibleGeometries(wkb **a, wkb **b, GEOSGeom *ga, GEOSGeom *gb)
+wkbGetCompatibleGeometries(wkb * const *a, wkb * const *b, GEOSGeom *ga, GEOSGeom *gb)
 {
 	str err = MAL_SUCCEED;
 
@@ -769,7 +769,7 @@ geoDistanceInternal(GEOSGeom a, GEOSGeom b, double distance_min_limit)
 **/
 /* Calculates the distance, in meters, between two geographic geometries with latitude/longitude coordinates */
 str
-wkbDistanceGeographic(dbl *out, wkb **a, wkb **b)
+wkbDistanceGeographic(dbl *out, wkb * const *a, wkb * const *b)
 {
 	str err = MAL_SUCCEED;
 	GEOSGeom ga, gb;
@@ -788,7 +788,7 @@ wkbDistanceGeographic(dbl *out, wkb **a, wkb **b)
 **/
 /* Checks if two geographic geometries are within d meters of one another */
 str
-wkbDWithinGeographic(bit *out, wkb **a, wkb **b, dbl *d)
+wkbDWithinGeographic(bit *out, wkb * const *a, wkb * const *b, const dbl *d)
 {
 	str err = MAL_SUCCEED;
 	GEOSGeom ga, gb;
@@ -809,7 +809,7 @@ wkbDWithinGeographic(bit *out, wkb **a, wkb **b, dbl *d)
 **/
 /* Checks if two geographic geometries intersect at any point */
 str
-wkbIntersectsGeographic(bit *out, wkb **a, wkb **b)
+wkbIntersectsGeographic(bit *out, wkb * const *a, wkb * const *b)
 {
 	str err = MAL_SUCCEED;
 	GEOSGeom ga, gb;
@@ -913,7 +913,7 @@ geoCoversInternal(GEOSGeom a, GEOSGeom b)
 **/
 /* Checks if no point of Geometry B is outside Geometry A */
 str
-wkbCoversGeographic(bit *out, wkb **a, wkb **b)
+wkbCoversGeographic(bit *out, wkb * const *a, wkb * const *b)
 {
 	str err = MAL_SUCCEED;
 	GEOSGeom ga, gb;
@@ -939,7 +939,7 @@ geosDistanceWithin (GEOSGeom geom1, GEOSGeom geom2, dbl distance_within) {
 
 //TODO Change BUNappend with manual insertion into the result BAT
 static str
-filterSelectGeomGeomDoubleToBit(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const, dbl double_flag, bit anti, bit (*func) (GEOSGeom, GEOSGeom, dbl), const char *name)
+filterSelectGeomGeomDoubleToBit(bat* outid, const bat *bid , const bat *sid, const wkb *wkb_const, dbl double_flag, bit anti, bit (*func) (GEOSGeom, GEOSGeom, dbl), const char *name)
 {
 	BAT *out = NULL, *b = NULL, *s = NULL;
 	BATiter b_iter;
@@ -1016,7 +1016,7 @@ filterSelectGeomGeomDoubleToBit(bat* outid, const bat *bid , const bat *sid, wkb
 }
 
 static str
-filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, double double_flag, const bat *ls_id, const bat *rs_id, bit nil_matches, lng *estimate, bit anti, bit (*func) (GEOSGeom, GEOSGeom, dbl), const char *name)
+filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, double double_flag, const bat *ls_id, const bat *rs_id, bit nil_matches, const lng *estimate, bit anti, bit (*func) (GEOSGeom, GEOSGeom, dbl), const char *name)
 {
 	BAT *lres = NULL, *rres = NULL, *l = NULL, *r = NULL, *ls = NULL, *rs = NULL;
 	BATiter l_iter, r_iter;
@@ -1024,6 +1024,7 @@ filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const
 	struct canditer l_ci, r_ci;
 	GEOSGeom l_geom, r_geom;
 	GEOSGeom *l_geoms = NULL, *r_geoms = NULL;
+	BUN est;
 
 	//get the input BATs
 	if ((l = BATdescriptor(*l_id)) == NULL || (r = BATdescriptor(*r_id)) == NULL) {
@@ -1041,13 +1042,12 @@ filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const
 	canditer_init(&l_ci, l, ls);
 	canditer_init(&r_ci, r, rs);
 	//create new BATs for the output
-	if (is_lng_nil(*estimate) || *estimate == 0)
-		*estimate = l_ci.ncand;
-	if ((lres = COLnew(0, ATOMindex("oid"), *estimate, TRANSIENT)) == NULL) {
+	est = is_lng_nil(*estimate) || *estimate == 0 ? l_ci.ncand : (BUN) *estimate;
+	if ((lres = COLnew(0, ATOMindex("oid"), est, TRANSIENT)) == NULL) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}
-	if ((rres = COLnew(0, ATOMindex("oid"), *estimate, TRANSIENT)) == NULL) {
+	if ((rres = COLnew(0, ATOMindex("oid"), est, TRANSIENT)) == NULL) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}
@@ -1165,7 +1165,7 @@ free:
 }
 
 str
-wkbDWithinGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *d_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate, bit *anti) {
+wkbDWithinGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *d_id, const bat *ls_id, const bat *rs_id, const bit *nil_matches, const lng *estimate, const bit *anti) {
 	double distance_within = 0;
 	BAT *d = NULL;
 	//Get the distance BAT and get the double value
@@ -1182,17 +1182,17 @@ wkbDWithinGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat 
 }
 
 str
-wkbDWithinGeographicSelect(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, dbl *distance_within, bit *anti) {
+wkbDWithinGeographicSelect(bat* outid, const bat *bid , const bat *sid, wkb * const *wkb_const, const dbl *distance_within, const bit *anti) {
 	return filterSelectGeomGeomDoubleToBit(outid,bid,sid,*wkb_const,*distance_within,*anti,geosDistanceWithin,"geom.wkbDWithinGeographicSelect");
 }
 
 str
-wkbIntersectsGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate, bit *anti) {
+wkbIntersectsGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, const bit *nil_matches, const lng *estimate, const bit *anti) {
 	return filterJoinGeomGeomDoubleToBit(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,estimate,*anti,geosDistanceWithin,"geom.wkbIntersectsGeographicJoin");
 }
 
 str
-wkbIntersectsGeographicSelect(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti) {
+wkbIntersectsGeographicSelect(bat* outid, const bat *bid , const bat *sid, wkb * const *wkb_const, const bit *anti) {
 	return filterSelectGeomGeomDoubleToBit(outid,bid,sid,*wkb_const,0,*anti,geosDistanceWithin,"geom.wkbIntersectsGeographicSelect");
 }
 

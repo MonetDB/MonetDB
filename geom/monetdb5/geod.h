@@ -49,20 +49,20 @@ typedef struct CartPoint2D
     double y;
 } CartPoint2D;
 
-str wkbGetCompatibleGeometries(wkb **a, wkb **b, GEOSGeom *ga, GEOSGeom *gb);
+str wkbGetCompatibleGeometries(wkb * const *a, wkb * const *b, GEOSGeom *ga, GEOSGeom *gb);
 
 /* Geographic functions */
-str wkbCoversGeographic(bit* out, wkb** a, wkb** b);
+str wkbCoversGeographic(bit* out, wkb * const * a, wkb * const * b);
 
-str wkbDistanceGeographic(dbl* out, wkb** a, wkb** b);
-str wkbDistanceGeographic_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id);
-str wkbDistanceGeographic_bat_cand(bat *out_id, bat *a_id, bat *b_id, bat *s1_id, bat *s2_id);
+str wkbDistanceGeographic(dbl* out, wkb * const * a, wkb * const * b);
+str wkbDistanceGeographic_bat(bat *outBAT_id, const bat *aBAT_id, const bat *bBAT_id);
+str wkbDistanceGeographic_bat_cand(bat *out_id, const bat *a_id, const bat *b_id, const bat *s1_id, const bat *s2_id);
 
-str wkbDWithinGeographic(bit* out, wkb** a, wkb** b, dbl *distance);
-str wkbDWithinGeographicSelect(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, dbl *distance_within, bit *anti);
-str wkbDWithinGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *d_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate, bit *anti);
-str wkbIntersectsGeographic(bit* out, wkb** a, wkb** b);
-str wkbIntersectsGeographicSelect(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti);
-str wkbIntersectsGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate, bit *anti);
+str wkbDWithinGeographic(bit* out, wkb * const * a, wkb * const * b, const dbl *distance);
+str wkbDWithinGeographicSelect(bat* outid, const bat *bid , const bat *sid, wkb * const *wkb_const, const dbl *distance_within, const bit *anti);
+str wkbDWithinGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *d_id, const bat *ls_id, const bat *rs_id, const bit *nil_matches, const lng *estimate, const bit *anti);
+str wkbIntersectsGeographic(bit* out, wkb * const * a, wkb * const * b);
+str wkbIntersectsGeographicSelect(bat* outid, const bat *bid , const bat *sid, wkb * const *wkb_const, const bit *anti);
+str wkbIntersectsGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, const bit *nil_matches, const lng *estimate, const bit *anti);
 
 str geodeticEdgeBoundingBox(const CartPoint3D* p1, const CartPoint3D* p2, BoundingBox* mbox);
