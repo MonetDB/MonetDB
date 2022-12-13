@@ -128,6 +128,7 @@ BuildRequires: pkgconfig(zlib)
 BuildRequires: pkgconfig(liblz4) >= 1.8
 %if %{with py3integration}
 BuildRequires: pkgconfig(python3) >= 3.5
+# cannot use python3dist(numpy) because of CentOS 7
 BuildRequires: python3-numpy
 %endif
 %if %{with rintegration}
@@ -343,7 +344,6 @@ Recommends: perl-DBD-monetdb >= 1.0
 Recommends: php-monetdb >= 1.0
 %endif
 Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
-Requires: python3-pymonetdb >= 1.0.6
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} > 7
 Recommends: python3dist(lz4)
 Recommends: python3dist(scipy)
@@ -690,6 +690,7 @@ package.  You probably don't need this, unless you are a developer.
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires: %{name}-client-tests = %{version}-%{release}
+Requires: python3dist(pymonetdb) >= 1.0.6
 BuildArch: noarch
 
 %description testing-python
