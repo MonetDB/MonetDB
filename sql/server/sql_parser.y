@@ -6488,7 +6488,6 @@ odbc_datetime_func:
     | TIMESTAMPDIFF '(' odbc_tsi_qualifier ',' search_condition ',' search_condition ')'
 		{ dlist *l = L(); 
           switch($3) {
-            // TODO implement other cases
             case iyear:
 		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_year")));
                 break;
