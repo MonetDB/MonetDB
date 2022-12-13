@@ -6490,7 +6490,11 @@ odbc_datetime_func:
           switch($3) {
             // TODO implement other cases
             case iyear:
+		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_year")));
+                break;
             case iquarter:
+		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_quarter")));
+                break;
             case imonth:
 		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_month")));
                 break;
