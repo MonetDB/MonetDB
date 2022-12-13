@@ -54,8 +54,7 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid, const bat *sid
 	}
 	bn = BATconvert(b, s, TPE(TP2), *s1, 0, 0);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (bn == NULL)
 		throw(SQL, "sql."STRNG(FUN(dec,TP1,_2_,TP2)), GDK_EXCEPTION);
 	*res = bn->batCacheid;
@@ -77,8 +76,7 @@ FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const bat *
 	}
 	bn = BATconvert(b, s, TPE(TP2), *S1, *S2, *d2);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (bn == NULL)
 		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), GDK_EXCEPTION);
 
@@ -102,8 +100,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const bat *sid, const int 
 	}
 	bn = BATconvert(b, s, TPE(TP2), 0, *s2, *d2);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (bn == NULL)
 		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), GDK_EXCEPTION);
 	*res = bn->batCacheid;

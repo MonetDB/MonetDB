@@ -2703,8 +2703,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		MT_lock_unset(&pb->batIdxLock);
 	if (oidxh)
 		HEAPdecref(oidxh, false);
-	if (bn)
-		BBPunfix(bn->batCacheid);
+	BBPreclaim(bn);
 	if (pb && pb != b)
 		BBPunfix(pb->batCacheid);
 	BBPreclaim(on);

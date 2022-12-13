@@ -198,11 +198,10 @@ internal_find_bat(logger *lg, log_id id, int tid)
 	return -1;		/* error creating hash */
 }
 
-static void
+static inline void
 logbat_destroy(BAT *b)
 {
-	if (b)
-		BBPunfix(b->batCacheid);
+	BBPreclaim(b);
 }
 
 static BAT *
@@ -1243,8 +1242,7 @@ log_read_transaction(logger *lg)
 	if (!lg->flushing)
 		GDKdebug = dbg;
 
-	if (cands)
-		BBPunfix(cands->batCacheid);
+	BBPreclaim(cands);
 	if (!ok)
 		return LOG_EOF;
 	return err;
@@ -2809,12 +2807,9 @@ new_logfile(logger *lg)
 	const lng log_large = (GDKdebug & FORCEMITOMASK)?LOG_MINI:LOG_LARGE;
 
 	gdk_return result = GDK_SUCCEED;
-	MT_lock_set(&lg->rotation_lock);
 	const lng p = (lng) getfilepos(getFile(lg->output_log));
-	if (p == -1) {
-		MT_lock_unset(&lg->rotation_lock);
+	if (p == -1)
 		return GDK_FAIL;
-	}
 	if (( p > log_large || (lg->end*1024) > log_large )) {
 		log_lock(lg);
 		if (ATOMIC_GET(&lg->refcount) == 1) {
@@ -2829,7 +2824,6 @@ new_logfile(logger *lg)
 		}
 		log_unlock(lg);
 	}
-	MT_lock_unset(&lg->rotation_lock);
 	return result;
 }
 
@@ -2936,16 +2930,19 @@ log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
 			/* number of transactions in the group commit */
 			const int fqueue_length = flush_queue_length(lg);
 			/* flush + fsync */
+			MT_lock_set(&lg->rotation_lock);
 			if (mnstr_flush(lg->output_log, MNSTR_FLUSH_DATA) ||
 					(!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log)) ||
 					new_logfile(lg) != GDK_SUCCEED) {
 				/* flush failed */
+				MT_lock_unset(&lg->rotation_lock);
 				MT_lock_unset(&lg->flush_lock);
 				(void) ATOMIC_DEC(&lg->refcount);
 				return GDK_FAIL;
 			}
 			else {
 				/* flush succeeded */
+				MT_lock_unset(&lg->rotation_lock);
 				left_truncate_flush_queue(lg, fqueue_length);
 			}
 		}

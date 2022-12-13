@@ -563,8 +563,7 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 	/* free the memory */
 unfree4:
 	for(i = 0; i < colsNum; i++) {
-		if (colsBAT[i])
-			BBPunfix(colsBAT[i]->batCacheid);
+		BBPreclaim(colsBAT[i]);
 	}
 	free(field_definitions);
 	GDKfree(colsBAT);
@@ -798,8 +797,7 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
   bailout:
 	for(i = 0; i < colsNum; i++) {
-		if (colsBAT[i])
-			BBPunfix(colsBAT[i]->batCacheid);
+		BBPreclaim(colsBAT[i]);
 	}
 
 	/* free the memory */

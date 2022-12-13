@@ -46,8 +46,7 @@ unfix_inputs(int nargs, ...)
 	va_start(valist, nargs);
 	for (int i = 0; i < nargs; i++) {
 		BAT *b = va_arg(valist, BAT *);
-		if (b)
-			BBPunfix(b->batCacheid);
+		BBPreclaim(b);
 	}
 	va_end(valist);
 }

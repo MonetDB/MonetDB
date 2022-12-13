@@ -1326,12 +1326,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	if (locked)
 		MT_rwlock_rdunlock(&b->thashlock);
-	if (gn)
-		BBPunfix(gn->batCacheid);
-	if (en)
-		BBPunfix(en->batCacheid);
-	if (hn)
-		BBPunfix(hn->batCacheid);
+	BBPreclaim(gn);
+	BBPreclaim(en);
+	BBPreclaim(hn);
 	return GDK_FAIL;
 }
 

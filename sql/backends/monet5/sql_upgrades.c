@@ -2065,8 +2065,7 @@ sql_update_oct2020(Client c, mvc *sql)
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
+	BBPreclaim(b);
 	if (output)
 		res_table_destroy(output);
 	GDKfree(buf);
@@ -3131,8 +3130,7 @@ sql_update_jul2021(Client c, mvc *sql)
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
+	BBPreclaim(b);
 	if (output)
 		res_table_destroy(output);
 	GDKfree(buf);
@@ -4580,12 +4578,9 @@ sql_update_sep2022(Client c, mvc *sql)
 			(p = BATdescriptor(bid)) == NULL ||
 			(bid = BBPindex("M5system_auth_deleted")) == 0 ||
 			(d = BATdescriptor(bid)) == NULL) {
-			if (u)
-				BBPunfix(u->batCacheid);
-			if (p)
-				BBPunfix(p->batCacheid);
-			if (d)
-				BBPunfix(d->batCacheid);
+			BBPreclaim(u);
+			BBPreclaim(p);
+			BBPreclaim(d);
 			throw(SQL, __func__, INTERNAL_BAT_ACCESS);
 		}
 		BATiter ui = bat_iterator(u);
