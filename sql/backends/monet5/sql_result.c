@@ -1913,7 +1913,8 @@ mvc_export_bin_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 	struct bindump_record *colinfo;
 	stream *countstream = NULL;
 	uint64_t byte_count = 0;
-	BUN end = offset + nr;
+	uint64_t toc_pos = 0;
+	BUN end_row = offset + nr;
 
 	res_table *res = res_tables_find(b->results, res_id);
 	if (res == NULL)
@@ -1935,8 +1936,8 @@ mvc_export_bin_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 		}
 		colinfo[i].bat = b;
 
-		if (BATcount(b) < end)
-			end = BATcount(b);
+		if (BATcount(b) < end_row)
+			end_row = BATcount(b);
 
 		int tpe = BATttype(b);
 		const char *gdk_name = ATOMname(tpe);
@@ -1953,16 +1954,20 @@ mvc_export_bin_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 		colinfo[i].type_rec = rec;
 	}
 
-	// Probably have to deal with t->order somehow..
+	// TODO: Probably have to deal with t->order somehow..
+	// Right now we just write the contents of the bats.
+
+	// The byte_counting_stream keeps track of the byte offsets
 	countstream = byte_counting_stream(s, &byte_count);
 
-	mnstr_printf(countstream, "&6 %d %d " BUNFMT " " BUNFMT "\n", res_id, res->nr_cols, end - offset, offset);
+	// Make sure the message starts with a & and not with a !
+	mnstr_printf(countstream, "&6 %d %d " BUNFMT " " BUNFMT "\n", res_id, res->nr_cols, end_row - offset, offset);
 
 	for (int i = 0; i < res->nr_cols; i++) {
 		align_dump(countstream, &byte_count, 32); // 32 looks nice in tcpflow
 		struct bindump_record *info = &colinfo[i];
 		info->start = byte_count;
-		str msg = dump_binary_column(info->type_rec, info->bat, offset, end - offset, false, countstream);
+		str msg = dump_binary_column(info->type_rec, info->bat, offset, end_row - offset, false, countstream);
 		if (msg != MAL_SUCCEED) {
 			GDKerror("%s", msg);
 			GDKfree(msg);
@@ -1972,7 +1977,10 @@ mvc_export_bin_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 		info->length = byte_count - info->start;
 	}
 
+	assert(byte_count > 0);
+
 	align_dump(countstream, &byte_count, 32);
+	toc_pos = byte_count;
 	for (int i = 0; i < res->nr_cols; i++) {
 		struct bindump_record *info = &colinfo[i];
 		lng start = info->start;
@@ -1981,6 +1989,7 @@ mvc_export_bin_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 		mnstr_writeLng(countstream, length);
 	}
 
+	mnstr_writeLng(countstream, toc_pos);
 	ret = 0;
 
 end:
