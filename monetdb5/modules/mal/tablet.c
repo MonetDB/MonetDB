@@ -589,8 +589,6 @@ TABLEToutput_file(Tablet *as, BAT *order, stream *s)
  * observed time spending so far.
  */
 
-/* #define MLOCK_TST did not make a difference on sf10 */
-
 #define BREAKROW 1
 #define UPDATEBAT 2
 #define ENDOFCOPY 3
@@ -1615,13 +1613,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	task.b = b;
 	task.out = out;
 
-#ifdef MLOCK_TST
-	mlock(task.fields, as->nr_attrs * sizeof(char *));
-	mlock(task.cols, as->nr_attrs * sizeof(int));
-	mlock(task.time, as->nr_attrs * sizeof(lng));
-	for (i = 0; i < MAXBUFFERS; i++)
-		mlock(task.base[i], b->size + 2);
-#endif
 	as->error = NULL;
 
 	/* there is no point in creating more threads than we have columns */
@@ -1638,9 +1629,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 				as->error = createException(MAL, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
-#ifdef MLOCK_TST
-		mlock(task.fields[i], sizeof(char *) * task.limit);
-#endif
 		task.cols[i] = (int) (i + 1);	/* to distinguish non initialized later with zero */
 	}
 	for (i = 0; i < MAXBUFFERS; i++) {
@@ -1678,9 +1666,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 			MT_sema_up(&task.producer);
 			goto bailout;
 		}
-#ifdef MLOCK_TST
-		mlock(ptask[j].cols, sizeof(char *) * task.limit);
-#endif
 		snprintf(name, sizeof(name), "ptask%d.sema", j);
 		MT_sema_init(&ptask[j].sema, 0, name);
 		snprintf(name, sizeof(name), "ptask%d.repl", j);
@@ -1704,9 +1689,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	tio = GDKusec();
 	tio = GDKusec() - tio;
 	t1 = GDKusec();
-#ifdef MLOCK_TST
-	mlock(task.b->buf, task.b->size);
-#endif
 	for (firstcol = 0; firstcol < task.as->nr_attrs; firstcol++)
 		if (task.as->format[firstcol].c != NULL)
 			break;
@@ -1918,9 +1900,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		GDKfree(task.rowerror);
 	MT_sema_destroy(&task.producer);
 	MT_sema_destroy(&task.consumer);
-#ifdef MLOCK_TST
-	munlockall();
-#endif
 
 	return res < 0 ? BUN_NONE : cnt;
 
@@ -1938,9 +1917,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	GDKfree(task.rowerror);
 	for (i = 0; i < MAXWORKERS; i++)
 		GDKfree(ptask[i].cols);
-#ifdef MLOCK_TST
-	munlockall();
-#endif
 	return BUN_NONE;
 }
 
