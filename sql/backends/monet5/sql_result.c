@@ -1942,12 +1942,8 @@ mvc_export_bin_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 		int tpe = BATttype(b);
 		const char *gdk_name = ATOMname(tpe);
 		type_record_t *rec = find_type_rec(gdk_name);
-		if (!rec) {
-			ret = -1;
-			goto end;
-		}
-		if (!can_dump_binary_column(rec)) {
-			GDKerror("don't know how to dump result column %d in binary", i);
+		if (!rec || !can_dump_binary_column(rec)) {
+			GDKerror("column %d: don't know how to dump data type '%s'", i, gdk_name);
 			ret = -3;
 			goto end;
 		}
