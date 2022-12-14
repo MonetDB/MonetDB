@@ -1,6 +1,11 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Dec 14 2022 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed cleanup after a failed allocation where the data being cleaned
+  up was unitialized but still used as pointers to memory that also had
+  to be freed.
+
 * Wed Dec  7 2022 Sjoerd Mullender <sjoerd@acm.org>
 - Fixed a double cleanup after a failed allocation in COPY INTO.  The
   double cleanup could cause a crash due to a race condition it enabled.
