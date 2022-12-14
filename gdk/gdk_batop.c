@@ -328,12 +328,12 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 	}
 	bat_iterator_end(&ni);
 	TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(GDK_FAIL));
+	MT_rwlock_wrlock(&b->thashlock);
 	MT_lock_set(&b->theaplock);
 	BATsetcount(b, oldcnt + ci->ncand);
 	assert(b->batCapacity >= b->batCount);
 	MT_lock_unset(&b->theaplock);
 	/* maintain hash */
-	MT_rwlock_wrlock(&b->thashlock);
 	for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
 		HASHappend_locked(b, r, b->tvheap->base + VarHeapVal(Tloc(b, 0), r, b->twidth));
 	}
@@ -403,11 +403,11 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				*dst++ = src[canditer_next(ci) - hseq];
 			}
 		}
+		MT_rwlock_wrlock(&b->thashlock);
 		MT_lock_set(&b->theaplock);
 		BATsetcount(b, BATcount(b) + ci->ncand);
 		MT_lock_unset(&b->theaplock);
 		/* maintain hash table */
-		MT_rwlock_wrlock(&b->thashlock);
 		for (BUN i = BATcount(b) - ci->ncand;
 		     b->thash && i < BATcount(b);
 		     i++) {
@@ -494,10 +494,10 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 			r++;
 		}
 	}
-	MT_rwlock_wrunlock(&b->thashlock);
 	MT_lock_set(&b->theaplock);
 	BATsetcount(b, r);
 	MT_lock_unset(&b->theaplock);
+	MT_rwlock_wrunlock(&b->thashlock);
 	bat_iterator_end(&ni);
 	return GDK_SUCCEED;
 }
@@ -922,10 +922,10 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			}
 			TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		}
-		MT_rwlock_wrunlock(&b->thashlock);
 		MT_lock_set(&b->theaplock);
 		BATsetcount(b, b->batCount + ci.ncand);
 		MT_lock_unset(&b->theaplock);
+		MT_rwlock_wrunlock(&b->thashlock);
 	}
 
   doreturn:
@@ -1318,16 +1318,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
-				/* doesn't fit in current heap, upgrade
-				 * it, can't keep hashlock while doing
-				 * so */
-				MT_rwlock_wrunlock(&b->thashlock);
-				locked = false;
+				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, d, 0, MAX(updid, b->batCount)) != GDK_SUCCEED) {
 					goto bailout;
 				}
-				MT_rwlock_wrlock(&b->thashlock);
-				locked = true;
 			}
 			/* in case ATOMreplaceVAR and/or
 			 * GDKupgradevarheap replaces a heap, we need to
@@ -1367,6 +1361,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 		b->tvheap->dirty = true;
 		MT_lock_unset(&b->theaplock);
 	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
+		assert(b->thash == NULL);
 		HASHdestroy(b);	/* hash doesn't make sense for msk */
 		for (BUN i = 0; i < ni.count; i++) {
 			oid updid;

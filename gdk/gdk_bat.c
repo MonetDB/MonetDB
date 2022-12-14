@@ -1157,6 +1157,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		b->tsorted = b->trevsorted = b->tkey = false;
 	}
 	MT_lock_unset(&b->theaplock);
+	MT_rwlock_wrlock(&b->thashlock);
 	if (values && b->ttype) {
 		int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
 		const void *atomnil = ATOMnilptr(b->ttype);
@@ -1172,6 +1173,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				t = ((void **) values)[i];
 				gdk_return rc = tfastins_nocheckVAR(b, p, t);
 				if (rc != GDK_SUCCEED) {
+					MT_rwlock_wrunlock(&b->thashlock);
 					return rc;
 				}
 				if (vbase != b->tvheap->base) {
@@ -1212,7 +1214,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				}
 				p++;
 			}
-			MT_rwlock_wrlock(&b->thashlock);
 			if (b->thash) {
 				p -= count;
 				for (BUN i = 0; i < count; i++) {
@@ -1221,7 +1222,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 					p++;
 				}
 			}
-			MT_rwlock_wrunlock(&b->thashlock);
 		} else if (ATOMstorage(b->ttype) == TYPE_msk) {
 			bi.minpos = bi.maxpos = BUN_NONE;
 			minvalp = maxvalp = NULL;
@@ -1235,7 +1235,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				minvalp = BUNtloc(bi, bi.minpos);
 			if (bi.maxpos != BUN_NONE)
 				maxvalp = BUNtloc(bi, bi.maxpos);
-			MT_rwlock_wrlock(&b->thashlock);
 			for (BUN i = 0; i < count; i++) {
 				t = (void *) ((char *) values + (i << b->tshift));
 				gdk_return rc = tfastins_nocheckFIX(b, p, t);
@@ -1265,14 +1264,12 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				}
 				p++;
 			}
-			MT_rwlock_wrunlock(&b->thashlock);
 		}
 		MT_lock_set(&b->theaplock);
 		b->tminpos = bi.minpos;
 		b->tmaxpos = bi.maxpos;
 		MT_lock_unset(&b->theaplock);
 	} else {
-		MT_rwlock_wrlock(&b->thashlock);
 		for (BUN i = 0; i < count; i++) {
 			gdk_return rc = tfastins_nocheck(b, p, t);
 			if (rc != GDK_SUCCEED) {
@@ -1284,11 +1281,11 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			}
 			p++;
 		}
-		MT_rwlock_wrunlock(&b->thashlock);
 	}
 	MT_lock_set(&b->theaplock);
 	BATsetcount(b, p);
 	MT_lock_unset(&b->theaplock);
+	MT_rwlock_wrunlock(&b->thashlock);
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
@@ -1555,14 +1552,11 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			}
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 << b->tshift))) {
-				/* doesn't fit in current heap, upgrade
-				 * it, can't keep hashlock while doing
-				 * so */
-				MT_rwlock_wrunlock(&b->thashlock);
+				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, _d, 0, bi.count) != GDK_SUCCEED) {
+					MT_rwlock_wrunlock(&b->thashlock);
 					return GDK_FAIL;
 				}
-				MT_rwlock_wrlock(&b->thashlock);
 			}
 			/* reinitialize iterator after possible heap upgrade */
 			{
