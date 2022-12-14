@@ -85,7 +85,7 @@ void BATrmprop(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
 void BATrmprop_nolock(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
-gdk_return BATsave_locked(BAT *bd, BATiter *bi, BUN size)
+gdk_return BATsave_iter(BAT *bd, BATiter *bi, BUN size)
 	__attribute__((__visibility__("hidden")));
 void BATsetdims(BAT *b, uint16_t width)
 	__attribute__((__visibility__("hidden")));
