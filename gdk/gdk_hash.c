@@ -609,6 +609,7 @@ BAThashsave_intern(BAT *b, bool dosync)
 		/* only persist if parent BAT hasn't changed in the
 		 * mean time */
 		if (!b->theap->dirty &&
+		    ((size_t *) h->heapbckt.base)[1] == BATcount(b) &&
 		    ((size_t *) h->heapbckt.base)[4] == BATcount(b) &&
 		    HEAPsave(&h->heaplink, h->heaplink.filename, NULL, dosync, h->heaplink.free, NULL) == GDK_SUCCEED &&
 		    HEAPsave(&h->heapbckt, h->heapbckt.filename, NULL, dosync, h->heapbckt.free, NULL) == GDK_SUCCEED) {
