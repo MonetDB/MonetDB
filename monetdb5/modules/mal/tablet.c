@@ -1567,13 +1567,14 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	create_rejects_table(task.cntxt);
 	if (task.cntxt->error_row == NULL || task.cntxt->error_fld == NULL || task.cntxt->error_msg == NULL || task.cntxt->error_input == NULL) {
 		tablet_error(&task, lng_nil, lng_nil, int_nil, "SQLload initialization failed", "");
-		goto bailout;
+		/* nothing allocated yet, so nothing to free */
+		return BUN_NONE;
 	}
 
 	assert(rsep);
 	assert(csep);
 	assert(maxrow < 0 || maxrow <= (lng) BUN_MAX);
-	task.fields = (char ***) GDKmalloc(as->nr_attrs * sizeof(char **));
+	task.fields = (char ***) GDKzalloc(as->nr_attrs * sizeof(char **));
 	task.cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
 	task.time = (lng *) GDKzalloc(as->nr_attrs * sizeof(lng));
 	if (task.fields == NULL || task.cols == NULL || task.time == NULL) {
@@ -1584,7 +1585,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	for (i = 0; i < MAXBUFFERS; i++) {
 		task.base[i] = GDKmalloc(MAXROWSIZE(2 * b->size) + 2);
 		task.rowlimit[i] = MAXROWSIZE(2 * b->size);
-		if (task.base[i] == 0) {
+		if (task.base[i] == NULL) {
 			tablet_error(&task, lng_nil, lng_nil, int_nil, SQLSTATE(HY013) MAL_MALLOC_FAIL, "SQLload_file");
 			goto bailout;
 		}
@@ -1597,11 +1598,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		task.maxrow = BUN_MAX;
 	else
 		task.maxrow = (BUN) maxrow;
-
-	if (task.fields == 0 || task.cols == 0 || task.time == 0) {
-		tablet_error(&task, lng_nil, lng_nil, int_nil, SQLSTATE(HY013) MAL_MALLOC_FAIL, "SQLload_file");
-		goto bailout;
-	}
 
 	task.skip = skip;
 	task.quote = quote;
@@ -1635,7 +1631,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	task.limit = (int) (b->size / as->nr_attrs + as->nr_attrs);
 	for (i = 0; i < as->nr_attrs; i++) {
 		task.fields[i] = GDKmalloc(sizeof(char *) * task.limit);
-		if (task.fields[i] == 0) {
+		if (task.fields[i] == NULL) {
 			if (task.as->error == NULL)
 				as->error = createException(MAL, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
@@ -1674,8 +1670,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		ptask[j] = task;
 		ptask[j].id = j;
 		ptask[j].cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
-		if (ptask[j].cols == 0) {
-			tablet_error(&task, lng_nil, lng_nil, int_nil, SQLSTATE(HY013) MAL_MALLOC_FAIL, "SQLload_file");
+		if (ptask[j].cols == NULL) {
+			tablet_error(&task, lng_nil, lng_nil, int_nil, SQLSTATE(HY013) MAL_MALLOC _FAIL, "SQLload_file");
 			task.id = -1;
 			MT_sema_up(&task.producer);
 			goto bailout;
@@ -1940,10 +1936,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 
   bailout:
 	if (task.fields) {
-		for (i = 0; i < as->nr_attrs; i++) {
-			if (task.fields[i])
-				GDKfree(task.fields[i]);
-		}
+		for (i = 0; i < as->nr_attrs; i++)
+			GDKfree(task.fields[i]);
 		GDKfree(task.fields);
 	}
 	GDKfree(task.time);
