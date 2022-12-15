@@ -1,13 +1,13 @@
 if(Parquet_FOUND)
-  add_library(parquet_lib MODULE SHARED)
+  add_library(parquetlib MODULE)
 
-  target_sources(parquet_lib
+  target_sources(parquetlib
     PRIVATE
     parquet.c
     parquet.h
   )
 
-  target_link_libraries(parquet_lib
+  target_link_libraries(parquetlib
     PRIVATE
     monetdb_config_header
     monetdb5
@@ -22,7 +22,7 @@ if(Parquet_FOUND)
   )
 
   install(TARGETS
-    parquet_lib
+    parquetlib
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
     COMPONENT server)
 endif()

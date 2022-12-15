@@ -111,7 +111,7 @@ target_link_libraries(sqlserver
   sqlcommon
   sqlinclude
   sqlstorage
-  parquet_lib)
+  )
 
 target_compile_definitions(sqlserver
   PRIVATE

@@ -33,11 +33,6 @@ parquet_file *open_file(char* filename) {
 
 
 parquet_table_metadata get_table_metadata(parquet_file *file) {
-    /* This shouldn't be possible, but check it for good measure */
-    if(file->reader == NULL) {
-        /* Throw error */
-    }
-
     GError *table_error;
     GArrowTable *table = gparquet_arrow_file_reader_read_table(file->reader, &table_error);
 
