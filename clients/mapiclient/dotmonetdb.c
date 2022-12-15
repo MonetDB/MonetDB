@@ -117,7 +117,7 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 			} else if (strcmp(buf, "database") == 0) {
 				dotfile->dbname = strdup(q);
 				q = NULL;
-                        } else if (strcmp(buf, "host") == 0) {
+			} else if (strcmp(buf, "host") == 0) {
 				dotfile->host = strdup(q);
 				q = NULL;
 			} else if (strcmp(buf, "language") == 0) {
@@ -146,7 +146,7 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 			} else if (strcmp(buf, "width") == 0) {
 				dotfile->pagewidth = atoi(q);
 				q = NULL;
-                        } else if (strcmp(buf, "port") == 0) {
+			} else if (strcmp(buf, "port") == 0) {
 				dotfile->port = atoi(q);
 				q = NULL;
 			}

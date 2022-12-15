@@ -384,10 +384,12 @@ project_str(BATiter *restrict li, struct canditer *restrict ci, int tpe,
 	v = (var_t) r1i->vhfree;
 	if (r1i->vh == r2i->vh) {
 		h1off = 0;
-		BBPshare(r1i->vh->parentid);
+		assert(bn->tvheap->parentid == bn->batCacheid);
 		HEAPdecref(bn->tvheap, true);
 		HEAPincref(r1i->vh);
 		bn->tvheap = r1i->vh;
+		assert(bn->tvheap->parentid != bn->batCacheid);
+		BBPretain(bn->tvheap->parentid);
 	} else {
 		v = (v + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
 		h1off = (BUN) v;
@@ -795,11 +797,12 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		if (r1i.restricted == BAT_READ || VIEWvtparent(r1)) {
 			/* really share string heap */
 			assert(r1i.vh->parentid > 0);
-			BBPshare(r1i.vh->parentid);
 			/* there is no file, so we don't need to remove it */
 			HEAPdecref(bn->tvheap, false);
 			bn->tvheap = r1i.vh;
 			HEAPincref(r1i.vh);
+			assert(bn->tvheap->parentid != bn->batCacheid);
+			BBPretain(bn->tvheap->parentid);
 		} else {
 			/* make copy of string heap */
 			bn->tvheap->parentid = bn->batCacheid;
@@ -1077,10 +1080,11 @@ BATprojectchain(BAT **bats)
 			bn->tnil = false;
 			bn->tnonil = b->tnonil;
 			bn->tkey = false;
-			BBPshare(bi.vh->parentid);
 			assert(bn->tvheap == NULL);
 			bn->tvheap = bi.vh;
 			HEAPincref(bi.vh);
+			assert(bn->tvheap->parentid != bn->batCacheid);
+			BBPretain(bn->tvheap->parentid);
 			assert(bn->ttype == b->ttype);
 			assert(bn->twidth == bi.width);
 			assert(bn->tshift == bi.shift);

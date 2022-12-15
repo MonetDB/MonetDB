@@ -159,8 +159,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (!strNil(v))
 				SQLstr_cast_str(v, digits);
 		}
-		if (s)
-			BBPunfix(s->batCacheid);
+		BBPreclaim(s);
 		bat_iterator_end(&bi);
 		*res = b->batCacheid;
 		BBPkeepref(b);
@@ -256,10 +255,8 @@ bailout1:
 
 bailout:
 	GDKfree(r);
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (dst && !msg) {
 		BATsetcount(dst, ci.ncand);
 		dst->tnil = nils;

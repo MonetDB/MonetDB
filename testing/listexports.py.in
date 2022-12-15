@@ -41,15 +41,16 @@ def extract(f):
     decls = []
 
     data = exportutils.preprocess(f, include=False)
+    data = re.sub(r'"[^"\\]*(\\.[^"\\]*)*"', '""', data)
 
     res = expre.search(data)
     while res is not None:
         pos = res.end(0)
         decl = res.group('decl')
         if '{' in decl:
-            sys.stderr.write('export on definition:\n%s\n' % res.group(0))
+            print(f'export on definition:\n{res.group(0)}', file=sys.stderr)
         elif '"hidden"' in decl:
-            sys.stderr.write('cannot export hidden function\n%s\n' % res.group(0))
+            print(f'cannot export hidden function:\n{res.group(0)}', file=sys.stderr)
         else:
             decl = exportutils.normalize(decl)
             res = nmere.search(decl)
@@ -91,14 +92,14 @@ def listexports():
         dirs = dirlist[lib]
         dl = [os.path.join(srcdir, d) for d in dirs]
         decls = findfiles(dl, skipfiles = skipfiles, skipdirs = skipdirs)
-        output.append('# %s\n' % lib)
+        output.append(f'# {lib}\n')
         for d in decls:
             output.append(d + '\n')
         output.append('\n')
     return output
 
 def main():
-    sys.stdout.writelines(listexports())
+    print(*listexports(), sep='', end='')
 
 if __name__ == '__main__':
     main()

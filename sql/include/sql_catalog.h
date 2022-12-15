@@ -77,7 +77,7 @@ typedef enum sql_dependency {
 
 #define SCALE_NONE	0
 #define SCALE_FIX	1	/* many numerical functions require equal
-                           scales/precision for all their inputs */
+						   scales/precision for all their inputs */
 #define SCALE_NOFIX	2
 #define SCALE_MUL	3	/* multiplication gives the sum of scales */
 #define SCALE_DIV	4	/* div on the other hand reduces the scales */

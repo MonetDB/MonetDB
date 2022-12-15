@@ -109,12 +109,9 @@ static str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3
 	b2= BATdescriptor(*bid2);											\
 	b3= BATdescriptor(*bid3);											\
 	if (b == NULL || b2 == NULL || b3 == NULL) {						\
-		if (b)															\
-			BBPunfix(b->batCacheid);									\
-		if (b2)															\
-			BBPunfix(b2->batCacheid);									\
-		if (b3)															\
-			BBPunfix(b3->batCacheid);									\
+		BBPreclaim(b);													\
+		BBPreclaim(b2);													\
+		BBPreclaim(b3);													\
 		throw(MAL, "batcolor." #NAME, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING); \
 	}																	\
 	bn= COLnew(b->hseqbase,getAtomIndex("color",5,TYPE_int),BATcount(b), TRANSIENT); \

@@ -281,10 +281,8 @@ MKEYbathash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (bs)
-		BBPunfix(bs->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(bs);
 	if (bn && !msg) {
 		BATsetcount(bn, ci.ncand);
 		bn->tnonil = false;
@@ -478,14 +476,10 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	bat_iterator_end(&bi);
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (hb)
-		BBPunfix(hb->batCacheid);
-	if (s1)
-		BBPunfix(s1->batCacheid);
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(hb);
+	BBPreclaim(s1);
+	BBPreclaim(s2);
 	if (bn && !msg) {
 		BATsetcount(bn, ci1.ncand);
 		bn->tnonil = false;
@@ -577,10 +571,8 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	bat_iterator_end(&hbi);
 
 bailout:
-	if (hb)
-		BBPunfix(hb->batCacheid);
-	if (bs)
-		BBPunfix(bs->batCacheid);
+	BBPreclaim(hb);
+	BBPreclaim(bs);
 	if (bn && !msg) {
 		BATsetcount(bn, ci.ncand);
 		bn->tnonil = false;
@@ -684,10 +676,8 @@ MKEYconstbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	bat_iterator_end(&bi);
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (bs)
-		BBPunfix(bs->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(bs);
 	if (bn && !msg) {
 		BATsetcount(bn, ci.ncand);
 		bn->tnonil = false;

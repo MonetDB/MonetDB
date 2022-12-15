@@ -30,8 +30,6 @@ gdk_export size_t GDKuniqueid(size_t offset);
 gdk_export void *GDKinitmmap(size_t id, size_t size, size_t *return_size);
 //! Release a memory mapped file that was created through GDKinitmmap
 gdk_export gdk_return GDKreleasemmap(void *ptr, size_t size, size_t id);
-//! snprintf the file name of a memory mapped file (as created by GDKinitmmap)
-gdk_export gdk_return GDKmmapfile(char *buffer, size_t max, size_t id);
 
 /*
  * Interprocess-Semaphores, used for cross process lock operations

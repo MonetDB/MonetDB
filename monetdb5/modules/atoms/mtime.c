@@ -188,8 +188,7 @@ bailout: 																\
 		bat_iterator_end(&b1i);											\
 		BBPunfix(b1->batCacheid);										\
 	}																	\
-	if (s)																\
-		BBPunfix(s->batCacheid);										\
+	BBPreclaim(s);														\
 	if (bn) {															\
 		if (msg)														\
 			BBPreclaim(bn);												\
@@ -306,14 +305,10 @@ bailout: 																\
 	CLEAR_EXTRA_MULTI(res);												\
 	bat_iterator_end(&b1i);												\
 	bat_iterator_end(&b2i);												\
-	if (b1)																\
-		BBPunfix(b1->batCacheid);										\
-	if (b2) 															\
-		BBPunfix(b2->batCacheid);										\
-	if (s1)																\
-		BBPunfix(s1->batCacheid);										\
-	if (s2) 															\
-		BBPunfix(s2->batCacheid);										\
+	BBPreclaim(b1);														\
+	BBPreclaim(b2);														\
+	BBPreclaim(s1);														\
+	BBPreclaim(s2);														\
 	if (bn) {															\
 		if (msg)														\
 			BBPreclaim(bn);												\
@@ -390,8 +385,7 @@ bailout: 																\
 		bat_iterator_end(&b2i);											\
 		BBPunfix(b2->batCacheid);										\
 	}																	\
-	if (s2) 															\
-		BBPunfix(s2->batCacheid);										\
+	BBPreclaim(s2);														\
 	if (bn) {															\
 		if (msg)														\
 			BBPreclaim(bn);												\
@@ -468,8 +462,7 @@ bailout: 																\
 		bat_iterator_end(&b1i);											\
 		BBPunfix(b1->batCacheid);										\
 	}																	\
-	if (s1) 															\
-		BBPunfix(s1->batCacheid);										\
+	BBPreclaim(s1);														\
 	if (bn) {															\
 		if (msg)														\
 			BBPreclaim(bn);												\

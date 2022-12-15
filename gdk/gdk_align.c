@@ -133,20 +133,9 @@ VIEWcreate(oid seq, BAT *b)
 		HEAPincref(b->tvheap);
 	MT_lock_unset(&b->theaplock);
 
-	if (tp)
-		BBPshare(tp);
-	if (bn->tvheap) {
-		assert(bn->tvheap->parentid > 0);
-		BBPshare(bn->tvheap->parentid);
-	}
-
 	if (BBPcacheit(bn, true) != GDK_SUCCEED) {	/* enter in BBP */
-		if (tp)
-			BBPunshare(tp);
-		if (bn->tvheap) {
-			BBPunshare(bn->tvheap->parentid);
+		if (bn->tvheap)
 			HEAPdecref(bn->tvheap, false);
-		}
 		HEAPdecref(bn->theap, false);
 		MT_lock_destroy(&bn->theaplock);
 		MT_lock_destroy(&bn->batIdxLock);
@@ -154,6 +143,9 @@ VIEWcreate(oid seq, BAT *b)
 		GDKfree(bn);
 		return NULL;
 	}
+	BBPretain(bn->theap->parentid);
+	if (bn->tvheap)
+		BBPretain(bn->tvheap->parentid);
 	TRC_DEBUG(ALGO, ALGOBATFMT " -> " ALGOBATFMT "\n",
 		  ALGOBATPAR(b), ALGOBATPAR(bn));
 	return bn;
@@ -264,9 +256,14 @@ BATmaterialize(BAT *b, BUN cap)
 	BATsetcount(b, b->batCount);
 	BATsetcapacity(b, cap);
 	MT_lock_unset(&b->theaplock);
+	if (h->parentid != b->batCacheid)
+		BBPrelease(h->parentid);
 	HEAPdecref(h, false);
-	if (vh)
+	if (vh) {
+		if (vh->parentid != b->batCacheid)
+			BBPrelease(vh->parentid);
 		HEAPdecref(vh, true);
+	}
 
 	return GDK_SUCCEED;
 }
@@ -277,16 +274,16 @@ BATmaterialize(BAT *b, BUN cap)
  * the underlying BAT and compensates for outliers.
  */
 void
-VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
+VIEWboundsbi(BATiter *bi, BAT *view, BUN l, BUN h)
 {
 	BUN cnt;
 	BUN baseoff;
 
-	if (b == NULL || view == NULL)
+	if (bi == NULL || view == NULL)
 		return;
-	if (h > BATcount(b))
-		h = BATcount(b);
-	baseoff = b->tbaseoff;
+	if (h > bi->count)
+		h = bi->count;
+	baseoff = bi->baseoff;
 	if (h < l)
 		h = l;
 	cnt = h - l;
@@ -322,6 +319,13 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 		view->tmaxpos = BUN_NONE;
 	view->tkey |= cnt <= 1;
 }
+void
+VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
+{
+	BATiter bi = bat_iterator(b);
+	VIEWboundsbi(&bi, view, l, h);
+	bat_iterator_end(&bi);
+}
 
 /*
  * Destroy a view.
@@ -330,6 +334,7 @@ void
 VIEWdestroy(BAT *b)
 {
 	assert(isVIEW(b));
+	bat tp = 0, tvp = 0;
 
 	/* remove any leftover private hash structures */
 	HASHdestroy(b);
@@ -342,7 +347,8 @@ VIEWdestroy(BAT *b)
 	/* heaps that are left after VIEWunlink are ours, so need to be
 	 * destroyed (and files deleted) */
 	if (b->theap) {
-		HEAPdecref(b->theap, b->theap->parentid == b->batCacheid);
+		tp = b->theap->parentid;
+		HEAPdecref(b->theap, tp == b->batCacheid);
 		b->theap = NULL;
 	}
 	if (b->tvheap) {
@@ -350,9 +356,14 @@ VIEWdestroy(BAT *b)
 		 * our own (not a view), and then it doesn't make sense
 		 * that the offset heap was a view (at least one of them
 		 * had to be) */
-		HEAPdecref(b->tvheap, b->tvheap->parentid == b->batCacheid);
+		tvp = b->tvheap->parentid;
+		HEAPdecref(b->tvheap, tvp == b->batCacheid);
 		b->tvheap = NULL;
 	}
 	MT_lock_unset(&b->theaplock);
+	if (tp != 0 && tp != b->batCacheid)
+		BBPrelease(tp);
+	if (tvp != 0 && tvp != b->batCacheid)
+		BBPrelease(tvp);
 	BATfree(b);
 }

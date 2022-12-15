@@ -70,7 +70,6 @@ gdk_export int BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *b
 gdk_export gdk_return BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror);
 
 /* update interface */
-gdk_export int BBPreclaim(BAT *b);
 gdk_export gdk_return BBPsave(BAT *b);
 gdk_export int BBPrename(BAT *b, const char *nme);
 
@@ -81,11 +80,16 @@ gdk_export bat BBPindex(const char *nme);
 gdk_export gdk_return BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng transid);
 gdk_export int BBPfix(bat b);
 gdk_export int BBPunfix(bat b);
+static inline void
+BBPreclaim(BAT *b)
+{
+	if (b != NULL)
+		BBPunfix(b->batCacheid);
+}
 gdk_export int BBPretain(bat b);
 gdk_export int BBPrelease(bat b);
 gdk_export void BBPkeepref(BAT *b)
 	__attribute__((__nonnull__(1)));
-gdk_export void BBPshare(bat b);
 gdk_export void BBPcold(bat i);
 
 #define BBP_status_set(bid, mode)			\

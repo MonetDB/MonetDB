@@ -1406,16 +1406,22 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                         print('\nFailed to start server.\n')
                         FdOut = FdErr = F_FAIL
                         break
-                    dbh = pymonetdb.connect(username='monetdb',
-                                            password='monetdb',
-                                            hostname=HOST,
-                                            port=int(pSrvr.port),
-                                            database=TSTDB,
-                                            autocommit=True)
-                    crs = dbh.cursor()
-                    crs.execute("call logging.setcomplevel('SQL_EXECUTION', 'INFO')")
-                    crs.close()
-                    dbh.close()
+                    try:
+                        dbh = pymonetdb.connect(username='monetdb',
+                                                password='monetdb',
+                                                hostname=HOST,
+                                                port=int(pSrvr.port),
+                                                database=TSTDB,
+                                                autocommit=True)
+                    except KeyboardInterrupt:
+                        raise
+                    except:
+                        pass
+                    else:
+                        crs = dbh.cursor()
+                        crs.execute("call logging.setcomplevel('SQL_EXECUTION', 'INFO')")
+                        crs.close()
+                        dbh.close()
                     os.environ['MAPIPORT'] = env['MAPIPORT'] = pSrvr.port
                     SetExecEnv(env['exe'], pSrvr.port, verbosity > 1)
                 if global_timeout and start_time + global_timeout < time.time():
@@ -2734,7 +2740,7 @@ def mapi_ping(port) :
             data = sock.recv(len)
             # we don't send
             return True
-        except socket.error:
+        except OSError:
             pass
         time.sleep(wait)
     return False
@@ -3260,7 +3266,7 @@ else:
 # see if we can use UNIX sockets
 try:
     server = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-except (socket.error, AttributeError):
+except (OSError, AttributeError):
     # apparently not
     SOCK = False
 else:
@@ -3719,7 +3725,7 @@ def main(argv) :
     try:
         with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
             s.bind(('::1', 0))
-    except socket.error as err:
+    except OSError as err:
         CONDITIONALS['HAVE_IPV6'] = False
     else:
         CONDITIONALS['HAVE_IPV6'] = True

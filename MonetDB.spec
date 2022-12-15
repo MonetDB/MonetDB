@@ -87,7 +87,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Sep2022/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Sep2022-SP1/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -128,6 +128,7 @@ BuildRequires: pkgconfig(zlib)
 BuildRequires: pkgconfig(liblz4) >= 1.8
 %if %{with py3integration}
 BuildRequires: pkgconfig(python3) >= 3.5
+# cannot use python3dist(numpy) because of CentOS 7
 BuildRequires: python3-numpy
 %endif
 %if %{with rintegration}
@@ -343,7 +344,6 @@ Recommends: perl-DBD-monetdb >= 1.0
 Recommends: php-monetdb >= 1.0
 %endif
 Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
-Requires: python3-pymonetdb >= 1.0.6
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} > 7
 Recommends: python3dist(lz4)
 Recommends: python3dist(scipy)
@@ -690,6 +690,7 @@ package.  You probably don't need this, unless you are a developer.
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires: %{name}-client-tests = %{version}-%{release}
+Requires: python3dist(pymonetdb) >= 1.0.6
 BuildArch: noarch
 
 %description testing-python
@@ -855,6 +856,55 @@ fi
 %endif
 
 %changelog
+* Mon Dec 05 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.11-20221205
+- Rebuilt.
+- GH#7342: column which datatype is double couldn't group or aggregation
+  in version 11.45.7
+
+* Mon Nov 28 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.9-20221128
+- Rebuilt.
+- GH#7330: Creating temporary table fails after reconnect
+- GH#7333: DLLs fail to load on Windows with accented characters in path
+- GH#7336: Selecting from a literal-value table returns wrong values
+- GH#7339: MonetDB corrupted state after SIGKILL
+
+* Wed Nov  9 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.9-20221128
+- clients: Also dump the new options of CREATE USER.
+
+* Wed Nov  9 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.9-20221128
+- gdk: On Windows, use the wide-character interface of system calls when
+  dealing with the environment (i.e. file names and getenv()).
+- gdk: Memory leaks have been fixed.
+- gdk: Improved maintenance of the estimated number of distinct values in BATs.
+  The estimate helps in deciding which low-level algorithm to use.
+
+* Wed Nov  9 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.9-20221128
+- monetdb5: Fixed a crash when the server runs out of client contexts (i.e. more
+  concurrent clients than the server is configured to handle).
+- monetdb5: A race condition in the SHA hash code was fixed which resulted in
+  occasional failed connection attempts when they occurred concurrently.
+
+* Wed Nov  9 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.9-20221128
+- sql: Improved the handling of the "idle" value in the sys.sessions function
+  and view.
+
+* Wed Oct 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.9-20221128
+- monetdb5: Fix a bug where the MAL optimizer would use the starttime of the
+  previous query to determine whether a query timeout occurred.
+
+* Thu Oct 13 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.45.9-20221128
+- odbc: Fixed issue with generated raw strings prefix when ODBC driver is used
+  against a server older than Jun2020 (11.37).
+
+* Wed Oct 12 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.9-20221128
+- merovingian: Stop logging references to monetdbd's logfile in said logfile.
+
+* Mon Oct 10 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.9-20221128
+- gdk: Offset heaps (.tailN files) were growing too fast and unnecessarily
+  under certain conditions.  This has been fixed.  Also, when such too
+  large files are now loaded into the system, it is recognized they are
+  too large and they are truncated to a more reasonable size.
+
 * Fri Sep 23 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.7-20220923
 - Rebuilt.
 

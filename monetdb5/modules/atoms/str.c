@@ -2991,14 +2991,10 @@ static str
 STRepilogue(void *ret)
 {
 	(void) ret;
-	if (UTF8_toUpperFrom)
-		BBPunfix(UTF8_toUpperFrom->batCacheid);
-	if (UTF8_toUpperTo)
-		BBPunfix(UTF8_toUpperTo->batCacheid);
-	if (UTF8_toLowerFrom)
-		BBPunfix(UTF8_toLowerFrom->batCacheid);
-	if (UTF8_toLowerTo)
-		BBPunfix(UTF8_toLowerTo->batCacheid);
+	BBPreclaim(UTF8_toUpperFrom);
+	BBPreclaim(UTF8_toUpperTo);
+	BBPreclaim(UTF8_toLowerFrom);
+	BBPreclaim(UTF8_toLowerTo);
 	UTF8_toUpperFrom = NULL;
 	UTF8_toUpperTo = NULL;
 	UTF8_toLowerFrom = NULL;

@@ -2665,6 +2665,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	BUN maxsize;
 	BAT *r1 = NULL;
 	BAT *r2 = NULL;
+	BAT *b = NULL;
 
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 
@@ -2722,7 +2723,9 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	} else if (phash) {
 		/* there is a hash on the parent which we should use */
 		MT_thread_setalgorithm(swapped ? "hashjoin using parent hash (swapped)" : "hashjoin using parent hash");
-		BAT *b = BBP_cache(VIEWtparent(r));
+		b = BATdescriptor(VIEWtparent(r));
+		if (b == NULL)
+			goto bailout;
 		TRC_DEBUG(ALGO, "%s(%s): using "
 			  "parent(" ALGOBATFMT ") for hash%s\n",
 			  __func__,
@@ -2786,6 +2789,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 					GDKfree(hsh);
 					bat_iterator_end(&li);
 					bat_iterator_end(&ri);
+					BBPreclaim(b);
 					return nomatch(r1p, r2p, l, r, lci,
 						       false, false, __func__, t0);
 				}
@@ -2801,6 +2805,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 						MT_rwlock_rdunlock(&r->thashlock);
 					bat_iterator_end(&li);
 					bat_iterator_end(&ri);
+					BBPreclaim(b);
 					return nomatch(r1p, r2p, l, r, lci,
 						       false, false,
 						       __func__, t0);
@@ -3029,6 +3034,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
 		  GDKusec() - t0);
 
+	BBPreclaim(b);
 	return GDK_SUCCEED;
 
   bailout:
@@ -3043,6 +3049,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	}
 	BBPreclaim(r1);
 	BBPreclaim(r2);
+	BBPreclaim(b);
 	return GDK_FAIL;
 }
 
@@ -3321,15 +3328,17 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 			/* average chain length */
 			rcost *= (double) cnt / nheads;
 		} else if ((parent = VIEWtparent(r)) != 0 &&
-			   (b = BBP_cache(parent)) != NULL &&
-			   BATcheckhash(b)) {
-			MT_rwlock_rdlock(&b->thashlock);
-			rhash = prhash = b->thash != NULL;
-			if (rhash) {
-				/* average chain length */
-				rcost *= (double) BATcount(b) / b->thash->nheads;
+			   (b = BATdescriptor(parent)) != NULL) {
+			if (BATcheckhash(b)) {
+				MT_rwlock_rdlock(&b->thashlock);
+				rhash = prhash = b->thash != NULL;
+				if (rhash) {
+					/* average chain length */
+					rcost *= (double) BATcount(b) / b->thash->nheads;
+				}
+				MT_rwlock_rdunlock(&b->thashlock);
 			}
-			MT_rwlock_rdunlock(&b->thashlock);
+			BBPunfix(b->batCacheid);
 		}
 		if (!rhash) {
 			MT_lock_set(&r->theaplock);
@@ -3747,6 +3756,8 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	bat parent;
 	double rcost = 0;
 	gdk_return rc;
+	BAT *lp = NULL;
+	BAT *rp = NULL;
 
 	MT_thread_setalgorithm(__func__);
 	/* only_misses implies left output only */
@@ -3763,35 +3774,49 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	canditer_init(&rci, r, sr);
 
 	if ((parent = VIEWtparent(l)) != 0) {
-		BAT *b = BBP_cache(parent);
-		if (l->hseqbase == b->hseqbase &&
-		    BATcount(l) == BATcount(b) &&
-		    ATOMtype(l->ttype) == ATOMtype(b->ttype)) {
-			l = b;
+		lp = BATdescriptor(parent);
+		if (lp != NULL) {
+			if (l->hseqbase == lp->hseqbase &&
+			    BATcount(l) == BATcount(lp) &&
+			    ATOMtype(l->ttype) == ATOMtype(lp->ttype)) {
+				l = lp;
+			} else {
+				BBPunfix(lp->batCacheid);
+				lp = NULL;
+			}
 		}
 	}
 	if ((parent = VIEWtparent(r)) != 0) {
-		BAT *b = BBP_cache(parent);
-		if (r->hseqbase == b->hseqbase &&
-		    BATcount(r) == BATcount(b) &&
-		    ATOMtype(r->ttype) == ATOMtype(b->ttype)) {
-			r = b;
+		rp = BATdescriptor(parent);
+		if (rp != NULL) {
+			if (r->hseqbase == rp->hseqbase &&
+			    BATcount(r) == BATcount(rp) &&
+			    ATOMtype(r->ttype) == ATOMtype(rp->ttype)) {
+				r = rp;
+			} else {
+				BBPunfix(rp->batCacheid);
+				rp = NULL;
+			}
 		}
 	}
 
 	if (l->ttype == TYPE_msk || mask_cand(l)) {
-		if ((l = BATunmask(l)) == NULL)
-			return GDK_FAIL;
-	} else {
-		BBPfix(l->batCacheid);
-	}
-	if (r->ttype == TYPE_msk || mask_cand(r)) {
-		if ((r = BATunmask(r)) == NULL) {
-			BBPunfix(l->batCacheid);
+		l = BATunmask(l);
+		BBPreclaim(lp);
+		if (l == NULL) {
+			BBPreclaim(rp);
 			return GDK_FAIL;
 		}
-	} else {
-		BBPfix(r->batCacheid);
+		lp = l;
+	}
+	if (r->ttype == TYPE_msk || mask_cand(r)) {
+		r = BATunmask(r);
+		BBPreclaim(rp);
+		if (r == NULL) {
+			BBPreclaim(lp);
+			return GDK_FAIL;
+		}
+		rp = r;
 	}
 
 	if (joinparamcheck(l, r, NULL, sl, sr, func) != GDK_SUCCEED) {
@@ -3941,8 +3966,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					     r1, NULL, NULL, false, false, false);
 				BBPunfix(r1->batCacheid);
 				if (rc != GDK_SUCCEED) {
-					if (r2)
-						BBPunfix(r2->batCacheid);
+					BBPreclaim(r2);
 					goto doreturn;
 				}
 				*r1p = r1 = tmp;
@@ -3967,8 +3991,8 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		      not_in, max_one, min_one, estimate, t0, false, rhash, prhash,
 		      rcand, func);
   doreturn:
-	BBPunfix(l->batCacheid);
-	BBPunfix(r->batCacheid);
+	BBPreclaim(lp);
+	BBPreclaim(rp);
 	return rc;
 }
 
@@ -4100,6 +4124,8 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	gdk_return rc;
 	lng t0 = 0;
 	BAT *r2 = NULL;
+	BAT *lp = NULL;
+	BAT *rp = NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -4107,33 +4133,49 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	canditer_init(&rci, r, sr);
 
 	if ((parent = VIEWtparent(l)) != 0) {
-		BAT *b = BBP_cache(parent);
-		if (l->hseqbase == b->hseqbase &&
-		    BATcount(l) == BATcount(b) &&
-		    ATOMtype(l->ttype) == ATOMtype(b->ttype))
-			l = b;
+		lp = BATdescriptor(parent);
+		if (lp != NULL) {
+			if (l->hseqbase == lp->hseqbase &&
+			    BATcount(l) == BATcount(lp) &&
+			    ATOMtype(l->ttype) == ATOMtype(lp->ttype)) {
+				l = lp;
+			} else {
+				BBPunfix(lp->batCacheid);
+				lp = NULL;
+			}
+		}
 	}
 	if ((parent = VIEWtparent(r)) != 0) {
-		BAT *b = BBP_cache(parent);
-		if (r->hseqbase == b->hseqbase &&
-		    BATcount(r) == BATcount(b) &&
-		    ATOMtype(r->ttype) == ATOMtype(b->ttype))
-			r = b;
+		rp = BATdescriptor(parent);
+		if (rp != NULL) {
+			if (r->hseqbase == rp->hseqbase &&
+			    BATcount(r) == BATcount(rp) &&
+			    ATOMtype(r->ttype) == ATOMtype(rp->ttype)) {
+				r = rp;
+			} else {
+				BBPunfix(rp->batCacheid);
+				rp = NULL;
+			}
+		}
 	}
 
 	if (l->ttype == TYPE_msk || mask_cand(l)) {
-		if ((l = BATunmask(l)) == NULL)
-			return GDK_FAIL;
-	} else {
-		BBPfix(l->batCacheid);
-	}
-	if (r->ttype == TYPE_msk || mask_cand(r)) {
-		if ((r = BATunmask(r)) == NULL) {
-			BBPunfix(l->batCacheid);
+		l = BATunmask(l);
+		BBPreclaim(lp);
+		if (l == NULL) {
+			BBPreclaim(rp);
 			return GDK_FAIL;
 		}
-	} else {
-		BBPfix(r->batCacheid);
+		lp = l;
+	}
+	if (r->ttype == TYPE_msk || mask_cand(r)) {
+		r = BATunmask(r);
+		BBPreclaim(rp);
+		if (r == NULL) {
+			BBPreclaim(lp);
+			return GDK_FAIL;
+		}
+		rp = r;
 	}
 
 	*r1p = NULL;
@@ -4231,8 +4273,8 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 			      __func__);
 	}
   doreturn:
-	BBPunfix(l->batCacheid);
-	BBPunfix(r->batCacheid);
+	BBPreclaim(lp);
+	BBPreclaim(rp);
 	return rc;
 }
 

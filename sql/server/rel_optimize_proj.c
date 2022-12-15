@@ -3460,8 +3460,10 @@ rel_distinct_project2groupby_(visitor *v, sql_rel *rel)
 
 			set_nodistinct(e);
 			ne = exp_ref(v->sql, e);
-			if (e->card > CARD_ATOM && !list_find_exp(gbe, ne)) /* no need to group by on constants, or the same column multiple times */
+			if (e->card > CARD_ATOM && !list_find_exp(gbe, ne)) { /* no need to group by on constants, or the same column multiple times */
 				append(gbe, ne);
+				ne = exp_ref(v->sql, ne);
+			}
 			append(exps, ne);
 		}
 		rel->op = op_groupby;

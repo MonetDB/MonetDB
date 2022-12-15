@@ -23,7 +23,7 @@ geomerror(_In_z_ _Printf_format_string_ const char *fmt, ...)
 	char err[256];
 	va_start(va, fmt);
 	vsnprintf(err, sizeof(err), fmt, va);
-	GDKtracer_log(__FILE__, __func__, __LINE__, M_CRITICAL,
+	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,
 		      GDK, NULL, "%s", err);
 	va_end(va);
 }

@@ -1356,13 +1356,13 @@ cleanup:
 		bat_iterator_end(&bimpl_iter);
 	}
 	// clean these up
-	if (btype)		BBPunfix(btype->batCacheid);
-	if (bimpl)		BBPunfix(bimpl->batCacheid);
-	if (bdigits)	BBPunfix(bdigits->batCacheid);
-	if (bscale)		BBPunfix(bscale->batCacheid);
-	if (bschema)	BBPunfix(bschema->batCacheid);
-	if (btable)		BBPunfix(btable->batCacheid);
-	if (bcolumn)	BBPunfix(bcolumn->batCacheid);
+	BBPreclaim(btype);
+	BBPreclaim(bimpl);
+	BBPreclaim(bdigits);
+	BBPreclaim(bscale);
+	BBPreclaim(bschema);
+	BBPreclaim(btable);
+	BBPreclaim(bcolumn);
 
 	if (msg && rcb) GDKfree(rcb);
 	if (msg && ccontext) GDKfree(ccontext);
@@ -2778,8 +2778,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 	if (column_result)
 		column_result->name = result->monetdbe_resultset->cols[column_index].name;
 cleanup:
-	if (b)
-		BBPunfix(b->batCacheid);
+	BBPreclaim(b);
 	if (mdbe->msg) {
 		if (res)
 			*res = NULL;
