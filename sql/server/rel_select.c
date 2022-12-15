@@ -568,6 +568,9 @@ file_loader_add_table_column_types(sql_subfunc *f, sql_allocator *sa, sql_exp *e
 	return types;
 	f->res = types;
 	*/
+
+	GDKfree(file);
+
 	return NULL;
 }
 
