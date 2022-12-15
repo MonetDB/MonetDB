@@ -97,7 +97,7 @@ MNDBPrepare(ODBCStmt *stmt,
 
 	ODBCResetStmt(stmt);
 
-	if (mt->Dbc->cachelimit != -1) {
+	if (stmt->Dbc->cachelimit != -1) {
 		mapi_cache_limit(stmt->Dbc->mid, -1);
 		stmt->Dbc->cachelimit = -1;
 	}
