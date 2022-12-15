@@ -33312,7 +33312,7 @@ geom
 Length
 command geom.Length(X_0:wkb):dbl 
 wkbLength;
-Returns the cartesian 2D length of the geometry if it is a linestrin or multilinestring
+Returns the cartesian 2D length of the geometry if it is a linestring or multilinestring
 geom
 LineFromText
 function geom.LineFromText(wkt:str):wkb;
