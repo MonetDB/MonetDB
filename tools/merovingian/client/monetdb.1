@@ -154,8 +154,10 @@ database, bring it down first using the
 command.
 .RE
 .TP
-\fBlock\fP \fIdatabase\fP [\fIdatabase\fP ...]
-Puts the given database in maintenance mode.  A database under
+\fBlock\fP [\fB\-a\fP] \fIdatabase\fP [\fIdatabase\fP ...]
+Puts the given database(s), or, when
+.B \-a
+is supplied, all databases in maintenance mode.  A database under
 maintenance can only be connected to by an administrator account
 (by default the
 .I monetdb
@@ -169,8 +171,10 @@ database which is under maintenance for administrator access, the
 .B start
 command can be used.
 .TP
-\fBrelease\fP \fIdatabase\fP [\fIdatabase\fP ...]
-Brings back a database from maintenance mode.  A released database is
+\fBrelease\fP [\fB\-a\fP] \fIdatabase\fP [\fIdatabase\fP ...]
+Brings the given database(s), or, when
+.B \-a
+is supplied, all databases back from maintenance mode. A released database is
 available again for normal use by any client, and is started on demand.
 Use the
 .B lock
@@ -376,8 +380,8 @@ database.  For each property its source and value are printed.  Source
 indicates where the current value comes from, e.g. the configuration
 file, or a local override.
 .TP
-\fBset\fP \fIproperty\fP\fB=\fP\fIvalue\fP \fIdatabase\fP [\fIdatabase\fP ...]
-Sets property to value for the given database.  For a list of
+\fBset\fP \fIproperty\fP\fB=\fP\fIvalue\fP [\fIdatabase\fP ...]
+Sets property to value for the given database(s), or all. For a list of
 properties, run
 .BR "monetdb get all" .
 Most properties require the database to be stopped when set.
@@ -443,9 +447,9 @@ to a \fB\-\-loadmodule=\fP\fImodule\fP option to
 for each of the modules in the list.
 .RE
 .TP
-\fBinherit\fP \fIproperty\fP \fIdatabase\fP [\fIdatabase\fP ...]
+\fBinherit\fP \fIproperty\fP [\fIdatabase\fP ...]
 Like set, but unsets the database-local value, and reverts to inherit
-from the default again.
+from the default again for the given database(s), or all.
 .TP
 \fBdiscover\fP [\fIexpression\fP]
 Returns a list of remote monetdbds and database URIs

@@ -1704,10 +1704,8 @@ bailout:
 		BBPkeepref(bn);
 	} else if (bn)
 		BBPreclaim(bn);
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (pbn)
-		BBPunfix(pbn->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(pbn);
 	return msg;
 }
 
@@ -1732,30 +1730,30 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /* scan select loop with or without candidates */
-#define pcrescanloop(TEST, KEEP_NULLS)				\
-	do {	\
-		TRC_DEBUG(ALGO,			\
-				  "PCREselect(b=%s#"BUNFMT",anti=%d): "		\
-				  "scanselect %s\n", BATgetId(b), BATcount(b),	\
-				  anti, #TEST);		\
-		if (!s || BATtdense(s)) {	\
-			for (; p < q; p++) {	\
-                GDK_CHECK_TIMEOUT(timeoffset, counter,						\
-                        GOTO_LABEL_TIMEOUT_HANDLER(bailout));				\
-				const char *restrict v = BUNtvar(bi, p - off);	\
-				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))	\
-					vals[cnt++] = p;	\
-			}		\
-		} else {		\
-			for (; p < ncands; p++) {		\
-                GDK_CHECK_TIMEOUT(timeoffset, counter,						\
-                        GOTO_LABEL_TIMEOUT_HANDLER(bailout));				\
-				oid o = canditer_next(ci);		\
-				const char *restrict v = BUNtvar(bi, o - off);	\
-				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))	\
-					vals[cnt++] = o;	\
-			}		\
-		}		\
+#define pcrescanloop(TEST, KEEP_NULLS)									\
+	do {																\
+		TRC_DEBUG(ALGO,													\
+				  "PCREselect(b=%s#"BUNFMT",anti=%d): "					\
+				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
+				  anti, #TEST);											\
+		if (!s || BATtdense(s)) {										\
+			for (; p < q; p++) {										\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+				const char *restrict v = BUNtvar(bi, p - off);			\
+				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
+					vals[cnt++] = p;									\
+			}															\
+		} else {														\
+			for (; p < ncands; p++) {									\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+				oid o = canditer_next(ci);								\
+				const char *restrict v = BUNtvar(bi, o - off);			\
+				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
+					vals[cnt++] = o;									\
+			}															\
+		}																\
 	} while (0)
 
 #ifdef HAVE_LIBPCRE
@@ -1968,12 +1966,9 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat, const s
 
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	if (old_s)
-		BBPunfix(old_s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
+	BBPreclaim(old_s);
 	GDKfree(ppat);
 	if (bn && !msg) {
 		*ret = bn->batCacheid;
@@ -2296,33 +2291,21 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid, bat c
 	}
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
-	if (escape)
-		BBPunfix(escape->batCacheid);
-	if (caseignore)
-		BBPunfix(caseignore->batCacheid);
-	if (candleft)
-		BBPunfix(candleft->batCacheid);
-	if (candright)
-		BBPunfix(candright->batCacheid);
+	BBPreclaim(escape);
+	BBPreclaim(caseignore);
+	BBPreclaim(candleft);
+	BBPreclaim(candright);
 	return MAL_SUCCEED;
 
   fail:
-	if (left)
-		BBPunfix(left->batCacheid);
-	if (right)
-		BBPunfix(right->batCacheid);
-	if (escape)
-		BBPunfix(escape->batCacheid);
-	if (caseignore)
-		BBPunfix(caseignore->batCacheid);
-	if (candleft)
-		BBPunfix(candleft->batCacheid);
-	if (candright)
-		BBPunfix(candright->batCacheid);
-	if (result1)
-		BBPunfix(result1->batCacheid);
-	if (result2)
-		BBPunfix(result2->batCacheid);
+	BBPreclaim(left);
+	BBPreclaim(right);
+	BBPreclaim(escape);
+	BBPreclaim(caseignore);
+	BBPreclaim(candleft);
+	BBPreclaim(candright);
+	BBPreclaim(result1);
+	BBPreclaim(result2);
 	if (msg)
 		return msg;
 	throw(MAL, "pcre.join", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);

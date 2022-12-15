@@ -740,7 +740,7 @@ IDXdrop(mvc *sql, const char *sname, const char *tname, const char *iname, void 
 
 	if (!b)
 		throw(SQL,"sql.drop_index", SQLSTATE(HY005) "Column can not be accessed");
-	if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
+	if (VIEWtparent(b) && (nb = BBP_desc(VIEWtparent(b)))) {
 		BBPunfix(b->batCacheid);
 		if (!(b = BATdescriptor(nb->batCacheid)))
 			throw(SQL,"sql.drop_index", SQLSTATE(HY005) "Column can not be accessed");
@@ -1258,7 +1258,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				sql_kc *ic = i->columns->h->data;
 				if (!(b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, RDONLY)))
 					throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access ordered index %s_%s_%s", s->base.name, t->base.name, i->base.name);
-				if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
+				if (VIEWtparent(b) && (nb = BBP_desc(VIEWtparent(b)))) {
 					BBPunfix(b->batCacheid);
 					if (!(b = BATdescriptor(nb->batCacheid)))
 						throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access ordered index %s_%s_%s", s->base.name, t->base.name, i->base.name);
@@ -1275,7 +1275,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				sql_kc *ic = i->columns->h->data;
 				if (!(b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, RDONLY)))
 					throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access imprints index %s_%s_%s", s->base.name, t->base.name, i->base.name);
-				if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
+				if (VIEWtparent(b) && (nb = BBP_desc(VIEWtparent(b)))) {
 					BBPunfix(b->batCacheid);
 					if (!(b = BATdescriptor(nb->batCacheid)))
 						throw(SQL,"sql.alter_table",SQLSTATE(HY005) "Cannot access imprints index %s_%s_%s", s->base.name, t->base.name, i->base.name);

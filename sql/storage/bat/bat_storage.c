@@ -149,14 +149,17 @@ new_segment(segment *o, sql_trans *tr, size_t cnt)
 		n->ts = tr->tid;
 		n->oldts = 0;
 		n->deleted = false;
-		n->start = 0;
-		n->next = NULL;
-		n->prev = NULL;
 		if (o) {
 			n->start = o->end;
-			o->next = n;
+			n->end = o->end + cnt;
+		} else {
+			n->start = 0;
+			n->end = cnt;
 		}
-		n->end = n->start + cnt;
+		n->next = NULL;
+		n->prev = NULL;
+		if (o)
+			o->next = n;
 	}
 	return n;
 }
@@ -2832,12 +2835,52 @@ static BAT *
 bind_no_view(BAT *b, bool quick)
 {
 	if (isVIEW(b)) { /* If it is a view get the parent BAT */
-		BAT *nb = BBP_cache(VIEWtparent(b));
+		BAT *nb = BBP_desc(VIEWtparent(b));
 		bat_destroy(b);
 		if (!(b = quick ? quick_descriptor(nb->batCacheid) : temp_descriptor(nb->batCacheid)))
 			return NULL;
 	}
 	return b;
+}
+
+static int
+set_stats_col(sql_trans *tr, sql_column *c, double *unique_est, char *min, char *max)
+{
+	int ok = 0;
+	assert(tr->active);
+	if (!c || !ATOMIC_PTR_GET(&c->data) || !isTable(c->t) || !c->t->s)
+		return 0;
+	lock_column(tr->store, c->base.id);
+	if (unique_est) {
+		sql_delta *d;
+		if ((d = ATOMIC_PTR_GET(&c->data)) && d->cs.st == ST_DEFAULT) {
+			BAT *b;
+			if ((b = bind_col(tr, c, RDONLY)) && (b = bind_no_view(b, false))) {
+				MT_lock_set(&b->theaplock);
+				b->tunique_est = *unique_est;
+				MT_lock_unset(&b->theaplock);
+				bat_destroy(b);
+			}
+		}
+	}
+	if (min) {
+		_DELETE(c->min);
+		size_t minlen = ATOMlen(c->type.type->localtype, min);
+		if ((c->min = GDKmalloc(minlen)) != NULL) {
+			memcpy(c->min, min, minlen);
+			ok = 1;
+		}
+	}
+	if (max) {
+		_DELETE(c->max);
+		size_t maxlen = ATOMlen(c->type.type->localtype, max);
+		if ((c->max = GDKmalloc(maxlen)) != NULL) {
+			memcpy(c->max, max, maxlen);
+			ok = 1;
+		}
+	}
+	unlock_column(tr->store, c->base.id);
+	return ok;
 }
 
 static int
@@ -3016,9 +3059,13 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 
 			if ((EC_NUMBER(eclass) || EC_VARCHAR(eclass) || EC_TEMP_NOFRAC(eclass) || eclass == EC_DATE) &&
 				d->cs.ucnt == 0 && (bi.minpos != BUN_NONE || bi.maxpos != BUN_NONE)) {
-				if (bi.minpos != BUN_NONE && VALinit(min, bi.type, BUNtail(bi, bi.minpos)))
+				if (c->min && VALinit(min, bi.type, c->min))
 					ok |= 1;
-				if (bi.maxpos != BUN_NONE && VALinit(max, bi.type, BUNtail(bi, bi.maxpos)))
+				else if (bi.minpos != BUN_NONE && VALinit(min, bi.type, BUNtail(bi, bi.minpos)))
+					ok |= 1;
+				if (c->max && VALinit(max, bi.type, c->max))
+					ok |= 2;
+				else if (bi.maxpos != BUN_NONE && VALinit(max, bi.type, BUNtail(bi, bi.maxpos)))
 					ok |= 2;
 			}
 			if (d->cs.ucnt == 0) {
@@ -5041,6 +5088,7 @@ bat_storage_init( store_functions *sf)
 	sf->count_idx = &count_idx;
 	sf->dcount_col = &dcount_col;
 	sf->min_max_col = &min_max_col;
+	sf->set_stats_col = &set_stats_col;
 	sf->sorted_col = &sorted_col;
 	sf->unique_col = &unique_col;
 	sf->double_elim_col = &double_elim_col;

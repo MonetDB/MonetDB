@@ -40,12 +40,11 @@ unshare_varsized_heap(BAT *b)
 		}
 		ATOMIC_INIT(&h->refs, 1);
 		MT_lock_set(&b->theaplock);
-		int parent = b->tvheap->parentid;
 		Heap *oh = b->tvheap;
 		b->tvheap = h;
 		MT_lock_unset(&b->theaplock);
+		BBPrelease(oh->parentid);
 		HEAPdecref(oh, false);
-		BBPunshare(parent);
 	}
 	return GDK_SUCCEED;
 }
@@ -84,13 +83,14 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		/* we can share the vheaps, so we then only need to
 		 * append the offsets */
 		MT_lock_set(&b->theaplock);
-		if (b->tvheap->parentid != b->batCacheid)
-			BBPunshare(b->tvheap->parentid);
-		HEAPdecref(b->tvheap, b->tvheap->parentid == b->batCacheid);
+		bat bid = b->tvheap->parentid;
+		HEAPdecref(b->tvheap, bid == b->batCacheid);
 		HEAPincref(ni->vh);
 		b->tvheap = ni->vh;
 		MT_lock_unset(&b->theaplock);
-		BBPshare(ni->vh->parentid);
+		BBPretain(ni->vh->parentid);
+		if (bid != b->batCacheid)
+			BBPrelease(bid);
 		toff = 0;
 		MT_thread_setalgorithm("share vheap");
 	} else {
@@ -304,12 +304,12 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		}
 	}
 	TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(GDK_FAIL));
+	MT_rwlock_wrlock(&b->thashlock);
 	MT_lock_set(&b->theaplock);
 	BATsetcount(b, oldcnt + ci->ncand);
 	assert(b->batCapacity >= b->batCount);
 	MT_lock_unset(&b->theaplock);
 	/* maintain hash */
-	MT_rwlock_wrlock(&b->thashlock);
 	for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
 		HASHappend_locked(b, r, b->tvheap->base + VarHeapVal(Tloc(b, 0), r, b->twidth));
 	}
@@ -356,13 +356,14 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		 * is read-only, we replace b's vheap with a reference
 		 * to n's */
 		MT_lock_set(&b->theaplock);
-		if (b->tvheap->parentid != b->batCacheid)
-			BBPunshare(b->tvheap->parentid);
-		BBPshare(ni->vh->parentid);
+		bat bid = b->tvheap->parentid;
 		HEAPdecref(b->tvheap, true);
 		HEAPincref(ni->vh);
 		b->tvheap = ni->vh;
 		MT_lock_unset(&b->theaplock);
+		BBPretain(ni->vh->parentid);
+		if (bid != b->batCacheid)
+			BBPrelease(bid);
 	}
 	if (b->tvheap == ni->vh) {
 		/* if b and n use the same vheap, we only need to copy
@@ -381,11 +382,11 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 				*dst++ = src[canditer_next(ci) - hseq];
 			}
 		}
+		MT_rwlock_wrlock(&b->thashlock);
 		MT_lock_set(&b->theaplock);
 		BATsetcount(b, BATcount(b) + ci->ncand);
 		MT_lock_unset(&b->theaplock);
 		/* maintain hash table */
-		MT_rwlock_wrlock(&b->thashlock);
 		for (BUN i = BATcount(b) - ci->ncand;
 		     b->thash && i < BATcount(b);
 		     i++) {
@@ -418,13 +419,13 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 			GDKfree(h);
 			return GDK_FAIL;
 		}
-		bat parid = b->tvheap->parentid;
-		BBPunshare(parid);
 		ATOMIC_INIT(&h->refs, 1);
 		MT_lock_set(&b->theaplock);
 		Heap *oh = b->tvheap;
 		b->tvheap = h;
 		MT_lock_unset(&b->theaplock);
+		if (oh->parentid != b->batCacheid)
+			BBPrelease(oh->parentid);
 		HEAPdecref(oh, false);
 	}
 	if (BATcount(b) == 0 && BATatoms[b->ttype].atomFix == NULL &&
@@ -476,12 +477,12 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		}
 	}
 	BUN nunique = b->thash ? b->thash->nunique : 0;
-	MT_rwlock_wrunlock(&b->thashlock);
 	MT_lock_set(&b->theaplock);
 	BATsetcount(b, r);
 	if (nunique != 0)
 		b->tunique_est = (double) nunique;
 	MT_lock_unset(&b->theaplock);
+	MT_rwlock_wrunlock(&b->thashlock);
 	return GDK_SUCCEED;
 }
 
@@ -903,12 +904,12 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		}
 		BUN nunique;
 		nunique = b->thash ? b->thash->nunique : 0;
-		MT_rwlock_wrunlock(&b->thashlock);
 		MT_lock_set(&b->theaplock);
 		BATsetcount(b, b->batCount + ci.ncand);
 		if (nunique != 0)
 			b->tunique_est = (double) nunique;
 		MT_lock_unset(&b->theaplock);
+		MT_rwlock_wrunlock(&b->thashlock);
 	}
 
   doreturn:
@@ -1319,16 +1320,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
-				/* doesn't fit in current heap, upgrade
-				 * it, can't keep hashlock while doing
-				 * so */
-				MT_rwlock_wrunlock(&b->thashlock);
-				locked = false;
+				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, d, 0, MAX(updid, b->batCount)) != GDK_SUCCEED) {
 					goto bailout;
 				}
-				MT_rwlock_wrlock(&b->thashlock);
-				locked = true;
 			}
 			/* in case ATOMreplaceVAR and/or
 			 * GDKupgradevarheap replaces a heap, we need to
@@ -1372,6 +1367,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 		b->tvheap->dirty = true;
 		MT_lock_unset(&b->theaplock);
 	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
+		assert(b->thash == NULL);
 		HASHdestroy(b);	/* hash doesn't make sense for msk */
 		for (BUN i = 0; i < ni.count; i++) {
 			oid updid;
@@ -1801,7 +1797,7 @@ BATslice(BAT *b, BUN l, BUN h)
 	}
 	restrict_t prestricted;
 	if (bi.restricted == BAT_READ && VIEWtparent(b)) {
-		BAT *pb = BBP_cache(VIEWtparent(b));
+		BAT *pb = BBP_desc(VIEWtparent(b));
 		MT_lock_set(&pb->theaplock);
 		prestricted = pb->batRestricted;
 		MT_lock_unset(&pb->theaplock);
@@ -1813,7 +1809,7 @@ BATslice(BAT *b, BUN l, BUN h)
 		bn = VIEWcreate(b->hseqbase + low, b);
 		if (bn == NULL)
 			goto doreturn;
-		VIEWbounds(b, bn, l, h);
+		VIEWboundsbi(&bi, bn, l, h);
 	} else {
 		/* create a new BAT and put everything into it */
 		BUN p = l;
@@ -2359,12 +2355,15 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		return GDK_SUCCEED;
 	}
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
-		if (b->tbaseoff != pb->tbaseoff ||
-		    BATcount(b) != BATcount(pb) ||
-		    b->hseqbase != pb->hseqbase ||
-		    BATatoms[b->ttype].atomCmp != BATatoms[pb->ttype].atomCmp)
+		pb = BATdescriptor(VIEWtparent(b));
+		if (pb != NULL &&
+		    (b->tbaseoff != pb->tbaseoff ||
+		     BATcount(b) != BATcount(pb) ||
+		     b->hseqbase != pb->hseqbase ||
+		     BATatoms[b->ttype].atomCmp != BATatoms[pb->ttype].atomCmp)) {
+			BBPunfix(pb->batCacheid);
 			pb = NULL;
+		}
 	} else {
 		pb = b;
 	}
@@ -2448,6 +2447,8 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			  ALGOOPTBATPAR(g), reverse, nilslast, stable,
 			  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn),
 			  ALGOOPTBATPAR(on), GDKusec() - t0);
+		if (pb != NULL && pb != b)
+			BBPunfix(pb->batCacheid);
 		return GDK_SUCCEED;
 	} else if (oidxh) {
 		HEAPdecref(oidxh, false);
@@ -2464,9 +2465,11 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		}
 		if (pb) {
 			bat_iterator_end(&pbi);
+			if (pb != b)
+				BBPunfix(pb->batCacheid);
 			pbi = bat_iterator(NULL);
+			pb = NULL;
 		}
-		pb = NULL;
 	} else {
 		bn = COLcopy(b, b->ttype, true, TRANSIENT);
 	}
@@ -2561,6 +2564,8 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 				  stable, ALGOOPTBATPAR(bn),
 				  ALGOOPTBATPAR(gn), ALGOOPTBATPAR(on),
 				  GDKusec() - t0);
+			if (pb != NULL && pb != b)
+				BBPunfix(pb->batCacheid);
 			return GDK_SUCCEED;
 		}
 		assert(g->ttype == TYPE_oid);
@@ -2683,6 +2688,8 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		  reverse, nilslast, stable, ALGOOPTBATPAR(bn),
 		  ALGOOPTBATPAR(gn), ALGOOPTBATPAR(on),
 		  g ? "grouped " : "", GDKusec() - t0);
+	if (pb && pb != b)
+		BBPunfix(pb->batCacheid);
 	return GDK_SUCCEED;
 
   error:
@@ -2691,8 +2698,9 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		MT_lock_unset(&pb->batIdxLock);
 	if (oidxh)
 		HEAPdecref(oidxh, false);
-	if (bn)
-		BBPunfix(bn->batCacheid);
+	BBPreclaim(bn);
+	if (pb && pb != b)
+		BBPunfix(pb->batCacheid);
 	BBPreclaim(on);
 	if (sorted)
 		*sorted = NULL;
@@ -3069,19 +3077,22 @@ BATcount_no_nil(BAT *b, BAT *s)
 			assert(!b->tnil);
 			b->tnil = false;
 		}
-		MT_lock_unset(&b->theaplock);
 		bat pbid = VIEWtparent(b);
+		MT_lock_unset(&b->theaplock);
 		if (pbid) {
-			BAT *pb = BBP_cache(pbid);
-			MT_lock_set(&pb->theaplock);
-			if (cnt == BATcount(pb) &&
-			    bi.h == pb->theap &&
-			    !pb->tnonil) {
-				pb->tnonil = true;
-				assert(!pb->tnil);
-				pb->tnil = false;
+			BAT *pb = BATdescriptor(pbid);
+			if (pb) {
+				MT_lock_set(&pb->theaplock);
+				if (cnt == BATcount(pb) &&
+				    bi.h == pb->theap &&
+				    !pb->tnonil) {
+					pb->tnonil = true;
+					assert(!pb->tnil);
+					pb->tnil = false;
+				}
+				MT_lock_unset(&pb->theaplock);
+				BBPunfix(pb->batCacheid);
 			}
-			MT_lock_unset(&pb->theaplock);
 		}
 	}
 	bat_iterator_end(&bi);

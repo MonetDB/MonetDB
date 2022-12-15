@@ -1,0 +1,116 @@
+statement ok
+CREATE LOCAL TEMP TABLE tmp.tmp_pk_uc (id1 INT NOT NULL PRIMARY KEY, name1 VARCHAR(99) UNIQUE)
+
+statement ok
+CREATE LOCAL TEMP TABLE tmp.tmp_nopk_twoucs (id2 INT NOT NULL UNIQUE, name2 VARCHAR(99) UNIQUE)
+
+statement ok
+CREATE GLOBAL TEMP TABLE tmp.glbl_pk_uc (id1 INT NOT NULL PRIMARY KEY, name1 VARCHAR(99) UNIQUE)
+
+statement ok
+CREATE GLOBAL TEMP TABLE tmp.glbl_nopk_twoucs (id2 INT NOT NULL UNIQUE, name2 VARCHAR(99) UNIQUE)
+
+query T rowsort
+SELECT name FROM sys.tables WHERE NOT system ORDER BY name
+-----
+glbl_nopk_twoucs
+glbl_pk_uc
+tmp_nopk_twoucs
+tmp_pk_uc
+
+query T rowsort
+SELECT name FROM sys.idxs WHERE (table_id) IN (SELECT id FROM sys.tables WHERE NOT system) ORDER BY name
+-----
+glbl_nopk_twoucs_id2_unique
+glbl_nopk_twoucs_name2_unique
+glbl_pk_uc_id1_pkey
+glbl_pk_uc_name1_unique
+
+query T rowsort
+SELECT name FROM tmp.idxs WHERE (table_id) IN (SELECT id FROM sys.tables WHERE NOT system) ORDER BY name
+-----
+tmp_nopk_twoucs_id2_unique
+tmp_nopk_twoucs_name2_unique
+tmp_pk_uc_id1_pkey
+tmp_pk_uc_name1_unique
+
+statement ok
+CREATE INDEX tmp_pk_uc_i ON tmp.tmp_pk_uc (id1, name1)
+
+statement ok
+CREATE INDEX tmp_nopk_twoucs_i ON tmp.tmp_nopk_twoucs (id2, name2)
+
+statement ok
+CREATE INDEX glbl_pk_uc_i ON tmp.glbl_pk_uc (id1, name1)
+
+statement ok
+CREATE INDEX glbl_nopk_twoucs_i ON tmp.glbl_nopk_twoucs (id2, name2)
+
+query T rowsort
+SELECT name FROM sys.idxs WHERE (table_id) IN (SELECT id FROM sys.tables WHERE NOT system) ORDER BY name
+-----
+glbl_nopk_twoucs_i
+glbl_nopk_twoucs_id2_unique
+glbl_nopk_twoucs_name2_unique
+glbl_pk_uc_i
+glbl_pk_uc_id1_pkey
+glbl_pk_uc_name1_unique
+
+query T rowsort
+SELECT name FROM tmp.idxs WHERE (table_id) IN (SELECT id FROM sys.tables WHERE NOT system) ORDER BY name
+-----
+tmp_nopk_twoucs_i
+tmp_nopk_twoucs_id2_unique
+tmp_nopk_twoucs_name2_unique
+tmp_pk_uc_i
+tmp_pk_uc_id1_pkey
+tmp_pk_uc_name1_unique
+
+statement ok
+DROP INDEX tmp.tmp_pk_uc_i
+
+statement ok
+DROP INDEX tmp.tmp_nopk_twoucs_i
+
+statement ok
+DROP INDEX tmp.glbl_pk_uc_i
+
+statement ok
+DROP INDEX tmp.glbl_nopk_twoucs_i
+
+query T rowsort
+SELECT name FROM sys.idxs WHERE (table_id) IN (SELECT id FROM sys.tables WHERE NOT system) ORDER BY name
+-----
+glbl_nopk_twoucs_id2_unique
+glbl_nopk_twoucs_name2_unique
+glbl_pk_uc_id1_pkey
+glbl_pk_uc_name1_unique
+
+query T rowsort
+SELECT name FROM tmp.idxs WHERE (table_id) IN (SELECT id FROM sys.tables WHERE NOT system) ORDER BY name
+-----
+tmp_nopk_twoucs_id2_unique
+tmp_nopk_twoucs_name2_unique
+tmp_pk_uc_id1_pkey
+tmp_pk_uc_name1_unique
+
+statement ok
+DROP TABLE tmp.tmp_pk_uc
+
+statement ok
+DROP TABLE tmp.glbl_pk_uc
+
+statement ok
+DROP TABLE tmp.tmp_nopk_twoucs
+
+statement ok
+DROP TABLE tmp.glbl_nopk_twoucs
+
+query T rowsort
+SELECT name FROM sys.idxs WHERE (table_id) IN (SELECT id FROM sys.tables WHERE NOT system) ORDER BY name
+-----
+
+query T rowsort
+SELECT name FROM tmp.idxs WHERE (table_id) IN (SELECT id FROM sys.tables WHERE NOT system) ORDER BY name
+-----
+

@@ -12,6 +12,7 @@
 #include "mal_exception.h"
 #include "mal_resource.h"
 #include "mal_private.h"
+#include "mal_internal.h"
 #include "mal_instruction.h"
 
 /* Memory based admission does not seem to have a major impact so far. */
