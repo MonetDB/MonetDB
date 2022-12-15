@@ -7,19 +7,26 @@
 #include <arrow-glib/arrow-glib.h>
 #include <parquet-glib/metadata.h>
 
-parquet_file open_file(char* filename) {
+
+extern void *GDKmalloc(size_t size); /* FIXME */
+
+parquet_file *open_file(char* filename) {
     GParquetArrowFileReader *reader;
-    GError *error;
+    GError *g_error;
+    char* error = NULL;
   
-    reader = gparquet_arrow_file_reader_new_path(filename, &error);
+    reader = gparquet_arrow_file_reader_new_path(filename, &g_error);
 
     if(!reader) {
-        printf("%s", error->message);
-        /* TODO: Throw a SQLState Error. */
         reader = NULL;
+        error = g_error->message;
     }
 
-    parquet_file file = { filename, reader };
+    parquet_file *file = GDKmalloc(sizeof(parquet_file));
+
+    file->filename = filename;
+    file->reader = reader;
+    file->error = error;
 
     return file;
 }

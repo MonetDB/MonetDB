@@ -547,8 +547,13 @@ file_loader_add_table_column_types(sql_subfunc *f, sql_allocator *sa, sql_exp *e
 	(void)sa;
 	(void)e;
 
-	parquet_file file = open_file(filename);
-	get_table_metadata(&file);
+	parquet_file *file = open_file(filename);
+
+	if(file->error) {
+		return file->error;
+	}
+
+	get_table_metadata(file);
 
 	/* ext -> call back */
 	/*
