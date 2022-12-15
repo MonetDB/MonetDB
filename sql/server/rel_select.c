@@ -24,6 +24,8 @@
 #include "rel_unnest.h"
 #include "rel_sequence.h"
 
+#include "../backends/monet5/vaults/parquet/parquet.h"
+
 #define VALUE_FUNC(f) (f->func->type == F_FUNC || f->func->type == F_FILT)
 #define check_card(card,f) ((card == card_none && !f->res) || (CARD_VALUE(card) && f->res && VALUE_FUNC(f)) || card == card_loader || (card == card_relation && f->func->type == F_UNION))
 
@@ -544,6 +546,10 @@ file_loader_add_table_column_types(sql_subfunc *f, sql_allocator *sa, sql_exp *e
 	(void)f;
 	(void)sa;
 	(void)e;
+
+	parquet_file file = open_file(filename);
+	get_table_metadata(&file);
+
 	/* ext -> call back */
 	/*
 	node *n;
