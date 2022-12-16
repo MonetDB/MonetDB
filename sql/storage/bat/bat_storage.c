@@ -500,7 +500,7 @@ temp_dup_delta(ulng tid, int type)
 
 	if (!bat)
 		return NULL;
-	if (temp_dup_cs(&bat->cs, tid, type)) {
+	if (temp_dup_cs(&bat->cs, tid, type) != LOG_OK) {
 		_DELETE(bat);
 		return NULL;
 	}
@@ -522,7 +522,7 @@ temp_dup_storage(sql_trans *tr)
 
 	if (!bat)
 		return NULL;
-	if (temp_dup_cs(&bat->cs, tr->tid, TYPE_msk)) {
+	if (temp_dup_cs(&bat->cs, tr->tid, TYPE_msk) != LOG_OK) {
 		_DELETE(bat);
 		return NULL;
 	}
@@ -2008,15 +2008,13 @@ dup_cs(sql_trans *tr, column_storage *ocs, column_storage *cs, int type, int tem
 	return LOG_OK;
 }
 
-static int
+static void
 destroy_delta(sql_delta *b, bool recursive)
 {
-	int ok = LOG_OK;
-
 	if (--b->cs.refcnt > 0)
-		return LOG_OK;
+		return;
 	if (recursive && b->next)
-		ok = destroy_delta(b->next, true);
+		destroy_delta(b->next, true);
 	if (b->cs.uibid)
 		temp_destroy(b->cs.uibid);
 	if (b->cs.uvbid)
@@ -2027,7 +2025,6 @@ destroy_delta(sql_delta *b, bool recursive)
 		temp_destroy(b->cs.ebid);
 	b->cs.bid = b->cs.ebid = b->cs.uibid = b->cs.uvbid = 0;
 	_DELETE(b);
-	return ok;
 }
 
 static sql_delta *
@@ -2096,8 +2093,8 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 	bool update_conflict = false;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
 
-	if (isTempTable(c->t) && isGlobal(c->t))
-		c = find_tmp_column(tr, c);
+	if (isTempTable(c->t) && isGlobal(c->t) && (c = find_tmp_column(tr, c)) == NULL)
+		return LOG_ERR;
 
 	if (tpe == TYPE_bat) {
 		BAT *t = tids;
@@ -2168,8 +2165,8 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 	bool update_conflict = false;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
 
-	if (isTempTable(i->t) && isGlobal(i->t))
-		i = find_tmp_idx(tr, i);
+	if (isTempTable(i->t) && isGlobal(i->t) && (i = find_tmp_idx(tr, i)) == NULL)
+		return LOG_ERR;
 
 	if (tpe == TYPE_bat) {
 		BAT *t = tids;
@@ -2364,8 +2361,8 @@ append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *data, B
 			return LOG_OK;
 	}
 
-	if (isTempTable(c->t) && isGlobal(c->t))
-		c = find_tmp_column(tr, c);
+	if (isTempTable(c->t) && isGlobal(c->t) && (c = find_tmp_column(tr, c)) == NULL)
+		return LOG_ERR;
 
 	if ((delta = bind_col_data(tr, c, NULL)) == NULL)
 		return LOG_ERR;
@@ -2404,8 +2401,8 @@ append_idx(sql_trans *tr, sql_idx *i, BUN offset, BAT *offsets, void *data, BUN 
 			return LOG_OK;
 	}
 
-	if (isTempTable(i->t) && isGlobal(i->t))
-		i = find_tmp_idx(tr, i);
+	if (isTempTable(i->t) && isGlobal(i->t) && (i = find_tmp_idx(tr, i)) == NULL)
+		return LOG_ERR;
 
 	if ((delta = bind_idx_data(tr, i, NULL)) == NULL)
 		return LOG_ERR;
@@ -2604,15 +2601,13 @@ destroy_segments(segments *s)
 	_DELETE(s);
 }
 
-static int
+static void
 destroy_storage(storage *bat)
 {
-	int ok = LOG_OK;
-
 	if (--bat->cs.refcnt > 0)
-		return LOG_OK;
+		return;
 	if (bat->next)
-		ok = destroy_storage(bat->next);
+		destroy_storage(bat->next);
 	destroy_segments(bat->segs);
 	if (bat->cs.uibid)
 		temp_destroy(bat->cs.uibid);
@@ -2622,7 +2617,6 @@ destroy_storage(storage *bat)
 		temp_destroy(bat->cs.bid);
 	bat->cs.bid = bat->cs.uibid = bat->cs.uvbid = 0;
 	_DELETE(bat);
-	return ok;
 }
 
 static int
@@ -2710,8 +2704,8 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 	BAT *b = ib;
 	storage *bat;
 
-	if (isTempTable(t) && isGlobal(t))
-		t = find_tmp_table(tr, t);
+	if (isTempTable(t) && isGlobal(t) && (t = find_tmp_table(tr, t)) == NULL)
+		return LOG_ERR;
 
 	if (tpe == TYPE_bat && !BATcount(b))
 		return ok;
@@ -3103,6 +3097,8 @@ create_col(sql_trans *tr, sql_column *c)
 		/* alter ? */
 		if (!isTempTable(c->t) && ol_first_node(c->t->columns) && (fc = ol_first_node(c->t->columns)->data) != NULL) {
 			storage *s = tab_timestamp_storage(tr, fc->t);
+			if (s == NULL)
+				return LOG_ERR;
 			cnt = segs_end(s->segs, tr, c->t);
 		}
 		if (cnt && fc != c) {
@@ -3232,7 +3228,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 					ok = LOG_ERR;
 			}
 		} else {
-			ok = LOG_ERR;
+			return LOG_ERR;
 		}
 
 		bat->cs.ucnt = 0;
@@ -3293,8 +3289,10 @@ load_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 	}
 
 	if (BATcount(b)) {
-		if (ok == LOG_OK && !(s->segs = new_segments(tr, BATcount(ib))))
-			ok = LOG_ERR;
+		if (ok == LOG_OK && !(s->segs = new_segments(tr, BATcount(ib)))) {
+			bat_destroy(ib);
+			return LOG_ERR;
+		}
 		if (BATtdense(b)) {
 			size_t start = b->tseqbase;
 			size_t cnt = BATcount(b);
@@ -3395,7 +3393,7 @@ create_del(sql_trans *tr, sql_table *t)
 	} else if (!bat->cs.bid) {
 		assert(!bat->segs);
 		if (!(bat->segs = new_segments(tr, 0)))
-			ok = LOG_ERR;
+			return LOG_ERR;
 
 		b = bat_new(TYPE_msk, t->sz, PERSISTENT);
 		if(b != NULL) {
@@ -3403,7 +3401,7 @@ create_del(sql_trans *tr, sql_table *t)
 			bat->cs.bid = temp_create(b);
 			bat_destroy(b);
 		} else {
-			ok = LOG_ERR;
+			return LOG_ERR;
 		}
 		if (new)
 			trans_add(tr, &t->base, bat, &tc_gc_del, &commit_create_del, isTempTable(t) ? NULL : &log_create_del);
@@ -3500,7 +3498,6 @@ commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	if(!isTempTable(t)) {
 		storage *dbat = ATOMIC_PTR_GET(&t->data);
 		ok = segments2cs(tr, dbat->segs, &dbat->cs);
-		assert(ok == LOG_OK);
 		if (ok != LOG_OK)
 			return ok;
 		merge_segments(dbat, tr, change, commit_ts, commit_ts/* create is we are alone */ /*oldest*/);
@@ -3548,11 +3545,10 @@ static int
 destroy_col(sqlstore *store, sql_column *c)
 {
 	(void)store;
-	int ok = LOG_OK;
 	if (ATOMIC_PTR_GET(&c->data))
-		ok = destroy_delta(ATOMIC_PTR_GET(&c->data), true);
+		destroy_delta(ATOMIC_PTR_GET(&c->data), true);
 	ATOMIC_PTR_SET(&c->data, NULL);
-	return ok;
+	return LOG_OK;
 }
 
 static int
@@ -3579,11 +3575,10 @@ static int
 destroy_idx(sqlstore *store, sql_idx *i)
 {
 	(void)store;
-	int ok = LOG_OK;
 	if (ATOMIC_PTR_GET(&i->data))
-		ok = destroy_delta(ATOMIC_PTR_GET(&i->data), true);
+		destroy_delta(ATOMIC_PTR_GET(&i->data), true);
 	ATOMIC_PTR_SET(&i->data, NULL);
-	return ok;
+	return LOG_OK;
 }
 
 static int
@@ -3612,11 +3607,10 @@ static int
 destroy_del(sqlstore *store, sql_table *t)
 {
 	(void)store;
-	int ok = LOG_OK;
 	if (ATOMIC_PTR_GET(&t->data))
-		ok = destroy_storage(ATOMIC_PTR_GET(&t->data));
+		destroy_storage(ATOMIC_PTR_GET(&t->data));
 	ATOMIC_PTR_SET(&t->data, NULL);
-	return ok;
+	return LOG_OK;
 }
 
 static int
@@ -4099,7 +4093,7 @@ merge_storage(storage *tdb)
 	int ok = merge_cs(&tdb->cs);
 
 	if (tdb->next) {
-		ok = destroy_storage(tdb->next);
+		destroy_storage(tdb->next);
 		tdb->next = NULL;
 	}
 	return ok;
@@ -4374,7 +4368,6 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 			dbat->cs.ts = commit_ts;
 
 		ok = segments2cs(tr, dbat->segs, &dbat->cs);
-		assert(ok == LOG_OK);
 		if (ok == LOG_OK)
 			merge_segments(dbat, tr, change, commit_ts, oldest);
 		if (ok == LOG_OK && oldest == commit_ts)
@@ -4615,27 +4608,30 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 				slot = s->segs->t->start;
 			}
 		}
-		ok = add_offsets(slot, cnt, total, offset, offsets);
+		if (ok == LOG_OK)
+			ok = add_offsets(slot, cnt, total, offset, offsets);
 	}
 	if (!locked)
 		unlock_table(tr->store, t->base.id);
 
-	/* hard to only add this once per transaction (probably want to change to once per new segment) */
-	if ((!inTransaction(tr, t) && (!in_transaction || isTempTable(t)) && isGlobal(t)) || (!isNew(t) && isLocalTemp(t))) {
-		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isTempTable(t) || isUnloggedTable(t) ? NULL : &log_update_del);
-		in_transaction = true;
-	}
-	if (in_transaction && !isTempTable(t) && !isUnloggedTable(t))
-		tr->logchanges += (int) total;
-	if (*offsets) {
-		BAT *pos = *offsets;
-		assert(BATcount(pos) == total);
-		BATsetcount(pos, total); /* set other properties */
-		pos->tnil = false;
-		pos->tnonil = true;
-		pos->tkey = true;
-		pos->tsorted = true;
-		pos->trevsorted = false;
+	if (ok == LOG_OK) {
+		/* hard to only add this once per transaction (probably want to change to once per new segment) */
+		if ((!inTransaction(tr, t) && (!in_transaction || isTempTable(t)) && isGlobal(t)) || (!isNew(t) && isLocalTemp(t))) {
+			trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isTempTable(t) || isUnloggedTable(t) ? NULL : &log_update_del);
+			in_transaction = true;
+		}
+		if (in_transaction && !isTempTable(t) && !isUnloggedTable(t))
+			tr->logchanges += (int) total;
+		if (*offsets) {
+			BAT *pos = *offsets;
+			assert(BATcount(pos) == total);
+			BATsetcount(pos, total); /* set other properties */
+			pos->tnil = false;
+			pos->tnonil = true;
+			pos->tkey = true;
+			pos->tsorted = true;
+			pos->trevsorted = false;
+		}
 	}
 	return ok;
 }
@@ -4669,8 +4665,10 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 					break;
 				}
 				/* we claimed part of the old segment, the split off part needs to stay deleted */
-				if ((seg=split_segment(s->segs, seg, p, tr, seg->start, cnt, false)) == NULL)
+				if ((seg=split_segment(s->segs, seg, p, tr, seg->start, cnt, false)) == NULL) {
 					ok = LOG_ERR;
+					break;
+				}
 			}
 			seg->ts = tr->tid;
 			seg->deleted = false;
@@ -4696,18 +4694,17 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 	if (!locked)
 		unlock_table(tr->store, t->base.id);
 
-	/* hard to only add this once per transaction (probably want to change to once per new segment) */
-	if ((!inTransaction(tr, t) && (!in_transaction || isTempTable(t)) && isGlobal(t)) || (!isNew(t) && isLocalTemp(t))) {
-		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isTempTable(t) || isUnloggedTable(t) ? NULL : &log_update_del);
-		in_transaction = true;
-	}
-	if (in_transaction && !isTempTable(t) && !isUnloggedTable(t))
-		tr->logchanges += (int) cnt;
 	if (ok == LOG_OK) {
+		/* hard to only add this once per transaction (probably want to change to once per new segment) */
+		if ((!inTransaction(tr, t) && (!in_transaction || isTempTable(t)) && isGlobal(t)) || (!isNew(t) && isLocalTemp(t))) {
+			trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isTempTable(t) || isUnloggedTable(t) ? NULL : &log_update_del);
+			in_transaction = true;
+		}
+		if (in_transaction && !isTempTable(t) && !isUnloggedTable(t))
+			tr->logchanges += (int) cnt;
 		*offset = slot;
-		return LOG_OK;
 	}
-	return LOG_ERR;
+	return ok;
 }
 
 /*
@@ -4721,8 +4718,8 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt, BUN *offset, BAT **offsets)
 {
 	storage *s;
 
-	if (isTempTable(t) && isGlobal(t))
-		t = find_tmp_table(tr, t);
+	if (isTempTable(t) && isGlobal(t) && (t = find_tmp_table(tr, t)) == NULL)
+		return LOG_ERR;
 
 	/* we have a single segment structure for each persistent table
 	 * for temporary tables each has its own */
@@ -4739,8 +4736,8 @@ key_claim_tab(sql_trans *tr, sql_table *t, size_t cnt, BUN *offset, BAT **offset
 	storage *s;
 	int res = 0;
 
-	if (isTempTable(t) && isGlobal(t))
-		t = find_tmp_table(tr, t);
+	if (isTempTable(t) && isGlobal(t) && (t = find_tmp_table(tr, t)) == NULL)
+		return LOG_ERR;
 
 	/* we have a single segment structure for each persistent table
 	 * for temporary tables each has its own */
