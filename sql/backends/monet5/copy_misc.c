@@ -105,7 +105,7 @@ format_error(struct error_handling *restrict admin, lng row_1based, int column_1
 	else
 		snprintf(col_msg, sizeof(col_msg), " column %d", column_1based);
 
-	int n = snprintf(buf, buf_end - buf, "Row %ld%s: ", row_1based, col_msg);
+	int n = snprintf(buf, buf_end - buf, "Row "LLFMT"%s: ", row_1based, col_msg);
 	if (n < buf_end - buf) {
 		buf += n;
 		n = vsnprintf(buf, buf_end - buf, format, ap);
@@ -252,7 +252,7 @@ copy_check_too_many_errors(struct error_handling *admin, const char *fname)
 		if (error_count == 1)
 			throw(MAL, fname, "%s", message);
 		else
-			throw(MAL, fname, "At least %ld conversion errors, example: %s", error_count, message);
+			throw(MAL, fname, "At least "LLFMT" conversion errors, example: %s", error_count, message);
 
 	} else {
 		return MAL_SUCCEED;
@@ -346,7 +346,7 @@ COPYbuf2str(str *ret, bat *bat_id)
 
 	for (BUN i = 0; i < len; i++) {
 		if (*(char*)Tloc(b, i) == '\0')
-			bailout("copy.buf2str", "BAT contains a 0 at index %ld", (long)i);
+			bailout("copy.buf2str", "BAT contains a 0 at index "BUNFMT, i);
 	}
 
 	s = GDKmalloc(len + 1);
@@ -361,4 +361,3 @@ end:
 		BBPunfix(b->batCacheid);
 	return msg;
 }
-
