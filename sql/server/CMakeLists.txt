@@ -59,6 +59,7 @@ target_sources(sqlserver
   rel_psm.c
   rel_xml.c
   rel_dump.c
+  rel_file_loader.c
   rel_dump.h rel_exp.h rel_rel.h
   rel_basetable.h
   rel_rewriter.h
@@ -88,6 +89,7 @@ target_sources(sqlserver
   sql_symbol.h
   sql_tokens.h
   sql_partition.h
+  rel_file_loader.h
   ${BISON_sqlparser_OUTPUT_HEADER}
   ${BISON_sqlparser_OUTPUT_SOURCE}
   PUBLIC
