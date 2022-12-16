@@ -4010,6 +4010,10 @@ exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 	BUN est = get_rel_count(rel);
 	lng cnt;
 	sql_subtype *t = exp_subtype(e);
+	prop *p;
+
+	if ((p = find_prop(e->p, PROP_NUNIQUES)))
+		est = p->value.dval;
 
 	if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
 		cnt = 85000000;
@@ -4150,7 +4154,7 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 				list *el = e->l;
 				sql_exp *a = el->h->data;
 				sql_subtype *t = exp_subtype(a);
-				int estimate = exp_getcard(be->mvc, rel->l /* count before group by */, e);
+				int estimate = exp_getcard(be->mvc, rel->l /* count before group by */, a);
 				if (estimate<0) {
 					assert(0);
 					estimate = 85000000;
