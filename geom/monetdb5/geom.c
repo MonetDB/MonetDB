@@ -6566,7 +6566,7 @@ static mel_func geom_init_funcs[] = {
  command("geom", "Area", wkbArea, false, "Returns the area of the surface if it is a polygon or multi-polygon", args(1,2, arg("",dbl),arg("w",wkb))),
  command("geom", "Centroid", wkbCentroid, false, "Computes the geometric center of a geometry, or equivalently, the center of mass of the geometry as a POINT.", args(1,2, arg("",wkb),arg("w",wkb))),
  command("geom", "Distance", wkbDistance, false, "Returns the 2-dimensional minimum cartesian distance between the two geometries in projected units (spatial ref units.", args(1,3, arg("",dbl),arg("a",wkb),arg("b",wkb))),
- command("geom", "Length", wkbLength, false, "Returns the cartesian 2D length of the geometry if it is a linestrin or multilinestring", args(1,2, arg("",dbl),arg("w",wkb))),
+ command("geom", "Length", wkbLength, false, "Returns the cartesian 2D length of the geometry if it is a linestring or multilinestring", args(1,2, arg("",dbl),arg("w",wkb))),
  command("geom", "ConvexHull", wkbConvexHull, false, "Returns a geometry that represents the convex hull of this geometry. The convex hull of a geometry represents the minimum convex geometry that encloses all geometries within the set.", args(1,2, arg("",wkb),arg("w",wkb))),
  command("geom", "Intersection", wkbIntersection, false, "Returns a geometry that represents the point set intersection of the Geometries a, b", args(1,3, arg("",wkb),arg("a",wkb),arg("b",wkb))),
  command("geom", "Union", wkbUnion, false, "Returns a geometry that represents the point set union of the Geometries a, b", args(1,3, arg("",wkb),arg("a",wkb),arg("b",wkb))),

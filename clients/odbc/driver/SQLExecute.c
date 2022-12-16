@@ -492,7 +492,7 @@ MNDBExecute(ODBCStmt *stmt)
 		/* we're the only Stmt handle, and we're only going forward */
 		if (stmt->Dbc->cachelimit != 10000)
 			mapi_cache_limit(stmt->Dbc->mid, 10000);
-		stmt->Dbc->cachelimit = 1000;
+		stmt->Dbc->cachelimit = 10000;
 	} else {
 		if (stmt->Dbc->cachelimit != 100)
 			mapi_cache_limit(stmt->Dbc->mid, 100);

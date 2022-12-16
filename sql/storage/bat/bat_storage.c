@@ -615,8 +615,8 @@ find_tmp_idx(sql_trans *tr, sql_idx *i)
 static sql_delta *
 temp_col_timestamp_delta( sql_trans *tr, sql_column *c)
 {
-	if (isGlobal(c->t))
-		c = find_tmp_column(tr, c);
+	if (isGlobal(c->t) && (c = find_tmp_column(tr, c)) == NULL)
+		return NULL;
 	assert (!isGlobal(c->t));
 	assert(isTempTable(c->t));
 	sql_delta *d = temp_delta(ATOMIC_PTR_GET(&c->data), tr->tid);
@@ -676,8 +676,8 @@ timestamp_storage( sql_trans *tr, storage *d)
 static storage *
 temp_tab_timestamp_storage( sql_trans *tr, sql_table *t)
 {
-	if (isGlobal(t))
-		t = find_tmp_table(tr, t);
+	if (isGlobal(t) && (t = find_tmp_table(tr, t)) == NULL)
+		return NULL;
 	assert(!isGlobal(t));
 	assert(isTempTable(t));
 	storage *d = temp_storage(ATOMIC_PTR_GET(&t->data), tr->tid);
