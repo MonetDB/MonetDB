@@ -39,7 +39,7 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int col_no = *getArgReference_int(stk, pci, 6);
 	const char *col_name = *getArgReference_str(stk, pci, 7);
 	int n;
-	void *buffer;
+	void *buffer = NULL;
 	size_t buffer_len;
 	const void *nil_ptr;
 
@@ -55,7 +55,6 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	nil_ptr = ATOMnilptr(tpe);
 
-	buffer = NULL;
 	buffer_len = 0;
 	for (int i = 0; i < n; i++) {
 		gdk_return ok = GDK_SUCCEED;
@@ -176,6 +175,7 @@ COPYparse_string(
 			} else if (colwidth > 0 && !fits_varchar(src, colwidth)) {
 				ok = copy_report_error(&errors, i, -1, "field too long, max length is %d", colwidth);
 			} else {
+				ok = GDK_SUCCEED;
 				to_insert = src;
 			}
 		}
