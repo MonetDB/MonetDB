@@ -23,8 +23,7 @@
 #include "rel_schema.h"
 #include "rel_unnest.h"
 #include "rel_sequence.h"
-
-#include "../backends/monet5/vaults/parquet/parquet.h"
+#include "rel_file_loader.h"
 
 #define VALUE_FUNC(f) (f->func->type == F_FUNC || f->func->type == F_FILT)
 #define check_card(card,f) ((card == card_none && !f->res) || (CARD_VALUE(card) && f->res && VALUE_FUNC(f)) || card == card_loader || (card == card_relation && f->func->type == F_UNION))
@@ -547,13 +546,23 @@ file_loader_add_table_column_types(sql_subfunc *f, sql_allocator *sa, sql_exp *e
 	(void)sa;
 	(void)e;
 
-	parquet_file *file = open_file(filename);
-
-	if(file->error) {
-		return file->error;
+	file_loader_t *fl = fl_find(ext);
+	/* TODO add errors on missing file loader */
+	if (fl) {
+		 fl->add_types(f, filename); /* TODO check for errors */
+		 return NULL;
 	}
 
-	get_table_metadata(file);
+	/* below stuff needs to be in the parquet backend code */
+//#include "../backends/monet5/vaults/parquet/parquet.h"
+
+//	parquet_file *file = open_file(filename);
+
+//	if(file->error) {
+//		return file->error;
+//	}
+
+//	get_table_metadata(file);
 
 	/* ext -> call back */
 	/*
@@ -569,7 +578,7 @@ file_loader_add_table_column_types(sql_subfunc *f, sql_allocator *sa, sql_exp *e
 	f->res = types;
 	*/
 
-	GDKfree(file);
+//	GDKfree(file);
 
 	return NULL;
 }
