@@ -497,7 +497,7 @@ COPYtrackrowids(lng *start, bat *newrows_out_id, bat *newrows_in_id, lng *count,
 		if (!pos)
 			bailout("copy.trackrowids", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		if (BATcount(pos) != (BUN)*count)
-			bailout("copy.trackrowids", SQLSTATE(42000) "expected " BUNFMT " row ids, got %" PRId64, *count, BATcount(pos));
+			bailout("copy.trackrowids", SQLSTATE(42000) "expected " LLFMT " row ids, got " BUNFMT, *count, BATcount(pos));
 		if (BUNappendmulti(newrows, Tloc(pos, 0), (BUN)*count, false) != GDK_SUCCEED)
 			bailout("copy.trackrowids", GDK_EXCEPTION);
 	}
