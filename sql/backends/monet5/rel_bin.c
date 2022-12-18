@@ -4499,10 +4499,8 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	bool df2 = (SQLrunning && rel->parallel && rel_groupby_pp(rel, _2phases));
 	int neededpp = rel->partition && get_need_pipeline(be);
 
-	// TODO: if aggr on full table (ie basetable under this relation, piggy back aggr results into properties
 	sql_rel *p = rel->l;
 	int is_base = (p && is_basetable(p->op));
-//	if (rel_single_distinct(rel))
 
 	stmt *pp = NULL;
 
@@ -4512,7 +4510,6 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			set_need_pipeline(be);
 		} else {
 			pp = pp_create(be, pp_nr_slices(rel->l));
-			//pp -> op4.lval = shared;
 			set_pipeline(be, pp);
 		}
 		assert(rel->spb || pp == NULL);
