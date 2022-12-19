@@ -2093,14 +2093,17 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 	bool update_conflict = false;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
 
-	if (isTempTable(c->t) && isGlobal(c->t) && (c = find_tmp_column(tr, c)) == NULL)
-		return LOG_ERR;
+	if (isTempTable(c->t) && isGlobal(c->t))
+		c = find_tmp_column(tr, c);
 
 	if (tpe == TYPE_bat) {
 		BAT *t = tids;
 		if (!BATcount(t))
 			return LOG_OK;
 	}
+
+	if (c == NULL)
+		return LOG_ERR;
 
 	if ((delta = bind_col_data(tr, c, &update_conflict)) == NULL)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
@@ -2165,14 +2168,17 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 	bool update_conflict = false;
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
 
-	if (isTempTable(i->t) && isGlobal(i->t) && (i = find_tmp_idx(tr, i)) == NULL)
-		return LOG_ERR;
+	if (isTempTable(i->t) && isGlobal(i->t))
+		i = find_tmp_idx(tr, i);
 
 	if (tpe == TYPE_bat) {
 		BAT *t = tids;
 		if (!BATcount(t))
 			return LOG_OK;
 	}
+
+	if (i == NULL)
+		return LOG_ERR;
 
 	if ((delta = bind_idx_data(tr, i, &update_conflict)) == NULL)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
@@ -2704,11 +2710,14 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 	BAT *b = ib;
 	storage *bat;
 
-	if (isTempTable(t) && isGlobal(t) && (t = find_tmp_table(tr, t)) == NULL)
-		return LOG_ERR;
+	if (isTempTable(t) && isGlobal(t))
+		t = find_tmp_table(tr, t);
 
 	if (tpe == TYPE_bat && !BATcount(b))
 		return ok;
+
+	if (t == NULL)
+		return LOG_ERR;
 
 	if ((bat = bind_del_data(tr, t, NULL)) == NULL)
 		return LOG_ERR;
