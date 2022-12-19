@@ -94,8 +94,7 @@ HEAPgrow(Heap **hp, size_t size, bool mayshare)
 
 	ATOMIC_BASE_TYPE refs = ATOMIC_GET(&(*hp)->refs);
 	if ((refs & HEAPREFS) == 1) {
-		gdk_return rc = HEAPextend((*hp), size, mayshare);
-		return rc;
+		return HEAPextend((*hp), size, mayshare);
 	}
 	new = GDKmalloc(sizeof(Heap));
 	if (new != NULL) {
