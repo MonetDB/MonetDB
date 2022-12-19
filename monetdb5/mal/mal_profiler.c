@@ -427,14 +427,16 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						}
 
 						cv = VALformat(&stk->stk[getArg(pci,j)]);
-						c = strchr(cv, '>');
-						if (c)		/* unlikely that this isn't true */
-							*c = 0;
-						ok = logadd(&logbuf, ",\"file\":\"%s\"", cv + 1);
-						GDKfree(cv);
-						if (!ok) {
-							BBPunfix(d->batCacheid);
-							goto cleanup_and_exit;
+						if (cv) {
+							c = strchr(cv, '>');
+							if (c)		/* unlikely that this isn't true */
+								*c = 0;
+							ok = logadd(&logbuf, ",\"file\":\"%s\"", cv + 1);
+							GDKfree(cv);
+							if (!ok) {
+								BBPunfix(d->batCacheid);
+								goto cleanup_and_exit;
+							}
 						}
 						total += cnt << di.shift;
 						if (!logadd(&logbuf, ",\"width\":%d", di.width)) {
