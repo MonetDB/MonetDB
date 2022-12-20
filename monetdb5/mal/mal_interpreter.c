@@ -764,12 +764,12 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			InstrPtr q;
 			int ii, arg;
 
-			stk->pcup = stkpc;
 			nstk = prepareMALstack(pci->blk, pci->blk->vsize);
 			if (nstk == 0){
 				ret= createException(MAL,"mal.interpreter",MAL_STACK_FAIL);
 				break;
 			}
+			nstk->pcup = stkpc;
 
 			/*safeguardStack*/
 			nstk->stkdepth = nstk->stksize + stk->stkdepth;
