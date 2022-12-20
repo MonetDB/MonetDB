@@ -9,6 +9,10 @@
 #ifndef _MAL_RUNTIME_H
 #define _MAL_RUNTIME_H
 
+#ifndef LIBMONETDB5
+#error this file should not be included outside its source directory
+#endif
+
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_instruction.h"
