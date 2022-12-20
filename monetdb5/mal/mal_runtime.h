@@ -51,7 +51,7 @@ typedef struct USERSTAT{
 	lng maxticks;
 	str maxquery;
 } *UserStats;
-mal_export size_t usrstatscnt;
+extern size_t usrstatscnt;
 
 typedef struct WORKINGSET{
 	Client		cntxt;
@@ -60,15 +60,15 @@ typedef struct WORKINGSET{
 	InstrPtr    pci;
 } Workingset;
 
-mal_export Workingset workingset[THREADS];
+extern Workingset workingset[THREADS];
 
-mal_export void runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
-mal_export void runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
-mal_export void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
-mal_export void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
-mal_export lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
-mal_export lng getBatSpace(BAT *b);
+extern void runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
+extern void runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
+extern void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
+extern void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
+extern lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
+extern lng getBatSpace(BAT *b);
 
-mal_export QueryQueue QRYqueue;
-mal_export UserStats USRstats;
+extern QueryQueue QRYqueue;
+extern UserStats USRstats;
 #endif
