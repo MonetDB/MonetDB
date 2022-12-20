@@ -13,6 +13,8 @@
 #error this file should not be included outside its source directory
 #endif
 
+#include "gdk.h"
+
 extern str mal_quote(const char *msg, size_t size);
 extern void mal_unquote(char *msg);
 
