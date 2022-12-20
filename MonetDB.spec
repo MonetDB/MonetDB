@@ -1,3 +1,11 @@
+# SPDX-License-Identifier: MPL-2.0
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+
 %global name MonetDB
 %global version 11.45.12
 %{!?buildno: %global buildno %(date +%Y%m%d)}
@@ -78,7 +86,7 @@ Summary: MonetDB - Monet Database Management System
 Vendor: MonetDB BV <info@monetdb.org>
 
 Group: Applications/Databases
-License: MPLv2.0
+License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
 Source: https://www.monetdb.org/downloads/sources/Sep2022-SP1/%{name}-%{version}.tar.bz2
