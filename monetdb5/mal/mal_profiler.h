@@ -61,6 +61,7 @@ mal_export str closeProfilerStream(Client cntxt);
 
 mal_export void profilerEvent(MalEvent *me, NonMalEvent *nme);
 mal_export void sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export oid runtimeProfileSetTag(Client cntxt);
 
 mal_export str startProfiler(Client cntxt);
 mal_export str stopProfiler(Client cntxt);

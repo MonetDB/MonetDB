@@ -202,7 +202,7 @@ mdbBacktrace(Client cntxt, MalStkPtr stk, int pci)
 	for (; stk != NULL; stk = stk->up) {
 		printCall(cntxt, stk->blk, stk, pci);
 		if (stk->up)
-			pci = stk->up->pcup;
+			pci = stk->pcup;
 	}
 }
 

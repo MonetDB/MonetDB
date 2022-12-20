@@ -62,7 +62,6 @@ typedef struct WORKINGSET{
 
 mal_export Workingset workingset[THREADS];
 
-mal_export oid runtimeProfileSetTag(Client cntxt);
 mal_export void runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
 mal_export void runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
 mal_export void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);

@@ -474,6 +474,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	bat *ret2 = getArgReference_bat(s, p, 1);
 	int k = 0;
 	size_t len,l;
+	int pcup;
 
 	b = COLnew(0, TYPE_int, 256, TRANSIENT);
 	if ( b== NULL)
@@ -510,8 +511,8 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	}
 	GDKfree(msg);
 
-	for (s = s->up, k++; s != NULL; s = s->up, k++) {
-		if ((msg = instruction2str(s->blk, s, getInstrPtr(s->blk, s->pcup), LIST_MAL_DEBUG)) == NULL){
+	for (pcup = s->pcup, s = s->up, k++; s != NULL; pcup = s->pcup, s = s->up, k++) {
+		if ((msg = instruction2str(s->blk, s, getInstrPtr(s->blk, pcup), LIST_MAL_DEBUG)) == NULL){
 			BBPunfix(b->batCacheid);
 			BBPunfix(bn->batCacheid);
 			throw(MAL,"mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -530,7 +531,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		}
 		snprintf(buf,len+1024,"%s at %s.%s[%d]", msg,
 			getModuleId(getInstrPtr(s->blk,0)),
-			getFunctionId(getInstrPtr(s->blk,0)), s->pcup);
+			getFunctionId(getInstrPtr(s->blk,0)), pcup);
 		if (BUNappend(b, &k, false) != GDK_SUCCEED ||
 			BUNappend(bn, buf, false) != GDK_SUCCEED) {
 			GDKfree(buf);
