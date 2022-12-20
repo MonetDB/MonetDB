@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -26,6 +28,8 @@ The backup is the file with a tilde (~) appended.\
 '''
 
 license = [
+    'SPDX-License-Identifier: MPL-2.0',
+    '',
     'This Source Code Form is subject to the terms of the Mozilla Public',
     'License, v. 2.0.  If a copy of the MPL was not distributed with this',
     'file, You can obtain one at http://mozilla.org/MPL/2.0/.',
@@ -85,45 +89,48 @@ def main():
             func(filename[:-1], pre=pre, post=post, start=start, end=end, verbose=verbose)
 
 suffixrules = {
-    # suffix: (pre,     post,  start,  end)
-    '.bash':  ('',      '',    '# ',   ''), # shell script
-    '.bat':   ('',      '',    '@REM ',''), # Windows cmd batch script
-    '.c':     ('/*',    ' */', ' * ',  ''), # C source
-    '.cc':    ('',      '',    '// ',  ''), # C++ source
-    '.cmake': ('#[[',   '#]]', '# ',   ''), # CMake source
-    '.cpp':   ('',      '',    '// ',  ''), # C++ source
-    '.el':    ('',      '',    '; ',   ''), # Emacs Lisp
-    '.fc':    ('',      '',    '# ',   ''), # SELinux file context
-    '.h':     ('/*',    ' */', ' * ',  ''), # C header file
-    '.hs':    ('',      '',    '-- ',  ''), # Haskell source
-    '.html':  ('<!--',  '-->', '',     ''), # HTML source
-    '.java':  ('/*',    ' */', ' * ',  ''), # Java source
-    '.l':     ('/*',    ' */', ' * ',  ''), # (f)lex source
-    '.mal':   ('',      '',    '# ',   ''), # MonetDB Assembly Language
-    '.php':   ('<?php', '?>',  '# ',   ''), # PHP source
-    '.pl':    ('',      '',    '# ',   ''), # Perl source
-    '.pm':    ('',      '',    '# ',   ''), # Perl module source
-    '.py':    ('',      '',    '# ',   ''), # Python source
-    '.R':     ('',      '',    '# ',   ''), # R source
-    '.rb':    ('',      '',    '# ',   ''), # Ruby source
-    '.rc':    ('',      '',    '// ',  ''), # Windows resource file
-    '.rst':   ('',      '',    '.. ',  ''), # reStructured Text
-    '.sh':    ('',      '',    '# ',   ''), # shell script
-    '.sql':   ('',      '',    '-- ',  ''), # SQL source
-    '.t':     ('',      '',    '# ',   ''), # Perl test
-    '.te':    ('',      '',    '# ',   ''), # SELinux
-    '.xml':   ('<!--',  '-->', '',     ''), # XML source
-    '.y':     ('/*',    ' */', ' * ',  ''), # yacc (bison) source
+    # suffix: (pre,     post,  start,  end, addline)
+    '.1':     ('',      '.\\"','.\\" ','', False), # Man page
+    '.bash':  ('',      '',    '# ',   '', True ), # shell script
+    '.bat':   ('',      '',    '@REM ','', True ), # Windows cmd batch script
+    '.c':     ('/*',    ' */', ' * ',  '', True ), # C source
+    '.cc':    ('',      '',    '// ',  '', True ), # C++ source
+    '.cmake': ('#[[',   '#]]', '# ',   '', True ), # CMake source
+    '.cpp':   ('',      '',    '// ',  '', True ), # C++ source
+    '.el':    ('',      '',    '; ',   '', True ), # Emacs Lisp
+    '.fc':    ('',      '',    '# ',   '', True ), # SELinux file context
+    '.h':     ('/*',    ' */', ' * ',  '', True ), # C header file
+    '.hs':    ('',      '',    '-- ',  '', True ), # Haskell source
+    '.html':  ('<!--',  '-->', '',     '', True ), # HTML source
+    '.java':  ('/*',    ' */', ' * ',  '', True ), # Java source
+    '.l':     ('/*',    ' */', ' * ',  '', True ), # (f)lex source
+    '.mal':   ('',      '',    '# ',   '', True ), # MonetDB Assembly Language
+    '.php':   ('<?php', '?>',  '# ',   '', True ), # PHP source
+    '.pl':    ('',      '',    '# ',   '', True ), # Perl source
+    '.pm':    ('',      '',    '# ',   '', True ), # Perl module source
+    '.py':    ('',      '',    '# ',   '', True ), # Python source
+    '.R':     ('',      '',    '# ',   '', True ), # R source
+    '.rb':    ('',      '',    '# ',   '', True ), # Ruby source
+    '.rc':    ('',      '',    '// ',  '', True ), # Windows resource file
+    '.rst':   ('',      '',    '.. ',  '', True ), # reStructured Text
+    '.sh':    ('',      '',    '# ',   '', True ), # shell script
+    '.spec':  ('',      '',    '# ',   '', True ), # RPM specification
+    '.sql':   ('',      '',    '-- ',  '', True ), # SQL source
+    '.t':     ('',      '',    '# ',   '', True ), # Perl test
+    '.te':    ('',      '',    '# ',   '', True ), # SELinux
+    '.xml':   ('<!--',  '-->', '',     '', True ), # XML source
+    '.y':     ('/*',    ' */', ' * ',  '', True ), # yacc (bison) source
     # we also match some complete filenames
-    'CMakeLists.txt': ('#[[', '#]]', '# ', ''),
-    'Makefile': ('', '', '# ', ''),
-    '.merovingian_properties': ('', '', '# ', ''),
-    'copyright': ('', '', '', ''),
-    'license.txt': ('', '', '', ''),
+    'CMakeLists.txt': ('#[[', '#]]', '# ', '', True),
+    'Makefile': ('', '', '# ', '', True),
+    '.merovingian_properties': ('', '', '# ', '', True),
+    'copyright': ('', '', '', '', True),
+    'license.txt': ('', '', '', '', True),
     }
 
 def getcomments(file, pre = None, post = None, start = None, end = None):
     ext = ''
+    addln = True
     if pre is None and post is None and start is None and end is None:
         if file.endswith('.in') and os.path.basename(file[:-3]) in suffixrules:
             ext = os.path.basename(file[:-3])
@@ -144,7 +151,7 @@ def getcomments(file, pre = None, post = None, start = None, end = None):
                     ext = '.sh'
                 else:
                     return '', '', '', '', ''
-        pre, post, start, end = suffixrules[ext]
+        pre, post, start, end, addln = suffixrules[ext]
     if not pre:
         pre = ''
     if not post:
@@ -153,7 +160,7 @@ def getcomments(file, pre = None, post = None, start = None, end = None):
         start = ''
     if not end:
         end = ''
-    return ext, pre, post, start, end
+    return ext, pre, post, start, end, addln
 
 PERL_COPYRIGHT = 'COPYRIGHT AND LICENCE\n\n'
 COPYRIGHT_NOTICE = 'Copyright Notice\n================\n\n'
@@ -189,7 +196,7 @@ def addlicense(file, pre = None, post = None, start = None, end = None, verbose 
         g.write(data[pos:])
     else:
         try:
-            ext, pre, post, start, end = getcomments(file, pre, post, start, end)
+            ext, pre, post, start, end, addln = getcomments(file, pre, post, start, end)
             if not ext:
                 return
         except IOError:
@@ -236,7 +243,7 @@ def addlicense(file, pre = None, post = None, start = None, end = None, verbose 
         if post:
             g.write(post + '\n')
         # add empty line after license
-        if line:
+        if addln and line:
             g.write('\n')
         # but only one, so skip empty line from file, if any
         if line and line != '\n':
@@ -310,7 +317,7 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
         g.write(data[pos:])
     else:
         try:
-            ext, pre, post, start, end = getcomments(file, pre, post, start, end)
+            ext, pre, post, start, end, addln = getcomments(file, pre, post, start, end)
             if not ext:
                 return
         except IOError:
@@ -439,7 +446,7 @@ def listfile(file, pre = None, post = None, start = None, end = None, verbose = 
             pos += len(l) + 1
     else:
         try:
-            ext, pre, post, start, end = getcomments(file, pre, post, start, end)
+            ext, pre, post, start, end, addln = getcomments(file, pre, post, start, end)
             if not ext:
                 return
         except IOError:
