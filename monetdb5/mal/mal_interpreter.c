@@ -964,7 +964,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				exceptionVar = findVariableLength(mb, ret, (int)(msg - ret));
 			}
 			if (exceptionVar == -1)
-				exceptionVar = findVariable(mb, "ANYexception");
+				exceptionVar = findVariableLength(mb, "ANYexception", 12);
 
 			/* unknown exceptions lead to propagation */
 			if (exceptionVar == -1) {
@@ -1439,8 +1439,6 @@ garbageElement(Client cntxt, ValPtr v)
 		   bid, BBP_lrefs(bid),BBP_refs(bid));*/
 		v->val.bval = bat_nil;
 		if (is_bat_nil(bid))
-			return;
-		if (!BBP_lrefs(bid))
 			return;
 		BBPcold(bid);
 		BBPrelease(bid);
