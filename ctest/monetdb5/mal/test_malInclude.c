@@ -10,7 +10,6 @@
 #include "mal.h"
 #include "mal_import.h"
 #include "mal_parser.h"
-#include "mal_profiler.h"
 
 int
 main(void)

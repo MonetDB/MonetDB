@@ -50,6 +50,7 @@ static struct timeval startup_time;
 static ATOMIC_TYPE hbdelay = ATOMIC_VAR_INIT(0);
 
 #ifdef HAVE_SYS_RESOURCE_H
+#include <sys/resource.h>
 struct rusage infoUsage;
 static struct rusage prevUsage;
 #endif
