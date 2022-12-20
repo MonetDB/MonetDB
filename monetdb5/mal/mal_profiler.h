@@ -50,6 +50,8 @@ typedef struct MalEvent {
 	MalBlkPtr mb;
 	MalStkPtr stk;
 	InstrPtr pci;
+	lng clk;					/* end time */
+	lng duration;
 } MalEvent;
 
 mal_export int profilerStatus;
@@ -60,7 +62,6 @@ mal_export str openProfilerStream(Client cntxt, int m);
 mal_export str closeProfilerStream(Client cntxt);
 
 mal_export void profilerEvent(MalEvent *me, NonMalEvent *nme);
-mal_export void sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export oid runtimeProfileSetTag(Client cntxt);
 
 mal_export str startProfiler(Client cntxt);

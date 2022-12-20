@@ -270,11 +270,10 @@ format_val2json(const ValPtr res) {
 }
 
 static str
-prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng clk, lng ticks)
 {
 	struct logbuf logbuf;
 	str c;
-	lng clk;
 	uint64_t mclk;
 	bool ok;
 	const char *algo = MT_thread_getalgorithm();
@@ -291,7 +290,6 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	logbuf = (struct logbuf) {0};
 
-	clk = pci->clock;
 	mclk = (uint64_t)clk - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
 	/* make profile event tuple  */
 	if (!logadd(&logbuf,
@@ -318,7 +316,7 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((pci->token < FCNcall || pci->token > PATcall) &&
 		!logadd(&logbuf, ",\"operator\":\"%s\"", operatorName(pci->token)))
 		goto cleanup_and_exit;
-	if (!logadd(&logbuf, ",\"usec\":"LLFMT, pci->ticks))
+	if (!logadd(&logbuf, ",\"usec\":"LLFMT, ticks))
 		goto cleanup_and_exit;
 	if (algo && !logadd(&logbuf, ",\"algorithm\":\"%s\"", algo))
 		goto cleanup_and_exit;
@@ -656,7 +654,7 @@ profilerEvent(MalEvent *me, NonMalEvent *nme)
 				MT_lock_unset(&mal_profileLock);
 				return; /* minimal mode */
 			}
-			event = prepareMalEvent(me->cntxt, me->mb, me->stk, me->pci);
+			event = prepareMalEvent(me->cntxt, me->mb, me->stk, me->pci, me->clk, me->duration);
 		}
 		if (me == NULL && nme != NULL && nme->phase != MAL_ENGINE) {
 			event = prepareNonMalEvent(nme->cntxt, nme->phase, nme->clk, nme->tid, nme->ts, nme->state, nme->duration);
@@ -720,15 +718,15 @@ openProfilerStream(Client cntxt, int m)
 	MT_sleep_ms(200);
 
 	for (j = 0; j <THREADS; j++){
-		Client c = 0; MalBlkPtr m = 0; MalStkPtr s = 0; InstrPtr p = 0;
-		c = workingset[j].cntxt;
-		m = workingset[j].mb;
-		s = workingset[j].stk;
-		p =  workingset[j].pci;
+		Client c = workingset[j].cntxt;
+		MalBlkPtr m = workingset[j].mb;
+		MalStkPtr s = workingset[j].stk;
+		InstrPtr p = workingset[j].pci;
+		lng t = workingset[j].clock;
 		if (c && m && s && p) {
-			/* show the event  assuming the quadruple is aligned*/
+			/* show the event  assuming the quintuple is aligned*/
 			MT_lock_unset(&mal_profileLock);
-			profilerEvent(&(struct MalEvent) {c, m, s, p},
+			profilerEvent(&(struct MalEvent) {c, m, s, p, t, 0},
 						  NULL);
 			MT_lock_set(&mal_profileLock);
 		}
@@ -909,7 +907,7 @@ cleanupTraces(Client cntxt)
 }
 
 void
-sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng clk, lng ticks)
 {
 	str stmt, c, ev;
 	int errors = 0;
@@ -926,7 +924,7 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	   c++;
 	*/
 
-	ev = prepareMalEvent(cntxt, mb, stk, pci);
+	ev = prepareMalEvent(cntxt, mb, stk, pci, clk, ticks);
 	// keep it a short transaction
 	MT_lock_set(&mal_profileLock);
 	if (cntxt->profticks == NULL) {
@@ -934,7 +932,7 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(stmt);
 		return;
 	}
-	errors += BUNappend(cntxt->profticks, &pci->ticks, false) != GDK_SUCCEED;
+	errors += BUNappend(cntxt->profticks, &ticks, false) != GDK_SUCCEED;
 	errors += BUNappend(cntxt->profstmt, c, false) != GDK_SUCCEED;
 	errors += BUNappend(cntxt->profevents, ev ? ev : str_nil, false) != GDK_SUCCEED;
 	if (errors > 0) {
