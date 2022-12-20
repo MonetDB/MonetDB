@@ -150,7 +150,7 @@ def getcomments(file, pre = None, post = None, start = None, end = None):
                 if line[:2] == '#!':
                     ext = '.sh'
                 else:
-                    return '', '', '', '', ''
+                    return '', '', '', '', '', True
         pre, post, start, end, addln = suffixrules[ext]
     if not pre:
         pre = ''
