@@ -10,7 +10,6 @@
 #define _OPTIMIZER_H
 
 #include "mal_interpreter.h"
-#include "mal_scenario.h"
 #include "mal_namespace.h"
 #include "opt_support.h"
 #include "opt_prelude.h"

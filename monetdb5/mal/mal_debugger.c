@@ -13,6 +13,7 @@
 #include "monetdb_config.h"
 #include "mal.h"
 #include "mal_debugger.h"
+#include "mal_scenario.h"
 #include "mal_interpreter.h"	/* for getArgReference() */
 #include "mal_listing.h"
 #include "mal_function.h"

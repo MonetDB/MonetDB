@@ -19,6 +19,7 @@
  * The routines below are linked with the kernel by default
 */
 #include "monetdb_config.h"
+#include "mal_scenario.h"
 #include "optimizer.h"
 #include "mal_debugger.h"
 #include "optimizer_private.h"

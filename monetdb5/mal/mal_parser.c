@@ -23,7 +23,7 @@
 #include "mal_session.h"
 #include "mal_private.h"
 
-#define FATALINPUT MAXERRORS+1
+#define FATALINPUT (MAXERRORS+1)
 #define NL(X) ((X)=='\n' || (X)=='\r')
 
 static str idCopy(Client cntxt, int len);

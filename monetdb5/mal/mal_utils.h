@@ -8,9 +8,12 @@
 
 #ifndef MAL_UTILS_H
 #define MAL_UTILS_H
-#include "mal.h"
 
-mal_export str mal_quote(const char *msg, size_t size);
-mal_export void mal_unquote(char *msg);
+#ifndef LIBMONETDB5
+#error this file should not be included outside its source directory
+#endif
+
+extern str mal_quote(const char *msg, size_t size);
+extern void mal_unquote(char *msg);
 
 #endif /* MAL_UTILS_H */

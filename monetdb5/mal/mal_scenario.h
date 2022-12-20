@@ -54,18 +54,21 @@ typedef struct SCENARIO {
 	MALfcn callbackCmd;
 } *Scenario;
 
-mal_export str setScenario(Client c, str nme);
-mal_export str runScenario(Client c, int once);
-mal_export str getScenarioLanguage(Client c);
 mal_export Scenario getFreeScenario(void);
-
-mal_export void showCurrentScenario(void);
-mal_export void showScenarioByName(stream *f, str s);
-mal_export void showScenario(stream *f, Scenario s);
-mal_export void showAllScenarios(stream *f);
-mal_export void resetScenario(Client c);
-
 mal_export Scenario findScenario(str nme);
-mal_export void updateScenario(str scen, str nme, MALfcn fcn);
+
+#ifdef LIBMONETDB5
+extern str setScenario(Client c, str nme);
+extern str runScenario(Client c, int once);
+extern str getScenarioLanguage(Client c);
+
+extern void showCurrentScenario(void);
+extern void showScenarioByName(stream *f, str s);
+extern void showScenario(stream *f, Scenario s);
+extern void showAllScenarios(stream *f);
+extern void resetScenario(Client c);
+
+extern void updateScenario(str scen, str nme, MALfcn fcn);
+#endif
 
 #endif /* _MAL_SCENARIO_H */

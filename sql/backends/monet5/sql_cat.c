@@ -24,7 +24,6 @@
 #include "opt_prelude.h"
 #include "querylog.h"
 #include "mal_builder.h"
-#include "mal_debugger.h"
 
 #include "rel_select.h"
 #include "rel_prop.h"

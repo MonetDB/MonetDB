@@ -20,6 +20,7 @@
 #include "mal_private.h"
 #include "mal_internal.h"
 #include "mal_function.h"
+#include "mal_factory.h"
 
 static lng qptimeout = 0; /* how often we print still running queries (usec) */
 
