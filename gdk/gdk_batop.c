@@ -2067,8 +2067,9 @@ BATordered(BAT *b)
 		}
 	}
   doreturn:
+	bool sorted = b->tsorted;
 	MT_lock_unset(&b->theaplock);
-	return b->tsorted;
+	return sorted;
 }
 
 #define BAT_REVORDERED(TPE)						\
@@ -2162,8 +2163,9 @@ BATordered_rev(BAT *b)
 		TRC_DEBUG(ALGO, "Fixed revsorted for " ALGOBATFMT " (" LLFMT " usec)\n", ALGOBATPAR(b), GDKusec() - t0);
 	}
   doreturn:
+	bool revsorted = b->trevsorted;
 	MT_lock_unset(&b->theaplock);
-	return b->trevsorted;
+	return revsorted;
 }
 
 /* figure out which sort function is to be called
