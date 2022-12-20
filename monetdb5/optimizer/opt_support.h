@@ -11,7 +11,7 @@
 
 #include "mal.h"
 #include "mal_function.h"
-#include "mal_scenario.h"
+#include "mal_client.h"
 #include "mal_builder.h"
 
 /*
@@ -53,4 +53,3 @@ extern int isOptimizerEnabled(MalBlkPtr mb, const char *opt);
 extern int isOptimizerUsed(MalBlkPtr mb, InstrPtr p, const char *opt);
 
 #endif /* _OPT_SUPPORT_H */
-

@@ -15,7 +15,6 @@
 #define _MAL_INTERPRET_H
 
 #include "mal_client.h"
-#include "mal_factory.h"
 #include "mal_profiler.h"
 
 /*

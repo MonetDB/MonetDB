@@ -20,6 +20,7 @@
  */
 #include "monetdb_config.h"
 #include "opt_pipes.h"
+#include "mal_import.h"
 #include "opt_support.h"
 #include "mal_client.h"
 #include "mal_instruction.h"

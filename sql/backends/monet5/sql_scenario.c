@@ -37,7 +37,7 @@
 #include "mal_namespace.h"
 #include "mal_debugger.h"
 #include "mal_linker.h"
-#include "mal_utils.h"
+#include "mal_scenario.h"
 #include "bat5.h"
 #include "msabaoth.h"
 #include "gdk_time.h"

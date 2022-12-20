@@ -17,7 +17,6 @@
 
 #include "mal_namespace.h"
 #include "mal_builder.h"
-#include "mal_debugger.h"
 #include "opt_prelude.h"
 
 /*

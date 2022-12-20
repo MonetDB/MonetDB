@@ -10,16 +10,21 @@
 #define _MAL_DEBUGGER_H
 
 #include "mal.h"
-#include "mal_scenario.h"
 #include "mal_client.h"
+
+mal_export str runMALDebugger(Client cntxt, MalBlkPtr mb);
+
+#ifdef LIBMONETDB5
+/* only available in monetdb5 */
 
 #define MAXBREAKS 32
 
-mal_export void mdbDump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
+extern void mdbDump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
 
-mal_export void mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd);
-mal_export str runMALDebugger(Client cntxt, MalBlkPtr mb);
-mal_export str BATinfo(BAT **key, BAT **val, const bat bid);
+extern void mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd);
+extern str BATinfo(BAT **key, BAT **val, const bat bid);
+
+#endif
 
 #endif /* _MAL_DEBUGGER_h */

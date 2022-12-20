@@ -12,6 +12,6 @@
 #include "mal.h"
 #include "mal_client.h"
 
-mal_export str shutdownFactory(Client cntxt, MalBlkPtr mb);
-mal_export str shutdownFactoryByName(Client cntxt, Module m,str nme);
+extern str shutdownFactory(Client cntxt, MalBlkPtr mb);
+extern str shutdownFactoryByName(Client cntxt, Module m,str nme);
 #endif /*  _MAL_FACTORY_H */

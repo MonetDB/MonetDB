@@ -16,6 +16,7 @@
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
 #include "mal_exception.h"
+#include "mal_factory.h"
 
 static str
 FCTgetPlants(bat *ret, bat *ret2)
