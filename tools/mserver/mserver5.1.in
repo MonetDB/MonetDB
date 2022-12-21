@@ -9,7 +9,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MSERVER5 1 "APRIL 2011" MonetDB "MonetDB Applications"
+.TH MSERVER5 1 2022-09-23 MonetDB "MonetDB Applications"
 .SH NAME
 mserver5 \- the MonetDB server version 5
 .SH SYNOPSIS
