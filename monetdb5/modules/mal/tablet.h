@@ -63,7 +63,7 @@ typedef struct Column_t {
 typedef struct Table_t {
 	BUN offset;
 	BUN nr;						/* allocated space for table loads */
-	BUN nr_attrs;				/* attributes found sofar */
+	BUN nr_attrs;				/* attributes found so far */
 	Column *format;				/* remove later */
 	str error;					/* last error */
 	int tryall;					/* skip erroneous lines */
