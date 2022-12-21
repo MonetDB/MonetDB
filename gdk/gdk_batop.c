@@ -1951,6 +1951,7 @@ bool
 BATordered(BAT *b)
 {
 	lng t0 = GDKusec();
+	bool sorted;
 
 	MT_lock_set(&b->theaplock);
 	if (b->ttype == TYPE_void || b->tsorted || BATcount(b) == 0) {
@@ -2069,7 +2070,7 @@ BATordered(BAT *b)
 		}
 	}
   doreturn:
-	bool sorted = b->tsorted;
+	sorted = b->tsorted;
 	MT_lock_unset(&b->theaplock);
 	return sorted;
 }
@@ -2107,6 +2108,7 @@ bool
 BATordered_rev(BAT *b)
 {
 	lng t0 = GDKusec();
+	bool revsorted;
 
 	if (b == NULL || !ATOMlinear(b->ttype))
 		return false;
@@ -2165,7 +2167,7 @@ BATordered_rev(BAT *b)
 		TRC_DEBUG(ALGO, "Fixed revsorted for " ALGOBATFMT " (" LLFMT " usec)\n", ALGOBATPAR(b), GDKusec() - t0);
 	}
   doreturn:
-	bool revsorted = b->trevsorted;
+	revsorted = b->trevsorted;
 	MT_lock_unset(&b->theaplock);
 	return revsorted;
 }
