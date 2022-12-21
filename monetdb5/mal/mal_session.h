@@ -1,4 +1,6 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -9,7 +11,7 @@
 #ifndef _MAL_SESSION_H
 #define _MAL_SESSION_H
 
-#include "mal_scenario.h"
+#include "mal_client.h"
 #include "mal_resolve.h"
 
 mal_export str malBootstrap(char *modules[], bool embedded, const char *initpasswd);
