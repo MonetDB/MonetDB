@@ -64,7 +64,7 @@ select * from sys.rejects
 ----
 2
 1
-line 2 field i 'int' expected in '5.1'
+'int' expected in '5.1'
 5.1@
 
 statement ok
@@ -93,15 +93,15 @@ select * from sys.rejects
 ----
 2
 1
-line 2 field i 'int' expected in 'nil'
+'int' expected in 'nil'
 nil@
 4
 1
-line 4 field i 'int' expected in 'null'
+'int' expected in 'null'
 null@
 5
 1
-line 5 field i 'int' expected in 'abc'
+'int' expected in 'abc'
 abc@
 
 statement ok
