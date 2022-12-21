@@ -1,4 +1,6 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -1949,6 +1951,7 @@ bool
 BATordered(BAT *b)
 {
 	lng t0 = GDKusec();
+	bool sorted;
 
 	MT_lock_set(&b->theaplock);
 	if (b->ttype == TYPE_void || b->tsorted || BATcount(b) == 0) {
@@ -2067,8 +2070,9 @@ BATordered(BAT *b)
 		}
 	}
   doreturn:
+	sorted = b->tsorted;
 	MT_lock_unset(&b->theaplock);
-	return b->tsorted;
+	return sorted;
 }
 
 #define BAT_REVORDERED(TPE)						\
@@ -2104,6 +2108,7 @@ bool
 BATordered_rev(BAT *b)
 {
 	lng t0 = GDKusec();
+	bool revsorted;
 
 	if (b == NULL || !ATOMlinear(b->ttype))
 		return false;
@@ -2162,8 +2167,9 @@ BATordered_rev(BAT *b)
 		TRC_DEBUG(ALGO, "Fixed revsorted for " ALGOBATFMT " (" LLFMT " usec)\n", ALGOBATPAR(b), GDKusec() - t0);
 	}
   doreturn:
+	revsorted = b->trevsorted;
 	MT_lock_unset(&b->theaplock);
-	return b->trevsorted;
+	return revsorted;
 }
 
 /* figure out which sort function is to be called
