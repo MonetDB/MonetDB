@@ -1,4 +1,6 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -32,13 +34,12 @@
 #include "mal.h"
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
-#include "mal_runtime.h"
 #include "mal_parser.h"
 #include "mal_builder.h"
 #include "mal_namespace.h"
 #include "mal_debugger.h"
 #include "mal_linker.h"
-#include "mal_utils.h"
+#include "mal_scenario.h"
 #include "bat5.h"
 #include "msabaoth.h"
 #include "gdk_time.h"

@@ -56,10 +56,9 @@ COMMANDS
 
 The commands for the *monetdb* utility are **create**, **destroy**,
 **lock**, **release**, **status**, **start**, **stop**, **kill**,
-**profilerstart**, **profilerstop**, **snapshot**, **set**, **get**,
-**inherit**, **discover**, **help**, and **version**. The commands
-facilitate adding, removing, maintaining, starting and stopping a
-database inside the MonetDB Database Server.
+**snapshot**, **set**, **get**, **inherit**, **discover**, **help**, and
+**version**. The commands facilitate adding, removing, maintaining,
+starting and stopping a database inside the MonetDB Database Server.
 
 For all commands, database arguments can be glob-like expressions. This
 allows to do wildcard matches. For details on the syntax, see
@@ -104,18 +103,20 @@ allows to do wildcard matches. For details on the syntax, see
       destroy a running database, bring it down first using the **stop**
       command.
 
-**lock**\ *database*\ **[**\ *database*\ **...]**
-   Puts the given database in maintenance mode. A database under
-   maintenance can only be connected to by an administrator account (by
-   default the *monetdb* account). A database which is under maintenance
-   is not started automatically by *monetdbd*\ (1), the MonetDB Database
-   Server, when clients request for it. Use the **release** command to
-   bring the database back for normal usage. To start a database which
-   is under maintenance for administrator access, the **start** command
-   can be used.
+**lock [-a]**\ *database*\ **[**\ *database*\ **...]**
+   Puts the given database(s), or, when **-a** is supplied, all
+   databases in maintenance mode. A database under maintenance can only
+   be connected to by an administrator account (by default the *monetdb*
+   account). A database which is under maintenance is not started
+   automatically by *monetdbd*\ (1), the MonetDB Database Server, when
+   clients request for it. Use the **release** command to bring the
+   database back for normal usage. To start a database which is under
+   maintenance for administrator access, the **start** command can be
+   used.
 
-**release**\ *database*\ **[**\ *database*\ **...]**
-   Brings back a database from maintenance mode. A released database is
+**release [-a]**\ *database*\ **[**\ *database*\ **...]**
+   Brings the given database(s), or, when **-a** is supplied, all
+   databases back from maintenance mode. A released database is
    available again for normal use by any client, and is started on
    demand. Use the **lock** command to take a database under
    maintenance.
@@ -186,7 +187,7 @@ successful.
 **monetdb snapshot write**\ *dbname*
    Takes a snapshot of the given database and writes it to stdout.
 
-**monetdb snapshot create [-t**\ *targetfile*\ **]**\ *dbname*\ **[**\ *dbname*\ **..]**
+**monetdb snapshot create [-t**\ *targetfile*\ **]**\ *dbname*\ **[**\ *dbname*\ **...]**
    Takes a snapshot of the given databases. Here, *dbname* can be either
    the name of a single database or a pattern such as *staging\**
    indicating multiple databases to snapshot. Unless **-t** is given,
@@ -200,7 +201,7 @@ successful.
    be somewhere under *snapshotdir* but which does not have to follow
    any particular naming convention.
 
-**monetdb snapshot list [**\ *dbname*\ **..]**
+**monetdb snapshot list [**\ *dbname*\ **...]**
    Lists the snapshots for the given databases, or all databases if none
    is given, showing the snapshot id, the time the snapshot was taken
    and the (compressed) size of the snapshot file. Only snapshots
@@ -220,11 +221,11 @@ successful.
    *snapshotid* is a full path. When **-f** is given, no confirmation is
    asked when overwriting an existing database.
 
-**monetdb snapshot destroy [-f]**\ *name*\ **@**\ *tag*\ **..**
+**monetdb snapshot destroy [-f]**\ *name*\ **@**\ *tag*\ **[**\ *name*\ **@**\ *tag*\ **...]**
    Delete the listed snapshots from the *snapshotdir* directory. When
    **-f** is given, no confirmation is asked.
 
-**monetdb snapshot destroy [-f] -r**\ *N*\ *dbname*\ **..**
+**monetdb snapshot destroy [-f] -r**\ *N*\ *dbname*\ **[**\ *dbname*\ **...]**
    Delete all but the *N* latest snapshots for the given databases.
    Again, *dbname* can be a pattern such as *staging\** or even *\** to
    work on all snapshotted databases. When **-f** is given, no
@@ -236,9 +237,9 @@ successful.
    Source indicates where the current value comes from, e.g. the
    configuration file, or a local override.
 
-**set**\ *property*\ **=**\ *value*\ *database*\ **[**\ *database*\ **...]**
-   Sets property to value for the given database. For a list of
-   properties, run **monetdb get all**. Most properties require the
+**set**\ *property*\ **=**\ *value*\ **[**\ *database*\ **...]**
+   Sets property to value for the given database(s), or all. For a list
+   of properties, run **monetdb get all**. Most properties require the
    database to be stopped when set.
 
    **shared=<yes|no\|**\ *tag*\ **>**
@@ -280,9 +281,15 @@ successful.
       Defines how the server interprets literal strings. See the
       *mserver5*\ (1) manpage for more details.
 
-**inherit**\ *property*\ *database*\ **[**\ *database*\ **...]**
+   **loadmodules=**\ *module-list*
+      Enable the modules in *module-list* for the given database. The
+      *module-list* is a comma or space separated list of module names
+      and translates to a **--loadmodule=**\ *module*\ **option to**
+      *mserver5*\ (1) for each of the modules in the list.
+
+**inherit**\ *property*\ **[**\ *database*\ **...]**
    Like set, but unsets the database-local value, and reverts to inherit
-   from the default again.
+   from the default again for the given database(s), or all.
 
 **discover [**\ *expression*\ **]**
    Returns a list of remote monetdbds and database URIs that were

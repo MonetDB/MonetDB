@@ -1,4 +1,6 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -661,23 +663,31 @@ DESCload(int i)
 }
 
 gdk_return
-BATsave_locked(BAT *b, BATiter *bi, BUN size)
+BATsave_iter(BAT *b, BATiter *bi, BUN size)
 {
 	gdk_return err = GDK_SUCCEED;
 	const char *nme;
 	bool dosync;
+	bool locked = false;
 
 	BATcheck(b, GDK_FAIL);
+
+	if (MT_rwlock_rdtry(&b->thashlock))
+		locked = true;
 
 	dosync = (BBP_status(b->batCacheid) & BBPPERSISTENT) != 0;
 	assert(!GDKinmemory(bi->h->farmid));
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
 	if (isVIEW(b)) {
+		if (locked)
+			MT_rwlock_rdunlock(&b->thashlock);
 		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(b), BBP_logical(VIEWtparent(b)));
 		return GDK_FAIL;
 	}
 	if (!BATdirtybi(*bi)) {
+		if (locked)
+			MT_rwlock_rdunlock(&b->thashlock);
 		return GDK_SUCCEED;
 	}
 
@@ -760,9 +770,11 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 			b->batCopiedtodisk = true;
 		}
 		MT_lock_unset(&b->theaplock);
-		if (b->thash && b->thash != (Hash *) 1)
+		if (locked &&  b->thash && b->thash != (Hash *) 1)
 			BAThashsave(b, dosync);
 	}
+	if (locked)
+		MT_rwlock_rdunlock(&b->thashlock);
 	return err;
 }
 
@@ -772,9 +784,7 @@ BATsave(BAT *b)
 	gdk_return rc;
 
 	BATiter bi = bat_iterator(b);
-	MT_rwlock_rdlock(&b->thashlock);
-	rc = BATsave_locked(b, &bi, bi.count);
-	MT_rwlock_rdunlock(&b->thashlock);
+	rc = BATsave_iter(b, &bi, bi.count);
 	bat_iterator_end(&bi);
 	return rc;
 }

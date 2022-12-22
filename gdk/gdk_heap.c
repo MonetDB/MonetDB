@@ -1,4 +1,6 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -95,8 +97,7 @@ HEAPgrow(Heap **hp, size_t size, bool mayshare)
 
 	ATOMIC_BASE_TYPE refs = ATOMIC_GET(&(*hp)->refs);
 	if ((refs & HEAPREFS) == 1) {
-		gdk_return rc = HEAPextend((*hp), size, mayshare);
-		return rc;
+		return HEAPextend((*hp), size, mayshare);
 	}
 	new = GDKmalloc(sizeof(Heap));
 	if (new != NULL) {

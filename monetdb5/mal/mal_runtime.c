@@ -1,4 +1,6 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -336,6 +338,7 @@ void
 runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
 {
 	int tid = THRgettid();
+	lng clk = GDKusec();
 
 	assert(pci);
 	/* keep track on the instructions taken in progress for stethoscope*/
@@ -347,16 +350,18 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 			workingset[tid].mb = mb;
 			workingset[tid].stk = stk;
 			workingset[tid].pci = pci;
+			workingset[tid].clock = clk;
 			MT_lock_unset(&mal_profileLock);
 		} else {
 			workingset[tid].cntxt = cntxt;
 			workingset[tid].mb = mb;
 			workingset[tid].stk = stk;
 			workingset[tid].pci = pci;
+			workingset[tid].clock = clk;
 		}
 	}
 	/* always collect the MAL instruction execution time */
-	pci->clock = prof->ticks = GDKusec();
+	prof->ticks = clk;
 }
 
 /* At the end of each MAL stmt */
@@ -378,16 +383,11 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 		}
 	}
 
-	/* always collect the MAL instruction execution time */
-	pci->clock = ticks;
-	pci->ticks = ticks - prof->ticks;
-	pci->totticks += pci->ticks;
-
 	if (profilerStatus > 0 )
-		profilerEvent(&(struct MalEvent) {cntxt, mb, stk, pci},
+		profilerEvent(&(struct MalEvent) {cntxt, mb, stk, pci, ticks, ticks - prof->ticks},
 					  NULL);
 	if (cntxt->sqlprofiler)
-		sqlProfilerEvent(cntxt, mb, stk, pci);
+		sqlProfilerEvent(cntxt, mb, stk, pci, ticks, ticks - prof->ticks);
 	if (profilerStatus < 0) {
 		/* delay profiling until you encounter start of MAL function */
 		if (getInstrPtr(mb,0) == pci)
