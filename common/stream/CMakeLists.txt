@@ -32,6 +32,7 @@ target_sources(stream
   lz4_stream.c
   url_stream.c
   socket_stream.c
+  tls_stream.c
   mapi_stream.c
   memio.c
   callback.c

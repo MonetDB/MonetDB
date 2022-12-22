@@ -8,8 +8,6 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
-/* streams working on a gzip-compressed disk file */
-
 #include "monetdb_config.h"
 #include "stream.h"
 #include "stream_internal.h"
