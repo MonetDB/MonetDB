@@ -2606,10 +2606,10 @@ bbpclear(bat i, bool lock)
 }
 
 void
-BBPclear(bat i, bool lock)
+BBPclear(bat i)
 {
-	lock &= locked_by == 0 || locked_by != MT_getpid();
 	if (BBPcheck(i)) {
+		bool lock = locked_by == 0 || locked_by != MT_getpid();
 		bbpclear(i, lock);
 	}
 }
@@ -2943,7 +2943,7 @@ decref(bat i, bool logical, bool lock, const char *func)
 		} else if (lrefs == 0 && (BBP_status(i) & BBPDELETED) == 0) {
 			if ((b = BBP_desc(i)) != NULL)
 				BATdelete(b);
-			BBPclear(i, true);
+			BBPclear(i);
 		} else {
 			BBP_status_off(i, BBPUNLOADING);
 		}
@@ -3162,7 +3162,7 @@ BBPdestroy(BAT *b)
 	}
 	BATdelete(b);
 
-	BBPclear(b->batCacheid, true);	/* if destroyed; de-register from BBP */
+	BBPclear(b->batCacheid);	/* if destroyed; de-register from BBP */
 }
 
 static gdk_return
@@ -4146,7 +4146,7 @@ getdesc(bat bid)
 	if (bid < (bat) ATOMIC_GET(&BBPsize) && BBP_logical(bid))
 		b = BBP_desc(bid);
 	if (b == NULL)
-		BBPclear(bid, true);
+		BBPclear(bid);
 	return b;
 }
 
