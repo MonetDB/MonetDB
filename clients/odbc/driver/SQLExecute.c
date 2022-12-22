@@ -1,4 +1,6 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -492,7 +494,7 @@ MNDBExecute(ODBCStmt *stmt)
 		/* we're the only Stmt handle, and we're only going forward */
 		if (stmt->Dbc->cachelimit != 10000)
 			mapi_cache_limit(stmt->Dbc->mid, 10000);
-		stmt->Dbc->cachelimit = 1000;
+		stmt->Dbc->cachelimit = 10000;
 	} else {
 		if (stmt->Dbc->cachelimit != 100)
 			mapi_cache_limit(stmt->Dbc->mid, 100);

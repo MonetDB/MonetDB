@@ -1,4 +1,6 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -3786,9 +3788,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 					BBP_status_on(i, BBPSAVING);
 					if (lock)
 						MT_lock_unset(&GDKswapLock(i));
-					MT_rwlock_rdlock(&b->thashlock);
-					ret = BATsave_locked(b, &bi, size);
-					MT_rwlock_rdunlock(&b->thashlock);
+					ret = BATsave_iter(b, &bi, size);
 					BBP_status_off(i, BBPSAVING);
 				}
 			} else {
