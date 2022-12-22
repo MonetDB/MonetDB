@@ -102,7 +102,7 @@ gdk_return BBPcacheit(BAT *bn, bool lock)
 gdk_return BBPchkfarms(void)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-void BBPclear(bat bid, bool lock)
+void BBPclear(bat bid)
 	__attribute__((__visibility__("hidden")));
 void BBPdump(void)		/* never called: for debugging only */
 	__attribute__((__cold__));

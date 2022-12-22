@@ -130,7 +130,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 
 		if (ATOMneedheap(tt)) {
 			if ((bn->tvheap = GDKmalloc(sizeof(Heap))) == NULL) {
-				BBPclear(bn->batCacheid, true);
+				BBPclear(bn->batCacheid);
 				HEAPfree(bn->theap, true);
 				GDKfree(bn->theap);
 				GDKfree(bn);
@@ -296,7 +296,7 @@ COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 	TRC_DEBUG(ALGO, "-> " ALGOBATFMT "\n", ALGOBATPAR(bn));
 	return bn;
   bailout:
-	BBPclear(bn->batCacheid, true);
+	BBPclear(bn->batCacheid);
 	return NULL;
 }
 
