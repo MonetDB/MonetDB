@@ -1,4 +1,6 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -274,16 +276,16 @@ BATmaterialize(BAT *b, BUN cap)
  * the underlying BAT and compensates for outliers.
  */
 void
-VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
+VIEWboundsbi(BATiter *bi, BAT *view, BUN l, BUN h)
 {
 	BUN cnt;
 	BUN baseoff;
 
-	if (b == NULL || view == NULL)
+	if (bi == NULL || view == NULL)
 		return;
-	if (h > BATcount(b))
-		h = BATcount(b);
-	baseoff = b->tbaseoff;
+	if (h > bi->count)
+		h = bi->count;
+	baseoff = bi->baseoff;
 	if (h < l)
 		h = l;
 	cnt = h - l;
@@ -318,6 +320,13 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 	else
 		view->tmaxpos = BUN_NONE;
 	view->tkey |= cnt <= 1;
+}
+void
+VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
+{
+	BATiter bi = bat_iterator(b);
+	VIEWboundsbi(&bi, view, l, h);
+	bat_iterator_end(&bi);
 }
 
 /*

@@ -1,4 +1,6 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -183,14 +185,20 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 				actions++;
 				cst.vtype = 0;
-				VALcopy(&cst, &env->stk[getArg(p, 0)]);
+				if (VALcopy(&cst, &env->stk[getArg(p, 0)]) == NULL) {
+					msg = createException(MAL,"optimizer.evaluate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto wrapup;
+				}
 				/* You may not overwrite constants.  They may be used by
 				 * other instructions */
 				nvar = defConstant(mb, getArgType(mb, p, 0), &cst);
 				if( nvar >= 0)
 					getArg(p,1) = nvar;
 				if (nvar >= env->stktop) {
-					VALcopy(&env->stk[getArg(p, 1)], &getVarConstant(mb, getArg(p, 1)));
+					if (VALcopy(&env->stk[getArg(p, 1)], &getVarConstant(mb, getArg(p, 1))) == NULL) {
+						msg = createException(MAL,"optimizer.evaluate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto wrapup;
+					}
 					env->stktop = getArg(p, 1) + 1;
 				}
 				alias[getArg(p, 0)] = getArg(p, 1);
