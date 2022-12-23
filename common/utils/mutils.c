@@ -468,8 +468,16 @@ MT_lockf(const char *filename, int mode)
 		wchar_t *wfilename;
 		int fildes;
 	} *lockedfiles;
+	static CRITICAL_SECTION cs;
+	static bool inited = false;
 	struct lockedfiles **fpp, *fp;
 	wchar_t *wfilename;
+
+	if (!inited) {
+		/* here we're still running single threaded */
+		InitializeCriticalSection(&cs);
+		inited = true;			/* only time this is changed */
+	}
 
 	if ((wfilename = utf8towchar(filename)) == NULL)
 		return -2;
@@ -483,19 +491,21 @@ MT_lockf(const char *filename, int mode)
 #endif
 
 	if (mode == F_ULOCK) {
+		EnterCriticalSection(&cs);
 		for (fpp = &lockedfiles; (fp = *fpp) != NULL; fpp = &fp->next) {
 			if (wcscmp(fp->wfilename, wfilename) == 0) {
+				*fpp = fp->next;
+				LeaveCriticalSection(&cs);
 				free(fp->wfilename);
 				fd = fp->fildes;
 				fh = (HANDLE) _get_osfhandle(fd);
-				fp = *fpp;
-				*fpp = fp->next;
 				free(fp);
 				ret = UnlockFileEx(fh, 0, 1, 0, &ov);
 				free(wfilename);
 				return ret ? 0 : -1;
 			}
 		}
+		LeaveCriticalSection(&cs);
 		/* didn't find the locked file, try opening the file
 		 * directly */
 		fh = CreateFileW(wfilename,
@@ -542,8 +552,10 @@ MT_lockf(const char *filename, int mode)
 		if ((fp = malloc(sizeof(*fp))) != NULL) {
 			fp->wfilename = wfilename;
 			fp->fildes = fd;
+			EnterCriticalSection(&cs);
 			fp->next = lockedfiles;
 			lockedfiles = fp;
+			LeaveCriticalSection(&cs);
 		} else {
 			free(wfilename);
 		}
@@ -752,6 +764,8 @@ lockf(int fd, int cmd, off_t len)
 }
 #endif
 
+#include <pthread.h>
+
 #ifndef O_TEXT
 #define O_TEXT 0
 #endif
@@ -763,19 +777,57 @@ lockf(int fd, int cmd, off_t len)
 int
 MT_lockf(const char *filename, int mode)
 {
-	int fd = open(filename, O_CREAT | O_RDWR | O_TEXT | O_CLOEXEC, MONETDB_MODE);
+	static struct lockfile {
+		char *filename;
+		int fd;
+		struct lockfile *next;
+	} *lockfiles = NULL;
+	static pthread_mutex_t cs = PTHREAD_MUTEX_INITIALIZER;
+	struct lockfile *fp;
+	int fd;
+	off_t seek;
+
+	if (mode == F_ULOCK) {
+		pthread_mutex_lock(&cs);
+		for (struct lockfile **fpp = &lockfiles; (fp = *fpp) != NULL; fpp = &fp->next) {
+			if (strcmp(fp->filename, filename) == 0) {
+				*fpp = fp->next;
+				pthread_mutex_unlock(&cs);
+				free(fp->filename);
+				fd = fp->fd;
+				free(fp);
+				seek = lseek(fd, 4, SEEK_SET);
+				int ret = lockf(fd, mode, 1);
+				(void) lseek(fd, seek, SEEK_SET); /* move seek pointer back */
+				/* do not close fd, it is closed by caller */
+				return ret;		/* 0 if unlock successful, -1 if not */
+			}
+		}
+	}
+	fd = open(filename, O_CREAT | O_RDWR | O_TEXT | O_CLOEXEC, MONETDB_MODE);
 
 	if (fd < 0)
 		return -2;
 
-	if (lseek(fd, 4, SEEK_SET) >= 0 &&
+	if ((seek = lseek(fd, 4, SEEK_SET)) >= 0 &&
 	    lockf(fd, mode, 1) == 0) {
 		if (mode == F_ULOCK || mode == F_TEST) {
 			close(fd);
 			return 0;
 		}
+		if ((fp = malloc(sizeof(*fp))) != NULL) {
+			if ((fp->filename = strdup(filename)) != NULL) {
+				fp->fd = fd;
+				pthread_mutex_lock(&cs);
+				fp->next = lockfiles;
+				lockfiles = fp;
+				pthread_mutex_unlock(&cs);
+			} else {
+				free(fp);
+			}
+		}
 		/* do not close else we lose the lock we want */
-		(void) lseek(fd, 0, SEEK_SET); /* move seek pointer back */
+		(void) lseek(fd, seek, SEEK_SET); /* move seek pointer back */
 		return fd;
 	}
 	close(fd);
