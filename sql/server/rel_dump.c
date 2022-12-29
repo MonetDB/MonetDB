@@ -254,7 +254,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			strcmp(exp_relname(e), e->l) == 0 &&
 			strcmp(exp_name(e), e->r) == 0)
 			alias = 0;
-		if (!exp_relname(e) && exp_name(e) && strcmp(exp_name(e), e->r)==0)
+		if (!exp_relname(e) && exp_name(e) && !e->l && strcmp(exp_name(e), e->r)==0)
 			alias = 0;
 	 	break;
 	case e_cmp:
