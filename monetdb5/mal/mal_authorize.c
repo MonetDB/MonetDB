@@ -351,7 +351,7 @@ AUTHgetUsername(str *username, Client cntxt)
 		*username = GDKstrdup(cntxt->username);
 		return(MAL_SUCCEED);
 	}
-	if (authCallbackCntx.get_user_name && cntxt) {
+	if (authCallbackCntx.get_user_name) {
 		if ((*username = authCallbackCntx.get_user_name(cntxt)) == NULL) {
 			throw(MAL, "getUsername", INVCRED_WRONG_ID);
 		}
