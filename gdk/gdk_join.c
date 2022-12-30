@@ -1827,6 +1827,9 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		assert(ri.vh == NULL);
 		lvars = rvars = NULL;
 	}
+	/* if the var pointer is not NULL, then so is the val pointer */
+	assert(lvars == NULL || lvals != NULL);
+	assert(rvars == NULL || rvals != NULL);
 
 	if (not_in && rci->ncand > 0 && !ri.nonil &&
 	    ((BATtvoid(l) && l->tseqbase == oid_nil) ||
