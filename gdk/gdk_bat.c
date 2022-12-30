@@ -646,7 +646,14 @@ BATclear(BAT *b, bool force)
 	BAThseqbase(b, 0);
 	BATtseqbase(b, ATOMtype(b->ttype) == TYPE_oid ? 0 : oid_nil);
 	b->theap->dirty = true;
-	BATsettrivprop(b);
+	b->tnonil = true;
+	b->tnil = false;
+	b->tsorted = b->trevsorted = ATOMlinear(b->ttype);
+	b->tnosorted = b->tnorevsorted = 0;
+	b->tkey = true;
+	b->tnokey[0] = b->tnokey[1] = 0;
+	b->tminpos = b->tmaxpos = BUN_NONE;
+	b->tunique_est = 0;
 	MT_lock_unset(&b->theaplock);
 	return GDK_SUCCEED;
 }
@@ -1166,10 +1173,57 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			b->tkey = count == 1;
 			b->tnil = true;
 			b->tnonil = false;
+			b->tunique_est = 1;
 		} else {
-			b->tsorted = b->trevsorted = b->tkey = count == 1;
+			int c;
 			b->tnil = b->tnonil = false;
+			switch (count) {
+			case 1:
+				b->tsorted = b->trevsorted = b->tkey = true;
+				b->tunique_est = 1;
+				break;
+			case 2:
+				if (b->tvheap)
+					c = ATOMcmp(b->ttype,
+						    ((void **) values)[0],
+						    ((void **) values)[1]);
+				else
+					c = ATOMcmp(b->ttype,
+						    values,
+						    (char *) values + b->twidth);
+				b->tsorted = c <= 0;
+				b->tnosorted = !b->tsorted;
+				b->trevsorted = c >= 0;
+				b->tnorevsorted = !b->trevsorted;
+				b->tkey = c != 0;
+				b->tnokey[0] = 0;
+				b->tnokey[1] = !b->tkey;
+				b->tunique_est = (double) (1 + b->tkey);
+				break;
+			default:
+				b->tsorted = b->trevsorted = b->tkey = false;
+				break;
+			}
 		}
+	} else if (b->batCount == 1 && count == 1) {
+		BATiter bi = bat_iterator_nolock(b);
+		if (values != NULL) {
+			if (b->tvheap)
+				t = ((void **) values)[0];
+			else
+				t = values;
+		}
+		int c = ATOMcmp(b->ttype, BUNtail(bi, 0), t);
+		b->tsorted = c <= 0;
+		b->tnosorted = !b->tsorted;
+		b->trevsorted = c >= 0;
+		b->tnorevsorted = !b->trevsorted;
+		b->tkey = c != 0;
+		b->tnokey[0] = 0;
+		b->tnokey[1] = !b->tkey;
+		b->tunique_est = (double) (1 + b->tkey);
+		b->tnil |= values == NULL;
+		b->tnonil = false;
 	} else {
 		b->tnil |= values == NULL;
 		b->tnonil = false;
