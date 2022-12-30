@@ -1223,8 +1223,11 @@ log_read_transaction(logger *lg)
 					cands = COLnew(0, TYPE_void, 0, TRANSIENT);
 					if (!cands)
 						err = LOG_ERR;
-				}
-				else {
+				} else if (cands == NULL) {
+					/* should have gone through the
+					 * above option earlier */
+					err = LOG_ERR;
+				} else {
 					// END OF LOG_BAT_GROUP
 					BBPunfix(cands->batCacheid);
 					cands = NULL;
@@ -2653,7 +2656,9 @@ log_bat_transient(logger *lg, log_id id)
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged destroyed bat (%d) %d\n", id,
 				bid);
-	lg->end += BATcount(BBPquickdesc(bid));
+	BAT *b = BBPquickdesc(bid);
+	assert(b);
+	lg->end += BATcount(b);
 	gdk_return r =  log_del_bat(lg, bid);
 	log_unlock(lg);
 	if (r != GDK_SUCCEED)

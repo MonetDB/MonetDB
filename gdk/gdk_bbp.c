@@ -744,7 +744,7 @@ BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn,
 	}
 	nread += n;
 
-	if (nread >= sizeof(buf) || (buf[nread] != '\n' && buf[nread] != ' ')) {
+	if (nread >= (int) sizeof(buf) || (buf[nread] != '\n' && buf[nread] != ' ')) {
 		TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", *lineno);
 		return -1;
 	}

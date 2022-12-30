@@ -295,6 +295,7 @@ old_logger_find_bat(old_logger *lg, const char *name, char tpe, oid id)
 		BATiter cni = bat_iterator_nolock(lg->catalog_nme);
 		BUN p;
 
+		assert(name != NULL);
 		if (BAThash(lg->catalog_nme) == GDK_SUCCEED) {
 			MT_rwlock_rdlock(&cni.b->thashlock);
 			HASHloop_str(cni, cni.b->thash, p, name) {
