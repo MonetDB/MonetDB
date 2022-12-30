@@ -47,6 +47,7 @@ struct logger {
 	lng end;		/* end of pre-allocated blocks for faster f(data)sync */
 
 	ATOMIC_TYPE refcount; /* Number of active writers and flushers in the logger */ // TODO check refcount in c->log and c->end
+	bool flushing_output_log; /* prevent output_log that is currently being flushed from being closed */
 	MT_Lock rotation_lock;
 	MT_Lock lock;
 	/* Store log_bids (int) to circumvent trouble with reference counting */
