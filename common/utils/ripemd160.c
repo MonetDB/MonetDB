@@ -27,19 +27,21 @@ RIPEMD160Input(RIPEMD160Context *ctxt, const uint8_t *bytes, unsigned bytecount)
 
 	ctxt->length += bytecount;
 	if (ctxt->noverflow > 0) {
+		assert(ctxt->noverflow < 64);
 		if (ctxt->noverflow + bytecount < 64) {
 			memcpy(ctxt->overflow + ctxt->noverflow, bytes, bytecount);
 			ctxt->noverflow += bytecount;
 			return;
 		}
-		memcpy(ctxt->overflow + ctxt->noverflow, bytes, bytecount - ctxt->noverflow);
+		unsigned l = 64 - ctxt->noverflow;
+		memcpy(ctxt->overflow + ctxt->noverflow, bytes, l);
 		const uint8_t *x = ctxt->overflow;
 		for (int i = 0; i < 16; i++) {
 			X[i] = BYTES_TO_DWORD(x);
 			x += 4;
 		}
-		bytecount -= ctxt->noverflow;
-		bytes += ctxt->noverflow;
+		bytecount -= l;
+		bytes += l;
 		ctxt->noverflow = 0;
 		MDcompress(ctxt->digest, X);
 	}
