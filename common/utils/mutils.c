@@ -797,12 +797,15 @@ MT_lockf(const char *filename, int mode)
 				fd = fp->fd;
 				free(fp);
 				seek = lseek(fd, 4, SEEK_SET);
+				if (seek < 0)
+					seek = 0;	/* should never happen, just for coverity */
 				int ret = lockf(fd, mode, 1);
 				(void) lseek(fd, seek, SEEK_SET); /* move seek pointer back */
 				/* do not close fd, it is closed by caller */
 				return ret;		/* 0 if unlock successful, -1 if not */
 			}
 		}
+		pthread_mutex_unlock(&cs);
 	}
 	fd = open(filename, O_CREAT | O_RDWR | O_TEXT | O_CLOEXEC, MONETDB_MODE);
 

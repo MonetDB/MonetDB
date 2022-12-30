@@ -1027,7 +1027,12 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	}
 
 	MT_lock_set(&b->theaplock);
-	ALIGNapp(b, force, GDK_FAIL);
+	if (!force && (b->batRestricted == BAT_READ ||
+		       b->batSharecnt > 0)) {
+		MT_lock_unset(&b->theaplock);
+		GDKerror("access denied to %s, aborting.\n", BATgetId(b));
+		return GDK_FAIL;
+	}
 	MT_lock_unset(&b->theaplock);
 	/* load hash so that we can maintain it */
 	(void) BATcheckhash(b);
