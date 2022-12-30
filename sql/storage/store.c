@@ -31,7 +31,8 @@ store_function_counter(sqlstore *store)
 static ulng
 store_timestamp(sqlstore *store)
 {
-	ulng ts = ATOMIC_INC(&store->timestamp);
+	ulng ts = ATOMIC_ADD(&store->timestamp, TS_UNIT);
+	assert((ts & TS_MASK) == ts);
 	return ts;
 }
 
@@ -2172,7 +2173,7 @@ store_exit(sqlstore *store)
 			MT_lock_set(&store->flush);
 		}
 		if (!list_empty(store->changes)) {
-			ulng oldest = store_timestamp(store)+1;
+			ulng oldest = store_timestamp(store)+TS_UNIT;
 			for(node *n=store->changes->h; n; n = n->next) {
 				sql_change *c = n->data;
 
@@ -2313,7 +2314,7 @@ store_manager(sqlstore *store)
 			MT_lock_unset(&store->flush);
 			store_lock(store);
 			if (ATOMIC_GET(&store->nr_active) == 0) {
-				ulng oldest = store_timestamp(store)+1;
+				ulng oldest = store_timestamp(store)+TS_UNIT;
 				store_pending_changes(store, oldest);
 			}
 			store_unlock(store);

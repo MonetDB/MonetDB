@@ -4275,7 +4275,7 @@ tc_gc_rollbacked( sql_store Store, sql_change *change, ulng oldest)
 		return 1;
 	}
 	if (d->cs.ts > TRANSACTION_ID_BASE)
-		d->cs.ts = store_get_timestamp(store) + 1;
+		d->cs.ts = store_get_timestamp(store) + TS_UNIT;
 	return 0;
 }
 
@@ -4290,7 +4290,7 @@ tc_gc_rollbacked_storage( sql_store Store, sql_change *change, ulng oldest)
 		return 1;
 	}
 	if (d->cs.ts > TRANSACTION_ID_BASE)
-		d->cs.ts = store_get_timestamp(store) + 1;
+		d->cs.ts = store_get_timestamp(store) + TS_UNIT;
 	return 0;
 }
 

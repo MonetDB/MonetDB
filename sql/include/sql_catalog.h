@@ -303,6 +303,13 @@ typedef struct sql_catalog {
 	struct objectset *objects;
 } sql_catalog;
 
+#define NT_NBITS (10) /* number of bits for encoding nested transactions*/
+#define TS_UNIT (1ULL << NT_NBITS)
+#define TOTAL_N_BITS (sizeof(ulng) * CHAR_BIT)
+#define BK_NBITS (2) /* book keeping bits: highest bit represents uncommited/committed TODO second highest bit represents centralized lookup TODO */
+#define TS_NBITS (TOTAL_N_BITS - BK_NBITS - NT_NBITS)
+#define TS_MASK (((1ULL << TS_NBITS) - 1) << NT_NBITS)
+
 typedef struct sql_trans {
 	char *name;
 
