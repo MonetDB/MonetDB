@@ -22,6 +22,7 @@
 							  strcmp((sf)->func->base.name, "coalesce") == 0 || \
 							  strcmp((sf)->func->base.name, "nullif") == 0)
 #define is_case_func(sf) (strcmp((sf)->func->base.name, "case") == 0)
+#define is_casewhen_func(sf) (strcmp((sf)->func->base.name, "casewhen") == 0)
 
 extern sql_exp *rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth);
 extern sql_rel *rewrite_simplify(visitor *v, uint8_t cycle, bool value_based_opt, sql_rel *rel);

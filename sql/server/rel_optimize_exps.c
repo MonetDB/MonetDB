@@ -427,7 +427,7 @@ reduce_scale(mvc *sql, atom *a)
 static inline sql_exp *
 rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 {
-	if (is_func(e->type) && list_length(e->l) == 3 && is_case_func((sql_subfunc*)e->f) /*is_ifthenelse_func((sql_subfunc*)e->f)*/) {
+	if (is_func(e->type) && list_length(e->l) == 3 && is_case_func((sql_subfunc*)e->f)) {
 		list *args = e->l;
 		sql_exp *ie = args->h->data;
 
@@ -443,6 +443,30 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 				exp_prop_alias(v->sql->sa, res, e);
 			v->changes++;
 			return res;
+		}
+	}
+	if (is_func(e->type) && list_length(e->l) == 4 && is_casewhen_func((sql_subfunc*)e->f)) {
+		/* case x when y then a else b */
+		list *args = e->l;
+		node *n = args->h;
+		sql_exp *le = n->data;
+		sql_exp *re = n->next->data;
+
+		if (exp_is_atom(le) && exp_is_atom(re) && le->type == e_atom && le->l && re->type == e_atom && re->l) {
+			n = n->next->next;
+			if (exp_match_exp(le, re)) { /* x==y -> a */
+				sql_exp *res = n->data;
+				if (exp_name(e))
+					exp_prop_alias(v->sql->sa, res, e);
+				v->changes++;
+				return res;
+			} else { /*  -> b */
+				sql_exp *res = n->next->data;
+				if (exp_name(e))
+					exp_prop_alias(v->sql->sa, res, e);
+				v->changes++;
+				return res;
+			}
 		}
 	}
 	if (is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) {
