@@ -873,6 +873,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 
 		if (snprintf(BBP_bak(b.batCacheid), sizeof(BBP_bak(b.batCacheid)), "tmp_%o", (unsigned) b.batCacheid) >= (int) sizeof(BBP_bak(b.batCacheid))) {
 			BATdestroy(bn);
+			GDKfree(options);
 			TRC_CRITICAL(GDK, "BBP logical filename directory is too large, on line %d\n", lineno);
 			goto bailout;
 		}
@@ -892,6 +893,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 			BBP_logical(b.batCacheid) = GDKstrdup(logical);
 			if (BBP_logical(b.batCacheid) == NULL) {
 				BATdestroy(bn);
+				GDKfree(options);
 				TRC_CRITICAL(GDK, "GDKstrdup failed\n");
 				goto bailout;
 			}
@@ -2609,12 +2611,12 @@ BBPclear(bat i)
 int
 BBPrename(BAT *b, const char *nme)
 {
+	if (b == NULL)
+		return 0;
+
 	char dirname[24];
 	bat bid = b->batCacheid;
 	bat tmpid = 0, i;
-
-	if (b == NULL)
-		return 0;
 
 	if (nme == NULL) {
 		if (BBP_bak(bid)[0] == 0 &&
@@ -4307,7 +4309,7 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			} else if (strncmp(p + 1, "tail", 4) == 0) {
 				BAT *b = getdesc(bid);
 				delete = (b == NULL || !b->ttype || !b->batCopiedtodisk || b->batCount == 0);
-				assert(b->batCount > 0 || b->theap->free == 0);
+				assert(b == NULL || b->batCount > 0 || b->theap->free == 0);
 				if (!delete) {
 					if (b->ttype == TYPE_str) {
 						switch (b->twidth) {
