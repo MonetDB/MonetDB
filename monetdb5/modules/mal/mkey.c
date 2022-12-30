@@ -287,7 +287,8 @@ bailout:
 		BBPunfix(b->batCacheid);
 	if (bs)
 		BBPunfix(bs->batCacheid);
-	if (bn && !msg) {
+	if (bn) {
+		assert(msg == MAL_SUCCEED);
 		BATsetcount(bn, ci.ncand);
 		bn->tnonil = false;
 		bn->tnil = false;
@@ -296,8 +297,6 @@ bailout:
 		bn->trevsorted = BATcount(bn) <= 1;
 		*res = bn->batCacheid;
 		BBPkeepref(bn);
-	} else if (bn) {
-		BBPreclaim(bn);
 	}
 	return msg;
 }
@@ -488,7 +487,8 @@ bailout:
 		BBPunfix(s1->batCacheid);
 	if (s2)
 		BBPunfix(s2->batCacheid);
-	if (bn && !msg) {
+	if (bn) {
+		assert(msg == MAL_SUCCEED);
 		BATsetcount(bn, ci1.ncand);
 		bn->tnonil = false;
 		bn->tnil = false;
@@ -497,8 +497,6 @@ bailout:
 		bn->trevsorted = BATcount(bn) <= 1;
 		*res = bn->batCacheid;
 		BBPkeepref(bn);
-	} else if (bn) {
-		BBPreclaim(bn);
 	}
 	return msg;
 }
@@ -583,7 +581,8 @@ bailout:
 		BBPunfix(hb->batCacheid);
 	if (bs)
 		BBPunfix(bs->batCacheid);
-	if (bn && !msg) {
+	if (bn) {
+		assert(msg == MAL_SUCCEED);
 		BATsetcount(bn, ci.ncand);
 		bn->tnonil = false;
 		bn->tnil = false;
@@ -592,8 +591,6 @@ bailout:
 		bn->trevsorted = BATcount(bn) <= 1;
 		*res = bn->batCacheid;
 		BBPkeepref(bn);
-	} else if (bn) {
-		BBPreclaim(bn);
 	}
 	return msg;
 }
@@ -690,7 +687,8 @@ bailout:
 		BBPunfix(b->batCacheid);
 	if (bs)
 		BBPunfix(bs->batCacheid);
-	if (bn && !msg) {
+	if (bn) {
+		assert(msg == MAL_SUCCEED);
 		BATsetcount(bn, ci.ncand);
 		bn->tnonil = false;
 		bn->tnil = false;
@@ -699,8 +697,6 @@ bailout:
 		bn->trevsorted = BATcount(bn) <= 1;
 		*res = bn->batCacheid;
 		BBPkeepref(bn);
-	} else if (bn) {
-		BBPreclaim(bn);
 	}
 	return msg;
 }

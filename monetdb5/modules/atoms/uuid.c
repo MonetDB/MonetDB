@@ -65,10 +65,14 @@ UUIDgenerateUuid_internal(uuid *u)
 		/* generate something like this:
 		 * cefa7a9c-1dd2-41b2-8350-880020adbeef
 		 * ("%08x-%04x-%04x-%04x-%012x") */
-		for (int i = 0; i < 16; i++) {
+		for (int i = 0; i < 16; i += 2) {
+#ifdef __COVERITY__
+			int r = 0;
+#else
 			int r = rand();
-			u->u[i++] = (unsigned char) (r >> 8);
-			u->u[i++] = (unsigned char) r;
+#endif
+			u->u[i] = (unsigned char) (r >> 8);
+			u->u[i+1] = (unsigned char) r;
 		}
 		/* make sure this is a variant 1 UUID (RFC 4122/DCE 1.1) */
 		u->u[8] = (u->u[8] & 0x3F) | 0x80;
