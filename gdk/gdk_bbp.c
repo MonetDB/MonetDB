@@ -3791,39 +3791,40 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 
 		while (++idx < cnt) {
 			bat i = subcommit ? subcommit[idx] : idx;
+			const bat bid = i;
 			if (lock)
-				MT_lock_set(&GDKswapLock(i));
+				MT_lock_set(&GDKswapLock(bid));
 			/* set flag that we're syncing, i.e. that we'll
 			 * be between moving heap to backup dir and
 			 * saving the new version, in other words, the
 			 * heap may not exist in the usual location */
-			BBP_status_on(i, BBPSYNCING);
+			BBP_status_on(bid, BBPSYNCING);
 			/* wait until unloading is finished before
 			 * attempting to make a backup */
-			while (BBP_status(i) & BBPUNLOADING) {
+			while (BBP_status(bid) & BBPUNLOADING) {
 				if (lock)
-					MT_lock_unset(&GDKswapLock(i));
-				BBPspin(i, __func__, BBPUNLOADING);
+					MT_lock_unset(&GDKswapLock(bid));
+				BBPspin(bid, __func__, BBPUNLOADING);
 				if (lock)
-					MT_lock_set(&GDKswapLock(i));
+					MT_lock_set(&GDKswapLock(bid));
 			}
 			BAT *b = dirty_bat(&i, subcommit != NULL);
 			if (i <= 0) {
 				if (lock)
-					MT_lock_unset(&GDKswapLock(subcommit ? subcommit[idx] : idx));
+					MT_lock_unset(&GDKswapLock(bid));
 				break;
 			}
-			if (BBP_status(i) & BBPEXISTING) {
+			if (BBP_status(bid) & BBPEXISTING) {
 				if (b != NULL && b->batInserted > 0) {
 					if (BBPbackup(b, subcommit != NULL) != GDK_SUCCEED) {
 						if (lock)
-							MT_lock_unset(&GDKswapLock(i));
+							MT_lock_unset(&GDKswapLock(bid));
 						break;
 					}
 				}
 			}
 			if (lock)
-				MT_lock_unset(&GDKswapLock(i));
+				MT_lock_unset(&GDKswapLock(bid));
 		}
 		if (idx < cnt)
 			ret = GDK_FAIL;
