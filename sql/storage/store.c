@@ -3729,11 +3729,11 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 		}
 		tr->ts = pts;
 		tr->tid = ptid + 1;
-		assert((tr->tid | TS_MASK) == tr->ts);
+		assert((tr->tid | TS_MASK | (~TRANSACTION_ID_BASE) ) == tr->ts);
 	}
 	else {
-		tr->ts = (store_timestamp(store) | TRANSACTION_ID_BASE);
-		tr->tid = tr->ts;
+		tr->ts = store_timestamp(store);
+		tr->tid = (tr->ts | TRANSACTION_ID_BASE);
 	}
 	tr->cat = store->cat;
 	if (!tr->cat) {
@@ -3791,8 +3791,7 @@ sql_trans *
 sql_trans_create(sqlstore *store, sql_trans *parent, const char *name)
 {
 	sql_trans *tr = sql_trans_create_(store, parent, name);
-	if (tr) {
-		tr->ts = tr->tid;
+	if (tr) { // TODO: check if this is still necessary
 		tr->active = 1;
 	}
 	return tr;
@@ -7014,7 +7013,7 @@ sql_session_create(sqlstore *store, sql_allocator *sa, int ac)
 		_DELETE(s);
 		return NULL;
 	}
-	s->tr->active = 0;
+	s->tr->active = 0; // TODO maybe do this in sql_trans_create_
 	if (!sql_session_reset(s, ac)) {
 		sql_trans_destroy(s->tr);
 		_DELETE(s);
@@ -7062,8 +7061,8 @@ sql_trans_begin(sql_session *s)
 
 	store_lock(store);
 	TRC_DEBUG(SQL_STORE, "Enter sql_trans_begin for transaction: " ULLFMT "\n", tr->tid);
-	tr->ts = (store_timestamp(store) | TRANSACTION_ID_BASE);
-	tr->tid = tr->ts;
+	tr->ts = store_timestamp(store);
+	tr->tid = (tr->ts | TRANSACTION_ID_BASE);
 	if (!(s->schema = find_sql_schema(tr, s->schema_name))) {
 		TRC_DEBUG(SQL_STORE, "Exit sql_trans_begin for transaction: " ULLFMT " with error, the schema %s was not found\n", tr->tid, s->schema_name);
 		store_unlock(store);

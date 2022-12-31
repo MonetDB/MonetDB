@@ -71,9 +71,13 @@ trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_co
 int
 tr_version_of_parent(sql_trans *tr, ulng ts)
 {
+	bool is_version_of_parent = (tr->tid & TS_MASK) == (ts & TS_MASK);
 	for( tr = tr->parent; tr; tr = tr->parent)
-		if (tr->tid == ts)
+		if (tr->tid == ts) {
+			assert(is_version_of_parent);
 			return 1;
+		}
+	assert(!is_version_of_parent);
 	return 0;
 }
 
