@@ -3718,12 +3718,23 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	store_lock(store);
 	tr->store = store;
 	if (parent) {
-		tr->ts = parent->ts;
-		tr->tid = parent->tid + 1;
+		ulng pts;
+		ulng ptid;
+		{	/* TODO: just a temporary syntactically trick to
+			 * make all references to (sql_trans*)->tid and (sql_trans*)->ts
+			 * searchable as tr->tid and tr->ts respectively */
+			sql_trans* tr = parent;
+			pts = tr->ts;
+			ptid = tr->tid;
+		}
+		tr->ts = pts;
+		tr->tid = ptid + 1;
+		assert((tr->tid | TS_MASK) == tr->ts);
 	}
-	ulng nt_part = parent?(parent->tid - parent->ts):0;
-	tr->ts = (store_timestamp(store) | TRANSACTION_ID_BASE);
-	tr->tid = tr->ts + nt_part ;
+	else {
+		tr->ts = (store_timestamp(store) | TRANSACTION_ID_BASE);
+		tr->tid = tr->ts;
+	}
 	tr->cat = store->cat;
 	if (!tr->cat) {
 		store->cat = tr->cat = SA_ZNEW(tr->sa, sql_catalog);
@@ -3952,7 +3963,16 @@ sql_trans_commit(sql_trans *tr)
 		store_lock(store);
 
 		if (tr->parent) {
-			commit_ts = oldest = tr->parent->tid;
+			sql_trans* parent = tr;
+			ulng ptid;
+			{	/* TODO: just a temporary syntactically trick to
+				 * make all references to (sql_trans*)->tid and (sql_trans*)->ts
+				 * searchable as tr->tid and tr->ts respectively
+				 */
+				sql_trans* tr = parent;
+				ptid = tr->tid;
+			}
+			commit_ts = oldest = ptid;
 			tr->parent->logchanges += tr->logchanges;
 		}
 		else {
