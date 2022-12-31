@@ -1222,7 +1222,7 @@ segments_is_deleted(segment *s, sql_trans *tr, oid rid)
 {
 	for(; s; s=s->next) {
 		if (s->start <= rid && s->end > rid) {
-			if (s->ts >= tr->ts && s->deleted) {
+			if ((s->ts == tr->tid || s->ts > tr->ts) && s->deleted) {
 				return 1;
 			}
 			break;
@@ -1516,7 +1516,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 			for(segment *seg = s->segs->h; seg && res == LOG_OK ; seg=seg->next) {
 				if (seg->start <= start && seg->end > start) {
 					/* check for delete conflicts */
-					if (seg->ts >= tr->ts && seg->deleted) {
+					if ((seg->ts == tr->tid || seg->ts > tr->ts) && seg->deleted) {
 						res = LOG_CONFLICT;
 						continue;
 					}
@@ -1561,7 +1561,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 					seg = seg->next;
 				else if (seg->start <= rid && seg->end > rid) {
 					/* check for delete conflicts */
-					if (seg->ts >= tr->ts && seg->deleted) {
+					if ((seg->ts == tr->tid || seg->ts > tr->ts) && seg->deleted) {
 						res = LOG_CONFLICT;
 						continue;
 					}
@@ -1601,7 +1601,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 					seg = seg->next;
 				else if (seg->start <= rid[i] && seg->end > rid[i]) {
 					/* check for delete conflicts */
-					if (seg->ts >= tr->ts && seg->deleted) {
+					if ((seg->ts == tr->tid || seg->ts > tr->ts) && seg->deleted) {
 						res = LOG_CONFLICT;
 						continue;
 					}

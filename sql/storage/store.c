@@ -43,13 +43,6 @@ store_get_timestamp(sqlstore *store)
 	return ts;
 }
 
-static ulng
-store_transaction_id(sqlstore *store)
-{
-	ulng tid = ATOMIC_INC(&store->transaction);
-	return tid;
-}
-
 ulng
 store_oldest(sqlstore *store)
 {
@@ -3724,7 +3717,13 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 
 	store_lock(store);
 	tr->store = store;
-	tr->tid = store_transaction_id(store);
+	if (parent) {
+		tr->ts = parent->ts;
+		tr->tid = parent->tid + 1;
+	}
+	ulng nt_part = parent?(parent->tid - parent->ts):0;
+	tr->ts = (store_timestamp(store) | TRANSACTION_ID_BASE);
+	tr->tid = tr->ts + nt_part ;
 	tr->cat = store->cat;
 	if (!tr->cat) {
 		store->cat = tr->cat = SA_ZNEW(tr->sa, sql_catalog);
@@ -3782,7 +3781,7 @@ sql_trans_create(sqlstore *store, sql_trans *parent, const char *name)
 {
 	sql_trans *tr = sql_trans_create_(store, parent, name);
 	if (tr) {
-		tr->ts = store_timestamp(store);
+		tr->ts = tr->tid;
 		tr->active = 1;
 	}
 	return tr;
@@ -3858,7 +3857,7 @@ transaction_check_dependencies_and_removals(sql_trans *tr)
 				sql_dependency_change *schange = (sql_dependency_change*) he->value;
 
 				/* conflict only if transactions overlap */
-				if (schange->ts >= tr->ts && lchange->objid == schange->objid && lchange->type == schange->type)
+				if ((schange->ts == tr->tid || schange->ts > tr->ts ) && lchange->objid == schange->objid && lchange->type == schange->type)
 					ok = LOG_CONFLICT;
 			}
 		}
@@ -3873,7 +3872,7 @@ transaction_check_dependencies_and_removals(sql_trans *tr)
 				sql_dependency_change *schange = (sql_dependency_change*) he->value;
 
 				/* conflict only if transactions overlap */
-				if (schange->ts >= tr->ts && lchange->objid == schange->objid && lchange->type == schange->type)
+				if ((schange->ts == tr->tid || schange->ts > tr->ts ) && lchange->objid == schange->objid && lchange->type == schange->type)
 					ok = LOG_CONFLICT;
 			}
 		}
@@ -7043,7 +7042,8 @@ sql_trans_begin(sql_session *s)
 
 	store_lock(store);
 	TRC_DEBUG(SQL_STORE, "Enter sql_trans_begin for transaction: " ULLFMT "\n", tr->tid);
-	tr->ts = store_timestamp(store);
+	tr->ts = (store_timestamp(store) | TRANSACTION_ID_BASE);
+	tr->tid = tr->ts;
 	if (!(s->schema = find_sql_schema(tr, s->schema_name))) {
 		TRC_DEBUG(SQL_STORE, "Exit sql_trans_begin for transaction: " ULLFMT " with error, the schema %s was not found\n", tr->tid, s->schema_name);
 		store_unlock(store);
