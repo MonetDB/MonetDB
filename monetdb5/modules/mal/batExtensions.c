@@ -83,7 +83,6 @@ CMDBATdup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == 0)
 		throw(MAL,"bat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*ret = b->batCacheid;
-	BATsettrivprop(b);
 	BBPretain(b->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -281,7 +280,6 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	*r = b->batCacheid;
-	BATsettrivprop(b);
 	BBPretain(b->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;

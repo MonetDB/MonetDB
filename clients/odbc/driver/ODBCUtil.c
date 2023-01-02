@@ -1214,6 +1214,8 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 											}
 										}
 									}
+									if (repl == NULL)
+										break;
 								}
 								size_t l = i + strlen(repl) + 2 + arglen + strlen(rest) - j + 1 + strlen(repl2) + repl3len;
 								nquery = malloc(l);
