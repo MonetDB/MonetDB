@@ -3648,7 +3648,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 				sql_rel *nrel;
 				list *l = (list*) n->data, *exps = sa_list(v->sql->sa), *pexps = sa_list(v->sql->sa);
 
-				l = list_flaten(l);
+				l = list_flatten(l);
 				nrel = rel_groupby(v->sql, rel_dup(rel->l), l);
 
 				for (node *m = rel->exps->h ; m ; m = m->next) {

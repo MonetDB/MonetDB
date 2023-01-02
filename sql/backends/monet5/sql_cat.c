@@ -1238,6 +1238,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				if (i->base.new || !i->base.deleted)
 					continue;
 				sql_idx *ni = mvc_bind_idx(sql, s, i->base.name);
+				if (ni == NULL)
+					throw(SQL, "sql.alter_table", "Couldn't bind index %s", i->base.name);
 				switch (mvc_drop_idx(sql, s, ni)) {
 					case -1:
 						throw(SQL,"sql.alter_table",SQLSTATE(HY013) MAL_MALLOC_FAIL);
