@@ -1097,6 +1097,7 @@ oi_next(struct os_iter *oi)
 	if (oi->name) {
 		versionhead  *n = oi->n;
 
+		lock_reader(oi->os); /* intentionally outside of while loop */
 		while (n && !b) {
 
 			if (n->ov->b->name && strcmp(n->ov->b->name, oi->name) == 0) {
@@ -1107,24 +1108,23 @@ oi_next(struct os_iter *oi)
 				if (ov && os_atmc_get_state(ov) == active)
 					b = ov->b;
 			} else {
-				lock_reader(oi->os);
 				n = oi->n = n->next;
-				unlock_reader(oi->os);
 			}
 	 	}
+		unlock_reader(oi->os);
 	} else {
 		versionhead  *n = oi->n;
 
+		lock_reader(oi->os); /* intentionally outside of while loop */
 		while (n && !b) {
 			objectversion *ov = n->ov;
-			lock_reader(oi->os);
 			n = oi->n = n->next;
-			unlock_reader(oi->os);
 
 			ov = get_valid_object_id(oi->tr, ov);
 			if (ov && os_atmc_get_state(ov) == active)
 				b = ov->b;
 		}
+		unlock_reader(oi->os);
 	}
 	return b;
 }

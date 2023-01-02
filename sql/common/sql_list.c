@@ -757,13 +757,15 @@ list_dup(list *l, fdup dup)
 }
 
 list *
-list_flaten(list *l)
+list_flatten(list *l)
 {
 	list *res = list_new_(l);
-	for (node *n = l->h ; n ; n = n->next) {
-		list *ll = (list*) n->data;
-		for (node *m = ll->h ; m ; m = m->next)
-			list_append(res, m->data);
+	if (res) {
+		for (node *n = l->h ; n ; n = n->next) {
+			list *ll = (list*) n->data;
+			for (node *m = ll->h ; m ; m = m->next)
+				list_append(res, m->data);
+		}
 	}
 	return res;
 }

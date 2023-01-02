@@ -90,7 +90,7 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*res = GDKstrdup(r);
 	if (!from_str)
 		GDKfree(r);
-	if (!res)
+	if (!*res)
 		throw(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }

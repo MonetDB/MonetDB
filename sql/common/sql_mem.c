@@ -153,7 +153,7 @@ sa_alloc( sql_allocator *sa, size_t sz )
 		if (sa->pa)
 			r = SA_NEW_ARRAY(sa->pa,char,(sz > SA_BLOCK ? sz : SA_BLOCK));
 	    else if (sz <= SA_BLOCK && sa->freelist) {
-			r = sa_use_freed(sa, sz > SA_BLOCK ? sz : SA_BLOCK);
+			r = sa_use_freed(sa, SA_BLOCK);
 		} else
 			r = GDKmalloc(sz > SA_BLOCK ? sz : SA_BLOCK);
 		if (r == NULL) {

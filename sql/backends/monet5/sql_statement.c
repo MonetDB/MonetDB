@@ -2502,10 +2502,12 @@ stmt_rs_column(backend *be, stmt *rs, int i, sql_subtype *tpe)
 #define meta(P, Id, Tpe, Args)						\
 	do {											\
 		P = newStmtArgs(mb, batRef, packRef, Args);	\
-		Id = getArg(P,0);							\
-		setVarType(mb, Id, newBatType(Tpe));		\
-		setVarFixed(mb, Id);						\
-		list = pushArgument(mb, list, Id);			\
+		if (P) {									\
+			Id = getArg(P,0);						\
+			setVarType(mb, Id, newBatType(Tpe));	\
+			setVarFixed(mb, Id);					\
+			list = pushArgument(mb, list, Id);		\
+		}											\
 	} while (0)
 
 #define metaInfo(P,Tpe,Val)						\

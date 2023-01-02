@@ -833,7 +833,7 @@ extractURLHost(str *retval, str *url, bit *no_www)
 	const char *h = NULL;
 	const char *p = NULL;
 
-	if ((url != NULL || *url != NULL) && !strNil(*url)) {
+	if (url != NULL && *url != NULL && !strNil(*url)) {
 		if ((s = skip_scheme(*url)) != NULL &&
 			(s = skip_authority(s, NULL, NULL, &h, &p)) != NULL &&
 			h != NULL)

@@ -596,6 +596,7 @@ append_msk_bat(BAT *b, BATiter *ni, struct canditer *ci)
 			/* boff < noff */
 			if (noff + cnt <= 32) {
 				/* only need part of the first word of n */
+				assert(cnt < 32); /* noff > 0, so cnt < 32 */
 				mask = (1U << cnt) - 1;
 				*bp &= ~(mask << boff);
 				*bp |= (*np & (mask << noff)) >> (noff - boff);
