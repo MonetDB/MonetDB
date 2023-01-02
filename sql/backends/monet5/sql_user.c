@@ -503,7 +503,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s, const char *initpasswd)
 	sql_column *col = NULL;
 	mvc *m = (mvc *) _mvc;
 	sqlid schema_id = 0;
-	str err;
+	str err = NULL;
 
 	/* create the authorisation related tables */
 	mvc_create_table(&t, m, s, "db_user_info", tt_table, 1, SQL_PERSIST, 0, -1, 0);
