@@ -749,6 +749,10 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = fname;
 	else
 		s++;
+	if (strcpy_len(bname, s, sizeof(bname)) >= sizeof(bname)) {
+		fits_close_file(fptr, &status);
+		throw(MAL, "fits.attach", SQLSTATE(FI000) "File name too long\n");
+	}
 	strcpy(bname, s);
 	s = strrchr(bname, '.');
 	if (s) *s = 0;
@@ -878,7 +882,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			esc_tunit = SQLescapeString(tunit);
-			if (!esc_tform) {
+			if (!esc_tunit) {
 				GDKfree(esc_tform);
 				GDKfree(esc_cname);
 				fits_close_file(fptr, &status);

@@ -589,7 +589,7 @@ mvc_add_column_predicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	if ((t = mvc_bind_table(m, s, tname)) == NULL)
 		throw(SQL, "sql.column_predicate", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
-		throw(SQL, "sql.column_predicate", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
+		throw(SQL, "sql.column_predicate", SQLSTATE(42S22) "Column not found in %s.%s.%s",sname,tname,cname);
 
 	if ((m->session->level & tr_snapshot) == tr_snapshot || isNew(c) || !isGlobal(c->t) || isGlobalTemp(c->t))
 		return MAL_SUCCEED;
@@ -1360,8 +1360,10 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else { /*unpartitioned access to base column*/
 		int coltype = getBatType(getArgType(mb, pci, 0));
 		b = store->storage_api.bind_col(m->session->tr, c, access);
+		if (b == NULL)
+			throw(SQL, "sql.bin", "Couldn't bind column");
 
-		if (b && b->ttype && b->ttype != coltype) {
+		if (b->ttype && b->ttype != coltype) {
 			BBPunfix(b->batCacheid);
 			throw(SQL,"sql.bind",SQLSTATE(42000) "Column type mismatch %s.%s.%s",sname,tname,cname);
 		}
@@ -1709,8 +1711,10 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else { /*unpartitioned access to base index*/
 		int idxtype = getBatType(getArgType(mb, pci, 0));
 		b = store->storage_api.bind_idx(m->session->tr, i, access);
+		if (b == NULL)
+			throw(SQL,"sql.bindidx", "Couldn't bind index");
 
-		if (b && b->ttype && b->ttype != idxtype) {
+		if (b->ttype && b->ttype != idxtype) {
 			BBPunfix(b->batCacheid);
 			throw(SQL,"sql.bindidx",SQLSTATE(42000) "Index type mismatch %s.%s.%s",sname,tname,iname);
 		}
@@ -4876,7 +4880,7 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isTempTable(t))
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "Column not found in %s.%s.%s",sname,tname,cname);
 	if (c->storage_type)
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
 
@@ -5013,7 +5017,7 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (isTempTable(t))
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S22) "Column not found in %s.%s.%s",sname,tname,cname);
 	if (c->storage_type)
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
 
@@ -5068,7 +5072,7 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (isTempTable(t))
 		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
-		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
+		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42S22) "Column not found in %s.%s.%s",sname,tname,cname);
 
 	if(gdk_remove_callback("str_column_vacuum", str_column_vacuum_callback_args_free) != GDK_SUCCEED)
 		throw(SQL, "sql.str_column_stop_vacuum", "removing vacuum callback failed!");
