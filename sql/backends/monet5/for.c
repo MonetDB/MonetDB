@@ -108,7 +108,6 @@ FORdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BAT *o = BATdescriptor(O), *b = NULL;
 	if (!o) {
-		bat_destroy(o);
 		throw(SQL, "for.decompress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if (o->ttype != TYPE_bte && o->ttype != TYPE_sht) {
