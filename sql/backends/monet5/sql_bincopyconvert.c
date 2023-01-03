@@ -28,7 +28,7 @@ validate_bit(void *dst_, void *src_, size_t count, int width, bool byteswap)
 	const unsigned char *src = src_;
 
 	for (size_t i = 0; i < count; i++) {
-		if (*src > 1)
+		if (*src > 1 && *src != 0x80)
 			throw(SQL, "convert_bit", SQLSTATE(22003) "invalid boolean byte value: %d", *src);
 		*dst++ = (bit)*src++;
 	}
