@@ -575,16 +575,10 @@ find_tmp_table(sql_trans *tr, sql_table *t)
 {
 	assert(isGlobal(t));
 	assert(tr->tmp == t->s);
-	node *n = cs_find_id(&tr->localtmps, t->base.id);
-	sql_table *lt = NULL;
+	sql_table *lt = (sql_table*) os_find_id(tr->_localtmps, tr, t->base.id);
 
-	if (n)
-		lt = (sql_table*)n->data;
 	if (!lt) {
 		lt = globaltmp_instantiate(tr, t);
-		/* TODO prepend to not mark as new */
-		if (lt)
-			cs_add(&tr->localtmps, lt, true);
 	}
 	return lt;
 }
@@ -630,8 +624,6 @@ temp_col_timestamp_delta( sql_trans *tr, sql_column *c)
 static sql_delta *
 col_timestamp_delta( sql_trans *tr, sql_column *c)
 {
-	if (isTempTable(c->t))
-		return temp_col_timestamp_delta(tr, c);
 	return timestamp_delta( tr, ATOMIC_PTR_GET(&c->data));
 }
 
@@ -691,8 +683,6 @@ temp_tab_timestamp_storage( sql_trans *tr, sql_table *t)
 static storage *
 tab_timestamp_storage( sql_trans *tr, sql_table *t)
 {
-	if (isTempTable(t))
-		return temp_tab_timestamp_storage(tr, t);
 	return timestamp_storage( tr, ATOMIC_PTR_GET(&t->data));
 }
 
@@ -2066,6 +2056,8 @@ bind_col_data(sql_trans *tr, sql_column *c, bool *update_conflict)
 	if (isTempTable(c->t) && !(obat = temp_col_timestamp_delta(tr, c)))
 		return NULL;
 
+	if (isTempTable(c->t)) { assert(obat->cs.ts == tr->tid); return obat; }
+
 	if (obat->cs.ts == tr->tid || ((obat->cs.ts < TRANSACTION_ID_BASE || tr_version_of_parent(tr, obat->cs.ts)) && !update_conflict)) /* on append there are no conflicts */
 		return obat;
 	if ((!tr->parent || !tr_version_of_parent(tr, obat->cs.ts)) && obat->cs.ts >= TRANSACTION_ID_BASE && !isTempTable(c->t)) {
@@ -2727,8 +2719,6 @@ bind_del_data(sql_trans *tr, sql_table *t, bool *clear)
 	if (isTempTable(t)) {
 		if (!(obat = temp_tab_timestamp_storage(tr, t)))
 			return NULL;
-
-		assert(obat->cs.ts == tr->tid);
 
 		if (clear && clear_storage(tr, t, obat)  != LOG_OK)
 			return NULL;
@@ -3507,11 +3497,12 @@ create_del(sql_trans *tr, sql_table *t)
 	}
 
 	if (!isNew(t) && !isTempTable(t)) {
+		// TODO: figure out the purpose
 		bat->cs.ts = tr->ts;
 		return load_storage(tr, t, bat, t->base.id);
-	} else if (bat->cs.bid && !isTempTable(t)) {
+	} else if (bat->cs.bid) {
 		return ok;
-	} else if (!bat->cs.bid) {
+	} else {
 		assert(!bat->segs);
 		if (!(bat->segs = new_segments(tr, 0)))
 			ok = LOG_ERR;
@@ -3616,34 +3607,32 @@ commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 
 	if (!commit_ts) /* rollback handled by ? */
 		return ok;
-	if(!isTempTable(t)) {
-		storage *dbat = ATOMIC_PTR_GET(&t->data);
-		ok = segments2cs(tr, dbat->segs, &dbat->cs);
-		assert(ok == LOG_OK);
-		if (ok != LOG_OK)
-			return ok;
-		merge_segments(dbat, tr, change, commit_ts, commit_ts/* create is we are alone */ /*oldest*/);
-		assert(dbat->cs.ts == tr->tid);
-		dbat->cs.ts = commit_ts;
-		if (ok == LOG_OK) {
-			for(node *n = ol_first_node(t->columns); n && ok == LOG_OK; n = n->next) {
-				sql_column *c = n->data;
-				sql_delta *delta = ATOMIC_PTR_GET(&c->data);
+	storage *dbat = ATOMIC_PTR_GET(&t->data);
+	ok = segments2cs(tr, dbat->segs, &dbat->cs);
+	assert(ok == LOG_OK);
+	if (ok != LOG_OK)
+		return ok;
+	merge_segments(dbat, tr, change, commit_ts, commit_ts/* create is we are alone */ /*oldest*/);
+	assert(dbat->cs.ts == tr->tid);
+	dbat->cs.ts = commit_ts;
+	if (ok == LOG_OK) {
+		for(node *n = ol_first_node(t->columns); n && ok == LOG_OK; n = n->next) {
+			sql_column *c = n->data;
+			sql_delta *delta = ATOMIC_PTR_GET(&c->data);
 
-				ok = commit_create_delta(tr, c->t, &c->base, delta, commit_ts, oldest);
-			}
-			if (t->idxs) {
-				for(node *n = ol_first_node(t->idxs); n && ok == LOG_OK; n = n->next) {
-					sql_idx *i = n->data;
-					sql_delta *delta = ATOMIC_PTR_GET(&i->data);
-
-					if (delta)
-						ok = commit_create_delta(tr, i->t, &i->base, delta, commit_ts, oldest);
-				}
-			}
-			if (!tr->parent)
-				t->base.new = 0;
+			ok = commit_create_delta(tr, c->t, &c->base, delta, commit_ts, oldest);
 		}
+		if (t->idxs) {
+			for(node *n = ol_first_node(t->idxs); n && ok == LOG_OK; n = n->next) {
+				sql_idx *i = n->data;
+				sql_delta *delta = ATOMIC_PTR_GET(&i->data);
+
+				if (delta)
+					ok = commit_create_delta(tr, i->t, &i->base, delta, commit_ts, oldest);
+			}
+		}
+		if (!tr->parent)
+			t->base.new = 0;
 	}
 	if (!tr->parent)
 		t->base.new = 0;

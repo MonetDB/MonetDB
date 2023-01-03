@@ -18,37 +18,6 @@ base_key( sql_base *b )
 	return hash_key(b->name);
 }
 
-static void *
-_list_find_name(list *l, const char *name)
-{
-	node *n;
-
-	if (l) {
-		if (l->ht) {
-			int key = hash_key(name);
-			sql_hash_e *he = l->ht->buckets[key&(l->ht->size-1)];
-
-			for (; he; he = he->chain) {
-				sql_base *b = he->value;
-
-				if (b->name && strcmp(b->name, name) == 0) {
-					return b;
-				}
-			}
-			return NULL;
-		}
-		for (n = l->h; n; n = n->next) {
-			sql_base *b = n->data;
-
-			/* check if names match */
-			if (name[0] == b->name[0] && strcmp(name, b->name) == 0) {
-				return b;
-			}
-		}
-	}
-	return NULL;
-}
-
 void
 trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log)
 {
@@ -171,13 +140,11 @@ schema_find_key(sql_trans *tr, sql_schema *s, const char *name)
 {
 	sql_base *b = os_find_name(s->keys, tr, name);
 
-	if (!b && tr->tmp == s && tr->localtmps.set) { /* for localtmps search tables */
-		for(node *n = tr->localtmps.set->h; n; n = n->next) {
-			sql_table *t = n->data;
-			sql_key *o = find_sql_key(t, name);
-			if (o)
-				return o;
-		}
+	if (!b && tr->tmp == s) {
+		sql_table *t = (sql_table*) os_find_name(tr->_localtmps, tr, name);
+		sql_key *o = find_sql_key(t, name);
+		if (o)
+			return o;
 	}
 	return (sql_key*)b;
 }
@@ -210,13 +177,11 @@ schema_find_idx(sql_trans *tr, sql_schema *s, const char *name)
 {
 	sql_base *b = os_find_name(s->idxs, tr, name);
 
-	if (!b && tr->tmp == s && tr->localtmps.set) { /* for localtmps search tables */
-		for(node *n = tr->localtmps.set->h; n; n = n->next) {
-			sql_table *t = n->data;
-			sql_idx *o = find_sql_idx(t, name);
-			if (o)
-				return o;
-		}
+	if (!b && tr->tmp == s) {
+	sql_table *t = (sql_table*) os_find_name(tr->_localtmps, tr, name);
+		sql_idx *o = find_sql_idx(t, name);
+		if (o)
+			return o;
 	}
 	return (sql_idx*)b;
 }
@@ -226,9 +191,11 @@ schema_find_idx_id(sql_trans *tr, sql_schema *s, sqlid id)
 {
 	sql_base *b = os_find_id(s->idxs, tr, id);
 
-	if (!b && tr->tmp == s && tr->localtmps.set) { /* for localtmps search tables */
-		for(node *n = tr->localtmps.set->h; n; n = n->next) {
-			sql_table *t = n->data;
+	if (!b && tr->tmp == s) {
+		struct os_iter oi;
+		os_iterator(&oi, tr->_localtmps, tr, NULL);
+		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) { // TODO: maybe an objectset for idxs or have idxs in global idxs os
+			sql_table *t = (sql_table *) b;
 			node *o = ol_find_id(t->idxs, id);
 			if (o)
 				return (sql_idx*)o->data;
@@ -251,8 +218,23 @@ sql_table *
 find_sql_table(sql_trans *tr, sql_schema *s, const char *tname)
 {
 	sql_table *t = (sql_table*)os_find_name(s->tables, tr, tname);
-	if (!t && tr->tmp == s)
-		t = (sql_table*)_list_find_name(tr->localtmps.set, tname);
+
+	if (!t && tr->tmp == s) {
+		t = (sql_table*) os_find_name(tr->_localtmps, tr, tname);
+		return t;
+	}
+
+	if (t && isTempTable(t) && tr->tmp == s) {
+		assert(isGlobal(t));
+
+		sql_table* lt = (sql_table*) os_find_name(tr->_localtmps, tr, tname);
+		if (lt)
+			return lt;
+
+		t = globaltmp_instantiate(tr, t);
+		return t;
+	}
+
 	return t;
 }
 
@@ -261,9 +243,18 @@ find_sql_table_id(sql_trans *tr, sql_schema *s, sqlid id)
 {
 	sql_table *t = (sql_table*)os_find_id(s->tables, tr, id);
 	if (!t && tr->tmp == s) {
-		node *n = cs_find_id(&tr->localtmps, id);
-		if (n)
-			return (sql_table*)n->data;
+		t = (sql_table*) os_find_id(tr->_localtmps, tr, id);
+	}
+
+	if (t && isTempTable(t) && tr->tmp == s) {
+		assert(isGlobal(t));
+
+		sql_table* lt = (sql_table*) os_find_id(tr->_localtmps, tr, id);
+		if (lt)
+			return lt;
+
+		t = globaltmp_instantiate(tr, t);
+		return t;
 	}
 	return t;
 }
@@ -388,13 +379,11 @@ schema_find_trigger(sql_trans *tr, sql_schema *s, const char *name)
 {
 	sql_base *b = os_find_name(s->triggers, tr, name);
 
-	if (!b && tr->tmp == s && tr->localtmps.set) { /* for localtmps search tables */
-		for(node *n = tr->localtmps.set->h; n; n = n->next) {
-			sql_table *t = n->data;
-			sql_trigger *o = find_sql_trigger(t, name);
-			if (o)
-				return o;
-		}
+	if (!b && tr->tmp == s) {
+		sql_table *t = (sql_table*) os_find_name(tr->_localtmps, tr, name);
+		sql_trigger *o = find_sql_trigger(t, name);
+		if (o)
+			return o;
 	}
 	return (sql_trigger*)b;
 }
