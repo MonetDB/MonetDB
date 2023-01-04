@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1236,7 +1236,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		assert (((backend*)  mdbe->c->sqlcontext)->remote < INT_MAX);
 		char nme[16]		= {0};
 		const char* name	= number2name(nme, sizeof(nme), ++((backend*)  mdbe->c->sqlcontext)->remote);
-		prg					= newFunction(userRef, putName(name), FUNCTIONsymbol);
+		prg					= newFunctionArgs(userRef, putName(name), FUNCTIONsymbol, (int) nparams + 1);
 	}
 
 	resizeMalBlk(prg->def, (int) nparams + 3 /*function declaration + remote.exec + return statement*/);
@@ -1340,10 +1340,11 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	 */
 	prg->def = NULL;
 	freeSymbol(prg);
-	if ((prg = newFunction(userRef, putName(be->q->name), FUNCTIONsymbol)) == NULL) {
+	if ((prg = newFunctionArgs(userRef, putName(be->q->name), FUNCTIONsymbol, -1)) == NULL) {
 		msg = createException(MAL, "monetdbe.monetdbe_prepare_cb", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
+	freeMalBlk(prg->def);
 	prg->def = mb;
 	setFunctionId(getSignature(prg), be->q->name);
 
@@ -2004,7 +2005,7 @@ append_create_remote_append_mal_program(
 	assert(prg);
 
 	*prg	= NULL;
-	_prg	= newFunction(userRef, putName(remote_program_name), FUNCTIONsymbol); // remote program
+	_prg	= newFunctionArgs(userRef, putName(remote_program_name), FUNCTIONsymbol, (int) ccount + 1); // remote program
 	mb		= _prg->def;
 
 	{ // START OF HACK

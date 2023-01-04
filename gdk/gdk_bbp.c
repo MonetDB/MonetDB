@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -662,14 +662,16 @@ BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn,
 		return 0;	/* end of file */
 	}
 	(*lineno)++;
-	if ((s = strchr(buf, '\r')) != NULL) {
-		/* convert \r\n into just \n */
-		if (s[1] != '\n') {
+	if ((s = strpbrk(buf, "\r\n")) != NULL) {
+		if (s[0] == '\r' && s[1] != '\n') {
 			TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", *lineno);
 			return -1;
 		}
-		*s++ = '\n';
-		*s = 0;
+		/* zap the newline */
+		*s = '\0';
+	} else {
+		TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d: line too long\n", *lineno);
+		return -1;
 	}
 
 	if (bbpversion <= GDKLIBRARY_HSIZE ?
@@ -746,7 +748,7 @@ BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn,
 	}
 	nread += n;
 
-	if (nread >= (int) sizeof(buf) || (buf[nread] != '\n' && buf[nread] != ' ')) {
+	if (nread >= (int) sizeof(buf) || (buf[nread] != '\0' && buf[nread] != ' ')) {
 		TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", *lineno);
 		return -1;
 	}
@@ -2026,8 +2028,13 @@ new_bbpentry(FILE *fp, bat i, BUN size, BATiter *bi)
 		assert(BBPfarms[bi->vh->farmid].roles & (1U << PERSISTENT));
 	}
 	assert(size <= bi->count || size == BUN_NONE);
+	assert(BBP_options(i) == NULL || strpbrk(BBP_options(i), "\r\n") == NULL);
 #endif
 
+	if (BBP_options(i) != NULL && strpbrk(BBP_options(i), "\r\n") != NULL) {
+		GDKerror("options for bat %d contains a newline\n", i);
+		return GDK_FAIL;
+	}
 	if (size > bi->count)
 		size = bi->count;
 	if (fprintf(fp, "%d %u %s %s %d " BUNFMT " " OIDFMT,
