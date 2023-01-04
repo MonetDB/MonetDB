@@ -244,6 +244,7 @@ find_sql_table_id(sql_trans *tr, sql_schema *s, sqlid id)
 	sql_table *t = (sql_table*)os_find_id(s->tables, tr, id);
 	if (!t && tr->tmp == s) {
 		t = (sql_table*) os_find_id(tr->_localtmps, tr, id);
+		return t;
 	}
 
 	if (t && isTempTable(t) && tr->tmp == s) {
