@@ -275,6 +275,38 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 	return base;
 }
 
+static str
+fmtRemark(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str t, int flg, str base, size_t len)
+{
+	char aux[128]; //no mal opt func name is bigger then this
+
+	if (!copystring(&t, "# ", &len))
+		return base;
+	//optimizer remark, i=1 actions field, i=2 usec field
+	if (pci && pci->argc == 3) {
+		if (getFunctionId(pci)) {
+			snprintf(aux, 128, "%-36s %d actions %ld usec",
+					 getFunctionId(pci),
+					 atoi(renderTerm(mb, stk, pci, 1, flg)),
+					 atol(renderTerm(mb, stk, pci, 2, flg)));
+			if (!copystring(&t, aux, &len))
+				return base;
+		}
+	}
+	else if (pci->argc == 1) {
+		if (getFunctionId(pci)) {
+			if (!copystring(&t, getFunctionId(pci), &len))
+				return base;
+		}
+	}
+	else if (getVar(mb, getArg(pci, 0))->value.val.sval &&
+			 getVar(mb, getArg(pci, 0))->value.len > 0 &&
+			 !copystring(&t, getVar(mb, getArg(pci, 0))->value.val.sval, &len))
+		return base;
+
+	return base;
+}
+
 str
 operatorName(int i)
 {
@@ -406,6 +438,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		}
 		return fcnDefinition(mb, p, t, flg, base, len + (t - base));
 	case REMsymbol:
+		return fmtRemark(mb, stk, p, t, flg, base, len);
 	case NOOPsymbol:
 		if (!copystring(&t, "#", &len))
 			return base;
