@@ -402,6 +402,7 @@ objectversion_destroy(sqlstore *store, objectset* os, objectversion *ov)
 	if (os->destroy)
 		os->destroy(store, ov->b);
 
+	if (os->temporary) os_destroy(os, store); // TODO tempscs2os : embed into refcounting subproject
 	_DELETE(ov);
 }
 
@@ -890,8 +891,8 @@ os_add_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 		return res;
 	}
 
-	if (!os->temporary)
-		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
+	if (os->temporary) (void) os_dup(os); // TODO tempscs2os : embed into refcounting subproject
+	trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
 	return res;
 }
 
@@ -993,8 +994,8 @@ os_del_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 		return res;
 	}
 
-	if (!os->temporary)
-		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
+	if (os->temporary) (void) os_dup(os); // TODO tempscs2os : embed into refcounting subproject
+	trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
 	return res;
 }
 
