@@ -1236,7 +1236,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		assert (((backend*)  mdbe->c->sqlcontext)->remote < INT_MAX);
 		char nme[16]		= {0};
 		const char* name	= number2name(nme, sizeof(nme), ++((backend*)  mdbe->c->sqlcontext)->remote);
-		prg					= newFunction(userRef, putName(name), FUNCTIONsymbol);
+		prg					= newFunctionArgs(userRef, putName(name), FUNCTIONsymbol, (int) nparams + 1);
 	}
 
 	resizeMalBlk(prg->def, (int) nparams + 3 /*function declaration + remote.exec + return statement*/);
@@ -2005,7 +2005,7 @@ append_create_remote_append_mal_program(
 	assert(prg);
 
 	*prg	= NULL;
-	_prg	= newFunction(userRef, putName(remote_program_name), FUNCTIONsymbol); // remote program
+	_prg	= newFunctionArgs(userRef, putName(remote_program_name), FUNCTIONsymbol, (int) ccount + 1); // remote program
 	mb		= _prg->def;
 
 	{ // START OF HACK
