@@ -254,7 +254,7 @@ compareResultOptClose(SQLHANDLE stmt, SQLRETURN retcode, const char * functionna
 			if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
 				/* some rows of EXPLAIN output (which has only 1 result column) must be surpressed to get stable output */
 				if (columns == 1 &&
-				    (strncmp(buf, "# optimizer.", 12) == 0 ||
+				    (strncmp(buf, "# ", 2) == 0 ||
 				     strncmp(buf, "barrier X_", 10) == 0 ||
 				     strncmp(buf, "exit X_", 7) == 0) ) {
 					continue;

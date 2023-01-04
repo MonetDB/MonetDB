@@ -687,7 +687,7 @@ rel_print_(mvc *sql, stream *fout, sql_rel *rel, int depth, list *refs, int deco
 
 			if (run->name) { /* if name is set, then the optimizer did run */
 				print_indent(sql, fout, depth, decorate);
-				mnstr_printf(fout, "%-36s %3d actions " LLFMT " usec",
+				mnstr_printf(fout, "# %-36s %3d actions " LLFMT " usec",
 							 run->name, run->nchanges, run->time);
 			}
 		}
