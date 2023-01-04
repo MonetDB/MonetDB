@@ -3685,7 +3685,7 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	}
 
 	if (!parent) {
-		tr->_localtmps = os_new(tr->sa, (destroy_fptr) &table_destroy, false, true, false, store);
+		tr->_localtmps = os_new(tr->sa, (destroy_fptr) &table_destroy, true, true, false, store);
 	}
 	else {
 		tr->_localtmps = os_dup(parent->_localtmps);
@@ -3718,12 +3718,13 @@ schema_dup(sql_trans *tr, sql_schema *s, const char *name, sql_schema **rs)
 	ns->system = s->system;
 
 	sqlstore *store = tr->store;
-	ns->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, isTempSchema(s), true, true, store);
-	ns->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, isTempSchema(s), true, true, store);
-	ns->keys = os_new(tr->sa, (destroy_fptr) &key_destroy, isTempSchema(s), true, true, store);
-	ns->idxs = os_new(tr->sa, (destroy_fptr) &idx_destroy, isTempSchema(s), true, true, store);
-	ns->triggers = os_new(tr->sa, (destroy_fptr) &trigger_destroy, isTempSchema(s), true, true, store);
-	ns->parts = os_new(tr->sa, (destroy_fptr) &part_destroy, isTempSchema(s), false, true, store);
+	assert(!isTempSchema(s)); // TODO tempscs2os : check if this is really true
+	ns->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, false, true, true, store);
+	ns->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, false, true, true, store);
+	ns->keys = os_new(tr->sa, (destroy_fptr) &key_destroy, false, true, true, store);
+	ns->idxs = os_new(tr->sa, (destroy_fptr) &idx_destroy, false, true, true, store);
+	ns->triggers = os_new(tr->sa, (destroy_fptr) &trigger_destroy, false, true, true, store);
+	ns->parts = os_new(tr->sa, (destroy_fptr) &part_destroy, false, false, true, store);
 
 	/* table_dup will dup keys, idxs, triggers and parts */
 	struct os_iter oi;
@@ -5016,14 +5017,15 @@ sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid ow
 	s->auth_id = auth_id;
 	s->owner = owner;
 	s->system = FALSE;
-	s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, isTempSchema(s), true, true, store);
-	s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, isTempSchema(s), true, true, store);
-	s->funcs = os_new(tr->sa, (destroy_fptr) &func_destroy, isTempSchema(s), false, false, store);
-	s->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, isTempSchema(s), true, true, store);
-	s->keys = os_new(tr->sa, (destroy_fptr) &key_destroy, isTempSchema(s), true, true, store);
-	s->idxs = os_new(tr->sa, (destroy_fptr) &idx_destroy, isTempSchema(s), true, true, store);
-	s->triggers = os_new(tr->sa, (destroy_fptr) &trigger_destroy, isTempSchema(s), true, true, store);
-	s->parts = os_new(tr->sa, (destroy_fptr) &part_destroy, isTempSchema(s), false, true, store);
+	assert(!isTempSchema(s)); // TODO tempscs2os : check if this is really true
+	s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, false, true, true, store);
+	s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, false, true, true, store);
+	s->funcs = os_new(tr->sa, (destroy_fptr) &func_destroy, false, false, false, store);
+	s->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, false, true, true, store);
+	s->keys = os_new(tr->sa, (destroy_fptr) &key_destroy, false, true, true, store);
+	s->idxs = os_new(tr->sa, (destroy_fptr) &idx_destroy, false, true, true, store);
+	s->triggers = os_new(tr->sa, (destroy_fptr) &trigger_destroy, false, true, true, store);
+	s->parts = os_new(tr->sa, (destroy_fptr) &part_destroy, false, false, true, store);
 	s->store = tr->store;
 
 	if ((res = store->table_api.table_insert(tr, sysschema, &s->base.id, &s->base.name, &s->auth_id, &s->owner, &s->system))) {
@@ -5823,7 +5825,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 
 	if (t && isTempTable(t)) {
 		gt = find_sql_table_id(tr, s, t->base.id);
-		assert(t == gt); // TODO: Check if this code is ever different
+		assert(t == gt); // TODO tempscs2os: Check if this code is ever different
 		if (gt)
 			t = gt;
 	}
@@ -5862,8 +5864,8 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 		if ((res = os_del(s->tables, tr, t->base.name, dup_base(&t->base))))
 			return res;
 	}
-	if (n && !os_del(tr->_localtmps, tr, n->name, dup_base(n)))
-		return -1;
+	if (n && (res =os_del(tr->_localtmps, tr, n->name, dup_base(n))))
+		return res;
 
 	sqlstore *store = tr->store;
 	if (isTable(t) && !isNew(t))
