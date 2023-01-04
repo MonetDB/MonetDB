@@ -8,7 +8,7 @@ const char* cheader_header_text =
 " * License, v. 2.0.  If a copy of the MPL was not distributed with this\n"
 " * file, You can obtain one at http://mozilla.org/MPL/2.0/.\n"
 " *\n"
-" * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.\n"
+" * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.\n"
 " */\n"
 "#include <stdint.h>\n"
 "typedef void *(*malloc_function_ptr)(size_t);\n"
