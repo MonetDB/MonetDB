@@ -39,15 +39,17 @@ Symbol newFunctionArgs(const char *mod, const char *nme, int kind, int args)
 		return NULL;
 	}
 
-	p = newInstructionArgs(NULL, mod, nme, args);
-	if (p == NULL) {
-		freeSymbol(s);
-		return NULL;
+	if (args > 0) {
+		p = newInstructionArgs(NULL, mod, nme, args);
+		if (p == NULL) {
+			freeSymbol(s);
+			return NULL;
+		}
+		p->token = kind;
+		p->barrier = 0;
+		setDestVar(p, varid);
+		pushInstruction(s->def,p);
 	}
-	p->token = kind;
-	p->barrier = 0;
-	setDestVar(p, varid);
-	pushInstruction(s->def,p);
 	return s;
 }
 
@@ -335,7 +337,7 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	InstrPtr pp;
 	str msg = MAL_SUCCEED;
 
-	new = newFunction(scope->name, proc->name, getSignature(proc)->token);
+	new = newFunctionArgs(scope->name, proc->name, getSignature(proc)->token, -1);
 	if( new == NULL){
 		return NULL;
 	}

@@ -1340,10 +1340,11 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	 */
 	prg->def = NULL;
 	freeSymbol(prg);
-	if ((prg = newFunction(userRef, putName(be->q->name), FUNCTIONsymbol)) == NULL) {
+	if ((prg = newFunctionArgs(userRef, putName(be->q->name), FUNCTIONsymbol, -1)) == NULL) {
 		msg = createException(MAL, "monetdbe.monetdbe_prepare_cb", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
+	freeMalBlk(prg->def);
 	prg->def = mb;
 	setFunctionId(getSignature(prg), be->q->name);
 
