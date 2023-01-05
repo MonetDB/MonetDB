@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -407,8 +407,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 	}
 
 	if ((ret = parse_schema_path_str(m, schema_path, false)) != MAL_SUCCEED) {
-		if (schema_buf)
-			GDKfree(schema_buf);
+		GDKfree(schema_buf);
 		return ret;
 	}
 
@@ -417,8 +416,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 
 	if (!enc) {
 		if (!(pwd = mcrypt_BackendSum(passwd, strlen(passwd)))) {
-			if (schema_buf)
-				GDKfree(schema_buf);
+			GDKfree(schema_buf);
 			throw(MAL, "sql.create_user", SQLSTATE(42000) "Crypt backend hash not found");
 		}
 	} else {
@@ -426,8 +424,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 	}
 
 	if ((err = AUTHGeneratePasswordHash(&hash, pwd)) != MAL_SUCCEED) {
-		if (schema_buf)
-			GDKfree(schema_buf);
+		GDKfree(schema_buf);
 		if (!enc)
 			free(pwd);
 		throw(MAL, "sql.create_user", SQLSTATE(42000) "create backend hash failure");
@@ -506,7 +503,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s, const char *initpasswd)
 	sql_column *col = NULL;
 	mvc *m = (mvc *) _mvc;
 	sqlid schema_id = 0;
-	str err;
+	str err = NULL;
 
 	/* create the authorisation related tables */
 	mvc_create_table(&t, m, s, "db_user_info", tt_table, 1, SQL_PERSIST, 0, -1, 0);
@@ -529,7 +526,8 @@ monet5_create_privileges(ptr _mvc, sql_schema *s, const char *initpasswd)
 	char *username = "monetdb";
 	char *password = initpasswd ? mcrypt_BackendSum(initpasswd, strlen(initpasswd)) : mcrypt_BackendSum("monetdb", strlen("monetdb"));
 	char *hash = NULL;
-	if ((err = AUTHGeneratePasswordHash(&hash, password)) != MAL_SUCCEED) {
+	if (password == NULL ||
+		(err = AUTHGeneratePasswordHash(&hash, password)) != MAL_SUCCEED) {
 		TRC_CRITICAL(SQL_TRANS, "generate password hash failure");
 		freeException(err);
 		free(password);

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -285,7 +285,8 @@ MKEYbathash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bailout:
 	BBPreclaim(b);
 	BBPreclaim(bs);
-	if (bn && !msg) {
+	if (bn) {
+		assert(msg == MAL_SUCCEED);
 		BATsetcount(bn, ci.ncand);
 		bn->tnonil = false;
 		bn->tnil = false;
@@ -294,8 +295,6 @@ bailout:
 		bn->trevsorted = BATcount(bn) <= 1;
 		*res = bn->batCacheid;
 		BBPkeepref(bn);
-	} else if (bn) {
-		BBPreclaim(bn);
 	}
 	return msg;
 }
@@ -482,7 +481,8 @@ bailout:
 	BBPreclaim(hb);
 	BBPreclaim(s1);
 	BBPreclaim(s2);
-	if (bn && !msg) {
+	if (bn) {
+		assert(msg == MAL_SUCCEED);
 		BATsetcount(bn, ci1.ncand);
 		bn->tnonil = false;
 		bn->tnil = false;
@@ -491,8 +491,6 @@ bailout:
 		bn->trevsorted = BATcount(bn) <= 1;
 		*res = bn->batCacheid;
 		BBPkeepref(bn);
-	} else if (bn) {
-		BBPreclaim(bn);
 	}
 	return msg;
 }
@@ -575,7 +573,8 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 bailout:
 	BBPreclaim(hb);
 	BBPreclaim(bs);
-	if (bn && !msg) {
+	if (bn) {
+		assert(msg == MAL_SUCCEED);
 		BATsetcount(bn, ci.ncand);
 		bn->tnonil = false;
 		bn->tnil = false;
@@ -584,8 +583,6 @@ bailout:
 		bn->trevsorted = BATcount(bn) <= 1;
 		*res = bn->batCacheid;
 		BBPkeepref(bn);
-	} else if (bn) {
-		BBPreclaim(bn);
 	}
 	return msg;
 }
@@ -680,7 +677,8 @@ MKEYconstbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 bailout:
 	BBPreclaim(b);
 	BBPreclaim(bs);
-	if (bn && !msg) {
+	if (bn) {
+		assert(msg == MAL_SUCCEED);
 		BATsetcount(bn, ci.ncand);
 		bn->tnonil = false;
 		bn->tnil = false;
@@ -689,8 +687,6 @@ bailout:
 		bn->trevsorted = BATcount(bn) <= 1;
 		*res = bn->batCacheid;
 		BBPkeepref(bn);
-	} else if (bn) {
-		BBPreclaim(bn);
 	}
 	return msg;
 }

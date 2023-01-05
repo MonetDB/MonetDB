@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -747,6 +747,10 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = fname;
 	else
 		s++;
+	if (strcpy_len(bname, s, sizeof(bname)) >= sizeof(bname)) {
+		fits_close_file(fptr, &status);
+		throw(MAL, "fits.attach", SQLSTATE(FI000) "File name too long\n");
+	}
 	strcpy(bname, s);
 	s = strrchr(bname, '.');
 	if (s) *s = 0;
@@ -876,7 +880,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			esc_tunit = SQLescapeString(tunit);
-			if (!esc_tform) {
+			if (!esc_tunit) {
 				GDKfree(esc_tform);
 				GDKfree(esc_cname);
 				fits_close_file(fptr, &status);

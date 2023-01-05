@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -596,6 +596,7 @@ append_msk_bat(BAT *b, BATiter *ni, struct canditer *ci)
 			/* boff < noff */
 			if (noff + cnt <= 32) {
 				/* only need part of the first word of n */
+				assert(cnt < 32); /* noff > 0, so cnt < 32 */
 				mask = (1U << cnt) - 1;
 				*bp &= ~(mask << boff);
 				*bp |= (*np & (mask << noff)) >> (noff - boff);

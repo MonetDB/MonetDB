@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -2502,10 +2502,12 @@ stmt_rs_column(backend *be, stmt *rs, int i, sql_subtype *tpe)
 #define meta(P, Id, Tpe, Args)						\
 	do {											\
 		P = newStmtArgs(mb, batRef, packRef, Args);	\
-		Id = getArg(P,0);							\
-		setVarType(mb, Id, newBatType(Tpe));		\
-		setVarFixed(mb, Id);						\
-		list = pushArgument(mb, list, Id);			\
+		if (P) {									\
+			Id = getArg(P,0);						\
+			setVarType(mb, Id, newBatType(Tpe));	\
+			setVarFixed(mb, Id);					\
+			list = pushArgument(mb, list, Id);		\
+		}											\
 	} while (0)
 
 #define metaInfo(P,Tpe,Val)						\

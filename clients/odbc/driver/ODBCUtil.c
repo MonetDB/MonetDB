@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -1214,6 +1214,8 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 											}
 										}
 									}
+									if (repl == NULL)
+										break;
 								}
 								size_t l = i + strlen(repl) + 2 + arglen + strlen(rest) - j + 1 + strlen(repl2) + repl3len;
 								nquery = malloc(l);

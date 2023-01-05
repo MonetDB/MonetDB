@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -83,7 +83,6 @@ CMDBATdup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == 0)
 		throw(MAL,"bat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*ret = b->batCacheid;
-	BATsettrivprop(b);
 	BBPretain(b->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -281,7 +280,6 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	*r = b->batCacheid;
-	BATsettrivprop(b);
 	BBPretain(b->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
