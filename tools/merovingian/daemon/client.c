@@ -84,14 +84,22 @@ handleClient(void *data)
 	self = ((struct clientdata *) data)->self;
 	memcpy(chal, ((struct clientdata *) data)->challenge, sizeof(chal));
 	free(data);
+#ifdef HAVE_OPENSSL
+	fdin = open_tls_serv_stream(sock, "merovingian<-client (tls read)", true);
+#else
 	fdin = socket_rstream(sock, "merovingian<-client (read)");
+#endif // HAVE_OPENSSL
 	if (fdin == NULL) {
 		self->dead = true;
 		return(newErr("merovingian-client inputstream problems: %s", mnstr_peek_error(NULL)));
 	}
 	fdin = block_stream(fdin);
 
+#ifdef HAVE_OPENSSL
+	fout = open_tls_serv_stream(sock, "merovingian->client (tls write)", false);
+#else
 	fout = socket_wstream(sock, "merovingian->client (write)");
+#endif // HAVE_OPENSSL
 	if (fout == 0) {
 		close_stream(fdin);
 		self->dead = true;

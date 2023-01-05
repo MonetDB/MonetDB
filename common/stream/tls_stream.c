@@ -11,6 +11,7 @@
 #include "monetdb_config.h"
 #include "stream.h"
 #include "stream_internal.h"
+#include <stdio.h>
 
 /* ---------------------------------------------- */
 /* streams working over TLS */
@@ -43,8 +44,14 @@ tls_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	return SSL_read(w->cSSL, buf, elmsize*cnt);
 }
 
+static void
+tls_close(stream *s) {
+	ssl_wrapper *w = (ssl_wrapper *)s->stream_data.p;
+	SSL_shutdown(w->cSSL);
+}
+
 stream *
-open_tls_serv_stream(int fd)
+open_tls_serv_stream(int fd, const char *name, bool readonly)
 {
 	int ssl_err = 1;
 	stream *ret;
@@ -61,9 +68,8 @@ open_tls_serv_stream(int fd)
 		return NULL;
 	}
 
-
 	/* TODO parametrize */
-	const char *server_keypair_fname = "/home/kutsurak/src/monetdb/mercurial-repos/public/smapi/smapi-dev-certificates/leaf_keypair.pem";
+	const char *server_keypair_fname = "/home/kutsurak/src/monetdb/mercurial-repos/public/smapi/smapi-dev-certificates/new/server_keypair.pem";
 	ssl_err = SSL_CTX_use_PrivateKey_file(w->ctx, server_keypair_fname, SSL_FILETYPE_PEM);
 	if (ssl_err <= 0) {
 		/* TODO handle */
@@ -71,10 +77,11 @@ open_tls_serv_stream(int fd)
 	}
 
 	/* TODO parametrize */
-	const char *server_cert_chain_fname = "/home/kutsurak/src/monetdb/mercurial-repos/public/smapi/smapi-dev-certificates/leaf_cert.pem";
+	const char *server_cert_chain_fname = "/home/kutsurak/src/monetdb/mercurial-repos/public/smapi/smapi-dev-certificates/server_cert.pem";
 	ssl_err = SSL_CTX_use_certificate_chain_file(w->ctx, server_cert_chain_fname);
 	if (ssl_err <= 0) {
 		/* TODO handle */
+		ERR_print_errors_fp(stdout);
 		return NULL;
 	}
 
@@ -96,14 +103,16 @@ open_tls_serv_stream(int fd)
 	}
 
 
-	if ((ret = create_stream("server_ssl_stream")) == NULL) {
+	if ((ret = create_stream(name)) == NULL) {
 		return NULL;
 	}
 
 
 	ret->stream_data.p = w;
+	ret->readonly = readonly;
 	ret->read = tls_read;
 	ret->write = tls_write;
+	ret->close = tls_close;
 
 	return ret;
 }
