@@ -25,33 +25,29 @@ typedef struct ssl_wrapper {
 	SSL *cSSL;
 } ssl_wrapper;
 
-/*
+
 static ssize_t
 tls_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
 {
-	(void)s;
-	(void)buf;
-	(void)elmsize;
-	(void)cnt;
+	/* Is it safe to cast a void pointer into an ssl_wrapper pointer? */
+	ssl_wrapper *w = (ssl_wrapper *)s->stream_data.p;
 
-	return 0;
+	return SSL_write(w->cSSL, buf, elmsize*cnt);
 }
 
 static ssize_t
-tls_read(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
+tls_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 {
-	(void)s;
-	(void)buf;
-	(void)elmsize;
-	(void)cnt;
+	ssl_wrapper *w = (ssl_wrapper *)s->stream_data.p;
 
-	return 0;
+	return SSL_read(w->cSSL, buf, elmsize*cnt);
 }
-*/
+
 stream *
 open_tls_serv_stream(int fd)
 {
-	int err = 1;
+	int ssl_err = 1;
+	stream *ret;
 
 	ssl_wrapper *w = (ssl_wrapper *)malloc(sizeof(ssl_wrapper));
 	if (w == NULL) {
@@ -68,22 +64,22 @@ open_tls_serv_stream(int fd)
 
 	/* TODO parametrize */
 	const char *server_keypair_fname = "/home/kutsurak/src/monetdb/mercurial-repos/public/smapi/smapi-dev-certificates/leaf_keypair.pem";
-	err = SSL_CTX_use_PrivateKey_file(w->ctx, server_keypair_fname, SSL_FILETYPE_PEM);
-	if (err <= 0) {
+	ssl_err = SSL_CTX_use_PrivateKey_file(w->ctx, server_keypair_fname, SSL_FILETYPE_PEM);
+	if (ssl_err <= 0) {
 		/* TODO handle */
 		return NULL;
 	}
 
 	/* TODO parametrize */
 	const char *server_cert_chain_fname = "/home/kutsurak/src/monetdb/mercurial-repos/public/smapi/smapi-dev-certificates/leaf_cert.pem";
-	err = SSL_CTX_use_certificate_chain_file(w->ctx, server_cert_chain_fname);
-	if (err <= 0) {
+	ssl_err = SSL_CTX_use_certificate_chain_file(w->ctx, server_cert_chain_fname);
+	if (ssl_err <= 0) {
 		/* TODO handle */
 		return NULL;
 	}
 
-	err = SSL_CTX_check_private_key(w->ctx);
-	if (err <= 0) {
+	ssl_err = SSL_CTX_check_private_key(w->ctx);
+	if (ssl_err <= 0) {
 		/* TODO handle */
 		return NULL;
 	}
@@ -93,13 +89,23 @@ open_tls_serv_stream(int fd)
 
 	SSL_set_fd(w->cSSL, fd);
 
-	/* TODO: Accept connection and construct stream.
-	 *
-	 * NOTE: Accepting the connection will probably need to happen at the point where the TCP connection is
-	 * accepted. The handshake also happens there and the open_tlsstream is given a fully constructed ssl wrapper.
-	 */
+	ssl_err = SSL_accept(w->cSSL);
+	if (ssl_err <= 0) {
+		/* TODO handle */
+		return NULL;
+	}
 
-	return NULL;
+
+	if ((ret = create_stream("server_ssl_stream")) == NULL) {
+		return NULL;
+	}
+
+
+	ret->stream_data.p = w;
+	ret->read = tls_read;
+	ret->write = tls_write;
+
+	return ret;
 }
 
 #else
