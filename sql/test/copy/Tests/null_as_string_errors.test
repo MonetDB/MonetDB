@@ -11,7 +11,7 @@ select * from sys.rejects
 ----
 1
 1
-line 1 field i 'int' expected in 'NULL'
+'int' expected in 'NULL'
 NULL,NULL,NULL@
 
 statement ok
@@ -27,7 +27,7 @@ select * from sys.rejects
 ----
 1
 1
-line 1 field i 'int' expected in 'NULL'
+'int' expected in 'NULL'
 NULL,zero,0@
 
 statement ok
@@ -65,7 +65,7 @@ select * from sys.rejects
 ----
 1
 3
-line 1 field d 'decimal(5,2)' expected in 'NULL'
+'decimal(5,2)' expected in 'NULL'
 2,two,NULL@
 
 statement ok
@@ -81,7 +81,7 @@ select * from sys.rejects
 ----
 1
 1
-line 1 field i 'int' expected in ''
+'int' expected in ''
 ,,@
 
 statement ok
@@ -97,7 +97,7 @@ select * from sys.rejects
 ----
 1
 1
-line 1 field i 'int' expected in ''
+'int' expected in ''
 ,zero,0@
 
 statement ok

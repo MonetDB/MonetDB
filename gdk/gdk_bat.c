@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -130,7 +130,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 
 		if (ATOMneedheap(tt)) {
 			if ((bn->tvheap = GDKmalloc(sizeof(Heap))) == NULL) {
-				BBPclear(bn->batCacheid, true);
+				BBPclear(bn->batCacheid);
 				HEAPfree(bn->theap, true);
 				GDKfree(bn->theap);
 				GDKfree(bn);
@@ -296,7 +296,7 @@ COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 	TRC_DEBUG(ALGO, "-> " ALGOBATFMT "\n", ALGOBATPAR(bn));
 	return bn;
   bailout:
-	BBPclear(bn->batCacheid, true);
+	BBPclear(bn->batCacheid);
 	return NULL;
 }
 
@@ -649,7 +649,14 @@ BATclear(BAT *b, bool force)
 	BAThseqbase(b, 0);
 	BATtseqbase(b, ATOMtype(b->ttype) == TYPE_oid ? 0 : oid_nil);
 	b->theap->dirty = true;
-	BATsettrivprop(b);
+	b->tnonil = true;
+	b->tnil = false;
+	b->tsorted = b->trevsorted = ATOMlinear(b->ttype);
+	b->tnosorted = b->tnorevsorted = 0;
+	b->tkey = true;
+	b->tnokey[0] = b->tnokey[1] = 0;
+	b->tminpos = b->tmaxpos = BUN_NONE;
+	b->tunique_est = 0;
 	MT_lock_unset(&b->theaplock);
 	if (tvp != 0 && tvp != b->batCacheid)
 		BBPrelease(tvp);
@@ -1166,10 +1173,57 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			b->tkey = count == 1;
 			b->tnil = true;
 			b->tnonil = false;
+			b->tunique_est = 1;
 		} else {
-			b->tsorted = b->trevsorted = b->tkey = count == 1;
+			int c;
 			b->tnil = b->tnonil = false;
+			switch (count) {
+			case 1:
+				b->tsorted = b->trevsorted = b->tkey = true;
+				b->tunique_est = 1;
+				break;
+			case 2:
+				if (b->tvheap)
+					c = ATOMcmp(b->ttype,
+						    ((void **) values)[0],
+						    ((void **) values)[1]);
+				else
+					c = ATOMcmp(b->ttype,
+						    values,
+						    (char *) values + b->twidth);
+				b->tsorted = c <= 0;
+				b->tnosorted = !b->tsorted;
+				b->trevsorted = c >= 0;
+				b->tnorevsorted = !b->trevsorted;
+				b->tkey = c != 0;
+				b->tnokey[0] = 0;
+				b->tnokey[1] = !b->tkey;
+				b->tunique_est = (double) (1 + b->tkey);
+				break;
+			default:
+				b->tsorted = b->trevsorted = b->tkey = false;
+				break;
+			}
 		}
+	} else if (b->batCount == 1 && count == 1) {
+		BATiter bi = bat_iterator_nolock(b);
+		if (values != NULL) {
+			if (b->tvheap)
+				t = ((void **) values)[0];
+			else
+				t = values;
+		}
+		int c = ATOMcmp(b->ttype, BUNtail(bi, 0), t);
+		b->tsorted = c <= 0;
+		b->tnosorted = !b->tsorted;
+		b->trevsorted = c >= 0;
+		b->tnorevsorted = !b->trevsorted;
+		b->tkey = c != 0;
+		b->tnokey[0] = 0;
+		b->tnokey[1] = !b->tkey;
+		b->tunique_est = (double) (1 + b->tkey);
+		b->tnil |= values == NULL;
+		b->tnonil = false;
 	} else {
 		b->tnil |= values == NULL;
 		b->tnonil = false;
