@@ -285,10 +285,15 @@ fmtRemark(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str t, int flg, str base, s
 	//optimizer remark, i=1 actions field, i=2 usec field
 	if (pci && pci->argc == 3) {
 		if (getFunctionId(pci)) {
-			snprintf(aux, 128, "%-36s %d actions %ld usec",
-					 getFunctionId(pci),
-					 atoi(renderTerm(mb, stk, pci, 1, flg)),
-					 atol(renderTerm(mb, stk, pci, 2, flg)));
+			char *arg1 = renderTerm(mb, stk, pci, 1, flg);
+			char *arg2 = renderTerm(mb, stk, pci, 2, flg);
+			if (arg1 && arg2)
+				snprintf(aux, 128, "%-36s %d actions %ld usec",
+						 getFunctionId(pci),
+						 atoi(arg1),
+						 atol(arg2));
+			GDKfree(arg1);
+			GDKfree(arg2);
 			if (!copystring(&t, aux, &len))
 				return base;
 		}
