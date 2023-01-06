@@ -122,7 +122,6 @@ openConnectionIP(int *socks, bool udp, const char *bindaddr, unsigned short port
 						   (const char *) &on, sizeof on) < 0)
 				Mlevelfprintf(ERROR, log, "setsockopt SO_EXCLBIND: %s\n", strerror(e));
 #endif
-			}
 
 			switch (bind(sock, rp->ai_addr, rp->ai_addrlen)) {
 			case -1:
