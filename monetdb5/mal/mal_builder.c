@@ -36,9 +36,10 @@ newAssignmentArgs(MalBlkPtr mb, int args)
 		str msg = createException(MAL, "newAssignment", "Can not allocate variable");
 		addMalException(mb, msg);
 		freeException(msg);
+		GDKfree(q);
+		return NULL;
 	} else
 		getArg(q,0) =  k;
-	pushInstruction(mb, q);
 	return q;
 }
 
@@ -69,8 +70,9 @@ newStmtArgs(MalBlkPtr mb, const char *module, const char *name, int args)
 		str msg = createException(MAL, "newStmtArgs", "Can not allocate variable");
 		addMalException(mb, msg);
 		freeException(msg);
+		GDKfree(q);
+		return NULL;
 	}
-	pushInstruction(mb, q);
 	return q;
 }
 
@@ -87,10 +89,11 @@ newReturnStmt(MalBlkPtr mb)
 		str msg = createException(MAL, "newReturnStmt", "Can not allocate return variable");
 		addMalException(mb, msg);
 		freeException(msg);
+		GDKfree(q);
+		return NULL;
 	} else
 		getArg(q,0) = k;
 	q->barrier= RETURNsymbol;
-	pushInstruction(mb, q);
 	return q;
 }
 
@@ -100,10 +103,12 @@ newFcnCallArgs(MalBlkPtr mb, const char *mod, const char *fcn, int args)
 	InstrPtr q = newAssignmentArgs(mb, args);
 	const char *fcnName, *modName;
 
-	modName = putName(mod);
-	fcnName = putName(fcn);
-	setModuleId(q, modName);
-	setFunctionId(q, fcnName);
+	if (q != NULL) {
+		modName = putName(mod);
+		fcnName = putName(fcn);
+		setModuleId(q, modName);
+		setFunctionId(q, fcnName);
+	}
 	return q;
 }
 
@@ -128,15 +133,18 @@ newComment(MalBlkPtr mb, const char *val)
 		str msg = createException(MAL, "newComment", "Can not allocate comment");
 		addMalException(mb, msg);
 		freeException(msg);
+		GDKfree(q);
+		return NULL;
 	} else {
 		k = defConstant(mb, TYPE_str, &cst);
-		if( k >= 0){
-			getArg(q,0) = k;
-			clrVarConstant(mb,getArg(q,0));
-			setVarDisabled(mb,getArg(q,0));
+		if (k < 0) {
+			GDKfree(q);
+			return NULL;
 		}
+		getArg(q,0) = k;
+		clrVarConstant(mb,getArg(q,0));
+		setVarDisabled(mb,getArg(q,0));
 	}
-	pushInstruction(mb, q);
 	return q;
 }
 
@@ -156,6 +164,8 @@ newCatchStmt(MalBlkPtr mb, const char *nme)
 			str msg = createException(MAL, "newCatchStmt", "Can not allocate variable");
 			addMalException(mb, msg);
 			freeException(msg);
+			GDKfree(q);
+			return NULL;
 		}else{
 			getArg(q,0) = k;
 		}
@@ -179,6 +189,8 @@ newRaiseStmt(MalBlkPtr mb, const char *nme)
 			str msg = createException(MAL, "newRaiseStmt", "Can not allocate variable");
 			addMalException(mb, msg);
 			freeException(msg);
+			GDKfree(q);
+			return NULL;
 		} else
 			getArg(q,0) = k;
 	} else
@@ -202,6 +214,8 @@ newExitStmt(MalBlkPtr mb, const char *nme)
 			str msg = createException(MAL, "newExitStmt", "Can not allocate variable");
 			addMalException(mb, msg);
 			freeException(msg);
+			GDKfree(q);
+			return NULL;
 		}else
 			getArg(q,0) = k;
 	} else

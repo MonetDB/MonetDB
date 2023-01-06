@@ -4616,6 +4616,10 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mod = *getArgReference_str(stk, pci, arg++);
 	fcn = *getArgReference_str(stk, pci, arg++);
 	npci = newStmtArgs(nmb, mod, fcn, pci->argc);
+	if (npci == NULL) {
+		freeMalBlk(nmb);
+		return createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	for (int i = 1; i < pci->retc; i++) {
 		int type = getArgType(mb, pci, i);
@@ -4630,9 +4634,10 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		npci = pushNil(nmb, npci, type);
 	}
+	pushInstruction(nmb, npci);
 	/* check program to get the proper malblk */
 	if (chkInstruction(cntxt->usermodule, nmb, npci)) {
-		freeInstruction(npci);
+		freeMalBlk(nmb);
 		return createException(MAL, "sql.unionfunc", SQLSTATE(42000) PROGRAM_GENERAL);
 	}
 

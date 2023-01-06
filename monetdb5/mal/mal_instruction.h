@@ -189,7 +189,6 @@ mal_export str convertConstant(malType type, ValPtr vr);
 
 mal_export void pushInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid);
-mal_export InstrPtr addArgument(MalBlkPtr mb, InstrPtr p, int varid);
 mal_export InstrPtr setArgument(MalBlkPtr mb, InstrPtr p, int idx, int varid);
 mal_export InstrPtr pushReturn(MalBlkPtr mb, InstrPtr p, int varid);
 mal_export InstrPtr pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name);

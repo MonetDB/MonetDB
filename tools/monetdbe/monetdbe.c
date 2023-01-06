@@ -836,8 +836,15 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 		c->curprg= NULL;
 		return -2;
 	}
+	pushInstruction(mb, p);
 
 	q = newInstruction(mb, NULL, NULL);
+	if (q == NULL) {
+		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL));
+		freeSymbol(c->curprg);
+		c->curprg= NULL;
+		return -2;
+	}
 	q->barrier= RETURNsymbol;
 	q = pushReturn(mb, q, getArg(p, 0));
 
@@ -1246,6 +1253,10 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	o->retc = o->argc = 0;
 
 	e = newInstructionArgs(mb, remoteRef, execRef, (int)(nparams + 5));
+	if (e == NULL) {
+		msg = createException(MAL, "monetdbe.monetdbe_prepare_cb", MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
 	setDestVar(e, newTmpVariable(mb, TYPE_any));
 	e = pushStr(mb, e, mdbe->mid);
 	e = pushStr(mb, e, userRef);
@@ -1274,6 +1285,10 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	e = pushValue(mb, e, &v);
 
 	r = newInstruction(mb, NULL, NULL);
+	if (r == NULL) {
+		msg = createException(MAL, "monetdbe.monetdbe_prepare_cb", MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
 	r->barrier= RETURNsymbol;
 	r->argc= r->retc=0;
 
@@ -1306,9 +1321,14 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 			o = pushArgument(mb, o, idx);
 
 			InstrPtr p = newFcnCall(mb, remoteRef, putRef);
+			if (p == NULL) {
+				msg = createException(MAL, "monetdbe.monetdbe_prepare_cb", MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
 			setArgType(mb, p, 0, TYPE_str);
 			p = pushStr(mb, p, mdbe->mid);
 			p = pushArgument(mb, p, idx);
+			pushInstruction(mb, p);
 
 			e = pushArgument(mb, e, getArg(p, 0));
 		}
@@ -1322,6 +1342,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	}
 	pushInstruction(mb, e);
 	pushInstruction(mb, r);
+	e = r = NULL;
 
 	if ( (mdbe->msg = chkProgram(mdbe->c->usermodule, mb)) != MAL_SUCCEED ) {
 		msg = mdbe->msg;
@@ -1352,6 +1373,8 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	insertSymbol(mdbe->c->usermodule, prg);
 
 cleanup:
+	freeInstruction(e);
+	freeInstruction(r);
 	if (bcolumn) {
 		bat_iterator_end(&btype_iter);
 		bat_iterator_end(&bcolumn_iter);
@@ -1399,6 +1422,11 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 	o = newStmt(mb, remoteRef, putRef);
 	o = pushStr(mb, o, mdbe->mid);
 	o = pushBit(mb, o, TRUE);
+	if (o == NULL) {
+		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_query_remote", MAL_MALLOC_FAIL));
+		goto finalize;
+	}
+	pushInstruction(mb, o);
 
 	if (prepare_id) {
 		size_t query_len, input_query_len, prep_len = 0;
@@ -1421,9 +1449,18 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 	p = newStmt(mb, remoteRef, putRef);
 	p = pushStr(mb, p, mdbe->mid);
 	p = pushStr(mb, p, query);
+	if (p == NULL) {
+		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_query_remote", MAL_MALLOC_FAIL));
+		goto finalize;
+	}
+	pushInstruction(mb, p);
 
 
 	e = newInstruction(mb, remoteRef, execRef);
+	if (e == NULL) {
+		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_query_remote", MAL_MALLOC_FAIL));
+		goto finalize;
+	}
 	setDestVar(e, newTmpVariable(mb, TYPE_any));
 	e = pushStr(mb, e, mdbe->mid);
 	e = pushStr(mb, e, sqlRef);
@@ -1473,6 +1510,10 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 	pushInstruction(mb, e);
 
 	r = newInstruction(mb, NULL, NULL);
+	if (r == NULL) {
+		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_query_remote", MAL_MALLOC_FAIL));
+		goto finalize;
+	}
 	r->barrier= RETURNsymbol;
 	r->argc= r->retc=0;
 	pushInstruction(mb, r);
@@ -2038,11 +2079,17 @@ append_create_remote_append_mal_program(
 	f->retc = f->argc = 0;
 	f = pushReturn(mb, f, newTmpVariable(mb, TYPE_int));
 	v = newFcnCall(mb, sqlRef, mvcRef);
+	if (v == NULL) {
+		msg = createException(SQL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+	pushInstruction(mb, v);
 	setArgType(mb, v, 0, TYPE_int);
 
 	mvc_id = getArg(v, 0);
 
-	sqlstore *store = m->session->tr->store;
+	sqlstore *store;
+	store = m->session->tr->store;
 	for (size_t i = 0; i < ccount; i++) {
 		sql_column *col = NULL;
 		sql_type *tpe = SA_ZNEW(m->sa, sql_type);
@@ -2078,17 +2125,26 @@ append_create_remote_append_mal_program(
 		f = pushArgument(mb, f, idx);
 
 		a = newFcnCall(mb, sqlRef, appendRef);
+		if (a == NULL) {
+			msg = createException(SQL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
+			goto cleanup;
+		}
 		setArgType(mb, a, 0, TYPE_int);
 		a = pushArgument(mb, a, mvc_id);
 		a = pushStr(mb, a, schema ? schema : "sys"); /* TODO this should be better */
 		a = pushStr(mb, a, table);
 		a = pushStr(mb, a, columns[i].name);
 		a = pushArgument(mb, a, idx);
+		pushInstruction(mb, a);
 
 		mvc_id = getArg(a, 0);
 	}
 
 	r = newInstruction(mb, NULL, NULL);
+	if (r == NULL) {
+		msg = createException(SQL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
 	r->barrier= RETURNsymbol;
 	r->retc = r->argc = 0;
 	r = pushReturn(mb, r, mvc_id);
@@ -2473,12 +2529,24 @@ remote_cleanup:
 		f->retc = f->argc = 0;
 
 		InstrPtr r = newFcnCall(mb, remoteRef, registerRef);
+		if (r == NULL) {
+			set_error(mdbe, createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL));
+			freeSymbol(prg);
+			goto cleanup;
+		}
+
 		setArgType(mb, r, 0, TYPE_str);
 		r = pushStr(mb, r, mdbe->mid);
 		r = pushStr(mb, r, userRef);
 		r = pushStr(mb, r, putName(remote_prg->name));
+		pushInstruction(mb, r);
 
 		InstrPtr e = newInstructionArgs(mb, remoteRef, execRef, 4 + ol_length(t->columns));
+		if (e == NULL) {
+			set_error(mdbe, createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL));
+			freeSymbol(prg);
+			goto cleanup;
+		}
 		setDestVar(e, newTmpVariable(mb, TYPE_any));
 		e = pushStr(mb, e, mdbe->mid);
 		e = pushStr(mb, e, userRef);
@@ -2500,10 +2568,16 @@ remote_cleanup:
 			BBPunfix(b->batCacheid);
 
 			InstrPtr p = newFcnCall(mb, remoteRef, putRef);
-			;
+			if (p == NULL) {
+				set_error(mdbe, createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL));
+				freeInstruction(e);
+				freeSymbol(prg);
+				goto cleanup;
+			}
 			setArgType(mb, p, 0, TYPE_str);
 			p = pushStr(mb, p, mdbe->mid);
 			p = pushArgument(mb, p, idx);
+			pushInstruction(mb, p);
 
 			e = pushArgument(mb, e, getArg(p, 0));
 		}
@@ -2511,6 +2585,11 @@ remote_cleanup:
 		pushInstruction(mb, e);
 
 		InstrPtr ri = newInstruction(mb, NULL, NULL);
+		if (ri == NULL) {
+			set_error(mdbe, createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL));
+			freeSymbol(prg);
+			goto cleanup;
+		}
 		ri->barrier= RETURNsymbol;
 		ri->retc = ri->argc = 0;
 		pushInstruction(mb, ri);
