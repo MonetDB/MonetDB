@@ -402,7 +402,8 @@ objectversion_destroy(sqlstore *store, objectset* os, objectversion *ov)
 	if (os->destroy)
 		os->destroy(store, ov->b);
 
-	if (os->temporary) os_destroy(os, store); // TODO tempscs2os : embed into refcounting subproject
+	if (os->temporary && (state & deleted || state & under_destruction || state & rollbacked))
+		os_destroy(os, store); // TODO tempscs2os : embed into refcounting subproject : reference is already dropped by os_cleanup
 	_DELETE(ov);
 }
 
@@ -580,6 +581,9 @@ os_cleanup(sqlstore* store, objectversion *ov, ulng oldest)
 		// we want to retry marking it for destruction later.
 		return LOG_OK;
 	}
+
+	assert(os_atmc_get_state(ov) != deleted && os_atmc_get_state(ov) != under_destruction && os_atmc_get_state(ov) != rollbacked);
+	if (ov->os->temporary) os_destroy(ov->os, store); // TODO tempscs2os : embed into refcounting subproject: (old) live versions should drop their reference to the os
 
 	while (ov->id_based_older && ov->id_based_older == ov->name_based_older && ov->ts >= oldest) {
 		ov = ov->id_based_older;

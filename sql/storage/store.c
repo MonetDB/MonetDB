@@ -3147,6 +3147,7 @@ cleanup:
 sql_table *
 globaltmp_instantiate(sql_trans *tr, sql_table *ot)
 {
+	assert(isGlobal(ot)&& isTempTable(ot));
 	sql_table *t = NULL;
 	if (table_dup(tr, ot, NULL, NULL, &t) == LOG_OK)
 		return t;
@@ -3583,6 +3584,14 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 {
 	sqlstore *store = tr->store;
 	if (!list_empty(tr->changes)) {
+		struct os_iter oi;
+		os_iterator(&oi, tr->_localtmps, tr, NULL);
+		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
+			sql_table *t = (sql_table *) b;
+			if (t->commit_action == CA_DROP && !b->deleted) {
+				(void) sql_trans_drop_table_id(tr, t->s, b->id, DROP_RESTRICT);// TODO tempscs2os : fix result code sql_trans_drop_table_id
+			}
+		}
 		/* revert the change list */
 		list *nl = SA_LIST(tr->sa, (fdestroy) NULL);
 		for(node *n=tr->changes->h; n; n = n->next)
@@ -3858,6 +3867,15 @@ sql_trans_commit(sql_trans *tr)
 	sqlstore *store = tr->store;
 
 	if (!list_empty(tr->changes)) {
+		struct os_iter oi;
+		os_iterator(&oi, tr->_localtmps, tr, NULL);
+		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
+			sql_table *t = (sql_table *) b;
+			if (t->commit_action == CA_DROP && !b->deleted) {
+				(void) sql_trans_drop_table_id(tr, t->s, b->id, DROP_RESTRICT);;// TODO tempscs2os : fix result code sql_trans_drop_table_id
+			}
+		}
+
 		int flush = 0;
 		ulng commit_ts = 0, oldest = 0, log_file_id = 0;
 
@@ -5816,24 +5834,21 @@ create_sql_column(sqlstore *store, sql_allocator *sa, sql_table *t, const char *
 int
 sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_action)
 {
-	sql_table *t = find_sql_table(tr, s, name), *gt = NULL;
+	sql_table *t = find_sql_table(tr, s, name);
 
 	if (!t) {
 		TRC_ERROR(SQL_STORE, "sql_trans_drop_table: Table %s.%s does not exist\n", s->base.name, name);
 		return -1;
 	}
 
+	sql_table *gt = t;
 	if (t && isTempTable(t)) {
-		gt = find_sql_table_id(tr, s, t->base.id);
-		assert(t == gt); // TODO tempscs2os: Check if this code is ever different
-		if (gt)
-			t = gt;
+		gt = (sql_table*)os_find_id(s->tables, tr, t->base.id);
 	}
-	int is_global = isGlobal(t), res = LOG_OK;
-	sql_base *n = NULL;
 
-	if (!is_global || gt)
-		n = os_find_id(tr->_localtmps, tr, t->base.id);
+	assert(t == gt || !gt || (isTempTable(gt) && !isLocalTemp(gt) && isLocalTemp(t)));
+
+	int res = LOG_OK;
 
 	if ((drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) &&
 	    tr->dropped && list_find_id(tr->dropped, t->base.id))
@@ -5860,11 +5875,10 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 			return res;
 
 	t->base.deleted = 1;
-	if (is_global) {
-		if ((res = os_del(s->tables, tr, t->base.name, dup_base(&t->base))))
-			return res;
-	}
-	if (n && (res =os_del(tr->_localtmps, tr, n->name, dup_base(n))))
+	
+	if (gt && (res = os_del(s->tables, tr, gt->base.name, dup_base(&gt->base))))
+		return res;
+	if (t != gt && (res =os_del(tr->_localtmps, tr, t->base.name, dup_base(&t->base))))
 		return res;
 
 	sqlstore *store = tr->store;

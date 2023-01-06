@@ -2296,7 +2296,6 @@ append_idx(sql_trans *tr, sql_idx *i, BUN offset, BAT *offsets, void *data, BUN 
 		return LOG_ERR;
 
 	assert(delta->cs.st == ST_DEFAULT);
-	assert(delta && delta->cs.ts == tr->tid);
 
 	odelta = delta;
 	res = append_col_execute(tr, &delta, i->base.id, offset, offsets, data, cnt, tpe, NULL);
