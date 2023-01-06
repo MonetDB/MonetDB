@@ -4,6 +4,7 @@ try:
 except ImportError:
     import process
 
+process.verbose = True
 with process.server(stdin=process.PIPE, stdout=process.PIPE,
                     stderr=process.PIPE, ipv6=True) as server:
     with process.client('sql', host='::1', server=server,

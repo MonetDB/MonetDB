@@ -794,7 +794,6 @@ void TABLETdestroy_format(Tablet *as);
 int TABLEToutput_file(Tablet *as, BAT *order, stream *s);
 int TRACEtable(Client cntxt, BAT **r);
 int TYPE_xml;
-InstrPtr addArgument(MalBlkPtr mb, InstrPtr p, int varid);
 void addMalException(MalBlkPtr mb, str msg);
 str addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name);
 str addPipeDefinition(Client cntxt, const char *name, const char *pipe);

@@ -244,6 +244,10 @@ addFunctions(mel_func *fcn){
 		mb->statichelp = mb->help = fcn->comment;
 
 		sig= newInstructionArgs(mb, mod, putName(fcn->fcn), fcn->argc + (fcn->retc == 0));
+		if (sig == NULL) {
+			freeSymbol(s);
+			throw(LOADER, "addFunctions", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		sig->retc = 0;
 		sig->argc = 0;
 		sig->token = fcn->command?COMMANDsymbol:PATTERNsymbol;
@@ -357,6 +361,10 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp, const ch
 		return MEL_ERR;
 	}
 	sig = newInstructionArgs(mb, mod, fcn, argc + (retc == 0));
+	if (sig == NULL) {
+		freeSymbol(s);
+		return MEL_ERR;
+	}
 	sig->retc = 0;
 	sig->argc = 0;
 	sig->token = command ? COMMANDsymbol:PATTERNsymbol;

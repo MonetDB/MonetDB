@@ -172,9 +172,13 @@ wrapup:
 	if(actions > 0 && msg == MAL_SUCCEED){
 		mb->optimize = GDKusec() - clk;
 		p = newStmt(mb, optimizerRef, totalRef);
+		if (p == NULL) {
+			throw(MAL, "optimizer.MALoptimizer", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		p->token = REMsymbol;
 		p = pushInt(mb, p, actions);
 		p = pushLng(mb, p, mb->optimize);
+		pushInstruction(mb, p);
 	}
 	if (cnt >= mb->stop)
 		throw(MAL, "optimizer.MALoptimizer", SQLSTATE(42000) OPTIMIZER_CYCLE);
