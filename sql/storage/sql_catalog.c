@@ -141,10 +141,14 @@ schema_find_key(sql_trans *tr, sql_schema *s, const char *name)
 	sql_base *b = os_find_name(s->keys, tr, name);
 
 	if (!b && tr->tmp == s) {
-		sql_table *t = (sql_table*) os_find_name(tr->_localtmps, tr, name);
-		sql_key *o = find_sql_key(t, name);
-		if (o)
-			return o;
+		struct os_iter oi;
+		os_iterator(&oi, tr->_localtmps, tr, NULL);
+		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
+			sql_table *t = (sql_table *) b;
+			sql_key *o = find_sql_key(t, name);
+			if (o)
+				return o;
+		}
 	}
 	return (sql_key*)b;
 }
@@ -178,10 +182,14 @@ schema_find_idx(sql_trans *tr, sql_schema *s, const char *name)
 	sql_base *b = os_find_name(s->idxs, tr, name);
 
 	if (!b && tr->tmp == s) {
-	sql_table *t = (sql_table*) os_find_name(tr->_localtmps, tr, name);
-		sql_idx *o = find_sql_idx(t, name);
-		if (o)
-			return o;
+		struct os_iter oi;
+		os_iterator(&oi, tr->_localtmps, tr, NULL);
+		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
+			sql_table *t = (sql_table *) b;
+			sql_idx *o = find_sql_idx(t, name);
+			if (o)
+				return o;
+		}
 	}
 	return (sql_idx*)b;
 }
@@ -194,7 +202,7 @@ schema_find_idx_id(sql_trans *tr, sql_schema *s, sqlid id)
 	if (!b && tr->tmp == s) {
 		struct os_iter oi;
 		os_iterator(&oi, tr->_localtmps, tr, NULL);
-		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) { // TODO: maybe an objectset for idxs or have idxs in global idxs os
+		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_table *t = (sql_table *) b;
 			node *o = ol_find_id(t->idxs, id);
 			if (o)
@@ -381,10 +389,14 @@ schema_find_trigger(sql_trans *tr, sql_schema *s, const char *name)
 	sql_base *b = os_find_name(s->triggers, tr, name);
 
 	if (!b && tr->tmp == s) {
-		sql_table *t = (sql_table*) os_find_name(tr->_localtmps, tr, name);
-		sql_trigger *o = find_sql_trigger(t, name);
-		if (o)
-			return o;
+		struct os_iter oi;
+		os_iterator(&oi, tr->_localtmps, tr, NULL);
+		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
+			sql_table *t = (sql_table *) b;
+			sql_trigger *o = find_sql_trigger(t, name);
+			if (o)
+				return o;
+		}
 	}
 	return (sql_trigger*)b;
 }
