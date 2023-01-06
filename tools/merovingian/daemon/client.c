@@ -85,7 +85,7 @@ handleClient(void *data)
 	memcpy(chal, ((struct clientdata *) data)->challenge, sizeof(chal));
 	free(data);
 #ifdef HAVE_OPENSSL
-	fdin = open_tls_serv_stream(sock, "merovingian<-client (tls read)", true);
+	fdin = open_tls_server_stream(sock, "merovingian<-client (tls read)", NULL);
 #else
 	fdin = socket_rstream(sock, "merovingian<-client (read)");
 #endif // HAVE_OPENSSL
@@ -96,7 +96,9 @@ handleClient(void *data)
 	fdin = block_stream(fdin);
 
 #ifdef HAVE_OPENSSL
-	fout = open_tls_serv_stream(sock, "merovingian->client (tls write)", false);
+	/* stream library really wants 2 different streams one read only and one read write. On the other hand openssl has */
+	/* one object (BIO) that handles both directions. */
+	fout = open_tls_server_stream(sock, "merovingian->client (tls write)", fdin);
 #else
 	fout = socket_wstream(sock, "merovingian->client (write)");
 #endif // HAVE_OPENSSL
