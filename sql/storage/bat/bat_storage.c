@@ -3724,7 +3724,7 @@ clear_del(sql_trans *tr, sql_table *t, int in_transaction)
 		unlock_table(tr->store, t->base.id);
 	}
 	assert(t->persistence != SQL_DECLARED_TABLE);
-	if (in_transaction)
+	if (!in_transaction)
 		trans_add(tr, &t->base, bat, &tc_gc_del, &commit_update_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_update_del);
 	if (ok == LOG_ERR)
 		return BUN_NONE;
