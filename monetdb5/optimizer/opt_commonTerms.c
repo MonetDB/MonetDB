@@ -112,7 +112,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		 * Like all optimizer decisions, it is safe to stop.
 		 */
 		barrier |= getFunctionId(p) == assertRef;
-		if (barrier || p->token == NOOPsymbol || p->token == ASSIGNsymbol) {
+		if (barrier || p->token == ASSIGNsymbol) {
 			TRC_DEBUG(MAL_OPTIMIZER, "Skipped[%d]: %d %d\n", i, barrier, p->retc == p->argc);
 			pushInstruction(mb,p);
 			continue;

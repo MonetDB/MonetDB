@@ -444,15 +444,6 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		return fcnDefinition(mb, p, t, flg, base, len + (t - base));
 	case REMsymbol:
 		return fmtRemark(mb, stk, p, t, flg, base, len);
-	case NOOPsymbol:
-		if (!copystring(&t, "#", &len))
-			return base;
-		if (getVar(mb, getArg(p, 0))->value.val.sval && getVar(mb, getArg(p, 0))->value.len > 0 &&
-			!copystring(&t, getVar(mb, getArg(p, 0))->value.val.sval, &len))
-			return base;
-		if (!copystring(&t, " ", &len))
-			return base;
-		break;
 	default:
 		i = snprintf(t, len, " unknown symbol ?%d? ", p->token);
 		if (i < 0 || (size_t) i >= len)

@@ -45,7 +45,6 @@
 
 #define ASSIGNsymbol    40	/* interpreter entry points */
 #define ENDsymbol       41
-#define NOOPsymbol      43	/* no operation required */
 
 #define COMMANDsymbol   61	/* these tokens should be the last group !! */
 #define FUNCTIONsymbol  62	/* the designate the signature start */
