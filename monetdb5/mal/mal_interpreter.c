@@ -803,7 +803,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 			break;
 		}
-		case NOOPsymbol:
 		case REMsymbol:
 			break;
 		case ENDsymbol:
