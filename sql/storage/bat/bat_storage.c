@@ -3123,10 +3123,10 @@ create_idx(sql_trans *tr, sql_idx *ni)
 	if (new)
 		bat->cs.ts = tr->tid;
 
-	if (!isNew(ni)){
+	if (!isNew(ni) && !isTempTable(ni->t)){
 		bat->cs.ts = 1;
 		return load_cs(tr, &bat->cs, type, ni->base.id);
-	} else if (bat && bat->cs.bid) {
+	} else if (bat && bat->cs.bid && !isTempTable(ni->t)) {
 		return new_persistent_delta(ATOMIC_PTR_GET(&ni->data));
 	} else {
 		sql_column *c = ol_first_node(ni->t->columns)->data;
@@ -3181,7 +3181,9 @@ commit_create_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	sql_delta *delta = ATOMIC_PTR_GET(&i->data);
 	if (!tr->parent)
 		i->base.new = 0;
-	return commit_create_delta( tr, i->t, &i->base, delta, commit_ts, oldest);
+	if (!isTempTable(i->t))
+		return commit_create_delta( tr, i->t, &i->base, delta, commit_ts, oldest);
+	return LOG_OK;
 }
 
 static int
@@ -4195,7 +4197,8 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 
 	if (t->commit_action == CA_DELETE || t->commit_action == CA_DROP) {
 		assert(isTempTable(t));
-		ok = clear_storage(tr, t, dbat);
+		if ((ok = clear_storage(tr, t, dbat)) == LOG_OK)
+			if (commit_ts) dbat->segs->h->ts = commit_ts;
 		return ok;
 	}
 
