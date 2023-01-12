@@ -1,7 +1,7 @@
 if(Parquet_FOUND)
-  add_library(parquetlib MODULE)
+  add_library(parquet MODULE)
 
-  target_sources(parquetlib
+  target_sources(parquet
     PRIVATE
     parquet.c
     parquet.h
@@ -9,7 +9,7 @@ if(Parquet_FOUND)
 
 
 
-  target_link_libraries(parquetlib
+  target_link_libraries(parquet
     PRIVATE
     monetdb_config_header
     monetdb5
@@ -23,7 +23,7 @@ if(Parquet_FOUND)
     parquet-glib
   )
 
-  target_include_directories(parquetlib
+  target_include_directories(parquet
     PRIVATE
     $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:malmodules,INTERFACE_INCLUDE_DIRECTORIES>
@@ -36,7 +36,7 @@ if(Parquet_FOUND)
     $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 
   install(TARGETS
-    parquetlib
+    parquet
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
     COMPONENT server)
 endif()
