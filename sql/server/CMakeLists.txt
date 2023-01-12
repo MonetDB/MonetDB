@@ -16,6 +16,7 @@ add_library(sqlserver STATIC)
 
 set(sqlserver_public_headers
   ${CMAKE_CURRENT_SOURCE_DIR}/sql_parser.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/rel_file_loader.h
   ${CMAKE_CURRENT_SOURCE_DIR}/sql_mvc.h)
 
 target_sources(sqlserver
