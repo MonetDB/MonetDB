@@ -36,6 +36,7 @@ extern void _exp_print(mvc *sql, sql_exp *e);
 
 extern int constantAtom(backend *be, MalBlkPtr mb, atom *a);
 extern InstrPtr table_func_create_result(MalBlkPtr mb, InstrPtr q, sql_func *f, list *restypes);
-extern InstrPtr relational_func_create_result(mvc *sql, MalBlkPtr mb, InstrPtr q, sql_rel *f);
+extern void relational_func_create_result_part1(mvc *sql, sql_rel **f, int *nargs);
+extern InstrPtr relational_func_create_result_part2(MalBlkPtr mb, InstrPtr q, sql_rel *r);
 
 #endif /* _SQL2MAL_H */

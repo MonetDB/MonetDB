@@ -59,7 +59,7 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				q= getInstrPtr(mb, getVar(mb,getArg(p,2))->declared);
 			if( q && getArg(q,0) == getArg(p,2) && getModuleId(q) == algebraRef && getFunctionId(q) == projectionRef ){
 				getArg(p,2)=  getArg(q,2);
-				p= addArgument(mb, p, getArg(q,1));
+				p= pushArgument(mb, p, getArg(q,1));
 				actions++;
 			}
 		}

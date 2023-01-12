@@ -285,10 +285,15 @@ fmtRemark(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str t, int flg, str base, s
 	//optimizer remark, i=1 actions field, i=2 usec field
 	if (pci && pci->argc == 3) {
 		if (getFunctionId(pci)) {
-			snprintf(aux, 128, "%-36s %d actions %ld usec",
-					 getFunctionId(pci),
-					 atoi(renderTerm(mb, stk, pci, 1, flg)),
-					 atol(renderTerm(mb, stk, pci, 2, flg)));
+			char *arg1 = renderTerm(mb, stk, pci, 1, flg);
+			char *arg2 = renderTerm(mb, stk, pci, 2, flg);
+			if (arg1 && arg2)
+				snprintf(aux, 128, "%-36s %d actions %ld usec",
+						 getFunctionId(pci),
+						 atoi(arg1),
+						 atol(arg2));
+			GDKfree(arg1);
+			GDKfree(arg2);
 			if (!copystring(&t, aux, &len))
 				return base;
 		}
@@ -439,15 +444,6 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		return fcnDefinition(mb, p, t, flg, base, len + (t - base));
 	case REMsymbol:
 		return fmtRemark(mb, stk, p, t, flg, base, len);
-	case NOOPsymbol:
-		if (!copystring(&t, "#", &len))
-			return base;
-		if (getVar(mb, getArg(p, 0))->value.val.sval && getVar(mb, getArg(p, 0))->value.len > 0 &&
-			!copystring(&t, getVar(mb, getArg(p, 0))->value.val.sval, &len))
-			return base;
-		if (!copystring(&t, " ", &len))
-			return base;
-		break;
 	default:
 		i = snprintf(t, len, " unknown symbol ?%d? ", p->token);
 		if (i < 0 || (size_t) i >= len)

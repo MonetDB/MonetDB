@@ -218,6 +218,10 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops){
 	q = newStmt(nmb,
 		getVarConstant(mb,getArg(pci,pci->retc)).val.sval,
 		getVarConstant(mb,getArg(pci,pci->retc+1)).val.sval);
+	if (q == NULL) {
+		freeMalBlk(nmb);
+		return NULL;
+	}
 
 	// Prepare the single result variable
 	tpe =getBatType(getArgType(mb,pci,0));
@@ -232,6 +236,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops){
 		q= pushArgument(nmb,q, k= newTmpVariable(nmb, tpe));
 		setVarFixed(nmb,k);
 	}
+	pushInstruction(nmb, q);
 
 /*
 	TRC_DEBUG(MAL_SERVER, "Manifold operation\n");
