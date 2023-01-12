@@ -3273,11 +3273,7 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 	int neg = -1, action = -1, nr, res = LOG_OK;
 	node *n;
 	sql_key *nk;
-	sql_table *dup = NULL;
 
-	if ((res = new_table(tr, t, &dup)))
-		return res;
-	t = dup;
 	if ((res = key_dup(tr, k, t, &nk)))
 		return res;
 	sql_fkey *fk = (sql_fkey*)nk;
@@ -3351,11 +3347,7 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires)
 	sql_table *sysic = find_sql_table(tr, syss, "objects");
 	node *n;
 	int nr, res = LOG_OK, ncols = list_length(i->columns);
-	sql_table *dup = NULL;
 
-	if ((res = new_table(tr, t, &dup)))
-		return res;
-	t = dup;
 	sql_idx *ni = SA_ZNEW(tr->sa, sql_idx);
 	base_init(tr->sa, &ni->base, i->base.id?i->base.id:next_oid(tr->store), true, i->base.name);
 	ni->columns = list_new(tr->sa, (fdestroy) &kc_destroy);
@@ -3477,12 +3469,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 	sqlstore *store = tr->store;
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *syscolumn = find_sql_table(tr, syss, "_columns");
-	sql_table *dup = NULL;
 	int res = LOG_OK;
-
-	if ((res = new_table(tr, t, &dup)))
-		return res;
-	t = dup;
 	sql_column *col = SA_ZNEW(tr->sa, sql_column);
 	base_init(tr->sa, &col->base, c->base.id?c->base.id:next_oid(tr->store), true, c->base.name);
 	dup_sql_type(tr, t->s, &(c->type), &(col->type));
@@ -5871,7 +5858,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 	}
 
 	if (!isDeclaredTable(t))
-		if ((res = sys_drop_table(tr, t, drop_action)))
+		if ((res = sys_drop_table(tr, gt?gt:t, drop_action)))
 			return res;
 
 	t->base.deleted = 1;
