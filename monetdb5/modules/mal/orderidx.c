@@ -111,7 +111,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	q= addArgument(smb, q, arg);
+	q= pushArgument(smb, q, arg);
 	if (q == NULL || (getArg(q,0) = newTmpVariable(smb, TYPE_void)) < 0) {
 		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -126,7 +126,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	pack = addArgument(smb, pack, arg);
+	pack = pushArgument(smb, pack, arg);
 	if (pack == NULL) {
 		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -146,6 +146,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	}
 	q->barrier = BARRIERsymbol;
 	q->argv[0] = loopvar;
+	pushInstruction(smb, q);
 
 	cnt = BATcount(b);
 	step = cnt/pieces;
@@ -161,13 +162,13 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		}
 		setVarType(smb, getArg(q,0), tpe);
 		setVarFixed(smb, getArg(q,0));
-		q = addArgument(smb, q, arg);
+		q = pushArgument(smb, q, arg);
 		if (q == NULL) {
 			freeInstruction(pack);
 			msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
-		pack = addArgument(smb, pack, getArg(q,0));
+		pack = pushArgument(smb, pack, getArg(q,0));
 		q = pushOid(smb, q, o);
 		if (i == pieces-1) {
 			o = cnt;
@@ -193,7 +194,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		}
 		setVarType(smb, getArg(q, 0), tpe);
 		setVarFixed(smb, getArg(q, 0));
-		q = addArgument(smb, q, pack->argv[2+i]);
+		q = pushArgument(smb, q, pack->argv[2+i]);
 		q = pushBit(smb, q, 1);
 		if (q == NULL) {
 			freeInstruction(pack);
@@ -212,6 +213,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	}
 	q->barrier = EXITsymbol;
 	q->argv[0] = loopvar;
+	pushInstruction(smb, q);
 	pushEndInstruction(smb);
 	msg = chkProgram(cntxt->usermodule, smb);
 	if( msg )

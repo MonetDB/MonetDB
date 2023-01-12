@@ -1095,6 +1095,9 @@ log_close_input(logger *lg)
 static inline void
 log_close_output(logger *lg)
 {
+	if (lg->flushing_output_log)
+		return;
+
 	if (!LOG_DISABLED(lg))
 		close_stream(lg->output_log);
 	lg->output_log = NULL;
@@ -2806,10 +2809,21 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 #define LOG_LARGE	(LL_CONSTANT(2)*1024*1024*1024)
 
 static gdk_return
-new_logfile(logger *lg)
+new_logfile(logger *lg, stream* output_log, ulng id)
 {
 	assert(!LOG_DISABLED(lg));
 
+	MT_lock_set(&lg->rotation_lock);
+	assert(lg->flushing_output_log);
+	lg->flushing_output_log = false;
+	if (lg->id != id) {
+		/* lg->output_log was rotated during the flush */
+		assert(lg->output_log != output_log && lg->id > id);
+		close_stream(output_log);
+		MT_lock_unset(&lg->rotation_lock);
+		return GDK_SUCCEED;
+	}
+	MT_lock_unset(&lg->rotation_lock);
 
 	const lng log_large = (GDKdebug & FORCEMITOMASK)?LOG_MINI:LOG_LARGE;
 
@@ -2928,7 +2942,12 @@ log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
 		return GDK_SUCCEED;
 	}
 
-	if (log_file_id == lg->id) {
+
+	ulng id;
+	MT_lock_set(&lg->rotation_lock);
+	id = lg->id;
+	MT_lock_unset(&lg->rotation_lock);
+	if (log_file_id == id) {
 		unsigned int number = request_number_flush_queue(lg);
 
 		MT_lock_set(&lg->flush_lock);
@@ -2938,10 +2957,16 @@ log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
 			const int fqueue_length = flush_queue_length(lg);
 			/* flush + fsync */
 			MT_lock_set(&lg->rotation_lock);
-			if (mnstr_flush(lg->output_log, MNSTR_FLUSH_DATA) ||
-					(!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log)) ||
-					new_logfile(lg) != GDK_SUCCEED) {
+			lg->flushing_output_log = true;
+			stream* output_log = lg->output_log;
+			id = lg->id;
+			MT_lock_unset(&lg->rotation_lock);
+			if (mnstr_flush(output_log, MNSTR_FLUSH_DATA) ||
+					(!(GDKdebug & NOSYNCMASK) && mnstr_fsync(output_log)) ||
+					new_logfile(lg, output_log, id) != GDK_SUCCEED) {
 				/* flush failed */
+				MT_lock_set(&lg->rotation_lock);
+				lg->flushing_output_log = false;
 				MT_lock_unset(&lg->rotation_lock);
 				MT_lock_unset(&lg->flush_lock);
 				(void) ATOMIC_DEC(&lg->refcount);
@@ -2949,7 +2974,6 @@ log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
 			}
 			else {
 				/* flush succeeded */
-				MT_lock_unset(&lg->rotation_lock);
 				left_truncate_flush_queue(lg, fqueue_length);
 			}
 		}
@@ -3132,7 +3156,7 @@ log_tstart(logger *lg, bool flushnow, ulng *log_file_id)
 {
 	MT_lock_set(&lg->rotation_lock);
 	log_lock(lg);
-	if (flushnow || (lg->request_rotation && ATOMIC_GET(&lg->refcount) == 0)) {
+	if ((flushnow || (lg->request_rotation && ATOMIC_GET(&lg->refcount) == 0)) && lg->end > 0) {
 		lg->id++;
 		log_close_output(lg);
 		/* start new file */

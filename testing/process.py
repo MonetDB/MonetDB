@@ -370,7 +370,7 @@ class server(Popen):
         cmd = _server[:]
         if not cmd:
             cmd = ['mserver5',
-                   '--set', ipv6 and 'mapi_listenaddr=all' or 'mapi_listenaddr=0.0.0.0',
+                   '--set', 'mapi_listenaddr=all' if ipv6 else 'mapi_listenaddr=0.0.0.0',
                    '--set', 'gdk_nr_threads=1']
         if os.getenv('NOWAL'):
             cmd.extend(['--set', 'sql_debug=128'])

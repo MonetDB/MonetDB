@@ -558,8 +558,6 @@ setVariableScope(MalBlkPtr mb)
 
 	for (pc = 0; pc < mb->stop; pc++) {
 		p = getInstrPtr(mb, pc);
-		if( p->token == NOOPsymbol)
-			continue;
 
 		if( blockStart(p)){
 			if (getModuleId(p) && getFunctionId(p) && strcmp(getModuleId(p),"language")==0 && strcmp(getFunctionId(p),"dataflow")==0){
@@ -718,7 +716,7 @@ chkDeclarations(MalBlkPtr mb){
 
 	for(pc=1;pc<mb->stop; pc++){
 		p= getInstrPtr(mb,pc);
-		if ( p->token == REMsymbol || p->token == NOOPsymbol)
+		if ( p->token == REMsymbol)
 			continue;
 		/* check correct use of the arguments*/
 		for(k=p->retc;k<p->argc; k++) {
