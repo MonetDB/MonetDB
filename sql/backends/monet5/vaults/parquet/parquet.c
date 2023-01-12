@@ -1,12 +1,12 @@
-#include "parquet.h"
 #include <parquet-glib/parquet-glib.h>
 #include <parquet-glib/arrow-file-reader.h>
 #include <arrow-glib/arrow-glib.h>
 #include <parquet-glib/metadata.h>
-#include <rel_file_loader.h>
 
+#include "monetdb_config.h"
+#include "rel_file_loader.h"
 
-extern void *GDKmalloc(size_t size); /* FIXME */
+#include "parquet.h"
 
 parquet_file *open_file(char* filename) {
     GParquetArrowFileReader *reader;

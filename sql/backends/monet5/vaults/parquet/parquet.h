@@ -19,4 +19,6 @@ parquet_file *open_file(char* filename);
 
 parquet_table_metadata get_table_metadata(parquet_file *file);
 
+void parquet_init(void);
+
 #endif
