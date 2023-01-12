@@ -164,7 +164,8 @@ stream_export void close_stream(stream *s);
 
 stream_export stream *open_urlstream(const char *url); // mclient.c, future copy from remote
 
-stream_export stream *open_tls_server_stream(int fd, const char *name, stream *s);
+
+stream_export stream *open_tls_server_stream(int fd, const char *name, stream *s, const char *kp_fname, const char *ct_fname);
 
 stream_export stream *file_rstream(FILE *restrict fp, bool binary, const char *restrict name); // unused
 stream_export stream *file_wstream(FILE *restrict fp, bool binary, const char *restrict name); // unused

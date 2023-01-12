@@ -45,14 +45,15 @@ tls_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 }
 
 static void
-tls_close(stream *s) {
+tls_close(stream *s)
+{
 	/* TODO properly shutdown */
 	ssl_wrapper *w = (ssl_wrapper *)s->stream_data.p;
 	SSL_shutdown(w->cSSL);
 }
 
 static stream *
-new_tls_server_stream(int fd, const char *name)
+new_tls_server_stream(int fd, const char *name, const char *kp_fname, const char *ct_fname)
 {
 	int ssl_err = 1;
 	stream *ret;
@@ -75,8 +76,8 @@ new_tls_server_stream(int fd, const char *name)
 	}
 
 	/* TODO parametrize */
-	const char *server_keypair_fname = "/home/kutsurak/src/monetdb/mercurial-repos/public/smapi/smapi-dev-certificates/new/server_keypair.pem";
-	ssl_err = SSL_CTX_use_PrivateKey_file(w->ctx, server_keypair_fname, SSL_FILETYPE_PEM);
+	// const char *server_keypair_fname = "/home/kutsurak/src/monetdb/mercurial-repos/public/smapi/smapi-dev-certificates/new/server_keypair.pem";
+	ssl_err = SSL_CTX_use_PrivateKey_file(w->ctx, kp_fname, SSL_FILETYPE_PEM);
 	if (ssl_err <= 0) {
 		/* TODO handle */
 		fprintf(stderr, "SSL_CTX_use_PrivateKey_file\n");
@@ -85,8 +86,8 @@ new_tls_server_stream(int fd, const char *name)
 	}
 
 	/* TODO parametrize */
-	const char *server_cert_chain_fname = "/home/kutsurak/src/monetdb/mercurial-repos/public/smapi/smapi-dev-certificates/new/server_cert.pem";
-	ssl_err = SSL_CTX_use_certificate_chain_file(w->ctx, server_cert_chain_fname);
+	// const char *server_cert_chain_fname = "/home/kutsurak/src/monetdb/mercurial-repos/public/smapi/smapi-dev-certificates/new/server_cert.pem";
+	ssl_err = SSL_CTX_use_certificate_chain_file(w->ctx, ct_fname);
 	if (ssl_err <= 0) {
 		/* TODO handle */
 		fprintf(stderr, "SSL_CTX_use_certificate_chain_file\n");
@@ -133,13 +134,14 @@ new_tls_server_stream(int fd, const char *name)
 }
 
 stream *
-open_tls_server_stream(int fd, const char *name, stream *s) {
+open_tls_server_stream(int fd, const char *name, stream *s, const char *kp_fname, const char *ct_fname)
+{
 	stream *ret;
 
 	/* This assumes that the read stream is created before the write stream. This probably */
 	/* needs to change. */
 	if (s == NULL) {
-		ret = new_tls_server_stream(fd, name);
+		ret = new_tls_server_stream(fd, name, kp_fname, ct_fname);
 	}
 	else {
 		if ((ret = create_stream(name)) == NULL) {
@@ -167,9 +169,11 @@ open_tls_server_stream(int fd, const char *name, stream *s) {
 #else
 
 stream *
-open_tls_serv_stream(int fd)
+open_tls_server_stream(int fd, const char *name, stream *s)
 {
 	(void) fd;
+	(void) name;
+	(void) stream;
 	return NULL;
 }
 
