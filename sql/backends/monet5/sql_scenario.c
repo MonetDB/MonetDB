@@ -863,8 +863,11 @@ SQLreader(Client c)
 				break;
 			commit_done = true;
 		}
-		if (m->session->tr && m->session->tr->active)
+		if (m->session->tr && m->session->tr->active) {
+			MT_lock_set(&mal_contextLock);
 			c->idle = 0;
+			MT_lock_unset(&mal_contextLock);
+		}
 
 		if (go && in->pos >= in->len) {
 			ssize_t rd;
@@ -887,10 +890,12 @@ SQLreader(Client c)
 					if (msg)
 						break;
 					commit_done = true;
+					MT_lock_set(&mal_contextLock);
 					if (c->idle == 0 && (m->session->tr == NULL || !m->session->tr->active)) {
 						/* now the session is idle */
 						c->idle = time(0);
 					}
+					MT_lock_unset(&mal_contextLock);
 				}
 
 				if (go && ((!blocked && mnstr_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || mnstr_flush(c->fdout, MNSTR_FLUSH_DATA))) {

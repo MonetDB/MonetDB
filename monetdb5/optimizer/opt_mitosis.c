@@ -152,7 +152,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	 * Take into account the number of client connections,
 	 * because all user together are responsible for resource contentions
 	 */
+	MT_lock_set(&mal_contextLock);
 	cntxt->idle = 0; // this one is definitely not idle
+	MT_lock_unset(&mal_contextLock);
 
 /* This code was used to experiment with block sizes, mis-using the memorylimit  variable
 	if (cntxt->memorylimit){
