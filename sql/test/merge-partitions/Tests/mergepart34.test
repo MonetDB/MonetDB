@@ -114,9 +114,13 @@ statement ok
 DROP TABLE table1
 
 query IIIII rowsort
-select * from table_partitions
+select * from sys.table_partitions
 ------
 
 query IIIII rowsort
-select * from range_partitions
+select * from sys.range_partitions
+------
+
+query ITII rowsort
+select * from sys.objects where id > 5967
 ------
