@@ -1634,7 +1634,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
-	if (equi && !havehash && parent != 0) {
+	if (equi && !havehash && pb != NULL) {
 		/* use parent hash if it already exists and if either
 		 * a quick check shows the value we're looking for
 		 * does not occur, or if it is cheaper to check the
@@ -1712,8 +1712,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if ((oidxh = b->torderidx) != NULL)
 			HEAPincref(oidxh);
 		MT_lock_unset(&b->batIdxLock);
-		if (oidxh == NULL && parent) {
-			BAT *pb = BBP_cache(parent);
+		if (oidxh == NULL && pb != NULL) {
 			(void) BATcheckorderidx(pb);
 			MT_lock_set(&pb->batIdxLock);
 			if ((oidxh = pb->torderidx) != NULL) {
@@ -1933,7 +1932,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		} else if (b->thash->nunique == bi.count)
 			estimate = 1;
 	}
-	if (estimate == BUN_NONE && (bi.key || (parent != 0 && BBP_cache(parent)->tkey))) {
+	if (estimate == BUN_NONE && (bi.key || (pb != NULL && pbi.key))) {
 		/* exact result size in special cases */
 		if (equi) {
 			estimate = 1;
@@ -2039,9 +2038,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if (!equi &&
 		    /* DISABLES CODE */ (0) && imprintable(bi.type) &&
 		    (!bi.transient ||
-		     (parent != 0 &&
-		      pb != NULL &&
-		      !pbi.transient)) &&
+		     (pb != NULL && !pbi.transient)) &&
 		    BATimprints(b) == GDK_SUCCEED) {
 			if (pb != NULL) {
 				MT_lock_set(&pb->batIdxLock);
