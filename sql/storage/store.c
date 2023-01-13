@@ -2211,6 +2211,18 @@ store_exit(sqlstore *store)
 	MT_lock_unset(&store->flush);
 	MT_lock_unset(&store->lock);
 	sa_destroy(sa);
+	ATOMIC_DESTROY(&store->nr_active);
+	ATOMIC_DESTROY(&store->lastactive);
+	ATOMIC_DESTROY(&store->timestamp);
+	ATOMIC_DESTROY(&store->transaction);
+	ATOMIC_DESTROY(&store->function_counter);
+	MT_lock_destroy(&store->lock);
+	MT_lock_destroy(&store->commit);
+	MT_lock_destroy(&store->flush);
+	for(int i = 0; i<NR_TABLE_LOCKS; i++)
+		MT_lock_destroy(&store->table_locks[i]);
+	for(int i = 0; i<NR_COLUMN_LOCKS; i++)
+		MT_lock_destroy(&store->column_locks[i]);
 	_DELETE(store);
 }
 
