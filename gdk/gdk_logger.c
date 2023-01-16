@@ -1594,11 +1594,12 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts, 
 	return rcnt;
 }
 
+/* this function is called with logger_lock() held; it releases the lock
+ * before returning */
 static gdk_return
 bm_subcommit(logger *lg)
 {
 	BUN p, q;
-	logger_lock(lg);
 	BAT *catalog_bid = lg->catalog_bid;
 	BAT *catalog_id = lg->catalog_id;
 	BAT *dcatalog = lg->dcatalog;
@@ -1921,6 +1922,8 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		BBPretain(lg->catalog_id->batCacheid);
 		BBPretain(lg->dcatalog->batCacheid);
 
+		logger_lock(lg);
+		/* bm_subcommit releases the lock */
 		if (bm_subcommit(lg) != GDK_SUCCEED) {
 			/* cannot commit catalog, so remove log */
 			MT_remove(filename);
@@ -2881,7 +2884,7 @@ bm_commit(logger *lg)
 			fprintf(stderr, "#bm_commit: create %d (%d)\n",
 				bid, BBP_lrefs(bid));
 	}
-	logger_unlock(lg);
+	/* bm_subcommit releases the lock */
 	return bm_subcommit(lg);
 }
 
