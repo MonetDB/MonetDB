@@ -3405,10 +3405,17 @@ commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 {
 	int ok = LOG_OK;
 	sql_table *t = (sql_table*)change->obj;
+	storage *dbat = ATOMIC_PTR_GET(&t->data);
+
+	if (t->commit_action == CA_DELETE || t->commit_action == CA_DROP) {
+		assert(isTempTable(t));
+		if ((ok = clear_storage(tr, t, dbat)) == LOG_OK)
+			if (commit_ts) dbat->segs->h->ts = commit_ts;
+		return ok;
+	}
 
 	if (!commit_ts) /* rollback handled by ? */
 		return ok;
-	storage *dbat = ATOMIC_PTR_GET(&t->data);
 	ok = segments2cs(tr, dbat->segs, &dbat->cs);
 	assert(ok == LOG_OK);
 	if (ok != LOG_OK)
