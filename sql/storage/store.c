@@ -3044,7 +3044,7 @@ trigger_dup(sql_trans *tr, sql_trigger *i, sql_table *t, sql_trigger **tres)
 }
 
 static int
-table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name, sql_table **tres)
+table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name, sql_table **tres, bool dup_global_as_global)
 {
 	sqlstore *store = tr->store;
 	sql_allocator *sa = tr->sa;
@@ -3056,7 +3056,7 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name, sql_tab
 	t->type = ot->type;
 	t->system = ot->system;
 	t->bootstrap = ot->bootstrap;
-	t->persistence = s?ot->persistence:SQL_LOCAL_TEMP;
+	t->persistence = (s || dup_global_as_global)?ot->persistence:SQL_LOCAL_TEMP;
 	t->commit_action = ot->commit_action;
 	t->access = ot->access;
 	t->query = (ot->query) ? SA_STRDUP(sa, ot->query) : NULL;
@@ -3149,7 +3149,7 @@ globaltmp_instantiate(sql_trans *tr, sql_table *ot)
 {
 	assert(isGlobal(ot)&& isTempTable(ot));
 	sql_table *t = NULL;
-	if (table_dup(tr, ot, NULL, NULL, &t) == LOG_OK)
+	if (table_dup(tr, ot, NULL, NULL, &t, false) == LOG_OK)
 		return t;
 	return NULL;
 }
@@ -3158,9 +3158,11 @@ static int
 new_table(sql_trans *tr, sql_table *t, sql_table **tres)
 {
 	int res = LOG_OK;
-	t = find_sql_table(tr, t->s, t->base.name); /* could have changed by depending changes */
+	if (!isGlobalTemp(t))
+		t = find_sql_table(tr, t->s, t->base.name); /* could have changed by depending changes */
+
 	if (!isLocalTemp(t) && !isNew(t) && !os_obj_intransaction(t->s->tables, tr, &t->base))
-		res = table_dup(tr, t, t->s, NULL, tres);
+		res = table_dup(tr, t, t->s, NULL, tres, true);
 	else
 		*tres = t;
 	return res;
@@ -3273,7 +3275,11 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 	int neg = -1, action = -1, nr, res = LOG_OK;
 	node *n;
 	sql_key *nk;
+	sql_table *dup = NULL;
 
+	if ((res = new_table(tr, t, &dup)))
+		return res;
+	t = dup;
 	if ((res = key_dup(tr, k, t, &nk)))
 		return res;
 	sql_fkey *fk = (sql_fkey*)nk;
@@ -3347,7 +3353,11 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires)
 	sql_table *sysic = find_sql_table(tr, syss, "objects");
 	node *n;
 	int nr, res = LOG_OK, ncols = list_length(i->columns);
+	sql_table *dup = NULL;
 
+	if ((res = new_table(tr, t, &dup)))
+		return res;
+	t = dup;
 	sql_idx *ni = SA_ZNEW(tr->sa, sql_idx);
 	base_init(tr->sa, &ni->base, i->base.id?i->base.id:next_oid(tr->store), true, i->base.name);
 	ni->columns = list_new(tr->sa, (fdestroy) &kc_destroy);
@@ -3469,7 +3479,12 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 	sqlstore *store = tr->store;
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *syscolumn = find_sql_table(tr, syss, "_columns");
+	sql_table *dup = NULL;
 	int res = LOG_OK;
+
+	if ((res = new_table(tr, t, &dup)))
+		return res;
+	t = dup;
 	sql_column *col = SA_ZNEW(tr->sa, sql_column);
 	base_init(tr->sa, &col->base, c->base.id?c->base.id:next_oid(tr->store), true, c->base.name);
 	dup_sql_type(tr, t->s, &(c->type), &(col->type));
@@ -3728,7 +3743,7 @@ schema_dup(sql_trans *tr, sql_schema *s, const char *name, sql_schema **rs)
 	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 		sql_table *t = NULL;
 
-		if ((res = table_dup(tr, (sql_table*)b, s, NULL, &t)) || (res = os_add(ns->tables, tr, t->base.name, &t->base))) {
+		if ((res = table_dup(tr, (sql_table*)b, s, NULL, &t, true)) || (res = os_add(ns->tables, tr, t->base.name, &t->base))) {
 			schema_destroy(tr->store, ns);
 			return res;
 		}
@@ -5543,7 +5558,7 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 			return res;
 	}
 
-	if ((res = table_dup(tr, t, t->s, new_name, &dup)))
+	if ((res = table_dup(tr, t, t->s, new_name, &dup, true)))
 		return res;
 	return res;
 }
@@ -5567,7 +5582,7 @@ sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *
 		return res;
 	if ((res = os_del(os->tables, tr, t->base.name, dup_base(&t->base))))
 		return res;
-	return table_dup(tr, t, ns, NULL, &dup);
+	return table_dup(tr, t, ns, NULL, &dup, true);
 }
 
 int
