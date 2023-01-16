@@ -2028,7 +2028,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
 
 	assert(delta && delta->cs.ts == tr->tid);
-	if ((odelta != delta) || (!isNew(i->t)))
+	if (odelta != delta)
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, NOT_TO_BE_LOGGED(i->t) ? NULL : &log_update_idx);
 
 	odelta = delta;
