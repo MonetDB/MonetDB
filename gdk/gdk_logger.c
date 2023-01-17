@@ -97,17 +97,8 @@ typedef enum {LOG_OK, LOG_EOF, LOG_ERR} log_return;
 static gdk_return bm_commit(logger *lg);
 static gdk_return tr_grow(trans *tr);
 
-static inline void
-log_lock(logger *lg)
-{
-	MT_lock_set(&lg->lock);
-}
-
-static inline void
-log_unlock(logger *lg)
-{
-	MT_lock_unset(&lg->lock);
-}
+#define log_lock(lg)	MT_lock_set(&(lg)->lock)
+#define log_unlock(lg)	MT_lock_unset(&(lg)->lock)
 
 static inline bte
 find_type(logger *lg, int tpe)
