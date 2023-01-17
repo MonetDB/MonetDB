@@ -1911,7 +1911,7 @@ bind_col_data(sql_trans *tr, sql_column *c, bool *update_conflict)
 	if (!bat)
 		return NULL;
 	bat->cs.refcnt = 1;
-	if (dup_cs(tr, &obat->cs, &bat->cs, c->type.type->localtype, isTempTable(c->t)) != LOG_OK) {
+	if (dup_cs(tr, &obat->cs, &bat->cs, c->type.type->localtype, 0) != LOG_OK) {
 		destroy_delta(bat, false);
 		return NULL;
 	}
@@ -1994,7 +1994,7 @@ bind_idx_data(sql_trans *tr, sql_idx *i, bool *update_conflict)
 	if (!bat)
 		return NULL;
 	bat->cs.refcnt = 1;
-	if (dup_cs(tr, &obat->cs, &bat->cs, (oid_index(i->type))?TYPE_oid:TYPE_lng, isTempTable(i->t)) != LOG_OK) {
+	if (dup_cs(tr, &obat->cs, &bat->cs, (oid_index(i->type))?TYPE_oid:TYPE_lng, 0) != LOG_OK) {
 		destroy_delta(bat, false);
 		return NULL;
 	}
