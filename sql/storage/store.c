@@ -3074,7 +3074,7 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name, sql_tab
 	t->sz = ot->sz;
 	ATOMIC_PTR_INIT(&t->data, NULL);
 
-	if ((res = os_add(isLocalTemp(t) ? tr->_localtmps : t->s->tables, tr, t->base.name, &t->base)))
+	if ((res = os_add(isLocalTemp(t) ? tr->localtmps : t->s->tables, tr, t->base.name, &t->base)))
 		goto cleanup;
 
 	if (isPartitionedByExpressionTable(ot)) {
@@ -3587,7 +3587,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 	sqlstore *store = tr->store;
 	if (!list_empty(tr->changes)) {
 		struct os_iter oi;
-		os_iterator(&oi, tr->_localtmps, tr, NULL);
+		os_iterator(&oi, tr->localtmps, tr, NULL);
 		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_table *t = (sql_table *) b;
 			if (t->commit_action == CA_DROP && !b->deleted) {
@@ -3667,7 +3667,7 @@ sql_trans_destroy(sql_trans *tr)
 	if (!list_empty(tr->changes))
 		sql_trans_rollback(tr, false);
 	sqlstore *store = tr->store;
-	os_destroy(tr->_localtmps, store);
+	os_destroy(tr->localtmps, store);
 	store_lock(store);
 	store_unlock(store);
 	MT_lock_destroy(&tr->lock);
@@ -3696,10 +3696,10 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	}
 
 	if (!parent) {
-		tr->_localtmps = os_new(tr->sa, (destroy_fptr) &table_destroy, true, true, false, store);
+		tr->localtmps = os_new(tr->sa, (destroy_fptr) &table_destroy, true, true, false, store);
 	}
 	else {
-		tr->_localtmps = os_dup(parent->_localtmps);
+		tr->localtmps = os_dup(parent->localtmps);
 	}
 
 	store_lock(store);
@@ -3870,7 +3870,7 @@ sql_trans_commit(sql_trans *tr)
 
 	if (!list_empty(tr->changes)) {
 		struct os_iter oi;
-		os_iterator(&oi, tr->_localtmps, tr, NULL);
+		os_iterator(&oi, tr->localtmps, tr, NULL);
 		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_table *t = (sql_table *) b;
 			if (t->commit_action == CA_DROP && !b->deleted) {
@@ -5553,8 +5553,8 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 			return res;
 	} else {
 		assert(isTempTable(t));
-		sql_base *b = os_find_id(tr->_localtmps, tr, t->base.id);
-		if ((res = os_del(tr->_localtmps, tr, b->name, dup_base(b))))
+		sql_base *b = os_find_id(tr->localtmps, tr, t->base.id);
+		if ((res = os_del(tr->localtmps, tr, b->name, dup_base(b))))
 			return res;
 	}
 
@@ -5640,7 +5640,7 @@ sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const cha
 	if (sz < 0)
 		t->sz = COLSIZE;
 
-	if ((res = os_add(isGlobal(t)?s->tables:tr->_localtmps, tr, t->base.name, &t->base)))
+	if ((res = os_add(isGlobal(t)?s->tables:tr->localtmps, tr, t->base.name, &t->base)))
 		return res;
 
 	if (isUnloggedTable(t))
@@ -5880,7 +5880,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 	
 	if (gt && (res = os_del(s->tables, tr, gt->base.name, dup_base(&gt->base))))
 		return res;
-	if (t != gt && (res =os_del(tr->_localtmps, tr, t->base.name, dup_base(&t->base))))
+	if (t != gt && (res =os_del(tr->localtmps, tr, t->base.name, dup_base(&t->base))))
 		return res;
 
 	sqlstore *store = tr->store;
