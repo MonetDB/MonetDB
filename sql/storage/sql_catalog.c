@@ -142,7 +142,7 @@ schema_find_key(sql_trans *tr, sql_schema *s, const char *name)
 
 	if (!b && tr->tmp == s) {
 		struct os_iter oi;
-		os_iterator(&oi, tr->_localtmps, tr, NULL);
+		os_iterator(&oi, tr->localtmps, tr, NULL);
 		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_table *t = (sql_table *) b;
 			sql_key *o = find_sql_key(t, name);
@@ -183,7 +183,7 @@ schema_find_idx(sql_trans *tr, sql_schema *s, const char *name)
 
 	if (!b && tr->tmp == s) {
 		struct os_iter oi;
-		os_iterator(&oi, tr->_localtmps, tr, NULL);
+		os_iterator(&oi, tr->localtmps, tr, NULL);
 		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_table *t = (sql_table *) b;
 			sql_idx *o = find_sql_idx(t, name);
@@ -201,7 +201,7 @@ schema_find_idx_id(sql_trans *tr, sql_schema *s, sqlid id)
 
 	if (!b && tr->tmp == s) {
 		struct os_iter oi;
-		os_iterator(&oi, tr->_localtmps, tr, NULL);
+		os_iterator(&oi, tr->localtmps, tr, NULL);
 		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_table *t = (sql_table *) b;
 			node *o = ol_find_id(t->idxs, id);
@@ -228,14 +228,14 @@ find_sql_table(sql_trans *tr, sql_schema *s, const char *tname)
 	sql_table *t = (sql_table*)os_find_name(s->tables, tr, tname);
 
 	if (!t && tr->tmp == s) {
-		t = (sql_table*) os_find_name(tr->_localtmps, tr, tname);
+		t = (sql_table*) os_find_name(tr->localtmps, tr, tname);
 		return t;
 	}
 
 	if (t && isTempTable(t) && tr->tmp == s) {
 		assert(isGlobal(t));
 
-		sql_table* lt = (sql_table*) os_find_name(tr->_localtmps, tr, tname);
+		sql_table* lt = (sql_table*) os_find_name(tr->localtmps, tr, tname);
 		if (lt)
 			return lt;
 
@@ -251,14 +251,14 @@ find_sql_table_id(sql_trans *tr, sql_schema *s, sqlid id)
 {
 	sql_table *t = (sql_table*)os_find_id(s->tables, tr, id);
 	if (!t && tr->tmp == s) {
-		t = (sql_table*) os_find_id(tr->_localtmps, tr, id);
+		t = (sql_table*) os_find_id(tr->localtmps, tr, id);
 		return t;
 	}
 
 	if (t && isTempTable(t) && tr->tmp == s) {
 		assert(isGlobal(t));
 
-		sql_table* lt = (sql_table*) os_find_id(tr->_localtmps, tr, id);
+		sql_table* lt = (sql_table*) os_find_id(tr->localtmps, tr, id);
 		if (lt)
 			return lt;
 
@@ -390,7 +390,7 @@ schema_find_trigger(sql_trans *tr, sql_schema *s, const char *name)
 
 	if (!b && tr->tmp == s) {
 		struct os_iter oi;
-		os_iterator(&oi, tr->_localtmps, tr, NULL);
+		os_iterator(&oi, tr->localtmps, tr, NULL);
 		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_table *t = (sql_table *) b;
 			sql_trigger *o = find_sql_trigger(t, name);
