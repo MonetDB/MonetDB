@@ -2348,7 +2348,6 @@ storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 		}
 	}
 	unlock_table(tr->store, t->base.id);
-	// TODO tempscs2os assert declared
 	if (!in_transaction)
 		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_update_del);
 	return LOG_OK;
@@ -3077,7 +3076,7 @@ log_create_col(sql_trans *tr, sql_change *change)
 static int
 commit_create_delta( sql_trans *tr, sql_table *t, sql_base *base, sql_delta *delta, ulng commit_ts, ulng oldest)
 {
-	(void) t; // TODO tempscs2os: remove if unnecessary
+	(void) t; // TODO transaction_layer_revam: remove if unnecessary
 	(void)oldest;
 	assert(delta->cs.ts == tr->tid);
 	delta->cs.ts = commit_ts;
@@ -3298,7 +3297,7 @@ create_del(sql_trans *tr, sql_table *t)
 		bat->cs.ts = tr->tid;
 	}
 
-	if (!isNew(t) && !isTempTable(t)) { // TODO tempscs2os: figure out the purpose
+	if (!isNew(t) && !isTempTable(t)) {
 		bat->cs.ts = tr->ts;
 		return load_storage(tr, t, bat, t->base.id);
 	} else if (bat->cs.bid) {
@@ -4082,7 +4081,7 @@ tc_gc_rollbacked_storage( sql_store Store, sql_change *change, ulng oldest)
 static int
 commit_update_delta( sql_trans *tr, sql_change *change, sql_table* t, sql_base* base, ATOMIC_PTR_TYPE* data, int type, ulng commit_ts, ulng oldest)
 {
-	(void) type; // TODO tempscs2os remove if remains unused
+	(void) type; // TODO transaction_layer_revamremove if remains unused
 
 	sql_delta *delta = ATOMIC_PTR_GET(data);
 
@@ -4460,7 +4459,6 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 		unlock_table(tr->store, t->base.id);
 
 	/* hard to only add this once per transaction (probably want to change to once per new segment) */
-	// TODO tempscs2os assert declared
 	if (!in_transaction) {
 		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_update_del);
 		in_transaction = true;
