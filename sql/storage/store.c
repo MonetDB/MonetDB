@@ -3591,7 +3591,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_table *t = (sql_table *) b;
 			if (t->commit_action == CA_DROP && !b->deleted) {
-				(void) sql_trans_drop_table_id(tr, t->s, b->id, DROP_RESTRICT);// TODO tempscs2os : fix result code sql_trans_drop_table_id
+				(void) sql_trans_drop_table_id(tr, t->s, b->id, DROP_RESTRICT);// TODO transaction_layer_revam: fix result code sql_trans_drop_table_id
 			}
 		}
 		/* revert the change list */
@@ -3729,7 +3729,7 @@ schema_dup(sql_trans *tr, sql_schema *s, const char *name, sql_schema **rs)
 	ns->system = s->system;
 
 	sqlstore *store = tr->store;
-	assert(!isTempSchema(s)); // TODO tempscs2os : check if this is really true
+	assert(!isTempSchema(s)); // TODO transaction_layer_revam: check if this is really true
 	ns->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, false, true, true, store);
 	ns->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, false, true, true, store);
 	ns->keys = os_new(tr->sa, (destroy_fptr) &key_destroy, false, true, true, store);
@@ -3874,7 +3874,7 @@ sql_trans_commit(sql_trans *tr)
 		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_table *t = (sql_table *) b;
 			if (t->commit_action == CA_DROP && !b->deleted) {
-				(void) sql_trans_drop_table_id(tr, t->s, b->id, DROP_RESTRICT);;// TODO tempscs2os : fix result code sql_trans_drop_table_id
+				(void) sql_trans_drop_table_id(tr, t->s, b->id, DROP_RESTRICT);;// TODO transaction_layer_revam: fix result code sql_trans_drop_table_id
 			}
 		}
 
@@ -5037,7 +5037,7 @@ sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid ow
 	s->auth_id = auth_id;
 	s->owner = owner;
 	s->system = FALSE;
-	assert(!isTempSchema(s)); // TODO tempscs2os : check if this is really true
+	assert(!isTempSchema(s)); // TODO transaction_layer_revam: check if this is really true
 	s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, false, true, true, store);
 	s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, false, true, true, store);
 	s->funcs = os_new(tr->sa, (destroy_fptr) &func_destroy, false, false, false, store);
