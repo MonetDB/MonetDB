@@ -354,7 +354,7 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"DROP SCHEMA",
 	 "",
-	 "DROP SCHEMA [ IF EXISTS ] qname [ RESTRICT | CASCADE ]",
+	 "DROP SCHEMA [ IF EXISTS ] ident [ RESTRICT | CASCADE ]",
 	 NULL,
 	 NULL},
 	{"DROP SEQUENCE",
