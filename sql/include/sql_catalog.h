@@ -324,7 +324,7 @@ typedef struct sql_trans {
 
 	sql_catalog *cat;
 	sql_schema *tmp;	/* each session has its own tmp schema */
-	changeset localtmps;
+	struct objectset* localtmps;
 	sql_allocator *sa;	/* transaction allocator */
 
 	struct sql_trans *parent;	/* multilevel transaction support */

@@ -931,6 +931,7 @@ mvc_bind_table(mvc *m, sql_schema *s, const char *tname)
 	(void) m;
 	if (!t)
 		return NULL;
+
 	TRC_DEBUG(SQL_TRANS, "Bind table: %s.%s\n", s->base.name, tname);
 	return t;
 }
