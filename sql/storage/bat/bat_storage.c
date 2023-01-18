@@ -3066,7 +3066,7 @@ create_col(sql_trans *tr, sql_column *c)
 		bat->cs.ucnt = 0;
 
 		if (new && !isTempTable(c->t) && !isNew(c->t) /* alter */)
-			trans_add(tr, &c->base, bat, &tc_gc_col, &commit_create_col, isTempTable(c->t) ? NULL : &log_create_col);
+			trans_add(tr, &c->base, bat, &tc_gc_col, &commit_create_col, &log_create_col);
 	}
 	return ok;
 }
@@ -3165,8 +3165,8 @@ create_idx(sql_trans *tr, sql_idx *ni)
 				ok = LOG_ERR;
 		}
 		bat->cs.ucnt = 0;
-		if (new && !isNew(ni->t) /* alter */)
-			trans_add(tr, &ni->base, bat, &tc_gc_idx, &commit_create_idx, isTempTable(ni->t) ? NULL : &log_create_idx);
+		if (new && !isTempTable(ni->t) && !isNew(ni->t) /* alter */)
+			trans_add(tr, &ni->base, bat, &tc_gc_idx, &commit_create_idx, &log_create_idx);
 	}
 	return ok;
 }
