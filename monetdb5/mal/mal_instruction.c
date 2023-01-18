@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -455,6 +457,7 @@ newInstructionArgs(MalBlkPtr mb, const char *modnme, const char *fcnnme, int arg
 
 	p = GDKzalloc(args * sizeof(p->argv[0]) + offsetof(InstrRecord, argv));
 	if (p == NULL) {
+#if 0
 		/* We are facing an hard problem.
 		 * The upper layers of the code base assume that this routine will always produce a structure.
 		 * Furthermore, failure to allocate such a small data structure indicates we are in serious trouble.
@@ -462,6 +465,9 @@ newInstructionArgs(MalBlkPtr mb, const char *modnme, const char *fcnnme, int arg
 		 */
 		GDKfatal(SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		exit(1);
+#else
+		return NULL;
+#endif
 	}
 	p->maxarg = args;
 	p->typechk = TYPE_UNKNOWN;
@@ -1189,51 +1195,6 @@ extendInstruction(MalBlkPtr mb, InstrPtr p)
 InstrPtr
 pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 {
-	InstrPtr pn;
-
-	if (p == NULL)
-		return NULL;
-	if (varid < 0) {
-		/* leave everything as is in this exceptional programming error */
-		mb->errors = createMalException(mb, 0, TYPE,"improper variable id");
-		return p;
-	}
-	if (p->argc == p->maxarg) {
-		pn = extendInstruction(mb, p);
-
-		/* if the instruction is already stored in the MAL block
-		 * it should be replaced by an extended version.
-		 */
-		if (p != pn) {
-			for (int i = mb->stop - 1; i >= 0; i--) {
-				if (mb->stmt[i] == p) {
-					mb->stmt[i] =  pn;
-					break;
-				}
-			}
-		}
-		p = pn;
-		if (mb->errors)
-			return p;
-	}
-	/* protect against the case that the instruction is malloced
-	 * in isolation */
-	if( mb->maxarg < p->maxarg)
-		mb->maxarg= p->maxarg;
-	p->argv[p->argc++] = varid;
-	return p;
-}
-
-
-/* the next version assumes that we have allocated an isolated instruction
- * using newInstruction. As long as it is not stored in the MAL block
- * we can simpy extend it with arguments
- */
-InstrPtr
-addArgument(MalBlkPtr mb, InstrPtr p, int varid)
-{
-	InstrPtr pn = p;
-
 	if (p == NULL)
 		return NULL;
 	if (varid < 0) {
@@ -1243,14 +1204,11 @@ addArgument(MalBlkPtr mb, InstrPtr p, int varid)
 	}
 
 	if (p->argc == p->maxarg) {
-		pn = extendInstruction(mb, p);
 #ifndef NDEBUG
-		if (p != pn) {
-			for (int i = mb->stop - 1; i >= 0; i--)
-				assert(mb->stmt[i] != p);
-		}
+		for (int i = 0; i < mb->stop; i++)
+			assert(mb->stmt[i] != p);
 #endif
-		p = pn;
+		p = extendInstruction(mb, p);
 		if (mb->errors)
 			return p;
 	}
@@ -1281,6 +1239,8 @@ setArgument(MalBlkPtr mb, InstrPtr p, int idx, int varid)
 InstrPtr
 pushReturn(MalBlkPtr mb, InstrPtr p, int varid)
 {
+	if (p == NULL)
+		return NULL;
 	if (p->retc == 1 && p->argv[0] == -1) {
 		p->argv[0] = varid;
 		return p;

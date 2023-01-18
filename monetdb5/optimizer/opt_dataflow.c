@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -377,8 +379,13 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			if ( !simple){
 				flowblock = newTmpVariable(mb,TYPE_bit);
 				q= newFcnCall(mb,languageRef,dataflowRef);
+				if (q == NULL) {
+					msg = createException(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					break;
+				}
 				q->barrier= BARRIERsymbol;
 				getArg(q,0)= flowblock;
+				pushInstruction(mb, q);
 				actions++;
 			}
 			// copyblock the collected statements
@@ -391,22 +398,32 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 						if (getState(states,q,k) & VAR2READ &&  getEndScope(mb,getArg(q,k)) == j && isaBatType(getVarType(mb,getArg(q,k))) ){
 							InstrPtr r;
 							r = newInstruction(NULL,languageRef, passRef);
+							if (r == NULL) {
+								msg = createException(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+								break;
+							}
 							getArg(r,0) = newTmpVariable(mb,TYPE_void);
-							r= addArgument(mb,r, getArg(q,k));
+							r= pushArgument(mb,r, getArg(q,k));
 							pushInstruction(mb,r);
 						}
 					}
+				if (msg)
+					break;
 			}
+			if (msg)
+				break;
 			/* exit parallel block */
 			if ( ! simple){
 				q= newAssignment(mb);
+				if (q == NULL) {
+					msg = createException(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					break;
+				}
 				q->barrier= EXITsymbol;
 				getArg(q,0) = flowblock;
+				pushInstruction(mb, q);
 			}
 			if (p->token == ENDsymbol){
-				for(; i < limit; i++)
-					if( old[i])
-						pushInstruction(mb,old[i]);
 				break;
 			}
 
@@ -436,12 +453,13 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if (old[i])
 			pushInstruction(mb, old[i]);
 	/* Defense line against incorrect plans */
-	if( actions > 0){
+	if (msg == MAL_SUCCEED && actions > 0) {
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);
-		if (!msg)
+		if (msg == MAL_SUCCEED) {
 			msg = chkFlow(mb);
-		if (!msg)
-			msg = chkDeclarations(mb);
+			if (msg == MAL_SUCCEED)
+				msg = chkDeclarations(mb);
+		}
 	}
 wrapup:
 	/* keep actions taken as a fake argument*/

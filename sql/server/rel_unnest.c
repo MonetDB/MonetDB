@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -3729,7 +3731,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 				sql_rel *nrel;
 				list *l = (list*) n->data, *exps = sa_list(v->sql->sa), *pexps = sa_list(v->sql->sa);
 
-				l = list_flaten(l);
+				l = list_flatten(l);
 				nrel = rel_groupby(v->sql, rel_dup(rel->l), l);
 
 				for (node *m = rel->exps->h ; m ; m = m->next) {
