@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -2204,6 +2206,18 @@ store_exit(sqlstore *store)
 	MT_lock_unset(&store->flush);
 	MT_lock_unset(&store->lock);
 	sa_destroy(sa);
+	ATOMIC_DESTROY(&store->nr_active);
+	ATOMIC_DESTROY(&store->lastactive);
+	ATOMIC_DESTROY(&store->timestamp);
+	ATOMIC_DESTROY(&store->transaction);
+	ATOMIC_DESTROY(&store->function_counter);
+	MT_lock_destroy(&store->lock);
+	MT_lock_destroy(&store->commit);
+	MT_lock_destroy(&store->flush);
+	for(int i = 0; i<NR_TABLE_LOCKS; i++)
+		MT_lock_destroy(&store->table_locks[i]);
+	for(int i = 0; i<NR_COLUMN_LOCKS; i++)
+		MT_lock_destroy(&store->column_locks[i]);
 	_DELETE(store);
 }
 
@@ -2547,6 +2561,9 @@ end:
 static gdk_return __attribute__((__warn_unused_result__))
 hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 {
+	if (plan == NULL)
+		return GDK_FAIL;
+
 	gdk_return ret = GDK_FAIL;
 	const char *p = plan; // our cursor in the plan
 	time_t timestamp = 1234567890; // dummy date, Sat 14 Feb 2009 12:31:30 AM CET

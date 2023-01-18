@@ -1,8 +1,10 @@
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 
 %global name MonetDB
 %global version 11.46.0
@@ -84,7 +86,7 @@ Summary: MonetDB - Monet Database Management System
 Vendor: MonetDB BV <info@monetdb.org>
 
 Group: Applications/Databases
-License: MPLv2.0
+License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
 Source: https://www.monetdb.org/downloads/sources/Sep2022-SP1/%{name}-%{version}.tar.bz2
@@ -128,6 +130,7 @@ BuildRequires: pkgconfig(zlib)
 BuildRequires: pkgconfig(liblz4) >= 1.8
 %if %{with py3integration}
 BuildRequires: pkgconfig(python3) >= 3.5
+# cannot use python3dist(numpy) because of CentOS 7
 BuildRequires: python3-numpy
 %endif
 %if %{with rintegration}
@@ -343,7 +346,6 @@ Recommends: perl-DBD-monetdb >= 1.0
 Recommends: php-monetdb >= 1.0
 %endif
 Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
-Requires: python3-pymonetdb >= 1.0.6
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} > 7
 Recommends: python3dist(lz4)
 Recommends: python3dist(scipy)
@@ -690,6 +692,7 @@ package.  You probably don't need this, unless you are a developer.
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires: %{name}-client-tests = %{version}-%{release}
+Requires: python3dist(pymonetdb) >= 1.0.6
 BuildArch: noarch
 
 %description testing-python
