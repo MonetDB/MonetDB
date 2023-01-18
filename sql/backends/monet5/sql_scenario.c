@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -32,13 +34,12 @@
 #include "mal.h"
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
-#include "mal_runtime.h"
 #include "mal_parser.h"
 #include "mal_builder.h"
 #include "mal_namespace.h"
 #include "mal_debugger.h"
 #include "mal_linker.h"
-#include "mal_utils.h"
+#include "mal_scenario.h"
 #include "bat5.h"
 #include "msabaoth.h"
 #include "gdk_time.h"
@@ -859,8 +860,11 @@ SQLreader(Client c)
 				break;
 			commit_done = true;
 		}
-		if (m->session->tr && m->session->tr->active)
+		if (m->session->tr && m->session->tr->active) {
+			MT_lock_set(&mal_contextLock);
 			c->idle = 0;
+			MT_lock_unset(&mal_contextLock);
+		}
 
 		if (go && in->pos >= in->len) {
 			ssize_t rd;
@@ -883,10 +887,12 @@ SQLreader(Client c)
 					if (msg)
 						break;
 					commit_done = true;
+					MT_lock_set(&mal_contextLock);
 					if (c->idle == 0 && (m->session->tr == NULL || !m->session->tr->active)) {
 						/* now the session is idle */
 						c->idle = time(0);
 					}
+					MT_lock_unset(&mal_contextLock);
 				}
 
 				if (go && ((!blocked && mnstr_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || mnstr_flush(c->fdout, MNSTR_FLUSH_DATA))) {

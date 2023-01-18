@@ -94,6 +94,12 @@ Server, and retrieving or setting options.
    running *monetdbd* to reload the properties file (if running). For an
    explanation of the properties, see the *CONFIGURATION* section below.
 
+**help** [ *command* ]
+   Shows general help, or short help for a given command.
+
+**version**
+   Shows the version and release information of *monetdbd*.
+
 CONFIGURATION
 =============
 
@@ -107,6 +113,14 @@ using the **set** command. The following properties can be set:
    to. It is relative to the dbfarm directory, but can be absolute to
    point to e.g. another medium. Changing this property takes effect
    immediately at runtime.
+
+**loglevel**
+   This property defines the level of what messages should be logged. It
+   can be: error or warning or information or debug. Defaut is
+   information. When loglevel is error, only errors are logged. When
+   loglevel is warning, errors and warnings are logged. When loglevel is
+   information, errors and warnings and information messages are logged.
+   When loglevel is debug, all messages are logged.
 
 **pidfile**
    *Monetdbd* stores the process ID of the background server in the file

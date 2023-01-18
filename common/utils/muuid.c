@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /* NOTE: for this file to work correctly, the random number generator
@@ -69,12 +71,18 @@ generateUUID(void)
 		/* generate something like this:
 		 * cefa7a9c-1dd2-41b2-8350-880020adbeef
 		 * ("%08x-%04x-%04x-%04x-%012x") */
+#ifdef __COVERITY__
+		/* avoid rand() when checking with coverity */
+		snprintf(out, sizeof(out),
+				 "00000000-0000-0000-0000-000000000000");
+#else
 		snprintf(out, sizeof(out),
 			 "%04x%04x-%04x-4%03x-8%03x-%04x%04x%04x",
 			 (unsigned) rand() & 0xFFFF, (unsigned) rand() & 0xFFFF,
 			 (unsigned) rand() & 0xFFFF, (unsigned) rand() & 0x0FFF,
 			 (unsigned) rand() & 0x0FFF, (unsigned) rand() & 0xFFFF,
 			 (unsigned) rand() & 0xFFFF, (unsigned) rand() & 0xFFFF);
+#endif
 	}
 	return strdup(out);
 }

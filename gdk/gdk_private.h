@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -86,7 +88,7 @@ void BATrmprop(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
 void BATrmprop_nolock(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
-gdk_return BATsave_locked(BAT *bd, BATiter *bi, BUN size)
+gdk_return BATsave_iter(BAT *bd, BATiter *bi, BUN size)
 	__attribute__((__visibility__("hidden")));
 void BATsetdims(BAT *b, uint16_t width)
 	__attribute__((__visibility__("hidden")));
@@ -100,7 +102,7 @@ gdk_return BBPcacheit(BAT *bn, bool lock)
 gdk_return BBPchkfarms(void)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-void BBPclear(bat bid, bool lock)
+void BBPclear(bat bid)
 	__attribute__((__visibility__("hidden")));
 void BBPdump(void)		/* never called: for debugging only */
 	__attribute__((__cold__));
@@ -278,6 +280,8 @@ gdk_return TMcommit(void)
 	__attribute__((__visibility__("hidden")));
 gdk_return unshare_varsized_heap(BAT *b)
 	__attribute__((__warn_unused_result__))
+	__attribute__((__visibility__("hidden")));
+void VIEWboundsbi(BATiter *bi, BAT *view, BUN l, BUN h)
 	__attribute__((__visibility__("hidden")));
 void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));

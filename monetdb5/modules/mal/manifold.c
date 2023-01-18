@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -216,6 +218,10 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops){
 	q = newStmt(nmb,
 		getVarConstant(mb,getArg(pci,pci->retc)).val.sval,
 		getVarConstant(mb,getArg(pci,pci->retc+1)).val.sval);
+	if (q == NULL) {
+		freeMalBlk(nmb);
+		return NULL;
+	}
 
 	// Prepare the single result variable
 	tpe =getBatType(getArgType(mb,pci,0));
@@ -230,6 +236,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops){
 		q= pushArgument(nmb,q, k= newTmpVariable(nmb, tpe));
 		setVarFixed(nmb,k);
 	}
+	pushInstruction(nmb, q);
 
 /*
 	TRC_DEBUG(MAL_SERVER, "Manifold operation\n");

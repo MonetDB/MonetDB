@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -120,7 +122,7 @@ unsigned int type_digits_to_char_digits(sql_subtype *t)
 /* 0 cannot convert */
 /* 1 set operations have very limited coersion rules */
 /* 2 automatic coersion (could still require dynamic checks for overflow) */
-/* 3 casts are allowed (requires dynamic checks) (sofar not used) */
+/* 3 casts are allowed (requires dynamic checks) (so far not used) */
 static int convert_matrix[EC_MAX][EC_MAX] = {
 
 /* EC_ANY */		{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, /* NULL */
