@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -149,14 +151,17 @@ new_segment(segment *o, sql_trans *tr, size_t cnt)
 		n->ts = tr->tid;
 		n->oldts = 0;
 		n->deleted = false;
-		n->start = 0;
-		n->next = NULL;
-		n->prev = NULL;
 		if (o) {
 			n->start = o->end;
-			o->next = n;
+			n->end = o->end + cnt;
+		} else {
+			n->start = 0;
+			n->end = cnt;
 		}
-		n->end = n->start + cnt;
+		n->next = NULL;
+		n->prev = NULL;
+		if (o)
+			o->next = n;
 	}
 	return n;
 }
@@ -300,10 +305,11 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 	b->tkey = false;
 	b->tnokey[0] = 0;
 	b->tnokey[1] = 0;
+	b->theap->dirty = true;
+	BUN cnt = BATcount(b);
 	MT_lock_unset(&b->theaplock);
 
 	uint32_t *restrict dst;
-	BUN cnt = BATcount(b);
 	MT_rwlock_wrlock(&b->thashlock);
 	for (; s ; s=s->next) {
 		if (s->start >= nr)
@@ -339,9 +345,6 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 				}
 				assert(lnr==0);
 			}
-			MT_lock_set(&b->theaplock);
-			b->theap->dirty = true;
-			MT_lock_unset(&b->theaplock);
 			size_t lnr = s->end-s->start;
 			size_t pos = s->start;
 			dst = (uint32_t *) Tloc(b, 0) + (pos/32);
@@ -1958,6 +1961,9 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 			return LOG_OK;
 	}
 
+	if (c == NULL)
+		return LOG_ERR;
+
 	if ((delta = bind_col_data(tr, c, &update_conflict)) == NULL)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
 
@@ -2023,6 +2029,9 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 		if (!BATcount(t))
 			return LOG_OK;
 	}
+
+	if (i == NULL)
+		return LOG_ERR;
 
 	if ((delta = bind_idx_data(tr, i, &update_conflict)) == NULL)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
@@ -2486,15 +2495,13 @@ destroy_segments(segments *s)
 	_DELETE(s);
 }
 
-static int
+static void
 destroy_storage(storage *bat)
 {
-	int ok = LOG_OK;
-
 	if (--bat->cs.refcnt > 0)
-		return LOG_OK;
+		return;
 	if (bat->next)
-		ok = destroy_storage(bat->next);
+		destroy_storage(bat->next);
 	destroy_segments(bat->segs);
 	if (bat->cs.uibid)
 		temp_destroy(bat->cs.uibid);
@@ -2504,7 +2511,6 @@ destroy_storage(storage *bat)
 		temp_destroy(bat->cs.bid);
 	bat->cs.bid = bat->cs.uibid = bat->cs.uvbid = 0;
 	_DELETE(bat);
-	return ok;
 }
 
 static int
@@ -2582,6 +2588,9 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 
 	if (tpe == TYPE_bat && !BATcount(b))
 		return ok;
+
+	if (t == NULL)
+		return LOG_ERR;
 
 	if ((bat = bind_del_data(tr, t, NULL)) == NULL)
 		return LOG_ERR;
@@ -3014,6 +3023,8 @@ create_col(sql_trans *tr, sql_column *c)
 		/* alter ? */
 		if (!isTempTable(c->t) && ol_first_node(c->t->columns) && (fc = ol_first_node(c->t->columns)->data) != NULL) {
 			storage *s = tab_timestamp_storage(tr, fc->t);
+			if (s == NULL)
+				return LOG_ERR;
 			cnt = segs_end(s->segs, tr, c->t);
 		}
 		if (cnt && fc != c) {
@@ -3140,7 +3151,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 					ok = LOG_ERR;
 			}
 		} else {
-			ok = LOG_ERR;
+			return LOG_ERR;
 		}
 
 		bat->cs.ucnt = 0;
@@ -3202,8 +3213,10 @@ load_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 	}
 
 	if (BATcount(b)) {
-		if (ok == LOG_OK && !(s->segs = new_segments(tr, BATcount(ib))))
-			ok = LOG_ERR;
+		if (ok == LOG_OK && !(s->segs = new_segments(tr, BATcount(ib)))) {
+			bat_destroy(ib);
+			return LOG_ERR;
+		}
 		if (BATtdense(b)) {
 			size_t start = b->tseqbase;
 			size_t cnt = BATcount(b);
@@ -3304,7 +3317,7 @@ create_del(sql_trans *tr, sql_table *t)
 	} else {
 		assert(!bat->segs);
 		if (!(bat->segs = new_segments(tr, 0)))
-			ok = LOG_ERR;
+			return LOG_ERR;
 
 		b = bat_new(TYPE_msk, t->sz, PERSISTENT);
 		if(b != NULL) {
@@ -3312,7 +3325,7 @@ create_del(sql_trans *tr, sql_table *t)
 			bat->cs.bid = temp_create(b);
 			bat_destroy(b);
 		} else {
-			ok = LOG_ERR;
+			return LOG_ERR;
 		}
 		if (new)
 			trans_add(tr, &t->base, bat, &tc_gc_del, &commit_create_del, isTempTable(t) ? NULL : &log_create_del);
@@ -3524,11 +3537,10 @@ static int
 destroy_del(sqlstore *store, sql_table *t)
 {
 	(void)store;
-	int ok = LOG_OK;
 	if (ATOMIC_PTR_GET(&t->data))
-		ok = destroy_storage(ATOMIC_PTR_GET(&t->data));
+		destroy_storage(ATOMIC_PTR_GET(&t->data));
 	ATOMIC_PTR_SET(&t->data, NULL);
-	return ok;
+	return LOG_OK;
 }
 
 static int
@@ -4234,7 +4246,6 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 			dbat->cs.ts = commit_ts;
 
 		ok = segments2cs(tr, dbat->segs, &dbat->cs);
-		assert(ok == LOG_OK);
 		if (ok == LOG_OK) {
 			merge_segments(dbat, tr, change, commit_ts, oldest);
 			if (oldest == commit_ts)
@@ -4452,27 +4463,30 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 				slot = s->segs->t->start;
 			}
 		}
-		ok = add_offsets(slot, cnt, total, offset, offsets);
+		if (ok == LOG_OK)
+			ok = add_offsets(slot, cnt, total, offset, offsets);
 	}
 	if (!locked)
 		unlock_table(tr->store, t->base.id);
 
-	/* hard to only add this once per transaction (probably want to change to once per new segment) */
-	if (!in_transaction) {
-		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_update_del);
-		in_transaction = true;
-	}
-	if (in_transaction && !NOT_TO_BE_LOGGED(t))
-		tr->logchanges += (int) total;
-	if (*offsets) {
-		BAT *pos = *offsets;
-		assert(BATcount(pos) == total);
-		BATsetcount(pos, total); /* set other properties */
-		pos->tnil = false;
-		pos->tnonil = true;
-		pos->tkey = true;
-		pos->tsorted = true;
-		pos->trevsorted = false;
+	if (ok == LOG_OK) {	
+		/* hard to only add this once per transaction (probably want to change to once per new segment) */
+		if (!in_transaction) {
+			trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_update_del);
+			in_transaction = true;
+		}
+		if (in_transaction && !NOT_TO_BE_LOGGED(t))
+			tr->logchanges += (int) total;
+		if (*offsets) {
+			BAT *pos = *offsets;
+			assert(BATcount(pos) == total);
+			BATsetcount(pos, total); /* set other properties */
+			pos->tnil = false;
+			pos->tnonil = true;
+			pos->tkey = true;
+			pos->tsorted = true;
+			pos->trevsorted = false;
+		}
 	}
 	return ok;
 }
@@ -4506,8 +4520,10 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 					break;
 				}
 				/* we claimed part of the old segment, the split off part needs to stay deleted */
-				if ((seg=split_segment(s->segs, seg, p, tr, seg->start, cnt, false)) == NULL)
+				if ((seg=split_segment(s->segs, seg, p, tr, seg->start, cnt, false)) == NULL) {
 					ok = LOG_ERR;
+					break;
+				}
 			}
 			seg->ts = tr->tid;
 			seg->deleted = false;
@@ -4533,18 +4549,17 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 	if (!locked)
 		unlock_table(tr->store, t->base.id);
 
-	/* hard to only add this once per transaction (probably want to change to once per new segment) */
-	if (!in_transaction) {
-		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_update_del);
-		in_transaction = true;
-	}
-	if (in_transaction && !NOT_TO_BE_LOGGED(t))
-		tr->logchanges += (int) cnt;
 	if (ok == LOG_OK) {
+		/* hard to only add this once per transaction (probably want to change to once per new segment) */
+		if (!in_transaction) {
+			trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_update_del);
+			in_transaction = true;
+		}
+		if (in_transaction && !NOT_TO_BE_LOGGED(t))
+			tr->logchanges += (int) cnt;
 		*offset = slot;
-		return LOG_OK;
 	}
-	return LOG_ERR;
+	return ok;
 }
 
 /*

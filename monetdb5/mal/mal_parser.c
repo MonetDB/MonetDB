@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /* (c): M. L. Kersten
@@ -23,7 +25,7 @@
 #include "mal_session.h"
 #include "mal_private.h"
 
-#define FATALINPUT MAXERRORS+1
+#define FATALINPUT (MAXERRORS+1)
 #define NL(X) ((X)=='\n' || (X)=='\r')
 
 static str idCopy(Client cntxt, int len);
@@ -1061,6 +1063,55 @@ parseInclude(Client cntxt)
 	return 0;
 }
 
+/* return the combined count of the number of arguments and the number
+ * of return values so that we can allocate enough space in the
+ * instruction; returns -1 on error (missing closing parenthesis) */
+static int
+cntArgsReturns(Client cntxt)
+{
+	size_t yycur = cntxt->yycur;
+	int cnt = 0;
+	char ch;
+
+	ch = currChar(cntxt);
+	if (ch != ')') {
+		cnt++;
+		while (ch != ')' && ch && !NL(ch)) {
+			if (ch == ',')
+				cnt++;
+			nextChar(cntxt);
+			ch = currChar(cntxt);
+		}
+	}
+	if (ch != ')') {
+		parseError(cntxt, "')' expected\n");
+		cntxt->yycur = yycur;
+		return -1;
+	}
+	advance(cntxt, 1);
+	ch = currChar(cntxt);
+	if (ch == '(') {
+		advance(cntxt, 1);
+		ch = currChar(cntxt);
+		cnt++;
+		while (ch != ')' && ch && !NL(ch)) {
+			if (ch == ',')
+				cnt++;
+			nextChar(cntxt);
+			ch = currChar(cntxt);
+		}
+		if (ch != ')') {
+			parseError(cntxt, "')' expected\n");
+			cntxt->yycur = yycur;
+			return -1;
+		}
+	} else {
+		cnt++;
+	}
+	cntxt->yycur = yycur;
+	return cnt;
+}
+
 /*
  * Definition
  * The definition statements share a lot in common, which calls for factoring
@@ -1133,7 +1184,11 @@ fcnHeader(Client cntxt, int kind)
 
 	assert(!cntxt->backup);
 	cntxt->backup = cntxt->curprg;
-	cntxt->curprg = newFunction( modnme, fnme, kind);
+	int nargs = cntArgsReturns(cntxt);
+	if (nargs < 0)
+		return 0;
+	/* one extra for argument/return manipulation */
+	cntxt->curprg = newFunctionArgs( modnme, fnme, kind, nargs + 1);
 	if(cntxt->curprg == NULL) {
 		/* reinstate curprg to have a place for the error */
 		cntxt->curprg = cntxt->backup;

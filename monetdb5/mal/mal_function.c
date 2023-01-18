@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -37,15 +39,17 @@ Symbol newFunctionArgs(const char *mod, const char *nme, int kind, int args)
 		return NULL;
 	}
 
-	p = newInstructionArgs(NULL, mod, nme, args);
-	if (p == NULL) {
-		freeSymbol(s);
-		return NULL;
+	if (args > 0) {
+		p = newInstructionArgs(NULL, mod, nme, args);
+		if (p == NULL) {
+			freeSymbol(s);
+			return NULL;
+		}
+		p->token = kind;
+		p->barrier = 0;
+		setDestVar(p, varid);
+		pushInstruction(s->def,p);
 	}
-	p->token = kind;
-	p->barrier = 0;
-	setDestVar(p, varid);
-	pushInstruction(s->def,p);
 	return s;
 }
 
@@ -333,7 +337,7 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	InstrPtr pp;
 	str msg = MAL_SUCCEED;
 
-	new = newFunction(scope->name, proc->name, getSignature(proc)->token);
+	new = newFunctionArgs(scope->name, proc->name, getSignature(proc)->token, -1);
 	if( new == NULL){
 		return NULL;
 	}
@@ -554,8 +558,6 @@ setVariableScope(MalBlkPtr mb)
 
 	for (pc = 0; pc < mb->stop; pc++) {
 		p = getInstrPtr(mb, pc);
-		if( p->token == NOOPsymbol)
-			continue;
 
 		if( blockStart(p)){
 			if (getModuleId(p) && getFunctionId(p) && strcmp(getModuleId(p),"language")==0 && strcmp(getFunctionId(p),"dataflow")==0){
@@ -714,7 +716,7 @@ chkDeclarations(MalBlkPtr mb){
 
 	for(pc=1;pc<mb->stop; pc++){
 		p= getInstrPtr(mb,pc);
-		if ( p->token == REMsymbol || p->token == NOOPsymbol)
+		if ( p->token == REMsymbol)
 			continue;
 		/* check correct use of the arguments*/
 		for(k=p->retc;k<p->argc; k++) {
