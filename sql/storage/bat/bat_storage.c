@@ -3076,7 +3076,7 @@ log_create_col(sql_trans *tr, sql_change *change)
 static int
 commit_create_delta( sql_trans *tr, sql_table *t, sql_base *base, sql_delta *delta, ulng commit_ts, ulng oldest)
 {
-	(void) t; // TODO transaction_layer_revam: remove if unnecessary
+	(void) t; // TODO transaction_layer_revamp: remove if unnecessary
 	(void)oldest;
 	assert(delta->cs.ts == tr->tid);
 	delta->cs.ts = commit_ts;
@@ -3180,8 +3180,7 @@ commit_create_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	sql_delta *delta = ATOMIC_PTR_GET(&i->data);
 	if (!tr->parent)
 		i->base.new = 0;
-	if (!isTempTable(i->t))
-		return commit_create_delta( tr, i->t, &i->base, delta, commit_ts, oldest);
+	return commit_create_delta( tr, i->t, &i->base, delta, commit_ts, oldest);
 	return LOG_OK;
 }
 
@@ -4081,7 +4080,7 @@ tc_gc_rollbacked_storage( sql_store Store, sql_change *change, ulng oldest)
 static int
 commit_update_delta( sql_trans *tr, sql_change *change, sql_table* t, sql_base* base, ATOMIC_PTR_TYPE* data, int type, ulng commit_ts, ulng oldest)
 {
-	(void) type; // TODO transaction_layer_revamremove if remains unused
+	(void) type; // TODO transaction_layer_revamp remove if remains unused
 
 	sql_delta *delta = ATOMIC_PTR_GET(data);
 
