@@ -210,6 +210,34 @@ gen_null_strings(FILE *f, bool byteswap, long nrecs)
 }
 
 static void
+gen_null_blobs(FILE *f, bool byteswap, long nrecs)
+{
+	uint8_t *buffer = malloc(nrecs);
+	for (long i = 0; i < nrecs; i++) {
+		buffer[i] = 0xD0 + 3 - (i % 3);
+	}
+
+	for (long i = 0; i < nrecs; i++) {
+		uint64_t header;
+		size_t n;
+		if (i % 3 == 2) {
+			// null
+			n = 0;
+			header = (uint64_t)-1;
+		} else {
+			n = (i % 1000);
+			header = n;
+		}
+		if (byteswap)
+			copy_binary_convert64(&header);
+		assert(sizeof(header) == 8);
+		fwrite(&header, sizeof(header), 1, f);
+		if (n > 0)
+			fwrite(buffer, 1, n, f);
+	}
+}
+
+static void
 gen_json(FILE *f, bool byteswap, long nrecs)
 {
 	(void)byteswap;
@@ -245,6 +273,7 @@ static struct gen {
 	{ "broken_strings", gen_broken_strings },
 	{ "newline_strings", gen_newline_strings },
 	{ "null_strings", gen_null_strings },
+	{ "null_blobs", gen_null_blobs },
 	//
 	{ "timestamps", gen_timestamps },
 	{ "timestamp_times", gen_timestamp_times },

@@ -394,6 +394,126 @@ end:
 }
 
 
+// Read BLOBs.  Every blob is preceded by a 64bit header word indicating its length.
+// NULLs are indicated by length==-1
+static str
+load_blob(BAT *bat, stream *s, int *eof_reached, int width, bool byteswap)
+{
+	(void)width;
+	const char *mal_operator = "sql.importColumn";
+	str msg = MAL_SUCCEED;
+	const blob *nil_value = ATOMnilptr(TYPE_blob);
+	blob *buffer = NULL;
+	size_t buffer_size = 0;
+	union {
+		uint64_t length;
+		char bytes[8];
+	} header;
+
+	*eof_reached = 0;
+
+	while (1) {
+		const blob *value;
+		// Read the header
+		ssize_t nread = mnstr_read(s, header.bytes, 1, 8);
+		if (nread < 0) {
+			bailout("%s", mnstr_peek_error(s));
+		} else if (nread == 0) {
+			*eof_reached = 1;
+			break;
+		} else if (nread < 8) {
+			bailout("incomplete blob at end of file");
+		}
+		if (byteswap) {
+			copy_binary_convert64(&header.length);
+		}
+
+		if (header.length == ~(uint64_t)0) {
+			value = nil_value;
+		} else {
+			size_t length;
+			size_t needed;
+
+			if (header.length >= VAR_MAX) {
+				bailout("blob too long");
+			}
+			length = (size_t) header.length;
+
+			// Reallocate the buffer
+			needed = sizeof(blob) + length;
+			if (buffer_size < needed) {
+				// do not use GDKrealloc, no need to copy the old contents
+				GDKfree(buffer);
+				size_t allocate = needed;
+				allocate += allocate / 16;   // add a little margin
+				allocate += ((-allocate) % 0x100000);   // round up to nearest MiB
+				assert(allocate >= needed);
+				buffer = GDKmalloc(allocate);
+				if (!buffer) {
+					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto end;
+				}
+				buffer_size = allocate;
+			}
+
+			// Fill the buffer
+			buffer->nitems = length;
+			if (length > 0) {
+				nread = mnstr_read(s, buffer->data, length, 1);
+				if (nread < 0) {
+					bailout("%s", mnstr_peek_error(s));
+				} else if (nread != 1) {
+					bailout("Incomplete blob at end of file");
+				}
+			}
+
+			value = buffer;
+		}
+
+		if (BUNappend(bat, value, false) != GDK_SUCCEED) {
+				msg = createException(SQL, mal_operator, GDK_EXCEPTION);
+				goto end;
+		}
+	}
+
+end:
+	GDKfree(buffer);
+	return msg;
+}
+
+static str
+dump_blob(BAT *bat, stream *s, BUN start, BUN length, bool byteswap)
+{
+	const char *mal_operator = "sql.export_bin_column";
+	str msg = MAL_SUCCEED;
+	int tpe = BATttype(bat);
+	assert(ATOMstorage(tpe) == TYPE_blob); (void)tpe;
+	assert(mnstr_isbinary(s));
+
+	BUN end = start + length;
+	assert(end <= BATcount(bat));
+	BATiter bi = bat_iterator(bat);
+	uint64_t nil_header = ~(uint64_t)0;
+	for (BUN p = start; p < end; p++) {
+		const blob *b = BUNtvar(bi, p);
+		uint64_t header = is_blob_nil(b) ? nil_header : (uint64_t)b->nitems;
+		if (byteswap)
+			copy_binary_convert64(&header);
+		if (mnstr_write(s, &header, 8, 1) != 1) {
+			bailout("%s", mnstr_peek_error(s));
+		}
+		if (!is_blob_nil(b) && mnstr_write(s, b->data,b->nitems, 1) != 1) {
+			bailout("%s", mnstr_peek_error(s));
+		}
+	}
+
+end:
+	bat_iterator_end(&bi);
+	return msg;
+
+}
+
+
 static struct type_record_t type_recs[] = {
 
 	// no conversion, no byteswapping
@@ -412,6 +532,8 @@ static struct type_record_t type_recs[] = {
 #ifdef HAVE_HGE
 	{ "hge", "hge", .trivial_if_no_byteswap=true, .decoder=byteswap_hge, .encoder=byteswap_hge},
 #endif
+
+	{ "blob", "blob", .loader=load_blob, .dumper=dump_blob },
 
 	// \0-terminated text records
 	{ "str", "str", .loader=load_zero_terminated_text, .dumper=dump_zero_terminated_text },
