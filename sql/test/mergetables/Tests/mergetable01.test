@@ -14,6 +14,10 @@ CREATE TABLE child2(a int)
 statement ok rowcount 2
 INSERT INTO child2 VALUES (3),(4)
 
+@connection(id=3, username=monetdb, password=monetdb)                                                                                 
+statement ok
+start transaction
+
 @connection(id=2)
 statement ok
 start transaction
