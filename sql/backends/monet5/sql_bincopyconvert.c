@@ -180,6 +180,14 @@ encode_date(void *dst_, void *src_, size_t count, int width, bool byteswap)
 	date *src = src_;
 	for (size_t i = 0; i < count; i++) {
 		date dt = *src++;
+		if (is_date_nil(dt)) {
+			*dst++ = (copy_binary_date){
+				.day = 0xFF,
+				.month = 0xFF,
+				.year = -1,
+			};
+			continue;
+		}
 		int16_t year = date_year(dt);
 		if (byteswap)
 			year = copy_binary_byteswap16(year);
@@ -220,6 +228,16 @@ encode_time(void *dst_, void *src_, size_t count, int width, bool byteswap)
 	daytime *src = src_;
 	for (size_t i = 0; i < count; i++) {
 		daytime tm = *src++;
+		if (is_daytime_nil(tm)) {
+			*dst++ = (copy_binary_time){
+				.ms = 0xFFFFFFFF,
+				.seconds = 0xFF,
+				.minutes = 0xFF,
+				.hours = 0xFF,
+				.padding = 0xFF,
+			};
+			continue;
+		}
 		uint32_t ms = daytime_usec(tm);
 		if (byteswap)
 			ms = copy_binary_byteswap32(ms);
@@ -265,6 +283,23 @@ encode_timestamp(void *dst_, void *src_, size_t count, int width, bool byteswap)
 	timestamp *src = src_;
 	for (size_t i = 0; i < count; i++) {
 		timestamp value = *src++;
+		if (is_timestamp_nil(value)) {
+			*dst++ = (copy_binary_timestamp) {
+				.time = {
+					.ms = 0xFFFFFFFF,
+					.seconds = 0xFF,
+					.minutes = 0xFF,
+					.hours = 0xFF,
+					.padding = 0xFF,
+				},
+				.date = {
+					.day = 0xFF,
+					.month = 0xFF,
+					.year = -1,
+				}
+			};
+			continue;
+		}
 		date dt = timestamp_date(value);
 		daytime tm = timestamp_daytime(value);
 		int16_t year = date_year(dt);
