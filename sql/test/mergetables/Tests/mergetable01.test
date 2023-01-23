@@ -1,4 +1,4 @@
-@connection(id=2, username=monetdb, password=monetdb)                                                                                 
+@connection(id=2, username=monetdb, password=monetdb)
 statement ok
 CREATE TABLE child1(a int)
 
@@ -14,7 +14,7 @@ CREATE TABLE child2(a int)
 statement ok rowcount 2
 INSERT INTO child2 VALUES (3),(4)
 
-@connection(id=3, username=monetdb, password=monetdb)                                                                                 
+@connection(id=3, username=monetdb, password=monetdb)
 statement ok
 start transaction
 
@@ -22,7 +22,7 @@ start transaction
 statement ok
 start transaction
 
-@connection(id=1, username=monetdb, password=monetdb)                                                                                 
+@connection(id=1, username=monetdb, password=monetdb)
 statement ok
 start transaction
 
@@ -40,7 +40,7 @@ alter table parent add table child2
 
 @connection(id=2)
 statement ok
-drop table child2;
+drop table child2
 
 @connection(id=1)
 statement ok
@@ -52,20 +52,21 @@ commit
 
 @connection(id=1)
 query I nosort
-select count(*) from sys.objects where nr = ( select id from sys._tables where name = 'parent');
+select count(*) from sys.objects where nr = ( select id from sys._tables where name = 'parent')
 ----
 2
 
-# cleanup 
+# cleanup
 
 @connection(id=1)
 statement ok
-drop table parent;
+drop table parent
 
 @connection(id=1)
 statement ok
-drop table child1;
+drop table child1
 
 @connection(id=1)
 statement ok
-drop table child2;
+drop table child2
+
