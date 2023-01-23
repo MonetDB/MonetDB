@@ -3928,7 +3928,6 @@ sql_trans_commit(sql_trans *tr)
 		}
 
 		if (!tr->parent &&
-			ATOMIC_GET(&store->nr_active) == 1 &&
 			(!list_empty(tr->dependencies) || !list_empty(tr->depchanges))) {
 			ok = transaction_check_dependencies_and_removals(tr);
 			if (ok != LOG_OK) {
