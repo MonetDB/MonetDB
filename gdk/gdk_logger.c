@@ -97,17 +97,8 @@ typedef enum {LOG_OK, LOG_EOF, LOG_ERR} log_return;
 static gdk_return bm_commit(logger *lg);
 static gdk_return tr_grow(trans *tr);
 
-static inline void
-log_lock(logger *lg)
-{
-	MT_lock_set(&lg->lock);
-}
-
-static inline void
-log_unlock(logger *lg)
-{
-	MT_lock_unset(&lg->lock);
-}
+#define log_lock(lg)	MT_lock_set(&(lg)->lock)
+#define log_unlock(lg)	MT_lock_unset(&(lg)->lock)
 
 static inline bte
 find_type(logger *lg, int tpe)
@@ -1615,11 +1606,12 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts, 
 	return rcnt;
 }
 
+/* this function is called with log_lock() held; it releases the lock
+ * before returning */
 static gdk_return
 bm_subcommit(logger *lg)
 {
 	BUN p, q;
-	log_lock(lg);
 	BAT *catalog_bid = lg->catalog_bid;
 	BAT *catalog_id = lg->catalog_id;
 	BAT *dcatalog = lg->dcatalog;
@@ -1936,6 +1928,8 @@ log_load(int debug, const char *fn, const char *logdir, logger *lg, char filenam
 		BBPretain(lg->catalog_id->batCacheid);
 		BBPretain(lg->dcatalog->batCacheid);
 
+		log_lock(lg);
+		/* bm_subcommit releases the lock */
 		if (bm_subcommit(lg) != GDK_SUCCEED) {
 			/* cannot commit catalog, so remove log */
 			MT_remove(filename);
@@ -3081,7 +3075,7 @@ bm_commit(logger *lg)
 			fprintf(stderr, "#bm_commit: create %d (%d)\n",
 				bid, BBP_lrefs(bid));
 	}
-	log_unlock(lg);
+	/* bm_subcommit releases the lock */
 	return bm_subcommit(lg);
 }
 

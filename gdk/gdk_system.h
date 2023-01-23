@@ -205,6 +205,16 @@ gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 /* define this to keep lock statistics (can be expensive) */
 /* #define LOCK_STATS 1 */
 
+/* define this to keep track of which locks a thread has acquired */
+#ifndef NDEBUG			/* normally only in debug builds */
+#define LOCK_OWNER 1
+#endif
+
+#ifndef LOCK_OWNER
+#define MT_thread_add_mylock(l) ((void) 0)
+#define MT_thread_del_mylock(l) ((void) 0)
+#endif
+
 #ifdef LOCK_STATS
 #include "gdk_tracer.h"
 
@@ -215,13 +225,15 @@ gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 	} while (0)
 
 #define _DBG_LOCK_LOCKER(l)				\
-	do {						\
-		(l)->locker = __func__;			\
-		(l)->thread = MT_thread_getname();	\
-	} while (0)
+	(						\
+		(l)->locker = __func__,			\
+		(l)->thread = MT_thread_getname(),	\
+		MT_thread_add_mylock(l)			\
+	)
 
 #define _DBG_LOCK_UNLOCKER(l)					\
 	do {							\
+		MT_thread_del_mylock(l);			\
 		(l)->locker = __func__;				\
 		(l)->thread = NULL;				\
 		TRC_DEBUG(TEM, "Unlocking %s\n", (l)->name);	\
@@ -286,14 +298,31 @@ gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 
 #else
 
+#ifdef LOCK_OWNER
+#define _DBG_LOCK_LOCKER(l)				\
+	(						\
+		(l)->locker = __func__,			\
+		(l)->thread = MT_thread_getname(),	\
+		MT_thread_add_mylock(l)			\
+	)
+
+#define _DBG_LOCK_UNLOCKER(l)					\
+	do {							\
+		MT_thread_del_mylock(l);			\
+		(l)->locker = __func__;				\
+		(l)->thread = NULL;				\
+	} while (0)
+#else
+#define _DBG_LOCK_LOCKER(l)		((void) 0)
+#define _DBG_LOCK_UNLOCKER(l)		((void) 0)
+#endif
+
 #define _DBG_LOCK_COUNT_0(l)		((void) 0)
 #define _DBG_LOCK_CONTENTION(l)		((void) 0)
 #define _DBG_LOCK_SLEEP(l)		((void) 0)
 #define _DBG_LOCK_COUNT_2(l)		((void) 0)
 #define _DBG_LOCK_INIT(l)		((void) 0)
 #define _DBG_LOCK_DESTROY(l)		((void) 0)
-#define _DBG_LOCK_LOCKER(l)		((void) 0)
-#define _DBG_LOCK_UNLOCKER(l)		((void) 0)
 
 #endif
 
@@ -307,8 +336,13 @@ typedef struct MT_Lock {
 	ATOMIC_TYPE sleep;
 	struct MT_Lock *volatile next;
 	struct MT_Lock *volatile prev;
+#endif
+#if defined(LOCK_STATS) || defined(LOCK_OWNER)
 	const char *locker;
 	const char *thread;
+#endif
+#ifdef LOCK_OWNER
+	struct MT_Lock *nxt;
 #endif
 } MT_Lock;
 
@@ -343,7 +377,7 @@ __pragma(comment(linker, "/include:" _LOCK_PREF_ "wininit_" #n "_"))
 		_DBG_LOCK_INIT(l);				\
 	} while (0)
 
-#define MT_lock_try(l)	TryEnterCriticalSection(&(l)->lock)
+#define MT_lock_try(l)	(TryEnterCriticalSection(&(l)->lock) && (_DBG_LOCK_LOCKER(l), true))
 
 #define MT_lock_set(l)						\
 	do {							\
@@ -406,8 +440,13 @@ typedef struct MT_Lock {
 	ATOMIC_TYPE sleep;
 	struct MT_Lock *volatile next;
 	struct MT_Lock *volatile prev;
+#endif
+#if defined(LOCK_STATS) || defined(LOCK_OWNER)
 	const char *locker;
 	const char *thread;
+#endif
+#ifdef LOCK_OWNER
+	struct MT_Lock *nxt;
 #endif
 } MT_Lock;
 
@@ -424,7 +463,7 @@ typedef struct MT_Lock {
 		_DBG_LOCK_INIT(l);				\
 	} while (0)
 
-#define MT_lock_try(l)		(pthread_mutex_trylock(&(l)->lock) == 0)
+#define MT_lock_try(l)		(pthread_mutex_trylock(&(l)->lock) == 0 && (_DBG_LOCK_LOCKER(l), true))
 
 #ifdef LOCK_STATS
 #define MT_lock_set(l)					\
@@ -440,7 +479,11 @@ typedef struct MT_Lock {
 		_DBG_LOCK_COUNT_2(l);			\
 	} while (0)
 #else
-#define MT_lock_set(l)		pthread_mutex_lock(&(l)->lock)
+#define MT_lock_set(l)				\
+	do {					\
+		pthread_mutex_lock(&(l)->lock);	\
+		_DBG_LOCK_LOCKER(l);		\
+	} while (0)
 #endif
 
 #define MT_lock_unset(l)				\
@@ -713,6 +756,12 @@ gdk_export void MT_thread_setsemawait(MT_Sema *sema);
 gdk_export void MT_thread_setworking(const char *work);
 gdk_export void MT_thread_setalgorithm(const char *algo);
 gdk_export const char *MT_thread_getalgorithm(void);
+#ifdef LOCK_OWNER
+#define hide_exp(a,b) a ## b	/* hide export from exports test */
+hide_exp(gdk_ex,port) void MT_thread_add_mylock(MT_Lock *lock);
+hide_exp(gdk_ex,port) void MT_thread_del_mylock(MT_Lock *lock);
+#undef hide_exp
+#endif
 
 gdk_export int MT_check_nr_cores(void);
 
