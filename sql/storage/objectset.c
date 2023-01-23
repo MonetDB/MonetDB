@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1095,6 +1097,7 @@ oi_next(struct os_iter *oi)
 	if (oi->name) {
 		versionhead  *n = oi->n;
 
+		lock_reader(oi->os); /* intentionally outside of while loop */
 		while (n && !b) {
 
 			if (n->ov->b->name && strcmp(n->ov->b->name, oi->name) == 0) {
@@ -1105,24 +1108,23 @@ oi_next(struct os_iter *oi)
 				if (ov && os_atmc_get_state(ov) == active)
 					b = ov->b;
 			} else {
-				lock_reader(oi->os);
 				n = oi->n = n->next;
-				unlock_reader(oi->os);
 			}
 	 	}
+		unlock_reader(oi->os);
 	} else {
 		versionhead  *n = oi->n;
 
+		lock_reader(oi->os); /* intentionally outside of while loop */
 		while (n && !b) {
 			objectversion *ov = n->ov;
-			lock_reader(oi->os);
 			n = oi->n = n->next;
-			unlock_reader(oi->os);
 
 			ov = get_valid_object_id(oi->tr, ov);
 			if (ov && os_atmc_get_state(ov) == active)
 				b = ov->b;
 		}
+		unlock_reader(oi->os);
 	}
 	return b;
 }

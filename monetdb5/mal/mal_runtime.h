@@ -1,13 +1,19 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #ifndef _MAL_RUNTIME_H
 #define _MAL_RUNTIME_H
+
+#ifndef LIBMONETDB5
+#error this file should not be included outside its source directory
+#endif
 
 #include "mal.h"
 #include "mal_client.h"
@@ -51,25 +57,26 @@ typedef struct USERSTAT{
 	lng maxticks;
 	str maxquery;
 } *UserStats;
-mal_export size_t usrstatscnt;
+extern size_t usrstatscnt;
 
 typedef struct WORKINGSET{
 	Client		cntxt;
 	MalBlkPtr   mb;
 	MalStkPtr   stk;
 	InstrPtr    pci;
+	lng         clock;			/* start time */
 } Workingset;
 
-mal_export Workingset workingset[THREADS];
+extern Workingset workingset[THREADS];
 
-mal_export oid runtimeProfileSetTag(Client cntxt);
-mal_export void runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
-mal_export void runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
-mal_export void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
-mal_export void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
-mal_export lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
-mal_export lng getBatSpace(BAT *b);
+extern void runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
+extern void runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
+extern void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
+extern void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
+extern lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
+extern lng getBatSpace(BAT *b);
+extern void sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng clk, lng ticks);
 
-mal_export QueryQueue QRYqueue;
-mal_export UserStats USRstats;
+extern QueryQueue QRYqueue;
+extern UserStats USRstats;
 #endif

@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -512,7 +514,8 @@ CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		lng timeout_micro = GDKdebug & FORCEMITOMASK && qto == 1 ? 1000 : (lng) qto * 1000000;
 		mal_clients[idx].qryctx.querytimeout = timeout_micro;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-		qry_ctx->querytimeout = timeout_micro;
+		if (qry_ctx)
+			qry_ctx->querytimeout = timeout_micro;
 	}
 	MT_lock_unset(&mal_contextLock);
 	return msg;
@@ -538,7 +541,8 @@ CLTqueryTimeoutMicro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else {
 		mal_clients[idx].qryctx.querytimeout = qto;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-		qry_ctx->querytimeout = qto;
+		if (qry_ctx)
+			qry_ctx->querytimeout = qto;
 	}
 	MT_lock_unset(&mal_contextLock);
 	return msg;

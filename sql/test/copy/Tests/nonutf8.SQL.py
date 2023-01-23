@@ -19,9 +19,12 @@ with process.client('sql', text=False, stdin=process.PIPE, stdout=process.PIPE, 
     retcode = c.returncode
 
     if retcode == 0:
-        sys.stderr.write("Expected nonzero return code")
+        print(f"Expected nonzero return code, received {retcode}",
+              file=sys.stderr)
     if not err or b'invalid start of UTF-8 sequence' not in err:
-        sys.stderr.write("Expected stderr to contain 'invalid start of UTF-8 sequence'")
+        print("Expected stderr to contain 'invalid start of UTF-8 sequence'",
+              file=sys.stderr)
+        print(f"Received: {err}", file=sys.stderr)
 
 # input is a byte string because it contains broken utf-8
 INPUT2 = b"""
@@ -34,9 +37,12 @@ with process.client('sql', text=False, stdin=process.PIPE, stdout=process.PIPE, 
     retcode = c.returncode
 
     if retcode == 0:
-        sys.stderr.write("Expected nonzero return code")
+        print(f"Expected nonzero return code, received {retcode}",
+              file=sys.stderr)
     if not err or b'input not properly encoded UTF-8' not in err:
-        sys.stderr.write("Expected stderr to contain 'input not properly encoded UTF-8'")
+        print("Expected stderr to contain 'input not properly encoded UTF-8'",
+              file=sys.stderr)
+        print(f"Received: {err}", file=sys.stderr)
 
 with SQLTestCase() as tc:
     tc.connect(username="monetdb", password="monetdb")
