@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -59,9 +59,13 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				getFunctionId(p) == joinRef
 			){
 				q= newInstruction(0,languageRef,blockRef);
+				if (q == NULL) {
+					msg = createException(MAL, "optimizer.volcano", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					break;
+				}
 				setDestVar(q, newTmpVariable(mb,TYPE_any));
-				q =  addArgument(mb,q,mvcvar);
-				q =  addArgument(mb,q,getArg(p,0));
+				q =  pushArgument(mb,q,mvcvar);
+				q =  pushArgument(mb,q,getArg(p,0));
 				mvcvar=  getArg(q,0);
 				pushInstruction(mb,q);
 				count++;
@@ -71,9 +75,13 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		if( count < MAXdelays && getModuleId(p) == groupRef ){
 			if( getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupdoneRef ){
 				q= newInstruction(0,languageRef,blockRef);
+				if (q == NULL) {
+					msg = createException(MAL, "optimizer.volcano", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					break;
+				}
 				setDestVar(q, newTmpVariable(mb,TYPE_any));
-				q =  addArgument(mb,q,mvcvar);
-				q =  addArgument(mb,q,getArg(p,0));
+				q =  pushArgument(mb,q,mvcvar);
+				q =  pushArgument(mb,q,getArg(p,0));
 				mvcvar=  getArg(q,0);
 				pushInstruction(mb,q);
 				count++;
@@ -97,7 +105,7 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	GDKfree(old);
 
 	/* Defense line against incorrect plans */
-	if( count){
+	if( msg == MAL_SUCCEED && count){
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);

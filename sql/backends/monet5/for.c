@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -108,7 +108,6 @@ FORdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BAT *o = BATdescriptor(O), *b = NULL;
 	if (!o) {
-		bat_destroy(o);
 		throw(SQL, "for.decompress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if (o->ttype != TYPE_bte && o->ttype != TYPE_sht) {

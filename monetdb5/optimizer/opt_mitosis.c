@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -152,7 +152,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	 * Take into account the number of client connections,
 	 * because all user together are responsible for resource contentions
 	 */
+	MT_lock_set(&mal_contextLock);
 	cntxt->idle = 0; // this one is definitely not idle
+	MT_lock_unset(&mal_contextLock);
 
 /* This code was used to experiment with block sizes, mis-using the memorylimit  variable
 	if (cntxt->memorylimit){
@@ -280,10 +282,19 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		qtpe = getVarType(mb, getArg(p, 0));
 
 		matq = newInstructionArgs(NULL, matRef, newRef, pieces + 1);
+		if (matq == NULL) {
+			msg = createException(MAL, "optimizer.mitosis", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			break;
+		}
 		getArg(matq, 0) = getArg(p, 0);
 
 		if (upd) {
 			matr = newInstructionArgs(NULL, matRef, newRef, pieces + 1);
+			if (matr == NULL) {
+				freeInstruction(matq);
+				msg = createException(MAL, "optimizer.mitosis", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				break;
+			}
 			getArg(matr, 0) = getArg(p, 1);
 			rtpe = getVarType(mb, getArg(p, 1));
 		}
@@ -291,6 +302,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		for (j = 0; j < pieces; j++) {
 			q = copyInstruction(p);
 			if( q == NULL){
+				freeInstruction(matr);
+				freeInstruction(matq);
 				for (; i<limit; i++)
 					if (old[i])
 						pushInstruction(mb,old[i]);
@@ -305,9 +318,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				rv = getArg(q, 1) = newTmpVariable(mb, rtpe);
 			}
 			pushInstruction(mb, q);
-			matq = addArgument(mb, matq, qv);
+			matq = pushArgument(mb, matq, qv);
 			if (upd)
-				matr = addArgument(mb, matr, rv);
+				matr = pushArgument(mb, matr, rv);
 		}
 		pushInstruction(mb, matq);
 		if (upd)
@@ -320,11 +333,14 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	GDKfree(old);
 
 	/* Defense line against incorrect plans */
-	msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	if (!msg)
-		msg = chkFlow(mb);
-	if (!msg)
-		msg = chkDeclarations(mb);
+	if (msg == MAL_SUCCEED) {
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (msg == MAL_SUCCEED) {
+			msg = chkFlow(mb);
+			if (msg == MAL_SUCCEED)
+				msg = chkDeclarations(mb);
+		}
+	}
 bailout:
 	/* keep actions taken as a fake argument*/
 	(void) pushInt(mb, pci, pieces);

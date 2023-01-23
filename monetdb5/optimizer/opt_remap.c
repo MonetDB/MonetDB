@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -44,6 +44,8 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 		return 0;
 
 	p= newInstructionArgs(mb, bufName, fcnName, pci->argc + 2);
+	if (p == NULL)
+		return 0;
 
 	for(i=0; i<pci->retc; i++)
 		if (i<1)
@@ -55,11 +57,11 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 
 
 	if (plus_one) {
-		p = addArgument(mb,p,getArg(pci,pci->retc)); // cardinality argument
+		p = pushArgument(mb,p,getArg(pci,pci->retc)); // cardinality argument
 	}
 
 	for(i= pci->retc+2+plus_one; i<pci->argc; i++)
-		p= addArgument(mb,p,getArg(pci,i));
+		p= pushArgument(mb,p,getArg(pci,i));
 	if (p->retc == 1 &&
 		((bufName == batcalcRef &&
 		(fcnName == mulRef || fcnName == divRef || fcnName == plusRef || fcnName == minusRef || fcnName == modRef)) || bufName == batmtimeRef || bufName == batstrRef)) {
@@ -222,7 +224,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 				setVarType(mq,getArg(q,0),tpe);
 				setModuleId(q,algebraRef);
 				setFunctionId(q,projectRef);
-				q= addArgument(mb,q, getArg(q,1));
+				q= pushArgument(mb,q, getArg(q,1));
 				mq->stmt[i] = q;
 				getArg(q,1)= refbat;
 			}
@@ -286,7 +288,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					!(isaBatType( getArgType(mq,q,1))) ){
 					setModuleId(q,algebraRef);
 					setFunctionId(q,projectRef);
-					q= addArgument(mq,q, getArg(q,1));
+					q= pushArgument(mq,q, getArg(q,1));
 					mq->stmt[i] = q;
 					getArg(q,1)= refbat;
 
@@ -436,12 +438,15 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			InstrPtr sum, avg,t, iszero;
 			InstrPtr cnt;
 			sum = copyInstruction(p);
-			if( sum == NULL)
-				throw(MAL, "remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			if (sum == NULL) {
+				msg = createException(MAL, "optimizer.remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				break;
+			}
 			cnt = copyInstruction(p);
 			if( cnt == NULL){
 				freeInstruction(sum);
-				throw(MAL, "remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				msg = createException(MAL, "optimizer.remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				break;
 			}
 			setFunctionId(sum, sumRef);
 			setFunctionId(cnt, countRef);
@@ -451,36 +456,56 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			pushInstruction(mb, cnt);
 
 			t = newInstruction(mb, batcalcRef, eqRef);
+			if (t == NULL) {
+				msg = createException(MAL, "optimizer.remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				break;
+			}
 			getArg(t,0) = newTmpVariable(mb, newBatType(TYPE_bit));
-			t = addArgument(mb, t, getDestVar(cnt));
+			t = pushArgument(mb, t, getDestVar(cnt));
 			t = pushLng(mb, t, 0);
 			pushInstruction(mb, t);
 			iszero = t;
 
 			t = newInstruction(mb, batcalcRef, dblRef);
+			if (t == NULL) {
+				msg = createException(MAL, "optimizer.remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				break;
+			}
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
-			t = addArgument(mb, t, getDestVar(sum));
+			t = pushArgument(mb, t, getDestVar(sum));
 			pushInstruction(mb, t);
 			sum = t;
 
 			t = newInstruction(mb, batcalcRef, ifthenelseRef);
+			if (t == NULL) {
+				msg = createException(MAL, "optimizer.remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				break;
+			}
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
-			t = addArgument(mb, t, getDestVar(iszero));
+			t = pushArgument(mb, t, getDestVar(iszero));
 			t = pushNil(mb, t, TYPE_dbl);
-			t = addArgument(mb, t, getDestVar(sum));
+			t = pushArgument(mb, t, getDestVar(sum));
 			pushInstruction(mb, t);
 			sum = t;
 
 			t = newInstruction(mb, batcalcRef, dblRef);
+			if (t == NULL) {
+				msg = createException(MAL, "optimizer.remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				break;
+			}
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
-			t = addArgument(mb, t, getDestVar(cnt));
+			t = pushArgument(mb, t, getDestVar(cnt));
 			pushInstruction(mb, t);
 			cnt = t;
 
 			avg = newInstruction(mb, batcalcRef, divRef);
+			if (avg == NULL) {
+				msg = createException(MAL, "optimizer.remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				break;
+			}
 			getArg(avg, 0) = getArg(p, 0);
-			avg = addArgument(mb, avg, getDestVar(sum));
-			avg = addArgument(mb, avg, getDestVar(cnt));
+			avg = pushArgument(mb, avg, getDestVar(sum));
+			avg = pushArgument(mb, avg, getDestVar(cnt));
 			avg = pushNil(mb, avg, TYPE_bat);
 			avg = pushNil(mb, avg, TYPE_bat);
 			freeInstruction(p);
@@ -494,8 +519,6 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			pushInstruction(mb, old[i]);
 	GDKfree(old);
 
-	if (actions)
-		msg = chkTypes(cntxt->usermodule,mb,TRUE);
 	/* Defense line against incorrect plans */
 	if( msg == MAL_SUCCEED && actions > 0){
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);

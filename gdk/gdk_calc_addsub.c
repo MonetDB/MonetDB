@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1427,7 +1427,8 @@ add_typeswitchloop(const void *lft, int tp1, bool incr1,
 }
 
 static BUN
-addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn, BATiter b1i, BATiter b2i,
+addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
+	    BATiter *b1i, BATiter *b2i,
 	    struct canditer *restrict ci1, struct canditer *restrict ci2)
 {
 	BUN nils = 0, ncand = ci1->ncand;
@@ -1452,9 +1453,9 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn, BATiter b1i
 		oid x1 = canditer_next(ci1) - candoff1;
 		oid x2 = canditer_next(ci2) - candoff2;
 		if (b1)
-			l = BUNtvar(b1i, x1);
+			l = BUNtvar(*b1i, x1);
 		if (b2)
-			r = BUNtvar(b2i, x2);
+			r = BUNtvar(*b2i, x2);
 		if (strNil(l) || strNil(r)) {
 			nils++;
 			if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
@@ -1514,7 +1515,7 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp)
 	BATiter b1i = bat_iterator(b1);
 	BATiter b2i = bat_iterator(b2);
 	if (b1i.type == TYPE_str && b2i.type == TYPE_str && tp == TYPE_str) {
-		nils = addstr_loop(b1, NULL, b2, NULL, bn, b1i, b2i, &ci1, &ci2);
+		nils = addstr_loop(b1, NULL, b2, NULL, bn, &b1i, &b2i, &ci1, &ci2);
 	} else {
 		nils = add_typeswitchloop(b1i.base, b1i.type, true,
 					  b2i.base, b2i.type, true,
@@ -1576,7 +1577,7 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp)
 
 	BATiter bi = bat_iterator(b);
 	if (bi.type == TYPE_str && v->vtype == TYPE_str && tp == TYPE_str) {
-		nils = addstr_loop(b, NULL, NULL, v->val.sval, bn, bi, (BATiter){0}, &ci, &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand});
+		nils = addstr_loop(b, NULL, NULL, v->val.sval, bn, &bi, &(BATiter){0}, &ci, &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand});
 	} else {
 		nils = add_typeswitchloop(bi.base, bi.type, true,
 					  VALptr(v), v->vtype, false,
@@ -1635,7 +1636,7 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp)
 
 	BATiter bi = bat_iterator(b);
 	if (bi.type == TYPE_str && v->vtype == TYPE_str && tp == TYPE_str) {
-		nils = addstr_loop(NULL, v->val.sval, b, NULL, bn, (BATiter){0}, bi, &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand}, &ci);
+		nils = addstr_loop(NULL, v->val.sval, b, NULL, bn, &(BATiter){0}, &bi, &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand}, &ci);
 	} else {
 		nils = add_typeswitchloop(VALptr(v), v->vtype, false,
 					  bi.base, bi.type, true,

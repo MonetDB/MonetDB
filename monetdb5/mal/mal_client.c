@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -557,9 +557,11 @@ MCactiveClients(void)
 	int active = 0;
 	Client cntxt = mal_clients;
 
+	MT_lock_set(&mal_contextLock);
 	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
 		active += (cntxt->idle == 0 && cntxt->mode == RUNCLIENT);
 	}
+	MT_lock_unset(&mal_contextLock);
 	return active;
 }
 
@@ -574,14 +576,19 @@ MCmemoryClaim(void)
 
 	Client cntxt = mal_clients;
 
-	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++)
+	MT_lock_set(&mal_contextLock);
+	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++) {
 		if( cntxt->idle == 0 && cntxt->mode == RUNCLIENT){
 			if(cntxt->memorylimit){
 				claim += cntxt->memorylimit;
 				active ++;
-			} else
+			} else {
+				MT_lock_unset(&mal_contextLock);
 				return GDK_mem_maxsize;
+			}
 		}
+	}
+	MT_lock_unset(&mal_contextLock);
 	if(active == 0 ||  claim  * LL_CONSTANT(1048576) >= GDK_mem_maxsize)
 		return GDK_mem_maxsize;
 	return claim * LL_CONSTANT(1048576);

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -65,11 +65,15 @@ OPTstrimpsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			break;
 		}
 
-		/* Look for bind operations on strings, because for those we migh need strimps */
+		/* Look for bind operations on strings, because for those we might need strimps */
 
 		if (getModuleId(p) == algebraRef &&
 			getFunctionId(p) == likeselectRef) {
 			q = newInstruction(mb, strimpsRef, strimpFilterSelectRef);
+			if (q == NULL) {
+				msg = createException(MAL, "optimizer.strimps", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				break;
+			}
 			res = newTmpVariable(mb, newBatType(TYPE_oid));
 			setDestVar(q, res);
 			q = pushArgument(mb, q, getArg(p, 1));
@@ -88,14 +92,13 @@ OPTstrimpsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		}
 		pushInstruction(mb, p);
 	}
-	(void)slimit;
 	for (; i < slimit; i++)
 		if (old[i])
 			freeInstruction(old[i]);
 	GDKfree(old);
 
 	/* Defense line against incorrect plans */
-	if (actions){
+	if (msg == MAL_SUCCEED && actions){
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);

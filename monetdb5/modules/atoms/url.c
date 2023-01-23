@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -833,7 +833,7 @@ extractURLHost(str *retval, str *url, bit *no_www)
 	const char *h = NULL;
 	const char *p = NULL;
 
-	if ((url != NULL || *url != NULL) && !strNil(*url)) {
+	if (url != NULL && *url != NULL && !strNil(*url)) {
 		if ((s = skip_scheme(*url)) != NULL &&
 			(s = skip_authority(s, NULL, NULL, &h, &p)) != NULL &&
 			h != NULL)

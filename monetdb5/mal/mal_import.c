@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /* Author(s) M.L. Kersten
@@ -105,7 +105,7 @@ malLoadScript(str name, bstream **fdin)
 	*fdin = bstream_create(fd, sz == 0 ? (size_t) (2 * 128 * BLOCK) : sz);
 	if(*fdin == NULL) {
 		close_stream(fd);
-		throw(MAL, "malInclude", MAL_MALLOC_FAIL);
+		throw(MAL, "malInclude", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if (bstream_next(*fdin) < 0) {
 		bstream_destroy(*fdin);
@@ -175,10 +175,10 @@ malIncludeString(Client c, const char *name, str mal, int listing, MALfcn addres
 	stream* mal_stream;
 
 	if ((mal_buf = GDKmalloc(sizeof(buffer))) == NULL)
-		throw(MAL, "malIncludeString", MAL_MALLOC_FAIL);
+		throw(MAL, "malIncludeString", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if ((mal_stream = buffer_rastream(mal_buf, name)) == NULL) {
 		GDKfree(mal_buf);
-		throw(MAL, "malIncludeString", MAL_MALLOC_FAIL);
+		throw(MAL, "malIncludeString", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	buffer_init(mal_buf, mal, mal_len);
 	c->srcFile = name;
@@ -187,7 +187,7 @@ malIncludeString(Client c, const char *name, str mal, int listing, MALfcn addres
 	if ((c->fdin = bstream_create(mal_stream, mal_len)) == NULL) {
 		mnstr_destroy(mal_stream);
 		GDKfree(mal_buf);
-		throw(MAL, "malIncludeString", MAL_MALLOC_FAIL);
+		throw(MAL, "malIncludeString", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	bstream_next(c->fdin);
 	parseMAL(c, c->curprg, 1, INT_MAX, address);
