@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -97,17 +97,8 @@ typedef enum {LOG_OK, LOG_EOF, LOG_ERR} log_return;
 static gdk_return bm_commit(logger *lg);
 static gdk_return tr_grow(trans *tr);
 
-static inline void
-log_lock(logger *lg)
-{
-	MT_lock_set(&lg->lock);
-}
-
-static inline void
-log_unlock(logger *lg)
-{
-	MT_lock_unset(&lg->lock);
-}
+#define log_lock(lg)	MT_lock_set(&(lg)->lock)
+#define log_unlock(lg)	MT_lock_unset(&(lg)->lock)
 
 static inline bte
 find_type(logger *lg, int tpe)
@@ -1095,6 +1086,9 @@ log_close_input(logger *lg)
 static inline void
 log_close_output(logger *lg)
 {
+	if (lg->flushing_output_log)
+		return;
+
 	if (!LOG_DISABLED(lg))
 		close_stream(lg->output_log);
 	lg->output_log = NULL;
@@ -1222,8 +1216,11 @@ log_read_transaction(logger *lg)
 					cands = COLnew(0, TYPE_void, 0, SYSTRANS);
 					if (!cands)
 						err = LOG_ERR;
-				}
-				else {
+				} else if (cands == NULL) {
+					/* should have gone through the
+					 * above option earlier */
+					err = LOG_ERR;
+				} else {
 					// END OF LOG_BAT_GROUP
 					BBPunfix(cands->batCacheid);
 					cands = NULL;
@@ -1609,11 +1606,12 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts, 
 	return rcnt;
 }
 
+/* this function is called with log_lock() held; it releases the lock
+ * before returning */
 static gdk_return
 bm_subcommit(logger *lg)
 {
 	BUN p, q;
-	log_lock(lg);
 	BAT *catalog_bid = lg->catalog_bid;
 	BAT *catalog_id = lg->catalog_id;
 	BAT *dcatalog = lg->dcatalog;
@@ -1930,6 +1928,8 @@ log_load(int debug, const char *fn, const char *logdir, logger *lg, char filenam
 		BBPretain(lg->catalog_id->batCacheid);
 		BBPretain(lg->dcatalog->batCacheid);
 
+		log_lock(lg);
+		/* bm_subcommit releases the lock */
 		if (bm_subcommit(lg) != GDK_SUCCEED) {
 			/* cannot commit catalog, so remove log */
 			MT_remove(filename);
@@ -2671,7 +2671,9 @@ log_bat_transient(logger *lg, log_id id)
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged destroyed bat (%d) %d\n", id,
 				bid);
-	lg->end += BATcount(BBPquickdesc(bid));
+	BAT *b = BBPquickdesc(bid);
+	assert(b);
+	lg->end += BATcount(b);
 	gdk_return r =  log_del_bat(lg, bid);
 	log_unlock(lg);
 	if (r != GDK_SUCCEED)
@@ -2801,10 +2803,21 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 #define LOG_LARGE	(LL_CONSTANT(2)*1024*1024*1024)
 
 static gdk_return
-new_logfile(logger *lg)
+new_logfile(logger *lg, stream* output_log, ulng id)
 {
 	assert(!LOG_DISABLED(lg));
 
+	MT_lock_set(&lg->rotation_lock);
+	assert(lg->flushing_output_log);
+	lg->flushing_output_log = false;
+	if (lg->id != id) {
+		/* lg->output_log was rotated during the flush */
+		assert(lg->output_log != output_log && lg->id > id);
+		close_stream(output_log);
+		MT_lock_unset(&lg->rotation_lock);
+		return GDK_SUCCEED;
+	}
+	MT_lock_unset(&lg->rotation_lock);
 
 	const lng log_large = (GDKdebug & FORCEMITOMASK)?LOG_MINI:LOG_LARGE;
 
@@ -2923,7 +2936,12 @@ log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
 		return GDK_SUCCEED;
 	}
 
-	if (log_file_id == lg->id) {
+
+	ulng id;
+	MT_lock_set(&lg->rotation_lock);
+	id = lg->id;
+	MT_lock_unset(&lg->rotation_lock);
+	if (log_file_id == id) {
 		unsigned int number = request_number_flush_queue(lg);
 
 		MT_lock_set(&lg->flush_lock);
@@ -2933,10 +2951,16 @@ log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
 			const int fqueue_length = flush_queue_length(lg);
 			/* flush + fsync */
 			MT_lock_set(&lg->rotation_lock);
-			if (mnstr_flush(lg->output_log, MNSTR_FLUSH_DATA) ||
-					(!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log)) ||
-					new_logfile(lg) != GDK_SUCCEED) {
+			lg->flushing_output_log = true;
+			stream* output_log = lg->output_log;
+			id = lg->id;
+			MT_lock_unset(&lg->rotation_lock);
+			if (mnstr_flush(output_log, MNSTR_FLUSH_DATA) ||
+					(!(GDKdebug & NOSYNCMASK) && mnstr_fsync(output_log)) ||
+					new_logfile(lg, output_log, id) != GDK_SUCCEED) {
 				/* flush failed */
+				MT_lock_set(&lg->rotation_lock);
+				lg->flushing_output_log = false;
 				MT_lock_unset(&lg->rotation_lock);
 				MT_lock_unset(&lg->flush_lock);
 				(void) ATOMIC_DEC(&lg->refcount);
@@ -2944,7 +2968,6 @@ log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
 			}
 			else {
 				/* flush succeeded */
-				MT_lock_unset(&lg->rotation_lock);
 				left_truncate_flush_queue(lg, fqueue_length);
 			}
 		}
@@ -3052,7 +3075,7 @@ bm_commit(logger *lg)
 			fprintf(stderr, "#bm_commit: create %d (%d)\n",
 				bid, BBP_lrefs(bid));
 	}
-	log_unlock(lg);
+	/* bm_subcommit releases the lock */
 	return bm_subcommit(lg);
 }
 
@@ -3127,7 +3150,7 @@ log_tstart(logger *lg, bool flushnow, ulng *log_file_id)
 {
 	MT_lock_set(&lg->rotation_lock);
 	log_lock(lg);
-	if (flushnow || (lg->request_rotation && ATOMIC_GET(&lg->refcount) == 0)) {
+	if ((flushnow || (lg->request_rotation && ATOMIC_GET(&lg->refcount) == 0)) && lg->end > 0) {
 		lg->id++;
 		log_close_output(lg);
 		/* start new file */

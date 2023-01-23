@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -102,7 +102,7 @@ gdk_return BBPcacheit(BAT *bn, bool lock)
 gdk_return BBPchkfarms(void)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-void BBPclear(bat bid, bool lock)
+void BBPclear(bat bid)
 	__attribute__((__visibility__("hidden")));
 void BBPdump(void)		/* never called: for debugging only */
 	__attribute__((__cold__));

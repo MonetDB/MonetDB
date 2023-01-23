@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /* Author(s) M.L. Kersten
@@ -228,7 +228,6 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	}
 
 	// add new invocation
-	cntxt->idle = 0;
 	for (i = 0; i < qsize; i++) {
 		size_t j = qlast;
 		if (++qlast >= qsize)
@@ -259,6 +258,9 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		}
 	}
 	MT_lock_unset(&mal_delayLock);
+	MT_lock_set(&mal_contextLock);
+	cntxt->idle = 0;
+	MT_lock_unset(&mal_contextLock);
 }
 
 /*
@@ -290,7 +292,10 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			QRYqueue[i].ticks = GDKusec() - QRYqueue[i].ticks;
 			updateUserStats(cntxt, mb, QRYqueue[i].ticks, QRYqueue[i].start, QRYqueue[i].finished, QRYqueue[i].query);
 			// assume that the user is now idle
+			MT_lock_unset(&mal_delayLock);
+			MT_lock_set(&mal_contextLock);
 			cntxt->idle = time(0);
+			MT_lock_unset(&mal_contextLock);
 			found = true;
 			break;
 		}
@@ -313,9 +318,9 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 				}
 			}
 		}
+		MT_lock_unset(&mal_delayLock);
 	}
 
-	MT_lock_unset(&mal_delayLock);
 }
 
 /* Used by mal_reset to do the grand final clean up of this area before MonetDB exits */

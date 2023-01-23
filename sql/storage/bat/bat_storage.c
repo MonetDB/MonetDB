@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -305,10 +305,11 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 	b->tkey = false;
 	b->tnokey[0] = 0;
 	b->tnokey[1] = 0;
+	b->theap->dirty = true;
+	BUN cnt = BATcount(b);
 	MT_lock_unset(&b->theaplock);
 
 	uint32_t *restrict dst;
-	BUN cnt = BATcount(b);
 	MT_rwlock_wrlock(&b->thashlock);
 	for (; s ; s=s->next) {
 		if (s->start >= nr)
@@ -344,9 +345,6 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 				}
 				assert(lnr==0);
 			}
-			MT_lock_set(&b->theaplock);
-			b->theap->dirty = true;
-			MT_lock_unset(&b->theaplock);
 			size_t lnr = s->end-s->start;
 			size_t pos = s->start;
 			dst = (uint32_t *) Tloc(b, 0) + (pos/32);

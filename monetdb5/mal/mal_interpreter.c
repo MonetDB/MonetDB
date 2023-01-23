@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -328,7 +328,7 @@ runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 			throw(MAL, "mal.interpreter","stack too small");
 		initStack(env->stkbot, res);
 		if(!res)
-			throw(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
+			throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		stk = prepareMALstack(mb, mb->vsize);
 		if (stk == 0)
@@ -655,7 +655,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				lhs = &stk->stk[pci->argv[k]];
 				rhs = &stk->stk[pci->argv[i]];
 				if(VALcopy(lhs, rhs) == NULL) {
-					ret = createException(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
+					ret = createException(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
 				} else if (lhs->vtype == TYPE_bat && !is_bat_nil(lhs->val.bval))
 					BBPretain(lhs->val.bval);
@@ -785,7 +785,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				rhs = &stk->stk[pci->argv[ii]];
 				if(VALcopy(lhs, rhs) == NULL) {
 					GDKfree(nstk);
-					ret = createException(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
+					ret = createException(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
 				} else if (lhs->vtype == TYPE_bat)
 					BBPretain(lhs->val.bval);
@@ -803,7 +803,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 			break;
 		}
-		case NOOPsymbol:
 		case REMsymbol:
 			break;
 		case ENDsymbol:
@@ -1223,7 +1222,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						rhs = &stk->stk[pp->argv[i]];
 						lhs = &env->stk[pci->argv[i]];
 						if(VALcopy(lhs, rhs) == NULL) {
-							ret = createException(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
+							ret = createException(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 							break;
 						} else if (lhs->vtype == TYPE_bat)
 							BBPretain(lhs->val.bval);

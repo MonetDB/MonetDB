@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 
 import subprocess
 import os
@@ -370,7 +370,7 @@ class server(Popen):
         cmd = _server[:]
         if not cmd:
             cmd = ['mserver5',
-                   '--set', ipv6 and 'mapi_listenaddr=all' or 'mapi_listenaddr=0.0.0.0',
+                   '--set', 'mapi_listenaddr=all' if ipv6 else 'mapi_listenaddr=0.0.0.0',
                    '--set', 'gdk_nr_threads=1']
         if os.getenv('NOWAL'):
             cmd.extend(['--set', 'sql_debug=128'])

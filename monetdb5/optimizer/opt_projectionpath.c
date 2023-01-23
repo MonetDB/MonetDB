@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /* author: M Kersten
@@ -234,9 +234,9 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				if ( getFunctionId(p) == projectionRef){
 					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== projectionRef  || getFunctionId(r)== projectionpathRef) ){
 						for(k= r->retc; k<r->argc; k++)
-							q = addArgument(mb,q,getArg(r,k));
+							q = pushArgument(mb,q,getArg(r,k));
 					} else
-						q = addArgument(mb,q,getArg(p,j));
+						q = pushArgument(mb,q,getArg(p,j));
 				}
 			}
 			if(q->argc<= p->argc){
@@ -280,6 +280,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 		if(old[i])
 			pushInstruction(mb, old[i]);
 
+#ifdef ELIMCOMMONPREFIX
 	/* All complete projection paths have been constructed.
 	 * There may be cases where there is a common prefix used multiple times.
 	 * Especially in wide table projections and lengthy paths
@@ -288,7 +289,6 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	 * Also a run against SF-100 did not show improvement in Q7
  	 * Also there are collateral damages in the testweb.
 	 */
-#ifdef ELIMCOMMONPREFIX
 	 if( OPTdeadcodeImplementation(cntxt, mb, 0, 0) == MAL_SUCCEED){
 		actions += OPTprojectionPrefix(cntxt, mb);
 	}

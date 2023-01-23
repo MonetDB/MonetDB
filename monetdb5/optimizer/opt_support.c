@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
  /* (c) M. Kersten
@@ -172,9 +172,13 @@ wrapup:
 	if(actions > 0 && msg == MAL_SUCCEED){
 		mb->optimize = GDKusec() - clk;
 		p = newStmt(mb, optimizerRef, totalRef);
+		if (p == NULL) {
+			throw(MAL, "optimizer.MALoptimizer", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		p->token = REMsymbol;
 		p = pushInt(mb, p, actions);
 		p = pushLng(mb, p, mb->optimize);
+		pushInstruction(mb, p);
 	}
 	if (cnt >= mb->stop)
 		throw(MAL, "optimizer.MALoptimizer", SQLSTATE(42000) OPTIMIZER_CYCLE);

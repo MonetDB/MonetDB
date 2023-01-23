@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -139,8 +139,7 @@ mo_config_file(opt **Set, int setlen, char *file)
 		val = strchr(s, '=');
 		if (val == NULL) {
 			fprintf(stderr, "mo_config_file: syntax error in %s at %s\n", file, s);
-			fclose(fd);
-			exit(1);
+			break;
 		}
 		*val = 0;
 
@@ -162,8 +161,7 @@ mo_config_file(opt **Set, int setlen, char *file)
 		}
 		if (quote) {
 			fprintf(stderr, "mo_config_file: wrong number of quotes in %s at %s\n", file, val);
-			fclose(fd);
-			exit(1);
+			break;
 		}
 		/* remove trailing white space */
 		while (isspace((unsigned char) t[-1]))
@@ -176,7 +174,7 @@ mo_config_file(opt **Set, int setlen, char *file)
 
 		opt *tmp = realloc(set, (setlen + 1) * sizeof(opt));
 		if (tmp == NULL)
-			return setlen;
+			break;
 		*Set = set = tmp;
 		set[setlen].kind = opt_config;
 		set[setlen].name = strdup(s);
@@ -184,7 +182,7 @@ mo_config_file(opt **Set, int setlen, char *file)
 		if (set[setlen].name == NULL || set[setlen].value == NULL) {
 			free(set[setlen].name);
 			free(set[setlen].value);
-			return setlen;
+			break;
 		}
 		for (t = val, s = set[setlen].value; *t; t++)
 			if (*t != '"')
