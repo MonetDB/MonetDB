@@ -393,6 +393,28 @@ end:
 	return msg;
 }
 
+// Some streams, in particular the mapi upload stream, sometimes read fewer
+// bytes than requested. This function wraps the read in a loop to force it to
+// read the whole block
+static ssize_t
+read_exact(stream *s, void *buffer, size_t length)
+{
+	char *p = buffer;
+
+	while (length > 0) {
+		ssize_t nread = mnstr_read(s, p, 1, length);
+		if (nread < 0) {
+			return nread;
+		} else if (nread == 0) {
+			break;
+		} else {
+			p += nread;
+			length -= nread;
+		}
+	}
+
+	return p - (char*)buffer;
+}
 
 // Read BLOBs.  Every blob is preceded by a 64bit header word indicating its length.
 // NULLs are indicated by length==-1
@@ -415,7 +437,7 @@ load_blob(BAT *bat, stream *s, int *eof_reached, int width, bool byteswap)
 	while (1) {
 		const blob *value;
 		// Read the header
-		ssize_t nread = mnstr_read(s, header.bytes, 1, 8);
+		ssize_t nread = read_exact(s, header.bytes, 8);
 		if (nread < 0) {
 			bailout("%s", mnstr_peek_error(s));
 		} else if (nread == 0) {
@@ -459,10 +481,10 @@ load_blob(BAT *bat, stream *s, int *eof_reached, int width, bool byteswap)
 			// Fill the buffer
 			buffer->nitems = length;
 			if (length > 0) {
-				nread = mnstr_read(s, buffer->data, length, 1);
+				nread = read_exact(s, buffer->data, length);
 				if (nread < 0) {
 					bailout("%s", mnstr_peek_error(s));
-				} else if (nread != 1) {
+				} else if ((size_t)nread < length) {
 					bailout("Incomplete blob at end of file");
 				}
 			}
