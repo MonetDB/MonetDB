@@ -2293,7 +2293,7 @@ static int
 append_idx(sql_trans *tr, sql_idx *i, BUN offset, BAT *offsets, void *data, BUN cnt, int tpe)
 {
 	int res = LOG_OK;
-	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
+	sql_delta *delta;
 
 	if (tpe == TYPE_bat) {
 		BAT *t = data;
@@ -2306,9 +2306,7 @@ append_idx(sql_trans *tr, sql_idx *i, BUN offset, BAT *offsets, void *data, BUN 
 
 	assert(delta->cs.st == ST_DEFAULT);
 
-	odelta = delta;
 	res = append_col_execute(tr, &delta, i->base.id, offset, offsets, data, cnt, tpe, NULL);
-	assert (odelta == delta);
 	return res;
 }
 
