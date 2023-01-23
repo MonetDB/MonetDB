@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /* (c) M.L. Kersten
@@ -50,6 +52,7 @@ static struct timeval startup_time;
 static ATOMIC_TYPE hbdelay = ATOMIC_VAR_INIT(0);
 
 #ifdef HAVE_SYS_RESOURCE_H
+#include <sys/resource.h>
 struct rusage infoUsage;
 static struct rusage prevUsage;
 #endif
@@ -134,33 +137,35 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 		va_end(va2);
 		return false;
 	}
-	if (logbuf->loglen + (size_t) tmp_len >= logbuf->logcap) {
-		if ((size_t) tmp_len >= logbuf->logcap) {
-			/* includes first time when logbuffer == NULL and logcap = 0 */
-			char *alloc_buff;
-			if (logbuf->loglen > 0)
+	if (tmp_len > 0) {
+		if (logbuf->loglen + (size_t) tmp_len >= logbuf->logcap) {
+			if ((size_t) tmp_len >= logbuf->logcap) {
+				/* includes first time when logbuffer == NULL and logcap == 0 */
+				char *alloc_buff;
+				if (logbuf->loglen > 0)
+					logjsonInternal(logbuf->logbuffer, false);
+				logbuf->logcap = (size_t) tmp_len + (size_t) tmp_len/2;
+				if (logbuf->logcap < LOGLEN)
+					logbuf->logcap = LOGLEN;
+				alloc_buff = GDKrealloc(logbuf->logbuffer, logbuf->logcap);
+				if (alloc_buff == NULL) {
+					TRC_ERROR(MAL_SERVER, "Profiler JSON buffer reallocation failure\n");
+					logdel(logbuf);
+					va_end(va);
+					va_end(va2);
+					return false;
+				}
+				logbuf->logbuffer = alloc_buff;
+				lognew(logbuf);
+			} else {
 				logjsonInternal(logbuf->logbuffer, false);
-			logbuf->logcap = (size_t) tmp_len + (size_t) tmp_len/2;
-			if (logbuf->logcap < LOGLEN)
-				logbuf->logcap = LOGLEN;
-			alloc_buff = GDKrealloc(logbuf->logbuffer, logbuf->logcap);
-			if (alloc_buff == NULL) {
-				TRC_ERROR(MAL_SERVER, "Profiler JSON buffer reallocation failure\n");
-				logdel(logbuf);
-				va_end(va);
-				va_end(va2);
-				return false;
+				lognew(logbuf);
 			}
-			logbuf->logbuffer = alloc_buff;
-			lognew(logbuf);
-		} else {
-			logjsonInternal(logbuf->logbuffer, false);
-			lognew(logbuf);
 		}
+		logbuf->loglen += vsnprintf(logbuf->logbase + logbuf->loglen,
+									logbuf->logcap - logbuf->loglen,
+									fmt, va2);
 	}
-	logbuf->loglen += vsnprintf(logbuf->logbase + logbuf->loglen,
-								logbuf->logcap - logbuf->loglen,
-								fmt, va2);
 	va_end(va);
 	va_end(va2);
 	return true;
@@ -270,11 +275,10 @@ format_val2json(const ValPtr res) {
 }
 
 static str
-prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng clk, lng ticks)
 {
 	struct logbuf logbuf;
 	str c;
-	lng clk;
 	uint64_t mclk;
 	bool ok;
 	const char *algo = MT_thread_getalgorithm();
@@ -291,7 +295,6 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	logbuf = (struct logbuf) {0};
 
-	clk = pci->clock;
 	mclk = (uint64_t)clk - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
 	/* make profile event tuple  */
 	if (!logadd(&logbuf,
@@ -318,14 +321,14 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((pci->token < FCNcall || pci->token > PATcall) &&
 		!logadd(&logbuf, ",\"operator\":\"%s\"", operatorName(pci->token)))
 		goto cleanup_and_exit;
-	if (!logadd(&logbuf, ",\"usec\":"LLFMT, pci->ticks))
+	if (!logadd(&logbuf, ",\"usec\":"LLFMT, ticks))
 		goto cleanup_and_exit;
 	if (algo && !logadd(&logbuf, ",\"algorithm\":\"%s\"", algo))
 		goto cleanup_and_exit;
 	if (mb && pci->modname && pci->fcnname) {
 		int j;
 
-		if (profilerMode == 0) {
+		if (profilerMode == 0 && stk) {
 			if (!logadd(&logbuf, ",\"args\":["))
 				goto cleanup_and_exit;
 			for(j=0; j< pci->argc; j++){
@@ -427,14 +430,16 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						}
 
 						cv = VALformat(&stk->stk[getArg(pci,j)]);
-						c = strchr(cv, '>');
-						if (c)		/* unlikely that this isn't true */
-							*c = 0;
-						ok = logadd(&logbuf, ",\"file\":\"%s\"", cv + 1);
-						GDKfree(cv);
-						if (!ok) {
-							BBPunfix(d->batCacheid);
-							goto cleanup_and_exit;
+						if (cv) {
+							c = strchr(cv, '>');
+							if (c)		/* unlikely that this isn't true */
+								*c = 0;
+							ok = logadd(&logbuf, ",\"file\":\"%s\"", cv + 1);
+							GDKfree(cv);
+							if (!ok) {
+								BBPunfix(d->batCacheid);
+								goto cleanup_and_exit;
+							}
 						}
 						total += cnt << di.shift;
 						if (!logadd(&logbuf, ",\"width\":%d", di.width)) {
@@ -654,7 +659,7 @@ profilerEvent(MalEvent *me, NonMalEvent *nme)
 				MT_lock_unset(&mal_profileLock);
 				return; /* minimal mode */
 			}
-			event = prepareMalEvent(me->cntxt, me->mb, me->stk, me->pci);
+			event = prepareMalEvent(me->cntxt, me->mb, me->stk, me->pci, me->clk, me->duration);
 		}
 		if (me == NULL && nme != NULL && nme->phase != MAL_ENGINE) {
 			event = prepareNonMalEvent(nme->cntxt, nme->phase, nme->clk, nme->tid, nme->ts, nme->state, nme->duration);
@@ -718,15 +723,15 @@ openProfilerStream(Client cntxt, int m)
 	MT_sleep_ms(200);
 
 	for (j = 0; j <THREADS; j++){
-		Client c = 0; MalBlkPtr m = 0; MalStkPtr s = 0; InstrPtr p = 0;
-		c = workingset[j].cntxt;
-		m = workingset[j].mb;
-		s = workingset[j].stk;
-		p =  workingset[j].pci;
+		Client c = workingset[j].cntxt;
+		MalBlkPtr m = workingset[j].mb;
+		MalStkPtr s = workingset[j].stk;
+		InstrPtr p = workingset[j].pci;
+		lng t = workingset[j].clock;
 		if (c && m && s && p) {
-			/* show the event  assuming the quadruple is aligned*/
+			/* show the event  assuming the quintuple is aligned*/
 			MT_lock_unset(&mal_profileLock);
-			profilerEvent(&(struct MalEvent) {c, m, s, p},
+			profilerEvent(&(struct MalEvent) {c, m, s, p, t, 0},
 						  NULL);
 			MT_lock_set(&mal_profileLock);
 		}
@@ -907,7 +912,7 @@ cleanupTraces(Client cntxt)
 }
 
 void
-sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng clk, lng ticks)
 {
 	str stmt, c, ev;
 	int errors = 0;
@@ -924,7 +929,7 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	   c++;
 	*/
 
-	ev = prepareMalEvent(cntxt, mb, stk, pci);
+	ev = prepareMalEvent(cntxt, mb, stk, pci, clk, ticks);
 	// keep it a short transaction
 	MT_lock_set(&mal_profileLock);
 	if (cntxt->profticks == NULL) {
@@ -932,7 +937,7 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(stmt);
 		return;
 	}
-	errors += BUNappend(cntxt->profticks, &pci->ticks, false) != GDK_SUCCEED;
+	errors += BUNappend(cntxt->profticks, &ticks, false) != GDK_SUCCEED;
 	errors += BUNappend(cntxt->profstmt, c, false) != GDK_SUCCEED;
 	errors += BUNappend(cntxt->profevents, ev ? ev : str_nil, false) != GDK_SUCCEED;
 	if (errors > 0) {

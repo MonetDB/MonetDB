@@ -16,5 +16,5 @@ SRID:0;LINESTRING Z (1 1 1, 0 0 1, -1 1 1, 1 1 1)
 query T rowsort
 SELECT ST_AsEWKT(ST_Boundary(ST_GeomFromText('MULTILINESTRING((1 1 1,0 0 0.5, -1 1 1),(1 1 0.5,0 0 0.5, -1 1 0.5, 1 1 0.5) )')))
 ----
-SRID:0;MULTIPOINT Z (-1 1 1, 1 1 0.75)
+SRID:0;MULTIPOINT Z (-1 1 1, 1 1 1)
 
