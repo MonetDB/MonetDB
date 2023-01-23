@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -24,7 +26,6 @@
 #include "opt_prelude.h"
 #include "querylog.h"
 #include "mal_builder.h"
-#include "mal_debugger.h"
 
 #include "rel_select.h"
 #include "rel_prop.h"
@@ -1236,6 +1237,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				if (i->base.new || !i->base.deleted)
 					continue;
 				sql_idx *ni = mvc_bind_idx(sql, s, i->base.name);
+				if (ni == NULL)
+					throw(SQL, "sql.alter_table", "Couldn't bind index %s", i->base.name);
 				switch (mvc_drop_idx(sql, s, ni)) {
 					case -1:
 						throw(SQL,"sql.alter_table",SQLSTATE(HY013) MAL_MALLOC_FAIL);

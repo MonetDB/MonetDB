@@ -31,11 +31,11 @@ query IITT rowsort
 select * from sys.rejects()
 ----
 2
-1
+2
 Column value missing
 2@
 3
-1
+2
 Column value missing
 no tag@
 4
