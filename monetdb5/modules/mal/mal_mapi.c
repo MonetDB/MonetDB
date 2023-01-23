@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -568,12 +570,25 @@ start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
 				sock = INVALID_SOCKET;
 				continue;
 			}
-			if (bind(sock, rp->ai_addr, (SOCKLEN) rp->ai_addrlen) == SOCKET_ERROR) {
+			if ((e = bind(sock, rp->ai_addr, (SOCKLEN) rp->ai_addrlen)) != 0) {
+				/* return value of 1 is currently undocumented, but
+				 * seems to occur when binding a port to an IPv4 socket
+				 * when the same port is already bound to an IPv6 socket
+				 * that already also listens to IPv4; in this case the
+				 * port that is actually bound to here is a different
+				 * one, and we don't want that, so we close the socket
+				 * without error (if bind returned SOCKET_ERROR, we do
+				 * report the error) */
+				if (e == SOCKET_ERROR) {
 #ifdef _MSC_VER
-				e = WSAGetLastError();
+					e = WSAGetLastError();
 #else
-				e = errno;
+					e = errno;
 #endif
+				} else if (nsock == 0) {
+					assert(e == 1);
+					e = 0;
+				}
 				closesocket(sock);
 				sock = INVALID_SOCKET;
 				continue;
