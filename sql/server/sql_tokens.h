@@ -98,6 +98,7 @@ typedef enum tokens {
 	SQL_IS_NULL,
 	SQL_JOIN,
 	SQL_LIKE,
+	SQL_LOGIN,
 	SQL_MAXVALUE,
 	SQL_MERGE,
 	SQL_MERGE_MATCH,

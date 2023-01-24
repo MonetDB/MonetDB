@@ -529,6 +529,7 @@ int yydebug=1;
 	XML_element_content_list
 	XML_value_expression_list
     opt_schema_details_list
+    opt_qname
 
 %type <i_val>
 	_transaction_mode_list
@@ -639,7 +640,7 @@ int yydebug=1;
 
 %token	USER CURRENT_USER SESSION_USER LOCAL BEST EFFORT
 %token  CURRENT_ROLE sqlSESSION CURRENT_SCHEMA CURRENT_TIMEZONE
-%token <sval> sqlDELETE UPDATE SELECT INSERT MATCHED
+%token <sval> sqlDELETE UPDATE SELECT INSERT MATCHED LOGIN
 %token <sval> LATERAL LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
@@ -2536,18 +2537,24 @@ Define triggered SQL-statements.
 
 trigger_def:
     create_or_replace TRIGGER qname trigger_action_time trigger_event
-    ON qname opt_referencing_list triggered_action
+    opt_qname opt_referencing_list triggered_action
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_int(l, $4);
 	  append_symbol(l, $5);
+	  append_list(l, $6);
 	  append_list(l, $7);
 	  append_list(l, $8);
-	  append_list(l, $9);
 	  append_int(l, $1);
 	  $$ = _symbol_create_list(SQL_CREATE_TRIGGER, l); 
 	}
  ;
+
+opt_qname:
+    /* empty */ { $$ = NULL; }
+    | ON qname  { $$ = $2; }
+    ;
+    
 
 trigger_action_time:
     BEFORE	{ $$ = 0; }
@@ -2561,6 +2568,7 @@ trigger_event:
  |  TRUNCATE 		{ $$ = _symbol_create_list(SQL_TRUNCATE, NULL); }
  |  UPDATE 			{ $$ = _symbol_create_list(SQL_UPDATE, NULL); }
  |  UPDATE OF ident_commalist 	{ $$ = _symbol_create_list(SQL_UPDATE, $3); }
+ |  LOGIN 			{ $$ = _symbol_create_list(SQL_LOGIN, NULL); }
  ;
 
 opt_referencing_list:
@@ -6383,6 +6391,7 @@ char *token2string(tokens token)
 	SQL(IS_NULL);
 	SQL(JOIN);
 	SQL(LIKE);
+	SQL(LOGIN);
 	SQL(MAXVALUE);
 	SQL(MERGE);
 	SQL(MERGE_MATCH);
