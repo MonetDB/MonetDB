@@ -1,3 +1,81 @@
+monetdb (11.45.13) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7343: GDKmmap requesting 0 virtual memory
+  * GH#7347: A bug where an exception occurs even though it is a query with
+    normal syntax (Merge Table)
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 24 Jan 2023 13:18:55 +0100
+
+monetdb (11.45.13) unstable; urgency=low
+
+  * sql: Fixed a regression where when there are multiple concurrent
+    transactions, the dependencies weren't checked properly.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 23 Jan 2023 13:18:55 +0100
+
+monetdb (11.45.13) unstable; urgency=low
+
+  * gdk: Fixed a race condition that could lead to a bat being added to the SQL
+    catalog but nog being made persistent, causing a subsequent restart
+    of the system to fail (and crash).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 16 Jan 2023 13:18:55 +0100
+
+monetdb (11.45.13) unstable; urgency=low
+
+  * odbc: A crash in the ODBC driver was fixed when certain unsupported functions
+    where used in a {fn ...} escape.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 4 Jan 2023 13:18:55 +0100
+
+monetdb (11.45.13) unstable; urgency=low
+
+  * odbc: Prepare of a query where the sum of the number of parameters (question
+    marks in the query) and the number of output columns is larger than
+    100 could fail with an unexpected error.  This has been fixed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 21 Dec 2022 13:18:55 +0100
+
+monetdb (11.45.13) unstable; urgency=low
+
+  * sql: Added some error checking to prevent crashes.  Errors would mainly
+    occur under memory pressure.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 16 Dec 2022 13:18:55 +0100
+
+monetdb (11.45.13) unstable; urgency=low
+
+  * gdk: Fixed a race condition where a hash could have been created on a
+    bat using the old bat count while in another thread the bat count
+    got updated.  This would make the hash be based on too small a size,
+    causing failures later on.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 14 Dec 2022 13:18:55 +0100
+
+monetdb (11.45.13) unstable; urgency=low
+
+  * sql: Fixed cleanup after a failed allocation where the data being cleaned
+    up was unitialized but still used as pointers to memory that also had
+    to be freed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 14 Dec 2022 13:18:55 +0100
+
+monetdb (11.45.13) unstable; urgency=low
+
+  * gdk: When extending a bat failed, the capacity had been updated already and
+    was therefore too large.  This could then later cause a crash.  This has
+    been fixed by only updating the capacity if the extend succeeded.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 8 Dec 2022 13:18:55 +0100
+
+monetdb (11.45.13) unstable; urgency=low
+
+  * sql: Fixed a double cleanup after a failed allocation in COPY INTO.  The
+    double cleanup could cause a crash due to a race condition it enabled.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 7 Dec 2022 13:18:55 +0100
+
 monetdb (11.45.11) unstable; urgency=low
 
   * Rebuilt.
