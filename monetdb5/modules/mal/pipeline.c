@@ -1473,7 +1473,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 	return MAL_SUCCEED;
 }
 
-/* TODO gunique: rehash iff to many probes need to be done, in the linear chain */
+/* TODO gunique: rehash iff too many probes need to be done, in the linear chain */
 #define gunique(Type) \
 	if (tt == TYPE_##Type) { \
 		Type *bp = Tloc(b, 0); \
@@ -3431,7 +3431,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					o[grp[i]] = f(o[grp[i]], in[i]); \
 	}
 
-/* fron now assume shared heap */
+/* from now on assume shared heap */
 #define vamin(cmp, o, opos, op, in, i, bp, nil) \
 	if (!o[opos] || (cmp(bp+in[i], nil) != 0 && cmp(op+o[opos], nil) != 0 && cmp(op+o[opos], bp+in[i]) > 0)) \
 		o[opos] = in[i];
