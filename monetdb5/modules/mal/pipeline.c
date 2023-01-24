@@ -1276,7 +1276,7 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-/* TODO unique: rehash iff to many probes need to be done, in the linear chain */
+/* TODO unique: rehash iff too many probes need to be done, in the linear chain */
 #define unique(Type) \
 	if (tt == TYPE_##Type) { \
 		Type *bp = Tloc(b, 0); \
