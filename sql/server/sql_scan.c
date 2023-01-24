@@ -522,6 +522,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("MULTILINESTRINGZM", GEOMETRYSUBTYPE);
 	failed += keywords_insert("MULTIPOLYGONZM", GEOMETRYSUBTYPE);
 	failed += keywords_insert("GEOMETRYCOLLECTIONZM", GEOMETRYSUBTYPE);
+	failed += keywords_insert("LOGIN", LOGIN);
 
 	return failed;
 }

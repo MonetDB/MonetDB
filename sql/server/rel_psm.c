@@ -1241,8 +1241,8 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	mvc *sql = query->sql;
 	const char *triggerschema = qname_schema(qname);
 	const char *triggername = qname_schema_object(qname);
-	const char *sname = qname_schema(tqname);
-	const char *tname = qname_schema_object(tqname);
+	const char *sname = tqname? qname_schema(tqname) : NULL;
+	const char *tname = tqname? qname_schema_object(tqname) : NULL;
 	int instantiate = (sql->emode == m_instantiate);
 	int create = (!instantiate && sql->emode != m_deps), event, orientation;
 	sql_schema *ss = cur_schema(sql), *old_schema = cur_schema(sql);
@@ -1276,8 +1276,10 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	if (create) {
 		if (triggerschema)
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: a trigger will be placed on the respective table's schema, specify the schema on the table reference, ie ON clause instead", base);
-		if (!(t = mvc_bind_table(sql, ss, tname)))
-			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "%s: no such table %s%s%s'%s'", base, sname ? "'":"", sname ? sname : "", sname ? "'.":"", tname);
+		if (tname) {
+			if (!(t = mvc_bind_table(sql, ss, tname)))
+				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "%s: no such table %s%s%s'%s'", base, sname ? "'":"", sname ? sname : "", sname ? "'.":"", tname);
+		}
 		if (!mvc_schema_privs(sql, ss))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), ss->base.name);
 		if (isView(t))
