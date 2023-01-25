@@ -419,7 +419,8 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int var)
 		is_assign = (n >= 0);
 	}
 
-	if((r = newInstructionArgs(mb, matRef, packRef, mat[m].mi->argc)) == NULL)
+	if(m < 0 ||
+	   (r = newInstructionArgs(mb, matRef, packRef, mat[m].mi->argc)) == NULL)
 		return -1;
 	getArg(r, 0) = getArg(p,0);
 	tpe = getArgType(mb,p,0);
@@ -490,6 +491,7 @@ mat_apply(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int nrmats)
 		return mat_apply1(mb, p, ml, is_a_mat(getArg(p,1),ml), 1);
 	assert(nrmats <= 8);
 
+	assert(p->retc < p->argc);	/* i.e. matvar[0] gets initialized */
 	for(k=p->retc, l=0; k < p->argc; k++) {
 		int mv = is_a_mat(getArg(p,k), ml);
 		if (mv >=0) {
