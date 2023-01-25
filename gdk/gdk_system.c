@@ -842,6 +842,7 @@ MT_thread_add_mylock(MT_Lock *lock)
 	struct posthread *p = pthread_getspecific(threadkey);
 
 	if (p) {
+		if (p == &mainthread) fprintf(stderr, "add %s\n", lock->name);
 		lock->nxt = p->mylocks;
 		p->mylocks = lock;
 	}
@@ -855,6 +856,7 @@ MT_thread_del_mylock(MT_Lock *lock)
 	struct posthread *p = pthread_getspecific(threadkey);
 
 	if (p) {
+		if (p == &mainthread) fprintf(stderr, "del %s\n", lock->name);
 		if (p->mylocks == lock) {
 			p->mylocks = lock->nxt;
 		} else {
