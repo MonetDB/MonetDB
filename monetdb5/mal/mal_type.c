@@ -121,6 +121,10 @@ getAtomIndex(const char *nme, size_t len, int deftype)
 			if (qt("bte"))
 				return TYPE_bte;
 			break;
+		case 'B':
+			if (qt("BAT"))
+				return TYPE_bat;
+			break;
 		case 'd':
 			if (qt("dbl"))
 				return TYPE_dbl;
