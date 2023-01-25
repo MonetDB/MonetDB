@@ -68,6 +68,14 @@ sa_list_append(sql_allocator *sa, list *l, void *data)
 }
 
 list *
+list_add(list *l, void *data)
+{
+	if (!l)
+		l = list_create(NULL);
+	return list_append(l, data);
+}
+
+list *
 list_new(sql_allocator *sa, fdestroy destroy)
 {
 	list *l = (sa)?SA_NEW(sa, list):MNEW(list);

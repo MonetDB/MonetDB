@@ -23,7 +23,7 @@ base_key( sql_base *b )
 void
 trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log)
 {
-	sql_change *change = SA_NEW(tr->sa, sql_change);
+	sql_change *change = MNEW(sql_change);
 
 	*change = (sql_change) {
 		.obj = b,
@@ -33,7 +33,7 @@ trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_co
 		.log = log,
 	};
 	MT_lock_set(&tr->lock);
-	tr->changes = sa_list_append(tr->sa, tr->changes, change);
+	tr->changes = list_add(tr->changes, change);
 	if (log)
 		tr->logchanges++;
 	MT_lock_unset(&tr->lock);

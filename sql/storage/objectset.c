@@ -635,6 +635,7 @@ tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng 
 objectset *
 os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, sql_store store)
 {
+	assert(!sa);
 	objectset *os = SA_NEW(sa, objectset);
 	*os = (objectset) {
 		.refcnt = 1,
