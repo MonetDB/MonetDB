@@ -6761,7 +6761,7 @@ sql_trans_create_trigger(sql_trigger **tres, sql_trans *tr, sql_table *t, const 
 	const char *condition, const char *statement )
 {
 	sqlstore *store = tr->store;
-	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
+	sql_schema *syss = (t != NULL) ? find_sql_schema(tr, isGlobal(t) ? "sys":"tmp") : find_sql_schema(tr, "sys");
 	sql_table *systrigger = find_sql_table(tr, syss, "triggers");
 	char *strnil = (char*)ATOMnilptr(TYPE_str);
 	sql_table *dup = NULL;
@@ -6769,7 +6769,7 @@ sql_trans_create_trigger(sql_trigger **tres, sql_trans *tr, sql_table *t, const 
 
 	assert(name);
 
-	if ((res = new_table(tr, t, &dup)))
+	if ( t && (res = new_table(tr, t, &dup)))
 		return res;
 	t = dup;
 	sql_trigger *nt = ZNEW(sql_trigger);
@@ -6787,13 +6787,15 @@ sql_trans_create_trigger(sql_trigger **tres, sql_trans *tr, sql_table *t, const 
 	if (condition)
 		nt->condition =_STRDUP(condition);
 	nt->statement =_STRDUP(statement);
+	if(t) {
+		assert(isGlobal(t));
+		if ((res = ol_add(t->triggers, &nt->base)) ||
+			(res = os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base))))
+			return res;
+	}
+	oid tid = t? (oid) t->base.id : oid_nil;
 
-	assert(isGlobal(t));
-	if ((res = ol_add(t->triggers, &nt->base)) ||
-		(res = os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base))))
-		return res;
-
-	if ((res = store->table_api.table_insert(tr, systrigger, &nt->base.id, &nt->base.name, &t->base.id, &nt->time, &nt->orientation,
+	if ((res = store->table_api.table_insert(tr, systrigger, &nt->base.id, &nt->base.name, &tid, &nt->time, &nt->orientation,
 							 &nt->event, (nt->old_name)?&nt->old_name:&strnil, (nt->new_name)?&nt->new_name:&strnil,
 							 (nt->condition)?&nt->condition:&strnil, &nt->statement)))
 		return res;

@@ -523,19 +523,25 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 {
 	sql_trigger *tri = NULL, *other = NULL;
 	sql_schema *s = NULL;
-	sql_table *t;
+	sql_table *t = NULL;
 	const char *base = replace ? "CREATE OR REPLACE TRIGGER" : "CREATE TRIGGER";
 
-	if (!(s = mvc_bind_schema(sql, sname)))
-		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
-	if (!mvc_schema_privs(sql, s))
-		throw(SQL,"sql.create_trigger",SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), s->base.name);
+	if (!strNil(sname) && !strNil(tname)) {
+		if (!(s = mvc_bind_schema(sql, sname)))
+			throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
+		if (!mvc_schema_privs(sql, s))
+			throw(SQL,"sql.create_trigger",SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), s->base.name);
+		if (!(t = mvc_bind_table(sql, s, tname)))
+			throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: unknown table '%s'", base, tname);
+		if (isView(t))
+			throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: cannot create trigger on view '%s'", base, tname);
+	} else {
+		if (!(s = mvc_bind_schema(sql, "sys")))
+			throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
+	}
+
 	if ((other = mvc_bind_trigger(sql, s, triggername)) && !replace)
 		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: name '%s' already in use", base, triggername);
-	if (!(t = mvc_bind_table(sql, s, tname)))
-		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: unknown table '%s'", base, tname);
-	if (isView(t))
-		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: cannot create trigger on view '%s'", base, tname);
 
 	if (replace && other) {
 		if (other->t->base.id != t->base.id) /* defensive line */
