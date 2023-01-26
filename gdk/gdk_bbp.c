@@ -121,10 +121,13 @@ static bat BBP_mask = 0;		/* number of buckets = & mask */
 #else
 #define threadmask(y)	((int) (mix_int(y) & BBP_THREADMASK))
 #endif
+#define GENERAL_LIST_IDX (BBP_THREADMASK + 1)
+#define FREE_CHUNK_ALLOC_SIZE 10
 static struct {
 	MT_Lock cache;
 	bat free;
-} GDKbbpLock[BBP_THREADMASK + 1];
+} GDKbbpLock[GENERAL_LIST_IDX + 1]; // last GDKbbpLock, i.e. GDKbbpLock[GENERAL_LIST_IDX], is the general free list
+
 #define GDKcacheLock(y)	GDKbbpLock[y].cache
 #define BBP_free(y)	GDKbbpLock[y].free
 
@@ -2450,7 +2453,27 @@ BBPgetsubdir(str s, bat i)
  */
 static gdk_return
 maybeextend(int idx) {
-	/* release the current gdkcachelock first to avoid dealocks when extending the common pool */
+	MT_lock_set(&GDKcacheLock(GENERAL_LIST_IDX));
+	if (BBP_free(GENERAL_LIST_IDX) > 0) {
+		/* take a chunk out of the general free list on top of my own free list */
+		int i = 1;
+		bat cf = BBP_free(GENERAL_LIST_IDX);
+		BBP_pidx(cf) = idx;
+		while (BBP_next(cf) && i < FREE_CHUNK_ALLOC_SIZE) {
+			cf = BBP_next(cf);
+			BBP_pidx(cf) = idx;
+			i++;
+		}
+		BBP_free(GENERAL_LIST_IDX) = BBP_next(cf);
+		MT_lock_unset(&GDKcacheLock(GENERAL_LIST_IDX));
+		BBP_next(cf) = 0;
+		BBP_free(idx) = cf;
+		return GDK_SUCCEED;
+	}
+	/* there wasn't anything left on the general free list */
+	MT_lock_unset(&GDKcacheLock(GENERAL_LIST_IDX));
+
+	/* release the current gdkcachelock first to avoid deadlocks when extending the common pool */
 	MT_lock_unset(&GDKcacheLock(idx));
 	MT_lock_set(&BBPnameLock);
 	MT_lock_set(&GDKcacheLock(idx));
@@ -2463,9 +2486,9 @@ maybeextend(int idx) {
 
 	bat size = (bat) ATOMIC_GET(&BBPsize);
 	/* if the common pool has no more space, extend it */
-	if (size >= BBPlimit) {
+	if (size + FREE_CHUNK_ALLOC_SIZE > BBPlimit) {
 		/* extend the common pool */
-		gdk_return r = BBPextend(true, size + 1);
+		gdk_return r = BBPextend(true, size + FREE_CHUNK_ALLOC_SIZE);
 		if (r != GDK_SUCCEED) {
 			MT_lock_unset(&BBPnameLock);
 			return GDK_FAIL;
@@ -2473,10 +2496,14 @@ maybeextend(int idx) {
 	}
 
 	/* extend the thread list */
-	BBP_free(idx) = size;
-	BBP_pidx(size) = idx;
+	BBP_free(idx)	= size;
+	BBP_pidx(size)	= idx;
+	for (bat i = size + 1; i < (size + FREE_CHUNK_ALLOC_SIZE); i++) {
+		BBP_next(i - 1)	= i;
+		BBP_pidx(i)		= idx;
+	}
 
-	ATOMIC_SET(&BBPsize, size + 1);
+	ATOMIC_SET(&BBPsize, size + FREE_CHUNK_ALLOC_SIZE);
 
 	MT_lock_unset(&BBPnameLock);
 	return GDK_SUCCEED;

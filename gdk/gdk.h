@@ -947,7 +947,7 @@ typedef struct {
 	char physical[24];	/* dir + basename for storage */
 #endif
 	bat next;		/* next BBP slot in linked list */
-	int pidx;		/* preferred index of associated thread mask */
+	int pidx;		/* preferred index of associated thread mask */ // TODO multi-cachelock 2) See if this can be removed or replaced by pid
 	int refs;		/* in-memory references on which the loaded status of a BAT relies */
 	int lrefs;		/* logical references on which the existence of a BAT relies */
 	ATOMIC_TYPE status;	/* status mask used for spin locking */
