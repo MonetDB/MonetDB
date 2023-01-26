@@ -2474,8 +2474,7 @@ maybeextend(int idx) {
 
 	/* extend the thread list */
 	BBP_free(idx) = size;
-	if (idx != threadmask((lng) size))
-		BBP_pidx(size) = idx;
+	BBP_pidx(size) = idx;
 
 	ATOMIC_SET(&BBPsize, size + 1);
 
@@ -2657,7 +2656,7 @@ BBPclear(bat i)
 {
 	if (BBPcheck(i)) {
 		bool lock = locked_by == 0 || locked_by != MT_getpid();
-		int idx = BBP_pidx(i)?BBP_pidx(i):threadmask((lng) i);
+		int idx = BBP_pidx(i);
 		bbpclear(i, idx, lock);
 	}
 }
