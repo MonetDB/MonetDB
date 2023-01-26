@@ -1,3 +1,5 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Jan 26 2023 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Fix bug where boolean NULLs were not recognized by COPY BINARY INTO

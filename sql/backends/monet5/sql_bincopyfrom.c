@@ -115,7 +115,7 @@ convert_bit(void *start, void *end, bool byteswap)
 	unsigned char *e = end;
 	for (unsigned char *p = start; p < e; p++) {
 		int b = *p;
-		if (b > 1)
+		if (b > 1 && b != 0x80)
 			throw(SQL, "convert_bit", SQLSTATE(22003) "invalid boolean byte value: %d", b);
 	}
 	return MAL_SUCCEED;
