@@ -2467,6 +2467,7 @@ maybeextend(int idx) {
 		/* extend the common pool */
 		gdk_return r = BBPextend(true, size + 1);
 		if (r != GDK_SUCCEED) {
+			MT_lock_unset(&BBPnameLock);
 			return GDK_FAIL;
 		}
 	}
