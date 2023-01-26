@@ -693,13 +693,13 @@ simpleTypeId(Client cntxt)
 }
 
 static int
-parseTypeId(Client cntxt, int defaultType)
+parseTypeId(Client cntxt)
 {
 	int i = TYPE_any, kt = 0;
 	char *s = CURRENT(cntxt);
 	int tt;
 
-	if (s[0] == ':' && s[1] == 'b' && s[2] == 'a' && s[3] == 't' && s[4] == '[') {
+	if (strncmp(s, ":bat[", 5) == 0 || strncmp(s, ":BAT[", 5) == 0) {
 		/* parse :bat[:type] */
 		advance(cntxt, 5);
 		if (currChar(cntxt) == ':') {
@@ -707,7 +707,7 @@ parseTypeId(Client cntxt, int defaultType)
 			kt = typeAlias(cntxt, tt);
 		} else{
 			parseError(cntxt, "':bat[:any]' expected\n");
-			return TYPE_bat;
+			return -1;
 		}
 
 		i = newBatType(tt);
@@ -728,7 +728,7 @@ parseTypeId(Client cntxt, int defaultType)
 		return tt;
 	}
 	parseError(cntxt, "<type identifier> expected\n");
-	return defaultType;
+	return -1;
 }
 
 static inline int
@@ -736,7 +736,7 @@ typeElm(Client cntxt, int def)
 {
 	if (currChar(cntxt) != ':')
 		return def;  /* no type qualifier */
-	return parseTypeId(cntxt, def);
+	return parseTypeId(cntxt);
 }
 
  /*
@@ -963,7 +963,7 @@ parseAtom(Client cntxt)
 	if (currChar(cntxt) != ':')
 		tpe = TYPE_void;  /* no type qualifier */
 	else
-		tpe = parseTypeId(cntxt, TYPE_int);
+		tpe = parseTypeId(cntxt);
 	if( ATOMindex(modnme) < 0) {
 		if(cntxt->curprg->def->errors)
 			freeException(cntxt->curprg->def->errors);

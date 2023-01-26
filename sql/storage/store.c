@@ -2196,6 +2196,8 @@ store_exit(sqlstore *store)
 		os_destroy(store->cat->objects, store);
 		os_destroy(store->cat->schemas, store);
 		_DELETE(store->cat);
+	} else {
+		MT_lock_unset(&store->commit);
 	}
 	store->logger_api.destroy(store);
 

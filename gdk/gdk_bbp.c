@@ -3705,7 +3705,7 @@ gdk_return
 BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng transid)
 {
 	gdk_return ret = GDK_SUCCEED;
-	int t0 = 0, t1 = 0;
+	lng t0 = 0, t1 = 0;
 	str bakdir, deldir;
 	const bool lock = locked_by == 0 || locked_by != MT_getpid();
 	char buf[3000];
@@ -3719,7 +3719,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 		return GDK_FAIL;
 	}
 
-	TRC_DEBUG_IF(PERF) t0 = t1 = GDKms();
+	TRC_DEBUG_IF(PERF) t0 = t1 = GDKusec();
 
 	ret = BBPprepare(subcommit != NULL);
 
@@ -3767,7 +3767,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 		if (idx < cnt)
 			ret = GDK_FAIL;
 	}
-	TRC_DEBUG(PERF, "move time %d, %d files\n", (t1 = GDKms()) - t0, backup_files);
+	TRC_DEBUG(PERF, "move time "LLFMT" usec, %d files\n", (t1 = GDKusec()) - t0, backup_files);
 
 	/* PHASE 2: save the repository and write new BBP.dir file */
 	if (ret == GDK_SUCCEED) {
@@ -3831,13 +3831,13 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 		}
 	}
 
-	TRC_DEBUG(PERF, "write time %d\n", (t0 = GDKms()) - t1);
+	TRC_DEBUG(PERF, "write time "LLFMT" usec\n", (t0 = GDKusec()) - t1);
 
 	if (ret == GDK_SUCCEED) {
 		ret = BBPdir_last(n, buf, sizeof(buf), obbpf, nbbpf);
 	}
 
-	TRC_DEBUG(PERF, "dir time %d, %d bats\n", (t1 = GDKms()) - t0, (bat) ATOMIC_GET(&BBPsize));
+	TRC_DEBUG(PERF, "dir time "LLFMT" usec, %d bats\n", (t1 = GDKusec()) - t0, (bat) ATOMIC_GET(&BBPsize));
 
 	if (ret == GDK_SUCCEED) {
 		/* atomic switchover */
@@ -3873,9 +3873,9 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 			backup_files = 1;
 		}
 	}
-	TRC_DEBUG(PERF, "%s (ready time %d)\n",
+	TRC_DEBUG(PERF, "%s (ready time "LLFMT" usec)\n",
 		  ret == GDK_SUCCEED ? "" : " failed",
-		  (t0 = GDKms()) - t1);
+		  (t0 = GDKusec()) - t1);
 
 	/* turn off the BBPSYNCING bits for all bats, even when things
 	 * didn't go according to plan (i.e., don't check for ret ==

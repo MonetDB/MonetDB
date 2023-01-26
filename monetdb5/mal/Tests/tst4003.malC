@@ -1,9 +1,0 @@
-# The 4000 series deals with strategic optimizer constructs
-# common subexpression evaluation
-optimizer.setDebug();
-optimizer.commonExpressionRemoval();
-b:= new(:str,:str);
-c:= new(:str,:str);       # identical until insert takes place
-d:= select(b,nil:bat[:oid],"hello","world",true,true,false);
-e:= select(b,nil:bat[:oid],"hello","world",true,true,false);    # mapped onto one instruction
-
