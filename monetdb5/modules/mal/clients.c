@@ -334,14 +334,18 @@ CLTsetmemorylimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "clients.setmemorylimit", "The memmory limit cannot be NULL");
 	if( limit < 0)
 		throw(MAL, "clients.setmemorylimit", "The memmory limit cannot be negative");
-	if( (size_t) limit > GDK_mem_maxsize / 1048576)
-		throw(MAL,"clients.setmemorylimit","Memory claim beyond physical memory");
 
 	MT_lock_set(&mal_contextLock);
 	if (mal_clients[idx].mode == FREECLIENT)
 		msg = createException(MAL,"clients.setmemorylimit","Session not active anymore");
-	else
+	else if (cntxt->user != MAL_ADMIN &&
+			 mal_clients[idx].maxmem > 0 &&
+			 mal_clients[idx].maxmem < (lng) limit << 20)
+		msg = createException(MAL, "clients.setmemorylimit","Cannot increase memory limit");
+	else {
 		mal_clients[idx].memorylimit = limit;
+		mal_clients[idx].qryctx.maxmem = (ATOMIC_BASE_TYPE) limit << 20;
+	}
 	MT_lock_unset(&mal_contextLock);
 	return msg;
 }
