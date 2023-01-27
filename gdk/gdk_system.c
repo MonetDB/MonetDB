@@ -191,6 +191,9 @@ static struct winthread {
 	MT_Lock *lockwait;	/* lock we're waiting for */
 	MT_Sema *semawait;	/* semaphore we're waiting for */
 	MT_Cond *condwait;	/* condition variable we're waiting for */
+#ifdef LOCK_OWNER
+	MT_Lock *mylocks;	/* locks we're holding */
+#endif
 	struct winthread *joinwait; /* process we are joining with */
 	const char *working;	/* what we're currently doing */
 	char algorithm[512];	/* the algorithm used in the last operation */
@@ -211,21 +214,33 @@ static DWORD threadslot = TLS_OUT_OF_INDEXES;
 void
 dump_threads(void)
 {
-	TRC_DEBUG_IF(THRD) {
-		EnterCriticalSection(&winthread_cs);
-		for (struct winthread *w = winthreads; w; w = w->next) {
-			TRC_DEBUG_ENDIF(THRD, "%s, waiting for %s, working on %.200s\n",
-					w->threadname,
-					w->lockwait ? w->lockwait->name :
-					w->semawait ? w->semawait->name :
-					w->condwait ? w->condwait->name :
-					w->joinwait ? w->joinwait->threadname :
-					"nothing",
-					ATOMIC_GET(&w->exited) ? "exiting" :
-					w->working ? w->working : "nothing");
+	char buf[1024];
+	EnterCriticalSection(&winthread_cs);
+	for (struct winthread *w = winthreads; w; w = w->next) {
+		int pos = snprintf(buf, sizeof(buf),
+				   "%s, waiting for %s, working on %.200s",
+				   w->threadname,
+				   w->lockwait ? w->lockwait->name :
+				   w->semawait ? w->semawait->name :
+				   w->condwait ? w->condwait->name :
+				   w->joinwait ? w->joinwait->threadname :
+				   "nothing",
+				   ATOMIC_GET(&w->exited) ? "exiting" :
+				   w->working ? w->working : "nothing");
+#ifdef LOCK_OWNER
+		const char *sep = ", locked: ";
+		for (MT_Lock *l = w->mylocks; l && pos < (int) sizeof(buf); l = l->nxt) {
+			pos += snprintf(buf + pos, sizeof(buf) - pos,
+					"%s%s(%s)", sep, l->name, l->locker);
+			sep = ", ";
 		}
-		LeaveCriticalSection(&winthread_cs);
+#endif
+		TRC_DEBUG_IF(THRD)
+			TRC_DEBUG_ENDIF(THRD, "%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
+		else
+			fprintf(stderr, "%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
 	}
+	LeaveCriticalSection(&winthread_cs);
 }
 
 bool
@@ -344,6 +359,42 @@ MT_thread_setcondwait(MT_Cond *cond)
 	if (w)
 		w->condwait = cond;
 }
+
+#ifdef LOCK_OWNER
+void
+MT_thread_add_mylock(MT_Lock *lock)
+{
+	if (threadslot == TLS_OUT_OF_INDEXES)
+		return;
+	struct winthread *w = TlsGetValue(threadslot);
+
+	if (w) {
+		lock->nxt = w->mylocks;
+		w->mylocks = lock;
+	}
+}
+
+void
+MT_thread_del_mylock(MT_Lock *lock)
+{
+	if (threadslot == TLS_OUT_OF_INDEXES)
+		return;
+	struct winthread *w = TlsGetValue(threadslot);
+
+	if (w) {
+		if (w->mylocks == lock) {
+			w->mylocks = lock->nxt;
+		} else {
+			for (MT_Lock *l = w->mylocks; l; l = l->nxt) {
+				if (l->nxt == lock) {
+					l->nxt = lock->nxt;
+					break;
+				}
+			}
+		}
+	}
+}
+#endif
 
 void
 MT_thread_setworking(const char *work)
@@ -609,6 +660,9 @@ static struct posthread {
 	MT_Lock *lockwait;	/* lock we're waiting for */
 	MT_Sema *semawait;	/* semaphore we're waiting for */
 	MT_Cond *condwait;	/* condition variable we're waiting for */
+#ifdef LOCK_OWNER
+	MT_Lock *mylocks;	/* locks we're holding */
+#endif
 	struct posthread *joinwait; /* process we are joining with */
 	const char *working;	/* what we're currently doing */
 	char algorithm[512];	/* the algorithm used in the last operation */
@@ -634,21 +688,33 @@ static bool thread_initialized = false;
 void
 dump_threads(void)
 {
-	TRC_DEBUG_IF(THRD) {
-		pthread_mutex_lock(&posthread_lock);
-		for (struct posthread *p = posthreads; p; p = p->next) {
-			TRC_DEBUG_ENDIF(THRD, "%s, waiting for %s, working on %.200s\n",
-					p->threadname,
-					p->lockwait ? p->lockwait->name :
-					p->semawait ? p->semawait->name :
-					p->condwait ? p->condwait->name :
-					p->joinwait ? p->joinwait->threadname :
-					"nothing",
-					ATOMIC_GET(&p->exited) ? "exiting" :
-					p->working ? p->working : "nothing");
+	char buf[1024];
+	pthread_mutex_lock(&posthread_lock);
+	for (struct posthread *p = posthreads; p; p = p->next) {
+		int pos = snprintf(buf, sizeof(buf),
+				   "%s: waiting for %s, working on %.200s",
+				   p->threadname,
+				   p->lockwait ? p->lockwait->name :
+				   p->semawait ? p->semawait->name :
+				   p->condwait ? p->condwait->name :
+				   p->joinwait ? p->joinwait->threadname :
+				   "nothing",
+				   ATOMIC_GET(&p->exited) ? "exiting" :
+				   p->working ? p->working : "nothing");
+#ifdef LOCK_OWNER
+		const char *sep = ", locked: ";
+		for (MT_Lock *l = p->mylocks; l && pos < (int) sizeof(buf); l = l->nxt) {
+			pos += snprintf(buf + pos, sizeof(buf) - pos,
+					"%s%s(%s)", sep, l->name, l->locker);
+			sep = ", ";
 		}
-		pthread_mutex_unlock(&posthread_lock);
+#endif
+		TRC_DEBUG_IF(THRD)
+			TRC_DEBUG_ENDIF(THRD, "%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
+		else
+			fprintf(stderr, "%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
 	}
+	pthread_mutex_unlock(&posthread_lock);
 }
 
 bool
@@ -766,6 +832,42 @@ MT_thread_setcondwait(MT_Cond *cond)
 	if (p)
 		p->condwait = cond;
 }
+
+#ifdef LOCK_OWNER
+void
+MT_thread_add_mylock(MT_Lock *lock)
+{
+	if (!thread_initialized)
+		return;
+	struct posthread *p = pthread_getspecific(threadkey);
+
+	if (p) {
+		lock->nxt = p->mylocks;
+		p->mylocks = lock;
+	}
+}
+
+void
+MT_thread_del_mylock(MT_Lock *lock)
+{
+	if (!thread_initialized)
+		return;
+	struct posthread *p = pthread_getspecific(threadkey);
+
+	if (p) {
+		if (p->mylocks == lock) {
+			p->mylocks = lock->nxt;
+		} else {
+			for (MT_Lock *l = p->mylocks; l; l = l->nxt) {
+				if (l->nxt == lock) {
+					l->nxt = lock->nxt;
+					break;
+				}
+			}
+		}
+	}
+}
+#endif
 
 void
 MT_thread_setworking(const char *work)
