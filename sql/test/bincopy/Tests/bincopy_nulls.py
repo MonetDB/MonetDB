@@ -24,16 +24,14 @@ class TestCase:
     little_endian_bits: bytes
     big_endian_bits: bytes
     expected: List[Any]
-    if_exists: bool
 
     def __init__(self,
                  sqltype: str, byteswap_size: int, expected: List[Any],
                  little_endian_bits: bytes,
-                 big_endian_bits: Optional[bytes] = None, if_exists=False):
+                 big_endian_bits: Optional[bytes] = None):
         self.sqltype = sqltype
         self.little_endian_bits = little_endian_bits
         self.expected = expected
-        self.if_exists = if_exists
         if big_endian_bits:
             self.big_endian_bits = big_endian_bits
         elif byteswap_size > 0:
@@ -42,7 +40,7 @@ class TestCase:
             self.big_endian_bits = None
 
     def run(self, conn: pymonetdb.Connection, big_endian=False):
-        if self.if_exists and self.sqltype not in SUPPORTED_TYPES:
+        if self.sqltype not in SUPPORTED_TYPES:
             print(f"SKIP    {self.sqltype}")
             print()
             return

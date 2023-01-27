@@ -270,6 +270,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->qryctx.starttime = 0;
 	ATOMIC_SET(&c->qryctx.datasize, 0);
 	c->qryctx.maxmem = 0;
+	c->maxmem = 0;
 	c->itrace = 0;
 	c->errbuf = 0;
 
@@ -372,6 +373,7 @@ MCinitClientThread(Client c)
 Client
 MCforkClient(Client father)
 {
+	/* TO BE REMOVED: this function is not used anywhere */
 	Client son = NULL;
 	str prompt;
 
@@ -395,6 +397,7 @@ MCforkClient(Client father)
 		son->memorylimit = father->memorylimit;
 		son->qryctx.querytimeout = father->qryctx.querytimeout;
 		son->qryctx.maxmem = father->qryctx.maxmem;
+		son->maxmem = father->maxmem;
 		son->sessiontimeout = father->sessiontimeout;
 
 		if (son->prompt)
@@ -571,27 +574,10 @@ MCactiveClients(void)
 size_t
 MCmemoryClaim(void)
 {
-	size_t claim = 0;
-	int active = 1;
-
-	Client cntxt = mal_clients;
-
-	MT_lock_set(&mal_contextLock);
-	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++) {
-		if( cntxt->idle == 0 && cntxt->mode == RUNCLIENT){
-			if(cntxt->memorylimit){
-				claim += cntxt->memorylimit;
-				active ++;
-			} else {
-				MT_lock_unset(&mal_contextLock);
-				return GDK_mem_maxsize;
-			}
-		}
-	}
-	MT_lock_unset(&mal_contextLock);
-	if(active == 0 ||  claim  * LL_CONSTANT(1048576) >= GDK_mem_maxsize)
-		return GDK_mem_maxsize;
-	return claim * LL_CONSTANT(1048576);
+	/* TO BE REMOVED */
+	/* this function used to be more complex, but in the end it always
+	 * returned GDK_mem_maxsize, so that's what we do now */
+	return GDK_mem_maxsize;
 }
 
 str
