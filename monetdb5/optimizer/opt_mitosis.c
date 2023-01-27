@@ -166,11 +166,13 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	/* respect the memory limit size set for the user
 	* and determine the column part size
 	*/
-	if( cntxt->memorylimit)
-		m = (((size_t) cntxt->memorylimit) * 1048576) / argsize;
-	else {
-		m = GDK_mem_maxsize / (size_t) MCactiveClients() / argsize;
-	}
+	m = GDK_mem_maxsize / MCactiveClients(); /* use temporarily */
+	if (cntxt->memorylimit > 0 && (size_t) cntxt->memorylimit << 20 < m)
+		m = ((size_t) cntxt->memorylimit << 20) / argsize;
+	else if (cntxt->maxmem > 0 && cntxt->maxmem < (lng) m)
+		m = (size_t) (cntxt->maxmem / argsize);
+	else
+		m = m / argsize;
 
 	/* if data exceeds memory size,
 	 * i.e., (rowcnt*argsize > GDK_mem_maxsize),
