@@ -270,6 +270,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->qryctx.starttime = 0;
 	ATOMIC_SET(&c->qryctx.datasize, 0);
 	c->qryctx.maxmem = 0;
+	c->maxmem = 0;
 	c->itrace = 0;
 	c->errbuf = 0;
 
@@ -396,6 +397,7 @@ MCforkClient(Client father)
 		son->memorylimit = father->memorylimit;
 		son->qryctx.querytimeout = father->qryctx.querytimeout;
 		son->qryctx.maxmem = father->qryctx.maxmem;
+		son->maxmem = father->maxmem;
 		son->sessiontimeout = father->sessiontimeout;
 
 		if (son->prompt)
