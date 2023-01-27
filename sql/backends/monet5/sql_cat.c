@@ -390,7 +390,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) "ALTER TABLE: no values in the list");
 		goto finish;
 	}
-	values = list_new(sql->session->tr->sa, (fdestroy) &part_value_destroy);
+	values = list_create((fdestroy) &part_value_destroy);
 	for ( i = pci->retc+6; i < pci->argc; i++){
 		sql_part_value *nextv = NULL;
 		ValRecord *vnext = &(stk)->stk[(pci)->argv[i]];
@@ -404,8 +404,8 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 			goto finish;
 		}
 
-		nextv = SA_ZNEW(sql->session->tr->sa, sql_part_value); /* instantiate the part value */
-		nextv->value = SA_NEW_ARRAY(sql->session->tr->sa, char, len);
+		nextv = ZNEW(sql_part_value); /* instantiate the part value */
+		nextv->value = NEW_ARRAY(char, len);
 		memcpy(nextv->value, pnext, len);
 		nextv->length = len;
 
