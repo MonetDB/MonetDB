@@ -1121,6 +1121,13 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 	if (!(nt = mvc_bind_table(sql, s, t->base.name)))
 		throw(SQL,"sql.alter_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s'", t->base.name);
 
+	sql_table *gt = NULL;
+	if (nt && isTempTable(nt)) {
+		gt = (sql_table*)os_find_id(s->tables, sql->session->tr, nt->base.id);
+		if (gt)
+			nt = gt;
+	}
+
 	/* First check if all the changes are allowed */
 	if (t->idxs) {
 		/* only one pkey */
