@@ -1,6 +1,0 @@
-# simple iterator loop test
-
-barrier v:= 0:lng;
-	redo v:= iterator.next(1:lng,1000000:lng);
-exit	v;
-io.print("end of loop");

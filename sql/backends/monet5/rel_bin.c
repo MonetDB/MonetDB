@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -70,22 +70,26 @@ clean_mal_statements(backend *be, int oldstop, int oldvtop, int oldvid)
 	be->mvc->errstr[0] = '\0';
 }
 
-void
+int
 add_to_rowcount_accumulator(backend *be, int nr)
 {
 	if (be->silent)
-		return;
+		return 0;
 
 	if (be->rowcount == 0) {
 		be->rowcount = nr;
-		return;
+		return 0;
 	}
 
 	InstrPtr q = newStmt(be->mb, calcRef, plusRef);
+	if (q == NULL)
+		return -1;
 	q = pushArgument(be->mb, q, be->rowcount);
 	q = pushArgument(be->mb, q, nr);
+	pushInstruction(be->mb, q);
 
 	be->rowcount = getDestVar(q);
+	return 0;
 }
 
 static stmt *
@@ -1195,6 +1199,8 @@ emit_loadcolumn(backend *be, stmt *onclient_stmt, stmt *bswap_stmt,  int *count_
 	int new_count_var = newTmpVariable(mb, TYPE_oid);
 
 	InstrPtr p = newStmt(mb, sqlRef, importColumnRef);
+	if (p == NULL)
+		return sql_error(be->mvc, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	setArgType(mb, p, 0, bat_type);
 	p = pushReturn(mb, p, new_count_var);
 	//
@@ -1207,6 +1213,7 @@ emit_loadcolumn(backend *be, stmt *onclient_stmt, stmt *bswap_stmt,  int *count_
 		p = pushOid(mb, p, 0);
 	else
 		p = pushArgument(mb, p, *count_var);
+	pushInstruction(mb, p);
 
 	*count_var = new_count_var;
 
@@ -1476,6 +1483,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 				if (!es)
 					return NULL;
+				/*if (rows && en == exps->h && f->func->type != F_LOADER)
+					es = stmt_const(be, rows, es);*/
 				else if (f->func->type == F_ANALYTIC && es->nrcols == 0) {
 					if (en == exps->h && left->nrcols)
 						es = stmt_const(be, bin_find_smallest_column(be, left), es); /* ensure the first argument is a column */
@@ -2337,6 +2346,8 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 					if (ops)
 						narg += list_length(ops);
 					InstrPtr q = newStmtArgs(be->mb, sqlRef, "unionfunc", narg);
+					if (q == NULL)
+						return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					/* Generate output rowid column and output of function f */
 					for(i=0; m; m = m->next, i++) {
 						sql_exp *e = m->data;
@@ -2348,8 +2359,10 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 						else
 							getArg(q, 0) = newTmpVariable(be->mb, type);
 					}
-					if (backend_create_subfunc(be, f, ops) < 0)
+					if (backend_create_subfunc(be, f, ops) < 0) {
+						freeInstruction(q);
 		 				return NULL;
+					}
 					str mod = sql_func_mod(f->func);
 					str fcn = backend_function_imp(be, f->func);
 					q = pushStr(be->mb, q, mod);
@@ -2367,6 +2380,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 							q = pushArgument(be->mb, q, op->nr);
 						}
 					}
+					pushInstruction(be->mb, q);
 
 					/* name output of dependent columns, output of function is handled the same as without correlation */
 					int len = list_length(rel->exps)-list_length(f->func->res);
@@ -3003,6 +3017,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		s = stmt_alias(be, s, rnme, nme);
 		list_append(l, s);
 	}
+
 	res = stmt_list(be, l);
 	res->extra = l2; /* used for merge statments, this will be cleaned out on the pushcands branch :) */
 	return res;
@@ -3351,8 +3366,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		s = stmt_alias(be, s, rnme, nme);
 		list_append(l, s);
 	}
-	stmt *sub = stmt_list(be, l);
-	return sub;
+	return stmt_list(be, l);
 }
 
 static stmt *
@@ -4162,12 +4176,13 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 					estimate = 85000000;
 				}
 
-				InstrPtr q = stmt_hash_new(be, t->type->localtype, estimate, 0);
+				InstrPtr q = stmt_hash_new(be, t->type->localtype, estimate, 0); /* pushed already */
 				if (q == NULL)
 					return NULL;
 				assert(!e->shared);
 				e->shared = q->argv[0];
 			}
+			pushInstruction(be->mb, q);
 		}
 	} else if (is_groupby(rel->op) && !list_empty(rel->r) && !list_empty(rel->exps)) {
 		BUN est = get_rel_count(rel->l);
@@ -4332,6 +4347,7 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 				if (!EC_APPNUM(tpe->type->eclass))
 					q = pushArgument(be->mb, q, getArg(i->q, 2));
 			}
+			pushInstruction(be->mb, q);
 			getArg(q, 0) = *v;
 			stmt *s = stmt_none(be);
 			s->op4.typeval = *tpe;
@@ -4419,6 +4435,7 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 			}
 			getArg(q, 0) = *v;
 			q->inout = 0;
+			pushInstruction(be->mb, q);
 			stmt *s = stmt_none(be);
 			s->op4.typeval = *exp_subtype(e);
 			s->nr = *v;
@@ -4691,12 +4708,14 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 						q = pushStr(be->mb, q, c->t->base.name);
 						q = pushStr(be->mb, q, c->base.name);
 						(void) pushArgument(be->mb, q, getArg(s->q, 0));
+						pushInstruction(be->mb, q);
 					} else if (c && (strcmp(sf->func->base.name, "count") == 0) && need_distinct(aggrexp)) {
 						InstrPtr q = newStmt(be->mb, sqlRef, "set_count_distinct");
 						q = pushStr(be->mb, q, c->t->s->base.name);
 						q = pushStr(be->mb, q, c->t->base.name);
 						q = pushStr(be->mb, q, c->base.name);
 						(void) pushArgument(be->mb, q, getArg(s->q, 0));
+						pushInstruction(be->mb, q);
 					}
 				}
 			}
@@ -4757,6 +4776,7 @@ rel_topn_prepare_pp(backend *be, sql_rel *rel, stmt *all)
 		setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
 		q = pushType(be->mb, q, TYPE_oid);
 		append(projectresults, q->argv);
+		pushInstruction(be->mb, q);
 
 		for( node *n = l->exps->h; n; n = n->next ) {
 			sql_exp *e = n->data;
@@ -4768,6 +4788,7 @@ rel_topn_prepare_pp(backend *be, sql_rel *rel, stmt *all)
 				return NULL;
 			setVarType(be->mb, getArg(q, 0), newBatType(tt));
 			q = pushType(be->mb, q, tt);
+			pushInstruction(be->mb, q);
 			append(projectresults, q->argv);
 		}
 		return projectresults;
@@ -4790,6 +4811,7 @@ rel_topn_prepare_pp(backend *be, sql_rel *rel, stmt *all)
 			if (q == NULL)
 				return NULL;
 		}
+		pushInstruction(be->mb, q);
 		append(projectresults, q->argv);
 		for( node *n = l->exps->h; n; n = n->next ) {
 			sql_exp *e = n->data;
@@ -4802,6 +4824,7 @@ rel_topn_prepare_pp(backend *be, sql_rel *rel, stmt *all)
 			setVarType(be->mb, getArg(q, 0), newBatType(tt));
 			q = pushType(be->mb, q, tt);
 			q = pushArgument(be->mb, q, all->nr);
+			pushInstruction(be->mb, q);
 			append(projectresults, q->argv);
 		}
 		for( node *n = obexps->h; n; n = n->next ) {
@@ -4815,6 +4838,7 @@ rel_topn_prepare_pp(backend *be, sql_rel *rel, stmt *all)
 			setVarType(be->mb, getArg(q, 0), newBatType(tt));
 			q = pushType(be->mb, q, tt);
 			q = pushArgument(be->mb, q, all->nr);
+			pushInstruction(be->mb, q);
 			append(projectresults, q->argv);
 		}
 		return projectresults;
@@ -4953,6 +4977,7 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 			append(osl, orderbycolstmt);
 			append(osl, orderbycole);
 		}
+		pushInstruction(be->mb, q);
 		int sel = getArg(q, 0);
 		int del = getArg(q, 1);
 		int ins = getArg(q, 2);
@@ -4989,6 +5014,7 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 		q = pushBit(be->mb, q, !is_ascending(e));
 		q = pushBit(be->mb, q, nulls_last(e));
 	}
+	pushInstruction(be->mb, q);
 	int sel = getArg(q, 0);
 	int del = getArg(q, 1);
 	int ins = getArg(q, 2);
@@ -5903,7 +5929,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		return stmt_list(be, l);
 	} else {
 		ret = cnt;
-		add_to_rowcount_accumulator(be, ret->nr);
+		if (add_to_rowcount_accumulator(be, ret->nr) < 0)
+			return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if (t->s && isGlobal(t) && !isGlobalTemp(t))
 			stmt_add_dependency_change(be, t, ret);
 		return ret;
@@ -6761,7 +6788,8 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 
 	if (!be->silent || (t->s && isGlobal(t) && !isGlobalTemp(t)))
 		cnt = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
-	add_to_rowcount_accumulator(be, cnt->nr);
+	if (add_to_rowcount_accumulator(be, cnt->nr) < 0)
+		return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (t->s && isGlobal(t) && !isGlobalTemp(t))
 		stmt_add_dependency_change(be, t, cnt);
 /* cascade ?? */
@@ -6882,7 +6910,8 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		cnt = stmt_list(be, l);
 	} else {
 		cnt = stmt_aggr(be, tids, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
-		add_to_rowcount_accumulator(be, cnt->nr);
+		if (add_to_rowcount_accumulator(be, cnt->nr) < 0)
+			return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if (t->s && isGlobal(t) && !isGlobalTemp(t))
 			stmt_add_dependency_change(be, t, cnt);
 	}
@@ -7097,7 +7126,8 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	if (!sql_delete_triggers(be, t, v, deleted_cols, 1, 1, 3))
 		return sql_error(sql, 10, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", t->base.name);
 
-	add_to_rowcount_accumulator(be, s->nr);
+	if (add_to_rowcount_accumulator(be, s->nr) < 0)
+		return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (t->s && isGlobal(t) && !isGlobalTemp(t))
 		stmt_add_dependency_change(be, t, s);
 	return s;
@@ -7264,10 +7294,15 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 			goto finalize;
 		}
 
-		add_to_rowcount_accumulator(be, other->nr);
+		if (add_to_rowcount_accumulator(be, other->nr) < 0) {
+			(void) sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			ret = NULL;
+			goto finalize;
+		}
 		if (next->s && isGlobal(next) && !isGlobalTemp(next))
 			stmt_add_dependency_change(be, next, other);
 	}
+
 finalize:
 	sa_reset(sql->ta);
 	return ret;
@@ -7376,7 +7411,8 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	} else {
 		res = stmt_atom_lng(be, 1);
 	}
-	add_to_rowcount_accumulator(be, res->nr);
+	if (add_to_rowcount_accumulator(be, res->nr) < 0)
+		return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return res;
 }
 

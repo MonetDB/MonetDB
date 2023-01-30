@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #ifndef _MAL_CLIENT_H_
@@ -69,6 +69,7 @@ typedef struct CLIENT {
 	char	optimizer[IDLENGTH];/* The optimizer pipe preferred for this session */
 	int 	workerlimit;		/* maximum number of workthreads processing a query */
 	int		memorylimit;		/* Memory claim highwater mark, 0 = no limit */
+	lng maxmem;					/* maximum memory from db_user_info table */
 	lng	    sessiontimeout;		/* session abort after x usec, 0 = no limit */
 	QryCtx  qryctx;				/* per query limitations */
 

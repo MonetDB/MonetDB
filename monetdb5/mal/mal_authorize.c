@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -395,7 +395,7 @@ AUTHgetUsername(str *username, Client cntxt)
 		*username = GDKstrdup(cntxt->username);
 		return(MAL_SUCCEED);
 	}
-	if (authCallbackCntx.get_user_name && cntxt) {
+	if (authCallbackCntx.get_user_name) {
 		if ((*username = authCallbackCntx.get_user_name(cntxt)) == NULL) {
 			throw(MAL, "getUsername", INVCRED_WRONG_ID);
 		}

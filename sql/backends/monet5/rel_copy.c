@@ -84,6 +84,7 @@ emit_channel(MalBlkPtr mb, int var_initial_value)
 	InstrPtr q = newStmt(mb, "pipeline", "channel");
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_int));
 	q = pushArgument(mb, q, var_initial_value);
+	pushInstruction(mb, q);
 	return q;
 }
 
@@ -99,6 +100,7 @@ emit_receive(MalBlkPtr mb, int var_handle, InstrPtr channel_stmt)
 	q = pushArgument(mb, q, var_handle);
 	q = pushArgument(mb, q, var_mailbox);
 	q = pushArgument(mb, q, var_channel);
+	pushInstruction(mb, q);
 	return getDestVar(q);
 }
 
@@ -115,6 +117,7 @@ emit_send(MalBlkPtr mb, int var_handle, InstrPtr channel_stmt, int var_value)
 	q = pushArgument(mb, q, var_mailbox);
 	q = pushArgument(mb, q, var_channel);
 	q = pushArgument(mb, q, var_value);
+	pushInstruction(mb, q);
 }
 
 
@@ -174,56 +177,67 @@ emit_pipelined_loop(
 		// offset has been handled
 		offset = 0;
 	}
+	pushInstruction(mb, q);
 
 	q = newStmt(mb, "copy", "defer_close");
 	q = pushArgument(mb, q, var_stream);
+	pushInstruction(mb, q);
 	loop_vars->defer_close = getDestVar(q);
 
 	q = newStmt(mb, "bat", "new");
 	q = pushNil(mb, q, TYPE_bte);
 	q = pushLng(mb, q, alloc);
+	pushInstruction(mb, q);
 	int var_block = getDestVar(q);
 
 	// emit the offset handling
 	if (offset > 0) {
 		q = newAssignment(mb);
 		q = pushLng(mb, q, offset);
+		pushInstruction(mb, q);
 		int var_offset = getDestVar(q);
 
 		q = newAssignment(mb);
 		q->barrier = BARRIERsymbol;
 		q = pushBit(mb, q, true);
+		pushInstruction(mb, q);
 		int offset_handling = getDestVar(q);
 
 		q = newStmt(mb, "calc", "isnil");
 		q->barrier = LEAVEsymbol;
 		q = pushArgument(mb, q, var_stream);
+		pushInstruction(mb, q);
 		setDestVar(q, offset_handling);
 
 		q = newStmt(mb, "copy", "read");
 		q = pushArgument(mb, q, var_stream);
 		q = pushLng(mb, q, block_size);
 		q = pushArgument(mb, q, var_block);
+		pushInstruction(mb, q);
 		setDestVar(q, var_stream);
 
 		q = newStmt(mb, "copy", "skiplines");
 		q = pushArgument(mb, q, var_block);
 		q = pushArgument(mb, q, var_offset);
+		pushInstruction(mb, q);
 		setDestVar(q, var_offset);
 
 		q = newStmt(mb, "calc", ">");
 		q->barrier = REDOsymbol;
 		q = pushArgument(mb, q, var_offset);
 		q = pushLng(mb, q, 0);
+		pushInstruction(mb, q);
 		setDestVar(q, offset_handling);
 
 		q = newAssignment(mb);
 		q->barrier = EXITsymbol;
+		pushInstruction(mb, q);
 		setDestVar(q, offset_handling);
 	}
 
 	q = newAssignment(mb);
 	q = pushLng(mb, q, 0);
+	pushInstruction(mb, q);
 	int var_initial_line_count = getDestVar(q);
 
 	// set up the channels
@@ -239,6 +253,7 @@ emit_pipelined_loop(
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_int));
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_ptr));
 	q = pushInt(mb, q, -1);
+	pushInstruction(mb, q);
 	// int var_iter_id = getArg(q, 1);
 	loop_vars->loop_barrier = getArg(q, 0);
 	loop_vars->loop_iter = getArg(q, 1);
@@ -249,12 +264,14 @@ emit_pipelined_loop(
 	q = newStmt(mb, "bat", "new");
 	q = pushNil(mb, q, TYPE_bte);
 	q = pushLng(mb, q, alloc);
+	pushInstruction(mb, q);
 	int var_next_block = getDestVar(q);
 
 	q = newStmt(mb, "copy", "read");
 	q = pushArgument(mb, q, var_s);
 	q = pushLng(mb, q, block_size);
 	q = pushArgument(mb, q, var_next_block);
+	pushInstruction(mb, q);
 	setDestVar(q, var_s);
 
 	emit_send(mb, loop_vars->loop_handle, stream_channel_stmt, var_s);
@@ -264,36 +281,43 @@ emit_pipelined_loop(
 
 	q = newStmt(mb, "aggr", "count");
 	q = pushArgument(mb, q, loop_vars->our_block);
+	pushInstruction(mb, q);
 	int var_our_count = getDestVar(q);
 
 	q = newStmt(mb, "aggr", "count");
 	q = pushArgument(mb, q, var_next_block);
+	pushInstruction(mb, q);
 	int var_next_count = getDestVar(q);
 
 	q = newStmt(mb, "calc", "+");
 	q = pushArgument(mb, q, var_our_count);
 	q = pushArgument(mb, q, var_next_count);
+	pushInstruction(mb, q);
 	int var_total_count = getDestVar(q);
 
 	q = newStmt(mb, "calc", "==");
 	q = pushArgument(mb, q, var_total_count);
 	q = pushLng(mb, q, 0);
+	pushInstruction(mb, q);
 	int var_total_count_is_zero = getDestVar(q);
 
 	q = newStmt(mb, "calc", "-");
 	q = pushArgument(mb, q, var_nrecords);
 	q = pushArgument(mb, q, loop_vars->earlier_line_count);
+	pushInstruction(mb, q);
 	int var_todo = getDestVar(q);
 
 	q = newStmt(mb, "calc", "<=");
 	q = pushArgument(mb, q, var_todo);
 	q = pushLng(mb, q, 0);
+	pushInstruction(mb, q);
 	int var_no_more_needed = getDestVar(q);
 
 	q = newStmt(mb, "calc", "or");
 	q->barrier = BARRIERsymbol;
 	q = pushArgument(mb, q, var_total_count_is_zero);
 	q = pushArgument(mb, q, var_no_more_needed);
+	pushInstruction(mb, q);
 	int var_quit_barrier = getDestVar(q);
 
 	// Before we exit the main loop we make sure to unblock the next
@@ -306,9 +330,11 @@ emit_pipelined_loop(
 	q->barrier = LEAVEsymbol;
 	setReturnArgument(q, loop_vars->loop_barrier);
 	q = pushBit(mb, q, true);
+	pushInstruction(mb, q);
 
 	q = newAssignment(mb);
 	q->barrier = EXITsymbol;
+	pushInstruction(mb, q);
 	getDestVar(q) = var_quit_barrier;
 
 	q = newStmt(mb, "copy", "fixlines");
@@ -323,6 +349,7 @@ emit_pipelined_loop(
 	q = pushArgument(mb, q, var_failures_bat);
 	q = pushArgument(mb, q, loop_vars->earlier_line_count);
 	q = pushArgument(mb, q, var_todo);
+	pushInstruction(mb, q);
 	// use the variables defined by fixlines from now on:
 	loop_vars->our_block = getArg(q, 0);
 	var_next_block = getArg(q, 1);
@@ -331,6 +358,7 @@ emit_pipelined_loop(
 	q = newStmt(mb, "calc", "+");
 	q = pushArgument(mb, q, loop_vars->earlier_line_count);
 	q = pushArgument(mb, q, loop_vars->our_line_count);
+	pushInstruction(mb, q);
 	int var_next_line_count = getDestVar(q);
 
 	emit_send(mb, loop_vars->loop_handle, line_count_stmt, var_next_line_count);
@@ -345,11 +373,13 @@ emit_redo(MalBlkPtr mb, struct loop_vars *loop_vars)
 	q = newStmt(mb, "pipeline", "counter");
 	setReturnArgument(q, loop_vars->loop_iter);
 	q = pushArgument(mb, q, loop_vars->loop_handle);
+	pushInstruction(mb, q);
 
 	q = newAssignment(mb);
 	q->barrier = REDOsymbol;
 	pushBit(mb, q, true);
 	getDestVar(q) = loop_vars->loop_barrier;
+	pushInstruction(mb, q);
 }
 
 static void
@@ -360,9 +390,11 @@ emit_loop_end(MalBlkPtr mb, struct loop_vars *loop_vars)
 	q = newAssignment(mb);
 	q->barrier = EXITsymbol;
 	getDestVar(q) = loop_vars->loop_barrier;
+	pushInstruction(mb, q);
 
 	q = newStmt(mb, "language", "pass");
 	q = pushArgument(mb, q, loop_vars->defer_close);
+	pushInstruction(mb, q);
 }
 
 stmt *
@@ -427,6 +459,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = newStmt(mb, "bat", "new");
 	q = pushNil(mb, q, TYPE_oid);
 	q = pushLng(mb, q, 0);
+	pushInstruction(mb, q);
 	int var_new_oids_bat = getDestVar(q);
 
 	// Initialize the failures bat if BEST EFFORT is on
@@ -441,9 +474,11 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 		setDestVar(q, var_failures_bat);
 		pushNil(mb, q, newBatType(TYPE_oid));
 	}
+	pushInstruction(mb, q);
 
 	q = newAssignment(mb);
 	q = pushNil(mb, q, TYPE_bit);
+	pushInstruction(mb, q);
 	InstrPtr claim_channel_stmt = emit_channel(mb, getDestVar(q));
 
 	emit_pipelined_loop(mb, &loop_vars, fname, on_client, block_size, var_line_sep, var_quote_char, escape, var_failures_bat, offset, num_rows);
@@ -454,6 +489,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q->barrier = BARRIERsymbol;
 	q = pushArgument(mb, q, loop_vars.our_line_count);
 	q = pushLng(mb, q, 0);
+	pushInstruction(mb, q);
 	int var_claim_block = getDestVar(q);
 
 	emit_send(mb, loop_vars.loop_handle, claim_channel_stmt, var_claim_token);
@@ -464,6 +500,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q->barrier = EXITsymbol;
 	q = pushBit(mb, q, true);
 	setDestVar(q, var_claim_block);
+	pushInstruction(mb, q);
 
 	q = newStmt(mb, "sql", "claim");
 	q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid)));
@@ -471,6 +508,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushStr(mb, q, schema_name);
 	q = pushStr(mb, q, table_name);
 	q = pushArgument(mb, q, loop_vars.our_line_count);
+	pushInstruction(mb, q);
 	int var_position = getArg(q, 0);
 	int var_positions = getArg(q, 1);
 
@@ -480,6 +518,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushArgument(mb, q, loop_vars.our_line_count);
 	q = pushArgument(mb, q, var_position);
 	q = pushArgument(mb, q, var_positions);
+	pushInstruction(mb, q);
 
 	emit_send(mb, loop_vars.loop_handle, claim_channel_stmt, var_claim_token);
 
@@ -505,6 +544,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = pushStr(mb, q, null_representation);
 	q = pushArgument(mb, q, var_failures_bat);
 	q = pushBit(mb, q, escape);
+	pushInstruction(mb, q);
 	InstrPtr splitlines_instr = q;
 
 	int i = 0;
@@ -533,6 +573,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 				q = pushArgument(mb, q, loop_vars.earlier_line_count);
 				q = pushInt(mb, q, i);
 				q = pushStr(mb, q, col->base.name);
+				pushInstruction(mb, q);
 				//
 				if (scale_extra != 1) {
 					int ints = getDestVar(q);
@@ -543,6 +584,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 					q = pushArgument(mb, q, loop_vars.earlier_line_count);
 					q = pushInt(mb, q, i);
 					q = pushStr(mb, q, col->base.name);
+					pushInstruction(mb, q);
 				}
 				break;
 			case EC_DEC:
@@ -556,6 +598,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 				q = pushArgument(mb, q, loop_vars.earlier_line_count);
 				q = pushInt(mb, q, i);
 				q = pushStr(mb, q, col->base.name);
+				pushInstruction(mb, q);
 				break;
 			case EC_STRING:
 				q = newStmt(mb, "copy", "parse_string");
@@ -566,6 +609,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 				q = pushArgument(mb, q, loop_vars.earlier_line_count);
 				q = pushInt(mb, q, i);
 				q = pushStr(mb, q, col->base.name);
+				pushInstruction(mb, q);
 				break;
 			default:
 				q = newStmt(mb, "copy", "parse_generic");
@@ -576,6 +620,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 				q = pushArgument(mb, q, loop_vars.earlier_line_count);
 				q = pushInt(mb, q, i);
 				q = pushStr(mb, q, col->base.name);
+				pushInstruction(mb, q);
 				break;
 		}
 		int var_converted = getDestVar(q);
@@ -588,6 +633,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 		q = pushArgument(mb, q, var_position);
 		q = pushArgument(mb, q, var_positions);
 		q = pushArgument(mb, q, var_converted);
+		pushInstruction(mb, q);
 	}
 
 	// END LOOP
@@ -602,6 +648,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 		q = newStmt(mb, "algebra", "projection");
 		q = pushArgument(mb, q, var_failures_bat);
 		q = pushArgument(mb, q, var_new_oids_bat);
+		pushInstruction(mb, q);
 		int var_rows_to_delete_with_duplicates = getDestVar(q);
 
 		q = newStmt(mb, "algebra", "difference");
@@ -612,11 +659,13 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 		q = pushBit(mb, q, false);
 		q = pushBit(mb, q, true);
 		q = pushNil(mb, q, TYPE_lng);
+		pushInstruction(mb, q);
 		int var_tmp = getDestVar(q);
 
 		q = newStmt(mb, "algebra", "projection");
 		q = pushArgument(mb, q, var_tmp);
 		q = pushArgument(mb, q, var_new_oids_bat);
+		pushInstruction(mb, q);
 		int var_rows_to_retain = getDestVar(q);
 
 		q = newStmt(mb, "algebra", "difference");
@@ -627,11 +676,13 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 		q = pushBit(mb, q, false);
 		q = pushBit(mb, q, true);
 		q = pushNil(mb, q, TYPE_lng);
+		pushInstruction(mb, q);
 		var_tmp = getDestVar(q);
 
 		q = newStmt(mb, "algebra", "projection");
 		q = pushArgument(mb, q, var_tmp);
 		q = pushArgument(mb, q, var_new_oids_bat);
+		pushInstruction(mb, q);
 		int var_rows_to_delete = getDestVar(q);
 
 		q = newStmt(mb, "sql", "delete");
@@ -639,9 +690,11 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 		q = pushStr(mb, q, schema_name);
 		q = pushStr(mb, q, table_name);
 		q = pushArgument(mb, q, var_rows_to_delete);
+		pushInstruction(mb, q);
 
 		q = newAssignment(mb);
 		q = pushArgument(mb, q, var_rows_to_retain);
+		pushInstruction(mb, q);
 		setDestVar(q, var_new_oids_bat);
 	}
 
@@ -650,14 +703,17 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom)
 	q = newStmt(mb, "aggr", "count");
 	q = pushArgument(mb, q, var_new_oids_bat);
 	q = pushBit(mb, q, false);
+	pushInstruction(mb, q);
 	int var_row_count = getDestVar(q);
 
 	q = newStmt(mb, "sql", "depend");
 	q = pushStr(mb, q, schema_name);
 	q = pushStr(mb, q, table_name);
 	q = pushArgument(mb, q, var_row_count);
+	pushInstruction(mb, q);
 
-	add_to_rowcount_accumulator(be, var_row_count);
+	if (add_to_rowcount_accumulator(be, var_row_count) < 0)
+		return NULL;
 	// dump_code(-1);
 
 	// I'm assuming that attaching the stmt list to op4.lval

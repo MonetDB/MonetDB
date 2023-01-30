@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1827,6 +1827,9 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		assert(ri.vh == NULL);
 		lvars = rvars = NULL;
 	}
+	/* if the var pointer is not NULL, then so is the val pointer */
+	assert(lvars == NULL || lvals != NULL);
+	assert(rvars == NULL || rvals != NULL);
 
 	if (not_in && rci->ncand > 0 && !ri.nonil &&
 	    ((BATtvoid(l) && l->tseqbase == oid_nil) ||

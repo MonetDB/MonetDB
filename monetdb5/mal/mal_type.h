@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #ifndef MAL_TYPE_H
@@ -45,7 +45,6 @@
 
 #define ASSIGNsymbol    40	/* interpreter entry points */
 #define ENDsymbol       41
-#define NOOPsymbol      43	/* no operation required */
 
 #define COMMANDsymbol   61	/* these tokens should be the last group !! */
 #define FUNCTIONsymbol  62	/* the designate the signature start */

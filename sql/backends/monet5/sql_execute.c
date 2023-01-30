@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -87,101 +87,194 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	mb->stop=k;
 
 	q= newStmt(mb, profilerRef, stoptraceRef);
+	if (q == NULL) {
+		throw(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	pushInstruction(mb, q);
 
 	/* cook a new resultSet instruction */
 	resultset = newInstruction(mb,sqlRef, resultSetRef);
+	if (resultset == NULL) {
+		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return msg;
+	}
 	getArg(resultset,0) = newTmpVariable(mb, TYPE_int);
 
 	/* build table defs */
 	tbls = newStmt(mb,batRef, newRef);
+	if (tbls == NULL) {
+		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return msg;
+	}
 	setVarType(mb, getArg(tbls,0), newBatType(TYPE_str));
 	tbls = pushType(mb, tbls, TYPE_str);
+	pushInstruction(mb, tbls);
 
 	q= newStmt(mb,batRef,appendRef);
+	if (q == NULL) {
+		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return msg;
+	}
 	q= pushArgument(mb,q,getArg(tbls,0));
 	q= pushStr(mb,q,".trace");
 	k= getArg(q,0);
+	pushInstruction(mb, q);
 
 	q= newStmt(mb,batRef,appendRef);
+	if (q == NULL) {
+		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return msg;
+	}
 	q= pushArgument(mb,q,k);
 	q= pushStr(mb,q,".trace");
+	pushInstruction(mb, q);
 
-	resultset= addArgument(mb,resultset, getArg(q,0));
+	resultset= pushArgument(mb,resultset, getArg(q,0));
 
 	/* build colum defs */
 	cols = newStmt(mb,batRef, newRef);
+	if (cols == NULL) {
+		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return msg;
+	}
 	setVarType(mb, getArg(cols,0), newBatType(TYPE_str));
 	cols = pushType(mb, cols, TYPE_str);
+	pushInstruction(mb, cols);
 
 	q= newStmt(mb,batRef,appendRef);
+	if (q == NULL) {
+		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return msg;
+	}
 	q= pushArgument(mb,q,getArg(cols,0));
 	q= pushStr(mb,q,"usec");
 	k= getArg(q,0);
+	pushInstruction(mb, q);
 
 	q= newStmt(mb,batRef,appendRef);
+	if (q == NULL) {
+		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return msg;
+	}
 	q= pushArgument(mb,q, k);
 	q= pushStr(mb,q,"statement");
+	pushInstruction(mb, q);
 
-	resultset= addArgument(mb,resultset, getArg(q,0));
+	resultset= pushArgument(mb,resultset, getArg(q,0));
 
 	/* build type defs */
 	types = newStmt(mb,batRef, newRef);
+	if (types == NULL) {
+		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return msg;
+	}
 	setVarType(mb, getArg(types,0), newBatType(TYPE_str));
 	types = pushType(mb, types, TYPE_str);
+	pushInstruction(mb, types);
 
 	q= newStmt(mb,batRef,appendRef);
+	if (q == NULL) {
+		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return msg;
+	}
 	q= pushArgument(mb,q, getArg(types,0));
 	q= pushStr(mb,q,"bigint");
 	k= getArg(q,0);
+	pushInstruction(mb, q);
 
 	q= newStmt(mb,batRef,appendRef);
+	if (q == NULL) {
+		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return msg;
+	}
 	q= pushArgument(mb,q, k);
 	q= pushStr(mb,q,"clob");
+	pushInstruction(mb, q);
 
-	resultset= addArgument(mb,resultset, getArg(q,0));
+	resultset= pushArgument(mb,resultset, getArg(q,0));
 
 	/* build scale defs */
 	clen = newStmt(mb,batRef, newRef);
+	if (clen == NULL) {
+		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return msg;
+	}
 	setVarType(mb, getArg(clen,0), newBatType(TYPE_int));
 	clen = pushType(mb, clen, TYPE_int);
+	pushInstruction(mb, clen);
 
 	q= newStmt(mb,batRef,appendRef);
+	if (q == NULL) {
+		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return msg;
+	}
 	q= pushArgument(mb,q, getArg(clen,0));
 	q= pushInt(mb,q,64);
 	k= getArg(q,0);
+	pushInstruction(mb, q);
 
 	q= newStmt(mb,batRef,appendRef);
+	if (q == NULL) {
+		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return msg;
+	}
 	q= pushArgument(mb,q, k);
 	q= pushInt(mb,q,0);
+	pushInstruction(mb, q);
 
-	resultset= addArgument(mb,resultset, getArg(q,0));
+	resultset= pushArgument(mb,resultset, getArg(q,0));
 
 	/* build scale defs */
 	scale = newStmt(mb,batRef, newRef);
+	if (scale == NULL) {
+		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return msg;
+	}
 	setVarType(mb, getArg(scale,0), newBatType(TYPE_int));
 	scale = pushType(mb, scale, TYPE_int);
+	pushInstruction(mb, scale);
 
 	q= newStmt(mb,batRef,appendRef);
+	if (q == NULL) {
+		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return msg;
+	}
 	q= pushArgument(mb,q, getArg(scale,0));
 	q= pushInt(mb,q,0);
 	k= getArg(q,0);
+	pushInstruction(mb, q);
 
 	q= newStmt(mb,batRef,appendRef);
+	if (q == NULL) {
+		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return msg;
+	}
 	q= pushArgument(mb, q, k);
 	q= pushInt(mb,q,0);
+	pushInstruction(mb, q);
 
-	resultset= addArgument(mb,resultset, getArg(q,0));
+	resultset= pushArgument(mb,resultset, getArg(q,0));
 
 	/* add the ticks column */
 
 	q = newStmt(mb, profilerRef, getTraceRef);
+	if (q == NULL) {
+		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return msg;
+	}
 	q = pushStr(mb, q, putName("usec"));
-	resultset= addArgument(mb,resultset, getArg(q,0));
+	resultset= pushArgument(mb,resultset, getArg(q,0));
+	pushInstruction(mb, q);
 
 	/* add the stmt column */
 	q = newStmt(mb, profilerRef, getTraceRef);
+	if (q == NULL) {
+		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return msg;
+	}
 	q = pushStr(mb, q, putName("stmt"));
-	resultset= addArgument(mb,resultset, getArg(q,0));
+	resultset= pushArgument(mb,resultset, getArg(q,0));
+	pushInstruction(mb, q);
 
 	pushInstruction(mb,resultset);
 	pushEndInstruction(mb);
@@ -243,22 +336,28 @@ SQLrun(Client c, mvc *m)
 		if( m->emod & mod_trace){
 			if((msg = SQLsetTrace(c,mb)) == MAL_SUCCEED) {
 				setVariableScope(mb);
+				MT_lock_set(&mal_contextLock);
 				c->idle = 0;
 				c->lastcmd = time(0);
+				MT_lock_unset(&mal_contextLock);
 				msg = runMAL(c, mb, 0, 0);
 				stopTrace(c);
 			}
 		} else {
 			setVariableScope(mb);
+			MT_lock_set(&mal_contextLock);
 			c->idle = 0;
 			c->lastcmd = time(0);
+			MT_lock_unset(&mal_contextLock);
 			msg = runMAL(c, mb, 0, 0);
 		}
 		resetMalBlk(mb);
 	}
 	/* after the query has been finished we enter the idle state */
+	MT_lock_set(&mal_contextLock);
 	c->idle = time(0);
 	c->lastcmd = 0;
+	MT_lock_unset(&mal_contextLock);
 	MT_thread_setworking(NULL);
 	return msg;
 }

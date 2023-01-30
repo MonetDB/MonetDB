@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -106,27 +106,32 @@ openConnectionIP(int *socks, bool udp, const char *bindaddr, unsigned short port
 						   (const char *) &(int){0}, sizeof(int)) == -1)
 				Mlevelfprintf(ERROR, log, "setsockopt IPV6_V6ONLY: %s\n", strerror(e));
 
-			if (!udp) {
-				if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
-							   (const char *) &on, sizeof on) < 0) {
-					e = errno;
-					closesocket(sock);
-					continue;
-				}
+			if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+						   (const char *) &on, sizeof on) < 0) {
+				e = errno;
+				closesocket(sock);
+				continue;
+			}
 #ifdef SO_EXCLUSIVEADDRUSE
-				if (setsockopt(sock, SOL_SOCKET, SO_EXCLUSIVEADDRUSE,
-							   (const char *) &on, sizeof on) < 0)
-					Mlevelfprintf(ERROR, log, "setsockopt SO_EXCLUSIVEADDRUSE: %s\n", strerror(e));
+			if (setsockopt(sock, SOL_SOCKET, SO_EXCLUSIVEADDRUSE,
+						   (const char *) &on, sizeof on) < 0)
+				Mlevelfprintf(ERROR, log, "setsockopt SO_EXCLUSIVEADDRUSE: %s\n", strerror(e));
 #endif
 #ifdef SO_EXCLBIND
-				if (setsockopt(sock, SOL_SOCKET, SO_EXCLBIND,
-							   (const char *) &on, sizeof on) < 0)
-					Mlevelfprintf(ERROR, log, "setsockopt SO_EXCLBIND: %s\n", strerror(e));
+			if (setsockopt(sock, SOL_SOCKET, SO_EXCLBIND,
+						   (const char *) &on, sizeof on) < 0)
+				Mlevelfprintf(ERROR, log, "setsockopt SO_EXCLBIND: %s\n", strerror(e));
 #endif
-			}
 
-			if (bind(sock, rp->ai_addr, rp->ai_addrlen) == -1) {
+			switch (bind(sock, rp->ai_addr, rp->ai_addrlen)) {
+			case -1:
 				e = errno;
+				closesocket(sock);
+				continue;
+			case 0:
+				/* normal return */
+				break;
+			case 1:
 				closesocket(sock);
 				continue;
 			}

@@ -406,7 +406,7 @@ project (
 | | | table("sys"."tab2") [ "tab2"."myk" as "myalias1"."myk", "tab2"."ups" UNIQUE as "myalias1"."ups" ]
 | | ) [ ("myalias0"."part" UNIQUE) = ("myalias1"."myk") ]
 | ) [ "myalias1"."ups", "myalias0"."part", "myalias0"."tet" as "track" ] [ "myalias0"."part", "track", "myalias0"."tet", "sys"."count"() NOT NULL as "%1"."%1" ]
-) [ "myalias0"."part", "myalias0"."tet", "%1"."%1" NOT NULL as "mycount", "track" ]
+) [ "myalias0"."part" as "part", "myalias0"."tet" as "tet", "%1"."%1" NOT NULL as "mycount", "track" ]
 
 query IIII rowsort
 select

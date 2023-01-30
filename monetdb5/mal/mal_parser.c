@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /* (c): M. L. Kersten
@@ -693,13 +693,13 @@ simpleTypeId(Client cntxt)
 }
 
 static int
-parseTypeId(Client cntxt, int defaultType)
+parseTypeId(Client cntxt)
 {
 	int i = TYPE_any, kt = 0;
 	char *s = CURRENT(cntxt);
 	int tt;
 
-	if (s[0] == ':' && s[1] == 'b' && s[2] == 'a' && s[3] == 't' && s[4] == '[') {
+	if (strncmp(s, ":bat[", 5) == 0 || strncmp(s, ":BAT[", 5) == 0) {
 		/* parse :bat[:type] */
 		advance(cntxt, 5);
 		if (currChar(cntxt) == ':') {
@@ -707,7 +707,7 @@ parseTypeId(Client cntxt, int defaultType)
 			kt = typeAlias(cntxt, tt);
 		} else{
 			parseError(cntxt, "':bat[:any]' expected\n");
-			return TYPE_bat;
+			return -1;
 		}
 
 		i = newBatType(tt);
@@ -728,7 +728,7 @@ parseTypeId(Client cntxt, int defaultType)
 		return tt;
 	}
 	parseError(cntxt, "<type identifier> expected\n");
-	return defaultType;
+	return -1;
 }
 
 static inline int
@@ -736,7 +736,7 @@ typeElm(Client cntxt, int def)
 {
 	if (currChar(cntxt) != ':')
 		return def;  /* no type qualifier */
-	return parseTypeId(cntxt, def);
+	return parseTypeId(cntxt);
 }
 
  /*
@@ -963,7 +963,7 @@ parseAtom(Client cntxt)
 	if (currChar(cntxt) != ':')
 		tpe = TYPE_void;  /* no type qualifier */
 	else
-		tpe = parseTypeId(cntxt, TYPE_int);
+		tpe = parseTypeId(cntxt);
 	if( ATOMindex(modnme) < 0) {
 		if(cntxt->curprg->def->errors)
 			freeException(cntxt->curprg->def->errors);
@@ -1063,6 +1063,55 @@ parseInclude(Client cntxt)
 	return 0;
 }
 
+/* return the combined count of the number of arguments and the number
+ * of return values so that we can allocate enough space in the
+ * instruction; returns -1 on error (missing closing parenthesis) */
+static int
+cntArgsReturns(Client cntxt)
+{
+	size_t yycur = cntxt->yycur;
+	int cnt = 0;
+	char ch;
+
+	ch = currChar(cntxt);
+	if (ch != ')') {
+		cnt++;
+		while (ch != ')' && ch && !NL(ch)) {
+			if (ch == ',')
+				cnt++;
+			nextChar(cntxt);
+			ch = currChar(cntxt);
+		}
+	}
+	if (ch != ')') {
+		parseError(cntxt, "')' expected\n");
+		cntxt->yycur = yycur;
+		return -1;
+	}
+	advance(cntxt, 1);
+	ch = currChar(cntxt);
+	if (ch == '(') {
+		advance(cntxt, 1);
+		ch = currChar(cntxt);
+		cnt++;
+		while (ch != ')' && ch && !NL(ch)) {
+			if (ch == ',')
+				cnt++;
+			nextChar(cntxt);
+			ch = currChar(cntxt);
+		}
+		if (ch != ')') {
+			parseError(cntxt, "')' expected\n");
+			cntxt->yycur = yycur;
+			return -1;
+		}
+	} else {
+		cnt++;
+	}
+	cntxt->yycur = yycur;
+	return cnt;
+}
+
 /*
  * Definition
  * The definition statements share a lot in common, which calls for factoring
@@ -1135,7 +1184,11 @@ fcnHeader(Client cntxt, int kind)
 
 	assert(!cntxt->backup);
 	cntxt->backup = cntxt->curprg;
-	cntxt->curprg = newFunction( modnme, fnme, kind);
+	int nargs = cntArgsReturns(cntxt);
+	if (nargs < 0)
+		return 0;
+	/* one extra for argument/return manipulation */
+	cntxt->curprg = newFunctionArgs( modnme, fnme, kind, nargs + 1);
 	if(cntxt->curprg == NULL) {
 		/* reinstate curprg to have a place for the error */
 		cntxt->curprg = cntxt->backup;

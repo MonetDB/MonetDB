@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -56,6 +56,7 @@ multiplex2(MalBlkPtr mb, const char *mod, const char *name, int o1, int o2, int 
 	q = pushStr(mb, q, convertMultiplexFcn(name));
 	q = pushArgument(mb, q, o1);
 	q = pushArgument(mb, q, o2);
+	pushInstruction(mb, q);
 	return q;
 }
 
@@ -68,6 +69,7 @@ dump_1(MalBlkPtr mb, const char *mod, const char *name, stmt *o1)
 		return NULL;
 	q = newStmt(mb, mod, name);
 	q = pushArgument(mb, q, o1->nr);
+	pushInstruction(mb, q);
 	return q;
 }
 
@@ -81,6 +83,7 @@ dump_2(MalBlkPtr mb, const char *mod, const char *name, stmt *o1, stmt *o2)
 	q = newStmt(mb, mod, name);
 	q = pushArgument(mb, q, o1->nr);
 	q = pushArgument(mb, q, o2->nr);
+	pushInstruction(mb, q);
 	return q;
 }
 
@@ -226,6 +229,7 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done, int 
 		if (grp)
 			q = pushArgument(mb, q, grp->nr);
 	}
+	pushInstruction(mb, q);
 	if (q) {
 		stmt *ns = stmt_create(be->mvc->sa, st_group);
 		if (ns == NULL) {
@@ -270,6 +274,7 @@ stmt_group_locked(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, stmt *p
 	if (grp)
 		q = pushArgument(mb, q, grp->nr);
 	q = pushArgument(mb, q, s->nr);
+	pushInstruction(mb, q);
 	if (q) {
 		stmt *ns = stmt_create(be->mvc->sa, st_group);
 		if (ns == NULL) {
@@ -314,6 +319,7 @@ stmt_unique(backend *be, stmt *s, int output)
 	}
 	q = pushArgument(mb, q, s->nr);
 	q = pushNil(mb, q, TYPE_bat); /* candidate list */
+	pushInstruction(mb, q);
 	if (q) {
 		stmt *ns = stmt_create(be->mvc->sa, st_unique);
 		if (ns == NULL) {
@@ -349,7 +355,7 @@ stmt_bat_new(backend *be, int tt, lng estimate)
 	q = pushType(be->mb, q, tt);
 	if (estimate > 0)
 		q = pushInt(be->mb, q, (int)estimate);
-	//return getDestVar(q);
+	pushInstruction(be->mb, q);
 	return q;
 }
 
@@ -367,7 +373,7 @@ stmt_hash_new(backend *be, int tt, lng estimate, int parent)
 	q = pushInt(be->mb, q, (int)estimate);
 	if (parent)
 		q = pushArgument(be->mb, q, parent);
-	//return getDestVar(q);
+	pushInstruction(be->mb, q);
 	return q;
 }
 
@@ -412,6 +418,7 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 		if (q == NULL)
 			return NULL;
 		setVarType(mb, getArg(q, 0), tt);
+		pushInstruction(mb, q);
 	} else if (!declare) {
 		char levelstr[16];
 
@@ -423,6 +430,7 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 		stpcpy(stpcpy(stpcpy(stpcpy(buf, "A"), levelstr), "%"), varname); /* mangle variable name */
 		q = newAssignment(mb);
 		q = pushArgumentId(mb, q, buf);
+		pushInstruction(mb, q);
 	} else {
 		int tt = t->type->localtype;
 		char levelstr[16];
@@ -507,6 +515,7 @@ stmt_varnr(backend *be, int nr, sql_subtype *t)
 
 	(void) snprintf(buf, sizeof(buf), "A%d", nr);
 	q = pushArgumentId(mb, q, buf);
+	pushInstruction(mb, q);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_var);
 		if (s == NULL) {
@@ -539,10 +548,12 @@ stmt_table(backend *be, stmt *cols, int temp)
 
 	if (cols->type != st_list) {
 	    InstrPtr q = newAssignment(mb);
+		pushInstruction(mb, q);
 		q = newStmt(mb, sqlRef, printRef);
 		q = pushStr(mb, q, "not a valid output list\n");
 		if (q == NULL)
 			return NULL;
+		pushInstruction(mb, q);
 	}
 	s->op1 = cols;
 	s->flag = temp;
@@ -562,6 +573,7 @@ stmt_temp(backend *be, sql_subtype *t)
 		return NULL;
 	setVarType(mb, getArg(q, 0), newBatType(tt));
 	q = pushType(mb, q, tt);
+	pushInstruction(mb, q);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_temp);
 
@@ -627,6 +639,7 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	}
 	if (q == NULL)
 		return NULL;
+	pushInstruction(mb, q);
 	if (t && isTable(t) && partition) {
 		sql_trans *tr = be->mvc->session->tr;
 		sqlstore *store = tr->store;
@@ -719,6 +732,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	}
 	if (q == NULL)
 		return NULL;
+	pushInstruction(mb, q);
 
 	if (access == RD_UPD_ID) {
 		setVarType(mb, getArg(q, 1), newBatType(tt));
@@ -777,6 +791,7 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 	}
 	if (q == NULL)
 		return NULL;
+	pushInstruction(mb, q);
 
 	if (access == RD_UPD_ID) {
 		setVarType(mb, getArg(q, 1), newBatType(tt));
@@ -824,6 +839,9 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_
 			q = newStmt(mb, sqlRef, growRef);
 			q = pushArgument(mb, q, l[0]);
 			q = pushArgument(mb, q, b->nr);
+			if (q == NULL)
+				return NULL;
+			pushInstruction(mb, q);
 		}
 		q = newStmt(mb, batRef, appendRef);
 		q = pushArgument(mb, q, l[c->colnr+1]);
@@ -831,6 +849,7 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_
 		q = pushBit(mb, q, TRUE);
 		if (q)
 			getArg(q,0) = l[c->colnr+1];
+		pushInstruction(mb, q);
 	} else if (!fake) {	/* fake append */
 		if (offset->nr < 0)
 			return NULL;
@@ -854,6 +873,7 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_
 			return NULL;
 		if (mvc_var_update != NULL)
 			*mvc_var_update = getDestVar(q);
+		pushInstruction(mb, q);
 	} else {
 		return b;
 	}
@@ -899,6 +919,7 @@ stmt_append_idx(backend *be, sql_idx *i, stmt *offset, stmt *b)
 	if (q == NULL)
 		return NULL;
 	be->mvc_var = getDestVar(q);
+	pushInstruction(mb, q);
 
 	stmt *s = stmt_create(be->mvc->sa, st_append_idx);
 	if (s == NULL) {
@@ -930,6 +951,7 @@ stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd)
 		q = pushArgument(mb, q, l[c->colnr+1]);
 		q = pushArgument(mb, q, tids->nr);
 		q = pushArgument(mb, q, upd->nr);
+		pushInstruction(mb, q);
 	} else {
 		q = newStmt(mb, sqlRef, updateRef);
 		q = pushArgument(mb, q, be->mvc_var);
@@ -944,6 +966,7 @@ stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd)
 		if (q == NULL)
 			return NULL;
 		be->mvc_var = getDestVar(q);
+		pushInstruction(mb, q);
 	}
 	if (q){
 		stmt *s = stmt_create(be->mvc->sa, st_update_col);
@@ -985,6 +1008,7 @@ stmt_update_idx(backend *be, sql_idx *i, stmt *tids, stmt *upd)
 	if (q == NULL)
 		return NULL;
 	be->mvc_var = getDestVar(q);
+	pushInstruction(mb, q);
 	stmt *s = stmt_create(be->mvc->sa, st_update_idx);
 	if (s == NULL) {
 		freeInstruction(q);
@@ -1027,6 +1051,7 @@ stmt_delete(backend *be, sql_table *t, stmt *tids)
 			return NULL;
 		be->mvc_var = getDestVar(q);
 	}
+	pushInstruction(mb, q);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_delete);
 		if (s == NULL) {
@@ -1191,12 +1216,14 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 		if (q == NULL)
 			return NULL;
 		k = getDestVar(q);
+		pushInstruction(mb, q);
 
 		q = newStmt(mb, batRef, appendRef);
 		q = pushArgument(mb, q, k);
 		q = pushArgument(mb, q, c);
 		if (q == NULL)
 			return NULL;
+		pushInstruction(mb, q);
 		c = k;
 	}
 	if (order) {
@@ -1209,6 +1236,7 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 		if (q == NULL)
 			return NULL;
 		topn = getDestVar(q);
+		pushInstruction(mb, q);
 
 		q = newStmtArgs(mb, algebraRef, firstnRef, 9);
 		if (!last) /* we need the groups for the next firstn */
@@ -1231,6 +1259,7 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 			return NULL;
 		l = getArg(q, 0);
 		l = getDestVar(q);
+		pushInstruction(mb, q);
 	} else {
 		int len;
 
@@ -1240,6 +1269,7 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 		if (q == NULL)
 			return NULL;
 		len = getDestVar(q);
+		pushInstruction(mb, q);
 
 		/* since both arguments of algebra.subslice are
 		   inclusive correct the LIMIT value by
@@ -1250,6 +1280,7 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 		if (q == NULL)
 			return NULL;
 		len = getDestVar(q);
+		pushInstruction(mb, q);
 
 		q = newStmtArgs(mb, algebraRef, subsliceRef, 8);
 		if (pipeline) { /* returns gid, rid, hid */
@@ -1265,6 +1296,7 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 		if (q == NULL)
 			return NULL;
 		l = getDestVar(q);
+		pushInstruction(mb, q);
 	}
 	/* retrieve the single values again */
 	if (col->nrcols == 0) {
@@ -1274,6 +1306,7 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 		if (q == NULL)
 			return NULL;
 		l = getDestVar(q);
+		pushInstruction(mb, q);
 	}
 
 	stmt *ns = stmt_create(be->mvc->sa, piv?st_limit2:st_limit);
@@ -1311,6 +1344,7 @@ stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed)
 
 		q = pushArgument(mb, q, seed->nr);
 	}
+	pushInstruction(mb, q);
 
 	if (q) {
 		stmt *ns = stmt_create(be->mvc->sa, st_sample);
@@ -1356,7 +1390,7 @@ stmt_order(backend *be, stmt *s, int direction, int nullslast)
 	q = pushBit(mb, q, FALSE);
 	if (q == NULL)
 		return NULL;
-
+	pushInstruction(mb, q);
 
 	stmt *ns = stmt_create(be->mvc->sa, st_order);
 	if (ns == NULL) {
@@ -1394,6 +1428,7 @@ stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_i
 	q = pushBit(mb, q, FALSE);
 	if (q == NULL)
 		return NULL;
+	pushInstruction(mb, q);
 
 	stmt *ns = stmt_create(be->mvc->sa, st_reorder);
 	if (ns == NULL) {
@@ -1434,6 +1469,7 @@ stmt_atom(backend *be, atom *a)
 	/* digits of the result timestamp/daytime */
 	if (EC_TEMP_FRAC(atom_type(a)->type->eclass))
 		q = pushInt(mb, q, atom_type(a)->digits);
+	pushInstruction(mb, q);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_atom);
 		if (s == NULL) {
@@ -1473,6 +1509,8 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		for (n = rops->op4.lval->h; n; n = n->next)
 			narg++;
 		q = newStmtArgs(mb, malRef, multiplexRef, narg);
+		if (q == NULL)
+			return NULL;
 		setVarType(mb, getArg(q, 0), newBatType(TYPE_bit));
 		q = pushStr(mb, q, convertMultiplexMod(mod, op));
 		q = pushStr(mb, q, convertMultiplexFcn(op));
@@ -1487,6 +1525,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 			q = pushArgument(mb, q, op->nr);
 		}
 		k = getDestVar(q);
+		pushInstruction(mb, q);
 
 		q = newStmtArgs(mb, algebraRef, selectRef, 9);
 		q = pushArgument(mb, q, k);
@@ -1497,6 +1536,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, anti);
+		pushInstruction(mb, q);
 	} else {
 		node *n;
 
@@ -1528,6 +1568,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		}
 
 		q = pushBit(mb, q, anti);
+		pushInstruction(mb, q);
 	}
 
 	if (q) {
@@ -1630,7 +1671,10 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			q = pushArgument(mb, q, k);
 			q = pushBit(mb, q, FALSE);
 			q = pushBit(mb, q, TRUE);
+			if (q == NULL)
+				return NULL;
 			k = getDestVar(q);
+			pushInstruction(mb, q);
 		}
 
 		q = newStmtArgs(mb, algebraRef, selectRef, 9);
@@ -1645,6 +1689,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		if (q == NULL)
 			return NULL;
 		k = getDestVar(q);
+		pushInstruction(mb, q);
 	} else {
 		assert (cmptype != cmp_filter);
 		if (is_semantics) {
@@ -1664,6 +1709,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			q = pushBit(mb, q, TRUE);
 			q = pushBit(mb, q, TRUE);
 			q = pushBit(mb, q, anti);
+			pushInstruction(mb, q);
 		} else {
 			q = newStmt(mb, algebraRef, thetaselectRef);
 			q = pushArgument(mb, q, l);
@@ -1702,6 +1748,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 					freeInstruction(q);
 				q = NULL;
 			}
+			pushInstruction(mb, q);
 		}
 		if (q == NULL)
 			return NULL;
@@ -1828,6 +1875,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 		p = pushBit(mb, p, (cmp & 2) != 0);	    /* hi inclusive */
 		p = pushBit(mb, p, FALSE);		    /* nils_false */
 		p = pushBit(mb, p, (anti)?TRUE:FALSE);	    /* anti */
+		pushInstruction(mb, p);
 		if (!reduce)
 			return p;
 		k = getDestVar(p);
@@ -1843,6 +1891,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 		q = pushBit(mb, q, FALSE);
 		if (q == NULL)
 			return NULL;
+		pushInstruction(mb, q);
 	} else {
 		/* if st_join2 try to convert to bandjoin */
 		/* ie check if we subtract/add a constant, to the
@@ -1932,6 +1981,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 			q = pushNil(mb, q, TYPE_lng); /* estimate */
 		if (q == NULL)
 			return NULL;
+		pushInstruction(mb, q);
 		if (swapped) {
 			InstrPtr r = newInstruction(mb,  NULL, NULL);
 			if (r == NULL)
@@ -2025,6 +2075,7 @@ stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 	q = pushBit(mb, q, FALSE);    /* nil matches */
 	q = pushBit(mb, q, FALSE);    /* do not clear nils */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
+	pushInstruction(mb, q);
 
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_tdiff);
@@ -2064,6 +2115,7 @@ stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 	q = pushBit(mb, q, FALSE);     /* nil matches */
 	q = pushBit(mb, q, TRUE);     /* not in */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
+	pushInstruction(mb, q);
 
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_tdiff);
@@ -2100,6 +2152,7 @@ stmt_tinter(backend *be, stmt *op1, stmt *op2, bool single)
 	q = pushBit(mb, q, FALSE);    /* nil matches */
 	q = pushBit(mb, q, single?TRUE:FALSE);    /* max_one */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
+	pushInstruction(mb, q);
 
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_tinter);
@@ -2158,6 +2211,7 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		q = pushNil(mb, q, TYPE_lng);
 		if (q == NULL)
 			return NULL;
+		pushInstruction(mb, q);
 		break;
 	case cmp_notequal:
 		q = newStmtArgs(mb, algebraRef, thetajoinRef, 9);
@@ -2177,6 +2231,7 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		q = pushNil(mb, q, TYPE_lng);
 		if (q == NULL)
 			return NULL;
+		pushInstruction(mb, q);
 		break;
 	case cmp_lt:
 	case cmp_lte:
@@ -2206,6 +2261,7 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		q = pushNil(mb, q, TYPE_lng);
 		if (q == NULL)
 			return NULL;
+		pushInstruction(mb, q);
 		break;
 	case cmp_all:	/* aka cross table */
 		q = newStmt(mb, algebraRef, crossRef);
@@ -2216,6 +2272,7 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		assert(!lcand && !rcand);
 		if (q == NULL)
 			return NULL;
+		pushInstruction(mb, q);
 		break;
 	case cmp_joined:
 		q = op1->q;
@@ -2277,6 +2334,7 @@ stmt_semijoin(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int i
 	q = pushNil(mb, q, TYPE_lng);
 	if (q == NULL)
 		return NULL;
+	pushInstruction(mb, q);
 
 	stmt *s = stmt_create(be->mvc->sa, st_semijoin);
 	if (s == NULL) {
@@ -2317,9 +2375,10 @@ stmt_project_join(backend *be, stmt *op1, stmt *op2, bool delta)
 		q = newStmt(mb, algebraRef, projectionRef);
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
-		if (q == NULL)
-			return NULL;
 	}
+	if (q == NULL)
+		return NULL;
+	pushInstruction(mb, q);
 	return q;
 }
 
@@ -2339,6 +2398,7 @@ stmt_project_(backend *be, int sel, int del, int ins, stmt *c, stmt *all)
 	q = pushArgument(be->mb, q, c->nr);
 	q = pushArgument(be->mb, q, all->nr);
 	q = pushArgument(be->mb, q, be->pipeline);
+	pushInstruction(be->mb, q);
 
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_join);
@@ -2425,6 +2485,7 @@ stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3)
 	q = pushArgument(mb, q, op1->nr);
 	q = pushArgument(mb, q, op2->nr);
 	q = pushArgument(mb, q, op3->nr);
+	pushInstruction(mb, q);
 
 	if (q){
 		stmt *s = stmt_create(be->mvc->sa, st_join);
@@ -2458,6 +2519,7 @@ stmt_dict(backend *be, stmt *op1, stmt *op2)
 	q = newStmt(mb, dictRef, decompressRef);
 	q = pushArgument(mb, q, op1->nr);
 	q = pushArgument(mb, q, op2->nr);
+	pushInstruction(mb, q);
 
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_join);
@@ -2492,6 +2554,7 @@ stmt_for(backend *be, stmt *op1, stmt *min_val)
 	q = newStmt(mb, forRef, decompressRef);
 	q = pushArgument(mb, q, op1->nr);
 	q = pushArgument(mb, q, min_val->nr);
+	pushInstruction(mb, q);
 
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_join);
@@ -2571,6 +2634,9 @@ stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapp
 	q = pushBit(mb, q, TRUE);     /* nil_matches */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
 	q = pushBit(mb, q, anti?TRUE:FALSE); /* 'not' matching */
+	if (q == NULL)
+		return NULL;
+	pushInstruction(mb, q);
 
 	if (swapped) {
 		InstrPtr r = newInstruction(mb,  NULL, NULL);
@@ -2647,10 +2713,13 @@ stmt_rs_column(backend *be, stmt *rs, int i, sql_subtype *tpe)
 #define meta(P, Id, Tpe, Args)						\
 	do {											\
 		P = newStmtArgs(mb, batRef, packRef, Args);	\
-		Id = getArg(P,0);							\
-		setVarType(mb, Id, newBatType(Tpe));		\
-		setVarFixed(mb, Id);						\
-		list = pushArgument(mb, list, Id);			\
+		if (P) {									\
+			Id = getArg(P,0);						\
+			setVarType(mb, Id, newBatType(Tpe));	\
+			setVarFixed(mb, Id);					\
+			list = pushArgument(mb, list, Id);		\
+			pushInstruction(mb, P);					\
+		}											\
 	} while (0)
 
 #define metaInfo(P,Tpe,Val)						\
@@ -2675,6 +2744,8 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 	args = list_length(l) + 1;
 
 	list = newInstructionArgs(mb, sqlRef, export_tableRef, args + 13);
+	if (list == NULL)
+		return -1;
 	getArg(list,0) = newTmpVariable(mb,TYPE_int);
 	if( file >= 0){
 		list = pushArgument(mb, list, file);
@@ -2749,7 +2820,10 @@ stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char 
 	} else {
 		q = newAssignment(mb);
 		q = pushStr(mb,q,"stdout");
+		if (q == NULL)
+			return NULL;
 		fnr = getArg(q,0);
+		pushInstruction(mb, q);
 	}
 	if (t->type == st_list) {
 		if (dump_export_header(be->mvc, mb, l, fnr, "csv", sep, rsep, ssep, null_string, onclient) < 0)
@@ -2759,6 +2833,7 @@ stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char 
 		q = pushStr(mb, q, "not a valid output list\n");
 		if (q == NULL)
 			return NULL;
+		pushInstruction(mb, q);
 	}
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_export);
@@ -2787,6 +2862,9 @@ stmt_export_bin(backend *be, stmt *colstmt, bool byteswap, const char *filename,
 	pushBit(mb, q, byteswap);
 	pushStr(mb, q, filename);
 	pushInt(mb, q, on_client);
+	if (q == NULL)
+		return NULL;
+	pushInstruction(mb, q);
 
 	stmt *s = stmt_create(be->mvc->sa, st_export);
 	if (!s)
@@ -2820,12 +2898,14 @@ stmt_trans(backend *be, int type, stmt *chain, stmt *name)
 		break;
 	default:
 		TRC_ERROR(SQL_EXECUTION, "Unknown transaction type\n");
+		return NULL;
 	}
 	q = pushArgument(mb, q, chain->nr);
 	if (name)
 		q = pushArgument(mb, q, name->nr);
 	else
 		q = pushNil(mb, q, TYPE_str);
+	pushInstruction(mb, q);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_trans);
 		if(!s) {
@@ -2905,6 +2985,7 @@ stmt_catalog(backend *be, int type, stmt *args)
 
 		q = pushArgument(mb, q, c->nr);
 	}
+	pushInstruction(mb, q);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_catalog);
 		if(!s) {
@@ -3050,16 +3131,17 @@ stmt_output(backend *be, stmt *lst)
 				snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 
 				q = newStmt(mb, sqlRef, resultSetRef);
+				if (q == NULL)
+					return -1;
 				getArg(q,0) = newTmpVariable(mb,TYPE_int);
-				if (q) {
-					q = pushStr(mb, q, fqtn);
-					q = pushStr(mb, q, cn);
-					q = pushStr(mb, q, t->type->localtype == TYPE_void ? "char" : t->type->base.name);
-					q = pushInt(mb, q, t->digits);
-					q = pushInt(mb, q, t->scale);
-					q = pushInt(mb, q, t->type->eclass);
-					q = pushArgument(mb, q, c->nr);
-				}
+				q = pushStr(mb, q, fqtn);
+				q = pushStr(mb, q, cn);
+				q = pushStr(mb, q, t->type->localtype == TYPE_void ? "char" : t->type->base.name);
+				q = pushInt(mb, q, t->digits);
+				q = pushInt(mb, q, t->scale);
+				q = pushInt(mb, q, t->type->eclass);
+				q = pushArgument(mb, q, c->nr);
+				pushInstruction(mb, q);
 			}
 		}
 		sa_reset(be->mvc->ta);
@@ -3086,6 +3168,7 @@ stmt_affected_rows(backend *be, int lastnr)
 	q = pushArgument(mb, q, lastnr);
 	if (q == NULL)
 		return -1;
+	pushInstruction(mb, q);
 	be->mvc_var = getDestVar(q);
 	return 0;
 }
@@ -3102,6 +3185,7 @@ stmt_append(backend *be, stmt *c, stmt *a)
 	q = pushArgument(mb, q, c->nr);
 	q = pushArgument(mb, q, a->nr);
 	q = pushBit(mb, q, TRUE);
+	pushInstruction(mb, q);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_append);
 		if(!s) {
@@ -3150,6 +3234,7 @@ stmt_append_bulk(backend *be, stmt *c, list *l)
 		stmt *a = n->data;
 		q = pushArgument(mb, q, a->nr);
 	}
+	pushInstruction(mb, q);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_append_bulk);
 		if(!s) {
@@ -3184,6 +3269,7 @@ stmt_claim(backend *be, sql_table *t, stmt *cnt)
 	q = pushSchema(mb, q, t);
 	q = pushStr(mb, q, t->base.name);
 	q = pushArgument(mb, q, cnt->nr);
+	pushInstruction(mb, q);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_claim);
 		if(!s) {
@@ -3211,6 +3297,7 @@ stmt_add_dependency_change(backend *be, sql_table *t, stmt *cnt)
 	q = pushSchema(mb, q, t);
 	q = pushStr(mb, q, t->base.name);
 	q = pushArgument(mb, q, cnt->nr);
+	pushInstruction(mb, q);
 }
 
 void
@@ -3225,6 +3312,7 @@ stmt_add_column_predicate(backend *be, sql_column *c)
 	q = pushSchema(mb, q, c->t);
 	q = pushStr(mb, q, c->t->base.name);
 	q = pushStr(mb, q, c->base.name);
+	pushInstruction(mb, q);
 }
 
 stmt *
@@ -3241,6 +3329,7 @@ stmt_replace(backend *be, stmt *r, stmt *id, stmt *val)
 	q = pushArgument(mb, q, id->nr);
 	q = pushArgument(mb, q, val->nr);
 	q = pushBit(mb, q, TRUE); /* forced */
+	pushInstruction(mb, q);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_replace);
 		if(!s) {
@@ -3272,6 +3361,9 @@ stmt_table_clear(backend *be, sql_table *t, int restart_sequences)
 		for (int i = 0; i < cnt; i++) {
 			q = newStmt(mb, batRef, deleteRef);
 			q = pushArgument(mb, q, l[i]);
+			if (q == NULL)
+				return NULL;
+			pushInstruction(mb, q);
 		}
 		/* declared tables don't have sequences */
 	} else {
@@ -3279,6 +3371,7 @@ stmt_table_clear(backend *be, sql_table *t, int restart_sequences)
 		q = pushSchema(mb, q, t);
 		q = pushStr(mb, q, t->base.name);
 		q = pushInt(mb, q, restart_sequences);
+		pushInstruction(mb, q);
 	}
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_table_clear);
@@ -3309,6 +3402,7 @@ stmt_exception(backend *be, stmt *cond, const char *errstr, int errcode)
 	q = newStmt(mb, sqlRef, assertRef);
 	q = pushArgument(mb, q, cond->nr);
 	q = pushStr(mb, q, errstr);
+	pushInstruction(mb, q);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_exception);
 		if(!s) {
@@ -3499,6 +3593,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 			q = pushInt(mb, q, f->scale);
 */			//q = pushInt(mb, q, ((ValRecord)((atom*)(be->mvc)->args[1])->data).val.ival);
 	}
+	pushInstruction(mb, q);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_convert);
 		if(!s) {
@@ -3584,12 +3679,18 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			q = newStmt(mb, mod, "==");
 			q = pushArgument(mb, q, e1->nr);
 			q = pushArgument(mb, q, e2->nr);
+			if (q == NULL)
+				return NULL;
 			int nr = getDestVar(q);
+			pushInstruction(mb, q);
 
 			q = newStmt(mb, mod, ifthenelseRef);
 			q = pushArgument(mb, q, nr);
 			q = pushNil(mb, q, tt);
 			q = pushArgument(mb, q, e1->nr);
+			if (q == NULL)
+				return NULL;
+			pushInstruction(mb, q);
 		}
 		push_cands = can_push_cands(sel, mod, fimp);
 	}
@@ -3676,6 +3777,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			q = pushInt(mb, q, tpe->digits);
 			q = pushInt(mb, q, tpe->scale);
 		}
+		pushInstruction(mb, q);
 	}
 
 	if (q) {
@@ -3747,11 +3849,16 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	if (monet5_create_relational_function(be->mvc, sql_private_module_name, name, rel, ops, NULL, 1) < 0)
 		return NULL;
 
+	int nargs;
+	sql_rel *r = rel;
+	relational_func_create_result_part1(be->mvc, &r, &nargs);
+	if (ops)
+		nargs += list_length(ops->op4.lval);
 	if (f_union)
 		q = newStmt(mb, batmalRef, multiplexRef);
 	else
 		q = newStmt(mb, sql_private_module_name, name);
-	q = relational_func_create_result(be->mvc, mb, q, rel);
+	q = relational_func_create_result_part2(mb, q, r);
 	if (f_union) {
 		q = pushStr(mb, q, sql_private_module_name);
 		q = pushStr(mb, q, name);
@@ -3763,6 +3870,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 			q = pushArgument(mb, q, op->nr);
 		}
 	}
+	pushInstruction(mb, q);
 
 	if (q) {
 		node *n;
@@ -3935,6 +4043,7 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 	}
 	if (pipeline)
 		q->inout = 0;
+	pushInstruction(mb, q);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_aggr);
 		if(!s) {
@@ -4290,6 +4399,7 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 		q->barrier = BARRIERsymbol;
 		q = pushArgument(mb, q, cond->nr);
 		getArg(q,0) = cond->nr;
+		pushInstruction(mb, q);
 	} else {	/* while */
 		int c;
 
@@ -4301,6 +4411,7 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 		if (q == NULL)
 			return NULL;
 		c = getArg(q, 0);
+		pushInstruction(mb, q);
 
 		q = newAssignment(mb);
 		if (q == NULL)
@@ -4308,6 +4419,7 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 		getArg(q, 0) = outer->nr;
 		q->barrier = LEAVEsymbol;
 		q = pushArgument(mb, q, c);
+		pushInstruction(mb, q);
 	}
 	if (q){
 		stmt *s = stmt_create(be->mvc->sa, st_cond);
@@ -4345,6 +4457,7 @@ stmt_control_end(backend *be, stmt *cond)
 		q = pushBit(mb, q, TRUE);
 		if (q == NULL)
 			return NULL;
+		pushInstruction(mb, q);
 	} else {
 		q = newAssignment(mb);
 		if (q == NULL)
@@ -4352,6 +4465,7 @@ stmt_control_end(backend *be, stmt *cond)
 		getArg(q, 0) = cond->nr;
 		q->argc = q->retc = 1;
 		q->barrier = EXITsymbol;
+		pushInstruction(mb, q);
 	}
 	be->mvc_var = cond->flag; /* restore old mvc_var from before the barrier */
 	stmt *s = stmt_create(be->mvc->sa, st_control_end);
@@ -4474,6 +4588,7 @@ stmt_assign(backend *be, const char *sname, const char *varname, stmt *val, int 
 		if (q == NULL)
 			return NULL;
 		getArg(q, 0) = be->mvc_var = newTmpVariable(mb, TYPE_int);
+		pushInstruction(mb, q);
 		be->mvc_var = getDestVar(q);
 	}
 	q = pushArgument(mb, q, val->nr);
@@ -4507,6 +4622,7 @@ const_column(backend *be, stmt *val)
 		return NULL;
 	setVarType(mb, getArg(q, 0), newBatType(tt));
 	q = pushArgument(mb, q, val->nr);
+	pushInstruction(mb, q);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_single);
 		if(!s) {
@@ -4551,6 +4667,7 @@ stmt_fetch(backend *be, stmt *val)
 	setVarType(mb, getArg(q, 0), tt);
 	q = pushArgument(mb, q, val->nr);
 	q = pushOid(mb, q, 0);
+	pushInstruction(mb, q);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_single);
 		if(!s) {
@@ -4584,6 +4701,7 @@ pp_create_nrparts_or_dynamic(backend *be, int nrparts, int input)
 	else
 		q = pushInt(be->mb, q, nrparts);
 
+	pushInstruction(be->mb, q);
 	be->nrparts = nrparts;
 	be->pp = getArg(q, 1); /* counter */
 	be->pipeline = getArg(q, 2); /* pipeline */
@@ -4597,6 +4715,7 @@ pp_create_nrparts_or_dynamic(backend *be, int nrparts, int input)
 		r = pushArgument(be->mb, r, input);
 	else
 		r = pushInt(be->mb, r, nrparts);
+	pushInstruction(be->mb, r);
 
 	if (r && q) {
 		stmt *s = stmt_create(be->mvc->sa, st_none);
@@ -4636,6 +4755,7 @@ stmt_slicer(backend *be, stmt *col, int slicer)
 	q->inout = 1;
 	q = pushArgument(be->mb, q, be->pp);
 
+	pushInstruction(be->mb, q);
 	stmt *ns = stmt_create(be->mvc->sa, st_temp);
 	if (ns == NULL) {
 		freeInstruction(q);
@@ -4658,6 +4778,7 @@ stmt_slices(backend *be, stmt *col)
 	InstrPtr q = newStmt(be->mb, slicerRef, slicesRef);
 	q = pushArgument(be->mb, q, col->nr);
 
+	pushInstruction(be->mb, q);
 	stmt *ns = stmt_create(be->mvc->sa, st_result); /* ?? */
 	if (ns == NULL) {
 		freeInstruction(q);
@@ -4686,6 +4807,7 @@ stmt_slice(backend *be, stmt *col, stmt *limit)
 	q = pushArgument(be->mb, q, col->nr);
 	q = pushLng(be->mb, q, 0);
 	q = pushArgument(be->mb, q, limit->nr);
+	pushInstruction(be->mb, q);
 
 	stmt *ns = stmt_create(be->mvc->sa, st_temp);
 	if (ns == NULL) {
@@ -4713,6 +4835,7 @@ pp_jump(backend *be, stmt *label, int nrparts)
 		return -1;
 	getArg(r, 0) = getArg(label->q, 1); /* counter */
 	r = pushArgument(be->mb, r, getArg(label->q, 2) /* pipeline */);
+	pushInstruction(be->mb, r);
 
 	r = newStmtArgs(be->mb, calcRef, "<", 3);
 	if (r == NULL)
@@ -4723,6 +4846,7 @@ pp_jump(backend *be, stmt *label, int nrparts)
 	r = pushArgument(be->mb, r, getArg(label->q, 3)); /* nrparts */
 	(void)nrparts;
 	//r = pushInt(be->mb, r, nrparts);
+	pushInstruction(be->mb, r);
 	if (r)
 		return 0;
 	return -1;
@@ -4739,6 +4863,7 @@ pp_end(backend *be, stmt *label)
 	getArg(q, 0) = label->nr;
 	q->argc = q->retc = 1;
 	q->barrier = EXITsymbol;
+	pushInstruction(be->mb, q);
 	if (q)
 		return 0;
 	return -1;

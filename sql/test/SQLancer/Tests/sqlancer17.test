@@ -648,12 +648,10 @@ least(3, sub0.c1) FROM vx JOIN (SELECT 4, vy.vc0 FROM vy) AS sub0(c1,c2) ON TRUE
 project (
 | crossproduct (
 | | table("sys"."rt0") [ "rt0"."%TID%" NOT NULL UNIQUE ],
-| | project (
-| | | crossproduct (
-| | | |  [ boolean(1) "true" as "%1"."%1" ],
-| | | |  [ boolean(1) "true" as "%2"."%2" ]
-| | | ) [  ]
-| | ) [ "sys"."casewhen"(tinyint(2) "2", tinyint(3) "4", char(1) "c", char(1) NULL) as "sub0"."c0" ]
+| | crossproduct (
+| | |  [ boolean(1) "true" as "%1"."%1" ],
+| | |  [ boolean(1) "true" as "%2"."%2" ]
+| | ) [  ]
 | ) [  ]
 ) [ tinyint(1) "1" ]
 

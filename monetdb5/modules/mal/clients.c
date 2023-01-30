@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -334,14 +334,18 @@ CLTsetmemorylimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "clients.setmemorylimit", "The memmory limit cannot be NULL");
 	if( limit < 0)
 		throw(MAL, "clients.setmemorylimit", "The memmory limit cannot be negative");
-	if( (size_t) limit > GDK_mem_maxsize / 1048576)
-		throw(MAL,"clients.setmemorylimit","Memory claim beyond physical memory");
 
 	MT_lock_set(&mal_contextLock);
 	if (mal_clients[idx].mode == FREECLIENT)
 		msg = createException(MAL,"clients.setmemorylimit","Session not active anymore");
-	else
+	else if (cntxt->user != MAL_ADMIN &&
+			 mal_clients[idx].maxmem > 0 &&
+			 mal_clients[idx].maxmem < (lng) limit << 20)
+		msg = createException(MAL, "clients.setmemorylimit","Cannot increase memory limit");
+	else {
 		mal_clients[idx].memorylimit = limit;
+		mal_clients[idx].qryctx.maxmem = (ATOMIC_BASE_TYPE) limit << 20;
+	}
 	MT_lock_unset(&mal_contextLock);
 	return msg;
 }
@@ -514,7 +518,8 @@ CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		lng timeout_micro = GDKdebug & FORCEMITOMASK && qto == 1 ? 1000 : (lng) qto * 1000000;
 		mal_clients[idx].qryctx.querytimeout = timeout_micro;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-		qry_ctx->querytimeout = timeout_micro;
+		if (qry_ctx)
+			qry_ctx->querytimeout = timeout_micro;
 	}
 	MT_lock_unset(&mal_contextLock);
 	return msg;
@@ -540,7 +545,8 @@ CLTqueryTimeoutMicro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else {
 		mal_clients[idx].qryctx.querytimeout = qto;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-		qry_ctx->querytimeout = qto;
+		if (qry_ctx)
+			qry_ctx->querytimeout = qto;
 	}
 	MT_lock_unset(&mal_contextLock);
 	return msg;

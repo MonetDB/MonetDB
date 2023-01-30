@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -390,7 +390,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) "ALTER TABLE: no values in the list");
 		goto finish;
 	}
-	values = list_new(sql->session->tr->sa, (fdestroy) &part_value_destroy);
+	values = list_create((fdestroy) &part_value_destroy);
 	for ( i = pci->retc+6; i < pci->argc; i++){
 		sql_part_value *nextv = NULL;
 		ValRecord *vnext = &(stk)->stk[(pci)->argv[i]];
@@ -404,8 +404,8 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 			goto finish;
 		}
 
-		nextv = SA_ZNEW(sql->session->tr->sa, sql_part_value); /* instantiate the part value */
-		nextv->value = SA_NEW_ARRAY(sql->session->tr->sa, char, len);
+		nextv = ZNEW(sql_part_value); /* instantiate the part value */
+		nextv->value = NEW_ARRAY(char, len);
 		memcpy(nextv->value, pnext, len);
 		nextv->length = len;
 
@@ -1121,6 +1121,13 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 	if (!(nt = mvc_bind_table(sql, s, t->base.name)))
 		throw(SQL,"sql.alter_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s'", t->base.name);
 
+	sql_table *gt = NULL;
+	if (nt && isTempTable(nt)) {
+		gt = (sql_table*)os_find_id(s->tables, sql->session->tr, nt->base.id);
+		if (gt)
+			nt = gt;
+	}
+
 	/* First check if all the changes are allowed */
 	if (t->idxs) {
 		/* only one pkey */
@@ -1237,6 +1244,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				if (i->base.new || !i->base.deleted)
 					continue;
 				sql_idx *ni = mvc_bind_idx(sql, s, i->base.name);
+				if (ni == NULL)
+					throw(SQL, "sql.alter_table", "Couldn't bind index %s", i->base.name);
 				switch (mvc_drop_idx(sql, s, ni)) {
 					case -1:
 						throw(SQL,"sql.alter_table",SQLSTATE(HY013) MAL_MALLOC_FAIL);

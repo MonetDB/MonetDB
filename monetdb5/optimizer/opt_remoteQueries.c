@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -84,50 +84,63 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
  * A pitfall is to create multiple connections with
  * their isolated runtime environment.
  */
-#define lookupServer(X)\
-	/* lookup the server connection */\
-	if( location[getArg(p,0)] == 0){\
-		db = 0;\
-		if( isVarConstant(mb,getArg(p,X)) )\
-			db= getVarConstant(mb, getArg(p,X)).val.sval;\
-		for(k=0; k<dbtop; k++)\
-			if( strcmp(db, dbalias[k].dbname)== 0)\
-				break;\
-		\
-		if( k== dbtop){\
-			r= newInstruction(mb,mapiRef,lookupRef);\
-			j= getArg(r,0)= newTmpVariable(mb, TYPE_int);\
-			r= addArgument(mb,r, getArg(p,X));\
-			pushInstruction(mb,r);\
-			dbalias[dbtop].dbhdl= j;\
-			dbalias[dbtop++].dbname= db;\
-			if( dbtop== 127) dbtop--;\
-		} else j= dbalias[k].dbhdl;\
-		location[getArg(p,0)]= j;\
+#define lookupServer(X)													\
+	/* lookup the server connection */									\
+	if( location[getArg(p,0)] == 0){									\
+	db = 0;																\
+	if( isVarConstant(mb,getArg(p,X)) )									\
+		db= getVarConstant(mb, getArg(p,X)).val.sval;					\
+	for(k=0; k<dbtop; k++)												\
+		if( strcmp(db, dbalias[k].dbname)== 0)							\
+			break;														\
+																		\
+	if( k== dbtop){														\
+		r= newInstruction(mb,mapiRef,lookupRef);						\
+		if (r == NULL) {												\
+			msg = createException(MAL, "optimizer.remote", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+			break;														\
+		}																\
+		j= getArg(r,0)= newTmpVariable(mb, TYPE_int);					\
+		r= pushArgument(mb,r, getArg(p,X));								\
+		pushInstruction(mb,r);											\
+		dbalias[dbtop].dbhdl= j;										\
+		dbalias[dbtop++].dbname= db;									\
+		if( dbtop== 127) dbtop--;										\
+	} else j= dbalias[k].dbhdl;											\
+	location[getArg(p,0)]= j;											\
 	} else j= location[getArg(p,0)];
 
-#define prepareRemote(X)\
-	r= newInstruction(mb,mapiRef,rpcRef);\
-	getArg(r,0)= newTmpVariable(mb, X);\
-	r= addArgument(mb,r,j);
+#define prepareRemote(X)												\
+	r= newInstruction(mb,mapiRef,rpcRef);								\
+	if (r == NULL) {													\
+		msg = createException(MAL, "optimizer.remote", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+		break;															\
+	}																	\
+	getArg(r,0)= newTmpVariable(mb, X);									\
+	r= pushArgument(mb,r,j);
 
-#define putRemoteVariables()\
-	for(j=p->retc; j<p->argc; j++)\
-	if( location[getArg(p,j)] == 0 && !isVarConstant(mb,getArg(p,j)) ){\
-		q= newInstruction(0, mapiRef, putRef);\
-		getArg(q,0)= newTmpVariable(mb, TYPE_void);\
-		q= addArgument(mb,q,location[getArg(p,j)]);\
-		q= pushStr(mb,q, getVarName(mb,getArg(p,j)));\
-		q= addArgument(mb,q,getArg(p,j));\
-		pushInstruction(mb,q);\
-	}
+#define putRemoteVariables()											\
+	for(j=p->retc; j<p->argc; j++)										\
+		if( location[getArg(p,j)] == 0 && !isVarConstant(mb,getArg(p,j)) ){	\
+			q= newInstruction(0, mapiRef, putRef);						\
+			if (q == NULL) {											\
+				freeInstruction(r);										\
+				msg = createException(MAL, "optimizer.remote", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+				break;													\
+			}															\
+			getArg(q,0)= newTmpVariable(mb, TYPE_void);					\
+			q= pushArgument(mb,q,location[getArg(p,j)]);				\
+			q= pushStr(mb,q, getVarName(mb,getArg(p,j)));				\
+			q= pushArgument(mb,q,getArg(p,j));							\
+			pushInstruction(mb,q);										\
+		}
 
-#define remoteAction()\
-	s= RQcall2str(mb,p);\
-	r= pushStr(mb,r,s+1);\
-	GDKfree(s);\
-	pushInstruction(mb,r);\
-	freeInstruction(p);\
+#define remoteAction()							\
+	s= RQcall2str(mb,p);						\
+	r= pushStr(mb,r,s+1);						\
+	GDKfree(s);									\
+	pushInstruction(mb,r);						\
+	freeInstruction(p);							\
 	actions++;
 
 typedef struct{
@@ -203,24 +216,24 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				getModuleId(p) = bbpRef;
 
 				prepareRemote(tpe)
-				putRemoteVariables()
-				remoteAction()
-			} else
+					putRemoteVariables()
+					remoteAction()
+					} else
 				pushInstruction(mb,p);
 		} else if( (getModuleId(p)== sqlRef && getFunctionId(p)==evalRef) ){
 			if( p->argc == 3){
 				/* a remote sql eval is needed */
 				lookupServer(1)
 
-				/* turn the instruction into a local one */
-				/* one argument less */
-				p->argc--;
+					/* turn the instruction into a local one */
+					/* one argument less */
+					p->argc--;
 				/* only use the second argument (string) */
 				getArg(p,1)= getArg(p,2);
 
 				prepareRemote(TYPE_void)
 
-				s= RQcall2str(mb,p);
+					s= RQcall2str(mb,p);
 				r= pushStr(mb,r,s+1);
 				GDKfree(s);
 				pushInstruction(mb,r);
@@ -236,119 +249,134 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
 				lookupServer(4)
 
-				/* turn the instruction into a local one */
-				k = defConstant(mb, TYPE_int, &cst);
+					/* turn the instruction into a local one */
+					k = defConstant(mb, TYPE_int, &cst);
 				if( k>=0){
 					getArg(p,4)= k;
 					prepareRemote(tpe)
-					putRemoteVariables()
-					remoteAction()
-				}
+						putRemoteVariables()
+						remoteAction()
+						}
 			} else
 				pushInstruction(mb,p);
 		} else
-		if(getModuleId(p)== sqlRef && getFunctionId(p)== binddbatRef) {
+			if(getModuleId(p)== sqlRef && getFunctionId(p)== binddbatRef) {
 
-			if( p->argc == 5 && getArgType(mb,p,3) == TYPE_str ) {
-				lookupServer(3)
+				if( p->argc == 5 && getArgType(mb,p,3) == TYPE_str ) {
+					lookupServer(3)
 
-				/* turn the instruction into a local one */
-				k= defConstant(mb, TYPE_int, &cst);
-				if( k >= 0){
-					getArg(p,3)= defConstant(mb, TYPE_int, &cst);
-					prepareRemote(TYPE_void)
-					putRemoteVariables()
-					remoteAction()
+						/* turn the instruction into a local one */
+						k= defConstant(mb, TYPE_int, &cst);
+					if( k >= 0){
+						getArg(p,3)= defConstant(mb, TYPE_int, &cst);
+						prepareRemote(TYPE_void)
+							putRemoteVariables()
+							remoteAction()
+							}
+				} else {
+					pushInstruction(mb,p);
 				}
-			} else {
-				pushInstruction(mb,p);
-			}
-		} else
-		if( getModuleId(p) == optimizerRef || cnt == 0 || p->barrier) /* local only or flow control statement */
-			pushInstruction(mb,p);
-		else {
-			/*
-			 * The hard part is to decide what to do with instructions that
-			 * contain a reference to a remote variable.
-			 * In the first implementation we use the following policy.
-			 * If there are multiple sites involved, all arguments are
-			 * moved local for processing. Moreover, all local arguments
-			 * to be shipped should be simple.
-			 */
-			remoteSite=0;
-			collectFirst= FALSE;
-			for(j=0; j<p->argc; j++)
-			if( location[getArg(p,j)]){
-				if (remoteSite == 0)
-					remoteSite= location[getArg(p,j)];
-				else if( remoteSite != location[getArg(p,j)])
-					collectFirst= TRUE;
-			}
-			if( getModuleId(p)== ioRef || (getModuleId(p)== sqlRef
-					&& (getFunctionId(p)== resultSetRef ||
-				getFunctionId(p)== rsColumnRef)))
-				 collectFirst= TRUE;
-
-			/* local BATs are not shipped */
-			if( remoteSite && collectFirst== FALSE)
-				for(j=p->retc; j<p->argc; j++)
-				if( location[getArg(p,j)] == 0 &&
-					isaBatType(getVarType(mb,getArg(p,j))))
+			} else
+				if( getModuleId(p) == optimizerRef || cnt == 0 || p->barrier) /* local only or flow control statement */
+					pushInstruction(mb,p);
+				else {
+					/*
+					 * The hard part is to decide what to do with instructions that
+					 * contain a reference to a remote variable.
+					 * In the first implementation we use the following policy.
+					 * If there are multiple sites involved, all arguments are
+					 * moved local for processing. Moreover, all local arguments
+					 * to be shipped should be simple.
+					 */
+					remoteSite=0;
+					collectFirst= FALSE;
+					for(j=0; j<p->argc; j++)
+						if( location[getArg(p,j)]){
+							if (remoteSite == 0)
+								remoteSite= location[getArg(p,j)];
+							else if( remoteSite != location[getArg(p,j)])
+								collectFirst= TRUE;
+						}
+					if( getModuleId(p)== ioRef || (getModuleId(p)== sqlRef
+												   && (getFunctionId(p)== resultSetRef ||
+													   getFunctionId(p)== rsColumnRef)))
 						collectFirst= TRUE;
 
-			if (collectFirst){
-				/* perform locally */
-				for(j=p->retc; j<p->argc; j++)
-				if( location[getArg(p,j)]){
-					q= newInstruction(0,mapiRef,rpcRef);
-					getArg(q,0)= getArg(p,j);
-					q= addArgument(mb,q,location[getArg(p,j)]);
-					snprintf(buf,BUFSIZ,"io.print(%s);",
-						getVarName(mb,getArg(p,j)) );
-					q=  pushStr(mb,q,buf);
-					pushInstruction(mb,q);
-				}
-				pushInstruction(mb,p);
-				/* as of now all the targets are also local */
-				for(j=0; j<p->retc; j++)
-					location[getArg(p,j)]= 0;
-				actions++;
-			} else if (remoteSite){
-				/* single remote site involved */
-				r= newInstruction(mb,mapiRef,rpcRef);
-				getArg(r,0)= newTmpVariable(mb, TYPE_void);
-				r= addArgument(mb, r, remoteSite);
+					/* local BATs are not shipped */
+					if( remoteSite && collectFirst== FALSE)
+						for(j=p->retc; j<p->argc; j++)
+							if( location[getArg(p,j)] == 0 &&
+								isaBatType(getVarType(mb,getArg(p,j))))
+								collectFirst= TRUE;
 
-				for(j=p->retc; j<p->argc; j++)
-				if( location[getArg(p,j)] == 0 && !isVarConstant(mb,getArg(p,j)) ){
-					q= newInstruction(0,mapiRef,putRef);
-					getArg(q,0)= newTmpVariable(mb, TYPE_void);
-					q= addArgument(mb, q, remoteSite);
-					q= pushStr(mb,q, getVarName(mb,getArg(p,j)));
-					q= addArgument(mb, q, getArg(p,j));
-					pushInstruction(mb,q);
+					if (collectFirst){
+						/* perform locally */
+						for(j=p->retc; j<p->argc; j++)
+							if( location[getArg(p,j)]){
+								q= newInstruction(0,mapiRef,rpcRef);
+								if (q == NULL) {
+									msg = createException(MAL, "optimizer.remote", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+									break;
+								}
+								getArg(q,0)= getArg(p,j);
+								q= pushArgument(mb,q,location[getArg(p,j)]);
+								snprintf(buf,BUFSIZ,"io.print(%s);",
+										 getVarName(mb,getArg(p,j)) );
+								q=  pushStr(mb,q,buf);
+								pushInstruction(mb,q);
+							}
+						if (msg)
+							break;
+						pushInstruction(mb,p);
+						/* as of now all the targets are also local */
+						for(j=0; j<p->retc; j++)
+							location[getArg(p,j)]= 0;
+						actions++;
+					} else if (remoteSite){
+						/* single remote site involved */
+						r= newInstruction(mb,mapiRef,rpcRef);
+						if (r == NULL) {
+							msg = createException(MAL, "optimizer.remote", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+							break;
+						}
+						getArg(r,0)= newTmpVariable(mb, TYPE_void);
+						r= pushArgument(mb, r, remoteSite);
+
+						for(j=p->retc; j<p->argc; j++)
+							if( location[getArg(p,j)] == 0 && !isVarConstant(mb,getArg(p,j)) ){
+								q= newInstruction(0,mapiRef,putRef);
+								if (q == NULL) {
+									freeInstruction(r);
+									msg = createException(MAL, "optimizer.remote", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+									break;
+								}
+								getArg(q,0)= newTmpVariable(mb, TYPE_void);
+								q= pushArgument(mb, q, remoteSite);
+								q= pushStr(mb,q, getVarName(mb,getArg(p,j)));
+								q= pushArgument(mb, q, getArg(p,j));
+								pushInstruction(mb,q);
+							}
+						s= RQcall2str(mb, p);
+						pushInstruction(mb,r);
+						(void) pushStr(mb,r,s+1);
+						GDKfree(s);
+						for(j=0; j<p->retc; j++)
+							location[getArg(p,j)]= remoteSite;
+						freeInstruction(p);
+						actions++;
+					} else
+						pushInstruction(mb,p);
 				}
-				s= RQcall2str(mb, p);
-				pushInstruction(mb,r);
-				(void) pushStr(mb,r,s+1);
-				GDKfree(s);
-				for(j=0; j<p->retc; j++)
-					location[getArg(p,j)]= remoteSite;
-				freeInstruction(p);
-				actions++;
-			} else
-				pushInstruction(mb,p);
-		}
 	}
 	for(; i<slimit; i++)
-	if( old[i])
-		pushInstruction(mb, old[i]);
+		if( old[i])
+			pushInstruction(mb, old[i]);
 	GDKfree(old);
 	GDKfree(location);
 	GDKfree(dbalias);
 
 	/* Defense line against incorrect plans */
-	if( actions){
+	if( msg == MAL_SUCCEED && actions){
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);

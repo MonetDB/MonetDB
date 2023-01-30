@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /* streams working on a gzip-compressed disk file */
@@ -171,16 +171,16 @@ open_urlstream(const char *url)
 		return NULL;
 	}
 	s->stream_data.p = (void *) c;
-	curl_easy_setopt(c->handle, CURLOPT_URL, s->name);
-	curl_easy_setopt(c->handle, CURLOPT_WRITEDATA, s);
-	curl_easy_setopt(c->handle, CURLOPT_VERBOSE, 0);
-	curl_easy_setopt(c->handle, CURLOPT_NOSIGNAL, 1);
-	curl_easy_setopt(c->handle, CURLOPT_FAILONERROR, 1);
-	curl_easy_setopt(c->handle, CURLOPT_ERRORBUFFER, c->errbuf);
-	curl_easy_setopt(c->handle, CURLOPT_WRITEFUNCTION, write_callback);
-	CURLcode ret = curl_easy_perform(c->handle);
-	if (ret != CURLE_OK) {
-		if (strlen(c->errbuf) > 0)
+	CURLcode ret;
+	if ((ret = curl_easy_setopt(c->handle, CURLOPT_ERRORBUFFER, c->errbuf)) != CURLE_OK ||
+		(ret = curl_easy_setopt(c->handle, CURLOPT_URL, s->name)) != CURLE_OK ||
+		(ret = curl_easy_setopt(c->handle, CURLOPT_WRITEDATA, s)) != CURLE_OK ||
+		(ret = curl_easy_setopt(c->handle, CURLOPT_VERBOSE, 0)) != CURLE_OK ||
+		(ret = curl_easy_setopt(c->handle, CURLOPT_NOSIGNAL, 1)) != CURLE_OK ||
+		(ret = curl_easy_setopt(c->handle, CURLOPT_FAILONERROR, 1)) != CURLE_OK ||
+		(ret = curl_easy_setopt(c->handle, CURLOPT_WRITEFUNCTION, write_callback)) != CURLE_OK ||
+		(ret = curl_easy_perform(c->handle)) != CURLE_OK) {
+		if (c->errbuf[0] != 0)
 			mnstr_set_open_error(url, 0, "%s", c->errbuf);
 		else
 			mnstr_set_open_error(url, 0, "curl_easy_perform: %s", curl_easy_strerror(ret));

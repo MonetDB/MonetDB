@@ -23,7 +23,7 @@ BEGIN
       VALUE "FileDescription", "MonetDB5 Library DLL\0"
       VALUE "FileVersion", sversion(11,46,0)
       VALUE "InternalName", "libmonetdb5\0"
-      VALUE "LegalCopyright", "Copyright (c) MonetDB B.V. 2008-2022\0"
+      VALUE "LegalCopyright", "Copyright (c) MonetDB B.V. 2008-2023\0"
       VALUE "LegalTrademarks", "\0"
       VALUE "OriginalFilename", "libmonetdb5.dll\0"
       VALUE "PrivateBuild", "\0"
