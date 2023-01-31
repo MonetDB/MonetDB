@@ -357,6 +357,8 @@ subtype_cmp(sql_subtype *t1, sql_subtype *t2)
 	switch (t1->type->eclass) {
 		case EC_SEC:
 		case EC_MONTH:
+			if (t1->digits != t2->digits)
+				return -1;
 			return 0;
 		case EC_NUM:
 			break;
