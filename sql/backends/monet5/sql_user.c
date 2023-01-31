@@ -255,7 +255,7 @@ execPostLoginTriggers(Client c) {
 					const char *stmt = store->table_api.column_find_value(tr, stmtCol, rid);
 					if ((err = SQLstatementIntern(c, stmt, "sql.init", TRUE, FALSE, NULL))) {
 						(void) sql_error(m, 02, SQLSTATE(42000) "%s", err);
-						// TODO push err up?
+						freeException(err);
 						res = LOG_ERR;
 					};
 				}
