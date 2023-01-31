@@ -47,7 +47,8 @@ static MT_RWLock rt_lock = MT_RWLOCK_INITIALIZER(rt_lock);
 static AUTHCallbackCntx authCallbackCntx = {
 	.get_user_name = NULL,
 	.get_user_password = NULL,
-	.get_user_oid = NULL
+	.get_user_oid = NULL,
+	.exec_post_login_triggers = NULL
 };
 
 static str AUTHdeleteRemoteTableCredentialsLocked(const char *local_table);
@@ -919,8 +920,28 @@ AUTHRegisterGetUserOIDHandler(get_user_oid_handler callback)
 	return MAL_SUCCEED;
 }
 
+
 str
 AUTHGeneratePasswordHash(str *res, const char *value)
 {
 	return AUTHcypherValue(res, value);
+}
+
+
+str
+AUTHRegisterPostLoginTriggersHandler(post_login_triggers_handler callback)
+{
+	authCallbackCntx.exec_post_login_triggers = callback;
+	return MAL_SUCCEED;
+}
+
+
+str
+AUTHexecPostLoginTriggers(Client c)
+{
+	if ( c && authCallbackCntx.exec_post_login_triggers) {
+		// TODO check for err
+		authCallbackCntx.exec_post_login_triggers(c);
+	}
+	return MAL_SUCCEED;
 }
