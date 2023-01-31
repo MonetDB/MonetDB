@@ -939,9 +939,9 @@ AUTHRegisterPostLoginTriggersHandler(post_login_triggers_handler callback)
 str
 AUTHexecPostLoginTriggers(Client c)
 {
-	if ( c && authCallbackCntx.exec_post_login_triggers) {
-		// TODO check for err
-		authCallbackCntx.exec_post_login_triggers(c);
+	if (c && authCallbackCntx.exec_post_login_triggers) {
+		if (authCallbackCntx.exec_post_login_triggers(c) < 0)
+			throw(MAL, "AUTHexecPostLoginTriggers", OPERATION_FAILED);
 	}
 	return MAL_SUCCEED;
 }
