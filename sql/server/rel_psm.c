@@ -1315,6 +1315,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 			}	break;
 			case SQL_LOGIN:
 				// TODO any checks here?
+				event = LOGIN_EVENT;
 				break;
 			default:
 				return sql_error(sql, 02, SQLSTATE(42000) "%s: invalid event: %s", base, token2string(trigger_event->token));

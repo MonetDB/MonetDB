@@ -194,6 +194,14 @@ typedef enum {
 	endian_native = 3,
 } endianness;
 
+typedef enum trigger_event {
+	INSERT_EVENT,
+	DELETE_EVENT,
+	UPDATE_EVENT,
+	TRUNCATE_EVENT,
+	LOGIN_EVENT
+} trigger_event;
+
 #ifdef WORDS_BIGENDIAN
 #define OUR_ENDIANNESS endian_big
 #else

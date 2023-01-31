@@ -102,6 +102,7 @@ typedef struct table_functions {
 	column_find_value_fptr column_find_value;
 	column_find_sqlid_fptr column_find_sqlid;
 	column_find_bte_fptr column_find_bte;
+	column_find_sht_fptr column_find_sht;
 	column_find_int_fptr column_find_int;
 	column_find_lng_fptr column_find_lng;
 	column_find_string_start_fptr column_find_string_start; /* this function returns a pointer to the heap, use it with care! */
