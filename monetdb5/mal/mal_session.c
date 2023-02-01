@@ -337,13 +337,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 				cleanUpScheduleClient(c, scenario, fin, fout, &command, &msg);
 				return;
 			}
-			// post login triggers if any
-			if ((msg=AUTHexecPostLoginTriggers(c)) != MAL_SUCCEED) {
-				mnstr_printf(fout, "!%s\n", msg);
-				cleanUpScheduleClient(c, scenario, fin, fout, &command, &msg);
-				freeException(msg);
-				return;
-			}
 			cleanUpScheduleClient(c, scenario, NULL, NULL, NULL, NULL);
 		}
 

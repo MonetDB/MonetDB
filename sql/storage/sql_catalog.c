@@ -615,3 +615,11 @@ atom_copy(sql_allocator *sa, atom *a)
 		SA_VALcopy(sa, &r->data, &a->data);
 	return r;
 }
+
+
+sql_table*
+find_sys_table(sql_trans *tr, const char* tbl_name)
+{
+	sql_schema *sys = find_sql_schema(tr, "sys");
+	return find_sql_table(tr, sys, tbl_name);
+}

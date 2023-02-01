@@ -28,15 +28,6 @@
 
 
 static inline sql_table*
-getSysTbl(mvc *m, const char* tbl_name)
-{
-	sql_trans *tr = m->session->tr;
-	sql_schema *sys = find_sql_schema(tr, "sys");
-	return find_sql_table(tr, sys, tbl_name);
-}
-
-
-static inline sql_table*
 getUsersTbl(mvc *m)
 {
 	sql_trans *tr = m->session->tr;
@@ -231,42 +222,6 @@ getUserOIDCallback(Client c, const char *user)
 	return oid_nil;
 }
 
-static int
-execPostLoginTriggers(Client c) {
-	int res = LOG_OK;
-	char *err = NULL;
-	backend *be = (backend *) c->sqlcontext;
-	if (be) {
-		mvc *m = be->mvc;
-		sql_table *triggers = getSysTbl(m, TRIGGERS_TABLE_NAME);
-		sql_trans *tr = m->session->tr;
-		int active = tr->active;
-		if (active || mvc_trans(m) == 0) {
-			sqlstore *store = tr->store;
-			sql_column *eventCol = find_sql_column(triggers, "event");
-			sql_column *timeCol = find_sql_column(triggers, "time");
-			sql_column *stmtCol = find_sql_column(triggers, "statement");
-			rids *rs = store->table_api.rids_select(tr, eventCol, NULL, NULL);
-			for (oid rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
-				const int event = (int) store->table_api.column_find_sht(tr, eventCol, rid);
-				const int time = (int) store->table_api.column_find_sht(tr, timeCol, rid);
-				bool after = time == 1;
-				if ((event == LOGIN_EVENT) && after) {
-					const char *stmt = store->table_api.column_find_value(tr, stmtCol, rid);
-					if ((err = SQLstatementIntern(c, stmt, "sql.init", TRUE, FALSE, NULL))) {
-						(void) sql_error(m, 02, SQLSTATE(42000) "%s", err);
-						freeException(err);
-						res = LOG_ERR;
-					};
-				}
-			}
-			if (!active)
-				sql_trans_end(m->session, SQL_OK);
-		}
-	}
-	return res;
-}
-
 
 static void
 monet5_set_user_api_hooks(ptr mvc)
@@ -275,7 +230,6 @@ monet5_set_user_api_hooks(ptr mvc)
 	AUTHRegisterGetPasswordHandler(&getUserPasswordCallback);
 	AUTHRegisterGetUserNameHandler(&getUserNameCallback);
 	AUTHRegisterGetUserOIDHandler(&getUserOIDCallback);
-	AUTHRegisterPostLoginTriggersHandler(&execPostLoginTriggers);
 }
 
 

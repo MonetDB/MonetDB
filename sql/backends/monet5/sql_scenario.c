@@ -223,6 +223,44 @@ SQLepilogue(void *ret)
 	return MAL_SUCCEED;
 }
 
+
+static int
+SQLexecPostLoginTriggers(Client c) {
+	int res = LOG_OK;
+	char *err = NULL;
+	backend *be = (backend *) c->sqlcontext;
+	if (be) {
+		mvc *m = be->mvc;
+		sql_trans *tr = m->session->tr;
+		int active = tr->active;
+		if (active || mvc_trans(m) == 0) {
+			sqlstore *store = tr->store;
+			sql_table *triggers = find_sys_table(tr, TRIGGERS_TABLE_NAME);
+			sql_column *eventCol = find_sql_column(triggers, "event");
+			sql_column *timeCol = find_sql_column(triggers, "time");
+			sql_column *stmtCol = find_sql_column(triggers, "statement");
+			rids *rs = store->table_api.rids_select(tr, eventCol, NULL, NULL);
+			for (oid rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
+				const int event = (int) store->table_api.column_find_sht(tr, eventCol, rid);
+				const int time = (int) store->table_api.column_find_sht(tr, timeCol, rid);
+				bool after = time == 1;
+				if ((event == LOGIN_EVENT) && after) {
+					const char *stmt = store->table_api.column_find_value(tr, stmtCol, rid);
+					if ((err = SQLstatementIntern(c, stmt, "sql.init", TRUE, FALSE, NULL))) {
+						(void) sql_error(m, 02, SQLSTATE(42000) "%s", err);
+						freeException(err);
+						res = LOG_ERR;
+					};
+				}
+			}
+			if (!active)
+				sql_trans_end(m->session, SQL_OK);
+		}
+	}
+	return res;
+}
+
+
 static char*
 SQLprepareClient(Client c, int login)
 {
@@ -275,6 +313,7 @@ SQLprepareClient(Client c, int login)
 			c->qryctx.maxmem = (ATOMIC_BASE_TYPE) (maxmem > 0 ? maxmem : 0);
 		else
 			c->qryctx.maxmem = 0;
+
 	}
 
 	if (c->handshake_options) {
@@ -672,7 +711,11 @@ SQLinitClient(Client c)
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinitClient", SQLSTATE(42000) "Catalogue not available");
 	}
-	msg = SQLprepareClient(c, true);
+	if ((msg = SQLprepareClient(c, true)) == MAL_SUCCEED) {
+		if (SQLexecPostLoginTriggers(c) < 0) {
+			throw(SQL, "SQLinitClient", SQLSTATE(42000) "Failed to execute post login triggers");
+		}
+	}
 	MT_lock_unset(&sql_contextLock);
 	return msg;
 }
