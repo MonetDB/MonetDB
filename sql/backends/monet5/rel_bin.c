@@ -1244,7 +1244,12 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		}
 		if (!l)
 			return NULL;
-		s = stmt_convert(be, l, (!push&&l->nrcols==0)?NULL:sel, from, to);
+		if (from->type->eclass == EC_SEC && to->type->eclass == EC_SEC) {
+			// trivial conversion because EC_SEC is always in milliseconds
+			s = l;
+		} else {
+			s = stmt_convert(be, l, (!push&&l->nrcols==0)?NULL:sel, from, to);
+		}
 	} 	break;
 	case e_func: {
 		node *en;
