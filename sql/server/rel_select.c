@@ -554,13 +554,13 @@ file_loader_add_table_column_types(sql_subfunc *f, sql_allocator *sa, sql_exp *e
 	}
 
 	/* below stuff needs to be in the parquet backend code */
-//#include "../backends/monet5/vaults/parquet/parquet.h"
+	// #include "../backends/monet5/vaults/parquet/parquet.h"
 
-//	parquet_file *file = open_file(filename);
+	// parquet_file *file = parquet_open_file(filename);
 
-//	if(file->error) {
-//		return file->error;
-//	}
+// 	if(file->error) {
+// 		return file->error;
+// 	}
 
 //	get_table_metadata(file);
 
