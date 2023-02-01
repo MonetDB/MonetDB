@@ -134,6 +134,7 @@ target_sources(sql
   rel_copy.c rel_copy.h
   rel_physical.c rel_physical.h
   rel_predicates.c rel_predicates.h
+  bin_partition.c bin_partition.h
   sql_cat.c sql_cat.h
   sql_transaction.c sql_transaction.h
   sql_statement.c sql_statement.h

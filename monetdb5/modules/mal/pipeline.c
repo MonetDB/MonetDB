@@ -121,25 +121,6 @@ ma_copy( mallocator *ma, const void *s, int l )
 }
 
 
-static void
-BATnegateprops(BAT *b)
-{
-	/* disable all properties here */
-	b->tnonil = false;
-	b->tnil = false;
-	if (b->ttype) {
-		b->tsorted = false;
-		b->trevsorted = false;
-		b->tnosorted = 0;
-		b->tnorevsorted = 0;
-	}
-	b->tseqbase = oid_nil;
-	b->tkey = false;
-	b->tnokey[0] = 0;
-	b->tnokey[1] = 0;
-	b->tmaxpos = b->tminpos = BUN_NONE;
-}
-
 #define pipeline_lock(p) MT_lock_set(&p->p->l)
 #define pipeline_unlock(p) MT_lock_unset(&p->p->l)
 

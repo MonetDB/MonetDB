@@ -15,26 +15,6 @@
 #include "mal_pipelines.h"
 #include "algebra.h"
 
-/* todo move into GDK ! */
-static void
-BATnegateprops(BAT *b)
-{
-    /* disable all properties here */
-    b->tnonil = false;
-    b->tnil = false;
-    if (b->ttype) {
-        b->tsorted = false;
-        b->trevsorted = false;
-        b->tnosorted = 0;
-        b->tnorevsorted = 0;
-    }
-    b->tseqbase = oid_nil;
-    b->tkey = false;
-    b->tnokey[0] = 0;
-    b->tnokey[1] = 0;
-    b->tmaxpos = b->tminpos = BUN_NONE;
-}
-
 #define pipeline_lock(p) MT_lock_set(&p->p->l)
 #define pipeline_unlock(p) MT_lock_unset(&p->p->l)
 
@@ -87,9 +67,8 @@ typedef struct heapn {
 	struct subheap *sub;	/* for multi attribute topn, next value array and function ptrs */
 } heapn;
 
-extern heapn *heapn_create( int size, bool shared);
-extern heapn *heapn_subheap( heapn *hp, int type, bool min /* or max */, bool nulls_last);
-extern heapn *heapn_done( heapn *hp ); /* done creating subheaps */
+static heapn *heapn_create( int size, bool shared);
+static heapn *heapn_done( heapn *hp ); /* done creating subheaps */
 
 static heapn *_heap_create( int size, bool shared );
 static subheap *subheap_create( heapn *hp, int type, bool min /* or max */, bool nulls_last);
@@ -983,20 +962,13 @@ subheap_create( heapn *hp, int type, bool min /* or max */, bool nulls_last)
 	return sh;
 }
 
-heapn *
+static heapn *
 heapn_create( int size, bool shared )
 {
 	return _heap_create( size, shared);
 }
 
-heapn *
-heapn_subheap( heapn *hp, int type, bool min /* or max */, bool nulls_last)
-{
-	(void)subheap_create(hp, type, min, nulls_last);
-	return hp;
-}
-
-heapn *
+static heapn *
 heapn_done( heapn *hp )
 {
 	/* should only be called once all subheaps are added */

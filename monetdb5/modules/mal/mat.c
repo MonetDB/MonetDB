@@ -33,6 +33,22 @@
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 
+#define PART_SINK 4
+#define MAT_SINK 5
+
+typedef struct mat_t {
+	Sink s;
+	int nr;
+	BAT **bat;
+} mat_t;
+
+typedef struct part_t {
+	Sink s;
+	int nr;
+	lng *curpos;
+	MT_Lock l;
+} part_t;
+
 /*
  * The pack is an ordinary multi BAT insert. Oid synchronistion
  * between pieces should be ensured by the code generators.
@@ -43,12 +59,33 @@
  * Contrary to most operations, NIL arguments are skipped and
  * do not produce RUNTIME_OBJECT_MISSING.
  */
+static BAT *
+pack_mat(BAT *b)
+{
+	printf("pack mat\n");
+	mat_t *mp = (mat_t*)b->T.sink;
+	BUN cap = 0;
+
+	for (int i = 0; i<mp->nr; i++)
+		cap += BATcount(mp->bat[i]);
+	BAT *bn = COLnew(0, b->ttype, cap, TRANSIENT);
+	if (!bn)
+		return NULL;
+	for (int i = 0; i<mp->nr; i++) {
+		if (BATappend(bn, mp->bat[i], NULL, false) != GDK_SUCCEED) {
+			BBPunfix(bn->batCacheid);
+			return NULL;
+		}
+	}
+	return bn;
+}
+
 static str
 MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i;
 	bat *ret = getArgReference_bat(stk,p,0);
-	BAT *b, *bn;
+	BAT *b, *bn = NULL;
 	BUN cap = 0;
 	int tt = TYPE_any;
 	int rt = getArgType(mb, p, 0), unmask = 0;
@@ -57,6 +94,16 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = 1; i < p->argc; i++) {
 		bat bid = stk->stk[getArg(p,i)].val.bval;
 		b = BBPquickdesc(bid);
+		mat_t *mp = (mat_t*)b->T.sink;
+		if (mp && mp->s.type == MAT_SINK) {
+			bn = pack_mat(b);
+			if (bn == NULL)
+				throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			*ret = bn->batCacheid;
+			BBPkeepref(bn);
+			return MAL_SUCCEED;
+		}
+
 		if( b ){
 			if (tt == TYPE_any)
 				tt = b->ttype;
@@ -250,6 +297,276 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	throw(MAL, "mat.pack", GDK_EXCEPTION);
 }
 
+static void
+mat_destroy( mat_t *m )
+{
+	for(int i = 0; i<m->nr; i++) {
+		if (m->bat[i])
+			BBPunfix(m->bat[i]->batCacheid);
+	}
+	GDKfree(m->bat);
+	GDKfree(m);
+}
+
+static void
+part_destroy( part_t *p )
+{
+	GDKfree(p->curpos);
+	GDKfree(p);
+}
+
+static str
+MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void)cntxt;
+	bat *mid = getArgReference_bat(stk, p, 0);
+	int tt = getArgType(mb, p, 1);
+	int nr = *getArgReference_int(stk, p, 2);
+
+	mat_t *mat = (mat_t*)GDKmalloc(sizeof(mat_t));
+
+	if (mat) {
+		mat->nr = nr;
+		mat->bat = (BAT**)GDKzalloc(nr * sizeof(BAT*));
+		if (!mat->bat)
+			mat = NULL;
+		mat->s.destroy = (sink_destroy)&mat_destroy;
+		mat->s.type = MAT_SINK;
+	}
+	BAT *matb = COLnew(0, tt, 100000 /* need estimate? */, TRANSIENT);
+	if (!matb || !mat) {
+		GDKfree(mat);
+		throw(MAL, "mat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	BATnegateprops(matb);
+	int i = 0;
+	for (i = 0; i<mat->nr; i++ ) {
+		BAT *b = COLnew(0, tt, 100000 /* need estimate? */, TRANSIENT);
+		mat->bat[i] = b;
+		if (!b)
+			break;
+		BATnegateprops(b);
+	}
+	if (i < mat->nr) {
+		mat_destroy(mat);
+		throw(MAL, "mat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	matb->T.sink = (Sink*)mat;
+	*mid = matb->batCacheid;
+	BBPkeepref(matb);
+	return MAL_SUCCEED;
+}
+
+static str
+PARTnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void)cntxt;
+	(void)mb;
+	bat *pid = getArgReference_bat(stk, p, 0);
+	int nr = *getArgReference_int(stk, p, 1);
+
+	part_t *part = (part_t*)GDKmalloc(sizeof(part_t));
+
+	if (part) {
+		part->nr = nr;
+		part->curpos = (lng*)GDKzalloc(nr * sizeof(lng));
+		MT_lock_init(&part->l, "partition");
+		if (!part->curpos)
+			part = NULL;
+		part->s.destroy = (sink_destroy)&part_destroy;
+		part->s.type = PART_SINK;
+	}
+	BAT *partb = COLnew(0, TYPE_oid, 100000 /* need estimate? */, TRANSIENT);
+	if (!partb || !part) {
+		GDKfree(part);
+		throw(MAL, "part.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	partb->T.sink = (Sink*)part;
+	*pid = partb->batCacheid;
+	BBPkeepref(partb);
+	return MAL_SUCCEED;
+}
+
+static str
+PARTprefixsum( bat *pos, const bat *gid, lng *max )
+{
+	BAT *g = BATdescriptor(*gid);
+	if (!g)
+		throw(MAL, "part.prefixsum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+
+	BUN n = 0, i;
+
+	/* get max from gid */
+	/*
+	if (!BATmax(g, &n))
+		throw(MAL, "part.prefixsum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		*/
+	n = *max;
+	BAT *p = COLnew(0, TYPE_lng, n, TRANSIENT);
+	if (!p) {
+		BBPunfix(g->batCacheid);
+		throw(MAL, "part.prefixsum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	lng *cnts = (lng*)Tloc(p, 0);
+	for(i=0; i<n; i++)
+		cnts[i]=0;
+	BATsetcount(p, n);
+
+	n = BATcount(g);
+	lng *id = (lng*)Tloc(g, 0);
+	for(i=0; i<n; i++)
+		cnts[id[i]]++;
+	*pos = p->batCacheid;
+	BBPunfix(g->batCacheid);
+	BBPkeepref(p);
+	return MAL_SUCCEED;
+}
+
+static str
+PARTpartition( bat *pos, const bat *part, const bat *glen )
+{
+	BAT *p = BATdescriptor(*part);
+	BAT *g = BATdescriptor(*glen);
+	if (!p || !g) {
+		if (p) BBPunfix(p->batCacheid);
+		throw(MAL, "part.partition", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	part_t *pt = (part_t*)p->T.sink;
+	assert(pt->s.type == PART_SINK);
+	assert(pt->nr == (int)BATcount(g));
+	BAT *posb = COLnew(0, TYPE_lng, pt->nr, TRANSIENT);
+	if (!posb) {
+		BBPunfix(p->batCacheid);
+		BBPunfix(g->batCacheid);
+		throw(MAL, "part.partition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	lng *pp = (lng*)Tloc(posb, 0);
+	lng *gp = (lng*)Tloc(g, 0);
+	MT_lock_set(&pt->l);
+	for(int i = 0; i < pt->nr; i++) {
+		pp[i] = pt->curpos[i];
+		pt->curpos[i] += gp[i];
+	}
+	MT_lock_unset(&pt->l);
+	BATsetcount(posb, pt->nr);
+	*pos = posb->batCacheid;
+	BBPunfix(p->batCacheid);
+	BBPunfix(g->batCacheid);
+	BBPkeepref(posb);
+	return MAL_SUCCEED;
+}
+
+#define mat_project(T)										\
+		{													\
+			int rc = GDK_SUCCEED;							\
+			T **cp = (T**)GDKzalloc(mt->nr * sizeof(T*));	\
+			for(int i = 0; i<mt->nr; i++) {					\
+				if (BATcapacity(mt->bat[i]) < (BUN)(curpos[i]+lp[i]))	\
+					rc = BATextend(mt->bat[i], curpos[i]+lp[i]);		\
+				if (rc != GDK_SUCCEED)						\
+					break;									\
+				if (BATcount(mt->bat[i]) < (BUN)(curpos[i]+lp[i]))		\
+					BATsetcount(mt->bat[i], curpos[i]+lp[i]);			\
+				cp[i] = (T*)Tloc(mt->bat[i], 0);			\
+			}												\
+			if (cp && rc == GDK_SUCCEED) {					\
+				T *dp = (T*)Tloc(d, 0);						\
+				for(BUN i = 0; i<BATcount(d); i++) { 		\
+					int g = grp[i];							\
+					cp[g][curpos[g]] = dp[i];				\
+					curpos[g]++;							\
+			    }											\
+			}												\
+			GDKfree(cp);									\
+		}													\
+		break
+
+static str
+MATproject( bat *mat, const bat *pos, const bat *lid, const bat *gid, const bat *data )
+{
+	BAT *m = BATdescriptor(*mat);
+	BAT *p = BATdescriptor(*pos);
+	BAT *l = BATdescriptor(*lid);
+	BAT *g = BATdescriptor(*gid);
+	BAT *d = BATdescriptor(*data);
+	if (!m || !p || !l || !g || !d) {
+		if (m) BBPunfix(m->batCacheid);
+		if (p) BBPunfix(p->batCacheid);
+		if (l) BBPunfix(l->batCacheid);
+		if (g) BBPunfix(g->batCacheid);
+		throw(MAL, "mat.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	lng *curpos = (lng*)Tloc(p, 0);
+	lng *lp = (lng*)Tloc(l, 0);
+	lng *grp = (lng*)Tloc(g, 0);
+	mat_t *mt = (mat_t*)m->T.sink;
+	assert(mt->s.type == MAT_SINK);
+	assert(mt->nr == (int)BATcount(p));
+	assert(mt->nr == (int)BATcount(l));
+	assert(BATcount(g) == BATcount(d));
+
+	MT_lock_set(&m->theaplock);
+	switch(d->twidth) {
+	case 1:
+		mat_project(bte);
+	case 2:
+		mat_project(sht);
+	case 4:
+		mat_project(int);
+	case 8:
+		mat_project(lng);
+#ifdef HAVE_HGE
+	case 16:
+		mat_project(hge);
+#endif
+	default:
+		printf("error\n");
+	}
+	MT_lock_unset(&m->theaplock);
+	BBPkeepref(m);
+	BBPunfix(p->batCacheid);
+	BBPunfix(l->batCacheid);
+	BBPunfix(g->batCacheid);
+	BBPunfix(d->batCacheid);
+	return MAL_SUCCEED;
+}
+
+static str
+MATfetch( bat *res, const bat *mat, const int *i )
+{
+	BAT *m = BATdescriptor(*mat);
+	if (!m)
+		throw(MAL, "mat.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	mat_t *mt = (mat_t*)m->T.sink;
+	assert(mt->s.type == MAT_SINK);
+	assert(*i < mt->nr);
+	BAT *b = mt->bat[*i];
+	BBPunfix(m->batCacheid);
+	BBPretain(*res = b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+static str
+MATadd( bat *mat, const bat *bid, const int *i )
+{
+	BAT *b = BATdescriptor(*bid);
+	BAT *m = BATdescriptor(*mat);
+	if (!b || !m) {
+		if (b) BBPunfix(b->batCacheid);
+		throw(MAL, "mat.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	mat_t *mt = (mat_t*)m->T.sink;
+	assert(mt->s.type == MAT_SINK);
+	assert(*i < mt->nr);
+	if (mt->bat[*i])
+		BBPunfix(mt->bat[*i]->batCacheid);
+	mt->bat[*i] = b;
+	BBPkeepref(m);
+	return MAL_SUCCEED;
+}
+
 #include "mel.h"
 mel_func mat_init_funcs[] = {
  pattern("mat", "new", MATpack, false, "Define a Merge Association Table (MAT). Fall back to the pack operation\nwhen this is called ", args(1,2, batargany("",2),batvarargany("b",2))),
@@ -258,6 +575,13 @@ mel_func mat_init_funcs[] = {
  pattern("mat", "pack", MATpack, false, "Materialize the MAT into a BAT", args(1,2, batargany("",2),batvarargany("b",2))),
  pattern("mat", "packIncrement", MATpackIncrement, false, "Prepare incremental mat pack", args(1,3, batargany("",2),batargany("b",2),arg("pieces",int))),
  pattern("mat", "packIncrement", MATpackIncrement, false, "Prepare incremental mat pack", args(1,3, batargany("",2),batargany("b",2),batargany("c",2))),
+ pattern("mat", "new", MATnew, false, "Create mat for partitioning", args(1,3, batargany("mat",1),argany("tt",1),arg("nr",int))),
+ pattern("part", "new", PARTnew, false, "Create part for partitioning", args(1,2, batarg("mat",oid),arg("nr",int))),
+ command("part", "prefixsum", PARTprefixsum, false, "Count per group id", args(1,3, batarg("pos",lng),batarg("gid",lng),arg("max",lng))),
+ command("part", "partition", PARTpartition, false, "Claim result positions for the given group lengths, returns first pos of each group", args(1,3, batarg("pos",lng),batarg("part",oid),batarg("grouplen",lng))),
+ command("mat", "project", MATproject, false, "project over the partitions", args(1,5, batargany("mat",1),batarg("pos",lng), batarg("lid", lng), batarg("gid", lng), batargany("data",1))),
+ command("mat", "fetch", MATfetch, false, "return i-th bat from mat", args(1,3, batargany("res",1),batargany("mat",1), arg("i", int))),
+ command("mat", "add", MATadd, false, "add i-th bat to mat", args(1,3, batargany("mat",1),batargany("b",1), arg("i", int))),
  { .imp=NULL }
 };
 #include "mal_import.h"

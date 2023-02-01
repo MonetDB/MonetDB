@@ -148,6 +148,8 @@ extern int stmt_key(stmt *s);
 
 extern InstrPtr stmt_bat_new(backend *be, int tt, lng estimate);
 extern InstrPtr stmt_hash_new(backend *be, int tt, lng estimate, int parent);
+extern InstrPtr stmt_part_new(backend *be, int nr_parts);
+extern InstrPtr stmt_mat_new(backend *be, int tt, int nr_parts);
 
 extern stmt *stmt_none(backend *be);
 
@@ -279,6 +281,8 @@ extern const char *schema_name(sql_allocator *sa, stmt *st);
 
 extern stmt *const_column(backend *ba, stmt *val);
 extern stmt *stmt_fetch(backend *ba, stmt *val);
+extern stmt *stmt_rename(backend *ba, sql_exp *e, stmt *s);
+extern stmt *stmt_instruction(backend *ba, InstrPtr p, stmt *s);
 
 extern stmt *pp_create(backend *ba, int nrparts); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */
 extern stmt *pp_dynamic(backend *ba, int input); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */

@@ -25,22 +25,6 @@ get_newcolumn(sql_trans *tr, sql_column *c)
 }
 
 static void
-BATnegateprops(BAT *b)
-{
-	/* disable all properties here */
-	b->tnonil = false;
-	b->tnil = false;
-	b->tsorted = false;
-	b->trevsorted = false;
-	b->tnosorted = 0;
-	b->tnorevsorted = 0;
-	b->tseqbase = oid_nil;
-	b->tkey = false;
-	b->tnokey[0] = 0;
-	b->tnokey[1] = 0;
-}
-
-static void
 BATmaxminpos_bte(BAT *o, bte m)
 {
 	BUN minpos = BUN_NONE, maxpos = BUN_NONE, p, q;

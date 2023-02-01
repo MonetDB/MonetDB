@@ -377,6 +377,33 @@ stmt_hash_new(backend *be, int tt, lng estimate, int parent)
 	return q;
 }
 
+InstrPtr
+stmt_part_new(backend *be, int nr_parts)
+{
+	InstrPtr q = newStmt(be->mb, putName("part"), newRef);
+
+	if (q == NULL)
+		//return -1;
+		return NULL;
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
+	q = pushInt(be->mb, q, nr_parts);
+	return q;
+}
+
+InstrPtr
+stmt_mat_new(backend *be, int tt, int nr_parts)
+{
+	InstrPtr q = newStmt(be->mb, putName("mat"), newRef);
+
+	if (q == NULL)
+		//return -1;
+		return NULL;
+	setVarType(be->mb, getArg(q, 0), newBatType(tt));
+	q = pushType(be->mb, q, tt);
+	q = pushInt(be->mb, q, nr_parts);
+	return q;
+}
+
 static int *
 dump_table(sql_allocator *sa, backend *be, sql_table *t)
 {
@@ -4687,6 +4714,41 @@ stmt_fetch(backend *be, stmt *val)
 	return NULL;
 }
 
+stmt *
+stmt_rename(backend *be, sql_exp *exp, stmt *s )
+{
+	const char *name = exp_name(exp);
+	const char *rname = exp_relname(exp);
+	stmt *o = s;
+
+	if (!name && exp_is_atom(exp))
+		name = sa_strdup(be->mvc->sa, "single_value");
+	assert(name);
+	s = stmt_alias(be, s, rname, name);
+	if (o->flag & OUTER_ZERO)
+		s->flag |= OUTER_ZERO;
+	return s;
+}
+
+stmt *
+stmt_instruction(backend *be, InstrPtr p, stmt *op1 )
+{
+	stmt *s = stmt_create(be->mvc->sa, st_alias);
+	if(!s) {
+		return NULL;
+	}
+	s->op1 = op1;
+	s->nrcols = op1->nrcols;
+	s->key = op1->key;
+	s->aggr = op1->aggr;
+
+	s->tname = op1->tname;
+	s->cname = op1->cname;
+	s->nr = getArg(p, 0);
+	s->q = p;
+	return s;
+}
+
 static stmt *
 pp_create_nrparts_or_dynamic(backend *be, int nrparts, int input)
 {
@@ -4868,3 +4930,4 @@ pp_end(backend *be, stmt *label)
 		return 0;
 	return -1;
 }
+

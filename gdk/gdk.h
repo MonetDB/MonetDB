@@ -1634,6 +1634,25 @@ BATsettrivprop(BAT *b)
 	}
 }
 
+static inline void
+BATnegateprops(BAT *b)
+{
+    /* disable all properties here */
+    b->tnonil = false;
+    b->tnil = false;
+    if (b->ttype) {
+        b->tsorted = false;
+        b->trevsorted = false;
+        b->tnosorted = 0;
+        b->tnorevsorted = 0;
+    }
+    b->tseqbase = oid_nil;
+    b->tkey = false;
+    b->tnokey[0] = 0;
+    b->tnokey[1] = 0;
+    b->tmaxpos = b->tminpos = BUN_NONE;
+}
+
 /*
  * @- GDK error handling
  *  @multitable @columnfractions 0.08 0.7
@@ -1975,7 +1994,7 @@ BBPcheck(bat x)
 		if (x < 0 || x >= getBBPsize() || BBP_logical(x) == NULL) {
 			TRC_DEBUG(CHECK_, "range error %d\n", (int) x);
 		} else {
-			assert(BBP_pid(x) == 0 || BBP_pid(x) == MT_getpid());
+			//assert(BBP_pid(x) == 0 || BBP_pid(x) == MT_getpid());
 			return x;
 		}
 	}

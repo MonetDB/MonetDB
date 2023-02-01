@@ -129,7 +129,7 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 		list *aexps = new_exp_list(sql->sa); /* alias list */
 		node *m, *n;
 
-		if (list_empty(rel->r) || mvc_debug_on(sql, 64))
+		if (/*list_empty(rel->r) ||*/ mvc_debug_on(sql, 64))
 			return rel;
 
 		/* Find all avg's */
@@ -163,75 +163,73 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 			sql_exp *sum = rel_find_aggr_exp(sql, rel, nexps, avg, "sum");
 			sql_subfunc *div, *ifthen, *cmp;
 			const char *rname = NULL, *name = NULL;
+			list *l = avg->l;
+			sql_subtype *avg_input_t = exp_subtype(l->h->data);
 
 			rname = exp_relname(avg);
 			name = exp_name(avg);
+
+			/* create nsum/cnt exp */
 			if (!cnt) {
-				list *l = avg->l;
-				sql_subfunc *cf = sql_bind_func_(sql, "sys", "count", append(sa_list(sql->sa),exp_subtype(l->h->data)), F_AGGR, false);
+				sql_subfunc *cf = sql_bind_func_(sql, "sys", "count", append(sa_list(sql->sa), avg_input_t), F_AGGR, false);
 				sql_exp *e = exp_aggr(sql->sa, list_dup(avg->l, (fdup)NULL), cf, need_distinct(avg), need_no_nil(avg), avg->card, has_nil(avg));
 
-				//exp_label(sql->sa, e, ++sql->label);
 				append(nexps, e);
 				cnt = exp_ref(sql, e);
 			}
 			if (!sum) {
-				list *l = avg->l;
-				sql_subfunc *sf = sql_bind_func_(sql, "sys", "sum", append(sa_list(sql->sa), exp_subtype(l->h->data)), F_AGGR, false);
+				sql_subfunc *sf = sql_bind_func_(sql, "sys", "sum", append(sa_list(sql->sa), avg_input_t), F_AGGR, false);
 				sql_exp *e = exp_aggr(sql->sa, list_dup(avg->l, (fdup)NULL), sf, need_distinct(avg), need_no_nil(avg), avg->card, has_nil(avg));
 
-				//exp_label(sql->sa, e, ++sql->label);
 				append(nexps, e);
 				sum = exp_ref(sql, e);
 			}
-			/* create new sum/cnt exp */
-
 			cnt_d = cnt;
 
 			sql_subtype *avg_t = exp_subtype(avg);
 			sql_subtype *dbl_t = sql_bind_localtype("dbl");
 			if (subtype_cmp(avg_t, dbl_t) == 0 || EC_INTERVAL(avg_t->type->eclass)) {
+				/* check for count = 0 (or move into funcs) */
+				args = new_exp_list(sql->sa);
+				append(args, cnt);
+				append(args, exp_atom_lng(sql->sa, 0));
+				cmp = find_func(sql, "=", args);
+				assert(cmp);
+				cond = exp_op(sql->sa, args, cmp);
 
-			args = new_exp_list(sql->sa);
-			append(args, cnt);
-			append(args, exp_atom_lng(sql->sa, 0));
-			cmp = find_func(sql, "=", args);
-			assert(cmp);
-			cond = exp_op(sql->sa, args, cmp);
+				args = new_exp_list(sql->sa);
+				append(args, cond);
+				append(args, exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(cnt_d), NULL)));
+				/* TODO only ifthenelse if value column may have nil's*/
+				append(args, cnt_d);
+				ifthen = find_func(sql, "ifthenelse", args);
+				assert(ifthen);
+				cnt_d = exp_op(sql->sa, args, ifthen);
 
-			args = new_exp_list(sql->sa);
-			append(args, cond);
-			append(args, exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(cnt_d), NULL)));
-			/* TODO only ifthenelse if value column may have nil's*/
-			append(args, cnt_d);
-			ifthen = find_func(sql, "ifthenelse", args);
-			assert(ifthen);
-			cnt_d = exp_op(sql->sa, args, ifthen);
-
-			if (subtype_cmp(avg_t, dbl_t) == 0) {
-				cnt_d = exp_convert(sql->sa, cnt, exp_subtype(cnt), dbl_t);
-				sum = exp_convert(sql->sa, sum, exp_subtype(sum), dbl_t);
-			}
-
-			args = new_exp_list(sql->sa);
-
-			sql_subtype *st = exp_subtype(sum);
-			sql_subtype *ct = exp_subtype(cnt_d);
-			/* convert sum flt -> dbl */
-			if (st->type->eclass == EC_FLT && ct->type->eclass == EC_FLT && st->type->localtype < ct->type->localtype) {
-				sum = exp_convert(sql->sa, sum, st, ct);
-			} else if (st->type->eclass == EC_FLT) {
-				if (ct->type != st->type) {
-					sql_subtype *dbl_t = sql_bind_localtype("dbl");
-					if (ct->type->eclass != EC_FLT || st->type == dbl_t->type)
-						cnt_d = exp_convert(sql->sa, cnt_d, exp_subtype(cnt_d), st);
+				if (subtype_cmp(avg_t, dbl_t) == 0) {
+					cnt_d = exp_convert(sql->sa, cnt, exp_subtype(cnt), dbl_t);
+					sum = exp_convert(sql->sa, sum, exp_subtype(sum), dbl_t);
 				}
-			}
-			append(args, sum);
-			append(args, cnt_d);
-			div = find_func(sql, "sql_div", args);
-			assert(div);
-			navg = exp_op(sql->sa, args, div);
+
+				args = new_exp_list(sql->sa);
+
+				sql_subtype *st = exp_subtype(sum);
+				sql_subtype *ct = exp_subtype(cnt_d);
+				/* convert sum flt -> dbl */
+				if (st->type->eclass == EC_FLT && ct->type->eclass == EC_FLT && st->type->localtype < ct->type->localtype) {
+					sum = exp_convert(sql->sa, sum, st, ct);
+				} else if (st->type->eclass == EC_FLT) {
+					if (ct->type != st->type) {
+						sql_subtype *dbl_t = sql_bind_localtype("dbl");
+						if (ct->type->eclass != EC_FLT || st->type == dbl_t->type)
+							cnt_d = exp_convert(sql->sa, cnt_d, exp_subtype(cnt_d), st);
+					}
+				}
+				append(args, sum);
+				append(args, cnt_d);
+				div = find_func(sql, "sql_div", args);
+				assert(div);
+				navg = exp_op(sql->sa, args, div);
 			} else {
 				args = sa_list(sql->sa);
 				append(args, sum);

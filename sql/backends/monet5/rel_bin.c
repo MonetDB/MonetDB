@@ -21,6 +21,7 @@
 #include "rel_updates.h"
 #include "rel_predicates.h"
 #include "rel_rewriter.h"
+#include "bin_partition.h"
 #include "sql_env.h"
 #include "sql_optimizer.h"
 #include "sql_gencode.h"
@@ -28,7 +29,7 @@
 #include "mal_builder.h"
 #include "opt_prelude.h"
 
-static void
+void
 set_need_pipeline(backend *be)
 {
 	if(be->need_pipeline)
@@ -36,7 +37,7 @@ set_need_pipeline(backend *be)
 	be->need_pipeline = true;
 }
 
-static bool
+bool
 get_need_pipeline(backend *be)
 {
 	bool r = be->need_pipeline;
@@ -44,20 +45,19 @@ get_need_pipeline(backend *be)
 	return r;
 }
 
-static void
+void
 set_pipeline(backend *be, stmt *pp)
 {
 	be->ppstmt = pp;
 }
 
-static stmt *
+stmt *
 get_pipeline(backend *be)
 {
 	return be->ppstmt;
 }
 
 static stmt * rel_bin(backend *be, sql_rel *rel);
-static stmt * subrel_bin(backend *be, sql_rel *rel, list *refs);
 
 static stmt *check_types(backend *be, sql_subtype *fromtype, stmt *s, check_type tpe);
 
@@ -181,7 +181,7 @@ print_stmtlist(sql_allocator *sa, stmt *l)
 	}
 }
 
-static stmt *
+stmt *
 list_find_column(backend *be, list *l, const char *rname, const char *name )
 {
 	stmt *res = NULL;
@@ -343,7 +343,7 @@ statment_score(stmt *c)
 	return score;
 }
 
-static stmt *
+stmt *
 bin_find_smallest_column(backend *be, stmt *sub)
 {
 	stmt *res = sub->op4.lval->h->data;
@@ -430,7 +430,7 @@ is_tid_chain(stmt *cand)
 	return 0;
 }
 
-static stmt *
+stmt *
 subrel_project( backend *be, stmt *s, list *refs, sql_rel *rel)
 {
 	if (!s || s->type != st_list || !s->cand)
@@ -444,7 +444,7 @@ subrel_project( backend *be, stmt *s, list *refs, sql_rel *rel)
 		stmt *c = n->data;
 
 		assert(c->type == st_alias || (c->type == st_join && c->flag == cmp_project) || c->type == st_bat || c->type == st_idxbat || c->type == st_single);
-		if (c->type != st_alias) {
+		if (c->type != st_alias || c->q != c->op1->q) {
 			c = stmt_project(be, cand, c);
 		} else if (c->op1->type == st_mirror && is_tid_chain(cand)) { /* alias with mirror (ie full row ids) */
 			c = stmt_alias(be, cand, c->tname, c->cname);
@@ -464,7 +464,7 @@ subrel_project( backend *be, stmt *s, list *refs, sql_rel *rel)
 	return s;
 }
 
-static stmt *
+stmt *
 rel2bin_slicer(backend *be, stmt *sub, int slicer)
 {
 	if (slicer == 1) {
@@ -1921,22 +1921,6 @@ parse_value(backend *be, sql_schema *s, char *query, sql_subtype *tpe, char emod
 }
 
 static stmt *
-stmt_rename(backend *be, sql_exp *exp, stmt *s )
-{
-	const char *name = exp_name(exp);
-	const char *rname = exp_relname(exp);
-	stmt *o = s;
-
-	if (!name && exp_is_atom(exp))
-		name = sa_strdup(be->mvc->sa, "single_value");
-	assert(name);
-	s = stmt_alias(be, s, rname, name);
-	if (o->flag & OUTER_ZERO)
-		s->flag |= OUTER_ZERO;
-	return s;
-}
-
-static stmt *
 rel2bin_sql_table(backend *be, sql_table *t, list *aliases)
 {
 	mvc *sql = be->mvc;
@@ -2716,7 +2700,7 @@ get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
 //#define SLICES 32
 #define PP_MIN_SIZE (64*1024)
 #define PP_MAX_SIZE (128*1024)
-static int
+int
 pp_nr_slices(sql_rel *rel)
 {
 	BUN est = get_rel_count(rel);
@@ -2741,7 +2725,7 @@ pp_nr_slices(sql_rel *rel)
 	return nr_slices;
 }
 
-static int
+int
 pp_dynamic_slices(backend *be, stmt *sub)
 {
 	if (sub && sub->cand)
@@ -4515,8 +4499,12 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	stmt *sub = NULL, *cursub;
 	stmt *groupby = NULL, *grp = NULL, *ext = NULL, *cnt = NULL;
 	bool _2phases = rel_groupby_2_phases(be->mvc, rel);
-	bool df2 = (SQLrunning && rel->parallel && rel_groupby_pp(rel, _2phases));
+	bool partition = SQLrunning && rel->parallel && !_2phases && rel_groupby_partition(be, rel);
+	bool df2 = (SQLrunning && rel->parallel && !partition && rel_groupby_pp(rel, _2phases));
 	int neededpp = rel->partition && get_need_pipeline(be);
+
+	if (partition)
+		return rel2bin_groupby_partition(be, rel, refs);
 
 	sql_rel *p = rel->l;
 	int is_base = (p && is_basetable(p->op));
@@ -7899,7 +7887,7 @@ rel2bin_ddl(backend *be, sql_rel *rel, list *refs)
 	return s;
 }
 
-static stmt *
+stmt *
 subrel_bin(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
