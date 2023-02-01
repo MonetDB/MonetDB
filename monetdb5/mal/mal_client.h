@@ -68,8 +68,9 @@ typedef struct CLIENT {
 	 */
 	char	optimizer[IDLENGTH];/* The optimizer pipe preferred for this session */
 	int 	workerlimit;		/* maximum number of workthreads processing a query */
+	int maxworkers;				/* max_workers from db_user_info table */
 	int		memorylimit;		/* maximum memory currently allowed in MB */
-	lng maxmem;					/* maximum memory from db_user_info table */
+	lng maxmem;					/* max_memory from db_user_info table */
 	lng	    sessiontimeout;		/* session abort after x usec, 0 = no limit */
 	QryCtx  qryctx;				/* per query limitations */
 

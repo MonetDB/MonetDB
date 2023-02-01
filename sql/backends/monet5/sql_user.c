@@ -970,7 +970,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 }
 
 int
-monet5_user_get_max_memory(mvc *m, int user, lng *maxmem)
+monet5_user_get_limits(mvc *m, int user, lng *maxmem, int *maxwrk)
 {
 	oid rid;
 	sql_schema *sys = NULL;
@@ -979,6 +979,7 @@ monet5_user_get_max_memory(mvc *m, int user, lng *maxmem)
 	str username = NULL;
 	sqlstore *store = m->session->tr->store;
 	lng max_memory = 0;
+	int max_workers = 0;
 
 	if (!m->session->tr->active) {
 		switch (mvc_trans(m)) {
@@ -1002,12 +1003,15 @@ monet5_user_get_max_memory(mvc *m, int user, lng *maxmem)
 		rid = store->table_api.column_find_row(m->session->tr, find_sql_column(user_info, "name"), username, NULL);
 		_DELETE(username);
 
-		if (!is_oid_nil(rid))
+		if (!is_oid_nil(rid)) {
 			max_memory = store->table_api.column_find_lng(m->session->tr, find_sql_column(user_info, "max_memory"), rid);
+			max_workers = store->table_api.column_find_lng(m->session->tr, find_sql_column(user_info, "max_workers"), rid);
+		}
 		mvc_rollback(m, 0, NULL, false);
 	}
 
 	*maxmem = max_memory > 0 ? max_memory : 0;
+	*maxwrk = max_workers > 0 ? max_workers : 0;
 
 	return 0;
 }

@@ -123,7 +123,7 @@ MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng 
 	 * A way out is to attach the thread count to the MAL stacks, which just limits the level
 	 * of parallism for a single dataflow graph.
 	 */
-	if (cntxt->workerlimit && (int) ATOMIC_GET(&cntxt->workers) >= cntxt->workerlimit) {
+	if (cntxt->workerlimit > 0 && (int) ATOMIC_GET(&cntxt->workers) >= cntxt->workerlimit) {
 		return -1;
 	}
 	if (argclaim == 0)
@@ -137,11 +137,11 @@ MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng 
 	}
 
 	/* the argument claim is based on the input for an instruction */
-	if ( memorypool > argclaim ) {
+	if ( memorypool > argclaim || ATOMIC_GET(&cntxt->workers) == 0) {
 		/* If we are low on memory resources, limit the user if he exceeds his memory budget
 		 * but make sure there is at least one worker thread active */
 		if ( cntxt->memorylimit) {
-			if (argclaim + stk->memory > (lng) cntxt->memorylimit * LL_CONSTANT(1048576)){
+			if (argclaim + stk->memory > (lng) cntxt->memorylimit * LL_CONSTANT(1048576) && ATOMIC_GET(&cntxt->workers) > 0){
 				MT_lock_unset(&admissionLock);
 				return -1;
 			}
