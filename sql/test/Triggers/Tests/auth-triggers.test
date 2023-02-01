@@ -1,0 +1,14 @@
+statement ok
+create role bar
+
+statement ok
+create user foo with password 'foo' name 'foo'
+
+statement ok
+create trigger foo after login set role bar
+
+@connection(id=1, username=foo, password=foo)
+query T rowsort
+select current_role
+----
+bar
