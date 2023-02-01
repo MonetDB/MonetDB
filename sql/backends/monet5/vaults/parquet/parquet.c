@@ -7,6 +7,15 @@
 #include "rel_file_loader.h"
 
 #include "parquet.h"
+#include "mal_instruction.h"
+#include "mal_interpreter.h"
+#include "mal_runtime.h"
+#include "mal_parser.h"
+#include "mal_builder.h"
+#include "mal_namespace.h"
+#include "mal_debugger.h"
+#include "mal_linker.h"
+#include "mal_utils.h"
 
 parquet_file *parquet_open_file(char* filename) {
     GParquetArrowFileReader *reader;
@@ -61,8 +70,38 @@ parquet_load(sql_subfunc *f, char *filename)
 	return 0;
 }
 
-void
-parquet_init(void)
+static str
+Parquetprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+    (void)cntxt;
+    (void)mb;
+    (void)stk;
+    (void)pci;
 	fl_register("parquet", &parquet_add_types, &parquet_load);
+    return MAL_SUCCEED;
 }
+
+static str
+Parquetepilogue(void *ret)
+{
+    (void)ret;
+    return MAL_SUCCEED;
+}
+
+#include "sql_scenario.h"
+#include "mel.h"
+
+static mel_func parquet_init_funcs[] = {
+ pattern("parquet", "prelude", Parquetprelude, false, "", noargs),
+ command("parquet", "epilogue", Parquetepilogue, false, "", noargs),
+{ .imp=NULL }
+};
+
+
+#include "mal_import.h"
+#ifdef _MSC_VER
+#undef read
+#pragma section(".CRT$XCU",read)
+#endif
+LIB_STARTUP_FUNC(init_parquet_mal)
+{ mal_module("parquet", NULL, parquet_init_funcs); }
