@@ -48,7 +48,6 @@ static AUTHCallbackCntx authCallbackCntx = {
 	.get_user_name = NULL,
 	.get_user_password = NULL,
 	.get_user_oid = NULL,
-	.exec_post_login_triggers = NULL
 };
 
 static str AUTHdeleteRemoteTableCredentialsLocked(const char *local_table);
@@ -927,21 +926,3 @@ AUTHGeneratePasswordHash(str *res, const char *value)
 	return AUTHcypherValue(res, value);
 }
 
-
-str
-AUTHRegisterPostLoginTriggersHandler(post_login_triggers_handler callback)
-{
-	authCallbackCntx.exec_post_login_triggers = callback;
-	return MAL_SUCCEED;
-}
-
-
-str
-AUTHexecPostLoginTriggers(Client c)
-{
-	if (c && authCallbackCntx.exec_post_login_triggers) {
-		if (authCallbackCntx.exec_post_login_triggers(c) < 0)
-			throw(MAL, "AUTHexecPostLoginTriggers", OPERATION_FAILED);
-	}
-	return MAL_SUCCEED;
-}
