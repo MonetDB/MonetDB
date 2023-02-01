@@ -270,11 +270,12 @@ SQLprepareClient(Client c, int login)
 			default:
 				break;
 		}
-		if (monet5_user_get_max_memory(m, m->user_id, &c->maxmem) == 0) {
+		if (monet5_user_get_limits(m, m->user_id, &c->maxmem, &c->maxworkers) == 0) {
 			c->qryctx.maxmem = (ATOMIC_BASE_TYPE) (c->maxmem > 0 ? c->maxmem : 0);
 		} else {
 			c->maxmem = 0;
 			c->qryctx.maxmem = 0;
+			c->maxworkers = 0;
 		}
 		if (c->memorylimit > 0 && c->qryctx.maxmem > ((ATOMIC_BASE_TYPE) c->memorylimit << 20))
 			c->qryctx.maxmem = (ATOMIC_BASE_TYPE) c->memorylimit << 20;
