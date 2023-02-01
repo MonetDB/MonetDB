@@ -291,6 +291,9 @@ loadLibrary(const char *filename, int flag)
 #ifdef HAVE_NETCDF
 			&& strcmp(filename, "netcdf") != 0
 #endif
+#ifdef HAVE_PARQUET
+			&& strcmp(filename, "parquet") != 0
+#endif
 #ifdef HAVE_SHP
 			&& strcmp(filename, "shp") != 0
 #endif
