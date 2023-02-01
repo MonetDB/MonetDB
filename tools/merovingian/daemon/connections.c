@@ -135,7 +135,7 @@ openConnectionIP(int *socks, bool udp, const char *bindaddr, unsigned short port
 				closesocket(sock);
 				continue;
 			}
-			if (!udp && listen(sock, 5) == -1) {
+			if (!udp && listen(sock, SOMAXCONN) == -1) {
 				e = errno;
 				closesocket(sock);
 				continue;
@@ -221,8 +221,7 @@ openConnectionUNIX(int *ret, const char *path, int mode, FILE *log)
 	}
 	umask(omask);
 
-	/* keep queue of 5 */
-	if (listen(sock, 5) == -1) {
+	if (listen(sock, SOMAXCONN) == -1) {
 		closesocket(sock);
 		return(newErr("setting UNIX stream socket at %s to listen failed: %s",
 					  path, strerror(errno)));
