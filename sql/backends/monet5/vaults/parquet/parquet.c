@@ -105,3 +105,4 @@ static mel_func parquet_init_funcs[] = {
 #endif
 LIB_STARTUP_FUNC(init_parquet_mal)
 { mal_module("parquet", NULL, parquet_init_funcs); }
+
