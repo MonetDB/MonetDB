@@ -17,7 +17,10 @@
 #include "mal_linker.h"
 #include "mal_utils.h"
 
-parquet_file *parquet_open_file(char* filename) {
+/*
+static parquet_file *
+parquet_open_file(char* filename)
+{
     GParquetArrowFileReader *reader;
     GError *g_error;
     char* error = NULL;
@@ -38,8 +41,9 @@ parquet_file *parquet_open_file(char* filename) {
     return file;
 }
 
-
-parquet_table_metadata parquet_get_table_metadata(parquet_file *file) {
+static parquet_table_metadata
+parquet_get_table_metadata(parquet_file *file)
+{
     GError *table_error;
     GArrowTable *table = gparquet_arrow_file_reader_read_table(file->reader, &table_error);
 
@@ -53,6 +57,7 @@ parquet_table_metadata parquet_get_table_metadata(parquet_file *file) {
 
     return metadata;
 }
+*/
 
 static int
 parquet_add_types(sql_subfunc *f, char *filename)
@@ -96,7 +101,6 @@ static mel_func parquet_init_funcs[] = {
  command("parquet", "epilogue", Parquetepilogue, false, "", noargs),
 { .imp=NULL }
 };
-
 
 #include "mal_import.h"
 #ifdef _MSC_VER

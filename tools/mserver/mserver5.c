@@ -362,6 +362,9 @@ main(int argc, char **av)
 #ifdef HAVE_NETCDF
 	modules[mods++] = "netcdf";
 #endif
+#ifdef HAVE_PARQUET
+	modules[mods++] = "parquet";
+#endif
 #ifdef HAVE_SHP
 	modules[mods++] = "shp";
 #endif

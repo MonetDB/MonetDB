@@ -7,22 +7,6 @@ if(Parquet_FOUND)
     parquet.h
   )
 
-
-
-  target_link_libraries(parquet
-    PRIVATE
-    monetdb_config_header
-    monetdb5
-    bat
-    sqlinclude
-    arrow_shared 
-    arrow-glib 
-    gobject-2.0 
-    glib-2.0 
-    parquet_shared 
-    parquet-glib
-  )
-
   target_include_directories(parquet
     PRIVATE
     $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
@@ -34,6 +18,29 @@ if(Parquet_FOUND)
     $<TARGET_PROPERTY:sqlstorage,INTERFACE_INCLUDE_DIRECTORIES>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
+
+  target_link_libraries(parquet
+    PRIVATE
+    monetdb_config_header
+    monetdb5
+    bat
+    sqlinclude
+    arrow_shared
+    arrow-glib
+    gobject-2.0
+    glib-2.0
+    parquet_shared
+    parquet-glib
+  )
+
+  set_target_properties(parquet
+    PROPERTIES
+    OUTPUT_NAME
+    _parquet)
+
+  target_compile_definitions(parquet
+    PRIVATE
+    LIBPARQUET)
 
   install(TARGETS
     parquet
