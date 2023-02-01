@@ -131,6 +131,7 @@ newMalBlk(int elements)
 		GDKfree(mb);
 		return NULL;
 	}
+	ATOMIC_INIT(&mb->workers, 1);
 	return mb;
 }
 
@@ -267,7 +268,6 @@ freeMalBlk(MalBlkPtr mb)
 	mb->binding[0] = 0;
 	mb->tag = 0;
 	mb->memory = 0;
-	mb->workers = 0;
 	if (mb->help && mb->statichelp != mb->help)
 		GDKfree(mb->help);
 	mb->help = 0;
@@ -275,6 +275,7 @@ freeMalBlk(MalBlkPtr mb)
 	mb->inlineProp = 0;
 	mb->unsafeProp = 0;
 	freeException(mb->errors);
+	ATOMIC_DESTROY(&mb->workers);
 	GDKfree(mb);
 }
 

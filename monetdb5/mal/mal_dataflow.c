@@ -50,7 +50,7 @@ typedef struct FLOWEVENT {
 	sht cost;
 	lng hotclaim;   /* memory foot print of result variables */
 	lng argclaim;   /* memory foot print of arguments */
-	lng maxclaim;   /* memory foot print of  largest argument, counld be used to indicate result size */
+	lng maxclaim;   /* memory foot print of largest argument, could be used to indicate result size */
 } *FlowEvent, FlowEventRec;
 
 typedef struct queue {
@@ -375,15 +375,25 @@ DFLOWworker(void *T)
 				if( p->fcn != (MALfcn) deblockdataflow){
 					fe->hotclaim = 0;   /* don't assume priority anymore */
 					fe->maxclaim = 0;
-					if (todo->last == 0)
+					MT_lock_set(&todo->l);
+					int last = todo->last;
+					MT_lock_unset(&todo->l);
+					if (last == 0)
 						MT_sleep_ms(DELAYUNIT);
 					q_requeue(todo, fe);
 					continue;
 				}
 			}
+			ATOMIC_BASE_TYPE wrks = ATOMIC_INC(&flow->cntxt->workers);
+			ATOMIC_BASE_TYPE mwrks = ATOMIC_GET(&flow->mb->workers);
+			while (wrks > mwrks) {
+				if (ATOMIC_CAS(&flow->mb->workers, &mwrks, wrks))
+					break;
+			}
 			error = runMALsequence(flow->cntxt, flow->mb, fe->pc, fe->pc + 1, flow->stk, 0, 0);
+			(void) ATOMIC_DEC(&flow->cntxt->workers);
 			/* release the memory claim */
-			MALadmission_release(flow->cntxt, flow->mb, flow->stk, p,  claim);
+			MALadmission_release(flow->cntxt, flow->mb, flow->stk, p, claim);
 
 			MT_lock_set(&flow->flowlock);
 			fe->state = DFLOWwrapup;
@@ -724,12 +734,14 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 	/* initialize the eligible statements */
 	fe = flow->status;
 
+	(void) ATOMIC_DEC(&flow->cntxt->workers);
 	MT_lock_set(&flow->flowlock);
 	for (i = 0; i < actions; i++)
 		if (fe[i].blocks == 0) {
 			p = getInstrPtr(flow->mb,fe[i].pc);
 			if (p == NULL) {
 				MT_lock_unset(&flow->flowlock);
+				(void) ATOMIC_INC(&flow->cntxt->workers);
 				throw(MAL, "dataflow", "DFLOWscheduler(): getInstrPtr(flow->mb,fe[i].pc) returned NULL");
 			}
 			fe[i].argclaim = 0;
@@ -745,8 +757,10 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 		f = q_dequeue(flow->done, NULL);
 		if (ATOMIC_GET(&exiting))
 			break;
-		if (f == NULL)
+		if (f == NULL) {
+			(void) ATOMIC_INC(&flow->cntxt->workers);
 			throw(MAL, "dataflow", "DFLOWscheduler(): q_dequeue(flow->done) returned NULL");
+		}
 
 		/*
 		 * When an instruction is finished we have to reduce the blocked
@@ -772,6 +786,7 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 	/* release the worker from its specific task (turn it into a
 	 * generic worker) */
 	ATOMIC_PTR_SET(&w->cntxt, NULL);
+	(void) ATOMIC_INC(&flow->cntxt->workers);
 	/* wrap up errors */
 	assert(flow->done->last == 0);
 	if ((ret = ATOMIC_PTR_XCG(&flow->error, NULL)) != NULL ) {

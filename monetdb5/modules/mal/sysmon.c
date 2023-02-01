@@ -241,7 +241,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				goto bailout;
 
 			if( QRYqueue[i].mb)
-				wrk = QRYqueue[i].mb->workers;
+				wrk = (int) ATOMIC_GET(&QRYqueue[i].mb->workers);
 			else
 				wrk = QRYqueue[i].workers;
 			if( QRYqueue[i].mb)

@@ -61,6 +61,7 @@ mal_client_reset(void)
 	if (mal_clients) {
 		for (int i = 0; i < MAL_MAXCLIENTS; i++) {
 			ATOMIC_DESTROY(&mal_clients[i].lastprint);
+			ATOMIC_DESTROY(&mal_clients[i].workers);
 			ATOMIC_DESTROY(&mal_clients[i].qryctx.datasize);
 		}
 		GDKfree(mal_clients);
@@ -93,6 +94,7 @@ MCinit(void)
 	}
 	for (int i = 0; i < MAL_MAXCLIENTS; i++){
 		ATOMIC_INIT(&mal_clients[i].lastprint, 0);
+		ATOMIC_INIT(&mal_clients[i].workers, 1);
 		ATOMIC_INIT(&mal_clients[i].qryctx.datasize, 0);
 		mal_clients[i].idx = -1; /* indicate it's available */
 	}
