@@ -712,7 +712,7 @@ SQLinitClient(Client c)
 		throw(SQL, "SQLinitClient", SQLSTATE(42000) "Catalogue not available");
 	}
 	if ((msg = SQLprepareClient(c, true)) == MAL_SUCCEED) {
-		if (SQLexecPostLoginTriggers(c) < 0) {
+		if (c->usermodule && SQLexecPostLoginTriggers(c) < 0) {
 			throw(SQL, "SQLinitClient", SQLSTATE(42000) "Failed to execute post login triggers");
 		}
 	}
