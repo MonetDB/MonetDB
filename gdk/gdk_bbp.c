@@ -123,13 +123,22 @@ static bat BBP_mask = 0;		/* number of buckets = & mask */
 #endif
 #define GENERAL_LIST_IDX (BBP_THREADMASK + 1)
 #define FREE_CHUNK_ALLOC_SIZE 10
+#define GC_FREE_LIST_CALL_COUNT 20
 static struct {
 	MT_Lock cache;
 	bat free;
+	bat stat_free_max;
+	bat stat_free_min;
+	int stat_call_count;
+	int stat_free_count;
 } GDKbbpLock[GENERAL_LIST_IDX + 1]; // last GDKbbpLock, i.e. GDKbbpLock[GENERAL_LIST_IDX], is the general free list
 
 #define GDKcacheLock(y)	GDKbbpLock[y].cache
 #define BBP_free(y)	GDKbbpLock[y].free
+#define BBP_stat_free_max(y)	GDKbbpLock[y].stat_free_max
+#define BBP_stat_free_min(y)	GDKbbpLock[y].stat_free_min
+#define BBP_stat_call_count(y)	GDKbbpLock[y].stat_call_count
+#define BBP_stat_call_free(y)	GDKbbpLock[y].stat_call_free
 
 static gdk_return BBPfree(BAT *b);
 static void BBPdestroy(BAT *b);
