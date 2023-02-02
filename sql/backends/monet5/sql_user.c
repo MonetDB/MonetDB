@@ -1005,7 +1005,7 @@ monet5_user_get_limits(mvc *m, int user, lng *maxmem, int *maxwrk)
 
 		if (!is_oid_nil(rid)) {
 			max_memory = store->table_api.column_find_lng(m->session->tr, find_sql_column(user_info, "max_memory"), rid);
-			max_workers = store->table_api.column_find_lng(m->session->tr, find_sql_column(user_info, "max_workers"), rid);
+			max_workers = store->table_api.column_find_int(m->session->tr, find_sql_column(user_info, "max_workers"), rid);
 		}
 		mvc_rollback(m, 0, NULL, false);
 	}
