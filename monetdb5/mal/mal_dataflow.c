@@ -370,19 +370,17 @@ DFLOWworker(void *T)
 
 			p= getInstrPtr(flow->mb,fe->pc);
 			claim = fe->argclaim;
-			if (MALadmission_claim(flow->cntxt, flow->mb, flow->stk, p, claim)) {
-				// never block on deblockdataflow()
-				if( p->fcn != (MALfcn) deblockdataflow){
-					fe->hotclaim = 0;   /* don't assume priority anymore */
-					fe->maxclaim = 0;
-					MT_lock_set(&todo->l);
-					int last = todo->last;
-					MT_lock_unset(&todo->l);
-					if (last == 0)
-						MT_sleep_ms(DELAYUNIT);
-					q_requeue(todo, fe);
-					continue;
-				}
+			if (p->fcn != (MALfcn) deblockdataflow && /* never block on deblockdataflow() */
+				!MALadmission_claim(flow->cntxt, flow->mb, flow->stk, p, claim)) {
+				fe->hotclaim = 0;   /* don't assume priority anymore */
+				fe->maxclaim = 0;
+				MT_lock_set(&todo->l);
+				int last = todo->last;
+				MT_lock_unset(&todo->l);
+				if (last == 0)
+					MT_sleep_ms(DELAYUNIT);
+				q_requeue(todo, fe);
+				continue;
 			}
 			ATOMIC_BASE_TYPE wrks = ATOMIC_INC(&flow->cntxt->workers);
 			ATOMIC_BASE_TYPE mwrks = ATOMIC_GET(&flow->mb->workers);
@@ -440,13 +438,9 @@ DFLOWworker(void *T)
 			for (last = fe->pc - flow->start; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last]){
 				if (flow->status[i].state == DFLOWpending && flow->status[i].blocks == 1) {
 					/* find the one with the largest footprint */
-					if( nxt == -1){
+					if (nxt == -1 || flow->status[i].argclaim > nxtclaim) {
 						nxt = i;
 						nxtclaim = flow->status[i].argclaim;
-					}
-					if( flow->status[i].argclaim > nxtclaim){
-						nxt = i;
-						nxtclaim =  flow->status[i].argclaim;
 					}
 				}
 			}
