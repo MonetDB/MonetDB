@@ -460,14 +460,13 @@ runPhase(Client c, int phase)
  * running a scenario should be explicitly permitted.
  */
 static str
-runScenarioBody(Client c, int once)
+runScenarioBody(Client c)
 {
 	str msg = MAL_SUCCEED;
 
+	assert(c->state[0]);
 	while (c->mode > FINISHCLIENT && !GDKexiting()) {
-		// be aware that a MAL call  may initialize a different scenario
-		if ( !c->state[0] && (msg = runPhase(c, MAL_SCENARIO_INITCLIENT)) )
-			goto wrapup;
+		/* later merge the phases */
 		if ( c->mode <= FINISHCLIENT ||  (msg = runPhase(c, MAL_SCENARIO_READER)) )
 			goto wrapup;
 		if ( c->mode <= FINISHCLIENT  || (msg = runPhase(c, MAL_SCENARIO_PARSER)) || c->blkmode)
@@ -493,21 +492,19 @@ runScenarioBody(Client c, int once)
 		if( GDKerrbuf && GDKerrbuf[0])
 			mnstr_printf(c->fdout,"!GDKerror: %s\n",GDKerrbuf);
 		assert(c->curprg->def->errors == NULL);
-		if( once) break;
 	}
-	if (once == 0)
-		msg = runPhase(c, MAL_SCENARIO_EXITCLIENT);
+	msg = runPhase(c, MAL_SCENARIO_EXITCLIENT);
 	return msg;
 }
 
 str
-runScenario(Client c, int once)
+runScenario(Client c)
 {
 	str msg = MAL_SUCCEED;
 
 	if (c == 0 || c->phase[MAL_SCENARIO_READER] == 0)
 		return msg;
-	msg = runScenarioBody(c,once);
+	msg = runScenarioBody(c);
 	if (msg != MAL_SUCCEED &&
 			strcmp(msg,"MALException:client.quit:Server stopped."))
 		mnstr_printf(c->fdout,"!%s\n",msg);

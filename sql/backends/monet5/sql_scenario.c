@@ -40,6 +40,8 @@
 #include "mal_debugger.h"
 #include "mal_linker.h"
 #include "mal_scenario.h"
+#include "mal_authorize.h"
+#include "mcrypt.h"
 #include "bat5.h"
 #include "msabaoth.h"
 #include "gdk_time.h"
@@ -79,6 +81,7 @@ static const char *sqlinit = NULL;
 static MT_Lock sql_contextLock = MT_LOCK_INITIALIZER(sql_contextLock);
 
 static str SQLinit(Client c, const char *initpasswd);
+static str master_password = NULL;
 
 str
 //SQLprelude(void *ret)
@@ -260,9 +263,64 @@ SQLexecPostLoginTriggers(Client c) {
 	return res;
 }
 
+static str
+userCheckCredentials( mvc *m, Client c, str passwd, str challenge, str algo)
+{
+	oid uid = getUserOIDByName(m, c->username);
+
+	if (strNil(passwd))
+		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", c->username);
+	str passValue = getUserPassword(m, uid);
+	if (strNil(passValue))
+		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", c->username);
+	    /* find the corresponding password to the user */
+
+	/* decypher the password (we lose the original tmp here) */
+	str pwd = NULL;
+	str tmp = AUTHdecypherValue(&pwd, passValue);
+	GDKfree(passValue);
+	if (tmp)
+		return tmp;
+
+	/* generate the hash as the client should have done */
+	str hash = mcrypt_hashPassword(algo, pwd, challenge);
+	GDKfree(pwd);
+	if(!hash)
+		throw(MAL, "checkCredentials", "hash '%s' backend not found", algo);
+
+	/* and now we have it, compare it to what was given to us */
+	if (strcmp(passwd, hash) == 0) {
+		free(hash);
+		c->user = uid;
+		return MAL_SUCCEED;
+	}
+	free(hash);
+
+	/* special case: users whose name starts with '.' can authenticate using
+	 * the temporary master password.
+	 */
+	if (c->username[0] == '.' && master_password != NULL && master_password[0] != '\0') {
+		// first encrypt the master password as if we've just found it
+		// in the password store
+		str encrypted = mcrypt_BackendSum(master_password, strlen(master_password));
+		if (encrypted == NULL)
+			throw(MAL, "checkCredentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		hash = mcrypt_hashPassword(algo, encrypted, challenge);
+		free(encrypted);
+		if (hash && strcmp(passwd, hash) == 0) {
+			c->user = uid;
+			free(hash);
+			return(MAL_SUCCEED);
+		}
+		free(hash);
+	}
+
+	/* of course we DO NOT print the password here */
+	throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", c->username);
+}
 
 static char*
-SQLprepareClient(Client c, int login)
+SQLprepareClient(Client c, str passwd, str challenge, str algo)
 {
 	mvc *m = NULL;
 	backend *be = NULL;
@@ -291,8 +349,18 @@ SQLprepareClient(Client c, int login)
 		assert(0);
 	}
 	MT_lock_unset(&sql_contextLock);
-	if (login) {
-		switch (monet5_user_set_def_schema(m, c->user)) {
+	if (c->username && passwd) {
+
+		if (mvc_trans(m) < 0) {
+			// we have -1 here
+			throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", c->username);
+		}
+
+		msg = userCheckCredentials( m, c, passwd, challenge, algo);
+		if (msg)
+			goto bailout1;
+
+		switch (monet5_user_set_def_schema(m, c->user, c->username)) {
 			case -1:
 				msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout1;
@@ -313,7 +381,7 @@ SQLprepareClient(Client c, int login)
 			c->qryctx.maxmem = (ATOMIC_BASE_TYPE) (maxmem > 0 ? maxmem : 0);
 		else
 			c->qryctx.maxmem = 0;
-
+		mvc_rollback(m, 0, NULL, false);
 	}
 
 	if (c->handshake_options) {
@@ -352,8 +420,9 @@ SQLprepareClient(Client c, int login)
 		}
 	}
 
-
 bailout1:
+	if (m->session->tr->active)
+		mvc_rollback(m, 0, NULL, false);
 	MT_lock_set(&sql_contextLock);
 bailout2:
 	/* expect SQL text first */
@@ -363,7 +432,8 @@ bailout2:
 	c->state[MAL_SCENARIO_READER] = c;
 	c->state[MAL_SCENARIO_PARSER] = c;
 	c->state[MAL_SCENARIO_OPTIMIZE] = c;
-	c->sqlcontext = be;
+	if (!msg)
+		c->sqlcontext = be;
 	if (msg)
 		c->mode = FINISHCLIENT;
 	return msg;
@@ -422,6 +492,13 @@ SQLinit(Client c, const char *initpasswd)
 	backend *be = NULL;
 	mvc *m = NULL;
 	const char *opt_pipe;
+
+	master_password = NULL;
+	if (!GDKembedded()) {
+		msg = msab_pickSecret(&master_password);
+		if (msg)
+			return msg;
+	}
 
 	if ((opt_pipe = GDKgetenv("sql_optimizer")) && !isOptimizerPipe(opt_pipe))
 		throw(SQL, "sql.init", SQLSTATE(42000) "invalid sql optimizer pipeline %s", opt_pipe);
@@ -489,7 +566,7 @@ SQLinit(Client c, const char *initpasswd)
 		if ( MCpushClientInput(c, fdin, 0, "") < 0)
 			TRC_ERROR(SQL_PARSER, "Could not switch client input stream\n");
 	}
-	if ((msg = SQLprepareClient(c, 0)) != NULL) {
+	if ((msg = SQLprepareClient(c, NULL, NULL, NULL)) != NULL) {
 		mvc_exit(SQLstore);
 		SQLstore = NULL;
 		MT_lock_unset(&sql_contextLock);
@@ -702,7 +779,7 @@ SQLtrans(mvc *m)
 }
 
 str
-SQLinitClient(Client c)
+SQLinitClient(Client c, str passwd, str challenge, str algo)
 {
 	str msg = MAL_SUCCEED;
 
@@ -711,7 +788,7 @@ SQLinitClient(Client c)
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinitClient", SQLSTATE(42000) "Catalogue not available");
 	}
-	if ((msg = SQLprepareClient(c, true)) == MAL_SUCCEED) {
+	if ((msg = SQLprepareClient(c, passwd, challenge, algo)) == MAL_SUCCEED) {
 		if (c->usermodule && SQLexecPostLoginTriggers(c) < 0) {
 			throw(SQL, "SQLinitClient", SQLSTATE(42000) "Failed to execute post login triggers");
 		}
@@ -721,11 +798,11 @@ SQLinitClient(Client c)
 }
 
 str
-SQLinitClientFromMAL(Client c)
+SQLinitClientFromMAL(Client c, str passwd, str challenge, str algo)
 {
 	str msg = MAL_SUCCEED;
 
-	if ((msg = SQLinitClient(c)) != MAL_SUCCEED) {
+	if ((msg = SQLinitClient(c, passwd, challenge, algo)) != MAL_SUCCEED) {
 		c->mode = FINISHCLIENT;
 		return msg;
 	}

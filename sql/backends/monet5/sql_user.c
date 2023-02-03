@@ -26,7 +26,6 @@
 #include "mcrypt.h"
 #include "sql_execute.h"
 
-
 static inline sql_table*
 getUsersTbl(mvc *m)
 {
@@ -35,8 +34,7 @@ getUsersTbl(mvc *m)
 	return find_sql_table(tr, sys, USER_TABLE_NAME);
 }
 
-
-static oid
+oid
 getUserOIDByName(mvc *m, const char *user)
 {
 	sql_trans *tr = m->session->tr;
@@ -58,33 +56,7 @@ getUserName(mvc *m, oid rid)
 	return store->table_api.column_find_value(tr, find_sql_column(users, "name"), rid);
 }
 
-
-#if 0
-static inline sql_table*
-getSchemasTbl(mvc *m)
-{
-	sql_trans *tr = m->session->tr;
-	sql_schema *sys = find_sql_schema(tr, "sys");
-	return find_sql_table(tr, sys, SCHEMA_TABLE_NAME);
-}
-
-static str
-getSchemaName(mvc *m, sqlid schema_id)
-{
-	if (schema_id > 0) {
-		oid rid;
-		sql_trans *tr = m->session->tr;
-		sqlstore *store = m->session->tr->store;
-		sql_table *tbl = getSchemasTbl(m);
-		if (is_oid_nil(rid = store->table_api.column_find_row(tr, find_sql_column(tbl, "id"), &schema_id, NULL)))
-			return NULL;
-		return store->table_api.column_find_value(tr, find_sql_column(tbl, "name"), rid);
-	}
-	return NULL;
-}
-#endif
-
-static str
+str
 getUserPassword(mvc *m, oid rid)
 {
 	if (is_oid_nil(rid)) {
@@ -94,44 +66,6 @@ getUserPassword(mvc *m, oid rid)
 	sqlstore *store = m->session->tr->store;
 	sql_table *users = getUsersTbl(m);
 	return store->table_api.column_find_value(tr, find_sql_column(users, USER_PASSWORD_COLUMN), rid);
-}
-
-
-static str
-getUserNameCallback(Client c)
-{
-	str res = NULL;
-	backend *be = (backend *) c->sqlcontext;
-	if (be) {
-		mvc *m = be->mvc;
-		int active = m->session->tr->active;
-		if (active || mvc_trans(m) == 0) {
-			res = getUserName(m, c->user);
-			if (!active)
-				sql_trans_end(m->session, SQL_OK);
-		}
-	}
-	return res;
-}
-
-
-static str
-getUserPasswordCallback(Client c, const char *user)
-{
-	str res = NULL;
-	backend *be = (backend *) c->sqlcontext;
-	if (be) {
-		mvc *m = be->mvc;
-		int active = m->session->tr->active;
-		// this starts new transaction
-		if (active || mvc_trans(m) == 0) {
-			oid rid = getUserOIDByName(m, user);
-			res = getUserPassword(m, rid);
-			if (!active)
-				sql_trans_end(m->session, SQL_OK);
-		}
-	}
-	return res;
 }
 
 
@@ -201,35 +135,6 @@ changeUserPassword(mvc *m, oid rid, str oldpass, str newpass)
 		GDKfree(hash);
 	}
 	return setUserPassword(m, rid, newpass);
-}
-
-
-static oid
-getUserOIDCallback(Client c, const char *user)
-{
-	oid res;
-	backend *be = (backend *) c->sqlcontext;
-	if (be) {
-		mvc *m = be->mvc;
-		int active = m->session->tr->active;
-		if (active || mvc_trans(m) == 0) {
-			res = getUserOIDByName(m, user);
-			if (!active)
-				sql_trans_end(m->session, SQL_OK);
-			return res;
-		}
-	}
-	return oid_nil;
-}
-
-
-static void
-monet5_set_user_api_hooks(ptr mvc)
-{
-	(void) mvc;
-	AUTHRegisterGetPasswordHandler(&getUserPasswordCallback);
-	AUTHRegisterGetUserNameHandler(&getUserNameCallback);
-	AUTHRegisterGetUserOIDHandler(&getUserOIDCallback);
 }
 
 
@@ -507,6 +412,11 @@ monet5_create_privileges(ptr _mvc, sql_schema *s, const char *initpasswd)
 	str err = NULL;
 
 	/* create the authorisation related tables */
+	mvc_create_table(&t, m, s, REMOTE_USER_INFO, tt_table, 1, SQL_PERSIST, 0, -1, 0);
+	mvc_create_column_(&col, m, t, "table_id", "int", 32);
+	mvc_create_column_(&col, m, t, "username", "varchar", 1024);
+	mvc_create_column_(&col, m, t, "password", "varchar", 256);
+
 	mvc_create_table(&t, m, s, "db_user_info", tt_table, 1, SQL_PERSIST, 0, -1, 0);
 	mvc_create_column_(&col, m, t, "name", "varchar", 1024);
 	mvc_create_column_(&col, m, t, "fullname", "varchar", 2048);
@@ -787,7 +697,6 @@ monet5_user_init(backend_functions *be_funcs)
 	be_funcs->fauser = &monet5_alter_user;
 	be_funcs->fruser = &monet5_rename_user;
 	be_funcs->fschuserdep = &monet5_schema_user_dependencies;
-	be_funcs->fset_user_api_hooks = &monet5_set_user_api_hooks;
 }
 
 int
@@ -831,7 +740,7 @@ monet5_user_get_def_schema(mvc *m, int user, str *schema)
 }
 
 int
-monet5_user_set_def_schema(mvc *m, oid user)
+monet5_user_set_def_schema(mvc *m, oid user, str username)
 {
 	oid rid;
 	sqlid schema_id, default_role_id;
@@ -847,19 +756,10 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	sql_table *auths = NULL;
 	sql_column *auths_id = NULL;
 	sql_column *auths_name = NULL;
-	str path_err = NULL, other = NULL, schema = NULL, schema_cpy, schema_path = NULL, username = NULL, userrole = NULL;
+	str path_err = NULL, other = NULL, schema = NULL, schema_cpy, schema_path = NULL, userrole = NULL;
 	int ok = 1, res = 0;
 
 	TRC_DEBUG(SQL_TRANS, OIDFMT "\n", user);
-
-	if ((res = mvc_trans(m)) < 0) {
-		// we have -1 here
-		return res;
-	}
-
-	if ((username = getUserName(m, user)) == NULL) {
-		return -1;
-	}
 
 	sys = find_sql_schema(m->session->tr, "sys");
 	user_info = find_sql_table(m->session->tr, sys, "db_user_info");
@@ -873,14 +773,12 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	if (is_oid_nil(rid)) {
 		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
 			freeException(other);
-		GDKfree(username);
 		return -2;
 	}
 	schema_id = store->table_api.column_find_sqlid(m->session->tr, users_schema, rid);
 	if (!(schema_path = store->table_api.column_find_value(m->session->tr, users_schema_path, rid))) {
 		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
 			freeException(other);
-		GDKfree(username);
 		return -1;
 	}
 
@@ -897,14 +795,12 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	if (is_oid_nil(rid)) {
 		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
 			freeException(other);
-		GDKfree(username);
 		_DELETE(schema_path);
 		return -3;
 	}
 	if (!(schema = store->table_api.column_find_value(m->session->tr, schemas_name, rid))) {
 		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
 			freeException(other);
-		GDKfree(username);
 		_DELETE(schema_path);
 		return -1;
 	}
@@ -917,7 +813,6 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	if (is_oid_nil(rid)) {
 		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
 			freeException(other);
-		GDKfree(username);
 		_DELETE(schema_path);
 		return -2;
 	}
@@ -929,7 +824,6 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	if (is_oid_nil(rid)) {
 		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
 			freeException(other);
-		GDKfree(username);
 		_DELETE(schema_path);
 		return -4;
 	}
@@ -937,7 +831,6 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	if (!(userrole = store->table_api.column_find_value(m->session->tr, auths_name, rid))) {
 		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
 			freeException(other);
-		GDKfree(username);
 		_DELETE(schema_path);
 		return -1;
 	}
@@ -946,7 +839,6 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	if (!(ok = mvc_set_schema(m, schema)) || (path_err = parse_schema_path_str(m, schema_path, true)) != MAL_SUCCEED) {
 		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
 			freeException(other);
-		GDKfree(username);
 		_DELETE(schema_path);
 		_DELETE(userrole);
 		freeException(path_err);
@@ -960,13 +852,8 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		!sqlvar_set_string(find_global_var(m, sys, "current_role"), userrole)) {
 		res = -1;
 	}
-	GDKfree(username);
 	_DELETE(schema_path);
 	_DELETE(userrole);
-	if ((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED) {
-		freeException(other);
-		return -1;
-	}
 	return res;
 }
 
@@ -982,15 +869,6 @@ monet5_user_get_max_memory(mvc *m, int user, lng *maxmem)
 	lng max_memory = 0;
 
 	if (!m->session->tr->active) {
-		switch (mvc_trans(m)) {
-		case -1:
-			return -1;
-		case -3:
-			return -3;
-		default:
-			break;
-		}
-
 		sys = find_sql_schema(m->session->tr, "sys");
 		auths = find_sql_table(m->session->tr, sys, "auths");
 		user_info = find_sql_table(m->session->tr, sys, "db_user_info");
@@ -1005,10 +883,65 @@ monet5_user_get_max_memory(mvc *m, int user, lng *maxmem)
 
 		if (!is_oid_nil(rid))
 			max_memory = store->table_api.column_find_lng(m->session->tr, find_sql_column(user_info, "max_memory"), rid);
-		mvc_rollback(m, 0, NULL, false);
 	}
-
 	*maxmem = max_memory > 0 ? max_memory : 0;
+	return 0;
+}
 
+/* move into mvc_remote_create */
+/* and mvc_remote_drop */
+str
+remote_create(mvc *m, sqlid id, const str username, const str password, int pw_encrypted)
+{
+	int log_res = 0;
+	sql_trans *tr = m->session->tr;
+	sqlstore *store = tr->store;
+	sql_schema *sys = find_sql_schema(tr, "sys");
+	sql_table *remote_user_info = find_sql_table(tr, sys, REMOTE_USER_INFO);
+
+	char *pwhash = password, *cypher = NULL;
+	if (!pw_encrypted) {
+		if((pwhash = mcrypt_BackendSum(password, strlen(password))) == NULL)
+			throw(MAL, "addRemoteTableCredentials", SQLSTATE(42000) "Crypt backend hash not found");
+	}
+	if (strNil(password)) {
+		oid rid = getUserOIDByName(m, username);
+		str cypher = getUserPassword(m, rid);
+		if (AUTHdecypherValue(&pwhash, cypher))
+			throw(MAL, "addRemoteTableCredentials", SQLSTATE(42000) "Crypt backend hash not found");
+	}
+	str msg = AUTHcypherValue(&cypher, pwhash);
+	if (pwhash != password)
+		GDKfree(pwhash);
+	if (msg != MAL_SUCCEED)
+		return msg;
+	log_res = store->table_api.table_insert(m->session->tr, remote_user_info, &id, &username, &cypher, NULL);
+	GDKfree(cypher);
+	if (log_res != 0)
+		throw(SQL, "sql.create_table", SQLSTATE(42000) "Create table failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+	return MAL_SUCCEED;
+}
+
+int
+remote_get(mvc *m, sqlid id, str *username, str *password)
+{
+	sql_trans *tr = m->session->tr;
+	sqlstore *store = tr->store;
+	sql_schema *sys = find_sql_schema(tr, "sys");
+	sql_table *remote_user_info = find_sql_table(tr, sys, REMOTE_USER_INFO);
+	sql_column *remote_user_info_id = find_sql_column(remote_user_info, "table_id");
+	oid rid = store->table_api.column_find_row(tr, remote_user_info_id, &id, NULL);
+
+	if (is_oid_nil(rid))
+		return -1;
+	*username = store->table_api.column_find_value(tr, find_sql_column(remote_user_info, "username"), rid);
+	if (strNil(*username)) {
+		GDKfree(*username);
+		*username = GDKstrdup("");
+	}
+	str hashpw = store->table_api.column_find_value(tr, find_sql_column(remote_user_info, "password"), rid);
+	if (AUTHdecypherValue(password, hashpw))
+		return -2;
+	GDKfree(hashpw);
 	return 0;
 }

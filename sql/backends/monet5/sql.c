@@ -3484,64 +3484,6 @@ sql_sessions_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	BAT *urib = NULL, *unameb = NULL, *hashb = NULL;
-	bat *uri = getArgReference_bat(stk, pci, 0);
-	bat *uname = getArgReference_bat(stk, pci, 1);
-	bat *hash = getArgReference_bat(stk, pci, 2);
-	str *table = getArgReference_str(stk, pci, 3);
-	str uris = NULL, unames = NULL, hashs = NULL;
-	str msg = MAL_SUCCEED;
-	(void)mb;
-	(void)cntxt;
-
-	urib = COLnew(0, TYPE_str, 0, TRANSIENT);
-	unameb = COLnew(0, TYPE_str, 0, TRANSIENT);
-	hashb = COLnew(0, TYPE_str, 0, TRANSIENT);
-
-	if (urib == NULL || unameb == NULL || hashb == NULL) {
-		msg = createException(SQL, "sql.remote_table_credentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-
-	if ((msg = AUTHgetRemoteTableCredentials(*table, &uris, &unames, &hashs)) != MAL_SUCCEED)
-		goto bailout;
-
-	MT_lock_set(&mal_contextLock);
-	if (BUNappend(urib, uris? uris: str_nil, false) != GDK_SUCCEED)
-		goto lbailout;
-	if (BUNappend(unameb, unames? unames: str_nil , false) != GDK_SUCCEED)
-		goto lbailout;
-	if (BUNappend(hashb, hashs? hashs: str_nil, false) != GDK_SUCCEED)
-		goto lbailout;
-	MT_lock_unset(&mal_contextLock);
-	*uri = urib->batCacheid;
-	BBPkeepref(urib);
-	*uname = unameb->batCacheid;
-	BBPkeepref(unameb);
-	*hash = hashb->batCacheid;
-	BBPkeepref(hashb);
-
-	GDKfree(uris);
-	GDKfree(unames);
-	GDKfree(hashs);
-	return MAL_SUCCEED;
-
-  lbailout:
-	MT_lock_unset(&mal_contextLock);
-	msg = createException(SQL, "sql.remote_table_credentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-  bailout:
-	GDKfree(uris);
-	GDKfree(unames);
-	GDKfree(hashs);
-	BBPreclaim(urib);
-	BBPreclaim(unameb);
-	BBPreclaim(hashb);
-	return msg;
-}
-
-str
 sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
@@ -4389,7 +4331,7 @@ SQLsession_prepared_statements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	bat *i = getArgReference_bat(stk,pci,2);
 	bat *s = getArgReference_bat(stk,pci,3);
 	bat *c = getArgReference_bat(stk,pci,4);
-	str msg = MAL_SUCCEED, usr;
+	str msg = MAL_SUCCEED;
 	mvc *sql = NULL;
 	cq *q = NULL;
 
@@ -4419,11 +4361,9 @@ SQLsession_prepared_statements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 			goto bailout;
 		}
 
-		msg = AUTHgetUsername(&usr, cntxt);
 		if (msg != MAL_SUCCEED)
 			goto bailout;
-		bun_res = BUNappend(user, usr, false);
-		GDKfree(usr);
+		bun_res = BUNappend(user, cntxt->username, false);
 		if (bun_res != GDK_SUCCEED) {
 			msg = createException(SQL, "sql.session_prepared_statements", GDK_EXCEPTION);
 			goto bailout;
@@ -5067,7 +5007,7 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 #include "mel.h"
 
 
-str
+static str
 SQLuser_password(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
@@ -5088,6 +5028,23 @@ SQLuser_password(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	*password = monet5_password_hash(m, username);
 	return MAL_SUCCEED;
+}
+
+static str
+SQLdecypher(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = NULL;
+	str *pwhash = getArgReference_str(stk, pci, 0);
+	const char *cypher = *getArgReference_str(stk, pci, 1);
+
+	(void) pwhash;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	return AUTHdecypherValue(pwhash, cypher);
 }
 
 static mel_func sql_init_funcs[] = {
@@ -5181,7 +5138,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "sql_variables", sql_variables, false, "return the table with session variables", args(4,4, batarg("sname",str),batarg("name",str),batarg("type",str),batarg("value",str))),
  pattern("sql", "sessions", sql_sessions_wrap, false, "SQL export table of active sessions, their timeouts and idle status", args(9,9, batarg("id",int),batarg("user",str),batarg("start",timestamp),batarg("idle",timestamp),batarg("optmizer",str),batarg("stimeout",int),batarg("qtimeout",int),batarg("wlimit",int),batarg("mlimit",int))),
 pattern("sql", "password", SQLuser_password, false, "Return password hash of user", args(1,2, arg("",str),arg("user",str))),
- pattern("sql", "rt_credentials", sql_rt_credentials_wrap, false, "Return the remote table credentials for the given table", args(3,4, batarg("uri",str),batarg("username",str),batarg("hash",str),arg("tablename",str))),
+pattern("sql", "decypher", SQLdecypher, false, "Return decyphered password", args(1,2, arg("",str),arg("hash",str))),
  pattern("sql", "dump_cache", dump_cache, false, "dump the content of the query cache", args(2,2, batarg("query",str),batarg("count",int))),
  pattern("sql", "dump_opt_stats", dump_opt_stats, false, "dump the optimizer rewrite statistics", args(2,2, batarg("rewrite",str),batarg("count",int))),
  pattern("sql", "dump_trace", dump_trace, false, "dump the trace statistics", args(3,3, batarg("ticks",lng),batarg("stmt",str),batarg("stmt",str))),
@@ -5895,6 +5852,7 @@ pattern("sql", "password", SQLuser_password, false, "Return password hash of use
  pattern("sqlcatalog", "create_schema", SQLcreate_schema, false, "Catalog operation create_schema", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
  pattern("sqlcatalog", "drop_schema", SQLdrop_schema, false, "Catalog operation drop_schema", args(0,3, arg("sname",str),arg("ifexists",int),arg("action",int))),
  pattern("sqlcatalog", "create_table", SQLcreate_table, false, "Catalog operation create_table", args(0,4, arg("sname",str),arg("tname",str),arg("tbl",ptr),arg("temp",int))),
+ pattern("sqlcatalog", "create_table", SQLcreate_table, false, "Catalog operation create_table", args(0,6, arg("sname",str),arg("tname",str),arg("tbl",ptr),arg("pw_encrypted",int),arg("username",str),arg("passwd",str))),
  pattern("sqlcatalog", "create_view", SQLcreate_view, false, "Catalog operation create_view", args(0,5, arg("sname",str),arg("vname",str),arg("tbl",ptr),arg("temp",int),arg("replace",int))),
  pattern("sqlcatalog", "drop_table", SQLdrop_table, false, "Catalog operation drop_table", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("sqlcatalog", "drop_view", SQLdrop_view, false, "Catalog operation drop_view", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),

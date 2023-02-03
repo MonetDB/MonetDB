@@ -5525,6 +5525,7 @@ non_reserved_word:
 | LAST		{ $$ = sa_strdup(SA, "last"); }
 | LEVEL		{ $$ = sa_strdup(SA, "level"); }
 | LITTLE	{ $$ = sa_strdup(SA, "little"); }
+| LOGIN		{ $$ = sa_strdup(SA, "login"); }
 | MAX_MEMORY	{ $$ = sa_strdup(SA, "max_memory"); }
 | MAXVALUE	{ $$ = sa_strdup(SA, "maxvalue"); }
 | MAX_WORKERS	{ $$ = sa_strdup(SA, "max_workers"); }

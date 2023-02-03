@@ -36264,11 +36264,6 @@ command remote.connect(X_0:str, X_1:str, X_2:str, X_3:str, X_4:bit):str
 RMTconnectScen;
 returns a newly created connection for uri, using user name, password and scenario
 remote
-connect
-pattern remote.connect(X_0:str, X_1:str):str 
-RMTconnectTable;
-return a newly created connection for a table. username and password should be in the vault
-remote
 disconnect
 command remote.disconnect(X_0:str):void 
 RMTdisconnect;
@@ -36683,6 +36678,11 @@ date_trunc
 command sql.date_trunc(X_0:str, X_1:timestamp):timestamp 
 date_trunc;
 Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)
+sql
+decypher
+pattern sql.decypher(X_0:str):str 
+SQLdecypher;
+Return decyphered password
 sql
 delete
 unsafe pattern sql.delete(X_0:int, X_1:str, X_2:str, X_3:any):int 
@@ -37148,11 +37148,6 @@ row_number
 pattern sql.row_number(X_0:any_1, X_1:bit, X_2:bit):int 
 SQLrow_number;
 return the row_numer-ed groups
-sql
-rt_credentials
-pattern sql.rt_credentials(X_0:str) (X_1:bat[:str], X_2:bat[:str], X_3:bat[:str]) 
-sql_rt_credentials_wrap;
-Return the remote table credentials for the given table
 sql
 sessions
 pattern sql.sessions() (X_0:bat[:int], X_1:bat[:str], X_2:bat[:timestamp], X_3:bat[:timestamp], X_4:bat[:str], X_5:bat[:int], X_6:bat[:int], X_7:bat[:int], X_8:bat[:int]) 
@@ -37626,6 +37621,11 @@ Catalog operation create_seq
 sqlcatalog
 create_table
 pattern sqlcatalog.create_table(X_0:str, X_1:str, X_2:ptr, X_3:int):void 
+SQLcreate_table;
+Catalog operation create_table
+sqlcatalog
+create_table
+pattern sqlcatalog.create_table(X_0:str, X_1:str, X_2:ptr, X_3:int, X_4:str, X_5:str):void 
 SQLcreate_table;
 Catalog operation create_table
 sqlcatalog
