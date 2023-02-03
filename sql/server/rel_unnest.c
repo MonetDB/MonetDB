@@ -2103,17 +2103,7 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	if (!e || (e->type != e_func && e->type != e_convert) || !e->l)
 		return e;
 
-	if (e->type == e_convert) {
-		sql_subtype *ft = exp_fromtype(e);
-		sql_subtype *tt = exp_totype(e);
-
-		/* complex conversion matrix */
-		if (ft->type->eclass == EC_SEC && tt->type->eclass == EC_SEC && ft->type->digits > tt->type->digits) {
-			/* no conversion needed, just time adjustment */
-			ne = e->l;
-			ne->tpe = *tt; // ugh
-		}
-	} else {
+	if (e->type != e_convert) {
 		list *args = e->l;
 		sql_subfunc *f = e->f;
 
