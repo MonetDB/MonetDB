@@ -124,11 +124,3 @@ backend_find_role(ptr mvc, char *name, sqlid *role_id)
 		return be_funcs.ffrole(mvc, name, role_id);
 	return 0;
 }
-
-
-void
-backend_set_user_api_hooks(ptr mvc)
-{
-	if (be_funcs.fset_user_api_hooks != NULL)
-		be_funcs.fset_user_api_hooks(mvc);
-}

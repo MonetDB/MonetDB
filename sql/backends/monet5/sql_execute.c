@@ -427,7 +427,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 #endif
 	if (!sql) {
 		inited = 1;
-		msg = SQLinitClient(c);
+		msg = SQLinitClient(c, NULL, NULL, NULL);
 		sql = (backend *) c->sqlcontext;
 	}
 	if (msg){

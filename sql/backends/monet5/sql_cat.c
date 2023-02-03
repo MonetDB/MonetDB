@@ -34,6 +34,7 @@
 #include "rel_bin.h"
 #include "rel_dump.h"
 #include "orderidx.h"
+#include "sql_user.h"
 
 #define initcontext() \
 	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)\
@@ -1504,10 +1505,23 @@ SQLcreate_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sname = *getArgReference_str(stk, pci, 1);
 	//str tname = *getArgReference_str(stk, pci, 2);
 	sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
-	int temp = *getArgReference_int(stk, pci, 4);
+	int temp = *getArgReference_int(stk, pci, 4), remote = (pci->argc == 7);
+	int pw_encrypted = temp;
 
 	initcontext();
+	if (remote)
+		temp = 0;
 	msg = create_table_or_view(sql, sname, t->base.name, t, temp, 0);
+	if (!msg && remote) {
+		str username = *getArgReference_str(stk, pci, 5);
+		str password = *getArgReference_str(stk, pci, 6);
+
+		sql_schema *s = mvc_bind_schema(sql, sname);
+		t = s?mvc_bind_table(sql, s, t->base.name):NULL;
+		if (t)
+			return remote_create(sql, t->base.id, username, password, pw_encrypted);
+		throw(SQL, "sql.create_table", SQLSTATE(3F000) "Internal error");
+	}
 	return msg;
 }
 

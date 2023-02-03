@@ -50,6 +50,8 @@
 
 #include "msabaoth.h"		/* msab_getUUID */
 #include "muuid.h"
+#include "rel_remote.h"
+#include "sql_user.h"
 
 int
 constantAtom(backend *sql, MalBlkPtr mb, atom *a)
@@ -331,14 +333,14 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0, p, o;
 	Symbol backup = NULL;
-	const char *local_tbl = prp->value.pval;
+	sqlid table_id = prp->id;
 	node *n;
 	int i, q, v, res = 0, added_to_cache = 0,  *lret, *rret;
 	size_t len = 1024, nr;
 	char *lname, *buf;
 	sql_rel *r = rel;
 
-	if (local_tbl == NULL) {
+	if (table_id == 0) {
 		sql_error(m, 003, SQLSTATE(42000) "Missing property on the input relation");
 		return -1;
 	}
@@ -439,14 +441,34 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		}
 	}
 
-	/* q := remote.connect("schema.table", "msql"); */
+	/* get username / password */
+	sql_table *rt = sql_trans_find_table(m->session->tr, table_id);
+	str username = NULL, password = NULL;
+	if (!rt || remote_get(m, table_id, &username, &password) != 0) {
+		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return -1;
+	}
+	/* q := remote.connect("uri", "username", "password", "msql"); */
 	p = newStmt(curBlk, remoteRef, connectRef);
 	if (p == NULL) {
 		GDKfree(lname);
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
-	p = pushStr(curBlk, p, local_tbl);
+	const char *uri = mapiuri_uri(rt->query, m->sa);
+	p = pushStr(curBlk, p, uri);
+	p = pushStr(curBlk, p, username);
+	GDKfree(username);
+	size_t pwlen = strlen(password);
+    char *pwhash = (char*)GDKmalloc(pwlen + 2);
+	if (pwhash == NULL) {
+		GDKfree(password);
+		return -1;
+	}
+	snprintf(pwhash, pwlen + 2, "\1%s", password);
+	GDKfree(password);
+	p = pushStr(curBlk, p, pwhash);
+	GDKfree(pwhash);
 	p = pushStr(curBlk, p, "msql");
 	q = getArg(p, 0);
 	pushInstruction(curBlk, p);

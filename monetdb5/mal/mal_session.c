@@ -179,19 +179,18 @@ static str MSserveClient(Client cntxt);
 
 
 static inline void
-cleanUpScheduleClient(Client c, Scenario s, bstream *fin, stream *fout, str *command, str *err)
+cleanUpScheduleClient(Client c, Scenario s, str *command, str *err)
 {
 	if(c) {
 		if (s) {
 			str msg = NULL;
 			if((msg = s->exitClientCmd(c)) != MAL_SUCCEED) {
-				mnstr_printf(fout, "!%s\n", msg);
+				mnstr_printf(c->fdout, "!%s\n", msg);
 				freeException(msg);
 			}
 		}
 		MCcloseClient(c);
 	}
-	exit_streams(fin, fout);
 	if (command) {
 		GDKfree(*command);
 		*command = NULL;
@@ -313,34 +312,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		oid uid = 0;
 		sabdb *stats = NULL;
 
-		if (!GDKembedded()) {
-			if ((c = MCinitClient(MAL_ADMIN, NULL, NULL)) == NULL) {
-				if ( MCshutdowninprogress())
-					mnstr_printf(fout, "!system shutdown in progress, please try again later\n");
-				else
-					mnstr_printf(fout, "!maximum concurrent client limit reached "
-									   "(%d), please try again later\n", MAL_MAXCLIENTS);
-				cleanUpScheduleClient(NULL, NULL, fin, fout, &command, NULL);
-				return;
-			}
-			Scenario scenario = findScenario("sql");
-			if ((msg = scenario->initClientCmd(c)) != MAL_SUCCEED) {
-				mnstr_printf(fout, "!%s\n", msg);
-				cleanUpScheduleClient(c, scenario, fin, fout, &command, &msg);
-				return;
-			}
-			/* access control: verify the credentials supplied by the user,
-			 * no need to check for database stuff, because that is done per
-			 * database itself (one gets a redirect) */
-			if ((msg = AUTHcheckCredentials(&uid, c, user, passwd, challenge, algo)) != MAL_SUCCEED) {
-				mnstr_printf(fout, "!%s\n", msg);
-				cleanUpScheduleClient(c, scenario, fin, fout, &command, &msg);
-				return;
-			}
-			cleanUpScheduleClient(c, scenario, NULL, NULL, NULL, NULL);
-		}
-
-
 		if (!GDKinmemory(0) && !GDKembedded()) {
 			err = msab_getMyStatus(&stats);
 			if (err != NULL) {
@@ -387,7 +358,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			c->curmodule = c->usermodule = userModule();
 			if(c->curmodule  == NULL) {
 				mnstr_printf(fout, "!could not allocate space\n");
-				cleanUpScheduleClient(c, NULL, fin, fout, &command, &msg);
+				cleanUpScheduleClient(c, NULL, &command, &msg);
 				return;
 			}
 		}
@@ -403,20 +374,23 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 
 			mnstr_printf(fout, "!only the 'monetdb' user can use non-sql languages. "
 					           "run mserver5 with --set %s=yes to change this.\n", mal_enableflag);
-			cleanUpScheduleClient(c, NULL, fin, fout, &command, &msg);
+			cleanUpScheduleClient(c, NULL, &command, &msg);
 			return;
 		}
 	}
 
 	if((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
 		mnstr_printf(fout, "!could not allocate space\n");
-		cleanUpScheduleClient(c, NULL, fin, fout, &command, &msg);
+		cleanUpScheduleClient(c, NULL, &command, &msg);
 		return;
 	}
 
 	// at this point username should have being verified
 	c->username = GDKstrdup(user);
-
+	if (passwd)
+		passwd = GDKstrdup(passwd);
+	if (algo)
+		algo = GDKstrdup(algo);
 	GDKfree(command);
 
 	/* NOTE ABOUT STARTING NEW THREADS
@@ -435,6 +409,23 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 
 	c->protocol = protocol;
 	c->blocksize = blocksize;
+
+	if (!GDKembedded() && c->phase[MAL_SCENARIO_INITCLIENT]) {
+		str (*init_client)(Client c, str passwd, str challenge, str algo) = c->phase[MAL_SCENARIO_INITCLIENT];
+		if ((msg = init_client(c, passwd, challenge, algo)) != MAL_SUCCEED) {
+			mnstr_printf(fout, "!%s\n", msg);
+			if (passwd)
+				GDKfree(passwd);
+			if (algo)
+				GDKfree(algo);
+			cleanUpScheduleClient(c, NULL, NULL, &msg);
+			return;
+		}
+	}
+	if (passwd)
+		GDKfree(passwd);
+	if (algo)
+		GDKfree(algo);
 
 	mnstr_settimeout(c->fdin->s, 50, is_exiting, NULL);
 	msg = MSserveClient(c);
@@ -580,7 +571,7 @@ MSserveClient(Client c)
 		do {
 			do {
 				MT_thread_setworking("running scenario");
-				msg = runScenario(c,0);
+				msg = runScenario(c);
 				freeException(msg);
 				if (c->mode == FINISHCLIENT)
 					break;
