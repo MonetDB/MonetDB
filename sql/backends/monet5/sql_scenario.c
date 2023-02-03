@@ -228,7 +228,8 @@ SQLepilogue(void *ret)
 
 
 static int
-SQLexecPostLoginTriggers(Client c) {
+SQLexecPostLoginTriggers(Client c)
+{
 	int res = LOG_OK;
 	char *err = NULL;
 	backend *be = (backend *) c->sqlcontext;
@@ -236,24 +237,22 @@ SQLexecPostLoginTriggers(Client c) {
 		mvc *m = be->mvc;
 		sql_trans *tr = m->session->tr;
 		int active = tr->active;
+		assert(active);
 		if (active || mvc_trans(m) == 0) {
 			sqlstore *store = tr->store;
 			sql_table *triggers = find_sys_table(tr, TRIGGERS_TABLE_NAME);
 			sql_column *eventCol = find_sql_column(triggers, "event");
 			sql_column *timeCol = find_sql_column(triggers, "time");
 			sql_column *stmtCol = find_sql_column(triggers, "statement");
-			rids *rs = store->table_api.rids_select(tr, eventCol, NULL, NULL);
-			for (oid rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
-				const int event = (int) store->table_api.column_find_sht(tr, eventCol, rid);
-				const int time = (int) store->table_api.column_find_sht(tr, timeCol, rid);
-				bool after = time == 1;
-				if ((event == LOGIN_EVENT) && after) {
-					const char *stmt = store->table_api.column_find_value(tr, stmtCol, rid);
-					if ((err = SQLstatementIntern(c, stmt, "sql.init", TRUE, FALSE, NULL))) {
-						(void) sql_error(m, 02, SQLSTATE(42000) "%s", err);
-						freeException(err);
-						res = LOG_ERR;
-					};
+			int event = LOGIN_EVENT, time = 1;
+
+			oid rid = store->table_api.column_find_row(tr, eventCol, &event, timeCol, &time, NULL);
+			if (!is_oid_nil(rid)) {
+				const char *stmt = store->table_api.column_find_value(tr, stmtCol, rid);
+				if ((err = SQLstatementIntern(c, stmt, "sql.init", TRUE, FALSE, NULL))) {
+					(void) sql_error(m, 02, SQLSTATE(42000) "%s", err);
+					freeException(err);
+					res = LOG_ERR;
 				}
 			}
 			if (!active)
