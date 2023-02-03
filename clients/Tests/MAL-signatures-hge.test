@@ -30205,6 +30205,11 @@ SQLbatstr_cast;
 cast to string and check for overflow
 batcalc
 str
+pattern batcalc.str(X_0:int, X_1:int, X_2:int, X_3:int, X_4:bat[:any_1], X_5:int):bat[:str] 
+SQLbatstr_cast;
+cast to string and check for overflow, no candidate list
+batcalc
+str
 command batcalc.str(X_0:bat[:uuid], X_1:bat[:oid]):bat[:str] 
 UUIDuuid2str_bulk;
 Coerce a uuid to a string type

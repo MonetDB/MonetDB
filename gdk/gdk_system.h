@@ -207,7 +207,9 @@ gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 
 /* define this to keep track of which locks a thread has acquired */
 #ifndef NDEBUG			/* normally only in debug builds */
+#ifndef __COVERITY__
 #define LOCK_OWNER 1
+#endif
 #endif
 
 #ifndef LOCK_OWNER
@@ -382,7 +384,7 @@ __pragma(comment(linker, "/include:" _LOCK_PREF_ "wininit_" #n "_"))
 #define MT_lock_set(l)						\
 	do {							\
 		_DBG_LOCK_COUNT_0(l);				\
-		if (!MT_lock_try(l)) {				\
+		if (!TryEnterCriticalSection(&(l)->lock)) {	\
 			_DBG_LOCK_CONTENTION(l);		\
 			MT_thread_setlockwait(l);		\
 			EnterCriticalSection(&(l)->lock);	\
@@ -469,7 +471,7 @@ typedef struct MT_Lock {
 #define MT_lock_set(l)					\
 	do {						\
 		_DBG_LOCK_COUNT_0(l);			\
-		if (!MT_lock_try(l)) {			\
+		if (pthread_mutex_trylock(&(l)->lock) {	\
 			_DBG_LOCK_CONTENTION(l);	\
 			MT_thread_setlockwait(l);	\
 			pthread_mutex_lock(&(l)->lock);	\

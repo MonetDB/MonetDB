@@ -185,7 +185,7 @@ typedef struct MALBLK {
 	ptr replica;			/* for the replicator tests */
 
 	/* During the run we keep track on the maximum number of concurrent threads and memory claim */
-	int		workers;
+	ATOMIC_TYPE workers;
 	lng		memory;
 	lng runtime;			/* average execution time of block in ticks */
 	int calls;				/* number of calls */
@@ -222,7 +222,6 @@ typedef struct MALSTK {
 	char status;			/* srunning 'R' suspended 'S', quiting 'Q' */
 	int pcup;				/* saved pc upon a recursive all */
 	oid tag;				/* unique invocation call tag */
-	int	workers;			/* Actual number of concurrent workers */
 	lng	memory;				/* Actual memory claims for highwater mark */
 
 	struct MALSTK *up;		/* stack trace list */

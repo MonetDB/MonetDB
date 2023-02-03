@@ -745,7 +745,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	size_t minsize;
 	int ret = 0;
 	char *srcpath, *dstpath;
-	int t0;
+	lng t0;
 
 	if (h->storage == STORE_INVALID || h->newstorage == STORE_INVALID) {
 		size_t allocated;
@@ -802,11 +802,11 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	}
 	strconcat_len(srcpath, minsize, dstpath, suffix, NULL);
 
-	t0 = GDKms();
+	t0 = GDKusec();
 	ret = MT_rename(srcpath, dstpath);
-	TRC_DEBUG(HEAP, "rename %s %s = %d %s (%dms)\n",
+	TRC_DEBUG(HEAP, "rename %s %s = %d %s ("LLFMT"usec)\n",
 		  srcpath, dstpath, ret, ret < 0 ? GDKstrerror(errno, (char[128]){0}, 128) : "",
-		  GDKms() - t0);
+		  GDKusec() - t0);
 	GDKfree(srcpath);
 	GDKfree(dstpath);
 

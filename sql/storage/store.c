@@ -2202,6 +2202,8 @@ store_exit(sqlstore *store)
 		os_destroy(store->cat->objects, store);
 		os_destroy(store->cat->schemas, store);
 		_DELETE(store->cat);
+	} else {
+		MT_lock_unset(&store->commit);
 	}
 	store->logger_api.destroy(store);
 
@@ -3063,7 +3065,7 @@ trigger_dup(sql_trans *tr, sql_trigger *i, sql_table *t, sql_trigger **tres)
 }
 
 static int
-table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name, sql_table **tres)
+table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name, sql_table **tres, bool dup_global_as_global)
 {
 	sqlstore *store = tr->store;
 	sql_table *t = ZNEW(sql_table);
@@ -3074,7 +3076,7 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name, sql_tab
 	t->type = ot->type;
 	t->system = ot->system;
 	t->bootstrap = ot->bootstrap;
-	t->persistence = s?ot->persistence:SQL_LOCAL_TEMP;
+	t->persistence = (s || dup_global_as_global)?ot->persistence:SQL_LOCAL_TEMP;
 	t->commit_action = ot->commit_action;
 	t->access = ot->access;
 	t->query = (ot->query) ?_STRDUP(ot->query) : NULL;
@@ -3092,7 +3094,7 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name, sql_tab
 	t->sz = ot->sz;
 	ATOMIC_PTR_INIT(&t->data, NULL);
 
-	if (isGlobal(t) && (res = os_add(t->s->tables, tr, t->base.name, &t->base)))
+	if ((res = os_add(isLocalTemp(t) ? tr->localtmps : t->s->tables, tr, t->base.name, &t->base)))
 		goto cleanup;
 
 	if (isPartitionedByExpressionTable(ot)) {
@@ -3165,8 +3167,9 @@ cleanup:
 sql_table *
 globaltmp_instantiate(sql_trans *tr, sql_table *ot)
 {
+	assert(isGlobal(ot)&& isTempTable(ot));
 	sql_table *t = NULL;
-	if (table_dup(tr, ot, NULL, NULL, &t) == LOG_OK)
+	if (table_dup(tr, ot, NULL, NULL, &t, false) == LOG_OK)
 		return t;
 	return NULL;
 }
@@ -3175,9 +3178,11 @@ static int
 new_table(sql_trans *tr, sql_table *t, sql_table **tres)
 {
 	int res = LOG_OK;
-	t = find_sql_table(tr, t->s, t->base.name); /* could have changed by depending changes */
+	if (!isGlobalTemp(t))
+		t = find_sql_table(tr, t->s, t->base.name); /* could have changed by depending changes */
+
 	if (!isLocalTemp(t) && !isNew(t) && !os_obj_intransaction(t->s->tables, tr, &t->base))
-		res = table_dup(tr, t, t->s, NULL, tres);
+		res = table_dup(tr, t, t->s, NULL, tres, true);
 	else
 		*tres = t;
 	return res;
@@ -3599,18 +3604,15 @@ static void
 sql_trans_rollback(sql_trans *tr, bool commit_lock)
 {
 	sqlstore *store = tr->store;
-
-	/* move back deleted */
-	if (tr->localtmps.dset) {
-		for(node *n=tr->localtmps.dset->h; n; ) {
-			node *next = n->next;
-			sql_table *tt = n->data;
-			if (!isNew(tt)) /* TODO this is prepending without re-hashing? */
-				list_prepend(tr->localtmps.set, dup_base(&tt->base));
-			n = next;
-		}
-	}
 	if (!list_empty(tr->changes)) {
+		struct os_iter oi;
+		os_iterator(&oi, tr->localtmps, tr, NULL);
+		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
+			sql_table *t = (sql_table *) b;
+			if (t->commit_action == CA_DROP && !b->deleted) {
+				(void) sql_trans_drop_table_id(tr, t->s, b->id, DROP_RESTRICT);// TODO transaction_layer_revamp: fix result code sql_trans_drop_table_id
+			}
+		}
 		/* revert the change list */
 		list *nl = list_create((fdestroy) NULL);
 		for(node *n=tr->changes->h; n; n = n->next)
@@ -3659,31 +3661,6 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		if (!commit_lock)
 			MT_lock_unset(&store->commit);
 	}
-	if (tr->localtmps.dset) {
-		list_destroy2(tr->localtmps.dset, tr->store);
-		tr->localtmps.dset = NULL;
-	}
-	if (cs_size(&tr->localtmps)) {
-		/* cleanup new */
-		if (tr->localtmps.nelm) {
-			for(node *n=tr->localtmps.nelm; n; ) {
-				node *next = n->next;
-				(void) cs_del(&tr->localtmps, store, n, true);
-				n = next;
-			}
-			tr->localtmps.nelm = NULL;
-		}
-		/* handle content */
-		for(node *n=tr->localtmps.set->h; n; ) {
-			node *next = n->next;
-			sql_table *tt = n->data;
-
-			if (tt->commit_action == CA_DROP) {
-				(void) sql_trans_drop_table_id(tr, tt->s, tt->base.id, DROP_RESTRICT);
-			}
-			n = next;
-		}
-	}
 
 	if (!list_empty(tr->predicates)) {
 		list_destroy(tr->predicates);
@@ -3709,8 +3686,8 @@ sql_trans_destroy(sql_trans *tr)
 	if (!list_empty(tr->changes))
 		sql_trans_rollback(tr, false);
 	sqlstore *store = tr->store;
+	os_destroy(tr->localtmps, store);
 	store_lock(store);
-	cs_destroy(&tr->localtmps, tr->store);
 	store_unlock(store);
 	MT_lock_destroy(&tr->lock);
 	if (!list_empty(tr->dropped))
@@ -3726,7 +3703,6 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 
 	if (!tr)
 		return NULL;
-	cs_new(&tr->localtmps, NULL, (fdestroy) &table_destroy, (fkeyvalue)&base_key);
 	MT_lock_init(&tr->lock, "trans_lock");
 	tr->parent = parent;
 	if (name) {
@@ -3736,6 +3712,13 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 		}
 		_DELETE(parent->name);
 		parent->name = _STRDUP(name);
+	}
+
+	if (!parent) {
+		tr->localtmps = os_new(NULL, (destroy_fptr) &table_destroy, true, true, false, store);
+	}
+	else {
+		tr->localtmps = os_dup(parent->localtmps);
 	}
 
 	store_lock(store);
@@ -3765,12 +3748,13 @@ schema_dup(sql_trans *tr, sql_schema *s, const char *name, sql_schema **rs)
 	ns->system = s->system;
 
 	sqlstore *store = tr->store;
-	ns->tables = os_new(NULL, (destroy_fptr) &table_destroy, isTempSchema(s), true, true, store);
-	ns->seqs = os_new(NULL, (destroy_fptr) &seq_destroy, isTempSchema(s), true, true, store);
-	ns->keys = os_new(NULL, (destroy_fptr) &key_destroy, isTempSchema(s), true, true, store);
-	ns->idxs = os_new(NULL, (destroy_fptr) &idx_destroy, isTempSchema(s), true, true, store);
-	ns->triggers = os_new(NULL, (destroy_fptr) &trigger_destroy, isTempSchema(s), true, true, store);
-	ns->parts = os_new(NULL, (destroy_fptr) &part_destroy, isTempSchema(s), false, true, store);
+	assert(!isTempSchema(s)); // TODO transaction_layer_revamp: check if this is really true
+	ns->tables = os_new(NULL, (destroy_fptr) &table_destroy, false, true, true, store);
+	ns->seqs = os_new(NULL, (destroy_fptr) &seq_destroy, false, true, true, store);
+	ns->keys = os_new(NULL, (destroy_fptr) &key_destroy, false, true, true, store);
+	ns->idxs = os_new(NULL, (destroy_fptr) &idx_destroy, false, true, true, store);
+	ns->triggers = os_new(NULL, (destroy_fptr) &trigger_destroy, false, true, true, store);
+	ns->parts = os_new(NULL, (destroy_fptr) &part_destroy, false, false, true, store);
 
 	/* table_dup will dup keys, idxs, triggers and parts */
 	struct os_iter oi;
@@ -3778,7 +3762,7 @@ schema_dup(sql_trans *tr, sql_schema *s, const char *name, sql_schema **rs)
 	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 		sql_table *t = NULL;
 
-		if ((res = table_dup(tr, (sql_table*)b, s, NULL, &t)) || (res = os_add(ns->tables, tr, t->base.name, &t->base))) {
+		if ((res = table_dup(tr, (sql_table*)b, s, NULL, &t, true)) || (res = os_add(ns->tables, tr, t->base.name, &t->base))) {
 			schema_destroy(tr->store, ns);
 			return res;
 		}
@@ -3904,6 +3888,15 @@ sql_trans_commit(sql_trans *tr)
 	sqlstore *store = tr->store;
 
 	if (!list_empty(tr->changes)) {
+		struct os_iter oi;
+		os_iterator(&oi, tr->localtmps, tr, NULL);
+		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
+			sql_table *t = (sql_table *) b;
+			if (t->commit_action == CA_DROP && !b->deleted) {
+				(void) sql_trans_drop_table_id(tr, t->s, b->id, DROP_RESTRICT);;// TODO transaction_layer_revamp: fix result code sql_trans_drop_table_id
+			}
+		}
+
 		int flush = 0;
 		ulng commit_ts = 0, oldest = 0, log_file_id = 0;
 
@@ -4044,22 +4037,6 @@ sql_trans_commit(sql_trans *tr)
 		store_unlock(store);
 		MT_lock_unset(&store->commit);
 	}
-	/* drop local temp tables with commit action CA_DROP, after cleanup */
-	if (cs_size(&tr->localtmps)) {
-		for(node *n=tr->localtmps.set->h; n; ) {
-			node *next = n->next;
-			sql_table *tt = n->data;
-
-			if (tt->commit_action == CA_DROP)
-				(void) sql_trans_drop_table_id(tr, tt->s, tt->base.id, DROP_RESTRICT);
-			n = next;
-		}
-	}
-	if (tr->localtmps.dset) {
-		list_destroy2(tr->localtmps.dset, store);
-		tr->localtmps.dset = NULL;
-	}
-	tr->localtmps.nelm = NULL;
 
 	if (ok == LOG_OK)
 		ok = clean_predicates_and_propagate_to_parent(tr);
@@ -5078,14 +5055,15 @@ sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid ow
 	s->auth_id = auth_id;
 	s->owner = owner;
 	s->system = FALSE;
-	s->tables = os_new(NULL, (destroy_fptr) &table_destroy, isTempSchema(s), true, true, store);
-	s->types = os_new(NULL, (destroy_fptr) &type_destroy, isTempSchema(s), true, true, store);
-	s->funcs = os_new(NULL, (destroy_fptr) &func_destroy, isTempSchema(s), false, false, store);
-	s->seqs = os_new(NULL, (destroy_fptr) &seq_destroy, isTempSchema(s), true, true, store);
-	s->keys = os_new(NULL, (destroy_fptr) &key_destroy, isTempSchema(s), true, true, store);
-	s->idxs = os_new(NULL, (destroy_fptr) &idx_destroy, isTempSchema(s), true, true, store);
-	s->triggers = os_new(NULL, (destroy_fptr) &trigger_destroy, isTempSchema(s), true, true, store);
-	s->parts = os_new(NULL, (destroy_fptr) &part_destroy, isTempSchema(s), false, true, store);
+	assert(!isTempSchema(s)); // TODO transaction_layer_revamp: check if this is really true
+	s->tables = os_new(NULL, (destroy_fptr) &table_destroy, false, true, true, store);
+	s->types = os_new(NULL, (destroy_fptr) &type_destroy, false, true, true, store);
+	s->funcs = os_new(NULL, (destroy_fptr) &func_destroy, false, false, false, store);
+	s->seqs = os_new(NULL, (destroy_fptr) &seq_destroy, false, true, true, store);
+	s->keys = os_new(NULL, (destroy_fptr) &key_destroy, false, true, true, store);
+	s->idxs = os_new(NULL, (destroy_fptr) &idx_destroy, false, true, true, store);
+	s->triggers = os_new(NULL, (destroy_fptr) &trigger_destroy, false, true, true, store);
+	s->parts = os_new(NULL, (destroy_fptr) &part_destroy, false, false, true, store);
 	s->store = tr->store;
 
 	if ((res = store->table_api.table_insert(tr, sysschema, &s->base.id, &s->base.name, &s->auth_id, &s->owner, &s->system))) {
@@ -5592,16 +5570,14 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 		if ((res = os_del(s->tables, tr, t->base.name, dup_base(&t->base))))
 			return res;
 	} else {
-		node *n = cs_find_id(&tr->localtmps, t->base.id);
-		if (n && !cs_del(&tr->localtmps, tr->store, n, t->base.new))
-			return -1;
+		assert(isTempTable(t));
+		sql_base *b = os_find_id(tr->localtmps, tr, t->base.id);
+		if ((res = os_del(tr->localtmps, tr, b->name, dup_base(b))))
+			return res;
 	}
 
-	if ((res = table_dup(tr, t, t->s, new_name, &dup)))
+	if ((res = table_dup(tr, t, t->s, new_name, &dup, true)))
 		return res;
-	t = dup;
-	if (!isGlobal(t) && !cs_add(&tr->localtmps, t, true))
-		return -1;
 	return res;
 }
 
@@ -5624,7 +5600,7 @@ sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *
 		return res;
 	if ((res = os_del(os->tables, tr, t->base.name, dup_base(&t->base))))
 		return res;
-	return table_dup(tr, t, ns, NULL, &dup);
+	return table_dup(tr, t, ns, NULL, &dup, true);
 }
 
 int
@@ -5681,12 +5657,9 @@ sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const cha
 	t->sz = sz;
 	if (sz < 0)
 		t->sz = COLSIZE;
-	if (isGlobal(t)) {
-		if ((res = os_add(s->tables, tr, t->base.name, &t->base)))
-			return res;
-	} else if (!cs_add(&tr->localtmps, t, true)) {
-		return -1;
-	}
+
+	if ((res = os_add(isGlobal(t)?s->tables:tr->localtmps, tr, t->base.name, &t->base)))
+		return res;
 
 	if (isUnloggedTable(t))
 		t->persistence = SQL_PERSIST; // It's not a temporary
@@ -5881,23 +5854,21 @@ create_sql_column(sqlstore *store, sql_allocator *sa, sql_table *t, const char *
 int
 sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_action)
 {
-	sql_table *t = find_sql_table(tr, s, name), *gt = NULL;
+	sql_table *t = find_sql_table(tr, s, name);
 
 	if (!t) {
 		TRC_ERROR(SQL_STORE, "sql_trans_drop_table: Table %s.%s does not exist\n", s->base.name, name);
 		return -1;
 	}
 
+	sql_table *gt = t;
 	if (t && isTempTable(t)) {
-		gt = find_sql_table_id(tr, s, t->base.id);
-		if (gt)
-			t = gt;
+		gt = (sql_table*)os_find_id(s->tables, tr, t->base.id);
 	}
-	int is_global = isGlobal(t), res = LOG_OK;
-	node *n = NULL;
 
-	if (!is_global || gt)
-		n = cs_find_id(&tr->localtmps, t->base.id);
+	assert(t == gt || !gt || (isTempTable(gt) && !isLocalTemp(gt) && isLocalTemp(t)));
+
+	int res = LOG_OK;
 
 	if ((drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) &&
 	    tr->dropped && list_find_id(tr->dropped, t->base.id))
@@ -5920,16 +5891,15 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 	}
 
 	if (!isDeclaredTable(t))
-		if ((res = sys_drop_table(tr, t, drop_action)))
+		if ((res = sys_drop_table(tr, gt?gt:t, drop_action)))
 			return res;
 
 	t->base.deleted = 1;
-	if (is_global) {
-		if ((res = os_del(s->tables, tr, t->base.name, dup_base(&t->base))))
-			return res;
-	}
-	if (n && !cs_del(&tr->localtmps, tr->store, n, 0))
-		return -1;
+	
+	if (gt && (res = os_del(s->tables, tr, gt->base.name, dup_base(&gt->base))))
+		return res;
+	if (t != gt && (res =os_del(tr->localtmps, tr, t->base.name, dup_base(&t->base))))
+		return res;
 
 	sqlstore *store = tr->store;
 	if (isTable(t) && !isNew(t))
@@ -7030,6 +7000,7 @@ sql_session_destroy(sql_session *s)
 		sqlstore *store = s->tr->store;
 		store->singleuser--;
 	}
+	// TODO check if s->tr is not always there
 	assert(!s->tr || s->tr->active == 0);
 	if (s->tr)
 		sql_trans_destroy(s->tr);
