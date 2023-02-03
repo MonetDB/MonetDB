@@ -249,17 +249,17 @@ q_dequeue(Queue *q, Client cntxt)
 		return NULL;
 	}
 	{
-		int i, minpc;
+		int minpc;
 
 		minpc = q->last -1;
 		s = q->data[minpc];
 		/* for long "queues", just grab the first eligible entry we encounter */
-		if (q->last < 1024) {
-			for (i = q->last - 1; i >= 0; i--) {
-				if ( cntxt ==  NULL || q->data[i]->flow->cntxt == cntxt) {
+		if (s && q->last < 1024) {
+			for (int i = q->last - 1; i >= 0; i--) {
+				if (cntxt ==  NULL || q->data[i]->flow->cntxt == cntxt) {
 					/* for shorter "queues", find the oldest eligible entry */
 					r = q->data[i];
-					if (s && r && s->pc > r->pc) {
+					if (r && s->pc > r->pc) {
 						minpc = i;
 						s = r;
 					}
@@ -268,9 +268,10 @@ q_dequeue(Queue *q, Client cntxt)
 		}
 		if (minpc >= 0) {
 			r = q->data[minpc];
-			i = minpc;
 			q->last--;
-			memmove(q->data + i, q->data + i + 1, (q->last - i) * sizeof(q->data[0]));
+			if (minpc < q->last)
+				memmove(q->data + minpc, q->data + minpc + 1,
+						(q->last - minpc) * sizeof(q->data[0]));
 		}
 	}
 	MT_lock_unset(&q->l);
