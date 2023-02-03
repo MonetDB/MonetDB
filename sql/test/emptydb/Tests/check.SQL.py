@@ -58,6 +58,9 @@ sys_pkeys = [
 
     ('queue', 'tag'),
     ('sessions', 'sessionid'),
+
+    ('fkey_actions', 'action_id'),
+    ('fkeys', 'id'),
 ]
 
 sys_akeys = [
@@ -95,6 +98,9 @@ sys_akeys = [
     ('table_partitions WHERE column_id IS NOT NULL', 'table_id, column_id'),
     ('table_partitions WHERE "expression" IS NOT NULL', 'table_id, "expression"'),
     ('range_partitions', 'table_id, partition_id, "maximum"'),
+
+    ('fkey_actions', 'action_name'),
+    ('fkeys', 'table_id, name'),
 ]
 
 sys_fkeys = [
@@ -196,6 +202,13 @@ sys_fkeys = [
     ('range_partitions', 'partition_id', 'id', 'table_partitions'),
     ('value_partitions', 'table_id', 'id', '_tables'),
     ('value_partitions', 'partition_id', 'id', 'table_partitions'),
+
+    ('keys WHERE action >= 0 AND ', 'cast(((action >> 8) & 255) as smallint)', 'action_id', 'fkey_actions'),
+    ('keys WHERE action >= 0 AND ', 'cast((action & 255) as smallint)', 'action_id', 'fkey_actions'),
+    ('fkeys', 'id, table_id, type, name, rkey', 'id, table_id, type, name, rkey', 'keys'),
+    ('fkeys', 'update_action_id', 'action_id', 'fkey_actions'),
+    ('fkeys', 'delete_action_id', 'action_id', 'fkey_actions'),
+
 ]
 
 sys_notnull = [
@@ -371,6 +384,18 @@ sys_notnull = [
     ('value_partitions', 'table_id'),
     ('value_partitions', 'partition_id'),
     ('value_partitions', 'value'),
+
+    ('fkey_actions', 'action_id'),
+    ('fkey_actions', 'action_name'),
+    ('fkeys', 'id'),
+    ('fkeys', 'table_id'),
+    ('fkeys', 'type'),
+    ('fkeys', 'name'),
+    ('fkeys', 'rkey'),
+    ('fkeys', 'update_action_id'),
+    ('fkeys', 'update_action'),
+    ('fkeys', 'delete_action_id'),
+    ('fkeys', 'delete_action')
 ]
 
 with process.client('sql', format='csv', echo=False,
