@@ -390,13 +390,13 @@ monet5_password_hash(mvc *m, const char *username)
 	oid rid = getUserOIDByName(m, username);
 	str password = getUserPassword(m, rid);
 	if (password) {
-		if ((msg = AUTHdecypherValue(&hash, password)) != MAL_SUCCEED) {
+		msg = AUTHdecypherValue(&hash, password);
+		GDKfree(password);
+		if (msg) {
 			(void) sql_error(m, 02, SQLSTATE(42000) "monet5_password_hash: %s", getExceptionMessage(msg));
 			freeException(msg);
-			GDKfree(password);
 		}
 	}
-	GDKfree(password);
 	return hash;
 }
 
@@ -912,8 +912,12 @@ remote_create(mvc *m, sqlid id, const str username, const str password, int pw_e
 	if (strNil(password)) {
 		oid rid = getUserOIDByName(m, username);
 		str cypher = getUserPassword(m, rid);
-		if (AUTHdecypherValue(&pwhash, cypher))
+		str err = AUTHdecypherValue(&pwhash, cypher);
+		GDKfree(cypher);
+		if (err) {
+			GDKfree(err);
 			throw(MAL, "addRemoteTableCredentials", SQLSTATE(42000) "Crypt backend hash not found");
+		}
 	}
 	str msg = AUTHcypherValue(&cypher, pwhash);
 	if (pwhash != password)
@@ -945,8 +949,11 @@ remote_get(mvc *m, sqlid id, str *username, str *password)
 		*username = GDKstrdup("");
 	}
 	str hashpw = store->table_api.column_find_value(tr, find_sql_column(remote_user_info, "password"), rid);
-	if (AUTHdecypherValue(password, hashpw))
-		return -2;
+	str err = AUTHdecypherValue(password, hashpw);
 	GDKfree(hashpw);
+	if (err) {
+		GDKfree(err); /* pass up, change api to return str */
+		return -2;
+	}
 	return 0;
 }
