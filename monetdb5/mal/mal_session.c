@@ -418,6 +418,9 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 				GDKfree(passwd);
 			if (algo)
 				GDKfree(algo);
+			if (c->phase[MAL_SCENARIO_EXITCLIENT]) {
+				c->phase[MAL_SCENARIO_EXITCLIENT](c);
+			}
 			cleanUpScheduleClient(c, NULL, NULL, &msg);
 			return;
 		}
