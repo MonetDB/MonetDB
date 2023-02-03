@@ -436,8 +436,7 @@ bailout2:
 	c->state[MAL_SCENARIO_READER] = c;
 	c->state[MAL_SCENARIO_PARSER] = c;
 	c->state[MAL_SCENARIO_OPTIMIZE] = c;
-	if (!msg)
-		c->sqlcontext = be;
+	c->sqlcontext = be;
 	if (msg)
 		c->mode = FINISHCLIENT;
 	return msg;
