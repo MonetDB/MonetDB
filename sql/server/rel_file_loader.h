@@ -10,10 +10,11 @@
 #define _REL_FILE_LOADER_H_
 
 #include "sql_types.h"
+#include "sql_mvc.h"
 
 /* TODO think of set of file names */
-typedef int (*fl_add_types_fptr)(sql_subfunc *f, char *filename);
-typedef int (*fl_load_fptr)(sql_subfunc *f, char *filename);
+typedef int (*fl_add_types_fptr)(mvc *sql, sql_subfunc *f, char *filename);
+typedef int (*fl_load_fptr)(mvc *sql, sql_subfunc *f, char *filename);
 
 typedef struct file_loader_t {
 	char *name;
