@@ -304,8 +304,17 @@ CLTsetworkerlimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_set(&mal_contextLock);
 	if (mal_clients[idx].mode == FREECLIENT)
 		msg = createException(MAL,"clients.setworkerlimit","Session not active anymore");
-	else
+	else {
+		if (limit == 0) {
+			if (mal_clients[idx].maxworkers > 0)
+				limit = mal_clients[idx].maxworkers;
+		} else if (cntxt->user != MAL_ADMIN &&
+				   mal_clients[idx].maxworkers > 0 &&
+				   mal_clients[idx].maxworkers < limit) {
+			limit = mal_clients[idx].maxworkers;
+		}
 		mal_clients[idx].workerlimit = limit;
+	}
 	MT_lock_unset(&mal_contextLock);
 	return msg;
 }
@@ -334,14 +343,24 @@ CLTsetmemorylimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "clients.setmemorylimit", "The memmory limit cannot be NULL");
 	if( limit < 0)
 		throw(MAL, "clients.setmemorylimit", "The memmory limit cannot be negative");
-	if( (size_t) limit > GDK_mem_maxsize / 1048576)
-		throw(MAL,"clients.setmemorylimit","Memory claim beyond physical memory");
+
+	lng mlimit = (lng) limit << 20;
 
 	MT_lock_set(&mal_contextLock);
 	if (mal_clients[idx].mode == FREECLIENT)
 		msg = createException(MAL,"clients.setmemorylimit","Session not active anymore");
-	else
-		mal_clients[idx].memorylimit = limit;
+	else {
+		if (mlimit == 0) {
+			if (mal_clients[idx].maxmem > 0)
+				mlimit = mal_clients[idx].maxmem;
+		} else if (cntxt->user != MAL_ADMIN &&
+				   mal_clients[idx].maxmem > 0 &&
+				   mal_clients[idx].maxmem < mlimit) {
+			mlimit = mal_clients[idx].maxmem;
+		}
+		mal_clients[idx].memorylimit = (int) (mlimit >> 20);
+		mal_clients[idx].qryctx.maxmem = (ATOMIC_BASE_TYPE) mlimit;
+	}
 	MT_lock_unset(&mal_contextLock);
 	return msg;
 }

@@ -377,10 +377,15 @@ SQLprepareClient(Client c, str passwd, str challenge, str algo)
 				break;
 		}
 		lng maxmem;
-		if (monet5_user_get_max_memory(m, m->user_id, &maxmem) == 0)
+		if (monet5_user_get_max_memory(m, m->user_id, &maxmem) == 0) {
 			c->qryctx.maxmem = (ATOMIC_BASE_TYPE) (maxmem > 0 ? maxmem : 0);
-		else
+		} else {
+			c->maxmem = 0;
 			c->qryctx.maxmem = 0;
+			c->maxworkers = 0;
+		}
+		if (c->memorylimit > 0 && c->qryctx.maxmem > ((ATOMIC_BASE_TYPE) c->memorylimit << 20))
+			c->qryctx.maxmem = (ATOMIC_BASE_TYPE) c->memorylimit << 20;
 		mvc_rollback(m, 0, NULL, false);
 	}
 
@@ -419,6 +424,7 @@ SQLprepareClient(Client c, str passwd, str challenge, str algo)
 			tok = strtok_r(NULL, ",", &strtok_state);
 		}
 	}
+
 
 bailout1:
 	if (m->session->tr->active)

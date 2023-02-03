@@ -216,11 +216,10 @@ dofsum(const void *restrict values, oid seqb,
 	if (pergroup == NULL)
 		return BUN_NONE;
 	for (grp = 0; grp < ngrp; grp++) {
-		pergroup[grp].npartials = 0;
-		pergroup[grp].valseen = false;
-		pergroup[grp].maxpartials = 2;
-		pergroup[grp].infs = 0;
-		pergroup[grp].partials = GDKmalloc(pergroup[grp].maxpartials * sizeof(double));
+		pergroup[grp] = (struct pergroup) {
+			.maxpartials = 2,
+			.partials = GDKmalloc(2 * sizeof(double)),
+		};
 		if (pergroup[grp].partials == NULL) {
 			while (grp > 0)
 				GDKfree(pergroup[--grp].partials);

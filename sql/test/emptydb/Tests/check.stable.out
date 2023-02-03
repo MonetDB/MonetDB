@@ -118,6 +118,8 @@ select 'duplicates in range_partitions', count(*), table_id, partition_id, minim
 select 'duplicates in value_partitions', count(*), table_id, partition_id, "value" from sys.value_partitions group by table_id, partition_id, "value" having count(*) > 1;
 select 'duplicates in queue', count(*), tag from sys.queue group by tag having count(*) > 1;
 select 'duplicates in sessions', count(*), sessionid from sys.sessions group by sessionid having count(*) > 1;
+select 'duplicates in fkey_actions', count(*), action_id from sys.fkey_actions group by action_id having count(*) > 1;
+select 'duplicates in fkeys', count(*), id from sys.fkeys group by id having count(*) > 1;
 select 'duplicates in schemas', count(*), name from sys.schemas group by name having count(*) > 1;
 select 'duplicates in _tables', count(*), schema_id, name from sys._tables group by schema_id, name having count(*) > 1;
 select 'duplicates in tables', count(*), schema_id, name from sys.tables group by schema_id, name having count(*) > 1;
@@ -148,6 +150,8 @@ select 'duplicates in comments', count(*), id from sys.comments group by id havi
 select 'duplicates in table_partitions WHERE column_id IS NOT NULL', count(*), table_id, column_id from sys.table_partitions WHERE column_id IS NOT NULL group by table_id, column_id having count(*) > 1;
 select 'duplicates in table_partitions WHERE expression IS NOT NULL', count(*), table_id, "expression" from sys.table_partitions WHERE "expression" IS NOT NULL group by table_id, "expression" having count(*) > 1;
 select 'duplicates in range_partitions', count(*), table_id, partition_id, "maximum" from sys.range_partitions group by table_id, partition_id, "maximum" having count(*) > 1;
+select 'duplicates in fkey_actions', count(*), action_name from sys.fkey_actions group by action_name having count(*) > 1;
+select 'duplicates in fkeys', count(*), table_id, name from sys.fkeys group by table_id, name having count(*) > 1;
 select 'missing reference in schemas authorization', authorization, * from sys.schemas where (authorization) not in (select id from sys.auths);
 select 'missing reference in schemas owner', owner, * from sys.schemas where (owner) not in (select id from sys.auths);
 select 'missing reference in _tables schema_id', schema_id, * from sys._tables where (schema_id) not in (select id from sys.schemas);
@@ -241,6 +245,11 @@ select 'missing reference in range_partitions table_id', table_id, * from sys.ra
 select 'missing reference in range_partitions partition_id', partition_id, * from sys.range_partitions where (partition_id) not in (select id from sys.table_partitions);
 select 'missing reference in value_partitions table_id', table_id, * from sys.value_partitions where (table_id) not in (select id from sys._tables);
 select 'missing reference in value_partitions partition_id', partition_id, * from sys.value_partitions where (partition_id) not in (select id from sys.table_partitions);
+select 'missing reference in keys cast(((action >> 8) & 255) as smallint)', cast(((action >> 8) & 255) as smallint), * from sys.keys WHERE action >= 0 AND  (cast(((action >> 8) & 255) as smallint)) not in (select action_id from sys.fkey_actions);
+select 'missing reference in keys cast((action & 255) as smallint)', cast((action & 255) as smallint), * from sys.keys WHERE action >= 0 AND  (cast((action & 255) as smallint)) not in (select action_id from sys.fkey_actions);
+select 'missing reference in fkeys id, table_id, type, name, rkey', id, table_id, type, name, rkey, * from sys.fkeys where (id, table_id, type, name, rkey) not in (select id, table_id, type, name, rkey from sys.keys);
+select 'missing reference in fkeys update_action_id', update_action_id, * from sys.fkeys where (update_action_id) not in (select action_id from sys.fkey_actions);
+select 'missing reference in fkeys delete_action_id', delete_action_id, * from sys.fkeys where (delete_action_id) not in (select action_id from sys.fkey_actions);
 select 'null in _columns.id', id, * from sys._columns where id is null;
 select 'null in _columns.name', name, * from sys._columns where name is null;
 select 'null in _columns.type', type, * from sys._columns where type is null;
@@ -411,6 +420,17 @@ select 'null in table_partitions.type', type, * from sys.table_partitions where 
 select 'null in value_partitions.table_id', table_id, * from sys.value_partitions where table_id is null;
 select 'null in value_partitions.partition_id', partition_id, * from sys.value_partitions where partition_id is null;
 select 'null in value_partitions.value', value, * from sys.value_partitions where value is null;
+select 'null in fkey_actions.action_id', action_id, * from sys.fkey_actions where action_id is null;
+select 'null in fkey_actions.action_name', action_name, * from sys.fkey_actions where action_name is null;
+select 'null in fkeys.id', id, * from sys.fkeys where id is null;
+select 'null in fkeys.table_id', table_id, * from sys.fkeys where table_id is null;
+select 'null in fkeys.type', type, * from sys.fkeys where type is null;
+select 'null in fkeys.name', name, * from sys.fkeys where name is null;
+select 'null in fkeys.rkey', rkey, * from sys.fkeys where rkey is null;
+select 'null in fkeys.update_action_id', update_action_id, * from sys.fkeys where update_action_id is null;
+select 'null in fkeys.update_action', update_action, * from sys.fkeys where update_action is null;
+select 'null in fkeys.delete_action_id', delete_action_id, * from sys.fkeys where delete_action_id is null;
+select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where delete_action is null;
 % .%1,	.s,	.,	.,	.s,	. # table_name
 % %1,	name,	authorization,	owner,	system,	comment # name
 % char,	varchar,	varchar,	varchar,	boolean,	varchar # type
@@ -5102,6 +5122,14 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %3,	%2,	sessionid # name
 % char,	bigint,	int # type
 % 22,	1,	1 # length
+% .%2,	sys.%1,	sys.fkey_actions # table_name
+% %2,	%1,	action_id # name
+% char,	bigint,	smallint # type
+% 26,	1,	1 # length
+% .%13,	.%12,	.fkeys # table_name
+% %13,	%12,	id # name
+% char,	bigint,	int # type
+% 19,	1,	1 # length
 % .%2,	sys.%1,	sys.schemas # table_name
 % %2,	%1,	name # name
 % char,	bigint,	varchar # type
@@ -5222,6 +5250,14 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %2,	%1,	table_id,	partition_id,	maximum # name
 % char,	bigint,	int,	int,	varchar # type
 % 30,	1,	1,	1,	0 # length
+% .%2,	sys.%1,	sys.fkey_actions # table_name
+% %2,	%1,	action_name # name
+% char,	bigint,	varchar # type
+% 26,	1,	0 # length
+% .%13,	.%12,	.fkeys,	.fkeys # table_name
+% %13,	%12,	table_id,	name # name
+% char,	bigint,	int,	varchar # type
+% 19,	1,	1,	0 # length
 % .%5,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
 % %5,	authorization,	id,	name,	authorization,	owner,	system # name
 % char,	int,	int,	varchar,	int,	int,	boolean # type
@@ -5594,6 +5630,26 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %5,	partition_id,	table_id,	partition_id,	value # name
 % char,	int,	int,	int,	varchar # type
 % 50,	1,	1,	1,	0 # length
+% .%10,	.%4,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys # table_name
+% %10,	%4,	id,	table_id,	type,	name,	rkey,	action # name
+% char,	smallint,	int,	int,	int,	varchar,	int,	int # type
+% 65,	1,	1,	1,	1,	0,	1,	1 # length
+% .%10,	.%4,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys # table_name
+% %10,	%4,	id,	table_id,	type,	name,	rkey,	action # name
+% char,	smallint,	int,	int,	int,	varchar,	int,	int # type
+% 58,	1,	1,	1,	1,	0,	1,	1 # length
+% .%30,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys # table_name
+% %30,	id,	table_id,	type,	name,	rkey,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
+% char,	int,	int,	int,	varchar,	int,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
+% 57,	1,	1,	1,	0,	1,	1,	1,	1,	0,	1,	1,	0,	1,	0 # length
+% .%16,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys # table_name
+% %16,	update_action_id,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
+% char,	smallint,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
+% 43,	1,	1,	1,	1,	0,	1,	1,	0,	1,	0 # length
+% .%16,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys # table_name
+% %16,	delete_action_id,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
+% char,	smallint,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
+% 43,	1,	1,	1,	1,	0,	1,	1,	0,	1,	0 # length
 % .%1,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
 % %1,	id,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
 % char,	int,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
@@ -6274,3 +6330,47 @@ select 'null in value_partitions.value', value, * from sys.value_partitions wher
 % %1,	value,	table_id,	partition_id,	value # name
 % char,	varchar,	int,	int,	varchar # type
 % 30,	0,	1,	1,	0 # length
+% .%1,	.fkey_actions,	.fkey_actions,	.fkey_actions # table_name
+% %1,	action_id,	action_id,	action_name # name
+% char,	smallint,	smallint,	varchar # type
+% 30,	1,	1,	0 # length
+% .%1,	.fkey_actions,	.fkey_actions,	.fkey_actions # table_name
+% %1,	action_name,	action_id,	action_name # name
+% char,	varchar,	smallint,	varchar # type
+% 32,	0,	1,	0 # length
+% .%14,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys # table_name
+% %14,	id,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
+% char,	int,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
+% 16,	1,	1,	1,	1,	0,	1,	1,	0,	1,	0 # length
+% .%14,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys # table_name
+% %14,	table_id,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
+% char,	int,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
+% 22,	1,	1,	1,	1,	0,	1,	1,	0,	1,	0 # length
+% .%14,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys # table_name
+% %14,	type,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
+% char,	int,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
+% 18,	1,	1,	1,	1,	0,	1,	1,	0,	1,	0 # length
+% .%14,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys # table_name
+% %14,	name,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
+% char,	varchar,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
+% 18,	0,	1,	1,	1,	0,	1,	1,	0,	1,	0 # length
+% .%14,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys # table_name
+% %14,	rkey,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
+% char,	int,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
+% 18,	1,	1,	1,	1,	0,	1,	1,	0,	1,	0 # length
+% .%14,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys # table_name
+% %14,	update_action_id,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
+% char,	smallint,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
+% 30,	1,	1,	1,	1,	0,	1,	1,	0,	1,	0 # length
+% .%12,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys # table_name
+% %12,	update_action,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
+% char,	varchar,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
+% 27,	0,	1,	1,	1,	0,	1,	1,	0,	1,	0 # length
+% .%14,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys # table_name
+% %14,	delete_action_id,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
+% char,	smallint,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
+% 30,	1,	1,	1,	1,	0,	1,	1,	0,	1,	0 # length
+% .%12,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys # table_name
+% %12,	delete_action,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
+% char,	varchar,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
+% 27,	0,	1,	1,	1,	0,	1,	1,	0,	1,	0 # length
