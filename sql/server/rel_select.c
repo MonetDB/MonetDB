@@ -530,7 +530,7 @@ nary_function_arg_types_2str(mvc *sql, list* types, int N)
  */
 
 static char *
-file_loader_add_table_column_types(sql_subfunc *f, sql_allocator *sa, sql_exp *e)
+file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, sql_exp *e)
 {
 	if (!exp_is_atom(e))
 		return "Filename missing";
@@ -542,44 +542,13 @@ file_loader_add_table_column_types(sql_subfunc *f, sql_allocator *sa, sql_exp *e
 	if (ext)
 		ext=ext+1;
 	printf("file_loader add column types '%s' ext %s\n", filename, ext?ext:"");
-	(void)f;
-	(void)sa;
-	(void)e;
 
 	file_loader_t *fl = fl_find(ext);
 	/* TODO add errors on missing file loader */
 	if (fl) {
-		 fl->add_types(f, filename); /* TODO check for errors */
+		 fl->add_types(sql, f, filename); /* TODO check for errors */
 		 return NULL;
 	}
-
-	/* below stuff needs to be in the parquet backend code */
-	// #include "../backends/monet5/vaults/parquet/parquet.h"
-
-	// parquet_file *file = parquet_open_file(filename);
-
-// 	if(file->error) {
-// 		return file->error;
-// 	}
-
-//	get_table_metadata(file);
-
-	/* ext -> call back */
-	/*
-	node *n;
-	list *types = sa_list(sa);
-
-	if (ol_first_node(t->columns)) for (n = ol_first_node(t->columns); n; n = n->next) {
-		sql_column *c = n->data;
-		if (c->base.name[0] != '%')
-			append(types, &c->type);
-	}
-	return types;
-	f->res = types;
-	*/
-
-//	GDKfree(file);
-
 	return NULL;
 }
 
@@ -597,7 +566,7 @@ find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sq
 		if (list_empty(tl) || f->func->vararg || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1))) {
 			if (list_length(exps) == 1 && f && f->func->varres && strlen(f->func->mod) == 0 && strlen(f->func->imp) == 0 && strcmp(fname, "file_loader") == 0) {
 				sql_exp *file = exps->h->data;
-				char *err = file_loader_add_table_column_types(f, sql->sa, file);
+				char *err = file_loader_add_table_column_types(sql, f, file);
 				if (err)
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: file_loader function type resolutions failed '%s'", err);
 			}

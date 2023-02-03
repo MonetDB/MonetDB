@@ -17,7 +17,6 @@
 #include "mal_linker.h"
 #include "mal_utils.h"
 
-/*
 static parquet_file *
 parquet_open_file(char* filename)
 {
@@ -41,7 +40,7 @@ parquet_open_file(char* filename)
     return file;
 }
 
-static parquet_table_metadata
+static GArrowTable *
 parquet_get_table_metadata(parquet_file *file)
 {
     GError *table_error;
@@ -51,25 +50,51 @@ parquet_get_table_metadata(parquet_file *file)
         printf("%s", table_error->message);
     }
 
+	/*
     guint64 n_rows = garrow_table_get_n_rows(table);
+	*/
 
-    parquet_table_metadata metadata = {"foo", n_rows};
-
-    return metadata;
+    return table;
 }
-*/
 
 static int
-parquet_add_types(sql_subfunc *f, char *filename)
+parquet_add_types(mvc *sql, sql_subfunc *f, char *filename)
 {
 	(void)f;
 	(void)filename;
+
+    parquet_file *file = parquet_open_file(filename);
+
+	if(file->error) {
+		//return file->error;
+		return -1;
+	}
+
+	GArrowTable *tbl = parquet_get_table_metadata(file);
+
+    list *types = sa_list(sql->sa);
+	/*
+	for each parquet column
+		get type from parquet column
+
+		sql_subtype *t = find_type( using meta data);
+
+        append(types, t);
+    }
+	*/
+	(void)tbl;
+	/* cleanup tbl */
+    f->res = types;
+
+	/* close file */
+	GDKfree(file);
 	return 0;
 }
 
 static int
-parquet_load(sql_subfunc *f, char *filename)
+parquet_load(mvc *sql, sql_subfunc *f, char *filename)
 {
+	(void)sql;
 	(void)f;
 	(void)filename;
 	return 0;
