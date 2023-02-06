@@ -9,10 +9,6 @@ typedef struct parquet_file {
     char* error;
 } parquet_file;
 
-typedef struct parquet_table_metadata {
-    char* table_name;
-    int n_row;
-} parquet_table_metadata;
 
 /* Opens the file, and returns a struct containing the reader. */
 //parquet_file *parquet_open_file(char* filename);

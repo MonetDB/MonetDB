@@ -16,6 +16,7 @@
 #include "mal_debugger.h"
 #include "mal_linker.h"
 #include "mal_utils.h"
+#include "sql_types.h"
 
 static parquet_file *
 parquet_open_file(char* filename)
@@ -40,21 +41,124 @@ parquet_open_file(char* filename)
     return file;
 }
 
-static GArrowTable *
-parquet_get_table_metadata(parquet_file *file)
-{
-    GError *table_error;
-    GArrowTable *table = gparquet_arrow_file_reader_read_table(file->reader, &table_error);
+static char* parquet_type_map(GArrowType type) {
+    switch(type) {
+      case GARROW_TYPE_NA:
+        return  "NA";
+        
+      case GARROW_TYPE_BOOLEAN:
+        return  "boolean";
+        
+      case GARROW_TYPE_UINT8:
+        return  "uint8";
+        
+      case GARROW_TYPE_INT8:
+        return  "int8";
+        
+      case GARROW_TYPE_UINT16:
+        return  "uint16";
+        
+      case GARROW_TYPE_INT16:
+        return  "int16";
+        
+      case GARROW_TYPE_UINT32:
+        return  "uint32";
+        
+      case GARROW_TYPE_INT32:
+        return  "int32";
+        
+      case GARROW_TYPE_UINT64:
+        return  "uint64";
+        
+      case GARROW_TYPE_INT64:
+        return  "int64";
+        
+      case GARROW_TYPE_HALF_FLOAT:
+        return  "half float";
+        
+      case GARROW_TYPE_FLOAT:
+        return  "type float";
+        
+      case GARROW_TYPE_DOUBLE:
+        return  "double";
+        
+      case GARROW_TYPE_STRING:
+        return  "type string";
+        
+      case GARROW_TYPE_BINARY:
+        return  "type binary";
+        
+      case GARROW_TYPE_FIXED_SIZE_BINARY:
+        return  "fixed size binary";
+        
+      case GARROW_TYPE_DATE32:
+        return  "date32";
+        
+      case GARROW_TYPE_DATE64:
+        return  "date64";
+        
+      case GARROW_TYPE_TIMESTAMP:
+        return  "timestamp";
+        
+      case GARROW_TYPE_TIME32:
+        return  "time32";
+        
+      case GARROW_TYPE_TIME64:
+        return  "time64";
+        
+      case GARROW_TYPE_MONTH_INTERVAL:
+        return  "type month interval";
+        
+      case GARROW_TYPE_DAY_TIME_INTERVAL:
+        return  "day time interval";
+        
+      case GARROW_TYPE_DECIMAL128:
+        return  "decimal128";
+        
+      case GARROW_TYPE_DECIMAL256:
+        return  "decimal256";
+        
+      case GARROW_TYPE_LIST:
+        return  "type list";
+        
+      case GARROW_TYPE_STRUCT:
+        return  "type struct";
+        
+      case GARROW_TYPE_SPARSE_UNION:
+        return  "sparse union";
+        
+      case GARROW_TYPE_DENSE_UNION:
+        return  "dense union";
+        
+      case GARROW_TYPE_DICTIONARY:
+        return  "type dict";
+        
+      case GARROW_TYPE_MAP:
+        return  "type map";
+        
+      case GARROW_TYPE_EXTENSION:
+        return  "type extension";
+        
+      case GARROW_TYPE_FIXED_SIZE_LIST:
+        return  "fixed size list";
+        
+      case GARROW_TYPE_DURATION:
+        return  "type duration";
+        
+      case GARROW_TYPE_LARGE_STRING:
+        return  "large string";
+        
+      case GARROW_TYPE_LARGE_BINARY:
+        return  "Large binary";
+        
+      case GARROW_TYPE_LARGE_LIST:
+        return  "Large list";
+        
+      case GARROW_TYPE_MONTH_DAY_NANO_INTERVAL:
+        return  "Month Day interval";
+    } // switch
 
-    if(table_error) {
-        printf("%s", table_error->message);
-    }
-
-	/*
-    guint64 n_rows = garrow_table_get_n_rows(table);
-	*/
-
-    return table;
+    return "not implemented";
 }
 
 static int
@@ -70,19 +174,34 @@ parquet_add_types(mvc *sql, sql_subfunc *f, char *filename)
 		return -1;
 	}
 
-	GArrowTable *tbl = parquet_get_table_metadata(file);
+    GError *table_error;
+    GArrowTable *table = gparquet_arrow_file_reader_read_table(file->reader, &table_error);
+
+    if(table_error) {
+        printf("%s", table_error->message);
+        return -1;
+    }
+
+    guint n_columns = garrow_table_get_n_columns(table);
 
     list *types = sa_list(sql->sa);
-	/*
-	for each parquet column
-		get type from parquet column
 
-		sql_subtype *t = find_type( using meta data);
+    for(int col = 0; col < (int)n_columns; col++) {
+        GArrowChunkedArray *array = garrow_table_get_column_data(table, col);
+        GArrowType type = garrow_chunked_array_get_value_type(array);
+        char* st = parquet_type_map(type);
 
-        append(types, t);
+        printf("%s", st);
     }
-	*/
-	(void)tbl;
+
+	// for each parquet column
+	// 	get type from parquet column
+
+	// 	sql_subtype *t = find_type( using meta data);
+
+    //     append(types, t);
+    // }
+	(void)table;
 	/* cleanup tbl */
     f->res = types;
 
