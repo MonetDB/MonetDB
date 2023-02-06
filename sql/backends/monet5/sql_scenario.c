@@ -237,7 +237,6 @@ SQLexecPostLoginTriggers(Client c)
 		mvc *m = be->mvc;
 		sql_trans *tr = m->session->tr;
 		int active = tr->active;
-		assert(active);
 		if (active || mvc_trans(m) == 0) {
 			sqlstore *store = tr->store;
 			sql_table *triggers = find_sys_table(tr, TRIGGERS_TABLE_NAME);
