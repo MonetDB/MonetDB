@@ -496,7 +496,7 @@ SQLinit(Client c, const char *initpasswd)
 	const char *opt_pipe;
 
 	master_password = NULL;
-	if (!GDKembedded()) {
+	if (!GDKembedded() && !GDKinmemory(0)) {
 		msg = msab_pickSecret(&master_password);
 		if (msg)
 			return msg;
