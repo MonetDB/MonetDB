@@ -65,6 +65,8 @@ sql_trans_drop_dependencies(sql_trans* tr, sqlid depend_id)
 	int log_res = LOG_OK;
 
 	rs = store->table_api.rids_select(tr, dep_dep_id, &depend_id, &depend_id, NULL);
+	if (rs == NULL)
+		return LOG_ERR;
 	for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid) && log_res == LOG_OK; rid = store->table_api.rids_next(rs))
 		log_res = store->table_api.table_delete(tr, deps, rid);
 	store->table_api.rids_destroy(rs);
@@ -87,6 +89,8 @@ sql_trans_drop_dependency(sql_trans* tr, sqlid obj_id, sqlid depend_id, sql_depe
 	int log_res = LOG_OK;
 
 	rs = store->table_api.rids_select(tr, dep_obj_id, &obj_id, &obj_id, dep_dep_id, &depend_id, &depend_id, dep_dep_type, &dtype, &dtype, NULL);
+	if (rs == NULL)
+		return LOG_ERR;
 	for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid) && log_res == LOG_OK; rid = store->table_api.rids_next(rs))
 		log_res = store->table_api.table_delete(tr, deps, rid);
 	store->table_api.rids_destroy(rs);
@@ -296,6 +300,8 @@ sql_trans_owner_schema_dependencies(sql_trans *tr, sqlid owner_id)
 		return NULL;
 
 	rs = store->table_api.rids_select(tr, schema_owner, &owner_id, &owner_id, NULL);
+	if (rs == NULL)
+		return NULL;
 
 	for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
 		if (!(v = store->table_api.column_find_value(tr, schema_id, rid))) {

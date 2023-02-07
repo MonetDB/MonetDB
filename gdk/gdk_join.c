@@ -3054,7 +3054,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 /* Count the number of unique values for the first half and the complete
  * set (the sample s of b) and return the two values in *cnt1 and
  * *cnt2. In case of error, both values are 0. */
-static void
+static gdk_return
 count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 {
 	struct canditer ci;
@@ -3080,7 +3080,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		/* trivial: already unique */
 		*cnt1 = half;
 		*cnt2 = ci.ncand;
-		return;
+		return GDK_SUCCEED;
 	}
 
 	(void) BATordered(b);
@@ -3091,7 +3091,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		/* trivial: all values are the same */
 		*cnt1 = *cnt2 = 1;
 		bat_iterator_end(&bi);
-		return;
+		return GDK_SUCCEED;
 	}
 
 	assert(bi.type != TYPE_void);
@@ -3152,7 +3152,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		seen = GDKzalloc((65536 / 32) * sizeof(seen[0]));
 		if (seen == NULL) {
 			bat_iterator_end(&bi);
-			return;
+			return GDK_FAIL;
 		}
 		for (i = 0; i < ci.ncand; i++) {
 			if (i == half) {
@@ -3193,7 +3193,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 			HEAPfree(&hs.heaplink, true);
 			HEAPfree(&hs.heapbckt, true);
 			bat_iterator_end(&bi);
-			return;
+			return GDK_FAIL;
 		}
 		for (i = 0; i < ci.ncand; i++) {
 			if (i == half)
@@ -3226,7 +3226,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  *cnt1, *cnt2, algomsg, GDKusec() - t0);
 
-	return;
+	return GDK_SUCCEED;
 }
 
 static double
@@ -3251,12 +3251,19 @@ guess_uniques(BAT *b, struct canditer *ci)
 		s1 = BATsample_with_seed(b, 1000, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
 	} else {
 		BAT *s2 = BATsample_with_seed(ci->s, 1000, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
+		if (s2 == NULL)
+			return -1;
 		s1 = BATproject(s2, ci->s);
 		BBPreclaim(s2);
 	}
+	if (s1 == NULL)
+		return -1;
 	BUN n2 = BATcount(s1);
 	BUN n1 = n2 / 2;
-	count_unique(b, s1, &cnt1, &cnt2);
+	if (count_unique(b, s1, &cnt1, &cnt2) != GDK_SUCCEED) {
+		BBPreclaim(s1);
+		return -1;
+	}
 	BBPreclaim(s1);
 
 	double A = (double) (cnt2 - cnt1) / (n2 - n1);
@@ -3337,8 +3344,11 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 			MT_lock_set(&r->theaplock);
 			double unique_est = r->tunique_est;
 			MT_lock_unset(&r->theaplock);
-			if (unique_est == 0)
+			if (unique_est == 0) {
 				unique_est = guess_uniques(r, &(struct canditer){.tpe=cand_dense, .ncand=BATcount(r)});
+				if (unique_est < 0)
+					return -1;
+			}
 			/* we have an estimate of the number of unique
 			 * values, assume some collisions */
 			rcost *= 1.1 * ((double) cnt / unique_est);
@@ -3367,8 +3377,11 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 			MT_lock_set(&r->theaplock);
 			double unique_est = r->tunique_est;
 			MT_lock_unset(&r->theaplock);
-			if (unique_est == 0)
+			if (unique_est == 0) {
 				unique_est = guess_uniques(r, rci);
+				if (unique_est < 0)
+					return -1;
+			}
 			/* we have an estimate of the number of unique
 			 * values, assume some chains */
 			rccost = 1.1 * ((double) cnt / unique_est);
@@ -3873,6 +3886,10 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		}
 	}
 	rcost = joincost(r, &lci, &rci, &rhash, &prhash, &rcand);
+	if (rcost < 0) {
+		rc = GDK_FAIL;
+		goto doreturn;
+	}
 
 	if (!nil_on_miss && !only_misses && !not_in && !max_one && !min_one) {
 		/* maybe do a hash join on the swapped operands; if we
@@ -3882,6 +3899,10 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		double lcost;
 
 		lcost = joincost(l, &rci, &lci, &lhash, &plhash, &lcand);
+		if (lcost < 0) {
+			rc = GDK_FAIL;
+			goto doreturn;
+		}
 		if (semi)
 			lcost += rci.ncand; /* cost of BATunique(r) */
 		/* add cost of sorting; obviously we don't know the
@@ -4196,6 +4217,10 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 
 	lcost = joincost(l, &rci, &lci, &lhash, &plhash, &lcand);
 	rcost = joincost(r, &lci, &rci, &rhash, &prhash, &rcand);
+	if (lcost < 0 || rcost < 0) {
+		rc = GDK_FAIL;
+		goto doreturn;
+	}
 
 	/* if the cost of doing searches on l is lower than the cost
 	 * of doing searches on r, we swap */
