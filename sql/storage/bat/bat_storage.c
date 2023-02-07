@@ -3984,7 +3984,7 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 		}
 		unlock_table(tr->store, t->base.id);
 
-		if (cs->ebid) {
+		if (ok == GDK_SUCCEED && cs->ebid) {
 			BAT *ins = temp_descriptor(cs->ebid);
 			assert(ins);
 			if (BATcount(ins) > ins->batInserted)

@@ -748,8 +748,9 @@ log_read_destroy(logger *lg, trans *tr, log_id id)
 		tr->changes[tr->nr].type = LOG_DESTROY;
 		tr->changes[tr->nr].cid = id;
 		tr->nr++;
+		return LOG_OK;
 	}
-	return LOG_OK;
+	return LOG_ERR;
 }
 
 static gdk_return
@@ -784,9 +785,9 @@ log_read_create(logger *lg, trans *tr, log_id id)
 		tr->changes[tr->nr].tt = tpe;
 		tr->changes[tr->nr].cid = id;
 		tr->nr++;
+		return LOG_OK;
 	}
-
-	return LOG_OK;
+	return LOG_ERR;
 }
 
 static gdk_return
@@ -1272,7 +1273,7 @@ log_readlog(logger *lg, char *filename, bool *filemissing)
 	}
 
 	gdk_return res = log_open_input(lg, filename, filemissing);
-	if (!lg->input_log)
+	if (!lg->input_log || res != GDK_SUCCEED)
 		return res;
 	int fd;
 	if ((fd = getFileNo(lg->input_log)) < 0 || fstat(fd, &sb) < 0) {
@@ -1314,8 +1315,8 @@ log_readlog(logger *lg, char *filename, bool *filemissing)
 	/* we cannot distinguish errors from incomplete transactions
 	 * (even if we would log aborts in the logs). So we simply
 	 * abort and move to the next log file */
-	//return err == LOG_ERR ? GDK_FAIL : GDK_SUCCEED;
-	return GDK_SUCCEED;
+	return err == LOG_ERR ? GDK_FAIL : GDK_SUCCEED;
+	//return GDK_SUCCEED;
 }
 
 /*
@@ -2665,7 +2666,7 @@ log_bat_transient(logger *lg, log_id id)
 	BAT *b = BBPquickdesc(bid);
 	assert(b);
 	lg->end += BATcount(b);
-	gdk_return r =  log_del_bat(lg, bid);
+	gdk_return r = log_del_bat(lg, bid);
 	log_unlock(lg);
 	if (r != GDK_SUCCEED)
 		(void) ATOMIC_DEC(&lg->refcount);
@@ -2854,7 +2855,8 @@ log_tend(logger *lg)
 	return result;
 }
 static int
-request_number_flush_queue(logger *lg) {
+request_number_flush_queue(logger *lg)
+{
 	// Semaphore protects ring buffer structure in queue against overflowing
 	static unsigned int _number = 0;
 	int result;
@@ -2870,7 +2872,8 @@ request_number_flush_queue(logger *lg) {
 }
 
 static void
-left_truncate_flush_queue(logger *lg, int limit) {
+left_truncate_flush_queue(logger *lg, int limit)
+{
 	MT_lock_set(&lg->flush_queue_lock);
 	lg->flush_queue_begin = (lg->flush_queue_begin + limit) % FLUSH_QUEUE_SIZE;
 	lg->flush_queue_length -= limit;
@@ -2880,29 +2883,31 @@ left_truncate_flush_queue(logger *lg, int limit) {
 		MT_sema_up(&lg->flush_queue_semaphore);
 }
 
-static int
-number_in_flush_queue(logger *lg, unsigned int number) {
+static bool
+number_in_flush_queue(logger *lg, unsigned int number)
+{
 	MT_lock_set(&lg->flush_queue_lock);
 	const int fql = lg->flush_queue_length;
 	MT_lock_unset(&lg->flush_queue_lock);
 	for (int i = 0; i < fql; i++) {
 		const int idx = (lg->flush_queue_begin + i) % FLUSH_QUEUE_SIZE;
 		if (lg->flush_queue[idx] == number) {
-			return 1;
+			return true;
 		}
 	}
-	return 0;
+	return false;
 }
 
 static int
-flush_queue_length(logger *lg) {
+flush_queue_length(logger *lg)
+{
 	MT_lock_set(&lg->flush_queue_lock);
 	const int fql = lg->flush_queue_length;
 	MT_lock_unset(&lg->flush_queue_lock);
 	return fql;
 }
 
-static gdk_return
+static void
 log_tdone(logger *lg, ulng commit_ts)
 {
 	if (lg->debug & 1)
@@ -2911,7 +2916,6 @@ log_tdone(logger *lg, ulng commit_ts)
 	if (lg->current) {
 		lg->current->last_ts = commit_ts;
 	}
-	return GDK_SUCCEED;
 }
 
 gdk_return
@@ -3133,6 +3137,7 @@ log_del_bat(logger *lg, log_bid bid)
 	return GDK_FAIL;
 }
 
+/* returns -1 on failure, 0 when not found, > 0 when found */
 log_bid
 log_find_bat(logger *lg, log_id id)
 {
@@ -3161,7 +3166,8 @@ log_tstart(logger *lg, bool flushnow, ulng *log_file_id)
 			while (lg->saved_id+1 < lg->id) {
 				log_unlock(lg);
 				MT_lock_unset(&lg->rotation_lock);
-				log_flush(lg, (1ULL<<63));
+				if (log_flush(lg, (1ULL<<63)) != GDK_SUCCEED)
+					return GDK_FAIL;
 				MT_lock_set(&lg->rotation_lock);
 				log_lock(lg);
 			}
