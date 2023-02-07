@@ -343,6 +343,8 @@
 #define gdk_export extern
 #endif
 
+/* Only ever compare with GDK_SUCCEED, never with GDK_FAIL, and do not
+ * use as a Boolean. */
 typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
 gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
