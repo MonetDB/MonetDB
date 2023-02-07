@@ -3915,7 +3915,7 @@ sql_trans_commit(sql_trans *tr)
 	sqlstore *store = tr->store;
 
 	if (!list_empty(tr->changes)) {
-		int flush = 0;
+		bool flush = false;
 		ulng commit_ts = 0, oldest = 0, log_file_id = 0;
 
 		MT_lock_set(&store->commit);
@@ -3944,7 +3944,7 @@ sql_trans_commit(sql_trans *tr)
 
 		if (log) {
 			const int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 1000000;
-			flush = log && (tr->logchanges > min_changes && list_empty(store->changes));
+			flush = (tr->logchanges > min_changes && list_empty(store->changes));
 		}
 
 		if (flush)

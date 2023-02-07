@@ -114,6 +114,10 @@ sql_trans_get_dependencies(sql_trans* tr, sqlid id, sql_dependency depend_type, 
 	dep_dep_type = find_sql_column(deps, "depend_type");
 
 	rs = store->table_api.rids_select(tr, dep_id, &id, &id, NULL);
+	if (rs == NULL) {
+		list_destroy(dep_list);
+		return NULL;
+	}
 	for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)){
 		if (!(v = store->table_api.column_find_value(tr, dep_dep_id, rid))) {
 			list_destroy(dep_list);
@@ -121,14 +125,24 @@ sql_trans_get_dependencies(sql_trans* tr, sqlid id, sql_dependency depend_type, 
 			return NULL;
 		}
 		id = *(sqlid*)v;
-		if (!(ignore_ids  && list_find_func_id(ignore_ids, id))) {
-			list_append(dep_list, v);
+		if (!(ignore_ids && list_find_func_id(ignore_ids, id))) {
+			if (list_append(dep_list, v) == NULL) {
+				_DELETE(v);
+				list_destroy(dep_list);
+				store->table_api.rids_destroy(rs);
+				return NULL;
+			}
 			if (!(v = store->table_api.column_find_value(tr, dep_dep_type, rid))) {
 				list_destroy(dep_list);
 				store->table_api.rids_destroy(rs);
 				return NULL;
 			}
-			list_append(dep_list, v);
+			if (list_append(dep_list, v) == NULL) {
+				_DELETE(v);
+				list_destroy(dep_list);
+				store->table_api.rids_destroy(rs);
+				return NULL;
+			}
 		} else {
 			_DELETE(v);
 		}
@@ -142,20 +156,34 @@ sql_trans_get_dependencies(sql_trans* tr, sqlid id, sql_dependency depend_type, 
 		depend_type = TRIGGER_DEPENDENCY;
 
 		rs = store->table_api.rids_select(tr, table_id, &id, &id, NULL);
+		if (rs == NULL) {
+			list_destroy(dep_list);
+			return NULL;
+		}
 		for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
 			if (!(v = store->table_api.column_find_value(tr, tri_id, rid))) {
 				list_destroy(dep_list);
 				store->table_api.rids_destroy(rs);
 				return NULL;
 			}
-			list_append(dep_list, v);
+			if (list_append(dep_list, v) == NULL) {
+				_DELETE(v);
+				list_destroy(dep_list);
+				store->table_api.rids_destroy(rs);
+				return NULL;
+			}
 			if (!(v = MNEW(sht))) {
 				list_destroy(dep_list);
 				store->table_api.rids_destroy(rs);
 				return NULL;
 			}
 			*(sht *) v = (sht) depend_type;
-			list_append(dep_list, v);
+			if (list_append(dep_list, v) == NULL) {
+				_DELETE(v);
+				list_destroy(dep_list);
+				store->table_api.rids_destroy(rs);
+				return NULL;
+			}
 		}
 		store->table_api.rids_destroy(rs);
 	}
