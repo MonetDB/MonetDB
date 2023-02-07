@@ -602,9 +602,9 @@ PyObject *PyDict_CheckForConversion(PyObject *pResult, int expected_columns,
 		if (object == NULL) {
 			msg = createException(
 				MAL, "pyapi3.eval",
-				SQLSTATE(PY000) "Error converting dict return value \"%s\": %s.",
+				SQLSTATE(PY000) "Error converting dict return value \"%s\": %s",
 				retcol_names[i], getExceptionMessage(*return_message));
-			GDKfree(*return_message);
+			freeException(*return_message);
 			goto wrapup;
 		}
 		if (PyList_CheckExact(object)) {
