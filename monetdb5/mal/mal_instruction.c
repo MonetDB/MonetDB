@@ -114,7 +114,10 @@ newMalBlk(int elements)
 
 	/* each MAL instruction implies at least one variable
  	 * we reserve some extra for constants */
-	elements= (elements + 8) %  MALCHUNK == 0 ? elements + 8: ((elements + 8)/MALCHUNK + 1) * MALCHUNK;
+	assert(elements >= 0);
+	elements += 8;
+	if (elements % MALCHUNK != 0)
+		elements = (elements / MALCHUNK + 1) * MALCHUNK;
 	v = (VarRecord *) GDKzalloc(sizeof(VarRecord) * elements );
 	if (v == NULL) {
 		GDKfree(mb);
@@ -152,17 +155,13 @@ newMalBlk(int elements)
 	return mb;
 }
 
-/* We only grow until the MAL block can be used */
-static int growBlk(int elm)
-{
-	return elm % MALCHUNK ==0 ? elm + MALCHUNK : elm;
-}
-
 int
 resizeMalBlk(MalBlkPtr mb, int elements)
 {
 	int i;
-	elements = elements  %  MALCHUNK == 0?  elements: (elements / MALCHUNK +1) * MALCHUNK;
+	assert(elements >= 0);
+	if (elements % MALCHUNK != 0)
+		elements = (elements / MALCHUNK + 1) * MALCHUNK;
 
 	if( elements > mb->ssize){
 		InstrPtr *ostmt = mb->stmt;
@@ -773,8 +772,7 @@ makeVarSpace(MalBlkPtr mb)
 {
 	if (mb->vtop >= mb->vsize) {
 		VarRecord *new;
-		int s = growBlk(mb->vsize);
-
+		int s = (mb->vtop / MALCHUNK + 1) * MALCHUNK;
 		new = (VarRecord*) GDKrealloc(mb->var, s * sizeof(VarRecord));
 		if (new == NULL) {
 			// the only place to return an error signal at this stage.
@@ -782,7 +780,7 @@ makeVarSpace(MalBlkPtr mb)
 			mb->errors = createMalException(mb,0,TYPE, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
-		memset( ((char*) new) + mb->vsize * sizeof(VarRecord), 0, (s- mb->vsize) * sizeof(VarRecord));
+		memset(new + mb->vsize, 0, (s - mb->vsize) * sizeof(VarRecord));
 		mb->vsize = s;
 		mb->var = new;
 	}
@@ -828,7 +826,6 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 		return -1;
 	}
 	if (makeVarSpace(mb)) {
-		assert(0);
 		/* no space for a new variable */
 		return -1;
 	}
@@ -898,7 +895,8 @@ newTypeVariable(MalBlkPtr mb, malType type)
 	if( i < mb->vtop )
 		return i;
 	n = newTmpVariable(mb, type);
-	setVarTypedef(mb, n);
+	if (n >= 0)
+		setVarTypedef(mb, n);
 	return n;
 }
 
@@ -977,6 +975,7 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 				getArg(q, j) = alias[getArg(q, j)];
 			}
 		}
+		mb->vtop = cnt;
 	}
 	/* rename the temporary variable */
 	mb->vid = 0;
@@ -987,7 +986,6 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 */
 
 	GDKfree(alias);
-	mb->vtop = cnt;
 }
 
 void
@@ -1411,11 +1409,12 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 
 	extra = mb->vsize - mb->vtop; // the extra variables already known
 	if (mb->stop + 1 >= mb->ssize) {
-		if( resizeMalBlk(mb, growBlk(mb->ssize + extra)) ){
+		int s = ((mb->ssize + extra) / MALCHUNK + 1) * MALCHUNK;
+		if( resizeMalBlk(mb, s) < 0 ){
 			/* perhaps we can continue with a smaller increment.
 			 * But the block remains marked as faulty.
 			 */
-			if( resizeMalBlk(mb,mb->ssize + 1)){
+			if( resizeMalBlk(mb,mb->ssize + 1) < 0){
 				/* we are now left with the situation that the new instruction is dangling .
 				 * The hack is to take an instruction out of the block that is likely not referenced independently
 				 * The last resort is to take the first, which should always be there

@@ -4286,6 +4286,7 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int oldvtop, int oldvid)
 		clearVariable(mb, i);
 		i++;
 	}
+	assert(oldvtop <= mb->vsize);
 	mb->vtop = oldvtop;
 	mb->vid = oldvid;
 }

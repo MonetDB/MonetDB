@@ -574,6 +574,8 @@ load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 	assert(ranges);
 
 	rs = store->table_api.rids_select(tr, find_sql_column(ranges, "table_id"), &pt->member, &pt->member, NULL);
+	if (rs == NULL)
+		return -1;
 	if ((rid = store->table_api.rids_next(rs)) != oid_nil) {
 		ptr cbat;
 		const char *v;
@@ -602,6 +604,8 @@ load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 	assert(values);
 
 	rids *rs = store->table_api.rids_select(tr, find_sql_column(values, "table_id"), &pt->member, &pt->member, NULL);
+	if (rs == NULL)
+		return -1;
 
 	vals = SA_LIST(tr->sa, (fdestroy) &part_value_destroy);
 	if (!vals) {
@@ -1095,6 +1099,8 @@ load_schema(sql_trans *tr, res_table *rt_schemas, res_table *rt_tables, res_tabl
 	type_schema = find_sql_column(types, "schema_id");
 	type_id = find_sql_column(types, "id");
 	rs = store->table_api.rids_select(tr, type_schema, &s->base.id, &s->base.id, type_id, &tmpid, NULL, NULL);
+	if (rs == NULL)
+		return NULL;
 	for (oid rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
 		sql_type *t = load_type(tr, s, rid);
 		if (os_add(s->types, tr, t->base.name, &t->base)) {
@@ -1133,7 +1139,11 @@ load_schema(sql_trans *tr, res_table *rt_schemas, res_table *rt_tables, res_tabl
 	func_schema = find_sql_column(funcs, "schema_id");
 	func_id = find_sql_column(funcs, "id");
 	rs = store->table_api.rids_select(tr, func_schema, &s->base.id, &s->base.id, func_id, &tmpid, NULL, NULL);
-	if (rs && !store->table_api.rids_empty(rs)) {
+	if (rs == NULL) {
+		schema_destroy(store, s);
+		return NULL;
+	}
+	if (!store->table_api.rids_empty(rs)) {
 		sql_table *args = find_sql_table(tr, syss, "args");
 		sql_column *arg_func_id = find_sql_column(args, "func_id");
 		sql_column *arg_number = find_sql_column(args, "number");
@@ -1180,6 +1190,10 @@ load_schema(sql_trans *tr, res_table *rt_schemas, res_table *rt_tables, res_tabl
 	seq_schema = find_sql_column(seqs, "schema_id");
 	seq_id = find_sql_column(seqs, "id");
 	rs = store->table_api.rids_select(tr, seq_schema, &s->base.id, &s->base.id, seq_id, &tmpid, NULL, NULL);
+	if (rs == NULL) {
+		schema_destroy(store, s);
+		return NULL;
+	}
 	for (oid rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
 		sql_sequence *seq = load_seq(tr, s, rid);
 		if (os_add(s->seqs, tr, seq->base.name, &seq->base)) {
@@ -1199,12 +1213,22 @@ load_schema(sql_trans *tr, res_table *rt_schemas, res_table *rt_tables, res_tabl
 			sql_column *mt_nr = find_sql_column(objects, "nr");
 			sql_column *mt_sub = find_sql_column(objects, "sub");
 			rids *rs = store->table_api.rids_select(tr, mt_nr, &t->base.id, &t->base.id, NULL);
-
+			if (rs == NULL) {
+				schema_destroy(store, s);
+				return NULL;
+			}
 			rs = store->table_api.rids_orderby(tr, rs, mt_sub);
+			if (rs == NULL) {
+				schema_destroy(store, s);
+				return NULL;
+			}
 			for (oid rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
 				sql_part *pt = load_part(tr, t, rid);
 				if (isRangePartitionTable(t)) {
-					load_range_partition(tr, syss, pt);
+					if (load_range_partition(tr, syss, pt) < 0) {
+						schema_destroy(store, s);
+						return NULL;
+					}
 				} else if (isListPartitionTable(t)) {
 					load_value_partition(tr, syss, pt);
 				}
@@ -1220,7 +1244,7 @@ load_schema(sql_trans *tr, res_table *rt_schemas, res_table *rt_tables, res_tabl
 	return s;
 }
 
-void
+int
 sql_trans_update_schemas(sql_trans* tr)
 {
 	sqlstore *store = tr->store;
@@ -1230,12 +1254,15 @@ sql_trans_update_schemas(sql_trans* tr)
 	rids *schemas = store->table_api.rids_select(tr, sysschema_ids, NULL, NULL);
 	oid rid;
 
+	if (schemas == NULL)
+		return -1;
 	TRC_DEBUG(SQL_STORE, "Update schemas\n");
 
 	for (rid = store->table_api.rids_next(schemas); !is_oid_nil(rid); rid = store->table_api.rids_next(schemas)) {
 		sql_trans_update_schema(tr, rid);
 	}
 	store->table_api.rids_destroy(schemas);
+	return 0;
 }
 
 static bool
@@ -3251,6 +3278,8 @@ store_reset_sql_functions(sql_trans *tr, sqlid id)
 
 	/* Find dependencies from the object */
 	depends = store->table_api.rids_select(tr, find_sql_column(deps, "id"), &id, &id, NULL);
+	if (depends == NULL)
+		return -1;
 	if (store->table_api.rids_empty(depends)) { /* nothing depends on the object, return */
 		store->table_api.rids_destroy(depends);
 		return res;
@@ -4413,6 +4442,8 @@ sql_trans_drop_obj_priv(sql_trans *tr, sqlid obj_id)
 	assert(sys && privs);
 	/* select privileges of this obj_id */
 	rids *A = store->table_api.rids_select(tr, find_sql_column(privs, "obj_id"), &obj_id, &obj_id, NULL);
+	if (A == NULL)
+		return LOG_ERR;
 	/* remove them */
 	for(oid rid = store->table_api.rids_next(A); !is_oid_nil(rid) && res == LOG_OK; rid = store->table_api.rids_next(A))
 		res = store->table_api.table_delete(tr, privs, rid);
@@ -4572,6 +4603,8 @@ sys_drop_part(sql_trans *tr, sql_part *pt, int drop_action)
 		sql_table *values = find_sql_table(tr, syss, "value_partitions");
 		assert(values);
 		rids *rs = store->table_api.rids_select(tr, find_sql_column(values, "table_id"), &pt->member, &pt->member, NULL);
+		if (rs == NULL)
+			return LOG_ERR;
 		for (oid rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
 			if ((res = store->table_api.table_delete(tr, values, rid))) {
 				store->table_api.rids_destroy(rs);
@@ -4657,6 +4690,8 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 		assert(pcols);
 		rids *rs = store->table_api.rids_select(tr, pcols, &t->base.id, &t->base.id, NULL);
 		oid poid;
+		if (rs == NULL)
+			return LOG_ERR;
 		if ((poid = store->table_api.rids_next(rs)) != oid_nil) {
 			if ((res = store->table_api.table_delete(tr, partitions, poid))) {
 				store->table_api.rids_destroy(rs);
@@ -4722,6 +4757,8 @@ sys_drop_func(sql_trans *tr, sql_func *func, int drop_action)
 	rids *args = store->table_api.rids_select(tr, sys_args_col, &func->base.id, &func->base.id, NULL);
 	int res = LOG_OK;
 
+	if (args == NULL)
+		return LOG_ERR;
 	for (oid r = store->table_api.rids_next(args); !is_oid_nil(r); r = store->table_api.rids_next(args)) {
 		if ((res = store->table_api.table_delete(tr, sys_tab_args, r))) {
 			store->table_api.rids_destroy(args);
@@ -5488,6 +5525,8 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		p = (sql_part*) n->data;
 
 		rs = store->table_api.rids_select(tr, find_sql_column(values, "table_id"), &pt->base.id, &pt->base.id, NULL);
+		if (rs == NULL)
+			return LOG_ERR;
 		for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
 			if ((res = store->table_api.table_delete(tr, values, rid))) { /* eliminate the old values */
 				store->table_api.rids_destroy(rs);
