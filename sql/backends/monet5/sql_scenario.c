@@ -51,6 +51,8 @@
 #include "opt_mitosis.h"
 #include <unistd.h>
 #include "sql_upgrades.h"
+#include "rel_semantic.h"
+#include "rel_rel.h"
 
 #define MAX_SQL_MODULES 128
 static int sql_modules = 0;
@@ -227,38 +229,81 @@ SQLepilogue(void *ret)
 }
 
 
-static int
+static str
 SQLexecPostLoginTriggers(Client c)
 {
-	int res = LOG_OK;
-	char *err = NULL;
 	backend *be = (backend *) c->sqlcontext;
 	if (be) {
 		mvc *m = be->mvc;
 		sql_trans *tr = m->session->tr;
 		int active = tr->active;
 		if (active || mvc_trans(m) == 0) {
-			sqlstore *store = tr->store;
-			sql_table *triggers = find_sys_table(tr, TRIGGERS_TABLE_NAME);
-			sql_column *eventCol = find_sql_column(triggers, "event");
-			sql_column *timeCol = find_sql_column(triggers, "time");
-			sql_column *stmtCol = find_sql_column(triggers, "statement");
-			int event = LOGIN_EVENT, time = 1;
+			sql_schema *sys = find_sql_schema(tr, "sys");
+			struct os_iter oi;
+			// triggers not related to table should have been loaded in sys
+			os_iterator(&oi, sys->triggers, tr, NULL);
+			for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
+				sql_trigger *t = (sql_trigger*) b;
+				if (t->event == LOGIN_EVENT) {
+					const char *stmt = t->statement;
+					sql_rel *r = NULL;
+					sql_allocator *sa = m->sa;
 
-			oid rid = store->table_api.column_find_row(tr, eventCol, &event, timeCol, &time, NULL);
-			if (!is_oid_nil(rid)) {
-				const char *stmt = store->table_api.column_find_value(tr, stmtCol, rid);
-				if ((err = SQLstatementIntern(c, stmt, "sql.init", TRUE, FALSE, NULL))) {
-					(void) sql_error(m, 02, SQLSTATE(42000) "%s", err);
-					freeException(err);
-					res = LOG_ERR;
+					if (!(m->sa = sa_create(m->pa))) {
+						m->sa = sa;
+						throw(SQL, "sql.SQLexecPostLoginTriggers", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					}
+					r = rel_parse(m, sys, stmt, m_deps);
+					if (r)
+						r = sql_processrelation(m, r, 0, 0, 0, 0);
+					if (r) {
+						list *blist = rel_dependencies(m, r);
+						if (mvc_create_dependencies(m, blist, t->base.id, TRIGGER_DEPENDENCY)) {
+							sa_destroy(m->sa);
+							m->sa = sa;
+							throw(SQL, "sql.SQLexecPostLoginTriggers", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						}
+					}
+					sa_destroy(m->sa);
+					m->sa = sa;
+					if (!r) {
+						if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
+							throw(SQL, "sql.SQLexecPostLoginTriggers", "%s", m->errstr);
+						else
+							throw(SQL, "sql.SQLexecPostLoginTriggers", SQLSTATE(42000) "%s", m->errstr);
+					}
+
+
+
+					//if ((err = SQLstatementIntern(c, stmt, "sql.SQLexecPostLoginTriggers", TRUE, FALSE, NULL))) {
+					//	(void) sql_error(m, 02, SQLSTATE(42000) "%s", err);
+					//	freeException(err);
+					//	res = LOG_ERR;
+					//	break;
+					//}
 				}
 			}
+
+			//sql_table *triggers = find_sys_table(tr, TRIGGERS_TABLE_NAME);
+			//sql_column *eventCol = find_sql_column(triggers, "event");
+			//sql_column *timeCol = find_sql_column(triggers, "time");
+			//sql_column *stmtCol = find_sql_column(triggers, "statement");
+			//int event = LOGIN_EVENT, time = 1;
+
+			//oid rid = store->table_api.column_find_row(tr, eventCol, &event, timeCol, &time, NULL);
+			//if (!is_oid_nil(rid)) {
+			//	const char *stmt = store->table_api.column_find_value(tr, stmtCol, rid);
+			//	if ((err = SQLstatementIntern(c, stmt, "sql.init", TRUE, FALSE, NULL))) {
+			//		(void) sql_error(m, 02, SQLSTATE(42000) "%s", err);
+			//		freeException(err);
+			//		res = LOG_ERR;
+			//	}
+			//}
 			if (!active)
 				sql_trans_end(m->session, SQL_OK);
 		}
 	}
-	return res;
+	return MAL_SUCCEED;
 }
 
 static str
@@ -790,7 +835,7 @@ SQLinitClient(Client c, str passwd, str challenge, str algo)
 		throw(SQL, "SQLinitClient", SQLSTATE(42000) "Catalogue not available");
 	}
 	if ((msg = SQLprepareClient(c, passwd, challenge, algo)) == MAL_SUCCEED) {
-		if (c->usermodule && SQLexecPostLoginTriggers(c) < 0) {
+		if (c->usermodule && (SQLexecPostLoginTriggers(c) != MAL_SUCCEED)) {
 			throw(SQL, "SQLinitClient", SQLSTATE(42000) "Failed to execute post login triggers");
 		}
 	}

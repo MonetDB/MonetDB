@@ -5895,7 +5895,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 			return res;
 
 	t->base.deleted = 1;
-	
+
 	if (gt && (res = os_del(s->tables, tr, gt->base.name, dup_base(&gt->base))))
 		return res;
 	if (t != gt && (res =os_del(tr->localtmps, tr, t->base.name, dup_base(&t->base))))
@@ -6725,8 +6725,8 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	return res;
 }
 
-int
-sql_trans_create_trigger(sql_trigger **tres, sql_trans *tr, sql_table *t, const char *name,
+static int
+sql_trans_create_table_trigger(sql_trigger **tres, sql_trans *tr, sql_table *t, const char *name,
 	sht time, sht orientation, sht event, const char *old_name, const char *new_name,
 	const char *condition, const char *statement )
 {
@@ -6764,6 +6764,52 @@ sql_trans_create_trigger(sql_trigger **tres, sql_trans *tr, sql_table *t, const 
 			return res;
 	}
 	oid tid = t? (oid) t->base.id : oid_nil;
+
+	if ((res = store->table_api.table_insert(tr, systrigger, &nt->base.id, &nt->base.name, &tid, &nt->time, &nt->orientation,
+							 &nt->event, (nt->old_name)?&nt->old_name:&strnil, (nt->new_name)?&nt->new_name:&strnil,
+							 (nt->condition)?&nt->condition:&strnil, &nt->statement)))
+		return res;
+	*tres = nt;
+	return res;
+}
+
+int
+sql_trans_create_trigger(sql_trigger **tres, sql_trans *tr, sql_table *t, const char *name,
+	sht time, sht orientation, sht event, const char *old_name, const char *new_name,
+	const char *condition, const char *statement )
+{
+	if (t)
+		return sql_trans_create_table_trigger(
+				tres, tr, t, name, time,
+			   	orientation, event, old_name,
+			   	new_name, condition, statement);
+
+	// triggers not bound to objects (e.g. table)
+
+	sqlstore *store = tr->store;
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_table *systrigger = find_sql_table(tr, syss, "triggers");
+	char *strnil = (char*)ATOMnilptr(TYPE_str);
+	int res = LOG_OK;
+
+	assert(name);
+
+	sql_trigger *nt = ZNEW(sql_trigger);
+	base_init(NULL, &nt->base, next_oid(tr->store), true, name);
+	nt->time = time;
+	nt->orientation = orientation;
+	nt->event = event;
+	nt->old_name = nt->new_name = nt->condition = NULL;
+	if (old_name)
+		nt->old_name =_STRDUP(old_name);
+	if (new_name)
+		nt->new_name =_STRDUP(new_name);
+	if (condition)
+		nt->condition =_STRDUP(condition);
+	nt->statement =_STRDUP(statement);
+	if ((res = os_add(syss->triggers, tr, nt->base.name, dup_base(&nt->base))))
+		return res;
+	oid tid = oid_nil;
 
 	if ((res = store->table_api.table_insert(tr, systrigger, &nt->base.id, &nt->base.name, &tid, &nt->time, &nt->orientation,
 							 &nt->event, (nt->old_name)?&nt->old_name:&strnil, (nt->new_name)?&nt->new_name:&strnil,
