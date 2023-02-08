@@ -272,9 +272,19 @@ GDKsetenv(const char *name, const char *value)
 				conval ? conval : value, false);
 	} else {
 		rc = BUNappend(GDKkey, name, false);
-		if (rc == GDK_SUCCEED)
+		if (rc == GDK_SUCCEED) {
 			rc = BUNappend(GDKval, conval ? conval : value, false);
+			if (rc != GDK_SUCCEED) {
+				/* undo earlier successful append to
+				 * keep bats aligned (this can't really
+				 * fail, but we must check the result
+				 * anyway) */
+				if (BUNdelete(GDKkey, GDKkey->hseqbase + GDKkey->batCount - 1) != GDK_SUCCEED)
+					GDKerror("deleting key failed after failed value append");
+			}
+		}
 	}
+	assert(BATcount(GDKval) == BATcount(GDKkey));
 	GDKfree(conval);
 	return rc;
 }
