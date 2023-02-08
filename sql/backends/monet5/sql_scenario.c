@@ -262,23 +262,22 @@ SQLexecPostLoginTriggers(Client c)
 }
 
 static str
-userCheckCredentials( mvc *m, Client c, str passwd, str challenge, str algo)
+userCheckCredentials( mvc *m, Client c, str pwhash, str challenge, str algo)
 {
 	oid uid = getUserOIDByName(m, c->username);
 
-	if (strNil(passwd))
+	if (strNil(pwhash))
 		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", c->username);
 	str passValue = getUserPassword(m, uid);
 	if (strNil(passValue))
 		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", c->username);
 	    /* find the corresponding password to the user */
 
-	/* decypher the password (we lose the original tmp here) */
 	str pwd = NULL;
-	str tmp = AUTHdecypherValue(&pwd, passValue);
+	str msg = AUTHdecypherValue(&pwd, passValue);
 	GDKfree(passValue);
-	if (tmp)
-		return tmp;
+	if (msg)
+		return msg;
 
 	/* generate the hash as the client should have done */
 	str hash = mcrypt_hashPassword(algo, pwd, challenge);
@@ -287,7 +286,7 @@ userCheckCredentials( mvc *m, Client c, str passwd, str challenge, str algo)
 		throw(MAL, "checkCredentials", "hash '%s' backend not found", algo);
 
 	/* and now we have it, compare it to what was given to us */
-	if (strcmp(passwd, hash) == 0) {
+	if (strcmp(pwhash, hash) == 0) {
 		free(hash);
 		c->user = uid;
 		return MAL_SUCCEED;
@@ -305,9 +304,9 @@ userCheckCredentials( mvc *m, Client c, str passwd, str challenge, str algo)
 			throw(MAL, "checkCredentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		hash = mcrypt_hashPassword(algo, encrypted, challenge);
 		free(encrypted);
-		if (hash && strcmp(passwd, hash) == 0) {
-			c->user = uid;
+		if (hash && strcmp(pwhash, hash) == 0) {
 			free(hash);
+			c->user = uid;
 			return(MAL_SUCCEED);
 		}
 		free(hash);
@@ -318,7 +317,7 @@ userCheckCredentials( mvc *m, Client c, str passwd, str challenge, str algo)
 }
 
 static char*
-SQLprepareClient(Client c, str passwd, str challenge, str algo)
+SQLprepareClient(Client c, str pwhash, str challenge, str algo)
 {
 	mvc *m = NULL;
 	backend *be = NULL;
@@ -347,14 +346,14 @@ SQLprepareClient(Client c, str passwd, str challenge, str algo)
 		assert(0);
 	}
 	MT_lock_unset(&sql_contextLock);
-	if (c->username && passwd) {
+	if (c->username && pwhash) {
 
 		if (mvc_trans(m) < 0) {
 			// we have -1 here
 			throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", c->username);
 		}
 
-		msg = userCheckCredentials( m, c, passwd, challenge, algo);
+		msg = userCheckCredentials( m, c, pwhash, challenge, algo);
 		if (msg)
 			goto bailout1;
 
