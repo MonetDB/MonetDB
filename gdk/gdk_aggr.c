@@ -56,6 +56,8 @@
  * This function finds the minimum and maximum group id (and the
  * number of groups) and initializes the variables for candidates
  * selection.
+ *
+ * In case of error, returns an error message.
  */
 const char *
 BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,

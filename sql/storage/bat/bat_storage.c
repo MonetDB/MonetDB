@@ -3878,7 +3878,7 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 	}
 	unlock_table(tr->store, t->base.id);
 
-	for (node *n = ol_first_node(t->columns); n && ok; n = n->next) {
+	for (node *n = ol_first_node(t->columns); n && ok == GDK_SUCCEED; n = n->next) {
 		sql_column *c = n->data;
 		column_storage *cs = ATOMIC_PTR_GET(&c->data);
 
@@ -3888,21 +3888,23 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 		}
 
 		lock_table(tr->store, t->base.id);
-		if (!cs->cleared) for (segment *cur = segs->h; cur && ok; cur = cur->next) {
-			unlock_table(tr->store, t->base.id);
-			if (cur->ts == tr->tid && !cur->deleted && cur->start < end) {
-				/* append col*/
-				BAT *ins = temp_descriptor(cs->bid);
-				assert(ins);
-				assert(BATcount(ins) >= cur->end);
-				ok = log_bat(store->logger, ins, c->base.id, cur->start, cur->end-cur->start, nr_appends);
-				bat_destroy(ins);
+		if (!cs->cleared) {
+			for (segment *cur = segs->h; cur && ok == GDK_SUCCEED; cur = cur->next) {
+				unlock_table(tr->store, t->base.id);
+				if (cur->ts == tr->tid && !cur->deleted && cur->start < end) {
+					/* append col*/
+					BAT *ins = temp_descriptor(cs->bid);
+					assert(ins);
+					assert(BATcount(ins) >= cur->end);
+					ok = log_bat(store->logger, ins, c->base.id, cur->start, cur->end-cur->start, nr_appends);
+					bat_destroy(ins);
+				}
+				lock_table(tr->store, t->base.id);
 			}
-			lock_table(tr->store, t->base.id);
 		}
 		unlock_table(tr->store, t->base.id);
 
-		if (cs->ebid) {
+		if (ok == GDK_SUCCEED && cs->ebid) {
 			BAT *ins = temp_descriptor(cs->ebid);
 			assert(ins);
 			if (BATcount(ins) > ins->batInserted)
@@ -3913,7 +3915,7 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 	}
 
 	if (t->idxs) {
-		for (node *n = ol_first_node(t->idxs); n && ok; n = n->next) {
+		for (node *n = ol_first_node(t->idxs); n && ok == GDK_SUCCEED; n = n->next) {
 			sql_idx *i = n->data;
 
 			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
@@ -3927,7 +3929,7 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 				}
 
 				lock_table(tr->store, t->base.id);
-				for (segment *cur = segs->h; cur && ok; cur = cur->next) {
+				for (segment *cur = segs->h; cur && ok == GDK_SUCCEED; cur = cur->next) {
 					unlock_table(tr->store, t->base.id);
 					if (cur->ts == tr->tid && !cur->deleted && cur->start < end) {
 						/* append idx */
