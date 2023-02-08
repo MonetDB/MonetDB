@@ -162,20 +162,27 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		h->base = GDKmalloc(h->size);
 		TRC_DEBUG(HEAP, "%s %zu %p\n", h->filename, h->size, h->base);
 	}
-	if (!GDKinmemory(h->farmid) && h->base == NULL) {
-		char *nme;
 
+	char *nme = NULL;
+	if (!GDKinmemory(h->farmid) && h->base == NULL) {
 		nme = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
 		if (nme == NULL)
 			return GDK_FAIL;
 		h->storage = STORE_MMAP;
 		h->base = HEAPcreatefile(NOFARM, &h->size, nme);
-		GDKfree(nme);
 	}
 	if (h->base == NULL) {
+		/* remove file we may just have created */
+		if (nme != NULL) {
+			/* file may or may not exist, depending on what
+			 * failed */
+			(void) MT_remove(nme);
+			GDKfree(nme);
+		}
 		GDKerror("Insufficient space for HEAP of %zu bytes.", h->size);
 		return GDK_FAIL;
 	}
+	GDKfree(nme);
 	h->newstorage = h->storage;
 	return GDK_SUCCEED;
 }
