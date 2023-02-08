@@ -1325,8 +1325,10 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			int coltype = getBatType(getArgType(mb, pci, 0));
 			b = store->storage_api.bind_col(m->session->tr, c, access);
+			if (b == NULL)
+				throw(SQL, "sql.bind", SQLSTATE(42000) "Cannot bind column %s.%s.%s", sname, tname, cname);
 
-			if (b && b->ttype && b->ttype != coltype) {
+			if (b->ttype && b->ttype != coltype) {
 				BBPunfix(b->batCacheid);
 				throw(SQL,"sql.bind",SQLSTATE(42000) "Column type mismatch %s.%s.%s",sname,tname,cname);
 			}
@@ -4252,6 +4254,7 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int oldvtop, int oldvid)
 		clearVariable(mb, i);
 		i++;
 	}
+	assert(oldvtop <= mb->vsize);
 	mb->vtop = oldvtop;
 	mb->vid = oldvid;
 }
@@ -5000,8 +5003,7 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 	void *argv[4] = {m->store, sname_copy, tname_copy, cname_copy};
 
-	gdk_return res;
-	if((res = gdk_add_callback("str_column_vacuum", str_column_vacuum_callback, 4, argv, interval)) != GDK_SUCCEED) {
+	if (gdk_add_callback("str_column_vacuum", str_column_vacuum_callback, 4, argv, interval) != GDK_SUCCEED) {
 		str_column_vacuum_callback_args_free(4, argv);
 		throw(SQL, "sql.str_column_auto_vacuum", "adding vacuum callback failed!");
 	}
