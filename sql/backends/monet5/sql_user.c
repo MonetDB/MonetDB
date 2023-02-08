@@ -920,8 +920,12 @@ remote_create(mvc *m, sqlid id, const str username, const str password, int pw_e
 		}
 	}
 	str msg = AUTHcypherValue(&cypher, pwhash);
-	if (pwhash != password)
-		GDKfree(pwhash);
+	if (pwhash != password) {
+		if (!pw_encrypted)
+			free(pwhash);
+		else
+			GDKfree(pwhash);
+	}
 	if (msg != MAL_SUCCEED)
 		return msg;
 	log_res = store->table_api.table_insert(m->session->tr, remote_user_info, &id, &username, &cypher, NULL);
@@ -931,8 +935,8 @@ remote_create(mvc *m, sqlid id, const str username, const str password, int pw_e
 	return MAL_SUCCEED;
 }
 
-int
-remote_get(mvc *m, sqlid id, str *username, str *password)
+str
+remote_get(mvc *m, sqlid id, str *username, str *pwhash)
 {
 	sql_trans *tr = m->session->tr;
 	sqlstore *store = tr->store;
@@ -942,18 +946,16 @@ remote_get(mvc *m, sqlid id, str *username, str *password)
 	oid rid = store->table_api.column_find_row(tr, remote_user_info_id, &id, NULL);
 
 	if (is_oid_nil(rid))
-		return -1;
+		throw(MAL, "remote", SQLSTATE(42000) "remote table credentials not found");
 	*username = store->table_api.column_find_value(tr, find_sql_column(remote_user_info, "username"), rid);
 	if (strNil(*username)) {
 		GDKfree(*username);
 		*username = GDKstrdup("");
 	}
-	str hashpw = store->table_api.column_find_value(tr, find_sql_column(remote_user_info, "password"), rid);
-	str err = AUTHdecypherValue(password, hashpw);
-	GDKfree(hashpw);
-	if (err) {
-		GDKfree(err); /* pass up, change api to return str */
-		return -2;
-	}
-	return 0;
+	str cypher = store->table_api.column_find_value(tr, find_sql_column(remote_user_info, "password"), rid);
+	str err = AUTHdecypherValue(pwhash, cypher);
+	GDKfree(cypher);
+	if (err)
+		return err;
+	return MAL_SUCCEED;
 }

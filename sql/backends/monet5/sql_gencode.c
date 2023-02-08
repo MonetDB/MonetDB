@@ -443,9 +443,15 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 
 	/* get username / password */
 	sql_table *rt = sql_trans_find_table(m->session->tr, table_id);
-	str username = NULL, password = NULL;
-	if (!rt || remote_get(m, table_id, &username, &password) != 0) {
+	if (!rt) {
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return -1;
+	}
+	str username = NULL, password = NULL;
+	str msg = remote_get(m, table_id, &username, &password);
+	if (msg) {
+		sql_error(m, 10, "%s", msg);
+		GDKfree(msg);
 		return -1;
 	}
 	/* q := remote.connect("uri", "username", "password", "msql"); */
