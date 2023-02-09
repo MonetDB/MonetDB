@@ -2211,19 +2211,26 @@ logger_create(int debug, const char *fn, const char *logdir, int version, prever
 static ulng
 logger_next_logfile(logger *lg, ulng ts)
 {
+	int m = (GDKdebug & FORCEMITOMASK)?1000:10;
 	if (!lg->pending || !lg->pending->next)
 		return 0;
-	if (lg->pending->last_ts <= ts)
-		return lg->pending->id;
+	if (lg->pending != lg->current && lg->pending->last_ts <= ts) {
+		logged_range *p = lg->pending;
+		for(int i = 1; i<m && p->next && p->next != lg->current && p->last_ts <= ts; i++)
+			p = p->next;
+		return p->id;
+	}
 	return 0;
 }
 
 static void
-logger_cleanup_range(logger *lg)
+logger_cleanup_range(logger *lg, ulng id)
 {
-	logged_range *p = lg->pending;
-	if (p) {
-		lg->pending = p->next;
+	while (lg->pending && lg->pending->id <= id) {
+		logged_range *p;
+		p = lg->pending;
+		if (p)
+			lg->pending = p->next;
 		GDKfree(p);
 	}
 }
@@ -2244,28 +2251,30 @@ logger_activate(logger *lg)
 gdk_return
 logger_flush(logger *lg, ulng ts)
 {
-	ulng lid = logger_next_logfile(lg, ts);
+	ulng lid = logger_next_logfile(lg, ts), olid = lg->saved_id;
 	if (LOG_DISABLED(lg)) {
 		lg->saved_id = lid;
 		lg->saved_tid = lg->tid;
 		if (lid)
-			logger_cleanup_range(lg);
+			logger_cleanup_range(lg, lg->saved_id);
 		if (logger_commit(lg) != GDK_SUCCEED)
 			TRC_ERROR(GDK, "failed to commit");
 		return GDK_SUCCEED;
 	}
 	if (lg->saved_id >= lid)
 		return GDK_SUCCEED;
-	if (lg->saved_id+1 >= lg->id) /* logger should first release the file */
+	ulng lgid = lg->id;
+	if (lg->saved_id+1 >= lgid) /* logger should first release the file */
 		return GDK_SUCCEED;
 	log_return res = LOG_OK;
-	while(lg->saved_id < lid && res == LOG_OK) {
-		if (lg->saved_id >= lg->id)
-			break;
+	ulng cid = olid;
+	if (lid > lgid)
+		lid = lgid;
+	while(cid < lid && res == LOG_OK) {
 		if (!lg->input_log) {
 			char *filename;
 			char id[32];
-			if (snprintf(id, sizeof(id), LLFMT, lg->saved_id+1) >= (int) sizeof(id)) {
+			if (snprintf(id, sizeof(id), LLFMT, cid+1) >= (int) sizeof(id)) {
 				TRC_CRITICAL(GDK, "log_id filename is too large\n");
 				return GDK_FAIL;
 			}
@@ -2294,22 +2303,25 @@ logger_flush(logger *lg, ulng ts)
 			logger_close_input(lg);
 			res = LOG_OK;
 		}
+		cid++;
+	}
+	if (lid > olid && res == LOG_OK) {
+		lg->saved_id = lid;
+		if (logger_commit(lg) != GDK_SUCCEED) {
+			TRC_ERROR(GDK, "failed to commit");
+			res = LOG_ERR;
+			lg->saved_id = olid; /* reset !! */
+		}
 		if (res != LOG_ERR) {
-			lg->saved_id++;
-			if (logger_commit(lg) != GDK_SUCCEED) {
-				TRC_ERROR(GDK, "failed to commit");
-				res = LOG_ERR;
-			}
-
-			/* remove old log file */
-			if (res != LOG_ERR) {
-				if (logger_cleanup(lg, lg->saved_id) != GDK_SUCCEED)
-					res = LOG_ERR;
+			while(olid <= lid) {
+				/* Try to cleanup, remove old log file, continue on failure! */
+				(void)logger_cleanup(lg, olid);
+				olid++;
 			}
 		}
+		if (res == LOG_OK)
+			logger_cleanup_range(lg, lg->saved_id);
 	}
-	if (lid && res == LOG_OK)
-		logger_cleanup_range(lg);
 	return res == LOG_ERR ? GDK_FAIL : GDK_SUCCEED;
 }
 
