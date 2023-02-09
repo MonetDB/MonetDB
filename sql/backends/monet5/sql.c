@@ -3011,7 +3011,8 @@ mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	b = cntxt->sqlcontext;
-	ok = mvc_export_operation(b, b->out, "", cntxt->qryctx.starttime, mb->optimize);
+	if (b->out)
+		ok = mvc_export_operation(b, b->out, "", cntxt->qryctx.starttime, mb->optimize);
 	cntxt->qryctx.starttime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
