@@ -232,6 +232,7 @@ SQLepilogue(void *ret)
 static str
 SQLexecPostLoginTriggers(Client c)
 {
+	char *msg = NULL;
 	backend *be = (backend *) c->sqlcontext;
 	if (be) {
 		mvc *m = be->mvc;
@@ -256,14 +257,12 @@ SQLexecPostLoginTriggers(Client c)
 					r = rel_parse(m, sys, stmt, m_deps);
 					if (r)
 						r = sql_processrelation(m, r, 0, 0, 0, 0);
-					if (r) {
-						list *blist = rel_dependencies(m, r);
-						if (mvc_create_dependencies(m, blist, t->base.id, TRIGGER_DEPENDENCY)) {
-							sa_destroy(m->sa);
-							m->sa = sa;
-							throw(SQL, "sql.SQLexecPostLoginTriggers", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						}
-					}
+					if (backend_dumpstmt(be, c->curprg->def, r, 1, 1, NULL) < 0)
+						throw(SQL, "sql.SQLexecPostLoginTriggers", SQLSTATE(4200) "%s", "generating MAL failed");
+
+					if ((msg = SQLrun(c,m)) != MAL_SUCCEED)
+						return msg;
+
 					sa_destroy(m->sa);
 					m->sa = sa;
 					if (!r) {
@@ -835,7 +834,8 @@ SQLinitClient(Client c, str passwd, str challenge, str algo)
 		throw(SQL, "SQLinitClient", SQLSTATE(42000) "Catalogue not available");
 	}
 	if ((msg = SQLprepareClient(c, passwd, challenge, algo)) == MAL_SUCCEED) {
-		if (c->usermodule && (SQLexecPostLoginTriggers(c) != MAL_SUCCEED)) {
+		if (c->usermodule && (c->user != MAL_ADMIN) && (SQLexecPostLoginTriggers(c) != MAL_SUCCEED)) {
+			MT_lock_unset(&sql_contextLock);
 			throw(SQL, "SQLinitClient", SQLSTATE(42000) "Failed to execute post login triggers");
 		}
 	}
