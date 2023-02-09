@@ -3403,6 +3403,8 @@ BBPprepare(bool subcommit)
 		/* starting a subcommit. Make sure SUBDIR and DELDIR
 		 * are clean */
 		ret = BBPrecover_subdir();
+		if (ret != GDK_SUCCEED)
+			return ret;
 	}
 	if (backup_files == 0) {
 		backup_dir = 0;
@@ -3435,7 +3437,7 @@ BBPprepare(bool subcommit)
 			GDKfree(subdirpath);
 			return GDK_FAIL;
 		}
-		TRC_DEBUG(IO_, "mkdir %s = %d\n", subdirpath, (int) ret);
+		TRC_DEBUG(IO_, "mkdir %s\n", subdirpath);
 		GDKfree(subdirpath);
 	}
 	if (backup_dir != set) {
@@ -3943,6 +3945,7 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 	if (ret != GDK_SUCCEED) {
 		char *srcpath;
 
+		GDKclrerr();
 		/* two legal possible causes: file exists or dir
 		 * doesn't exist */
 		if(!(dstpath = GDKfilepath(farmid, dstdir, name, NULL)))
@@ -4112,10 +4115,10 @@ BBPrecover_subdir(void)
 		if (dent->d_name[0] == '.')
 			continue;
 		ret = GDKmove(0, SUBDIR, dent->d_name, NULL, BAKDIR, dent->d_name, NULL, true);
-		if (ret == GDK_SUCCEED && strcmp(dent->d_name, "BBP.dir") == 0)
-			backup_dir = 1;
 		if (ret != GDK_SUCCEED)
 			break;
+		if (strcmp(dent->d_name, "BBP.dir") == 0)
+			backup_dir = 1;
 	}
 	closedir(dirp);
 
