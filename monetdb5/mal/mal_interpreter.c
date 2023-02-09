@@ -840,7 +840,8 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 			stkpc= mb->stop;
 			continue;
-		}	}
+		}
+		}
 
 		/* monitoring information should reflect the input arguments,
 		   which may be removed by garbage collection  */

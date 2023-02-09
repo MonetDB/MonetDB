@@ -1562,6 +1562,7 @@ SYSupdate_schemas(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 
-	sql_trans_update_schemas(m->session->tr);
+	if (sql_trans_update_schemas(m->session->tr) < 0)
+		throw(MAL, "sql.update_schemas", MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }

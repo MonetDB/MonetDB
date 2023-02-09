@@ -600,7 +600,7 @@ rids_join(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
 	}
 	bat_destroy(lcb);
 	bat_destroy(rcb);
-	return l;
+	return l->data ? l : NULL;
 }
 
 static rids *
@@ -627,7 +627,7 @@ rids_semijoin(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
 	}
 	bat_destroy(lcb);
 	bat_destroy(rcb);
-	return l;
+	return l->data ? l : NULL;
 }
 
 static subrids *
