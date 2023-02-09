@@ -232,7 +232,7 @@ SQLepilogue(void *ret)
 static str
 SQLexecPostLoginTriggers(Client c)
 {
-	char *msg = NULL;
+	str msg = MAL_SUCCEED;
 	backend *be = (backend *) c->sqlcontext;
 	if (be) {
 		mvc *m = be->mvc;
@@ -248,6 +248,11 @@ SQLexecPostLoginTriggers(Client c)
 				if (t->event == LOGIN_EVENT) {
 					const char *stmt = t->statement;
 					sql_rel *r = NULL;
+					// cache state
+					int oldvtop = c->curprg->def->vtop;
+					int oldstop = c->curprg->def->stop;
+					int oldvid = c->curprg->def->vid;
+					Symbol curprg = c->curprg;
 					sql_allocator *sa = m->sa;
 
 					if (!(m->sa = sa_create(m->pa))) {
@@ -257,47 +262,46 @@ SQLexecPostLoginTriggers(Client c)
 					r = rel_parse(m, sys, stmt, m_deps);
 					if (r)
 						r = sql_processrelation(m, r, 0, 0, 0, 0);
-					if (backend_dumpstmt(be, c->curprg->def, r, 1, 1, NULL) < 0)
-						throw(SQL, "sql.SQLexecPostLoginTriggers", SQLSTATE(4200) "%s", "generating MAL failed");
-
-					if ((msg = SQLrun(c,m)) != MAL_SUCCEED)
-						return msg;
-
-					sa_destroy(m->sa);
-					m->sa = sa;
 					if (!r) {
+						sa_destroy(m->sa);
+						m->sa = sa;
 						if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 							throw(SQL, "sql.SQLexecPostLoginTriggers", "%s", m->errstr);
 						else
 							throw(SQL, "sql.SQLexecPostLoginTriggers", SQLSTATE(42000) "%s", m->errstr);
 					}
 
+					setVarType(c->curprg->def, 0, 0);
+					if (backend_dumpstmt(be, c->curprg->def, r, 1, 1, NULL) < 0) {
+						freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+						c->curprg = curprg;
+						sa_destroy(m->sa);
+						m->sa = sa;
+						throw(SQL, "sql.SQLexecPostLoginTriggers", SQLSTATE(4200) "%s", "generating MAL failed");
+					}
 
-
-					//if ((err = SQLstatementIntern(c, stmt, "sql.SQLexecPostLoginTriggers", TRUE, FALSE, NULL))) {
-					//	(void) sql_error(m, 02, SQLSTATE(42000) "%s", err);
-					//	freeException(err);
-					//	res = LOG_ERR;
-					//	break;
-					//}
+					stream *out = be->out;
+					be->out = NULL;	/* no output stream */
+					if ((msg = SQLrun(c,m)) != MAL_SUCCEED) {
+						be->out = out;
+						freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+						sqlcleanup(be, 0);
+						c->curprg = curprg;
+						sa_destroy(m->sa);
+						m->sa = sa;
+						return msg;
+					}
+					// restore previous state
+					be->out = out;
+					MSresetInstructions(c->curprg->def, oldstop);
+					freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+					sqlcleanup(be, 0);
+					c->curprg = curprg;
+					sa_destroy(m->sa);
+					m->sa = sa;
 				}
 			}
 
-			//sql_table *triggers = find_sys_table(tr, TRIGGERS_TABLE_NAME);
-			//sql_column *eventCol = find_sql_column(triggers, "event");
-			//sql_column *timeCol = find_sql_column(triggers, "time");
-			//sql_column *stmtCol = find_sql_column(triggers, "statement");
-			//int event = LOGIN_EVENT, time = 1;
-
-			//oid rid = store->table_api.column_find_row(tr, eventCol, &event, timeCol, &time, NULL);
-			//if (!is_oid_nil(rid)) {
-			//	const char *stmt = store->table_api.column_find_value(tr, stmtCol, rid);
-			//	if ((err = SQLstatementIntern(c, stmt, "sql.init", TRUE, FALSE, NULL))) {
-			//		(void) sql_error(m, 02, SQLSTATE(42000) "%s", err);
-			//		freeException(err);
-			//		res = LOG_ERR;
-			//	}
-			//}
 			if (!active)
 				sql_trans_end(m->session, SQL_OK);
 		}
