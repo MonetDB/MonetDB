@@ -284,7 +284,7 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	return msg;
 }
 
-static str
+str
 SQLrun(Client c, mvc *m)
 {
 	str msg= MAL_SUCCEED;
