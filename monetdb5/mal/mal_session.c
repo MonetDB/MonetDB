@@ -109,7 +109,8 @@ MSresetClientPrg(Client cntxt, const char *mod, const char *fcn)
 	setModuleId(p, mod);
 	setFunctionId(p, fcn);
 	if( findVariable(mb,fcn) < 0)
-		p->argv[0] = newVariable(mb, fcn, strlen(fcn), TYPE_void);
+		if ((p->argv[0] = newVariable(mb, fcn, strlen(fcn), TYPE_void)) < 0)
+			throw(MAL, "resetClientPrg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	setVarType(mb, findVariable(mb, fcn), TYPE_void);
 	/* remove any MAL history */
@@ -520,6 +521,7 @@ MSresetStack(Client cntxt, MalBlkPtr mb, MalStkPtr glb)
 			}
 		}
 	}
+	assert(k <= mb->vsize);
 	mb->vtop = k;
 }
 

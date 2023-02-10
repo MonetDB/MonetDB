@@ -63,7 +63,6 @@ buffer_get_buf(buffer *b)
 		b->buf = r;
 		return NULL;
 	}
-	b->len = b->buf ? b->len : 0;
 	b->pos = 0;
 	return r;
 }
