@@ -1629,6 +1629,8 @@ bm_subcommit(logger *lg)
 	sizes[i] = BATcount(dcatalog);
 	n[i++] = dcatalog->batCacheid;
 
+	if (cleanup < (lg->cnt/2))
+		cleanup = 0;
 	if (cleanup && (rcnt=cleanup_and_swap(lg, r, bids, lids, cnts, catalog_bid, catalog_id, dcatalog, cleanup)) < 0) {
 		GDKfree(n);
 		GDKfree(r);
