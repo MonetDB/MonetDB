@@ -3675,9 +3675,9 @@ BBPcheckHeap(bool subcommit, Heap *h)
 			if (path == NULL)
 				return;
 			if (MT_stat(path, &statb) < 0) {
-				assert(0);
 				GDKsyserror("cannot stat file %s (expected size %zu)\n",
 					    path, h->free);
+				assert(0);
 				GDKfree(path);
 				return;
 			}
@@ -3687,9 +3687,9 @@ BBPcheckHeap(bool subcommit, Heap *h)
 		if (path == NULL)
 			return;
 		if (MT_stat(path, &statb) < 0) {
-			assert(0);
 			GDKsyserror("cannot stat file %s (expected size %zu)\n",
 				    path, h->free);
+			assert(0);
 			GDKfree(path);
 			return;
 		}
