@@ -6764,6 +6764,7 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	return res;
 }
 
+
 static int
 sql_trans_create_table_trigger(sql_trigger **tres, sql_trans *tr, sql_table *t, const char *name,
 	sht time, sht orientation, sht event, const char *old_name, const char *new_name,
@@ -6799,15 +6800,17 @@ sql_trans_create_table_trigger(sql_trigger **tres, sql_trans *tr, sql_table *t, 
 	if(t) {
 		assert(isGlobal(t));
 		if ((res = ol_add(t->triggers, &nt->base)) ||
-			(res = os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base))))
+			(res = os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base)))) {
 			return res;
+		}
 	}
 	oid tid = t? (oid) t->base.id : oid_nil;
 
 	if ((res = store->table_api.table_insert(tr, systrigger, &nt->base.id, &nt->base.name, &tid, &nt->time, &nt->orientation,
 							 &nt->event, (nt->old_name)?&nt->old_name:&strnil, (nt->new_name)?&nt->new_name:&strnil,
-							 (nt->condition)?&nt->condition:&strnil, &nt->statement)))
+							 (nt->condition)?&nt->condition:&strnil, &nt->statement))) {
 		return res;
+	}
 	*tres = nt;
 	return res;
 }
@@ -6824,6 +6827,7 @@ sql_trans_create_trigger(sql_trigger **tres, sql_trans *tr, sql_table *t, const 
 			   	new_name, condition, statement);
 
 	// triggers not bound to objects (e.g. table)
+	// are added to sys->triggers
 
 	sqlstore *store = tr->store;
 	sql_schema *syss = find_sql_schema(tr, "sys");
@@ -6846,14 +6850,19 @@ sql_trans_create_trigger(sql_trigger **tres, sql_trans *tr, sql_table *t, const 
 	if (condition)
 		nt->condition =_STRDUP(condition);
 	nt->statement =_STRDUP(statement);
-	if ((res = os_add(syss->triggers, tr, nt->base.name, dup_base(&nt->base))))
+	if ((res = os_add(syss->triggers, tr, nt->base.name, &nt->base))) {
+		trigger_destroy(store, nt);
 		return res;
+	}
 	oid tid = oid_nil;
 
 	if ((res = store->table_api.table_insert(tr, systrigger, &nt->base.id, &nt->base.name, &tid, &nt->time, &nt->orientation,
 							 &nt->event, (nt->old_name)?&nt->old_name:&strnil, (nt->new_name)?&nt->new_name:&strnil,
-							 (nt->condition)?&nt->condition:&strnil, &nt->statement)))
+							 (nt->condition)?&nt->condition:&strnil, &nt->statement))) {
+		trigger_destroy(store, nt);
 		return res;
+	}
+
 	*tres = nt;
 	return res;
 }
