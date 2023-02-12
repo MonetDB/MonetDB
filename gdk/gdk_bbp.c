@@ -3722,82 +3722,76 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 				   &obbpf, &nbbpf);
 	}
 
-	if (ret == GDK_SUCCEED) {
-		int idx = 0;
+	for (int idx = 1; ret == GDK_SUCCEED && idx < cnt; idx++) {
+		bat i = subcommit ? subcommit[idx] : idx;
+		/* BBP_desc(i) may be NULL */
+		BUN size = sizes ? sizes[idx] : BUN_NONE;
+		BATiter bi;
+		oid minpos = oid_nil, maxpos = oid_nil;
 
-		while (++idx < cnt) {
-			bat i = subcommit ? subcommit[idx] : idx;
-			/* BBP_desc(i) may be NULL */
-			BUN size = sizes ? sizes[idx] : BUN_NONE;
-			BATiter bi;
-			oid minpos = oid_nil, maxpos = oid_nil;
-
-			if (BBP_status(i) & BBPPERSISTENT) {
-				BAT *b = dirty_bat(&i, subcommit != NULL);
-				if (i <= 0) {
-					break;
-				}
-				MT_lock_set(&BBP_desc(i)->theaplock);
-				bi = bat_iterator_nolock(BBP_desc(i));
-				HEAPincref(bi.h);
-				if (bi.vh)
-					HEAPincref(bi.vh);
+		if (BBP_status(i) & BBPPERSISTENT) {
+			BAT *b = dirty_bat(&i, subcommit != NULL);
+			if (i <= 0) {
+				ret = GDK_FAIL;
+				break;
+			}
+			MT_lock_set(&BBP_desc(i)->theaplock);
+			bi = bat_iterator_nolock(BBP_desc(i));
+			HEAPincref(bi.h);
+			if (bi.vh)
+				HEAPincref(bi.vh);
 #ifndef NDEBUG
-				bi.locked = true;
+			bi.locked = true;
 #endif
-				assert(sizes == NULL || size <= bi.count);
-				assert(sizes == NULL || bi.width == 0 || (bi.type == TYPE_msk ? ((size + 31) / 32) * 4 : size << bi.shift) <= bi.hfree);
-				if (size > bi.count) /* includes sizes==NULL */
-					size = bi.count;
-				bi.b->batInserted = size;
-				if (size == 0) {
-					/* no need to save anything */
-					MT_lock_unset(&bi.b->theaplock);
-				} else {
-					const ValRecord *prop;
-					prop = BATgetprop_nolock(bi.b, GDK_MIN_POS);
-					if (prop)
-						minpos = prop->val.oval;
-					prop = BATgetprop_nolock(bi.b, GDK_MAX_POS);
-					if (prop)
-						maxpos = prop->val.oval;
-					MT_lock_unset(&bi.b->theaplock);
-					if (b) {
-						/* wait for BBPSAVING so
-						 * that we can set it,
-						 * wait for BBPUNLOADING
-						 * before attempting to
-						 * save */
-						for (;;) {
-							if (lock)
-								MT_lock_set(&GDKswapLock(i));
-							if (!(BBP_status(i) & (BBPSAVING|BBPUNLOADING)))
-								break;
-							if (lock)
-								MT_lock_unset(&GDKswapLock(i));
-							BBPspin(i, __func__, BBPSAVING|BBPUNLOADING);
-						}
-						BBP_status_on(i, BBPSAVING);
+			assert(sizes == NULL || size <= bi.count);
+			assert(sizes == NULL || bi.width == 0 || (bi.type == TYPE_msk ? ((size + 31) / 32) * 4 : size << bi.shift) <= bi.hfree);
+			if (size > bi.count) /* includes sizes==NULL */
+				size = bi.count;
+			bi.b->batInserted = size;
+			if (size == 0) {
+				/* no need to save anything */
+				MT_lock_unset(&bi.b->theaplock);
+			} else {
+				const ValRecord *prop;
+				prop = BATgetprop_nolock(bi.b, GDK_MIN_POS);
+				if (prop)
+					minpos = prop->val.oval;
+				prop = BATgetprop_nolock(bi.b, GDK_MAX_POS);
+				if (prop)
+					maxpos = prop->val.oval;
+				MT_lock_unset(&bi.b->theaplock);
+				if (b) {
+					/* wait for BBPSAVING so
+					 * that we can set it,
+					 * wait for BBPUNLOADING
+					 * before attempting to
+					 * save */
+					for (;;) {
+						if (lock)
+							MT_lock_set(&GDKswapLock(i));
+						if (!(BBP_status(i) & (BBPSAVING|BBPUNLOADING)))
+							break;
 						if (lock)
 							MT_lock_unset(&GDKswapLock(i));
-						ret = BATsave_iter(b, &bi, size);
-						BBP_status_off(i, BBPSAVING);
+						BBPspin(i, __func__, BBPSAVING|BBPUNLOADING);
 					}
+					BBP_status_on(i, BBPSAVING);
+					if (lock)
+						MT_lock_unset(&GDKswapLock(i));
+					ret = BATsave_iter(b, &bi, size);
+					BBP_status_off(i, BBPSAVING);
 				}
-			} else {
-				bi = bat_iterator(NULL);
 			}
-			if (ret == GDK_SUCCEED) {
-				n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf, &bi, (BUN) minpos, (BUN) maxpos);
-			}
-			bat_iterator_end(&bi);
-			if (n == -2)
-				break;
-			/* we once again have a saved heap */
+		} else {
+			bi = bat_iterator(NULL);
 		}
-		if (idx < cnt) {
-			ret = GDK_FAIL;
+		if (ret == GDK_SUCCEED) {
+			n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf, &bi, (BUN) minpos, (BUN) maxpos);
+			if (n < -1)
+				ret = GDK_FAIL;
 		}
+		bat_iterator_end(&bi);
+		/* we once again have a saved heap */
 	}
 
 	TRC_DEBUG(PERF, "write time %d\n", (t0 = GDKms()) - t1);
