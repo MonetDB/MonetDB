@@ -6073,6 +6073,8 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 
 	if (!isNew(col) && (res = sql_trans_add_dependency_change(tr, col->t->base.id, ddl)))
 		return res;
+	if (!isNew(col) && isGlobal(col->t) && !isGlobalTemp(col->t) && (res = sql_trans_add_dependency(tr, col->t->base.id, dml)))
+		return res;
 	if ((res = sys_drop_column(tr, col, drop_action)))
 		return res;
 
@@ -6667,6 +6669,10 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 		list_append(tr->dropped, local_id);
 	}
 
+	if (!isNew(i) && (res = sql_trans_add_dependency_change(tr, i->t->base.id, ddl)))
+		return res;
+	if (!isNew(i) && isGlobal(i->t) && !isGlobalTemp(i->t) && (res = sql_trans_add_dependency(tr, i->t->base.id, dml)))
+		return res;
 	if ((res = sys_drop_idx(tr, i, drop_action)))
 		return res;
 	if ((res = store_reset_sql_functions(tr, i->t->base.id))) /* reset sql functions depending on the table */
