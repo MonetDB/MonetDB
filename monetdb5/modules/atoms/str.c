@@ -3205,7 +3205,10 @@ str_case_hash_lock(bool upper)
 	if (BAThash(b) != GDK_SUCCEED)
 		throw(MAL, "str.str_case_hash_lock", GDK_EXCEPTION);
 	MT_rwlock_rdlock(&b->thashlock);
-	return MAL_SUCCEED;
+	if (b->thash)
+		return MAL_SUCCEED;
+	MT_rwlock_rdunlock(&b->thashlock);
+	throw(MAL, "str.str_case_hash_lock", "Lost hash");
 }
 
 void
