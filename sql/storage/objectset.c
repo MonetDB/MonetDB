@@ -135,9 +135,9 @@ find_id(objectset *os, sqlid id)
 				return n;
 			}
 		}
+		unlock_reader(os);
 	}
 
-	unlock_reader(os);
 	return NULL;
 }
 
