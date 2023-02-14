@@ -4361,6 +4361,7 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "grant on function",	"sys",	"covar_samp",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"covar_samp",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"current_sessionid",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"database",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"date_to_str",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"date_trunc",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"date_trunc",	"public",	"EXECUTE",	"monetdb",	0	]
