@@ -883,9 +883,9 @@ la_apply(logger *lg, logaction *c, int tid)
 static void
 la_destroy(logaction *c)
 {
-	if (c->b && (c->type == LOG_UPDATE || c->type == LOG_UPDATE_BULK))
+	if ((c->type == LOG_UPDATE || c->type == LOG_UPDATE_BULK) && c->b)
 		logbat_destroy(c->b);
-	if (c->uid && c->type == LOG_UPDATE)
+	if (c->type == LOG_UPDATE && c->uid)
 		logbat_destroy(c->uid);
 }
 
@@ -1496,7 +1496,7 @@ subcommit_list_add(int next, bat *n, BUN *sizes, bat bid, BUN sz)
 }
 
 static int
-cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts, BAT *catalog_bid, BAT *catalog_id, BAT *dcatalog, int cleanup)
+cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts, BAT *catalog_bid, BAT *catalog_id, BAT *dcatalog, BUN cleanup)
 {
 	BAT *nbids, *noids, *ncnts, *nlids, *ndels;
 	BUN p, q;
@@ -1624,7 +1624,7 @@ bm_subcommit(logger *lg)
 	gdk_return res;
 	const log_bid *bids;
 	lng *cnts = NULL, *lids = NULL;
-	int cleanup = 0;
+	BUN cleanup = 0;
 	lng t0 = 0;
 
 	if (n == NULL || r == NULL || sizes == NULL) {
@@ -1661,6 +1661,8 @@ bm_subcommit(logger *lg)
 	sizes[i] = BATcount(dcatalog);
 	n[i++] = dcatalog->batCacheid;
 
+	if (cleanup < (lg->cnt/2))
+		cleanup = 0;
 	if (cleanup && (rcnt=cleanup_and_swap(lg, r, bids, lids, cnts, catalog_bid, catalog_id, dcatalog, cleanup)) < 0) {
 		GDKfree(n);
 		GDKfree(r);
@@ -2282,25 +2284,30 @@ log_create(int debug, const char *fn, const char *logdir, int version, preversio
 static ulng
 log_next_logfile(logger *lg, ulng ts)
 {
+	int m = (GDKdebug & FORCEMITOMASK)?1000:10;
 	if (!lg->pending || !lg->pending->next)
 		return 0;
-	if (lg->pending->last_ts <= ts)
-		return lg->pending->id;
+	if (lg->pending != lg->current && lg->pending->last_ts <= ts) {
+		logged_range *p = lg->pending;
+		for(int i = 1; i<m && p->next && p->next != lg->current && p->last_ts <= ts; i++)
+			p = p->next;
+		return p->id;
+	}
 	return 0;
 }
 
 static void
-log_cleanup_range(logger *lg)
+log_cleanup_range(logger *lg, ulng id)
 {
-	if (lg->pending) {
+	log_lock(lg);
+	while (lg->pending && lg->pending->id <= id) {
 		logged_range *p;
-		log_lock(lg);
 		p = lg->pending;
 		if (p)
 			lg->pending = p->next;
-		log_unlock(lg);
 		GDKfree(p);
 	}
+	log_unlock(lg);
 }
 
 gdk_return
@@ -2326,12 +2333,12 @@ log_activate(logger *lg)
 gdk_return
 log_flush(logger *lg, ulng ts)
 {
-	ulng lid = log_next_logfile(lg, ts);
+	ulng lid = log_next_logfile(lg, ts), olid = lg->saved_id;
 	if (LOG_DISABLED(lg)) {
 		lg->saved_id = lid;
 		lg->saved_tid = lg->tid;
 		if (lid)
-			log_cleanup_range(lg);
+			log_cleanup_range(lg, lg->saved_id);
 		if (log_commit(lg) != GDK_SUCCEED)
 			TRC_ERROR(GDK, "failed to commit");
 		return GDK_SUCCEED;
@@ -2344,13 +2351,14 @@ log_flush(logger *lg, ulng ts)
 	if (lg->saved_id+1 >= lgid) /* logger should first release the file */
 		return GDK_SUCCEED;
 	log_return res = LOG_OK;
-	while(lg->saved_id < lid && res == LOG_OK) {
-		if (lg->saved_id >= lgid)
-			break;
+	ulng cid = olid;
+	if (lid > lgid)
+		lid = lgid;
+	while(cid < lid && res == LOG_OK) {
 		if (!lg->input_log) {
 			char *filename;
 			char id[32];
-			if (snprintf(id, sizeof(id), LLFMT, lg->saved_id+1) >= (int) sizeof(id)) {
+			if (snprintf(id, sizeof(id), LLFMT, cid+1) >= (int) sizeof(id)) {
 				TRC_CRITICAL(GDK, "log_id filename is too large\n");
 				return GDK_FAIL;
 			}
@@ -2379,22 +2387,25 @@ log_flush(logger *lg, ulng ts)
 			log_close_input(lg);
 			res = LOG_OK;
 		}
+		cid++;
+	}
+	if (lid > olid && res == LOG_OK) {
+		lg->saved_id = lid;
+		if (log_commit(lg) != GDK_SUCCEED) {
+			TRC_ERROR(GDK, "failed to commit");
+			res = LOG_ERR;
+			lg->saved_id = olid; /* reset !! */
+		}
 		if (res != LOG_ERR) {
-			lg->saved_id++;
-			if (log_commit(lg) != GDK_SUCCEED) {
-				TRC_ERROR(GDK, "failed to commit");
-				res = LOG_ERR;
-			}
-
-			/* remove old log file */
-			if (res != LOG_ERR) {
-				if (log_cleanup(lg, lg->saved_id) != GDK_SUCCEED)
-					res = LOG_ERR;
+			while(olid <= lid) {
+				/* Try to cleanup, remove old log file, continue on failure! */
+				(void)log_cleanup(lg, olid);
+				olid++;
 			}
 		}
+		if (res == LOG_OK)
+			log_cleanup_range(lg, lg->saved_id);
 	}
-	if (lid && res == LOG_OK)
-		log_cleanup_range(lg);
 	return res == LOG_ERR ? GDK_FAIL : GDK_SUCCEED;
 }
 
@@ -3164,7 +3175,7 @@ log_tstart(logger *lg, bool flushnow, ulng *log_file_id)
 		}
 		lg->request_rotation = false;
 		if (flushnow) {
-			while (lg->saved_id+1 < lg->id) {
+			if (lg->saved_id+1 < lg->id) {
 				log_unlock(lg);
 				MT_lock_unset(&lg->rotation_lock);
 				if (log_flush(lg, (1ULL<<63)) != GDK_SUCCEED)
