@@ -5482,6 +5482,20 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		output = NULL;
 	}
 
+	if (!sql_bind_func(sql, "sys", "database", NULL, NULL, F_FUNC, true)) {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+		pos = snprintf(buf, bufsize,
+					   "create function sys.database ()\n"
+					   "returns string\n"
+					   "external name inspect.\"getDatabaseName\";\n"
+					   "grant execute on function sys.database() to public;\n"
+					   "update sys.functions set system = true where system <> true and name = 'database' and schema_id = 2000 and type = %d;\n",
+					   (int) F_FUNC);
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+	}
+
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }

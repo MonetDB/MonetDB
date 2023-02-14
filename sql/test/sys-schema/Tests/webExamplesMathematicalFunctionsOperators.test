@@ -462,8 +462,10 @@ select asin(1.0), atan(1), atan(0.5), atan(1.0, 2.0)
 0.464
 0.464
 
-statement error
+query R nosort
 select atan2(1.0, 2.0)
+-----
+0.464
 
 query RRR nosort
 select cos(12.2), cosh(3.0), cot(16.0)
