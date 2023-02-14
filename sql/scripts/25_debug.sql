@@ -37,6 +37,7 @@ GRANT SELECT ON sys.environment TO PUBLIC;
 create function sys.database ()
     returns string
     external name inspect."getDatabaseName";
+grant execute on function sys.database() to public;
 
 -- The BAT buffer pool overview
 create function sys.bbp ()
