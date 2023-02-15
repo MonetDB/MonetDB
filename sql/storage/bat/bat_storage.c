@@ -4040,7 +4040,7 @@ log_update_col( sql_trans *tr, sql_change *change)
 {
 	sql_column *c = (sql_column*)change->obj;
 
-	if (!isTempTable(c->t) && !tr->parent) {/* don't write save point commits */
+	if (!isDeleted(c->t) && !isTempTable(c->t) && !tr->parent) {/* don't write save point commits */
 		storage *s = ATOMIC_PTR_GET(&c->t->data);
 		sql_delta *d = ATOMIC_PTR_GET(&c->data);
 		return tr_log_cs(tr, c->t, &d->cs, s->segs->h, c->base.id);
@@ -4153,7 +4153,7 @@ log_update_idx( sql_trans *tr, sql_change *change)
 {
 	sql_idx *i = (sql_idx*)change->obj;
 
-	if (!isTempTable(i->t) && !tr->parent) { /* don't write save point commits */
+	if (!isDeleted(i->t) && !isTempTable(i->t) && !tr->parent) { /* don't write save point commits */
 		storage *s = ATOMIC_PTR_GET(&i->t->data);
 		sql_delta *d = ATOMIC_PTR_GET(&i->data);
 		return tr_log_cs(tr, i->t, &d->cs, s->segs->h, i->base.id);
@@ -4197,7 +4197,7 @@ log_update_del( sql_trans *tr, sql_change *change)
 {
 	sql_table *t = (sql_table*)change->obj;
 
-	if (!isTempTable(t) && !tr->parent) /* don't write save point commits */
+	if (!isDeleted(t) && !isTempTable(t) && !tr->parent) /* don't write save point commits */
 		return log_storage(tr, t, ATOMIC_PTR_GET(&t->data), t->base.id);
 	return LOG_OK;
 }

@@ -277,6 +277,10 @@ la_bat_clear(logger *lg, logaction *la, int tid)
 
 	if (bid < 0)
 		return GDK_FAIL;
+	if (bid == 0) {
+		GDKerror("la_bat_clear failed to find bid for object %d\n", la->cid);
+		return GDK_FAIL;
+	}
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#la_bat_clear %d\n", la->cid);
@@ -650,8 +654,10 @@ la_bat_updates(logger *lg, logaction *la, int tid)
 
 	if (bid < 0)
 		return GDK_FAIL;
-	if (bid == 0)
-		return GDK_SUCCEED; /* ignore bats no longer in the catalog */
+	if (!bid) {
+		GDKerror("la_bat_updates failed to find bid for object %d\n", la->cid);
+		return GDK_FAIL;
+	}
 
 	if (!lg->flushing) {
 		b = BATdescriptor(bid);
@@ -755,6 +761,10 @@ la_bat_destroy(logger *lg, logaction *la, int tid)
 
 	if (bid < 0)
 		return GDK_FAIL;
+	if (!bid) {
+		GDKerror("la_bat_destroy failed to find bid for object %d\n", la->cid);
+		return GDK_FAIL;
+	}
 	if (bid && logger_del_bat(lg, bid) != GDK_SUCCEED)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
@@ -1046,6 +1056,7 @@ logger_open_output(logger *lg)
 	}
 
 	lg->end = 0;
+	lg->drops = 0;
 	if (!LOG_DISABLED(lg)) {
 		char id[32];
 		char *filename;
@@ -1648,8 +1659,6 @@ bm_subcommit(logger *lg)
 	sizes[i] = BATcount(dcatalog);
 	n[i++] = dcatalog->batCacheid;
 
-	if (cleanup < (lg->cnt/2))
-		cleanup = 0;
 	if (cleanup && (rcnt=cleanup_and_swap(lg, r, bids, lids, cnts, catalog_bid, catalog_id, dcatalog, cleanup)) < 0) {
 		GDKfree(n);
 		GDKfree(r);
@@ -1668,7 +1677,7 @@ bm_subcommit(logger *lg)
 		sizes[i] = BATcount(lg->seqs_id);
 		n[i++] = lg->seqs_val->batCacheid;
 	}
-	if (!cleanup && lg->seqs_id && BATcount(lg->dseqs) > (BATcount(lg->seqs_id)/2)) {
+	if (!cleanup && lg->seqs_id && BATcount(lg->dseqs) > (BATcount(lg->seqs_id)/2) && BATcount(lg->dseqs) > 10 ) {
 		BAT *tids, *ids, *vals;
 
 		tids = bm_tids(lg->seqs_id, lg->dseqs);
@@ -2140,6 +2149,8 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		.funcdata = funcdata,
 
 		.id = 0,
+		.drops = 0,
+		.end = 0,
 		.saved_id = getBBPlogno(), 		/* get saved log numer from bbp */
 		.saved_tid = (int)getBBPtransid(), 	/* get saved transaction id from bbp */
 	};
@@ -2275,14 +2286,15 @@ logger_cleanup_range(logger *lg, ulng id)
 gdk_return
 logger_activate(logger *lg)
 {
-	if (lg->end > 0 && lg->saved_id+1 == lg->id) {
+	gdk_return res = GDK_SUCCEED;
+
+	if (lg->drops > 100000 && lg->end > 0 && lg->saved_id+1 == lg->id) {
 		lg->id++;
 		logger_close_output(lg);
 		/* start new file */
-		if (logger_open_output(lg) != GDK_SUCCEED)
-			return GDK_FAIL;
+		res = logger_open_output(lg);
 	}
-	return GDK_SUCCEED;
+	return res;
 }
 
 gdk_return
@@ -2619,6 +2631,11 @@ log_bat_transient(logger *lg, log_id id)
 		logger_unlock(lg);
 		return GDK_FAIL;
 	}
+	if (!bid) {
+		GDKerror("log_bat_transient failed to find bid for object %d\n", id);
+		logger_unlock(lg);
+		return GDK_FAIL;
+	}
 	l.flag = LOG_DESTROY;
 	l.id = id;
 
@@ -2633,7 +2650,9 @@ log_bat_transient(logger *lg, log_id id)
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged destroyed bat (%d) %d\n", id,
 				bid);
-	lg->end += BATcount(BBPquickdesc(bid));
+	BUN cnt = BATcount(BBPquickdesc(bid));
+	lg->end += cnt;
+	lg->drops += cnt;
 	gdk_return r =  logger_del_bat(lg, bid);
 	logger_unlock(lg);
 	return r;
@@ -2761,7 +2780,7 @@ new_logfile(logger *lg)
 	p = (lng) getfilepos(getFile(lg->output_log));
 	if (p == -1)
 		return GDK_FAIL;
-	if (p > log_large || (lg->end*1024) > log_large) {
+	if (lg->drops > 100000 || p > log_large || (lg->end*1024) > log_large) {
 		lg->id++;
 		logger_close_output(lg);
 		return logger_open_output(lg);
@@ -2791,8 +2810,7 @@ log_tend(logger *lg)
 
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    mnstr_flush(lg->output_log, MNSTR_FLUSH_DATA) ||
-	    (!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log)) ||
-	    new_logfile(lg) != GDK_SUCCEED) {
+	    (!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->output_log))) {
 		TRC_CRITICAL(GDK, "write failed\n");
 		return GDK_FAIL;
 	}
@@ -2809,6 +2827,8 @@ log_tdone(logger *lg, ulng commit_ts)
 		lg->current->last_tid = lg->tid;
 		lg->current->last_ts = commit_ts;
 	}
+	if (!LOG_DISABLED(lg) && new_logfile(lg) != GDK_SUCCEED)
+		GDKfatal("Could not create new log file\n");
 	return GDK_SUCCEED;
 }
 
@@ -2971,6 +2991,10 @@ logger_find_bat(logger *lg, log_id id)
 	logger_lock(lg);
 	log_bid bid = internal_find_bat(lg, id, -1);
 	logger_unlock(lg);
+	if (!bid) {
+		GDKerror("logger_find_bat failed to find bid for object %d\n", id);
+		return GDK_FAIL;
+	}
 	return bid;
 }
 
