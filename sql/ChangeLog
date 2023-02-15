@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Feb 15 2023 svetlin <svetlin.stalinov@monetdbsolutions.com>
+- Added JDBC/ODBC escape sequences implementation to SQL layer. Now all
+  clients can forward them without further processing.
+
 * Fri Sep 30 2022 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
 - When loading data using COPY BINARY INTO, apply default values instead of just
   inserting NULLs.
