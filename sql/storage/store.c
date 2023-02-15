@@ -3687,7 +3687,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		list_destroy(tr->changes);
 		tr->changes = NULL;
 		tr->logchanges = 0;
-	} else if (ATOMIC_GET(&store->nr_active) == 1) { /* just me cleanup */
+	} else {
 		if (!commit_lock)
 			MT_lock_set(&store->commit);
 		store_lock(store);
