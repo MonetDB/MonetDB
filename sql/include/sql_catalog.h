@@ -204,6 +204,7 @@ typedef struct sql_base {
 } sql_base;
 
 #define isNew(x)          ((x)->base.new)
+#define isDeleted(x)      ((x)->base.deleted)
 
 extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, bool isnew, const char *name);
 
