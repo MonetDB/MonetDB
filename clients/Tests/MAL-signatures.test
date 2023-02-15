@@ -21430,6 +21430,11 @@ SQLbatstr_cast;
 cast to string and check for overflow
 batcalc
 str
+pattern batcalc.str(X_0:int, X_1:int, X_2:int, X_3:int, X_4:bat[:any_1], X_5:int):bat[:str] 
+SQLbatstr_cast;
+cast to string and check for overflow, no candidate list
+batcalc
+str
 command batcalc.str(X_0:bat[:uuid], X_1:bat[:oid]):bat[:str] 
 UUIDuuid2str_bulk;
 Coerce a uuid to a string type
@@ -23334,6 +23339,96 @@ pattern batmtime.month(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:bte]
 MTIMEtimestamp_month_bulk;
 (empty)
 batmtime
+odbc_timestamp_add_month_time
+pattern batmtime.odbc_timestamp_add_month_time(X_0:bat[:daytime], X_1:bat[:int]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_month_interval_time_bulk;
+(empty)
+batmtime
+odbc_timestamp_add_month_time
+pattern batmtime.odbc_timestamp_add_month_time(X_0:bat[:daytime], X_1:bat[:int], X_2:bat[:oid], X_3:bat[:oid]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_month_interval_time_bulk;
+(empty)
+batmtime
+odbc_timestamp_add_month_time
+pattern batmtime.odbc_timestamp_add_month_time(X_0:daytime, X_1:bat[:int]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_month_interval_time_bulk_p1;
+(empty)
+batmtime
+odbc_timestamp_add_month_time
+pattern batmtime.odbc_timestamp_add_month_time(X_0:daytime, X_1:bat[:int], X_2:bat[:oid]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_month_interval_time_bulk_p1;
+(empty)
+batmtime
+odbc_timestamp_add_month_time
+pattern batmtime.odbc_timestamp_add_month_time(X_0:bat[:daytime], X_1:int):bat[:timestamp] 
+MTIMEodbc_timestamp_add_month_interval_time_bulk_p2;
+(empty)
+batmtime
+odbc_timestamp_add_month_time
+pattern batmtime.odbc_timestamp_add_month_time(X_0:bat[:daytime], X_1:int, X_2:bat[:oid]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_month_interval_time_bulk_p2;
+(empty)
+batmtime
+odbc_timestamp_add_msec_date
+pattern batmtime.odbc_timestamp_add_msec_date(X_0:bat[:date], X_1:bat[:lng]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_date_bulk;
+(empty)
+batmtime
+odbc_timestamp_add_msec_date
+pattern batmtime.odbc_timestamp_add_msec_date(X_0:bat[:date], X_1:bat[:lng], X_2:bat[:oid], X_3:bat[:oid]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_date_bulk;
+(empty)
+batmtime
+odbc_timestamp_add_msec_date
+pattern batmtime.odbc_timestamp_add_msec_date(X_0:date, X_1:bat[:lng]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_date_bulk_p1;
+(empty)
+batmtime
+odbc_timestamp_add_msec_date
+pattern batmtime.odbc_timestamp_add_msec_date(X_0:date, X_1:bat[:lng], X_2:bat[:oid]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_date_bulk_p1;
+(empty)
+batmtime
+odbc_timestamp_add_msec_date
+pattern batmtime.odbc_timestamp_add_msec_date(X_0:bat[:date], X_1:lng):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_date_bulk_p2;
+(empty)
+batmtime
+odbc_timestamp_add_msec_date
+pattern batmtime.odbc_timestamp_add_msec_date(X_0:bat[:date], X_1:lng, X_2:bat[:oid]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_date_bulk_p2;
+(empty)
+batmtime
+odbc_timestamp_add_msec_time
+pattern batmtime.odbc_timestamp_add_msec_time(X_0:bat[:daytime], X_1:bat[:lng]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_time_bulk;
+(empty)
+batmtime
+odbc_timestamp_add_msec_time
+pattern batmtime.odbc_timestamp_add_msec_time(X_0:bat[:daytime], X_1:bat[:lng], X_2:bat[:oid], X_3:bat[:oid]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_time_bulk;
+(empty)
+batmtime
+odbc_timestamp_add_msec_time
+pattern batmtime.odbc_timestamp_add_msec_time(X_0:daytime, X_1:bat[:lng]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_time_bulk_p1;
+(empty)
+batmtime
+odbc_timestamp_add_msec_time
+pattern batmtime.odbc_timestamp_add_msec_time(X_0:daytime, X_1:bat[:lng], X_2:bat[:oid]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_time_bulk_p1;
+(empty)
+batmtime
+odbc_timestamp_add_msec_time
+pattern batmtime.odbc_timestamp_add_msec_time(X_0:bat[:daytime], X_1:lng):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_time_bulk_p2;
+(empty)
+batmtime
+odbc_timestamp_add_msec_time
+pattern batmtime.odbc_timestamp_add_msec_time(X_0:bat[:daytime], X_1:lng, X_2:bat[:oid]):bat[:timestamp] 
+MTIMEodbc_timestamp_add_msec_interval_time_bulk_p2;
+(empty)
+batmtime
 quarter
 pattern batmtime.quarter(X_0:bat[:date]):bat[:bte] 
 MTIMEdate_extract_quarter_bulk;
@@ -23712,6 +23807,726 @@ batmtime
 timestamp_to_str
 pattern batmtime.timestamp_to_str(X_0:bat[:timestamp], X_1:str, X_2:bat[:oid]):bat[:str] 
 MTIMEtimestamp_to_str_bulk_p2;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:timestamp], X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_day_bulk;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:timestamp], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_day_bulk;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:timestamp, X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_day_bulk_p1;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:timestamp, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_day_bulk_p1;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:timestamp], X_1:timestamp):bat[:int] 
+MTIMEtimestampdiff_day_bulk_p2;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:timestamp], X_1:timestamp, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_day_bulk_p2;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:daytime], X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_day_t_ts_bulk;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:daytime], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_day_t_ts_bulk;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:daytime, X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_day_t_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:daytime, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_day_t_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:daytime], X_1:timestamp):bat[:int] 
+MTIMEtimestampdiff_day_t_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:daytime], X_1:timestamp, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_day_t_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:timestamp], X_1:bat[:daytime]):bat[:int] 
+MTIMEtimestampdiff_day_ts_t_bulk;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:timestamp], X_1:bat[:daytime], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_day_ts_t_bulk;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:timestamp, X_1:bat[:daytime]):bat[:int] 
+MTIMEtimestampdiff_day_ts_t_bulk_p1;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:timestamp, X_1:bat[:daytime], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_day_ts_t_bulk_p1;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:timestamp], X_1:daytime):bat[:int] 
+MTIMEtimestampdiff_day_ts_t_bulk_p2;
+(empty)
+batmtime
+timestampdiff_day
+pattern batmtime.timestampdiff_day(X_0:bat[:timestamp], X_1:daytime, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_day_ts_t_bulk_p2;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:timestamp], X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_hour_bulk;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:timestamp], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_hour_bulk;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:timestamp, X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_hour_bulk_p1;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:timestamp, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_hour_bulk_p1;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:timestamp], X_1:timestamp):bat[:lng] 
+MTIMEtimestampdiff_hour_bulk_p2;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:timestamp], X_1:timestamp, X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_hour_bulk_p2;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:date], X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_hour_d_ts_bulk;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:date], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_hour_d_ts_bulk;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:date, X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_hour_d_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:date, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_hour_d_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:date], X_1:timestamp):bat[:lng] 
+MTIMEtimestampdiff_hour_d_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:date], X_1:timestamp, X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_hour_d_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:timestamp], X_1:bat[:date]):bat[:lng] 
+MTIMEtimestampdiff_hour_ts_d_bulk;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:timestamp], X_1:bat[:date], X_2:bat[:oid], X_3:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_hour_ts_d_bulk;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:timestamp, X_1:bat[:date]):bat[:lng] 
+MTIMEtimestampdiff_hour_ts_d_bulk_p1;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:timestamp, X_1:bat[:date], X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_hour_ts_d_bulk_p1;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:timestamp], X_1:date):bat[:lng] 
+MTIMEtimestampdiff_hour_ts_d_bulk_p2;
+(empty)
+batmtime
+timestampdiff_hour
+pattern batmtime.timestampdiff_hour(X_0:bat[:timestamp], X_1:date, X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_hour_ts_d_bulk_p2;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:timestamp], X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_min_bulk;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:timestamp], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_min_bulk;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:timestamp, X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_min_bulk_p1;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:timestamp, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_min_bulk_p1;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:timestamp], X_1:timestamp):bat[:lng] 
+MTIMEtimestampdiff_min_bulk_p2;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:timestamp], X_1:timestamp, X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_min_bulk_p2;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:date], X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_min_d_ts_bulk;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:date], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_min_d_ts_bulk;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:date, X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_min_d_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:date, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_min_d_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:date], X_1:timestamp):bat[:lng] 
+MTIMEtimestampdiff_min_d_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:date], X_1:timestamp, X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_min_d_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:timestamp], X_1:bat[:date]):bat[:lng] 
+MTIMEtimestampdiff_min_ts_d_bulk;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:timestamp], X_1:bat[:date], X_2:bat[:oid], X_3:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_min_ts_d_bulk;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:timestamp, X_1:bat[:date]):bat[:lng] 
+MTIMEtimestampdiff_min_ts_d_bulk_p1;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:timestamp, X_1:bat[:date], X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_min_ts_d_bulk_p1;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:timestamp], X_1:date):bat[:lng] 
+MTIMEtimestampdiff_min_ts_d_bulk_p2;
+(empty)
+batmtime
+timestampdiff_min
+pattern batmtime.timestampdiff_min(X_0:bat[:timestamp], X_1:date, X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_min_ts_d_bulk_p2;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:timestamp], X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_month_bulk;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:timestamp], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_month_bulk;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:timestamp, X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_month_bulk_p1;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:timestamp, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_month_bulk_p1;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:timestamp], X_1:timestamp):bat[:int] 
+MTIMEtimestampdiff_month_bulk_p2;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:timestamp], X_1:timestamp, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_month_bulk_p2;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:daytime], X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_month_t_ts_bulk;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:daytime], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_month_t_ts_bulk;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:daytime, X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_month_t_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:daytime, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_month_t_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:daytime], X_1:timestamp):bat[:int] 
+MTIMEtimestampdiff_month_t_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:daytime], X_1:timestamp, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_month_t_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:timestamp], X_1:bat[:daytime]):bat[:int] 
+MTIMEtimestampdiff_month_ts_t_bulk;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:timestamp], X_1:bat[:daytime], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_month_ts_t_bulk;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:timestamp, X_1:bat[:daytime]):bat[:int] 
+MTIMEtimestampdiff_month_ts_t_bulk_p1;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:timestamp, X_1:bat[:daytime], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_month_ts_t_bulk_p1;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:timestamp], X_1:daytime):bat[:int] 
+MTIMEtimestampdiff_month_ts_t_bulk_p2;
+(empty)
+batmtime
+timestampdiff_month
+pattern batmtime.timestampdiff_month(X_0:bat[:timestamp], X_1:daytime, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_month_ts_t_bulk_p2;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:timestamp], X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_quarter_bulk;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:timestamp], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_quarter_bulk;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:timestamp, X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_quarter_bulk_p1;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:timestamp, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_quarter_bulk_p1;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:timestamp], X_1:timestamp):bat[:int] 
+MTIMEtimestampdiff_quarter_bulk_p2;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:timestamp], X_1:timestamp, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_quarter_bulk_p2;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:daytime], X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_quarter_t_ts_bulk;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:daytime], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_quarter_t_ts_bulk;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:daytime, X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_quarter_t_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:daytime, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_quarter_t_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:daytime], X_1:timestamp):bat[:int] 
+MTIMEtimestampdiff_quarter_t_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:daytime], X_1:timestamp, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_quarter_t_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:timestamp], X_1:bat[:daytime]):bat[:int] 
+MTIMEtimestampdiff_quarter_ts_t_bulk;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:timestamp], X_1:bat[:daytime], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_quarter_ts_t_bulk;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:timestamp, X_1:bat[:daytime]):bat[:int] 
+MTIMEtimestampdiff_quarter_ts_t_bulk_p1;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:timestamp, X_1:bat[:daytime], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_quarter_ts_t_bulk_p1;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:timestamp], X_1:daytime):bat[:int] 
+MTIMEtimestampdiff_quarter_ts_t_bulk_p2;
+(empty)
+batmtime
+timestampdiff_quarter
+pattern batmtime.timestampdiff_quarter(X_0:bat[:timestamp], X_1:daytime, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_quarter_ts_t_bulk_p2;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:timestamp], X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_sec_bulk;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:timestamp], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_sec_bulk;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:timestamp, X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_sec_bulk_p1;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:timestamp, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_sec_bulk_p1;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:timestamp], X_1:timestamp):bat[:lng] 
+MTIMEtimestampdiff_sec_bulk_p2;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:timestamp], X_1:timestamp, X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_sec_bulk_p2;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:date], X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_sec_d_ts_bulk;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:date], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_sec_d_ts_bulk;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:date, X_1:bat[:timestamp]):bat[:lng] 
+MTIMEtimestampdiff_sec_d_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:date, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_sec_d_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:date], X_1:timestamp):bat[:lng] 
+MTIMEtimestampdiff_sec_d_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:date], X_1:timestamp, X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_sec_d_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:timestamp], X_1:bat[:date]):bat[:lng] 
+MTIMEtimestampdiff_sec_ts_d_bulk;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:timestamp], X_1:bat[:date], X_2:bat[:oid], X_3:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_sec_ts_d_bulk;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:timestamp, X_1:bat[:date]):bat[:lng] 
+MTIMEtimestampdiff_sec_ts_d_bulk_p1;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:timestamp, X_1:bat[:date], X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_sec_ts_d_bulk_p1;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:timestamp], X_1:date):bat[:lng] 
+MTIMEtimestampdiff_sec_ts_d_bulk_p2;
+(empty)
+batmtime
+timestampdiff_sec
+pattern batmtime.timestampdiff_sec(X_0:bat[:timestamp], X_1:date, X_2:bat[:oid]):bat[:lng] 
+MTIMEtimestampdiff_sec_ts_d_bulk_p2;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:timestamp], X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_week_bulk;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:timestamp], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_week_bulk;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:timestamp, X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_week_bulk_p1;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:timestamp, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_week_bulk_p1;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:timestamp], X_1:timestamp):bat[:int] 
+MTIMEtimestampdiff_week_bulk_p2;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:timestamp], X_1:timestamp, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_week_bulk_p2;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:daytime], X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_week_t_ts_bulk;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:daytime], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_week_t_ts_bulk;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:daytime, X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_week_t_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:daytime, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_week_t_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:daytime], X_1:timestamp):bat[:int] 
+MTIMEtimestampdiff_week_t_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:daytime], X_1:timestamp, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_week_t_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:timestamp], X_1:bat[:daytime]):bat[:int] 
+MTIMEtimestampdiff_week_ts_t_bulk;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:timestamp], X_1:bat[:daytime], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_week_ts_t_bulk;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:timestamp, X_1:bat[:daytime]):bat[:int] 
+MTIMEtimestampdiff_week_ts_t_bulk_p1;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:timestamp, X_1:bat[:daytime], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_week_ts_t_bulk_p1;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:timestamp], X_1:daytime):bat[:int] 
+MTIMEtimestampdiff_week_ts_t_bulk_p2;
+(empty)
+batmtime
+timestampdiff_week
+pattern batmtime.timestampdiff_week(X_0:bat[:timestamp], X_1:daytime, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_week_ts_t_bulk_p2;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:timestamp], X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_year_bulk;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:timestamp], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_year_bulk;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:timestamp, X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_year_bulk_p1;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:timestamp, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_year_bulk_p1;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:timestamp], X_1:timestamp):bat[:int] 
+MTIMEtimestampdiff_year_bulk_p2;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:timestamp], X_1:timestamp, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_year_bulk_p2;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:daytime], X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_year_t_ts_bulk;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:daytime], X_1:bat[:timestamp], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_year_t_ts_bulk;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:daytime, X_1:bat[:timestamp]):bat[:int] 
+MTIMEtimestampdiff_year_t_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:daytime, X_1:bat[:timestamp], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_year_t_ts_bulk_p1;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:daytime], X_1:timestamp):bat[:int] 
+MTIMEtimestampdiff_year_t_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:daytime], X_1:timestamp, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_year_t_ts_bulk_p2;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:timestamp], X_1:bat[:daytime]):bat[:int] 
+MTIMEtimestampdiff_year_ts_t_bulk;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:timestamp], X_1:bat[:daytime], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_year_ts_t_bulk;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:timestamp, X_1:bat[:daytime]):bat[:int] 
+MTIMEtimestampdiff_year_ts_t_bulk_p1;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:timestamp, X_1:bat[:daytime], X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_year_ts_t_bulk_p1;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:timestamp], X_1:daytime):bat[:int] 
+MTIMEtimestampdiff_year_ts_t_bulk_p2;
+(empty)
+batmtime
+timestampdiff_year
+pattern batmtime.timestampdiff_year(X_0:bat[:timestamp], X_1:daytime, X_2:bat[:oid]):bat[:int] 
+MTIMEtimestampdiff_year_ts_t_bulk_p2;
 (empty)
 batmtime
 usweekofyear
@@ -34079,6 +34894,11 @@ pattern inspect.getComment(X_0:str, X_1:str):bat[:str]
 INSPECTgetComment;
 Returns the function help information.
 inspect
+getDatabaseName
+command inspect.getDatabaseName():str 
+INSPECTgetDatabaseName;
+Return database name
+inspect
 getDefinition
 pattern inspect.getDefinition(X_0:str, X_1:str):bat[:str] 
 INSPECTgetDefinition;
@@ -35449,6 +36269,21 @@ command mtime.month(X_0:timestamp):bte
 MTIMEtimestamp_month;
 (empty)
 mtime
+odbc_timestamp_add_month_time
+command mtime.odbc_timestamp_add_month_time(X_0:daytime, X_1:int):timestamp 
+MTIMEodbc_timestamp_add_month_interval_time;
+Add months to a time
+mtime
+odbc_timestamp_add_msec_date
+command mtime.odbc_timestamp_add_msec_date(X_0:date, X_1:lng):timestamp 
+MTIMEodbc_timestamp_add_msec_interval_date;
+(empty)
+mtime
+odbc_timestamp_add_msec_time
+command mtime.odbc_timestamp_add_msec_time(X_0:daytime, X_1:lng):timestamp 
+MTIMEodbc_timestamp_add_msec_interval_time;
+(empty)
+mtime
 quarter
 command mtime.quarter(X_0:date):bte 
 MTIMEdate_extract_quarter;
@@ -35528,6 +36363,126 @@ timestamp_to_str
 command mtime.timestamp_to_str(X_0:timestamp, X_1:str):str 
 MTIMEtimestamp_to_str;
 create a string from the time, using the specified format (see man strftime)
+mtime
+timestampdiff_day
+command mtime.timestampdiff_day(X_0:timestamp, X_1:timestamp):int 
+MTIMEtimestampdiff_day;
+diff in days between 'val1' and 'val2'.
+mtime
+timestampdiff_day
+command mtime.timestampdiff_day(X_0:daytime, X_1:timestamp):int 
+MTIMEtimestampdiff_day_t_ts;
+diff in days between 'val1' and 'val2'.
+mtime
+timestampdiff_day
+command mtime.timestampdiff_day(X_0:timestamp, X_1:daytime):int 
+MTIMEtimestampdiff_day_ts_t;
+diff in days between 'val1' and 'val2'.
+mtime
+timestampdiff_hour
+command mtime.timestampdiff_hour(X_0:timestamp, X_1:timestamp):lng 
+MTIMEtimestampdiff_hour;
+diff in hours between 'val1' and 'val2'.
+mtime
+timestampdiff_hour
+command mtime.timestampdiff_hour(X_0:date, X_1:timestamp):lng 
+MTIMEtimestampdiff_hour_d_ts;
+diff in hours between 'val1' and 'val2'.
+mtime
+timestampdiff_hour
+command mtime.timestampdiff_hour(X_0:timestamp, X_1:date):lng 
+MTIMEtimestampdiff_hour_ts_d;
+diff in hours between 'val1' and 'val2'.
+mtime
+timestampdiff_min
+command mtime.timestampdiff_min(X_0:timestamp, X_1:timestamp):lng 
+MTIMEtimestampdiff_min;
+diff in min between 'val1' and 'val2'.
+mtime
+timestampdiff_min
+command mtime.timestampdiff_min(X_0:date, X_1:timestamp):lng 
+MTIMEtimestampdiff_min_d_ts;
+diff in min between 'val1' and 'val2'.
+mtime
+timestampdiff_min
+command mtime.timestampdiff_min(X_0:timestamp, X_1:date):lng 
+MTIMEtimestampdiff_min_ts_d;
+diff in min between 'val1' and 'val2'.
+mtime
+timestampdiff_month
+command mtime.timestampdiff_month(X_0:timestamp, X_1:timestamp):int 
+MTIMEtimestampdiff_month;
+diff in months between 'val1' and 'val2'.
+mtime
+timestampdiff_month
+command mtime.timestampdiff_month(X_0:daytime, X_1:timestamp):int 
+MTIMEtimestampdiff_month_t_ts;
+diff in months between 'val1' and 'val2'.
+mtime
+timestampdiff_month
+command mtime.timestampdiff_month(X_0:timestamp, X_1:daytime):int 
+MTIMEtimestampdiff_month_ts_t;
+diff in months between 'val1' and 'val2'.
+mtime
+timestampdiff_quarter
+command mtime.timestampdiff_quarter(X_0:timestamp, X_1:timestamp):int 
+MTIMEtimestampdiff_quarter;
+diff in months between 'val1' and 'val2'.
+mtime
+timestampdiff_quarter
+command mtime.timestampdiff_quarter(X_0:daytime, X_1:timestamp):int 
+MTIMEtimestampdiff_quarter_t_ts;
+diff in months between 'val1' and 'val2'.
+mtime
+timestampdiff_quarter
+command mtime.timestampdiff_quarter(X_0:timestamp, X_1:daytime):int 
+MTIMEtimestampdiff_quarter_ts_t;
+diff in months between 'val1' and 'val2'.
+mtime
+timestampdiff_sec
+command mtime.timestampdiff_sec(X_0:timestamp, X_1:timestamp):lng 
+MTIMEtimestampdiff_sec;
+diff in seconds between 'val1' and 'val2'.
+mtime
+timestampdiff_sec
+command mtime.timestampdiff_sec(X_0:date, X_1:timestamp):lng 
+MTIMEtimestampdiff_sec_d_ts;
+diff in seconds between 'val1' and 'val2'.
+mtime
+timestampdiff_sec
+command mtime.timestampdiff_sec(X_0:timestamp, X_1:date):lng 
+MTIMEtimestampdiff_sec_ts_d;
+diff in seconds between 'val1' and 'val2'.
+mtime
+timestampdiff_week
+command mtime.timestampdiff_week(X_0:timestamp, X_1:timestamp):int 
+MTIMEtimestampdiff_week;
+diff in weeks between 'val1' and 'val2'.
+mtime
+timestampdiff_week
+command mtime.timestampdiff_week(X_0:daytime, X_1:timestamp):int 
+MTIMEtimestampdiff_week_t_ts;
+diff in weeks between 'val1' and 'val2'.
+mtime
+timestampdiff_week
+command mtime.timestampdiff_week(X_0:timestamp, X_1:daytime):int 
+MTIMEtimestampdiff_week_ts_t;
+diff in weeks between 'val1' and 'val2'.
+mtime
+timestampdiff_year
+command mtime.timestampdiff_year(X_0:timestamp, X_1:timestamp):int 
+MTIMEtimestampdiff_year;
+diff in months between 'val1' and 'val2'.
+mtime
+timestampdiff_year
+command mtime.timestampdiff_year(X_0:daytime, X_1:timestamp):int 
+MTIMEtimestampdiff_year_t_ts;
+diff in months between 'val1' and 'val2'.
+mtime
+timestampdiff_year
+command mtime.timestampdiff_year(X_0:timestamp, X_1:daytime):int 
+MTIMEtimestampdiff_year_ts_t;
+diff in months between 'val1' and 'val2'.
 mtime
 usweekofyear
 command mtime.usweekofyear(X_0:date):bte 
@@ -38045,54 +39000,44 @@ mnstr_write_stringwrap;
 write data on the stream
 sysmon
 pause
-unsafe pattern sysmon.pause(X_0:int):void 
-SYSMONpause;
-Suspend a running query
-sysmon
-pause
 unsafe pattern sysmon.pause(X_0:lng):void 
 SYSMONpause;
-Suspend a running query
+Suspend query execution with OID id
 sysmon
 pause
-unsafe pattern sysmon.pause(X_0:sht):void 
+unsafe pattern sysmon.pause(X_0:lng, X_1:str):void 
 SYSMONpause;
-Suspend a running query
+Sysadmin call, suspend query execution with OID id belonging to user
 sysmon
 queue
 pattern sysmon.queue() (X_0:bat[:lng], X_1:bat[:int], X_2:bat[:str], X_3:bat[:timestamp], X_4:bat[:str], X_5:bat[:str], X_6:bat[:timestamp], X_7:bat[:int], X_8:bat[:int]) 
 SYSMONqueue;
 A queue of queries that are currently being executed or recently finished
 sysmon
-resume
-unsafe pattern sysmon.resume(X_0:int):void 
-SYSMONresume;
-Resume processing of a query 
+queue
+pattern sysmon.queue(X_0:str) (X_1:bat[:lng], X_2:bat[:int], X_3:bat[:str], X_4:bat[:timestamp], X_5:bat[:str], X_6:bat[:str], X_7:bat[:timestamp], X_8:bat[:int], X_9:bat[:int]) 
+SYSMONqueue;
+Sysadmin call, to see either the global queue or user queue of queries that are currently being executed or recently finished
 sysmon
 resume
 unsafe pattern sysmon.resume(X_0:lng):void 
 SYSMONresume;
-Resume processing of a query 
+Resume query execution with OID id
 sysmon
 resume
-unsafe pattern sysmon.resume(X_0:sht):void 
+unsafe pattern sysmon.resume(X_0:lng, X_1:str):void 
 SYSMONresume;
-Resume processing of a query 
-sysmon
-stop
-unsafe pattern sysmon.stop(X_0:int):void 
-SYSMONstop;
-Stop a single query a.s.a.p.
+Sysadmin call, resume query execution with OID id belonging to user
 sysmon
 stop
 unsafe pattern sysmon.stop(X_0:lng):void 
 SYSMONstop;
-Stop a single query a.s.a.p.
+Stop query execution with OID id
 sysmon
 stop
-unsafe pattern sysmon.stop(X_0:sht):void 
+unsafe pattern sysmon.stop(X_0:lng, X_1:str):void 
 SYSMONstop;
-Stop a single query a.s.a.p.
+Sysadmin call, stop query execution with OID id belonging to user
 sysmon
 user_statistics
 pattern sysmon.user_statistics() (X_0:bat[:str], X_1:bat[:lng], X_2:bat[:lng], X_3:bat[:timestamp], X_4:bat[:timestamp], X_5:bat[:lng], X_6:bat[:str]) 

@@ -283,7 +283,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		if (QRYqueue[i].stk == stk) {
 			QRYqueue[i].status = "finished";
 			QRYqueue[i].finished = time(0);
-			QRYqueue[i].workers = mb->workers;
+			QRYqueue[i].workers = (int) ATOMIC_GET(&mb->workers);
 			/* give the MB upperbound by addition of 1 MB */
 			QRYqueue[i].memory = 1 + (int)(mb->memory / LL_CONSTANT(1048576));
 			QRYqueue[i].cntxt = NULL;

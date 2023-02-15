@@ -689,11 +689,16 @@ chkInstruction(Module s, MalBlkPtr mb, InstrPtr p)
 str
 chkProgram(Module s, MalBlkPtr mb)
 {
-	str msg = MAL_SUCCEED;
+	str msg;
 /* it is not ready yet, too fragile
 		mb->typefixed = mb->stop == chk; ignored END */
 /*	if( mb->flowfixed == 0)*/
 
+	if (mb->errors){
+		msg = mb->errors;
+		mb->errors = NULL;
+		return msg;
+	}
 	msg = chkTypes(s, mb, FALSE);
 	if( msg == MAL_SUCCEED)
 		msg = chkFlow(mb);

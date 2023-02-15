@@ -270,11 +270,15 @@ SQLprepareClient(Client c, int login)
 			default:
 				break;
 		}
-		lng maxmem;
-		if (monet5_user_get_max_memory(m, m->user_id, &maxmem) == 0)
-			c->qryctx.maxmem = (ATOMIC_BASE_TYPE) (maxmem > 0 ? maxmem : 0);
-		else
+		if (monet5_user_get_limits(m, m->user_id, &c->maxmem, &c->maxworkers) == 0) {
+			c->qryctx.maxmem = (ATOMIC_BASE_TYPE) (c->maxmem > 0 ? c->maxmem : 0);
+		} else {
+			c->maxmem = 0;
 			c->qryctx.maxmem = 0;
+			c->maxworkers = 0;
+		}
+		if (c->memorylimit > 0 && c->qryctx.maxmem > ((ATOMIC_BASE_TYPE) c->memorylimit << 20))
+			c->qryctx.maxmem = (ATOMIC_BASE_TYPE) c->memorylimit << 20;
 	}
 
 	if (c->handshake_options) {
@@ -1396,6 +1400,7 @@ SYSupdate_schemas(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 
-	sql_trans_update_schemas(m->session->tr);
+	if (sql_trans_update_schemas(m->session->tr) < 0)
+		throw(MAL, "sql.update_schemas", MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }

@@ -329,7 +329,6 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 	str res = NULL;
 	sql_subtype found;
 	int localtype;
-	sql_trans *tr = sql->session->tr;
 
 	if (isPartitionedByExpressionTable(mt) && (res = bootstrap_partition_expression(sql, mt, 0)) != NULL)
 		return res;
@@ -352,7 +351,7 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 					if (ok)
 						ok = VALconvert(localtype, &vvalue);
 					if (ok) {
-						v->value = SA_NEW_ARRAY(tr->sa, char, vvalue.len);
+						v->value = NEW_ARRAY(char, vvalue.len);
 						memcpy(v->value, VALget(&vvalue), vvalue.len);
 						v->length = vvalue.len;
 					}
@@ -380,8 +379,8 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 						const void *nil_ptr = ATOMnilptr(localtype);
 						size_t nil_len = ATOMlen(localtype, nil_ptr);
 
-						p->part.range.minvalue = SA_NEW_ARRAY(tr->sa, char, nil_len);
-						p->part.range.maxvalue = SA_NEW_ARRAY(tr->sa, char, nil_len);
+						p->part.range.minvalue = NEW_ARRAY(char, nil_len);
+						p->part.range.maxvalue = NEW_ARRAY(char, nil_len);
 						memcpy(p->part.range.minvalue, nil_ptr, nil_len);
 						memcpy(p->part.range.maxvalue, nil_ptr, nil_len);
 						p->part.range.minlength = nil_len;
@@ -391,8 +390,8 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 						if (ok)
 							ok = VALconvert(localtype, &vmax);
 						if (ok) {
-							p->part.range.minvalue = SA_NEW_ARRAY(tr->sa, char, vmin.len);
-							p->part.range.maxvalue = SA_NEW_ARRAY(tr->sa, char, vmax.len);
+							p->part.range.minvalue = NEW_ARRAY(char, vmin.len);
+							p->part.range.maxvalue = NEW_ARRAY(char, vmax.len);
 							memcpy(p->part.range.minvalue, VALget(&vmin), vmin.len);
 							memcpy(p->part.range.maxvalue, VALget(&vmax), vmax.len);
 							p->part.range.minlength = vmin.len;
