@@ -50675,54 +50675,44 @@ mnstr_write_stringwrap;
 write data on the stream
 sysmon
 pause
-unsafe pattern sysmon.pause(X_0:int):void 
-SYSMONpause;
-Suspend a running query
-sysmon
-pause
 unsafe pattern sysmon.pause(X_0:lng):void 
 SYSMONpause;
-Suspend a running query
+Suspend query execution with OID id
 sysmon
 pause
-unsafe pattern sysmon.pause(X_0:sht):void 
+unsafe pattern sysmon.pause(X_0:lng, X_1:str):void 
 SYSMONpause;
-Suspend a running query
+Sysadmin call, suspend query execution with OID id belonging to user
 sysmon
 queue
 pattern sysmon.queue() (X_0:bat[:lng], X_1:bat[:int], X_2:bat[:str], X_3:bat[:timestamp], X_4:bat[:str], X_5:bat[:str], X_6:bat[:timestamp], X_7:bat[:int], X_8:bat[:int]) 
 SYSMONqueue;
 A queue of queries that are currently being executed or recently finished
 sysmon
-resume
-unsafe pattern sysmon.resume(X_0:int):void 
-SYSMONresume;
-Resume processing of a query 
+queue
+pattern sysmon.queue(X_0:str) (X_1:bat[:lng], X_2:bat[:int], X_3:bat[:str], X_4:bat[:timestamp], X_5:bat[:str], X_6:bat[:str], X_7:bat[:timestamp], X_8:bat[:int], X_9:bat[:int]) 
+SYSMONqueue;
+Sysadmin call, to see either the global queue or user queue of queries that are currently being executed or recently finished
 sysmon
 resume
 unsafe pattern sysmon.resume(X_0:lng):void 
 SYSMONresume;
-Resume processing of a query 
+Resume query execution with OID id
 sysmon
 resume
-unsafe pattern sysmon.resume(X_0:sht):void 
+unsafe pattern sysmon.resume(X_0:lng, X_1:str):void 
 SYSMONresume;
-Resume processing of a query 
-sysmon
-stop
-unsafe pattern sysmon.stop(X_0:int):void 
-SYSMONstop;
-Stop a single query a.s.a.p.
+Sysadmin call, resume query execution with OID id belonging to user
 sysmon
 stop
 unsafe pattern sysmon.stop(X_0:lng):void 
 SYSMONstop;
-Stop a single query a.s.a.p.
+Stop query execution with OID id
 sysmon
 stop
-unsafe pattern sysmon.stop(X_0:sht):void 
+unsafe pattern sysmon.stop(X_0:lng, X_1:str):void 
 SYSMONstop;
-Stop a single query a.s.a.p.
+Sysadmin call, stop query execution with OID id belonging to user
 sysmon
 user_statistics
 pattern sysmon.user_statistics() (X_0:bat[:str], X_1:bat[:lng], X_2:bat[:lng], X_3:bat[:timestamp], X_4:bat[:timestamp], X_5:bat[:lng], X_6:bat[:str]) 

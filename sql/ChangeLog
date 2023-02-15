@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Feb 15 2023 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
+- SQL function sys.queue() overloaded with sys.queue(username string), SYSADMIN only, allowing to filter the global queue by username or use 'ALL' to retrive the global queue. Calling the function without arguments returns the current user queue.
+- SQL function sys.queue() overloaded with sys.queue(username string), SYSADMIN only, allowing to filter the global queue by username or use 'ALL' to retrive the global queue. Calling the function without arguments returns the current user queue.
+
 * Wed Feb 15 2023 svetlin <svetlin.stalinov@monetdbsolutions.com>
 - Added JDBC/ODBC escape sequences implementation to SQL layer. Now all
   clients can forward them without further processing.
