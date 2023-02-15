@@ -20,11 +20,16 @@
 
 /* (c) M.L. Kersten
  * The queries currently in execution are returned to the front-end for managing expensive ones.
-*/
+ */
 
 static str
 SYSMONstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	/* Temporary hack not allowing MAL clients (mclient -lmal)
+	   to use this function */
+	if (cntxt->sqlcontext == NULL)
+		throw(MAL, "SYSMONstatistics", SQLSTATE(42000) "Calling from a mclient -lmal.");
+
 	BAT *user, *querycount, *totalticks, *started, *finished, *maxquery, *maxticks;
 	bat *u = getArgReference_bat(stk,pci,0);
 	bat *c = getArgReference_bat(stk,pci,1);
@@ -58,7 +63,7 @@ SYSMONstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	MT_lock_set(&mal_delayLock);
 	// FIXME: what if there are multiple users with ADMIN privilege?
-	for (i = 0 && cntxt->user == MAL_ADMIN; i < usrstatscnt; i++) {
+	for (i = 0; i < usrstatscnt; i++) {
 		/* We can stop at the first empty entry */
 		if (USRstats[i].username == NULL) break;
 
@@ -144,7 +149,7 @@ SYSMONstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(maxquery);
 	return MAL_SUCCEED;
 
-bailout:
+ bailout:
 	MT_lock_unset(&mal_delayLock);
 	BBPunfix(user->batCacheid);
 	BBPunfix(querycount->batCacheid);
@@ -159,34 +164,51 @@ bailout:
 static str
 SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *tag, *sessionid, *user, *started, *status, *query, *finished, *workers, *memory;
-	bat *t = getArgReference_bat(stk,pci,0);
-	bat *s = getArgReference_bat(stk,pci,1);
-	bat *u = getArgReference_bat(stk,pci,2);
-	bat *sd = getArgReference_bat(stk,pci,3);
-	bat *ss = getArgReference_bat(stk,pci,4);
-	bat *q = getArgReference_bat(stk,pci,5);
-	bat *f = getArgReference_bat(stk,pci,6);
-	bat *w = getArgReference_bat(stk,pci,7);
-	bat *m = getArgReference_bat(stk,pci,8);
+	/* Temporary hack not allowing MAL clients (mclient -lmal)
+	   to use this function */
+	if (cntxt->sqlcontext == NULL)
+		throw(MAL, "SYSMONstatistics", SQLSTATE(42000) "Calling from a mclient -lmal.");
+
+	(void)mb;
+
+	bat *t = getArgReference_bat(stk,pci,0),
+		*s = getArgReference_bat(stk,pci,1),
+		*u = getArgReference_bat(stk,pci,2),
+		*sd = getArgReference_bat(stk,pci,3),
+		*ss = getArgReference_bat(stk,pci,4),
+		*q = getArgReference_bat(stk,pci,5),
+		*f = getArgReference_bat(stk,pci,6),
+		*w = getArgReference_bat(stk,pci,7),
+		*m = getArgReference_bat(stk,pci,8);
+
+	BUN sz = (BUN)qsize;
+	BAT *tag = COLnew(0, TYPE_lng, sz, TRANSIENT),
+		*sessionid = COLnew(0, TYPE_int, sz, TRANSIENT),
+		*user = COLnew(0, TYPE_str, sz, TRANSIENT),
+		*started = COLnew(0, TYPE_timestamp, sz, TRANSIENT),
+		*status = COLnew(0, TYPE_str, sz, TRANSIENT),
+		*query = COLnew(0, TYPE_str, sz, TRANSIENT),
+		*finished = COLnew(0, TYPE_timestamp, sz, TRANSIENT),
+		*workers = COLnew(0, TYPE_int, sz, TRANSIENT),
+		*memory = COLnew(0, TYPE_int, sz, TRANSIENT);
+
 	lng qtag;
 	int wrk, mem;
-	BUN sz;
 	timestamp tsn;
-	str msg = MAL_SUCCEED;
+	str userqueue = NULL, msg = MAL_SUCCEED;
 
-	(void) mb;
-	sz = (BUN) qsize;	// reserve space for all tuples in QRYqueue
-	tag = COLnew(0, TYPE_lng, sz, TRANSIENT);
-	sessionid = COLnew(0, TYPE_int, sz, TRANSIENT);
-	user = COLnew(0, TYPE_str, sz, TRANSIENT);
-	started = COLnew(0, TYPE_timestamp, sz, TRANSIENT);
-	status = COLnew(0, TYPE_str, sz, TRANSIENT);
-	query = COLnew(0, TYPE_str, sz, TRANSIENT);
-	finished = COLnew(0, TYPE_timestamp, sz, TRANSIENT);
-	workers = COLnew(0, TYPE_int, sz, TRANSIENT);
-	memory = COLnew(0, TYPE_int, sz, TRANSIENT);
-	if ( tag == NULL || sessionid == NULL || user == NULL || query == NULL || started == NULL || finished == NULL || workers == NULL || memory == NULL){
+	/* If pci->argc == 10, arg 9 type is a string */
+	bool getall = false, admin = pci->argc == 10 ? true : false;
+	if (admin) {
+		assert(getArgType(mb, pci, 9) == TYPE_str);
+		userqueue = *getArgReference_str(stk, pci, 9);
+		if (strcmp("ALL", userqueue) == 0)
+			getall = true;
+	}
+
+	if (tag == NULL || sessionid == NULL || user == NULL ||
+		query == NULL || started == NULL || finished == NULL ||
+		workers == NULL || memory == NULL){
 		BBPreclaim(tag);
 		BBPreclaim(sessionid);
 		BBPreclaim(user);
@@ -196,60 +218,55 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(finished);
 		BBPreclaim(workers);
 		BBPreclaim(memory);
-		throw(MAL, "SYSMONqueue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "SYSMONqueue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	MT_lock_set(&mal_delayLock);
 	for (size_t i = 0; i < qsize; i++) {
-		if( QRYqueue[i].query && (cntxt->user == MAL_ADMIN ||
-					strcmp(cntxt->username, QRYqueue[i].username) == 0) ){
+		/* Filtering the queries according to how SYSMONqueue was called.
+		   Either:
+		   SYSADMIN calls sys.queue("ALL") or SYSADMIN calls sys.queue(USER)
+		   or any user calls sys.queue() to retrieve its own queue. */
+		if (QRYqueue[i].query &&
+			((admin && getall) ||
+			 (admin && strcmp(QRYqueue[i].username, userqueue) == 0) ||
+			 ((admin == false) && strcmp(QRYqueue[i].username, cntxt->username) == 0))) {
 			qtag = (lng) QRYqueue[i].tag;
-			if (BUNappend(tag, &qtag, false) != GDK_SUCCEED)
-				goto bailout;
-
-			if (BUNappend(user, QRYqueue[i].username, false) != GDK_SUCCEED) {
-				goto bailout;
-			}
-
-			if (BUNappend(sessionid, &(QRYqueue[i].idx), false) != GDK_SUCCEED) {
-				goto bailout;
-			}
-
-			if (BUNappend(query, QRYqueue[i].query, false) != GDK_SUCCEED ||
+			if (BUNappend(tag, &qtag, false) != GDK_SUCCEED ||
+				BUNappend(user, QRYqueue[i].username, false) != GDK_SUCCEED ||
+				BUNappend(sessionid, &(QRYqueue[i].idx),false) != GDK_SUCCEED ||
+				BUNappend(query, QRYqueue[i].query, false) != GDK_SUCCEED ||
 				BUNappend(status, QRYqueue[i].status, false) != GDK_SUCCEED)
 				goto bailout;
-
 			/* convert number of seconds into a timestamp */
 			tsn = timestamp_fromtime(QRYqueue[i].start);
 			if (is_timestamp_nil(tsn)) {
-				msg = createException(MAL, "SYSMONqueue", SQLSTATE(22003) "cannot convert time");
+				msg = createException(MAL, "SYSMONqueue", SQLSTATE(22003) "Cannot convert time.");
 				goto bailout;
 			}
 			if (BUNappend(started, &tsn, false) != GDK_SUCCEED)
 				goto bailout;
-
-			if (QRYqueue[i].finished == 0) {
+			if (QRYqueue[i].finished == 0)
 				tsn = timestamp_nil;
-			} else {
+			else {
 				tsn = timestamp_fromtime(QRYqueue[i].finished);
 				if (is_timestamp_nil(tsn)) {
-					msg = createException(MAL, "SYSMONqueue", SQLSTATE(22003) "cannot convert time");
+					msg = createException(MAL, "SYSMONqueue", SQLSTATE(22003) "Cannot convert time.");
 					goto bailout;
 				}
 			}
 			if (BUNappend(finished, &tsn, false) != GDK_SUCCEED)
 				goto bailout;
-
-			if( QRYqueue[i].mb)
+			if (QRYqueue[i].mb)
 				wrk = (int) ATOMIC_GET(&QRYqueue[i].mb->workers);
 			else
 				wrk = QRYqueue[i].workers;
-			if( QRYqueue[i].mb)
+			if (QRYqueue[i].mb)
 				mem = (int)(1 + QRYqueue[i].mb->memory / LL_CONSTANT(1048576));
 			else
-				mem = (int)QRYqueue[i].memory;
-			if ( BUNappend(workers, &wrk, false) != GDK_SUCCEED ||
-				 BUNappend(memory, &mem, false) != GDK_SUCCEED)
+				mem = QRYqueue[i].memory;
+			if (BUNappend(workers, &wrk, false) != GDK_SUCCEED ||
+				BUNappend(memory, &mem, false) != GDK_SUCCEED)
 				goto bailout;
 		}
 	}
@@ -274,7 +291,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(memory);
 	return MAL_SUCCEED;
 
-  bailout:
+ bailout:
 	MT_lock_unset(&mal_delayLock);
 	BBPunfix(tag->batCacheid);
 	BBPunfix(sessionid->batCacheid);
@@ -291,122 +308,156 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bool set = false;
-	lng tag = 0;
+	/* Temporary hack not allowing MAL clients (mclient -lmal)
+	   to use this function */
+	if (cntxt->sqlcontext == NULL)
+		throw(MAL, "SYSMONstatistics", SQLSTATE(42000) "Calling from a mclient -lmal.");
 
-	switch(getArgType(mb,pci,1)){
-	case TYPE_bte: tag = *getArgReference_bte(stk,pci,1); break;
-	case TYPE_sht: tag = *getArgReference_sht(stk,pci,1); break;
-	case TYPE_int: tag = *getArgReference_int(stk,pci,1); break;
-	case TYPE_lng: tag = *getArgReference_lng(stk,pci,1); break;
-	default:
-		throw(MAL, "SYSMONpause", SQLSTATE(42000) "SYSMONpause requires a 64-bit integer");
-	}
-	if (tag < 1)
-		throw(MAL, "SYSMONpause", SQLSTATE(42000) "Tag must be positive");
-	if (cntxt->user != MAL_ADMIN)
-		throw(MAL, "SYSMONpause", SQLSTATE(42000) "Administrator rights required");
+	oid tag = 0;
+	size_t i = 0;
+	bool paused = false;
+	bool admin = pci->argc == 3 ? true : false;
+	int owner = -1;
 
-	oid ctag = (oid) tag;
+	assert(getArgType(mb, pci, 1) == TYPE_lng);
+
+	if ((tag = (oid)*getArgReference_lng(stk, pci, 1)) < 1 )
+		throw(MAL, "SYSMONpause", SQLSTATE(22003) "Tag must be positive.");
+	if (tag == cntxt->curprg->def->tag)
+		throw(MAL, "SYSMONpause", SQLSTATE(HY009) "SYSMONpause cannot pause itself.");
+
 	MT_lock_set(&mal_delayLock);
-	for (size_t i = 0; i < qsize; i++) {
-		if (QRYqueue[i].tag == ctag) {
+	for (i = 0; i < qsize; i++) {
+		if (QRYqueue[i].tag == tag) {
 			if (QRYqueue[i].stk) {
-				QRYqueue[i].stk->status = 'p';
-				QRYqueue[i].status = "paused";
-				set = true;
+				if (admin || (owner = strcmp(QRYqueue[i].username, cntxt->username)) == 0 ) {
+					QRYqueue[i].stk->status = 'p';
+					QRYqueue[i].status = "paused";
+					paused = true;
+				}
+				/* tag found, but either not admin or user cannot
+				   pause that query with OID ctag */
+				break;
 			}
-			break; /* the tag was found, but the query could have already finished */
+			/* tag found, but query could have already finished...
+			   stack is 0 by this time.. potential problem?
+			   using MAL fcn alarm.sleep exposes the above */
+			break;
 		}
 	}
 	MT_lock_unset(&mal_delayLock);
-	return set ? MAL_SUCCEED : createException(MAL, "SYSMONpause", SQLSTATE(42000) "Tag " LLFMT " unknown", tag);
+
+	return paused ? MAL_SUCCEED :
+		i == qsize ? createException(MAL, "SYSMONpause", SQLSTATE(42S12) "Tag "LLFMT" unknown.", tag) :
+		createException(MAL, "SYSMONpause", SQLSTATE(HY009) "Tag "LLFMT" unknown to the user.", tag);
 }
 
 static str
 SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bool set = false;
-	lng tag = 0;
+	/* Temporary hack not allowing MAL clients (mclient -lmal)
+	   to use this function */
+	if (cntxt->sqlcontext == NULL)
+		throw(MAL, "SYSMONstatistics", SQLSTATE(42000) "Calling from a mclient -lmal.");
 
-	switch(getArgType(mb,pci,1)){
-	case TYPE_bte: tag = *getArgReference_bte(stk,pci,1); break;
-	case TYPE_sht: tag = *getArgReference_sht(stk,pci,1); break;
-	case TYPE_int: tag = *getArgReference_int(stk,pci,1); break;
-	case TYPE_lng: tag = *getArgReference_lng(stk,pci,1); break;
-	default:
-		throw(MAL, "SYSMONresume", SQLSTATE(42000) "SYSMONresume requires a 64-bit integer");
-	}
-	if (tag < 1)
-		throw(MAL, "SYSMONresume", SQLSTATE(42000) "Tag must be positive");
-	if (cntxt->user != MAL_ADMIN)
-		throw(MAL, "SYSMONresume", SQLSTATE(42000) "Administrator rights required");
+	oid tag = 0;
+	size_t i = 0;
+	bool paused = false;
+	bool admin = pci->argc == 3 ? true : false;
+	int owner = -1;
 
-	oid ctag = (oid) tag;
+	assert(getArgType(mb, pci, 1) == TYPE_lng);
+
+	if ((tag = (oid)*getArgReference_lng(stk, pci, 1)) < 1 )
+		throw(MAL, "SYSMONpause", SQLSTATE(22003) "Tag must be positive.");
+	if (tag == cntxt->curprg->def->tag)
+		throw(MAL, "SYSMONpause", SQLSTATE(HY009) "SYSMONpause cannot pause itself.");
+
 	MT_lock_set(&mal_delayLock);
-	for (size_t i = 0; i < qsize; i++) {
-		if (QRYqueue[i].tag == ctag) {
+	for (i = 0; i < qsize; i++) {
+		if (QRYqueue[i].tag == tag) {
 			if (QRYqueue[i].stk) {
-				QRYqueue[i].stk->status = 0;
-				QRYqueue[i].status = "running";
-				set = true;
+				if (admin || (owner = strcmp(QRYqueue[i].username, cntxt->username)) == 0 ) {
+					QRYqueue[i].stk->status = 0;
+					QRYqueue[i].status = "running";
+					paused = true;
+				}
+				/* tag found, but either not admin or user cannot
+				   pause that query with OID ctag */
+				break;
 			}
-			break; /* the tag was found, but the query could have already finished */
+			/* tag found, but query could have already finished...
+			   stack is 0 by this time.. potential problem?
+			   using MAL fcn alarm.sleep exposes the above */
+			break;
 		}
 	}
 	MT_lock_unset(&mal_delayLock);
-	return set ? MAL_SUCCEED : createException(MAL, "SYSMONresume", SQLSTATE(42000) "Tag " LLFMT " unknown", tag);
+
+	return paused ? MAL_SUCCEED :
+		i == qsize ? createException(MAL, "SYSMONpause", SQLSTATE(42S12) "Tag "LLFMT" unknown.", tag) :
+		createException(MAL, "SYSMONpause", SQLSTATE(HY009) "Tag "LLFMT" unknown to the user.", tag);
 }
 
 static str
 SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bool set = false;
-	lng tag = 0;
+	/* Temporary hack not allowing MAL clients (mclient -lmal)
+	   to use this function */
+	if (cntxt->sqlcontext == NULL)
+		throw(MAL, "SYSMONstatistics", SQLSTATE(42000) "Calling from a mclient -lmal.");
 
-	switch(getArgType(mb,pci,1)){
-	case TYPE_bte: tag = *getArgReference_bte(stk,pci,1); break;
-	case TYPE_sht: tag = *getArgReference_sht(stk,pci,1); break;
-	case TYPE_int: tag = *getArgReference_int(stk,pci,1); break;
-	case TYPE_lng: tag = *getArgReference_lng(stk,pci,1); break;
-	default:
-		throw(MAL, "SYSMONstop", SQLSTATE(42000) "SYSMONstop requires a 64-bit integer");
-	}
-	if (tag < 1)
-		throw(MAL, "SYSMONstop", SQLSTATE(42000) "Tag must be positive");
-	if (cntxt->user != MAL_ADMIN)
-		throw(MAL, "SYSMONstop", SQLSTATE(42000) "Administrator rights required");
+	oid tag = 0;
+	size_t i = 0;
+	bool paused = false;
+	bool admin = pci->argc == 3 ? true : false;
+	int owner = -1;
 
-	oid ctag = (oid) tag;
+	assert(getArgType(mb, pci, 1) == TYPE_lng);
+
+	if ((tag = (oid)*getArgReference_lng(stk, pci, 1)) < 1 )
+		throw(MAL, "SYSMONpause", SQLSTATE(22003) "Tag must be positive.");
+	if (tag == cntxt->curprg->def->tag)
+		throw(MAL, "SYSMONpause", SQLSTATE(HY009) "SYSMONpause cannot pause itself.");
+
 	MT_lock_set(&mal_delayLock);
-	for (size_t i = 0; i < qsize; i++) {
-		if (QRYqueue[i].tag == ctag) {
+	for (i = 0; i < qsize; i++) {
+		if (QRYqueue[i].tag == tag) {
 			if (QRYqueue[i].stk) {
-				QRYqueue[i].stk->status = 'q';
-				QRYqueue[i].status = "stopping";
-				set = true;
+				if (admin || (owner = strcmp(QRYqueue[i].username, cntxt->username)) == 0 ) {
+					QRYqueue[i].stk->status = 'q';
+					QRYqueue[i].status = "stopping";
+					paused = true;
+				}
+				/* tag found, but either not admin or user cannot
+				   pause that query with OID ctag */
+				break;
 			}
-			break; /* the tag was found, but the query could have already finished */
+			/* tag found, but query could have already finished...
+			   stack is 0 by this time.. potential problem?
+			   using MAL fcn alarm.sleep exposes the above */
+			break;
 		}
 	}
 	MT_lock_unset(&mal_delayLock);
-	return set ? MAL_SUCCEED : createException(MAL, "SYSMONstop", SQLSTATE(42000) "Tag " LLFMT " unknown", tag);
+
+	return paused ? MAL_SUCCEED :
+		i == qsize ? createException(MAL, "SYSMONpause", SQLSTATE(42S12) "Tag "LLFMT" unknown.", tag) :
+		createException(MAL, "SYSMONpause", SQLSTATE(HY009) "Tag "LLFMT" unknown to the user.", tag);
 }
 
 #include "mel.h"
 mel_func sysmon_init_funcs[] = {
- pattern("sysmon", "pause", SYSMONpause, true, "Suspend a running query", args(0,1, arg("id",sht))),
- pattern("sysmon", "pause", SYSMONpause, true, "Suspend a running query", args(0,1, arg("id",int))),
- pattern("sysmon", "pause", SYSMONpause, true, "Suspend a running query", args(0,1, arg("id",lng))),
- pattern("sysmon", "resume", SYSMONresume, true, "Resume processing of a query ", args(0,1, arg("id",sht))),
- pattern("sysmon", "resume", SYSMONresume, true, "Resume processing of a query ", args(0,1, arg("id",int))),
- pattern("sysmon", "resume", SYSMONresume, true, "Resume processing of a query ", args(0,1, arg("id",lng))),
- pattern("sysmon", "stop", SYSMONstop, true, "Stop a single query a.s.a.p.", args(0,1, arg("id",sht))),
- pattern("sysmon", "stop", SYSMONstop, true, "Stop a single query a.s.a.p.", args(0,1, arg("id",int))),
- pattern("sysmon", "stop", SYSMONstop, true, "Stop a single query a.s.a.p.", args(0,1, arg("id",lng))),
- pattern("sysmon", "queue", SYSMONqueue, false, "A queue of queries that are currently being executed or recently finished", args(9,9, batarg("tag",lng),batarg("sessionid",int),batarg("user",str),batarg("started",timestamp),batarg("status",str),batarg("query",str),batarg("finished",timestamp),batarg("workers",int),batarg("memory",int))),
- pattern("sysmon", "user_statistics", SYSMONstatistics, false, "", args(7,7, batarg("user",str),batarg("querycount",lng),batarg("totalticks",lng),batarg("started",timestamp),batarg("finished",timestamp),batarg("maxticks",lng),batarg("maxquery",str))),
- { .imp=NULL }
+	pattern("sysmon", "pause", SYSMONpause, true, "Suspend query execution with OID id", args(0, 1, arg("id", lng))),
+	pattern("sysmon", "pause", SYSMONpause, true, "Sysadmin call, suspend query execution with OID id belonging to user", args(0, 2, arg("id", lng), arg("user", str))),
+	pattern("sysmon", "resume", SYSMONresume, true, "Resume query execution with OID id", args(0, 1, arg("id", lng))),
+	pattern("sysmon", "resume", SYSMONresume, true, "Sysadmin call, resume query execution with OID id belonging to user", args(0, 2, arg("id", lng), arg("user", str))),
+	pattern("sysmon", "stop", SYSMONstop, true, "Stop query execution with OID id", args(0, 1, arg("id", lng))),
+	pattern("sysmon", "stop", SYSMONstop, true, "Sysadmin call, stop query execution with OID id belonging to user", args(0, 2, arg("id", lng), arg("user", str))),
+	pattern("sysmon", "queue", SYSMONqueue, false, "A queue of queries that are currently being executed or recently finished", args(9, 9, batarg("tag", lng), batarg("sessionid", int), batarg("user", str), batarg("started", timestamp), batarg("status", str), batarg("query", str), batarg("finished", timestamp), batarg("workers", int), batarg("memory", int))),
+	pattern("sysmon", "queue", SYSMONqueue, false, "Sysadmin call, to see either the global queue or user queue of queries that are currently being executed or recently finished", args(9, 10, batarg("tag", lng), batarg("sessionid", int), batarg("user", str), batarg("started", timestamp), batarg("status", str), batarg("query", str), batarg("finished", timestamp), batarg("workers", int), batarg("memory", int), arg("user", str))),
+	pattern("sysmon", "user_statistics", SYSMONstatistics, false, "", args(7, 7, batarg("user", str), batarg("querycount", lng), batarg("totalticks", lng), batarg("started", timestamp), batarg("finished", timestamp), batarg("maxticks", lng), batarg("maxquery", str))),
+	{ .imp=NULL }
 };
 #include "mal_import.h"
 #ifdef _MSC_VER
