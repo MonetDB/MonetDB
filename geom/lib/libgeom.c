@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -23,7 +25,7 @@ geomerror(_In_z_ _Printf_format_string_ const char *fmt, ...)
 	char err[256];
 	va_start(va, fmt);
 	vsnprintf(err, sizeof(err), fmt, va);
-	GDKtracer_log(__FILE__, __func__, __LINE__, M_CRITICAL,
+	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,
 		      GDK, NULL, "%s", err);
 	va_end(va);
 }

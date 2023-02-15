@@ -1,8 +1,10 @@
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 
 """
 This is the python implementation of the mapi protocol.
@@ -131,20 +133,20 @@ class Connection(object):
                     self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
                     self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                     self.socket.settimeout(self.connect_timeout)
-                except socket.error as msg:
+                except OSError as msg:
                     logger.info(msg)
                     self.socket = None
                     continue
                 try:
                     self.socket.connect(sa)
-                except socket.error as msg:
+                except OSError as msg:
                     logger.info(msg.strerror)
                     self.socket.close()
                     self.socket = None
                     continue
                 break
             if self.socket is None:
-                raise socket.error("Connection refused")
+                raise OSError("Connection refused")
         else:
             self.socket = socket.socket(socket.AF_UNIX)
             self.socket.settimeout(self.connect_timeout)

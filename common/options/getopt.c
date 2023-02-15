@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /* Getopt for GNU.
@@ -188,7 +190,11 @@ static enum {
 } ordering;
 
 /* Value of POSIXLY_CORRECT environment variable.  */
+#ifdef NATIVE_WIN32
+static wchar_t *posixly_correct;
+#else
 static char *posixly_correct;
+#endif
 
 #ifdef	__GNU_LIBRARY__
 /* We want to avoid inclusion of string.h with non-GNU libraries
@@ -370,7 +376,11 @@ _getopt_initialize(int argc, char *const *argv, const char *optstring)
 
 	nextchar = NULL;
 
+#ifdef NATIVE_WIN32
+	posixly_correct = _wgetenv(L"POSIXLY_CORRECT");
+#else
 	posixly_correct = getenv("POSIXLY_CORRECT");
+#endif
 
 	/* Determine how to handle the ordering of options and nonoptions.  */
 

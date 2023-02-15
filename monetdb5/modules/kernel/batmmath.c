@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -45,8 +47,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	bn = COLnew(ci.hseq, b->ttype, ci.ncand, TRANSIENT);
 	if (bn == NULL || ci.ncand == 0) {
 		BBPunfix(b->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
+		BBPreclaim(s);
 		if (bn == NULL)
 			throw(MAL, malfunc, GDK_EXCEPTION);
 		goto doreturn;
@@ -91,8 +92,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	e = errno;
 	ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (e != 0 || ex != 0) {
 		const char *err;
 		BBPunfix(bn->batCacheid);
@@ -316,14 +316,10 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 	BATkey(bn, false);
 
   doreturn:
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
-	if (s1)
-		BBPunfix(s1->batCacheid);
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(b1);
+	BBPreclaim(b2);
+	BBPreclaim(s1);
+	BBPreclaim(s2);
 	if (bn == NULL)
 		throw(MAL, malfunc, GDK_EXCEPTION);
 	if (e != 0 || ex != 0) {
@@ -344,16 +340,12 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 	return MAL_SUCCEED;
 
   bailout:
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
+	BBPreclaim(b1);
+	BBPreclaim(b2);
 /* cannot happen
-	if (s1)
-		BBPunfix(s1->batCacheid);
+	BBPreclaim(s1);
 */
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(s2);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
@@ -397,8 +389,7 @@ CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		}
 		canditer_init(&ci, b, bs);
 		q = ci.ncand;
-		if (bs)
-			BBPunfix(bs->batCacheid);
+		BBPreclaim(bs);
 	} else {
 		q = (BUN) *getArgReference_lng(stk, pci, 1);
 	}

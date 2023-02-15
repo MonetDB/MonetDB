@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -13,6 +15,7 @@
 #include "monetdb_config.h"
 #include "mal.h"
 #include "mal_debugger.h"
+#include "mal_scenario.h"
 #include "mal_interpreter.h"	/* for getArgReference() */
 #include "mal_listing.h"
 #include "mal_function.h"
@@ -87,9 +90,9 @@ printBATproperties(stream *f, BAT *b)
 	if (BBP_refs(b->batCacheid) - 1)
 		mnstr_printf(f, " refs=%d ", BBP_refs(b->batCacheid));
 	if (b->theap->refs)
-		mnstr_printf(f, " views=%llu", ATOMIC_GET(&b->theap->refs));
+		mnstr_printf(f, " views=%llu", (unsigned long long) ATOMIC_GET(&b->theap->refs));
 	if (b->tvheap->refs)
-		mnstr_printf(f, " shared vheaps=%llu", ATOMIC_GET(&b->tvheap->refs));
+		mnstr_printf(f, " shared vheaps=%llu", (unsigned long long) ATOMIC_GET(&b->tvheap->refs));
 	if (b->theap->parentid != b->batCacheid)
 		mnstr_printf(f, "view on %s ", BBP_logical(b->theap->parentid));
 }
@@ -202,7 +205,7 @@ mdbBacktrace(Client cntxt, MalStkPtr stk, int pci)
 	for (; stk != NULL; stk = stk->up) {
 		printCall(cntxt, stk->blk, stk, pci);
 		if (stk->up)
-			pci = stk->up->pcup;
+			pci = stk->pcup;
 	}
 }
 

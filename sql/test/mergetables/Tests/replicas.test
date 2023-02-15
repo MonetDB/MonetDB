@@ -13,10 +13,10 @@ insert into t3 values (1), (2), (3)
 statement ok
 alter table t1 add table t2
 
-statement error 42000!The REPLICA TABLE 'sys.t2' should have at least one table associated
+statement error 42000!REPLICA TABLE 'sys'.'t2' should have at least one table associated
 select a from t1
 
-statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
+statement error 42000!REPLICA TABLE 'sys'.'t2' should have at least one table associated
 select a from t2
 
 statement ok

@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -93,6 +95,8 @@ epilogue(int cnt, bat *subcommit, bool locked)
 		if (!locked)
 			MT_lock_set(&GDKswapLock(bid));
 		if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
+			if (!locked)
+				MT_lock_unset(&GDKswapLock(bid));
 			b = BBPquickdesc(bid);
 
 			/* the unloaded ones are deleted without
@@ -100,11 +104,12 @@ epilogue(int cnt, bat *subcommit, bool locked)
 			if (b) {
 				BATdelete(b);
 			}
-			BBPclear(bid, false);
+			BBPclear(bid); /* also clears BBP_status */
+		} else {
+			BBP_status_off(bid, BBPDELETED | BBPSWAPPED | BBPNEW);
+			if (!locked)
+				MT_lock_unset(&GDKswapLock(bid));
 		}
-		BBP_status_off(bid, BBPDELETED | BBPSWAPPED | BBPNEW);
-		if (!locked)
-			MT_lock_unset(&GDKswapLock(bid));
 	}
 	GDKclrerr();
 }
@@ -187,12 +192,12 @@ TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logn
 		}
 	}
 	/* lock just prevents other global (sub-)commits */
-	MT_lock_set(&GDKtmLock);
+	BBPtmlock();
 	if (BBPsync(cnt, subcommit, sizes, logno, transid) == GDK_SUCCEED) { /* write BBP.dir (++) */
 		epilogue(cnt, subcommit, false);
 		ret = GDK_SUCCEED;
 	}
-	MT_lock_unset(&GDKtmLock);
+	BBPtmunlock();
 	return ret;
 }
 

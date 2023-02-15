@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -392,8 +394,10 @@ sql_create_auth_id(mvc *m, sqlid id, str auth)
 	if (!is_oid_nil(store->table_api.column_find_row(m->session->tr, auth_name, auth, NULL)))
 		return false;
 
-	if ((log_res = store->table_api.table_insert(m->session->tr, auths, &id, &auth, &grantor)) != LOG_OK)
-		throw(SQL, "sql.create_auth_id", SQLSTATE(42000) "CREATE AUTH: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+	if ((log_res = store->table_api.table_insert(m->session->tr, auths, &id, &auth, &grantor)) != LOG_OK) {
+		(void)createException(SQL, "sql.create_auth_id", SQLSTATE(42000) "CREATE AUTH: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+		return false;
+	}
 	return true;
 }
 

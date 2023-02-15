@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -176,7 +178,7 @@ malEmbeddedReset(void) //remove extra modules and set to non-initialized again
 	stopProfiler(0);
 	AUTHreset();
 	if (!GDKinmemory(0) && !GDKembedded()) {
-            	str err = 0;
+		str err = 0;
 
 		if ((err = msab_wildRetreat()) != NULL) {
 			TRC_ERROR(MAL_SERVER, "%s\n", err);
@@ -214,8 +216,6 @@ malEmbeddedReset(void) //remove extra modules and set to non-initialized again
  * terminate this way.
  * We should also ensure that no new client enters the scene while shutting down.
  * For this we mark the client records as BLOCKCLIENT.
- *
- * Beware, mal_exit is also called during a SIGTERM from the monetdb tool
  */
 
 void

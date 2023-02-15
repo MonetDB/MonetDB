@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 /* monetdb_config.h.in.  Generated from CMakeLists.txt  */
 
@@ -455,19 +457,19 @@ gmtime_r(const time_t *restrict timep, struct tm *restrict result)
 
 #ifdef _MSC_VER
 #define _LIB_STARTUP_FUNC_(f,q) \
-        static void f(void); \
-        __declspec(allocate(".CRT$XCU")) void (*f##_)(void) = f; \
-        __pragma(comment(linker,"/include:" q #f "_")) \
+		static void f(void);										 \
+		__declspec(allocate(".CRT$XCU")) void (*f##_)(void) = f;	 \
+		__pragma(comment(linker,"/include:" q #f "_"))				 \
         static void f(void)
 #ifdef _WIN64
-        #define LIB_STARTUP_FUNC(f) _LIB_STARTUP_FUNC_(f,"")
+	#define LIB_STARTUP_FUNC(f) _LIB_STARTUP_FUNC_(f,"")
 #else
-        #define LIB_STARTUP_FUNC(f) _LIB_STARTUP_FUNC_(f,"_")
+	#define LIB_STARTUP_FUNC(f) _LIB_STARTUP_FUNC_(f,"_")
 #endif
 #else
 #define LIB_STARTUP_FUNC(f) \
-        static void f(void) __attribute__((__constructor__)); \
-        static void f(void)
+		static void f(void) __attribute__((__constructor__));	\
+		static void f(void)
 #endif
 
 #endif /* MT_SEEN_MONETDB_CONFIG_H */

@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -38,18 +40,26 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = old[i];
 		if( getModuleId(p) == sqlRef  && getFunctionId(p) == affectedRowsRef) {
 			q = newInstruction(0, jsonRef, resultSetRef);
-			q = addArgument(mb, q, bu);
-			q = addArgument(mb, q, br);
-			q = addArgument(mb, q, bj);
+			if (q == NULL) {
+				msg = createException(MAL, "optimizer.json", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				break;
+			}
+			q = pushArgument(mb, q, bu);
+			q = pushArgument(mb, q, br);
+			q = pushArgument(mb, q, bj);
 			pushInstruction(mb,q);
 			j = getArg(q,0);
 			p= getInstrPtr(mb,0);
 			setDestVar(q, newTmpVariable(mb, TYPE_str));
 			pushInstruction(mb,p);
 			q = newInstruction(0, NULL, NULL);
+			if (q == NULL) {
+				msg = createException(MAL, "optimizer.json", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				break;
+			}
 			q->barrier = RETURNsymbol;
 			getArg(q,0)= getArg(p,0);
-			q = addArgument(mb,q,j);
+			q = pushArgument(mb,q,j);
 			pushInstruction(mb,q);
 			actions++;
 			continue;
@@ -73,7 +83,7 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			pushInstruction(mb, old[i]);
 	GDKfree(old);
 	/* Defense line against incorrect plans */
-	if( actions > 0){
+	if( msg == MAL_SUCCEED && actions > 0){
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);

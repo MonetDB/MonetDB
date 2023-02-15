@@ -1,8 +1,10 @@
+-- SPDX-License-Identifier: MPL-2.0
+--
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 
 -- Add system views for showing dependencies between specific database objects.
 -- These system views improve, extend and replace the dependencies_X_on_Y() functions as previously defined in 21_dependency_functions.sql
@@ -167,7 +169,7 @@ GRANT SELECT ON sys.dependency_schemas_on_users TO PUBLIC;
 -- SELECT * FROM sys.dependencies_vw WHERE depend_type = 7 ORDER BY obj_type, id;
 -- Table t has a dependency on function f.
 CREATE VIEW sys.dependency_tables_on_functions AS
-SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type
+SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, f.id AS function_id, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type
   FROM sys.functions AS f, sys.tables AS t, sys.dependencies AS dep
  WHERE t.id = dep.id AND f.id = dep.depend_id
    AND dep.depend_type = 7 AND f.type <> 2 AND t.type NOT IN (1, 11)
@@ -177,7 +179,7 @@ GRANT SELECT ON sys.dependency_tables_on_functions TO PUBLIC;
 
 -- View v has a dependency on function f.
 CREATE VIEW sys.dependency_views_on_functions AS
-SELECT v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type
+SELECT v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name, f.id AS function_id, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type
   FROM sys.functions AS f, sys.tables AS v, sys.dependencies AS dep
  WHERE v.id = dep.id AND f.id = dep.depend_id
    AND dep.depend_type = 7 AND f.type <> 2 AND v.type IN (1, 11)

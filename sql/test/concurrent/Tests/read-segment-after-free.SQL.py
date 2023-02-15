@@ -1,7 +1,12 @@
 import os, random, pymonetdb
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import time
 from pymonetdb.exceptions import OperationalError
+
+if os.name == 'posix' and os.uname().sysname == 'Linux':
+    executor = ProcessPoolExecutor
+else:
+    executor = ThreadPoolExecutor
 
 init    =   '''
             drop table if exists foo;
@@ -47,5 +52,5 @@ def client(_):
             # concurrency conflicts are allowed
             pass
 
-with ProcessPoolExecutor(nr_clients) as pool:
+with executor(nr_clients) as pool:
     pool.map(client, range(nr_clients))

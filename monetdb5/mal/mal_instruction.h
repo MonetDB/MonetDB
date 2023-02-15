@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #ifndef _MAL_INSTR_H
@@ -187,7 +189,6 @@ mal_export str convertConstant(malType type, ValPtr vr);
 
 mal_export void pushInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid);
-mal_export InstrPtr addArgument(MalBlkPtr mb, InstrPtr p, int varid);
 mal_export InstrPtr setArgument(MalBlkPtr mb, InstrPtr p, int idx, int varid);
 mal_export InstrPtr pushReturn(MalBlkPtr mb, InstrPtr p, int varid);
 mal_export InstrPtr pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name);
@@ -198,17 +199,18 @@ mal_export malType destinationType(MalBlkPtr mb, InstrPtr p);
 mal_export void setPolymorphic(InstrPtr p, int tpe, int force);
 /* Utility macros to inspect an instruction */
 #define functionStart(X) ((X)->token == FUNCTIONsymbol || \
-              (X)->token == COMMANDsymbol || \
-              (X)->token == FACTORYsymbol )
+						  (X)->token == COMMANDsymbol ||  \
+						  (X)->token == FACTORYsymbol )
 #define patternStart(X)  ((X)->token == PATTERNsymbol)
 #define functionExit(X)  ((X)->token == ENDsymbol)
 
 #define blockStart(X)   ((X)->barrier && (((X)->barrier == BARRIERsymbol || \
-             (X)->barrier == CATCHsymbol )))
+										   (X)->barrier == CATCHsymbol )))
 #define blockExit(X) ((X)->barrier == EXITsymbol)
 #define blockReturn(X) ((X)->barrier == RETURNsymbol)
-#define blockCntrl(X) ( (X)->barrier== LEAVEsymbol ||  \
-             (X)->barrier== REDOsymbol || (X)->barrier== RETURNsymbol )
+#define blockCntrl(X) ((X)->barrier== LEAVEsymbol ||	\
+					   (X)->barrier== REDOsymbol ||		\
+					   (X)->barrier== RETURNsymbol )
 #define isLinearFlow(X)  (!(blockStart(X) || blockExit(X) || \
 				(X)->barrier== LEAVEsymbol ||  (X)->barrier== REDOsymbol ))
 

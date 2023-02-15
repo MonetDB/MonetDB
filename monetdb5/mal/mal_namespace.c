@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -120,8 +122,8 @@ static const char *findName(const char *nme, size_t len, bool allocate)
 		struct namespace *ns = GDKmalloc(sizeof(struct namespace));
 		if (ns == NULL) {
 			/* error we cannot recover from */
-			TRC_CRITICAL(MAL_SERVER, MAL_MALLOC_FAIL "\n");
-			mal_exit(1);
+			GDKfatal(MAL_MALLOC_FAIL);
+			exit(1);
 		}
 		ns->next = namespace;
 		ns->count = 0;

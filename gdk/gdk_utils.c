@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -270,9 +272,19 @@ GDKsetenv(const char *name, const char *value)
 				conval ? conval : value, false);
 	} else {
 		rc = BUNappend(GDKkey, name, false);
-		if (rc == GDK_SUCCEED)
+		if (rc == GDK_SUCCEED) {
 			rc = BUNappend(GDKval, conval ? conval : value, false);
+			if (rc != GDK_SUCCEED) {
+				/* undo earlier successful append to
+				 * keep bats aligned (this can't really
+				 * fail, but we must check the result
+				 * anyway) */
+				if (BUNdelete(GDKkey, GDKkey->hseqbase + GDKkey->batCount - 1) != GDK_SUCCEED)
+					GDKerror("deleting key failed after failed value append");
+			}
+		}
 	}
+	assert(BATcount(GDKval) == BATcount(GDKkey));
 	GDKfree(conval);
 	return rc;
 }
@@ -1214,8 +1226,6 @@ GDKprepareExit(void)
 	}
 }
 
-static MT_Lock GDKthreadLock = MT_LOCK_INITIALIZER(GDKthreadLock);
-
 void
 GDKreset(int status)
 {
@@ -1249,7 +1259,6 @@ GDKreset(int status)
 	if (status == 0) {
 		/* they had their chance, now kill them */
 		bool killed = false;
-		MT_lock_set(&GDKthreadLock);
 		for (Thread t = GDKthreads; t < GDKthreads + THREADS; t++) {
 			MT_Id victim;
 			if ((victim = (MT_Id) ATOMIC_GET(&t->pid)) != 0) {
@@ -1315,30 +1324,11 @@ GDKreset(int status)
 
 		memset(THRdata, 0, sizeof(THRdata));
 		gdk_bbp_reset();
-		MT_lock_unset(&GDKthreadLock);
 	}
 	ATOMunknown_clean();
 
 	/* stop GDKtracer */
 	GDKtracer_stop();
-}
-
-/* coverity[+kill] */
-void
-GDKexit(int status)
-{
-	if (!GDKinmemory(0) && GET_GDKLOCK(PERSISTENT) == NULL) {
-		/* stop GDKtracer */
-		GDKtracer_stop();
-
-		/* no database lock, so no threads, so exit now */
-		if (!GDKembedded())
-			exit(status);
-	}
-	GDKprepareExit();
-	GDKreset(status);
-	if (!GDKembedded())
-		exit(status);
 }
 
 /*
@@ -1347,9 +1337,6 @@ GDKexit(int status)
  */
 
 batlock_t GDKbatLock[BBP_BATMASK + 1];
-
-/* GDKtmLock protects all accesses and changes to BAKDIR and SUBDIR */
-MT_Lock GDKtmLock = MT_LOCK_INITIALIZER(GDKtmLock);
 
 /*
  * @+ Concurrency control

@@ -5,6 +5,15 @@
 - Added JDBC/ODBC escape sequences implementation to SQL layer. Now all
   clients can forward them without further processing.
 
+* Thu Nov 10 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- It is no longer allowed to create a merge table or remote table or
+  replica table or unlogged table in schema "tmp". The tmp schema is
+  reserved for temporary objects only, such as local/global temp tables.
+
+* Thu Nov  3 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- System views sys.dependency_tables_on_functions and
+  dependency_views_on_functions have been extended with column: function_id.
+
 * Fri Sep 30 2022 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
 - When loading data using COPY BINARY INTO, apply default values instead of just
   inserting NULLs.

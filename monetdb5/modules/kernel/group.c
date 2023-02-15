@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -27,16 +29,11 @@ GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, co
 		(gid != NULL && g == NULL) ||
 		(eid != NULL && e == NULL) ||
 		(hid != NULL && h == NULL)) {
-		if (b)
-			BBPunfix(b->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
-		if (g)
-			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
-		if (h)
-			BBPunfix(h->batCacheid);
+		BBPreclaim(b);
+		BBPreclaim(s);
+		BBPreclaim(g);
+		BBPreclaim(e);
+		BBPreclaim(h);
 		throw(MAL, gid ? "group.subgroup" : "group.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if ((r = BATgroup(&gn, next ? &en : NULL, nhis ? &hn : NULL, b, s, g, e, h)) == GDK_SUCCEED) {
@@ -52,14 +49,10 @@ GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, co
 		}
 	}
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	if (g)
-		BBPunfix(g->batCacheid);
-	if (e)
-		BBPunfix(e->batCacheid);
-	if (h)
-		BBPunfix(h->batCacheid);
+	BBPreclaim(s);
+	BBPreclaim(g);
+	BBPreclaim(e);
+	BBPreclaim(h);
 	return r == GDK_SUCCEED ? MAL_SUCCEED : createException(MAL, gid ? "group.subgroup" : "group.group", GDK_EXCEPTION);
 }
 

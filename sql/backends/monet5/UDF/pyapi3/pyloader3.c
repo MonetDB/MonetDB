@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -309,9 +311,7 @@ PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 wrapup:
 	if (cols) {
 		for (i = 0; i < ncols; i++) {
-			if (cols[i].b) {
-				BBPunfix(cols[i].b->batCacheid);
-			}
+			BBPreclaim(cols[i].b);
 			if (cols[i].name) {
 				GDKfree(cols[i].name);
 			}

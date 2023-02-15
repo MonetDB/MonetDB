@@ -10,10 +10,10 @@ update sys.db_user_info u set max_memory = 0, max_workers = 0, optimizer = 'defa
 -- and copying passwords
 
 Running database upgrade commands:
-drop view sys.dependency_schemas_on_users;
-drop view sys.roles;
-drop view sys.users;
-drop function sys.db_users();
+drop view sys.dependency_schemas_on_users cascade;
+drop view sys.roles cascade;
+drop view sys.users cascade;
+drop function sys.db_users() cascade;
 CREATE VIEW sys.roles AS SELECT id, name, grantor FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.db_user_info u);
 GRANT SELECT ON sys.roles TO PUBLIC;
 CREATE VIEW sys.users AS SELECT name, fullname, default_schema, schema_path, max_memory, max_workers, optimizer, default_role FROM sys.db_user_info;
@@ -29,20 +29,20 @@ update sys._tables set system = true where name in ('users', 'roles', 'dependenc
 update sys.functions set system = true where system <> true and name in ('db_users') and schema_id = 2000 and type = 5;
 
 Running database upgrade commands:
-drop function sys.dump_database(boolean);
-drop procedure sys.dump_table_data();
-drop procedure sys.dump_table_data(string, string);
-drop view sys.dump_partition_tables;
-drop view sys.describe_partition_tables;
-drop view sys.dump_sequences;
-drop view sys.dump_start_sequences;
-drop view sys.dump_tables;
-drop view sys.describe_tables;
-drop view sys.dump_create_users;
-drop view sys.dump_functions;
-drop view sys.dump_triggers;
-drop function sys.schema_guard;
-drop function sys.replace_first(string, string, string, string);
+drop function sys.dump_database(boolean) cascade;
+drop procedure sys.dump_table_data() cascade;
+drop procedure sys.dump_table_data(string, string) cascade;
+drop view sys.dump_partition_tables cascade;
+drop view sys.describe_partition_tables cascade;
+drop view sys.dump_sequences cascade;
+drop view sys.dump_start_sequences cascade;
+drop view sys.dump_tables cascade;
+drop view sys.describe_tables cascade;
+drop view sys.dump_create_users cascade;
+drop view sys.dump_functions cascade;
+drop view sys.dump_triggers cascade;
+drop function sys.schema_guard cascade;
+drop function sys.replace_first(string, string, string, string) cascade;
 CREATE FUNCTION sys.schema_guard(sch STRING, nme STRING, stmt STRING) RETURNS STRING BEGIN
 RETURN
  SELECT 'SET SCHEMA ' || sys.dq(sch) || '; ' || stmt;
@@ -325,27 +325,27 @@ grant execute on function sys.tracelog to public;
 grant select on sys.tracelog to public;
 
 Running database upgrade commands:
-drop procedure if exists wlc.master();
-drop procedure if exists wlc.master(string);
-drop procedure if exists wlc.stop();
-drop procedure if exists wlc.flush();
-drop procedure if exists wlc.beat(int);
-drop function if exists wlc.clock();
-drop function if exists wlc.tick();
-drop procedure if exists wlr.master(string);
-drop procedure if exists wlr.stop();
-drop procedure if exists wlr.accept();
-drop procedure if exists wlr.replicate();
-drop procedure if exists wlr.replicate(timestamp);
-drop procedure if exists wlr.replicate(tinyint);
-drop procedure if exists wlr.replicate(smallint);
-drop procedure if exists wlr.replicate(integer);
-drop procedure if exists wlr.replicate(bigint);
-drop procedure if exists wlr.beat(integer);
-drop function if exists wlr.clock();
-drop function if exists wlr.tick();
-drop schema if exists wlc;
-drop schema if exists wlr;
+drop procedure if exists wlc.master() cascade;
+drop procedure if exists wlc.master(string) cascade;
+drop procedure if exists wlc.stop() cascade;
+drop procedure if exists wlc.flush() cascade;
+drop procedure if exists wlc.beat(int) cascade;
+drop function if exists wlc.clock() cascade;
+drop function if exists wlc.tick() cascade;
+drop procedure if exists wlr.master(string) cascade;
+drop procedure if exists wlr.stop() cascade;
+drop procedure if exists wlr.accept() cascade;
+drop procedure if exists wlr.replicate() cascade;
+drop procedure if exists wlr.replicate(timestamp) cascade;
+drop procedure if exists wlr.replicate(tinyint) cascade;
+drop procedure if exists wlr.replicate(smallint) cascade;
+drop procedure if exists wlr.replicate(integer) cascade;
+drop procedure if exists wlr.replicate(bigint) cascade;
+drop procedure if exists wlr.beat(integer) cascade;
+drop function if exists wlr.clock() cascade;
+drop function if exists wlr.tick() cascade;
+drop schema if exists wlc cascade;
+drop schema if exists wlr cascade;
 
 Running database upgrade commands:
 create function sys.regexp_replace(ori string, pat string, rep string, flg string)
@@ -360,17 +360,17 @@ grant execute on function regexp_replace(string, string, string) to public;
 update sys.functions set system = true where system <> true and name = 'regexp_replace' and schema_id = 2000 and type = 1;
 
 Running database upgrade commands:
-drop function if exists sys.dump_database(boolean);
-drop procedure if exists sys.dump_table_data();
-drop procedure if exists sys.dump_table_data(string, string);
-drop view if exists sys.dump_tables;
-drop view if exists sys.dump_comments;
-drop function if exists sys.prepare_esc(string, string);
-drop view if exists sys.dump_partition_tables;
-drop view if exists sys.dump_create_users;
-drop view if exists sys.describe_tables;
-drop function if exists sys.get_remote_table_expressions(string, string);
-drop function if exists sys.sq(string);
+drop function if exists sys.dump_database(boolean) cascade;
+drop procedure if exists sys.dump_table_data() cascade;
+drop procedure if exists sys.dump_table_data(string, string) cascade;
+drop view if exists sys.dump_tables cascade;
+drop view if exists sys.dump_comments cascade;
+drop function if exists sys.prepare_esc(string, string) cascade;
+drop view if exists sys.dump_partition_tables cascade;
+drop view if exists sys.dump_create_users cascade;
+drop view if exists sys.describe_tables cascade;
+drop function if exists sys.get_remote_table_expressions(string, string) cascade;
+drop function if exists sys.sq(string) cascade;
 CREATE FUNCTION sys.SQ (s STRING) RETURNS STRING BEGIN RETURN '''' || sys.replace(s,'''','''''') || ''''; END;
 CREATE FUNCTION sys.get_remote_table_expressions(s STRING, t STRING) RETURNS STRING BEGIN
  RETURN SELECT ' ON ' || sys.SQ(uri) || ' WITH USER ' || sys.SQ(username) || ' ENCRYPTED PASSWORD ' || sys.SQ("hash") FROM sys.remote_table_credentials(s ||'.' || t);
@@ -555,4 +555,30 @@ update sys._tables set system = true where system <> true and name in ('describe
 update sys.functions set system = true where system <> true and name = 'dump_table_data' and schema_id = 2000 and type = 2;
 update sys.functions set system = true where system <> true and name = 'dump_database' and schema_id = 2000 and type = 5;
 GRANT SELECT ON sys.describe_tables TO PUBLIC;
+
+Running database upgrade commands:
+drop view if exists sys.dependency_tables_on_functions cascade;
+drop view if exists sys.dependency_views_on_functions cascade;
+CREATE VIEW sys.dependency_tables_on_functions AS
+SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, f.id AS function_id, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type
+  FROM sys.functions AS f, sys.tables AS t, sys.dependencies AS dep
+ WHERE t.id = dep.id AND f.id = dep.depend_id
+   AND dep.depend_type = 7 AND f.type <> 2 AND t.type NOT IN (1, 11)
+ ORDER BY t.name, t.schema_id, f.name, f.id;
+GRANT SELECT ON sys.dependency_tables_on_functions TO PUBLIC;
+CREATE VIEW sys.dependency_views_on_functions AS
+SELECT v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name, f.id AS function_id, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type
+  FROM sys.functions AS f, sys.tables AS v, sys.dependencies AS dep
+ WHERE v.id = dep.id AND f.id = dep.depend_id
+   AND dep.depend_type = 7 AND f.type <> 2 AND v.type IN (1, 11)
+ ORDER BY v.name, v.schema_id, f.name, f.id;
+GRANT SELECT ON sys.dependency_views_on_functions TO PUBLIC;
+update sys._tables set system = true where system <> true and name in ('dependency_tables_on_functions','dependency_views_on_functions') and schema_id = 2000;
+
+Running database upgrade commands:
+create function sys.database ()
+returns string
+external name inspect."getDatabaseName";
+grant execute on function sys.database() to public;
+update sys.functions set system = true where system <> true and name = 'database' and schema_id = 2000 and type = 1;
 

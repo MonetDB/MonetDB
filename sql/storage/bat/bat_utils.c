@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -20,8 +22,7 @@ bat_fix(BAT *b)
 void
 bat_destroy(BAT *b)
 {
-	if (b)
-		BBPunfix(b->batCacheid);
+	BBPreclaim(b);
 }
 
 BAT *
@@ -109,7 +110,7 @@ log_bid
 e_bat(int type)
 {
 	if (ebats[type] == NULL &&
-	    (ebats[type] = bat_new(type, 0, TRANSIENT)) == NULL)
+	    (ebats[type] = bat_new(type, 0, SYSTRANS)) == NULL)
 		return BID_NIL;
 	return temp_create(ebats[type]);
 }
@@ -118,7 +119,7 @@ BAT *
 e_BAT(int type)
 {
 	if (ebats[type] == NULL &&
-	    (ebats[type] = bat_new(type, 0, TRANSIENT)) == NULL)
+	    (ebats[type] = bat_new(type, 0, SYSTRANS)) == NULL)
 		return NULL;
 	return temp_descriptor(ebats[type]->batCacheid);
 }
@@ -131,7 +132,7 @@ bat_utils_init(void)
 
 	for (t=1; t<GDKatomcnt; t++) {
 		if (t != TYPE_bat && BATatoms[t].name[0]) {
-			ebats[t] = bat_new(t, 0, TRANSIENT);
+			ebats[t] = bat_new(t, 0, SYSTRANS);
 			if(ebats[t] == NULL) {
 				for (t = t - 1; t >= 1; t--)
 					bat_destroy(ebats[t]);

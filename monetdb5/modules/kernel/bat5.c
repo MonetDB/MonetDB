@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -64,7 +66,7 @@ BKCnewBAT(bat *res, const int *tt, const BUN *cap, role_t role)
 	if (bn == NULL)
 		throw(MAL, "bat.new", GDK_EXCEPTION);
 	*res = bn->batCacheid;
-	BATsettrivprop(bn);
+	bn->tkey = true;			/* COLnew leaves it as false */
 	BBPretain(bn->batCacheid);
 	BBPunfix(bn->batCacheid);
 	return MAL_SUCCEED;
@@ -128,7 +130,6 @@ BKCdelete(bat *r, const bat *bid, const oid *h)
 		throw(MAL, "bat.delete", GDK_EXCEPTION);
 	}
 	*r = b->batCacheid;
-	BATsettrivprop(b);
 	BBPretain(b->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -153,7 +154,6 @@ BKCdelete_multi(bat *r, const bat *bid, const bat *sid)
 		throw(MAL, "bat.delete", GDK_EXCEPTION);
 	}
 	*r = b->batCacheid;
-	BATsettrivprop(b);
 	BBPretain(b->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -213,14 +213,12 @@ BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid
 	}
 	ret = BATappend(b, u, s, force ? *force : false);
 	BBPunfix(u->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (ret != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.append", GDK_EXCEPTION);
 	}
 	*r = b->batCacheid;
-	BATsettrivprop(b);
 	BBPretain(b->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -266,7 +264,6 @@ BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u, const bit *force
 		throw(MAL, "bat.append", GDK_EXCEPTION);
 	}
 	*r = b->batCacheid;
-	BATsettrivprop(b);
 	BBPretain(b->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -291,7 +288,6 @@ BKCbun_inplace(bat *r, const bat *bid, const oid *id, const void *t)
 		throw(MAL, "bat.inplace", GDK_EXCEPTION);
 	}
 	*r = b->batCacheid;
-	BATsettrivprop(b);
 	BBPretain(b->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -310,7 +306,6 @@ BKCbun_inplace_force(bat *r, const bat *bid, const oid *id, const void *t, const
 		throw(MAL, "bat.inplace", GDK_EXCEPTION);
 	}
 	*r = b->batCacheid;
-	BATsettrivprop(b);
 	BBPretain(b->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -340,7 +335,6 @@ BKCbat_inplace_force(bat *r, const bat *bid, const bat *rid, const bat *uid, con
 		throw(MAL, "bat.inplace", GDK_EXCEPTION);
 	}
 	*r = b->batCacheid;
-	BATsettrivprop(b);
 	BBPretain(b->batCacheid);
 	BBPunfix(b->batCacheid);
 	BBPunfix(p->batCacheid);
@@ -533,7 +527,6 @@ BKCsetAccess(bat *res, const bat *bid, const char * const *param)
 	if ((b = BATsetaccess(b, m)) == NULL)
 		throw(MAL, "bat.setAccess", OPERATION_FAILED);
 	*res = b->batCacheid;
-	BATsettrivprop(b);
 	BBPretain(b->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;

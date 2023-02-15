@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1397,7 +1399,7 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 		case e_atom:
 			if (e1->l && e2->l && !atom_cmp(e1->l, e2->l))
 				return 1;
-			if (e1->f && e2->f && exp_match_list(e1->f, e2->f))
+			if (e1->f && e2->f && exps_equal(e1->f, e2->f))
 				return 1;
 			if (e1->r && e2->r && e1->flag == e2->flag && !subtype_cmp(&e1->tpe, &e2->tpe)) {
 				sql_var_name *v1 = (sql_var_name*) e1->r, *v2 = (sql_var_name*) e2->r;
@@ -1867,11 +1869,11 @@ exp_cmp_exp_is_false(sql_exp* e) {
     case cmp_lt:
     case cmp_equal:
     case cmp_notequal:
-        return exp_regular_cmp_exp_is_false(e);
+		return exp_regular_cmp_exp_is_false(e);
     case cmp_or:
-        return exp_or_exp_is_false(e);
+		return exp_or_exp_is_false(e);
     default:
-        return false;
+		return false;
 	}
 }
 
@@ -2909,13 +2911,13 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 
 		/* HACK alert: digits should be less than max */
 #ifdef HAVE_HGE
-		if (res->type->radix == 10 && digits > 39)
-			digits = 39;
+		if (res->type->radix == 10 && digits > 38)
+			digits = 38;
 		if (res->type->radix == 2 && digits > 128)
 			digits = 128;
 #else
-		if (res->type->radix == 10 && digits > 19)
-			digits = 19;
+		if (res->type->radix == 10 && digits > 18)
+			digits = 18;
 		if (res->type->radix == 2 && digits > 64)
 			digits = 64;
 #endif
@@ -2946,8 +2948,8 @@ exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
 
 		/* HACK alert: digits should be less than max */
 #ifdef HAVE_HGE
-		if (ares->type.type->radix == 10 && res->digits > 39) {
-			res->digits = 39;
+		if (ares->type.type->radix == 10 && res->digits > 38) {
+			res->digits = 38;
 			res->scale = MIN(res->scale, res->digits - 1);
 		}
 		if (ares->type.type->radix == 2 && res->digits > 128) {
@@ -2955,8 +2957,8 @@ exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
 			res->scale = MIN(res->scale, res->digits - 1);
 		}
 #else
-		if (ares->type.type->radix == 10 && res->digits > 19) {
-			res->digits = 19;
+		if (ares->type.type->radix == 10 && res->digits > 18) {
+			res->digits = 18;
 			res->scale = MIN(res->scale, res->digits - 1);
 		}
 		if (ares->type.type->radix == 2 && res->digits > 64) {
@@ -3369,4 +3371,3 @@ list_find_exp( list *exps, sql_exp *e)
 		return ne;
 	return NULL;
 }
-

@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -155,6 +157,7 @@ check_sys_tables(Client c, mvc *m, sql_schema *s)
 		/* tests a few internal functions: the last one created, the
 		 * first one created, and one of the first ones created after
 		 * the geom module */
+		{ "quarter",           "quarter",       "date", F_FUNC, },
 		{ "sys_update_tables", "update_tables", NULL,   F_PROC, },
 		{ "length",            "nitems",        "blob", F_FUNC, },
 		{ "isnull",            "isnil",         "void", F_FUNC, },
@@ -177,8 +180,10 @@ check_sys_tables(Client c, mvc *m, sql_schema *s)
 		if (f == NULL)
 			throw(SQL, __func__, "cannot find procedure sys.%s(%s)", tests[i].name, tests[i].type ? tests[i].type : "");
 		sqlid id = f->func->base.id;
-		char buf[128];
-		snprintf(buf, sizeof(buf), "select id from sys.functions where name = '%s' and func = '%s' and schema_id = 2000;\n", tests[i].name, tests[i].func);
+		char buf[256];
+		snprintf(buf, sizeof(buf),
+				 "select id from sys.functions where name = '%s' and func = '%s' and schema_id = 2000;\n",
+				 tests[i].name, tests[i].func);
 		res_table *output = NULL;
 		char *err = SQLstatementIntern(c, buf, "update", true, false, &output);
 		if (err)
@@ -193,6 +198,23 @@ check_sys_tables(Client c, mvc *m, sql_schema *s)
 			BBPunfix(b->batCacheid);
 		}
 		res_table_destroy(output);
+		if (i == 0) {
+			snprintf(buf, sizeof(buf),
+					 "select args.type from functions join args on functions.id = args.func_id where functions.name = '%s' and inout = 0;\n",
+					 tests[i].name);
+			err = SQLstatementIntern(c, buf, "quarter", true, false, &output);
+			if (err)
+				return err;
+			if ((b = BATdescriptor(output->cols[0].b)) != NULL) {
+				if (BATcount(b) > 0) {
+					BATiter bi = bat_iterator(b);
+					needsystabfix = strcmp((str) BUNtvar(bi, 0), "int") == 0;
+					bat_iterator_end(&bi);
+				}
+				BBPunfix(b->batCacheid);
+			}
+			res_table_destroy(output);
+		}
 		if (needsystabfix)
 			return sql_fix_system_tables(c, m);
 	}
@@ -327,23 +349,23 @@ sql_drop_functions_dependencies_Xs_on_Ys(Client c)
 
 	/* remove functions which were created in sql/scripts/21_dependency_functions.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
-			"DROP FUNCTION dependencies_schemas_on_users();\n"
-			"DROP FUNCTION dependencies_owners_on_schemas();\n"
-			"DROP FUNCTION dependencies_tables_on_views();\n"
-			"DROP FUNCTION dependencies_tables_on_indexes();\n"
-			"DROP FUNCTION dependencies_tables_on_triggers();\n"
-			"DROP FUNCTION dependencies_tables_on_foreignKeys();\n"
-			"DROP FUNCTION dependencies_tables_on_functions();\n"
-			"DROP FUNCTION dependencies_columns_on_views();\n"
-			"DROP FUNCTION dependencies_columns_on_keys();\n"
-			"DROP FUNCTION dependencies_columns_on_indexes();\n"
-			"DROP FUNCTION dependencies_columns_on_functions();\n"
-			"DROP FUNCTION dependencies_columns_on_triggers();\n"
-			"DROP FUNCTION dependencies_views_on_functions();\n"
-			"DROP FUNCTION dependencies_views_on_triggers();\n"
-			"DROP FUNCTION dependencies_functions_on_functions();\n"
-			"DROP FUNCTION dependencies_functions_on_triggers();\n"
-			"DROP FUNCTION dependencies_keys_on_foreignKeys();\n");
+			"DROP FUNCTION dependencies_schemas_on_users() CASCADE;\n"
+			"DROP FUNCTION dependencies_owners_on_schemas() CASCADE;\n"
+			"DROP FUNCTION dependencies_tables_on_views() CASCADE;\n"
+			"DROP FUNCTION dependencies_tables_on_indexes() CASCADE;\n"
+			"DROP FUNCTION dependencies_tables_on_triggers() CASCADE;\n"
+			"DROP FUNCTION dependencies_tables_on_foreignKeys() CASCADE;\n"
+			"DROP FUNCTION dependencies_tables_on_functions() CASCADE;\n"
+			"DROP FUNCTION dependencies_columns_on_views() CASCADE;\n"
+			"DROP FUNCTION dependencies_columns_on_keys() CASCADE;\n"
+			"DROP FUNCTION dependencies_columns_on_indexes() CASCADE;\n"
+			"DROP FUNCTION dependencies_columns_on_functions() CASCADE;\n"
+			"DROP FUNCTION dependencies_columns_on_triggers() CASCADE;\n"
+			"DROP FUNCTION dependencies_views_on_functions() CASCADE;\n"
+			"DROP FUNCTION dependencies_views_on_triggers() CASCADE;\n"
+			"DROP FUNCTION dependencies_functions_on_functions() CASCADE;\n"
+			"DROP FUNCTION dependencies_functions_on_triggers() CASCADE;\n"
+			"DROP FUNCTION dependencies_keys_on_foreignKeys() CASCADE;\n");
 
 	assert(pos < bufsize);
 
@@ -378,7 +400,7 @@ sql_update_storagemodel(Client c, mvc *sql, bool oct2020_upgrade)
 	/* new 75_storagemodel.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 		/* drop objects in reverse order of original creation of old 75_storagemodel.sql */
-		"drop view if exists sys.tablestoragemodel;\n"
+		"drop view if exists sys.tablestoragemodel cascade;\n"
 		"drop view if exists sys.storagemodel cascade;\n"
 		"drop function if exists sys.storagemodel() cascade;\n");
 
@@ -404,7 +426,7 @@ sql_update_storagemodel(Client c, mvc *sql, bool oct2020_upgrade)
 	}
 
 	pos += snprintf(buf + pos, bufsize - pos,
-		"drop procedure if exists sys.storagemodelinit();\n"
+		"drop procedure if exists sys.storagemodelinit() cascade;\n"
 		"drop table if exists sys.storagemodelinput cascade;\n"
 		"drop view if exists sys.\"storage\" cascade;\n");
 
@@ -926,23 +948,23 @@ sql_update_nov2019(Client c, mvc *sql)
 #endif
 	/* 60/61_wlcr signatures migrations */
 	pos += snprintf(buf + pos, bufsize - pos,
-			"drop procedure master();\n"
-			"drop procedure master(string);\n"
-			"drop procedure stopmaster();\n"
-			"drop procedure masterbeat(int);\n"
-			"drop function masterClock();\n"
-			"drop function masterTick();\n"
-			"drop procedure replicate();\n"
-			"drop procedure replicate(timestamp);\n"
-			"drop procedure replicate(string);\n"
-			"drop procedure replicate(string, timestamp);\n"
-			"drop procedure replicate(string, tinyint);\n"
-			"drop procedure replicate(string, smallint);\n"
-			"drop procedure replicate(string, integer);\n"
-			"drop procedure replicate(string, bigint);\n"
-			"drop procedure replicabeat(integer);\n"
-			"drop function replicaClock();\n"
-			"drop function replicaTick();\n"
+			"drop procedure master() cascade;\n"
+			"drop procedure master(string) cascade;\n"
+			"drop procedure stopmaster() cascade;\n"
+			"drop procedure masterbeat(int) cascade;\n"
+			"drop function masterClock() cascade;\n"
+			"drop function masterTick() cascade;\n"
+			"drop procedure replicate() cascade;\n"
+			"drop procedure replicate(timestamp) cascade;\n"
+			"drop procedure replicate(string) cascade;\n"
+			"drop procedure replicate(string, timestamp) cascade;\n"
+			"drop procedure replicate(string, tinyint) cascade;\n"
+			"drop procedure replicate(string, smallint) cascade;\n"
+			"drop procedure replicate(string, integer) cascade;\n"
+			"drop procedure replicate(string, bigint) cascade;\n"
+			"drop procedure replicabeat(integer) cascade;\n"
+			"drop function replicaClock() cascade;\n"
+			"drop function replicaTick() cascade;\n"
 		);
 
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1003,8 +1025,8 @@ sql_update_nov2019(Client c, mvc *sql)
 
 	/* The MAL implementation of functions json.text(string) and json.text(int) do not exist */
 	pos += snprintf(buf + pos, bufsize - pos,
-			"drop function json.text(string);\n"
-			"drop function json.text(int);\n");
+			"drop function json.text(string) cascade;\n"
+			"drop function json.text(int) cascade;\n");
 
 	/* The first argument to copyfrom is a PTR type */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1074,7 +1096,7 @@ sql_update_jun2020(Client c, mvc *sql)
 
 	/* 12_url */
 	pos += snprintf(buf + pos, bufsize - pos,
-			"drop function isaURL(url);\n"
+			"drop function isaURL(url) cascade;\n"
 			"CREATE function isaURL(theUrl string) RETURNS BOOL\n"
 			" EXTERNAL NAME url.\"isaURL\";\n"
 			"GRANT EXECUTE ON FUNCTION isaURL(string) TO PUBLIC;\n"
@@ -1083,10 +1105,10 @@ sql_update_jun2020(Client c, mvc *sql)
 
 	/* 13_date.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
-			"drop function str_to_time(string, string);\n"
-			"drop function time_to_str(time, string);\n"
-			"drop function str_to_timestamp(string, string);\n"
-			"drop function timestamp_to_str(timestamp, string);\n"
+			"drop function str_to_time(string, string) cascade;\n"
+			"drop function time_to_str(time, string) cascade;\n"
+			"drop function str_to_timestamp(string, string) cascade;\n"
+			"drop function timestamp_to_str(timestamp, string) cascade;\n"
 			"create function str_to_time(s string, format string) returns time with time zone\n"
 			" external name mtime.\"str_to_time\";\n"
 			"create function time_to_str(d time with time zone, format string) returns string\n"
@@ -1107,8 +1129,8 @@ sql_update_jun2020(Client c, mvc *sql)
 	t = mvc_bind_table(sql, sys, "tracelog");
 	t->system = 0; /* make it non-system else the drop view will fail */
 	pos += snprintf(buf + pos, bufsize - pos,
-			"drop view sys.tracelog;\n"
-			"drop function sys.tracelog();\n"
+			"drop view sys.tracelog cascade;\n"
+			"drop function sys.tracelog() cascade;\n"
 			"create function sys.tracelog()\n"
 			" returns table (\n"
 			"  ticks bigint, -- time in microseconds\n"
@@ -1124,10 +1146,10 @@ sql_update_jun2020(Client c, mvc *sql)
 
 	/* 17_temporal.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
-			"drop function sys.epoch(bigint);\n"
-			"drop function sys.epoch(int);\n"
-			"drop function sys.epoch(timestamp);\n"
-			"drop function sys.epoch(timestamp with time zone);\n"
+			"drop function sys.epoch(bigint) cascade;\n"
+			"drop function sys.epoch(int) cascade;\n"
+			"drop function sys.epoch(timestamp) cascade;\n"
+			"drop function sys.epoch(timestamp with time zone) cascade;\n"
 			"create function sys.epoch(sec BIGINT) returns TIMESTAMP WITH TIME ZONE\n"
 			" external name mtime.epoch;\n"
 			"create function sys.epoch(sec INT) returns TIMESTAMP WITH TIME ZONE\n"
@@ -1150,8 +1172,8 @@ sql_update_jun2020(Client c, mvc *sql)
 	t->system = 0; /* make it non-system else the drop view will fail */
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"drop view sys.sessions;\n"
-			"drop function sys.sessions;\n"
+			"drop view sys.sessions cascade;\n"
+			"drop function sys.sessions cascade;\n"
 			"create function sys.sessions()\n"
 			"returns table(\n"
 				"\"sessionid\" int,\n"
@@ -1265,8 +1287,8 @@ sql_update_jun2020(Client c, mvc *sql)
 	t->system = 0; /* make it non-system else the drop view will fail */
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"drop view sys.queue;\n"
-			"drop function sys.queue;\n"
+			"drop view sys.queue cascade;\n"
+			"drop function sys.queue cascade;\n"
 			"create function sys.queue()\n"
 			"returns table(\n"
 			"\"tag\" bigint,\n"
@@ -1283,9 +1305,9 @@ sql_update_jun2020(Client c, mvc *sql)
 			"create view sys.queue as select * from sys.queue();\n"
 			"grant select on sys.queue to public;\n"
 
-			"drop procedure sys.pause(int);\n"
-			"drop procedure sys.resume(int);\n"
-			"drop procedure sys.stop(int);\n"
+			"drop procedure sys.pause(int) cascade;\n"
+			"drop procedure sys.resume(int) cascade;\n"
+			"drop procedure sys.stop(int) cascade;\n"
 
 			"grant execute on procedure sys.pause(bigint) to public;\n"
 			"grant execute on procedure sys.resume(bigint) to public;\n"
@@ -1537,18 +1559,18 @@ sql_update_jun2020(Client c, mvc *sql)
 			" and schema_id = (select id from sys.schemas where name = 'sys') and type in (%d, %d);\n", (int) F_ANALYTIC, (int) F_AGGR);
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"DROP AGGREGATE stddev_samp(date);\n"
-			"DROP AGGREGATE stddev_samp(time);\n"
-			"DROP AGGREGATE stddev_samp(timestamp);\n"
-			"DROP AGGREGATE stddev_pop(date);\n"
-			"DROP AGGREGATE stddev_pop(time);\n"
-			"DROP AGGREGATE stddev_pop(timestamp);\n"
-			"DROP AGGREGATE var_samp(date);\n"
-			"DROP AGGREGATE var_samp(time);\n"
-			"DROP AGGREGATE var_samp(timestamp);\n"
-			"DROP AGGREGATE var_pop(date);\n"
-			"DROP AGGREGATE var_pop(time);\n"
-			"DROP AGGREGATE var_pop(timestamp);\n");
+			"DROP AGGREGATE stddev_samp(date) CASCADE;\n"
+			"DROP AGGREGATE stddev_samp(time) CASCADE;\n"
+			"DROP AGGREGATE stddev_samp(timestamp) CASCADE;\n"
+			"DROP AGGREGATE stddev_pop(date) CASCADE;\n"
+			"DROP AGGREGATE stddev_pop(time) CASCADE;\n"
+			"DROP AGGREGATE stddev_pop(timestamp) CASCADE;\n"
+			"DROP AGGREGATE var_samp(date) CASCADE;\n"
+			"DROP AGGREGATE var_samp(time) CASCADE;\n"
+			"DROP AGGREGATE var_samp(timestamp) CASCADE;\n"
+			"DROP AGGREGATE var_pop(date) CASCADE;\n"
+			"DROP AGGREGATE var_pop(time) CASCADE;\n"
+			"DROP AGGREGATE var_pop(timestamp) CASCADE;\n");
 
 	/* 51_sys_schema_extensions */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1675,27 +1697,27 @@ sql_update_jun2020_bam(Client c, mvc *m)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.schemas set system = false where name = 'bam';\n"
 			"update sys._tables set system = false where schema_id in (select id from sys.schemas where name = 'bam');\n"
-			"drop procedure bam.bam_loader_repos;\n"
-			"drop procedure bam.bam_loader_files;\n"
-			"drop procedure bam.bam_loader_file;\n"
-			"drop procedure bam.bam_drop_file;\n"
-			"drop function bam.bam_flag;\n"
-			"drop function bam.reverse_seq;\n"
-			"drop function bam.reverse_qual;\n"
-			"drop function bam.seq_length;\n"
-			"drop function bam.seq_char;\n"
-			"drop procedure bam.sam_export;\n"
-			"drop procedure bam.bam_export;\n");
+			"drop procedure bam.bam_loader_repos cascade;\n"
+			"drop procedure bam.bam_loader_files cascade;\n"
+			"drop procedure bam.bam_loader_file cascade;\n"
+			"drop procedure bam.bam_drop_file cascade;\n"
+			"drop function bam.bam_flag cascade;\n"
+			"drop function bam.reverse_seq cascade;\n"
+			"drop function bam.reverse_qual cascade;\n"
+			"drop function bam.seq_length cascade;\n"
+			"drop function bam.seq_char cascade;\n"
+			"drop procedure bam.sam_export cascade;\n"
+			"drop procedure bam.bam_export cascade;\n");
 	if (b) {
 		if (BATcount(b) > 0 && *(lng *) Tloc(b, 0) == 0) {
 			/* tables in bam schema are empty: drop them */
 			pos += snprintf(buf + pos, bufsize - pos,
-					"drop table bam.sq;\n"
-					"drop table bam.rg;\n"
-					"drop table bam.pg;\n"
-					"drop table bam.export;\n"
-					"drop table bam.files;\n"
-					"drop schema bam;\n");
+					"drop table bam.sq cascade;\n"
+					"drop table bam.rg cascade;\n"
+					"drop table bam.pg cascade;\n"
+					"drop table bam.export cascade;\n"
+					"drop table bam.files cascade;\n"
+					"drop schema bam cascade;\n");
 		}
 		BBPunfix(b->batCacheid);
 	}
@@ -1768,9 +1790,9 @@ static str
 sql_update_oscar_lidar(Client c)
 {
 	char *query =
-		"drop procedure sys.lidarattach(string);\n"
-		"drop procedure sys.lidarload(string);\n"
-		"drop procedure sys.lidarexport(string, string, string);\n";
+		"drop procedure sys.lidarattach(string) cascade;\n"
+		"drop procedure sys.lidarload(string) cascade;\n"
+		"drop procedure sys.lidarexport(string, string, string) cascade;\n";
 	printf("Running database upgrade commands:\n%s\n", query);
 	return SQLstatementIntern(c, query, "update", true, false, NULL);
 }
@@ -1818,8 +1840,8 @@ sql_update_oscar(Client c, mvc *sql)
 			t->system = 0; /* make it non-system else the drop view will fail */
 
 			pos += snprintf(buf + pos, bufsize - pos,
-					"drop view sys.queue;\n"
-					"drop function sys.queue;\n"
+					"drop view sys.queue cascade;\n"
+					"drop function sys.queue cascade;\n"
 					"create function sys.queue()\n"
 					"returns table(\n"
 					"\"tag\" bigint,\n"
@@ -1835,9 +1857,9 @@ sql_update_oscar(Client c, mvc *sql)
 					"grant execute on function sys.queue to public;\n"
 					"create view sys.queue as select * from sys.queue();\n"
 					"grant select on sys.queue to public;\n"
-					"drop procedure sys.pause(bigint);\n"
-					"drop procedure sys.resume(bigint);\n"
-					"drop procedure sys.stop(bigint);\n"
+					"drop procedure sys.pause(bigint) cascade;\n"
+					"drop procedure sys.resume(bigint) cascade;\n"
+					"drop procedure sys.stop(bigint) cascade;\n"
 					"create procedure sys.pause(tag bigint)\n"
 					"external name sysmon.pause;\n"
 					"grant execute on procedure sys.pause(bigint) to public;\n"
@@ -1860,7 +1882,7 @@ sql_update_oscar(Client c, mvc *sql)
 
 			/* scoping branch changes */
 			pos += snprintf(buf + pos, bufsize - pos,
-					"drop function \"sys\".\"var\"();\n"
+					"drop function \"sys\".\"var\"() cascade;\n"
 					"create function \"sys\".\"var\"() "
 					"returns table("
 					"\"schema\" string, "
@@ -1894,8 +1916,8 @@ sql_update_oscar(Client c, mvc *sql)
 
 			/* SQL functions without backend implementations */
 			pos += snprintf(buf + pos, bufsize - pos,
-					"DROP FUNCTION \"sys\".\"getcontent\"(url);\n"
-					"DROP AGGREGATE \"json\".\"output\"(json);\n");
+					"DROP FUNCTION \"sys\".\"getcontent\"(url) CASCADE;\n"
+					"DROP AGGREGATE \"json\".\"output\"(json) CASCADE;\n");
 
 			/* Move sys.degrees,sys.radians,sys.like and sys.ilike to sql_types.c definitions (I did this at the bat_logger) Remove the obsolete entries at privileges table */
 			pos += snprintf(buf + pos, bufsize - pos,
@@ -1944,7 +1966,7 @@ sql_update_oct2020(Client c, mvc *sql)
 			t = mvc_bind_table(sql, s, "var_values");
 			t->system = 0;	/* make it non-system else the drop view will fail */
 			pos += snprintf(buf + pos, bufsize - pos,
-							"DROP VIEW sys.var_values;\n"
+							"DROP VIEW sys.var_values CASCADE;\n"
 							"CREATE VIEW sys.var_values (var_name, value) AS\n"
 							"SELECT 'current_role', current_role UNION ALL\n"
 							"SELECT 'current_schema', current_schema UNION ALL\n"
@@ -1978,34 +2000,34 @@ sql_update_oct2020(Client c, mvc *sql)
 
 			/* 39_analytics.sql */
 			pos += snprintf(buf + pos, bufsize - pos,
-					"DROP AGGREGATE stddev_samp(INTERVAL SECOND);\n"
-					"DROP AGGREGATE stddev_samp(INTERVAL MONTH);\n"
-					"DROP WINDOW stddev_samp(INTERVAL SECOND);\n"
-					"DROP WINDOW stddev_samp(INTERVAL MONTH);\n"
-					"DROP AGGREGATE stddev_pop(INTERVAL SECOND);\n"
-					"DROP AGGREGATE stddev_pop(INTERVAL MONTH);\n"
-					"DROP WINDOW stddev_pop(INTERVAL SECOND);\n"
-					"DROP WINDOW stddev_pop(INTERVAL MONTH);\n"
-					"DROP AGGREGATE var_samp(INTERVAL SECOND);\n"
-					"DROP AGGREGATE var_samp(INTERVAL MONTH);\n"
-					"DROP WINDOW var_samp(INTERVAL SECOND);\n"
-					"DROP WINDOW var_samp(INTERVAL MONTH);\n"
-					"DROP AGGREGATE var_pop(INTERVAL SECOND);\n"
-					"DROP AGGREGATE var_pop(INTERVAL MONTH);\n"
-					"DROP WINDOW var_pop(INTERVAL SECOND);\n"
-					"DROP WINDOW var_pop(INTERVAL MONTH);\n"
-					"DROP AGGREGATE covar_samp(INTERVAL SECOND,INTERVAL SECOND);\n"
-					"DROP AGGREGATE covar_samp(INTERVAL MONTH,INTERVAL MONTH);\n"
-					"DROP WINDOW covar_samp(INTERVAL SECOND,INTERVAL SECOND);\n"
-					"DROP WINDOW covar_samp(INTERVAL MONTH,INTERVAL MONTH);\n"
-					"DROP AGGREGATE covar_pop(INTERVAL SECOND,INTERVAL SECOND);\n"
-					"DROP AGGREGATE covar_pop(INTERVAL MONTH,INTERVAL MONTH);\n"
-					"DROP WINDOW covar_pop(INTERVAL SECOND,INTERVAL SECOND);\n"
-					"DROP WINDOW covar_pop(INTERVAL MONTH,INTERVAL MONTH);\n"
-					"DROP AGGREGATE corr(INTERVAL SECOND,INTERVAL SECOND);\n"
-					"DROP AGGREGATE corr(INTERVAL MONTH,INTERVAL MONTH);\n"
-					"DROP WINDOW corr(INTERVAL SECOND,INTERVAL SECOND);\n"
-					"DROP WINDOW corr(INTERVAL MONTH,INTERVAL MONTH);\n"
+					"DROP AGGREGATE stddev_samp(INTERVAL SECOND) CASCADE;\n"
+					"DROP AGGREGATE stddev_samp(INTERVAL MONTH) CASCADE;\n"
+					"DROP WINDOW stddev_samp(INTERVAL SECOND) CASCADE;\n"
+					"DROP WINDOW stddev_samp(INTERVAL MONTH) CASCADE;\n"
+					"DROP AGGREGATE stddev_pop(INTERVAL SECOND) CASCADE;\n"
+					"DROP AGGREGATE stddev_pop(INTERVAL MONTH) CASCADE;\n"
+					"DROP WINDOW stddev_pop(INTERVAL SECOND) CASCADE;\n"
+					"DROP WINDOW stddev_pop(INTERVAL MONTH) CASCADE;\n"
+					"DROP AGGREGATE var_samp(INTERVAL SECOND) CASCADE;\n"
+					"DROP AGGREGATE var_samp(INTERVAL MONTH) CASCADE;\n"
+					"DROP WINDOW var_samp(INTERVAL SECOND) CASCADE;\n"
+					"DROP WINDOW var_samp(INTERVAL MONTH) CASCADE;\n"
+					"DROP AGGREGATE var_pop(INTERVAL SECOND) CASCADE;\n"
+					"DROP AGGREGATE var_pop(INTERVAL MONTH) CASCADE;\n"
+					"DROP WINDOW var_pop(INTERVAL SECOND) CASCADE;\n"
+					"DROP WINDOW var_pop(INTERVAL MONTH) CASCADE;\n"
+					"DROP AGGREGATE covar_samp(INTERVAL SECOND,INTERVAL SECOND) CASCADE;\n"
+					"DROP AGGREGATE covar_samp(INTERVAL MONTH,INTERVAL MONTH) CASCADE;\n"
+					"DROP WINDOW covar_samp(INTERVAL SECOND,INTERVAL SECOND) CASCADE;\n"
+					"DROP WINDOW covar_samp(INTERVAL MONTH,INTERVAL MONTH) CASCADE;\n"
+					"DROP AGGREGATE covar_pop(INTERVAL SECOND,INTERVAL SECOND) CASCADE;\n"
+					"DROP AGGREGATE covar_pop(INTERVAL MONTH,INTERVAL MONTH) CASCADE;\n"
+					"DROP WINDOW covar_pop(INTERVAL SECOND,INTERVAL SECOND) CASCADE;\n"
+					"DROP WINDOW covar_pop(INTERVAL MONTH,INTERVAL MONTH) CASCADE;\n"
+					"DROP AGGREGATE corr(INTERVAL SECOND,INTERVAL SECOND) CASCADE;\n"
+					"DROP AGGREGATE corr(INTERVAL MONTH,INTERVAL MONTH) CASCADE;\n"
+					"DROP WINDOW corr(INTERVAL SECOND,INTERVAL SECOND) CASCADE;\n"
+					"DROP WINDOW corr(INTERVAL MONTH,INTERVAL MONTH) CASCADE;\n"
 					"create aggregate median(val INTERVAL DAY) returns INTERVAL DAY\n"
 					" external name \"aggr\".\"median\";\n"
 					"GRANT EXECUTE ON AGGREGATE median(INTERVAL DAY) TO PUBLIC;\n"
@@ -2045,8 +2067,7 @@ sql_update_oct2020(Client c, mvc *sql)
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
+	BBPreclaim(b);
 	if (output)
 		res_table_destroy(output);
 	GDKfree(buf);
@@ -2104,9 +2125,9 @@ sql_update_jul2021(Client c, mvc *sql)
 		if (BATcount(b) == 1) {
 			/* 20_vacuum.sql */
 			pos += snprintf(buf + pos, bufsize - pos,
-							"drop procedure sys.shrink(string, string);\n"
-							"drop procedure sys.reuse(string, string);\n"
-							"drop procedure sys.vacuum(string, string);\n");
+							"drop procedure sys.shrink(string, string) cascade;\n"
+							"drop procedure sys.reuse(string, string) cascade;\n"
+							"drop procedure sys.vacuum(string, string) cascade;\n");
 
 			/* 22_clients.sql */
 			pos += snprintf(buf + pos, bufsize - pos,
@@ -2117,12 +2138,12 @@ sql_update_jul2021(Client c, mvc *sql)
 
 			/* 25_debug.sql */
 			pos += snprintf(buf + pos, bufsize - pos,
-							"drop procedure sys.flush_log();\n");
+							"drop procedure sys.flush_log() cascade;\n");
 
 			pos += snprintf(buf + pos, bufsize - pos,
-							"drop function sys.deltas(string);\n"
-							"drop function sys.deltas(string, string);\n"
-							"drop function sys.deltas(string, string, string);\n");
+							"drop function sys.deltas(string) cascade;\n"
+							"drop function sys.deltas(string, string) cascade;\n"
+							"drop function sys.deltas(string, string, string) cascade;\n");
 			pos += snprintf(buf + pos, bufsize - pos,
 							"create function sys.deltas (\"schema\" string)\n"
 							"returns table (\"id\" int, \"segments\" bigint, \"all\" bigint, \"inserted\" bigint, \"updates\" bigint, \"deletes\" bigint, \"level\" int)\n"
@@ -2141,8 +2162,8 @@ sql_update_jul2021(Client c, mvc *sql)
 			t->system = 0; /* make it non-system else the drop view will fail */
 
 			pos += snprintf(buf + pos, bufsize - pos,
-							"drop view sys.queue;\n"
-							"drop function sys.queue;\n"
+							"drop view sys.queue cascade;\n"
+							"drop function sys.queue cascade;\n"
 							"create function sys.queue()\n"
 							"returns table(\n"
 							"\"tag\" bigint,\n"
@@ -2172,9 +2193,9 @@ sql_update_jul2021(Client c, mvc *sql)
 
 			/* 41_json.sql */
 			pos += snprintf(buf + pos, bufsize - pos,
-							"drop function json.isobject(string);\n"
-							"drop function json.isarray(string);\n"
-							"drop function json.isvalid(json);\n"
+							"drop function json.isobject(string) cascade;\n"
+							"drop function json.isarray(string) cascade;\n"
+							"drop function json.isvalid(json) cascade;\n"
 							"create function json.isvalid(js json)\n"
 							"returns bool begin return true; end;\n"
 							"grant execute on function json.isvalid(json) to public;\n"
@@ -2708,7 +2729,7 @@ sql_update_jul2021(Client c, mvc *sql)
 			/* 75_storagemodel.sql not changed but dependencies changed
 			 * since sys.objects has a new column */
 			pos += snprintf(buf + pos, bufsize - pos,
-					"drop procedure sys.storagemodelinit();\n"
+					"drop procedure sys.storagemodelinit() cascade;\n"
 					"create procedure sys.storagemodelinit()\n"
 					"begin\n"
 					"    delete from sys.storagemodelinput;\n"
@@ -3074,8 +3095,8 @@ sql_update_jul2021(Client c, mvc *sql)
 			t = mvc_bind_table(sql, s, "dependency_schemas_on_users");
 			t->system = 0;	/* make it non-system else the drop view will fail */
 			pos += snprintf(buf + pos, bufsize - pos,
-					"DROP VIEW sys.dependency_schemas_on_users;\n"
-					"DROP VIEW sys.users;\n"
+					"DROP VIEW sys.dependency_schemas_on_users CASCADE;\n"
+					"DROP VIEW sys.users CASCADE;\n"
 
 					"ALTER TABLE sys.db_user_info ADD COLUMN schema_path CLOB;\n"
 					"UPDATE sys.db_user_info SET schema_path = '\"sys\"';\n"
@@ -3111,8 +3132,7 @@ sql_update_jul2021(Client c, mvc *sql)
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
+	BBPreclaim(b);
 	if (output)
 		res_table_destroy(output);
 	GDKfree(buf);
@@ -3147,8 +3167,8 @@ sql_update_jul2021_5(Client c, mvc *sql)
 				t = mvc_bind_table(sql, s, "dependencies_vw");
 				t->system = 0;	/* make it non-system else the drop view will fail */
 				pos += snprintf(buf + pos, bufsize - pos,
-								"drop view sys.dependencies_vw;\n"
-								"drop view sys.ids;\n");
+								"drop view sys.dependencies_vw cascade;\n"
+								"drop view sys.ids cascade;\n");
 				pos += snprintf(buf + pos, bufsize - pos,
 								"CREATE VIEW sys.ids (id, name, schema_id, table_id, table_name, obj_type, sys_table) AS\n"
 								"SELECT id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'author' AS obj_type, 'sys.auths' AS sys_table FROM sys.auths UNION ALL\n"
@@ -3218,8 +3238,8 @@ sql_update_jan2022(Client c, mvc *sql)
 			if (sql_bind_func_(sql, s->base.name, "strimp_create", l, F_PROC, true)) {
 				/* do the upgrade by removing the two functions */
 				const char *query =
-					"drop filter function sys.strimp_filter(string, string);\n"
-					"drop procedure sys.strimp_create(string, string, string);\n";
+					"drop filter function sys.strimp_filter(string, string) cascade;\n"
+					"drop procedure sys.strimp_create(string, string, string) cascade;\n";
 				printf("Running database upgrade commands:\n%s\n", query);
 				err = SQLstatementIntern(c, query, "update", true, false, NULL);
 			}
@@ -3251,8 +3271,8 @@ sql_update_jan2022(Client c, mvc *sql)
 	t = mvc_bind_table(sql, s, "tracelog");
 	t->system = 0; /* make it non-system else the drop view will fail */
 	pos += snprintf(buf + pos, bufsize - pos,
-			"drop view sys.tracelog;\n"
-			"drop function sys.tracelog();\n"
+			"drop view sys.tracelog cascade;\n"
+			"drop function sys.tracelog() cascade;\n"
 			"create function sys.tracelog()\n"
 			" returns table (\n"
 			"  ticks bigint, -- time in microseconds\n"
@@ -3268,7 +3288,7 @@ sql_update_jan2022(Client c, mvc *sql)
 
 	/* 17_temporal.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
-					"drop function sys.epoch(bigint);\n");
+					"drop function sys.epoch(bigint) cascade;\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 					"create function sys.epoch(sec DECIMAL(18,3)) "
 					"returns TIMESTAMP WITH TIME ZONE\n"
@@ -3278,7 +3298,7 @@ sql_update_jan2022(Client c, mvc *sql)
 
 	/* 25_debug.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
-					"drop function sys.malfunctions();\n"
+					"drop function sys.malfunctions() cascade;\n"
 					"create function sys.malfunctions()\n"
 					" returns table(\"module\" string, \"function\" string, \"signature\" string, \"address\" string, \"comment\" string)\n"
 					" external name \"manual\".\"functions\";\n"
@@ -3294,8 +3314,8 @@ sql_update_jan2022(Client c, mvc *sql)
 	t = mvc_bind_table(sql, s, "dependencies_vw");
 	t->system = 0;	/* make it non-system else the drop view will fail */
 	pos += snprintf(buf + pos, bufsize - pos,
-					"drop view sys.dependencies_vw;\n" /* depends on sys.ids */
-					"drop view sys.ids;\n"
+					"drop view sys.dependencies_vw cascade;\n" /* depends on sys.ids */
+					"drop view sys.ids cascade;\n"
 					"CREATE VIEW sys.ids (id, name, schema_id, table_id, table_name, obj_type, sys_table, system) AS\n"
 					"SELECT id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'author' AS obj_type, 'sys.auths' AS sys_table, (name in ('public','sysadmin','monetdb','.snapshot')) AS system FROM sys.auths UNION ALL\n"
 					"SELECT id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, ifthenelse(system, 'system schema', 'schema'), 'sys.schemas', system FROM sys.schemas UNION ALL\n"
@@ -3385,44 +3405,44 @@ sql_update_jan2022(Client c, mvc *sql)
 	t->system = 0;
 	pos += snprintf(buf + pos, bufsize - pos,
 					/* drop dependant stuff from 76_dump.sql */
-					"drop function sys.dump_database(boolean);\n"
-					"drop procedure sys.dump_table_data();\n"
-					"drop procedure sys._dump_table_data(string, string);\n"
-					"drop function sys.prepare_esc(string, string);\n"
-					"drop function sys.esc(string);\n"
-					"drop view sys.dump_privileges;\n"
-					"drop view sys.dump_user_defined_types;\n"
-					"drop view sys.dump_comments;\n"
-					"drop view sys.dump_triggers;\n"
-					"drop view sys.dump_tables;\n"
-					"drop view sys.dump_functions;\n"
-					"drop view sys.dump_start_sequences;\n"
-					"drop view sys.dump_sequences;\n"
-					"drop view sys.dump_partition_tables;\n"
-					"drop view sys.dump_foreign_keys;\n"
-					"drop view sys.dump_column_defaults;\n"
-					"drop view sys.dump_indices;\n"
-					"drop view sys.dump_table_constraint_type;\n"
-					"drop view sys.dump_grant_user_privileges;\n"
-					"drop view sys.dump_add_schemas_to_users;\n"
-					"drop view sys.dump_create_schemas;\n"
-					"drop view sys.dump_create_users;\n"
-					"drop view sys.dump_create_roles;\n"
+					"drop function sys.dump_database(boolean) cascade;\n"
+					"drop procedure sys.dump_table_data() cascade;\n"
+					"drop procedure sys._dump_table_data(string, string) cascade;\n"
+					"drop function sys.prepare_esc(string, string) cascade;\n"
+					"drop function sys.esc(string) cascade;\n"
+					"drop view sys.dump_privileges cascade;\n"
+					"drop view sys.dump_user_defined_types cascade;\n"
+					"drop view sys.dump_comments cascade;\n"
+					"drop view sys.dump_triggers cascade;\n"
+					"drop view sys.dump_tables cascade;\n"
+					"drop view sys.dump_functions cascade;\n"
+					"drop view sys.dump_start_sequences cascade;\n"
+					"drop view sys.dump_sequences cascade;\n"
+					"drop view sys.dump_partition_tables cascade;\n"
+					"drop view sys.dump_foreign_keys cascade;\n"
+					"drop view sys.dump_column_defaults cascade;\n"
+					"drop view sys.dump_indices cascade;\n"
+					"drop view sys.dump_table_constraint_type cascade;\n"
+					"drop view sys.dump_grant_user_privileges cascade;\n"
+					"drop view sys.dump_add_schemas_to_users cascade;\n"
+					"drop view sys.dump_create_schemas cascade;\n"
+					"drop view sys.dump_create_users cascade;\n"
+					"drop view sys.dump_create_roles cascade;\n"
 
-					"drop view sys.describe_functions;\n"
-					"drop view sys.describe_partition_tables;\n"
-					"drop view sys.describe_privileges;\n"
-					"drop view sys.fully_qualified_functions;\n"
-					"drop view sys.describe_comments;\n"
-					"drop view sys.describe_tables;\n"
-					"drop view sys.describe_sequences;\n"
-					"drop function sys.schema_guard(string, string, string);\n"
-					"drop function sys.get_remote_table_expressions(string, string);\n"
-					"drop function sys.get_merge_table_partition_expressions(int);\n"
-					"drop view sys.describe_constraints;\n"
-					"drop function sys.alter_table(string, string);\n"
-					"drop function sys.FQN(string, string);\n"
-					"drop function sys.sq(string);\n");
+					"drop view sys.describe_functions cascade;\n"
+					"drop view sys.describe_partition_tables cascade;\n"
+					"drop view sys.describe_privileges cascade;\n"
+					"drop view sys.fully_qualified_functions cascade;\n"
+					"drop view sys.describe_comments cascade;\n"
+					"drop view sys.describe_tables cascade;\n"
+					"drop view sys.describe_sequences cascade;\n"
+					"drop function sys.schema_guard(string, string, string) cascade;\n"
+					"drop function sys.get_remote_table_expressions(string, string) cascade;\n"
+					"drop function sys.get_merge_table_partition_expressions(int) cascade;\n"
+					"drop view sys.describe_constraints cascade;\n"
+					"drop function sys.alter_table(string, string) cascade;\n"
+					"drop function sys.FQN(string, string) cascade;\n"
+					"drop function sys.sq(string) cascade;\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 					"CREATE FUNCTION sys.SQ (s STRING) RETURNS STRING BEGIN RETURN '''' || sys.replace(s,'''','''''') || ''''; END;\n"
 					"CREATE FUNCTION sys.FQN(s STRING, t STRING) RETURNS STRING BEGIN RETURN '\"' || sys.replace(s,'\"','\"\"') || '\".\"' || sys.replace(t,'\"','\"\"') || '\"'; END;\n"
@@ -4061,8 +4081,8 @@ sql_update_jan2022(Client c, mvc *sql)
 
 	/* 80_udf.sql (removed) */
 	pos += snprintf(buf + pos, bufsize - pos,
-					"drop function sys.reverse(string);\n"
-					"drop all function sys.fuse;\n");
+					"drop function sys.reverse(string) cascade;\n"
+					"drop all function sys.fuse cascade;\n");
 
 	/* 26_sysmon.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -4131,41 +4151,41 @@ sql_update_jan2022(Client c, mvc *sql)
 	t = mvc_bind_table(sql, s, "querylog_catalog");
 	t->system = 0;
 	pos += snprintf(buf + pos, bufsize - pos,
-					"drop view logging.compinfo;\n"
-					"drop function logging.compinfo;\n"
-					"drop procedure sys.storagemodelinit();\n"
-					"drop view sys.schemastorage;\n"
-					"drop view sys.tablestorage;\n"
-					"drop view sys.storage;\n"
-					"drop function sys.storage();\n"
-					"drop function if exists wlr.tick;\n"
-					"drop function if exists wlr.clock;\n"
-					"drop function if exists wlc.tick;\n"
-					"drop function if exists wlc.clock;\n"
-					"drop function profiler.getlimit;\n"
-					"drop view sys.rejects;\n"
-					"drop function sys.rejects;\n"
-					"drop function sys.user_statistics;\n"
-					"drop view sys.queue;\n"
-					"drop function sys.queue;\n"
-					"drop function sys.debugflags;\n"
-					"drop function sys.bbp;\n"
-					"drop view sys.optimizers;\n"
-					"drop function sys.optimizers;\n"
-					"drop function sys.querycache;\n"
-					"drop function sys.optimizer_stats;\n"
-					"drop function sys.current_sessionid;\n"
-					"drop view sys.prepared_statements_args;\n"
-					"drop function sys.prepared_statements_args;\n"
-					"drop view sys.prepared_statements;\n"
-					"drop function sys.prepared_statements;\n"
-					"drop view sys.sessions;\n"
-					"drop function sys.sessions;\n"
-					"drop view sys.querylog_history;\n"
-					"drop view sys.querylog_calls;\n"
-					"drop function sys.querylog_calls;\n"
-					"drop view sys.querylog_catalog;\n"
-					"drop function sys.querylog_catalog;\n"
+					"drop view logging.compinfo cascade;\n"
+					"drop function logging.compinfo cascade;\n"
+					"drop procedure sys.storagemodelinit() cascade;\n"
+					"drop view sys.schemastorage cascade;\n"
+					"drop view sys.tablestorage cascade;\n"
+					"drop view sys.storage cascade;\n"
+					"drop function sys.storage() cascade;\n"
+					"drop function if exists wlr.tick cascade;\n"
+					"drop function if exists wlr.clock cascade;\n"
+					"drop function if exists wlc.tick cascade;\n"
+					"drop function if exists wlc.clock cascade;\n"
+					"drop function profiler.getlimit cascade;\n"
+					"drop view sys.rejects cascade;\n"
+					"drop function sys.rejects cascade;\n"
+					"drop function sys.user_statistics cascade;\n"
+					"drop view sys.queue cascade;\n"
+					"drop function sys.queue cascade;\n"
+					"drop function sys.debugflags cascade;\n"
+					"drop function sys.bbp cascade;\n"
+					"drop view sys.optimizers cascade;\n"
+					"drop function sys.optimizers cascade;\n"
+					"drop function sys.querycache cascade;\n"
+					"drop function sys.optimizer_stats cascade;\n"
+					"drop function sys.current_sessionid cascade;\n"
+					"drop view sys.prepared_statements_args cascade;\n"
+					"drop function sys.prepared_statements_args cascade;\n"
+					"drop view sys.prepared_statements cascade;\n"
+					"drop function sys.prepared_statements cascade;\n"
+					"drop view sys.sessions cascade;\n"
+					"drop function sys.sessions cascade;\n"
+					"drop view sys.querylog_history cascade;\n"
+					"drop view sys.querylog_calls cascade;\n"
+					"drop function sys.querylog_calls cascade;\n"
+					"drop view sys.querylog_catalog cascade;\n"
+					"drop function sys.querylog_catalog cascade;\n"
 					"create function sys.querylog_catalog()\n"
 					"returns table(\n"
 					" id oid,\n"
@@ -4407,17 +4427,17 @@ sql_update_jan2022(Client c, mvc *sql)
 	t = mvc_bind_table(sql, s, "systemfunctions");
 	t->system = 0;
 	pos += snprintf(buf + pos, bufsize - pos,
-			"drop view sys.systemfunctions;\n");
+			"drop view sys.systemfunctions cascade;\n");
 
 	/* 80_statistics.sql */
 	t = mvc_bind_table(sql, s, "statistics");
 	t->system = 0;
 	pos += snprintf(buf + pos, bufsize - pos,
-				"drop table sys.statistics;\n"
-				"drop procedure sys.analyze(int,bigint);\n"
-				"drop procedure sys.analyze(int,bigint,string);\n"
-				"drop procedure sys.analyze(int,bigint,string,string);\n"
-				"drop procedure sys.analyze(int,bigint,string,string,string);\n"
+				"drop table sys.statistics cascade;\n"
+				"drop procedure sys.analyze(int,bigint) cascade;\n"
+				"drop procedure sys.analyze(int,bigint,string) cascade;\n"
+				"drop procedure sys.analyze(int,bigint,string,string) cascade;\n"
+				"drop procedure sys.analyze(int,bigint,string,string,string) cascade;\n"
 				"create procedure sys.\"analyze\"()\n"
 				"external name sql.\"analyze\";\n"
 				"grant execute on procedure sys.\"analyze\"() to public;\n"
@@ -4560,12 +4580,9 @@ sql_update_sep2022(Client c, mvc *sql)
 			(p = BATdescriptor(bid)) == NULL ||
 			(bid = BBPindex("M5system_auth_deleted")) == 0 ||
 			(d = BATdescriptor(bid)) == NULL) {
-			if (u)
-				BBPunfix(u->batCacheid);
-			if (p)
-				BBPunfix(p->batCacheid);
-			if (d)
-				BBPunfix(d->batCacheid);
+			BBPreclaim(u);
+			BBPreclaim(p);
+			BBPreclaim(d);
 			throw(SQL, __func__, INTERNAL_BAT_ACCESS);
 		}
 		BATiter ui = bat_iterator(u);
@@ -4649,10 +4666,10 @@ sql_update_sep2022(Client c, mvc *sql)
 			t->system = 0;
 			pos = 0;
 			pos += snprintf(buf + pos, bufsize - pos,
-							"drop view sys.dependency_schemas_on_users;\n"
-							"drop view sys.roles;\n"
-							"drop view sys.users;\n"
-							"drop function sys.db_users();\n"
+							"drop view sys.dependency_schemas_on_users cascade;\n"
+							"drop view sys.roles cascade;\n"
+							"drop view sys.users cascade;\n"
+							"drop function sys.db_users() cascade;\n"
 							"CREATE VIEW sys.roles AS SELECT id, name, grantor FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.db_user_info u);\n"
 							"GRANT SELECT ON sys.roles TO PUBLIC;\n"
 							"CREATE VIEW sys.users AS SELECT name, fullname, default_schema, schema_path, max_memory, max_workers, optimizer, default_role FROM sys.db_user_info;\n"
@@ -4713,20 +4730,20 @@ sql_update_sep2022(Client c, mvc *sql)
 		pos = 0;
 		pos += snprintf(buf + pos, bufsize - pos,
 			/* drop dependent stuff from 76_dump.sql */
-			"drop function sys.dump_database(boolean);\n"
-			"drop procedure sys.dump_table_data();\n"
-			"drop procedure sys.dump_table_data(string, string);\n"
-			"drop view sys.dump_partition_tables;\n"
-			"drop view sys.describe_partition_tables;\n"
-			"drop view sys.dump_sequences;\n"
-			"drop view sys.dump_start_sequences;\n"
-			"drop view sys.dump_tables;\n"
-			"drop view sys.describe_tables;\n"
-			"drop view sys.dump_create_users;\n"
-			"drop view sys.dump_functions;\n"
-			"drop view sys.dump_triggers;\n"
-			"drop function sys.schema_guard;\n"
-			"drop function sys.replace_first(string, string, string, string);\n");
+			"drop function sys.dump_database(boolean) cascade;\n"
+			"drop procedure sys.dump_table_data() cascade;\n"
+			"drop procedure sys.dump_table_data(string, string) cascade;\n"
+			"drop view sys.dump_partition_tables cascade;\n"
+			"drop view sys.describe_partition_tables cascade;\n"
+			"drop view sys.dump_sequences cascade;\n"
+			"drop view sys.dump_start_sequences cascade;\n"
+			"drop view sys.dump_tables cascade;\n"
+			"drop view sys.describe_tables cascade;\n"
+			"drop view sys.dump_create_users cascade;\n"
+			"drop view sys.dump_functions cascade;\n"
+			"drop view sys.dump_triggers cascade;\n"
+			"drop function sys.schema_guard cascade;\n"
+			"drop function sys.replace_first(string, string, string, string) cascade;\n");
 
 		pos += snprintf(buf + pos, bufsize - pos,
 			"CREATE FUNCTION sys.schema_guard(sch STRING, nme STRING, stmt STRING) RETURNS STRING BEGIN\n"
@@ -5132,27 +5149,27 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 
 			pos = 0;
 			pos += snprintf(buf + pos, bufsize - pos,
-						"drop procedure if exists wlc.master();\n"
-						"drop procedure if exists wlc.master(string);\n"
-						"drop procedure if exists wlc.stop();\n"
-						"drop procedure if exists wlc.flush();\n"
-						"drop procedure if exists wlc.beat(int);\n"
-						"drop function if exists wlc.clock();\n"
-						"drop function if exists wlc.tick();\n"
-						"drop procedure if exists wlr.master(string);\n"
-						"drop procedure if exists wlr.stop();\n"
-						"drop procedure if exists wlr.accept();\n"
-						"drop procedure if exists wlr.replicate();\n"
-						"drop procedure if exists wlr.replicate(timestamp);\n"
-						"drop procedure if exists wlr.replicate(tinyint);\n"
-						"drop procedure if exists wlr.replicate(smallint);\n"
-						"drop procedure if exists wlr.replicate(integer);\n"
-						"drop procedure if exists wlr.replicate(bigint);\n"
-						"drop procedure if exists wlr.beat(integer);\n"
-						"drop function if exists wlr.clock();\n"
-						"drop function if exists wlr.tick();\n"
-						"drop schema if exists wlc;\n"
-						"drop schema if exists wlr;\n");
+						"drop procedure if exists wlc.master() cascade;\n"
+						"drop procedure if exists wlc.master(string) cascade;\n"
+						"drop procedure if exists wlc.stop() cascade;\n"
+						"drop procedure if exists wlc.flush() cascade;\n"
+						"drop procedure if exists wlc.beat(int) cascade;\n"
+						"drop function if exists wlc.clock() cascade;\n"
+						"drop function if exists wlc.tick() cascade;\n"
+						"drop procedure if exists wlr.master(string) cascade;\n"
+						"drop procedure if exists wlr.stop() cascade;\n"
+						"drop procedure if exists wlr.accept() cascade;\n"
+						"drop procedure if exists wlr.replicate() cascade;\n"
+						"drop procedure if exists wlr.replicate(timestamp) cascade;\n"
+						"drop procedure if exists wlr.replicate(tinyint) cascade;\n"
+						"drop procedure if exists wlr.replicate(smallint) cascade;\n"
+						"drop procedure if exists wlr.replicate(integer) cascade;\n"
+						"drop procedure if exists wlr.replicate(bigint) cascade;\n"
+						"drop procedure if exists wlr.beat(integer) cascade;\n"
+						"drop function if exists wlr.clock() cascade;\n"
+						"drop function if exists wlr.tick() cascade;\n"
+						"drop schema if exists wlc cascade;\n"
+						"drop schema if exists wlr cascade;\n");
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
@@ -5216,17 +5233,17 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 				t->system = 0;
 			pos = 0;
 			pos += snprintf(buf + pos, bufsize - pos,
-							"drop function if exists sys.dump_database(boolean);\n"
-							"drop procedure if exists sys.dump_table_data();\n"
-							"drop procedure if exists sys.dump_table_data(string, string);\n"
-							"drop view if exists sys.dump_tables;\n"
-							"drop view if exists sys.dump_comments;\n"
-							"drop function if exists sys.prepare_esc(string, string);\n"
-							"drop view if exists sys.dump_partition_tables;\n"
-							"drop view if exists sys.dump_create_users;\n"
-							"drop view if exists sys.describe_tables;\n"
-							"drop function if exists sys.get_remote_table_expressions(string, string);\n"
-							"drop function if exists sys.sq(string);\n");
+							"drop function if exists sys.dump_database(boolean) cascade;\n"
+							"drop procedure if exists sys.dump_table_data() cascade;\n"
+							"drop procedure if exists sys.dump_table_data(string, string) cascade;\n"
+							"drop view if exists sys.dump_tables cascade;\n"
+							"drop view if exists sys.dump_comments cascade;\n"
+							"drop function if exists sys.prepare_esc(string, string) cascade;\n"
+							"drop view if exists sys.dump_partition_tables cascade;\n"
+							"drop view if exists sys.dump_create_users cascade;\n"
+							"drop view if exists sys.describe_tables cascade;\n"
+							"drop function if exists sys.get_remote_table_expressions(string, string) cascade;\n"
+							"drop function if exists sys.sq(string) cascade;\n");
 			pos += snprintf(buf + pos, bufsize - pos,
 							"CREATE FUNCTION sys.SQ (s STRING) RETURNS STRING BEGIN RETURN '''' || sys.replace(s,'''','''''') || ''''; END;\n"
 							"CREATE FUNCTION sys.get_remote_table_expressions(s STRING, t STRING) RETURNS STRING BEGIN\n"
@@ -5407,8 +5424,8 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 							" INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');\n"
 							" RETURN sys.dump_statements;\n"
 							"END;\n"
- 							"update sys.functions set system = true where system <> true and name in ('sq', 'get_remote_table_expressions', 'prepare_esc') and schema_id = 2000 and type = %d;\n"
- 							"update sys._tables set system = true where system <> true and name in ('describe_tables', 'dump_create_users', 'dump_partition_tables', 'dump_comments', 'dump_tables') and schema_id = 2000;\n"
+							"update sys.functions set system = true where system <> true and name in ('sq', 'get_remote_table_expressions', 'prepare_esc') and schema_id = 2000 and type = %d;\n"
+							"update sys._tables set system = true where system <> true and name in ('describe_tables', 'dump_create_users', 'dump_partition_tables', 'dump_comments', 'dump_tables') and schema_id = 2000;\n"
 							"update sys.functions set system = true where system <> true and name = 'dump_table_data' and schema_id = 2000 and type = %d;\n"
 							"update sys.functions set system = true where system <> true and name = 'dump_database' and schema_id = 2000 and type = %d;\n"
 							"GRANT SELECT ON sys.describe_tables TO PUBLIC;\n",
@@ -5419,6 +5436,64 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		}
 		res_table_destroy(output);
 		output = NULL;
+	}
+
+	/* Add new column 'function_id' to views
+	 * sys.dependency_tables_on_functions and dependency_views_on_functions */
+	pos = snprintf(buf, bufsize,
+				   "SELECT id FROM sys._columns where name = 'function_id' "
+				   "and table_id in (select id FROM sys._tables where system "
+				   "and name in ('dependency_tables_on_functions','dependency_views_on_functions') "
+				   "and schema_id = 2000);\n");
+	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)) == NULL) {
+		if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) != 2) {
+			sql_table *t;
+			if ((t = mvc_bind_table(sql, s, "dependency_tables_on_functions")) != NULL)
+				t->system = 0;
+			if ((t = mvc_bind_table(sql, s, "dependency_views_on_functions")) != NULL)
+				t->system = 0;
+			pos = 0;
+			pos += snprintf(buf + pos, bufsize - pos,
+							"drop view if exists sys.dependency_tables_on_functions cascade;\n"
+							"drop view if exists sys.dependency_views_on_functions cascade;\n"
+							"CREATE VIEW sys.dependency_tables_on_functions AS\n"
+							"SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name,"
+							" f.id AS function_id, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type\n"
+							"  FROM sys.functions AS f, sys.tables AS t, sys.dependencies AS dep\n"
+							" WHERE t.id = dep.id AND f.id = dep.depend_id\n"
+							"   AND dep.depend_type = 7 AND f.type <> 2 AND t.type NOT IN (1, 11)\n"
+							" ORDER BY t.name, t.schema_id, f.name, f.id;\n"
+							"GRANT SELECT ON sys.dependency_tables_on_functions TO PUBLIC;\n"
+							"CREATE VIEW sys.dependency_views_on_functions AS\n"
+							"SELECT v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name,"
+							" f.id AS function_id, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type\n"
+							"  FROM sys.functions AS f, sys.tables AS v, sys.dependencies AS dep\n"
+							" WHERE v.id = dep.id AND f.id = dep.depend_id\n"
+							"   AND dep.depend_type = 7 AND f.type <> 2 AND v.type IN (1, 11)\n"
+							" ORDER BY v.name, v.schema_id, f.name, f.id;\n"
+							"GRANT SELECT ON sys.dependency_views_on_functions TO PUBLIC;\n"
+							"update sys._tables set system = true where system <> true and name in "
+							"('dependency_tables_on_functions','dependency_views_on_functions') and schema_id = 2000;\n");
+			assert(pos < bufsize);
+			printf("Running database upgrade commands:\n%s\n", buf);
+			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+		}
+		res_table_destroy(output);
+		output = NULL;
+	}
+
+	if (!sql_bind_func(sql, "sys", "database", NULL, NULL, F_FUNC, true)) {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+		pos = snprintf(buf, bufsize,
+					   "create function sys.database ()\n"
+					   "returns string\n"
+					   "external name inspect.\"getDatabaseName\";\n"
+					   "grant execute on function sys.database() to public;\n"
+					   "update sys.functions set system = true where system <> true and name = 'database' and schema_id = 2000 and type = %d;\n",
+					   (int) F_FUNC);
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
 
 	GDKfree(buf);

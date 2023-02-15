@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /* (author) M. Kersten */
@@ -36,7 +38,6 @@ lng MALdebug;
 #include "mal_atom.h"
 
 MT_Lock     mal_contextLock = MT_LOCK_INITIALIZER(mal_contextLock);
-MT_Lock     mal_remoteLock = MT_LOCK_INITIALIZER(mal_remoteLock);
 MT_Lock     mal_profileLock = MT_LOCK_INITIALIZER(mal_profileLock);
 MT_Lock     mal_copyLock = MT_LOCK_INITIALIZER(mal_copyLock);
 MT_Lock     mal_delayLock = MT_LOCK_INITIALIZER(mal_delayLock);
@@ -249,8 +250,6 @@ void mal_reset(void)
  * terminate this way.
  * We should also ensure that no new client enters the scene while shutting down.
  * For this we mark the client records as BLOCKCLIENT.
- *
- * Beware, mal_exit is also called during a SIGTERM from the monetdb tool
  */
 
 void mal_exit(int status)

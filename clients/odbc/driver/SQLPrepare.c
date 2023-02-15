@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -96,6 +98,11 @@ MNDBPrepare(ODBCStmt *stmt,
 	free(query);
 
 	ODBCResetStmt(stmt);
+
+	if (stmt->Dbc->cachelimit != -1) {
+		mapi_cache_limit(stmt->Dbc->mid, -1);
+		stmt->Dbc->cachelimit = -1;
+	}
 
 	ret = mapi_query_handle(hdl, s);
 	free(s);

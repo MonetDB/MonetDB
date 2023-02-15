@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -405,8 +407,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 	}
 
 	if ((ret = parse_schema_path_str(m, schema_path, false)) != MAL_SUCCEED) {
-		if (schema_buf)
-			GDKfree(schema_buf);
+		GDKfree(schema_buf);
 		return ret;
 	}
 
@@ -415,8 +416,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 
 	if (!enc) {
 		if (!(pwd = mcrypt_BackendSum(passwd, strlen(passwd)))) {
-			if (schema_buf)
-				GDKfree(schema_buf);
+			GDKfree(schema_buf);
 			throw(MAL, "sql.create_user", SQLSTATE(42000) "Crypt backend hash not found");
 		}
 	} else {
@@ -424,8 +424,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 	}
 
 	if ((err = AUTHGeneratePasswordHash(&hash, pwd)) != MAL_SUCCEED) {
-		if (schema_buf)
-			GDKfree(schema_buf);
+		GDKfree(schema_buf);
 		if (!enc)
 			free(pwd);
 		throw(MAL, "sql.create_user", SQLSTATE(42000) "create backend hash failure");
@@ -504,7 +503,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s, const char *initpasswd)
 	sql_column *col = NULL;
 	mvc *m = (mvc *) _mvc;
 	sqlid schema_id = 0;
-	str err;
+	str err = NULL;
 
 	/* create the authorisation related tables */
 	mvc_create_table(&t, m, s, "db_user_info", tt_table, 1, SQL_PERSIST, 0, -1, 0);
@@ -527,7 +526,8 @@ monet5_create_privileges(ptr _mvc, sql_schema *s, const char *initpasswd)
 	char *username = "monetdb";
 	char *password = initpasswd ? mcrypt_BackendSum(initpasswd, strlen(initpasswd)) : mcrypt_BackendSum("monetdb", strlen("monetdb"));
 	char *hash = NULL;
-	if ((err = AUTHGeneratePasswordHash(&hash, password)) != MAL_SUCCEED) {
+	if (password == NULL ||
+		(err = AUTHGeneratePasswordHash(&hash, password)) != MAL_SUCCEED) {
 		TRC_CRITICAL(SQL_TRANS, "generate password hash failure");
 		freeException(err);
 		free(password);
@@ -967,4 +967,51 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		return -1;
 	}
 	return res;
+}
+
+int
+monet5_user_get_limits(mvc *m, int user, lng *maxmem, int *maxwrk)
+{
+	oid rid;
+	sql_schema *sys = NULL;
+	sql_table *user_info = NULL;
+	sql_table *auths = NULL;
+	str username = NULL;
+	sqlstore *store = m->session->tr->store;
+	lng max_memory = 0;
+	int max_workers = 0;
+
+	if (!m->session->tr->active) {
+		switch (mvc_trans(m)) {
+		case -1:
+			return -1;
+		case -3:
+			return -3;
+		default:
+			break;
+		}
+
+		sys = find_sql_schema(m->session->tr, "sys");
+		auths = find_sql_table(m->session->tr, sys, "auths");
+		user_info = find_sql_table(m->session->tr, sys, "db_user_info");
+
+		rid = store->table_api.column_find_row(m->session->tr, find_sql_column(auths, "id"), &user, NULL);
+		if (is_oid_nil(rid))
+			return -2;
+		if (!(username = store->table_api.column_find_value(m->session->tr, find_sql_column(auths, "name"), rid)))
+			return -1;
+		rid = store->table_api.column_find_row(m->session->tr, find_sql_column(user_info, "name"), username, NULL);
+		_DELETE(username);
+
+		if (!is_oid_nil(rid)) {
+			max_memory = store->table_api.column_find_lng(m->session->tr, find_sql_column(user_info, "max_memory"), rid);
+			max_workers = store->table_api.column_find_int(m->session->tr, find_sql_column(user_info, "max_workers"), rid);
+		}
+		mvc_rollback(m, 0, NULL, false);
+	}
+
+	*maxmem = max_memory > 0 ? max_memory : 0;
+	*maxwrk = max_workers > 0 ? max_workers : 0;
+
+	return 0;
 }

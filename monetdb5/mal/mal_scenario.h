@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #ifndef _MAL_SCENARIO_H
@@ -54,18 +56,21 @@ typedef struct SCENARIO {
 	MALfcn callbackCmd;
 } *Scenario;
 
-mal_export str setScenario(Client c, str nme);
-mal_export str runScenario(Client c, int once);
-mal_export str getScenarioLanguage(Client c);
 mal_export Scenario getFreeScenario(void);
-
-mal_export void showCurrentScenario(void);
-mal_export void showScenarioByName(stream *f, str s);
-mal_export void showScenario(stream *f, Scenario s);
-mal_export void showAllScenarios(stream *f);
-mal_export void resetScenario(Client c);
-
 mal_export Scenario findScenario(str nme);
-mal_export void updateScenario(str scen, str nme, MALfcn fcn);
+
+#ifdef LIBMONETDB5
+extern str setScenario(Client c, str nme);
+extern str runScenario(Client c, int once);
+extern str getScenarioLanguage(Client c);
+
+extern void showCurrentScenario(void);
+extern void showScenarioByName(stream *f, str s);
+extern void showScenario(stream *f, Scenario s);
+extern void showAllScenarios(stream *f);
+extern void resetScenario(Client c);
+
+extern void updateScenario(str scen, str nme, MALfcn fcn);
+#endif
 
 #endif /* _MAL_SCENARIO_H */

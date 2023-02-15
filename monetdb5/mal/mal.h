@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -66,11 +68,7 @@ mal_export stream	*maleventstream;
 #define GRPperformance (DEADBEEFMASK)
 #define GRPforcemito (FORCEMITOMASK | NOSYNCMASK)
 
-mal_export MT_Lock  mal_contextLock;
-mal_export MT_Lock  mal_remoteLock;
-mal_export MT_Lock  mal_profileLock ;
-mal_export MT_Lock  mal_copyLock ;
-mal_export MT_Lock  mal_delayLock ;
+mal_export MT_Lock mal_contextLock;
 
 mal_export int mal_init(char *modules[], bool embedded, const char *initpasswd);
 mal_export _Noreturn void mal_exit(int status);
@@ -122,13 +120,12 @@ typedef struct VARRECORD {
 	char kind;				/* Could be either _, X or C to stamp the variable type */
 	malType type;				/* internal type signature */
 	bool constant:1,
-            typevar:1,
-            fixedtype:1,
-            //FREE SPOT NOW:1,
-            cleanup:1,
-            initialized:1,
-            used:1,
-            disabled:1;
+		typevar:1,
+		fixedtype:1,
+		cleanup:1,
+		initialized:1,
+		used:1,
+		disabled:1;
 	short depth;				/* scope block depth, set to -1 if not used */
 	ValRecord value;
 	int declared;				/* pc index when it was first assigned */
@@ -156,9 +153,6 @@ typedef struct {
 	MALfcn fcn;					/* resolved function address */
 	struct MALBLK *blk;			/* resolved MAL function address */
 	/* inline statistics */
-	lng clock;					/* when the last call was started */
-	lng ticks;					/* total micro seconds spent in last call */
-	lng totticks;				/* total time spent on this instruction. */
 	lng wbytes;					/* number of bytes produced in last instruction */
 	/* the core admin */
 	const char *modname;		/* module context, reference into namespace */
@@ -191,7 +185,7 @@ typedef struct MALBLK {
 	ptr replica;			/* for the replicator tests */
 
 	/* During the run we keep track on the maximum number of concurrent threads and memory claim */
-	int		workers;
+	ATOMIC_TYPE workers;
 	lng		memory;
 	lng runtime;			/* average execution time of block in ticks */
 	int calls;				/* number of calls */
@@ -228,7 +222,6 @@ typedef struct MALSTK {
 	char status;			/* srunning 'R' suspended 'S', quiting 'Q' */
 	int pcup;				/* saved pc upon a recursive all */
 	oid tag;				/* unique invocation call tag */
-	int	workers;			/* Actual number of concurrent workers */
 	lng	memory;				/* Actual memory claims for highwater mark */
 
 	struct MALSTK *up;		/* stack trace list */

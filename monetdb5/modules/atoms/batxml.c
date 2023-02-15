@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -1087,10 +1089,8 @@ BATXMLconcat(bat *ret, const bat *bid, const bat *rid)
 	r = BATdescriptor(*rid);
 	if (b == NULL || r == NULL) {
 		GDKfree(buf);
-		if (b)
-			BBPunfix(b->batCacheid);
-		if (r)
-			BBPunfix(r->batCacheid);
+		BBPreclaim(b);
+		BBPreclaim(r);
 		throw(MAL, "xml.concat", INTERNAL_BAT_ACCESS);
 	}
 	p = 0;
@@ -1420,8 +1420,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
   out1:
 	bat_iterator_end(&bi);
   out:
-	if (t2)
-		BBPunfix(t2->batCacheid);
+	BBPreclaim(t2);
 	if (freeb && b)
 		BBPunfix(b->batCacheid);
 	if (freeg && g)
@@ -1450,22 +1449,17 @@ AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, cons
 	g = gid ? BATdescriptor(*gid) : NULL;
 	e = eid ? BATdescriptor(*eid) : NULL;
 	if (b == NULL || (gid != NULL && g == NULL) || (eid != NULL && e == NULL)) {
-		if (b)
-			BBPunfix(b->batCacheid);
-		if (g)
-			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
+		BBPreclaim(b);
+		BBPreclaim(g);
+		BBPreclaim(e);
 		throw(MAL, "aggr.subxml", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (sid && !is_bat_nil(*sid)) {
 		s = BATdescriptor(*sid);
 		if (s == NULL) {
 			BBPunfix(b->batCacheid);
-			if (g)
-				BBPunfix(g->batCacheid);
-			if (e)
-				BBPunfix(e->batCacheid);
+			BBPreclaim(g);
+			BBPreclaim(e);
 			throw(MAL, "aggr.subxml", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 	} else {
@@ -1473,12 +1467,9 @@ AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, cons
 	}
 	err = BATxmlaggr(&bn, b, g, e, s, *skip_nils);
 	BBPunfix(b->batCacheid);
-	if (g)
-		BBPunfix(g->batCacheid);
-	if (e)
-		BBPunfix(e->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(g);
+	BBPreclaim(e);
+	BBPreclaim(s);
 	if (err != NULL)
 		throw(MAL, "aggr.subxml", "%s", err);
 

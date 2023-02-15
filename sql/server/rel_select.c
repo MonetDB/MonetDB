@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1015,7 +1017,8 @@ table_ref(sql_query *query, symbol *tableref, int lateral, list *refs)
 			return rel;
 		}
 		if ((isMergeTable(t) || isReplicaTable(t)) && list_length(t->members)==0)
-			return sql_error(sql, 02, SQLSTATE(42000) "MERGE or REPLICA TABLE should have at least one table associated");
+			return sql_error(sql, 02, SQLSTATE(42000) "%s '%s'.'%s' should have at least one table associated",
+							TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->s->base.name, tname);
 		res = rel_basetable(sql, t, tname);
 		if (!allowed) {
 			rel_base_disallow(res);
@@ -3494,9 +3497,18 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 				else
 					groupby = subquery = gl;
 			}
-			if (!exp_subtype(e)) { /* we also do not expect parameters here */
+			sql_subtype *t = exp_subtype(e);
+			if (!t) { /* we also do not expect parameters here */
 				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
 				return sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to aggregate functions", toUpperCopy(uaname, aname));
+			}
+			if (!t->type->localtype) {
+				if (e->type == e_atom && !e->f) {
+					t = sql_bind_localtype("bte");
+					e->tpe = *t;
+					if (e->l)
+						e->l = atom_set_type(sql->sa, e->l, t);
+				}
 			}
 
 			all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && is_aggr(e->type) && !is_func(e->type) && (!groupby || !is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));

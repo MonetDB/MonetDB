@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #ifndef SQL_STORAGE_H
@@ -155,6 +157,7 @@ typedef size_t (*count_col_fptr) (sql_trans *tr, sql_column *c, int access);
 typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef size_t (*dcount_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*min_max_col_fptr) (sql_trans *tr, sql_column *c);
+typedef int (*set_stats_col_fptr) (sql_trans *tr, sql_column *c, double *unique_est, char *min, char *max);
 typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*proprec_col_fptr) (sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max);
 
@@ -239,6 +242,7 @@ typedef struct store_functions {
 	count_idx_fptr count_idx;
 	dcount_col_fptr dcount_col;
 	min_max_col_fptr min_max_col;
+	set_stats_col_fptr set_stats_col;
 	prop_col_fptr sorted_col;
 	prop_col_fptr unique_col;
 	prop_col_fptr double_elim_col; /* varsize col with double elimination */
@@ -366,7 +370,7 @@ extern int sql_trans_drop_func(sql_trans *tr, sql_schema *s, sqlid id, int drop_
 extern int sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_action);
 
 extern void sql_trans_update_tables(sql_trans *tr, sql_schema *s);
-extern void sql_trans_update_schemas(sql_trans *tr);
+extern int sql_trans_update_schemas(sql_trans *tr);
 
 extern int sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid owner, sqlid *schema_id_ptr);
 extern int sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name);

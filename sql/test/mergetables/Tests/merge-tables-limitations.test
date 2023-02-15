@@ -16,27 +16,18 @@ CREATE VIEW tst.my_tables as
 statement error 42000!CREATE TABLE: cannot create persistent table 'tbl' in the schema 'tmp'
 CREATE TABLE tmp.tbl (c1 int)
 
-statement ok
+statement error 42000!CREATE MERGE TABLE: cannot create persistent table 'mtbl' in the schema 'tmp'
 CREATE MERGE TABLE tmp.mtbl (c1 int)
--- this succeeds strangely
 
 query TTTIIIII nosort
 select * from tst.my_tables where name = 'mtbl'
 ----
-tmp
-mtbl
-NULL
-3
-0
-0
-0
-0
 
-statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
+statement error 42S02!SELECT: no such table 'tmp'.'mtbl'
 select * from tmp.mtbl
 ----
 
-statement error 42S02!ALTER TABLE: can't alter temporary table 'mtbl'
+statement error 42S02!ALTER TABLE: no such table 'tmp'.'mtbl'
 ALTER TABLE tmp.mtbl ADD TABLE tmp.mtbl
 
 statement ok
@@ -45,14 +36,6 @@ CREATE MERGE TABLE tst.mtbl (c1 int)
 query TTTIIIII nosort
 select * from tst.my_tables where name = 'mtbl'
 ----
-tmp
-mtbl
-NULL
-3
-0
-0
-0
-0
 tst
 mtbl
 NULL
@@ -62,40 +45,31 @@ NULL
 0
 0
 
-statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
+statement error 42000!MERGE TABLE 'tst'.'mtbl' should have at least one table associated
 select * from tst.mtbl
 ----
 
-statement error 42000!ALTER TABLE: can't add/drop a temporary table into a MERGE TABLE
+statement error 42S02!ALTER TABLE: no such table 'tmp'.'mtbl'
 ALTER TABLE tst.mtbl ADD TABLE tmp.mtbl
 
 statement error 42000!ALTER TABLE: a MERGE TABLE can't be a child of itself
 ALTER TABLE tst.mtbl ADD TABLE tst.mtbl
 
-statement ok
+statement error 42000!CREATE REPLICA TABLE: cannot create persistent table 'rtbl' in the schema 'tmp'
 CREATE REPLICA TABLE tmp.rtbl (c1 int)
--- this succeeds strangely
 
 query TTTIIIII nosort
 select * from tst.my_tables where name = 'rtbl'
 ----
-tmp
-rtbl
-NULL
-6
-0
-0
-0
-0
 
-statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
+statement error 42S02!SELECT: no such table 'tmp'.'rtbl'
 select * from tmp.rtbl
 ----
 
-statement error 42S02!ALTER TABLE: can't alter temporary table 'mtbl'
+statement error 42S02!ALTER TABLE: no such table 'tmp'.'mtbl'
 ALTER TABLE tmp.mtbl ADD TABLE tmp.rtbl
 
-statement error 42000!ALTER TABLE: can't add/drop a temporary table into a MERGE TABLE
+statement error 42S02!ALTER TABLE: no such table 'tmp'.'rtbl'
 ALTER TABLE tst.mtbl ADD TABLE tmp.rtbl
 
 statement ok
@@ -104,14 +78,6 @@ CREATE REPLICA TABLE tst.rtbl (c1 int)
 query TTTIIIII nosort
 select * from tst.my_tables where name = 'rtbl'
 ----
-tmp
-rtbl
-NULL
-6
-0
-0
-0
-0
 tst
 rtbl
 NULL
@@ -121,44 +87,35 @@ NULL
 0
 0
 
-statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
+statement error 42000!REPLICA TABLE 'tst'.'rtbl' should have at least one table associated
 select * from tst.rtbl
 ----
 
 statement ok
 ALTER TABLE tst.mtbl ADD TABLE tst.rtbl
 
-statement error 42000!The REPLICA TABLE 'tst.rtbl' should have at least one table associated
+statement error 42000!REPLICA TABLE 'tst'.'rtbl' should have at least one table associated
 select * from tst.mtbl
 ----
 
 statement ok
 ALTER TABLE tst.mtbl DROP TABLE tst.rtbl
 
-statement ok
+statement error 42000!CREATE UNLOGGED TABLE: cannot create persistent table 'utbl' in the schema 'tmp'
 CREATE UNLOGGED TABLE tmp.utbl (c1 int)
--- this succeeds strangely
 
 query TTTIIIII nosort
 select * from tst.my_tables where name = 'utbl'
 ----
-tmp
-utbl
-NULL
-7
-0
-0
-0
-0
 
-query I nosort
+statement error 42S02!SELECT: no such table 'tmp'.'utbl'
 select * from tmp.utbl
 ----
 
-statement error 42S02!ALTER TABLE: can't alter temporary table 'mtbl'
+statement error 42S02!ALTER TABLE: no such table 'tmp'.'mtbl'
 ALTER TABLE tmp.mtbl ADD TABLE tmp.utbl
 
-statement error 42000!ALTER TABLE: can't add/drop a temporary table into a MERGE TABLE
+statement error 42S02!ALTER TABLE: no such table 'tmp'.'utbl'
 ALTER TABLE tst.mtbl ADD TABLE tmp.utbl
 
 statement ok
@@ -167,14 +124,6 @@ CREATE UNLOGGED TABLE tst.utbl (c1 int)
 query TTTIIIII nosort
 select * from tst.my_tables where name = 'utbl'
 ----
-tmp
-utbl
-NULL
-7
-0
-0
-0
-0
 tst
 utbl
 NULL
@@ -198,30 +147,21 @@ select * from tst.mtbl
 statement ok
 ALTER TABLE tst.mtbl DROP TABLE tst.utbl
 
-statement ok
+statement error 42000!CREATE REMOTE TABLE: cannot create persistent table 'rmtbl' in the schema 'tmp'
 CREATE REMOTE TABLE tmp.rmtbl (c1 int) ON 'mapi:monetdb://localhost:50000/demo'
--- this succeeds strangely
 
 query TTTIIIII nosort
 select * from tst.my_tables where name = 'rmtbl'
 ----
-tmp
-rmtbl
-mapi:monetdb://localhost:50000/demo
-5
-0
-0
-0
-0
 
-statement error Exception occurred in the remote server, please check the log there
+statement error 42S02!SELECT: no such table 'tmp'.'rmtbl'
 select * from tmp.rmtbl
 ----
 
-statement error 42S02!ALTER TABLE: can't alter temporary table 'mtbl'
+statement error 42S02!ALTER TABLE: no such table 'tmp'.'mtbl'
 ALTER TABLE tmp.mtbl ADD TABLE tmp.rmtbl
 
-statement error 42000!ALTER TABLE: can't add/drop a temporary table into a MERGE TABLE
+statement error 42S02!ALTER TABLE: no such table 'tmp'.'rmtbl'
 ALTER TABLE tst.mtbl ADD TABLE tmp.rmtbl
 
 statement ok
@@ -230,14 +170,6 @@ CREATE REMOTE TABLE tst.rmtbl (c1 int) ON 'mapi:monetdb://localhost:50000/demo'
 query TTTIIIII nosort
 select * from tst.my_tables where name = 'rmtbl'
 ----
-tmp
-rmtbl
-mapi:monetdb://localhost:50000/demo
-5
-0
-0
-0
-0
 tst
 rmtbl
 mapi:monetdb://localhost:50000/demo
@@ -283,7 +215,7 @@ query I nosort
 select * from tmp.lttbl
 ----
 
-statement error 42S02!ALTER TABLE: can't alter temporary table 'mtbl'
+statement error 42S02!ALTER TABLE: no such table 'tmp'.'mtbl'
 ALTER TABLE tmp.mtbl ADD TABLE tmp.lttbl
 
 statement error 42000!ALTER TABLE: can't add/drop a temporary table into a MERGE TABLE
@@ -311,7 +243,7 @@ query I nosort
 select * from tmp.gttbl
 ----
 
-statement error 42S02!ALTER TABLE: can't alter temporary table 'mtbl'
+statement error 42S02!ALTER TABLE: no such table 'tmp'.'mtbl'
 ALTER TABLE tmp.mtbl ADD TABLE tmp.gttbl
 
 statement error 42000!ALTER TABLE: can't add/drop a temporary table into a MERGE TABLE
@@ -325,14 +257,6 @@ tmp
 gttbl
 tmp
 lttbl
-tmp
-mtbl
-tmp
-rmtbl
-tmp
-rtbl
-tmp
-utbl
 tst
 mtbl
 tst
@@ -350,16 +274,16 @@ DROP TABLE tmp.gttbl
 statement ok
 DROP TABLE tmp.lttbl
 
-statement ok
+42S02!DROP TABLE: no such table 'tmp'.'mtbl'
 DROP TABLE tmp.mtbl
 
-statement ok
+42S02!DROP TABLE: no such table 'tmp'.'rmtbl'
 DROP TABLE tmp.rmtbl
 
-statement ok
+42S02!DROP TABLE: no such table 'tmp'.'rtbl'
 DROP TABLE tmp.rtbl
 
-statement ok
+42S02!DROP TABLE: no such table 'tmp'.'utbl'
 DROP TABLE tmp.utbl
 
 statement ok

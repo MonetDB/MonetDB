@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -88,7 +90,7 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*res = GDKstrdup(r);
 	if (!from_str)
 		GDKfree(r);
-	if (!res)
+	if (!*res)
 		throw(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -159,8 +161,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (!strNil(v))
 				SQLstr_cast_str(v, digits);
 		}
-		if (s)
-			BBPunfix(s->batCacheid);
+		BBPreclaim(s);
 		bat_iterator_end(&bi);
 		*res = b->batCacheid;
 		BBPkeepref(b);
@@ -256,10 +257,8 @@ bailout1:
 
 bailout:
 	GDKfree(r);
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(s);
 	if (dst && !msg) {
 		BATsetcount(dst, ci.ncand);
 		dst->tnil = nils;

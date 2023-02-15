@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 
@@ -537,7 +539,9 @@ STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	if (isVIEW(b)) {
-		pb = BBP_cache(VIEWtparent(b));
+		pb = BATdescriptor(VIEWtparent(b));
+		if (pb == NULL)
+			return NULL;
 	}
 	else {
 		pb = b;
@@ -555,7 +559,10 @@ STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 	canditer_init(&ci, b, s);
 	if (ci.ncand == 0) {
 		STRMPdecref(strmps, false);
-		return BATdense(b->hseqbase, 0, 0);
+		r = BATdense(b->hseqbase, 0, 0);
+		if (pb != b)
+			BBPunfix(pb->batCacheid);
+		return r;
 	}
 	r = COLnew(b->hseqbase, TYPE_oid, ci.ncand, TRANSIENT);
 	if (r == NULL) {
@@ -586,9 +593,13 @@ STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 		  100*r->batCount/(double)ci.ncand);
 	TRC_DEBUG(ACCELERATOR, "r->" ALGOBATFMT "\n", ALGOBATPAR(r) );
 	STRMPdecref(strmps, false);
+	if (pb != b)
+		BBPunfix(pb->batCacheid);
 	return virtualize(r);
 
  sfilter_fail:
+	if (pb != b)
+		BBPunfix(pb->batCacheid);
 	return NULL;
 }
 
@@ -740,7 +751,7 @@ BAThasstrimps(BAT *b)
 	BAT *pb;
 	bool ret;
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
+		pb = BATdescriptor(VIEWtparent(b));
 		assert(pb);
 	} else {
 		pb = b;
@@ -750,6 +761,8 @@ BAThasstrimps(BAT *b)
 	ret = pb->tstrimps != NULL;
 	MT_lock_unset(&pb->batIdxLock);
 
+	if (pb != b)
+		BBPunfix(pb->batCacheid);
 	return ret;
 
 }
@@ -763,7 +776,7 @@ BATsetstrimps(BAT *b)
 {
 	BAT *pb;
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
+		pb = BATdescriptor(VIEWtparent(b));
 		assert(pb);
 	} else {
 		pb = b;
@@ -771,6 +784,8 @@ BATsetstrimps(BAT *b)
 
 	if (pb->batCount < STRIMP_CREATION_THRESHOLD) {
 		GDKerror("Cannot create strimps index on columns with fewer than %ud elements\n", STRIMP_CREATION_THRESHOLD);
+		if (pb != b)
+			BBPunfix(pb->batCacheid);
 		return GDK_FAIL;
 	}
 
@@ -781,6 +796,8 @@ BATsetstrimps(BAT *b)
 	}
 	MT_lock_unset(&pb->batIdxLock);
 
+	if (pb != b)
+		BBPunfix(pb->batCacheid);
 	return GDK_SUCCEED;
 }
 
@@ -832,7 +849,7 @@ STRMPcreate(BAT *b, BAT *s)
 	}
 
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
+		pb = BATdescriptor(VIEWtparent(b));
 		assert(pb);
 	} else {
 		pb = b;
@@ -857,6 +874,8 @@ STRMPcreate(BAT *b, BAT *s)
 		if (pb->tstrimps == NULL || pb->tstrimps == (Strimps*)1) {
 			if (BATcheckstrimps(pb)) {
 				MT_lock_unset(&pb->batIdxLock);
+				if (pb != b)
+					BBPunfix(pb->batCacheid);
 				return GDK_SUCCEED;
 			}
 
@@ -877,6 +896,8 @@ STRMPcreate(BAT *b, BAT *s)
 				 */
 				pb->tstrimps = (Strimps *)2;
 				MT_lock_unset(&pb->batIdxLock);
+				if (pb != b)
+					BBPunfix(pb->batCacheid);
 				return GDK_FAIL;
 			}
 			pb->tstrimps = r;
@@ -885,6 +906,8 @@ STRMPcreate(BAT *b, BAT *s)
 	}
 
 	if (STRIMP_COMPLETE(pb)) {
+		if (pb != b)
+			BBPunfix(pb->batCacheid);
 		return GDK_SUCCEED;
 	}
 
@@ -917,6 +940,8 @@ STRMPcreate(BAT *b, BAT *s)
 	STRMPdecref(r, false);
 
 	TRC_DEBUG(ACCELERATOR, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
+	if (pb != b)
+		BBPunfix(pb->batCacheid);
 	return GDK_SUCCEED;
 }
 
@@ -1008,7 +1033,7 @@ STRMPappendBitstring(BAT *b, const char *s)
 	}
 
 	if (VIEWtparent(b)) {
-		pb = BBP_cache(VIEWtparent(b));
+		pb = BATdescriptor(VIEWtparent(b));
 		assert(pb);
 	} else {
 		pb = b;
@@ -1016,6 +1041,8 @@ STRMPappendBitstring(BAT *b, const char *s)
 
 	if (!BATcheckstrimps(pb)) {
 		GDKerror("Strimp missing, cannot append value\n");
+		if (pb != b)
+			BBPunfix(pb->batCacheid);
 		return GDK_FAIL;
 	}
 	MT_lock_set(&pb->batIdxLock);
@@ -1028,6 +1055,8 @@ STRMPappendBitstring(BAT *b, const char *s)
 		if (HEAPextend(&(strmp->strimps), (size_t)(extend_factor*BATcount(pb)*sizeof(uint64_t)), false) != GDK_SUCCEED) {
 			MT_lock_unset(&pb->batIdxLock);
 			GDKerror("Cannot extend heap\n");
+			if (pb != b)
+				BBPunfix(pb->batCacheid);
 			return GDK_FAIL;
 		}
 		strmp->sizes_base = (uint8_t *)strmp->strimps.base + sizes_offset;
@@ -1042,6 +1071,8 @@ STRMPappendBitstring(BAT *b, const char *s)
 	MT_lock_unset(&pb->batIdxLock);
 
 	TRC_DEBUG(ACCELERATOR, "appending to strimp took " LLFMT " usec\n", GDKusec()-t0);
+	if (pb != b)
+		BBPunfix(pb->batCacheid);
 	return GDK_SUCCEED;
 }
 #endif

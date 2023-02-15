@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -563,8 +565,7 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 	/* free the memory */
 unfree4:
 	for(i = 0; i < colsNum; i++) {
-		if (colsBAT[i])
-			BBPunfix(colsBAT[i]->batCacheid);
+		BBPreclaim(colsBAT[i]);
 	}
 	free(field_definitions);
 	GDKfree(colsBAT);
@@ -798,8 +799,7 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
   bailout:
 	for(i = 0; i < colsNum; i++) {
-		if (colsBAT[i])
-			BBPunfix(colsBAT[i]->batCacheid);
+		BBPreclaim(colsBAT[i]);
 	}
 
 	/* free the memory */

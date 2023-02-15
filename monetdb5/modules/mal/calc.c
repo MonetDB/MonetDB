@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -655,8 +657,7 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	}
 	r = (*sumprod)(VALget(ret), ret->vtype, b, s, true, nil_if_empty);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (r != GDK_SUCCEED)
 		return mythrow(MAL, func, OPERATION_FAILED);
 	return MAL_SUCCEED;
@@ -691,7 +692,6 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit *skip_nils;
 	BAT *b = NULL, *s = NULL, *avgs, *cnts, *rems;
 
-	gdk_return rc;
 	(void)cntxt;
 	(void)mb;
 
@@ -707,11 +707,11 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = sid != NULL && !is_bat_nil(*sid) ? BATdescriptor(*sid) : NULL;
 	if (b == NULL ||
 		(sid != NULL && !is_bat_nil(*sid) && s == NULL)) {
-		if (b)
-			BBPunfix(b->batCacheid);
+		BBPreclaim(b);
 		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	rc = BATgroupavg3(&avgs, &rems, &cnts, b, NULL, NULL, s, *skip_nils);
+	if (BATgroupavg3(&avgs, &rems, &cnts, b, NULL, NULL, s, *skip_nils) != GDK_SUCCEED)
+		return mythrow(MAL, "aggr.avg", GDK_EXCEPTION);
 	if (avgs && BATcount(avgs) == 1) {
 		/* only type bte, sht, int, lng and hge */
 		ptr res = VALget(ret);
@@ -743,17 +743,11 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (cnt)
 			*cnt = lng_nil;
 	}
-	if (avgs)
-		BBPunfix(avgs->batCacheid);
-	if (rems)
-		BBPunfix(rems->batCacheid);
-	if (cnts)
-		BBPunfix(cnts->batCacheid);
+	BBPreclaim(avgs);
+	BBPreclaim(rems);
+	BBPreclaim(cnts);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	if (rc != GDK_SUCCEED)
-		return mythrow(MAL, "aggr.avg", OPERATION_FAILED);
+	BBPreclaim(s);
 	return MAL_SUCCEED;
 }
 
@@ -773,12 +767,9 @@ CMDBATavg3comb(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	r = BATdescriptor(*rid);
 	c = BATdescriptor(*cid);
 	if (b == NULL || r == NULL || c == NULL) {
-		if (b)
-			BBPunfix(b->batCacheid);
-		if (r)
-			BBPunfix(r->batCacheid);
-		if (c)
-			BBPunfix(c->batCacheid);
+		BBPreclaim(b);
+		BBPreclaim(r);
+		BBPreclaim(c);
 		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	avgs = BATgroupavg3combine(b, r, c, NULL, NULL, TRUE);
@@ -802,8 +793,7 @@ CMDBATavg3comb(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		VALset(ret, ret->vtype, (ptr)ATOMnilptr(ret->vtype));
 	}
-	if (avgs)
-		BBPunfix(avgs->batCacheid);
+	BBPreclaim(avgs);
 	BBPunfix(b->batCacheid);
 	BBPunfix(r->batCacheid);
 	BBPunfix(c->batCacheid);
@@ -867,10 +857,8 @@ CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert((separator && !sep) || (!separator && sep));
 	r = BATstr_group_concat(ret, b, s, sep, true, nil_if_empty, separator);
 	BBPunfix(b->batCacheid);
-	if (sep)
-		BBPunfix(sep->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(sep);
+	BBPreclaim(s);
 	if (r != GDK_SUCCEED)
 		return mythrow(MAL, "aggr.str_group_concat", OPERATION_FAILED);
 	return MAL_SUCCEED;

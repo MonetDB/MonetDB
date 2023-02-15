@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1300,20 +1302,23 @@ BATnegcands(BUN nr, BAT *odels)
 		return bn;
 
 	nme = BBP_physical(bn->batCacheid);
-	if ((dels = (Heap*)GDKzalloc(sizeof(Heap))) == NULL ||
-	    (dels->farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap)) < 0){
-		GDKfree(dels);
+	if ((dels = GDKmalloc(sizeof(Heap))) == NULL){
 		BBPreclaim(bn);
 		return NULL;
 	}
+	*dels = (Heap) {
+		.farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap),
+		.parentid = bn->batCacheid,
+		.dirty = true,
+	};
 	strconcat_len(dels->filename, sizeof(dels->filename),
 		      nme, ".theap", NULL);
-    	dels->parentid = bn->batCacheid;
 
-    	if (HEAPalloc(dels, hi - lo + (sizeof(ccand_t)/sizeof(oid)), sizeof(oid)) != GDK_SUCCEED) {
+    	if (dels->farmid < 0 ||
+	    HEAPalloc(dels, hi - lo + (sizeof(ccand_t)/sizeof(oid)), sizeof(oid)) != GDK_SUCCEED) {
 		GDKfree(dels);
 		BBPreclaim(bn);
-        	return NULL;
+		return NULL;
 	}
 	ATOMIC_INIT(&dels->refs, 1);
 	c = (ccand_t *) dels->base;
@@ -1321,7 +1326,6 @@ BATnegcands(BUN nr, BAT *odels)
 		.type = CAND_NEGOID,
 	};
 	dels->free = sizeof(ccand_t) + sizeof(oid) * (hi - lo);
-	dels->dirty = true;
 	BATiter bi = bat_iterator(odels);
 	if (bi.type == TYPE_void) {
 		oid *r = (oid *) (dels->base + sizeof(ccand_t));
@@ -1366,21 +1370,24 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 		return bn;
 
 	nme = BBP_physical(bn->batCacheid);
-	if ((msks = (Heap*)GDKzalloc(sizeof(Heap))) == NULL ||
-	    (msks->farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap)) < 0){
-		GDKfree(msks);
+	if ((msks = GDKmalloc(sizeof(Heap))) == NULL){
 		BBPreclaim(bn);
 		return NULL;
 	}
+	*msks = (Heap) {
+		.farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap),
+		.parentid = bn->batCacheid,
+		.dirty = true,
+	};
 	strconcat_len(msks->filename, sizeof(msks->filename),
 		      nme, ".theap", NULL);
-    	msks->parentid = bn->batCacheid;
 
 	nmask = (nr + 31) / 32;
-    	if (HEAPalloc(msks, nmask + (sizeof(ccand_t)/sizeof(uint32_t)), sizeof(uint32_t)) != GDK_SUCCEED) {
+    	if (msks->farmid < 0 ||
+	    HEAPalloc(msks, nmask + (sizeof(ccand_t)/sizeof(uint32_t)), sizeof(uint32_t)) != GDK_SUCCEED) {
 		GDKfree(msks);
 		BBPreclaim(bn);
-        	return NULL;
+		return NULL;
 	}
 	c = (ccand_t *) msks->base;
 	*c = (ccand_t) {
@@ -1388,7 +1395,6 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 //		.mask = true,
 	};
 	msks->free = sizeof(ccand_t) + nmask * sizeof(uint32_t);
-	msks->dirty = true;
 	uint32_t *r = (uint32_t*)(msks->base + sizeof(ccand_t));
 	BATiter bi = bat_iterator(masked);
 	if (selected) {
@@ -1479,17 +1485,21 @@ BATunmask(BAT *b)
 			return NULL;
 		}
 		Heap *dels;
-		if ((dels = GDKzalloc(sizeof(Heap))) == NULL ||
-		    strconcat_len(dels->filename, sizeof(dels->filename),
-				  BBP_physical(bn->batCacheid), ".theap",
-				  NULL) >= sizeof(dels->filename) ||
-		    (dels->parentid = bn->batCacheid) <= 0 ||
-		    (dels->farmid = BBPselectfarm(TRANSIENT, TYPE_void,
-						  varheap)) == -1 ||
-		    HEAPalloc(dels,
-			      cnt * 32 - bi.count
-			      + sizeof(ccand_t) / sizeof(oid),
-			      sizeof(oid)) != GDK_SUCCEED) {
+		if ((dels = GDKmalloc(sizeof(Heap))) == NULL) {
+			BBPreclaim(bn);
+			return NULL;
+		}
+		*dels = (Heap) {
+			.farmid = BBPselectfarm(TRANSIENT, TYPE_void, varheap),
+			.parentid = bn->batCacheid,
+			.dirty = true,
+		};
+		strconcat_len(dels->filename, sizeof(dels->filename),
+			      BBP_physical(bn->batCacheid), ".theap", NULL);
+
+		if (dels->farmid < 0 ||
+		    HEAPalloc(dels, cnt * 32 - bi.count
+			      + sizeof(ccand_t) / sizeof(oid), sizeof(oid)) != GDK_SUCCEED) {
 			GDKfree(dels);
 			BBPreclaim(bn);
 			bat_iterator_end(&bi);

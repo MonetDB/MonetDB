@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -541,9 +543,8 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		throw(IO, "sql.copy_from", SQLSTATE(42000) "No stream (pointer) provided");
 	if (mnstr_errnr(bs->s) != MNSTR_NO__ERROR) {
 		mnstr_error_kind errnr = mnstr_errnr(bs->s);
-		char *stream_msg = mnstr_error(bs->s);
+		const char *stream_msg = mnstr_peek_error(bs->s);
 		msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Stream not open %s: %s", mnstr_error_kind_name(errnr), stream_msg ? stream_msg : "unknown error");
-		free(stream_msg);
 		return msg;
 	}
 	if (offset < 0 || offset > (lng) BUN_MAX)
@@ -590,6 +591,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 					BBPunfix(fmt[j].c->batCacheid);
 				}
 				GDKfree(fmt[i].data);
+				GDKfree(fmt);
 				throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			fmt[i].c = NULL;
@@ -855,25 +857,18 @@ create_prepare_result(backend *b, cq *q, int nrows)
 		error = -1;
 
 	wrapup:
-		if (btype)
-			BBPunfix(btype->batCacheid);
-		if (bdigits)
-			BBPunfix(bdigits->batCacheid);
-		if (bimpl)
-			BBPunfix(bimpl->batCacheid);
-		if (bscale)
-			BBPunfix(bscale->batCacheid);
-		if (bschema)
-			BBPunfix(bschema->batCacheid);
-		if (btable)
-			BBPunfix(btable->batCacheid);
-		if (bcolumn)
-			BBPunfix(bcolumn->batCacheid);
+		BBPreclaim(btype);
+		BBPreclaim(bdigits);
+		BBPreclaim(bimpl);
+		BBPreclaim(bscale);
+		BBPreclaim(bschema);
+		BBPreclaim(btable);
+		BBPreclaim(bcolumn);
 		if (error < 0 && b->results) {
 			res_table_destroy(b->results);
 			b->results = NULL;
-		} else if (order)
-			BBPunfix(order->batCacheid);
+		} else
+			BBPreclaim(order);
 		return error;
 }
 
@@ -1560,8 +1555,7 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng star
 static int
 export_error(BAT *order)
 {
-	if (order)
-		BBPunfix(order->batCacheid);
+	BBPreclaim(order);
 	return -4;
 }
 

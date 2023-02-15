@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /**
@@ -86,17 +88,21 @@ command_help(int argc, char *argv[])
 		printf("Options:\n");
 		printf("  -f  do not ask for confirmation, destroy right away\n");
 	} else if (strcmp(argv[1], "lock") == 0) {
-		printf("Usage: monetdb lock database [database ...]\n");
+		printf("Usage: monetdb lock [-a] database [database ...]\n");
 		printf("  Puts the given database in maintenance mode.  A database\n");
 		printf("  under maintenance can only be connected to by the DBA.\n");
 		printf("  A database which is under maintenance is not started\n");
 		printf("  automatically.  Use the \"release\" command to bring\n");
 		printf("  the database back for normal usage.\n");
+		printf("Options:\n");
+		printf("  -a  locks all known databases\n");
 	} else if (strcmp(argv[1], "release") == 0) {
-		printf("Usage: monetdb release database [database ...]\n");
+		printf("Usage: monetdb release [-a] database [database ...]\n");
 		printf("  Brings back a database from maintenance mode.  A released\n");
 		printf("  database is available again for normal use.  Use the\n");
 		printf("  \"lock\" command to take a database under maintenance.\n");
+		printf("Options:\n");
+		printf("  -a  releases all known databases\n");
 	} else if (strcmp(argv[1], "status") == 0) {
 		printf("Usage: monetdb status [-lc] [expression ...]\n");
 		printf("  Shows the state of a given glob-style database match, or\n");
@@ -129,17 +135,17 @@ command_help(int argc, char *argv[])
 		printf("Options:\n");
 		printf("  -a  kill all known databases\n");
 	} else if (strcmp(argv[1], "set") == 0) {
-		printf("Usage: monetdb set property=value database [database ...]\n");
-		printf("  sets property to value for the given database\n");
+		printf("Usage: monetdb set property=value [database ...]\n");
+		printf("  sets property to value for the given database(s), or all\n");
 		printf("  for a list of properties, use `monetdb get all`\n");
 	} else if (strcmp(argv[1], "get") == 0) {
 		printf("Usage: monetdb get <\"all\" | property,...> [database ...]\n");
 		printf("  gets value for property for the given database, or\n");
 		printf("  retrieves all properties for the given database\n");
 	} else if (strcmp(argv[1], "inherit") == 0) {
-		printf("Usage: monetdb inherit property database [database ...]\n");
+		printf("Usage: monetdb inherit property [database ...]\n");
 		printf("  unsets property, reverting to its inherited value from\n");
-		printf("  the default configuration for the given database\n");
+		printf("  the default configuration for the given database(s), or all\n");
 	} else if (strcmp(argv[1], "discover") == 0) {
 		printf("Usage: monetdb discover [expression]\n");
 		printf("  Lists the remote databases discovered by the MonetDB\n");
@@ -642,14 +648,14 @@ simple_argv_cmd(char *cmd, sabdb *dbs, char *merocmd,
  * for performing merocmd action.
  */
 static int
-simple_command(int argc, char *argv[], char *merocmd, char *successmsg, bool glob)
+simple_command(int argc, char *argv[], char *merocmd, char *successmsg)
 {
 	int i;
 	sabdb *orig = NULL;
 	sabdb *stats = NULL;
 	char *e;
 	int fails = 0;
-
+	bool doall = false;
 	if (argc == 1) {
 		/* print help message for this command */
 		command_help(2, &argv[-1]);
@@ -662,38 +668,31 @@ simple_command(int argc, char *argv[], char *merocmd, char *successmsg, bool glo
 			argv[i] = NULL;
 			break;
 		}
-		if (argv[i][0] == '-') {
+		if (strcmp(argv[i], "-a") == 0) {
+			doall = true;
+			break;
+		}
+		else if (argv[i][0] == '-') {
 			fprintf(stderr, "%s: unknown option: %s\n", argv[0], argv[i]);
 			command_help(argc + 1, &argv[-1]);
 			exit(1);
 		}
 	}
 
-	if (glob) {
-		if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
-			fprintf(stderr, "%s: %s\n", argv[0], e);
-			free(e);
-			exit(2);
-		}
+	if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
+		fprintf(stderr, "%s: %s\n", argv[0], e);
+		free(e);
+		exit(2);
+	}
+
+	if (!doall) {
 		stats = globMatchDBS(&fails, argc, argv, &orig, argv[0]);
 		msab_freeStatus(&orig);
 		orig = stats;
-
-		if (orig == NULL)
-			return 1;
-	} else {
-		for (i = 1; i < argc; i++) {
-			if (argv[i] != NULL) {
-				/* maintain input order */
-				if (orig == NULL) {
-					stats = orig = calloc(1, sizeof(sabdb));
-				} else {
-					stats = stats->next = calloc(1, sizeof(sabdb));
-				}
-				stats->dbname = strdup(argv[i]);
-			}
-		}
 	}
+
+	if (orig == NULL)
+		return 1;
 
 	simple_argv_cmd(argv[0], orig, merocmd, successmsg, NULL);
 	msab_freeStatus(&orig);
@@ -1151,6 +1150,7 @@ static _Noreturn void command_set(int argc, char *argv[], meroset type);
 static void
 command_set(int argc, char *argv[], meroset type)
 {
+	bool doall = true;
 	char *p = NULL;
 	char property[24] = "";
 	int i;
@@ -1162,7 +1162,7 @@ command_set(int argc, char *argv[], meroset type)
 	char *e;
 	int fails = 0;
 
-	if (argc >= 1 && argc <= 2) {
+	if (argc == 1) {
 		/* print help message for this command */
 		command_help(2, &argv[-1]);
 		exit(1);
@@ -1210,6 +1210,8 @@ command_set(int argc, char *argv[], meroset type)
 			}
 			argv[i] = NULL;
 		}
+		else
+			doall = false;
 	}
 
 	if (property[0] == '\0') {
@@ -1223,9 +1225,14 @@ command_set(int argc, char *argv[], meroset type)
 		free(e);
 		exit(2);
 	}
-	stats = globMatchDBS(&fails, argc, argv, &orig, argv[0]);
-	msab_freeStatus(&orig);
-	orig = stats;
+
+	/* look at the arguments and evaluate them based on a glob (hence we
+	 * listed all databases before) */
+	if (!doall) {
+		stats = globMatchDBS(&fails, argc, argv, &orig, "get");
+		msab_freeStatus(&orig);
+		orig = stats;
+	}
 
 	if (orig == NULL) {
 		/* error already printed by globMatchDBS */
@@ -1258,11 +1265,12 @@ command_set(int argc, char *argv[], meroset type)
 		exit(state);
 	}
 
+	if (type == INHERIT) {
+		strncat(property, "=", sizeof(property) - strlen(property) - 1);
+		p = property;
+	}
+
 	for (stats = orig; stats != NULL; stats = stats->next) {
-		if (type == INHERIT) {
-			strncat(property, "=", sizeof(property) - strlen(property) - 1);
-			p = property;
-		}
 		out = control_send(&res, mero_host, mero_port,
 				stats->dbname, p, false, mero_pass);
 		if (out != NULL || strcmp(res, "OK") != 0) {
@@ -1684,13 +1692,13 @@ command_destroy(int argc, char *argv[])
 static int
 command_lock(int argc, char *argv[])
 {
-	return simple_command(argc, argv, "lock", "put database under maintenance", true);
+	return simple_command(argc, argv, "lock", "put database under maintenance");
 }
 
 static int
 command_release(int argc, char *argv[])
 {
-	return simple_command(argc, argv, "release", "taken database out of maintenance mode", true);
+	return simple_command(argc, argv, "release", "taken database out of maintenance mode");
 }
 
 /* Snapshot this single database to the given file */

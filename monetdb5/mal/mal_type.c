@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -118,6 +120,10 @@ getAtomIndex(const char *nme, size_t len, int deftype)
 				return TYPE_bit;
 			if (qt("bte"))
 				return TYPE_bte;
+			break;
+		case 'B':
+			if (qt("BAT"))
+				return TYPE_bat;
 			break;
 		case 'd':
 			if (qt("dbl"))
