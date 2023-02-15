@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -90,27 +92,27 @@ date_year(date dt)
 	return date_extract_year(dt);
 }
 
-int
+bte
 date_quarter(date dt)
 {
 	if (is_date_nil(dt))
-		return int_nil;
+		return bte_nil;
 	return (date_extract_month(dt) - 1) / 3 + 1;
 }
 
-int
+bte
 date_month(date dt)
 {
 	if (is_date_nil(dt))
-		return int_nil;
+		return bte_nil;
 	return date_extract_month(dt);
 }
 
-int
+bte
 date_day(date dt)
 {
 	if (is_date_nil(dt))
-		return int_nil;
+		return bte_nil;
 	return date_extract_day(dt);
 }
 
@@ -206,11 +208,11 @@ date_diff(date d1, date d2)
  * day-of-week calculation below from this fact */
 #define DOW_OFF (7 - (((21 + (2019+CNT_OFF)*365 + (2019+CNT_OFF-1)/4 - (2019+CNT_OFF-1)/100 + (2019+CNT_OFF-1)/400 + 90) % 7) + 1))
 /* return day of week of given date; Monday = 1, Sunday = 7 */
-int
+bte
 date_dayofweek(date dt)
 {
 	if (is_date_nil(dt))
-		return int_nil;
+		return bte_nil;
 	/* calculate number of days since the start of the year -CNT_OFF */
 	int d = date_countdays(dt);
 	/* then simply take the remainder from 7 and convert to correct
@@ -222,11 +224,11 @@ date_dayofweek(date dt)
  * January 1 to 3 fall in the week before the 4th, they are in the
  * last week of the previous year; the last days of the year may fall
  * in week 1 of the following year */
-int
+bte
 date_weekofyear(date dt)
 {
 	if (is_date_nil(dt))
-		return int_nil;
+		return bte_nil;
 	int y = date_extract_year(dt);
 	int m = date_extract_month(dt);
 	int d = date_extract_day(dt);
@@ -247,11 +249,11 @@ date_weekofyear(date dt)
 
 /* In the US they have to do it differently, of course.
  * Week 1 is the week (Sunday to Saturday) in which January 1 falls */
-int
+bte
 date_usweekofyear(date dt)
 {
 	if (is_date_nil(dt))
-		return int_nil;
+		return bte_nil;
 	int y = date_extract_year(dt);
 	int m = date_extract_month(dt);
 	/* day of year (date_dayofyear without nil check) */
@@ -263,11 +265,11 @@ date_usweekofyear(date dt)
 	return (doy + jan1dow - 1) / 7 + 1;
 }
 
-int
+sht
 date_dayofyear(date dt)
 {
 	if (is_date_nil(dt))
-		return int_nil;
+		return sht_nil;
 	int m = date_extract_month(dt);
 	return date_extract_day(dt) + cumdays[m-1]
 		+ (m > 2 && isleapyear(date_extract_year(dt)));
@@ -288,19 +290,19 @@ daytime_diff(daytime d1, daytime d2)
 	return (d1 - d2) / 1000;
 }
 
-int
+bte
 daytime_hour(daytime tm)
 {
 	if (is_daytime_nil(tm))
-		return int_nil;
+		return bte_nil;
 	return daytime_extract_hour(tm);
 }
 
-int
+bte
 daytime_min(daytime tm)
 {
 	if (is_daytime_nil(tm))
-		return int_nil;
+		return bte_nil;
 	return daytime_extract_minute(tm);
 }
 

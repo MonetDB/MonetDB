@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1039,6 +1041,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		     BAThash(b) == GDK_SUCCEED) ||
 		    (/* DISABLES CODE */ (0) &&
 		     (parent = VIEWtparent(b)) != 0 &&
+/* if enabled, need to fix/unfix parent bat */
 		     BATcheckhash(BBP_cache(parent))))) {
 		/* we already have a hash table on b, or b is
 		 * persistent and we could create a hash table, or b
@@ -1056,6 +1059,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			/* b is a view on another bat (b2 for now).
 			 * calculate the bounds [lo, lo+BATcount(b))
 			 * in the parent that b uses */
+/* if enabled, need to fix/unfix parent bat */
 			BAT *b2 = BBP_cache(parent);
 			MT_rwlock_rdunlock(&b->thashlock);
 			lo = b->tbaseoff - b2->tbaseoff;
@@ -1324,12 +1328,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	if (locked)
 		MT_rwlock_rdunlock(&b->thashlock);
-	if (gn)
-		BBPunfix(gn->batCacheid);
-	if (en)
-		BBPunfix(en->batCacheid);
-	if (hn)
-		BBPunfix(hn->batCacheid);
+	BBPreclaim(gn);
+	BBPreclaim(en);
+	BBPreclaim(hn);
 	return GDK_FAIL;
 }
 

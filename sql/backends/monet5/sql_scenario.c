@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -32,13 +34,12 @@
 #include "mal.h"
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
-#include "mal_runtime.h"
 #include "mal_parser.h"
 #include "mal_builder.h"
 #include "mal_namespace.h"
 #include "mal_debugger.h"
 #include "mal_linker.h"
-#include "mal_utils.h"
+#include "mal_scenario.h"
 #include "bat5.h"
 #include "msabaoth.h"
 #include "gdk_time.h"
@@ -269,6 +270,15 @@ SQLprepareClient(Client c, int login)
 			default:
 				break;
 		}
+		if (monet5_user_get_limits(m, m->user_id, &c->maxmem, &c->maxworkers) == 0) {
+			c->qryctx.maxmem = (ATOMIC_BASE_TYPE) (c->maxmem > 0 ? c->maxmem : 0);
+		} else {
+			c->maxmem = 0;
+			c->qryctx.maxmem = 0;
+			c->maxworkers = 0;
+		}
+		if (c->memorylimit > 0 && c->qryctx.maxmem > ((ATOMIC_BASE_TYPE) c->memorylimit << 20))
+			c->qryctx.maxmem = (ATOMIC_BASE_TYPE) c->memorylimit << 20;
 	}
 
 	if (c->handshake_options) {
@@ -287,7 +297,7 @@ SQLprepareClient(Client c, int login)
 				}
 				m->reply_size = value;
 			} else if (sscanf(tok, "size_header=%d", &value) == 1) {
-					be->sizeheader = value != 0;
+				be->sizeheader = value != 0;
 			} else if (sscanf(tok, "columnar_protocol=%d", &value) == 1) {
 				c->protocol = (value != 0) ? PROTOCOL_COLUMNAR : PROTOCOL_9;
 			} else if (sscanf(tok, "time_zone=%d", &value) == 1) {
@@ -854,8 +864,11 @@ SQLreader(Client c)
 				break;
 			commit_done = true;
 		}
-		if (m->session->tr && m->session->tr->active)
+		if (m->session->tr && m->session->tr->active) {
+			MT_lock_set(&mal_contextLock);
 			c->idle = 0;
+			MT_lock_unset(&mal_contextLock);
+		}
 
 		if (go && in->pos >= in->len) {
 			ssize_t rd;
@@ -878,10 +891,12 @@ SQLreader(Client c)
 					if (msg)
 						break;
 					commit_done = true;
+					MT_lock_set(&mal_contextLock);
 					if (c->idle == 0 && (m->session->tr == NULL || !m->session->tr->active)) {
 						/* now the session is idle */
 						c->idle = time(0);
 					}
+					MT_lock_unset(&mal_contextLock);
 				}
 
 				if (go && ((!blocked && mnstr_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || mnstr_flush(c->fdout, MNSTR_FLUSH_DATA))) {
@@ -1018,12 +1033,12 @@ SQLparser(Client c)
 		if (n == 2 || n == 3) {
 			if (n == 2)
 				len = m->reply_size;
+			in->pos = in->len;	/* HACK: should use parsed length */
 			if ((ok = mvc_export_chunk(be, out, v, off, len < 0 ? BUN_NONE : (BUN) len)) < 0) {
 				msg = createException(SQL, "SQLparser", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, out, ok));
 				goto finalize;
 			}
 
-			in->pos = in->len;	/* HACK: should use parsed length */
 			return MAL_SUCCEED;
 		}
 		if (strncmp(in->buf + in->pos, "close ", 6) == 0) {
@@ -1090,8 +1105,10 @@ SQLparser(Client c)
 		}
 		if (strncmp(in->buf + in->pos, "quit", 4) == 0) {
 			c->mode = FINISHCLIENT;
+			in->pos = in->len;	/* HACK: should use parsed length */
 			return MAL_SUCCEED;
 		}
+		in->pos = in->len;	/* HACK: should use parsed length */
 		msg = createException(SQL, "SQLparser", SQLSTATE(42000) "Unrecognized X command: %s\n", in->buf + in->pos);
 		goto finalize;
 	}
@@ -1383,6 +1400,7 @@ SYSupdate_schemas(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 
-	sql_trans_update_schemas(m->session->tr);
+	if (sql_trans_update_schemas(m->session->tr) < 0)
+		throw(MAL, "sql.update_schemas", MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }

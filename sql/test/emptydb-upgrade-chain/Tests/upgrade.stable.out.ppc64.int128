@@ -301,3 +301,29 @@ update sys.functions set system = true where system <> true and name = 'dump_tab
 update sys.functions set system = true where system <> true and name = 'dump_database' and schema_id = 2000 and type = 5;
 GRANT SELECT ON sys.describe_tables TO PUBLIC;
 
+Running database upgrade commands:
+drop view if exists sys.dependency_tables_on_functions;
+drop view if exists sys.dependency_views_on_functions;
+CREATE VIEW sys.dependency_tables_on_functions AS
+SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, f.id AS function_id, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type
+  FROM sys.functions AS f, sys.tables AS t, sys.dependencies AS dep
+ WHERE t.id = dep.id AND f.id = dep.depend_id
+   AND dep.depend_type = 7 AND f.type <> 2 AND t.type NOT IN (1, 11)
+ ORDER BY t.name, t.schema_id, f.name, f.id;
+GRANT SELECT ON sys.dependency_tables_on_functions TO PUBLIC;
+CREATE VIEW sys.dependency_views_on_functions AS
+SELECT v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name, f.id AS function_id, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type
+  FROM sys.functions AS f, sys.tables AS v, sys.dependencies AS dep
+ WHERE v.id = dep.id AND f.id = dep.depend_id
+   AND dep.depend_type = 7 AND f.type <> 2 AND v.type IN (1, 11)
+ ORDER BY v.name, v.schema_id, f.name, f.id;
+GRANT SELECT ON sys.dependency_views_on_functions TO PUBLIC;
+update sys._tables set system = true where system <> true and name in ('dependency_tables_on_functions','dependency_views_on_functions') and schema_id = 2000;
+
+Running database upgrade commands:
+create function sys.database ()
+returns string
+external name inspect."getDatabaseName";
+grant execute on function sys.database() to public;
+update sys.functions set system = true where system <> true and name = 'database' and schema_id = 2000 and type = 1;
+

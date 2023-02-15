@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -91,9 +93,33 @@ SQLRETURN MNDBFreeHandle(SQLSMALLINT handleType, SQLHANDLE handle);
 SQLRETURN MNDBGetDiagRec(SQLSMALLINT handleType, SQLHANDLE handle, SQLSMALLINT recNumber, SQLCHAR *sqlState, SQLINTEGER *nativeErrorPtr, SQLCHAR *messageText, SQLSMALLINT bufferLength, SQLSMALLINT *textLengthPtr);
 
 #ifdef ODBCDEBUG
+#ifdef NATIVE_WIN32
+extern const wchar_t *ODBCdebug;
+#else
 extern const char *ODBCdebug;
+#endif
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
+#ifdef NATIVE_WIN32
+#define ODBCLOG(...)							\
+	do {								\
+		if (ODBCdebug == NULL) {				\
+			if ((ODBCdebug = _wgetenv(L"ODBCDEBUG")) == NULL) \
+				ODBCdebug = _wcsdup(L"");		\
+			else						\
+				ODBCdebug = _wcsdup(ODBCdebug);		\
+		}							\
+		if (ODBCdebug != NULL && *ODBCdebug != 0) {		\
+			FILE *_f;					\
+			_f = _wfopen(ODBCdebug, L"a");			\
+			if (_f == NULL)					\
+				_f = stderr;				\
+			fprintf(_f, __VA_ARGS__);			\
+			if (_f != stderr)				\
+				fclose(_f);				\
+		}							\
+	} while (0)
+#else
 #define ODBCLOG(...)							\
 	do {								\
 		if (ODBCdebug == NULL) {				\
@@ -112,6 +138,7 @@ extern const char *ODBCdebug;
 				fclose(_f);				\
 		}							\
 	} while (0)
+#endif
 #else
 extern void ODBCLOG(_In_z_ _Printf_format_string_ const char *fmt, ...)
 	__attribute__((__format__(__printf__, 1, 2)));

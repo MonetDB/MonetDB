@@ -1,0 +1,12 @@
+query IIR nosort
+select a,b,c
+from (values (10, 20, 0.5), 
+             (20, 10, 0.5)
+) as (a,b,c)
+----
+10
+20
+0.500
+20
+10
+0.500

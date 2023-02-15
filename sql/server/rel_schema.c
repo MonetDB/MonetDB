@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1352,8 +1354,8 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		return sql_error(sql, 02, SQLSTATE(42S01) "%s TABLE: name '%s' already declared", action, name);
 	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	} else if (temp == SQL_PERSIST && isTempSchema(s)){
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: cannot create persistent table '%s' in the schema '%s'", name, s->base.name);
+	} else if ((temp == SQL_PERSIST || temp == SQL_MERGE_TABLE || temp == SQL_REMOTE || temp == SQL_REPLICA_TABLE || temp == SQL_UNLOGGED_TABLE) && isTempSchema(s)) {
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: cannot create persistent table '%s' in the schema '%s'", TABLE_TYPE_DESCRIPTION(tt, properties), name, s->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) {
 		/* table element list */
 		dnode *n;
@@ -1794,37 +1796,37 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 			return NULL;
 		if (isView(pt))
 			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a view into a %s",
-								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+							TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 		if (isDeclaredTable(pt))
 			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a declared table into a %s",
-								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+							TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 		if (isTempSchema(pt->s))
 			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a temporary table into a %s",
-								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+							TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 		if (isReplicaTable(t) && isMergeTable(pt))
 			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a %s table into a %s",
-							 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+							TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 		nsname = pt->s->base.name;
 		if (strcmp(sname, nsname) != 0)
-			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be "
-								"part of schema '%s'", sname, tname, sname);
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be part of schema '%s'",
+						sname, tname, sname);
 
 		if (te->token == SQL_TABLE) {
 			symbol *extra = dl->h->next->next->next->data.sym;
 
 			if (!extra) {
 				if (isRangePartitionTable(t)) {
-					return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: a range partition is required while adding under a %s",
-									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: a range partition is required while adding under a %s",
+								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 				} else if (isListPartitionTable(t)) {
-					return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: a value partition is required while adding under a %s",
-									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: a value partition is required while adding under a %s",
+								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 				}
 				return rel_alter_table(sql->sa, ddl_alter_table_add_table, sname, tname, nsname, ntname, 0);
 			}
 			if ((isMergeTable(pt) || isReplicaTable(pt)) && list_length(pt->members)==0)
-				return sql_error(sql, 02, SQLSTATE(42000) "The %s %s.%s should have at least one table associated",
-								 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), pt->s->base.name, pt->base.name);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s '%s'.'%s' should have at least one table associated",
+								TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), pt->s->base.name, pt->base.name);
 
 			if (extra->token == SQL_MERGE_PARTITION) { /* partition to hold null values only */
 				dlist* ll = extra->data.lval;
@@ -1836,7 +1838,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 					return rel_alter_table_add_partition_list(query, t, pt, sname, tname, nsname, ntname, NULL, true, update);
 				} else {
 					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add a partition into a %s",
-									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 				}
 			} else if (extra->token == SQL_PARTITION_RANGE) {
 				dlist* ll = extra->data.lval;
@@ -1845,7 +1847,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 
 				if (!isRangePartitionTable(t)) {
 					return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a range partition into a %s",
-									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 				}
 
 				assert(nills == 0 || nills == 1);
@@ -1856,7 +1858,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 
 				if (!isListPartitionTable(t)) {
 					return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a value partition into a %s",
-									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 				}
 
 				assert(nills == 0 || nills == 1);

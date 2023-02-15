@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -31,8 +33,6 @@
 #include <unistd.h>
 #endif
 
-static BUN lookupRemoteTableKey(const char *key);
-
 /* Remote table bats */
 static BAT *rt_key = NULL;
 static BAT *rt_uri = NULL;
@@ -42,16 +42,23 @@ static BAT *rt_deleted = NULL;
 /* yep, the vault key is just stored in memory */
 static str vaultKey = NULL;
 static str master_password = NULL;
+/* lock to protect the above */
+static MT_RWLock rt_lock = MT_RWLOCK_INITIALIZER(rt_lock);
 static AUTHCallbackCntx authCallbackCntx = {
 	.get_user_name = NULL,
 	.get_user_password = NULL,
 	.get_user_oid = NULL
 };
 
+static str AUTHdeleteRemoteTableCredentialsLocked(const char *local_table);
+static str AUTHdecypherValueLocked(str *ret, const char *value);
+
 void AUTHreset(void)
 {
+	MT_rwlock_wrlock(&rt_lock);
 	GDKfree(vaultKey);
 	vaultKey = NULL;
+	MT_rwlock_wrunlock(&rt_lock);
 }
 
 /**
@@ -67,7 +74,7 @@ AUTHrequireAdmin(Client cntxt) {
 	return(MAL_SUCCEED);
 }
 
-static void
+static str
 AUTHcommit(void)
 {
 	bat blist[6];
@@ -84,7 +91,9 @@ AUTHcommit(void)
 	blist[4] = rt_hashedpwd->batCacheid;
 	assert(rt_deleted);
 	blist[5] = rt_deleted->batCacheid;
-	TMsubcommit_list(blist, NULL, 6, getBBPlogno(), getBBPtransid());
+	if (TMsubcommit_list(blist, NULL, 6, getBBPlogno(), getBBPtransid()) != GDK_SUCCEED)
+		throw(MAL, "AUTHcommit", GDK_EXCEPTION);
+	return MAL_SUCCEED;
 }
 
 /*
@@ -102,9 +111,13 @@ AUTHinitTables(void) {
 	int isNew = 1;
 	str msg = MAL_SUCCEED;
 
+	MT_rwlock_wrlock(&rt_lock);
+
 	/* skip loading if already loaded */
-	if (rt_key != NULL && rt_deleted != NULL)
+	if (rt_key != NULL && rt_deleted != NULL) {
+		MT_rwlock_wrunlock(&rt_lock);
 		return(MAL_SUCCEED);
+	}
 
 	/* Remote table authorization table.
 	 *
@@ -115,12 +128,16 @@ AUTHinitTables(void) {
 	bid = BBPindex("M5system_auth_rt_key");
 	if (!bid) {
 		rt_key = COLnew(0, TYPE_str, 256, PERSISTENT);
-		if (rt_key == NULL)
+		if (rt_key == NULL) {
+			MT_rwlock_wrunlock(&rt_lock);
 			throw(MAL, "initTables.rt_key", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table key bat");
+		}
 
 		if (BBPrename(rt_key, "M5system_auth_rt_key") != 0 ||
-			BATmode(rt_key, false) != GDK_SUCCEED)
+			BATmode(rt_key, false) != GDK_SUCCEED) {
+			MT_rwlock_wrunlock(&rt_lock);
 			throw(MAL, "initTables.rt_key", GDK_EXCEPTION);
+		}
 	}
 	else {
 		int dbg = GDKdebug;
@@ -129,6 +146,7 @@ AUTHinitTables(void) {
 		rt_key = BATdescriptor(bid);
 		GDKdebug = dbg;
 		if (rt_key == NULL) {
+			MT_rwlock_wrunlock(&rt_lock);
 			throw(MAL, "initTables.rt_key", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		isNew = 0;
@@ -139,12 +157,16 @@ AUTHinitTables(void) {
 	bid = BBPindex("M5system_auth_rt_uri");
 	if (!bid) {
 		rt_uri = COLnew(0, TYPE_str, 256, PERSISTENT);
-		if (rt_uri == NULL)
+		if (rt_uri == NULL) {
+			MT_rwlock_wrunlock(&rt_lock);
 			throw(MAL, "initTables.rt_uri", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table uri bat");
+		}
 
 		if (BBPrename(rt_uri, "M5system_auth_rt_uri") != 0 ||
-			BATmode(rt_uri, false) != GDK_SUCCEED)
+			BATmode(rt_uri, false) != GDK_SUCCEED) {
+			MT_rwlock_wrunlock(&rt_lock);
 			throw(MAL, "initTables.rt_uri", GDK_EXCEPTION);
+		}
 	}
 	else {
 		int dbg = GDKdebug;
@@ -153,6 +175,7 @@ AUTHinitTables(void) {
 		rt_uri = BATdescriptor(bid);
 		GDKdebug = dbg;
 		if (rt_uri == NULL) {
+			MT_rwlock_wrunlock(&rt_lock);
 			throw(MAL, "initTables.rt_uri", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		isNew = 0;
@@ -163,12 +186,16 @@ AUTHinitTables(void) {
 	bid = BBPindex("M5system_auth_rt_remoteuser");
 	if (!bid) {
 		rt_remoteuser = COLnew(0, TYPE_str, 256, PERSISTENT);
-		if (rt_remoteuser == NULL)
+		if (rt_remoteuser == NULL) {
+			MT_rwlock_wrunlock(&rt_lock);
 			throw(MAL, "initTables.rt_remoteuser", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table local user bat");
+		}
 
 		if (BBPrename(rt_remoteuser, "M5system_auth_rt_remoteuser") != 0 ||
-			BATmode(rt_remoteuser, false) != GDK_SUCCEED)
+			BATmode(rt_remoteuser, false) != GDK_SUCCEED) {
+			MT_rwlock_wrunlock(&rt_lock);
 			throw(MAL, "initTables.rt_remoteuser", GDK_EXCEPTION);
+		}
 	}
 	else {
 		int dbg = GDKdebug;
@@ -177,6 +204,7 @@ AUTHinitTables(void) {
 		rt_remoteuser = BATdescriptor(bid);
 		GDKdebug = dbg;
 		if (rt_remoteuser == NULL) {
+			MT_rwlock_wrunlock(&rt_lock);
 			throw(MAL, "initTables.rt_remoteuser", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		isNew = 0;
@@ -187,12 +215,16 @@ AUTHinitTables(void) {
 	bid = BBPindex("M5system_auth_rt_hashedpwd");
 	if (!bid) {
 		rt_hashedpwd = COLnew(0, TYPE_str, 256, PERSISTENT);
-		if (rt_hashedpwd == NULL)
+		if (rt_hashedpwd == NULL) {
+			MT_rwlock_wrunlock(&rt_lock);
 			throw(MAL, "initTables.rt_hashedpwd", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table local user bat");
+		}
 
 		if (BBPrename(rt_hashedpwd, "M5system_auth_rt_hashedpwd") != 0 ||
-			BATmode(rt_hashedpwd, false) != GDK_SUCCEED)
+			BATmode(rt_hashedpwd, false) != GDK_SUCCEED) {
+			MT_rwlock_wrunlock(&rt_lock);
 			throw(MAL, "initTables.rt_hashedpwd", GDK_EXCEPTION);
+		}
 	}
 	else {
 		int dbg = GDKdebug;
@@ -201,6 +233,7 @@ AUTHinitTables(void) {
 		rt_hashedpwd = BATdescriptor(bid);
 		GDKdebug = dbg;
 		if (rt_hashedpwd == NULL) {
+			MT_rwlock_wrunlock(&rt_lock);
 			throw(MAL, "initTables.rt_hashedpwd", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		isNew = 0;
@@ -211,22 +244,29 @@ AUTHinitTables(void) {
 	bid = BBPindex("M5system_auth_rt_deleted");
 	if (!bid) {
 		rt_deleted = COLnew(0, TYPE_oid, 256, PERSISTENT);
-		if (rt_deleted == NULL)
+		if (rt_deleted == NULL) {
+			MT_rwlock_wrunlock(&rt_lock);
 			throw(MAL, "initTables.rt_deleted", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table local user bat");
+		}
 
 		if (BBPrename(rt_deleted, "M5system_auth_rt_deleted") != 0 ||
-			BATmode(rt_deleted, false) != GDK_SUCCEED)
+			BATmode(rt_deleted, false) != GDK_SUCCEED) {
+			MT_rwlock_wrunlock(&rt_lock);
 			throw(MAL, "initTables.rt_deleted", GDK_EXCEPTION);
+		}
 		/* If the database is not new, but we just created this BAT,
 		 * write everything to disc. This needs to happen only after
 		 * the last BAT of the vault has been created.
 		 */
-		if (!isNew)
-			AUTHcommit();
+		if (!isNew && (msg = AUTHcommit()) != MAL_SUCCEED) {
+			MT_rwlock_wrunlock(&rt_lock);
+			return msg;
+		}
 	}
 	else {
 		rt_deleted = BATdescriptor(bid);
 		if (rt_deleted == NULL) {
+			MT_rwlock_wrunlock(&rt_lock);
 			throw(MAL, "initTables.rt_deleted", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		isNew = 0;
@@ -240,9 +280,12 @@ AUTHinitTables(void) {
 		if (msg != NULL) {
 			char *nmsg = createException(MAL, "initTables", "%s", msg);
 			free(msg);
+			MT_rwlock_wrunlock(&rt_lock);
 			return nmsg;
 		}
 	}
+
+	MT_rwlock_wrunlock(&rt_lock);
 
 	return(MAL_SUCCEED);
 }
@@ -319,7 +362,9 @@ AUTHcheckCredentials(
 	/* special case: users whose name starts with '.' can authenticate using
 	 * the temporary master password.
 	 */
+	MT_rwlock_rdlock(&rt_lock);
 	if (username[0] == '.' && master_password != NULL && master_password[0] != '\0') {
+		MT_rwlock_rdunlock(&rt_lock);
 		// first encrypt the master password as if we've just found it
 		// in the password store
 		str encrypted = mcrypt_BackendSum(master_password, strlen(master_password));
@@ -333,7 +378,8 @@ AUTHcheckCredentials(
 			return(MAL_SUCCEED);
 		}
 		free(hash);
-	}
+	} else
+		MT_rwlock_rdunlock(&rt_lock);
 
 	/* of course we DO NOT print the password here */
 	throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", username);
@@ -349,7 +395,7 @@ AUTHgetUsername(str *username, Client cntxt)
 		*username = GDKstrdup(cntxt->username);
 		return(MAL_SUCCEED);
 	}
-	if (authCallbackCntx.get_user_name && cntxt) {
+	if (authCallbackCntx.get_user_name) {
 		if ((*username = authCallbackCntx.get_user_name(cntxt)) == NULL) {
 			throw(MAL, "getUsername", INVCRED_WRONG_ID);
 		}
@@ -361,14 +407,14 @@ AUTHgetUsername(str *username, Client cntxt)
  * Returns the password hash as used by the backend for the given
  * username. Throws an exception if called by a non-superuser.
  */
-str
-AUTHgetPasswordHash(str *ret, Client cntxt, const char *username)
+static str
+AUTHgetPasswordHashLocked(str *ret, Client cntxt, const char *username)
 {
-	str tmp;
+	str tmp = NULL;
 	str msg;
 	str passwd = NULL;
 
-	rethrow("getPasswordHash", tmp, AUTHrequireAdmin(cntxt));
+	rethrow("getPasswordHash", msg, AUTHrequireAdmin(cntxt));
 
 	if (strNil(username))
 		throw(ILLARG, "getPasswordHash", "username should not be nil");
@@ -381,18 +427,26 @@ AUTHgetPasswordHash(str *ret, Client cntxt, const char *username)
 		throw(MAL, "getPasswordHash", "user '%s' does not exist", username);
 	}
 	/* decypher the password */
-	if ((msg = AUTHdecypherValue(&passwd, tmp)) != MAL_SUCCEED) {
+	if ((msg = AUTHdecypherValueLocked(&passwd, tmp)) != MAL_SUCCEED) {
 		GDKfree(tmp);
 		return msg;
 	}
 
-	if(tmp)
+	if (tmp)
 		GDKfree(tmp);
 
 	*ret = passwd;
 	return(MAL_SUCCEED);
 }
 
+str
+AUTHgetPasswordHash(str *ret, Client cntxt, const char *username)
+{
+	MT_rwlock_rdlock(&rt_lock);
+	str err = AUTHgetPasswordHashLocked(ret, cntxt, username);
+	MT_rwlock_rdunlock(&rt_lock);
+	return err;
+}
 
 /*=== the vault ===*/
 
@@ -413,10 +467,15 @@ AUTHunlockVault(const char *password)
 	/* even though I think this function should be called only once, it
 	 * is not of real extra efforts to avoid a mem-leak if it is used
 	 * multiple times */
+	MT_rwlock_wrlock(&rt_lock);
 	GDKfree(vaultKey);
 
-	if ((vaultKey = GDKstrdup(password)) == NULL)
+	vaultKey = GDKstrdup(password);
+	if (vaultKey == NULL) {
+		MT_rwlock_wrunlock(&rt_lock);
 		throw(MAL, "unlockVault", SQLSTATE(HY013) MAL_MALLOC_FAIL " vault key");
+	}
+	MT_rwlock_wrunlock(&rt_lock);
 	return(MAL_SUCCEED);
 }
 
@@ -427,8 +486,8 @@ AUTHunlockVault(const char *password)
  * an exception.  The ret string is GDKmalloced, and should be GDKfreed
  * by the caller.
  */
-str
-AUTHdecypherValue(str *ret, const char *value)
+static str
+AUTHdecypherValueLocked(str *ret, const char *value)
 {
 	/* Cyphering and decyphering can be done using many algorithms.
 	 * Future requirements might want a stronger cypher than the XOR
@@ -444,7 +503,7 @@ AUTHdecypherValue(str *ret, const char *value)
 	str r, w;
 	const char *s = value;
 	char t = '\0';
-	int escaped = 0;
+	bool escaped = false;
 	/* we default to some garbage key, just to make password unreadable
 	 * (a space would only uppercase the password) */
 	size_t keylen = 0;
@@ -460,12 +519,17 @@ AUTHdecypherValue(str *ret, const char *value)
 	/* XOR all characters.  If we encounter a 'one' char after the XOR
 	 * operation, it is an escape, so replace it with the next char. */
 	for (; (t = *s) != '\0'; s++) {
-		if (t == '\1' && escaped == 0) {
-			escaped = 1;
+		if ((t & 0xE0) == 0xC0) {
+			assert((t & 0x1E) == 0x02);
+			assert((s[1] & 0xC0) == 0x80);
+			t = ((t & 0x1F) << 6) | (*++s & 0x3F);
+		}
+		if (t == '\1' && !escaped) {
+			escaped = true;
 			continue;
-		} else if (escaped != 0) {
+		} else if (escaped) {
 			t -= 1;
-			escaped = 0;
+			escaped = false;
 		}
 		*w = t ^ vaultKey[(w - r) % keylen];
 		w++;
@@ -476,13 +540,22 @@ AUTHdecypherValue(str *ret, const char *value)
 	return(MAL_SUCCEED);
 }
 
+str
+AUTHdecypherValue(str *ret, const char *value)
+{
+	MT_rwlock_rdlock(&rt_lock);
+	str err = AUTHdecypherValueLocked(ret, value);
+	MT_rwlock_rdunlock(&rt_lock);
+	return err;
+}
+
 /**
  * Cyphers the given string using the vaultKey.  If the cypher algorithm
  * fails or detects an invalid password, it might throw an exception.
  * The ret string is GDKmalloced, and should be GDKfreed by the caller.
  */
-str
-AUTHcypherValue(str *ret, const char *value)
+static str
+AUTHcypherValueLocked(str *ret, const char *value)
 {
 	/* this is the XOR cypher implementation */
 	str r, w;
@@ -502,13 +575,18 @@ AUTHcypherValue(str *ret, const char *value)
 	/* XOR all characters.  If we encounter a 'zero' char after the XOR
 	 * operation, escape it with a 'one' char. */
 	for (; *s != '\0'; s++) {
-		*w = *s ^ vaultKey[(s - value) % keylen];
-		if (*w == '\0') {
+		char c = *s ^ vaultKey[(s - value) % keylen];
+		if (c == '\0') {
 			*w++ = '\1';
 			*w = '\1';
-		} else if (*w == '\1') {
+		} else if (c == '\1') {
 			*w++ = '\1';
 			*w = '\2';
+		} else if (c & 0x80) {
+			*w++ = 0xC0 | ((c >> 6) & 0x03);
+			*w = 0x80 | (c & 0x3F);
+		} else {
+			*w = c;
 		}
 		w++;
 	}
@@ -516,6 +594,15 @@ AUTHcypherValue(str *ret, const char *value)
 
 	*ret = r;
 	return(MAL_SUCCEED);
+}
+
+str
+AUTHcypherValue(str *ret, const char *value)
+{
+	MT_rwlock_rdlock(&rt_lock);
+	str err = AUTHcypherValueLocked(ret, value);
+	MT_rwlock_rdunlock(&rt_lock);
+	return err;
 }
 
 /**
@@ -559,16 +646,13 @@ lookupRemoteTableKey(const char *key)
 	assert(rt_deleted);
 
 	if (BAThash(rt_key) == GDK_SUCCEED) {
-		MT_rwlock_rdlock(&cni.b->thashlock);
 		HASHloop_str(cni, cni.b->thash, p, key) {
 			oid pos = p;
 			if (BUNfnd(rt_deleted, &pos) == BUN_NONE) {
-				MT_rwlock_rdunlock(&cni.b->thashlock);
 				bat_iterator_end(&cni);
 				return p;
 			}
 		}
-		MT_rwlock_rdunlock(&cni.b->thashlock);
 	}
 	bat_iterator_end(&cni);
 
@@ -590,8 +674,10 @@ AUTHgetRemoteTableCredentials(const char *local_table, str *uri, str *username, 
 	if (strNil(local_table))
 		throw(ILLARG, "getRemoteTableCredentials", "local table should not be nil");
 
+	MT_rwlock_rdlock(&rt_lock);
 	p = lookupRemoteTableKey(local_table);
 	if (p == BUN_NONE) {
+		MT_rwlock_rdunlock(&rt_lock);
 		// No credentials for remote table with name local_table.
 		return MAL_SUCCEED;
 	}
@@ -609,6 +695,8 @@ AUTHgetRemoteTableCredentials(const char *local_table, str *uri, str *username, 
 	i = bat_iterator(rt_remoteuser);
 	*username = GDKstrdup(BUNtvar(i, p));
 	bat_iterator_end(&i);
+
+	MT_rwlock_rdunlock(&rt_lock);
 
 	if (!*uri || !*username) {
 		GDKfree(*uri);
@@ -649,6 +737,7 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 	if (strNil(local_user))
 		throw(ILLARG, "addRemoteTableCredentials", "local user name cannot be nil");
 
+	MT_rwlock_wrlock(&rt_lock);
 	assert(rt_key);
 	assert(rt_uri);
 	assert(rt_remoteuser);
@@ -699,40 +788,50 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 	 * Implementation note: we first delete the entry and then add a
 	 * new entry with the same key.
 	 */
-		if((output = AUTHdeleteRemoteTableCredentials(local_table)) != MAL_SUCCEED)
+		if((output = AUTHdeleteRemoteTableCredentialsLocked(local_table)) != MAL_SUCCEED) {
+			MT_rwlock_wrunlock(&rt_lock);
 			return output;
+		}
 	}
 
 	if (pass == NULL) {
 		// init client to have SQL callback hooks
 		Client c = getClientContext();
-		if((output = AUTHgetPasswordHash(&pwhash, c, local_user)) != MAL_SUCCEED)
+		if((output = AUTHgetPasswordHashLocked(&pwhash, c, local_user)) != MAL_SUCCEED) {
+			MT_rwlock_wrunlock(&rt_lock);
 			return output;
+		}
 	}
 	else {
 		free_pw = true;
 		if (pw_encrypted) {
-			if((pwhash = strdup(pass)) == NULL)
+			if((pwhash = strdup(pass)) == NULL) {
+				MT_rwlock_wrunlock(&rt_lock);
 				throw(MAL, "addRemoteTableCredentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 		}
 		else {
 			/* Note: the remote server might have used a different
 			 * algorithm to hash the pwhash.
 			 */
-			if((pwhash = mcrypt_BackendSum(pass, strlen(pass))) == NULL)
+			if((pwhash = mcrypt_BackendSum(pass, strlen(pass))) == NULL) {
 				throw(MAL, "addRemoteTableCredentials", SQLSTATE(42000) "Crypt backend hash not found");
+				MT_rwlock_wrunlock(&rt_lock);
+			}
 		}
 	}
 	msg = AUTHverifyPassword(pwhash);
 	if( msg != MAL_SUCCEED){
 		free(pwhash);
+		MT_rwlock_wrunlock(&rt_lock);
 		return msg;
 	}
 
 	str cypher;
-	msg = AUTHcypherValue(&cypher, pwhash);
+	msg = AUTHcypherValueLocked(&cypher, pwhash);
 	if( msg != MAL_SUCCEED){
 		free(pwhash);
+		MT_rwlock_wrunlock(&rt_lock);
 		return msg;
 	}
 
@@ -750,10 +849,13 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 			GDKfree(pwhash);
 		}
 		GDKfree(cypher);
+		MT_rwlock_wrunlock(&rt_lock);
 		throw(MAL, "addRemoteTableCredentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	AUTHcommit();
+	msg = AUTHcommit();
+
+	MT_rwlock_wrunlock(&rt_lock);
 
 	if (free_pw) {
 		free(pwhash);
@@ -762,11 +864,11 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 		GDKfree(pwhash);
 	}
 	GDKfree(cypher);
-	return MAL_SUCCEED;
+	return msg;
 }
 
-str
-AUTHdeleteRemoteTableCredentials(const char *local_table)
+static str
+AUTHdeleteRemoteTableCredentialsLocked(const char *local_table)
 {
 	BUN p;
 	oid id;
@@ -791,8 +893,16 @@ AUTHdeleteRemoteTableCredentials(const char *local_table)
 		throw(MAL, "deleteRemoteTableCredentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* make the stuff persistent */
-	AUTHcommit();
-	return(MAL_SUCCEED);
+	return AUTHcommit();
+}
+
+str
+AUTHdeleteRemoteTableCredentials(const char *local_table)
+{
+	MT_rwlock_wrlock(&rt_lock);
+	str err = AUTHdeleteRemoteTableCredentialsLocked(local_table);
+	MT_rwlock_wrunlock(&rt_lock);
+	return err;
 }
 
 

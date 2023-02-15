@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -1588,9 +1590,7 @@ close_result(MapiHdl hdl)
 				if (mnstr_printf(mid->to, "%s", msg) < 0 ||
 				    mnstr_flush(mid->to, MNSTR_FLUSH_DATA)) {
 					close_connection(mid);
-					char *err = mnstr_error(mid->to);
-					mapi_setError(mid, err, __func__, MTIMEOUT);
-					free(err);
+					mapi_setError(mid, mnstr_peek_error(mid->to), __func__, MTIMEOUT);
 					break;
 				}
 				read_into_cache(hdl, 0);
@@ -1608,9 +1608,7 @@ close_result(MapiHdl hdl)
 				if (mnstr_printf(mid->to, "%s", msg) < 0 ||
 				    mnstr_flush(mid->to, MNSTR_FLUSH_DATA)) {
 					close_connection(mid);
-					char *err = mnstr_error(mid->to);
-					mapi_setError(mid, err, __func__, MTIMEOUT);
-					free(err);
+					mapi_setError(mid, mnstr_peek_error(mid->to), __func__, MTIMEOUT);
 				} else
 					read_into_cache(hdl, 0);
 			}
@@ -1834,9 +1832,7 @@ finish_handle(MapiHdl hdl)
 			if (mnstr_printf(mid->to, "%s", msg) < 0 ||
 			    mnstr_flush(mid->to, MNSTR_FLUSH_DATA)) {
 				close_connection(mid);
-				char *err = mnstr_error(mid->to);
-				mapi_setError(mid, err, __func__, MTIMEOUT);
-				free(err);
+				mapi_setError(mid, mnstr_peek_error(mid->to), __func__, MTIMEOUT);
 				break;
 			}
 			read_into_cache(hdl, 0);
@@ -3428,9 +3424,7 @@ mapi_Xcommand(Mapi mid, const char *cmdname, const char *cmdvalue)
 	if (mnstr_printf(mid->to, "X" "%s %s\n", cmdname, cmdvalue) < 0 ||
 	    mnstr_flush(mid->to, MNSTR_FLUSH_DATA)) {
 		close_connection(mid);
-		char *err = mnstr_error(mid->to);
-		mapi_setError(mid, err, __func__, MTIMEOUT);
-		free(err);
+		mapi_setError(mid, mnstr_peek_error(mid->to), __func__, MTIMEOUT);
 		return MERROR;
 	}
 	if (mid->tracelog) {
@@ -4740,9 +4734,7 @@ mapi_cache_limit(Mapi mid, int limit)
 		if (mnstr_printf(mid->to, "X" "reply_size %d\n", limit) < 0 ||
 		    mnstr_flush(mid->to, MNSTR_FLUSH_DATA)) {
 			close_connection(mid);
-			char *err = mnstr_error(mid->to);
-			mapi_setError(mid, err, __func__, MTIMEOUT);
-			free(err);
+			mapi_setError(mid, mnstr_peek_error(mid->to), __func__, MTIMEOUT);
 			return MERROR;
 		}
 		hdl = prepareQuery(mapi_new_handle(mid), "reply_size");

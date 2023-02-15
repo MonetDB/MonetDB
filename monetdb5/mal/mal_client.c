@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -59,6 +61,7 @@ mal_client_reset(void)
 	if (mal_clients) {
 		for (int i = 0; i < MAL_MAXCLIENTS; i++) {
 			ATOMIC_DESTROY(&mal_clients[i].lastprint);
+			ATOMIC_DESTROY(&mal_clients[i].workers);
 			ATOMIC_DESTROY(&mal_clients[i].qryctx.datasize);
 		}
 		GDKfree(mal_clients);
@@ -91,6 +94,7 @@ MCinit(void)
 	}
 	for (int i = 0; i < MAL_MAXCLIENTS; i++){
 		ATOMIC_INIT(&mal_clients[i].lastprint, 0);
+		ATOMIC_INIT(&mal_clients[i].workers, 1);
 		ATOMIC_INIT(&mal_clients[i].qryctx.datasize, 0);
 		mal_clients[i].idx = -1; /* indicate it's available */
 	}
@@ -267,6 +271,8 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->sessiontimeout = 0;
 	c->qryctx.starttime = 0;
 	ATOMIC_SET(&c->qryctx.datasize, 0);
+	c->qryctx.maxmem = 0;
+	c->maxmem = 0;
 	c->itrace = 0;
 	c->errbuf = 0;
 
@@ -315,7 +321,7 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 	}
 	MT_lock_unset(&mal_contextLock);
 
-	if (c)
+	if (c && profilerStatus > 0)
 		profilerEvent(NULL,
 					  &(struct NonMalEvent)
 					  {CLIENT_START, c, c->session,  NULL, NULL, 0, 0});
@@ -369,6 +375,7 @@ MCinitClientThread(Client c)
 Client
 MCforkClient(Client father)
 {
+	/* TO BE REMOVED: this function is not used anywhere */
 	Client son = NULL;
 	str prompt;
 
@@ -391,6 +398,8 @@ MCforkClient(Client father)
 		son->workerlimit = father->workerlimit;
 		son->memorylimit = father->memorylimit;
 		son->qryctx.querytimeout = father->qryctx.querytimeout;
+		son->qryctx.maxmem = father->qryctx.maxmem;
+		son->maxmem = father->maxmem;
 		son->sessiontimeout = father->sessiontimeout;
 
 		if (son->prompt)
@@ -500,6 +509,7 @@ MCcloseClient(Client c)
 	c->handshake_options = NULL;
 	setClientContext(NULL);
 	MT_thread_set_qry_ctx(NULL);
+	assert(c->qryctx.datasize == 0);
 	MT_sema_destroy(&c->s);
 	MT_lock_set(&mal_contextLock);
 	if (shutdowninprogress) {
@@ -552,9 +562,11 @@ MCactiveClients(void)
 	int active = 0;
 	Client cntxt = mal_clients;
 
+	MT_lock_set(&mal_contextLock);
 	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
 		active += (cntxt->idle == 0 && cntxt->mode == RUNCLIENT);
 	}
+	MT_lock_unset(&mal_contextLock);
 	return active;
 }
 
@@ -564,22 +576,10 @@ MCactiveClients(void)
 size_t
 MCmemoryClaim(void)
 {
-	size_t claim = 0;
-	int active = 1;
-
-	Client cntxt = mal_clients;
-
-	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++)
-	if( cntxt->idle == 0 && cntxt->mode == RUNCLIENT){
-		if(cntxt->memorylimit){
-			claim += cntxt->memorylimit;
-			active ++;
-		} else
-			return GDK_mem_maxsize;
-	}
-	if(active == 0 ||  claim  * LL_CONSTANT(1048576) >= GDK_mem_maxsize)
-		return GDK_mem_maxsize;
-	return claim * LL_CONSTANT(1048576);
+	/* TO BE REMOVED */
+	/* this function used to be more complex, but in the end it always
+	 * returned GDK_mem_maxsize, so that's what we do now */
+	return GDK_mem_maxsize;
 }
 
 str

@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /* The Mapi Client Interface
@@ -2855,8 +2857,10 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 							mnstr_printf(toConsole, "none\n");
 							break;
 						}
-					} else
+					} else {
 						setFormatter(line);
+						mapi_set_size_header(mid, strcmp(line, "raw") == 0);
+					}
 					continue;
 				case 't':
 					while (my_isspace(line[length - 1]))
@@ -3254,14 +3258,14 @@ main(int argc, char **argv)
 
 	/* parse config file first, command line options override */
 	parse_dotmonetdb(&dotfile);
-        user = dotfile.user;
-        passwd = dotfile.passwd;
+	user = dotfile.user;
+	passwd = dotfile.passwd;
 	dbname = dotfile.dbname;
-        language = dotfile.language;
+	language = dotfile.language;
 	host = dotfile.host;
 	save_history = dotfile.save_history;
-        output = dotfile.output;
-        pagewidth = dotfile.pagewidth;
+	output = dotfile.output;
+	pagewidth = dotfile.pagewidth;
 	port = dotfile.port;
 	pagewidthset = pagewidth != 0;
 	if (language) {
@@ -3569,12 +3573,15 @@ main(int argc, char **argv)
 	mapi_trace(mid, trace);
 	if (output) {
 		setFormatter(output);
+		mapi_set_size_header(mid, strcmp(output, "raw") == 0);
 		free(output);
 	} else {
 		if (mode == SQL) {
 			setFormatter("sql");
+			mapi_set_size_header(mid, false);
 		} else {
 			setFormatter("raw");
+			mapi_set_size_header(mid, true);
 		}
 	}
 	/* give the user a welcome message with some general info */

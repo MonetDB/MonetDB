@@ -1,9 +1,10 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
-* Mon Oct 10 2022 Sjoerd Mullender <sjoerd@acm.org>
-- Offset heaps (.tailN files) were growing too fast and unnecessarily
-  under certain conditions.  This has been fixed.  Also, when such too
-  large files are now loaded into the system, it is recognized they are
-  too large and they are truncated to a more reasonable size.
+* Mon Feb 13 2023 Sjoerd Mullender <sjoerd@acm.org>
+- When saving a bat failed for some reason during a low-level commit,
+  this was logged in the log file, but the error was then subsequently
+  ignored, possibly leading to files that are too short or even missing.
+- The write-ahead log (WAL) is now rotated a bit more efficiently by
+  doing multiple log files in one go (i.e. in one low-level transaction).
 

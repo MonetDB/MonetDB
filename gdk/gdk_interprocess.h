@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -30,8 +32,6 @@ gdk_export size_t GDKuniqueid(size_t offset);
 gdk_export void *GDKinitmmap(size_t id, size_t size, size_t *return_size);
 //! Release a memory mapped file that was created through GDKinitmmap
 gdk_export gdk_return GDKreleasemmap(void *ptr, size_t size, size_t id);
-//! snprintf the file name of a memory mapped file (as created by GDKinitmmap)
-gdk_export gdk_return GDKmmapfile(char *buffer, size_t max, size_t id);
 
 /*
  * Interprocess-Semaphores, used for cross process lock operations

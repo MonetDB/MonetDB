@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -744,9 +746,7 @@ read_tar_block(stream *s, char *block, err *error)
 	if (nread <= 0) {
 		if (mnstr_errnr(s) != MNSTR_NO__ERROR) {
 			/* failure */
-			char *err = mnstr_error(s);
-			*error = newErr("Read error (%zd): %s", nread, err);
-			free(err);
+			*error = newErr("Read error (%zd): %s", nread, mnstr_peek_error(s));
 		} else {
 			*error = NULL;
 		}

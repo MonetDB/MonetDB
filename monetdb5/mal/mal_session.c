@@ -1,14 +1,17 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /* (author) M.L. Kersten
  */
 #include "monetdb_config.h"
+#include "mal_scenario.h"
 #include "mal_session.h"
 #include "mal_instruction.h" /* for pushEndInstruction() */
 #include "mal_interpreter.h" /* for runMAL(), garbageElement() */
@@ -106,7 +109,8 @@ MSresetClientPrg(Client cntxt, const char *mod, const char *fcn)
 	setModuleId(p, mod);
 	setFunctionId(p, fcn);
 	if( findVariable(mb,fcn) < 0)
-		p->argv[0] = newVariable(mb, fcn, strlen(fcn), TYPE_void);
+		if ((p->argv[0] = newVariable(mb, fcn, strlen(fcn), TYPE_void)) < 0)
+			throw(MAL, "resetClientPrg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	setVarType(mb, findVariable(mb, fcn), TYPE_void);
 	/* remove any MAL history */
@@ -517,6 +521,7 @@ MSresetStack(Client cntxt, MalBlkPtr mb, MalStkPtr glb)
 			}
 		}
 	}
+	assert(k <= mb->vsize);
 	mb->vtop = k;
 }
 

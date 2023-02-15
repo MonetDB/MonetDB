@@ -1,9 +1,11 @@
 #[[
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 #]]
 
 function(monetdb_default_compiler_options)
@@ -57,7 +59,16 @@ function(monetdb_default_compiler_options)
       add_option_if_available("-Wundef")
       add_option_if_available("-Wformat=2")
       add_option_if_available("-Wformat-overflow=1")
-      #add_option_if_available("-Wno-format-truncation")
+      if(${CMAKE_C_COMPILER_ID} MATCHES "^GNU$")
+	if(${CMAKE_C_COMPILER_VERSION} VERSION_LESS "9.5.0")
+	  # on Ubuntu 20.04 with gcc 9.4.0 when building a Release
+	  # version we get a warning (hence error) about possible
+	  # buffer overflow in a call to snprintf, this option avoids
+	  # that; I have no idea which version of gcc is safe, so the
+	  # test may have to be refined
+	  add_option_if_available("-Wno-format-truncation")
+	endif()
+      endif()
       add_option_if_available("-Wno-format-nonliteral")
       #add_option_if_available("-Wformat-signedness") 	-- numpy messes this up
       add_option_if_available("-Wno-cast-function-type")

@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -62,6 +64,14 @@ sa_list_append(sql_allocator *sa, list *l, void *data)
 {
 	if (!l)
 		l = SA_LIST(sa, NULL);
+	return list_append(l, data);
+}
+
+list *
+list_add(list *l, void *data)
+{
+	if (!l)
+		l = list_create(NULL);
 	return list_append(l, data);
 }
 
@@ -755,13 +765,15 @@ list_dup(list *l, fdup dup)
 }
 
 list *
-list_flaten(list *l)
+list_flatten(list *l)
 {
 	list *res = list_new_(l);
-	for (node *n = l->h ; n ; n = n->next) {
-		list *ll = (list*) n->data;
-		for (node *m = ll->h ; m ; m = m->next)
-			list_append(res, m->data);
+	if (res) {
+		for (node *n = l->h ; n ; n = n->next) {
+			list *ll = (list*) n->data;
+			for (node *m = ll->h ; m ; m = m->next)
+				list_append(res, m->data);
+		}
 	}
 	return res;
 }

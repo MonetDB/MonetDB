@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -122,6 +124,8 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 	}
 	if (mb->errors)
 		throw(MAL, "factory.call", PROGRAM_GENERAL);
+	QryCtx *qc = MT_thread_get_qry_ctx();
+	MT_thread_set_qry_ctx(NULL);
 	if (firstcall ){
 		/* initialize the stack */
 		for(i= psig->argc; i< mb->vtop; i++) {
@@ -144,6 +148,7 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 	 } else {
 		msg = reenterMAL(cntxt, mb, pl->pc, -1, pl->stk);
 	}
+	MT_thread_set_qry_ctx(qc);
 	/* propagate change in debugging status */
 	if (cmd && pl->stk && pl->stk->cmd != cmd && cmd != 'x')
 		for (; stk; stk = stk->up)

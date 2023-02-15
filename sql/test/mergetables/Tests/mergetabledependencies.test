@@ -118,7 +118,7 @@ alter table parent drop table child4
 statement ok
 savepoint sp1
 
-statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
+statement error 42000!MERGE TABLE 'sys'.'parent' should have at least one table associated
 SELECT a from myfunc()
 
 statement ok
@@ -173,7 +173,7 @@ select count(*) - (select "a" from "depend_count") from dependencies
 ----
 0
 
-statement error 42000!MERGE or REPLICA TABLE should have at least one table associated
+statement error 42000!MERGE TABLE 'sys'.'parent' should have at least one table associated
 SELECT a from myview
 
 statement ok

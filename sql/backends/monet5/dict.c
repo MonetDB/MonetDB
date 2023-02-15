@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -736,8 +738,8 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if (ATOMcmp(lvi.type, v, BUNtail(lvi, p)) != 0)
 						p--;
 				} else if (p != BUN_NONE && op[0] == '>' && !op[1]) {
-                    if (ATOMcmp(lvi.type, v, BUNtail(lvi, p)) != 0)
-                        op = ">=";
+					if (ATOMcmp(lvi.type, v, BUNtail(lvi, p)) != 0)
+						op = ">=";
 				}
 			}
 			if (p != BUN_NONE) {

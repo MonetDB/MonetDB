@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -55,8 +57,7 @@ CMDbatUNARY(MalStkPtr stk, InstrPtr pci,
 
 	bn = (*batfunc)(b, s);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (bn == NULL) {
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
 	}
@@ -87,8 +88,7 @@ CMDbatUNARY1(MalStkPtr stk, InstrPtr pci,
 
 	bn = (*batfunc)(b, s);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (bn == NULL) {
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
 	}
@@ -350,14 +350,10 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b2, s2, tp3);
 	} else
 		goto bailout;			/* cannot happen */
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
-	if (s1)
-		BBPunfix(s1->batCacheid);
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(b1);
+	BBPreclaim(b2);
+	BBPreclaim(s1);
+	BBPreclaim(s2);
 	if (bn == NULL)
 		return mythrow(MAL, malfunc, GDK_EXCEPTION);
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
@@ -365,16 +361,12 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	return MAL_SUCCEED;
 
 bailout:
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
+	BBPreclaim(b1);
+	BBPreclaim(b2);
 /* cannot happen
-	if (s1)
-		BBPunfix(s1->batCacheid);
+	BBPreclaim(s1);
 */
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(s2);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
@@ -447,14 +439,10 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b2, s2);
 	else
 		goto bailout;			/* cannot happen */
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
-	if (s1)
-		BBPunfix(s1->batCacheid);
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(b1);
+	BBPreclaim(b2);
+	BBPreclaim(s1);
+	BBPreclaim(s2);
 	if (bn == NULL)
 		return mythrow(MAL, malfunc, GDK_EXCEPTION);
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
@@ -462,16 +450,12 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 	return MAL_SUCCEED;
 
 bailout:
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
+	BBPreclaim(b1);
+	BBPreclaim(b2);
 /* cannot happen
-	if (s1)
-		BBPunfix(s1->batCacheid);
+	BBPreclaim(s1);
 */
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(s2);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
@@ -558,14 +542,10 @@ CMDbatBINARY1a(MalStkPtr stk, InstrPtr pci,
 		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b2, s2, nil_matches);
 	else
 		goto bailout;			/* cannot happen */
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
-	if (s1)
-		BBPunfix(s1->batCacheid);
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(b1);
+	BBPreclaim(b2);
+	BBPreclaim(s1);
+	BBPreclaim(s2);
 	if (bn == NULL)
 		return mythrow(MAL, malfunc, GDK_EXCEPTION);
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
@@ -573,16 +553,12 @@ CMDbatBINARY1a(MalStkPtr stk, InstrPtr pci,
 	return MAL_SUCCEED;
 
 bailout:
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
+	BBPreclaim(b1);
+	BBPreclaim(b2);
 /* cannot happen
-	if (s1)
-		BBPunfix(s1->batCacheid);
+	BBPreclaim(s1);
 */
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(s2);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
@@ -646,14 +622,10 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b2, s2);
 	else
 		goto bailout;			/* cannot happen */
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
-	if (s1)
-		BBPunfix(s1->batCacheid);
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(b1);
+	BBPreclaim(b2);
+	BBPreclaim(s1);
+	BBPreclaim(s2);
 	if (bn == NULL)
 		return mythrow(MAL, malfunc, GDK_EXCEPTION);
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
@@ -661,16 +633,12 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 	return MAL_SUCCEED;
 
 bailout:
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
+	BBPreclaim(b1);
+	BBPreclaim(b2);
 /* cannot happen
-	if (s1)
-		BBPunfix(s1->batCacheid);
+	BBPreclaim(s1);
 */
-	if (s2)
-		BBPunfix(s2->batCacheid);
+	BBPreclaim(s2);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
@@ -998,16 +966,11 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								  &stk->stk[getArg(pci, 3)], s,
 								  symmetric, linc, hinc, nils_false, anti);
 	BBPunfix(b->batCacheid);
-	if (lo)
-		BBPunfix(lo->batCacheid);
-	if (hi)
-		BBPunfix(hi->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	if (slo)
-		BBPunfix(slo->batCacheid);
-	if (shi)
-		BBPunfix(shi->batCacheid);
+	BBPreclaim(lo);
+	BBPreclaim(hi);
+	BBPreclaim(s);
+	BBPreclaim(slo);
+	BBPreclaim(shi);
 	if (bn == NULL)
 		return mythrow(MAL, "batcalc.between", OPERATION_FAILED);
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
@@ -1015,19 +978,13 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 
   bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (lo)
-		BBPunfix(lo->batCacheid);
-	if (hi)
-		BBPunfix(hi->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	if (slo)
-		BBPunfix(slo->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(lo);
+	BBPreclaim(hi);
+	BBPreclaim(s);
+	BBPreclaim(slo);
 /* cannot happen
-	if (shi)
-		BBPunfix(shi->batCacheid);
+	BBPreclaim(shi);
 */
 	throw(MAL, "batcalc.between", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
@@ -1063,8 +1020,7 @@ CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	ret = BATcalcavg(b, s, &avg, &vals, scale);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (ret != GDK_SUCCEED)
 		return mythrow(MAL, "aggr.avg", OPERATION_FAILED);
 	* getArgReference_dbl(stk, pci, 0) = avg;
@@ -1090,16 +1046,14 @@ CMDconvertbat(MalStkPtr stk, InstrPtr pci, int tp)
 		}
 		if (s && ATOMtype(s->ttype) != TYPE_oid) {
 			BBPunfix(b->batCacheid);
-			if (s)
-				BBPunfix(s->batCacheid);
+			BBPreclaim(s);
 			throw(MAL, "batcalc.convert", SQLSTATE(42000) ILLEGAL_ARGUMENT);
 		}
 	}
 
 	bn = BATconvert(b, s, tp, 0, 0, 0);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (bn == NULL) {
 		char buf[20];
 		snprintf(buf, sizeof(buf), "batcalc.%s", ATOMname(tp));
@@ -1230,8 +1184,7 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tp1 == TYPE_bat || isaBatType(tp1)) {
 		b1 = BATdescriptor(* getArgReference_bat(stk, pci, 2));
 		if (b1 == NULL) {
-			if (b)
-				BBPunfix(b->batCacheid);
+			BBPreclaim(b);
 			throw(MAL, "batcalc.ifthenelse", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		if (cnt == BUN_NONE)
@@ -1244,19 +1197,15 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tp2 == TYPE_bat || isaBatType(tp2)) {
 		b2 = BATdescriptor(* getArgReference_bat(stk, pci, 3));
 		if (b2 == NULL) {
-			if (b)
-				BBPunfix(b->batCacheid);
-			if (b1)
-				BBPunfix(b1->batCacheid);
+			BBPreclaim(b);
+			BBPreclaim(b1);
 			throw(MAL, "batcalc.ifthenelse", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		if (cnt == BUN_NONE)
 			cnt = BATcount(b2);
 		else if (BATcount(b2) != cnt) {
-			if (b)
-				BBPunfix(b->batCacheid);
-			if (b1)
-				BBPunfix(b1->batCacheid);
+			BBPreclaim(b);
+			BBPreclaim(b1);
 			throw(MAL, "batcalc.ifthenelse", ILLEGAL_ARGUMENT);
 		}
 	}
@@ -1301,12 +1250,9 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				bn = BATconstant(b1->hseqbase, b1->ttype, VALptr(&stk->stk[getArg(pci, 3)]), BATcount(b1), TRANSIENT);
 		}
 	}
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (b1)
-		BBPunfix(b1->batCacheid);
-	if (b2)
-		BBPunfix(b2->batCacheid);
+	BBPreclaim(b);
+	BBPreclaim(b1);
+	BBPreclaim(b2);
 	if (bn == NULL) {
 		return mythrow(MAL, "batcalc.ifthenelse", OPERATION_FAILED);
 	}

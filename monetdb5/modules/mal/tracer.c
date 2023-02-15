@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -21,140 +23,137 @@
 static str
 TRACERflush_buffer(void *ret)
 {
-    (void) ret;
-    GDKtracer_flush_buffer();
-    return MAL_SUCCEED;
+	(void) ret;
+	GDKtracer_flush_buffer();
+	return MAL_SUCCEED;
 }
 
 
 static str
 TRACERset_component_level(void *ret, str *comp_id, str *lvl_id)
 {
-    (void) ret;
-    if (GDKtracer_set_component_level(*comp_id, *lvl_id) != GDK_SUCCEED)
-        throw(MAL, "logging.setcomplevel", ILLEGAL_ARGUMENT);
+	(void) ret;
+	if (GDKtracer_set_component_level(*comp_id, *lvl_id) != GDK_SUCCEED)
+		throw(MAL, "logging.setcomplevel", ILLEGAL_ARGUMENT);
 
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 
 static str
 TRACERreset_component_level(void *ret, str *comp_id)
 {
-    (void) ret;
-    if (GDKtracer_reset_component_level(*comp_id) != GDK_SUCCEED)
-        throw(MAL, "logging.resetcomplevel", ILLEGAL_ARGUMENT"\n");
+	(void) ret;
+	if (GDKtracer_reset_component_level(*comp_id) != GDK_SUCCEED)
+		throw(MAL, "logging.resetcomplevel", ILLEGAL_ARGUMENT"\n");
 
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 
 static str
 TRACERset_layer_level(void *ret, str *layer_id, str *lvl_id)
 {
-    (void) ret;
-    if (GDKtracer_set_layer_level(*layer_id, *lvl_id) != GDK_SUCCEED)
-        throw(MAL, "logging.setlayerlevel", ILLEGAL_ARGUMENT"\n");
+	(void) ret;
+	if (GDKtracer_set_layer_level(*layer_id, *lvl_id) != GDK_SUCCEED)
+		throw(MAL, "logging.setlayerlevel", ILLEGAL_ARGUMENT"\n");
 
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 
 static str
 TRACERreset_layer_level(void *ret, str *layer_id)
 {
-    (void) ret;
-    if (GDKtracer_reset_layer_level(*layer_id) != GDK_SUCCEED)
-        throw(MAL, "logging.resetlayerlevel", ILLEGAL_ARGUMENT"\n");
+	(void) ret;
+	if (GDKtracer_reset_layer_level(*layer_id) != GDK_SUCCEED)
+		throw(MAL, "logging.resetlayerlevel", ILLEGAL_ARGUMENT"\n");
 
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 
 static str
 TRACERset_flush_level(void *ret, str *lvl_id)
 {
-    (void) ret;
-    if (GDKtracer_set_flush_level(*lvl_id) != GDK_SUCCEED)
-        throw(MAL, "logging.setflushlevel", ILLEGAL_ARGUMENT"\n");
+	(void) ret;
+	if (GDKtracer_set_flush_level(*lvl_id) != GDK_SUCCEED)
+		throw(MAL, "logging.setflushlevel", ILLEGAL_ARGUMENT"\n");
 
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 
 static str
 TRACERreset_flush_level(void *ret)
 {
-    (void) ret;
-    if (GDKtracer_reset_flush_level() != GDK_SUCCEED)
-        throw(MAL, "logging.resetflushlevel", _OPERATION_FAILED"\n");
+	(void) ret;
+	if (GDKtracer_reset_flush_level() != GDK_SUCCEED)
+		throw(MAL, "logging.resetflushlevel", _OPERATION_FAILED"\n");
 
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 
 static str
 TRACERset_adapter(void *ret, str *adapter_id)
 {
-    (void) ret;
-    if (GDKtracer_set_adapter(*adapter_id) != GDK_SUCCEED)
-        throw(MAL, "logging.setadapter", ILLEGAL_ARGUMENT"\n");
+	(void) ret;
+	if (GDKtracer_set_adapter(*adapter_id) != GDK_SUCCEED)
+		throw(MAL, "logging.setadapter", ILLEGAL_ARGUMENT"\n");
 
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 
 static str
 TRACERreset_adapter(void *ret)
 {
-    (void) ret;
-    if (GDKtracer_reset_adapter() != GDK_SUCCEED)
-        throw(MAL, "logging.resetadapter", _OPERATION_FAILED"\n");
+	(void) ret;
+	if (GDKtracer_reset_adapter() != GDK_SUCCEED)
+		throw(MAL, "logging.resetadapter", _OPERATION_FAILED"\n");
 
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 
 static str
 TRACERcomp_info(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-    (void) cntxt;
-    (void) mb;
+	(void) cntxt;
+	(void) mb;
 
-    BAT *id, *component, *log_level;
-    bat *i = getArgReference_bat(stk, pci, 0);
-    bat *c = getArgReference_bat(stk, pci, 1);
-    bat *l = getArgReference_bat(stk, pci, 2);
+	BAT *id, *component, *log_level;
+	bat *i = getArgReference_bat(stk, pci, 0);
+	bat *c = getArgReference_bat(stk, pci, 1);
+	bat *l = getArgReference_bat(stk, pci, 2);
 
-    id = COLnew(0, TYPE_int, (BUN) COMPONENTS_COUNT, TRANSIENT);
-    component = COLnew(0, TYPE_str, (BUN) COMPONENTS_COUNT, TRANSIENT);
-    log_level = COLnew(0, TYPE_str, (BUN) COMPONENTS_COUNT, TRANSIENT);
+	id = COLnew(0, TYPE_int, (BUN) COMPONENTS_COUNT, TRANSIENT);
+	component = COLnew(0, TYPE_str, (BUN) COMPONENTS_COUNT, TRANSIENT);
+	log_level = COLnew(0, TYPE_str, (BUN) COMPONENTS_COUNT, TRANSIENT);
 
-    if ( id == NULL || component == NULL || log_level == NULL ) {
+	if ( id == NULL || component == NULL || log_level == NULL ) {
 		BBPreclaim(id);
 		BBPreclaim(component);
 		BBPreclaim(log_level);
 		throw(MAL, "logging.compinfo", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-    // Fill the BATs
-    MT_lock_set(&mal_delayLock);
+	// Fill the BATs
 	if(GDKtracer_fill_comp_info(id, component, log_level) != GDK_SUCCEED) {
-		MT_lock_unset(&mal_delayLock);
 		BBPunfix(id->batCacheid);
 		BBPunfix(component->batCacheid);
 		BBPunfix(log_level->batCacheid);
 		throw(MAL, "logging.compinfo", GDK_EXCEPTION);
 	}
-    MT_lock_unset(&mal_delayLock);
 
-    *i = id->batCacheid;
-    BBPkeepref(id);
-    *c = component->batCacheid;
-    BBPkeepref(component);
-    *l = log_level->batCacheid;
-    BBPkeepref(log_level);
-    return MAL_SUCCEED;
+	*i = id->batCacheid;
+	BBPkeepref(id);
+	*c = component->batCacheid;
+	BBPkeepref(component);
+	*l = log_level->batCacheid;
+	BBPkeepref(log_level);
+	return MAL_SUCCEED;
 }
 
 #include "mel.h"

@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -324,7 +326,8 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 {
 	char *path1;
 	char *path2;
-	int ret, t0 = GDKms();
+	int ret;
+	lng t0 = GDKusec();
 
 	if (nme1 == NULL || *nme1 == 0) {
 		GDKerror("no file specified\n");
@@ -337,7 +340,7 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 		if (ret < 0 && report)
 			GDKsyserror("cannot rename %s to %s\n", path1, path2);
 
-		TRC_DEBUG(IO_, "Move %s %s = %d (%dms)\n", path1, path2, ret, GDKms() - t0);
+		TRC_DEBUG(IO_, "Move %s %s = %d ("LLFMT" usec)\n", path1, path2, ret, GDKusec() - t0);
 	} else {
 		ret = -1;
 	}
@@ -351,7 +354,7 @@ GDKextendf(int fd, size_t size, const char *fn)
 {
 	struct stat stb;
 	int rt = 0;
-	int t0 = GDKms();
+	lng t0 = GDKusec();
 
 	assert(!GDKinmemory(0));
 #ifdef __COVERITY__
@@ -395,9 +398,9 @@ GDKextendf(int fd, size_t size, const char *fn)
 				GDKsyserror("ftruncate to old size");
 		}
 	}
-	TRC_DEBUG(IO_, "GDKextend %s %zu -> %zu %dms%s\n",
+	TRC_DEBUG(IO_, "GDKextend %s %zu -> %zu "LLFMT" usec%s\n",
 		  fn, (size_t) stb.st_size, size,
-		  GDKms() - t0, rt != 0 ? " (failed)" : "");
+		  GDKusec() - t0, rt != 0 ? " (failed)" : "");
 	/* posix_fallocate returns != 0 on failure, fallocate and
 	 * ftruncate return -1 on failure, but all three return 0 on
 	 * success */
@@ -661,23 +664,31 @@ DESCload(int i)
 }
 
 gdk_return
-BATsave_locked(BAT *b, BATiter *bi, BUN size)
+BATsave_iter(BAT *b, BATiter *bi, BUN size)
 {
 	gdk_return err = GDK_SUCCEED;
 	const char *nme;
 	bool dosync;
+	bool locked = false;
 
 	BATcheck(b, GDK_FAIL);
+
+	if (MT_rwlock_rdtry(&b->thashlock))
+		locked = true;
 
 	dosync = (BBP_status(b->batCacheid) & BBPPERSISTENT) != 0;
 	assert(!GDKinmemory(bi->h->farmid));
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
 	if (isVIEW(b)) {
+		if (locked)
+			MT_rwlock_rdunlock(&b->thashlock);
 		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(b), BBP_logical(VIEWtparent(b)));
 		return GDK_FAIL;
 	}
 	if (!BATdirtybi(*bi)) {
+		if (locked)
+			MT_rwlock_rdunlock(&b->thashlock);
 		return GDK_SUCCEED;
 	}
 
@@ -743,10 +754,12 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 		if (b->theap != bi->h) {
 			assert(b->theap->dirty);
 			b->theap->wasempty = bi->h->wasempty;
+			b->theap->hasfile |= bi->h->hasfile;
 		}
 		if (b->tvheap && b->tvheap != bi->vh) {
 			assert(b->tvheap->dirty);
 			b->tvheap->wasempty = bi->vh->wasempty;
+			b->tvheap->hasfile |= bi->vh->hasfile;
 		}
 		if (size != b->batCount || b->batInserted < b->batCount) {
 			/* if the sizes don't match, the BAT must be dirty */
@@ -758,9 +771,11 @@ BATsave_locked(BAT *b, BATiter *bi, BUN size)
 			b->batCopiedtodisk = true;
 		}
 		MT_lock_unset(&b->theaplock);
-		if (b->thash && b->thash != (Hash *) 1)
+		if (locked &&  b->thash && b->thash != (Hash *) 1)
 			BAThashsave(b, dosync);
 	}
+	if (locked)
+		MT_rwlock_rdunlock(&b->thashlock);
 	return err;
 }
 
@@ -770,9 +785,7 @@ BATsave(BAT *b)
 	gdk_return rc;
 
 	BATiter bi = bat_iterator(b);
-	MT_rwlock_rdlock(&b->thashlock);
-	rc = BATsave_locked(b, &bi, bi.count);
-	MT_rwlock_rdunlock(&b->thashlock);
+	rc = BATsave_iter(b, &bi, bi.count);
 	bat_iterator_end(&bi);
 	return rc;
 }

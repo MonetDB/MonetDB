@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -23,7 +25,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	str schema = 0, table = 0;
 	BUN r = 0, rowcnt = 0;	/* table should be sizeable to consider parallel execution*/
 	InstrPtr p, q, *old, target = 0;
-	size_t argsize = 6 * sizeof(lng), m = 0, memclaim;
+	size_t argsize = 6 * sizeof(lng), m = 0;
 	/*	 estimate size per operator estimate:   4 args + 2 res*/
 	int threads = GDKnr_threads ? GDKnr_threads : 1, maxparts = MAXSLICES;
 	str msg = MAL_SUCCEED;
@@ -150,58 +152,48 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	 * Take into account the number of client connections,
 	 * because all user together are responsible for resource contentions
 	 */
+	MT_lock_set(&mal_contextLock);
 	cntxt->idle = 0; // this one is definitely not idle
+	MT_lock_unset(&mal_contextLock);
 
-/* This code was used to experiment with block sizes, mis-using the memorylimit  variable
-	if (cntxt->memorylimit){
-		// the new mitosis scheme uses a maximum chunck size in MB from the client context
-		m = (((size_t) cntxt->memorylimit) * 1048576) / (size_t) row_size;
-		pieces = (int) (rowcnt / m + (rowcnt - m * pieces > 0));
-	}
-	if (cntxt->memorylimit == 0 || pieces <= 1){
-*/
-	if (pieces <= 1){
-		/* improve memory usage estimation */
-		if (nr_cols > 1 || nr_aggrs > 1 || nr_maps > 1)
-			argsize = (nr_cols + nr_aggrs + nr_maps) * sizeof(lng);
-		/* We haven't assigned the number of pieces.
-		 * Determine the memory available for this client
+	/* improve memory usage estimation */
+	if (nr_cols > 1 || nr_aggrs > 1 || nr_maps > 1)
+		argsize = (nr_cols + nr_aggrs + nr_maps) * sizeof(lng);
+	/* We haven't assigned the number of pieces.
+	 * Determine the memory available for this client
+	 */
+
+	/* respect the memory limit size set for the user
+	* and determine the column part size
+	*/
+	m = GDK_mem_maxsize / MCactiveClients(); /* use temporarily */
+	if (cntxt->memorylimit > 0 && (size_t) cntxt->memorylimit << 20 < m)
+		m = ((size_t) cntxt->memorylimit << 20) / argsize;
+	else if (cntxt->maxmem > 0 && cntxt->maxmem < (lng) m)
+		m = (size_t) (cntxt->maxmem / argsize);
+	else
+		m = m / argsize;
+
+	/* if data exceeds memory size,
+	 * i.e., (rowcnt*argsize > GDK_mem_maxsize),
+	 * i.e., (rowcnt > GDK_mem_maxsize/argsize = m) */
+	if (rowcnt > m && m / threads > 0) {
+		/* create |pieces| > |threads| partitions such that
+		 * |threads| partitions at a time fit in memory,
+		 * i.e., (threads*(rowcnt/pieces) <= m),
+		 * i.e., (rowcnt/pieces <= m/threads),
+		 * i.e., (pieces => rowcnt/(m/threads))
+		 * (assuming that (m > threads*MIN_PART_SIZE)) */
+		/* the number of pieces affects SF-100, going beyond 8x increases
+		 * the optimizer costs beyond the execution time
 		 */
-
-		/* respect the memory limit size set for the user
-		* and determine the column part size
-		*/
-		if( cntxt->memorylimit)
-			m = (((size_t) cntxt->memorylimit) * 1048576) / argsize;
-		else {
-			memclaim= MCmemoryClaim();
-			if(memclaim == GDK_mem_maxsize){
-				m = GDK_mem_maxsize / (size_t) MCactiveClients()  / argsize;
-			} else
-				m = (GDK_mem_maxsize - memclaim) / argsize;
-		}
-
-		/* if data exceeds memory size,
-		 * i.e., (rowcnt*argsize > GDK_mem_maxsize),
-		 * i.e., (rowcnt > GDK_mem_maxsize/argsize = m) */
-		if (rowcnt > m && m / threads > 0) {
-			/* create |pieces| > |threads| partitions such that
-			 * |threads| partitions at a time fit in memory,
-			 * i.e., (threads*(rowcnt/pieces) <= m),
-			 * i.e., (rowcnt/pieces <= m/threads),
-			 * i.e., (pieces => rowcnt/(m/threads))
-			 * (assuming that (m > threads*MIN_PART_SIZE)) */
-			/* the number of pieces affects SF-100, going beyond 8x increases
-			 * the optimizer costs beyond the execution time
-			 */
-			pieces = ((int) ceil((double)rowcnt / (m / threads)));
-			if (pieces <= threads)
-				pieces = threads;
-		} else if (rowcnt > MIN_PART_SIZE) {
-		/* exploit parallelism, but ensure minimal partition size to
-		 * limit overhead */
-			pieces = MIN((int) ceil((double)rowcnt / MIN_PART_SIZE), MAX_PARTS2THREADS_RATIO * threads);
-		}
+		pieces = ((int) ceil((double)rowcnt / (m / threads)));
+		if (pieces <= threads)
+			pieces = threads;
+	} else if (rowcnt > MIN_PART_SIZE) {
+	/* exploit parallelism, but ensure minimal partition size to
+	 * limit overhead */
+		pieces = MIN((int) ceil((double)rowcnt / MIN_PART_SIZE), MAX_PARTS2THREADS_RATIO * threads);
 	}
 
 	/* when testing, always aim for full parallelism, but avoid
@@ -278,10 +270,19 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		qtpe = getVarType(mb, getArg(p, 0));
 
 		matq = newInstructionArgs(NULL, matRef, newRef, pieces + 1);
+		if (matq == NULL) {
+			msg = createException(MAL, "optimizer.mitosis", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			break;
+		}
 		getArg(matq, 0) = getArg(p, 0);
 
 		if (upd) {
 			matr = newInstructionArgs(NULL, matRef, newRef, pieces + 1);
+			if (matr == NULL) {
+				freeInstruction(matq);
+				msg = createException(MAL, "optimizer.mitosis", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				break;
+			}
 			getArg(matr, 0) = getArg(p, 1);
 			rtpe = getVarType(mb, getArg(p, 1));
 		}
@@ -289,6 +290,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		for (j = 0; j < pieces; j++) {
 			q = copyInstruction(p);
 			if( q == NULL){
+				freeInstruction(matr);
+				freeInstruction(matq);
 				for (; i<limit; i++)
 					if (old[i])
 						pushInstruction(mb,old[i]);
@@ -303,9 +306,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				rv = getArg(q, 1) = newTmpVariable(mb, rtpe);
 			}
 			pushInstruction(mb, q);
-			matq = addArgument(mb, matq, qv);
+			matq = pushArgument(mb, matq, qv);
 			if (upd)
-				matr = addArgument(mb, matr, rv);
+				matr = pushArgument(mb, matr, rv);
 		}
 		pushInstruction(mb, matq);
 		if (upd)
@@ -318,11 +321,14 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	GDKfree(old);
 
 	/* Defense line against incorrect plans */
-	msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	if (!msg)
-		msg = chkFlow(mb);
-	if (!msg)
-		msg = chkDeclarations(mb);
+	if (msg == MAL_SUCCEED) {
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (msg == MAL_SUCCEED) {
+			msg = chkFlow(mb);
+			if (msg == MAL_SUCCEED)
+				msg = chkDeclarations(mb);
+		}
+	}
 bailout:
 	/* keep actions taken as a fake argument*/
 	(void) pushInt(mb, pci, pieces);

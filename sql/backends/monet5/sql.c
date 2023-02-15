@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -389,7 +391,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 		char *err = NULL;
 
 		_DELETE(nt->part.pexp->exp);
-		nt->part.pexp->exp = SA_STRDUP(sql->session->tr->sa, t->part.pexp->exp);
+		nt->part.pexp->exp = _STRDUP(t->part.pexp->exp);
 		err = bootstrap_partition_expression(sql, nt, 1);
 		sa_reset(sql->ta);
 		if (err) {
@@ -587,7 +589,7 @@ mvc_add_column_predicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	if ((t = mvc_bind_table(m, s, tname)) == NULL)
 		throw(SQL, "sql.column_predicate", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
-		throw(SQL, "sql.column_predicate", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
+		throw(SQL, "sql.column_predicate", SQLSTATE(42S22) "Column not found in %s.%s.%s",sname,tname,cname);
 
 	if ((m->session->level & tr_snapshot) == tr_snapshot || isNew(c) || !isGlobal(c->t) || isGlobalTemp(c->t))
 		return MAL_SUCCEED;
@@ -1119,14 +1121,10 @@ bailout1:
 	bat_iterator_end(&schi);
 	bat_iterator_end(&seqi);
 bailout:
-	if (scheb)
-		BBPunfix(scheb->batCacheid);
-	if (sches)
-		BBPunfix(sches->batCacheid);
-	if (seqb)
-		BBPunfix(seqb->batCacheid);
-	if (seqs)
-		BBPunfix(seqs->batCacheid);
+	BBPreclaim(scheb);
+	BBPreclaim(sches);
+	BBPreclaim(seqb);
+	BBPreclaim(seqs);
 	if (bn && !msg) {
 		BATsetcount(bn, ci1.ncand);
 		bn->tnil = nils;
@@ -1327,8 +1325,10 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			int coltype = getBatType(getArgType(mb, pci, 0));
 			b = store->storage_api.bind_col(m->session->tr, c, access);
+			if (b == NULL)
+				throw(SQL, "sql.bind", SQLSTATE(42000) "Cannot bind column %s.%s.%s", sname, tname, cname);
 
-			if (b && b->ttype && b->ttype != coltype) {
+			if (b->ttype && b->ttype != coltype) {
 				BBPunfix(b->batCacheid);
 				throw(SQL,"sql.bind",SQLSTATE(42000) "Column type mismatch %s.%s.%s",sname,tname,cname);
 			}
@@ -1358,8 +1358,10 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else { /*unpartitioned access to base column*/
 		int coltype = getBatType(getArgType(mb, pci, 0));
 		b = store->storage_api.bind_col(m->session->tr, c, access);
+		if (b == NULL)
+			throw(SQL, "sql.bin", "Couldn't bind column");
 
-		if (b && b->ttype && b->ttype != coltype) {
+		if (b->ttype && b->ttype != coltype) {
 			BBPunfix(b->batCacheid);
 			throw(SQL,"sql.bind",SQLSTATE(42000) "Column type mismatch %s.%s.%s",sname,tname,cname);
 		}
@@ -1707,8 +1709,10 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else { /*unpartitioned access to base index*/
 		int idxtype = getBatType(getArgType(mb, pci, 0));
 		b = store->storage_api.bind_idx(m->session->tr, i, access);
+		if (b == NULL)
+			throw(SQL,"sql.bindidx", "Couldn't bind index");
 
-		if (b && b->ttype && b->ttype != idxtype) {
+		if (b->ttype && b->ttype != idxtype) {
 			BBPunfix(b->batCacheid);
 			throw(SQL,"sql.bindidx",SQLSTATE(42000) "Index type mismatch %s.%s.%s",sname,tname,iname);
 		}
@@ -2003,31 +2007,26 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tpe == TYPE_bat && (b = BATdescriptor(*(bat *) ins)) == NULL)
 		throw(SQL, "sql.delete", SQLSTATE(HY005) "Cannot access column descriptor");
 	if (tpe != TYPE_bat || (b->ttype != TYPE_oid && b->ttype != TYPE_void && b->ttype != TYPE_msk)) {
-		if (b)
-			BBPunfix(b->batCacheid);
+		BBPreclaim(b);
 		throw(SQL, "sql.delete", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL) {
-		if (b)
-			BBPunfix(b->batCacheid);
+		BBPreclaim(b);
 		throw(SQL, "sql.delete", SQLSTATE(3F000) "Schema missing %s",sname);
 	}
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL) {
-		if (b)
-			BBPunfix(b->batCacheid);
+		BBPreclaim(b);
 		throw(SQL, "sql.delete", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	}
 	if (!isTable(t)) {
-		if (b)
-			BBPunfix(b->batCacheid);
+		BBPreclaim(b);
 		throw(SQL, "sql.delete", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	}
 	sqlstore *store = m->session->tr->store;
 	log_res = store->storage_api.delete_tab(m->session->tr, t, b, tpe);
-	if (b)
-		BBPunfix(b->batCacheid);
+	BBPreclaim(b);
 	if (log_res != LOG_OK)
 		throw(SQL, "sql.delete", SQLSTATE(42000) "Delete failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;
@@ -2263,14 +2262,12 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 			 * values */
 			if (!nu_val || (res = setwritable(res)) == NULL ||
 			    BATreplace(res, os, nu_val, false) != GDK_SUCCEED) {
-				if (res)
-					BBPunfix(res->batCacheid);
+				BBPreclaim(res);
 				BBPunfix(os->batCacheid);
 				BBPunfix(s->batCacheid);
 				BBPunfix(u_id->batCacheid);
 				BBPunfix(u_val->batCacheid);
-				if (nu_val)
-					BBPunfix(nu_val->batCacheid);
+				BBPreclaim(nu_val);
 				throw(MAL, "sql.delta", GDK_EXCEPTION);
 			}
 			BBPunfix(nu_val->batCacheid);
@@ -2304,14 +2301,10 @@ BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
 	r = BATdescriptor(*R);
 	res = COLnew(0, TYPE_oid, cnt, TRANSIENT);
 	if (!c || !l || !r || !res) {
-		if (c)
-			BBPunfix(c->batCacheid);
-		if (l)
-			BBPunfix(l->batCacheid);
-		if (r)
-			BBPunfix(r->batCacheid);
-		if (res)
-			BBPunfix(res->batCacheid);
+		BBPreclaim(c);
+		BBPreclaim(l);
+		BBPreclaim(r);
+		BBPreclaim(res);
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	p = (oid*)Tloc(res,0);
@@ -2637,7 +2630,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   wrapup_result_set1:
 	cntxt->qryctx.starttime = 0;
 	mb->optimize = 0;
-	if( order) BBPunfix(order->batCacheid);
+	BBPreclaim(order);
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
 	if( tpe) BBPunfix(tpeId);
@@ -3544,9 +3537,9 @@ sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(uris);
 	GDKfree(unames);
 	GDKfree(hashs);
-	if (urib) BBPunfix(urib->batCacheid);
-	if (unameb) BBPunfix(unameb->batCacheid);
-	if (hashb) BBPunfix(hashb->batCacheid);
+	BBPreclaim(urib);
+	BBPreclaim(unameb);
+	BBPreclaim(hashb);
 	return msg;
 }
 
@@ -3856,7 +3849,7 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (!(b = store->storage_api.bind_col(m->session->tr, c, RDONLY)))
 			throw(SQL, "sql.drop_hash", SQLSTATE(HY005) "Cannot access column descriptor");
-		if (VIEWtparent(b) && (nb = BBP_cache(VIEWtparent(b)))) {
+		if (VIEWtparent(b) && (nb = BBP_desc(VIEWtparent(b)))) {
 			BBPunfix(b->batCacheid);
 			if (!(b = BATdescriptor(nb->batCacheid)))
 				throw(SQL, "sql.drop_hash", SQLSTATE(HY005) "Cannot access column descriptor");
@@ -4224,40 +4217,23 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
   bailout:
 	bat_iterator_end(&bsi);
-	if (sch)
-		BBPunfix(sch->batCacheid);
-	if (tab)
-		BBPunfix(tab->batCacheid);
-	if (col)
-		BBPunfix(col->batCacheid);
-	if (mode)
-		BBPunfix(mode->batCacheid);
-	if (loc)
-		BBPunfix(loc->batCacheid);
-	if (cnt)
-		BBPunfix(cnt->batCacheid);
-	if (type)
-		BBPunfix(type->batCacheid);
-	if (atom)
-		BBPunfix(atom->batCacheid);
-	if (size)
-		BBPunfix(size->batCacheid);
-	if (heap)
-		BBPunfix(heap->batCacheid);
-	if (indices)
-		BBPunfix(indices->batCacheid);
-	if (phash)
-		BBPunfix(phash->batCacheid);
-	if (imprints)
-		BBPunfix(imprints->batCacheid);
-	if (sort)
-		BBPunfix(sort->batCacheid);
-	if (revsort)
-		BBPunfix(revsort->batCacheid);
-	if (key)
-		BBPunfix(key->batCacheid);
-	if (oidx)
-		BBPunfix(oidx->batCacheid);
+	BBPreclaim(sch);
+	BBPreclaim(tab);
+	BBPreclaim(col);
+	BBPreclaim(mode);
+	BBPreclaim(loc);
+	BBPreclaim(cnt);
+	BBPreclaim(type);
+	BBPreclaim(atom);
+	BBPreclaim(size);
+	BBPreclaim(heap);
+	BBPreclaim(indices);
+	BBPreclaim(phash);
+	BBPreclaim(imprints);
+	BBPreclaim(sort);
+	BBPreclaim(revsort);
+	BBPreclaim(key);
+	BBPreclaim(oidx);
 	if (!msg)
 		msg = createException(SQL, "sql.storage", GDK_EXCEPTION);
 	return msg;
@@ -4278,6 +4254,7 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int oldvtop, int oldvid)
 		clearVariable(mb, i);
 		i++;
 	}
+	assert(oldvtop <= mb->vsize);
 	mb->vtop = oldvtop;
 	mb->vid = oldvid;
 }
@@ -4642,6 +4619,10 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mod = *getArgReference_str(stk, pci, arg++);
 	fcn = *getArgReference_str(stk, pci, arg++);
 	npci = newStmtArgs(nmb, mod, fcn, pci->argc);
+	if (npci == NULL) {
+		freeMalBlk(nmb);
+		return createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	for (int i = 1; i < pci->retc; i++) {
 		int type = getArgType(mb, pci, i);
@@ -4656,9 +4637,10 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		npci = pushNil(nmb, npci, type);
 	}
+	pushInstruction(nmb, npci);
 	/* check program to get the proper malblk */
 	if (chkInstruction(cntxt->usermodule, nmb, npci)) {
-		freeInstruction(npci);
+		freeMalBlk(nmb);
 		return createException(MAL, "sql.unionfunc", SQLSTATE(42000) PROGRAM_GENERAL);
 	}
 
@@ -4833,8 +4815,7 @@ do_str_column_vacuum(sql_trans *tr, sql_column *c, char *sname, char *tname, cha
 		}
 	}
 	BBPunfix(b->batCacheid);
-	if (bn)
-		BBPunfix(bn->batCacheid);
+	BBPreclaim(bn);
 	return MAL_SUCCEED;
 }
 
@@ -4873,7 +4854,7 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isTempTable(t))
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
+		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "Column not found in %s.%s.%s",sname,tname,cname);
 	if (c->storage_type)
 		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
 
@@ -5010,7 +4991,7 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (isTempTable(t))
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
+		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S22) "Column not found in %s.%s.%s",sname,tname,cname);
 	if (c->storage_type)
 		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
 
@@ -5022,8 +5003,7 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 	void *argv[4] = {m->store, sname_copy, tname_copy, cname_copy};
 
-	gdk_return res;
-	if((res = gdk_add_callback("str_column_vacuum", str_column_vacuum_callback, 4, argv, interval)) != GDK_SUCCEED) {
+	if (gdk_add_callback("str_column_vacuum", str_column_vacuum_callback, 4, argv, interval) != GDK_SUCCEED) {
 		str_column_vacuum_callback_args_free(4, argv);
 		throw(SQL, "sql.str_column_auto_vacuum", "adding vacuum callback failed!");
 	}
@@ -5065,7 +5045,7 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (isTempTable(t))
 		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
 	if ((c = mvc_bind_column(m, t, cname)) == NULL)
-		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42S22) "Column not found %s.%s",sname,tname);
+		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42S22) "Column not found in %s.%s.%s",sname,tname,cname);
 
 	if(gdk_remove_callback("str_column_vacuum", str_column_vacuum_callback_args_free) != GDK_SUCCEED)
 		throw(SQL, "sql.str_column_stop_vacuum", "removing vacuum callback failed!");
@@ -5382,6 +5362,7 @@ pattern("sql", "password", SQLuser_password, false, "Return password hash of use
  pattern("calc", "date", nil_2_date, false, "cast to date", args(1,2, arg("",date),arg("v",void))),
  pattern("batcalc", "date", nil_2_date, false, "cast to date", args(1,2, batarg("",date),batarg("v",oid))),
  pattern("calc", "str", SQLstr_cast, false, "cast to string and check for overflow", args(1,7, arg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),argany("v",1),arg("digits",int))),
+ pattern("batcalc", "str", SQLbatstr_cast, false, "cast to string and check for overflow, no candidate list", args(1,7, batarg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),batargany("v",1),arg("digits",int))),
  pattern("batcalc", "str", SQLbatstr_cast, false, "cast to string and check for overflow", args(1,8, batarg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),batargany("v",1),batarg("s",oid),arg("digits",int))),
  pattern("calc", "month_interval", month_interval_str, false, "cast str to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",str),arg("ek",int),arg("sk",int))),
  pattern("batcalc", "month_interval", month_interval_str, false, "cast str to a month_interval and check for overflow", args(1,5, batarg("",int),batarg("v",str),batarg("s",oid),arg("ek",int),arg("sk",int))),

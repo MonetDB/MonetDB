@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -184,7 +186,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	long optimal; /* type long used by fits library */
 	rids * rs;
 
-	int tm0, texportboolean=0, texportchar=0, texportstring=0, texportshort=0, texportint=0, texportlng=0, texportfloat=0, texportdouble=0;
+	lng tm0, texportboolean=0, texportchar=0, texportstring=0, texportshort=0, texportint=0, texportlng=0, texportfloat=0, texportdouble=0;
 	size_t numberrow = 0, dimension = 0;
 	int cc = 0, status = 0, j = 0, columns, *fid, block = 0;
 	int boolcols = 0, charcols = 0, strcols = 0, shortcols = 0, intcols = 0, lngcols = 0, floatcols = 0, doublecols = 0;
@@ -313,17 +315,17 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (dimension == (size_t) optimal)
 				{
 					dimension = 0;
-					tm0 = GDKms();
+					tm0 = GDKusec();
 					fits_write_col(fptr, TLOGICAL, cc+1, (optimal*block)+1, 1, optimal, readboolrows, &status);
-					texportboolean += GDKms() - tm0;
+					texportboolean += GDKusec() - tm0;
 					GDKfree(readboolrows);
 					readboolrows = (_Bool *) GDKmalloc (sizeof(_Bool) * optimal);
 					block++;
 				}
 			}
-			tm0 = GDKms();
+			tm0 = GDKusec();
 			fits_write_col(fptr, TLOGICAL, cc+1, (optimal*block)+1, 1, dimension, readboolrows, &status);
-			texportboolean += GDKms() - tm0;
+			texportboolean += GDKusec() - tm0;
 			GDKfree(readboolrows);
 		}
 
@@ -343,17 +345,17 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (dimension == (size_t) optimal)
 				{
 					dimension = 0;
-					tm0 = GDKms();
+					tm0 = GDKusec();
 					fits_write_col(fptr, TBYTE, cc+1, (optimal*block)+1, 1, optimal, readcharrows, &status);
-					texportchar += GDKms() - tm0;
+					texportchar += GDKusec() - tm0;
 					GDKfree(readcharrows);
 					readcharrows = (char *) GDKmalloc (sizeof(char) * optimal);
 					block++;
 				}
 			}
-			tm0 = GDKms();
+			tm0 = GDKusec();
 			fits_write_col(fptr, TBYTE, cc+1, (optimal*block)+1, 1, dimension, readcharrows, &status);
-			texportchar += GDKms() - tm0;
+			texportchar += GDKusec() - tm0;
 			GDKfree(readcharrows);
 		}
 
@@ -372,9 +374,9 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (dimension == (size_t) optimal)
 				{
 					dimension = 0;
-					tm0 = GDKms();
+					tm0 = GDKusec();
 					fits_write_col_str(fptr, cc+1, (optimal*block)+1, 1, optimal, readstrrows, &status);
-					texportstring += GDKms() - tm0;
+					texportstring += GDKusec() - tm0;
 					for (dimension = 0; dimension < (size_t) optimal; dimension++)
 						GDKfree(readstrrows[dimension]);
 					dimension = 0;
@@ -383,9 +385,9 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					block++;
 				}
 			}
-			tm0 = GDKms();
+			tm0 = GDKusec();
 			fits_write_col_str(fptr, cc+1, (optimal*block)+1, 1, dimension, readstrrows, &status);
-			texportstring += GDKms() - tm0;
+			texportstring += GDKusec() - tm0;
 			for (numberrow = 0; numberrow < dimension; numberrow++)
 				GDKfree(readstrrows[numberrow]);
 			GDKfree(readstrrows);
@@ -407,17 +409,17 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (dimension == (size_t) optimal)
 				{
 					dimension = 0;
-					tm0 = GDKms();
+					tm0 = GDKusec();
 					fits_write_col(fptr, TSHORT, cc+1, (optimal*block)+1, 1, optimal, readshortrows, &status);
-					texportshort += GDKms() - tm0;
+					texportshort += GDKusec() - tm0;
 					GDKfree(readshortrows);
 					readshortrows = (short *) GDKmalloc (sizeof(short) * optimal);
 					block++;
 				}
 			}
-			tm0 = GDKms();
+			tm0 = GDKusec();
 			fits_write_col(fptr, TSHORT, cc+1, (optimal*block)+1, 1, dimension, readshortrows, &status);
-			texportshort += GDKms() - tm0;
+			texportshort += GDKusec() - tm0;
 			GDKfree(readshortrows);
 		}
 
@@ -437,17 +439,17 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (dimension == (size_t) optimal)
 				{
 					dimension = 0;
-					tm0 = GDKms();
+					tm0 = GDKusec();
 					fits_write_col(fptr, TINT, cc+1, (optimal*block)+1, 1, optimal, readintrows, &status);
-					texportint += GDKms() - tm0;
+					texportint += GDKusec() - tm0;
 					GDKfree(readintrows);
 					readintrows = (int *) GDKmalloc (sizeof(int) * optimal);
 					block++;
 				}
 			}
-			tm0 = GDKms();
+			tm0 = GDKusec();
 			fits_write_col(fptr, TINT, cc+1, (optimal*block)+1, 1, dimension, readintrows, &status);
-			texportint += GDKms() - tm0;
+			texportint += GDKusec() - tm0;
 			GDKfree(readintrows);
 		}
 
@@ -467,17 +469,17 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (dimension == (size_t) optimal)
 				{
 					dimension = 0;
-					tm0 = GDKms();
+					tm0 = GDKusec();
 					fits_write_col(fptr, TLONG, cc+1, (optimal*block)+1, 1, optimal, readlngrows, &status);
-					texportlng += GDKms() - tm0;
+					texportlng += GDKusec() - tm0;
 					GDKfree(readlngrows);
 					readlngrows = (lng *) GDKmalloc (sizeof(lng) * optimal);
 					block++;
 				}
 			}
-			tm0 = GDKms();
+			tm0 = GDKusec();
 			fits_write_col(fptr, TLONG, cc+1, (optimal*block)+1, 1, dimension, readlngrows, &status);
-			texportlng += GDKms() - tm0;
+			texportlng += GDKusec() - tm0;
 			GDKfree(readlngrows);
 		}
 
@@ -497,17 +499,17 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (dimension == (size_t) optimal)
 				{
 					dimension = 0;
-					tm0 = GDKms();
+					tm0 = GDKusec();
 					fits_write_col(fptr, TFLOAT, cc+1, (optimal*block)+1, 1, optimal, readfloatrows, &status);
-					texportfloat += GDKms() - tm0;
+					texportfloat += GDKusec() - tm0;
 					GDKfree(readfloatrows);
 					readfloatrows = (float *) GDKmalloc (sizeof(float) * optimal);
 					block++;
 				}
 			}
-			tm0 = GDKms();
+			tm0 = GDKusec();
 			fits_write_col(fptr, TFLOAT, cc+1, (optimal*block)+1, 1, dimension, readfloatrows, &status);
-			texportfloat += GDKms() - tm0;
+			texportfloat += GDKusec() - tm0;
 			GDKfree(readfloatrows);
 		}
 
@@ -527,31 +529,31 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (dimension == (size_t) optimal)
 				{
 					dimension = 0;
-					tm0 = GDKms();
+					tm0 = GDKusec();
 					fits_write_col(fptr, TDOUBLE, cc+1, (optimal*block)+1, 1, optimal, readdoublerows, &status);
-					texportdouble += GDKms() - tm0;
+					texportdouble += GDKusec() - tm0;
 					GDKfree(readdoublerows);
 					readdoublerows = (double *) GDKmalloc (sizeof(double) * optimal);
 					block++;
 				}
 			}
-			tm0 = GDKms();
+			tm0 = GDKusec();
 			fits_write_col(fptr, TDOUBLE, cc+1, (optimal*block)+1, 1, optimal, readdoublerows, &status);
-			texportdouble += GDKms() - tm0;
+			texportdouble += GDKusec() - tm0;
 			GDKfree(readdoublerows);
 		}
 	}
 
 
 	// print all the times that were needed to export each one of the columns
-	if (texportboolean > 0)		TRC_DEBUG(FITS, "%d Boolean\tcolumn(s) exported in %d ms\n", boolcols, texportboolean);
-	if (texportchar > 0)		TRC_DEBUG(FITS, "%d Char\t\tcolumn(s) exported in %d ms\n", charcols, texportchar);
-	if (texportstring > 0)		TRC_DEBUG(FITS, "%d String\tcolumn(s) exported in %d ms\n", strcols, texportstring);
-	if (texportshort > 0)		TRC_DEBUG(FITS, "%d Short\t\tcolumn(s) exported in %d ms\n", shortcols, texportshort);
-	if (texportint > 0)			TRC_DEBUG(FITS, "%d Integer\tcolumn(s) exported in %d ms\n", intcols, texportint);
-	if (texportlng > 0)			TRC_DEBUG(FITS, "%d Long\t\tcolumn(s) exported in %d ms\n", lngcols, texportlng);
-	if (texportfloat > 0)		TRC_DEBUG(FITS, "%d Float\t\tcolumn(s) exported in %d ms\n", floatcols, texportfloat);
-	if (texportdouble > 0)		TRC_DEBUG(FITS, "%d Double\tcolumn(s) exported in %d ms\n", doublecols, texportdouble);
+	if (texportboolean > 0)		TRC_DEBUG(FITS, "%d Boolean\tcolumn(s) exported in "LLFMT" usec\n", boolcols, texportboolean);
+	if (texportchar > 0)		TRC_DEBUG(FITS, "%d Char\t\tcolumn(s) exported in "LLFMT" usec\n", charcols, texportchar);
+	if (texportstring > 0)		TRC_DEBUG(FITS, "%d String\tcolumn(s) exported in "LLFMT" usec\n", strcols, texportstring);
+	if (texportshort > 0)		TRC_DEBUG(FITS, "%d Short\t\tcolumn(s) exported in "LLFMT" usec\n", shortcols, texportshort);
+	if (texportint > 0)			TRC_DEBUG(FITS, "%d Integer\tcolumn(s) exported in "LLFMT" usec\n", intcols, texportint);
+	if (texportlng > 0)			TRC_DEBUG(FITS, "%d Long\t\tcolumn(s) exported in "LLFMT" usec\n", lngcols, texportlng);
+	if (texportfloat > 0)		TRC_DEBUG(FITS, "%d Float\t\tcolumn(s) exported in "LLFMT" usec\n", floatcols, texportfloat);
+	if (texportdouble > 0)		TRC_DEBUG(FITS, "%d Double\tcolumn(s) exported in "LLFMT" usec\n", doublecols, texportdouble);
 
 
 	fits_close_file(fptr, &status);
@@ -745,6 +747,10 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = fname;
 	else
 		s++;
+	if (strcpy_len(bname, s, sizeof(bname)) >= sizeof(bname)) {
+		fits_close_file(fptr, &status);
+		throw(MAL, "fits.attach", SQLSTATE(FI000) "File name too long\n");
+	}
 	strcpy(bname, s);
 	s = strrchr(bname, '.');
 	if (s) *s = 0;
@@ -874,7 +880,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			esc_tunit = SQLescapeString(tunit);
-			if (!esc_tform) {
+			if (!esc_tunit) {
 				GDKfree(esc_tform);
 				GDKfree(esc_cname);
 				fits_close_file(fptr, &status);
@@ -1020,7 +1026,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	for (j = 1; j <= cnum; j++) {
 		BAT *tmp = NULL;
-		int time0 = GDKms();
+		lng time0 = GDKusec();
 		mtype = fits2mtype(tpcode[j - 1], rep[j - 1]);
 		nilptr = ATOMnilptr(mtype);
 		col = mvc_bind_column(m, tbl, cname[j - 1]);
@@ -1079,28 +1085,28 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /*			char *v = GDKzalloc(wid[j-1]);*/
 			/* type long demanded by "rows", i.e., by fits library */
 			long bsize = 50, batch = bsize, k, i;
-			int tm0, tloadtm = 0, tattachtm = 0;
+			lng tm0, tloadtm = 0, tattachtm = 0;
 			char **v = (char **) GDKzalloc(sizeof(char *) * bsize);
 			for(i = 0; i < bsize; i++)
 				v[i] = GDKzalloc(wid[j-1]);
 			for(i = 0; i < rows; i += batch) {
 				batch = rows - i < bsize ? rows - i: bsize;
-				tm0 = GDKms();
+				tm0 = GDKusec();
 				fits_read_col(fptr, tpcode[j - 1], j, 1 + i, 1, batch, (void *) nilptr, (void *)v, &anynull, &status);
-				tloadtm += GDKms() - tm0;
-				tm0 = GDKms();
+				tloadtm += GDKusec() - tm0;
+				tm0 = GDKusec();
 				for(k = 0; k < batch ; k++)
 					if (BUNappend(tmp, v[k], false) != GDK_SUCCEED) {
 						BBPreclaim(tmp);
 						msg = createException(MAL, "fits.loadtable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						goto bailout;
 					}
-				tattachtm += GDKms() - tm0;
+				tattachtm += GDKusec() - tm0;
 			}
 			for(i = 0; i < bsize ; i++)
 				GDKfree(v[i]);
 			GDKfree(v);
-			TRC_INFO(FITS, "String column load %d ms, BUNappend %d ms\n", tloadtm, tattachtm);
+			TRC_INFO(FITS, "String column load "LLFMT" usec, BUNappend "LLFMT" usec\n", tloadtm, tattachtm);
 		}
 		else {
 			BATiter bi = bat_iterator_nolock(tmp);
@@ -1118,13 +1124,13 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		}
 
-		TRC_INFO(FITS, "#Column %s loaded for %d ms\t", cname[j-1], GDKms() - time0);
+		TRC_INFO(FITS, "#Column %s loaded for "LLFMT" usec\t", cname[j-1], GDKusec() - time0);
 		if (store->storage_api.append_col(m->session->tr, col, offset, pos, tmp, BATcount(tmp), TYPE_bat) != LOG_OK) {
 			BBPreclaim(tmp);
 			msg = createException(MAL, "fits.loadtable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			break;
 		}
-		TRC_INFO(FITS, "Total %d ms\n", GDKms() - time0);
+		TRC_INFO(FITS, "Total "LLFMT" usec\n", GDKusec() - time0);
 		BBPreclaim(tmp);
 	}
 

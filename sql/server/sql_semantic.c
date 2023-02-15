@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1071,11 +1073,11 @@ result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
 		if (l->type->radix == 10 && r->type->radix == 10) {
 			digits = scale + (sql_max(l->digits - l->scale, r->digits - r->scale));
 #ifdef HAVE_HGE
-			if (digits > 39) {
-				digits = 39;
+			if (digits > 38) {
+				digits = 38;
 #else
-			if (digits > 19) {
-				digits = 19;
+			if (digits > 18) {
+				digits = 18;
 #endif
 				scale = MIN(scale, digits - 1);
 			}

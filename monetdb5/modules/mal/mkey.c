@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -281,11 +283,10 @@ MKEYbathash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (bs)
-		BBPunfix(bs->batCacheid);
-	if (bn && !msg) {
+	BBPreclaim(b);
+	BBPreclaim(bs);
+	if (bn) {
+		assert(msg == MAL_SUCCEED);
 		BATsetcount(bn, ci.ncand);
 		bn->tnonil = false;
 		bn->tnil = false;
@@ -294,8 +295,6 @@ bailout:
 		bn->trevsorted = BATcount(bn) <= 1;
 		*res = bn->batCacheid;
 		BBPkeepref(bn);
-	} else if (bn) {
-		BBPreclaim(bn);
 	}
 	return msg;
 }
@@ -478,15 +477,12 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	bat_iterator_end(&bi);
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (hb)
-		BBPunfix(hb->batCacheid);
-	if (s1)
-		BBPunfix(s1->batCacheid);
-	if (s2)
-		BBPunfix(s2->batCacheid);
-	if (bn && !msg) {
+	BBPreclaim(b);
+	BBPreclaim(hb);
+	BBPreclaim(s1);
+	BBPreclaim(s2);
+	if (bn) {
+		assert(msg == MAL_SUCCEED);
 		BATsetcount(bn, ci1.ncand);
 		bn->tnonil = false;
 		bn->tnil = false;
@@ -495,8 +491,6 @@ bailout:
 		bn->trevsorted = BATcount(bn) <= 1;
 		*res = bn->batCacheid;
 		BBPkeepref(bn);
-	} else if (bn) {
-		BBPreclaim(bn);
 	}
 	return msg;
 }
@@ -577,11 +571,10 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	bat_iterator_end(&hbi);
 
 bailout:
-	if (hb)
-		BBPunfix(hb->batCacheid);
-	if (bs)
-		BBPunfix(bs->batCacheid);
-	if (bn && !msg) {
+	BBPreclaim(hb);
+	BBPreclaim(bs);
+	if (bn) {
+		assert(msg == MAL_SUCCEED);
 		BATsetcount(bn, ci.ncand);
 		bn->tnonil = false;
 		bn->tnil = false;
@@ -590,8 +583,6 @@ bailout:
 		bn->trevsorted = BATcount(bn) <= 1;
 		*res = bn->batCacheid;
 		BBPkeepref(bn);
-	} else if (bn) {
-		BBPreclaim(bn);
 	}
 	return msg;
 }
@@ -684,11 +675,10 @@ MKEYconstbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	bat_iterator_end(&bi);
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (bs)
-		BBPunfix(bs->batCacheid);
-	if (bn && !msg) {
+	BBPreclaim(b);
+	BBPreclaim(bs);
+	if (bn) {
+		assert(msg == MAL_SUCCEED);
 		BATsetcount(bn, ci.ncand);
 		bn->tnonil = false;
 		bn->tnil = false;
@@ -697,8 +687,6 @@ bailout:
 		bn->trevsorted = BATcount(bn) <= 1;
 		*res = bn->batCacheid;
 		BBPkeepref(bn);
-	} else if (bn) {
-		BBPreclaim(bn);
 	}
 	return msg;
 }

@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -109,12 +111,9 @@ static str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3
 	b2= BATdescriptor(*bid2);											\
 	b3= BATdescriptor(*bid3);											\
 	if (b == NULL || b2 == NULL || b3 == NULL) {						\
-		if (b)															\
-			BBPunfix(b->batCacheid);									\
-		if (b2)															\
-			BBPunfix(b2->batCacheid);									\
-		if (b3)															\
-			BBPunfix(b3->batCacheid);									\
+		BBPreclaim(b);													\
+		BBPreclaim(b2);													\
+		BBPreclaim(b3);													\
 		throw(MAL, "batcolor." #NAME, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING); \
 	}																	\
 	bn= COLnew(b->hseqbase,getAtomIndex("color",5,TYPE_int),BATcount(b), TRANSIENT); \

@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -6074,366 +6076,454 @@ wkbContains_point(bit *out, wkb **a, dbl *point_x, dbl *point_y)
 	return MAL_SUCCEED;
 }
 
-static const unsigned char geom_functions[9054] = {
-"module geom;\n"
-"function AsText(w:wkb) :str;\n"
-"x := ToText(w,0);\n"
-"return x;\n"
-"end AsText;\n"
-"function AsEWKT(w:wkb) :str;\n"
-"x := ToText(w,1);\n"
-"return x;\n"
-"end AsEWKT;\n"
-"function GeomFromText(wkt:str, srid:int) :wkb;\n"
-"x := FromText(wkt,srid,0);\n"
-"return x;\n"
-"end GeomFromText;\n"
-"function PointFromText(wkt:str, srid:int) :wkb;\n"
-"x := FromText(wkt,srid,1);\n"
-"return x;\n"
-"end PointFromText;\n"
-"function LineFromText(wkt:str, srid:int) :wkb;\n"
-"x := FromText(wkt,srid,2);\n"
-"return x;\n"
-"end LineFromText;\n"
-"function PolygonFromText(wkt:str, srid:int) :wkb;\n"
-"x := FromText(wkt,srid,4);\n"
-"return x;\n"
-"end PolygonFromText;\n"
-"function MPointFromText(wkt:str, srid:int) :wkb;\n"
-"x := FromText(wkt,srid,5);\n"
-"return x;\n"
-"end MPointFromText;\n"
-"function MLineFromText(wkt:str, srid:int) :wkb;\n"
-"x := FromText(wkt,srid,6);\n"
-"return x;\n"
-"end MLineFromText;\n"
-"function MPolyFromText(wkt:str, srid:int) :wkb;\n"
-"x := FromText(wkt,srid,7);\n"
-"return x;\n"
-"end MPolyFromText;\n"
-"function GeomCollFromText(wkt:str, srid:int) :wkb;\n"
-"x := FromText(wkt,srid,8);\n"
-"return x;\n"
-"end GeomCollFromText;\n"
-"function GeomFromText(wkt:str) :wkb;\n"
-"x := FromText(wkt,0,0);\n"
-"return x;\n"
-"end GeomFromText;\n"
-"function PointFromText(wkt:str) :wkb;\n"
-"x := FromText(wkt,0,1);\n"
-"return x;\n"
-"end PointFromText;\n"
-"function LineFromText(wkt:str) :wkb;\n"
-"x := FromText(wkt,0,2);\n"
-"return x;\n"
-"end LineFromText;\n"
-"function PolygonFromText(wkt:str) :wkb;\n"
-"x := FromText(wkt,0,4);\n"
-"return x;\n"
-"end PolygonFromText;\n"
-"function MPointFromText(wkt:str) :wkb;\n"
-"x := FromText(wkt,0,5);\n"
-"return x;\n"
-"end MPointFromText;\n"
-"function MLineFromText(wkt:str) :wkb;\n"
-"x := FromText(wkt,0,6);\n"
-"return x;\n"
-"end MLineFromText;\n"
-"function MPolyFromText(wkt:str) :wkb;\n"
-"x := FromText(wkt,0,7);\n"
-"return x;\n"
-"end MPolyFromText;\n"
-"function GeomCollFromText(wkt:str) :wkb;\n"
-"x := FromText(wkt,0,8);\n"
-"return x;\n"
-"end GeomCollFromText;\n"
-"function NumInteriorRings(w:wkb) :int;\n"
-"x := geom.NumRings(w, 0);\n"
-"return x;\n"
-"end NumInteriorRings;\n"
-"function NRings(w:wkb) :int;\n"
-"x := geom.NumRings(w, 1);\n"
-"return x;\n"
-"end NRings;\n"
-"function BdPolyFromText(wkt:str, srid:int) :wkb;\n"
-"x := MLineStringToPolygon(wkt,srid,0);\n"
-"return x;\n"
-"end BdPolyFromText;\n"
-"function BdMPolyFromText(wkt:str, srid:int) :wkb;\n"
-"x := MLineStringToPolygon(wkt,srid,1);\n"
-"return x;\n"
-"end BdMPolyFromText;\n"
-"function MakePoint(x:dbl, y:dbl) :wkb;\n"
-"p := MakePointXYZM(x, y, 0:dbl, 0:dbl, 0);\n"
-"return p;\n"
-"end MakePoint;\n"
-"function MakePoint(x:dbl, y:dbl, z:dbl) :wkb;\n"
-"p := MakePointXYZM(x, y, z, 0:dbl, 10);\n"
-"return p;\n"
-"end MakePoint;\n"
-"function MakePointM(x:dbl, y:dbl, m:dbl) :wkb;\n"
-"p := MakePointXYZM(x, y, 0:dbl, m, 1);\n"
-"return p;\n"
-"end MakePointM;\n"
-"function MakePoint(x:dbl, y:dbl, z:dbl, m:dbl) :wkb;\n"
-"p := MakePointXYZM(x, y, z, m, 11);\n"
-"return p;\n"
-"end MakePoint;\n"
-"function GeometryType1(w:wkb) :str;\n"
-"x := GeometryType(w, 0);\n"
-"return x;\n"
-"end GeometryType1;\n"
-"function GeometryType2(w:wkb) :str;\n"
-"x := GeometryType(w, 1);\n"
-"return x;\n"
-"end GeometryType2;\n"
-"function X(w:wkb) :dbl;\n"
-"c := GetCoordinate(w, 0);\n"
-"return c;\n"
-"end X;\n"
-"function Y(w:wkb) :dbl;\n"
-"c := GetCoordinate(w, 1);\n"
-"return c;\n"
-"end Y;\n"
-"function Z(w:wkb) :dbl;\n"
-"c := GetCoordinate(w, 2);\n"
-"return c;\n"
-"end Z;\n"
-"function Force2D(g:wkb) :wkb;\n"
-"x := ForceDimensions(g, 2);\n"
-"return x;\n"
-"end Force2D;\n"
-"function Force3D(g:wkb) :wkb;\n"
-"x := ForceDimensions(g, 3);\n"
-"return x;\n"
-"end Force3D;\n"
-"function Translate(g:wkb, dx:dbl, dy:dbl) :wkb;\n"
-"x := Translate3D(g,dx,dy,0:dbl);\n"
-"return x;\n"
-"end Translate;\n"
-"function Translate(g:wkb, dx:dbl, dy:dbl, dz:dbl) :wkb;\n"
-"x := Translate3D(g,dx,dy,dz);\n"
-"return x;\n"
-"end Translate;\n"
-"function NumPoints(w:wkb) :int;\n"
-"x := PointsNum(w, 1);\n"
-"return x;\n"
-"end NumPoints;\n"
-"function NPoints(w:wkb) :int;\n"
-"x := PointsNum(w, 0);\n"
-"return x;\n"
-"end NPoints;\n"
-"function MakeEnvelope(xmin:dbl, ymin:dbl, xmax:dbl, ymax:dbl, srid:int) :wkb;\n"
-"x := EnvelopeFromCoordinates(xmin, ymin, xmax, ymax, srid);\n"
-"return x;\n"
-"end MakeEnvelope;\n"
-"function MakeEnvelope(xmin:dbl, ymin:dbl, xmax:dbl, ymax:dbl) :wkb;\n"
-"x := EnvelopeFromCoordinates(xmin, ymin, xmax, ymax, 0);\n"
-"return x;\n"
-"end MakeEnvelope;\n"
-"function MakePolygon(external:wkb) :wkb;\n"
-"x := Polygon(external, nil:bat[:wkb], 0);\n"
-"return x;\n"
-"end MakePolygon;\n"
-"function MakePolygon(external:wkb, srid:int) :wkb;\n"
-"x := Polygon(external, nil:bat[:wkb], srid);\n"
-"return x;\n"
-"end MakePolygon;\n"
-"function XMinFromWKB(g:wkb) :dbl;\n"
-"x := coordinateFromWKB(g, 1);\n"
-"return x;\n"
-"end XMinFromWKB;\n"
-"function YMinFromWKB(g:wkb) :dbl;\n"
-"x := coordinateFromWKB(g, 2);\n"
-"return x;\n"
-"end YMinFromWKB;\n"
-"function XMaxFromWKB(g:wkb) :dbl;\n"
-"x := coordinateFromWKB(g, 3);\n"
-"return x;\n"
-"end XMaxFromWKB;\n"
-"function YMaxFromWKB(g:wkb) :dbl;\n"
-"x := coordinateFromWKB(g, 4);\n"
-"return x;\n"
-"end YMaxFromWKB;\n"
-"function XMinFromMBR(b:mbr) :dbl;\n"
-"x := coordinateFromMBR(b, 1);\n"
-"return x;\n"
-"end XMinFromMBR;\n"
-"function YMinFromMBR(b:mbr) :dbl;\n"
-"x := coordinateFromMBR(b, 2);\n"
-"return x;\n"
-"end YMinFromMBR;\n"
-"function XMaxFromMBR(b:mbr) :dbl;\n"
-"x := coordinateFromMBR(b, 3);\n"
-"return x;\n"
-"end XMaxFromMBR;\n"
-"function YMaxFromMBR(b:mbr) :dbl;\n"
-"x := coordinateFromMBR(b, 4);\n"
-"return x;\n"
-"end YMaxFromMBR;\n"
-"module batgeom;\n"
-"function GeomFromText(wkt:bat[:str], srid:int) :bat[:wkb];\n"
-"x := FromText(wkt,srid,0);\n"
-"return x;\n"
-"end GeomFromText;\n"
-"function PointFromText(wkt:bat[:str], srid:int) :bat[ :wkb];\n"
-"x := FromText(wkt,srid,1);\n"
-"return x;\n"
-"end PointFromText;\n"
-"function LineFromText(wkt:bat[:str], srid:int) :bat[ :wkb];\n"
-"x := FromText(wkt,srid,2);\n"
-"return x;\n"
-"end LineFromText;\n"
-"function PolygonFromText(wkt:bat[:str], srid:int) :bat[ :wkb];\n"
-"x := FromText(wkt,srid,4);\n"
-"return x;\n"
-"end PolygonFromText;\n"
-"function MPointFromText(wkt:bat[:str], srid:int) :bat[ :wkb];\n"
-"x := FromText(wkt,srid,5);\n"
-"return x;\n"
-"end MPointFromText;\n"
-"function MLineFromText(wkt:bat[:str], srid:int) :bat[ :wkb];\n"
-"x := FromText(wkt,srid,6);\n"
-"return x;\n"
-"end MLineFromText;\n"
-"function MPolyFromText(wkt:bat[:str], srid:int) :bat[ :wkb];\n"
-"x := FromText(wkt,srid,7);\n"
-"return x;\n"
-"end MPolyFromText;\n"
-"function GeomCollFromText(wkt:bat[:str], srid:int) :bat[ :wkb];\n"
-"x := FromText(wkt,srid,8);\n"
-"return x;\n"
-"end GeomCollFromText;\n"
-"function GeomFromText(wkt:bat[:str]) :bat[:wkb];\n"
-"x := FromText(wkt,0,0);\n"
-"return x;\n"
-"end GeomFromText;\n"
-"function PointFromText(wkt:bat[:str]) :bat[ :wkb];\n"
-"x := FromText(wkt,0,1);\n"
-"return x;\n"
-"end PointFromText;\n"
-"function LineFromText(wkt:bat[:str]) :bat[ :wkb];\n"
-"x := FromText(wkt,0,2);\n"
-"return x;\n"
-"end LineFromText;\n"
-"function PolygonFromText(wkt:bat[:str]) :bat[ :wkb];\n"
-"x := FromText(wkt,0,4);\n"
-"return x;\n"
-"end PolygonFromText;\n"
-"function MPointFromText(wkt:bat[:str]) :bat[ :wkb];\n"
-"x := FromText(wkt,0,5);\n"
-"return x;\n"
-"end MPointFromText;\n"
-"function MLineFromText(wkt:bat[:str]) :bat[ :wkb];\n"
-"x := FromText(wkt,0,6);\n"
-"return x;\n"
-"end MLineFromText;\n"
-"function MPolyFromText(wkt:bat[:str]) :bat[ :wkb];\n"
-"x := FromText(wkt,0,7);\n"
-"return x;\n"
-"end MPolyFromText;\n"
-"function GeomCollFromText(wkt:bat[:str]) :bat[ :wkb];\n"
-"x := FromText(wkt,0,8);\n"
-"return x;\n"
-"end GeomCollFromText;\n"
-"function AsText(w:bat[:wkb]) :bat[:str];\n"
-"x := ToText(w,0);\n"
-"return x;\n"
-"end AsText;\n"
-"function AsEWKT(w:bat[:wkb]) :bat[:str];\n"
-"x := ToText(w,1);\n"
-"return x;\n"
-"end AsEWKT;\n"
-"function GeometryType1(w:bat[:wkb]) :bat[:str];\n"
-"x := GeometryType(w, 0);\n"
-"return x;\n"
-"end GeometryType1;\n"
-"function GeometryType2(w:bat[:wkb]) :bat[:str];\n"
-"x := GeometryType(w, 1);\n"
-"return x;\n"
-"end GeometryType2;\n"
-"function MakePoint(x:bat[:dbl], y:bat[:dbl]) :bat[:wkb];\n"
-"p := MakePointXYZM(x, y, nil:bat[:dbl], nil:bat, 0);\n"
-"return p;\n"
-"end MakePoint;\n"
-"function MakePoint(x:bat[:dbl], y:bat[:dbl], z:bat[:dbl]) :bat[:wkb];\n"
-"p := MakePointXYZM(x, y, z, nil:bat[:dbl], 10);\n"
-"return p;\n"
-"end MakePoint;\n"
-"function MakePointM(x:bat[:dbl], y:bat[:dbl], m:bat[:dbl]) :bat[:wkb];\n"
-"p := MakePointXYZM(x, y, nil:bat[:dbl], m, 1);\n"
-"return p;\n"
-"end MakePointM;\n"
-"function MakePoint(x:bat[:dbl], y:bat[:dbl], z:bat[:dbl], m:bat[:dbl]) :bat[:wkb];\n"
-"p := MakePointXYZM(x, y, z, m, 11);\n"
-"return p;\n"
-"end MakePoint;\n"
-"function NumPoints(w:bat[:wkb]) :bat[:int];\n"
-"x := PointsNum(w, 1);\n"
-"return x;\n"
-"end NumPoints;\n"
-"function NPoints(w:bat[:wkb]) :bat[:int];\n"
-"x := PointsNum(w, 0);\n"
-"return x;\n"
-"end NPoints;\n"
-"function X(w:bat[:wkb]) :bat[:dbl];\n"
-"c := GetCoordinate(w, 0);\n"
-"return c;\n"
-"end X;\n"
-"function Y(w:bat[:wkb]) :bat[:dbl];\n"
-"c := GetCoordinate(w, 1);\n"
-"return c;\n"
-"end Y;\n"
-"function Z(w:bat[:wkb]) :bat[:dbl];\n"
-"c := GetCoordinate(w, 2);\n"
-"return c;\n"
-"end Z;\n"
-"function NumInteriorRings(w:bat[:wkb]) :bat[:int];\n"
-"x := batgeom.NumRings(w, 0);\n"
-"return x;\n"
-"end NumInteriorRings;\n"
-"function NRings(w:bat[:wkb]) :bat[:int];\n"
-"x := batgeom.NumRings(w, 1);\n"
-"return x;\n"
-"end NRings;\n"
-"function XMinFromWKB(g:bat[:wkb]) :bat[:dbl];\n"
-"x := coordinateFromWKB(g, 1);\n"
-"return x;\n"
-"end XMinFromWKB;\n"
-"function YMinFromWKB(g:bat[:wkb]) :bat[:dbl];\n"
-"x := coordinateFromWKB(g, 2);\n"
-"return x;\n"
-"end YMinFromWKB;\n"
-"function XMaxFromWKB(g:bat[:wkb]) :bat[:dbl];\n"
-"x := coordinateFromWKB(g, 3);\n"
-"return x;\n"
-"end XMaxFromWKB;\n"
-"function YMaxFromWKB(g:bat[:wkb]) :bat[:dbl];\n"
-"x := coordinateFromWKB(g, 4);\n"
-"return x;\n"
-"end YMaxFromWKB;\n"
-"function XMinFromMBR(b:bat[:mbr]) :bat[:dbl];\n"
-"x := coordinateFromMBR(b, 1);\n"
-"return x;\n"
-"end XMinFromMBR;\n"
-"function YMinFromMBR(b:bat[:mbr]) :bat[:dbl];\n"
-"x := coordinateFromMBR(b, 2);\n"
-"return x;\n"
-"end YMinFromMBR;\n"
-"function XMaxFromMBR(b:bat[:mbr]) :bat[:dbl];\n"
-"x := coordinateFromMBR(b, 3);\n"
-"return x;\n"
-"end XMaxFromMBR;\n"
-"function YMaxFromMBR(b:bat[:mbr]) :bat[:dbl];\n"
-"x := coordinateFromMBR(b, 4);\n"
-"return x;\n"
-"end YMaxFromMBR;\n"
-"function calc.wkb( wkt:str, srid:int, type:int ) :wkb;\n"
-"x := geom.FromText(wkt,0,0);\n"
-"return x;\n"
-"end wkb;\n"
-};
+static str
+geom_AsText_wkb(char **ret, wkb **w)
+{
+	return wkbAsText(ret, w, &(int){0});
+}
+static str
+geom_AsEWKT_wkb(char **ret, wkb **w)
+{
+	return wkbAsText(ret, w, &(int){1});
+}
+static str
+geom_GeomFromText_str_int(wkb **ret, char **wkt, int *srid)
+{
+	return wkbFromText(ret, wkt, srid, &(int){0});
+}
+static str
+geom_PointFromText_str_int(wkb **ret, char **wkt, int *srid)
+{
+	return wkbFromText(ret, wkt, srid, &(int){1});
+}
+static str
+geom_LineFromText_str_int(wkb **ret, char **wkt, int *srid)
+{
+	return wkbFromText(ret, wkt, srid, &(int){2});
+}
+static str
+geom_PolygonFromText_str_int(wkb **ret, char **wkt, int *srid)
+{
+	return wkbFromText(ret, wkt, srid, &(int){4});
+}
+static str
+geom_MPointFromText_str_int(wkb **ret, char **wkt, int *srid)
+{
+	return wkbFromText(ret, wkt, srid, &(int){5});
+}
+static str
+geom_MLineFromText_str_int(wkb **ret, char **wkt, int *srid)
+{
+	return wkbFromText(ret, wkt, srid, &(int){6});
+}
+static str
+geom_MPolyFromText_str_int(wkb **ret, char **wkt, int *srid)
+{
+	return wkbFromText(ret, wkt, srid, &(int){7});
+}
+static str
+geom_GeomCollFromText_str_int(wkb **ret, char **wkt, int *srid)
+{
+	return wkbFromText(ret, wkt, srid, &(int){8});
+}
+static str
+geom_GeomFromText_str(wkb **ret, char **wkt)
+{
+	return wkbFromText(ret, wkt, &(int){0}, &(int){0});
+}
+static str
+geom_PointFromText_str(wkb **ret, char **wkt)
+{
+	return wkbFromText(ret, wkt, &(int){0}, &(int){1});
+}
+static str
+geom_LineFromText_str(wkb **ret, char **wkt)
+{
+	return wkbFromText(ret, wkt, &(int){0}, &(int){2});
+}
+static str
+geom_PolygonFromText_str(wkb **ret, char **wkt)
+{
+	return wkbFromText(ret, wkt, &(int){0}, &(int){4});
+}
+static str
+geom_MPointFromText_str(wkb **ret, char **wkt)
+{
+	return wkbFromText(ret, wkt, &(int){0}, &(int){5});
+}
+static str
+geom_MLineFromText_str(wkb **ret, char **wkt)
+{
+	return wkbFromText(ret, wkt, &(int){0}, &(int){6});
+}
+static str
+geom_MPolyFromText_str(wkb **ret, char **wkt)
+{
+	return wkbFromText(ret, wkt, &(int){0}, &(int){7});
+}
+static str
+geom_GeomCollFromText_str(wkb **ret, char **wkt)
+{
+	return wkbFromText(ret, wkt, &(int){0}, &(int){8});
+}
+static str
+geom_NumInteriorRings_wkb(int *ret, wkb **w)
+{
+	return wkbNumRings(ret, w, &(int){0});
+}
+static str
+geom_NRings_wkb(int *ret, wkb **w)
+{
+	return wkbNumRings(ret, w, &(int){1});
+}
+static str
+geom_BdPolyFromText_str_int(wkb **ret, char **wkt, int *srid)
+{
+	return wkbMLineStringToPolygon(ret, wkt, srid, &(int){0});
+}
+static str
+geom_BdMPolyFromText_str_int(wkb **ret, char **wkt, int *srid)
+{
+	return wkbMLineStringToPolygon(ret, wkt, srid, &(int){1});
+}
+static str
+geom_MakePoint_dbl_dbl(wkb **ret, dbl *x, dbl *y)
+{
+	return wkbMakePoint(ret, x, y, &(dbl){0}, &(dbl){0}, &(int){0});
+}
+static str
+geom_MakePoint_dbl_dbl_dbl(wkb **ret, dbl *x, dbl *y, dbl *z)
+{
+	return wkbMakePoint(ret, x, y, z, &(dbl){0}, &(int){10});
+}
+static str
+geom_MakePointM_dbl_dbl_dbl(wkb **ret, dbl *x, dbl *y, dbl *m)
+{
+	return wkbMakePoint(ret, x, y, &(dbl){0}, m, &(int){1});
+}
+static str
+geom_MakePoint_dbl_dbl_dbl_dbl(wkb **ret, dbl *x, dbl *y, dbl *z, dbl *m)
+{
+	return wkbMakePoint(ret, x, y, z, m, &(int){11});
+}
+static str
+geom_GeometryType1_wkb(char **ret, wkb **w)
+{
+	return wkbGeometryType(ret, w, &(int){0});
+}
+static str
+geom_GeometryType2_wkb(char **ret, wkb **w)
+{
+	return wkbGeometryType(ret, w, &(int){1});
+}
+static str
+geom_X_wkb(dbl *ret, wkb **w)
+{
+	return wkbGetCoordinate(ret, w, &(int){0});
+}
+static str
+geom_Y_wkb(dbl *ret, wkb **w)
+{
+	return wkbGetCoordinate(ret, w, &(int){1});
+}
+static str
+geom_Z_wkb(dbl *ret, wkb **w)
+{
+	return wkbGetCoordinate(ret, w, &(int){2});
+}
+static str
+geom_Force2D_wkb(wkb **ret, wkb **g)
+{
+	return wkbForceDim(ret, g, &(int){2});
+}
+static str
+geom_Force3D_wkb(wkb **ret, wkb **g)
+{
+	return wkbForceDim(ret, g, &(int){3});
+}
+static str
+geom_Translate_wkb_dbl_dbl(wkb **ret, wkb **g, dbl *dx, dbl *dy)
+{
+	return wkbTranslate(ret, g, dx, dy, &(dbl){0});
+}
+static str
+geom_Translate_wkb_dbl_dbl_dbl(wkb **ret, wkb **g, dbl *dx, dbl *dy, dbl *dz)
+{
+	return wkbTranslate(ret, g, dx, dy, dz);
+}
+static str
+geom_NumPoints_wkb(int *ret, wkb **w)
+{
+	return wkbNumPoints(ret, w, &(int){1});
+}
+static str
+geom_NPoints_wkb(int *ret, wkb **w)
+{
+	return wkbNumPoints(ret, w, &(int){0});
+}
+static str
+geom_MakeEnvelope_dbl_dbl_dbl_dbl_int(wkb **ret, dbl *xmin, dbl *ymin, dbl *xmax, dbl *ymax, int *srid)
+{
+	return wkbEnvelopeFromCoordinates(ret, xmin, ymin, xmax, ymax, srid);
+}
+static str
+geom_MakeEnvelope_dbl_dbl_dbl_dbl(wkb **ret, dbl *xmin, dbl *ymin, dbl *xmax, dbl *ymax)
+{
+	return wkbEnvelopeFromCoordinates(ret, xmin, ymin, xmax, ymax, &(int){0});
+}
+static str
+geom_MakePolygon_wkb(wkb **ret, wkb **external)
+{
+	return wkbMakePolygon(ret, external, &(bat){bat_nil}, &(int){0});
+}
+static str
+geom_MakePolygon_wkb_int(wkb **ret, wkb **external, int *srid)
+{
+	return wkbMakePolygon(ret, external, &(bat){bat_nil}, srid);
+}
+static str
+geom_XMinFromWKB_wkb(dbl *ret, wkb **g)
+{
+	return wkbCoordinateFromWKB(ret, g, &(int){1});
+}
+static str
+geom_YMinFromWKB_wkb(dbl *ret, wkb **g)
+{
+	return wkbCoordinateFromWKB(ret, g, &(int){2});
+}
+static str
+geom_XMaxFromWKB_wkb(dbl *ret, wkb **g)
+{
+	return wkbCoordinateFromWKB(ret, g, &(int){3});
+}
+static str
+geom_YMaxFromWKB_wkb(dbl *ret, wkb **g)
+{
+	return wkbCoordinateFromWKB(ret, g, &(int){4});
+}
+static str
+geom_XMinFromMBR_mbr(dbl *ret, mbr **b)
+{
+	return wkbCoordinateFromMBR(ret, b, &(int){1});
+}
+static str
+geom_YMinFromMBR_mbr(dbl *ret, mbr **b)
+{
+	return wkbCoordinateFromMBR(ret, b, &(int){2});
+}
+static str
+geom_XMaxFromMBR_mbr(dbl *ret, mbr **b)
+{
+	return wkbCoordinateFromMBR(ret, b, &(int){3});
+}
+static str
+geom_YMaxFromMBR_mbr(dbl *ret, mbr **b)
+{
+	return wkbCoordinateFromMBR(ret, b, &(int){4});
+}
+static str
+calc_wkb_str_int_int(wkb **ret, str *wkt, int *srid, int *type)
+{
+	(void) srid;
+	(void) type;
+	return wkbFromText(ret, wkt, &(int){0}, &(int){0});
+}
+
+static str
+batgeom_GeomFromText_str_int(bat *ret, bat *wkt, int *srid)
+{
+	return wkbFromText_bat(ret, wkt, srid, &(int){0});
+}
+static str
+batgeom_PointFromText_str_int(bat *ret, bat *wkt, int *srid)
+{
+	return wkbFromText_bat(ret, wkt, srid, &(int){1});
+}
+static str
+batgeom_LineFromText_str_int(bat *ret, bat *wkt, int *srid)
+{
+	return wkbFromText_bat(ret, wkt, srid, &(int){2});
+}
+static str
+batgeom_PolygonFromText_str_int(bat *ret, bat *wkt, int *srid)
+{
+	return wkbFromText_bat(ret, wkt, srid, &(int){4});
+}
+static str
+batgeom_MPointFromText_str_int(bat *ret, bat *wkt, int *srid)
+{
+	return wkbFromText_bat(ret, wkt, srid, &(int){5});
+}
+static str
+batgeom_MLineFromText_str_int(bat *ret, bat *wkt, int *srid)
+{
+	return wkbFromText_bat(ret, wkt, srid, &(int){6});
+}
+static str
+batgeom_MPolyFromText_str_int(bat *ret, bat *wkt, int *srid)
+{
+	return wkbFromText_bat(ret, wkt, srid, &(int){7});
+}
+static str
+batgeom_GeomCollFromText_str_int(bat *ret, bat *wkt, int *srid)
+{
+	return wkbFromText_bat(ret, wkt, srid, &(int){8});
+}
+static str
+batgeom_GeomFromText_str(bat *ret, bat *wkt)
+{
+	return wkbFromText_bat(ret, wkt, &(int){0}, &(int){0});
+}
+static str
+batgeom_PointFromText_str(bat *ret, bat *wkt)
+{
+	return wkbFromText_bat(ret, wkt, &(int){0}, &(int){1});
+}
+static str
+batgeom_LineFromText_str(bat *ret, bat *wkt)
+{
+	return wkbFromText_bat(ret, wkt, &(int){0}, &(int){2});
+}
+static str
+batgeom_PolygonFromText_str(bat *ret, bat *wkt)
+{
+	return wkbFromText_bat(ret, wkt, &(int){0}, &(int){4});
+}
+static str
+batgeom_MPointFromText_str(bat *ret, bat *wkt)
+{
+	return wkbFromText_bat(ret, wkt, &(int){0}, &(int){5});
+}
+static str
+batgeom_MLineFromText_str(bat *ret, bat *wkt)
+{
+	return wkbFromText_bat(ret, wkt, &(int){0}, &(int){6});
+}
+static str
+batgeom_MPolyFromText_str(bat *ret, bat *wkt)
+{
+	return wkbFromText_bat(ret, wkt, &(int){0}, &(int){7});
+}
+static str
+batgeom_GeomCollFromText_str(bat *ret, bat *wkt)
+{
+	return wkbFromText_bat(ret, wkt, &(int){0}, &(int){8});
+}
+static str
+batgeom_AsText_wkb(bat *ret, bat *w)
+{
+	return wkbAsText_bat(ret, w, &(int){0});
+}
+static str
+batgeom_AsEWKT_wkb(bat *ret, bat *w)
+{
+	return wkbAsText_bat(ret, w, &(int){1});
+}
+static str
+batgeom_GeometryType1_wkb(bat *ret, bat *w)
+{
+	return wkbGeometryType_bat(ret, w, &(int){0});
+}
+static str
+batgeom_GeometryType2_wkb(bat *ret, bat *w)
+{
+	return wkbGeometryType_bat(ret, w, &(int){1});
+}
+static str
+batgeom_MakePoint_dbl_dbl(bat *ret, bat *x, bat *y)
+{
+	return wkbMakePoint_bat(ret, x, y, &(bat){bat_nil}, &(bat){bat_nil}, &(int){0});
+}
+static str
+batgeom_MakePoint_dbl_dbl_dbl(bat *ret, bat *x, bat *y, bat *z)
+{
+	return wkbMakePoint_bat(ret, x, y, z, &(bat){bat_nil}, &(int){10});
+}
+static str
+batgeom_MakePointM_dbl_dbl_dbl(bat *ret, bat *x, bat *y, bat *m)
+{
+	return wkbMakePoint_bat(ret, x, y, &(bat){bat_nil}, m, &(int){1});
+}
+static str
+batgeom_MakePoint_dbl_dbl_dbl_dbl(bat *ret, bat *x, bat *y, bat *z, bat *m)
+{
+	return wkbMakePoint_bat(ret, x, y, z, m, &(int){11});
+}
+static str
+batgeom_NumPoints_wkb(bat *ret, bat *w)
+{
+	return wkbNumPoints_bat(ret, w, &(int){1});
+}
+static str
+batgeom_NPoints_wkb(bat *ret, bat *w)
+{
+	return wkbNumPoints_bat(ret, w, &(int){0});
+}
+static str
+batgeom_X_wkb(bat *ret, bat *w)
+{
+	return wkbGetCoordinate_bat(ret, w, &(int){0});
+}
+static str
+batgeom_Y_wkb(bat *ret, bat *w)
+{
+	return wkbGetCoordinate_bat(ret, w, &(int){1});
+}
+static str
+batgeom_Z_wkb(bat *ret, bat *w)
+{
+	return wkbGetCoordinate_bat(ret, w, &(int){2});
+}
+static str
+batgeom_NumInteriorRings_wkb(bat *ret, bat *w)
+{
+	return wkbNumRings_bat(ret, w, &(int){0});
+}
+static str
+batgeom_NRings_wkb(bat *ret, bat *w)
+{
+	return wkbNumRings_bat(ret, w, &(int){1});
+}
+static str
+batgeom_XMinFromWKB_wkb(bat *ret, bat *g)
+{
+	return wkbCoordinateFromWKB_bat(ret, g, &(int){1});
+}
+static str
+batgeom_YMinFromWKB_wkb(bat *ret, bat *g)
+{
+	return wkbCoordinateFromWKB_bat(ret, g, &(int){2});
+}
+static str
+batgeom_XMaxFromWKB_wkb(bat *ret, bat *g)
+{
+	return wkbCoordinateFromWKB_bat(ret, g, &(int){3});
+}
+static str
+batgeom_YMaxFromWKB_wkb(bat *ret, bat *g)
+{
+	return wkbCoordinateFromWKB_bat(ret, g, &(int){4});
+}
+static str
+batgeom_XMinFromMBR_mbr(bat *ret, bat *b)
+{
+	return wkbCoordinateFromMBR_bat(ret, b, &(int){1});
+}
+static str
+batgeom_YMinFromMBR_mbr(bat *ret, bat *b)
+{
+	return wkbCoordinateFromMBR_bat(ret, b, &(int){2});
+}
+static str
+batgeom_XMaxFromMBR_mbr(bat *ret, bat *b)
+{
+	return wkbCoordinateFromMBR_bat(ret, b, &(int){3});
+}
+static str
+batgeom_YMaxFromMBR_mbr(bat *ret, bat *b)
+{
+	return wkbCoordinateFromMBR_bat(ret, b, &(int){4});
+}
 
 #include "mel.h"
 static mel_atom geom_init_atoms[] = {
@@ -6478,7 +6568,7 @@ static mel_func geom_init_funcs[] = {
  command("geom", "Area", wkbArea, false, "Returns the area of the surface if it is a polygon or multi-polygon", args(1,2, arg("",dbl),arg("w",wkb))),
  command("geom", "Centroid", wkbCentroid, false, "Computes the geometric center of a geometry, or equivalently, the center of mass of the geometry as a POINT.", args(1,2, arg("",wkb),arg("w",wkb))),
  command("geom", "Distance", wkbDistance, false, "Returns the 2-dimensional minimum cartesian distance between the two geometries in projected units (spatial ref units.", args(1,3, arg("",dbl),arg("a",wkb),arg("b",wkb))),
- command("geom", "Length", wkbLength, false, "Returns the cartesian 2D length of the geometry if it is a linestrin or multilinestring", args(1,2, arg("",dbl),arg("w",wkb))),
+ command("geom", "Length", wkbLength, false, "Returns the cartesian 2D length of the geometry if it is a linestring or multilinestring", args(1,2, arg("",dbl),arg("w",wkb))),
  command("geom", "ConvexHull", wkbConvexHull, false, "Returns a geometry that represents the convex hull of this geometry. The convex hull of a geometry represents the minimum convex geometry that encloses all geometries within the set.", args(1,2, arg("",wkb),arg("w",wkb))),
  command("geom", "Intersection", wkbIntersection, false, "Returns a geometry that represents the point set intersection of the Geometries a, b", args(1,3, arg("",wkb),arg("a",wkb),arg("b",wkb))),
  command("geom", "Union", wkbUnion, false, "Returns a geometry that represents the point set union of the Geometries a, b", args(1,3, arg("",wkb),arg("a",wkb),arg("b",wkb))),
@@ -6581,6 +6671,95 @@ static mel_func geom_init_funcs[] = {
  command("calc", "wkb", geom_2_geom, false, "Called when inserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition", args(1,4, arg("",wkb),arg("geo",wkb),arg("columnType",int),arg("columnSRID",int))),
  command("batcalc", "wkb", geom_2_geom_bat, false, "Called when inserting values to a table in order to check if the inserted geometries are of the same type and srid required by the column definition", args(1,5, batarg("",wkb),batarg("geo",wkb),batarg("s",oid),arg("columnType",int),arg("columnSRID",int))),
  command("batcalc", "wkb", wkbFromText_bat_cand, false, "", args(1,5, batarg("",wkb),batarg("wkt",str),batarg("s",oid),arg("srid",int),arg("type",int))),
+ command("geom", "AsText", geom_AsText_wkb, false, "", args(1,2, arg("",str),arg("w",wkb))),
+ command("geom", "AsEWKT", geom_AsEWKT_wkb, false, "", args(1,2, arg("",str),arg("w",wkb))),
+ command("geom", "GeomFromText", geom_GeomFromText_str_int, false, "", args(1,3, arg("",wkb),arg("wkt",str),arg("srid",int))),
+ command("geom", "PointFromText", geom_PointFromText_str_int, false, "", args(1,3, arg("",wkb),arg("wkt",str),arg("srid",int))),
+ command("geom", "LineFromText", geom_LineFromText_str_int, false, "", args(1,3, arg("",wkb),arg("wkt",str),arg("srid",int))),
+ command("geom", "PolygonFromText", geom_PolygonFromText_str_int, false, "", args(1,3, arg("",wkb),arg("wkt",str),arg("srid",int))),
+ command("geom", "MPointFromText", geom_MPointFromText_str_int, false, "", args(1,3, arg("",wkb),arg("wkt",str),arg("srid",int))),
+ command("geom", "MLineFromText", geom_MLineFromText_str_int, false, "", args(1,3, arg("",wkb),arg("wkt",str),arg("srid",int))),
+ command("geom", "MPolyFromText", geom_MPolyFromText_str_int, false, "", args(1,3, arg("",wkb),arg("wkt",str),arg("srid",int))),
+ command("geom", "GeomCollFromText", geom_GeomCollFromText_str_int, false, "", args(1,3, arg("",wkb),arg("wkt",str),arg("srid",int))),
+ command("geom", "GeomFromText", geom_GeomFromText_str, false, "", args(1,2, arg("",wkb),arg("wkt",str))),
+ command("geom", "PointFromText", geom_PointFromText_str, false, "", args(1,2, arg("",wkb),arg("wkt",str))),
+ command("geom", "LineFromText", geom_LineFromText_str, false, "", args(1,2, arg("",wkb),arg("wkt",str))),
+ command("geom", "PolygonFromText", geom_PolygonFromText_str, false, "", args(1,2, arg("",wkb),arg("wkt",str))),
+ command("geom", "MPointFromText", geom_MPointFromText_str, false, "", args(1,2, arg("",wkb),arg("wkt",str))),
+ command("geom", "MLineFromText", geom_MLineFromText_str, false, "", args(1,2, arg("",wkb),arg("wkt",str))),
+ command("geom", "MPolyFromText", geom_MPolyFromText_str, false, "", args(1,2, arg("",wkb),arg("wkt",str))),
+ command("geom", "GeomCollFromText", geom_GeomCollFromText_str, false, "", args(1,2, arg("",wkb),arg("wkt",str))),
+ command("geom", "NumInteriorRings", geom_NumInteriorRings_wkb, false, "", args(1,2, arg("",int),arg("w",wkb))),
+ command("geom", "NRings", geom_NRings_wkb, false, "", args(1,2, arg("",int),arg("w",wkb))),
+ command("geom", "BdPolyFromText", geom_BdPolyFromText_str_int, false, "", args(1,3, arg("",wkb),arg("wkt",str),arg("srid",int))),
+ command("geom", "BdMPolyFromText", geom_BdMPolyFromText_str_int, false, "", args(1,3, arg("",wkb),arg("wkt",str),arg("srid",int))),
+ command("geom", "MakePoint", geom_MakePoint_dbl_dbl, false, "", args(1,3, arg("",wkb),arg("x",dbl),arg("y",dbl))),
+ command("geom", "MakePoint", geom_MakePoint_dbl_dbl_dbl, false, "", args(1,4, arg("",wkb),arg("x",dbl),arg("y",dbl),arg("z",dbl))),
+ command("geom", "MakePointM", geom_MakePointM_dbl_dbl_dbl, false, "", args(1,4, arg("",wkb),arg("x",dbl),arg("y",dbl),arg("m",dbl))),
+ command("geom", "MakePoint", geom_MakePoint_dbl_dbl_dbl_dbl, false, "", args(1,5, arg("",wkb),arg("x",dbl),arg("y",dbl),arg("z",dbl),arg("m",dbl))),
+ command("geom", "GeometryType1", geom_GeometryType1_wkb, false, "", args(1,2, arg("",str),arg("w",wkb))),
+ command("geom", "GeometryType2", geom_GeometryType2_wkb, false, "", args(1,2, arg("",str),arg("w",wkb))),
+ command("geom", "X", geom_X_wkb, false, "", args(1,2, arg("",dbl),arg("w",wkb))),
+ command("geom", "Y", geom_Y_wkb, false, "", args(1,2, arg("",dbl),arg("w",wkb))),
+ command("geom", "Z", geom_Z_wkb, false, "", args(1,2, arg("",dbl),arg("w",wkb))),
+ command("geom", "Force2D", geom_Force2D_wkb, false, "", args(1,2, arg("",wkb),arg("g",wkb))),
+ command("geom", "Force3D", geom_Force3D_wkb, false, "", args(1,2, arg("",wkb),arg("g",wkb))),
+ command("geom", "Translate", geom_Translate_wkb_dbl_dbl, false, "", args(1,4, arg("",wkb),arg("g",wkb),arg("dx",dbl),arg("dy",dbl))),
+ command("geom", "Translate", geom_Translate_wkb_dbl_dbl_dbl, false, "", args(1,5, arg("",wkb),arg("g",wkb),arg("dx",dbl),arg("dy",dbl),arg("dz",dbl))),
+ command("geom", "NumPoints", geom_NumPoints_wkb, false, "", args(1,2, arg("",int),arg("w",wkb))),
+ command("geom", "NPoints", geom_NPoints_wkb, false, "", args(1,2, arg("",int),arg("w",wkb))),
+ command("geom", "MakeEnvelope", geom_MakeEnvelope_dbl_dbl_dbl_dbl_int, false, "", args(1,6, arg("",wkb),arg("xmin",dbl),arg("ymin",dbl),arg("xmax",dbl),arg("ymax",dbl),arg("srid",int))),
+ command("geom", "MakeEnvelope", geom_MakeEnvelope_dbl_dbl_dbl_dbl, false, "", args(1,5, arg("",wkb),arg("xmin",dbl),arg("ymin",dbl),arg("xmax",dbl),arg("ymax",dbl))),
+ command("geom", "MakePolygon", geom_MakePolygon_wkb, false, "", args(1,2, arg("",wkb),arg("external",wkb))),
+ command("geom", "MakePolygon", geom_MakePolygon_wkb_int, false, "", args(1,3, arg("",wkb),arg("external",wkb),arg("srid",int))),
+ command("geom", "XMinFromWKB", geom_XMinFromWKB_wkb, false, "", args(1,2, arg("",dbl),arg("g",wkb))),
+ command("geom", "YMinFromWKB", geom_YMinFromWKB_wkb, false, "", args(1,2, arg("",dbl),arg("g",wkb))),
+ command("geom", "XMaxFromWKB", geom_XMaxFromWKB_wkb, false, "", args(1,2, arg("",dbl),arg("g",wkb))),
+ command("geom", "YMaxFromWKB", geom_YMaxFromWKB_wkb, false, "", args(1,2, arg("",dbl),arg("g",wkb))),
+ command("geom", "XMinFromMBR", geom_XMinFromMBR_mbr, false, "", args(1,2, arg("",dbl),arg("b",mbr))),
+ command("geom", "YMinFromMBR", geom_YMinFromMBR_mbr, false, "", args(1,2, arg("",dbl),arg("b",mbr))),
+ command("geom", "XMaxFromMBR", geom_XMaxFromMBR_mbr, false, "", args(1,2, arg("",dbl),arg("b",mbr))),
+ command("geom", "YMaxFromMBR", geom_YMaxFromMBR_mbr, false, "", args(1,2, arg("",dbl),arg("b",mbr))),
+ command("calc", "wkb", calc_wkb_str_int_int, false, "", args(1,4, arg("",wkb),arg("wkt",str),arg("srid",int),arg("type",int))),
+ command("batgeom", "GeomFromText", batgeom_GeomFromText_str_int, false, "", args(1,3, batarg("",wkb),batarg("wkt",str),arg("srid",int))),
+ command("batgeom", "PointFromText", batgeom_PointFromText_str_int, false, "", args(1,3, batarg("",wkb),batarg("wkt",str),arg("srid",int))),
+ command("batgeom", "LineFromText", batgeom_LineFromText_str_int, false, "", args(1,3, batarg("",wkb),batarg("wkt",str),arg("srid",int))),
+ command("batgeom", "PolygonFromText", batgeom_PolygonFromText_str_int, false, "", args(1,3, batarg("",wkb),batarg("wkt",str),arg("srid",int))),
+ command("batgeom", "MPointFromText", batgeom_MPointFromText_str_int, false, "", args(1,3, batarg("",wkb),batarg("wkt",str),arg("srid",int))),
+ command("batgeom", "MLineFromText", batgeom_MLineFromText_str_int, false, "", args(1,3, batarg("",wkb),batarg("wkt",str),arg("srid",int))),
+ command("batgeom", "MPolyFromText", batgeom_MPolyFromText_str_int, false, "", args(1,3, batarg("",wkb),batarg("wkt",str),arg("srid",int))),
+ command("batgeom", "GeomCollFromText", batgeom_GeomCollFromText_str_int, false, "", args(1,3, batarg("",wkb),batarg("wkt",str),arg("srid",int))),
+ command("batgeom", "GeomFromText", batgeom_GeomFromText_str, false, "", args(1,2, batarg("",wkb),batarg("wkt",str))),
+ command("batgeom", "PointFromText", batgeom_PointFromText_str, false, "", args(1,2, batarg("",wkb),batarg("wkt",str))),
+ command("batgeom", "LineFromText", batgeom_LineFromText_str, false, "", args(1,2, batarg("",wkb),batarg("wkt",str))),
+ command("batgeom", "PolygonFromText", batgeom_PolygonFromText_str, false, "", args(1,2, batarg("",wkb),batarg("wkt",str))),
+ command("batgeom", "MPointFromText", batgeom_MPointFromText_str, false, "", args(1,2, batarg("",wkb),batarg("wkt",str))),
+ command("batgeom", "MLineFromText", batgeom_MLineFromText_str, false, "", args(1,2, batarg("",wkb),batarg("wkt",str))),
+ command("batgeom", "MPolyFromText", batgeom_MPolyFromText_str, false, "", args(1,2, batarg("",wkb),batarg("wkt",str))),
+ command("batgeom", "GeomCollFromText", batgeom_GeomCollFromText_str, false, "", args(1,2, batarg("",wkb),batarg("wkt",str))),
+ command("batgeom", "AsText", batgeom_AsText_wkb, false, "", args(1,2, batarg("",str),batarg("w",wkb))),
+ command("batgeom", "AsEWKT", batgeom_AsEWKT_wkb, false, "", args(1,2, batarg("",str),batarg("w",wkb))),
+ command("batgeom", "GeometryType1", batgeom_GeometryType1_wkb, false, "", args(1,2, batarg("",str),batarg("w",wkb))),
+ command("batgeom", "GeometryType2", batgeom_GeometryType2_wkb, false, "", args(1,2, batarg("",str),batarg("w",wkb))),
+ command("batgeom", "MakePoint", batgeom_MakePoint_dbl_dbl, false, "", args(1,3, batarg("",wkb),batarg("x",dbl),batarg("y",dbl))),
+ command("batgeom", "MakePoint", batgeom_MakePoint_dbl_dbl_dbl, false, "", args(1,4, batarg("",wkb),batarg("x",dbl),batarg("y",dbl),batarg("z",dbl))),
+ command("batgeom", "MakePointM", batgeom_MakePointM_dbl_dbl_dbl, false, "", args(1,4, batarg("",wkb),batarg("x",dbl),batarg("y",dbl),batarg("m",dbl))),
+ command("batgeom", "MakePoint", batgeom_MakePoint_dbl_dbl_dbl_dbl, false, "", args(1,5, batarg("",wkb),batarg("x",dbl),batarg("y",dbl),batarg("z",dbl),batarg("m",dbl))),
+ command("batgeom", "NumPoints", batgeom_NumPoints_wkb, false, "", args(1,2, batarg("",int),batarg("w",wkb))),
+ command("batgeom", "NPoints", batgeom_NPoints_wkb, false, "", args(1,2, batarg("",int),batarg("w",wkb))),
+ command("batgeom", "X", batgeom_X_wkb, false, "", args(1,2, batarg("",dbl),batarg("w",wkb))),
+ command("batgeom", "Y", batgeom_Y_wkb, false, "", args(1,2, batarg("",dbl),batarg("w",wkb))),
+ command("batgeom", "Z", batgeom_Z_wkb, false, "", args(1,2, batarg("",dbl),batarg("w",wkb))),
+ command("batgeom", "NumInteriorRings", batgeom_NumInteriorRings_wkb, false, "", args(1,2, batarg("",int),batarg("w",wkb))),
+ command("batgeom", "NRings", batgeom_NRings_wkb, false, "", args(1,2, batarg("",int),batarg("w",wkb))),
+ command("batgeom", "XMinFromWKB", batgeom_XMinFromWKB_wkb, false, "", args(1,2, batarg("",dbl),batarg("g",wkb))),
+ command("batgeom", "YMinFromWKB", batgeom_YMinFromWKB_wkb, false, "", args(1,2, batarg("",dbl),batarg("g",wkb))),
+ command("batgeom", "XMaxFromWKB", batgeom_XMaxFromWKB_wkb, false, "", args(1,2, batarg("",dbl),batarg("g",wkb))),
+ command("batgeom", "YMaxFromWKB", batgeom_YMaxFromWKB_wkb, false, "", args(1,2, batarg("",dbl),batarg("g",wkb))),
+ command("batgeom", "XMinFromMBR", batgeom_XMinFromMBR_mbr, false, "", args(1,2, batarg("",dbl),batarg("b",mbr))),
+ command("batgeom", "YMinFromMBR", batgeom_YMinFromMBR_mbr, false, "", args(1,2, batarg("",dbl),batarg("b",mbr))),
+ command("batgeom", "XMaxFromMBR", batgeom_XMaxFromMBR_mbr, false, "", args(1,2, batarg("",dbl),batarg("b",mbr))),
+ command("batgeom", "YMaxFromMBR", batgeom_YMaxFromMBR_mbr, false, "", args(1,2, batarg("",dbl),batarg("b",mbr))),
  { .imp=NULL }
 };
 #include "mal_import.h"
@@ -6589,4 +6768,4 @@ static mel_func geom_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_geom_mal)
-{ mal_module2("geom", geom_init_atoms, geom_init_funcs, geom_prelude, (const char*)geom_functions); }
+{ mal_module2("geom", geom_init_atoms, geom_init_funcs, geom_prelude, NULL); }

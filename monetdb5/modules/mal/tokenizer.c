@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -44,6 +46,7 @@
 #include "mal_interpreter.h"
 #include "mal_linker.h"
 #include "mal_exception.h"
+#include "mal_internal.h"
 
 #define MAX_TKNZR_DEPTH 256
 #define INDEX MAX_TKNZR_DEPTH
@@ -124,7 +127,7 @@ TKNZRopen(void *ret, str *in)
 	}
 	tokenDepth = 0;
 
-	TRANS = COLnew(0, TYPE_str, MAX_TKNZR_DEPTH + 1, TRANSIENT);
+	TRANS = COLnew(0, TYPE_str, MAX_TKNZR_DEPTH + 1, SYSTRANS);
 	if (TRANS == NULL) {
 		MT_lock_unset(&mal_contextLock);
 		throw(MAL, "tokenizer.open", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -200,7 +203,8 @@ TKNZRclose(void *r)
 	if (TRANS == NULL)
 		throw(MAL, "tokenizer", "no tokenizer store open");
 
-	TMsubcommit(TRANS);
+	if (TMsubcommit(TRANS) != GDK_SUCCEED)
+		throw(MAL, "tokenizer", GDK_EXCEPTION);
 
 	for (i = 0; i < tokenDepth; i++) {
 		BBPunfix(tokenBAT[i].idx->batCacheid);

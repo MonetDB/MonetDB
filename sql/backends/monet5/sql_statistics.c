@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /* (c) M.L. Kersten
@@ -125,9 +127,10 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if (!(b = store->storage_api.bind_col(tr, c, access)))
 						continue; /* At the moment we ignore the error, but maybe we can change this */
 					if (isVIEW(b)) { /* If it is a view get the parent BAT */
-						BAT *nb = BBP_cache(VIEWtparent(b));
+						BAT *nb = BATdescriptor(VIEWtparent(b));
 						BBPunfix(b->batCacheid);
-						if (!(b = BATdescriptor(nb->batCacheid)))
+						b = nb;
+						if (b == NULL)
 							continue;
 					}
 
@@ -311,9 +314,10 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							}
 							BATiter rei = bat_iterator(re);
 							if (isVIEW(re)) { /* If it is a view get the parent BAT */
-								BAT *nb = BBP_cache(VIEWtparent(re));
+								BAT *nb = BATdescriptor(VIEWtparent(re));
 								BBPunfix(re->batCacheid);
-								if (!(re = BATdescriptor(nb->batCacheid))) {
+								re = nb;
+								if (re == NULL) {
 									bat_iterator_end(&qdi);
 									bat_iterator_end(&rei);
 									msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
@@ -349,8 +353,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							BUNappend(sorted, &issorted, false) != GDK_SUCCEED ||
 							BUNappend(revsorted, &isrevsorted, false) != GDK_SUCCEED) {
 							bat_iterator_end(&posi);
-							if (re)
-								BBPunfix(re->batCacheid);
+							BBPreclaim(re);
 							goto bailout;
 						}
 
@@ -364,9 +367,10 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									goto bailout;
 								}
 								if (isVIEW(fb)) { /* If it is a view get the parent BAT */
-									BAT *nb = BBP_cache(VIEWtparent(fb));
+									BAT *nb = BATdescriptor(VIEWtparent(fb));
 									BBPunfix(fb->batCacheid);
-									if (!(fb = BATdescriptor(nb->batCacheid))) {
+									fb = nb;
+									if (fb == NULL) {
 										msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
 										goto bailout;
 									}
@@ -411,8 +415,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							BBPunfix(fb->batCacheid);
 						} else if (BUNappend(minval, str_nil, false) != GDK_SUCCEED || BUNappend(maxval, str_nil, false) != GDK_SUCCEED) {
 							bat_iterator_end(&posi);
-							if (re)
-								BBPunfix(re->batCacheid);
+							BBPreclaim(re);
 							goto bailout;
 						} else if (re) {
 							bat_iterator_end(&posi);

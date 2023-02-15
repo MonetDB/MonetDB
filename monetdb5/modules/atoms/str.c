@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -2991,14 +2993,10 @@ static str
 STRepilogue(void *ret)
 {
 	(void) ret;
-	if (UTF8_toUpperFrom)
-		BBPunfix(UTF8_toUpperFrom->batCacheid);
-	if (UTF8_toUpperTo)
-		BBPunfix(UTF8_toUpperTo->batCacheid);
-	if (UTF8_toLowerFrom)
-		BBPunfix(UTF8_toLowerFrom->batCacheid);
-	if (UTF8_toLowerTo)
-		BBPunfix(UTF8_toLowerTo->batCacheid);
+	BBPreclaim(UTF8_toUpperFrom);
+	BBPreclaim(UTF8_toUpperTo);
+	BBPreclaim(UTF8_toLowerFrom);
+	BBPreclaim(UTF8_toLowerTo);
 	UTF8_toUpperFrom = NULL;
 	UTF8_toUpperTo = NULL;
 	UTF8_toLowerFrom = NULL;
@@ -3204,7 +3202,10 @@ str_case_hash_lock(bool upper)
 	if (BAThash(b) != GDK_SUCCEED)
 		throw(MAL, "str.str_case_hash_lock", GDK_EXCEPTION);
 	MT_rwlock_rdlock(&b->thashlock);
-	return MAL_SUCCEED;
+	if (b->thash)
+		return MAL_SUCCEED;
+	MT_rwlock_rdunlock(&b->thashlock);
+	throw(MAL, "str.str_case_hash_lock", "Lost hash");
 }
 
 void

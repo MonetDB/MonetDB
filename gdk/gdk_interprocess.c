@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -50,8 +52,19 @@ GDKuniqueid(size_t offset)
 	return (size_t) ATOMIC_ADD(&interprocess_unique_id, (ATOMIC_BASE_TYPE) offset);
 }
 
+//! snprintf the file name of a memory mapped file (as created by GDKinitmmap)
+/* buffer: The buffer to write the name to
+ * max: The maxsize of the buffer (should be at least ~10 characters)
+ * id: Identifier of the file
+*/
+static inline void
+GDKmmapfile(char *buffer, size_t max, size_t id)
+{
+	snprintf(buffer, max, "pymmap%zu", id);
+}
+
 //! Create a memory mapped file if it does not exist and open it
-/* id: The unique identifier of the memory mapped file (use GDKuniquemmapid to get a unique identifier)
+/* id: The unique identifier of the memory mapped file (use GDKuniqueid to get a unique identifier)
  * size: Minimum required size of the file
  * return: Return value pointing into the file, NULL if not successful
 */
@@ -67,11 +80,12 @@ GDKinitmmap(size_t id, size_t size, size_t *return_size)
 	GDKmmapfile(address, sizeof(address), id);
 
 	/* round up to multiple of GDK_mmap_pagesize with a
-	 * minimum of one
-	 size = (maxsize + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
-	 if (size == 0)
-	 size = GDK_mmap_pagesize; */
-	path = GDKfilepath(0, BATDIR, address, "tmp");
+	 * minimum of one */
+	size = (size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
+	if (size == 0)
+		size = GDK_mmap_pagesize;
+	int farmid = BBPselectfarm(TRANSIENT, TYPE_bte, dataheap);
+	path = GDKfilepath(farmid, BATDIR, address, "tmp");
 	if (path == NULL) {
 		return NULL;
 	}
@@ -113,7 +127,8 @@ GDKreleasemmap(void *ptr, size_t size, size_t id)
 	if (GDKmunmap(ptr, size) != GDK_SUCCEED) {
 		return GDK_FAIL;
 	}
-	path = GDKfilepath(0, BATDIR, address, "tmp");
+	int farmid = BBPselectfarm(TRANSIENT, TYPE_bte, dataheap);
+	path = GDKfilepath(farmid, BATDIR, address, "tmp");
 	if (path == NULL) {
 		return GDK_FAIL;
 	}
@@ -122,18 +137,6 @@ GDKreleasemmap(void *ptr, size_t size, size_t id)
 		GDKsyserror("cannot remove '%s'", path);
 	GDKfree(path);
 	return ret < 0 ? GDK_FAIL : GDK_SUCCEED;
-}
-
-//! snprintf the file name of a memory mapped file (as created by GDKinitmmap)
-/* buffer: The buffer to write the name to
- * max: The maxsize of the buffer (should be at least ~10 characters)
- * id: Identifier of the file
-*/
-gdk_return
-GDKmmapfile(char *buffer, size_t max, size_t id)
-{
-	snprintf(buffer, max, "pymmap%zu", id);
-	return GDK_SUCCEED;
 }
 
 static gdk_return

@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -57,7 +59,7 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 	int n;
 	SQLRETURN rc;
 #ifdef ODBCDEBUG
-	int allocated = 0;
+	bool allocated = false;
 #endif
 
 	fixODBCstring(InConnectionString, StringLength1, SQLSMALLINT, addDbcError, dbc, return SQL_ERROR);
@@ -106,12 +108,33 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 			dbname = attr;
 #ifdef ODBCDEBUG
 		} else if (strcasecmp(key, "logfile") == 0 &&
-			   getenv("ODBCDEBUG") == NULL) {
+#ifdef NATIVE_WIN32
+			   _wgetenv(L"ODBCDEBUG")
+#else
+			   getenv("ODBCDEBUG")
+#endif
+			   == NULL) {
 			/* environment trumps everything */
 			if (ODBCdebug)
 				free((void *) ODBCdebug); /* discard const */
+#ifdef NATIVE_WIN32
+			size_t attrlen = strlen(attr);
+			SQLWCHAR *wattr = malloc((attrlen + 1) * sizeof(SQLWCHAR));
+			if (ODBCutf82wchar(attr,
+					   (SQLINTEGER) attrlen,
+					   wattr,
+					   (SQLLEN) ((attrlen + 1) * sizeof(SQLWCHAR)),
+					   NULL,
+					   NULL)) {
+				free(wattr);
+				wattr = NULL;
+			}
+			ODBCdebug = wattr;
+			free(attr);
+#else
 			ODBCdebug = attr;
-			allocated = 1;
+#endif
+			allocated = true;
 #endif
 		} else
 			free(attr);
@@ -160,14 +183,35 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 			}
 		}
 #ifdef ODBCDEBUG
-		if (!allocated && getenv("ODBCDEBUG") == NULL) {
+		if (!allocated &&
+#ifdef NATIVE_WIN32
+		    _wgetenv(L"ODBCDEBUG")
+#else
+		    getenv("ODBCDEBUG")
+#endif
+		    == NULL) {
 			/* if not set from InConnectionString argument
 			 * or environment, look in profile */
 			n = SQLGetPrivateProfileString(dsn, "logfile", "", buf, sizeof(buf), "odbc.ini");
 			if (n > 0 && buf[0]) {
 				if (ODBCdebug)
 					free((void *) ODBCdebug); /* discard const */
+#ifdef NATIVE_WIN32
+				size_t attrlen = strlen(buf);
+				SQLWCHAR *wattr = malloc((attrlen + 1) * sizeof(SQLWCHAR));
+				if (ODBCutf82wchar(buf,
+						   (SQLINTEGER) attrlen,
+						   wattr,
+						   (SQLLEN) ((attrlen + 1) * sizeof(SQLWCHAR)),
+						   NULL,
+						   NULL)) {
+					free(wattr);
+					wattr = NULL;
+				}
+				ODBCdebug = wattr;
+#else
 				ODBCdebug = strdup(buf);
+#endif
 			}
 		}
 #endif

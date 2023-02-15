@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #ifndef _SQL2MAL_H
@@ -34,6 +36,7 @@ extern void _exp_print(mvc *sql, sql_exp *e);
 
 extern int constantAtom(backend *be, MalBlkPtr mb, atom *a);
 extern InstrPtr table_func_create_result(MalBlkPtr mb, InstrPtr q, sql_func *f, list *restypes);
-extern InstrPtr relational_func_create_result(mvc *sql, MalBlkPtr mb, InstrPtr q, sql_rel *f);
+extern void relational_func_create_result_part1(mvc *sql, sql_rel **f, int *nargs);
+extern InstrPtr relational_func_create_result_part2(MalBlkPtr mb, InstrPtr q, sql_rel *r);
 
 #endif /* _SQL2MAL_H */

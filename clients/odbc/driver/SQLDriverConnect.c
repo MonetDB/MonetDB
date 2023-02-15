@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -196,20 +198,43 @@ ODBCConnectionString(SQLRETURN rc,
 			BufferLength = -1;
 		}
 	}
+	n = 0;
 #ifdef ODBCDEBUG
+#ifdef NATIVE_WIN32
+	if (ODBCdebug && _wgetenv(L"ODBCDEBUG") == NULL) {
+		if (BufferLength > 0) {
+			n = snprintf((char *) OutConnectionString,
+				     BufferLength,
+				     "LOGFILE=%ls;", ODBCdebug);
+			if (n < 0) {
+				n = 0;
+				BufferLength = -1;
+			} else {
+				BufferLength -= n;
+				OutConnectionString += n;
+			}
+		} else {
+			BufferLength = -1;
+		}
+	}
+#else
 	if (ODBCdebug && getenv("ODBCDEBUG") == NULL) {
 		if (BufferLength > 0) {
 			n = snprintf((char *) OutConnectionString,
 				     BufferLength,
 				     "LOGFILE=%s;", ODBCdebug);
-			if (n < 0)
-				n = BufferLength + 1;
-			BufferLength -= n;
-			OutConnectionString += n;
+			if (n < 0) {
+				n = 0;
+				BufferLength = -1;
+			} else {
+				BufferLength -= n;
+				OutConnectionString += n;
+			}
 		} else {
 			BufferLength = -1;
 		}
 	}
+#endif
 #endif
 
 	/* calculate how much space was needed */
@@ -221,10 +246,7 @@ ODBCConnectionString(SQLRETURN rc,
 			 (host ? strlen(host) + 6 : 0) +
 			 (port ? port + 6 : 0) +
 			 (database ? strlen(database) + 10 : 0)
-#ifdef ODBCDEBUG
-			 + (ODBCdebug && getenv("ODBCDEBUG") == NULL ? strlen(ODBCdebug) + 9 : 0)
-#endif
-				);
+			 + n);
 
 #ifdef ODBCDEBUG
 	ODBCLOG("ConnectionString: \"%.*s\" %d\n", buf ? buflen : 6, buf ? (char *) buf : "(null)", buflen);
@@ -322,11 +344,31 @@ MNDBDriverConnect(ODBCDbc *dbc,
 			port = atoi(attr);
 			free(attr);
 #ifdef ODBCDEBUG
+#ifdef NATIVE_WIN32
+		} else if (strcasecmp(key, "logfile") == 0 &&
+			   _wgetenv(L"ODBCDEBUG") == NULL) {
+			if (ODBCdebug)
+				free((void *) ODBCdebug); /* discard const */
+			size_t attrlen = strlen(attr);
+			SQLWCHAR *wattr = malloc((attrlen + 1) * sizeof(SQLWCHAR));
+			if (ODBCutf82wchar(attr,
+					   (SQLINTEGER) attrlen,
+					   wattr,
+					   (SQLLEN) ((attrlen + 1) * sizeof(SQLWCHAR)),
+					   NULL,
+					   NULL)) {
+				free(wattr);
+				wattr = NULL;
+			}
+			free(attr);
+			ODBCdebug = wattr;
+#else
 		} else if (strcasecmp(key, "logfile") == 0 &&
 			   getenv("ODBCDEBUG") == NULL) {
 			if (ODBCdebug)
 				free((void *) ODBCdebug); /* discard const */
 			ODBCdebug = attr;
+#endif
 #endif
 		} else
 			free(attr);

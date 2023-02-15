@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -850,10 +852,8 @@ bailout:
 		BBPkeepref(bn);
 	} else if (bn)
 		BBPreclaim(bn);
-	if (left)
-		BBPunfix(left->batCacheid);
-	if (right)
-		BBPunfix(right->batCacheid);
+	BBPreclaim(left);
+	BBPreclaim(right);
 	return msg;
 }
 
@@ -878,14 +878,10 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 	pos = BATdescriptor(*pid);
 	len = BATdescriptor(*lid);
 	if (qgram == NULL || id == NULL || pos == NULL || len == NULL) {
-		if (qgram)
-			BBPunfix(qgram->batCacheid);
-		if (id)
-			BBPunfix(id->batCacheid);
-		if (pos)
-			BBPunfix(pos->batCacheid);
-		if (len)
-			BBPunfix(len->batCacheid);
+		BBPreclaim(qgram);
+		BBPreclaim(id);
+		BBPreclaim(pos);
+		BBPreclaim(len);
 		throw(MAL, "txtsim.qgramselfjoin", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 

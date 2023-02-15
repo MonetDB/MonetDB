@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1825,6 +1827,9 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		assert(ri.vh == NULL);
 		lvars = rvars = NULL;
 	}
+	/* if the var pointer is not NULL, then so is the val pointer */
+	assert(lvars == NULL || lvals != NULL);
+	assert(rvars == NULL || rvals != NULL);
 
 	if (not_in && rci->ncand > 0 && !ri.nonil &&
 	    ((BATtvoid(l) && l->tseqbase == oid_nil) ||
@@ -2665,6 +2670,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	BUN maxsize;
 	BAT *r1 = NULL;
 	BAT *r2 = NULL;
+	BAT *b = NULL;
 
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 
@@ -2722,7 +2728,9 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	} else if (phash) {
 		/* there is a hash on the parent which we should use */
 		MT_thread_setalgorithm(swapped ? "hashjoin using parent hash (swapped)" : "hashjoin using parent hash");
-		BAT *b = BBP_cache(VIEWtparent(r));
+		b = BATdescriptor(VIEWtparent(r));
+		if (b == NULL)
+			goto bailout;
 		TRC_DEBUG(ALGO, "%s(%s): using "
 			  "parent(" ALGOBATFMT ") for hash%s\n",
 			  __func__,
@@ -2786,6 +2794,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 					GDKfree(hsh);
 					bat_iterator_end(&li);
 					bat_iterator_end(&ri);
+					BBPreclaim(b);
 					return nomatch(r1p, r2p, l, r, lci,
 						       false, false, __func__, t0);
 				}
@@ -2801,6 +2810,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 						MT_rwlock_rdunlock(&r->thashlock);
 					bat_iterator_end(&li);
 					bat_iterator_end(&ri);
+					BBPreclaim(b);
 					return nomatch(r1p, r2p, l, r, lci,
 						       false, false,
 						       __func__, t0);
@@ -3029,6 +3039,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
 		  GDKusec() - t0);
 
+	BBPreclaim(b);
 	return GDK_SUCCEED;
 
   bailout:
@@ -3043,13 +3054,14 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	}
 	BBPreclaim(r1);
 	BBPreclaim(r2);
+	BBPreclaim(b);
 	return GDK_FAIL;
 }
 
 /* Count the number of unique values for the first half and the complete
  * set (the sample s of b) and return the two values in *cnt1 and
  * *cnt2. In case of error, both values are 0. */
-static void
+static gdk_return
 count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 {
 	struct canditer ci;
@@ -3075,7 +3087,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		/* trivial: already unique */
 		*cnt1 = half;
 		*cnt2 = ci.ncand;
-		return;
+		return GDK_SUCCEED;
 	}
 
 	(void) BATordered(b);
@@ -3086,7 +3098,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		/* trivial: all values are the same */
 		*cnt1 = *cnt2 = 1;
 		bat_iterator_end(&bi);
-		return;
+		return GDK_SUCCEED;
 	}
 
 	assert(bi.type != TYPE_void);
@@ -3147,7 +3159,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		seen = GDKzalloc((65536 / 32) * sizeof(seen[0]));
 		if (seen == NULL) {
 			bat_iterator_end(&bi);
-			return;
+			return GDK_FAIL;
 		}
 		for (i = 0; i < ci.ncand; i++) {
 			if (i == half) {
@@ -3191,7 +3203,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 			HEAPfree(&hs.heaplink, true);
 			HEAPfree(&hs.heapbckt, true);
 			bat_iterator_end(&bi);
-			return;
+			return GDK_FAIL;
 		}
 		for (i = 0; i < ci.ncand; i++) {
 			if (i == half)
@@ -3224,7 +3236,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  *cnt1, *cnt2, algomsg, GDKusec() - t0);
 
-	return;
+	return GDK_SUCCEED;
 }
 
 static double
@@ -3249,12 +3261,19 @@ guess_uniques(BAT *b, struct canditer *ci)
 		s1 = BATsample_with_seed(b, 1000, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
 	} else {
 		BAT *s2 = BATsample_with_seed(ci->s, 1000, (uint64_t) GDKusec() * (uint64_t) b->batCacheid);
+		if (s2 == NULL)
+			return -1;
 		s1 = BATproject(s2, ci->s);
 		BBPreclaim(s2);
 	}
+	if (s1 == NULL)
+		return -1;
 	BUN n2 = BATcount(s1);
 	BUN n1 = n2 / 2;
-	count_unique(b, s1, &cnt1, &cnt2);
+	if (count_unique(b, s1, &cnt1, &cnt2) != GDK_SUCCEED) {
+		BBPreclaim(s1);
+		return -1;
+	}
 	BBPreclaim(s1);
 
 	double A = (double) (cnt2 - cnt1) / (n2 - n1);
@@ -3321,22 +3340,27 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 			/* average chain length */
 			rcost *= (double) cnt / nheads;
 		} else if ((parent = VIEWtparent(r)) != 0 &&
-			   (b = BBP_cache(parent)) != NULL &&
-			   BATcheckhash(b)) {
-			MT_rwlock_rdlock(&b->thashlock);
-			rhash = prhash = b->thash != NULL;
-			if (rhash) {
-				/* average chain length */
-				rcost *= (double) BATcount(b) / b->thash->nheads;
+			   (b = BATdescriptor(parent)) != NULL) {
+			if (BATcheckhash(b)) {
+				MT_rwlock_rdlock(&b->thashlock);
+				rhash = prhash = b->thash != NULL;
+				if (rhash) {
+					/* average chain length */
+					rcost *= (double) BATcount(b) / b->thash->nheads;
+				}
+				MT_rwlock_rdunlock(&b->thashlock);
 			}
-			MT_rwlock_rdunlock(&b->thashlock);
+			BBPunfix(b->batCacheid);
 		}
 		if (!rhash) {
 			MT_lock_set(&r->theaplock);
 			double unique_est = r->tunique_est;
 			MT_lock_unset(&r->theaplock);
-			if (unique_est == 0)
+			if (unique_est == 0) {
 				unique_est = guess_uniques(r, &(struct canditer){.tpe=cand_dense, .ncand=BATcount(r)});
+				if (unique_est < 0)
+					return -1;
+			}
 			/* we have an estimate of the number of unique
 			 * values, assume some collisions */
 			rcost *= 1.1 * ((double) cnt / unique_est);
@@ -3365,8 +3389,11 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 			MT_lock_set(&r->theaplock);
 			double unique_est = r->tunique_est;
 			MT_lock_unset(&r->theaplock);
-			if (unique_est == 0)
+			if (unique_est == 0) {
 				unique_est = guess_uniques(r, rci);
+				if (unique_est < 0)
+					return -1;
+			}
 			/* we have an estimate of the number of unique
 			 * values, assume some chains */
 			rccost = 1.1 * ((double) cnt / unique_est);
@@ -3747,6 +3774,8 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	bat parent;
 	double rcost = 0;
 	gdk_return rc;
+	BAT *lp = NULL;
+	BAT *rp = NULL;
 
 	MT_thread_setalgorithm(__func__);
 	/* only_misses implies left output only */
@@ -3763,35 +3792,49 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	canditer_init(&rci, r, sr);
 
 	if ((parent = VIEWtparent(l)) != 0) {
-		BAT *b = BBP_cache(parent);
-		if (l->hseqbase == b->hseqbase &&
-		    BATcount(l) == BATcount(b) &&
-		    ATOMtype(l->ttype) == ATOMtype(b->ttype)) {
-			l = b;
+		lp = BATdescriptor(parent);
+		if (lp != NULL) {
+			if (l->hseqbase == lp->hseqbase &&
+			    BATcount(l) == BATcount(lp) &&
+			    ATOMtype(l->ttype) == ATOMtype(lp->ttype)) {
+				l = lp;
+			} else {
+				BBPunfix(lp->batCacheid);
+				lp = NULL;
+			}
 		}
 	}
 	if ((parent = VIEWtparent(r)) != 0) {
-		BAT *b = BBP_cache(parent);
-		if (r->hseqbase == b->hseqbase &&
-		    BATcount(r) == BATcount(b) &&
-		    ATOMtype(r->ttype) == ATOMtype(b->ttype)) {
-			r = b;
+		rp = BATdescriptor(parent);
+		if (rp != NULL) {
+			if (r->hseqbase == rp->hseqbase &&
+			    BATcount(r) == BATcount(rp) &&
+			    ATOMtype(r->ttype) == ATOMtype(rp->ttype)) {
+				r = rp;
+			} else {
+				BBPunfix(rp->batCacheid);
+				rp = NULL;
+			}
 		}
 	}
 
 	if (l->ttype == TYPE_msk || mask_cand(l)) {
-		if ((l = BATunmask(l)) == NULL)
-			return GDK_FAIL;
-	} else {
-		BBPfix(l->batCacheid);
-	}
-	if (r->ttype == TYPE_msk || mask_cand(r)) {
-		if ((r = BATunmask(r)) == NULL) {
-			BBPunfix(l->batCacheid);
+		l = BATunmask(l);
+		BBPreclaim(lp);
+		if (l == NULL) {
+			BBPreclaim(rp);
 			return GDK_FAIL;
 		}
-	} else {
-		BBPfix(r->batCacheid);
+		lp = l;
+	}
+	if (r->ttype == TYPE_msk || mask_cand(r)) {
+		r = BATunmask(r);
+		BBPreclaim(rp);
+		if (r == NULL) {
+			BBPreclaim(lp);
+			return GDK_FAIL;
+		}
+		rp = r;
 	}
 
 	if (joinparamcheck(l, r, NULL, sl, sr, func) != GDK_SUCCEED) {
@@ -3871,6 +3914,10 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		}
 	}
 	rcost = joincost(r, &lci, &rci, &rhash, &prhash, &rcand);
+	if (rcost < 0) {
+		rc = GDK_FAIL;
+		goto doreturn;
+	}
 
 	if (!nil_on_miss && !only_misses && !not_in && !max_one && !min_one) {
 		/* maybe do a hash join on the swapped operands; if we
@@ -3880,6 +3927,10 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		double lcost;
 
 		lcost = joincost(l, &rci, &lci, &lhash, &plhash, &lcand);
+		if (lcost < 0) {
+			rc = GDK_FAIL;
+			goto doreturn;
+		}
 		if (semi)
 			lcost += rci.ncand; /* cost of BATunique(r) */
 		/* add cost of sorting; obviously we don't know the
@@ -3941,8 +3992,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					     r1, NULL, NULL, false, false, false);
 				BBPunfix(r1->batCacheid);
 				if (rc != GDK_SUCCEED) {
-					if (r2)
-						BBPunfix(r2->batCacheid);
+					BBPreclaim(r2);
 					goto doreturn;
 				}
 				*r1p = r1 = tmp;
@@ -3967,8 +4017,8 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		      not_in, max_one, min_one, estimate, t0, false, rhash, prhash,
 		      rcand, func);
   doreturn:
-	BBPunfix(l->batCacheid);
-	BBPunfix(r->batCacheid);
+	BBPreclaim(lp);
+	BBPreclaim(rp);
 	return rc;
 }
 
@@ -4100,6 +4150,8 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	gdk_return rc;
 	lng t0 = 0;
 	BAT *r2 = NULL;
+	BAT *lp = NULL;
+	BAT *rp = NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -4107,33 +4159,49 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	canditer_init(&rci, r, sr);
 
 	if ((parent = VIEWtparent(l)) != 0) {
-		BAT *b = BBP_cache(parent);
-		if (l->hseqbase == b->hseqbase &&
-		    BATcount(l) == BATcount(b) &&
-		    ATOMtype(l->ttype) == ATOMtype(b->ttype))
-			l = b;
+		lp = BATdescriptor(parent);
+		if (lp != NULL) {
+			if (l->hseqbase == lp->hseqbase &&
+			    BATcount(l) == BATcount(lp) &&
+			    ATOMtype(l->ttype) == ATOMtype(lp->ttype)) {
+				l = lp;
+			} else {
+				BBPunfix(lp->batCacheid);
+				lp = NULL;
+			}
+		}
 	}
 	if ((parent = VIEWtparent(r)) != 0) {
-		BAT *b = BBP_cache(parent);
-		if (r->hseqbase == b->hseqbase &&
-		    BATcount(r) == BATcount(b) &&
-		    ATOMtype(r->ttype) == ATOMtype(b->ttype))
-			r = b;
+		rp = BATdescriptor(parent);
+		if (rp != NULL) {
+			if (r->hseqbase == rp->hseqbase &&
+			    BATcount(r) == BATcount(rp) &&
+			    ATOMtype(r->ttype) == ATOMtype(rp->ttype)) {
+				r = rp;
+			} else {
+				BBPunfix(rp->batCacheid);
+				rp = NULL;
+			}
+		}
 	}
 
 	if (l->ttype == TYPE_msk || mask_cand(l)) {
-		if ((l = BATunmask(l)) == NULL)
-			return GDK_FAIL;
-	} else {
-		BBPfix(l->batCacheid);
-	}
-	if (r->ttype == TYPE_msk || mask_cand(r)) {
-		if ((r = BATunmask(r)) == NULL) {
-			BBPunfix(l->batCacheid);
+		l = BATunmask(l);
+		BBPreclaim(lp);
+		if (l == NULL) {
+			BBPreclaim(rp);
 			return GDK_FAIL;
 		}
-	} else {
-		BBPfix(r->batCacheid);
+		lp = l;
+	}
+	if (r->ttype == TYPE_msk || mask_cand(r)) {
+		r = BATunmask(r);
+		BBPreclaim(rp);
+		if (r == NULL) {
+			BBPreclaim(lp);
+			return GDK_FAIL;
+		}
+		rp = r;
 	}
 
 	*r1p = NULL;
@@ -4194,6 +4262,10 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 
 	lcost = joincost(l, &rci, &lci, &lhash, &plhash, &lcand);
 	rcost = joincost(r, &lci, &rci, &rhash, &prhash, &rcand);
+	if (lcost < 0 || rcost < 0) {
+		rc = GDK_FAIL;
+		goto doreturn;
+	}
 
 	/* if the cost of doing searches on l is lower than the cost
 	 * of doing searches on r, we swap */
@@ -4231,8 +4303,8 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 			      __func__);
 	}
   doreturn:
-	BBPunfix(l->batCacheid);
-	BBPunfix(r->batCacheid);
+	BBPreclaim(lp);
+	BBPreclaim(rp);
 	return rc;
 }
 

@@ -128,16 +128,16 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 7,	2,	1,	0,	3,	3 # length
+% 7,	1,	1,	0,	3,	3 # length
 [ "boolean",	1,	0,	"",	"%10",	"%10"	]
-[ "decimal",	16,	6,	NULL,	NULL,	NULL	]
+[ "decimal",	9,	6,	NULL,	NULL,	NULL	]
 #PREPARE SELECT "quarter"(date '2021-01-02') IN ("second"(TIME '01:00:00'), (select ? where true));
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 7,	2,	1,	0,	3,	3 # length
+% 7,	1,	1,	0,	3,	3 # length
 [ "boolean",	1,	0,	"",	"%10",	"%10"	]
-[ "decimal",	16,	6,	NULL,	NULL,	NULL	]
+[ "decimal",	9,	6,	NULL,	NULL,	NULL	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type

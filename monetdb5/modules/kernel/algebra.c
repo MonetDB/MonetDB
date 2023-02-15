@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -282,8 +284,7 @@ ALGselect2(bat *result, const bat *bid, const bat *sid, const void *low, const v
 	}
 	bn = BATselect(b, s, low, high, *li, *hi, *anti);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (bn == NULL)
 		throw(MAL, "algebra.select", GDK_EXCEPTION);
 	*result = bn->batCacheid;
@@ -333,8 +334,7 @@ ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, cons
 
 	bn = BATselect(b, s, low, high, nli, nhi, nanti);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (bn == NULL)
 		throw(MAL, "algebra.select", GDK_EXCEPTION);
 	*result = bn->batCacheid;
@@ -369,8 +369,7 @@ ALGthetaselect2(bat *result, const bat *bid, const bat *sid, const void *val, co
 	derefStr(b, val);
 	bn = BATthetaselect(b, s, val, *op);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (bn == NULL)
 		throw(MAL, "algebra.select", GDK_EXCEPTION);
 	*result = bn->batCacheid;
@@ -517,23 +516,16 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id,
 	}
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
-	if (candleft)
-		BBPunfix(candleft->batCacheid);
-	if (candright)
-		BBPunfix(candright->batCacheid);
+	BBPreclaim(candleft);
+	BBPreclaim(candright);
 	return MAL_SUCCEED;
 
   fail:
-	if (left)
-		BBPunfix(left->batCacheid);
-	if (right)
-		BBPunfix(right->batCacheid);
-	if (right2)
-		BBPunfix(right2->batCacheid);
-	if (candleft)
-		BBPunfix(candleft->batCacheid);
-	if (candright)
-		BBPunfix(candright->batCacheid);
+	BBPreclaim(left);
+	BBPreclaim(right);
+	BBPreclaim(right2);
+	BBPreclaim(candleft);
+	BBPreclaim(candright);
 	if (err == NULL)
 		throw(MAL, funcname, GDK_EXCEPTION);
 	throw(MAL, funcname, "%s", err);
@@ -731,10 +723,8 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	distinct = *getArgReference_bit(stk, pci, pci->argc - 1);
 	rc = BATfirstn(&bn, ret2 ? &gn : NULL, b, s, g, (BUN) n, asc, nilslast, distinct);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	if (g)
-		BBPunfix(g->batCacheid);
+	BBPreclaim(s);
+	BBPreclaim(g);
 	if (rc != GDK_SUCCEED)
 		throw(MAL, "algebra.firstn", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*ret1 = bn->batCacheid;
@@ -789,8 +779,7 @@ ALGunique(bat *result, const bat *bid, const bat *sid)
 	}
 	bn = BATunique(b, s);
 	BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	if (bn == NULL)
 		throw(MAL, "algebra.unique", GDK_EXCEPTION);
 	*result = bn->batCacheid;
@@ -808,18 +797,15 @@ ALGcrossproduct(bat *l, bat *r, const bat *left, const bat *right, const bat *sl
 	L = BATdescriptor(*left);
 	R = BATdescriptor(*right);
 	if (L == NULL || R == NULL) {
-		if (L)
-			BBPunfix(L->batCacheid);
-		if (R)
-			BBPunfix(R->batCacheid);
+		BBPreclaim(L);
+		BBPreclaim(R);
 		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if ((slid && !is_bat_nil(*slid) && (sl = BATdescriptor(*slid)) == NULL) ||
 		(srid && !is_bat_nil(*srid) && (sr = BATdescriptor(*srid)) == NULL)) {
 		BBPunfix(L->batCacheid);
 		BBPunfix(R->batCacheid);
-		if (sl)
-			BBPunfix(sl->batCacheid);
+		BBPreclaim(sl);
 		/* sr == NULL, so no need to unfix */
 		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
@@ -827,10 +813,8 @@ ALGcrossproduct(bat *l, bat *r, const bat *left, const bat *right, const bat *sl
 					  max_one && !is_bit_nil(*max_one) && *max_one);
 	BBPunfix(L->batCacheid);
 	BBPunfix(R->batCacheid);
-	if (sl)
-		BBPunfix(sl->batCacheid);
-	if (sr)
-		BBPunfix(sr->batCacheid);
+	BBPreclaim(sl);
+	BBPreclaim(sr);
 	if (ret != GDK_SUCCEED)
 		throw(MAL, "algebra.crossproduct", GDK_EXCEPTION);
 	*l = bn1->batCacheid;
@@ -886,8 +870,7 @@ ALGprojection2(bat *result, const bat *lid, const bat *r1id, const bat *r2id)
 	bn = BATproject2(l, r1, r2);
 	BBPunfix(l->batCacheid);
 	BBPunfix(r1->batCacheid);
-	if (r2)
-		BBPunfix(r2->batCacheid);
+	BBPreclaim(r2);
 	if (bn == NULL)
 		throw(MAL, "algebra.projection", GDK_EXCEPTION);
 	*result = bn->batCacheid;
@@ -914,8 +897,7 @@ ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *orde
 		throw(MAL, "algebra.sort", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (group && !is_bat_nil(*group) && (g = BATdescriptor(*group)) == NULL) {
-		if (o)
-			BBPunfix(o->batCacheid);
+		BBPreclaim(o);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.sort", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
@@ -923,18 +905,14 @@ ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *orde
 				   norder ? &on : NULL,
 				   ngroup ? &gn : NULL,
 				b, o, g, *reverse, *nilslast, *stable) != GDK_SUCCEED) {
-		if (o)
-			BBPunfix(o->batCacheid);
-		if (g)
-			BBPunfix(g->batCacheid);
+		BBPreclaim(o);
+		BBPreclaim(g);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.sort", GDK_EXCEPTION);
 	}
 	BBPunfix(b->batCacheid);
-	if (o)
-		BBPunfix(o->batCacheid);
-	if (g)
-		BBPunfix(g->batCacheid);
+	BBPreclaim(o);
+	BBPreclaim(g);
 	if (result) {
 		*result = bn->batCacheid;
 		BBPkeepref(bn);
@@ -1019,8 +997,7 @@ ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_n
 		canditer_init(&ci, b, s);
 		*result = (lng) ci.ncand;
 	}
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(s);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

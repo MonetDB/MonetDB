@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -44,16 +46,11 @@ AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const ba
 		(eid != NULL && e == NULL) ||
 		(sid != NULL && s == NULL) ||
 		(quantile != NULL && q == NULL)) {
-		if (b)
-			BBPunfix(b->batCacheid);
-		if (g)
-			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
-		if (q)
-			BBPunfix(q->batCacheid);
+		BBPreclaim(b);
+		BBPreclaim(g);
+		BBPreclaim(e);
+		BBPreclaim(s);
+		BBPreclaim(q);
 		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (tp == TYPE_any &&
@@ -76,12 +73,9 @@ AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const ba
 			MT_lock_unset(&q->theaplock);
 			if (qvalue < 0 || qvalue > 1) {
 				BBPunfix(b->batCacheid);
-				if (g)
-					BBPunfix(g->batCacheid);
-				if (e)
-					BBPunfix(e->batCacheid);
-				if (s)
-					BBPunfix(s->batCacheid);
+				BBPreclaim(g);
+				BBPreclaim(e);
+				BBPreclaim(s);
 				BBPunfix(q->batCacheid);
 				throw(MAL, malfunc,
 					  "quantile value of %f is not in range [0,1]", qvalue);
@@ -95,12 +89,9 @@ AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const ba
 	}
 
 	BBPunfix(b->batCacheid);
-	if (g)
-		BBPunfix(g->batCacheid);
-	if (e)
-		BBPunfix(e->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(g);
+	BBPreclaim(e);
+	BBPreclaim(s);
 	if (bn == NULL)
 		throw(MAL, malfunc, GDK_EXCEPTION);
 	*retval1 = bn->batCacheid;
@@ -633,26 +624,19 @@ AGGRavg3(bat *retval1, bat *retval2, bat *retval3, const bat *bid, const bat *gi
 		(gid != NULL && !is_bat_nil(*gid) && g == NULL) ||
 		(eid != NULL && !is_bat_nil(*eid) && e == NULL) ||
 		(sid != NULL && !is_bat_nil(*sid) && s == NULL)) {
-		if (b)
-			BBPunfix(b->batCacheid);
-		if (g)
-			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
+		BBPreclaim(b);
+		BBPreclaim(g);
+		BBPreclaim(e);
+		BBPreclaim(s);
 		throw(MAL, "aggr.subavg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	rc = BATgroupavg3(&avgs, &rems, &cnts, b, g, e, s, *skip_nils);
 
 	BBPunfix(b->batCacheid);
-	if (g)
-		BBPunfix(g->batCacheid);
-	if (e)
-		BBPunfix(e->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(g);
+	BBPreclaim(e);
+	BBPreclaim(s);
 	if (rc != GDK_SUCCEED)
 		throw(MAL, "aggr.subavg", GDK_EXCEPTION);
 	*retval1 = avgs->batCacheid;
@@ -680,16 +664,11 @@ AGGRavg3comb(bat *retval1, const bat *bid, const bat *rid, const bat *cid, const
 		c == NULL ||
 		(gid != NULL && !is_bat_nil(*gid) && g == NULL) ||
 		(eid != NULL && !is_bat_nil(*eid) && e == NULL)) {
-		if (b)
-			BBPunfix(b->batCacheid);
-		if (r)
-			BBPunfix(r->batCacheid);
-		if (c)
-			BBPunfix(c->batCacheid);
-		if (g)
-			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
+		BBPreclaim(b);
+		BBPreclaim(r);
+		BBPreclaim(c);
+		BBPreclaim(g);
+		BBPreclaim(e);
 		throw(MAL, "aggr.subavg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
@@ -698,10 +677,8 @@ AGGRavg3comb(bat *retval1, const bat *bid, const bat *rid, const bat *cid, const
 	BBPunfix(b->batCacheid);
 	BBPunfix(r->batCacheid);
 	BBPunfix(c->batCacheid);
-	if (g)
-		BBPunfix(g->batCacheid);
-	if (e)
-		BBPunfix(e->batCacheid);
+	BBPreclaim(g);
+	BBPreclaim(e);
 	if (bn == NULL)
 		throw(MAL, "aggr.subavg", GDK_EXCEPTION);
 	*retval1 = bn->batCacheid;
@@ -1006,30 +983,21 @@ AGGRgroup_str_concat(bat *retval1, const bat *bid, const bat *gid, const bat *ei
 
 	if (b == NULL || (gid != NULL && g == NULL) || (eid != NULL && e == NULL) ||
 		(sid != NULL && s == NULL) || (sepid != NULL && sep == NULL)) {
-		if (b)
-			BBPunfix(b->batCacheid);
-		if (g)
-			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
-		if (sep)
-			BBPunfix(sep->batCacheid);
+		BBPreclaim(b);
+		BBPreclaim(g);
+		BBPreclaim(e);
+		BBPreclaim(s);
+		BBPreclaim(sep);
 		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	bn = BATgroupstr_group_concat(b, g, e, s, sep, skip_nils, separator);
 
 	BBPunfix(b->batCacheid);
-	if (g)
-		BBPunfix(g->batCacheid);
-	if (e)
-		BBPunfix(e->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
-	if (sep)
-		BBPunfix(sep->batCacheid);
+	BBPreclaim(g);
+	BBPreclaim(e);
+	BBPreclaim(s);
+	BBPreclaim(sep);
 	if (bn == NULL)
 		throw(MAL, malfunc, GDK_EXCEPTION);
 	*retval1 = bn->batCacheid;
@@ -1092,28 +1060,20 @@ AGGRgrouped2(bat *retval, const bat *bid1, const bat *bid2, const bat *gid, cons
 
 	if (b1 == NULL || b2 == NULL || (gid != NULL && g == NULL) || (eid != NULL && e == NULL) ||
 		(sid != NULL && s == NULL)) {
-		if (b1)
-			BBPunfix(b1->batCacheid);
-		if (b2)
-			BBPunfix(b2->batCacheid);
-		if (g)
-			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
+		BBPreclaim(b1);
+		BBPreclaim(b2);
+		BBPreclaim(g);
+		BBPreclaim(e);
+		BBPreclaim(s);
 		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	if (b1->ttype != b2->ttype) {
 		BBPunfix(b1->batCacheid);
 		BBPunfix(b2->batCacheid);
-		if (g)
-			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
+		BBPreclaim(g);
+		BBPreclaim(e);
+		BBPreclaim(s);
 		throw(MAL, malfunc, SQLSTATE(42000) "%s requires both arguments of the same type", malfunc);
 	}
 
@@ -1121,12 +1081,9 @@ AGGRgrouped2(bat *retval, const bat *bid1, const bat *bid2, const bat *gid, cons
 
 	BBPunfix(b1->batCacheid);
 	BBPunfix(b2->batCacheid);
-	if (g)
-		BBPunfix(g->batCacheid);
-	if (e)
-		BBPunfix(e->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	BBPreclaim(g);
+	BBPreclaim(e);
+	BBPreclaim(s);
 	if (bn == NULL)
 		throw(MAL, malfunc, GDK_EXCEPTION);
 	*retval = bn->batCacheid;

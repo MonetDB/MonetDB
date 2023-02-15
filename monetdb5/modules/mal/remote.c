@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -100,6 +102,8 @@ typedef struct _connection {
 #include <sys/un.h> /* sockaddr_un */
 #endif
 #include <unistd.h> /* gethostname */
+
+static MT_Lock mal_remoteLock = MT_LOCK_INITIALIZER(mal_remoteLock);
 
 static connection conns = NULL;
 static unsigned char localtype = 0177;
@@ -1215,7 +1219,7 @@ static str RMTregisterInternal(Client cntxt, char** fcn_id, const char *conn, co
 	}
 
 	Symbol prg;
-	if ((prg = newFunction(putName(mod), putName(*fcn_id), FUNCTIONsymbol)) == NULL) {
+	if ((prg = newFunctionArgs(putName(mod), putName(*fcn_id), FUNCTIONsymbol, -1)) == NULL) {
 		MT_lock_unset(&c->lock);
 		throw(MAL, "Remote register", MAL_MALLOC_FAIL);
 	}
@@ -1525,7 +1529,7 @@ static str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	sendtheap = b->ttype != TYPE_void;
 	sendtvheap = sendtheap && b->tvheap;
-	if (isVIEW(b) && sendtvheap && VIEWvtparent(b) && BATcount(b) < BATcount(BBP_cache(VIEWvtparent(b)))) {
+	if (isVIEW(b) && sendtvheap && VIEWvtparent(b) && BATcount(b) < BATcount(BBP_desc(VIEWvtparent(b)))) {
 		if ((b = BATdescriptor(bid)) == NULL) {
 			BBPunfix(bid);
 			throw(MAL, "remote.bincopyto", RUNTIME_OBJECT_MISSING);
