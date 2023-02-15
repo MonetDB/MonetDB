@@ -3609,9 +3609,8 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 	}
 	if (!list_empty(tr->changes)) {
 		/* revert the change list */
-		list *nl = SA_LIST(tr->sa, (fdestroy) NULL);
-		for(node *n=tr->changes->h; n; n = n->next)
-			list_prepend(nl, n->data);
+		list *nl = tr->changes;
+		list_revert(nl);
 
 		/* rollback */
 		if (!commit_lock)
@@ -3633,6 +3632,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 			if (!c->cleanup) {
 				_DELETE(c);
 			} else if (c->cleanup && !c->cleanup(store, c, oldest)) {
+				/* TODO change too node stealing (no allocs here) */
 				store->changes = sa_list_append(tr->sa, store->changes, c);
 			} else
 				_DELETE(c);
@@ -3640,7 +3640,6 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		store_unlock(store);
 		if (!commit_lock)
 			MT_lock_unset(&store->commit);
-		list_destroy(nl);
 		list_destroy(tr->changes);
 		tr->changes = NULL;
 		tr->logchanges = 0;
@@ -3648,10 +3647,8 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		if (!commit_lock)
 			MT_lock_set(&store->commit);
 		store_lock(store);
-		if (ATOMIC_GET(&store->nr_active) == 1) { /* still just me */
-			ulng oldest = store_timestamp(store);
-			store_pending_changes(store, oldest);
-		}
+		ulng oldest = store_oldest(store);
+		store_pending_changes(store, oldest);
 		store_unlock(store);
 		if (!commit_lock)
 			MT_lock_unset(&store->commit);
