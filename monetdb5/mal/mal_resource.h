@@ -24,7 +24,7 @@
 #define DELAYUNIT 2 /* ms delay in parallel processing decisions */
 #define MAX_DELAYS 1000 /* never wait more then 2000 ms */
 
-extern int MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argclaim);
+extern bool MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argclaim);
 extern void MALadmission_release(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argclaim);
 
 #define FAIRNESS_THRESHOLD (MAX_DELAYS * DELAYUNIT)

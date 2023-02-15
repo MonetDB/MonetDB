@@ -3403,6 +3403,8 @@ BBPprepare(bool subcommit)
 		/* starting a subcommit. Make sure SUBDIR and DELDIR
 		 * are clean */
 		ret = BBPrecover_subdir();
+		if (ret != GDK_SUCCEED)
+			return ret;
 	}
 	if (backup_files == 0) {
 		backup_dir = 0;
@@ -3435,7 +3437,7 @@ BBPprepare(bool subcommit)
 			GDKfree(subdirpath);
 			return GDK_FAIL;
 		}
-		TRC_DEBUG(IO_, "mkdir %s = %d\n", subdirpath, (int) ret);
+		TRC_DEBUG(IO_, "mkdir %s\n", subdirpath);
 		GDKfree(subdirpath);
 	}
 	if (backup_dir != set) {
@@ -3588,9 +3590,9 @@ BBPcheckHeap(bool subcommit, Heap *h)
 			if (path == NULL)
 				return;
 			if (MT_stat(path, &statb) < 0) {
-				assert(0);
 				GDKsyserror("cannot stat file %s (expected size %zu)\n",
 					    path, h->free);
+				assert(0);
 				GDKfree(path);
 				return;
 			}
@@ -3600,9 +3602,9 @@ BBPcheckHeap(bool subcommit, Heap *h)
 		if (path == NULL)
 			return;
 		if (MT_stat(path, &statb) < 0) {
-			assert(0);
 			GDKsyserror("cannot stat file %s (expected size %zu)\n",
 				    path, h->free);
+			assert(0);
 			GDKfree(path);
 			return;
 		}
@@ -3705,7 +3707,7 @@ gdk_return
 BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng transid)
 {
 	gdk_return ret = GDK_SUCCEED;
-	int t0 = 0, t1 = 0;
+	lng t0 = 0, t1 = 0;
 	str bakdir, deldir;
 	const bool lock = locked_by == 0 || locked_by != MT_getpid();
 	char buf[3000];
@@ -3719,7 +3721,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 		return GDK_FAIL;
 	}
 
-	TRC_DEBUG_IF(PERF) t0 = t1 = GDKms();
+	TRC_DEBUG_IF(PERF) t0 = t1 = GDKusec();
 
 	ret = BBPprepare(subcommit != NULL);
 
@@ -3767,7 +3769,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 		if (idx < cnt)
 			ret = GDK_FAIL;
 	}
-	TRC_DEBUG(PERF, "move time %d, %d files\n", (t1 = GDKms()) - t0, backup_files);
+	TRC_DEBUG(PERF, "move time "LLFMT" usec, %d files\n", (t1 = GDKusec()) - t0, backup_files);
 
 	/* PHASE 2: save the repository and write new BBP.dir file */
 	if (ret == GDK_SUCCEED) {
@@ -3775,69 +3777,63 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 				   &obbpf, &nbbpf);
 	}
 
-	if (ret == GDK_SUCCEED) {
-		int idx = 0;
+	for (int idx = 1; ret == GDK_SUCCEED && idx < cnt; idx++) {
+		bat i = subcommit ? subcommit[idx] : idx;
+		/* BBP_desc(i) may be NULL */
+		BUN size = sizes ? sizes[idx] : BUN_NONE;
+		BATiter bi;
 
-		while (++idx < cnt) {
-			bat i = subcommit ? subcommit[idx] : idx;
-			/* BBP_desc(i) may be NULL */
-			BUN size = sizes ? sizes[idx] : BUN_NONE;
-			BATiter bi;
-
-			if (BBP_status(i) & BBPPERSISTENT) {
-				BAT *b = dirty_bat(&i, subcommit != NULL);
-				if (i <= 0) {
-					break;
-				}
-				bi = bat_iterator(BBP_desc(i));
-				assert(sizes == NULL || size <= bi.count);
-				assert(sizes == NULL || bi.width == 0 || (bi.type == TYPE_msk ? ((size + 31) / 32) * 4 : size << bi.shift) <= bi.hfree);
-				if (size > bi.count) /* includes sizes==NULL */
-					size = bi.count;
-				bi.b->batInserted = size;
-				if (b && size != 0) {
-					/* wait for BBPSAVING so that we
-					 * can set it, wait for
-					 * BBPUNLOADING before
-					 * attempting to save */
-					for (;;) {
-						if (lock)
-							MT_lock_set(&GDKswapLock(i));
-						if (!(BBP_status(i) & (BBPSAVING|BBPUNLOADING)))
-							break;
-						if (lock)
-							MT_lock_unset(&GDKswapLock(i));
-						BBPspin(i, __func__, BBPSAVING|BBPUNLOADING);
-					}
-					BBP_status_on(i, BBPSAVING);
+		if (BBP_status(i) & BBPPERSISTENT) {
+			BAT *b = dirty_bat(&i, subcommit != NULL);
+			if (i <= 0) {
+				ret = GDK_FAIL;
+				break;
+			}
+			bi = bat_iterator(BBP_desc(i));
+			assert(sizes == NULL || size <= bi.count);
+			assert(sizes == NULL || bi.width == 0 || (bi.type == TYPE_msk ? ((size + 31) / 32) * 4 : size << bi.shift) <= bi.hfree);
+			if (size > bi.count) /* includes sizes==NULL */
+				size = bi.count;
+			bi.b->batInserted = size;
+			if (b && size != 0) {
+				/* wait for BBPSAVING so that we
+				 * can set it, wait for
+				 * BBPUNLOADING before
+				 * attempting to save */
+				for (;;) {
+					if (lock)
+						MT_lock_set(&GDKswapLock(i));
+					if (!(BBP_status(i) & (BBPSAVING|BBPUNLOADING)))
+						break;
 					if (lock)
 						MT_lock_unset(&GDKswapLock(i));
-					ret = BATsave_iter(b, &bi, size);
-					BBP_status_off(i, BBPSAVING);
+					BBPspin(i, __func__, BBPSAVING|BBPUNLOADING);
 				}
-			} else {
-				bi = bat_iterator(NULL);
+				BBP_status_on(i, BBPSAVING);
+				if (lock)
+					MT_lock_unset(&GDKswapLock(i));
+				ret = BATsave_iter(b, &bi, size);
+				BBP_status_off(i, BBPSAVING);
 			}
-			if (ret == GDK_SUCCEED) {
-				n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf, &bi);
-			}
-			bat_iterator_end(&bi);
-			if (n == -2)
-				break;
-			/* we once again have a saved heap */
+		} else {
+			bi = bat_iterator(NULL);
 		}
-		if (idx < cnt) {
-			ret = GDK_FAIL;
+		if (ret == GDK_SUCCEED) {
+			n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf, &bi);
+			if (n < -1)
+				ret = GDK_FAIL;
 		}
+		bat_iterator_end(&bi);
+		/* we once again have a saved heap */
 	}
 
-	TRC_DEBUG(PERF, "write time %d\n", (t0 = GDKms()) - t1);
+	TRC_DEBUG(PERF, "write time "LLFMT" usec\n", (t0 = GDKusec()) - t1);
 
 	if (ret == GDK_SUCCEED) {
 		ret = BBPdir_last(n, buf, sizeof(buf), obbpf, nbbpf);
 	}
 
-	TRC_DEBUG(PERF, "dir time %d, %d bats\n", (t1 = GDKms()) - t0, (bat) ATOMIC_GET(&BBPsize));
+	TRC_DEBUG(PERF, "dir time "LLFMT" usec, %d bats\n", (t1 = GDKusec()) - t0, (bat) ATOMIC_GET(&BBPsize));
 
 	if (ret == GDK_SUCCEED) {
 		/* atomic switchover */
@@ -3873,9 +3869,9 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 			backup_files = 1;
 		}
 	}
-	TRC_DEBUG(PERF, "%s (ready time %d)\n",
+	TRC_DEBUG(PERF, "%s (ready time "LLFMT" usec)\n",
 		  ret == GDK_SUCCEED ? "" : " failed",
-		  (t0 = GDKms()) - t1);
+		  (t0 = GDKusec()) - t1);
 
 	/* turn off the BBPSYNCING bits for all bats, even when things
 	 * didn't go according to plan (i.e., don't check for ret ==
@@ -3943,6 +3939,7 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 	if (ret != GDK_SUCCEED) {
 		char *srcpath;
 
+		GDKclrerr();
 		/* two legal possible causes: file exists or dir
 		 * doesn't exist */
 		if(!(dstpath = GDKfilepath(farmid, dstdir, name, NULL)))
@@ -4112,10 +4109,10 @@ BBPrecover_subdir(void)
 		if (dent->d_name[0] == '.')
 			continue;
 		ret = GDKmove(0, SUBDIR, dent->d_name, NULL, BAKDIR, dent->d_name, NULL, true);
-		if (ret == GDK_SUCCEED && strcmp(dent->d_name, "BBP.dir") == 0)
-			backup_dir = 1;
 		if (ret != GDK_SUCCEED)
 			break;
+		if (strcmp(dent->d_name, "BBP.dir") == 0)
+			backup_dir = 1;
 	}
 	closedir(dirp);
 

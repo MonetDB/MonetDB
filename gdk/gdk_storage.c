@@ -326,7 +326,8 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 {
 	char *path1;
 	char *path2;
-	int ret, t0 = GDKms();
+	int ret;
+	lng t0 = GDKusec();
 
 	if (nme1 == NULL || *nme1 == 0) {
 		GDKerror("no file specified\n");
@@ -339,7 +340,7 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 		if (ret < 0 && report)
 			GDKsyserror("cannot rename %s to %s\n", path1, path2);
 
-		TRC_DEBUG(IO_, "Move %s %s = %d (%dms)\n", path1, path2, ret, GDKms() - t0);
+		TRC_DEBUG(IO_, "Move %s %s = %d ("LLFMT" usec)\n", path1, path2, ret, GDKusec() - t0);
 	} else {
 		ret = -1;
 	}
@@ -353,7 +354,7 @@ GDKextendf(int fd, size_t size, const char *fn)
 {
 	struct stat stb;
 	int rt = 0;
-	int t0 = GDKms();
+	lng t0 = GDKusec();
 
 	assert(!GDKinmemory(0));
 #ifdef __COVERITY__
@@ -397,9 +398,9 @@ GDKextendf(int fd, size_t size, const char *fn)
 				GDKsyserror("ftruncate to old size");
 		}
 	}
-	TRC_DEBUG(IO_, "GDKextend %s %zu -> %zu %dms%s\n",
+	TRC_DEBUG(IO_, "GDKextend %s %zu -> %zu "LLFMT" usec%s\n",
 		  fn, (size_t) stb.st_size, size,
-		  GDKms() - t0, rt != 0 ? " (failed)" : "");
+		  GDKusec() - t0, rt != 0 ? " (failed)" : "");
 	/* posix_fallocate returns != 0 on failure, fallocate and
 	 * ftruncate return -1 on failure, but all three return 0 on
 	 * success */

@@ -137,9 +137,9 @@ find_id(objectset *os, sqlid id)
 				return n;
 			}
 		}
+		unlock_reader(os);
 	}
 
-	unlock_reader(os);
 	return NULL;
 }
 
@@ -404,6 +404,8 @@ objectversion_destroy(sqlstore *store, objectset* os, objectversion *ov)
 	if (os->destroy)
 		os->destroy(store, ov->b);
 
+	if (os->temporary && (state & deleted || state & under_destruction || state & rollbacked))
+		os_destroy(os, store); // TODO transaction_layer_revamp: embed into refcounting subproject : reference is already dropped by os_cleanup
 	_DELETE(ov);
 }
 
@@ -582,6 +584,9 @@ os_cleanup(sqlstore* store, objectversion *ov, ulng oldest)
 		return LOG_OK;
 	}
 
+	assert(os_atmc_get_state(ov) != deleted && os_atmc_get_state(ov) != under_destruction && os_atmc_get_state(ov) != rollbacked);
+	if (ov->os->temporary) os_destroy(ov->os, store); // TODO transaction_layer_revamp: embed into refcounting subproject: (old) live versions should drop their reference to the os
+
 	while (ov->id_based_older && ov->id_based_older == ov->name_based_older && ov->ts >= oldest) {
 		ov = ov->id_based_older;
 	}
@@ -630,6 +635,7 @@ tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng 
 objectset *
 os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, sql_store store)
 {
+	assert(!sa);
 	objectset *os = SA_NEW(sa, objectset);
 	*os = (objectset) {
 		.refcnt = 1,
@@ -892,8 +898,8 @@ os_add_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 		return res;
 	}
 
-	if (!os->temporary)
-		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
+	if (os->temporary) (void) os_dup(os); // TODO transaction_layer_revamp: embed into refcounting subproject
+	trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
 	return res;
 }
 
@@ -995,8 +1001,8 @@ os_del_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 		return res;
 	}
 
-	if (!os->temporary)
-		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
+	if (os->temporary) (void) os_dup(os); // TODO transaction_layer_revamp: embed into refcounting subproject
+	trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
 	return res;
 }
 
