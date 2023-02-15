@@ -3532,7 +3532,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		if (!commit_lock)
 			MT_lock_set(&store->commit);
 		store_lock(store);
-		ulng oldest = store_timestamp(store);
+		ulng oldest = store_oldest(store);
 		store_pending_changes(store, oldest);
 		store_unlock(store);
 		if (!commit_lock)
