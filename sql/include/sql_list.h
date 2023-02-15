@@ -55,7 +55,7 @@ extern node *list_remove_node(list *l, void *gdata, node *n);
 extern void list_remove_data(list *l, void *gdata, void *data);
 extern void list_remove_list(list *l, void *gdata, list *data);
 extern list *list_move_data(list *l, list *d, void *data);
-
+extern void list_revert(list *l);
 
 extern int list_traverse(list *l, traverse_func f, void *clientdata);
 
