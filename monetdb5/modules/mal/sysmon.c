@@ -351,8 +351,8 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_unset(&mal_delayLock);
 
 	return paused ? MAL_SUCCEED :
-		i == qsize ? createException(MAL, "SYSMONpause", SQLSTATE(42S12) "Tag "LLFMT" unknown.", tag) :
-		createException(MAL, "SYSMONpause", SQLSTATE(HY009) "Tag "LLFMT" unknown to the user.", tag);
+		i == qsize ? createException(MAL, "SYSMONpause", SQLSTATE(42S12) "Tag "OIDFMT" unknown.", tag) :
+		createException(MAL, "SYSMONpause", SQLSTATE(HY009) "Tag "OIDFMT" unknown to the user.", tag);
 }
 
 static str
@@ -400,8 +400,8 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_unset(&mal_delayLock);
 
 	return paused ? MAL_SUCCEED :
-		i == qsize ? createException(MAL, "SYSMONresume", SQLSTATE(42S12) "Tag "LLFMT" unknown.", tag) :
-		createException(MAL, "SYSMONresume", SQLSTATE(HY009) "Tag "LLFMT" unknown to the user.", tag);
+		i == qsize ? createException(MAL, "SYSMONresume", SQLSTATE(42S12) "Tag "OIDFMT" unknown.", tag) :
+		createException(MAL, "SYSMONresume", SQLSTATE(HY009) "Tag "OIDFMT" unknown to the user.", tag);
 }
 
 static str
@@ -449,8 +449,8 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_unset(&mal_delayLock);
 
 	return paused ? MAL_SUCCEED :
-		i == qsize ? createException(MAL, "SYSMONstop", SQLSTATE(42S12) "Tag "LLFMT" unknown.", tag) :
-		createException(MAL, "SYSMONstop", SQLSTATE(HY009) "Tag "LLFMT" unknown to the user.", tag);
+		i == qsize ? createException(MAL, "SYSMONstop", SQLSTATE(42S12) "Tag "OIDFMT" unknown.", tag) :
+		createException(MAL, "SYSMONstop", SQLSTATE(HY009) "Tag "OIDFMT" unknown to the user.", tag);
 }
 
 #include "mel.h"
