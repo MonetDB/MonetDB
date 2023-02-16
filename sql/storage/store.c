@@ -1525,7 +1525,7 @@ table_next_column_nr(sql_table *t)
 }
 
 static sql_column *
-bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, sqlid id, char *sqltype, unsigned int digits)
+bootstrap_create_column(sql_trans *tr, sql_table *t, const char *name, sqlid id, const char *sqltype, unsigned int digits)
 {
 	sqlstore *store = tr->store;
 	sql_column *col = SA_ZNEW(tr->sa, sql_column);
@@ -1703,7 +1703,7 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 }
 
 static sql_table *
-bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name, sqlid id)
+bootstrap_create_table(sql_trans *tr, sql_schema *s, const char *name, sqlid id)
 {
 	sqlstore *store = tr->store;
 	int istmp = isTempSchema(s);
@@ -1733,7 +1733,7 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name, sqlid id)
 }
 
 static sql_schema *
-bootstrap_create_schema(sql_trans *tr, char *name, sqlid id, sqlid auth_id, int owner)
+bootstrap_create_schema(sql_trans *tr, const char *name, sqlid id, sqlid auth_id, int owner)
 {
 	sqlstore *store = tr->store;
 	sql_schema *s = SA_ZNEW(tr->sa, sql_schema);
