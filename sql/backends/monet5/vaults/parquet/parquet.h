@@ -6,7 +6,7 @@
 typedef struct parquet_file {
     char* filename;
     GParquetArrowFileReader *reader;
-    char* error;
+    GError* error;
 } parquet_file;
 
 

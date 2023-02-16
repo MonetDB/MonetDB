@@ -13,30 +13,32 @@
 #include "mal_parser.h"
 #include "mal_builder.h"
 #include "mal_namespace.h"
+#include "mal_exception.h"
 #include "mal_debugger.h"
 #include "mal_linker.h"
 #include "mal_utils.h"
 #include "sql_types.h"
 
+#include <unistd.h>
+
 static parquet_file *
 parquet_open_file(char* filename)
 {
     GParquetArrowFileReader *reader;
-    GError *g_error;
-    char* error = NULL;
-
-    reader = gparquet_arrow_file_reader_new_path(filename, &g_error);
-
-    if(!reader) {
-        reader = NULL;
-        error = g_error->message;
-    }
+    GError *g_error = NULL;
 
     parquet_file *file = GDKmalloc(sizeof(parquet_file));
 
+    if (access(filename, F_OK) != 0) {
+      reader = NULL;
+    } 
+    else {
+      reader = gparquet_arrow_file_reader_new_path(filename, &g_error);
+    }
+
     file->filename = filename;
     file->reader = reader;
-    file->error = error;
+    file->error = g_error;
 
     return file;
 }
@@ -161,38 +163,33 @@ static char* parquet_type_map(GArrowType type) {
     return "not implemented";
 }
 
-static int
+static str
 parquet_add_types(mvc *sql, sql_subfunc *f, char *filename)
 {
-	(void)f;
-	(void)filename;
+  parquet_file *file = parquet_open_file(filename);
 
-    parquet_file *file = parquet_open_file(filename);
-
-	if(file->error) {
-		//return file->error;
-		return -1;
+	if(file->reader == NULL) {
+    throw(SQL, SQLSTATE(42000), "parquet" RUNTIME_FILE_NOT_FOUND);
 	}
 
-    GError *table_error;
-    GArrowTable *table = gparquet_arrow_file_reader_read_table(file->reader, &table_error);
+  GError *table_error;
+  GArrowTable *table = gparquet_arrow_file_reader_read_table(file->reader, &table_error);
 
-    if(table_error) {
-        printf("%s", table_error->message);
-        return -1;
-    }
+  if(table_error) {
+    throw(SQL, SQLSTATE(42000), "parquet" RUNTIME_LOAD_ERROR); // TODO: different error.
+  }
 
-    guint n_columns = garrow_table_get_n_columns(table);
+  guint n_columns = garrow_table_get_n_columns(table);
 
-    list *types = sa_list(sql->sa);
+  list *types = sa_list(sql->sa);
 
-    for(int col = 0; col < (int)n_columns; col++) {
-        GArrowChunkedArray *array = garrow_table_get_column_data(table, col);
-        GArrowType type = garrow_chunked_array_get_value_type(array);
-        char* st = parquet_type_map(type);
+  for(int col = 0; col < (int)n_columns; col++) {
+      GArrowChunkedArray *array = garrow_table_get_column_data(table, col);
+      GArrowType type = garrow_chunked_array_get_value_type(array);
+      char* st = parquet_type_map(type);
 
-        printf("%s", st);
-    }
+      printf("%s", st);
+  }
 
 	// for each parquet column
 	// 	get type from parquet column
@@ -207,7 +204,7 @@ parquet_add_types(mvc *sql, sql_subfunc *f, char *filename)
 
 	/* close file */
 	GDKfree(file);
-	return 0;
+	return "";
 }
 
 static int
