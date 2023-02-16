@@ -25,6 +25,8 @@
 static str
 SYSMONstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) mb;
+
 	/* Temporary hack not allowing MAL clients (mclient -lmal)
 	   to use this function */
 	if (cntxt->sqlcontext == NULL)
@@ -42,7 +44,6 @@ SYSMONstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	timestamp tsn = timestamp_nil;
 	str msg = MAL_SUCCEED;
 
-	(void) mb;
 	user = COLnew(0, TYPE_str, usrstatscnt, TRANSIENT);
 	querycount = COLnew(0, TYPE_lng, usrstatscnt, TRANSIENT);
 	totalticks = COLnew(0, TYPE_lng, usrstatscnt, TRANSIENT);
@@ -168,8 +169,6 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	   to use this function */
 	if (cntxt->sqlcontext == NULL)
 		throw(MAL, "SYSMONqueue", SQLSTATE(42000) "Calling from a mclient -lmal.");
-
-	(void)mb;
 
 	bat *t = getArgReference_bat(stk,pci,0),
 		*s = getArgReference_bat(stk,pci,1),
