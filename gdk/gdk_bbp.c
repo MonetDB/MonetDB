@@ -646,7 +646,7 @@ BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn,
 {
 	char buf[4096];
 	uint64_t batid;
-	uint16_t status;
+	unsigned int status;
 	unsigned int properties;
 	int nread, n;
 	char *s;
@@ -674,14 +674,14 @@ BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn,
 
 	if (bbpversion <= GDKLIBRARY_HSIZE ?
 	    sscanf(buf,
-		   "%" SCNu64 " %" SCNu16 " %128s %19s %u %" SCNu64
+		   "%" SCNu64 " %u %128s %19s %u %" SCNu64
 		   " %" SCNu64 " %" SCNu64
 		   "%n",
 		   &batid, &status, batname, filename,
 		   &properties, &count, &capacity, &base,
 		   &nread) < 8 :
 	    sscanf(buf,
-		   "%" SCNu64 " %" SCNu16 " %128s %19s %u %" SCNu64
+		   "%" SCNu64 " %u %128s %19s %u %" SCNu64
 		   " %" SCNu64
 		   "%n",
 		   &batid, &status, batname, filename,
