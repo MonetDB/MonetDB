@@ -165,6 +165,8 @@ SYSMONstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) mb;
+
 	/* Temporary hack not allowing MAL clients (mclient -lmal)
 	   to use this function */
 	if (cntxt->sqlcontext == NULL)
@@ -307,6 +309,8 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) mb;
+
 	/* Temporary hack not allowing MAL clients (mclient -lmal)
 	   to use this function */
 	if (cntxt->sqlcontext == NULL)
@@ -354,6 +358,8 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) mb;
+
 	/* Temporary hack not allowing MAL clients (mclient -lmal)
 	   to use this function */
 	if (cntxt->sqlcontext == NULL)
@@ -401,6 +407,8 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) mb;
+
 	/* Temporary hack not allowing MAL clients (mclient -lmal)
 	   to use this function */
 	if (cntxt->sqlcontext == NULL)
