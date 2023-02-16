@@ -3880,7 +3880,21 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 			if (size > bi.count) /* includes sizes==NULL */
 				size = bi.count;
 			bi.b->batInserted = size;
-			if (b && size != 0) {
+			if (ATOMvarsized(bi.b->ttype)) {
+				/* see epilogue() for other part of this */
+				MT_lock_set(&bi.b->theaplock);
+				/* remember the tail we're saving */
+				if (BATsetprop_nolock(bi.b, (enum prop_t) 20, TYPE_ptr, &bi.h) == NULL) {
+					GDKerror("setprop failed\n");
+					ret = GDK_FAIL;
+				} else {
+					if (bi.b->oldtail == NULL)
+						bi.b->oldtail = (Heap *) 1;
+					HEAPincref(bi.h);
+				}
+				MT_lock_unset(&bi.b->theaplock);
+			}
+			if (ret == GDK_SUCCEED && b && size != 0) {
 				/* wait for BBPSAVING so that we
 				 * can set it, wait for
 				 * BBPUNLOADING before
@@ -3957,6 +3971,23 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 	TRC_DEBUG(PERF, "%s (ready time %d)\n",
 		  ret == GDK_SUCCEED ? "" : " failed",
 		  (t0 = GDKms()) - t1);
+
+	if (ret != GDK_SUCCEED) {
+		/* clean up extra refs we created */
+		for (int idx = 1; idx < cnt; idx++) {
+			bat i = subcommit ? subcommit[idx] : idx;
+			BAT *b = BBP_desc(i);
+			if (b && ATOMvarsized(b->ttype)) {
+				MT_lock_set(&b->theaplock);
+				ValPtr p = BATgetprop_nolock(b, (enum prop_t) 20);
+				if (p != NULL) {
+					HEAPdecref(p->val.pval, false);
+					BATrmprop_nolock(b, (enum prop_t) 20);
+				}
+				MT_lock_unset(&b->theaplock);
+			}
+		}
+	}
 
 	/* turn off the BBPSYNCING bits for all bats, even when things
 	 * didn't go according to plan (i.e., don't check for ret ==

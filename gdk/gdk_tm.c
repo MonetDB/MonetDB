@@ -83,12 +83,26 @@ epilogue(int cnt, bat *subcommit, bool locked)
 			}
 		}
 		b = BBP_desc(bid);
-		if (b) {
+		if (b && ATOMvarsized(b->ttype)) {
 			MT_lock_set(&b->theaplock);
-			if (b->oldtail) {
-				ATOMIC_AND(&b->oldtail->refs, ~DELAYEDREMOVE);
-				HEAPdecref(b->oldtail, true);
-				b->oldtail = NULL;
+			ValPtr p = BATgetprop_nolock(b, (enum prop_t) 20);
+			if (p != NULL) {
+				Heap *tail = p->val.pval;
+				assert(b->oldtail != NULL);
+				BATrmprop_nolock(b, (enum prop_t) 20);
+				if (b->oldtail != (Heap *) 1)
+					HEAPdecref(b->oldtail, true);
+				if (tail == b->theap ||
+				    strcmp(tail->filename,
+					   b->theap->filename) == 0) {
+					/* no upgrades done since saving
+					 * started */
+					b->oldtail = NULL;
+					HEAPdecref(tail, false);
+				} else {
+					b->oldtail = tail;
+					ATOMIC_OR(&tail->refs, DELAYEDREMOVE);
+				}
 			}
 			MT_lock_unset(&b->theaplock);
 		}
