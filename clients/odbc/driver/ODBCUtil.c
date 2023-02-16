@@ -894,6 +894,9 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 	 * plenty long enough */
 	char buf[128], buf2[128];
 
+	if (dbc->minor >= 46)
+		noscan = SQL_NOSCAN_ON;
+
 	if (noscan != SQL_NOSCAN_ON) {
 		char *nquery;
 		bool quoted = false, rawstring = false, dquoted = false;

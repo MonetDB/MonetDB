@@ -112,10 +112,9 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
  */
 static MT_Lock admissionLock = MT_LOCK_INITIALIZER(admissionLock);
 
-int
+bool
 MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argclaim)
 {
-	(void) mb;
 	(void) pci;
 
 	/* Check if we are allowed to allocate another worker thread for this client */
@@ -123,11 +122,11 @@ MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng 
 	 * A way out is to attach the thread count to the MAL stacks, which just limits the level
 	 * of parallism for a single dataflow graph.
 	 */
-	if(cntxt->workerlimit && cntxt->workerlimit < stk->workers){
-		return -1;
-	}
+	if (cntxt->workerlimit > 0 && (int) ATOMIC_GET(&cntxt->workers) >= cntxt->workerlimit)
+		return false;
+
 	if (argclaim == 0)
-		return 0;
+		return true;
 
 	MT_lock_set(&admissionLock);
 	/* Determine if the total memory resource is exhausted, because it is overall limitation.  */
@@ -137,30 +136,27 @@ MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng 
 	}
 
 	/* the argument claim is based on the input for an instruction */
-	if ( memorypool > argclaim || stk->workers == 0 ) {
+	if ( memorypool > argclaim || ATOMIC_GET(&cntxt->workers) == 0) {
 		/* If we are low on memory resources, limit the user if he exceeds his memory budget
 		 * but make sure there is at least one worker thread active */
 		if ( cntxt->memorylimit) {
-			if (argclaim + stk->memory > (lng) cntxt->memorylimit * LL_CONSTANT(1048576)){
+			if (argclaim + stk->memory > (lng) cntxt->memorylimit * LL_CONSTANT(1048576) && ATOMIC_GET(&cntxt->workers) > 0){
 				MT_lock_unset(&admissionLock);
-				return -1;
+				return false;
 			}
 			stk->memory += argclaim;
 		}
 		memorypool -= argclaim;
-		stk->workers++;
 		stk->memory += argclaim;
 		MT_lock_set(&mal_delayLock);
-		if( mb->workers < stk->workers)
-			mb->workers = stk->workers;
 		if( mb->memory < stk->memory)
 			mb->memory = stk->memory;
 		MT_lock_unset(&mal_delayLock);
 		MT_lock_unset(&admissionLock);
-		return 0;
+		return true;
 	}
 	MT_lock_unset(&admissionLock);
-	return -1;
+	return false;
 }
 
 void
@@ -181,7 +177,6 @@ MALadmission_release(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, ln
 	if ( memorypool > (lng) MEMORY_THRESHOLD ){
 		memorypool = (lng) MEMORY_THRESHOLD;
 	}
-	stk->workers--;
 	stk->memory -= argclaim;
 	MT_lock_unset(&admissionLock);
 	return;

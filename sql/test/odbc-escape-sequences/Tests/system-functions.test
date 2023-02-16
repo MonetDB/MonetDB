@@ -1,0 +1,14 @@
+query T rowsort
+select { fn user() }
+----
+monetdb
+
+query I rowsort
+select length((select { fn database() })) > 0
+----
+1
+
+query I rowsort
+select { fn ifnull(NULL, 1) }
+----
+1

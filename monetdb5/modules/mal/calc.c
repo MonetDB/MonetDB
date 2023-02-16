@@ -717,7 +717,6 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b = NULL, *s = NULL, *avgs, *cnts, *rems;
 	bool inout = pci->inout >= 0;
 
-	gdk_return rc;
 	(void)cntxt;
 	(void)mb;
 
@@ -748,7 +747,8 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL, "aggr.avg", GDK_EXCEPTION);
 		}
 	}
-	rc = BATgroupavg3(&avgs, &rems, &cnts, b, NULL, NULL, s, *skip_nils, inout);
+	if (BATgroupavg3(&avgs, &rems, &cnts, b, NULL, NULL, s, *skip_nils, inout) != GDK_SUCCEED)
+		return mythrow(MAL, "aggr.avg", GDK_EXCEPTION);
 	if (avgs && BATcount(avgs) == 1) {
 		/* only type bte, sht, int, lng and hge */
 		ptr res = VALget(ret);
@@ -785,8 +785,6 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPreclaim(cnts);
 	BBPunfix(b->batCacheid);
 	BBPreclaim(s);
-	if (rc != GDK_SUCCEED)
-		return mythrow(MAL, "aggr.avg", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 

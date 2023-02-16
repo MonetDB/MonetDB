@@ -285,7 +285,6 @@ prepareMALstack(MalBlkPtr mb, int size)
 		return NULL;
 	stk->stktop = mb->vtop;
 	stk->blk = mb;
-	stk->workers = 0;
 	stk->memory = 0;
 	initStack(0, res);
 	if(!res) {
@@ -841,7 +840,8 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 			stkpc= mb->stop;
 			continue;
-		}	}
+		}
+		}
 
 		/* monitoring information should reflect the input arguments,
 		   which may be removed by garbage collection  */

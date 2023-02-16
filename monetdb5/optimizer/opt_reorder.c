@@ -130,7 +130,10 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 					if( top[i])
 						GDKfree(blocks[i]);
 				GDKfree(depth);
-				GDKfree(old);
+				GDKfree(mb->stmt);
+				mb->stop = limit;
+				mb->ssize = slimit;
+				mb->stmt = old;
 				throw(MAL,"optimizer.reorder", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
@@ -176,4 +179,3 @@ wrapup:
 	GDKfree(old);
 	return msg;
 }
-

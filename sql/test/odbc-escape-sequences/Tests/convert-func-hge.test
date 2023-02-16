@@ -1,0 +1,4 @@
+query I rowsort
+select { fn convert(1, SQL_HUGEINT) }
+----
+1

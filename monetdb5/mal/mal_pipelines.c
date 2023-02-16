@@ -136,7 +136,6 @@ stack_copy(MalStkPtr stk, int start)
 	n->stktop = stk->stktop;
 	n->blk = stk->blk;
 	n->tag = stk->tag;
-	n->workers = 0;
 	n->memory = 0;
 
 	for (int i = 0; i < stk->stktop; i++) {

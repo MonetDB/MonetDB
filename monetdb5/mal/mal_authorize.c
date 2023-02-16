@@ -503,7 +503,7 @@ AUTHdecypherValueLocked(str *ret, const char *value)
 	str r, w;
 	const char *s = value;
 	char t = '\0';
-	int escaped = 0;
+	bool escaped = false;
 	/* we default to some garbage key, just to make password unreadable
 	 * (a space would only uppercase the password) */
 	size_t keylen = 0;
@@ -519,12 +519,17 @@ AUTHdecypherValueLocked(str *ret, const char *value)
 	/* XOR all characters.  If we encounter a 'one' char after the XOR
 	 * operation, it is an escape, so replace it with the next char. */
 	for (; (t = *s) != '\0'; s++) {
-		if (t == '\1' && escaped == 0) {
-			escaped = 1;
+		if ((t & 0xE0) == 0xC0) {
+			assert((t & 0x1E) == 0x02);
+			assert((s[1] & 0xC0) == 0x80);
+			t = ((t & 0x1F) << 6) | (*++s & 0x3F);
+		}
+		if (t == '\1' && !escaped) {
+			escaped = true;
 			continue;
-		} else if (escaped != 0) {
+		} else if (escaped) {
 			t -= 1;
-			escaped = 0;
+			escaped = false;
 		}
 		*w = t ^ vaultKey[(w - r) % keylen];
 		w++;
@@ -570,13 +575,18 @@ AUTHcypherValueLocked(str *ret, const char *value)
 	/* XOR all characters.  If we encounter a 'zero' char after the XOR
 	 * operation, escape it with a 'one' char. */
 	for (; *s != '\0'; s++) {
-		*w = *s ^ vaultKey[(s - value) % keylen];
-		if (*w == '\0') {
+		char c = *s ^ vaultKey[(s - value) % keylen];
+		if (c == '\0') {
 			*w++ = '\1';
 			*w = '\1';
-		} else if (*w == '\1') {
+		} else if (c == '\1') {
 			*w++ = '\1';
 			*w = '\2';
+		} else if (c & 0x80) {
+			*w++ = 0xC0 | ((c >> 6) & 0x03);
+			*w = 0x80 | (c & 0x3F);
+		} else {
+			*w = c;
 		}
 		w++;
 	}

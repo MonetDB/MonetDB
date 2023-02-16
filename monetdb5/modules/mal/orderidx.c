@@ -318,15 +318,13 @@ static str
 OIDXorderidx(bat *ret, const bat *bid, const bit *stable)
 {
 	BAT *b;
-	gdk_return r;
 
 	(void) ret;
 	b = BATdescriptor(*bid);
 	if (b == NULL)
 		throw(MAL, "algebra.orderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	r = BATorderidx(b, *stable);
-	if (r != GDK_SUCCEED) {
+	if (BATorderidx(b, *stable) != GDK_SUCCEED) {
 		BBPunfix(*bid);
 		throw(MAL, "algebra.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}

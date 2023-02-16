@@ -1,6 +1,7 @@
 sys_queue
 sys_queue_expand
 sys_queue_multisessions
+sys_pause_resume_stop
 sys_user_statistics
 #stop
 

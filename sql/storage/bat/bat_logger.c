@@ -126,7 +126,7 @@ replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol
 			lg->cnt++;
 		}
 	}
-	return GDK_SUCCEED;
+	return rc;
 }
 #endif
 
@@ -2002,6 +2002,8 @@ bl_postversion(void *Store, void *Lg)
 		{
 			/* new BOOLEAN column sys.functions.semantics */
 			b = log_temp_descriptor(log_find_bat(lg, 2017)); /* sys.functions.id */
+			if (b == NULL)
+				return GDK_FAIL;
 			BAT *sem = BATconstant(b->hseqbase, TYPE_bit, &(bit){1}, BATcount(b), PERSISTENT);
 			bat_destroy(b);
 			if (sem == NULL)

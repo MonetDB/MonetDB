@@ -1,0 +1,177 @@
+
+query I rowsort
+select { fn convert(1, SQL_BIGINT) }
+----
+1
+
+query T rowsort
+select { fn convert(x'1234', SQL_BINARY) }
+----
+1234
+
+query I rowsort
+select { fn convert(true, SQL_BIT) }
+----
+1
+
+query T rowsort
+select { fn convert('abc', SQL_CHAR) }
+----
+a
+
+query T rowsort
+select { fn convert('2022-11-10', SQL_DATE) }
+----
+2022-11-10
+
+query T rowsort
+select { fn convert(3.33333, SQL_DECIMAL) }
+----
+3.333
+
+query T rowsort
+select { fn convert(3.33333, SQL_DOUBLE) }
+----
+3.33333
+
+query T rowsort
+select { fn convert(3.33333, SQL_FLOAT) }
+----
+3.33333
+
+query T rowsort
+select { fn convert('a338a15d-0422-4242-a7f0-65316edae19a', SQL_GUID) }
+----
+a338a15d-0422-4242-a7f0-65316edae19a
+
+
+query I rowsort
+select { fn convert(1, SQL_INTEGER) }
+----
+1
+
+query I rowsort
+select { fn convert(interval '1' year, SQL_INTERVAL_YEAR) }
+----
+12
+
+query I rowsort
+select { fn convert(interval '1' year, SQL_INTERVAL_YEAR_TO_MONTH) }
+----
+12
+
+query I rowsort
+select { fn convert(interval '1' year, SQL_INTERVAL_MONTH) }
+----
+12
+
+query I rowsort
+select { fn convert(date'2022-10-8' - date'2022-10-7', SQL_INTERVAL_DAY) }
+----
+1
+
+query T rowsort
+select { fn convert(interval '1' day, SQL_INTERVAL_DAY_TO_HOUR) }
+----
+1 day, 0:00:00
+
+
+query T rowsort
+select { fn convert(interval '1' day, SQL_INTERVAL_DAY_TO_MINUTE) }
+----
+1 day, 0:00:00
+
+query T rowsort
+select { fn convert(interval '1' day, SQL_INTERVAL_DAY_TO_SECOND) }
+----
+1 day, 0:00:00
+
+query T rowsort
+select { fn convert(interval '1' hour, SQL_INTERVAL_HOUR) }
+----
+1:00:00
+
+query T rowsort
+select { fn convert(interval '1' hour, SQL_INTERVAL_HOUR_TO_MINUTE) }
+----
+1:00:00
+
+query T rowsort
+select { fn convert(interval '1' hour, SQL_INTERVAL_HOUR_TO_SECOND) }
+----
+1:00:00
+
+query T rowsort
+select { fn convert(interval '1' minute, SQL_INTERVAL_MINUTE) }
+----
+0:01:00
+
+query T rowsort
+select { fn convert((interval '1' minute - interval '30' second), SQL_INTERVAL_MINUTE_TO_SECOND) }
+----
+0:00:30
+
+query T rowsort
+select { fn convert(x'1234', SQL_LONGVARBINARY) }
+----
+1234
+
+query T rowsort
+select { fn convert('abc', SQL_LONGVARCHAR) }
+----
+abc
+
+query T rowsort
+select { fn convert(3.333333, SQL_NUMERIC) }
+----
+3.333
+
+query T rowsort
+select { fn convert(3.333333, SQL_REAL) }
+----
+3.333333
+
+query I rowsort
+select { fn convert(3, SQL_SMALLINT) }
+----
+3
+
+query T rowsort
+select { fn convert(time'00:01:45', SQL_TIME) }
+----
+00:01:45
+
+query T rowsort
+select { fn convert(timestamp'2022-11-10 00:01:45', SQL_TIMESTAMP) }
+----
+2022-11-10 00:01:45
+
+query I rowsort
+select { fn convert(1, SQL_TINYINT) }
+----
+1
+
+query T rowsort
+select { fn convert(x'1234', SQL_VARBINARY) }
+----
+1234
+
+query T rowsort
+select { fn convert('abc', SQL_VARCHAR) }
+----
+abc
+
+query T rowsort
+select { fn convert('abc', SQL_WCHAR) }
+----
+a
+
+query T rowsort
+select { fn convert('abc', SQL_WVARCHAR) }
+----
+abc
+
+query T rowsort
+select { fn convert('abc', SQL_WLONGVARCHAR) }
+----
+abc

@@ -139,6 +139,11 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 		} else {
 			nv[n] = newTmpVariable(mb, getVarType(mc, n));
 		}
+		if (nv[n] < 0) {
+			GDKfree(nv);
+			GDKfree(ns);
+			return -1;
+		}
 	}
 
 	/* use an alias mapping to keep track of the actual arguments */

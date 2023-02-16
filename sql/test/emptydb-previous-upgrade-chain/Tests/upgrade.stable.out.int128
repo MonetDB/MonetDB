@@ -650,3 +650,17 @@ SELECT v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name, f.id
 GRANT SELECT ON sys.dependency_views_on_functions TO PUBLIC;
 update sys._tables set system = true where system <> true and name in ('dependency_tables_on_functions','dependency_views_on_functions') and schema_id = 2000;
 
+Running database upgrade commands:
+create function sys.database ()
+returns string
+external name inspect."getDatabaseName";
+grant execute on function sys.database() to public;
+update sys.functions set system = true where system <> true and name = 'database' and schema_id = 2000 and type = 1;
+
+Running database upgrade commands:
+create function sys.queue(username string) returns table("tag" bigint, "sessionid" int, "username" string, "started" timestamp, "status" string, "query" string, "finished" timestamp, "maxworkers" int, "footprint" int) external name sysmon.queue;
+create procedure sys.pause(tag bigint, username string) external name sysmon.pause;
+create procedure sys.resume(tag bigint, username string) external name sysmon.resume;
+create procedure sys.stop(tag bigint, username string) external name sysmon.stop;
+update sys.functions set system = true where system <> true and mod = 'sysmon' and name in ('stop', 'pause', 'resume', 'queue');
+

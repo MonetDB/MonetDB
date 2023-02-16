@@ -113,6 +113,39 @@ timestamp_add_msec_interval(timestamp *ret, timestamp ts, lng ms)
 	return MAL_SUCCEED;
 }
 
+
+static inline str
+odbc_timestamp_add_msec_interval_time(timestamp *ret, daytime t, lng ms)
+{
+	date today = timestamp_date(timestamp_current());
+	timestamp ts = timestamp_create(today, t);
+	if (is_timestamp_nil((*ret = timestamp_add_usec(ts, ms * 1000))))
+		throw(MAL, "mtime.odbc_timestamp_add_msec_interval_time", SQLSTATE(22003) "overflow in calculation");
+	return MAL_SUCCEED;
+}
+
+
+static inline str
+odbc_timestamp_add_month_interval_time(timestamp *ret, daytime t, int m)
+{
+	date today = timestamp_date(timestamp_current());
+	timestamp ts = timestamp_create(today, t);
+	if (is_timestamp_nil((*ret = timestamp_add_month(ts, m))))
+		throw(MAL, "mtime.odbc_timestamp_add_month_interval_time", SQLSTATE(22003) "overflow in calculation");
+	return MAL_SUCCEED;
+}
+
+
+static inline str
+odbc_timestamp_add_msec_interval_date(timestamp *ret, date d, lng ms)
+{
+	timestamp ts = timestamp_fromdate(d);
+	if (is_timestamp_nil((*ret = timestamp_add_usec(ts, ms * 1000))))
+		throw(MAL, "mtime.odbc_timestamp_add_msec_interval_date", SQLSTATE(22003) "overflow in calculation");
+	return MAL_SUCCEED;
+}
+
+
 static inline str
 date_submonths(date *ret, date d, int m)
 {

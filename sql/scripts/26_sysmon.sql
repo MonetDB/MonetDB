@@ -8,7 +8,7 @@
 
 -- System monitoring
 
--- show status of all active SQL queries.
+-- show own status of all active SQL queries.
 create function sys.queue()
 returns table(
 	"tag" bigint,
@@ -22,12 +22,25 @@ returns table(
 	"footprint" int		-- maximum memory claim awarded
 )
 external name sysmon.queue;
-grant execute on function sys.queue to public;
-
+grant execute on function sys.queue() to public;
 create view sys.queue as select * from sys.queue();
 grant select on sys.queue to public;
+-- sysadmin show query queue of all users or a specific user.
+create function sys.queue(username string)
+returns table(
+	"tag" bigint,
+	"sessionid" int,
+	"username" string,
+	"started" timestamp,
+	"status" string,	-- paused, running, finished
+	"query" string,
+	"finished" timestamp,	
+	"maxworkers" int,	-- maximum number of concurrent worker threads
+	"footprint" int		-- maximum memory claim awarded
+)
+external name sysmon.queue;
 
--- operations to manipulate the state of havoc queries
+-- user owned operations to manipulate queries
 create procedure sys.pause(tag bigint)
 external name sysmon.pause;
 grant execute on procedure sys.pause(bigint) to public;
@@ -37,6 +50,13 @@ grant execute on procedure sys.resume(bigint) to public;
 create procedure sys.stop(tag bigint)
 external name sysmon.stop;
 grant execute on procedure sys.stop(bigint) to public;
+-- sysadmin operations to manipulate queries
+create procedure sys.pause(tag bigint, username string)
+external name sysmon.pause;
+create procedure sys.resume(tag bigint, username string)
+external name sysmon.resume;
+create procedure sys.stop(tag bigint, username string)
+external name sysmon.stop;
 
 -- we collect some aggregated user information
 create function sys.user_statistics()
@@ -52,11 +72,8 @@ returns table(
 external name sysmon.user_statistics;
 
 create procedure sys.vacuum(sname string, tname string, cname string)
-	external name sql.vacuum;
-
+external name sql.vacuum;
 create procedure sys.vacuum(sname string, tname string, cname string, interval int)
-	external name sql.vacuum;
-
+external name sql.vacuum;
 create procedure sys.stop_vacuum(sname string, tname string, cname string)
-	external name sql.stop_vacuum;
-
+external name sql.stop_vacuum;

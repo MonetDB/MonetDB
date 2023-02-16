@@ -384,7 +384,7 @@ __pragma(comment(linker, "/include:" _LOCK_PREF_ "wininit_" #n "_"))
 #define MT_lock_set(l)						\
 	do {							\
 		_DBG_LOCK_COUNT_0(l);				\
-		if (!MT_lock_try(l)) {				\
+		if (!TryEnterCriticalSection(&(l)->lock)) {	\
 			_DBG_LOCK_CONTENTION(l);		\
 			MT_thread_setlockwait(l);		\
 			EnterCriticalSection(&(l)->lock);	\

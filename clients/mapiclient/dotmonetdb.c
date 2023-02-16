@@ -57,7 +57,7 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 		}
 	} else if (*cfile != 0 && (config = _wfopen(cfile, L"r")) == NULL) {
 		fprintf(stderr, "failed to open file '%ls': %s\n",
-			cfile, strerror(errno));
+				cfile, strerror(errno));
 	}
 #else
 	char *cfile;
@@ -85,7 +85,7 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 		}
 	} else if (*cfile != 0 && (config = fopen(cfile, "r")) == NULL) {
 		fprintf(stderr, "failed to open file '%s': %s\n",
-			cfile, strerror(errno));
+				cfile, strerror(errno));
 	}
 #endif
 
@@ -103,7 +103,7 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 				continue;
 			if ((q = strchr(buf, '=')) == NULL) {
 				fprintf(stderr, CF ":%d: syntax error: %s\n",
-					cfile, line, buf);
+						cfile, line, buf);
 				continue;
 			}
 			*q++ = '\0';
@@ -126,9 +126,8 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 				/* make sure we don't set garbage */
 				if (strcmp(q, "sql") != 0 &&
 				    strcmp(q, "mal") != 0) {
-					fprintf(stderr, CF ":%d: unsupported "
-						"language: %s\n",
-						cfile, line, q);
+					fprintf(stderr, CF ":%d: unsupported language: %s\n",
+							cfile, line, q);
 				}
 				dotfile->language = strdup(q);
 				q = NULL;
@@ -138,7 +137,7 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 					dotfile->save_history = true;
 					q = NULL;
 				} else if (strcmp(q, "false") == 0 ||
-					   strcmp(q, "off") == 0) {
+						   strcmp(q, "off") == 0) {
 					dotfile->save_history = false;
 					q = NULL;
 				}
@@ -154,7 +153,7 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 			}
 			if (q != NULL)
 				fprintf(stderr, CF ":%d: unknown property: %s\n",
-					cfile, line, buf);
+						cfile, line, buf);
 		}
 		fclose(config);
 	}
