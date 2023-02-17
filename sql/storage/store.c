@@ -1859,208 +1859,217 @@ store_load(sqlstore *store, sql_allocator *pa)
 	store->sequences = hash_new(NULL, 32, (fkeyvalue)&seq_hash);
 	store->seqchanges = list_create(NULL);
 	if (!store->active || !store->dependencies || !store->depchanges || !store->sequences || !store->seqchanges) {
-		TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
-		sql_trans_destroy(tr);
-		return NULL;
+		goto critical;
 	}
 
 	s = bootstrap_create_schema(tr, "sys", 2000, ROLE_SYSADMIN, USER_MONETDB);
+	if (s == NULL) {
+		goto critical;
+	}
 	if (!store->first)
 		s->base.new = 0;
 
-	t = bootstrap_create_table(tr, s, "schemas", 2001);
-	bootstrap_create_column(tr, t, "id", 2002, "int", 32);
-	bootstrap_create_column(tr, t, "name", 2003, "varchar", 1024);
-	bootstrap_create_column(tr, t, "authorization", 2004, "int", 32);
-	bootstrap_create_column(tr, t, "owner", 2005, "int", 32);
-	bootstrap_create_column(tr, t, "system", 2006, "boolean", 1);
+	if ((t = bootstrap_create_table(tr, s, "schemas", 2001)) == NULL ||
+		bootstrap_create_column(tr, t, "id", 2002, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "name", 2003, "varchar", 1024) == NULL ||
+		bootstrap_create_column(tr, t, "authorization", 2004, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "owner", 2005, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "system", 2006, "boolean", 1) == NULL ||
 
-	types = t = bootstrap_create_table(tr, s, "types", 2007);
-	bootstrap_create_column(tr, t, "id", 2008, "int", 32);
-	bootstrap_create_column(tr, t, "systemname", 2009, "varchar", 256);
-	bootstrap_create_column(tr, t, "sqlname", 2010, "varchar", 1024);
-	bootstrap_create_column(tr, t, "digits", 2011, "int", 32);
-	bootstrap_create_column(tr, t, "scale", 2012, "int", 32);
-	bootstrap_create_column(tr, t, "radix", 2013, "int", 32);
-	bootstrap_create_column(tr, t, "eclass", 2014, "int", 32);
-	bootstrap_create_column(tr, t, "schema_id", 2015, "int", 32);
+		(types = t = bootstrap_create_table(tr, s, "types", 2007)) == NULL ||
+		bootstrap_create_column(tr, t, "id", 2008, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "systemname", 2009, "varchar", 256) == NULL ||
+		bootstrap_create_column(tr, t, "sqlname", 2010, "varchar", 1024) == NULL ||
+		bootstrap_create_column(tr, t, "digits", 2011, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "scale", 2012, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "radix", 2013, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "eclass", 2014, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "schema_id", 2015, "int", 32) == NULL ||
 
-	functions = t = bootstrap_create_table(tr, s, "functions", 2016);
-	bootstrap_create_column(tr, t, "id", 2017, "int", 32);
-	bootstrap_create_column(tr, t, "name", 2018, "varchar", 256);
-	bootstrap_create_column(tr, t, "func", 2019, "varchar", 8196);
-	bootstrap_create_column(tr, t, "mod", 2020, "varchar", 8196);
+		(functions = t = bootstrap_create_table(tr, s, "functions", 2016)) == NULL ||
+		bootstrap_create_column(tr, t, "id", 2017, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "name", 2018, "varchar", 256) == NULL ||
+		bootstrap_create_column(tr, t, "func", 2019, "varchar", 8196) == NULL ||
+		bootstrap_create_column(tr, t, "mod", 2020, "varchar", 8196) == NULL ||
 
-	/* language asm=0, sql=1, R=2, C=3, J=4 */
-	bootstrap_create_column(tr, t, "language", 2021, "int", 32);
+		/* language asm=0, sql=1, R=2, C=3, J=4 */
+		bootstrap_create_column(tr, t, "language", 2021, "int", 32) == NULL ||
 
-	/* func, proc, aggr or filter */
-	bootstrap_create_column(tr, t, "type", 2022, "int", 32);
-	bootstrap_create_column(tr, t, "side_effect", 2023, "boolean", 1);
-	bootstrap_create_column(tr, t, "varres", 2024, "boolean", 1);
-	bootstrap_create_column(tr, t, "vararg", 2025, "boolean", 1);
-	bootstrap_create_column(tr, t, "schema_id", 2026, "int", 32);
-	bootstrap_create_column(tr, t, "system", 2027, "boolean", 1);
-	bootstrap_create_column(tr, t, "semantics", 2162, "boolean", 1);
+		/* func, proc, aggr or filter */
+		bootstrap_create_column(tr, t, "type", 2022, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "side_effect", 2023, "boolean", 1) == NULL ||
+		bootstrap_create_column(tr, t, "varres", 2024, "boolean", 1) == NULL ||
+		bootstrap_create_column(tr, t, "vararg", 2025, "boolean", 1) == NULL ||
+		bootstrap_create_column(tr, t, "schema_id", 2026, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "system", 2027, "boolean", 1) == NULL ||
+		bootstrap_create_column(tr, t, "semantics", 2162, "boolean", 1) == NULL ||
 
-	arguments = t = bootstrap_create_table(tr, s, "args", 2028);
-	bootstrap_create_column(tr, t, "id", 2029, "int", 32);
-	bootstrap_create_column(tr, t, "func_id", 2030, "int", 32);
-	bootstrap_create_column(tr, t, "name", 2031, "varchar", 256);
-	bootstrap_create_column(tr, t, "type", 2032, "varchar", 1024);
-	bootstrap_create_column(tr, t, "type_digits", 2033, "int", 32);
-	bootstrap_create_column(tr, t, "type_scale", 2034, "int", 32);
-	bootstrap_create_column(tr, t, "inout", 2035, "tinyint", 8);
-	bootstrap_create_column(tr, t, "number", 2036, "int", 32);
+		(arguments = t = bootstrap_create_table(tr, s, "args", 2028)) == NULL ||
+		bootstrap_create_column(tr, t, "id", 2029, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "func_id", 2030, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "name", 2031, "varchar", 256) == NULL ||
+		bootstrap_create_column(tr, t, "type", 2032, "varchar", 1024) == NULL ||
+		bootstrap_create_column(tr, t, "type_digits", 2033, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "type_scale", 2034, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "inout", 2035, "tinyint", 8) == NULL ||
+		bootstrap_create_column(tr, t, "number", 2036, "int", 32) == NULL ||
 
-	t = bootstrap_create_table(tr, s, "sequences", 2037);
-	bootstrap_create_column(tr, t, "id", 2038, "int", 32);
-	bootstrap_create_column(tr, t, "schema_id", 2039, "int", 32);
-	bootstrap_create_column(tr, t, "name", 2040, "varchar", 256);
-	bootstrap_create_column(tr, t, "start", 2041, "bigint", 64);
-	bootstrap_create_column(tr, t, "minvalue", 2042, "bigint", 64);
-	bootstrap_create_column(tr, t, "maxvalue", 2043, "bigint", 64);
-	bootstrap_create_column(tr, t, "increment", 2044, "bigint", 64);
-	bootstrap_create_column(tr, t, "cacheinc", 2045, "bigint", 64);
-	bootstrap_create_column(tr, t, "cycle", 2046, "boolean", 1);
+		(t = bootstrap_create_table(tr, s, "sequences", 2037)) == NULL ||
+		bootstrap_create_column(tr, t, "id", 2038, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "schema_id", 2039, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "name", 2040, "varchar", 256) == NULL ||
+		bootstrap_create_column(tr, t, "start", 2041, "bigint", 64) == NULL ||
+		bootstrap_create_column(tr, t, "minvalue", 2042, "bigint", 64) == NULL ||
+		bootstrap_create_column(tr, t, "maxvalue", 2043, "bigint", 64) == NULL ||
+		bootstrap_create_column(tr, t, "increment", 2044, "bigint", 64) == NULL ||
+		bootstrap_create_column(tr, t, "cacheinc", 2045, "bigint", 64) == NULL ||
+		bootstrap_create_column(tr, t, "cycle", 2046, "boolean", 1) == NULL ||
 
-	t = bootstrap_create_table(tr, s, "table_partitions", 2047);
-	bootstrap_create_column(tr, t, "id", 2048, "int", 32);
-	bootstrap_create_column(tr, t, "table_id", 2049, "int", 32);
-	bootstrap_create_column(tr, t, "column_id", 2050, "int", 32);
-	bootstrap_create_column(tr, t, "expression", 2051, "varchar", STORAGE_MAX_VALUE_LENGTH);
-	bootstrap_create_column(tr, t, "type", 2052, "tinyint", 8);
+		(t = bootstrap_create_table(tr, s, "table_partitions", 2047)) == NULL ||
+		bootstrap_create_column(tr, t, "id", 2048, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "table_id", 2049, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "column_id", 2050, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "expression", 2051, "varchar", STORAGE_MAX_VALUE_LENGTH) == NULL ||
+		bootstrap_create_column(tr, t, "type", 2052, "tinyint", 8) == NULL ||
 
-	t = bootstrap_create_table(tr, s, "range_partitions", 2053);
-	bootstrap_create_column(tr, t, "table_id", 2054, "int", 32);
-	bootstrap_create_column(tr, t, "partition_id", 2055, "int", 32);
-	bootstrap_create_column(tr, t, "minimum", 2056, "varchar", STORAGE_MAX_VALUE_LENGTH);
-	bootstrap_create_column(tr, t, "maximum", 2057, "varchar", STORAGE_MAX_VALUE_LENGTH);
-	bootstrap_create_column(tr, t, "with_nulls", 2058, "boolean", 1);
+		(t = bootstrap_create_table(tr, s, "range_partitions", 2053)) == NULL ||
+		bootstrap_create_column(tr, t, "table_id", 2054, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "partition_id", 2055, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "minimum", 2056, "varchar", STORAGE_MAX_VALUE_LENGTH) == NULL ||
+		bootstrap_create_column(tr, t, "maximum", 2057, "varchar", STORAGE_MAX_VALUE_LENGTH) == NULL ||
+		bootstrap_create_column(tr, t, "with_nulls", 2058, "boolean", 1) == NULL ||
 
-	t = bootstrap_create_table(tr, s, "value_partitions", 2059);
-	bootstrap_create_column(tr, t, "table_id", 2060, "int", 32);
-	bootstrap_create_column(tr, t, "partition_id", 2061, "int", 32);
-	bootstrap_create_column(tr, t, "value", 2062, "varchar", STORAGE_MAX_VALUE_LENGTH);
+		(t = bootstrap_create_table(tr, s, "value_partitions", 2059)) == NULL ||
+		bootstrap_create_column(tr, t, "table_id", 2060, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "partition_id", 2061, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "value", 2062, "varchar", STORAGE_MAX_VALUE_LENGTH) == NULL ||
 
-	t = bootstrap_create_table(tr, s, "dependencies", 2063);
-	bootstrap_create_column(tr, t, "id", 2064, "int", 32);
-	bootstrap_create_column(tr, t, "depend_id", 2065, "int", 32);
-	bootstrap_create_column(tr, t, "depend_type", 2066, "smallint", 16);
+		(t = bootstrap_create_table(tr, s, "dependencies", 2063)) == NULL ||
+		bootstrap_create_column(tr, t, "id", 2064, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "depend_id", 2065, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "depend_type", 2066, "smallint", 16) == NULL ||
 
 
-	t = bootstrap_create_table(tr, s, "_tables", 2067);
-	bootstrap_create_column(tr, t, "id", 2068, "int", 32);
-	bootstrap_create_column(tr, t, "name", 2069, "varchar", 1024);
-	bootstrap_create_column(tr, t, "schema_id", 2070, "int", 32);
-	bootstrap_create_column(tr, t, "query", 2071, "varchar", 1 << 20);
-	bootstrap_create_column(tr, t, "type", 2072, "smallint", 16);
-	bootstrap_create_column(tr, t, "system", 2073, "boolean", 1);
-	bootstrap_create_column(tr, t, "commit_action", 2074, "smallint", 16);
-	bootstrap_create_column(tr, t, "access", 2075, "smallint", 16);
+		(t = bootstrap_create_table(tr, s, "_tables", 2067)) == NULL ||
+		bootstrap_create_column(tr, t, "id", 2068, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "name", 2069, "varchar", 1024) == NULL ||
+		bootstrap_create_column(tr, t, "schema_id", 2070, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "query", 2071, "varchar", 1 << 20) == NULL||
+		bootstrap_create_column(tr, t, "type", 2072, "smallint", 16) == NULL ||
+		bootstrap_create_column(tr, t, "system", 2073, "boolean", 1) == NULL ||
+		bootstrap_create_column(tr, t, "commit_action", 2074, "smallint", 16) == NULL ||
+		bootstrap_create_column(tr, t, "access", 2075, "smallint", 16) == NULL ||
 
-	t = bootstrap_create_table(tr, s, "_columns", 2076);
-	bootstrap_create_column(tr, t, "id", 2077, "int", 32);
-	bootstrap_create_column(tr, t, "name", 2078, "varchar", 1024);
-	bootstrap_create_column(tr, t, "type", 2079, "varchar", 1024);
-	bootstrap_create_column(tr, t, "type_digits", 2080, "int", 32);
-	bootstrap_create_column(tr, t, "type_scale", 2081, "int", 32);
-	bootstrap_create_column(tr, t, "table_id", 2082, "int", 32);
-	bootstrap_create_column(tr, t, "default", 2083, "varchar", STORAGE_MAX_VALUE_LENGTH);
-	bootstrap_create_column(tr, t, "null", 2084, "boolean", 1);
-	bootstrap_create_column(tr, t, "number", 2085, "int", 32);
-	bootstrap_create_column(tr, t, "storage", 2086, "varchar", 2048);
+		(t = bootstrap_create_table(tr, s, "_columns", 2076)) == NULL ||
+		bootstrap_create_column(tr, t, "id", 2077, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "name", 2078, "varchar", 1024) == NULL ||
+		bootstrap_create_column(tr, t, "type", 2079, "varchar", 1024) == NULL ||
+		bootstrap_create_column(tr, t, "type_digits", 2080, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "type_scale", 2081, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "table_id", 2082, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "default", 2083, "varchar", STORAGE_MAX_VALUE_LENGTH) == NULL ||
+		bootstrap_create_column(tr, t, "null", 2084, "boolean", 1) == NULL ||
+		bootstrap_create_column(tr, t, "number", 2085, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "storage", 2086, "varchar", 2048) == NULL ||
 
-	t = bootstrap_create_table(tr, s, "keys", 2087);
-	bootstrap_create_column(tr, t, "id", 2088, "int", 32);
-	bootstrap_create_column(tr, t, "table_id", 2089, "int", 32);
-	bootstrap_create_column(tr, t, "type", 2090, "int", 32);
-	bootstrap_create_column(tr, t, "name", 2091, "varchar", 1024);
-	bootstrap_create_column(tr, t, "rkey", 2092, "int", 32);
-	bootstrap_create_column(tr, t, "action", 2093, "int", 32);
+		(t = bootstrap_create_table(tr, s, "keys", 2087)) == NULL ||
+		bootstrap_create_column(tr, t, "id", 2088, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "table_id", 2089, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "type", 2090, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "name", 2091, "varchar", 1024) == NULL ||
+		bootstrap_create_column(tr, t, "rkey", 2092, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "action", 2093, "int", 32) == NULL ||
 
-	t = bootstrap_create_table(tr, s, "idxs", 2094);
-	bootstrap_create_column(tr, t, "id", 2095, "int", 32);
-	bootstrap_create_column(tr, t, "table_id", 2096, "int", 32);
-	bootstrap_create_column(tr, t, "type", 2097, "int", 32);
-	bootstrap_create_column(tr, t, "name", 2098, "varchar", 1024);
+		(t = bootstrap_create_table(tr, s, "idxs", 2094)) == NULL ||
+		bootstrap_create_column(tr, t, "id", 2095, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "table_id", 2096, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "type", 2097, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "name", 2098, "varchar", 1024) == NULL ||
 
-	t = bootstrap_create_table(tr, s, "triggers", 2099);
-	bootstrap_create_column(tr, t, "id", 2100, "int", 32);
-	bootstrap_create_column(tr, t, "name", 2101, "varchar", 1024);
-	bootstrap_create_column(tr, t, "table_id", 2102, "int", 32);
-	bootstrap_create_column(tr, t, "time", 2103, "smallint", 16);
-	bootstrap_create_column(tr, t, "orientation", 2104, "smallint", 16);
-	bootstrap_create_column(tr, t, "event", 2105, "smallint", 16);
-	bootstrap_create_column(tr, t, "old_name", 2106, "varchar", 1024);
-	bootstrap_create_column(tr, t, "new_name", 2107, "varchar", 1024);
-	bootstrap_create_column(tr, t, "condition", 2108, "varchar", 2048);
-	bootstrap_create_column(tr, t, "statement", 2109, "varchar", 2048);
+		(t = bootstrap_create_table(tr, s, "triggers", 2099)) == NULL ||
+		bootstrap_create_column(tr, t, "id", 2100, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "name", 2101, "varchar", 1024) == NULL ||
+		bootstrap_create_column(tr, t, "table_id", 2102, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "time", 2103, "smallint", 16) == NULL ||
+		bootstrap_create_column(tr, t, "orientation", 2104, "smallint", 16) == NULL ||
+		bootstrap_create_column(tr, t, "event", 2105, "smallint", 16) == NULL ||
+		bootstrap_create_column(tr, t, "old_name", 2106, "varchar", 1024) == NULL ||
+		bootstrap_create_column(tr, t, "new_name", 2107, "varchar", 1024) == NULL ||
+		bootstrap_create_column(tr, t, "condition", 2108, "varchar", 2048) == NULL ||
+		bootstrap_create_column(tr, t, "statement", 2109, "varchar", 2048) == NULL ||
 
-	t = bootstrap_create_table(tr, s, "objects", 2110);
-	bootstrap_create_column(tr, t, "id", 2111, "int", 32);
-	bootstrap_create_column(tr, t, "name", 2112, "varchar", 1024);
-	bootstrap_create_column(tr, t, "nr", 2113, "int", 32);
-	bootstrap_create_column(tr, t, "sub", 2163, "int", 32);
+		(t = bootstrap_create_table(tr, s, "objects", 2110)) == NULL ||
+		bootstrap_create_column(tr, t, "id", 2111, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "name", 2112, "varchar", 1024) == NULL ||
+		bootstrap_create_column(tr, t, "nr", 2113, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "sub", 2163, "int", 32) == NULL) {
+		goto critical;
+	}
 
-	s = bootstrap_create_schema(tr, "tmp", 2114, ROLE_SYSADMIN, USER_MONETDB);
+	if ((s = bootstrap_create_schema(tr, "tmp", 2114, ROLE_SYSADMIN, USER_MONETDB)) == NULL) {
+		goto critical;
+	}
 	store->tmp = s;
 
-	t = bootstrap_create_table(tr, s, "_tables", 2115);
-	bootstrap_create_column(tr, t, "id", 2116, "int", 32);
-	bootstrap_create_column(tr, t, "name", 2117, "varchar", 1024);
-	bootstrap_create_column(tr, t, "schema_id", 2118, "int", 32);
-	bootstrap_create_column(tr, t, "query", 2119, "varchar", 1 << 20);
-	bootstrap_create_column(tr, t, "type", 2120, "smallint", 16);
-	bootstrap_create_column(tr, t, "system", 2121, "boolean", 1);
-	bootstrap_create_column(tr, t, "commit_action", 2122, "smallint", 16);
-	bootstrap_create_column(tr, t, "access", 2123, "smallint", 16);
+	if ((t = bootstrap_create_table(tr, s, "_tables", 2115)) == NULL ||
+		bootstrap_create_column(tr, t, "id", 2116, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "name", 2117, "varchar", 1024) == NULL ||
+		bootstrap_create_column(tr, t, "schema_id", 2118, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "query", 2119, "varchar", 1 << 20) == NULL ||
+		bootstrap_create_column(tr, t, "type", 2120, "smallint", 16) == NULL ||
+		bootstrap_create_column(tr, t, "system", 2121, "boolean", 1) == NULL ||
+		bootstrap_create_column(tr, t, "commit_action", 2122, "smallint", 16) == NULL ||
+		bootstrap_create_column(tr, t, "access", 2123, "smallint", 16) == NULL ||
 
-	t = bootstrap_create_table(tr, s, "_columns", 2124);
-	bootstrap_create_column(tr, t, "id", 2125, "int", 32);
-	bootstrap_create_column(tr, t, "name", 2126, "varchar", 1024);
-	bootstrap_create_column(tr, t, "type", 2127, "varchar", 1024);
-	bootstrap_create_column(tr, t, "type_digits", 2128, "int", 32);
-	bootstrap_create_column(tr, t, "type_scale", 2129, "int", 32);
-	bootstrap_create_column(tr, t, "table_id", 2130, "int", 32);
-	bootstrap_create_column(tr, t, "default", 2131, "varchar", STORAGE_MAX_VALUE_LENGTH);
-	bootstrap_create_column(tr, t, "null", 2132, "boolean", 1);
-	bootstrap_create_column(tr, t, "number", 2133, "int", 32);
-	bootstrap_create_column(tr, t, "storage", 2134, "varchar", 2048);
+		(t = bootstrap_create_table(tr, s, "_columns", 2124)) == NULL ||
+		bootstrap_create_column(tr, t, "id", 2125, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "name", 2126, "varchar", 1024) == NULL ||
+		bootstrap_create_column(tr, t, "type", 2127, "varchar", 1024) == NULL ||
+		bootstrap_create_column(tr, t, "type_digits", 2128, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "type_scale", 2129, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "table_id", 2130, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "default", 2131, "varchar", STORAGE_MAX_VALUE_LENGTH) == NULL ||
+		bootstrap_create_column(tr, t, "null", 2132, "boolean", 1) == NULL ||
+		bootstrap_create_column(tr, t, "number", 2133, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "storage", 2134, "varchar", 2048) == NULL ||
 
-	t = bootstrap_create_table(tr, s, "keys", 2135);
-	bootstrap_create_column(tr, t, "id", 2136, "int", 32);
-	bootstrap_create_column(tr, t, "table_id", 2137, "int", 32);
-	bootstrap_create_column(tr, t, "type", 2138, "int", 32);
-	bootstrap_create_column(tr, t, "name", 2139, "varchar", 1024);
-	bootstrap_create_column(tr, t, "rkey", 2140, "int", 32);
-	bootstrap_create_column(tr, t, "action", 2141, "int", 32);
+		(t = bootstrap_create_table(tr, s, "keys", 2135)) == NULL ||
+		bootstrap_create_column(tr, t, "id", 2136, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "table_id", 2137, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "type", 2138, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "name", 2139, "varchar", 1024) == NULL ||
+		bootstrap_create_column(tr, t, "rkey", 2140, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "action", 2141, "int", 32) == NULL ||
 
-	t = bootstrap_create_table(tr, s, "idxs", 2142);
-	bootstrap_create_column(tr, t, "id", 2143, "int", 32);
-	bootstrap_create_column(tr, t, "table_id", 2144, "int", 32);
-	bootstrap_create_column(tr, t, "type", 2145, "int", 32);
-	bootstrap_create_column(tr, t, "name", 2146, "varchar", 1024);
+		(t = bootstrap_create_table(tr, s, "idxs", 2142)) == NULL ||
+		bootstrap_create_column(tr, t, "id", 2143, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "table_id", 2144, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "type", 2145, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "name", 2146, "varchar", 1024) == NULL ||
 
-	t = bootstrap_create_table(tr, s, "triggers", 2147);
-	bootstrap_create_column(tr, t, "id", 2148, "int", 32);
-	bootstrap_create_column(tr, t, "name", 2149, "varchar", 1024);
-	bootstrap_create_column(tr, t, "table_id", 2150, "int", 32);
-	bootstrap_create_column(tr, t, "time", 2151, "smallint", 16);
-	bootstrap_create_column(tr, t, "orientation", 2152, "smallint", 16);
-	bootstrap_create_column(tr, t, "event", 2153, "smallint", 16);
-	bootstrap_create_column(tr, t, "old_name", 2154, "varchar", 1024);
-	bootstrap_create_column(tr, t, "new_name", 2155, "varchar", 1024);
-	bootstrap_create_column(tr, t, "condition", 2156, "varchar", 2048);
-	bootstrap_create_column(tr, t, "statement", 2157, "varchar", 2048);
+		(t = bootstrap_create_table(tr, s, "triggers", 2147)) == NULL ||
+		bootstrap_create_column(tr, t, "id", 2148, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "name", 2149, "varchar", 1024) == NULL ||
+		bootstrap_create_column(tr, t, "table_id", 2150, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "time", 2151, "smallint", 16) == NULL ||
+		bootstrap_create_column(tr, t, "orientation", 2152, "smallint", 16) == NULL ||
+		bootstrap_create_column(tr, t, "event", 2153, "smallint", 16) == NULL ||
+		bootstrap_create_column(tr, t, "old_name", 2154, "varchar", 1024) == NULL ||
+		bootstrap_create_column(tr, t, "new_name", 2155, "varchar", 1024) == NULL ||
+		bootstrap_create_column(tr, t, "condition", 2156, "varchar", 2048) == NULL ||
+		bootstrap_create_column(tr, t, "statement", 2157, "varchar", 2048) == NULL ||
 
-	t = bootstrap_create_table(tr, s, "objects", 2158);
-	bootstrap_create_column(tr, t, "id", 2159, "int", 32);
-	bootstrap_create_column(tr, t, "name", 2160, "varchar", 1024);
-	bootstrap_create_column(tr, t, "nr", 2161, "int", 32);
-	bootstrap_create_column(tr, t, "sub", 2164, "int", 32);
+		(t = bootstrap_create_table(tr, s, "objects", 2158)) == NULL ||
+		bootstrap_create_column(tr, t, "id", 2159, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "name", 2160, "varchar", 1024) == NULL ||
+		bootstrap_create_column(tr, t, "nr", 2161, "int", 32) == NULL ||
+		bootstrap_create_column(tr, t, "sub", 2164, "int", 32) == NULL) {
+		goto critical;
+	}
 
-	(void) bootstrap_create_schema(tr, dt_schema, -1, ROLE_SYSADMIN, USER_MONETDB);
+	if (bootstrap_create_schema(tr, dt_schema, -1, ROLE_SYSADMIN, USER_MONETDB) == NULL) {
+		goto critical;
+	}
 
 	if (store->first) {
 		if (insert_types(tr, types) || insert_functions(tr, functions, funcs, arguments) || insert_schemas(tr)) {
@@ -2100,6 +2109,11 @@ store_load(sqlstore *store, sql_allocator *pa)
 	sql_trans_destroy(tr);
 	store->initialized = 1;
 	return store;
+
+  critical:
+	TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
+	sql_trans_destroy(tr);
+	return NULL;
 }
 
 sqlstore *
