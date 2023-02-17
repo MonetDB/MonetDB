@@ -2282,7 +2282,7 @@ log_create(int debug, const char *fn, const char *logdir, int version, preversio
 static ulng
 log_next_logfile(logger *lg, ulng ts)
 {
-	int m = (GDKdebug & FORCEMITOMASK)?1000:10;
+	int m = (GDKdebug & FORCEMITOMASK)?1000:100;
 	if (!lg->pending || !lg->pending->next)
 		return 0;
 	if (lg->pending != lg->current && lg->pending->last_ts <= ts) {
