@@ -2940,7 +2940,7 @@ log_tdone(logger *lg, ulng commit_ts)
 	}
 	stream* output_log = lg->output_log;
 	ulng id = lg->id;
-	if (!LOG_DISABLED(lg) && new_logfile(lg, output_log, id) != GDK_SUCCEED)
+	if (lg->flushing_output_log && !LOG_DISABLED(lg) && new_logfile(lg, output_log, id) != GDK_SUCCEED)
 		GDKfatal("Could not create new log file\n");
 }
 
