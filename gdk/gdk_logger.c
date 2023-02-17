@@ -765,7 +765,7 @@ la_bat_destroy(logger *lg, logaction *la, int tid)
 		GDKerror("la_bat_destroy failed to find bid for object %d\n", la->cid);
 		return GDK_FAIL;
 	}
-	if (bid && logger_del_bat(lg, bid) != GDK_SUCCEED)
+	if (logger_del_bat(lg, bid) != GDK_SUCCEED)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -2259,7 +2259,7 @@ logger_create(int debug, const char *fn, const char *logdir, int version, prever
 static ulng
 logger_next_logfile(logger *lg, ulng ts)
 {
-	int m = (GDKdebug & FORCEMITOMASK)?1000:10;
+	int m = (GDKdebug & FORCEMITOMASK)?1000:100;
 	if (!lg->pending || !lg->pending->next)
 		return 0;
 	if (lg->pending != lg->current && lg->pending->last_ts <= ts) {
