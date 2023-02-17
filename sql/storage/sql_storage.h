@@ -317,7 +317,7 @@ extern void store_resume_log(struct sqlstore *store);
 extern lng store_hot_snapshot(struct sqlstore *store, str tarfile);
 extern lng store_hot_snapshot_to_stream(struct sqlstore *store, stream *s);
 
-extern ulng store_oldest(struct sqlstore *store);
+extern ulng store_oldest(struct sqlstore *store, sql_trans *tr);
 extern ulng store_get_timestamp(struct sqlstore *store);
 extern void store_manager(struct sqlstore *store);
 
