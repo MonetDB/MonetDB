@@ -1325,8 +1325,10 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			int coltype = getBatType(getArgType(mb, pci, 0));
 			b = store->storage_api.bind_col(m->session->tr, c, access);
+			if (b == NULL)
+				throw(SQL, "sql.bind", SQLSTATE(42000) "Cannot bind column %s.%s.%s", sname, tname, cname);
 
-			if (b && b->ttype && b->ttype != coltype) {
+			if (b->ttype && b->ttype != coltype) {
 				BBPunfix(b->batCacheid);
 				throw(SQL,"sql.bind",SQLSTATE(42000) "Column type mismatch %s.%s.%s",sname,tname,cname);
 			}
@@ -4252,6 +4254,7 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int oldvtop, int oldvid)
 		clearVariable(mb, i);
 		i++;
 	}
+	assert(oldvtop <= mb->vsize);
 	mb->vtop = oldvtop;
 	mb->vid = oldvid;
 }
@@ -5000,8 +5003,7 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 	void *argv[4] = {m->store, sname_copy, tname_copy, cname_copy};
 
-	gdk_return res;
-	if((res = gdk_add_callback("str_column_vacuum", str_column_vacuum_callback, 4, argv, interval)) != GDK_SUCCEED) {
+	if (gdk_add_callback("str_column_vacuum", str_column_vacuum_callback, 4, argv, interval) != GDK_SUCCEED) {
 		str_column_vacuum_callback_args_free(4, argv);
 		throw(SQL, "sql.str_column_auto_vacuum", "adding vacuum callback failed!");
 	}
@@ -5360,6 +5362,7 @@ pattern("sql", "password", SQLuser_password, false, "Return password hash of use
  pattern("calc", "date", nil_2_date, false, "cast to date", args(1,2, arg("",date),arg("v",void))),
  pattern("batcalc", "date", nil_2_date, false, "cast to date", args(1,2, batarg("",date),batarg("v",oid))),
  pattern("calc", "str", SQLstr_cast, false, "cast to string and check for overflow", args(1,7, arg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),argany("v",1),arg("digits",int))),
+ pattern("batcalc", "str", SQLbatstr_cast, false, "cast to string and check for overflow, no candidate list", args(1,7, batarg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),batargany("v",1),arg("digits",int))),
  pattern("batcalc", "str", SQLbatstr_cast, false, "cast to string and check for overflow", args(1,8, batarg("",str),arg("eclass",int),arg("d1",int),arg("s1",int),arg("has_tz",int),batargany("v",1),batarg("s",oid),arg("digits",int))),
  pattern("calc", "month_interval", month_interval_str, false, "cast str to a month_interval and check for overflow", args(1,4, arg("",int),arg("v",str),arg("ek",int),arg("sk",int))),
  pattern("batcalc", "month_interval", month_interval_str, false, "cast str to a month_interval and check for overflow", args(1,5, batarg("",int),batarg("v",str),batarg("s",oid),arg("ek",int),arg("sk",int))),

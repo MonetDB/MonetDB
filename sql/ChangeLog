@@ -1,6 +1,14 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Feb 15 2023 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
+- SQL function sys.queue() overloaded with sys.queue(username string), SYSADMIN only, allowing to filter the global queue by username or use 'ALL' to retrive the global queue. Calling the function without arguments returns the current user queue.
+- SQL function sys.queue() overloaded with sys.queue(username string), SYSADMIN only, allowing to filter the global queue by username or use 'ALL' to retrive the global queue. Calling the function without arguments returns the current user queue.
+
+* Wed Feb 15 2023 svetlin <svetlin.stalinov@monetdbsolutions.com>
+- Added JDBC/ODBC escape sequences implementation to SQL layer. Now all
+  clients can forward them without further processing.
+
 * Thu Nov 10 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - It is no longer allowed to create a merge table or remote table or
   replica table or unlogged table in schema "tmp". The tmp schema is
