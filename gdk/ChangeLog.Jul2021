@@ -2,6 +2,8 @@
 # This file is updated with Maddlog
 
 * Mon Feb 20 2023 Sjoerd Mullender <sjoerd@acm.org>
+- A race condition was fixed where certain write-ahead log messages
+  could get intermingled, resulting in a corrupted WAL file.
 - If opening of a file failed when it was supposed to get memory mapped,
   an incorrect value was returned to indicate the failure, causing
   crashes later on.  This has been fixed.
