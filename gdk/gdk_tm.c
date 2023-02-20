@@ -83,7 +83,7 @@ epilogue(int cnt, bat *subcommit, bool locked)
 			}
 		}
 		b = BBP_desc(bid);
-		if (b && ATOMvarsized(b->ttype)) {
+		if (b && b->ttype >= 0 && ATOMvarsized(b->ttype)) {
 			MT_lock_set(&b->theaplock);
 			ValPtr p = BATgetprop_nolock(b, (enum prop_t) 20);
 			if (p != NULL) {
