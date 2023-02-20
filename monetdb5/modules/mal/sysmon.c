@@ -25,6 +25,8 @@
 static str
 SYSMONstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) mb;
+
 	/* Temporary hack not allowing MAL clients (mclient -lmal)
 	   to use this function */
 	if (cntxt->sqlcontext == NULL)
@@ -42,7 +44,6 @@ SYSMONstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	timestamp tsn = timestamp_nil;
 	str msg = MAL_SUCCEED;
 
-	(void) mb;
 	user = COLnew(0, TYPE_str, usrstatscnt, TRANSIENT);
 	querycount = COLnew(0, TYPE_lng, usrstatscnt, TRANSIENT);
 	totalticks = COLnew(0, TYPE_lng, usrstatscnt, TRANSIENT);
@@ -164,12 +165,12 @@ SYSMONstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) mb;
+
 	/* Temporary hack not allowing MAL clients (mclient -lmal)
 	   to use this function */
 	if (cntxt->sqlcontext == NULL)
-		throw(MAL, "SYSMONstatistics", SQLSTATE(42000) "Calling from a mclient -lmal.");
-
-	(void)mb;
+		throw(MAL, "SYSMONqueue", SQLSTATE(42000) "Calling from a mclient -lmal.");
 
 	bat *t = getArgReference_bat(stk,pci,0),
 		*s = getArgReference_bat(stk,pci,1),
@@ -308,10 +309,12 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) mb;
+
 	/* Temporary hack not allowing MAL clients (mclient -lmal)
 	   to use this function */
 	if (cntxt->sqlcontext == NULL)
-		throw(MAL, "SYSMONstatistics", SQLSTATE(42000) "Calling from a mclient -lmal.");
+		throw(MAL, "SYSMONpause", SQLSTATE(42000) "Calling from a mclient -lmal.");
 
 	oid tag = 0;
 	size_t i = 0;
@@ -348,17 +351,19 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_unset(&mal_delayLock);
 
 	return paused ? MAL_SUCCEED :
-		i == qsize ? createException(MAL, "SYSMONpause", SQLSTATE(42S12) "Tag "LLFMT" unknown.", tag) :
-		createException(MAL, "SYSMONpause", SQLSTATE(HY009) "Tag "LLFMT" unknown to the user.", tag);
+		i == qsize ? createException(MAL, "SYSMONpause", SQLSTATE(42S12) "Tag "OIDFMT" unknown.", tag) :
+		createException(MAL, "SYSMONpause", SQLSTATE(HY009) "Tag "OIDFMT" unknown to the user.", tag);
 }
 
 static str
 SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) mb;
+
 	/* Temporary hack not allowing MAL clients (mclient -lmal)
 	   to use this function */
 	if (cntxt->sqlcontext == NULL)
-		throw(MAL, "SYSMONstatistics", SQLSTATE(42000) "Calling from a mclient -lmal.");
+		throw(MAL, "SYSMONresume", SQLSTATE(42000) "Calling from a mclient -lmal.");
 
 	oid tag = 0;
 	size_t i = 0;
@@ -369,9 +374,9 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(getArgType(mb, pci, 1) == TYPE_lng);
 
 	if ((tag = (oid)*getArgReference_lng(stk, pci, 1)) < 1 )
-		throw(MAL, "SYSMONpause", SQLSTATE(22003) "Tag must be positive.");
+		throw(MAL, "SYSMONresume", SQLSTATE(22003) "Tag must be positive.");
 	if (tag == cntxt->curprg->def->tag)
-		throw(MAL, "SYSMONpause", SQLSTATE(HY009) "SYSMONpause cannot pause itself.");
+		throw(MAL, "SYSMONresume", SQLSTATE(HY009) "SYSMONresume cannot pause itself.");
 
 	MT_lock_set(&mal_delayLock);
 	for (i = 0; i < qsize; i++) {
@@ -395,17 +400,19 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_unset(&mal_delayLock);
 
 	return paused ? MAL_SUCCEED :
-		i == qsize ? createException(MAL, "SYSMONpause", SQLSTATE(42S12) "Tag "LLFMT" unknown.", tag) :
-		createException(MAL, "SYSMONpause", SQLSTATE(HY009) "Tag "LLFMT" unknown to the user.", tag);
+		i == qsize ? createException(MAL, "SYSMONresume", SQLSTATE(42S12) "Tag "OIDFMT" unknown.", tag) :
+		createException(MAL, "SYSMONresume", SQLSTATE(HY009) "Tag "OIDFMT" unknown to the user.", tag);
 }
 
 static str
 SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) mb;
+
 	/* Temporary hack not allowing MAL clients (mclient -lmal)
 	   to use this function */
 	if (cntxt->sqlcontext == NULL)
-		throw(MAL, "SYSMONstatistics", SQLSTATE(42000) "Calling from a mclient -lmal.");
+		throw(MAL, "SYSMONstop", SQLSTATE(42000) "Calling from a mclient -lmal.");
 
 	oid tag = 0;
 	size_t i = 0;
@@ -416,9 +423,9 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(getArgType(mb, pci, 1) == TYPE_lng);
 
 	if ((tag = (oid)*getArgReference_lng(stk, pci, 1)) < 1 )
-		throw(MAL, "SYSMONpause", SQLSTATE(22003) "Tag must be positive.");
+		throw(MAL, "SYSMONstop", SQLSTATE(22003) "Tag must be positive.");
 	if (tag == cntxt->curprg->def->tag)
-		throw(MAL, "SYSMONpause", SQLSTATE(HY009) "SYSMONpause cannot pause itself.");
+		throw(MAL, "SYSMONstop", SQLSTATE(HY009) "SYSMONstop cannot pause itself.");
 
 	MT_lock_set(&mal_delayLock);
 	for (i = 0; i < qsize; i++) {
@@ -442,8 +449,8 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_unset(&mal_delayLock);
 
 	return paused ? MAL_SUCCEED :
-		i == qsize ? createException(MAL, "SYSMONpause", SQLSTATE(42S12) "Tag "LLFMT" unknown.", tag) :
-		createException(MAL, "SYSMONpause", SQLSTATE(HY009) "Tag "LLFMT" unknown to the user.", tag);
+		i == qsize ? createException(MAL, "SYSMONstop", SQLSTATE(42S12) "Tag "OIDFMT" unknown.", tag) :
+		createException(MAL, "SYSMONstop", SQLSTATE(HY009) "Tag "OIDFMT" unknown to the user.", tag);
 }
 
 #include "mel.h"

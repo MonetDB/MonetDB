@@ -5499,21 +5499,20 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 	/* Add new sysadmin procedure calls: stop, pause and resume with two
 	   arguments, first arg is query OID and second the user username that
 	   the query in bound to. */
-	pos = snprintf(buf, bufsize,
-				   "SELECT id FROM sys.functions where name='stop' and schema_id=2000;\n");
-	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)) == NULL) {
-		if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) != 2) {
-			pos = 0;
-			pos += snprintf(buf + pos, bufsize - pos,
-							"create function sys.queue(username string) returns table(\"tag\" bigint, \"sessionid\" int, \"username\" string, \"started\" timestamp, \"status\" string, \"query\" string, \"finished\" timestamp, \"maxworkers\" int, \"footprint\" int) external name sysmon.queue;\n"
-							"create procedure sys.pause(tag bigint, username string) external name sysmon.pause;\n"
-							"create procedure sys.resume(tag bigint, username string) external name sysmon.resume;\n"
-							"create procedure sys.stop(tag bigint, username string) external name sysmon.stop;\n"
-							"update sys.functions set system = true where system <> true and mod = 'sysmon' and name in ('stop', 'pause', 'resume', 'queue');\n");
-			assert(pos < bufsize);
-			printf("Running database upgrade commands:\n%s\n", buf);
-			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
-		}
+	sql_subtype t1, t2;
+	sql_find_subtype(&t1, "bigint", 64, 0);
+	sql_find_subtype(&t2, "clob", 0, 0);
+	if (!sql_bind_func(sql, "sys", "pause", &t1, &t2, F_PROC, true)) {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+		pos = snprintf(buf, bufsize,
+					   "create function sys.queue(username string) returns table(\"tag\" bigint, \"sessionid\" int, \"username\" string, \"started\" timestamp, \"status\" string, \"query\" string, \"finished\" timestamp, \"maxworkers\" int, \"footprint\" int) external name sysmon.queue;\n"
+					   "create procedure sys.pause(tag bigint, username string) external name sysmon.pause;\n"
+					   "create procedure sys.resume(tag bigint, username string) external name sysmon.resume;\n"
+					   "create procedure sys.stop(tag bigint, username string) external name sysmon.stop;\n"
+					   "update sys.functions set system = true where system <> true and mod = 'sysmon' and name in ('stop', 'pause', 'resume', 'queue');\n");
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
 
 	GDKfree(buf);
