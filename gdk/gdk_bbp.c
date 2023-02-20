@@ -3880,7 +3880,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 			if (size > bi.count) /* includes sizes==NULL */
 				size = bi.count;
 			bi.b->batInserted = size;
-			if (ATOMvarsized(bi.b->ttype)) {
+			if (bi.b->ttype >= 0 && ATOMvarsized(bi.b->ttype)) {
 				/* see epilogue() for other part of this */
 				MT_lock_set(&bi.b->theaplock);
 				/* remember the tail we're saving */
