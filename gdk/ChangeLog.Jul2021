@@ -1,6 +1,11 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Mon Feb 20 2023 Sjoerd Mullender <sjoerd@acm.org>
+- If opening of a file failed when it was supposed to get memory mapped,
+  an incorrect value was returned to indicate the failure, causing
+  crashes later on.  This has been fixed.
+
 * Mon Feb 13 2023 Sjoerd Mullender <sjoerd@acm.org>
 - When saving a bat failed for some reason during a low-level commit,
   this was logged in the log file, but the error was then subsequently
