@@ -30,6 +30,9 @@ endif()
 
 if(WITH_CMOCKA)
   find_package(CMocka)
+  if (TARGET cmocka::cmocka)
+    set(CMOCKA_LIBRARY cmocka::cmocka)
+  endif()
 endif()
 
 if(WITH_PCRE)
