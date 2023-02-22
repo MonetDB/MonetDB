@@ -1541,7 +1541,7 @@ SQLcallback(Client c, str msg)
 		freeException(msg);
 		return MAL_SUCCEED;
 	}
-	return MALcallback(c, msg);
+	return MAL_SUCCEED;
 }
 
 str
