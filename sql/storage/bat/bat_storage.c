@@ -3407,9 +3407,6 @@ commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	sql_column *c = (sql_column*)change->obj;
 	sql_delta *delta = ATOMIC_PTR_GET(&c->data);
 
-	if (isDeleted(c->t))
-		return ok;
-
 	if (isTempTable(c->t))
 		return commit_update_col_(tr, c, commit_ts, oldest);
 	if (commit_ts)
@@ -3487,9 +3484,6 @@ commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	int ok = LOG_OK;
 	sql_idx *i = (sql_idx*)change->obj;
 	sql_delta *delta = ATOMIC_PTR_GET(&i->data);
-
-	if (isDeleted(i->t))
-		return ok;
 
 	if (isTempTable(i->t))
 		return commit_update_idx_( tr, i, commit_ts, oldest);
@@ -3574,9 +3568,6 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	int ok = LOG_OK;
 	sql_table *t = (sql_table*)change->obj;
 	storage *dbat = ATOMIC_PTR_GET(&t->data);
-
-	if (isDeleted(t))
-		return ok;
 
 	if (isTempTable(t)) {
 		if (!(dbat = temp_tab_timestamp_storage(tr, t)))
@@ -3808,7 +3799,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 {
 	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	assert(s->segs);
-	ulng oldest = store_oldest(tr->store, NULL);
+	ulng oldest = store_oldest(tr->store);
 	BUN slot = 0;
 	size_t total = cnt;
 
@@ -3894,7 +3885,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 		return claim_segmentsV2(tr, t, s, cnt, offset, offsets, locked);
 	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	assert(s->segs);
-	ulng oldest = store_oldest(tr->store, NULL);
+	ulng oldest = store_oldest(tr->store);
 	BUN slot = 0;
 	int reused = 0;
 
