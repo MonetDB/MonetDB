@@ -6395,6 +6395,18 @@ rel2bin_catalog_table(backend *be, sql_rel *rel, list *refs)
 			replace = stmt_atom_int(be, 0);
 		}
 		append(l, replace);
+	} else if (rel->flag == ddl_create_table && en) {
+		stmt *name = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		if (!name)
+			return NULL;
+		en = en->next;
+		append(l, name);
+		if (!en)
+			return NULL;
+		stmt *passwd = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		if (!passwd)
+			return NULL;
+		append(l, passwd);
 	}
 	return stmt_catalog(be, rel->flag, stmt_list(be, l));
 }

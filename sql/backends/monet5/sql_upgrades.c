@@ -5515,6 +5515,110 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
 
+	/* remote credentials where moved */
+	sql_trans *tr = sql->session->tr;
+	sqlstore *store = tr->store;
+	sql_schema *sys = find_sql_schema(tr, "sys");
+	sql_table *remote_user_info = find_sql_table(tr, sys, REMOTE_USER_INFO);
+	sql_column *remote_user_info_id = find_sql_column(remote_user_info, "table_id");
+	BAT *rt_key = NULL, *rt_username = NULL, *rt_pwhash = NULL, *rt_deleted = NULL;
+	if (!err && store->storage_api.count_col(tr, remote_user_info_id, 0) == 0 && BBPindex("M5system_auth_rt_key")) {
+			pos = 0;
+			pos += snprintf(buf + pos, bufsize - pos,
+							"drop function sys.remote_table_credentials (tablename string);\n"
+							"create function sys.decypher (cypher string) returns string external name sql.decypher;\n"
+
+							"drop function sys.get_remote_table_expressions(s STRING, t STRING);\n"
+							"CREATE FUNCTION sys.get_remote_table_expressions(s STRING, t STRING) RETURNS STRING BEGIN\n"
+							"\tRETURN SELECT ' ON ' || sys.SQ(tt.query) || ' WITH USER ' || sys.SQ(username) || ' ENCRYPTED PASSWORD ' || sys.SQ(sys.decypher(\"password\")) FROM sys.remote_user_info r, sys._tables tt, sys.schemas ss where tt.name = t and ss.name = s and tt.schema_id = ss.id and r.table_id = tt.id;\n"
+							"END;\n"
+							);
+			assert(pos < bufsize);
+			printf("Running database upgrade commands:\n%s\n", buf);
+			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+			if (err)
+				return err;
+
+		BAT *rt_key = BATdescriptor(BBPindex("M5system_auth_rt_key"));
+		BAT *rt_username = BATdescriptor(BBPindex("M5system_auth_rt_remoteuser"));
+		BAT *rt_pwhash = BATdescriptor(BBPindex("M5system_auth_rt_hashedpwd"));
+		BAT *rt_deleted = BATdescriptor(BBPindex("M5system_auth_rt_deleted"));
+		if (!rt_key || !rt_username || !rt_pwhash || !rt_deleted) /* cleanup remainders and continue or full stop ? */
+			throw(SQL, __func__, "cannot find M5system_auth bats");
+
+		BATiter ik = bat_iterator(rt_key);
+		BATiter iu = bat_iterator(rt_username);
+		BATiter ip = bat_iterator(rt_pwhash);
+		for(BUN p = 0; p<BATcount(rt_key); p++ ) {
+			oid pos = p;
+			if (BUNfnd(rt_deleted, &pos) == BUN_NONE) {
+				char *key = GDKstrdup(BUNtvar(ik, p));
+				char *username = BUNtvar(iu, p);
+				char *pwhash = BUNtvar(ip, p);
+
+				if (!key) {
+					bat_iterator_end(&ik);
+					bat_iterator_end(&iu);
+					bat_iterator_end(&ip);
+					BBPunfix(rt_key->batCacheid);
+					BBPunfix(rt_username->batCacheid);
+					BBPunfix(rt_pwhash->batCacheid);
+					BBPunfix(rt_deleted->batCacheid);
+					throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				char *d = strchr(key, '.');
+				/* . not found simply skip */
+				if (d) {
+					*d = '\0';
+					d++;
+					sql_schema *s = find_sql_schema(tr, key);
+					if (s) {
+						sql_table *t = find_sql_table(tr, s, d);
+						if (t && store->table_api.table_insert(tr, remote_user_info, &t->base.id, &username, &pwhash) != LOG_OK) {
+							bat_iterator_end(&ik);
+							bat_iterator_end(&iu);
+							bat_iterator_end(&ip);
+							BBPunfix(rt_key->batCacheid);
+							BBPunfix(rt_username->batCacheid);
+							BBPunfix(rt_pwhash->batCacheid);
+							BBPunfix(rt_deleted->batCacheid);
+							GDKfree(key);
+							throw(SQL, __func__, "Failed to insert remote credentials during upgrade");
+						}
+					}
+				}
+				GDKfree(key);
+			}
+		}
+		bat_iterator_end(&ik);
+		bat_iterator_end(&iu);
+		bat_iterator_end(&ip);
+	}
+	if (!err && rt_key) {
+		BAT *rt_uri = BATdescriptor(BBPindex("M5system_auth_rt_uri"));
+
+		if (rt_key) {
+			BATmode(rt_key, true);
+			BBPunfix(rt_key->batCacheid);
+		}
+		if (rt_username) {
+			BATmode(rt_username, true);
+			BBPunfix(rt_username->batCacheid);
+		}
+		if (rt_pwhash) {
+			BATmode(rt_pwhash, true);
+			BBPunfix(rt_pwhash->batCacheid);
+		}
+		if (rt_uri) {
+			BATmode(rt_uri, true);
+			BBPunfix(rt_uri->batCacheid);
+		}
+		if (rt_deleted) {
+			BATmode(rt_deleted, true);
+			BBPunfix(rt_deleted->batCacheid);
+		}
+	}
+
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
