@@ -783,6 +783,7 @@ extern sql_idx *schema_find_idx_id(sql_trans *tr, sql_schema *s, sqlid id);
 
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
 
+extern sql_table *find_sys_table(sql_trans *tr, const char *tname);
 extern sql_table *find_sql_table(sql_trans *tr, sql_schema *s, const char *tname);
 extern sql_table *find_sql_table_id(sql_trans *tr, sql_schema *s, sqlid id);
 extern sql_table *sql_trans_find_table(sql_trans *tr, sqlid id);
