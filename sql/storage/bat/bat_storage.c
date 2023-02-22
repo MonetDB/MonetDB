@@ -4147,6 +4147,9 @@ commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	ATOMIC_PTR_TYPE* data = &c->data;
 	int type = c->type.type->localtype;
 
+	if (isDeleted(c->t))
+		return LOG_OK;
+
 	return commit_update_delta(tr, change, t, base, data, type, commit_ts, oldest);
 }
 
@@ -4172,6 +4175,9 @@ commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	sql_table* t = i->t;
 	ATOMIC_PTR_TYPE* data = &i->data;
 	int type = (oid_index(i->type))?TYPE_oid:TYPE_lng;
+
+	if (isDeleted(i->t))
+		return LOG_OK;
 
 	return commit_update_delta(tr, change, t, base, data, type, commit_ts, oldest);
 }
@@ -4212,6 +4218,9 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	int ok = LOG_OK;
 	sql_table *t = (sql_table*)change->obj;
 	storage *dbat = ATOMIC_PTR_GET(&t->data);
+
+	if (isDeleted(t))
+		return ok;
 
 	if (t->commit_action == CA_DELETE || t->commit_action == CA_DROP) {
 		assert(isTempTable(t));
@@ -4410,7 +4419,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 {
 	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	assert(s->segs);
-	ulng oldest = store_oldest(tr->store);
+	ulng oldest = store_oldest(tr->store, NULL);
 	BUN slot = 0;
 	size_t total = cnt;
 
@@ -4470,7 +4479,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 	if (!locked)
 		unlock_table(tr->store, t->base.id);
 
-	if (ok == LOG_OK) {	
+	if (ok == LOG_OK) {
 		/* hard to only add this once per transaction (probably want to change to once per new segment) */
 		if (!in_transaction) {
 			trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_update_del);
@@ -4499,7 +4508,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 		return claim_segmentsV2(tr, t, s, cnt, offset, offsets, locked);
 	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	assert(s->segs);
-	ulng oldest = store_oldest(tr->store);
+	ulng oldest = store_oldest(tr->store, NULL);
 	BUN slot = 0;
 	int reused = 0;
 
