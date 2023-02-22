@@ -1113,7 +1113,15 @@ int scanner_symbol(mvc * c, int cur)
 	case '"':
 		return scanner_string(c, cur, false);
 	case '{':
-		return scanner_body(c);
+		// if previous tokens like LANGUAGE IDENT
+		// TODO checking on IDENT only may not be enough
+		if (lc->yylast == IDENT)
+			return scanner_body(c);
+		lc->started = 1;
+		return scanner_token(lc, cur);
+	case '}':
+		lc->started = 1;
+		return scanner_token(lc, cur);
 	case '-':
 		lc->started = 1;
 		next = scanner_getc(lc);
