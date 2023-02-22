@@ -22,19 +22,15 @@ start transaction
 statement ok
 start transaction
 
-@connection(id=1, username=monetdb, password=monetdb)
 statement ok
 start transaction
 
-@connection(id=1)
 statement ok
 CREATE MERGE TABLE parent(a int)
 
-@connection(id=1)
 statement ok
 alter table parent add table child1
 
-@connection(id=1)
 statement ok
 alter table parent add table child2
 
@@ -42,7 +38,6 @@ alter table parent add table child2
 statement ok
 drop table child2
 
-@connection(id=1)
 statement ok
 commit
 
@@ -50,7 +45,6 @@ commit
 statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
 commit
 
-@connection(id=1)
 query I nosort
 select count(*) from sys.objects where nr = ( select id from sys._tables where name = 'parent')
 ----
@@ -58,15 +52,12 @@ select count(*) from sys.objects where nr = ( select id from sys._tables where n
 
 # cleanup
 
-@connection(id=1)
 statement ok
 drop table parent
 
-@connection(id=1)
 statement ok
 drop table child1
 
-@connection(id=1)
 statement ok
 drop table child2
 
