@@ -310,6 +310,7 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 	MT_lock_unset(&b->theaplock);
 
 	uint32_t *restrict dst;
+	/* why hashlock ?? */
 	MT_rwlock_wrlock(&b->thashlock);
 	for (; s ; s=s->next) {
 		if (s->start >= nr)
@@ -4051,7 +4052,7 @@ log_update_col( sql_trans *tr, sql_change *change)
 	sql_column *c = (sql_column*)change->obj;
 	assert(!isTempTable(c->t));
 
-	if (!tr->parent) {/* don't write save point commits */
+	if (!isDeleted(c->t) && !tr->parent) {/* don't write save point commits */
 		storage *s = ATOMIC_PTR_GET(&c->t->data);
 		sql_delta *d = ATOMIC_PTR_GET(&c->data);
 		return tr_log_cs(tr, c->t, &d->cs, s->segs->h, c->base.id);
@@ -4155,7 +4156,7 @@ log_update_idx( sql_trans *tr, sql_change *change)
 	sql_idx *i = (sql_idx*)change->obj;
 	assert(!isTempTable(i->t));
 
-	if (!tr->parent) { /* don't write save point commits */
+	if (!isDeleted(i->t) && !tr->parent) { /* don't write save point commits */
 		storage *s = ATOMIC_PTR_GET(&i->t->data);
 		sql_delta *d = ATOMIC_PTR_GET(&i->data);
 		return tr_log_cs(tr, i->t, &d->cs, s->segs->h, i->base.id);
@@ -4200,7 +4201,7 @@ log_update_del( sql_trans *tr, sql_change *change)
 	sql_table *t = (sql_table*)change->obj;
 	assert(!isTempTable(t));
 
-	if (!tr->parent) /* don't write save point commits */
+	if (!isDeleted(t) && !tr->parent) /* don't write save point commits */
 		return log_storage(tr, t, ATOMIC_PTR_GET(&t->data));
 	return LOG_OK;
 }
