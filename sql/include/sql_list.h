@@ -41,6 +41,7 @@ sql_export list *sa_list(sql_allocator *sa);
 extern list *list_new(sql_allocator *sa, fdestroy destroy);
 
 extern list *sa_list_append( sql_allocator *sa, list *l, void *data);
+extern list *list_add( list *l, void *data);
 
 extern void list_destroy(list *l);
 extern void list_destroy2(list *l, void *data);
@@ -55,7 +56,7 @@ extern node *list_remove_node(list *l, void *gdata, node *n);
 extern void list_remove_data(list *l, void *gdata, void *data);
 extern void list_remove_list(list *l, void *gdata, list *data);
 extern list *list_move_data(list *l, list *d, void *data);
-
+extern void list_revert(list *l);
 
 extern int list_traverse(list *l, traverse_func f, void *clientdata);
 

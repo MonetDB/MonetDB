@@ -60,7 +60,7 @@ language P
 	return retval
 }
 
-statement error PY000!Error converting dict return value "a": An array of size 2 was returned, yet we expect a list of 1 columns. The result is invalid..
+statement error PY000!Error converting dict return value "a": An array of size 2 was returned, yet we expect a list of 1 columns. The result is invalid.
 SELECT * FROM pyapi17()
 
 statement ok

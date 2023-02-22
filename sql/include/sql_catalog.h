@@ -204,6 +204,7 @@ typedef struct sql_base {
 } sql_base;
 
 #define isNew(x)          ((x)->base.new)
+#define isDeleted(x)      ((x)->base.deleted)
 
 extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, bool isnew, const char *name);
 
@@ -326,8 +327,7 @@ typedef struct sql_trans {
 
 	sql_catalog *cat;
 	sql_schema *tmp;	/* each session has its own tmp schema */
-	changeset localtmps;
-	sql_allocator *sa;	/* transaction allocator */
+	struct objectset* localtmps;
 
 	struct sql_trans *parent;	/* multilevel transaction support */
 } sql_trans;

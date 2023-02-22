@@ -1,16 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Fri Dec 16 2022 Sjoerd Mullender <sjoerd@acm.org>
-- Added some error checking to prevent crashes.  Errors would mainly
-  occur under memory pressure.
+* Mon Feb 13 2023 Sjoerd Mullender <sjoerd@acm.org>
+- An insert into a table from which a column was dropped in a parallel
+  transaction was incorrectly not flagged as a transaction conflict.
 
-* Wed Dec 14 2022 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed cleanup after a failed allocation where the data being cleaned
-  up was unitialized but still used as pointers to memory that also had
-  to be freed.
-
-* Wed Dec  7 2022 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed a double cleanup after a failed allocation in COPY INTO.  The
-  double cleanup could cause a crash due to a race condition it enabled.
+* Thu Jan 26 2023 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Fix bug where boolean NULLs were not recognized by COPY BINARY INTO
 
