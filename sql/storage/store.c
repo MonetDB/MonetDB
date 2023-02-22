@@ -45,15 +45,8 @@ store_transaction_id(sqlstore *store)
 }
 
 ulng
-store_oldest(sqlstore *store, sql_trans *tr)
+store_oldest(sqlstore *store)
 {
-	if (tr && tr->ts == store->oldest) {
-		sql_session *s = store->active->h->data;
-		if (s->tr == tr && store->active->h->next) {
-			s = store->active->h->next->data;
-			return s->tr->ts;
-		}
-	}
 	return store->oldest;
 }
 
@@ -2274,7 +2267,7 @@ id_hash_clear_older(sql_hash *h, ulng oldest)
 }
 
 static void
-store_pending_changes(sqlstore *store, ulng oldest, sql_trans *tr)
+store_pending_changes(sqlstore *store, ulng oldest)
 {
 	ulng oldest_changes = store_get_timestamp(store);
 	if (!list_empty(store->changes)) { /* lets first cleanup old stuff */
@@ -2287,7 +2280,7 @@ store_pending_changes(sqlstore *store, ulng oldest, sql_trans *tr)
 			} else if (c->cleanup && c->cleanup(store, c, oldest)) {
 				list_remove_node(store->changes, store, n);
 				_DELETE(c);
-			} else if (!c->handled && c->ts < oldest_changes) {
+			} else if (c->ts < oldest_changes) {
 				oldest_changes = c->ts;
 			}
 			n = next;
@@ -2297,7 +2290,7 @@ store_pending_changes(sqlstore *store, ulng oldest, sql_trans *tr)
 		dep_hash_clear(store->dependencies);
 		dep_hash_clear(store->depchanges);
 	} else {
-		ulng stoldest = store_oldest(store, tr);
+		ulng stoldest = store_oldest(store);
 		id_hash_clear_older(store->dependencies, stoldest);
 		id_hash_clear_older(store->depchanges, stoldest);
 	}
@@ -2321,7 +2314,7 @@ store_manager(sqlstore *store)
 			store_lock(store);
 			if (ATOMIC_GET(&store->nr_active) == 0) {
 				ulng oldest = store_timestamp(store)+1;
-				store_pending_changes(store, oldest, NULL);
+				store_pending_changes(store, oldest);
 			}
 			store_unlock(store);
 			MT_lock_set(&store->flush);
@@ -3507,7 +3500,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		if (!commit_lock)
 			MT_lock_set(&store->commit);
 		store_lock(store);
-		ulng oldest = store_oldest(store, tr);
+		ulng oldest = store_oldest(store);
 		ulng commit_ts = store_get_timestamp(store); /* use most recent timestamp such that we can cleanup savely */
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
@@ -3516,7 +3509,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 				c->commit(tr, c, 0 /* ie rollback */, oldest);
 			c->ts = commit_ts;
 		}
-		store_pending_changes(store, oldest, tr);
+		store_pending_changes(store, oldest);
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
 
@@ -3538,8 +3531,8 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		if (!commit_lock)
 			MT_lock_set(&store->commit);
 		store_lock(store);
-		ulng oldest = store_oldest(store, tr);
-		store_pending_changes(store, oldest, tr);
+		ulng oldest = store_oldest(store);
+		store_pending_changes(store, oldest);
 		store_unlock(store);
 		if (!commit_lock)
 			MT_lock_unset(&store->commit);
@@ -3841,13 +3834,13 @@ sql_trans_commit(sql_trans *tr)
 			if (tr->parent)
 				tr->parent->logchanges += tr->logchanges;
 		}
-		oldest = tr->parent ? commit_ts : store_oldest(store, tr);
+		oldest = tr->parent ? commit_ts : store_oldest(store);
 		tr->logchanges = 0;
 		TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
 		/* apply committed changes */
 		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent)
 			oldest = commit_ts;
-		store_pending_changes(store, oldest, tr);
+		store_pending_changes(store, oldest);
 		for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
 			sql_change *c = n->data;
 
@@ -3904,7 +3897,7 @@ sql_trans_commit(sql_trans *tr)
 		MT_lock_set(&store->commit);
 		store_lock(store);
 		ulng oldest = store_timestamp(store);
-		store_pending_changes(store, oldest, tr);
+		store_pending_changes(store, oldest);
 		store_unlock(store);
 		MT_lock_unset(&store->commit);
 	}
