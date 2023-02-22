@@ -3586,6 +3586,8 @@ commit_destroy_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng olde
 	(void)change;
 	(void)commit_ts;
 	(void)oldest;
+	if (commit_ts)
+		change->handled = true;
 	return 0;
 }
 
@@ -4052,6 +4054,8 @@ log_update_col( sql_trans *tr, sql_change *change)
 	sql_column *c = (sql_column*)change->obj;
 	assert(!isTempTable(c->t));
 
+	if (isDeleted(c->t))
+		change->handled = true;
 	if (!isDeleted(c->t) && !tr->parent) {/* don't write save point commits */
 		storage *s = ATOMIC_PTR_GET(&c->t->data);
 		sql_delta *d = ATOMIC_PTR_GET(&c->data);
@@ -4147,7 +4151,7 @@ commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	ATOMIC_PTR_TYPE* data = &c->data;
 	int type = c->type.type->localtype;
 
-	if (isDeleted(c->t))
+	if (change->handled || isDeleted(c->t))
 		return LOG_OK;
 
 	return commit_update_delta(tr, change, t, base, data, type, commit_ts, oldest);
@@ -4159,6 +4163,8 @@ log_update_idx( sql_trans *tr, sql_change *change)
 	sql_idx *i = (sql_idx*)change->obj;
 	assert(!isTempTable(i->t));
 
+	if (isDeleted(i->t))
+		change->handled = true;
 	if (!isDeleted(i->t) && !tr->parent) { /* don't write save point commits */
 		storage *s = ATOMIC_PTR_GET(&i->t->data);
 		sql_delta *d = ATOMIC_PTR_GET(&i->data);
@@ -4176,7 +4182,7 @@ commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	ATOMIC_PTR_TYPE* data = &i->data;
 	int type = (oid_index(i->type))?TYPE_oid:TYPE_lng;
 
-	if (isDeleted(i->t))
+	if (change->handled || isDeleted(i->t))
 		return LOG_OK;
 
 	return commit_update_delta(tr, change, t, base, data, type, commit_ts, oldest);
@@ -4207,6 +4213,8 @@ log_update_del( sql_trans *tr, sql_change *change)
 	sql_table *t = (sql_table*)change->obj;
 	assert(!isTempTable(t));
 
+	if (isDeleted(t))
+		change->handled = true;
 	if (!isDeleted(t) && !tr->parent) /* don't write save point commits */
 		return log_storage(tr, t, ATOMIC_PTR_GET(&t->data));
 	return LOG_OK;
@@ -4219,7 +4227,7 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	sql_table *t = (sql_table*)change->obj;
 	storage *dbat = ATOMIC_PTR_GET(&t->data);
 
-	if (isDeleted(t))
+	if (change->handled || isDeleted(t))
 		return ok;
 
 	if (t->commit_action == CA_DELETE || t->commit_action == CA_DROP) {
@@ -4280,6 +4288,9 @@ gc_col( sqlstore *store, sql_change *change, ulng oldest, bool drop)
 	if (!c) /* cleaned earlier */
 		return 1;
 
+	if (change->handled || isDeleted(c->t))
+		return 1;
+
 	/* savepoint commit (did it merge ?) */
 	if (ATOMIC_PTR_GET(&c->data) != change->data) /* data is freed by commit */
 		return 1;
@@ -4328,6 +4339,9 @@ gc_idx( sqlstore *store, sql_change *change, ulng oldest, bool drop)
 	if (!i) /* cleaned earlier */
 		return 1;
 
+	if (change->handled || isDeleted(i->t))
+		return 1;
+
 	/* savepoint commit (did it merge ?) */
 	if (ATOMIC_PTR_GET(&i->data) != change->data) /* data is freed by commit */
 		return 1;
@@ -4374,6 +4388,8 @@ tc_gc_del( sql_store Store, sql_change *change, ulng oldest)
 	sqlstore *store = Store;
 	sql_table *t = (sql_table*)change->obj;
 
+	if (change->handled || isDeleted(t))
+		return 1;
 	(void)store;
 	/* savepoint commit (did it merge ?) */
 	if (ATOMIC_PTR_GET(&t->data) != change->data) /* data is freed by commit */
