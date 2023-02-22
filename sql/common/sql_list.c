@@ -428,6 +428,23 @@ list_check_prop_all(list *l, prop_check_func f)
 	return res;
 }
 
+void
+list_revert(list *l)
+{
+	node *c = NULL;
+
+	l->t = l->h;
+	for (node *o = l->h; o; ) {
+		node *nxt = o->next;
+
+		o->next = c;
+		c = o;
+
+		o = nxt;
+	}
+	l->h = c;
+}
+
 int
 list_traverse(list *l, traverse_func f, void *clientdata)
 {

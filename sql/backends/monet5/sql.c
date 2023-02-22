@@ -3940,86 +3940,86 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								goto bailout;
 							}
 
-							bat_iterator_end(&bsi);
 							bsi = bat_iterator(bs);
 							/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
 							if (BUNappend(sch, b->name, false) != GDK_SUCCEED ||
 							    BUNappend(tab, bt->name, false) != GDK_SUCCEED ||
 							    BUNappend(col, bc->name, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 							if (c->t->access == TABLE_WRITABLE) {
 								if (BUNappend(mode, "writable", false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 							} else if (c->t->access == TABLE_APPENDONLY) {
 								if (BUNappend(mode, "appendonly", false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 							} else if (c->t->access == TABLE_READONLY) {
 								if (BUNappend(mode, "readonly", false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 							} else {
 								if (BUNappend(mode, str_nil, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 							}
 							if (BUNappend(type, c->type.type->base.name, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							/*printf(" cnt "BUNFMT, bsi.count); */
 							sz = bsi.count;
 							if (BUNappend(cnt, &sz, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							/*printf(" loc %s", BBP_physical(bs->batCacheid)); */
 							if (BUNappend(loc, BBP_physical(bs->batCacheid), false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 							/*printf(" width %d", bsi.width); */
 							w = bsi.width;
 							if (BUNappend(atom, &w, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							sz = bsi.count << bsi.shift;
 							if (BUNappend(size, &sz, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							sz = heapinfo(bs->tvheap, bs->batCacheid);
 							if (BUNappend(heap, &sz, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							MT_rwlock_rdlock(&bs->thashlock);
 							sz = hashinfo(bs->thash, bs->batCacheid);
 							MT_rwlock_rdunlock(&bs->thashlock);
 							if (BUNappend(indices, &sz, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							bitval = 0; /* HASHispersistent(bs); */
 							if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							sz = IMPSimprintsize(bs);
 							if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 							/*printf(" indices "BUNFMT, bs->thash?bs->thash->heap.size:0); */
 							/*printf("\n"); */
 							bitval = bsi.sorted;
 							if (!bitval && bsi.nosorted == 0)
 								bitval = bit_nil;
 							if (BUNappend(sort, &bitval, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							bitval = bsi.revsorted;
 							if (!bitval && bsi.norevsorted == 0)
 								bitval = bit_nil;
 							if (BUNappend(revsort, &bitval, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							bitval = BATtkey(bs);
 							if (!bitval && bsi.nokey[0] == 0 && bsi.nokey[1] == 0)
 								bitval = bit_nil;
 							if (BUNappend(key, &bitval, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							sz = bs->torderidx && bs->torderidx != (Heap *) 1 ? bs->torderidx->free : 0;
 							if (BUNappend(oidx, &sz, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
+							bat_iterator_end(&bsi);
 						}
 					}
 
@@ -4037,82 +4037,82 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								}
 								if( cname && strcmp(bc->name, cname) )
 									continue;
-								bat_iterator_end(&bsi);
 								bsi = bat_iterator(bs);
 								/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
 								if (BUNappend(sch, b->name, false) != GDK_SUCCEED ||
 								    BUNappend(tab, bt->name, false) != GDK_SUCCEED ||
 								    BUNappend(col, bc->name, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								if (c->t->access == TABLE_WRITABLE) {
 									if (BUNappend(mode, "writable", false) != GDK_SUCCEED)
-										goto bailout;
+										goto bailout1;
 								} else if (c->t->access == TABLE_APPENDONLY) {
 									if (BUNappend(mode, "appendonly", false) != GDK_SUCCEED)
-										goto bailout;
+										goto bailout1;
 								} else if (c->t->access == TABLE_READONLY) {
 									if (BUNappend(mode, "readonly", false) != GDK_SUCCEED)
-										goto bailout;
+										goto bailout1;
 								} else {
 									if (BUNappend(mode, str_nil, false) != GDK_SUCCEED)
-										goto bailout;
+										goto bailout1;
 								}
 								if (BUNappend(type, "oid", false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 
 								/*printf(" cnt "BUNFMT, bsi.count); */
 								sz = bsi.count;
 								if (BUNappend(cnt, &sz, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 
 								/*printf(" loc %s", BBP_physical(bs->batCacheid)); */
 								if (BUNappend(loc, BBP_physical(bs->batCacheid), false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								/*printf(" width %d", bsi.width); */
 								w = bsi.width;
 								if (BUNappend(atom, &w, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								/*printf(" size "BUNFMT, tailsize(bs,bsi.count) + (bs->tvheap? bs->tvheap->size:0)); */
 								sz = tailsize(bs, bsi.count);
 								if (BUNappend(size, &sz, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 
 								sz = bs->tvheap ? bs->tvheap->size : 0;
 								if (BUNappend(heap, &sz, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 
 								MT_rwlock_rdlock(&bs->thashlock);
 								sz = bs->thash && bs->thash != (Hash *) 1 ? bs->thash->heaplink.size + bs->thash->heapbckt.size : 0; /* HASHsize() */
 								MT_rwlock_rdunlock(&bs->thashlock);
 								if (BUNappend(indices, &sz, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								bitval = 0; /* HASHispersistent(bs); */
 								if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 
 								sz = IMPSimprintsize(bs);
 								if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								/*printf(" indices "BUNFMT, bs->thash?bs->thash->heaplink.size+bs->thash->heapbckt.size:0); */
 								/*printf("\n"); */
 								bitval = bsi.sorted;
 								if (!bitval && bsi.nosorted == 0)
 									bitval = bit_nil;
 								if (BUNappend(sort, &bitval, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								bitval = bsi.revsorted;
 								if (!bitval && bsi.norevsorted == 0)
 									bitval = bit_nil;
 								if (BUNappend(revsort, &bitval, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								bitval = BATtkey(bs);
 								if (!bitval && bsi.nokey[0] == 0 && bsi.nokey[1] == 0)
 									bitval = bit_nil;
 								if (BUNappend(key, &bitval, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								sz = bs->torderidx && bs->torderidx != (Heap *) 1 ? bs->torderidx->free : 0;
 								if (BUNappend(oidx, &sz, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
+								bat_iterator_end(&bsi);
 							}
 						}
 					}
@@ -4121,7 +4121,6 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	bat_iterator_end(&bsi);
 	*rsch = sch->batCacheid;
 	BBPkeepref(sch);
 	*rtab = tab->batCacheid;
@@ -4158,8 +4157,9 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(oidx);
 	return MAL_SUCCEED;
 
-  bailout:
+  bailout1:
 	bat_iterator_end(&bsi);
+  bailout:
 	BBPreclaim(sch);
 	BBPreclaim(tab);
 	BBPreclaim(col);
