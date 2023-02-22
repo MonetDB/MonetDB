@@ -62,8 +62,7 @@ typedef struct objectset {
 	bool
 		temporary:1,
 		unique:1, /* names are unique */
-		concurrent:1,	/* concurrent inserts are allowed */
-	    nested:1;
+		concurrent:1;	/* concurrent inserts are allowed */
 	sql_store store;
 } objectset;
 
@@ -534,8 +533,7 @@ try_to_mark_deleted_for_destruction(sqlstore* store, objectversion *ov)
 		}
 
 		ov->ts = store_get_timestamp(store)+1;
-		if (!ov->os->nested)
-			ov_destroy_obj_recursive(store, ov);
+		ov_destroy_obj_recursive(store, ov);
 	}
 }
 
@@ -642,7 +640,7 @@ tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng 
 }
 
 objectset *
-os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, bool nested, sql_store store)
+os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, sql_store store)
 {
 	objectset *os = SA_NEW(sa, objectset);
 	*os = (objectset) {
@@ -652,7 +650,6 @@ os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, boo
 		.temporary = temporary,
 		.unique = unique,
 		.concurrent = concurrent,
-		.nested = nested,
 		.store = store
 	};
 	os->destroy = destroy;
