@@ -3004,7 +3004,7 @@ mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 {
 	backend *b = NULL;
 	str msg;
-	int ok;
+	int ok = 0;
 
 	(void) stk;		/* NOT USED */
 	(void) pci;		/* NOT USED */
