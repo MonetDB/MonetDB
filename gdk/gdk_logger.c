@@ -2457,16 +2457,19 @@ log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
 
 	gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[type].atomWrite;
 
+	log_lock(lg);
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    !mnstr_writeLng(lg->output_log, nr) ||
 	    mnstr_write(lg->output_log, &tpe, 1, 1) != 1 ||
 	    !mnstr_writeLng(lg->output_log, offset)) {
 		(void) ATOMIC_DEC(&lg->refcount);
+		log_unlock(lg);
 		ok = GDK_FAIL;
 		goto bailout;
 	}
 
 	ok = wt(val, lg->output_log, 1);
+	log_unlock(lg);
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged %d " LLFMT " inserts\n", id, nr);
@@ -2839,7 +2842,7 @@ new_logfile(logger *lg, stream* output_log, ulng id)
 	const lng p = (lng) getfilepos(getFile(lg->output_log));
 	if (p == -1)
 		return GDK_FAIL;
-	if (lg->drops > 100000 || p > log_large || (lg->end*1024) > log_large) {
+	if (((!lg->pending || !lg->pending->next) && lg->drops > 100000) || p > log_large || (lg->end*1024) > log_large) {
 		log_lock(lg);
 		if (ATOMIC_GET(&lg->refcount) == 1) {
 			lg->id++;
