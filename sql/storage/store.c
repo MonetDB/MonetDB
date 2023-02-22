@@ -1097,14 +1097,14 @@ load_schema(sql_trans *tr, res_table *rt_schemas, res_table *rt_tables, res_tabl
 		s->system = *(bte*)store->table_api.table_fetch_value(rt_schemas, find_sql_column(ss, "system"));
 		s->owner = *(sqlid*)store->table_api.table_fetch_value(rt_schemas, find_sql_column(ss, "owner"));
 
-		s->tables = os_new(NULL, (destroy_fptr) &table_destroy, false, true, true, store);
-		s->types = os_new(NULL, (destroy_fptr) &type_destroy, false, true, true, store);
-		s->funcs = os_new(NULL, (destroy_fptr) &func_destroy, false, false, false, store);
-		s->seqs = os_new(NULL, (destroy_fptr) &seq_destroy, false, true, true, store);
-		s->keys = os_new(NULL, (destroy_fptr) &key_destroy, false, true, true, store);
-		s->idxs = os_new(NULL, (destroy_fptr) &idx_destroy, false, true, true, store);
-		s->triggers = os_new(NULL, (destroy_fptr) &trigger_destroy, false, true, true, store);
-		s->parts = os_new(NULL, (destroy_fptr) &part_destroy, false, false, true, store);
+		s->tables = os_new(NULL, (destroy_fptr) &table_destroy, false, true, true, false, store);
+		s->types = os_new(NULL, (destroy_fptr) &type_destroy, false, true, true, false, store);
+		s->funcs = os_new(NULL, (destroy_fptr) &func_destroy, false, false, false, false, store);
+		s->seqs = os_new(NULL, (destroy_fptr) &seq_destroy, false, true, true, false, store);
+		s->keys = os_new(NULL, (destroy_fptr) &key_destroy, false, true, true, false, store);
+		s->idxs = os_new(NULL, (destroy_fptr) &idx_destroy, false, true, true, false, store);
+		s->triggers = os_new(NULL, (destroy_fptr) &trigger_destroy, false, true, true, false, store);
+		s->parts = os_new(NULL, (destroy_fptr) &part_destroy, false, false, true, false, store);
 	}
 
 	TRC_DEBUG(SQL_STORE, "Load schema: %s %d\n", s->base.name, s->base.id);
@@ -1766,14 +1766,14 @@ bootstrap_create_schema(sql_trans *tr, const char *name, sqlid id, sqlid auth_id
 	s->auth_id = auth_id;
 	s->owner = owner;
 	s->system = TRUE;
-	s->tables = os_new(NULL, (destroy_fptr) &table_destroy, false, true, true, store);
-	s->types = os_new(NULL, (destroy_fptr) &type_destroy, false, true, true, store);
-	s->funcs = os_new(NULL, (destroy_fptr) &func_destroy, false, false, false, store);
-	s->seqs = os_new(NULL, (destroy_fptr) &seq_destroy, false, true, true, store);
-	s->keys = os_new(NULL, (destroy_fptr) &key_destroy, false, true, true, store);
-	s->idxs = os_new(NULL, (destroy_fptr) &idx_destroy, false, true, true, store);
-	s->triggers = os_new(NULL, (destroy_fptr) &trigger_destroy, false, true, true, store);
-	s->parts = os_new(NULL, (destroy_fptr) &part_destroy, false, false, true, store);
+	s->tables = os_new(NULL, (destroy_fptr) &table_destroy, false, true, true, false, store);
+	s->types = os_new(NULL, (destroy_fptr) &type_destroy, false, true, true, false, store);
+	s->funcs = os_new(NULL, (destroy_fptr) &func_destroy, false, false, false, false, store);
+	s->seqs = os_new(NULL, (destroy_fptr) &seq_destroy, false, true, true, false, store);
+	s->keys = os_new(NULL, (destroy_fptr) &key_destroy, false, true, true, false, store);
+	s->idxs = os_new(NULL, (destroy_fptr) &idx_destroy, false, true, true, false, store);
+	s->triggers = os_new(NULL, (destroy_fptr) &trigger_destroy, false, true, true, false, store);
+	s->parts = os_new(NULL, (destroy_fptr) &part_destroy, false, false, true, false, store);
 	if (os_add(tr->cat->schemas, tr, s->base.name, &s->base)) {
 		return NULL;
 	}
@@ -3762,7 +3762,7 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	}
 
 	if (!parent) {
-		tr->localtmps = os_new(NULL, (destroy_fptr) &table_destroy, true, true, false, store);
+		tr->localtmps = os_new(NULL, (destroy_fptr) &table_destroy, true, true, false, false, store);
 	}
 	else {
 		tr->localtmps = os_dup(parent->localtmps);
@@ -3774,8 +3774,8 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	tr->cat = store->cat;
 	if (!tr->cat) {
 		store->cat = tr->cat = ZNEW(sql_catalog);
-		store->cat->schemas = os_new(NULL, (destroy_fptr) &schema_destroy, false, true, true, store);
-		store->cat->objects = os_new(NULL, (destroy_fptr) &key_destroy, false, false, true, store);
+		store->cat->schemas = os_new(NULL, (destroy_fptr) &schema_destroy, false, true, true, true, store);
+		store->cat->objects = os_new(NULL, (destroy_fptr) &key_destroy, false, false, true, false, store);
 	}
 	tr->tmp = store->tmp;
 	TRC_DEBUG(SQL_STORE, "New transaction: %p\n", tr);
@@ -3796,12 +3796,12 @@ schema_dup(sql_trans *tr, sql_schema *s, const char *name, sql_schema **rs)
 
 	sqlstore *store = tr->store;
 	assert(!isTempSchema(s)); // TODO transaction_layer_revamp: check if this is really true
-	ns->tables = os_new(NULL, (destroy_fptr) &table_destroy, false, true, true, store);
-	ns->seqs = os_new(NULL, (destroy_fptr) &seq_destroy, false, true, true, store);
-	ns->keys = os_new(NULL, (destroy_fptr) &key_destroy, false, true, true, store);
-	ns->idxs = os_new(NULL, (destroy_fptr) &idx_destroy, false, true, true, store);
-	ns->triggers = os_new(NULL, (destroy_fptr) &trigger_destroy, false, true, true, store);
-	ns->parts = os_new(NULL, (destroy_fptr) &part_destroy, false, false, true, store);
+	ns->tables = os_new(NULL, (destroy_fptr) &table_destroy, false, true, true, false, store);
+	ns->seqs = os_new(NULL, (destroy_fptr) &seq_destroy, false, true, true, false, store);
+	ns->keys = os_new(NULL, (destroy_fptr) &key_destroy, false, true, true, false, store);
+	ns->idxs = os_new(NULL, (destroy_fptr) &idx_destroy, false, true, true, false, store);
+	ns->triggers = os_new(NULL, (destroy_fptr) &trigger_destroy, false, true, true, false, store);
+	ns->parts = os_new(NULL, (destroy_fptr) &part_destroy, false, false, true, false, store);
 
 	/* table_dup will dup keys, idxs, triggers and parts */
 	struct os_iter oi;
@@ -5111,14 +5111,14 @@ sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid ow
 	s->owner = owner;
 	s->system = FALSE;
 	assert(!isTempSchema(s)); // TODO transaction_layer_revamp: check if this is really true
-	s->tables = os_new(NULL, (destroy_fptr) &table_destroy, false, true, true, store);
-	s->types = os_new(NULL, (destroy_fptr) &type_destroy, false, true, true, store);
-	s->funcs = os_new(NULL, (destroy_fptr) &func_destroy, false, false, false, store);
-	s->seqs = os_new(NULL, (destroy_fptr) &seq_destroy, false, true, true, store);
-	s->keys = os_new(NULL, (destroy_fptr) &key_destroy, false, true, true, store);
-	s->idxs = os_new(NULL, (destroy_fptr) &idx_destroy, false, true, true, store);
-	s->triggers = os_new(NULL, (destroy_fptr) &trigger_destroy, false, true, true, store);
-	s->parts = os_new(NULL, (destroy_fptr) &part_destroy, false, false, true, store);
+	s->tables = os_new(NULL, (destroy_fptr) &table_destroy, false, true, true, false, store);
+	s->types = os_new(NULL, (destroy_fptr) &type_destroy, false, true, true, false, store);
+	s->funcs = os_new(NULL, (destroy_fptr) &func_destroy, false, false, false, false, store);
+	s->seqs = os_new(NULL, (destroy_fptr) &seq_destroy, false, true, true, false, store);
+	s->keys = os_new(NULL, (destroy_fptr) &key_destroy, false, true, true, false, store);
+	s->idxs = os_new(NULL, (destroy_fptr) &idx_destroy, false, true, true, false, store);
+	s->triggers = os_new(NULL, (destroy_fptr) &trigger_destroy, false, true, true, false, store);
+	s->parts = os_new(NULL, (destroy_fptr) &part_destroy, false, false, true, false, store);
 	s->store = tr->store;
 
 	if ((res = store->table_api.table_insert(tr, sysschema, &s->base.id, &s->base.name, &s->auth_id, &s->owner, &s->system))) {
@@ -5952,7 +5952,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 			return res;
 
 	t->base.deleted = 1;
-	
+
 	if (gt && (res = os_del(s->tables, tr, gt->base.name, dup_base(&gt->base))))
 		return res;
 	if (t != gt && (res =os_del(tr->localtmps, tr, t->base.name, dup_base(&t->base))))
