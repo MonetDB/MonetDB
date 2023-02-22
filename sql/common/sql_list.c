@@ -68,6 +68,14 @@ sa_list_append(sql_allocator *sa, list *l, void *data)
 }
 
 list *
+list_add(list *l, void *data)
+{
+	if (!l)
+		l = list_create(NULL);
+	return list_append(l, data);
+}
+
+list *
 list_new(sql_allocator *sa, fdestroy destroy)
 {
 	list *l = (sa)?SA_NEW(sa, list):MNEW(list);
@@ -418,6 +426,23 @@ list_check_prop_all(list *l, prop_check_func f)
 		for (node *n = l->h; n && res; n = n->next)
 			res &= f(n->data);
 	return res;
+}
+
+void
+list_revert(list *l)
+{
+	node *c = NULL;
+
+	l->t = l->h;
+	for (node *o = l->h; o; ) {
+		node *nxt = o->next;
+
+		o->next = c;
+		c = o;
+
+		o = nxt;
+	}
+	l->h = c;
 }
 
 int

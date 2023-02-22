@@ -523,6 +523,13 @@ INSPECTgetEnvironmentKey(str *ret, str *key)
 }
 
 static str
+INSPECTgetDatabaseName(str *ret)
+{
+	char* key = "gdk_dbname";
+	return INSPECTgetEnvironmentKey(ret, &key);
+}
+
+static str
 INSPECTatom_sup_names(bat *ret)
 {
 	int i, k;
@@ -701,6 +708,7 @@ mel_func inspect_init_funcs[] = {
  command("inspect", "getAtomSizes", INSPECTatom_sizes, false, "Collect a BAT with the atom sizes.", args(1,1, batarg("",int))),
  command("inspect", "getEnvironment", INSPECTgetEnvironment, false, "Collect the environment variables.", args(2,2, batarg("k",str),batarg("v",str))),
  command("inspect", "getEnvironment", INSPECTgetEnvironmentKey, false, "Get the value of an environemnt variable", args(1,2, arg("",str),arg("k",str))),
+ command("inspect", "getDatabaseName", INSPECTgetDatabaseName, false, "Return database name", args(1,1, arg("",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"
