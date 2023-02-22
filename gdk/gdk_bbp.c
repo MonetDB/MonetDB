@@ -3184,6 +3184,11 @@ BBPdestroy(BAT *b)
 		if (vtp != 0)
 			BBPrelease(vtp);
 	}
+	if (b->oldtail) {
+		ATOMIC_AND(&b->oldtail->refs, ~DELAYEDREMOVE);
+		HEAPdecref(b->oldtail, true);
+		b->oldtail = NULL;
+	}
 	BATdelete(b);
 
 	BBPclear(b->batCacheid);	/* if destroyed; de-register from BBP */
