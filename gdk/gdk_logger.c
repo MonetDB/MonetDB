@@ -2430,15 +2430,18 @@ log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
 
 	if (is_row)
 		l.flag = tpe;
+	logger_lock(lg);
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    (!is_row && !mnstr_writeLng(lg->output_log, nr)) ||
 	    (!is_row && mnstr_write(lg->output_log, &tpe, 1, 1) != 1) ||
 	    (!is_row && !mnstr_writeLng(lg->output_log, offset))) {
+		logger_unlock(lg);
 		ok = GDK_FAIL;
 		goto bailout;
 	}
 
 	ok = wt(val, lg->output_log, 1);
+	logger_unlock(lg);
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged %d " LLFMT " inserts\n", id, nr);
@@ -2780,7 +2783,7 @@ new_logfile(logger *lg)
 	p = (lng) getfilepos(getFile(lg->output_log));
 	if (p == -1)
 		return GDK_FAIL;
-	if (lg->drops > 100000 || p > log_large || (lg->end*1024) > log_large) {
+	if (((!lg->pending || !lg->pending->next) && lg->drops > 100000) || p > log_large || (lg->end*1024) > log_large) {
 		lg->id++;
 		logger_close_output(lg);
 		return logger_open_output(lg);

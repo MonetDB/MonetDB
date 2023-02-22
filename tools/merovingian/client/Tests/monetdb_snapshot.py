@@ -2,7 +2,7 @@
 
 import locale
 import os
-import pipes
+import shlex
 import re
 import subprocess
 import sys
@@ -97,7 +97,7 @@ with Runner(False) as run:
 
         header('CUSTOM FILENAME')
         custom_name = os.path.join(m.snapdir, 'snap.tar')
-        qcustom_name = pipes.quote(custom_name)
+        qcustom_name = shlex.quote(custom_name)
         m.run_monetdb('snapshot', 'create', '-t', qcustom_name, 'foo1')
         assert os.path.exists(custom_name)
         note("""os.path.exists(custom_name)""")
