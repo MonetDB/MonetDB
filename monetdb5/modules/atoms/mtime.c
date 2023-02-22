@@ -518,6 +518,26 @@ func2(MTIMEtimestamp_add_msec_interval, "timestamp_add_msec_interval",
 	  GET_NEXT_VAR, GET_NEXT_VAR,
 	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
+func2(MTIMEodbc_timestamp_add_msec_interval_time, "odbc_timestamp_add_msec_interval_time",
+	  daytime, lng, timestamp, odbc_timestamp_add_msec_interval_time, func2_except,
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEodbc_timestamp_add_month_interval_time, "odbc_timestamp_add_month_interval_time",
+	  daytime, int, timestamp, odbc_timestamp_add_month_interval_time, func2_except,
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEodbc_timestamp_add_msec_interval_date, "odbc_timestamp_add_msec_interval_date",
+	  date, lng, timestamp, odbc_timestamp_add_msec_interval_date, func2_except,
+	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+
+
 func2(MTIMEtimestamp_sub_month_interval, "timestamp_sub_month_interval",
 	  timestamp, int, timestamp, timestamp_sub_month_interval, func2_except,
 	  DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT,
@@ -1050,6 +1070,318 @@ func2(MTIMEtimestamp_to_str, "timestamp_to_str",
 	  GET_NEXT_VAR, GET_NEXT_ITER,
 	  APPEND_STR, FINISH_BUFFER_SINGLE, FINISH_BUFFER_MULTI)
 
+
+static inline lng
+timestampdiff_sec(timestamp t1, timestamp t2)
+{
+	return TSDIFF(t1, t2)/ 1000;
+}
+
+
+static inline lng
+timestampdiff_sec_date_timestamp(date d, timestamp ts)
+{
+	return timestampdiff_sec(timestamp_fromdate(d), ts);
+}
+
+
+static inline lng
+timestampdiff_sec_timestamp_date(timestamp ts, date d)
+{
+	return timestampdiff_sec(ts, timestamp_fromdate(d));
+}
+
+
+static inline lng
+timestampdiff_min(timestamp t1, timestamp t2)
+{
+	return TSDIFF(t1, t2)/ 1000 / 60;
+}
+
+static inline lng
+timestampdiff_min_date_timestamp(date d, timestamp ts)
+{
+	return timestampdiff_min(timestamp_fromdate(d), ts);
+}
+
+static inline lng
+timestampdiff_min_timestamp_date(timestamp ts, date d)
+{
+	return timestampdiff_min(ts, timestamp_fromdate(d));
+}
+
+static inline lng
+timestampdiff_hour(timestamp t1, timestamp t2)
+{
+	return TSDIFF(t1, t2)/ 1000 / 60/ 60;
+}
+
+static inline lng
+timestampdiff_hour_date_timestamp(date d, timestamp ts)
+{
+	return timestampdiff_hour(timestamp_fromdate(d), ts);
+}
+
+static inline lng
+timestampdiff_hour_timestamp_date(timestamp ts, date d)
+{
+	return timestampdiff_hour(ts, timestamp_fromdate(d));
+}
+
+static inline int
+timestampdiff_day(timestamp t1, timestamp t2)
+{
+	return date_diff(timestamp_date(t1), timestamp_date(t2));
+}
+
+static inline int
+timestampdiff_day_time_timestamp(daytime t, timestamp ts)
+{
+	date today = timestamp_date(timestamp_current());
+	return timestampdiff_day(timestamp_create(today, t), ts);
+}
+
+static inline int
+timestampdiff_day_timestamp_time(timestamp ts, daytime t)
+{
+	date today = timestamp_date(timestamp_current());
+	return timestampdiff_day(ts, timestamp_create(today, t));
+}
+
+static inline int
+timestampdiff_week(timestamp t1, timestamp t2)
+{
+	return date_diff(timestamp_date(t1), timestamp_date(t2))/ 7;
+}
+
+static inline int
+timestampdiff_week_time_timestamp(daytime t, timestamp ts)
+{
+	date today = timestamp_date(timestamp_current());
+	return timestampdiff_week(timestamp_create(today, t), ts);
+}
+
+static inline int
+timestampdiff_week_timestamp_time(timestamp ts, daytime t)
+{
+	date today = timestamp_date(timestamp_current());
+	return timestampdiff_week(ts, timestamp_create(today, t));
+}
+
+static inline int
+timestampdiff_month(timestamp t1, timestamp t2)
+{
+	date d1 = timestamp_date(t1);
+	date d2 = timestamp_date(t2);
+	return ((date_year(d1) - date_year(d2)) * 12) + (date_month(d1) - date_month(d2));
+}
+
+static inline int
+timestampdiff_month_time_timestamp(daytime t, timestamp ts)
+{
+	date today = timestamp_date(timestamp_current());
+	return timestampdiff_month(timestamp_create(today, t), ts);
+}
+
+static inline int
+timestampdiff_month_timestamp_time(timestamp ts, daytime t)
+{
+	date today = timestamp_date(timestamp_current());
+	return timestampdiff_month(ts, timestamp_create(today, t));
+}
+
+static inline int
+timestampdiff_quarter(timestamp t1, timestamp t2)
+{
+	date d1 = timestamp_date(t1);
+	date d2 = timestamp_date(t2);
+	return ((date_year(d1) - date_year(d2)) * 4) + (date_quarter(d1) - date_quarter(d2));
+}
+
+static inline int
+timestampdiff_quarter_time_timestamp(daytime t, timestamp ts)
+{
+	date today = timestamp_date(timestamp_current());
+	return timestampdiff_quarter(timestamp_create(today, t), ts);
+}
+
+static inline int
+timestampdiff_quarter_timestamp_time(timestamp ts, daytime t)
+{
+	date today = timestamp_date(timestamp_current());
+	return timestampdiff_quarter(ts, timestamp_create(today, t));
+}
+
+static inline int
+timestampdiff_year(timestamp t1, timestamp t2)
+{
+	date d1 = timestamp_date(t1);
+	date d2 = timestamp_date(t2);
+	return date_year(d1) - date_year(d2);
+}
+
+static inline int
+timestampdiff_year_time_timestamp(daytime t, timestamp ts)
+{
+	date today = timestamp_date(timestamp_current());
+	return timestampdiff_year(timestamp_create(today, t), ts);
+}
+
+static inline int
+timestampdiff_year_timestamp_time(timestamp ts, daytime t)
+{
+	date today = timestamp_date(timestamp_current());
+	return timestampdiff_year(ts, timestamp_create(today, t));
+}
+
+// odbc timestampdiff variants
+func2(MTIMEtimestampdiff_sec, "timestampdiff_sec",
+	  timestamp, timestamp, lng, timestampdiff_sec, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_sec_d_ts, "timestampdiff_sec_date_timestamp",
+	  date, timestamp, lng, timestampdiff_sec_date_timestamp, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_sec_ts_d, "timestampdiff_sec_timestamp_date",
+	  timestamp, date, lng, timestampdiff_sec_timestamp_date, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_min, "timestampdiff_min",
+	  timestamp, timestamp, lng, timestampdiff_min, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_min_d_ts, "timestampdiff_min_date_timestamp",
+	  date, timestamp, lng, timestampdiff_min_date_timestamp, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_min_ts_d, "timestampdiff_min_timestamp_date",
+	  timestamp, date, lng, timestampdiff_min_timestamp_date, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_hour, "timestampdiff_hour",
+	  timestamp, timestamp, lng, timestampdiff_hour, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_hour_d_ts, "timestampdiff_hour_date_timestamp",
+	  date, timestamp, lng, timestampdiff_hour_date_timestamp, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_hour_ts_d, "timestampdiff_hour_timestamp_date",
+	  timestamp, date, lng, timestampdiff_hour_timestamp_date, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_day, "timestampdiff_day",
+	  timestamp, timestamp, int, timestampdiff_day, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_day_t_ts, "timestampdiff_day_time_timestamp",
+	  daytime, timestamp, int, timestampdiff_day_time_timestamp, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_day_ts_t, "timestampdiff_day_timestamp_time",
+	  timestamp, daytime, int, timestampdiff_day_timestamp_time, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_week, "timestampdiff_week",
+	  timestamp, timestamp, int, timestampdiff_week, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_week_t_ts, "timestampdiff_week_t_ts",
+	  daytime, timestamp, int, timestampdiff_week_time_timestamp, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_week_ts_t, "timestampdiff_week_ts_t",
+	  timestamp, daytime, int, timestampdiff_week_timestamp_time, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_month, "timestampdiff_month",
+	  timestamp, timestamp, int, timestampdiff_month, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_month_t_ts, "timestampdiff_month_time_timestamp",
+	  daytime, timestamp, int, timestampdiff_month_time_timestamp, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_month_ts_t, "timestampdiff_month_timestamp_time",
+	  timestamp, daytime, int, timestampdiff_month_timestamp_time, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_quarter, "timestampdiff_quarter",
+	  timestamp, timestamp, int, timestampdiff_quarter, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_quarter_t_ts, "timestampdiff_quarter_time_timestamp",
+	  daytime, timestamp, int, timestampdiff_quarter_time_timestamp, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_quarter_ts_t, "timestampdiff_quarter_timestamp_time",
+	  timestamp, daytime, int, timestampdiff_quarter_timestamp_time, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_year, "timestampdiff_year",
+	  timestamp, timestamp, int, timestampdiff_year, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_year_t_ts, "timestampdiff_year_time_timestamp",
+	  daytime, timestamp, int, timestampdiff_year_time_timestamp, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestampdiff_year_ts_t, "timestampdiff_year_timestamp_time",
+	  timestamp, daytime, int, timestampdiff_year_timestamp_time, func2_noexcept,
+	  DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT,
+	  INIT_VARIN, INIT_VARIN, INIT_VAROUT,
+	  GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+
+
+
 #include "mel.h"
 static mel_func mtime_init_funcs[] = {
  command("mtime", "epoch", MTIMEseconds_since_epoch, false, "unix-time (epoch) support: seconds since epoch", args(1,2, arg("",int),arg("t",timestamp))),
@@ -1096,6 +1428,7 @@ static mel_func mtime_init_funcs[] = {
  pattern("batmtime", "timestamp_sub_month_interval", MTIMEtimestamp_sub_month_interval_bulk, false, "", args(1,5, batarg("",timestamp),batarg("t",timestamp),batarg("s",int),batarg("s1",oid),batarg("s2",oid))),
  pattern("batmtime", "timestamp_sub_month_interval", MTIMEtimestamp_sub_month_interval_bulk_p1, false, "", args(1,4, batarg("",timestamp),arg("t",timestamp),batarg("s",int),batarg("s",oid))),
  pattern("batmtime", "timestamp_sub_month_interval", MTIMEtimestamp_sub_month_interval_bulk_p2, false, "", args(1,4, batarg("",timestamp),batarg("t",timestamp),arg("s",int),batarg("s",oid))),
+ // --
  command("mtime", "timestamp_add_month_interval", MTIMEtimestamp_add_month_interval, false, "Add months to a timestamp", args(1,3, arg("",timestamp),arg("t",timestamp),arg("s",int))),
  pattern("batmtime", "timestamp_add_month_interval", MTIMEtimestamp_add_month_interval_bulk, false, "", args(1,3, batarg("",timestamp),batarg("t",timestamp),batarg("s",int))),
  pattern("batmtime", "timestamp_add_month_interval", MTIMEtimestamp_add_month_interval_bulk_p1, false, "", args(1,3, batarg("",timestamp),arg("t",timestamp),batarg("s",int))),
@@ -1103,6 +1436,31 @@ static mel_func mtime_init_funcs[] = {
  pattern("batmtime", "timestamp_add_month_interval", MTIMEtimestamp_add_month_interval_bulk, false, "", args(1,5, batarg("",timestamp),batarg("t",timestamp),batarg("s",int),batarg("s1",oid),batarg("s2",oid))),
  pattern("batmtime", "timestamp_add_month_interval", MTIMEtimestamp_add_month_interval_bulk_p1, false, "", args(1,4, batarg("",timestamp),arg("t",timestamp),batarg("s",int),batarg("s",oid))),
  pattern("batmtime", "timestamp_add_month_interval", MTIMEtimestamp_add_month_interval_bulk_p2, false, "", args(1,4, batarg("",timestamp),batarg("t",timestamp),arg("s",int),batarg("s",oid))),
+// odbc timestampadd corner cases
+ command("mtime", "odbc_timestamp_add_msec_time", MTIMEodbc_timestamp_add_msec_interval_time, false, "", args(1,3, arg("",timestamp),arg("t", daytime),arg("ms",lng))),
+ pattern("batmtime", "odbc_timestamp_add_msec_time", MTIMEodbc_timestamp_add_msec_interval_time_bulk, false, "", args(1,3, batarg("",timestamp),batarg("t",daytime),batarg("ms",lng))),
+ pattern("batmtime", "odbc_timestamp_add_msec_time", MTIMEodbc_timestamp_add_msec_interval_time_bulk_p1, false, "", args(1,3, batarg("",timestamp),arg("t",daytime),batarg("ms",lng))),
+ pattern("batmtime", "odbc_timestamp_add_msec_time", MTIMEodbc_timestamp_add_msec_interval_time_bulk_p2, false, "", args(1,3, batarg("",timestamp),batarg("t",daytime),arg("ms",lng))),
+ pattern("batmtime", "odbc_timestamp_add_msec_time", MTIMEodbc_timestamp_add_msec_interval_time_bulk, false, "", args(1,5, batarg("",timestamp),batarg("t",daytime), batarg("ms",lng),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "odbc_timestamp_add_msec_time", MTIMEodbc_timestamp_add_msec_interval_time_bulk_p1, false, "", args(1,4, batarg("",timestamp),arg("t", daytime),batarg("ms",lng),batarg("s",oid))),
+ pattern("batmtime", "odbc_timestamp_add_msec_time", MTIMEodbc_timestamp_add_msec_interval_time_bulk_p2, false, "", args(1,4, batarg("",timestamp),batarg("t", daytime),arg("ms",lng),batarg("s",oid))),
+ // --
+ command("mtime", "odbc_timestamp_add_month_time", MTIMEodbc_timestamp_add_month_interval_time, false, "Add months to a time", args(1,3, arg("",timestamp),arg("t",daytime),arg("s",int))),
+ pattern("batmtime", "odbc_timestamp_add_month_time", MTIMEodbc_timestamp_add_month_interval_time_bulk, false, "", args(1,3, batarg("",timestamp),batarg("t",daytime),batarg("s",int))),
+ pattern("batmtime", "odbc_timestamp_add_month_time", MTIMEodbc_timestamp_add_month_interval_time_bulk_p1, false, "", args(1,3, batarg("",timestamp),arg("t",daytime),batarg("s",int))),
+ pattern("batmtime", "odbc_timestamp_add_month_time", MTIMEodbc_timestamp_add_month_interval_time_bulk_p2, false, "", args(1,3, batarg("",timestamp),batarg("t",daytime),arg("s",int))),
+ pattern("batmtime", "odbc_timestamp_add_month_time", MTIMEodbc_timestamp_add_month_interval_time_bulk, false, "", args(1,5, batarg("",timestamp),batarg("t",daytime),batarg("s",int),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "odbc_timestamp_add_month_time", MTIMEodbc_timestamp_add_month_interval_time_bulk_p1, false, "", args(1,4, batarg("",timestamp),arg("t",daytime),batarg("s",int),batarg("s",oid))),
+ pattern("batmtime", "odbc_timestamp_add_month_time", MTIMEodbc_timestamp_add_month_interval_time_bulk_p2, false, "", args(1,4, batarg("",timestamp),batarg("t",daytime),arg("s",int),batarg("s",oid))),
+ // --
+ command("mtime", "odbc_timestamp_add_msec_date", MTIMEodbc_timestamp_add_msec_interval_date, false, "", args(1,3, arg("",timestamp),arg("d", date),arg("ms",lng))),
+ pattern("batmtime", "odbc_timestamp_add_msec_date", MTIMEodbc_timestamp_add_msec_interval_date_bulk, false, "", args(1,3, batarg("",timestamp),batarg("d",date),batarg("ms",lng))),
+ pattern("batmtime", "odbc_timestamp_add_msec_date", MTIMEodbc_timestamp_add_msec_interval_date_bulk_p1, false, "", args(1,3, batarg("",timestamp),arg("d",date),batarg("ms",lng))),
+ pattern("batmtime", "odbc_timestamp_add_msec_date", MTIMEodbc_timestamp_add_msec_interval_date_bulk_p2, false, "", args(1,3, batarg("",timestamp),batarg("d",date),arg("ms",lng))),
+ pattern("batmtime", "odbc_timestamp_add_msec_date", MTIMEodbc_timestamp_add_msec_interval_date_bulk, false, "", args(1,5, batarg("",timestamp),batarg("d",date), batarg("ms",lng),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "odbc_timestamp_add_msec_date", MTIMEodbc_timestamp_add_msec_interval_date_bulk_p1, false, "", args(1,4, batarg("",timestamp),arg("d", date),batarg("ms",lng),batarg("s",oid))),
+ pattern("batmtime", "odbc_timestamp_add_msec_date", MTIMEodbc_timestamp_add_msec_interval_date_bulk_p2, false, "", args(1,4, batarg("",timestamp),batarg("d", date),arg("ms",lng),batarg("s",oid))),
+// end odbc timestampadd corner cases
  command("mtime", "time_sub_msec_interval", MTIMEtime_sub_msec_interval, false, "Subtract seconds from a time", args(1,3, arg("",daytime),arg("t",daytime),arg("ms",lng))),
  pattern("batmtime", "time_sub_msec_interval", MTIMEtime_sub_msec_interval_bulk, false, "", args(1,3, batarg("",daytime),batarg("t",daytime),batarg("ms",lng))),
  pattern("batmtime", "time_sub_msec_interval", MTIMEtime_sub_msec_interval_bulk_p1, false, "", args(1,3, batarg("",daytime),arg("t",daytime),batarg("ms",lng))),
@@ -1318,6 +1676,198 @@ static mel_func mtime_init_funcs[] = {
  pattern("batcalc", "daytime", MTIMEdaytime_daytime_bulk, false, "", args(1,3, batarg("",daytime),batarg("d",daytime),batarg("s",oid))),
  pattern("batcalc", "daytime", MTIMEdaytime_fromseconds_bulk, false, "", args(1,3, batarg("",daytime),batarg("s",lng),batarg("s",oid))),
  pattern("batcalc", "daytime", MTIMEtimestamp_extract_daytime_bulk, false, "", args(1,3, batarg("",daytime),batarg("t",timestamp),batarg("s",oid))),
+ // -- odbc timestampdiff variants
+ command("mtime", "timestampdiff_sec", MTIMEtimestampdiff_sec, false, "diff in seconds between 'val1' and 'val2'.", args(1,3, arg("",lng),arg("val1",timestamp),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_sec", MTIMEtimestampdiff_sec_bulk, false, "", args(1,3, batarg("",lng),batarg("val1",timestamp),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_sec", MTIMEtimestampdiff_sec_bulk_p1, false, "", args(1,3, batarg("",lng),arg("val1",timestamp),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_sec", MTIMEtimestampdiff_sec_bulk_p2, false, "", args(1,3, batarg("",lng),batarg("val1",timestamp),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_sec", MTIMEtimestampdiff_sec_bulk, false, "", args(1,5, batarg("",lng),batarg("val1",timestamp),batarg("val2",timestamp),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_sec", MTIMEtimestampdiff_sec_bulk_p1, false, "", args(1,4, batarg("",lng),arg("val1",timestamp),batarg("val2",timestamp),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_sec", MTIMEtimestampdiff_sec_bulk_p2, false, "", args(1,4, batarg("",lng),batarg("val1",timestamp),arg("val2",timestamp),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_sec", MTIMEtimestampdiff_sec_d_ts, false, "diff in seconds between 'val1' and 'val2'.", args(1,3, arg("",lng),arg("val1",date),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_sec", MTIMEtimestampdiff_sec_d_ts_bulk, false, "", args(1,3, batarg("",lng),batarg("val1",date),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_sec", MTIMEtimestampdiff_sec_d_ts_bulk_p1, false, "", args(1,3, batarg("",lng),arg("val1",date),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_sec", MTIMEtimestampdiff_sec_d_ts_bulk_p2, false, "", args(1,3, batarg("",lng),batarg("val1",date),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_sec", MTIMEtimestampdiff_sec_d_ts_bulk, false, "", args(1,5, batarg("",lng),batarg("val1",date),batarg("val2",timestamp),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_sec", MTIMEtimestampdiff_sec_d_ts_bulk_p1, false, "", args(1,4, batarg("",lng),arg("val1",date),batarg("val2",timestamp),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_sec", MTIMEtimestampdiff_sec_d_ts_bulk_p2, false, "", args(1,4, batarg("",lng),batarg("val1",date),arg("val2",timestamp),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_sec", MTIMEtimestampdiff_sec_ts_d, false, "diff in seconds between 'val1' and 'val2'.", args(1,3, arg("",lng),arg("val1",timestamp),arg("val2",date))),
+ pattern("batmtime", "timestampdiff_sec", MTIMEtimestampdiff_sec_ts_d_bulk, false, "", args(1,3, batarg("",lng),batarg("val1",timestamp),batarg("val2",date))),
+ pattern("batmtime", "timestampdiff_sec", MTIMEtimestampdiff_sec_ts_d_bulk_p1, false, "", args(1,3, batarg("",lng),arg("val1",timestamp),batarg("val2",date))),
+ pattern("batmtime", "timestampdiff_sec", MTIMEtimestampdiff_sec_ts_d_bulk_p2, false, "", args(1,3, batarg("",lng),batarg("val1",timestamp),arg("val2",date))),
+ pattern("batmtime", "timestampdiff_sec", MTIMEtimestampdiff_sec_ts_d_bulk, false, "", args(1,5, batarg("",lng),batarg("val1",timestamp),batarg("val2",date),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_sec", MTIMEtimestampdiff_sec_ts_d_bulk_p1, false, "", args(1,4, batarg("",lng),arg("val1",timestamp),batarg("val2",date),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_sec", MTIMEtimestampdiff_sec_ts_d_bulk_p2, false, "", args(1,4, batarg("",lng),batarg("val1",timestamp),arg("val2",date),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_min", MTIMEtimestampdiff_min, false, "diff in min between 'val1' and 'val2'.", args(1,3, arg("",lng),arg("val1",timestamp),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_min", MTIMEtimestampdiff_min_bulk, false, "", args(1,3, batarg("",lng),batarg("val1",timestamp),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_min", MTIMEtimestampdiff_min_bulk_p1, false, "", args(1,3, batarg("",lng),arg("val1",timestamp),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_min", MTIMEtimestampdiff_min_bulk_p2, false, "", args(1,3, batarg("",lng),batarg("val1",timestamp),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_min", MTIMEtimestampdiff_min_bulk, false, "", args(1,5, batarg("",lng),batarg("val1",timestamp),batarg("val2",timestamp),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_min", MTIMEtimestampdiff_min_bulk_p1, false, "", args(1,4, batarg("",lng),arg("val1",timestamp),batarg("val2",timestamp),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_min", MTIMEtimestampdiff_min_bulk_p2, false, "", args(1,4, batarg("",lng),batarg("val1",timestamp),arg("val2",timestamp),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_min", MTIMEtimestampdiff_min_d_ts, false, "diff in min between 'val1' and 'val2'.", args(1,3, arg("",lng),arg("val1",date),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_min", MTIMEtimestampdiff_min_d_ts_bulk, false, "", args(1,3, batarg("",lng),batarg("val1",date),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_min", MTIMEtimestampdiff_min_d_ts_bulk_p1, false, "", args(1,3, batarg("",lng),arg("val1",date),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_min", MTIMEtimestampdiff_min_d_ts_bulk_p2, false, "", args(1,3, batarg("",lng),batarg("val1",date),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_min", MTIMEtimestampdiff_min_d_ts_bulk, false, "", args(1,5, batarg("",lng),batarg("val1",date),batarg("val2",timestamp),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_min", MTIMEtimestampdiff_min_d_ts_bulk_p1, false, "", args(1,4, batarg("",lng),arg("val1",date),batarg("val2",timestamp),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_min", MTIMEtimestampdiff_min_d_ts_bulk_p2, false, "", args(1,4, batarg("",lng),batarg("val1",date),arg("val2",timestamp),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_min", MTIMEtimestampdiff_min_ts_d, false, "diff in min between 'val1' and 'val2'.", args(1,3, arg("",lng),arg("val1",timestamp),arg("val2",date))),
+ pattern("batmtime", "timestampdiff_min", MTIMEtimestampdiff_min_ts_d_bulk, false, "", args(1,3, batarg("",lng),batarg("val1",timestamp),batarg("val2",date))),
+ pattern("batmtime", "timestampdiff_min", MTIMEtimestampdiff_min_ts_d_bulk_p1, false, "", args(1,3, batarg("",lng),arg("val1",timestamp),batarg("val2",date))),
+ pattern("batmtime", "timestampdiff_min", MTIMEtimestampdiff_min_ts_d_bulk_p2, false, "", args(1,3, batarg("",lng),batarg("val1",timestamp),arg("val2",date))),
+ pattern("batmtime", "timestampdiff_min", MTIMEtimestampdiff_min_ts_d_bulk, false, "", args(1,5, batarg("",lng),batarg("val1",timestamp),batarg("val2",date),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_min", MTIMEtimestampdiff_min_ts_d_bulk_p1, false, "", args(1,4, batarg("",lng),arg("val1",timestamp),batarg("val2",date),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_min", MTIMEtimestampdiff_min_ts_d_bulk_p2, false, "", args(1,4, batarg("",lng),batarg("val1",timestamp),arg("val2",date),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_hour", MTIMEtimestampdiff_hour, false, "diff in hours between 'val1' and 'val2'.", args(1,3, arg("",lng),arg("val1",timestamp),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_hour", MTIMEtimestampdiff_hour_bulk, false, "", args(1,3, batarg("",lng),batarg("val1",timestamp),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_hour", MTIMEtimestampdiff_hour_bulk_p1, false, "", args(1,3, batarg("",lng),arg("val1",timestamp),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_hour", MTIMEtimestampdiff_hour_bulk_p2, false, "", args(1,3, batarg("",lng),batarg("val1",timestamp),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_hour", MTIMEtimestampdiff_hour_bulk, false, "", args(1,5, batarg("",lng),batarg("val1",timestamp),batarg("val2",timestamp),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_hour", MTIMEtimestampdiff_hour_bulk_p1, false, "", args(1,4, batarg("",lng),arg("val1",timestamp),batarg("val2",timestamp),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_hour", MTIMEtimestampdiff_hour_bulk_p2, false, "", args(1,4, batarg("",lng),batarg("val1",timestamp),arg("val2",timestamp),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_hour", MTIMEtimestampdiff_hour_d_ts, false, "diff in hours between 'val1' and 'val2'.", args(1,3, arg("",lng),arg("val1",date),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_hour", MTIMEtimestampdiff_hour_d_ts_bulk, false, "", args(1,3, batarg("",lng),batarg("val1",date),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_hour", MTIMEtimestampdiff_hour_d_ts_bulk_p1, false, "", args(1,3, batarg("",lng),arg("val1",date),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_hour", MTIMEtimestampdiff_hour_d_ts_bulk_p2, false, "", args(1,3, batarg("",lng),batarg("val1",date),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_hour", MTIMEtimestampdiff_hour_d_ts_bulk, false, "", args(1,5, batarg("",lng),batarg("val1",date),batarg("val2",timestamp),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_hour", MTIMEtimestampdiff_hour_d_ts_bulk_p1, false, "", args(1,4, batarg("",lng),arg("val1",date),batarg("val2",timestamp),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_hour", MTIMEtimestampdiff_hour_d_ts_bulk_p2, false, "", args(1,4, batarg("",lng),batarg("val1",date),arg("val2",timestamp),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_hour", MTIMEtimestampdiff_hour_ts_d, false, "diff in hours between 'val1' and 'val2'.", args(1,3, arg("",lng),arg("val1",timestamp),arg("val2",date))),
+ pattern("batmtime", "timestampdiff_hour", MTIMEtimestampdiff_hour_ts_d_bulk, false, "", args(1,3, batarg("",lng),batarg("val1",timestamp),batarg("val2",date))),
+ pattern("batmtime", "timestampdiff_hour", MTIMEtimestampdiff_hour_ts_d_bulk_p1, false, "", args(1,3, batarg("",lng),arg("val1",timestamp),batarg("val2",date))),
+ pattern("batmtime", "timestampdiff_hour", MTIMEtimestampdiff_hour_ts_d_bulk_p2, false, "", args(1,3, batarg("",lng),batarg("val1",timestamp),arg("val2",date))),
+ pattern("batmtime", "timestampdiff_hour", MTIMEtimestampdiff_hour_ts_d_bulk, false, "", args(1,5, batarg("",lng),batarg("val1",timestamp),batarg("val2",date),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_hour", MTIMEtimestampdiff_hour_ts_d_bulk_p1, false, "", args(1,4, batarg("",lng),arg("val1",timestamp),batarg("val2",date),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_hour", MTIMEtimestampdiff_hour_ts_d_bulk_p2, false, "", args(1,4, batarg("",lng),batarg("val1",timestamp),arg("val2",date),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_day", MTIMEtimestampdiff_day, false, "diff in days between 'val1' and 'val2'.", args(1,3, arg("",int),arg("val1",timestamp),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_day", MTIMEtimestampdiff_day_bulk, false, "", args(1,3, batarg("",int),batarg("val1",timestamp),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_day", MTIMEtimestampdiff_day_bulk_p1, false, "", args(1,3, batarg("",int),arg("val1",timestamp),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_day", MTIMEtimestampdiff_day_bulk_p2, false, "", args(1,3, batarg("",int),batarg("val1",timestamp),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_day", MTIMEtimestampdiff_day_bulk, false, "", args(1,5, batarg("",int),batarg("val1",timestamp),batarg("val2",timestamp),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_day", MTIMEtimestampdiff_day_bulk_p1, false, "", args(1,4, batarg("",int),arg("val1",timestamp),batarg("val2",timestamp),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_day", MTIMEtimestampdiff_day_bulk_p2, false, "", args(1,4, batarg("",int),batarg("val1",timestamp),arg("val2",timestamp),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_day", MTIMEtimestampdiff_day_t_ts, false, "diff in days between 'val1' and 'val2'.", args(1,3, arg("",int),arg("val1",daytime),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_day", MTIMEtimestampdiff_day_t_ts_bulk, false, "", args(1,3, batarg("",int),batarg("val1",daytime),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_day", MTIMEtimestampdiff_day_t_ts_bulk_p1, false, "", args(1,3, batarg("",int),arg("val1",daytime),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_day", MTIMEtimestampdiff_day_t_ts_bulk_p2, false, "", args(1,3, batarg("",int),batarg("val1",daytime),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_day", MTIMEtimestampdiff_day_t_ts_bulk, false, "", args(1,5, batarg("",int),batarg("val1",daytime),batarg("val2",timestamp),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_day", MTIMEtimestampdiff_day_t_ts_bulk_p1, false, "", args(1,4, batarg("",int),arg("val1",daytime),batarg("val2",timestamp),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_day", MTIMEtimestampdiff_day_t_ts_bulk_p2, false, "", args(1,4, batarg("",int),batarg("val1",daytime),arg("val2",timestamp),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_day", MTIMEtimestampdiff_day_ts_t, false, "diff in days between 'val1' and 'val2'.", args(1,3, arg("",int),arg("val1",timestamp),arg("val2",daytime))),
+ pattern("batmtime", "timestampdiff_day", MTIMEtimestampdiff_day_ts_t_bulk, false, "", args(1,3, batarg("",int),batarg("val1",timestamp),batarg("val2",daytime))),
+ pattern("batmtime", "timestampdiff_day", MTIMEtimestampdiff_day_ts_t_bulk_p1, false, "", args(1,3, batarg("",int),arg("val1",timestamp),batarg("val2",daytime))),
+ pattern("batmtime", "timestampdiff_day", MTIMEtimestampdiff_day_ts_t_bulk_p2, false, "", args(1,3, batarg("",int),batarg("val1",timestamp),arg("val2",daytime))),
+ pattern("batmtime", "timestampdiff_day", MTIMEtimestampdiff_day_ts_t_bulk, false, "", args(1,5, batarg("",int),batarg("val1",timestamp),batarg("val2",daytime),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_day", MTIMEtimestampdiff_day_ts_t_bulk_p1, false, "", args(1,4, batarg("",int),arg("val1",timestamp),batarg("val2",daytime),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_day", MTIMEtimestampdiff_day_ts_t_bulk_p2, false, "", args(1,4, batarg("",int),batarg("val1",timestamp),arg("val2",daytime),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_week", MTIMEtimestampdiff_week, false, "diff in weeks between 'val1' and 'val2'.", args(1,3, arg("",int),arg("val1",timestamp),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_week", MTIMEtimestampdiff_week_bulk, false, "", args(1,3, batarg("",int),batarg("val1",timestamp),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_week", MTIMEtimestampdiff_week_bulk_p1, false, "", args(1,3, batarg("",int),arg("val1",timestamp),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_week", MTIMEtimestampdiff_week_bulk_p2, false, "", args(1,3, batarg("",int),batarg("val1",timestamp),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_week", MTIMEtimestampdiff_week_bulk, false, "", args(1,5, batarg("",int),batarg("val1",timestamp),batarg("val2",timestamp),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_week", MTIMEtimestampdiff_week_bulk_p1, false, "", args(1,4, batarg("",int),arg("val1",timestamp),batarg("val2",timestamp),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_week", MTIMEtimestampdiff_week_bulk_p2, false, "", args(1,4, batarg("",int),batarg("val1",timestamp),arg("val2",timestamp),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_week", MTIMEtimestampdiff_week_t_ts, false, "diff in weeks between 'val1' and 'val2'.", args(1,3, arg("",int),arg("val1",daytime),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_week", MTIMEtimestampdiff_week_t_ts_bulk, false, "", args(1,3, batarg("",int),batarg("val1",daytime),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_week", MTIMEtimestampdiff_week_t_ts_bulk_p1, false, "", args(1,3, batarg("",int),arg("val1",daytime),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_week", MTIMEtimestampdiff_week_t_ts_bulk_p2, false, "", args(1,3, batarg("",int),batarg("val1",daytime),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_week", MTIMEtimestampdiff_week_t_ts_bulk, false, "", args(1,5, batarg("",int),batarg("val1",daytime),batarg("val2",timestamp),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_week", MTIMEtimestampdiff_week_t_ts_bulk_p1, false, "", args(1,4, batarg("",int),arg("val1",daytime),batarg("val2",timestamp),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_week", MTIMEtimestampdiff_week_t_ts_bulk_p2, false, "", args(1,4, batarg("",int),batarg("val1",daytime),arg("val2",timestamp),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_week", MTIMEtimestampdiff_week_ts_t, false, "diff in weeks between 'val1' and 'val2'.", args(1,3, arg("",int),arg("val1",timestamp),arg("val2",daytime))),
+ pattern("batmtime", "timestampdiff_week", MTIMEtimestampdiff_week_ts_t_bulk, false, "", args(1,3, batarg("",int),batarg("val1",timestamp),batarg("val2",daytime))),
+ pattern("batmtime", "timestampdiff_week", MTIMEtimestampdiff_week_ts_t_bulk_p1, false, "", args(1,3, batarg("",int),arg("val1",timestamp),batarg("val2",daytime))),
+ pattern("batmtime", "timestampdiff_week", MTIMEtimestampdiff_week_ts_t_bulk_p2, false, "", args(1,3, batarg("",int),batarg("val1",timestamp),arg("val2",daytime))),
+ pattern("batmtime", "timestampdiff_week", MTIMEtimestampdiff_week_ts_t_bulk, false, "", args(1,5, batarg("",int),batarg("val1",timestamp),batarg("val2",daytime),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_week", MTIMEtimestampdiff_week_ts_t_bulk_p1, false, "", args(1,4, batarg("",int),arg("val1",timestamp),batarg("val2",daytime),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_week", MTIMEtimestampdiff_week_ts_t_bulk_p2, false, "", args(1,4, batarg("",int),batarg("val1",timestamp),arg("val2",daytime),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_month", MTIMEtimestampdiff_month, false, "diff in months between 'val1' and 'val2'.", args(1,3, arg("",int),arg("val1",timestamp),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_month", MTIMEtimestampdiff_month_bulk, false, "", args(1,3, batarg("",int),batarg("val1",timestamp),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_month", MTIMEtimestampdiff_month_bulk_p1, false, "", args(1,3, batarg("",int),arg("val1",timestamp),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_month", MTIMEtimestampdiff_month_bulk_p2, false, "", args(1,3, batarg("",int),batarg("val1",timestamp),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_month", MTIMEtimestampdiff_month_bulk, false, "", args(1,5, batarg("",int),batarg("val1",timestamp),batarg("val2",timestamp),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_month", MTIMEtimestampdiff_month_bulk_p1, false, "", args(1,4, batarg("",int),arg("val1",timestamp),batarg("val2",timestamp),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_month", MTIMEtimestampdiff_month_bulk_p2, false, "", args(1,4, batarg("",int),batarg("val1",timestamp),arg("val2",timestamp),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_month", MTIMEtimestampdiff_month_t_ts, false, "diff in months between 'val1' and 'val2'.", args(1,3, arg("",int),arg("val1",daytime),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_month", MTIMEtimestampdiff_month_t_ts_bulk, false, "", args(1,3, batarg("",int),batarg("val1",daytime),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_month", MTIMEtimestampdiff_month_t_ts_bulk_p1, false, "", args(1,3, batarg("",int),arg("val1",daytime),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_month", MTIMEtimestampdiff_month_t_ts_bulk_p2, false, "", args(1,3, batarg("",int),batarg("val1",daytime),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_month", MTIMEtimestampdiff_month_t_ts_bulk, false, "", args(1,5, batarg("",int),batarg("val1",daytime),batarg("val2",timestamp),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_month", MTIMEtimestampdiff_month_t_ts_bulk_p1, false, "", args(1,4, batarg("",int),arg("val1",daytime),batarg("val2",timestamp),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_month", MTIMEtimestampdiff_month_t_ts_bulk_p2, false, "", args(1,4, batarg("",int),batarg("val1",daytime),arg("val2",timestamp),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_month", MTIMEtimestampdiff_month_ts_t, false, "diff in months between 'val1' and 'val2'.", args(1,3, arg("",int),arg("val1",timestamp),arg("val2",daytime))),
+ pattern("batmtime", "timestampdiff_month", MTIMEtimestampdiff_month_ts_t_bulk, false, "", args(1,3, batarg("",int),batarg("val1",timestamp),batarg("val2",daytime))),
+ pattern("batmtime", "timestampdiff_month", MTIMEtimestampdiff_month_ts_t_bulk_p1, false, "", args(1,3, batarg("",int),arg("val1",timestamp),batarg("val2",daytime))),
+ pattern("batmtime", "timestampdiff_month", MTIMEtimestampdiff_month_ts_t_bulk_p2, false, "", args(1,3, batarg("",int),batarg("val1",timestamp),arg("val2",daytime))),
+ pattern("batmtime", "timestampdiff_month", MTIMEtimestampdiff_month_ts_t_bulk, false, "", args(1,5, batarg("",int),batarg("val1",timestamp),batarg("val2",daytime),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_month", MTIMEtimestampdiff_month_ts_t_bulk_p1, false, "", args(1,4, batarg("",int),arg("val1",timestamp),batarg("val2",daytime),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_month", MTIMEtimestampdiff_month_ts_t_bulk_p2, false, "", args(1,4, batarg("",int),batarg("val1",timestamp),arg("val2",daytime),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_quarter", MTIMEtimestampdiff_quarter, false, "diff in months between 'val1' and 'val2'.", args(1,3, arg("",int),arg("val1",timestamp),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_quarter", MTIMEtimestampdiff_quarter_bulk, false, "", args(1,3, batarg("",int),batarg("val1",timestamp),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_quarter", MTIMEtimestampdiff_quarter_bulk_p1, false, "", args(1,3, batarg("",int),arg("val1",timestamp),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_quarter", MTIMEtimestampdiff_quarter_bulk_p2, false, "", args(1,3, batarg("",int),batarg("val1",timestamp),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_quarter", MTIMEtimestampdiff_quarter_bulk, false, "", args(1,5, batarg("",int),batarg("val1",timestamp),batarg("val2",timestamp),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_quarter", MTIMEtimestampdiff_quarter_bulk_p1, false, "", args(1,4, batarg("",int),arg("val1",timestamp),batarg("val2",timestamp),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_quarter", MTIMEtimestampdiff_quarter_bulk_p2, false, "", args(1,4, batarg("",int),batarg("val1",timestamp),arg("val2",timestamp),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_quarter", MTIMEtimestampdiff_quarter_t_ts, false, "diff in months between 'val1' and 'val2'.", args(1,3, arg("",int),arg("val1",daytime),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_quarter", MTIMEtimestampdiff_quarter_t_ts_bulk, false, "", args(1,3, batarg("",int),batarg("val1",daytime),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_quarter", MTIMEtimestampdiff_quarter_t_ts_bulk_p1, false, "", args(1,3, batarg("",int),arg("val1",daytime),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_quarter", MTIMEtimestampdiff_quarter_t_ts_bulk_p2, false, "", args(1,3, batarg("",int),batarg("val1",daytime),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_quarter", MTIMEtimestampdiff_quarter_t_ts_bulk, false, "", args(1,5, batarg("",int),batarg("val1",daytime),batarg("val2",timestamp),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_quarter", MTIMEtimestampdiff_quarter_t_ts_bulk_p1, false, "", args(1,4, batarg("",int),arg("val1",daytime),batarg("val2",timestamp),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_quarter", MTIMEtimestampdiff_quarter_t_ts_bulk_p2, false, "", args(1,4, batarg("",int),batarg("val1",daytime),arg("val2",timestamp),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_quarter", MTIMEtimestampdiff_quarter_ts_t, false, "diff in months between 'val1' and 'val2'.", args(1,3, arg("",int),arg("val1",timestamp),arg("val2",daytime))),
+ pattern("batmtime", "timestampdiff_quarter", MTIMEtimestampdiff_quarter_ts_t_bulk, false, "", args(1,3, batarg("",int),batarg("val1",timestamp),batarg("val2",daytime))),
+ pattern("batmtime", "timestampdiff_quarter", MTIMEtimestampdiff_quarter_ts_t_bulk_p1, false, "", args(1,3, batarg("",int),arg("val1",timestamp),batarg("val2",daytime))),
+ pattern("batmtime", "timestampdiff_quarter", MTIMEtimestampdiff_quarter_ts_t_bulk_p2, false, "", args(1,3, batarg("",int),batarg("val1",timestamp),arg("val2",daytime))),
+ pattern("batmtime", "timestampdiff_quarter", MTIMEtimestampdiff_quarter_ts_t_bulk, false, "", args(1,5, batarg("",int),batarg("val1",timestamp),batarg("val2",daytime),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_quarter", MTIMEtimestampdiff_quarter_ts_t_bulk_p1, false, "", args(1,4, batarg("",int),arg("val1",timestamp),batarg("val2",daytime),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_quarter", MTIMEtimestampdiff_quarter_ts_t_bulk_p2, false, "", args(1,4, batarg("",int),batarg("val1",timestamp),arg("val2",daytime),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_year", MTIMEtimestampdiff_year, false, "diff in months between 'val1' and 'val2'.", args(1,3, arg("",int),arg("val1",timestamp),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_year", MTIMEtimestampdiff_year_bulk, false, "", args(1,3, batarg("",int),batarg("val1",timestamp),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_year", MTIMEtimestampdiff_year_bulk_p1, false, "", args(1,3, batarg("",int),arg("val1",timestamp),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_year", MTIMEtimestampdiff_year_bulk_p2, false, "", args(1,3, batarg("",int),batarg("val1",timestamp),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_year", MTIMEtimestampdiff_year_bulk, false, "", args(1,5, batarg("",int),batarg("val1",timestamp),batarg("val2",timestamp),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_year", MTIMEtimestampdiff_year_bulk_p1, false, "", args(1,4, batarg("",int),arg("val1",timestamp),batarg("val2",timestamp),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_year", MTIMEtimestampdiff_year_bulk_p2, false, "", args(1,4, batarg("",int),batarg("val1",timestamp),arg("val2",timestamp),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_year", MTIMEtimestampdiff_year_t_ts, false, "diff in months between 'val1' and 'val2'.", args(1,3, arg("",int),arg("val1",daytime),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_year", MTIMEtimestampdiff_year_t_ts_bulk, false, "", args(1,3, batarg("",int),batarg("val1",daytime),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_year", MTIMEtimestampdiff_year_t_ts_bulk_p1, false, "", args(1,3, batarg("",int),arg("val1",daytime),batarg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_year", MTIMEtimestampdiff_year_t_ts_bulk_p2, false, "", args(1,3, batarg("",int),batarg("val1",daytime),arg("val2",timestamp))),
+ pattern("batmtime", "timestampdiff_year", MTIMEtimestampdiff_year_t_ts_bulk, false, "", args(1,5, batarg("",int),batarg("val1",daytime),batarg("val2",timestamp),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_year", MTIMEtimestampdiff_year_t_ts_bulk_p1, false, "", args(1,4, batarg("",int),arg("val1",daytime),batarg("val2",timestamp),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_year", MTIMEtimestampdiff_year_t_ts_bulk_p2, false, "", args(1,4, batarg("",int),batarg("val1",daytime),arg("val2",timestamp),batarg("s",oid))),
+ // --
+ command("mtime", "timestampdiff_year", MTIMEtimestampdiff_year_ts_t, false, "diff in months between 'val1' and 'val2'.", args(1,3, arg("",int),arg("val1",timestamp),arg("val2",daytime))),
+ pattern("batmtime", "timestampdiff_year", MTIMEtimestampdiff_year_ts_t_bulk, false, "", args(1,3, batarg("",int),batarg("val1",timestamp),batarg("val2",daytime))),
+ pattern("batmtime", "timestampdiff_year", MTIMEtimestampdiff_year_ts_t_bulk_p1, false, "", args(1,3, batarg("",int),arg("val1",timestamp),batarg("val2",daytime))),
+ pattern("batmtime", "timestampdiff_year", MTIMEtimestampdiff_year_ts_t_bulk_p2, false, "", args(1,3, batarg("",int),batarg("val1",timestamp),arg("val2",daytime))),
+ pattern("batmtime", "timestampdiff_year", MTIMEtimestampdiff_year_ts_t_bulk, false, "", args(1,5, batarg("",int),batarg("val1",timestamp),batarg("val2",daytime),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmtime", "timestampdiff_year", MTIMEtimestampdiff_year_ts_t_bulk_p1, false, "", args(1,4, batarg("",int),arg("val1",timestamp),batarg("val2",daytime),batarg("s",oid))),
+ pattern("batmtime", "timestampdiff_year", MTIMEtimestampdiff_year_ts_t_bulk_p2, false, "", args(1,4, batarg("",int),batarg("val1",timestamp),arg("val2",daytime),batarg("s",oid))),
  { .imp=NULL }
 };
 #include "mal_import.h"
