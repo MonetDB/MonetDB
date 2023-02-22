@@ -332,7 +332,7 @@ MT_mmap(const char *path, int mode, size_t len)
 	fd = open(path, O_CREAT | ((mode & MMAP_WRITE) ? O_RDWR : O_RDONLY) | O_CLOEXEC, MONETDB_MODE);
 	if (fd < 0) {
 		GDKsyserror("open %s failed\n", path);
-		return MAP_FAILED;
+		return NULL;
 	}
 	ret = mmap(NULL,
 		   len,
@@ -343,9 +343,10 @@ MT_mmap(const char *path, int mode, size_t len)
 	if (ret == MAP_FAILED) {
 		GDKsyserror("mmap(%s,%zu) failed\n", path, len);
 		ret = NULL;
+	} else {
+		VALGRIND_MALLOCLIKE_BLOCK(ret, len, 0, 1);
 	}
 	close(fd);
-	VALGRIND_MALLOCLIKE_BLOCK(ret, len, 0, 1);
 	return ret;
 }
 

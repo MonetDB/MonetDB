@@ -3689,7 +3689,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 			if (!c->cleanup) {
 				_DELETE(c);
 			} else if (c->cleanup && !c->cleanup(store, c, oldest)) {
-				/* TODO change too node stealing (no allocs here) */
+				/* TODO change to node stealing (no allocs here) */
 				store->changes = sa_list_append(tr->sa, store->changes, c);
 			} else
 				_DELETE(c);
