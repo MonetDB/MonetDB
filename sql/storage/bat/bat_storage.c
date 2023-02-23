@@ -4311,7 +4311,7 @@ gc_col( sqlstore *store, sql_change *change, ulng oldest, bool drop)
 		lock_column(store, c->base.id); /* lock for concurrent updates (appends) */
 		merge_delta(d);
 		unlock_column(store, c->base.id);
-		return LOG_OK;
+		return 1;
 	}
 	if (drop)
 		column_destroy(store, c);
@@ -4362,7 +4362,7 @@ gc_idx( sqlstore *store, sql_change *change, ulng oldest, bool drop)
 		lock_column(store, i->base.id); /* lock for concurrent updates (appends) */
 		merge_delta(d);
 		unlock_column(store, i->base.id);
-		return LOG_OK;
+		return 1;
 	}
 	if (drop)
 		idx_destroy(store, i);
