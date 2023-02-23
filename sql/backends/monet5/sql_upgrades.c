@@ -198,19 +198,14 @@ check_sys_tables(Client c, mvc *m, sql_schema *s)
 			BBPunfix(b->batCacheid);
 		}
 		res_table_destroy(output);
-		if (i == 0) {
+		if (i == 0 && !needsystabfix) {
 			snprintf(buf, sizeof(buf),
-					 "select args.type from functions join args on functions.id = args.func_id where functions.name = '%s' and inout = 0;\n",
-					 tests[i].name);
-			err = SQLstatementIntern(c, buf, "quarter", true, false, &output);
+					 "select a.type from sys.functions f join sys.args a on f.id = a.func_id where f.name = 'quarter' and f.schema_id = 2000 and a.inout = 0 and a.type = 'int';\n");
+			err = SQLstatementIntern(c, buf, "update", true, false, &output);
 			if (err)
 				return err;
 			if ((b = BATdescriptor(output->cols[0].b)) != NULL) {
-				if (BATcount(b) > 0) {
-					BATiter bi = bat_iterator(b);
-					needsystabfix = strcmp((str) BUNtvar(bi, 0), "int") == 0;
-					bat_iterator_end(&bi);
-				}
+				needsystabfix = BATcount(b) > 0;
 				BBPunfix(b->batCacheid);
 			}
 			res_table_destroy(output);
@@ -4543,7 +4538,7 @@ sql_update_jan2022(Client c, mvc *sql)
 }
 
 static str
-sql_update_sep2022(Client c, mvc *sql)
+sql_update_sep2022(Client c, mvc *sql, sql_schema *s)
 {
 	size_t bufsize = 65536, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
@@ -4555,14 +4550,8 @@ sql_update_sep2022(Client c, mvc *sql)
 
 	/* if sys.db_user_info does not have a column password, we need to
 	 * add a bunch of columns */
-	pos = snprintf(buf, bufsize,
-				   "select id from sys._columns where table_id = (select id from sys._tables where name = 'db_user_info') and name = 'password';\n");
-	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output))) {
-		GDKfree(buf);
-		return err;
-	}
-	if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 0) {
-		pos = 0;
+	sql_table *db_user_info = find_sql_table(sql->session->tr, s, "db_user_info");
+	if (find_sql_column(db_user_info, "password") == NULL) {
 		pos += snprintf(buf + pos, bufsize - pos,
 						"alter table sys.db_user_info add column max_memory bigint;\n"
 						"alter table sys.db_user_info add column max_workers int;\n"
@@ -4688,8 +4677,6 @@ sql_update_sep2022(Client c, mvc *sql)
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 	}
-	res_table_destroy(output);
-	output = NULL;
 	if (err != MAL_SUCCEED) {
 		GDKfree(buf);
 		return err;
@@ -5136,46 +5123,42 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* wlc/wlr support was removed */
-	pos = snprintf(buf, bufsize,
-				   "select id from sys.schemas where name in ('wlc', 'wlr');\n");
-	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)) == NULL) {
-		if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) > 0) {
-			sql_schema *wl = mvc_bind_schema(sql, "wlc");
+	{
+		sql_schema *wl = mvc_bind_schema(sql, "wlc");
+		sql_schema *wr = mvc_bind_schema(sql, "wlr");
+		if (wl != NULL || wr != NULL) {
 			if (wl)
 				wl->system = 0;
-			wl = mvc_bind_schema(sql, "wlr");
-			if (wl)
-				wl->system = 0;
+			if (wr)
+				wr->system = 0;
 
 			pos = 0;
 			pos += snprintf(buf + pos, bufsize - pos,
-						"drop procedure if exists wlc.master() cascade;\n"
-						"drop procedure if exists wlc.master(string) cascade;\n"
-						"drop procedure if exists wlc.stop() cascade;\n"
-						"drop procedure if exists wlc.flush() cascade;\n"
-						"drop procedure if exists wlc.beat(int) cascade;\n"
-						"drop function if exists wlc.clock() cascade;\n"
-						"drop function if exists wlc.tick() cascade;\n"
-						"drop procedure if exists wlr.master(string) cascade;\n"
-						"drop procedure if exists wlr.stop() cascade;\n"
-						"drop procedure if exists wlr.accept() cascade;\n"
-						"drop procedure if exists wlr.replicate() cascade;\n"
-						"drop procedure if exists wlr.replicate(timestamp) cascade;\n"
-						"drop procedure if exists wlr.replicate(tinyint) cascade;\n"
-						"drop procedure if exists wlr.replicate(smallint) cascade;\n"
-						"drop procedure if exists wlr.replicate(integer) cascade;\n"
-						"drop procedure if exists wlr.replicate(bigint) cascade;\n"
-						"drop procedure if exists wlr.beat(integer) cascade;\n"
-						"drop function if exists wlr.clock() cascade;\n"
-						"drop function if exists wlr.tick() cascade;\n"
-						"drop schema if exists wlc cascade;\n"
-						"drop schema if exists wlr cascade;\n");
+							"drop procedure if exists wlc.master() cascade;\n"
+							"drop procedure if exists wlc.master(string) cascade;\n"
+							"drop procedure if exists wlc.stop() cascade;\n"
+							"drop procedure if exists wlc.flush() cascade;\n"
+							"drop procedure if exists wlc.beat(int) cascade;\n"
+							"drop function if exists wlc.clock() cascade;\n"
+							"drop function if exists wlc.tick() cascade;\n"
+							"drop procedure if exists wlr.master(string) cascade;\n"
+							"drop procedure if exists wlr.stop() cascade;\n"
+							"drop procedure if exists wlr.accept() cascade;\n"
+							"drop procedure if exists wlr.replicate() cascade;\n"
+							"drop procedure if exists wlr.replicate(timestamp) cascade;\n"
+							"drop procedure if exists wlr.replicate(tinyint) cascade;\n"
+							"drop procedure if exists wlr.replicate(smallint) cascade;\n"
+							"drop procedure if exists wlr.replicate(integer) cascade;\n"
+							"drop procedure if exists wlr.replicate(bigint) cascade;\n"
+							"drop procedure if exists wlr.beat(integer) cascade;\n"
+							"drop function if exists wlr.clock() cascade;\n"
+							"drop function if exists wlr.tick() cascade;\n"
+							"drop schema if exists wlc cascade;\n"
+							"drop schema if exists wlr cascade;\n");
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
-		res_table_destroy(output);
-		output = NULL;
 	}
 
 	/* new function sys.regexp_replace */
@@ -5449,16 +5432,10 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 
 	/* Add new column 'function_id' to views
 	 * sys.dependency_tables_on_functions and dependency_views_on_functions */
-	pos = snprintf(buf, bufsize,
-				   "SELECT id FROM sys._columns where name = 'function_id' "
-				   "and table_id in (select id FROM sys._tables where system "
-				   "and name in ('dependency_tables_on_functions','dependency_views_on_functions') "
-				   "and schema_id = 2000);\n");
-	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)) == NULL) {
-		if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) != 2) {
-			sql_table *t;
-			if ((t = mvc_bind_table(sql, s, "dependency_tables_on_functions")) != NULL)
-				t->system = 0;
+	{
+		sql_table *t = find_sql_table(sql->session->tr, s, "dependency_tables_on_functions");
+		if (t != NULL && find_sql_column(t, "function_id") == NULL) {
+			t->system = 0;		/* sys.dependency_tables_on_functions */
 			if ((t = mvc_bind_table(sql, s, "dependency_views_on_functions")) != NULL)
 				t->system = 0;
 			pos = 0;
@@ -5487,8 +5464,6 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 			printf("Running database upgrade commands:\n%s\n", buf);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
-		res_table_destroy(output);
-		output = NULL;
 	}
 
 	if (!sql_bind_func(sql, "sys", "database", NULL, NULL, F_FUNC, true)) {
@@ -5822,7 +5797,7 @@ SQLupgrades(Client c, mvc *m)
 		return -1;
 	}
 
-	if ((err = sql_update_sep2022(c, m)) != NULL) {
+	if ((err = sql_update_sep2022(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		return -1;
