@@ -2696,6 +2696,8 @@ bbpclear(bat i, int idx, bool lock)
 			bat first = BBP_free(idx);
 			bat last = first;
 			i = first;
+			BBP_stat_free_count(idx) -= b;
+			BBP_stat_free_min(idx) = BBP_stat_free_max(idx) = BBP_stat_free_count(idx);
 			while (b--) {
 				last = i;
 				i = BBP_next(i);
