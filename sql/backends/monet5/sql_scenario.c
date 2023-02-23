@@ -310,7 +310,7 @@ SQLexecPostLoginTriggers(Client c)
 }
 
 static str
-userCheckCredentials( mvc *m, Client c, str pwhash, str challenge, str algo)
+userCheckCredentials( mvc *m, Client c, const char *pwhash, const char *challenge, const char *algo)
 {
 	oid uid = getUserOIDByName(m, c->username);
 
@@ -365,7 +365,7 @@ userCheckCredentials( mvc *m, Client c, str pwhash, str challenge, str algo)
 }
 
 static char*
-SQLprepareClient(Client c, str pwhash, str challenge, str algo)
+SQLprepareClient(Client c, const char *pwhash, const char *challenge, const char *algo)
 {
 	mvc *m = NULL;
 	backend *be = NULL;
@@ -828,7 +828,7 @@ SQLtrans(mvc *m)
 }
 
 str
-SQLinitClient(Client c, str passwd, str challenge, str algo)
+SQLinitClient(Client c, const char *passwd, const char *challenge, const char *algo)
 {
 	str msg = MAL_SUCCEED;
 
@@ -848,7 +848,7 @@ SQLinitClient(Client c, str passwd, str challenge, str algo)
 }
 
 str
-SQLinitClientFromMAL(Client c, str passwd, str challenge, str algo)
+SQLinitClientFromMAL(Client c, const char *passwd, const char *challenge, const char *algo)
 {
 	str msg = MAL_SUCCEED;
 

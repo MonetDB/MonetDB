@@ -106,29 +106,26 @@
 #endif
 
 static struct SCENARIO scenarioRec[MAXSCEN] = {
-	{"mal", "mal",
-	 0, 0,			/* hardwired MALinit*/
-	 0, 0,			/* implicit */
-	 "MALinitClient", (MALfcn) &MALinitClient,
-	 "MALexitClient", (MALfcn) &MALexitClient,
-	 "MALreader", (MALfcn) &MALreader,
-	 "MALparser", (MALfcn) &MALparser,
-	 "MALoptimizer", 0,
-	 0, 0,
-	 "MALengine", (MALfcn) &MALengine,
-	 "MALcallback", (MALfcn) &MALcallback },
-	{0, 0,		/* name */
-	 0, 0,		/* init */
-	 0, 0,		/* exit */
-	 0, 0,		/* initClient */
-	 0, 0,		/* exitClient */
-	 0, 0,		/* reader */
-	 0, 0,		/* parser */
-	 0, 0,		/* optimizer */
-	 0, 0,		/* scheduler */
-	 0, 0,		/* callback */
-	 0, 0		/* engine */
-	 }
+	{	.name = "mal",
+		.language = "mal",
+		.initClient = "MALinitClient",
+		.initClientCmd = (MALfcn) MALinitClient,
+		.exitClient = "MALexitClient",
+		.exitClientCmd = (MALfcn) MALexitClient,
+		.reader = "MALreader",
+		.readerCmd = (MALfcn) MALreader,
+		.parser = "MALparser",
+		.parserCmd = (MALfcn) MALparser,
+		.optimizer = "MALoptimizer",
+		.optimizerCmd = NULL,
+		.engine = "MALengine",
+		.engineCmd = (MALfcn) MALengine,
+		.callback = "MALcallback",
+		.callbackCmd = (MALfcn) MALcallback,
+	},
+	{
+		.name = NULL,
+	}
 };
 
 static str fillScenario(Client c, Scenario scen);
