@@ -113,6 +113,8 @@ gdk_return BBPinit(bool first)
 bat BBPinsert(BAT *bn)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
+void BBPrelinquish(Thread t)
+	__attribute__((__visibility__("hidden")));
 int BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
 BUN binsearch(const oid *restrict indir, oid offset, int type, const void *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const void *restrict v, int ordering, int last)
@@ -497,7 +499,12 @@ extern size_t GDK_mmap_pagesize; /* mmap granularity */
 		}				\
 	} while (0)
 
-#define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
+
+static inline MT_Lock* _GDKswapLock(bat x) {
+	return &(GDKbatLock[(x)&BBP_BATMASK].swap);
+}
+
+#define GDKswapLock(x)  (*_GDKswapLock(x))
 
 #define HEAPREMOVE	((ATOMIC_BASE_TYPE) 1 << 63)
 #define DELAYEDREMOVE	((ATOMIC_BASE_TYPE) 1 << 62)
