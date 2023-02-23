@@ -2466,7 +2466,8 @@ maybeextend(int idx) {
 	if (BBP_free(GENERAL_LIST_IDX) > 0) {
 		/* take a chunk out of the general free list on top of my own free list */
 		int i = 1;
-		bat cf = BBP_free(GENERAL_LIST_IDX);
+		bat ocf = BBP_free(GENERAL_LIST_IDX);
+		bat cf = ocf;
 		BBP_pidx(cf) = idx;
 		while (BBP_next(cf) && i < FREE_CHUNK_ALLOC_SIZE) {
 			cf = BBP_next(cf);
@@ -2476,7 +2477,7 @@ maybeextend(int idx) {
 		BBP_free(GENERAL_LIST_IDX) = BBP_next(cf);
 		MT_lock_unset(&GDKcacheLock(GENERAL_LIST_IDX));
 		BBP_next(cf) = 0;
-		BBP_free(idx) = cf;
+		BBP_free(idx) = ocf;
 		return GDK_SUCCEED;
 	}
 	/* there wasn't anything left on the general free list */
