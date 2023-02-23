@@ -5219,7 +5219,7 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 	pos = snprintf(buf, bufsize,
 				   "select id from sys.functions where name = 'dump_table_data' and schema_id = 2000 and func like '%% R'')%%';\n");
 	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)) == NULL) {
-		if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 0) {
+		if (((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 0) || find_sql_table(sql->session->tr, s, "remote_user_info") == NULL) {
 			sql_table *t;
 			if ((t = mvc_bind_table(sql, s, "describe_tables")) != NULL)
 				t->system = 0;
@@ -5243,11 +5243,20 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 							"drop view if exists sys.dump_create_users cascade;\n"
 							"drop view if exists sys.describe_tables cascade;\n"
 							"drop function if exists sys.get_remote_table_expressions(string, string) cascade;\n"
+							"drop function if exists sys.remote_table_credentials(string) cascade;\n"
 							"drop function if exists sys.sq(string) cascade;\n");
+			if (find_sql_table(sql->session->tr, s, "remote_user_info") == NULL) {
+				pos += snprintf(buf + pos, bufsize - pos,
+								"create table sys.remote_user_info (table_id int, username varchar(1024), password varchar(256));\n"
+								"create function sys.decypher (cypher string) returns string external name sql.decypher;\n"
+								"update sys.functions set system = true where system <> true and name = 'decypher' and schema_id = 2000 and type = %d;\n"
+								"update sys._tables set system = true where system <> true and name = 'remote_user_info' and schema_id = 2000;\n",
+								F_FUNC);
+			}
 			pos += snprintf(buf + pos, bufsize - pos,
 							"CREATE FUNCTION sys.SQ (s STRING) RETURNS STRING BEGIN RETURN '''' || sys.replace(s,'''','''''') || ''''; END;\n"
 							"CREATE FUNCTION sys.get_remote_table_expressions(s STRING, t STRING) RETURNS STRING BEGIN\n"
-							" RETURN SELECT ' ON ' || sys.SQ(uri) || ' WITH USER ' || sys.SQ(username) || ' ENCRYPTED PASSWORD ' || sys.SQ(\"hash\") FROM sys.remote_table_credentials(s ||'.' || t);\n"
+							" RETURN SELECT ' ON ' || sys.SQ(tt.query) || ' WITH USER ' || sys.SQ(username) || ' ENCRYPTED PASSWORD ' || sys.SQ(sys.decypher(\"password\")) FROM sys.remote_user_info r, sys._tables tt, sys.schemas ss where tt.name = t and ss.name = s and tt.schema_id = ss.id and r.table_id = tt.id;\n"
 							"END;\n"
 							"CREATE VIEW sys.describe_tables AS\n"
 							" SELECT\n"
@@ -5518,40 +5527,31 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 	/* remote credentials where moved */
 	sql_trans *tr = sql->session->tr;
 	sqlstore *store = tr->store;
-	sql_schema *sys = find_sql_schema(tr, "sys");
-	sql_table *remote_user_info = find_sql_table(tr, sys, REMOTE_USER_INFO);
+	sql_table *remote_user_info = find_sql_table(tr, s, "remote_user_info");
 	sql_column *remote_user_info_id = find_sql_column(remote_user_info, "table_id");
-	BAT *rt_key = NULL, *rt_username = NULL, *rt_pwhash = NULL, *rt_deleted = NULL;
+	BAT *rt_key = NULL, *rt_username = NULL, *rt_pwhash = NULL, *rt_uri = NULL, *rt_deleted = NULL;
 	if (!err && store->storage_api.count_col(tr, remote_user_info_id, 0) == 0 && BBPindex("M5system_auth_rt_key")) {
-			pos = 0;
-			pos += snprintf(buf + pos, bufsize - pos,
-							"drop function sys.remote_table_credentials (tablename string);\n"
-							"create function sys.decypher (cypher string) returns string external name sql.decypher;\n"
 
-							"drop function sys.get_remote_table_expressions(s STRING, t STRING);\n"
-							"CREATE FUNCTION sys.get_remote_table_expressions(s STRING, t STRING) RETURNS STRING BEGIN\n"
-							"\tRETURN SELECT ' ON ' || sys.SQ(tt.query) || ' WITH USER ' || sys.SQ(username) || ' ENCRYPTED PASSWORD ' || sys.SQ(sys.decypher(\"password\")) FROM sys.remote_user_info r, sys._tables tt, sys.schemas ss where tt.name = t and ss.name = s and tt.schema_id = ss.id and r.table_id = tt.id;\n"
-							"END;\n"
-							);
-			assert(pos < bufsize);
-			printf("Running database upgrade commands:\n%s\n", buf);
-			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
-			if (err)
-				return err;
-
-		BAT *rt_key = BATdescriptor(BBPindex("M5system_auth_rt_key"));
-		BAT *rt_username = BATdescriptor(BBPindex("M5system_auth_rt_remoteuser"));
-		BAT *rt_pwhash = BATdescriptor(BBPindex("M5system_auth_rt_hashedpwd"));
-		BAT *rt_deleted = BATdescriptor(BBPindex("M5system_auth_rt_deleted"));
-		if (!rt_key || !rt_username || !rt_pwhash || !rt_deleted) /* cleanup remainders and continue or full stop ? */
+		rt_key = BATdescriptor(BBPindex("M5system_auth_rt_key"));
+		rt_uri = BATdescriptor(BBPindex("M5system_auth_rt_uri"));
+		rt_username = BATdescriptor(BBPindex("M5system_auth_rt_remoteuser"));
+		rt_pwhash = BATdescriptor(BBPindex("M5system_auth_rt_hashedpwd"));
+		rt_deleted = BATdescriptor(BBPindex("M5system_auth_rt_deleted"));
+		if (rt_key == NULL || rt_username == NULL || rt_pwhash == NULL || rt_uri == NULL || rt_deleted == NULL) {
+			/* cleanup remainders and continue or full stop ? */
+			BBPreclaim(rt_key);
+			BBPreclaim(rt_uri);
+			BBPreclaim(rt_username);
+			BBPreclaim(rt_pwhash);
+			BBPreclaim(rt_deleted);
 			throw(SQL, __func__, "cannot find M5system_auth bats");
+		}
 
 		BATiter ik = bat_iterator(rt_key);
 		BATiter iu = bat_iterator(rt_username);
 		BATiter ip = bat_iterator(rt_pwhash);
-		for(BUN p = 0; p<BATcount(rt_key); p++ ) {
-			oid pos = p;
-			if (BUNfnd(rt_deleted, &pos) == BUN_NONE) {
+		for (oid p = 0; p < ik.count; p++) {
+			if (BUNfnd(rt_deleted, &p) == BUN_NONE) {
 				char *key = GDKstrdup(BUNtvar(ik, p));
 				char *username = BUNtvar(iu, p);
 				char *pwhash = BUNtvar(ip, p);
@@ -5569,8 +5569,7 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 				char *d = strchr(key, '.');
 				/* . not found simply skip */
 				if (d) {
-					*d = '\0';
-					d++;
+					*d++ = '\0';
 					sql_schema *s = find_sql_schema(tr, key);
 					if (s) {
 						sql_table *t = find_sql_table(tr, s, d);
@@ -5595,28 +5594,33 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		bat_iterator_end(&ip);
 	}
 	if (!err && rt_key) {
-		BAT *rt_uri = BATdescriptor(BBPindex("M5system_auth_rt_uri"));
+		bat rtauthbats[6];
 
-		if (rt_key) {
-			BATmode(rt_key, true);
-			BBPunfix(rt_key->batCacheid);
+		rtauthbats[0] = 0;
+		rtauthbats[1] = rt_key->batCacheid;
+		rtauthbats[2] = rt_uri->batCacheid;
+		rtauthbats[3] = rt_username->batCacheid;
+		rtauthbats[4] = rt_pwhash->batCacheid;
+		rtauthbats[5] = rt_deleted->batCacheid;
+
+		if (BATmode(rt_key, true) != GDK_SUCCEED ||
+			BBPrename(rt_key, NULL) != 0 ||
+			BATmode(rt_username, true) != GDK_SUCCEED ||
+			BBPrename(rt_username, NULL) != 0 ||
+			BATmode(rt_pwhash, true) != GDK_SUCCEED ||
+			BBPrename(rt_pwhash, NULL) != 0 ||
+			BATmode(rt_uri, true) != GDK_SUCCEED ||
+			BBPrename(rt_uri, NULL) != 0 ||
+			BATmode(rt_deleted, true) != GDK_SUCCEED ||
+			BBPrename(rt_deleted, NULL) != 0 ||
+			TMsubcommit_list(rtauthbats, NULL, 6, getBBPlogno(), getBBPtransid()) != GDK_SUCCEED) {
+			fprintf(stderr, "Committing removal of old remote user/password BATs failed\n");
 		}
-		if (rt_username) {
-			BATmode(rt_username, true);
-			BBPunfix(rt_username->batCacheid);
-		}
-		if (rt_pwhash) {
-			BATmode(rt_pwhash, true);
-			BBPunfix(rt_pwhash->batCacheid);
-		}
-		if (rt_uri) {
-			BATmode(rt_uri, true);
-			BBPunfix(rt_uri->batCacheid);
-		}
-		if (rt_deleted) {
-			BATmode(rt_deleted, true);
-			BBPunfix(rt_deleted->batCacheid);
-		}
+		BBPunfix(rt_key->batCacheid);
+		BBPunfix(rt_username->batCacheid);
+		BBPunfix(rt_pwhash->batCacheid);
+		BBPunfix(rt_uri->batCacheid);
+		BBPunfix(rt_deleted->batCacheid);
 	}
 
 	GDKfree(buf);
