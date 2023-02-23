@@ -1,7 +1,3 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
-* Wed Oct 19 2022 Sjoerd Mullender <sjoerd@acm.org>
-- Fix a bug where the MAL optimizer would use the starttime of the
-  previous query to determine whether a query timeout occurred.
-
