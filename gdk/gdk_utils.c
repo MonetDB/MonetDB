@@ -959,7 +959,7 @@ GDKinit(opt *set, int setlen, bool embedded)
 		for (i = 0; i <= BBP_BATMASK; i++) {
 			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "GDKswapLock%d", i);
-			MT_lock_init(&GDKbatLock[i].swap, name);
+			MT_lock_init(&GDKswapLock(i), name);
 		}
 		if (mnstr_init() < 0) {
 			TRC_CRITICAL(GDK, "mnstr_init failed\n");
@@ -1614,6 +1614,11 @@ THRnew(const char *name, MT_Id pid)
 			s->data[0] = THRdata[0];
 			s->data[1] = THRdata[1];
 			s->sp = THRsp();
+			s->free = 0;
+			s->stat_free_max = 0;
+			s->stat_free_min = 0;
+			s->stat_call_count = 0;
+			s->stat_free_count = 0;
 			strcpy_len(s->name, name, sizeof(s->name));
 			TRC_DEBUG(PAR, "%x %zu sp = %zu\n",
 				  (unsigned) s->tid,
@@ -1697,6 +1702,7 @@ void
 THRdel(Thread t)
 {
 	assert(GDKthreads <= t && t < GDKthreads + THREADS);
+	BBPrelinquish(t);
 	MT_thread_setdata(NULL);
 	TRC_DEBUG(PAR, "pid = %zu, disconnected, %d left\n",
 		  (size_t) ATOMIC_GET(&t->pid),
