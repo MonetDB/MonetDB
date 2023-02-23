@@ -2478,6 +2478,8 @@ maybeextend(int idx) {
 		MT_lock_unset(&GDKcacheLock(GENERAL_LIST_IDX));
 		BBP_next(cf) = 0;
 		BBP_free(idx) = ocf;
+		assert(BBP_stat_free_count(idx) == 0);
+		BBP_stat_free_count(idx) += i;
 		return GDK_SUCCEED;
 	}
 	/* there wasn't anything left on the general free list */
@@ -2512,6 +2514,8 @@ maybeextend(int idx) {
 		BBP_next(i - 1)	= i;
 		BBP_pidx(i)		= idx;
 	}
+	assert(BBP_stat_free_count(idx) == 0);
+	BBP_stat_free_count(idx) += FREE_CHUNK_ALLOC_SIZE;
 
 	ATOMIC_SET(&BBPsize, size + FREE_CHUNK_ALLOC_SIZE);
 
@@ -2547,6 +2551,7 @@ BBPinsert(BAT *bn)
 	i = BBP_free(idx);
 	assert(i > 0);
 	BBP_free(idx) = BBP_next(i);
+	BBP_stat_free_count(idx)--;
 
 	if (lock) {
 		MT_lock_unset(&GDKcacheLock(idx));
