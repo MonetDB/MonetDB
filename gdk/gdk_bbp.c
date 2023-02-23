@@ -138,7 +138,7 @@ static struct {
 #define BBP_stat_free_max(y)	GDKbbpLock[y].stat_free_max
 #define BBP_stat_free_min(y)	GDKbbpLock[y].stat_free_min
 #define BBP_stat_call_count(y)	GDKbbpLock[y].stat_call_count
-#define BBP_stat_call_free(y)	GDKbbpLock[y].stat_call_free
+#define BBP_stat_free_count(y)	GDKbbpLock[y].stat_free_count
 
 static gdk_return BBPfree(BAT *b);
 static void BBPdestroy(BAT *b);
@@ -2682,7 +2682,33 @@ bbpclear(bat i, int idx, bool lock)
 	BBP_logical(i) = NULL;
 	BBP_next(i) = BBP_free(idx);
 	BBP_free(idx) = i;
+	int stat_free_count = ++BBP_stat_free_count(idx);
+	if (BBP_stat_free_min(idx) > stat_free_count) {
+		BBP_stat_free_min(idx) = stat_free_count;
+	}
+	else if (BBP_stat_free_max(idx) < stat_free_count) {
+		BBP_stat_free_max(idx) = stat_free_count;
+	}
+	if (++BBP_stat_call_count(idx) == GC_FREE_LIST_CALL_COUNT) {
+		const bat a = (BBP_stat_free_max(idx) - BBP_stat_free_min(idx));
+		bat b = a/2;
+		if (b && 2 * a < BBP_stat_free_min(idx)) {
+			bat first = BBP_free(idx);
+			bat last = first;
+			i = first;
+			while (b--) {
+				last = i;
+				i = BBP_next(i);
+			}
+			BBP_free(idx) = i;
+			MT_lock_set(&GDKcacheLock(GENERAL_LIST_IDX));
+			BBP_next(last) = BBP_free(GENERAL_LIST_IDX);
+			BBP_free(GENERAL_LIST_IDX) = first;
+		}
+		BBP_stat_call_count(idx) = 0;
+	}
 	BBP_pid(i) = ~(MT_Id)0; /* not zero, not a valid thread id */
+
 	if (lock)
 		MT_lock_unset(&GDKcacheLock(idx));
 	MT_lock_unset(&BBPnameLock);
