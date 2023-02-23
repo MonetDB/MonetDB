@@ -412,7 +412,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 	c->blocksize = blocksize;
 
 	if (!GDKembedded() && c->phase[MAL_SCENARIO_INITCLIENT]) {
-		str (*init_client)(Client c, str passwd, str challenge, str algo) = c->phase[MAL_SCENARIO_INITCLIENT];
+		str (*init_client)(Client, const char *, const char *, const char *) = (str (*)(Client, const char *, const char *, const char *)) c->phase[MAL_SCENARIO_INITCLIENT];
 		if ((msg = init_client(c, passwd, challenge, algo)) != MAL_SUCCEED) {
 			mnstr_printf(fout, "!%s\n", msg);
 			if (passwd)
