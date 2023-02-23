@@ -2704,6 +2704,7 @@ bbpclear(bat i, int idx, bool lock)
 			MT_lock_set(&GDKcacheLock(GENERAL_LIST_IDX));
 			BBP_next(last) = BBP_free(GENERAL_LIST_IDX);
 			BBP_free(GENERAL_LIST_IDX) = first;
+			MT_lock_unset(&GDKcacheLock(GENERAL_LIST_IDX));
 		}
 		BBP_stat_call_count(idx) = 0;
 	}
