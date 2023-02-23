@@ -29,6 +29,8 @@ parquet_open_file(char* filename)
 
     parquet_file *file = GDKmalloc(sizeof(parquet_file));
 
+    // TODO: access is not available on Windows.
+    // TODO: probably replace this with GDKfdlocate located in gdk_storage.h
     if (access(filename, F_OK) != 0) {
       reader = NULL;
     } 
@@ -49,118 +51,80 @@ static char* parquet_type_map(GArrowType type) {
         return  "NA";
         
       case GARROW_TYPE_BOOLEAN:
-        return  "boolean";
+        return  "BOOL";
         
       case GARROW_TYPE_UINT8:
-        return  "uint8";
-        
       case GARROW_TYPE_INT8:
-        return  "int8";
-        
-      case GARROW_TYPE_UINT16:
-        return  "uint16";
+        return  "TINYINT";
         
       case GARROW_TYPE_INT16:
-        return  "int16";
+      case GARROW_TYPE_UINT16:
+        return  "SMALLINT";
         
       case GARROW_TYPE_UINT32:
-        return  "uint32";
-        
       case GARROW_TYPE_INT32:
-        return  "int32";
-        
+        return  "INT";
+
       case GARROW_TYPE_UINT64:
-        return  "uint64";
-        
       case GARROW_TYPE_INT64:
-        return  "int64";
-        
-      case GARROW_TYPE_HALF_FLOAT:
-        return  "half float";
+        return  "BIGINT";
         
       case GARROW_TYPE_FLOAT:
-        return  "type float";
+      case GARROW_TYPE_HALF_FLOAT:
+        return  "FLOAT";
         
       case GARROW_TYPE_DOUBLE:
-        return  "double";
+        return  "DOUBLE";
         
       case GARROW_TYPE_STRING:
-        return  "type string";
+        return  "STRING";
         
       case GARROW_TYPE_BINARY:
-        return  "type binary";
-        
       case GARROW_TYPE_FIXED_SIZE_BINARY:
-        return  "fixed size binary";
+        return  "BLOB";
         
       case GARROW_TYPE_DATE32:
-        return  "date32";
-        
       case GARROW_TYPE_DATE64:
-        return  "date64";
+        return  "DATE";
         
       case GARROW_TYPE_TIMESTAMP:
-        return  "timestamp";
-        
       case GARROW_TYPE_TIME32:
-        return  "time32";
-        
       case GARROW_TYPE_TIME64:
-        return  "time64";
-        
-      case GARROW_TYPE_MONTH_INTERVAL:
-        return  "type month interval";
-        
-      case GARROW_TYPE_DAY_TIME_INTERVAL:
-        return  "day time interval";
+        return  "TIMESTAMP";
         
       case GARROW_TYPE_DECIMAL128:
-        return  "decimal128";
-        
       case GARROW_TYPE_DECIMAL256:
-        return  "decimal256";
+        return  "DECIMAL";
         
       case GARROW_TYPE_LIST:
-        return  "type list";
-        
+      case GARROW_TYPE_LARGE_LIST:
       case GARROW_TYPE_STRUCT:
-        return  "type struct";
-        
       case GARROW_TYPE_SPARSE_UNION:
-        return  "sparse union";
-        
       case GARROW_TYPE_DENSE_UNION:
-        return  "dense union";
-        
       case GARROW_TYPE_DICTIONARY:
-        return  "type dict";
-        
       case GARROW_TYPE_MAP:
-        return  "type map";
-        
       case GARROW_TYPE_EXTENSION:
-        return  "type extension";
-        
       case GARROW_TYPE_FIXED_SIZE_LIST:
-        return  "fixed size list";
-        
       case GARROW_TYPE_DURATION:
-        return  "type duration";
+        return NULL;
+        
         
       case GARROW_TYPE_LARGE_STRING:
-        return  "large string";
+        return  "TEXT";
         
       case GARROW_TYPE_LARGE_BINARY:
         return  "Large binary";
         
-      case GARROW_TYPE_LARGE_LIST:
-        return  "Large list";
-        
+      ///
+      /// TODO: figure out what this should be.
+      ///
+      case GARROW_TYPE_MONTH_INTERVAL:
+      case GARROW_TYPE_DAY_TIME_INTERVAL:
       case GARROW_TYPE_MONTH_DAY_NANO_INTERVAL:
-        return  "Month Day interval";
+        return  NULL;
     } // switch
 
-    return "not implemented";
+    return NULL;
 }
 
 static str
@@ -182,25 +146,28 @@ parquet_add_types(mvc *sql, sql_subfunc *f, char *filename)
   guint n_columns = garrow_table_get_n_columns(table);
 
   list *types = sa_list(sql->sa);
+  list *col_names = sa_list(sql->sa);
 
   for(int col = 0; col < (int)n_columns; col++) {
       GArrowChunkedArray *array = garrow_table_get_column_data(table, col);
       GArrowType type = garrow_chunked_array_get_value_type(array);
       char* st = parquet_type_map(type);
 
-      printf("%s", st);
+      if(st) {
+        /// add to list.
+        	sql_subtype *t = sql_bind_subtype(sql->sa, st, 8, 0);
+
+          sa_list_append(sql->sa, types, t);
+      }
+      else {
+        throw(SQL, SQLSTATE(42000), "parquet" RUNTIME_LOAD_ERROR); // TODO: this should throw a 'unsupported column type' error.
+      }
   }
 
-	// for each parquet column
-	// 	get type from parquet column
-
-	// 	sql_subtype *t = find_type( using meta data);
-
-    //     append(types, t);
-    // }
-	(void)table;
+  (void)table;
 	/* cleanup tbl */
-    f->res = types;
+  f->res = types;
+  f->colnames = col_names;
 
 	/* close file */
 	GDKfree(file);
