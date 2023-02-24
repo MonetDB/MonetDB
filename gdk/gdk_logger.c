@@ -581,36 +581,38 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT** cands)
 			GDKfree(hv);
 		}
 
-		if (res == LOG_OK && tr_grow(tr) == GDK_SUCCEED) {
-			tr->changes[tr->nr].type = l->flag;
-			if (l->flag==LOG_UPDATE_BULK && offset == -1) {
-				assert(cands); // bat r is part of a group of bats logged together.
-				struct canditer ci;
-				canditer_init(&ci, NULL, *cands);
-				const oid first = canditer_peek(&ci);
-				const oid last = canditer_last(&ci);
-				offset = (lng) first;
-				pnr = (lng) (last - first) + 1;
-				if (!lg->flushing ) {
-					assert(uid == NULL);
-					uid = *cands;
-					BBPfix((*cands)->batCacheid);
-					tr->changes[tr->nr].type = LOG_UPDATE;
+		if (res == LOG_OK) {
+			if (tr_grow(tr) == GDK_SUCCEED) {
+				tr->changes[tr->nr].type = l->flag;
+				if (l->flag==LOG_UPDATE_BULK && offset == -1) {
+					assert(cands); // bat r is part of a group of bats logged together.
+					struct canditer ci;
+					canditer_init(&ci, NULL, *cands);
+					const oid first = canditer_peek(&ci);
+					const oid last = canditer_last(&ci);
+					offset = (lng) first;
+					pnr = (lng) (last - first) + 1;
+					if (!lg->flushing ) {
+						assert(uid == NULL);
+						uid = *cands;
+						BBPfix((*cands)->batCacheid);
+						tr->changes[tr->nr].type = LOG_UPDATE;
+					}
 				}
+				if (l->flag==LOG_UPDATE_CONST) {
+					assert(!cands); // TODO: This might change in the future.
+					tr->changes[tr->nr].type = LOG_UPDATE_BULK;
+				}
+				tr->changes[tr->nr].nr = pnr;
+				tr->changes[tr->nr].tt = tpe;
+				tr->changes[tr->nr].cid = id;
+				tr->changes[tr->nr].offset = offset;
+				tr->changes[tr->nr].b = r;
+				tr->changes[tr->nr].uid = uid;
+				tr->nr++;
+			} else {
+				res = LOG_ERR;
 			}
-			if (l->flag==LOG_UPDATE_CONST) {
-				assert(!cands); // TODO: This might change in the future.
-				tr->changes[tr->nr].type = LOG_UPDATE_BULK;
-			}
-			tr->changes[tr->nr].nr = pnr;
-			tr->changes[tr->nr].tt = tpe;
-			tr->changes[tr->nr].cid = id;
-			tr->changes[tr->nr].offset = offset;
-			tr->changes[tr->nr].b = r;
-			tr->changes[tr->nr].uid = uid;
-			tr->nr++;
-		} else {
-			res = LOG_ERR;
 		}
 		if (res == LOG_ERR) {
 			if (r)
