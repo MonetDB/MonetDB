@@ -546,8 +546,9 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, sql_exp *e)
 	file_loader_t *fl = fl_find(ext);
 	/* TODO add errors on missing file loader */
 	if (fl) {
-		 fl->add_types(sql, f, filename); /* TODO check for errors */
-		 return NULL;
+		 str err = fl->add_types(sql, f, filename); /* TODO check for errors */
+		 if (err)
+			return err;
 	}
 	return NULL;
 }
