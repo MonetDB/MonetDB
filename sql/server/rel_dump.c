@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -252,7 +254,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			strcmp(exp_relname(e), e->l) == 0 &&
 			strcmp(exp_name(e), e->r) == 0)
 			alias = 0;
-		if (!exp_relname(e) && exp_name(e) && strcmp(exp_name(e), e->r)==0)
+		if (!exp_relname(e) && exp_name(e) && !e->l && strcmp(exp_name(e), e->r)==0)
 			alias = 0;
 	 	break;
 	case e_cmp:
@@ -685,7 +687,7 @@ rel_print_(mvc *sql, stream *fout, sql_rel *rel, int depth, list *refs, int deco
 
 			if (run->name) { /* if name is set, then the optimizer did run */
 				print_indent(sql, fout, depth, decorate);
-				mnstr_printf(fout, "%-36s %3d actions " LLFMT " usec",
+				mnstr_printf(fout, "# %-36s %3d actions " LLFMT " usec",
 							 run->name, run->nchanges, run->time);
 			}
 		}

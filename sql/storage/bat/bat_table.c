@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -164,6 +166,7 @@ column_find_##TPE(sql_trans *tr, sql_column *c, oid rid) \
 
 column_find_tpe(sqlid)
 column_find_tpe(bte)
+column_find_tpe(sht)
 column_find_tpe(int)
 column_find_tpe(lng)
 
@@ -597,7 +600,7 @@ rids_join(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
 	}
 	bat_destroy(lcb);
 	bat_destroy(rcb);
-	return l;
+	return l->data ? l : NULL;
 }
 
 static rids *
@@ -624,7 +627,7 @@ rids_semijoin(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
 	}
 	bat_destroy(lcb);
 	bat_destroy(rcb);
-	return l;
+	return l->data ? l : NULL;
 }
 
 static subrids *
@@ -807,6 +810,7 @@ bat_table_init( table_functions *tf )
 	tf->column_find_value = column_find_value;
 	tf->column_find_sqlid = column_find_sqlid;
 	tf->column_find_bte = column_find_bte;
+	tf->column_find_sht = column_find_sht;
 	tf->column_find_int = column_find_int;
 	tf->column_find_lng = column_find_lng;
 	tf->column_find_string_start = column_find_string_start; /* this function returns a pointer to the heap, use it with care! */

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 
 # skipif <system>
 # onlyif <system>
@@ -665,10 +667,10 @@ class SQLLogic:
             if not line:
                 break
             if line.startswith('#'): # skip mal comments
-                self.writeline(line.rstrip('\n'))
+                self.writeline(line.rstrip())
                 continue
             if self.language == 'sql' and line.startswith('--'):
-                self.writeline(line.rstrip('\n'))
+                self.writeline(line.rstrip())
                 continue
             if line == '\n':
                 self.writeline()
@@ -678,7 +680,7 @@ class SQLLogic:
             if line.startswith('@connection'):
                 conn_params = self.parse_connection_string(line)
                 conn = self.get_connection(conn_params.get('conn_id')) or self.add_connection(**conn_params)
-                self.writeline(line)
+                self.writeline(line.rstrip())
                 line = self.readline()
             words = line.split()
             if not words:
@@ -688,13 +690,13 @@ class SQLLogic:
                     skipping = True
                 elif words[0] == 'onlyif' and words[1] != 'MonetDB':
                     skipping = True
-                self.writeline(line)
+                self.writeline(line.rstrip())
                 line = self.readline()
                 words = line.split()
             hashlabel = None
             if words[0] == 'hash-threshold':
                 self.threshold = int(words[1])
-                self.writeline(line)
+                self.writeline(line.rstrip())
                 self.writeline()
             elif words[0] == 'statement':
                 expected_err_code = None
@@ -727,8 +729,13 @@ class SQLLogic:
                     self.writeline(' '.join(result))
                 else:
                     self.writeline(stline)
+                dostrip = True
                 for line in statement:
+                    if dostrip:
+                        line = line.rstrip()
                     self.writeline(line, replace=True)
+                    if dostrip and '<COPY_INTO_DATA>' in line:
+                        dostrip = False
                 self.writeline()
             elif words[0] == 'query':
                 columns = words[1]
@@ -774,14 +781,14 @@ class SQLLogic:
                     result1, result2 = self.exec_query('\n'.join(query), columns, sorting, pyscript, hashlabel, nresult, hash, expected, conn=conn, verbose=verbose)
                     self.writeline(' '.join(result1))
                     for line in query:
-                        self.writeline(line, replace=True)
+                        self.writeline(line.rstrip(), replace=True)
                     self.writeline('----')
                     for line in result2:
                         self.writeline(line)
                 else:
-                    self.writeline(qrline)
+                    self.writeline(qrline.rstrip())
                     for line in query:
-                        self.writeline(line)
+                        self.writeline(line.rstrip())
                     self.writeline('----')
                     if hash:
                         self.writeline('{} values hashing to {}'.format(

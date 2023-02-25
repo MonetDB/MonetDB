@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -128,7 +130,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 
 		if (ATOMneedheap(tt)) {
 			if ((bn->tvheap = GDKmalloc(sizeof(Heap))) == NULL) {
-				BBPclear(bn->batCacheid, true);
+				BBPclear(bn->batCacheid);
 				HEAPfree(bn->theap, true);
 				GDKfree(bn->theap);
 				GDKfree(bn);
@@ -294,7 +296,7 @@ COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 	TRC_DEBUG(ALGO, "-> " ALGOBATFMT "\n", ALGOBATPAR(bn));
 	return bn;
   bailout:
-	BBPclear(bn->batCacheid, true);
+	BBPclear(bn->batCacheid);
 	return NULL;
 }
 
@@ -648,7 +650,14 @@ BATclear(BAT *b, bool force)
 	BAThseqbase(b, 0);
 	BATtseqbase(b, ATOMtype(b->ttype) == TYPE_oid ? 0 : oid_nil);
 	b->theap->dirty = true;
-	BATsettrivprop(b);
+	b->tnonil = true;
+	b->tnil = false;
+	b->tsorted = b->trevsorted = ATOMlinear(b->ttype);
+	b->tnosorted = b->tnorevsorted = 0;
+	b->tkey = true;
+	b->tnokey[0] = b->tnokey[1] = 0;
+	b->tminpos = b->tmaxpos = BUN_NONE;
+	b->tunique_est = 0;
 	MT_lock_unset(&b->theaplock);
 	if (tvp != 0 && tvp != b->batCacheid)
 		BBPrelease(tvp);
@@ -681,10 +690,26 @@ BATfree(BAT *b)
 	if (nunique != BUN_NONE) {
 		b->tunique_est = (double) nunique;
 	}
+	/* wait until there are no other references to the heap; a
+	 * reference is possible in e.g. BBPsync that uses a
+	 * bat_iterator directly on the BBP_desc, i.e. without fix */
+	while (b->theap && (ATOMIC_GET(&b->theap->refs) & HEAPREFS) > 1) {
+		MT_lock_unset(&b->theaplock);
+		MT_sleep_ms(1);
+		MT_lock_set(&b->theaplock);
+	}
 	if (b->theap) {
 		assert((ATOMIC_GET(&b->theap->refs) & HEAPREFS) == 1);
 		assert(b->theap->parentid == b->batCacheid);
 		HEAPfree(b->theap, false);
+	}
+	/* wait until there are no other references to the heap; a
+	 * reference is possible in e.g. BBPsync that uses a
+	 * bat_iterator directly on the BBP_desc, i.e. without fix */
+	while (b->tvheap && (ATOMIC_GET(&b->tvheap->refs) & HEAPREFS) > 1) {
+		MT_lock_unset(&b->theaplock);
+		MT_sleep_ms(1);
+		MT_lock_set(&b->theaplock);
 	}
 	if (b->tvheap) {
 		assert((ATOMIC_GET(&b->tvheap->refs) & HEAPREFS) == 1);
@@ -714,9 +739,9 @@ BATdestroy(BAT *b)
 		GDKfree(b->theap);
 	}
 	if (b->oldtail) {
+		ATOMIC_AND(&b->oldtail->refs, ~DELAYEDREMOVE);
 		/* the bat has not been committed, so we cannot remove
 		 * the old tail file */
-		ATOMIC_AND(&b->oldtail->refs, ~DELAYEDREMOVE);
 		HEAPdecref(b->oldtail, false);
 		b->oldtail = NULL;
 	}
@@ -1166,10 +1191,57 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			b->tkey = count == 1;
 			b->tnil = true;
 			b->tnonil = false;
+			b->tunique_est = 1;
 		} else {
-			b->tsorted = b->trevsorted = b->tkey = count == 1;
+			int c;
 			b->tnil = b->tnonil = false;
+			switch (count) {
+			case 1:
+				b->tsorted = b->trevsorted = b->tkey = true;
+				b->tunique_est = 1;
+				break;
+			case 2:
+				if (b->tvheap)
+					c = ATOMcmp(b->ttype,
+						    ((void **) values)[0],
+						    ((void **) values)[1]);
+				else
+					c = ATOMcmp(b->ttype,
+						    values,
+						    (char *) values + b->twidth);
+				b->tsorted = c <= 0;
+				b->tnosorted = !b->tsorted;
+				b->trevsorted = c >= 0;
+				b->tnorevsorted = !b->trevsorted;
+				b->tkey = c != 0;
+				b->tnokey[0] = 0;
+				b->tnokey[1] = !b->tkey;
+				b->tunique_est = (double) (1 + b->tkey);
+				break;
+			default:
+				b->tsorted = b->trevsorted = b->tkey = false;
+				break;
+			}
 		}
+	} else if (b->batCount == 1 && count == 1) {
+		BATiter bi = bat_iterator_nolock(b);
+		if (values != NULL) {
+			if (b->tvheap)
+				t = ((void **) values)[0];
+			else
+				t = values;
+		}
+		int c = ATOMcmp(b->ttype, BUNtail(bi, 0), t);
+		b->tsorted = c <= 0;
+		b->tnosorted = !b->tsorted;
+		b->trevsorted = c >= 0;
+		b->tnorevsorted = !b->trevsorted;
+		b->tkey = c != 0;
+		b->tnokey[0] = 0;
+		b->tnokey[1] = !b->tkey;
+		b->tunique_est = (double) (1 + b->tkey);
+		b->tnil |= values == NULL;
+		b->tnonil = false;
 	} else {
 		b->tnil |= values == NULL;
 		b->tnonil = false;
@@ -1177,6 +1249,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	}
 	BATiter bi = bat_iterator_nolock(b);
 	MT_lock_unset(&b->theaplock);
+	MT_rwlock_wrlock(&b->thashlock);
 	if (values && b->ttype) {
 		int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
 		const void *atomnil = ATOMnilptr(b->ttype);
@@ -1191,6 +1264,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				t = ((void **) values)[i];
 				gdk_return rc = tfastins_nocheckVAR(b, p, t);
 				if (rc != GDK_SUCCEED) {
+					MT_rwlock_wrunlock(&b->thashlock);
 					return rc;
 				}
 				if (vbase != b->tvheap->base) {
@@ -1231,7 +1305,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				}
 				p++;
 			}
-			MT_rwlock_wrlock(&b->thashlock);
 			if (b->thash) {
 				p -= count;
 				for (BUN i = 0; i < count; i++) {
@@ -1241,7 +1314,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				}
 				nunique = b->thash ? b->thash->nunique : 0;
 			}
-			MT_rwlock_wrunlock(&b->thashlock);
 		} else if (ATOMstorage(b->ttype) == TYPE_msk) {
 			bi.minpos = bi.maxpos = BUN_NONE;
 			minvalp = maxvalp = NULL;
@@ -1255,7 +1327,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				minvalp = BUNtloc(bi, bi.minpos);
 			if (bi.maxpos != BUN_NONE)
 				maxvalp = BUNtloc(bi, bi.maxpos);
-			MT_rwlock_wrlock(&b->thashlock);
 			for (BUN i = 0; i < count; i++) {
 				t = (void *) ((char *) values + (i << b->tshift));
 				gdk_return rc = tfastins_nocheckFIX(b, p, t);
@@ -1286,14 +1357,12 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				p++;
 			}
 			nunique = b->thash ? b->thash->nunique : 0;
-			MT_rwlock_wrunlock(&b->thashlock);
 		}
 		MT_lock_set(&b->theaplock);
 		b->tminpos = bi.minpos;
 		b->tmaxpos = bi.maxpos;
 		MT_lock_unset(&b->theaplock);
 	} else {
-		MT_rwlock_wrlock(&b->thashlock);
 		for (BUN i = 0; i < count; i++) {
 			gdk_return rc = tfastins_nocheck(b, p, t);
 			if (rc != GDK_SUCCEED) {
@@ -1306,13 +1375,13 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			p++;
 		}
 		nunique = b->thash ? b->thash->nunique : 0;
-		MT_rwlock_wrunlock(&b->thashlock);
 	}
 	MT_lock_set(&b->theaplock);
 	BATsetcount(b, p);
 	if (nunique != 0)
 		b->tunique_est = (double) nunique;
 	MT_lock_unset(&b->theaplock);
+	MT_rwlock_wrunlock(&b->thashlock);
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
@@ -1592,14 +1661,11 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			}
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 << b->tshift))) {
-				/* doesn't fit in current heap, upgrade
-				 * it, can't keep hashlock while doing
-				 * so */
-				MT_rwlock_wrunlock(&b->thashlock);
+				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, _d, 0, bi.count) != GDK_SUCCEED) {
+					MT_rwlock_wrunlock(&b->thashlock);
 					return GDK_FAIL;
 				}
-				MT_rwlock_wrlock(&b->thashlock);
 			}
 			/* reinitialize iterator after possible heap upgrade */
 			{

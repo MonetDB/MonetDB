@@ -48,7 +48,7 @@ HAVE_GEOM?ST_Contains
 
 #HAVE_GEOM?equals
 
-HAVE_GEOM?ST_Boundary
+HAVE_GEOM&GEOS_VERSION>=3.11.1?ST_Boundary
 
 HAVE_GEOM?ST_Dimension
 HAVE_GEOM?ST_CoordDim

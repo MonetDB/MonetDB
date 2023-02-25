@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #ifndef _LOGGER_INTERNALS_H_
@@ -28,6 +30,7 @@ struct logger {
 	int saved_tid;		/* id of transaction which was flushed out (into BBP storage)  */
 	bool flushing;
 	bool flushnow;
+	ulng drops;
 	bool request_rotation;
 	logged_range *pending;
 	logged_range *current;
@@ -45,6 +48,7 @@ struct logger {
 	lng end;		/* end of pre-allocated blocks for faster f(data)sync */
 
 	ATOMIC_TYPE refcount; /* Number of active writers and flushers in the logger */ // TODO check refcount in c->log and c->end
+	bool flushing_output_log; /* prevent output_log that is currently being flushed from being closed */
 	MT_Lock rotation_lock;
 	MT_Lock lock;
 	/* Store log_bids (int) to circumvent trouble with reference counting */

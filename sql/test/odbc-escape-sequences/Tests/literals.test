@@ -1,0 +1,36 @@
+query T rowsort
+select {d '2022-10-31'}
+----
+2022-10-31
+
+query T rowsort
+select {t '12:15:31'}
+----
+12:15:31
+
+# with precision
+query T rowsort
+select {t '12:15:31.073400'}
+----
+12:15:31.073400
+
+# with precision
+query T rowsort
+select {ts '2022-02-17 02:08:12.345678'}
+----
+2022-02-17 02:08:12.345678
+
+query T rowsort
+select {ts '2022-02-17 02:08:12'}
+----
+2022-02-17 02:08:12
+
+query T rowsort
+select { guid 'e751f9e0-2cee-4eca-b0c2-1cf108cebd18' }
+----
+e751f9e0-2cee-4eca-b0c2-1cf108cebd18
+
+query T rowsort
+select {interval '1' day}
+----
+1

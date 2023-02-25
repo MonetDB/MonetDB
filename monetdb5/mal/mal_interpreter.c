@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -20,6 +22,7 @@
 #include "mal_private.h"
 #include "mal_internal.h"
 #include "mal_function.h"
+#include "mal_factory.h"
 
 static lng qptimeout = 0; /* how often we print still running queries (usec) */
 
@@ -282,7 +285,6 @@ prepareMALstack(MalBlkPtr mb, int size)
 		return NULL;
 	stk->stktop = mb->vtop;
 	stk->blk = mb;
-	stk->workers = 0;
 	stk->memory = 0;
 	initStack(0, res);
 	if(!res) {
@@ -325,7 +327,7 @@ runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 			throw(MAL, "mal.interpreter","stack too small");
 		initStack(env->stkbot, res);
 		if(!res)
-			throw(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
+			throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		stk = prepareMALstack(mb, mb->vsize);
 		if (stk == 0)
@@ -652,7 +654,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				lhs = &stk->stk[pci->argv[k]];
 				rhs = &stk->stk[pci->argv[i]];
 				if(VALcopy(lhs, rhs) == NULL) {
-					ret = createException(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
+					ret = createException(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
 				} else if (lhs->vtype == TYPE_bat && !is_bat_nil(lhs->val.bval))
 					BBPretain(lhs->val.bval);
@@ -751,12 +753,12 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			InstrPtr q;
 			int ii, arg;
 
-			stk->pcup = stkpc;
 			nstk = prepareMALstack(pci->blk, pci->blk->vsize);
 			if (nstk == 0){
 				ret= createException(MAL,"mal.interpreter",MAL_STACK_FAIL);
 				break;
 			}
+			nstk->pcup = stkpc;
 
 			/*safeguardStack*/
 			nstk->stkdepth = nstk->stksize + stk->stkdepth;
@@ -782,7 +784,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				rhs = &stk->stk[pci->argv[ii]];
 				if(VALcopy(lhs, rhs) == NULL) {
 					GDKfree(nstk);
-					ret = createException(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
+					ret = createException(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
 				} else if (lhs->vtype == TYPE_bat)
 					BBPretain(lhs->val.bval);
@@ -800,7 +802,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 			break;
 		}
-		case NOOPsymbol:
 		case REMsymbol:
 			break;
 		case ENDsymbol:
@@ -839,7 +840,8 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 			stkpc= mb->stop;
 			continue;
-		}	}
+		}
+		}
 
 		/* monitoring information should reflect the input arguments,
 		   which may be removed by garbage collection  */
@@ -951,7 +953,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				exceptionVar = findVariableLength(mb, ret, (int)(msg - ret));
 			}
 			if (exceptionVar == -1)
-				exceptionVar = findVariable(mb, "ANYexception");
+				exceptionVar = findVariableLength(mb, "ANYexception", 12);
 
 			/* unknown exceptions lead to propagation */
 			if (exceptionVar == -1) {
@@ -1220,7 +1222,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						rhs = &stk->stk[pp->argv[i]];
 						lhs = &env->stk[pci->argv[i]];
 						if(VALcopy(lhs, rhs) == NULL) {
-							ret = createException(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
+							ret = createException(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 							break;
 						} else if (lhs->vtype == TYPE_bat)
 							BBPretain(lhs->val.bval);
@@ -1420,8 +1422,6 @@ garbageElement(Client cntxt, ValPtr v)
 		   bid, BBP_lrefs(bid),BBP_refs(bid));*/
 		v->val.bval = bat_nil;
 		if (is_bat_nil(bid))
-			return;
-		if (!BBP_lrefs(bid))
 			return;
 		BBPcold(bid);
 		BBPrelease(bid);

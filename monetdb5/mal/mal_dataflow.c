@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -48,7 +50,7 @@ typedef struct FLOWEVENT {
 	sht cost;
 	lng hotclaim;   /* memory foot print of result variables */
 	lng argclaim;   /* memory foot print of arguments */
-	lng maxclaim;   /* memory foot print of  largest argument, counld be used to indicate result size */
+	lng maxclaim;   /* memory foot print of largest argument, could be used to indicate result size */
 } *FlowEvent, FlowEventRec;
 
 typedef struct queue {
@@ -247,17 +249,17 @@ q_dequeue(Queue *q, Client cntxt)
 		return NULL;
 	}
 	{
-		int i, minpc;
+		int minpc;
 
 		minpc = q->last -1;
 		s = q->data[minpc];
 		/* for long "queues", just grab the first eligible entry we encounter */
-		if (q->last < 1024) {
-			for (i = q->last - 1; i >= 0; i--) {
-				if ( cntxt ==  NULL || q->data[i]->flow->cntxt == cntxt) {
+		if (s && q->last < 1024) {
+			for (int i = q->last - 1; i >= 0; i--) {
+				if (cntxt ==  NULL || q->data[i]->flow->cntxt == cntxt) {
 					/* for shorter "queues", find the oldest eligible entry */
 					r = q->data[i];
-					if (s && r && s->pc > r->pc) {
+					if (r && s->pc > r->pc) {
 						minpc = i;
 						s = r;
 					}
@@ -266,9 +268,10 @@ q_dequeue(Queue *q, Client cntxt)
 		}
 		if (minpc >= 0) {
 			r = q->data[minpc];
-			i = minpc;
 			q->last--;
-			memmove(q->data + i, q->data + i + 1, (q->last - i) * sizeof(q->data[0]));
+			if (minpc < q->last)
+				memmove(q->data + minpc, q->data + minpc + 1,
+						(q->last - minpc) * sizeof(q->data[0]));
 		}
 	}
 	MT_lock_unset(&q->l);
@@ -368,20 +371,28 @@ DFLOWworker(void *T)
 
 			p= getInstrPtr(flow->mb,fe->pc);
 			claim = fe->argclaim;
-			if (MALadmission_claim(flow->cntxt, flow->mb, flow->stk, p, claim)) {
-				// never block on deblockdataflow()
-				if( p->fcn != (MALfcn) deblockdataflow){
-					fe->hotclaim = 0;   /* don't assume priority anymore */
-					fe->maxclaim = 0;
-					if (todo->last == 0)
-						MT_sleep_ms(DELAYUNIT);
-					q_requeue(todo, fe);
-					continue;
-				}
+			if (p->fcn != (MALfcn) deblockdataflow && /* never block on deblockdataflow() */
+				!MALadmission_claim(flow->cntxt, flow->mb, flow->stk, p, claim)) {
+				fe->hotclaim = 0;   /* don't assume priority anymore */
+				fe->maxclaim = 0;
+				MT_lock_set(&todo->l);
+				int last = todo->last;
+				MT_lock_unset(&todo->l);
+				if (last == 0)
+					MT_sleep_ms(DELAYUNIT);
+				q_requeue(todo, fe);
+				continue;
+			}
+			ATOMIC_BASE_TYPE wrks = ATOMIC_INC(&flow->cntxt->workers);
+			ATOMIC_BASE_TYPE mwrks = ATOMIC_GET(&flow->mb->workers);
+			while (wrks > mwrks) {
+				if (ATOMIC_CAS(&flow->mb->workers, &mwrks, wrks))
+					break;
 			}
 			error = runMALsequence(flow->cntxt, flow->mb, fe->pc, fe->pc + 1, flow->stk, 0, 0);
+			(void) ATOMIC_DEC(&flow->cntxt->workers);
 			/* release the memory claim */
-			MALadmission_release(flow->cntxt, flow->mb, flow->stk, p,  claim);
+			MALadmission_release(flow->cntxt, flow->mb, flow->stk, p, claim);
 
 			MT_lock_set(&flow->flowlock);
 			fe->state = DFLOWwrapup;
@@ -428,13 +439,9 @@ DFLOWworker(void *T)
 			for (last = fe->pc - flow->start; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last]){
 				if (flow->status[i].state == DFLOWpending && flow->status[i].blocks == 1) {
 					/* find the one with the largest footprint */
-					if( nxt == -1){
+					if (nxt == -1 || flow->status[i].argclaim > nxtclaim) {
 						nxt = i;
 						nxtclaim = flow->status[i].argclaim;
-					}
-					if( flow->status[i].argclaim > nxtclaim){
-						nxt = i;
-						nxtclaim =  flow->status[i].argclaim;
 					}
 				}
 			}
@@ -722,12 +729,14 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 	/* initialize the eligible statements */
 	fe = flow->status;
 
+	(void) ATOMIC_DEC(&flow->cntxt->workers);
 	MT_lock_set(&flow->flowlock);
 	for (i = 0; i < actions; i++)
 		if (fe[i].blocks == 0) {
 			p = getInstrPtr(flow->mb,fe[i].pc);
 			if (p == NULL) {
 				MT_lock_unset(&flow->flowlock);
+				(void) ATOMIC_INC(&flow->cntxt->workers);
 				throw(MAL, "dataflow", "DFLOWscheduler(): getInstrPtr(flow->mb,fe[i].pc) returned NULL");
 			}
 			fe[i].argclaim = 0;
@@ -743,8 +752,10 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 		f = q_dequeue(flow->done, NULL);
 		if (ATOMIC_GET(&exiting))
 			break;
-		if (f == NULL)
+		if (f == NULL) {
+			(void) ATOMIC_INC(&flow->cntxt->workers);
 			throw(MAL, "dataflow", "DFLOWscheduler(): q_dequeue(flow->done) returned NULL");
+		}
 
 		/*
 		 * When an instruction is finished we have to reduce the blocked
@@ -770,6 +781,7 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 	/* release the worker from its specific task (turn it into a
 	 * generic worker) */
 	ATOMIC_PTR_SET(&w->cntxt, NULL);
+	(void) ATOMIC_INC(&flow->cntxt->workers);
 	/* wrap up errors */
 	assert(flow->done->last == 0);
 	if ((ret = ATOMIC_PTR_XCG(&flow->error, NULL)) != NULL ) {

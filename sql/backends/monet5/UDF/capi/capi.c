@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -471,7 +473,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	lng initial_output_count = -1;
 
-	struct sigaction sa, oldsa, oldsb;
+	struct sigaction sa = (struct sigaction) {.sa_flags = 0}, oldsa, oldsb;
 	sigset_t signal_set;
 
 #ifdef NDEBUG
@@ -524,8 +526,6 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		(void)sigaddset(&signal_set, SIGSEGV);
 		(void)sigaddset(&signal_set, SIGBUS);
 		(void)pthread_sigmask(SIG_UNBLOCK, &signal_set, NULL);
-
-		sa = (struct sigaction) {.sa_flags = 0,};
 	}
 
 	sqlfun = *(sql_func **)getArgReference_ptr(stk, pci, pci->retc);
@@ -1403,7 +1403,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			errno = 0;
 			goto wrapup;
 		}
-		sa = (struct sigaction) {.sa_flags = 0,};
+		sa = (struct sigaction) {.sa_flags = 0};
 	}
 
 	if (msg) {

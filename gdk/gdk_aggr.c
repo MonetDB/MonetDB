@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -54,6 +56,8 @@
  * This function finds the minimum and maximum group id (and the
  * number of groups) and initializes the variables for candidates
  * selection.
+ *
+ * In case of error, returns an error message.
  */
 const char *
 BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
@@ -214,11 +218,10 @@ dofsum(const void *restrict values, oid seqb,
 	if (pergroup == NULL)
 		return BUN_NONE;
 	for (grp = 0; grp < ngrp; grp++) {
-		pergroup[grp].npartials = 0;
-		pergroup[grp].valseen = false;
-		pergroup[grp].maxpartials = 2;
-		pergroup[grp].infs = 0;
-		pergroup[grp].partials = GDKmalloc(pergroup[grp].maxpartials * sizeof(double));
+		pergroup[grp] = (struct pergroup) {
+			.maxpartials = 2,
+			.partials = GDKmalloc(2 * sizeof(double)),
+		};
 		if (pergroup[grp].partials == NULL) {
 			while (grp > 0)
 				GDKfree(pergroup[--grp].partials);

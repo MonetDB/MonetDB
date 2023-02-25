@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /* (author) M. Kersten */
@@ -160,11 +162,6 @@ mal_init(char *modules[], bool embedded, const char *initpasswd)
 
 	if (initialize_tl_client_key() != 0)
 		return -1;
-
-	if ((err = AUTHinitTables()) != MAL_SUCCEED) {
-		freeException(err);
-		return -1;
-	}
 
 	if (!MCinit())
 		return -1;
