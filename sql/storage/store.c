@@ -52,8 +52,15 @@ store_transaction_id(sqlstore *store)
 }
 
 ulng
-store_oldest(sqlstore *store)
+store_oldest(sqlstore *store, sql_trans *tr)
 {
+	if (tr && tr->ts == store->oldest) {
+		sql_session *s = store->active->h->data;
+		if (s->tr == tr && store->active->h->next) {
+			s = store->active->h->next->data;
+			return s->tr->ts;
+		}
+	}
 	return store->oldest;
 }
 
@@ -1090,14 +1097,14 @@ load_schema(sql_trans *tr, res_table *rt_schemas, res_table *rt_tables, res_tabl
 		s->system = *(bte*)store->table_api.table_fetch_value(rt_schemas, find_sql_column(ss, "system"));
 		s->owner = *(sqlid*)store->table_api.table_fetch_value(rt_schemas, find_sql_column(ss, "owner"));
 
-		s->tables = os_new(NULL, (destroy_fptr) &table_destroy, false, true, true, store);
-		s->types = os_new(NULL, (destroy_fptr) &type_destroy, false, true, true, store);
-		s->funcs = os_new(NULL, (destroy_fptr) &func_destroy, false, false, false, store);
-		s->seqs = os_new(NULL, (destroy_fptr) &seq_destroy, false, true, true, store);
-		s->keys = os_new(NULL, (destroy_fptr) &key_destroy, false, true, true, store);
-		s->idxs = os_new(NULL, (destroy_fptr) &idx_destroy, false, true, true, store);
-		s->triggers = os_new(NULL, (destroy_fptr) &trigger_destroy, false, true, true, store);
-		s->parts = os_new(NULL, (destroy_fptr) &part_destroy, false, false, true, store);
+		s->tables = os_new(NULL, (destroy_fptr) &table_destroy, false, true, true, false, store);
+		s->types = os_new(NULL, (destroy_fptr) &type_destroy, false, true, true, false, store);
+		s->funcs = os_new(NULL, (destroy_fptr) &func_destroy, false, false, false, false, store);
+		s->seqs = os_new(NULL, (destroy_fptr) &seq_destroy, false, true, true, false, store);
+		s->keys = os_new(NULL, (destroy_fptr) &key_destroy, false, true, true, false, store);
+		s->idxs = os_new(NULL, (destroy_fptr) &idx_destroy, false, true, true, false, store);
+		s->triggers = os_new(NULL, (destroy_fptr) &trigger_destroy, false, true, true, false, store);
+		s->parts = os_new(NULL, (destroy_fptr) &part_destroy, false, false, true, false, store);
 	}
 
 	TRC_DEBUG(SQL_STORE, "Load schema: %s %d\n", s->base.name, s->base.id);
@@ -1759,14 +1766,14 @@ bootstrap_create_schema(sql_trans *tr, const char *name, sqlid id, sqlid auth_id
 	s->auth_id = auth_id;
 	s->owner = owner;
 	s->system = TRUE;
-	s->tables = os_new(NULL, (destroy_fptr) &table_destroy, false, true, true, store);
-	s->types = os_new(NULL, (destroy_fptr) &type_destroy, false, true, true, store);
-	s->funcs = os_new(NULL, (destroy_fptr) &func_destroy, false, false, false, store);
-	s->seqs = os_new(NULL, (destroy_fptr) &seq_destroy, false, true, true, store);
-	s->keys = os_new(NULL, (destroy_fptr) &key_destroy, false, true, true, store);
-	s->idxs = os_new(NULL, (destroy_fptr) &idx_destroy, false, true, true, store);
-	s->triggers = os_new(NULL, (destroy_fptr) &trigger_destroy, false, true, true, store);
-	s->parts = os_new(NULL, (destroy_fptr) &part_destroy, false, false, true, store);
+	s->tables = os_new(NULL, (destroy_fptr) &table_destroy, false, true, true, false, store);
+	s->types = os_new(NULL, (destroy_fptr) &type_destroy, false, true, true, false, store);
+	s->funcs = os_new(NULL, (destroy_fptr) &func_destroy, false, false, false, false, store);
+	s->seqs = os_new(NULL, (destroy_fptr) &seq_destroy, false, true, true, false, store);
+	s->keys = os_new(NULL, (destroy_fptr) &key_destroy, false, true, true, false, store);
+	s->idxs = os_new(NULL, (destroy_fptr) &idx_destroy, false, true, true, false, store);
+	s->triggers = os_new(NULL, (destroy_fptr) &trigger_destroy, false, true, true, false, store);
+	s->parts = os_new(NULL, (destroy_fptr) &part_destroy, false, false, true, false, store);
 	if (os_add(tr->cat->schemas, tr, s->base.name, &s->base)) {
 		return NULL;
 	}
@@ -2334,7 +2341,7 @@ id_hash_clear_older(sql_hash *h, ulng oldest)
 }
 
 static void
-store_pending_changes(sqlstore *store, ulng oldest)
+store_pending_changes(sqlstore *store, ulng oldest, sql_trans *tr)
 {
 	ulng oldest_changes = store_get_timestamp(store);
 	if (!list_empty(store->changes)) { /* lets first cleanup old stuff */
@@ -2346,7 +2353,7 @@ store_pending_changes(sqlstore *store, ulng oldest)
 			if (c->cleanup(store, c, oldest)) {
 				list_remove_node(store->changes, store, n);
 				_DELETE(c);
-			} else if (c->ts < oldest_changes) {
+			} else if (!c->handled && c->ts < oldest_changes) {
 				oldest_changes = c->ts;
 			}
 			n = next;
@@ -2356,7 +2363,7 @@ store_pending_changes(sqlstore *store, ulng oldest)
 		dep_hash_clear(store->dependencies);
 		dep_hash_clear(store->depchanges);
 	} else {
-		ulng stoldest = store_oldest(store);
+		ulng stoldest = store_oldest(store, tr);
 		id_hash_clear_older(store->dependencies, stoldest);
 		id_hash_clear_older(store->depchanges, stoldest);
 	}
@@ -2380,7 +2387,7 @@ store_manager(sqlstore *store)
 			store_lock(store);
 			if (ATOMIC_GET(&store->nr_active) == 0) {
 				ulng oldest = store_timestamp(store)+1;
-				store_pending_changes(store, oldest);
+				store_pending_changes(store, oldest, NULL);
 			}
 			store_unlock(store);
 			MT_lock_set(&store->flush);
@@ -3664,7 +3671,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		if (!commit_lock)
 			MT_lock_set(&store->commit);
 		store_lock(store);
-		ulng oldest = store_oldest(store);
+		ulng oldest = store_oldest(store, tr);
 		ulng commit_ts = store_get_timestamp(store); /* use most recent timestamp such that we can cleanup savely */
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
@@ -3673,7 +3680,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 				c->commit(tr, c, 0 /* ie rollback */, oldest);
 			c->ts = commit_ts;
 		}
-		store_pending_changes(store, oldest);
+		store_pending_changes(store, oldest, tr);
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
 
@@ -3695,8 +3702,8 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		if (!commit_lock)
 			MT_lock_set(&store->commit);
 		store_lock(store);
-		ulng oldest = store_oldest(store);
-		store_pending_changes(store, oldest);
+		ulng oldest = store_oldest(store, tr);
+		store_pending_changes(store, oldest, tr);
 		store_unlock(store);
 		if (!commit_lock)
 			MT_lock_unset(&store->commit);
@@ -3755,7 +3762,7 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	}
 
 	if (!parent) {
-		tr->localtmps = os_new(NULL, (destroy_fptr) &table_destroy, true, true, false, store);
+		tr->localtmps = os_new(NULL, (destroy_fptr) &table_destroy, true, true, false, false, store);
 	}
 	else {
 		tr->localtmps = os_dup(parent->localtmps);
@@ -3767,8 +3774,8 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	tr->cat = store->cat;
 	if (!tr->cat) {
 		store->cat = tr->cat = ZNEW(sql_catalog);
-		store->cat->schemas = os_new(NULL, (destroy_fptr) &schema_destroy, false, true, true, store);
-		store->cat->objects = os_new(NULL, (destroy_fptr) &key_destroy, false, false, true, store);
+		store->cat->schemas = os_new(NULL, (destroy_fptr) &schema_destroy, false, true, true, true, store);
+		store->cat->objects = os_new(NULL, (destroy_fptr) &key_destroy, false, false, true, false, store);
 	}
 	tr->tmp = store->tmp;
 	TRC_DEBUG(SQL_STORE, "New transaction: %p\n", tr);
@@ -3789,12 +3796,12 @@ schema_dup(sql_trans *tr, sql_schema *s, const char *name, sql_schema **rs)
 
 	sqlstore *store = tr->store;
 	assert(!isTempSchema(s)); // TODO transaction_layer_revamp: check if this is really true
-	ns->tables = os_new(NULL, (destroy_fptr) &table_destroy, false, true, true, store);
-	ns->seqs = os_new(NULL, (destroy_fptr) &seq_destroy, false, true, true, store);
-	ns->keys = os_new(NULL, (destroy_fptr) &key_destroy, false, true, true, store);
-	ns->idxs = os_new(NULL, (destroy_fptr) &idx_destroy, false, true, true, store);
-	ns->triggers = os_new(NULL, (destroy_fptr) &trigger_destroy, false, true, true, store);
-	ns->parts = os_new(NULL, (destroy_fptr) &part_destroy, false, false, true, store);
+	ns->tables = os_new(NULL, (destroy_fptr) &table_destroy, false, true, true, false, store);
+	ns->seqs = os_new(NULL, (destroy_fptr) &seq_destroy, false, true, true, false, store);
+	ns->keys = os_new(NULL, (destroy_fptr) &key_destroy, false, true, true, false, store);
+	ns->idxs = os_new(NULL, (destroy_fptr) &idx_destroy, false, true, true, false, store);
+	ns->triggers = os_new(NULL, (destroy_fptr) &trigger_destroy, false, true, true, false, store);
+	ns->parts = os_new(NULL, (destroy_fptr) &part_destroy, false, false, true, false, store);
 
 	/* table_dup will dup keys, idxs, triggers and parts */
 	struct os_iter oi;
@@ -4006,14 +4013,14 @@ sql_trans_commit(sql_trans *tr)
 		}
 		else {
 			commit_ts = store_timestamp(store);
-			oldest = store_oldest(store);
+			oldest = store_oldest(store, tr);
 		}
 		tr->logchanges = 0;
 		TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
 		/* apply committed changes */
 		if (ATOMIC_GET(&store->nr_active) == 1 && !tr->parent)
 			oldest = commit_ts;
-		store_pending_changes(store, oldest);
+		store_pending_changes(store, oldest, tr);
 		for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
 			sql_change *c = n->data;
 
@@ -4073,7 +4080,7 @@ sql_trans_commit(sql_trans *tr)
 		MT_lock_set(&store->commit);
 		store_lock(store);
 		ulng oldest = store_timestamp(store);
-		store_pending_changes(store, oldest);
+		store_pending_changes(store, oldest, tr);
 		store_unlock(store);
 		MT_lock_unset(&store->commit);
 	}
@@ -5104,14 +5111,14 @@ sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid ow
 	s->owner = owner;
 	s->system = FALSE;
 	assert(!isTempSchema(s)); // TODO transaction_layer_revamp: check if this is really true
-	s->tables = os_new(NULL, (destroy_fptr) &table_destroy, false, true, true, store);
-	s->types = os_new(NULL, (destroy_fptr) &type_destroy, false, true, true, store);
-	s->funcs = os_new(NULL, (destroy_fptr) &func_destroy, false, false, false, store);
-	s->seqs = os_new(NULL, (destroy_fptr) &seq_destroy, false, true, true, store);
-	s->keys = os_new(NULL, (destroy_fptr) &key_destroy, false, true, true, store);
-	s->idxs = os_new(NULL, (destroy_fptr) &idx_destroy, false, true, true, store);
-	s->triggers = os_new(NULL, (destroy_fptr) &trigger_destroy, false, true, true, store);
-	s->parts = os_new(NULL, (destroy_fptr) &part_destroy, false, false, true, store);
+	s->tables = os_new(NULL, (destroy_fptr) &table_destroy, false, true, true, false, store);
+	s->types = os_new(NULL, (destroy_fptr) &type_destroy, false, true, true, false, store);
+	s->funcs = os_new(NULL, (destroy_fptr) &func_destroy, false, false, false, false, store);
+	s->seqs = os_new(NULL, (destroy_fptr) &seq_destroy, false, true, true, false, store);
+	s->keys = os_new(NULL, (destroy_fptr) &key_destroy, false, true, true, false, store);
+	s->idxs = os_new(NULL, (destroy_fptr) &idx_destroy, false, true, true, false, store);
+	s->triggers = os_new(NULL, (destroy_fptr) &trigger_destroy, false, true, true, false, store);
+	s->parts = os_new(NULL, (destroy_fptr) &part_destroy, false, false, true, false, store);
 	s->store = tr->store;
 
 	if ((res = store->table_api.table_insert(tr, sysschema, &s->base.id, &s->base.name, &s->auth_id, &s->owner, &s->system))) {
@@ -5945,7 +5952,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 			return res;
 
 	t->base.deleted = 1;
-	
+
 	if (gt && (res = os_del(s->tables, tr, gt->base.name, dup_base(&gt->base))))
 		return res;
 	if (t != gt && (res =os_del(tr->localtmps, tr, t->base.name, dup_base(&t->base))))
@@ -6781,13 +6788,14 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	return res;
 }
 
-int
-sql_trans_create_trigger(sql_trigger **tres, sql_trans *tr, sql_table *t, const char *name,
+
+static int
+sql_trans_create_table_trigger(sql_trigger **tres, sql_trans *tr, sql_table *t, const char *name,
 	sht time, sht orientation, sht event, const char *old_name, const char *new_name,
 	const char *condition, const char *statement )
 {
 	sqlstore *store = tr->store;
-	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
+	sql_schema *syss = (t != NULL) ? find_sql_schema(tr, isGlobal(t) ? "sys":"tmp") : find_sql_schema(tr, "sys");
 	sql_table *systrigger = find_sql_table(tr, syss, "triggers");
 	char *strnil = (char*)ATOMnilptr(TYPE_str);
 	sql_table *dup = NULL;
@@ -6795,7 +6803,7 @@ sql_trans_create_trigger(sql_trigger **tres, sql_trans *tr, sql_table *t, const 
 
 	assert(name);
 
-	if ((res = new_table(tr, t, &dup)))
+	if ( t && (res = new_table(tr, t, &dup)))
 		return res;
 	t = dup;
 	sql_trigger *nt = ZNEW(sql_trigger);
@@ -6813,16 +6821,72 @@ sql_trans_create_trigger(sql_trigger **tres, sql_trans *tr, sql_table *t, const 
 	if (condition)
 		nt->condition =_STRDUP(condition);
 	nt->statement =_STRDUP(statement);
+	if(t) {
+		assert(isGlobal(t));
+		if ((res = ol_add(t->triggers, &nt->base)) ||
+			(res = os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base)))) {
+			return res;
+		}
+	}
+	oid tid = t? (oid) t->base.id : oid_nil;
 
-	assert(isGlobal(t));
-	if ((res = ol_add(t->triggers, &nt->base)) ||
-		(res = os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base))))
-		return res;
-
-	if ((res = store->table_api.table_insert(tr, systrigger, &nt->base.id, &nt->base.name, &t->base.id, &nt->time, &nt->orientation,
+	if ((res = store->table_api.table_insert(tr, systrigger, &nt->base.id, &nt->base.name, &tid, &nt->time, &nt->orientation,
 							 &nt->event, (nt->old_name)?&nt->old_name:&strnil, (nt->new_name)?&nt->new_name:&strnil,
-							 (nt->condition)?&nt->condition:&strnil, &nt->statement)))
+							 (nt->condition)?&nt->condition:&strnil, &nt->statement))) {
 		return res;
+	}
+	*tres = nt;
+	return res;
+}
+
+int
+sql_trans_create_trigger(sql_trigger **tres, sql_trans *tr, sql_table *t, const char *name,
+	sht time, sht orientation, sht event, const char *old_name, const char *new_name,
+	const char *condition, const char *statement )
+{
+	if (t)
+		return sql_trans_create_table_trigger(
+				tres, tr, t, name, time,
+			   	orientation, event, old_name,
+			   	new_name, condition, statement);
+
+	// triggers not bound to objects (e.g. table)
+	// are added to sys->triggers
+
+	sqlstore *store = tr->store;
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_table *systrigger = find_sql_table(tr, syss, "triggers");
+	char *strnil = (char*)ATOMnilptr(TYPE_str);
+	int res = LOG_OK;
+
+	assert(name);
+
+	sql_trigger *nt = ZNEW(sql_trigger);
+	base_init(NULL, &nt->base, next_oid(tr->store), true, name);
+	nt->time = time;
+	nt->orientation = orientation;
+	nt->event = event;
+	nt->old_name = nt->new_name = nt->condition = NULL;
+	if (old_name)
+		nt->old_name =_STRDUP(old_name);
+	if (new_name)
+		nt->new_name =_STRDUP(new_name);
+	if (condition)
+		nt->condition =_STRDUP(condition);
+	nt->statement =_STRDUP(statement);
+	if ((res = os_add(syss->triggers, tr, nt->base.name, &nt->base))) {
+		trigger_destroy(store, nt);
+		return res;
+	}
+	oid tid = oid_nil;
+
+	if ((res = store->table_api.table_insert(tr, systrigger, &nt->base.id, &nt->base.name, &tid, &nt->time, &nt->orientation,
+							 &nt->event, (nt->old_name)?&nt->old_name:&strnil, (nt->new_name)?&nt->new_name:&strnil,
+							 (nt->condition)?&nt->condition:&strnil, &nt->statement))) {
+		trigger_destroy(store, nt);
+		return res;
+	}
+
 	*tres = nt;
 	return res;
 }

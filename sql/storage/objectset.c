@@ -64,7 +64,8 @@ typedef struct objectset {
 	bool
 		temporary:1,
 		unique:1, /* names are unique */
-		concurrent:1;	/* concurrent inserts are allowed */
+		concurrent:1,	/* concurrent inserts are allowed */
+	    nested:1;
 	sql_store store;
 } objectset;
 
@@ -401,7 +402,7 @@ objectversion_destroy(sqlstore *store, objectset* os, objectversion *ov)
 		node_destroy(ov->os, store, ov->id_based_head);
 	}
 
-	if (os->destroy)
+	if (os->destroy && ov->b)
 		os->destroy(store, ov->b);
 
 	if (os->temporary && (state & deleted || state & under_destruction || state & rollbacked))
@@ -500,6 +501,18 @@ os_rollback(objectversion *ov, sqlstore *store)
 	return LOG_OK;
 }
 
+static void
+ov_destroy_obj_recursive(sqlstore* store, objectversion *ov)
+{
+	if (ov->id_based_older && ov->id_based_older == ov->name_based_older) {
+		ov_destroy_obj_recursive(store, ov->id_based_older);
+	}
+	if (ov->os->destroy && ov->b) {
+		ov->os->destroy(store, ov->b);
+		ov->b = NULL;
+	}
+}
+
 static inline void
 try_to_mark_deleted_for_destruction(sqlstore* store, objectversion *ov)
 {
@@ -525,6 +538,8 @@ try_to_mark_deleted_for_destruction(sqlstore* store, objectversion *ov)
 		}
 
 		ov->ts = store_get_timestamp(store)+1;
+		if (!ov->os->nested)
+			ov_destroy_obj_recursive(store, ov);
 	}
 }
 
@@ -577,6 +592,7 @@ os_cleanup(sqlstore* store, objectversion *ov, ulng oldest)
 		if (ov->ts <= oldest) {
 			// the oldest relevant state is deleted so lets try to mark it as destroyed
 			try_to_mark_deleted_for_destruction(store, ov);
+			return LOG_OK+1;
 		}
 
 		// Keep it inplace on the cleanup list, either because it is now marked for destruction or
@@ -603,14 +619,14 @@ os_cleanup(sqlstore* store, objectversion *ov, ulng oldest)
 static int
 tc_gc_objectversion(sql_store store, sql_change *change, ulng oldest)
 {
-	assert(!change->handled);
+//	assert(!change->handled);
 	objectversion *ov = (objectversion*)change->data;
 
 	if (oldest >= TRANSACTION_ID_BASE)
 		return 0;
 	int res = os_cleanup( (sqlstore*) store, ov, oldest);
 	change->handled = (res)?true:false;
-	return res;
+	return res>=0?LOG_OK:LOG_ERR;
 }
 
 static int
@@ -633,7 +649,7 @@ tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng 
 }
 
 objectset *
-os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, sql_store store)
+os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, bool nested, sql_store store)
 {
 	assert(!sa);
 	objectset *os = SA_NEW(sa, objectset);
@@ -644,6 +660,7 @@ os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, boo
 		.temporary = temporary,
 		.unique = unique,
 		.concurrent = concurrent,
+		.nested = nested,
 		.store = store
 	};
 	os->destroy = destroy;
