@@ -6828,7 +6828,7 @@ sql_trans_create_table_trigger(sql_trigger **tres, sql_trans *tr, sql_table *t, 
 			return res;
 		}
 	}
-	oid tid = t? (oid) t->base.id : oid_nil;
+	sqlid tid = t? t->base.id : int_nil;
 
 	if ((res = store->table_api.table_insert(tr, systrigger, &nt->base.id, &nt->base.name, &tid, &nt->time, &nt->orientation,
 							 &nt->event, (nt->old_name)?&nt->old_name:&strnil, (nt->new_name)?&nt->new_name:&strnil,
@@ -6878,7 +6878,7 @@ sql_trans_create_trigger(sql_trigger **tres, sql_trans *tr, sql_table *t, const 
 		trigger_destroy(store, nt);
 		return res;
 	}
-	oid tid = oid_nil;
+	sqlid tid = oid_nil;
 
 	if ((res = store->table_api.table_insert(tr, systrigger, &nt->base.id, &nt->base.name, &tid, &nt->time, &nt->orientation,
 							 &nt->event, (nt->old_name)?&nt->old_name:&strnil, (nt->new_name)?&nt->new_name:&strnil,
