@@ -74,6 +74,9 @@ DEP_FUNC
 _tables
 describe_table
 DEP_FUNC
+_tables
+get_remote_table_expressions
+DEP_FUNC
 comments
 describe_columns
 DEP_FUNC
@@ -98,6 +101,9 @@ DEP_FUNC
 functions
 describe_function
 DEP_FUNC
+remote_user_info
+get_remote_table_expressions
+DEP_FUNC
 schemas
 describe_columns
 DEP_FUNC
@@ -106,6 +112,9 @@ describe_function
 DEP_FUNC
 schemas
 describe_table
+DEP_FUNC
+schemas
+get_remote_table_expressions
 DEP_FUNC
 spatial_ref_sys
 getproj4
@@ -190,7 +199,7 @@ SELECT c.name, i.name, 'DEP_INDEX' from sys.columns as c,  sys.objects as kc, sy
 query TTT rowsort
 SELECT c.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.columns as c, sys.dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name
 ----
-273 values hashing to 9ef14ef0bd961ee521581c23fdc30a09
+300 values hashing to 56c4a1af0df9cfbab6b1151831650e61
 
 query TTT rowsort
 SELECT c.name, tri.name, 'DEP_TRIGGER' from sys.columns as c, sys.objects as tri, sys.dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by c.name, tri.name
@@ -274,6 +283,9 @@ SELECT v.name, tri.name, 'DEP_TRIGGER' from sys.tables as v, sys.objects as tri,
 query TTT rowsort
 SELECT f1.name, f2.name, 'DEP_FUNC' from sys.functions as f1, sys.functions as f2, sys.dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 ORDER BY f1.name, f2.name
 ----
+decypher
+get_remote_table_expressions
+DEP_FUNC
 describe_type
 describe_columns
 DEP_FUNC
@@ -300,9 +312,6 @@ ms_round
 DEP_FUNC
 regexp_replace
 regexp_replace
-DEP_FUNC
-remote_table_credentials
-get_remote_table_expressions
 DEP_FUNC
 sq
 get_remote_table_expressions

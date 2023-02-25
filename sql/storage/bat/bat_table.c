@@ -166,6 +166,7 @@ column_find_##TPE(sql_trans *tr, sql_column *c, oid rid) \
 
 column_find_tpe(sqlid)
 column_find_tpe(bte)
+column_find_tpe(sht)
 column_find_tpe(int)
 column_find_tpe(lng)
 
@@ -809,6 +810,7 @@ bat_table_init( table_functions *tf )
 	tf->column_find_value = column_find_value;
 	tf->column_find_sqlid = column_find_sqlid;
 	tf->column_find_bte = column_find_bte;
+	tf->column_find_sht = column_find_sht;
 	tf->column_find_int = column_find_int;
 	tf->column_find_lng = column_find_lng;
 	tf->column_find_string_start = column_find_string_start; /* this function returns a pointer to the heap, use it with care! */
