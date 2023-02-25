@@ -61,7 +61,7 @@ mal_export Scenario findScenario(str nme);
 
 #ifdef LIBMONETDB5
 extern str setScenario(Client c, str nme);
-extern str runScenario(Client c, int once);
+extern str runScenario(Client c);
 extern str getScenarioLanguage(Client c);
 
 extern void showCurrentScenario(void);
