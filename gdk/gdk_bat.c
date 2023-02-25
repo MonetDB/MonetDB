@@ -688,10 +688,26 @@ BATfree(BAT *b)
 	if (nunique != BUN_NONE) {
 		b->tunique_est = (double) nunique;
 	}
+	/* wait until there are no other references to the heap; a
+	 * reference is possible in e.g. BBPsync that uses a
+	 * bat_iterator directly on the BBP_desc, i.e. without fix */
+	while (b->theap && (ATOMIC_GET(&b->theap->refs) & HEAPREFS) > 1) {
+		MT_lock_unset(&b->theaplock);
+		MT_sleep_ms(1);
+		MT_lock_set(&b->theaplock);
+	}
 	if (b->theap) {
 		assert((ATOMIC_GET(&b->theap->refs) & HEAPREFS) == 1);
 		assert(b->theap->parentid == b->batCacheid);
 		HEAPfree(b->theap, false);
+	}
+	/* wait until there are no other references to the heap; a
+	 * reference is possible in e.g. BBPsync that uses a
+	 * bat_iterator directly on the BBP_desc, i.e. without fix */
+	while (b->tvheap && (ATOMIC_GET(&b->tvheap->refs) & HEAPREFS) > 1) {
+		MT_lock_unset(&b->theaplock);
+		MT_sleep_ms(1);
+		MT_lock_set(&b->theaplock);
 	}
 	if (b->tvheap) {
 		assert((ATOMIC_GET(&b->tvheap->refs) & HEAPREFS) == 1);
@@ -721,9 +737,9 @@ BATdestroy(BAT *b)
 		GDKfree(b->theap);
 	}
 	if (b->oldtail) {
+		ATOMIC_AND(&b->oldtail->refs, ~DELAYEDREMOVE);
 		/* the bat has not been committed, so we cannot remove
 		 * the old tail file */
-		ATOMIC_AND(&b->oldtail->refs, ~DELAYEDREMOVE);
 		HEAPdecref(b->oldtail, false);
 		b->oldtail = NULL;
 	}

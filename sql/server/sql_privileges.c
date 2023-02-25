@@ -1098,9 +1098,3 @@ sql_create_privileges(mvc *m, sql_schema *s, const char *initpasswd)
 
 	return 0;
 }
-
-void
-sql_set_user_api_hooks(mvc *m)
-{
-	backend_set_user_api_hooks(m);
-}

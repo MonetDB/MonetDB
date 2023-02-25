@@ -34,6 +34,7 @@
 #include "rel_bin.h"
 #include "rel_dump.h"
 #include "orderidx.h"
+#include "sql_user.h"
 
 #define initcontext() \
 	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)\
@@ -390,7 +391,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) "ALTER TABLE: no values in the list");
 		goto finish;
 	}
-	values = list_new(sql->session->tr->sa, (fdestroy) &part_value_destroy);
+	values = list_create((fdestroy) &part_value_destroy);
 	for ( i = pci->retc+6; i < pci->argc; i++){
 		sql_part_value *nextv = NULL;
 		ValRecord *vnext = &(stk)->stk[(pci)->argv[i]];
@@ -404,8 +405,8 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 			goto finish;
 		}
 
-		nextv = SA_ZNEW(sql->session->tr->sa, sql_part_value); /* instantiate the part value */
-		nextv->value = SA_NEW_ARRAY(sql->session->tr->sa, char, len);
+		nextv = ZNEW(sql_part_value); /* instantiate the part value */
+		nextv->value = NEW_ARRAY(char, len);
 		memcpy(nextv->value, pnext, len);
 		nextv->length = len;
 
@@ -523,19 +524,25 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 {
 	sql_trigger *tri = NULL, *other = NULL;
 	sql_schema *s = NULL;
-	sql_table *t;
+	sql_table *t = NULL;
 	const char *base = replace ? "CREATE OR REPLACE TRIGGER" : "CREATE TRIGGER";
 
-	if (!(s = mvc_bind_schema(sql, sname)))
-		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
-	if (!mvc_schema_privs(sql, s))
-		throw(SQL,"sql.create_trigger",SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), s->base.name);
+	if (!strNil(sname) && !strNil(tname)) {
+		if (!(s = mvc_bind_schema(sql, sname)))
+			throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
+		if (!mvc_schema_privs(sql, s))
+			throw(SQL,"sql.create_trigger",SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), s->base.name);
+		if (!(t = mvc_bind_table(sql, s, tname)))
+			throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: unknown table '%s'", base, tname);
+		if (isView(t))
+			throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: cannot create trigger on view '%s'", base, tname);
+	} else {
+		if (!(s = mvc_bind_schema(sql, "sys")))
+			throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
+	}
+
 	if ((other = mvc_bind_trigger(sql, s, triggername)) && !replace)
 		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: name '%s' already in use", base, triggername);
-	if (!(t = mvc_bind_table(sql, s, tname)))
-		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: unknown table '%s'", base, tname);
-	if (isView(t))
-		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: cannot create trigger on view '%s'", base, tname);
 
 	if (replace && other) {
 		if (other->t->base.id != t->base.id) /* defensive line */
@@ -1121,6 +1128,13 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 	if (!(nt = mvc_bind_table(sql, s, t->base.name)))
 		throw(SQL,"sql.alter_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s'", t->base.name);
 
+	sql_table *gt = NULL;
+	if (nt && isTempTable(nt)) {
+		gt = (sql_table*)os_find_id(s->tables, sql->session->tr, nt->base.id);
+		if (gt)
+			nt = gt;
+	}
+
 	/* First check if all the changes are allowed */
 	if (t->idxs) {
 		/* only one pkey */
@@ -1498,10 +1512,23 @@ SQLcreate_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sname = *getArgReference_str(stk, pci, 1);
 	//str tname = *getArgReference_str(stk, pci, 2);
 	sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
-	int temp = *getArgReference_int(stk, pci, 4);
+	int temp = *getArgReference_int(stk, pci, 4), remote = (pci->argc == 7);
+	int pw_encrypted = temp;
 
 	initcontext();
+	if (remote)
+		temp = 0;
 	msg = create_table_or_view(sql, sname, t->base.name, t, temp, 0);
+	if (!msg && remote) {
+		str username = *getArgReference_str(stk, pci, 5);
+		str password = *getArgReference_str(stk, pci, 6);
+
+		sql_schema *s = mvc_bind_schema(sql, sname);
+		t = s?mvc_bind_table(sql, s, t->base.name):NULL;
+		if (t)
+			return remote_create(sql, t->base.id, username, password, pw_encrypted);
+		throw(SQL, "sql.create_table", SQLSTATE(3F000) "Internal error");
+	}
 	return msg;
 }
 

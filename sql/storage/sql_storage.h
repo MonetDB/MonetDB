@@ -102,6 +102,7 @@ typedef struct table_functions {
 	column_find_value_fptr column_find_value;
 	column_find_sqlid_fptr column_find_sqlid;
 	column_find_bte_fptr column_find_bte;
+	column_find_sht_fptr column_find_sht;
 	column_find_int_fptr column_find_int;
 	column_find_lng_fptr column_find_lng;
 	column_find_string_start_fptr column_find_string_start; /* this function returns a pointer to the heap, use it with care! */
@@ -345,7 +346,7 @@ extern lng store_hot_snapshot_to_stream(struct sqlstore *store, stream *s);
 
 extern ulng store_function_counter(struct sqlstore *store);
 
-extern ulng store_oldest(struct sqlstore *store);
+extern ulng store_oldest(struct sqlstore *store, sql_trans *tr);
 extern ulng store_get_timestamp(struct sqlstore *store);
 extern void store_manager(struct sqlstore *store);
 
@@ -370,7 +371,7 @@ extern int sql_trans_drop_func(sql_trans *tr, sql_schema *s, sqlid id, int drop_
 extern int sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_action);
 
 extern void sql_trans_update_tables(sql_trans *tr, sql_schema *s);
-extern void sql_trans_update_schemas(sql_trans *tr);
+extern int sql_trans_update_schemas(sql_trans *tr);
 
 extern int sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid owner, sqlid *schema_id_ptr);
 extern int sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name);

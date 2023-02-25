@@ -163,21 +163,28 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		h->base = GDKmalloc(h->size);
 		TRC_DEBUG(HEAP, "%s %zu %p\n", h->filename, h->size, h->base);
 	}
-	if (!GDKinmemory(h->farmid) && h->base == NULL) {
-		char *nme;
 
+	char *nme = NULL;
+	if (!GDKinmemory(h->farmid) && h->base == NULL) {
 		nme = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
 		if (nme == NULL)
 			return GDK_FAIL;
 		h->storage = STORE_MMAP;
 		h->base = HEAPcreatefile(NOFARM, &h->size, nme);
 		h->hasfile = true;
-		GDKfree(nme);
 	}
 	if (h->base == NULL) {
+		/* remove file we may just have created */
+		if (nme != NULL) {
+			/* file may or may not exist, depending on what
+			 * failed */
+			(void) MT_remove(nme);
+			GDKfree(nme);
+		}
 		GDKerror("Insufficient space for HEAP of %zu bytes.", h->size);
 		return GDK_FAIL;
 	}
+	GDKfree(nme);
 	h->newstorage = h->storage;
 	if (h->farmid == 1) {
 		QryCtx *qc = MT_thread_get_qry_ctx();
@@ -745,7 +752,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	size_t minsize;
 	int ret = 0;
 	char *srcpath, *dstpath;
-	int t0;
+	lng t0;
 
 	if (h->storage == STORE_INVALID || h->newstorage == STORE_INVALID) {
 		size_t allocated;
@@ -802,11 +809,11 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	}
 	strconcat_len(srcpath, minsize, dstpath, suffix, NULL);
 
-	t0 = GDKms();
+	t0 = GDKusec();
 	ret = MT_rename(srcpath, dstpath);
-	TRC_DEBUG(HEAP, "rename %s %s = %d %s (%dms)\n",
+	TRC_DEBUG(HEAP, "rename %s %s = %d %s ("LLFMT"usec)\n",
 		  srcpath, dstpath, ret, ret < 0 ? GDKstrerror(errno, (char[128]){0}, 128) : "",
-		  GDKms() - t0);
+		  GDKusec() - t0);
 	GDKfree(srcpath);
 	GDKfree(dstpath);
 

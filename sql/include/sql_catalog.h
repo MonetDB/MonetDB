@@ -204,6 +204,7 @@ typedef struct sql_base {
 } sql_base;
 
 #define isNew(x)          ((x)->base.new)
+#define isDeleted(x)      ((x)->base.deleted)
 
 extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, bool isnew, const char *name);
 
@@ -242,7 +243,7 @@ typedef int (*tc_cleanup_fptr) (sql_store store, struct sql_change *c, ulng olde
 typedef void (*destroy_fptr)(sql_store store, sql_base *b);
 typedef int (*validate_fptr)(struct sql_trans *tr, sql_base *b, int delete);
 
-extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, sql_store store);
+extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique, bool concurrent, bool nested, sql_store store);
 extern struct objectset *os_dup(struct objectset *os);
 extern void os_destroy(struct objectset *os, sql_store store);
 extern int /*ok, error (name existed) and conflict (added before) */ os_add(struct objectset *os, struct sql_trans *tr, const char *name, sql_base *b);
@@ -326,8 +327,7 @@ typedef struct sql_trans {
 
 	sql_catalog *cat;
 	sql_schema *tmp;	/* each session has its own tmp schema */
-	changeset localtmps;
-	sql_allocator *sa;	/* transaction allocator */
+	struct objectset* localtmps;
 
 	struct sql_trans *parent;	/* multilevel transaction support */
 } sql_trans;
@@ -783,6 +783,7 @@ extern sql_idx *schema_find_idx_id(sql_trans *tr, sql_schema *s, sqlid id);
 
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
 
+extern sql_table *find_sys_table(sql_trans *tr, const char *tname);
 extern sql_table *find_sql_table(sql_trans *tr, sql_schema *s, const char *tname);
 extern sql_table *find_sql_table_id(sql_trans *tr, sql_schema *s, sqlid id);
 extern sql_table *sql_trans_find_table(sql_trans *tr, sqlid id);
