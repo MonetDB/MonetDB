@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -26,7 +28,7 @@ validate_bit(void *dst_, void *src_, size_t count, int width, bool byteswap)
 	const unsigned char *src = src_;
 
 	for (size_t i = 0; i < count; i++) {
-		if (*src > 1)
+		if (*src > 1 && *src != 0x80)
 			throw(SQL, "convert_bit", SQLSTATE(22003) "invalid boolean byte value: %d", *src);
 		*dst++ = (bit)*src++;
 	}

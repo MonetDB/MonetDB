@@ -1,17 +1,20 @@
+-- SPDX-License-Identifier: MPL-2.0
+--
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 
 create function sys.password_hash (username string)
 	returns string
     external name sql.password;
 	-- return select password from users where name = username;
 
-create function sys.remote_table_credentials (tablename string)
-returns table ("uri" string, "username" string, "hash" string)
-external name sql.rt_credentials;
+create function sys.decypher (cypher string)
+	returns string
+    external name sql.decypher;
+	-- return decyphered pwhash 
 
 create function sys.sessions()
 returns table(

@@ -1,8 +1,21 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
-* Thu Dec  8 2022 Sjoerd Mullender <sjoerd@acm.org>
-- When extending a bat failed, the capacity had been updated already and
-  was therefore too large.  This could then later cause a crash.  This has
-  been fixed by only updating the capacity if the extend succeeded.
+* Mon Feb 20 2023 Sjoerd Mullender <sjoerd@acm.org>
+- A race condition was fixed where certain write-ahead log messages
+  could get intermingled, resulting in a corrupted WAL file.
+- If opening of a file failed when it was supposed to get memory mapped,
+  an incorrect value was returned to indicate the failure, causing
+  crashes later on.  This has been fixed.
+
+* Thu Feb 16 2023 Sjoerd Mullender <sjoerd@acm.org>
+- A race condition was fixed that could result in a missing tail file
+  for a string bat (i.e. a file with .tail1, .tail2, or .tail4 extension).
+
+* Mon Feb 13 2023 Sjoerd Mullender <sjoerd@acm.org>
+- When saving a bat failed for some reason during a low-level commit,
+  this was logged in the log file, but the error was then subsequently
+  ignored, possibly leading to files that are too short or even missing.
+- The write-ahead log (WAL) is now rotated a bit more efficiently by
+  doing multiple log files in one go (i.e. in one low-level transaction).
 

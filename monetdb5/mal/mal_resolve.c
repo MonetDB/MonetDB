@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -687,11 +689,16 @@ chkInstruction(Module s, MalBlkPtr mb, InstrPtr p)
 str
 chkProgram(Module s, MalBlkPtr mb)
 {
-	str msg = MAL_SUCCEED;
+	str msg;
 /* it is not ready yet, too fragile
 		mb->typefixed = mb->stop == chk; ignored END */
 /*	if( mb->flowfixed == 0)*/
 
+	if (mb->errors){
+		msg = mb->errors;
+		mb->errors = NULL;
+		return msg;
+	}
 	msg = chkTypes(s, mb, FALSE);
 	if( msg == MAL_SUCCEED)
 		msg = chkFlow(mb);

@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #ifndef LIST_H
@@ -39,6 +41,7 @@ sql_export list *sa_list(sql_allocator *sa);
 extern list *list_new(sql_allocator *sa, fdestroy destroy);
 
 extern list *sa_list_append( sql_allocator *sa, list *l, void *data);
+extern list *list_add( list *l, void *data);
 
 extern void list_destroy(list *l);
 extern void list_destroy2(list *l, void *data);
@@ -53,7 +56,7 @@ extern node *list_remove_node(list *l, void *gdata, node *n);
 extern void list_remove_data(list *l, void *gdata, void *data);
 extern void list_remove_list(list *l, void *gdata, list *data);
 extern list *list_move_data(list *l, list *d, void *data);
-
+extern void list_revert(list *l);
 
 extern int list_traverse(list *l, traverse_func f, void *clientdata);
 
@@ -99,7 +102,7 @@ extern list *list_dup(list *l, fdup dup);
 extern list *list_merge(list *l, list *data, fdup dup);
 extern list *list_merge_destroy(list *l, list *data, fdup dup);
 
-extern list *list_flaten(list *l);
+extern list *list_flatten(list *l);
 
 extern void list_hash_delete(list *l, void *data, fcmp cmp);
 extern void* list_hash_add(list *l, void *data, fcmp cmp);

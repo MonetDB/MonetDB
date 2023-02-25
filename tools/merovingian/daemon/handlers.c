@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -309,7 +311,7 @@ childhandler(void)
 				if (WIFEXITED(wstatus)) {
 					Mlevelfprintf(INFORMATION, stdout, "database '%s' (%lld) has exited with "
 							 "exit status %d\n", p->dbname,
-							 (long long int)p->pid, WEXITSTATUS(wstatus));
+							 (long long int)pid, WEXITSTATUS(wstatus));
 				} else if (WIFSIGNALED(wstatus)) {
 					const char *sigstr = sigtostr(WTERMSIG(wstatus));
 					char signum[8];
@@ -320,11 +322,11 @@ childhandler(void)
 					if (WCOREDUMP(wstatus)) {
 						Mlevelfprintf(ERROR, stdout, "database '%s' (%lld) has crashed "
 								 "with signal %s (dumped core)\n",
-								 p->dbname, (long long int)p->pid, sigstr);
+								 p->dbname, (long long int)pid, sigstr);
 					} else {
 						Mlevelfprintf(WARNING, stdout, "database '%s' (%lld) was killed "
 								 "by signal %s\n",
-								 p->dbname, (long long int)p->pid, sigstr);
+								 p->dbname, (long long int)pid, sigstr);
 					}
 				}
 				break;

@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -68,7 +70,11 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (plus_one) {
 		q = newFcnCallArgs(mb, batRef, putName("densebat"), 2);
+		if (q == NULL) {
+			throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		q = pushArgument(mb, q, getArg(pci, pci->retc));
+		pushInstruction(mb, q);
 		iter = getArg(q,0);
 	}
 	else /* search the iterator bat */
@@ -97,6 +103,11 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* resB := new(refBat) */
 	for (i = 0; i < pci->retc; i++) {
 		q = newFcnCallArgs(mb, batRef, newRef, 3);
+		if (q == NULL) {
+			GDKfree(alias);
+			GDKfree(resB);
+			throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		resB[i] = getArg(q, 0);
 
 		tt = getBatType(getArgType(mb, pci, i));
@@ -104,31 +115,49 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		setVarType(mb, getArg(q, 0), newBatType(tt));
 		q = pushType(mb, q, tt);
 		q = pushArgument(mb, q, iter);
+		pushInstruction(mb, q);
 		assert(q->argc==3);
 	}
 
 	/* barrier (h,r) := iterator.new(refBat); */
 	q = newFcnCall(mb, iteratorRef, newRef);
+	if (q == NULL) {
+		GDKfree(alias);
+		GDKfree(resB);
+		throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	q->barrier = BARRIERsymbol;
 	hvar = newTmpVariable(mb, TYPE_any);
 	getArg(q,0) = hvar;
 	tvar = newTmpVariable(mb, TYPE_any);
 	q= pushReturn(mb, q, tvar);
 	(void) pushArgument(mb,q,iter);
+	pushInstruction(mb, q);
 
 	/* $1:= algebra.fetch(Ai,h) or constant */
 	for (i = pci->retc+2+plus_one; i < pci->argc; i++) {
 		if (getArg(pci, i) != iter && isaBatType(getArgType(mb, pci, i))) {
 			q = newFcnCall(mb, algebraRef, "fetch");
+			if (q == NULL) {
+				GDKfree(alias);
+				GDKfree(resB);
+				throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 			alias[i] = newTmpVariable(mb, getBatType(getArgType(mb, pci, i)));
 			getArg(q, 0) = alias[i];
 			q= pushArgument(mb, q, getArg(pci, i));
-			(void) pushArgument(mb, q, hvar);
+			q= pushArgument(mb, q, hvar);
+			pushInstruction(mb, q);
 		}
 	}
 
 	/* cr:= mod.CMD($1,...,$n); */
 	q = newFcnCallArgs(mb, mod, fcn, pci->argc - 2 - plus_one);
+	if (q == NULL) {
+		GDKfree(alias);
+		GDKfree(resB);
+		throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	for (i = 0; i < pci->retc; i++) {
 		int nvar = 0;
 		if (bat) {
@@ -152,30 +181,55 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			q = pushArgument(mb, q, getArg(pci, i));
 		}
 	}
+	pushInstruction(mb, q);
 
 	for (i = 0; i < pci->retc; i++) {
 		InstrPtr a = newFcnCall(mb, batRef, appendRef);
+		if (a == NULL) {
+			GDKfree(alias);
+			GDKfree(resB);
+			throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		a = pushArgument(mb, a, resB[i]);
 		a = pushArgument(mb, a, getArg(q,i));
 		getArg(a,0) = resB[i];
+		pushInstruction(mb, a);
 	}
 
 /* redo (h,r):= iterator.next(refBat); */
 	q = newFcnCall(mb, iteratorRef, nextRef);
+	if (q == NULL) {
+		GDKfree(alias);
+		GDKfree(resB);
+		throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	q->barrier = REDOsymbol;
 	getArg(q,0) = hvar;
 	q= pushReturn(mb, q, tvar);
 	(void) pushArgument(mb,q,iter);
+	pushInstruction(mb, q);
 
 	q = newAssignment(mb);
+	if (q == NULL) {
+		GDKfree(alias);
+		GDKfree(resB);
+		throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	q->barrier = EXITsymbol;
 	getArg(q,0) = hvar;
 	(void) pushReturn(mb, q, tvar);
+	pushInstruction(mb, q);
 
 	for (i = 0; i < pci->retc; i++) {
 		q = newAssignment(mb);
+		if (q == NULL) {
+			GDKfree(alias);
+			GDKfree(resB);
+			throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		getArg(q, 0) = getArg(pci, i);
 		(void) pushArgument(mb, q, resB[i]);
+		pushInstruction(mb, q);
 	}
 	GDKfree(alias);
 	GDKfree(resB);

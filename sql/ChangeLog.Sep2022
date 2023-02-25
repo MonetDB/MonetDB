@@ -1,7 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Wed Dec  7 2022 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed a double cleanup after a failed allocation in COPY INTO.  The
-  double cleanup could cause a crash due to a race condition it enabled.
+* Mon Feb 13 2023 Sjoerd Mullender <sjoerd@acm.org>
+- An insert into a table from which a column was dropped in a parallel
+  transaction was incorrectly not flagged as a transaction conflict.
+
+* Thu Jan 26 2023 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Fix bug where boolean NULLs were not recognized by COPY BINARY INTO
 

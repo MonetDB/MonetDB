@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #ifndef _SQL_SCENARIO_H_
@@ -20,8 +22,8 @@ sql5_export str SQLtrans(mvc *m);
 sql5_export str SQLexit(Client c);
 sql5_export str SQLexitClient(Client c);
 sql5_export str SQLresetClient(Client c);
-sql5_export str SQLinitClient(Client c);
-sql5_export str SQLinitClientFromMAL(Client c);
+sql5_export str SQLinitClient(Client c, const char *passwd, const char *challenge, const char *algo);
+sql5_export str SQLinitClientFromMAL(Client c, const char *passwd, const char *challenge, const char *algo);
 sql5_export str SQLreader(Client c);
 sql5_export str SQLparser(Client c);
 sql5_export str SQLengine(Client c);

@@ -1,0 +1,63 @@
+@connection(id=2, username=monetdb, password=monetdb)
+statement ok
+CREATE TABLE child1(a int)
+
+@connection(id=2)
+statement ok rowcount 2
+INSERT INTO child1 VALUES (1),(2)
+
+@connection(id=2)
+statement ok
+CREATE TABLE child2(a int)
+
+@connection(id=2)
+statement ok rowcount 2
+INSERT INTO child2 VALUES (3),(4)
+
+@connection(id=3, username=monetdb, password=monetdb)
+statement ok
+start transaction
+
+@connection(id=2)
+statement ok
+start transaction
+
+statement ok
+start transaction
+
+statement ok
+CREATE MERGE TABLE parent(a int)
+
+statement ok
+alter table parent add table child1
+
+statement ok
+alter table parent add table child2
+
+@connection(id=2)
+statement ok
+drop table child2
+
+statement ok
+commit
+
+@connection(id=2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+query I nosort
+select count(*) from sys.objects where nr = ( select id from sys._tables where name = 'parent')
+----
+2
+
+# cleanup
+
+statement ok
+drop table parent
+
+statement ok
+drop table child1
+
+statement ok
+drop table child2
+

@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -756,7 +758,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 			} else {
 				bool max_equal_min = ATOMcmp(tpe, pt->part.range.maxvalue, pt->part.range.minvalue) == 0;
 
-				full_range = range = max_equal_min ? 
+				full_range = range = max_equal_min ?
 					exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.minvalue)), cmp_equal) :
 					exp_compare2(sql->sa, le, exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.minvalue)),
 											  exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.maxvalue)), 1, 0);

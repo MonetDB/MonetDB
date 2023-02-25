@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -304,12 +306,12 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		}
 	}
 	TIMEOUT_CHECK(timeoffset, TIMEOUT_HANDLER(GDK_FAIL));
+	MT_rwlock_wrlock(&b->thashlock);
 	MT_lock_set(&b->theaplock);
 	BATsetcount(b, oldcnt + ci->ncand);
 	assert(b->batCapacity >= b->batCount);
 	MT_lock_unset(&b->theaplock);
 	/* maintain hash */
-	MT_rwlock_wrlock(&b->thashlock);
 	for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
 		HASHappend_locked(b, r, b->tvheap->base + VarHeapVal(Tloc(b, 0), r, b->twidth));
 	}
@@ -382,11 +384,11 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 				*dst++ = src[canditer_next(ci) - hseq];
 			}
 		}
+		MT_rwlock_wrlock(&b->thashlock);
 		MT_lock_set(&b->theaplock);
 		BATsetcount(b, BATcount(b) + ci->ncand);
 		MT_lock_unset(&b->theaplock);
 		/* maintain hash table */
-		MT_rwlock_wrlock(&b->thashlock);
 		for (BUN i = BATcount(b) - ci->ncand;
 		     b->thash && i < BATcount(b);
 		     i++) {
@@ -477,12 +479,12 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		}
 	}
 	BUN nunique = b->thash ? b->thash->nunique : 0;
-	MT_rwlock_wrunlock(&b->thashlock);
 	MT_lock_set(&b->theaplock);
 	BATsetcount(b, r);
 	if (nunique != 0)
 		b->tunique_est = (double) nunique;
 	MT_lock_unset(&b->theaplock);
+	MT_rwlock_wrunlock(&b->thashlock);
 	return GDK_SUCCEED;
 }
 
@@ -594,6 +596,7 @@ append_msk_bat(BAT *b, BATiter *ni, struct canditer *ci)
 			/* boff < noff */
 			if (noff + cnt <= 32) {
 				/* only need part of the first word of n */
+				assert(cnt < 32); /* noff > 0, so cnt < 32 */
 				mask = (1U << cnt) - 1;
 				*bp &= ~(mask << boff);
 				*bp |= (*np & (mask << noff)) >> (noff - boff);
@@ -905,12 +908,12 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		}
 		BUN nunique;
 		nunique = b->thash ? b->thash->nunique : 0;
-		MT_rwlock_wrunlock(&b->thashlock);
 		MT_lock_set(&b->theaplock);
 		BATsetcount(b, b->batCount + ci.ncand);
 		if (nunique != 0)
 			b->tunique_est = (double) nunique;
 		MT_lock_unset(&b->theaplock);
+		MT_rwlock_wrunlock(&b->thashlock);
 	}
 
   doreturn:
@@ -1323,16 +1326,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
-				/* doesn't fit in current heap, upgrade
-				 * it, can't keep hashlock while doing
-				 * so */
-				MT_rwlock_wrunlock(&b->thashlock);
-				locked = false;
+				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, d, 0, MAX(updid, b->batCount)) != GDK_SUCCEED) {
 					goto bailout;
 				}
-				MT_rwlock_wrlock(&b->thashlock);
-				locked = true;
 			}
 			/* in case ATOMreplaceVAR and/or
 			 * GDKupgradevarheap replaces a heap, we need to
@@ -1376,6 +1373,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 		b->tvheap->dirty = true;
 		MT_lock_unset(&b->theaplock);
 	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
+		assert(b->thash == NULL);
 		HASHdestroy(b);	/* hash doesn't make sense for msk */
 		for (BUN i = 0; i < ni.count; i++) {
 			oid updid;
@@ -1817,7 +1815,7 @@ BATslice(BAT *b, BUN l, BUN h)
 		bn = VIEWcreate(b->hseqbase + low, b);
 		if (bn == NULL)
 			goto doreturn;
-		VIEWbounds(b, bn, l, h);
+		VIEWboundsbi(&bi, bn, l, h);
 	} else {
 		/* create a new BAT and put everything into it */
 		BUN p = l;
@@ -1957,6 +1955,7 @@ bool
 BATordered(BAT *b)
 {
 	lng t0 = GDKusec();
+	bool sorted;
 
 	MT_lock_set(&b->theaplock);
 	if (b->ttype == TYPE_void || b->tsorted || BATcount(b) == 0) {
@@ -2075,8 +2074,9 @@ BATordered(BAT *b)
 		}
 	}
   doreturn:
+	sorted = b->tsorted;
 	MT_lock_unset(&b->theaplock);
-	return b->tsorted;
+	return sorted;
 }
 
 #define BAT_REVORDERED(TPE)						\
@@ -2112,6 +2112,7 @@ bool
 BATordered_rev(BAT *b)
 {
 	lng t0 = GDKusec();
+	bool revsorted;
 
 	if (b == NULL || !ATOMlinear(b->ttype))
 		return false;
@@ -2170,8 +2171,9 @@ BATordered_rev(BAT *b)
 		TRC_DEBUG(ALGO, "Fixed revsorted for " ALGOBATFMT " (" LLFMT " usec)\n", ALGOBATPAR(b), GDKusec() - t0);
 	}
   doreturn:
+	revsorted = b->trevsorted;
 	MT_lock_unset(&b->theaplock);
-	return b->trevsorted;
+	return revsorted;
 }
 
 /* figure out which sort function is to be called
