@@ -237,6 +237,7 @@ gen_null_blobs(FILE *f, bool byteswap, long nrecs)
 		if (n > 0)
 			fwrite(buffer, 1, n, f);
 	}
+	free(buffer);
 }
 
 static void
