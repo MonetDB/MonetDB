@@ -2435,7 +2435,7 @@ BBPgetsubdir(str s, bat i)
 	*s = 0;
 }
 
-/* 
+/*
  * Extends the bpp list of some thread by reserving from the common pool,
  * increasing the common pool if it runs out of space.
  */
@@ -2651,7 +2651,6 @@ bbpclear(bat i, bool lock)
 	TRC_DEBUG(BAT_, "clear %d (%s)\n", (int) i, BBP_logical(i));
 	BBPuncacheit(i, true);
 	TRC_DEBUG(BAT_, "set to unloading %d\n", i);
-	MT_lock_set(&BBPnameLock);
 	if (lock) {
 		MT_lock_set(&GDKswapLock(i));
 	}
@@ -2662,7 +2661,9 @@ bbpclear(bat i, bool lock)
 	if (lock)
 		MT_lock_unset(&GDKswapLock(i));
 	if (!BBPtmpcheck(BBP_logical(i))) {
+		MT_lock_set(&BBPnameLock);
 		BBP_delete(i);
+		MT_lock_unset(&BBPnameLock);
 	}
 	if (BBP_logical(i) != BBP_bak(i))
 		GDKfree(BBP_logical(i));
@@ -2686,7 +2687,6 @@ bbpclear(bat i, bool lock)
 		t->stat_call_count = 0;
 	}
 	BBP_pid(i) = ~(MT_Id)0; /* not zero, not a valid thread id */
-	MT_lock_unset(&BBPnameLock);
 }
 
 void
