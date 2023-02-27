@@ -58,35 +58,33 @@ def execute_qry():
             print(e)
             exit(1)
 
-with SQLTestCase() as mdb:
-    mdb.connect(username="monetdb", password="monetdb")
-    mdb.execute(init).assertSucceeded()
-    mdb.execute(p_proced).assertSucceeded()
-    mdb.execute(r_proced).assertSucceeded()
-    mdb.execute(s_proced).assertSucceeded()
+if __name__ == '__main__':
+    with SQLTestCase() as mdb:
+        mdb.connect(username="monetdb", password="monetdb")
+        mdb.execute(init).assertSucceeded()
+        mdb.execute(p_proced).assertSucceeded()
+        mdb.execute(r_proced).assertSucceeded()
+        mdb.execute(s_proced).assertSucceeded()
 
-    client_proc1 = mp.Process(target=execute_qry)
-    client_proc1.start()
+        client_proc1 = mp.Process(target=execute_qry)
+        client_proc1.start()
 
-    time.sleep(1)
-    mdb.execute('call pause_sleep();').assertSucceeded()
-    mdb.execute(status).assertSucceeded().assertDataResultMatch([('paused',)])
-    mdb.execute('call resume_sleep();').assertSucceeded()
+        time.sleep(1)
+        mdb.execute('call pause_sleep();').assertSucceeded()
+        mdb.execute(status).assertSucceeded().assertDataResultMatch([('paused',)])
+        mdb.execute('call resume_sleep();').assertSucceeded()
+        client_proc1.join()
 
-    client_proc1.join()
+        client_proc2 = mp.Process(target=execute_qry)
+        client_proc2.start()
+        time.sleep(1)
+        mdb.execute('call stop_sleep();').assertSucceeded()
+        mdb.execute(status).assertSucceeded().assertDataResultMatch([('finished',)])
+        client_proc2.join()
 
-    client_proc2 = mp.Process(target=execute_qry)
-    client_proc2.start()
-
-    time.sleep(1)
-    mdb.execute('call stop_sleep();').assertSucceeded()
-    mdb.execute(status).assertSucceeded().assertDataResultMatch([('finished',)])
-
-    client_proc2.join()
-
-    mdb.execute('drop function sleep;').assertSucceeded()
-    mdb.execute('drop procedure pause_sleep;').assertSucceeded()
-    mdb.execute('drop procedure resume_sleep;').assertSucceeded()
-    mdb.execute('drop procedure stop_sleep;').assertSucceeded()
-    mdb.execute('drop user u1;').assertSucceeded()
-    mdb.execute('drop schema s1;').assertSucceeded()
+        mdb.execute('drop function sleep;').assertSucceeded()
+        mdb.execute('drop procedure pause_sleep;').assertSucceeded()
+        mdb.execute('drop procedure resume_sleep;').assertSucceeded()
+        mdb.execute('drop procedure stop_sleep;').assertSucceeded()
+        mdb.execute('drop user u1;').assertSucceeded()
+        mdb.execute('drop schema s1;').assertSucceeded()
