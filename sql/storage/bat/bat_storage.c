@@ -310,6 +310,7 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 	MT_lock_unset(&b->theaplock);
 
 	uint32_t *restrict dst;
+	/* why hashlock ?? */
 	MT_rwlock_wrlock(&b->thashlock);
 	for (; s ; s=s->next) {
 		if (s->start >= nr)
@@ -3585,6 +3586,8 @@ commit_destroy_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng olde
 	(void)change;
 	(void)commit_ts;
 	(void)oldest;
+	if (commit_ts)
+		change->handled = true;
 	return 0;
 }
 
@@ -4051,7 +4054,9 @@ log_update_col( sql_trans *tr, sql_change *change)
 	sql_column *c = (sql_column*)change->obj;
 	assert(!isTempTable(c->t));
 
-	if (!tr->parent) {/* don't write save point commits */
+	if (isDeleted(c->t))
+		change->handled = true;
+	if (!isDeleted(c->t) && !tr->parent) {/* don't write save point commits */
 		storage *s = ATOMIC_PTR_GET(&c->t->data);
 		sql_delta *d = ATOMIC_PTR_GET(&c->data);
 		return tr_log_cs(tr, c->t, &d->cs, s->segs->h, c->base.id);
@@ -4146,6 +4151,9 @@ commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	ATOMIC_PTR_TYPE* data = &c->data;
 	int type = c->type.type->localtype;
 
+	if (change->handled || isDeleted(c->t))
+		return LOG_OK;
+
 	return commit_update_delta(tr, change, t, base, data, type, commit_ts, oldest);
 }
 
@@ -4155,7 +4163,9 @@ log_update_idx( sql_trans *tr, sql_change *change)
 	sql_idx *i = (sql_idx*)change->obj;
 	assert(!isTempTable(i->t));
 
-	if (!tr->parent) { /* don't write save point commits */
+	if (isDeleted(i->t))
+		change->handled = true;
+	if (!isDeleted(i->t) && !tr->parent) { /* don't write save point commits */
 		storage *s = ATOMIC_PTR_GET(&i->t->data);
 		sql_delta *d = ATOMIC_PTR_GET(&i->data);
 		return tr_log_cs(tr, i->t, &d->cs, s->segs->h, i->base.id);
@@ -4171,6 +4181,9 @@ commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	sql_table* t = i->t;
 	ATOMIC_PTR_TYPE* data = &i->data;
 	int type = (oid_index(i->type))?TYPE_oid:TYPE_lng;
+
+	if (change->handled || isDeleted(i->t))
+		return LOG_OK;
 
 	return commit_update_delta(tr, change, t, base, data, type, commit_ts, oldest);
 }
@@ -4200,7 +4213,9 @@ log_update_del( sql_trans *tr, sql_change *change)
 	sql_table *t = (sql_table*)change->obj;
 	assert(!isTempTable(t));
 
-	if (!tr->parent) /* don't write save point commits */
+	if (isDeleted(t))
+		change->handled = true;
+	if (!isDeleted(t) && !tr->parent) /* don't write save point commits */
 		return log_storage(tr, t, ATOMIC_PTR_GET(&t->data));
 	return LOG_OK;
 }
@@ -4211,6 +4226,9 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	int ok = LOG_OK;
 	sql_table *t = (sql_table*)change->obj;
 	storage *dbat = ATOMIC_PTR_GET(&t->data);
+
+	if (change->handled || isDeleted(t))
+		return ok;
 
 	if (t->commit_action == CA_DELETE || t->commit_action == CA_DROP) {
 		assert(isTempTable(t));
@@ -4270,6 +4288,9 @@ gc_col( sqlstore *store, sql_change *change, ulng oldest, bool drop)
 	if (!c) /* cleaned earlier */
 		return 1;
 
+	if (change->handled || isDeleted(c->t))
+		return 1;
+
 	/* savepoint commit (did it merge ?) */
 	if (ATOMIC_PTR_GET(&c->data) != change->data) /* data is freed by commit */
 		return 1;
@@ -4290,7 +4311,7 @@ gc_col( sqlstore *store, sql_change *change, ulng oldest, bool drop)
 		lock_column(store, c->base.id); /* lock for concurrent updates (appends) */
 		merge_delta(d);
 		unlock_column(store, c->base.id);
-		return LOG_OK;
+		return 1;
 	}
 	if (drop)
 		column_destroy(store, c);
@@ -4318,6 +4339,9 @@ gc_idx( sqlstore *store, sql_change *change, ulng oldest, bool drop)
 	if (!i) /* cleaned earlier */
 		return 1;
 
+	if (change->handled || isDeleted(i->t))
+		return 1;
+
 	/* savepoint commit (did it merge ?) */
 	if (ATOMIC_PTR_GET(&i->data) != change->data) /* data is freed by commit */
 		return 1;
@@ -4338,7 +4362,7 @@ gc_idx( sqlstore *store, sql_change *change, ulng oldest, bool drop)
 		lock_column(store, i->base.id); /* lock for concurrent updates (appends) */
 		merge_delta(d);
 		unlock_column(store, i->base.id);
-		return LOG_OK;
+		return 1;
 	}
 	if (drop)
 		idx_destroy(store, i);
@@ -4364,6 +4388,8 @@ tc_gc_del( sql_store Store, sql_change *change, ulng oldest)
 	sqlstore *store = Store;
 	sql_table *t = (sql_table*)change->obj;
 
+	if (change->handled || isDeleted(t))
+		return 1;
 	(void)store;
 	/* savepoint commit (did it merge ?) */
 	if (ATOMIC_PTR_GET(&t->data) != change->data) /* data is freed by commit */
@@ -4409,7 +4435,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 {
 	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	assert(s->segs);
-	ulng oldest = store_oldest(tr->store);
+	ulng oldest = store_oldest(tr->store, NULL);
 	BUN slot = 0;
 	size_t total = cnt;
 
@@ -4469,7 +4495,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 	if (!locked)
 		unlock_table(tr->store, t->base.id);
 
-	if (ok == LOG_OK) {	
+	if (ok == LOG_OK) {
 		/* hard to only add this once per transaction (probably want to change to once per new segment) */
 		if (!in_transaction) {
 			trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_update_del);
@@ -4498,7 +4524,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 		return claim_segmentsV2(tr, t, s, cnt, offset, offsets, locked);
 	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	assert(s->segs);
-	ulng oldest = store_oldest(tr->store);
+	ulng oldest = store_oldest(tr->store, NULL);
 	BUN slot = 0;
 	int reused = 0;
 

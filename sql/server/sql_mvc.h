@@ -27,6 +27,8 @@
 #include "sql_tokens.h"
 #include "sql_symbol.h"
 
+#define REMOTE_USER_INFO "remote_user_info"
+
 #define ERRSIZE 8192
 #define ERR_AMBIGUOUS	050000
 #define ERR_GROUPBY		060000

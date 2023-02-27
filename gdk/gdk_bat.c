@@ -737,9 +737,9 @@ BATdestroy(BAT *b)
 		GDKfree(b->theap);
 	}
 	if (b->oldtail) {
+		ATOMIC_AND(&b->oldtail->refs, ~DELAYEDREMOVE);
 		/* the bat has not been committed, so we cannot remove
 		 * the old tail file */
-		ATOMIC_AND(&b->oldtail->refs, ~DELAYEDREMOVE);
 		HEAPdecref(b->oldtail, false);
 		b->oldtail = NULL;
 	}

@@ -12,11 +12,17 @@
 #define _SQL_USER_H_
 #include "sql.h"		/* includes sql_backend.h */
 
+extern oid getUserOIDByName(mvc *m, const char *user);
+extern str getUserPassword(mvc *m, oid rid);
+
 extern void monet5_user_init(backend_functions *be_funcs);
-extern int monet5_user_set_def_schema(mvc *m, oid user /* mal user id */);
+extern int monet5_user_set_def_schema(mvc *m, oid user /* mal user id */, str username);
 extern int monet5_user_get_def_schema(mvc *m, int user /* sql user id */, str *schema);
 extern int monet5_user_get_limits(mvc *m, int user /* sql user id */, lng *maxmem, int *maxwrk);
 
 extern str monet5_password_hash(mvc *m, const char *username);
+
+extern str remote_create(mvc *sql, sqlid id, const str username, const str password, int pw_encrypted);
+extern str remote_get(mvc *sql, sqlid id, str *username, str *pwhash);
 
 #endif /* _SQL_USER_H_ */
