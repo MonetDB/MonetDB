@@ -86,8 +86,6 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 			return msg;
 		}
 	}
-	if ((msg = AUTHinitTables()) != MAL_SUCCEED)
-		return msg;
 
 	if (!MCinit())
 		throw(MAL, "malEmbeddedBoot", "MAL debugger failed to start");

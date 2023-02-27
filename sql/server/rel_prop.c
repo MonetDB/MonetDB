@@ -35,6 +35,7 @@ prop_copy( sql_allocator *sa, prop *p )
 
 	for(; p; p = p->p) {
 		np = prop_create(sa, p->kind, np);
+		np->id = p->id;
 		switch (p->kind) {
 		case PROP_COUNT:
 			np->value.lval = p->value.lval;
