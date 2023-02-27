@@ -2681,9 +2681,9 @@ bbpclear(bat i, bool lock)
 	}
 	if (++t->stat_call_count == GC_FREE_LIST_CALL_COUNT) {
 		const bat a = (t->stat_free_max - t->stat_free_min);
-		bat b = a/2;
+		bat b = a / FREE_CHUNK_ALLOC_SIZE / 2;
 		if (b && 2 * a < t->stat_free_min) {
-			BBPhandover(t, b);
+			BBPhandover(t, b * FREE_CHUNK_ALLOC_SIZE);
 		}
 		t->stat_call_count = 0;
 	}
