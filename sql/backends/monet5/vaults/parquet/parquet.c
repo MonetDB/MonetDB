@@ -136,10 +136,10 @@ parquet_add_types(mvc *sql, sql_subfunc *f, char *filename)
     throw(SQL, SQLSTATE(42000), "parquet" RUNTIME_FILE_NOT_FOUND);
 	}
 
-  GError *table_error;
+  GError *table_error = NULL;
   GArrowTable *table = gparquet_arrow_file_reader_read_table(file->reader, &table_error);
 
-  if(table_error) {
+  if(table_error->message) {
     throw(SQL, SQLSTATE(42000), "parquet" RUNTIME_LOAD_ERROR); // TODO: different error.
   }
 
