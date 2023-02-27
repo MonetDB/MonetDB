@@ -2632,6 +2632,7 @@ BBPhandover(Thread t, bat nr)
 		i = BBP_next(i);
 	}
 	t->free = i;
+	assert((t->free && t->stat_free_count) || (!t->free && !t->stat_free_count));
 
 	MT_lock_set(&GDKcacheLock);
 	BBP_next(last) = BBP_free;
