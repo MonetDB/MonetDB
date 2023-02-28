@@ -88,7 +88,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
-BugURL: https://bugs.monetdb.org/
+BugURL: https://github.com/MonetDB/MonetDB/issues
 Source: https://www.monetdb.org/downloads/sources/Sep2022-SP2/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
