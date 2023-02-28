@@ -1084,7 +1084,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	if (argc < MAXARG)
 		argc = MAXARG;
 	assert(cq && strlen(cq->name) < IDLENGTH);
-	c->curprg = newFunctionArgs(sql_private_module, putName(cq->name), FUNCTIONsymbol, argc);
+	c->curprg = newFunctionArgs(sql_private_module, cq->name = putName(cq->name), FUNCTIONsymbol, argc);
 	if (c->curprg == NULL) {
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		res = -1;

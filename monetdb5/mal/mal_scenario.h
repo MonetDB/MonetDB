@@ -16,11 +16,10 @@
 #define MAL_SCENARIO_READER 0
 #define MAL_SCENARIO_PARSER  1
 #define MAL_SCENARIO_OPTIMIZE 2
-#define MAL_SCENARIO_SCHEDULER 3
-#define MAL_SCENARIO_ENGINE 4
-#define MAL_SCENARIO_INITCLIENT 5
-#define MAL_SCENARIO_EXITCLIENT 6
-#define MAL_SCENARIO_CALLBACK 7
+#define MAL_SCENARIO_ENGINE 3
+#define MAL_SCENARIO_INITCLIENT 4
+#define MAL_SCENARIO_EXITCLIENT 5
+#define MAL_SCENARIO_CALLBACK 6
 
 /*#define MAL_SCENARIO_DEBUG*/
 /*
@@ -48,8 +47,6 @@ typedef struct SCENARIO {
 	MALfcn parserCmd;
 	str optimizer;
 	MALfcn optimizerCmd;
-	str tactics;
-	MALfcn tacticsCmd;
 	str engine;
 	MALfcn engineCmd;
 	str callback;

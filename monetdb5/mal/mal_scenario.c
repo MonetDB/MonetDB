@@ -14,8 +14,8 @@
  * In MonetDB multiple languages, optimizers, and execution engines can
  * be combined at run time to satisfy a wide user-community.
  * Such an assemblage of components is called a @emph{scenario}
- * and consists of a @emph{reader}, @emph{parser}, @emph{optimizer},
- * @emph{tactic scheduler} and @emph{engine}. These hooks allow
+ * and consists of a @emph{reader}, @emph{parser}, @emph{optimizer}
+ * and @emph{engine}. These hooks allow
  * for both linked-in and external components.
  *
  * The languages supported are SQL, the Monet Assembly Language (MAL), and profiler.
@@ -41,13 +41,6 @@
  * code blocks and possible catalogues maintained for the query language
  * at hand. Optimizers leave advice and their findings in properties
  * in the symbol table, see @ref{Property Management}.
- *
- * Once the program has thus been refined, the
- * MAL scheduler prepares for execution using tactical optimizations.
- * For example, it may parallelize the code, generate an ad-hoc
- * user-defined function, or prepare for efficient replication management.
- * In the default case, the program is handed over to the MAL interpreter
- * without any further modification.
  *
  * The final stage is to choose an execution paradigm,
  * i.e. interpretative (default), compilation of an ad-hoc user
@@ -82,7 +75,7 @@
  * each individual client. Sharing this information between clients
  * should be dealt with in the implementation of the scenario managers.
  * Upon need, the client can postpone a session scenario by
- * pushing a new one(language, optimize, tactic,
+ * pushing a new one(language, optimize,
  * processor). Propagation of the state information is
  * encapsulated a scenario2scenario() call. Not all transformations
  * may be legal.
@@ -182,7 +175,6 @@ showScenario(stream *f, Scenario scen)
 	print_scenarioCommand(f, scen->exitClient, scen->exitClientCmd);
 	print_scenarioCommand(f, scen->parser, scen->parserCmd);
 	print_scenarioCommand(f, scen->optimizer, scen->optimizerCmd);
-	print_scenarioCommand(f, scen->tactics, scen->tacticsCmd);
 	print_scenarioCommand(f, scen->callback, scen->callbackCmd);
 	print_scenarioCommand(f, scen->engine, scen->engineCmd);
 	mnstr_printf(f, "]\n");
@@ -238,10 +230,6 @@ updateScenario(str nme, str fnme, MALfcn fcn)
 	if (scen->optimizer && strcmp(scen->optimizer, fnme) == 0) {
 		scen->optimizerCmd = fcn;
 		phase = MAL_SCENARIO_OPTIMIZE;
-	}
-	if (scen->tactics && strcmp(scen->tactics, fnme) == 0) {
-		scen->tacticsCmd = fcn;
-		phase = MAL_SCENARIO_SCHEDULER;
 	}
 	if (scen->callback && strcmp(scen->callback, fnme) == 0) {
 		scen->callbackCmd = fcn;
@@ -311,7 +299,6 @@ fillScenario(Client c, Scenario scen)
 	c->phase[MAL_SCENARIO_READER] = scen->readerCmd;
 	c->phase[MAL_SCENARIO_PARSER] = scen->parserCmd;
 	c->phase[MAL_SCENARIO_OPTIMIZE] = scen->optimizerCmd;
-	c->phase[MAL_SCENARIO_SCHEDULER] = scen->tacticsCmd;
 	c->phase[MAL_SCENARIO_CALLBACK] = scen->callbackCmd;
 	c->phase[MAL_SCENARIO_ENGINE] = scen->engineCmd;
 	c->phase[MAL_SCENARIO_INITCLIENT] = scen->initClientCmd;
@@ -319,7 +306,6 @@ fillScenario(Client c, Scenario scen)
 	c->state[MAL_SCENARIO_READER] = 0;
 	c->state[MAL_SCENARIO_PARSER] = 0;
 	c->state[MAL_SCENARIO_OPTIMIZE] = 0;
-	c->state[MAL_SCENARIO_SCHEDULER] = 0;
 	c->state[MAL_SCENARIO_ENGINE] = 0;
 	c->state[MAL_SCENARIO_INITCLIENT] = 0;
 	c->state[MAL_SCENARIO_EXITCLIENT] = 0;
@@ -421,11 +407,6 @@ resetScenario(Client c)
  * The @sc{xyzoptimizer(Client c)} contains language specific optimizations
  * using the MAL intermediate code as a starting point.
  *
- * The @sc{xyztactics(Client c)} synchronizes the program execution with the
- * state of the machine, e.g., claiming resources, the history of the client
- * or alignment of the request with concurrent actions (e.g., transaction
- * coordination).
- *
  * The @sc{xyzengine(Client c)} contains the applicable back-end engine.
  * The default is the MAL interpreter, which provides good balance
  * between speed and ability to analysis its behavior.
@@ -439,7 +420,6 @@ static const char *phases[] = {
 	[MAL_SCENARIO_OPTIMIZE] = "scenario optimize",
 	[MAL_SCENARIO_PARSER] = "scenario parser",
 	[MAL_SCENARIO_READER] = "scenario reader",
-	[MAL_SCENARIO_SCHEDULER] = "scenario scheduler",
 };
 static str
 runPhase(Client c, int phase)
@@ -470,8 +450,6 @@ runScenarioBody(Client c)
 			goto wrapup;
 		if ( c->mode <= FINISHCLIENT ||  (msg = runPhase(c, MAL_SCENARIO_OPTIMIZE)) )
 			goto wrapup;
-		if ( c->mode <= FINISHCLIENT || (msg = runPhase(c, MAL_SCENARIO_SCHEDULER)))
-			goto wrapup;
 		if ( c->mode <= FINISHCLIENT || (msg = runPhase(c, MAL_SCENARIO_ENGINE)))
 			goto wrapup;
 	wrapup:
@@ -499,7 +477,7 @@ runScenario(Client c)
 {
 	str msg = MAL_SUCCEED;
 
-	if (c == 0 || c->phase[MAL_SCENARIO_READER] == 0)
+	if (c == 0 /*|| c->phase[MAL_SCENARIO_READER] == 0*/)
 		return msg;
 	msg = runScenarioBody(c);
 	if (msg != MAL_SUCCEED &&
