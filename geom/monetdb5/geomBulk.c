@@ -263,6 +263,7 @@ static str
 filterJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, double double_flag, const bat *ls_id, const bat *rs_id, bit nil_matches, lng estimate, bit anti, char (*func) (const GEOSGeometry *, const GEOSGeometry *, double), const char *name)
 {
 	BAT *lres = NULL, *rres = NULL, *l = NULL, *r = NULL, *ls = NULL, *rs = NULL;
+	BUN estimate_safe;
 	BATiter l_iter, r_iter;
 	str msg = MAL_SUCCEED;
 	struct canditer l_ci, r_ci;
@@ -284,15 +285,26 @@ filterJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, 
 	}
 	canditer_init(&l_ci, l, ls);
 	canditer_init(&r_ci, r, rs);
-	//TODO Why is this here? should we also not check how many cands are in r_ci
-	//create new BATs for the output
-	if (is_lng_nil(estimate) || estimate == 0)
-		estimate = l_ci.ncand;
-	if ((lres = COLnew(0, ATOMindex("oid"), estimate, TRANSIENT)) == NULL) {
+
+	// properly handle the estimate
+	if (is_lng_nil(estimate) || estimate == 0) {
+		if (l_ci.ncand > r_ci.ncand)
+			estimate = l_ci.ncand;
+		else
+			estimate = r_ci.ncand;
+	}
+
+	if (estimate < 0 || is_lng_nil(estimate) || estimate > (lng) BUN_MAX)
+		estimate_safe = BUN_NONE;
+	else
+		estimate_safe = (BUN) estimate;
+
+	// create new BATs for the output
+	if ((lres = COLnew(0, ATOMindex("oid"), estimate_safe, TRANSIENT)) == NULL) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}
-	if ((rres = COLnew(0, ATOMindex("oid"), estimate, TRANSIENT)) == NULL) {
+	if ((rres = COLnew(0, ATOMindex("oid"), estimate_safe, TRANSIENT)) == NULL) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}
@@ -412,6 +424,7 @@ free:
 static str
 filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, double double_flag, const bat *ls_id, const bat *rs_id, bit nil_matches, lng estimate, bit anti, char (*func) (const GEOSGeometry *, const GEOSGeometry *, double), const char *name) {
 	BAT *lres = NULL, *rres = NULL, *l = NULL, *r = NULL, *ls = NULL, *rs = NULL, *inner_res = NULL, *outer_res = NULL, *inner_b = NULL;
+	BUN estimate_safe;
 	BATiter l_iter, r_iter;
 	str msg = MAL_SUCCEED;
 	struct canditer l_ci, r_ci, outer_ci, inner_ci;
@@ -433,7 +446,8 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 	}
 	canditer_init(&l_ci, l, ls);
 	canditer_init(&r_ci, r, rs);
-	//create new BATs for the output
+
+	// properly handle the estimate
 	if (is_lng_nil(estimate) || estimate == 0) {
 		if (l_ci.ncand > r_ci.ncand)
 			estimate = l_ci.ncand;
@@ -441,11 +455,17 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 			estimate = r_ci.ncand;
 	}
 
-	if ((lres = COLnew(0, ATOMindex("oid"), estimate, TRANSIENT)) == NULL) {
+	if (estimate < 0 || is_lng_nil(estimate) || estimate > (lng) BUN_MAX)
+		estimate_safe = BUN_NONE;
+	else
+		estimate_safe = (BUN) estimate;
+
+	// create new BATs for the output
+	if ((lres = COLnew(0, ATOMindex("oid"), estimate_safe, TRANSIENT)) == NULL) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}
-	if ((rres = COLnew(0, ATOMindex("oid"), estimate, TRANSIENT)) == NULL) {
+	if ((rres = COLnew(0, ATOMindex("oid"), estimate_safe, TRANSIENT)) == NULL) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}
