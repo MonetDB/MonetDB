@@ -1712,6 +1712,8 @@ rel_groupby_cse(visitor *v, sql_rel *rel)
 		for (node *n=((list*)rel->r)->h; n ; n = n->next) {
 			sql_exp *e1 = n->data;
 			/* TODO maybe cover more cases? Here I only look at the left relation */
+			// TODO: we have to go down the expression as it could be an expresion of groupby columns
+			// eg: GROUP BY c1 + c3 -> ( r -> [c1,c3,sum])
 			sql_exp *e3 = e1->type == e_column ? exps_find_exp(l->exps, e1) : NULL;
 
 			for (node *m=n->next; m; m = m->next) {
@@ -2997,22 +2999,47 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rel_push_join_down_union(visitor *v, sql_rel *rel)
 {
+	return rel;
 	if ((is_join(rel->op) && !is_outerjoin(rel->op) && !is_single(rel)) || is_semi(rel->op)) {
 		sql_rel *l = rel->l, *r = rel->r, *ol = l, *or = r;
 		list *exps = rel->exps, *attr = rel->attr;
 		sql_exp *je = NULL;
 
+		/*
+		if (l && rel_is_ref(l) && is_union(l->op) && !need_distinct(l)) {
+			rel->l = l = rel_copy(v->sql, l, true);
+			rel_destroy(ol);
+			ol = l;
+		}
+		*/
+		if (l && rel_is_ref(l) && is_union(l->op) /*&& is_basetable(l->op)*/) {
+			rel->l = l = rel_copy(v->sql, l, true);
+			rel_destroy(ol);
+			ol = l;
+		}
+		if (r && rel_is_ref(r) && is_union(r->op) /*&& is_basetable(l->op)*/) {
+			rel->r = r = rel_copy(v->sql, r, true);
+			rel_destroy(or);
+			or = r;
+		}
 		if (!l || !r || need_distinct(l) || need_distinct(r) || rel_is_ref(l) || rel_is_ref(r))
 			return rel;
-		if (l->op == op_project)
+		if (l->op == op_project) {
+			if (!l->l)
+				return rel;
 			l = l->l;
-		if (r->op == op_project)
+		}
+		if (r->op == op_project) {
+			if (!r->l)
+				return rel;
 			r = r->l;
+		}
 
 		/* both sides only if we have a join index */
-		if (!l || !r ||(is_union(l->op) && is_union(r->op) &&
-			!(je = rel_is_join_on_pkey(rel, true)))) /* aligned PKEY-FKEY JOIN */
-			return rel;
+		//if (!l || !r || (is_union(l->op) && is_union(r->op) &&
+			//!(je = rel_is_join_on_pkey(rel, true)))) /* aligned PKEY-FKEY JOIN */
+			//return rel;
+		je = rel_is_join_on_pkey(rel, true); /* aligned PKEY-FKEY JOIN */
 		if (is_semi(rel->op) && is_union(l->op) && !je)
 			return rel;
 
@@ -3100,7 +3127,7 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 			nr = rel_project(v->sql->sa, nr, rel_projections(v->sql, nr, NULL, 1, 1));
 			v->changes++;
 			return rel_inplace_setop(v->sql, rel, nl, nr, op_union, rel_projections(v->sql, rel, NULL, 1, 1));
-		} else if (!is_union(l->op) &&
+		} else if ((!is_union(l->op) || !je) &&
 			   is_union(r->op) && !need_distinct(r) && !is_single(r) &&
 			   !is_semi(rel->op)) {
 			sql_rel *nl, *nr;
