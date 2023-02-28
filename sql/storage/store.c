@@ -1763,6 +1763,7 @@ bootstrap_create_schema(sql_trans *tr, const char *name, sqlid id, sqlid auth_id
 	} else {
 		base_init(NULL, &s->base, id, true, name);
 	}
+	s->base.new = store->first;
 	s->auth_id = auth_id;
 	s->owner = owner;
 	s->system = TRUE;
@@ -6878,7 +6879,7 @@ sql_trans_create_trigger(sql_trigger **tres, sql_trans *tr, sql_table *t, const 
 		trigger_destroy(store, nt);
 		return res;
 	}
-	sqlid tid = oid_nil;
+	sqlid tid = int_nil;
 
 	if ((res = store->table_api.table_insert(tr, systrigger, &nt->base.id, &nt->base.name, &tid, &nt->time, &nt->orientation,
 							 &nt->event, (nt->old_name)?&nt->old_name:&strnil, (nt->new_name)?&nt->new_name:&strnil,

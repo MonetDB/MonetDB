@@ -480,11 +480,6 @@ typedef struct sqlstore {
 	int catalog_version;	/* software version of the catalog */
 	sql_catalog *cat;		/* the catalog of persistent tables (what to do with tmp tables ?) */
 	sql_schema *tmp;		/* keep pointer to default (empty) tmp schema */
-	MT_Lock lock;			/* lock protecting concurrent writes (not reads, ie use rcu) */
-	MT_Lock commit;			/* protect transactions, only single commit (one wal writer) */
-	MT_Lock flush;			/* flush lock protecting concurrent writes (not reads, ie use rcu) */
-	MT_Lock table_locks[NR_TABLE_LOCKS];		/* protecting concurrent writes to tables (storage) */
-	MT_Lock column_locks[NR_COLUMN_LOCKS];		/* protecting concurrent writes to columns (storage) */
 	list *active;			/* list of running transactions */
 
 	ATOMIC_TYPE nr_active;	/* count number of transactions */
@@ -513,6 +508,12 @@ typedef struct sqlstore {
 	table_functions table_api;
 	logger_functions logger_api;
 	void *logger;			/* space to keep logging structure of storage backend */
+
+	MT_Lock lock;			/* lock protecting concurrent writes (not reads, ie use rcu) */
+	MT_Lock commit;			/* protect transactions, only single commit (one wal writer) */
+	MT_Lock flush;			/* flush lock protecting concurrent writes (not reads, ie use rcu) */
+	MT_Lock table_locks[NR_TABLE_LOCKS];		/* protecting concurrent writes to tables (storage) */
+	MT_Lock column_locks[NR_COLUMN_LOCKS];		/* protecting concurrent writes to columns (storage) */
 } sqlstore;
 
 typedef enum sql_dependency_change_type {
