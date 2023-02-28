@@ -115,15 +115,18 @@ struct BBPfarm_t BBPfarms[MAXFARMS];
 static MT_Lock BBPnameLock = MT_LOCK_INITIALIZER(BBPnameLock);
 static bat *BBP_hash = NULL;		/* BBP logical name hash buckets */
 static bat BBP_mask = 0;		/* number of buckets = & mask */
-#define FREE_CHUNK_ALLOC_SIZE 10
-#define GC_FREE_LIST_CALL_COUNT 20
+#define FREE_LIST_CHUNK_SIZE	8
+#define FREE_LIST_MIN_SIZE		32
+#define FREE_LIST_MAX_SIZE		64
 static struct {
 	MT_Lock cache;
 	bat free;
+	bat free_count;
 } GDKbbpLock; // last GDKbbpLock, i.e. GDKcacheLock, is the general free list
 
-#define GDKcacheLock	(GDKbbpLock.cache)
-#define BBP_free		(GDKbbpLock.free)
+#define GDKcacheLock		(GDKbbpLock.cache)
+#define BBP_free			(GDKbbpLock.free)
+#define BBP_free_count		(GDKbbpLock.free_count)
 
 static gdk_return BBPfree(BAT *b);
 static void BBPdestroy(BAT *b);
@@ -1622,7 +1625,8 @@ BBPinit(bool first)
 		char name[MT_NAME_LEN];
 		snprintf(name, sizeof(name), "GDKcacheLock");
 		MT_lock_init(&GDKcacheLock, name);
-		BBP_free = 0;
+		BBP_free		= 0;
+		BBP_free_count	= 0;
 	}
 
 	if (!GDKinmemory(0)) {
@@ -2442,16 +2446,18 @@ BBPgetsubdir(str s, bat i)
 static gdk_return
 maybeextend(Thread t) {
 	MT_lock_set(&GDKcacheLock);
-	if (BBP_free > 0) {
+	if (BBP_free_count >= FREE_LIST_CHUNK_SIZE) {
+		assert(BBP_free > 0);
 		/* take a chunk out of the general free list on top of my own free list */
 		int i = 1;
 		bat ocf = BBP_free;
 		bat cf = ocf;
-		while (BBP_next(cf) && i < FREE_CHUNK_ALLOC_SIZE) {
+		while (BBP_next(cf) && i < FREE_LIST_CHUNK_SIZE) {
 			cf = BBP_next(cf);
 			i++;
 		}
-		BBP_free = BBP_next(cf);
+		BBP_free				=	BBP_next(cf);
+		BBP_free_count			-=	FREE_LIST_CHUNK_SIZE;
 		MT_lock_unset(&GDKcacheLock);
 		BBP_next(cf) = 0;
 		t->free = ocf;
@@ -2472,9 +2478,9 @@ maybeextend(Thread t) {
 
 	bat size = (bat) ATOMIC_GET(&BBPsize);
 	/* if the common pool has no more space, extend it */
-	if (size + FREE_CHUNK_ALLOC_SIZE > BBPlimit) {
+	if (size + FREE_LIST_CHUNK_SIZE > BBPlimit) {
 		/* extend the common pool */
-		gdk_return r = BBPextend(true, size + FREE_CHUNK_ALLOC_SIZE);
+		gdk_return r = BBPextend(true, size + FREE_LIST_CHUNK_SIZE);
 		if (r != GDK_SUCCEED) {
 			MT_lock_unset(&BBPnameLock);
 			return GDK_FAIL;
@@ -2483,13 +2489,13 @@ maybeextend(Thread t) {
 
 	/* extend the thread list */
 	t->free	= size;
-	for (bat i = size + 1; i < (size + FREE_CHUNK_ALLOC_SIZE); i++) {
+	for (bat i = size + 1; i < (size + FREE_LIST_CHUNK_SIZE); i++) {
 		BBP_next(i - 1)	= i;
 	}
 	assert(t->stat_free_count == 0);
-	t->stat_free_count += FREE_CHUNK_ALLOC_SIZE;
+	t->stat_free_count += FREE_LIST_CHUNK_SIZE;
 
-	ATOMIC_SET(&BBPsize, size + FREE_CHUNK_ALLOC_SIZE);
+	ATOMIC_SET(&BBPsize, size + FREE_LIST_CHUNK_SIZE);
 
 	MT_lock_unset(&BBPnameLock);
 	return GDK_SUCCEED;
@@ -2623,8 +2629,8 @@ BBPhandover(Thread t, bat nr)
 {
 	bat first = t->free;
 	bat last = first;
-	t->stat_free_count -= nr;
-	t->stat_free_min = t->stat_free_max = t->stat_free_count;
+	t->stat_free_count	-= nr;
+	BBP_free_count 		+= nr;
 
 	bat i = first;
 	while (nr--) {
@@ -2672,20 +2678,9 @@ bbpclear(bat i, bool lock)
 	BBP_logical(i) = NULL;
 	BBP_next(i) = t->free;
 	t->free = i;
-	int stat_free_count = ++t->stat_free_count;
-	if (t->stat_free_min > stat_free_count) {
-		t->stat_free_min = stat_free_count;
-	}
-	else if (t->stat_free_max < stat_free_count) {
-		t->stat_free_max = stat_free_count;
-	}
-	if (++t->stat_call_count == GC_FREE_LIST_CALL_COUNT) {
-		const bat a = (t->stat_free_max - t->stat_free_min);
-		bat b = a / FREE_CHUNK_ALLOC_SIZE / 2;
-		if (b && 2 * a < t->stat_free_min) {
-			BBPhandover(t, b * FREE_CHUNK_ALLOC_SIZE);
-		}
-		t->stat_call_count = 0;
+	if (++t->stat_free_count > FREE_LIST_MAX_SIZE) {
+		bat m = (t->stat_free_count - FREE_LIST_MIN_SIZE) / FREE_LIST_CHUNK_SIZE;
+		BBPhandover(t, m * FREE_LIST_CHUNK_SIZE);
 	}
 	BBP_pid(i) = ~(MT_Id)0; /* not zero, not a valid thread id */
 }
@@ -4435,7 +4430,8 @@ void
 gdk_bbp_reset(void)
 {
 	int i;
-	BBP_free = 0;
+	BBP_free		= 0;
+	BBP_free_count	= 0;
 
 	while (BBPlimit > 0) {
 		BBPlimit -= BBPINIT;

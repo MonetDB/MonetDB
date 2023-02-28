@@ -1615,9 +1615,6 @@ THRnew(const char *name, MT_Id pid)
 			s->data[1] = THRdata[1];
 			s->sp = THRsp();
 			s->free = 0;
-			s->stat_free_max = 0;
-			s->stat_free_min = 0;
-			s->stat_call_count = 0;
 			s->stat_free_count = 0;
 			strcpy_len(s->name, name, sizeof(s->name));
 			TRC_DEBUG(PAR, "%x %zu sp = %zu\n",

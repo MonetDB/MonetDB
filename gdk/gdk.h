@@ -1932,9 +1932,6 @@ typedef struct threadStruct {
 				 * invalid) */
 	ATOMIC_TYPE pid;	/* thread id, 0 = unallocated */
 	bat free;
-	bat stat_free_max;
-	bat stat_free_min;
-	int stat_call_count;
 	int stat_free_count;
 	char name[MT_NAME_LEN];
 	void *data[THREADDATA];
