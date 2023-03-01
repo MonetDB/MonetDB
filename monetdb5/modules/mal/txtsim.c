@@ -9,17 +9,35 @@
  */
 
 /*
- * @f txtsim
- * @t Module providing similarity metrics for strings
- * @a Romulo Goncalves (from M4 to M5)
- * @d 01/12/2007
- * @v 0.1
+ * String Metrics
+ * Module providing similarity metrics for strings.
  *
- * @+ String metrics
+ * NEW:
+ * Levenshtein distance
+ * maxLevenshtein
+ * minLevenshtein (missing... but do it anyway?)
+ * Jaro–Winkler distance
+ * maxJaroWinkler (missing... but do it anyway?)
+ * minJaroWinkler
+ * startsWith
+ * endsWith
+ * endsWith
  *
- * Provides basic similarity metrics for strings.
- *
+ * ~ New:
+ * levenshtein - levenshtein dist + var op costs (ins/del, replace, transp)
+ * levenshtein - basic levenshtein dist
+ * editdistance - levenshtein alias ?
+ * editdistance2 - duplicate of editdistance ?
+ * similarity - normalized edit distance + minimum(?)
+ * similarity - normalized edit distance
+ * similarity - bulk normalized edit distance
+ * soundex
+ * stringdiff
+ * qgramnormalize
+ * qgramselfjoin
+ * str2grams
  */
+
 #include "monetdb_config.h"
 #include "mal.h"
 #include <string.h>
@@ -29,16 +47,16 @@
 #include "mal_exception.h"
 
 
-#define RETURN_NIL_IF(b,t) \
-	if (b) {\
-	   if (ATOMextern(t)) {\
-	      *(ptr*) res = (ptr) ATOMnil(t);\
-		  if ( *(ptr *) res == NULL)\
-			throw(MAL,"txtsim", SQLSTATE(HY013) MAL_MALLOC_FAIL);\
-	   } else {\
-	      memcpy(res, ATOMnilptr(t), ATOMsize(t));\
- 	   }\
-	   return MAL_SUCCEED; \
+#define RETURN_NIL_IF(b,t)												\
+	if (b) {															\
+		if (ATOMextern(t)) {											\
+			*(ptr*) res = (ptr) ATOMnil(t);								\
+			if ( *(ptr *) res == NULL)									\
+				throw(MAL,"txtsim", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+		} else {														\
+			memcpy(res, ATOMnilptr(t), ATOMsize(t));					\
+		}																\
+		return MAL_SUCCEED;												\
 	}
 
 /* =========================================================================
@@ -217,7 +235,7 @@ levenshteinbasic2_impl(int *result, str *s, str *t)
 
 /* set letter values */
 static const int Code[] = { 0, 1, 2, 3, 0, 1, 2, 0, 0, 2, 2, 4, 5, 5, 0,
-	1, 2, 6, 2, 3, 0, 1, 0, 2, 0, 2
+							1, 2, 6, 2, 3, 0, 1, 0, 2, 0, 2
 };
 
 static inline char
@@ -386,48 +404,48 @@ struct partition {
 };
 
 /* NAME
-	diag - find diagonal path
+   diag - find diagonal path
 
    SYNOPSIS
-	int diag(int xoff, int xlim, int yoff, int ylim, int minimal,
-		struct partition *part);
+   int diag(int xoff, int xlim, int yoff, int ylim, int minimal,
+   struct partition *part);
 
    DESCRIPTION
-	Find the midpoint of the shortest edit script for a specified
-	portion of the two strings.
+   Find the midpoint of the shortest edit script for a specified
+   portion of the two strings.
 
-	Scan from the beginnings of the strings, and simultaneously from
-	the ends, doing a breadth-first search through the space of
-	edit-sequence.  When the two searches meet, we have found the
-	midpoint of the shortest edit sequence.
+   Scan from the beginnings of the strings, and simultaneously from
+   the ends, doing a breadth-first search through the space of
+   edit-sequence.  When the two searches meet, we have found the
+   midpoint of the shortest edit sequence.
 
-	If MINIMAL is nonzero, find the minimal edit script regardless
-	of expense.  Otherwise, if the search is too expensive, use
-	heuristics to stop the search and report a suboptimal answer.
+   If MINIMAL is nonzero, find the minimal edit script regardless
+   of expense.  Otherwise, if the search is too expensive, use
+   heuristics to stop the search and report a suboptimal answer.
 
    RETURNS
-	Set PART->(XMID,YMID) to the midpoint (XMID,YMID).  The diagonal
-	number XMID - YMID equals the number of inserted characters
-	minus the number of deleted characters (counting only characters
-	before the midpoint).  Return the approximate edit cost; this is
-	the total number of characters inserted or deleted (counting
-	only characters before the midpoint), unless a heuristic is used
-	to terminate the search prematurely.
+   Set PART->(XMID,YMID) to the midpoint (XMID,YMID).  The diagonal
+   number XMID - YMID equals the number of inserted characters
+   minus the number of deleted characters (counting only characters
+   before the midpoint).  Return the approximate edit cost; this is
+   the total number of characters inserted or deleted (counting
+   only characters before the midpoint), unless a heuristic is used
+   to terminate the search prematurely.
 
-	Set PART->LEFT_MINIMAL to nonzero iff the minimal edit script
-	for the left half of the partition is known; similarly for
-	PART->RIGHT_MINIMAL.
+   Set PART->LEFT_MINIMAL to nonzero iff the minimal edit script
+   for the left half of the partition is known; similarly for
+   PART->RIGHT_MINIMAL.
 
    CAVEAT
-	This function assumes that the first characters of the specified
-	portions of the two strings do not match, and likewise that the
-	last characters do not match.  The caller must trim matching
-	characters from the beginning and end of the portions it is
-	going to specify.
+   This function assumes that the first characters of the specified
+   portions of the two strings do not match, and likewise that the
+   last characters do not match.  The caller must trim matching
+   characters from the beginning and end of the portions it is
+   going to specify.
 
-	If we return the "wrong" partitions, the worst this can do is
-	cause suboptimal diff output.  It cannot cause incorrect diff
-	output.  */
+   If we return the "wrong" partitions, the worst this can do is
+   cause suboptimal diff output.  It cannot cause incorrect diff
+   output.  */
 
 static inline int
 diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part, int too_expensive, struct string_data *string, int *fdiag, int *bdiag)
@@ -594,23 +612,23 @@ diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part
 
 
 /* NAME
-	compareseq - find edit sequence
+   compareseq - find edit sequence
 
    SYNOPSIS
-	void compareseq(int xoff, int xlim, int yoff, int ylim, int minimal);
+   void compareseq(int xoff, int xlim, int yoff, int ylim, int minimal);
 
    DESCRIPTION
-	Compare in detail contiguous subsequences of the two strings
-	which are known, as a whole, to match each other.
+   Compare in detail contiguous subsequences of the two strings
+   which are known, as a whole, to match each other.
 
-	The subsequence of string 0 is [XOFF, XLIM) and likewise for
-	string 1.
+   The subsequence of string 0 is [XOFF, XLIM) and likewise for
+   string 1.
 
-	Note that XLIM, YLIM are exclusive bounds.  All character
-	numbers are origin-0.
+   Note that XLIM, YLIM are exclusive bounds.  All character
+   numbers are origin-0.
 
-	If MINIMAL is nonzero, find a minimal difference no matter how
-	expensive it is.  */
+   If MINIMAL is nonzero, find a minimal difference no matter how
+   expensive it is.  */
 
 static inline void
 compareseq(int xoff, int xlim, int yoff, int ylim, int minimal, int max_edits, int too_expensive, struct string_data *string, int *fdiag, int *bdiag) /* compareseq stops when edits > max_edits */
@@ -666,35 +684,35 @@ compareseq(int xoff, int xlim, int yoff, int ylim, int minimal, int max_edits, i
 }
 
 /* NAME
-	fstrcmp - fuzzy string compare
+   fstrcmp - fuzzy string compare
 
    SYNOPSIS
-	double fstrcmp(const char *s1, int l1, const char *s2, int l2, double);
+   double fstrcmp(const char *s1, int l1, const char *s2, int l2, double);
 
    DESCRIPTION
-	The fstrcmp function may be used to compare two string for
-	similarity.  It is very useful in reducing "cascade" or
-	"secondary" errors in compilers or other situations where
-	symbol tables occur.
+   The fstrcmp function may be used to compare two string for
+   similarity.  It is very useful in reducing "cascade" or
+   "secondary" errors in compilers or other situations where
+   symbol tables occur.
 
    RETURNS
-	double; 0 if the strings are entirly dissimilar, 1 if the
-	strings are identical, and a number in between if they are
-	similar.  */
+   double; 0 if the strings are entirly dissimilar, 1 if the
+   strings are identical, and a number in between if they are
+   similar.  */
 
 #define INITIAL_INT_BUFFER_LENGTH 2048
 
-#define CHECK_INT_BUFFER_LENGTH(BUFFER, BUFFER_LEN, NEXT_LEN, OP) \
-	do { \
-		if ((NEXT_LEN) > *BUFFER_LEN) { \
+#define CHECK_INT_BUFFER_LENGTH(BUFFER, BUFFER_LEN, NEXT_LEN, OP)		\
+	do {																\
+		if ((NEXT_LEN) > *BUFFER_LEN) {									\
 			size_t newlen = (((NEXT_LEN) + 1023) & ~1023); /* align to a multiple of 1024 bytes */ \
-			int *newbuf = GDKmalloc(newlen); \
-			if (!newbuf) \
-				throw(MAL, OP, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-			GDKfree(*BUFFER); \
-			*BUFFER = newbuf; \
-			*BUFFER_LEN = newlen; \
-		} \
+			int *newbuf = GDKmalloc(newlen);							\
+			if (!newbuf)												\
+				throw(MAL, OP, SQLSTATE(HY013) MAL_MALLOC_FAIL);		\
+			GDKfree(*BUFFER);											\
+			*BUFFER = newbuf;											\
+			*BUFFER_LEN = newlen;										\
+		}																\
 	} while (0)
 
 static str
@@ -748,8 +766,8 @@ fstrcmp_impl_internal(dbl *ret, int **fdiag_buf, size_t *fdiag_buflen, const cha
 	   This is admittedly biased towards finding that the strings are
 	   similar, however it does produce meaningful results.  */
 	*ret = ((double)
-		(string[0].data_length + string[1].data_length - string[1].edit_count - string[0].edit_count)
-		/ (string[0].data_length + string[1].data_length));
+			(string[0].data_length + string[1].data_length - string[1].edit_count - string[0].edit_count)
+			/ (string[0].data_length + string[1].data_length));
 	return MAL_SUCCEED;
 }
 
@@ -839,7 +857,7 @@ fstrcmp0_impl_bulk(bat *res, bat *strings1, bat *strings2)
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
 
-bailout:
+ bailout:
 	GDKfree(fdiag_buf);
 	if (bn && !msg) {
 		BATsetcount(bn, q);
@@ -1077,19 +1095,19 @@ CMDstr2qgrams(bat *ret, str *val)
 
 #include "mel.h"
 mel_func txtsim_init_funcs[] = {
- command("txtsim", "levenshtein", levenshtein_impl, false, "Calculates Levenshtein distance (edit distance) between two strings, variable operation costs (ins/del, replacement, transposition)", args(1,6, arg("",int),arg("s",str),arg("t",str),arg("insdel_cost",int),arg("replace_cost",int),arg("transpose_cost",int))),
- command("txtsim", "levenshtein", levenshteinbasic_impl, false, "Calculates Levenshtein distance (edit distance) between two strings", args(1,3, arg("",int),arg("s",str),arg("t",str))),
- command("txtsim", "editdistance", levenshteinbasic_impl, false, "Alias for Levenshtein(str,str)", args(1,3, arg("",int),arg("s",str),arg("t",str))),
- command("txtsim", "editdistance2", levenshteinbasic2_impl, false, "Calculates Levenshtein distance (edit distance) between two strings. Cost of transposition is 1 instead of 2", args(1,3, arg("",int),arg("s",str),arg("t",str))),
- command("txtsim", "similarity", fstrcmp_impl, false, "Normalized edit distance between two strings", args(1,4, arg("",dbl),arg("string1",str),arg("string2",str),arg("minimum",dbl))),
- command("txtsim", "similarity", fstrcmp0_impl, false, "Normalized edit distance between two strings", args(1,3, arg("",dbl),arg("string1",str),arg("string2",str))),
- command("battxtsim", "similarity", fstrcmp0_impl_bulk, false, "Normalized edit distance between two strings", args(1,3, batarg("",dbl),batarg("string1",str),batarg("string2",str))),
- command("txtsim", "soundex", soundex_impl, false, "Soundex function for phonetic matching", args(1,2, arg("",str),arg("name",str))),
- command("txtsim", "stringdiff", stringdiff_impl, false, "calculate the soundexed editdistance", args(1,3, arg("",int),arg("s1",str),arg("s2",str))),
- command("txtsim", "qgramnormalize", CMDqgramnormalize, false, "'Normalizes' strings (eg. toUpper and replaces non-alphanumerics with one space", args(1,2, arg("",str),arg("input",str))),
- command("txtsim", "qgramselfjoin", CMDqgramselfjoin, false, "QGram self-join on ordered(!) qgram tables and sub-ordered q-gram positions", args(2,8, batarg("",int),batarg("",int),batarg("qgram",oid),batarg("id",oid),batarg("pos",int),batarg("len",int),arg("c",flt),arg("k",int))),
- command("txtsim", "str2qgrams", CMDstr2qgrams, false, "Break the string into 4-grams", args(1,2, batarg("",str),arg("s",str))),
- { .imp=NULL }
+	command("txtsim", "levenshtein", levenshtein_impl, false, "Calculates Levenshtein distance (edit distance) between two strings, variable operation costs (ins/del, replacement, transposition)", args(1,6, arg("",int),arg("s",str),arg("t",str),arg("insdel_cost",int),arg("replace_cost",int),arg("transpose_cost",int))),
+	command("txtsim", "levenshtein", levenshteinbasic_impl, false, "Calculates Levenshtein distance (edit distance) between two strings", args(1,3, arg("",int),arg("s",str),arg("t",str))),
+	command("txtsim", "editdistance", levenshteinbasic_impl, false, "Alias for Levenshtein(str,str)", args(1,3, arg("",int),arg("s",str),arg("t",str))),
+	command("txtsim", "editdistance2", levenshteinbasic2_impl, false, "Calculates Levenshtein distance (edit distance) between two strings. Cost of transposition is 1 instead of 2", args(1,3, arg("",int),arg("s",str),arg("t",str))),
+	command("txtsim", "similarity", fstrcmp_impl, false, "Normalized edit distance between two strings", args(1,4, arg("",dbl),arg("string1",str),arg("string2",str),arg("minimum",dbl))),
+	command("txtsim", "similarity", fstrcmp0_impl, false, "Normalized edit distance between two strings", args(1,3, arg("",dbl),arg("string1",str),arg("string2",str))),
+	command("battxtsim", "similarity", fstrcmp0_impl_bulk, false, "Normalized edit distance between two strings", args(1,3, batarg("",dbl),batarg("string1",str),batarg("string2",str))),
+	command("txtsim", "soundex", soundex_impl, false, "Soundex function for phonetic matching", args(1,2, arg("",str),arg("name",str))),
+	command("txtsim", "stringdiff", stringdiff_impl, false, "calculate the soundexed editdistance", args(1,3, arg("",int),arg("s1",str),arg("s2",str))),
+	command("txtsim", "qgramnormalize", CMDqgramnormalize, false, "'Normalizes' strings (eg. toUpper and replaces non-alphanumerics with one space", args(1,2, arg("",str),arg("input",str))),
+	command("txtsim", "qgramselfjoin", CMDqgramselfjoin, false, "QGram self-join on ordered(!) qgram tables and sub-ordered q-gram positions", args(2,8, batarg("",int),batarg("",int),batarg("qgram",oid),batarg("id",oid),batarg("pos",int),batarg("len",int),arg("c",flt),arg("k",int))),
+	command("txtsim", "str2qgrams", CMDstr2qgrams, false, "Break the string into 4-grams", args(1,2, batarg("",str),arg("s",str))),
+	{ .imp=NULL }
 };
 #include "mal_import.h"
 #ifdef _MSC_VER
