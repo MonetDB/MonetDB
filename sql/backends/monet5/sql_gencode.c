@@ -1212,16 +1212,8 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	if (!r)
 		return -1;
 
-#ifndef NDEBUG
-	/* for debug builds we keep the SQL function name in the MAL function name to make it easy to debug */
-	if (strlen(f->base.name) + 21 >= IDLENGTH) { /* 20 bits for u64 number + '%' */
-		(void) sql_error(m, 10, SQLSTATE(42000) "MAL function name '%s' too large for the backend", f->base.name);
-		return -1;
-	}
-	(void) snprintf(befname, IDLENGTH, "%%" LLFMT "%s", store_function_counter(m->store), f->base.name);
-#else
 	(void) snprintf(befname, IDLENGTH, "f_" LLFMT, store_function_counter(m->store));
-#endif
+	TRC_INFO(SQL_PARSER, "Mapping SQL name '%s' to MAL name '%s'\n", f->base.name, befname);
 	symbackup = c->curprg;
 	memcpy(&bebackup, be, sizeof(backend)); /* backup current backend */
 	backend_reset(be);
