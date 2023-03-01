@@ -38,7 +38,6 @@ target_sources(mal
   mal_client.c
   mal_debugger.c mal_debugger.h
   mal_exception.c
-  mal_factory.c mal_factory.h
   mal_function.c mal_function.h
   mal_import.c
   mal_runtime.c mal_runtime.h

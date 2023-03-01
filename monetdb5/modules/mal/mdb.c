@@ -101,16 +101,6 @@ MDBstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 static str
-MDBstartFactory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) p;
-		throw(MAL, "mdb.start", SQLSTATE(0A000) PROGRAM_NYI);
-}
-
-static str
 MDBstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	stk->cmd = 0;
@@ -763,7 +753,6 @@ CMDmodules(bat *bid)
 mel_func mdb_init_funcs[] = {
  pattern("mdb", "start", MDBstart, false, "Start interactive debugger", args(1,1, arg("",void))),
  pattern("mdb", "start", MDBstart, false, "Start interactive debugger on a client", args(1,2, arg("",void),arg("clientid",int))),
- pattern("mdb", "start", MDBstartFactory, false, "Start interactive debugger on a running factory", args(1,3, arg("",void),arg("mod",str),arg("fcn",str))),
  pattern("mdb", "stop", MDBstop, false, "Stop the interactive debugger", args(1,1, arg("",void))),
  pattern("mdb", "inspect", MDBinspect, false, "Run the debugger on a specific function", args(1,3, arg("",void),arg("mod",str),arg("fcn",str))),
  command("mdb", "modules", CMDmodules, false, "List available modules", args(1,1, batarg("",str))),

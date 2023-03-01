@@ -1551,7 +1551,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			continue;
 		sideeffects = sideeffects || hasSideEffects(curBlk, p, FALSE);
 		no_inline |= (getModuleId(p) == malRef && getFunctionId(p) == multiplexRef);
-		if (p->token == RETURNsymbol || p->token == YIELDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol)
+		if (p->token == RETURNsymbol || p->barrier == RETURNsymbol)
 			retseen++;
 	}
 	if (i == curBlk->stop && retseen == 1 && f->type != F_UNION && !no_inline)

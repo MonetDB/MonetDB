@@ -926,11 +926,9 @@ retryRead:
 			/* terminate the execution for ordinary functions only */
 			if (strncmp("exit", b, 4) == 0) {
 		case 'x':
-				if (!(getInstrPtr(mb, 0)->token == FACcall)) {
-					stk->cmd = 'x';
-					cntxt->prompt = oldprompt;
-					cntxt->promptlength = oldpromptlength;
-				}
+				stk->cmd = 'x';
+				cntxt->prompt = oldprompt;
+				cntxt->promptlength = oldpromptlength;
 			}
 			return;
 		case 'q':

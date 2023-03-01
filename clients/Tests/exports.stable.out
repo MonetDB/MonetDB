@@ -1098,7 +1098,6 @@ InstrPtr newInstruction(MalBlkPtr mb, const char *modnme, const char *fcnnme);
 InstrPtr newInstructionArgs(MalBlkPtr mb, const char *modnme, const char *fcnnme, int args);
 MalBlkPtr newMalBlk(int elements);
 int newMalBlkStmt(MalBlkPtr mb, int elements);
-Plant newPlant(MalBlkPtr mb);
 InstrPtr newRaiseStmt(MalBlkPtr mb, const char *nme);
 const char *newRef;
 InstrPtr newReturnStmt(MalBlkPtr mb);

@@ -187,7 +187,6 @@ malEmbeddedReset(void) //remove extra modules and set to non-initialized again
 			free(err);
  		}
 	}
-	mal_factory_reset();
 	mal_dataflow_reset();
 	mal_client_reset();
   	mal_linker_reset();
