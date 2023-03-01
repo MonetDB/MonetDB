@@ -64,6 +64,10 @@
 #include "str.h"
 #include <string.h>
 
+#if HAVE_ICONV
+#include <iconv.h>
+#endif
+
 /*
  * UTF-8 Handling
  * UTF-8 is a way to store Unicode strings in zero-terminated byte
@@ -4745,6 +4749,44 @@ STRspace(str *res, const int *ll)
 	return msg;
 }
 
+static str
+STRasciify(str *r, const str *s)
+{
+#if HAVE_ICONV
+	/* Handle NULL and return early */
+	if (strNil(*s)) {
+		if ((*r = GDKstrdup(str_nil)) == NULL)
+			throw(MAL, "str.asciify", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		else
+			return MAL_SUCCEED;
+	}
+	iconv_t cd;
+	const str f = "UTF8", t = "ASCII//TRANSLIT";
+	str in = *s, out;
+	/* Output string length LEN+1 when converting from UTF-8 TO ASCII
+	   should be enough. If for some reason LEN is needed is totality,
+	   +1 safeguards the \0.*/
+	size_t in_len = strlen(in), out_len = in_len + 1;
+	/* man iconv; /TRANSLIT */
+	if ((cd = iconv_open(t, f)) == (iconv_t)(-1))
+		throw(MAL, "str.asciify", "Cannot convert from (%s) to (%s).", f, t);
+	if ((*r = out = GDKmalloc(out_len)) == NULL)
+		throw(MAL, "str.asciify", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	size_t x = iconv(cd, &in, &in_len, &out, &out_len);
+	if (x == (size_t)-1) {
+		GDKfree(out);
+		*r = NULL;
+		iconv_close(cd);
+		throw(MAL, "str.asciify", "ICONV: string conversion failed from (%s) to (%s)", f, t);
+	}
+	*out = '\0';
+	iconv_close(cd);
+	return MAL_SUCCEED;
+#else
+	throw(MAL, "str.asciify", "ICONV library not available.");
+#endif
+}
+
 #include "mel.h"
 mel_func str_init_funcs[] = {
  command("str", "str", STRtostr, false, "Noop routine.", args(1,2, arg("",str),arg("s",str))),
@@ -4788,6 +4830,7 @@ mel_func str_init_funcs[] = {
  command("str", "repeat", STRrepeat, false, "", args(1,3, arg("",str),arg("s2",str),arg("c",int))),
  command("str", "space", STRspace, false, "", args(1,2, arg("",str),arg("l",int))),
  command("str", "epilogue", STRepilogue, false, "", args(1,1, arg("",void))),
+ command("str", "asciify", STRasciify, false, "Transform in str from UTF8 to ASCII", args(1, 2, arg("out",str), arg("in",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"

@@ -4906,6 +4906,18 @@ bailout:
 	return msg;
 }
 
+static str
+BATSTRasciify(str *r, const str *s)
+{
+#if HAVE_ICONV
+	(void)r;
+	(void)s;
+	return MAL_SUCCEED;
+#else
+	throw(MAL, "str.asciify", "ICONV library not available.");
+#endif
+}
+
 #include "mel.h"
 mel_func batstr_init_funcs[] = {
  pattern("batstr", "length", STRbatLength, false, "Return the length of a string.", args(1,2, batarg("",int),batarg("s",str))),
@@ -5058,6 +5070,7 @@ mel_func batstr_init_funcs[] = {
  pattern("batstr", "repeat", STRbatrepeat_strcst, false, "", args(1,4, batarg("",str),arg("s",str),batarg("c",int),batarg("s",oid))),
  pattern("batstr", "space", STRbatSpace, false, "", args(1,2, batarg("",str),batarg("l",int))),
  pattern("batstr", "space", STRbatSpace, false, "", args(1,3, batarg("",str),batarg("l",int),batarg("s",oid))),
+ command("batstr", "asciify", BATSTRasciify, false, "Transform in str from UTF8 to ASCII", args(1, 2, batarg("out",str), batarg("in",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"
