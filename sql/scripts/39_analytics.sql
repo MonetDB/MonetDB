@@ -336,9 +336,11 @@ GRANT EXECUTE ON AGGREGATE median_avg(INTEGER) TO PUBLIC;
 create aggregate median_avg(val BIGINT) returns DOUBLE
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(BIGINT) TO PUBLIC;
+/* like avg we need a proper decimal returning version
 create aggregate median_avg(val DECIMAL) returns DOUBLE
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL) TO PUBLIC;
+*/
 create aggregate median_avg(val REAL) returns DOUBLE
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(REAL) TO PUBLIC;
