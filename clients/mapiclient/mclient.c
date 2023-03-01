@@ -3544,6 +3544,14 @@ main(int argc, char **argv)
 	if (mode == SQL && !settz)
 		mapi_set_time_zone(mid, 0);
 
+	if (mode == SQL) {
+		if (output) {
+			mapi_set_size_header(mid, strcmp(output, "raw") == 0);
+		} else {
+			mapi_set_size_header(mid, false);
+		}
+	}
+
 	if (mapi_error(mid) == MOK)
 		mapi_reconnect(mid);	/* actually, initial connect */
 
@@ -3573,15 +3581,12 @@ main(int argc, char **argv)
 	mapi_trace(mid, trace);
 	if (output) {
 		setFormatter(output);
-		mapi_set_size_header(mid, strcmp(output, "raw") == 0);
 		free(output);
 	} else {
 		if (mode == SQL) {
 			setFormatter("sql");
-			mapi_set_size_header(mid, false);
 		} else {
 			setFormatter("raw");
-			mapi_set_size_header(mid, true);
 		}
 	}
 	/* give the user a welcome message with some general info */
