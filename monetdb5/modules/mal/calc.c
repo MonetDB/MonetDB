@@ -127,6 +127,29 @@ CMDvarDIV(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+static str
+CMDvarDIV2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	ValRecord v1, v2;
+
+	v1.vtype = TYPE_lng;
+	v1.val.lval = 1;
+	v2.vtype = TYPE_lng;
+	v2.val.lval = 2;
+
+	if (VARcalcsub(&v1, &stk->stk[getArg(pci, 2)], &v1) != GDK_SUCCEED)
+		return mythrow(MAL, "calc./", OPERATION_FAILED);
+	if (VARcalcdiv(&v2, &v1, &v2) != GDK_SUCCEED)
+		return mythrow(MAL, "calc./", OPERATION_FAILED);
+	if (VARcalcadd(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &v2) != GDK_SUCCEED)
+		return mythrow(MAL, "calc./", OPERATION_FAILED);
+	if (VARcalcdiv(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+		return mythrow(MAL, "calc./", OPERATION_FAILED);
+	return MAL_SUCCEED;
+}
+
 
 static str
 CMDvarMOD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1057,6 +1080,11 @@ mel_func calc_init_funcs[] = {
  pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",dbl),arg("v2",int))),
  pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",dbl),arg("v2",lng))),
  pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",dbl),arg("v2",hge))),
+ pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",hge),arg("v1",hge),arg("v2",lng))),
+ pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",lng),arg("v1",lng),arg("v2",lng))),
+ pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",int),arg("v1",int),arg("v2",lng))),
+ pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",sht),arg("v1",sht),arg("v2",lng))),
+ pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",bte),arg("v1",bte),arg("v2",lng))),
  pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",bte),arg("v2",bte))),
  pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",bte),arg("v2",sht))),
  pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",bte),arg("v2",int))),

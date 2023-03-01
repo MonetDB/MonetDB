@@ -1209,6 +1209,7 @@ sqltypeinit( sql_allocator *sa)
 				sql_create_func(sa, "sql_div", "calc", "/", FALSE, FALSE, SCALE_DIV, 0, *t, 2, *t, *u);
 			}
 		}
+		sql_create_func(sa, "num_div", "calc", "num_div", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, LNG);
 	}
 
 	/* all numericals */
