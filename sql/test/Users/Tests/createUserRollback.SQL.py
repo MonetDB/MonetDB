@@ -21,5 +21,4 @@ with SQLTestCase() as tc:
                 DROP TABLE sys.myvar;
             """).assertSucceeded()
     tc.connect(username="1", password="1")
-    tc.execute("SELECT 1;")
-
+    tc.execute("SELECT 1;").assertFailed()
