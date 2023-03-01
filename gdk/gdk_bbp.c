@@ -2470,12 +2470,6 @@ maybeextend(Thread t) {
 
 	MT_lock_set(&BBPnameLock);
 
-	/* thread list was already extended by another concurrent transaction */
-	if (t->free > 0) {
-		MT_lock_unset(&BBPnameLock);
-		return GDK_SUCCEED;
-	}
-
 	bat size = (bat) ATOMIC_GET(&BBPsize);
 	/* if the common pool has no more space, extend it */
 	if (size + FREE_LIST_CHUNK_SIZE > BBPlimit) {
@@ -2495,7 +2489,7 @@ maybeextend(Thread t) {
 	assert(t->stat_free_count == 0);
 	t->stat_free_count += FREE_LIST_CHUNK_SIZE;
 
-	ATOMIC_SET(&BBPsize, size + FREE_LIST_CHUNK_SIZE);
+	ATOMIC_ADD(&BBPsize, FREE_LIST_CHUNK_SIZE);
 
 	MT_lock_unset(&BBPnameLock);
 	return GDK_SUCCEED;
