@@ -37,7 +37,6 @@
 #include "mal_parser.h"
 #include "mal_builder.h"
 #include "mal_namespace.h"
-#include "mal_debugger.h"
 #include "mal_linker.h"
 #include "mal_scenario.h"
 #include "mal_authorize.h"

@@ -15,7 +15,6 @@
 #include "opt_support.h"
 #include "mal_interpreter.h"
 #include "mal_listing.h"
-#include "mal_debugger.h"
 #include "opt_multiplex.h"
 #include "optimizer_private.h"
 #include "manifold.h"
