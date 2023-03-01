@@ -16,13 +16,13 @@ PLAN SELECT - col0 AS col1 FROM tab0 AS cor0 WHERE NOT + col0 IS NOT NULL GROUP 
 ----
 project (
 | select (
-| | group by (
+| | project (
 | | | group by (
 | | | | select (
 | | | | | table("sys"."tab0") [ "tab0"."col0" UNIQUE as "cor0"."col0", "tab0"."col1" UNIQUE as "cor0"."col1" ]
 | | | | ) [ ("cor0"."col0" UNIQUE) * = (int(32) NULL) ]
-| | | ) [ "cor0"."col1" UNIQUE, "cor0"."col0" UNIQUE ] [ "cor0"."col1" UNIQUE, "cor0"."col0" UNIQUE ]
-| | ) [ "cor0"."col1" UNIQUE, "cor0"."col0" UNIQUE ] [ "cor0"."col1" UNIQUE, "cor0"."col0" UNIQUE, "sys"."avg" no nil ("cor0"."col0" UNIQUE) as "%1"."%1" ]
+| | | ) [ "cor0"."col1" UNIQUE, "cor0"."col0" UNIQUE ] [ "cor0"."col1" UNIQUE, "cor0"."col0" UNIQUE, "sys"."count" unique  no nil ("cor0"."col0" UNIQUE) NOT NULL as "%2"."%2", "sys"."sum" unique  no nil ("cor0"."col0" UNIQUE) as "%3"."%3" ]
+| | ) [ "cor0"."col1" UNIQUE, "cor0"."col0" UNIQUE, "sys"."sql_div"(double(53)["%3"."%3"], double(53)["%2"."%2" NOT NULL] NOT NULL) as "%1"."%1" ]
 | ) [ ("sys"."sql_add"(double(53)["sys"."sql_neg"("cor0"."col1" UNIQUE)], "%1"."%1")) ! * = (double(53) NULL) ]
 ) [ "sys"."sql_neg"("cor0"."col0" UNIQUE) as "col1" ]
 
