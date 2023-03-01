@@ -236,7 +236,6 @@ static FlowEvent
 q_dequeue(Queue *q, Client cntxt)
 {
 	FlowEvent r = NULL, s = NULL;
-	//int i;
 
 	assert(q);
 	MT_sema_down(&q->s);
