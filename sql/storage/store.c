@@ -1763,6 +1763,7 @@ bootstrap_create_schema(sql_trans *tr, const char *name, sqlid id, sqlid auth_id
 	} else {
 		base_init(NULL, &s->base, id, true, name);
 	}
+	s->base.new = store->first;
 	s->auth_id = auth_id;
 	s->owner = owner;
 	s->system = TRUE;
