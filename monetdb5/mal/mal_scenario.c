@@ -244,9 +244,6 @@ updateScenario(str nme, str fnme, MALfcn fcn)
 			if (c1->scenario &&
 			    strcmp(c1->scenario, scen->name) == 0)
 				c1->phase[phase] = fcn;
-			if (c1->oldscenario &&
-			    strcmp(c1->oldscenario, scen->name) == 0)
-				c1->oldphase[phase] = fcn;
 		}
 	}
 }
@@ -277,9 +274,7 @@ str getScenarioLanguage(Client c){
 }
 /*
  * Changing the scenario for a particular client invalidates the
- * state maintained for the previous scenario. The old scenario is
- * retained in the client record to facilitate propagation of
- * state information, or to simply switch back to the previous one.
+ * state maintained for the previous scenario.
  * Before we initialize a scenario the client scenario is reset to
  * the MAL scenario. This implies that all scenarios are initialized
  * using the same scenario. After the scenario initialization file
@@ -319,22 +314,13 @@ setScenario(Client c, str nme)
 	if (scen == NULL)
 		throw(MAL, "setScenario", SCENARIO_NOT_FOUND " '%s'", nme);
 
-	if (c->scenario) {
-		c->oldscenario = c->scenario;
-		for (i = 0; i < SCENARIO_PROPERTIES; i++) {
-			c->oldphase[i] = c->phase[i];
-		}
-	}
-
 	msg = fillScenario(c, scen);
 	if (msg) {
 		/* error occurred, reset the scenario , assume default always works */
-		c->scenario = c->oldscenario;
+		c->scenario = NULL;
 		for (i = 0; i < SCENARIO_PROPERTIES; i++) {
-			c->phase[i] = c->oldphase[i];
-			c->oldphase[i] = NULL;
+			c->phase[i] = NULL;
 		}
-		c->oldscenario = NULL;
 		return msg;
 	}
 	return MAL_SUCCEED;
@@ -368,11 +354,10 @@ resetScenario(Client c)
 		freeException(msg);
 	}
 
-	c->scenario = c->oldscenario;
+	c->scenario = NULL;
 	for (i = 0; i < SCENARIO_PROPERTIES; i++) {
-		c->phase[i] = c->oldphase[i];
+		c->phase[i] = NULL;
 	}
-	c->oldscenario = 0;
 }
 
 /*

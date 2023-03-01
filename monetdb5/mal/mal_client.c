@@ -237,7 +237,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->user = user;
 	c->username = 0;
 	c->scenario = NULL;
-	c->oldscenario = NULL;
 	c->srcFile = NULL;
 	c->blkmode = 0;
 

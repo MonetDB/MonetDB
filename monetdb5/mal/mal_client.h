@@ -57,8 +57,7 @@ typedef struct CLIENT {
 	 * provided to temporarily switch to another scenario.
 	 */
 	str     scenario;  /* scenario management references */
-	str     oldscenario;
-	MALfcn  phase[SCENARIO_PROPERTIES], oldphase[SCENARIO_PROPERTIES];
+	MALfcn  phase[SCENARIO_PROPERTIES];
 						/* if set to 'S' it will put the process to sleep */
 	bit		sqlprofiler;		/* control off-line sql performance monitoring */
 	/*
