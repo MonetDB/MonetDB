@@ -44009,6 +44009,31 @@ pattern calc.not(X_0:sht):sht
 CMDvarNOT;
 Unary bitwise not of V
 calc
+num_div
+pattern calc.num_div(X_0:bte, X_1:lng):bte 
+CMDvarDIV2;
+Return (V1+(V2-1)/2) / V2, nil on divide by zero
+calc
+num_div
+pattern calc.num_div(X_0:hge, X_1:lng):hge 
+CMDvarDIV2;
+Return (V1+(V2-1)/2) / V2, nil on divide by zero
+calc
+num_div
+pattern calc.num_div(X_0:int, X_1:lng):int 
+CMDvarDIV2;
+Return (V1+(V2-1)/2) / V2, nil on divide by zero
+calc
+num_div
+pattern calc.num_div(X_0:lng, X_1:lng):lng 
+CMDvarDIV2;
+Return (V1+(V2-1)/2) / V2, nil on divide by zero
+calc
+num_div
+pattern calc.num_div(X_0:sht, X_1:lng):sht 
+CMDvarDIV2;
+Return (V1+(V2-1)/2) / V2, nil on divide by zero
+calc
 oid
 pattern calc.oid(X_0:bit):oid 
 CMDvarCONVERT;
