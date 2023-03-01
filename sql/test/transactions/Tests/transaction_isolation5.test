@@ -1,0 +1,1010 @@
+statement ok
+START TRANSACTION
+
+statement ok
+SAVEPOINT mys
+
+statement ok
+CREATE SCHEMA ups
+
+statement ok
+SET SCHEMA ups
+
+statement error 40000!ROLLBACK TO SAVEPOINT: finished successfully, but the session's schema could not be found on the current transaction
+ROLLBACK TO SAVEPOINT mys
+
+statement ok
+rollback
+
+@connection(id=mdb1, username=monetdb, password=monetdb)
+statement ok
+START TRANSACTION
+
+@connection(id=mdb1)
+statement ok
+SAVEPOINT mys2
+
+@connection(id=mdb1)
+statement ok
+CREATE SCHEMA ups2
+
+@connection(id=mdb1)
+statement ok
+SET SCHEMA ups2
+
+@connection(id=mdb1)
+statement ok
+RELEASE SAVEPOINT mys2
+
+@connection(id=mdb1)
+statement ok
+rollback
+
+@connection(id=mdb3, username=monetdb, password=monetdb)
+statement ok
+create table child1(a int)
+
+@connection(id=mdb3)
+statement ok
+start transaction
+
+@connection(id=mdb2, username=monetdb, password=monetdb)
+statement ok
+start transaction
+
+@connection(id=mdb3)
+statement ok
+create merge table parent1(a int)
+
+@connection(id=mdb3)
+statement ok
+alter table parent1 add table child1
+
+@connection(id=mdb2)
+statement ok
+insert into child1 values (1)
+
+@connection(id=mdb3)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+commit
+
+@connection(id=mdb3)
+statement ok
+create merge table parent2(a int, b int)
+
+@connection(id=mdb3)
+statement ok
+create table child2(a int, b int)
+
+@connection(id=mdb3)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb3)
+statement ok
+drop table child2
+
+@connection(id=mdb2)
+statement ok
+ALTER TABLE parent2 ADD TABLE child2
+
+@connection(id=mdb3)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+@connection(id=mdb3)
+statement ok
+create merge table parent3(a int, b int)
+
+@connection(id=mdb3)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb3)
+statement ok
+drop table parent3
+
+@connection(id=mdb2)
+statement error 42000!ALTER TABLE: transaction conflict detected
+ALTER TABLE parent3 ADD TABLE parent2
+
+@connection(id=mdb3)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+@connection(id=mdb3)
+statement ok
+CREATE ROLE myrole
+
+@connection(id=mdb3)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb3)
+statement ok
+CREATE schema mysch AUTHORIZATION myrole
+
+@connection(id=mdb2)
+statement ok
+DROP ROLE myrole
+
+@connection(id=mdb3)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+@connection(id=mdb3)
+statement ok
+start transaction
+
+@connection(id=mdb3)
+statement ok
+alter table parent1 drop table child1
+
+@connection(id=mdb3)
+statement ok
+drop table parent1
+
+@connection(id=mdb3)
+statement ok
+drop table child1
+
+@connection(id=mdb3)
+statement ok
+drop table parent2
+
+@connection(id=mdb3)
+statement ok
+drop schema mysch
+
+@connection(id=mdb3)
+statement ok
+drop role myrole
+
+@connection(id=mdb3)
+statement ok
+commit
+
+@connection(id=mdb4, username=monetdb, password=monetdb)
+statement ok
+start transaction
+
+@connection(id=mdb4)
+statement ok
+create merge table parent(a int, b int)
+
+@connection(id=mdb4)
+statement ok
+create table child1(a int, b int)
+
+@connection(id=mdb4)
+statement ok
+insert into child1 values (1,1)
+
+@connection(id=mdb4)
+statement ok
+create table child2(a int, b int)
+
+@connection(id=mdb4)
+statement ok
+insert into child2 values (2,2)
+
+@connection(id=mdb4)
+statement ok
+commit
+
+@connection(id=mdb4)
+statement ok
+start transaction
+
+@connection(id=mdb5, username=monetdb, password=monetdb)
+statement ok
+start transaction
+
+@connection(id=mdb4)
+statement ok
+alter table parent add table child1
+
+@connection(id=mdb5)
+statement ok
+alter table child1 add column data int
+
+@connection(id=mdb4)
+statement ok
+commit
+
+@connection(id=mdb5)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+@connection(id=mdb4)
+query II nosort
+select * from parent
+----
+1
+1
+
+@connection(id=mdb5)
+query II nosort
+select * from parent
+----
+1
+1
+
+@connection(id=mdb4)
+statement ok
+alter table parent drop table child1
+
+@connection(id=mdb4)
+statement ok
+alter table parent add table child2
+
+@connection(id=mdb4)
+statement ok
+start transaction
+
+@connection(id=mdb5)
+statement ok
+start transaction
+
+@connection(id=mdb4)
+statement ok
+alter table parent add table child1
+
+@connection(id=mdb5)
+statement ok
+alter table child1 alter column a set not null
+
+@connection(id=mdb4)
+statement ok
+commit
+
+@connection(id=mdb5)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+@connection(id=mdb4)
+query II nosort
+select * from parent
+----
+2
+2
+1
+1
+
+@connection(id=mdb5)
+query II nosort
+select * from parent
+----
+2
+2
+1
+1
+
+@connection(id=mdb4)
+statement ok
+alter table parent drop table child1
+
+@connection(id=mdb4)
+statement ok
+start transaction
+
+@connection(id=mdb5)
+statement ok
+start transaction
+
+@connection(id=mdb4)
+statement ok
+alter table parent add table child1
+
+@connection(id=mdb5)
+statement ok
+alter table child1 drop column b
+
+@connection(id=mdb4)
+statement ok
+commit
+
+@connection(id=mdb5)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+@connection(id=mdb4)
+query II nosort
+select * from parent
+----
+2
+2
+1
+1
+
+@connection(id=mdb5)
+query II nosort
+select * from parent
+----
+2
+2
+1
+1
+
+@connection(id=mdb4)
+statement ok
+start transaction
+
+@connection(id=mdb4)
+statement ok
+alter table parent drop table child1
+
+@connection(id=mdb4)
+statement ok
+alter table parent drop table child2
+
+@connection(id=mdb4)
+statement ok
+drop table parent
+
+@connection(id=mdb4)
+statement ok
+drop table child1
+
+@connection(id=mdb4)
+statement ok
+drop table child2
+
+@connection(id=mdb4)
+statement ok
+commit
+
+@connection(id=mdb6, username=monetdb, password=monetdb)
+statement ok
+start transaction
+
+@connection(id=mdb6)
+statement ok
+CREATE MERGE TABLE parent(a int)
+
+@connection(id=mdb6)
+statement ok
+CREATE TABLE child1(a int)
+
+@connection(id=mdb6)
+statement ok
+INSERT INTO child1 VALUES (1),(2)
+
+@connection(id=mdb6)
+statement ok
+ALTER TABLE parent ADD table child1
+
+@connection(id=mdb6)
+statement ok
+CREATE TABLE child2(a int)
+
+@connection(id=mdb6)
+statement ok
+INSERT INTO child2 VALUES (3),(4)
+
+@connection(id=mdb6)
+statement ok
+create function myfunc() returns table(a int) begin return select a from parent; end
+
+@connection(id=mdb6)
+statement ok
+create view myview as (select a from parent)
+
+@connection(id=mdb6)
+query I nosort
+SELECT a from myfunc()
+----
+1
+2
+
+@connection(id=mdb6)
+query I nosort
+SELECT a from myview
+----
+1
+2
+
+@connection(id=mdb6)
+statement ok
+commit
+
+@connection(id=mdb6)
+query I nosort
+SELECT a from myfunc()
+----
+1
+2
+
+@connection(id=mdb7, username=monetdb, password=monetdb)
+query I nosort
+SELECT a from myfunc()
+----
+1
+2
+
+@connection(id=mdb6)
+query I nosort
+SELECT a from myview
+----
+1
+2
+
+@connection(id=mdb7)
+query I nosort
+SELECT a from myview
+----
+1
+2
+
+@connection(id=mdb6)
+statement ok
+start transaction
+
+@connection(id=mdb7)
+statement ok
+start transaction
+
+@connection(id=mdb6)
+query I nosort
+SELECT a from myfunc()
+----
+1
+2
+
+@connection(id=mdb7)
+query I nosort
+SELECT a from myfunc()
+----
+1
+2
+
+@connection(id=mdb6)
+query I nosort
+SELECT a from myview
+----
+1
+2
+
+@connection(id=mdb7)
+query I nosort
+SELECT a from myview
+----
+1
+2
+
+@connection(id=mdb7)
+statement ok
+ALTER TABLE parent ADD table child2
+
+@connection(id=mdb6)
+query I nosort
+SELECT a from myfunc()
+----
+1
+2
+
+@connection(id=mdb7)
+query I nosort
+SELECT a from myfunc()
+----
+1
+2
+3
+4
+
+@connection(id=mdb6)
+query I nosort
+SELECT a from myview
+----
+1
+2
+
+@connection(id=mdb7)
+query I nosort
+SELECT a from myview
+----
+1
+2
+3
+4
+
+@connection(id=mdb6)
+statement ok
+commit
+
+@connection(id=mdb7)
+statement ok
+commit
+
+@connection(id=mdb6)
+query I nosort
+SELECT a from myfunc()
+----
+1
+2
+3
+4
+
+@connection(id=mdb7)
+query I nosort
+SELECT a from myfunc()
+----
+1
+2
+3
+4
+
+@connection(id=mdb6)
+query I nosort
+SELECT a from myview
+----
+1
+2
+3
+4
+
+@connection(id=mdb7)
+query I nosort
+SELECT a from myview
+----
+1
+2
+3
+4
+
+@connection(id=mdb6)
+statement ok
+start transaction
+
+@connection(id=mdb6)
+statement ok
+drop function myfunc
+
+@connection(id=mdb6)
+statement ok
+drop view myview
+
+@connection(id=mdb6)
+statement ok
+alter table parent drop table child1
+
+@connection(id=mdb6)
+statement ok
+alter table parent drop table child2
+
+@connection(id=mdb6)
+statement ok
+drop table parent
+
+@connection(id=mdb6)
+statement ok
+drop table child1
+
+@connection(id=mdb6)
+statement ok
+drop table child2
+
+@connection(id=mdb6)
+statement ok
+commit
+
+@connection(id=mdb6)
+statement ok
+start transaction
+
+@connection(id=mdb6)
+statement ok
+create or replace function otherfunc() returns int return 1
+
+@connection(id=mdb6)
+statement ok
+create or replace view otherview(x) as (select 1)
+
+@connection(id=mdb6)
+statement ok
+commit
+
+@connection(id=mdb6)
+query I nosort
+SELECT otherfunc()
+----
+1
+
+@connection(id=mdb7)
+query I nosort
+SELECT otherfunc()
+----
+1
+
+@connection(id=mdb6)
+query I nosort
+SELECT x from otherview
+----
+1
+
+@connection(id=mdb7)
+query I nosort
+SELECT x from otherview
+----
+1
+
+@connection(id=mdb6)
+statement ok
+start transaction
+
+@connection(id=mdb7)
+statement ok
+start transaction
+
+@connection(id=mdb6)
+query I nosort
+SELECT otherfunc()
+----
+1
+
+@connection(id=mdb7)
+query I nosort
+SELECT otherfunc()
+----
+1
+
+@connection(id=mdb6)
+query I nosort
+SELECT x from otherview
+----
+1
+
+@connection(id=mdb7)
+query I nosort
+SELECT x from otherview
+----
+1
+
+@connection(id=mdb7)
+statement ok
+create or replace function otherfunc() returns int return 2
+
+@connection(id=mdb7)
+statement ok
+create or replace view otherview(x) as (select 2)
+
+@connection(id=mdb6)
+query I nosort
+SELECT otherfunc()
+----
+1
+
+@connection(id=mdb7)
+query I nosort
+SELECT otherfunc()
+----
+2
+
+@connection(id=mdb6)
+query I nosort
+SELECT x from otherview
+----
+1
+
+@connection(id=mdb7)
+query I nosort
+SELECT x from otherview
+----
+2
+
+@connection(id=mdb6)
+statement ok
+commit
+
+@connection(id=mdb7)
+statement ok
+commit
+
+@connection(id=mdb6)
+query I nosort
+SELECT otherfunc()
+----
+2
+
+@connection(id=mdb7)
+query I nosort
+SELECT otherfunc()
+----
+2
+
+@connection(id=mdb6)
+query I nosort
+SELECT x from otherview
+----
+2
+
+@connection(id=mdb7)
+query I nosort
+SELECT x from otherview
+----
+2
+
+@connection(id=mdb6)
+statement ok
+start transaction
+
+@connection(id=mdb6)
+statement ok
+drop function otherfunc
+
+@connection(id=mdb6)
+statement ok
+drop view otherview
+
+@connection(id=mdb6)
+statement ok
+commit
+
+@connection(id=mdb6)
+statement ok
+start transaction
+
+@connection(id=mdb6)
+statement ok
+create table t0(c0 int)
+
+@connection(id=mdb6)
+statement ok
+insert into t0 values (1),(2),(3)
+
+@connection(id=mdb6)
+statement ok
+commit
+
+@connection(id=mdb6)
+statement ok
+start transaction
+
+@connection(id=mdb7)
+statement ok
+start transaction
+
+@connection(id=mdb6)
+statement ok
+alter table t0 set read only
+
+@connection(id=mdb7)
+statement ok
+insert into t0 values (4),(5),(6)
+
+@connection(id=mdb6)
+statement ok
+commit
+
+@connection(id=mdb7)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+@connection(id=mdb6)
+query I nosort
+select c0 from t0
+----
+1
+2
+3
+
+@connection(id=mdb7)
+query I nosort
+select c0 from t0
+----
+1
+2
+3
+
+@connection(id=mdb6)
+statement ok
+drop table t0
+
+@connection(id=mdb6)
+statement ok
+start transaction
+
+@connection(id=mdb6)
+statement ok
+create table x (x int primary key)
+
+@connection(id=mdb6)
+statement ok
+create procedure ups() begin insert into x values (1); end
+
+@connection(id=mdb6)
+statement ok
+commit
+
+@connection(id=mdb6)
+statement ok
+CALL ups()
+
+@connection(id=mdb7)
+statement error 40002!INSERT INTO: PRIMARY KEY constraint 'x.x_x_pkey' violated
+CALL ups()
+
+@connection(id=mdb6)
+statement ok
+TRUNCATE x
+
+@connection(id=mdb6)
+statement ok
+start transaction
+
+@connection(id=mdb7)
+statement ok
+start transaction
+
+@connection(id=mdb6)
+statement ok
+CALL ups()
+
+@connection(id=mdb7)
+statement ok
+CALL ups()
+
+@connection(id=mdb6)
+statement ok
+commit
+
+@connection(id=mdb7)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+@connection(id=mdb6)
+statement ok
+start transaction
+
+@connection(id=mdb6)
+statement ok
+drop procedure ups
+
+@connection(id=mdb6)
+statement ok
+drop table x
+
+@connection(id=mdb6)
+statement ok
+commit
+
+@connection(id=mdb8, username=monetdb, password=monetdb)
+statement ok
+start transaction
+
+@connection(id=mdb8)
+statement ok
+create table x (x int primary key)
+
+@connection(id=mdb8)
+statement ok
+create table y (y int)
+
+@connection(id=mdb8)
+statement ok
+commit
+
+@connection(id=mdb8)
+statement ok
+start transaction
+
+@connection(id=mdb9, username=monetdb, password=monetdb)
+statement ok
+start transaction
+
+@connection(id=mdb8)
+statement ok
+create index ups on y(y)
+
+@connection(id=mdb9)
+statement error 42000!ALTER TABLE: sys_y_ups conflicts with another transaction
+alter table y add constraint ups foreign key (y) references x (x)
+
+@connection(id=mdb8)
+statement ok
+commit
+
+@connection(id=mdb9)
+statement error
+commit
+
+@connection(id=mdb8)
+statement ok
+start transaction
+
+@connection(id=mdb8)
+statement ok
+drop table x
+
+@connection(id=mdb8)
+statement ok
+drop table y
+
+@connection(id=mdb8)
+statement ok
+commit
+
+@connection(id=mdb8)
+statement ok
+start transaction
+
+@connection(id=mdb8)
+statement ok
+create table x (x int primary key)
+
+@connection(id=mdb8)
+statement ok
+create table y (y int)
+
+@connection(id=mdb8)
+statement ok
+commit
+
+@connection(id=mdb8)
+statement ok
+start transaction
+
+@connection(id=mdb9)
+statement ok
+start transaction
+
+@connection(id=mdb8)
+statement ok
+alter table y add constraint ups2 foreign key (y) references x (x)
+
+@connection(id=mdb9)
+statement error 42000!ALTER TABLE: sys_y_ups2 conflicts with another transaction
+create index ups2 on y(y)
+
+@connection(id=mdb8)
+statement ok
+commit
+
+@connection(id=mdb9)
+statement error
+commit
+
+@connection(id=mdb8)
+statement ok
+start transaction
+
+@connection(id=mdb8)
+statement ok
+drop table y
+
+@connection(id=mdb8)
+statement ok
+drop table x
+
+@connection(id=mdb8)
+statement ok
+commit
+
