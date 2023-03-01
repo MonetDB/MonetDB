@@ -1708,7 +1708,7 @@ parseAssign(Client cntxt, int cntrl)
 	if (!keyphrase2(cntxt, ":=")) {
 		/* no assignment !! a control variable is allowed */
 		/* for the case RETURN X, we normalize it to include the function arguments */
-		if (cntrl == RETURNsymbol || cntrl == YIELDsymbol) {
+		if (cntrl == RETURNsymbol) {
 			int e;
 			InstrPtr sig = getInstrPtr(curBlk,0);
 			curInstr->retc = 0;
@@ -1944,16 +1944,6 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines, MALfcn addres
 					unsafeProp = 0;
 					break;
 				}
-			} else if (MALkeyword(cntxt, "factory", 7)) {
-				if( inlineProp )
-					parseError(cntxt, "parseError:INLINE ignored\n");
-				if( unsafeProp)
-					parseError(cntxt, "parseError:UNSAFE ignored\n");
-				inlineProp = 0;
-				unsafeProp = 0;
-				cntxt->blkmode++;
-				parseFunction(cntxt, FACTORYsymbol);
-				break;
 			}
 			goto allLeft;
 		case 'I': case 'i':
@@ -2009,12 +1999,6 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines, MALfcn addres
 				unsafeProp= 1;
 				skipSpace(cntxt);
 				continue;
-			}
-			goto allLeft;
-		case 'Y': case 'y':
-			if (MALkeyword(cntxt, "yield", 5)) {
-				cntrl = YIELDsymbol;
-				goto allLeft;
 			}
 			/* fall through */
 		default: allLeft :

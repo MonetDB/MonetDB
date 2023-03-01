@@ -22,7 +22,6 @@
 #include "mal_private.h"
 #include "mal_internal.h"
 #include "mal_function.h"
-#include "mal_factory.h"
 
 static lng qptimeout = 0; /* how often we print still running queries (usec) */
 
@@ -243,8 +242,6 @@ malCommandCall(MalStkPtr stk, InstrPtr pci)
 
 /*
  * Copy the constant values onto the stack frame
- * Also we cannot overwrite values on the stack as this maybe part of a
- * sequence of factory calls.
  */
 #define initStack(S, R)								\
 	do {											\
@@ -444,10 +441,6 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 		}
 		stk->cmd = debug;
 		ret = runMALsequence(cntxt, mb, 1, 0, stk, 0, 0);
-		break;
-	case FACTORYsymbol:
-	case FACcall:
-		ret = callFactory(cntxt, mb, argv, debug);
 		break;
 	case PATcall:
 	case CMDcall:
@@ -717,31 +710,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 #endif
 			break;
-		case FACcall:
-			/*
-			 * Factory calls are more involved. At this stage it
-			 * is a synchrononous call to the factory manager.
-			 * Factory calls should deal with the reference
-			 * counting.
-			 */
-			if (pci->blk == NULL)
-				ret = createException(MAL,"mal.interpreter", "%s.%s[%d] reference to MAL function missing", getModuleId(pci), getFunctionId(pci), pci->pc);
-			else {
-				/* show call before entering the factory */
-#ifndef NDEBUG
-				if (cntxt->itrace) {
-					if (stk->cmd == 0)
-						stk->cmd = cntxt->itrace;
-					mdbStep(cntxt, pci->blk, stk, 0);
-					if (stk->cmd == 'x') {
-						stk->cmd = 0;
-						stkpc = mb->stop;
-					}
-				}
-#endif
-				ret = runFactory(cntxt, pci->blk, mb, stk, pci);
-			}
-			break;
 		case FCNcall: {
 			/*
 			 * MAL function calls are relatively expensive,
@@ -805,8 +773,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		case REMsymbol:
 			break;
 		case ENDsymbol:
-			if (getInstrPtr(mb, 0)->token == FACTORYsymbol)
-				ret = shutdownFactory(cntxt, mb);
 			runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
 			runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
 			if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
@@ -853,7 +819,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		/* check for strong debugging after each MAL statement */
 		/* when we find a timeout situation, then the result is already known
 		 * and assigned,  the backup version is not removed*/
-		if (pci->token != FACcall && ret== MAL_SUCCEED) {
+		if (ret== MAL_SUCCEED) {
 			for (int i = 0; i < pci->retc; i++) {
 				lhs = &backup[i];
 				if (BATatoms[lhs->vtype].atomUnfix &&
@@ -1198,41 +1164,25 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				break;
 			}
 			break;
-		case YIELDsymbol:     /* to be defined */
-			if( startedProfileQueue)
-				runtimeProfileFinish(cntxt, mb, stk);
-			if (backup != backups)
-				GDKfree(backup);
-			if (garbage != garbages)
-				GDKfree(garbage);
-			ret = yieldFactory(mb, pci, stkpc);
-			return ret;
 		case RETURNsymbol:
-			/* Return from factory involves cleanup */
-
-			if (getInstrPtr(mb, 0)->token == FACTORYsymbol) {
-				yieldResult(mb, pci, stkpc);
-				shutdownFactory(cntxt, mb);
-			} else {
-				/* a fake multi-assignment */
-				if (env != NULL && pcicaller != NULL) {
-					InstrPtr pp = pci;
-					pci = pcicaller;
-					for (int i = 0; i < pci->retc; i++) {
-						rhs = &stk->stk[pp->argv[i]];
-						lhs = &env->stk[pci->argv[i]];
-						if(VALcopy(lhs, rhs) == NULL) {
-							ret = createException(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-							break;
-						} else if (lhs->vtype == TYPE_bat)
-							BBPretain(lhs->val.bval);
-					}
-					if (garbageControl(getInstrPtr(mb, 0)))
-						garbageCollector(cntxt, mb, stk, TRUE);
-					/* reset the clock */
-					runtimeProfileExit(cntxt, mb, stk, pp, &runtimeProfile);
-					runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
+			/* a fake multi-assignment */
+			if (env != NULL && pcicaller != NULL) {
+				InstrPtr pp = pci;
+				pci = pcicaller;
+				for (int i = 0; i < pci->retc; i++) {
+					rhs = &stk->stk[pp->argv[i]];
+					lhs = &env->stk[pci->argv[i]];
+					if(VALcopy(lhs, rhs) == NULL) {
+						ret = createException(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						break;
+					} else if (lhs->vtype == TYPE_bat)
+						BBPretain(lhs->val.bval);
 				}
+				if (garbageControl(getInstrPtr(mb, 0)))
+					garbageCollector(cntxt, mb, stk, TRUE);
+				/* reset the clock */
+				runtimeProfileExit(cntxt, mb, stk, pp, &runtimeProfile);
+				runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
 			}
 			stkpc = mb->stop;
 			continue;
@@ -1289,7 +1239,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
  * The linkage between MAL interpreter and compiled C-routines
  * is kept as simple as possible.
  * Basically we distinguish four kinds of calling conventions:
- * CMDcall, FCNcall, FACcall, and  PATcall.
+ * CMDcall, FCNcall and PATcall.
  * The FCNcall indicates calling a MAL procedure, which leads
  * to a recursive call to the interpreter.
  *

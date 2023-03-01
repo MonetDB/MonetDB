@@ -31,13 +31,7 @@ str defaultScenario(Client c)	/* used in src/mal/mal_session.c */
 void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	__attribute__((__visibility__("hidden")));
 
-str runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrPtr pci)
-	__attribute__((__visibility__("hidden")));
 int yieldResult(MalBlkPtr mb, InstrPtr p, int pc)
-	__attribute__((__visibility__("hidden")));
-str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc)
-	__attribute__((__visibility__("hidden")));
-str callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[],char flag)
 	__attribute__((__visibility__("hidden")));
 #endif
 
@@ -75,9 +69,6 @@ void mal_client_reset(void)
 	__attribute__((__visibility__("hidden")));
 
 void mal_dataflow_reset(void)
-	__attribute__((__visibility__("hidden")));
-
-void mal_factory_reset(void)
 	__attribute__((__visibility__("hidden")));
 
 void mal_linker_reset(void)
