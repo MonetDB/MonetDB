@@ -15,7 +15,6 @@
  */
 #include "monetdb_config.h"
 #include "mal_builder.h"
-#include "mal_debugger.h"
 #include "opt_prelude.h"
 #include "sql_mvc.h"
 #include "sql_optimizer.h"
