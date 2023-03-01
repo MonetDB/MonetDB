@@ -475,9 +475,6 @@ bailout2:
 	if (be)
 		be->language = 'S';
 	/* Set state, this indicates an initialized client scenario */
-	c->state[MAL_SCENARIO_READER] = c;
-	c->state[MAL_SCENARIO_PARSER] = c;
-	c->state[MAL_SCENARIO_OPTIMIZE] = c;
 	c->sqlcontext = be;
 	if (msg)
 		c->mode = FINISHCLIENT;
@@ -510,13 +507,10 @@ SQLresetClient(Client c)
 		pa = m->pa;
 		mvc_destroy(m);
 		backend_destroy(be);
-		c->state[MAL_SCENARIO_OPTIMIZE] = NULL;
-		c->state[MAL_SCENARIO_PARSER] = NULL;
 		c->sqlcontext = NULL;
 		c->query = NULL;
 		sa_destroy(pa);
 	}
-	c->state[MAL_SCENARIO_READER] = NULL;
 	if (other && !msg)
 		msg = other;
 	else if (other && msg)
@@ -985,7 +979,7 @@ SQLreader(Client c, backend *be)
 		c->mode = FINISHCLIENT;
 		return MAL_SUCCEED;
 	}
-	language = be->language;	/* 'S' for SQL, 'D' from debugger */
+	language = be->language;	/* 'S', 's' or 'X' */
 	m = be->mvc;
 	m->errstr[0] = 0;
 	/*
@@ -1003,7 +997,7 @@ SQLreader(Client c, backend *be)
 		   B \n C; -- statements in one block   S
 		 */
 		/* auto_commit on end of statement */
-		if (language != 'D' && m->scanner.mode == LINE_N && !commit_done) {
+		if (m->scanner.mode == LINE_N && !commit_done) {
 			msg = SQLautocommit(m);
 			if (msg)
 				break;
@@ -1026,12 +1020,11 @@ SQLreader(Client c, backend *be)
 				c->yycur = 0;
 			}
 			if (in->eof || !blocked) {
-				if (language != 'D')
-					language = 0;
+				language = 0;
 
 				/* The rules of auto_commit require us to finish
 				   and start a transaction on the start of a new statement (s A;B; case) */
-				if (language != 'D' && !(m->emod & mod_debug) && !commit_done) {
+				if (!commit_done) {
 					msg = SQLautocommit(m);
 					if (msg)
 						break;
@@ -1054,12 +1047,7 @@ SQLreader(Client c, backend *be)
 				more = false;
 				go = false;
 			} else if (go && (rd = bstream_next(in)) <= 0) {
-				if (be->language == 'D' && !in->eof) {
-					in->pos++;// skip 's' or 'S'
-					return msg;
-				}
-
-				if (rd == 0 && language !=0 && in->eof) {
+				if (rd == 0 && in->eof) {
 					/* we hadn't seen the EOF before, so just try again
 					   (this time with prompt) */
 					more = true;
@@ -1079,8 +1067,6 @@ SQLreader(Client c, backend *be)
 				} else if (be->language == 'S') {
 					m->scanner.mode = LINE_N;
 				}
-			} else if (go && language == 'D' && !in->eof) {
-				in->pos++;// skip 's' or 'S'
 			}
 		}
 	}
@@ -1376,11 +1362,6 @@ SQLparser(Client c, backend *be)
 							  {MAL_OPT, c, Tend, NULL, NULL, msg==MAL_SUCCEED?0:1, Tend-Tbegin});
 					if (msg != MAL_SUCCEED) {
 						str other = c->curprg->def->errors;
-						/* In debugging mode you may want to assess what went wrong in the optimizers*/
-#ifndef NDEBUG
-						if( m->emod & mod_debug)
-							runMALDebugger(c, c->curprg->def);
-#endif
 						c->curprg->def->errors = 0;
 						MSresetInstructions(c->curprg->def, oldstop);
 						freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);

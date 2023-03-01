@@ -17,7 +17,6 @@
 #include "mal_interpreter.h"
 #include "mal_resource.h"
 #include "mal_listing.h"
-#include "mal_debugger.h"   /* for mdbStep() */
 #include "mal_type.h"
 #include "mal_private.h"
 #include "mal_internal.h"
@@ -330,7 +329,6 @@ runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 		if (stk == 0)
 			throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 		stk->blk = mb;
-		stk->cmd = cntxt->itrace;    /* set debug mode */
 		/*safeguardStack*/
 		if( env){
 			stk->stkdepth = stk->stksize + env->stkdepth;
@@ -348,13 +346,8 @@ runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 		 * been observed due the small size of the function).
 		 */
 	}
-	if (stk->cmd && env && stk->cmd != 'f')
-		stk->cmd = env->cmd;
 	ret = runMALsequence(cntxt, mb, 1, 0, stk, env, 0);
 
-	/* pass the new debug mode to the caller */
-	if (stk->cmd && env && stk->cmd != 'f')
-		env->cmd = stk->cmd;
 	if (!stk->keepAlive && garbageControl(getInstrPtr(mb, 0)))
 		garbageCollector(cntxt, mb, stk, env != stk);
 	if (stk && stk != env)
@@ -384,7 +377,6 @@ reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk)
 	keepAlive = stk->keepAlive;
 	ret = runMALsequence(cntxt, mb, startpc, stoppc, stk, 0, 0);
 
-	/* pass the new debug mode to the caller */
 	if (keepAlive == 0 && garbageControl(getInstrPtr(mb, 0)))
 		garbageCollector(cntxt, mb, stk, stk != 0);
 	return ret;
@@ -399,7 +391,7 @@ reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk)
  * The call does not return values, they are ignored.
  */
 str
-callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
+callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[])
 {
 	MalStkPtr stk = NULL;
 	str ret = MAL_SUCCEED;
@@ -439,7 +431,6 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 			if (lhs->vtype == TYPE_bat)
 				BBPretain(lhs->val.bval);
 		}
-		stk->cmd = debug;
 		ret = runMALsequence(cntxt, mb, 1, 0, stk, 0, 0);
 		break;
 	case PATcall:
@@ -539,28 +530,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				ret= createException(MAL, "mal.interpreter", "prematurely stopped client");
 			break;
 		}
-#ifndef NDEBUG
-		if (cntxt->itrace || stk->status) {
-			if (stk->status == 'p'){
-				// execution is paused
-				while (stk->status == 'p')
-					MT_sleep_ms(50);
-				continue;
-			}
-			if (stk->status == 'q')
-				stk->cmd = 'x';
-
-			if (stk->cmd == 0)
-				stk->cmd = cntxt->itrace;
-			mdbStep(cntxt, mb, stk, stkpc);
-			if (stk->cmd == 'x' ) {
-				stk->cmd = 0;
-				stkpc = mb->stop;
-				ret= createException(MAL, "mal.interpreter", "prematurely stopped client");
-				break;
-			}
-		}
-#endif
 
 		//Ensure we spread system resources over multiple users as well.
 		runtimeProfileBegin(cntxt, mb, stk, pci, &runtimeProfile);
@@ -816,7 +785,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		if( mb->stop <= 1)
 			continue;
 		runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
-		/* check for strong debugging after each MAL statement */
 		/* when we find a timeout situation, then the result is already known
 		 * and assigned,  the backup version is not removed*/
 		if (ret== MAL_SUCCEED) {
@@ -884,23 +852,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		if (ret != MAL_SUCCEED) {
 			str msg = 0;
 
-#ifndef NDEBUG
-			if (stk->cmd) {
-				mnstr_printf(cntxt->fdout, "!ERROR: %s\n", ret);
-				stk->cmd = '\n'; /* in debugging go to step mode */
-				mdbStep(cntxt, mb, stk, stkpc);
-				if (stk->cmd == 'x' || stk->cmd == 'q' ) {
-					stkpc = mb->stop;
-					continue;
-				}
-				if (stk->cmd == 'r') {
-					stk->cmd = 'n';
-					stkpc = startpc;
-					exceptionVar = -1;
-					continue;
-				}
-			}
-#endif
 			/* Detect any exception received from the implementation. */
 			/* The first identifier is an optional exception name */
 			if (strstr(ret, "!skip-to-end")) {
@@ -947,16 +898,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 			/* position yourself at the catch instruction for further decisions */
 			/* skipToCatch(exceptionVar,@2,@3) */
-#ifndef NDEBUG
-			if (stk->cmd == 'C') {
-				stk->cmd = 'n';
-				mdbStep(cntxt, mb, stk, stkpc);
-				if (stk->cmd == 'x' ) {
-					stkpc = mb->stop;
-					continue;
-				}
-			}
-#endif
 			/* skip to catch block or end */
 			for (; stkpc < mb->stop; stkpc++) {
 				InstrPtr l = getInstrPtr(mb, stkpc);
@@ -1134,16 +1075,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				ret = createException(MAL, nme, "%s", stk->stk[getDestVar(pci)].val.sval);
 			}
 			/* skipToCatch(exceptionVar, @2, stk) */
-#ifndef NDEBUG
-			if (stk->cmd == 'C') {
-				stk->cmd = 'n';
-				mdbStep(cntxt, mb, stk, stkpc);
-				if (stk->cmd == 'x' ) {
-					stkpc = mb->stop;
-					continue;
-				}
-			}
-#endif
 			/* skip to catch block or end */
 			for (; stkpc < mb->stop; stkpc++) {
 				InstrPtr l = getInstrPtr(mb, stkpc);

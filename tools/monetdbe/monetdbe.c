@@ -1711,7 +1711,7 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 	}
 
 	s = findSymbolInModule(mdbe->c->usermodule, q->f->imp);
-	if ((mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0)) != MAL_SUCCEED)
+	if ((mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args)) != MAL_SUCCEED)
 		goto cleanup;
 
 	if (b->rowcnt >= 0 && affected_rows)

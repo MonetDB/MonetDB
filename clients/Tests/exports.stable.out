@@ -828,7 +828,7 @@ const char *bindidxRef;
 const char *blockRef;
 const char *bstreamRef;
 const char *calcRef;
-str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb, ValPtr argv[], char debug);
+str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb, ValPtr argv[]);
 const char *capiRef;
 str chkDeclarations(MalBlkPtr mb);
 str chkFlow(MalBlkPtr mb);

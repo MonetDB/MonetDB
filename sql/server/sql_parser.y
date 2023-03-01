@@ -702,7 +702,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token CHECK CONSTRAINT CREATE COMMENT NULLS FIRST LAST
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE
-%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREP PREPARE EXEC EXECUTE DEALLOCATE
+%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_TRACE PREP PREPARE EXEC EXECUTE DEALLOCATE
 %token DEFAULT DISTINCT DROP TRUNCATE
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -859,15 +859,6 @@ sqlstmt:
 			  YYACCEPT;
 			}
 
- | SQL_DEBUG 		{
-			  if (m->scanner.mode == LINE_1) {
-				yyerror(m, "SQL debugging only supported in interactive mode");
-				YYABORT;
-			  }
-		  	  m->emod |= mod_debug;
-			  m->scanner.as = m->scanner.yycur; 
-			}
-   sqlstmt		{ $$ = $3; YYACCEPT; }
  | SQL_TRACE 		{
 		  	  m->emod |= mod_trace;
 			  m->scanner.as = m->scanner.yycur; 
@@ -5614,7 +5605,6 @@ non_reserved_word:
 | CLIENT	{ $$ = sa_strdup(SA, "client"); }
 | COMMENT	{ $$ = sa_strdup(SA, "comment"); }
 | DATA 		{ $$ = sa_strdup(SA, "data"); }
-| SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
 | DECADE	{ $$ = sa_strdup(SA, "decade"); }
 | DIAGNOSTICS 	{ $$ = sa_strdup(SA, "diagnostics"); }
 | DOW 		{ $$ = sa_strdup(SA, "dow"); }
