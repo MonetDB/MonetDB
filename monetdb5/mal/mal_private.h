@@ -28,21 +28,11 @@ bool MCshutdowninprogress(void)
 	__attribute__((__visibility__("hidden")));
 str defaultScenario(Client c)	/* used in src/mal/mal_session.c */
 	__attribute__((__visibility__("hidden")));
-void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
-	__attribute__((__visibility__("hidden")));
-
-int yieldResult(MalBlkPtr mb, InstrPtr p, int pc)
-	__attribute__((__visibility__("hidden")));
 #endif
 
 str malAtomDefinition(const char *name,int tpe)
 	__attribute__((__visibility__("hidden")));
 str malAtomProperty(MalBlkPtr mb, InstrPtr pci)
-	__attribute__((__visibility__("hidden")));
-
-bool mdbInit(void)
-	__attribute__((__visibility__("hidden")));
-void mdbExit(void)
 	__attribute__((__visibility__("hidden")));
 
 #ifdef MAXSCOPE

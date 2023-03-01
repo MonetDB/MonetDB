@@ -273,7 +273,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	ATOMIC_SET(&c->qryctx.datasize, 0);
 	c->qryctx.maxmem = 0;
 	c->maxmem = 0;
-	c->itrace = 0;
 	c->errbuf = 0;
 
 	prompt = PROMPT1;
@@ -587,7 +586,6 @@ MCsuspendClient(int id)
 {
 	if (id < 0 || id >= MAL_MAXCLIENTS)
 		throw(INVCRED, "mal.clients", INVCRED_WRONG_ID);
-	mal_clients[id].itrace = 'S';
 	return MAL_SUCCEED;
 }
 
@@ -596,7 +594,6 @@ MCawakeClient(int id)
 {
 	if (id < 0 || id >= MAL_MAXCLIENTS)
 		throw(INVCRED, "mal.clients", INVCRED_WRONG_ID);
-	mal_clients[id].itrace = 0;
 	return MAL_SUCCEED;
 }
 

@@ -76,9 +76,7 @@
  * should be dealt with in the implementation of the scenario managers.
  * Upon need, the client can postpone a session scenario by
  * pushing a new one(language, optimize,
- * processor). Propagation of the state information is
- * encapsulated a scenario2scenario() call. Not all transformations
- * may be legal.
+ * processor).
  *
  * @+ Scenario administration
  * Administration of scenarios follows the access rules
@@ -303,12 +301,6 @@ fillScenario(Client c, Scenario scen)
 	c->phase[MAL_SCENARIO_ENGINE] = scen->engineCmd;
 	c->phase[MAL_SCENARIO_INITCLIENT] = scen->initClientCmd;
 	c->phase[MAL_SCENARIO_EXITCLIENT] = scen->exitClientCmd;
-	c->state[MAL_SCENARIO_READER] = 0;
-	c->state[MAL_SCENARIO_PARSER] = 0;
-	c->state[MAL_SCENARIO_OPTIMIZE] = 0;
-	c->state[MAL_SCENARIO_ENGINE] = 0;
-	c->state[MAL_SCENARIO_INITCLIENT] = 0;
-	c->state[MAL_SCENARIO_EXITCLIENT] = 0;
 	return(MAL_SUCCEED);
 }
 
@@ -330,21 +322,16 @@ setScenario(Client c, str nme)
 	if (c->scenario) {
 		c->oldscenario = c->scenario;
 		for (i = 0; i < SCENARIO_PROPERTIES; i++) {
-			c->oldstate[i] = c->state[i];
 			c->oldphase[i] = c->phase[i];
 		}
 	}
-	for (i = 0; i < SCENARIO_PROPERTIES; i++)
-		c->state[i] = 0;
 
 	msg = fillScenario(c, scen);
 	if (msg) {
 		/* error occurred, reset the scenario , assume default always works */
 		c->scenario = c->oldscenario;
 		for (i = 0; i < SCENARIO_PROPERTIES; i++) {
-			c->state[i] = c->oldstate[i];
 			c->phase[i] = c->oldphase[i];
-			c->oldstate[i] = NULL;
 			c->oldphase[i] = NULL;
 		}
 		c->oldscenario = NULL;
@@ -383,7 +370,6 @@ resetScenario(Client c)
 
 	c->scenario = c->oldscenario;
 	for (i = 0; i < SCENARIO_PROPERTIES; i++) {
-		c->state[i] = c->oldstate[i];
 		c->phase[i] = c->oldphase[i];
 	}
 	c->oldscenario = 0;
@@ -393,7 +379,7 @@ resetScenario(Client c)
  * The building blocks of scenarios are routines obeying a strict
  * name signature. They require exclusive access to the client
  * record. Any specific information should be accessible from
- * there, e.g., access to a scenario specific state descriptor.
+ * there, e.g., access to a scenario specific descriptor.
  * The client scenario initialization and finalization brackets
  * are  @sc{xyzinitClient()} and @sc{xyzexitClient()}.
  *
@@ -441,7 +427,6 @@ runScenarioBody(Client c)
 {
 	str msg = MAL_SUCCEED;
 
-	assert(c->state[0]);
 	while (c->mode > FINISHCLIENT && !GDKexiting()) {
 		/* later merge the phases */
 		if ( c->mode <= FINISHCLIENT ||  (msg = runPhase(c, MAL_SCENARIO_READER)) )

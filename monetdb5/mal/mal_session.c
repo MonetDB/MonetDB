@@ -95,7 +95,6 @@ MSresetClientPrg(Client cntxt, const char *mod, const char *fcn)
 	MalBlkPtr mb;
 	InstrPtr p;
 
-	cntxt->itrace = 0;  /* turn off any debugging */
 	mb = cntxt->curprg->def;
 	mb->stop = 1;
 	mb->errors = MAL_SUCCEED;
@@ -625,9 +624,8 @@ MSserveClient(Client c)
 str
 MALinitClient(Client c)
 {
-	assert(c->state[0] == NULL);
-	c->state[0] = c;
-	return NULL;
+	(void)c;
+	return MAL_SUCCEED;
 }
 
 str
@@ -798,7 +796,6 @@ MALengine(Client c)
 		}
 		c->glb->stktop = prg->def->vtop;
 		c->glb->blk = prg->def;
-		c->glb->cmd = (c->itrace && c->itrace != 'C') ? 'n' : 0;
 	}
 
 	/*
@@ -829,7 +826,5 @@ MALengine(Client c)
 	if (prg->def->errors)
 		freeException(prg->def->errors);
 	prg->def->errors = NULL;
-	if (c->itrace)
-		mnstr_printf(c->fdout, "mdb>#EOD\n");
 	return msg;
 }
