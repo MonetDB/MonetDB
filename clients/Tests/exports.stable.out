@@ -1358,8 +1358,6 @@ str SQLexit(Client c);
 str SQLexitClient(Client c);
 str SQLinitClient(Client c, const char *passwd, const char *challenge, const char *algo);
 str SQLinitClientFromMAL(Client c, const char *passwd, const char *challenge, const char *algo);
-str SQLparser(Client c);
-str SQLreader(Client c);
 str SQLresetClient(Client c);
 str SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit output, res_table **result);
 str SQLtrans(mvc *m);
