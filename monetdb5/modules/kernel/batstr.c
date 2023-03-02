@@ -26,6 +26,9 @@
 #include "mal_interpreter.h"
 #include "mal_exception.h"
 #include "str.h"
+#if HAVE_ICONV
+#include <iconv.h>
+#endif
 
 /* In order to make avaialble a bulk version of a string function with candidates, all possible combinations of scalar/vector
 	version of each argument must be avaiable for the function. Obviously this won't scale for functions with a large number of
@@ -4907,12 +4910,81 @@ bailout:
 }
 
 static str
-BATSTRasciify(str *r, const str *s)
+BATSTRasciify(bat *ret, bat *bid)
 {
 #if HAVE_ICONV
-	(void)r;
-	(void)s;
+	BAT *b = NULL, *bn = NULL;
+	BATiter bi;
+	BUN start, end;
+	size_t prev_out_len = 0, in_len = 0, out_len = 0;
+	iconv_t cd;
+	const str f = "UTF8", t = "ASCII//TRANSLIT";
+	/* man iconv; /TRANSLIT */
+	if ((cd = iconv_open(t, f)) == (iconv_t)(-1))
+		throw(MAL, "str.asciify", "ICONV: cannot convert from (%s) to (%s).", f, t);
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "batstr.asciify", RUNTIME_OBJECT_MISSING);
+	if ((bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "batstr.asciify", GDK_EXCEPTION);
+	}
+	bi = bat_iterator(b);
+	for (start = 0, end = BATcount(b); start < end; start++) {
+		str r = NULL, out = NULL, in = (str) BUNtail(bi, start);
+		if (strNil(in)) {
+			if (BUNappend(bn, str_nil, false) != GDK_SUCCEED)
+				goto bailout;
+			bn->tnonil = 0;
+			bn->tnil = 1;
+			continue;
+		}
+		in_len = strlen(in), out_len = in_len + 1;
+		if (out == NULL) {
+			if ((out = GDKmalloc(out_len)) == NULL) {
+				iconv_close(cd);
+				bat_iterator_end(&bi);
+				BBPunfix(b->batCacheid);
+				BBPunfix(bn->batCacheid);
+				throw(MAL, "batstr.asciify", MAL_MALLOC_FAIL);
+			}
+			prev_out_len = out_len;
+		}
+		else if (out_len > prev_out_len) {
+			if ((out = GDKrealloc(r, out_len)) == NULL) {
+				iconv_close(cd);
+				bat_iterator_end(&bi);
+				BBPunfix(b->batCacheid);
+				BBPunfix(bn->batCacheid);
+				throw(MAL, "batstr.asciify", MAL_MALLOC_FAIL);
+			}
+			prev_out_len = out_len;
+		}
+		r = out;
+		if (iconv(cd, &in, &in_len, &out, &out_len) == (size_t) - 1) {
+			GDKfree(out);
+			r = NULL;
+			iconv_close(cd);
+			bat_iterator_end(&bi);
+			BBPunfix(b->batCacheid);
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "str.asciify", "ICONV: string conversion failed from (%s) to (%s)", f, t);
+		}
+		*out = '\0';
+		if (BUNappend(bn, r, false) != GDK_SUCCEED)
+			goto bailout;
+	}
+	bat_iterator_end(&bi);
+	BATsetcount(bn, BATcount(b));
+	BBPunfix(b->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
 	return MAL_SUCCEED;
+ bailout:
+	iconv_close(cd);
+	bat_iterator_end(&bi);
+	BBPunfix(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	throw(MAL, "batstr.asciify", GDK_EXCEPTION);
 #else
 	throw(MAL, "str.asciify", "ICONV library not available.");
 #endif
