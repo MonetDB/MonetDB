@@ -410,12 +410,8 @@ CONDITIONALS = {
     # hence, we set them only at runtime in main() below
     'KNOWNFAIL'            : "", # skip on release branch when not in testweb
     'HAVE_MONETDBJDBC_JAR' : "",
-    'HAVE_JAVA'            : "",
-    'HAVE_JAVAJDBC'        : "",
-    'HAVE_JAVAMEROCONTROL' : "",
     'HAVE_JDBCCLIENT_JAR'  : "",
     'HAVE_JDBCTESTS_JAR'   : "",
-    'HAVE_JDBCTESTS_DIR'   : "",
     'HAVE_JDBCTESTS'       : "",
 #    'HAVE_LIBPANDAS3'      : "",
     'HAVE_LIBSCIPY3'       : "",
@@ -2085,9 +2081,9 @@ def CheckClassPath() :
         cp = ''
         cpx = ''
     JARS = {
-        'HAVE_MONETDBJDBC_JAR' : re.compile('^monetdb-jdbc-[0-9]\.[0-9]+(-[a-f0-9]{12})?\.jre[0-9]+\.jar$'),
-        'HAVE_JDBCCLIENT_JAR'  : re.compile('^jdbcclient\.jre[0-9]+\.jar$'),
-        'HAVE_JDBCTESTS_JAR'   : re.compile('^jdbctests\.jar$'),
+        'HAVE_MONETDBJDBC_JAR' : re.compile(r'^monetdb-jdbc-[0-9]\.[0-9]+(-[a-f0-9]{12})?\.jre[0-9]+\.jar$'),
+        'HAVE_JDBCCLIENT_JAR'  : re.compile(r'^jdbcclient\.jre[0-9]+\.jar$'),
+        'HAVE_JDBCTESTS_JAR'   : re.compile(r'^jdbctests\.jar$'),
     }
     # check for known JARs in CLASSPATH files
     for p in cp.split(os.pathsep):
@@ -2114,18 +2110,12 @@ def CheckClassPath() :
             for f in listdir(d):
                 p = os.path.join(d,f)
                 if os.path.isfile(p):
-                    if f == 'BugConcurrent_clients_SF_1504657.class':
-                        C = 'HAVE_JDBCTESTS_DIR'
-                        if not CONDITIONALS.get(C):
-                            cp = cp + os.pathsep + d
-                            CONDITIONALS[C] = '#'
-                    else:
-                        C = 'HAVE_%s' % f.upper().replace('.','_')
-                        if C not in JARS:
-                            C = 'HAVE_MONETDBJDBC_JAR'
-                        if not CONDITIONALS.get(C) and JARS[C].match(f):
-                            cp = cp + os.pathsep + p
-                            CONDITIONALS[C] = '#'
+                    C = 'HAVE_%s' % f.upper().replace('.','_')
+                    if C not in JARS:
+                        C = 'HAVE_MONETDBJDBC_JAR'
+                    if not CONDITIONALS.get(C) and JARS[C].match(f):
+                        cp = cp + os.pathsep + p
+                        CONDITIONALS[C] = '#'
     if cp:
         os.environ['CLASSPATH'] = cp
     if verbose:
@@ -2137,8 +2127,7 @@ def CheckClassPath() :
         if miss:
             Warn('Could not find%s in\nCLASSPATH="%s"' % (miss,cpx))
     if CONDITIONALS.get('HAVE_MONETDBJDBC_JAR') and \
-       ( CONDITIONALS.get('HAVE_JDBCTESTS_JAR') or
-         CONDITIONALS.get('HAVE_JDBCTESTS_DIR') ):
+       CONDITIONALS.get('HAVE_JDBCTESTS_JAR'):
         CONDITIONALS['HAVE_JDBCTESTS'] = '#'
 ### CheckClassPath() #
 
@@ -2414,7 +2403,6 @@ def main(argv) :
     parser.add_argument('--SQLDUMP', action='store', dest='SQLDUMP', metavar='<sql-dump program>', help='default: %s' % dft['SQLDUMP'])
     parser.add_argument('--RCLIENT', action='store', dest='RCLIENT', metavar='<R program>', help='default: %s' % dft['RCLIENT'])
     parser.add_argument('--RUBYCLIENT', action='store', dest='RUBYCLIENT', metavar='<ruby program>', help='default: %s' % dft['RUBYCLIENT'])
-    parser.add_argument('--concurrent', action='store_true', dest='concurrent', help='There are concurrent Mtest runs using the same MonetDB installation')
     parser.add_argument('--dbg', action='store', dest='dbg', metavar='<debugger/valgrind>', help="debugger to start before each server")
     parser.add_argument('--mserver_set', action='store', dest='mserver_set', metavar='<mserver5_option>', help="This passes a single set to the server")
     parser.add_argument('--no-clean', action='store_true', dest='no_clean', help='Do not clean up before test')
@@ -2460,9 +2448,6 @@ def main(argv) :
     a = opts.gdk_dbfarm
     if a is not None:
         env['GDK_DBFARM'] = a
-    a = opts.concurrent
-    if a:
-        env['CONCURRENT'] = a
     a = opts.dbg
     if a is not None:
         env['DBG'] = a

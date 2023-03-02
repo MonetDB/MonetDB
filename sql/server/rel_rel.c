@@ -917,7 +917,7 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 				list_append(gexps, e);
 			} else {
 				const char *ername = exp_relname(e), *nername = exp_relname(ne), *ename = exp_name(e), *nename = exp_name(ne);
-				if ((ername && !nername) || (!ername && nername) || 
+				if ((ername && !nername) || (!ername && nername) ||
 					(ername && nername && strcmp(ername,nername) != 0) || strcmp(ename,nename) != 0)
 					list_append(gexps, e);
 			}
