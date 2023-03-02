@@ -3785,48 +3785,35 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 	ret = BBPprepare(subcommit != NULL);
 
 	/* PHASE 1: safeguard everything in a backup-dir */
-	if (ret == GDK_SUCCEED) {
-		int idx = 0;
-
-		while (++idx < cnt) {
-			bat i = subcommit ? subcommit[idx] : idx;
-			const bat bid = i;
-			if (lock)
-				MT_lock_set(&GDKswapLock(bid));
-			/* set flag that we're syncing, i.e. that we'll
-			 * be between moving heap to backup dir and
-			 * saving the new version, in other words, the
-			 * heap may not exist in the usual location */
-			BBP_status_on(bid, BBPSYNCING);
-			/* wait until unloading is finished before
-			 * attempting to make a backup */
-			while (BBP_status(bid) & BBPUNLOADING) {
-				if (lock)
-					MT_lock_unset(&GDKswapLock(bid));
-				BBPspin(bid, __func__, BBPUNLOADING);
-				if (lock)
-					MT_lock_set(&GDKswapLock(bid));
-			}
-			BAT *b = dirty_bat(&i, subcommit != NULL);
-			if (i <= 0) {
-				if (lock)
-					MT_lock_unset(&GDKswapLock(bid));
-				break;
-			}
-			if (BBP_status(bid) & BBPEXISTING) {
-				if (b != NULL && b->batInserted > 0) {
-					if (BBPbackup(b, subcommit != NULL) != GDK_SUCCEED) {
-						if (lock)
-							MT_lock_unset(&GDKswapLock(bid));
-						break;
-					}
-				}
-			}
+	for (int idx = 1; ret == GDK_SUCCEED && idx < cnt; idx++) {
+		bat i = subcommit ? subcommit[idx] : idx;
+		const bat bid = i;
+		if (lock)
+			MT_lock_set(&GDKswapLock(bid));
+		/* set flag that we're syncing, i.e. that we'll
+		 * be between moving heap to backup dir and
+		 * saving the new version, in other words, the
+		 * heap may not exist in the usual location */
+		BBP_status_on(bid, BBPSYNCING);
+		/* wait until unloading is finished before
+		 * attempting to make a backup */
+		while (BBP_status(bid) & BBPUNLOADING) {
 			if (lock)
 				MT_lock_unset(&GDKswapLock(bid));
+			BBPspin(bid, __func__, BBPUNLOADING);
+			if (lock)
+				MT_lock_set(&GDKswapLock(bid));
 		}
-		if (idx < cnt)
+		BAT *b = dirty_bat(&i, subcommit != NULL);
+		if (i <= 0 ||
+		    (BBP_status(bid) & BBPEXISTING &&
+		     b != NULL &&
+		     b->batInserted > 0 &&
+		     BBPbackup(b, subcommit != NULL) != GDK_SUCCEED)) {
 			ret = GDK_FAIL;
+		}
+		if (lock)
+			MT_lock_unset(&GDKswapLock(bid));
 	}
 	TRC_DEBUG(PERF, "move time "LLFMT" usec, %d files\n", (t1 = GDKusec()) - t0, backup_files);
 

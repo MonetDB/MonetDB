@@ -1,0 +1,124 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "mct00" ("c0" TINYINT,"c1" BOOLEAN)
+
+statement ok
+INSERT INTO "mct00" VALUES (4, true), (NULL, false)
+
+statement ok
+create procedure "sys"."dict_compress"(sname string, tname string, cname string, ordered_values bool) external name "dict"."compress"
+
+statement ok
+COMMIT
+
+statement ok
+CALL "sys"."dict_compress"('sys','mct00','c1',true)
+
+statement ok
+CREATE REMOTE TABLE "rmct00" ("c0" TINYINT,"c1" BOOLEAN) ON 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/sys/mct00'
+
+query I nosort
+SELECT mct00.c1 FROM mct00
+----
+1
+0
+
+query I nosort
+SELECT rmct00.c1 FROM rmct00
+----
+1
+0
+
+statement ok
+START TRANSACTION
+
+statement ok
+DROP TABLE rmct00
+
+statement ok
+DROP TABLE mct00
+
+statement ok
+DROP PROCEDURE "sys"."dict_compress"
+
+statement ok
+COMMIT
+
+@connection(id=mdb1, username=monetdb, password=monetdb)
+statement ok
+START TRANSACTION
+
+@connection(id=mdb1)
+statement ok
+create table t0(c0 int)
+
+@connection(id=mdb1)
+statement ok
+insert into t0 values (1),(2),(3)
+
+@connection(id=mdb1)
+statement ok
+create procedure "sys"."dict_compress"(sname string, tname string, cname string, ordered_values bool) external name "dict"."compress"
+
+@connection(id=mdb1)
+statement ok
+COMMIT
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2, username=monetdb, password=monetdb)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+call "sys"."dict_compress"('sys','t0','c0',false)
+
+@connection(id=mdb2)
+statement ok
+insert into t0 values (4),(5),(6)
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+@connection(id=mdb1)
+query I nosort
+select c0 from t0
+----
+1
+2
+3
+
+@connection(id=mdb2)
+query I nosort
+select c0 from t0
+----
+1
+2
+3
+
+@connection(id=mdb1)
+statement ok
+START TRANSACTION
+
+@connection(id=mdb1)
+statement ok
+drop table t0
+
+@connection(id=mdb1)
+statement ok
+drop procedure "sys"."dict_compress"
+
+@connection(id=mdb1)
+statement ok
+COMMIT
+
