@@ -1,0 +1,93 @@
+statement ok
+CREATE SCHEMA library
+
+statement ok
+CREATE SCHEMA bank
+
+statement ok
+CREATE TABLE bank.loans(nr int, amount int)
+
+statement ok
+CREATE USER alice WITH PASSWORD 'alice' name 'alice' schema library
+
+statement ok
+CREATE USER april WITH PASSWORD 'april' name 'april' schema library
+
+statement ok
+GRANT SELECT ON bank.loans TO april WITH GRANT OPTION
+
+statement ok
+GRANT INSERT ON bank.loans TO april WITH GRANT OPTION
+
+statement ok
+GRANT UPDATE ON bank.loans TO april WITH GRANT OPTION
+
+statement ok
+GRANT DELETE ON bank.loans TO april WITH GRANT OPTION
+
+@connection(id=alice, username=alice, password=alice)
+statement error 42000!INSERT INTO: insufficient privileges for user 'alice' to insert into table 'loans'
+INSERT INTO bank.loans VALUES (12, 127), (42, 8191)
+
+@connection(id=alice)
+statement error 42000!UPDATE: insufficient privileges for user 'alice' to update table 'loans'
+UPDATE bank.loans SET amount = amount - 100 WHERE nr = 42
+
+@connection(id=alice)
+statement error 42000!DELETE FROM: insufficient privileges for user 'alice' to delete from table 'loans'
+DELETE FROM bank.loans WHERE nr = 12
+
+@connection(id=alice)
+statement error 42000!SELECT: access denied for alice to table 'bank.loans'
+SELECT * FROM bank.loans
+
+@connection(id=april, username=april, password=april)
+statement ok
+GRANT SELECT ON bank.loans TO alice WITH GRANT OPTION
+
+@connection(id=april)
+statement ok
+GRANT INSERT ON bank.loans TO alice WITH GRANT OPTION
+
+@connection(id=april)
+statement ok
+GRANT UPDATE ON bank.loans TO alice WITH GRANT OPTION
+
+@connection(id=april)
+statement ok
+GRANT DELETE ON bank.loans TO alice WITH GRANT OPTION
+
+@connection(id=april)
+statement ok rowcount 2
+INSERT INTO bank.loans VALUES (12, 127), (42, 8191)
+
+@connection(id=april)
+statement ok rowcount 1
+UPDATE bank.loans SET amount = amount - 100 WHERE nr = 42
+
+@connection(id=april)
+statement ok rowcount 1
+DELETE FROM bank.loans WHERE nr = 12
+
+@connection(id=april)
+query II nosort
+SELECT * FROM bank.loans
+----
+42
+8091
+
+statement ok
+DROP TABLE bank.loans
+
+statement ok
+DROP USER april
+
+statement ok
+DROP USER alice
+
+statement ok
+DROP SCHEMA bank
+
+statement ok
+DROP SCHEMA library
+

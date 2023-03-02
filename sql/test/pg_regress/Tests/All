@@ -13,7 +13,8 @@ varchar
 text
 int2
 int4
-int8
+HAVE_HGE?int8
+!HAVE_HGE?int8-nohge
 #oid
 float4
 float8

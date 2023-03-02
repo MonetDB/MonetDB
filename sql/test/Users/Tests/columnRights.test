@@ -1,0 +1,58 @@
+statement ok
+CREATE SCHEMA library
+
+statement ok
+CREATE TABLE library.orders(price int, name VARCHAR(100))
+
+statement ok rowcount 2
+INSERT INTO library.orders VALUES (12, 'abc'), (42, 'def')
+
+statement ok
+CREATE USER alice WITH PASSWORD 'alice' name 'alice' schema library
+
+statement ok
+GRANT SELECT (price) ON library.orders TO alice
+
+statement ok
+GRANT UPDATE (name)  ON library.orders TO alice
+
+@connection(id=tc, username=alice, password=alice)
+statement ok
+SELECT price FROM orders
+
+@connection(id=tc)
+statement error 42000!SELECT: identifier 'name' unknown
+SELECT name FROM orders
+
+@connection(id=tc)
+query I nosort
+SELECT * FROM orders
+----
+12
+42
+
+@connection(id=tc)
+statement error 42000!UPDATE: insufficient privileges for user 'alice' to update table 'orders' on column 'price'
+UPDATE orders SET price = 0
+
+@connection(id=tc)
+statement ok
+UPDATE orders SET name = 'book title goes here'
+
+@connection(id=tc)
+statement error 42000!SELECT: identifier 'name' unknown
+UPDATE orders SET name = name || 'book title goes here'
+
+@connection(id=tc)
+statement ok
+UPDATE orders SET name = 'new book title' where price = 12
+
+statement ok
+DROP USER alice
+
+statement ok
+DROP TABLE library.orders
+
+statement ok
+DROP SCHEMA library
+

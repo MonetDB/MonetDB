@@ -734,31 +734,35 @@ static str CLTgetUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	str *ret = getArgReference_str(stk, pci, 0);
 	(void)mb;
 
-	return AUTHgetUsername(ret, cntxt);
+	*ret = GDKstrdup(cntxt->username);
+	return MAL_SUCCEED;
 }
 
 static str CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	(void)cntxt;
 	str *ret = getArgReference_str(stk, pci, 0);
 	str *user = getArgReference_str(stk, pci, 1);
+	(void)ret;
+	(void)user;
 
 	(void)mb;
 
-	return AUTHgetPasswordHash(ret, cntxt, *user);
+	throw(MAL, "clients.getPassword needs reimplementation", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
-static str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str *usr = getArgReference_str(stk, pci, 1);
+static str
+CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	(void)cntxt;
+	//str *usr = getArgReference_str(stk, pci, 1);
 	str *pw = getArgReference_str(stk, pci, 2);
-	str ch = "";
-	str algo = "SHA1";
-	oid id;
+	//str algo = "SHA1";
 	str pwd,msg;
 
 	(void)mb;
 
 	if (!(pwd = mcrypt_SHA1Sum(*pw, strlen(*pw))))
 		throw(MAL, "clients.checkPermission", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	msg = AUTHcheckCredentials(&id, cntxt, *usr, pwd, ch, algo);
+	throw(MAL, "clients.checkPermission needs reimplementation", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	free(pwd);
 	return msg;
 }

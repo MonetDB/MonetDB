@@ -1,0 +1,11 @@
+statement error 22018!conversion of string 'a' to type ...
+select 'a'+1
+
+statement error 22018!conversion of string 'a' to type ...
+select 1-'a'
+
+query I nosort
+select true+1
+----
+2
+

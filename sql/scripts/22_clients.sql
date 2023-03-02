@@ -11,9 +11,10 @@ create function sys.password_hash (username string)
     external name sql.password;
 	-- return select password from users where name = username;
 
-create function sys.remote_table_credentials (tablename string)
-returns table ("uri" string, "username" string, "hash" string)
-external name sql.rt_credentials;
+create function sys.decypher (cypher string)
+	returns string
+    external name sql.decypher;
+	-- return decyphered pwhash 
 
 create function sys.sessions()
 returns table(

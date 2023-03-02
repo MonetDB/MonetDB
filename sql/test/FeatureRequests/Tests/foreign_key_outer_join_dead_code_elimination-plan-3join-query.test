@@ -1,0 +1,66 @@
+query T nosort
+plan select count(*) from pk1 join fk on fk.fk1 = pk1.pk1
+----
+project (
+| group by (
+| | select (
+| | | table("sys"."fk") [ "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey" ]
+| | ) [ ("fk"."%fk_fk1_fkey") ! * = (oid(63) NULL) ]
+| ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%1"."%1" ]
+) [ "%1"."%1" NOT NULL UNIQUE ]
+
+query T nosort
+plan select id from pk1 join fk on fk.fk1 = pk1.pk1 order by id
+----
+project (
+| select (
+| | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey" ]
+| ) [ ("fk"."%fk_fk1_fkey") ! * = (oid(63) NULL) ]
+) [ "fk"."id" NOT NULL UNIQUE HASHCOL  ] [ "fk"."id" ASC NOT NULL UNIQUE HASHCOL  ]
+
+query T nosort
+plan select count(*) from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2
+----
+project (
+| group by (
+| | select (
+| | | table("sys"."fk") [ "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey", "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ]
+| | ) [ ("fk"."%fk_fk2_fkey") ! * = (oid(63) NULL), ("fk"."%fk_fk1_fkey") ! * = (oid(63) NULL) ]
+| ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%1"."%1" ]
+) [ "%1"."%1" NOT NULL UNIQUE ]
+
+query T nosort
+plan select id from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id
+----
+project (
+| select (
+| | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey", "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ]
+| ) [ ("fk"."%fk_fk2_fkey") ! * = (oid(63) NULL), ("fk"."%fk_fk1_fkey") ! * = (oid(63) NULL) ]
+) [ "fk"."id" NOT NULL UNIQUE HASHCOL  ] [ "fk"."id" ASC NOT NULL UNIQUE HASHCOL  ]
+
+query T nosort
+plan select id, v1 from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id
+----
+project (
+| join (
+| | semijoin (
+| | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey", "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ],
+| | | table("sys"."pk2") [ "pk2"."%TID%" NOT NULL UNIQUE ]
+| | ) [ ("fk"."%fk_fk2_fkey") = ("pk2"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk2_fkey" ],
+| | table("sys"."pk1") [ "pk1"."v1", "pk1"."%TID%" NOT NULL UNIQUE ]
+| ) [ ("fk"."%fk_fk1_fkey") = ("pk1"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk1_fkey" ]
+) [ "fk"."id" NOT NULL HASHCOL , "pk1"."v1" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
+
+query T nosort
+plan select id, v2 from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id
+----
+project (
+| join (
+| | semijoin (
+| | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey", "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ],
+| | | table("sys"."pk1") [ "pk1"."%TID%" NOT NULL UNIQUE ]
+| | ) [ ("fk"."%fk_fk1_fkey") = ("pk1"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk1_fkey" ],
+| | table("sys"."pk2") [ "pk2"."v2", "pk2"."%TID%" NOT NULL UNIQUE ]
+| ) [ ("fk"."%fk_fk2_fkey") = ("pk2"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk2_fkey" ]
+) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
+

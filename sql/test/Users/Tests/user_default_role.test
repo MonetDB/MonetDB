@@ -1,0 +1,50 @@
+statement ok
+create schema pub
+
+statement ok
+create role bartender
+
+statement ok
+create table pub.beers(name VARCHAR(20))
+
+statement ok
+grant all on pub.beers to bartender
+
+statement ok
+create user foo with password 'foo' name 'foo' schema pub default role bartender
+
+@connection(id=tc, username=foo, password=foo)
+query T nosort
+select current_user
+----
+foo
+
+@connection(id=tc)
+query T nosort
+select current_role
+----
+bartender
+
+@connection(id=tc)
+statement ok
+insert into pub.beers values ('Amstel'), ('Grolsch'), ('Brand')
+
+@connection(id=tc)
+statement ok
+delete from pub.beers
+
+statement ok
+alter user foo default role foo
+
+@connection(id=foo, username=foo, password=foo)
+query T nosort
+select current_user
+----
+foo
+
+@connection(id=foo)
+query T nosort
+select current_role
+----
+foo
+

@@ -1,0 +1,89 @@
+statement ok
+CREATE SCHEMA s1
+
+statement ok
+CREATE USER bruce WITH PASSWORD 'bruce' name 'willis' schema s1
+
+statement ok
+CREATE USER alice WITH PASSWORD 'alice' name 'wonderland' schema s1
+
+statement ok
+CREATE TABLE s1.test(d int)
+
+statement ok
+CREATE ROLE role1
+
+statement ok
+GRANT ALL ON s1.test to role1
+
+# check that bruce cannot grant role1
+@connection(id=bruce, username=bruce, password=bruce)
+statement error 42000!Role (role1) missing
+SET role role1
+
+@connection(id=bruce)
+statement error 42000!SELECT: access denied for bruce to table 's1.test'
+select * from test
+
+@connection(id=bruce)
+statement error 0P000!GRANT: Insufficient privileges to grant ROLE 'role1'
+GRANT role1 TO alice FROM current_user
+
+@connection(id=bruce)
+statement error 0P000!GRANT: Insufficient privileges to grant ROLE 'role1'
+GRANT role1 TO bruce FROM current_user
+
+# check that bruce can grant role1 once he's assigned the role
+statement ok
+GRANT role1 TO bruce WITH ADMIN OPTION
+
+@connection(id=bruce)
+statement ok
+SET role role1
+
+@connection(id=bruce)
+query I nosort
+select * from test
+----
+
+@connection(id=bruce)
+statement ok
+GRANT role1 TO alice FROM current_user
+
+@connection(id=bruce)
+statement error M1M05!GRANT: User 'bruce' already has ROLE 'role1'
+GRANT role1 TO bruce FROM current_user
+
+# revoke role1 from bruce and check that he's lost his privileges
+statement ok
+REVOKE role1 FROM bruce
+
+statement ok
+REVOKE role1 FROM alice
+
+@connection(id=bruce1, username=bruce, password=bruce)
+statement error 42000!SELECT: access denied for bruce to table 's1.test'
+select * from test
+
+@connection(id=bruce1)
+statement error 0P000!GRANT: Insufficient privileges to grant ROLE 'role1'
+GRANT role1 TO alice FROM current_user
+
+# grant sysadmin to bruce and check that he now can do everything again
+# as a sysadmin
+statement ok
+GRANT sysadmin TO bruce
+
+@connection(id=bruce1)
+statement ok
+SET role sysadmin
+
+@connection(id=bruce1)
+query I nosort
+select * from test
+----
+
+@connection(id=bruce1)
+statement ok
+GRANT role1 TO alice FROM current_role
+

@@ -1,0 +1,72 @@
+statement ok
+create table test (id bigint)
+
+statement ok
+insert into test values (1)
+
+statement ok
+start transaction
+
+@connection(id=2, username=monetdb, password=monetdb)
+statement ok
+start transaction
+
+statement ok
+alter table test add column data int
+
+@connection(id=2)
+statement ok
+insert into test values (2)
+
+statement ok
+commit
+
+@connection(id=2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+query II nosort
+select * from test
+----
+1
+NULL
+
+@connection(id=2)
+query II nosort
+select * from test
+----
+1
+NULL
+
+statement ok
+start transaction
+
+@connection(id=2)
+statement ok
+start transaction
+
+statement ok
+alter table test drop column data
+
+@connection(id=2)
+statement ok
+insert into test values (3,4)
+
+statement ok
+commit
+
+@connection(id=2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+query I nosort
+select * from test
+----
+1
+
+@connection(id=2)
+query I nosort
+select * from test
+----
+1
+

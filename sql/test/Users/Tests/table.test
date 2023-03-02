@@ -1,0 +1,76 @@
+statement ok
+CREATE ROLE my_role
+
+statement ok
+CREATE SCHEMA my_schema AUTHORIZATION my_role
+
+statement ok
+CREATE USER my_user with password 'p1' name 'User with role' schema my_schema
+
+@connection(id=usr, username=my_user, password=p1)
+statement error 42000!CREATE TABLE: insufficient privileges for user 'my_user' in schema 'my_schema'
+CREATE TABLE my_schema.my_table (
+              obsid INT NOT NULL,
+              time_s BIGINT NULL,
+              time_e BIGINT NULL,
+              PRIMARY KEY (obsid))
+
+statement ok
+GRANT my_role to my_user
+
+@connection(id=usr)
+statement ok
+SET ROLE my_role
+
+@connection(id=usr)
+statement ok
+CREATE TABLE my_schema.my_table (
+              obsid INT NOT NULL,
+              time_s BIGINT NULL,
+              time_e BIGINT NULL,
+              PRIMARY KEY (obsid))
+
+@connection(id=usr)
+statement ok
+INSERT INTO my_schema.my_table (obsid, time_s) values (1, 300), (2, 42)
+
+@connection(id=usr)
+statement ok
+UPDATE my_schema.my_table SET time_e = 999999 WHERE time_e IS NULL
+
+@connection(id=usr)
+statement ok
+DELETE FROM my_schema.my_table WHERE obsid = 1
+
+@connection(id=usr)
+query III nosort
+SELECT * FROM my_schema.my_table
+----
+2
+42
+999999
+
+@connection(id=usr)
+statement ok
+DROP TABLE my_schema.my_table
+
+@connection(id=usr)
+statement ok
+CREATE TABLE my_schema.my_table (
+              obsid INT NOT NULL,
+              time_s BIGINT NULL,
+              time_e BIGINT NULL,
+              PRIMARY KEY (obsid))
+
+statement ok
+DROP TABLE my_schema.my_table
+
+statement ok
+DROP USER my_user
+
+statement ok
+DROP ROLE my_role
+
+statement ok
+DROP SCHEMA my_schema
+

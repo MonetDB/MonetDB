@@ -409,6 +409,47 @@ bailout:
 	return false;
 }
 
+static bool
+has_remote_user_info_table(Mapi mid)
+{
+	MapiHdl hdl;
+	bool ret;
+	static int answer = -1;
+
+	if (answer >= 0)
+		return answer;
+
+	if ((hdl = mapi_query(mid,
+			      "select id from sys._tables"
+			      " where name = 'remote_user_info'"
+			      " and schema_id = ("
+			      "select id from sys.schemas"
+			      " where name = 'sys')")) == NULL ||
+	    mapi_error(mid))
+		goto bailout;
+	ret = mapi_get_row_count(hdl) == 1;
+	while ((mapi_fetch_row(hdl)) != 0) {
+		if (mapi_error(mid))
+			goto bailout;
+	}
+	if (mapi_error(mid))
+		goto bailout;
+	mapi_close_handle(hdl);
+	answer = ret;
+	return ret;
+
+bailout:
+	if (hdl) {
+		if (mapi_result_error(hdl))
+			mapi_explain_result(hdl, stderr);
+		else
+			mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+	} else
+		mapi_explain(mid, stderr);
+	return false;
+}
+
 static int
 dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *tid, stream *toConsole)
 {
@@ -1320,10 +1361,17 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 		} else if (type == 5) { /* remote table */
 			char *rt_user = NULL;
 			char *rt_hash = NULL;
-			snprintf(query, maxquerylen,
-				 "SELECT username, hash "
-				 "FROM sys.remote_table_credentials('%s.%s')",
-				 schema, tname);
+			if (has_remote_user_info_table(mid)) {
+				snprintf(query, maxquerylen,
+					"SELECT username, sys.decypher(password) "
+					"FROM sys.remote_user_info where table_id = (select t.id from sys._tables t, sys.schemas s where "
+					"t.schema_id = s.id and s.name = '%s' and t.name = '%s')", schema, tname);
+			} else {
+				snprintf(query, maxquerylen,
+					"SELECT username, hash "
+					"FROM sys.remote_table_credentials('%s.%s')",
+					schema, tname);
+			}
 			if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 				goto bailout;
 			cnt = 0;

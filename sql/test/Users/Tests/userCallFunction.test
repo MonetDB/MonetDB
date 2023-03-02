@@ -1,0 +1,95 @@
+statement ok
+start transaction
+
+statement ok
+create schema s1
+
+statement ok
+CREATE USER u1 WITH PASSWORD '1' NAME 'u1' SCHEMA s1
+
+statement ok
+CREATE FUNCTION s1.f1(a int) RETURNS INT BEGIN RETURN 10 + a; END
+
+statement ok
+CREATE FUNCTION s1.f1(a int, b int) RETURNS INT BEGIN RETURN b + a; END
+
+statement ok
+CREATE FUNCTION s1.f1() RETURNS INT BEGIN RETURN 10; END
+
+statement ok
+commit
+
+@connection(id=tc, username=u1, password=1)
+statement error 42000!SELECT: insufficient privileges for operator 's1'.'f1'()
+SELECT s1.f1()
+
+@connection(id=tc)
+statement error 42000!SELECT: insufficient privileges for unary operator 's1'.'f1'(tinyint)
+SELECT s1.f1(1)
+
+@connection(id=tc)
+statement error 42000!SELECT: insufficient privileges for unary operator 's1'.'f1'(int)
+SELECT s1.f1(cast(1 as int))
+
+@connection(id=tc)
+statement error 42000!SELECT: insufficient privileges for binary operator 's1'.'f1'(tinyint,tinyint)
+SELECT s1.f1(1, 2)
+
+@connection(id=tc)
+statement error 42000!SELECT: insufficient privileges for operator 'sys'.'clearrejects'()
+CALL sys.clearrejects()
+
+statement error 42000!GRANT FUNCTION: there are more than one function called 'f1', please use the full signature
+GRANT EXECUTE ON FUNCTION s1.f1 TO u1
+
+statement ok
+GRANT EXECUTE ON FUNCTION s1.f1() TO u1
+
+@connection(id=tc)
+query I nosort
+SELECT s1.f1()
+----
+10
+
+@connection(id=tc)
+statement error 42000!SELECT: insufficient privileges for unary operator 's1'.'f1'(tinyint)
+SELECT s1.f1(1)
+
+@connection(id=tc)
+statement error 42000!SELECT: insufficient privileges for unary operator 's1'.'f1'(int)
+SELECT s1.f1(cast(1 as int))
+
+statement ok
+REVOKE EXECUTE ON FUNCTION s1.f1() FROM u1
+
+@connection(id=tc)
+statement error 42000!SELECT: insufficient privileges for operator 's1'.'f1'()
+SELECT s1.f1()
+
+statement ok
+GRANT EXECUTE ON FUNCTION s1.f1(int) TO u1
+
+@connection(id=tc)
+query I nosort
+SELECT s1.f1(1)
+----
+11
+
+@connection(id=tc)
+query I nosort
+SELECT s1.f1(cast(1 as int))
+----
+11
+
+statement ok
+start transaction
+
+statement ok
+drop user u1
+
+statement ok
+drop schema s1 cascade
+
+statement ok
+commit
+

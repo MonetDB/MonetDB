@@ -364,9 +364,11 @@ MT_thread_setcondwait(MT_Cond *cond)
 void
 MT_thread_add_mylock(MT_Lock *lock)
 {
+	struct winthread *w;
 	if (threadslot == TLS_OUT_OF_INDEXES)
-		return;
-	struct winthread *w = TlsGetValue(threadslot);
+		w = &mainthread;
+	else
+		w = TlsGetValue(threadslot);
 
 	if (w) {
 		lock->nxt = w->mylocks;
@@ -837,9 +839,11 @@ MT_thread_setcondwait(MT_Cond *cond)
 void
 MT_thread_add_mylock(MT_Lock *lock)
 {
+	struct posthread *p;
 	if (!thread_initialized)
-		return;
-	struct posthread *p = pthread_getspecific(threadkey);
+		p = &mainthread;
+	else
+		p = pthread_getspecific(threadkey);
 
 	if (p) {
 		lock->nxt = p->mylocks;
@@ -1028,6 +1032,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	int ret;
 	struct posthread *p;
 
+	assert(thread_initialized);
 	join_threads();
 	if (threadname == NULL) {
 		TRC_CRITICAL(GDK, "Thread must have a name\n");

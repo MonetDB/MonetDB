@@ -42,7 +42,7 @@ with SQLTestCase() as mdb:
             mdb.execute('select username, sessionid from sys.queue(\'ALL\') group by username, sessionid order by sessionid;')\
                .assertSucceeded().assertDataResultMatch([('monetdb', 0), ('u1', 1), ('u2', 2)])
 
-    mdb.execute('drop user u1').assertSucceeded()
-    mdb.execute('drop user u2').assertSucceeded()
-    mdb.execute('drop role r1').assertSucceeded()
-    mdb.execute('drop schema s1').assertSucceeded()
+    mdb.execute('drop user u1;').assertSucceeded()
+    mdb.execute('drop user u2;').assertSucceeded()
+    mdb.execute('drop role r1;').assertSucceeded()
+    mdb.execute('drop schema s1;').assertSucceeded()

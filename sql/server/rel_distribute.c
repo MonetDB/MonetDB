@@ -103,8 +103,10 @@ rewrite_replica(mvc *sql, list *exps, sql_table *t, sql_table *p, int remote_pro
 
 	/* set_remote() */
 	if (remote_prop && p && isRemote(p)) {
+		sqlid id = p->base.id;
 		char *local_name = sa_strconcat(sql->sa, sa_strconcat(sql->sa, p->s->base.name, "."), p->base.name);
 		prop *p = r->p = prop_create(sql->sa, PROP_REMOTE, r->p);
+		p->id = id;
 		p->value.pval = local_name;
 	}
 	return r;
@@ -229,6 +231,7 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 		if (t && isRemote(t) && (p = find_prop(rel->p, PROP_REMOTE)) == NULL) {
 			char *local_name = sa_strconcat(v->sql->sa, sa_strconcat(v->sql->sa, t->s->base.name, "."), t->base.name);
 			p = rel->p = prop_create(v->sql->sa, PROP_REMOTE, rel->p);
+			p->id = t->base.id;
 			p->value.pval = local_name;
 		}
 	} break;

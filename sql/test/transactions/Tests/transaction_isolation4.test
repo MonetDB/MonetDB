@@ -1,0 +1,730 @@
+@connection(id=mdb1)
+statement ok
+create table myt (i int, j int)
+
+@connection(id=mdb1)
+statement ok
+insert into myt values (1, 1), (2, 2)
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+alter table myt add constraint pk1 primary key (i)
+
+@connection(id=mdb2)
+statement error 42000!NOT NULL CONSTRAINT: transaction conflict detected
+alter table myt add constraint pk2 primary key (j)
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+@connection(id=mdb1)
+statement ok
+create table t1 (i int)
+
+@connection(id=mdb1)
+statement ok
+alter table t1 add constraint pk3 primary key (i)
+
+@connection(id=mdb2)
+statement ok
+create table t2 (i int)
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+alter table t2 add foreign key(i) references t1(i)
+
+@connection(id=mdb2)
+statement ok
+alter table t1 drop constraint pk3
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+@connection(id=mdb1)
+statement ok
+create table t3 (i int)
+
+@connection(id=mdb1)
+statement ok
+alter table t3 add constraint pk4 primary key (i)
+
+@connection(id=mdb2)
+statement ok
+create table t4 (i int)
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+alter table t3 drop constraint pk4
+
+@connection(id=mdb2)
+statement ok
+alter table t4 add foreign key(i) references t3(i)
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+@connection(id=mdb1)
+statement ok
+CREATE schema mys
+
+@connection(id=mdb1)
+statement ok
+CREATE ROLE myrole
+
+@connection(id=mdb1)
+statement ok
+CREATE USER duser WITH PASSWORD 'ups' NAME 'ups' SCHEMA mys
+
+@connection(id=mdb1)
+statement ok
+GRANT myrole to duser
+
+@connection(id=mdb1)
+statement ok
+create table mys.myt2 (i int, j int)
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+GRANT SELECT on table mys.myt2 to myrole
+
+@connection(id=mdb2)
+statement ok
+drop role myrole
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+@connection(id=mdb1)
+statement ok
+create table mytx (i int, j int)
+
+@connection(id=mdb1)
+statement ok
+insert into mytx values (1, 1), (2, 2)
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+analyze sys.mytx
+
+@connection(id=mdb2)
+statement ok
+drop table mytx
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+commit
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+comment on table "sys"."myt" is 'amifine?'
+
+@connection(id=mdb2)
+statement ok
+drop table myt
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+@connection(id=mdb1)
+statement ok
+CREATE schema mys2
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+CREATE USER duser2 WITH PASSWORD 'ups' NAME 'ups' SCHEMA mys2
+
+@connection(id=mdb2)
+statement ok
+drop schema mys2
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+@connection(id=mdb1)
+statement ok
+create merge table parent1(a int) PARTITION BY RANGE ON (a)
+
+@connection(id=mdb1)
+statement ok
+create merge table parent2(a int)
+
+@connection(id=mdb1)
+statement ok
+create table child1(a int)
+
+@connection(id=mdb1)
+statement ok
+alter table parent2 add table child1
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+ALTER TABLE parent1 ADD TABLE parent2 AS PARTITION FROM '1' TO '2'
+
+@connection(id=mdb2)
+statement ok
+insert into child1 values (3)
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+@connection(id=mdb1)
+statement ok
+create merge table parent3(a int) PARTITION BY RANGE ON (a)
+
+@connection(id=mdb1)
+statement ok
+create merge table parent4(a int)
+
+@connection(id=mdb1)
+statement ok
+create table child2(a int)
+
+@connection(id=mdb1)
+statement ok
+alter table parent4 add table child2
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+ALTER TABLE parent3 ADD TABLE parent4 AS PARTITION FROM '1' TO '2'
+
+@connection(id=mdb2)
+statement error 42000!ALTER TABLE: transaction conflict detected
+alter table parent3 set schema mys2
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+@connection(id=mdb1)
+statement ok
+create merge table parent5(a int)
+
+@connection(id=mdb1)
+statement ok
+create merge table parent6(a int)
+
+@connection(id=mdb1)
+statement ok
+create table child3(a int)
+
+@connection(id=mdb1)
+statement ok
+alter table parent6 add table child3
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+ALTER TABLE parent5 ADD TABLE parent6
+
+@connection(id=mdb2)
+statement ok
+insert into child3 values (10)
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+commit
+
+@connection(id=mdb1)
+statement ok
+create merge table parent7(a int primary key)
+
+@connection(id=mdb1)
+statement ok
+create table child4(a int primary key)
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+ALTER TABLE parent7 ADD TABLE child4
+
+@connection(id=mdb2)
+statement ok
+alter table child4 add constraint ugh foreign key(a) references child4(a)
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+@connection(id=mdb1)
+statement ok
+create merge table parent8(a int, b int)
+
+@connection(id=mdb1)
+statement ok
+create table child5(a int, b int)
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+ALTER TABLE parent8 ADD TABLE child5
+
+@connection(id=mdb2)
+statement ok
+alter table child5 drop column b
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+alter table t3 rename to t5
+
+@connection(id=mdb2)
+statement error 42000!ALTER TABLE: transaction conflict detected
+alter table t4 rename to t5
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40000!COMMIT: transaction is aborted, will ROLLBACK instead
+commit
+
+@connection(id=mdb1)
+statement ok
+create merge table parent9(a int, b int)
+
+@connection(id=mdb1)
+statement ok
+create merge table parent10(a int, b int)
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+ALTER TABLE parent9 ADD TABLE parent10
+
+@connection(id=mdb2)
+statement ok
+ALTER TABLE parent10 ADD TABLE parent9
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+@connection(id=mdb1)
+statement ok
+CREATE TABLE integers (i int)
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+alter table integers add primary key (i)
+
+@connection(id=mdb2)
+statement ok
+insert into integers values (5),(5),(5)
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit and chain
+
+@connection(id=mdb2)
+statement error 2DM30!COMMIT: not allowed in auto commit mode
+commit
+
+@connection(id=mdb1)
+query I nosort
+SELECT i from integers
+----
+
+@connection(id=mdb2)
+query I nosort
+SELECT i from integers
+----
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+drop table myt
+
+@connection(id=mdb1)
+statement ok
+drop table t2
+
+@connection(id=mdb1)
+statement ok
+drop table t1
+
+@connection(id=mdb1)
+statement ok
+drop table t4
+
+@connection(id=mdb1)
+statement ok
+drop table t5
+
+@connection(id=mdb1)
+statement ok
+drop user duser
+
+@connection(id=mdb1)
+statement ok
+drop role myrole
+
+@connection(id=mdb1)
+statement ok
+drop schema mys cascade
+
+@connection(id=mdb1)
+statement ok
+drop user duser2
+
+@connection(id=mdb1)
+statement ok
+alter table parent1 drop table parent2
+
+@connection(id=mdb1)
+statement ok
+alter table parent2 drop table child1
+
+@connection(id=mdb1)
+statement ok
+alter table parent3 drop table parent4
+
+@connection(id=mdb1)
+statement ok
+alter table parent4 drop table child2
+
+@connection(id=mdb1)
+statement ok
+alter table parent5 drop table parent6
+
+@connection(id=mdb1)
+statement ok
+alter table parent6 drop table child3
+
+@connection(id=mdb1)
+statement ok
+alter table parent7 drop table child4
+
+@connection(id=mdb1)
+statement ok
+alter table parent8 drop table child5
+
+@connection(id=mdb1)
+statement ok
+alter table parent9 drop table parent10
+
+@connection(id=mdb1)
+statement ok
+drop table child1
+
+@connection(id=mdb1)
+statement ok
+drop table child2
+
+@connection(id=mdb1)
+statement ok
+drop table child3
+
+@connection(id=mdb1)
+statement ok
+drop table child4
+
+@connection(id=mdb1)
+statement ok
+drop table child5
+
+@connection(id=mdb1)
+statement ok
+drop table parent1
+
+@connection(id=mdb1)
+statement ok
+drop table parent2
+
+@connection(id=mdb1)
+statement ok
+drop table parent3
+
+@connection(id=mdb1)
+statement ok
+drop table parent4
+
+@connection(id=mdb1)
+statement ok
+drop table parent5
+
+@connection(id=mdb1)
+statement ok
+drop table parent6
+
+@connection(id=mdb1)
+statement ok
+drop table parent7
+
+@connection(id=mdb1)
+statement ok
+drop table parent8
+
+@connection(id=mdb1)
+statement ok
+drop table parent9
+
+@connection(id=mdb1)
+statement ok
+drop table parent10
+
+@connection(id=mdb1)
+statement ok
+drop schema mys2
+
+@connection(id=mdb1)
+statement ok
+drop table integers
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb3, username=monetdb, password=monetdb)
+statement ok
+CREATE schema mys3
+
+@connection(id=mdb3)
+statement ok
+CREATE USER duser3 WITH PASSWORD 'ups' NAME 'ups' SCHEMA mys3
+
+@connection(id=duser3, username=duser3, password=ups)
+statement ok
+select 1
+
+@connection(id=mdb3)
+statement ok
+start transaction
+
+@connection(id=mdb3)
+statement ok
+drop user duser3
+
+@connection(id=mdb3)
+statement ok
+drop schema mys3
+
+@connection(id=mdb3)
+statement ok
+commit
+
+@connection(id=duser3)
+statement error 42000!The session's schema was not found, this transaction won't start
+start transaction
+
+@connection(id=mdb4, username=monetdb, password=monetdb)
+statement ok
+CREATE schema mys4
+
+@connection(id=mdb4)
+statement ok
+CREATE USER duser4 WITH PASSWORD 'ups' NAME 'ups' SCHEMA mys4
+
+@connection(id=duser4, username=duser4, password=ups)
+statement ok
+start transaction
+
+@connection(id=duser4)
+statement ok
+select 1
+
+@connection(id=mdb4)
+statement ok
+start transaction
+
+@connection(id=mdb4)
+statement ok
+drop user duser4
+
+@connection(id=mdb4)
+statement ok
+drop schema mys4
+
+@connection(id=mdb4)
+statement ok
+commit
+
+@connection(id=duser4)
+statement error
+rollback and chain
+

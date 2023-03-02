@@ -522,6 +522,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("MULTILINESTRINGZM", GEOMETRYSUBTYPE);
 	failed += keywords_insert("MULTIPOLYGONZM", GEOMETRYSUBTYPE);
 	failed += keywords_insert("GEOMETRYCOLLECTIONZM", GEOMETRYSUBTYPE);
+	failed += keywords_insert("LOGIN", LOGIN);
 	// odbc keywords
 	failed += keywords_insert("d", ODBC_DATE_ESCAPE_PREFIX);
 	failed += keywords_insert("t", ODBC_TIME_ESCAPE_PREFIX);

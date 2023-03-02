@@ -98,6 +98,7 @@ typedef enum tokens {
 	SQL_IS_NULL,
 	SQL_JOIN,
 	SQL_LIKE,
+	SQL_LOGIN,
 	SQL_MAXVALUE,
 	SQL_MERGE,
 	SQL_MERGE_MATCH,
@@ -192,6 +193,14 @@ typedef enum {
 	endian_little = 1,
 	endian_native = 3,
 } endianness;
+
+typedef enum trigger_event {
+	INSERT_EVENT,
+	DELETE_EVENT,
+	UPDATE_EVENT,
+	TRUNCATE_EVENT,
+	LOGIN_EVENT
+} trigger_event;
 
 #ifdef WORDS_BIGENDIAN
 #define OUR_ENDIANNESS endian_big

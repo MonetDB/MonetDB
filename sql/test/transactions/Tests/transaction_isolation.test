@@ -1,0 +1,1044 @@
+@connection(id=mdb1)
+statement ok
+CREATE TABLE integers (i int)
+
+@connection(id=mdb1)
+statement ok
+insert into integers values (1),(2),(3),(NULL)
+
+@connection(id=mdb1)
+query I nosort
+SELECT i FROM integers
+----
+1
+2
+3
+NULL
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers
+----
+1
+2
+3
+NULL
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+query I nosort
+SELECT i FROM integers
+----
+1
+2
+3
+NULL
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers
+----
+1
+2
+3
+NULL
+
+@connection(id=mdb1)
+statement ok rowcount 4
+TRUNCATE integers
+
+@connection(id=mdb1)
+query I nosort
+SELECT i FROM integers
+----
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers
+----
+1
+2
+3
+NULL
+
+@connection(id=mdb1)
+statement ok rowcount 3
+insert into integers values (4),(5),(6)
+
+@connection(id=mdb1)
+query I nosort
+SELECT i FROM integers
+----
+4
+5
+6
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers
+----
+1
+2
+3
+NULL
+
+@connection(id=mdb1)
+statement ok rowcount 1
+update integers set i = 7 where i = 6
+
+@connection(id=mdb1)
+query I nosort
+SELECT i FROM integers
+----
+4
+5
+7
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers
+----
+1
+2
+3
+NULL
+
+@connection(id=mdb1)
+statement ok rowcount 1
+delete from integers where i = 5
+
+@connection(id=mdb1)
+query I nosort
+SELECT i FROM integers
+----
+4
+7
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers
+----
+1
+2
+3
+NULL
+
+@connection(id=mdb1)
+statement ok
+rollback
+
+@connection(id=mdb1)
+query I nosort
+SELECT i FROM integers
+----
+1
+2
+3
+NULL
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers
+----
+1
+2
+3
+NULL
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+query I nosort
+SELECT i FROM integers
+----
+1
+2
+3
+NULL
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers
+----
+1
+2
+3
+NULL
+
+@connection(id=mdb1)
+statement ok rowcount 4
+TRUNCATE integers
+
+@connection(id=mdb1)
+query I nosort
+SELECT i FROM integers
+----
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers
+----
+1
+2
+3
+NULL
+
+@connection(id=mdb1)
+statement ok rowcount 3
+insert into integers values (4),(5),(6)
+
+@connection(id=mdb1)
+query I nosort
+SELECT i FROM integers
+----
+4
+5
+6
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers
+----
+1
+2
+3
+NULL
+
+@connection(id=mdb1)
+statement ok rowcount 1
+update integers set i = 7 where i = 6
+
+@connection(id=mdb1)
+query I nosort
+SELECT i FROM integers
+----
+4
+5
+7
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers
+----
+1
+2
+3
+NULL
+
+@connection(id=mdb1)
+statement ok rowcount 1
+delete from integers where i = 5
+
+@connection(id=mdb1)
+query I nosort
+SELECT i FROM integers
+----
+4
+7
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers
+----
+1
+2
+3
+NULL
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb1)
+query I nosort
+SELECT i FROM integers
+----
+4
+7
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers
+----
+4
+7
+
+@connection(id=mdb1)
+statement ok rowcount 2
+TRUNCATE integers
+
+@connection(id=mdb1)
+statement ok rowcount 20
+insert into integers (select value from generate_series(1,21,1))
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok rowcount 16
+delete from integers where i % 5 <> 0
+
+@connection(id=mdb1)
+query I nosort
+SELECT count(*) FROM integers
+----
+4
+
+@connection(id=mdb2)
+query I nosort
+SELECT count(*) FROM integers
+----
+20
+
+@connection(id=mdb1)
+statement ok rowcount 2
+update integers set i = i + 1 where i % 2 = 0
+
+@connection(id=mdb1)
+query I nosort
+SELECT count(*) FROM integers
+----
+4
+
+@connection(id=mdb2)
+query I nosort
+SELECT count(*) FROM integers
+----
+20
+
+@connection(id=mdb1)
+statement ok rowcount 10
+insert into integers (select value from generate_series(1,11,1))
+
+@connection(id=mdb1)
+query I nosort
+SELECT count(*) FROM integers
+----
+14
+
+@connection(id=mdb2)
+query I nosort
+SELECT count(*) FROM integers
+----
+20
+
+@connection(id=mdb1)
+statement ok rowcount 6
+delete from integers where i between 1 and 5
+
+@connection(id=mdb1)
+query I nosort
+SELECT count(*) FROM integers
+----
+8
+
+@connection(id=mdb2)
+query I nosort
+SELECT count(*) FROM integers
+----
+20
+
+@connection(id=mdb1)
+statement ok rowcount 8
+TRUNCATE integers
+
+@connection(id=mdb1)
+query I nosort
+SELECT count(*) FROM integers
+----
+0
+
+@connection(id=mdb2)
+query I nosort
+SELECT count(*) FROM integers
+----
+20
+
+@connection(id=mdb1)
+statement ok
+rollback
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+@connection(id=mdb1)
+statement ok rowcount 20
+insert into integers (select value from generate_series(1,21,1))
+
+@connection(id=mdb1)
+query I nosort
+SELECT count(*) FROM integers
+----
+40
+
+@connection(id=mdb2)
+query I nosort
+SELECT count(*) FROM integers
+----
+40
+
+@connection(id=mdb1)
+statement ok rowcount 200
+insert into integers (select value from generate_series(1,201,1))
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok rowcount 60
+delete from integers where i < 21
+
+@connection(id=mdb1)
+query I nosort
+SELECT count(*) FROM integers
+----
+180
+
+@connection(id=mdb2)
+query I nosort
+SELECT count(*) FROM integers
+----
+240
+
+@connection(id=mdb1)
+statement ok rowcount 290
+insert into integers (select value from generate_series(11,301,1))
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb1)
+query I nosort
+SELECT count(*) FROM integers
+----
+470
+
+@connection(id=mdb2)
+query I nosort
+SELECT count(*) FROM integers
+----
+470
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+query I nosort
+SELECT count(*) FROM integers
+----
+470
+
+@connection(id=mdb2)
+query I nosort
+SELECT count(*) FROM integers
+----
+470
+
+@connection(id=mdb1)
+statement ok rowcount 170
+delete from integers where i < 101
+
+@connection(id=mdb1)
+query I nosort
+SELECT count(*) FROM integers
+----
+300
+
+@connection(id=mdb2)
+query I nosort
+SELECT count(*) FROM integers
+----
+470
+
+@connection(id=mdb1)
+statement ok rowcount 120
+insert into integers (select value from generate_series(41,161,1))
+
+@connection(id=mdb1)
+query I nosort
+SELECT count(*) FROM integers
+----
+420
+
+@connection(id=mdb2)
+query I nosort
+SELECT count(*) FROM integers
+----
+470
+
+@connection(id=mdb1)
+statement ok rowcount 70
+delete from integers where i between 91 and 120
+
+@connection(id=mdb1)
+query I nosort
+SELECT count(*) FROM integers
+----
+350
+
+@connection(id=mdb2)
+query I nosort
+SELECT count(*) FROM integers
+----
+470
+
+@connection(id=mdb1)
+statement ok rowcount 80
+delete from integers where i between 131 and 140 or i < 91
+
+@connection(id=mdb1)
+query I nosort
+SELECT count(*) FROM integers
+----
+270
+
+@connection(id=mdb2)
+query I nosort
+SELECT count(*) FROM integers
+----
+470
+
+@connection(id=mdb1)
+statement ok rowcount 10
+insert into integers (select value from generate_series(41,51,1))
+
+@connection(id=mdb1)
+query I nosort
+SELECT count(*) FROM integers
+----
+280
+
+@connection(id=mdb2)
+query I nosort
+SELECT count(*) FROM integers
+----
+470
+
+@connection(id=mdb1)
+statement ok rowcount 270
+delete from integers where i > 99
+
+@connection(id=mdb1)
+query I nosort
+SELECT i FROM integers order by i
+----
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+
+@connection(id=mdb2)
+query I nosort
+SELECT count(*) FROM integers
+----
+470
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb1)
+query I nosort
+SELECT i FROM integers order by i
+----
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers order by i
+----
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok rowcount 10
+TRUNCATE integers
+
+@connection(id=mdb1)
+query I nosort
+SELECT count(*) FROM integers
+----
+0
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers order by i
+----
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+
+@connection(id=mdb1)
+statement ok rowcount 100
+insert into integers (select value from generate_series(1,101,1))
+
+@connection(id=mdb1)
+query I nosort
+SELECT count(*) FROM integers
+----
+100
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers order by i
+----
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+
+@connection(id=mdb1)
+statement ok rowcount 30
+insert into integers (select value from generate_series(1,31,1))
+
+@connection(id=mdb1)
+query I nosort
+SELECT count(*) FROM integers
+----
+130
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers order by i
+----
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+
+@connection(id=mdb1)
+statement ok rowcount 20
+DELETE FROM integers WHERE i between 11 and 20
+
+@connection(id=mdb1)
+query I nosort
+SELECT count(*) FROM integers
+----
+110
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers order by i
+----
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+
+@connection(id=mdb1)
+statement ok rowcount 30
+DELETE FROM integers WHERE i between 1 and 10 or i between 91 and 100
+
+@connection(id=mdb1)
+query I nosort
+SELECT count(*) FROM integers
+----
+80
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers order by i
+----
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+
+@connection(id=mdb1)
+statement ok rowcount 10
+insert into integers (select value from generate_series(1,11,1))
+
+@connection(id=mdb1)
+query I nosort
+SELECT count(*) FROM integers
+----
+90
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers order by i
+----
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+
+@connection(id=mdb1)
+statement ok rowcount 90
+TRUNCATE integers
+
+@connection(id=mdb1)
+query I nosort
+SELECT count(*) FROM integers
+----
+0
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers order by i
+----
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb1)
+query I nosort
+SELECT i FROM integers
+----
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers
+----
+
+@connection(id=mdb1)
+statement ok rowcount 10
+insert into integers (select value from generate_series(1,11,1))
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok rowcount 1
+delete from integers where i = 10
+
+@connection(id=mdb2)
+statement error 42000!Delete failed due to conflict with another transaction
+delete from integers where i = 10
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok rowcount 1
+update integers set i = 2 where i = 1
+
+@connection(id=mdb2)
+statement error 42000!Update failed due to conflict with another transaction
+update integers set i = 2 where i = 1
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok rowcount 1
+delete from integers where i = 9
+
+@connection(id=mdb2)
+statement error 42000!Table clear failed due to conflict with another transaction
+truncate integers
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+@connection(id=mdb1)
+statement ok
+alter table integers add column j int
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+alter table integers drop column j
+
+@connection(id=mdb2)
+statement error 42000!ALTER TABLE: transaction conflict detected
+alter table integers drop column j
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+@connection(id=mdb1)
+statement ok
+CREATE schema another
+
+@connection(id=mdb1)
+statement ok
+CREATE TABLE longs (i bigint)
+
+@connection(id=mdb1)
+statement ok
+insert into longs values (1),(2),(3)
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+alter table integers rename to goodluck
+
+@connection(id=mdb2)
+statement ok
+alter table longs set schema another
+
+@connection(id=mdb2)
+statement error 42000!ALTER TABLE: transaction conflict detected
+alter table integers rename to badluck
+
+@connection(id=mdb1)
+statement ok
+rollback
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+alter table integers set schema another
+
+@connection(id=mdb2)
+statement error 42000!ALTER TABLE: transaction conflict detected
+alter table integers rename to another
+
+@connection(id=mdb1)
+statement ok
+rollback
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+alter table integers add column k int
+
+@connection(id=mdb2)
+statement error 42000!ALTER TABLE: sys_integers_k conflicts with another transaction
+alter table integers add column k int
+
+@connection(id=mdb1)
+statement ok
+rollback
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+@connection(id=mdb1)
+statement ok
+create function mytest() returns int return 1
+
+@connection(id=mdb1)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb1)
+statement ok
+create or replace function mytest() returns int return 2
+
+@connection(id=mdb2)
+statement error 42000!CREATE OR REPLACE FUNCTION: transaction conflict detected
+create or replace function mytest() returns int return 3
+
+@connection(id=mdb1)
+statement ok
+drop function mytest()
+
+@connection(id=mdb1)
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+@connection(id=mdb1)
+statement ok rowcount 2
+update integers set i = 3 where i = 2
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers order by i
+----
+3
+3
+3
+4
+5
+6
+7
+8
+
+@connection(id=mdb1)
+statement ok rowcount 8
+truncate integers
+
+@connection(id=mdb2)
+query I nosort
+SELECT i FROM integers order by i
+----
+
+@connection(id=mdb1)
+statement ok
+drop table integers
+
+@connection(id=mdb1)
+statement ok
+drop table longs
+
+@connection(id=mdb1)
+statement ok
+drop schema another
+

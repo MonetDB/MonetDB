@@ -1,0 +1,408 @@
+statement ok
+CREATE ROLE my_role
+
+statement ok
+CREATE SCHEMA my_schema AUTHORIZATION my_role
+
+statement ok
+CREATE USER my_user WITH PASSWORD 'p1' NAME 'my_user' SCHEMA sys
+
+statement ok
+CREATE USER my_user2 WITH PASSWORD 'p2' NAME 'my_user2' SCHEMA sys
+
+statement ok
+create procedure dontcallme(a int, b int, c int)
+begin
+  create table x(x int, y int, z int);
+  insert into x values (a,b,c);
+end
+
+statement ok
+SET SCHEMA my_schema
+
+statement ok
+CREATE TABLE version (name VARCHAR(10), i INT)
+
+statement ok
+INSERT INTO version VALUES ('test1', 1)
+
+statement ok
+create function selectversion() returns table(name varchar(10), i int)
+begin
+  return table(select * from version);
+end
+
+statement ok
+create function insertversion(iname varchar(10), ii int) returns int
+begin
+  insert into version values (iname, ii);
+  return 1;
+end
+
+statement ok
+create function updateversion(iname varchar(10), ii int) returns int
+begin
+  update version set i = ii where name = iname;
+  return 1;
+end
+
+statement ok
+create function deleteversion(iname varchar(10)) returns int
+begin
+  delete from version where name = iname;
+  return 1;
+end
+
+statement ok
+create function truncateversion() returns int
+begin
+  truncate version;
+  return 1;
+end
+
+statement ok
+CREATE SCHEMA your_schema
+
+statement ok
+create table your_schema.your_table (name varchar(10), i int)
+
+statement ok
+GRANT SELECT on table version to my_user
+
+statement ok
+GRANT INSERT on table version to my_user
+
+statement ok
+GRANT UPDATE on table version to my_user
+
+statement ok
+GRANT DELETE on table version to my_user
+
+statement ok
+GRANT EXECUTE on function selectversion to my_user
+
+statement ok
+GRANT EXECUTE on function insertversion to my_user
+
+statement ok
+GRANT EXECUTE on function updateversion to my_user
+
+statement ok
+GRANT EXECUTE on function deleteversion to my_user
+
+statement ok
+GRANT EXECUTE on function truncateversion to my_user
+
+statement ok
+GRANT EXECUTE on function selectversion to my_user2
+
+statement ok
+GRANT EXECUTE on function insertversion to my_user2
+
+statement ok
+GRANT EXECUTE on function updateversion to my_user2
+
+statement ok
+GRANT EXECUTE on function deleteversion to my_user2
+
+statement ok
+GRANT EXECUTE on function truncateversion to my_user2
+
+@connection(id=user, username=my_user, password=p1)
+statement ok
+SET SCHEMA my_schema
+
+@connection(id=user)
+statement ok
+INSERT INTO version (name, i) VALUES ('test2', 2)
+
+@connection(id=user)
+query TI nosort
+SELECT * FROM version
+----
+test1
+1
+test2
+2
+
+@connection(id=user)
+statement ok
+UPDATE version SET name = 'test22' WHERE i = 2
+
+@connection(id=user)
+query TI nosort
+SELECT * FROM version
+----
+test1
+1
+test22
+2
+
+@connection(id=user)
+statement ok
+DELETE FROM version WHERE name = 'test22'
+
+@connection(id=user)
+query TI nosort
+SELECT * FROM version
+----
+test1
+1
+
+@connection(id=user)
+statement ok
+SELECT insertversion('test3', 3)
+
+@connection(id=user)
+statement ok
+SELECT updateversion('test1', 4)
+
+@connection(id=user)
+statement ok
+SELECT deleteversion('test1')
+
+@connection(id=user)
+query TI nosort
+SELECT * FROM selectversion()
+----
+test3
+3
+
+@connection(id=user)
+statement ok
+SELECT truncateversion()
+
+@connection(id=user)
+query TI nosort
+SELECT * FROM selectversion()
+----
+
+@connection(id=user)
+statement ok
+INSERT INTO version VALUES ('test3', 3)
+
+@connection(id=mdb)
+statement ok
+GRANT my_role to my_user
+
+@connection(id=user)
+statement ok
+SET ROLE my_role
+
+@connection(id=user)
+statement ok
+create function myselect() returns table(name varchar(10), i int)
+begin
+  return table(select * from version);
+end
+
+@connection(id=user)
+statement ok
+create function myinsert(iname varchar(10), ii int) returns int
+begin
+  insert into version (name, i) values (iname, ii);
+  return 1;
+end
+
+@connection(id=user)
+statement ok
+create function myupdate(iname varchar(10), ii int) returns int
+begin
+  update version set i = ii where name = iname;
+  return 1;
+end
+
+@connection(id=user)
+statement ok
+create function mydelete(iname varchar(10)) returns int
+begin
+  delete from version where name = iname;
+  return 1;
+end
+
+@connection(id=user)
+statement ok
+create function mytruncate() returns int
+begin
+  truncate version;
+  return 1;
+end
+
+@connection(id=user)
+statement ok
+DROP FUNCTION myselect
+
+@connection(id=user)
+statement ok
+DROP FUNCTION myinsert
+
+@connection(id=user)
+statement ok
+DROP FUNCTION myupdate
+
+@connection(id=user)
+statement ok
+DROP FUNCTION mydelete
+
+@connection(id=user)
+statement ok
+DROP FUNCTION mytruncate
+
+@connection(id=user)
+statement error 42000!SELECT: access denied for my_user to table 'your_schema.your_table'
+create function yourselect() returns table(name varchar(10), i int)
+begin
+  return table(select * from version union select * from your_schema.your_table);
+end
+
+@connection(id=user2, username=my_user2, password=p2)
+statement error 42000!SELECT: insufficient privileges for operator 'dontcallme'(tinyint, tinyint, tinyint)
+CALL dontcallme(1,2,3)
+
+@connection(id=user2)
+statement ok
+SET SCHEMA my_schema
+
+@connection(id=user2)
+statement error 42000!INSERT INTO: insufficient privileges for user 'my_user2' to insert into table 'version'
+INSERT INTO version (name, i) VALUES ('test2', 2)
+
+@connection(id=user2)
+statement error 42000!UPDATE: insufficient privileges for user 'my_user2' to update table 'version'
+UPDATE version SET name = 'test22' WHERE i = 2
+
+@connection(id=user2)
+statement error 42000!DELETE FROM: insufficient privileges for user 'my_user2' to delete from table 'version'
+DELETE FROM version WHERE name = 'test22'
+
+@connection(id=user2)
+statement error 42000!SELECT: access denied for my_user2 to table 'my_schema.version'
+SELECT * FROM version
+
+@connection(id=user2)
+statement ok
+SELECT insertversion('test4', 4)
+
+@connection(id=user2)
+query TI nosort
+SELECT * FROM selectversion()
+----
+test3
+3
+test4
+4
+
+@connection(id=user2)
+statement ok
+SELECT updateversion('test3', 33)
+
+@connection(id=user2)
+query TI nosort
+SELECT * FROM selectversion()
+----
+test3
+33
+test4
+4
+
+@connection(id=user2)
+statement ok
+SELECT deleteversion('test3')
+
+@connection(id=user2)
+query TI nosort
+SELECT * FROM selectversion()
+----
+test4
+4
+
+@connection(id=user2)
+statement ok
+SELECT truncateversion()
+
+@connection(id=user2)
+query TI nosort
+SELECT * FROM selectversion()
+----
+
+@connection(id=user2)
+statement error 42000!CREATE UNION FUNCTION: insufficient privileges for user 'my_user2' in schema 'my_schema'
+create function myselect2() returns table(name varchar(10), i int)
+begin
+  return table(select * from version);
+end
+
+@connection(id=user2)
+statement error 42000!CREATE FUNCTION: insufficient privileges for user 'my_user2' in schema 'my_schema'
+create function myinsert2(iname varchar(10), ii int) returns int
+begin
+  insert into version (name, i) values (iname, ii);
+  return 1;
+end
+
+@connection(id=user2)
+statement error 42000!CREATE FUNCTION: insufficient privileges for user 'my_user2' in schema 'my_schema'
+create function myupdate2(iname varchar(10), ii int) returns int
+begin
+  update version set i = ii where name = iname;
+  return 1;
+end
+
+@connection(id=user2)
+statement error 42000!CREATE FUNCTION: insufficient privileges for user 'my_user2' in schema 'my_schema'
+create function mydelete2(iname varchar(10)) returns int
+begin
+  delete from version where name = iname;
+  return 1;
+end
+
+@connection(id=user2)
+statement error 42000!CREATE FUNCTION: insufficient privileges for user 'my_user2' in schema 'my_schema'
+create function mytruncate2() returns int
+begin
+  truncate version;
+  return 1;
+end
+
+statement ok
+SET SCHEMA sys
+
+statement ok
+DROP FUNCTION my_schema.selectversion
+
+statement ok
+DROP FUNCTION my_schema.insertversion
+
+statement ok
+DROP FUNCTION my_schema.updateversion
+
+statement ok
+DROP FUNCTION my_schema.deleteversion
+
+statement ok
+DROP FUNCTION my_schema.truncateversion
+
+statement ok
+DROP TABLE my_schema.version
+
+statement ok
+DROP TABLE your_schema.your_table
+
+statement ok
+DROP USER my_user
+
+statement ok
+DROP USER my_user2
+
+statement ok
+DROP ROLE my_role
+
+statement ok
+DROP SCHEMA my_schema
+
+statement ok
+DROP SCHEMA your_schema
+
+statement ok
+DROP PROCEDURE dontcallme
+

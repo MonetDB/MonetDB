@@ -1,0 +1,75 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c0" BIGINT,"c1" INTERVAL MONTH)
+
+statement ok
+INSERT INTO "t1" VALUES (1, INTERVAL '9' MONTH),(5, INTERVAL '6' MONTH),(5, NULL),(7, NULL),(2, INTERVAL '1' MONTH),(2, INTERVAL '1' MONTH)
+
+statement ok
+CREATE FUNCTION mybooludf(a bool) RETURNS BOOL RETURN a
+
+statement ok
+COMMIT
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE REMOTE TABLE "rt1" ("c0" BIGINT,"c1" INTERVAL MONTH) ON 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/sys/t1'
+
+statement ok
+COMMIT
+
+# Issues related to scale propagation in the sql layer
+query T nosort
+SELECT greatest("lower"('D4Idf '), 'x x') FROM t1 where t1.c0 = 1
+----
+x x
+
+query T nosort
+SELECT greatest("lower"('D4Idf '), 'x x') FROM rt1 where rt1.c0 = 1
+----
+x x
+
+query I nosort
+SELECT 1 FROM t1 where t1.c0 = 1 AND abs(0.4) = 0
+----
+
+query I nosort
+SELECT 1 FROM rt1 where rt1.c0 = 1 AND abs(0.4) = 0
+----
+
+# We should replace algebra.fetch call with something more appropriate
+query I nosort
+SELECT 1 FROM t1 HAVING (min(TIME '02:00:00') IN (TIME '02:00:00')) IS NULL
+----
+
+query I nosort
+SELECT 1 FROM rt1 HAVING (min(TIME '02:00:00') IN (TIME '02:00:00')) IS NULL
+----
+
+query I nosort
+SELECT 1 FROM t1 HAVING mybooludf(min(false))
+----
+
+query I nosort
+SELECT 1 FROM rt1 HAVING mybooludf(min(false))
+----
+
+statement ok
+START TRANSACTION
+
+statement ok
+DROP TABLE rt1
+
+statement ok
+DROP TABLE t1
+
+statement ok
+DROP FUNCTION mybooludf(bool)
+
+statement ok
+COMMIT
+

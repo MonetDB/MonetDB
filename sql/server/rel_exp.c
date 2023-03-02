@@ -1209,10 +1209,18 @@ int
 exp_refers( sql_exp *p, sql_exp *c)
 {
 	if (c->type == e_column) {
+		// at first they need to have the same expression names
 		if (!p->alias.name || !c->r || strcmp(p->alias.name, c->r) != 0)
 			return 0;
-		if (c->l && ((p->alias.rname && strcmp(p->alias.rname, c->l) != 0) || (!p->alias.rname && strcmp(p->l, c->l) != 0)))
-			return 0;
+		// then compare the relation names
+		if (c->l) {
+			// if the parent has an alias for the relation name compare with the child's relation name
+			if (p->alias.rname && strcmp(p->alias.rname, c->l) != 0)
+				return 0;
+			// if the parent does NOT have a relation name alias compare his relation name with the child's
+			if (!p->alias.rname && strcmp(p->l, c->l) != 0)
+				return 0;
+		}
 		return 1;
 	}
 	return 0;

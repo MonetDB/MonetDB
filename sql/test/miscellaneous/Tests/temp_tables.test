@@ -1,0 +1,15 @@
+statement ok
+CREATE GLOBAL TEMPORARY TABLE t2(c0 INT, c1 TIME UNIQUE) ON COMMIT DELETE ROWS
+
+@connection(id=mdb2, username=monetdb, password=monetdb)
+statement ok rowcount 1
+INSERT INTO tmp.t2(c1) VALUES(TIME '13:35:22')
+
+@connection(id=mdb3, username=monetdb, password=monetdb)
+statement ok rowcount 1
+INSERT INTO tmp.t2(c1, c0) VALUES(TIME '13:41:34', 66)
+
+@connection(id=mdb3)
+statement ok
+DROP TABLE tmp.t2
+

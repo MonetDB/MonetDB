@@ -1,0 +1,64 @@
+statement error 0P000!DROP ROLE: no such role 'non_existing_role'
+DROP ROLE non_existing_role
+
+statement ok
+CREATE ROLE role1
+
+statement ok
+CREATE ROLE role2
+
+statement ok
+CREATE ROLE role3
+
+statement error 0P000!Role 'role1' already exists
+CREATE ROLE role1
+
+statement ok
+CREATE USER alice with password 'alice' name 'alice' schema sys
+
+statement ok
+GRANT role1 TO alice
+
+statement ok
+GRANT role2 TO alice
+
+@connection(id=alice, username=alice, password=alice)
+statement ok
+SET ROLE role1
+
+@connection(id=alice)
+statement error 42000!Role (role3) missing
+SET ROLE role3
+
+statement ok
+REVOKE role1 FROM alice
+
+statement ok
+REVOKE role2 FROM alice
+
+statement ok
+DROP ROLE role2
+
+statement error 01006!REVOKE: User 'alice' does not have ROLE 'role3'
+REVOKE role3 FROM alice
+
+@connection(id=alice2, username=alice, password=alice)
+statement error 42000!Role (role1) missing
+SET ROLE role1
+
+@connection(id=alice2)
+statement error 42000!Role (role2) missing
+SET ROLE role2
+
+statement error M1M05!GRANT: no such role 'non_existing_role' or grantee 'alice'
+GRANT non_existing_role TO alice
+
+statement ok
+DROP ROLE role1
+
+statement ok
+DROP ROLE role3
+
+statement ok
+DROP USER alice
+

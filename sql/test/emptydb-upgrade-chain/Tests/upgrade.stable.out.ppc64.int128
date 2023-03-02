@@ -115,10 +115,15 @@ drop view if exists sys.dump_partition_tables cascade;
 drop view if exists sys.dump_create_users cascade;
 drop view if exists sys.describe_tables cascade;
 drop function if exists sys.get_remote_table_expressions(string, string) cascade;
+drop function if exists sys.remote_table_credentials(string) cascade;
 drop function if exists sys.sq(string) cascade;
+create table sys.remote_user_info (table_id int, username varchar(1024), password varchar(256));
+create function sys.decypher (cypher string) returns string external name sql.decypher;
+update sys.functions set system = true where system <> true and name = 'decypher' and schema_id = 2000 and type = 1;
+update sys._tables set system = true where system <> true and name = 'remote_user_info' and schema_id = 2000;
 CREATE FUNCTION sys.SQ (s STRING) RETURNS STRING BEGIN RETURN '''' || sys.replace(s,'''','''''') || ''''; END;
 CREATE FUNCTION sys.get_remote_table_expressions(s STRING, t STRING) RETURNS STRING BEGIN
- RETURN SELECT ' ON ' || sys.SQ(uri) || ' WITH USER ' || sys.SQ(username) || ' ENCRYPTED PASSWORD ' || sys.SQ("hash") FROM sys.remote_table_credentials(s ||'.' || t);
+ RETURN SELECT ' ON ' || sys.SQ(tt.query) || ' WITH USER ' || sys.SQ(username) || ' ENCRYPTED PASSWORD ' || sys.SQ(sys.decypher("password")) FROM sys.remote_user_info r, sys._tables tt, sys.schemas ss where tt.name = t and ss.name = s and tt.schema_id = ss.id and r.table_id = tt.id;
 END;
 CREATE VIEW sys.describe_tables AS
  SELECT
@@ -326,4 +331,11 @@ returns string
 external name inspect."getDatabaseName";
 grant execute on function sys.database() to public;
 update sys.functions set system = true where system <> true and name = 'database' and schema_id = 2000 and type = 1;
+
+Running database upgrade commands:
+create function sys.queue(username string) returns table("tag" bigint, "sessionid" int, "username" string, "started" timestamp, "status" string, "query" string, "finished" timestamp, "maxworkers" int, "footprint" int) external name sysmon.queue;
+create procedure sys.pause(tag bigint, username string) external name sysmon.pause;
+create procedure sys.resume(tag bigint, username string) external name sysmon.resume;
+create procedure sys.stop(tag bigint, username string) external name sysmon.stop;
+update sys.functions set system = true where system <> true and mod = 'sysmon' and name in ('stop', 'pause', 'resume', 'queue');
 

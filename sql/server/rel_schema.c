@@ -49,6 +49,30 @@ rel_table(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr)
 }
 
 static sql_rel *
+rel_create_remote(mvc *sql, int cat_type, const char *sname, sql_table *t, int pw_encrypted, const char *username, const char *passwd)
+{
+	sql_rel *rel = rel_create(sql->sa);
+	list *exps = new_exp_list(sql->sa);
+	if (!rel || !exps)
+		return NULL;
+
+	append(exps, exp_atom_int(sql->sa, pw_encrypted));
+	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, t->base.name, sql_bind_localtype("str") ));
+	append(exps, exp_atom_ptr(sql->sa, t));
+	append(exps, exp_atom_str(sql->sa, username, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, passwd, sql_bind_localtype("str") ));
+	rel->l = rel_basetable(sql, t, t->base.name);
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = cat_type;
+	rel->exps = exps;
+	rel->card = CARD_MULTI;
+	rel->nrcols = 0;
+	return rel;
+}
+
+static sql_rel *
 rel_create_view_ddl(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr, int replace)
 {
 	sql_rel *rel = rel_table(sql, cat_type, sname, t, nr);
@@ -1363,16 +1387,8 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		int res = LOG_OK;
 
 		if (tt == tt_remote) {
-			char *local_user = get_string_global_var(sql, "current_user");
-			char *local_table = sa_strconcat(sql->sa, sa_strconcat(sql->sa, s->base.name, "."), name);
 			if (!mapiuri_valid(loc))
 				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: incorrect uri '%s' for remote table '%s'", action, loc, name);
-
-			const char *remote_uri = mapiuri_uri(loc, sql->sa);
-			char *reg_credentials = AUTHaddRemoteTableCredentials(local_table, local_user, remote_uri, username, password, pw_encrypted);
-			if (reg_credentials != 0) {
-				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: cannot register credentials for remote table '%s' in vault: %s", action, name, reg_credentials);
-			}
 			res = mvc_create_remote(&t, sql, s, name, SQL_DECLARED_TABLE, loc);
 		} else {
 			res = mvc_create_table(&t, sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, properties);
@@ -1403,6 +1419,9 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 			return NULL;
 
 		temp = (tt == tt_table)?temp:SQL_PERSIST;
+
+		if (tt == tt_remote)
+			return rel_create_remote(sql, ddl_create_table, s->base.name, t, pw_encrypted, username, password);
 		return rel_table(sql, ddl_create_table, s->base.name, t, temp);
 	} else { /* [col name list] as subquery with or without data */
 		sql_rel *sq = NULL, *res = NULL;

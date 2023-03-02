@@ -82,13 +82,13 @@
 Name: %{name}
 Version: %{version}
 Release: %{release}
-Summary: MonetDB - Monet Database Management System
+Summary: Monet Database Management System
 Vendor: MonetDB BV <info@monetdb.org>
 
 Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
-BugURL: https://bugs.monetdb.org/
+BugURL: https://github.com/MonetDB/MonetDB/issues
 Source: https://www.monetdb.org/downloads/sources/Sep2022-SP2/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
@@ -144,12 +144,12 @@ BuildRequires: texlive-obsolete
 %endif
 %endif
 # optional packages:
-# BuildRequires: pkgconfig(cmocka)	# -DWITH_CMOCKA=ON
-# BuildRequires: pkgconfig(gdal)	# -DSHP=ON
-# BuildRequires: pkgconfig(netcdf)	# -DNETCDF=ON
-# BuildRequires: pkgconfig(proj)	# -DWITH_PROJ=ON
-# BuildRequires: pkgconfig(snappy)	# -DWITH_SNAPPY=ON
-# BuildRequires: pkgconfig(valgrind)	# -DWITH_VALGRIND=ON
+# BuildRequires: pkgconfig(cmocka)      # -DWITH_CMOCKA=ON
+# BuildRequires: pkgconfig(gdal)        # -DSHP=ON
+# BuildRequires: pkgconfig(netcdf)      # -DNETCDF=ON
+# BuildRequires: pkgconfig(proj)        # -DWITH_PROJ=ON
+# BuildRequires: pkgconfig(snappy)      # -DWITH_SNAPPY=ON
+# BuildRequires: pkgconfig(valgrind)    # -DWITH_VALGRIND=ON
 
 %if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
@@ -505,17 +505,17 @@ getent group monetdb >/dev/null || groupadd --system monetdb
 if getent passwd monetdb >/dev/null; then
     case $(getent passwd monetdb | cut -d: -f6) in
     %{_localstatedir}/MonetDB) # old value
-	# change home directory, but not using usermod
-	# usermod requires there to not be any running processes owned by the user
-	EDITOR='sed -i "/^monetdb:/s|:%{_localstatedir}/MonetDB:|:%{_localstatedir}/lib/monetdb:|"'
-	unset VISUAL
-	export EDITOR
-	/sbin/vipw > /dev/null
-	;;
+        # change home directory, but not using usermod
+        # usermod requires there to not be any running processes owned by the user
+        EDITOR='sed -i "/^monetdb:/s|:%{_localstatedir}/MonetDB:|:%{_localstatedir}/lib/monetdb:|"'
+        unset VISUAL
+        export EDITOR
+        /sbin/vipw > /dev/null
+        ;;
     esac
 else
     useradd --system --gid monetdb --home-dir %{_localstatedir}/lib/monetdb \
-	--shell /sbin/nologin --comment "MonetDB Server" monetdb
+        --shell /sbin/nologin --comment "MonetDB Server" monetdb
 fi
 exit 0
 
@@ -782,33 +782,33 @@ fi
 
 %build
 %cmake3 \
-	-DCMAKE_INSTALL_RUNSTATEDIR=/run \
-	-DRELEASE_VERSION=ON \
-	-DASSERT=OFF \
-	-DCINTEGRATION=%{?with_cintegration:ON}%{!?with_cintegration:OFF} \
-	-DFITS=%{?with_fits:ON}%{!?with_fits:OFF} \
-	-DGEOM=%{?with_geos:ON}%{!?with_geos:OFF} \
-	-DINT128=%{?with_hugeint:ON}%{!?with_hugeint:OFF} \
-	-DNETCDF=OFF \
-	-DODBC=ON \
-	-DPY3INTEGRATION=%{?with_py3integration:ON}%{!?with_py3integration:OFF} \
-	-DRINTEGRATION=%{?with_rintegration:ON}%{!?with_rintegration:OFF} \
-	-DSANITIZER=OFF \
-	-DSHP=OFF \
-	-DSTRICT=OFF \
-	-DTESTING=ON \
-	-DWITH_BZ2=ON \
-	-DWITH_CMOCKA=OFF \
-	-DWITH_CURL=ON \
-	-DWITH_LZ4=ON \
-	-DWITH_LZMA=ON \
-	-DWITH_PCRE=ON \
-	-DWITH_PROJ=OFF \
-	-DWITH_READLINE=ON \
-	-DWITH_SNAPPY=OFF \
-	-DWITH_VALGRIND=OFF \
-	-DWITH_XML2=ON \
-	-DWITH_ZLIB=ON
+        -DCMAKE_INSTALL_RUNSTATEDIR=/run \
+        -DRELEASE_VERSION=ON \
+        -DASSERT=OFF \
+        -DCINTEGRATION=%{?with_cintegration:ON}%{!?with_cintegration:OFF} \
+        -DFITS=%{?with_fits:ON}%{!?with_fits:OFF} \
+        -DGEOM=%{?with_geos:ON}%{!?with_geos:OFF} \
+        -DINT128=%{?with_hugeint:ON}%{!?with_hugeint:OFF} \
+        -DNETCDF=OFF \
+        -DODBC=ON \
+        -DPY3INTEGRATION=%{?with_py3integration:ON}%{!?with_py3integration:OFF} \
+        -DRINTEGRATION=%{?with_rintegration:ON}%{!?with_rintegration:OFF} \
+        -DSANITIZER=OFF \
+        -DSHP=OFF \
+        -DSTRICT=OFF \
+        -DTESTING=ON \
+        -DWITH_BZ2=ON \
+        -DWITH_CMOCKA=OFF \
+        -DWITH_CURL=ON \
+        -DWITH_LZ4=ON \
+        -DWITH_LZMA=ON \
+        -DWITH_PCRE=ON \
+        -DWITH_PROJ=OFF \
+        -DWITH_READLINE=ON \
+        -DWITH_SNAPPY=OFF \
+        -DWITH_VALGRIND=OFF \
+        -DWITH_XML2=ON \
+        -DWITH_ZLIB=ON
 
 %cmake3_build
 

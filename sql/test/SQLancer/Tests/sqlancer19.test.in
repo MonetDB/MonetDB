@@ -1,0 +1,1184 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" INTERVAL SECOND NOT NULL, "c1" JSON)
+
+statement ok
+INSERT INTO "t0" VALUES (INTERVAL '9' SECOND, '""')
+
+statement ok
+CREATE TABLE "t1" ("c0" BINARY LARGE OBJECT,"c1" BIGINT)
+
+statement ok
+INSERT INTO "t1" VALUES (NULL, 1),(NULL, 6),(NULL, 0),(BINARY LARGE OBJECT '50', NULL),(BINARY LARGE OBJECT 'ACBC2EDEF0', NULL),
+(BINARY LARGE OBJECT '65', NULL),(BINARY LARGE OBJECT 'EF43C0', NULL),(BINARY LARGE OBJECT '90', NULL),(BINARY LARGE OBJECT '', NULL)
+
+statement ok
+CREATE TABLE "t2" ("c0" TINYINT NOT NULL,"c2" DATE)
+
+statement ok
+INSERT INTO "t2" VALUES (-7, NULL),(0, NULL),(-11, DATE '1970-01-01'),(8, DATE '1970-01-01'),(5, DATE '1970-01-01'),(1, DATE '1970-01-01'),
+(0, NULL),(1, NULL),(7, NULL),(5, NULL)
+
+statement ok
+CREATE TABLE "t3" ("c0" BIGINT,"c1" INTERVAL MONTH)
+
+statement ok
+INSERT INTO "t3" VALUES (1, INTERVAL '9' MONTH),(5, INTERVAL '6' MONTH),(5, NULL),(7, NULL),(2, INTERVAL '1' MONTH),(2, INTERVAL '1' MONTH)
+
+statement ok
+CREATE TABLE "t4" ("c0" BIGINT PRIMARY KEY,"c1" INTERVAL MONTH)
+
+statement ok
+INSERT INTO "t4" VALUES (1, INTERVAL '9' MONTH),(5, INTERVAL '6' MONTH),(10, NULL),(7, NULL),(2, INTERVAL '1' MONTH),(11, INTERVAL '1' MONTH)
+
+statement ok
+CREATE TABLE "t5" ("c0" DECIMAL(18,3),"c1" BOOLEAN)
+
+statement ok
+INSERT INTO "t5" VALUES (0.928, NULL),(0.974, NULL),(NULL, false),(3.000, NULL),(NULL, false),(NULL, false),(NULL, true),(0.897, NULL),
+(0.646, NULL),(0.145, true),(0.848, false),(NULL, false)
+
+statement ok
+CREATE TABLE "t6" ("c1" CLOB)
+
+statement ok
+INSERT INTO "t6" VALUES('3'), ('8ጮk|1*'), ('27'), ('Vrx^qA齀'), ('J'), ('18'), ('>*4嘁pAP'), ('+Jm*W0{{'), ('>V鷓'), ('BW5z'), ('.#OJruk'),
+('lU1覃Nlm'), (NULL), ('968786590')
+
+statement ok
+CREATE TABLE "t7" ("c0" SMALLINT)
+
+statement ok
+INSERT INTO "t7" VALUES (0),(0),(3),(3),(7),(-1),(5),(NULL),(5),(0),(5),(6),(4),(4),(4),(6),(7),(-7),(0),(1),(5),(9),(9),(8),(0)
+
+statement ok
+COMMIT
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE REMOTE TABLE "rt1" ("c0" BINARY LARGE OBJECT,"c1" BIGINT) ON 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/sys/t1'
+
+statement ok
+CREATE REMOTE TABLE "rt2" ("c0" TINYINT NOT NULL,"c2" DATE) ON 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/sys/t2'
+
+statement ok
+CREATE REMOTE TABLE "rt3" ("c0" BIGINT,"c1" INTERVAL MONTH) ON 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/sys/t3'
+
+statement ok
+CREATE REMOTE TABLE "rt4" ("c0" BIGINT PRIMARY KEY,"c1" INTERVAL MONTH) ON 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/sys/t4'
+
+statement ok
+CREATE REMOTE TABLE "rt5" ("c0" DECIMAL(18,3),"c1" BOOLEAN) ON 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/sys/t5'
+
+statement ok
+CREATE REMOTE TABLE "rt6" ("c1" CLOB) ON 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/sys/t6'
+
+statement ok
+CREATE REMOTE TABLE "rt7" ("c0" SMALLINT) ON 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/sys/t7'
+
+statement ok
+COMMIT
+
+statement ok
+START TRANSACTION
+
+query I nosort
+SELECT json."integer"(JSON '1') FROM t3
+----
+1
+1
+1
+1
+1
+1
+
+query I nosort
+SELECT json."integer"(JSON '1') FROM rt3
+----
+1
+1
+1
+1
+1
+1
+
+query I nosort
+SELECT c0 BETWEEN 10 AND 11 FROM t3
+----
+0
+0
+0
+0
+0
+0
+
+query I nosort
+SELECT c0 BETWEEN 10 AND 11 FROM rt3
+----
+0
+0
+0
+0
+0
+0
+
+query IIII nosort
+SELECT c0 > 10 as myt, 4 BETWEEN 4 AND 4, c0 = 10 as myp, c0 BETWEEN 1 AND 1 as myp2 FROM t3 where t3.c0 = 1
+----
+0
+1
+0
+1
+
+query IIII nosort
+SELECT c0 > 10 as myt, 4 BETWEEN 4 AND 4, c0 = 10 as myp, c0 BETWEEN 1 AND 1 as myp2 FROM rt3 where rt3.c0 = 1
+----
+0
+1
+0
+1
+
+query I nosort
+SELECT c0 BETWEEN 2 AND 5 AS myproj FROM t3 ORDER BY myproj
+----
+0
+0
+1
+1
+1
+1
+
+query I nosort
+SELECT c0 BETWEEN 2 AND 5 AS myproj FROM rt3 ORDER BY myproj
+----
+0
+0
+1
+1
+1
+1
+
+query I nosort
+SELECT c0 > 4 AS myproj FROM t3 ORDER BY myproj
+----
+0
+0
+0
+1
+1
+1
+
+query I nosort
+SELECT c0 > 4 AS myproj FROM rt3 ORDER BY myproj
+----
+0
+0
+0
+1
+1
+1
+
+statement ok
+MERGE INTO t0 USING (SELECT 1 FROM rt1) AS mergejoined(c0) ON TRUE WHEN NOT MATCHED THEN INSERT (c0) VALUES (INTERVAL '5' SECOND)
+
+query I nosort
+SELECT 1 FROM (values (0)) mv(vc0) LEFT OUTER JOIN (SELECT 1 FROM rt1) AS sub0(c0) ON 2 = 0.05488666234725814
+----
+1
+
+query I nosort
+SELECT c1 FROM rt1 WHERE rt1.c1 NOT BETWEEN 1 AND NULL
+----
+0
+
+query I nosort
+SELECT c1 FROM rt1 WHERE rt1.c1 NOT BETWEEN SYMMETRIC 1 AND NULL
+----
+
+query I nosort
+SELECT 1 FROM (SELECT TIME '01:00:00' FROM rt1) va(vc1) WHERE greatest(va.vc1, TIME '01:01:01') <= TIME '01:01:02'
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+query I nosort
+SELECT 3 > (rt2.c0 ^ CAST(2 AS TINYINT)) * rt2.c0 FROM rt2
+----
+0
+1
+0
+0
+0
+0
+1
+0
+0
+0
+
+query TTTTT nosort
+SELECT U&'&+000022' UESCAPE '&', U&'&+00005C' UESCAPE '&', ' ', '' as "'", '''' as " " from t3 where t3.c0 = 1
+----
+"
+\
+ 
+(empty)
+'
+
+query TTTTT nosort
+SELECT U&'&+000022' UESCAPE '&', U&'&+00005C' UESCAPE '&', ' ', '' as "'", '''' as " " from rt3 where rt3.c0 = 1
+----
+"
+\
+ 
+(empty)
+'
+
+query IIIII nosort
+SELECT 1 as "ups\", 2 as "\", 3 as """", 4 as """\", 5 as "\""" from t3 where t3.c0 = 1
+----
+1
+2
+3
+4
+5
+
+query IIIII nosort
+SELECT 1 as "ups\", 2 as "\", 3 as """", 4 as """\", 5 as "\""" from rt3 where rt3.c0 = 1
+----
+1
+2
+3
+4
+5
+
+query TT nosort
+SELECT "current_schema", current_user from t3 where t3.c0 = 1
+----
+sys
+monetdb
+
+query TT nosort
+SELECT "current_schema", current_user from rt3 where rt3.c0 = 1
+----
+sys
+monetdb
+
+query T nosort
+SELECT sql_min(t3.c0 || t3.c0, 3) as x from t3 ORDER BY x
+----
+11
+22
+22
+3
+3
+3
+
+query T nosort
+SELECT sql_min(rt3.c0 || rt3.c0, 3) as x from rt3 ORDER BY x
+----
+11
+22
+22
+3
+3
+3
+
+query I nosort
+SELECT CASE WHEN 1 BETWEEN 1 AND 2 THEN 3*6 END FROM t3 where t3.c0 = 1
+----
+18
+
+query I nosort
+SELECT CASE WHEN 1 BETWEEN 1 AND 2 THEN 3*6 END FROM rt3 where rt3.c0 = 1
+----
+18
+
+query R nosort
+SELECT 3 / 0.84 FROM t3 where t3.c0 = 1
+----
+3.571
+
+query R nosort
+SELECT 3 / 0.84 FROM rt3 where rt3.c0 = 1
+----
+3.571
+
+query R nosort
+SELECT CAST(2 AS DECIMAL) * 0.010 FROM t3 where t3.c0 = 1
+----
+0.020
+
+query R nosort
+SELECT CAST(2 AS DECIMAL) * 0.010 FROM rt3 where rt3.c0 = 1
+----
+0.020
+
+query R nosort
+SELECT sql_min(4, 7 - 0.5207499) FROM t3 where t3.c0 = 1
+----
+4.000
+
+query R nosort
+SELECT sql_min(4, 7 - 0.5207499) FROM rt3 where rt3.c0 = 1
+----
+4.000
+
+query T nosort
+SELECT "insert"('99', 5, 8, '10S') FROM t3 where t3.c0 = 1
+----
+9910S
+
+query T nosort
+SELECT "insert"('99', 5, 8, '10S') FROM rt3 where rt3.c0 = 1
+----
+9910S
+
+query T nosort
+SELECT greatest('69', splitpart('', '191', 2)) FROM t3 where t3.c0 = 1
+----
+69
+
+query T nosort
+SELECT greatest('69', splitpart('', '191', 2)) FROM rt3 where rt3.c0 = 1
+----
+69
+
+query TTT nosort
+SELECT CAST(trim('14', 'abc') AS STRING(408)), CAST(trim('14', 'abc') AS VARCHAR(408)), CAST(trim('14', 'abc') AS CLOB) FROM t3 where t3.c0 = 1
+----
+14
+14
+14
+
+query TTT nosort
+SELECT CAST(trim('14', 'abc') AS STRING(408)), CAST(trim('14', 'abc') AS VARCHAR(408)), CAST(trim('14', 'abc') AS CLOB) FROM rt3 where rt3.c0 = 1
+----
+14
+14
+14
+
+query TTTTTT nosort
+SELECT NULL, 'NULL', 'null', cast(NULL as clob), cast('NULL' as clob), cast('null' as clob) FROM t3 where t3.c0 = 1
+----
+NULL
+NULL
+null
+NULL
+NULL
+null
+
+query TTTTTT nosort
+SELECT NULL, 'NULL', 'null', cast(NULL as clob), cast('NULL' as clob), cast('null' as clob) FROM rt3 where rt3.c0 = 1
+----
+NULL
+NULL
+null
+NULL
+NULL
+null
+
+query I nosort
+SELECT t3.c0 FROM t3 where (t3.c0) NOT IN (0.07564294, 211.0, 1, 2) ORDER BY t3.c0
+----
+5
+5
+7
+
+query I nosort
+SELECT rt3.c0 FROM rt3 where (rt3.c0) NOT IN (0.07564294, 211.0, 1, 2) ORDER BY rt3.c0
+----
+5
+5
+7
+
+query I nosort
+SELECT t3.c0 FROM t3 INNER JOIN t3 myx ON t3.c0 = myx.c0 ORDER BY t3.c0
+----
+1
+2
+2
+2
+2
+5
+5
+5
+5
+7
+
+query I nosort
+SELECT rt3.c0 FROM rt3 INNER JOIN rt3 myx ON rt3.c0 = myx.c0 ORDER BY rt3.c0
+----
+1
+2
+2
+2
+2
+5
+5
+5
+5
+7
+
+query I nosort
+SELECT t4.c0 FROM t4 ORDER BY t4.c0 DESC NULLS FIRST
+----
+11
+10
+7
+5
+2
+1
+
+query I nosort
+SELECT rt4.c0 FROM rt4 ORDER BY rt4.c0 DESC NULLS FIRST
+----
+11
+10
+7
+5
+2
+1
+
+query T nosort
+SELECT t4.c1 FROM t4 ORDER BY t4.c1 ASC NULLS LAST
+----
+1
+1
+6
+9
+NULL
+NULL
+
+query T nosort
+SELECT rt4.c1 FROM rt4 ORDER BY rt4.c1 ASC NULLS LAST
+----
+1
+1
+6
+9
+NULL
+NULL
+
+query T nosort
+SELECT t4.c1 + INTERVAL '2' MONTH AS myx FROM t4 ORDER BY myx ASC NULLS LAST
+----
+3
+3
+8
+11
+NULL
+NULL
+
+query T nosort
+SELECT rt4.c1 + INTERVAL '2' MONTH AS myx FROM rt4 ORDER BY myx ASC NULLS LAST
+----
+3
+3
+8
+11
+NULL
+NULL
+
+query T nosort
+SELECT t4.c1 + INTERVAL '5' MONTH AS myx FROM t4 GROUP BY myx ORDER BY myx
+----
+NULL
+6
+11
+14
+
+query T nosort
+SELECT rt4.c1 + INTERVAL '5' MONTH AS myx FROM rt4 GROUP BY myx ORDER BY myx
+----
+NULL
+6
+11
+14
+
+query I nosort
+SELECT TRUE BETWEEN (TRUE BETWEEN FALSE AND FALSE) AND TRUE FROM t3 where t3.c0 = 1
+----
+1
+
+query I nosort
+SELECT TRUE BETWEEN (TRUE BETWEEN FALSE AND FALSE) AND TRUE FROM rt3 where rt3.c0 = 1
+----
+1
+
+query I nosort
+SELECT 1 FROM t3 WHERE (t3.c0 BETWEEN t3.c0 AND t3.c0) IS NULL
+----
+
+query I nosort
+SELECT 2 FROM rt3 WHERE (rt3.c0 BETWEEN rt3.c0 AND rt3.c0) IS NULL
+----
+
+query T nosort
+SELECT upper(count(*)) FROM t3
+----
+6
+
+query T nosort
+SELECT upper(count(*)) FROM rt3
+----
+6
+
+query T nosort
+SELECT U&'&+000064&+00005C&+000006&+000056&+000057' UESCAPE '&' from t3 where t3.c0 = 1
+----
+d\@VW
+
+query T nosort
+SELECT U&'&+000064&+00005C&+000006&+000056&+000057' UESCAPE '&' from rt3 where rt3.c0 = 1
+----
+d\@VW
+
+query I nosort
+SELECT 1 FROM t1 INNER JOIN (SELECT greatest('a', NULL), INTERVAL '4' DAY FROM t3 where t3.c0 = 1) AS q(c0,c1) ON INTERVAL '3' DAY
+BETWEEN sql_sub(CAST(INTERVAL '3' SECOND AS INTERVAL DAY), INTERVAL '2' DAY) AND q.c1
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+query I nosort
+SELECT 1 FROM t1 INNER JOIN (SELECT greatest('a', NULL), INTERVAL '4' DAY FROM rt3 where rt3.c0 = 1) AS q(c0,c1) ON INTERVAL '3' DAY
+BETWEEN sql_sub(CAST(INTERVAL '3' SECOND AS INTERVAL DAY), INTERVAL '2' DAY) AND q.c1
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+statement ok
+CREATE FUNCTION testremote(a int) RETURNS INT
+BEGIN
+    DECLARE b INT, "😀" INT, res1 INT, res2 INT;
+    SET b = 2;
+    SET "😀" = 4;
+    SELECT a + b + "😀" + count(*) INTO res1 FROM t3;
+    SELECT a + b + "😀" + count(*) INTO res2 FROM rt3;
+    RETURN res1 + res2;
+END
+
+query I nosort
+SELECT testremote(1)
+----
+26
+
+statement ok
+CREATE FUNCTION testremote2(a int) RETURNS INT
+BEGIN
+    DECLARE b INT, res INT;
+    SET b = 2;
+    IF a = 1 THEN
+	DECLARE b INT;
+	SET b = 3;
+	SELECT b + count(*) INTO res FROM rt3;
+    ELSE
+	IF a = 2 THEN
+	    SELECT b + count(*) INTO res FROM rt3;
+	ELSE
+	    DECLARE c INT;
+	    SET c = 5;
+	    SELECT c + b + count(*) INTO res FROM rt3;
+	END IF;
+    END IF;
+    RETURN res;
+END
+
+query III nosort
+SELECT testremote2(1), testremote2(2), testremote2(3)
+----
+9
+8
+13
+
+statement ok
+CREATE FUNCTION testremote3(" ugh "" _ , !😂?, " INT) RETURNS INT
+BEGIN
+    DECLARE " " INT,"""" INT, "\" INT, res INT;
+    SET " " = 2;
+    SET """" = 4;
+    SET "\" = 10;
+    SELECT " " + """" + "\" + count(*) + " ugh "" _ , !😂?, "
+	    + CASE "current_user" WHEN 'monetdb' THEN 7 ELSE 7 END INTO res FROM rt3;
+    RETURN res;
+END
+
+statement ok
+CREATE FUNCTION testremote4(a UUID, b JSON, c INT) RETURNS INT
+BEGIN
+    RETURN SELECT (CASE a WHEN UUID '39FcCcEE-5033-0d81-42Eb-Ac6fFaA9EF2d' THEN 1 END) +
+	(CASE b WHEN JSON '""' THEN 2 END) + (CASE c WHEN 3 THEN 3 END) + count(*) FROM rt3;
+END
+
+query II nosort
+SELECT testremote3(1), testremote4(UUID '39FcCcEE-5033-0d81-42Eb-Ac6fFaA9EF2d', JSON '""', 3)
+----
+30
+12
+
+statement ok
+CREATE FUNCTION testremote5(a INET, b JSON, c DATE) RETURNS INT
+BEGIN
+    RETURN SELECT (CASE a WHEN INET '192.168.1.0/26' THEN 1 END) +
+        (CASE b WHEN JSON '[1]' THEN 2 END) + (CASE c WHEN DATE '2010-01-01' THEN 3 END) + count(*) FROM rt3;
+END
+
+query II nosort
+SELECT testremote5(INET '192.168.1.0/26', JSON '[1]', DATE '2010-01-01'), testremote5(NULL, NULL, NULL)
+----
+12
+NULL
+
+statement ok
+    CREATE FUNCTION testremote6(a BLOB) RETURNS INT
+    BEGIN
+        RETURN SELECT (CASE a WHEN BLOB 'AABB' THEN 1 ELSE 10 END) + count(*) FROM rt3;
+    END
+
+query III nosort
+SELECT testremote6(BLOB 'AABB'), testremote6(BLOB 'CCDD'), testremote6(NULL)
+----
+7
+16
+16
+
+statement ok
+    CREATE FUNCTION testremote7("😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀" INT) RETURNS INT
+    BEGIN
+        RETURN SELECT (CASE "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀" WHEN 2 THEN 1 ELSE 10 END) + count(*) FROM rt3;
+    END
+
+query II nosort
+SELECT testremote7(2), testremote7(3)
+----
+7
+16
+
+statement ok
+create view v0(vc0, vc1) as (values (interval '2' second, 0.5))
+
+query I nosort
+select 1 from rt1, v0, rt3 where "right_shift_assign"(inet '150.117.219.77', inet '1.188.46.21/12')
+----
+
+query I nosort
+select 1 from t1, v0, t3 where "right_shift_assign"(inet '150.117.219.77', inet '1.188.46.21/12')
+----
+
+statement ok
+create view v1(vc0) as (select greatest(sql_sub(time '01:00:00', interval '0' second), time '01:00:00') from t3 where false)
+
+query I nosort
+select 1 from (select distinct 1 from v1, rt3) as v1(vc1) where sql_min(true, true)
+----
+
+query I nosort
+select 1 from (select distinct 1 from v1, t3) as v1(vc1) where sql_min(true, true)
+----
+
+query I nosort
+SELECT count(*) FROM ((select 7 from rt3, (values (1)) y(y)) union (select 3)) x(x)
+----
+2
+
+query I nosort
+SELECT count(*) FROM ((select 7 from t3, (values (1)) y(y)) union (select 3)) x(x)
+----
+2
+
+query I nosort
+SELECT count(*) FROM ((select 7 from rt3, (values (1)) y(y)) union all (select 3)) x(x)
+----
+7
+
+query I nosort
+SELECT count(*) FROM ((select 7 from t3, (values (1)) y(y)) union all (select 3)) x(x)
+----
+7
+
+statement ok
+create view v2(vc0) as ((select 3 from rt3) intersect (select 2 from t3))
+
+statement ok
+create view v3(vc0) as (select 1 from rt3, v2 where "right_shift_assign"(inet '228.236.62.235/6', inet '82.120.56.164'))
+
+statement ok
+create view v4(vc0, vc1, vc2) as (select 1, 2, 3)
+
+statement ok
+create view v5(vc0) as ((select time '01:00:00') intersect (select time '01:00:00' from v3))
+
+statement ok
+create view v6(vc0) as ((select 1) union all (select 2))
+
+query I nosort
+select 1 from v4, v5, v6
+----
+
+statement ok
+create view v7(vc0) as (select case '201' when ',' then rt3.c0 when '' then cast(rt3.c0 as bigint) end from rt3)
+
+query I nosort
+SELECT 1 FROM v7 CROSS JOIN ((SELECT 1) UNION ALL (SELECT 2)) AS sub0(c0)
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+query I nosort
+SELECT 1 FROM (VALUES (2),(3)) x(x) FULL OUTER JOIN (SELECT t1.c1 <= CAST(t1.c1 AS INT) FROM t1) AS sub0(c0) ON true WHERE sub0.c0
+UNION ALL
+SELECT 1 FROM (VALUES (2),(3)) x(x) FULL OUTER JOIN (SELECT t1.c1 <= CAST(t1.c1 AS INT) FROM t1) AS sub0(c0) ON true
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+query I nosort
+SELECT 1 FROM (VALUES (2),(3)) x(x) FULL OUTER JOIN (SELECT rt1.c1 <= CAST(rt1.c1 AS INT) FROM rt1) AS sub0(c0) ON true WHERE sub0.c0
+UNION ALL
+SELECT 1 FROM (VALUES (2),(3)) x(x) FULL OUTER JOIN (SELECT rt1.c1 <= CAST(rt1.c1 AS INT) FROM rt1) AS sub0(c0) ON true
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+query I nosort
+SELECT count(0.3121149) FROM (select case when 2 > 1 then 0.3 end from (select 1 from t3) x(x)) v100(vc1), t3 WHERE 5 >= sinh(CAST(v100.vc1 AS REAL))
+----
+36
+
+query I nosort
+SELECT count(0.3121149) FROM (select case when 2 > 1 then 0.3 end from (select 1 from rt3) x(x)) v100(vc1), rt3 WHERE 5 >= sinh(CAST(v100.vc1 AS REAL))
+----
+36
+
+query I nosort
+SELECT CAST(2 AS REAL) BETWEEN 2 AND (t5.c0 / t5.c0)^5 AS X FROM t5 ORDER BY x NULLS LAST
+----
+1
+1
+1
+1
+1
+1
+1
+NULL
+NULL
+NULL
+NULL
+NULL
+
+query I nosort
+SELECT CAST(2 AS REAL) BETWEEN 2 AND (rt5.c0 / rt5.c0)^5 AS X FROM rt5 ORDER BY x NULLS LAST
+----
+1
+1
+1
+1
+1
+1
+1
+NULL
+NULL
+NULL
+NULL
+NULL
+
+query I nosort
+SELECT count(*) AS mx FROM t3 GROUP BY 1 + least(2, round(0.68, t3.c0)) ORDER BY mx
+----
+1
+5
+
+query I nosort
+SELECT count(*) AS mx FROM rt3 GROUP BY 1 + least(2, round(0.68, rt3.c0)) ORDER BY mx
+----
+1
+5
+
+query I nosort
+SELECT 1 FROM t3 INNER JOIN (SELECT 1 FROM t2) AS sub0(c0) ON ((2) IN (3, 6)) WHERE 4 < least(NULL, least(t3.c0, t3.c0))
+----
+
+query I nosort
+SELECT 1 FROM rt3 INNER JOIN (SELECT 1 FROM t2) AS sub0(c0) ON ((2) IN (3, 6)) WHERE 4 < least(NULL, least(rt3.c0, rt3.c0))
+----
+
+query I nosort
+SELECT t7.c0 FROM t7 WHERE (((('5' LIKE '0.53')OR((VALUES (0 < ANY(VALUES (7), (0)))))))OR(4 NOT BETWEEN -t7.c0 AND t7.c0)) ORDER BY c0
+----
+NULL
+-7
+-1
+0
+0
+0
+0
+0
+1
+3
+3
+4
+4
+4
+5
+5
+5
+5
+6
+6
+7
+7
+8
+9
+9
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((('5' LIKE '0.53')OR((VALUES (0 < ANY(VALUES (7), (0)))))))OR(4 NOT BETWEEN -t7.c0 AND t7.c0)) AS INT) as count FROM t7) as res
+----
+25
+
+query I nosort
+SELECT rt7.c0 FROM rt7 WHERE (((('5' LIKE '0.53')OR((VALUES (0 < ANY(VALUES (7), (0)))))))OR(4 NOT BETWEEN -rt7.c0 AND rt7.c0)) ORDER BY c0
+----
+NULL
+-7
+-1
+0
+0
+0
+0
+0
+1
+3
+3
+4
+4
+4
+5
+5
+5
+5
+6
+6
+7
+7
+8
+9
+9
+
+query I nosort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((('5' LIKE '0.53')OR((VALUES (0 < ANY(VALUES (7), (0)))))))OR(4 NOT BETWEEN -rt7.c0 AND rt7.c0)) AS INT) as count FROM rt7) as res
+----
+25
+
+statement ok
+create view v8(vc0) as (select -24.6 from t3)
+
+statement ok
+create view v9(vc0) as (select -24.6 from rt3)
+
+query I nosort
+SELECT 1 FROM t3 WHERE EXISTS ((SELECT 0.3, 4 FROM v8) EXCEPT ALL (SELECT 8, 1 FROM v8))
+----
+1
+1
+1
+1
+1
+1
+
+query I nosort
+SELECT 1 FROM t3 WHERE EXISTS ((SELECT 0.3, 4 FROM v9) EXCEPT ALL (SELECT 8, 1 FROM v9))
+----
+1
+1
+1
+1
+1
+1
+
+query T nosort
+SELECT c1 FROM t6
+----
+3
+8@k|1*
+27
+Vrx^qA@
+J
+18
+>*4@pAP
++Jm*W0{{
+>V@
+BW5z
+.#OJruk
+lU1@Nlm
+NULL
+968786590
+
+query T nosort
+SELECT c1 FROM rt6
+----
+3
+8@k|1*
+27
+Vrx^qA@
+J
+18
+>*4@pAP
++Jm*W0{{
+>V@
+BW5z
+.#OJruk
+lU1@Nlm
+NULL
+968786590
+
+query I nosort
+SELECT 3 >= ALL(SELECT vx.vc0 FROM storage((SELECT 'sys', 't3' FROM t3))) FROM (SELECT 0) vx(vc0)
+----
+1
+
+query I nosort
+SELECT 3 >= ALL(SELECT vx.vc0 FROM storage((SELECT 'sys', 't3' FROM rt3))) FROM (SELECT 0) vx(vc0)
+----
+1
+
+query I nosort
+SELECT 5 <> ALL((SELECT 2 FROM t3 FULL OUTER JOIN (SELECT 1) AS sub1n0(subc1n0) ON 2 < ANY(SELECT 1))
+UNION ALL (SELECT 1 FROM t3 RIGHT OUTER JOIN (SELECT 4) AS sub1n0(subc1n0) ON TRUE
+CROSS JOIN (SELECT FALSE FROM t3) AS sub1n1(subc1n0))) FROM t3
+----
+1
+1
+1
+1
+1
+1
+
+query I nosort
+SELECT 5 <> ALL((SELECT 2 FROM rt3 FULL OUTER JOIN (SELECT 1) AS sub1n0(subc1n0) ON 2 < ANY(SELECT 1))
+UNION ALL (SELECT 1 FROM rt3 RIGHT OUTER JOIN (SELECT 4) AS sub1n0(subc1n0) ON TRUE
+CROSS JOIN (SELECT FALSE FROM rt3) AS sub1n1(subc1n0))) FROM rt3
+----
+1
+1
+1
+1
+1
+1
+
+query I nosort
+select (values (t3.c0)) from t3, (select 2 from t3 where
+((select t3.c0) intersect (select 3)) > 0) vx(vc0) where (values (t3.c0)) > 0
+----
+
+query I nosort
+select (values (rt3.c0)) from rt3, (select 2 from rt3 where
+((select rt3.c0) intersect (select 3)) > 0) vx(vc0) where (values (rt3.c0)) > 0
+----
+
+query I nosort
+SELECT CASE WHEN t3.c0 = 3 THEN (1) IN (SELECT 2 FROM t3) END FROM t3
+----
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+
+query I nosort
+SELECT CASE WHEN rt3.c0 = 3 THEN (1) IN (SELECT 2 FROM rt3) END FROM rt3
+----
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+
+query RTTT nosort
+SELECT abs(2.47), ltrim(count(*)), ltrim(count(*),count(*)), lower(count(*)) FROM t3 where t3.c0 = 1
+----
+2.470
+1
+(empty)
+1
+
+query RTTT nosort
+SELECT abs(2.47), ltrim(count(*)), ltrim(count(*),count(*)), lower(count(*)) FROM rt3 where rt3.c0 = 1
+----
+2.470
+1
+(empty)
+1
+
+query I nosort
+SELECT 1 FROM t3 LEFT OUTER JOIN (SELECT 1) x(x) ON 1 <> ALL(VALUES (t3.c0)) where t3.c0 = 1
+----
+1
+
+query I nosort
+SELECT 1 FROM rt3 LEFT OUTER JOIN (SELECT 1) x(x) ON 1 <> ALL(VALUES (rt3.c0)) where rt3.c0 = 1
+----
+1
+
+query TTT nosort
+(SELECT greatest(JSON '"5mTevdOzH5brfkMv"', JSON '0.4'),CASE WHEN FALSE THEN NULL END, greatest(BLOB 'c0', BLOB '') FROM t3) INTERSECT ALL (SELECT JSON '0.2', JSON '-3', BLOB '30' FROM t3)
+----
+
+query TTT nosort
+(SELECT greatest(JSON '"5mTevdOzH5brfkMv"', JSON '0.4'),CASE WHEN FALSE THEN NULL END, greatest(BLOB 'c0', BLOB '') FROM rt3) INTERSECT ALL (SELECT JSON '0.2', JSON '-3', BLOB '30' FROM rt3)
+----
+
+statement ok
+ROLLBACK
+
+# GDK reported error: hashjoin: more than one match
+statement error
+SELECT CASE 1 WHEN 5 THEN ((SELECT t3.c0) INTERSECT (SELECT 9)) ELSE (VALUES (t3.c0), (1)) END FROM t3
+
+# GDK reported error: hashjoin: more than one match
+statement error
+SELECT CASE 1 WHEN 5 THEN ((SELECT rt3.c0) INTERSECT (SELECT 9)) ELSE (VALUES (rt3.c0), (1)) END FROM rt3
+
+statement ok
+TRUNCATE t3
+
+query I nosort
+SELECT 1 FROM t3 CROSS JOIN LATERAL (SELECT 1 FROM (SELECT 1) z(z) JOIN (VALUES (1, t3.c0), (2, t3.c0)) x(x,y) ON x.x = 1) y(y)
+----
+
+query I nosort
+SELECT 1 FROM rt3 CROSS JOIN LATERAL (SELECT 1 FROM (SELECT 1) z(z) JOIN (VALUES (1, rt3.c0), (2, rt3.c0)) x(x,y) ON x.x = 1) y(y)
+----
+
+statement ok
+START TRANSACTION
+
+statement ok
+DROP TABLE rt1
+
+statement ok
+DROP TABLE rt2
+
+statement ok
+DROP TABLE rt3
+
+statement ok
+DROP TABLE rt4
+
+statement ok
+DROP TABLE rt5
+
+statement ok
+DROP TABLE rt6
+
+statement ok
+DROP TABLE rt7
+
+statement ok
+DROP TABLE t0
+
+statement ok
+DROP TABLE t1
+
+statement ok
+DROP TABLE t2
+
+statement ok
+DROP TABLE t3
+
+statement ok
+DROP TABLE t4
+
+statement ok
+DROP TABLE t5
+
+statement ok
+DROP TABLE t6
+
+statement ok
+DROP TABLE t7
+
+statement ok
+COMMIT
+

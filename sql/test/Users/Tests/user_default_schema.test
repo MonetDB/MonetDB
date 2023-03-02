@@ -1,0 +1,34 @@
+statement ok
+create user bar with password 'bar' name 'full name bar'
+
+@connection(id=tc, username=bar, password=bar)
+query T nosort
+select current_user
+----
+bar
+
+@connection(id=tc)
+query T nosort
+select current_role
+----
+bar
+
+@connection(id=tc)
+query T nosort
+select current_schema
+----
+bar
+
+@connection(id=tc)
+statement ok
+create table beers(name VARCHAR(20))
+
+@connection(id=tc)
+statement ok
+insert into beers values ('Amstel'), ('Grolsch'), ('Brand')
+
+query I nosort
+select count(*) from bar.beers
+----
+3
+

@@ -30,6 +30,7 @@ struct logger {
 	int saved_tid;		/* id of transaction which was flushed out (into BBP storage)  */
 	bool flushing;
 	bool flushnow;
+	ulng drops;
 	bool request_rotation;
 	logged_range *pending;
 	logged_range *current;

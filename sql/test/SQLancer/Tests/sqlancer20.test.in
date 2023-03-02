@@ -1,0 +1,254 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE MERGE TABLE "mt2" ("c0" CHAR(78),"c1" UUID NOT NULL,CONSTRAINT "mt2_c1_pkey" PRIMARY KEY ("c1"),CONSTRAINT "mt2_c1_unique" UNIQUE ("c1"))
+
+statement ok
+CREATE TABLE "mct21" ("c0" CHAR(78),"c1" UUID NOT NULL,CONSTRAINT "mct21_c1_pkey" PRIMARY KEY ("c1"),CONSTRAINT "mct21_c1_unique" UNIQUE ("c1"))
+
+statement ok
+INSERT INTO "mct21" VALUES ('2\\5LTC', 'efcdc386-d403-cf6d-4d34-79e08cefad9b')
+
+statement ok
+CREATE TABLE "mct20" ("c0" CHAR(78),"c1" UUID NOT NULL,CONSTRAINT "mct20_c1_pkey" PRIMARY KEY ("c1"),CONSTRAINT "mct20_c1_unique" UNIQUE ("c1"))
+
+statement ok
+INSERT INTO "mct20" VALUES ('gC', '7ffeefe2-5ad2-9a6b-71e5-9ecbb8b52ce9'),('3', 'd4bb47ec-0ccf-2daf-3997-bfa94b409fae'),('o', 'd7c126c0-bb8b-f457-50e0-dcaf5e68e6be'),
+    ('55', 'bf940cb2-f98d-67ae-1cae-17c8ed046ab6'),('#~Ew', 'afa1c3a9-b09d-92a0-e1ef-ed27bb663c2d'),(NULL, 'b991d4fe-abba-c4ea-c282-c19c2dd9f08d'),
+    (NULL, 'da1bfd50-14d3-43fa-b6c1-cd95ee6f2f17'),(NULL, 'b408ad8d-bfe4-e2a9-f2b1-bf7bb2310226'),('', '15fed7bd-387b-475e-03b4-03da2cafbad7'),
+    ('3', 'fb1f40ff-fa29-da45-f90b-0562639de03c'),(NULL, 'dac78eac-8483-46d4-ccd0-fb61eedaac02')
+
+statement ok
+COMMIT
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE REMOTE TABLE "rmct20" ("c0" CHAR(78),"c1" UUID NOT NULL,CONSTRAINT "rmct20_c1_pkey" PRIMARY KEY ("c1"),CONSTRAINT "rmct20_c1_unique" UNIQUE ("c1")) ON 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/sys/mct20'
+
+statement ok
+CREATE REMOTE TABLE "rmct21" ("c0" CHAR(78),"c1" UUID NOT NULL,CONSTRAINT "rmct21_c1_pkey" PRIMARY KEY ("c1"),CONSTRAINT "rmct21_c1_unique" UNIQUE ("c1")) ON 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/sys/mct21'
+
+statement ok
+ALTER TABLE "mt2" ADD TABLE "rmct20"
+
+statement ok
+ALTER TABLE "mt2" ADD TABLE "rmct21"
+
+statement ok
+COMMIT
+
+statement ok
+START TRANSACTION
+
+query I nosort
+(select 0) intersect (select 0 from mt2, mct20 where mct20.c0 like mt2.c0)
+----
+0
+
+query I nosort
+(select 0) intersect (select 1 from mt2, mct20 where mct20.c0 like mt2.c0)
+----
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+ALTER TABLE mt2 DROP TABLE rmct20
+
+statement ok
+ALTER TABLE mt2 DROP TABLE rmct21
+
+statement ok
+DROP TABLE rmct20
+
+statement ok
+DROP TABLE rmct21
+
+statement ok
+DROP TABLE mct20
+
+statement ok
+DROP TABLE mct21
+
+statement ok
+DROP TABLE mt2
+
+statement ok
+COMMIT
+
+# testing remote tables with transaction isolation
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE rt0(c0 INT)
+
+statement ok
+CREATE REMOTE TABLE rrt0(c0 INT) on 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/sys/rt0'
+
+statement ok
+COMMIT
+
+statement error Exception occurred in the remote server, please check the log there
+SELECT "setmasklen"(INET '9.49.240.200/13', 48061431) FROM rrt0
+
+statement ok
+INSERT INTO rt0(c0) VALUES(1)
+
+statement ok
+ALTER TABLE rt0 ADD CONSTRAINT con3 UNIQUE(c0)
+
+statement ok
+START TRANSACTION
+
+statement ok
+DROP TABLE rrt0
+
+statement ok
+DROP TABLE rt0
+
+statement ok
+COMMIT
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t0(c0 INT)
+
+statement ok
+INSERT INTO t0 VALUES (1),(2),(3)
+
+statement ok
+CREATE MERGE TABLE mt2 (c0 INT)
+
+statement ok
+CREATE TABLE mct20 (c0 INT)
+
+statement ok
+CREATE TABLE rmct21 (c0 INT)
+
+statement ok
+CREATE REMOTE TABLE rrmct21 (c0 INT) ON 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/sys/rmct21'
+
+statement ok
+ALTER TABLE mt2 ADD TABLE mct20
+
+statement ok
+ALTER TABLE mt2 ADD TABLE rrmct21
+
+statement ok
+COMMIT
+
+query I nosort
+SELECT 1 FROM (SELECT 1 FROM t0, mt2) vx(vc0) LEFT OUTER JOIN
+        (SELECT 2 FROM t0) AS sub0(c0) ON CASE 5 WHEN 2 THEN sub0.c0 <> ALL(VALUES (3), (4)) END
+----
+
+statement ok
+START TRANSACTION
+
+statement ok
+DROP TABLE t0
+
+statement ok
+ALTER TABLE mt2 DROP TABLE rrmct21
+
+statement ok
+ALTER TABLE mt2 DROP TABLE mct20
+
+statement ok
+DROP TABLE mt2
+
+statement ok
+DROP TABLE mct20
+
+statement ok
+DROP TABLE rmct21
+
+statement ok
+DROP TABLE rrmct21
+
+statement ok
+COMMIT
+
+# remote tables with replica tables
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE rt0 (c0 INTEGER)
+
+statement ok
+INSERT INTO rt0 VALUES (1),(2)
+
+statement ok
+CREATE REMOTE TABLE rrt0 (c0 INTEGER) ON 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/sys/rt0'
+
+statement ok
+CREATE TABLE rt2 (c0 TIMESTAMP)
+
+statement ok
+INSERT INTO rt2 VALUES (TIMESTAMP '1980-06-11 14:05:31'),(TIMESTAMP '1970-01-09 22:12:27')
+
+statement ok
+CREATE REPLICA TABLE rrt2 (c0 TIMESTAMP)
+
+statement ok
+ALTER TABLE rrt2 ADD TABLE rt2
+
+statement ok
+COMMIT
+
+query I nosort
+SELECT rrt0.c0 FROM rrt2, rrt0 ORDER BY rrt0.c0
+----
+1
+1
+2
+2
+
+statement ok
+START TRANSACTION
+
+statement ok
+ALTER TABLE rrt2 DROP TABLE rt2
+
+statement ok
+DROP TABLE rrt2
+
+statement ok
+DROP TABLE rt2
+
+statement ok
+DROP TABLE rrt0
+
+statement ok
+DROP TABLE rt0
+
+statement ok
+COMMIT
+
+# testing temporary tables
+@connection(id=mdb1, username=monetdb, password=monetdb)
+statement ok
+CREATE GLOBAL TEMPORARY TABLE tt2(c0 JSON, c1 DATE) ON COMMIT PRESERVE ROWS
+
+@connection(id=mdb1)
+statement ok
+INSERT INTO tmp.tt2(c1, c0) VALUES(DATE '2010-10-10', JSON 'true')
+
+@connection(id=mdb2, username=monetdb, password=monetdb)
+statement ok
+TRUNCATE TABLE tmp.tt2
+
+@connection(id=mdb2)
+statement ok
+DROP TABLE tmp.tt2
+

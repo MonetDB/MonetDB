@@ -1,8 +1,6 @@
-@connection(id=1, username=monetdb, password=monetdb)
 statement ok
 create table child (i int)
 
-@connection(id=1)
 statement ok
 start transaction
 
@@ -10,11 +8,9 @@ start transaction
 statement ok
 start transaction
 
-@connection(id=1)
 statement ok
 create merge table mt (i int)
 
-@connection(id=1)
 statement ok
 alter table mt add table child
 
@@ -22,7 +18,6 @@ alter table mt add table child
 statement ok
 drop table child
 
-@connection(id=1)
 statement ok
 commit
 
@@ -30,20 +25,16 @@ commit
 statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
 commit
 
-@connection(id=1)
 query I rowsort
 select * from mt
 ----
 
-@connection(id=1)
 statement ok
 alter table mt drop table child
 
-@connection(id=1)
 statement ok
 drop table child
 
-@connection(id=1)
 statement ok
 drop table mt
 

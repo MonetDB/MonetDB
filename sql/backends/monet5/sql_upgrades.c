@@ -198,19 +198,14 @@ check_sys_tables(Client c, mvc *m, sql_schema *s)
 			BBPunfix(b->batCacheid);
 		}
 		res_table_destroy(output);
-		if (i == 0) {
+		if (i == 0 && !needsystabfix) {
 			snprintf(buf, sizeof(buf),
-					 "select args.type from functions join args on functions.id = args.func_id where functions.name = '%s' and inout = 0;\n",
-					 tests[i].name);
-			err = SQLstatementIntern(c, buf, "quarter", true, false, &output);
+					 "select a.type from sys.functions f join sys.args a on f.id = a.func_id where f.name = 'quarter' and f.schema_id = 2000 and a.inout = 0 and a.type = 'int';\n");
+			err = SQLstatementIntern(c, buf, "update", true, false, &output);
 			if (err)
 				return err;
 			if ((b = BATdescriptor(output->cols[0].b)) != NULL) {
-				if (BATcount(b) > 0) {
-					BATiter bi = bat_iterator(b);
-					needsystabfix = strcmp((str) BUNtvar(bi, 0), "int") == 0;
-					bat_iterator_end(&bi);
-				}
+				needsystabfix = BATcount(b) > 0;
 				BBPunfix(b->batCacheid);
 			}
 			res_table_destroy(output);
@@ -4543,7 +4538,7 @@ sql_update_jan2022(Client c, mvc *sql)
 }
 
 static str
-sql_update_sep2022(Client c, mvc *sql)
+sql_update_sep2022(Client c, mvc *sql, sql_schema *s)
 {
 	size_t bufsize = 65536, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
@@ -4555,14 +4550,8 @@ sql_update_sep2022(Client c, mvc *sql)
 
 	/* if sys.db_user_info does not have a column password, we need to
 	 * add a bunch of columns */
-	pos = snprintf(buf, bufsize,
-				   "select id from sys._columns where table_id = (select id from sys._tables where name = 'db_user_info') and name = 'password';\n");
-	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output))) {
-		GDKfree(buf);
-		return err;
-	}
-	if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 0) {
-		pos = 0;
+	sql_table *db_user_info = find_sql_table(sql->session->tr, s, "db_user_info");
+	if (find_sql_column(db_user_info, "password") == NULL) {
 		pos += snprintf(buf + pos, bufsize - pos,
 						"alter table sys.db_user_info add column max_memory bigint;\n"
 						"alter table sys.db_user_info add column max_workers int;\n"
@@ -4688,8 +4677,6 @@ sql_update_sep2022(Client c, mvc *sql)
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 	}
-	res_table_destroy(output);
-	output = NULL;
 	if (err != MAL_SUCCEED) {
 		GDKfree(buf);
 		return err;
@@ -5136,46 +5123,42 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* wlc/wlr support was removed */
-	pos = snprintf(buf, bufsize,
-				   "select id from sys.schemas where name in ('wlc', 'wlr');\n");
-	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)) == NULL) {
-		if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) > 0) {
-			sql_schema *wl = mvc_bind_schema(sql, "wlc");
+	{
+		sql_schema *wl = mvc_bind_schema(sql, "wlc");
+		sql_schema *wr = mvc_bind_schema(sql, "wlr");
+		if (wl != NULL || wr != NULL) {
 			if (wl)
 				wl->system = 0;
-			wl = mvc_bind_schema(sql, "wlr");
-			if (wl)
-				wl->system = 0;
+			if (wr)
+				wr->system = 0;
 
 			pos = 0;
 			pos += snprintf(buf + pos, bufsize - pos,
-						"drop procedure if exists wlc.master() cascade;\n"
-						"drop procedure if exists wlc.master(string) cascade;\n"
-						"drop procedure if exists wlc.stop() cascade;\n"
-						"drop procedure if exists wlc.flush() cascade;\n"
-						"drop procedure if exists wlc.beat(int) cascade;\n"
-						"drop function if exists wlc.clock() cascade;\n"
-						"drop function if exists wlc.tick() cascade;\n"
-						"drop procedure if exists wlr.master(string) cascade;\n"
-						"drop procedure if exists wlr.stop() cascade;\n"
-						"drop procedure if exists wlr.accept() cascade;\n"
-						"drop procedure if exists wlr.replicate() cascade;\n"
-						"drop procedure if exists wlr.replicate(timestamp) cascade;\n"
-						"drop procedure if exists wlr.replicate(tinyint) cascade;\n"
-						"drop procedure if exists wlr.replicate(smallint) cascade;\n"
-						"drop procedure if exists wlr.replicate(integer) cascade;\n"
-						"drop procedure if exists wlr.replicate(bigint) cascade;\n"
-						"drop procedure if exists wlr.beat(integer) cascade;\n"
-						"drop function if exists wlr.clock() cascade;\n"
-						"drop function if exists wlr.tick() cascade;\n"
-						"drop schema if exists wlc cascade;\n"
-						"drop schema if exists wlr cascade;\n");
+							"drop procedure if exists wlc.master() cascade;\n"
+							"drop procedure if exists wlc.master(string) cascade;\n"
+							"drop procedure if exists wlc.stop() cascade;\n"
+							"drop procedure if exists wlc.flush() cascade;\n"
+							"drop procedure if exists wlc.beat(int) cascade;\n"
+							"drop function if exists wlc.clock() cascade;\n"
+							"drop function if exists wlc.tick() cascade;\n"
+							"drop procedure if exists wlr.master(string) cascade;\n"
+							"drop procedure if exists wlr.stop() cascade;\n"
+							"drop procedure if exists wlr.accept() cascade;\n"
+							"drop procedure if exists wlr.replicate() cascade;\n"
+							"drop procedure if exists wlr.replicate(timestamp) cascade;\n"
+							"drop procedure if exists wlr.replicate(tinyint) cascade;\n"
+							"drop procedure if exists wlr.replicate(smallint) cascade;\n"
+							"drop procedure if exists wlr.replicate(integer) cascade;\n"
+							"drop procedure if exists wlr.replicate(bigint) cascade;\n"
+							"drop procedure if exists wlr.beat(integer) cascade;\n"
+							"drop function if exists wlr.clock() cascade;\n"
+							"drop function if exists wlr.tick() cascade;\n"
+							"drop schema if exists wlc cascade;\n"
+							"drop schema if exists wlr cascade;\n");
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
-		res_table_destroy(output);
-		output = NULL;
 	}
 
 	/* new function sys.regexp_replace */
@@ -5219,7 +5202,7 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 	pos = snprintf(buf, bufsize,
 				   "select id from sys.functions where name = 'dump_table_data' and schema_id = 2000 and func like '%% R'')%%';\n");
 	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)) == NULL) {
-		if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 0) {
+		if (((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 0) || find_sql_table(sql->session->tr, s, "remote_user_info") == NULL) {
 			sql_table *t;
 			if ((t = mvc_bind_table(sql, s, "describe_tables")) != NULL)
 				t->system = 0;
@@ -5243,11 +5226,20 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 							"drop view if exists sys.dump_create_users cascade;\n"
 							"drop view if exists sys.describe_tables cascade;\n"
 							"drop function if exists sys.get_remote_table_expressions(string, string) cascade;\n"
+							"drop function if exists sys.remote_table_credentials(string) cascade;\n"
 							"drop function if exists sys.sq(string) cascade;\n");
+			if (find_sql_table(sql->session->tr, s, "remote_user_info") == NULL) {
+				pos += snprintf(buf + pos, bufsize - pos,
+								"create table sys.remote_user_info (table_id int, username varchar(1024), password varchar(256));\n"
+								"create function sys.decypher (cypher string) returns string external name sql.decypher;\n"
+								"update sys.functions set system = true where system <> true and name = 'decypher' and schema_id = 2000 and type = %d;\n"
+								"update sys._tables set system = true where system <> true and name = 'remote_user_info' and schema_id = 2000;\n",
+								F_FUNC);
+			}
 			pos += snprintf(buf + pos, bufsize - pos,
 							"CREATE FUNCTION sys.SQ (s STRING) RETURNS STRING BEGIN RETURN '''' || sys.replace(s,'''','''''') || ''''; END;\n"
 							"CREATE FUNCTION sys.get_remote_table_expressions(s STRING, t STRING) RETURNS STRING BEGIN\n"
-							" RETURN SELECT ' ON ' || sys.SQ(uri) || ' WITH USER ' || sys.SQ(username) || ' ENCRYPTED PASSWORD ' || sys.SQ(\"hash\") FROM sys.remote_table_credentials(s ||'.' || t);\n"
+							" RETURN SELECT ' ON ' || sys.SQ(tt.query) || ' WITH USER ' || sys.SQ(username) || ' ENCRYPTED PASSWORD ' || sys.SQ(sys.decypher(\"password\")) FROM sys.remote_user_info r, sys._tables tt, sys.schemas ss where tt.name = t and ss.name = s and tt.schema_id = ss.id and r.table_id = tt.id;\n"
 							"END;\n"
 							"CREATE VIEW sys.describe_tables AS\n"
 							" SELECT\n"
@@ -5440,16 +5432,10 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 
 	/* Add new column 'function_id' to views
 	 * sys.dependency_tables_on_functions and dependency_views_on_functions */
-	pos = snprintf(buf, bufsize,
-				   "SELECT id FROM sys._columns where name = 'function_id' "
-				   "and table_id in (select id FROM sys._tables where system "
-				   "and name in ('dependency_tables_on_functions','dependency_views_on_functions') "
-				   "and schema_id = 2000);\n");
-	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)) == NULL) {
-		if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) != 2) {
-			sql_table *t;
-			if ((t = mvc_bind_table(sql, s, "dependency_tables_on_functions")) != NULL)
-				t->system = 0;
+	{
+		sql_table *t = find_sql_table(sql->session->tr, s, "dependency_tables_on_functions");
+		if (t != NULL && find_sql_column(t, "function_id") == NULL) {
+			t->system = 0;		/* sys.dependency_tables_on_functions */
 			if ((t = mvc_bind_table(sql, s, "dependency_views_on_functions")) != NULL)
 				t->system = 0;
 			pos = 0;
@@ -5478,8 +5464,6 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 			printf("Running database upgrade commands:\n%s\n", buf);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
-		res_table_destroy(output);
-		output = NULL;
 	}
 
 	if (!sql_bind_func(sql, "sys", "database", NULL, NULL, F_FUNC, true)) {
@@ -5499,21 +5483,119 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 	/* Add new sysadmin procedure calls: stop, pause and resume with two
 	   arguments, first arg is query OID and second the user username that
 	   the query in bound to. */
-	pos = snprintf(buf, bufsize,
-				   "SELECT id FROM sys.functions where name='stop' and schema_id=2000;\n");
-	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)) == NULL) {
-		if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) != 2) {
-			pos = 0;
-			pos += snprintf(buf + pos, bufsize - pos,
-							"create function sys.queue(username string) returns table(\"tag\" bigint, \"sessionid\" int, \"username\" string, \"started\" timestamp, \"status\" string, \"query\" string, \"finished\" timestamp, \"maxworkers\" int, \"footprint\" int) external name sysmon.queue;\n"
-							"create procedure sys.pause(tag bigint, username string) external name sysmon.pause;\n"
-							"create procedure sys.resume(tag bigint, username string) external name sysmon.resume;\n"
-							"create procedure sys.stop(tag bigint, username string) external name sysmon.stop;\n"
-							"update sys.functions set system = true where system <> true and mod = 'sysmon' and name in ('stop', 'pause', 'resume', 'queue');\n");
-			assert(pos < bufsize);
-			printf("Running database upgrade commands:\n%s\n", buf);
-			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+	sql_subtype t1, t2;
+	sql_find_subtype(&t1, "bigint", 64, 0);
+	sql_find_subtype(&t2, "clob", 0, 0);
+	if (!sql_bind_func(sql, "sys", "pause", &t1, &t2, F_PROC, true)) {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+		pos = snprintf(buf, bufsize,
+					   "create function sys.queue(username string) returns table(\"tag\" bigint, \"sessionid\" int, \"username\" string, \"started\" timestamp, \"status\" string, \"query\" string, \"finished\" timestamp, \"maxworkers\" int, \"footprint\" int) external name sysmon.queue;\n"
+					   "create procedure sys.pause(tag bigint, username string) external name sysmon.pause;\n"
+					   "create procedure sys.resume(tag bigint, username string) external name sysmon.resume;\n"
+					   "create procedure sys.stop(tag bigint, username string) external name sysmon.stop;\n"
+					   "update sys.functions set system = true where system <> true and mod = 'sysmon' and name in ('stop', 'pause', 'resume', 'queue');\n");
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+	}
+
+	/* remote credentials where moved */
+	sql_trans *tr = sql->session->tr;
+	sqlstore *store = tr->store;
+	sql_table *remote_user_info = find_sql_table(tr, s, "remote_user_info");
+	sql_column *remote_user_info_id = find_sql_column(remote_user_info, "table_id");
+	BAT *rt_key = NULL, *rt_username = NULL, *rt_pwhash = NULL, *rt_uri = NULL, *rt_deleted = NULL;
+	if (!err && store->storage_api.count_col(tr, remote_user_info_id, 0) == 0 && BBPindex("M5system_auth_rt_key")) {
+
+		rt_key = BATdescriptor(BBPindex("M5system_auth_rt_key"));
+		rt_uri = BATdescriptor(BBPindex("M5system_auth_rt_uri"));
+		rt_username = BATdescriptor(BBPindex("M5system_auth_rt_remoteuser"));
+		rt_pwhash = BATdescriptor(BBPindex("M5system_auth_rt_hashedpwd"));
+		rt_deleted = BATdescriptor(BBPindex("M5system_auth_rt_deleted"));
+		if (rt_key == NULL || rt_username == NULL || rt_pwhash == NULL || rt_uri == NULL || rt_deleted == NULL) {
+			/* cleanup remainders and continue or full stop ? */
+			BBPreclaim(rt_key);
+			BBPreclaim(rt_uri);
+			BBPreclaim(rt_username);
+			BBPreclaim(rt_pwhash);
+			BBPreclaim(rt_deleted);
+			throw(SQL, __func__, "cannot find M5system_auth bats");
 		}
+
+		BATiter ik = bat_iterator(rt_key);
+		BATiter iu = bat_iterator(rt_username);
+		BATiter ip = bat_iterator(rt_pwhash);
+		for (oid p = 0; p < ik.count; p++) {
+			if (BUNfnd(rt_deleted, &p) == BUN_NONE) {
+				char *key = GDKstrdup(BUNtvar(ik, p));
+				char *username = BUNtvar(iu, p);
+				char *pwhash = BUNtvar(ip, p);
+
+				if (!key) {
+					bat_iterator_end(&ik);
+					bat_iterator_end(&iu);
+					bat_iterator_end(&ip);
+					BBPunfix(rt_key->batCacheid);
+					BBPunfix(rt_username->batCacheid);
+					BBPunfix(rt_pwhash->batCacheid);
+					BBPunfix(rt_deleted->batCacheid);
+					throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				char *d = strchr(key, '.');
+				/* . not found simply skip */
+				if (d) {
+					*d++ = '\0';
+					sql_schema *s = find_sql_schema(tr, key);
+					if (s) {
+						sql_table *t = find_sql_table(tr, s, d);
+						if (t && store->table_api.table_insert(tr, remote_user_info, &t->base.id, &username, &pwhash) != LOG_OK) {
+							bat_iterator_end(&ik);
+							bat_iterator_end(&iu);
+							bat_iterator_end(&ip);
+							BBPunfix(rt_key->batCacheid);
+							BBPunfix(rt_username->batCacheid);
+							BBPunfix(rt_pwhash->batCacheid);
+							BBPunfix(rt_deleted->batCacheid);
+							GDKfree(key);
+							throw(SQL, __func__, "Failed to insert remote credentials during upgrade");
+						}
+					}
+				}
+				GDKfree(key);
+			}
+		}
+		bat_iterator_end(&ik);
+		bat_iterator_end(&iu);
+		bat_iterator_end(&ip);
+	}
+	if (!err && rt_key) {
+		bat rtauthbats[6];
+
+		rtauthbats[0] = 0;
+		rtauthbats[1] = rt_key->batCacheid;
+		rtauthbats[2] = rt_uri->batCacheid;
+		rtauthbats[3] = rt_username->batCacheid;
+		rtauthbats[4] = rt_pwhash->batCacheid;
+		rtauthbats[5] = rt_deleted->batCacheid;
+
+		if (BATmode(rt_key, true) != GDK_SUCCEED ||
+			BBPrename(rt_key, NULL) != 0 ||
+			BATmode(rt_username, true) != GDK_SUCCEED ||
+			BBPrename(rt_username, NULL) != 0 ||
+			BATmode(rt_pwhash, true) != GDK_SUCCEED ||
+			BBPrename(rt_pwhash, NULL) != 0 ||
+			BATmode(rt_uri, true) != GDK_SUCCEED ||
+			BBPrename(rt_uri, NULL) != 0 ||
+			BATmode(rt_deleted, true) != GDK_SUCCEED ||
+			BBPrename(rt_deleted, NULL) != 0 ||
+			TMsubcommit_list(rtauthbats, NULL, 6, getBBPlogno(), getBBPtransid()) != GDK_SUCCEED) {
+			fprintf(stderr, "Committing removal of old remote user/password BATs failed\n");
+		}
+		BBPunfix(rt_key->batCacheid);
+		BBPunfix(rt_username->batCacheid);
+		BBPunfix(rt_pwhash->batCacheid);
+		BBPunfix(rt_uri->batCacheid);
+		BBPunfix(rt_deleted->batCacheid);
 	}
 
 	GDKfree(buf);
@@ -5715,7 +5797,7 @@ SQLupgrades(Client c, mvc *m)
 		return -1;
 	}
 
-	if ((err = sql_update_sep2022(c, m)) != NULL) {
+	if ((err = sql_update_sep2022(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		return -1;

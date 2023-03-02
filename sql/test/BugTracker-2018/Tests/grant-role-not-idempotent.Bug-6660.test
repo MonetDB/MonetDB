@@ -1,0 +1,52 @@
+statement ok
+create user mydummyuser with password 'mydummyuser' name 'mydummyuser' schema sys
+
+@connection(id=user, username=mydummyuser, password=mydummyuser)
+statement error 42000!Role (sysadmin) missing
+set role sysadmin
+
+query I
+select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser')
+----
+0
+
+statement ok
+grant sysadmin to mydummyuser
+
+query I
+select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser')
+----
+1
+
+@connection(id=user)
+statement ok
+set role sysadmin
+
+statement error M1M05!GRANT: User 'mydummyuser' already has ROLE 'sysadmin'
+grant sysadmin to mydummyuser
+
+query I
+select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser')
+----
+1
+
+statement ok
+revoke sysadmin from mydummyuser
+
+query I
+select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser')
+----
+0
+
+statement error 01006!REVOKE: User 'mydummyuser' does not have ROLE 'sysadmin'
+revoke sysadmin from mydummyuser
+
+query I
+select count(*) from user_role where login_id in (select id from sys.auths where name = 'mydummyuser')
+----
+0
+
+# clean up
+statement ok
+drop user mydummyuser
+

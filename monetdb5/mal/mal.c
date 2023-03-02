@@ -163,11 +163,6 @@ mal_init(char *modules[], bool embedded, const char *initpasswd)
 	if (initialize_tl_client_key() != 0)
 		return -1;
 
-	if ((err = AUTHinitTables()) != MAL_SUCCEED) {
-		freeException(err);
-		return -1;
-	}
-
 	if (!MCinit())
 		return -1;
 #ifndef NDEBUG

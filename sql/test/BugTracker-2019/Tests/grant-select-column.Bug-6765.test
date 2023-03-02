@@ -1,0 +1,134 @@
+statement ok
+CREATE schema myschema
+
+statement ok
+CREATE USER myuser WITH UNENCRYPTED PASSWORD 'Test123' NAME 'Hulk' SCHEMA myschema
+
+statement ok
+SET SCHEMA myschema
+
+statement ok
+CREATE TABLE test (id integer, name varchar(20), address varchar(20))
+
+statement ok
+INSERT INTO test (id, name,address) VALUES (1,'Tom', 'planet'),(2,'Karen', 'earth')
+
+# 'myuser' cannot SELECT before GRANT and after REVOKE, can SELECT after GRANT
+@connection(id=tc, username=myuser, password=Test123)
+statement error 42000!SELECT: access denied for myuser to table 'myschema.test'
+select * from test
+
+statement ok
+GRANT SELECT ON test TO myuser
+
+@connection(id=tc)
+query ITT rowsort
+select * from test
+----
+1
+Tom
+planet
+2
+Karen
+earth
+
+statement ok
+REVOKE SELECT ON test FROM myuser
+
+@connection(id=tc)
+statement error 42000!SELECT: access denied for myuser to table 'myschema.test'
+select * from test
+
+# 'myuser' can SELECT test(id)
+statement ok
+GRANT SELECT (id) ON test TO myuser
+
+@connection(id=tc)
+query I rowsort
+select id from test
+----
+1
+2
+
+@connection(id=tc)
+statement error 42000!SELECT: identifier 'name' unknown
+select name from test
+
+@connection(id=tc)
+statement error 42000!SELECT: identifier 'address' unknown
+select address from test
+
+@connection(id=tc)
+query I rowsort
+select * from test
+----
+1
+2
+
+# 'myuser' can SELECT test(id, address)
+statement ok
+GRANT SELECT (address) ON test TO myuser
+
+@connection(id=tc)
+query I rowsort
+select id from test
+----
+1
+2
+
+@connection(id=tc)
+statement error 42000!SELECT: identifier 'name' unknown
+select name from test
+
+@connection(id=tc)
+query T rowsort
+select address from test
+----
+earth
+planet
+
+@connection(id=tc)
+query IT rowsort
+select * from test
+----
+1
+planet
+2
+earth
+
+# 'myuser' can only SELECT test(address)
+statement ok
+REVOKE SELECT (id) ON test FROM myuser
+
+@connection(id=tc)
+statement error 42000!SELECT: identifier 'id' unknown
+select id from test
+
+@connection(id=tc)
+statement error 42000!SELECT: identifier 'name' unknown
+select name from test
+
+@connection(id=tc)
+query T rowsort
+select address from test
+----
+earth
+planet
+
+@connection(id=tc)
+query T rowsort
+select * from test
+----
+earth
+planet
+
+# clean up
+statement ok
+SET SCHEMA sys
+
+statement ok
+DROP USER myuser
+
+statement ok
+DROP SCHEMA myschema CASCADE
+

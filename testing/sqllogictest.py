@@ -682,7 +682,7 @@ class SQLLogic:
                 conn = self.get_connection(conn_params.get('conn_id')) or self.add_connection(**conn_params)
                 self.writeline(line.rstrip())
                 line = self.readline()
-            words = line.split()
+            words = line.split(maxsplit=2)
             if not words:
                 continue
             while words[0] == 'skipif' or words[0] == 'onlyif':
@@ -692,7 +692,7 @@ class SQLLogic:
                     skipping = True
                 self.writeline(line.rstrip())
                 line = self.readline()
-                words = line.split()
+                words = line.split(maxsplit=2)
             hashlabel = None
             if words[0] == 'hash-threshold':
                 self.threshold = int(words[1])
@@ -705,10 +705,11 @@ class SQLLogic:
                 expectok = words[1] == 'ok'
                 if len(words) > 2:
                     if expectok:
-                        if words[2] == 'rowcount':
-                            expected_rowcount = int(words[3])
+                        rwords = words[2].split()
+                        if rwords[0] == 'rowcount':
+                            expected_rowcount = int(rwords[1])
                     else:
-                        err_str = " ".join(words[2:])
+                        err_str = words[2]
                         expected_err_code, expected_err_msg = utils.parse_mapi_err_msg(err_str)
                 statement = []
                 self.qline = self.line + 1
@@ -741,13 +742,14 @@ class SQLLogic:
                 columns = words[1]
                 pyscript = None
                 if len(words) > 2:
-                    sorting = words[2]  # nosort,rowsort,valuesort
+                    rwords = words[2].split()
+                    sorting = rwords[0]  # nosort,rowsort,valuesort
                     if sorting == 'python':
-                        pyscript = words[3]
-                        if len(words) > 4:
-                            hashlabel = words[4]
-                    elif len(words) > 3:
-                        hashlabel = words[3]
+                        pyscript = rwords[1]
+                        if len(rwords) > 2:
+                            hashlabel = rwords[2]
+                    elif len(rwords) > 1:
+                        hashlabel = rwords[1]
                 else:
                     sorting = 'nosort'
                 query = []

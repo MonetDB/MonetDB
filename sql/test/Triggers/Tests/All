@@ -12,3 +12,4 @@ trigger_insert
 trigger_projection
 trigger_schema
 trigger-restart
+auth-triggers

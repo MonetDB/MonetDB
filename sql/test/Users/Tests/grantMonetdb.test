@@ -1,0 +1,108 @@
+statement ok
+CREATE SCHEMA library
+
+statement ok
+CREATE USER alice WITH PASSWORD 'alice' name 'alice' schema library
+
+statement ok
+CREATE USER april WITH PASSWORD 'april' name 'april' schema library
+
+statement ok
+CREATE TABLE library.orders(price int, name VARCHAR(100))
+
+@connection(id=tc, username=alice, password=alice)
+statement error 42000!Role (sysadmin) missing
+SET ROLE sysadmin
+
+@connection(id=tc)
+statement error 42M31!Insufficient privileges to create user 'may'
+CREATE USER may WITH PASSWORD 'may' NAME 'May' SCHEMA library
+
+@connection(id=tc)
+statement error 01007!GRANT: Grantor 'alice' is not allowed to grant privileges for table 'orders'
+GRANT ALL ON library.orders TO april
+
+statement ok
+GRANT sysadmin TO alice
+
+@connection(id=tc)
+statement ok
+SET ROLE sysadmin
+
+@connection(id=tc)
+statement ok
+CREATE USER may WITH PASSWORD 'may' NAME 'May' SCHEMA library
+
+@connection(id=tc)
+statement ok
+DROP USER may
+
+@connection(id=tc2, username=april, password=april)
+statement error 42000!INSERT INTO: insufficient privileges for user 'april' to insert into table 'orders'
+INSERT INTO library.orders VALUES (12, 'abc'), (42, 'def')
+
+@connection(id=tc2)
+statement error 42000!UPDATE: insufficient privileges for user 'april' to update table 'orders'
+UPDATE library.orders SET price = price*2 WHERE price < 42
+
+@connection(id=tc2)
+statement error 42000!DELETE FROM: insufficient privileges for user 'april' to delete from table 'orders'
+DELETE FROM library.orders WHERE price = 42
+
+@connection(id=tc2)
+statement error 42000!SELECT: access denied for april to table 'library.orders'
+SELECT * FROM library.orders
+
+@connection(id=tc)
+statement ok
+GRANT ALL ON library.orders TO april
+
+@connection(id=tc2)
+statement ok
+INSERT INTO library.orders VALUES (12, 'abc'), (42, 'def')
+
+@connection(id=tc2)
+statement ok
+UPDATE library.orders SET price = price*2 WHERE price < 42
+
+@connection(id=tc2)
+statement ok
+DELETE FROM library.orders WHERE price = 42
+
+@connection(id=tc2)
+query IT nosort
+SELECT * FROM library.orders
+----
+24
+abc
+
+@connection(id=tc2)
+statement error 42000!DROP TABLE: access denied for april to schema 'library'
+DROP TABLE library.orders
+
+@connection(id=tc)
+statement error 0P000!GRANT: Insufficient privileges to grant ROLE 'sysadmin'
+GRANT sysadmin TO april
+
+statement ok
+REVOKE sysadmin FROM alice
+
+statement ok
+GRANT sysadmin TO alice WITH ADMIN OPTION
+
+@connection(id=tc)
+statement ok
+GRANT sysadmin TO april
+
+statement ok
+DROP TABLE library.orders
+
+statement ok
+DROP SCHEMA library
+
+statement ok
+DROP USER alice
+
+statement ok
+DROP USER april
+

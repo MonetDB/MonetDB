@@ -1,0 +1,3 @@
+statement ok
+trace select count(*) FROM tables
+

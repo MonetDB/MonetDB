@@ -26,6 +26,7 @@ typedef enum rel_prop {
 
 typedef struct prop {
 	rel_prop kind;  /* kind of property */
+	sqlid id;		/* optional id of object involved */
 	union {
 		BUN lval; /* property with simple counts */
 		dbl dval; /* property with estimate */

@@ -322,66 +322,6 @@ RMTconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		return RMTconnectScen(ret, uri, user, passwd, &scen, NULL);
 }
 
-static str
-RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	char *local_table = NULL, *tmp = NULL, *ret = NULL,
-		 *remoteuser = NULL, *passwd = NULL, *uri = NULL;
-	str scen, msg;
-	ValPtr v;
-
-	(void)mb;
-	(void)cntxt;
-
-	local_table = *getArgReference_str(stk, pci, 1);
-	scen = *getArgReference_str(stk, pci, 2);
-	if (local_table == NULL || strcmp(local_table, (str)str_nil) == 0) {
-		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": local table is NULL or nil");
-	}
-
-	rethrow("remote.connect", tmp, AUTHgetRemoteTableCredentials(local_table, &uri, &remoteuser, &passwd));
-	if (!remoteuser)
-		remoteuser = GDKstrdup("");
-	if (!passwd)
-		passwd = GDKstrdup("");
-	if (!remoteuser || !passwd) {
-		GDKfree(uri);
-		GDKfree(remoteuser);
-		GDKfree(passwd);
-		throw(MAL, "remote.connect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	/* The password we just got is hashed. Add the byte \1 in front to
-	 * signal this fact to the mapi. */
-	size_t pwlen = strlen(passwd);
-	char *pwhash = (char*)GDKmalloc(pwlen + 2);
-	if (pwhash == NULL) {
-		GDKfree(uri);
-		GDKfree(remoteuser);
-		GDKfree(passwd);
-		throw(MAL, "remote.connect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	snprintf(pwhash, pwlen + 2, "\1%s", passwd);
-	GDKfree(passwd);
-
-	msg = RMTconnectScen(&ret, &uri, &remoteuser, &pwhash, &scen, NULL);
-	GDKfree(uri);
-	GDKfree(remoteuser);
-	GDKfree(pwhash);
-
-	if (msg == MAL_SUCCEED) {
-		v = &stk->stk[pci->argv[0]];
-		if (VALinit(v, TYPE_str, ret) == NULL) {
-			GDKfree(ret);
-			throw(MAL, "remote.connect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-	}
-
-	GDKfree(ret);
-	return msg;
-}
-
-
 /**
  * Disconnects a connection.  The connection needs not to exist in the
  * system, it only needs to exist for the client (i.e. it was once
@@ -1690,7 +1630,6 @@ mel_func remote_init_funcs[] = {
  command("remote", "resolve", RMTresolve, false, "resolve a pattern against Merovingian and return the URIs", args(1,2, batarg("",str),arg("pattern",str))),
  pattern("remote", "connect", RMTconnect, false, "returns a newly created connection for uri, using user name and password", args(1,5, arg("",str),arg("uri",str),arg("user",str),arg("passwd",str),arg("scen",str))),
  command("remote", "connect", RMTconnectScen, false, "returns a newly created connection for uri, using user name, password and scenario", args(1,6, arg("",str),arg("uri",str),arg("user",str),arg("passwd",str),arg("scen",str),arg("columnar",bit))),
- pattern("remote", "connect", RMTconnectTable, false, "return a newly created connection for a table. username and password should be in the vault", args(1,3, arg("",str),arg("table",str),arg("schen",str))),
  command("remote", "disconnect", RMTdisconnect, false, "disconnects the connection pointed to by handle (received from a call to connect()", args(1,2, arg("",void),arg("conn",str))),
  pattern("remote", "get", RMTget, false, "retrieves a copy of remote object ident", args(1,3, argany("",0),arg("conn",str),arg("ident",str))),
  pattern("remote", "put", RMTput, false, "copies object to the remote site and returns its identifier", args(1,3, arg("",str),arg("conn",str),argany("object",0))),

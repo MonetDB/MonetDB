@@ -560,7 +560,7 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts 
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_internal", "Failed to initialize client MAL module"));
 		goto cleanup;
 	}
-	if ((mdbe->msg = SQLinitClient(mdbe->c)) != MAL_SUCCEED ||
+	if ((mdbe->msg = SQLinitClient(mdbe->c, NULL, NULL, NULL)) != MAL_SUCCEED ||
 		(mdbe->msg = getSQLContext(mdbe->c, NULL, &m, NULL)) != MAL_SUCCEED)
 		goto cleanup;
 	m->session->auto_commit = 1;

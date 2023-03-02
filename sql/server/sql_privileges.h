@@ -46,6 +46,5 @@ extern char * sql_create_user(mvc *sql, char *user, char *passwd, bool enc, char
 extern char * sql_drop_user(mvc *sql, char *user);
 extern char * sql_alter_user(mvc *sql, char *user, char *passwd, bool enc, char *schema, char *schema_path, char *oldpasswd, char *role);
 extern char * sql_rename_user(mvc *sql, char *olduser, char *newuser);
-extern void sql_set_user_api_hooks(mvc *m);
 
 #endif /*_SQL_PRIV_H_ */

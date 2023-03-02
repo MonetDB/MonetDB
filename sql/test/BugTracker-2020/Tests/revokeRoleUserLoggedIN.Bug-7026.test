@@ -1,0 +1,77 @@
+# Create a user, schema and role
+statement ok
+CREATE SCHEMA s1
+
+statement ok
+CREATE USER bruce WITH PASSWORD 'bruce' name 'willis' schema s1
+
+statement ok
+CREATE TABLE s1.test(d int)
+
+statement ok
+CREATE ROLE role1
+
+statement ok
+GRANT ALL ON s1.test to role1
+
+statement ok
+GRANT role1 TO bruce
+
+# Login as `bruce` and use `role1`
+@connection(id=bruce, username=bruce, password=bruce)
+statement ok
+SET role role1
+
+@connection(id=bruce)
+statement ok
+INSERT INTO test VALUES (24), (42)
+
+@connection(id=bruce)
+statement ok
+UPDATE test SET d = 42 WHERE d <> 42
+
+@connection(id=bruce)
+statement ok
+DELETE FROM test WHERE d = 42
+
+@connection(id=bruce)
+query I nosort
+SELECT * FROM test
+----
+
+# Revoke `role1` from `bruce`
+statement ok
+REVOKE role1 FROM bruce
+
+# `bruce` should still be able to access `test`
+@connection(id=bruce)
+statement ok
+INSERT INTO test VALUES (24), (42)
+
+@connection(id=bruce)
+statement ok
+UPDATE test SET d = 42 WHERE d <> 42
+
+@connection(id=bruce)
+statement ok
+DELETE FROM test WHERE d = 42
+
+@connection(id=bruce)
+query I nosort
+SELECT * FROM test
+----
+
+#verify role1 is gone
+@connection(id=bruce)
+statement error Role (role1) missing
+SET ROLE role1
+
+statement ok
+DROP USER bruce
+
+statement ok
+DROP SCHEMA s1 CASCADE
+
+statement ok
+DROP ROLE role1
+
