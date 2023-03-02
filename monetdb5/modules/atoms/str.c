@@ -63,7 +63,6 @@
 #include "monetdb_config.h"
 #include "str.h"
 #include <string.h>
-
 #if HAVE_ICONV
 #include <iconv.h>
 #endif
@@ -4769,11 +4768,10 @@ STRasciify(str *r, const str *s)
 	size_t in_len = strlen(in), out_len = in_len + 1;
 	/* man iconv; /TRANSLIT */
 	if ((cd = iconv_open(t, f)) == (iconv_t)(-1))
-		throw(MAL, "str.asciify", "Cannot convert from (%s) to (%s).", f, t);
+		throw(MAL, "str.asciify", "ICONV: cannot convert from (%s) to (%s).", f, t);
 	if ((*r = out = GDKmalloc(out_len)) == NULL)
 		throw(MAL, "str.asciify", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	size_t x = iconv(cd, &in, &in_len, &out, &out_len);
-	if (x == (size_t)-1) {
+	if (iconv(cd, &in, &in_len, &out, &out_len) == (size_t) - 1) {
 		GDKfree(out);
 		*r = NULL;
 		iconv_close(cd);
