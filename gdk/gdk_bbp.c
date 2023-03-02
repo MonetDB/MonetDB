@@ -2437,7 +2437,7 @@ maybeextend(Thread t) {
 	/* if the common pool has no more space, extend it */
 	if (size + FREE_LIST_CHUNK_SIZE > BBPlimit) {
 		/* extend the common pool */
-		gdk_return r = BBPextend(true, size + FREE_LIST_CHUNK_SIZE);
+		gdk_return r = BBPextend(size + FREE_LIST_CHUNK_SIZE);
 		if (r != GDK_SUCCEED) {
 			MT_lock_unset(&GDKcacheLock);
 			return GDK_FAIL;
