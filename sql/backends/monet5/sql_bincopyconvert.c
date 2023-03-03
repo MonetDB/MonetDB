@@ -505,6 +505,9 @@ load_blob(BAT *bat, stream *s, int *eof_reached, int width, bool byteswap)
 				GDKfree(buffer);
 				size_t allocate = needed;
 				allocate += allocate / 16;   // add a little margin
+#ifdef _MSC_VER
+#pragma warning(suppress:4146)
+#endif
 				allocate += ((-allocate) % 0x100000);   // round up to nearest MiB
 				assert(allocate >= needed);
 				buffer = GDKmalloc(allocate);
