@@ -22,7 +22,7 @@ unique_keys
 vessels
 prepare
 HAVE_HGE?rel_push_count_down
-NOT_ASSERT?sqlfuncnames
+sqlfuncnames
 sequences
 analyze_test
 blobs
