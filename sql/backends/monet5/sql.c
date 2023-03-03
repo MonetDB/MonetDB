@@ -91,6 +91,10 @@ rel_no_mitosis(mvc *sql, sql_rel *rel)
 	}
 	if (is_topn(rel->op) || is_sample(rel->op) || is_simple_project(rel->op))
 		return rel_no_mitosis(sql, rel->l);
+	if (is_ddl(rel->op) && rel->flag == ddl_output) {
+		// COPY SELECT ... INTO
+		return rel_no_mitosis(sql, rel->l);
+	}
 	if ((is_delete(rel->op) || is_truncate(rel->op)) && rel->card <= CARD_AGGR)
 		return 1;
 	if ((is_insert(rel->op) || is_update(rel->op)) && rel->card <= CARD_AGGR)
