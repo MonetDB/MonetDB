@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -521,6 +523,13 @@ INSPECTgetEnvironmentKey(str *ret, str *key)
 }
 
 static str
+INSPECTgetDatabaseName(str *ret)
+{
+	char* key = "gdk_dbname";
+	return INSPECTgetEnvironmentKey(ret, &key);
+}
+
+static str
 INSPECTatom_sup_names(bat *ret)
 {
 	int i, k;
@@ -699,6 +708,7 @@ mel_func inspect_init_funcs[] = {
  command("inspect", "getAtomSizes", INSPECTatom_sizes, false, "Collect a BAT with the atom sizes.", args(1,1, batarg("",int))),
  command("inspect", "getEnvironment", INSPECTgetEnvironment, false, "Collect the environment variables.", args(2,2, batarg("k",str),batarg("v",str))),
  command("inspect", "getEnvironment", INSPECTgetEnvironmentKey, false, "Get the value of an environemnt variable", args(1,2, arg("",str),arg("k",str))),
+ command("inspect", "getDatabaseName", INSPECTgetDatabaseName, false, "Return database name", args(1,1, arg("",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"

@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #ifndef _MAL_CLIENT_H_
@@ -66,7 +68,9 @@ typedef struct CLIENT {
 	 */
 	char	optimizer[IDLENGTH];/* The optimizer pipe preferred for this session */
 	int 	workerlimit;		/* maximum number of workthreads processing a query */
-	int		memorylimit;		/* Memory claim highwater mark, 0 = no limit */
+	int maxworkers;				/* max_workers from db_user_info table */
+	int		memorylimit;		/* maximum memory currently allowed in MB */
+	lng maxmem;					/* max_memory from db_user_info table */
 	lng	    sessiontimeout;		/* session abort after x usec, 0 = no limit */
 	QryCtx  qryctx;				/* per query limitations */
 
@@ -85,6 +89,7 @@ typedef struct CLIENT {
 	BAT *profevents;
 
 	ATOMIC_TYPE	lastprint;	/* when we last printed the query, to be deprecated */
+	ATOMIC_TYPE	workers;	/* number of threads working for this context */
 	/*
 	 * Communication channels for the interconnect are stored here.
 	 * It is perfectly legal to have a client without input stream.

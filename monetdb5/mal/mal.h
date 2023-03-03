@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -151,9 +153,6 @@ typedef struct {
 	MALfcn fcn;					/* resolved function address */
 	struct MALBLK *blk;			/* resolved MAL function address */
 	/* inline statistics */
-	lng clock;					/* when the last call was started */
-	lng ticks;					/* total micro seconds spent in last call */
-	lng totticks;				/* total time spent on this instruction. */
 	lng wbytes;					/* number of bytes produced in last instruction */
 	/* the core admin */
 	const char *modname;		/* module context, reference into namespace */
@@ -186,7 +185,7 @@ typedef struct MALBLK {
 	ptr replica;			/* for the replicator tests */
 
 	/* During the run we keep track on the maximum number of concurrent threads and memory claim */
-	int		workers;
+	ATOMIC_TYPE workers;
 	lng		memory;
 	lng runtime;			/* average execution time of block in ticks */
 	int calls;				/* number of calls */
@@ -223,7 +222,6 @@ typedef struct MALSTK {
 	char status;			/* srunning 'R' suspended 'S', quiting 'Q' */
 	int pcup;				/* saved pc upon a recursive all */
 	oid tag;				/* unique invocation call tag */
-	int	workers;			/* Actual number of concurrent workers */
 	lng	memory;				/* Actual memory claims for highwater mark */
 
 	struct MALSTK *up;		/* stack trace list */

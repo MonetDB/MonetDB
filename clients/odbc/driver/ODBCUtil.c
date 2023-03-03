@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -892,6 +894,9 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 	 * plenty long enough */
 	char buf[128], buf2[128];
 
+	if (dbc->minor >= 46)
+		noscan = SQL_NOSCAN_ON;
+
 	if (noscan != SQL_NOSCAN_ON) {
 		char *nquery;
 		bool quoted = false, rawstring = false, dquoted = false;
@@ -1212,6 +1217,8 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 											}
 										}
 									}
+									if (repl == NULL)
+										break;
 								}
 								size_t l = i + strlen(repl) + 2 + arglen + strlen(rest) - j + 1 + strlen(repl2) + repl3len;
 								nquery = malloc(l);

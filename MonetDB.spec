@@ -1,8 +1,10 @@
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 
 %global name MonetDB
 %global version 11.46.0
@@ -80,14 +82,14 @@
 Name: %{name}
 Version: %{version}
 Release: %{release}
-Summary: MonetDB - Monet Database Management System
+Summary: Monet Database Management System
 Vendor: MonetDB BV <info@monetdb.org>
 
 Group: Applications/Databases
-License: MPLv2.0
+License: MPL-2.0
 URL: https://www.monetdb.org/
-BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Sep2022-SP1/%{name}-%{version}.tar.bz2
+BugURL: https://github.com/MonetDB/MonetDB/issues
+Source: https://www.monetdb.org/downloads/sources/Sep2022-SP2/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -128,6 +130,7 @@ BuildRequires: pkgconfig(zlib)
 BuildRequires: pkgconfig(liblz4) >= 1.8
 %if %{with py3integration}
 BuildRequires: pkgconfig(python3) >= 3.5
+# cannot use python3dist(numpy) because of CentOS 7
 BuildRequires: python3-numpy
 %endif
 %if %{with rintegration}
@@ -141,12 +144,12 @@ BuildRequires: texlive-obsolete
 %endif
 %endif
 # optional packages:
-# BuildRequires: pkgconfig(cmocka)	# -DWITH_CMOCKA=ON
-# BuildRequires: pkgconfig(gdal)	# -DSHP=ON
-# BuildRequires: pkgconfig(netcdf)	# -DNETCDF=ON
-# BuildRequires: pkgconfig(proj)	# -DWITH_PROJ=ON
-# BuildRequires: pkgconfig(snappy)	# -DWITH_SNAPPY=ON
-# BuildRequires: pkgconfig(valgrind)	# -DWITH_VALGRIND=ON
+# BuildRequires: pkgconfig(cmocka)      # -DWITH_CMOCKA=ON
+# BuildRequires: pkgconfig(gdal)        # -DSHP=ON
+# BuildRequires: pkgconfig(netcdf)      # -DNETCDF=ON
+# BuildRequires: pkgconfig(proj)        # -DWITH_PROJ=ON
+# BuildRequires: pkgconfig(snappy)      # -DWITH_SNAPPY=ON
+# BuildRequires: pkgconfig(valgrind)    # -DWITH_VALGRIND=ON
 
 %if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
@@ -343,7 +346,6 @@ Recommends: perl-DBD-monetdb >= 1.0
 Recommends: php-monetdb >= 1.0
 %endif
 Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
-Requires: python3-pymonetdb >= 1.0.6
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} > 7
 Recommends: python3dist(lz4)
 Recommends: python3dist(scipy)
@@ -503,17 +505,17 @@ getent group monetdb >/dev/null || groupadd --system monetdb
 if getent passwd monetdb >/dev/null; then
     case $(getent passwd monetdb | cut -d: -f6) in
     %{_localstatedir}/MonetDB) # old value
-	# change home directory, but not using usermod
-	# usermod requires there to not be any running processes owned by the user
-	EDITOR='sed -i "/^monetdb:/s|:%{_localstatedir}/MonetDB:|:%{_localstatedir}/lib/monetdb:|"'
-	unset VISUAL
-	export EDITOR
-	/sbin/vipw > /dev/null
-	;;
+        # change home directory, but not using usermod
+        # usermod requires there to not be any running processes owned by the user
+        EDITOR='sed -i "/^monetdb:/s|:%{_localstatedir}/MonetDB:|:%{_localstatedir}/lib/monetdb:|"'
+        unset VISUAL
+        export EDITOR
+        /sbin/vipw > /dev/null
+        ;;
     esac
 else
     useradd --system --gid monetdb --home-dir %{_localstatedir}/lib/monetdb \
-	--shell /sbin/nologin --comment "MonetDB Server" monetdb
+        --shell /sbin/nologin --comment "MonetDB Server" monetdb
 fi
 exit 0
 
@@ -690,6 +692,7 @@ package.  You probably don't need this, unless you are a developer.
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires: %{name}-client-tests = %{version}-%{release}
+Requires: python3dist(pymonetdb) >= 1.0.6
 BuildArch: noarch
 
 %description testing-python
@@ -779,33 +782,33 @@ fi
 
 %build
 %cmake3 \
-	-DCMAKE_INSTALL_RUNSTATEDIR=/run \
-	-DRELEASE_VERSION=ON \
-	-DASSERT=OFF \
-	-DCINTEGRATION=%{?with_cintegration:ON}%{!?with_cintegration:OFF} \
-	-DFITS=%{?with_fits:ON}%{!?with_fits:OFF} \
-	-DGEOM=%{?with_geos:ON}%{!?with_geos:OFF} \
-	-DINT128=%{?with_hugeint:ON}%{!?with_hugeint:OFF} \
-	-DNETCDF=OFF \
-	-DODBC=ON \
-	-DPY3INTEGRATION=%{?with_py3integration:ON}%{!?with_py3integration:OFF} \
-	-DRINTEGRATION=%{?with_rintegration:ON}%{!?with_rintegration:OFF} \
-	-DSANITIZER=OFF \
-	-DSHP=OFF \
-	-DSTRICT=OFF \
-	-DTESTING=ON \
-	-DWITH_BZ2=ON \
-	-DWITH_CMOCKA=OFF \
-	-DWITH_CURL=ON \
-	-DWITH_LZ4=ON \
-	-DWITH_LZMA=ON \
-	-DWITH_PCRE=ON \
-	-DWITH_PROJ=OFF \
-	-DWITH_READLINE=ON \
-	-DWITH_SNAPPY=OFF \
-	-DWITH_VALGRIND=OFF \
-	-DWITH_XML2=ON \
-	-DWITH_ZLIB=ON
+        -DCMAKE_INSTALL_RUNSTATEDIR=/run \
+        -DRELEASE_VERSION=ON \
+        -DASSERT=OFF \
+        -DCINTEGRATION=%{?with_cintegration:ON}%{!?with_cintegration:OFF} \
+        -DFITS=%{?with_fits:ON}%{!?with_fits:OFF} \
+        -DGEOM=%{?with_geos:ON}%{!?with_geos:OFF} \
+        -DINT128=%{?with_hugeint:ON}%{!?with_hugeint:OFF} \
+        -DNETCDF=OFF \
+        -DODBC=ON \
+        -DPY3INTEGRATION=%{?with_py3integration:ON}%{!?with_py3integration:OFF} \
+        -DRINTEGRATION=%{?with_rintegration:ON}%{!?with_rintegration:OFF} \
+        -DSANITIZER=OFF \
+        -DSHP=OFF \
+        -DSTRICT=OFF \
+        -DTESTING=ON \
+        -DWITH_BZ2=ON \
+        -DWITH_CMOCKA=OFF \
+        -DWITH_CURL=ON \
+        -DWITH_LZ4=ON \
+        -DWITH_LZMA=ON \
+        -DWITH_PCRE=ON \
+        -DWITH_PROJ=OFF \
+        -DWITH_READLINE=ON \
+        -DWITH_SNAPPY=OFF \
+        -DWITH_VALGRIND=OFF \
+        -DWITH_XML2=ON \
+        -DWITH_ZLIB=ON
 
 %cmake3_build
 
@@ -855,6 +858,54 @@ fi
 %endif
 
 %changelog
+* Tue Jan 24 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
+- Rebuilt.
+- GH#7343: GDKmmap requesting 0 virtual memory
+- GH#7347: A bug where an exception occurs even though it is a query with
+  normal syntax (Merge Table)
+
+* Mon Jan 23 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
+- sql: Fixed a regression where when there are multiple concurrent
+  transactions, the dependencies weren't checked properly.
+
+* Mon Jan 16 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
+- gdk: Fixed a race condition that could lead to a bat being added to the SQL
+  catalog but nog being made persistent, causing a subsequent restart
+  of the system to fail (and crash).
+
+* Wed Jan  4 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
+- odbc: A crash in the ODBC driver was fixed when certain unsupported functions
+  where used in a {fn ...} escape.
+
+* Wed Dec 21 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
+- odbc: Prepare of a query where the sum of the number of parameters (question
+  marks in the query) and the number of output columns is larger than
+  100 could fail with an unexpected error.  This has been fixed.
+
+* Fri Dec 16 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
+- sql: Added some error checking to prevent crashes.  Errors would mainly
+  occur under memory pressure.
+
+* Wed Dec 14 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
+- gdk: Fixed a race condition where a hash could have been created on a
+  bat using the old bat count while in another thread the bat count
+  got updated.  This would make the hash be based on too small a size,
+  causing failures later on.
+
+* Wed Dec 14 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
+- sql: Fixed cleanup after a failed allocation where the data being cleaned
+  up was unitialized but still used as pointers to memory that also had
+  to be freed.
+
+* Thu Dec  8 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
+- gdk: When extending a bat failed, the capacity had been updated already and
+  was therefore too large.  This could then later cause a crash.  This has
+  been fixed by only updating the capacity if the extend succeeded.
+
+* Wed Dec  7 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
+- sql: Fixed a double cleanup after a failed allocation in COPY INTO.  The
+  double cleanup could cause a crash due to a race condition it enabled.
+
 * Mon Dec 05 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.11-20221205
 - Rebuilt.
 - GH#7342: column which datatype is double couldn't group or aggregation

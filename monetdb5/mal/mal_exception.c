@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -89,7 +91,7 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 		TRC_CRITICAL(MAL_SERVER, "called with bad arguments");
 		len = 0;
 	}
-	msg = GDKmalloc(msglen + len + 1);
+	msg = GDKmalloc(msglen + len + 2);
 	if (msg != NULL) {
 		/* the calls below succeed: the arguments have already been checked */
 		(void) strconcat_len(msg, msglen + 1,
@@ -97,7 +99,13 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 		if (len > 0)
 			(void) vsnprintf(msg + msglen, len + 1, format, ap2);
 		va_end(ap2);
-		char *q = msg;
+		char *q = msg + strlen(msg);
+		if (q[-1] != '\n') {
+			/* make sure message ends with newline, we already have the space */
+			*q++ = '\n';
+			*q = '\0';
+		}
+		q = msg;
 		for (char *p = strchr(msg, '\n'); p; q = p + 1, p = strchr(q, '\n'))
 			TRC_ERROR(MAL_SERVER, "%.*s\n", (int) (p - q), q);
 		if (*q)

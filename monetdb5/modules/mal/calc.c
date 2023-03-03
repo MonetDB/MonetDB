@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -690,7 +692,6 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit *skip_nils;
 	BAT *b = NULL, *s = NULL, *avgs, *cnts, *rems;
 
-	gdk_return rc;
 	(void)cntxt;
 	(void)mb;
 
@@ -709,7 +710,8 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(b);
 		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	rc = BATgroupavg3(&avgs, &rems, &cnts, b, NULL, NULL, s, *skip_nils);
+	if (BATgroupavg3(&avgs, &rems, &cnts, b, NULL, NULL, s, *skip_nils) != GDK_SUCCEED)
+		return mythrow(MAL, "aggr.avg", GDK_EXCEPTION);
 	if (avgs && BATcount(avgs) == 1) {
 		/* only type bte, sht, int, lng and hge */
 		ptr res = VALget(ret);
@@ -746,8 +748,6 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPreclaim(cnts);
 	BBPunfix(b->batCacheid);
 	BBPreclaim(s);
-	if (rc != GDK_SUCCEED)
-		return mythrow(MAL, "aggr.avg", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 

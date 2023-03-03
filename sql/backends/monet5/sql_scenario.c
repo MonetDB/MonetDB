@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -32,13 +34,14 @@
 #include "mal.h"
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
-#include "mal_runtime.h"
 #include "mal_parser.h"
 #include "mal_builder.h"
 #include "mal_namespace.h"
 #include "mal_debugger.h"
 #include "mal_linker.h"
-#include "mal_utils.h"
+#include "mal_scenario.h"
+#include "mal_authorize.h"
+#include "mcrypt.h"
 #include "bat5.h"
 #include "msabaoth.h"
 #include "gdk_time.h"
@@ -48,6 +51,8 @@
 #include "opt_mitosis.h"
 #include <unistd.h>
 #include "sql_upgrades.h"
+#include "rel_semantic.h"
+#include "rel_rel.h"
 
 #define MAX_SQL_MODULES 128
 static int sql_modules = 0;
@@ -78,6 +83,7 @@ static const char *sqlinit = NULL;
 static MT_Lock sql_contextLock = MT_LOCK_INITIALIZER(sql_contextLock);
 
 static str SQLinit(Client c, const char *initpasswd);
+static str master_password = NULL;
 
 str
 //SQLprelude(void *ret)
@@ -222,8 +228,144 @@ SQLepilogue(void *ret)
 	return MAL_SUCCEED;
 }
 
+
+static str
+SQLexecPostLoginTriggers(Client c)
+{
+	str msg = MAL_SUCCEED;
+	backend *be = (backend *) c->sqlcontext;
+	if (be) {
+		mvc *m = be->mvc;
+		sql_trans *tr = m->session->tr;
+		int active = tr->active;
+		if (active || mvc_trans(m) == 0) {
+			sql_schema *sys = find_sql_schema(tr, "sys");
+			struct os_iter oi;
+			// triggers not related to table should have been loaded in sys
+			os_iterator(&oi, sys->triggers, tr, NULL);
+			for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
+				sql_trigger *t = (sql_trigger*) b;
+				if (t->event == LOGIN_EVENT) {
+					const char *stmt = t->statement;
+					sql_rel *r = NULL;
+					// cache state
+					int oldvtop = c->curprg->def->vtop;
+					int oldstop = c->curprg->def->stop;
+					int oldvid = c->curprg->def->vid;
+					Symbol curprg = c->curprg;
+					sql_allocator *sa = m->sa;
+
+					if (!(m->sa = sa_create(m->pa))) {
+						m->sa = sa;
+						throw(SQL, "sql.SQLexecPostLoginTriggers", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					}
+					r = rel_parse(m, sys, stmt, m_deps);
+					if (r)
+						r = sql_processrelation(m, r, 0, 0, 0, 0);
+					if (!r) {
+						sa_destroy(m->sa);
+						m->sa = sa;
+						if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
+							throw(SQL, "sql.SQLexecPostLoginTriggers", "%s", m->errstr);
+						else
+							throw(SQL, "sql.SQLexecPostLoginTriggers", SQLSTATE(42000) "%s", m->errstr);
+					}
+
+					setVarType(c->curprg->def, 0, 0);
+					if (backend_dumpstmt(be, c->curprg->def, r, 1, 1, NULL) < 0) {
+						freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+						c->curprg = curprg;
+						sa_destroy(m->sa);
+						m->sa = sa;
+						throw(SQL, "sql.SQLexecPostLoginTriggers", SQLSTATE(4200) "%s", "generating MAL failed");
+					}
+
+					stream *out = be->out;
+					be->out = NULL;	/* no output stream */
+					if ((msg = SQLrun(c,m)) != MAL_SUCCEED) {
+						be->out = out;
+						freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+						sqlcleanup(be, 0);
+						c->curprg = curprg;
+						sa_destroy(m->sa);
+						m->sa = sa;
+						return msg;
+					}
+					// restore previous state
+					be->out = out;
+					MSresetInstructions(c->curprg->def, oldstop);
+					freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+					sqlcleanup(be, 0);
+					c->curprg = curprg;
+					sa_destroy(m->sa);
+					m->sa = sa;
+				}
+			}
+
+			if (!active)
+				sql_trans_end(m->session, SQL_OK);
+		}
+	}
+	return MAL_SUCCEED;
+}
+
+static str
+userCheckCredentials( mvc *m, Client c, const char *pwhash, const char *challenge, const char *algo)
+{
+	oid uid = getUserOIDByName(m, c->username);
+
+	if (strNil(pwhash))
+		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", c->username);
+	str passValue = getUserPassword(m, uid);
+	if (strNil(passValue))
+		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", c->username);
+	    /* find the corresponding password to the user */
+
+	str pwd = NULL;
+	str msg = AUTHdecypherValue(&pwd, passValue);
+	GDKfree(passValue);
+	if (msg)
+		return msg;
+
+	/* generate the hash as the client should have done */
+	str hash = mcrypt_hashPassword(algo, pwd, challenge);
+	GDKfree(pwd);
+	if(!hash)
+		throw(MAL, "checkCredentials", "hash '%s' backend not found", algo);
+
+	/* and now we have it, compare it to what was given to us */
+	if (strcmp(pwhash, hash) == 0) {
+		free(hash);
+		c->user = uid;
+		return MAL_SUCCEED;
+	}
+	free(hash);
+
+	/* special case: users whose name starts with '.' can authenticate using
+	 * the temporary master password.
+	 */
+	if (c->username[0] == '.' && master_password != NULL && master_password[0] != '\0') {
+		// first encrypt the master password as if we've just found it
+		// in the password store
+		str encrypted = mcrypt_BackendSum(master_password, strlen(master_password));
+		if (encrypted == NULL)
+			throw(MAL, "checkCredentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		hash = mcrypt_hashPassword(algo, encrypted, challenge);
+		free(encrypted);
+		if (hash && strcmp(pwhash, hash) == 0) {
+			free(hash);
+			c->user = uid;
+			return(MAL_SUCCEED);
+		}
+		free(hash);
+	}
+
+	/* of course we DO NOT print the password here */
+	throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", c->username);
+}
+
 static char*
-SQLprepareClient(Client c, int login)
+SQLprepareClient(Client c, const char *pwhash, const char *challenge, const char *algo)
 {
 	mvc *m = NULL;
 	backend *be = NULL;
@@ -252,8 +394,18 @@ SQLprepareClient(Client c, int login)
 		assert(0);
 	}
 	MT_lock_unset(&sql_contextLock);
-	if (login) {
-		switch (monet5_user_set_def_schema(m, c->user)) {
+	if (c->username && pwhash) {
+
+		if (mvc_trans(m) < 0) {
+			// we have -1 here
+			throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", c->username);
+		}
+
+		msg = userCheckCredentials( m, c, pwhash, challenge, algo);
+		if (msg)
+			goto bailout1;
+
+		switch (monet5_user_set_def_schema(m, c->user, c->username)) {
 			case -1:
 				msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout1;
@@ -269,11 +421,16 @@ SQLprepareClient(Client c, int login)
 			default:
 				break;
 		}
-		lng maxmem;
-		if (monet5_user_get_max_memory(m, m->user_id, &maxmem) == 0)
-			c->qryctx.maxmem = (ATOMIC_BASE_TYPE) (maxmem > 0 ? maxmem : 0);
-		else
+		if (monet5_user_get_limits(m, m->user_id, &c->maxmem, &c->maxworkers) == 0) {
+			c->qryctx.maxmem = (ATOMIC_BASE_TYPE) (c->maxmem > 0 ? c->maxmem : 0);
+		} else {
+			c->maxmem = 0;
 			c->qryctx.maxmem = 0;
+			c->maxworkers = 0;
+		}
+		if (c->memorylimit > 0 && c->qryctx.maxmem > ((ATOMIC_BASE_TYPE) c->memorylimit << 20))
+			c->qryctx.maxmem = (ATOMIC_BASE_TYPE) c->memorylimit << 20;
+		mvc_rollback(m, 0, NULL, false);
 	}
 
 	if (c->handshake_options) {
@@ -314,6 +471,8 @@ SQLprepareClient(Client c, int login)
 
 
 bailout1:
+	if (m->session->tr->active)
+		mvc_rollback(m, 0, NULL, false);
 	MT_lock_set(&sql_contextLock);
 bailout2:
 	/* expect SQL text first */
@@ -383,6 +542,13 @@ SQLinit(Client c, const char *initpasswd)
 	mvc *m = NULL;
 	const char *opt_pipe;
 
+	master_password = NULL;
+	if (!GDKembedded() && !GDKinmemory(0)) {
+		msg = msab_pickSecret(&master_password);
+		if (msg)
+			return msg;
+	}
+
 	if ((opt_pipe = GDKgetenv("sql_optimizer")) && !isOptimizerPipe(opt_pipe))
 		throw(SQL, "sql.init", SQLSTATE(42000) "invalid sql optimizer pipeline %s", opt_pipe);
 
@@ -449,7 +615,7 @@ SQLinit(Client c, const char *initpasswd)
 		if ( MCpushClientInput(c, fdin, 0, "") < 0)
 			TRC_ERROR(SQL_PARSER, "Could not switch client input stream\n");
 	}
-	if ((msg = SQLprepareClient(c, 0)) != NULL) {
+	if ((msg = SQLprepareClient(c, NULL, NULL, NULL)) != NULL) {
 		mvc_exit(SQLstore);
 		SQLstore = NULL;
 		MT_lock_unset(&sql_contextLock);
@@ -662,7 +828,7 @@ SQLtrans(mvc *m)
 }
 
 str
-SQLinitClient(Client c)
+SQLinitClient(Client c, const char *passwd, const char *challenge, const char *algo)
 {
 	str msg = MAL_SUCCEED;
 
@@ -671,17 +837,22 @@ SQLinitClient(Client c)
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinitClient", SQLSTATE(42000) "Catalogue not available");
 	}
-	msg = SQLprepareClient(c, true);
+	if ((msg = SQLprepareClient(c, passwd, challenge, algo)) == MAL_SUCCEED) {
+		if (c->usermodule && (c->user != MAL_ADMIN) && (SQLexecPostLoginTriggers(c) != MAL_SUCCEED)) {
+			MT_lock_unset(&sql_contextLock);
+			throw(SQL, "SQLinitClient", SQLSTATE(42000) "Failed to execute post login triggers");
+		}
+	}
 	MT_lock_unset(&sql_contextLock);
 	return msg;
 }
 
 str
-SQLinitClientFromMAL(Client c)
+SQLinitClientFromMAL(Client c, const char *passwd, const char *challenge, const char *algo)
 {
 	str msg = MAL_SUCCEED;
 
-	if ((msg = SQLinitClient(c)) != MAL_SUCCEED) {
+	if ((msg = SQLinitClient(c, passwd, challenge, algo)) != MAL_SUCCEED) {
 		c->mode = FINISHCLIENT;
 		return msg;
 	}
@@ -859,8 +1030,11 @@ SQLreader(Client c)
 				break;
 			commit_done = true;
 		}
-		if (m->session->tr && m->session->tr->active)
+		if (m->session->tr && m->session->tr->active) {
+			MT_lock_set(&mal_contextLock);
 			c->idle = 0;
+			MT_lock_unset(&mal_contextLock);
+		}
 
 		if (go && in->pos >= in->len) {
 			ssize_t rd;
@@ -883,10 +1057,12 @@ SQLreader(Client c)
 					if (msg)
 						break;
 					commit_done = true;
+					MT_lock_set(&mal_contextLock);
 					if (c->idle == 0 && (m->session->tr == NULL || !m->session->tr->active)) {
 						/* now the session is idle */
 						c->idle = time(0);
 					}
+					MT_lock_unset(&mal_contextLock);
 				}
 
 				if (go && ((!blocked && mnstr_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || mnstr_flush(c->fdout, MNSTR_FLUSH_DATA))) {
@@ -1365,7 +1541,7 @@ SQLcallback(Client c, str msg)
 		freeException(msg);
 		return MAL_SUCCEED;
 	}
-	return MALcallback(c, msg);
+	return MAL_SUCCEED;
 }
 
 str
@@ -1390,6 +1566,7 @@ SYSupdate_schemas(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 
-	sql_trans_update_schemas(m->session->tr);
+	if (sql_trans_update_schemas(m->session->tr) < 0)
+		throw(MAL, "sql.update_schemas", MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }

@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 %{
@@ -23,6 +25,8 @@ static int sqlformaterror(mvc *sql, _In_z_ _Printf_format_string_ const char *fo
 
 static void *ma_alloc(sql_allocator *sa, size_t sz);
 static void ma_free(void *p);
+static inline symbol*
+makeAtomNode(mvc *m, const char* type, const char* val, unsigned int digits, unsigned int scale, bool bind);
 
 #include <unistd.h>
 #include <string.h>
@@ -156,6 +160,7 @@ uescape_xform(char *restrict s, const char *restrict esc)
 	s[j] = 0;
 	return s;
 }
+
 %}
 /* KNOWN NOT DONE OF sql'99
  *
@@ -527,6 +532,7 @@ int yydebug=1;
 	XML_element_content_list
 	XML_value_expression_list
     opt_schema_details_list
+    opt_qname
 
 %type <i_val>
 	_transaction_mode_list
@@ -637,7 +643,7 @@ int yydebug=1;
 
 %token	USER CURRENT_USER SESSION_USER LOCAL BEST EFFORT
 %token  CURRENT_ROLE sqlSESSION CURRENT_SCHEMA CURRENT_TIMEZONE
-%token <sval> sqlDELETE UPDATE SELECT INSERT MATCHED
+%token <sval> sqlDELETE UPDATE SELECT INSERT MATCHED LOGIN
 %token <sval> LATERAL LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
@@ -670,7 +676,7 @@ int yydebug=1;
 %left UNION EXCEPT INTERSECT CORRESPONDING
 %left JOIN CROSS LEFT FULL RIGHT INNER NATURAL
 %left WITH DATA
-%left <operation> '(' ')'
+%left <operation> '(' ')' '{' '}'
 
 %left <operation> NOT
 %left <operation> '='
@@ -720,6 +726,83 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token X_BODY 
 %token MAX_MEMORY MAX_WORKERS OPTIMIZER
+/* odbc tokens */
+%token DAYNAME MONTHNAME TIMESTAMPADD TIMESTAMPDIFF IFNULL
+/* odbc data type tokens */
+%token <sval>
+		SQL_BIGINT
+		SQL_BINARY
+		SQL_BIT
+		SQL_CHAR
+		SQL_DATE
+		SQL_DECIMAL
+		SQL_DOUBLE
+		SQL_FLOAT
+		SQL_GUID
+		SQL_HUGEINT
+		SQL_INTEGER
+		SQL_INTERVAL_DAY
+		SQL_INTERVAL_DAY_TO_HOUR
+		SQL_INTERVAL_DAY_TO_MINUTE
+		SQL_INTERVAL_DAY_TO_SECOND
+		SQL_INTERVAL_HOUR
+		SQL_INTERVAL_HOUR_TO_MINUTE
+		SQL_INTERVAL_HOUR_TO_SECOND
+		SQL_INTERVAL_MINUTE
+		SQL_INTERVAL_MINUTE_TO_SECOND
+		SQL_INTERVAL_MONTH
+		SQL_INTERVAL_SECOND
+		SQL_INTERVAL_YEAR
+		SQL_INTERVAL_YEAR_TO_MONTH
+		SQL_LONGVARBINARY
+		SQL_LONGVARCHAR
+		SQL_NUMERIC
+		SQL_REAL
+		SQL_SMALLINT
+		SQL_TIME
+		SQL_TIMESTAMP
+		SQL_TINYINT
+		SQL_VARBINARY
+		SQL_VARCHAR
+		SQL_WCHAR
+		SQL_WLONGVARCHAR
+		SQL_WVARCHAR
+        SQL_TSI_FRAC_SECOND
+        SQL_TSI_SECOND
+        SQL_TSI_MINUTE
+        SQL_TSI_HOUR
+        SQL_TSI_DAY
+        SQL_TSI_WEEK
+        SQL_TSI_MONTH
+        SQL_TSI_QUARTER
+        SQL_TSI_YEAR
+
+%type <type>
+	odbc_data_type 
+
+%type <i_val>
+    odbc_tsi_qualifier
+    
+/* odbc escape prefix tokens */
+%token <sval>
+    ODBC_DATE_ESCAPE_PREFIX
+    ODBC_TIME_ESCAPE_PREFIX
+    ODBC_TIMESTAMP_ESCAPE_PREFIX
+    ODBC_GUID_ESCAPE_PREFIX
+    ODBC_FUNC_ESCAPE_PREFIX
+    ODBC_OJ_ESCAPE_PREFIX
+
+/* odbc symbolic types */
+%type <sym>
+    odbc_date_escape
+    odbc_time_escape
+    odbc_timestamp_escape
+    odbc_guid_escape
+    odbc_interval_escape
+    odbc_scalar_func_escape
+    odbc_scalar_func
+    odbc_datetime_func
+
 %%
 
 sqlstmt:
@@ -2308,6 +2391,8 @@ call_statement:
 
 call_procedure_statement:
 	CALL func_ref		 	{$$ = _symbol_create_symbol(SQL_CALL, $2);}
+    // odbc procedure call escape
+    | '{' CALL func_ref '}' {$$ = _symbol_create_symbol(SQL_CALL, $3);}
     ;
 
 routine_invocation: 
@@ -2534,18 +2619,24 @@ Define triggered SQL-statements.
 
 trigger_def:
     create_or_replace TRIGGER qname trigger_action_time trigger_event
-    ON qname opt_referencing_list triggered_action
+    opt_qname opt_referencing_list triggered_action
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_int(l, $4);
 	  append_symbol(l, $5);
+	  append_list(l, $6);
 	  append_list(l, $7);
 	  append_list(l, $8);
-	  append_list(l, $9);
 	  append_int(l, $1);
 	  $$ = _symbol_create_list(SQL_CREATE_TRIGGER, l); 
 	}
  ;
+
+opt_qname:
+    /* empty */ { $$ = NULL; }
+    | ON qname  { $$ = $2; }
+    ;
+    
 
 trigger_action_time:
     BEFORE	{ $$ = 0; }
@@ -2559,6 +2650,7 @@ trigger_event:
  |  TRUNCATE 		{ $$ = _symbol_create_list(SQL_TRUNCATE, NULL); }
  |  UPDATE 			{ $$ = _symbol_create_list(SQL_UPDATE, NULL); }
  |  UPDATE OF ident_commalist 	{ $$ = _symbol_create_list(SQL_UPDATE, $3); }
+ |  LOGIN 			{ $$ = _symbol_create_list(SQL_LOGIN, NULL); }
  ;
 
 opt_referencing_list:
@@ -3193,7 +3285,15 @@ joined_table:
 	  append_symbol(l, $5);
 	  append_symbol(l, NULL);
 	  $$ = _symbol_create_list( SQL_JOIN, l); }
-  ;
+ | '{' ODBC_OJ_ESCAPE_PREFIX table_ref outer_join_type OUTER JOIN table_ref join_spec '}'
+	{ dlist *l = L();
+	  append_symbol(l, $3);
+	  append_int(l, 0);
+	  append_int(l, $4 + 1);
+	  append_symbol(l, $7);
+	  append_symbol(l, $8);
+	  $$ = _symbol_create_list( SQL_JOIN, l); }
+  ; 
 
 join_type:
     /* empty */			{ $$ = 0; }
@@ -3786,6 +3886,21 @@ like_exp:
 		$$ = _symbol_create_list(SQL_ESCAPE, l);
 	  }
 	}
+ // odbc like escape
+ |  scalar_exp '{' ESCAPE string '}'
+    {
+        const char* esc = $4;
+        if (_strlen(esc) != 1) {
+		    sqlformaterror(m, SQLSTATE(22019) "%s", "ESCAPE must be one character");
+            $$= NULL;
+            YYABORT;
+        } else {
+            dlist *l = L();
+            append_symbol(l, $1);
+            append_string(l, esc);
+            $$ = _symbol_create_list(SQL_ESCAPE, l);
+        }
+    }
  ;
 
 test_for_null:
@@ -4113,6 +4228,7 @@ value_exp:
  |  param
  |  string_funcs
  |  XML_value_function
+ |  odbc_scalar_func_escape
  ;
 
 param:
@@ -4849,18 +4965,13 @@ literal:
 		  sql_find_subtype(&t, "double", 51, 0 );
 		  $$ = _newAtomNode(atom_float(SA, &t, val)); }
  |  sqlDATE string
-		{ sql_subtype t;
-		  atom *a;
-		  int r;
-
- 		  r = sql_find_subtype(&t, "date", 0, 0 );
-		  if (!r || (a = atom_general(SA, &t, $2)) == NULL) {
-			sqlformaterror(m, SQLSTATE(22007) "Incorrect date value (%s)", $2);
-			$$ = NULL;
-			YYABORT;
-		  } else {
-		  	$$ = _newAtomNode(a);
-		} }
+        {
+            symbol* node = makeAtomNode(m, "date", $2, 0, 0, false);
+            if (node == NULL)
+                YYABORT;
+            $$ = node;
+        }
+ |  odbc_date_escape
  |  TIME time_precision tz string
 		{ sql_subtype t;
 		  atom *a;
@@ -4874,6 +4985,7 @@ literal:
 		  } else {
 		  	$$ = _newAtomNode(a);
 		} }
+ |  odbc_time_escape
  |  TIMESTAMP timestamp_precision tz string
 		{ sql_subtype t;
 		  atom *a;
@@ -4887,7 +4999,9 @@ literal:
 		  } else {
 		  	$$ = _newAtomNode(a);
 		} }
+ |  odbc_timestamp_escape
  |  interval_expression
+ |  odbc_interval_escape
  |  blob string
 		{ sql_subtype t;
 		  atom *a= 0;
@@ -4963,6 +5077,7 @@ literal:
 		  }
 		  $$ = _newAtomNode(a);
 		}
+ |  odbc_guid_escape
  |  BOOL_FALSE
 		{ sql_subtype t;
 		  sql_find_subtype(&t, "boolean", 0, 0 );
@@ -5528,6 +5643,7 @@ non_reserved_word:
 | LAST		{ $$ = sa_strdup(SA, "last"); }
 | LEVEL		{ $$ = sa_strdup(SA, "level"); }
 | LITTLE	{ $$ = sa_strdup(SA, "little"); }
+| LOGIN		{ $$ = sa_strdup(SA, "login"); }
 | MAX_MEMORY	{ $$ = sa_strdup(SA, "max_memory"); }
 | MAXVALUE	{ $$ = sa_strdup(SA, "maxvalue"); }
 | MAX_WORKERS	{ $$ = sa_strdup(SA, "max_workers"); }
@@ -5579,6 +5695,19 @@ non_reserved_word:
 | STRIP		{ $$ = sa_strdup(SA, "strip"); }
 | URI		{ $$ = sa_strdup(SA, "uri"); }
 | WHITESPACE	{ $$ = sa_strdup(SA, "whitespace"); }
+
+/* odbc escape sequence non reserved words */
+| ODBC_DATE_ESCAPE_PREFIX { $$ = sa_strdup(SA, "d"); }
+| ODBC_TIME_ESCAPE_PREFIX { $$ = sa_strdup(SA, "t"); }
+| ODBC_TIMESTAMP_ESCAPE_PREFIX { $$ = sa_strdup(SA, "ts"); }
+| ODBC_GUID_ESCAPE_PREFIX { $$ = sa_strdup(SA, "guid"); }
+| ODBC_FUNC_ESCAPE_PREFIX { $$ = sa_strdup(SA, "fn"); }
+| ODBC_OJ_ESCAPE_PREFIX { $$ = sa_strdup(SA, "oj"); }
+| DAYNAME { $$ = sa_strdup(SA, "dayname"); }
+| MONTHNAME { $$ = sa_strdup(SA, "monthname"); }
+| TIMESTAMPADD { $$ = sa_strdup(SA, "timestampadd"); }
+| TIMESTAMPDIFF { $$ = sa_strdup(SA, "timestampdiff"); }
+| IFNULL { $$ = sa_strdup(SA, "ifnull"); }
 ;
 
 lngval:
@@ -6261,7 +6390,327 @@ XML_aggregate:
 	}
  ;
 
+odbc_date_escape:
+    '{' ODBC_DATE_ESCAPE_PREFIX string '}'
+        {
+            symbol* node = makeAtomNode(m, "date", $3, 0, 0, false);
+            if (node == NULL)
+                YYABORT;
+            $$ = node;
+        }
+    ;
+
+odbc_time_escape:
+    '{' ODBC_TIME_ESCAPE_PREFIX string '}'
+        {
+            unsigned int pr = get_time_precision($3) + 1;
+            symbol* node = makeAtomNode(m, "time", $3, pr, 0, false);
+            if (node == NULL)
+                YYABORT;
+            $$ = node;
+        }
+    ;
+
+odbc_timestamp_escape:
+    '{' ODBC_TIMESTAMP_ESCAPE_PREFIX string '}'
+        {
+            unsigned int pr = get_timestamp_precision($3);
+            pr = pr ? (pr + 1) : (pr + 6);
+            symbol* node = makeAtomNode(m, "timestamp", $3, pr, 0, false);
+            if (node == NULL)
+                YYABORT;
+            $$ = node;
+        }
+    ;
+
+odbc_guid_escape:
+    '{' ODBC_GUID_ESCAPE_PREFIX string '}'
+        {
+            symbol* node = makeAtomNode(m, "uuid", $3, 0, 0, true);
+            if (node == NULL)
+                YYABORT;
+            $$ = node;
+        }
+    ;
+
+odbc_interval_escape:
+     '{' interval_expression '}' {$$ = $2;}
+    ;
+
+odbc_scalar_func_escape:
+    '{' ODBC_FUNC_ESCAPE_PREFIX odbc_scalar_func '}' {$$ = $3;}
+;
+
+
+odbc_datetime_func:
+    HOUR '(' search_condition ')'
+		{ dlist *l = L(); 
+		  append_list( l, append_string(L(), sa_strdup(SA, "hour")));
+	      append_int(l, FALSE); /* ignore distinct */
+          append_symbol(l, $3);
+          $$ = _symbol_create_list( SQL_UNOP, l ); 
+		}
+    | MINUTE '(' search_condition ')'
+		{ dlist *l = L(); 
+		  append_list( l, append_string(L(), sa_strdup(SA, "minute")));
+	      append_int(l, FALSE); /* ignore distinct */
+          append_symbol(l, $3);
+          $$ = _symbol_create_list( SQL_UNOP, l ); 
+		}
+    | SECOND '(' search_condition ')'
+		{ dlist *l = L(); 
+		  append_list( l, append_string(L(), sa_strdup(SA, "second")));
+	      append_int(l, FALSE); /* ignore distinct */
+          append_symbol(l, $3);
+          $$ = _symbol_create_list( SQL_UNOP, l ); 
+		}
+    | DAYNAME '(' search_condition ')'
+		{ dlist *l = L(); 
+		  append_list( l, append_string(L(), sa_strdup(SA, "date_to_str")));
+	      append_int(l, FALSE); /* ignore distinct */
+          append_symbol(l, $3);
+          append_symbol(l, makeAtomNode(m, "char", "%A", 2, 0, false));
+          $$ = _symbol_create_list( SQL_BINOP, l ); 
+		}
+    | MONTHNAME '(' search_condition ')'
+		{ dlist *l = L(); 
+		  append_list( l, append_string(L(), sa_strdup(SA, "date_to_str")));
+	      append_int(l, FALSE); /* ignore distinct */
+          append_symbol(l, $3);
+          append_symbol(l, makeAtomNode(m, "char", "%B", 2, 0, false));
+          $$ = _symbol_create_list( SQL_BINOP, l ); 
+		}
+    | MONTH '(' search_condition ')'
+		{ dlist *l = L(); 
+		  append_list( l, append_string(L(), sa_strdup(SA, "month")));
+	      append_int(l, FALSE); /* ignore distinct */
+          append_symbol(l, $3);
+          $$ = _symbol_create_list( SQL_UNOP, l ); 
+		}
+    | YEAR '(' search_condition ')'
+		{ dlist *l = L(); 
+		  append_list( l, append_string(L(), sa_strdup(SA, "year")));
+	      append_int(l, FALSE); /* ignore distinct */
+          append_symbol(l, $3);
+          $$ = _symbol_create_list( SQL_UNOP, l ); 
+		}
+    | TIMESTAMPADD '(' odbc_tsi_qualifier ',' intval ',' search_condition ')'
+		{ dlist *l = L(); 
+		  append_list( l, append_string(L(), sa_strdup(SA, "timestampadd")));
+	      append_int(l, FALSE); /* ignore distinct */
+          sql_subtype t; 
+	  	  lng i = 0;
+          if (process_odbc_interval(m, $3, $5, &t, &i) < 0) {
+		    yyerror(m, "incorrect interval");
+			$$ = NULL;
+			YYABORT;
+          }
+          append_symbol(l, $7);
+          append_symbol(l, _newAtomNode(atom_int(SA, &t, i)));
+          $$ = _symbol_create_list( SQL_BINOP, l ); 
+		}
+    | TIMESTAMPDIFF '(' odbc_tsi_qualifier ',' search_condition ',' search_condition ')'
+		{ dlist *l = L(); 
+          switch($3) {
+            case iyear:
+		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_year")));
+                break;
+            case iquarter:
+		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_quarter")));
+                break;
+            case imonth:
+		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_month")));
+                break;
+            case iweek:
+		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_week")));
+                break;
+            case iday:
+		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_day")));
+                break;
+            case ihour:
+		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_hour")));
+                break;
+            case imin:
+		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_min")));
+                break;
+            case isec:
+		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_sec")));
+                break;
+            default:
+                // diff in ms
+		        append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff")));
+          }
+	      append_int(l, FALSE); /* ignore distinct */
+          append_symbol(l, $7);
+          append_symbol(l, $5);
+          $$ = _symbol_create_list( SQL_BINOP, l ); 
+		}
+;
+
+
+odbc_scalar_func:
+    func_ref { $$ = $1;}
+    | string_funcs { $$ = $1;}
+    | datetime_funcs { $$ = $1;}
+    | odbc_datetime_func { $$ = $1;}
+    | CONVERT '(' search_condition ',' odbc_data_type ')'
+        { dlist *l = L();
+          append_symbol(l, $3);
+          append_type(l, &$5);
+          $$ = _symbol_create_list( SQL_CAST, l ); }
+    | USER '(' ')'
+        { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_user"))); }
+    | CHARACTER '(' search_condition ')'
+		{ dlist *l = L(); 
+		  append_list( l, append_string(L(), sa_strdup(SA, "code")));
+	      append_int(l, FALSE); /* ignore distinct */
+          append_symbol(l, $3);
+          $$ = _symbol_create_list( SQL_UNOP, l ); 
+		}
+    | TRUNCATE '(' search_condition ',' search_condition ')'
+		{ dlist *l = L(); 
+		  append_list( l, append_string(L(), sa_strdup(SA, "ms_trunc")));
+	      append_int(l, FALSE); /* ignore distinct */
+          append_symbol(l, $3);
+          append_symbol(l, $5);
+	  	  $$ = _symbol_create_list( SQL_BINOP, l ); 
+		}
+    | IFNULL '(' search_condition ',' search_condition ')'
+        { dlist *l = L();
+          append_symbol( l, $3);
+          append_symbol( l, $5);
+		  $$ = _symbol_create_list(SQL_COALESCE, l);
+        }
+;
+
+odbc_data_type:
+    SQL_BIGINT
+        { sql_find_subtype(&$$, "bigint", 0, 0); }
+    | SQL_BINARY
+        { sql_find_subtype(&$$, "blob", 0, 0); }
+    | SQL_BIT
+        { sql_find_subtype(&$$, "boolean", 0, 0); }
+    | SQL_CHAR
+        { sql_find_subtype(&$$, "char", 1, 0); }
+    | SQL_DATE
+        { sql_find_subtype(&$$, "date", 0, 0); }
+    | SQL_DECIMAL
+        { sql_find_subtype(&$$, "decimal", 18, 3); }
+    | SQL_DOUBLE
+        { sql_find_subtype(&$$, "double", 0, 0); }
+    | SQL_FLOAT
+        { sql_find_subtype(&$$, "double", 0, 0); }
+    | SQL_GUID
+        {
+            sql_type* t = NULL;
+            if (!(t = mvc_bind_type(m, "uuid"))) {
+                sqlformaterror(m, SQLSTATE(22000) "Type uuid unknown");
+                YYABORT;
+            }
+            sql_init_subtype(&$$, t, 0, 0);
+        }
+    | SQL_HUGEINT
+        { sql_find_subtype(&$$, "hugeint", 0, 0); }
+    | SQL_INTEGER
+        { sql_find_subtype(&$$, "int", 0, 0); }
+    | SQL_INTERVAL_YEAR
+        { sql_find_subtype(&$$, "month_interval", 1, 0); }
+    | SQL_INTERVAL_YEAR_TO_MONTH
+        { sql_find_subtype(&$$, "month_interval", 2, 0); }
+    | SQL_INTERVAL_MONTH
+        { sql_find_subtype(&$$, "month_interval", 3, 0); }
+    | SQL_INTERVAL_DAY
+        { sql_find_subtype(&$$, "day_interval", 4, 0); }
+    | SQL_INTERVAL_DAY_TO_HOUR
+        { sql_find_subtype(&$$, "sec_interval", 5, 0); }
+    | SQL_INTERVAL_DAY_TO_MINUTE
+        { sql_find_subtype(&$$, "sec_interval", 6, 0); }
+    | SQL_INTERVAL_DAY_TO_SECOND
+        { sql_find_subtype(&$$, "sec_interval", 7, 0); }
+    | SQL_INTERVAL_HOUR
+        { sql_find_subtype(&$$, "sec_interval", 8, 0); }
+    | SQL_INTERVAL_HOUR_TO_MINUTE
+        { sql_find_subtype(&$$, "sec_interval", 9, 0); }
+    | SQL_INTERVAL_HOUR_TO_SECOND
+        { sql_find_subtype(&$$, "sec_interval", 10, 0); }
+    | SQL_INTERVAL_MINUTE
+        { sql_find_subtype(&$$, "sec_interval", 11, 0); }
+    | SQL_INTERVAL_MINUTE_TO_SECOND
+        { sql_find_subtype(&$$, "sec_interval", 12, 0); }
+    | SQL_INTERVAL_SECOND
+        { sql_find_subtype(&$$, "sec_interval", 13, 0); }
+    | SQL_LONGVARBINARY
+        { sql_find_subtype(&$$, "blob", 0, 0); }
+    | SQL_LONGVARCHAR
+        { sql_find_subtype(&$$, "clob", 0, 0); }
+    | SQL_NUMERIC
+        { sql_find_subtype(&$$, "decimal", 18, 3); }
+    | SQL_REAL
+        { sql_find_subtype(&$$, "real", 0, 0); }
+    | SQL_SMALLINT
+        { sql_find_subtype(&$$, "smallint", 0, 0); }
+    | SQL_TIME
+        { sql_find_subtype(&$$, "time", 0, 0); }
+    | SQL_TIMESTAMP
+        { sql_find_subtype(&$$, "timestamp", 6, 0); }
+    | SQL_TINYINT
+        { sql_find_subtype(&$$, "tinyint", 0, 0); }
+    | SQL_VARBINARY
+        { sql_find_subtype(&$$, "blob", 0, 0); }
+    | SQL_VARCHAR
+        { sql_find_subtype(&$$, "clob", 0, 0); }
+    | SQL_WCHAR
+        { sql_find_subtype(&$$, "char", 1, 0); }
+    | SQL_WLONGVARCHAR
+        { sql_find_subtype(&$$, "clob", 0, 0); }
+    | SQL_WVARCHAR
+        { sql_find_subtype(&$$, "clob", 0, 0); }
+;
+
+odbc_tsi_qualifier:
+    SQL_TSI_SECOND
+        { $$ = isec; }
+    | SQL_TSI_MINUTE
+        { $$ = imin; }
+    | SQL_TSI_HOUR
+        { $$ = ihour; }
+    | SQL_TSI_DAY
+        { $$ = iday; }
+    | SQL_TSI_WEEK
+        { $$ = iweek; }
+    | SQL_TSI_MONTH
+        { $$ = imonth; }
+    | SQL_TSI_QUARTER
+        { $$ = iquarter; }
+    | SQL_TSI_YEAR
+        { $$ = iyear; }
+;
+
 %%
+
+
+static inline symbol*
+makeAtomNode(mvc *m, const char* typename, const char* val, unsigned int digits, unsigned int scale, bool bind) {
+    sql_subtype sub_t;
+    atom *a;
+    int sub_t_found = 0;
+    if (bind) {
+        sql_type* t = NULL;
+        if (!(t = mvc_bind_type(m, typename))) {
+            sqlformaterror(m, SQLSTATE(22000) "Type (%s) unknown", typename);
+            return NULL;
+        }
+        sql_init_subtype(&sub_t, t, 0, 0);
+    } else {
+        sub_t_found = sql_find_subtype(&sub_t, typename, digits, scale);
+    }
+    if ((!bind && !sub_t_found) || (a = atom_general(m->sa, &sub_t, val)) == NULL) {
+        sqlformaterror(m, SQLSTATE(22007) "Incorrect %s value (%s)", typename, val);
+        return NULL;
+    }
+    return _newAtomNode(a);
+}
+
 int find_subgeometry_type(mvc *m, char* geoSubType) {
 	int subType = 0;
 	if(strcmp(geoSubType, "point") == 0 )
@@ -6394,6 +6843,7 @@ char *token2string(tokens token)
 	SQL(IS_NULL);
 	SQL(JOIN);
 	SQL(LIKE);
+	SQL(LOGIN);
 	SQL(MAXVALUE);
 	SQL(MERGE);
 	SQL(MERGE_MATCH);

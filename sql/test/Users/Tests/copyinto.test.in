@@ -1,0 +1,97 @@
+statement ok
+CREATE TABLE t (i INT)
+
+statement ok
+COPY 2 RECORDS INTO t FROM r'$QTSTSRCDIR/copyfrom.csv' USING DELIMITERS ',', E'\n','"'
+
+statement ok
+CREATE USER copyuser WITH PASSWORD 'copyuser' name 'copyuser' schema sys
+
+@connection(id=usr, username=copyuser, password=copyuser)
+statement error 42000!SELECT: access denied for copyuser to table 'sys.t'
+SELECT * FROM t
+
+@connection(id=usr)
+statement error 42000!INSERT INTO: insufficient privileges for user 'copyuser' to insert into table 't'
+INSERT INTO t VALUES (888)
+
+@connection(id=usr)
+statement error 42000!COPY INTO: insufficient privileges for user 'copyuser' to copy into table 't'
+COPY 2 RECORDS INTO t FROM r'$QTSTSRCDIR/copyfrom.csv' USING DELIMITERS ',', E'\n','"'
+
+statement ok
+GRANT INSERT ON t TO copyuser
+
+@connection(id=usr)
+statement ok
+INSERT INTO t VALUES (888)
+
+@connection(id=usr)
+statement error 42000!COPY INTO: insufficient privileges: COPY INTO from file(s) requires database administrator rights, use 'COPY INTO "t" FROM file ON CLIENT' instead
+COPY 2 RECORDS INTO t FROM r'$QTSTSRCDIR/copyfrom.csv' USING DELIMITERS ',', E'\n','"'
+
+statement ok
+GRANT COPY FROM TO copyuser
+
+@connection(id=usr)
+statement ok
+COPY 2 RECORDS INTO t FROM r'$QTSTSRCDIR/copyfrom.csv' USING DELIMITERS ',', E'\n','"'
+
+statement ok
+REVOKE INSERT ON t FROM copyuser
+
+@connection(id=usr)
+statement error 42000!COPY INTO: insufficient privileges for user 'copyuser' to copy into table 't'
+COPY 2 RECORDS INTO t FROM r'$QTSTSRCDIR/copyfrom.csv' USING DELIMITERS ',', E'\n','"'
+
+statement ok
+GRANT INSERT ON t TO copyuser
+
+statement ok
+REVOKE COPY FROM FROM copyuser
+
+@connection(id=usr)
+statement error 42000!COPY INTO: insufficient privileges: COPY INTO from file(s) requires database administrator rights, use 'COPY INTO "t" FROM file ON CLIENT' instead
+COPY 2 RECORDS INTO t FROM r'$QTSTSRCDIR/copyfrom.csv' USING DELIMITERS ',', E'\n','"'
+
+statement ok
+GRANT SELECT ON t TO copyuser
+
+@connection(id=usr)
+query I nosort
+SELECT * FROM t
+----
+24
+42
+888
+24
+42
+
+@connection(id=usr)
+statement error 42000!COPY INTO: insufficient privileges: COPY INTO file requires database administrator rights, use 'COPY ... INTO file ON CLIENT' instead
+COPY SELECT * FROM t INTO r'$QTSTTRGDIR/copyinto.csv'
+
+statement ok
+GRANT COPY INTO TO copyuser
+
+@connection(id=usr)
+statement ok
+COPY SELECT * FROM t INTO r'$QTSTTRGDIR/copyinto.csv'
+
+statement ok
+REVOKE COPY INTO FROM copyuser
+
+@connection(id=usr)
+statement error 42000!COPY INTO: insufficient privileges: COPY INTO file requires database administrator rights, use 'COPY ... INTO file ON CLIENT' instead
+COPY SELECT * FROM t INTO r'$QTSTTRGDIR/copyinto.csv'
+
+statement ok
+GRANT COPY INTO TO copyuser
+
+statement ok
+REVOKE SELECT ON t FROM copyuser
+
+@connection(id=usr)
+statement error 42000!SELECT: access denied for copyuser to table 'sys.t'
+COPY SELECT * FROM t INTO r'$QTSTTRGDIR/copyinto.csv'
+

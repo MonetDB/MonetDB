@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 
 # skipif <system>
 # onlyif <system>
@@ -33,6 +35,7 @@ import MonetDBtesting.malmapi as malmapi
 import hashlib
 import re
 import sys
+import os
 import importlib
 import MonetDBtesting.utils as utils
 from pathlib import Path
@@ -665,10 +668,10 @@ class SQLLogic:
             if not line:
                 break
             if line.startswith('#'): # skip mal comments
-                self.writeline(line.rstrip('\n'))
+                self.writeline(line.rstrip())
                 continue
             if self.language == 'sql' and line.startswith('--'):
-                self.writeline(line.rstrip('\n'))
+                self.writeline(line.rstrip())
                 continue
             if line == '\n':
                 self.writeline()
@@ -678,23 +681,23 @@ class SQLLogic:
             if line.startswith('@connection'):
                 conn_params = self.parse_connection_string(line)
                 conn = self.get_connection(conn_params.get('conn_id')) or self.add_connection(**conn_params)
-                self.writeline(line)
+                self.writeline(line.rstrip())
                 line = self.readline()
-            words = line.split()
+            words = line.split(maxsplit=2)
             if not words:
                 continue
             while words[0] == 'skipif' or words[0] == 'onlyif':
-                if words[0] == 'skipif' and words[1] == 'MonetDB':
+                if words[0] == 'skipif' and words[1] in ('MonetDB', f'arch={os.uname().machine}'):
                     skipping = True
-                elif words[0] == 'onlyif' and words[1] != 'MonetDB':
+                elif words[0] == 'onlyif' and words[1] not in ('MonetDB', f'arch={os.uname().machine}'):
                     skipping = True
-                self.writeline(line)
+                self.writeline(line.rstrip())
                 line = self.readline()
-                words = line.split()
+                words = line.split(maxsplit=2)
             hashlabel = None
             if words[0] == 'hash-threshold':
                 self.threshold = int(words[1])
-                self.writeline(line)
+                self.writeline(line.rstrip())
                 self.writeline()
             elif words[0] == 'statement':
                 expected_err_code = None
@@ -703,10 +706,11 @@ class SQLLogic:
                 expectok = words[1] == 'ok'
                 if len(words) > 2:
                     if expectok:
-                        if words[2] == 'rowcount':
-                            expected_rowcount = int(words[3])
+                        rwords = words[2].split()
+                        if rwords[0] == 'rowcount':
+                            expected_rowcount = int(rwords[1])
                     else:
-                        err_str = " ".join(words[2:])
+                        err_str = words[2]
                         expected_err_code, expected_err_msg = utils.parse_mapi_err_msg(err_str)
                 statement = []
                 self.qline = self.line + 1
@@ -727,20 +731,26 @@ class SQLLogic:
                     self.writeline(' '.join(result))
                 else:
                     self.writeline(stline)
+                dostrip = True
                 for line in statement:
+                    if dostrip:
+                        line = line.rstrip()
                     self.writeline(line, replace=True)
+                    if dostrip and '<COPY_INTO_DATA>' in line:
+                        dostrip = False
                 self.writeline()
             elif words[0] == 'query':
                 columns = words[1]
                 pyscript = None
                 if len(words) > 2:
-                    sorting = words[2]  # nosort,rowsort,valuesort
+                    rwords = words[2].split()
+                    sorting = rwords[0]  # nosort,rowsort,valuesort
                     if sorting == 'python':
-                        pyscript = words[3]
-                        if len(words) > 4:
-                            hashlabel = words[4]
-                    elif len(words) > 3:
-                        hashlabel = words[3]
+                        pyscript = rwords[1]
+                        if len(rwords) > 2:
+                            hashlabel = rwords[2]
+                    elif len(rwords) > 1:
+                        hashlabel = rwords[1]
                 else:
                     sorting = 'nosort'
                 query = []
@@ -774,14 +784,14 @@ class SQLLogic:
                     result1, result2 = self.exec_query('\n'.join(query), columns, sorting, pyscript, hashlabel, nresult, hash, expected, conn=conn, verbose=verbose)
                     self.writeline(' '.join(result1))
                     for line in query:
-                        self.writeline(line, replace=True)
+                        self.writeline(line.rstrip(), replace=True)
                     self.writeline('----')
                     for line in result2:
                         self.writeline(line)
                 else:
-                    self.writeline(qrline)
+                    self.writeline(qrline.rstrip())
                     for line in query:
-                        self.writeline(line)
+                        self.writeline(line.rstrip())
                     self.writeline('----')
                     if hash:
                         self.writeline('{} values hashing to {}'.format(

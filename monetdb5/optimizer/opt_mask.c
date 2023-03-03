@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /* (c) Martin Kersten
@@ -36,7 +38,7 @@ OPTmaskImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(varused);
-		throw(MAL,"optimizer.deadcode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.mask", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	// Consolidate the actual need for variables
@@ -56,12 +58,18 @@ OPTmaskImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if(varused[k]) {
 				// we should actually postpone its reconstruction to JIT
 				r = newInstruction(mb, maskRef, umaskRef);
+				if (r == NULL) {
+					msg = createException(MAL, "optimizer.mask", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					break;
+				}
 				getArg(r,0) = k;
 				r= pushArgument(mb, r, varused[k]);
 				pushInstruction(mb,r);
 				varused[k] = 0;
 			}
 		}
+		if (msg)
+			break;
 		pushInstruction(mb, p);
 
 		if ( getModuleId(p) == algebraRef && (getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef)){
@@ -71,20 +79,24 @@ OPTmaskImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			// Inject a dummy pair, just based on :oid for now and later to be switched to :msk
 			q = newInstruction(mb, maskRef, maskRef);
+			if (q == NULL) {
+				msg = createException(MAL, "optimizer.mask", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				break;
+			}
 			setDestVar(q, newTmpVariable(mb, newBatType(TYPE_msk)));
 			setVarFixed(mb,getArg(q,0));
 			q= pushArgument(mb, q, getArg(p,0));
 			pushInstruction(mb,q);
 			varused[k] = getArg(q,0);
-			actions++;	
-		} 
+			actions++;
+		}
 	}
 
 	for(; i<slimit; i++)
 		if( old[i])
 			pushInstruction(mb, old[i]);
 	/* Defense line against incorrect plans */
-	if( actions > 0){
+	if( msg == MAL_SUCCEED && actions > 0){
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);

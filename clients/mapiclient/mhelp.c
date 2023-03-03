@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /**
@@ -313,20 +315,20 @@ SQLhelp sqlhelp1[] = {
 	{"DROP AGGREGATE",
 	 "",
 	 "DROP ALL AGGREGATE [ FUNCTION ] qname [ RESTRICT | CASCADE ]\n"
-	 "DROP AGGREGATE [ FUNCTION ] [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
-	 "param",
+	 "DROP AGGREGATE [ FUNCTION ] [ IF EXISTS ] qname [ '(' [ data_type [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
+	 NULL,
 	 NULL},
 	{"DROP FILTER FUNCTION",
 	 "",
 	 "DROP ALL FILTER [ FUNCTION ] qname [ RESTRICT | CASCADE ]\n"
-	 "DROP FILTER [ FUNCTION ] [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
-	 "param",
+	 "DROP FILTER [ FUNCTION ] [ IF EXISTS ] qname [ '(' [ data_type [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
+	 NULL,
 	 NULL},
 	{"DROP FUNCTION",
 	 "",
 	 "DROP ALL FUNCTION qname [ RESTRICT | CASCADE ]\n"
-	 "DROP FUNCTION [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
-	 "param",
+	 "DROP FUNCTION [ IF EXISTS ] qname [ '(' [ data_type [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
+	 NULL,
 	 NULL},
 	{"DROP INDEX",
 	 "",
@@ -336,14 +338,14 @@ SQLhelp sqlhelp1[] = {
 	{"DROP LOADER",
 	 "",
 	 "DROP ALL LOADER [ FUNCTION ] qname [ RESTRICT | CASCADE ]\n"
-	 "DROP LOADER [ FUNCTION ] [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
-	 "param",
+	 "DROP LOADER [ FUNCTION ] [ IF EXISTS ] qname [ '(' [ data_type [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
+	 NULL,
 	 NULL},
 	{"DROP PROCEDURE",
 	 "",
 	 "DROP ALL PROCEDURE qname [ RESTRICT | CASCADE ]\n"
-	 "DROP PROCEDURE [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
-	 "param",
+	 "DROP PROCEDURE [ IF EXISTS ] qname [ '(' [ data_type [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
+	 NULL,
 	 NULL},
 	{"DROP ROLE",
 	 "",
@@ -352,7 +354,7 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"DROP SCHEMA",
 	 "",
-	 "DROP SCHEMA [ IF EXISTS ] qname [ RESTRICT | CASCADE ]",
+	 "DROP SCHEMA [ IF EXISTS ] ident [ RESTRICT | CASCADE ]",
 	 NULL,
 	 NULL},
 	{"DROP SEQUENCE",
@@ -388,8 +390,8 @@ SQLhelp sqlhelp1[] = {
 	{"DROP WINDOW",
 	 "",
 	 "DROP ALL WINDOW [ FUNCTION ] qname [ RESTRICT | CASCADE ]\n"
-	 "DROP WINDOW [ FUNCTION ] [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
-	 "param",
+	 "DROP WINDOW [ FUNCTION ] [ IF EXISTS ] qname [ '(' [ data_type [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
+	 NULL,
 	 NULL},
 	{"EXECUTE",
 	 "Execute a prepared SQL statement with supplied parameter values",
@@ -692,7 +694,7 @@ SQLhelp sqlhelp2[] = {
 	 NULL,
 	 NULL},
 	{"ident",
-	 "An identifier. Use double quote's around the identifier name to include\n"
+	 "An identifier name. Use double quote's around the identifier name to include\n"
 	 "        mixed/upper case letters and/or special characters",
 	 NULL,
 	 NULL,

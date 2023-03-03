@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -27,33 +29,45 @@ if(P->typechk == TYPE_UNKNOWN){\
 }\
 pushInstruction(mb,P);
 
-#define casting(TPE)\
-			k= getArg(p,1);\
-			p->argc = p->retc;\
-			q= newInstruction(0,calcRef, TPE##Ref);\
-			setDestVar(q, newTmpVariable(mb, TYPE_##TPE));\
-			q = addArgument(mb,q,getArg(series[k],1));\
-			typeChecker(cntxt->usermodule, mb, q, 0, TRUE);\
-			p = addArgument(mb,p, getArg(q,0));\
-			pushInstruction(mb,q);\
-			q= newInstruction(0,calcRef,TPE##Ref);\
-			setDestVar(q, newTmpVariable(mb, TYPE_##TPE));\
-			q = addArgument(mb,q,getArg(series[k],2));\
-			pushInstruction(mb,q);\
-			typeChecker(cntxt->usermodule, mb, q, 0, TRUE);\
-			p = addArgument(mb,p, getArg(q,0));\
-			if( p->argc == 4){\
-				q= newInstruction(0,calcRef,TPE##Ref);\
-				setDestVar(q, newTmpVariable(mb, TYPE_##TPE));\
-				q = addArgument(mb,q,getArg(series[k],3));\
-				typeChecker(cntxt->usermodule, mb, q, 0, TRUE);\
-				p = addArgument(mb,p, getArg(q,0));\
-				pushInstruction(mb,q);\
-			}\
-			setModuleId(p,generatorRef);\
-			setFunctionId(p,parametersRef);\
-			series[getArg(p,0)] = p;\
-			pushInstruction(mb,p);
+#define casting(TPE)													\
+	k= getArg(p,1);														\
+	p->argc = p->retc;													\
+	q= newInstruction(0,calcRef, TPE##Ref);								\
+	if (q == NULL) {													\
+		msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+		break;															\
+	}																	\
+	setDestVar(q, newTmpVariable(mb, TYPE_##TPE));						\
+	q = pushArgument(mb,q,getArg(series[k],1));							\
+	typeChecker(cntxt->usermodule, mb, q, 0, TRUE);						\
+	p = pushArgument(mb,p, getArg(q,0));								\
+	pushInstruction(mb,q);												\
+	q= newInstruction(0,calcRef,TPE##Ref);								\
+	if (q == NULL) {													\
+		msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+		break;															\
+	}																	\
+	setDestVar(q, newTmpVariable(mb, TYPE_##TPE));						\
+	q = pushArgument(mb,q,getArg(series[k],2));							\
+	pushInstruction(mb,q);												\
+	typeChecker(cntxt->usermodule, mb, q, 0, TRUE);						\
+	p = pushArgument(mb,p, getArg(q,0));								\
+	if( p->argc == 4){													\
+		q= newInstruction(0,calcRef,TPE##Ref);							\
+		if (q == NULL) {												\
+			msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+			break;														\
+		}																\
+		setDestVar(q, newTmpVariable(mb, TYPE_##TPE));					\
+		q = pushArgument(mb,q,getArg(series[k],3));						\
+		typeChecker(cntxt->usermodule, mb, q, 0, TRUE);					\
+		p = pushArgument(mb,p, getArg(q,0));							\
+		pushInstruction(mb,q);											\
+	}																	\
+	setModuleId(p,generatorRef);										\
+	setFunctionId(p,parametersRef);										\
+	series[getArg(p,0)] = p;											\
+	pushInstruction(mb,p);
 
 str
 OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -101,7 +115,6 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	for( i=0; i < limit; i++){
 		p = old[i];
 		if (p->token == ENDsymbol){
-			pushInstruction(mb,p);
 			break;
 		}
 		if ( getModuleId(p) == generatorRef && getFunctionId(p) == seriesRef){
@@ -152,7 +165,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			pushInstruction(mb,p);
 		}
 	}
-	for (i++; i < limit; i++)
+	for (; i < limit; i++)
 		pushInstruction(mb, old[i]);
 	for (; i < slimit; i++) {
 		if (old[i])
