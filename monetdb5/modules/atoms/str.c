@@ -4785,6 +4785,66 @@ STRasciify(str *r, const str *s)
 #endif
 }
 
+static str
+STRreverse(str *ret, const str *arg)
+{
+	str src = *arg;
+	size_t len = strlen(src);
+	str dst = GDKmalloc(len + 1);
+	/* dst is a buffer of length larger than len (i.e. dst[len] exists),
+	   src is a UTF-8-encoded string of length exactly len bytes. */
+	if (dst == NULL)
+		throw(MAL, "str.reverse", MAL_MALLOC_FAIL);
+	dst[len] = 0;
+	if (strNil(src)) {
+		/* special case for nil:str */
+		assert(len == strlen(str_nil));
+		strcpy(dst, str_nil);
+		return MAL_SUCCEED;
+	}
+	/* All strings in MonetDB are encoded using UTF-8; we must
+	 * make sure that the reversed string is also encoded in valid
+	 * UTF-8, so we treat multibyte characters as single units */
+	while (*src) {
+		if ((*src & 0xF8) == 0xF0) {
+			/* 4 byte UTF-8 sequence */
+			assert(len >= 4);
+			dst[len - 4] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 3] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 2] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 1] = *src++;
+			len -= 4;
+		} else if ((*src & 0xF0) == 0xE0) {
+			/* 3 byte UTF-8 sequence */
+			assert(len >= 3);
+			dst[len - 3] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 2] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 1] = *src++;
+			len -= 3;
+		} else if ((*src & 0xE0) == 0xC0) {
+			/* 2 byte UTF-8 sequence */
+			assert(len >= 2);
+			dst[len - 2] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 1] = *src++;
+			len -= 2;
+		} else {
+			/* 1 byte UTF-8 "sequence" */
+			assert(len >= 1);
+			assert((*src & 0x80) == 0);
+			dst[--len] = *src++;
+		}
+	}
+	assert(len == 0);
+	*ret = dst;
+	return MAL_SUCCEED;
+}
+
 #include "mel.h"
 mel_func str_init_funcs[] = {
  command("str", "str", STRtostr, false, "Noop routine.", args(1,2, arg("",str),arg("s",str))),
@@ -4828,7 +4888,8 @@ mel_func str_init_funcs[] = {
  command("str", "repeat", STRrepeat, false, "", args(1,3, arg("",str),arg("s2",str),arg("c",int))),
  command("str", "space", STRspace, false, "", args(1,2, arg("",str),arg("l",int))),
  command("str", "epilogue", STRepilogue, false, "", args(1,1, arg("",void))),
- command("str", "asciify", STRasciify, false, "Transform in str from UTF8 to ASCII", args(1, 2, arg("out",str), arg("in",str))),
+ command("str", "asciify", STRasciify, false, "Transform string from UTF8 to ASCII", args(1, 2, arg("out",str), arg("in",str))),
+ command("str", "reverse", STRreverse, false, "Reverse a string", args(1,2, arg("out",str),arg("in",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"
