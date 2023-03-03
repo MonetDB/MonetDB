@@ -31,53 +31,35 @@ typedef enum inttype {
 	insec
 } itype;
 
-int parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek, int *sp, int *ep);
+extern int parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek, int *sp, int *ep);
 /* returns 0 for month intervals,
  *         1 for sec intervals,
  * 	   in both cases sk/ek contain the start and end qualifiers
  *         <0 for errors */
 
-lng qualifier2multiplier( int sk );
+extern lng qualifier2multiplier( int sk );
 /* returns the multiplier for the given interval qualifier */
 
-int parse_interval(mvc *sql, lng sign, const char *str, int sk, int ek, int sp, int ep, lng *i);
+extern int parse_interval(mvc *sql, lng sign, const char *str, int sk, int ek, int sp, int ep, lng *i);
 /* returns 0 for month intervals and value in val,
  *         1 for sec intervals and value in val,
  *         <0 for errors */
 
-int interval_from_str(const char *str, int d, int p, lng *val);
+extern int interval_from_str(const char *str, int d, int p, lng *val);
 /* returns 0 for month intervals and value in val,
  *         1 for sec intervals and value in val,
  *         <0 for errors */
 
-char *datetime_field(itype field);
+extern char *datetime_field(itype field);
 /* returns the datetime_field string representation */
 
-int inttype2digits( int sk, int ek );
-int digits2sk( int digits);
-int digits2ek( int digits );
-int
-parse_time(const char* val,
-		unsigned int* hr,
-		unsigned int* mn,
-		unsigned int* sc,
-		unsigned long* fr,
-		unsigned int* pr);
-unsigned int
-get_time_precision(const char* val);
-int
-parse_timestamp(const char* val,
-	   	unsigned int* yr,
-	   	unsigned int* mt,
-	   	unsigned int* dy,
-	   	unsigned int* hr,
-	   	unsigned int* mn,
-	   	unsigned int* sc,
-	   	unsigned long* fr,
-	   	unsigned int* pr);
-unsigned int
-get_timestamp_precision(const char* val);
-int
-process_odbc_interval(mvc *sql, itype interval, int val, sql_subtype *t, lng *i);
+extern int inttype2digits( int sk, int ek );
+extern int digits2sk( int digits);
+extern int digits2ek( int digits );
+
+extern unsigned int get_time_precision(const char* val);
+extern unsigned int get_timestamp_precision(const char* val);
+
+extern int process_odbc_interval(mvc *sql, itype interval, int val, sql_subtype *t, lng *i);
 
 #endif /*_SQL_DATETIME_H_*/

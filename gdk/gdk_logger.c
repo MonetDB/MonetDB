@@ -2835,17 +2835,14 @@ new_logfile(logger *lg, stream* output_log, ulng id)
 {
 	assert(!LOG_DISABLED(lg));
 
-	MT_lock_set(&lg->rotation_lock);
 	assert(lg->flushing_output_log);
 	lg->flushing_output_log = false;
 	if (lg->id != id) {
 		/* lg->output_log was rotated during the flush */
 		assert(lg->output_log != output_log && lg->id > id);
 		close_stream(output_log);
-		MT_lock_unset(&lg->rotation_lock);
 		return GDK_SUCCEED;
 	}
-	MT_lock_unset(&lg->rotation_lock);
 
 	const lng log_large = (GDKdebug & FORCEMITOMASK)?LOG_MINI:LOG_LARGE;
 
@@ -2854,7 +2851,6 @@ new_logfile(logger *lg, stream* output_log, ulng id)
 	if (p == -1)
 		return GDK_FAIL;
 	if (((!lg->pending || !lg->pending->next) && lg->drops > 100000) || p > log_large || (lg->end*1024) > log_large) {
-		log_lock(lg);
 		if (ATOMIC_GET(&lg->refcount) == 1) {
 			lg->id++;
 			log_close_output(lg);
@@ -2865,7 +2861,6 @@ new_logfile(logger *lg, stream* output_log, ulng id)
 			// Delegate wal rotation to next writer or last flusher.
 			lg->request_rotation = true;
 		}
-		log_unlock(lg);
 	}
 	return result;
 }
@@ -2944,6 +2939,8 @@ number_in_flush_queue(logger *lg, unsigned int number)
 static void
 log_tdone(logger *lg, ulng commit_ts)
 {
+	MT_lock_set(&lg->rotation_lock);
+	log_lock(lg);
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_tdone " LLFMT "\n", commit_ts);
 
@@ -2954,6 +2951,8 @@ log_tdone(logger *lg, ulng commit_ts)
 	ulng id = lg->id;
 	if (lg->flushing_output_log && new_logfile(lg, output_log, id) != GDK_SUCCEED)
 		GDKfatal("Could not create new log file\n");
+	log_unlock(lg);
+	MT_lock_unset(&lg->rotation_lock);
 }
 
 gdk_return
