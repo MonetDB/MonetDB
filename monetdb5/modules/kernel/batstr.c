@@ -4917,11 +4917,16 @@ BATSTRasciify(bat *ret, bat *bid)
 	BATiter bi;
 	BUN start, end;
 	size_t prev_out_len = 0, in_len = 0, out_len = 0;
+	str s = NULL, out = NULL, in = NULL;
+	int i = -1;
+	str	error[3] = { GDK_EXCEPTION,
+					 MAL_MALLOC_FAIL,
+					 "ICONV: string conversion failed" };
 	iconv_t cd;
 	const str f = "UTF8", t = "ASCII//TRANSLIT";
 	/* man iconv; /TRANSLIT */
 	if ((cd = iconv_open(t, f)) == (iconv_t)(-1))
-		throw(MAL, "str.asciify", "ICONV: cannot convert from (%s) to (%s).", f, t);
+		throw(MAL, "batstr.asciify", "ICONV: cannot convert from (%s) to (%s).", f, t);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batstr.asciify", RUNTIME_OBJECT_MISSING);
 	if ((bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT)) == NULL) {
@@ -4930,57 +4935,57 @@ BATSTRasciify(bat *ret, bat *bid)
 	}
 	bi = bat_iterator(b);
 	for (start = 0, end = BATcount(b); start < end; start++) {
-		str r = NULL, out = NULL, in = (str) BUNtail(bi, start);
+		in = (str) BUNtail(bi, start);
 		if (strNil(in)) {
-			if (BUNappend(bn, str_nil, false) != GDK_SUCCEED)
-				goto bail_append_fail;
+			if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
+				i = 2;
+				goto bail;
+			}
 			bn->tnonil = 0;
 			bn->tnil = 1;
 			continue;
 		}
 		in_len = strlen(in), out_len = in_len + 1;
 		if (out == NULL) {
-			if ((out = GDKmalloc(out_len)) == NULL)
-				goto bail_alloc_fail;
+			if ((out = GDKmalloc(out_len)) == NULL) {
+				i = 1;
+				goto bail;
+			}
 			prev_out_len = out_len;
 		}
 		else if (out_len > prev_out_len) {
-			if ((out = GDKrealloc(r, out_len)) == NULL)
-				goto bail_alloc_fail;
+			if ((out = GDKrealloc(s, out_len)) == NULL) {
+				i = 1;
+				goto bail;
+			}
 			prev_out_len = out_len;
 		}
-		r = out;
+		s = out;
 		if (iconv(cd, &in, &in_len, &out, &out_len) == (size_t) - 1) {
 			GDKfree(out);
-			r = NULL;
-			iconv_close(cd);
-			bat_iterator_end(&bi);
-			BBPunfix(b->batCacheid);
-			BBPunfix(bn->batCacheid);
-			throw(MAL, "str.asciify", "ICONV: string conversion failed from (%s) to (%s)", f, t);
+			s = NULL;
+			i = 2;
+			goto bail;
 		}
 		*out = '\0';
-		if (BUNappend(bn, r, false) != GDK_SUCCEED)
-			goto bail_append_fail;
+		if (BUNappend(bn, s, false) != GDK_SUCCEED) {
+			i = 0;
+			goto bail;
+		}
 	}
 	bat_iterator_end(&bi);
+	iconv_close(cd);
 	BATsetcount(bn, BATcount(b));
 	BBPunfix(b->batCacheid);
 	*ret = bn->batCacheid;
 	BBPkeepref(bn);
 	return MAL_SUCCEED;
- bail_append_fail:
+ bail:
 	iconv_close(cd);
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "batstr.asciify", GDK_EXCEPTION);
- bail_alloc_fail:
-	iconv_close(cd);
-	bat_iterator_end(&bi);
-	BBPunfix(b->batCacheid);
-	BBPunfix(bn->batCacheid);
-	throw(MAL, "batstr.asciify", MAL_MALLOC_FAIL);
+	throw(MAL, "batstr.asciify", "%s", error[i]);
 #else
 	throw(MAL, "str.asciify", "ICONV library not available.");
 #endif
