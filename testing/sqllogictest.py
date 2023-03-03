@@ -35,6 +35,7 @@ import MonetDBtesting.malmapi as malmapi
 import hashlib
 import re
 import sys
+import os
 import importlib
 import MonetDBtesting.utils as utils
 from pathlib import Path
@@ -686,9 +687,9 @@ class SQLLogic:
             if not words:
                 continue
             while words[0] == 'skipif' or words[0] == 'onlyif':
-                if words[0] == 'skipif' and words[1] == 'MonetDB':
+                if words[0] == 'skipif' and words[1] in ('MonetDB', f'arch={os.uname().machine}'):
                     skipping = True
-                elif words[0] == 'onlyif' and words[1] != 'MonetDB':
+                elif words[0] == 'onlyif' and words[1] not in ('MonetDB', f'arch={os.uname().machine}'):
                     skipping = True
                 self.writeline(line.rstrip())
                 line = self.readline()
