@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /* multi version catalog */
@@ -406,9 +408,6 @@ mvc_init(int debug, store_type store_tpe, int ro, int su, const char *initpasswd
 		mvc_exit(store);
 		return NULL;
 	}
-
-	// set SQL user callbacks in MAL authorization
-	sql_set_user_api_hooks(m);
 	mvc_destroy(m);
 	return store;
 }
@@ -931,6 +930,7 @@ mvc_bind_table(mvc *m, sql_schema *s, const char *tname)
 	(void) m;
 	if (!t)
 		return NULL;
+
 	TRC_DEBUG(SQL_TRANS, "Bind table: %s.%s\n", s->base.name, tname);
 	return t;
 }
@@ -1292,22 +1292,29 @@ mvc_create_remote(sql_table **t, mvc *m, sql_schema *s, const char *name, int pe
 	return res;
 }
 
+static str
+remote_drop(mvc *m, sqlid id)
+{
+	int log_res = 0;
+	sql_trans *tr = m->session->tr;
+	sqlstore *store = tr->store;
+	sql_schema *sys = find_sql_schema(tr, "sys");
+	sql_table *remote_user_info = find_sql_table(tr, sys, REMOTE_USER_INFO);
+	sql_column *remote_user_info_id = find_sql_column(remote_user_info, "table_id");
+	oid rid = store->table_api.column_find_row(tr, remote_user_info_id, &id, NULL);
+	if (is_oid_nil(rid) || (log_res = store->table_api.table_delete(tr, remote_user_info, rid)) != 0)
+		throw(SQL, "sql.drop_table", SQLSTATE(42000) "Drop table failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+	return MAL_SUCCEED;
+}
+
 str
 mvc_drop_table(mvc *m, sql_schema *s, sql_table *t, int drop_action)
 {
+	char *msg = NULL;
 	TRC_DEBUG(SQL_TRANS, "Drop table: %s %s\n", s->base.name, t->base.name);
 
-	if (isRemote(t)) {
-		str AUTHres;
-
-		char *qualified_name = sa_strconcat(m->ta, sa_strconcat(m->ta, t->s->base.name, "."), t->base.name);
-		if (!qualified_name)
-			throw(SQL, "sql.mvc_drop_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		AUTHres = AUTHdeleteRemoteTableCredentials(qualified_name);
-		sa_reset(m->ta);
-		if(AUTHres != MAL_SUCCEED)
-			return AUTHres;
-	}
+	if (isRemote(t) && (msg = remote_drop(m, t->base.id)) != NULL)
+		return msg;
 
 	switch (sql_trans_drop_table(m->session->tr, s, t->base.name, drop_action ? DROP_CASCADE_START : DROP_RESTRICT)) {
 		case -1:

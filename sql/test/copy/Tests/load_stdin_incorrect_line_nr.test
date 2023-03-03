@@ -21,7 +21,7 @@ select * from sys.rejects
 ----
 2
 1
-line 2 field isanumber 'int' expected in 'bla'
+'int' expected in 'bla'
 bla@
 
 statement ok

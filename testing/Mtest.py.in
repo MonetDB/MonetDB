@@ -1,10 +1,12 @@
 #!@PYTHON@
 
+# SPDX-License-Identifier: MPL-2.0
+#
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 
 #TODO:
 #=====
@@ -156,10 +158,6 @@ if os.path.exists('/usr/bin/coredumpctl'):
         except ValueError:
             # if we can't raise the limit, just forget it
             pass
-
-def ErrExit(msg):
-    print(msg, file=sys.stderr, flush=True)
-    sys.exit(1)
 
 def _configure(str):
     # expand configure variables in str and return result
@@ -387,17 +385,12 @@ CONDITIONALS = {
     'HAVE_GETENTROPY'      : "@HAVE_GETENTROPY_FALSE@",
     'NATIVE_WIN32'         : "@NATIVE_WIN32_FALSE@",
     'NOT_WIN32'            : "@NOT_WIN32_FALSE@",
-    'NOT_ASSERT'           : "@NOT_ASSERT_FALSE@",
     # unknown at compile time;
     # hence, we set them only at runtime in main() below
     'KNOWNFAIL'            : False, # skip on release branch when not in testweb
     'HAVE_MONETDBJDBC_JAR' : False,
-    'HAVE_JAVA'            : False,
-    'HAVE_JAVAJDBC'        : False,
-    'HAVE_JAVAMEROCONTROL' : False,
     'HAVE_JDBCCLIENT_JAR'  : False,
     'HAVE_JDBCTESTS_JAR'   : False,
-    'HAVE_JDBCTESTS_DIR'   : False,
     'HAVE_JDBCTESTS'       : False,
 #    'HAVE_LIBPANDAS3'      : False,
     'HAVE_LIBSCIPY3'       : False,
@@ -1353,7 +1346,7 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                 else:
                     vaultopt = []
                 if not oneserver:
-                    pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + vaultopt + mserver5_opts, open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'))
+                    pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1] +['--dbpath=%s' % LogDBdir] + vaultopt + mserver5_opts), open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'), dbg=env.get('DBG'))
                     pSrvr.LaunchIt()
                     pSrvr.terminate()
         if not os.path.exists(TSTTRGDIR):
@@ -1399,7 +1392,8 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                                         openutf8(os.path.join(TSTTRGDIR, 'SingleServer.err'), 'a'),
                                         0,
                                         pollfile,
-                                        inmem=inmem)
+                                        inmem=inmem,
+                                        dbg=env.get('DBG'))
                     os.chdir(TSTTRGDIR)
                     pSrvr.LaunchIt()
                     if pSrvr.port is None:
@@ -2572,7 +2566,7 @@ def killProc(proc, outfile = None, cmd = None):
         killchildren(proc.pid)
 
 class ServerClass:
-    def __init__(self, cmd, TestOut, TestErr, TimeOut, pollfile, inmem=False):
+    def __init__(self, cmd, TestOut, TestErr, TimeOut, pollfile, inmem=False, dbg=None):
         self.proc = None
         self.timer = None
         self.outfile = TestOut
@@ -2583,6 +2577,7 @@ class ServerClass:
         self.timeout = TimeOut
         self.pollfile = pollfile
         self.inmem = inmem
+        self.dbg = dbg
 
     def poll(self):
         return self.proc.poll()
@@ -2612,25 +2607,31 @@ class ServerClass:
         if procdebug:
             print('LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(self.cmd))
         setpgrp = True
-        outfile = self.outfile
+        stdin = open(os.devnull)
+        stdout = self.outfile
+        stderr = self.errfile
+        cmd = self.cmd
         if self.inmem:
-            outfile = process.PIPE
+            stdout = process.PIPE
         elif self.pollfile:
             try:
                 os.unlink(self.pollfile)
             except OSError:
                 pass
+            if self.dbg:
+                stdin = stdout = stderr = None
+                cmd = splitcommand(self.dbg) + self.cmd
         else:
-            outfile = process.PIPE
+            stdout = process.PIPE
         if os.name == "nt":
-            proc = process.Popen(self.cmd, stdin=open(os.devnull), stdout=outfile,
-                                 stderr=self.errfile, text=True,
+            proc = process.Popen(cmd, stdin=stdin, stdout=stdout,
+                                 stderr=stderr, text=True,
                                  creationflags=process.CREATE_NEW_PROCESS_GROUP)
         else:
-            proc = process.Popen(self.cmd, stdin=open(os.devnull), stdout=outfile,
-                                 stderr=self.errfile, text=True)
+            proc = process.Popen(cmd, stdin=stdin, stdout=stdout,
+                                 stderr=stderr, text=True)
         # maybe buffer output as it comes to avoid deadlock
-        if outfile == process.PIPE:
+        if stdout == process.PIPE:
             proc.stdout = process._BufferedPipe(proc.stdout)
         if self.errfile == process.PIPE:
             proc.stderr = process._BufferedPipe(proc.stderr)
@@ -2829,7 +2830,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                 if os.path.isfile(TST + '.options5'):
                     Srvr.extend(openutf8(TST + '.options5').read().split())
                 Srvr.extend(mserver5_opts)
-                pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'))
+                pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'), dbg=env.get('DBG'))
                 pSrvr.LaunchIt()
                 if pSrvr.port is None:
                     print('\nFailed to start server.\n')
@@ -2925,7 +2926,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                 pass
                         defines = []
                         if lang == 'sql' and os.path.exists(TST+'.test.in'):
-                            for key in ('TSTDATAPATH', 'TSTSRCBASE', 'TSTSRCDIR', 'TSTTRGDIR', 'UTSTSRCDIR'):
+                            for key in ('TSTDATAPATH', 'TSTSRCBASE', 'TSTSRCDIR', 'TSTTRGDIR', 'UTSTSRCDIR', 'TSTDB', 'MAPIPORT'):
                                 if key in env:
                                     defines.append('{}={}'.format(key, env[key]))
                         try:
@@ -3132,9 +3133,9 @@ def CheckClassPath() :
         cp = ''
         cpx = ''
     JARS = {
-        'HAVE_MONETDBJDBC_JAR' : re.compile('^monetdb-jdbc-[0-9]\.[0-9]+(-[a-f0-9]{12})?\.jre[0-9]+\.jar$'),
-        'HAVE_JDBCCLIENT_JAR'  : re.compile('^jdbcclient\.jre[0-9]+\.jar$'),
-        'HAVE_JDBCTESTS_JAR'   : re.compile('^jdbctests\.jar$'),
+        'HAVE_MONETDBJDBC_JAR' : re.compile(r'^monetdb-jdbc-[0-9]\.[0-9]+(-[a-f0-9]{12})?\.jre[0-9]+\.jar$'),
+        'HAVE_JDBCCLIENT_JAR'  : re.compile(r'^jdbcclient\.jre[0-9]+\.jar$'),
+        'HAVE_JDBCTESTS_JAR'   : re.compile(r'^jdbctests\.jar$'),
     }
     # check for known JARs in CLASSPATH files
     for p in cp.split(os.pathsep):
@@ -3161,18 +3162,12 @@ def CheckClassPath() :
             for f in listdir(d):
                 p = os.path.join(d,f)
                 if os.path.isfile(p):
-                    if f == 'BugConcurrent_clients_SF_1504657.class':
-                        C = 'HAVE_JDBCTESTS_DIR'
-                        if not CONDITIONALS.get(C):
-                            cp = cp + os.pathsep + d
-                            CONDITIONALS[C] = True
-                    else:
-                        C = 'HAVE_%s' % f.upper().replace('.','_')
-                        if C not in JARS:
-                            C = 'HAVE_MONETDBJDBC_JAR'
-                        if not CONDITIONALS.get(C) and JARS[C].match(f):
-                            cp = cp + os.pathsep + p
-                            CONDITIONALS[C] = True
+                    C = 'HAVE_%s' % f.upper().replace('.','_')
+                    if C not in JARS:
+                        C = 'HAVE_MONETDBJDBC_JAR'
+                    if not CONDITIONALS.get(C) and JARS[C].match(f):
+                        cp = cp + os.pathsep + p
+                        CONDITIONALS[C] = True
     if cp:
         os.environ['CLASSPATH'] = cp
     if verbosity > 1:
@@ -3184,8 +3179,7 @@ def CheckClassPath() :
         if miss:
             Warn('Could not find%s in\nCLASSPATH="%s"' % (miss,cpx))
     if CONDITIONALS.get('HAVE_MONETDBJDBC_JAR') and \
-       ( CONDITIONALS.get('HAVE_JDBCTESTS_JAR') or
-         CONDITIONALS.get('HAVE_JDBCTESTS_DIR') ):
+       CONDITIONALS.get('HAVE_JDBCTESTS_JAR'):
         CONDITIONALS['HAVE_JDBCTESTS'] = True
 ### CheckClassPath() #
 
@@ -3454,7 +3448,6 @@ def main(argv) :
     parser.add_argument('--SQLDUMP', action='store', dest='SQLDUMP', metavar='<sql-dump program>', help='default: %s' % dft['SQLDUMP'])
     parser.add_argument('--RCLIENT', action='store', dest='RCLIENT', metavar='<R program>', help='default: %s' % dft['RCLIENT'])
     parser.add_argument('--RUBYCLIENT', action='store', dest='RUBYCLIENT', metavar='<ruby program>', help='default: %s' % dft['RUBYCLIENT'])
-    parser.add_argument('--concurrent', action='store_true', dest='concurrent', help='There are concurrent Mtest runs using the same MonetDB installation')
     parser.add_argument('--dbg', action='store', dest='dbg', metavar='<debugger/valgrind>', help="debugger to start before each server")
     parser.add_argument('--mserver_set', action='append', dest='mserver_set', metavar='<mserver5_option>', help="This passes a single set to the server")
     parser.add_argument('--loadmodule', action='append', dest='loadmodule', metavar='<module_name>', help="Pass on loadmodule to mserver5")
@@ -3511,9 +3504,6 @@ def main(argv) :
     a = opts.gdk_dbfarm
     if a is not None:
         env['GDK_DBFARM'] = a
-    a = opts.concurrent
-    if a:
-        env['CONCURRENT'] = a
     a = opts.dbg
     if a is not None:
         env['DBG'] = a
@@ -3656,10 +3646,6 @@ def main(argv) :
         env['setMONETDB_MOD_PATH'] = eval(dft['setMONETDB_MOD_PATH'])
     else:
         env['setMONETDB_MOD_PATH'] = ''
-    if 'DBG' in env:
-        env['setDBG'] = env['DBG']
-    else:
-        env['setDBG'] = ''
 
     #TODO:
     ## in case of inconsistencies, try to fallback to "save" settings
@@ -3845,8 +3831,8 @@ def main(argv) :
             SOCK = ""
 
         exe = {}
-        exe['mserver5']       = CheckExec('mserver5')     , '%s mserver5 --debug=%s --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=0 %s %s' % \
-                                                               (env['setDBG'], env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], SOCK, not nomito and '--forcemito' or '')
+        exe['mserver5']       = CheckExec('mserver5')     , 'mserver5 --debug=%s --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=0 %s %s' % \
+                                                               (env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], SOCK, not nomito and '--forcemito' or '')
         exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , '%s %s' % (env['RUBYCLIENT'], '${PORT}')
         exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s --host=%s --port=%s' % (env['MALCLIENT'], HOST, '${PORT}')
         exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, '${PORT}')

@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -124,7 +126,7 @@ replace_bat(old_logger *old_lg, logger *lg, int colid, bat oldcolid, BAT *newcol
 			lg->cnt++;
 		}
 	}
-	return GDK_SUCCEED;
+	return rc;
 }
 #endif
 
@@ -2000,6 +2002,8 @@ bl_postversion(void *Store, void *Lg)
 		{
 			/* new BOOLEAN column sys.functions.semantics */
 			b = log_temp_descriptor(log_find_bat(lg, 2017)); /* sys.functions.id */
+			if (b == NULL)
+				return GDK_FAIL;
 			BAT *sem = BATconstant(b->hseqbase, TYPE_bit, &(bit){1}, BATcount(b), PERSISTENT);
 			bat_destroy(b);
 			if (sem == NULL)

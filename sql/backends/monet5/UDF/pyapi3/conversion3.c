@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -600,9 +602,9 @@ PyObject *PyDict_CheckForConversion(PyObject *pResult, int expected_columns,
 		if (object == NULL) {
 			msg = createException(
 				MAL, "pyapi3.eval",
-				SQLSTATE(PY000) "Error converting dict return value \"%s\": %s.",
+				SQLSTATE(PY000) "Error converting dict return value \"%s\": %s",
 				retcol_names[i], getExceptionMessage(*return_message));
-			GDKfree(*return_message);
+			freeException(*return_message);
 			goto wrapup;
 		}
 		if (PyList_CheckExact(object)) {
@@ -684,7 +686,7 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 			}
 		} else {
 			// if it is not a scalar, we check if it is a single array
-			bool IsSingleArray = TRUE;
+			bool IsSingleArray = true;
 			PyObject *data = pResult;
 			if (PyType_IsNumpyMaskedArray(data)) {
 				data = PyObject_GetAttrString(pResult, "data");
@@ -696,9 +698,9 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 			}
 			if (PyType_IsNumpyArray(data)) {
 				if (PyArray_NDIM((PyArrayObject *)data) != 1) {
-					IsSingleArray = FALSE;
+					IsSingleArray = false;
 				} else if (PyArray_SIZE((PyArrayObject *)data) == 0) {
-					IsSingleArray = TRUE;
+					IsSingleArray = true;
 				} else {
 					pColO = PyArray_GETITEM(
 						(PyArrayObject *)data,
@@ -707,7 +709,7 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 				}
 			} else if (PyList_Check(data)) {
 				if (PyList_Size(data) == 0) {
-					IsSingleArray = TRUE;
+					IsSingleArray = true;
 				} else {
 					pColO = PyList_GetItem(data, 0);
 					IsSingleArray = PyType_IsPyScalar(pColO);
@@ -841,7 +843,7 @@ bool PyObject_PreprocessObject(PyObject *pResult, PyReturn *pyreturn_values,
 		// we will fill this now
 		PyReturn *ret = &pyreturn_values[i];
 
-		ret->multidimensional = FALSE;
+		ret->multidimensional = false;
 		// There are three possibilities (we have ensured this right after
 		// executing the Python call by calling PyObject_CheckForConversion)
 		// 1: The top level result object is a PyList or Numpy Array containing
@@ -871,7 +873,7 @@ bool PyObject_PreprocessObject(PyObject *pResult, PyReturn *pyreturn_values,
 			if (PyArray_NDIM((PyArrayObject *)data) != 1) {
 				// If it is a multidimensional numpy array, we have to convert
 				// the i'th dimension to a NUMPY array object
-				ret->multidimensional = TRUE;
+				ret->multidimensional = true;
 				ret->result_type =
 					PyArray_DESCR((PyArrayObject *)data)->type_num;
 			} else {
@@ -902,10 +904,10 @@ bool PyObject_PreprocessObject(PyObject *pResult, PyReturn *pyreturn_values,
 			}
 		}
 	}
-	return TRUE;
+	return true;
 wrapup:
 	*return_message = msg;
-	return FALSE;
+	return false;
 }
 
 BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
@@ -1024,7 +1026,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 				ele_blob->nitems = blob_len;
 				memcpy(ele_blob->data, memcpy_data, blob_len);
 			}
-			if (BUNappend(b, ele_blob, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(b, ele_blob, false) != GDK_SUCCEED) {
 				if (ret->result_type == NPY_OBJECT) {
 					Py_XDECREF(pickle_module);
 					Python_ReleaseGIL(gstate);

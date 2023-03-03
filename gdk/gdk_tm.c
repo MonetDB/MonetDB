@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 /*
@@ -81,18 +83,34 @@ epilogue(int cnt, bat *subcommit, bool locked)
 			}
 		}
 		b = BBP_desc(bid);
-		if (b) {
+		if (b && b->ttype >= 0 && ATOMvarsized(b->ttype)) {
 			MT_lock_set(&b->theaplock);
-			if (b->oldtail) {
-				ATOMIC_AND(&b->oldtail->refs, ~DELAYEDREMOVE);
-				HEAPdecref(b->oldtail, true);
-				b->oldtail = NULL;
+			ValPtr p = BATgetprop_nolock(b, (enum prop_t) 20);
+			if (p != NULL) {
+				Heap *tail = p->val.pval;
+				assert(b->oldtail != NULL);
+				BATrmprop_nolock(b, (enum prop_t) 20);
+				if (b->oldtail != (Heap *) 1)
+					HEAPdecref(b->oldtail, true);
+				if (tail == b->theap ||
+				    strcmp(tail->filename,
+					   b->theap->filename) == 0) {
+					/* no upgrades done since saving
+					 * started */
+					b->oldtail = NULL;
+					HEAPdecref(tail, false);
+				} else {
+					b->oldtail = tail;
+					ATOMIC_OR(&tail->refs, DELAYEDREMOVE);
+				}
 			}
 			MT_lock_unset(&b->theaplock);
 		}
 		if (!locked)
 			MT_lock_set(&GDKswapLock(bid));
 		if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
+			if (!locked)
+				MT_lock_unset(&GDKswapLock(bid));
 			b = BBPquickdesc(bid);
 
 			/* the unloaded ones are deleted without
@@ -100,11 +118,12 @@ epilogue(int cnt, bat *subcommit, bool locked)
 			if (b) {
 				BATdelete(b);
 			}
-			BBPclear(bid, false);
+			BBPclear(bid); /* also clears BBP_status */
+		} else {
+			BBP_status_off(bid, BBPDELETED | BBPSWAPPED | BBPNEW);
+			if (!locked)
+				MT_lock_unset(&GDKswapLock(bid));
 		}
-		BBP_status_off(bid, BBPDELETED | BBPSWAPPED | BBPNEW);
-		if (!locked)
-			MT_lock_unset(&GDKswapLock(bid));
 	}
 	GDKclrerr();
 }

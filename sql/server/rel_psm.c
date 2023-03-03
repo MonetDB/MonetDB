@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1239,8 +1241,8 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	mvc *sql = query->sql;
 	const char *triggerschema = qname_schema(qname);
 	const char *triggername = qname_schema_object(qname);
-	const char *sname = qname_schema(tqname);
-	const char *tname = qname_schema_object(tqname);
+	char *sname = tqname? qname_schema(tqname) : NULL;
+	char *tname = tqname? qname_schema_object(tqname) : NULL;
 	int instantiate = (sql->emode == m_instantiate);
 	int create = (!instantiate && sql->emode != m_deps), event, orientation;
 	sql_schema *ss = cur_schema(sql), *old_schema = cur_schema(sql);
@@ -1274,12 +1276,16 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	if (create) {
 		if (triggerschema)
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: a trigger will be placed on the respective table's schema, specify the schema on the table reference, ie ON clause instead", base);
-		if (!(t = mvc_bind_table(sql, ss, tname)))
-			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "%s: no such table %s%s%s'%s'", base, sname ? "'":"", sname ? sname : "", sname ? "'.":"", tname);
+		if (tname) {
+			if (!(t = mvc_bind_table(sql, ss, tname)))
+				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "%s: no such table %s%s%s'%s'", base, sname ? "'":"", sname ? sname : "", sname ? "'.":"", tname);
+			if (isView(t))
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot create trigger on view '%s'", base, tname);
+			sname = t->s->base.name;
+			tname = t->base.name;
+		}
 		if (!mvc_schema_privs(sql, ss))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), ss->base.name);
-		if (isView(t))
-			return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot create trigger on view '%s'", base, tname);
 		if (!replace && mvc_bind_trigger(sql, ss, triggername) != NULL)
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: name '%s' already in use", base, triggername);
 		switch (trigger_event->token) {
@@ -1307,6 +1313,10 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 					return sql_error(sql, 02, SQLSTATE(42000) "%s: old and new names cannot be the same", base);
 				event = 2;
 			}	break;
+			case SQL_LOGIN:
+				// TODO any checks here?
+				event = LOGIN_EVENT;
+				break;
 			default:
 				return sql_error(sql, 02, SQLSTATE(42000) "%s: invalid event: %s", base, token2string(trigger_event->token));
 		}
@@ -1314,21 +1324,24 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		assert(triggered_action->h->type == type_int);
 		orientation = triggered_action->h->data.i_val;
 		q = query_cleaned(sql->ta, QUERY(sql->scanner));
-		return rel_create_trigger(sql, t->s->base.name, t->base.name, triggername, time, orientation, event, old_name, new_name, condition, q, replace);
+		return rel_create_trigger(sql, sname, tname, triggername, time, orientation, event, old_name, new_name, condition, q, replace);
 	}
 
 	if (!instantiate) {
-		t = mvc_bind_table(sql, ss, tname);
 		if (!stack_push_frame(sql, "%OLD-NEW"))
 			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		/* we need to add the old and new tables */
-		if (new_name && !_stack_push_table(sql, new_name, t)) {
-			stack_pop_frame(sql);
-			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		if (old_name && !_stack_push_table(sql, old_name, t)) {
-			stack_pop_frame(sql);
-			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if (tname) {
+			if (!(t = mvc_bind_table(sql, ss, tname)))
+				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "%s: no such table %s%s%s'%s'", base, sname ? "'":"", sname ? sname : "", sname ? "'.":"", tname);
+			/* we need to add the old and new tables */
+			if (new_name && !_stack_push_table(sql, new_name, t)) {
+				stack_pop_frame(sql);
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			if (old_name && !_stack_push_table(sql, old_name, t)) {
+				stack_pop_frame(sql);
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 		}
 	}
 	if (condition) {

@@ -1,9 +1,11 @@
 /*
+ * SPDX-License-Identifier: MPL-2.0
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -915,7 +917,7 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 				list_append(gexps, e);
 			} else {
 				const char *ername = exp_relname(e), *nername = exp_relname(ne), *ename = exp_name(e), *nename = exp_name(ne);
-				if ((ername && !nername) || (!ername && nername) || 
+				if ((ername && !nername) || (!ername && nername) ||
 					(ername && nername && strcmp(ername,nername) != 0) || strcmp(ename,nename) != 0)
 					list_append(gexps, e);
 			}
@@ -1813,7 +1815,7 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 		}
 		break;
 	case e_atom:
-		if (e->f && exp_deps(sql, e->f, refs, l) != 0)
+		if (e->f && exps_deps(sql, e->f, refs, l) != 0)
 			return -1;
 		break;
 	case e_column:
@@ -2193,6 +2195,7 @@ rel_exp_visitor_bottomup(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter
 }
 
 static list *exps_rel_visitor(visitor *v, list *exps, rel_rewrite_fptr rel_rewriter, bool topdown);
+static list *exps_exps_rel_visitor(visitor *v, list *lists, rel_rewrite_fptr rel_rewriter, bool topdown);
 
 static sql_exp *
 exp_rel_visitor(visitor *v, sql_exp *e, rel_rewrite_fptr rel_rewriter, bool topdown)
@@ -2211,7 +2214,7 @@ exp_rel_visitor(visitor *v, sql_exp *e, rel_rewrite_fptr rel_rewriter, bool topd
 	case e_aggr:
 	case e_func:
 		if (e->r) /* rewrite rank */
-			if ((e->r = exps_rel_visitor(v, e->r, rel_rewriter, topdown)) == NULL)
+			if ((e->r = exps_exps_rel_visitor(v, e->r, rel_rewriter, topdown)) == NULL)
 				return NULL;
 		if (e->l)
 			if ((e->l = exps_rel_visitor(v, e->l, rel_rewriter, topdown)) == NULL)
@@ -2274,6 +2277,17 @@ exps_rel_visitor(visitor *v, list *exps, rel_rewrite_fptr rel_rewriter, bool top
 		if (n->data && (n->data = exp_rel_visitor(v, n->data, rel_rewriter, topdown)) == NULL)
 			return NULL;
 	return exps;
+}
+
+static list *
+exps_exps_rel_visitor(visitor *v, list *lists, rel_rewrite_fptr rel_rewriter, bool topdown)
+{
+	if (list_empty(lists))
+		return lists;
+	for (node *n = lists->h; n; n = n->next)
+		if (n->data && (n->data = exps_rel_visitor(v, n->data, rel_rewriter, topdown)) == NULL)
+			return NULL;
+	return lists;
 }
 
 static inline sql_rel *
