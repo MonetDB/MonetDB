@@ -139,7 +139,7 @@ parquet_add_types(mvc *sql, sql_subfunc *f, char *filename)
   GError *table_error = NULL;
   GArrowTable *table = gparquet_arrow_file_reader_read_table(file->reader, &table_error);
 
-  if(table_error->message) {
+  if(table_error) {
     throw(SQL, SQLSTATE(42000), "parquet" RUNTIME_LOAD_ERROR); // TODO: different error.
   }
 
@@ -153,8 +153,9 @@ parquet_add_types(mvc *sql, sql_subfunc *f, char *filename)
       GArrowType type = garrow_chunked_array_get_value_type(array);
       char* st = parquet_type_map(type);
 
+      printf("%s\n", st);
+
       if(st) {
-        /// add to list.
         	sql_subtype *t = sql_bind_subtype(sql->sa, st, 8, 0);
 
           sa_list_append(sql->sa, types, t);
