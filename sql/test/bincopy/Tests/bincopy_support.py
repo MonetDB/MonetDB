@@ -192,35 +192,38 @@ NULL_BLOBS = ("""
 CREATE TABLE foo(id INT NOT NULL, b BLOB);
 COPY BINARY INTO foo(id, b) FROM @ints@, @null_blobs@ @ON@;
 COPY SELECT id, b FROM foo INTO BINARY @>ints@, @>null_blobs@ @ON@;
-SELECT
-    (SELECT COUNT(*) FROM foo WHERE (b IS NULL) <> (id % 3 = 2)) AS nulls_wrong,
-    (SELECT COUNT(*) FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)) AS lengths_wrong,
-    (SELECT b FROM foo WHERE id = 6) AS blob5
-    ;
-""", ["0,0,D3D2D1D3D2D1"])
+
+SELECT 'nulls', COUNT(*), NULL FROM foo WHERE (b IS NULL) <> (id % 3 = 2)
+UNION
+SELECT 'lengths', COUNT(*), NULL FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)
+UNION
+SELECT 'blob5', NULL, b FROM foo WHERE id = 6;
+""", ["nulls,0,", "lengths,0,", "blob5,,D3D2D1D3D2D1" ])
 
 NULL_BLOBS_LE = ("""
 CREATE TABLE foo(id INT NOT NULL, b BLOB);
 COPY LITTLE ENDIAN BINARY INTO foo(id, b) FROM @le_ints@, @le_null_blobs@ @ON@;
 COPY SELECT id, b FROM foo INTO LITTLE ENDIAN BINARY @>le_ints@, @>le_null_blobs@ @ON@;
-SELECT
-    (SELECT COUNT(*) FROM foo WHERE (b IS NULL) <> (id % 3 = 2)) AS nulls_wrong,
-    (SELECT COUNT(*) FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)) AS lengths_wrong,
-    (SELECT b FROM foo WHERE id = 6) AS blob5
-    ;
-""", ["0,0,D3D2D1D3D2D1"])
+
+SELECT 'nulls', COUNT(*), NULL FROM foo WHERE (b IS NULL) <> (id % 3 = 2)
+UNION
+SELECT 'lengths', COUNT(*), NULL FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)
+UNION
+SELECT 'blob5', NULL, b FROM foo WHERE id = 6;
+""", ["nulls,0,", "lengths,0,", "blob5,,D3D2D1D3D2D1" ])
 
 
 NULL_BLOBS_BE = ("""
 CREATE TABLE foo(id INT NOT NULL, b BLOB);
 COPY BIG ENDIAN BINARY INTO foo(id, b) FROM @be_ints@, @be_null_blobs@ @ON@;
 COPY SELECT id, b FROM foo INTO BIG ENDIAN BINARY @>be_ints@, @>be_null_blobs@ @ON@;
-SELECT
-    (SELECT COUNT(*) FROM foo WHERE (b IS NULL) <> (id % 3 = 2)) AS nulls_wrong,
-    (SELECT COUNT(*) FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)) AS lengths_wrong,
-    (SELECT b FROM foo WHERE id = 6) AS blob5
-    ;
-""", ["0,0,D3D2D1D3D2D1"])
+
+SELECT 'nulls', COUNT(*), NULL FROM foo WHERE (b IS NULL) <> (id % 3 = 2)
+UNION
+SELECT 'lengths', COUNT(*), NULL FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)
+UNION
+SELECT 'blob5', NULL, b FROM foo WHERE id = 6;
+""", ["nulls,0,", "lengths,0,", "blob5,,D3D2D1D3D2D1" ])
 
 
 
