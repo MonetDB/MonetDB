@@ -9,14 +9,12 @@
 #include "parquet.h"
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
-#include "mal_runtime.h"
 #include "mal_parser.h"
 #include "mal_builder.h"
 #include "mal_namespace.h"
 #include "mal_exception.h"
 #include "mal_debugger.h"
 #include "mal_linker.h"
-#include "mal_utils.h"
 #include "sql_types.h"
 
 #include <unistd.h>
@@ -33,7 +31,7 @@ parquet_open_file(char* filename)
     // TODO: probably replace this with GDKfdlocate located in gdk_storage.h
     if (access(filename, F_OK) != 0) {
       reader = NULL;
-    } 
+    }
     else {
       reader = gparquet_arrow_file_reader_new_path(filename, &g_error);
     }
@@ -49,18 +47,18 @@ static char* parquet_type_map(GArrowType type) {
     switch(type) {
       case GARROW_TYPE_NA:
         return  "NA";
-        
+
       case GARROW_TYPE_BOOLEAN:
         return  "BOOL";
-        
+
       case GARROW_TYPE_UINT8:
       case GARROW_TYPE_INT8:
         return  "TINYINT";
-        
+
       case GARROW_TYPE_INT16:
       case GARROW_TYPE_UINT16:
         return  "SMALLINT";
-        
+
       case GARROW_TYPE_UINT32:
       case GARROW_TYPE_INT32:
         return  "INT";
@@ -68,34 +66,34 @@ static char* parquet_type_map(GArrowType type) {
       case GARROW_TYPE_UINT64:
       case GARROW_TYPE_INT64:
         return  "BIGINT";
-        
+
       case GARROW_TYPE_FLOAT:
       case GARROW_TYPE_HALF_FLOAT:
         return  "FLOAT";
-        
+
       case GARROW_TYPE_DOUBLE:
         return  "DOUBLE";
-        
+
       case GARROW_TYPE_STRING:
         return  "STRING";
-        
+
       case GARROW_TYPE_BINARY:
       case GARROW_TYPE_FIXED_SIZE_BINARY:
         return  "BLOB";
-        
+
       case GARROW_TYPE_DATE32:
       case GARROW_TYPE_DATE64:
         return  "DATE";
-        
+
       case GARROW_TYPE_TIMESTAMP:
       case GARROW_TYPE_TIME32:
       case GARROW_TYPE_TIME64:
         return  "TIMESTAMP";
-        
+
       case GARROW_TYPE_DECIMAL128:
       case GARROW_TYPE_DECIMAL256:
         return  "DECIMAL";
-        
+
       case GARROW_TYPE_LIST:
       case GARROW_TYPE_LARGE_LIST:
       case GARROW_TYPE_STRUCT:
@@ -107,14 +105,14 @@ static char* parquet_type_map(GArrowType type) {
       case GARROW_TYPE_FIXED_SIZE_LIST:
       case GARROW_TYPE_DURATION:
         return NULL;
-        
-        
+
+
       case GARROW_TYPE_LARGE_STRING:
         return  "TEXT";
-        
+
       case GARROW_TYPE_LARGE_BINARY:
         return  "Large binary";
-        
+
       ///
       /// TODO: figure out what this should be.
       ///
