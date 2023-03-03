@@ -4933,30 +4933,20 @@ BATSTRasciify(bat *ret, bat *bid)
 		str r = NULL, out = NULL, in = (str) BUNtail(bi, start);
 		if (strNil(in)) {
 			if (BUNappend(bn, str_nil, false) != GDK_SUCCEED)
-				goto bailout;
+				goto bail_append_fail;
 			bn->tnonil = 0;
 			bn->tnil = 1;
 			continue;
 		}
 		in_len = strlen(in), out_len = in_len + 1;
 		if (out == NULL) {
-			if ((out = GDKmalloc(out_len)) == NULL) {
-				iconv_close(cd);
-				bat_iterator_end(&bi);
-				BBPunfix(b->batCacheid);
-				BBPunfix(bn->batCacheid);
-				throw(MAL, "batstr.asciify", MAL_MALLOC_FAIL);
-			}
+			if ((out = GDKmalloc(out_len)) == NULL)
+				goto bail_alloc_fail;
 			prev_out_len = out_len;
 		}
 		else if (out_len > prev_out_len) {
-			if ((out = GDKrealloc(r, out_len)) == NULL) {
-				iconv_close(cd);
-				bat_iterator_end(&bi);
-				BBPunfix(b->batCacheid);
-				BBPunfix(bn->batCacheid);
-				throw(MAL, "batstr.asciify", MAL_MALLOC_FAIL);
-			}
+			if ((out = GDKrealloc(r, out_len)) == NULL)
+				goto bail_alloc_fail;
 			prev_out_len = out_len;
 		}
 		r = out;
@@ -4971,7 +4961,7 @@ BATSTRasciify(bat *ret, bat *bid)
 		}
 		*out = '\0';
 		if (BUNappend(bn, r, false) != GDK_SUCCEED)
-			goto bailout;
+			goto bail_append_fail;
 	}
 	bat_iterator_end(&bi);
 	BATsetcount(bn, BATcount(b));
@@ -4979,12 +4969,18 @@ BATSTRasciify(bat *ret, bat *bid)
 	*ret = bn->batCacheid;
 	BBPkeepref(bn);
 	return MAL_SUCCEED;
- bailout:
+ bail_append_fail:
 	iconv_close(cd);
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "batstr.asciify", GDK_EXCEPTION);
+ bail_alloc_fail:
+	iconv_close(cd);
+	bat_iterator_end(&bi);
+	BBPunfix(b->batCacheid);
+	BBPunfix(bn->batCacheid);
+	throw(MAL, "batstr.asciify", MAL_MALLOC_FAIL);
 #else
 	throw(MAL, "str.asciify", "ICONV library not available.");
 #endif
