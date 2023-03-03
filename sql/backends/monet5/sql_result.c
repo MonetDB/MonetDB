@@ -1888,7 +1888,7 @@ mvc_export_error(backend *be, stream *s, int err_code)
 }
 
 static ssize_t
-align_dump(stream *s, uint64_t *pos, unsigned int alignment)
+align_dump(stream *s, uint64_t pos, unsigned int alignment)
 {
 	uint64_t a = (uint64_t)alignment;
 	// must be a power of two
@@ -1896,8 +1896,11 @@ align_dump(stream *s, uint64_t *pos, unsigned int alignment)
 	assert((a & (a-1)) == 0);
 
 	static char zeroes[32] = { 0 };
-	uint64_t gap = (-*pos) % a;
-	return mnstr_write(s, zeroes, 1, gap);
+#ifdef _MSC_VER
+#pragma warning(suppress:4146)
+#endif
+	uint64_t gap = (-pos) % a;
+	return mnstr_write(s, zeroes, 1, (size_t)gap);
 }
 
 
@@ -1962,7 +1965,7 @@ mvc_export_bin_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 	mnstr_printf(countstream, "&6 %d %d " BUNFMT " " BUNFMT "\n", res_id, res->nr_cols, end_row - offset, offset);
 
 	for (int i = 0; i < res->nr_cols; i++) {
-		align_dump(countstream, &byte_count, 32); // 32 looks nice in tcpflow
+		align_dump(countstream, byte_count, 32); // 32 looks nice in tcpflow
 		struct bindump_record *info = &colinfo[i];
 		info->start = byte_count;
 		str msg = dump_binary_column(info->type_rec, info->bat, offset, end_row - offset, false, countstream);
@@ -1977,7 +1980,7 @@ mvc_export_bin_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 
 	assert(byte_count > 0);
 
-	align_dump(countstream, &byte_count, 32);
+	align_dump(countstream, byte_count, 32);
 	toc_pos = byte_count;
 	for (int i = 0; i < res->nr_cols; i++) {
 		struct bindump_record *info = &colinfo[i];
