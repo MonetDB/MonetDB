@@ -1,0 +1,102 @@
+statement ok
+start transaction
+
+statement ok
+create schema foo
+
+statement ok
+create user u1 with password '1' name 'u1' schema foo
+
+statement ok
+create user u2 with password '2' name 'u2' schema foo
+
+statement ok
+create table foo.tab1 (col1 int, col2 int)
+
+statement ok
+create table foo.tab2 (col1 int, col2 int)
+
+statement ok
+insert into foo.tab1 values (1, 1)
+
+statement ok
+insert into foo.tab2 values (2, 2)
+
+statement ok
+create view foo.v1(col1,col2) as (select col1, col2 from foo.tab1)
+
+statement ok
+create view foo.v2(col1,col2) as (select v1.col1 + v1.col2, v1.col2 + 10 from foo.v1, foo.tab2)
+
+statement ok
+commit
+
+@connection(id=1, username=u1, password=1)
+statement error 42000!SELECT: access denied for u1 to view 'foo.v1'
+SELECT "col1" FROM "foo"."v1"
+
+@connection(id=1)
+statement error 42000!SELECT: access denied for u1 to view 'foo.v1'
+SELECT "col2" FROM "foo"."v1"
+
+@connection(id=1)
+statement error 42000!SELECT: access denied for u1 to table 'foo.tab1'
+SELECT "col1" FROM "foo"."tab1"
+
+statement ok
+grant select ("col1") ON "foo"."v1" TO u1
+
+statement ok
+grant select ("col1") ON "foo"."v2" TO u2
+
+@connection(id=2, username=u1, password=1)
+query I nosort
+SELECT "col1" FROM "foo"."v1"
+----
+1
+
+@connection(id=2)
+statement error 42000!SELECT: identifier 'col2' unknown
+SELECT "col2" FROM "foo"."v1"
+
+@connection(id=2)
+statement error 42000!SELECT: access denied for u1 to table 'foo.tab1'
+SELECT "col1" FROM "foo"."tab1"
+
+@connection(id=u2, username=u2, password=2)
+query I nosort
+SELECT "col1" FROM "foo"."v2"
+----
+2
+
+@connection(id=u2)
+statement error 42000!SELECT: identifier 'col2' unknown
+SELECT "col2" FROM "foo"."v2"
+
+@connection(id=u2)
+statement error 42000!SELECT: access denied for u2 to view 'foo.v1'
+SELECT "col1" FROM "foo"."v1"
+
+@connection(id=u2)
+statement error 42000!SELECT: access denied for u2 to table 'foo.tab1'
+SELECT "col1" FROM "foo"."tab1"
+
+@connection(id=u2)
+statement error 42000!SELECT: access denied for u2 to table 'foo.tab2'
+SELECT "col1" FROM "foo"."tab2"
+
+statement ok
+start transaction
+
+statement ok
+drop user u1
+
+statement ok
+drop user u2
+
+statement ok
+drop schema foo cascade
+
+statement ok
+commit
+
