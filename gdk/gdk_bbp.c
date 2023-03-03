@@ -2423,7 +2423,7 @@ maybeextend(Thread t) {
 			i++;
 		}
 		BBP_free = BBP_next(cf);
-		BBP_free_count -= FREE_LIST_CHUNK_SIZE;
+		BBP_free_count -= i;
 		MT_lock_unset(&GDKcacheLock);
 		BBP_next(cf) = 0;
 		t->free = ocf;
@@ -2435,7 +2435,7 @@ maybeextend(Thread t) {
 	bat size = (bat) ATOMIC_GET(&BBPsize);
 
 	/* if the common pool has no more space, extend it */
-	if (size + FREE_LIST_CHUNK_SIZE > BBPlimit) {
+	if (size + FREE_LIST_CHUNK_SIZE >= BBPlimit) {
 		/* extend the common pool */
 		gdk_return r = BBPextend(size + FREE_LIST_CHUNK_SIZE);
 		if (r != GDK_SUCCEED) {
@@ -2583,10 +2583,9 @@ BBPuncacheit(bat i, bool unloaddesc)
 static inline void
 BBPhandover(Thread t, bat nr)
 {
+	bat fnr = nr;
 	bat first = t->free;
 	bat last = first;
-	t->stat_free_count -= nr;
-	BBP_free_count += nr;
 
 	bat i = first;
 	while (nr--) {
@@ -2594,11 +2593,13 @@ BBPhandover(Thread t, bat nr)
 		i = BBP_next(i);
 	}
 	t->free = i;
+	t->stat_free_count -= fnr;
 	assert((t->free && t->stat_free_count) || (!t->free && !t->stat_free_count));
 
 	MT_lock_set(&GDKcacheLock);
 	BBP_next(last) = BBP_free;
 	BBP_free = first;
+	BBP_free_count += fnr;
 	MT_lock_unset(&GDKcacheLock);
 }
 
