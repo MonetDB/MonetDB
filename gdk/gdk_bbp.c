@@ -339,7 +339,7 @@ BBPunlock(void)
 
 	for (i = BBP_BATMASK; i >= 0; i--)
 		MT_lock_unset(&GDKswapLock(i));
-	MT_lock_set(&GDKcacheLock);
+	MT_lock_unset(&GDKcacheLock);
 	locked_by = 0;
 	BBPtmunlock();
 }
