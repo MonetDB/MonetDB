@@ -555,8 +555,34 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, sql_exp *e, list *r
 	return NULL;
 }
 
+static sql_rel *
+rel_file_loader(mvc *sql, list *exps, list *tl, char *tname)
+{
+	sql_subfunc *f = NULL;
+	bool found = false;
+
+	if ((f = bind_func_(sql, NULL, "file_loader", tl, F_UNION, false, &found))) {
+		list *nexps = exps;
+		if (list_empty(tl) || f->func->vararg || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1))) {
+			list *res_exps = sa_list(sql->sa);
+			if (list_length(exps) == 1 && f && f->func->varres && strlen(f->func->mod) == 0 && strlen(f->func->imp) == 0) {
+				sql_exp *file = exps->h->data;
+				char *err = file_loader_add_table_column_types(sql, f, file, res_exps, tname);
+				if (err)
+					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: file_loader function type resolutions failed '%s'", err);
+			}
+			sql_exp *e = exp_op(sql->sa, nexps, f);
+			sql_rel *rel = rel_table_func(sql->sa, NULL, e, res_exps, TABLE_PROD_FUNC);
+			if (rel)
+				rel = rel_project(sql->sa, rel, res_exps);
+			return rel;
+		}
+	}
+	return NULL;
+}
+
 sql_exp *
-find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sql_ftype type, sql_rel **rel, char *tname)
+find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sql_ftype type)
 {
 	bool found = false;
 	list *ff = NULL;
@@ -564,23 +590,6 @@ find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sq
 	int i = 0, *scores, nfunc;
 
 	assert(type == F_UNION || type == F_LOADER);
-	if ((f = bind_func_(sql, sname, fname, tl, type, false, &found))) {
-		list *nexps = exps;
-		if (list_empty(tl) || f->func->vararg || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1))) {
-			list *res_exps = sa_list(sql->sa);
-			if (list_length(exps) == 1 && f && f->func->varres && strlen(f->func->mod) == 0 && strlen(f->func->imp) == 0 && strcmp(fname, "file_loader") == 0) {
-				sql_exp *file = exps->h->data;
-				char *err = file_loader_add_table_column_types(sql, f, file, res_exps, tname);
-				if (err)
-					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: file_loader function type resolutions failed '%s'", err);
-			}
-			sql_exp *e = exp_op(sql->sa, nexps, f);
-			*rel = rel_table_func(sql->sa, NULL, e, res_exps, TABLE_PROD_FUNC);
-			*rel = rel_project(sql->sa, *rel, res_exps);
-			return e;
-		}
-		found = false;
-	}
 	sql->session->status = 0; /* reset error */
 	sql->errstr[0] = '\0';
 	if (list_empty(tl) || !(ff = sql_find_funcs(sql, sname, fname, list_length(tl), type, false)) || list_empty(ff)) {
@@ -708,7 +717,9 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 	else
 		tname = make_label(sql->sa, ++sql->label);
 
-	if (!(e = find_table_function(sql, sname, fname, list_empty(exps) ? NULL : exps, tl, F_UNION, &rel, tname)))
+	if (!sname && strcmp(fname, "file_loader") == 0) {
+		rel = rel_file_loader(sql, exps, tl, tname);
+	} else if (!(e = find_table_function(sql, sname, fname, list_empty(exps) ? NULL : exps, tl, F_UNION)))
 		return NULL;
 
 	if (!rel) {
@@ -6330,7 +6341,7 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 	}
 
 	sql_exp *e = NULL;
-	if (!(e = find_table_function(sql, sname, fname, exps, tl, F_LOADER, NULL, NULL)))
+	if (!(e = find_table_function(sql, sname, fname, exps, tl, F_LOADER)))
 		return NULL;
 	sql_subfunc *sf = e->f;
 	if (sq) {
