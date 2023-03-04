@@ -35,10 +35,15 @@ import MonetDBtesting.malmapi as malmapi
 import hashlib
 import re
 import sys
+import platform
 import importlib
 import MonetDBtesting.utils as utils
 from pathlib import Path
 from typing import Optional
+
+architecture = platform.machine()
+if architecture == 'AMD64':     # Windows :-(
+    architecture = 'x86_64'
 
 skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 
@@ -686,9 +691,9 @@ class SQLLogic:
             if not words:
                 continue
             while words[0] == 'skipif' or words[0] == 'onlyif':
-                if words[0] == 'skipif' and words[1] == 'MonetDB':
+                if words[0] == 'skipif' and words[1] in ('MonetDB', f'arch={architecture}'):
                     skipping = True
-                elif words[0] == 'onlyif' and words[1] != 'MonetDB':
+                elif words[0] == 'onlyif' and words[1] not in ('MonetDB', f'arch={architecture}'):
                     skipping = True
                 self.writeline(line.rstrip())
                 line = self.readline()
