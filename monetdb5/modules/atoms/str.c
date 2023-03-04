@@ -63,7 +63,7 @@
 #include "monetdb_config.h"
 #include "str.h"
 #include <string.h>
-#if HAVE_ICONV
+#ifdef HAVE_ICONV
 #include <iconv.h>
 #endif
 
@@ -4751,7 +4751,7 @@ STRspace(str *res, const int *ll)
 static str
 STRasciify(str *r, const str *s)
 {
-#if HAVE_ICONV
+#ifdef HAVE_ICONV
 	/* Handle NULL and return early */
 	if (strNil(*s)) {
 		if ((*r = GDKstrdup(str_nil)) == NULL)
