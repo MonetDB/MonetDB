@@ -532,7 +532,7 @@ nary_function_arg_types_2str(mvc *sql, list* types, int N)
  */
 
 static char *
-file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, sql_exp *e)
+file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, sql_exp *e, list *res_exps, char *tname)
 {
 	if (!exp_is_atom(e))
 		return "Filename missing";
@@ -548,7 +548,7 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, sql_exp *e)
 	file_loader_t *fl = fl_find(ext);
 	/* TODO add errors on missing file loader */
 	if (fl) {
-		 str err = fl->add_types(sql, f, filename); /* TODO check for errors */
+		 str err = fl->add_types(sql, f, filename, res_exps, tname); /* TODO check for errors */
 		 if (err)
 			return err;
 	}
@@ -556,7 +556,7 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, sql_exp *e)
 }
 
 sql_exp *
-find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sql_ftype type)
+find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sql_ftype type, sql_rel **rel, char *tname)
 {
 	bool found = false;
 	list *ff = NULL;
@@ -567,13 +567,17 @@ find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sq
 	if ((f = bind_func_(sql, sname, fname, tl, type, false, &found))) {
 		list *nexps = exps;
 		if (list_empty(tl) || f->func->vararg || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1))) {
+			list *res_exps = sa_list(sql->sa);
 			if (list_length(exps) == 1 && f && f->func->varres && strlen(f->func->mod) == 0 && strlen(f->func->imp) == 0 && strcmp(fname, "file_loader") == 0) {
 				sql_exp *file = exps->h->data;
-				char *err = file_loader_add_table_column_types(sql, f, file);
+				char *err = file_loader_add_table_column_types(sql, f, file, res_exps, tname);
 				if (err)
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: file_loader function type resolutions failed '%s'", err);
 			}
-			return exp_op(sql->sa, nexps, f);
+			sql_exp *e = exp_op(sql->sa, nexps, f);
+			*rel = rel_table_func(sql->sa, NULL, e, res_exps, TABLE_PROD_FUNC);
+			*rel = rel_project(sql->sa, *rel, res_exps);
+			return e;
 		}
 		found = false;
 	}
@@ -698,39 +702,43 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		}
 	}
 
-	if (!(e = find_table_function(sql, sname, fname, list_empty(exps) ? NULL : exps, tl, F_UNION)))
-		return NULL;
-	rel = sq;
-
+	rel = NULL;
 	if (ast->data.lval->t->type == type_symbol && ast->data.lval->t->data.sym)
 		tname = ast->data.lval->t->data.sym->data.lval->h->data.sval;
 	else
 		tname = make_label(sql->sa, ++sql->label);
 
-	/* column or table function */
-	sf = e->f;
-	if (e->type != e_func || sf->func->type != F_UNION)
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' does not return a table", exp_func_name(e));
+	if (!(e = find_table_function(sql, sname, fname, list_empty(exps) ? NULL : exps, tl, F_UNION, &rel, tname)))
+		return NULL;
 
-	if (sq) {
-		for (node *n = sq->exps->h, *m = sf->func->ops->h ; n && m ; n = n->next, m = m->next) {
-			sql_exp *e = (sql_exp*) n->data;
-			sql_arg *a = (sql_arg*) m->data;
-			if (!exp_subtype(e) && rel_set_type_param(sql, &(a->type), sq, e, 0) < 0)
-				return NULL;
+	if (!rel) {
+		rel = sq;
+
+		/* column or table function */
+		sf = e->f;
+		if (e->type != e_func || sf->func->type != F_UNION)
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' does not return a table", exp_func_name(e));
+
+		if (sq) {
+			for (node *n = sq->exps->h, *m = sf->func->ops->h ; n && m ; n = n->next, m = m->next) {
+				sql_exp *e = (sql_exp*) n->data;
+				sql_arg *a = (sql_arg*) m->data;
+				if (!exp_subtype(e) && rel_set_type_param(sql, &(a->type), sq, e, 0) < 0)
+					return NULL;
+			}
 		}
-	}
 
-	/* for each column add table.column name */
-	exps = new_exp_list(sql->sa);
-	for (m = sf->func->res->h; m; m = m->next) {
-		sql_arg *a = m->data;
-		sql_exp *e = exp_column(sql->sa, tname, a->name, &a->type, CARD_MULTI, 1, 0, 0);
+		/* for each column add table.column name */
+		exps = new_exp_list(sql->sa);
+		for (m = sf->func->res->h; m; m = m->next) {
+			sql_arg *a = m->data;
+			sql_exp *e = exp_column(sql->sa, tname, a->name, &a->type, CARD_MULTI, 1, 0, 0);
 
-		set_basecol(e);
-		append(exps, e);
+			set_basecol(e);
+			append(exps, e);
+		}
+		rel = rel_table_func(sql->sa, rel, e, exps, (sq)?TABLE_FROM_RELATION:TABLE_PROD_FUNC);
 	}
-	rel = rel_table_func(sql->sa, rel, e, exps, (sq)?TABLE_FROM_RELATION:TABLE_PROD_FUNC);
 	if (ast->data.lval->t->type == type_symbol && ast->data.lval->t->data.sym && ast->data.lval->t->data.sym->data.lval->h->next->data.lval) {
 		rel = rel_table_optname(sql, rel, ast->data.lval->t->data.sym, refs);
 	} else if (refs) { /* if this relation is under a FROM clause, check for duplicate names */
@@ -6322,7 +6330,7 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 	}
 
 	sql_exp *e = NULL;
-	if (!(e = find_table_function(sql, sname, fname, exps, tl, F_LOADER)))
+	if (!(e = find_table_function(sql, sname, fname, exps, tl, F_LOADER, NULL, NULL)))
 		return NULL;
 	sql_subfunc *sf = e->f;
 	if (sq) {

@@ -13,7 +13,7 @@
 #include "sql_mvc.h"
 
 /* TODO think of set of file names */
-typedef str (*fl_add_types_fptr)(mvc *sql, sql_subfunc *f, char *filename);
+typedef str (*fl_add_types_fptr)(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *name);
 typedef int (*fl_load_fptr)(mvc *sql, sql_subfunc *f, char *filename);
 
 typedef struct file_loader_t {
