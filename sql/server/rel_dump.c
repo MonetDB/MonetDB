@@ -1930,7 +1930,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 
 				if (!mvc_bind_schema(sql, sname))
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "No such schema '%s'\n", sname);
-				if (!(tudf = find_table_function(sql, sname, tname, list_empty(inputs) ? NULL : inputs, list_empty(inputs) ? NULL : exp_types(sql->sa, inputs), F_UNION, NULL, NULL)))
+				if (!(tudf = find_table_function(sql, sname, tname, list_empty(inputs) ? NULL : inputs, list_empty(inputs) ? NULL : exp_types(sql->sa, inputs), F_UNION)))
 					return NULL;
 				sf = tudf->f;
 				if (tudf->type != e_func || sf->func->type != F_UNION)
