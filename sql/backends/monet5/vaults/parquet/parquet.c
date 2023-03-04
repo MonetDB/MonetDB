@@ -5,6 +5,7 @@
 
 #include "monetdb_config.h"
 #include "rel_file_loader.h"
+#include "rel_exp.h"
 
 #include "parquet.h"
 #include "mal_instruction.h"
@@ -75,7 +76,7 @@ static char* parquet_type_map(GArrowType type) {
         return  "DOUBLE";
 
       case GARROW_TYPE_STRING:
-        return  "STRING";
+        return  "varchar";
 
       case GARROW_TYPE_BINARY:
       case GARROW_TYPE_FIXED_SIZE_BINARY:
@@ -126,51 +127,56 @@ static char* parquet_type_map(GArrowType type) {
 }
 
 static str
-parquet_add_types(mvc *sql, sql_subfunc *f, char *filename)
+parquet_add_types(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tname)
 {
-  parquet_file *file = parquet_open_file(filename);
+	parquet_file *file = parquet_open_file(filename);
 
 	if(file->reader == NULL) {
-    throw(SQL, SQLSTATE(42000), "parquet" RUNTIME_FILE_NOT_FOUND);
+		throw(SQL, SQLSTATE(42000), "parquet" RUNTIME_FILE_NOT_FOUND);
 	}
 
-  GError *table_error = NULL;
-  GArrowTable *table = gparquet_arrow_file_reader_read_table(file->reader, &table_error);
+	GError *table_error = NULL;
+	GArrowTable *table = gparquet_arrow_file_reader_read_table(file->reader, &table_error);
 
-  if(table_error) {
-    throw(SQL, SQLSTATE(42000), "parquet" RUNTIME_LOAD_ERROR); // TODO: different error.
-  }
+	if(table_error) {
+		throw(SQL, SQLSTATE(42000), "parquet" RUNTIME_LOAD_ERROR); // TODO: different error.
+	}
 
-  guint n_columns = garrow_table_get_n_columns(table);
+	guint n_columns = garrow_table_get_n_columns(table);
 
-  list *types = sa_list(sql->sa);
-  list *col_names = sa_list(sql->sa);
+	list *types = sa_list(sql->sa);
+	list *col_names = sa_list(sql->sa);
 
-  for(int col = 0; col < (int)n_columns; col++) {
-      GArrowChunkedArray *array = garrow_table_get_column_data(table, col);
-      GArrowType type = garrow_chunked_array_get_value_type(array);
-      char* st = parquet_type_map(type);
+	if (!tname)
+		tname = "parquet";
 
-      printf("%s\n", st);
+	for(int col = 0; col < (int)n_columns; col++) {
+		GArrowChunkedArray *array = garrow_table_get_column_data(table, col);
+		GArrowType type = garrow_chunked_array_get_value_type(array);
+		char *name = "column name";
+		char* st = parquet_type_map(type);
 
-      if(st) {
-        	sql_subtype *t = sql_bind_subtype(sql->sa, st, 8, 0);
+		printf("%s\n", st);
 
-          sa_list_append(sql->sa, types, t);
-      }
-      else {
-        throw(SQL, SQLSTATE(42000), "parquet" RUNTIME_LOAD_ERROR); // TODO: this should throw a 'unsupported column type' error.
-      }
-  }
+		if(st) {
+			sql_subtype *t = sql_bind_subtype(sql->sa, st, 0, 0);
 
-  (void)table;
+			list_append(types, t);
+			list_append(res_exps, exp_column(sql->sa, tname, name, t, CARD_MULTI, 1, 0, 0));
+		}
+		else {
+			throw(SQL, SQLSTATE(42000), "parquet" RUNTIME_LOAD_ERROR); // TODO: this should throw a 'unsupported column type' error.
+		}
+	}
+
+	(void)table;
 	/* cleanup tbl */
-  f->res = types;
-  f->colnames = col_names;
+	f->res = types;
+	f->colnames = col_names;
 
 	/* close file */
 	GDKfree(file);
-	return "";
+	return MAL_SUCCEED;
 }
 
 static int

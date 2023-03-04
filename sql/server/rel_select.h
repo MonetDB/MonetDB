@@ -30,7 +30,7 @@ extern sql_exp *rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char 
 extern sql_exp *rel_nop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_exp *r2, sql_exp *r3, char *sname, char *fname, int card);
 extern sql_rel *rel_with_query(sql_query *query, symbol *q);
 extern sql_rel *table_ref(sql_query *query, symbol *tableref, int lateral, list *refs);
-extern sql_exp *find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sql_ftype type);
+extern sql_exp *find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sql_ftype type, sql_rel **rel, char *tname);
 extern sql_rel *rel_loader_function(sql_query* query, symbol* s, list *fexps, sql_subfunc **loader_function);
 extern list *check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sql_subfunc *sf, int maybe_zero_or_one);
 
