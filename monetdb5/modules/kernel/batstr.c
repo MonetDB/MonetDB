@@ -26,7 +26,7 @@
 #include "mal_interpreter.h"
 #include "mal_exception.h"
 #include "str.h"
-#if HAVE_ICONV
+#ifdef HAVE_ICONV
 #include <iconv.h>
 #endif
 
@@ -4912,7 +4912,7 @@ bailout:
 static str
 BATSTRasciify(bat *ret, bat *bid)
 {
-#if HAVE_ICONV
+#ifdef HAVE_ICONV
 	BAT *b = NULL, *bn = NULL;
 	BATiter bi;
 	BUN start, end;
