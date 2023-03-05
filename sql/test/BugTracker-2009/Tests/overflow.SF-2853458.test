@@ -1,8 +1,8 @@
-skipif arch=arm64
+skipif arch=aarch64
 statement error 22003!overflow in conversion of 9.2233720368547758e+18 to lng.
 select cast(power(2,63) as bigint) 
 
-onlyif arch=arm64
+onlyif arch=aarch64
 query I
 select cast(power(2,63) as bigint) 
 ----
