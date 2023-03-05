@@ -44,6 +44,8 @@ from typing import Optional
 architecture = platform.machine()
 if architecture == 'AMD64':     # Windows :-(
     architecture = 'x86_64'
+if architecture == 'amd64':     # MacOS :-(
+    architecture = 'aarch64'
 
 skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 
