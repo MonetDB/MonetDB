@@ -19,6 +19,11 @@ typedef int (*fl_load_fptr)(mvc *sql, sql_subfunc *f, char *filename);
 typedef struct file_loader_t {
 	char *name;
 	fl_add_types_fptr add_types;
+	/* api needs more designing */
+	// void *fl_create(); load meta data from file
+	// fl_nrows(metadata); return number of rows
+	// fl_columnname(metadata, int i); return name of nth column
+	// fl_loadchunk(metadata, int colnr, output_buf, nrows);
 	fl_load_fptr load;
 } file_loader_t;
 
