@@ -42,7 +42,11 @@ target_sources(malmodules
   projectionpath.c
   tablet.c tablet.h
   batcalc.c calc.c
-  pipeline.c
+  pp_mem.c pp_mem.h
+  pp_hash.c pp_hash.h
+  pp_slicer.c
+  pp_algebra.c
+  pipeline.c pipeline.h
   heapn.c)
 
 target_include_directories(malmodules
