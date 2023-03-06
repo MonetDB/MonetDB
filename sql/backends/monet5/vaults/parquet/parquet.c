@@ -145,7 +145,6 @@ parquet_add_types(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char
 	guint n_columns = garrow_table_get_n_columns(table);
 
 	list *types = sa_list(sql->sa);
-	list *col_names = sa_list(sql->sa);
 
 	if (!tname)
 		tname = "parquet";
@@ -172,7 +171,6 @@ parquet_add_types(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char
 	(void)table;
 	/* cleanup tbl */
 	f->res = types;
-	f->colnames = col_names;
 
 	/* close file */
 	GDKfree(file);
