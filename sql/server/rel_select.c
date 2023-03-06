@@ -590,6 +590,12 @@ find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sq
 	int i = 0, *scores, nfunc;
 
 	assert(type == F_UNION || type == F_LOADER);
+	if ((f = bind_func_(sql, sname, fname, tl, type, false, &found))) {
+		list *nexps = exps;
+		if (list_empty(tl) || f->func->vararg || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1)))
+			return exp_op(sql->sa, nexps, f);
+		found = false;
+	}
 	sql->session->status = 0; /* reset error */
 	sql->errstr[0] = '\0';
 	if (list_empty(tl) || !(ff = sql_find_funcs(sql, sname, fname, list_length(tl), type, false)) || list_empty(ff)) {
