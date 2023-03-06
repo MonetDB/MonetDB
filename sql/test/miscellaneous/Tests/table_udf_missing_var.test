@@ -1,0 +1,36 @@
+statement ok
+create function myfunc() returns table (x int) begin declare myvar int; return select myvar; end
+
+statement ok
+create function myfunc2() returns int begin declare myvar int; return myvar; end
+
+query I nosort
+select * from myfunc()
+----
+NULL
+
+query I nosort
+select myfunc2()
+----
+NULL
+
+@connection(id=tc, username=monetdb, password=monetdb)
+query I nosort
+select * from myfunc()
+----
+NULL
+
+@connection(id=tc)
+query I nosort
+select myfunc2()
+----
+NULL
+
+@connection(id=tc)
+statement ok
+drop function myfunc()
+
+@connection(id=tc)
+statement ok
+drop function myfunc2()
+

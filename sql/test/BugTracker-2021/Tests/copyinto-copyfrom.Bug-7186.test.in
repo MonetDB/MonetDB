@@ -1,0 +1,18 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t" ("id" INTEGER,"name" VARCHAR(1024),"schema_id" INTEGER,"query" VARCHAR(1048576),"type" SMALLINT,"system" BOOLEAN,"commit_action" SMALLINT,"access" SMALLINT,"temporary" TINYINT)
+
+statement ok
+COPY SELECT "id","name","schema_id","query","type","system","commit_action","access","temporary" FROM sys.tables LIMIT 100 INTO '$QTSTTRGDIR/copyinto-copyfrom.csv' USING DELIMITERS '|',E'\n','"'
+
+statement ok
+COPY INTO t FROM '$QTSTTRGDIR/copyinto-copyfrom.csv' USING DELIMITERS '|',E'\n','"'
+
+statement ok
+DROP TABLE t
+
+statement ok
+ROLLBACK
+

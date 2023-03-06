@@ -1,0 +1,91 @@
+statement ok
+CREATE SCHEMA library
+
+statement ok
+CREATE TABLE library.orders(price int, name VARCHAR(100))
+
+statement ok
+CREATE ROLE bankAdmin
+
+statement ok
+CREATE SCHEMA bank AUTHORIZATION bankAdmin
+
+statement ok
+CREATE TABLE bank.accounts(nr int, name VARCHAR(100))
+
+statement ok
+CREATE USER april WITH PASSWORD 'april' name 'april' schema bank
+
+statement ok
+GRANT ALL ON bank.accounts to april
+
+statement ok
+GRANT bankAdmin to april
+
+statement error 42M32!ALTER USER: no such user 'april2'
+ALTER USER "april2" SET SCHEMA library
+
+statement error 3F000!ALTER USER: no such schema 'library2'
+ALTER USER "april" SET SCHEMA library2
+
+@connection(id=tc, username=april, password=april)
+query T nosort
+SELECT current_schema
+----
+bank
+
+@connection(id=tc)
+statement ok
+SELECT * from accounts
+
+@connection(id=mdb)
+statement ok
+ALTER USER "april" SET SCHEMA library
+
+@connection(id=april, username=april, password=april)
+query T nosort
+SELECT current_schema
+----
+library
+
+@connection(id=april)
+statement error 42S02!SELECT: no such table 'accounts'
+SELECT * from accounts
+
+@connection(id=april)
+statement error 42000!SELECT: access denied for april to table 'library.orders'
+SELECT * from library.orders
+
+statement ok
+ALTER USER "april" SET SCHEMA bank
+
+statement ok
+CREATE SCHEMA forAlice AUTHORIZATION april
+
+statement error M1M05!DROP USER: 'april' owns a schema
+DROP user april
+
+statement ok
+DROP TABLE library.orders
+
+statement ok
+DROP TABLE bank.accounts
+
+statement ok
+ALTER USER "april" SET SCHEMA sys
+
+statement ok
+DROP SCHEMA forAlice
+
+statement ok
+DROP SCHEMA bank
+
+statement ok
+DROP SCHEMA library
+
+statement ok
+DROP USER april
+
+statement ok
+DROP ROLE bankAdmin
+
