@@ -1,0 +1,141 @@
+statement ok
+CREATE ROLE my_role
+
+statement ok
+CREATE SCHEMA my_schema AUTHORIZATION my_role
+
+statement ok
+CREATE USER my_user WITH PASSWORD 'p1' NAME 'my_user' SCHEMA my_schema
+
+statement ok
+GRANT my_role to my_user
+
+statement ok
+CREATE SCHEMA your_schema
+
+statement ok
+SET SCHEMA your_schema
+
+statement ok
+CREATE TABLE your_table (name VARCHAR(10), birthday DATE, ssn CHAR(9))
+
+statement ok rowcount 2
+INSERT INTO your_table VALUES ('alice', '1980-01-01', 'AAAAAAAAA'), ('bob', '1970-01-01', '000000000')
+
+statement ok
+CREATE VIEW your_view AS SELECT name, EXTRACT(YEAR FROM birthday) as yr, '********'||substring(ssn,9,9) as ssn FROM your_table
+
+query TIT nosort
+SELECT * FROM your_view
+----
+alice
+1980
+********A
+bob
+1970
+********0
+
+statement ok
+GRANT SELECT on your_view to my_user
+
+@connection(id=tc, username=my_user, password=p1)
+statement ok
+SET ROLE my_role
+
+@connection(id=tc)
+statement ok
+CREATE TABLE my_schema.my_table (name VARCHAR(10), i INT)
+
+@connection(id=tc)
+statement ok
+CREATE VIEW my_schema.my_view AS SELECT * FROM my_schema.my_table
+
+statement ok
+DROP VIEW my_schema.my_view
+
+statement ok
+DROP TABLE my_schema.my_table
+
+@connection(id=tc)
+statement error 42000!SELECT: access denied for my_user to table 'your_schema.your_table'
+SELECT * FROM your_schema.your_table
+
+@connection(id=tc)
+query TIT nosort
+SELECT * FROM your_schema.your_view
+----
+alice
+1980
+********A
+bob
+1970
+********0
+
+@connection(id=tc)
+statement error 42000!SELECT: access denied for my_user to table 'your_schema.your_table'
+CREATE VIEW your_view AS SELECT * FROM your_schema.your_table
+
+statement ok
+REVOKE SELECT on your_view FROM my_user
+
+@connection(id=tc)
+statement error 42000!SELECT: access denied for my_user to view 'your_schema.your_view'
+SELECT * FROM your_schema.your_view
+
+statement ok
+GRANT SELECT (name) on your_view to my_user
+
+@connection(id=tc)
+query T nosort
+SELECT name FROM your_schema.your_view
+----
+alice
+bob
+
+@connection(id=tc)
+query T nosort
+SELECT * FROM your_schema.your_view
+----
+alice
+bob
+
+statement ok
+GRANT SELECT (ssn) on your_view to my_user
+
+@connection(id=tc)
+query TT nosort
+SELECT name, ssn FROM your_schema.your_view
+----
+alice
+********A
+bob
+********0
+
+@connection(id=tc)
+query TT nosort
+SELECT * FROM your_schema.your_view
+----
+alice
+********A
+bob
+********0
+
+@connection(id=tc)
+statement error 42000!SELECT: identifier 'yr' unknown
+SELECT yr FROM your_schema.your_view
+
+statement ok
+SET SCHEMA sys
+
+statement ok
+DROP USER my_user
+
+statement ok
+DROP ROLE my_role
+
+statement ok
+DROP SCHEMA my_schema CASCADE
+
+statement ok
+DROP SCHEMA your_schema CASCADE
+
