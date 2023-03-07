@@ -24,7 +24,7 @@ AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const ba
 			const bat *quantile,
 			const char *malfunc)
 {
-	BAT *b, *g, *e, *s, *bn = NULL, *cnts, *q = NULL;
+	BAT *b, *g, *e, *s, *bn = NULL, *cnts = NULL, *q = NULL;
 	double qvalue;
 
 	/* exactly one of grpfunc1, grpfunc2 and quantilefunc is non-NULL */
