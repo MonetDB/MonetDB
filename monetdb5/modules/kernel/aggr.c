@@ -11,6 +11,7 @@
 #include "monetdb_config.h"
 #include "mal.h"
 #include "mal_exception.h"
+#include "aggr.h"
 
 /*
  * grouped aggregates
@@ -124,7 +125,7 @@ AGGRsum3_int(bat *retval, const bat *bid, const bat *gid, const bat *eid)
 					   BATgroupsum, NULL, NULL, NULL, "aggr.sum");
 }
 
-static str
+str
 AGGRsum3_lng(bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
 	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_lng,
@@ -132,7 +133,7 @@ AGGRsum3_lng(bat *retval, const bat *bid, const bat *gid, const bat *eid)
 }
 
 #ifdef HAVE_HGE
-static str
+str
 AGGRsum3_hge(bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
 	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_hge,
