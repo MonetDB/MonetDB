@@ -61,9 +61,9 @@ typedef const struct type_record_t type_record_t;
 
 extern type_record_t *find_type_rec(const char *name);
 
-extern bool can_dump_binary_column(type_record_t const *rec);
+extern bool can_dump_binary_column(type_record_t *rec);
 
-extern str dump_binary_column(type_record_t const *rec, BAT *b, BUN start, BUN length, bool byteswap, stream *s);
+extern str dump_binary_column(type_record_t *rec, BAT *b, BUN start, BUN length, bool byteswap, stream *s);
 
 
 #endif

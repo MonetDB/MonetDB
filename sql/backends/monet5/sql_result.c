@@ -1899,7 +1899,7 @@ align_dump(stream *s, uint64_t pos, unsigned int alignment)
 #ifdef _MSC_VER
 #pragma warning(suppress:4146)
 #endif
-	uint64_t gap = (-pos) % a;
+	uint64_t gap = (~pos + 1) % a;
 	return mnstr_write(s, zeroes, 1, (size_t)gap);
 }
 
@@ -2004,4 +2004,3 @@ end:
 	mnstr_destroy(countstream);
 	return ret;
 }
-

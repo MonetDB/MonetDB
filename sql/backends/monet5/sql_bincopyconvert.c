@@ -508,7 +508,7 @@ load_blob(BAT *bat, stream *s, int *eof_reached, int width, bool byteswap)
 #ifdef _MSC_VER
 #pragma warning(suppress:4146)
 #endif
-				allocate += ((-allocate) % 0x100000);   // round up to nearest MiB
+				allocate += ((~allocate + 1) % 0x100000);   // round up to nearest MiB
 				assert(allocate >= needed);
 				buffer = GDKmalloc(allocate);
 				if (!buffer) {
@@ -620,7 +620,7 @@ find_type_rec(const char *name)
 }
 
 bool
-can_dump_binary_column(const type_record_t *rec)
+can_dump_binary_column(type_record_t *rec)
 {
 	return rec->encoder_trivial || rec->dumper || rec->encoder;
 }
