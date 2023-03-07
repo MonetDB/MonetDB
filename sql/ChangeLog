@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Mar  3 2023 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
+- Queries stopped with the stop procedure are now marked as 'aborted'
+  'finished'.
+
 * Wed Feb 15 2023 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
 - SQL function sys.queue() overloaded with sys.queue(username string),
   SYSADMIN only, allowing to filter the global queue by username or

@@ -18,7 +18,7 @@ target_sources(kernel
   bat5.c
   algebra.c algebra.h
   group.c group.h
-  aggr.c
+  aggr.c aggr.h
   batmmath.c
   batstr.c
   batcolor.c

@@ -1,32 +1,24 @@
-@connection(id=mdb, username=monetdb, password=monetdb)
 statement ok
 CREATE USER my_user with password 'p1' name 'User with role' schema sys
 
-@connection(id=mdb)
 statement ok
 CREATE USER my_user2 with password 'p2' name 'User without role' schema sys
 
-@connection(id=mdb)
 statement ok
 CREATE SCHEMA my_schema
 
-@connection(id=mdb)
 statement ok
 CREATE table my_schema.test (i int, b bigint)
 
-@connection(id=mdb)
 statement ok
 GRANT SELECT on table my_schema.test to my_user
 
-@connection(id=mdb)
 statement ok
 GRANT INSERT on table my_schema.test to my_user
 
-@connection(id=mdb)
 statement ok
 GRANT UPDATE on table my_schema.test to my_user
 
-@connection(id=mdb)
 statement ok
 GRANT DELETE on table my_schema.test to my_user
 
