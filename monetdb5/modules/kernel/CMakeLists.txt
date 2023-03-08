@@ -22,6 +22,8 @@ target_sources(kernel
   batmmath.c
   batstr.c
   batcolor.c
+  pp_group.c
+  pp_aggr.c
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/bat5.h)
 target_sources(microbenchmark

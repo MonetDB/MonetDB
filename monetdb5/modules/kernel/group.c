@@ -11,7 +11,6 @@
 #include "monetdb_config.h"
 #include "mal.h"
 #include "mal_exception.h"
-#include "mal_pipelines.h"
 #include "group.h"
 
 str
@@ -100,18 +99,6 @@ GRPsubgroup2(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid)
 }
 
 static str
-LGRPsubgroup2(bat *ngid, bat *next, bat *nhis, const ptr *h, const bat *bid, const bat *gid)
-{
-	Pipeline *p = (Pipeline*)*h;
-	str res;
-
-	MT_lock_set(&p->p->l);
-	res = GRPsubgroup2(ngid, next, nhis, bid, gid);
-	MT_lock_unset(&p->p->l);
-	return res;
-}
-
-static str
 GRPgroup4(bat *ngid, bat *next, const bat *bid, const bat *sid)
 {
 	return GRPsubgroup5(ngid, next, NULL, bid, sid, NULL, NULL, NULL);
@@ -124,18 +111,6 @@ GRPgroup3(bat *ngid, bat *next, const bat *bid)
 }
 
 static str
-LGRPgroup3(bat *ngid, bat *next, const ptr *h, const bat *bid)
-{
-	Pipeline *p = (Pipeline*)*h;
-	str res;
-
-	MT_lock_set(&p->p->l);
-	res = GRPgroup3(ngid, next, bid);
-	MT_lock_unset(&p->p->l);
-	return res;
-}
-
-static str
 GRPgroup2(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid)
 {
 	return GRPsubgroup5(ngid, next, nhis, bid, sid, NULL, NULL, NULL);
@@ -145,18 +120,6 @@ str
 GRPgroup1(bat *ngid, bat *next, bat *nhis, const bat *bid)
 {
 	return GRPsubgroup5(ngid, next, nhis, bid, NULL, NULL, NULL, NULL);
-}
-
-static str
-LGRPgroup1(bat *ngid, bat *next, bat *nhis, const ptr *h, const bat *bid)
-{
-	Pipeline *p = (Pipeline*)*h;
-	str res;
-
-	MT_lock_set(&p->p->l);
-	res = GRPgroup1(ngid, next, nhis, bid);
-	MT_lock_unset(&p->p->l);
-	return res;
 }
 
 static str
@@ -198,10 +161,8 @@ GRPsubgroup21(bat *ngid, const bat *bid, const bat *gid)
 #include "mel.h"
 mel_func group_init_funcs[] = {
  command("group", "group", GRPgroup1, false, "", args(3,4, batarg("groups",oid),batarg("extents",oid),batarg("histo",lng),batargany("b",1))),
- command("lockedgroup", "group", LGRPgroup1, false, "", args(3,5, batarg("groups",oid),batarg("extents",oid),batarg("histo",lng),arg("pipeline", ptr), batargany("b",1))),
  command("group", "group", GRPgroup2, false, "", args(3,5, batarg("groups",oid),batarg("extents",oid),batarg("histo",lng),batargany("b",1),batarg("s",oid))),
  command("group", "group", GRPgroup3, false, "", args(2,3, batarg("groups",oid),batarg("extents",oid),batargany("b",1))),
- command("lockedgroup", "group", LGRPgroup3, false, "", args(2,4, batarg("groups",oid),batarg("extents",oid),arg("pipeline", ptr), batargany("b",1))),
  command("group", "group", GRPgroup4, false, "", args(2,4, batarg("groups",oid),batarg("extents",oid),batargany("b",1),batarg("s",oid))),
  command("group", "group", GRPgroup11, false, "", args(1,2, batarg("",oid),batargany("b",1))),
  command("group", "group", GRPgroup21, false, "", args(1,3, batarg("",oid),batargany("b",1),batarg("s",oid))),
@@ -224,7 +185,6 @@ mel_func group_init_funcs[] = {
  command("group", "groupdone", GRPgroup11, false, "", args(1,2, batarg("",oid),batargany("b",1))),
  command("group", "groupdone", GRPgroup21, false, "", args(1,3, batarg("",oid),batargany("b",1),batarg("s",oid))),
  command("group", "subgroupdone", GRPsubgroup2, false, "", args(3,5, batarg("groups",oid),batarg("extents",oid),batarg("histo",lng),batargany("b",1),batarg("g",oid))),
- command("lockedgroup", "subgroupdone", LGRPsubgroup2, false, "", args(3,6, batarg("groups",oid),batarg("extents",oid),batarg("histo",lng), arg("pipeline", ptr), batargany("b",1),batarg("g",oid))),
  command("group", "subgroupdone", GRPsubgroup3, false, "", args(3,6, batarg("groups",oid),batarg("extents",oid),batarg("histo",lng),batargany("b",1),batarg("s",oid),batarg("g",oid))),
  command("group", "subgroupdone", GRPsubgroup4, false, "", args(3,7, batarg("groups",oid),batarg("extents",oid),batarg("histo",lng),batargany("b",1),batarg("g",oid),batarg("e",oid),batarg("h",lng))),
  command("group", "subgroupdone", GRPsubgroup5, false, "", args(3,8, batarg("groups",oid),batarg("extents",oid),batarg("histo",lng),batargany("b",1),batarg("s",oid),batarg("g",oid),batarg("e",oid),batarg("h",lng))),
