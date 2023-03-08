@@ -1194,6 +1194,7 @@ BBPtrim(bool aggressive)
 		    (b = BBP_cache(bid)) != NULL) {
 			MT_lock_set(&b->theaplock);
 			if (b->batSharecnt == 0 &&
+			    !isVIEW(b) &&
 			    (!BATdirty(b) || (aggressive && b->theap->storage == STORE_MMAP && (b->tvheap == NULL || b->tvheap->storage == STORE_MMAP))) /*&&
 			    (BBP_status(bid) & BBPPERSISTENT ||
 			     (b->batRole == PERSISTENT && BBP_lrefs(bid) == 1)) */) {
