@@ -3576,7 +3576,6 @@ main(int argc, char **argv)
 	} else {
 		if (mode == SQL) {
 			setFormatter("sql");
-			mapi_set_size_header(mid, false);
 		} else {
 			setFormatter("raw");
 			mapi_set_size_header(mid, true);
