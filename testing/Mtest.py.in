@@ -3805,10 +3805,11 @@ def main(argv) :
         # fix up URLPREFIX
         if REV:
             URLPREFIX += '%s/' % REV.split()[0].rstrip('+')
-            os.environ['REVISION'] = REV
         else:
             # if no revision known, can't refer to repository
             URLPREFIX = None
+    if REV:
+        os.environ['REVISION'] = REV
 
     global SOCK, HOST
     try:                        # try/finally to clean up sockdir

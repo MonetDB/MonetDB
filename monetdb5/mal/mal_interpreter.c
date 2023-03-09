@@ -546,17 +546,19 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				ret= createException(MAL, "mal.interpreter", "prematurely stopped client");
 			break;
 		}
-#ifndef NDEBUG
-		if (cntxt->itrace || stk->status) {
-			if (stk->status == 'p'){
-				// execution is paused
-				while (stk->status == 'p')
-					MT_sleep_ms(50);
-				continue;
-			}
-			if (stk->status == 'q')
-				stk->cmd = 'x';
 
+		if (stk->status) {
+			while (stk->status == 'p')
+				MT_sleep_ms(50);
+			continue;
+			if (stk->status == 'q') {
+				stkpc = mb->stop;
+				ret = createException(MAL, "mal.interpreter", "Prematurely stopped client");
+			}
+		}
+
+#ifndef NDEBUG
+		if (cntxt->itrace) {
 			if (stk->cmd == 0)
 				stk->cmd = cntxt->itrace;
 			mdbStep(cntxt, mb, stk, stkpc);
