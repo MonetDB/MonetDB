@@ -173,7 +173,7 @@
 [ 9999	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	str,	str,	str # type
+% varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 6,	2,	1,	0,	2,	2 # length
 [ "bigint",	64,	0,	"",	"%2",	"%2"	]
 % .%2 # table_name
