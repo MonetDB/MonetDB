@@ -886,7 +886,11 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				getArg(u, 3) = getArg(q,2); /* update ids */
 				//getArg(u, 4) = getArg(s,0);
 				p = pushArgument(mb, u, getArg(s,0)); /* push at end */
+				/* make sure to resolve again */
+				u->token = ASSIGNsymbol;
 				u->typechk = TYPE_UNKNOWN;
+        		u->fcn = NULL;
+        		u->blk = NULL;
 				pushInstruction(mb,u);
 				oclean[i] = 1;
 				continue;
