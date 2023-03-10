@@ -872,7 +872,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	if (c->curprg == NULL) {
 		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		res = -1;
-		c->curprg = symbackup;
 		goto cleanup;
 	}
 
@@ -934,7 +933,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 
 	// restore the context for the wrapper code
 cleanup:
-	if (res < 0) {
+	if (res < 0 && c->curprg) {
 		if (!added_to_cache)
 			freeSymbol(c->curprg);
 		else
@@ -1255,7 +1254,8 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	if (c->curprg == NULL) {
 		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		res = -1;
-		c->curprg = symbackup;
+		if (!vararg)
+			f->sql--;
 		goto cleanup;
 	}
 
@@ -1375,7 +1375,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	}
 
 cleanup:
-	if (res < 0) {
+	if (res < 0 && c->curprg) {
 		if (!vararg)
 			f->sql--;
 		if (!added_to_cache)
