@@ -83,3 +83,11 @@ ROLLBACK;
 PREPARE WITH y(a,b) AS (SELECT 1, ?) SELECT "json"."filter"(JSON '"a"', y.b) FROM y CROSS JOIN ((SELECT 1, 4) EXCEPT (SELECT 1,2)) x(x,y);
 
 PREPARE WITH y(a,b) AS (SELECT 1, ?) SELECT "json"."filter"(JSON '"a"', y.b) FROM ((SELECT 1, 4) EXCEPT (SELECT 1,2)) x(x,y) CROSS JOIN y;
+
+START TRANSACTION;
+create table deleteall (i integer, j integer);
+insert into deleteall (select a,a as b from generate_series(cast(1 as integer),10000) as a(a));
+set optimizer='sequential_pipe';
+prepare select count(*) from deleteall where j in (2001,2007,2016,2028,2037,2047,2053,2059,2063,2067,2076,2087,2094,2099,2110,2115,2124,2135,2142,2147);
+EXEC **();
+ROLLBACK;
