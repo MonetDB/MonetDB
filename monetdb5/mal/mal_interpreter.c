@@ -539,10 +539,8 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	exceptionVar = -1;
 
 	QryCtx qry_ctx = {.querytimeout=cntxt->querytimeout, .starttime=mb->starttime};
-#ifndef NDEBUG
 	/* very short timeout */
 	QryCtx qry_ctx_abort = {.querytimeout=100, .starttime=mb->starttime};
-#endif
 	/* save, in case this function is called recursively */
 	QryCtx *qry_ctx_save = MT_thread_get_qry_ctx();
 	MT_thread_set_qry_ctx(&qry_ctx);
@@ -560,12 +558,20 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		}
 
 		if (stk->status) {
-			while (stk->status == 'p')
-				MT_sleep_ms(50);
-			continue;
+			/* pause procedure from SYSMON */
+			if (stk->status == 'p') {
+				while (stk->status == 'p')
+					MT_sleep_ms(50);
+				continue;
+			}
+			/* stop procedure from SYSMON */
 			if (stk->status == 'q') {
 				stkpc = mb->stop;
-				ret = createException(MAL, "mal.interpreter", "Prematurely stopped client");
+				MT_thread_set_qry_ctx(&qry_ctx_abort);
+				ret = createException(MAL, "mal.interpreter",
+									  "Query with tag "OIDFMT" received stop signal",
+									  mb->tag);
+				break;
 			}
 		}
 
