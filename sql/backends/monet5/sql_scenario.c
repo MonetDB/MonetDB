@@ -985,6 +985,7 @@ SQLparser(Client c)
 		c->mode = FINISHCLIENT;
 		throw(SQL, "SQLparser", SQLSTATE(42000) "State descriptor missing, aborting");
 	}
+	assert(c->curprg && c->curprg->def);
 	oldvid = c->curprg->def->vid;
 	oldvtop = c->curprg->def->vtop;
 	oldstop = c->curprg->def->stop;

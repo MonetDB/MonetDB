@@ -324,7 +324,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	node *n;
 	int i, q, v, res = 0, added_to_cache = 0,  *lret, *rret;
 	size_t len = 1024, nr;
-	char *lname, *buf;
+	char *lname = NULL, *buf = NULL, *mal_session_uuid, *err = NULL;
 	sql_rel *r = rel;
 
 	if (local_tbl == NULL) {
@@ -369,6 +369,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	if( c->curprg == NULL) {
 		GDKfree(lname);
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		c->curprg = backup;
 		return -1;
 	}
 	lname[0] = 'l';
@@ -377,9 +378,9 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 
 	curInstr = relational_func_create_result(m, curBlk, curInstr, rel);
 	if( curInstr == NULL) {
-		GDKfree(lname);
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return -1;
+		res = -1;
+		goto cleanup;
 	}
 
 	/* ops */
@@ -394,9 +395,9 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 
 			sprintf(nbuf, "A%d", i++);
 			if ((varid = newVariable(curBlk, nbuf, strlen(nbuf), type)) < 0) {
-				GDKfree(lname);
 				sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
-				return -1;
+				res = -1;
+				goto cleanup;
 			}
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
@@ -445,9 +446,9 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	p = pushArgument(curBlk, p, getArg(o,0));
 
 	if (!(buf = rel2str(m, rel))) {
-		GDKfree(lname);
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return -1;
+		res = -1;
+		goto cleanup;
 	}
 	o = newFcnCall(curBlk, remoteRef, putRef);
 	o = pushArgument(curBlk, o, q);
@@ -456,9 +457,9 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	free(buf);
 
 	if (!(buf = GDKmalloc(len))) {
-		GDKfree(lname);
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return -1;
+		res = -1;
+		goto cleanup;
 	}
 
 	buf[0] = 0;
@@ -479,10 +480,10 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 				len = (len + nlen) * 2;
 				char *tmp = GDKrealloc(buf, len);
 				if (tmp == NULL) {
-					GDKfree(lname);
 					GDKfree(buf);
 					sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					return -1;
+					res = -1;
+					goto cleanup;
 				}
 				buf = tmp;
 			}
@@ -504,11 +505,11 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 			str next = sql_subtype_string(m->ta, t);
 
 			if (!next) {
-				GDKfree(lname);
 				GDKfree(buf);
 				sa_reset(m->ta);
 				sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				return -1;
+				res = -1;
+				goto cleanup;
 			}
 
 			size_t nlen = strlen(next) + 2;
@@ -516,11 +517,11 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 				len = (len + nlen) * 2;
 				char *tmp = GDKrealloc(buf, len);
 				if (tmp == NULL) {
-					GDKfree(lname);
 					GDKfree(buf);
 					sa_reset(m->ta);
 					sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					return -1;
+					res = -1;
+					goto cleanup;
 				}
 				buf = tmp;
 			}
@@ -536,7 +537,6 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	p = pushArgument(curBlk, p, getArg(o,0));
 	pushInstruction(curBlk, p);
 
-	char *mal_session_uuid, *err = NULL;
 	if (!GDKinmemory(0) && !GDKembedded() && (err = msab_getUUID(&mal_session_uuid)) == NULL) {
 		str lsupervisor_session = GDKstrdup(mal_session_uuid);
 		str rsupervisor_session = GDKstrdup(mal_session_uuid);
@@ -545,7 +545,8 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 			GDKfree(lsupervisor_session);
 			GDKfree(rsupervisor_session);
 			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			return -1;
+			res = -1;
+			goto cleanup;
 		}
 
 		str rworker_plan_uuid = generateUUID();
@@ -553,7 +554,8 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 			GDKfree(rsupervisor_session);
 			GDKfree(lsupervisor_session);
 			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			return -1;
+			res = -1;
+			goto cleanup;
 		}
 		str lworker_plan_uuid = GDKstrdup(rworker_plan_uuid);
 		if (lworker_plan_uuid == NULL) {
@@ -561,7 +563,8 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 			GDKfree(lsupervisor_session);
 			GDKfree(rsupervisor_session);
 			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			return -1;
+			res = -1;
+			goto cleanup;
 		}
 
 		/* remote.supervisor_register(connection, supervisor_uuid, plan_uuid) */
@@ -715,8 +718,9 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		res = -1;
 	}
 
+cleanup:
 	GDKfree(lname);	/* make sure stub is called */
-	if (res < 0) {
+	if (res < 0 && c->curprg) {
 		if (!added_to_cache) /* on error, remove generated symbol from cache */
 			freeSymbol(c->curprg);
 		else
@@ -923,7 +927,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 
 	// restore the context for the wrapper code
 cleanup:
-	if (res < 0) {
+	if (res < 0 && c->curprg) {
 		if (!added_to_cache)
 			freeSymbol(c->curprg);
 		else
