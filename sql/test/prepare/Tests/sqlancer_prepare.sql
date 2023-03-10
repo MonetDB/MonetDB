@@ -69,3 +69,11 @@ PREPARE SELECT "quarter"(date '2021-01-02') IN ("second"(TIME '01:00:00'), (sele
 PREPARE SELECT "quarter"(date '2021-01-02') IN ("second"(TIME '01:00:00'), (select ? where true));
 
 PREPARE SELECT 1 FROM idontexist(?,16); --error, function doesn't exist
+
+START TRANSACTION;
+create table deleteall (i integer, j integer);
+insert into deleteall (select a,a as b from generate_series(cast(1 as integer),10000) as a(a));
+set optimizer='sequential_pipe';
+prepare select count(*) from deleteall where j in (2001,2007,2016,2028,2037,2047,2053,2059,2063,2067,2076,2087,2094,2099,2110,2115,2124,2135,2142,2147);
+EXEC **();
+ROLLBACK;
