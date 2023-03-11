@@ -25624,6 +25624,11 @@ pattern batstr.ascii(X_0:bat[:str], X_1:bat[:oid]):bat[:int]
 STRbatAscii;
 Return unicode of head of string
 batstr
+asciify
+command batstr.asciify(X_0:bat[:str]):bat[:str] 
+BATSTRasciify;
+Transform BAT of strings from UTF8 to ASCII
+batstr
 endsWith
 pattern batstr.endsWith(X_0:bat[:str], X_1:bat[:str]):bat[:bit] 
 STRbatSuffix;
@@ -25883,6 +25888,11 @@ replace
 pattern batstr.replace(X_0:bat[:str], X_1:str, X_2:str):bat[:str] 
 STRbatReplacecst;
 Insert a string into another
+batstr
+reverse
+command batstr.reverse(X_0:bat[:str]):bat[:str] 
+BATSTRreverse;
+Reverse a BAT of strings
 batstr
 rpad
 pattern batstr.rpad(X_0:str, X_1:bat[:int]):bat[:str] 
@@ -38724,6 +38734,11 @@ command str.ascii(X_0:str):int
 STRascii;
 Return unicode of head of string
 str
+asciify
+command str.asciify(X_0:str):str 
+STRasciify;
+Transform string from UTF8 to ASCII
+str
 endsWith
 command str.endsWith(X_0:str, X_1:str):bit 
 STRSuffix;
@@ -38813,6 +38828,11 @@ replace
 command str.replace(X_0:str, X_1:str, X_2:str):str 
 STRreplace;
 Insert a string into another
+str
+reverse
+command str.reverse(X_0:str):str 
+STRreverse;
+Reverse a string
 str
 rpad
 command str.rpad(X_0:str, X_1:int):str 
