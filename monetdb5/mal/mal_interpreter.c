@@ -548,12 +548,19 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		}
 
 		if (stk->status) {
-			while (stk->status == 'p')
-				MT_sleep_ms(50);
-			continue;
+			/* pause procedure from SYSMON */
+			if (stk->status == 'p') {
+				while (stk->status == 'p')
+					MT_sleep_ms(50);
+				continue;
+			}
+			/* stop procedure from SYSMON */
 			if (stk->status == 'q') {
 				stkpc = mb->stop;
-				ret = createException(MAL, "mal.interpreter", "Prematurely stopped client");
+				ret = createException(MAL, "mal.interpreter",
+									  "Query with tag "OIDFMT" received stop signal",
+									  mb->tag);
+				break;
 			}
 		}
 
