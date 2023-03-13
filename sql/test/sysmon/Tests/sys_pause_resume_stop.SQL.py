@@ -53,9 +53,9 @@ if __name__ == '__main__':
         mdb.execute('call pauseid(\'id1\', \'u1\');').assertSucceeded()
         mdb.execute(status1).assertSucceeded().assertDataResultMatch([('paused',)])
         mdb.execute('call resumeid(\'id1\', \'u1\');').assertSucceeded()
-        time.sleep(1)
+        time.sleep(2)
         mdb.execute(status1).assertSucceeded().assertDataResultMatch([('finished',)])
-        # client_proc1.join()
+        client_proc1.join()
 
         client_proc2 = mp.Process(target=execute_qry, args=('u1', 'u1', '/*id2*/',))
         client_proc2.start()
