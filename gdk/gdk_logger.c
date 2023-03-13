@@ -750,7 +750,7 @@ la_bat_destroy(logger *lg, logaction *la, int tid)
 
 	if (!bid) {
 		GDKerror("la_bat_destroy failed to find bid for object %d\n", la->cid);
-		return GDK_FAIL;
+		return GDK_SUCCEED;
 	}
 	if (logger_del_bat(lg, bid) != GDK_SUCCEED)
 		return GDK_FAIL;
