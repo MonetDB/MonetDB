@@ -3528,14 +3528,14 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		tr->changes = NULL;
 		tr->logchanges = 0;
 	} else {
-		if (!commit_lock)
-			MT_lock_set(&store->commit);
-		store_lock(store);
-		ulng oldest = store_oldest(store);
-		store_pending_changes(store, oldest);
-		store_unlock(store);
-		if (!commit_lock)
-			MT_lock_unset(&store->commit);
+		if (commit_lock || MT_lock_try(&store->commit)) {
+			store_lock(store);
+			ulng oldest = store_oldest(store);
+			store_pending_changes(store, oldest);
+			store_unlock(store);
+			if (!commit_lock)
+				MT_lock_unset(&store->commit);
+		}
 	}
 	if (tr->localtmps.dset) {
 		list_destroy2(tr->localtmps.dset, tr->store);
