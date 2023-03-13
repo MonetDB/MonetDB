@@ -13,14 +13,15 @@
 #include "stream_internal.h"
 #include "mapi_prompt.h"
 
-static ssize_t byte_counting_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
+static ssize_t
+byte_counting_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
 {
-		uint64_t *counter = (uint64_t*) s->stream_data.p;
-		ssize_t nwritten = s->inner->write(s->inner, buf, elmsize, cnt);
-		if (nwritten >= 0) {
-			*counter += elmsize * nwritten;
-		}
-		return nwritten;
+	uint64_t *counter = (uint64_t*) s->stream_data.p;
+	ssize_t nwritten = s->inner->write(s->inner, buf, elmsize, cnt);
+	if (nwritten >= 0) {
+		*counter += elmsize * nwritten;
+	}
+	return nwritten;
 }
 
 
