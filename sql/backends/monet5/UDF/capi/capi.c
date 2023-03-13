@@ -220,7 +220,9 @@ static void *wrapped_GDK_zalloc_nojump(size_t size)
 	if (!ptr) {
 		return NULL;
 	}
-	return add_allocated_region(ptr);
+	/*return add_allocated_region(ptr); we GDKfree this already in the CUDFeval, so no need to keep it in the
+	 * allocated_regions */
+	return ptr;
 }
 
 #define GENERATE_NUMERIC_IS_NULL(type, tpename) \
