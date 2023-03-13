@@ -239,6 +239,8 @@ algebra.sort
 1
 bat.pack
 5
+optimizer.profiler
+1
 querylog.define
 1
 sql.bind
@@ -267,6 +269,8 @@ algebra.subslice
 1
 bat.pack
 5
+optimizer.profiler
+1
 querylog.define
 1
 sql.bind
@@ -297,6 +301,8 @@ algebra.subslice
 1
 bat.pack
 5
+optimizer.profiler
+1
 querylog.define
 1
 sql.bind
@@ -327,6 +333,8 @@ algebra.subslice
 1
 bat.pack
 5
+optimizer.profiler
+1
 querylog.define
 1
 sql.bind
@@ -357,6 +365,8 @@ algebra.subslice
 1
 bat.pack
 5
+optimizer.profiler
+1
 querylog.define
 1
 sql.bind
