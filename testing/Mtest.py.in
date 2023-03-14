@@ -2253,31 +2253,31 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
         ##if [ -f .all.left-over.tmp.bats. ] ; then  mv -f .all.left-over.tmp.bats. $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
 
         if tres == 'socket':
-            if verbosity == 0:
+            if verbosity == 0 and not produce_html:
                 print("\n%s : Socket!" % TST)
             elif verbosity > 1:
                 print("(Socket!) ", end='')
 
         if tres == 'timeout':
-            if verbosity == 0:
+            if verbosity == 0 and not produce_html:
                 print("\n%s : Timeout!" % TST)
             elif verbosity > 1:
                 print("(Timeout!) ", end='')
 
         if tres == 'recursion':
-            if verbosity == 0:
+            if verbosity == 0 and not produce_html:
                 print("\n%s : Recursion!" % TST)
             elif verbosity > 1:
                 print("(Recursion!) ", end='')
 
         if tres == 'segfault':
-            if verbosity == 0:
+            if verbosity == 0 and not produce_html:
                 print("\n%s : Crashed!" % TST)
             elif verbosity > 1:
                 print("(Crashed!) ", end='')
 
         if tres == 'signal':
-            if verbosity == 0:
+            if verbosity == 0 and not produce_html:
                 print("\n%s : Signaled!" % TST)
             elif verbosity > 1:
                 print("(Signaled!) ", end='')
