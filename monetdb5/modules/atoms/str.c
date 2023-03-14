@@ -3541,43 +3541,6 @@ STRWChrAt(int *res, const str *arg1, const int *at)
 	return str_wchr_at(res, *arg1, *at);
 }
 
-/* returns whether arg1 starts with arg2 */
-bit
-str_is_prefix(const char *s, const char *prefix)
-{
-	return strncmp(s, prefix, strlen(prefix)) == 0;
-}
-
-static str
-STRPrefix(bit *res, const str *arg1, const str *arg2)
-{
-	const char *s = *arg1, *prefix = *arg2;
-
-	*res = (strNil(s) || strNil(prefix)) ? bit_nil : str_is_prefix(s, prefix);
-	return MAL_SUCCEED;
-}
-
-bit
-str_is_suffix(const char *s, const char *suffix)
-{
-	size_t sl = strlen(s), sul = strlen(suffix);
-
-	if (sl < sul)
-		return 0;
-	else
-		return strcmp(s + sl - sul, suffix) == 0;
-}
-
-/* returns whether arg1 ends with arg2 */
-static str
-STRSuffix(bit *res, const str *arg1, const str *arg2)
-{
-	const char *s = *arg1, *suffix = *arg2;
-
-	*res = (strNil(s) || strNil(suffix)) ? bit_nil : str_is_suffix(s, suffix);
-	return MAL_SUCCEED;
-}
-
 str
 str_lower(str *buf, size_t *buflen, const char *s)
 {
@@ -3656,6 +3619,95 @@ STRUpper(str *res, const str *arg1)
 	return msg;
 }
 
+/* returns whether arg1 starts with arg2 */
+bit
+str_is_prefix(const char *s, const char *prefix)
+{
+	return strncmp(s, prefix, strlen(prefix)) == 0;
+}
+
+static str
+STRPrefix(bit *res, const str *arg1, const str *arg2)
+{
+	const char *s = *arg1, *prefix = *arg2;
+
+	*res = (strNil(s) || strNil(prefix)) ? bit_nil : str_is_prefix(s, prefix);
+	return MAL_SUCCEED;
+}
+
+static str
+STRiPrefix(bit *res, const str *arg1, const str *arg2, const bit *b)
+{
+	const str s1 = *arg1, s2 = *arg2;
+	str msg = MAL_SUCCEED;
+	if (strNil(s1) || strNil(s2))
+		*res = bit_nil;
+	else {
+		if (*b) {
+			str s1_lower, s2_lower;
+			if ((msg = STRLower(&s1_lower, &s1)) != MAL_SUCCEED)
+				return msg;
+			if ((msg = STRLower(&s2_lower, &s2)) != MAL_SUCCEED) {
+				GDKfree(s1_lower);
+				return msg;
+			}
+			*res = str_is_prefix(s1_lower, s2_lower);
+			GDKfree(s1_lower);
+			GDKfree(s2_lower);
+		}
+		else
+			*res = str_is_prefix(s1, s2);
+	}
+	return msg;
+}
+
+bit
+str_is_suffix(const char *s, const char *suffix)
+{
+	size_t sl = strlen(s), sul = strlen(suffix);
+
+	if (sl < sul)
+		return 0;
+	else
+		return strcmp(s + sl - sul, suffix) == 0;
+}
+
+/* returns whether arg1 ends with arg2 */
+static str
+STRSuffix(bit *res, const str *arg1, const str *arg2)
+{
+	const char *s = *arg1, *suffix = *arg2;
+
+	*res = (strNil(s) || strNil(suffix)) ? bit_nil : str_is_suffix(s, suffix);
+	return MAL_SUCCEED;
+}
+
+static str
+STRiSuffix(bit *res, const str *arg1, const str *arg2, const bit *b)
+{
+	const str s1 = *arg1, s2 = *arg2;
+	str msg = MAL_SUCCEED;
+	if (strNil(s1) || strNil(s2))
+		*res = bit_nil;
+	else {
+		if (*b) {
+			str s1_lower, s2_lower;
+			if ((msg = STRLower(&s1_lower, &s1)) != MAL_SUCCEED)
+				return msg;
+			if ((msg = STRLower(&s2_lower, &s2)) != MAL_SUCCEED) {
+				GDKfree(s1_lower);
+				return msg;
+			}
+			*res = str_is_suffix(s1_lower, s2_lower);
+			GDKfree(s1_lower);
+			GDKfree(s2_lower);
+		}
+		else
+			*res = str_is_suffix(s1, s2);
+	}
+	return msg;
+}
+
 int
 str_search(const char *s, const char *s2)
 {
@@ -3674,6 +3726,32 @@ STRstrSearch(int *res, const str *haystack, const str *needle)
 
 	*res = (strNil(s) || strNil(s2)) ? int_nil : str_search(s, s2);
 	return MAL_SUCCEED;
+}
+
+static str
+STRstrISearch(int *res, const str *haystack, const str *needle, const bit *b)
+{
+	const str h = *haystack, n = *needle;
+	str msg = MAL_SUCCEED;
+	if (strNil(h) || strNil(n))
+		*res = bit_nil;
+	else {
+		if (*b) {
+			str h_lower, n_lower;
+			if ((msg = STRLower(&h_lower, &h)) != MAL_SUCCEED)
+				return msg;
+			if ((msg = STRLower(&n_lower, &n)) != MAL_SUCCEED) {
+				GDKfree(h_lower);
+				return msg;
+			}
+			*res = str_is_suffix(h_lower, n_lower);
+			GDKfree(h_lower);
+			GDKfree(n_lower);
+		}
+		else
+			*res = str_search(h, n);
+	}
+	return msg;
 }
 
 int
@@ -4855,10 +4933,13 @@ mel_func str_init_funcs[] = {
  command("str", "unicodeAt", STRWChrAt, false, "get a unicode character\n(as an int) from a string position.", args(1,3, arg("",int),arg("s",str),arg("index",int))),
  command("str", "unicode", STRFromWChr, false, "convert a unicode to a character.", args(1,2, arg("",str),arg("wchar",int))),
  command("str", "startsWith", STRPrefix, false, "Prefix check.", args(1,3, arg("",bit),arg("s",str),arg("prefix",str))),
+ command("str", "startsWith", STRiPrefix, false, "Prefix check with case insensitive flag.", args(1,4, arg("",bit),arg("s",str),arg("prefix",str),arg("cs",bit))),
  command("str", "endsWith", STRSuffix, false, "Suffix check.", args(1,3, arg("",bit),arg("s",str),arg("suffix",str))),
+ command("str", "endsWith", STRiSuffix, false, "Suffix check with case insensitive flag.", args(1,4, arg("",bit),arg("s",str),arg("suffix",str),arg("cs",bit))),
  command("str", "toLower", STRLower, false, "Convert a string to lower case.", args(1,2, arg("",str),arg("s",str))),
  command("str", "toUpper", STRUpper, false, "Convert a string to upper case.", args(1,2, arg("",str),arg("s",str))),
  command("str", "search", STRstrSearch, false, "Search for a substring. Returns\nposition, -1 if not found.", args(1,3, arg("",int),arg("s",str),arg("c",str))),
+ command("str", "search", STRstrISearch, false, "Search for a substring. Returns\nposition, -1 if not found.", args(1,4, arg("",int),arg("s",str),arg("c",str),arg("cs",bit))),
  command("str", "r_search", STRReverseStrSearch, false, "Reverse search for a substring. Returns\nposition, -1 if not found.", args(1,3, arg("",int),arg("s",str),arg("c",str))),
  command("str", "splitpart", STRsplitpart, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, arg("",str),arg("s",str),arg("needle",str),arg("field",int))),
  command("str", "trim", STRStrip, false, "Strip whitespaces around a string.", args(1,2, arg("",str),arg("s",str))),
