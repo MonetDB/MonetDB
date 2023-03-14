@@ -144,7 +144,7 @@ parquet_add_types(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char
 
 	guint n_columns = garrow_table_get_n_columns(table);
 
-	list *types = sa_list(sql->sa);
+	// list *types = sa_list(sql->sa);
 
 	if (!tname)
 		tname = "parquet";
@@ -152,16 +152,16 @@ parquet_add_types(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char
 	for(int col = 0; col < (int)n_columns; col++) {
 		GArrowChunkedArray *array = garrow_table_get_column_data(table, col);
 		GArrowType type = garrow_chunked_array_get_value_type(array);
-		char *name = "column name";
+    char buff[25];
+    snprintf(buff, 100, "name_%i", col);
+    str name = GDKstrdup(buff);
 		char* st = parquet_type_map(type);
-
-		printf("%s\n", st);
 
 		if(st) {
 			sql_subtype *t = sql_bind_subtype(sql->sa, st, 0, 0);
 
-			list_append(types, t);
-			list_append(res_exps, exp_column(sql->sa, tname, name, t, CARD_MULTI, 1, 0, 0));
+			// list_append(types, t);
+			list_append(res_exps, exp_column(sql->sa, NULL, name, t, CARD_MULTI, 1, 0, 0));
 		}
 		else {
 			throw(SQL, SQLSTATE(42000), "parquet" RUNTIME_LOAD_ERROR); // TODO: this should throw a 'unsupported column type' error.
@@ -170,7 +170,7 @@ parquet_add_types(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char
 
 	(void)table;
 	/* cleanup tbl */
-	f->res = types;
+	f->res = res_exps;
 
 	/* close file */
 	GDKfree(file);
