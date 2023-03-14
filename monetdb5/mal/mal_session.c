@@ -384,6 +384,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 				mnstr_printf(fout, "!could not allocate space\n");
 				exit_streams(fin, fout);
 				GDKfree(command);
+				MCcloseClient(c);
 				return;
 			}
 		}
@@ -392,7 +393,10 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			mnstr_printf(c->fdout, "!%s\n", s);
 			mnstr_flush(c->fdout, MNSTR_FLUSH_DATA);
 			GDKfree(s);
+			exit_streams(fin, fout);
+			GDKfree(command);
 			MCcloseClient(c);
+			return;
 		}
 		if (!GDKgetenv_isyes(mal_enableflag) &&
 				(strncasecmp("sql", lang, 3) != 0 && uid != 0)) {
