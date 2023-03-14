@@ -177,13 +177,13 @@ parquet_add_types(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char
 	return MAL_SUCCEED;
 }
 
-static int
+static list *
 parquet_load(mvc *sql, sql_subfunc *f, char *filename)
 {
 	(void)sql;
 	(void)f;
 	(void)filename;
-	return 0;
+	return NULL;
 }
 
 static str
