@@ -2859,7 +2859,8 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						}
 					} else {
 						setFormatter(line);
-						mapi_set_size_header(mid, strcmp(line, "raw") == 0);
+						if (mode == SQL)
+							mapi_set_size_header(mid, strcmp(line, "raw") == 0);
 					}
 					continue;
 				case 't':
@@ -3543,7 +3544,8 @@ main(int argc, char **argv)
 		mapi_set_time_zone(mid, 0);
 	if (output) {
 		setFormatter(output);
-		mapi_set_size_header(mid, strcmp(output, "raw") == 0);
+		if (mode == SQL)
+			mapi_set_size_header(mid, strcmp(output, "raw") == 0);
 		free(output);
 	} else {
 		if (mode == SQL) {
@@ -3551,7 +3553,6 @@ main(int argc, char **argv)
 			mapi_set_size_header(mid, false);
 		} else {
 			setFormatter("raw");
-			mapi_set_size_header(mid, true);
 		}
 	}
 
