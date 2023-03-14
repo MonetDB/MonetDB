@@ -20,6 +20,61 @@ analysis by optimizers.
 #include "monetdb_config.h"
 #include "sql_statistics.h"
 
+static str
+sql_set_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int type)
+{
+	mvc *m = NULL;
+	str sch = NULL, tbl = NULL, col = NULL, msg = MAL_SUCCEED;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	sch = *getArgReference_str(stk, pci, 1);
+	tbl = *getArgReference_str(stk, pci, 2);
+	col = *getArgReference_str(stk, pci, 3);
+
+	sql_schema *s = mvc_bind_schema(m, sch);
+	sql_table *t = s?mvc_bind_table(m, s, tbl):NULL;
+	sql_column *c = t?mvc_bind_column(m, t, col):NULL;
+	if (!c || !t || !s)
+		throw(SQL, "sql.set_stats", SQLSTATE(42000) "Cannot not find Column '%s.%s.%s'", sch, tbl, col);
+	sql_trans *tr = m->session->tr;
+    sqlstore *store = tr->store;
+	if (type > 0) {
+		if (getArgType(mb, pci, 4) != c->type.type->localtype)
+			throw(SQL, "sql.set_stats", SQLSTATE(42000) "Wrong value type '%s'", BATatoms[getArgType(mb, pci, 4)].name);
+		ptr val = getArgReference(stk, pci, 4);
+		store->storage_api.set_stats_col(tr, c, NULL, type==1?val:NULL, type==2?val:NULL);
+	} else { /* count lng type */
+		if (getArgType(mb, pci, 4) != TYPE_lng)
+			throw(SQL, "sql.set_stats", SQLSTATE(42000) "Wrong value type '%s'", BATatoms[getArgType(mb, pci, 4)].name);
+		lng cnt = *getArgReference_lng(stk, pci, 4);
+		double est = cnt;
+		store->storage_api.set_stats_col(tr, c, &est, NULL, NULL);
+	}
+	return msg;
+}
+
+str
+sql_set_count_distinct(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return sql_set_stats(cntxt, mb, stk, pci, 0);
+}
+
+str
+sql_set_min(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return sql_set_stats(cntxt, mb, stk, pci, 1);
+}
+
+str
+sql_set_max(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return sql_set_stats(cntxt, mb, stk, pci, 2);
+}
+
 str
 sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
