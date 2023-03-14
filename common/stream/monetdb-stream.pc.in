@@ -14,7 +14,7 @@ Name: monetdb-stream
 Description: MonetDB streams libary
 URL: https://www.monetdb.org/
 Version: @MONETDB_VERSION@
-Requires.private: @PKG_ZLIB@ @PKG_BZIP2@ @PKG_CURL@ @PKG_LZMA@ @PKG_SNAPPY@
+Requires.private: @PKG_ZLIB@ @PKG_BZIP2@ @PKG_CURL@ @PKG_LZMA@
 
 Libs: -L${libdir} -lstream
 Libs.private: @SOCKET_LIBS@ @PKG_LIBICONV@

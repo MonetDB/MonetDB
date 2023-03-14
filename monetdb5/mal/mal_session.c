@@ -368,7 +368,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			mnstr_printf(c->fdout, "!%s\n", s);
 			mnstr_flush(c->fdout, MNSTR_FLUSH_DATA);
 			GDKfree(s);
-			c->mode = FINISHCLIENT;
+			MCcloseClient(c);
 		}
 		if (!GDKgetenv_isyes(mal_enableflag) &&
 				(strncasecmp("sql", lang, 3) != 0 && uid != 0)) {

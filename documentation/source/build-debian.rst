@@ -39,5 +39,5 @@ zlib1g-dev		# optional: read and write .gz compressed files
 These packages are optional.
 
 libcfitsio-dev		# optional: read FITS files
-liblz4-dev		# optional: compression in new (unused) MAPI protocol, also used to read and write .lz4 compressed files
-libsnappy-dev		# optional: compression in new (unused) MAPI protocol
+liblz4-dev		# optional: read and write .lz4 compressed files
+libsnappy-dev		# optional: currently unused

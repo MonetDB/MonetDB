@@ -56,9 +56,6 @@
 #ifdef HAVE_LIBLZMA
 #include <lzma.h>
 #endif
-#ifdef HAVE_SNAPPY
-#include <snappy-c.h>
-#endif
 #ifdef HAVE_LIBLZ4
 #include <lz4.h>
 #include <lz4frame.h>

@@ -40,12 +40,6 @@ mcrypt_getHashAlgorithms(void)
 		",SHA256"
 		",SHA224"
 		",SHA1"
-#ifdef HAVE_SNAPPY
-		",COMPRESSION_SNAPPY"
-#endif
-#ifdef HAVE_LIBLZ4
-		",COMPRESSION_LZ4"
-#endif
 		;
 	return algorithms;
 }

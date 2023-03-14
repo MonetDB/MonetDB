@@ -66,7 +66,6 @@ target_link_libraries(stream
   $<$<BOOL:${CURL_FOUND}>:CURL::libcurl>
   $<$<BOOL:${LIBLZMA_FOUND}>:LibLZMA::LibLZMA>
   $<$<BOOL:${LZ4_FOUND}>:LZ4::LZ4>
-  $<$<BOOL:${SNAPPY_FOUND}>:SNAPPY::SNAPPY>
   $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>
   matomic
   monetdb_config_header
@@ -98,10 +97,6 @@ if (NOT WIN32)
 
   if(LIBLZMA_FOUND)
     set(PKG_LZMA "liblzma")
-  endif()
-
-  if(SNAPPY_FOUND)
-    set(PKG_SNAPPY "snappy")
   endif()
 
   if(ICONV_FOUND AND NOT Iconv_IS_BUILT_IN)

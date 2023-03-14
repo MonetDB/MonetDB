@@ -32,17 +32,17 @@ the command make rpm.
 | python3-devel		# optional, needed for Python 3 integration
 | python3-numpy		# optional, needed for Python 3 integration
 | R-core-devel		# optional, needed for R integration
-| readline-devel		# optional, enable editing in mclient
+| readline-devel	# optional, enable editing in mclient
 | rpm-build		# optional, required to create RPMs (make rpm)
 | selinux-policy-devel	# optional, required to create RPMs (make rpm)
-| unixODBC-devel		# optional, needed for ODBC driver
+| unixODBC-devel	# optional, needed for ODBC driver
 
 These packages are optional.
 
 | cfitsio-devel		# optional: read FITS files
-| libasan			# optional: --enable-sanitizer configuration (debug)
-| lz4-devel		# optional: compression in new (unused) MAPI protocol, also used to read and write .lz4 compressed files
+| libasan		# optional: --enable-sanitizer configuration (debug)
+| lz4-devel		# optional: read and write .lz4 compressed files
 | netcdf-devel		# optional: read NetCDF files
 | proj-devel		# optional, only optionally used in geom module
-| snappy-devel		# optional: compression in new (unused) MAPI protocol
-| valgrind-devel		# optional: --with-valgrind configuration (debug)
+| snappy-devel		# optional: unused
+| valgrind-devel	# optional: --with-valgrind configuration (debug)
