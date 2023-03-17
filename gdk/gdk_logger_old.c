@@ -1658,7 +1658,6 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 		BBPrelease(bids[p]);
 	}
 	logbat_destroy(lg->del);
-	GDKfree(lg->local_dir);
 	GDKfree(lg);
 	return GDK_FAIL;
 }
