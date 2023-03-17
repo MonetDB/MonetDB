@@ -254,6 +254,7 @@ UTF8_strwidth(const char *restrict s)
 }
 
 mal_export bool batstr_func_has_candidates(const char *func);
+mal_export str STRlower(str *res, const str *arg1);
 
 /* For str returning functions, the result is passed as the input parameter buf. The returned str indicates
    if the function succeeded (ie malloc failure or invalid unicode character). str_wchr_at function also
