@@ -38756,8 +38756,13 @@ Transform string from UTF8 to ASCII
 str
 endsWith
 command str.endsWith(X_0:str, X_1:str):bit 
-STRSuffix;
-Suffix check.
+STRendsWith;
+Check if string ends with substring.
+str
+endsWith
+pattern str.endsWith(X_0:str, X_1:str, X_2:bit):bit 
+STRendsWith;
+Check if string ends with substring, case insensitive flag.
 str
 epilogue
 command str.epilogue():void 
@@ -38874,6 +38879,11 @@ command str.search(X_0:str, X_1:str):int
 STRstrSearch;
 Search for a substring. Returns@position, -1 if not found.
 str
+search
+command str.search(X_0:str, X_1:str, X_2:bit):int 
+STRstrSearch;
+Search for a substring, case insensitive flag. Returns@position, -1 if not found.
+str
 space
 command str.space(X_0:int):str 
 STRspace;
@@ -38885,9 +38895,14 @@ STRsplitpart;
 Split string on delimiter. Returns@given field (counting from one.)
 str
 startsWith
-command str.startsWith(X_0:str, X_1:str):bit 
-STRPrefix;
-Prefix check.
+pattern str.startsWith(X_0:str, X_1:str):bit 
+STRstartsWith;
+Check if string starts with substring.
+str
+startsWith
+pattern str.startsWith(X_0:str, X_1:str, X_2:bit):bit 
+STRstartsWith;
+Check if string starts with substring, case insensitive flag.
 str
 str
 command str.str(X_0:str):str 
@@ -38936,12 +38951,12 @@ Extract the suffix of a given length
 str
 toLower
 command str.toLower(X_0:str):str 
-STRLower;
+STRlower;
 Convert a string to lower case.
 str
 toUpper
 command str.toUpper(X_0:str):str 
-STRUpper;
+STRupper;
 Convert a string to upper case.
 str
 trim
