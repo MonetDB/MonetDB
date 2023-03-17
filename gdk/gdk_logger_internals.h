@@ -14,8 +14,8 @@
 #define FLUSH_QUEUE_SIZE 2048 /* maximum size of the flush queue, i.e. maximum number of transactions committing simultaneously */
 
 typedef struct logged_range_t {
-	ulng id;			/* log file id */
-	ulng last_ts;		/* last stored timestamp */
+	ulng id;				/* log file id */
+	ATOMIC_TYPE last_ts;	/* last stored timestamp */
 	struct logged_range_t *next;
 	ATOMIC_TYPE refcount;
 	ATOMIC_TYPE end;
