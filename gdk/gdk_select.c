@@ -1485,6 +1485,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		return bn;
 	}
 
+	/* figure out how the searched for range compares with the known
+	 * minimum and maximum values */
 	if (anti) {
 		int c;
 
@@ -1604,82 +1606,37 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	 * persistent and the total size wouldn't be too large; check
 	 * for existence of hash last since that may involve I/O */
 	if (equi) {
-		havehash = BATcheckhash(b);
-		if (havehash) {
-			MT_rwlock_rdlock(&b->thashlock);
-			if (b->thash == NULL) {
-				MT_rwlock_rdunlock(&b->thashlock);
-				havehash = false;
+		double cost = joincost(b, 1, &ci, &havehash, &phash, NULL);
+		if (cost > 0 && cost < ci.ncand) {
+			wanthash = true;
+			if (havehash) {
+				if (phash) {
+					MT_rwlock_rdlock(&pb->thashlock);
+					if (pb->thash == NULL) {
+						MT_rwlock_rdunlock(&pb->thashlock);
+						havehash = false;
+					}
+				} else {
+					MT_rwlock_rdlock(&b->thashlock);
+					if (b->thash == NULL) {
+						MT_rwlock_rdunlock(&b->thashlock);
+						havehash = false;
+					}
+				}
 			}
-		}
-		wanthash = havehash ||
-			((!bi.transient ||
-			  (b->batRole == PERSISTENT && GDKinmemory(0))) &&
-			 ATOMsize(bi.type) >= sizeof(BUN) / 4 &&
-			 bi.count * (ATOMsize(bi.type) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2);
-		if (!wanthash) {
-			MT_lock_set(&b->theaplock);
-			if (++b->selcnt > 1000) {
-				wanthash = true;
-				b->selcnt = 1000; /* limit value */
+			if (wanthash && !havehash) {
+				MT_lock_set(&b->theaplock);
+				if (++b->selcnt > 1000)
+					b->selcnt = 1000; /* limit value */
+				else
+					wanthash = false;
+				MT_lock_unset(&b->theaplock);
 			}
-			MT_lock_unset(&b->theaplock);
-		}
-		if (wanthash && !havehash) {
-			if (bi.unique_est != 0 &&
-			    bi.unique_est < bi.count / no_hash_select_fraction) {
-				/* too many duplicates: not worth it */
-				wanthash = false;
-			}
+		} else {
+			wanthash = havehash = false;
 		}
 	}
 
-	if (equi && !havehash && pb != NULL) {
-		/* use parent hash if it already exists and if either
-		 * a quick check shows the value we're looking for
-		 * does not occur, or if it is cheaper to check the
-		 * candidate list for each value in the hash chain
-		 * than to scan (cost for probe is average length of
-		 * hash chain (count divided by #slots) times the cost
-		 * to do a binary search on the candidate list (or 1
-		 * if no need for search)) */
-		if (BATcheckhash(pb)) {
-			MT_rwlock_rdlock(&pb->thashlock);
-			phash = pb->thash != NULL &&
-				(pbi.count == bi.count ||
-				 pbi.count / pb->thash->nheads * (ci.tpe != cand_dense ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : bi.count) ||
-				 HASHget(pb->thash, HASHprobe(pb->thash, tl)) == BUN_NONE);
-			if (phash)
-				havehash = wanthash = true;
-			else
-				MT_rwlock_rdunlock(&pb->thashlock);
-		}
-		/* create a hash on the parent bat (and use it) if it is
-		 * the same size as the view and it is persistent */
-		bool wantphash = false;
-		if (!phash) {
-			MT_lock_set(&pb->theaplock);
-			if (++pb->selcnt > 1000) {
-				wantphash = true;
-				pb->selcnt = 1000;
-			}
-			MT_lock_unset(&pb->theaplock);
-		}
-		if (!phash &&
-		    (!pbi.transient ||
-		     wantphash ||
-		     (pb->batRole == PERSISTENT && GDKinmemory(0))) &&
-		    pbi.count == bi.count &&
-		    (pbi.unique_est == 0 ||
-		     pbi.unique_est >= pbi.count / no_hash_select_fraction) &&
-		    BAThash(pb) == GDK_SUCCEED) {
-			MT_rwlock_rdlock(&pb->thashlock);
-			if (pb->thash)
-				havehash = wanthash = phash = true;
-			else
-				MT_rwlock_rdunlock(&pb->thashlock);
-		}
-	}
 	/* at this point, if havehash is set, we have the hash lock
 	 * the lock is on the parent if phash is set, on b itself if not
 	 * also, if havehash is set, then so is wanthash (but not v.v.) */
