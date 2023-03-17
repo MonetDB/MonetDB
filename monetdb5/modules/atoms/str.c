@@ -3548,7 +3548,7 @@ str_lower(str *buf, size_t *buflen, const char *s)
 	return convertCase(UTF8_toLowerFrom, UTF8_toLowerTo, buf, buflen, s, "str.lower");
 }
 
-static str
+str
 STRlower(str *res, const str *arg1)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
@@ -3635,14 +3635,12 @@ STRstartsWith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit *res = getArgReference(stk, pci, 0);
 	const str *arg1 = getArgReference(stk, pci, 1);
 	const str *arg2 = getArgReference(stk, pci, 2);
-	bit cs = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
+	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
+	str s = *arg1, prefix = *arg2, msg = MAL_SUCCEED;
 
-	str s = *arg1, prefix = *arg2;
-	str s_lower, prefix_lower, msg = MAL_SUCCEED;
-
-	if (cs) {
-		if ((msg = STRlower(&s, &s_lower)) != MAL_SUCCEED ||
-			(msg = STRlower(&prefix, &prefix_lower)) != MAL_SUCCEED)
+	if (icase) {
+		if ((msg = STRlower(&s, &s)) != MAL_SUCCEED ||
+			(msg = STRlower(&prefix, &prefix)) != MAL_SUCCEED)
 			goto bail;
 	}
 	*res = (strNil(s) || strNil(prefix)) ? bit_nil :str_is_prefix(s, prefix) ;
@@ -3670,12 +3668,12 @@ STRendsWith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit *res = getArgReference(stk, pci, 0);
 	const str *arg1 = getArgReference(stk, pci, 1);
 	const str *arg2 = getArgReference(stk, pci, 2);
-	bit cs = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
+	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
 
 	str s = *arg1, suffix = *arg2;
 	str s_lower, suffix_lower, msg = MAL_SUCCEED;
 
-	if (cs) {
+	if (icase) {
 		if ((msg = STRlower(&s, &s_lower)) != MAL_SUCCEED ||
 			(msg = STRlower(&suffix, &suffix_lower)) != MAL_SUCCEED)
 			goto bail;
@@ -3704,12 +3702,12 @@ STRstrSearch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit *res = getArgReference(stk, pci, 0);
 	const str *haystack = getArgReference(stk, pci, 1);
 	const str *needle = getArgReference(stk, pci, 2);
-	bit cs = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
+	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
 
 	str s = *haystack, h = *needle;
 	str s_lower, h_lower, msg = MAL_SUCCEED;
 
-	if (cs) {
+	if (icase) {
 		if ((msg = STRlower(&s, &s_lower)) != MAL_SUCCEED ||
 			(msg = STRlower(&h, &h_lower)) != MAL_SUCCEED)
 			goto bail;
@@ -4898,13 +4896,13 @@ mel_func str_init_funcs[] = {
  command("str", "unicodeAt", STRWChrAt, false, "get a unicode character\n(as an int) from a string position.", args(1,3, arg("",int),arg("s",str),arg("index",int))),
  command("str", "unicode", STRFromWChr, false, "convert a unicode to a character.", args(1,2, arg("",str),arg("wchar",int))),
  pattern("str", "startsWith", STRstartsWith, false, "Check if string starts with substring.", args(1,3, arg("",bit),arg("s",str),arg("prefix",str))),
- pattern("str", "startsWith", STRstartsWith, false, "Check if string starts with substring, case insensitive flag.", args(1,4, arg("",bit),arg("s",str),arg("prefix",str),arg("cs",bit))),
+ pattern("str", "startsWith", STRstartsWith, false, "Check if string starts with substring, icase flag.", args(1,4, arg("",bit),arg("s",str),arg("prefix",str),arg("icase",bit))),
  pattern("str", "endsWith", STRendsWith, false, "Check if string ends with substring.", args(1,3, arg("",bit),arg("s",str),arg("suffix",str))),
- pattern("str", "endsWith", STRendsWith, false, "Check if string ends with substring, case insensitive flag.", args(1,4, arg("",bit),arg("s",str),arg("suffix",str),arg("cs",bit))),
+ pattern("str", "endsWith", STRendsWith, false, "Check if string ends with substring, icase flag.", args(1,4, arg("",bit),arg("s",str),arg("suffix",str),arg("icase",bit))),
  command("str", "toLower", STRlower, false, "Convert a string to lower case.", args(1,2, arg("",str),arg("s",str))),
  command("str", "toUpper", STRupper, false, "Convert a string to upper case.", args(1,2, arg("",str),arg("s",str))),
  pattern("str", "search", STRstrSearch, false, "Search for a substring. Returns\nposition, -1 if not found.", args(1,3, arg("",int),arg("s",str),arg("c",str))),
- pattern("str", "search", STRstrSearch, false, "Search for a substring, case insensitive flag. Returns\nposition, -1 if not found.", args(1,4, arg("",int),arg("s",str),arg("c",str),arg("cs",bit))),
+ pattern("str", "search", STRstrSearch, false, "Search for a substring, icase flag. Returns\nposition, -1 if not found.", args(1,4, arg("",int),arg("s",str),arg("c",str),arg("icase",bit))),
  command("str", "r_search", STRReverseStrSearch, false, "Reverse search for a substring. Returns\nposition, -1 if not found.", args(1,3, arg("",int),arg("s",str),arg("c",str))),
  command("str", "splitpart", STRsplitpart, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, arg("",str),arg("s",str),arg("needle",str),arg("field",int))),
  command("str", "trim", STRStrip, false, "Strip whitespaces around a string.", args(1,2, arg("",str),arg("s",str))),
