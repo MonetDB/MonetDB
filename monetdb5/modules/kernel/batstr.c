@@ -1768,12 +1768,10 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 	bool nils = false;
 	struct canditer ci1 = {0};
 	oid off1;
-	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1), *sid1;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1), *sid1 = NULL;
 	/* checking if icase is ~NULL and not if it is true or false */
 	if (pci->argc == 4 || pci->argc == 5) {
-		if (icase)
-			sid1 = NULL;
-		else {
+		if (!icase) {
 			assert(getArgType(mb, pci, 3) == TYPE_bat);
 			sid1 = getArgReference_bat(stk, pci, 3);
 		}
@@ -1894,12 +1892,10 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bool nils = false;
 	struct canditer ci1 = {0};
 	oid off1;
-	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2), *sid1;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2), *sid1 = NULL;
 	/* checking if icase is ~NULL and not if it is true or false */
 	if (pci->argc == 4 || pci->argc == 5) {
-		if (icase)
-			sid1 = NULL;
-		else {
+		if (!icase) {
 			assert(getArgType(mb, pci, 3) == TYPE_bat);
 			sid1 = getArgReference_bat(stk, pci, 3);
 		}
@@ -2143,12 +2139,10 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 	bool nils = false;
 	struct canditer ci1 = {0};
 	oid off1;
-	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1), *sid1;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1), *sid1 = NULL;
 	/* checking if icase is ~NULL and not if it is true or false */
 	if (pci->argc == 4 || pci->argc == 5) {
-		if (icase)
-			sid1 = NULL;
-		else {
+		if (!icase) {
 			assert(getArgType(mb, pci, 3) == TYPE_bat);
 			sid1 = getArgReference_bat(stk, pci, 3);
 		}
@@ -2265,12 +2259,10 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	bool nils = false;
 	struct canditer ci1 = {0};
 	oid off1;
-	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2), *sid1;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2), *sid1 = NULL;
 	/* checking if icase is ~NULL and not if it is true or false */
 	if (pci->argc == 4 || pci->argc == 5) {
-		if (icase)
-			sid1 = NULL;
-		else {
+		if (!icase) {
 			assert(getArgType(mb, pci, 3) == TYPE_bat);
 			sid1 = getArgReference_bat(stk, pci, 3);
 		}
