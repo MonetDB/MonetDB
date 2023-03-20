@@ -1,8 +1,8 @@
 statement ok
-create function startswith(x string, y string) returns bool external name str."startsWith"
+create function endswith(x string, y string) returns bool external name str."endsWith"
 
 statement ok
-create function istartswith(x string, y string, i bool) returns bool external name str."startsWith"
+create function iendswith(x string, y string, i bool) returns bool external name str."endsWith"
 
 statement ok
 create table foo(x string)
@@ -11,14 +11,14 @@ statement ok
 insert into foo values ('johndoe'),('janedoe'),('robertdoe')
 
 query T rowsort
-select startswith(x, '') from foo
+select endswith(x, '') from foo
 ----
 True
 True
 True
 
 query T rowsort
-select startswith('', x) from foo
+select endswith('', x) from foo
 ----
 False
 False
@@ -34,7 +34,7 @@ statement ok
 insert into bar values ('johndoe','doe'),('Müller Thomas', 'Thomas Müller'),('Thomas Müller', 'Müller Thomas')
 
 query T rowsort
-select startswith(x, 'Müller') from bar
+select endswith(x, 'Müller') from bar
 ----
 False
 False
@@ -44,7 +44,7 @@ statement ok
 drop table bar
 
 statement ok
-drop function startswith
+drop function endswith
 
 statement ok
-drop function istartswith
+drop function iendswith
