@@ -36734,16 +36734,6 @@ pattern optimizer.macro(X_0:str, X_1:str, X_2:str, X_3:str):void
 OPTmacro;
 Inline a target function used in a specific function.
 optimizer
-mask
-pattern optimizer.mask():str 
-OPTwrapper;
-(empty)
-optimizer
-mask
-pattern optimizer.mask(X_0:str, X_1:str):str 
-OPTwrapper;
-Manipulate the MSK objects
-optimizer
 matpack
 pattern optimizer.matpack():str 
 OPTwrapper;
