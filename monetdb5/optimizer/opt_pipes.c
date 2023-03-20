@@ -55,7 +55,6 @@ static struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 //"optimizer.candidates();" only for decoration in explain
-	 //"optimizer.mask();"
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -70,7 +69,6 @@ static struct PIPELINES {
 	 "optimizer.strimps();"
 	 "optimizer.generator();"
 	 //"optimizer.candidates();" only for decoration in explain
-	 //"optimizer.mask();"
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -114,10 +112,8 @@ static struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 "optimizer.candidates();"
-	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -148,10 +144,8 @@ static struct PIPELINES {
 	 "optimizer.strimps();"
 	 "optimizer.generator();"
 	 "optimizer.candidates();"
-	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -190,10 +184,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.volcano();"
 	 "optimizer.candidates();"
-	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -232,10 +224,8 @@ static struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 "optimizer.candidates();"
-	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -274,10 +264,8 @@ static struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 "optimizer.candidates();"
-	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
