@@ -3,3 +3,6 @@ TriBool
 batstr
 math
 select
+
+batstartswith
+batendswith
