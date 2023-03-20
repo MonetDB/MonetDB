@@ -106,8 +106,13 @@ CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(b);
 		throw(MAL, "bat.single", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+	/* BBPkeepref makes the BAT readonly, while in pipeline, we need to
+	 * keep the BAT writable for the next round, hence BBPretain to
+	 * increase the logical reference and BBPunfix to decrease the current
+	 * phsical reference.  Together they are similar to what BBPkeepref
+	 * does, but without making the BAT readonly.
+	 */
 	//BBPkeepref(*ret = b->batCacheid);
-	//leave writable
 	BBPretain(*ret = b->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
