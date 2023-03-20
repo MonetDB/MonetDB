@@ -1,0 +1,56 @@
+statement ok
+create function endswith(x string, y string) returns bool external name str."endsWith"
+
+statement ok
+create function iendswith(x string, y string, i bool) returns bool external name str."endsWith"
+
+query T rowsort
+select endsWith(NULL, '')
+----
+NULL
+
+query T rowsort
+select endsWith('', NULL)
+----
+NULL
+
+query T rowsort
+select endsWith('', '')
+----
+True
+
+query T rowsort
+select endsWith('johndoe', '')
+----
+True
+
+query T rowsort
+select endsWith('', 'johndoe')
+----
+False
+
+query T rowsort
+select endsWith('johndoe', 'doe')
+----
+True
+
+query T rowsort
+select iendswith('one two three', 'three', true)
+----
+True
+
+query T rowsort
+select iendswith('Thomas Müller', 'müller', true)
+----
+True
+
+query T rowsort
+select iendswith('Thomas Müller', 'müller', false)
+----
+False
+
+statement ok
+drop function endswith
+
+statement ok
+drop function iendswith
