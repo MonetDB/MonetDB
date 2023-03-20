@@ -56,9 +56,9 @@ struct logger {
 	
 	// synchronized by rotation_lock
 	logged_range *current;
+	logged_range *flush_ranges;
 
 	// atomic
-	ATOMIC_PTR_TYPE flush_ranges;
 	ATOMIC_TYPE		nr_flushers;
 
 	// synchronized by store->flush

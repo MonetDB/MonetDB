@@ -2153,7 +2153,6 @@ log_load(int debug, const char *fn, const char *logdir, logger *lg, char filenam
 	logbat_destroy(lg->dseqs);
 	ATOMIC_DESTROY(&lg->current->refcount);
 	ATOMIC_DESTROY(&lg->nr_flushers);
-	ATOMIC_PTR_DESTROY(&lg->flush_ranges);
 	MT_lock_destroy(&lg->lock);
 	MT_lock_destroy(&lg->rotation_lock);
 	GDKfree(lg->fn);
@@ -2223,7 +2222,6 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 	MT_lock_init(&lg->flush_lock, "flush_lock");
 	MT_cond_init(&lg->excl_flush_cv);
 	ATOMIC_INIT(&lg->nr_flushers, 0);
-	ATOMIC_PTR_INIT(&lg->flush_ranges, NULL);
 
 	if (log_load(debug, fn, logdir, lg, filename) == GDK_SUCCEED) {
 		return lg;
@@ -2233,8 +2231,8 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 
 static logged_range*
 do_flush_range_cleanup(logger* lg) {
-
-	logged_range* frange = ATOMIC_PTR_GET(&lg->flush_ranges);
+	rotation_lock(lg);
+	logged_range* frange = lg->flush_ranges;
 	logged_range* first = frange;
 	
 	while ( frange->next) {
@@ -2242,19 +2240,22 @@ do_flush_range_cleanup(logger* lg) {
 			break;
 		frange = frange->next;
 	}
-	if (first == frange)
+	if (first == frange) {
+		rotation_unlock(lg);
 		return first;
+	}
 
 	logged_range* flast = frange;
-	if (ATOMIC_PTR_CAS(&lg->flush_ranges, &first, flast)) {
-		for (frange = first; frange && frange != flast; frange = frange->next) {
-			(void) ATOMIC_DEC(&frange->refcount);
-			close_stream(frange->output_log);
-			frange->output_log = NULL;
-			frange = frange->next;
-		}
+
+	lg->flush_ranges = flast;
+	rotation_unlock(lg);
+
+	for (frange = first; frange && frange != flast; frange = frange->next) {
+		(void) ATOMIC_DEC(&frange->refcount);
+		close_stream(frange->output_log);
+		frange->output_log = NULL;
+		frange = frange->next;
 	}
-	/* else some other flusher is cleaning up the flush ranges*/
 
 	return flast;
 }
@@ -2265,7 +2266,7 @@ log_destroy(logger *lg)
 	log_close_input(lg);
 	logged_range* last = do_flush_range_cleanup(lg);
 	(void) last;
-	assert(last == lg->current && last == (logged_range*) ATOMIC_PTR_GET(&lg->flush_ranges));
+	assert(last == lg->current && last == lg->flush_ranges);
 	log_close_output(lg);
 	for (logged_range *p = lg->pending; p; ){
 		logged_range *n = p->next;
@@ -2305,7 +2306,6 @@ log_destroy(logger *lg)
 	MT_lock_destroy(&lg->rotation_lock);
 	MT_lock_destroy(&lg->flush_lock);
 	ATOMIC_DESTROY(&lg->nr_flushers);
-	ATOMIC_PTR_DESTROY(&lg->flush_ranges);
 	GDKfree(lg->fn);
 	GDKfree(lg->dir);
 	GDKfree(lg->buf);
@@ -2973,7 +2973,7 @@ gdk_return
 log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
 
 	if (lg->flushnow) {
-		logged_range* frange = ATOMIC_PTR_GET(&lg->flush_ranges);
+		logged_range* frange = lg->flush_ranges;
 		assert(frange == lg->current);
 		ulng end = ATOMIC_GET(&lg->current->end);
 		assert(end > ATOMIC_GET(&lg->current->pend));
