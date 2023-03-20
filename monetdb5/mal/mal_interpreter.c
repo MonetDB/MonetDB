@@ -531,6 +531,22 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			break;
 		}
 
+		if (stk->status) {
+			/* pause procedure from SYSMON */
+			if (stk->status == 'p') {
+				while (stk->status == 'p')
+					MT_sleep_ms(50);
+				continue;
+			}
+			/* stop procedure from SYSMON */
+			if (stk->status == 'q') {
+				stkpc = mb->stop;
+				ret = createException(MAL, "mal.interpreter",
+									  "Query with tag "OIDFMT" received stop signal",
+									  mb->tag);
+				break;
+			}
+		}
 		//Ensure we spread system resources over multiple users as well.
 		runtimeProfileBegin(cntxt, mb, stk, pci, &runtimeProfile);
 		if (runtimeProfile.ticks > lastcheck + CHECKINTERVAL) {
@@ -787,7 +803,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
 		/* when we find a timeout situation, then the result is already known
 		 * and assigned,  the backup version is not removed*/
-		if (ret== MAL_SUCCEED) {
+		if (ret == MAL_SUCCEED) {
 			for (int i = 0; i < pci->retc; i++) {
 				lhs = &backup[i];
 				if (BATatoms[lhs->vtype].atomUnfix &&

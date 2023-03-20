@@ -716,7 +716,7 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 	int i;
 	int j;
 	InstrPtr p;
-	int tasks=0, actions;
+	int tasks=0, actions = 0;
 	str ret = MAL_SUCCEED;
 	FlowEvent fe, f = 0;
 

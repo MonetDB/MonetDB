@@ -235,6 +235,8 @@ void IMPSincref(Imprints *imprints)
 void IMPSprint(BAT *b)		/* never called: for debugging only */
 	__attribute__((__cold__));
 #endif
+double joincost(BAT *r, BUN lcount, struct canditer *rci, bool *hash, bool *phash, bool *cand)
+	__attribute__((__visibility__("hidden")));
 void STRMPincref(Strimps *strimps)
 	__attribute__((__visibility__("hidden")));
 void STRMPdecref(Strimps *strimps, bool remove)
