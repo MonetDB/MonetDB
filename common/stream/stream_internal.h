@@ -268,8 +268,8 @@ typedef struct bs bs;
 struct bs {
 	unsigned nr;		/* how far we got in buf */
 	unsigned itotal;	/* amount available in current read block */
-	size_t blks;		/* read/writen blocks (possibly partial) */
-	size_t bytes;		/* read/writen bytes */
+	int64_t blks;		/* read/writen blocks (possibly partial) */
+	int64_t bytes;		/* read/writen bytes */
 	char buf[BLOCK];	/* the buffered data (minus the size of
 				 * size-short */
 };

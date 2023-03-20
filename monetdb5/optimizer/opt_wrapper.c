@@ -35,12 +35,9 @@
 #include "opt_garbageCollector.h"
 #include "opt_generator.h"
 #include "opt_inline.h"
-#include "opt_jit.h"
 #include "opt_projectionpath.h"
 #include "opt_matpack.h"
-#include "opt_json.h"
 #include "opt_postfix.h"
-#include "opt_mask.h"
 #include "opt_for.h"
 #include "opt_dict.h"
 #include "opt_mergetable.h"
@@ -81,9 +78,6 @@ static struct {
 	{"garbageCollector", &OPTgarbageCollectorImplementation,0,0},
 	{"generator", &OPTgeneratorImplementation,0,0},
 	{"inline", &OPTinlineImplementation,0,0},
-	{"jit", &OPTjitImplementation,0,0},
-	{"json", &OPTjsonImplementation,0,0},
-	{"mask", &OPTmaskImplementation,0,0},
 	{"matpack", &OPTmatpackImplementation,0,0},
 	{"mergetable", &OPTmergetableImplementation,0,0},
 	{"minimalfast", &OPTminimalfastImplementation,0,0},
