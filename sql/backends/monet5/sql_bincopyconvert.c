@@ -19,6 +19,13 @@
 #include "mal_interpreter.h"
 #include "mstring.h"
 
+
+#define bailout(...) do { \
+		msg = createException(MAL, mal_operator, SQLSTATE(42000) __VA_ARGS__); \
+		goto end; \
+	} while (0)
+
+
 static str
 validate_bit(void *dst_, void *src_, size_t count, int width, bool byteswap)
 {
@@ -173,6 +180,14 @@ encode_date(void *dst_, void *src_, size_t count, int width, bool byteswap)
 	date *src = src_;
 	for (size_t i = 0; i < count; i++) {
 		date dt = *src++;
+		if (is_date_nil(dt)) {
+			*dst++ = (copy_binary_date){
+				.day = 0xFF,
+				.month = 0xFF,
+				.year = -1,
+			};
+			continue;
+		}
 		int16_t year = date_year(dt);
 		if (byteswap)
 			year = copy_binary_byteswap16(year);
@@ -213,6 +228,16 @@ encode_time(void *dst_, void *src_, size_t count, int width, bool byteswap)
 	daytime *src = src_;
 	for (size_t i = 0; i < count; i++) {
 		daytime tm = *src++;
+		if (is_daytime_nil(tm)) {
+			*dst++ = (copy_binary_time){
+				.ms = 0xFFFFFFFF,
+				.seconds = 0xFF,
+				.minutes = 0xFF,
+				.hours = 0xFF,
+				.padding = 0xFF,
+			};
+			continue;
+		}
 		uint32_t ms = daytime_usec(tm);
 		if (byteswap)
 			ms = copy_binary_byteswap32(ms);
@@ -258,6 +283,23 @@ encode_timestamp(void *dst_, void *src_, size_t count, int width, bool byteswap)
 	timestamp *src = src_;
 	for (size_t i = 0; i < count; i++) {
 		timestamp value = *src++;
+		if (is_timestamp_nil(value)) {
+			*dst++ = (copy_binary_timestamp) {
+				.time = {
+					.ms = 0xFFFFFFFF,
+					.seconds = 0xFF,
+					.minutes = 0xFF,
+					.hours = 0xFF,
+					.padding = 0xFF,
+				},
+				.date = {
+					.day = 0xFF,
+					.month = 0xFF,
+					.year = -1,
+				}
+			};
+			continue;
+		}
 		date dt = timestamp_date(value);
 		daytime tm = timestamp_daytime(value);
 		int16_t year = date_year(dt);
@@ -363,7 +405,7 @@ end:
 }
 
 static str
-dump_zero_terminated_text(BAT *bat, stream *s, bool byteswap)
+dump_zero_terminated_text(BAT *bat, stream *s, BUN start, BUN length, bool byteswap)
 {
 	(void)byteswap;
 	const char *mal_operator = "sql.export_bin_column";
@@ -372,9 +414,11 @@ dump_zero_terminated_text(BAT *bat, stream *s, bool byteswap)
 	assert(ATOMstorage(tpe) == TYPE_str); (void)tpe;
 	assert(mnstr_isbinary(s));
 
-	BUN end = BATcount(bat);
+
+	BUN end = start + length;
+	assert(end <= BATcount(bat));
 	BATiter bi = bat_iterator(bat);
-	for (BUN p = 0; p < end; p++) {
+	for (BUN p = start; p < end; p++) {
 		const char *v = BUNtvar(bi, p);
 		if (mnstr_writeStr(s, v) < 0 || mnstr_writeBte(s, 0) < 0) {
 			bailout("%s", mnstr_peek_error(s));
@@ -384,6 +428,151 @@ dump_zero_terminated_text(BAT *bat, stream *s, bool byteswap)
 end:
 	bat_iterator_end(&bi);
 	return msg;
+}
+
+// Some streams, in particular the mapi upload stream, sometimes read fewer
+// bytes than requested. This function wraps the read in a loop to force it to
+// read the whole block
+static ssize_t
+read_exact(stream *s, void *buffer, size_t length)
+{
+	char *p = buffer;
+
+	while (length > 0) {
+		ssize_t nread = mnstr_read(s, p, 1, length);
+		if (nread < 0) {
+			return nread;
+		} else if (nread == 0) {
+			break;
+		} else {
+			p += nread;
+			length -= nread;
+		}
+	}
+
+	return p - (char*)buffer;
+}
+
+// Read BLOBs.  Every blob is preceded by a 64bit header word indicating its length.
+// NULLs are indicated by length==-1
+static str
+load_blob(BAT *bat, stream *s, int *eof_reached, int width, bool byteswap)
+{
+	(void)width;
+	const char *mal_operator = "sql.importColumn";
+	str msg = MAL_SUCCEED;
+	const blob *nil_value = ATOMnilptr(TYPE_blob);
+	blob *buffer = NULL;
+	size_t buffer_size = 0;
+	union {
+		uint64_t length;
+		char bytes[8];
+	} header;
+
+	*eof_reached = 0;
+
+	while (1) {
+		const blob *value;
+		// Read the header
+		ssize_t nread = read_exact(s, header.bytes, 8);
+		if (nread < 0) {
+			bailout("%s", mnstr_peek_error(s));
+		} else if (nread == 0) {
+			*eof_reached = 1;
+			break;
+		} else if (nread < 8) {
+			bailout("incomplete blob at end of file");
+		}
+		if (byteswap) {
+			copy_binary_convert64(&header.length);
+		}
+
+		if (header.length == ~(uint64_t)0) {
+			value = nil_value;
+		} else {
+			size_t length;
+			size_t needed;
+
+			if (header.length >= VAR_MAX) {
+				bailout("blob too long");
+			}
+			length = (size_t) header.length;
+
+			// Reallocate the buffer
+			needed = sizeof(blob) + length;
+			if (buffer_size < needed) {
+				// do not use GDKrealloc, no need to copy the old contents
+				GDKfree(buffer);
+				size_t allocate = needed;
+				allocate += allocate / 16;   // add a little margin
+#ifdef _MSC_VER
+#pragma warning(suppress:4146)
+#endif
+				allocate += ((~allocate + 1) % 0x100000);   // round up to nearest MiB
+				assert(allocate >= needed);
+				buffer = GDKmalloc(allocate);
+				if (!buffer) {
+					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto end;
+				}
+				buffer_size = allocate;
+			}
+
+			// Fill the buffer
+			buffer->nitems = length;
+			if (length > 0) {
+				nread = read_exact(s, buffer->data, length);
+				if (nread < 0) {
+					bailout("%s", mnstr_peek_error(s));
+				} else if ((size_t)nread < length) {
+					bailout("Incomplete blob at end of file");
+				}
+			}
+
+			value = buffer;
+		}
+
+		if (BUNappend(bat, value, false) != GDK_SUCCEED) {
+				msg = createException(SQL, mal_operator, GDK_EXCEPTION);
+				goto end;
+		}
+	}
+
+end:
+	GDKfree(buffer);
+	return msg;
+}
+
+static str
+dump_blob(BAT *bat, stream *s, BUN start, BUN length, bool byteswap)
+{
+	const char *mal_operator = "sql.export_bin_column";
+	str msg = MAL_SUCCEED;
+	int tpe = BATttype(bat);
+	assert(ATOMstorage(tpe) == TYPE_blob); (void)tpe;
+	assert(mnstr_isbinary(s));
+
+	BUN end = start + length;
+	assert(end <= BATcount(bat));
+	BATiter bi = bat_iterator(bat);
+	uint64_t nil_header = ~(uint64_t)0;
+	for (BUN p = start; p < end; p++) {
+		const blob *b = BUNtvar(bi, p);
+		uint64_t header = is_blob_nil(b) ? nil_header : (uint64_t)b->nitems;
+		if (byteswap)
+			copy_binary_convert64(&header);
+		if (mnstr_write(s, &header, 8, 1) != 1) {
+			bailout("%s", mnstr_peek_error(s));
+		}
+		if (!is_blob_nil(b) && mnstr_write(s, b->data,b->nitems, 1) != 1) {
+			bailout("%s", mnstr_peek_error(s));
+		}
+	}
+
+end:
+	bat_iterator_end(&bi);
+	return msg;
+
 }
 
 
@@ -406,6 +595,8 @@ static struct type_record_t type_recs[] = {
 	{ "hge", "hge", .trivial_if_no_byteswap=true, .decoder=byteswap_hge, .encoder=byteswap_hge},
 #endif
 
+	{ "blob", "blob", .loader=load_blob, .dumper=dump_blob },
+
 	// \0-terminated text records
 	{ "str", "str", .loader=load_zero_terminated_text, .dumper=dump_zero_terminated_text },
 	{ "url", "url", .loader=load_zero_terminated_text, .dumper=dump_zero_terminated_text },
@@ -426,4 +617,10 @@ find_type_rec(const char *name)
 		if (strcmp(t->method, name) == 0)
 			return t;
 	return NULL;
+}
+
+bool
+can_dump_binary_column(type_record_t *rec)
+{
+	return rec->encoder_trivial || rec->dumper || rec->encoder;
 }
