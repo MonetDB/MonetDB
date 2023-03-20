@@ -58,21 +58,6 @@ static struct PIPELINES {
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
-#ifdef USE_STRIMPS_OPTIMIZERS
-	{"minimal_strimps_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.aliases();"
-	 "optimizer.constants();"
-	 "optimizer.deadcode();"
-	 "optimizer.multiplex();"
-	 "optimizer.strimps();"
-	 "optimizer.generator();"
-	 //"optimizer.candidates();" only for decoration in explain
-	 "optimizer.garbageCollector();"
-	 "optimizer.profiler();",
-	 "stable", NULL, 1},
-#endif  // USE_STRIMPS_OPTIMIZERS
 	{"minimal_fast",
 	 "optimizer.minimalfast()",
 	 "stable", NULL, 1},
@@ -117,39 +102,6 @@ static struct PIPELINES {
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
-#ifdef USE_STRIMPS_OPTIMIZERS
-	{"strimps_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.aliases();"
-	 "optimizer.evaluate();"
-	 "optimizer.emptybind();"
-	 "optimizer.deadcode();" /* Feb2021 update, I pushed deadcode optimizer earlier in the pipeline so it runs before mitosis, thus removing less instructions */
-	 "optimizer.pushselect();"
-	 "optimizer.aliases();"
-	 "optimizer.mitosis();"
-	 "optimizer.mergetable();"
-	 "optimizer.aliases();"
-	 "optimizer.constants();"
-	 "optimizer.commonTerms();"
-	 "optimizer.projectionpath();"
-	 "optimizer.deadcode();"
-	 "optimizer.matpack();"
-	 "optimizer.reorder();"
-	 "optimizer.dataflow();"
-	 "optimizer.querylog();"
-	 "optimizer.multiplex();"
-	 "optimizer.strimps();"
-	 "optimizer.generator();"
-	 "optimizer.candidates();"
-	 "optimizer.deadcode();"
-	 "optimizer.postfix();"
-	 "optimizer.garbageCollector();"
-	 "optimizer.profiler();",
-	 "stable", NULL, 1},
-#endif  // USE_STRIMPS_OPTIMIZERS
 	{"default_fast",
 	 "optimizer.defaultfast()",
 	 "stable", NULL, 1},

@@ -52,7 +52,6 @@
 #include "opt_reorder.h"
 #include "opt_volcano.h"
 #include "opt_fastpath.h"
-#include "opt_strimps.h"
 #include "optimizer_private.h"
 
 // keep the optimizer list sorted
@@ -92,7 +91,6 @@ static struct {
 	{"remap", &OPTremapImplementation,0,0},
 	{"remoteQueries", &OPTremoteQueriesImplementation,0,0},
 	{"reorder", &OPTreorderImplementation,0,0},
-	{"strimps", &OPTstrimpsImplementation,0,0},
 	{"volcano", &OPTvolcanoImplementation,0,0},
 	{0,0,0,0}
 };
