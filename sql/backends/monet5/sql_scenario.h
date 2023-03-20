@@ -12,7 +12,7 @@
 #define _SQL_SCENARIO_H_
 #include "sql.h"
 
-extern int SQLrunning;
+extern int SQLrunning; // dev. debug var, 2 remove once the code is ~stable
 extern int SQLdebug;
 extern str SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLepilogue(void *ret);
