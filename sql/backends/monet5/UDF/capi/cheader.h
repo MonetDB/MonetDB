@@ -40,6 +40,8 @@ typedef struct {
 	struct cudf_data_struct_##typename                                         \
 	{                                                                          \
 		type *data;                                                            \
+		bool alloced;														   \
+		bool valloced;														   \
 		size_t count;                                                          \
 		type null_value;                                                       \
 		double scale;                                                          \

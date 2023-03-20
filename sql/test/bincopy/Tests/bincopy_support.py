@@ -188,6 +188,45 @@ WHERE (id % 2 = 0 AND s IS NULL)
 OR    (id % 2 = 1 AND s = 'banana');
 """, [f"{NRECS}"])
 
+NULL_BLOBS = ("""
+CREATE TABLE foo(id INT NOT NULL, b BLOB);
+COPY BINARY INTO foo(id, b) FROM @ints@, @null_blobs@ @ON@;
+COPY SELECT id, b FROM foo INTO BINARY @>ints@, @>null_blobs@ @ON@;
+
+SELECT 'nulls', COUNT(*), NULL FROM foo WHERE (b IS NULL) <> (id % 3 = 2)
+UNION
+SELECT 'lengths', COUNT(*), NULL FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)
+UNION
+SELECT 'blob5', NULL, b FROM foo WHERE id = 6;
+""", ["nulls,0,", "lengths,0,", "blob5,,D3D2D1D3D2D1" ])
+
+NULL_BLOBS_LE = ("""
+CREATE TABLE foo(id INT NOT NULL, b BLOB);
+COPY LITTLE ENDIAN BINARY INTO foo(id, b) FROM @le_ints@, @le_null_blobs@ @ON@;
+COPY SELECT id, b FROM foo INTO LITTLE ENDIAN BINARY @>le_ints@, @>le_null_blobs@ @ON@;
+
+SELECT 'nulls', COUNT(*), NULL FROM foo WHERE (b IS NULL) <> (id % 3 = 2)
+UNION
+SELECT 'lengths', COUNT(*), NULL FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)
+UNION
+SELECT 'blob5', NULL, b FROM foo WHERE id = 6;
+""", ["nulls,0,", "lengths,0,", "blob5,,D3D2D1D3D2D1" ])
+
+
+NULL_BLOBS_BE = ("""
+CREATE TABLE foo(id INT NOT NULL, b BLOB);
+COPY BIG ENDIAN BINARY INTO foo(id, b) FROM @be_ints@, @be_null_blobs@ @ON@;
+COPY SELECT id, b FROM foo INTO BIG ENDIAN BINARY @>be_ints@, @>be_null_blobs@ @ON@;
+
+SELECT 'nulls', COUNT(*), NULL FROM foo WHERE (b IS NULL) <> (id % 3 = 2)
+UNION
+SELECT 'lengths', COUNT(*), NULL FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)
+UNION
+SELECT 'blob5', NULL, b FROM foo WHERE id = 6;
+""", ["nulls,0,", "lengths,0,", "blob5,,D3D2D1D3D2D1" ])
+
+
+
 TIMESTAMPS = ("""
 CREATE TABLE foo(
     id INT NOT NULL,
@@ -233,42 +272,42 @@ INTO BINARY
 
 
 SELECT * FROM foo
-    WHERE EXTRACT(YEAR FROM ts) <> "year"
+    WHERE COALESCE(EXTRACT(YEAR FROM ts), -1) <> COALESCE("year", -1)
     LIMIT 4;
 SELECT * FROM foo
-    WHERE EXTRACT(MONTH FROM ts) <> "month"
+    WHERE COALESCE(EXTRACT(MONTH FROM ts), -1) <> COALESCE("month", -1)
     LIMIT 4;
 SELECT * FROM foo
-    WHERE EXTRACT(DAY FROM ts) <> "day"
+    WHERE COALESCE(EXTRACT(DAY FROM ts), -1) <> COALESCE("day", -1)
     LIMIT 4;
 SELECT * FROM foo
-    WHERE EXTRACT(HOUR FROM ts) <> "hour"
+    WHERE COALESCE(EXTRACT(HOUR FROM ts), -1) <> COALESCE("hour", -1)
     LIMIT 4;
 SELECT * FROM foo
-    WHERE EXTRACT(MINUTE FROM ts) <> "minute"
+    WHERE COALESCE(EXTRACT(MINUTE FROM ts), -1) <> COALESCE("minute", -1)
     LIMIT 4;
 SELECT * FROM foo
-    WHERE 1000000 * CAST(EXTRACT(SECOND FROM ts) AS DECIMAL(13,6)) <> 1000000 * "second" + ms
-    LIMIT 4;
-
-SELECT * FROM foo
-    WHERE EXTRACT(YEAR FROM dt) <> "year"
-    LIMIT 4;
-SELECT * FROM foo
-    WHERE EXTRACT(MONTH FROM dt) <> "month"
-    LIMIT 4;
-SELECT * FROM foo
-    WHERE EXTRACT(DAY FROM dt) <> "day"
+    WHERE COALESCE(1000000 * CAST(EXTRACT(SECOND FROM ts) AS DECIMAL(13,6)), -1) <> COALESCE(1000000 * "second" + ms, -1)
     LIMIT 4;
 
 SELECT * FROM foo
-    WHERE EXTRACT(HOUR FROM tm) <> "hour"
+    WHERE COALESCE(EXTRACT(YEAR FROM dt), -1) <> COALESCE("year", -1)
     LIMIT 4;
 SELECT * FROM foo
-    WHERE EXTRACT(MINUTE FROM tm) <> "minute"
+    WHERE COALESCE(EXTRACT(MONTH FROM dt), -1) <> COALESCE("month", -1)
     LIMIT 4;
 SELECT * FROM foo
-    WHERE 1000000 * CAST(EXTRACT(SECOND FROM tm) AS DECIMAL(13,6)) <> 1000000 * "second" + ms
+    WHERE COALESCE(EXTRACT(DAY FROM dt), -1) <> COALESCE("day", -1)
+    LIMIT 4;
+
+SELECT * FROM foo
+    WHERE COALESCE(EXTRACT(HOUR FROM tm), -1) <> COALESCE("hour", -1)
+    LIMIT 4;
+SELECT * FROM foo
+    WHERE COALESCE(EXTRACT(MINUTE FROM tm), -1) <> COALESCE("minute", -1)
+    LIMIT 4;
+SELECT * FROM foo
+    WHERE COALESCE(1000000 * CAST(EXTRACT(SECOND FROM tm) AS DECIMAL(13,6)), -1) <> COALESCE(1000000 * "second" + ms, -1)
     LIMIT 4;
 
 """, [])

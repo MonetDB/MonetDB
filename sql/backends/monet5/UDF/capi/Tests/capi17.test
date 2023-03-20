@@ -1,0 +1,75 @@
+statement ok
+create or replace function my_test(stub string)
+returns string
+language c {
+    result->initialize(result, stub.count);
+    for (int i = 0; i < stub.count; i++) {
+        result->data[i] = malloc(4);
+        result->data[i][0] = 'a';
+        result->data[i][1] = 'b';
+        result->data[i][2] = 'c';
+        result->data[i][3] = '\0';
+    }
+}
+
+query T rowsort
+select my_test('');
+----
+abc
+
+statement ok
+create or replace function my_test(stub int)
+returns string
+language c {
+    result->initialize(result, stub.count);
+    for (int i = 0; i < stub.count; i++) {
+        result->data[i] = malloc(4);
+        result->data[i][0] = 'a';
+        result->data[i][1] = 'b';
+        result->data[i][2] = 'c';
+        result->data[i][3] = '\0';
+    }
+}
+
+query T rowsort
+select my_test(1);
+----
+abc
+
+statement ok
+create or replace aggregate my_test2(stub string)
+returns string
+language c {
+    result->initialize(result, aggr_group.count);
+    for (int i = 0; i < aggr_group.count; i++) {
+        result->data[i] = malloc(4);
+        result->data[i][0] = 'a';
+        result->data[i][1] = 'b';
+        result->data[i][2] = 'c';
+        result->data[i][3] = '\0';
+    }
+}
+
+query T rowsort
+select my_test2('') from sys._tables;
+----
+abc
+
+statement ok
+create or replace aggregate my_test2(stub string)
+returns string
+language c {
+    result->initialize(result, aggr_group.count);
+    for (int i = 0; i < aggr_group.count; i++) {
+        result->data[i] = malloc(4);
+        result->data[i][0] = 'a';
+        result->data[i][1] = 'b';
+        result->data[i][2] = 'c';
+        result->data[i][3] = '\0';
+    }
+};
+
+query T rowsort
+select count(*) > 1 from (select my_test2('') from sys._tables group by id) as c
+----
+True

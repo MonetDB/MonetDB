@@ -755,8 +755,9 @@ la_bat_destroy(logger *lg, logaction *la, int tid)
 	if (bid < 0)
 		return GDK_FAIL;
 	if (!bid) {
-		GDKerror("la_bat_destroy failed to find bid for object %d\n", la->cid);
-		return GDK_FAIL;
+		GDKerror("la_bat_destroy failed to find bid for object %d (issue ignored)\n", la->cid);
+		GDKclrerr();
+		return GDK_SUCCEED;
 	}
 	if (bid && log_del_bat(lg, bid) != GDK_SUCCEED)
 		return GDK_FAIL;
@@ -1096,8 +1097,7 @@ log_close_input(logger *lg)
 static inline void
 log_close_output(logger *lg)
 {
-	if (lg->flushing_output_log)
-		return;
+	assert (!lg->flushing_output_log);
 
 	if (!LOG_DISABLED(lg))
 		close_stream(lg->output_log);

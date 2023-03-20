@@ -51,7 +51,7 @@ sql_set_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int type)
 		if (getArgType(mb, pci, 4) != TYPE_lng)
 			throw(SQL, "sql.set_stats", SQLSTATE(42000) "Wrong value type '%s'", BATatoms[getArgType(mb, pci, 4)].name);
 		lng cnt = *getArgReference_lng(stk, pci, 4);
-		double est = cnt;
+		double est = (double) cnt;
 		store->storage_api.set_stats_col(tr, c, &est, NULL, NULL);
 	}
 	return msg;

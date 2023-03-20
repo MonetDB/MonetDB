@@ -41,7 +41,7 @@ typedef str (*bincopy_decoder_t)(void *dst,void *src, size_t count, int width, b
 typedef str (*bincopy_loader_t)(BAT *bat, stream *s, int *eof_reached, int width, bool byteswap);
 
 typedef str (*bincopy_encoder_t)(void *dst, void *src, size_t count, int width, bool byteswap);
-typedef str (*bincopy_dumper_t)(BAT *bat, stream *s, bool byteswap);
+typedef str (*bincopy_dumper_t)(BAT *bat, stream *s, BUN start, BUN length, bool byteswap);
 
 struct type_record_t {
 	char *method;
@@ -61,11 +61,9 @@ typedef const struct type_record_t type_record_t;
 
 extern type_record_t *find_type_rec(const char *name);
 
+extern bool can_dump_binary_column(type_record_t *rec);
 
-#define bailout(...) do { \
-		msg = createException(MAL, mal_operator, SQLSTATE(42000) __VA_ARGS__); \
-		goto end; \
-	} while (0)
+extern str dump_binary_column(type_record_t *rec, BAT *b, BUN start, BUN length, bool byteswap, stream *s);
 
 
 #endif

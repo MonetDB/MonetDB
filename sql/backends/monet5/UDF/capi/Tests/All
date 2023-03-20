@@ -16,5 +16,5 @@ NOT_WIN32?capi13
 NOT_WIN32?capi14
 NOT_WIN32?capi15
 NOT_WIN32?capi16
-#NOT_WIN32?capi17 no oids
+NOT_WIN32?capi17
 NOT_WIN32?capi18

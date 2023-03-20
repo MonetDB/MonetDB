@@ -1,0 +1,87 @@
+statement ok
+START TRANSACTION
+
+# We need blobs of sizes 0..999
+statement ok
+CREATE TABLE blobs
+AS SELECT
+    t1.value AS nr,
+    CAST(
+        sys.group_concat(
+            CASE WHEN t2.value IS NOT NULL THEN 'DB' ELSE '' END
+            , '')
+    AS BLOB) AS blb
+FROM
+    sys.generate_series(0, 1000) AS t1
+LEFT JOIN
+    sys.generate_series(0, 1000) AS t2
+ON t2.value < t1.value
+GROUP BY nr
+ORDER BY nr
+
+# to match sql/test/bincopy/bincopy_blobs_on_server,
+# row N must have a blob of length N mod 1000,
+# unless N is 2 mod 3.
+statement ok
+CREATE TABLE foo(id INT NOT NULL, b BLOB);
+INSERT INTO foo
+SELECT
+    nums.value AS id,
+    blobs.blb AS b
+FROM
+    sys.generate_series(0, 1000000) AS nums
+LEFT OUTER JOIN
+    blobs
+ON nums.value % 1000 = blobs.nr AND nums.value % 3 <> 2
+ORDER BY id
+
+# In sql/test/bincopy/bincopy_blobs_on_server, the query with the UNION
+# seems to try to allocate unreasonable large intermediate BATs
+# when run on a system with many threads.
+# For example, heaps of 17 or 28 GiB.
+
+# First try the parts separately
+
+query TIT
+SELECT 'nulls', COUNT(*), NULL FROM foo WHERE (b IS NULL) <> (id % 3 = 2)
+----
+nulls
+0
+NULL
+
+query TIT
+SELECT 'lengths', COUNT(*), NULL FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)
+----
+lengths
+0
+NULL
+
+query TIT
+SELECT 'blob6', NULL, b FROM foo WHERE id = 6
+----
+blob6
+NULL
+DBDBDBDBDBDB
+
+# This is the one that seems to crash
+
+query TIT
+SELECT 'nulls', COUNT(*), NULL FROM foo WHERE (b IS NULL) <> (id % 3 = 2)
+UNION
+SELECT 'lengths', COUNT(*), NULL FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)
+UNION
+SELECT 'blob6', NULL, b FROM foo WHERE id = 6
+----
+nulls
+0
+NULL
+lengths
+0
+NULL
+blob6
+NULL
+DBDBDBDBDBDB
+
+
+statement ok
+ROLLBACK
