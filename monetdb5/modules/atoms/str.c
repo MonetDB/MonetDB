@@ -3669,13 +3669,11 @@ STRendsWith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const str *arg1 = getArgReference(stk, pci, 1);
 	const str *arg2 = getArgReference(stk, pci, 2);
 	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
-
-	str s = *arg1, suffix = *arg2;
-	str s_lower, suffix_lower, msg = MAL_SUCCEED;
+	str s = *arg1, suffix = *arg2, msg = MAL_SUCCEED;
 
 	if (icase) {
-		if ((msg = STRlower(&s, &s_lower)) != MAL_SUCCEED ||
-			(msg = STRlower(&suffix, &suffix_lower)) != MAL_SUCCEED)
+		if ((msg = STRlower(&s, &s)) != MAL_SUCCEED ||
+			(msg = STRlower(&suffix, &suffix)) != MAL_SUCCEED)
 			goto bail;
 	}
 	*res = (strNil(s) || strNil(suffix)) ? bit_nil :str_is_suffix(s, suffix) ;

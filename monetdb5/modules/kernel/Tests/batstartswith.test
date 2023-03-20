@@ -1,0 +1,31 @@
+statement ok
+create table foo(x string)
+
+statement ok
+insert into stringtest values ('johndoe'),('janedoe'),('robertdoe')
+
+statement ok
+create function startsWith(x string, y string) returns bool external name str."startsWith"
+
+query T rowsort
+select startsWith('', '')
+----
+true
+
+query T rowsort
+select startsWith('johndoe', '')
+
+query T rowsort
+select startsWith('johndoe', 'john')
+
+query T rowsort
+select startsWith(x, '')
+
+query T rowsort
+select startsWith('', x)
+
+statement ok
+drop function startsWith
+
+statement ok
+drop table stringtest
