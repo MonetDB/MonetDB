@@ -1235,7 +1235,6 @@ void strAfterCall(ValPtr v, ValPtr bak);
 void strBeforeCall(ValPtr v, ValPtr bak);
 const char *strRef;
 const char *streamsRef;
-const char *strimpFilterSelectRef;
 const char *strimpsRef;
 const char *subavgRef;
 const char *subcountRef;
