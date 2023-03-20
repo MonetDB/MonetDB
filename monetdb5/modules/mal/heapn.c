@@ -1248,6 +1248,12 @@ HEAPproject(bat *rid, bat *cand, bat *del, bat *ins, bat *in, lng *n, const ptr 
 		} else {
 			MT_lock_unset(&b->theaplock);
 			local_storage = true;
+			/* Calling COLnew2 with width==0 to have a varheap
+			 * created (with a width > 0, no varheap is created),
+			 * but in pipeline, we want to have varheaps of the
+			 * same width for all workers, hence the call to
+			 * ATOMheap afterwards.
+			 */
 			r = COLnew2(0, tt, *n, TRANSIENT, b->twidth);
 			if (r->tvheap && r->tvheap->base == NULL &&
 				ATOMheap(r->ttype, r->tvheap, r->batCapacity) != GDK_SUCCEED)

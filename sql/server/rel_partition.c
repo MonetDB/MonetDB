@@ -113,6 +113,13 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 	}
 }
 
+/* To start parallel processing within a (query plan) graph, we need to mark
+ * the places where partitioning is needed, and where to start or end a
+ * parallel block.
+ * SPB: Start Parallel Block
+ * EPB: End Parallel Block
+ * NPB: currently not used
+ */
 #define REL_PARTITION 1
 #define SPB 2
 #define EPB 3

@@ -132,7 +132,6 @@ AGGRsum3_lng(bat *retval, const bat *bid, const bat *gid, const bat *eid)
 					   BATgroupsum, NULL, NULL, NULL, "aggr.sum");
 }
 
-
 #ifdef HAVE_HGE
 str
 AGGRsum3_hge(bat *retval, const bat *bid, const bat *gid, const bat *eid)

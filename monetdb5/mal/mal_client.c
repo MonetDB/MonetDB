@@ -514,6 +514,12 @@ MCcloseClient(Client c)
 	c->handshake_options = NULL;
 	setClientContext(NULL);
 	MT_thread_set_qry_ctx(NULL);
+	/* This assert is used to check for leaks: normally, who allocates a
+	 * BAT is denoted as the owner and is responsible to free the BAT.
+	 * However, in pipeline, we cannot guarantee that the BAT-creator is
+	 * also the one to free the BAT.
+	 * TODO: find a way to check for leaks in pipeline
+	 */
 	//assert(c->qryctx.datasize == 0);
 	MT_sema_destroy(&c->s);
 	MT_lock_set(&mal_contextLock);
