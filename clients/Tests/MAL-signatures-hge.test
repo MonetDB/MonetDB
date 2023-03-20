@@ -33395,12 +33395,12 @@ PCREreplacefirst_bat_wrap;
 (empty)
 batpyapi3
 eval
-unsafe pattern batpyapi3.eval(X_0:lng, X_1:ptr, X_2:str):any... 
+unsafe pattern batpyapi3.eval(X_0:lng, X_1:ptr, X_2:str):bat[:any_1] 
 PYAPI3PyAPIevalStd;
 Execute a simple Python script value
 batpyapi3
 eval
-unsafe pattern batpyapi3.eval(X_0:ptr, X_1:str, X_2:any...):any... 
+unsafe pattern batpyapi3.eval(X_0:ptr, X_1:str, X_2:any...):bat[:any]... 
 PYAPI3PyAPIevalStd;
 Execute a simple Python script value
 batpyapi3
@@ -48610,7 +48610,7 @@ CMDstopTrace;
 Stop collecting trace information
 pyapi3
 eval
-unsafe pattern pyapi3.eval(X_0:ptr, X_1:str):any 
+unsafe pattern pyapi3.eval(X_0:ptr, X_1:str):any_1 
 PYAPI3PyAPIevalStd;
 Execute a simple Python script returning a single value
 pyapi3
