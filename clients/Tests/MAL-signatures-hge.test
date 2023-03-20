@@ -49734,21 +49734,21 @@ unsafe pattern sql.setVariable(X_0:int, X_1:str, X_2:str, X_3:any_1):int
 setVariable;
 Set the value of a session variable
 sql
-sql
 set_count_distinct
-unsafe pattern sql.set_count_distinct(X_0:str, X_1:str, X_2:str, X_3:lng):void
+unsafe pattern sql.set_count_distinct(X_0:str, X_1:str, X_2:str, X_3:lng):void 
 sql_set_count_distinct;
 Set count distinct for column
 sql
 set_max
-unsafe pattern sql.set_max(X_0:str, X_1:str, X_2:str, X_3:any_1):void
+unsafe pattern sql.set_max(X_0:str, X_1:str, X_2:str, X_3:any_1):void 
 sql_set_max;
 Set max for column
 sql
 set_min
-unsafe pattern sql.set_min(X_0:str, X_1:str, X_2:str, X_3:any_1):void
+unsafe pattern sql.set_min(X_0:str, X_1:str, X_2:str, X_3:any_1):void 
 sql_set_min;
 Set min for column
+sql
 set_protocol
 unsafe pattern sql.set_protocol(X_0:int):int 
 SQLset_protocol;
