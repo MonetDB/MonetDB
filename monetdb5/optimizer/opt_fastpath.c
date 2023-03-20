@@ -30,7 +30,6 @@
 #include "opt_matpack.h"
 #include "opt_json.h"
 #include "opt_postfix.h"
-#include "opt_mask.h"
 #include "opt_mergetable.h"
 #include "opt_mitosis.h"
 #include "opt_multiplex.h"
