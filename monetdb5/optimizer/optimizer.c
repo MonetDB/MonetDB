@@ -37,7 +37,6 @@ optimizer_prelude(void)
 {
 	updateScenario("mal", "MALoptimizer", (MALfcn) MALoptimizer);
 	optimizerInit();
-	//return compileAllOptimizers(cntxt); causes problems
 	return MAL_SUCCEED;
 }
 
