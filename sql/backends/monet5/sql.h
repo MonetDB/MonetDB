@@ -292,7 +292,6 @@ extern str SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 extern str SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-extern str SQLpart_nr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str LOCKEDAGGRsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
