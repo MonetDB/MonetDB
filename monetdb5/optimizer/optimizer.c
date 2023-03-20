@@ -37,7 +37,6 @@ optimizer_prelude(void)
 {
 	updateScenario("mal", "MALoptimizer", (MALfcn) MALoptimizer);
 	optimizerInit();
-	//return compileAllOptimizers(cntxt); causes problems
 	return MAL_SUCCEED;
 }
 
@@ -98,7 +97,6 @@ static mel_func optimizer_init_funcs[] = {
  optwrapper_pattern("dataflow", "Dataflow bracket code injection"),
  optwrapper_pattern("deadcode", "Dead code optimizer"),
  optwrapper_pattern("emptybind", "Evaluate empty set expressions"),
- optwrapper_pattern("jit", "Propagate candidate lists in just-in-time optimization"),
  optwrapper_pattern("evaluate", "Evaluate constant expressions once"),
  optwrapper_pattern("garbageCollector", "Garbage collector optimizer"),
  optwrapper_pattern("generator", "Sequence generator optimizer"),
@@ -118,7 +116,6 @@ static mel_func optimizer_init_funcs[] = {
  optwrapper_pattern("mitosis", "Modify the plan to exploit parallel processing on multiple cores"),
  optwrapper_pattern("multiplex", "Compiler for multiplexed instructions"),
  optwrapper_pattern("matpack", "Unroll the mat.pack operation"),
- optwrapper_pattern("json", "Unroll the mat.pack operation"),
  optwrapper_pattern("reduce", "Reduce the stack space claims"),
  optwrapper_pattern("remap", "Remapping function calls to a their multiplex variant"),
  optwrapper_pattern("remoteQueries", "Resolve the multi-table definitions"),
@@ -129,8 +126,6 @@ static mel_func optimizer_init_funcs[] = {
  optwrapper_pattern("strimps", "Use strimps index if appropriate"),
  optwrapper_pattern("for", "Push for decompress down"),
  optwrapper_pattern("dict", "Push dict decompress down"),
- pattern("optimizer", "mask", OPTwrapper, false, "", args(1,1, arg("",str))),
- pattern("optimizer", "mask", OPTwrapper, false, "Manipulate the MSK objects", args(1,3, arg("",str),arg("mod",str),arg("fcn",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"

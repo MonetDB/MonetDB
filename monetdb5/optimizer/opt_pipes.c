@@ -55,7 +55,6 @@ static struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 //"optimizer.candidates();" only for decoration in explain
-	 //"optimizer.mask();"
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -70,7 +69,6 @@ static struct PIPELINES {
 	 "optimizer.strimps();"
 	 "optimizer.generator();"
 	 //"optimizer.candidates();" only for decoration in explain
-	 //"optimizer.mask();"
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -114,10 +112,8 @@ static struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 "optimizer.candidates();"
-	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -148,10 +144,8 @@ static struct PIPELINES {
 	 "optimizer.strimps();"
 	 "optimizer.generator();"
 	 "optimizer.candidates();"
-	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -190,10 +184,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.volcano();"
 	 "optimizer.candidates();"
-	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -232,10 +224,8 @@ static struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 "optimizer.candidates();"
-	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -274,10 +264,8 @@ static struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 "optimizer.candidates();"
-	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -302,126 +290,6 @@ static struct PIPELINES {
 #include "optimizer_private.h"
 
 static MT_Lock pipeLock = MT_LOCK_INITIALIZER(pipeLock);
-
-/* the session_pipe is the one defined by the user */
-str
-addPipeDefinition(Client cntxt, const char *name, const char *pipe)
-{
-	int i;
-	str msg;
-	struct PIPELINES oldpipe;
-
-	MT_lock_set(&pipeLock);
-	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
-		if (strcmp(name, pipes[i].name) == 0)
-			break;
-
-	if (i == MAXOPTPIPES) {
-		MT_lock_unset(&pipeLock);
-		throw(MAL, "optimizer.addPipeDefinition", SQLSTATE(HY013) "Out of slots");
-	}
-	if (pipes[i].name && pipes[i].builtin) {
-		MT_lock_unset(&pipeLock);
-		throw(MAL, "optimizer.addPipeDefinition", SQLSTATE(42000) "No overwrite of built in allowed");
-	}
-
-	/* save old value */
-	oldpipe = pipes[i];
-	pipes[i].name = GDKstrdup(name);
-	pipes[i].def = GDKstrdup(pipe);
-	pipes[i].status = GDKstrdup("experimental");
-	if(pipes[i].name == NULL || pipes[i].def == NULL || pipes[i].status == NULL) {
-		GDKfree(pipes[i].name);
-		GDKfree(pipes[i].def);
-		GDKfree(pipes[i].status);
-		pipes[i].name = oldpipe.name;
-		pipes[i].def = oldpipe.def;
-		pipes[i].status = oldpipe.status;
-		MT_lock_unset(&pipeLock);
-		throw(MAL, "optimizer.addPipeDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	pipes[i].mb = NULL;
-	MT_lock_unset(&pipeLock);
-	msg = compileOptimizer(cntxt, name);
-	if (msg) {
-		/* failed: restore old value */
-		MT_lock_set(&pipeLock);
-		GDKfree(pipes[i].name);
-		GDKfree(pipes[i].def);
-		GDKfree(pipes[i].status);
-		pipes[i] = oldpipe;
-		MT_lock_unset(&pipeLock);
-	} else {
-		/* succeeded: destroy old value */
-		if (oldpipe.name)
-			GDKfree(oldpipe.name);
-		if (oldpipe.def)
-			GDKfree(oldpipe.def);
-		if (oldpipe.mb)
-			freeMalBlk(oldpipe.mb);
-		if (oldpipe.status)
-			GDKfree(oldpipe.status);
-	}
-	return msg;
-}
-
-int
-isOptimizerPipe(const char *name)
-{
-	int i;
-
-	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
-		if (strcmp(name, pipes[i].name) == 0)
-			return TRUE;
-	return FALSE;
-}
-
-str
-getPipeDefinition(str name)
-{
-	int i;
-
-	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
-		if (strcmp(name, pipes[i].name) == 0)
-			return GDKstrdup(pipes[i].def);
-	return NULL;
-}
-
-str
-getPipeCatalog(bat *nme, bat *def, bat *stat)
-{
-	BAT *b, *bn, *bs;
-	int i;
-
-	b = COLnew(0, TYPE_str, 20, TRANSIENT);
-	bn = COLnew(0, TYPE_str, 20, TRANSIENT);
-	bs = COLnew(0, TYPE_str, 20, TRANSIENT);
-	if (b == NULL || bn == NULL || bs == NULL) {
-		BBPreclaim(b);
-		BBPreclaim(bn);
-		BBPreclaim(bs);
-		throw(MAL, "optimizer.getpipeDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) {
-		if (BUNappend(b, pipes[i].name, false) != GDK_SUCCEED ||
-			BUNappend(bn, pipes[i].def, false) != GDK_SUCCEED ||
-			BUNappend(bs, pipes[i].status, false) != GDK_SUCCEED) {
-			BBPreclaim(b);
-			BBPreclaim(bn);
-			BBPreclaim(bs);
-			throw(MAL, "optimizer.getpipeDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-	}
-
-	*nme = b->batCacheid;
-	BBPkeepref(b);
-	*def = bn->batCacheid;
-	BBPkeepref(bn);
-	*stat = bs->batCacheid;
-	BBPkeepref(bs);
-	return MAL_SUCCEED;
-}
 
 static str
 validatePipe(MalBlkPtr mb)
@@ -500,7 +368,7 @@ validateOptimizerPipes(void)
  * Compile (the first time) an optimizer pipe string
  * then copy the statements to the end of the MAL plan
 */
-str
+static str
 compileOptimizer(Client cntxt, const char *name)
 {
 	int i, j;
@@ -531,16 +399,113 @@ compileOptimizer(Client cntxt, const char *name)
 	return msg;
 }
 
+/* the session_pipe is the one defined by the user */
 str
-compileAllOptimizers(Client cntxt)
+addPipeDefinition(Client cntxt, const char *name, const char *pipe)
 {
 	int i;
-	str msg = MAL_SUCCEED;
+	str msg;
+	struct PIPELINES oldpipe;
 
-	for(i=0;pipes[i].def && msg == MAL_SUCCEED; i++){
-		msg =compileOptimizer(cntxt,pipes[i].name);
+	MT_lock_set(&pipeLock);
+	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
+		if (strcmp(name, pipes[i].name) == 0)
+			break;
+
+	if (i == MAXOPTPIPES) {
+		MT_lock_unset(&pipeLock);
+		throw(MAL, "optimizer.addPipeDefinition", SQLSTATE(HY013) "Out of slots");
+	}
+	if (pipes[i].name && pipes[i].builtin) {
+		MT_lock_unset(&pipeLock);
+		throw(MAL, "optimizer.addPipeDefinition", SQLSTATE(42000) "No overwrite of built in allowed");
+	}
+
+	/* save old value */
+	oldpipe = pipes[i];
+	pipes[i].name = GDKstrdup(name);
+	pipes[i].def = GDKstrdup(pipe);
+	pipes[i].status = GDKstrdup("experimental");
+	if(pipes[i].name == NULL || pipes[i].def == NULL || pipes[i].status == NULL) {
+		GDKfree(pipes[i].name);
+		GDKfree(pipes[i].def);
+		GDKfree(pipes[i].status);
+		pipes[i].name = oldpipe.name;
+		pipes[i].def = oldpipe.def;
+		pipes[i].status = oldpipe.status;
+		MT_lock_unset(&pipeLock);
+		throw(MAL, "optimizer.addPipeDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	pipes[i].mb = NULL;
+	MT_lock_unset(&pipeLock);
+	msg = compileOptimizer(cntxt, name);
+	if (msg) {
+		/* failed: restore old value */
+		MT_lock_set(&pipeLock);
+		GDKfree(pipes[i].name);
+		GDKfree(pipes[i].def);
+		GDKfree(pipes[i].status);
+		pipes[i] = oldpipe;
+		MT_lock_unset(&pipeLock);
+	} else {
+		/* succeeded: destroy old value */
+		if (oldpipe.name)
+			GDKfree(oldpipe.name);
+		if (oldpipe.def)
+			GDKfree(oldpipe.def);
+		if (oldpipe.mb)
+			freeMalBlk(oldpipe.mb);
+		if (oldpipe.status)
+			GDKfree(oldpipe.status);
 	}
 	return msg;
+}
+
+int
+isOptimizerPipe(const char *name)
+{
+	int i;
+
+	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
+		if (strcmp(name, pipes[i].name) == 0)
+			return TRUE;
+	return FALSE;
+}
+
+str
+getPipeCatalog(bat *nme, bat *def, bat *stat)
+{
+	BAT *b, *bn, *bs;
+	int i;
+
+	b = COLnew(0, TYPE_str, 20, TRANSIENT);
+	bn = COLnew(0, TYPE_str, 20, TRANSIENT);
+	bs = COLnew(0, TYPE_str, 20, TRANSIENT);
+	if (b == NULL || bn == NULL || bs == NULL) {
+		BBPreclaim(b);
+		BBPreclaim(bn);
+		BBPreclaim(bs);
+		throw(MAL, "optimizer.getpipeDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) {
+		if (BUNappend(b, pipes[i].name, false) != GDK_SUCCEED ||
+			BUNappend(bn, pipes[i].def, false) != GDK_SUCCEED ||
+			BUNappend(bs, pipes[i].status, false) != GDK_SUCCEED) {
+			BBPreclaim(b);
+			BBPreclaim(bn);
+			BBPreclaim(bs);
+			throw(MAL, "optimizer.getpipeDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+	}
+
+	*nme = b->batCacheid;
+	BBPkeepref(b);
+	*def = bn->batCacheid;
+	BBPkeepref(bn);
+	*stat = bs->batCacheid;
+	BBPkeepref(bs);
+	return MAL_SUCCEED;
 }
 
 /*
