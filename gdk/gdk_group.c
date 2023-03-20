@@ -1284,6 +1284,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		en->trevsorted = ngrp == 1;
 		en->tnonil = true;
 		en->tnil = false;
+		/* don't virtulize `en` probably because we don't want the heap
+		 * to disappear
+		 */
 		*extents = en;
 	}
 	if (histo) {

@@ -1998,6 +1998,9 @@ BBPcheck(bat x)
 		if (x < 0 || x >= getBBPsize() || BBP_logical(x) == NULL) {
 			TRC_DEBUG(CHECK_, "range error %d\n", (int) x);
 		} else {
+			/* No longer guaranteed in pipeline, hence disable it.
+			 * TODO: find a proper way for this check
+			 */
 			//assert(BBP_pid(x) == 0 || BBP_pid(x) == MT_getpid());
 			return x;
 		}

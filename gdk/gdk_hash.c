@@ -817,6 +817,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		/* try out on first 25% of b */
 		cnt1 = ci->ncand >> 2;
 	}
+	/* put some limit on the mask size based on the BATcapacity */
 	if (BATcapacity(b) > 79*1000000) { /* TODO cleanup: nasty hack*/
 		mask = HASHmask(BATcapacity(b));
 	}
