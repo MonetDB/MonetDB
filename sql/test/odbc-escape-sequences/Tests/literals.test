@@ -1,36 +1,117 @@
-query T rowsort
-select {d '2022-10-31'}
+query TT rowsort
+select {d '2022-10-31'}, date '2022-10-31'
 ----
 2022-10-31
+2022-10-31
 
-query T rowsort
-select {t '12:15:31'}
+query TT rowsort
+select {d '2022-12-31 -9:30'}, date '2022-12-31 -9:30'
 ----
+2022-12-31
+2022-12-31
+
+query TT rowsort
+select {t '12:15:31'}, time '12:15:31'
+----
+12:15:31
 12:15:31
 
 # with precision
-query T rowsort
-select {t '12:15:31.073400'}
+query TT rowsort
+select {t '12:15:31.073400'}, time(6) '12:15:31.073400'
 ----
+12:15:31.073400
 12:15:31.073400
 
 # with precision
-query T rowsort
-select {ts '2022-02-17 02:08:12.345678'}
+query TT rowsort
+select {ts '2022-02-17 02:08:12.345678'}, timestamp(6) '2022-02-17 02:08:12.345678'
 ----
 2022-02-17 02:08:12.345678
+2022-02-17 02:08:12.345678
 
-query T rowsort
-select {ts '2022-02-17 02:08:12'}
+query TT rowsort
+select {ts '2022-02-18 02:08:12'}, timestamp '2022-02-18 02:08:12'
 ----
-2022-02-17 02:08:12
+2022-02-18 02:08:12
+2022-02-18 02:08:12
 
-query T rowsort
-select { guid 'e751f9e0-2cee-4eca-b0c2-1cf108cebd18' }
+query TT rowsort
+select { guid 'e751f9e0-2cee-4eca-b0c2-1cf108cebd18' }, uuid 'e751f9e0-2cee-4eca-b0c2-1cf108cebd18'
 ----
 e751f9e0-2cee-4eca-b0c2-1cf108cebd18
+e751f9e0-2cee-4eca-b0c2-1cf108cebd18
 
-query T rowsort
-select {interval '1' day}
+query TT rowsort
+select {interval '1' day}, interval '1' day
 ----
 1
+1
+
+query TT rowsort
+select {interval '10' year}, interval '10' year
+----
+120
+120
+
+query TT rowsort
+select {interval '3' month}, interval '3' month
+----
+3
+3
+
+query TT rowsort
+select {interval '2-6' year to month}, interval '2-6' year to month
+----
+30
+30
+
+query TT rowsort
+select {interval '2' hour}, interval '2' hour
+----
+2:00:00
+2:00:00
+
+query TT rowsort
+select {interval '3' minute}, interval '3' minute
+----
+0:03:00
+0:03:00
+
+query TT rowsort
+select {interval '4.567' second}, interval '4.567' second
+----
+0:00:04
+0:00:04
+
+query TT rowsort
+select {interval '2 6' day to hour}, interval '2 6' day to hour
+----
+2 days, 6:00:00
+2 days, 6:00:00
+
+query TT rowsort
+select {interval '6:45' hour to minute}, interval '6:45' hour to minute
+----
+6:45:00
+6:45:00
+
+query TT rowsort
+select {interval '6:45:4' hour to second}, interval '6:45:4' hour to second
+----
+6:45:04
+6:45:04
+
+# also test invalid interval qualifiers
+statement error 42000!syntax error in: "select {interval '7' week"
+select {interval '7' week}
+
+statement error 42000!syntax error in: "select {interval '8' quarter"
+select {interval '8' quarter}
+
+statement error 42000!syntax error in: "select {interval '9' decade"
+select {interval '9' decade}
+
+statement error 42000!syntax error in: "select {interval '1' century"
+select {interval '1' century}
+

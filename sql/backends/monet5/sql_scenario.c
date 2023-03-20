@@ -1101,6 +1101,19 @@ SQLchannelcmd(Client c, backend *be)
 		}
 		return MAL_SUCCEED;
 	}
+	if (strncmp(in->buf + in->pos, "exportbin ", 10) == 0) {
+		n = sscanf(in->buf + in->pos + 10, "%d %d %d", &v, &off, &len);
+		if (n == 3) {
+			if ((ok = mvc_export_bin_chunk(be, out, v, off, len < 0 ? BUN_NONE: (BUN) len)) < 0) {
+				msg = createException(SQL, "SQLparser", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, out, ok));
+				in->pos = in->len;	/* HACK: should use parsed length */
+				sqlcleanup(be, 0);
+				return msg;
+			}
+			in->pos = in->len;	/* HACK: should use parsed length */
+			return MAL_SUCCEED;
+		}
+	}
 	if (strncmp(in->buf + in->pos, "close ", 6) == 0) {
 		res_table *t;
 

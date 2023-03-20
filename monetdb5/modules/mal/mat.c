@@ -48,7 +48,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i;
 	bat *ret = getArgReference_bat(stk,p,0);
-	BAT *b, *bn;
+	BAT *b, *bn = NULL;
 	BUN cap = 0;
 	int tt = TYPE_any;
 	int rt = getArgType(mb, p, 0), unmask = 0;
