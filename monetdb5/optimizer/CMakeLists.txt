@@ -32,7 +32,6 @@ target_sources(optimizer
   opt_projectionpath.c opt_projectionpath.h
   opt_macro.c opt_macro.h
   opt_matpack.c opt_matpack.h
-  opt_json.c opt_json.h
   opt_mergetable.c opt_mergetable.h
   opt_mitosis.c opt_mitosis.h
   opt_multiplex.c opt_multiplex.h

@@ -35204,11 +35204,6 @@ pattern json.renderobject(X_0:any...):json
 JSONrenderobject;
 (empty)
 json
-resultSet
-command json.resultSet(X_0:bat[:uuid], X_1:bat[:lng], X_2:bat[:json]):json 
-JSONresultSet;
-Converts the json store into a single json string:
-json
 str
 command json.str(X_0:json):str 
 JSONjson2str;
@@ -36703,16 +36698,6 @@ inline
 pattern optimizer.inline(X_0:str, X_1:str):str 
 OPTwrapper;
 Expand inline functions
-optimizer
-json
-pattern optimizer.json():str 
-OPTwrapper;
-(empty)
-optimizer
-json
-pattern optimizer.json(X_0:str, X_1:str):str 
-OPTwrapper;
-Unroll the mat.pack operation
 optimizer
 macro
 pattern optimizer.macro(X_0:str, X_1:str):void 
