@@ -48274,16 +48274,6 @@ pattern optimizer.inline(X_0:str, X_1:str):str
 OPTwrapper;
 Expand inline functions
 optimizer
-jit
-pattern optimizer.jit():str 
-OPTwrapper;
-(empty)
-optimizer
-jit
-pattern optimizer.jit(X_0:str, X_1:str):str 
-OPTwrapper;
-Propagate candidate lists in just-in-time optimization
-optimizer
 json
 pattern optimizer.json():str 
 OPTwrapper;

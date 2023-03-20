@@ -97,7 +97,6 @@ static mel_func optimizer_init_funcs[] = {
  optwrapper_pattern("dataflow", "Dataflow bracket code injection"),
  optwrapper_pattern("deadcode", "Dead code optimizer"),
  optwrapper_pattern("emptybind", "Evaluate empty set expressions"),
- optwrapper_pattern("jit", "Propagate candidate lists in just-in-time optimization"),
  optwrapper_pattern("evaluate", "Evaluate constant expressions once"),
  optwrapper_pattern("garbageCollector", "Garbage collector optimizer"),
  optwrapper_pattern("generator", "Sequence generator optimizer"),

@@ -114,7 +114,6 @@ static struct PIPELINES {
 	 "optimizer.candidates();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -147,7 +146,6 @@ static struct PIPELINES {
 	 "optimizer.candidates();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -188,7 +186,6 @@ static struct PIPELINES {
 	 "optimizer.candidates();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -229,7 +226,6 @@ static struct PIPELINES {
 	 "optimizer.candidates();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -270,7 +266,6 @@ static struct PIPELINES {
 	 "optimizer.candidates();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},

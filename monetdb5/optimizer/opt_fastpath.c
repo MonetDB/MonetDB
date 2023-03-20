@@ -25,7 +25,6 @@
 #include "opt_garbageCollector.h"
 #include "opt_generator.h"
 #include "opt_inline.h"
-#include "opt_jit.h"
 #include "opt_projectionpath.h"
 #include "opt_matpack.h"
 #include "opt_json.h"
@@ -134,7 +133,6 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	optcall(profilerStatus, OPTcandidatesImplementation);
 	optcall(true, OPTdeadcodeImplementation);
 	optcall(true, OPTpostfixImplementation);
-	// optcall(true, OPTjitImplementation);
 	optcall(true, OPTgarbageCollectorImplementation);
 
 	/* Defense line against incorrect plans  handled by optimizer steps */
