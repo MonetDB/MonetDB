@@ -235,7 +235,6 @@ const char *sqlcatalogRef;
 const char *sqlRef;
 const char *stoptraceRef;
 const char *streamsRef;
-const char *strimpFilterSelectRef;
 const char *strimpsRef;
 const char *strRef;
 const char *subavgRef;
@@ -491,7 +490,6 @@ void optimizerInit(void)
 	sqlRef = putName("sql");
 	stoptraceRef = putName("stoptrace");
 	streamsRef = putName("streams");
-	strimpFilterSelectRef = putName("strimpfilterselect");
 	strimpsRef = putName("strimps");
 	strRef = putName("str");
 	subavgRef = putName("subavg");

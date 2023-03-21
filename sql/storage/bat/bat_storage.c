@@ -2869,7 +2869,7 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 					*unique = bi.key;
 					*unique_est = bi.unique_est;
 					if (*unique_est == 0)
-						*unique_est = BATguess_uniques(b,NULL);
+						*unique_est = (double)BATguess_uniques(b,NULL);
 				} else if (d->cs.st == ST_DICT && (off = bind_col(tr, c, QUICK)) && (off = bind_no_view(off, true))) {
 					/* for dict, check the offsets bat for uniqueness */
 					MT_lock_set(&off->theaplock);

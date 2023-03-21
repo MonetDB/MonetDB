@@ -90,7 +90,6 @@ static mel_func optimizer_init_funcs[] = {
  optwrapper_pattern("coercions", "Handle simple type coercions"),
  optwrapper_pattern("commonTerms", "Common sub-expression optimizer"),
  optwrapper_pattern("candidates", "Mark candidate list variables"),
- /* optwrapper_pattern("volcano", "Simulate volcano style execution"), Apr2022 update. I disabled the volcano_pipe because it has issues on it */
  optwrapper_pattern("constants", "Duplicate constant removal optimizer"),
  optwrapper_pattern("profiler", "Collect properties for the profiler"),
  optwrapper_pattern("costModel", "Estimate the cost of a relational expression"),
