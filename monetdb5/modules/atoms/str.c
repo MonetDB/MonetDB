@@ -3693,7 +3693,7 @@ str_search(const char *s, const char *s2)
 
 /* find first occurrence of needle in haystack */
 static str
-STRstrSearch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)cntxt;
 	(void)mb;
@@ -3736,12 +3736,26 @@ str_reverse_str_search(const char *s, const char *s2)
 
 /* find last occurrence of arg2 in arg1 */
 static str
-STRReverseStrSearch(int *res, const str *arg1, const str *arg2)
+STRrevstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	const char *s = *arg1, *s2 = *arg2;
+	(void)cntxt;
+	(void)mb;
+	bit *res = getArgReference(stk, pci, 0);
+	const str *haystack = getArgReference(stk, pci, 1);
+	const str *needle = getArgReference(stk, pci, 2);
+	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
 
-	*res = (strNil(s) || strNil(s2)) ? int_nil : str_reverse_str_search(s, s2);
-	return MAL_SUCCEED;
+	str s = *haystack, h = *needle;
+	str s_lower, h_lower, msg = MAL_SUCCEED;
+
+	if (icase) {
+		if ((msg = STRlower(&s, &s_lower)) != MAL_SUCCEED ||
+			(msg = STRlower(&h, &h_lower)) != MAL_SUCCEED)
+			goto bail;
+	}
+	*res = (strNil(s) || strNil(h)) ? bit_nil : str_reverse_str_search(s, h) ;
+ bail:
+	return msg;
 }
 
 str
@@ -4899,9 +4913,10 @@ mel_func str_init_funcs[] = {
  pattern("str", "endsWith", STRendsWith, false, "Check if string ends with substring, icase flag.", args(1,4, arg("",bit),arg("s",str),arg("suffix",str),arg("icase",bit))),
  command("str", "toLower", STRlower, false, "Convert a string to lower case.", args(1,2, arg("",str),arg("s",str))),
  command("str", "toUpper", STRupper, false, "Convert a string to upper case.", args(1,2, arg("",str),arg("s",str))),
- pattern("str", "search", STRstrSearch, false, "Search for a substring. Returns\nposition, -1 if not found.", args(1,3, arg("",int),arg("s",str),arg("c",str))),
- pattern("str", "search", STRstrSearch, false, "Search for a substring, icase flag. Returns\nposition, -1 if not found.", args(1,4, arg("",int),arg("s",str),arg("c",str),arg("icase",bit))),
- command("str", "r_search", STRReverseStrSearch, false, "Reverse search for a substring. Returns\nposition, -1 if not found.", args(1,3, arg("",int),arg("s",str),arg("c",str))),
+ pattern("str", "search", STRstr_search, false, "Search for a substring. Returns\nposition, -1 if not found.", args(1,3, arg("",int),arg("s",str),arg("c",str))),
+ pattern("str", "search", STRstr_search, false, "Search for a substring, icase flag. Returns\nposition, -1 if not found.", args(1,4, arg("",int),arg("s",str),arg("c",str),arg("icase",bit))),
+ pattern("str", "r_search", STRrevstr_search, false, "Reverse search for a substring. Returns\nposition, -1 if not found.", args(1,3, arg("",int),arg("s",str),arg("c",str))),
+ pattern("str", "r_search", STRrevstr_search, false, "Reverse search for a substring, icase flag. Returns\nposition, -1 if not found.", args(1,4, arg("",int),arg("s",str),arg("c",str),arg("icase",bit))),
  command("str", "splitpart", STRsplitpart, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, arg("",str),arg("s",str),arg("needle",str),arg("field",int))),
  command("str", "trim", STRStrip, false, "Strip whitespaces around a string.", args(1,2, arg("",str),arg("s",str))),
  command("str", "ltrim", STRLtrim, false, "Strip whitespaces from start of a string.", args(1,2, arg("",str),arg("s",str))),
