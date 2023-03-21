@@ -1983,7 +1983,7 @@ BATSTRstarts_with_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 }
 
 static str
-BATSTRends_with_str_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BATSTRends_with_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *icase = NULL;
 	switch (pci->argc) {
@@ -5243,114 +5243,119 @@ BATSTRasciify(bat *ret, bat *bid)
 #endif
 }
 
+static inline void
+str_reverse(char *dst, const char *src, size_t len)
+{
+	dst[len] = 0;
+	if (strNil(src)) {
+		assert(len == strlen(str_nil));
+		strcpy(dst, str_nil);
+		return;
+	}
+	while (*src) {
+		if ((*src & 0xF8) == 0xF0) {
+			/* 4 byte UTF-8 sequence */
+			assert(len >= 4);
+			dst[len - 4] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 3] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 2] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 1] = *src++;
+			len -= 4;
+		} else if ((*src & 0xF0) == 0xE0) {
+			/* 3 byte UTF-8 sequence */
+			assert(len >= 3);
+			dst[len - 3] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 2] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 1] = *src++;
+			len -= 3;
+		} else if ((*src & 0xE0) == 0xC0) {
+			/* 2 byte UTF-8 sequence */
+			assert(len >= 2);
+			dst[len - 2] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 1] = *src++;
+			len -= 2;
+		} else {
+			/* 1 byte UTF-8 "sequence" */
+			assert(len >= 1);
+			assert((*src & 0x80) == 0);
+			dst[--len] = *src++;
+		}
+	}
+	assert(len == 0);
+}
+
 static str
 BATSTRreverse(bat *ret, const bat *arg)
 {
 	BAT *b, *bn;
 	BATiter bi;
-	BUN start, end;
+	BUN p, q;
 	const char *src;
-	/* Allocate temporary space for reversed strings;
-	   we grow this if we need more. */
 	size_t len, dst_len = 1024;
-	int i = -1;
-	str	dst, error[2] = { GDK_EXCEPTION, MAL_MALLOC_FAIL };
-	/* Use zalloc to force valid UTF-8 */
+	str dst, msg = MAL_SUCCEED;
+	bool nils = false;
+
 	if ((dst = GDKzalloc(dst_len)) == NULL)
 		throw(MAL, "batstr.reverse", MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*arg)) == NULL) {
 		GDKfree(dst);
 		throw(MAL, "batstr.reverse", RUNTIME_OBJECT_MISSING);
 	}
-	/* We should only get called for string BATs */
 	assert(b->ttype == TYPE_str);
-	/* Allocate result BAT */
 	bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT);
 	if(bn == NULL) {
 		BBPunfix(b->batCacheid);
 		GDKfree(dst);
 		throw(MAL, "batstr.reverse", MAL_MALLOC_FAIL);
 	}
-	/* Loop through BAT b; 'start' is index of the entry we're working
-	   on, 'end' is used internally by BATloop to do the iterating */
 	bi = bat_iterator(b);
-	BATloop(b, start, end) {
-		src = (const char *) BUNtail(bi, start);
+	BATloop(b, p, q) {
+		src = (const char *) BUNtail(bi, p);
 		if (strNil(src)) {
 			assert(len > strlen(src));
+			nils = true;
 			strcpy(dst, str_nil);
 		}
 		else {
 			len = strlen(src);
-			/* make sure dst is large enough */
 			if (len >= dst_len) {
 				dst_len = len + 1024;
 				if ((dst = GDKrealloc(dst, dst_len)) == NULL) {
-					i = 1;
+					msg = createException(MAL,"batstr.reverse", MAL_MALLOC_FAIL);
 					goto bail;
 				}
 			}
-			/* All strings in MonetDB are encoded using UTF-8; we must
-			 * make sure that the reversed string is also encoded in valid
-			 * UTF-8, so we treat multibyte characters as single units */
-			while (*src) {
-				if ((*src & 0xF8) == 0xF0) {
-					/* 4 byte UTF-8 sequence */
-					assert(len >= 4);
-					dst[len - 4] = *src++;
-					assert((*src & 0xC0) == 0x80);
-					dst[len - 3] = *src++;
-					assert((*src & 0xC0) == 0x80);
-					dst[len - 2] = *src++;
-					assert((*src & 0xC0) == 0x80);
-					dst[len - 1] = *src++;
-					len -= 4;
-				} else if ((*src & 0xF0) == 0xE0) {
-					/* 3 byte UTF-8 sequence */
-					assert(len >= 3);
-					dst[len - 3] = *src++;
-					assert((*src & 0xC0) == 0x80);
-					dst[len - 2] = *src++;
-					assert((*src & 0xC0) == 0x80);
-					dst[len - 1] = *src++;
-					len -= 3;
-				} else if ((*src & 0xE0) == 0xC0) {
-					/* 2 byte UTF-8 sequence */
-					assert(len >= 2);
-					dst[len - 2] = *src++;
-					assert((*src & 0xC0) == 0x80);
-					dst[len - 1] = *src++;
-					len -= 2;
-				} else {
-					/* 1 byte UTF-8 "sequence" */
-					assert(len >= 1);
-					assert((*src & 0x80) == 0);
-					dst[--len] = *src++;
-				}
-			}
-			assert(len == 0);
+			str_reverse(dst, src, len);
 		}
-		if (BUNappend(bn, dst, false) != GDK_SUCCEED) {
-			/* BUNappend can fail since it may have to grow memory
-			   areas, especially true for string BATs */
-			i = 0;
+		if (tfastins_nocheckVAR(bn, p, dst) != GDK_SUCCEED) {
+			msg = createException(MAL,"batstr.reverse", GDK_EXCEPTION);
 			goto bail;
 		}
 	}
 	bat_iterator_end(&bi);
+	BATsetcount(bn, q);
+	bn->theap->dirty |= BATcount(bn) > 0;
+	bn->tnil = nils;
+	bn->tnonil = !nils;
+	bn->tkey = BATcount(bn) <= 1;
+	bn->tsorted = BATcount(bn) <= 1;
+	bn->trevsorted = BATcount(bn) <= 1;
 	GDKfree(dst);
 	BBPunfix(b->batCacheid);
 	*ret = bn->batCacheid;
 	BBPkeepref(bn);
-	return MAL_SUCCEED;
+	return msg;
  bail:
-	/* We only get here in the case of an allocation error;
-	   clean up the mess we've created and throw an exception */
 	bat_iterator_end(&bi);
 	GDKfree(dst);
-	BBPunfix(b->batCacheid);
-	BBPunfix(bn->batCacheid);
-	throw(MAL, "batstr.reverse", "%s", error[i]);
+	unfix_inputs(b->batCacheid, bn->batCacheid);
+	throw(MAL, "batstr.reverse", "%s", msg);
 }
 
 #include "mel.h"
@@ -5427,10 +5432,10 @@ mel_func batstr_init_funcs[] = {
 	pattern("batstr", "endsWith", BATSTRends_with_cst, false, "Check if bat string ends with substring, icase flag.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),arg("icase",bit))),
 	pattern("batstr", "endsWith", BATSTRends_with_cst, false, "Check if bat string(with CL) ends with substring.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),batarg("s",oid))),
 	pattern("batstr", "endsWith", BATSTRends_with_cst, false, "Check if bat string(with CL) ends with substring + icase flag.", args(1,5, batarg("",bit),batarg("s",str),arg("prefix",str),batarg("s",oid),arg("icase",bit))),
-	pattern("batstr", "endsWith", BATSTRends_with_str_cst, false, "Check if string ends with bat substring.", args(1,3, batarg("",bit),arg("s",str),batarg("prefix",str))),
-	pattern("batstr", "endsWith", BATSTRends_with_str_cst, false, "Check if string ends with bat substring + icase flag.", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit))),
-	pattern("batstr", "endsWith", BATSTRends_with_str_cst, false, "Check if string ends with bat substring(with CL).", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),batarg("s",oid))),
-	pattern("batstr", "endsWith", BATSTRends_with_str_cst, false, "Check if string ends with bat substring(with CL) + icase flag.", args(1,5, batarg("",bit),arg("s",str),batarg("prefix",str),batarg("s",oid),arg("icase",bit))),
+	pattern("batstr", "endsWith", BATSTRends_with_strcst, false, "Check if string ends with bat substring.", args(1,3, batarg("",bit),arg("s",str),batarg("prefix",str))),
+	pattern("batstr", "endsWith", BATSTRends_with_strcst, false, "Check if string ends with bat substring + icase flag.", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit))),
+	pattern("batstr", "endsWith", BATSTRends_with_strcst, false, "Check if string ends with bat substring(with CL).", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),batarg("s",oid))),
+	pattern("batstr", "endsWith", BATSTRends_with_strcst, false, "Check if string ends with bat substring(with CL) + icase flag.", args(1,5, batarg("",bit),arg("s",str),batarg("prefix",str),batarg("s",oid),arg("icase",bit))),
 	pattern("batstr", "splitpart", STRbatsplitpart, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),batarg("needle",str),batarg("field",int))),
 	pattern("batstr", "splitpart", STRbatsplitpartcst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),arg("field",int))),
 	pattern("batstr", "splitpart", STRbatsplitpart_needlecst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),batarg("field",int))),
