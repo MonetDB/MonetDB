@@ -35,9 +35,6 @@ enum heaptype {
 	dataheap
 };
 
-gdk_return ATOMheap(int id, Heap *hp, size_t cap)
-	__attribute__((__warn_unused_result__))
-	__attribute__((__visibility__("hidden")));
 bool ATOMisdescendant(int id, int parentid)
 	__attribute__((__visibility__("hidden")));
 int ATOMunknown_find(const char *nme)

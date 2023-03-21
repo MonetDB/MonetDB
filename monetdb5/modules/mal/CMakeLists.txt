@@ -34,7 +34,6 @@ target_sources(malmodules
   txtsim.c
   tokenizer.c
   sample.c
-  json_util.c
   querylog.c querylog.h
   sysmon.c
   tracer.c

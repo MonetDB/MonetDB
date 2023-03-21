@@ -55,26 +55,9 @@ static struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 //"optimizer.candidates();" only for decoration in explain
-	 //"optimizer.mask();"
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
-#ifdef USE_STRIMPS_OPTIMIZERS
-	{"minimal_strimps_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.aliases();"
-	 "optimizer.constants();"
-	 "optimizer.deadcode();"
-	 "optimizer.multiplex();"
-	 "optimizer.strimps();"
-	 "optimizer.generator();"
-	 //"optimizer.candidates();" only for decoration in explain
-	 //"optimizer.mask();"
-	 "optimizer.garbageCollector();"
-	 "optimizer.profiler();",
-	 "stable", NULL, 1},
-#endif  // USE_STRIMPS_OPTIMIZERS
 	{"minimal_fast",
 	 "optimizer.minimalfast()",
 	 "stable", NULL, 1},
@@ -114,90 +97,14 @@ static struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 "optimizer.candidates();"
-	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
-#ifdef USE_STRIMPS_OPTIMIZERS
-	{"strimps_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.aliases();"
-	 "optimizer.evaluate();"
-	 "optimizer.emptybind();"
-	 "optimizer.deadcode();" /* Feb2021 update, I pushed deadcode optimizer earlier in the pipeline so it runs before mitosis, thus removing less instructions */
-	 "optimizer.pushselect();"
-	 "optimizer.aliases();"
-	 "optimizer.mitosis();"
-	 "optimizer.mergetable();"
-	 "optimizer.aliases();"
-	 "optimizer.constants();"
-	 "optimizer.commonTerms();"
-	 "optimizer.projectionpath();"
-	 "optimizer.deadcode();"
-	 "optimizer.matpack();"
-	 "optimizer.reorder();"
-	 "optimizer.dataflow();"
-	 "optimizer.querylog();"
-	 "optimizer.multiplex();"
-	 "optimizer.strimps();"
-	 "optimizer.generator();"
-	 "optimizer.candidates();"
-	 //"optimizer.mask();"
-	 "optimizer.deadcode();"
-	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
-	 "optimizer.garbageCollector();"
-	 "optimizer.profiler();",
-	 "stable", NULL, 1},
-#endif  // USE_STRIMPS_OPTIMIZERS
 	{"default_fast",
 	 "optimizer.defaultfast()",
 	 "stable", NULL, 1},
-/* Apr2022 update. I disabled the volcano_pipe because it has issues on it */
-#if 0
-/*
- * Volcano style execution produces a sequence of blocks from the source relation
- */
-	{"volcano_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.aliases();"
-	 "optimizer.evaluate();"
-	 "optimizer.emptybind();"
-	 "optimizer.deadcode();" /* Feb2021 update, I pushed deadcode optimizer earlier in the pipeline so it runs before mitosis, thus removing less instructions */
-	 "optimizer.pushselect();"
-	 "optimizer.aliases();"
-	 "optimizer.mitosis();"
-	 "optimizer.mergetable();"
-	 "optimizer.aliases();"
-	 "optimizer.constants();"
-	 "optimizer.commonTerms();"
-	 "optimizer.projectionpath();"
-	 "optimizer.deadcode();"
-	 "optimizer.matpack();"
-	 "optimizer.reorder();"
-	 "optimizer.dataflow();"
-	 "optimizer.querylog();"
-	 "optimizer.multiplex();"
-	 "optimizer.generator();"
-	 "optimizer.volcano();"
-	 "optimizer.candidates();"
-	 //"optimizer.mask();"
-	 "optimizer.deadcode();"
-	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
-	 "optimizer.garbageCollector();"
-	 "optimizer.profiler();",
-	 "stable", NULL, 1},
-#endif
 /* The no_mitosis pipe line is (and should be kept!) identical to the
  * default pipeline, except that optimizer mitosis is omitted.  It is
  * used mainly to make some tests work deterministically, and to check
@@ -232,10 +139,8 @@ static struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 "optimizer.candidates();"
-	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
@@ -274,10 +179,8 @@ static struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 "optimizer.candidates();"
-	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.garbageCollector();"
 	 "optimizer.profiler();",
 	 "stable", NULL, 1},
