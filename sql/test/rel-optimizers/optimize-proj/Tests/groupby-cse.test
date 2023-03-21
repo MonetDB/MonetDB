@@ -1,0 +1,333 @@
+statement ok
+create table foo (c1 int, c2 int, c3 int)
+
+statement ok
+INSERT INTO
+    foo
+VALUES
+    (1,1,13),
+    (1,2,17),
+    (2,1,11),
+    (1,1,15)
+
+## GROUPBY <--input-- BASETABLE ########################################
+
+# the same expression should be removed from the GROUPBY op list of
+# group expressions (->l)
+query T nosort
+PLAN
+SELECT
+    c1,
+    c1,
+    count(c3)
+FROM
+    foo
+GROUP BY
+    c1,
+    c1
+----
+project (
+| group by (
+| | table("sys"."foo") [ "foo"."c1", "foo"."c3" ]
+| ) [ "foo"."c1" ] [ "foo"."c1", "sys"."count" no nil ("foo"."c3") as "%1"."%1" ]
+) [ "foo"."c1", "foo"."c1", "%1"."%1" ]
+
+query III nosort gb-over-bt
+SELECT
+    c1,
+    c1,
+    count(c3)
+FROM
+    foo
+GROUP BY
+    c1,
+    c1
+----
+1
+1
+3
+2
+2
+1
+
+# same as before
+query T nosort
+PLAN
+SELECT
+    c1 AS c1_alias1,
+    c1 AS c1_alias2,
+    count(c3)
+FROM
+    foo
+GROUP BY
+    c1_alias1,
+    c1_alias2
+----
+project (
+| group by (
+| | project (
+| | | table("sys"."foo") [ "foo"."c1", "foo"."c3" ]
+| | ) [ "foo"."c1", "foo"."c3", "foo"."c1" as "c1_alias2" ]
+| ) [ "foo"."c1" as "c1_alias1" ] [ "c1_alias1", "c1_alias2", "sys"."count" no nil ("foo"."c3") as "%1"."%1" ]
+) [ "c1_alias1", "c1_alias2", "%1"."%1" ]
+
+query III rowsort gb-over-bt
+SELECT
+    c1 AS c1_alias1,
+    c1 AS c1_alias2,
+    count(c3)
+FROM
+    foo
+GROUP BY
+    c1_alias1,
+    c1_alias2
+----
+1
+1
+3
+2
+2
+1
+
+## GROUPBY <--input-- TABLE ############################################
+
+statement ok
+CREATE FUNCTION tableReturnUDF ()
+RETURNS TABLE(a1 int, a2 int, a3 int)
+BEGIN
+    RETURN SELECT c1, c2, c3 FROM foo;
+END;
+
+# the same expression should be removed from the GROUPBY op list of
+# group expressions (->l) exactly like in the case of basetable
+query T nosort
+PLAN
+SELECT
+    a1,
+    a1,
+    count(a3)
+FROM
+    tableReturnUDF()
+GROUP BY
+    a1,
+    a1
+----
+project (
+| group by (
+| | table ("sys"."tablereturnudf"(), 
+| | ) [ "%1"."a1", "%1"."a2", "%1"."a3" ]
+| ) [ "%1"."a1" ] [ "%1"."a1", "sys"."count" no nil ("%1"."a3") as "%2"."%2" ]
+) [ "%1"."a1", "%1"."a1", "%2"."%2" ]
+
+query III rowsort
+SELECT
+    a1,
+    a1,
+    count(a3)
+FROM
+    tableReturnUDF()
+GROUP BY
+    a1,
+    a1
+----
+1
+1
+3
+2
+2
+1
+
+## GROUPBY <--input-- PROJECT ########################################## 
+
+# TODO: fix that and uncomment
+## in this example the order by groups are aliases of the same column
+## coming from the inner projection operator
+#query T nosort
+#PLAN
+#SELECT
+#    c1_alias1,
+#    c1_alias2,
+#    c2,
+#    count(c1_alias2)
+#FROM (
+#    SELECT
+#        c1 AS c1_alias1,
+#        c1 AS c1_alias2,
+#        c2,
+#        c3
+#    FROM
+#        foo
+#) AS sq
+#GROUP BY
+#    c1_alias1,
+#    c1_alias2,
+#    c2
+#----
+#project (
+#| group by (
+#| | project (
+#| | | table("sys"."foo") [ "foo"."c1", "foo"."c2" ]
+#| | ) [ "foo"."c1" as "sq"."c1_alias1", "foo"."c1" as "sq"."c1_alias2", "foo"."c2" as "sq"."c2" ]
+#| ) [ "sq"."c1_alias1", "sq"."c2" ] [ "sq"."c1_alias1", "sq"."c1_alias2", "sq"."c2", "sys"."count" no nil ("sq"."c1_alias2") as "%1"."%1" ]
+#) [ "sq"."c1_alias1", "sq"."c1_alias2", "sq"."c2", "%1"."%1" ]
+#
+#query III rowsort gb-over-pr
+#SELECT
+#    c1_alias_1,
+#    c1_alias_2,
+#    count(c1_alias_2)
+#FROM (
+#    SELECT
+#        c1 AS c1_alias_1,
+#        c1 AS c1_alias_2,
+#        c2,
+#        c3
+#    FROM
+#        foo
+#) AS sq
+#GROUP BY
+#    c1_alias_1,
+#    c1_alias_2,
+#    c2
+#----
+#1
+#1
+#1
+#1
+#1
+#2
+#2
+#2
+#1
+
+query T nosort
+PLAN
+SELECT
+    c1 AS c1_alias_1,
+    c1 AS c1_alias_2,
+    count(c3)
+FROM (
+    SELECT
+        c1,
+        c2,
+        c3
+    FROM
+        foo
+) AS sq
+GROUP BY
+    c1_alias_1,
+    c1_alias_2,
+    c2
+----
+project (
+| group by (
+| | project (
+| | | table("sys"."foo") [ "foo"."c1", "foo"."c2", "foo"."c3" ]
+| | ) [ "foo"."c1" as "sq"."c1", "foo"."c2" as "sq"."c2", "foo"."c3" as "sq"."c3", "sq"."c1" as "c1_alias_2" ]
+| ) [ "sq"."c1" as "c1_alias_1", "sq"."c2" ] [ "c1_alias_1", "c1_alias_2", "sys"."count" no nil ("sq"."c3") as "%1"."%1" ]
+) [ "c1_alias_1", "c1_alias_2", "%1"."%1" ]
+
+query III rowsort
+SELECT
+    c1 AS c1_alias_1,
+    c1 AS c1_alias_2,
+    count(c3)
+FROM (
+    SELECT
+        c1,
+        c2,
+        c3
+    FROM
+        foo
+) AS sq
+GROUP BY
+    c1_alias_1,
+    c1_alias_2,
+    c2
+----
+1
+1
+1
+1
+1
+2
+2
+2
+1
+
+# in this example both outer project/groupby and the inner (subquery)
+# projet use aliases for the column c1.
+query T nosort
+PLAN
+SELECT
+    c1_in_alias_1 AS c1_out_alias_1,
+    c1_in_alias_2 AS c1_out_alias_2,
+    count(c3)
+FROM (
+    SELECT
+        c1 as c1_in_alias_1,
+        c1 as c1_in_alias_2,
+        c2,
+        c3
+    FROM
+        foo
+) AS sq
+GROUP BY
+    c1_out_alias_1,
+    c1_out_alias_2,
+    c2
+----
+project (
+| group by (
+| | project (
+| | | table("sys"."foo") [ "foo"."c1", "foo"."c2", "foo"."c3" ]
+| | ) [ "foo"."c1" as "sq"."c1_in_alias_1", "foo"."c1" as "sq"."c1_in_alias_2", "foo"."c2" as "sq"."c2", "foo"."c3" as "sq"."c3", "sq"."c1_in_alias_2" as "c1_out_alias_2" ]
+| ) [ "sq"."c1_in_alias_1" as "c1_out_alias_1", "sq"."c2" ] [ "c1_out_alias_1", "c1_out_alias_2", "sys"."count" no nil ("sq"."c3") as "%1"."%1" ]
+) [ "c1_out_alias_1", "c1_out_alias_2", "%1"."%1" ]
+
+query III rowsort
+SELECT
+    c1_in_alias_1 AS c1_out_alias_1,
+    c1_in_alias_2 AS c1_out_alias_2,
+    count(c2)
+FROM (
+    SELECT
+        c1 as c1_in_alias_1,
+        c1 as c1_in_alias_2,
+        c2,
+        c3
+    FROM
+        foo
+) AS sq
+GROUP BY
+    c1_out_alias_1,
+    c1_out_alias_2,
+    c2
+----
+1
+1
+1
+1
+1
+2
+2
+2
+1
+
+
+## GROUPBY <--input-- TOPN/SAMPLE
+# this cannot happen since the TOPN/SAMPLE operators are pushed down to
+# the projections 
+
+## GROUPBY <--input-- JOIN
+# TODO
+
+## GROUPBY <--input-- SEMI
+# TODO
+
+## GROUPBY <--input-- UNION
+# TODO
+
+## GROUPBY <--input-- MERGE
+# TODO
+
