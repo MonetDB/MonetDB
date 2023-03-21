@@ -2930,15 +2930,6 @@ do_flush(logged_range *range, lng end) {
 	return GDK_SUCCEED;
 }
 
-static int
-flush_queue_length(logger *lg)
-{
-	MT_lock_set(&lg->flush_queue_lock);
-	const int fql = lg->flush_queue_length;
-	MT_lock_unset(&lg->flush_queue_lock);
-	return fql;
-}
-
 static inline void
 log_tdone(logger* lg, logged_range *range, ulng commit_ts) {
 	if (lg->debug & 1)
