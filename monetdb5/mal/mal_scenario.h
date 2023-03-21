@@ -13,13 +13,10 @@
 
 #include "mal_import.h"
 
-#define MAL_SCENARIO_READER 0
-#define MAL_SCENARIO_PARSER  1
-#define MAL_SCENARIO_OPTIMIZE 2
-#define MAL_SCENARIO_ENGINE 3
-#define MAL_SCENARIO_INITCLIENT 4
-#define MAL_SCENARIO_EXITCLIENT 5
-#define MAL_SCENARIO_CALLBACK 6
+#define MAL_SCENARIO_ENGINE 0
+#define MAL_SCENARIO_INITCLIENT 1
+#define MAL_SCENARIO_EXITCLIENT 2
+#define MAL_SCENARIO_CALLBACK 3
 
 /*#define MAL_SCENARIO_DEBUG*/
 /*
@@ -41,10 +38,6 @@ typedef struct SCENARIO {
 	MALfcn initClientCmd;
 	str exitClient;
 	MALfcn exitClientCmd;
-	str reader;
-	MALfcn readerCmd;
-	str parser;
-	MALfcn parserCmd;
 	str engine;
 	MALfcn engineCmd;
 	str callback;
