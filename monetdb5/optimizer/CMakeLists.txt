@@ -29,12 +29,9 @@ target_sources(optimizer
   opt_generator.c opt_generator.h
   opt_querylog.c opt_querylog.h
   opt_inline.c opt_inline.h
-  opt_jit.c opt_jit.h
   opt_projectionpath.c opt_projectionpath.h
   opt_macro.c opt_macro.h
-  opt_mask.c opt_mask.h
   opt_matpack.c opt_matpack.h
-  opt_json.c opt_json.h
   opt_mergetable.c opt_mergetable.h
   opt_mitosis.c opt_mitosis.h
   opt_multiplex.c opt_multiplex.h
@@ -48,9 +45,7 @@ target_sources(optimizer
   opt_pushselect.c opt_pushselect.h
   opt_profiler.c opt_profiler.h
   opt_postfix.c opt_postfix.h
-  opt_volcano.c opt_volcano.h
   opt_fastpath.c opt_fastpath.h
-  opt_strimps.c opt_strimps.h
   opt_wrapper.c
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/opt_pipes.h)

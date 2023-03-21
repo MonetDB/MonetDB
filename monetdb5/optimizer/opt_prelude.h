@@ -231,7 +231,6 @@ mal_export  const char *sqlcatalogRef;
 mal_export  const char *sqlRef;
 mal_export  const char *stoptraceRef;
 mal_export  const char *streamsRef;
-mal_export  const char *strimpFilterSelectRef;
 mal_export  const char *strimpsRef;
 mal_export  const char *strRef;
 mal_export  const char *subavgRef;

@@ -1097,8 +1097,7 @@ log_close_input(logger *lg)
 static inline void
 log_close_output(logger *lg)
 {
-	if (lg->flushing_output_log)
-		return;
+	assert (!lg->flushing_output_log);
 
 	if (!LOG_DISABLED(lg))
 		close_stream(lg->output_log);
