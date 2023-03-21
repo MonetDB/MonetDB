@@ -303,6 +303,7 @@ DFLOWworker(void *T)
 	srand((unsigned int) GDKusec());
 #endif
 	assert(t->errbuf != NULL);
+	t->errbuf[0] = 0;
 	GDKsetbuf(t->errbuf);		/* where to leave errors */
 	t->errbuf = NULL;
 
@@ -716,7 +717,7 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 	int i;
 	int j;
 	InstrPtr p;
-	int tasks=0, actions;
+	int tasks=0, actions = 0;
 	str ret = MAL_SUCCEED;
 	FlowEvent fe, f = 0;
 
@@ -741,8 +742,8 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 			fe[i].argclaim = 0;
 			for (j = p->retc; j < p->argc; j++)
 				fe[i].argclaim += getMemoryClaim(fe[0].flow->mb, fe[0].flow->stk, p, j, FALSE);
-			q_enqueue(todo, flow->status + i);
 			flow->status[i].state = DFLOWrunning;
+			q_enqueue(todo, flow->status + i);
 		}
 	MT_lock_unset(&flow->flowlock);
 	MT_sema_up(&w->s);
@@ -768,8 +769,8 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 			if (flow->status[i].state == DFLOWpending) {
 				flow->status[i].argclaim += f->hotclaim;
 				if (flow->status[i].blocks == 1 ) {
-					flow->status[i].state = DFLOWrunning;
 					flow->status[i].blocks--;
+					flow->status[i].state = DFLOWrunning;
 					q_enqueue(todo, flow->status + i);
 				} else {
 					flow->status[i].blocks--;

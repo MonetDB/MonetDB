@@ -401,7 +401,7 @@ int digits2ek( int digits)
 }
 
 
-int
+static int
 parse_time(const char* val,
 	   	unsigned int* hr,
 	   	unsigned int* mn,
@@ -425,7 +425,7 @@ parse_time(const char* val,
 }
 
 
-int
+static int
 parse_timestamp(const char* val,
 	   	unsigned int* yr,
 	   	unsigned int* mt,

@@ -1614,6 +1614,8 @@ THRnew(const char *name, MT_Id pid)
 			s->data[0] = THRdata[0];
 			s->data[1] = THRdata[1];
 			s->sp = THRsp();
+			s->freebats = 0;
+			s->nfreebats = 0;
 			strcpy_len(s->name, name, sizeof(s->name));
 			TRC_DEBUG(PAR, "%x %zu sp = %zu\n",
 				  (unsigned) s->tid,
@@ -1697,6 +1699,7 @@ void
 THRdel(Thread t)
 {
 	assert(GDKthreads <= t && t < GDKthreads + THREADS);
+	BBPrelinquish(t);
 	MT_thread_setdata(NULL);
 	TRC_DEBUG(PAR, "pid = %zu, disconnected, %d left\n",
 		  (size_t) ATOMIC_GET(&t->pid),

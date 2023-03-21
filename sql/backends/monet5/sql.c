@@ -91,6 +91,10 @@ rel_no_mitosis(mvc *sql, sql_rel *rel)
 	}
 	if (is_topn(rel->op) || is_sample(rel->op) || is_simple_project(rel->op))
 		return rel_no_mitosis(sql, rel->l);
+	if (is_ddl(rel->op) && rel->flag == ddl_output) {
+		// COPY SELECT ... INTO
+		return rel_no_mitosis(sql, rel->l);
+	}
 	if ((is_delete(rel->op) || is_truncate(rel->op)) && rel->card <= CARD_AGGR)
 		return 1;
 	if ((is_insert(rel->op) || is_update(rel->op)) && rel->card <= CARD_AGGR)
@@ -5149,6 +5153,9 @@ pattern("sql", "decypher", SQLdecypher, false, "Return decyphered password", arg
  pattern("sql", "analyze", sql_analyze, true, "Update statistics for schema", args(1,2, arg("",void),arg("sch",str))),
  pattern("sql", "analyze", sql_analyze, true, "Update statistics for table", args(1,3, arg("",void),arg("sch",str),arg("tbl",str))),
  pattern("sql", "analyze", sql_analyze, true, "Update statistics for column", args(1,4, arg("",void),arg("sch",str),arg("tbl",str),arg("col",str))),
+ pattern("sql", "set_count_distinct", sql_set_count_distinct, true, "Set count distinct for column", args(1,5, arg("",void),arg("sch",str),arg("tbl",str),arg("col",str),arg("val",lng))),
+ pattern("sql", "set_min", sql_set_min, true, "Set min for column", args(1,5, arg("",void),arg("sch",str),arg("tbl",str),arg("col",str),argany("val",1))),
+ pattern("sql", "set_max", sql_set_max, true, "Set max for column", args(1,5, arg("",void),arg("sch",str),arg("tbl",str),arg("col",str),argany("val",1))),
  pattern("sql", "statistics", sql_statistics, false, "return a table with statistics information", args(13,13, batarg("columnid",int),batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("with",int),batarg("count",lng),batarg("unique",bit),batarg("nils",bit),batarg("minval",str),batarg("maxval",str),batarg("sorted",bit),batarg("revsorted",bit))),
  pattern("sql", "statistics", sql_statistics, false, "return a table with statistics information for a particular schema", args(13,14, batarg("columnid",int),batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("with",int),batarg("count",lng),batarg("unique",bit),batarg("nils",bit),batarg("minval",str),batarg("maxval",str),batarg("sorted",bit),batarg("revsorted",bit),arg("sname",str))),
  pattern("sql", "statistics", sql_statistics, false, "return a table with statistics information for a particular table", args(13,15, batarg("columnid",int),batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("with",int),batarg("count",lng),batarg("unique",bit),batarg("nils",bit),batarg("minval",str),batarg("maxval",str),batarg("sorted",bit),batarg("revsorted",bit),arg("sname",str),arg("tname",str))),
