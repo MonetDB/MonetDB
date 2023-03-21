@@ -2865,6 +2865,8 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 
 static inline bool
 check_rotation_conditions(logger *lg) {
+	if (LOG_DISABLED(lg))
+		return false;
 
 	if (lg->current->next)
 		return false; /* do not rotate if there is already a prepared next current */
