@@ -2237,7 +2237,6 @@ do_flush_range_cleanup(logger* lg) {
 		(void) ATOMIC_DEC(&frange->refcount);
 		close_stream(frange->output_log);
 		frange->output_log = NULL;
-		frange = frange->next;
 	}
 
 	return flast;
