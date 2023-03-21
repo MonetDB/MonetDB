@@ -38,7 +38,6 @@
 #include "opt_remap.h"
 #include "opt_remoteQueries.h"
 #include "opt_reorder.h"
-#include "opt_volcano.h"
 #include "opt_fastpath.h"
 #include "optimizer_private.h"
 #include "mal_interpreter.h"
