@@ -64,6 +64,7 @@ malBootstrap(char *modules[], bool embedded, const char *initpasswd)
 		MCcloseClient(c);
 		return msg;
 	}
+	/*
 	pushEndInstruction(c->curprg->def);
 	msg = chkProgram(c->usermodule, c->curprg->def);
 	if ( msg != MAL_SUCCEED || (msg= c->curprg->def->errors) != MAL_SUCCEED ) {
@@ -71,6 +72,7 @@ malBootstrap(char *modules[], bool embedded, const char *initpasswd)
 		return msg;
 	}
 	msg = MALengine(c);
+	*/
 	MCcloseClient(c);
 	return msg;
 }
@@ -651,7 +653,7 @@ MALexitClient(Client c)
 	return NULL;
 }
 
-str
+static str
 MALreader(Client c)
 {
 	if (MCreadClient(c) > 0)
@@ -799,10 +801,20 @@ MALengine(Client c)
 	Symbol prg;
 	str msg = MAL_SUCCEED;
 
-	if ((msg = MALoptimizer(c)) != MAL_SUCCEED)
+	do {
+	if ((msg = MALreader(c)) != MAL_SUCCEED)
 		return msg;
+	if (c->mode == FINISHCLIENT)
+		return msg;
+	if ((msg = MALparser(c)) != MAL_SUCCEED)
+		return msg;
+	} while(c->blkmode);
+	/*
 	if (c->blkmode)
 		return MAL_SUCCEED;
+		*/
+	if ((msg = MALoptimizer(c)) != MAL_SUCCEED)
+		return msg;
 	prg = c->curprg;
 	if (prg == NULL)
 		throw(SYNTAX, "mal.engine", SYNTAX_SIGNATURE);

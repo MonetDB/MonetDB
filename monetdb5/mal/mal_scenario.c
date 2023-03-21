@@ -14,8 +14,7 @@
  * In MonetDB multiple languages and execution engines can
  * be combined at run time to satisfy a wide user-community.
  * Such an assemblage of components is called a @emph{scenario}
- * and consists of a @emph{reader}, @emph{parser}
- * and @emph{engine}. These hooks allow
+ * and consists of a @emph{engine}. These hooks allow
  * for both linked-in and external components.
  *
  * The languages supported are SQL, the Monet Assembly Language (MAL), and profiler.
@@ -27,11 +26,6 @@
  * execution. The reader uses the common stream package to read
  * data in large chunks, if possible. In interactive mode the lines
  * are processed one at a time.
- *
- * The MAL parser component turns the string into
- * an internal representation of the MAL program.
- * During this phase semantic checks are performed, such that
- * we end up with a type correct program.
  *
  * The final stage is to choose an execution paradigm,
  * i.e. interpretative (default), compilation of an ad-hoc user
@@ -94,10 +88,6 @@ static struct SCENARIO scenarioRec[MAXSCEN] = {
 		.initClientCmd = (MALfcn) MALinitClient,
 		.exitClient = "MALexitClient",
 		.exitClientCmd = (MALfcn) MALexitClient,
-		.reader = "MALreader",
-		.readerCmd = (MALfcn) MALreader,
-		.parser = "MALparser",
-		.parserCmd = (MALfcn) MALparser,
 		.engine = "MALengine",
 		.engineCmd = (MALfcn) MALengine,
 		.callback = "MALcallback",
@@ -160,7 +150,6 @@ showScenario(stream *f, Scenario scen)
 	print_scenarioCommand(f, scen->exitSystem, scen->exitSystemCmd);
 	print_scenarioCommand(f, scen->initClient, scen->initClientCmd);
 	print_scenarioCommand(f, scen->exitClient, scen->exitClientCmd);
-	print_scenarioCommand(f, scen->parser, scen->parserCmd);
 	print_scenarioCommand(f, scen->callback, scen->callbackCmd);
 	print_scenarioCommand(f, scen->engine, scen->engineCmd);
 	mnstr_printf(f, "]\n");
@@ -219,8 +208,6 @@ fillScenario(Client c, Scenario scen)
 {
 	c->scenario = scen->name;
 
-	c->phase[MAL_SCENARIO_READER] = scen->readerCmd;
-	c->phase[MAL_SCENARIO_PARSER] = scen->parserCmd;
 	c->phase[MAL_SCENARIO_CALLBACK] = scen->callbackCmd;
 	c->phase[MAL_SCENARIO_ENGINE] = scen->engineCmd;
 	c->phase[MAL_SCENARIO_INITCLIENT] = scen->initClientCmd;
@@ -297,13 +284,6 @@ resetScenario(Client c)
  * The client scenario initialization and finalization brackets
  * are  @sc{xyzinitClient()} and @sc{xyzexitClient()}.
  *
- * The @sc{xyzparser(Client c)} contains the parser for language XYZ
- * and should fill the MAL program block associated with the client record.
- * The latter may have been initialized with variables.
- * Each language parser may require a catalog with information
- * on the translation of language specific datastructures into their BAT
- * equivalent.
- *
  * The @sc{xyzengine(Client c)} contains the applicable back-end engine.
  * The default is the MAL interpreter, which provides good balance
  * between speed and ability to analysis its behavior.
@@ -314,9 +294,6 @@ static const char *phases[] = {
 	[MAL_SCENARIO_ENGINE] = "scenario engine",
 	[MAL_SCENARIO_EXITCLIENT] = "scenario exitclient",
 	[MAL_SCENARIO_INITCLIENT] = "scenario initclient",
-	[MAL_SCENARIO_OPTIMIZE] = "scenario optimize",
-	[MAL_SCENARIO_PARSER] = "scenario parser",
-	[MAL_SCENARIO_READER] = "scenario reader",
 };
 static str
 runPhase(Client c, int phase)
@@ -340,12 +317,6 @@ runScenarioBody(Client c)
 
 	while (c->mode > FINISHCLIENT && !GDKexiting()) {
 		/* later merge the phases */
-		if ( c->mode <= FINISHCLIENT ||  (msg = runPhase(c, MAL_SCENARIO_READER)) )
-			goto wrapup;
-		if ( c->mode <= FINISHCLIENT  || (msg = runPhase(c, MAL_SCENARIO_PARSER)) || c->blkmode)
-			goto wrapup;
-		if ( c->mode <= FINISHCLIENT ||  (msg = runPhase(c, MAL_SCENARIO_OPTIMIZE)) )
-			goto wrapup;
 		if ( c->mode <= FINISHCLIENT || (msg = runPhase(c, MAL_SCENARIO_ENGINE)))
 			goto wrapup;
 	wrapup:

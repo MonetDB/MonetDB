@@ -130,6 +130,7 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 		return msg;
 	}
 	pushEndInstruction(c->curprg->def);
+#if 0
 	msg = chkProgram(c->usermodule, c->curprg->def);
 	if ( msg != MAL_SUCCEED || (msg= c->curprg->def->errors) != MAL_SUCCEED ) {
 		MCcloseClient(c);
@@ -138,6 +139,7 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 		return msg;
 	}
 	msg = MALengine(c);
+#endif
 	if (msg == MAL_SUCCEED)
 		embeddedinitialized = true;
 	MCcloseClient(c);
