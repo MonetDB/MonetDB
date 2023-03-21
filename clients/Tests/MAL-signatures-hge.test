@@ -34581,33 +34581,63 @@ Transform BAT of strings from UTF8 to ASCII
 batstr
 endsWith
 pattern batstr.endsWith(X_0:bat[:str], X_1:bat[:str]):bat[:bit] 
-STRbatSuffix;
-Suffix check.
+BATSTRends_with;
+Check if bat string ends with bat substring.
 batstr
 endsWith
 pattern batstr.endsWith(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit] 
-STRbatSuffix;
-Suffix check.
+BATSTRends_with;
+Check if bat string ends with bat substring (with CLs).
 batstr
 endsWith
-pattern batstr.endsWith(X_0:str, X_1:bat[:str]):bat[:bit] 
-STRbatSuffix_strcst;
-Suffix check.
+pattern batstr.endsWith(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit):bat[:bit] 
+BATSTRends_with;
+Check if bat string ends with bat substring (with CLs) + icase flag.
 batstr
 endsWith
-pattern batstr.endsWith(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:bit] 
-STRbatSuffix_strcst;
-Suffix check.
+pattern batstr.endsWith(X_0:bat[:str], X_1:bat[:str], X_2:bit):bat[:bit] 
+BATSTRends_with;
+Check if bat string ends with bat substring, icase flag.
 batstr
 endsWith
 pattern batstr.endsWith(X_0:bat[:str], X_1:str):bat[:bit] 
-STRbatSuffixcst;
-Suffix check.
+BATSTRends_with_cst;
+Check if bat string ends with substring.
 batstr
 endsWith
 pattern batstr.endsWith(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:bit] 
-STRbatSuffixcst;
-Suffix check.
+BATSTRends_with_cst;
+Check if bat string(with CL) ends with substring.
+batstr
+endsWith
+pattern batstr.endsWith(X_0:bat[:str], X_1:str, X_2:bat[:oid], X_3:bit):bat[:bit] 
+BATSTRends_with_cst;
+Check if bat string(with CL) ends with substring + icase flag.
+batstr
+endsWith
+pattern batstr.endsWith(X_0:bat[:str], X_1:str, X_2:bit):bat[:bit] 
+BATSTRends_with_cst;
+Check if bat string ends with substring, icase flag.
+batstr
+endsWith
+pattern batstr.endsWith(X_0:str, X_1:bat[:str]):bat[:bit] 
+BATSTRends_with_strcst;
+Check if string ends with bat substring.
+batstr
+endsWith
+pattern batstr.endsWith(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:bit] 
+BATSTRends_with_strcst;
+Check if string ends with bat substring(with CL).
+batstr
+endsWith
+pattern batstr.endsWith(X_0:str, X_1:bat[:str], X_2:bat[:oid], X_3:bit):bat[:bit] 
+BATSTRends_with_strcst;
+Check if string ends with bat substring(with CL) + icase flag.
+batstr
+endsWith
+pattern batstr.endsWith(X_0:str, X_1:bat[:str], X_2:bit):bat[:bit] 
+BATSTRends_with_strcst;
+Check if string ends with bat substring + icase flag.
 batstr
 insert
 pattern batstr.insert(X_0:bat[:str], X_1:bat[:int], X_2:bat[:int], X_3:bat[:str]):bat[:str] 
@@ -34771,33 +34801,63 @@ Return the string length in bytes.
 batstr
 r_search
 pattern batstr.r_search(X_0:bat[:str], X_1:bat[:str]):bat[:int] 
-STRbatRstrSearch;
+BATSTRrevstr_search;
 Reverse search for a substring. Returns position, -1 if not found.
 batstr
 r_search
 pattern batstr.r_search(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
-STRbatRstrSearch;
-Reverse search for a substring. Returns position, -1 if not found.
+BATSTRrevstr_search;
+Reverse search for a substring (with CLs). Returns position, -1 if not found.
 batstr
 r_search
-pattern batstr.r_search(X_0:str, X_1:bat[:str]):bat[:int] 
-STRbatRstrSearch_strcst;
-Reverse search for a substring. Returns position, -1 if not found.
+pattern batstr.r_search(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit):bat[:int] 
+BATSTRrevstr_search;
+Reverse search for a substring (with CLs) + icase flag. Returns position, -1 if not found.
 batstr
 r_search
-pattern batstr.r_search(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:int] 
-STRbatRstrSearch_strcst;
-Reverse search for a substring. Returns position, -1 if not found.
+pattern batstr.r_search(X_0:bat[:str], X_1:bat[:str], X_2:bit):bat[:int] 
+BATSTRrevstr_search;
+Reverse search for a substring + icase flag. Returns position, -1 if not found.
 batstr
 r_search
 pattern batstr.r_search(X_0:bat[:str], X_1:str):bat[:int] 
-STRbatRstrSearchcst;
+BATSTRrevstr_search_cst;
 Reverse search for a substring. Returns position, -1 if not found.
 batstr
 r_search
 pattern batstr.r_search(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:int] 
-STRbatRstrSearchcst;
+BATSTRrevstr_search_cst;
+Reverse search for a substring (with CL). Returns position, -1 if not found.
+batstr
+r_search
+pattern batstr.r_search(X_0:bat[:str], X_1:str, X_2:bat[:oid], X_3:bit):bat[:int] 
+BATSTRrevstr_search_cst;
+Reverse search for a substring (with CL) + icase flag. Returns position, -1 if not found.
+batstr
+r_search
+pattern batstr.r_search(X_0:bat[:str], X_1:str, X_2:bit):bat[:int] 
+BATSTRrevstr_search_cst;
+Reverse search for a substring + icase flag. Returns position, -1 if not found.
+batstr
+r_search
+pattern batstr.r_search(X_0:str, X_1:bat[:str]):bat[:int] 
+BATSTRrevstr_search_strcst;
 Reverse search for a substring. Returns position, -1 if not found.
+batstr
+r_search
+pattern batstr.r_search(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:int] 
+BATSTRrevstr_search_strcst;
+Reverse search for a substring (with CL). Returns position, -1 if not found.
+batstr
+r_search
+pattern batstr.r_search(X_0:str, X_1:bat[:str], X_2:bat[:oid], X_3:bit):bat[:int] 
+BATSTRrevstr_search_strcst;
+Reverse search for a substring (with CL) + icase flag. Returns position, -1 if not found.
+batstr
+r_search
+pattern batstr.r_search(X_0:str, X_1:bat[:str], X_2:bit):bat[:int] 
+BATSTRrevstr_search_strcst;
+Reverse search for a substring + icase flag. Returns position, -1 if not found.
 batstr
 repeat
 pattern batstr.repeat(X_0:bat[:str], X_1:bat[:int]):bat[:str] 
@@ -34936,33 +34996,63 @@ Strip characters in the second string from end of the first strings.
 batstr
 search
 pattern batstr.search(X_0:bat[:str], X_1:bat[:str]):bat[:int] 
-STRbatstrSearch;
+BATSTRstr_search;
 Search for a substring. Returns position, -1 if not found.
 batstr
 search
 pattern batstr.search(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
-STRbatstrSearch;
+BATSTRstr_search;
 Search for a substring. Returns position, -1 if not found.
 batstr
 search
-pattern batstr.search(X_0:str, X_1:bat[:str]):bat[:int] 
-STRbatstrSearch_strcst;
-Search for a substring. Returns position, -1 if not found.
+pattern batstr.search(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit):bat[:int] 
+BATSTRstr_search;
+Search for a substring. Returns position, -1 if not found, icase flag.
 batstr
 search
-pattern batstr.search(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:int] 
-STRbatstrSearch_strcst;
-Search for a substring. Returns position, -1 if not found.
+pattern batstr.search(X_0:bat[:str], X_1:bat[:str], X_2:bit):bat[:int] 
+BATSTRstr_search;
+Search for a substring. Returns position, -1 if not found, icase flag.
 batstr
 search
 pattern batstr.search(X_0:bat[:str], X_1:str):bat[:int] 
-STRbatstrSearchcst;
+BATSTRstr_search_cst;
 Search for a substring. Returns position, -1 if not found.
 batstr
 search
 pattern batstr.search(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:int] 
-STRbatstrSearchcst;
+BATSTRstr_search_cst;
 Search for a substring. Returns position, -1 if not found.
+batstr
+search
+pattern batstr.search(X_0:bat[:str], X_1:str, X_2:bat[:oid], X_3:bit):bat[:int] 
+BATSTRstr_search_cst;
+Search for a substring. Returns position, -1 if not found, icase flag.
+batstr
+search
+pattern batstr.search(X_0:bat[:str], X_1:str, X_2:bit):bat[:int] 
+BATSTRstr_search_cst;
+Search for a substring. Returns position, -1 if not found, icase flag.
+batstr
+search
+pattern batstr.search(X_0:str, X_1:bat[:str]):bat[:int] 
+BATSTRstr_search_strcst;
+Search for a substring. Returns position, -1 if not found.
+batstr
+search
+pattern batstr.search(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:int] 
+BATSTRstr_search_strcst;
+Search for a substring. Returns position, -1 if not found.
+batstr
+search
+pattern batstr.search(X_0:str, X_1:bat[:str], X_2:bat[:oid], X_3:bit):bat[:int] 
+BATSTRstr_search_strcst;
+Search for a substring. Returns position, -1 if not found, icase flag.
+batstr
+search
+pattern batstr.search(X_0:str, X_1:bat[:str], X_2:bit):bat[:int] 
+BATSTRstr_search_strcst;
+Search for a substring. Returns position, -1 if not found, icase flag.
 batstr
 space
 pattern batstr.space(X_0:bat[:int]):bat[:str] 
@@ -34996,33 +35086,63 @@ Split string on delimiter. Returns@given field (counting from one.)
 batstr
 startsWith
 pattern batstr.startsWith(X_0:bat[:str], X_1:bat[:str]):bat[:bit] 
-STRbatPrefix;
-Prefix check.
+BATSTRstarts_with;
+Check if bat string starts with bat substring.
 batstr
 startsWith
 pattern batstr.startsWith(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit] 
-STRbatPrefix;
-Prefix check.
+BATSTRstarts_with;
+Check if bat string starts with bat substring (with CLs).
 batstr
 startsWith
-pattern batstr.startsWith(X_0:str, X_1:bat[:str]):bat[:bit] 
-STRbatPrefix_strcst;
-Prefix check.
+pattern batstr.startsWith(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit):bat[:bit] 
+BATSTRstarts_with;
+Check if bat string starts with bat substring (with CLs) + icase flag.
 batstr
 startsWith
-pattern batstr.startsWith(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:bit] 
-STRbatPrefix_strcst;
-Prefix check.
+pattern batstr.startsWith(X_0:bat[:str], X_1:bat[:str], X_2:bit):bat[:bit] 
+BATSTRstarts_with;
+Check if bat string starts with bat substring, icase flag.
 batstr
 startsWith
 pattern batstr.startsWith(X_0:bat[:str], X_1:str):bat[:bit] 
-STRbatPrefixcst;
-Prefix check.
+BATSTRstarts_with_cst;
+Check if bat string starts with substring.
 batstr
 startsWith
 pattern batstr.startsWith(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:bit] 
-STRbatPrefixcst;
-Prefix check.
+BATSTRstarts_with_cst;
+Check if bat string(with CL) starts with substring.
+batstr
+startsWith
+pattern batstr.startsWith(X_0:bat[:str], X_1:str, X_2:bat[:oid], X_3:bit):bat[:bit] 
+BATSTRstarts_with_cst;
+Check if bat string(with CL) starts with substring + icase flag.
+batstr
+startsWith
+pattern batstr.startsWith(X_0:bat[:str], X_1:str, X_2:bit):bat[:bit] 
+BATSTRstarts_with_cst;
+Check if bat string starts with substring, icase flag.
+batstr
+startsWith
+pattern batstr.startsWith(X_0:str, X_1:bat[:str]):bat[:bit] 
+BATSTRstarts_with_strcst;
+Check if string starts with bat substring.
+batstr
+startsWith
+pattern batstr.startsWith(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:bit] 
+BATSTRstarts_with_strcst;
+Check if string starts with bat substring(with CL).
+batstr
+startsWith
+pattern batstr.startsWith(X_0:str, X_1:bat[:str], X_2:bat[:oid], X_3:bit):bat[:bit] 
+BATSTRstarts_with_strcst;
+Check if string starts with bat substring(with CL) + icase flag.
+batstr
+startsWith
+pattern batstr.startsWith(X_0:str, X_1:bat[:str], X_2:bit):bat[:bit] 
+BATSTRstarts_with_strcst;
+Check if string starts with bat substring + icase flag.
 batstr
 string
 pattern batstr.string(X_0:bat[:str], X_1:bat[:int]):bat[:str] 
@@ -50395,14 +50515,14 @@ STRasciify;
 Transform string from UTF8 to ASCII
 str
 endsWith
-command str.endsWith(X_0:str, X_1:str):bit 
+pattern str.endsWith(X_0:str, X_1:str):bit 
 STRendsWith;
 Check if string ends with substring.
 str
 endsWith
 pattern str.endsWith(X_0:str, X_1:str, X_2:bit):bit 
 STRendsWith;
-Check if string ends with substring, case insensitive flag.
+Check if string ends with substring, icase flag.
 str
 epilogue
 command str.epilogue():void 
@@ -50470,9 +50590,14 @@ STRprefix;
 Extract the prefix of a given length
 str
 r_search
-command str.r_search(X_0:str, X_1:str):int 
-STRReverseStrSearch;
+pattern str.r_search(X_0:str, X_1:str):int 
+STRrevstr_search;
 Reverse search for a substring. Returns@position, -1 if not found.
+str
+r_search
+pattern str.r_search(X_0:str, X_1:str, X_2:bit):int 
+STRrevstr_search;
+Reverse search for a substring, icase flag. Returns@position, -1 if not found.
 str
 repeat
 command str.repeat(X_0:str, X_1:int):str 
@@ -50515,14 +50640,14 @@ STRRtrim2;
 Remove the longest string containing only characters from the second string from the end of the first string.
 str
 search
-command str.search(X_0:str, X_1:str):int 
-STRstrSearch;
+pattern str.search(X_0:str, X_1:str):int 
+STRstr_search;
 Search for a substring. Returns@position, -1 if not found.
 str
 search
-command str.search(X_0:str, X_1:str, X_2:bit):int 
-STRstrSearch;
-Search for a substring, case insensitive flag. Returns@position, -1 if not found.
+pattern str.search(X_0:str, X_1:str, X_2:bit):int 
+STRstr_search;
+Search for a substring, icase flag. Returns@position, -1 if not found.
 str
 space
 command str.space(X_0:int):str 
@@ -50535,14 +50660,14 @@ STRsplitpart;
 Split string on delimiter. Returns@given field (counting from one.)
 str
 startsWith
-command str.startsWith(X_0:str, X_1:str):bit 
+pattern str.startsWith(X_0:str, X_1:str):bit 
 STRstartsWith;
 Check if string starts with substring.
 str
 startsWith
-command str.startsWith(X_0:str, X_1:str, X_2:bit):bit 
+pattern str.startsWith(X_0:str, X_1:str, X_2:bit):bit 
 STRstartsWith;
-Check if string starts with substring, case insensitive flag.
+Check if string starts with substring, icase flag.
 str
 str
 command str.str(X_0:str):str 
