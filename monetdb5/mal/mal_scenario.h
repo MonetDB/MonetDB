@@ -45,8 +45,6 @@ typedef struct SCENARIO {
 	MALfcn readerCmd;
 	str parser;
 	MALfcn parserCmd;
-	str optimizer;
-	MALfcn optimizerCmd;
 	str engine;
 	MALfcn engineCmd;
 	str callback;
@@ -67,7 +65,6 @@ extern void showScenario(stream *f, Scenario s);
 extern void showAllScenarios(stream *f);
 extern void resetScenario(Client c);
 
-extern void updateScenario(str scen, str nme, MALfcn fcn);
 #endif
 
 #endif /* _MAL_SCENARIO_H */

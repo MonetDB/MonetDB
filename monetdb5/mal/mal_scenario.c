@@ -11,10 +11,10 @@
 /*
  * (author) M. Kersten
  * @+ Session Scenarios
- * In MonetDB multiple languages, optimizers, and execution engines can
+ * In MonetDB multiple languages and execution engines can
  * be combined at run time to satisfy a wide user-community.
  * Such an assemblage of components is called a @emph{scenario}
- * and consists of a @emph{reader}, @emph{parser}, @emph{optimizer}
+ * and consists of a @emph{reader}, @emph{parser}
  * and @emph{engine}. These hooks allow
  * for both linked-in and external components.
  *
@@ -32,15 +32,6 @@
  * an internal representation of the MAL program.
  * During this phase semantic checks are performed, such that
  * we end up with a type correct program.
- *
- * The code block is subsequently sent to an MAL optimizer.
- * In the default case the program is left untouched. For other languages,
- * the optimizer deploys language specific code transformations,
- * e.g., foreign-key optimizations in joins and remote query execution.
- * All optimization information is statically derived from the
- * code blocks and possible catalogues maintained for the query language
- * at hand. Optimizers leave advice and their findings in properties
- * in the symbol table, see @ref{Property Management}.
  *
  * The final stage is to choose an execution paradigm,
  * i.e. interpretative (default), compilation of an ad-hoc user
@@ -107,8 +98,6 @@ static struct SCENARIO scenarioRec[MAXSCEN] = {
 		.readerCmd = (MALfcn) MALreader,
 		.parser = "MALparser",
 		.parserCmd = (MALfcn) MALparser,
-		.optimizer = "MALoptimizer",
-		.optimizerCmd = NULL,
 		.engine = "MALengine",
 		.engineCmd = (MALfcn) MALengine,
 		.callback = "MALcallback",
@@ -172,7 +161,6 @@ showScenario(stream *f, Scenario scen)
 	print_scenarioCommand(f, scen->initClient, scen->initClientCmd);
 	print_scenarioCommand(f, scen->exitClient, scen->exitClientCmd);
 	print_scenarioCommand(f, scen->parser, scen->parserCmd);
-	print_scenarioCommand(f, scen->optimizer, scen->optimizerCmd);
 	print_scenarioCommand(f, scen->callback, scen->callbackCmd);
 	print_scenarioCommand(f, scen->engine, scen->engineCmd);
 	mnstr_printf(f, "]\n");
@@ -188,64 +176,6 @@ findScenario(str nme)
 		if (scen->name && strcmp(scen->name, nme) == 0)
 			return scen;
 	return NULL;
-}
-
-/*
- * Functions may become resolved only after the corresponding module
- * has been loaded. This should be announced as part of the module
- * prelude code.
- * Beware that after the update, we also have to adjust the client records.
- * They contain a copy of the functions addresses.
- */
-void
-updateScenario(str nme, str fnme, MALfcn fcn)
-{
-	int phase = -1;
-	Scenario scen = findScenario(nme);
-
-	if (scen == NULL)
-		return;
-	if (scen->initSystem && strcmp(scen->initSystem, fnme) == 0)
-		scen->initSystemCmd = fcn;
-	if (scen->exitSystem && strcmp(scen->exitSystem, fnme) == 0)
-		scen->exitSystemCmd = fcn;
-	if (scen->initClient && strcmp(scen->initClient, fnme) == 0) {
-		scen->initClientCmd = fcn;
-		phase = MAL_SCENARIO_INITCLIENT;
-	}
-	if (scen->exitClient && strcmp(scen->exitClient, fnme) == 0) {
-		scen->exitClientCmd = fcn;
-		phase = MAL_SCENARIO_EXITCLIENT;
-	}
-	if (scen->reader && strcmp(scen->reader, fnme) == 0) {
-		scen->readerCmd = fcn;
-		phase = MAL_SCENARIO_READER;
-	}
-	if (scen->parser && strcmp(scen->parser, fnme) == 0) {
-		scen->parserCmd = fcn;
-		phase = MAL_SCENARIO_PARSER;
-	}
-	if (scen->optimizer && strcmp(scen->optimizer, fnme) == 0) {
-		scen->optimizerCmd = fcn;
-		phase = MAL_SCENARIO_OPTIMIZE;
-	}
-	if (scen->callback && strcmp(scen->callback, fnme) == 0) {
-		scen->callbackCmd = fcn;
-		phase = MAL_SCENARIO_CALLBACK;
-	}
-	if (scen->engine && strcmp(scen->engine, fnme) == 0) {
-		scen->engineCmd = fcn;
-		phase = MAL_SCENARIO_ENGINE;
-	}
-	if (phase != -1) {
-		Client c1;
-
-		for (c1 = mal_clients; c1 < mal_clients + MAL_MAXCLIENTS; c1++) {
-			if (c1->scenario &&
-			    strcmp(c1->scenario, scen->name) == 0)
-				c1->phase[phase] = fcn;
-		}
-	}
 }
 
 void
@@ -291,7 +221,6 @@ fillScenario(Client c, Scenario scen)
 
 	c->phase[MAL_SCENARIO_READER] = scen->readerCmd;
 	c->phase[MAL_SCENARIO_PARSER] = scen->parserCmd;
-	c->phase[MAL_SCENARIO_OPTIMIZE] = scen->optimizerCmd;
 	c->phase[MAL_SCENARIO_CALLBACK] = scen->callbackCmd;
 	c->phase[MAL_SCENARIO_ENGINE] = scen->engineCmd;
 	c->phase[MAL_SCENARIO_INITCLIENT] = scen->initClientCmd;
@@ -374,9 +303,6 @@ resetScenario(Client c)
  * Each language parser may require a catalog with information
  * on the translation of language specific datastructures into their BAT
  * equivalent.
- *
- * The @sc{xyzoptimizer(Client c)} contains language specific optimizations
- * using the MAL intermediate code as a starting point.
  *
  * The @sc{xyzengine(Client c)} contains the applicable back-end engine.
  * The default is the MAL interpreter, which provides good balance
