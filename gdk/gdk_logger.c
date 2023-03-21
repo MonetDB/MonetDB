@@ -3215,19 +3215,22 @@ log_tstart(logger *lg, bool flushnow, ulng *log_file_id)
 			if (log_open_output(lg) != GDK_SUCCEED)
 				GDKfatal("Could not create new log file\n"); // TODO: does not have to be fatal (yet)
 		}
+		do_rotate(lg);
+		rotation_unlock(lg);
+		(void) do_flush_range_cleanup(lg);
+
+		if (lg->saved_id+1 < lg->id)
+			log_flush(lg, (1ULL<<63));
 		lg->flushnow = flushnow;
 	}
-	else if (check_rotation_conditions(lg)) {
-		lg->id++;
-		if (log_open_output(lg) != GDK_SUCCEED)
-			GDKfatal("Could not create new log file\n"); // TODO: does not have to be fatal (yet)
-	}
-	do_rotate(lg);
-	rotation_unlock(lg);
-
-	if (lg->flushnow && lg->saved_id+1 < lg->id) {
-		(void) do_flush_range_cleanup(lg);
-		log_flush(lg, (1ULL<<63));
+	else {
+		if (check_rotation_conditions(lg)) {
+			lg->id++;
+			if (log_open_output(lg) != GDK_SUCCEED)
+				GDKfatal("Could not create new log file\n"); // TODO: does not have to be fatal (yet)
+		}
+		do_rotate(lg);
+		rotation_unlock(lg);
 	}
 
 	(void) ATOMIC_INC(&lg->current->refcount);
