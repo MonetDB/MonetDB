@@ -36734,16 +36734,6 @@ pattern optimizer.deadcode(X_0:str, X_1:str):str
 OPTwrapper;
 Dead code optimizer
 optimizer
-default_fast
-function optimizer.default_fast():void;
-(empty)
-(empty)
-optimizer
-default_pipe
-function optimizer.default_pipe():void;
-(empty)
-(empty)
-optimizer
 defaultfast
 pattern optimizer.defaultfast():str 
 OPTwrapper;
@@ -36859,16 +36849,6 @@ pattern optimizer.mergetable(X_0:str, X_1:str):str
 OPTwrapper;
 Resolve the multi-table definitions
 optimizer
-minimal_fast
-function optimizer.minimal_fast():void;
-(empty)
-(empty)
-optimizer
-minimal_pipe
-function optimizer.minimal_pipe():void;
-(empty)
-(empty)
-optimizer
 minimalfast
 pattern optimizer.minimalfast():str 
 OPTwrapper;
@@ -36898,11 +36878,6 @@ multiplex
 pattern optimizer.multiplex(X_0:str, X_1:str):str 
 OPTwrapper;
 Compiler for multiplexed instructions
-optimizer
-no_mitosis_pipe
-function optimizer.no_mitosis_pipe():void;
-(empty)
-(empty)
 optimizer
 optimize
 pattern optimizer.optimize(X_0:str, X_1:str):void 
@@ -37008,11 +36983,6 @@ reorder
 pattern optimizer.reorder(X_0:str, X_1:str):str 
 OPTwrapper;
 Reorder by dataflow dependencies
-optimizer
-sequential_pipe
-function optimizer.sequential_pipe():void;
-(empty)
-(empty)
 optimizer
 strimps
 pattern optimizer.strimps():str 

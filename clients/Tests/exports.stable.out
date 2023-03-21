@@ -1002,7 +1002,7 @@ const char *ioRef;
 bool isExceptionVariable(const char *nme);
 int isIdentifier(str s);
 int isLoopBarrier(MalBlkPtr mb, int pc);
-int isOptimizerPipe(const char *name);
+bool isOptimizerPipe(const char *name);
 const char *iteratorRef;
 const char *joinRef;
 const char *jsonRef;
