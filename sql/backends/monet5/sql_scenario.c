@@ -136,8 +136,6 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		.readerCmd = MALreader,
 		.parser = "MALparser",
 		.parserCmd = MALparser,
-		.optimizer = "MALoptimizer",
-		.optimizerCmd = MALoptimizer,
 		.engine = "MALengine",
 		.engineCmd = MALengine,
 		.callback = "MALcallback",
