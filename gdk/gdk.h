@@ -1269,6 +1269,8 @@ gdk_export gdk_return BATextend(BAT *b, BUN newcap)
 /* internal */
 gdk_export uint8_t ATOMelmshift(int sz)
 	__attribute__((__const__));
+gdk_export gdk_return ATOMheap(int id, Heap *hp, size_t cap)
+	__attribute__((__warn_unused_result__));
 gdk_export const char *BATtailname(const BAT *b);
 
 gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
