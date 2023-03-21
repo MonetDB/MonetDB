@@ -4,5 +4,7 @@ batstr
 math
 select
 
-batstartswith
-batendswith
+batstr_reverse
+
+batstr_startswith
+batstr_endswith

@@ -1,0 +1,52 @@
+statement ok
+create function reverse(x string) returns string external name str.reverse
+
+statement ok
+create table foo(x string)
+
+statement ok
+insert into foo values('johndoe'), ('janedoe')
+
+query T nosort
+select reverse(x) from foo
+----
+eodnhoj
+eodenaj
+
+statement ok
+drop table foo
+
+statement ok
+create table bar(x string)
+
+statement ok
+insert into bar values('johndoe'), (''), ('janedoe')
+
+query T nosort
+select reverse(x) from bar;
+----
+eodnhoj
+(empty)
+eodenaj
+
+statement ok
+drop table bar
+
+statement ok
+create table baz(x string)
+
+statement ok
+insert into baz values('johndoe'), (NULL), ('janedoe')
+
+query T nosort
+select reverse(x) from baz;
+----
+eodnhoj
+NULL
+eodenaj
+
+statement ok
+drop table baz
+
+statement ok
+drop function reverse
