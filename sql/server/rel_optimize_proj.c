@@ -2892,7 +2892,6 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 		rel = rel_simplify_groupby_columns(v, rel);
 	}
 	rel = rel_groupby_cse(v, rel);
-	//rel = rel_remove_const_aggr(v, rel);
 	rel = rel_push_aggr_down(v, rel);
 	rel = rel_push_groupby_down(v, rel);
 	rel = rel_reduce_groupby_exps(v, rel);
