@@ -415,17 +415,15 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 	c->protocol = protocol;
 	c->blocksize = blocksize;
 
-	if (!GDKembedded() && c->phase[MAL_SCENARIO_INITCLIENT]) {
-		str (*init_client)(Client, const char *, const char *, const char *) = (str (*)(Client, const char *, const char *, const char *)) c->phase[MAL_SCENARIO_INITCLIENT];
-		if ((msg = init_client(c, passwd, challenge, algo)) != MAL_SUCCEED) {
+	if (!GDKembedded() && c->initClient) {
+		if ((msg = c->initClient(c, passwd, challenge, algo)) != MAL_SUCCEED) {
 			mnstr_printf(fout, "!%s\n", msg);
 			if (passwd)
 				GDKfree(passwd);
 			if (algo)
 				GDKfree(algo);
-			if (c->phase[MAL_SCENARIO_EXITCLIENT]) {
-				c->phase[MAL_SCENARIO_EXITCLIENT](c);
-			}
+			if (c->exitClient)
+				c->exitClient(c);
 			cleanUpScheduleClient(c, NULL, NULL, &msg);
 			return;
 		}

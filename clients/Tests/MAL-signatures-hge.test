@@ -44719,11 +44719,6 @@ unsafe pattern clients.setquerytimeout(X_0:int, X_1:int):void
 CLTqueryTimeout;
 A query is aborted after q seconds (q=0 means run undisturbed).
 clients
-setsession
-unsafe pattern clients.setsession(X_0:lng):void 
-CLTsetSessionTimeout;
-Abort a session after  n seconds.
-clients
 setsessiontimeout
 unsafe pattern clients.setsessiontimeout(X_0:int):void 
 CLTsessionTimeout;
@@ -44733,16 +44728,6 @@ setsessiontimeout
 unsafe pattern clients.setsessiontimeout(X_0:int, X_1:int):void 
 CLTsessionTimeout;
 Set the session timeout for a particulat session id
-clients
-settimeout
-unsafe pattern clients.settimeout(X_0:lng):void 
-CLTsetTimeout;
-Abort a query after  n seconds.
-clients
-settimeout
-unsafe pattern clients.settimeout(X_0:lng, X_1:lng):void 
-CLTsetTimeout;
-Abort a query after q seconds (q=0 means run undisturbed).@The session timeout aborts the connection after spending too@many seconds on query processing.
 clients
 setworkerlimit
 unsafe pattern clients.setworkerlimit(X_0:int):void 
@@ -47169,11 +47154,6 @@ pattern mdb.List():void
 MDBlistDetail;
 Dump the current routine on standard out.
 mdb
-dump
-pattern mdb.dump():void 
-MDBdump;
-Dump instruction, stacktrace, and stack
-mdb
 getContext
 command mdb.getContext(X_0:str):str 
 MDBgetExceptionContext;
@@ -47229,11 +47209,6 @@ pattern mdb.getVMsize():lng
 MDBgetVMsize;
 Retrieve the max VM size
 mdb
-inspect
-pattern mdb.inspect(X_0:str, X_1:str):void 
-MDBinspect;
-Run the debugger on a specific function
-mdb
 list
 pattern mdb.list(X_0:str, X_1:str):void 
 MDBlist3;
@@ -47254,11 +47229,6 @@ command mdb.modules():bat[:str]
 CMDmodules;
 List available modules
 mdb
-setCatch
-pattern mdb.setCatch(X_0:bit):void 
-MDBsetCatch;
-Turn on/off catching exceptions
-mdb
 setDebug
 pattern mdb.setDebug(X_0:int):int 
 MDBsetDebug;
@@ -47269,35 +47239,10 @@ pattern mdb.setDebug(X_0:str):int
 MDBsetDebugStr;
 Set the kernel debugging bit-set and return its previous value.@The recognized options are: threads, memory, properties,@io, transactions, modules, algorithms, estimates.
 mdb
-setTrace
-pattern mdb.setTrace(X_0:bit):void 
-MDBsetTrace;
-Turn on/off tracing of current routine
-mdb
-setTrace
-pattern mdb.setTrace(X_0:str):void 
-MDBsetVarTrace;
-Turn on/off tracing of a variable 
-mdb
 setVMsize
 pattern mdb.setVMsize(X_0:lng):lng 
 MDBsetVMsize;
 Manipulate the VM max size in MBs
-mdb
-start
-pattern mdb.start():void 
-MDBstart;
-Start interactive debugger
-mdb
-start
-pattern mdb.start(X_0:int):void 
-MDBstart;
-Start interactive debugger on a client
-mdb
-stop
-pattern mdb.stop():void 
-MDBstop;
-Stop the interactive debugger
 mdb
 var
 pattern mdb.var(X_0:str, X_1:str):void 

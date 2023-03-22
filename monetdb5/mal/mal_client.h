@@ -44,6 +44,9 @@ typedef struct CLIENT_INPUT {
 	struct CLIENT_INPUT *next;
 } ClientInput;
 
+typedef struct CLIENT *Client;
+typedef str (*init_client)(Client, const char *, const char *, const char *);
+
 typedef struct CLIENT {
 	int idx;        /* entry in mal_clients (-1 if free) */
 	oid user;       /* user id in the auth administration */
@@ -57,7 +60,10 @@ typedef struct CLIENT {
 	 * provided to temporarily switch to another scenario.
 	 */
 	str     scenario;  /* scenario management references */
-	MALfcn  phase[SCENARIO_PROPERTIES];
+	MALfcn engine;
+	MALfcn callback;
+	init_client initClient;
+	MALfcn exitClient;
 						/* if set to 'S' it will put the process to sleep */
 	bit		sqlprofiler;		/* control off-line sql performance monitoring */
 	/*
