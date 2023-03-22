@@ -38,15 +38,8 @@
  * @+ Scenario management
  * Scenarios are captured in modules; they can be dynamically loaded
  * and remain active until the system is brought to a halt.
- * The first time a scenario @sc{xyz} is used, the system looks for a scenario
- * initialization routine @sc{xyzinitSystem()} and executes it.
- * It is typically used to prepare the server for language specific interactions.
  * Thereafter its components are set to those required by
  * the scenario and the client initialization takes place.
- *
- * When the last user interested in a particular scenario leaves the
- * scene, we activate its finalization routine calling @sc{xyzexitSystem()}.
- * It typically perform cleanup, backup and monitoring functions.
  *
  * A scenario is interpreted in a strictly linear fashion,
  * i.e. performing a symbolic optimization before scheduling decisions
@@ -90,8 +83,6 @@ static struct SCENARIO scenarioRec[MAXSCEN] = {
 		.exitClientCmd = (MALfcn) MALexitClient,
 		.engine = "MALengine",
 		.engineCmd = (MALfcn) MALengine,
-		.callback = "MALcallback",
-		.callbackCmd = (MALfcn) MALcallback,
 	},
 	{
 		.name = NULL,
@@ -146,11 +137,8 @@ void
 showScenario(stream *f, Scenario scen)
 {
 	mnstr_printf(f, "[ \"%s\",", scen->name);
-	print_scenarioCommand(f, scen->initSystem, scen->initSystemCmd);
-	print_scenarioCommand(f, scen->exitSystem, scen->exitSystemCmd);
 	print_scenarioCommand(f, scen->initClient, scen->initClientCmd);
 	print_scenarioCommand(f, scen->exitClient, scen->exitClientCmd);
-	print_scenarioCommand(f, scen->callback, scen->callbackCmd);
 	print_scenarioCommand(f, scen->engine, scen->engineCmd);
 	mnstr_printf(f, "]\n");
 }
@@ -209,7 +197,6 @@ fillScenario(Client c, Scenario scen)
 	c->scenario = scen->name;
 
 	c->engine = scen->engineCmd;
-	c->callback = scen->callbackCmd;
 	c->initClient = scen->initClientCmd;
 	c->exitClient = scen->exitClientCmd;
 	return(MAL_SUCCEED);
@@ -236,7 +223,6 @@ setScenario(Client c, str nme)
 		c->initClient = NULL;
 		c->exitClient = NULL;
 		c->engine = NULL;
-		c->callback = NULL;
 		return msg;
 	}
 	return MAL_SUCCEED;
@@ -266,7 +252,6 @@ resetScenario(Client c)
 	c->initClient = NULL;
 	c->exitClient = NULL;
 	c->engine = NULL;
-	c->callback = NULL;
 }
 
 /*
@@ -294,20 +279,9 @@ runScenarioBody(Client c)
 
 	MT_thread_setworking("engine");
 	while (c->mode > FINISHCLIENT && !GDKexiting()) {
-		if ( c->mode <= FINISHCLIENT || (msg = c->engine(c)) != MAL_SUCCEED)
+		if (c->mode <= FINISHCLIENT || (msg = c->engine(c)) != MAL_SUCCEED)
 			goto wrapup;
 	wrapup:
-		if (msg != MAL_SUCCEED) {
-			if (c->callback) {
-				MT_thread_setworking("callback");
-				msg = (str)c->callback(c, msg);
-			}
-			if (msg) {
-				mnstr_printf(c->fdout,"!%s%s", msg, (msg[strlen(msg)-1] == '\n'? "":"\n"));
-				freeException(msg);
-				msg = MAL_SUCCEED;
-			}
-		}
 		if( GDKerrbuf && GDKerrbuf[0])
 			mnstr_printf(c->fdout,"!GDKerror: %s\n",GDKerrbuf);
 		assert(c->curprg->def->errors == NULL);

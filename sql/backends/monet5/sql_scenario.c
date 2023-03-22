@@ -104,16 +104,12 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*s = (struct SCENARIO) {
 		.name = "S_Q_L",
 		.language = "sql",
-		.exitSystem = "SQLexit",
-		.exitSystemCmd = SQLexit,
 		.initClient = "SQLinitClient",
 		.initClientCmd = SQLinitClient,
 		.exitClient = "SQLexitClient",
 		.exitClientCmd = SQLexitClient,
 		.engine = "SQLengine",
 		.engineCmd = SQLengine,
-		.callback = "SQLcallback",
-		.callbackCmd = SQLcallback,
 	};
 	ms = getFreeScenario();
 	if (!ms)
@@ -122,16 +118,12 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*ms = (struct SCENARIO) {
 		.name = "M_S_Q_L",
 		.language = "msql",
-		.exitSystem = "SQLexit",
-		.exitSystemCmd = SQLexit,
 		.initClient = "SQLinitClientFromMAL",
 		.initClientCmd = SQLinitClientFromMAL,
 		.exitClient = "SQLexitClient",
 		.exitClientCmd = SQLexitClient,
 		.engine = "MALengine",
 		.engineCmd = MALengine,
-		.callback = "MALcallback",
-		.callbackCmd = MALcallback,
 	};
 
 	tmp = SQLinit(cntxt, initpasswd);
@@ -174,7 +166,7 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SQLexit(Client c)
 {
 	(void) c;		/* not used */
@@ -1452,8 +1444,8 @@ finalize:
 	return msg;
 }
 
-str
-SQLengine(Client c)
+static str
+SQLengine_(Client c)
 {
 	backend *be = (backend *) c->sqlcontext;
 
@@ -1491,8 +1483,9 @@ SQLengine(Client c)
 }
 
 str
-SQLcallback(Client c, str msg)
+SQLengine(Client c)
 {
+	char *msg = SQLengine_(c);
 	if (msg) {
 		/* remove exception decoration */
 		for (char *m = msg; m && *m; ) {

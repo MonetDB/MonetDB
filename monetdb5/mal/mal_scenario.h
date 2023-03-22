@@ -25,18 +25,12 @@
 
 typedef struct SCENARIO {
 	str name, language;
-	str initSystem;
-	MALfcn initSystemCmd;
-	str exitSystem;
-	MALfcn exitSystemCmd;
 	str initClient;
 	init_client initClientCmd;
 	str exitClient;
 	MALfcn exitClientCmd;
 	str engine;
 	MALfcn engineCmd;
-	str callback;
-	MALfcn callbackCmd;
 } *Scenario;
 
 mal_export Scenario getFreeScenario(void);
