@@ -396,7 +396,6 @@ CONDITIONALS = {
     'HAVE_LIBSCIPY3'       : False,
     'HAVE_PERL'            : False,
     'HAVE_PHP'             : False,
-    'HAVE_PYMONETDB'       : True,  # default PYTHON can import pymonetdb
     'HAVE_PYTHON_LZ4'      : False, # module lz4 is available
     'HAVE_RUBY'            : False,
     'HAVE_CPP'             : False,
