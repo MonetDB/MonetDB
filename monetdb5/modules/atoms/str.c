@@ -3633,17 +3633,22 @@ STRstartsWith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	(void)mb;
 	bit *res = getArgReference(stk, pci, 0);
-	const str *arg1 = getArgReference(stk, pci, 1);
-	const str *arg2 = getArgReference(stk, pci, 2);
+	const str *arg1 = getArgReference(stk, pci, 1), *arg2 = getArgReference(stk, pci, 2);
 	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
 	str s = *arg1, prefix = *arg2, msg = MAL_SUCCEED;
 
 	if (icase) {
-		if ((msg = STRlower(&s, &s)) != MAL_SUCCEED ||
-			(msg = STRlower(&prefix, &prefix)) != MAL_SUCCEED)
+		if ((msg = STRlower(&s, &s)) != MAL_SUCCEED) {
+			GDKfree(s);
 			goto bail;
+		}
+		if ((msg = STRlower(&prefix, &prefix)) != MAL_SUCCEED) {
+			GDKfree(s);
+			GDKfree(prefix);
+			goto bail;
+		}
 	}
-	*res = (strNil(s) || strNil(prefix)) ? bit_nil :str_is_prefix(s, prefix) ;
+	*res = (strNil(s) || strNil(prefix)) ? bit_nil : str_is_prefix(s, prefix);
  bail:
 	return msg;
 }
@@ -3666,17 +3671,22 @@ STRendsWith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	(void)mb;
 	bit *res = getArgReference(stk, pci, 0);
-	const str *arg1 = getArgReference(stk, pci, 1);
-	const str *arg2 = getArgReference(stk, pci, 2);
+	const str *arg1 = getArgReference(stk, pci, 1), *arg2 = getArgReference(stk, pci, 2);
 	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
 	str s = *arg1, suffix = *arg2, msg = MAL_SUCCEED;
 
 	if (icase) {
-		if ((msg = STRlower(&s, &s)) != MAL_SUCCEED ||
-			(msg = STRlower(&suffix, &suffix)) != MAL_SUCCEED)
+		if ((msg = STRlower(&s, &s)) != MAL_SUCCEED) {
+			GDKfree(s);
 			goto bail;
+		}
+		if ((msg = STRlower(&suffix, &suffix)) != MAL_SUCCEED) {
+			GDKfree(s);
+			GDKfree(suffix);
+			goto bail;
+		}
 	}
-	*res = (strNil(s) || strNil(suffix)) ? bit_nil :str_is_suffix(s, suffix) ;
+	*res = (strNil(s) || strNil(suffix)) ? bit_nil : str_is_suffix(s, suffix);
  bail:
 	return msg;
 }
@@ -3698,19 +3708,22 @@ STRstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	(void)mb;
 	bit *res = getArgReference(stk, pci, 0);
-	const str *haystack = getArgReference(stk, pci, 1);
-	const str *needle = getArgReference(stk, pci, 2);
+	const str *haystack = getArgReference(stk, pci, 1), *needle = getArgReference(stk, pci, 2);
 	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
-
-	str s = *haystack, h = *needle;
-	str s_lower, h_lower, msg = MAL_SUCCEED;
+	str s = *haystack, h = *needle, msg = MAL_SUCCEED;
 
 	if (icase) {
-		if ((msg = STRlower(&s, &s_lower)) != MAL_SUCCEED ||
-			(msg = STRlower(&h, &h_lower)) != MAL_SUCCEED)
+		if ((msg = STRlower(&s, &s)) != MAL_SUCCEED) {
+			GDKfree(s);
 			goto bail;
+		}
+		if ((msg = STRlower(&h, &h)) != MAL_SUCCEED) {
+			GDKfree(s);
+			GDKfree(h);
+			goto bail;
+		}
 	}
-	*res = (strNil(s) || strNil(h)) ? bit_nil : str_search(s, h) ;
+	*res = (strNil(s) || strNil(h)) ? bit_nil : str_search(s, h);
  bail:
 	return msg;
 }
@@ -3744,16 +3757,20 @@ STRrevstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const str *haystack = getArgReference(stk, pci, 1);
 	const str *needle = getArgReference(stk, pci, 2);
 	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
-
-	str s = *haystack, h = *needle;
-	str s_lower, h_lower, msg = MAL_SUCCEED;
+	str s = *haystack, h = *needle, msg = MAL_SUCCEED;
 
 	if (icase) {
-		if ((msg = STRlower(&s, &s_lower)) != MAL_SUCCEED ||
-			(msg = STRlower(&h, &h_lower)) != MAL_SUCCEED)
+		if ((msg = STRlower(&s, &s)) != MAL_SUCCEED) {
+			GDKfree(s);
 			goto bail;
+		}
+		if ((msg = STRlower(&h, &h)) != MAL_SUCCEED) {
+			GDKfree(s);
+			GDKfree(h);
+			goto bail;
+		}
 	}
-	*res = (strNil(s) || strNil(h)) ? bit_nil : str_reverse_str_search(s, h) ;
+	*res = (strNil(s) || strNil(h)) ? bit_nil : str_reverse_str_search(s, h);
  bail:
 	return msg;
 }
