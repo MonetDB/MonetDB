@@ -8,36 +8,6 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
-/*
- * String Metrics
- * Module providing similarity metrics for strings.
- *
- * NEW:
- * Levenshtein distance
- * maxLevenshtein
- * minLevenshtein (missing... but do it anyway?)
- * Jaro–Winkler distance
- * maxJaroWinkler (missing... but do it anyway?)
- * minJaroWinkler
- * startsWith
- * endsWith
- * endsWith
- *
- * ~ New:
- * levenshtein - levenshtein dist + var op costs (ins/del, replace, transp)
- * levenshtein - basic levenshtein dist
- * editdistance - levenshtein alias ?
- * editdistance2 - duplicate of editdistance ?
- * similarity - normalized edit distance + minimum(?)
- * similarity - normalized edit distance
- * similarity - bulk normalized edit distance
- * soundex
- * stringdiff
- * qgramnormalize
- * qgramselfjoin
- * str2grams
- */
-
 #include "monetdb_config.h"
 #include "mal.h"
 #include <string.h>
@@ -45,7 +15,6 @@
 #include "str.h"
 #include <limits.h>
 #include "mal_exception.h"
-
 
 #define RETURN_NIL_IF(b,t)												\
 	if (b) {															\
