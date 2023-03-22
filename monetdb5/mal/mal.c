@@ -166,7 +166,6 @@ mal_init(char *modules[], bool embedded, const char *initpasswd)
 	if (!MCinit())
 		return -1;
 	initNamespace();
-	initParser();
 
 	err = malBootstrap(modules, embedded, initpasswd);
 	if (err != MAL_SUCCEED) {

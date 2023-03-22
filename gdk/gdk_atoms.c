@@ -1320,6 +1320,8 @@ UUIDfromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 		**retval = uuid_nil;
 		return 1;
 	}
+	while (GDKisspace(*s))
+		s++;
 	/* we don't use uuid_parse since we accept UUIDs without hyphens */
 	uuid u;
 	for (int i = 0, j = 0; i < UUID_SIZE; i++) {
@@ -1350,6 +1352,8 @@ UUIDfromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 		s++;
 		j++;
 	}
+	while (GDKisspace(*s))
+		s++;
 	if (*s != 0)
 		goto bailout;
 	**retval = u;
@@ -1601,12 +1605,7 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 	for (i = nitems = 0; instr[i]; i++) {
 		if (xdigit[(unsigned char) instr[i]])
 			nitems++;
-		else if (instr[i] != ' ' &&
-				 instr[i] != '\n' &&
-				 instr[i] != '\t' &&
-				 instr[i] != '\r' &&
-				 instr[i] != '\f' &&
-				 instr[i] != '\v') {
+		else if (!GDKisspace(instr[i])) {
 			GDKerror("Illegal char in blob\n");
 			return -1;
 		}
@@ -1642,7 +1641,7 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 			} else if (*s >= 'a' && *s <= 'f') {
 				res = 10 + *s - 'a';
 			} else {
-				assert(isspace((unsigned char) *s));
+				assert(GDKisspace(*s));
 				s++;
 				continue;
 			}
@@ -1658,7 +1657,7 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 			} else if (*s >= 'a' && *s <= 'f') {
 				res += 10 + *s - 'a';
 			} else {
-				assert(isspace((unsigned char) *s));
+				assert(GDKisspace(*s));
 				s++;
 				continue;
 			}
@@ -1668,6 +1667,8 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 
 		result->data[i] = res;
 	}
+	while (GDKisspace(*s))
+		s++;
 
 	return (ssize_t) (s - instr);
 }
