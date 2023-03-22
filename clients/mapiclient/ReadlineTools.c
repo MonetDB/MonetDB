@@ -392,7 +392,7 @@ invoke_editor(int cnt, int key) {
 
 		/* Remove trailing whitespace */
 		idx = read_bytes - 1;
-		while(isspace(*(read_buff + idx))) {
+		while (isspace((unsigned char) read_buff[idx])) {
 			read_buff[idx] = 0;
 			idx--;
 		}

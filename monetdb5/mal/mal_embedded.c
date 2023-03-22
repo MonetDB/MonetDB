@@ -91,7 +91,6 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 		throw(MAL, "malEmbeddedBoot", "MAL debugger failed to start");
 	// monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();
-	initParser();
 	initHeartbeat();
 	// initResource();
 	c_old = setClientContext(NULL); //save context
