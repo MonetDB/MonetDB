@@ -85,7 +85,7 @@ static struct SCENARIO scenarioRec[MAXSCEN] = {
 	{	.name = "mal",
 		.language = "mal",
 		.initClient = "MALinitClient",
-		.initClientCmd = (MALfcn) MALinitClient,
+		.initClientCmd = (init_client) MALinitClient,
 		.exitClient = "MALexitClient",
 		.exitClientCmd = (MALfcn) MALexitClient,
 		.engine = "MALengine",
@@ -197,7 +197,7 @@ str getScenarioLanguage(Client c){
  * Before we initialize a scenario the client scenario is reset to
  * the MAL scenario. This implies that all scenarios are initialized
  * using the same scenario. After the scenario initialization file
- * has been processed, the scenario phases are replaced with the
+ * has been processed, the scenario functions are replaced with the
  * proper ones.
  *
  * All client records should be initialized with a default
@@ -208,10 +208,10 @@ fillScenario(Client c, Scenario scen)
 {
 	c->scenario = scen->name;
 
-	c->phase[MAL_SCENARIO_CALLBACK] = scen->callbackCmd;
-	c->phase[MAL_SCENARIO_ENGINE] = scen->engineCmd;
-	c->phase[MAL_SCENARIO_INITCLIENT] = scen->initClientCmd;
-	c->phase[MAL_SCENARIO_EXITCLIENT] = scen->exitClientCmd;
+	c->engine = scen->engineCmd;
+	c->callback = scen->callbackCmd;
+	c->initClient = scen->initClientCmd;
+	c->exitClient = scen->exitClientCmd;
 	return(MAL_SUCCEED);
 }
 
@@ -222,7 +222,6 @@ fillScenario(Client c, Scenario scen)
 str
 setScenario(Client c, str nme)
 {
-	int i;
 	str msg;
 	Scenario scen;
 
@@ -234,9 +233,10 @@ setScenario(Client c, str nme)
 	if (msg) {
 		/* error occurred, reset the scenario , assume default always works */
 		c->scenario = NULL;
-		for (i = 0; i < SCENARIO_PROPERTIES; i++) {
-			c->phase[i] = NULL;
-		}
+		c->initClient = NULL;
+		c->exitClient = NULL;
+		c->engine = NULL;
+		c->callback = NULL;
 		return msg;
 	}
 	return MAL_SUCCEED;
@@ -247,18 +247,10 @@ setScenario(Client c, str nme)
  * state of the previous one. But also call the exitClient
  * to garbage collect any scenario specific structures.
  */
-#if 0
-str
-getCurrentScenario(Client c)
-{
-	return c->scenario;
-}
-#endif
 
 void
 resetScenario(Client c)
 {
-	int i;
 	Scenario scen = scenarioRec;
 
 	if (c->scenario == 0)
@@ -271,9 +263,10 @@ resetScenario(Client c)
 	}
 
 	c->scenario = NULL;
-	for (i = 0; i < SCENARIO_PROPERTIES; i++) {
-		c->phase[i] = NULL;
-	}
+	c->initClient = NULL;
+	c->exitClient = NULL;
+	c->engine = NULL;
+	c->callback = NULL;
 }
 
 /*
@@ -289,22 +282,6 @@ resetScenario(Client c)
  * between speed and ability to analysis its behavior.
  *
  */
-static const char *phases[] = {
-	[MAL_SCENARIO_CALLBACK] = "scenario callback",
-	[MAL_SCENARIO_ENGINE] = "scenario engine",
-	[MAL_SCENARIO_EXITCLIENT] = "scenario exitclient",
-	[MAL_SCENARIO_INITCLIENT] = "scenario initclient",
-};
-static str
-runPhase(Client c, int phase)
-{
-	str msg = MAL_SUCCEED;
-	if (c->phase[phase]) {
-		MT_thread_setworking(phases[phase]);
-	    return msg = (str) (*c->phase[phase])(c);
-	}
-	return msg;
-}
 
 /*
  * Access control enforcement. Except for the server owner
@@ -315,15 +292,15 @@ runScenarioBody(Client c)
 {
 	str msg = MAL_SUCCEED;
 
+	MT_thread_setworking("engine");
 	while (c->mode > FINISHCLIENT && !GDKexiting()) {
-		/* later merge the phases */
-		if ( c->mode <= FINISHCLIENT || (msg = runPhase(c, MAL_SCENARIO_ENGINE)))
+		if ( c->mode <= FINISHCLIENT || (msg = c->engine(c)) != MAL_SUCCEED)
 			goto wrapup;
 	wrapup:
-		if (msg != MAL_SUCCEED){
-			if (c->phase[MAL_SCENARIO_CALLBACK]) {
-				MT_thread_setworking(phases[MAL_SCENARIO_CALLBACK]);
-				msg = (str) (*c->phase[MAL_SCENARIO_CALLBACK])(c, msg);
+		if (msg != MAL_SUCCEED) {
+			if (c->callback) {
+				MT_thread_setworking("callback");
+				msg = (str)c->callback(c, msg);
 			}
 			if (msg) {
 				mnstr_printf(c->fdout,"!%s%s", msg, (msg[strlen(msg)-1] == '\n'? "":"\n"));
@@ -335,7 +312,7 @@ runScenarioBody(Client c)
 			mnstr_printf(c->fdout,"!GDKerror: %s\n",GDKerrbuf);
 		assert(c->curprg->def->errors == NULL);
 	}
-	msg = runPhase(c, MAL_SCENARIO_EXITCLIENT);
+	msg = c->exitClient(c);
 	return msg;
 }
 
@@ -344,7 +321,7 @@ runScenario(Client c)
 {
 	str msg = MAL_SUCCEED;
 
-	if (c == 0 /*|| c->phase[MAL_SCENARIO_READER] == 0*/)
+	if (c == 0)
 		return msg;
 	msg = runScenarioBody(c);
 	if (msg != MAL_SUCCEED &&

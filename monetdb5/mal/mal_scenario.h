@@ -13,11 +13,6 @@
 
 #include "mal_import.h"
 
-#define MAL_SCENARIO_ENGINE 0
-#define MAL_SCENARIO_INITCLIENT 1
-#define MAL_SCENARIO_EXITCLIENT 2
-#define MAL_SCENARIO_CALLBACK 3
-
 /*#define MAL_SCENARIO_DEBUG*/
 /*
  * @-
@@ -26,7 +21,7 @@
  * An exception or error detected while parsing is turned
  * into an exception and aborts the scenario.
  */
-#define MAXSCEN 128
+#define MAXSCEN 4
 
 typedef struct SCENARIO {
 	str name, language;
@@ -35,7 +30,7 @@ typedef struct SCENARIO {
 	str exitSystem;
 	MALfcn exitSystemCmd;
 	str initClient;
-	MALfcn initClientCmd;
+	init_client initClientCmd;
 	str exitClient;
 	MALfcn exitClientCmd;
 	str engine;
@@ -57,7 +52,6 @@ extern void showScenarioByName(stream *f, str s);
 extern void showScenario(stream *f, Scenario s);
 extern void showAllScenarios(stream *f);
 extern void resetScenario(Client c);
-
 #endif
 
 #endif /* _MAL_SCENARIO_H */
