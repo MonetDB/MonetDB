@@ -1696,7 +1696,8 @@ def GetBitsAndModsAndThreads(env) :
         proc.killed = False
         proc.onechild = True
         t = Timer(float(par['TIMEOUT']), killProc, args = [proc, stderr, cmd])
-        qOut = qErr = None
+        qOut = qErr = ''
+        mods = []
         try:
             t.start()
             while True:
@@ -1711,36 +1712,32 @@ def GetBitsAndModsAndThreads(env) :
             if proc.returncode is None:
                 connurl = open(os.path.join(dbpath, '.conn')).read()
                 res = mapiportre.search(connurl)
-                cmd = splitcommand(env['exe']['MAL_Client'][1].replace('${PORT}', res.group('port')))
-                if procdebug:
-                    print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
-                with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
-                                   stderr=process.PIPE, text=True) as clnt:
-                    input = '''\
-                        c := mdb.modules();
-                        modsid := algebra.unique(c,nil:bat);
-                        mods := algebra.projection(modsid,c);
-                        s := "\\nModules: ";
-                        sep := "";
-                        barrier (h:oid,t:str) := iterator.new(mods);
-                                s := s + sep;
-                                s := s + "\'";
-                                s := s + t;
-                                s := s + "\'";
-                                sep := ",";
-                        redo (h:oid,t:str) := iterator.next(mods);
-                        exit h;
-                        s := s + "\\n";
-                        io.printf(s);
-                    '''
-                    ##module("NoModule");
-                    qOut, qErr = clnt.communicate(input=input)
+                try:
+                    dbh = pymonetdb.connect(username='monetdb',
+                                            password='monetdb',
+                                            hostname=HOST,
+                                            port=int(res.group('port')),
+                                            database=TSTPREF,
+                                            autocommit=True)
+                except KeyboardInterrupt:
+                    raise
+                except:
+                    pass
+                else:
+                    crs = dbh.cursor()
+                    crs.execute('select distinct module from sys.malfunctions() order by module')
+                    mods = crs.fetchall()
+                    mods = [x[0] for x in mods]
+                    try:
+                        mods.remove('user')
+                    except ValueError:
+                        pass
+                    crs.close()
+                    dbh.close()
                 proc.terminate()
-                sOut = proc.stdout.read()
-                sErr = proc.stderr.read()
+                qOut = proc.stdout.read()
+                qErr = proc.stderr.read()
                 proc.wait()
-                qOut = sOut + qOut
-                qErr = sErr + qErr
         finally:
             t.cancel()
             if proc.returncode is None:
@@ -1748,7 +1745,7 @@ def GetBitsAndModsAndThreads(env) :
                 proc.wait()
             if procdebug:
                 print('GetBitsAndModsAndThreads: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode))
-    env['TST_MODS'] = []
+    env['TST_MODS'] = mods
     env['TST_BITS'] = ""
     env['TST_INT128'] = ""
     env['TST_SINGLE'] = ""
@@ -1757,7 +1754,6 @@ def GetBitsAndModsAndThreads(env) :
     if qOut:
         tbos = re.compile("^# Compiled for (?P<arch>[^-]+).*/(?P<bits>[63][42]bit)(?P<int128> with 128bit integers|)", re.MULTILINE)
         tt = re.compile("^# Serving database .*, using ([0-9]+) threads?", re.MULTILINE)
-        tm = re.compile("^Modules: (.+)$", re.MULTILINE)
         for l in qOut.split('\n'):
             obs = tbos.match(l)
             if obs is not None:
@@ -1776,9 +1772,6 @@ def GetBitsAndModsAndThreads(env) :
                     env['TST_SINGLE'] = "single"
                     os.environ['TST_SINGLE'] = env['TST_SINGLE']
                 env['TST_THREADS'] = t.group(1)
-            m = tm.match(l)
-            if m:
-                env['TST_MODS'] = eval(m.group(1))
         if not env['TST_BITS']:
             ErrMsg("Checking for Bits failed!")
         if not env['TST_MODS']:
