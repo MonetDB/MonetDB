@@ -8,16 +8,6 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
-/*
- *  M.L. Kersten
- * String multiplexes
- * [TODO: property propagations]
- * The collection of routines provided here are map operations
- * for the atom string primitives.
- *
- * In line with the batcalc module, we assume that if two bat operands
- * are provided that they are aligned.
- */
 #include "monetdb_config.h"
 #include "gdk.h"
 #include <ctype.h>
@@ -45,7 +35,7 @@ batstr_func_has_candidates(const char *func)
 }
 
 static inline void
-finalize_ouput(bat *res, BAT *bn, str msg, bool nils, BUN q)
+finalize_output(bat *res, BAT *bn, str msg, bool nils, BUN q)
 {
 	if (bn && !msg) {
 		BATsetcount(bn, q);
@@ -54,6 +44,7 @@ finalize_ouput(bat *res, BAT *bn, str msg, bool nils, BUN q)
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
+		bn->theap->dirty |= BATcount(bn) > 0;
 		*res = bn->batCacheid;
 		BBPkeepref(bn);
 	} else if (bn)
@@ -138,7 +129,7 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const cha
 	}
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -211,7 +202,7 @@ STRbatAscii(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bailout1:
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -305,7 +296,7 @@ STRbatFromWChr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -392,7 +383,7 @@ STRbatSpace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -477,7 +468,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -565,7 +556,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -653,7 +644,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -752,7 +743,7 @@ bailout1:
 	bat_iterator_end(&righti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -841,7 +832,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -931,7 +922,7 @@ do_batstr_int_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -1035,7 +1026,7 @@ bailout1:
 	bat_iterator_end(&lefti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, ls, right, rs);
 	return msg;
 }
@@ -1125,7 +1116,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -1230,7 +1221,7 @@ bailout1:
 	bat_iterator_end(&lefti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, ls, right, rs);
 	return msg;
 }
@@ -1332,7 +1323,7 @@ bailout1:
 	bat_iterator_end(&righti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, ls, right, rs);
 	return msg;
 }
@@ -1442,7 +1433,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, arg1, arg1s, arg2, arg2s, arg3, arg3s);
 	return msg;
 }
@@ -1652,21 +1643,21 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 
 	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	if ((sid1 && !is_bat_nil(*sid1) && !(lefts = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(rights = BATdescriptor(*sid2)))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	canditer_init(&ci1, left, lefts);
 	canditer_init(&ci2, right, rights);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
-		goto bailout;
+		goto exit2;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_bit, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		goto exit2;
 	}
 
 	off1 = left->hseqbase;
@@ -1687,7 +1678,7 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 				if (icase && *icase) {
 					if ((msg = STRlower(&x, &x)) != MAL_SUCCEED ||
 						(msg = STRlower(&y, &y)) != MAL_SUCCEED)
-						goto bailout;
+						goto exit1;
 				}
 				vals[i] = func(x, y);
 			}
@@ -1705,16 +1696,17 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 				if (icase && *icase) {
 					if ((msg = STRlower(&x, &x)) != MAL_SUCCEED ||
 						(msg = STRlower(&y, &y)) != MAL_SUCCEED)
-						goto bailout;
+						goto exit1;
 				}
 				vals[i] = func(x, y);
 			}
 		}
 	}
+ exit1:
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
-bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+ exit2:
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -1779,20 +1771,20 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 
 	if (icase && *icase) {
 		if ((msg = STRlower(&y, &y)) != MAL_SUCCEED)
-			goto bailout;
+			goto exit2;
 	}
 	if (!(b = BATdescriptor(*bid))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	canditer_init(&ci1, b, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_bit, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		goto exit2;
 	}
 
 	off1 = b->hseqbase;
@@ -1809,7 +1801,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 			} else {
 				if (icase && *icase) {
 					if ((msg = STRlower(&x, &x)) != MAL_SUCCEED)
-						goto bailout;
+						goto exit1;
 				}
 				vals[i] = func(x, y);
 			}
@@ -1825,15 +1817,16 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 			} else {
 				if(icase && *icase) {
 					if ((msg = STRlower(&x, &x)) != MAL_SUCCEED)
-						goto bailout;
+						goto exit1;
 				}
 				vals[i] = func(x, y);
 			}
 		}
 	}
+ exit1:
 	bat_iterator_end(&bi);
-bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+ exit2:
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -1903,20 +1896,20 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	if (icase && *icase) {
 		if ((msg = STRlower(&x, &x)) != MAL_SUCCEED)
-			goto bailout;
+			goto exit2;
 	}
 	if (!(b = BATdescriptor(*bid))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	canditer_init(&ci1, b, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_bit, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		goto exit2;
 	}
 
 	off1 = b->hseqbase;
@@ -1933,7 +1926,7 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			} else {
 				if(icase && *icase) {
 					if ((msg = STRlower(&y, &y)) != MAL_SUCCEED)
-						goto bailout;
+						goto exit1;
 				}
 				vals[i] = func(x, y);
 			}
@@ -1949,15 +1942,16 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			} else {
 				if(icase && *icase) {
 					if ((msg = STRlower(&y, &y)) != MAL_SUCCEED)
-						goto bailout;
+						goto exit1;
 				}
 				vals[i] = func(x, y);
 			}
 		}
 	}
+ exit1:
 	bat_iterator_end(&bi);
-bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+ exit2:
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2022,21 +2016,21 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 
 	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	if ((sid1 && !is_bat_nil(*sid1) && !(lefts = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(rights = BATdescriptor(*sid2)))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	canditer_init(&ci1, left, lefts);
 	canditer_init(&ci2, right, rights);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
-		goto bailout;
+		goto exit2;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		goto exit2;
 	}
 
 	off1 = left->hseqbase;
@@ -2057,7 +2051,7 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 				if (icase && *icase) {
 					if ((msg = STRlower(&x, &x)) != MAL_SUCCEED ||
 						(msg = STRlower(&y, &y)) != MAL_SUCCEED)
-						goto bailout;
+						goto exit1;
 				}
 				vals[i] = func(x, y);
 			}
@@ -2075,16 +2069,17 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 				if (icase && *icase) {
 					if ((msg = STRlower(&x, &x)) != MAL_SUCCEED ||
 						(msg = STRlower(&y, &y)) != MAL_SUCCEED)
-						goto bailout;
+						goto exit1;
 				}
 				vals[i] = func(x, y);
 			}
 		}
 	}
+ exit1:
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
-bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+ exit2:
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -2150,16 +2145,16 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 
 	if (!(b = BATdescriptor(*bid))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	canditer_init(&ci1, b, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		goto exit2;
 	}
 
 	off1 = b->hseqbase;
@@ -2176,7 +2171,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 			} else {
 				if (icase && *icase) {
 					if ((msg = STRlower(&x, &x)) != MAL_SUCCEED)
-						goto bailout;
+						goto exit1;
 				}
 				vals[i] = func(x, y);
 			}
@@ -2192,15 +2187,16 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 			} else {
 				if(icase && *icase) {
 					if ((msg = STRlower(&x, &x)) != MAL_SUCCEED)
-						goto bailout;
+						goto exit1;
 				}
 				vals[i] = func(x, y);
 			}
 		}
 	}
+ exit1:
 	bat_iterator_end(&bi);
-bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+ exit2:
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2270,20 +2266,20 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 	if (icase && *icase) {
 		if ((msg = STRlower(&x, &x)) != MAL_SUCCEED)
-			goto bailout;
+			goto exit2;
 	}
 	if (!(b = BATdescriptor(*bid))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	canditer_init(&ci1, b, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		goto exit2;
 	}
 
 	off1 = b->hseqbase;
@@ -2300,7 +2296,7 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			} else {
 				if(icase && *icase) {
 					if ((msg = STRlower(&y, &y)) != MAL_SUCCEED)
-						goto bailout;
+						goto exit1;
 				}
 				vals[i] = func(x, y);
 			}
@@ -2316,15 +2312,16 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			} else {
 				if(icase && *icase) {
 					if ((msg = STRlower(&y, &y)) != MAL_SUCCEED)
-						goto bailout;
+						goto exit1;
 				}
 				vals[i] = func(x, y);
 			}
 		}
 	}
+ exit1:
 	bat_iterator_end(&bi);
-bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+ exit2:
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2444,7 +2441,7 @@ bailout1:
 	bat_iterator_end(&lefti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -2511,7 +2508,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2580,7 +2577,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2666,7 +2663,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2776,7 +2773,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2864,7 +2861,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2976,7 +2973,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -3076,7 +3073,7 @@ bailout1:
 	bat_iterator_end(&lefti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -3200,7 +3197,7 @@ bailout1:
 	bat_iterator_end(&lefti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -3287,7 +3284,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -3413,7 +3410,7 @@ bailout1:
 	bat_iterator_end(&arg3i);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(8, arg1, arg1, arg2, arg2s, arg3, arg3s, arg4, arg4s);
 	return msg;
 }
@@ -3500,7 +3497,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -3600,7 +3597,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, f, fs);
 	return msg;
 }
@@ -3698,7 +3695,7 @@ bailout1:
 	bat_iterator_end(&ni);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, n, ns);
 	return msg;
 }
@@ -3806,7 +3803,7 @@ bailout1:
 	bat_iterator_end(&arg2i);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, arg1, arg1s, arg2, arg2s, arg3, arg3s);
 	return msg;
 }
@@ -3919,7 +3916,7 @@ bailout1:
 	bat_iterator_end(&arg3i);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, arg1, arg1s, arg2, arg2s, arg3, arg3s);
 	return msg;
 }
@@ -4038,7 +4035,7 @@ bailout1:
 	bat_iterator_end(&righti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(8, left, ls, start, ss, nchars, ns, right, rs);
 	return msg;
 }
@@ -4125,7 +4122,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -4214,7 +4211,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -4302,7 +4299,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -4390,7 +4387,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -4492,7 +4489,7 @@ bailout1:
 	bat_iterator_end(&lbi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, lb, lbs);
 	return msg;
 }
@@ -4592,7 +4589,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, lb, lbs);
 	return msg;
 }
@@ -4691,7 +4688,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, lb, lbs);
 	return msg;
 }
@@ -4799,7 +4796,7 @@ bailout1:
 	bat_iterator_end(&lengthi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, left, ls, start, ss, length, lens);
 	return msg;
 }
@@ -4864,7 +4861,7 @@ STRbatstrLocatecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -4929,7 +4926,7 @@ STRbatstrLocate_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -5006,7 +5003,7 @@ STRbatstrLocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
 bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, ls, right, rs);
 	return msg;
 }
@@ -5071,7 +5068,7 @@ STRbatstrLocate3cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -5156,7 +5153,7 @@ STRbatstrLocate3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
 bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, left, ls, right, rs, start, ss);
 	return msg;
 }
@@ -5167,48 +5164,45 @@ BATSTRasciify(bat *ret, bat *bid)
 #ifdef HAVE_ICONV
 	BAT *b = NULL, *bn = NULL;
 	BATiter bi;
-	BUN start, end;
+	BUN p, q;
+	bool nils = false;
 	size_t prev_out_len = 0, in_len = 0, out_len = 0;
-	str s = NULL, out = NULL, in = NULL;
-	int i = -1;
-	str	error[3] = { GDK_EXCEPTION,
-					 MAL_MALLOC_FAIL,
-					 "ICONV: string conversion failed" };
+	str s = NULL, out = NULL, in = NULL, msg = MAL_SUCCEED;
 	iconv_t cd;
 	const str f = "UTF8", t = "ASCII//TRANSLIT";
+
 	/* man iconv; /TRANSLIT */
 	if ((cd = iconv_open(t, f)) == (iconv_t)(-1))
 		throw(MAL, "batstr.asciify", "ICONV: cannot convert from (%s) to (%s).", f, t);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batstr.asciify", RUNTIME_OBJECT_MISSING);
 	if ((bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT)) == NULL) {
-		BBPunfix(b->batCacheid);
+		BBPreclaim(b);
 		throw(MAL, "batstr.asciify", GDK_EXCEPTION);
 	}
 	bi = bat_iterator(b);
-	BATloop(b, start, end) {
-		in = (str) BUNtail(bi, start);
+	BATloop(b, p, q) {
+		in = (str) BUNtail(bi, p);
 		if (strNil(in)) {
 			if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
-				i = 2;
-				goto bail;
+				msg = createException(MAL,"batstr.asciify", "ICONV: string conversion failed");
+				goto exit;
 			}
-			bn->tnonil = 0;
-			bn->tnil = 1;
+			nils = true;
 			continue;
 		}
 		in_len = strlen(in), out_len = in_len + 1;
 		if (out == NULL) {
 			if ((out = GDKmalloc(out_len)) == NULL) {
-				i = 1;
-				goto bail;
+				msg = createException(MAL,"batstr.asciify", MAL_MALLOC_FAIL);
+				goto exit;
 			}
 			prev_out_len = out_len;
 		}
 		else if (out_len > prev_out_len) {
 			if ((out = GDKrealloc(s, out_len)) == NULL) {
-				i = 1;
-				goto bail;
+				msg = createException(MAL,"batstr.asciify", MAL_MALLOC_FAIL);
+				goto exit;
 			}
 			prev_out_len = out_len;
 		}
@@ -5216,30 +5210,23 @@ BATSTRasciify(bat *ret, bat *bid)
 		if (iconv(cd, &in, &in_len, &out, &out_len) == (size_t) - 1) {
 			GDKfree(out);
 			s = NULL;
-			i = 2;
-			goto bail;
+			msg = createException(MAL,"batstr.asciify", "ICONV: string conversion failed");
+			goto exit;
 		}
 		*out = '\0';
 		if (BUNappend(bn, s, false) != GDK_SUCCEED) {
-			i = 0;
-			goto bail;
+			msg = createException(MAL,"batstr.asciify", GDK_EXCEPTION);
+			goto exit;
 		}
 	}
+ exit:
 	bat_iterator_end(&bi);
 	iconv_close(cd);
-	BATsetcount(bn, BATcount(b));
-	BBPunfix(b->batCacheid);
-	*ret = bn->batCacheid;
-	BBPkeepref(bn);
-	return MAL_SUCCEED;
- bail:
-	iconv_close(cd);
-	bat_iterator_end(&bi);
-	BBPunfix(b->batCacheid);
-	BBPunfix(bn->batCacheid);
-	throw(MAL, "batstr.asciify", "%s", error[i]);
+	finalize_output(ret, bn, msg, nils, q);
+	BBPreclaim(b);
+	return msg;
 #else
-	throw(MAL, "str.asciify", "ICONV library not available.");
+	throw(MAL, "batstr.asciify", "ICONV library not available.");
 #endif
 }
 
@@ -5291,27 +5278,26 @@ str_reverse(char *dst, const char *src, size_t len)
 }
 
 static str
-BATSTRreverse(bat *ret, const bat *arg)
+BATSTRreverse(bat *res, const bat *arg)
 {
-	BAT *b, *bn;
+	BAT *b = NULL, *bn = NULL;
 	BATiter bi;
 	BUN p, q;
 	const char *src;
-	size_t len, dst_len = 1024;
+	size_t len = 0, dst_len = 1024;
 	str dst, msg = MAL_SUCCEED;
 	bool nils = false;
 
-	if ((dst = GDKzalloc(dst_len)) == NULL)
+	if (!(dst = GDKzalloc(dst_len)))
 		throw(MAL, "batstr.reverse", MAL_MALLOC_FAIL);
-	if ((b = BATdescriptor(*arg)) == NULL) {
+	if (!(b = BATdescriptor(*arg))) {
 		GDKfree(dst);
 		throw(MAL, "batstr.reverse", RUNTIME_OBJECT_MISSING);
 	}
 	assert(b->ttype == TYPE_str);
-	bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT);
-	if(bn == NULL) {
-		BBPunfix(b->batCacheid);
+	if (!(bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT))) {
 		GDKfree(dst);
+		BBPreclaim(b);
 		throw(MAL, "batstr.reverse", MAL_MALLOC_FAIL);
 	}
 	bi = bat_iterator(b);
@@ -5328,34 +5314,22 @@ BATSTRreverse(bat *ret, const bat *arg)
 				dst_len = len + 1024;
 				if ((dst = GDKrealloc(dst, dst_len)) == NULL) {
 					msg = createException(MAL,"batstr.reverse", MAL_MALLOC_FAIL);
-					goto bail;
+					goto exit;
 				}
 			}
 			str_reverse(dst, src, len);
 		}
 		if (tfastins_nocheckVAR(bn, p, dst) != GDK_SUCCEED) {
 			msg = createException(MAL,"batstr.reverse", GDK_EXCEPTION);
-			goto bail;
+			goto exit;
 		}
 	}
+ exit:
 	bat_iterator_end(&bi);
-	BATsetcount(bn, q);
-	bn->theap->dirty |= BATcount(bn) > 0;
-	bn->tnil = nils;
-	bn->tnonil = !nils;
-	bn->tkey = BATcount(bn) <= 1;
-	bn->tsorted = BATcount(bn) <= 1;
-	bn->trevsorted = BATcount(bn) <= 1;
 	GDKfree(dst);
-	BBPunfix(b->batCacheid);
-	*ret = bn->batCacheid;
-	BBPkeepref(bn);
+	finalize_output(res, bn, msg, nils, q);
+	BBPreclaim(b);
 	return msg;
- bail:
-	bat_iterator_end(&bi);
-	GDKfree(dst);
-	unfix_inputs(b->batCacheid, bn->batCacheid);
-	throw(MAL, "batstr.reverse", "%s", msg);
 }
 
 #include "mel.h"
