@@ -1057,11 +1057,6 @@ rotation_unlock(logger *lg) {
 	MT_lock_unset(&lg->rotation_lock);
 }
 
-static inline bool
-try_rotation_lock(logger *lg) {
-	return MT_lock_try(&lg->rotation_lock);
-}
-
 static gdk_return
 log_open_output(logger *lg)
 {
@@ -2910,11 +2905,6 @@ flush_unlock(logger *lg) {
 	MT_lock_unset(&lg->flush_lock);
 }
 
-static inline bool
-try_flush_lock(logger *lg) {
-	return MT_lock_try(&lg->flush_lock);
-}
-
 static inline gdk_return
 do_flush(logged_range *range, lng end) {
 	// assumes flush lock
@@ -2947,8 +2937,7 @@ do_rotate(logger *lg) {
 		lng end = ATOMIC_GET(&lg->current->end);
 		ATOMIC_SET(&next->pend, end);
 		ATOMIC_SET(&next->end, end);
-		logged_range* pcurrent = lg->current;
-		assert(ATOMIC_GET(&pcurrent->refcount) > 0);
+		assert(ATOMIC_GET(&lg->current->refcount) > 0);
 		lg->current = lg->current->next;
 	}
 }
