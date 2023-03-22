@@ -745,29 +745,6 @@ MALcommentsOnly(MalBlkPtr mb)
 	return 1;
 }
 
-str
-MALcallback(Client c, str msg)
-{
-	if (msg) {
-		/* don't print exception decoration, just the message */
-		char *n = NULL;
-		char *o = msg;
-		while ((n = strchr(o, '\n')) != NULL) {
-			if (*o == '!')
-				o++;
-			mnstr_printf(c->fdout, "!%.*s\n", (int) (n - o), o);
-			o = ++n;
-		}
-		if (*o != 0) {
-			if (*o == '!')
-				o++;
-			mnstr_printf(c->fdout, "!%s\n", o);
-		}
-		freeException(msg);
-	}
-	return MAL_SUCCEED;
-}
-
 /*
  * The default MAL optimizer includes a final call to
  * the multiplex expander.
@@ -793,8 +770,8 @@ MALoptimizer(Client c)
 	return msg;
 }
 
-str
-MALengine(Client c)
+static str
+MALengine_(Client c)
 {
 	Symbol prg;
 	str msg = MAL_SUCCEED;
@@ -867,6 +844,30 @@ MALengine(Client c)
 		freeException(prg->def->errors);
 	prg->def->errors = NULL;
 	return msg;
+}
+
+str
+MALengine(Client c)
+{
+	str msg = MALengine_(c);
+	if (msg) {
+		/* don't print exception decoration, just the message */
+		char *n = NULL;
+		char *o = msg;
+		while ((n = strchr(o, '\n')) != NULL) {
+			if (*o == '!')
+				o++;
+			mnstr_printf(c->fdout, "!%.*s\n", (int) (n - o), o);
+			o = ++n;
+		}
+		if (*o != 0) {
+			if (*o == '!')
+				o++;
+			mnstr_printf(c->fdout, "!%s\n", o);
+		}
+		freeException(msg);
+	}
+	return MAL_SUCCEED;
 }
 
 /* Hypothetical, optimizers may massage the plan in such a way

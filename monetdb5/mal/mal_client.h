@@ -61,7 +61,6 @@ typedef struct CLIENT {
 	 */
 	str     scenario;  /* scenario management references */
 	MALfcn engine;
-	MALfcn callback;
 	init_client initClient;
 	MALfcn exitClient;
 						/* if set to 'S' it will put the process to sleep */
