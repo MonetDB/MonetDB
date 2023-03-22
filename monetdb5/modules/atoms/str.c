@@ -3638,13 +3638,10 @@ STRstartsWith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str s = *arg1, prefix = *arg2, msg = MAL_SUCCEED;
 
 	if (icase) {
-		if ((msg = STRlower(&s, &s)) != MAL_SUCCEED) {
-			GDKfree(s);
+		if ((msg = STRlower(&s, &s)) != MAL_SUCCEED)
 			goto bail;
-		}
 		if ((msg = STRlower(&prefix, &prefix)) != MAL_SUCCEED) {
 			GDKfree(s);
-			GDKfree(prefix);
 			goto bail;
 		}
 	}
@@ -3676,13 +3673,10 @@ STRendsWith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str s = *arg1, suffix = *arg2, msg = MAL_SUCCEED;
 
 	if (icase) {
-		if ((msg = STRlower(&s, &s)) != MAL_SUCCEED) {
-			GDKfree(s);
+		if ((msg = STRlower(&s, &s)) != MAL_SUCCEED)
 			goto bail;
-		}
 		if ((msg = STRlower(&suffix, &suffix)) != MAL_SUCCEED) {
 			GDKfree(s);
-			GDKfree(suffix);
 			goto bail;
 		}
 	}
@@ -3713,13 +3707,10 @@ STRstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str s = *haystack, h = *needle, msg = MAL_SUCCEED;
 
 	if (icase) {
-		if ((msg = STRlower(&s, &s)) != MAL_SUCCEED) {
-			GDKfree(s);
+		if ((msg = STRlower(&s, &s)) != MAL_SUCCEED)
 			goto bail;
-		}
 		if ((msg = STRlower(&h, &h)) != MAL_SUCCEED) {
 			GDKfree(s);
-			GDKfree(h);
 			goto bail;
 		}
 	}
@@ -3760,13 +3751,10 @@ STRrevstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str s = *haystack, h = *needle, msg = MAL_SUCCEED;
 
 	if (icase) {
-		if ((msg = STRlower(&s, &s)) != MAL_SUCCEED) {
-			GDKfree(s);
+		if ((msg = STRlower(&s, &s)) != MAL_SUCCEED)
 			goto bail;
-		}
 		if ((msg = STRlower(&h, &h)) != MAL_SUCCEED) {
 			GDKfree(s);
-			GDKfree(h);
 			goto bail;
 		}
 	}
