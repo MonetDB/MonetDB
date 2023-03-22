@@ -407,7 +407,7 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 	if (prepare_id)
 		m->emode = m_prepare;
 	c->fdout = NULL;
-	if ((mdbe->msg = SQLengine(c)) != MAL_SUCCEED)
+	if ((mdbe->msg = SQLengine_(c)) != MAL_SUCCEED)
 		goto cleanup;
 	if (m->emode == m_prepare && prepare_id)
 		*prepare_id = b->q->id;

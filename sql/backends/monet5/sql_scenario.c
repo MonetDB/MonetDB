@@ -1444,7 +1444,7 @@ finalize:
 	return msg;
 }
 
-static str
+str
 SQLengine_(Client c)
 {
 	backend *be = (backend *) c->sqlcontext;
@@ -1482,7 +1482,7 @@ SQLengine_(Client c)
 	return SQLengineIntern(c, be);
 }
 
-str
+void
 SQLengine(Client c)
 {
 	char *msg = SQLengine_(c);
@@ -1498,9 +1498,7 @@ SQLengine(Client c)
 			}
 		}
 		freeException(msg);
-		return MAL_SUCCEED;
 	}
-	return MAL_SUCCEED;
 }
 
 str

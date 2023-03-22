@@ -23,7 +23,8 @@ sql5_export str SQLexitClient(Client c);
 sql5_export str SQLresetClient(Client c);
 sql5_export str SQLinitClient(Client c, const char *passwd, const char *challenge, const char *algo);
 sql5_export str SQLinitClientFromMAL(Client c, const char *passwd, const char *challenge, const char *algo);
-sql5_export str SQLengine(Client c);
+sql5_export str SQLengine_(Client c);
+sql5_export void SQLengine(Client c);
 extern str handle_error(mvc *m, int pstatus, str msg);
 
 extern str SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

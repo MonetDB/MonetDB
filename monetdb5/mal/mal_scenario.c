@@ -82,7 +82,7 @@ static struct SCENARIO scenarioRec[MAXSCEN] = {
 		.exitClient = "MALexitClient",
 		.exitClientCmd = (MALfcn) MALexitClient,
 		.engine = "MALengine",
-		.engineCmd = (MALfcn) MALengine,
+		.engineCmd = (engine_fptr)MALengine,
 	},
 	{
 		.name = NULL,
@@ -125,21 +125,18 @@ defaultScenario(Client c)
  *
  */
 static void
-print_scenarioCommand(stream *f, str cmd, MALfcn funcptr)
+print_scenarioCommand(stream *f, str cmd)
 {
-    if (cmd)
-	mnstr_printf(f," \"%s%s\",", cmd, (funcptr?"":"?"));
-    else
-	mnstr_printf(f," nil,");
+	mnstr_printf(f," \"%s\",", cmd);
 }
 
 void
 showScenario(stream *f, Scenario scen)
 {
 	mnstr_printf(f, "[ \"%s\",", scen->name);
-	print_scenarioCommand(f, scen->initClient, scen->initClientCmd);
-	print_scenarioCommand(f, scen->exitClient, scen->exitClientCmd);
-	print_scenarioCommand(f, scen->engine, scen->engineCmd);
+	print_scenarioCommand(f, scen->initClient);
+	print_scenarioCommand(f, scen->exitClient);
+	print_scenarioCommand(f, scen->engine);
 	mnstr_printf(f, "]\n");
 }
 
@@ -275,19 +272,14 @@ resetScenario(Client c)
 static str
 runScenarioBody(Client c)
 {
-	str msg = MAL_SUCCEED;
-
 	MT_thread_setworking("engine");
 	while (c->mode > FINISHCLIENT && !GDKexiting()) {
-		if (c->mode <= FINISHCLIENT || (msg = c->engine(c)) != MAL_SUCCEED)
-			goto wrapup;
-	wrapup:
-		if( GDKerrbuf && GDKerrbuf[0])
-			mnstr_printf(c->fdout,"!GDKerror: %s\n",GDKerrbuf);
+		c->engine(c);
 		assert(c->curprg->def->errors == NULL);
 	}
-	msg = c->exitClient(c);
-	return msg;
+	if (!GDKexiting() && GDKerrbuf && GDKerrbuf[0])
+		mnstr_printf(c->fdout,"!GDKerror: %s\n",GDKerrbuf);
+	return c->exitClient(c);
 }
 
 str
