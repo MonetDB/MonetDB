@@ -30,7 +30,7 @@ typedef struct SCENARIO {
 	str exitClient;
 	MALfcn exitClientCmd;
 	str engine;
-	MALfcn engineCmd;
+	engine_fptr engineCmd;
 } *Scenario;
 
 mal_export Scenario getFreeScenario(void);

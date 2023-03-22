@@ -846,7 +846,7 @@ MALengine_(Client c)
 	return msg;
 }
 
-str
+void
 MALengine(Client c)
 {
 	str msg = MALengine_(c);
@@ -867,7 +867,6 @@ MALengine(Client c)
 		}
 		freeException(msg);
 	}
-	return MAL_SUCCEED;
 }
 
 /* Hypothetical, optimizers may massage the plan in such a way

@@ -46,6 +46,7 @@ typedef struct CLIENT_INPUT {
 
 typedef struct CLIENT *Client;
 typedef str (*init_client)(Client, const char *, const char *, const char *);
+typedef void (*engine_fptr)(Client);
 
 typedef struct CLIENT {
 	int idx;        /* entry in mal_clients (-1 if free) */
@@ -60,7 +61,7 @@ typedef struct CLIENT {
 	 * provided to temporarily switch to another scenario.
 	 */
 	str     scenario;  /* scenario management references */
-	MALfcn engine;
+	engine_fptr engine;
 	init_client initClient;
 	MALfcn exitClient;
 						/* if set to 'S' it will put the process to sleep */
