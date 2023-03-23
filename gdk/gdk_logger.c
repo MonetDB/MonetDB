@@ -300,7 +300,7 @@ log_read_id(logger *lg, log_id *id)
 #endif
 
 static log_return
-string_reader(logger *lg, char* rbuf, size_t* rbufsize, BAT *b, lng nr)
+string_reader(logger *lg, char** rbuf, size_t* rbufsize, BAT *b, lng nr)
 {
 	size_t sz = 0;
 	lng SZ = 0;
@@ -311,21 +311,21 @@ string_reader(logger *lg, char* rbuf, size_t* rbufsize, BAT *b, lng nr)
 			return LOG_EOF;
 		sz = (size_t)SZ;
 		if (*rbufsize < sz) {
-			if (!(rbuf = GDKrealloc(rbuf, sz)))
+			if (!(*rbuf = GDKrealloc(*rbuf, sz)))
 				return LOG_ERR;
 			*rbufsize = sz;
 		}
 
-		if (mnstr_read(lg->input_log, rbuf, sz, 1) != 1)
+		if (mnstr_read(lg->input_log, *rbuf, sz, 1) != 1)
 			return LOG_EOF;
 		/* handle strings */
-		char *t = rbuf;
+		char *t = *rbuf;
 		/* chunked */
 #define CHUNK_SIZE 1024
 		char *strings[CHUNK_SIZE];
 		int cur = 0;
 
-		for(; nr>0 && res == LOG_OK && t < (rbuf+sz); nr--) {
+		for(; nr>0 && res == LOG_OK && t < (*rbuf+sz); nr--) {
 			strings[cur++] = t;
 			if (cur == CHUNK_SIZE && b && BUNappendmulti(b, strings, cur, true) != GDK_SUCCEED)
 				res = LOG_ERR;
@@ -502,7 +502,9 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT** cands)
 					}
 				} else if (tpe == TYPE_str) {
 					/* efficient string */
-					res = string_reader(lg, rbuf, &rbufsize, r, nr);
+					char* cbuf = rbuf;
+					res = string_reader(lg, &cbuf, &rbufsize, r, nr);
+					rbuf = cbuf;
 				} else {
 					for (; res == LOG_OK && nr > 0; nr--) {
 						size_t tlen = rbufsize;
@@ -566,7 +568,9 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT** cands)
 				}
 			} else if (tpe == TYPE_str) {
 				/* efficient string */
-				res = string_reader(lg, rbuf, &rbufsize, r, nr);
+				char* cbuf = rbuf;
+				res = string_reader(lg, &cbuf, &rbufsize, r, nr);
+				rbuf = cbuf;
 			} else {
 				for (; res == LOG_OK && nr > 0; nr--) {
 					size_t tlen = rbufsize;
