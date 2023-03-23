@@ -109,8 +109,8 @@ strptime(const char *buf, const char *fmt, struct tm *tm)
 		alt_format = 0;
 
 		/* Eat up white-space. */
-		if (isspace(c)) {
-			while (isspace(*bp))
+		if (isspace((unsigned char) c)) {
+			while (isspace((unsigned char) *bp))
 				bp++;
 
 			fmt++;
@@ -356,7 +356,7 @@ literal:
 			case 'n':	/* Any kind of white-space. */
 			case 't':
 			LEGAL_ALT(0);
-				while (isspace(*bp))
+				while (isspace((unsigned char) *bp))
 					bp++;
 				break;
 			default:	/* Unknown/unsupported conversion. */

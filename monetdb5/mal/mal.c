@@ -172,7 +172,6 @@ mal_init(char *modules[], bool embedded, const char *initpasswd)
 	}
 #endif
 	initNamespace();
-	initParser();
 
 	err = malBootstrap(modules, embedded, initpasswd);
 	if (err != MAL_SUCCEED) {

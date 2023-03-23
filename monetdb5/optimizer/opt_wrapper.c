@@ -56,7 +56,7 @@
 // keep the optimizer list sorted
 static struct {
 	str nme;
-	str (*fcn)();
+	str (*fcn)(Client, MalBlkPtr, MalStkPtr, InstrPtr);
 	int calls;
 	lng timing;
 } codes[] = {
@@ -92,35 +92,19 @@ static struct {
 	{"reorder", &OPTreorderImplementation,0,0},
 	{0,0,0,0}
 };
-static int codehash[256];
 static MT_Lock codeslock = MT_LOCK_INITIALIZER(codeslock);
 
-static
-void fillcodehash(void)
+str
+OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, idx;
-
-	for( i=0;  i< 256; i++)
-		codehash[i] = -1;
-	for (i=0; codes[i].nme; i++){
-		idx = (int) codes[i].nme[0];
-		if( codehash[idx] == -1 ){
-			codehash[idx] = i;
-		}
-	}
-}
-
-str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str modnme = "(NONE)";
-	const char *fcnnme = "(NONE)";
+	str modnme = "optimizer";
+	const char *fcnnme;
 	Symbol s= NULL;
 	int i;
 	str msg = MAL_SUCCEED;
 	lng clk;
 
 	// no optimizer starts with a null byte, initialization sets a zero
-	if( codehash[0] != -1 || codehash[0] == 0)
-		fillcodehash();
 	if (cntxt->mode == FINISHCLIENT)
 		throw(MAL, "optimizer", SQLSTATE(42000) "prematurely stopped client");
 
@@ -160,9 +144,9 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	clk = GDKusec();
 	const char *id = getFunctionId(p);
-	for (i=codehash[(unsigned char) *id]; codes[i].nme; i++){
-		if (codes[i].nme[0] == *id && strcmp(codes[i].nme, getFunctionId(p)) == 0){
-			msg = (str)(*(codes[i].fcn))(cntxt, mb, stk, p);
+	for (i = 0; codes[i].nme != NULL; i++) {
+		if (strcmp(codes[i].nme, id) == 0) {
+			msg = (str)(*codes[i].fcn)(cntxt, mb, stk, p);
 			clk = GDKusec() - clk;
 			MT_lock_set(&codeslock);
 			codes[i].timing += clk;

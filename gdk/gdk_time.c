@@ -652,7 +652,16 @@ date_fromstr(const char *buf, size_t *len, date **d, bool external)
 		if( *d == NULL)
 			return -1;
 	}
-	return parse_date(buf, *d, external);
+	ssize_t n = 0;
+	while (buf[n] && GDKisspace(buf[n]))
+		n++;
+	ssize_t l = parse_date(buf + n, *d, external);
+	if (l < 0)
+		return l;
+	n += l;
+	while (buf[n] && GDKisspace(buf[n]))
+		n++;
+	return n;
 }
 
 static ssize_t
@@ -775,7 +784,16 @@ daytime_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 		if (*ret == NULL)
 			return -1;
 	}
-	return parse_daytime(buf, *ret, external);
+	ssize_t n = 0;
+	while (buf[n] && GDKisspace(buf[n]))
+		n++;
+	ssize_t l = parse_daytime(buf + n, *ret, external);
+	if (l < 0)
+		return l;
+	n += l;
+	while (buf[n] && GDKisspace(buf[n]))
+		n++;
+	return n;
 }
 
 ssize_t
@@ -815,6 +833,8 @@ daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 		val -= DAY_USEC;
 	/* and return */
 	**ret = val;
+	while (*s && GDKisspace(*s))
+		s++;
 	return (ssize_t) (s - buf);
 }
 
@@ -900,7 +920,9 @@ timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
 		if (*ret == NULL)
 			return -1;
 	}
-	pos = parse_date(buf, &dt, external);
+	while (*s && GDKisspace(*s))
+		s++;
+	pos = parse_date(s, &dt, external);
 	if (pos < 0)
 		return pos;
 	if (is_date_nil(dt)) {
@@ -947,6 +969,8 @@ timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
 		}
 		**ret = timestamp_add_usec(**ret, offset);
 	}
+	while (*s && GDKisspace(*s))
+		s++;
 	return (ssize_t) (s - buf);
 }
 
@@ -978,6 +1002,8 @@ timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool externa
 		s += pos;
 	}
 	**ret = timestamp_add_usec(**ret, offset);
+	while (*s && GDKisspace(*s))
+		s++;
 	return (ssize_t) (s - buf);
 }
 

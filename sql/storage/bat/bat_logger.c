@@ -2805,7 +2805,7 @@ bl_postversion(void *Store, void *Lg)
 			const char *e;
 			if (!strNil(f) &&
 				(e = strstr(f, "external")) != NULL &&
-				e > f && isspace(e[-1]) && isspace(e[8]) && strncmp(e + 9, "name", 4) == 0 && isspace(e[13]) &&
+				e > f && isspace((unsigned char) e[-1]) && isspace((unsigned char) e[8]) && strncmp(e + 9, "name", 4) == 0 && isspace((unsigned char) e[13]) &&
 				BUNreplace(b2, o, &(int){FUNC_LANG_MAL}, false) != GDK_SUCCEED) {
 				bat_destroy(b2);
 				bat_destroy(func_func);

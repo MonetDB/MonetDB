@@ -364,6 +364,7 @@ gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *for
 #define GDKisspace(c)	isspace((unsigned char) (c))
 #define GDKisalnum(c)	isalnum((unsigned char) (c))
 #define GDKisdigit(c)	isdigit((unsigned char) (c))
+#define GDKisxdigit(c)	isxdigit((unsigned char) (c))
 
 #define BATDIR		"bat"
 #define TEMPDIR_NAME	"TEMP_DATA"

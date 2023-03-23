@@ -97,7 +97,6 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 #endif
 	// monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();
-	initParser();
 	initHeartbeat();
 	// initResource();
 	c_old = setClientContext(NULL); //save context

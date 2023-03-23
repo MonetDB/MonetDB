@@ -1229,7 +1229,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 						}
 						break;
 					}
-					if (!seenarg && !isspace((signed char) rest[j])) {
+					if (!seenarg && !isspace((unsigned char) rest[j])) {
 						lastarg = j;
 						seenarg = true;
 					}
