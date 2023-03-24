@@ -1,9 +1,3 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Fri Mar 24 2023 Sjoerd Mullender <sjoerd@acm.org>
-- Increased the size of a variable counting the number of changes made
-  to the database (e.g. in case more than a 2 billion rows are added to
-  a table).
-- Improved cleanup after failures such as failed memory allocations.
-
