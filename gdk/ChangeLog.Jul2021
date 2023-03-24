@@ -1,3 +1,7 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Fri Mar 24 2023 Sjoerd Mullender <sjoerd@acm.org>
+- When processing the WAL, if a to-be-destroyed object cannot be found,
+  don't stop, but keep processing the rest of the WAL.
+
