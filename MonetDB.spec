@@ -850,6 +850,23 @@ else
 fi
 
 %changelog
+* Fri Mar 24 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.31-20230324
+- Rebuilt.
+
+* Fri Mar 24 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.31-20230324
+- gdk: When processing the WAL, if a to-be-destroyed object cannot be found,
+  don't stop, but keep processing the rest of the WAL.
+
+* Fri Mar 24 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.31-20230324
+- monetdb5: Client connections are cleaned up better so that we get fewer instances
+  of clients that cannot connect.
+
+* Fri Mar 24 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.31-20230324
+- sql: Increased the size of a variable counting the number of changes made
+  to the database (e.g. in case more than a 2 billion rows are added to
+  a table).
+- sql: Improved cleanup after failures such as failed memory allocations.
+
 * Thu Feb 23 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.29-20230223
 - Rebuilt.
 

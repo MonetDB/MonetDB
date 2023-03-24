@@ -1,3 +1,32 @@
+monetdb (11.41.31) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 24 Mar 2023 10:59:06 +0100
+
+monetdb (11.41.31) unstable; urgency=low
+
+  * gdk: When processing the WAL, if a to-be-destroyed object cannot be found,
+    don't stop, but keep processing the rest of the WAL.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 24 Mar 2023 10:59:06 +0100
+
+monetdb (11.41.31) unstable; urgency=low
+
+  * monetdb5: Client connections are cleaned up better so that we get fewer instances
+    of clients that cannot connect.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 24 Mar 2023 10:59:06 +0100
+
+monetdb (11.41.31) unstable; urgency=low
+
+  * sql: Increased the size of a variable counting the number of changes made
+    to the database (e.g. in case more than a 2 billion rows are added to
+    a table).
+  * sql: Improved cleanup after failures such as failed memory allocations.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 24 Mar 2023 10:59:06 +0100
+
 monetdb (11.41.29) unstable; urgency=low
 
   * Rebuilt.
