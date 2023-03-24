@@ -98,7 +98,11 @@ BuildRequires: hardlink
 BuildRequires: cmake3 >= 3.12
 BuildRequires: gcc
 BuildRequires: bison
-BuildRequires: /usr/bin/python3
+%if (0%{?rhel} == 8)
+BuildRequires: python36
+%else
+BuildRequires: python3
+%endif
 %if %{?rhel:1}%{!?rhel:0}
 # RH 7 (and for readline also 8)
 BuildRequires: bzip2-devel
