@@ -2959,6 +2959,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 	/* these two needed for ADD_WITH_CHECK macro */
 	bool abort_on_error = true;
 	BUN nils = 0;
+	(void) nils;
 
 	ncand = canditer_init(&ci, b, s);
 
