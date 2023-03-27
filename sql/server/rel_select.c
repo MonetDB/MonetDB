@@ -982,9 +982,6 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 						noninternexp_setname(sql->sa, e, tname, NULL);
 						set_basecol(e);
 					}
-					if (tableref->data.lval->h->next->data.sym && tableref->data.lval->h->next->data.sym->data.lval->h->next->data.lval) { /* AS with column aliases */
-						temp_table = rel_table_optname(sql, temp_table, tableref->data.lval->h->next->data.sym, refs);
-					}
 				}
 			}
 			if (allowed)
