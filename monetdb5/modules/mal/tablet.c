@@ -974,7 +974,7 @@ SQLload_parse_row(READERtask *task, int idx)
 
 			/* eat away the column separator */
 			for (; *row; row++)
-				if (*row == '\\') {
+				if (*row == '\\' && task->escape) {
 					if (row[1])
 						row++;
 				} else if (*row == ch && (task->seplen == 1 || strncmp(row, task->csep, task->seplen) == 0)) {
@@ -1010,7 +1010,7 @@ SQLload_parse_row(READERtask *task, int idx)
 
 			/* eat away the column separator */
 			for (; *row; row++)
-				if (*row == '\\') {
+				if (*row == '\\' && task->escape) {
 					if (row[1])
 						row++;
 				} else if (*row == ch) {
