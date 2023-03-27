@@ -1050,7 +1050,7 @@ log_open_output(logger *lg)
 			GDKfree(new_range);
 			return GDK_FAIL;
 		}
-		if (!(filename = GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id))) {
+		if ((filename = GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id)) == NULL) {
 			TRC_CRITICAL(GDK, "allocation failure\n");
 			GDKfree(new_range);
 			return GDK_FAIL;
@@ -2368,7 +2368,7 @@ log_flush(logger *lg, ulng ts)
 				TRC_CRITICAL(GDK, "log_id filename is too large\n");
 				return GDK_FAIL;
 			}
-			if (!(filename = GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id)))
+			if ((filename = GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id)) == NULL)
 				return GDK_FAIL;
 			if (strlen(filename) >= FILENAME_MAX) {
 				GDKerror("Logger filename path is too large\n");
@@ -2508,7 +2508,7 @@ string_writer(logger *lg, BAT *b, lng offset, lng nr)
 	for ( ; p < end; ) {
 		size_t sz = 0;
 		if (resize) {
-			if (!(buf = GDKrealloc(lg->buf, resize))) {
+			if ((buf = GDKrealloc(lg->buf, resize)) == NULL) {
 				res = GDK_FAIL;
 				break;
 			}
