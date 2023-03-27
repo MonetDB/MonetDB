@@ -2064,10 +2064,9 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	}
 	if (!private)
 		pipeline_unlock1(r);
-	/* FIXME: the name 'aggr.project' doesn't match the mel definition */
-	TIMEOUT_CHECK(timeoffset, throw(MAL, "aggr.project", GDK_EXCEPTION));
+	TIMEOUT_CHECK(timeoffset, throw(MAL, "algebra.project", GDK_EXCEPTION));
 	if (err)
-		throw(MAL, "aggr.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	return MAL_SUCCEED;
 }
 
