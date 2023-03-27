@@ -133,7 +133,6 @@ malLoadScript(str name, bstream **fdin)
 	c->blkmode = oldblkmode; \
 	c->bak = oldbak; \
 	c->srcFile = oldsrcFile; \
-	if(c->prompt) GDKfree(c->prompt); \
 	c->prompt = oldprompt; \
 	c->promptlength = strlen(c->prompt);
 #define restoreClient2 \
@@ -157,7 +156,7 @@ malIncludeString(Client c, const char *name, str mal, int listing, MALfcn addres
 	enum clientmode oldmode = c->mode;
 	int oldblkmode = c->blkmode;
 	ClientInput *oldbak = c->bak;
-	str oldprompt = c->prompt;
+	const char *oldprompt = c->prompt;
 	const char *oldsrcFile = c->srcFile;
 
 	MalStkPtr oldglb = c->glb;
@@ -165,7 +164,7 @@ malIncludeString(Client c, const char *name, str mal, int listing, MALfcn addres
 	Module oldcurmodule = c->curmodule;
 	Symbol oldprg = c->curprg;
 
-	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
+	c->prompt = "";				/* do not produce visible prompts */
 	c->promptlength = 0;
 	c->listing = listing;
 	c->fdin = NULL;
@@ -216,7 +215,7 @@ malInclude(Client c, const char *name, int listing)
 	enum clientmode oldmode = c->mode;
 	int oldblkmode = c->blkmode;
 	ClientInput *oldbak = c->bak;
-	str oldprompt = c->prompt;
+	const char *oldprompt = c->prompt;
 	const char *oldsrcFile = c->srcFile;
 
 	MalStkPtr oldglb = c->glb;
@@ -224,7 +223,7 @@ malInclude(Client c, const char *name, int listing)
 	Module oldcurmodule = c->curmodule;
 	Symbol oldprg = c->curprg;
 
-	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
+	c->prompt = "";				/* do not produce visible prompts */
 	c->promptlength = 0;
 	c->listing = listing;
 	c->fdin = NULL;

@@ -88,11 +88,11 @@ MCinit(void)
 
 	MAL_MAXCLIENTS = /* client connections */ maxclients;
 	mal_clients = GDKzalloc(sizeof(ClientRec) * MAL_MAXCLIENTS);
-	if( mal_clients == NULL){
+	if (mal_clients == NULL) {
 		TRC_CRITICAL(MAL_SERVER, "Initialization failed: " MAL_MALLOC_FAIL "\n");
 		return false;
 	}
-	for (int i = 0; i < MAL_MAXCLIENTS; i++){
+	for (int i = 0; i < MAL_MAXCLIENTS; i++) {
 		ATOMIC_INIT(&mal_clients[i].lastprint, 0);
 		ATOMIC_INIT(&mal_clients[i].workers, 1);
 		ATOMIC_INIT(&mal_clients[i].qryctx.datasize, 0);
@@ -103,7 +103,7 @@ MCinit(void)
 
 /* stack the files from which you read */
 int
-MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt)
+MCpushClientInput(Client c, bstream *new_input, int listing, const char *prompt)
 {
 	ClientInput *x = (ClientInput *) GDKmalloc(sizeof(ClientInput));
 	if (x == 0)
@@ -116,11 +116,7 @@ MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt)
 	c->bak = x;
 	c->fdin = new_input;
 	c->listing = listing;
-	c->prompt = prompt ? GDKstrdup(prompt) : GDKstrdup("");
-	if(c->prompt == 0) {
-		GDKfree(x);
-		return -1;
-	}
+	c->prompt = prompt ? prompt : "";
 	c->promptlength = strlen(c->prompt);
 	c->yycur = 0;
 	return 0;
@@ -134,7 +130,6 @@ MCpopClientInput(Client c)
 		/* missing protection against closing stdin stream */
 		bstream_destroy(c->fdin);
 	}
-	GDKfree(c->prompt);
 	c->fdin = x->fdin;
 	c->yycur = x->yycur;
 	c->listing = x->listing;
@@ -147,20 +142,16 @@ MCpopClientInput(Client c)
 static Client
 MCnewClient(void)
 {
-	Client c;
-
-	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
-		if (c->idx == -1)
-			break;
+	for (Client c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
+		if (c->idx == -1) {
+			assert(c->mode == FREECLIENT);
+			c->mode = RUNCLIENT;
+			c->idx = (int) (c - mal_clients);
+			return c;
+		}
 	}
 
-	if (c == mal_clients + MAL_MAXCLIENTS)
-		return NULL;
-
-	assert(c->mode == FREECLIENT);
-	c->mode = RUNCLIENT;
-	c->idx = (int) (c - mal_clients);
-	return c;
+	return NULL;
 }
 
 /*
@@ -204,7 +195,7 @@ MCexitClient(Client c)
 {
 	MCresetProfiler(c->fdout);
 	// Remove any left over constant symbols
-	if( c->curprg)
+	if (c->curprg)
 		resetMalBlk(c->curprg->def);
 	if (c->father == NULL) { /* normal client */
 		if (c->fdout && c->fdout != GDKstdout)
@@ -220,7 +211,7 @@ MCexitClient(Client c)
 		c->fdin = NULL;
 	}
 	assert(c->query == NULL);
-	if(profilerStatus > 0) {
+	if (profilerStatus > 0) {
 		lng Tend = GDKusec();
 		profilerEvent(NULL,
 					  &(struct NonMalEvent)
@@ -231,8 +222,6 @@ MCexitClient(Client c)
 static Client
 MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 {
-	const char *prompt;
-
 	/* mal_contextLock is held when this is called */
 	c->user = user;
 	c->username = 0;
@@ -242,7 +231,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->blkmode = 0;
 
 	c->fdin = fin ? fin : bstream_create(GDKstdin, 0);
-	if ( c->fdin == NULL){
+	if (c->fdin == NULL) {
 		c->mode = FREECLIENT;
 		c->idx = -1;
 		TRC_ERROR(MAL_SERVER, "No stdin channel available\n");
@@ -276,18 +265,8 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->itrace = 0;
 	c->errbuf = 0;
 
-	prompt = PROMPT1;
-	c->prompt = GDKstrdup(prompt);
-	if ( c->prompt == NULL){
-		if (fin == NULL) {
-			c->fdin->s = NULL;
-			bstream_destroy(c->fdin);
-		}
-		c->mode = FREECLIENT;
-		c->idx = -1;
-		return NULL;
-	}
-	c->promptlength = strlen(prompt);
+	c->prompt = PROMPT1;
+	c->promptlength = strlen(c->prompt);
 
 	c->profticks = c->profstmt = c->profevents = NULL;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
@@ -353,7 +332,7 @@ MCinitClientThread(Client c)
 	c->errbuf = GDKerrbuf;
 	if (c->errbuf == NULL) {
 		char *n = GDKzalloc(GDKMAXERRLEN);
-		if ( n == NULL){
+		if (n == NULL) {
 			MCresetProfiler(c->fdout);
 			return -1;
 		}
@@ -377,14 +356,11 @@ MCforkClient(Client father)
 {
 	/* TO BE REMOVED: this function is not used anywhere */
 	Client son = NULL;
-	str prompt;
 
 	if (father == NULL)
 		return NULL;
 	if (father->father != NULL)
 		father = father->father;
-	if((prompt = GDKstrdup(father->prompt)) == NULL)
-		return NULL;
 	if ((son = MCinitClient(father->user, father->fdin, father->fdout))) {
 		son->fdin = NULL;
 		son->fdout = father->fdout;
@@ -402,20 +378,16 @@ MCforkClient(Client father)
 		son->maxmem = father->maxmem;
 		son->sessiontimeout = father->sessiontimeout;
 
-		if (son->prompt)
-			GDKfree(son->prompt);
-		son->prompt = prompt;
-		son->promptlength = strlen(prompt);
+		son->prompt = father->prompt;
+		son->promptlength = strlen(son->prompt);
 		/* reuse the scopes wherever possible */
 		if (son->usermodule == 0) {
 			son->usermodule = userModule();
-			if(son->usermodule == 0) {
+			if (son->usermodule == 0) {
 				MCcloseClient(son);
 				return NULL;
 			}
 		}
-	} else {
-		GDKfree(prompt);
 	}
 	return son;
 }
@@ -445,7 +417,7 @@ void
 MCcloseClient(Client c)
 {
 	MT_lock_set(&mal_contextLock);
-	if( c->mode == FREECLIENT) {
+	if (c->mode == FREECLIENT) {
 		assert(c->idx == -1);
 		MT_lock_unset(&mal_contextLock);
 		return;
@@ -459,8 +431,6 @@ MCcloseClient(Client c)
 	 * reside in a quit() command. Therefore the scopelist is re-used.
 	 */
 	c->scenario = NULL;
-	if (c->prompt)
-		GDKfree(c->prompt);
 	c->prompt = NULL;
 	c->promptlength = -1;
 	if (c->errbuf) {
@@ -482,7 +452,7 @@ MCcloseClient(Client c)
 	c->qryctx.querytimeout = 0;
 	c->sessiontimeout = 0;
 	c->user = oid_nil;
-	if( c->username){
+	if (c->username) {
 		GDKfree(c->username);
 		c->username = 0;
 	}
@@ -491,13 +461,13 @@ MCcloseClient(Client c)
 		freeStack(c->glb);
 		c->glb = NULL;
 	}
-	if( c->profticks){
+	if (c->profticks) {
 		BBPunfix(c->profticks->batCacheid);
 		BBPunfix(c->profstmt->batCacheid);
 		BBPunfix(c->profevents->batCacheid);
 		c->profticks = c->profstmt = c->profevents = NULL;
 	}
-	if( c->error_row){
+	if (c->error_row) {
 		BBPunfix(c->error_row->batCacheid);
 		BBPunfix(c->error_fld->batCacheid);
 		BBPunfix(c->error_msg->batCacheid);
@@ -560,26 +530,13 @@ int
 MCactiveClients(void)
 {
 	int active = 0;
-	Client cntxt = mal_clients;
 
 	MT_lock_set(&mal_contextLock);
-	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
+	for (Client cntxt = mal_clients; cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++) {
 		active += (cntxt->idle == 0 && cntxt->mode == RUNCLIENT);
 	}
 	MT_lock_unset(&mal_contextLock);
 	return active;
-}
-
-/* To determine the average memory claims for assignment, we should calculate the outstanding claims*/
-/* This only concerns active clients and if one query claims all, then all should be divided equally */
-
-size_t
-MCmemoryClaim(void)
-{
-	/* TO BE REMOVED */
-	/* this function used to be more complex, but in the end it always
-	 * returned GDK_mem_maxsize, so that's what we do now */
-	return GDK_mem_maxsize;
 }
 
 str
@@ -674,12 +631,11 @@ MCreadClient(Client c)
 int
 MCvalid(Client tc)
 {
-	Client c;
 	if (tc == NULL) {
 		return 0;
 	}
 	MT_lock_set(&mal_contextLock);
-	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
+	for (Client c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
 		if (c == tc && c->mode == RUNCLIENT) {
 			MT_lock_unset(&mal_contextLock);
 			return 1;
