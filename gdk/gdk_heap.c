@@ -429,7 +429,7 @@ HEAPshrink(Heap *h, size_t size)
 			/* don't grow */
 			return GDK_SUCCEED;
 		}
-		if(!(path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL)))
+		if ((path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL)) == NULL)
 			return GDK_FAIL;
 		p = GDKmremap(path,
 			      h->storage == STORE_PRIV ?
