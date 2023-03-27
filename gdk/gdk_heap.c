@@ -406,6 +406,13 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 			}
 		}
 	  failed:
+		if (h->hasfile && !bak.hasfile) {
+			char *path = GDKfilepath(h->farmid, BATDIR, nme, ext);
+			if (path) {
+				MT_remove(path);
+				GDKfree(path);
+			}
+		}
 		*h = bak;
 	}
 	GDKerror("failed to extend to %zu for %s%s%s: %s\n",
