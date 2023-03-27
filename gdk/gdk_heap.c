@@ -701,10 +701,12 @@ HEAPfree(Heap *h, bool rmheap)
 #ifndef NDEBUG
 		} else {
 			char *path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
-			/* should not be present */
-			struct stat st;
-			assert(stat(path, &st) == -1 && errno == ENOENT);
-			GDKfree(path);
+			if (path) {
+				/* should not be present */
+				struct stat st;
+				assert(stat(path, &st) == -1 && errno == ENOENT);
+				GDKfree(path);
+			}
 #endif
 		}
 	}
