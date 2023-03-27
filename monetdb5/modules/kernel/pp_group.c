@@ -52,18 +52,9 @@ LGRPgroup1(bat *ngid, bat *next, bat *nhis, const ptr *h, const bat *bid)
 
 #include "mel.h"
 mel_func pp_group_init_funcs[] = {
- command("lockedgroup", "group", LGRPgroup1, false, "", args(3,5,
-	 batarg("groups",oid), batarg("extents",oid), batarg("histo",lng),
-	 arg("pipeline", ptr), batargany("b",1)
- )),
- command("lockedgroup", "group", LGRPgroup3, false, "", args(2,4,
-	 batarg("groups",oid), batarg("extents",oid),
-	 arg("pipeline", ptr), batargany("b",1)
- )),
- command("lockedgroup", "subgroupdone", LGRPsubgroup2, false, "", args(3,6,
-	 batarg("groups",oid), batarg("extents",oid), batarg("histo",lng),
-	 arg("pipeline", ptr), batargany("b",1), batarg("g",oid)
- )),
+ command("lockedgroup", "group", LGRPgroup1, false, "", args(3,5, batarg("groups",oid),batarg("extents",oid),batarg("histo",lng),arg("pipeline", ptr),batargany("b",1))),
+ command("lockedgroup", "group", LGRPgroup3, false, "", args(2,4, batarg("groups",oid),batarg("extents",oid),arg("pipeline", ptr),batargany("b",1))),
+ command("lockedgroup", "subgroupdone", LGRPsubgroup2, false, "", args(3,6, batarg("groups",oid),batarg("extents",oid),batarg("histo",lng),arg("pipeline", ptr),batargany("b",1),batarg("g",oid))),
  { .imp=NULL }
 };
 #include "mal_import.h"

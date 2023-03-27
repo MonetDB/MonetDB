@@ -3235,136 +3235,40 @@ ALGmaxany(ptr result, const bat *bid)
 
 #include "mel.h"
 static mel_func pp_algebra_init_funcs[] = {
- pattern("lockedaggr", "sum", LOCKEDAGGRsum, true, "sum values into bat (bat has value, update), using the bat lock", args(1,3,
-	 sharedbatargany("", 1),
-	 arg("pipeline", ptr), argany("val", 1)
- )),
- pattern("lockedaggr", "prod", LOCKEDAGGRprod, true, "product of all values, using the bat lock", args(1,3,
-	 sharedbatargany("", 1),
-	 arg("pipeline", ptr), argany("val", 2)
- )),
- pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "avg values into bat (bat has value, update), using the bat lock", args(2,5,
-	 sharedbatargany("", 1), sharedbatarg("rcnt", lng),
-	 arg("pipeline", ptr), argany("val", 1), arg("cnt", lng)
- )),
- pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "avg values into bat (bat has value, update), using the bat lock", args(3,7,
-	 sharedbatargany("", 1), sharedbatarg("rremainder", lng), sharedbatarg("rcnt", lng),
-	 arg("pipeline", ptr), argany("val", 1), arg("remainder", lng), arg("cnt", lng)
- )),
- pattern("lockedaggr", "min", LOCKEDAGGRmin, true, "min values into bat (bat has value, update), using the bat lock", args(1,3,
-	 sharedbatargany("", 1),
-	 arg("pipeline", ptr), argany("val", 1)
- )),
- pattern("lockedaggr", "max", LOCKEDAGGRmax, true, "max values into bat (bat has value, update), using the bat lock", args(1,3,
-	 sharedbatargany("", 1),
-	 arg("pipeline", ptr), argany("val", 1)
- )),
- command("lockedalgebra", "projection", LALGprojection, false, "Project left input onto right input.", args(1,4,
-	 batargany("",3),
-	 arg("pipeline", ptr), batarg("left",oid),batargany("right",3)
- )),
- command("algebra", "unique", LALGunique, false, "Unique rows.", args(2,5,
-	 batarg("gid", oid), batargany("",3),
-	 arg("pipeline", ptr), batargany("b",3), batarg("s",oid)
- )),
- command("algebra", "unique", LALGgroup_unique, false, "Unique per group rows.", args(2,6,
-	 batarg("ngid", oid), batargany("",3),
-	 arg("pipeline", ptr), batargany("b",3), batarg("s",oid), batarg("gid",oid)
- )),
- command("group", "group", LALGgroup, false, "Group input.", args(2,4,
-	 batarg("gid", oid), batargany("sink",3),
-	 arg("pipeline", ptr), batargany("b",4)
- )),
- command("group", "group", LALGderive, false, "Sub Group input.", args(2,6,
-	 batarg("gid", oid), batargany("sink",3),
-	 arg("pipeline", ptr), batarg("pgid", oid), batargany("phash", 5), batargany("b",3)
- )),
- command("algebra", "projection", LALGproject, false, "Project.", args(1,4,
-	 batargany("",1),
-	 batarg("gid", oid), batargany("b",1), arg("pipeline", ptr)
- )),
- command("aggr", "count", LALGcount, false, "Count per group.", args(1,6,
-	 batarg("",lng),
-	 batarg("gid", oid), batargany("", 1), arg("nonil", bit), arg("pipeline", ptr), batarg("pid", oid)
- )),
- command("aggr", "count", LALGcountstar, false, "count per group.", args(1,4,
-	 batarg("",lng),
-	 batarg("gid", oid), arg("pipeline", ptr), batarg("pid", oid)
- )),
- pattern("aggr", "sum", LALGsum, false, "sum per group.", args(1,5,
-	 batargany("",1),
-	 batarg("gid", oid), batargany("", 2), arg("pipeline", ptr), batarg("pid", oid)
- )),
- pattern("aggr", "prod", LALGprod, false, "product per group.", args(1,5,
-	 batargany("",1),
-	 batarg("gid", oid), batargany("", 2), arg("pipeline", ptr), batarg("pid", oid)
- )),
- pattern("aggr", "avg", LALGavg, false, "avg per group.", args(2,6,
-	 batarg("ravg", dbl), batarg("rcnt", lng),
-	 batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid)
- )),
- pattern("aggr", "avg", LALGavg, false, "avg per group.", args(3,7,
-	 batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng),
-	 batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid)
- )),
- pattern("aggr", "avg", LALGavg, false, "avg per group.", args(2,7,
-	 batarg("ravg", dbl), batarg("rcnt", lng),
-	 batarg("gid", oid), batargany("", 1), batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid)
- )),
- pattern("aggr", "avg", LALGavg, false, "avg per group.", args(3,9,
-	 batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng),
-	 batarg("gid", oid), batargany("", 1), batarg("remainder", lng), batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid)
- )),
- command("aggr", "min", LALGmin, false, "Min per group.", args(1,5,
-	 batargany("",1),
-	 batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid)
- )),
- command("aggr", "max", LALGmax, false, "Max per group.", args(1,5,
-	 batargany("",1),
-	 batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid)
- )),
+ pattern("lockedaggr", "sum", LOCKEDAGGRsum, true, "sum values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
+ pattern("lockedaggr", "prod", LOCKEDAGGRprod, true, "product of all values, using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 2))),
+ pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "avg values into bat (bat has value, update), using the bat lock", args(2,5, sharedbatargany("", 1), sharedbatarg("rcnt", lng), arg("pipeline", ptr), argany("val", 1), arg("cnt", lng))),
+ pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "avg values into bat (bat has value, update), using the bat lock", args(3,7, sharedbatargany("", 1), sharedbatarg("rremainder", lng), sharedbatarg("rcnt", lng), arg("pipeline", ptr), argany("val", 1), arg("remainder", lng), arg("cnt", lng))),
+ pattern("lockedaggr", "min", LOCKEDAGGRmin, true, "min values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
+ pattern("lockedaggr", "max", LOCKEDAGGRmax, true, "max values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
+ command("lockedalgebra", "projection", LALGprojection, false, "Project left input onto right input.", args(1,4, batargany("",3), arg("pipeline", ptr), batarg("left",oid),batargany("right",3))),
+ command("algebra", "unique", LALGunique, false, "Unique rows.", args(2,5, batarg("gid", oid), batargany("",3), arg("pipeline", ptr), batargany("b",3), batarg("s",oid))),
+ command("algebra", "unique", LALGgroup_unique, false, "Unique per group rows.", args(2,6, batarg("ngid", oid), batargany("",3), arg("pipeline", ptr), batargany("b",3), batarg("s",oid), batarg("gid",oid))),
+ command("group", "group", LALGgroup, false, "Group input.", args(2,4, batarg("gid", oid), batargany("sink",3), arg("pipeline", ptr), batargany("b",4))),
+ command("group", "group", LALGderive, false, "Sub Group input.", args(2,6, batarg("gid", oid), batargany("sink",3), arg("pipeline", ptr), batarg("pgid", oid), batargany("phash", 5), batargany("b",3))),
+ command("algebra", "projection", LALGproject, false, "Project.", args(1,4, batargany("",1), batarg("gid", oid), batargany("b",1), arg("pipeline", ptr))),
+ command("aggr", "count", LALGcount, false, "Count per group.", args(1,6, batarg("",lng), batarg("gid", oid), batargany("", 1), arg("nonil", bit), arg("pipeline", ptr), batarg("pid", oid))),
+ command("aggr", "count", LALGcountstar, false, "count per group.", args(1,4, batarg("",lng), batarg("gid", oid), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("aggr", "sum", LALGsum, false, "sum per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 2), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("aggr", "prod", LALGprod, false, "product per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 2), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("aggr", "avg", LALGavg, false, "avg per group.", args(2,6, batarg("ravg", dbl), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("aggr", "avg", LALGavg, false, "avg per group.", args(3,7, batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("aggr", "avg", LALGavg, false, "avg per group.", args(2,7, batarg("ravg", dbl), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("aggr", "avg", LALGavg, false, "avg per group.", args(3,9, batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("remainder", lng), batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid))),
+ command("aggr", "min", LALGmin, false, "Min per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
+ command("aggr", "max", LALGmax, false, "Max per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
 
  /* Incremental aggregates */
- command("iaggr", "count", ALGcount_bat, false, "Return the current size (in number of elements) in a BAT.", args(1,2,
-	 arg("",lng),
-	 batargany("b",0)
- )),
- command("iaggr", "count", ALGcount_nil, false, "Return the number of elements currently in a BAT ignores\nBUNs with nil-tail iff ignore_nils==TRUE.", args(1,3,
-	 arg("",lng),
-	 batargany("b",0),arg("ignore_nils",bit)
- )),
- command("iaggr", "count_no_nil", ALGcount_no_nil, false, "Return the number of elements currently\nin a BAT ignoring BUNs with nil-tail", args(1,2,
-	 arg("",lng),
-	 batargany("b",2)
- )),
- command("iaggr", "count", ALGcountCND_bat, false, "Return the current size (in number of elements) in a BAT.", args(1,3,
-	 arg("",lng),
-	 batargany("b",0),batarg("cnd",oid)
- )),
- command("iaggr", "count", ALGcountCND_nil, false, "Return the number of elements currently in a BAT ignores\nBUNs with nil-tail iff ignore_nils==TRUE.", args(1,4,
-	 arg("",lng),
-	 batargany("b",0),batarg("cnd",oid),arg("ignore_nils",bit)
- )),
- command("iaggr", "count_no_nil", ALGcountCND_no_nil, false, "Return the number of elements currently\nin a BAT ignoring BUNs with nil-tail", args(1,3,
-	 arg("",lng),
-	 batargany("b",2),batarg("cnd",oid)
- )),
- command("iaggr", "min", ALGminany, false, "Return the lowest tail value or nil.", args(1,2,
-	 argany("",2),
-	 batargany("b",2)
- )),
- command("iaggr", "min", ALGminany_skipnil, false, "Return the lowest tail value or nil.", args(1,3,
-	 argany("",2),
-	 batargany("b",2),arg("skipnil",bit)
- )),
- command("iaggr", "max", ALGmaxany, false, "Return the highest tail value or nil.", args(1,2,
-	 argany("",2),
-	 batargany("b",2)
- )),
- command("iaggr", "max", ALGmaxany_skipnil, false, "Return the highest tail value or nil.", args(1,3,
-	 argany("",2),
-	 batargany("b",2),arg("skipnil",bit)
- )),
+ command("iaggr", "count", ALGcount_bat, false, "Return the current size (in number of elements) in a BAT.", args(1,2, arg("",lng), batargany("b",0))),
+ command("iaggr", "count", ALGcount_nil, false, "Return the number of elements currently in a BAT ignores\nBUNs with nil-tail iff ignore_nils==TRUE.", args(1,3, arg("",lng), batargany("b",0),arg("ignore_nils",bit))),
+ command("iaggr", "count_no_nil", ALGcount_no_nil, false, "Return the number of elements currently\nin a BAT ignoring BUNs with nil-tail", args(1,2, arg("",lng), batargany("b",2))),
+ command("iaggr", "count", ALGcountCND_bat, false, "Return the current size (in number of elements) in a BAT.", args(1,3, arg("",lng), batargany("b",0),batarg("cnd",oid))),
+ command("iaggr", "count", ALGcountCND_nil, false, "Return the number of elements currently in a BAT ignores\nBUNs with nil-tail iff ignore_nils==TRUE.", args(1,4, arg("",lng), batargany("b",0),batarg("cnd",oid),arg("ignore_nils",bit))),
+ command("iaggr", "count_no_nil", ALGcountCND_no_nil, false, "Return the number of elements currently\nin a BAT ignoring BUNs with nil-tail", args(1,3, arg("",lng), batargany("b",2),batarg("cnd",oid))),
+ command("iaggr", "min", ALGminany, false, "Return the lowest tail value or nil.", args(1,2, argany("",2), batargany("b",2))),
+ command("iaggr", "min", ALGminany_skipnil, false, "Return the lowest tail value or nil.", args(1,3, argany("",2), batargany("b",2),arg("skipnil",bit))),
+ command("iaggr", "max", ALGmaxany, false, "Return the highest tail value or nil.", args(1,2, argany("",2), batargany("b",2))),
+ command("iaggr", "max", ALGmaxany_skipnil, false, "Return the highest tail value or nil.", args(1,3, argany("",2), batargany("b",2),arg("skipnil",bit))),
  { .imp=NULL }
 };
 #include "mal_import.h"

@@ -42,15 +42,9 @@ LAGGRsum3_hge(bat *retval, const ptr *h, const bat *bid, const bat *gid, const b
 
 #include "mel.h"
 mel_func pp_aggr_init_funcs[] = {
- command("lockedaggr", "sum", LAGGRsum3_lng, false, "Grouped tail sum on lng", args(1,5,
-	 batarg("",lng),
-	 arg("pipeline", ptr), batarg("b",lng), batarg("g",oid), batargany("e",1)
- )),
+ command("lockedaggr", "sum", LAGGRsum3_lng, false, "Grouped tail sum on lng", args(1,5, batarg("",lng),arg("pipeline", ptr),batarg("b",lng),batarg("g",oid),batargany("e",1))),
 #ifdef HAVE_HGE
- command("lockedaggr", "sum", LAGGRsum3_hge, false, "Grouped tail sum on hge", args(1,5,
-	 batarg("",hge),
-	 arg("pipeline", ptr), batarg("b",hge), batarg("g",oid), batargany("e",1)
- )),
+ command("lockedaggr", "sum", LAGGRsum3_hge, false, "Grouped tail sum on hge", args(1,5, batarg("",hge),arg("pipeline", ptr),batarg("b",hge),batarg("g",oid),batargany("e",1))),
 #endif
  { .imp=NULL }
 };
