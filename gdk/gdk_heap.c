@@ -298,7 +298,6 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 			h->newstorage = h->storage = STORE_MEM;
 			h->base = GDKrealloc(h->base, size);
 			TRC_DEBUG(HEAP, "Extending malloced heap %s %zu->%zu %p->%p\n", h->filename, bak.size, size, bak.base, h->base);
-			h->size = size;
 			if (h->base) {
 				if (h->farmid == 1) {
 					QryCtx *qc = MT_thread_get_qry_ctx();
