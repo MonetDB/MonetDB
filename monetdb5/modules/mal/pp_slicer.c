@@ -187,8 +187,8 @@ SLICERslices(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #include "mel.h"
 static mel_func pp_slicer_init_funcs[] = {
  command("algebra", "subslice", LALGsubslice, false, "Returns the slice of a pipelined result", args(3,7, batarg("gid", oid), batarg("rid", oid), batarg("tid", oid), batargany("b", 1), arg("start", lng), arg("end", lng), arg("pipeline", ptr))),
- pattern("slicer", "slice", SLICERslice, false, "", args(2,3, batargany("slice",1), batargany("b",1), arg("nr",int))),
- pattern("slicer", "slices", SLICERslices, false, "", args(1,2, arg("slices", int), batargany("b",1))),
+ pattern("slicer", "slice", SLICERslice, false, "Return the 'nr'-th slice, of SLICE_SIZE rrows, from the input BAT", args(2,3, batargany("slice",1), batargany("b",1), arg("nr",int))),
+ pattern("slicer", "slices", SLICERslices, false, "Returns the number of slices into which the input BAT is to be sliced", args(1,2, arg("slices", int), batargany("b",1))),
  { .imp=NULL }
 };
 #include "mal_import.h"
