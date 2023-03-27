@@ -180,6 +180,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 			 * failed */
 			(void) MT_remove(nme);
 			GDKfree(nme);
+			h->hasfile = false; /* just removed it */
 		}
 		GDKerror("Insufficient space for HEAP of %zu bytes.", h->size);
 		return GDK_FAIL;
