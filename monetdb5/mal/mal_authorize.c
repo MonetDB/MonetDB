@@ -715,25 +715,17 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 			return output;
 	}
 
-	if (pass == NULL) {
-		// init client to have SQL callback hooks
-		Client c = getClientContext();
-		if((output = AUTHgetPasswordHash(&pwhash, c, local_user)) != MAL_SUCCEED)
-			return output;
-	}
-	else {
-		free_pw = true;
-		if (pw_encrypted) {
-			if((pwhash = strdup(pass)) == NULL)
-				throw(MAL, "addRemoteTableCredentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		else {
-			/* Note: the remote server might have used a different
-			 * algorithm to hash the pwhash.
-			 */
-			if((pwhash = mcrypt_BackendSum(pass, strlen(pass))) == NULL)
-				throw(MAL, "addRemoteTableCredentials", SQLSTATE(42000) "Crypt backend hash not found");
-		}
+	assert(pass);
+	free_pw = true;
+	if (pw_encrypted) {
+		if((pwhash = strdup(pass)) == NULL)
+			throw(MAL, "addRemoteTableCredentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	} else {
+		/* Note: the remote server might have used a different
+		 * algorithm to hash the pwhash.
+		 */
+		if((pwhash = mcrypt_BackendSum(pass, strlen(pass))) == NULL)
+			throw(MAL, "addRemoteTableCredentials", SQLSTATE(42000) "Crypt backend hash not found");
 	}
 	msg = AUTHverifyPassword(pwhash);
 	if( msg != MAL_SUCCEED){
