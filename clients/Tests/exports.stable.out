@@ -753,7 +753,6 @@ MALfcn MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprop
 int MCactiveClients(void);
 str MCawakeClient(int id);
 void MCcloseClient(Client c);
-Client MCforkClient(Client father);
 Client MCgetClient(int id);
 Client MCinitClient(oid user, bstream *fin, stream *fout);
 int MCpushClientInput(Client c, bstream *new_input, int listing, const char *prompt);

@@ -343,55 +343,6 @@ MCinitClientThread(Client c)
 	return 0;
 }
 
-/*
- * Forking is a relatively cheap way to create a new client.  The new
- * client record shares the IO descriptors.  To avoid interference, we
- * limit children to only produce output by closing the input-side.
- *
- * If the father itself is a temporary client, let the new child depend
- * on the grandfather.
- */
-Client
-MCforkClient(Client father)
-{
-	/* TO BE REMOVED: this function is not used anywhere */
-	Client son = NULL;
-
-	if (father == NULL)
-		return NULL;
-	if (father->father != NULL)
-		father = father->father;
-	if ((son = MCinitClient(father->user, father->fdin, father->fdout))) {
-		son->fdin = NULL;
-		son->fdout = father->fdout;
-		son->bak = NULL;
-		son->yycur = 0;
-		son->father = father;
-		son->login = father->login;
-		son->idle = father->idle;
-		son->scenario = father->scenario;
-		strcpy_len(father->optimizer, son->optimizer, sizeof(father->optimizer));
-		son->workerlimit = father->workerlimit;
-		son->memorylimit = father->memorylimit;
-		son->qryctx.querytimeout = father->qryctx.querytimeout;
-		son->qryctx.maxmem = father->qryctx.maxmem;
-		son->maxmem = father->maxmem;
-		son->sessiontimeout = father->sessiontimeout;
-
-		son->prompt = father->prompt;
-		son->promptlength = strlen(son->prompt);
-		/* reuse the scopes wherever possible */
-		if (son->usermodule == 0) {
-			son->usermodule = userModule();
-			if (son->usermodule == 0) {
-				MCcloseClient(son);
-				return NULL;
-			}
-		}
-	}
-	return son;
-}
-
 static bool shutdowninprogress = false;
 
 bool
