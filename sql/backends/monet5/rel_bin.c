@@ -1412,7 +1412,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				if (!left)
 					return const_column(be, stmt_bool(be, 1));
 				return left->op4.lval->h->data;
-			} if (strcmp(fname, "case") == 0)
+			}
+			if (strcmp(fname, "case") == 0)
 				return exp2bin_case(be, e, left, right, sel, depth);
 			if (strcmp(fname, "casewhen") == 0)
 				return exp2bin_casewhen(be, e, left, right, sel, depth);
