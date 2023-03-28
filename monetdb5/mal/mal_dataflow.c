@@ -149,7 +149,7 @@ q_create(int sz, const char *name)
 	if (q == NULL)
 		return NULL;
 	*q = (Queue) {
-		.size = ((sz << 1) >> 1), /* we want a multiple of 2 */
+		.size = (sz + 1) & ~1,	/* we want a multiple of 2 */
 	};
 	q->data = (FlowEvent*) GDKmalloc(sizeof(FlowEvent) * q->size);
 	if (q->data == NULL) {
@@ -175,24 +175,17 @@ q_destroy(Queue *q)
 /* keep a simple LIFO queue. It won't be a large one, so shuffles of requeue is possible */
 /* we might actually sort it for better scheduling behavior */
 static void
-q_enqueue_(Queue *q, FlowEvent d)
+q_enqueue(Queue *q, FlowEvent d)
 {
 	assert(q);
 	assert(d);
+	MT_lock_set(&q->l);
 	if (q->last == q->size) {
 		q->size <<= 1;
 		q->data = (FlowEvent*) GDKrealloc(q->data, sizeof(FlowEvent) * q->size);
 		assert(q->data);
 	}
 	q->data[q->last++] = d;
-}
-static void
-q_enqueue(Queue *q, FlowEvent d)
-{
-	assert(q);
-	assert(d);
-	MT_lock_set(&q->l);
-	q_enqueue_(q, d);
 	MT_lock_unset(&q->l);
 	MT_sema_up(&q->s);
 }
@@ -204,30 +197,21 @@ q_enqueue(Queue *q, FlowEvent d)
  */
 
 static void
-q_requeue_(Queue *q, FlowEvent d)
+q_requeue(Queue *q, FlowEvent d)
 {
-	int i;
-
 	assert(q);
 	assert(d);
+	MT_lock_set(&q->l);
 	if (q->last == q->size) {
 		/* enlarge buffer */
 		q->size <<= 1;
 		q->data = (FlowEvent*) GDKrealloc(q->data, sizeof(FlowEvent) * q->size);
 		assert(q->data);
 	}
-	for (i = q->last; i > 0; i--)
+	for (int i = q->last; i > 0; i--)
 		q->data[i] = q->data[i - 1];
 	q->data[0] = d;
 	q->last++;
-}
-static void
-q_requeue(Queue *q, FlowEvent d)
-{
-	assert(q);
-	assert(d);
-	MT_lock_set(&q->l);
-	q_requeue_(q, d);
 	MT_lock_unset(&q->l);
 	MT_sema_up(&q->s);
 }
@@ -929,7 +913,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	flow->start = startpc + 1;
 	flow->stop = stoppc;
 
-	flow->done = q_create(stoppc- startpc+1, "flow->done");
+	flow->done = q_create((unsigned) (stoppc - startpc) + 1, "flow->done");
 	if (flow->done == NULL) {
 		GDKfree(flow);
 		throw(MAL, "dataflow", "runMALdataflow(): Failed to create flow->done queue");

@@ -37,10 +37,10 @@ enum clientmode {
  * initialization string. See the documentation on Scenarios.
  */
 typedef struct CLIENT_INPUT {
-	bstream             *fdin;
-	size_t              yycur;
-	int                 listing;
-	char                *prompt;
+	bstream *fdin;
+	size_t yycur;
+	int listing;
+	const char *prompt;
 	struct CLIENT_INPUT *next;
 } ClientInput;
 
@@ -108,7 +108,7 @@ typedef struct CLIENT {
 	 * the type information.
 	 */
 	int  listing;
-	str prompt;         /* acknowledge prompt */
+	const char *prompt;         /* acknowledge prompt */
 	size_t promptlength;
 	ClientInput *bak;   /* used for recursive script and string execution */
 
@@ -179,14 +179,12 @@ mal_export ClientRec *mal_clients;
 
 mal_export Client  MCgetClient(int id);
 mal_export Client  MCinitClient(oid user, bstream *fin, stream *fout);
-mal_export Client  MCforkClient(Client father);
 mal_export void	   MCstopClients(Client c);
 mal_export int	   MCactiveClients(void);
-mal_export size_t  MCmemoryClaim(void);
 mal_export void    MCcloseClient(Client c);
 mal_export str     MCsuspendClient(int id);
 mal_export str     MCawakeClient(int id);
-mal_export int     MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt);
+mal_export int     MCpushClientInput(Client c, bstream *new_input, int listing, const char *prompt);
 mal_export int	   MCvalid(Client c);
 
 #endif /* _MAL_CLIENT_H_ */
