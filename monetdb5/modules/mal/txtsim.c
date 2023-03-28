@@ -9,83 +9,143 @@
  */
 
 #include "monetdb_config.h"
-#include "mal.h"
-#include <string.h>
 #include "gdk.h"
 #include "str.h"
-#include <limits.h>
+#include "mal.h"
 #include "mal_exception.h"
+#include "mal_interpreter.h"
+#include <string.h>
+#include <limits.h>
+
+#define SoundexLen 4		/* length of a soundex code */
+#define SoundexKey "Z000"	/* default key for soundex code */
+
+/* set letter values */
+static const int Code[] = { 0, 1, 2, 3, 0, 1,
+							2, 0, 0, 2, 2, 4,
+							5, 5, 0, 1, 2, 6,
+							2, 3, 0, 1, 0, 2, 0, 2
+};
+
+#define MIN3(X,Y,Z)   (MIN(MIN((X),(Y)),(Z)))
+#define MAX3(X,Y,Z)   (MAX(MAX((X),(Y)),(Z)))
+#define MIN4(W,X,Y,Z) (MIN(MIN(MIN(W,X),Y),Z))
+
+#define INITIAL_INT_BUFFER_LENGTH 2048
+
+#define CHECK_INT_BUFFER_LENGTH(BUFFER, BUFFER_LEN, NEXT_LEN, OP)		\
+	do {																\
+		if ((NEXT_LEN) > *BUFFER_LEN) {								\
+			size_t newlen = (((NEXT_LEN) + 1023) & ~1023); /* align to a multiple of 1024 bytes */ \
+			int *newbuf = GDKmalloc(newlen);							\
+			if (!newbuf)												\
+				throw(MAL, OP, SQLSTATE(HY013) MAL_MALLOC_FAIL);		\
+			GDKfree(*BUFFER);											\
+			*BUFFER = newbuf;											\
+			*BUFFER_LEN = newlen;										\
+		}																\
+	} while (0)
 
 #define RETURN_NIL_IF(b,t)												\
 	if (b) {															\
 		if (ATOMextern(t)) {											\
-			*(ptr*) res = (ptr) ATOMnil(t);								\
+			*(ptr*) res = (ptr) ATOMnil(t);							\
 			if ( *(ptr *) res == NULL)									\
 				throw(MAL,"txtsim", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 		} else {														\
 			memcpy(res, ATOMnilptr(t), ATOMsize(t));					\
 		}																\
-		return MAL_SUCCEED;												\
+		return MAL_SUCCEED;											\
 	}
 
-/* =========================================================================
- * LEVENSH?TEIN FUNCTION
- * Source:
- * http://www.merriampark.com/ld.htm
- * =========================================================================
+/**
+ * levenshtein_distance - levenshtein distance, iterative with one row
+ * @res: result pointer
+ * @X: Pointer to a string
+ * @Y: Pointer to another string
+ * @insdel_cost: cost of char insertion/deletion
+ * @replace_cost: cost of char replace
  */
+static inline str
+levenshtein(int *res, const str *X, const str *Y, int insdel_cost, int replace_cost)
+{
+	str x = *X, y = *Y;
+	UTF8_assert(x); UTF8_assert(y);
+	int xlen = UTF8_strlen(x), ylen = UTF8_strlen(y);
+	int i = 1, j = 1, cx = 0, cy = 0, indicator = 0,
+		last_diagonal = 0, old_diagonal = 0;
+		/* previous_diagonal = 0, previous_above = 0; */
 
-#define MYMIN(x,y) ( (x<y) ? x : y )
-#define SMALLEST_OF(x,y,z) ( MYMIN(MYMIN(x,y),z) )
-#define SMALLEST_OF4(x,y,z,z2) ( MYMIN(MYMIN(MYMIN(x,y),z),z2) )
+	if (xlen == ylen && (strcmp(x, y) == 0))
+		return MAL_SUCCEED;
 
-/***************************************************
- * Get a pointer to the specified cell of the matrix
- **************************************************/
+	int *editdist = GDKmalloc((ylen + 1) * sizeof(unsigned int));
+
+	for (i = 0; i <= ylen; i++)
+		editdist[i] = i;
+
+	while (*x) {
+		editdist[0] = i;
+		UTF8_GETCHAR(cx, x);
+		while (*y) {
+			UTF8_GETCHAR(cy, y);
+			indicator = cx == cy ? 0 : replace_cost;
+			old_diagonal = editdist[j];
+			editdist[j] = MIN3(editdist[j] + insdel_cost,
+							   editdist[j-1] + insdel_cost,
+							   last_diagonal + indicator);
+			last_diagonal = old_diagonal;
+			j++;
+		}
+		i++;
+	}
+
+	*res = editdist[ylen];
+	GDKfree(editdist);
+	return MAL_SUCCEED;
+ illegal:
+	/* UTF8_GETCHAR bail */
+	GDKfree(editdist);
+	throw(MAL, "txtsim.levenshtein", "Illegal unicode code point");
+}
 
 static inline int *
-levenshtein_GetCellPointer(int *pOrigin, int col, int row, int nCols)
+damerau_get_cellpointer(int *pOrigin, int col, int row, int nCols)
 {
 	return pOrigin + col + (row * (nCols + 1));
 }
 
-/******************************************************
- * Get the contents of the specified cell in the matrix
- *****************************************************/
-
 static inline int
-levenshtein_GetAt(int *pOrigin, int col, int row, int nCols)
+damerau_getat(int *pOrigin, int col, int row, int nCols)
 {
 	int *pCell;
-
-	pCell = levenshtein_GetCellPointer(pOrigin, col, row, nCols);
+	pCell = damerau_get_cellpointer(pOrigin, col, row, nCols);
 	return *pCell;
-
 }
 
-/********************************************************
- * Fill the specified cell in the matrix with the value x
- *******************************************************/
-
 static inline void
-levenshtein_PutAt(int *pOrigin, int col, int row, int nCols, int x)
+damerau_putat(int *pOrigin, int col, int row, int nCols, int x)
 {
 	int *pCell;
-
-	pCell = levenshtein_GetCellPointer(pOrigin, col, row, nCols);
+	pCell = damerau_get_cellpointer(pOrigin, col, row, nCols);
 	*pCell = x;
 }
 
-
-/******************************
- * Compute Levenshtein distance
- *****************************/
+/**
+ * damerau_levenshtein - Damerau-Levenshtein distance, iterative with full matrix
+ * @res: result pointer
+ * @S: Pointer to a string
+ * @T: Pointer to another string
+ * @insdel_cost: cost of char insertion/deletion
+ * @replace_cost: cost of char replace
+ * @transpose_cos: cost of transpose chars
+ */
 static str
-levenshtein_impl(int *result, str *S, str *T, int *insdel_cost, int *replace_cost, int *transpose_cost)
+damerau_levenshtein(int *res, str *S, str *T, int insdel_cost, int replace_cost, int transpose_cost)
 {
 	char *s = *S;
 	char *t = *T;
-	int *d;			/* pointer to matrix */
+	int *d;		/* pointer to matrix */
 	int n;			/* length of s */
 	int m;			/* length of t */
 	int i;			/* iterates through s */
@@ -101,7 +161,7 @@ levenshtein_impl(int *result, str *S, str *T, int *insdel_cost, int *replace_cos
 	int diag2 = 0, cost2 = 0;
 
 	if (strNil(*S) || strNil(*T)) {
-		*result = int_nil;
+		*res = int_nil;
 		return MAL_SUCCEED;
 	}
 
@@ -109,11 +169,11 @@ levenshtein_impl(int *result, str *S, str *T, int *insdel_cost, int *replace_cos
 	n = (int) strlen(s);	/* 64bit: assume strings are less than 2 GB */
 	m = (int) strlen(t);
 	if (n == 0) {
-		*result = m;
+		*res = m;
 		return MAL_SUCCEED;
 	}
 	if (m == 0) {
-		*result = n;
+		*res = n;
 		return MAL_SUCCEED;
 	}
 	sz = (n + 1) * (m + 1) * sizeof(int);
@@ -123,89 +183,113 @@ levenshtein_impl(int *result, str *S, str *T, int *insdel_cost, int *replace_cos
 
 	/* Step 2 */
 	for (i = 0; i <= n; i++) {
-		levenshtein_PutAt(d, i, 0, n, i);
+		damerau_putat(d, i, 0, n, i);
 	}
-
 	for (j = 0; j <= m; j++) {
-		levenshtein_PutAt(d, 0, j, n, j);
+		damerau_putat(d, 0, j, n, j);
 	}
-
 	/* Step 3 */
 	for (i = 1; i <= n; i++) {
-
 		s_i = s[i - 1];
-
 		/* Step 4 */
 		for (j = 1; j <= m; j++) {
-
 			t_j = t[j - 1];
-
 			/* Step 5 */
 			if (s_i == t_j) {
 				cost = 0;
 			} else {
-				cost = *replace_cost;
+				cost = replace_cost;
 			}
-
 			/* Step 6 */
-			above = levenshtein_GetAt(d, i - 1, j, n);
-			left = levenshtein_GetAt(d, i, j - 1, n);
-			diag = levenshtein_GetAt(d, i - 1, j - 1, n);
-
+			above = damerau_getat(d, i - 1, j, n);
+			left = damerau_getat(d, i, j - 1, n);
+			diag = damerau_getat(d, i - 1, j - 1, n);
 			if (j >= 2 && i >= 2) {
 				/* NEW: detect transpositions */
-
-				diag2 = levenshtein_GetAt(d, i - 2, j - 2, n);
+				diag2 = damerau_getat(d, i - 2, j - 2, n);
 				if (s[i - 2] == t[j - 1] && s[i - 1] == t[j - 2]) {
-					cost2 = *transpose_cost;
+					cost2 = transpose_cost;
 				} else {
 					cost2 = 2;
 				}
-				cell = SMALLEST_OF4(above + *insdel_cost, left + *insdel_cost, diag + cost, diag2 + cost2);
+				cell = MIN4(above + insdel_cost, left + insdel_cost, diag + cost, diag2 + cost2);
 			} else {
-				cell = SMALLEST_OF(above + *insdel_cost, left + *insdel_cost, diag + cost);
+				cell = MIN3(above + insdel_cost, left + insdel_cost, diag + cost);
 			}
-			levenshtein_PutAt(d, i, j, n, cell);
+			damerau_putat(d, i, j, n, cell);
 		}
 	}
-
 	/* Step 7 */
-	*result = levenshtein_GetAt(d, n, m, n);
+	*res = damerau_getat(d, n, m, n);
 	GDKfree(d);
 	return MAL_SUCCEED;
 }
 
 static str
-levenshteinbasic_impl(int *result, str *s, str *t)
+damerau_levenshtein1(int *result, str *s, str *t)
 {
-	int insdel = 1, replace = 1, transpose = 2;
-
-	return levenshtein_impl(result, s, t, &insdel, &replace, &transpose);
+	return damerau_levenshtein(result, s, t, 1, 1, 2);
 }
 
 static str
-levenshteinbasic2_impl(int *result, str *s, str *t)
+damerau_levenshtein2(int *result, str *s, str *t)
 {
-	int insdel = 1, replace = 1, transpose = 1;
-
-	return levenshtein_impl(result, s, t, &insdel, &replace, &transpose);
+	return damerau_levenshtein(result, s, t, 1, 1, 1);
 }
 
+static str
+damerau_levenshtein_distance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	int *res = getArgReference_int(stk, pci, 0);
+	str *X = getArgReference_str(stk, pci, 1), *Y = getArgReference_str(stk, pci, 2);
+	int insdel_cost, replace_cost, transpose_cost;
 
-/* =========================================================================
- * SOUNDEX FUNCTION
- * Source:
- * http://www.mit.edu/afs/sipb/service/rtfm/src/freeWAIS-sf-1.0/ir/soundex.c
- * =========================================================================
- */
+	assert(pci->argc == 3 || pci->argc == 6);
 
-#define SoundexLen 4		/* length of a soundex code */
-#define SoundexKey "Z000"	/* default key for soundex code */
+	if (pci->argc == 3) {
+		insdel_cost = 1;
+		replace_cost = 1;
+		transpose_cost = 2;
+	}
+	else {
+		insdel_cost = *getArgReference_int(stk, pci, 3);
+		replace_cost = *getArgReference_int(stk, pci, 4);
+		transpose_cost = *getArgReference_int(stk, pci, 5);
+	}
 
-/* set letter values */
-static const int Code[] = { 0, 1, 2, 3, 0, 1, 2, 0, 0, 2, 2, 4, 5, 5, 0,
-							1, 2, 6, 2, 3, 0, 1, 0, 2, 0, 2
-};
+	return damerau_levenshtein(res, X, Y, insdel_cost, replace_cost, transpose_cost);
+}
+
+static str
+levenshtein_distance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	int *res = getArgReference_int(stk, pci, 0);
+	str *X = getArgReference_str(stk, pci, 1), *Y = getArgReference_str(stk, pci, 2);
+	int insdel_cost, replace_cost;
+
+	if (pci->argc == 3) {
+		insdel_cost = 1;
+		replace_cost = 1;
+	}
+	else if (pci->argc == 5 || pci->argc == 6) {
+		insdel_cost = *getArgReference_int(stk, pci, 3);
+		replace_cost = *getArgReference_int(stk, pci, 4);
+		/* Backwards compatibility purposes */
+		if (pci->argc == 6) {
+			int transposition_cost = *getArgReference_int(stk, pci, 5);
+			return damerau_levenshtein(res, X, Y, insdel_cost, replace_cost, transposition_cost);
+		}
+	}
+	else {
+		throw(MAL, "txtsim.levenshtein", RUNTIME_SIGNATURE_MISSING);
+	}
+
+	return levenshtein(res, X, Y, insdel_cost, replace_cost);;
+}
 
 static inline char
 SCode(unsigned char c)
@@ -259,7 +343,7 @@ soundex_code(const char *Name, char *Key)
 }
 
 static str
-soundex_impl(str *res, str *Name)
+soundex(str *res, str *Name)
 {
 	str msg = MAL_SUCCEED;
 
@@ -280,20 +364,20 @@ soundex_impl(str *res, str *Name)
 }
 
 static str
-stringdiff_impl(int *res, str *s1, str *s2)
+stringdiff(int *res, str *s1, str *s2)
 {
 	str r = MAL_SUCCEED;
 	char *S1 = NULL, *S2 = NULL;
 
-	r = soundex_impl(&S1, s1);
+	r = soundex(&S1, s1);
 	if( r != MAL_SUCCEED)
 		return r;
-	r = soundex_impl(&S2, s2);
+	r = soundex(&S2, s2);
 	if( r != MAL_SUCCEED){
 		GDKfree(S1);
 		return r;
 	}
-	r = levenshteinbasic_impl(res, &S1, &S2);
+	r = damerau_levenshtein1(res, &S1, &S2);
 	GDKfree(S1);
 	GDKfree(S2);
 	return r;
@@ -311,7 +395,7 @@ stringdiff_impl(int *res, str *s1, str *s2)
  *
  *****************************/
 static str
-CMDqgramnormalize(str *res, str *Input)
+qgram_normalize(str *res, str *Input)
 {
 	char *input = *Input;
 	int i, j = 0;
@@ -340,16 +424,222 @@ CMDqgramnormalize(str *res, str *Input)
 	return MAL_SUCCEED;
 }
 
-/* =========================================================================
- * FSTRCMP FUNCTION
- * Source:
- * http://search.cpan.org/src/MLEHMANN/String-Similarity-1/fstrcmp.c
- * =========================================================================
- */
+static str
+qgram_selfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, flt *c, int *k)
+{
+	BAT *qgram, *id, *pos, *len;
+	BUN n;
+	BUN i, j;
+	BAT *bn, *bn2;
+	oid *qbuf;
+	int *ibuf;
+	int *pbuf;
+	int *lbuf;
+	str msg = MAL_SUCCEED;
 
-/*
- * Data on one input string being compared.
- */
+	qgram = BATdescriptor(*qid);
+	id = BATdescriptor(*bid);
+	pos = BATdescriptor(*pid);
+	len = BATdescriptor(*lid);
+	if (qgram == NULL || id == NULL || pos == NULL || len == NULL) {
+		BBPreclaim(qgram);
+		BBPreclaim(id);
+		BBPreclaim(pos);
+		BBPreclaim(len);
+		throw(MAL, "txtsim.qgramselfjoin", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+
+	BATiter qgrami = bat_iterator(qgram);
+	BATiter idi = bat_iterator(id);
+	BATiter posi = bat_iterator(pos);
+	BATiter leni = bat_iterator(len);
+	if (qgrami.type != TYPE_oid)
+		msg = createException(MAL, "txtsim.qgramselfjoin",
+							  SEMANTIC_TYPE_MISMATCH ": tail of BAT qgram must be oid");
+	else if (idi.type != TYPE_int)
+		msg = createException(MAL, "txtsim.qgramselfjoin",
+							  SEMANTIC_TYPE_MISMATCH ": tail of BAT id must be int");
+	else if (posi.type != TYPE_int)
+		msg = createException(MAL, "txtsim.qgramselfjoin",
+							  SEMANTIC_TYPE_MISMATCH ": tail of BAT pos must be int");
+	else if (leni.type != TYPE_int)
+		msg = createException(MAL, "txtsim.qgramselfjoin",
+							  SEMANTIC_TYPE_MISMATCH ": tail of BAT len must be int");
+	if (msg) {
+		bat_iterator_end(&qgrami);
+		bat_iterator_end(&idi);
+		bat_iterator_end(&posi);
+		bat_iterator_end(&leni);
+		BBPunfix(qgram->batCacheid);
+		BBPunfix(id->batCacheid);
+		BBPunfix(pos->batCacheid);
+		BBPunfix(len->batCacheid);
+		return msg;
+	}
+
+	n = BATcount(qgram);
+
+	/* if (BATcount(qgram)>1 && !qgrami.sorted) throw(MAL, "txtsim.qgramselfjoin", SEMANTIC_TYPE_MISMATCH); */
+
+	if (!ALIGNsynced(qgram, id))
+		msg = createException(MAL, "txtsim.qgramselfjoin",
+							  SEMANTIC_TYPE_MISMATCH ": qgram and id are not synced");
+
+	else if (!ALIGNsynced(qgram, pos))
+		msg = createException(MAL, "txtsim.qgramselfjoin",
+							  SEMANTIC_TYPE_MISMATCH ": qgram and pos are not synced");
+	else if (!ALIGNsynced(qgram, len))
+		msg = createException(MAL, "txtsim.qgramselfjoin",
+							  SEMANTIC_TYPE_MISMATCH ": qgram and len are not synced");
+
+	else if (qgrami.width != ATOMsize(qgrami.type))
+		msg = createException(MAL, "txtsim.qgramselfjoin",
+							  SEMANTIC_TYPE_MISMATCH ": qgram is not a true void bat");
+	else if (idi.width != ATOMsize(idi.type))
+		msg = createException(MAL, "txtsim.qgramselfjoin",
+							  SEMANTIC_TYPE_MISMATCH ": id is not a true void bat");
+
+	else if (posi.width != ATOMsize(posi.type))
+		msg = createException(MAL, "txtsim.qgramselfjoin",
+							  SEMANTIC_TYPE_MISMATCH ": pos is not a true void bat");
+	else if (leni.width != ATOMsize(leni.type))
+		msg = createException(MAL, "txtsim.qgramselfjoin",
+							  SEMANTIC_TYPE_MISMATCH ": len is not a true void bat");
+	if (msg) {
+		bat_iterator_end(&qgrami);
+		bat_iterator_end(&idi);
+		bat_iterator_end(&posi);
+		bat_iterator_end(&leni);
+		BBPunfix(qgram->batCacheid);
+		BBPunfix(id->batCacheid);
+		BBPunfix(pos->batCacheid);
+		BBPunfix(len->batCacheid);
+		return msg;
+	}
+
+	bn = COLnew(0, TYPE_int, n, TRANSIENT);
+	bn2 = COLnew(0, TYPE_int, n, TRANSIENT);
+	if (bn == NULL || bn2 == NULL){
+		bat_iterator_end(&qgrami);
+		bat_iterator_end(&idi);
+		bat_iterator_end(&posi);
+		bat_iterator_end(&leni);
+		BBPreclaim(bn);
+		BBPreclaim(bn2);
+		BBPunfix(qgram->batCacheid);
+		BBPunfix(id->batCacheid);
+		BBPunfix(pos->batCacheid);
+		BBPunfix(len->batCacheid);
+		throw(MAL, "txtsim.qgramselfjoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	qbuf = (oid *) qgrami.base;
+	ibuf = (int *) idi.base;
+	pbuf = (int *) posi.base;
+	lbuf = (int *) leni.base;
+	for (i = 0; i < n - 1; i++) {
+		for (j = i + 1; (j < n && qbuf[j] == qbuf[i] && pbuf[j] <= (pbuf[i] + (*k + *c * MIN(lbuf[i], lbuf[j])))); j++) {
+			if (ibuf[i] != ibuf[j] && abs(lbuf[i] - lbuf[j]) <= (*k + *c * MIN(lbuf[i], lbuf[j]))) {
+				if (BUNappend(bn, ibuf + i, false) != GDK_SUCCEED ||
+					BUNappend(bn2, ibuf + j, false) != GDK_SUCCEED) {
+					bat_iterator_end(&qgrami);
+					bat_iterator_end(&idi);
+					bat_iterator_end(&posi);
+					bat_iterator_end(&leni);
+					BBPunfix(qgram->batCacheid);
+					BBPunfix(id->batCacheid);
+					BBPunfix(pos->batCacheid);
+					BBPunfix(len->batCacheid);
+					BBPreclaim(bn);
+					BBPreclaim(bn2);
+					throw(MAL, "txtsim.qgramselfjoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+			}
+		}
+	}
+	bat_iterator_end(&qgrami);
+	bat_iterator_end(&idi);
+	bat_iterator_end(&posi);
+	bat_iterator_end(&leni);
+
+	BBPunfix(qgram->batCacheid);
+	BBPunfix(id->batCacheid);
+	BBPunfix(pos->batCacheid);
+	BBPunfix(len->batCacheid);
+
+	*res1 = bn->batCacheid;
+	BBPkeepref(bn);
+	*res2 = bn2->batCacheid;
+	BBPkeepref(bn2);
+
+	return MAL_SUCCEED;
+}
+
+/* copy up to utf8len UTF-8 encoded characters from src to buf
+ * stop early if buf (size given by bufsize) is too small, or if src runs out
+ * return number of UTF-8 characters copied (excluding NUL)
+ * close with NUL if enough space */
+static size_t
+utf8strncpy(char *buf, size_t bufsize, const char *src, size_t utf8len)
+{
+	size_t cnt = 0;
+
+	while (utf8len != 0 && *src != 0 && bufsize != 0) {
+		bufsize--;
+		utf8len--;
+		cnt++;
+		if (((*buf++ = *src++) & 0x80) != 0) {
+			while ((*src & 0xC0) == 0x80 && bufsize != 0) {
+				*buf++ = *src++;
+				bufsize--;
+			}
+		}
+	}
+	if (bufsize != 0)
+		*buf = 0;
+	return cnt;
+}
+
+static str
+str_2_qgrams(bat *ret, str *val)
+{
+	BAT *bn;
+	size_t i, len = strlen(*val) + 5;
+	str s = GDKmalloc(len);
+	char qgram[4 * 6 + 1];		/* 4 UTF-8 code points plus NULL byte */
+
+	if (s == NULL)
+		throw(MAL, "txtsim.str2qgram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	strcpy(s, "##");
+	strcpy(s + 2, *val);
+	strcpy(s + len - 3, "$$");
+	bn = COLnew(0, TYPE_str, (BUN) strlen(*val), TRANSIENT);
+	if (bn == NULL) {
+		GDKfree(s);
+		throw(MAL, "txtsim.str2qgram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	i = 0;
+	while (s[i]) {
+		if (utf8strncpy(qgram, sizeof(qgram), s + i, 4) < 4)
+			break;
+		if (BUNappend(bn, qgram, false) != GDK_SUCCEED) {
+			BBPreclaim(bn);
+			GDKfree(s);
+			throw(MAL, "txtsim.str2qgram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		if ((s[i++] & 0xC0) == 0xC0) {
+			while ((s[i] & 0xC0) == 0x80)
+				i++;
+		}
+	}
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
+	GDKfree(s);
+	return MAL_SUCCEED;
+}
+
+/* DEPRECATED (see DEPRECATED_END) */
 struct string_data {
 	/* The string to be compared. */
 	const char *data;
@@ -652,38 +942,6 @@ compareseq(int xoff, int xlim, int yoff, int ylim, int minimal, int max_edits, i
 	}
 }
 
-/* NAME
-   fstrcmp - fuzzy string compare
-
-   SYNOPSIS
-   double fstrcmp(const char *s1, int l1, const char *s2, int l2, double);
-
-   DESCRIPTION
-   The fstrcmp function may be used to compare two string for
-   similarity.  It is very useful in reducing "cascade" or
-   "secondary" errors in compilers or other situations where
-   symbol tables occur.
-
-   RETURNS
-   double; 0 if the strings are entirly dissimilar, 1 if the
-   strings are identical, and a number in between if they are
-   similar.  */
-
-#define INITIAL_INT_BUFFER_LENGTH 2048
-
-#define CHECK_INT_BUFFER_LENGTH(BUFFER, BUFFER_LEN, NEXT_LEN, OP)		\
-	do {																\
-		if ((NEXT_LEN) > *BUFFER_LEN) {									\
-			size_t newlen = (((NEXT_LEN) + 1023) & ~1023); /* align to a multiple of 1024 bytes */ \
-			int *newbuf = GDKmalloc(newlen);							\
-			if (!newbuf)												\
-				throw(MAL, OP, SQLSTATE(HY013) MAL_MALLOC_FAIL);		\
-			GDKfree(*BUFFER);											\
-			*BUFFER = newbuf;											\
-			*BUFFER_LEN = newlen;										\
-		}																\
-	} while (0)
-
 static str
 fstrcmp_impl_internal(dbl *ret, int **fdiag_buf, size_t *fdiag_buflen, const char *string1, const char *string2, dbl minimum)
 {
@@ -843,239 +1101,25 @@ fstrcmp0_impl_bulk(bat *res, bat *strings1, bat *strings2)
 	BBPreclaim(right);
 	return msg;
 }
-
-
-/* ============ Q-GRAM SELF JOIN ============== */
-
-static str
-CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, flt *c, int *k)
-{
-	BAT *qgram, *id, *pos, *len;
-	BUN n;
-	BUN i, j;
-	BAT *bn, *bn2;
-	oid *qbuf;
-	int *ibuf;
-	int *pbuf;
-	int *lbuf;
-	str msg = MAL_SUCCEED;
-
-	qgram = BATdescriptor(*qid);
-	id = BATdescriptor(*bid);
-	pos = BATdescriptor(*pid);
-	len = BATdescriptor(*lid);
-	if (qgram == NULL || id == NULL || pos == NULL || len == NULL) {
-		BBPreclaim(qgram);
-		BBPreclaim(id);
-		BBPreclaim(pos);
-		BBPreclaim(len);
-		throw(MAL, "txtsim.qgramselfjoin", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-
-	BATiter qgrami = bat_iterator(qgram);
-	BATiter idi = bat_iterator(id);
-	BATiter posi = bat_iterator(pos);
-	BATiter leni = bat_iterator(len);
-	if (qgrami.type != TYPE_oid)
-		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": tail of BAT qgram must be oid");
-	else if (idi.type != TYPE_int)
-		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": tail of BAT id must be int");
-	else if (posi.type != TYPE_int)
-		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": tail of BAT pos must be int");
-	else if (leni.type != TYPE_int)
-		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": tail of BAT len must be int");
-	if (msg) {
-		bat_iterator_end(&qgrami);
-		bat_iterator_end(&idi);
-		bat_iterator_end(&posi);
-		bat_iterator_end(&leni);
-		BBPunfix(qgram->batCacheid);
-		BBPunfix(id->batCacheid);
-		BBPunfix(pos->batCacheid);
-		BBPunfix(len->batCacheid);
-		return msg;
-	}
-
-	n = BATcount(qgram);
-
-	/* if (BATcount(qgram)>1 && !qgrami.sorted) throw(MAL, "tstsim.qgramselfjoin", SEMANTIC_TYPE_MISMATCH); */
-
-	if (!ALIGNsynced(qgram, id))
-		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": qgram and id are not synced");
-
-	else if (!ALIGNsynced(qgram, pos))
-		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": qgram and pos are not synced");
-	else if (!ALIGNsynced(qgram, len))
-		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": qgram and len are not synced");
-
-	else if (qgrami.width != ATOMsize(qgrami.type))
-		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": qgram is not a true void bat");
-	else if (idi.width != ATOMsize(idi.type))
-		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": id is not a true void bat");
-
-	else if (posi.width != ATOMsize(posi.type))
-		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": pos is not a true void bat");
-	else if (leni.width != ATOMsize(leni.type))
-		msg = createException(MAL, "tstsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": len is not a true void bat");
-	if (msg) {
-		bat_iterator_end(&qgrami);
-		bat_iterator_end(&idi);
-		bat_iterator_end(&posi);
-		bat_iterator_end(&leni);
-		BBPunfix(qgram->batCacheid);
-		BBPunfix(id->batCacheid);
-		BBPunfix(pos->batCacheid);
-		BBPunfix(len->batCacheid);
-		return msg;
-	}
-
-	bn = COLnew(0, TYPE_int, n, TRANSIENT);
-	bn2 = COLnew(0, TYPE_int, n, TRANSIENT);
-	if (bn == NULL || bn2 == NULL){
-		bat_iterator_end(&qgrami);
-		bat_iterator_end(&idi);
-		bat_iterator_end(&posi);
-		bat_iterator_end(&leni);
-		BBPreclaim(bn);
-		BBPreclaim(bn2);
-		BBPunfix(qgram->batCacheid);
-		BBPunfix(id->batCacheid);
-		BBPunfix(pos->batCacheid);
-		BBPunfix(len->batCacheid);
-		throw(MAL, "txtsim.qgramselfjoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	qbuf = (oid *) qgrami.base;
-	ibuf = (int *) idi.base;
-	pbuf = (int *) posi.base;
-	lbuf = (int *) leni.base;
-	for (i = 0; i < n - 1; i++) {
-		for (j = i + 1; (j < n && qbuf[j] == qbuf[i] && pbuf[j] <= (pbuf[i] + (*k + *c * MYMIN(lbuf[i], lbuf[j])))); j++) {
-			if (ibuf[i] != ibuf[j] && abs(lbuf[i] - lbuf[j]) <= (*k + *c * MYMIN(lbuf[i], lbuf[j]))) {
-				if (BUNappend(bn, ibuf + i, false) != GDK_SUCCEED ||
-					BUNappend(bn2, ibuf + j, false) != GDK_SUCCEED) {
-					bat_iterator_end(&qgrami);
-					bat_iterator_end(&idi);
-					bat_iterator_end(&posi);
-					bat_iterator_end(&leni);
-					BBPunfix(qgram->batCacheid);
-					BBPunfix(id->batCacheid);
-					BBPunfix(pos->batCacheid);
-					BBPunfix(len->batCacheid);
-					BBPreclaim(bn);
-					BBPreclaim(bn2);
-					throw(MAL, "txtsim.qgramselfjoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				}
-			}
-		}
-	}
-	bat_iterator_end(&qgrami);
-	bat_iterator_end(&idi);
-	bat_iterator_end(&posi);
-	bat_iterator_end(&leni);
-
-	BBPunfix(qgram->batCacheid);
-	BBPunfix(id->batCacheid);
-	BBPunfix(pos->batCacheid);
-	BBPunfix(len->batCacheid);
-
-	*res1 = bn->batCacheid;
-	BBPkeepref(bn);
-	*res2 = bn2->batCacheid;
-	BBPkeepref(bn2);
-
-	return MAL_SUCCEED;
-}
-
-/* copy up to utf8len UTF-8 encoded characters from src to buf
- * stop early if buf (size given by bufsize) is too small, or if src runs out
- * return number of UTF-8 characters copied (excluding NUL)
- * close with NUL if enough space */
-static size_t
-utf8strncpy(char *buf, size_t bufsize, const char *src, size_t utf8len)
-{
-	size_t cnt = 0;
-
-	while (utf8len != 0 && *src != 0 && bufsize != 0) {
-		bufsize--;
-		utf8len--;
-		cnt++;
-		if (((*buf++ = *src++) & 0x80) != 0) {
-			while ((*src & 0xC0) == 0x80 && bufsize != 0) {
-				*buf++ = *src++;
-				bufsize--;
-			}
-		}
-	}
-	if (bufsize != 0)
-		*buf = 0;
-	return cnt;
-}
-
-static str
-CMDstr2qgrams(bat *ret, str *val)
-{
-	BAT *bn;
-	size_t i, len = strlen(*val) + 5;
-	str s = GDKmalloc(len);
-	char qgram[4 * 6 + 1];		/* 4 UTF-8 code points plus NULL byte */
-
-	if (s == NULL)
-		throw(MAL, "txtsim.str2qgram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	strcpy(s, "##");
-	strcpy(s + 2, *val);
-	strcpy(s + len - 3, "$$");
-	bn = COLnew(0, TYPE_str, (BUN) strlen(*val), TRANSIENT);
-	if (bn == NULL) {
-		GDKfree(s);
-		throw(MAL, "txtsim.str2qgram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	i = 0;
-	while (s[i]) {
-		if (utf8strncpy(qgram, sizeof(qgram), s + i, 4) < 4)
-			break;
-		if (BUNappend(bn, qgram, false) != GDK_SUCCEED) {
-			BBPreclaim(bn);
-			GDKfree(s);
-			throw(MAL, "txtsim.str2qgram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		if ((s[i++] & 0xC0) == 0xC0) {
-			while ((s[i] & 0xC0) == 0x80)
-				i++;
-		}
-	}
-	*ret = bn->batCacheid;
-	BBPkeepref(bn);
-	GDKfree(s);
-	return MAL_SUCCEED;
-}
+/* DEPRECATED_END */
 
 #include "mel.h"
 mel_func txtsim_init_funcs[] = {
-	command("txtsim", "levenshtein", levenshtein_impl, false, "Calculates Levenshtein distance (edit distance) between two strings, variable operation costs (ins/del, replacement, transposition)", args(1,6, arg("",int),arg("s",str),arg("t",str),arg("insdel_cost",int),arg("replace_cost",int),arg("transpose_cost",int))),
-	command("txtsim", "levenshtein", levenshteinbasic_impl, false, "Calculates Levenshtein distance (edit distance) between two strings", args(1,3, arg("",int),arg("s",str),arg("t",str))),
-	command("txtsim", "editdistance", levenshteinbasic_impl, false, "Alias for Levenshtein(str,str)", args(1,3, arg("",int),arg("s",str),arg("t",str))),
-	command("txtsim", "editdistance2", levenshteinbasic2_impl, false, "Calculates Levenshtein distance (edit distance) between two strings. Cost of transposition is 1 instead of 2", args(1,3, arg("",int),arg("s",str),arg("t",str))),
-	command("txtsim", "similarity", fstrcmp_impl, false, "Normalized edit distance between two strings", args(1,4, arg("",dbl),arg("string1",str),arg("string2",str),arg("minimum",dbl))),
-	command("txtsim", "similarity", fstrcmp0_impl, false, "Normalized edit distance between two strings", args(1,3, arg("",dbl),arg("string1",str),arg("string2",str))),
-	command("battxtsim", "similarity", fstrcmp0_impl_bulk, false, "Normalized edit distance between two strings", args(1,3, batarg("",dbl),batarg("string1",str),batarg("string2",str))),
-	command("txtsim", "soundex", soundex_impl, false, "Soundex function for phonetic matching", args(1,2, arg("",str),arg("name",str))),
-	command("txtsim", "stringdiff", stringdiff_impl, false, "calculate the soundexed editdistance", args(1,3, arg("",int),arg("s1",str),arg("s2",str))),
-	command("txtsim", "qgramnormalize", CMDqgramnormalize, false, "'Normalizes' strings (eg. toUpper and replaces non-alphanumerics with one space", args(1,2, arg("",str),arg("input",str))),
-	command("txtsim", "qgramselfjoin", CMDqgramselfjoin, false, "QGram self-join on ordered(!) qgram tables and sub-ordered q-gram positions", args(2,8, batarg("",int),batarg("",int),batarg("qgram",oid),batarg("id",oid),batarg("pos",int),batarg("len",int),arg("c",flt),arg("k",int))),
-	command("txtsim", "str2qgrams", CMDstr2qgrams, false, "Break the string into 4-grams", args(1,2, batarg("",str),arg("s",str))),
+	pattern("txtsim", "levenshtein", levenshtein_distance, false, "Calculates Levenshtein distance between two strings", args(1,3,arg("",int),arg("s",str),arg("t",str))),
+	pattern("txtsim", "levenshtein", levenshtein_distance, false, "Calculates Levenshtein distance between two strings, variable operation costs (ins/del, replacement)", args(1,5,arg("",int),arg("x",str),arg("y",str),arg("insdel_cost",int),arg("replace_cost",int))),
+	pattern("txtsim", "levenshtein", levenshtein_distance, false, "(Backwards compatibility purposes) Calculates Damerau-Levenshtein distance between two strings, variable operation costs (ins/del, replacement, transposition)", args(1,6,arg("",int),arg("x",str),arg("y",str),arg("insdel_cost",int),arg("replace_cost",int),arg("transpose_cost",int))),
+	pattern("txtsim", "damerau_levenshtein", damerau_levenshtein_distance, false, "Calculates Damerau-Levenshtein distance between two strings, variable operation costs (ins/del, replacement, transposition)", args(1,3,arg("",int),arg("x",str),arg("y",str))),
+	pattern("txtsim", "damerau_levenshtein", damerau_levenshtein_distance, false, "Calculates Damerau-Levenshtein distance between two strings, variable operation costs (ins/del, replacement, transposition)", args(1,6,arg("",int),arg("x",str),arg("y",str),arg("insdel_cost",int),arg("replace_cost",int),arg("transpose_cost",int))),
+	command("txtsim", "editdistance", damerau_levenshtein1, false, "Alias for Damerau-Levenshtein(str,str), insdel cost = 1, replace cost = 1 and transpose = 2", args(1,3, arg("",int),arg("s",str),arg("t",str))),
+	command("txtsim", "editdistance2", damerau_levenshtein2, false, "Alias for Damerau-Levenshtein(str,str), insdel cost = 1, replace cost = 1 and transpose = 1", args(1,3, arg("",int),arg("s",str),arg("t",str))),
+	command("txtsim", "soundex", soundex, false, "Soundex function for phonetic matching", args(1,2, arg("",str),arg("name",str))),
+	command("txtsim", "stringdiff", stringdiff, false, "calculate the soundexed editdistance", args(1,3, arg("",int),arg("s1",str),arg("s2",str))),
+	command("txtsim", "qgramnormalize", qgram_normalize, false, "'Normalizes' strings (eg. toUpper and replaces non-alphanumerics with one space", args(1,2, arg("",str),arg("input",str))),
+	command("txtsim", "qgramselfjoin", qgram_selfjoin, false, "QGram self-join on ordered(!) qgram tables and sub-ordered q-gram positions", args(2,8, batarg("",int),batarg("",int),batarg("qgram",oid),batarg("id",oid),batarg("pos",int),batarg("len",int),arg("c",flt),arg("k",int))),
+	command("txtsim", "str2qgrams", str_2_qgrams, false, "Break the string into 4-grams", args(1,2, batarg("",str),arg("s",str))),
+	command("txtsim", "similarity", fstrcmp_impl, false, "(Deprecated) Normalized edit distance between two strings", args(1,4, arg("",dbl),arg("string1",str),arg("string2",str),arg("minimum",dbl))),
+	command("txtsim", "similarity", fstrcmp0_impl, false, "(Deprecated) Normalized edit distance between two strings", args(1,3, arg("",dbl),arg("string1",str),arg("string2",str))),
+	command("battxtsim", "similarity", fstrcmp0_impl_bulk, false, "(Deprecated) Normalized edit distance between two strings", args(1,3, batarg("",dbl),batarg("string1",str),batarg("string2",str))),
 	{ .imp=NULL }
 };
 #include "mal_import.h"
