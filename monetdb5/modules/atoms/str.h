@@ -15,6 +15,110 @@
 #include "mal_exception.h"
 #include <ctype.h>
 
+/* Get the last char in (X2), and #bytes it takes, but do not decrease
+ * the pos in (X2).  See gdk_atoms.c for UTF-8 encoding */
+#define UTF8_LASTCHAR(X1, SZ, X2, SZ2)				\
+	do {											\
+		if (((X2)[SZ2-1] & 0x80) == 0) {			\
+			(X1) = (X2)[SZ2-1];					\
+			(SZ) = 1;								\
+		} else if (((X2)[SZ2-2] & 0xE0) == 0xC0) {	\
+			(X1)  = ((X2)[SZ2-2] & 0x1F) << 6;		\
+			(X1) |= ((X2)[SZ2-1] & 0x3F);			\
+			(SZ) = 2;								\
+		} else if (((X2)[SZ2-3] & 0xF0) == 0xE0) {	\
+			(X1)  = ((X2)[SZ2-3] & 0x0F) << 12;	\
+			(X1) |= ((X2)[SZ2-2] & 0x3F) << 6;		\
+			(X1) |= ((X2)[SZ2-1] & 0x3F);			\
+			(SZ) = 3;								\
+		} else if (((X2)[SZ2-4] & 0xF8) == 0xF0) {	\
+			(X1)  = ((X2)[SZ2-4] & 0x07) << 18;	\
+			(X1) |= ((X2)[SZ2-3] & 0x3F) << 12;	\
+			(X1) |= ((X2)[SZ2-2] & 0x3F) << 6;		\
+			(X1) |= ((X2)[SZ2-1] & 0x3F);			\
+			(SZ) = 4;								\
+		} else {									\
+			(X1) = int_nil;						\
+			(SZ) = 0;								\
+		}											\
+	} while (0)
+
+/* Get the first char in (X2), and #bytes it takes, but do not
+ * increase the pos in (X2) */
+#define UTF8_NEXTCHAR(X1, SZ, X2)				\
+	do {										\
+		if (((X2)[0] & 0x80) == 0) {			\
+			(X1) = (X2)[0];					\
+			(SZ) = 1;							\
+		} else if (((X2)[0] & 0xE0) == 0xC0) {	\
+			(X1)  = ((X2)[0] & 0x1F) << 6;		\
+			(X1) |= ((X2)[1] & 0x3F);			\
+			(SZ) = 2;							\
+		} else if (((X2)[0] & 0xF0) == 0xE0) {	\
+			(X1)  = ((X2)[0] & 0x0F) << 12;	\
+			(X1) |= ((X2)[1] & 0x3F) << 6;		\
+			(X1) |= ((X2)[2] & 0x3F);			\
+			(SZ) = 3;							\
+		} else if (((X2)[0] & 0xF8) == 0xF0) {	\
+			(X1)  = ((X2)[0] & 0x07) << 18;	\
+			(X1) |= ((X2)[1] & 0x3F) << 12;	\
+			(X1) |= ((X2)[2] & 0x3F) << 6;		\
+			(X1) |= ((X2)[3] & 0x3F);			\
+			(SZ) = 4;							\
+		} else {								\
+			(X1) = int_nil;					\
+			(SZ) = 0;							\
+		}										\
+	} while (0)
+
+#define UTF8_GETCHAR(X1, X2)											\
+	do {																\
+		if ((*(X2) & 0x80) == 0) {										\
+			(X1) = *(X2)++;											\
+		} else if ((*(X2) & 0xE0) == 0xC0) {							\
+			(X1)  = (*(X2)++ & 0x1F) << 6;								\
+			(X1) |= (*(X2)++ & 0x3F);									\
+		} else if ((*(X2) & 0xF0) == 0xE0) {							\
+			(X1)  = (*(X2)++ & 0x0F) << 12;							\
+			(X1) |= (*(X2)++ & 0x3F) << 6;								\
+			(X1) |= (*(X2)++ & 0x3F);									\
+		} else if ((*(X2) & 0xF8) == 0xF0) {							\
+			(X1)  = (*(X2)++ & 0x07) << 18;							\
+			(X1) |= (*(X2)++ & 0x3F) << 12;							\
+			(X1) |= (*(X2)++ & 0x3F) << 6;								\
+			(X1) |= (*(X2)++ & 0x3F);									\
+			if ((X1) > 0x10FFFF || ((X1) & 0x1FF800) == 0xD800)		\
+				goto illegal;											\
+		} else {														\
+			(X1) = int_nil;											\
+		}																\
+	} while (0)
+
+#define UTF8_PUTCHAR(X1, X2)											\
+	do {																\
+		if ((X1) < 0 || (X1) > 0x10FFFF || ((X1) & 0x1FF800) == 0xD800) { \
+			goto illegal;												\
+		} else if ((X1) <= 0x7F) {										\
+			*(X2)++ = (X1);											\
+		} else if ((X1) <= 0x7FF) {									\
+			*(X2)++ = 0xC0 | ((X1) >> 6);								\
+			*(X2)++ = 0x80 | ((X1) & 0x3F);							\
+		} else if ((X1) <= 0xFFFF) {									\
+			*(X2)++ = 0xE0 | ((X1) >> 12);								\
+			*(X2)++ = 0x80 | (((X1) >> 6) & 0x3F);						\
+			*(X2)++ = 0x80 | ((X1) & 0x3F);							\
+		} else {														\
+			*(X2)++ = 0xF0 | ((X1) >> 18);								\
+			*(X2)++ = 0x80 | (((X1) >> 12) & 0x3F);					\
+			*(X2)++ = 0x80 | (((X1) >> 6) & 0x3F);						\
+			*(X2)++ = 0x80 | ((X1) & 0x3F);							\
+		}																\
+	} while (0)
+
+#define UTF8_CHARLEN(UC) \
+	((UC) <= 0x7F ? 1 : (UC) <= 0x7FF ? 2 : (UC) <= 0xFFFF ? 3 : 4)
+//	(1 + ((UC) > 0x7F) + ((UC) > 0x7FF) + ((UC) > 0xFFFF))
+
 /* The batstr module functions use a single buffer to avoid malloc/free overhead.
    Note the buffer should be always large enough to hold null strings, so less testing will be required */
 #define INITIAL_STR_BUFFER_LENGTH (MAX(strlen(str_nil) + 1, 1024))

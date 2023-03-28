@@ -1540,7 +1540,10 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "qgramnormalize", "txtsim", "qgramnormalize", FALSE, FALSE, SCALE_NONE, 0, *t, 1, *t);
 
 		sql_create_func(sa, "levenshtein", "txtsim", "levenshtein", TRUE, FALSE, SCALE_FIX, 0, INT, 2, *t, *t);
+		sql_create_func(sa, "levenshtein", "txtsim", "levenshtein", TRUE, FALSE, SCALE_FIX, 0, INT, 4, *t, *t, INT, INT);
 		sql_create_func(sa, "levenshtein", "txtsim", "levenshtein", TRUE, FALSE, SCALE_FIX, 0, INT, 5, *t, *t, INT, INT, INT);
+		sql_create_func(sa, "damerau_levenshtein", "txtsim", "damerau_levenshtein", TRUE, FALSE, SCALE_FIX, 0, INT, 2, *t, *t, INT, INT, INT);
+		sql_create_func(sa, "damerau_levenshtein", "txtsim", "damerau_levenshtein", TRUE, FALSE, SCALE_FIX, 0, INT, 5, *t, *t, INT, INT, INT);
 	}
 	/* copyfrom fname (arg 12) */
 	f = sql_create_union(sa, "copyfrom", "sql", "copy_from", TRUE, SCALE_FIX, 0, TABLE, 12, PTR, STR, STR, STR, STR, STR, LNG, LNG, INT, STR, INT, INT);
