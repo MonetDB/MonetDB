@@ -100,55 +100,51 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		.batTransient = true,
 		.batRestricted = BAT_WRITE,
 	};
-	if (heapnames && (bn->theap = GDKmalloc(sizeof(Heap))) == NULL) {
-		GDKfree(bn);
-		return NULL;
-	}
 
-	/*
-	 * add to BBP
-	 */
-	if (BBPinsert(bn) == 0) {
-		GDKfree(bn->theap);
-		GDKfree(bn);
-		return NULL;
-	}
-	/*
-	 * fill in heap names, so HEAPallocs can resort to disk for
-	 * very large writes.
-	 */
 	if (heapnames) {
-		assert(bn->theap != NULL);
+		if ((bn->theap = GDKmalloc(sizeof(Heap))) == NULL) {
+			GDKfree(bn);
+			return NULL;
+		}
 		*bn->theap = (Heap) {
-			.parentid = bn->batCacheid,
 			.farmid = BBPselectfarm(role, bn->ttype, offheap),
 			.dirty = true,
 		};
 
-		const char *nme = BBP_physical(bn->batCacheid);
-		settailname(bn->theap, nme, tt, width);
-
 		if (ATOMneedheap(tt)) {
 			if ((bn->tvheap = GDKmalloc(sizeof(Heap))) == NULL) {
-				BBPclear(bn->batCacheid);
-				HEAPfree(bn->theap, true);
 				GDKfree(bn->theap);
 				GDKfree(bn);
 				return NULL;
 			}
 			*bn->tvheap = (Heap) {
-				.parentid = bn->batCacheid,
 				.farmid = BBPselectfarm(role, bn->ttype, varheap),
 				.dirty = true,
 			};
+		}
+	}
+	/*
+	 * add to BBP
+	 */
+	if (BBPinsert(bn) == 0) {
+		GDKfree(bn->tvheap);
+		GDKfree(bn->theap);
+		GDKfree(bn);
+		return NULL;
+	}
+	if (bn->theap) {
+		bn->theap->parentid = bn->batCacheid;
+		ATOMIC_INIT(&bn->theap->refs, 1);
+		const char *nme = BBP_physical(bn->batCacheid);
+		settailname(bn->theap, nme, tt, width);
+
+		if (bn->tvheap) {
+			bn->tvheap->parentid = bn->batCacheid;
 			ATOMIC_INIT(&bn->tvheap->refs, 1);
 			strconcat_len(bn->tvheap->filename,
 				      sizeof(bn->tvheap->filename),
 				      nme, ".theap", NULL);
 		}
-		ATOMIC_INIT(&bn->theap->refs, 1);
-	} else {
-		assert(bn->theap == NULL);
 	}
 	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "heaplock%d", bn->batCacheid); /* fits */
