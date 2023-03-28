@@ -179,7 +179,6 @@ mal_export ClientRec *mal_clients;
 
 mal_export Client  MCgetClient(int id);
 mal_export Client  MCinitClient(oid user, bstream *fin, stream *fout);
-mal_export Client  MCforkClient(Client father);
 mal_export void	   MCstopClients(Client c);
 mal_export int	   MCactiveClients(void);
 mal_export void    MCcloseClient(Client c);
