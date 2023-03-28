@@ -698,7 +698,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 		// if DELDIR directory does not exist, create it
 		deldirpath = GDKfilepath(0, NULL, TEMPDIR, NULL);
-		if (!deldirpath) {
+		if (deldirpath == NULL) {
 			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 			goto wrapup;
 		}

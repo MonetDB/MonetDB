@@ -1600,14 +1600,14 @@ BBPinit(void)
 
 		BBPtmlock();
 
-		if (!(bbpdirstr = GDKfilepath(0, BATDIR, "BBP", "dir"))) {
+		if ((bbpdirstr = GDKfilepath(0, BATDIR, "BBP", "dir")) == NULL) {
 			TRC_CRITICAL(GDK, "GDKmalloc failed\n");
 			BBPtmunlock();
 			GDKdebug = dbg;
 			return GDK_FAIL;
 		}
 
-		if (!(backupbbpdirstr = GDKfilepath(0, BAKDIR, "BBP", "dir"))) {
+		if ((backupbbpdirstr = GDKfilepath(0, BAKDIR, "BBP", "dir")) == NULL) {
 			GDKfree(bbpdirstr);
 			TRC_CRITICAL(GDK, "GDKmalloc failed\n");
 			BBPtmunlock();
@@ -1758,7 +1758,13 @@ BBPinit(void)
 	if (GDKinmemory(0)) {
 		needstrbatmove = NULL;
 	} else {
-		needstrbatmove = GDKfilepath(0, BATDIR, "needstrbatmove", NULL);
+		if ((needstrbatmove = GDKfilepath(0, BATDIR, "needstrbatmove", NULL)) == NULL) {
+#ifdef GDKLIBRARY_HASHASH
+			GDKfree(hashbats);
+#endif
+			GDKdebug = dbg;
+			return GDK_FAIL;
+		}
 		if (bbpversion <= GDKLIBRARY_TAILN) {
 			/* create signal file that we need to rename string
 			 * offset heaps */
@@ -3735,9 +3741,9 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 	int n = subcommit ? 0 : -1;
 	FILE *obbpf, *nbbpf;
 
-	if(!(bakdir = GDKfilepath(0, NULL, subcommit ? SUBDIR : BAKDIR, NULL)))
+	if ((bakdir = GDKfilepath(0, NULL, subcommit ? SUBDIR : BAKDIR, NULL)) == NULL)
 		return GDK_FAIL;
-	if(!(deldir = GDKfilepath(0, NULL, DELDIR, NULL))) {
+	if ((deldir = GDKfilepath(0, NULL, DELDIR, NULL)) == NULL) {
 		GDKfree(bakdir);
 		return GDK_FAIL;
 	}
@@ -3945,7 +3951,7 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 
 		strncpy(srcpath, name, len);
 		srcpath[len] = '\0';
-		if(!(dstpath = GDKfilepath(farmid, dstdir, srcpath, NULL))) {
+		if ((dstpath = GDKfilepath(farmid, dstdir, srcpath, NULL)) == NULL) {
 			return GDK_FAIL;
 		}
 
@@ -3962,7 +3968,7 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 
 		/* step 2: now remove the .kill file. This one is
 		 * crucial, otherwise we'll never finish recovering */
-		if(!(killfile = GDKfilepath(farmid, srcdir, name, NULL))) {
+		if ((killfile = GDKfilepath(farmid, srcdir, name, NULL)) == NULL) {
 			return GDK_FAIL;
 		}
 		if (MT_remove(killfile) != 0) {
@@ -3981,9 +3987,9 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 		GDKclrerr();
 		/* two legal possible causes: file exists or dir
 		 * doesn't exist */
-		if(!(dstpath = GDKfilepath(farmid, dstdir, name, NULL)))
+		if ((dstpath = GDKfilepath(farmid, dstdir, name, NULL)) == NULL)
 			return GDK_FAIL;
-		if(!(srcpath = GDKfilepath(farmid, srcdir, name, NULL))) {
+		if ((srcpath = GDKfilepath(farmid, srcdir, name, NULL)) == NULL) {
 			GDKfree(dstpath);
 			return GDK_FAIL;
 		}

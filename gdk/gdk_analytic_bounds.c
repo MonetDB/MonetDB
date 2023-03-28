@@ -116,20 +116,20 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 		ANALYTICAL_DIFF_IMP(hge);
 		break;
 #endif
-	case TYPE_flt: {
+	case TYPE_flt:
 		if (bi.nonil) {
 			ANALYTICAL_DIFF_IMP(flt);
 		} else { /* Because of NaN values, use this path */
 			ANALYTICAL_DIFF_FLOAT_IMP(flt);
 		}
-	} break;
-	case TYPE_dbl: {
+		break;
+	case TYPE_dbl:
 		if (bi.nonil) {
 			ANALYTICAL_DIFF_IMP(dbl);
 		} else { /* Because of NaN values, use this path */
 			ANALYTICAL_DIFF_FLOAT_IMP(dbl);
 		}
-	} break;
+		break;
 	default:{
 		const void *v = BUNtail(bi, 0), *next;
 		int (*atomcmp) (const void *, const void *) = ATOMcompare(tpe);
@@ -714,57 +714,57 @@ GDKanalyticalpeers(BAT *r, BAT *b, BAT *p, bool preceding) /* used in range when
 	bool last = false;
 
 	switch (ATOMbasetype(bi.type)) {
-	case TYPE_bte: {
+	case TYPE_bte:
 		if (preceding) {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_PRECEDING, bte, NO_NAN_CHECK);
 		} else {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_FOLLOWING, bte, NO_NAN_CHECK);
 		}
-	} break;
-	case TYPE_sht: {
+		break;
+	case TYPE_sht:
 		if (preceding) {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_PRECEDING, sht, NO_NAN_CHECK);
 		} else {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_FOLLOWING, sht, NO_NAN_CHECK);
 		}
-	} break;
-	case TYPE_int: {
+		break;
+	case TYPE_int:
 		if (preceding) {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_PRECEDING, int, NO_NAN_CHECK);
 		} else {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_FOLLOWING, int, NO_NAN_CHECK);
 		}
-	} break;
-	case TYPE_lng: {
+		break;
+	case TYPE_lng:
 		if (preceding) {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_PRECEDING, lng, NO_NAN_CHECK);
 		} else {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_FOLLOWING, lng, NO_NAN_CHECK);
 		}
-	} break;
+		break;
 #ifdef HAVE_HGE
-	case TYPE_hge: {
+	case TYPE_hge:
 		if (preceding) {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_PRECEDING, hge, NO_NAN_CHECK);
 		} else {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_FOLLOWING, hge, NO_NAN_CHECK);
 		}
-	} break;
+		break;
 #endif
-	case TYPE_flt: {
+	case TYPE_flt:
 		if (preceding) {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_PRECEDING, flt, && (!is_flt_nil(next) || !is_flt_nil(prev)));
 		} else {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_FOLLOWING, flt, && (!is_flt_nil(next) || !is_flt_nil(prev)));
 		}
-	} break;
-	case TYPE_dbl: {
+		break;
+	case TYPE_dbl:
 		if (preceding) {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_PRECEDING, dbl, && (!is_dbl_nil(next) || !is_dbl_nil(prev)));
 		} else {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_FOLLOWING, dbl, && (!is_dbl_nil(next) || !is_dbl_nil(prev)));
 		}
-	} break;
+		break;
 	default: {
 		const void *prev, *next;
 		int (*atomcmp) (const void *, const void *) = ATOMcompare(bi.type);
@@ -941,7 +941,8 @@ GDKanalyticalrowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict boun
 #else
 			limit = (lng) (*(lng *) bound);
 #endif
-		} break;
+			break;
+		}
 #ifdef HAVE_HGE
 		case TYPE_hge: {
 			hge nval = *(hge *) bound;
@@ -1386,7 +1387,8 @@ GDKanalyticalgroupsbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict b
 #else
 			limit = (lng) (*(lng *) bound);
 #endif
-		} break;
+			break;
+		}
 #ifdef HAVE_HGE
 		case TYPE_hge: {
 			hge nval = *(hge *) bound;
