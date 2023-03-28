@@ -314,7 +314,6 @@ DFLOWworker(void *T)
 		cntxt = ATOMIC_PTR_GET(&t->cntxt);
 		while (1) {
 			MT_thread_set_qry_ctx(NULL);
-			setClientContext(NULL);
 			if (fnxt == 0) {
 				MT_thread_setworking(NULL);
 				cntxt = ATOMIC_PTR_GET(&t->cntxt);
@@ -345,7 +344,6 @@ DFLOWworker(void *T)
 			flow = fe->flow;
 			assert(flow);
 			MT_thread_set_qry_ctx(flow->set_qry_ctx ? &flow->cntxt->qryctx : NULL);
-			setClientContext(flow->cntxt);
 
 			/* whenever we have a (concurrent) error, skip it */
 			if (ATOMIC_PTR_GET(&flow->error)) {
