@@ -47,12 +47,22 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mb->inlineProp)
 		goto wrapup;
 
+	limit = mb->stop;
+
+	for (i = 0; i < limit; i++) {
+		p = mb->stmt[i];
+		if (p && p->retc == 1 && getModuleId(p) == forRef && getFunctionId(p) == decompressRef) {
+			break;
+		}
+	}
+	if (i == limit)
+		goto wrapup;			/* nothing to do */
+
 	varisfor = GDKzalloc(2 * mb->vtop * sizeof(int));
 	varforvalue = GDKzalloc(2 * mb->vtop * sizeof(int));
 	if (varisfor == NULL || varforvalue == NULL)
 		goto wrapup;
 
-	limit = mb->stop;
 	slimit = mb->ssize;
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
