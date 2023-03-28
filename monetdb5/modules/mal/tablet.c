@@ -1060,7 +1060,6 @@ SQLworker(void *arg)
 	GDKclrerr();
 	task->errbuf = GDKerrbuf;
 	MT_thread_set_qry_ctx(task->set_qry_ctx ? &task->cntxt->qryctx : NULL);
-	setClientContext(task->cntxt);
 
 	MT_sema_down(&task->sema);
 	while (task->top[task->cur] >= 0) {
@@ -1112,7 +1111,6 @@ SQLworker(void *arg)
 	GDKfree(GDKerrbuf);
 	GDKsetbuf(NULL);
 	MT_thread_set_qry_ctx(NULL);
-	setClientContext(NULL);
 }
 
 static void
@@ -1227,7 +1225,6 @@ SQLproducer(void *p)
 	}
 
 	MT_thread_set_qry_ctx(task->set_qry_ctx ? &task->cntxt->qryctx : NULL);
-	setClientContext(task->cntxt);
 	rdfa = mkdfa((const unsigned char *) rsep, rseplen);
 	if (rdfa == NULL) {
 		tablet_error(task, lng_nil, lng_nil, int_nil, "cannot allocate memory", "");
@@ -1416,7 +1413,6 @@ SQLproducer(void *p)
 			if (cnt == task->maxrow) {
 				GDKfree(rdfa);
 				MT_thread_set_qry_ctx(NULL);
-				setClientContext(NULL);
 				return;
 			}
 		} else {
@@ -1430,7 +1426,6 @@ SQLproducer(void *p)
 				if (task->state == ENDOFCOPY) {
 					GDKfree(rdfa);
 					MT_thread_set_qry_ctx(NULL);
-					setClientContext(NULL);
 					return;
 				}
 			}
@@ -1453,7 +1448,6 @@ SQLproducer(void *p)
 /*				TRC_DEBUG(MAL_SERVER, "Producer delivered all\n");*/
 				GDKfree(rdfa);
 				MT_thread_set_qry_ctx(NULL);
-				setClientContext(NULL);
 				return;
 			}
 		}
@@ -1464,14 +1458,12 @@ SQLproducer(void *p)
 /*			TRC_DEBUG(MAL_SERVER, "Producer encountered eof\n");*/
 			GDKfree(rdfa);
 			MT_thread_set_qry_ctx(NULL);
-			setClientContext(NULL);
 			return;
 		}
 		/* consumers ask us to stop? */
 		if (task->state == ENDOFCOPY) {
 			GDKfree(rdfa);
 			MT_thread_set_qry_ctx(NULL);
-			setClientContext(NULL);
 			return;
 		}
 		bufcnt[cur] = cnt;
@@ -1487,7 +1479,6 @@ SQLproducer(void *p)
 	}
 	GDKfree(rdfa);
 	MT_thread_set_qry_ctx(NULL);
-	setClientContext(NULL);
 
 	return;
 
