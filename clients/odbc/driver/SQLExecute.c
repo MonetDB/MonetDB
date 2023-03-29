@@ -424,9 +424,6 @@ MNDBExecute(ODBCStmt *stmt)
 		return SQL_ERROR;
 	}
 
-	/* internal state correctness checks */
-	assert(stmt->State == PREPARED0 || stmt->State == EXECUTED0 || stmt->ImplRowDescr->descRec != NULL);
-
 	assert(stmt->Dbc);
 	assert(stmt->Dbc->mid);
 	hdl = stmt->hdl;

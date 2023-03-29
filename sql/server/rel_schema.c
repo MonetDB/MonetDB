@@ -1363,12 +1363,23 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		int res = LOG_OK;
 
 		if (tt == tt_remote) {
+			char *msg, *pwhash = NULL;
 			char *local_user = get_string_global_var(sql, "current_user");
 			char *local_table = sa_strconcat(sql->sa, sa_strconcat(sql->sa, s->base.name, "."), name);
 			if (!mapiuri_valid(loc))
 				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: incorrect uri '%s' for remote table '%s'", action, loc, name);
 
 			const char *remote_uri = mapiuri_uri(loc, sql->sa);
+			if (password == NULL && pw_encrypted == true) {
+				if((msg = AUTHgetPasswordHash(&pwhash, mal_clients+sql->clientid, local_user)) != MAL_SUCCEED) {
+					GDKfree(msg);
+					return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: missing password hash for user '%s'", action, local_user);
+				}
+				password = sa_strdup(sql->sa, pwhash);
+				GDKfree(pwhash);
+				if (!password)
+					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 			char *reg_credentials = AUTHaddRemoteTableCredentials(local_table, local_user, remote_uri, username, password, pw_encrypted);
 			if (reg_credentials != 0) {
 				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: cannot register credentials for remote table '%s' in vault: %s", action, name, reg_credentials);

@@ -906,7 +906,7 @@ la_apply(logger *lg, logaction *c, int tid)
 			ret = la_bat_destroy(lg, c, tid);
 		break;
 	default:
-		assert(0);
+		MT_UNREACHABLE();
 	}
 	return ret;
 }

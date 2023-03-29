@@ -218,7 +218,6 @@ MCexitClient(Client c)
 					  &(struct NonMalEvent)
 					  {CLIENT_END, c, Tend,  NULL, NULL, 0, Tend-(c->session)});
 	}
-	setClientContext(NULL);
 }
 
 static Client
@@ -303,12 +302,8 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 
 	MT_lock_set(&mal_contextLock);
 	c = MCnewClient();
-	if (c) {
-		Client c_old = setClientContext(c);
-		(void) c_old;
-		assert(NULL == c_old);
+	if (c)
 		c = MCinitClientRecord(c, user, fin, fout);
-	}
 	MT_lock_unset(&mal_contextLock);
 
 	if (c && profilerStatus > 0)
