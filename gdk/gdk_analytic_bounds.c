@@ -1160,7 +1160,7 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 				break;
 			}
 			default:
-				assert(0);
+				MT_UNREACHABLE();
 			}
 			if (is_lng_nil(limit) || limit < 0 || is_int_nil(int_limit) || int_limit < 0) {
 				goto invalid_bound;
@@ -1444,7 +1444,7 @@ GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict b
 	case 2:
 		return GDKanalyticalgroupsbounds(r, b, p, l, bound, tp2, preceding);
 	default:
-		assert(0);
+		MT_UNREACHABLE();
 	}
 	GDKerror("42000!unit type %d not supported (this is a bug).\n", unit);
 	return GDK_FAIL;

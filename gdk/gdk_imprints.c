@@ -124,15 +124,15 @@
 #define IMPRINTS_VERSION	2
 #define IMPRINTS_HEADER_SIZE	4 /* nr of size_t fields in header */
 
-#define BINSIZE(B, FUNC, T)			\
-	do {					\
-		switch (B) {			\
-		case 8: FUNC(T,8); break;	\
-		case 16: FUNC(T,16); break;	\
-		case 32: FUNC(T,32); break;	\
-		case 64: FUNC(T,64); break;	\
-		default: assert(0); break;	\
-		}				\
+#define BINSIZE(B, FUNC, T)				\
+	do {						\
+		switch (B) {				\
+		case 8: FUNC(T,8); break;		\
+		case 16: FUNC(T,16); break;		\
+		case 32: FUNC(T,32); break;		\
+		case 64: FUNC(T,64); break;		\
+		default: MT_UNREACHABLE(); break;	\
+		}					\
 	} while (0)
 
 
@@ -253,7 +253,7 @@ imprints_create(BAT *b, BATiter *bi, void *inbins, BUN *stats, bte bits,
 		break;
 	default:
 		/* should never reach here */
-		assert(0);
+		MT_UNREACHABLE();
 	}
 
 	*dictcnt = dcnt;
@@ -608,7 +608,7 @@ BATimprints(BAT *b)
 			break;
 		default:
 			/* should never reach here */
-			assert(0);
+			MT_UNREACHABLE();
 		}
 
 		imprints_create(b, &bi,
@@ -731,9 +731,7 @@ IMPSgetbin(int tpe, bte bits, const char *restrict inbins, const void *restrict 
 		break;
 	}
 	default:
-		assert(0);
-		(void) inbins;
-		break;
+		MT_UNREACHABLE();
 	}
 	return ret;
 }
