@@ -35,10 +35,6 @@ import signal
 import fnmatch
 import glob
 import pymonetdb # check for pymonetdb early: it is essential for our work
-try:
-    import winreg               # Python 3 on Windows
-except ImportError:
-    winreg = None               # not on Windows
 
 MonetDB_VERSION = '@MONETDB_VERSION@'.split('.')
 
