@@ -396,6 +396,7 @@ CONDITIONALS = {
     'HAVE_LIBSCIPY3'       : False,
     'HAVE_PERL'            : False,
     'HAVE_PHP'             : False,
+    'HAVE_PYODBC'          : False,
     'HAVE_PYTHON_LZ4'      : False, # module lz4 is available
     'HAVE_RUBY'            : False,
     'HAVE_CPP'             : False,
@@ -1978,7 +1979,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
     nomito = os.path.isfile(TST + '.nomito')
     user = None
     passwd = None
-
+    odbc = False                # whether to set up odbc.ini file
 
     os.chdir(TSTTRGDIR)
 
@@ -2086,6 +2087,8 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
                     reason = "as conditional '%s' does not hold." % cond
                 elem = SkipTest(env, TST, EXT, reason, length)
                 break
+            elif cond in ('HAVE_ODBC', 'HAVE_PYODBC'):
+                odbc = True
     if reason:
         pass
     elif MissingTests:
@@ -2172,6 +2175,23 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
                     f.write(expandvars(l, env))
                 f.close()
 
+        if odbc:
+            f = openutf8('odbc.ini', 'w')
+            f.write(f'''\
+[MonetDB-Test]
+Description = Test MonetDB Data Source
+Driver = {env["LIBDIR"]}/libMonetODBC.so
+Setup = {env["LIBDIR"]}/libMonetODBCs.so
+Host = localhost
+Port = {env["MAPIPORT"]}
+Database = {TSTDB}
+User = {user or "monetdb"}
+Password = {passwd or "monetdb"}
+Debug =
+''')
+            f.close()
+            os.environ['ODBCINI'] = os.path.join(TSTTRGDIR, 'odbc.ini')
+
         STABLEout,STABLEerr = StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION)
         TIMEOUT = par['TIMEOUT']
         if os.path.isfile(TST+".timeout"):
@@ -2197,6 +2217,9 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
         TX = t1 - t0
         if verbosity > 0:
             print(" %7.3fs " % TX, end='')
+
+        if odbc:
+            del os.environ['ODBCINI']
 
         if tres == 'timeout':
             errcode = F_TIME
@@ -3551,6 +3574,19 @@ def main(argv) :
     # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
     # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
     os.environ['PYTHON'] = sys.executable
+
+    if CONDITIONALS['HAVE_ODBC']:
+        if CONDITIONALS['NOT_WIN32']:
+            # only enable HAVE_PYODBC if we have ODBC support
+            try:
+                import pyodbc
+            except ImportError:
+                CONDITIONALS['HAVE_PYODBC'] = False
+            else:
+                CONDITIONALS['HAVE_PYODBC'] = True
+        else:
+            # for now, no ODBC testing on Windows
+            CONDITIONALS['HAVE_ODBC'] = False
 
     try:
         import lz4
