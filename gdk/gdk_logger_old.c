@@ -936,7 +936,7 @@ la_apply(old_logger *lg, logaction *c)
 		ret = la_bat_clear(lg, c);
 		break;
 	default:
-		assert(0);
+		MT_UNREACHABLE();
 	}
 	lg->changes += (ret == GDK_SUCCEED);
 	return ret;
