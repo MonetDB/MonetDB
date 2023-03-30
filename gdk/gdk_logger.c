@@ -2124,7 +2124,6 @@ log_load(int debug, const char *fn, const char *logdir, logger *lg, char filenam
 	MT_lock_destroy(&lg->flush_queue_lock);
 	GDKfree(lg->fn);
 	GDKfree(lg->dir);
-	GDKfree(lg->local_dir);
 	GDKfree(lg->buf);
 	GDKfree(lg);
 	GDKdebug = dbg;
