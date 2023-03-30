@@ -17,55 +17,10 @@
 #include <string.h>
 #include <limits.h>
 
-#define SoundexLen 4		/* length of a soundex code */
-#define SoundexKey "Z000"	/* default key for soundex code */
-
-/* set letter values */
-static const int Code[] = { 0, 1, 2, 3, 0, 1,
-							2, 0, 0, 2, 2, 4,
-							5, 5, 0, 1, 2, 6,
-							2, 3, 0, 1, 0, 2, 0, 2
-};
-
 #define MIN3(X,Y,Z)   (MIN(MIN((X),(Y)),(Z)))
 #define MAX3(X,Y,Z)   (MAX(MAX((X),(Y)),(Z)))
 #define MIN4(W,X,Y,Z) (MIN(MIN(MIN(W,X),Y),Z))
 
-#define INITIAL_INT_BUFFER_LENGTH 2048
-
-#define CHECK_INT_BUFFER_LENGTH(BUFFER, BUFFER_LEN, NEXT_LEN, OP)		\
-	do {																\
-		if ((NEXT_LEN) > *BUFFER_LEN) {								\
-			size_t newlen = (((NEXT_LEN) + 1023) & ~1023); /* align to a multiple of 1024 bytes */ \
-			int *newbuf = GDKmalloc(newlen);							\
-			if (!newbuf)												\
-				throw(MAL, OP, SQLSTATE(HY013) MAL_MALLOC_FAIL);		\
-			GDKfree(*BUFFER);											\
-			*BUFFER = newbuf;											\
-			*BUFFER_LEN = newlen;										\
-		}																\
-	} while (0)
-
-#define RETURN_NIL_IF(b,t)												\
-	if (b) {															\
-		if (ATOMextern(t)) {											\
-			*(ptr*) res = (ptr) ATOMnil(t);							\
-			if ( *(ptr *) res == NULL)									\
-				throw(MAL,"txtsim", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
-		} else {														\
-			memcpy(res, ATOMnilptr(t), ATOMsize(t));					\
-		}																\
-		return MAL_SUCCEED;											\
-	}
-
-/**
- * levenshtein_distance - levenshtein distance, iterative with one row
- * @res: result pointer
- * @X: Pointer to a string
- * @Y: Pointer to another string
- * @insdel_cost: cost of char insertion/deletion
- * @replace_cost: cost of char replace
- */
 static inline str
 levenshtein(int *res, const str *X, const str *Y, int insdel_cost, int replace_cost)
 {
@@ -131,15 +86,6 @@ damerau_putat(int *pOrigin, int col, int row, int nCols, int x)
 	*pCell = x;
 }
 
-/**
- * damerau_levenshtein - Damerau-Levenshtein distance, iterative with full matrix
- * @res: result pointer
- * @S: Pointer to a string
- * @T: Pointer to another string
- * @insdel_cost: cost of char insertion/deletion
- * @replace_cost: cost of char replace
- * @transpose_cos: cost of transpose chars
- */
 static str
 damerau_levenshtein(int *res, str *S, str *T, int insdel_cost, int replace_cost, int transpose_cost)
 {
@@ -290,6 +236,210 @@ levenshtein_distance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	return levenshtein(res, X, Y, insdel_cost, replace_cost);;
 }
+
+#define JARO_WINKLER_SCALING_FACTOR 0.1
+#define JARO_WINKLER_PREFIX_LEN 4
+
+typedef struct {
+	size_t matches;      /* accumulator for number of matches for this item */
+	BUN o;               /* position in the BAT */
+	str val;             /* string value */
+	int *cp_seq;         /* string as array of Unicode codepoints */
+	size_t len;          /* string length in characters (multi-byte characters count as 1)*/
+	size_t cp_seq_len;       /* string length in bytes*/
+	uint64_t abm;        /* 64bit alphabet bitmap */
+	size_t abm_popcount; /* hamming weight of abm */
+} str_item;
+
+static inline
+size_t _popcount64(uint64_t x) {
+	x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL);
+	x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
+	x = (x & 0x0F0F0F0F0F0F0F0FULL) + ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL);
+	return (x * 0x0101010101010101ULL) >> 56;
+}
+
+static inline
+size_t popcount64(uint64_t x) {
+	return _popcount64(x);
+	/* __builtin_popcountll is the gcc builtin
+	 * It is fast as long as the hardware
+	 * support (-mpopcnt) is NOT activated
+	 */
+	// return __builtin_popcountll(x);
+}
+
+/* static int */
+/* str_item_cmp(const void * a, const void * b) { */
+/* 	return strcmp((const char *)((str_item *)a)->val, */
+/* 				  (const char *)((str_item *)b)->val); */
+/* } */
+
+/* static int */
+/* str_item_lenrev_cmp(const void * a, const void * b) { */
+/* 	return ((int)((str_item *)b)->len - (int)((str_item *)a)->len); */
+/* } */
+
+static str
+str_2_codepointseq(str_item *s) {
+	str p = s->val;
+	unsigned int i;
+	int c;
+
+	s->cp_seq = GDKmalloc(s->len * sizeof(int));
+	if (s->cp_seq == NULL)
+		throw(MAL, "str_2_byteseq", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	for (i = 0; i < s->len; i++) {
+		UTF8_GETCHAR(c, (p));
+		if (c == 0)
+			break;
+		s->cp_seq[i] = c;
+	}
+	return MAL_SUCCEED;
+illegal:
+	throw(MAL, "str_2_byteseq", SQLSTATE(42000) "Illegal Unicode code point");
+}
+
+/* static void */
+/* str_alphabet_bitmap(str_item *s) { */
+/* 	size_t i; */
+
+/* 	s->abm = 0ULL; */
+/* 	for (i=0; i < s->len; i++) { */
+/* 		s->abm |= 1ULL << (s->cp_seq[i] % 64); */
+/* 	} */
+/* 	s->abm_popcount = popcount64(s->abm); */
+/* } */
+
+static inline double
+jaro_winkler_lp(const str_item *a, const str_item *b) {
+	unsigned int i, l;
+
+	/* calculate common string prefix up to prefixlen chars */
+	l = 0;
+	for (i = 0; i < MIN3(a->len, b->len, JARO_WINKLER_PREFIX_LEN); i++)
+		l += (a->cp_seq[i] == b->cp_seq[i]);
+
+	return (double)l * JARO_WINKLER_SCALING_FACTOR;
+}
+
+static inline double
+jaro_winkler(const str_item *x, const str_item *y, double lp, int *x_flags, int *y_flags) {
+	int xlen = x->len, ylen = y->len;
+	int range = MAX(0, MAX(xlen, ylen) / 2 - 1);
+	int *x1 = x->cp_seq, *s2 = y->cp_seq;
+	int m=0, t=0;
+	int i, j, l;
+	double dw;
+
+	if (!xlen || !ylen)
+		return 0.0;
+
+	for (i = 0; i < xlen; i++)
+		x_flags[i] = 0;
+
+	for (i = 0; i < ylen; i++)
+		y_flags[i] = 0;
+
+	/* calculate matching characters */
+	for (i = 0; i < ylen; i++) {
+		for (j = MAX(i - range, 0), l = MIN(i + range + 1, xlen); j < l; j++) {
+			if (s2[i] == x1[j] && !x_flags[j]) {
+				x_flags[j] = 1;
+				y_flags[i] = 1;
+				m++;
+				break;
+			}
+		}
+	}
+
+	if (!m) {
+		return 0.0;
+	}
+
+	/* calculate character transpositions */
+	l = 0;
+	for (i = 0; i < ylen; i++) {
+		if (y_flags[i] == 1) {
+			for (j = l; j < xlen; j++) {
+				if (x_flags[j] == 1) {
+					l = j + 1;
+					break;
+				}
+			}
+			if (s2[i] != x1[j])
+				t++;
+		}
+	}
+	t /= 2;
+
+	/* Jaro similarity */
+	dw = (((double)m / xlen) + ((double)m / ylen) + ((double)(m - t) / m)) / 3.0;
+
+	/* calculate common string prefix up to prefixlen chars */
+	if (lp == -1)
+		lp = jaro_winkler_lp(x, y);
+
+	/* Jaro-Winkler similarity */
+	dw = dw + (lp * (1 - dw));
+
+	return dw;
+}
+
+static str
+jaro_winkler_similarity(double *ret, const str *x, const str *y) {
+	int *x_flags=NULL, *y_flags=NULL;
+	str_item xi, yi;
+	str msg = MAL_SUCCEED;
+
+	xi.val = *x;
+	xi.len = UTF8_strlen(*x);
+	if ((msg = str_2_codepointseq(&xi)) != MAL_SUCCEED)
+		goto bailout;
+
+	yi.val = *y;
+	yi.len = UTF8_strlen(*y);
+	if ((msg = str_2_codepointseq(&yi)) != MAL_SUCCEED)
+		goto bailout;
+
+	x_flags = GDKmalloc(xi.len * sizeof(int));
+	y_flags = GDKmalloc(yi.len * sizeof(int));
+
+	if (x_flags == NULL || y_flags == NULL)
+		goto bailout;
+
+	*ret = jaro_winkler(&xi, &yi, -1, x_flags, y_flags);
+
+bailout:
+	if (x_flags) GDKfree(x_flags);
+	if (y_flags) GDKfree(y_flags);
+	GDKfree(xi.cp_seq);
+	GDKfree(yi.cp_seq);
+	return msg;
+}
+
+#define SoundexLen 4		/* length of a soundex code */
+#define SoundexKey "Z000"	/* default key for soundex code */
+
+/* set letter values */
+static const int Code[] = { 0, 1, 2, 3, 0, 1,
+							2, 0, 0, 2, 2, 4,
+							5, 5, 0, 1, 2, 6,
+							2, 3, 0, 1, 0, 2, 0, 2
+};
+
+#define RETURN_NIL_IF(b,t)												\
+	if (b) {															\
+		if (ATOMextern(t)) {											\
+			*(ptr*) res = (ptr) ATOMnil(t);							\
+			if ( *(ptr *) res == NULL)									\
+				throw(MAL,"txtsim", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+		} else {														\
+			memcpy(res, ATOMnilptr(t), ATOMsize(t));					\
+		}																\
+		return MAL_SUCCEED;											\
+	}
 
 static inline char
 SCode(unsigned char c)
@@ -640,6 +790,20 @@ str_2_qgrams(bat *ret, str *val)
 }
 
 /* DEPRECATED (see DEPRECATED_END) */
+#define INITIAL_INT_BUFFER_LENGTH 2048
+#define CHECK_INT_BUFFER_LENGTH(BUFFER, BUFFER_LEN, NEXT_LEN, OP)		\
+	do {																\
+		if ((NEXT_LEN) > *BUFFER_LEN) {								\
+			size_t newlen = (((NEXT_LEN) + 1023) & ~1023); /* align to a multiple of 1024 bytes */ \
+			int *newbuf = GDKmalloc(newlen);							\
+			if (!newbuf)												\
+				throw(MAL, OP, SQLSTATE(HY013) MAL_MALLOC_FAIL);		\
+			GDKfree(*BUFFER);											\
+			*BUFFER = newbuf;											\
+			*BUFFER_LEN = newlen;										\
+		}																\
+	} while (0)
+
 struct string_data {
 	/* The string to be compared. */
 	const char *data;
@@ -1105,18 +1269,19 @@ fstrcmp0_impl_bulk(bat *res, bat *strings1, bat *strings2)
 
 #include "mel.h"
 mel_func txtsim_init_funcs[] = {
-	pattern("txtsim", "levenshtein", levenshtein_distance, false, "Calculates Levenshtein distance between two strings", args(1,3,arg("",int),arg("s",str),arg("t",str))),
+	pattern("txtsim", "levenshtein", levenshtein_distance, false, "Calculates Levenshtein distance between two strings, operation costs (ins/del = 1, replacement = 1)", args(1,3,arg("",int),arg("s",str),arg("t",str))),
 	pattern("txtsim", "levenshtein", levenshtein_distance, false, "Calculates Levenshtein distance between two strings, variable operation costs (ins/del, replacement)", args(1,5,arg("",int),arg("x",str),arg("y",str),arg("insdel_cost",int),arg("replace_cost",int))),
 	pattern("txtsim", "levenshtein", levenshtein_distance, false, "(Backwards compatibility purposes) Calculates Damerau-Levenshtein distance between two strings, variable operation costs (ins/del, replacement, transposition)", args(1,6,arg("",int),arg("x",str),arg("y",str),arg("insdel_cost",int),arg("replace_cost",int),arg("transpose_cost",int))),
-	pattern("txtsim", "damerau_levenshtein", damerau_levenshtein_distance, false, "Calculates Damerau-Levenshtein distance between two strings, variable operation costs (ins/del, replacement, transposition)", args(1,3,arg("",int),arg("x",str),arg("y",str))),
+	pattern("txtsim", "damerau_levenshtein", damerau_levenshtein_distance, false, "Calculates Damerau-Levenshtein distance between two strings, operation costs (ins/del = 1, replacement = 1, transposition = 2)", args(1,3,arg("",int),arg("x",str),arg("y",str))),
 	pattern("txtsim", "damerau_levenshtein", damerau_levenshtein_distance, false, "Calculates Damerau-Levenshtein distance between two strings, variable operation costs (ins/del, replacement, transposition)", args(1,6,arg("",int),arg("x",str),arg("y",str),arg("insdel_cost",int),arg("replace_cost",int),arg("transpose_cost",int))),
 	command("txtsim", "editdistance", damerau_levenshtein1, false, "Alias for Damerau-Levenshtein(str,str), insdel cost = 1, replace cost = 1 and transpose = 2", args(1,3, arg("",int),arg("s",str),arg("t",str))),
 	command("txtsim", "editdistance2", damerau_levenshtein2, false, "Alias for Damerau-Levenshtein(str,str), insdel cost = 1, replace cost = 1 and transpose = 1", args(1,3, arg("",int),arg("s",str),arg("t",str))),
 	command("txtsim", "soundex", soundex, false, "Soundex function for phonetic matching", args(1,2, arg("",str),arg("name",str))),
-	command("txtsim", "stringdiff", stringdiff, false, "calculate the soundexed editdistance", args(1,3, arg("",int),arg("s1",str),arg("s2",str))),
+	command("txtsim", "stringdiff", stringdiff, false, "Calculate the soundexed editdistance", args(1,3, arg("",int),arg("s1",str),arg("s2",str))),
 	command("txtsim", "qgramnormalize", qgram_normalize, false, "'Normalizes' strings (eg. toUpper and replaces non-alphanumerics with one space", args(1,2, arg("",str),arg("input",str))),
 	command("txtsim", "qgramselfjoin", qgram_selfjoin, false, "QGram self-join on ordered(!) qgram tables and sub-ordered q-gram positions", args(2,8, batarg("",int),batarg("",int),batarg("qgram",oid),batarg("id",oid),batarg("pos",int),batarg("len",int),arg("c",flt),arg("k",int))),
 	command("txtsim", "str2qgrams", str_2_qgrams, false, "Break the string into 4-grams", args(1,2, batarg("",str),arg("s",str))),
+	command("txtsim", "jaro_winkler_similarity", jaro_winkler_similarity, false, "Calculate Jaro Winkler similarity", args(1,3, arg("",dbl),arg("x",str),arg("y",str))),
 	command("txtsim", "similarity", fstrcmp_impl, false, "(Deprecated) Normalized edit distance between two strings", args(1,4, arg("",dbl),arg("string1",str),arg("string2",str),arg("minimum",dbl))),
 	command("txtsim", "similarity", fstrcmp0_impl, false, "(Deprecated) Normalized edit distance between two strings", args(1,3, arg("",dbl),arg("string1",str),arg("string2",str))),
 	command("battxtsim", "similarity", fstrcmp0_impl_bulk, false, "(Deprecated) Normalized edit distance between two strings", args(1,3, batarg("",dbl),batarg("string1",str),batarg("string2",str))),
