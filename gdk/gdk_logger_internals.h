@@ -39,7 +39,6 @@ struct logger {
 	bool inmemory;
 	char *fn;
 	char *dir;
-	char *local_dir; /* the directory in which the log is written */
 	preversionfix_fptr prefuncp;
 	postversionfix_fptr postfuncp;
 	void *funcdata;
@@ -88,7 +87,6 @@ struct old_logger {
 	lng id;
 	int tid;
 	bool with_ids;
-	char *local_dir; /* the directory in which the log is written */
 	stream *log;
 	lng end;		/* end of pre-allocated blocks for faster f(data)sync */
 	/* Store log_bids (int) to circumvent trouble with reference counting */
