@@ -1957,7 +1957,7 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 		b->results = res_tables_remove(b->results, t);
 
 	if (res > -1)
-		res = mvc_export_warning(s, "");
+		res = 1;
 	return res;
 }
 
