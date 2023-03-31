@@ -248,9 +248,10 @@ typedef struct {
 	size_t len;          /* string length in characters (multi-byte characters count as 1)*/
 	size_t cp_seq_len;       /* string length in bytes*/
 	uint64_t abm;        /* 64bit alphabet bitmap */
-	size_t abm_popcount; /* hamming weight of abm */
+	//size_t abm_popcount; /* hamming weight of abm */
 } str_item;
 
+#if 0
 static inline
 size_t _popcount64(uint64_t x) {
 	x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL);
@@ -268,6 +269,7 @@ size_t popcount64(uint64_t x) {
 	 */
 	// return __builtin_popcountll(x);
 }
+#endif
 
 /* static int */
 /* str_item_cmp(const void * a, const void * b) { */
