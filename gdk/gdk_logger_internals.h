@@ -15,8 +15,6 @@
 
 typedef struct logged_range_t {
 	ulng id;			/* log file id */
-	int first_tid;		/* first */
-	int last_tid;		/* last tid */
 	ulng last_ts;		/* last stored timestamp */
 	struct logged_range_t *next;
 } logged_range;
