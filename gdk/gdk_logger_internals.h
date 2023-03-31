@@ -28,32 +28,34 @@ typedef struct logged_range_t {
 
 struct logger {
 	// CHECK initialized once
-	int debug;		
+	int debug;
 	int version;
 	bool inmemory;
 	char *fn;
 	char *dir;
 	preversionfix_fptr prefuncp;
 	postversionfix_fptr postfuncp;
-	void *funcdata;	
+	void *funcdata;
 	/* we map type names into internal log ids, split in 2 ranges
 	 * (0-127 fixed size types and 129 - 255 varsized) */
 	uint8_t type_nr[256];	/* mapping from logger type id to GDK type nr */
 	int8_t type_id[128];	/* mapping from GDK type nr to logger type id */
 
 	// CHECK writer only
-	lng end;			
+	lng end;
 	ulng* writer_end;
 	lng total_cnt; /* When logging the content of a bats in multiple runs, total_cnt is used the very first to signal this and keep track in the logging*/
-	void *buf;
-	size_t bufsize;
+	void *rbuf;
+	size_t rbufsize;
+	void *wbuf;
+	size_t wbufsize;
 
 	// synchronized by combination of store->flush and rotation_lock
 	ulng id;			/* current log output file id */
 	ulng saved_id; 		/* id of last fully handled log file */ /*TODO: requires no additional synchronization*/
 	int tid;			/* current transaction id */
 	int saved_tid;		/* id of transaction which was flushed out (into BBP storage)  */
-	
+
 	// synchronized by rotation_lock
 	logged_range *current;
 	logged_range *flush_ranges;
