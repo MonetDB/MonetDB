@@ -1074,8 +1074,6 @@ log_open_output(logger *lg)
 		GDKfree(filename);
 	}
 	new_range->id = lg->id;
-	new_range->first_tid = lg->tid;
-	new_range->last_tid = lg->tid;
 	new_range->last_ts = 0;
 	new_range->next = NULL;
 	if (lg->current)
