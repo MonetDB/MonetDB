@@ -34,7 +34,6 @@
 
 static struct pipeline {
 	char *name;
-	const char *status;			/* "stable" or "experimental" */
 	char **def;					/* NULL terminated list of optimizers */
 	bool builtin;
 } pipes[MAXOPTPIPES] = {
@@ -45,7 +44,6 @@ static struct pipeline {
  * (see tools/mserver/mserver5.1) accordingly!
  */
 	{"minimal_pipe",
-	 "stable",
 	 (char *[]) {
 		 "inline",
 		 "remap",
@@ -62,7 +60,6 @@ static struct pipeline {
 	 true,
 	},
 	{"minimal_fast",
-	 "stable",
 	 (char *[]) {
 		 "minimalfast",
 		 NULL,
@@ -75,7 +72,6 @@ static struct pipeline {
  * tools/mserver/mserver5.1) accordingly!
  */
 	{"default_pipe",
-	 "stable",
 	 (char *[]) {
 		 "inline",
 		 "remap",
@@ -112,7 +108,6 @@ static struct pipeline {
 	 true,
 	},
 	{"default_fast",
-	 "stable",
 	 (char *[]) {
 		 "defaultfast",
 		 NULL,
@@ -130,7 +125,6 @@ static struct pipeline {
  * (see tools/mserver/mserver5.1) accordingly!
  */
 	{"no_mitosis_pipe",
-	 "stable",
 	 (char *[]) {
 		 "inline",
 		 "remap",
@@ -174,7 +168,6 @@ static struct pipeline {
  * (see tools/mserver/mserver5.1) accordingly!
  */
 	{"sequential_pipe",
-	 "stable",
 	 (char *[]) {
 		 "inline",
 		 "remap",
@@ -213,7 +206,7 @@ static struct pipeline {
  * settings!
  */
 /* sentinel */
-	{NULL, NULL, NULL, false, },
+	{NULL, NULL, false, },
 };
 
 #include "optimizer_private.h"
@@ -241,7 +234,6 @@ validatePipe(struct pipeline *pipe)
 		const char *fname = pipe->def[i];
 		if (garbage)
 			throw(MAL, "optimizer.validate", SQLSTATE(42000) "'garbageCollector' should be used as the last one\n");
-		garbage = false;
 		if (strcmp(fname, "deadcode") == 0)
 			deadcode = true;
 		else if (strcmp(fname, "remap") == 0)
@@ -304,7 +296,6 @@ addPipeDefinition(Client cntxt, const char *name, const char *pipe)
 	oldpipe = pipes[i];
 	pipes[i] = (struct pipeline) {
 		.name = GDKstrdup(name),
-		.status = "experimental",
 	};
 	if(pipes[i].name == NULL)
 		goto bailout;
@@ -416,7 +407,7 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 		}
 		if (BUNappend(b, pipes[i].name, false) != GDK_SUCCEED ||
 			BUNappend(bn, buf, false) != GDK_SUCCEED ||
-			BUNappend(bs, pipes[i].status, false) != GDK_SUCCEED) {
+			BUNappend(bs, pipes[i].builtin ? "stable" : "experimental", false) != GDK_SUCCEED) {
 			BBPreclaim(b);
 			BBPreclaim(bn);
 			BBPreclaim(bs);
