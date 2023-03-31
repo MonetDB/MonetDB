@@ -239,6 +239,9 @@ validatePipe(struct pipeline *pipe)
 
 	for (i = 0; pipe->def[i]; i++) {
 		const char *fname = pipe->def[i];
+		if (garbage)
+			throw(MAL, "optimizer.validate", SQLSTATE(42000) "'garbageCollector' should be used as the last one\n");
+		garbage = false;
 		if (strcmp(fname, "deadcode") == 0)
 			deadcode = true;
 		else if (strcmp(fname, "remap") == 0)
