@@ -409,8 +409,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT** cands)
 						}
 						else
 							res = LOG_ERR;
-					}
-					else {
+					} else {
 						assert((*cands)->ttype == TYPE_oid);
 						assert(BATcount(*cands) > 0);
 						if (BATappend(*cands, dense, NULL, true) != GDK_SUCCEED)
@@ -1084,8 +1083,6 @@ log_open_output(logger *lg)
 		GDKfree(filename);
 	}
 	new_range->id = lg->id;
-	new_range->first_tid = lg->tid;
-	new_range->last_tid = lg->tid;
 	new_range->last_ts = 0;
 	new_range->next = NULL;
 	if (lg->current)
