@@ -388,9 +388,10 @@ jaro_winkler(const str_item *x, const str_item *y, double lp, int *x_flags, int 
 }
 
 static str
-jaro_winkler_similarity(double *ret, const str *x, const str *y) {
+jaro_winkler_similarity(double *ret, const str *x, const str *y)
+{
 	int *x_flags=NULL, *y_flags=NULL;
-	str_item xi, yi;
+	str_item xi = { 0 }, yi = { 0 };
 	str msg = MAL_SUCCEED;
 
 	xi.val = *x;
