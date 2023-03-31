@@ -56,8 +56,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 //"optimizer.candidates();" only for decoration in explain
 	 //"optimizer.mask();"
-	 "optimizer.garbageCollector();"
-	 "optimizer.profiler();",
+	 "optimizer.profiler();"
+	 "optimizer.garbageCollector();",
 	 "stable", NULL, 1},
 #ifdef USE_STRIMPS_OPTIMIZERS
 	{"minimal_strimps_pipe",
@@ -121,8 +121,8 @@ static struct PIPELINES {
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
-	 "optimizer.garbageCollector();"
-	 "optimizer.profiler();",
+	 "optimizer.profiler();"
+	 "optimizer.garbageCollector();",
 	 "stable", NULL, 1},
 #ifdef USE_STRIMPS_OPTIMIZERS
 	{"strimps_pipe",
@@ -157,8 +157,8 @@ static struct PIPELINES {
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
-	 "optimizer.garbageCollector();"
-	 "optimizer.profiler();",
+	 "optimizer.profiler();"
+	 "optimizer.garbageCollector();",
 	 "stable", NULL, 1},
 #endif  // USE_STRIMPS_OPTIMIZERS
 	{"default_fast",
@@ -201,8 +201,8 @@ static struct PIPELINES {
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
-	 "optimizer.garbageCollector();"
-	 "optimizer.profiler();",
+	 "optimizer.profiler();"
+	 "optimizer.garbageCollector();",
 	 "stable", NULL, 1},
 #endif
 /* The no_mitosis pipe line is (and should be kept!) identical to the
@@ -245,8 +245,8 @@ static struct PIPELINES {
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
-	 "optimizer.garbageCollector();"
-	 "optimizer.profiler();",
+	 "optimizer.profiler();"
+	 "optimizer.garbageCollector();",
 	 "stable", NULL, 1},
 /* The sequential pipe line is (and should be kept!) identical to the
  * default pipeline, except that optimizers mitosis & dataflow are
@@ -289,8 +289,8 @@ static struct PIPELINES {
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
-	 "optimizer.garbageCollector();"
-	 "optimizer.profiler();",
+	 "optimizer.profiler();"
+	 "optimizer.garbageCollector();",
 	 "stable", NULL, 1},
 /* Experimental pipelines stressing various components under
  * development.  Do not use any of these pipelines in production
@@ -437,8 +437,8 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 static str
 validatePipe(MalBlkPtr mb)
 {
-	int mitosis = FALSE, deadcode = FALSE, mergetable = FALSE, multiplex = FALSE;
-	int bincopyfrom = FALSE, garbage = FALSE, generator = FALSE, remap =  FALSE;
+	bool mitosis = false, deadcode = false, mergetable = false, multiplex = false;
+	bool bincopyfrom = false, garbage = false, generator = false, remap =  false;
 	int i;
 	InstrPtr p;
 
@@ -455,42 +455,45 @@ validatePipe(MalBlkPtr mb)
 	for (i = 1; i < mb->stop - 1; i++){
 		p = getInstrPtr(mb, i);
 		const char *fname = getFunctionId(p);
+		if (garbage)
+			throw(MAL, "optimizer.validate", SQLSTATE(42000) "'garbageCollector' should be used as the last one\n");
+		garbage = false;
 		if (fname != NULL) {
 			if (strcmp(fname, "deadcode") == 0)
-				deadcode = TRUE;
+				deadcode = true;
 			else if (strcmp(fname, "remap") == 0)
-				remap = TRUE;
+				remap = true;
 			else if (strcmp(fname, "mitosis") == 0)
-				mitosis = TRUE;
+				mitosis = true;
 			else if (strcmp(fname, "bincopyfrom") == 0)
-				bincopyfrom = TRUE;
+				bincopyfrom = true;
 			else if (strcmp(fname, "mergetable") == 0)
-				mergetable = TRUE;
+				mergetable = true;
 			else if (strcmp(fname, "multiplex") == 0)
-				multiplex = TRUE;
+				multiplex = true;
 			else if (strcmp(fname, "generator") == 0)
-				generator = TRUE;
+				generator = true;
 			else if (strcmp(fname, "garbageCollector") == 0)
-				garbage = TRUE;
+				garbage = true;
 		} else
 			throw(MAL, "optimizer.validate", SQLSTATE(42000) "Missing optimizer call\n");
 	}
 
-	if (mitosis == TRUE && mergetable == FALSE)
+	if (mitosis && !mergetable)
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'mitosis' needs 'mergetable'\n");
 
 	/* several optimizer should be used */
-	if (multiplex == 0)
+	if (!multiplex)
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'multiplex' should be used\n");
-	if (deadcode == FALSE)
+	if (!deadcode)
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'deadcode' should be used at least once\n");
-	if (garbage == FALSE)
+	if (!garbage)
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'garbageCollector' should be used as the last one\n");
-	if (remap == FALSE)
+	if (!remap)
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'remap' should be used\n");
-	if (generator == FALSE)
+	if (!generator)
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'generator' should be used\n");
-	if (bincopyfrom == FALSE)
+	if (!bincopyfrom)
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'bincopyfrom' should be used\n");
 
 	return MAL_SUCCEED;
