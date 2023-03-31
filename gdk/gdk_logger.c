@@ -359,12 +359,12 @@ string_reader(logger *lg, BAT *b, lng nr)
 		if (mnstr_readLng(lg->input_log, &SZ) != 1)
 			return LOG_EOF;
 		sz = (size_t)SZ;
-		char *buf = lg->buf;
-		if (lg->bufsize < sz) {
-			if (!(buf = GDKrealloc(lg->buf, sz)))
+		char *buf = lg->rbuf;
+		if (lg->rbufsize < sz) {
+			if (!(buf = GDKrealloc(lg->rbuf, sz)))
 				return LOG_ERR;
-			lg->buf = buf;
-			lg->bufsize = sz;
+			lg->rbuf = buf;
+			lg->rbufsize = sz;
 		}
 
 		if (mnstr_read(lg->input_log, buf, sz, 1) != 1)
@@ -438,13 +438,13 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 					BBPreclaim(r);
 				return LOG_ERR;
 			}
-			size_t tlen = lg->bufsize;
-			void *t = rt(lg->buf, &tlen, lg->input_log, 1);
+			size_t tlen = lg->rbufsize;
+			void *t = rt(lg->rbuf, &tlen, lg->input_log, 1);
 			if (t == NULL) {
 				res = LOG_ERR;
 			} else {
-				lg->buf = t;
-				lg->bufsize = tlen;
+				lg->rbuf = t;
+				lg->rbufsize = tlen;
 				for(BUN p = 0; p<(BUN) nr; p++) {
 					if (r && BUNappend(r, t, true) != GDK_SUCCEED)
 						res = LOG_ERR;
@@ -463,32 +463,32 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 					else
 						res = LOG_ERR;
 				} else {
-					size_t tlen = lg->bufsize/sizeof(int);
+					size_t tlen = lg->rbufsize/sizeof(int);
 					size_t cnt = 0, snr = (size_t)nr;
 					snr = (snr+31)/32;
 					assert(tlen);
 					for (; res == LOG_OK && snr > 0; snr-=cnt) {
 						cnt = snr>tlen?tlen:snr;
-						if (!mnstr_readIntArray(lg->input_log, lg->buf, cnt))
+						if (!mnstr_readIntArray(lg->input_log, lg->rbuf, cnt))
 							res = LOG_ERR;
 					}
 				}
 			} else {
 				if (!ATOMvarsized(tpe)) {
 					size_t cnt = 0, snr = (size_t)nr;
-					size_t tlen = lg->bufsize/ATOMsize(tpe), ntlen = lg->bufsize;
+					size_t tlen = lg->rbufsize/ATOMsize(tpe), ntlen = lg->rbufsize;
 					assert(tlen);
 					/* read in chunks of max
 					 * BUFSIZE/width rows */
 					for (; res == LOG_OK && snr > 0; snr-=cnt) {
 						cnt = snr>tlen?tlen:snr;
-						void *t = rt(lg->buf, &ntlen, lg->input_log, cnt);
+						void *t = rt(lg->rbuf, &ntlen, lg->input_log, cnt);
 
 						if (t == NULL) {
 							res = LOG_EOF;
 							break;
 						}
-						assert(t == lg->buf);
+						assert(t == lg->rbuf);
 						if (r && BUNappendmulti(r, t, cnt, true) != GDK_SUCCEED)
 							res = LOG_ERR;
 					}
@@ -497,8 +497,8 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 					res = string_reader(lg, r, nr);
 				} else {
 					for (; res == LOG_OK && nr > 0; nr--) {
-						size_t tlen = lg->bufsize;
-						void *t = rt(lg->buf, &tlen, lg->input_log, 1);
+						size_t tlen = lg->rbufsize;
+						void *t = rt(lg->rbuf, &tlen, lg->input_log, 1);
 
 						if (t == NULL) {
 							/* see if failure was due to
@@ -510,8 +510,8 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 							else
 								res = LOG_ERR;
 						} else {
-							lg->buf = t;
-							lg->bufsize = tlen;
+							lg->rbuf = t;
+							lg->rbufsize = tlen;
 							if (r && BUNappend(r, t, true) != GDK_SUCCEED)
 								res = LOG_ERR;
 						}
@@ -560,8 +560,8 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 				res = string_reader(lg, r, nr);
 			} else {
 				for (; res == LOG_OK && nr > 0; nr--) {
-					size_t tlen = lg->bufsize;
-					void *t = rt(lg->buf, &tlen, lg->input_log, 1);
+					size_t tlen = lg->rbufsize;
+					void *t = rt(lg->rbuf, &tlen, lg->input_log, 1);
 
 					if (t == NULL) {
 						if (strstr(GDKerrbuf, "malloc") == NULL)
@@ -569,8 +569,8 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 						else
 							res = LOG_ERR;
 					} else {
-						lg->buf = t;
-						lg->bufsize = tlen;
+						lg->rbuf = t;
+						lg->rbufsize = tlen;
 						if ((r && BUNappend(r, t, true) != GDK_SUCCEED))
 							res = LOG_ERR;
 					}
@@ -2081,7 +2081,8 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 	GDKfree(lg->fn);
 	GDKfree(lg->dir);
 	GDKfree(lg->local_dir);
-	GDKfree(lg->buf);
+	GDKfree(lg->rbuf);
+	GDKfree(lg->wbuf);
 	GDKfree(lg);
 	GDKdebug = dbg;
 	return GDK_FAIL;
@@ -2130,13 +2131,17 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	}
 	lg->fn = GDKstrdup(fn);
 	lg->dir = GDKstrdup(filename);
-	lg->bufsize = 64*1024;
-	lg->buf = GDKmalloc(lg->bufsize);
-	if (lg->fn == NULL || lg->dir == NULL || lg->buf == NULL) {
+	lg->rbufsize = 64*1024;
+	lg->rbuf = GDKmalloc(lg->rbufsize);
+	lg->wbufsize = 64*1024;
+	lg->wbuf = GDKmalloc(lg->wbufsize);
+	if (lg->fn == NULL || lg->dir == NULL ||
+	    lg->rbuf == NULL || lg->wbuf == NULL) {
 		TRC_CRITICAL(GDK, "strdup failed\n");
 		GDKfree(lg->fn);
 		GDKfree(lg->dir);
-		GDKfree(lg->buf);
+		GDKfree(lg->rbuf);
+		GDKfree(lg->wbuf);
 		GDKfree(lg);
 		return NULL;
 	}
@@ -2189,7 +2194,8 @@ logger_destroy(logger *lg)
 	}
 	GDKfree(lg->fn);
 	GDKfree(lg->dir);
-	GDKfree(lg->buf);
+	GDKfree(lg->rbuf);
+	GDKfree(lg->wbuf);
 	logger_close_input(lg);
 	logger_close_output(lg);
 	GDKfree(lg);
@@ -2423,9 +2429,9 @@ log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
 static gdk_return
 string_writer(logger *lg, BAT *b, lng offset, lng nr)
 {
-	size_t bufsz = lg->bufsize, resize = 0;
+	size_t bufsz = lg->wbufsize, resize = 0;
 	BUN end = (BUN)(offset + nr);
-	char *buf = lg->buf;
+	char *buf = lg->wbuf;
 	gdk_return res = GDK_SUCCEED;
 
 	if (!buf)
@@ -2435,12 +2441,12 @@ string_writer(logger *lg, BAT *b, lng offset, lng nr)
 	for ( ; p < end; ) {
 		size_t sz = 0;
 		if (resize) {
-			if (!(buf = GDKrealloc(lg->buf, resize))) {
+			if (!(buf = GDKrealloc(lg->wbuf, resize))) {
 				res = GDK_FAIL;
 				break;
 			}
-			lg->buf = buf;
-			lg->bufsize = bufsz = resize;
+			lg->wbuf = buf;
+			lg->wbufsize = bufsz = resize;
 			resize = 0;
 		}
 		char *dst = buf;
