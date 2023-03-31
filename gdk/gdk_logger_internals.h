@@ -62,8 +62,10 @@ struct logger {
 	BAT *type_nme;		/* names of types */
 	BAT *type_nr;		/* atom number of this type (transient) */
 
-	void *buf;
-	size_t bufsize;
+	void *rbuf;
+	size_t rbufsize;
+	void *wbuf;
+	size_t wbufsize;
 };
 
 struct old_logger {
