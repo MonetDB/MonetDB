@@ -66,8 +66,10 @@ struct logger {
 	uint8_t type_nr[256];	/* mapping from logger type id to GDK type nr */
 	int8_t type_id[128];	/* mapping from GDK type nr to logger type id */
 
-	void *buf;
-	size_t bufsize;
+	void *rbuf;
+	size_t rbufsize;
+	void *wbuf;
+	size_t wbufsize;
 
 	/* flush variables */
 	unsigned int flush_queue[FLUSH_QUEUE_SIZE]; /* circular array with the current transactions' ids waiting to be flushed */
