@@ -24,43 +24,49 @@
 static inline str
 levenshtein(int *res, const str *X, const str *Y, int insdel_cost, int replace_cost)
 {
-	str x = *X, y = *Y;
-	UTF8_assert(x); UTF8_assert(y);
-	int xlen = UTF8_strlen(x), ylen = UTF8_strlen(y);
-	int i = 1, j = 1, cx = 0, cy = 0, indicator = 0,
-		last_diagonal = 0, old_diagonal = 0;
-		/* previous_diagonal = 0, previous_above = 0; */
+	str x = *X, y = *Y, x_iter = x;
+	unsigned int xlen, ylen, i = 0, j = 0;
+	unsigned int last_diagonal, old_diagonal;
+	int cx, cy;
+	unsigned int *column;
+
+	if (strNil(*X) || strNil(*Y)) {
+		*res = int_nil;
+		return MAL_SUCCEED;
+	}
+
+	xlen = UTF8_strlen(x);
+	ylen = UTF8_strlen(y);
 
 	if (xlen == ylen && (strcmp(x, y) == 0))
 		return MAL_SUCCEED;
 
-	int *editdist = GDKmalloc((ylen + 1) * sizeof(unsigned int));
+	column = GDKmalloc((xlen + 1) * sizeof(unsigned int));
 
-	for (i = 0; i <= ylen; i++)
-		editdist[i] = i;
+    for (i = 1; i <= xlen; i++)
+		column[i] = i;
 
-	while (*x) {
-		editdist[0] = i;
-		UTF8_GETCHAR(cx, x);
-		while (*y) {
-			UTF8_GETCHAR(cy, y);
-			indicator = cx == cy ? 0 : replace_cost;
-			old_diagonal = editdist[j];
-			editdist[j] = MIN3(editdist[j] + insdel_cost,
-							   editdist[j-1] + insdel_cost,
-							   last_diagonal + indicator);
+	for (j = 1; j <= ylen; j++) {
+		column[0] = j;
+		x_iter = x;
+		UTF8_GETCHAR(cy, y);
+		for (i = 1, last_diagonal = j - 1; i <= xlen; i++) {
+			UTF8_GETCHAR(cx, x_iter);
+			old_diagonal = column[i];
+			column[i] = MIN3(column[i] + insdel_cost,
+							 column[i - 1] + insdel_cost,
+							 last_diagonal + (cx == cy ? 0 : replace_cost));
 			last_diagonal = old_diagonal;
-			j++;
 		}
-		i++;
+		(*x)++;
 	}
 
-	*res = editdist[ylen];
-	GDKfree(editdist);
+    *res= column[xlen];
+	GDKfree(column);
 	return MAL_SUCCEED;
  illegal:
 	/* UTF8_GETCHAR bail */
-	GDKfree(editdist);
+	GDKfree(column);
 	throw(MAL, "txtsim.levenshtein", "Illegal unicode code point");
 }
 
@@ -244,32 +250,29 @@ typedef struct {
 	size_t matches;      /* accumulator for number of matches for this item */
 	BUN o;               /* position in the BAT */
 	str val;             /* string value */
-	int *cp_seq;         /* string as array of Unicode codepoints */
+	int *cp_sequence;    /* string as array of Unicode codepoints */
 	size_t len;          /* string length in characters (multi-byte characters count as 1)*/
-	size_t cp_seq_len;       /* string length in bytes*/
+	size_t cp_seq_len;   /* string length in bytes*/
 	uint64_t abm;        /* 64bit alphabet bitmap */
-	//size_t abm_popcount; /* hamming weight of abm */
+	/* size_t abm_popcount; /\* hamming weight of abm *\/ */
 } str_item;
 
-#if 0
-static inline
-size_t _popcount64(uint64_t x) {
-	x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL);
-	x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
-	x = (x & 0x0F0F0F0F0F0F0F0FULL) + ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL);
-	return (x * 0x0101010101010101ULL) >> 56;
-}
+/* static inline */
+/* size_t _popcount64(uint64_t x) { */
+/* 	x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL); */
+/* 	x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL); */
+/* 	x = (x & 0x0F0F0F0F0F0F0F0FULL) + ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL); */
+/* 	return (x * 0x0101010101010101ULL) >> 56; */
+/* } */
 
-static inline
-size_t popcount64(uint64_t x) {
-	return _popcount64(x);
-	/* __builtin_popcountll is the gcc builtin
-	 * It is fast as long as the hardware
-	 * support (-mpopcnt) is NOT activated
-	 */
-	// return __builtin_popcountll(x);
-}
-#endif
+/* static inline */
+/* size_t popcount64(uint64_t x) { */
+/* 	return _popcount64(x); */
+/* 	/\* __builtin_popcountll is the gcc builtin */
+/* 	 * It is fast as long as the hardware */
+/* 	 * support (-mpopcnt) is NOT activated *\/ */
+/* 	/\* return __builtin_popcountll(x); *\/ */
+/* } */
 
 /* static int */
 /* str_item_cmp(const void * a, const void * b) { */
@@ -283,20 +286,21 @@ size_t popcount64(uint64_t x) {
 /* } */
 
 static str
-str_2_codepointseq(str_item *s) {
+str_2_codepointseq(str_item *s)
+{
 	str p = s->val;
 	unsigned int i;
 	int c;
 
-	s->cp_seq = GDKmalloc(s->len * sizeof(int));
-	if (s->cp_seq == NULL)
+	s->cp_sequence = GDKmalloc(s->len * sizeof(int));
+	if (s->cp_sequence == NULL)
 		throw(MAL, "str_2_byteseq", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < s->len; i++) {
-		UTF8_GETCHAR(c, (p));
+		UTF8_GETCHAR(c, p);
 		if (c == 0)
 			break;
-		s->cp_seq[i] = c;
+		s->cp_sequence[i] = c;
 	}
 	return MAL_SUCCEED;
 illegal:
@@ -315,22 +319,24 @@ illegal:
 /* } */
 
 static inline double
-jaro_winkler_lp(const str_item *a, const str_item *b) {
+jaro_winkler_lp(const str_item *a, const str_item *b)
+{
 	unsigned int i, l;
 
 	/* calculate common string prefix up to prefixlen chars */
 	l = 0;
 	for (i = 0; i < MIN3(a->len, b->len, JARO_WINKLER_PREFIX_LEN); i++)
-		l += (a->cp_seq[i] == b->cp_seq[i]);
+		l += (a->cp_sequence[i] == b->cp_sequence[i]);
 
 	return (double)l * JARO_WINKLER_SCALING_FACTOR;
 }
 
 static inline double
-jaro_winkler(const str_item *x, const str_item *y, double lp, int *x_flags, int *y_flags) {
+jaro_winkler(const str_item *x, const str_item *y, double lp, int *x_flags, int *y_flags)
+{
 	int xlen = x->len, ylen = y->len;
 	int range = MAX(0, MAX(xlen, ylen) / 2 - 1);
-	int *x1 = x->cp_seq, *s2 = y->cp_seq;
+	int *x1 = x->cp_sequence, *s2 = y->cp_sequence;
 	int m=0, t=0;
 	int i, j, l;
 	double dw;
@@ -344,7 +350,7 @@ jaro_winkler(const str_item *x, const str_item *y, double lp, int *x_flags, int 
 	for (i = 0; i < ylen; i++)
 		y_flags[i] = 0;
 
-	/* calculate matching characters */
+	/* matching characters */
 	for (i = 0; i < ylen; i++) {
 		for (j = MAX(i - range, 0), l = MIN(i + range + 1, xlen); j < l; j++) {
 			if (s2[i] == x1[j] && !x_flags[j]) {
@@ -356,11 +362,10 @@ jaro_winkler(const str_item *x, const str_item *y, double lp, int *x_flags, int 
 		}
 	}
 
-	if (!m) {
+	if (!m)
 		return 0.0;
-	}
 
-	/* calculate character transpositions */
+	/* character transpositions */
 	l = 0;
 	for (i = 0; i < ylen; i++) {
 		if (y_flags[i] == 1) {
@@ -390,9 +395,9 @@ jaro_winkler(const str_item *x, const str_item *y, double lp, int *x_flags, int 
 }
 
 static str
-jaro_winkler_similarity(double *ret, const str *x, const str *y)
+jaro_winkler_similarity(double *ret, str *x, str *y)
 {
-	int *x_flags=NULL, *y_flags=NULL;
+	int *x_flags = NULL, *y_flags = NULL;
 	str_item xi = { 0 }, yi = { 0 };
 	str msg = MAL_SUCCEED;
 
@@ -415,10 +420,10 @@ jaro_winkler_similarity(double *ret, const str *x, const str *y)
 	*ret = jaro_winkler(&xi, &yi, -1, x_flags, y_flags);
 
 bailout:
-	if (x_flags) GDKfree(x_flags);
-	if (y_flags) GDKfree(y_flags);
-	GDKfree(xi.cp_seq);
-	GDKfree(yi.cp_seq);
+	GDKfree(x_flags);
+	GDKfree(y_flags);
+	GDKfree(xi.cp_sequence);
+	GDKfree(yi.cp_sequence);
 	return msg;
 }
 
