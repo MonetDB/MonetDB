@@ -394,7 +394,7 @@ jaro_winkler(const str_item *x, const str_item *y, double lp, int *x_flags, int 
 }
 
 static str
-jaro_winkler_similarity(double *ret, str *x, str *y)
+jaro_winkler_similarity(dbl *ret, str *x, str *y)
 {
 	int *x_flags = NULL, *y_flags = NULL;
 	str_item xi = { 0 }, yi = { 0 };
