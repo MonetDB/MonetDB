@@ -251,9 +251,9 @@ typedef struct {
 	BUN o;               /* position in the BAT */
 	str val;             /* string value */
 	int *cp_sequence;    /* string as array of Unicode codepoints */
-	size_t len;          /* string length in characters (multi-byte characters count as 1)*/
-	size_t cp_seq_len;   /* string length in bytes*/
-	uint64_t abm;        /* 64bit alphabet bitmap */
+	int len;          /* string length in characters (multi-byte characters count as 1)*/
+	/*size_t cp_seq_len;*/   /* string length in bytes*/
+	/*uint64_t abm;*/        /* 64bit alphabet bitmap */
 	/* size_t abm_popcount; /\* hamming weight of abm *\/ */
 } str_item;
 
@@ -289,14 +289,13 @@ static str
 str_2_codepointseq(str_item *s)
 {
 	str p = s->val;
-	unsigned int i;
 	int c;
 
 	s->cp_sequence = GDKmalloc(s->len * sizeof(int));
 	if (s->cp_sequence == NULL)
 		throw(MAL, "str_2_byteseq", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	for (i = 0; i < s->len; i++) {
+	for (int i = 0; i < s->len; i++) {
 		UTF8_GETCHAR(c, p);
 		if (c == 0)
 			break;
@@ -321,11 +320,11 @@ illegal:
 static inline double
 jaro_winkler_lp(const str_item *a, const str_item *b)
 {
-	unsigned int i, l;
+	unsigned int l;
 
 	/* calculate common string prefix up to prefixlen chars */
 	l = 0;
-	for (i = 0; i < MIN3(a->len, b->len, JARO_WINKLER_PREFIX_LEN); i++)
+	for (int i = 0; i < MIN3(a->len, b->len, JARO_WINKLER_PREFIX_LEN); i++)
 		l += (a->cp_sequence[i] == b->cp_sequence[i]);
 
 	return (double)l * JARO_WINKLER_SCALING_FACTOR;
