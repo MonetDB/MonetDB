@@ -292,9 +292,6 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 	MT_lock_set(&mal_contextLock);
 	c = MCnewClient();
 	if (c) {
-		Client c_old = setClientContext(c);
-		(void) c_old;
-		assert(NULL == c_old);
 		c = MCinitClientRecord(c, user, fin, fout);
 		MT_thread_set_qry_ctx(&c->qryctx);
 	}
@@ -428,7 +425,6 @@ MCcloseClient(Client c)
 	c->sqlprofiler = 0;
 	free(c->handshake_options);
 	c->handshake_options = NULL;
-	setClientContext(NULL);
 	MT_thread_set_qry_ctx(NULL);
 	assert(c->qryctx.datasize == 0);
 	MT_sema_destroy(&c->s);
