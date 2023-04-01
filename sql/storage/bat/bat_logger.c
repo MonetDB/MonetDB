@@ -1597,6 +1597,12 @@ upgrade(old_logger *lg)
 				BAT *b3;
 				b3 = BATproject(b2, mapnew);
 				bat_destroy(b2);
+				if (b3 == NULL) {
+					bat_destroy(b1);
+					bat_destroy(orig);
+					bat_destroy(b);
+					goto bailout;
+				}
 				rc = BATreplace(b, b1, b3, false);
 				bat_destroy(b1);
 				bat_destroy(b3);

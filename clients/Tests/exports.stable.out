@@ -946,7 +946,6 @@ int getBitConstant(MalBlkPtr mb, bit val);
 int getBlockBegin(MalBlkPtr mb, int pc);
 int getBlockExit(MalBlkPtr mb, int pc);
 int getBteConstant(MalBlkPtr mb, bte val);
-Client getClientContext(void);
 int getDblConstant(MalBlkPtr mb, dbl val);
 str getExceptionMessage(const char *);
 str getExceptionMessageAndState(const char *);
