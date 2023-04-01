@@ -26497,7 +26497,7 @@ battxtsim
 similarity
 command battxtsim.similarity(X_0:bat[:str], X_1:bat[:str]):bat[:dbl] 
 fstrcmp0_impl_bulk;
-Normalized edit distance between two strings
+(Deprecated) Normalized edit distance between two strings
 baturl
 extractURLHost
 command baturl.extractURLHost(X_0:bat[:str], X_1:bit):bat[:str] 
@@ -39204,60 +39204,80 @@ pattern tokenizer.take(X_0:oid):str
 TKNZRtakeOid;
 reconstruct and returns the i-th string
 txtsim
+damerau_levenshtein
+pattern txtsim.damerau_levenshtein(X_0:str, X_1:str):int 
+damerau_levenshtein_distance;
+Calculates Damerau-Levenshtein distance between two strings, operation costs (ins/del = 1, replacement = 1, transposition = 2)
+txtsim
+damerau_levenshtein
+pattern txtsim.damerau_levenshtein(X_0:str, X_1:str, X_2:int, X_3:int, X_4:int):int 
+damerau_levenshtein_distance;
+Calculates Damerau-Levenshtein distance between two strings, variable operation costs (ins/del, replacement, transposition)
+txtsim
 editdistance
 command txtsim.editdistance(X_0:str, X_1:str):int 
-levenshteinbasic_impl;
-Alias for Levenshtein(str,str)
+damerau_levenshtein1;
+Alias for Damerau-Levenshtein(str,str), insdel cost = 1, replace cost = 1 and transpose = 2
 txtsim
 editdistance2
 command txtsim.editdistance2(X_0:str, X_1:str):int 
-levenshteinbasic2_impl;
-Calculates Levenshtein distance (edit distance) between two strings. Cost of transposition is 1 instead of 2
+damerau_levenshtein2;
+Alias for Damerau-Levenshtein(str,str), insdel cost = 1, replace cost = 1 and transpose = 1
+txtsim
+jaro_winkler_similarity
+command txtsim.jaro_winkler_similarity(X_0:str, X_1:str):dbl 
+jaro_winkler_similarity;
+Calculate Jaro Winkler similarity
 txtsim
 levenshtein
-command txtsim.levenshtein(X_0:str, X_1:str, X_2:int, X_3:int, X_4:int):int 
-levenshtein_impl;
-Calculates Levenshtein distance (edit distance) between two strings, variable operation costs (ins/del, replacement, transposition)
+pattern txtsim.levenshtein(X_0:str, X_1:str):int 
+levenshtein_distance;
+Calculates Levenshtein distance between two strings, operation costs (ins/del = 1, replacement = 1)
 txtsim
 levenshtein
-command txtsim.levenshtein(X_0:str, X_1:str):int 
-levenshteinbasic_impl;
-Calculates Levenshtein distance (edit distance) between two strings
+pattern txtsim.levenshtein(X_0:str, X_1:str, X_2:int, X_3:int):int 
+levenshtein_distance;
+Calculates Levenshtein distance between two strings, variable operation costs (ins/del, replacement)
+txtsim
+levenshtein
+pattern txtsim.levenshtein(X_0:str, X_1:str, X_2:int, X_3:int, X_4:int):int 
+levenshtein_distance;
+(Backwards compatibility purposes) Calculates Damerau-Levenshtein distance between two strings, variable operation costs (ins/del, replacement, transposition)
 txtsim
 qgramnormalize
 command txtsim.qgramnormalize(X_0:str):str 
-CMDqgramnormalize;
+qgram_normalize;
 'Normalizes' strings (eg. toUpper and replaces non-alphanumerics with one space
 txtsim
 qgramselfjoin
 command txtsim.qgramselfjoin(X_0:bat[:oid], X_1:bat[:oid], X_2:bat[:int], X_3:bat[:int], X_4:flt, X_5:int) (X_6:bat[:int], X_7:bat[:int]) 
-CMDqgramselfjoin;
+qgram_selfjoin;
 QGram self-join on ordered(!) qgram tables and sub-ordered q-gram positions
 txtsim
 similarity
 command txtsim.similarity(X_0:str, X_1:str):dbl 
 fstrcmp0_impl;
-Normalized edit distance between two strings
+(Deprecated) Normalized edit distance between two strings
 txtsim
 similarity
 command txtsim.similarity(X_0:str, X_1:str, X_2:dbl):dbl 
 fstrcmp_impl;
-Normalized edit distance between two strings
+(Deprecated) Normalized edit distance between two strings
 txtsim
 soundex
 command txtsim.soundex(X_0:str):str 
-soundex_impl;
+soundex;
 Soundex function for phonetic matching
 txtsim
 str2qgrams
 command txtsim.str2qgrams(X_0:str):bat[:str] 
-CMDstr2qgrams;
+str_2_qgrams;
 Break the string into 4-grams
 txtsim
 stringdiff
 command txtsim.stringdiff(X_0:str, X_1:str):int 
-stringdiff_impl;
-calculate the soundexed editdistance
+stringdiff;
+Calculate the soundexed editdistance
 url
 extractURLHost
 command url.extractURLHost(X_0:str, X_1:bit):str 
