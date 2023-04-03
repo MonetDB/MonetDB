@@ -157,7 +157,8 @@ typedef struct {
 	/* the core admin */
 	const char *modname;		/* module context, reference into namespace */
 	const char *fcnname;		/* function name, reference into namespace */
-	int argc, inout, retc, maxarg;		/* total and result argument count */
+	int argc, retc, maxarg;		/* total and result argument count */
+	int inout;			/* starting index of the inout result arguments in argv, -1 if none*/
 	int argv[FLEXIBLE_ARRAY_MEMBER]; /* at least a few entries */
 } *InstrPtr, InstrRecord;
 
