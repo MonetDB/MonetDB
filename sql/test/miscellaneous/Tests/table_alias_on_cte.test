@@ -1,0 +1,8 @@
+
+query I rowsort
+WITH bar(i) AS (SELECT * FROM generate_series(0, 3))
+SELECT j from bar foo(j);
+----
+0
+1
+2

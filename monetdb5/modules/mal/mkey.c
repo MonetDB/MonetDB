@@ -244,7 +244,8 @@ MKEYbathash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				r[i] = o + p;
 			}
 		}
-	} break;
+		break;
+	}
 	case TYPE_bte:
 		MKEYbathashloop(bte);
 		break;
@@ -445,7 +446,8 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 					r[i] = GDK_ROTATE(h[p1], lbit, rbit) ^ (ulng) MKEYHASH_lng(v[p2]);
 				}
 			}
-		} break;
+			break;
+		}
 		case TYPE_dbl:
 			MKEYbulk_rotate_xor_hashloop(lng);
 			break;

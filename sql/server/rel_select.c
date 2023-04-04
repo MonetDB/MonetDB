@@ -971,6 +971,8 @@ table_ref(sql_query *query, symbol *tableref, int lateral, list *refs)
 					list_hash_clear(exps);
 				}
 			}
+			if (temp_table && tableref->data.lval->t->type == type_symbol && tableref->data.lval->t->data.sym && tableref->data.lval->t->data.sym->data.lval->h->next->data.lval) /* AS with column aliases */
+				temp_table = rel_table_optname(sql, temp_table, tableref->data.lval->t->data.sym, refs);
 			if (allowed)
 				return temp_table;
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s'", get_string_global_var(sql, "current_user"), tname);

@@ -1,5 +1,5 @@
 update-from-count.Bug-7079
-HAVE_PYMONETDB?remote-table-ranges.Bug-7089
+remote-table-ranges.Bug-7089
 #KNOWNFAIL?query-too-complex.Bug-7092  # this is a feature request rather than a bug
 KNOWNFAIL?remote-table-rollback.Bug-7094
 ntile-wrong-result.Bug-7104
@@ -24,7 +24,7 @@ rollup-distinct-count.Bug-7146
 sum-union.Bug-7147
 distinct-union.Bug-7148
 HAVE_LIBPY3?python-aggregates-empty.Bug-7158
-HAVE_PYMONETDB?remote-join-idxs.Bug-7165
+remote-join-idxs.Bug-7165
 shutdown-force.Bug-7167
 replace-transaction-conflict.Bug-7168
 merge-table-join.Bug-7172

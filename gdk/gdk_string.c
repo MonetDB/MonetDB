@@ -1402,20 +1402,20 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 
 	if (cnt > 0) {
 		switch (frame_type) {
-		case 3: /* unbounded until current row */	{
+		case 3: /* unbounded until current row */
 			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_UNBOUNDED_TILL_CURRENT_ROW);
-		} break;
+			break;
 		case 4: /* current row until unbounded */
 			goto notimplemented;
-		case 5: /* all rows */	{
+		case 5: /* all rows */
 			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_ALL_ROWS);
-		} break;
-		case 6: /* current row */ {
+			break;
+		case 6: /* current row */
 			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_CURRENT_ROW);
-		} break;
-		default: {
+			break;
+		default:
 			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_OTHERS);
-		}
+			break;
 		}
 	}
 

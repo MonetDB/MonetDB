@@ -211,7 +211,7 @@ HASHgetlink(const Hash *h, BUN i)
 #define hash_flt(H,V)	hash_int(H,V)
 #define hash_dbl(H,V)	hash_lng(H,V)
 
-static inline BUN __attribute__((__const__))
+static inline BUN __attribute__((__pure__))
 mix_uuid(const uuid *u)
 {
 	ulng u1, u2;

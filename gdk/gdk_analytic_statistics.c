@@ -25,28 +25,34 @@
 
 /* average on integers */
 #define ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, ARG)		\
-	if (!is_##TPE##_nil(ARG)) {					\
-		ADD_WITH_CHECK(ARG, sum, LNG_HGE, sum, GDK_LNG_HGE_max, goto avg_overflow##TPE##IMP); \
-		/* count only when no overflow occurs */		\
-		n++;							\
-	}
+	do {								\
+		if (!is_##TPE##_nil(ARG)) {				\
+			ADD_WITH_CHECK(ARG, sum, LNG_HGE, sum,		\
+				       GDK_LNG_HGE_max,			\
+				       goto avg_overflow##TPE##IMP);	\
+			/* count only when no overflow occurs */	\
+			n++;						\
+		}							\
+	} while (0)
 
-#define ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP)		\
-			if (0) {				\
-avg_overflow##TPE##IMP:						\
-				assert(n > 0);			\
-				if (sum >= 0) {			\
-					a = (TPE) (sum / n);	\
-					rr = (lng) (sum % n);	\
-				} else {			\
-					sum = -sum;		\
-					a = - (TPE) (sum / n);	\
-					rr = (lng) (sum % n);	\
-					if (r) {		\
-						a--;		\
-						rr = n - rr;	\
-					}			\
-				}
+/* do the common part of the overflow handling from STEP1 */
+#define ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP)	\
+	do {						\
+	  avg_overflow##TPE##IMP:			\
+		assert(n > 0);				\
+		if (sum >= 0) {				\
+			a = (TPE) (sum / n);		\
+			rr = (lng) (sum % n);		\
+		} else {				\
+			sum = -sum;			\
+			a = - (TPE) (sum / n);		\
+			rr = (lng) (sum % n);		\
+			if (r) {			\
+				a--;			\
+				rr = n - rr;		\
+			}				\
+		}					\
+	} while (0)
 
 #define ANALYTICAL_AVG_IMP_NUM_UNBOUNDED_TILL_CURRENT_ROW(TPE, IMP)	\
 	do {								\
@@ -55,21 +61,20 @@ avg_overflow##TPE##IMP:						\
 		for (; k < i;) {					\
 			j = k;						\
 			do {						\
-				ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, bp[k]) \
-				ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP) \
-					while (k < i && !op[k]) {	\
-						TPE v = bp[k++];	\
-						if (is_##TPE##_nil(v))	\
-							continue;	\
-						AVERAGE_ITER(TPE, v, a, rr, n);	\
-					}				\
-					curval = a + (dbl) rr / n;	\
-					goto calc_done##TPE##IMP;	\
-				}					\
+				ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, bp[k]); \
 				k++;					\
 			} while (k < i && !op[k]);			\
 			curval = n > 0 ? (dbl) sum / n : dbl_nil;	\
-calc_done##TPE##IMP:							\
+			if (0) { /* overflow handling from STEP1 */	\
+				ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP); \
+				while (k < i && !op[k]) {		\
+					TPE v = bp[k++];		\
+					if (is_##TPE##_nil(v))		\
+						continue;		\
+					AVERAGE_ITER(TPE, v, a, rr, n);	\
+				}					\
+				curval = a + (dbl) rr / n;		\
+			}						\
 			for (; j < k; j++)				\
 				rb[j] = curval;				\
 			has_nils |= (n == 0);				\
@@ -84,20 +89,19 @@ calc_done##TPE##IMP:							\
 		dbl curval = dbl_nil;					\
 		l = i - 1;						\
 		for (j = l; ; j--) {					\
-			ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, bp[j]) \
-			ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP)	\
-				while (!(op[j] || j == k)) {		\
-					TPE v = bp[j--];		\
-					if (is_##TPE##_nil(v))		\
-						continue;		\
-					AVERAGE_ITER(TPE, v, a, rr, n);	\
-				}					\
-				curval = a + (dbl) rr / n;		\
-				goto calc_done##TPE##IMP;		\
-			}						\
+			ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, bp[j]); \
 			if (op[j] || j == k) {				\
 				curval = n > 0 ? (dbl) sum / n : dbl_nil; \
-calc_done##TPE##IMP:							\
+				if (0) { /* overflow handling from STEP1 */ \
+					ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP); \
+					while (!(op[j] || j == k)) {	\
+						TPE v = bp[j--];	\
+						if (is_##TPE##_nil(v))	\
+							continue;	\
+						AVERAGE_ITER(TPE, v, a, rr, n);	\
+						curval = a + (dbl) rr / n; \
+					}				\
+				}					\
 				for (; ; l--) {				\
 					rb[l] = curval;			\
 					if (l == j)			\
@@ -117,22 +121,22 @@ calc_done##TPE##IMP:							\
 #define ANALYTICAL_AVG_IMP_NUM_ALL_ROWS(TPE, IMP)			\
 	do {								\
 		TPE a = 0;						\
+		TPE v;							\
 		for (; j < i; j++) {					\
-			TPE v = bp[j];					\
-			ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, v)	\
-			ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP)	\
-				for (; j < i; j++) {			\
-					v = bp[j];			\
-					if (is_##TPE##_nil(v))		\
-						continue;		\
-					AVERAGE_ITER(TPE, v, a, rr, n);	\
-				}					\
-				curval = a + (dbl) rr / n;		\
-				goto calc_done##TPE##IMP;		\
-			}						\
+			v = bp[j];					\
+			ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, v);	\
 		}							\
 		curval = n > 0 ? (dbl) sum / n : dbl_nil;		\
-calc_done##TPE##IMP:							\
+		if (0) { /* overflow handling from STEP1 */		\
+			ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP);	\
+			for (; j < i; j++) {				\
+				v = bp[j];				\
+				if (is_##TPE##_nil(v))			\
+					continue;			\
+				AVERAGE_ITER(TPE, v, a, rr, n);		\
+			}						\
+			curval = a + (dbl) rr / n;			\
+		}							\
 		for (; k < i; k++)					\
 			rb[k] = curval;					\
 		has_nils |= (n == 0);					\
@@ -379,25 +383,25 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 
 	if (cnt > 0) {
 		switch (frame_type) {
-		case 3: /* unbounded until current row */	{
+		case 3: /* unbounded until current row */
 			ANALYTICAL_AVG_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
-		} break;
-		case 4: /* current row until unbounded */	{
+			break;
+		case 4: /* current row until unbounded */
 			ANALYTICAL_AVG_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
-		} break;
-		case 5: /* all rows */	{
+			break;
+		case 5: /* all rows */
 			ANALYTICAL_AVG_BRANCHES(ALL_ROWS);
-		} break;
-		case 6: /* current row */ {
+			break;
+		case 6: /* current row */
 			ANALYTICAL_AVG_BRANCHES(CURRENT_ROW);
-		} break;
-		default: {
+			break;
+		default:
 			if (!(st = GDKinitialize_segment_tree())) {
 				res = GDK_FAIL;
 				goto cleanup;
 			}
 			ANALYTICAL_AVG_BRANCHES(OTHERS);
-		}
+			break;
 		}
 	}
 
@@ -639,25 +643,25 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 
 	if (cnt > 0) {
 		switch (frame_type) {
-		case 3: /* unbounded until current row */	{
+		case 3: /* unbounded until current row */
 			ANALYTICAL_AVG_INT_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
-		} break;
-		case 4: /* current row until unbounded */	{
+			break;
+		case 4: /* current row until unbounded */
 			ANALYTICAL_AVG_INT_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
-		} break;
-		case 5: /* all rows */	{
+			break;
+		case 5: /* all rows */
 			ANALYTICAL_AVG_INT_BRANCHES(ALL_ROWS);
-		} break;
-		case 6: /* current row */ {
+			break;
+		case 6: /* current row */
 			ANALYTICAL_AVG_INT_BRANCHES(CURRENT_ROW);
-		} break;
-		default: {
+			break;
+		default:
 			if (!(st = GDKinitialize_segment_tree())) {
 				res = GDK_FAIL;
 				goto cleanup;
 			}
 			ANALYTICAL_AVG_INT_BRANCHES(OTHERS);
-		}
+			break;
 		}
 	}
 
@@ -907,25 +911,25 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, in
 									\
 	if (cnt > 0) {							\
 		switch (frame_type) {					\
-		case 3: /* unbounded until current row */	{	\
+		case 3: /* unbounded until current row */		\
 			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_UNBOUNDED_TILL_CURRENT_ROW, SAMPLE, OP); \
-		} break;						\
-		case 4: /* current row until unbounded */	{	\
+			break;						\
+		case 4: /* current row until unbounded */		\
 			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_CURRENT_ROW_TILL_UNBOUNDED, SAMPLE, OP); \
-		} break;						\
-		case 5: /* all rows */	{				\
+			break;						\
+		case 5: /* all rows */					\
 			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_ALL_ROWS, SAMPLE, OP); \
-		} break;						\
-		case 6: /* current row */ {				\
+			break;						\
+		case 6: /* current row */ 				\
 			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_CURRENT_ROW, SAMPLE, OP);	\
-		} break;						\
-		default: {						\
+			break;						\
+		default:						\
 			if (!(st = GDKinitialize_segment_tree())) {	\
 				res = GDK_FAIL;				\
 				goto cleanup;				\
 			}						\
 			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_OTHERS, SAMPLE, OP); \
-		}							\
+			break;						\
 		}							\
 	}								\
 									\
@@ -1130,25 +1134,25 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, i
 									\
 	if (cnt > 0) {							\
 		switch (frame_type) {					\
-		case 3: /* unbounded until current row */	{	\
+		case 3: /* unbounded until current row */		\
 			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_UNBOUNDED_TILL_CURRENT_ROW, SAMPLE, OP); \
-		} break;						\
-		case 4: /* current row until unbounded */	{	\
+			break;						\
+		case 4: /* current row until unbounded */		\
 			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_CURRENT_ROW_TILL_UNBOUNDED, SAMPLE, OP); \
-		} break;						\
-		case 5: /* all rows */	{				\
+			break;						\
+		case 5: /* all rows */					\
 			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_ALL_ROWS, SAMPLE, OP); \
-		} break;						\
-		case 6: /* current row */ {				\
+			break;						\
+		case 6: /* current row */ 				\
 			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_CURRENT_ROW, SAMPLE, OP); \
-		} break;						\
-		default: {						\
+			break;						\
+		default:						\
 			if (!(st = GDKinitialize_segment_tree())) {	\
 				res = GDK_FAIL;				\
 				goto cleanup;				\
 			}						\
 			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_OTHERS, SAMPLE, OP); \
-		}							\
+			break;						\
 		}							\
 	}								\
 									\
@@ -1387,25 +1391,25 @@ GDKanalytical_correlation(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT 
 
 	if (cnt > 0) {
 		switch (frame_type) {
-		case 3: /* unbounded until current row */	{
+		case 3: /* unbounded until current row */
 			ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_UNBOUNDED_TILL_CURRENT_ROW, ;, ;);
-		} break;
-		case 4: /* current row until unbounded */	{
+			break;
+		case 4: /* current row until unbounded */
 			ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_CURRENT_ROW_TILL_UNBOUNDED, ;, ;);
-		} break;
-		case 5: /* all rows */	{
+			break;
+		case 5: /* all rows */
 			ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_ALL_ROWS, ;, ;);
-		} break;
-		case 6: /* current row */ {
+			break;
+		case 6: /* current row */
 			ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_CURRENT_ROW, ;, ;);
-		} break;
-		default: {
+			break;
+		default:
 			if (!(st = GDKinitialize_segment_tree())) {
 				res = GDK_FAIL;
 				goto cleanup;
 			}
 			ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_OTHERS, ;, ;);
-		}
+			break;
 		}
 	}
 

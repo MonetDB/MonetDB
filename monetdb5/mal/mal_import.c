@@ -133,7 +133,6 @@ malLoadScript(str name, bstream **fdin)
 	c->blkmode = oldblkmode; \
 	c->bak = oldbak; \
 	c->srcFile = oldsrcFile; \
-	if(c->prompt) GDKfree(c->prompt); \
 	c->prompt = oldprompt; \
 	c->promptlength = strlen(c->prompt);
 #define restoreClient2 \
@@ -157,7 +156,7 @@ malIncludeString(Client c, const char *name, str mal, int listing, MALfcn addres
 	enum clientmode oldmode = c->mode;
 	int oldblkmode = c->blkmode;
 	ClientInput *oldbak = c->bak;
-	str oldprompt = c->prompt;
+	const char *oldprompt = c->prompt;
 	const char *oldsrcFile = c->srcFile;
 
 	MalStkPtr oldglb = c->glb;
@@ -165,7 +164,7 @@ malIncludeString(Client c, const char *name, str mal, int listing, MALfcn addres
 	Module oldcurmodule = c->curmodule;
 	Symbol oldprg = c->curprg;
 
-	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
+	c->prompt = "";				/* do not produce visible prompts */
 	c->promptlength = 0;
 	c->listing = listing;
 	c->fdin = NULL;
@@ -216,7 +215,7 @@ malInclude(Client c, const char *name, int listing)
 	enum clientmode oldmode = c->mode;
 	int oldblkmode = c->blkmode;
 	ClientInput *oldbak = c->bak;
-	str oldprompt = c->prompt;
+	const char *oldprompt = c->prompt;
 	const char *oldsrcFile = c->srcFile;
 
 	MalStkPtr oldglb = c->glb;
@@ -224,7 +223,7 @@ malInclude(Client c, const char *name, int listing)
 	Module oldcurmodule = c->curmodule;
 	Symbol oldprg = c->curprg;
 
-	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
+	c->prompt = "";				/* do not produce visible prompts */
 	c->promptlength = 0;
 	c->listing = listing;
 	c->fdin = NULL;
@@ -277,7 +276,7 @@ mal_cmdline(char *s, size_t *len)
 str
 compileString(Symbol *fcn, Client cntxt, str s)
 {
-	Client c, c_old;
+	Client c;
 	QryCtx *qc_old;
 	size_t len = strlen(s);
 	buffer *b;
@@ -317,14 +316,12 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	}
 	strncpy(fdin->buf, qry, len+1);
 
-	c_old = setClientContext(NULL); // save context
 	qc_old = MT_thread_get_qry_ctx();
 	// compile in context of called for
 	c = MCinitClient(MAL_ADMIN, fdin, 0);
 	if( c == NULL){
 		GDKfree(qry);
 		GDKfree(b);
-		setClientContext(c_old); // restore context
 		MT_thread_set_qry_ctx(qc_old);
 		throw(MAL,"mal.eval","Can not create user context");
 	}
@@ -337,7 +334,6 @@ compileString(Symbol *fcn, Client cntxt, str s)
 		GDKfree(b);
 		c->usermodule= 0;
 		MCcloseClient(c);
-		setClientContext(c_old); // restore context
 		MT_thread_set_qry_ctx(qc_old);
 		return msg;
 	}
@@ -353,7 +349,6 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	c->usermodule= 0;
 	/* restore IO channel */
 	MCcloseClient(c);
-	setClientContext(c_old); // restore context
 	MT_thread_set_qry_ctx(qc_old);
 	GDKfree(qry);
 	GDKfree(b);

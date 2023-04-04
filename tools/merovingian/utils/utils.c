@@ -238,8 +238,9 @@ setConfVal(confkeyval *ckv, const char *val) {
 				return(strdup(buf));
 			}
 			ival = sign * atoi(val);
-		}; break;
-		case BOOLEAN: {
+			break;
+		}
+		case BOOLEAN:
 			if (strcasecmp(val, "true") == 0 ||
 					strcasecmp(val, "yes") == 0 ||
 					strcmp(val, "1") == 0)
@@ -259,8 +260,8 @@ setConfVal(confkeyval *ckv, const char *val) {
 						ckv->key, val);
 				return(strdup(buf));
 			}
-		}; break;
-		case MURI: {
+			break;
+		case MURI:
 			if (strncmp(val, "mapi:monetdb://",
 						sizeof("mapi:monetdb://") -1) != 0)
 			{
@@ -271,8 +272,8 @@ setConfVal(confkeyval *ckv, const char *val) {
 				return(strdup(buf));
 			}
 			/* TODO: check full URL? */
-		}; break;
-		case LADDR: {
+			break;
+		case LADDR:
 			if (strncmp(val, "127.0.0.1", strlen("127.0.0.1")) != 0 &&
 				strncmp(val, "0.0.0.0", strlen("0.0.0.0")) != 0 &&
 				strncmp(val, "::", 2) != 0 &&
@@ -286,8 +287,8 @@ setConfVal(confkeyval *ckv, const char *val) {
 						 ckv->key);
 				return(strdup(buf));
 			}
-		}; break;
-		case LOGLEVEL: {
+			break;
+		case LOGLEVEL:
 			if (strcasecmp(val, "error") == 0) {
 				val = "error";
 				ival = ERROR;
@@ -303,7 +304,7 @@ setConfVal(confkeyval *ckv, const char *val) {
 			} else {
 				return(strdup("allowed loglevel values are: error or warning or information or debug\n"));
 			}
-		}; break;
+			break;
 		case MODS:
 			for (size_t i = 0; val[i]; i++) {
 				if (val[i] < ' ' || val[i] == '\\' || val[i] == '/' || val[i] >= 0177)

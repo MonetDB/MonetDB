@@ -34,7 +34,7 @@ import struct
 import signal
 import fnmatch
 import glob
-
+import pymonetdb # check for pymonetdb early: it is essential for our work
 try:
     import winreg               # Python 3 on Windows
 except ImportError:
@@ -417,7 +417,6 @@ CONDITIONALS = {
     'HAVE_LIBSCIPY3'       : "",
     'HAVE_PERL'            : "",
     'HAVE_PHP'             : "",
-    'HAVE_PYMONETDB'       : "", # default PYTHON can import pymonetdb
     'HAVE_PY3MONETDB'      : "", # PYTHON3 exists and can import pymonetdb
     'HAVE_PYTHON_LZ4'      : "", # module lz4 is available
     'HAVE_RUBY'            : "",
@@ -1148,10 +1147,6 @@ def RunTest(env, test, oktests, pSrvr):
         reason = "as %s is not available." % env['SQLCLIENT'].split(None, 1)[0]
     elif EXT == ".sql" and  not env['exe']['SQL_Dump'][0]:
         reason = "as %s is not available." % env['SQLDUMP'].split(None, 1)[0]
-    elif EXT == ".test" and not CONDITIONALS['HAVE_PYMONETDB']:
-        reason = "as pymonetdb is not available."
-    elif EXT == ".maltest" and not CONDITIONALS['HAVE_PYMONETDB']:
-        reason = "as pymonetdb is not available."
     elif SERVER in ["MAL", "SQL"] and not env['exe']['mserver5'][0]:
         reason = "as %s is not available." % env['MSERVER'].split(None, 1)[0]
     elif EXT == ".malS" and not env['exe']['mserver5'][0]:
@@ -2517,12 +2512,6 @@ def main(argv) :
                 pass
     else:
         CONDITIONALS['HAVE_PY3MONETDB'] = '' # no pymonetdb for python3
-    try:
-        import pymonetdb
-    except ImportError:
-        print('Python available, but pymonetdb package not available')
-    else:
-        CONDITIONALS['HAVE_PYMONETDB'] = '#'
     try:
         import lz4
     except ImportError:

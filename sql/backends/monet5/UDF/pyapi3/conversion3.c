@@ -464,7 +464,8 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 					}
 				}
 				bat_iterator_end(&li);
-			} break;
+				break;
+			}
 #ifdef HAVE_HGE
 			case TYPE_hge: {
 				// create a NPY_FLOAT64 array to hold the huge type

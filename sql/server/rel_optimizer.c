@@ -545,7 +545,8 @@ rel_setjoins_2_joingroupby_(visitor *v, sql_rel *rel)
 					if (is_join(c->op) && !is_processed(c) && rel_find_exp(c->r, me->r)) {
 						p = c;
 						c = p->r;
-					} if (!pp && is_project(c->op) && c->l && rel_find_exp(c->l, me->r)) {
+					}
+					if (!pp && is_project(c->op) && c->l && rel_find_exp(c->l, me->r)) {
 						pp = c;
 						c = c->l;
 					} else {

@@ -830,7 +830,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 	int m = 1;
 	char *b= 0, *c, lastcmd = 0;
 	stream *out = cntxt->fdout;
-	char *oldprompt = cntxt->prompt;
+	const char *oldprompt = cntxt->prompt;
 	size_t oldpromptlength = cntxt->promptlength;
 	MalStkPtr stk = stkbase;
 	int first = pc - ( pc == 1);
@@ -1436,7 +1436,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 str
 runMALDebugger(Client cntxt, MalBlkPtr mb)
 {
-	str oldprompt= cntxt->prompt;
+	const char *oldprompt= cntxt->prompt;
 	int oldtrace = cntxt->itrace;
 	str msg;
 
@@ -1444,7 +1444,7 @@ runMALDebugger(Client cntxt, MalBlkPtr mb)
 
 	msg = runMAL(cntxt, mb, 0, 0);
 
-	cntxt->prompt =oldprompt;
+	cntxt->prompt = oldprompt;
 	cntxt->itrace = oldtrace;
 	mnstr_printf(cntxt->fdout, "mdb>#EOD\n");
 	removeMalBlkHistory(mb);

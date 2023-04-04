@@ -383,11 +383,18 @@ project (
 query T nosort
 plan select 1 from splitted where stamp > TIMESTAMP '1999-01-01 00:00:00' and stamp <= TIMESTAMP '2001-01-01 00:00:00'
 ----
-project (
-| select (
-| | table("sys"."first_decade") [ "first_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| ) [ (timestamp(7) "1999-01-01 00:00:00.000000") < ("splitted"."stamp" UNIQUE) <= (timestamp(7) "2001-01-01 00:00:00.000000") ]
-) [ tinyint(1) "1" as "%5"."%5" ]
+union (
+| project (
+| | select (
+| | | table("sys"."first_decade") [ "first_decade"."stamp" UNIQUE as "splitted"."stamp" ]
+| | ) [ (timestamp(7) "1999-01-01 00:00:00.000000") < ("splitted"."stamp" UNIQUE) <= (timestamp(7) "2001-01-01 00:00:00.000000") ]
+| ) [ tinyint(1) "1" ],
+| project (
+| | select (
+| | | table("sys"."fourth_decade") [ "fourth_decade"."stamp" UNIQUE as "splitted"."stamp" ]
+| | ) [ (timestamp(7) "1999-01-01 00:00:00.000000") < ("splitted"."stamp" UNIQUE) <= (timestamp(7) "2001-01-01 00:00:00.000000") ]
+| ) [ tinyint(1) "1" ]
+) [ "%5"."%5" NOT NULL ]
 
 query T nosort
 plan select 1 from splitted where stamp = TIMESTAMP '2010-01-01 00:00:00'

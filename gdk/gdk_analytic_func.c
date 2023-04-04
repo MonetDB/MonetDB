@@ -1280,25 +1280,25 @@ GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int f
 									\
 	if (cnt > 0) {							\
 		switch (frame_type) {					\
-		case 3: /* unbounded until current row */	{	\
+		case 3: /* unbounded until current row */		\
 			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, UNBOUNDED_TILL_CURRENT_ROW); \
-		} break;						\
-		case 4: /* current row until unbounded */	{	\
+			break;						\
+		case 4: /* current row until unbounded */		\
 			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, CURRENT_ROW_TILL_UNBOUNDED); \
-		} break;						\
-		case 5: /* all rows */	{				\
+			break;						\
+		case 5: /* all rows */					\
 			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, ALL_ROWS); \
-		} break;						\
-		case 6: /* current row */ {				\
+			break;						\
+		case 6: /* current row */ 				\
 			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, CURRENT_ROW); \
-		} break;						\
-		default: {						\
+			break;						\
+		default:						\
 			if (!(st = GDKinitialize_segment_tree())) {	\
 				res = GDK_FAIL;				\
 				goto cleanup;				\
 			}						\
 			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, OTHERS); \
-		}							\
+			break;						\
 		}							\
 	}								\
 									\
@@ -1640,25 +1640,25 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 
 	if (cnt > 0) {
 		switch (frame_type) {
-		case 3: /* unbounded until current row */	{
+		case 3: /* unbounded until current row */
 			ANALYTICAL_COUNT_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
-		} break;
-		case 4: /* current row until unbounded */	{
+			break;
+		case 4: /* current row until unbounded */
 			ANALYTICAL_COUNT_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
-		} break;
-		case 5: /* all rows */	{
+			break;
+		case 5: /* all rows */
 			ANALYTICAL_COUNT_BRANCHES(ALL_ROWS);
-		} break;
-		case 6: /* current row */ {
+			break;
+		case 6: /* current row */
 			ANALYTICAL_COUNT_BRANCHES(CURRENT_ROW);
-		} break;
-		default: {
+			break;
+		default:
 			if (!count_all && !(st = GDKinitialize_segment_tree())) {
 				res = GDK_FAIL;
 				goto cleanup;
 			}
 			ANALYTICAL_COUNT_BRANCHES(OTHERS);
-		}
+			break;
 		}
 	}
 
@@ -1968,25 +1968,25 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 
 	if (cnt > 0) {
 		switch (frame_type) {
-		case 3: /* unbounded until current row */	{
+		case 3: /* unbounded until current row */
 			ANALYTICAL_SUM_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
-		} break;
-		case 4: /* current row until unbounded */	{
+			break;
+		case 4: /* current row until unbounded */
 			ANALYTICAL_SUM_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
-		} break;
-		case 5: /* all rows */	{
+			break;
+		case 5: /* all rows */
 			ANALYTICAL_SUM_BRANCHES(ALL_ROWS);
-		} break;
-		case 6: /* current row */ {
+			break;
+		case 6: /* current row */
 			ANALYTICAL_SUM_BRANCHES(CURRENT_ROW);
-		} break;
-		default: {
+			break;
+		default:
 			if (!(st = GDKinitialize_segment_tree())) {
 				res = GDK_FAIL;
 				goto cleanup;
 			}
 			ANALYTICAL_SUM_BRANCHES(OTHERS);
-		}
+			break;
 		}
 	}
 
@@ -2487,25 +2487,25 @@ GDKanalyticalprod(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int t
 
 	if (cnt > 0) {
 		switch (frame_type) {
-		case 3: /* unbounded until current row */	{
+		case 3: /* unbounded until current row */
 			ANALYTICAL_PROD_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
-		} break;
-		case 4: /* current row until unbounded */	{
+			break;
+		case 4: /* current row until unbounded */
 			ANALYTICAL_PROD_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
-		} break;
-		case 5: /* all rows */	{
+			break;
+		case 5: /* all rows */
 			ANALYTICAL_PROD_BRANCHES(ALL_ROWS);
-		} break;
-		case 6: /* current row */ {
+			break;
+		case 6: /* current row */
 			ANALYTICAL_PROD_BRANCHES(CURRENT_ROW);
-		} break;
-		default: {
+			break;
+		default:
 			if (!(st = GDKinitialize_segment_tree())) {
 				res = GDK_FAIL;
 				goto cleanup;
 			}
 			ANALYTICAL_PROD_BRANCHES(OTHERS);
-		}
+			break;
 		}
 	}
 

@@ -171,17 +171,16 @@ bat_to_sexp(BAT* b, int type)
 		case TYPE_int:
 			//Storage is int but the actual defined type may be different
 			switch (type) {
-				case TYPE_int: {
-					// special case: memcpy for int-to-int conversion without NULLs
+			case TYPE_int:
+				// special case: memcpy for int-to-int conversion without NULLs
+				BAT_TO_INTSXP(b, bi, int, varvalue, 1);
+				break;
+			default:
+				if (type == ATOMindex("date")) {
+					BAT_TO_DATESXP(b, bi, int, varvalue, 0);
+				} else {
+					//Type stored as int but no implementation to decode into native R type
 					BAT_TO_INTSXP(b, bi, int, varvalue, 1);
-				} break;
-				default: {
-					if (type == ATOMindex("date")) {
-						BAT_TO_DATESXP(b, bi, int, varvalue, 0);
-					} else {
-						//Type stored as int but no implementation to decode into native R type
-						BAT_TO_INTSXP(b, bi, int, varvalue, 1);
-					}
 				}
 			}
 			break;

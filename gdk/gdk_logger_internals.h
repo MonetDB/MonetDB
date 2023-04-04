@@ -15,8 +15,6 @@
 
 typedef struct logged_range_t {
 	ulng id;			/* log file id */
-	int first_tid;		/* first */
-	int last_tid;		/* last tid */
 	ulng last_ts;		/* last stored timestamp */
 	struct logged_range_t *next;
 } logged_range;
@@ -39,7 +37,6 @@ struct logger {
 	bool inmemory;
 	char *fn;
 	char *dir;
-	char *local_dir; /* the directory in which the log is written */
 	preversionfix_fptr prefuncp;
 	postversionfix_fptr postfuncp;
 	void *funcdata;
@@ -69,8 +66,10 @@ struct logger {
 	uint8_t type_nr[256];	/* mapping from logger type id to GDK type nr */
 	int8_t type_id[128];	/* mapping from GDK type nr to logger type id */
 
-	void *buf;
-	size_t bufsize;
+	void *rbuf;
+	size_t rbufsize;
+	void *wbuf;
+	size_t wbufsize;
 
 	/* flush variables */
 	unsigned int flush_queue[FLUSH_QUEUE_SIZE]; /* circular array with the current transactions' ids waiting to be flushed */
@@ -88,7 +87,6 @@ struct old_logger {
 	lng id;
 	int tid;
 	bool with_ids;
-	char *local_dir; /* the directory in which the log is written */
 	stream *log;
 	lng end;		/* end of pre-allocated blocks for faster f(data)sync */
 	/* Store log_bids (int) to circumvent trouble with reference counting */

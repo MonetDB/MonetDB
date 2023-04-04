@@ -130,7 +130,6 @@ newMalBlk(int elements)
 	};
 	if (newMalBlkStmt(mb, elements) < 0) {
 		GDKfree(mb->var);
-		GDKfree(mb->stmt);
 		GDKfree(mb);
 		return NULL;
 	}

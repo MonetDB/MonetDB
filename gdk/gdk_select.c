@@ -421,7 +421,8 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 			checkMINMAX(64, TYPE);				\
 			impsmask(ISDENSE,TEST,64);			\
 			break;						\
-		default: assert(0); break;				\
+		default:						\
+			MT_UNREACHABLE();				\
 		}							\
 	} while (false)
 
@@ -2656,7 +2657,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 			default:
 				ncnt = BUN_NONE;
 				GDKerror("unsupported type\n");
-				assert(0);
+				MT_UNREACHABLE();
 			}
 			if (ncnt == BUN_NONE) {
 				IMPSdecref(imprints, false);
