@@ -607,24 +607,24 @@ static mel_func copy_init_funcs[] = {
  )),
 #endif
 
- command("copy", "scale", COPYscale_bte, true, "scale by a power of 10", args(1, 7,
+ pattern("copy", "scale", COPYscale_bte, true, "scale by a power of 10", args(1, 7,
 	batarg("", bte),
 	batarg("values", bte), arg("scale", int), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
- command("copy", "scale", COPYscale_sht, true, "scale by a power of 10", args(1, 7,
+ pattern("copy", "scale", COPYscale_sht, true, "scale by a power of 10", args(1, 7,
 	batarg("", sht),
 	batarg("values", sht), arg("scale", int), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
- command("copy", "scale", COPYscale_int, true, "scale by a power of 10", args(1, 7,
+ pattern("copy", "scale", COPYscale_int, true, "scale by a power of 10", args(1, 7,
 	batarg("", int),
 	batarg("values", int), arg("scale", int), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
- command("copy", "scale", COPYscale_lng, true, "scale by a power of 10", args(1, 7,
+ pattern("copy", "scale", COPYscale_lng, true, "scale by a power of 10", args(1, 7,
 	batarg("", lng),
 	batarg("values", lng), arg("scale", int), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
  #ifdef HAVE_HGE
- command("copy", "scale", COPYscale_hge, true, "scale by a power of 10", args(1, 7,
+ pattern("copy", "scale", COPYscale_hge, true, "scale by a power of 10", args(1, 7,
 	batarg("", hge),
 	batarg("values", hge), arg("scale", int), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),

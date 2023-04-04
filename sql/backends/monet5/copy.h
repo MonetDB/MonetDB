@@ -78,12 +78,12 @@ extern str COPYparse_decimal_lng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 extern str COPYparse_decimal_hge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
 
-extern str COPYscale_bte(bat *result_bat_id, bat *values_bat_id, int *factor, bat *failures_bat_id, lng *starting_row, int *col_no, str *col_name);
-extern str COPYscale_sht(bat *result_bat_id, bat *values_bat_id, int *factor, bat *failures_bat_id, lng *starting_row, int *col_no, str *col_name);
-extern str COPYscale_int(bat *result_bat_id, bat *values_bat_id, int *factor, bat *failures_bat_id, lng *starting_row, int *col_no, str *col_name);
-extern str COPYscale_lng(bat *result_bat_id, bat *values_bat_id, int *factor, bat *failures_bat_id, lng *starting_row, int *col_no, str *col_name);
+extern str COPYscale_bte(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str COPYscale_sht(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str COPYscale_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str COPYscale_lng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #ifdef HAVE_HGE
-extern str COPYscale_hge(bat *result_bat_id, bat *values_bat_id, int *factor, bat *failures_bat_id, lng *starting_row, int *col_no, str *col_name);
+extern str COPYscale_hge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
 
 ////////////////////////////////////////////////////////////////////////

@@ -219,17 +219,24 @@ TMPL_SUFFIXED(COPYparse_integer) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 }
 
 str
-TMPL_SUFFIXED(COPYscale) (
-	bat *result_bat_id,
-	bat *values_bat_id, int *factor,
-	bat *failures_bat_id, lng *starting_row, int *col_no, str *col_name)
+TMPL_SUFFIXED(COPYscale) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	const char *operatorname = "copy.scale";
-	BAT *values_bat = BATdescriptor(*values_bat_id);
+
+	(void)mb;
+	bat *result_bat_id = getArgReference_bat(stk, pci, 0);
+	bat values_bat_id = *getArgReference_bat(stk, pci, 1);
+	int factor = *getArgReference_int(stk, pci, 2);
+	bat failures_bat_id = *getArgReference_bat(stk, pci, 3);
+	lng starting_row = *getArgReference_lng(stk, pci, 4);
+	int col_no = *getArgReference_int(stk, pci, 5);
+	str col_name = *getArgReference_str(stk, pci, 6);
+
+	BAT *values_bat = BATdescriptor(values_bat_id);
 	size_t n = BATcount(values_bat);
 	BAT *results_bat = NULL;
-	TMPL_TYPE limit = TMPL_MAX / *factor;
+	TMPL_TYPE limit = TMPL_MAX / factor;
 	TMPL_TYPE *values;
 	TMPL_TYPE *results;
 
@@ -240,7 +247,7 @@ TMPL_SUFFIXED(COPYscale) (
 		bailout(operatorname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	struct error_handling errors;
-	copy_init_error_handling(&errors, NULL, *failures_bat_id, *starting_row, *col_no, *col_name); // JOERI FIX THIS
+	copy_init_error_handling(&errors, cntxt, failures_bat_id, starting_row, col_no, col_name);
 
 	values = Tloc(values_bat, 0);
 	results = Tloc(results_bat, 0);
@@ -253,7 +260,7 @@ TMPL_SUFFIXED(COPYscale) (
 			copy_report_error(&errors, i, -1, "value too large");
 			scaled = TMPL_NIL;
 		} else {
-			scaled = *factor * val;
+			scaled = factor * val;
 		}
 		results[i] = scaled;
 	}
