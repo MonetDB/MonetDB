@@ -152,22 +152,28 @@ TMPL_SUFFIXED(parse_many_integers) (struct error_handling *errors, void *parms, 
 
 
 str
-TMPL_SUFFIXED(COPYparse_decimal) (
-	bat *parsed_bat_id,
-	bat *block_bat_id, bat *offsets_bat_id,
-	int *digits, int *scale,
-	TMPL_TYPE *dummy,
-	bat *failures_bat, lng *starting_row, int *col_no, str *col_name)
+TMPL_SUFFIXED(COPYparse_decimal) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	(void)dummy;
+
+	(void)mb;
+	bat *parsed_bat_id = getArgReference_bat(stk, pci, 0);
+	bat block_bat_id = *getArgReference_bat(stk, pci, 1);
+	bat offsets_bat_id = *getArgReference_bat(stk, pci, 2);
+	int digits = *getArgReference_int(stk, pci, 3);
+	int scale = *getArgReference_int(stk, pci, 4);
+	// arg 5 is a dummy
+	bat failures_bat = *getArgReference_bat(stk, pci, 6);
+	lng starting_row = *getArgReference_lng(stk, pci, 7);
+	int col_no = *getArgReference_int(stk, pci, 8);
+	str col_name = *getArgReference_str(stk, pci, 9);
 
 	struct error_handling errors;
-	copy_init_error_handling(&errors, NULL, *failures_bat, *starting_row, *col_no, *col_name); // JOERI FIX THIS
+	copy_init_error_handling(&errors, cntxt, failures_bat, starting_row, col_no, col_name);
 
 	struct decimal_parms myparms = {
-		.digits = *digits,
-		.scale = *scale,
+		.digits = digits,
+		.scale = scale,
 	};
 
 	// Does this number of digits fit in the result type?
@@ -179,7 +185,7 @@ TMPL_SUFFIXED(COPYparse_decimal) (
 
 	msg = parse_fixed_width_column(
 		parsed_bat_id, &errors, "copy.parse_decimal",
-		*block_bat_id, *offsets_bat_id,
+		block_bat_id, offsets_bat_id,
 		TMPL_SUFFIXED(TYPE), TMPL_SUFFIXED(parse_many_decimals), &myparms);
 
 end:

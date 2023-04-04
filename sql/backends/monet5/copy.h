@@ -70,12 +70,12 @@ extern str COPYparse_integer_lng(bat *parsed_bat_id, bat *block_bat_id, bat *off
 extern str COPYparse_integer_hge(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, hge *dummy, bat *failures_bat, lng *starting_row, int *col_no, str *col_name);
 #endif
 
-extern str COPYparse_decimal_bte(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *digits_p, int *scale_p, bte *dummy, bat *failures_bat, lng *starting_row, int *col_no, str *col_name);
-extern str COPYparse_decimal_sht(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *digits_p, int *scale_p, sht *dummy, bat *failures_bat, lng *starting_row, int *col_no, str *col_name);
-extern str COPYparse_decimal_int(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *digits_p, int *scale_p, int *dummy, bat *failures_bat, lng *starting_row, int *col_no, str *col_name);
-extern str COPYparse_decimal_lng(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *digits_p, int *scale_p, lng *dummy, bat *failures_bat, lng *starting_row, int *col_no, str *col_name);
+extern str COPYparse_decimal_bte(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str COPYparse_decimal_sht(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str COPYparse_decimal_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str COPYparse_decimal_lng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #ifdef HAVE_HGE
-extern str COPYparse_decimal_hge(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *digits_p, int *scale_p, hge *dummy, bat *failures_bat, lng *starting_row, int *col_no, str *col_name);
+extern str COPYparse_decimal_hge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
 
 extern str COPYscale_bte(bat *result_bat_id, bat *values_bat_id, int *factor, bat *failures_bat_id, lng *starting_row, int *col_no, str *col_name);
