@@ -5171,7 +5171,7 @@ wkbHASH(const void *W)
 	for (i = 0; i < (w->len - 1); i += 2) {
 		BUN a = ((unsigned char *) w->data)[i];
 		BUN b = ((unsigned char *) w->data)[i + 1];
-#if '\377' < 0
+#if '\377' < 0					/* char is signed? */
 		/* maybe sign extend */
 		if (a & 0x80)
 			a |= ~(BUN)0x7f;
@@ -5631,7 +5631,15 @@ wkbaHASH(const void *WARRAY)
 	for (j = 0; j < wArray->itemsNum; j++) {
 		wkb *w = wArray->data[j];
 		for (i = 0; i < (w->len - 1); i += 2) {
-			int a = *(w->data + i), b = *(w->data + i + 1);
+			BUN a = ((unsigned char *) w->data)[i];
+			BUN b = ((unsigned char *) w->data)[i + 1];
+#if '\377' < 0					/* char is signed? */
+			/* maybe sign extend */
+			if (a & 0x80)
+				a |= ~(BUN)0x7f;
+			if (b & 0x80)
+				b |= ~(BUN)0x7f;
+#endif
 			h = (h << 3) ^ (h >> 11) ^ (h >> 17) ^ (b << 8) ^ a;
 		}
 	}
