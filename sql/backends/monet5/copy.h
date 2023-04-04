@@ -111,7 +111,7 @@ extern str scan_fields(
 // copy_io.c
 
 extern str COPYdefer_close_stream(bat *container, Stream *s);
-extern str COPYrequest_upload(Stream *upload, str *filename, bit *binary);
+extern str COPYrequest_upload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str COPYfrom_stdin(Stream *s, lng *offset, lng *lines, bit *stoponemptyline, str *linesep_arg, str *quote_arg, bit *escape);
 
 

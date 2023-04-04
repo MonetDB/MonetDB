@@ -514,7 +514,7 @@ end:
 
 
 static mel_func copy_init_funcs[] = {
- command("copy", "request_upload", COPYrequest_upload, true, "request MAPI file upload",
+ pattern("copy", "request_upload", COPYrequest_upload, true, "request MAPI file upload",
 	args(1, 3,
 		arg("", streams),
 		arg("filename", str), arg("binary", bit)
