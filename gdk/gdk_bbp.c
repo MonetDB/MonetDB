@@ -550,6 +550,9 @@ heapinit(BAT *b, const char *buf,
 		return -1;
 	}
 
+	if (strcmp(type, "wkba") == 0)
+		TRC_WARNING(GDK, "type wkba (SQL name: GeometryA) is deprecated\n");
+
 	if (properties & ~0x0F81) {
 		TRC_CRITICAL(GDK, "unknown properties are set: incompatible database on line %d of BBP.dir\n", lineno);
 		return -1;
