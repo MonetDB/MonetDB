@@ -136,19 +136,26 @@ fits_varchar(const char *s, int maxlen) {
 }
 
 str
-COPYparse_string(
-	bat *parsed_bat_id,
-	bat *block_bat_id, bat *offsets_bat_id,
-	int *maxlen,
-	bat *failures_bat, lng *starting_row, int *col_no, str *col_name)
+COPYparse_string(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	const char *fname = "copy.parse_string";
+
+	(void)mb;
+	bat *parsed_bat_id = getArgReference_bat(stk, pci, 0);
+	bat block_bat_id = *getArgReference_bat(stk, pci, 1);
+	bat offsets_bat_id = *getArgReference_bat(stk, pci, 2);
+	int maxlen = *getArgReference_int(stk, pci, 3);
+	bat failures_bat = *getArgReference_bat(stk, pci, 4);
+	lng starting_row = *getArgReference_lng(stk, pci, 5);
+	int col_no = *getArgReference_int(stk, pci, 6);
+	str col_name = *getArgReference_str(stk, pci, 7);
+
 	struct error_handling errors;
-	BAT *block_bat = BATdescriptor(*block_bat_id);
-	BAT *offsets_bat = BATdescriptor(*offsets_bat_id);
+	BAT *block_bat = BATdescriptor(block_bat_id);
+	BAT *offsets_bat = BATdescriptor(offsets_bat_id);
 	BAT *parsed_bat = NULL;
-	int colwidth = *maxlen;
+	int colwidth = maxlen;
 	int n;
 
 	if (!block_bat || !offsets_bat)
@@ -158,7 +165,7 @@ COPYparse_string(
 	if (!parsed_bat)
 		bailout(fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	copy_init_error_handling(&errors, NULL, *failures_bat, *starting_row, *col_no, *col_name); // JOERI FIX THIS
+	copy_init_error_handling(&errors, cntxt, failures_bat, starting_row, col_no, col_name);
 
 	n = BATcount(offsets_bat);
 	for (int i = 0; i < n; i++) {
