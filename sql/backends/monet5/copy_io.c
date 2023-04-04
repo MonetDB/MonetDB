@@ -239,12 +239,17 @@ from_stdin_destroy(void *private)
 }
 
 str
-COPYfrom_stdin(Stream *s, lng *offset, lng *lines, bit *stoponemptyline, str *linesep_arg, str *quote_arg, bit *escape)
+COPYfrom_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void)s;
-	(void)stoponemptyline;
-	(void)lines;
-	Client cntxt = getClientContext();
+	(void)mb;
+	Stream *s = (Stream*)getArgReference(stk, pci, 0);
+	lng offset = *getArgReference_lng(stk, pci, 1);
+	lng lines = *getArgReference_lng(stk, pci, 2);
+	bit stoponemptyline = *getArgReference_bit(stk, pci, 3);
+	str linesep_arg = *getArgReference_str(stk, pci, 4);
+	str quote_arg = *getArgReference_str(stk, pci, 5);
+	bit escape = *getArgReference_bit(stk, pci, 6);
+
 	backend *be = cntxt->sqlcontext;
 	mvc *mvc = be->mvc;
 
@@ -252,17 +257,17 @@ COPYfrom_stdin(Stream *s, lng *offset, lng *lines, bit *stoponemptyline, str *li
 	if (!state)
 		throw(MAL, "copy.from_stdin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	bool backslash_escapes = *escape;
+	bool backslash_escapes = escape;
 	*state = (struct from_stdin_state) {
 		.bs = mvc->scanner.rs,
 		.ws = mvc->scanner.ws,
-		.stop_on_empty = *stoponemptyline,
-		.offset_left = *offset,
-		.lines_left = *lines,
+		.stop_on_empty = stoponemptyline,
+		.offset_left = offset,
+		.lines_left = lines,
 		.at_start_of_line = true,
 		.scan_state = {
-			.quote_char = get_sep_char(*quote_arg, backslash_escapes),
-			.line_sep = get_sep_char(*linesep_arg, backslash_escapes),
+			.quote_char = get_sep_char(quote_arg, backslash_escapes),
+			.line_sep = get_sep_char(linesep_arg, backslash_escapes),
 			.escape_enabled = backslash_escapes,
 			.quoted = false,
 			.escape_pending = false,

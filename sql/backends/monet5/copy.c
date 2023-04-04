@@ -519,7 +519,7 @@ static mel_func copy_init_funcs[] = {
 		arg("", streams),
 		arg("filename", str), arg("binary", bit)
  )),
- command("copy", "from_stdin", COPYfrom_stdin, true, "read FROM STDIN",
+ pattern("copy", "from_stdin", COPYfrom_stdin, true, "read FROM STDIN",
  	args(1, 7,
 		arg("", streams),
 		arg("offset", lng), arg("lines", lng),
