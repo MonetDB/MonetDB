@@ -406,6 +406,8 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			return base;
 
 		for (i = 0; i < p->retc; i++) {
+			if (p->inout > -1 && i >= p->inout && !copystring(&t, "!", &len))
+				return base;
 			arg= renderTerm(mb, stk, p, i, flg);
 			if (arg) {
 				if (!copystring(&t, arg, &len)) {
