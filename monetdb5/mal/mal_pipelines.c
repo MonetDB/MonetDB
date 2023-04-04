@@ -190,7 +190,6 @@ PIPELINEworker(void *T)
 			MalStkPtr stk = stack_copy(s->stk, s->start);
 
 			MT_thread_set_qry_ctx(&s->cntxt->qryctx);
-			setClientContext(s->cntxt);
 
 			*p = (Pipeline) {
 				.p = s,

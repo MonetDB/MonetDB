@@ -66,8 +66,6 @@ dump_block(const char *msg, BAT *b)
 void
 copy_init_error_handling(struct error_handling *admin, Client cntxt, bat failures_bat, lng starting_row, int default_col_no, const char *column_name)
 {
-	if (cntxt == NULL)
-		cntxt = getClientContext();
 	admin->cntxt = cntxt;
 	admin->failures_bat_id = failures_bat;
 	admin->failures_bat = NULL;
