@@ -215,7 +215,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 	Client c;
 
 	MT_thread_set_qry_ctx(NULL);
-	setClientContext(NULL);
 
 	/* decode BIG/LIT:user:{cypher}passwordchal:lang:database: line */
 

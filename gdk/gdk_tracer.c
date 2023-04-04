@@ -167,6 +167,7 @@ GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
   too_long:
 	GDK_TRACER_EXCEPTION("path name for dbtrace file too long\n");
 	/* uninitialize */
+	free(fn);
 	free(file_name);
 	file_name = NULL;
 	active_tracer = stderr;
