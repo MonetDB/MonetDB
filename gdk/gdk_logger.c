@@ -2225,8 +2225,10 @@ do_flush_range_cleanup(logger* lg) {
 
 	for (frange = first; frange && frange != flast; frange = frange->next) {
 		(void) ATOMIC_DEC(&frange->refcount);
-		close_stream(frange->output_log);
-		frange->output_log = NULL;
+		if (!LOG_DISABLED(lg)) {
+			close_stream(frange->output_log);
+			frange->output_log = NULL;
+		}
 	}
 
 	return flast;
@@ -2953,7 +2955,6 @@ log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
 		if (log_open_output(lg) != GDK_SUCCEED)
 			GDKfatal("Could not create new log file\n"); // TODO: does not have to be fatal (yet)
 		do_rotate(lg);
-		(void) ATOMIC_DEC(&frange->refcount);
 		(void) do_flush_range_cleanup(lg);
 		assert(ATOMIC_GET(&frange->refcount) == 0);
 		return log_commit(lg);
@@ -3207,12 +3208,12 @@ log_tstart(logger *lg, bool flushnow, ulng *log_file_id)
 		do_rotate(lg);
 		rotation_unlock(lg);
 	}
-
-	(void) ATOMIC_INC(&lg->current->refcount);
 	(void) ATOMIC_INC(&lg->current->end);
 
 	if (LOG_DISABLED(lg))
 		return GDK_SUCCEED;
+
+	(void) ATOMIC_INC(&lg->current->refcount);
 
 	logformat l;
 	l.flag = LOG_START;
