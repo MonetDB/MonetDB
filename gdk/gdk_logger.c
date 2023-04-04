@@ -2904,9 +2904,9 @@ flush_unlock(logger *lg) {
 }
 
 static inline gdk_return
-do_flush(logged_range *range, lng end) {
+do_flush(logged_range *range, ulng end) {
 	// assumes flush lock
-	if ((lng) ATOMIC_GET(&range->flushed_end) < end) { // CAS
+	if ((ulng) ATOMIC_GET(&range->flushed_end) < end) { // CAS
 		stream* output_log = range->output_log;
 		if (
 			mnstr_flush(output_log, MNSTR_FLUSH_DATA) ||
@@ -2932,7 +2932,7 @@ do_rotate(logger *lg) {
 	logged_range* next	= lg->current->next;
 	if (next) {
 		assert(ATOMIC_GET(&next->refcount) == 1);
-		lng end = ATOMIC_GET(&lg->current->end);
+		ulng end = ATOMIC_GET(&lg->current->end);
 		ATOMIC_SET(&next->pend, end);
 		ATOMIC_SET(&next->end, end);
 		assert(ATOMIC_GET(&lg->current->refcount) > 0);
@@ -2941,7 +2941,7 @@ do_rotate(logger *lg) {
 }
 
 gdk_return
-log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
+log_tflush(logger* lg, ulng writer_end, ulng commit_ts) {
 
 	if (lg->flushnow) {
 		logged_range* frange = lg->flush_ranges;
@@ -2966,16 +2966,16 @@ log_tflush(logger* lg, ulng log_file_id, ulng commit_ts) {
 
 	logged_range* frange = do_flush_range_cleanup(lg);
 
-	lng end = (lng) log_file_id;
-	while ((lng) ATOMIC_GET(&frange->end) < end) {
+	ulng end = writer_end;
+	while ((ulng) ATOMIC_GET(&frange->end) < end) {
 		assert(frange->next);
 		frange = frange->next;
 	}
 
-	if ((lng) ATOMIC_GET(&frange->flushed_end) < end) {
+	if ((ulng) ATOMIC_GET(&frange->flushed_end) < end) {
 		flush_lock(lg);
 		/* check it one more time*/
-		if ((lng) ATOMIC_GET(&frange->flushed_end) < end)
+		if ((ulng) ATOMIC_GET(&frange->flushed_end) < end)
 			do_flush(frange, end);
 		flush_unlock(lg);
 	}
@@ -3170,10 +3170,9 @@ log_find_bat(logger *lg, log_id id)
 
 
 gdk_return
-log_tstart(logger *lg, bool flushnow, ulng *log_file_id)
+log_tstart(logger *lg, bool flushnow, ulng *writer_end)
 {
-	lg->writer_end			= log_file_id;
-	logged_range* current	= lg->current;
+	lg->writer_end = writer_end;
 
 	rotation_lock(lg);
 	if (flushnow) {
@@ -3184,9 +3183,9 @@ log_tstart(logger *lg, bool flushnow, ulng *log_file_id)
 		}
 		assert(ATOMIC_GET(&lg->nr_flushers) == 0);
 
-		ulng end = ATOMIC_GET(&current->end);
-		assert(!ATOMIC_GET(&current->flushed_end) || ATOMIC_GET(&current->flushed_end) == end);
-		if (ATOMIC_GET(&current->pend) < end) {
+		ulng end = ATOMIC_GET(&lg->current->end);
+		assert(!ATOMIC_GET(&lg->current->flushed_end) || ATOMIC_GET(&lg->current->flushed_end) == end);
+		if (ATOMIC_GET(&lg->current->pend) < end) {
 			lg->id++;
 			if (log_open_output(lg) != GDK_SUCCEED)
 				GDKfatal("Could not create new log file\n"); // TODO: does not have to be fatal (yet)
