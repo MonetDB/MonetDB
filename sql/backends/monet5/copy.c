@@ -162,20 +162,28 @@ get_sep_char(str sep, bool backslash_escapes)
 }
 
 static str
-COPYfixlines(
-	  bat *ret_left, bat *ret_right, lng *ret_linecount,
-	  bat *left_block, bat *right_block, str *linesep_arg, str *quote_arg,
-	  bit *escape, bat *failures_bat,
-	  lng *starting_row_arg, lng *max_rows_arg)
+COPYfixlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	struct error_handling errors;
-	bool backslash_escapes = *escape;
-	lng starting_row = *starting_row_arg;
-	lng max_rows = *max_rows_arg;
+
+	(void)mb;
+	bat *ret_left = getArgReference_bat(stk, pci, 0);
+	bat *ret_right = getArgReference_bat(stk, pci, 1);
+	lng *ret_linecount = getArgReference_lng(stk, pci, 2);
+	bat left_block = *getArgReference_bat(stk, pci, 3);
+	bat right_block = *getArgReference_bat(stk, pci, 4);
+	str linesep = *getArgReference_str(stk, pci, 5);
+	str quote = *getArgReference_str(stk, pci, 6);
+	bit escape_arg = *getArgReference_bit(stk, pci, 7);
+	bat failures_bat = *getArgReference_bat(stk, pci, 8);
+	lng starting_row = *getArgReference_lng(stk, pci, 9);
+	lng max_rows = *getArgReference_lng(stk, pci, 10);
+
+	bool backslash_escapes = escape_arg;
 	struct scan_state state = {
-		.quote_char = get_sep_char(*quote_arg, backslash_escapes),
-		.line_sep = get_sep_char(*linesep_arg, backslash_escapes),
+		.quote_char = get_sep_char(quote, backslash_escapes),
+		.line_sep = get_sep_char(linesep, backslash_escapes),
 		.escape_enabled = backslash_escapes,
 		.quoted = false,
 		.escape_pending = false,
@@ -187,7 +195,7 @@ COPYfixlines(
 	int newline_count = 0;
 	const unsigned char *latest_newline;
 
-	copy_init_error_handling(&errors, NULL, *failures_bat, starting_row, -1, NULL); // JOERI FIX THIS
+	copy_init_error_handling(&errors, cntxt, failures_bat, starting_row, -1, NULL);
 	// The recoverable only errors copy.fixlines detects do not correspond to
 	// inserted rows.
 	copy_error_handling_inhibit_deletes(&errors);
@@ -199,10 +207,10 @@ COPYfixlines(
 	if (state.line_sep == state.quote_char)
 		bailout("copy.fixlines", SQLSTATE(42000) "line separator and quote character cannot be the same");
 
-	if (is_bat_nil(*left_block) || is_bat_nil(*right_block) || is_bit_nil(*escape))
+	if (is_bat_nil(left_block) || is_bat_nil(right_block) || is_bit_nil(escape_arg))
 		bailout("copy.fixlines", "arguments must not be nil");
 
-	if ((left = BATdescriptor(*left_block)) == NULL || (right = BATdescriptor(*right_block)) == NULL)
+	if ((left = BATdescriptor(left_block)) == NULL || (right = BATdescriptor(right_block)) == NULL)
 		bailout("copy.fixlines", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (BATcount(left) > (BUN)INT_MAX || BATcount(right) > (BUN)INT_MAX)
 		bailout("copy.fixlines", SQLSTATE(42000) "block size too large");
@@ -535,7 +543,7 @@ static mel_func copy_init_funcs[] = {
 	arg("", lng),
 	batarg("block", bte),arg("toskip", lng)
  )),
- command("copy", "fixlines", COPYfixlines, true, "Copy bytes from 'right' to 'left' to complete the final line of 'left'. Return left line count and bytes copied",
+ pattern("copy", "fixlines", COPYfixlines, true, "Copy bytes from 'right' to 'left' to complete the final line of 'left'. Return left line count and bytes copied",
 	args(3, 11,
 	batarg("new_left", bte), batarg("new_right", bte), arg("linecount", lng),
 	batarg("left", bte), batarg("right", bte), arg("linesep", str), arg("quote", str), arg("escape", bit), batarg("failures", oid), arg("startingrow", lng), arg("maxrows", lng)
