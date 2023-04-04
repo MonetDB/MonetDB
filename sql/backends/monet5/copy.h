@@ -62,12 +62,12 @@ extern str parse_fixed_width_column(bat *ret, struct error_handling *errors, con
 extern str COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str COPYparse_string(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *maxlen, bat *failures_bat, lng *starting_row, int *col_no, str *col_name);
 
-extern str COPYparse_integer_bte(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, bte *dummy, bat *failures_bat, lng *starting_row, int *col_no, str *col_name);
-extern str COPYparse_integer_sht(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, sht *dummy, bat *failures_bat, lng *starting_row, int *col_no, str *col_name);
-extern str COPYparse_integer_int(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, int *dummy, bat *failures_bat, lng *starting_row, int *col_no, str *col_name);
-extern str COPYparse_integer_lng(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, lng *dummy, bat *failures_bat, lng *starting_row, int *col_no, str *col_name);
+extern str COPYparse_integer_bte(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str COPYparse_integer_sht(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str COPYparse_integer_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str COPYparse_integer_lng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #ifdef HAVE_HGE
-extern str COPYparse_integer_hge(bat *parsed_bat_id, bat *block_bat_id, bat *offsets_bat_id, hge *dummy, bat *failures_bat, lng *starting_row, int *col_no, str *col_name);
+extern str COPYparse_integer_hge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
 
 extern str COPYparse_decimal_bte(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

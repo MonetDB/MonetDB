@@ -194,21 +194,24 @@ end:
 }
 
 str
-TMPL_SUFFIXED(COPYparse_integer) (
-	bat *parsed_bat_id,
-	bat *block_bat_id, bat *offsets_bat_id,
-	TMPL_TYPE *dummy,
-	bat *failures_bat, lng *starting_row, int *col_no, str *col_name)
+TMPL_SUFFIXED(COPYparse_integer) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void)dummy;
+	(void)mb;
+	bat *parsed_bat_id = getArgReference_bat(stk, pci, 0);
+	bat block_bat_id = *getArgReference_bat(stk, pci, 1);
+	bat offsets_bat_id = *getArgReference_bat(stk, pci, 2);
+	// TMPL_TYPE dummy = *getArgReference_TMPL_TYPE(stk, pci, 3);
+	bat failures_bat = *getArgReference_bat(stk, pci, 4);
+	lng starting_row = *getArgReference_lng(stk, pci, 5);
+	int col_no = *getArgReference_int(stk, pci, 6);
+	str col_name = *getArgReference_str(stk, pci, 7);
 
 	struct error_handling errors;
-
-	copy_init_error_handling(&errors, NULL, *failures_bat, *starting_row, *col_no, *col_name); // JOERI FIX THIS
+	copy_init_error_handling(&errors, cntxt, failures_bat, starting_row, col_no, col_name);
 
 	str msg = parse_fixed_width_column(
 		parsed_bat_id, &errors, "copy.parse_integer" ,
-		*block_bat_id, *offsets_bat_id,
+		block_bat_id, offsets_bat_id,
 		TMPL_SUFFIXED(TYPE), TMPL_SUFFIXED(parse_many_integers), NULL);
 
 	copy_destroy_error_handling(&errors);

@@ -584,24 +584,24 @@ static mel_func copy_init_funcs[] = {
  )),
 #endif
 
- command("copy", "parse_integer", COPYparse_integer_bte, false, "Parse as an integer", args(1, 8,
+ pattern("copy", "parse_integer", COPYparse_integer_bte, false, "Parse as an integer", args(1, 8,
 	 batarg("", bte),
 	 batarg("block", bte), batarg("offsets", int), arg("type", bte), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
- command("copy", "parse_integer", COPYparse_integer_sht, false, "Parse as an integer", args(1, 8,
+ pattern("copy", "parse_integer", COPYparse_integer_sht, false, "Parse as an integer", args(1, 8,
 	 batarg("", sht),
 	 batarg("block", bte), batarg("offsets", int), arg("type", sht), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
- command("copy", "parse_integer", COPYparse_integer_int, false, "Parse as an integer", args(1, 8,
+ pattern("copy", "parse_integer", COPYparse_integer_int, false, "Parse as an integer", args(1, 8,
 	 batarg("", int),
 	 batarg("block", bte), batarg("offsets", int), arg("type", int), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
- command("copy", "parse_integer", COPYparse_integer_lng, false, "Parse as an integer", args(1, 8,
+ pattern("copy", "parse_integer", COPYparse_integer_lng, false, "Parse as an integer", args(1, 8,
 	 batarg("", lng),
 	 batarg("block", bte), batarg("offsets", int), arg("type", lng), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
  #ifdef HAVE_HGE
- command("copy", "parse_integer", COPYparse_integer_hge, false, "Parse as an integer", args(1, 8,
+ pattern("copy", "parse_integer", COPYparse_integer_hge, false, "Parse as an integer", args(1, 8,
 	 batarg("", hge),
 	 batarg("block", bte), batarg("offsets", int), arg("type", hge), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
  )),
