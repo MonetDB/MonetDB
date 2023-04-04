@@ -163,7 +163,7 @@ TMPL_SUFFIXED(COPYparse_decimal) (
 	(void)dummy;
 
 	struct error_handling errors;
-	copy_init_error_handling(&errors, *failures_bat, *starting_row, *col_no, *col_name);
+	copy_init_error_handling(&errors, NULL, *failures_bat, *starting_row, *col_no, *col_name); // JOERI FIX THIS
 
 	struct decimal_parms myparms = {
 		.digits = *digits,
@@ -198,7 +198,7 @@ TMPL_SUFFIXED(COPYparse_integer) (
 
 	struct error_handling errors;
 
-	copy_init_error_handling(&errors, *failures_bat, *starting_row, *col_no, *col_name);
+	copy_init_error_handling(&errors, NULL, *failures_bat, *starting_row, *col_no, *col_name); // JOERI FIX THIS
 
 	str msg = parse_fixed_width_column(
 		parsed_bat_id, &errors, "copy.parse_integer" ,
@@ -231,7 +231,7 @@ TMPL_SUFFIXED(COPYscale) (
 		bailout(operatorname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	struct error_handling errors;
-	copy_init_error_handling(&errors, *failures_bat_id, *starting_row, *col_no, *col_name);
+	copy_init_error_handling(&errors, NULL, *failures_bat_id, *starting_row, *col_no, *col_name); // JOERI FIX THIS
 
 	values = Tloc(values_bat, 0);
 	results = Tloc(results_bat, 0);

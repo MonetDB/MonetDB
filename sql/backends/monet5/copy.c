@@ -187,7 +187,7 @@ COPYfixlines(
 	int newline_count = 0;
 	const unsigned char *latest_newline;
 
-	copy_init_error_handling(&errors, *failures_bat, starting_row, -1, NULL);
+	copy_init_error_handling(&errors, NULL, *failures_bat, starting_row, -1, NULL); // JOERI FIX THIS
 	// The recoverable only errors copy.fixlines detects do not correspond to
 	// inserted rows.
 	copy_error_handling_inhibit_deletes(&errors);
@@ -393,7 +393,7 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat failures_bat = *getArgReference_bat(stk, pci, pci->retc + 7);
 	state.escape_enabled = *getArgReference_bit(stk, pci, pci->retc + 8);
 
-	copy_init_error_handling(&errors, failures_bat, starting_row, -1, NULL);
+	copy_init_error_handling(&errors, cntxt, failures_bat, starting_row, -1, NULL);
 
 	state.line_sep = get_sep_char(line_sep_str, state.escape_enabled);
 	if (state.line_sep <= 0) // 0 not ok

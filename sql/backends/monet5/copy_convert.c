@@ -43,7 +43,7 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size_t buffer_len;
 	const void *nil_ptr;
 
-	copy_init_error_handling(&errors, failures_bat, starting_row, col_no, col_name);
+	copy_init_error_handling(&errors, cntxt, failures_bat, starting_row, col_no, col_name);
 
 	if (block == NULL || indices == NULL)
 		bailout("copy.parse_generic", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -151,14 +151,14 @@ COPYparse_string(
 	int colwidth = *maxlen;
 	int n;
 
-	copy_init_error_handling(&errors, *failures_bat, *starting_row, *col_no, *col_name);
-
 	if (!block_bat || !offsets_bat)
 		bailout(fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	parsed_bat = COLnew(0, TYPE_str, BATcount(offsets_bat), TRANSIENT);
 	if (!parsed_bat)
 		bailout(fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	copy_init_error_handling(&errors, NULL, *failures_bat, *starting_row, *col_no, *col_name); // JOERI FIX THIS
 
 	n = BATcount(offsets_bat);
 	for (int i = 0; i < n; i++) {

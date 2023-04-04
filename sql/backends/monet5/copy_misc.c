@@ -64,8 +64,11 @@ dump_block(const char *msg, BAT *b)
 
 
 void
-copy_init_error_handling(struct error_handling *admin, bat failures_bat, lng starting_row, int default_col_no, const char *column_name)
+copy_init_error_handling(struct error_handling *admin, Client cntxt, bat failures_bat, lng starting_row, int default_col_no, const char *column_name)
 {
+	if (cntxt == NULL)
+		cntxt = getClientContext();
+	admin->cntxt = cntxt;
 	admin->failures_bat_id = failures_bat;
 	admin->failures_bat = NULL;
 	admin->inhibit_deletes = false;
@@ -116,11 +119,9 @@ format_error(struct error_handling *restrict admin, lng row_1based, int column_1
 }
 
 static void
-copy_add_to_rejects(lng row_1based, int column_1based, const char *msg)
+copy_add_to_rejects(Client cntxt, lng row_1based, int column_1based, const char *msg)
 {
 	bool ok = false;
-
-	Client cntxt = getClientContext();
 	MT_lock_set(&cntxt->error_lock);
 
 	if (cntxt->error_row == NULL) {
@@ -227,7 +228,7 @@ copy_report_error(struct error_handling *restrict admin, int rel_row, int column
 	format_error(admin, row_1based, column_1based, col_name, buf, buf_end, format, ap);
 	va_end(ap);
 
-	copy_add_to_rejects(row_1based, column_1based, buf);
+	copy_add_to_rejects(admin->cntxt, row_1based, column_1based, buf);
 
 	// In BEST EFFORT mode, keep track of the failed lines.
 	if (!admin->inhibit_deletes) {
