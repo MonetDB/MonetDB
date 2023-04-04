@@ -1069,10 +1069,9 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 			BBPkeepref(ng);
 		}
 	}
-	/* FIXME: the name 'group.unique' doesn't match the mel definition */
-	TIMEOUT_CHECK(timeoffset, throw(MAL, "group.unique", GDK_EXCEPTION));
+	TIMEOUT_CHECK(timeoffset, throw(MAL, "algebra.unique", GDK_EXCEPTION));
 	if (err)
-		throw(MAL, "group.unique", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.unique", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	return MAL_SUCCEED;
 }
 
