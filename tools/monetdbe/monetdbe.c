@@ -285,8 +285,8 @@ cleanup:
 }
 
 static char*
-monetdbe_get_results(monetdbe_result** result, monetdbe_database_internal *mdbe) {
-
+monetdbe_get_results(monetdbe_result** result, monetdbe_database_internal *mdbe)
+{
 	backend *be = NULL;
 
 	*result = NULL;
@@ -1103,15 +1103,7 @@ monetdbe_set_remote_results(backend *be, char* tblname, columnar_result* results
 		return error;
 	}
 
-	BAT* order = BATdense(0, 0, BATcount(b_0));
-	if (!order) {
-		BBPunfix(b_0->batCacheid);
-		error = createException(MAL,"monetdbe.monetdbe_set_remote_results",SQLSTATE(HY005) MAL_MALLOC_FAIL);
-		return error;
-	}
-
-	int res = mvc_result_table(be, 0, (int) nr_results, Q_TABLE, order);
-	BBPunfix(order->batCacheid);
+	int res = mvc_result_table(be, 0, (int) nr_results, Q_TABLE);
 	if (res < 0) {
 		BBPunfix(b_0->batCacheid);
 		error = createException(MAL,"monetdbe.monetdbe_set_remote_results",SQLSTATE(HY005) "Cannot create result table");
@@ -1535,7 +1527,6 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 			((monetdbe_result_internal*) *result)->type = Q_PREPARE;
 		else
 			((monetdbe_result_internal*) *result)->type = (be->results) ? be->results->query_type : m->type;
-
 
 		if (!be->results && be->rowcnt >= 0 && affected_rows)
 			*affected_rows = be->rowcnt;

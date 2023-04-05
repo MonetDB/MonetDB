@@ -1562,7 +1562,7 @@ sql_table *mvc_bind_table(mvc *c, sql_schema *s, const char *tname);
 str mvc_commit(mvc *c, int chain, const char *name, bool enabling_auto_commit);
 int mvc_create_column(sql_column **col, mvc *m, sql_table *t, const char *name, sql_subtype *tpe);
 int mvc_result_column(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, BAT *b);
-int mvc_result_table(backend *be, oid query_id, int nr_cols, mapi_query_t type, BAT *order);
+int mvc_result_table(backend *be, oid query_id, int nr_cols, mapi_query_t type);
 str mvc_rollback(mvc *c, int chain, const char *name, bool disabling_auto_commit);
 str number2name(str s, int len, int i);
 bool option_disable_fork;
