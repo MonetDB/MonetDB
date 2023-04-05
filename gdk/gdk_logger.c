@@ -2944,8 +2944,7 @@ gdk_return
 log_tflush(logger* lg, ulng writer_end, ulng commit_ts) {
 
 	if (lg->flushnow) {
-		logged_range* frange = lg->flush_ranges;
-		assert(frange == lg->current);
+		assert(lg->flush_ranges == lg->current);
 		ulng end = ATOMIC_GET(&lg->current->end);
 		assert(end > ATOMIC_GET(&lg->current->pend));
 		ATOMIC_SET(&lg->current->flushed_end, end);
@@ -2956,7 +2955,7 @@ log_tflush(logger* lg, ulng writer_end, ulng commit_ts) {
 			GDKfatal("Could not create new log file\n"); // TODO: does not have to be fatal (yet)
 		do_rotate(lg);
 		(void) do_flush_range_cleanup(lg);
-		assert(ATOMIC_GET(&frange->refcount) == 0);
+		assert(lg->flush_ranges == lg->current);
 		return log_commit(lg);
 	}
 
