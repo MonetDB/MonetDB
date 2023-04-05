@@ -2689,6 +2689,8 @@ store_hot_snapshot_to_stream(sqlstore *store, stream *tar_stream)
 		goto end; // should already have set a GDK error
 	close_stream(plan_stream);
 	plan_stream = NULL;
+	MT_lock_unset(&store->lock);
+	locked = 2;
 	r = hot_snapshot_write_tar(tar_stream, GDKgetenv("gdk_dbname"), buffer_get_buf(plan_buf));
 	if (r != GDK_SUCCEED)
 		goto end;
@@ -2705,7 +2707,8 @@ store_hot_snapshot_to_stream(sqlstore *store, stream *tar_stream)
 end:
 	if (locked) {
 		BBPtmunlock();
-		MT_lock_unset(&store->lock);
+		if (locked == 1)
+			MT_lock_unset(&store->lock);
 		MT_lock_unset(&store->flush);
 	}
 	if (plan_stream)
