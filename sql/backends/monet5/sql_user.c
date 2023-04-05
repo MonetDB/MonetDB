@@ -536,7 +536,8 @@ monet5_schema_user_dependencies(ptr _trans, int schema_id)
 	/* select all authorization ids */
 	A = store->table_api.rids_select(tr, auth_name, NULL, NULL);
 	/* join all authorization with the selected users */
-	A = store->table_api.rids_join(tr, A, auth_name, U, users_name);
+	if (A && U)
+		A = store->table_api.rids_join(tr, A, auth_name, U, users_name);
 	store->table_api.rids_destroy(U);
 	return A;
 }
