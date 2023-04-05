@@ -1,3 +1,5 @@
+# ref: https://learn.microsoft.com/en-us/sql/odbc/reference/appendixes/time-date-and-interval-functions
+
 query I rowsort
 select { fn current_date() } > date'2023-01-02'
 ----
@@ -24,9 +26,15 @@ select { fn current_time() } >= time'00:00:00'
 1
 
 query I rowsort
-select { fn current_time() } >= {t'00:00:00'}
+select { fn CURRENT_TIME() } >= {t'00:00:00'}
 ----
 1
+
+# test CURRENT_TIME( time-precision )
+statement error 42000!syntax error in: "select { fn current_time(6"
+select { fn current_time(6) } >= {t'00:00:00.000000001'}
+# ----
+# 1
 
 query I rowsort
 select length(cast((select { fn current_time() }) as varchar(100))) > 0
@@ -44,9 +52,15 @@ select { fn current_timestamp() } > timestamp'2023-01-02 00:00:00'
 1
 
 query I rowsort
-select { fn current_timestamp() } > {ts'2023-01-02 00:00:00'}
+select { fn CURRENT_TIMESTAMP() } > {ts'2023-01-02 00:00:00'}
 ----
 1
+
+# test CURRENT_TIMESTAMP( timestamp-precision )
+statement error 42000!syntax error in: "select { fn current_timestamp(9"
+select { fn current_timestamp(9) } >= {ts'2002-01-02 00:00:00.000000001'}
+# ----
+# 1
 
 query I rowsort
 select length(cast((select { fn current_timestamp() }) as varchar(100))) > 0
@@ -238,16 +252,13 @@ select { fn year(timestamp'2222-11-14 12:30:34') }
 ----
 2222
 
-# timestampadd() tests
-
-# TODO not implemented
-# query T rowsort
-# select { fn timestampadd(hour, 10, timestamp'2022-11-14 09:26:30') }
-# ----
-# 2022-11-14 10:26:30
+# TIMESTAMPADD(interval, integer_exp, time_exp) tests
+# Timestamp calculated by adding integer_exp intervals of type interval to time_exp.
+# interval can be one of the following values: SQL_TSI_FRAC_SECOND, SQL_TSI_SECOND, SQL_TSI_MINUTE, SQL_TSI_HOUR, SQL_TSI_DAY, SQL_TSI_WEEK, SQL_TSI_MONTH, SQL_TSI_QUARTER, SQL_TSI_YEAR
+# Fractional seconds are expressed in billionths of a second.
 
 query T rowsort
-select { fn timestampadd(SQL_TSI_HOUR, 10, timestamp'2022-11-14 14:13:12') }
+select {fn timestampadd(SQL_TSI_HOUR, 10, {ts '2022-11-14 14:13:12.654321'}) }
 ----
 2022-11-15 00:13:12
 
@@ -273,10 +284,16 @@ select { fn timestampadd(SQL_TSI_SECOND, 11, timestamp'2022-11-14 14:13:12') }
 ----
 2022-11-14 14:13:23
 
-statement error 42000!syntax error in: "select { fn timestampadd(sql_tsi_second"
+statement error 42000!syntax error in: "select { fn timestampadd(sql_tsi_second, 11.234"
 select { fn timestampadd(SQL_TSI_SECOND, 11.234, timestamp'2022-11-14 14:13:12') }
 # ----
 # 2022-11-14 14:13:23.234
+
+# TODO: add support for integer expression as second argument.
+statement error 42000!syntax error in: "select { fn timestampadd(sql_tsi_second, 15*"
+select { fn timestampadd(SQL_TSI_SECOND, 15*60, timestamp'2022-11-14 14:13:12') }
+# ----
+# 2022-11-14 14:28:12
 
 query T rowsort
 select { fn timestampadd(SQL_TSI_MINUTE, 12, timestamp'2022-11-14 14:13:12') }
@@ -324,16 +341,18 @@ select { fn timestampadd(SQL_TSI_YEAR, 5, timestamp'2022-11-14 14:13:12') }
 2027-11-14 14:13:12
 
 
-# timestampdiff() tests
-
-# TODO not implemented
-# query I rowsort
-# select { fn timestampdiff(hour, timestamp'2022-11-14 10:26:30', timestamp'2022-11-14 09:26:30') }
-# ----
-# 1
+# TIMESTAMPDIFF(interval, time_exp1, time_exp2) tests
+# Integer number of intervals of type interval by which time_exp2 is greater than time_exp1.
+# interval has the same value as TIMESTAMPADD.
+# Fractional seconds are expressed in billionths of a second.
 
 query I rowsort
 select { fn timestampdiff(SQL_TSI_SECOND, timestamp'2022-12-12 12:00:00', timestamp'2022-12-12 12:00:30') }
+----
+30
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_SECOND, {ts'2022-12-12 12:00:00'}, {ts'2022-12-12 12:00:30'}) }
 ----
 30
 
