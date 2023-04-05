@@ -4,6 +4,11 @@ select { fn current_date() } > date'2023-01-02'
 1
 
 query I rowsort
+select { fn current_date() } > {d'2023-01-02'}
+----
+1
+
+query I rowsort
 select length((select { fn current_date() })) > 0
 ----
 1
@@ -19,6 +24,11 @@ select { fn current_time() } >= time'00:00:00'
 1
 
 query I rowsort
+select { fn current_time() } >= {t'00:00:00'}
+----
+1
+
+query I rowsort
 select length(cast((select { fn current_time() }) as varchar(100))) > 0
 ----
 1
@@ -30,6 +40,11 @@ select length(cast((select { fn curtime() }) as varchar(100))) > 0
 
 query I rowsort
 select { fn current_timestamp() } > timestamp'2023-01-02 00:00:00'
+----
+1
+
+query I rowsort
+select { fn current_timestamp() } > {ts'2023-01-02 00:00:00'}
 ----
 1
 
