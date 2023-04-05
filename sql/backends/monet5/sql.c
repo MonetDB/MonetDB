@@ -2433,7 +2433,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY005) "Cannot access column descriptor");
 		goto wrapup_result_set;
 	}
-	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE, b);
+	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE);
 	BBPunfix(b->batCacheid);
 	if (res < 0) {
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2516,7 +2516,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATiter itertbl,iteratr,itertpe,iterdig,iterscl;
 	backend *be;
 	mvc *m = NULL;
-	BAT *order = NULL, *b = NULL, *tbl = NULL, *atr = NULL, *tpe = NULL,*len = NULL,*scale = NULL;
+	BAT *b = NULL, *tbl = NULL, *atr = NULL, *tpe = NULL,*len = NULL,*scale = NULL;
 	res_table *t = NULL;
 	bool tostdout;
 	char buf[80];
@@ -2534,12 +2534,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	bid = *getArgReference_bat(stk,pci,13);
-	order = BATdescriptor(bid);
-	if ( order == NULL) {
-		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY005) "Cannot access column descriptor");
-		goto wrapup_result_set1;
-	}
-	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 12), Q_TABLE, order);
+	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 12), Q_TABLE);
 	t = be->results;
 	if (res < 0) {
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2634,7 +2629,6 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   wrapup_result_set1:
 	cntxt->qryctx.starttime = 0;
 	mb->optimize = 0;
-	BBPreclaim(order);
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
 	if( tpe) BBPunfix(tpeId);
@@ -2666,7 +2660,7 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if ((msg = getBackendContext(cntxt, &be)) != NULL)
 		return msg;
-	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE, NULL);
+	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE);
 	if (res < 0) {
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup_result_set;
@@ -2769,7 +2763,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto wrapup_result_set;
 	}
 
-	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 12), Q_TABLE, NULL);
+	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 12), Q_TABLE);
 
 	t = be->results;
 	if (res < 0){
@@ -2879,30 +2873,28 @@ str
 mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str res = MAL_SUCCEED;
-	BAT *order;
 	backend *be = NULL;
 	str msg;
 	int *res_id;
 	int nr_cols;
 	mapi_query_t qtype;
-	bat order_bid;
 
 	if ( pci->argc > 6)
 		return mvc_result_set_wrap(cntxt,mb,stk,pci);
 
+	assert(0);
 	res_id = getArgReference_int(stk, pci, 0);
 	nr_cols = *getArgReference_int(stk, pci, 1);
 	qtype = (mapi_query_t) *getArgReference_int(stk, pci, 2);
-	order_bid = *getArgReference_bat(stk, pci, 3);
+	bat order_bid = *getArgReference_bat(stk, pci, 3);
+	(void)order_bid;
+	/* TODO remove use */
 
 	if ((msg = getBackendContext(cntxt, &be)) != NULL)
 		return msg;
-	if ((order = BATdescriptor(order_bid)) == NULL)
-		throw(SQL, "sql.resultSet", SQLSTATE(HY005) "Cannot access column descriptor");
-	*res_id = mvc_result_table(be, mb->tag, nr_cols, qtype, order);
+	*res_id = mvc_result_table(be, mb->tag, nr_cols, qtype);
 	if (*res_id < 0)
 		res = createException(SQL, "sql.resultSet", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	BBPunfix(order->batCacheid);
 	return res;
 }
 
@@ -3045,7 +3037,7 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = *(ptr *) p;
 
 	// scalar values are single-column result sets
-	if ((res_id = mvc_result_table(be, mb->tag, 1, Q_TABLE, NULL)) < 0) {
+	if ((res_id = mvc_result_table(be, mb->tag, 1, Q_TABLE)) < 0) {
 		cntxt->qryctx.starttime = 0;
 		mb->optimize = 0;
 		throw(SQL, "sql.exportValue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
