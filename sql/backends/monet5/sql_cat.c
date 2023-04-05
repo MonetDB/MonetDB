@@ -1183,6 +1183,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			if (c->null == 0) {
 				const void *nilptr = ATOMnilptr(c->type.type->localtype);
 				rids *nils = store->table_api.rids_select(sql->session->tr, nc, nilptr, NULL, NULL);
+				if (!nils)
+					throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				int has_nils = !is_oid_nil(store->table_api.rids_next(nils));
 
 				store->table_api.rids_destroy(nils);
