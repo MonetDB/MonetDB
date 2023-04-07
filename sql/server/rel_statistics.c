@@ -1026,7 +1026,7 @@ run_optimizer
 bind_get_statistics(visitor *v, global_props *gp)
 {
 	(void) v;
-	return gp->opt_level == 1 ? rel_get_statistics : NULL;
+	return (gp->opt_level == 1 && !gp->cnt[op_insert]) ? rel_get_statistics : NULL;
 }
 
 

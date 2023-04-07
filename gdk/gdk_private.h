@@ -35,9 +35,6 @@ enum heaptype {
 	dataheap
 };
 
-gdk_return ATOMheap(int id, Heap *hp, size_t cap)
-	__attribute__((__warn_unused_result__))
-	__attribute__((__visibility__("hidden")));
 bool ATOMisdescendant(int id, int parentid)
 	__attribute__((__visibility__("hidden")));
 int ATOMunknown_find(const char *nme)
@@ -112,6 +109,8 @@ gdk_return BBPinit(void)
 	__attribute__((__visibility__("hidden")));
 bat BBPinsert(BAT *bn)
 	__attribute__((__warn_unused_result__))
+	__attribute__((__visibility__("hidden")));
+void BBPrelinquish(Thread t)
 	__attribute__((__visibility__("hidden")));
 int BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
@@ -233,6 +232,8 @@ void IMPSincref(Imprints *imprints)
 void IMPSprint(BAT *b)		/* never called: for debugging only */
 	__attribute__((__cold__));
 #endif
+double joincost(BAT *r, BUN lcount, struct canditer *rci, bool *hash, bool *phash, bool *cand)
+	__attribute__((__visibility__("hidden")));
 void STRMPincref(Strimps *strimps)
 	__attribute__((__visibility__("hidden")));
 void STRMPdecref(Strimps *strimps, bool remove)

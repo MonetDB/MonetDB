@@ -291,11 +291,11 @@ extern str SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 extern str SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLuser_password(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str getBackendContext(Client cntxt, backend **be);
 
 #define USER_TABLE_NAME "db_user_info"
+#define TRIGGERS_TABLE_NAME "triggers"
 #define SCHEMA_TABLE_NAME "schemas"
 #define USER_PASSWORD_COLUMN "password"
 

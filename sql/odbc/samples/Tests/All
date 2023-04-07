@@ -2,4 +2,4 @@
 # cf., clients/odbc/samples/Makefile.ag
 # and  http://dev.monetdb.org/hg/MonetDB/rev/168f15887717
 #
-HAVE_ODBC&NOT_WIN32?odbcsample1
+HAVE_ODBC?odbcsample1

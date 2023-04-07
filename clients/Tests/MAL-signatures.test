@@ -24590,12 +24590,12 @@ PCREreplacefirst_bat_wrap;
 (empty)
 batpyapi3
 eval
-unsafe pattern batpyapi3.eval(X_0:lng, X_1:ptr, X_2:str):any... 
+unsafe pattern batpyapi3.eval(X_0:lng, X_1:ptr, X_2:str):bat[:any_1] 
 PYAPI3PyAPIevalStd;
 Execute a simple Python script value
 batpyapi3
 eval
-unsafe pattern batpyapi3.eval(X_0:ptr, X_1:str, X_2:any...):any... 
+unsafe pattern batpyapi3.eval(X_0:ptr, X_1:str, X_2:any...):bat[:any]... 
 PYAPI3PyAPIevalStd;
 Execute a simple Python script value
 batpyapi3
@@ -35204,11 +35204,6 @@ pattern json.renderobject(X_0:any...):json
 JSONrenderobject;
 (empty)
 json
-resultSet
-command json.resultSet(X_0:bat[:uuid], X_1:bat[:lng], X_2:bat[:json]):json 
-JSONresultSet;
-Converts the json store into a single json string:
-json
 str
 command json.str(X_0:json):str 
 JSONjson2str;
@@ -36609,16 +36604,6 @@ pattern optimizer.deadcode(X_0:str, X_1:str):str
 OPTwrapper;
 Dead code optimizer
 optimizer
-default_fast
-function optimizer.default_fast():void;
-(empty)
-(empty)
-optimizer
-default_pipe
-function optimizer.default_pipe():void;
-(empty)
-(empty)
-optimizer
 defaultfast
 pattern optimizer.defaultfast():str 
 OPTwrapper;
@@ -36704,26 +36689,6 @@ pattern optimizer.inline(X_0:str, X_1:str):str
 OPTwrapper;
 Expand inline functions
 optimizer
-jit
-pattern optimizer.jit():str 
-OPTwrapper;
-(empty)
-optimizer
-jit
-pattern optimizer.jit(X_0:str, X_1:str):str 
-OPTwrapper;
-Propagate candidate lists in just-in-time optimization
-optimizer
-json
-pattern optimizer.json():str 
-OPTwrapper;
-(empty)
-optimizer
-json
-pattern optimizer.json(X_0:str, X_1:str):str 
-OPTwrapper;
-Unroll the mat.pack operation
-optimizer
 macro
 pattern optimizer.macro(X_0:str, X_1:str):void 
 OPTmacro;
@@ -36733,16 +36698,6 @@ macro
 pattern optimizer.macro(X_0:str, X_1:str, X_2:str, X_3:str):void 
 OPTmacro;
 Inline a target function used in a specific function.
-optimizer
-mask
-pattern optimizer.mask():str 
-OPTwrapper;
-(empty)
-optimizer
-mask
-pattern optimizer.mask(X_0:str, X_1:str):str 
-OPTwrapper;
-Manipulate the MSK objects
 optimizer
 matpack
 pattern optimizer.matpack():str 
@@ -36763,16 +36718,6 @@ mergetable
 pattern optimizer.mergetable(X_0:str, X_1:str):str 
 OPTwrapper;
 Resolve the multi-table definitions
-optimizer
-minimal_fast
-function optimizer.minimal_fast():void;
-(empty)
-(empty)
-optimizer
-minimal_pipe
-function optimizer.minimal_pipe():void;
-(empty)
-(empty)
 optimizer
 minimalfast
 pattern optimizer.minimalfast():str 
@@ -36803,11 +36748,6 @@ multiplex
 pattern optimizer.multiplex(X_0:str, X_1:str):str 
 OPTwrapper;
 Compiler for multiplexed instructions
-optimizer
-no_mitosis_pipe
-function optimizer.no_mitosis_pipe():void;
-(empty)
-(empty)
 optimizer
 optimize
 pattern optimizer.optimize(X_0:str, X_1:str):void 
@@ -36913,11 +36853,6 @@ reorder
 pattern optimizer.reorder(X_0:str, X_1:str):str 
 OPTwrapper;
 Reorder by dataflow dependencies
-optimizer
-sequential_pipe
-function optimizer.sequential_pipe():void;
-(empty)
-(empty)
 optimizer
 strimps
 pattern optimizer.strimps():str 
@@ -37075,7 +37010,7 @@ CMDstopTrace;
 Stop collecting trace information
 pyapi3
 eval
-unsafe pattern pyapi3.eval(X_0:ptr, X_1:str):any 
+unsafe pattern pyapi3.eval(X_0:ptr, X_1:str):any_1 
 PYAPI3PyAPIevalStd;
 Execute a simple Python script returning a single value
 pyapi3
@@ -37218,11 +37153,6 @@ connect
 command remote.connect(X_0:str, X_1:str, X_2:str, X_3:str, X_4:bit):str 
 RMTconnectScen;
 returns a newly created connection for uri, using user name, password and scenario
-remote
-connect
-pattern remote.connect(X_0:str, X_1:str):str 
-RMTconnectTable;
-return a newly created connection for a table. username and password should be in the vault
 remote
 disconnect
 command remote.disconnect(X_0:str):void 
@@ -37638,6 +37568,11 @@ date_trunc
 command sql.date_trunc(X_0:str, X_1:timestamp):timestamp 
 date_trunc;
 Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)
+sql
+decypher
+pattern sql.decypher(X_0:str):str 
+SQLdecypher;
+Return decyphered password
 sql
 delete
 unsafe pattern sql.delete(X_0:int, X_1:str, X_2:str, X_3:any):int 
@@ -38104,11 +38039,6 @@ pattern sql.row_number(X_0:any_1, X_1:bit, X_2:bit):int
 SQLrow_number;
 return the row_numer-ed groups
 sql
-rt_credentials
-pattern sql.rt_credentials(X_0:str) (X_1:bat[:str], X_2:bat[:str], X_3:bat[:str]) 
-sql_rt_credentials_wrap;
-Return the remote table credentials for the given table
-sql
 sessions
 pattern sql.sessions() (X_0:bat[:int], X_1:bat[:str], X_2:bat[:timestamp], X_3:bat[:timestamp], X_4:bat[:str], X_5:bat[:int], X_6:bat[:int], X_7:bat[:int], X_8:bat[:int]) 
 sql_sessions_wrap;
@@ -38118,6 +38048,21 @@ setVariable
 unsafe pattern sql.setVariable(X_0:int, X_1:str, X_2:str, X_3:any_1):int 
 setVariable;
 Set the value of a session variable
+sql
+set_count_distinct
+unsafe pattern sql.set_count_distinct(X_0:str, X_1:str, X_2:str, X_3:lng):void 
+sql_set_count_distinct;
+Set count distinct for column
+sql
+set_max
+unsafe pattern sql.set_max(X_0:str, X_1:str, X_2:str, X_3:any_1):void 
+sql_set_max;
+Set max for column
+sql
+set_min
+unsafe pattern sql.set_min(X_0:str, X_1:str, X_2:str, X_3:any_1):void 
+sql_set_min;
+Set min for column
 sql
 set_protocol
 unsafe pattern sql.set_protocol(X_0:int):int 
@@ -38581,6 +38526,11 @@ Catalog operation create_seq
 sqlcatalog
 create_table
 pattern sqlcatalog.create_table(X_0:str, X_1:str, X_2:ptr, X_3:int):void 
+SQLcreate_table;
+Catalog operation create_table
+sqlcatalog
+create_table
+pattern sqlcatalog.create_table(X_0:str, X_1:str, X_2:ptr, X_3:int, X_4:str, X_5:str):void 
 SQLcreate_table;
 Catalog operation create_table
 sqlcatalog

@@ -1,0 +1,297 @@
+statement ok
+CREATE ROLE my_role
+
+statement ok
+CREATE SCHEMA my_schema AUTHORIZATION my_role
+
+statement ok
+CREATE USER usr1 WITH PASSWORD 'p1' NAME 'usr1' SCHEMA my_schema
+
+statement ok
+CREATE USER usr2 WITH PASSWORD 'p2' NAME 'usr2' SCHEMA my_schema
+
+statement ok
+GRANT my_role to usr1
+
+statement ok
+GRANT my_role to usr2
+
+statement ok
+CREATE SCHEMA your_schema
+
+statement ok
+SET SCHEMA your_schema
+
+statement ok
+CREATE TABLE person (name VARCHAR(10), birthday DATE, ssn CHAR(9))
+
+statement ok rowcount 2
+INSERT INTO person VALUES ('alice', '1980-01-01', 'AAAAAAAAA'), ('bob', '1970-01-01', '000000000')
+
+statement ok
+CREATE TABLE employee (name VARCHAR(10), salary DECIMAL(10,2))
+
+statement ok rowcount 2
+INSERT INTO employee VALUES ('alice', 888.42), ('bob', 444.42)
+
+statement ok
+CREATE VIEW v1 AS SELECT
+  p.name,
+  EXTRACT(YEAR FROM birthday) as yr,
+  '********'||substring(ssn,9,9) as ssn,
+  ifthenelse((salary > 500), 'high', 'low') as salary
+FROM person p, employee e
+WHERE p.name = e.name
+
+query TITT nosort
+SELECT * FROM v1
+----
+alice
+1980
+********A
+high
+bob
+1970
+********0
+low
+
+statement ok
+CREATE VIEW v2 AS SELECT v1.name, v1.ssn, e.salary
+FROM v1, employee e
+WHERE v1.name = e.name
+
+query TTR nosort
+SELECT * FROM v2
+----
+alice
+********A
+888.420
+bob
+********0
+444.420
+
+statement ok
+CREATE VIEW v3 AS SELECT v1.name, v1.yr, v2.salary
+FROM v1, v2
+WHERE v1.name = v2.name
+
+query TIR nosort
+SELECT * FROM v3
+----
+alice
+1980
+888.420
+bob
+1970
+444.420
+
+statement ok
+CREATE VIEW v4 AS SELECT yr,
+  ifthenelse((salary > 500), 'high', 'low') as salary
+FROM v3
+
+query IT nosort
+SELECT * FROM v4
+----
+1980
+high
+1970
+low
+
+statement ok
+SET SCHEMA sys
+
+statement ok
+GRANT SELECT on your_schema.v4 to usr1
+
+@connection(id=usr1, username=usr1, password=p1)
+query IT nosort
+SELECT * FROM your_schema.v4
+----
+1980
+high
+1970
+low
+
+@connection(id=usr1)
+statement error 42000!SELECT: access denied for usr1 to view 'your_schema.v3'
+SELECT * FROM your_schema.v3
+
+@connection(id=usr1)
+statement error 42000!SELECT: access denied for usr1 to view 'your_schema.v2'
+SELECT * FROM your_schema.v2
+
+@connection(id=usr1)
+statement error 42000!SELECT: access denied for usr1 to view 'your_schema.v1'
+SELECT * FROM your_schema.v1
+
+statement ok
+GRANT SELECT on your_schema.v3 to usr1
+
+@connection(id=usr1)
+query TIR nosort
+SELECT * FROM your_schema.v3
+----
+alice
+1980
+888.420
+bob
+1970
+444.420
+
+@connection(id=usr1)
+statement error 42000!SELECT: access denied for usr1 to view 'your_schema.v2'
+SELECT * FROM your_schema.v2
+
+@connection(id=usr1)
+statement error 42000!SELECT: access denied for usr1 to view 'your_schema.v1'
+SELECT * FROM your_schema.v1
+
+statement ok
+GRANT SELECT on your_schema.v2 to usr1
+
+@connection(id=usr1)
+query TTR nosort
+SELECT * FROM your_schema.v2
+----
+alice
+********A
+888.420
+bob
+********0
+444.420
+
+@connection(id=usr1)
+statement error 42000!SELECT: access denied for usr1 to view 'your_schema.v1'
+SELECT * FROM your_schema.v1
+
+statement ok
+GRANT SELECT on your_schema.v1 to usr1
+
+@connection(id=usr1)
+query TITT nosort
+SELECT * FROM your_schema.v1
+----
+alice
+1980
+********A
+high
+bob
+1970
+********0
+low
+
+@connection(id=usr1)
+statement error 42000!SELECT: access denied for usr1 to table 'your_schema.person'
+SELECT * FROM your_schema.person
+
+@connection(id=usr1)
+statement error 42000!SELECT: access denied for usr1 to table 'your_schema.employee'
+SELECT * FROM your_schema.employee
+
+statement ok
+GRANT SELECT on your_schema.employee to usr2
+
+statement ok
+GRANT SELECT on your_schema.v4 to usr2
+
+@connection(id=usr2, username=usr2, password=p2)
+query IT nosort
+SELECT * FROM your_schema.v4
+----
+1980
+high
+1970
+low
+
+@connection(id=usr2)
+statement error 42000!SELECT: access denied for usr2 to view 'your_schema.v3'
+SELECT * FROM your_schema.v3
+
+@connection(id=usr2)
+statement error 42000!SELECT: access denied for usr2 to view 'your_schema.v2'
+SELECT * FROM your_schema.v2
+
+@connection(id=usr2)
+statement error 42000!SELECT: access denied for usr2 to view 'your_schema.v1'
+SELECT * FROM your_schema.v1
+
+statement ok
+GRANT SELECT on your_schema.v3 to usr2
+
+@connection(id=usr2)
+query TIR nosort
+SELECT * FROM your_schema.v3
+----
+alice
+1980
+888.420
+bob
+1970
+444.420
+
+@connection(id=usr2)
+statement error 42000!SELECT: access denied for usr2 to view 'your_schema.v2'
+SELECT * FROM your_schema.v2
+
+@connection(id=usr2)
+statement error 42000!SELECT: access denied for usr2 to view 'your_schema.v1'
+SELECT * FROM your_schema.v1
+
+statement ok
+GRANT SELECT on your_schema.v2 to usr2
+
+@connection(id=usr2)
+query TTR nosort
+SELECT * FROM your_schema.v2
+----
+alice
+********A
+888.420
+bob
+********0
+444.420
+
+@connection(id=usr2)
+statement error 42000!SELECT: access denied for usr2 to view 'your_schema.v1'
+SELECT * FROM your_schema.v1
+
+statement ok
+GRANT SELECT on your_schema.v1 to usr2
+
+@connection(id=usr2)
+query TITT nosort
+SELECT * FROM your_schema.v1
+----
+alice
+1980
+********A
+high
+bob
+1970
+********0
+low
+
+@connection(id=usr2)
+statement error 42000!SELECT: access denied for usr2 to table 'your_schema.person'
+SELECT * FROM your_schema.person
+
+@connection(id=usr2)
+statement ok rowcount 2
+SELECT * FROM your_schema.employee
+
+statement ok
+DROP USER usr1
+
+statement ok
+DROP USER usr2
+
+statement ok
+DROP ROLE my_role
+
+statement ok
+DROP SCHEMA my_schema CASCADE
+
+statement ok
+DROP SCHEMA your_schema CASCADE
+

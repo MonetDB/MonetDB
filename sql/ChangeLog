@@ -1,13 +1,28 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Mar  3 2023 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
+- Queries stopped with the stop procedure are now marked as 'aborted'
+  'finished'.
+
 * Wed Feb 15 2023 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
-- SQL function sys.queue() overloaded with sys.queue(username string), SYSADMIN only, allowing to filter the global queue by username or use 'ALL' to retrive the global queue. Calling the function without arguments returns the current user queue.
-- SQL function sys.queue() overloaded with sys.queue(username string), SYSADMIN only, allowing to filter the global queue by username or use 'ALL' to retrive the global queue. Calling the function without arguments returns the current user queue.
+- SQL function sys.queue() overloaded with sys.queue(username string),
+  SYSADMIN only, allowing to filter the global queue by username or
+  use 'ALL' to retrive the global queue. Calling the function without
+  arguments returns the current user queue.
+- SQL procedures sys.pause(tag bigint), sys.resume(tag bigint),
+  sys.stop(tag bigint) overloaded with sys.pause(tag bigint, username string),
+  sys.resume(tag bigint, username string) and sys.stop(tag bigint, username
+  string), SYSADMIN only, allowing to pause, resume and stop query
+  executions by TAG,USERNAME. The call without arguments is a public
+  procedure giving access to users to pause, resume and stop their
+  own query executions.
 
 * Wed Feb 15 2023 svetlin <svetlin.stalinov@monetdbsolutions.com>
-- Added JDBC/ODBC escape sequences implementation to SQL layer. Now all
-  clients can forward them without further processing.
+- Added support of ODBC escape sequences syntax to SQL layer. Now all clients
+  (including ODBC/JDBC/pymonetdb) can use them without further processing.
+  For details on ODBC escape sequences syntax see:
+  https://learn.microsoft.com/en-us/sql/odbc/reference/appendixes/odbc-escape-sequences
 
 * Thu Nov 10 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - It is no longer allowed to create a merge table or remote table or

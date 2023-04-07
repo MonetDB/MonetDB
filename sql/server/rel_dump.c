@@ -1041,7 +1041,7 @@ function_error_string(mvc *sql, const char *schema, const char *fname, list *exp
 static unsigned int /* keep updating the label count */
 try_update_label_count(mvc *sql, const char *label)
 {
-	if (label && label[0] == '%' && isdigit(label[1])) {
+	if (label && label[0] == '%' && isdigit((unsigned char) label[1])) {
 		char *eptr = NULL;
 		unsigned int value = (unsigned int) strtol(label + 1, &eptr, 10);
 		if (eptr && eptr[0] == '\0') {

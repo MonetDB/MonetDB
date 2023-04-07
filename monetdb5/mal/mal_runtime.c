@@ -281,7 +281,10 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	MT_lock_set(&mal_delayLock);
 	for (i = 0; i < qsize; i++) {
 		if (QRYqueue[i].stk == stk) {
-			QRYqueue[i].status = "finished";
+			if (QRYqueue[i].status[0] == 's')
+				QRYqueue[i].status = "aborted";
+			else
+				QRYqueue[i].status = "finished";
 			QRYqueue[i].finished = time(0);
 			QRYqueue[i].workers = (int) ATOMIC_GET(&mb->workers);
 			/* give the MB upperbound by addition of 1 MB */

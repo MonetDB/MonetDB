@@ -683,7 +683,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	ALIGNapp(b, force, GDK_FAIL);
 
 	if (ATOMstorage(ATOMtype(b->ttype)) != ATOMstorage(ATOMtype(n->ttype))) {
-		GDKerror("Incompatible operands.\n");
+		GDKerror("Incompatible operands ("ALGOBATFMT" vs. "ALGOBATFMT").\n", ALGOBATPAR(b), ALGOBATPAR(n));
 		return GDK_FAIL;
 	}
 

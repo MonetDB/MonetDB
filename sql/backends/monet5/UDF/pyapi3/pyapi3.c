@@ -1765,14 +1765,14 @@ bailout:
 
 #include "mel.h"
 static mel_func pyapi3_init_funcs[] = {
- pattern("pyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script returning a single value", args(1,3, argany("",0),arg("fptr",ptr),arg("expr",str))),
+ pattern("pyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script returning a single value", args(1,3, argany("",1),arg("fptr",ptr),arg("expr",str))),
  pattern("pyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script value", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("pyapi3", "subeval_aggr", PYAPI3PyAPIevalAggr, true, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("pyapi3", "eval_aggr", PYAPI3PyAPIevalAggr, true, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("pyapi3", "eval_loader", PYAPI3PyAPIevalLoader, true, "loader functions through Python", args(1,3, varargany("",0),arg("fptr",ptr),arg("expr",str))),
  pattern("pyapi3", "eval_loader", PYAPI3PyAPIevalLoader, true, "loader functions through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
- pattern("batpyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script value", args(1,4, varargany("",0),arg("fptr", ptr), arg("expr",str),varargany("arg",0))),
- pattern("batpyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script value", args(1,4, varargany("",0),arg("card", lng), arg("fptr",ptr),arg("expr",str))),
+ pattern("batpyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script value", args(1,4, batvarargany("",0),arg("fptr", ptr), arg("expr",str),varargany("arg",0))),
+ pattern("batpyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script value", args(1,4, batargany("",1),arg("card", lng), arg("fptr",ptr),arg("expr",str))),
  pattern("batpyapi3", "subeval_aggr", PYAPI3PyAPIevalAggr, true, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("batpyapi3", "eval_aggr", PYAPI3PyAPIevalAggr, true, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("batpyapi3", "eval_loader", PYAPI3PyAPIevalLoader, true, "loader functions through Python", args(1,3, varargany("",0),arg("fptr",ptr),arg("expr",str))),

@@ -1,0 +1,642 @@
+statement ok
+start transaction
+
+statement ok
+CREATE TABLE integers (i int)
+
+statement ok
+insert into integers values (1),(2),(3),(NULL)
+
+statement ok
+CREATE TABLE longs (i bigint)
+
+statement ok
+CREATE TABLE doubles (d double precision)
+
+statement ok
+insert into longs values (1),(2),(3)
+
+statement ok
+insert into integers values (1),(2),(3)
+
+statement ok
+alter table longs add primary key (i)
+
+statement ok
+CREATE TABLE sys.myvar (c BIGINT)
+
+statement ok
+commit
+
+statement ok
+start transaction
+
+@connection(id=mdb2, username=monetdb, password=monetdb)
+statement ok
+start transaction
+
+statement ok
+alter table integers add foreign key(i) references longs(i)
+
+@connection(id=mdb2)
+statement error 42000!ALTER TABLE: sys_integers_integers_i_fkey conflicts with another transaction
+alter table integers add foreign key(i) references longs(i)
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+statement ok
+create trigger ups after delete on integers referencing old row as old_row for each row insert into longs values(0)
+
+statement ok
+create trigger ups2 after delete on integers referencing old row as old_row for each row insert into longs values(10)
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+create or replace trigger ups after delete on integers referencing old row as old_row for each row insert into longs values(1)
+
+@connection(id=mdb2)
+statement error 42000!CREATE OR REPLACE TRIGGER: transaction conflict detected
+create or replace trigger ups after delete on integers referencing old row as old_row for each row insert into longs values(2)
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+drop trigger ups
+
+@connection(id=mdb2)
+statement ok
+alter table doubles add primary key (d)
+
+@connection(id=mdb2)
+statement error 42000!CREATE OR REPLACE TRIGGER: transaction conflict detected
+create or replace trigger ups after delete on integers referencing old row as old_row for each row insert into longs values(3)
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+create or replace trigger ups2 after delete on integers referencing old row as old_row for each row insert into longs values(15)
+
+@connection(id=mdb2)
+statement ok
+create table floats (f float)
+
+@connection(id=mdb2)
+statement ok
+insert into floats values (1),(2),(3)
+
+@connection(id=mdb2)
+statement ok
+create index myidx ON floats(f)
+
+@connection(id=mdb2)
+statement ok
+alter table floats alter f set not null
+
+@connection(id=mdb2)
+statement ok
+alter table floats alter f set default 1
+
+@connection(id=mdb2)
+statement error 42000!DROP TRIGGER: transaction conflict detected
+drop trigger ups2
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+statement ok
+drop trigger ups2
+
+statement ok
+commit
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+CREATE TYPE myurl EXTERNAL NAME url
+
+@connection(id=mdb2)
+statement error 42000!CREATE TYPE: transaction conflict detected
+CREATE TYPE myurl EXTERNAL NAME url
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+statement ok rowcount 1
+INSERT INTO sys.myvar VALUES ((SELECT COUNT(*) FROM sys.roles))
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+CREATE ROLE myrole
+
+@connection(id=mdb2)
+statement error 42000!CREATE ROLE: failed due to conflict with another transaction
+CREATE ROLE myrole
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error
+commit
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+CREATE schema mysch AUTHORIZATION myrole
+
+@connection(id=mdb2)
+statement error 42000!CREATE SCHEMA: transaction conflict detected
+CREATE schema mysch AUTHORIZATION myrole
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+CREATE USER dummyuser WITH PASSWORD 'ups' NAME 'ups' SCHEMA mysch
+
+@connection(id=mdb2)
+statement error M0M27!CREATE USER: 42000!Create user failed due to conflict with another transaction
+CREATE USER dummyuser WITH PASSWORD 'ups' NAME 'ups' SCHEMA mysch
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+GRANT myrole TO dummyuser
+
+@connection(id=mdb2)
+statement error 42000!GRANT: failed due to conflict with another transaction
+GRANT myrole TO dummyuser
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error
+commit
+
+query I nosort
+SELECT CAST(COUNT(*) - (SELECT c FROM sys.myvar) AS BIGINT) FROM sys.roles
+----
+1
+
+statement ok
+start transaction
+
+statement ok
+DROP USER dummyuser
+
+statement ok
+DROP SCHEMA mysch
+
+statement ok
+DROP ROLE myrole
+
+statement ok
+commit
+
+statement ok
+TRUNCATE sys.myvar
+
+statement ok rowcount 1
+INSERT INTO sys.myvar VALUES ((SELECT COUNT(*) FROM sys.comments))
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+COMMENT ON TABLE "sys"."integers" IS 'something'
+
+@connection(id=mdb2)
+statement error 42000!Comment on failed due to conflict with another transaction
+COMMENT ON TABLE "sys"."integers" IS 'somethingelse'
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error
+commit
+
+query I nosort
+SELECT CAST(COUNT(*) - (SELECT c FROM sys.myvar) AS BIGINT) FROM sys.comments
+----
+1
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+ANALYZE "sys"."integers"
+
+@connection(id=mdb2)
+statement ok
+ANALYZE "sys"."integers"
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+commit
+
+statement ok
+create merge table parent(a int)
+
+statement ok
+create table child1(c int)
+
+statement ok
+create table child2(c int)
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+ALTER TABLE parent ADD TABLE child1
+
+@connection(id=mdb2)
+statement error 42000!ALTER TABLE: transaction conflict detected
+ALTER TABLE parent ADD TABLE child2
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+statement ok
+start transaction
+
+statement ok
+ALTER TABLE parent DROP TABLE child1
+
+statement ok
+DROP TABLE parent
+
+statement ok
+DROP TABLE child1
+
+statement ok
+DROP TABLE child2
+
+statement ok
+commit
+
+statement ok
+create merge table parent(a int)
+
+statement ok
+create table child(c int)
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+ALTER TABLE parent ADD TABLE child
+
+@connection(id=mdb2)
+statement error 42000!ALTER TABLE: transaction conflict detected
+ALTER TABLE parent ADD TABLE child
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+statement ok
+start transaction
+
+statement ok
+ALTER TABLE parent DROP TABLE child
+
+statement ok
+DROP TABLE parent
+
+statement ok
+DROP TABLE child
+
+statement ok
+commit
+
+statement ok
+create merge table parent(a int) PARTITION BY RANGE ON (a)
+
+statement ok
+create table child1(c int)
+
+statement ok
+create table child2(c int)
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+ALTER TABLE parent ADD TABLE child1 AS PARTITION FROM '1' TO '2'
+
+@connection(id=mdb2)
+statement ok
+create table myx (a int)
+
+@connection(id=mdb2)
+statement ok
+drop table myx
+
+@connection(id=mdb2)
+statement error 42000!ALTER TABLE: failed due to conflict with another transaction
+ALTER TABLE parent ADD TABLE child2 AS PARTITION FROM '0' TO '4'
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+statement ok
+start transaction
+
+statement ok
+ALTER TABLE parent DROP TABLE child1
+
+statement ok
+DROP TABLE parent
+
+statement ok
+DROP TABLE child1
+
+statement ok
+DROP TABLE child2
+
+statement ok
+commit
+
+statement ok
+create merge table parent1(a int) PARTITION BY RANGE ON (a)
+
+statement ok
+create merge table parent2(a int) PARTITION BY RANGE ON (a)
+
+statement ok
+create table child(c int)
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+create table myx (a int)
+
+@connection(id=mdb2)
+statement ok
+drop table myx
+
+statement ok
+ALTER TABLE parent1 ADD TABLE child AS PARTITION FROM '1' TO '2'
+
+@connection(id=mdb2)
+statement ok
+ALTER TABLE parent2 ADD TABLE child AS PARTITION FROM '0' TO '4'
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+statement ok
+start transaction
+
+statement ok
+ALTER TABLE parent1 DROP TABLE child
+
+statement ok
+DROP TABLE parent1
+
+statement ok
+DROP TABLE parent2
+
+statement ok
+DROP TABLE child
+
+statement ok
+commit
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+CREATE FUNCTION myfunc() RETURNS INT RETURN 1
+
+@connection(id=mdb2)
+statement ok
+create table myx (a int)
+
+@connection(id=mdb2)
+statement ok
+drop table myx
+
+@connection(id=mdb2)
+statement error 42000!CREATE FUNCTION: transaction conflict detected
+CREATE FUNCTION myfunc() RETURNS INT RETURN 2
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+statement ok
+DROP FUNCTION myfunc
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+insert into longs values (4),(5),(6)
+
+@connection(id=mdb2)
+statement ok
+insert into longs values (5),(6),(7)
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+query I nosort
+SELECT i FROM longs order by i
+----
+1
+2
+3
+4
+5
+6
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok rowcount 3
+delete from longs where i > 3
+
+@connection(id=mdb2)
+statement ok
+insert into integers values (4)
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+query I nosort
+SELECT i FROM longs order by i
+----
+1
+2
+3
+
+statement ok
+start transaction
+
+statement ok
+DROP TYPE myurl
+
+statement ok
+drop table integers
+
+statement ok
+drop table longs
+
+statement ok
+drop table doubles
+
+statement ok
+DROP TABLE sys.myvar
+
+statement ok
+commit
+
