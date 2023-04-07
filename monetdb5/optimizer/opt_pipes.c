@@ -32,12 +32,10 @@
 
 #define MAXOPTPIPES 64
 
-static struct PIPELINES {
+static struct pipeline {
 	char *name;
-	char *def;
-	char *status;
-	MalBlkPtr mb;
-	char builtin;
+	char **def;					/* NULL terminated list of optimizers */
+	bool builtin;
 } pipes[MAXOPTPIPES] = {
 /* The minimal pipeline necessary by the server to operate correctly
  *
@@ -46,158 +44,76 @@ static struct PIPELINES {
  * (see tools/mserver/mserver5.1) accordingly!
  */
 	{"minimal_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.emptybind();"
-	 "optimizer.deadcode();"
-	 "optimizer.for();"
-	 "optimizer.dict();"
-	 "optimizer.multiplex();"
-	 "optimizer.generator();"
-	 //"optimizer.candidates();" only for decoration in explain
-	 //"optimizer.mask();"
-	 "optimizer.garbageCollector();"
-	 "optimizer.profiler();",
-	 "stable", NULL, 1},
-#ifdef USE_STRIMPS_OPTIMIZERS
-	{"minimal_strimps_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.aliases();"
-	 "optimizer.constants();"
-	 "optimizer.deadcode();"
-	 "optimizer.multiplex();"
-	 "optimizer.strimps();"
-	 "optimizer.generator();"
-	 //"optimizer.candidates();" only for decoration in explain
-	 //"optimizer.mask();"
-	 "optimizer.garbageCollector();"
-	 "optimizer.profiler();",
-	 "stable", NULL, 1},
-#endif  // USE_STRIMPS_OPTIMIZERS
+	 (char *[]) {
+		 "inline",
+		 "remap",
+		 "emptybind",
+		 "deadcode",
+		 "for",
+		 "dict",
+		 "multiplex",
+		 "generator",
+		 "profiler",
+		 "garbageCollector",
+		 NULL,
+	 },
+	 true,
+	},
 	{"minimal_fast",
-	 "optimizer.minimalfast()",
-	 "stable", NULL, 1},
-/* The default pipe line contains as of Feb2010
- * mitosis-mergetable-reorder, aimed at large tables and improved
- * access locality.
- *
- * NOTE:
- * If you change the default pipe, please also update the no_mitosis pipe
- * and sequential pipe (see below, as well as the man page (see
+	 (char *[]) {
+		 "minimalfast",
+		 NULL,
+	 },
+	 true,
+	},
+/* NOTE:
+ * If you change the default pipe, please also update the no_mitosis
+ * pipe and sequential pipe (see below, as well as the man page (see
  * tools/mserver/mserver5.1) accordingly!
  */
 	{"default_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.aliases();"
-	 "optimizer.evaluate();"
-	 "optimizer.emptybind();"
-	 "optimizer.deadcode();" /* Feb2021 update, I pushed deadcode optimizer earlier in the pipeline so it runs before mitosis, thus removing less instructions */
-	 "optimizer.pushselect();"
-	 "optimizer.aliases();"
-	 "optimizer.for();"
-	 "optimizer.dict();"
-	 "optimizer.mitosis();"
-	 "optimizer.mergetable();"
-	 "optimizer.aliases();"
-	 "optimizer.constants();"
-	 "optimizer.commonTerms();"
-	 "optimizer.projectionpath();"
-	 "optimizer.deadcode();"
-	 "optimizer.matpack();"
-	 "optimizer.reorder();"
-	 "optimizer.dataflow();"
-	 "optimizer.querylog();"
-	 "optimizer.multiplex();"
-	 "optimizer.generator();"
-	 "optimizer.candidates();"
-	 //"optimizer.mask();"
-	 "optimizer.deadcode();"
-	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
-	 "optimizer.garbageCollector();"
-	 "optimizer.profiler();",
-	 "stable", NULL, 1},
-#ifdef USE_STRIMPS_OPTIMIZERS
-	{"strimps_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.aliases();"
-	 "optimizer.evaluate();"
-	 "optimizer.emptybind();"
-	 "optimizer.deadcode();" /* Feb2021 update, I pushed deadcode optimizer earlier in the pipeline so it runs before mitosis, thus removing less instructions */
-	 "optimizer.pushselect();"
-	 "optimizer.aliases();"
-	 "optimizer.mitosis();"
-	 "optimizer.mergetable();"
-	 "optimizer.aliases();"
-	 "optimizer.constants();"
-	 "optimizer.commonTerms();"
-	 "optimizer.projectionpath();"
-	 "optimizer.deadcode();"
-	 "optimizer.matpack();"
-	 "optimizer.reorder();"
-	 "optimizer.dataflow();"
-	 "optimizer.querylog();"
-	 "optimizer.multiplex();"
-	 "optimizer.strimps();"
-	 "optimizer.generator();"
-	 "optimizer.candidates();"
-	 //"optimizer.mask();"
-	 "optimizer.deadcode();"
-	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
-	 "optimizer.garbageCollector();"
-	 "optimizer.profiler();",
-	 "stable", NULL, 1},
-#endif  // USE_STRIMPS_OPTIMIZERS
+	 (char *[]) {
+		 "inline",
+		 "remap",
+		 "costModel",
+		 "coercions",
+		 "aliases",
+		 "evaluate",
+		 "emptybind",
+		 "deadcode",
+		 "pushselect",
+		 "aliases",
+		 "for",
+		 "dict",
+		 "mitosis",
+		 "mergetable",
+		 "aliases",
+		 "constants",
+		 "commonTerms",
+		 "projectionpath",
+		 "deadcode",
+		 "matpack",
+		 "reorder",
+		 "dataflow",
+		 "querylog",
+		 "multiplex",
+		 "generator",
+		 "candidates",
+		 "deadcode",
+		 "postfix",
+		 "profiler",
+		 "garbageCollector",
+		 NULL,
+	 },
+	 true,
+	},
 	{"default_fast",
-	 "optimizer.defaultfast()",
-	 "stable", NULL, 1},
-/* Apr2022 update. I disabled the volcano_pipe because it has issues on it */
-#if 0
-/*
- * Volcano style execution produces a sequence of blocks from the source relation
- */
-	{"volcano_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.aliases();"
-	 "optimizer.evaluate();"
-	 "optimizer.emptybind();"
-	 "optimizer.deadcode();" /* Feb2021 update, I pushed deadcode optimizer earlier in the pipeline so it runs before mitosis, thus removing less instructions */
-	 "optimizer.pushselect();"
-	 "optimizer.aliases();"
-	 "optimizer.mitosis();"
-	 "optimizer.mergetable();"
-	 "optimizer.aliases();"
-	 "optimizer.constants();"
-	 "optimizer.commonTerms();"
-	 "optimizer.projectionpath();"
-	 "optimizer.deadcode();"
-	 "optimizer.matpack();"
-	 "optimizer.reorder();"
-	 "optimizer.dataflow();"
-	 "optimizer.querylog();"
-	 "optimizer.multiplex();"
-	 "optimizer.generator();"
-	 "optimizer.volcano();"
-	 "optimizer.candidates();"
-	 //"optimizer.mask();"
-	 "optimizer.deadcode();"
-	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
-	 "optimizer.garbageCollector();"
-	 "optimizer.profiler();",
-	 "stable", NULL, 1},
-#endif
+	 (char *[]) {
+		 "defaultfast",
+		 NULL,
+	 },
+	 true,
+	},
 /* The no_mitosis pipe line is (and should be kept!) identical to the
  * default pipeline, except that optimizer mitosis is omitted.  It is
  * used mainly to make some tests work deterministically, and to check
@@ -209,40 +125,42 @@ static struct PIPELINES {
  * (see tools/mserver/mserver5.1) accordingly!
  */
 	{"no_mitosis_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.aliases();"
-	 "optimizer.evaluate();"
-	 "optimizer.emptybind();"
-	 "optimizer.deadcode();" /* Feb2021 update, I pushed deadcode optimizer earlier in the pipeline so it runs before mitosis, thus removing less instructions */
-	 "optimizer.pushselect();"
-	 "optimizer.aliases();"
-	 "optimizer.mergetable();"
-	 "optimizer.aliases();"
-	 "optimizer.constants();"
-	 "optimizer.commonTerms();"
-	 "optimizer.projectionpath();"
-	 "optimizer.deadcode();"
-	 "optimizer.matpack();"
-	 "optimizer.reorder();"
-	 "optimizer.dataflow();"
-	 "optimizer.querylog();"
-	 "optimizer.multiplex();"
-	 "optimizer.generator();"
-	 "optimizer.candidates();"
-	 //"optimizer.mask();"
-	 "optimizer.deadcode();"
-	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
-	 "optimizer.garbageCollector();"
-	 "optimizer.profiler();",
-	 "stable", NULL, 1},
+	 (char *[]) {
+		 "inline",
+		 "remap",
+		 "costModel",
+		 "coercions",
+		 "aliases",
+		 "evaluate",
+		 "emptybind",
+		 "deadcode",
+		 "pushselect",
+		 "aliases",
+		 "mergetable",
+		 "aliases",
+		 "constants",
+		 "commonTerms",
+		 "projectionpath",
+		 "deadcode",
+		 "matpack",
+		 "reorder",
+		 "dataflow",
+		 "querylog",
+		 "multiplex",
+		 "generator",
+		 "candidates",
+		 "deadcode",
+		 "postfix",
+		 "profiler",
+		 "garbageCollector",
+		 NULL,
+	 },
+	 true,
+	},
 /* The sequential pipe line is (and should be kept!) identical to the
  * default pipeline, except that optimizers mitosis & dataflow are
- * omitted.  It is use mainly to make some tests work
- * deterministically, i.e., avoid ambigious output, by avoiding
+ * omitted.  It is used mainly to make some tests work
+ * deterministically, i.e., avoid ambiguous output, by avoiding
  * parallelism.
  *
  * NOTE:
@@ -250,67 +168,116 @@ static struct PIPELINES {
  * (see tools/mserver/mserver5.1) accordingly!
  */
 	{"sequential_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.aliases();"
-	 "optimizer.evaluate();"
-	 "optimizer.emptybind();"
-	 "optimizer.deadcode();" /* Feb2021 update, I pushed deadcode optimizer earlier in the pipeline so it runs before mitosis, thus removing less instructions */
-	 "optimizer.pushselect();"
-	 "optimizer.aliases();"
-	 "optimizer.for();"
-	 "optimizer.dict();"
-	 "optimizer.mergetable();"
-	 "optimizer.aliases();"
-	 "optimizer.constants();"
-	 "optimizer.commonTerms();"
-	 "optimizer.projectionpath();"
-	 "optimizer.deadcode();"
-	 "optimizer.matpack();"
-	 "optimizer.reorder();"
-	 "optimizer.querylog();"
-	 "optimizer.multiplex();"
-	 "optimizer.generator();"
-	 "optimizer.candidates();"
-	 //"optimizer.mask();"
-	 "optimizer.deadcode();"
-	 "optimizer.postfix();"
-//	 "optimizer.jit();" awaiting the new batcalc api
-	 "optimizer.garbageCollector();"
-	 "optimizer.profiler();",
-	 "stable", NULL, 1},
+	 (char *[]) {
+		 "inline",
+		 "remap",
+		 "costModel",
+		 "coercions",
+		 "aliases",
+		 "evaluate",
+		 "emptybind",
+		 "deadcode",
+		 "pushselect",
+		 "aliases",
+		 "for",
+		 "dict",
+		 "mergetable",
+		 "aliases",
+		 "constants",
+		 "commonTerms",
+		 "projectionpath",
+		 "deadcode",
+		 "matpack",
+		 "reorder",
+		 "querylog",
+		 "multiplex",
+		 "generator",
+		 "candidates",
+		 "deadcode",
+		 "postfix",
+		 "profiler",
+		 "garbageCollector",
+		 NULL,
+	 },
+	 true,
+	},
 /* Experimental pipelines stressing various components under
  * development.  Do not use any of these pipelines in production
  * settings!
  */
 /* sentinel */
-	{NULL, NULL, NULL, NULL, 0}
+	{NULL, NULL, false, },
 };
 
-/*
- * Debugging the optimizer pipeline",
- * The best way is to use mdb and inspect the information gathered",
- * during the optimization phase.  Several optimizers produce more",
- * intermediate information, which may shed light on the details.  The",
- * opt_debug bitvector controls their output. It can be set to a",
- * pipeline or a comma separated list of optimizers you would like to",
- * trace. It is a server wide property and can not be set dynamically,",
- * as it is intended for internal use.",
- */
 #include "optimizer_private.h"
 
 static MT_Lock pipeLock = MT_LOCK_INITIALIZER(pipeLock);
+
+static str
+validatePipe(struct pipeline *pipe)
+{
+	bool mitosis = false, deadcode = false, mergetable = false;
+	bool multiplex = false, garbage = false, generator = false, remap = false;
+	int i;
+
+	if (pipe->def == NULL || pipe->def[0] == NULL)
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "missing optimizers");
+
+	if (strcmp(pipe->def[0], "defaultfast") == 0 ||
+		strcmp(pipe->def[0], "minimalfast") == 0)
+		return MAL_SUCCEED;
+
+	if (strcmp(pipe->def[0], "inline") != 0)
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'inline' should be the first\n");
+
+	for (i = 0; pipe->def[i]; i++) {
+		const char *fname = pipe->def[i];
+		if (garbage)
+			throw(MAL, "optimizer.validate", SQLSTATE(42000) "'garbageCollector' should be used as the last one\n");
+		if (strcmp(fname, "deadcode") == 0)
+			deadcode = true;
+		else if (strcmp(fname, "remap") == 0)
+			remap = true;
+		else if (strcmp(fname, "mitosis") == 0)
+			mitosis = true;
+		else if (strcmp(fname, "mergetable") == 0)
+			mergetable = true;
+		else if (strcmp(fname, "multiplex") == 0)
+			multiplex = true;
+		else if (strcmp(fname, "generator") == 0)
+			generator = true;
+		else if (strcmp(fname, "garbageCollector") == 0)
+			garbage = true;
+	}
+
+	if (mitosis && !mergetable)
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'mitosis' needs 'mergetable'\n");
+
+	/* several optimizer should be used */
+	if (!multiplex)
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'multiplex' should be used\n");
+	if (!deadcode)
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'deadcode' should be used at least once\n");
+	if (!garbage)
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'garbageCollector' should be used as the last one\n");
+	if (!remap)
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'remap' should be used\n");
+	if (!generator)
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'generator' should be used\n");
+
+	return MAL_SUCCEED;
+}
 
 /* the session_pipe is the one defined by the user */
 str
 addPipeDefinition(Client cntxt, const char *name, const char *pipe)
 {
-	int i;
-	str msg;
-	struct PIPELINES oldpipe;
+	int i, n;
+	str msg = MAL_SUCCEED;
+	struct pipeline oldpipe;
+	const char *p;
 
+	(void) cntxt;
 	MT_lock_set(&pipeLock);
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
 		if (strcmp(name, pipes[i].name) == 0)
@@ -327,64 +294,74 @@ addPipeDefinition(Client cntxt, const char *name, const char *pipe)
 
 	/* save old value */
 	oldpipe = pipes[i];
-	pipes[i].name = GDKstrdup(name);
-	pipes[i].def = GDKstrdup(pipe);
-	pipes[i].status = GDKstrdup("experimental");
-	if(pipes[i].name == NULL || pipes[i].def == NULL || pipes[i].status == NULL) {
-		GDKfree(pipes[i].name);
-		GDKfree(pipes[i].def);
-		GDKfree(pipes[i].status);
-		pipes[i].name = oldpipe.name;
-		pipes[i].def = oldpipe.def;
-		pipes[i].status = oldpipe.status;
-		MT_lock_unset(&pipeLock);
-		throw(MAL, "optimizer.addPipeDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	pipes[i] = (struct pipeline) {
+		.name = GDKstrdup(name),
+	};
+	if(pipes[i].name == NULL)
+		goto bailout;
+	n = 1;
+	for (p = pipe; p; p = strchr(p, ';')) {
+		p++;
+		n++;
 	}
-	pipes[i].mb = NULL;
-	MT_lock_unset(&pipeLock);
-	msg = compileOptimizer(cntxt, name);
-	if (msg) {
+	if ((pipes[i].def = GDKmalloc(n * sizeof(char *))) == NULL)
+		goto bailout;
+	n = 0;
+	while ((p = strchr(pipe, ';')) != NULL) {
+		if (strncmp(pipe, "optimizer.", 10) == 0)
+			pipe += 10;
+		const char *q = pipe;
+		while (q < p && *q != '(' && *q != '.' && !GDKisspace(*q))
+			q++;
+		if (*q == '.') {
+			msg = createException(MAL, "optimizer.addPipeDefinition", SQLSTATE(42000) "Bad pipeline definition");
+			goto bailout;
+		}
+		if (q > pipe) {
+			if ((pipes[i].def[n++] = GDKstrndup(pipe, q - pipe)) == NULL)
+				goto bailout;
+		}
+		pipe = p + 1;
+		while (*pipe && GDKisspace(*pipe))
+			pipe++;
+	}
+	pipes[i].def[n] = NULL;
+	msg = validatePipe(&pipes[i]);
+	if (msg != MAL_SUCCEED) {
 		/* failed: restore old value */
-		MT_lock_set(&pipeLock);
-		GDKfree(pipes[i].name);
-		GDKfree(pipes[i].def);
-		GDKfree(pipes[i].status);
-		pipes[i] = oldpipe;
-		MT_lock_unset(&pipeLock);
-	} else {
-		/* succeeded: destroy old value */
-		if (oldpipe.name)
-			GDKfree(oldpipe.name);
-		if (oldpipe.def)
-			GDKfree(oldpipe.def);
-		if (oldpipe.mb)
-			freeMalBlk(oldpipe.mb);
-		if (oldpipe.status)
-			GDKfree(oldpipe.status);
+		goto bailout;
 	}
+	MT_lock_unset(&pipeLock);
+	/* succeeded: destroy old value */
+	GDKfree(oldpipe.name);
+	if (oldpipe.def)
+		for (n = 0; oldpipe.def[n]; n++)
+			GDKfree(oldpipe.def[n]);
+	GDKfree(oldpipe.def);
 	return msg;
+
+  bailout:
+	GDKfree(pipes[i].name);
+	if (pipes[i].def)
+		for (n = 0; pipes[i].def[n]; n++)
+			GDKfree(pipes[i].def[n]);
+	GDKfree(pipes[i].def);
+	pipes[i] = oldpipe;
+	MT_lock_unset(&pipeLock);
+	if (msg)
+		return msg;
+	throw(MAL, "optimizer.addPipeDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
-int
+bool
 isOptimizerPipe(const char *name)
 {
 	int i;
 
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
 		if (strcmp(name, pipes[i].name) == 0)
-			return TRUE;
-	return FALSE;
-}
-
-str
-getPipeDefinition(str name)
-{
-	int i;
-
-	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
-		if (strcmp(name, pipes[i].name) == 0)
-			return GDKstrdup(pipes[i].def);
-	return NULL;
+			return true;
+	return false;
 }
 
 str
@@ -392,27 +369,53 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 {
 	BAT *b, *bn, *bs;
 	int i;
+	size_t l = 2048;
+	char *buf = GDKmalloc(l);
 
 	b = COLnew(0, TYPE_str, 20, TRANSIENT);
 	bn = COLnew(0, TYPE_str, 20, TRANSIENT);
 	bs = COLnew(0, TYPE_str, 20, TRANSIENT);
-	if (b == NULL || bn == NULL || bs == NULL) {
+	if (buf == NULL || b == NULL || bn == NULL || bs == NULL) {
 		BBPreclaim(b);
 		BBPreclaim(bn);
 		BBPreclaim(bs);
+		GDKfree(buf);
 		throw(MAL, "optimizer.getpipeDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) {
+		size_t n = 1;
+		for (int j = 0; pipes[i].def[j]; j++)
+			n += strlen(pipes[i].def[j]) + 13;
+		if (n > l) {
+			GDKfree(buf);
+			buf = GDKmalloc(n);
+			l = n;
+			if (buf == NULL) {
+				BBPreclaim(b);
+				BBPreclaim(bn);
+				BBPreclaim(bs);
+				GDKfree(buf);
+				throw(MAL, "optimizer.getpipeDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+		}
+		char *p = buf;
+		for (int j = 0; pipes[i].def[j]; j++) {
+			p = stpcpy(p, "optimizer.");
+			p = stpcpy(p, pipes[i].def[j]);
+			p = stpcpy(p, "();");
+		}
 		if (BUNappend(b, pipes[i].name, false) != GDK_SUCCEED ||
-			BUNappend(bn, pipes[i].def, false) != GDK_SUCCEED ||
-			BUNappend(bs, pipes[i].status, false) != GDK_SUCCEED) {
+			BUNappend(bn, buf, false) != GDK_SUCCEED ||
+			BUNappend(bs, pipes[i].builtin ? "stable" : "experimental", false) != GDK_SUCCEED) {
 			BBPreclaim(b);
 			BBPreclaim(bn);
 			BBPreclaim(bs);
+			GDKfree(buf);
 			throw(MAL, "optimizer.getpipeDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
+	GDKfree(buf);
 
 	*nme = b->batCacheid;
 	BBPkeepref(b);
@@ -423,137 +426,18 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 	return MAL_SUCCEED;
 }
 
-static str
-validatePipe(MalBlkPtr mb)
-{
-	int mitosis = FALSE, deadcode = FALSE, mergetable = FALSE, multiplex = FALSE;
-	int garbage = FALSE, generator = FALSE, remap =  FALSE;
-	int i;
-	InstrPtr p;
-
-	if (mb == NULL )
-		throw(MAL, "optimizer.validate", SQLSTATE(42000) "missing optimizer mal block\n");
-	p = getInstrPtr(mb,1);
-
-	if (getFunctionId(p) && (idcmp(getFunctionId(p), "defaultfast") == 0 || (idcmp(getFunctionId(p), "minimalfast") == 0)))
-		return MAL_SUCCEED;
-
-	if (getFunctionId(p) == NULL || idcmp(getFunctionId(p), "inline") != 0)
-		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'inline' should be the first\n");
-
-	for (i = 1; i < mb->stop - 1; i++){
-		p = getInstrPtr(mb, i);
-		const char *fname = getFunctionId(p);
-		if (fname != NULL) {
-			if (strcmp(fname, "deadcode") == 0)
-				deadcode = TRUE;
-			else if (strcmp(fname, "remap") == 0)
-				remap = TRUE;
-			else if (strcmp(fname, "mitosis") == 0)
-				mitosis = TRUE;
-			else if (strcmp(fname, "mergetable") == 0)
-				mergetable = TRUE;
-			else if (strcmp(fname, "multiplex") == 0)
-				multiplex = TRUE;
-			else if (strcmp(fname, "generator") == 0)
-				generator = TRUE;
-			else if (strcmp(fname, "garbageCollector") == 0)
-				garbage = TRUE;
-		} else
-			throw(MAL, "optimizer.validate", SQLSTATE(42000) "Missing optimizer call\n");
-	}
-
-	if (mitosis == TRUE && mergetable == FALSE)
-		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'mitosis' needs 'mergetable'\n");
-
-	/* several optimizer should be used */
-	if (multiplex == 0)
-		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'multiplex' should be used\n");
-	if (deadcode == FALSE)
-		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'deadcode' should be used at least once\n");
-	if (garbage == FALSE)
-		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'garbageCollector' should be used as the last one\n");
-	if (remap == FALSE)
-		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'remap' should be used\n");
-	if (generator == FALSE)
-		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'generator' should be used\n");
-
-	return MAL_SUCCEED;
-}
-
-static str
-validateOptimizerPipes(void)
-{
-	int i;
-	str msg = MAL_SUCCEED;
-
-	for (i = 0; i < MAXOPTPIPES && pipes[i].def; i++)
-		if (pipes[i].mb) {
-			msg = validatePipe(pipes[i].mb);
-			if (msg != MAL_SUCCEED)
-				break;
-		}
-	return msg;
-}
-
-/*
- * Compile (the first time) an optimizer pipe string
- * then copy the statements to the end of the MAL plan
-*/
-str
-compileOptimizer(Client cntxt, const char *name)
-{
-	int i, j;
-	char buf[2048];
-	str msg = MAL_SUCCEED;
-	Symbol fcn, compiled;
-
-	MT_lock_set(&pipeLock);
-	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
-		if (strcmp(pipes[i].name, name) == 0 && pipes[i].mb == 0) {
-			/* precompile a pipeline as MAL string */
-			for (j = 0; j < MAXOPTPIPES && pipes[j].def; j++) {
-				if (pipes[j].mb == NULL) {
-					snprintf(buf,2048,"function optimizer.%s(); %s;end %s;", pipes[j].name,pipes[j].def,pipes[j].name);
-					msg = compileString(&fcn,cntxt, buf);
-					if( msg == MAL_SUCCEED){
-						compiled = findSymbol(cntxt->usermodule,getName("optimizer"), getName(pipes[j].name));
-						if( compiled)
-							pipes[j].mb = compiled->def;
-					} else break;
-				}
-			}
-			if (msg != MAL_SUCCEED ||
-				(msg = validateOptimizerPipes()) != MAL_SUCCEED)
-				break;
-		}
-	MT_lock_unset(&pipeLock);
-	return msg;
-}
-
-str
-compileAllOptimizers(Client cntxt)
-{
-	int i;
-	str msg = MAL_SUCCEED;
-
-	for(i=0;pipes[i].def && msg == MAL_SUCCEED; i++){
-		msg =compileOptimizer(cntxt,pipes[i].name);
-	}
-	return msg;
-}
-
 /*
  * Add a new components of the optimizer pipe to the plan
  */
 str
 addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 {
-	int i, j, k;
-	InstrPtr p,q;
+	int i, j;
+	InstrPtr p;
 	str msg = MAL_SUCCEED;
 
-	if (strcmp(name, "default_fast") == 0 && isSimpleSQL(mb)){
+	(void) cntxt;
+	if (strcmp(name, "default_fast") == 0 && isSimpleSQL(mb)) {
 		for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
 			if (strcmp(pipes[i].name, "minimal_fast") == 0)
 				break;
@@ -563,29 +447,16 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 				break;
 	}
 
-	if (i == MAXOPTPIPES)
-		throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY013) "Out of slots");
+	if (i == MAXOPTPIPES || pipes[i].name == NULL)
+		throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(22023) "Unknown optimizer");
 
-	if (pipes[i].mb == NULL){
-		if (strcmp(name, "default_fast") == 0  && isSimpleSQL(mb))
-			msg = compileOptimizer(cntxt, name);
-		else
-			msg = compileOptimizer(cntxt, "minimal_fast");
-	}
-
-	if (pipes[i].mb && pipes[i].mb->stop) {
-		for (j = 1; j < pipes[i].mb->stop - 1; j++) {
-			q= getInstrPtr(pipes[i].mb,j);
-			if( getModuleId(q) != optimizerRef)
-				continue;
-			p = copyInstruction(q);
-			if (!p)
-				throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			for (k = 0; k < p->argc; k++)
-				getArg(p, k) = cloneVariable(mb, pipes[i].mb, getArg(p, k));
-			// typecheck to get its internal address typeChecker(cntxt->usermodule, mb, p, j, FALSE);
-			pushInstruction(mb, p);
-		}
+	for (j = 0; pipes[i].def[j]; j++) {
+		p = newFcnCall(mb, optimizerRef, pipes[i].def[j]);
+		if (p == NULL)
+			throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		p->fcn = OPTwrapper;
+		p->token = PATcall;
+		pushInstruction(mb, p);
 	}
 	return msg;
 }
@@ -593,8 +464,15 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 void
 opt_pipes_reset(void)
 {
-	int i;
-
-	for (i = 0; i < MAXOPTPIPES; i++)
-		pipes[i].mb = NULL;
+	for (int i = 0; i < MAXOPTPIPES; i++)
+		if (pipes[i].name && !pipes[i].builtin) {
+			GDKfree(pipes[i].name);
+			if (pipes[i].def)
+				for (int n = 0; pipes[i].def[n]; n++)
+					GDKfree(pipes[i].def[n]);
+			GDKfree(pipes[i].def);
+			pipes[i] = (struct pipeline) {
+				.name = NULL,
+			};
+		}
 }

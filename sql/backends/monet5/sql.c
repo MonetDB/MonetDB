@@ -91,6 +91,10 @@ rel_no_mitosis(mvc *sql, sql_rel *rel)
 	}
 	if (is_topn(rel->op) || is_sample(rel->op) || is_simple_project(rel->op))
 		return rel_no_mitosis(sql, rel->l);
+	if (is_ddl(rel->op) && rel->flag == ddl_output) {
+		// COPY SELECT ... INTO
+		return rel_no_mitosis(sql, rel->l);
+	}
 	if ((is_delete(rel->op) || is_truncate(rel->op)) && rel->card <= CARD_AGGR)
 		return 1;
 	if ((is_insert(rel->op) || is_update(rel->op)) && rel->card <= CARD_AGGR)
@@ -129,7 +133,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 	lng Tbegin, Tend;
 	int value_based_opt = be->mvc->emode != m_prepare, storage_based_opt;
 	int profile = be->mvc->emode == m_plan;
-	Client c = getClientContext();
+	Client c = be->client;
 
 	Tbegin = GDKusec();
 	rel = rel_semantic(query, sym);
@@ -3004,14 +3008,15 @@ mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 {
 	backend *b = NULL;
 	str msg;
-	int ok;
+	int ok = 0;
 
 	(void) stk;		/* NOT USED */
 	(void) pci;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	b = cntxt->sqlcontext;
-	ok = mvc_export_operation(b, b->out, "", cntxt->qryctx.starttime, mb->optimize);
+	if (b->out)
+		ok = mvc_export_operation(b, b->out, "", cntxt->qryctx.starttime, mb->optimize);
 	cntxt->qryctx.starttime = 0;
 	mb->optimize = 0;
 	if (ok < 0)
@@ -3486,64 +3491,6 @@ sql_sessions_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	BAT *urib = NULL, *unameb = NULL, *hashb = NULL;
-	bat *uri = getArgReference_bat(stk, pci, 0);
-	bat *uname = getArgReference_bat(stk, pci, 1);
-	bat *hash = getArgReference_bat(stk, pci, 2);
-	str *table = getArgReference_str(stk, pci, 3);
-	str uris = NULL, unames = NULL, hashs = NULL;
-	str msg = MAL_SUCCEED;
-	(void)mb;
-	(void)cntxt;
-
-	urib = COLnew(0, TYPE_str, 0, TRANSIENT);
-	unameb = COLnew(0, TYPE_str, 0, TRANSIENT);
-	hashb = COLnew(0, TYPE_str, 0, TRANSIENT);
-
-	if (urib == NULL || unameb == NULL || hashb == NULL) {
-		msg = createException(SQL, "sql.remote_table_credentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-
-	if ((msg = AUTHgetRemoteTableCredentials(*table, &uris, &unames, &hashs)) != MAL_SUCCEED)
-		goto bailout;
-
-	MT_lock_set(&mal_contextLock);
-	if (BUNappend(urib, uris? uris: str_nil, false) != GDK_SUCCEED)
-		goto lbailout;
-	if (BUNappend(unameb, unames? unames: str_nil , false) != GDK_SUCCEED)
-		goto lbailout;
-	if (BUNappend(hashb, hashs? hashs: str_nil, false) != GDK_SUCCEED)
-		goto lbailout;
-	MT_lock_unset(&mal_contextLock);
-	*uri = urib->batCacheid;
-	BBPkeepref(urib);
-	*uname = unameb->batCacheid;
-	BBPkeepref(unameb);
-	*hash = hashb->batCacheid;
-	BBPkeepref(hashb);
-
-	GDKfree(uris);
-	GDKfree(unames);
-	GDKfree(hashs);
-	return MAL_SUCCEED;
-
-  lbailout:
-	MT_lock_unset(&mal_contextLock);
-	msg = createException(SQL, "sql.remote_table_credentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-  bailout:
-	GDKfree(uris);
-	GDKfree(unames);
-	GDKfree(hashs);
-	BBPreclaim(urib);
-	BBPreclaim(unameb);
-	BBPreclaim(hashb);
-	return msg;
-}
-
-str
 sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
@@ -3997,86 +3944,86 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								goto bailout;
 							}
 
-							bat_iterator_end(&bsi);
 							bsi = bat_iterator(bs);
 							/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
 							if (BUNappend(sch, b->name, false) != GDK_SUCCEED ||
 							    BUNappend(tab, bt->name, false) != GDK_SUCCEED ||
 							    BUNappend(col, bc->name, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 							if (c->t->access == TABLE_WRITABLE) {
 								if (BUNappend(mode, "writable", false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 							} else if (c->t->access == TABLE_APPENDONLY) {
 								if (BUNappend(mode, "appendonly", false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 							} else if (c->t->access == TABLE_READONLY) {
 								if (BUNappend(mode, "readonly", false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 							} else {
 								if (BUNappend(mode, str_nil, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 							}
 							if (BUNappend(type, c->type.type->base.name, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							/*printf(" cnt "BUNFMT, bsi.count); */
 							sz = bsi.count;
 							if (BUNappend(cnt, &sz, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							/*printf(" loc %s", BBP_physical(bs->batCacheid)); */
 							if (BUNappend(loc, BBP_physical(bs->batCacheid), false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 							/*printf(" width %d", bsi.width); */
 							w = bsi.width;
 							if (BUNappend(atom, &w, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							sz = bsi.count << bsi.shift;
 							if (BUNappend(size, &sz, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							sz = heapinfo(bs->tvheap, bs->batCacheid);
 							if (BUNappend(heap, &sz, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							MT_rwlock_rdlock(&bs->thashlock);
 							sz = hashinfo(bs->thash, bs->batCacheid);
 							MT_rwlock_rdunlock(&bs->thashlock);
 							if (BUNappend(indices, &sz, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							bitval = 0; /* HASHispersistent(bs); */
 							if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							sz = IMPSimprintsize(bs);
 							if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 							/*printf(" indices "BUNFMT, bs->thash?bs->thash->heap.size:0); */
 							/*printf("\n"); */
 							bitval = bsi.sorted;
 							if (!bitval && bsi.nosorted == 0)
 								bitval = bit_nil;
 							if (BUNappend(sort, &bitval, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							bitval = bsi.revsorted;
 							if (!bitval && bsi.norevsorted == 0)
 								bitval = bit_nil;
 							if (BUNappend(revsort, &bitval, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							bitval = BATtkey(bs);
 							if (!bitval && bsi.nokey[0] == 0 && bsi.nokey[1] == 0)
 								bitval = bit_nil;
 							if (BUNappend(key, &bitval, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
 
 							sz = bs->torderidx && bs->torderidx != (Heap *) 1 ? bs->torderidx->free : 0;
 							if (BUNappend(oidx, &sz, false) != GDK_SUCCEED)
-								goto bailout;
+								goto bailout1;
+							bat_iterator_end(&bsi);
 						}
 					}
 
@@ -4094,82 +4041,82 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								}
 								if( cname && strcmp(bc->name, cname) )
 									continue;
-								bat_iterator_end(&bsi);
 								bsi = bat_iterator(bs);
 								/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
 								if (BUNappend(sch, b->name, false) != GDK_SUCCEED ||
 								    BUNappend(tab, bt->name, false) != GDK_SUCCEED ||
 								    BUNappend(col, bc->name, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								if (c->t->access == TABLE_WRITABLE) {
 									if (BUNappend(mode, "writable", false) != GDK_SUCCEED)
-										goto bailout;
+										goto bailout1;
 								} else if (c->t->access == TABLE_APPENDONLY) {
 									if (BUNappend(mode, "appendonly", false) != GDK_SUCCEED)
-										goto bailout;
+										goto bailout1;
 								} else if (c->t->access == TABLE_READONLY) {
 									if (BUNappend(mode, "readonly", false) != GDK_SUCCEED)
-										goto bailout;
+										goto bailout1;
 								} else {
 									if (BUNappend(mode, str_nil, false) != GDK_SUCCEED)
-										goto bailout;
+										goto bailout1;
 								}
 								if (BUNappend(type, "oid", false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 
 								/*printf(" cnt "BUNFMT, bsi.count); */
 								sz = bsi.count;
 								if (BUNappend(cnt, &sz, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 
 								/*printf(" loc %s", BBP_physical(bs->batCacheid)); */
 								if (BUNappend(loc, BBP_physical(bs->batCacheid), false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								/*printf(" width %d", bsi.width); */
 								w = bsi.width;
 								if (BUNappend(atom, &w, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								/*printf(" size "BUNFMT, tailsize(bs,bsi.count) + (bs->tvheap? bs->tvheap->size:0)); */
 								sz = tailsize(bs, bsi.count);
 								if (BUNappend(size, &sz, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 
 								sz = bs->tvheap ? bs->tvheap->size : 0;
 								if (BUNappend(heap, &sz, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 
 								MT_rwlock_rdlock(&bs->thashlock);
 								sz = bs->thash && bs->thash != (Hash *) 1 ? bs->thash->heaplink.size + bs->thash->heapbckt.size : 0; /* HASHsize() */
 								MT_rwlock_rdunlock(&bs->thashlock);
 								if (BUNappend(indices, &sz, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								bitval = 0; /* HASHispersistent(bs); */
 								if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 
 								sz = IMPSimprintsize(bs);
 								if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								/*printf(" indices "BUNFMT, bs->thash?bs->thash->heaplink.size+bs->thash->heapbckt.size:0); */
 								/*printf("\n"); */
 								bitval = bsi.sorted;
 								if (!bitval && bsi.nosorted == 0)
 									bitval = bit_nil;
 								if (BUNappend(sort, &bitval, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								bitval = bsi.revsorted;
 								if (!bitval && bsi.norevsorted == 0)
 									bitval = bit_nil;
 								if (BUNappend(revsort, &bitval, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								bitval = BATtkey(bs);
 								if (!bitval && bsi.nokey[0] == 0 && bsi.nokey[1] == 0)
 									bitval = bit_nil;
 								if (BUNappend(key, &bitval, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
 								sz = bs->torderidx && bs->torderidx != (Heap *) 1 ? bs->torderidx->free : 0;
 								if (BUNappend(oidx, &sz, false) != GDK_SUCCEED)
-									goto bailout;
+									goto bailout1;
+								bat_iterator_end(&bsi);
 							}
 						}
 					}
@@ -4178,7 +4125,6 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	bat_iterator_end(&bsi);
 	*rsch = sch->batCacheid;
 	BBPkeepref(sch);
 	*rtab = tab->batCacheid;
@@ -4215,8 +4161,9 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(oidx);
 	return MAL_SUCCEED;
 
-  bailout:
+  bailout1:
 	bat_iterator_end(&bsi);
+  bailout:
 	BBPreclaim(sch);
 	BBPreclaim(tab);
 	BBPreclaim(col);
@@ -4392,7 +4339,7 @@ SQLsession_prepared_statements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	bat *i = getArgReference_bat(stk,pci,2);
 	bat *s = getArgReference_bat(stk,pci,3);
 	bat *c = getArgReference_bat(stk,pci,4);
-	str msg = MAL_SUCCEED, usr;
+	str msg = MAL_SUCCEED;
 	mvc *sql = NULL;
 	cq *q = NULL;
 
@@ -4422,11 +4369,9 @@ SQLsession_prepared_statements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 			goto bailout;
 		}
 
-		msg = AUTHgetUsername(&usr, cntxt);
 		if (msg != MAL_SUCCEED)
 			goto bailout;
-		bun_res = BUNappend(user, usr, false);
-		GDKfree(usr);
+		bun_res = BUNappend(user, cntxt->username, false);
 		if (bun_res != GDK_SUCCEED) {
 			msg = createException(SQL, "sql.session_prepared_statements", GDK_EXCEPTION);
 			goto bailout;
@@ -5069,7 +5014,7 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 #include "mel.h"
 
 
-str
+static str
 SQLuser_password(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
@@ -5090,6 +5035,23 @@ SQLuser_password(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	*password = monet5_password_hash(m, username);
 	return MAL_SUCCEED;
+}
+
+static str
+SQLdecypher(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = NULL;
+	str *pwhash = getArgReference_str(stk, pci, 0);
+	const char *cypher = *getArgReference_str(stk, pci, 1);
+
+	(void) pwhash;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	return AUTHdecypherValue(pwhash, cypher);
 }
 
 static mel_func sql_init_funcs[] = {
@@ -5183,7 +5145,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "sql_variables", sql_variables, false, "return the table with session variables", args(4,4, batarg("sname",str),batarg("name",str),batarg("type",str),batarg("value",str))),
  pattern("sql", "sessions", sql_sessions_wrap, false, "SQL export table of active sessions, their timeouts and idle status", args(9,9, batarg("id",int),batarg("user",str),batarg("start",timestamp),batarg("idle",timestamp),batarg("optmizer",str),batarg("stimeout",int),batarg("qtimeout",int),batarg("wlimit",int),batarg("mlimit",int))),
 pattern("sql", "password", SQLuser_password, false, "Return password hash of user", args(1,2, arg("",str),arg("user",str))),
- pattern("sql", "rt_credentials", sql_rt_credentials_wrap, false, "Return the remote table credentials for the given table", args(3,4, batarg("uri",str),batarg("username",str),batarg("hash",str),arg("tablename",str))),
+pattern("sql", "decypher", SQLdecypher, false, "Return decyphered password", args(1,2, arg("",str),arg("hash",str))),
  pattern("sql", "dump_cache", dump_cache, false, "dump the content of the query cache", args(2,2, batarg("query",str),batarg("count",int))),
  pattern("sql", "dump_opt_stats", dump_opt_stats, false, "dump the optimizer rewrite statistics", args(2,2, batarg("rewrite",str),batarg("count",int))),
  pattern("sql", "dump_trace", dump_trace, false, "dump the trace statistics", args(3,3, batarg("ticks",lng),batarg("stmt",str),batarg("stmt",str))),
@@ -5191,6 +5153,9 @@ pattern("sql", "password", SQLuser_password, false, "Return password hash of use
  pattern("sql", "analyze", sql_analyze, true, "Update statistics for schema", args(1,2, arg("",void),arg("sch",str))),
  pattern("sql", "analyze", sql_analyze, true, "Update statistics for table", args(1,3, arg("",void),arg("sch",str),arg("tbl",str))),
  pattern("sql", "analyze", sql_analyze, true, "Update statistics for column", args(1,4, arg("",void),arg("sch",str),arg("tbl",str),arg("col",str))),
+ pattern("sql", "set_count_distinct", sql_set_count_distinct, true, "Set count distinct for column", args(1,5, arg("",void),arg("sch",str),arg("tbl",str),arg("col",str),arg("val",lng))),
+ pattern("sql", "set_min", sql_set_min, true, "Set min for column", args(1,5, arg("",void),arg("sch",str),arg("tbl",str),arg("col",str),argany("val",1))),
+ pattern("sql", "set_max", sql_set_max, true, "Set max for column", args(1,5, arg("",void),arg("sch",str),arg("tbl",str),arg("col",str),argany("val",1))),
  pattern("sql", "statistics", sql_statistics, false, "return a table with statistics information", args(13,13, batarg("columnid",int),batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("with",int),batarg("count",lng),batarg("unique",bit),batarg("nils",bit),batarg("minval",str),batarg("maxval",str),batarg("sorted",bit),batarg("revsorted",bit))),
  pattern("sql", "statistics", sql_statistics, false, "return a table with statistics information for a particular schema", args(13,14, batarg("columnid",int),batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("with",int),batarg("count",lng),batarg("unique",bit),batarg("nils",bit),batarg("minval",str),batarg("maxval",str),batarg("sorted",bit),batarg("revsorted",bit),arg("sname",str))),
  pattern("sql", "statistics", sql_statistics, false, "return a table with statistics information for a particular table", args(13,15, batarg("columnid",int),batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("with",int),batarg("count",lng),batarg("unique",bit),batarg("nils",bit),batarg("minval",str),batarg("maxval",str),batarg("sorted",bit),batarg("revsorted",bit),arg("sname",str),arg("tname",str))),
@@ -5898,6 +5863,7 @@ pattern("sql", "password", SQLuser_password, false, "Return password hash of use
  pattern("sqlcatalog", "create_schema", SQLcreate_schema, false, "Catalog operation create_schema", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
  pattern("sqlcatalog", "drop_schema", SQLdrop_schema, false, "Catalog operation drop_schema", args(0,3, arg("sname",str),arg("ifexists",int),arg("action",int))),
  pattern("sqlcatalog", "create_table", SQLcreate_table, false, "Catalog operation create_table", args(0,4, arg("sname",str),arg("tname",str),arg("tbl",ptr),arg("temp",int))),
+ pattern("sqlcatalog", "create_table", SQLcreate_table, false, "Catalog operation create_table", args(0,6, arg("sname",str),arg("tname",str),arg("tbl",ptr),arg("pw_encrypted",int),arg("username",str),arg("passwd",str))),
  pattern("sqlcatalog", "create_view", SQLcreate_view, false, "Catalog operation create_view", args(0,5, arg("sname",str),arg("vname",str),arg("tbl",ptr),arg("temp",int),arg("replace",int))),
  pattern("sqlcatalog", "drop_table", SQLdrop_table, false, "Catalog operation drop_table", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("sqlcatalog", "drop_view", SQLdrop_view, false, "Catalog operation drop_view", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),

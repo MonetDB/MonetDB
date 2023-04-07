@@ -92,7 +92,7 @@ GRPsubgroup3(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, co
 	return GRPsubgroup5(ngid, next, nhis, bid, sid, gid, NULL, NULL);
 }
 
-static str
+str
 GRPsubgroup2(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid)
 {
 	return GRPsubgroup5(ngid, next, nhis, bid, NULL, gid, NULL, NULL);
@@ -104,7 +104,7 @@ GRPgroup4(bat *ngid, bat *next, const bat *bid, const bat *sid)
 	return GRPsubgroup5(ngid, next, NULL, bid, sid, NULL, NULL, NULL);
 }
 
-static str
+str
 GRPgroup3(bat *ngid, bat *next, const bat *bid)
 {
 	return GRPsubgroup5(ngid, next, NULL, bid, NULL, NULL, NULL, NULL);

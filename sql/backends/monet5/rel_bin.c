@@ -1412,7 +1412,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				if (!left)
 					return const_column(be, stmt_bool(be, 1));
 				return left->op4.lval->h->data;
-			} if (strcmp(fname, "case") == 0)
+			}
+			if (strcmp(fname, "case") == 0)
 				return exp2bin_case(be, e, left, right, sel, depth);
 			if (strcmp(fname, "casewhen") == 0)
 				return exp2bin_casewhen(be, e, left, right, sel, depth);
@@ -4380,7 +4381,7 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 {
 	mvc *sql = be->mvc;
 	node *m, *n;
-	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
+	sql_subfunc *cnt = NULL;
 
 	for (n = ol_first_node(t->columns), m = inserts->h; n && m;
 		n = n->next, m = m->next) {
@@ -4393,6 +4394,8 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 
 			if (!(s->key && s->nrcols == 0)) {
 				s = stmt_selectnil(be, column(be, i));
+				if (!cnt)
+					cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
 				s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
 			} else {
 				sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->type, NULL, F_FUNC, true);
@@ -6395,6 +6398,18 @@ rel2bin_catalog_table(backend *be, sql_rel *rel, list *refs)
 			replace = stmt_atom_int(be, 0);
 		}
 		append(l, replace);
+	} else if (rel->flag == ddl_create_table && en) {
+		stmt *name = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		if (!name)
+			return NULL;
+		en = en->next;
+		append(l, name);
+		if (!en)
+			return NULL;
+		stmt *passwd = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		if (!passwd)
+			return NULL;
+		append(l, passwd);
 	}
 	return stmt_catalog(be, rel->flag, stmt_list(be, l));
 }

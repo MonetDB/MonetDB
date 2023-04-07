@@ -25,12 +25,9 @@
 #include "opt_garbageCollector.h"
 #include "opt_generator.h"
 #include "opt_inline.h"
-#include "opt_jit.h"
 #include "opt_projectionpath.h"
 #include "opt_matpack.h"
-#include "opt_json.h"
 #include "opt_postfix.h"
-#include "opt_mask.h"
 #include "opt_mergetable.h"
 #include "opt_mitosis.h"
 #include "opt_multiplex.h"
@@ -41,7 +38,6 @@
 #include "opt_remap.h"
 #include "opt_remoteQueries.h"
 #include "opt_reorder.h"
-#include "opt_volcano.h"
 #include "opt_fastpath.h"
 #include "optimizer_private.h"
 #include "mal_interpreter.h"
@@ -135,7 +131,6 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	optcall(profilerStatus, OPTcandidatesImplementation);
 	optcall(true, OPTdeadcodeImplementation);
 	optcall(true, OPTpostfixImplementation);
-	// optcall(true, OPTjitImplementation);
 	optcall(true, OPTgarbageCollectorImplementation);
 
 	/* Defense line against incorrect plans  handled by optimizer steps */

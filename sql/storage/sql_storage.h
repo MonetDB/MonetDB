@@ -102,6 +102,7 @@ typedef struct table_functions {
 	column_find_value_fptr column_find_value;
 	column_find_sqlid_fptr column_find_sqlid;
 	column_find_bte_fptr column_find_bte;
+	column_find_sht_fptr column_find_sht;
 	column_find_int_fptr column_find_int;
 	column_find_lng_fptr column_find_lng;
 	column_find_string_start_fptr column_find_string_start; /* this function returns a pointer to the heap, use it with care! */
@@ -345,7 +346,7 @@ extern lng store_hot_snapshot_to_stream(struct sqlstore *store, stream *s);
 
 extern ulng store_function_counter(struct sqlstore *store);
 
-extern ulng store_oldest(struct sqlstore *store);
+extern ulng store_oldest(struct sqlstore *store, sql_trans *tr);
 extern ulng store_get_timestamp(struct sqlstore *store);
 extern void store_manager(struct sqlstore *store);
 
@@ -479,11 +480,6 @@ typedef struct sqlstore {
 	int catalog_version;	/* software version of the catalog */
 	sql_catalog *cat;		/* the catalog of persistent tables (what to do with tmp tables ?) */
 	sql_schema *tmp;		/* keep pointer to default (empty) tmp schema */
-	MT_Lock lock;			/* lock protecting concurrent writes (not reads, ie use rcu) */
-	MT_Lock commit;			/* protect transactions, only single commit (one wal writer) */
-	MT_Lock flush;			/* flush lock protecting concurrent writes (not reads, ie use rcu) */
-	MT_Lock table_locks[NR_TABLE_LOCKS];		/* protecting concurrent writes to tables (storage) */
-	MT_Lock column_locks[NR_COLUMN_LOCKS];		/* protecting concurrent writes to columns (storage) */
 	list *active;			/* list of running transactions */
 
 	ATOMIC_TYPE nr_active;	/* count number of transactions */
@@ -512,6 +508,12 @@ typedef struct sqlstore {
 	table_functions table_api;
 	logger_functions logger_api;
 	void *logger;			/* space to keep logging structure of storage backend */
+
+	MT_Lock lock;			/* lock protecting concurrent writes (not reads, ie use rcu) */
+	MT_Lock commit;			/* protect transactions, only single commit (one wal writer) */
+	MT_Lock flush;			/* flush lock protecting concurrent writes (not reads, ie use rcu) */
+	MT_Lock table_locks[NR_TABLE_LOCKS];		/* protecting concurrent writes to tables (storage) */
+	MT_Lock column_locks[NR_COLUMN_LOCKS];		/* protecting concurrent writes to columns (storage) */
 } sqlstore;
 
 typedef enum sql_dependency_change_type {

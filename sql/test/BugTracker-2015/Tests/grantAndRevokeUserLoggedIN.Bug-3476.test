@@ -1,0 +1,85 @@
+statement ok
+CREATE SCHEMA new_schema_as_well
+
+statement ok
+SET SCHEMA new_schema_as_well
+
+statement ok
+CREATE TABLE test (x int, y int)
+
+statement ok
+INSERT INTO test VALUES (-1, -1)
+
+statement ok
+CREATE USER new_user WITH PASSWORD 'new_quite_long_password' NAME 'newUser' SCHEMA new_schema_as_well
+
+statement ok
+GRANT SELECT ON new_schema_as_well.test TO new_user
+
+statement ok
+GRANT UPDATE ON new_schema_as_well.test TO new_user
+
+statement ok
+GRANT INSERT ON new_schema_as_well.test TO new_user
+
+statement ok
+GRANT DELETE ON new_schema_as_well.test TO new_user
+
+@connection(id=user, username=new_user, password=new_quite_long_password)
+statement ok
+SELECT * FROM test
+
+@connection(id=user)
+statement ok
+UPDATE test SET x = -3 WHERE y = -1
+
+@connection(id=user)
+statement ok
+INSERT INTO test VALUES (0, 0)
+
+@connection(id=user)
+statement ok
+DELETE FROM test WHERE y = -2
+
+# Revoke the right to select from the new user.
+statement ok
+REVOKE SELECT ON new_schema_as_well.test FROM new_user
+
+# The new user should not be able to select anymore while still logged in
+@connection(id=user)
+statement error 42000!SELECT: access denied for new_user to table 'new_schema_as_well.test'
+SELECT * FROM test
+
+@connection(id=user)
+statement error 42000!UPDATE: insufficient privileges for user 'new_user' to update table 'test'
+UPDATE test SET x = -66 WHERE y = 66
+
+@connection(id=user)
+statement ok
+INSERT INTO test VALUES (66, 66)
+
+@connection(id=user)
+statement error 42000!DELETE FROM: insufficient privileges for user 'new_user' to delete from table 'test'
+DELETE FROM test WHERE y = -66
+
+# Re-grant the right to select to the new user.
+statement ok
+GRANT SELECT ON new_schema_as_well.test TO new_user
+
+# The new user should be able to select again while still logged in
+@connection(id=user)
+statement ok
+SELECT * FROM test
+
+@connection(id=user)
+statement ok
+UPDATE test SET x = -66 WHERE y = 66
+
+@connection(id=user)
+statement ok
+INSERT INTO test VALUES (66, 66)
+
+@connection(id=user)
+statement ok
+DELETE FROM test WHERE y = -66
+

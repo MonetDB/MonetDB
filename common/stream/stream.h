@@ -272,4 +272,8 @@ stream_export stream *create_text_stream(stream *s);
 stream_export stream *mapi_request_upload(const char *filename, bool binary, bstream *rs, stream *ws);
 stream_export stream *mapi_request_download(const char *filename, bool binary, bstream *rs, stream *ws);
 
+// write-only
+stream_export stream *byte_counting_stream(stream *wrapped, uint64_t *counter);
+
+
 #endif /*_STREAM_H_*/
