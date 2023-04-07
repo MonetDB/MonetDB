@@ -155,9 +155,17 @@ __attribute__((__visibility__("hidden")));
 extern str str_wchr_at(int *res, const char *s, int at)
 __attribute__((__visibility__("hidden")));
 
-extern bit str_is_prefix(const char *s, const char *prefix)
+extern bit str_is_prefix(const char *s, const char *prefix, int plen)
 __attribute__((__visibility__("hidden")));
-extern bit str_is_suffix(const char *s, const char *suffix)
+extern bit str_is_iprefix(const char *s, const char *prefix, int plen)
+__attribute__((__visibility__("hidden")));
+extern bit str_is_suffix(const char *s, const char *suffix, int sul)
+__attribute__((__visibility__("hidden")));
+extern bit str_is_isuffix(const char *s, const char *suffix, int sul)
+__attribute__((__visibility__("hidden")));
+extern bit str_contains(const char *h, const char *n, int nlen)
+__attribute__((__visibility__("hidden")));
+extern bit str_icontains(const char *h, const char *n, int nlen)
 __attribute__((__visibility__("hidden")));
 
 extern str str_tail(str *buf, size_t *buflen, const char *s, int off)
@@ -205,9 +213,13 @@ __attribute__((__visibility__("hidden")));
 extern str str_rpad3(str *buf, size_t *buflen, const char *s, int len, const char *s2)
 __attribute__((__visibility__("hidden")));
 
-extern int str_search(const char *s, const char *s2)
+extern int str_search(const char *s, const char *needle, int needle_len)
 __attribute__((__visibility__("hidden")));
-extern int str_reverse_str_search(const char *s, const char *s2)
+extern int str_isearch(const char *s, const char *needle, int needle_len)
+__attribute__((__visibility__("hidden")));
+extern int str_reverse_str_search(const char *s, const char *needle, int needle_len)
+__attribute__((__visibility__("hidden")));
+extern int str_reverse_str_isearch(const char *s, const char *needle, int needle_len)
 __attribute__((__visibility__("hidden")));
 extern int str_locate2(const char *needle, const char *haystack, int start)
 __attribute__((__visibility__("hidden")));
