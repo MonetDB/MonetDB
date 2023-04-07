@@ -44,9 +44,9 @@ typedef struct CLIENT_INPUT {
 	struct CLIENT_INPUT *next;
 } ClientInput;
 
-typedef struct CLIENT *Client;
-typedef str (*init_client)(Client, const char *, const char *, const char *);
-typedef void (*engine_fptr)(Client);
+struct CLIENT;
+typedef str (*init_client)(struct CLIENT *, const char *, const char *, const char *);
+typedef void (*engine_fptr)(struct CLIENT *);
 
 typedef struct CLIENT {
 	int idx;        /* entry in mal_clients (-1 if free) */
