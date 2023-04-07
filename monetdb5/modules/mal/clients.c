@@ -533,8 +533,10 @@ CLTsessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_set(&mal_contextLock);
 	if (mal_clients[idx].mode == FREECLIENT)
 		msg = createException(MAL,"clients.setsessiontimeout","Session not active anymore");
-	else
-		mal_clients[idx].sessiontimeout = (lng) sto * 1000000;
+	else {
+		mal_clients[idx].sessiontimeout = (lng) (sto * 1000000) + (GDKusec() - mal_clients[idx].session);
+		mal_clients[idx].logical_sessiontimeout = (lng) sto;
+	}
 	MT_lock_unset(&mal_contextLock);
 	return msg;
 }
@@ -809,7 +811,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				goto bailout;
 			if (BUNappend(login, &ret, false) != GDK_SUCCEED)
 				goto bailout;
-			timeout = (int)(c->sessiontimeout / 1000000);
+			timeout = (int)(c->logical_sessiontimeout);
 			if (BUNappend(sessiontimeout, &timeout, false) != GDK_SUCCEED)
 				goto bailout;
 			timeout = (int)(c->qryctx.querytimeout / 1000000);

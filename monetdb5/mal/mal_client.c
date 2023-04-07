@@ -257,6 +257,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->memorylimit = 0;
 	c->qryctx.querytimeout = 0;
 	c->sessiontimeout = 0;
+	c->logical_sessiontimeout = 0;
 	c->qryctx.starttime = 0;
 	ATOMIC_SET(&c->qryctx.datasize, 0);
 	c->qryctx.maxmem = 0;
@@ -397,6 +398,7 @@ MCcloseClient(Client c)
 	c->memorylimit = 0;
 	c->qryctx.querytimeout = 0;
 	c->sessiontimeout = 0;
+	c->logical_sessiontimeout = 0;
 	c->user = oid_nil;
 	if (c->username) {
 		GDKfree(c->username);
