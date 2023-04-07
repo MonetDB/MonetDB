@@ -28,3 +28,4 @@ analyze_test
 blobs
 temp_tables
 table_alias_on_cte
+special_character_names

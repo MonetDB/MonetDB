@@ -1,0 +1,229 @@
+# test usage of special characters in object names
+# ODBC function SQLGetInfo(SQL_SPECIAL_CHARACTERS) returns "!#$%&'()*+,-./:;<=>?@[]^`{|}~"
+
+statement ok
+start transaction
+
+statement ok
+create table "a!1" ("a!1" int )
+
+query I
+select "a!1" from "a!1"
+----
+
+statement ok
+create table "a#1" ("a#1" int )
+
+# next query gives Mtest.py execution error: too many values to unpack (expected 2)
+# but it works fine when issued via mclient or JDBC or ODBC
+# query I
+# select "a#1" from "a#1"
+# ----
+
+statement ok
+create table "a$1" ("a$1" int )
+
+query I
+select "a$1" from "a$1"
+----
+
+statement ok
+create table "a%1" ("a%1" int )
+
+query I
+select "a%1" from "a%1"
+----
+
+statement ok
+create table "a&1" ("a&1" int )
+
+query I
+select "a&1" from "a&1"
+----
+
+statement ok
+create table "a'1" ("a'1" int )
+
+query I
+select "a'1" from "a'1"
+----
+
+statement ok
+create table "a(1" ("a(1" int )
+
+query I
+select "a(1" from "a(1"
+----
+
+statement ok
+create table "a)1" ("a)1" int )
+
+query I
+select "a)1" from "a)1"
+----
+
+statement ok
+create table "a*1" ("a*1" int )
+
+query I
+select "a*1" from "a*1"
+----
+
+statement ok
+create table "a+1" ("a+1" int )
+
+query I
+select "a+1" from "a+1"
+----
+
+statement ok
+create table "a,1" ("a,1" int )
+
+query I
+select "a,1" from "a,1"
+----
+
+statement ok
+create table "a-1" ("a-1" int )
+
+query I
+select "a-1" from "a-1"
+----
+
+statement ok
+create table "a.1" ("a.1" int )
+
+query I
+select "a.1" from "a.1"
+----
+
+statement ok
+create table "a/1" ("a/1" int )
+
+query I
+select "a/1" from "a/1"
+----
+
+statement ok
+create table "a:1" ("a:1" int )
+
+query I
+select "a:1" from "a:1"
+----
+
+statement ok
+create table "a;1" ("a;1" int )
+
+query I
+select "a;1" from "a;1"
+----
+
+statement ok
+create table "a<1" ("a<1" int )
+
+query I
+select "a<1" from "a<1"
+----
+
+statement ok
+create table "a=1" ("a=1" int )
+
+query I
+select "a=1" from "a=1"
+----
+
+statement ok
+create table "a>1" ("a>1" int )
+
+query I
+select "a>1" from "a>1"
+----
+
+statement ok
+create table "a?1" ("a?1" int )
+
+query I
+select "a?1" from "a?1"
+----
+
+statement ok
+create table "a@1" ("a@1" int )
+
+query I
+select "a@1" from "a@1"
+----
+
+statement ok
+create table "a[1" ("a[1" int )
+
+query I
+select "a[1" from "a[1"
+----
+
+statement ok
+create table "a]1" ("a]1" int )
+
+query I
+select "a]1" from "a]1"
+----
+
+statement ok
+create table "a^1" ("a^1" int )
+
+query I
+select "a^1" from "a^1"
+----
+
+statement ok
+create table "a_1" ("a_1" int )
+
+query I
+select "a_1" from "a_1"
+----
+
+statement ok
+create table "a`1" ("a`1" int )
+
+query I
+select "a`1" from "a`1"
+----
+
+statement ok
+create table "a{1" ("a{1" int )
+
+query I
+select "a{1" from "a{1"
+----
+
+statement ok
+create table "a|1" ("a|1" int )
+
+query I
+select "a|1" from "a|1"
+----
+
+statement ok
+create table "a}1" ("a}1" int )
+
+query I
+select "a}1" from "a}1"
+----
+
+statement ok
+create table "a~1" ("a~1" int )
+
+query I
+select "a~1" from "a~1"
+----
+
+# the " character can be used but only when doubled
+statement ok
+create table "a""1" ("a""1" int )
+
+query I
+select "a""1" from "a""1"
+----
+
+statement ok
+rollback
+
