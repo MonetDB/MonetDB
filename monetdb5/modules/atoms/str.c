@@ -3760,7 +3760,7 @@ STRstartsWith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const str *arg1 = getArgReference(stk, pci, 1), *arg2 = getArgReference(stk, pci, 2);
 	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
 	str s = *arg1, prefix = *arg2, msg = MAL_SUCCEED;
-	int plen = strlen(prefix);
+	int plen = str_strlen(prefix);
 
 	*res = (strNil(s) || strNil(prefix)) ? bit_nil :
 		icase ? str_is_iprefix(s, prefix, plen) : str_is_prefix(s, prefix, plen);
@@ -3770,7 +3770,7 @@ STRstartsWith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bit
 str_is_suffix(const char *s, const char *suffix, int sul)
 {
-	int sl = strlen(s);
+	int sl = str_strlen(s);
 
 	if (sl < sul)
 		return 0;
@@ -3781,7 +3781,7 @@ str_is_suffix(const char *s, const char *suffix, int sul)
 bit
 str_is_isuffix(const char *s, const char *suffix, int sul)
 {
-	int sl = strlen(s);
+	int sl = str_strlen(s);
 
 	if (sl < sul)
 		return 0;
@@ -3801,7 +3801,7 @@ STRendsWith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const str *arg1 = getArgReference(stk, pci, 1), *arg2 = getArgReference(stk, pci, 2);
 	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
 	str s = *arg1, suffix = *arg2, msg = MAL_SUCCEED;
-	int sul = strlen(suffix);
+	int sul = str_strlen(suffix);
 
 	*res = (strNil(s) || strNil(suffix)) ? bit_nil :
 		icase ? str_is_isuffix(s, suffix, sul) : str_is_suffix(s, suffix, sul);
@@ -3840,7 +3840,7 @@ STRcontains(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const str *arg1 = getArgReference(stk, pci, 1), *arg2 = getArgReference(stk, pci, 2);
 	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
 	str haystack = *arg1, needle = *arg2, msg = MAL_SUCCEED;
-	int needle_len = strlen(needle);
+	int needle_len = str_strlen(needle);
 
 	*res = (strNil(haystack) || strNil(needle)) ? bit_nil :
 		icase ? str_icontains(haystack, needle, needle_len) : str_contains(haystack, needle, needle_len);
@@ -3879,7 +3879,7 @@ STRstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const str *haystack = getArgReference(stk, pci, 1), *needle = getArgReference(stk, pci, 2);
 	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
 	str s = *haystack, h = *needle, msg = MAL_SUCCEED;
-	int needle_len = strlen(h);
+	int needle_len = str_strlen(h);
 
 	*res = (strNil(s) || strNil(h)) ? bit_nil :
 		icase ? str_isearch(s, h, needle_len) : str_search(s, h, needle_len);
@@ -3890,7 +3890,7 @@ int
 str_reverse_str_search(const char *s, const char *s2, int slen)
 {
 	/* 64bit: should return lng */
-	int len = strlen(s);
+	int len = str_strlen(s);
 	int res = -1; /* changed if found */
 
 	if (len >= slen) {
@@ -3909,7 +3909,7 @@ int
 str_reverse_str_isearch(const char *s, const char *s2, int slen)
 {
 	/* 64bit: should return lng */
-	int len = strlen(s);
+	int len = str_strlen(s);
 	int res = -1; /* changed if found */
 
 	if (len >= slen) {
@@ -3936,7 +3936,7 @@ STRrevstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const str *needle = getArgReference(stk, pci, 2);
 	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
 	str s = *haystack, h = *needle, msg = MAL_SUCCEED;
-	int needle_len = strlen(h);
+	int needle_len = str_strlen(h);
 
 	*res = (strNil(s) || strNil(h)) ? bit_nil :
 		icase ? str_reverse_str_isearch(s, h, needle_len) : str_reverse_str_search(s, h, needle_len);
