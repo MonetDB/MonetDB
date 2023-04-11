@@ -49381,7 +49381,7 @@ Write db snapshot to the given tar(.gz) file
 sql
 hot_snapshot
 unsafe pattern sql.hot_snapshot(X_0:str, X_1:bit):void 
-SQLhot_snapshot_wrap;
+SQLhot_snapshot;
 Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client
 sql
 importColumn
