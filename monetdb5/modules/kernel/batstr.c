@@ -1624,7 +1624,7 @@ STRbatRpad3_bat_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * implementation for shifted window arithmetic as well.
  */
 static str
-prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, bit (*func)(const char*, const char*), bit *icase)
+prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, bit (*func)(const char*, const char*, int), bit *icase)
 {
 	(void) cntxt;
 	(void) mb;
@@ -1638,8 +1638,8 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 1),
 		*r = getArgReference_bat(stk, pci, 2),
-		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
-		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
+		*sid1 = pci->argc >= 5 ? getArgReference_bat(stk, pci, icase?4:3) : NULL,
+		*sid2 = pci->argc >= 5 ? getArgReference_bat(stk, pci, icase?5:4) : NULL;
 
 	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1675,12 +1675,7 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				if (icase && *icase) {
-					if ((msg = STRlower(&x, &x)) != MAL_SUCCEED ||
-						(msg = STRlower(&y, &y)) != MAL_SUCCEED)
-						goto exit1;
-				}
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, strlen(y));
 			}
 		}
 	} else {
@@ -1693,16 +1688,10 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				if (icase && *icase) {
-					if ((msg = STRlower(&x, &x)) != MAL_SUCCEED ||
-						(msg = STRlower(&y, &y)) != MAL_SUCCEED)
-						goto exit1;
-				}
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, strlen(y));
 			}
 		}
 	}
- exit1:
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
  exit2:
@@ -1714,41 +1703,56 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 static str
 BATSTRstarts_with(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bit *icase;
+	bit *icase = NULL;
 	switch (pci->argc) {
 	case 4:
-		icase = getArgReference_bit(stk, pci, 3);
+		if (getArgType(mb, pci, 3) == TYPE_bit)
+			icase = getArgReference_bit(stk, pci, 3);
 		break;
 	case 6:
-		icase = getArgReference_bit(stk, pci, 5);
-		break;
-	default:
-		icase = NULL;
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
 		break;
 	}
-	return prefix_or_suffix(cntxt, mb, stk, pci, "batstr.startsWith", str_is_prefix, icase);
+	return prefix_or_suffix(cntxt, mb, stk, pci, "batstr.startsWith", (icase && *icase)?str_is_iprefix:str_is_prefix, icase);
 }
 
 static str
 BATSTRends_with(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bit *icase;
+	bit *icase = NULL;
 	switch (pci->argc) {
 	case 4:
-		icase = getArgReference_bit(stk, pci, 3);
+		if (getArgType(mb, pci, 3) == TYPE_bit)
+			icase = getArgReference_bit(stk, pci, 3);
 		break;
 	case 6:
-		icase = getArgReference_bit(stk, pci, 5);
-		break;
-	default:
-		icase = NULL;
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
 		break;
 	}
-	return prefix_or_suffix(cntxt, mb, stk, pci, "batstr.endsWith", str_is_suffix, icase);
+	return prefix_or_suffix(cntxt, mb, stk, pci, "batstr.endsWith", (icase && *icase)?str_is_isuffix:str_is_suffix, icase);
 }
 
 static str
-prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, bit (*func)(const char*, const char*), bit *icase)
+BATSTRcontains(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bit *icase = NULL;
+	switch (pci->argc) {
+	case 4:
+		if (getArgType(mb, pci, 3) == TYPE_bit)
+			icase = getArgReference_bit(stk, pci, 3);
+		break;
+	case 6:
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
+		break;
+	}
+	return prefix_or_suffix(cntxt, mb, stk, pci, "batstr.contains", (icase && *icase)?str_icontains:str_contains, icase);
+}
+
+static str
+prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, bit (*func)(const char*, const char*, int), bit *icase)
 {
 	(void) cntxt;
 	(void) mb;
@@ -1761,18 +1765,12 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 	struct canditer ci1 = {0};
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1), *sid1 = NULL;
-	/* checking if icase is ~NULL and not if it is true or false */
+	int ynil, ylen;
 	if (pci->argc == 4 || pci->argc == 5) {
-		if (!icase) {
-			assert(getArgType(mb, pci, 3) == TYPE_bat);
-			sid1 = getArgReference_bat(stk, pci, 3);
-		}
+		assert(getArgType(mb, pci, icase?4:3) == TYPE_bat);
+		sid1 = getArgReference_bat(stk, pci, icase?4:3);
 	}
 
-	if (icase && *icase) {
-		if ((msg = STRlower(&y, &y)) != MAL_SUCCEED)
-			goto exit2;
-	}
 	if (!(b = BATdescriptor(*bid))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit2;
@@ -1790,20 +1788,18 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 	off1 = b->hseqbase;
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
+	ynil = strNil(y);
+	ylen = strlen(y);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			char *x = BUNtvar(bi, p1);
 
-			if (strNil(x) || strNil(y)) {
+			if (ynil || strNil(x)) {
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				if (icase && *icase) {
-					if ((msg = STRlower(&x, &x)) != MAL_SUCCEED)
-						goto exit1;
-				}
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, ylen);
 			}
 		}
 	} else {
@@ -1811,19 +1807,14 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 			oid p1 = (canditer_next(&ci1) - off1);
 			char *x = BUNtvar(bi, p1);
 
-			if (strNil(x) || strNil(y)) {
+			if (ynil || strNil(x)) {
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				if(icase && *icase) {
-					if ((msg = STRlower(&x, &x)) != MAL_SUCCEED)
-						goto exit1;
-				}
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, ylen);
 			}
 		}
 	}
- exit1:
 	bat_iterator_end(&bi);
  exit2:
 	finalize_output(res, bn, msg, nils, ci1.ncand);
@@ -1837,18 +1828,15 @@ BATSTRstarts_with_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit *icase = NULL;
 	switch (pci->argc) {
 	case 4:
-		if (getArgType(mb, pci, 3) == TYPE_bit) {
+		if (getArgType(mb, pci, 3) == TYPE_bit)
 			icase = getArgReference_bit(stk, pci, 3);
-		}
 		break;
 	case 5:
-		icase = getArgReference_bit(stk, pci, 4);
-		break;
-	default:
-		icase = NULL;
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
 		break;
 	}
-	return prefix_or_suffix_cst(cntxt, mb, stk, pci, "batstr.startsWith", str_is_prefix, icase);
+	return prefix_or_suffix_cst(cntxt, mb, stk, pci, "batstr.startsWith", (icase && *icase)?str_is_iprefix:str_is_prefix, icase);
 }
 
 static str
@@ -1857,22 +1845,36 @@ BATSTRends_with_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit *icase = NULL;
 	switch (pci->argc) {
 	case 4:
-		if (getArgType(mb, pci, 3) == TYPE_bit) {
+		if (getArgType(mb, pci, 3) == TYPE_bit)
 			icase = getArgReference_bit(stk, pci, 3);
-		}
 		break;
 	case 5:
-		icase = getArgReference_bit(stk, pci, 4);
-		break;
-	default:
-		icase = NULL;
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
 		break;
 	}
-	return prefix_or_suffix_cst(cntxt, mb, stk, pci, "batstr.endsWith", str_is_suffix, icase);
+	return prefix_or_suffix_cst(cntxt, mb, stk, pci, "batstr.endsWith", (icase && *icase)?str_is_isuffix:str_is_suffix, icase);
 }
 
 static str
-prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, bit (*func)(const char*, const char*), bit *icase)
+BATSTRcontains_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bit *icase = NULL;
+	switch (pci->argc) {
+	case 4:
+		if (getArgType(mb, pci, 3) == TYPE_bit)
+			icase = getArgReference_bit(stk, pci, 3);
+		break;
+	case 5:
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
+		break;
+	}
+	return prefix_or_suffix_cst(cntxt, mb, stk, pci, "batstr.contains", (icase && *icase)?str_icontains:str_contains, icase);
+}
+
+static str
+prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, bit (*func)(const char*, const char*, int), bit *icase)
 {
 	(void) cntxt;
 	(void) mb;
@@ -1886,18 +1888,12 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	struct canditer ci1 = {0};
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2), *sid1 = NULL;
-	/* checking if icase is ~NULL and not if it is true or false */
+	int xnil;
 	if (pci->argc == 4 || pci->argc == 5) {
-		if (!icase) {
-			assert(getArgType(mb, pci, 3) == TYPE_bat);
-			sid1 = getArgReference_bat(stk, pci, 3);
-		}
+		assert(getArgType(mb, pci, icase?4:3) == TYPE_bat);
+		sid1 = getArgReference_bat(stk, pci, icase?4:3);
 	}
 
-	if (icase && *icase) {
-		if ((msg = STRlower(&x, &x)) != MAL_SUCCEED)
-			goto exit2;
-	}
 	if (!(b = BATdescriptor(*bid))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit2;
@@ -1915,20 +1911,17 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	off1 = b->hseqbase;
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
+	xnil = strNil(x);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			char *y = BUNtvar(bi, p1);
 
-			if (strNil(x) || strNil(y)) {
+			if (xnil || strNil(y)) {
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				if(icase && *icase) {
-					if ((msg = STRlower(&y, &y)) != MAL_SUCCEED)
-						goto exit1;
-				}
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, strlen(y));
 			}
 		}
 	} else {
@@ -1936,19 +1929,14 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			oid p1 = (canditer_next(&ci1) - off1);
 			char *y = BUNtvar(bi, p1);
 
-			if (strNil(x) || strNil(y)) {
+			if (xnil || strNil(y)) {
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				if(icase && *icase) {
-					if ((msg = STRlower(&y, &y)) != MAL_SUCCEED)
-						goto exit1;
-				}
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, strlen(y));
 			}
 		}
 	}
- exit1:
 	bat_iterator_end(&bi);
  exit2:
 	finalize_output(res, bn, msg, nils, ci1.ncand);
@@ -1962,18 +1950,15 @@ BATSTRstarts_with_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	bit *icase = NULL;
 	switch (pci->argc) {
 	case 4:
-		if (getArgType(mb, pci, 3) == TYPE_bit) {
+		if (getArgType(mb, pci, 3) == TYPE_bit)
 			icase = getArgReference_bit(stk, pci, 3);
-		}
 		break;
 	case 5:
-		icase = getArgReference_bit(stk, pci, 4);
-		break;
-	default:
-		icase = NULL;
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
 		break;
 	}
-	return prefix_or_suffix_strcst(cntxt, mb, stk, pci, "batstr.startsWith", str_is_prefix, icase);
+	return prefix_or_suffix_strcst(cntxt, mb, stk, pci, "batstr.startsWith", (icase && *icase)?str_is_iprefix:str_is_prefix, icase);
 }
 
 static str
@@ -1982,22 +1967,510 @@ BATSTRends_with_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit *icase = NULL;
 	switch (pci->argc) {
 	case 4:
-		if (getArgType(mb, pci, 3) == TYPE_bit) {
+		if (getArgType(mb, pci, 3) == TYPE_bit)
 			icase = getArgReference_bit(stk, pci, 3);
-		}
 		break;
 	case 5:
-		icase = getArgReference_bit(stk, pci, 4);
-		break;
-	default:
-		icase = NULL;
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
 		break;
 	}
-	return prefix_or_suffix_strcst(cntxt, mb, stk, pci, "batstr.endsWith", str_is_suffix, icase);
+	return prefix_or_suffix_strcst(cntxt, mb, stk, pci, "batstr.endsWith", (icase && *icase)?str_is_isuffix:str_is_suffix, icase);
 }
 
 static str
-search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, int (*func)(const char*, const char*), bit *icase)
+BATSTRcontains_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bit *icase = NULL;
+	switch (pci->argc) {
+	case 4:
+		if (getArgType(mb, pci, 3) == TYPE_bit)
+			icase = getArgReference_bit(stk, pci, 3);
+		break;
+	case 5:
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
+		break;
+	}
+	return prefix_or_suffix_strcst(cntxt, mb, stk, pci, "batstr.contains", (icase && *icase)?str_icontains:str_contains, icase);
+}
+
+/* scan select loop with or without candidates */
+#define scanloop(TEST, KEEP_NULLS)									    \
+	do {																\
+		TRC_DEBUG(ALGO,													\
+				  "scanselect(b=%s#"BUNFMT",anti=%d): "					\
+				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
+				  anti, #TEST);											\
+		if (!s || BATtdense(s)) {										\
+			for (; p < q; p++) {										\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+				const char *restrict v = BUNtvar(bi, p - off);			\
+				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
+					vals[cnt++] = p;									\
+			}															\
+		} else {														\
+			for (; p < ncands; p++) {									\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+				oid o = canditer_next(ci);								\
+				const char *restrict v = BUNtvar(bi, o - off);			\
+				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
+					vals[cnt++] = o;									\
+			}															\
+		}																\
+	} while (0)
+
+static str
+do_string_select(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN *rcnt, const char *key, bool anti,
+		bit (*str_cmp)(const char*, const char*, int))
+{
+	BATiter bi = bat_iterator(b);
+	BUN cnt = 0, ncands = ci->ncand;
+	oid off = b->hseqbase, *restrict vals = Tloc(bn, 0);
+	str msg = MAL_SUCCEED;
+	int klen = strlen(key);
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL)
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+
+	if (anti) /* keep nulls ? (use false for now) */
+		scanloop(v && *v != '\200' && str_cmp(v, key, klen) != 0, false);
+	else
+		scanloop(v && *v != '\200' && str_cmp(v, key, klen) == 0, false);
+
+bailout:
+	bat_iterator_end(&bi);
+	*rcnt = cnt;
+	return msg;
+}
+
+static str
+string_select(bat *ret, const bat *bid, const bat *sid, const str *key, const bit *anti, bit (*str_cmp)(const char*, const char*, int), const str fname)
+{
+	BAT *b, *s = NULL, *bn = NULL;
+	str msg = MAL_SUCCEED;
+	BUN p = 0, q = 0, rcnt = 0;
+	struct canditer ci;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		msg = createException(MAL, fname , SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+		msg = createException(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+
+	assert(ATOMstorage(b->ttype) == TYPE_str);
+
+	canditer_init(&ci, b, s);
+	if (!(bn = COLnew(0, TYPE_oid, ci.ncand, TRANSIENT))) {
+		msg = createException(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	if (!s || BATtdense(s)) {
+		if (s) {
+			assert(BATtdense(s));
+			p = (BUN) s->tseqbase;
+			q = p + BATcount(s);
+			if ((oid) p < b->hseqbase)
+				p = b->hseqbase;
+			if ((oid) q > b->hseqbase + BATcount(b))
+				q = b->hseqbase + BATcount(b);
+		} else {
+			p = b->hseqbase;
+			q = BATcount(b) + b->hseqbase;
+		}
+	}
+
+	msg = do_string_select(bn, b, s, &ci, p, q, &rcnt, *key, *anti, str_cmp);
+
+	if (!msg) { /* set some properties */
+		BATsetcount(bn, rcnt);
+		bn->tsorted = true;
+		bn->trevsorted = bn->batCount <= 1;
+		bn->tkey = true;
+		bn->tnil = false;
+		bn->tnonil = true;
+		bn->tseqbase = rcnt == 0 ? 0 : rcnt == 1 ? *(const oid*)Tloc(bn, 0) : rcnt == b->batCount ? b->hseqbase : oid_nil;
+	}
+
+bailout:
+	BBPreclaim(b);
+	BBPreclaim(s);
+	if (bn && !msg) {
+		*ret = bn->batCacheid;
+		BBPkeepref(bn);
+	} else if (bn)
+		BBPreclaim(bn);
+	return msg;
+}
+
+static str
+BATSTRstartswithselect(bat *ret, const bat *bid, const bat *sid, const str *key, const bit *caseignore, const bit *anti)
+{
+		return string_select(ret, bid, sid, key, anti, (*caseignore)?str_is_iprefix:str_is_prefix,
+				"batstr.startswithselect");
+}
+
+static str
+BATSTRendswithselect(bat *ret, const bat *bid, const bat *sid, const str *key, const bit *caseignore, const bit *anti)
+{
+		return string_select(ret, bid, sid, key, anti, (*caseignore)?str_is_isuffix:str_is_suffix,
+				"batstr.endswithselect");
+}
+
+static str
+BATSTRcontainsselect(bat *ret, const bat *bid, const bat *sid, const str *key, const bit *caseignore, const bit *anti)
+{
+		return string_select(ret, bid, sid, key, anti, (*caseignore)?str_icontains:str_contains,
+				"batstr.containsselect");
+}
+
+#define APPEND(b, o)	(((oid *) b->theap->base)[b->batCount++] = (o))
+#define VALUE(s, x)		(s##vars + VarHeapVal(s##vals, (x), s##i.width))
+
+/* nested loop implementation for batstr joins */
+#define batstr_join_loop(STRCMP, STR_LEN) \
+	do { \
+		for (BUN ridx = 0; ridx < rci.ncand; ridx++) { \
+			GDK_CHECK_TIMEOUT(timeoffset, counter, \
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+			ro = canditer_next(&rci); \
+			vr = VALUE(r, ro - rbase); \
+			rlen = STR_LEN; \
+			nl = 0; \
+			canditer_reset(&lci); \
+			for (BUN lidx = 0; lidx < lci.ncand; lidx++) { \
+				lo = canditer_next(&lci); \
+				vl = VALUE(l, lo - lbase); \
+				if (strNil(vl)) { \
+					continue; \
+				} else if (!(STRCMP)) { \
+					continue; \
+				} \
+				if (BATcount(r1) == BATcapacity(r1)) { \
+					newcap = BATgrows(r1); \
+					BATsetcount(r1, BATcount(r1)); \
+					if (r2) \
+						BATsetcount(r2, BATcount(r2)); \
+					if (BATextend(r1, newcap) != GDK_SUCCEED || (r2 && BATextend(r2, newcap) != GDK_SUCCEED)) { \
+						msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+						goto bailout; \
+					} \
+					assert(!r2 || BATcapacity(r1) == BATcapacity(r2)); \
+				} \
+				if (BATcount(r1) > 0) { \
+					if (lastl + 1 != lo) \
+						r1->tseqbase = oid_nil; \
+					if (nl == 0) { \
+						if (r2) \
+							r2->trevsorted = false; \
+						if (lastl > lo) { \
+							r1->tsorted = false; \
+							r1->tkey = false; \
+						} else if (lastl < lo) { \
+							r1->trevsorted = false; \
+						} else { \
+							r1->tkey = false; \
+						} \
+					} \
+				} \
+				APPEND(r1, lo); \
+				if (r2) \
+					APPEND(r2, ro); \
+				lastl = lo; \
+				nl++; \
+			} \
+			if (r2) { \
+				if (nl > 1) { \
+					r2->tkey = false; \
+					r2->tseqbase = oid_nil; \
+					r1->trevsorted = false; \
+				} else if (nl == 0) { \
+					rskipped = BATcount(r2) > 0; \
+				} else if (rskipped) { \
+					r2->tseqbase = oid_nil; \
+				} \
+			} else if (nl > 1) { \
+				r1->trevsorted = false; \
+			} \
+		} \
+	} while (0)
+
+static str
+batstrjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bit anti, bit (*str_cmp)(const char*, const char*, int), const str fname)
+{
+	struct canditer lci, rci;
+	const char *lvals, *rvals, *lvars, *rvars, *vl, *vr;
+	int rskipped = 0, rlen = 0;			/* whether we skipped values in r */
+	oid lbase, rbase, lo, ro, lastl = 0;		/* last value inserted into r1 */
+	BUN nl, newcap;
+	char *msg = MAL_SUCCEED;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
+	TRC_DEBUG(ALGO,
+			  "%s(l=%s#" BUNFMT "[%s]%s%s,"
+			  "r=%s#" BUNFMT "[%s]%s%s,sl=%s#" BUNFMT "%s%s,"
+			  "sr=%s#" BUNFMT "%s%s)\n",
+			  fname,
+			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
+			  l->tsorted ? "-sorted" : "",
+			  l->trevsorted ? "-revsorted" : "",
+			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
+			  r->tsorted ? "-sorted" : "",
+			  r->trevsorted ? "-revsorted" : "",
+			  sl ? BATgetId(sl) : "NULL", sl ? BATcount(sl) : 0,
+			  sl && sl->tsorted ? "-sorted" : "",
+			  sl && sl->trevsorted ? "-revsorted" : "",
+			  sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
+			  sr && sr->tsorted ? "-sorted" : "",
+			  sr && sr->trevsorted ? "-revsorted" : "");
+
+	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
+	assert(ATOMtype(l->ttype) == TYPE_str);
+
+	canditer_init(&lci, l, sl);
+	canditer_init(&rci, r, sr);
+
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
+	lbase = l->hseqbase;
+	rbase = r->hseqbase;
+	lvals = (const char *) li.base;
+	rvals = (const char *) ri.base;
+	assert(ri.vh && r->ttype);
+	lvars = li.vh->base;
+	rvars = ri.vh->base;
+
+	r1->tkey = true;
+	r1->tsorted = true;
+	r1->trevsorted = true;
+	r1->tnil = false;
+	r1->tnonil = true;
+	if (r2) {
+		r2->tkey = true;
+		r2->tsorted = true;
+		r2->trevsorted = true;
+		r2->tnil = false;
+		r2->tnonil = true;
+	}
+
+	if (anti) {
+		batstr_join_loop(str_cmp(vl, vr, rlen) == 0, strlen(vr));
+	} else {
+		batstr_join_loop(str_cmp(vl, vr, rlen) != 0, strlen(vr));
+	}
+	bat_iterator_end(&li);
+	bat_iterator_end(&ri);
+
+	assert(!r2 || BATcount(r1) == BATcount(r2));
+	/* also set other bits of heap to correct value to indicate size */
+	BATsetcount(r1, BATcount(r1));
+	if (r2)
+		BATsetcount(r2, BATcount(r2));
+	if (BATcount(r1) > 0) {
+		if (BATtdense(r1))
+			r1->tseqbase = ((oid *) r1->theap->base)[0];
+		if (r2 && BATtdense(r2))
+			r2->tseqbase = ((oid *) r2->theap->base)[0];
+	} else {
+		r1->tseqbase = 0;
+		if (r2)
+			r2->tseqbase = 0;
+	}
+	if (r2)
+		TRC_DEBUG(ALGO,
+				"%s(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+				fname,
+				BATgetId(l), BATgetId(r),
+				BATgetId(r1), BATcount(r1),
+				r1->tsorted ? "-sorted" : "",
+				r1->trevsorted ? "-revsorted" : "",
+				BATgetId(r2), BATcount(r2),
+				r2->tsorted ? "-sorted" : "",
+				r2->trevsorted ? "-revsorted" : "");
+	else
+		TRC_DEBUG(ALGO,
+			"%s(l=%s,r=%s)=(%s#"BUNFMT"%s%s\n",
+			fname,
+			BATgetId(l), BATgetId(r),
+			BATgetId(r1), BATcount(r1),
+			r1->tsorted ? "-sorted" : "",
+			r1->trevsorted ? "-revsorted" : "");
+	return MAL_SUCCEED;
+
+bailout:
+	bat_iterator_end(&li);
+	bat_iterator_end(&ri);
+	assert(msg != MAL_SUCCEED);
+	return msg;
+}
+
+
+static str
+BATSTRjoin(bat *r1, bat *r2, const bat lid, const bat rid, const bat slid, const bat srid, const bit anti, bit (*str_cmp)(const char*, const char*, int), const str fname)
+{
+	BAT *left = NULL, *right = NULL, *candleft = NULL, *candright = NULL;
+	BAT *result1 = NULL, *result2 = NULL;
+	char *msg = MAL_SUCCEED;
+
+	left = BATdescriptor(lid);
+	right = BATdescriptor(rid);
+	if (!left || !right) {
+		msg = createException(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto fail;
+	}
+	if ((!is_bat_nil(slid) && (candleft = BATdescriptor(slid)) == NULL) ||
+		(!is_bat_nil(srid) && (candright = BATdescriptor(srid)) == NULL) ) {
+		msg = createException(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto fail;
+	}
+	result1 = COLnew(0, TYPE_oid, BATcount(left), TRANSIENT);
+	if (r2)
+		result2 = COLnew(0, TYPE_oid, BATcount(left), TRANSIENT);
+	if (!result1 || (r2 && !result2)) {
+		BBPreclaim(result1);
+		BBPreclaim(result2);
+		msg = createException(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto fail;
+	}
+	result1->tnil = false;
+	result1->tnonil = true;
+	result1->tkey = true;
+	result1->tsorted = true;
+	result1->trevsorted = true;
+	result1->tseqbase = 0;
+	if (r2) {
+		result2->tnil = false;
+		result2->tnonil = true;
+		result2->tkey = true;
+		result2->tsorted = true;
+		result2->trevsorted = true;
+		result2->tseqbase = 0;
+	}
+	msg = batstrjoin(result1, result2, left, right, candleft, candright, anti, str_cmp, fname);
+	if (!msg) {
+		*r1 = result1->batCacheid;
+		BBPkeepref(result1);
+		if (r2) {
+			*r2 = result2->batCacheid;
+			BBPkeepref(result2);
+		}
+	} else {
+		BBPreclaim(result1);
+		BBPreclaim(result2);
+	}
+  fail:
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
+	BBPreclaim(candleft);
+	BBPreclaim(candright);
+	return msg;
+}
+
+static str
+join_caseignore(const bat *cid, bool *caseignore, str fname)
+{
+	BAT *c = NULL;
+
+	if ((c = BATdescriptor(*cid)) == NULL)
+		return createException(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if (BATcount(c) != 1)
+		return createException(MAL, fname, SQLSTATE(42000) "At the moment, only one value is allowed for the case ignore input at pcre join");
+	BATiter bi = bat_iterator(c);
+	*caseignore = *(bit*)BUNtloc(bi, 0);
+	bat_iterator_end(&bi);
+	BBPreclaim(c);
+	return MAL_SUCCEED;
+}
+
+static str
+BATSTRstartswithjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *cid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
+{
+    (void) nil_matches;
+    (void) estimate;
+	bool caseignore = false;
+	str msg = join_caseignore(cid, &caseignore, "batstr.startswithjoin");
+	if (msg)
+		return msg;
+    return BATSTRjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti, (caseignore)?str_is_iprefix:str_is_prefix, "batstr.startswithjoin");
+}
+
+static str
+BATSTRstartswithjoin1(bat *r1, const bat *lid, const bat *rid, const bat *cid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
+{
+    (void) nil_matches;
+    (void) estimate;
+	bool caseignore = false;
+	str msg = join_caseignore(cid, &caseignore, "batstr.startswithjoin");
+	if (msg)
+		return msg;
+    return BATSTRjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti, (caseignore)?str_is_iprefix:str_is_prefix, "batstr.startswithjoin");
+}
+
+static str
+BATSTRendswithjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *cid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
+{
+    (void) nil_matches;
+    (void) estimate;
+	bool caseignore = false;
+	str msg = join_caseignore(cid, &caseignore, "batstr.endswithjoin");
+	if (msg)
+		return msg;
+    return BATSTRjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti, (caseignore)?str_is_isuffix:str_is_suffix, "batstr.endswithjoin");
+}
+
+static str
+BATSTRendswithjoin1(bat *r1, const bat *lid, const bat *rid, const bat *cid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
+{
+    (void) nil_matches;
+    (void) estimate;
+	bool caseignore = false;
+	str msg = join_caseignore(cid, &caseignore, "batstr.endswithjoin");
+	if (msg)
+		return msg;
+    return BATSTRjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti, (caseignore)?str_is_isuffix:str_is_suffix, "batstr.endswithjoin");
+}
+
+static str
+BATSTRcontainsjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *cid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
+{
+    (void) nil_matches;
+    (void) estimate;
+	bool caseignore = false;
+	str msg = join_caseignore(cid, &caseignore, "batstr.containsjoin");
+	if (msg)
+		return msg;
+    return BATSTRjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti, (caseignore)?str_icontains:str_contains, "batstr.containsjoin");
+}
+
+static str
+BATSTRcontainsjoin1(bat *r1, const bat *lid, const bat *rid, const bat *cid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
+{
+    (void) nil_matches;
+    (void) estimate;
+	bool caseignore = false;
+	str msg = join_caseignore(cid, &caseignore, "batstr.containsjoin");
+	if (msg)
+		return msg;
+    return BATSTRjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti, (caseignore)?str_icontains:str_contains, "batstr.containsjoin");
+}
+
+static str
+search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, int (*func)(const char*, const char*, int), bit *icase)
 {
 	(void) cntxt;
 	(void) mb;
@@ -2011,8 +2484,8 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 1),
 		*r = getArgReference_bat(stk, pci, 2),
-		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
-		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
+		*sid1 = pci->argc >= 5 ? getArgReference_bat(stk, pci, icase?4:3) : NULL,
+		*sid2 = pci->argc >= 5 ? getArgReference_bat(stk, pci, icase?5:4) : NULL;
 
 	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -2048,12 +2521,7 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				if (icase && *icase) {
-					if ((msg = STRlower(&x, &x)) != MAL_SUCCEED ||
-						(msg = STRlower(&y, &y)) != MAL_SUCCEED)
-						goto exit1;
-				}
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, strlen(y));
 			}
 		}
 	} else {
@@ -2066,16 +2534,10 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				if (icase && *icase) {
-					if ((msg = STRlower(&x, &x)) != MAL_SUCCEED ||
-						(msg = STRlower(&y, &y)) != MAL_SUCCEED)
-						goto exit1;
-				}
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, strlen(y));
 			}
 		}
 	}
- exit1:
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
  exit2:
@@ -2087,41 +2549,39 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 static str
 BATSTRstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bit *icase;
+	bit *icase = NULL;
 	switch (pci->argc) {
 	case 4:
-		icase = getArgReference_bit(stk, pci, 3);
+		if (getArgType(mb, pci, 3) == TYPE_bit)
+			icase = getArgReference_bit(stk, pci, 3);
 		break;
 	case 6:
-		icase = getArgReference_bit(stk, pci, 5);
-		break;
-	default:
-		icase = NULL;
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
 		break;
 	}
-	return search_string_bat(cntxt, mb, stk, pci, "batstr.search", str_search, icase);
+	return search_string_bat(cntxt, mb, stk, pci, "batstr.search", (icase&&*icase)?str_isearch:str_search, icase);
 }
 
 static str
 BATSTRrevstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bit *icase;
+	bit *icase = NULL;
 	switch (pci->argc) {
 	case 4:
-		icase = getArgReference_bit(stk, pci, 3);
+		if (getArgType(mb, pci, 3) == TYPE_bit)
+			icase = getArgReference_bit(stk, pci, 3);
 		break;
 	case 6:
-		icase = getArgReference_bit(stk, pci, 5);
-		break;
-	default:
-		icase = NULL;
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
 		break;
 	}
-	return search_string_bat(cntxt, mb, stk, pci, "batstr.r_search", str_reverse_str_search, icase);
+	return search_string_bat(cntxt, mb, stk, pci, "batstr.r_search", (icase&&*icase)?str_reverse_str_isearch:str_reverse_str_search, icase);
 }
 
 static str
-search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, int (*func)(const char*, const char*), bit *icase)
+search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, int (*func)(const char*, const char*, int), bit *icase)
 {
 	(void) cntxt;
 	(void) mb;
@@ -2135,12 +2595,11 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 	struct canditer ci1 = {0};
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1), *sid1 = NULL;
+	int ynil, ylen;
 	/* checking if icase is ~NULL and not if it is true or false */
 	if (pci->argc == 4 || pci->argc == 5) {
-		if (!icase) {
-			assert(getArgType(mb, pci, 3) == TYPE_bat);
-			sid1 = getArgReference_bat(stk, pci, 3);
-		}
+		assert(getArgType(mb, pci, icase?4:3) == TYPE_bat);
+		sid1 = getArgReference_bat(stk, pci, icase?4:3);
 	}
 
 	if (!(b = BATdescriptor(*bid))) {
@@ -2160,20 +2619,18 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 	off1 = b->hseqbase;
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
+	ynil = strNil(y);
+	ylen = strlen(y);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			char *x = BUNtvar(bi, p1);
 
-			if (strNil(x) || strNil(y)) {
+			if (ynil || strNil(x)) {
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				if (icase && *icase) {
-					if ((msg = STRlower(&x, &x)) != MAL_SUCCEED)
-						goto exit1;
-				}
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, ylen);
 			}
 		}
 	} else {
@@ -2181,19 +2638,14 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 			oid p1 = (canditer_next(&ci1) - off1);
 			char *x = BUNtvar(bi, p1);
 
-			if (strNil(x) || strNil(y)) {
+			if (ynil || strNil(x)) {
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				if(icase && *icase) {
-					if ((msg = STRlower(&x, &x)) != MAL_SUCCEED)
-						goto exit1;
-				}
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, ylen);
 			}
 		}
 	}
- exit1:
 	bat_iterator_end(&bi);
  exit2:
 	finalize_output(res, bn, msg, nils, ci1.ncand);
@@ -2207,18 +2659,15 @@ BATSTRstr_search_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit *icase = NULL;
 	switch (pci->argc) {
 	case 4:
-		if (getArgType(mb, pci, 3) == TYPE_bit) {
+		if (getArgType(mb, pci, 3) == TYPE_bit)
 			icase = getArgReference_bit(stk, pci, 3);
-		}
 		break;
 	case 5:
-		icase = getArgReference_bit(stk, pci, 4);
-		break;
-	default:
-		icase = NULL;
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
 		break;
 	}
-	return search_string_bat_cst(cntxt, mb, stk, pci, "batstr.search", str_search, icase);
+	return search_string_bat_cst(cntxt, mb, stk, pci, "batstr.search", (icase && *icase)?str_isearch:str_search, icase);
 }
 
 static str
@@ -2227,22 +2676,19 @@ BATSTRrevstr_search_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit *icase = NULL;
 	switch (pci->argc) {
 	case 4:
-		if (getArgType(mb, pci, 3) == TYPE_bit) {
+		if (getArgType(mb, pci, 3) == TYPE_bit)
 			icase = getArgReference_bit(stk, pci, 3);
-		}
 		break;
 	case 5:
-		icase = getArgReference_bit(stk, pci, 4);
-		break;
-	default:
-		icase = NULL;
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
 		break;
 	}
-	return search_string_bat_cst(cntxt, mb, stk, pci, "batstr.r_search", str_reverse_str_search, icase);
+	return search_string_bat_cst(cntxt, mb, stk, pci, "batstr.r_search", (icase && *icase)?str_reverse_str_isearch:str_reverse_str_search, icase);
 }
 
 static str
-search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, int (*func)(const char*, const char*), bit *icase)
+search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, int (*func)(const char*, const char*, int), bit *icase)
 {
 	(void) cntxt;
 	(void) mb;
@@ -2256,18 +2702,13 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	struct canditer ci1 = {0};
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2), *sid1 = NULL;
+	int xnil;
 	/* checking if icase is ~NULL and not if it is true or false */
 	if (pci->argc == 4 || pci->argc == 5) {
-		if (!icase) {
-			assert(getArgType(mb, pci, 3) == TYPE_bat);
-			sid1 = getArgReference_bat(stk, pci, 3);
-		}
+		assert(getArgType(mb, pci, icase?4:3) == TYPE_bat);
+		sid1 = getArgReference_bat(stk, pci, icase?4:3);
 	}
 
-	if (icase && *icase) {
-		if ((msg = STRlower(&x, &x)) != MAL_SUCCEED)
-			goto exit2;
-	}
 	if (!(b = BATdescriptor(*bid))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit2;
@@ -2285,20 +2726,17 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	off1 = b->hseqbase;
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
+	xnil = strNil(x);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			char *y = BUNtvar(bi, p1);
 
-			if (strNil(x) || strNil(y)) {
+			if (xnil || strNil(y)) {
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				if(icase && *icase) {
-					if ((msg = STRlower(&y, &y)) != MAL_SUCCEED)
-						goto exit1;
-				}
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, strlen(y));
 			}
 		}
 	} else {
@@ -2306,19 +2744,14 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			oid p1 = (canditer_next(&ci1) - off1);
 			char *y = BUNtvar(bi, p1);
 
-			if (strNil(x) || strNil(y)) {
+			if (xnil || strNil(y)) {
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				if(icase && *icase) {
-					if ((msg = STRlower(&y, &y)) != MAL_SUCCEED)
-						goto exit1;
-				}
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, strlen(y));
 			}
 		}
 	}
- exit1:
 	bat_iterator_end(&bi);
  exit2:
 	finalize_output(res, bn, msg, nils, ci1.ncand);
@@ -2332,18 +2765,15 @@ BATSTRstr_search_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit *icase = NULL;
 	switch (pci->argc) {
 	case 4:
-		if (getArgType(mb, pci, 3) == TYPE_bit) {
+		if (getArgType(mb, pci, 3) == TYPE_bit)
 			icase = getArgReference_bit(stk, pci, 3);
-		}
 		break;
 	case 5:
-		icase = getArgReference_bit(stk, pci, 4);
-		break;
-	default:
-		icase = NULL;
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
 		break;
 	}
-	return search_string_bat_strcst(cntxt, mb, stk, pci, "batstr.search", str_search, icase);
+	return search_string_bat_strcst(cntxt, mb, stk, pci, "batstr.search", (icase && *icase)?str_isearch:str_search, icase);
 }
 
 static str
@@ -2352,18 +2782,15 @@ BATSTRrevstr_search_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	bit *icase = NULL;
 	switch (pci->argc) {
 	case 4:
-		if (getArgType(mb, pci, 3) == TYPE_bit) {
+		if (getArgType(mb, pci, 3) == TYPE_bit)
 			icase = getArgReference_bit(stk, pci, 3);
-		}
 		break;
 	case 5:
-		icase = getArgReference_bit(stk, pci, 4);
-		break;
-	default:
-		icase = NULL;
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
 		break;
 	}
-	return search_string_bat_strcst(cntxt, mb, stk, pci, "batstr.r_search", str_reverse_str_search, icase);
+	return search_string_bat_strcst(cntxt, mb, stk, pci, "batstr.r_search", (icase && *icase)?str_reverse_str_isearch:str_reverse_str_search, icase);
 }
 
 static str
@@ -5389,27 +5816,48 @@ mel_func batstr_init_funcs[] = {
 	pattern("batstr", "startsWith", BATSTRstarts_with, false, "Check if bat string starts with bat substring.", args(1,3, batarg("",bit),batarg("s",str),batarg("prefix",str))),
 	pattern("batstr", "startsWith", BATSTRstarts_with, false, "Check if bat string starts with bat substring, icase flag.", args(1,4, batarg("",bit),batarg("s",str),batarg("prefix",str),arg("icase",bit))),
 	pattern("batstr", "startsWith", BATSTRstarts_with, false, "Check if bat string starts with bat substring (with CLs).", args(1,5, batarg("",bit),batarg("s",str),batarg("prefix",str),batarg("s1",oid),batarg("s2",oid))),
-	pattern("batstr", "startsWith", BATSTRstarts_with, false, "Check if bat string starts with bat substring (with CLs) + icase flag.", args(1,6, batarg("",bit),batarg("s",str),batarg("prefix",str),batarg("s1",oid),batarg("s2",oid),arg("icase",bit))),
+	pattern("batstr", "startsWith", BATSTRstarts_with, false, "Check if bat string starts with bat substring (with CLs) + icase flag.", args(1,6, batarg("",bit),batarg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s1",oid),batarg("s2",oid))),
 	pattern("batstr", "startsWith", BATSTRstarts_with_cst, false, "Check if bat string starts with substring.", args(1,3, batarg("",bit),batarg("s",str),arg("prefix",str))),
 	pattern("batstr", "startsWith", BATSTRstarts_with_cst, false, "Check if bat string starts with substring, icase flag.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),arg("icase",bit))),
 	pattern("batstr", "startsWith", BATSTRstarts_with_cst, false, "Check if bat string(with CL) starts with substring.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),batarg("s",oid))),
-	pattern("batstr", "startsWith", BATSTRstarts_with_cst, false, "Check if bat string(with CL) starts with substring + icase flag.", args(1,5, batarg("",bit),batarg("s",str),arg("prefix",str),batarg("s",oid),arg("icase",bit))),
+	pattern("batstr", "startsWith", BATSTRstarts_with_cst, false, "Check if bat string(with CL) starts with substring + icase flag.", args(1,5, batarg("",bit),batarg("s",str),arg("prefix",str),arg("icase",bit),batarg("s",oid))),
 	pattern("batstr", "startsWith", BATSTRstarts_with_strcst, false, "Check if string starts with bat substring.", args(1,3, batarg("",bit),arg("s",str),batarg("prefix",str))),
 	pattern("batstr", "startsWith", BATSTRstarts_with_strcst, false, "Check if string starts with bat substring + icase flag.", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit))),
 	pattern("batstr", "startsWith", BATSTRstarts_with_strcst, false, "Check if string starts with bat substring(with CL).", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),batarg("s",oid))),
-	pattern("batstr", "startsWith", BATSTRstarts_with_strcst, false, "Check if string starts with bat substring(with CL) + icase flag.", args(1,5, batarg("",bit),arg("s",str),batarg("prefix",str),batarg("s",oid),arg("icase",bit))),
+	pattern("batstr", "startsWith", BATSTRstarts_with_strcst, false, "Check if string starts with bat substring(with CL) + icase flag.", args(1,5, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s",oid))),
 	pattern("batstr", "endsWith", BATSTRends_with, false, "Check if bat string ends with bat substring.", args(1,3, batarg("",bit),batarg("s",str),batarg("prefix",str))),
 	pattern("batstr", "endsWith", BATSTRends_with, false, "Check if bat string ends with bat substring, icase flag.", args(1,4, batarg("",bit),batarg("s",str),batarg("prefix",str),arg("icase",bit))),
 	pattern("batstr", "endsWith", BATSTRends_with, false, "Check if bat string ends with bat substring (with CLs).", args(1,5, batarg("",bit),batarg("s",str),batarg("prefix",str),batarg("s1",oid),batarg("s2",oid))),
-	pattern("batstr", "endsWith", BATSTRends_with, false, "Check if bat string ends with bat substring (with CLs) + icase flag.", args(1,6, batarg("",bit),batarg("s",str),batarg("prefix",str),batarg("s1",oid),batarg("s2",oid),arg("icase",bit))),
+	pattern("batstr", "endsWith", BATSTRends_with, false, "Check if bat string ends with bat substring (with CLs) + icase flag.", args(1,6, batarg("",bit),batarg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s1",oid),batarg("s2",oid))),
 	pattern("batstr", "endsWith", BATSTRends_with_cst, false, "Check if bat string ends with substring.", args(1,3, batarg("",bit),batarg("s",str),arg("prefix",str))),
 	pattern("batstr", "endsWith", BATSTRends_with_cst, false, "Check if bat string ends with substring, icase flag.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),arg("icase",bit))),
 	pattern("batstr", "endsWith", BATSTRends_with_cst, false, "Check if bat string(with CL) ends with substring.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),batarg("s",oid))),
-	pattern("batstr", "endsWith", BATSTRends_with_cst, false, "Check if bat string(with CL) ends with substring + icase flag.", args(1,5, batarg("",bit),batarg("s",str),arg("prefix",str),batarg("s",oid),arg("icase",bit))),
+	pattern("batstr", "endsWith", BATSTRends_with_cst, false, "Check if bat string(with CL) ends with substring + icase flag.", args(1,5, batarg("",bit),batarg("s",str),arg("prefix",str),arg("icase",bit),batarg("s",oid))),
 	pattern("batstr", "endsWith", BATSTRends_with_strcst, false, "Check if string ends with bat substring.", args(1,3, batarg("",bit),arg("s",str),batarg("prefix",str))),
 	pattern("batstr", "endsWith", BATSTRends_with_strcst, false, "Check if string ends with bat substring + icase flag.", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit))),
 	pattern("batstr", "endsWith", BATSTRends_with_strcst, false, "Check if string ends with bat substring(with CL).", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),batarg("s",oid))),
-	pattern("batstr", "endsWith", BATSTRends_with_strcst, false, "Check if string ends with bat substring(with CL) + icase flag.", args(1,5, batarg("",bit),arg("s",str),batarg("prefix",str),batarg("s",oid),arg("icase",bit))),
+	pattern("batstr", "endsWith", BATSTRends_with_strcst, false, "Check if string ends with bat substring(with CL) + icase flag.", args(1,5, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s",oid))),
+	pattern("batstr", "contains", BATSTRcontains, false, "Check if bat string haystack contains bat string needle.", args(1,3, batarg("",bit),batarg("s",str),batarg("prefix",str))),
+	pattern("batstr", "contains", BATSTRcontains, false, "Check if bat string haystack contains bat string needle, icase flag.", args(1,4, batarg("",bit),batarg("s",str),batarg("prefix",str),arg("icase",bit))),
+	pattern("batstr", "contains", BATSTRcontains, false, "Check if bat string haystack contains bat string needle (with CLs).", args(1,5, batarg("",bit),batarg("s",str),batarg("prefix",str),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "contains", BATSTRcontains, false, "Check if bat string haystack contains bat string needle (with CLs) + icase flag.", args(1,6, batarg("",bit),batarg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "contains", BATSTRcontains_cst, false, "Check if bat string haystack contains string needle.", args(1,3, batarg("",bit),batarg("s",str),arg("prefix",str))),
+	pattern("batstr", "contains", BATSTRcontains_cst, false, "Check if bat string haystack contains string needle, icase flag.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),arg("icase",bit))),
+	pattern("batstr", "contains", BATSTRcontains_cst, false, "Check if bat string haystack contains string needle (with CL) ends with substring.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),batarg("s",oid))),
+	pattern("batstr", "contains", BATSTRcontains_cst, false, "Check if bat string haystack contains string needle (with CL) ends with substring + icase flag.", args(1,5, batarg("",bit),batarg("s",str),arg("prefix",str),arg("icase",bit),batarg("s",oid))),
+	pattern("batstr", "contains", BATSTRcontains_strcst, false, "Check if string haystack contains bat string needle.", args(1,3, batarg("",bit),arg("s",str),batarg("prefix",str))),
+	pattern("batstr", "contains", BATSTRcontains_strcst, false, "Check if string haystack contains bat string needle + icase flag.", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit))),
+	pattern("batstr", "contains", BATSTRcontains_strcst, false, "Check if string haystack contains bat string needle (with CL).", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),batarg("s",oid))),
+	pattern("batstr", "contains", BATSTRcontains_strcst, false, "Check if string haystack contains bat string needle (with CL) + icase flag.", args(1,5, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s",oid))),
+	command("batstr", "startsWithselect", BATSTRstartswithselect, false, "Select all head values of the first input BAT for which the\ntail value starts with the given prefix.", args(1,6, batarg("",oid),batarg("b",str),batarg("s",oid),arg("prefix",str),arg("caseignore",bit),arg("anti",bit))),
+	command("batstr", "endsWithselect", BATSTRendswithselect, false, "Select all head values of the first input BAT for which the\ntail value end with the given suffix.", args(1,6, batarg("",oid),batarg("b",str),batarg("s",oid),arg("suffix",str),arg("caseignore",bit),arg("anti",bit))),
+	command("batstr", "containsselect", BATSTRcontainsselect, false, "Select all head values of the first input BAT for which the\ntail value contains the given needle.", args(1,6, batarg("",oid),batarg("b",str),batarg("s",oid),arg("needle",str),arg("caseignore",bit),arg("anti",bit))),
+	command("algebra", "startsWithjoin", BATSTRstartswithjoin, false, "Join the string bat L with the prefix bat R\nwith optional candidate lists SL and SR\nThe result is two aligned bats with oids of matching rows.", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+	command("algebra", "startsWithjoin", BATSTRstartswithjoin1, false, "The same as BATSTRstartswithjoin, but only produce one output", args(1,9,batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
+	command("algebra", "endsWithjoin", BATSTRendswithjoin, false, "Join the string bat L with the suffix bat R\nwith optional candidate lists SL and SR\nThe result is two aligned bats with oids of matching rows.", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+	command("algebra", "endsWithjoin", BATSTRendswithjoin1, false, "The same as BATSTRendswithjoin, but only produce one output", args(1,9,batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
+	command("algebra", "containsWithjoin", BATSTRcontainsjoin, false, "Join the string bat L with the bat R if L contains the string of R\nwith optional candidate lists SL and SR\nThe result is two aligned bats with oids of matching rows.", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+	command("algebra", "containsWithjoin", BATSTRcontainsjoin1, false, "The same as BATSTRcontainsjoin, but only produce one output", args(1,9,batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
 	pattern("batstr", "splitpart", STRbatsplitpart, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),batarg("needle",str),batarg("field",int))),
 	pattern("batstr", "splitpart", STRbatsplitpartcst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),arg("field",int))),
 	pattern("batstr", "splitpart", STRbatsplitpart_needlecst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),batarg("field",int))),
@@ -5417,27 +5865,27 @@ mel_func batstr_init_funcs[] = {
 	pattern("batstr", "search", BATSTRstr_search, false, "Search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),batarg("c",str))),
 	pattern("batstr", "search", BATSTRstr_search, false, "Search for a substring. Returns position, -1 if not found, icase flag.", args(1,4, batarg("",int),batarg("s",str),batarg("c",str),arg("icase",bit))),
 	pattern("batstr", "search", BATSTRstr_search, false, "Search for a substring. Returns position, -1 if not found.", args(1,5, batarg("",int),batarg("s",str),batarg("c",str),batarg("s1",oid),batarg("s2",oid))),
-	pattern("batstr", "search", BATSTRstr_search, false, "Search for a substring. Returns position, -1 if not found, icase flag.", args(1,6, batarg("",int),batarg("s",str),batarg("c",str),batarg("s1",oid),batarg("s2",oid),arg("icase",bit))),
+	pattern("batstr", "search", BATSTRstr_search, false, "Search for a substring. Returns position, -1 if not found, icase flag.", args(1,6, batarg("",int),batarg("s",str),batarg("c",str),arg("icase",bit),batarg("s1",oid),batarg("s2",oid))),
 	pattern("batstr", "search", BATSTRstr_search_cst, false, "Search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),arg("c",str))),
 	pattern("batstr", "search", BATSTRstr_search_cst, false, "Search for a substring. Returns position, -1 if not found, icase flag.", args(1,4, batarg("",int),batarg("s",str),arg("c",str),arg("icase",bit))),
 	pattern("batstr", "search", BATSTRstr_search_cst, false, "Search for a substring. Returns position, -1 if not found.", args(1,4, batarg("",int),batarg("s",str),arg("c",str),batarg("s",oid))),
-	pattern("batstr", "search", BATSTRstr_search_cst, false, "Search for a substring. Returns position, -1 if not found, icase flag.", args(1,5, batarg("",int),batarg("s",str),arg("c",str),batarg("s",oid),arg("icase",bit))),
+	pattern("batstr", "search", BATSTRstr_search_cst, false, "Search for a substring. Returns position, -1 if not found, icase flag.", args(1,5, batarg("",int),batarg("s",str),arg("c",str),arg("icase",bit),batarg("s",oid))),
 	pattern("batstr", "search", BATSTRstr_search_strcst, false, "Search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),arg("s",str),batarg("c",str))),
 	pattern("batstr", "search", BATSTRstr_search_strcst, false, "Search for a substring. Returns position, -1 if not found, icase flag.", args(1,4, batarg("",int),arg("s",str),batarg("c",str),arg("icase",bit))),
 	pattern("batstr", "search", BATSTRstr_search_strcst, false, "Search for a substring. Returns position, -1 if not found.", args(1,4, batarg("",int),arg("s",str),batarg("c",str),batarg("s",oid))),
-	pattern("batstr", "search", BATSTRstr_search_strcst, false, "Search for a substring. Returns position, -1 if not found, icase flag.", args(1,5, batarg("",int),arg("s",str),batarg("c",str),batarg("s",oid),arg("icase",bit))),
+	pattern("batstr", "search", BATSTRstr_search_strcst, false, "Search for a substring. Returns position, -1 if not found, icase flag.", args(1,5, batarg("",int),arg("s",str),batarg("c",str),arg("icase",bit),batarg("s",oid))),
 	pattern("batstr", "r_search", BATSTRrevstr_search, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),batarg("c",str))),
 	pattern("batstr", "r_search", BATSTRrevstr_search, false, "Reverse search for a substring + icase flag. Returns position, -1 if not found.", args(1,4, batarg("",int),batarg("s",str),batarg("c",str),arg("icase",bit))),
 	pattern("batstr", "r_search", BATSTRrevstr_search, false, "Reverse search for a substring (with CLs). Returns position, -1 if not found.", args(1,5, batarg("",int),batarg("s",str),batarg("c",str),batarg("s1",oid),batarg("s2",oid))),
-	pattern("batstr", "r_search", BATSTRrevstr_search, false, "Reverse search for a substring (with CLs) + icase flag. Returns position, -1 if not found.", args(1,6, batarg("",int),batarg("s",str),batarg("c",str),batarg("s1",oid),batarg("s2",oid),arg("icase",bit))),
+	pattern("batstr", "r_search", BATSTRrevstr_search, false, "Reverse search for a substring (with CLs) + icase flag. Returns position, -1 if not found.", args(1,6, batarg("",int),batarg("s",str),batarg("c",str),arg("icase",bit),batarg("s1",oid),batarg("s2",oid))),
 	pattern("batstr", "r_search", BATSTRrevstr_search_cst, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),arg("c",str))),
 	pattern("batstr", "r_search", BATSTRrevstr_search_cst, false, "Reverse search for a substring + icase flag. Returns position, -1 if not found.", args(1,4, batarg("",int),batarg("s",str),arg("c",str),arg("icase",bit))),
 	pattern("batstr", "r_search", BATSTRrevstr_search_cst, false, "Reverse search for a substring (with CL). Returns position, -1 if not found.", args(1,4, batarg("",int),batarg("s",str),arg("c",str),batarg("s",oid))),
-	pattern("batstr", "r_search", BATSTRrevstr_search_cst, false, "Reverse search for a substring (with CL) + icase flag. Returns position, -1 if not found.", args(1,5, batarg("",int),batarg("s",str),arg("c",str),batarg("s",oid),arg("icase",bit))),
+	pattern("batstr", "r_search", BATSTRrevstr_search_cst, false, "Reverse search for a substring (with CL) + icase flag. Returns position, -1 if not found.", args(1,5, batarg("",int),batarg("s",str),arg("c",str),arg("icase",bit),batarg("s",oid))),
 	pattern("batstr", "r_search", BATSTRrevstr_search_strcst, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),arg("s",str),batarg("c",str))),
 	pattern("batstr", "r_search", BATSTRrevstr_search_strcst, false, "Reverse search for a substring + icase flag. Returns position, -1 if not found.", args(1,4, batarg("",int),arg("s",str),batarg("c",str),arg("icase",bit))),
 	pattern("batstr", "r_search", BATSTRrevstr_search_strcst, false, "Reverse search for a substring (with CL). Returns position, -1 if not found.", args(1,4, batarg("",int),arg("s",str),batarg("c",str),batarg("s",oid))),
-	pattern("batstr", "r_search", BATSTRrevstr_search_strcst, false, "Reverse search for a substring (with CL) + icase flag. Returns position, -1 if not found.", args(1,5, batarg("",int),arg("s",str),batarg("c",str),batarg("s",oid),arg("icase",bit))),
+	pattern("batstr", "r_search", BATSTRrevstr_search_strcst, false, "Reverse search for a substring (with CL) + icase flag. Returns position, -1 if not found.", args(1,5, batarg("",int),arg("s",str),batarg("c",str),arg("icase",bit),batarg("s",oid))),
 	pattern("batstr", "string", STRbatTail, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, batarg("",str),batarg("b",str),batarg("offset",int))),
 	pattern("batstr", "string", STRbatTail, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,5, batarg("",str),batarg("b",str),batarg("offset",int),batarg("s1",oid),batarg("s2",oid))),
 	pattern("batstr", "string", STRbatTailcst, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, batarg("",str),batarg("b",str),arg("offset",int))),
