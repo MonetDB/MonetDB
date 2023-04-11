@@ -2866,8 +2866,7 @@ check_rotation_conditions(logger *lg) {
 
 	const lng log_large = (GDKdebug & FORCEMITOMASK)?LOG_MINI:LOG_LARGE;
 	return
-		(lg->saved_id+1 < lg->id && lg->current->drops > 100000) ||
-		(p > log_large || (((lng) ATOMIC_GET(&lg->current->end) - (lng) ATOMIC_GET(&lg->current->pend)) * 1024) > log_large);
+		(lg->saved_id+1 >= lg->id && lg->current->drops > 100000) || (p > log_large);
 }
 
 gdk_return
