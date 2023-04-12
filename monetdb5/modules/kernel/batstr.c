@@ -1766,7 +1766,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1), *sid1 = NULL;
 	int ynil, ylen;
-	if ((icase && pci->argc == 4) || pci->argc == 5) {
+	if ((!icase && pci->argc == 4) || pci->argc == 5) {
 		assert(getArgType(mb, pci, icase?4:3) == TYPE_bat);
 		sid1 = getArgReference_bat(stk, pci, icase?4:3);
 	}
