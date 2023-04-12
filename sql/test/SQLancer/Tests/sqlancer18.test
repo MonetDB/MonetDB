@@ -313,7 +313,7 @@ SELECT vx.vc0 FROM vx WHERE vx.vc0 <> ALL(SELECT vx.vc0 FROM vx WHERE vx.vc0 <> 
 1970-01-01
 NULL
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: BATsubcross: more than one match
 SELECT max((SELECT (SELECT rt2.c1 FROM t2) FROM t2 as rt2))
 
 statement ok
@@ -330,7 +330,7 @@ SELECT 1 FROM (select 4) v100(vc0) WHERE (3) NOT IN (COALESCE((SELECT 1 WHERE FA
 ----
 1
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: BATsubcross: more than one match
 select 1 from t1 where exists (select min((select t2.c0 from t1)) from t1 as t2)
 
 query I rowsort
