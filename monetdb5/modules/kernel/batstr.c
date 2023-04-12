@@ -1998,14 +1998,14 @@ BATSTRcontains_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* scan select loop with or without candidates */
 #define scanloop(TEST, KEEP_NULLS)									    \
 	do {																\
-		TRC_DEBUG(ALGO,													\
-				  "scanselect(b=%s#"BUNFMT",anti=%d): "					\
+		TRC_DEBUG(ALGO,												\
+				  "scanselect(b=%s#"BUNFMT",anti=%d): "				\
 				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
-				  anti, #TEST);											\
+				  anti, #TEST);										\
 		if (!s || BATtdense(s)) {										\
 			for (; p < q; p++) {										\
 				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 				const char *restrict v = BUNtvar(bi, p - off);			\
 				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
 					vals[cnt++] = p;									\
@@ -2013,7 +2013,7 @@ BATSTRcontains_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {														\
 			for (; p < ncands; p++) {									\
 				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
-								  GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
 				oid o = canditer_next(ci);								\
 				const char *restrict v = BUNtvar(bi, o - off);			\
 				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
