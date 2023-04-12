@@ -839,7 +839,7 @@ MNDBGetInfo(ODBCDbc *dbc,
 		sValue = MONETDB_SERVER_NAME;
 		break;
 	case SQL_SPECIAL_CHARACTERS:
-		sValue = "!$&'()*+,-./:;<=>?@[]^`{|}~";
+		sValue = "!#$%&'()*+,-./:;<=>?@[]^`{|}~";
 		break;
 	case SQL_SQL_CONFORMANCE:
 		nValue = SQL_SC_SQL92_FULL;
