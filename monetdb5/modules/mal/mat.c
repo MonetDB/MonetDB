@@ -141,8 +141,9 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		/* allocate enough space for the vheap, but not for strings,
-		 * since BATappend does clever things for strings */
-		if ( b->tvheap && bn->tvheap && ATOMstorage(b->ttype) != TYPE_str){
+		 * since BATappend does clever things for strings, and not for
+		 * vheap views since they may well get shared */
+		if (b->tvheap && b->tvheap->parentid == b->batCacheid && bn->tvheap && ATOMstorage(b->ttype) != TYPE_str){
 			newsize =  b->tvheap->size * pieces;
 			if (HEAPextend(bn->tvheap, newsize, true) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
