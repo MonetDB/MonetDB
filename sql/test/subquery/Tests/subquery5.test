@@ -404,7 +404,7 @@ SELECT SUM((SELECT MAX(i1.i + i2.i) FROM integers i2)) FROM integers i1
 ----
 15
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: BATsubcross: more than one match
 SELECT CORR((SELECT i1.i FROM integers i2), (SELECT SUM(i1.i + i2.i) FROM integers i2)) FROM integers i1
 
 query I rowsort
