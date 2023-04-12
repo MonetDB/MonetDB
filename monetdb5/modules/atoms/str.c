@@ -3747,7 +3747,6 @@ str_is_prefix(const char *s, const char *prefix, int plen)
 bit
 str_is_iprefix(const char *s, const char *prefix, int plen)
 {
-	//return strncasecmp(s, prefix, plen) == 0;
 	return utf8ncasecmp(s, prefix, plen) == 0;
 }
 
@@ -3786,7 +3785,6 @@ str_is_isuffix(const char *s, const char *suffix, int sul)
 	if (sl < sul)
 		return 0;
 	else
-		//return strcasecmp(s + sl - sul, suffix) == 0;
 		return utf8casecmp(s + sl - sul, suffix) == 0;
 }
 
@@ -3824,7 +3822,7 @@ str_icontains(const char *h, const char *n, int nlen)
 {
 	(void)nlen;
 	/* 64bit: should return lng */
-	if (strcasestr(h, n) != NULL)
+	if (utf8casestr(h, n) != NULL)
 		return TRUE;
 	else
 		return FALSE;
@@ -3863,7 +3861,7 @@ str_isearch(const char *s, const char *s2, int slen)
 {
 	(void)slen;
 	/* 64bit: should return lng */
-	if ((s2 = strcasestr(s, s2)) != NULL)
+	if ((s2 = utf8casestr(s, s2)) != NULL)
 		return UTF8_strpos(s, s2);
 	else
 		return -1;
@@ -3915,7 +3913,6 @@ str_reverse_str_isearch(const char *s, const char *s2, int slen)
 	if (len >= slen) {
 		const char *p = s + len - slen;
 		do {
-			//if (strncasecmp(p, s2, slen) == 0) {
 			if (utf8ncasecmp(p, s2, slen) == 0) {
 				res = UTF8_strpos(s, p);
 				break;
