@@ -4225,24 +4225,8 @@ SQLsuspend_log_flushing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-/*SQLhot_snapshot(void *ret, const str *tarfile_arg)*/
+/*SQLhot_snapshot(void *ret, const str *tarfile_arg [, bool onserver ])*/
 SQLhot_snapshot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	char *tarfile = *getArgReference_str(stk, pci, 1);
-	mvc *mvc;
-
-	char *msg = getSQLContext(cntxt, mb, &mvc, NULL);
-	if (msg)
-		return msg;
-	lng result = store_hot_snapshot(mvc->session->tr->store, tarfile);
-	if (result)
-		return MAL_SUCCEED;
-	else
-		throw(SQL, "sql.hot_snapshot", GDK_EXCEPTION);
-}
-
-str
-SQLhot_snapshot_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char *filename;
 	bool onserver;
@@ -4255,7 +4239,7 @@ SQLhot_snapshot_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng result;
 
 	filename = *getArgReference_str(stk, pci, 1);
-	onserver = *getArgReference_bit(stk, pci, 2);
+	onserver = pci->argc == 3 ? *getArgReference_bit(stk, pci, 2) : true;
 
 	msg = getSQLContext(cntxt, mb, &mvc, NULL);
 	if (msg)
@@ -5065,7 +5049,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "hot_snapshot", SQLhot_snapshot, true, "Write db snapshot to the given tar(.gz) file", args(1,2, arg("",void),arg("tarfile",str))),
  pattern("sql", "resume_log_flushing", SQLresume_log_flushing, true, "Resume WAL log flushing", args(1,1, arg("",void))),
  pattern("sql", "suspend_log_flushing", SQLsuspend_log_flushing, true, "Suspend WAL log flushing", args(1,1, arg("",void))),
- pattern("sql", "hot_snapshot", SQLhot_snapshot_wrap, true, "Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client", args(1,3, arg("",void),arg("tarfile", str),arg("onserver",bit))),
+ pattern("sql", "hot_snapshot", SQLhot_snapshot, true, "Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client", args(1,3, arg("",void),arg("tarfile", str),arg("onserver",bit))),
  pattern("sql", "assert", SQLassert, false, "Generate an exception when b==true", args(1,3, arg("",void),arg("b",bit),arg("msg",str))),
  pattern("sql", "assert", SQLassertInt, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",int),arg("msg",str))),
  pattern("sql", "assert", SQLassertLng, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",lng),arg("msg",str))),
