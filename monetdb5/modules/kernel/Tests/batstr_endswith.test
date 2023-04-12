@@ -10,14 +10,14 @@ create table foo(x string)
 statement ok
 insert into foo values ('johndoe'),('janedoe'),('robertdoe')
 
-query T rowsort
+query T
 select endswith(x, '') from foo
 ----
 True
 True
 True
 
-query T rowsort
+query T
 select endswith('', x) from foo
 ----
 False
@@ -33,7 +33,7 @@ create table bar(x string, y string)
 statement ok
 insert into bar values ('johndoe','doe'),('Müller Thomas', 'Thomas Müller'),('Thomas Müller', 'Müller Thomas')
 
-query T rowsort
+query T
 select endswith(x, 'Müller') from bar
 ----
 False

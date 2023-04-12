@@ -49,4 +49,4 @@ statement ok
 drop table baz
 
 statement ok
-drop function reverse
+drop function reverse(string)
