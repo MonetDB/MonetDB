@@ -1704,15 +1704,9 @@ static str
 BATSTRstarts_with(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *icase = NULL;
-	switch (pci->argc) {
-	case 4:
-		if (getArgType(mb, pci, 3) == TYPE_bit)
-			icase = getArgReference_bit(stk, pci, 3);
-		break;
-	case 6:
+	if (pci->argc == 4 || pci->argc == 6) {
 		assert(getArgType(mb, pci, 3) == TYPE_bit);
 		icase = getArgReference_bit(stk, pci, 3);
-		break;
 	}
 	return prefix_or_suffix(cntxt, mb, stk, pci, "batstr.startsWith", (icase && *icase)?str_is_iprefix:str_is_prefix, icase);
 }
@@ -1721,15 +1715,9 @@ static str
 BATSTRends_with(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *icase = NULL;
-	switch (pci->argc) {
-	case 4:
-		if (getArgType(mb, pci, 3) == TYPE_bit)
-			icase = getArgReference_bit(stk, pci, 3);
-		break;
-	case 6:
+	if (pci->argc == 4 || pci->argc == 6) {
 		assert(getArgType(mb, pci, 3) == TYPE_bit);
 		icase = getArgReference_bit(stk, pci, 3);
-		break;
 	}
 	return prefix_or_suffix(cntxt, mb, stk, pci, "batstr.endsWith", (icase && *icase)?str_is_isuffix:str_is_suffix, icase);
 }
@@ -1738,15 +1726,9 @@ static str
 BATSTRcontains(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *icase = NULL;
-	switch (pci->argc) {
-	case 4:
-		if (getArgType(mb, pci, 3) == TYPE_bit)
-			icase = getArgReference_bit(stk, pci, 3);
-		break;
-	case 6:
+	if (pci->argc == 4 || pci->argc == 6) {
 		assert(getArgType(mb, pci, 3) == TYPE_bit);
 		icase = getArgReference_bit(stk, pci, 3);
-		break;
 	}
 	return prefix_or_suffix(cntxt, mb, stk, pci, "batstr.contains", (icase && *icase)?str_icontains:str_contains, icase);
 }
@@ -1826,15 +1808,9 @@ static str
 BATSTRstarts_with_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *icase = NULL;
-	switch (pci->argc) {
-	case 4:
-		if (getArgType(mb, pci, 3) == TYPE_bit)
-			icase = getArgReference_bit(stk, pci, 3);
-		break;
-	case 5:
+	if ((pci->argc == 4 && getArgType(mb, pci, 3) == TYPE_bit) || pci->argc == 5) {
 		assert(getArgType(mb, pci, 3) == TYPE_bit);
 		icase = getArgReference_bit(stk, pci, 3);
-		break;
 	}
 	return prefix_or_suffix_cst(cntxt, mb, stk, pci, "batstr.startsWith", (icase && *icase)?str_is_iprefix:str_is_prefix, icase);
 }
@@ -1843,15 +1819,9 @@ static str
 BATSTRends_with_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *icase = NULL;
-	switch (pci->argc) {
-	case 4:
-		if (getArgType(mb, pci, 3) == TYPE_bit)
-			icase = getArgReference_bit(stk, pci, 3);
-		break;
-	case 5:
+	if ((pci->argc == 4 && getArgType(mb, pci, 3) == TYPE_bit) || pci->argc == 5) {
 		assert(getArgType(mb, pci, 3) == TYPE_bit);
 		icase = getArgReference_bit(stk, pci, 3);
-		break;
 	}
 	return prefix_or_suffix_cst(cntxt, mb, stk, pci, "batstr.endsWith", (icase && *icase)?str_is_isuffix:str_is_suffix, icase);
 }
@@ -1860,15 +1830,9 @@ static str
 BATSTRcontains_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *icase = NULL;
-	switch (pci->argc) {
-	case 4:
-		if (getArgType(mb, pci, 3) == TYPE_bit)
-			icase = getArgReference_bit(stk, pci, 3);
-		break;
-	case 5:
+	if ((pci->argc == 4 && getArgType(mb, pci, 3) == TYPE_bit) || pci->argc == 5) {
 		assert(getArgType(mb, pci, 3) == TYPE_bit);
 		icase = getArgReference_bit(stk, pci, 3);
-		break;
 	}
 	return prefix_or_suffix_cst(cntxt, mb, stk, pci, "batstr.contains", (icase && *icase)?str_icontains:str_contains, icase);
 }
@@ -1948,15 +1912,9 @@ static str
 BATSTRstarts_with_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *icase = NULL;
-	switch (pci->argc) {
-	case 4:
-		if (getArgType(mb, pci, 3) == TYPE_bit)
-			icase = getArgReference_bit(stk, pci, 3);
-		break;
-	case 5:
+	if ((pci->argc == 4 && getArgType(mb, pci, 3) == TYPE_bit) || pci->argc == 5) {
 		assert(getArgType(mb, pci, 3) == TYPE_bit);
 		icase = getArgReference_bit(stk, pci, 3);
-		break;
 	}
 	return prefix_or_suffix_strcst(cntxt, mb, stk, pci, "batstr.startsWith", (icase && *icase)?str_is_iprefix:str_is_prefix, icase);
 }
@@ -1965,15 +1923,9 @@ static str
 BATSTRends_with_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *icase = NULL;
-	switch (pci->argc) {
-	case 4:
-		if (getArgType(mb, pci, 3) == TYPE_bit)
-			icase = getArgReference_bit(stk, pci, 3);
-		break;
-	case 5:
+	if ((pci->argc == 4 && getArgType(mb, pci, 3) == TYPE_bit) || pci->argc == 5) {
 		assert(getArgType(mb, pci, 3) == TYPE_bit);
 		icase = getArgReference_bit(stk, pci, 3);
-		break;
 	}
 	return prefix_or_suffix_strcst(cntxt, mb, stk, pci, "batstr.endsWith", (icase && *icase)?str_is_isuffix:str_is_suffix, icase);
 }
@@ -1982,15 +1934,9 @@ static str
 BATSTRcontains_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *icase = NULL;
-	switch (pci->argc) {
-	case 4:
-		if (getArgType(mb, pci, 3) == TYPE_bit)
-			icase = getArgReference_bit(stk, pci, 3);
-		break;
-	case 5:
+	if ((pci->argc == 4 && getArgType(mb, pci, 3) == TYPE_bit) || pci->argc == 5) {
 		assert(getArgType(mb, pci, 3) == TYPE_bit);
 		icase = getArgReference_bit(stk, pci, 3);
-		break;
 	}
 	return prefix_or_suffix_strcst(cntxt, mb, stk, pci, "batstr.contains", (icase && *icase)?str_icontains:str_contains, icase);
 }
