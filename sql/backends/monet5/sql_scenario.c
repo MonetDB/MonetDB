@@ -375,6 +375,7 @@ SQLprepareClient(Client c, const char *pwhash, const char *challenge, const char
 
 		if (mvc_trans(m) < 0) {
 			// we have -1 here
+			MT_lock_set(&sql_contextLock);
 			throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", c->username);
 		}
 
