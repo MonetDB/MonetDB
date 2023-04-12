@@ -960,7 +960,7 @@ const struct {
 		.info = SQL_SPECIAL_CHARACTERS,
 		.name = "SQL_SPECIAL_CHARACTERS",
 		.type = STRING,
-		.str = "!$&'()*+,-./:;<=>?@[]^`{|}~",
+		.str = "!#$%&'()*+,-./:;<=>?@[]^`{|}~",
 	},
 	{
 		.info = SQL_SQL_CONFORMANCE,
