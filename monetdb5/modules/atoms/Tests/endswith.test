@@ -4,47 +4,47 @@ create function endswith(x string, y string) returns bool external name str."end
 statement ok
 create function iendswith(x string, y string, i bool) returns bool external name str."endsWith"
 
-query T rowsort
+query T
 select endsWith(NULL, '')
 ----
 NULL
 
-query T rowsort
+query T
 select endsWith('', NULL)
 ----
 NULL
 
-query T rowsort
+query T
 select endsWith('', '')
 ----
 True
 
-query T rowsort
+query T
 select endsWith('johndoe', '')
 ----
 True
 
-query T rowsort
+query T
 select endsWith('', 'johndoe')
 ----
 False
 
-query T rowsort
+query T
 select endsWith('johndoe', 'doe')
 ----
 True
 
-query T rowsort
+query T
 select iendswith('one two three', 'three', true)
 ----
 True
 
-query T rowsort
+query T
 select iendswith('Thomas Müller', 'müller', true)
 ----
 True
 
-query T rowsort
+query T
 select iendswith('Thomas Müller', 'müller', false)
 ----
 False
