@@ -17,6 +17,7 @@
 #include <string.h>
 #include <sql.h>
 #include <sqlext.h>
+#include <inttypes.h>
 
 static void
 prerr(SQLSMALLINT tpe, SQLHANDLE hnd, const char *func, const char *pref)
@@ -81,6 +82,8 @@ compareResult(char * testname, char * testresult, char * expected)
 	}
 }
 
+#define LLFMT                   "%" PRId64
+
 static SQLRETURN
 testGetDataTruncatedString(SQLHANDLE stmt, SWORD ctype)
 {
@@ -99,7 +102,7 @@ testGetDataTruncatedString(SQLHANDLE stmt, SWORD ctype)
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect");
 
 	ret = SQLRowCount(stmt, &RowCount);
-	pos += snprintf(outp + pos, outp_len - pos, "SQLRowCount is %ld\n", RowCount);
+	pos += snprintf(outp + pos, outp_len - pos, "SQLRowCount is " LLFMT "\n", (int64_t) RowCount);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLRowCount");
 
 	ret = SQLNumResultCols(stmt, &NumResultCols);
@@ -118,7 +121,7 @@ testGetDataTruncatedString(SQLHANDLE stmt, SWORD ctype)
 
 		/* test SQLGetData(SQL_C_(W)CHAR, 20) with a restricted buffer size (20) for the queried string value (47) */
 		ret = SQLGetData(stmt, (UWORD)col, (SWORD)ctype, (PTR)&buf, (SQLLEN)20, &vallen);
-		pos += snprintf(outp + pos, outp_len - pos, "SQLGetData(%d, %s, 20) returns %d, vallen %ld, buf: '%s'\n", col, ctype_str, ret, vallen, buf);
+		pos += snprintf(outp + pos, outp_len - pos, "SQLGetData(%d, %s, 20) returns %d, vallen " LLFMT ", buf: '%s'\n", col, ctype_str, ret, (int64_t) vallen, buf);
 		/* we expect SQL_SUCCESS_WITH_INFO with warning msg set, fetch them */
 		if (ret == SQL_SUCCESS_WITH_INFO) {
 			SQLCHAR state[6];
@@ -130,7 +133,7 @@ testGetDataTruncatedString(SQLHANDLE stmt, SWORD ctype)
 
 			/* get the next data part of the value (this is how SQLGetData is intended to be used to get large data in chunks) */
 			ret = SQLGetData(stmt, (UWORD)col, (SWORD)ctype, (PTR)&buf2, (SQLLEN)30, &vallen);
-			pos += snprintf(outp + pos, outp_len - pos, "SQLGetData(%d, %s, 30) returns %d, vallen %ld, buf: '%s'\n", col, ctype_str, ret, vallen, buf2);
+			pos += snprintf(outp + pos, outp_len - pos, "SQLGetData(%d, %s, 30) returns %d, vallen " LLFMT ", buf: '%s'\n", col, ctype_str, ret, (int64_t) vallen, buf2);
 			if (ret == SQL_SUCCESS_WITH_INFO) {
 				ret = SQLGetDiagRec(SQL_HANDLE_STMT, stmt, 1, state, &errnr, msg, sizeof(msg), &msglen);
 				pos += snprintf(outp + pos, outp_len - pos, "SQLstate %s, Errnr %d, Message %s\n", (char*)state, (int)errnr, (char*)msg);
