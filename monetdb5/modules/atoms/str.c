@@ -3665,7 +3665,7 @@ str_lower(str *buf, size_t *buflen, const char *s)
 	return convertCase(UTF8_toLowerFrom, UTF8_toLowerTo, buf, buflen, s, "str.lower");
 }
 
-str
+static inline str
 STRlower(str *res, const str *arg1)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
@@ -5080,6 +5080,480 @@ STRreverse(str *ret, const str *arg)
 	return MAL_SUCCEED;
 }
 
+/* scan select loop with or without candidates */
+#define scanloop(TEST, KEEP_NULLS)									    \
+	do {																\
+		TRC_DEBUG(ALGO,												\
+				  "scanselect(b=%s#"BUNFMT",anti=%d): "				\
+				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
+				  anti, #TEST);										\
+		if (!s || BATtdense(s)) {										\
+			for (; p < q; p++) {										\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				const char *restrict v = BUNtvar(bi, p - off);			\
+				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
+					vals[cnt++] = p;									\
+			}															\
+		} else {														\
+			for (; p < ncands; p++) {									\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				oid o = canditer_next(ci);								\
+				const char *restrict v = BUNtvar(bi, o - off);			\
+				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
+					vals[cnt++] = o;									\
+			}															\
+		}																\
+	} while (0)
+
+static str
+do_string_select(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN *rcnt, const char *key, bool anti,
+		bit (*str_cmp)(const char*, const char*, int))
+{
+	BATiter bi = bat_iterator(b);
+	BUN cnt = 0, ncands = ci->ncand;
+	oid off = b->hseqbase, *restrict vals = Tloc(bn, 0);
+	str msg = MAL_SUCCEED;
+	int klen = str_strlen(key);
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL)
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+
+	if (anti) /* keep nulls ? (use false for now) */
+		scanloop(v && *v != '\200' && str_cmp(v, key, klen) != 0, false);
+	else
+		scanloop(v && *v != '\200' && str_cmp(v, key, klen) == 0, false);
+
+bailout:
+	bat_iterator_end(&bi);
+	*rcnt = cnt;
+	return msg;
+}
+
+static str
+string_select(bat *ret, const bat *bid, const bat *sid, const str *key, const bit *anti, bit (*str_cmp)(const char*, const char*, int), const str fname)
+{
+	BAT *b, *s = NULL, *bn = NULL;
+	str msg = MAL_SUCCEED;
+	BUN p = 0, q = 0, rcnt = 0;
+	struct canditer ci;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		msg = createException(MAL, fname , SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+		msg = createException(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+
+	assert(ATOMstorage(b->ttype) == TYPE_str);
+
+	canditer_init(&ci, b, s);
+	if (!(bn = COLnew(0, TYPE_oid, ci.ncand, TRANSIENT))) {
+		msg = createException(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	if (!s || BATtdense(s)) {
+		if (s) {
+			assert(BATtdense(s));
+			p = (BUN) s->tseqbase;
+			q = p + BATcount(s);
+			if ((oid) p < b->hseqbase)
+				p = b->hseqbase;
+			if ((oid) q > b->hseqbase + BATcount(b))
+				q = b->hseqbase + BATcount(b);
+		} else {
+			p = b->hseqbase;
+			q = BATcount(b) + b->hseqbase;
+		}
+	}
+
+	msg = do_string_select(bn, b, s, &ci, p, q, &rcnt, *key, *anti, str_cmp);
+
+	if (!msg) { /* set some properties */
+		BATsetcount(bn, rcnt);
+		bn->tsorted = true;
+		bn->trevsorted = bn->batCount <= 1;
+		bn->tkey = true;
+		bn->tnil = false;
+		bn->tnonil = true;
+		bn->tseqbase = rcnt == 0 ? 0 : rcnt == 1 ? *(const oid*)Tloc(bn, 0) : rcnt == b->batCount ? b->hseqbase : oid_nil;
+	}
+
+bailout:
+	BBPreclaim(b);
+	BBPreclaim(s);
+	if (bn && !msg) {
+		*ret = bn->batCacheid;
+		BBPkeepref(bn);
+	} else if (bn)
+		BBPreclaim(bn);
+	return msg;
+}
+
+static str
+STRstartswithselect(bat *ret, const bat *bid, const bat *sid, const str *key, const bit *caseignore, const bit *anti)
+{
+		return string_select(ret, bid, sid, key, anti, (*caseignore)?str_is_iprefix:str_is_prefix,
+				"str.startswithselect");
+}
+
+static str
+STRendswithselect(bat *ret, const bat *bid, const bat *sid, const str *key, const bit *caseignore, const bit *anti)
+{
+		return string_select(ret, bid, sid, key, anti, (*caseignore)?str_is_isuffix:str_is_suffix,
+				"str.endswithselect");
+}
+
+static str
+STRcontainsselect(bat *ret, const bat *bid, const bat *sid, const str *key, const bit *caseignore, const bit *anti)
+{
+		return string_select(ret, bid, sid, key, anti, (*caseignore)?str_icontains:str_contains,
+				"str.containsselect");
+}
+
+#define APPEND(b, o)	(((oid *) b->theap->base)[b->batCount++] = (o))
+#define VALUE(s, x)		(s##vars + VarHeapVal(s##vals, (x), s##i.width))
+
+/* nested loop implementation for batstr joins */
+#define batstr_join_loop(STRCMP, STR_LEN) \
+	do { \
+		for (BUN ridx = 0; ridx < rci.ncand; ridx++) { \
+			GDK_CHECK_TIMEOUT(timeoffset, counter, \
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+			ro = canditer_next(&rci); \
+			vr = VALUE(r, ro - rbase); \
+			rlen = STR_LEN; \
+			nl = 0; \
+			canditer_reset(&lci); \
+			for (BUN lidx = 0; lidx < lci.ncand; lidx++) { \
+				lo = canditer_next(&lci); \
+				vl = VALUE(l, lo - lbase); \
+				if (strNil(vl)) { \
+					continue; \
+				} else if (!(STRCMP)) { \
+					continue; \
+				} \
+				if (BATcount(r1) == BATcapacity(r1)) { \
+					newcap = BATgrows(r1); \
+					BATsetcount(r1, BATcount(r1)); \
+					if (r2) \
+						BATsetcount(r2, BATcount(r2)); \
+					if (BATextend(r1, newcap) != GDK_SUCCEED || (r2 && BATextend(r2, newcap) != GDK_SUCCEED)) { \
+						msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+						goto bailout; \
+					} \
+					assert(!r2 || BATcapacity(r1) == BATcapacity(r2)); \
+				} \
+				if (BATcount(r1) > 0) { \
+					if (lastl + 1 != lo) \
+						r1->tseqbase = oid_nil; \
+					if (nl == 0) { \
+						if (r2) \
+							r2->trevsorted = false; \
+						if (lastl > lo) { \
+							r1->tsorted = false; \
+							r1->tkey = false; \
+						} else if (lastl < lo) { \
+							r1->trevsorted = false; \
+						} else { \
+							r1->tkey = false; \
+						} \
+					} \
+				} \
+				APPEND(r1, lo); \
+				if (r2) \
+					APPEND(r2, ro); \
+				lastl = lo; \
+				nl++; \
+			} \
+			if (r2) { \
+				if (nl > 1) { \
+					r2->tkey = false; \
+					r2->tseqbase = oid_nil; \
+					r1->trevsorted = false; \
+				} else if (nl == 0) { \
+					rskipped = BATcount(r2) > 0; \
+				} else if (rskipped) { \
+					r2->tseqbase = oid_nil; \
+				} \
+			} else if (nl > 1) { \
+				r1->trevsorted = false; \
+			} \
+		} \
+	} while (0)
+
+static str
+strjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bit anti, bit (*str_cmp)(const char*, const char*, int), const str fname)
+{
+	struct canditer lci, rci;
+	const char *lvals, *rvals, *lvars, *rvars, *vl, *vr;
+	int rskipped = 0, rlen = 0;			/* whether we skipped values in r */
+	oid lbase, rbase, lo, ro, lastl = 0;		/* last value inserted into r1 */
+	BUN nl, newcap;
+	char *msg = MAL_SUCCEED;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
+	TRC_DEBUG(ALGO,
+			  "%s(l=%s#" BUNFMT "[%s]%s%s,"
+			  "r=%s#" BUNFMT "[%s]%s%s,sl=%s#" BUNFMT "%s%s,"
+			  "sr=%s#" BUNFMT "%s%s)\n",
+			  fname,
+			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
+			  l->tsorted ? "-sorted" : "",
+			  l->trevsorted ? "-revsorted" : "",
+			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
+			  r->tsorted ? "-sorted" : "",
+			  r->trevsorted ? "-revsorted" : "",
+			  sl ? BATgetId(sl) : "NULL", sl ? BATcount(sl) : 0,
+			  sl && sl->tsorted ? "-sorted" : "",
+			  sl && sl->trevsorted ? "-revsorted" : "",
+			  sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
+			  sr && sr->tsorted ? "-sorted" : "",
+			  sr && sr->trevsorted ? "-revsorted" : "");
+
+	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
+	assert(ATOMtype(l->ttype) == TYPE_str);
+
+	canditer_init(&lci, l, sl);
+	canditer_init(&rci, r, sr);
+
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
+	lbase = l->hseqbase;
+	rbase = r->hseqbase;
+	lvals = (const char *) li.base;
+	rvals = (const char *) ri.base;
+	assert(ri.vh && r->ttype);
+	lvars = li.vh->base;
+	rvars = ri.vh->base;
+
+	r1->tkey = true;
+	r1->tsorted = true;
+	r1->trevsorted = true;
+	r1->tnil = false;
+	r1->tnonil = true;
+	if (r2) {
+		r2->tkey = true;
+		r2->tsorted = true;
+		r2->trevsorted = true;
+		r2->tnil = false;
+		r2->tnonil = true;
+	}
+
+	if (anti) {
+		batstr_join_loop(str_cmp(vl, vr, rlen) == 0, str_strlen(vr));
+	} else {
+		batstr_join_loop(str_cmp(vl, vr, rlen) != 0, str_strlen(vr));
+	}
+	bat_iterator_end(&li);
+	bat_iterator_end(&ri);
+
+	assert(!r2 || BATcount(r1) == BATcount(r2));
+	/* also set other bits of heap to correct value to indicate size */
+	BATsetcount(r1, BATcount(r1));
+	if (r2)
+		BATsetcount(r2, BATcount(r2));
+	if (BATcount(r1) > 0) {
+		if (BATtdense(r1))
+			r1->tseqbase = ((oid *) r1->theap->base)[0];
+		if (r2 && BATtdense(r2))
+			r2->tseqbase = ((oid *) r2->theap->base)[0];
+	} else {
+		r1->tseqbase = 0;
+		if (r2)
+			r2->tseqbase = 0;
+	}
+	if (r2)
+		TRC_DEBUG(ALGO,
+				"%s(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+				fname,
+				BATgetId(l), BATgetId(r),
+				BATgetId(r1), BATcount(r1),
+				r1->tsorted ? "-sorted" : "",
+				r1->trevsorted ? "-revsorted" : "",
+				BATgetId(r2), BATcount(r2),
+				r2->tsorted ? "-sorted" : "",
+				r2->trevsorted ? "-revsorted" : "");
+	else
+		TRC_DEBUG(ALGO,
+			"%s(l=%s,r=%s)=(%s#"BUNFMT"%s%s\n",
+			fname,
+			BATgetId(l), BATgetId(r),
+			BATgetId(r1), BATcount(r1),
+			r1->tsorted ? "-sorted" : "",
+			r1->trevsorted ? "-revsorted" : "");
+	return MAL_SUCCEED;
+
+bailout:
+	bat_iterator_end(&li);
+	bat_iterator_end(&ri);
+	assert(msg != MAL_SUCCEED);
+	return msg;
+}
+
+
+static str
+STRjoin(bat *r1, bat *r2, const bat lid, const bat rid, const bat slid, const bat srid, const bit anti, bit (*str_cmp)(const char*, const char*, int), const str fname)
+{
+	BAT *left = NULL, *right = NULL, *candleft = NULL, *candright = NULL;
+	BAT *result1 = NULL, *result2 = NULL;
+	char *msg = MAL_SUCCEED;
+
+	left = BATdescriptor(lid);
+	right = BATdescriptor(rid);
+	if (!left || !right) {
+		msg = createException(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto fail;
+	}
+	if ((!is_bat_nil(slid) && (candleft = BATdescriptor(slid)) == NULL) ||
+		(!is_bat_nil(srid) && (candright = BATdescriptor(srid)) == NULL) ) {
+		msg = createException(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto fail;
+	}
+	result1 = COLnew(0, TYPE_oid, BATcount(left), TRANSIENT);
+	if (r2)
+		result2 = COLnew(0, TYPE_oid, BATcount(left), TRANSIENT);
+	if (!result1 || (r2 && !result2)) {
+		BBPreclaim(result1);
+		BBPreclaim(result2);
+		msg = createException(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto fail;
+	}
+	result1->tnil = false;
+	result1->tnonil = true;
+	result1->tkey = true;
+	result1->tsorted = true;
+	result1->trevsorted = true;
+	result1->tseqbase = 0;
+	if (r2) {
+		result2->tnil = false;
+		result2->tnonil = true;
+		result2->tkey = true;
+		result2->tsorted = true;
+		result2->trevsorted = true;
+		result2->tseqbase = 0;
+	}
+	msg = strjoin(result1, result2, left, right, candleft, candright, anti, str_cmp, fname);
+	if (!msg) {
+		*r1 = result1->batCacheid;
+		BBPkeepref(result1);
+		if (r2) {
+			*r2 = result2->batCacheid;
+			BBPkeepref(result2);
+		}
+	} else {
+		BBPreclaim(result1);
+		BBPreclaim(result2);
+	}
+  fail:
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
+	BBPreclaim(candleft);
+	BBPreclaim(candright);
+	return msg;
+}
+
+static str
+join_caseignore(const bat *cid, bool *caseignore, str fname)
+{
+	BAT *c = NULL;
+
+	if ((c = BATdescriptor(*cid)) == NULL)
+		return createException(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if (BATcount(c) != 1)
+		return createException(MAL, fname, SQLSTATE(42000) "At the moment, only one value is allowed for the case ignore input at pcre join");
+	BATiter bi = bat_iterator(c);
+	*caseignore = *(bit*)BUNtloc(bi, 0);
+	bat_iterator_end(&bi);
+	BBPreclaim(c);
+	return MAL_SUCCEED;
+}
+
+static str
+STRstartswithjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *cid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
+{
+    (void) nil_matches;
+    (void) estimate;
+	bool caseignore = false;
+	str msg = join_caseignore(cid, &caseignore, "str.startswithjoin");
+	if (msg)
+		return msg;
+    return STRjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti, (caseignore)?str_is_iprefix:str_is_prefix, "str.startswithjoin");
+}
+
+static str
+STRstartswithjoin1(bat *r1, const bat *lid, const bat *rid, const bat *cid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
+{
+    (void) nil_matches;
+    (void) estimate;
+	bool caseignore = false;
+	str msg = join_caseignore(cid, &caseignore, "str.startswithjoin");
+	if (msg)
+		return msg;
+    return STRjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti, (caseignore)?str_is_iprefix:str_is_prefix, "str.startswithjoin");
+}
+
+static str
+STRendswithjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *cid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
+{
+    (void) nil_matches;
+    (void) estimate;
+	bool caseignore = false;
+	str msg = join_caseignore(cid, &caseignore, "str.endswithjoin");
+	if (msg)
+		return msg;
+    return STRjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti, (caseignore)?str_is_isuffix:str_is_suffix, "str.endswithjoin");
+}
+
+static str
+STRendswithjoin1(bat *r1, const bat *lid, const bat *rid, const bat *cid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
+{
+    (void) nil_matches;
+    (void) estimate;
+	bool caseignore = false;
+	str msg = join_caseignore(cid, &caseignore, "str.endswithjoin");
+	if (msg)
+		return msg;
+    return STRjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti, (caseignore)?str_is_isuffix:str_is_suffix, "str.endswithjoin");
+}
+
+static str
+STRcontainsjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *cid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
+{
+    (void) nil_matches;
+    (void) estimate;
+	bool caseignore = false;
+	str msg = join_caseignore(cid, &caseignore, "str.containsjoin");
+	if (msg)
+		return msg;
+    return STRjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti, (caseignore)?str_icontains:str_contains, "str.containsjoin");
+}
+
+static str
+STRcontainsjoin1(bat *r1, const bat *lid, const bat *rid, const bat *cid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
+{
+    (void) nil_matches;
+    (void) estimate;
+	bool caseignore = false;
+	str msg = join_caseignore(cid, &caseignore, "str.containsjoin");
+	if (msg)
+		return msg;
+    return STRjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti, (caseignore)?str_icontains:str_contains, "str.containsjoin");
+}
+
 #include "mel.h"
 mel_func str_init_funcs[] = {
  command("str", "str", STRtostr, false, "Noop routine.", args(1,2, arg("",str),arg("s",str))),
@@ -5131,6 +5605,15 @@ mel_func str_init_funcs[] = {
  command("str", "epilogue", STRepilogue, false, "", args(1,1, arg("",void))),
  command("str", "asciify", STRasciify, false, "Transform string from UTF8 to ASCII", args(1, 2, arg("out",str), arg("in",str))),
  command("str", "reverse", STRreverse, false, "Reverse a string", args(1,2, arg("out",str),arg("in",str))),
+ command("str", "startsWithselect", STRstartswithselect, false, "Select all head values of the first input BAT for which the\ntail value starts with the given prefix.", args(1,6, batarg("",oid),batarg("b",str),batarg("s",oid),arg("prefix",str),arg("caseignore",bit),arg("anti",bit))),
+ command("str", "endsWithselect", STRendswithselect, false, "Select all head values of the first input BAT for which the\ntail value end with the given suffix.", args(1,6, batarg("",oid),batarg("b",str),batarg("s",oid),arg("suffix",str),arg("caseignore",bit),arg("anti",bit))),
+ command("str", "containsselect", STRcontainsselect, false, "Select all head values of the first input BAT for which the\ntail value contains the given needle.", args(1,6, batarg("",oid),batarg("b",str),batarg("s",oid),arg("needle",str),arg("caseignore",bit),arg("anti",bit))),
+ command("str", "startsWithjoin", STRstartswithjoin, false, "Join the string bat L with the prefix bat R\nwith optional candidate lists SL and SR\nThe result is two aligned bats with oids of matching rows.", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+ command("str", "startsWithjoin", STRstartswithjoin1, false, "The same as STRstartswithjoin, but only produce one output", args(1,9,batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
+ command("str", "endsWithjoin", STRendswithjoin, false, "Join the string bat L with the suffix bat R\nwith optional candidate lists SL and SR\nThe result is two aligned bats with oids of matching rows.", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+ command("str", "endsWithjoin", STRendswithjoin1, false, "The same as STRendswithjoin, but only produce one output", args(1,9,batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
+ command("str", "containsjoin", STRcontainsjoin, false, "Join the string bat L with the bat R if L contains the string of R\nwith optional candidate lists SL and SR\nThe result is two aligned bats with oids of matching rows.", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+ command("str", "containsjoin", STRcontainsjoin1, false, "The same as STRcontainsjoin, but only produce one output", args(1,9,batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
  { .imp=NULL }
 };
 #include "mal_import.h"
