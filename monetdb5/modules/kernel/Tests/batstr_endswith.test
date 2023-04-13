@@ -48,3 +48,51 @@ drop function endswith
 
 statement ok
 drop function iendswith
+
+statement ok
+create table baz(x string)
+
+statement ok
+create table bazbaz(x string)
+
+statement ok
+insert into baz values ('john doe'),('jane doe'),('robert doe')
+
+statement ok
+insert into bazbaz values ('doe'),('doe'),('doe')
+
+statement ok
+create filter function iendsWith(s1 string, s2 string, icase boolean) external name str."endsWith";
+
+query T
+select * from baz where [baz.x] iendsWith ['john', true];
+----
+
+query T
+select * from baz where [baz.x] iendsWith ['doe', true];
+----
+john doe
+jane doe
+robert doe
+
+query T rowsort
+select baz.x from baz,bazbaz where [baz.x] iendsWith [bazbaz.x, true];
+----
+jane doe
+jane doe
+jane doe
+john doe
+john doe
+john doe
+robert doe
+robert doe
+robert doe
+
+statement ok
+drop filter function iendsWith(string, string, bool)
+
+statement ok
+drop table baz
+
+statement ok
+drop table bazbaz
