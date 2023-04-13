@@ -5124,9 +5124,9 @@ do_string_select(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN
 		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
 
 	if (anti) /* keep nulls ? (use false for now) */
-		scanloop(v && *v != '\200' && str_cmp(v, key, klen) != 0, false);
-	else
 		scanloop(v && *v != '\200' && str_cmp(v, key, klen) == 0, false);
+	else
+		scanloop(v && *v != '\200' && str_cmp(v, key, klen) != 0, false);
 
 bailout:
 	bat_iterator_end(&bi);
