@@ -4,47 +4,47 @@ create function startswith(x string, y string) returns bool external name str."s
 statement ok
 create function istartswith(x string, y string, i bool) returns bool external name str."startsWith"
 
-query T rowsort
+query T
 select startswith(NULL, '')
 ----
 NULL
 
-query T rowsort
+query T
 select startswith('', NULL)
 ----
 NULL
 
-query T rowsort
+query T
 select startswith('', '')
 ----
 True
 
-query T rowsort
+query T
 select startswith('johndoe', '')
 ----
 True
 
-query T rowsort
+query T
 select startswith('', 'johndoe')
 ----
 False
 
-query T rowsort
+query T
 select startswith('johndoe', 'john')
 ----
 True
 
-query T rowsort
+query T
 select istartswith('one two three', 'three', true)
 ----
 False
 
-query T rowsort
+query T
 select istartswith('Müller Thomas', 'müller', true)
 ----
 True
 
-query T rowsort
+query T
 select istartswith('Müller Thomas', 'müller', false)
 ----
 False
