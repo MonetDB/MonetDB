@@ -139,7 +139,6 @@
 	} while (0)
 
 mal_export bool batstr_func_has_candidates(const char *func);
-mal_export str STRlower(str *res, const str *arg1);
 mal_export int UTF8_strwidth(const char *restrict s);
 mal_export int UTF8_strlen(const char *restrict s);
 mal_export int str_strlen(const char *restrict s);
