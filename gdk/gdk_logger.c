@@ -2903,16 +2903,15 @@ flush_unlock(logger *lg) {
 }
 
 static inline gdk_return
-do_flush(logged_range *range, ulng end) {
+do_flush(logged_range *range) {
 	// assumes flush lock
-	if ((ulng) ATOMIC_GET(&range->flushed_end) < end) { // CAS
-		stream* output_log = range->output_log;
-		if (
-			mnstr_flush(output_log, MNSTR_FLUSH_DATA) ||
-			(!(GDKdebug & NOSYNCMASK) && mnstr_fsync(output_log)))
-			return GDK_FAIL;
-		ATOMIC_SET(&range->flushed_end, end);
-	}
+	stream* output_log = range->output_log;
+	ulng end = ATOMIC_GET(&range->end);
+	if (
+		mnstr_flush(output_log, MNSTR_FLUSH_DATA) ||
+		(!(GDKdebug & NOSYNCMASK) && mnstr_fsync(output_log)))
+		return GDK_FAIL;
+	ATOMIC_SET(&range->flushed_end, end);
 
 	return GDK_SUCCEED;
 }
@@ -2974,7 +2973,7 @@ log_tflush(logger* lg, ulng writer_end, ulng commit_ts) {
 		flush_lock(lg);
 		/* check it one more time*/
 		if ((ulng) ATOMIC_GET(&frange->flushed_end) < end)
-			do_flush(frange, end);
+			do_flush(frange);
 		flush_unlock(lg);
 	}
 	/* else somebody else has flushed our log file */
