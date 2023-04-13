@@ -221,6 +221,18 @@ MNDBTables(ODBCStmt *stmt,
 						continue;
 					}
 					buf[j] = 0;
+					/* Some ODBC applications use different table type names.
+					 * Replace those names to valid MonetDB table type names
+					 * as defined in sys.tables_types */
+					if (strcmp("BASE TABLE", buf) == 0) {
+						strcpy(buf, "TABLE");
+					} else
+					if (strcmp("GLOBAL TEMPORARY", buf) == 0) {
+						strcpy(buf, "GLOBAL TEMPORARY TABLE");
+					} else
+					if (strcmp("LOCAL TEMPORARY", buf) == 0) {
+						strcpy(buf, "LOCAL TEMPORARY TABLE");
+					}
 					pos += snprintf(query + pos, querylen - pos, "'%s',", buf);
  					j = 0;
 				} else if (j < sizeof(buf) &&
