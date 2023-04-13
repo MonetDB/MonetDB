@@ -2,10 +2,10 @@ statement ok
 create table foo(x string)
 
 statement ok
-insert into foo values ('john doe'),('jane doe'),('robert doe')
+create table bar(x string)
 
 statement ok
-create table bar(x string)
+insert into foo values ('john doe'),('jane doe'),('robert doe')
 
 statement ok
 insert into bar values ('johndoe'),('Müller Thomas'),('Thomas MüLLer')
@@ -97,3 +97,59 @@ drop table foo
 
 statement ok
 drop table bar
+
+statement ok
+create table baz(x string, y string)
+
+statement ok
+create table bazbaz(x string, y string)
+
+statement ok
+insert into baz values ('john doe', 'braga'),('jane doe', 'amsterdam'),('robert doe', 'paris')
+
+statement ok
+insert into bazbaz values ('john', '21'),('jane', '22'),('robert', '23')
+
+statement ok
+create filter function icontains(s1 string, s2 string, icase boolean) external name str."contains";
+
+query TT
+select * from baz where [baz.x] icontains ['john', true];
+----
+john doe
+braga
+
+query TT
+select * from baz where [baz.x] icontains ['doe', true];
+----
+john doe
+braga
+jane doe
+amsterdam
+robert doe
+paris
+
+query TTTT
+select * from baz,bazbaz where [baz.x] icontains [bazbaz.x, true];
+----
+john doe
+braga
+john
+21
+jane doe
+amsterdam
+jane
+22
+robert doe
+paris
+robert
+23
+
+statement ok
+drop filter function icontains(string, string, bool)
+
+statement ok
+drop table baz
+
+statement ok
+drop table bazbaz
