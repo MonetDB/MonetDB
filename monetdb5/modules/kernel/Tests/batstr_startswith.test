@@ -48,3 +48,46 @@ drop function startswith
 
 statement ok
 drop function istartswith
+
+statement ok
+create table baz(x string)
+
+statement ok
+create table bazbaz(x string)
+
+statement ok
+insert into baz values ('john doe'),('jane doe'),('robert doe')
+
+statement ok
+insert into bazbaz values ('john'),('jane'),('robert')
+
+statement ok
+create filter function istartsWith(s1 string, s2 string, icase boolean) external name str."startsWith";
+
+query T
+select * from baz where [baz.x] istartsWith ['john', true];
+----
+john doe
+
+query T
+select * from baz where [baz.x] istartsWith ['doe', true];
+----
+
+query TT
+select * from baz,bazbaz where [baz.x] istartsWith [bazbaz.x, true];
+----
+john doe
+john
+jane doe
+jane
+robert doe
+robert
+
+statement ok
+drop filter function istartsWith(string, string, bool)
+
+statement ok
+drop table baz
+
+statement ok
+drop table bazbaz
