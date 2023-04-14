@@ -130,6 +130,7 @@ target_sources(sql
   sql_assert.c sql_assert.h
   sql_upgrades.c sql_upgrades.h
   rel_bin.c rel_bin.h
+  rel_physical.c rel_physical.h
   rel_predicates.c rel_predicates.h
   sql_cat.c sql_cat.h
   sql_transaction.c sql_transaction.h
