@@ -31,6 +31,7 @@ install(FILES
   46_profiler.sql
   47_regexp.sql
   48_txtsim.sql
+  49_strings.sql
   52_describe.sql
   58_hot_snapshot.sql
   75_storagemodel.sql
