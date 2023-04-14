@@ -161,7 +161,7 @@ testGetDataTruncatedString(SQLHANDLE stmt, SWORD ctype)
 			/* snprintf does not allow printing wchar strings. convert it to a char string */
 			/* tried: wcstombs(buf, wbuf, 99); but it doesn't work */
 			/* workaround: just empty the buffer to get a stable output on all platforms (power8 gives a different output) */
-			strcpy(buf, "");
+			buf[0] = 0;
 		}
 		pos += snprintf(outp + pos, outp_len - pos, "SQLGetData(%d, %s, 20) returns %d, vallen " LLFMT ", buf: '%s'\n", col, ctype_str, ret, (int64_t) vallen, buf);
 		/* we expect SQL_SUCCESS_WITH_INFO with warning msg set, fetch them */
@@ -173,7 +173,7 @@ testGetDataTruncatedString(SQLHANDLE stmt, SWORD ctype)
 			if (ctype == SQL_C_WCHAR) {
 				/* tried: wcstombs(buf2, wbuf2, 99); but it doesn't work */
 				/* workaround: just empty the buffer to get a stable output on all platforms (power8 gives a different output) */
-				strcpy(buf2, "");
+				buf2[0] = 0;
 			}
 			pos += snprintf(outp + pos, outp_len - pos, "SQLGetData(%d, %s, 30) returns %d, vallen " LLFMT ", buf: '%s'\n", col, ctype_str, ret, (int64_t) vallen, buf2);
 			if (ret == SQL_SUCCESS_WITH_INFO) {
