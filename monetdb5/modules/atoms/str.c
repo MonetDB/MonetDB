@@ -4823,7 +4823,7 @@ str_locate2(const char *needle, const char *haystack, int start)
 
 	off = start <= 0 ? 1 : start;
 	s = UTF8_strtail(haystack, off - 1);
-	res = str_search(s, needle, strlen(needle));
+	res = str_search(s, needle, str_strlen(needle));
 	return res >= 0 ? res + off : 0;
 }
 
