@@ -17,7 +17,9 @@
 #include <string.h>
 #include <sql.h>
 #include <sqlext.h>
+#include <ctype.h>
 #include <inttypes.h>
+#include <wchar.h>
 
 static void
 prerr(SQLSMALLINT tpe, SQLHANDLE hnd, const char *func, const char *pref)
@@ -74,6 +76,29 @@ check(SQLRETURN ret, SQLSMALLINT tpe, SQLHANDLE hnd, const char *func)
 	}
 }
 
+static size_t
+retrieveDiagMsg(SQLHANDLE stmt, char * outp, size_t outp_len)
+{
+	SQLCHAR state[6];
+	SQLINTEGER errnr = 0;
+	char msg[256];
+	SQLSMALLINT msglen = 0;
+	SQLRETURN ret = SQLGetDiagRec(SQL_HANDLE_STMT, stmt, 1, state, &errnr, (SQLCHAR *) msg, sizeof(msg), &msglen);
+	if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
+		/* The message layout is: "[MonetDB][ODBC Driver 11.46.0][MonetDB-Test]error/warning text".
+		   The ODBC driver version numbers changes in time. Overwrite it to get a stable output */
+		if (strncmp(msg, "[MonetDB][ODBC Driver 11.", 25) == 0) {
+			for (int i = 25; msg[i] != ']'; i++) {
+				if (isdigit(msg[i])) {
+					msg[i] = '#';
+				}
+			}
+		}
+		return snprintf(outp, outp_len, "SQLstate %s, Errnr %d, Message %s\n", (char*)state, (int)errnr, (char*)msg);
+	}
+	return 0;
+}
+
 static void
 compareResult(char * testname, char * testresult, char * expected)
 {
@@ -91,7 +116,7 @@ testGetDataTruncatedString(SQLHANDLE stmt, SWORD ctype)
 	SQLLEN RowCount = 0;
 	SWORD NumResultCols = 0;
 
-	size_t outp_len = 600;
+	size_t outp_len = 800;
 	char * outp = malloc(outp_len);
 	size_t pos = 0;
 
@@ -115,28 +140,45 @@ testGetDataTruncatedString(SQLHANDLE stmt, SWORD ctype)
 
 	for (SWORD col = 1; col <= NumResultCols; col++) {
 		char buf[99];
+		wchar_t wbuf[99];
 		char buf2[99];
+		wchar_t wbuf2[99];
 		SQLLEN vallen = 0;
+		SQLLEN NumAttr = 0;
 		char * ctype_str = (ctype == SQL_C_CHAR ? "SQL_C_CHAR" : ctype == SQL_C_WCHAR ? "SQL_C_WCHAR" : "NYI");
 
+		/* retrieve query result column metadata */
+		ret = SQLColAttribute(stmt, (UWORD)col, SQL_DESC_CONCISE_TYPE, (PTR)&buf, (SQLLEN)20, NULL, &NumAttr);
+		pos += snprintf(outp + pos, outp_len - pos, "SQLColAttribute(%d, SQL_DESC_CONCISE_TYPE) returns %d, NumAttr " LLFMT "\n", col, ret, (int64_t) NumAttr);
+		ret = SQLColAttribute(stmt, (UWORD)col, SQL_DESC_LENGTH, (PTR)&buf, (SQLLEN)20, NULL, &NumAttr);
+		pos += snprintf(outp + pos, outp_len - pos, "SQLColAttribute(%d, SQL_DESC_LENGTH) returns %d, NumAttr " LLFMT "\n", col, ret, (int64_t) NumAttr);
+		ret = SQLColAttribute(stmt, (UWORD)col, SQL_DESC_DISPLAY_SIZE, (PTR)&buf, (SQLLEN)20, NULL, &NumAttr);
+		pos += snprintf(outp + pos, outp_len - pos, "SQLColAttribute(%d, SQL_DESC_DISPLAY_SIZE) returns %d, NumAttr " LLFMT "\n", col, ret, (int64_t) NumAttr);
+
 		/* test SQLGetData(SQL_C_(W)CHAR, 20) with a restricted buffer size (20) for the queried string value (47) */
-		ret = SQLGetData(stmt, (UWORD)col, (SWORD)ctype, (PTR)&buf, (SQLLEN)20, &vallen);
+		ret = SQLGetData(stmt, (UWORD)col, (SWORD)ctype, ctype == SQL_C_WCHAR ? (PTR)&wbuf : (PTR)&buf, (SQLLEN)20, &vallen);
+		if (ctype == SQL_C_WCHAR) {
+			/* snprintf does not allow printing wchar strings. convert it to a char string */
+			/* tried: wcstombs(buf, wbuf, 99); but it doesn't work */
+			/* workaround: just empty the buffer to get a stable output on all platforms (power8 gives a different output) */
+			strcpy(buf, "");
+		}
 		pos += snprintf(outp + pos, outp_len - pos, "SQLGetData(%d, %s, 20) returns %d, vallen " LLFMT ", buf: '%s'\n", col, ctype_str, ret, (int64_t) vallen, buf);
 		/* we expect SQL_SUCCESS_WITH_INFO with warning msg set, fetch them */
 		if (ret == SQL_SUCCESS_WITH_INFO) {
-			SQLCHAR state[6];
-			SQLINTEGER errnr;
-			SQLCHAR msg[256];
-			SQLSMALLINT msglen;
-			ret = SQLGetDiagRec(SQL_HANDLE_STMT, stmt, 1, state, &errnr, msg, sizeof(msg), &msglen);
-			pos += snprintf(outp + pos, outp_len - pos, "SQLstate %s, Errnr %d, Message %s\n", (char*)state, (int)errnr, (char*)msg);
+			pos += retrieveDiagMsg(stmt, outp + pos, outp_len - pos);
 
 			/* get the next data part of the value (this is how SQLGetData is intended to be used to get large data in chunks) */
-			ret = SQLGetData(stmt, (UWORD)col, (SWORD)ctype, (PTR)&buf2, (SQLLEN)30, &vallen);
+			ret = SQLGetData(stmt, (UWORD)col, (SWORD)ctype, ctype == SQL_C_WCHAR ? (PTR)&wbuf2 : (PTR)&buf2, (SQLLEN)30, &vallen);
+			if (ctype == SQL_C_WCHAR) {
+				/* tried: wcstombs(buf2, wbuf2, 99); but it doesn't work */
+				/* workaround: just empty the buffer to get a stable output on all platforms (power8 gives a different output) */
+				strcpy(buf2, "");
+			}
 			pos += snprintf(outp + pos, outp_len - pos, "SQLGetData(%d, %s, 30) returns %d, vallen " LLFMT ", buf: '%s'\n", col, ctype_str, ret, (int64_t) vallen, buf2);
 			if (ret == SQL_SUCCESS_WITH_INFO) {
-				ret = SQLGetDiagRec(SQL_HANDLE_STMT, stmt, 1, state, &errnr, msg, sizeof(msg), &msglen);
-				pos += snprintf(outp + pos, outp_len - pos, "SQLstate %s, Errnr %d, Message %s\n", (char*)state, (int)errnr, (char*)msg);
+				pos += retrieveDiagMsg(stmt, outp + pos, outp_len - pos);
+				ret = SQL_SUCCESS;
 			}
 		}
 		check(ret, SQL_HANDLE_STMT, stmt, "SQLGetData(col)");
@@ -145,17 +187,23 @@ testGetDataTruncatedString(SQLHANDLE stmt, SWORD ctype)
 	if (ctype == SQL_C_CHAR) {
 		compareResult("testGetDataTruncatedString(SQL_C_CHAR)", outp,
 			"SQLExecDirect\nSQLRowCount is 1\nSQLNumResultCols is 1\nSQLFetch\n"
+			"SQLColAttribute(1, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr -10\n"	/* -10 = SQL_WLONGVARCHAR */
+			"SQLColAttribute(1, SQL_DESC_LENGTH) returns 0, NumAttr 47\n"
+			"SQLColAttribute(1, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 47\n"
 			"SQLGetData(1, SQL_C_CHAR, 20) returns 1, vallen 47, buf: '1234567890123456789'\n"
-			"SQLstate 01004, Errnr 0, Message [MonetDB][ODBC Driver 11.46.0][MonetDB-Test]String data, right truncated\n"
+			"SQLstate 01004, Errnr 0, Message [MonetDB][ODBC Driver 11.##.#][MonetDB-Test]String data, right truncated\n"
 			"SQLGetData(1, SQL_C_CHAR, 30) returns 0, vallen 28, buf: '0 abcdefghijklmnopqrstuvwxyz'\n");
 	} else
 	if (ctype == SQL_C_WCHAR) {
 		compareResult("testGetDataTruncatedString(SQL_C_WCHAR)", outp,
 			"SQLExecDirect\nSQLRowCount is 1\nSQLNumResultCols is 1\nSQLFetch\n"
-			"SQLGetData(1, SQL_C_WCHAR, 20) returns 1, vallen 94, buf: '1'\n"
-			"SQLstate 01004, Errnr 0, Message [MonetDB][ODBC Driver 11.46.0][MonetDB-Test]String data, right truncated\n"
-			"SQLGetData(1, SQL_C_WCHAR, 30) returns 1, vallen 76, buf: '0'\n"
-			"SQLstate 01004, Errnr 0, Message [MonetDB][ODBC Driver 11.46.0][MonetDB-Test]String data, right truncated\n");
+			"SQLColAttribute(1, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr -10\n"	/* -10 = SQL_WLONGVARCHAR */
+			"SQLColAttribute(1, SQL_DESC_LENGTH) returns 0, NumAttr 47\n"
+			"SQLColAttribute(1, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 47\n"
+			"SQLGetData(1, SQL_C_WCHAR, 20) returns 1, vallen 94, buf: ''\n"
+			"SQLstate 01004, Errnr 0, Message [MonetDB][ODBC Driver 11.##.#][MonetDB-Test]String data, right truncated\n"
+			"SQLGetData(1, SQL_C_WCHAR, 30) returns 1, vallen 76, buf: ''\n"
+			"SQLstate 01004, Errnr 0, Message [MonetDB][ODBC Driver 11.##.#][MonetDB-Test]String data, right truncated\n");
 	}
 
 	/* cleanup */
@@ -205,13 +253,13 @@ main(int argc, char **argv)
 
 	/* run tests */
 	ret = testGetDataTruncatedString(stmt, SQL_C_CHAR);
-	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataTruncatedString (STMT, SQL_C_CHAR)");
+	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataTruncatedString(STMT, SQL_C_CHAR)");
 
 	ret = SQLCloseCursor(stmt);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLCloseCursor (STMT)");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLCloseCursor");
 
 	ret = testGetDataTruncatedString(stmt, SQL_C_WCHAR);
-	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataTruncatedString (STMT, SQL_C_WCHAR)");
+	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataTruncatedString(STMT, SQL_C_WCHAR)");
 
 	/* cleanup */
 	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
