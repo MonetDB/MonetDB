@@ -6481,19 +6481,26 @@ odbc_datetime_func:
           append_symbol(l, $3);
           $$ = _symbol_create_list( SQL_UNOP, l ); 
 		}
-    | TIMESTAMPADD '(' odbc_tsi_qualifier ',' intval ',' search_condition ')'
+    | TIMESTAMPADD '(' odbc_tsi_qualifier ',' scalar_exp ',' search_condition ')'
 		{ dlist *l = L(); 
 		  append_list( l, append_string(L(), sa_strdup(SA, "timestampadd")));
 	      append_int(l, FALSE); /* ignore distinct */
           sql_subtype t; 
 	  	  lng i = 0;
-          if (process_odbc_interval(m, $3, $5, &t, &i) < 0) {
+          if (process_odbc_interval(m, $3, 1, &t, &i) < 0) {
 		    yyerror(m, "incorrect interval");
 			$$ = NULL;
 			YYABORT;
           }
           append_symbol(l, $7);
-          append_symbol(l, _newAtomNode(atom_int(SA, &t, i)));
+          append_symbol(l, _symbol_create_list( SQL_BINOP, 
+		  append_symbol(
+		    append_symbol(
+		      append_int(
+		  	append_list(L(), append_string(L(), sa_strdup(SA, "sql_mul"))),
+	      	        FALSE), /* ignore distinct */
+          	      _newAtomNode(atom_int(SA, &t, i))),
+		    $5)));
           $$ = _symbol_create_list( SQL_BINOP, l ); 
 		}
     | TIMESTAMPDIFF '(' odbc_tsi_qualifier ',' search_condition ',' search_condition ')'
@@ -6655,7 +6662,9 @@ odbc_data_type:
 ;
 
 odbc_tsi_qualifier:
-    SQL_TSI_SECOND
+      SQL_TSI_FRAC_SECOND
+        { $$ = insec; }
+    | SQL_TSI_SECOND
         { $$ = isec; }
     | SQL_TSI_MINUTE
         { $$ = imin; }
