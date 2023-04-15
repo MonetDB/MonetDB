@@ -1,10 +1,4 @@
 statement ok
-create function endswith(x string, y string) returns bool external name str."endsWith"
-
-statement ok
-create function iendswith(x string, y string, i bool) returns bool external name str."endsWith"
-
-statement ok
 create table foo(x string)
 
 statement ok
@@ -44,12 +38,6 @@ statement ok
 drop table bar
 
 statement ok
-drop function endswith
-
-statement ok
-drop function iendswith
-
-statement ok
 create table baz(x string)
 
 statement ok
@@ -61,22 +49,19 @@ insert into baz values ('john doe'),('jane doe'),('robert doe')
 statement ok
 insert into bazbaz values ('doe'),('doe'),('doe')
 
-statement ok
-create filter function iendsWith(s1 string, s2 string, icase boolean) external name str."endsWith";
-
 query T
-select * from baz where [baz.x] iendsWith ['john', true];
+select * from baz where [baz.x] endswith ['john', true];
 ----
 
 query T
-select * from baz where [baz.x] iendsWith ['doe', true];
+select * from baz where [baz.x] endswith ['doe', true];
 ----
 john doe
 jane doe
 robert doe
 
 query T rowsort
-select baz.x from baz,bazbaz where [baz.x] iendsWith [bazbaz.x, true];
+select baz.x from baz,bazbaz where [baz.x] endswith [bazbaz.x, true];
 ----
 jane doe
 jane doe
@@ -87,9 +72,6 @@ john doe
 robert doe
 robert doe
 robert doe
-
-statement ok
-drop filter function iendsWith(string, string, bool)
 
 statement ok
 drop table baz

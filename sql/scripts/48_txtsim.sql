@@ -27,15 +27,15 @@ grant execute on function levenshtein(string, string, int, int, int) to public;
 
 -- Calculates Damerau-Levenshtein distance between two strings,
 -- operation costs ins/del = 1, replacement = 1, transposition = 2
-create function sys.damerau_levenshtein(x string, y string)
-returns int external name txtsim.damerau_levenshtein;
-grant execute on function damerau_levenshtein(string, string) to public;
+create function sys.dameraulevenshtein(x string, y string)
+returns int external name txtsim.dameraulevenshtein;
+grant execute on function dameraulevenshtein(string, string) to public;
 
 -- Calculates Damerau-Levenshtein distance between two strings,
 -- variable operation costs (ins/del, replacement, transposition)
-create function sys.damerau_levenshtein(x string, y string, insdel int, rep int, trans int)
-returns int external name txtsim.damerau_levenshtein;
-grant execute on function damerau_levenshtein(string, string, int, int, int) to public;
+create function sys.dameraulevenshtein(x string, y string, insdel int, rep int, trans int)
+returns int external name txtsim.dameraulevenshtein;
+grant execute on function dameraulevenshtein(string, string, int, int, int) to public;
 
 -- Alias for Damerau-Levenshtein(str,str), insdel cost = 1, replace cost = 1 and transpose = 2
 create function sys.editdistance(x string, y string)

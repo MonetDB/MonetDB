@@ -1,9 +1,3 @@
-statement ok
-create function endswith(x string, y string) returns bool external name str."endsWith"
-
-statement ok
-create function iendswith(x string, y string, i bool) returns bool external name str."endsWith"
-
 query T
 select endsWith(NULL, '')
 ----
@@ -35,22 +29,16 @@ select endsWith('johndoe', 'doe')
 True
 
 query T
-select iendswith('one two three', 'three', true)
+select endswith('one two three', 'three', true)
 ----
 True
 
 query T
-select iendswith('Thomas Müller', 'müller', true)
+select endswith('Thomas Müller', 'müller', true)
 ----
 True
 
 query T
-select iendswith('Thomas Müller', 'müller', false)
+select endswith('Thomas Müller', 'müller', false)
 ----
 False
-
-statement ok
-drop function endswith
-
-statement ok
-drop function iendswith
