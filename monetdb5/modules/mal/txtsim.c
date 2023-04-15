@@ -1459,28 +1459,28 @@ fstrcmp0_impl_bulk(bat *res, bat *strings1, bat *strings2)
 
 #include "mel.h"
 mel_func txtsim_init_funcs[] = {
-	pattern("txtsim", "dameraulevenshtein", TXTSIMdameraulevenshtein, false, "", args(1,3,arg("",int),arg("x",str),arg("y",str))),
-	pattern("txtsim", "dameraulevenshtein", TXTSIMdameraulevenshtein, false, "", args(1,6,arg("",int),arg("x",str),arg("y",str),arg("insdel_cost",int),arg("replace_cost",int),arg("transpose_cost",int))),
-	command("txtsim", "editdistance", TXTSIMdameraulevenshtein1, false, "", args(1,3, arg("",int),arg("s",str),arg("t",str))),
-	command("txtsim", "editdistance2", TXTSIMdameraulevenshtein2, false, "", args(1,3, arg("",int),arg("s",str),arg("t",str))),
-	pattern("txtsim", "levenshtein", TXTSIMlevenshtein, false, "", args(1,3,arg("",int),arg("s",str),arg("t",str))),
-	pattern("txtsim", "levenshtein", TXTSIMlevenshtein, false, "", args(1,5,arg("",int),arg("x",str),arg("y",str),arg("insdel_cost",int),arg("replace_cost",int))),
-	pattern("txtsim", "levenshtein", TXTSIMlevenshtein, false, "", args(1,6,arg("",int),arg("x",str),arg("y",str),arg("insdel_cost",int),arg("replace_cost",int),arg("transpose_cost",int))),
-	pattern("txtsim", "maxlevenshtein", TXTSIMmaxlevenshtein, false, "", args(1, 4, arg("",int), arg("l",str),arg("r",str),arg("k",int))),
-	pattern("txtsim", "maxlevenshtein", TXTSIMmaxlevenshtein, false, "", args(1, 6, arg("",int), arg("l",str),arg("r",str),arg("k",int),arg("insdel_cost",int),arg("replace_cost",int))),
-	pattern("battxtsim", "maxlevenshtein", BATTXTSIMmaxlevenshtein, false, "", args(1, 4, batarg("",bit), batarg("l",str),batarg("r",str),arg("k",int))),
-	pattern("battxtsim", "maxlevenshtein", BATTXTSIMmaxlevenshtein, false, "", args(1, 6, batarg("",bit), batarg("l",str),batarg("r",str),arg("k",int),arg("insdel_cost",int),arg("replace_cost",int))),
+	pattern("txtsim", "dameraulevenshtein", TXTSIMdameraulevenshtein, false, "Calculates Damerau-Levenshtein distance between two strings, operation costs (ins/del = 1, replacement = 1, transposition = 2)", args(1,3,arg("",int),arg("x",str),arg("y",str))),
+	pattern("txtsim", "dameraulevenshtein", TXTSIMdameraulevenshtein, false, "Calculates Damerau-Levenshtein distance between two strings, variable operation costs (ins/del, replacement, transposition)", args(1,6,arg("",int),arg("x",str),arg("y",str),arg("insdel_cost",int),arg("replace_cost",int),arg("transpose_cost",int))),
+	command("txtsim", "editdistance", TXTSIMdameraulevenshtein1, false, "Alias for Damerau-Levenshtein(str,str), insdel cost = 1, replace cost = 1 and transpose = 2", args(1,3, arg("",int),arg("s",str),arg("t",str))),
+	command("txtsim", "editdistance2", TXTSIMdameraulevenshtein2, false, "Alias for Damerau-Levenshtein(str,str), insdel cost = 1, replace cost = 1 and transpose = 1", args(1,3, arg("",int),arg("s",str),arg("t",str))),
+	pattern("txtsim", "levenshtein", TXTSIMlevenshtein, false, "Calculates Levenshtein distance between two strings, operation costs (ins/del = 1, replacement = 1)", args(1,3,arg("",int),arg("s",str),arg("t",str))),
+	pattern("txtsim", "levenshtein", TXTSIMlevenshtein, false, "Calculates Levenshtein distance between two strings, variable operation costs (ins/del, replacement)", args(1,5,arg("",int),arg("x",str),arg("y",str),arg("insdel_cost",int),arg("replace_cost",int))),
+	pattern("txtsim", "levenshtein", TXTSIMlevenshtein, false, "(Backwards compatibility purposes) Calculates Damerau-Levenshtein distance between two strings, variable operation costs (ins/del, replacement, transposition)", args(1,6,arg("",int),arg("x",str),arg("y",str),arg("insdel_cost",int),arg("replace_cost",int),arg("transpose_cost",int))),
+	pattern("txtsim", "maxlevenshtein", TXTSIMmaxlevenshtein, false, "Levenshtein distance with basic costs but up to a MAX", args(1, 4, arg("",int), arg("l",str),arg("r",str),arg("k",int))),
+	pattern("txtsim", "maxlevenshtein", TXTSIMmaxlevenshtein, false, "Levenshtein distance with variable costs but up to a MAX", args(1, 6, arg("",int), arg("l",str),arg("r",str),arg("k",int),arg("insdel_cost",int),arg("replace_cost",int))),
+	pattern("battxtsim", "maxlevenshtein", BATTXTSIMmaxlevenshtein, false, "Same as maxlevenshtein but for BATS", args(1, 4, batarg("",bit), batarg("l",str),batarg("r",str),arg("k",int))),
+	pattern("battxtsim", "maxlevenshtein", BATTXTSIMmaxlevenshtein, false, "Same as maxlevenshtein but for BATS", args(1, 6, batarg("",bit), batarg("l",str),batarg("r",str),arg("k",int),arg("insdel_cost",int),arg("replace_cost",int))),
 	/* command("battxtsim", "maxlevenshteinselect", TXTSIMmaxlevenshteinselect, false, "", args(1,6, batarg("",oid),batarg("b",str),batarg("s",oid),arg("anti",bit))), */
 	/* command("battxtsim", "maxlevenshteinjoin", TXTSIMmaxlevenshteinjoin, false, "", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))), */
-	command("txtsim", "soundex", soundex, false, "", args(1,2, arg("",str),arg("name",str))),
-	command("txtsim", "stringdiff", stringdiff, false, "", args(1,3, arg("",int),arg("s1",str),arg("s2",str))),
-	command("txtsim", "qgramnormalize", qgram_normalize, false, "", args(1,2, arg("",str),arg("input",str))),
-	command("txtsim", "qgramselfjoin", qgram_selfjoin, false, "", args(2,8, batarg("",int),batarg("",int),batarg("qgram",oid),batarg("id",oid),batarg("pos",int),batarg("len",int),arg("c",flt),arg("k",int))),
-	command("txtsim", "str2qgrams", str_2_qgrams, false, "", args(1,2, batarg("",str),arg("s",str))),
-	command("txtsim", "jaro_winkler_similarity", jaro_winkler_similarity, false, "", args(1,3, arg("",dbl),arg("x",str),arg("y",str))),
-	command("txtsim", "similarity", fstrcmp_impl, false, "", args(1,4, arg("",dbl),arg("string1",str),arg("string2",str),arg("minimum",dbl))),
-	command("txtsim", "similarity", fstrcmp0_impl, false, "", args(1,3, arg("",dbl),arg("string1",str),arg("string2",str))),
-	command("battxtsim", "similarity", fstrcmp0_impl_bulk, false, "", args(1,3, batarg("",dbl),batarg("string1",str),batarg("string2",str))),
+	command("txtsim", "soundex", soundex, false, "Soundex function for phonetic matching", args(1,2, arg("",str),arg("name",str))),
+	command("txtsim", "stringdiff", stringdiff, false, "Calculate the soundexed editdistance", args(1,3, arg("",int),arg("s1",str),arg("s2",str))),
+	command("txtsim", "qgramnormalize", qgram_normalize, false, "'Normalizes' strings (eg. toUpper and replaces non-alphanumerics with one space", args(1,2, arg("",str),arg("input",str))),
+	command("txtsim", "qgramselfjoin", qgram_selfjoin, false, "QGram self-join on ordered(!) qgram tables and sub-ordered q-gram positions", args(2,8, batarg("",int),batarg("",int),batarg("qgram",oid),batarg("id",oid),batarg("pos",int),batarg("len",int),arg("c",flt),arg("k",int))),
+	command("txtsim", "str2qgrams", str_2_qgrams, false, "Break the string into 4-grams", args(1,2, batarg("",str),arg("s",str))),
+	command("txtsim", "jaro_winkler_similarity", jaro_winkler_similarity, false, "Calculate Jaro Winkler similarity", args(1,3, arg("",dbl),arg("x",str),arg("y",str))),
+	command("txtsim", "similarity", fstrcmp_impl, false, "(Deprecated) Normalized edit distance between two strings", args(1,4, arg("",dbl),arg("string1",str),arg("string2",str),arg("minimum",dbl))),
+	command("txtsim", "similarity", fstrcmp0_impl, false, "(Deprecated) Normalized edit distance between two strings", args(1,3, arg("",dbl),arg("string1",str),arg("string2",str))),
+	command("battxtsim", "similarity", fstrcmp0_impl_bulk, false, "(Deprecated) Normalized edit distance between two strings", args(1,3, batarg("",dbl),batarg("string1",str),batarg("string2",str))),
 	/* command("spinque", "minjarowinkler", TXTSIMminjarowinkler, false, "", args(1, 4, arg("",bit), arg("l",str),arg("r",str),arg("threshold",dbl))), */
 	/* command("spinque", "minjarowinklerjoin", TXTSIMminjarowinklerjoin, false, "", args(2, 10, batarg("",oid),batarg("",oid), batarg("l",str),batarg("r",str),batarg("threshold",dbl),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))), */
 	{ .imp=NULL }
