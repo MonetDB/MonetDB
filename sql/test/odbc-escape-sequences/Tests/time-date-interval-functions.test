@@ -260,7 +260,7 @@ select { fn year(timestamp'2222-11-14 12:30:34') }
 query T rowsort
 select {fn timestampadd(SQL_TSI_HOUR, 10, {ts '2022-11-14 14:13:12.654321'}) }
 ----
-2022-11-15 00:13:12
+2022-11-15 00:13:12.654321
 
 # corner cases
 query T rowsort
