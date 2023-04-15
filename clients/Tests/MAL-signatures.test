@@ -39204,24 +39204,24 @@ pattern tokenizer.take(X_0:oid):str
 TKNZRtakeOid;
 reconstruct and returns the i-th string
 txtsim
-damerau_levenshtein
-pattern txtsim.damerau_levenshtein(X_0:str, X_1:str):int 
-damerau_levenshtein_distance;
+dameraulevenshtein
+pattern txtsim.dameraulevenshtein(X_0:str, X_1:str):int 
+dameraulevenshtein;
 Calculates Damerau-Levenshtein distance between two strings, operation costs (ins/del = 1, replacement = 1, transposition = 2)
 txtsim
-damerau_levenshtein
-pattern txtsim.damerau_levenshtein(X_0:str, X_1:str, X_2:int, X_3:int, X_4:int):int 
-damerau_levenshtein_distance;
+dameraulevenshtein
+pattern txtsim.dameraulevenshtein(X_0:str, X_1:str, X_2:int, X_3:int, X_4:int):int 
+dameraulevenshtein;
 Calculates Damerau-Levenshtein distance between two strings, variable operation costs (ins/del, replacement, transposition)
 txtsim
 editdistance
 command txtsim.editdistance(X_0:str, X_1:str):int 
-damerau_levenshtein1;
+dameraulevenshtein1;
 Alias for Damerau-Levenshtein(str,str), insdel cost = 1, replace cost = 1 and transpose = 2
 txtsim
 editdistance2
 command txtsim.editdistance2(X_0:str, X_1:str):int 
-damerau_levenshtein2;
+dameraulevenshtein2;
 Alias for Damerau-Levenshtein(str,str), insdel cost = 1, replace cost = 1 and transpose = 1
 txtsim
 jaro_winkler_similarity

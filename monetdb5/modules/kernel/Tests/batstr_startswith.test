@@ -1,10 +1,4 @@
 statement ok
-create function startswith(x string, y string) returns bool external name str."startsWith"
-
-statement ok
-create function istartswith(x string, y string, i bool) returns bool external name str."startsWith"
-
-statement ok
 create table foo(x string)
 
 statement ok
@@ -44,12 +38,6 @@ statement ok
 drop table bar
 
 statement ok
-drop function startswith
-
-statement ok
-drop function istartswith
-
-statement ok
 create table baz(x string)
 
 statement ok
@@ -61,20 +49,17 @@ insert into baz values ('john doe'),('jane doe'),('robert doe')
 statement ok
 insert into bazbaz values ('john'),('jane'),('robert')
 
-statement ok
-create filter function istartsWith(s1 string, s2 string, icase boolean) external name str."startsWith";
-
 query T
-select * from baz where [baz.x] istartsWith ['john', true];
+select * from baz where [baz.x] startswith ['john', true];
 ----
 john doe
 
 query T
-select * from baz where [baz.x] istartsWith ['doe', true];
+select * from baz where [baz.x] startswith ['doe', true];
 ----
 
 query TT
-select * from baz,bazbaz where [baz.x] istartsWith [bazbaz.x, true];
+select * from baz,bazbaz where [baz.x] startswith [bazbaz.x, true];
 ----
 john doe
 john
@@ -82,9 +67,6 @@ jane doe
 jane
 robert doe
 robert
-
-statement ok
-drop filter function istartsWith(string, string, bool)
 
 statement ok
 drop table baz

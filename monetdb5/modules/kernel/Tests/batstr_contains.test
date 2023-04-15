@@ -10,12 +10,6 @@ insert into foo values ('john doe'),('jane doe'),('robert doe')
 statement ok
 insert into bar values ('johndoe'),('Müller Thomas'),('Thomas MüLLer')
 
-statement ok
-create function contains(x string, y string) returns bool external name str."contains"
-
-statement ok
-create function icontains(x string, y string, i bool) returns bool external name str."contains"
-
 query T
 select contains(x, '') from foo
 ----
@@ -59,38 +53,32 @@ True
 False
 
 query T
-select icontains('MüLLER Thomas', x, true) from bar
+select contains('MüLLER Thomas', x, true) from bar
 ----
 False
 True
 False
 
 query T
-select icontains(x, 'DOE', true) from foo
+select contains(x, 'DOE', true) from foo
 ----
 True
 True
 True
 
 query T
-select icontains(x, 'DOE', false) from foo
+select contains(x, 'DOE', false) from foo
 ----
 False
 False
 False
 
 query T
-select icontains('doe', x, true) from foo
+select contains('doe', x, true) from foo
 ----
 False
 False
 False
-
-statement ok
-drop function contains(string, string)
-
-statement ok
-drop function icontains(string, string, bool)
 
 statement ok
 drop table foo
@@ -110,17 +98,14 @@ insert into baz values ('john doe', 'braga'),('jane doe', 'amsterdam'),('robert 
 statement ok
 insert into bazbaz values ('john', '21'),('jane', '22'),('robert', '23')
 
-statement ok
-create filter function icontains(s1 string, s2 string, icase boolean) external name str."contains";
-
 query TT
-select * from baz where [baz.x] icontains ['john', true];
+select * from baz where [baz.x] contains ['john', true];
 ----
 john doe
 braga
 
 query TT
-select * from baz where [baz.x] icontains ['doe', true];
+select * from baz where [baz.x] contains ['doe', true];
 ----
 john doe
 braga
@@ -130,7 +115,7 @@ robert doe
 paris
 
 query TTTT
-select * from baz,bazbaz where [baz.x] icontains [bazbaz.x, true];
+select * from baz,bazbaz where [baz.x] contains [bazbaz.x, true];
 ----
 john doe
 braga
@@ -144,9 +129,6 @@ robert doe
 paris
 robert
 23
-
-statement ok
-drop filter function icontains(string, string, bool)
 
 statement ok
 drop table baz

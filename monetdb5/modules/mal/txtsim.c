@@ -21,55 +21,6 @@
 #define MAX3(X,Y,Z)   (MAX(MAX((X),(Y)),(Z)))
 #define MIN4(W,X,Y,Z) (MIN(MIN(MIN(W,X),Y),Z))
 
-static inline str
-levenshtein(int *res, const str *X, const str *Y, int insdel_cost, int replace_cost)
-{
-	str x = *X, y = *Y, x_iter = x;
-	unsigned int xlen, ylen, i = 0, j = 0;
-	unsigned int last_diagonal, old_diagonal;
-	int cx, cy;
-	unsigned int *column;
-
-	if (strNil(*X) || strNil(*Y)) {
-		*res = int_nil;
-		return MAL_SUCCEED;
-	}
-
-	xlen = UTF8_strlen(x);
-	ylen = UTF8_strlen(y);
-
-	if (xlen == ylen && (strcmp(x, y) == 0))
-		return MAL_SUCCEED;
-
-	column = GDKmalloc((xlen + 1) * sizeof(unsigned int));
-
-    for (i = 1; i <= xlen; i++)
-		column[i] = i;
-
-	for (j = 1; j <= ylen; j++) {
-		column[0] = j;
-		x_iter = x;
-		UTF8_GETCHAR(cy, y);
-		for (i = 1, last_diagonal = j - 1; i <= xlen; i++) {
-			UTF8_GETCHAR(cx, x_iter);
-			old_diagonal = column[i];
-			column[i] = MIN3(column[i] + insdel_cost,
-							 column[i - 1] + insdel_cost,
-							 last_diagonal + (cx == cy ? 0 : replace_cost));
-			last_diagonal = old_diagonal;
-		}
-		(*x)++;
-	}
-
-    *res= column[xlen];
-	GDKfree(column);
-	return MAL_SUCCEED;
- illegal:
-	/* UTF8_GETCHAR bail */
-	GDKfree(column);
-	throw(MAL, "txtsim.levenshtein", "Illegal unicode code point");
-}
-
 static inline int *
 damerau_get_cellpointer(int *pOrigin, int col, int row, int nCols)
 {
@@ -93,23 +44,23 @@ damerau_putat(int *pOrigin, int col, int row, int nCols, int x)
 }
 
 static str
-damerau_levenshtein(int *res, str *S, str *T, int insdel_cost, int replace_cost, int transpose_cost)
+dameraulevenshtein(int *res, str *S, str *T, int insdel_cost, int replace_cost, int transpose_cost)
 {
 	char *s = *S;
 	char *t = *T;
-	int *d;		/* pointer to matrix */
-	int n;			/* length of s */
-	int m;			/* length of t */
-	int i;			/* iterates through s */
-	int j;			/* iterates through t */
-	char s_i;		/* ith character of s */
-	char t_j;		/* jth character of t */
-	int cost;		/* cost */
-	int cell;		/* contents of target cell */
-	int above;		/* contents of cell immediately above */
-	int left;		/* contents of cell immediately to left */
-	int diag;		/* contents of cell immediately above and to left */
-	int sz;			/* number of cells in matrix */
+	int *d;         /* pointer to matrix */
+	int n;          /* length of s */
+	int m;          /* length of t */
+	int i;          /* iterates through s */
+	int j;          /* iterates through t */
+	char s_i;       /* ith character of s */
+	char t_j;       /* jth character of t */
+	int cost;       /* cost */
+	int cell;       /* contents of target cell */
+	int above;      /* contents of cell immediately above */
+	int left;       /* contents of cell immediately to left */
+	int diag;       /* contents of cell immediately above and to left */
+	int sz;         /* number of cells in matrix */
 	int diag2 = 0, cost2 = 0;
 
 	if (strNil(*S) || strNil(*T)) {
@@ -178,19 +129,19 @@ damerau_levenshtein(int *res, str *S, str *T, int insdel_cost, int replace_cost,
 }
 
 static str
-damerau_levenshtein1(int *result, str *s, str *t)
+TXTSIMdameraulevenshtein1(int *result, str *s, str *t)
 {
-	return damerau_levenshtein(result, s, t, 1, 1, 2);
+	return dameraulevenshtein(result, s, t, 1, 1, 2);
 }
 
 static str
-damerau_levenshtein2(int *result, str *s, str *t)
+TXTSIMdameraulevenshtein2(int *result, str *s, str *t)
 {
-	return damerau_levenshtein(result, s, t, 1, 1, 1);
+	return dameraulevenshtein(result, s, t, 1, 1, 1);
 }
 
 static str
-damerau_levenshtein_distance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TXTSIMdameraulevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)cntxt;
 	(void)mb;
@@ -211,11 +162,114 @@ damerau_levenshtein_distance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		transpose_cost = *getArgReference_int(stk, pci, 5);
 	}
 
-	return damerau_levenshtein(res, X, Y, insdel_cost, replace_cost, transpose_cost);
+	return dameraulevenshtein(res, X, Y, insdel_cost, replace_cost, transpose_cost);
+}
+
+static inline str
+levenshtein(int *res, const str *X, const str *Y, int insdel_cost, int replace_cost, int max)
+{
+	str x = *X, y = *Y, x_iter = x;
+	unsigned int xlen, ylen, i = 0, j = 0;
+	unsigned int last_diagonal, old_diagonal;
+	int cx, cy;
+	unsigned int *column, min;
+
+	if (strNil(*X) || strNil(*Y)) {
+		*res = int_nil;
+		return MAL_SUCCEED;
+	}
+
+	xlen = UTF8_strlen(x);
+	ylen = UTF8_strlen(y);
+
+	if (xlen == ylen && (strcmp(x, y) == 0))
+		return MAL_SUCCEED;
+
+	column = GDKmalloc((xlen + 1) * sizeof(unsigned int));
+	if (column == NULL)
+		throw(MAL, "levenshtein", MAL_MALLOC_FAIL);
+
+    for (i = 1; i <= xlen; i++)
+		column[i] = i;
+
+	for (j = 1; j <= ylen; j++) {
+		column[0] = j;
+		min = INT_MAX;
+		x_iter = x;
+		UTF8_GETCHAR(cy, y);
+		for (i = 1, last_diagonal = j - 1; i <= xlen; i++) {
+			UTF8_GETCHAR(cx, x_iter);
+			old_diagonal = column[i];
+			column[i] = MIN3(column[i] + insdel_cost,
+							 column[i - 1] + insdel_cost,
+							 last_diagonal + (cx == cy ? 0 : replace_cost));
+			last_diagonal = old_diagonal;
+			if (last_diagonal < min)
+				min = last_diagonal;
+		}
+		if (max != -1 && min > (unsigned int) max) {
+			*res = INT_MAX;
+			GDKfree(column);
+			return MAL_SUCCEED;
+		}
+		(*x)++;
+	}
+
+    *res = column[xlen];
+	GDKfree(column);
+	return MAL_SUCCEED;
+ illegal:
+	/* UTF8_GETCHAR bail */
+	GDKfree(column);
+	throw(MAL, "txtsim.levenshtein", "Illegal unicode code point");
+}
+
+static inline int
+levenshtein2(const str X, const str Y, const size_t xlen, const size_t ylen, unsigned int *column,
+			 const int insdel_cost, const int replace_cost, const int max)
+{
+	str x = X, y = Y;
+	str x_iter = x;
+	unsigned int i = 0, j = 0, min;;
+	unsigned int last_diagonal, old_diagonal;
+	int cx, cy;
+
+	if (strNil(x) || strNil(y))
+		return int_nil;
+
+	if (xlen == ylen && (strcmp(x, y) == 0))
+		return 0;
+
+    for (i = 1; i <= xlen; i++)
+		column[i] = i;
+
+	for (j = 1; j <= ylen; j++) {
+		column[0] = j;
+		min = INT_MAX;
+		x_iter = x;
+		UTF8_GETCHAR(cy, y);
+		for (i = 1, last_diagonal = j - 1; i <= xlen; i++) {
+			UTF8_GETCHAR(cx, x_iter);
+			old_diagonal = column[i];
+			column[i] = MIN3(column[i] + insdel_cost,
+							 column[i - 1] + insdel_cost,
+							 last_diagonal + (cx == cy ? 0 : replace_cost));
+			last_diagonal = old_diagonal;
+			if (last_diagonal < min)
+				min = last_diagonal;
+		}
+		if (max != -1 && min > (unsigned int) max)
+			return INT_MAX;
+		(*x)++;
+	}
+	return column[xlen];
+ illegal:
+	/* UTF8_GETCHAR bail */
+	return INT_MAX;
 }
 
 static str
-levenshtein_distance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TXTSIMlevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)cntxt;
 	(void)mb;
@@ -233,15 +287,144 @@ levenshtein_distance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* Backwards compatibility purposes */
 		if (pci->argc == 6) {
 			int transposition_cost = *getArgReference_int(stk, pci, 5);
-			return damerau_levenshtein(res, X, Y, insdel_cost, replace_cost, transposition_cost);
+			return dameraulevenshtein(res, X, Y, insdel_cost, replace_cost, transposition_cost);
 		}
 	}
 	else {
 		throw(MAL, "txtsim.levenshtein", RUNTIME_SIGNATURE_MISSING);
 	}
 
-	return levenshtein(res, X, Y, insdel_cost, replace_cost);;
+	return levenshtein(res, X, Y, insdel_cost, replace_cost, -1);;
 }
+
+static str
+TXTSIMmaxlevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	int *res = getArgReference_int(stk, pci, 0);
+	const str *X = getArgReference_str(stk, pci, 1), *Y = getArgReference_str(stk, pci, 2);
+	const int *k = getArgReference_int(stk, pci, 3);
+	int insdel_cost, replace_cost;
+
+	if (pci->argc == 4) {
+		insdel_cost = 1;
+		replace_cost = 1;
+	}
+	else if (pci->argc == 6) {
+		insdel_cost = *getArgReference_int(stk, pci, 4);
+		replace_cost = *getArgReference_int(stk, pci, 5);
+	}
+	else {
+		throw(MAL, "txtsim.maxlevenshtein", RUNTIME_SIGNATURE_MISSING);
+	}
+
+	return levenshtein(res, X, Y, insdel_cost, replace_cost, *k);
+	return MAL_SUCCEED;
+}
+
+static str
+BATTXTSIMmaxlevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	bat *res = getArgReference_bat(stk, pci, 0);
+	bat *lid = getArgReference_bat(stk, pci, 1);
+	bat *rid = getArgReference_bat(stk, pci, 2);
+	int *k = getArgReference_int(stk, pci, 3);
+	int insdel_cost = 1, replace_cost = 1;
+	if (pci->argc == 6) {
+		insdel_cost = *getArgReference_int(stk, pci, 4);
+		replace_cost = *getArgReference_int(stk, pci, 5);
+	}
+	BAT *left = NULL, *right = NULL;
+	BAT *bn = NULL;
+	BUN p,q;
+	BATiter li, ri;
+	unsigned int *buffer = NULL;
+	str lv,rv;
+	size_t llen=0, rlen=0, maxlen=0;
+	int d;
+	bit v;
+	str msg = MAL_SUCCEED;
+
+	if ((left = BATdescriptor(*lid)) == NULL)
+		goto failed;
+	if ((right = BATdescriptor(*rid)) == NULL)
+		goto failed;
+
+	if (BATcount(left) != BATcount(right))
+		goto failed;
+
+	if ((bn = COLnew(0, TYPE_bit, BATcount(left), TRANSIENT)) == NULL)
+		goto failed;
+
+	li = bat_iterator(left);
+	ri = bat_iterator(right);
+
+	BATloop(left, p, q) {
+		lv = (str) BUNtail(li, p);
+		rv = (str) BUNtail(ri, p);
+		llen = UTF8_strlen(lv);
+		rlen = UTF8_strlen(rv);
+
+		if (abs((int)llen - (int)rlen) > (int)*k)
+			v = false;
+		else {
+			if (llen > maxlen) {
+				maxlen = llen;
+				unsigned int *tmp = GDKrealloc(buffer, (maxlen + 1) * sizeof(unsigned int));
+				buffer = tmp;
+			}
+			d = levenshtein2(lv, rv, llen, rlen, buffer, (int)*k, insdel_cost, replace_cost);
+			v = (bit)(d <= (int)*k);
+		}
+		if (BUNappend(bn, (const void *)&v, false) != GDK_SUCCEED)
+			goto bunins_failed;
+	}
+	bat_iterator_end(&li);
+	bat_iterator_end(&ri);
+	GDKfree(buffer);
+
+	BBPreclaim(left);
+	BBPreclaim(right);
+
+	*res = bn->batCacheid;
+	BBPkeepref(bn);
+
+	return MAL_SUCCEED;
+
+bunins_failed:
+failed:
+	if (buffer) GDKfree(buffer);
+	if (left) BBPreclaim(left);
+	if (right) BBPreclaim(right);
+	if (bn) BBPreclaim(bn);
+	if (msg != MAL_SUCCEED)
+		return msg;
+	throw(MAL, "batspinque.maxlevenshtein", OPERATION_FAILED);
+	return MAL_SUCCEED;
+}
+
+/* static str */
+/* TXTSIMmaxlevenshteinselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) */
+/* { */
+/* 	(void)cntxt; */
+/* 	(void)mb; */
+/* 	(void)stk; */
+/* 	(void)pci; */
+/* 	return MAL_SUCCEED; */
+/* } */
+
+/* static str */
+/* TXTSIMmaxlevenshteinjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) */
+/* { */
+/* 	(void)cntxt; */
+/* 	(void)mb; */
+/* 	(void)stk; */
+/* 	(void)pci; */
+/* 	return MAL_SUCCEED; */
+/* } */
 
 #define JARO_WINKLER_SCALING_FACTOR 0.1
 #define JARO_WINKLER_PREFIX_LEN 4
@@ -534,7 +717,7 @@ stringdiff(int *res, str *s1, str *s2)
 		GDKfree(S1);
 		return r;
 	}
-	r = damerau_levenshtein1(res, &S1, &S2);
+	r = TXTSIMdameraulevenshtein1(res, &S1, &S2);
 	GDKfree(S1);
 	GDKfree(S2);
 	return r;
@@ -1276,22 +1459,30 @@ fstrcmp0_impl_bulk(bat *res, bat *strings1, bat *strings2)
 
 #include "mel.h"
 mel_func txtsim_init_funcs[] = {
-	pattern("txtsim", "levenshtein", levenshtein_distance, false, "Calculates Levenshtein distance between two strings, operation costs (ins/del = 1, replacement = 1)", args(1,3,arg("",int),arg("s",str),arg("t",str))),
-	pattern("txtsim", "levenshtein", levenshtein_distance, false, "Calculates Levenshtein distance between two strings, variable operation costs (ins/del, replacement)", args(1,5,arg("",int),arg("x",str),arg("y",str),arg("insdel_cost",int),arg("replace_cost",int))),
-	pattern("txtsim", "levenshtein", levenshtein_distance, false, "(Backwards compatibility purposes) Calculates Damerau-Levenshtein distance between two strings, variable operation costs (ins/del, replacement, transposition)", args(1,6,arg("",int),arg("x",str),arg("y",str),arg("insdel_cost",int),arg("replace_cost",int),arg("transpose_cost",int))),
-	pattern("txtsim", "damerau_levenshtein", damerau_levenshtein_distance, false, "Calculates Damerau-Levenshtein distance between two strings, operation costs (ins/del = 1, replacement = 1, transposition = 2)", args(1,3,arg("",int),arg("x",str),arg("y",str))),
-	pattern("txtsim", "damerau_levenshtein", damerau_levenshtein_distance, false, "Calculates Damerau-Levenshtein distance between two strings, variable operation costs (ins/del, replacement, transposition)", args(1,6,arg("",int),arg("x",str),arg("y",str),arg("insdel_cost",int),arg("replace_cost",int),arg("transpose_cost",int))),
-	command("txtsim", "editdistance", damerau_levenshtein1, false, "Alias for Damerau-Levenshtein(str,str), insdel cost = 1, replace cost = 1 and transpose = 2", args(1,3, arg("",int),arg("s",str),arg("t",str))),
-	command("txtsim", "editdistance2", damerau_levenshtein2, false, "Alias for Damerau-Levenshtein(str,str), insdel cost = 1, replace cost = 1 and transpose = 1", args(1,3, arg("",int),arg("s",str),arg("t",str))),
-	command("txtsim", "soundex", soundex, false, "Soundex function for phonetic matching", args(1,2, arg("",str),arg("name",str))),
-	command("txtsim", "stringdiff", stringdiff, false, "Calculate the soundexed editdistance", args(1,3, arg("",int),arg("s1",str),arg("s2",str))),
-	command("txtsim", "qgramnormalize", qgram_normalize, false, "'Normalizes' strings (eg. toUpper and replaces non-alphanumerics with one space", args(1,2, arg("",str),arg("input",str))),
-	command("txtsim", "qgramselfjoin", qgram_selfjoin, false, "QGram self-join on ordered(!) qgram tables and sub-ordered q-gram positions", args(2,8, batarg("",int),batarg("",int),batarg("qgram",oid),batarg("id",oid),batarg("pos",int),batarg("len",int),arg("c",flt),arg("k",int))),
-	command("txtsim", "str2qgrams", str_2_qgrams, false, "Break the string into 4-grams", args(1,2, batarg("",str),arg("s",str))),
-	command("txtsim", "jaro_winkler_similarity", jaro_winkler_similarity, false, "Calculate Jaro Winkler similarity", args(1,3, arg("",dbl),arg("x",str),arg("y",str))),
-	command("txtsim", "similarity", fstrcmp_impl, false, "(Deprecated) Normalized edit distance between two strings", args(1,4, arg("",dbl),arg("string1",str),arg("string2",str),arg("minimum",dbl))),
-	command("txtsim", "similarity", fstrcmp0_impl, false, "(Deprecated) Normalized edit distance between two strings", args(1,3, arg("",dbl),arg("string1",str),arg("string2",str))),
-	command("battxtsim", "similarity", fstrcmp0_impl_bulk, false, "(Deprecated) Normalized edit distance between two strings", args(1,3, batarg("",dbl),batarg("string1",str),batarg("string2",str))),
+	pattern("txtsim", "dameraulevenshtein", TXTSIMdameraulevenshtein, false, "", args(1,3,arg("",int),arg("x",str),arg("y",str))),
+	pattern("txtsim", "dameraulevenshtein", TXTSIMdameraulevenshtein, false, "", args(1,6,arg("",int),arg("x",str),arg("y",str),arg("insdel_cost",int),arg("replace_cost",int),arg("transpose_cost",int))),
+	command("txtsim", "editdistance", TXTSIMdameraulevenshtein1, false, "", args(1,3, arg("",int),arg("s",str),arg("t",str))),
+	command("txtsim", "editdistance2", TXTSIMdameraulevenshtein2, false, "", args(1,3, arg("",int),arg("s",str),arg("t",str))),
+	pattern("txtsim", "levenshtein", TXTSIMlevenshtein, false, "", args(1,3,arg("",int),arg("s",str),arg("t",str))),
+	pattern("txtsim", "levenshtein", TXTSIMlevenshtein, false, "", args(1,5,arg("",int),arg("x",str),arg("y",str),arg("insdel_cost",int),arg("replace_cost",int))),
+	pattern("txtsim", "levenshtein", TXTSIMlevenshtein, false, "", args(1,6,arg("",int),arg("x",str),arg("y",str),arg("insdel_cost",int),arg("replace_cost",int),arg("transpose_cost",int))),
+	pattern("txtsim", "maxlevenshtein", TXTSIMmaxlevenshtein, false, "", args(1, 4, arg("",int), arg("l",str),arg("r",str),arg("k",int))),
+	pattern("txtsim", "maxlevenshtein", TXTSIMmaxlevenshtein, false, "", args(1, 6, arg("",int), arg("l",str),arg("r",str),arg("k",int),arg("insdel_cost",int),arg("replace_cost",int))),
+	pattern("battxtsim", "maxlevenshtein", BATTXTSIMmaxlevenshtein, false, "", args(1, 4, batarg("",bit), batarg("l",str),batarg("r",str),arg("k",int))),
+	pattern("battxtsim", "maxlevenshtein", BATTXTSIMmaxlevenshtein, false, "", args(1, 6, batarg("",bit), batarg("l",str),batarg("r",str),arg("k",int),arg("insdel_cost",int),arg("replace_cost",int))),
+	/* command("battxtsim", "maxlevenshteinselect", TXTSIMmaxlevenshteinselect, false, "", args(1,6, batarg("",oid),batarg("b",str),batarg("s",oid),arg("anti",bit))), */
+	/* command("battxtsim", "maxlevenshteinjoin", TXTSIMmaxlevenshteinjoin, false, "", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))), */
+	command("txtsim", "soundex", soundex, false, "", args(1,2, arg("",str),arg("name",str))),
+	command("txtsim", "stringdiff", stringdiff, false, "", args(1,3, arg("",int),arg("s1",str),arg("s2",str))),
+	command("txtsim", "qgramnormalize", qgram_normalize, false, "", args(1,2, arg("",str),arg("input",str))),
+	command("txtsim", "qgramselfjoin", qgram_selfjoin, false, "", args(2,8, batarg("",int),batarg("",int),batarg("qgram",oid),batarg("id",oid),batarg("pos",int),batarg("len",int),arg("c",flt),arg("k",int))),
+	command("txtsim", "str2qgrams", str_2_qgrams, false, "", args(1,2, batarg("",str),arg("s",str))),
+	command("txtsim", "jaro_winkler_similarity", jaro_winkler_similarity, false, "", args(1,3, arg("",dbl),arg("x",str),arg("y",str))),
+	command("txtsim", "similarity", fstrcmp_impl, false, "", args(1,4, arg("",dbl),arg("string1",str),arg("string2",str),arg("minimum",dbl))),
+	command("txtsim", "similarity", fstrcmp0_impl, false, "", args(1,3, arg("",dbl),arg("string1",str),arg("string2",str))),
+	command("battxtsim", "similarity", fstrcmp0_impl_bulk, false, "", args(1,3, batarg("",dbl),batarg("string1",str),batarg("string2",str))),
+	/* command("spinque", "minjarowinkler", TXTSIMminjarowinkler, false, "", args(1, 4, arg("",bit), arg("l",str),arg("r",str),arg("threshold",dbl))), */
+	/* command("spinque", "minjarowinklerjoin", TXTSIMminjarowinklerjoin, false, "", args(2, 10, batarg("",oid),batarg("",oid), batarg("l",str),batarg("r",str),batarg("threshold",dbl),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))), */
 	{ .imp=NULL }
 };
 #include "mal_import.h"

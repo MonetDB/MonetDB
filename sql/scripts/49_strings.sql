@@ -14,10 +14,10 @@ create function sys.startswith(x string, y string, icase boolean)
 returns boolean external name str."startsWith";
 grant execute on function startswith(string, string, boolean) to public;
 
-create filter function startswith(x string, y string)
+create filter function sys.startswith(x string, y string)
 external name str."startsWith";
 
-create filter function startswith(x string, y string, icase boolean)
+create filter function sys.startswith(x string, y string, icase boolean)
 external name str."startsWith";
 
 create function sys.endswith(x string, y string)
@@ -28,7 +28,10 @@ create function sys.endswith(x string, y string, icase boolean)
 returns boolean external name str."endsWith";
 grant execute on function endswith(string, string, boolean) to public;
 
-create filter function endswith(s1 string, s2 string, icase boolean)
+create filter function sys.endswith(s1 string, s2 string)
+external name str."endsWith";
+
+create filter function sys.endswith(s1 string, s2 string, icase boolean)
 external name str."endsWith";
 
 create function sys.contains(x string, y string)
@@ -39,8 +42,8 @@ create function sys.contains(x string, y string, icase boolean)
 returns boolean external name str."contains";
 grant execute on function contains(string, string, boolean) to public;
 
-create function contains(x string, y string, icase boolean)
-returns boolean external name str."contains";
+create filter function sys.contains(x string, y string)
+external name str."contains";
 
-create filter function contains(x string, y string, icase boolean)
+create filter function sys.contains(x string, y string, icase boolean)
 external name str."contains";

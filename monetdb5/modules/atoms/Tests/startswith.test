@@ -1,9 +1,3 @@
-statement ok
-create function startswith(x string, y string) returns bool external name str."startsWith"
-
-statement ok
-create function istartswith(x string, y string, i bool) returns bool external name str."startsWith"
-
 query T
 select startswith(NULL, '')
 ----
@@ -35,22 +29,16 @@ select startswith('johndoe', 'john')
 True
 
 query T
-select istartswith('one two three', 'three', true)
+select startswith('one two three', 'three', true)
 ----
 False
 
 query T
-select istartswith('Müller Thomas', 'müller', true)
+select startswith('Müller Thomas', 'müller', true)
 ----
 True
 
 query T
-select istartswith('Müller Thomas', 'müller', false)
+select startswith('Müller Thomas', 'müller', false)
 ----
 False
-
-statement ok
-drop function startswith
-
-statement ok
-drop function istartswith
