@@ -214,7 +214,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 	Client c;
 
 	MT_thread_set_qry_ctx(NULL);
-	setClientContext(NULL);
 
 	/* decode BIG/LIT:user:{cypher}passwordchal:lang:database: line */
 
@@ -368,7 +367,10 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			mnstr_printf(c->fdout, "!%s\n", s);
 			mnstr_flush(c->fdout, MNSTR_FLUSH_DATA);
 			GDKfree(s);
-			c->mode = FINISHCLIENT;
+			exit_streams(fin, fout);
+			GDKfree(command);
+			MCcloseClient(c);
+			return;
 		}
 		if (!GDKgetenv_isyes(mal_enableflag) &&
 				(strncasecmp("sql", lang, 3) != 0 && uid != 0)) {

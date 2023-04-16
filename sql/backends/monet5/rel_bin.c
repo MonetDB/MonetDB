@@ -19,13 +19,13 @@
 #include "rel_select.h"
 #include "rel_updates.h"
 #include "rel_predicates.h"
+#include "rel_file_loader.h"
 #include "sql_env.h"
 #include "sql_optimizer.h"
 #include "sql_gencode.h"
 #include "mal_builder.h"
 #include "opt_prelude.h"
 
-static stmt * exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, int reduce, int push);
 static stmt * rel_bin(backend *be, sql_rel *rel);
 static stmt * subrel_bin(backend *be, sql_rel *rel, list *refs);
 
@@ -1254,6 +1254,35 @@ exp2bin_copyfrombinary(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *
 	return stmt_list(be, columns);
 }
 
+static stmt*
+exp2bin_file_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel)
+{
+	assert(left == NULL); (void)left;
+	assert(right == NULL); (void)right;
+	assert(sel == NULL); (void)sel;
+	sql_subfunc *f = fe->f;
+
+	list *arg_list = fe->l;
+	/*
+	list *type_list = f->res;
+	assert(1 + list_length(type_list) == list_length(arg_list));
+	*/
+
+	sql_exp *fexp = arg_list->h->data;
+	assert(is_atom(fexp->type));
+	atom *fa = fexp->l;
+	assert(fa->data.vtype == TYPE_str);
+	char *filename = fa->data.val.sval;
+
+	char *ext = strrchr(filename, '.');
+	if (ext)
+		ext = ext+1;
+	else
+		return NULL;
+	file_loader_t *fl = fl_find(ext);
+	return (stmt*)fl->load((mvc*)be, f, filename);
+}
+
 stmt *
 exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, int reduce, int push)
 {
@@ -1412,7 +1441,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				if (!left)
 					return const_column(be, stmt_bool(be, 1));
 				return left->op4.lval->h->data;
-			} if (strcmp(fname, "case") == 0)
+			}
+			if (strcmp(fname, "case") == 0)
 				return exp2bin_case(be, e, left, right, sel, depth);
 			if (strcmp(fname, "casewhen") == 0)
 				return exp2bin_casewhen(be, e, left, right, sel, depth);
@@ -1420,6 +1450,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				return exp2bin_coalesce(be, e, left, right, sel, depth);
 			if (strcmp(fname, "copyfrombinary") == 0)
 				return exp2bin_copyfrombinary(be, e, left, right, sel);
+			if (strcmp(fname, "file_loader") == 0)
+				return exp2bin_file_loader(be, e, left, right, sel);
 		}
 		if (!list_empty(exps)) {
 			unsigned nrcols = 0;
@@ -3543,18 +3575,34 @@ rel2bin_inter(backend *be, sql_rel *rel, list *refs)
 	return rel_rename(be, rel, sub);
 }
 
+static int
+find_matching_exp(list *exps, sql_exp *e)
+{
+	int i = 0;
+	for (node *n = exps->h; n; n = n->next, i++) {
+		if (exp_match(n->data, e))
+			return i;
+	}
+	return -1;
+}
+
 static stmt *
-sql_reorder(backend *be, stmt *order, stmt *s)
+sql_reorder(backend *be, stmt *order, list *exps, stmt *s, list *oexps, list *ostmts)
 {
 	list *l = sa_list(be->mvc->sa);
-	node *n;
 
-	for (n = s->op4.lval->h; n; n = n->next) {
+	for (node *n = s->op4.lval->h, *m = exps->h; n && m; n = n->next, m = m->next) {
+		int pos = 0;
 		stmt *sc = n->data;
+		sql_exp *pe = m->data;
 		const char *cname = column_name(be->mvc->sa, sc);
 		const char *tname = table_name(be->mvc->sa, sc);
 
-		sc = stmt_project(be, order, sc);
+		if (oexps && (pos = find_matching_exp(oexps, pe)) >= 0 && list_fetch(ostmts, pos)) {
+			sc = list_fetch(ostmts, pos);
+		} else {
+			sc = stmt_project(be, order, sc);
+		}
 		sc = stmt_alias(be, sc, tname, cname );
 		list_append(l, sc);
 	}
@@ -3728,6 +3776,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		list *oexps = rel->r;
 		stmt *orderby_ids = NULL, *orderby_grp = NULL;
 
+		list *ostmts = sa_list(be->mvc->sa);
 		for (en = oexps->h; en; en = en->next) {
 			stmt *orderby = NULL;
 			sql_exp *orderbycole = en->data;
@@ -3738,17 +3787,21 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 				return NULL;
 			}
 			/* single values don't need sorting */
-			if (orderbycolstmt->nrcols == 0)
+			if (orderbycolstmt->nrcols == 0) {
+				append(ostmts, NULL);
 				continue;
+			}
 			if (orderby_ids)
 				orderby = stmt_reorder(be, orderbycolstmt, is_ascending(orderbycole), nulls_last(orderbycole), orderby_ids, orderby_grp);
 			else
 				orderby = stmt_order(be, orderbycolstmt, is_ascending(orderbycole), nulls_last(orderbycole));
+			stmt *orderby_vals = stmt_result(be, orderby, 0);
+			append(ostmts, orderby_vals);
 			orderby_ids = stmt_result(be, orderby, 1);
 			orderby_grp = stmt_result(be, orderby, 2);
 		}
 		if (orderby_ids)
-			psub = sql_reorder(be, orderby_ids, psub);
+			psub = sql_reorder(be, orderby_ids, rel->exps, psub, oexps, ostmts);
 	}
 	return psub;
 }
@@ -4380,7 +4433,7 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 {
 	mvc *sql = be->mvc;
 	node *m, *n;
-	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
+	sql_subfunc *cnt = NULL;
 
 	for (n = ol_first_node(t->columns), m = inserts->h; n && m;
 		n = n->next, m = m->next) {
@@ -4393,6 +4446,8 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 
 			if (!(s->key && s->nrcols == 0)) {
 				s = stmt_selectnil(be, column(be, i));
+				if (!cnt)
+					cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true);
 				s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
 			} else {
 				sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->type, NULL, F_FUNC, true);

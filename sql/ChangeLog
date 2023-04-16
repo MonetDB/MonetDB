@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Apr  7 2023 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
+- Session timeout feature improve to start evaluating from the moment
+  the procedure is called, instead of beginning of the session.
+
 * Fri Mar  3 2023 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
 - Queries stopped with the stop procedure are now marked as 'aborted'
   'finished'.
@@ -19,8 +23,10 @@
   own query executions.
 
 * Wed Feb 15 2023 svetlin <svetlin.stalinov@monetdbsolutions.com>
-- Added JDBC/ODBC escape sequences implementation to SQL layer. Now all
-  clients can forward them without further processing.
+- Added support of ODBC escape sequences syntax to SQL layer. Now all clients
+  (including ODBC/JDBC/pymonetdb) can use them without further processing.
+  For details on ODBC escape sequences syntax see:
+  https://learn.microsoft.com/en-us/sql/odbc/reference/appendixes/odbc-escape-sequences
 
 * Thu Nov 10 2022 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - It is no longer allowed to create a merge table or remote table or

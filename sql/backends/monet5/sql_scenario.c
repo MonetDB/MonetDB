@@ -398,6 +398,7 @@ SQLprepareClient(Client c, const char *pwhash, const char *challenge, const char
 
 		if (mvc_trans(m) < 0) {
 			// we have -1 here
+			MT_lock_set(&sql_contextLock);
 			throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", c->username);
 		}
 
@@ -1152,6 +1153,7 @@ SQLparser(Client c)
 		c->mode = FINISHCLIENT;
 		throw(SQL, "SQLparser", SQLSTATE(42000) "State descriptor missing, aborting");
 	}
+	assert(c->curprg && c->curprg->def);
 	oldvid = c->curprg->def->vid;
 	oldvtop = c->curprg->def->vtop;
 	oldstop = c->curprg->def->stop;
@@ -1193,19 +1195,34 @@ SQLparser(Client c)
 	if (be->language == 'X') {
 		int n = 0, v, off, len;
 
-		if (strncmp(in->buf + in->pos, "export ", 7) == 0)
+		if (strncmp(in->buf + in->pos, "export ", 7) == 0) {
 			n = sscanf(in->buf + in->pos + 7, "%d %d %d", &v, &off, &len);
 
-		if (n == 2 || n == 3) {
-			if (n == 2)
-				len = m->reply_size;
-			in->pos = in->len;	/* HACK: should use parsed length */
-			if ((ok = mvc_export_chunk(be, out, v, off, len < 0 ? BUN_NONE : (BUN) len)) < 0) {
-				msg = createException(SQL, "SQLparser", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, out, ok));
-				goto finalize;
-			}
+			if (n == 2 || n == 3) {
+				if (n == 2)
+					len = m->reply_size;
+				in->pos = in->len;	/* HACK: should use parsed length */
+				if ((ok = mvc_export_chunk(be, out, v, off, len < 0 ? BUN_NONE : (BUN) len)) < 0) {
+					msg = createException(SQL, "SQLparser", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, out, ok));
+					goto finalize;
+				}
 
-			return MAL_SUCCEED;
+				return MAL_SUCCEED;
+			}
+		}
+
+		if (strncmp(in->buf + in->pos, "exportbin ", 10) == 0) {
+			n = sscanf(in->buf + in->pos + 10, "%d %d %d", &v, &off, &len);
+			if (n == 3) {
+				if ((ok = mvc_export_bin_chunk(be, out, v, off, len < 0 ? BUN_NONE: (BUN) len)) < 0) {
+					msg = createException(SQL, "SQLparser", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, out, ok));
+					in->pos = in->len;	/* HACK: should use parsed length */
+					goto finalize;
+				}
+
+				in->pos = in->len;	/* HACK: should use parsed length */
+				return MAL_SUCCEED;
+			}
 		}
 		if (strncmp(in->buf + in->pos, "close ", 6) == 0) {
 			res_table *t;
@@ -1276,6 +1293,7 @@ SQLparser(Client c)
 		}
 		in->pos = in->len;	/* HACK: should use parsed length */
 		msg = createException(SQL, "SQLparser", SQLSTATE(42000) "Unrecognized X command: %s\n", in->buf + in->pos);
+		in->pos = in->len; // consume the command
 		goto finalize;
 	}
 	if (be->language !='S') {

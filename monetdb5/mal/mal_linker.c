@@ -274,6 +274,7 @@ loadLibrary(const char *filename, int flag)
 	if (handle == NULL) {
 		if (!is_monetdb5
 			&& strcmp(filename, "sql") != 0
+		/*
 			&& strcmp(filename, "generator") != 0
 #ifdef HAVE_GEOM
 			&& strcmp(filename, "geom") != 0
@@ -299,6 +300,7 @@ loadLibrary(const char *filename, int flag)
 #ifdef HAVE_SHP
 			&& strcmp(filename, "shp") != 0
 #endif
+			*/
 			)
 			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " could not locate library %s (from within file '%s'): %s", s, filename, dlerror());
 	}

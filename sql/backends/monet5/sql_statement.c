@@ -1079,7 +1079,10 @@ stmt_result(backend *be, stmt *s, int nr)
 		ns->nr = s->nr;
 	}
 	ns->op1 = s;
-	ns->op4.typeval = *sql_bind_localtype("oid");
+	if (!nr && (s->type == st_order || s->type == st_reorder))
+		ns->op4.typeval = *tail_type(s->op1);
+	else
+		ns->op4.typeval = *sql_bind_localtype("oid");
 	ns->flag = nr;
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;

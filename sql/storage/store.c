@@ -2401,8 +2401,13 @@ store_manager(sqlstore *store)
 		const int sleeptime = 100;
 		MT_lock_unset(&store->flush);
 		MT_sleep_ms(sleeptime);
-		MT_lock_set(&store->commit);
-		MT_lock_set(&store->flush);
+		for (;;) {
+			MT_lock_set(&store->commit);
+			if (MT_lock_try(&store->flush))
+				break;
+			MT_lock_unset(&store->commit);
+			MT_sleep_ms(sleeptime);
+		}
 
 		if (GDKexiting()) {
 			MT_lock_unset(&store->commit);
@@ -2767,6 +2772,8 @@ store_hot_snapshot_to_stream(sqlstore *store, stream *tar_stream)
 		goto end; // should already have set a GDK error
 	close_stream(plan_stream);
 	plan_stream = NULL;
+	MT_lock_unset(&store->lock);
+	locked = 2;
 	r = hot_snapshot_write_tar(tar_stream, GDKgetenv("gdk_dbname"), buffer_get_buf(plan_buf));
 	if (r != GDK_SUCCEED)
 		goto end;
@@ -2783,7 +2790,8 @@ store_hot_snapshot_to_stream(sqlstore *store, stream *tar_stream)
 end:
 	if (locked) {
 		BBPtmunlock();
-		MT_lock_unset(&store->lock);
+		if (locked == 1)
+			MT_lock_unset(&store->lock);
 		MT_lock_unset(&store->flush);
 	}
 	if (plan_stream)
@@ -3700,14 +3708,14 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		tr->changes = NULL;
 		tr->logchanges = 0;
 	} else {
-		if (!commit_lock)
-			MT_lock_set(&store->commit);
-		store_lock(store);
-		ulng oldest = store_oldest(store, tr);
-		store_pending_changes(store, oldest, tr);
-		store_unlock(store);
-		if (!commit_lock)
-			MT_lock_unset(&store->commit);
+		if (commit_lock || MT_lock_try(&store->commit)) {
+			store_lock(store);
+			ulng oldest = store_oldest(store, tr);
+			store_pending_changes(store, oldest, tr);
+			store_unlock(store);
+			if (!commit_lock)
+				MT_lock_unset(&store->commit);
+		}
 	}
 
 	if (!list_empty(tr->predicates)) {

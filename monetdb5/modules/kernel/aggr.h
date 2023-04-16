@@ -8,13 +8,10 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
-#ifndef _OPT_STRIMPS_
-#define _OPT_STRIMPS_
-#include "opt_prelude.h"
-#include "opt_support.h"
-#include "mal_exception.h"
+#ifndef _AGGR_H_
+#define _AGGR_H_
 
-extern str OPTstrimpsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+extern str AGGRsum3_lng(bat *retval, const bat *bid, const bat *gid, const bat *eid);
+extern str AGGRsum3_hge(bat *retval, const bat *bid, const bat *gid, const bat *eid);
 
-
-#endif
+#endif /* _AGGR_H_ */

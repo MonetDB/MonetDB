@@ -20,6 +20,7 @@
 #include "bat/res_table.h"
 #include "bat/bat_storage.h"
 #include "rel_exp.h"
+#include "sql_bincopyconvert.h"
 
 #ifndef HAVE_LLABS
 #define llabs(x)	((x) < 0 ? -(x) : (x))
@@ -1791,7 +1792,7 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 		b->results = res_tables_remove(b->results, t);
 
 	if (res > -1)
-		res = mvc_export_warning(s, "");
+		res = 1;
 	return res;
 }
 
@@ -1884,4 +1885,122 @@ mvc_export_error(backend *be, stream *s, int err_code)
 		default: /* Unknown, must be a bug */
 			return "Unknown internal error";
 	}
+}
+
+static ssize_t
+align_dump(stream *s, uint64_t pos, unsigned int alignment)
+{
+	uint64_t a = (uint64_t)alignment;
+	// must be a power of two
+	assert(a > 0);
+	assert((a & (a-1)) == 0);
+
+	static char zeroes[32] = { 0 };
+#ifdef _MSC_VER
+#pragma warning(suppress:4146)
+#endif
+	uint64_t gap = (~pos + 1) % a;
+	return mnstr_write(s, zeroes, 1, (size_t)gap);
+}
+
+
+struct bindump_record {
+	BAT *bat;
+	type_record_t *type_rec;
+	int64_t start;
+	int64_t length;
+};
+
+int
+mvc_export_bin_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
+{
+	int ret = -42;
+	struct bindump_record *colinfo;
+	stream *countstream = NULL;
+	uint64_t byte_count = 0;
+	uint64_t toc_pos = 0;
+	BUN end_row = offset + nr;
+
+	res_table *res = res_tables_find(b->results, res_id);
+	if (res == NULL)
+		return 0;
+
+	colinfo = GDKzalloc(res->nr_cols * sizeof(*colinfo));
+	if (!colinfo) {
+		ret = -1;
+		goto end;
+	}
+	for (int i = 0; i < res->nr_cols; i++)
+		colinfo[i].bat = NULL;
+	for (int i = 0; i < res->nr_cols; i++) {
+		bat bat_id = res->cols[i].b;
+		BAT *b = BATdescriptor(bat_id);
+		if (!b) {
+			ret = -1;
+			goto end;
+		}
+		colinfo[i].bat = b;
+
+		if (BATcount(b) < end_row)
+			end_row = BATcount(b);
+
+		int tpe = BATttype(b);
+		const char *gdk_name = ATOMname(tpe);
+		type_record_t *rec = find_type_rec(gdk_name);
+		if (!rec || !can_dump_binary_column(rec)) {
+			GDKerror("column %d: don't know how to dump data type '%s'", i, gdk_name);
+			ret = -3;
+			goto end;
+		}
+		colinfo[i].type_rec = rec;
+	}
+
+	// TODO: Probably have to deal with t->order somehow..
+	// Right now we just write the contents of the bats.
+
+	// The byte_counting_stream keeps track of the byte offsets
+	countstream = byte_counting_stream(s, &byte_count);
+
+	// Make sure the message starts with a & and not with a !
+	mnstr_printf(countstream, "&6 %d %d " BUNFMT " " BUNFMT "\n", res_id, res->nr_cols, end_row - offset, offset);
+
+	for (int i = 0; i < res->nr_cols; i++) {
+		align_dump(countstream, byte_count, 32); // 32 looks nice in tcpflow
+		struct bindump_record *info = &colinfo[i];
+		info->start = byte_count;
+		str msg = dump_binary_column(info->type_rec, info->bat, offset, end_row - offset, false, countstream);
+		if (msg != MAL_SUCCEED) {
+			GDKerror("%s", msg);
+			GDKfree(msg);
+			ret = -3;
+			goto end;
+		}
+		info->length = byte_count - info->start;
+	}
+
+	assert(byte_count > 0);
+
+	align_dump(countstream, byte_count, 32);
+	toc_pos = byte_count;
+	for (int i = 0; i < res->nr_cols; i++) {
+		struct bindump_record *info = &colinfo[i];
+		lng start = info->start;
+		lng length = info->length;
+		mnstr_writeLng(countstream, start);
+		mnstr_writeLng(countstream, length);
+	}
+
+	mnstr_writeLng(countstream, toc_pos);
+	ret = 0;
+
+end:
+	if (colinfo) {
+		for (int i = 0; i < res->nr_cols; i++) {
+			if (colinfo[i].bat)
+				BBPunfix(colinfo[i].bat->batCacheid);
+		}
+		GDKfree(colinfo);
+	}
+	mnstr_destroy(countstream);
+	return ret;
 }

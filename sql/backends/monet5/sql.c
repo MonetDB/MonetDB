@@ -35,6 +35,7 @@
 #include "rel_exp.h"
 #include "rel_dump.h"
 #include "rel_bin.h"
+#include "rel_physical.h"
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
@@ -133,7 +134,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 	lng Tbegin, Tend;
 	int value_based_opt = be->mvc->emode != m_prepare, storage_based_opt;
 	int profile = be->mvc->emode == m_plan;
-	Client c = getClientContext();
+	Client c = be->client;
 
 	Tbegin = GDKusec();
 	rel = rel_semantic(query, sym);
@@ -151,6 +152,8 @@ sql_symbol2relation(backend *be, symbol *sym)
 		rel = rel_partition(be->mvc, rel);
 	if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
 		be->no_mitosis = 1;
+	if (rel /*&& (be->mvc->emode != m_plan || (GDKdebug & FORCEMITOMASK) == 0)*/)
+		rel = rel_physical(be->mvc, rel);
 	Tend = GDKusec();
 	be->reloptimizer = Tend - Tbegin;
 
@@ -4233,24 +4236,8 @@ SQLsuspend_log_flushing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-/*SQLhot_snapshot(void *ret, const str *tarfile_arg)*/
+/*SQLhot_snapshot(void *ret, const str *tarfile_arg [, bool onserver ])*/
 SQLhot_snapshot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	char *tarfile = *getArgReference_str(stk, pci, 1);
-	mvc *mvc;
-
-	char *msg = getSQLContext(cntxt, mb, &mvc, NULL);
-	if (msg)
-		return msg;
-	lng result = store_hot_snapshot(mvc->session->tr->store, tarfile);
-	if (result)
-		return MAL_SUCCEED;
-	else
-		throw(SQL, "sql.hot_snapshot", GDK_EXCEPTION);
-}
-
-str
-SQLhot_snapshot_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char *filename;
 	bool onserver;
@@ -4263,7 +4250,7 @@ SQLhot_snapshot_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng result;
 
 	filename = *getArgReference_str(stk, pci, 1);
-	onserver = *getArgReference_bit(stk, pci, 2);
+	onserver = pci->argc == 3 ? *getArgReference_bit(stk, pci, 2) : true;
 
 	msg = getSQLContext(cntxt, mb, &mvc, NULL);
 	if (msg)
@@ -5073,7 +5060,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "hot_snapshot", SQLhot_snapshot, true, "Write db snapshot to the given tar(.gz) file", args(1,2, arg("",void),arg("tarfile",str))),
  pattern("sql", "resume_log_flushing", SQLresume_log_flushing, true, "Resume WAL log flushing", args(1,1, arg("",void))),
  pattern("sql", "suspend_log_flushing", SQLsuspend_log_flushing, true, "Suspend WAL log flushing", args(1,1, arg("",void))),
- pattern("sql", "hot_snapshot", SQLhot_snapshot_wrap, true, "Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client", args(1,3, arg("",void),arg("tarfile", str),arg("onserver",bit))),
+ pattern("sql", "hot_snapshot", SQLhot_snapshot, true, "Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client", args(1,3, arg("",void),arg("tarfile", str),arg("onserver",bit))),
  pattern("sql", "assert", SQLassert, false, "Generate an exception when b==true", args(1,3, arg("",void),arg("b",bit),arg("msg",str))),
  pattern("sql", "assert", SQLassertInt, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",int),arg("msg",str))),
  pattern("sql", "assert", SQLassertLng, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",lng),arg("msg",str))),
@@ -5153,6 +5140,9 @@ pattern("sql", "decypher", SQLdecypher, false, "Return decyphered password", arg
  pattern("sql", "analyze", sql_analyze, true, "Update statistics for schema", args(1,2, arg("",void),arg("sch",str))),
  pattern("sql", "analyze", sql_analyze, true, "Update statistics for table", args(1,3, arg("",void),arg("sch",str),arg("tbl",str))),
  pattern("sql", "analyze", sql_analyze, true, "Update statistics for column", args(1,4, arg("",void),arg("sch",str),arg("tbl",str),arg("col",str))),
+ pattern("sql", "set_count_distinct", sql_set_count_distinct, true, "Set count distinct for column", args(1,5, arg("",void),arg("sch",str),arg("tbl",str),arg("col",str),arg("val",lng))),
+ pattern("sql", "set_min", sql_set_min, true, "Set min for column", args(1,5, arg("",void),arg("sch",str),arg("tbl",str),arg("col",str),argany("val",1))),
+ pattern("sql", "set_max", sql_set_max, true, "Set max for column", args(1,5, arg("",void),arg("sch",str),arg("tbl",str),arg("col",str),argany("val",1))),
  pattern("sql", "statistics", sql_statistics, false, "return a table with statistics information", args(13,13, batarg("columnid",int),batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("with",int),batarg("count",lng),batarg("unique",bit),batarg("nils",bit),batarg("minval",str),batarg("maxval",str),batarg("sorted",bit),batarg("revsorted",bit))),
  pattern("sql", "statistics", sql_statistics, false, "return a table with statistics information for a particular schema", args(13,14, batarg("columnid",int),batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("with",int),batarg("count",lng),batarg("unique",bit),batarg("nils",bit),batarg("minval",str),batarg("maxval",str),batarg("sorted",bit),batarg("revsorted",bit),arg("sname",str))),
  pattern("sql", "statistics", sql_statistics, false, "return a table with statistics information for a particular table", args(13,15, batarg("columnid",int),batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("with",int),batarg("count",lng),batarg("unique",bit),batarg("nils",bit),batarg("minval",str),batarg("maxval",str),batarg("sorted",bit),batarg("revsorted",bit),arg("sname",str),arg("tname",str))),
