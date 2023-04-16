@@ -152,6 +152,7 @@ mal_export  const char *manifoldRef;
 mal_export  const char *mapiRef;
 mal_export  const char *maskRef;
 mal_export  const char *matRef;
+mal_export  const char *maxlevenshteinRef;
 mal_export  const char *maxRef;
 mal_export  const char *mdbRef;
 mal_export  const char *mergecandRef;

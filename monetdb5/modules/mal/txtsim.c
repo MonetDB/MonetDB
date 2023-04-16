@@ -406,26 +406,6 @@ failed:
 	return MAL_SUCCEED;
 }
 
-/* static str */
-/* TXTSIMmaxlevenshteinselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) */
-/* { */
-/* 	(void)cntxt; */
-/* 	(void)mb; */
-/* 	(void)stk; */
-/* 	(void)pci; */
-/* 	return MAL_SUCCEED; */
-/* } */
-
-/* static str */
-/* TXTSIMmaxlevenshteinjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) */
-/* { */
-/* 	(void)cntxt; */
-/* 	(void)mb; */
-/* 	(void)stk; */
-/* 	(void)pci; */
-/* 	return MAL_SUCCEED; */
-/* } */
-
 #define JARO_WINKLER_SCALING_FACTOR 0.1
 #define JARO_WINKLER_PREFIX_LEN 4
 
@@ -434,39 +414,34 @@ typedef struct {
 	BUN o;               /* position in the BAT */
 	str val;             /* string value */
 	int *cp_sequence;    /* string as array of Unicode codepoints */
-	int len;          /* string length in characters (multi-byte characters count as 1)*/
-	/*size_t cp_seq_len;*/   /* string length in bytes*/
-	/*uint64_t abm;*/        /* 64bit alphabet bitmap */
-	/* size_t abm_popcount; /\* hamming weight of abm *\/ */
+	size_t len;          /* string length in characters (multi-byte characters count as 1)*/
+	size_t cp_seq_len;   /* string length in bytes */
+	uint64_t abm;        /* 64bit alphabet bitmap */
+	size_t abm_popcount; /* hamming weight of abm */
 } str_item;
 
-/* static inline */
-/* size_t _popcount64(uint64_t x) { */
-/* 	x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL); */
-/* 	x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL); */
-/* 	x = (x & 0x0F0F0F0F0F0F0F0FULL) + ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL); */
-/* 	return (x * 0x0101010101010101ULL) >> 56; */
-/* } */
+static inline
+size_t _popcount64(uint64_t x) {
+	x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL);
+	x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
+	x = (x & 0x0F0F0F0F0F0F0F0FULL) + ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL);
+	return (x * 0x0101010101010101ULL) >> 56;
+}
 
-/* static inline */
-/* size_t popcount64(uint64_t x) { */
-/* 	return _popcount64(x); */
-/* 	/\* __builtin_popcountll is the gcc builtin */
-/* 	 * It is fast as long as the hardware */
-/* 	 * support (-mpopcnt) is NOT activated *\/ */
-/* 	/\* return __builtin_popcountll(x); *\/ */
-/* } */
+static inline
+size_t popcount64(uint64_t x) {
+	return _popcount64(x);
+	/* __builtin_popcountll is the gcc builtin
+	 * It is fast as long as the hardware
+	 * support (-mpopcnt) is NOT activated */
+	/* return __builtin_popcountll(x); */
+}
 
-/* static int */
-/* str_item_cmp(const void * a, const void * b) { */
-/* 	return strcmp((const char *)((str_item *)a)->val, */
-/* 				  (const char *)((str_item *)b)->val); */
-/* } */
+static int
+str_item_lenrev_cmp(const void * a, const void * b) {
+	return ((int)((str_item *)b)->len - (int)((str_item *)a)->len);
 
-/* static int */
-/* str_item_lenrev_cmp(const void * a, const void * b) { */
-/* 	return ((int)((str_item *)b)->len - (int)((str_item *)a)->len); */
-/* } */
+}
 
 static str
 str_2_codepointseq(str_item *s)
@@ -478,7 +453,7 @@ str_2_codepointseq(str_item *s)
 	if (s->cp_sequence == NULL)
 		throw(MAL, "str_2_byteseq", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	for (int i = 0; i < s->len; i++) {
+	for (size_t i = 0; i < s->len; i++) {
 		UTF8_GETCHAR(c, p);
 		if (c == 0)
 			break;
@@ -489,32 +464,32 @@ illegal:
 	throw(MAL, "str_2_byteseq", SQLSTATE(42000) "Illegal Unicode code point");
 }
 
-/* static void */
-/* str_alphabet_bitmap(str_item *s) { */
-/* 	size_t i; */
+static void
+str_alphabet_bitmap(str_item *s) {
+	size_t i;
 
-/* 	s->abm = 0ULL; */
-/* 	for (i=0; i < s->len; i++) { */
-/* 		s->abm |= 1ULL << (s->cp_seq[i] % 64); */
-/* 	} */
-/* 	s->abm_popcount = popcount64(s->abm); */
-/* } */
+	s->abm = 0ULL;
+	for (i=0; i < s->len; i++) {
+		s->abm |= 1ULL << (s->cp_sequence[i] % 64);
+	}
+	s->abm_popcount = popcount64(s->abm);
+}
 
 static inline double
-jaro_winkler_lp(const str_item *a, const str_item *b)
+jarowinkler_lp(const str_item *a, const str_item *b)
 {
 	unsigned int l;
 
 	/* calculate common string prefix up to prefixlen chars */
 	l = 0;
-	for (int i = 0; i < MIN3(a->len, b->len, JARO_WINKLER_PREFIX_LEN); i++)
+	for (size_t i = 0; i < MIN3(a->len, b->len, JARO_WINKLER_PREFIX_LEN); i++)
 		l += (a->cp_sequence[i] == b->cp_sequence[i]);
 
 	return (double)l * JARO_WINKLER_SCALING_FACTOR;
 }
 
 static inline double
-jaro_winkler(const str_item *x, const str_item *y, double lp, int *x_flags, int *y_flags)
+jarowinkler(const str_item *x, const str_item *y, double lp, int *x_flags, int *y_flags)
 {
 	int xlen = x->len, ylen = y->len;
 	int range = MAX(0, MAX(xlen, ylen) / 2 - 1);
@@ -568,7 +543,7 @@ jaro_winkler(const str_item *x, const str_item *y, double lp, int *x_flags, int 
 
 	/* calculate common string prefix up to prefixlen chars */
 	if (lp == -1)
-		lp = jaro_winkler_lp(x, y);
+		lp = jarowinkler_lp(x, y);
 
 	/* Jaro-Winkler similarity */
 	dw = dw + (lp * (1 - dw));
@@ -577,7 +552,7 @@ jaro_winkler(const str_item *x, const str_item *y, double lp, int *x_flags, int 
 }
 
 static str
-jaro_winkler_similarity(dbl *ret, str *x, str *y)
+TXTSIMjarowinkler(dbl *res, str *x, str *y)
 {
 	int *x_flags = NULL, *y_flags = NULL;
 	str_item xi = { 0 }, yi = { 0 };
@@ -599,7 +574,7 @@ jaro_winkler_similarity(dbl *ret, str *x, str *y)
 	if (x_flags == NULL || y_flags == NULL)
 		goto bailout;
 
-	*ret = jaro_winkler(&xi, &yi, -1, x_flags, y_flags);
+	*res = jarowinkler(&xi, &yi, -1, x_flags, y_flags);
 
 bailout:
 	GDKfree(x_flags);
@@ -607,6 +582,317 @@ bailout:
 	GDKfree(xi.cp_sequence);
 	GDKfree(yi.cp_sequence);
 	return msg;
+}
+
+static str
+TXTSIMminjarowinkler(bool *res, str *x, str *y, int *threshold)
+{
+	str msg = MAL_SUCCEED;
+	double s = 1;
+
+	msg = TXTSIMjarowinkler(&s, x, y);
+	if (msg != MAL_SUCCEED)
+		throw(MAL, "txt.minjarowinkler", OPERATION_FAILED);
+
+	*res = (s > *threshold);
+	return MAL_SUCCEED;
+}
+
+/* macro to declare common variables for custom string joins */
+#define strjoincommonvars												\
+	struct canditer lci, rci;											\
+	BAT *result1 = NULL, *result2 = NULL;								\
+	const char *lvals, *rvals;											\
+	const char *lvars, *rvars;											\
+	int lwidth, rwidth;												\
+	BUN n;																\
+	str_item *ssl = NULL, *ssr = NULL;									\
+	str msg = MAL_SUCCEED;
+
+/* macro to initialize custom string joins */
+#define strjoininit													\
+	do {																\
+		assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));				\
+		assert(ATOMtype(l->ttype) == TYPE_str);						\
+		assert(sl == NULL || sl->tsorted);								\
+		assert(sr == NULL || sr->tsorted);								\
+		canditer_init(&lci, l, sl);									\
+		canditer_init(&rci, r, sr);									\
+		lvals = (const char *) Tloc(l, 0);								\
+		rvals = (const char *) Tloc(r, 0);								\
+		assert(r->ttype);												\
+		lvars = l->tvheap->base;										\
+		rvars = r->tvheap->base;										\
+		lwidth = l->twidth;											\
+		rwidth = r->twidth;											\
+		/* TODO: handle the empty result case */						\
+		result1 = COLnew(0, TYPE_oid, lci.ncand, TRANSIENT);			\
+		result2 = COLnew(0, TYPE_oid, lci.ncand, TRANSIENT);			\
+		if (result1 == NULL || result2 == NULL) {						\
+			msg = createException(MAL, "txtsim.strjoininit", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+			return msg;												\
+		}																\
+		/* recomputed at the end */									\
+		result1->tsorted = result1->trevsorted = false;				\
+		result2->tsorted = result2->trevsorted = false;				\
+		if (lci.ncand == 0 || rci.ncand == 0) goto result;				\
+		ssl = GDKmalloc(lci.ncand * sizeof(str_item));					\
+		ssr = GDKmalloc(rci.ncand * sizeof(str_item));					\
+		if (ssl == NULL || ssr == NULL) {								\
+			msg = createException(MAL, "txtsim.strjoininit", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+			goto bailout;												\
+		}																\
+	} while (false)
+
+/* these macros allow to tap directly into the heap, without any copying */
+#define VALUE(s, x)		(s##vars + VarHeapVal(s##vals, (x), s##width))
+#define APPEND(b, o)		(((oid *) b->theap->base)[b->batCount++] = (o))
+
+/* macro to initialize the string distance joins' metadata */	\
+#define strdistjoininit										\
+	do {														\
+		canditer_reset(&lci);									\
+		for (n=0;n<lci.ncand;n++) {							\
+			ssl[n].matches = 0;								\
+			ssl[n].o = canditer_next(&lci);					\
+			ssl[n].val = (str) VALUE(l, ssl[n].o - l->hseqbase);\
+			ssl[n].cp_sequence = NULL;							\
+		}														\
+		canditer_reset(&rci);									\
+		for (n=0;n<rci.ncand;n++) {							\
+			ssr[n].matches = 0;								\
+			ssr[n].o = canditer_next(&rci);					\
+			ssr[n].val = (str) VALUE(r, ssr[n].o - r->hseqbase);\
+			ssr[n].cp_sequence = NULL;							\
+		}														\
+	} while (false)
+
+#define strdistjoininitlengths					\
+	do {										\
+		for (n=0;n<lci.ncand;n++) {			\
+			ssl[n].len = UTF8_strlen(ssl[n].val);\
+			ssl[n].cp_seq_len = strlen(ssl[n].val);\
+		}										\
+		for (n=0;n<rci.ncand;n++) {			\
+			ssr[n].len = UTF8_strlen(ssr[n].val);\
+			ssr[n].cp_seq_len = strlen(ssr[n].val);\
+		}										\
+	} while (false)
+
+
+#define strdistjoininittoints											\
+	do {																\
+		for (n=0;n<lci.ncand;n++) {									\
+			if ((msg = str_2_codepointseq(&ssl[n])) != MAL_SUCCEED) goto bailout;\
+		}																\
+		for (n=0;n<rci.ncand;n++) {									\
+			if ((msg = str_2_codepointseq(&ssr[n])) != MAL_SUCCEED) goto bailout;\
+		}																\
+	} while (false)
+
+#define strdistjoininitalphabetbitmap			\
+		do {									\
+			for (n=0;n<lci.ncand;n++) {		\
+				str_alphabet_bitmap(&ssl[n]);	\
+			}									\
+			for (n=0;n<rci.ncand;n++) {		\
+				str_alphabet_bitmap(&ssr[n]);	\
+			}									\
+		} while (false)
+
+#define strdistjoininitsortleft(cmpFunc) \
+	qsort(ssl, lci.ncand, sizeof(str_item), cmpFunc)
+
+#define strdistjoininitsortright(cmpFunc) \
+	qsort(ssr, rci.ncand, sizeof(str_item), cmpFunc)
+
+#define strdistjoininitsort(cmpFunc)			\
+	do {										\
+		strdistjoininitsortleft(cmpFunc);	\
+		strdistjoininitsortright(cmpFunc);	\
+	} while (false)
+
+#define strjoinfinalize								\
+	do {												\
+		assert(BATcount(result1) == BATcount(result2)); \
+		BATsetcount(result1, BATcount(result1));		\
+		BATsetcount(result2, BATcount(result2));		\
+		for (n=0; n<lci.ncand; n++) {					\
+			if (ssl[n].matches > 1) {					\
+				result1->tkey = false;					\
+				break;									\
+			}											\
+		}												\
+		if (n == lci.ncand) {							\
+			result1->tkey = true;						\
+		}												\
+		for (n=0; n<rci.ncand; n++) {					\
+			if (ssr[n].matches > 1) {					\
+				result2->tkey = false;					\
+				break;									\
+			}											\
+		}												\
+		if (n == rci.ncand) {							\
+			result2->tkey = true;						\
+		}												\
+		BATordered(result1);							\
+		BATordered(result2);							\
+		result1->theap->dirty |= BATcount(result1) > 0; \
+		result2->theap->dirty |= BATcount(result2) > 0; \
+	} while (false)
+
+static inline int
+maxlevenshtein_extcol_stritem(const str_item *si1, const str_item *si2, unsigned int *column, const int k) {
+	unsigned int x, y, lastdiag, olddiag;
+	int c1, c2;
+	unsigned int min;
+	size_t s1len = si1->len, s2len = si2->len;
+	int *s1 = si1->cp_sequence, *s2 = si2->cp_sequence;
+	/* first test if the strings are equal */
+	if (s1len == s2len) {
+		for (x=0; x<s1len; x++)
+			if (s1[x]!=s2[x]) break;
+		if (x == s1len)
+			return 0;
+	}
+
+	for (y = 1; y <= s1len; y++)
+		column[y] = y;
+	for (x = 1; x <= s2len; x++) {
+		c2 = s2[x-1];
+		column[0] = x;
+		min = INT_MAX;
+		for (y = 1, lastdiag = x-1; y <= s1len; y++) {
+			olddiag = column[y];
+			c1 = s1[y-1];
+			column[y] = MIN3(column[y] + 1, column[y-1] + 1, lastdiag + (c1 == c2 ? 0 : 1));
+			lastdiag = olddiag;
+			if (lastdiag < min) min=lastdiag;
+		}
+		if (min > (unsigned int)k)
+			return INT_MAX;
+	}
+	return column[s1len];
+}
+
+static str
+maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k) {
+	strjoincommonvars;
+	int d;
+	unsigned int *buffer=NULL;
+	strjoininit;
+	strdistjoininit;
+	strdistjoininitlengths;
+	strdistjoininittoints;
+	strdistjoininitalphabetbitmap;
+	strdistjoininitsort(str_item_lenrev_cmp);
+
+	buffer = GDKmalloc((ssl[0].len + 1) * sizeof(int));
+	if (buffer == NULL) {
+		msg = createException(MAL, "txtsim.maxlevenshteinjoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	/* join implementation for string distance */
+	for (BUN lstart=0,rstart=0;rstart<rci.ncand;rstart++) {
+		for (n=lstart;n<lci.ncand;n++) {
+			/* Update sliding window */
+			/* This is the first and cheapest filter */
+			if ((ssl[n].len) > k + ssr[rstart].len) {
+				lstart++;
+				continue;   /* no possible matches yet for this r */
+			} else if (ssr[rstart].len > k + ssl[n].len) {
+				break; /* no more possible matches from this r */
+			}
+			/* filter by comparing alphabet bitmaps (imprecise but fast filter) */
+			d = MAX(ssl[n].abm_popcount, ssr[rstart].abm_popcount) - popcount64(ssl[n].abm & ssr[rstart].abm);
+			if (d > k)
+				continue;
+			/* final and most expensive test: Levenshtein distance */
+			d = maxlevenshtein_extcol_stritem(&ssl[n], &ssr[rstart], buffer, (const unsigned int)k);
+			if (d > k)
+				continue;
+			/* The match test succeeded */
+			ssl[n].matches++;
+			ssr[rstart].matches++;
+			if (bunfastappTYPE(oid, result1, &(ssl[n].o)) != GDK_SUCCEED)
+				goto bunins_failed;
+			if (bunfastappTYPE(oid, result2, &(ssr[rstart].o)) != GDK_SUCCEED)
+				goto bunins_failed;
+		}
+	}
+	strjoinfinalize;
+bunins_failed:
+bailout:
+	GDKfree(buffer);
+	for (n=0;n<lci.ncand;n++)
+		GDKfree(ssl[n].cp_sequence);
+	GDKfree(ssl);
+	for (n=0;n<rci.ncand;n++)
+		GDKfree(ssr[n].cp_sequence);
+	GDKfree(ssr);
+	if (msg != MAL_SUCCEED)
+		return msg;
+result:
+	*r1 = result1;
+	*r2 = result2;
+	return MAL_SUCCEED;
+}
+
+static str
+TXTSIMmaxlevenshteinjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *kid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti) {
+	BAT *bleft = NULL, *bright = NULL, *bcandleft = NULL, *bcandright = NULL, *bk = NULL;
+	BAT *result1 = NULL, *result2 = NULL;
+	int k = 0;
+	str msg = MAL_SUCCEED;
+
+	(void)nil_matches;
+	(void)estimate;
+	(void)anti;
+
+	if ((bleft = BATdescriptor(*lid)) == NULL)
+		goto fail;
+	if ((bright = BATdescriptor(*rid)) == NULL)
+		goto fail;
+	if ((bk = BATdescriptor(*kid)) == NULL)
+		goto fail;
+	if (*slid != bat_nil && (bcandleft = BATdescriptor(*slid)) == NULL)
+		goto fail;
+	if (*srid != bat_nil && (bcandright = BATdescriptor(*srid)) == NULL)
+		goto fail;
+
+	if (BATcount(bk) > 0) {
+		BATiter ki = bat_iterator(bk);
+		k = *(bte *) BUNtail(ki,0);
+		bat_iterator_end(&ki);
+	}
+
+	msg = maxlevenshteinjoin(&result1, &result2, bleft, bright, bcandleft, bcandright, k);
+	if (msg != MAL_SUCCEED)
+		goto fail;
+
+	BBPunfix(bleft->batCacheid);
+	BBPunfix(bright->batCacheid);
+	if (bcandleft) BBPunfix(bcandleft->batCacheid);
+	if (bcandright) BBPunfix(bcandright->batCacheid);
+
+	*r1 = result1->batCacheid;
+	*r2 = result2->batCacheid;
+	BBPkeepref(result1);
+	BBPkeepref(result2);
+
+	return MAL_SUCCEED;
+
+fail:
+	BBPunfix(bleft->batCacheid);
+	BBPunfix(bright->batCacheid);
+	BBPunfix(bcandleft->batCacheid);
+	BBPunfix(bcandright->batCacheid);
+	BBPunfix(result1->batCacheid);
+	BBPunfix(result2->batCacheid);
+	if (msg != MAL_SUCCEED)
+		return msg;
+	throw(MAL, "txtsim.maxlevenshteinjoin", OPERATION_FAILED);
 }
 
 #define SoundexLen 4		/* length of a soundex code */
@@ -1470,19 +1756,18 @@ mel_func txtsim_init_funcs[] = {
 	pattern("txtsim", "maxlevenshtein", TXTSIMmaxlevenshtein, false, "Levenshtein distance with variable costs but up to a MAX", args(1, 6, arg("",int), arg("l",str),arg("r",str),arg("k",int),arg("insdel_cost",int),arg("replace_cost",int))),
 	pattern("battxtsim", "maxlevenshtein", BATTXTSIMmaxlevenshtein, false, "Same as maxlevenshtein but for BATS", args(1, 4, batarg("",bit), batarg("l",str),batarg("r",str),arg("k",int))),
 	pattern("battxtsim", "maxlevenshtein", BATTXTSIMmaxlevenshtein, false, "Same as maxlevenshtein but for BATS", args(1, 6, batarg("",bit), batarg("l",str),batarg("r",str),arg("k",int),arg("insdel_cost",int),arg("replace_cost",int))),
-	/* command("battxtsim", "maxlevenshteinselect", TXTSIMmaxlevenshteinselect, false, "", args(1,6, batarg("",oid),batarg("b",str),batarg("s",oid),arg("anti",bit))), */
-	/* command("battxtsim", "maxlevenshteinjoin", TXTSIMmaxlevenshteinjoin, false, "", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))), */
+	command("battxtsim", "maxlevenshteinjoin", TXTSIMmaxlevenshteinjoin, false, "", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
 	command("txtsim", "soundex", soundex, false, "Soundex function for phonetic matching", args(1,2, arg("",str),arg("name",str))),
 	command("txtsim", "stringdiff", stringdiff, false, "Calculate the soundexed editdistance", args(1,3, arg("",int),arg("s1",str),arg("s2",str))),
 	command("txtsim", "qgramnormalize", qgram_normalize, false, "'Normalizes' strings (eg. toUpper and replaces non-alphanumerics with one space", args(1,2, arg("",str),arg("input",str))),
 	command("txtsim", "qgramselfjoin", qgram_selfjoin, false, "QGram self-join on ordered(!) qgram tables and sub-ordered q-gram positions", args(2,8, batarg("",int),batarg("",int),batarg("qgram",oid),batarg("id",oid),batarg("pos",int),batarg("len",int),arg("c",flt),arg("k",int))),
 	command("txtsim", "str2qgrams", str_2_qgrams, false, "Break the string into 4-grams", args(1,2, batarg("",str),arg("s",str))),
-	command("txtsim", "jaro_winkler_similarity", jaro_winkler_similarity, false, "Calculate Jaro Winkler similarity", args(1,3, arg("",dbl),arg("x",str),arg("y",str))),
+	command("txtsim", "jarowinkler", TXTSIMjarowinkler, false, "Calculate Jaro Winkler similarity", args(1,3, arg("",dbl),arg("x",str),arg("y",str))),
+	command("txtsim", "minjarowinkler", TXTSIMminjarowinkler, false, "", args(1, 4, arg("",bit), arg("l",str),arg("r",str),arg("threshold",dbl))),
+	/* command("txtsim", "minjarowinklerjoin", TXTSIMminjarowinklerjoin, false, "", args(2, 10, batarg("",oid),batarg("",oid), batarg("l",str),batarg("r",str),batarg("threshold",dbl),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))), */
 	command("txtsim", "similarity", fstrcmp_impl, false, "(Deprecated) Normalized edit distance between two strings", args(1,4, arg("",dbl),arg("string1",str),arg("string2",str),arg("minimum",dbl))),
 	command("txtsim", "similarity", fstrcmp0_impl, false, "(Deprecated) Normalized edit distance between two strings", args(1,3, arg("",dbl),arg("string1",str),arg("string2",str))),
 	command("battxtsim", "similarity", fstrcmp0_impl_bulk, false, "(Deprecated) Normalized edit distance between two strings", args(1,3, batarg("",dbl),batarg("string1",str),batarg("string2",str))),
-	/* command("spinque", "minjarowinkler", TXTSIMminjarowinkler, false, "", args(1, 4, arg("",bit), arg("l",str),arg("r",str),arg("threshold",dbl))), */
-	/* command("spinque", "minjarowinklerjoin", TXTSIMminjarowinklerjoin, false, "", args(2, 10, batarg("",oid),batarg("",oid), batarg("l",str),batarg("r",str),batarg("threshold",dbl),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))), */
 	{ .imp=NULL }
 };
 #include "mal_import.h"

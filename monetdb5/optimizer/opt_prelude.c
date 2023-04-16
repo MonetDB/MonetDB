@@ -154,6 +154,7 @@ const char *manifoldRef;
 const char *mapiRef;
 const char *maskRef;
 const char *matRef;
+const char *maxlevenshteinRef;
 const char *maxRef;
 const char *mdbRef;
 const char *mergecandRef;
@@ -409,6 +410,7 @@ void optimizerInit(void)
 	mapiRef = putName("mapi");
 	maskRef = putName("mask");
 	matRef = putName("mat");
+	maxlevenshteinRef = putName("maxlevenshtein");
 	maxRef = putName("max");
 	mdbRef = putName("mdb");
 	mergecandRef= putName("mergecand");
