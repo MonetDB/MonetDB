@@ -6,6 +6,9 @@
 --
 -- Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 
+create function asciify(x string)
+returns string external name str."asciify";
+
 create function sys.startswith(x string, y string)
 returns boolean external name str."startsWith";
 grant execute on function startswith(string, string) to public;

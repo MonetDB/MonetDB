@@ -25,6 +25,14 @@ create function sys.levenshtein(x string, y string, insdel int, rep int, trans i
 returns int external name txtsim.levenshtein;
 grant execute on function levenshtein(string, string, int, int, int) to public;
 
+create filter function sys.maxlevenshtein(x string, y string, k int)
+external name txtsim."maxlevenshtein";
+
+create filter function sys.maxlevenshtein(x string, y string, k int, insdel int, rep int)
+external name txtsim."maxlevenshtein";
+
+-- CREATE OR REPLACE FILTER FUNCTION minjarowinkler(s1 string, s2 string, threshold double) EXTERNAL NAME spinque."minjarowinkler";
+
 -- Calculates Damerau-Levenshtein distance between two strings,
 -- operation costs ins/del = 1, replacement = 1, transposition = 2
 create function sys.dameraulevenshtein(x string, y string)
