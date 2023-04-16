@@ -313,10 +313,10 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	return MAL_SUCCEED;
 }
 
-static list *
-csv_load(mvc *ugh, sql_subfunc *f, char *filename)
+static void *
+csv_load(void *BE, sql_subfunc *f, char *filename)
 {
-	backend *be = (backend*)ugh;
+	backend *be = (backend*)BE;
 	mvc *sql = be->mvc;
 	sql_table *t = NULL;
 	if (mvc_create_table( &t, be->mvc, be->mvc->session->tr->tmp/* misuse tmp schema */, "csv" /*gettable name*/, tt_table, false, SQL_DECLARED_TABLE, 0, 0, false) != LOG_OK)
@@ -395,7 +395,7 @@ csv_load(mvc *ugh, sql_subfunc *f, char *filename)
                             exp_atom_int(sql->sa, 0)),
                         exp_atom_int(sql->sa, 0)), cf);
 
-	return (list*)exp_bin(be, import, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+	return exp_bin(be, import, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 }
 
 static str
