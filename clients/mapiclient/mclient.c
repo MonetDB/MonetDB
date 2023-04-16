@@ -1375,7 +1375,7 @@ SQLdebugRendering(MapiHdl hdl)
 }
 
 static void
-SQLpagemove(int *len, int fields, int *ps, bool *silent)
+SQLpagemove(int *len, int fields, int *ps, bool *skiprest)
 {
 	char buf[512];
 	ssize_t sz;
@@ -1388,11 +1388,11 @@ SQLpagemove(int *len, int fields, int *ps, bool *silent)
 		if (buf[0] == 'c')
 			*ps = 0;
 		if (buf[0] == 'q')
-			*silent = true;
+			*skiprest = true;
 		while (sz > 0 && buf[sz - 1] != '\n')
 			sz = mnstr_readline(fromConsole, buf, sizeof(buf));
 	}
-	if (!*silent)
+	if (!*skiprest)
 		SQLseparator(len, fields, '-');
 }
 
@@ -1403,10 +1403,9 @@ SQLrenderer(MapiHdl hdl)
 	int fields, rfields, printfields = 0, max = 1, graphwaste = 0;
 	int *len = NULL, *hdr = NULL, *numeric = NULL;
 	char **rest = NULL;
-	char buf[50];
 	int ps = rowsperpage;
-	bool silent = false;
-	int64_t rows = 0;
+	bool skiprest = false;
+	int64_t rows;				/* total number of rows */
 
 	croppedfields = 0;
 	fields = mapi_get_field_count(hdl);
@@ -1565,8 +1564,10 @@ SQLrenderer(MapiHdl hdl)
 			break;
 	}
 
-	rows = SQLheader(hdl, len, printfields, fields != printfields);
+	int64_t lines;				/* count number of lines printed for pager */
+	lines = SQLheader(hdl, len, printfields, fields != printfields);
 
+	int64_t nrows = 0;			/* count number of rows printed */
 	while ((rfields = fetch_row(hdl)) != 0) {
 		if (mnstr_errnr(toConsole) != MNSTR_NO__ERROR)
 			continue;
@@ -1576,7 +1577,7 @@ SQLrenderer(MapiHdl hdl)
 				     "got %d columns, expected %d, ignoring\n", rfields, fields);
 			continue;
 		}
-		if (silent)
+		if (skiprest)
 			continue;
 		for (i = 0; i < printfields; i++) {
 			rest[i] = mapi_fetch_field(hdl, i);
@@ -1605,22 +1606,24 @@ SQLrenderer(MapiHdl hdl)
 			}
 		}
 
-		if (ps > 0 && rows >= ps && fromConsole != NULL) {
-			SQLpagemove(len, printfields, &ps, &silent);
-			rows = 0;
-			if (silent) {
+		if (ps > 0 && lines >= ps && fromConsole != NULL) {
+			SQLpagemove(len, printfields, &ps, &skiprest);
+			lines = 0;
+			if (skiprest) {
 				mapi_finish(hdl);
 				break;
 			}
 		}
 
-		rows += SQLrow(len, numeric, rest, printfields, 2, 0);
+		nrows++;
+		lines += SQLrow(len, numeric, rest, printfields, 2, 0);
 	}
-	if (fields)
+	if (fields && !skiprest)
 		SQLseparator(len, printfields, '-');
-	rows = mapi_get_row_count(hdl);
-	snprintf(buf, sizeof(buf), "%" PRId64 " rows", rows);
-	mnstr_printf(toConsole, "%" PRId64 " tuple%s", rows, rows != 1 ? "s" : "");
+	if (skiprest)
+		mnstr_printf(toConsole, "%" PRId64 " of %" PRId64 " tuple%s", nrows, rows, nrows != 1 ? "s" : "");
+	else
+		mnstr_printf(toConsole, "%" PRId64 " tuple%s", rows, rows != 1 ? "s" : "");
 
 	if (fields != printfields || croppedfields > 0)
 		mnstr_printf(toConsole, " !");
