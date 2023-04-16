@@ -104,7 +104,7 @@ typedef enum csv {
  CSV_TIMESTAMP,
  CSV_STRING,
 //later: UUID, INET, JSON etc
-} csv_t;
+} csv_types_t;
 
 static bool
 detect_bool(const char *s, const char *e)
@@ -145,10 +145,10 @@ detect_decimal(const char *s, const char *e)
 }
 
 /* per row */
-static  csv_t *
+static  csv_types_t *
 detect_types_row(const char *s, const char *e, char delim, char quote, int nr_fields)
 {
-	csv_t *types = (csv_t*)GDKmalloc(sizeof(csv_t)*nr_fields);
+	csv_types_t *types = (csv_types_t*)GDKmalloc(sizeof(csv_types_t)*nr_fields);
 	if (!types)
 		return NULL;
 	for(int i = 0; i< nr_fields; i++) {
@@ -168,11 +168,11 @@ detect_types_row(const char *s, const char *e, char delim, char quote, int nr_fi
 	return types;
 }
 
-static csv_t *
+static csv_types_t *
 detect_types(const char *buf, char delim, char quote, int nr_fields, bool *has_header)
 {
 	const char *cur = buf;
-	csv_t *types = NULL;
+	csv_types_t *types = NULL;
 	int nr_lines = 0;
 
 	while ( true ) {
@@ -180,7 +180,7 @@ detect_types(const char *buf, char delim, char quote, int nr_fields, bool *has_h
 
 		if (!e)
 			break;
-		csv_t *ntypes = detect_types_row( cur, e, delim, quote, nr_fields);
+		csv_types_t *ntypes = detect_types_row( cur, e, delim, quote, nr_fields);
 		if (!ntypes)
 			return NULL;
 		cur = e+1;
@@ -215,12 +215,12 @@ detect_types(const char *buf, char delim, char quote, int nr_fields, bool *has_h
 }
 
 static const char *
-get_name(const char *s, const char *es, const char **E, char delim, char quote, bool has_header, int col)
+get_name(sql_allocator *sa, const char *s, const char *es, const char **E, char delim, char quote, bool has_header, int col)
 {
 	if (!has_header) {
 		char buff[25];
 		snprintf(buff, 100, "name_%i", col);
-		return GDKstrdup(buff);
+		return SA_STRDUP(sa, buff);
 	} else {
 		const char *e = next_delim(s, es, delim, quote);
 		if (e) {
@@ -230,16 +230,15 @@ get_name(const char *s, const char *es, const char **E, char delim, char quote, 
 				end--;
 			}
 			end[0] = 0;
-			str name = GDKstrdup(s);
 			*E = e+1;
-			return name;
+			return SA_STRDUP(sa, s);
 		}
 	}
 	return NULL;
 }
 
 static char*
-csv_type_map(csv_t type)
+csv_type_map(csv_types_t type)
 {
     switch(type) {
       case CSV_BOOLEAN:
@@ -261,6 +260,13 @@ csv_type_map(csv_t type)
 	}
     return  "varchar";
 }
+
+typedef struct csv_t {
+	char sname[1];
+	char quote;
+	char delim;
+	bool has_header;
+} csv_t;
 
 static str
 csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tname)
@@ -285,16 +291,20 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	bool has_header;
 	int nr_fields = 0;
 	char q = detect_quote(buf), d = detect_delimiter(buf, q, &nr_fields);
-	csv_t *types = detect_types(buf, d, q, nr_fields, &has_header);
+	csv_types_t *types = detect_types(buf, d, q, nr_fields, &has_header);
 
 	printf("delimiter '%c', nr_attrs %d, quote '%c', has_header %s\n", d, nr_fields, q, has_header?"true":"false");
 	if (!tname)
 		tname = "csv";
 
+	f->tname = tname;
+
 	const char *p = buf, *ep = strchr(p, '\n');;
 	list *typelist = sa_list(sql->sa);
+	list *nameslist = sa_list(sql->sa);
 	for(int col = 0; col < nr_fields; col++) {
-		const char *name = get_name(p, ep, &p, d, q, has_header, col);
+		const char *name = get_name(sql->sa, p, ep, &p, d, q, has_header, col);
+		append(nameslist, (char*)name);
 		char* st = csv_type_map(types[col]);
 
 		if(st) {
@@ -309,7 +319,15 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	}
 	GDKfree(types);
 	f->res = typelist;
+	f->coltypes = typelist;
+	f->colnames = nameslist;
 
+	csv_t* r = (csv_t*)sa_alloc(sql->sa, sizeof(csv_t));
+	r->sname[0] = 0;
+	r->quote = q;
+	r->delim = d;
+	r->has_header = has_header;
+	f->sname = (char*)r; /* pass schema++ */
 	return MAL_SUCCEED;
 }
 
@@ -318,45 +336,22 @@ csv_load(void *BE, sql_subfunc *f, char *filename)
 {
 	backend *be = (backend*)BE;
 	mvc *sql = be->mvc;
+	csv_t *r = (csv_t*)f->sname;
 	sql_table *t = NULL;
-	if (mvc_create_table( &t, be->mvc, be->mvc->session->tr->tmp/* misuse tmp schema */, "csv" /*gettable name*/, tt_table, false, SQL_DECLARED_TABLE, 0, 0, false) != LOG_OK)
+
+	if (mvc_create_table( &t, be->mvc, be->mvc->session->tr->tmp/* misuse tmp schema */, f->tname /*gettable name*/, tt_table, false, SQL_DECLARED_TABLE, 0, 0, false) != LOG_OK)
+		//throw(SQL, SQLSTATE(42000), "csv" RUNTIME_FILE_NOT_FOUND);
 		/* alloc error */
-		//throw(SQL, SQLSTATE(42000), "csv" RUNTIME_FILE_NOT_FOUND);
 		return NULL;
 
-	/* repeat part of csv_relation, later pass this information using a data type */
-	FILE *file = csv_open_file(filename);
-	char buf[8196+1];
-
-	if(file == NULL)
-		//throw(SQL, SQLSTATE(42000), "csv" RUNTIME_FILE_NOT_FOUND);
-		return NULL;
-
-	ssize_t readlen = fread(buf, 1, 8196, file);
-	fclose(file);
-	if (readlen<0)
-		//throw(SQL, SQLSTATE(42000), "csv" RUNTIME_LOAD_ERROR);
-		return NULL;
-	buf[readlen] = 0;
-	bool has_header;
-	int nr_fields = 0;
-	char q = detect_quote(buf), d = detect_delimiter(buf, q, &nr_fields);
-	csv_t *types = detect_types(buf, d, q, nr_fields, &has_header);
-
-	const char *p = buf, *ep = strchr(p, '\n');;
-	node *n;
 	int i;
-
-	sql_subtype tpe;
-	for (i=0, n = f->res->h; n; i++, n = n->next) {
-		const char *name = get_name(p, ep, &p, d, q, has_header, i);
-		char* st = csv_type_map(types[i]);
+	node *n, *nn = f->colnames->h, *tn = f->coltypes->h;
+	for (i=0, n = f->res->h; n; i++, n = n->next, nn = nn->next, tn = tn->next) {
+		const char *name = nn->data;
+		sql_subtype *tp = tn->data;
 		sql_column *c = NULL;
 
-		if (!sql_find_subtype(&tpe, st, 0, 0))
-			return NULL;
-
-		if (mvc_create_column(&c, be->mvc, t, name, &tpe) != LOG_OK) {
+		if (mvc_create_column(&c, be->mvc, t, name, tp) != LOG_OK) {
 			//throw(SQL, SQLSTATE(42000), "csv" RUNTIME_LOAD_ERROR);
 			return NULL;
 		}
@@ -367,11 +362,12 @@ csv_load(void *BE, sql_subfunc *f, char *filename)
 	sql_subfunc *cf = sql_find_func(sql, "sys", "copyfrom", 12, F_UNION, true, NULL);
 	cf->res = f->res;
 
+	sql_subtype tpe;
 	sql_find_subtype(&tpe, "varchar", 0, 0);
 	char tsep[2], ssep[2];
-	tsep[0] = d;
+	tsep[0] = r->delim;
 	tsep[1] = 0;
-	ssep[0] = q;
+	ssep[0] = r->quote;
 	ssep[1] = 0;
     list *args = append( append( append( append( append( new_exp_list(sql->sa),
         exp_atom_ptr(sql->sa, t)),
@@ -389,7 +385,7 @@ csv_load(void *BE, sql_subfunc *f, char *filename)
                                     append(
                                         append(args,
                                                exp_atom_lng(sql->sa, -1)),
-                                        exp_atom_lng(sql->sa, has_header?2:1)),
+                                        exp_atom_lng(sql->sa, r->has_header?2:1)),
                                     exp_atom_int(sql->sa, 0)),
                                 exp_atom_str(sql->sa, NULL, &tpe)),
                             exp_atom_int(sql->sa, 0)),
