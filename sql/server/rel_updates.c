@@ -1661,6 +1661,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				return NULL;
 			}
 
+			/*
 			// Parquet file COPY INTO.
 			char *dot = strrchr(fname, '.');
 			if (dot && !strcmp(dot, ".parquet")) {
@@ -1669,6 +1670,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				GDKfree(fn);
 				return NULL;
 			}
+			*/
 
 			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, best_effort, fwf_widths, onclient, escape);
 

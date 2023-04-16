@@ -298,7 +298,8 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 								msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) "BUNappend failed.");
 								goto wrapup;
 							}
-						} break;
+							break;
+						}
 					}
 				}
 			} else {

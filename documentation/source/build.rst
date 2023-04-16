@@ -104,7 +104,7 @@ Run as Administrator::
   @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
   choco feature enable -n allowGlobalConfirmation
   choco install ActivePerl ant ruby python3 hg git winflexbison
-  cinst VisualStudio2017community --package-parameters "--add Microsoft.VisualStudio.Workload.NativeDesktop --add microsoft.visualstudio.component.vc.cmake.project --add microsoft.visualstudio.component.vc.ATLMFC"
+  cinst VisualStudio2019community --package-parameters "--add Microsoft.VisualStudio.Workload.NativeDesktop --add microsoft.visualstudio.component.vc.cmake.project --add microsoft.visualstudio.component.vc.ATLMFC"
   refreshenv
 
   cd \
@@ -120,13 +120,13 @@ To compile MonetDB (as normal user)::
 
   hg clone https://dev.monetdb.org/hg/MonetDB/
 
-  "c:\Program Files (x86)\Microsoft Visual Studio\2017\Community\common7\tools\vsdevcmd.bat"
-  "c:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
+  "c:\Program Files (x86)\Microsoft Visual Studio\2019\Community\common7\tools\vsdevcmd.bat"
+  "c:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
 
   cd MonetDB
   mkdir build
   cd build
-  cmake -G "Visual Studio 15 2017" -DCMAKE_TOOLCHAIN_FILE=/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=%HOME%\install -A x64 ..
+  cmake -G "Visual Studio 16 2019" -DCMAKE_TOOLCHAIN_FILE=/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=%HOME%\install -A x64 ..
   cmake --build . --target ALL_BUILD --config Release
   cmake --build . --target INSTALL --config Release
   set PATH=%HOME%\install\bin;%HOME%\install\lib;%HOME%\install\lib\monetdb5;\vcpkg\installed\x64-windows\bin;\vcpkg\installed\x64-windows\debug\bin;%PATH%

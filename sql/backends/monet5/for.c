@@ -24,20 +24,6 @@ get_newcolumn(sql_trans *tr, sql_column *c)
 	return NULL;
 }
 
-static void
-BATnegateprops(BAT *b)
-{
-	/* disable all properties here */
-	b->tsorted = false;
-	b->trevsorted = false;
-	b->tnosorted = 0;
-	b->tnorevsorted = 0;
-	b->tseqbase = oid_nil;
-	b->tkey = false;
-	b->tnokey[0] = 0;
-	b->tnokey[1] = 0;
-}
-
 BAT *
 FORdecompress_(BAT *o, lng minval, int type, role_t role)
 {

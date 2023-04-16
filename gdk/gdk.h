@@ -364,6 +364,7 @@ gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *for
 #define GDKisspace(c)	isspace((unsigned char) (c))
 #define GDKisalnum(c)	isalnum((unsigned char) (c))
 #define GDKisdigit(c)	isdigit((unsigned char) (c))
+#define GDKisxdigit(c)	isxdigit((unsigned char) (c))
 
 #define BATDIR		"bat"
 #define TEMPDIR_NAME	"TEMP_DATA"
@@ -1269,6 +1270,8 @@ gdk_export gdk_return BATextend(BAT *b, BUN newcap)
 /* internal */
 gdk_export uint8_t ATOMelmshift(int sz)
 	__attribute__((__const__));
+gdk_export gdk_return ATOMheap(int id, Heap *hp, size_t cap)
+	__attribute__((__warn_unused_result__));
 gdk_export const char *BATtailname(const BAT *b);
 
 gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
@@ -1622,6 +1625,25 @@ BATsettrivprop(BAT *b)
 	}
 }
 
+static inline void
+BATnegateprops(BAT *b)
+{
+    /* disable all properties here */
+    b->tnonil = false;
+    b->tnil = false;
+    if (b->ttype) {
+        b->tsorted = false;
+        b->trevsorted = false;
+        b->tnosorted = 0;
+        b->tnorevsorted = 0;
+    }
+    b->tseqbase = oid_nil;
+    b->tkey = false;
+    b->tnokey[0] = 0;
+    b->tnokey[1] = 0;
+    b->tmaxpos = b->tminpos = BUN_NONE;
+}
+
 /*
  * @- GDK error handling
  *  @multitable @columnfractions 0.08 0.7
@@ -1929,6 +1951,8 @@ typedef struct threadStruct {
 				 * into this array + 1 (0 is
 				 * invalid) */
 	ATOMIC_TYPE pid;	/* thread id, 0 = unallocated */
+	bat freebats;		/* linked list of free bats */
+	uint32_t nfreebats;	/* number of free bats in .freebats */
 	char name[MT_NAME_LEN];
 	void *data[THREADDATA];
 	uintptr_t sp;

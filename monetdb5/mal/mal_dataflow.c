@@ -51,13 +51,12 @@ typedef struct FLOWEVENT {
 	lng hotclaim;   /* memory foot print of result variables */
 	lng argclaim;   /* memory foot print of arguments */
 	lng maxclaim;   /* memory foot print of largest argument, could be used to indicate result size */
+	struct FLOWEVENT *next;		/* linked list for queues */
 } *FlowEvent, FlowEventRec;
 
 typedef struct queue {
-	int size;	/* size of queue */
-	int last;	/* last element in the queue */
 	int exitcount;	/* how many threads should exit */
-	FlowEvent *data;
+	FlowEvent first, last;		/* first and last element of the queue */
 	MT_Lock l;	/* it's a shared resource, ie we need locks */
 	MT_Sema s;	/* threads wait on empty queues */
 } Queue;
@@ -112,7 +111,6 @@ mal_dataflow_reset(void)
 	idle_workers = -1;
 	exited_workers = -1;
 	if( todo) {
-		GDKfree(todo->data);
 		MT_lock_destroy(&todo->l);
 		MT_sema_destroy(&todo->s);
 		GDKfree(todo);
@@ -142,21 +140,12 @@ DFLOWgraphSize(MalBlkPtr mb, int start, int stop)
  */
 
 static Queue*
-q_create(int sz, const char *name)
+q_create(const char *name)
 {
-	Queue *q = (Queue*)GDKmalloc(sizeof(Queue));
+	Queue *q = GDKzalloc(sizeof(Queue));
 
 	if (q == NULL)
 		return NULL;
-	*q = (Queue) {
-		.size = ((sz << 1) >> 1), /* we want a multiple of 2 */
-	};
-	q->data = (FlowEvent*) GDKmalloc(sizeof(FlowEvent) * q->size);
-	if (q->data == NULL) {
-		GDKfree(q);
-		return NULL;
-	}
-
 	MT_lock_init(&q->l, name);
 	MT_sema_init(&q->s, 0, name);
 	return q;
@@ -168,31 +157,26 @@ q_destroy(Queue *q)
 	assert(q);
 	MT_lock_destroy(&q->l);
 	MT_sema_destroy(&q->s);
-	GDKfree(q->data);
 	GDKfree(q);
 }
 
 /* keep a simple LIFO queue. It won't be a large one, so shuffles of requeue is possible */
 /* we might actually sort it for better scheduling behavior */
 static void
-q_enqueue_(Queue *q, FlowEvent d)
-{
-	assert(q);
-	assert(d);
-	if (q->last == q->size) {
-		q->size <<= 1;
-		q->data = (FlowEvent*) GDKrealloc(q->data, sizeof(FlowEvent) * q->size);
-		assert(q->data);
-	}
-	q->data[q->last++] = d;
-}
-static void
 q_enqueue(Queue *q, FlowEvent d)
 {
 	assert(q);
 	assert(d);
 	MT_lock_set(&q->l);
-	q_enqueue_(q, d);
+	if (q->first == NULL) {
+		assert(q->last == NULL);
+		q->first = q->last = d;
+	} else {
+		assert(q->last != NULL);
+		q->last->next = d;
+		q->last = d;
+	}
+	d->next = NULL;
 	MT_lock_unset(&q->l);
 	MT_sema_up(&q->s);
 }
@@ -204,30 +188,20 @@ q_enqueue(Queue *q, FlowEvent d)
  */
 
 static void
-q_requeue_(Queue *q, FlowEvent d)
-{
-	int i;
-
-	assert(q);
-	assert(d);
-	if (q->last == q->size) {
-		/* enlarge buffer */
-		q->size <<= 1;
-		q->data = (FlowEvent*) GDKrealloc(q->data, sizeof(FlowEvent) * q->size);
-		assert(q->data);
-	}
-	for (i = q->last; i > 0; i--)
-		q->data[i] = q->data[i - 1];
-	q->data[0] = d;
-	q->last++;
-}
-static void
 q_requeue(Queue *q, FlowEvent d)
 {
 	assert(q);
 	assert(d);
 	MT_lock_set(&q->l);
-	q_requeue_(q, d);
+	if (q->first == NULL) {
+		assert(q->last == NULL);
+		q->first = q->last = d;
+		d->next = NULL;
+	} else {
+		assert(q->last != NULL);
+		d->next = q->first;
+		q->first = d;
+	}
 	MT_lock_unset(&q->l);
 	MT_sema_up(&q->s);
 }
@@ -235,46 +209,37 @@ q_requeue(Queue *q, FlowEvent d)
 static FlowEvent
 q_dequeue(Queue *q, Client cntxt)
 {
-	FlowEvent r = NULL, s = NULL;
-
 	assert(q);
 	MT_sema_down(&q->s);
 	if (ATOMIC_GET(&exiting))
 		return NULL;
 	MT_lock_set(&q->l);
-	if( cntxt == NULL && q->exitcount > 0){
+	if (cntxt == NULL && q->exitcount > 0) {
 		q->exitcount--;
 		MT_lock_unset(&q->l);
 		return NULL;
 	}
-	{
-		int minpc;
 
-		minpc = q->last -1;
-		s = q->data[minpc];
-		/* for long "queues", just grab the first eligible entry we encounter */
-		if (s && q->last < 1024) {
-			for (int i = q->last - 1; i >= 0; i--) {
-				if (cntxt ==  NULL || q->data[i]->flow->cntxt == cntxt) {
-					/* for shorter "queues", find the oldest eligible entry */
-					r = q->data[i];
-					if (r && s->pc > r->pc) {
-						minpc = i;
-						s = r;
-					}
-				}
-			}
-		}
-		if (minpc >= 0) {
-			r = q->data[minpc];
-			q->last--;
-			if (minpc < q->last)
-				memmove(q->data + minpc, q->data + minpc + 1,
-						(q->last - minpc) * sizeof(q->data[0]));
+	FlowEvent *dp = &q->first;
+	FlowEvent pd = NULL;
+	/* if cntxt == NULL, return the first event, if cntxt != NULL, find
+	 * the first event in the queue with matching cntxt value and return
+	 * that */
+	if (cntxt != NULL) {
+		while (*dp && (*dp)->flow->cntxt != cntxt) {
+			pd = *dp;
+			dp = &pd->next;
 		}
 	}
+	FlowEvent d = *dp;
+	if (d) {
+		*dp = d->next;
+		d->next = NULL;
+		if (*dp == NULL)
+			q->last = pd;
+	}
 	MT_lock_unset(&q->l);
-	return r;
+	return d;
 }
 
 /*
@@ -303,6 +268,7 @@ DFLOWworker(void *T)
 	srand((unsigned int) GDKusec());
 #endif
 	assert(t->errbuf != NULL);
+	t->errbuf[0] = 0;
 	GDKsetbuf(t->errbuf);		/* where to leave errors */
 	t->errbuf = NULL;
 
@@ -329,7 +295,6 @@ DFLOWworker(void *T)
 		cntxt = ATOMIC_PTR_GET(&t->cntxt);
 		while (1) {
 			MT_thread_set_qry_ctx(NULL);
-			setClientContext(NULL);
 			if (fnxt == 0) {
 				MT_thread_setworking(NULL);
 				cntxt = ATOMIC_PTR_GET(&t->cntxt);
@@ -360,7 +325,6 @@ DFLOWworker(void *T)
 			flow = fe->flow;
 			assert(flow);
 			MT_thread_set_qry_ctx(flow->set_qry_ctx ? &flow->cntxt->qryctx : NULL);
-			setClientContext(flow->cntxt);
 
 			/* whenever we have a (concurrent) error, skip it */
 			if (ATOMIC_PTR_GET(&flow->error)) {
@@ -375,9 +339,9 @@ DFLOWworker(void *T)
 				fe->hotclaim = 0;   /* don't assume priority anymore */
 				fe->maxclaim = 0;
 				MT_lock_set(&todo->l);
-				int last = todo->last;
+				FlowEvent last = todo->last;
 				MT_lock_unset(&todo->l);
-				if (last == 0)
+				if (last == NULL)
 					MT_sleep_ms(DELAYUNIT);
 				q_requeue(todo, fe);
 				continue;
@@ -512,7 +476,7 @@ DFLOWinitialize(void)
 		return 0;
 	}
 	free_max = GDKgetenv_int("dataflow_max_free", GDKnr_threads < 4 ? 4 : GDKnr_threads);
-	todo = q_create(2048, "todo");
+	todo = q_create("todo");
 	if (todo == NULL) {
 		MT_lock_unset(&dataflowLock);
 		MT_lock_unset(&mal_contextLock);
@@ -716,7 +680,7 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 	int i;
 	int j;
 	InstrPtr p;
-	int tasks=0, actions;
+	int tasks=0, actions = 0;
 	str ret = MAL_SUCCEED;
 	FlowEvent fe, f = 0;
 
@@ -741,8 +705,8 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 			fe[i].argclaim = 0;
 			for (j = p->retc; j < p->argc; j++)
 				fe[i].argclaim += getMemoryClaim(fe[0].flow->mb, fe[0].flow->stk, p, j, FALSE);
-			q_enqueue(todo, flow->status + i);
 			flow->status[i].state = DFLOWrunning;
+			q_enqueue(todo, flow->status + i);
 		}
 	MT_lock_unset(&flow->flowlock);
 	MT_sema_up(&w->s);
@@ -768,8 +732,8 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 			if (flow->status[i].state == DFLOWpending) {
 				flow->status[i].argclaim += f->hotclaim;
 				if (flow->status[i].blocks == 1 ) {
-					flow->status[i].state = DFLOWrunning;
 					flow->status[i].blocks--;
+					flow->status[i].state = DFLOWrunning;
 					q_enqueue(todo, flow->status + i);
 				} else {
 					flow->status[i].blocks--;
@@ -928,7 +892,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	flow->start = startpc + 1;
 	flow->stop = stoppc;
 
-	flow->done = q_create(stoppc- startpc+1, "flow->done");
+	flow->done = q_create("flow->done");
 	if (flow->done == NULL) {
 		GDKfree(flow);
 		throw(MAL, "dataflow", "runMALdataflow(): Failed to create flow->done queue");
