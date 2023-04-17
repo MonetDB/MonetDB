@@ -126,8 +126,9 @@ static char *pager = 0;		/* use external pager */
 #ifdef HAVE_SIGACTION
 #include <signal.h>		/* to block SIGPIPE */
 #endif
-static int rowsperpage = 0;	/* for SQL pagination */
+static int rowsperpage = -1;	/* for SQL pagination */
 static int pagewidth = 0;	/* -1: take whatever is necessary, >0: limit */
+static int pageheight = 0;	/* -1: take whatever is necessary, >0: limit */
 static bool pagewidthset = false; /* whether the user set the width explicitly */
 static int croppedfields = 0;	/* whatever got cropped/truncated */
 static bool firstcrop = true;	/* first time we see cropping/truncation */
@@ -1407,6 +1408,8 @@ SQLrenderer(MapiHdl hdl)
 	bool skiprest = false;
 	int64_t rows;				/* total number of rows */
 
+	if (ps == 0)
+		ps = pageheight;
 	croppedfields = 0;
 	fields = mapi_get_field_count(hdl);
 	rows = mapi_get_row_count(hdl);
@@ -1738,12 +1741,13 @@ setWidth(void)
 #ifdef TIOCGWINSZ
 		struct winsize ws;
 
-		if (ioctl(fileno(stdout), TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0)
+		if (ioctl(fileno(stdout), TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0) {
 			pagewidth = ws.ws_col;
-		else
+			pageheight = ws.ws_row;
+		} else
 #endif
 		{
-			pagewidth = -1;
+			pagewidth = pageheight = -1;
 		}
 	}
 }
