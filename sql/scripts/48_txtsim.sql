@@ -31,7 +31,8 @@ external name txtsim."maxlevenshtein";
 create filter function sys.maxlevenshtein(x string, y string, k int, insdel int, rep int)
 external name txtsim."maxlevenshtein";
 
--- CREATE OR REPLACE FILTER FUNCTION minjarowinkler(s1 string, s2 string, threshold double) EXTERNAL NAME spinque."minjarowinkler";
+create filter function minjarowinkler(x string, y string, threshold double)
+external name txtsim."minjarowinkler";
 
 -- Calculates Damerau-Levenshtein distance between two strings,
 -- operation costs ins/del = 1, replacement = 1, transposition = 2
