@@ -402,7 +402,7 @@ failed:
 	if (bn) BBPreclaim(bn);
 	if (msg != MAL_SUCCEED)
 		return msg;
-	throw(MAL, "batspinque.maxlevenshtein", OPERATION_FAILED);
+	throw(MAL, "battxtsim.maxlevenshtein", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
@@ -871,10 +871,10 @@ TXTSIMmaxlevenshteinjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const
 	if (msg != MAL_SUCCEED)
 		goto fail;
 
-	BBPunfix(bleft->batCacheid);
-	BBPunfix(bright->batCacheid);
-	if (bcandleft) BBPunfix(bcandleft->batCacheid);
-	if (bcandright) BBPunfix(bcandright->batCacheid);
+	BBPreclaim(bleft);
+	BBPreclaim(bright);
+	if (bcandleft) BBPreclaim(bcandleft);
+	if (bcandright) BBPreclaim(bcandright);
 
 	*r1 = result1->batCacheid;
 	*r2 = result2->batCacheid;
@@ -884,15 +884,183 @@ TXTSIMmaxlevenshteinjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const
 	return MAL_SUCCEED;
 
 fail:
-	BBPunfix(bleft->batCacheid);
-	BBPunfix(bright->batCacheid);
-	BBPunfix(bcandleft->batCacheid);
-	BBPunfix(bcandright->batCacheid);
-	BBPunfix(result1->batCacheid);
-	BBPunfix(result2->batCacheid);
+	BBPreclaim(bleft);
+	BBPreclaim(bright);
+	BBPreclaim(bcandleft);
+	BBPreclaim(bcandright);
+	BBPreclaim(result1);
+	BBPreclaim(result2);
 	if (msg != MAL_SUCCEED)
 		return msg;
 	throw(MAL, "txtsim.maxlevenshteinjoin", OPERATION_FAILED);
+}
+
+static inline void
+jarowinklerrangebounds(size_t *lb, size_t *ub, const str_item *a, const double lp, const double threshold)
+{
+	*lb = (size_t)floor(3.0 * a->len * (threshold - lp) / (1.0 - lp) - (2.0 * a->len));
+	*ub = (size_t)ceil(a->len / ((3.0 * (threshold - lp) / (1.0 - lp)) - 2.0 ));
+}
+
+/* version with given lp and m, and t=0*/
+static inline double
+jarowinkler_lp_m_t0(const str_item *si1, const str_item *si2, double lp, int m) {
+	double dw;
+	/* Jaro similarity */
+	dw = (((double)m / si1->len) + ((double)m / si2->len) + 1.0) / 3.0;
+
+	/* Jaro-Winkler similarity */
+	dw = dw + (lp * (1 - dw));
+
+	return dw;
+}
+
+static str
+minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const dbl threshold)
+{
+	strjoincommonvars;
+	str_item shortest;
+	size_t lb, ub;
+	const bool sliding_window_allowed = threshold > (2.01 + JARO_WINKLER_PREFIX_LEN * JARO_WINKLER_SCALING_FACTOR) / 3.0;
+	int *s1flags=NULL, *s2flags=NULL;
+	double s;
+	double lp=0;
+	int m=-1;
+
+	strjoininit;
+	strdistjoininit;
+	strdistjoininitlengths;
+	strdistjoininittoints;
+	strdistjoininitalphabetbitmap;
+	strdistjoininitsort(str_item_lenrev_cmp);
+
+	/* allocate buffers for the largest strings */
+	s1flags = GDKmalloc(ssl[0].len * sizeof(int));
+	s2flags = GDKmalloc(ssr[0].len * sizeof(int));
+
+	// lp used for filters. Use -1 for actual JW (forces to compute actual lp)
+	lp = JARO_WINKLER_PREFIX_LEN*JARO_WINKLER_SCALING_FACTOR;
+
+	/* join implementation for string similarity */
+	for (BUN lstart=0,rstart=0;rstart<rci.ncand;rstart++) {
+		if (sliding_window_allowed)
+			jarowinklerrangebounds(&lb, &ub, &ssr[rstart], lp, threshold);
+		for (n=lstart;n<lci.ncand;n++) {
+			/* Update sliding window */
+			/* This is the first and cheapest filter */
+			if (sliding_window_allowed) {
+				if (ssl[n].len > ub) { /* no possible matches yet for this r */
+					lstart++;
+					continue;
+				}
+				if (ssl[n].len < lb) { /* no more possible matches from this r */
+					break;
+				}
+			}
+
+			/* filter by comparing alphabet bitmaps */
+			/* find the best possible m: the length of the shorter string
+			 * minus the number of characters that surely cannot match */
+			shortest = ssl[n].len < ssr[rstart].len ? ssl[n] : ssr[rstart];
+			m = shortest.len - popcount64(shortest.abm - (ssl[n].abm & ssr[rstart].abm));
+			// equivalent to:
+			// m = shortest.len - popcount64(shortest.abm & (~(ssl[n].abm & ssr[rstart].abm)));
+			s = jarowinkler_lp_m_t0(&ssl[n], &ssr[rstart], lp, m);
+			if (s < threshold) {
+				continue;
+			}
+
+			/* final and most expensive test: Jaro-Winkler similarity */
+			s = jarowinkler(&ssl[n], &ssr[rstart], -1, s1flags, s2flags);
+			if (s < threshold) {
+				continue;
+			}
+
+			/* The match test succeeded */
+			ssl[n].matches++;
+			ssr[rstart].matches++;
+			if (bunfastappTYPE(oid, result1, &(ssl[n].o)) != GDK_SUCCEED)
+				goto bunins_failed;
+			if (bunfastappTYPE(oid, result2, &(ssr[rstart].o)) != GDK_SUCCEED)
+				goto bunins_failed;
+		}
+	}
+	strjoinfinalize;
+bunins_failed:
+bailout:
+	GDKfree(s1flags);
+	GDKfree(s2flags);
+	for (n=0;n<lci.ncand;n++) {
+		GDKfree(ssl[n].cp_sequence);
+	}
+	GDKfree(ssl);
+	for (n=0;n<rci.ncand;n++) {
+		GDKfree(ssr[n].cp_sequence);
+	}
+	GDKfree(ssr);
+
+	if (msg != MAL_SUCCEED)
+		return msg;
+result:
+	*r1 = result1;
+	*r2 = result2;
+	return MAL_SUCCEED;
+}
+
+static str
+TXTSIMminjarowinklerjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *thresholdid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti) {
+	BAT *bleft = NULL, *bright = NULL, *bcandleft = NULL, *bcandright = NULL, *bthreshold = NULL;
+	BAT *result1 = NULL, *result2 = NULL;
+	dbl threshold = 1;
+	str msg = MAL_SUCCEED;
+
+	(void)nil_matches;
+	(void)estimate;
+	(void)anti;
+
+	if ((bleft = BATdescriptor(*lid)) == NULL)
+		goto fail;
+	if ((bright = BATdescriptor(*rid)) == NULL)
+		goto fail;
+	if ((bthreshold = BATdescriptor(*thresholdid)) == NULL)
+		goto fail;
+	if (*slid != bat_nil && (bcandleft = BATdescriptor(*slid)) == NULL)
+		goto fail;
+	if (*srid != bat_nil && (bcandright = BATdescriptor(*srid)) == NULL)
+		goto fail;
+
+	if (BATcount(bthreshold) > 0) {
+		BATiter thresholdi = bat_iterator(bthreshold);
+		threshold = *(dbl *) BUNtail(thresholdi,0);
+		bat_iterator_end(&thresholdi);
+	}
+
+	msg = minjarowinklerjoin(&result1, &result2, bleft, bright, bcandleft, bcandright, threshold);
+	if (msg != MAL_SUCCEED)
+		goto fail;
+
+	BBPreclaim(bleft);
+	BBPreclaim(bright);
+	if (bcandleft) BBPreclaim(bcandleft);
+	if (bcandright) BBPreclaim(bcandright);
+
+	*r1 = result1->batCacheid;
+	*r2 = result2->batCacheid;
+	BBPkeepref(result1);
+	BBPkeepref(result2);
+
+	return MAL_SUCCEED;
+
+fail:
+	BBPreclaim(bleft);
+	BBPreclaim(bright);
+	BBPreclaim(bcandleft);
+	BBPreclaim(bcandright);
+	BBPreclaim(result1);
+	BBPreclaim(result2);
+	if (msg != MAL_SUCCEED)
+		return msg;
+	throw(MAL, "txtsim.minjarowinklerjoin", OPERATION_FAILED);
 }
 
 #define SoundexLen 4		/* length of a soundex code */
@@ -1756,7 +1924,7 @@ mel_func txtsim_init_funcs[] = {
 	pattern("txtsim", "maxlevenshtein", TXTSIMmaxlevenshtein, false, "Levenshtein distance with variable costs but up to a MAX", args(1, 6, arg("",int), arg("l",str),arg("r",str),arg("k",int),arg("insdel_cost",int),arg("replace_cost",int))),
 	pattern("battxtsim", "maxlevenshtein", BATTXTSIMmaxlevenshtein, false, "Same as maxlevenshtein but for BATS", args(1, 4, batarg("",bit), batarg("l",str),batarg("r",str),arg("k",int))),
 	pattern("battxtsim", "maxlevenshtein", BATTXTSIMmaxlevenshtein, false, "Same as maxlevenshtein but for BATS", args(1, 6, batarg("",bit), batarg("l",str),batarg("r",str),arg("k",int),arg("insdel_cost",int),arg("replace_cost",int))),
-	command("battxtsim", "maxlevenshteinjoin", TXTSIMmaxlevenshteinjoin, false, "", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+	command("txtsim", "maxlevenshteinjoin", TXTSIMmaxlevenshteinjoin, false, "", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
 	command("txtsim", "soundex", soundex, false, "Soundex function for phonetic matching", args(1,2, arg("",str),arg("name",str))),
 	command("txtsim", "stringdiff", stringdiff, false, "Calculate the soundexed editdistance", args(1,3, arg("",int),arg("s1",str),arg("s2",str))),
 	command("txtsim", "qgramnormalize", qgram_normalize, false, "'Normalizes' strings (eg. toUpper and replaces non-alphanumerics with one space", args(1,2, arg("",str),arg("input",str))),
@@ -1764,7 +1932,7 @@ mel_func txtsim_init_funcs[] = {
 	command("txtsim", "str2qgrams", str_2_qgrams, false, "Break the string into 4-grams", args(1,2, batarg("",str),arg("s",str))),
 	command("txtsim", "jarowinkler", TXTSIMjarowinkler, false, "Calculate Jaro Winkler similarity", args(1,3, arg("",dbl),arg("x",str),arg("y",str))),
 	command("txtsim", "minjarowinkler", TXTSIMminjarowinkler, false, "", args(1, 4, arg("",bit), arg("l",str),arg("r",str),arg("threshold",dbl))),
-	/* command("txtsim", "minjarowinklerjoin", TXTSIMminjarowinklerjoin, false, "", args(2, 10, batarg("",oid),batarg("",oid), batarg("l",str),batarg("r",str),batarg("threshold",dbl),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))), */
+	command("txtsim", "minjarowinklerjoin", TXTSIMminjarowinklerjoin, false, "", args(2, 10, batarg("",oid),batarg("",oid), batarg("l",str),batarg("r",str),batarg("threshold",dbl),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
 	command("txtsim", "similarity", fstrcmp_impl, false, "(Deprecated) Normalized edit distance between two strings", args(1,4, arg("",dbl),arg("string1",str),arg("string2",str),arg("minimum",dbl))),
 	command("txtsim", "similarity", fstrcmp0_impl, false, "(Deprecated) Normalized edit distance between two strings", args(1,3, arg("",dbl),arg("string1",str),arg("string2",str))),
 	command("battxtsim", "similarity", fstrcmp0_impl_bulk, false, "(Deprecated) Normalized edit distance between two strings", args(1,3, batarg("",dbl),batarg("string1",str),batarg("string2",str))),

@@ -161,6 +161,7 @@ const char *mergecandRef;
 const char *mergepackRef;
 const char *mergetableRef;
 const char *minRef;
+const char *minjarowinklerRef;
 const char *minusRef;
 const char *mirrorRef;
 const char *mitosisRef;
@@ -417,6 +418,7 @@ void optimizerInit(void)
 	mergepackRef= putName("mergepack");
 	mergetableRef = putName("mergetable");
 	minRef = putName("min");
+	minjarowinklerRef = putName("minjarowinkler");
 	minusRef = putName("-");
 	mirrorRef = putName("mirror");
 	mitosisRef = putName("mitosis");

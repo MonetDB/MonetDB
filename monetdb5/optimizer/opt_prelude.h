@@ -159,6 +159,7 @@ mal_export  const char *mergecandRef;
 mal_export  const char *mergepackRef;
 mal_export  const char *mergetableRef;
 mal_export  const char *minRef;
+mal_export  const char *minjarowinklerRef;
 mal_export  const char *minusRef;
 mal_export  const char *mirrorRef;
 mal_export  const char *mitosisRef;
