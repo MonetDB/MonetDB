@@ -3,3 +3,8 @@ TriBool
 batstr
 math
 select
+
+batstr_reverse
+batstr_startswith
+batstr_endswith
+batstr_contains
