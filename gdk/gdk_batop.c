@@ -1928,17 +1928,17 @@ BATslice(BAT *b, BUN l, BUN h)
 			int cmp = prevnil ? -!(prevnil = is_##TPE##_nil(next)) : (prevnil = is_##TPE##_nil(next)) ? 1 : (prev > next) - (prev < next); \
 			prev = next;					\
 			if (cmp > 0) {					\
-				b->tnosorted = p;			\
+				b->tnosorted = bi.nosorted = p;		\
 				TRC_DEBUG(ALGO, "Fixed nosorted(" BUNFMT ") for " ALGOBATFMT " (" LLFMT " usec)\n", p, ALGOBATPAR(b), GDKusec() - t0); \
 				goto doreturn;				\
 			} else if (cmp < 0) {				\
 				if (!b->trevsorted && b->tnorevsorted == 0) { \
-					b->tnorevsorted = p;		\
+					b->tnorevsorted = bi.norevsorted = p; \
 					TRC_DEBUG(ALGO, "Fixed norevsorted(" BUNFMT ") for " ALGOBATFMT "\n", p, ALGOBATPAR(b)); \
 				}					\
 			} else if (!b->tkey && b->tnokey[1] == 0) {	\
-				b->tnokey[0] = p - 1;			\
-				b->tnokey[1] = p;			\
+				b->tnokey[0] = bi.nokey[0] = p - 1;	\
+				b->tnokey[1] = bi.nokey[1] = p;		\
 				TRC_DEBUG(ALGO, "Fixed nokey(" BUNFMT "," BUNFMT") for " ALGOBATFMT "\n", p - 1, p, ALGOBATPAR(b)); \
 			}						\
 		}							\
@@ -2015,19 +2015,19 @@ BATordered(BAT *b)
 				else
 					c = strcmp(p1, p2);
 				if (c > 0) {
-					b->tnosorted = p;
+					b->tnosorted = bi.nosorted = p;
 					TRC_DEBUG(ALGO, "Fixed nosorted(" BUNFMT ") for " ALGOBATFMT " (" LLFMT " usec)\n", p, ALGOBATPAR(b), GDKusec() - t0);
 					goto doreturn;
 				} else if (c < 0) {
 					assert(!b->trevsorted);
 					if (b->tnorevsorted == 0) {
-						b->tnorevsorted = p;
+						b->tnorevsorted = bi.norevsorted = p;
 						TRC_DEBUG(ALGO, "Fixed norevsorted(" BUNFMT ") for " ALGOBATFMT "\n", p, ALGOBATPAR(b));
 					}
 				} else if (b->tnokey[1] == 0) {
 					assert(!b->tkey);
-					b->tnokey[0] = p - 1;
-					b->tnokey[1] = p;
+					b->tnokey[0] = bi.nokey[0] = p - 1;
+					b->tnokey[1] = bi.nokey[1] = p;
 					TRC_DEBUG(ALGO, "Fixed nokey(" BUNFMT "," BUNFMT") for " ALGOBATFMT "\n", p - 1, p, ALGOBATPAR(b));
 				}
 			}
@@ -2037,17 +2037,17 @@ BATordered(BAT *b)
 			for (BUN q = BATcount(b), p = 1; p < q; p++) {
 				int c;
 				if ((c = cmpf(BUNtail(bi, p - 1), BUNtail(bi, p))) > 0) {
-					b->tnosorted = p;
+					b->tnosorted = bi.nosorted = p;
 					TRC_DEBUG(ALGO, "Fixed nosorted(" BUNFMT ") for " ALGOBATFMT " (" LLFMT " usec)\n", p, ALGOBATPAR(b), GDKusec() - t0);
 					goto doreturn;
 				} else if (c < 0) {
 					if (!b->trevsorted && b->tnorevsorted == 0) {
-						b->tnorevsorted = p;
+						b->tnorevsorted = bi.norevsorted = p;
 						TRC_DEBUG(ALGO, "Fixed norevsorted(" BUNFMT ") for " ALGOBATFMT "\n", p, ALGOBATPAR(b));
 					}
 				} else if (!b->tkey && b->tnokey[1] == 0) {
-					b->tnokey[0] = p - 1;
-					b->tnokey[1] = p;
+					b->tnokey[0] = bi.nokey[0] = p - 1;
+					b->tnokey[1] = bi.nokey[1] = p;
 					TRC_DEBUG(ALGO, "Fixed nokey(" BUNFMT "," BUNFMT") for " ALGOBATFMT "\n", p - 1, p, ALGOBATPAR(b));
 				}
 			}
@@ -2059,20 +2059,42 @@ BATordered(BAT *b)
 		 * sortedness, we know that the BAT is also reverse
 		 * sorted; similarly, if we didn't record evidence about
 		 * keyness, we know the BAT is key */
-		b->tsorted = true;
+		b->tsorted = bi.sorted = true;
 		TRC_DEBUG(ALGO, "Fixed sorted for " ALGOBATFMT " (" LLFMT " usec)\n", ALGOBATPAR(b), GDKusec() - t0);
 		if (!b->trevsorted && b->tnorevsorted == 0) {
-			b->trevsorted = true;
+			b->trevsorted = bi.revsorted = true;
 			TRC_DEBUG(ALGO, "Fixed revsorted for " ALGOBATFMT "\n", ALGOBATPAR(b));
 		}
 		if (!b->tkey && b->tnokey[1] == 0) {
-			b->tkey = true;
+			b->tkey = bi.key = true;
 			TRC_DEBUG(ALGO, "Fixed key for " ALGOBATFMT "\n", ALGOBATPAR(b));
 		}
 	}
   doreturn:
 	sorted = b->tsorted;
+	bat pbid = VIEWtparent(b);
 	MT_lock_unset(&b->theaplock);
+	if (pbid) {
+		BAT *pb = BBP_cache(pbid);
+		MT_lock_set(&pb->theaplock);
+		if (bi.count == BATcount(pb) &&
+		    bi.h == pb->theap &&
+		    bi.type == pb->ttype) {
+			/* add to knowledge in parent bat */
+			pb->tsorted |= bi.sorted;
+			if (pb->tnosorted == 0)
+				pb->tnosorted = bi.nosorted;
+			pb->trevsorted |= bi.revsorted;
+			if (pb->tnorevsorted == 0)
+				pb->tnorevsorted = bi.norevsorted;
+			pb->tkey |= bi.key;
+			if (pb->tnokey[1] == 0) {
+				pb->tnokey[0] = bi.nokey[0];
+				pb->tnokey[1] = bi.nokey[1];
+			}
+		}
+		MT_lock_unset(&pb->theaplock);
+	}
 	return sorted;
 }
 
@@ -2095,7 +2117,7 @@ BATordered(BAT *b)
 			TPE prev = vals[p - 1], next = vals[p];		\
 			int cmp = is_flt_nil(prev) ? -!is_flt_nil(next) : is_flt_nil(next) ? 1 : (prev > next) - (prev < next);	\
 			if (cmp < 0) {					\
-				b->tnorevsorted = p;			\
+				b->tnorevsorted = bi.norevsorted = p;	\
 				TRC_DEBUG(ALGO, "Fixed norevsorted(" BUNFMT ") for " ALGOBATFMT " (" LLFMT " usec)\n", p, ALGOBATPAR(b), GDKusec() - t0); \
 				goto doreturn;				\
 			}						\
@@ -2164,12 +2186,26 @@ BATordered_rev(BAT *b)
 			break;
 		}
 		}
-		b->trevsorted = true;
+		b->trevsorted = bi.revsorted = true;
 		TRC_DEBUG(ALGO, "Fixed revsorted for " ALGOBATFMT " (" LLFMT " usec)\n", ALGOBATPAR(b), GDKusec() - t0);
 	}
   doreturn:
 	revsorted = b->trevsorted;
+	bat pbid = VIEWtparent(b);
 	MT_lock_unset(&b->theaplock);
+	if (pbid) {
+		BAT *pb = BBP_cache(pbid);
+		MT_lock_set(&pb->theaplock);
+		if (bi.count == BATcount(pb) &&
+		    bi.h == pb->theap &&
+		    bi.type == pb->ttype) {
+			/* add to knowledge in parent bat */
+			pb->trevsorted |= bi.revsorted;
+			if (pb->tnorevsorted == 0)
+				pb->tnorevsorted = bi.norevsorted;
+		}
+		MT_lock_unset(&pb->theaplock);
+	}
 	return revsorted;
 }
 
