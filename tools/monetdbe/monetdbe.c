@@ -285,8 +285,8 @@ cleanup:
 }
 
 static char*
-monetdbe_get_results(monetdbe_result** result, monetdbe_database_internal *mdbe) {
-
+monetdbe_get_results(monetdbe_result** result, monetdbe_database_internal *mdbe)
+{
 	backend *be = NULL;
 
 	*result = NULL;
@@ -406,13 +406,11 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 		goto cleanup;
 	if (prepare_id)
 		m->emode = m_prepare;
-	if ((mdbe->msg = SQLparser(c)) != MAL_SUCCEED)
+	c->fdout = NULL;
+	if ((mdbe->msg = SQLengine_(c)) != MAL_SUCCEED)
 		goto cleanup;
 	if (m->emode == m_prepare && prepare_id)
 		*prepare_id = b->q->id;
-	c->fdout = NULL;
-	if ((mdbe->msg = SQLengine(c)) != MAL_SUCCEED)
-		goto cleanup;
 	if (!b->results && b->rowcnt >= 0 && affected_rows)
 		*affected_rows = b->rowcnt;
 
@@ -1105,15 +1103,7 @@ monetdbe_set_remote_results(backend *be, char* tblname, columnar_result* results
 		return error;
 	}
 
-	BAT* order = BATdense(0, 0, BATcount(b_0));
-	if (!order) {
-		BBPunfix(b_0->batCacheid);
-		error = createException(MAL,"monetdbe.monetdbe_set_remote_results",SQLSTATE(HY005) MAL_MALLOC_FAIL);
-		return error;
-	}
-
-	int res = mvc_result_table(be, 0, (int) nr_results, Q_TABLE, order);
-	BBPunfix(order->batCacheid);
+	int res = mvc_result_table(be, 0, (int) nr_results, Q_TABLE);
 	if (res < 0) {
 		BBPunfix(b_0->batCacheid);
 		error = createException(MAL,"monetdbe.monetdbe_set_remote_results",SQLSTATE(HY005) "Cannot create result table");
@@ -1538,7 +1528,6 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 		else
 			((monetdbe_result_internal*) *result)->type = (be->results) ? be->results->query_type : m->type;
 
-
 		if (!be->results && be->rowcnt >= 0 && affected_rows)
 			*affected_rows = be->rowcnt;
 	}
@@ -1713,7 +1702,7 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 	}
 
 	s = findSymbolInModule(mdbe->c->usermodule, q->f->imp);
-	if ((mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0)) != MAL_SUCCEED)
+	if ((mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args)) != MAL_SUCCEED)
 		goto cleanup;
 
 	if (b->rowcnt >= 0 && affected_rows)

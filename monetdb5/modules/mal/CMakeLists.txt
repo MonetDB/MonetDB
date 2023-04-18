@@ -25,7 +25,6 @@ target_sources(malmodules
   manifold.c manifold.h
   iterator.c
   clients.c clients.h
-  factories.c
   groupby.c
   mdb.c
   pcre.c

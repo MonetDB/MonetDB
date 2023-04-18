@@ -387,7 +387,7 @@ table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_c
 	bat_destroy(cr2);
 	cl = r;
 	/* project all in the new order */
-	res_table *rt = res_table_create(tr, 1/*result_id*/, 1/*query_id*/, ol_length(t->columns), Q_TABLE, NULL, NULL);
+	res_table *rt = res_table_create(tr, 1/*result_id*/, 1/*query_id*/, ol_length(t->columns), Q_TABLE, NULL);
 	if (!rt) {
 		bat_destroy(cl);
 		return NULL;
