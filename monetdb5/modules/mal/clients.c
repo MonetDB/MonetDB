@@ -534,7 +534,7 @@ CLTsessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mal_clients[idx].mode == FREECLIENT)
 		msg = createException(MAL,"clients.setsessiontimeout","Session not active anymore");
 	else {
-		mal_clients[idx].sessiontimeout = (lng) (sto * 1000000) + (GDKusec() - mal_clients[idx].session);
+		mal_clients[idx].sessiontimeout = sto > 0 ? (lng) (sto * 1000000) + (GDKusec() - mal_clients[idx].session) : 0;
 		mal_clients[idx].logical_sessiontimeout = (lng) sto;
 	}
 	MT_lock_unset(&mal_contextLock);
