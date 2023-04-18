@@ -39290,7 +39290,7 @@ TXTSIMmaxlevenshtein;
 Levenshtein distance with variable costs but up to a MAX
 txtsim
 maxlevenshteinjoin
-command txtsim.maxlevenshteinjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit, X_7:any) (X_8:bat[:oid], X_9:bat[:oid]) 
+command txtsim.maxlevenshteinjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:int], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
 TXTSIMmaxlevenshteinjoin;
 (empty)
 txtsim
