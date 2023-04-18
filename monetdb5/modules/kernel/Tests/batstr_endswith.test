@@ -1,0 +1,80 @@
+statement ok
+create table foo(x string)
+
+statement ok
+insert into foo values ('johndoe'),('janedoe'),('robertdoe')
+
+query T
+select endswith(x, '') from foo
+----
+True
+True
+True
+
+query T
+select endswith('', x) from foo
+----
+False
+False
+False
+
+statement ok
+drop table foo
+
+statement ok
+create table bar(x string, y string)
+
+statement ok
+insert into bar values ('johndoe','doe'),('Müller Thomas', 'Thomas Müller'),('Thomas Müller', 'Müller Thomas')
+
+query T
+select endswith(x, 'Müller') from bar
+----
+False
+False
+True
+
+statement ok
+drop table bar
+
+statement ok
+create table baz(x string)
+
+statement ok
+create table bazbaz(x string)
+
+statement ok
+insert into baz values ('john doe'),('jane doe'),('robert doe')
+
+statement ok
+insert into bazbaz values ('doe'),('doe'),('doe')
+
+query T
+select * from baz where [baz.x] endswith ['john', true];
+----
+
+query T
+select * from baz where [baz.x] endswith ['doe', true];
+----
+john doe
+jane doe
+robert doe
+
+query T rowsort
+select baz.x from baz,bazbaz where [baz.x] endswith [bazbaz.x, true];
+----
+jane doe
+jane doe
+jane doe
+john doe
+john doe
+john doe
+robert doe
+robert doe
+robert doe
+
+statement ok
+drop table baz
+
+statement ok
+drop table bazbaz

@@ -8,16 +8,6 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
  */
 
-/*
- *  M.L. Kersten
- * String multiplexes
- * [TODO: property propagations]
- * The collection of routines provided here are map operations
- * for the atom string primitives.
- *
- * In line with the batcalc module, we assume that if two bat operands
- * are provided that they are aligned.
- */
 #include "monetdb_config.h"
 #include "gdk.h"
 #include <ctype.h>
@@ -26,6 +16,9 @@
 #include "mal_interpreter.h"
 #include "mal_exception.h"
 #include "str.h"
+#ifdef HAVE_ICONV
+#include <iconv.h>
+#endif
 
 /* In order to make avaialble a bulk version of a string function with candidates, all possible combinations of scalar/vector
 	version of each argument must be avaiable for the function. Obviously this won't scale for functions with a large number of
@@ -42,7 +35,7 @@ batstr_func_has_candidates(const char *func)
 }
 
 static inline void
-finalize_ouput(bat *res, BAT *bn, str msg, bool nils, BUN q)
+finalize_output(bat *res, BAT *bn, str msg, bool nils, BUN q)
 {
 	if (bn && !msg) {
 		BATsetcount(bn, q);
@@ -51,6 +44,7 @@ finalize_ouput(bat *res, BAT *bn, str msg, bool nils, BUN q)
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
+		bn->theap->dirty |= BATcount(bn) > 0;
 		*res = bn->batCacheid;
 		BBPkeepref(bn);
 	} else if (bn)
@@ -135,7 +129,7 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const cha
 	}
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -208,7 +202,7 @@ STRbatAscii(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bailout1:
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -302,7 +296,7 @@ STRbatFromWChr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -389,7 +383,7 @@ STRbatSpace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -474,7 +468,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -562,7 +556,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -650,7 +644,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -749,7 +743,7 @@ bailout1:
 	bat_iterator_end(&righti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -838,7 +832,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -928,7 +922,7 @@ do_batstr_int_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -1032,7 +1026,7 @@ bailout1:
 	bat_iterator_end(&lefti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, ls, right, rs);
 	return msg;
 }
@@ -1122,7 +1116,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -1227,7 +1221,7 @@ bailout1:
 	bat_iterator_end(&lefti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, ls, right, rs);
 	return msg;
 }
@@ -1329,7 +1323,7 @@ bailout1:
 	bat_iterator_end(&righti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, ls, right, rs);
 	return msg;
 }
@@ -1439,7 +1433,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, arg1, arg1s, arg2, arg2s, arg3, arg3s);
 	return msg;
 }
@@ -1629,10 +1623,12 @@ STRbatRpad3_bat_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * head column. This is not checked and may be mis-used to deploy the
  * implementation for shifted window arithmetic as well.
  */
-
 static str
-prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, bit (*func)(const char*, const char*))
+prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, bit (*func)(const char*, const char*, int), bit *icase)
 {
+	(void) cntxt;
+	(void) mb;
+
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
 	bit *restrict vals;
@@ -1642,28 +1638,26 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 1),
 		*r = getArgReference_bat(stk, pci, 2),
-		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
-		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
+		*sid1 = pci->argc >= 5 ? getArgReference_bat(stk, pci, icase?4:3) : NULL,
+		*sid2 = pci->argc >= 5 ? getArgReference_bat(stk, pci, icase?5:4) : NULL;
 
-	(void) cntxt;
-	(void) mb;
 	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	if ((sid1 && !is_bat_nil(*sid1) && !(lefts = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(rights = BATdescriptor(*sid2)))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	canditer_init(&ci1, left, lefts);
 	canditer_init(&ci2, right, rights);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
-		goto bailout;
+		goto exit2;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_bit, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		goto exit2;
 	}
 
 	off1 = left->hseqbase;
@@ -1674,207 +1668,285 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
-			const char *y = BUNtvar(righti, p2);
+			char *x = BUNtvar(lefti, p1);
+			char *y = BUNtvar(righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, str_strlen(y));
 			}
 		}
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
-			const char *y = BUNtvar(righti, p2);
+			char *x = BUNtvar(lefti, p1);
+			char *y = BUNtvar(righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, str_strlen(y));
 			}
 		}
 	}
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
-bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+ exit2:
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
 
 static str
-STRbatPrefix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BATSTRstarts_with(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return prefix_or_suffix(cntxt, mb, stk, pci, "batstr.startsWith", str_is_prefix);
+	bit *icase = NULL;
+	if (pci->argc == 4 || pci->argc == 6) {
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
+	}
+	return prefix_or_suffix(cntxt, mb, stk, pci, "batstr.startsWith", (icase && *icase)?str_is_iprefix:str_is_prefix, icase);
 }
 
 static str
-STRbatSuffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BATSTRends_with(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return prefix_or_suffix(cntxt, mb, stk, pci, "batstr.endsWith", str_is_suffix);
+	bit *icase = NULL;
+	if (pci->argc == 4 || pci->argc == 6) {
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
+	}
+	return prefix_or_suffix(cntxt, mb, stk, pci, "batstr.endsWith", (icase && *icase)?str_is_isuffix:str_is_suffix, icase);
 }
 
 static str
-prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, bit (*func)(const char*, const char*))
+BATSTRcontains(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	bit *icase = NULL;
+	if (pci->argc == 4 || pci->argc == 6) {
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
+	}
+	return prefix_or_suffix(cntxt, mb, stk, pci, "batstr.contains", (icase && *icase)?str_icontains:str_contains, icase);
+}
+
+static str
+prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, bit (*func)(const char*, const char*, int), bit *icase)
+{
+	(void) cntxt;
+	(void) mb;
+
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	bit *restrict vals;
-	const char *y = *getArgReference_str(stk, pci, 2);
-	str msg = MAL_SUCCEED;
+	str y = *getArgReference_str(stk, pci, 2), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = {0};
 	oid off1;
-	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
-		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1), *sid1 = NULL;
+	int ynil, ylen;
+	if ((!icase && pci->argc == 4) || pci->argc == 5) {
+		assert(getArgType(mb, pci, icase?4:3) == TYPE_bat);
+		sid1 = getArgReference_bat(stk, pci, icase?4:3);
+	}
 
-	(void) cntxt;
-	(void) mb;
 	if (!(b = BATdescriptor(*bid))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	canditer_init(&ci1, b, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_bit, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		goto exit2;
 	}
 
 	off1 = b->hseqbase;
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
+	ynil = strNil(y);
+	ylen = str_strlen(y);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			char *x = BUNtvar(bi, p1);
 
-			if (strNil(x) || strNil(y)) {
+			if (ynil || strNil(x)) {
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, ylen);
 			}
 		}
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			char *x = BUNtvar(bi, p1);
 
-			if (strNil(x) || strNil(y)) {
+			if (ynil || strNil(x)) {
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, ylen);
 			}
 		}
 	}
 	bat_iterator_end(&bi);
-bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+ exit2:
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
 
 static str
-STRbatPrefixcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BATSTRstarts_with_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return prefix_or_suffix_cst(cntxt, mb, stk, pci, "batstr.startsWith", str_is_prefix);
+	bit *icase = NULL;
+	if ((pci->argc == 4 && getArgType(mb, pci, 3) == TYPE_bit) || pci->argc == 5) {
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
+	}
+	return prefix_or_suffix_cst(cntxt, mb, stk, pci, "batstr.startsWith", (icase && *icase)?str_is_iprefix:str_is_prefix, icase);
 }
 
 static str
-STRbatSuffixcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BATSTRends_with_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return prefix_or_suffix_cst(cntxt, mb, stk, pci, "batstr.endsWith", str_is_suffix);
+	bit *icase = NULL;
+	if ((pci->argc == 4 && getArgType(mb, pci, 3) == TYPE_bit) || pci->argc == 5) {
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
+	}
+	return prefix_or_suffix_cst(cntxt, mb, stk, pci, "batstr.endsWith", (icase && *icase)?str_is_isuffix:str_is_suffix, icase);
 }
 
 static str
-prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, bit (*func)(const char*, const char*))
+BATSTRcontains_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	bit *icase = NULL;
+	if ((pci->argc == 4 && getArgType(mb, pci, 3) == TYPE_bit) || pci->argc == 5) {
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
+	}
+	return prefix_or_suffix_cst(cntxt, mb, stk, pci, "batstr.contains", (icase && *icase)?str_icontains:str_contains, icase);
+}
+
+static str
+prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, bit (*func)(const char*, const char*, int), bit *icase)
+{
+	(void) cntxt;
+	(void) mb;
+
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	bit *restrict vals;
-	const char *x = *getArgReference_str(stk, pci, 1);
+	char *x = *getArgReference_str(stk, pci, 1);
 	str msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = {0};
 	oid off1;
-	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2),
-		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2), *sid1 = NULL;
+	int xnil;
+	if ((!icase && pci->argc == 4) || pci->argc == 5) {
+		assert(getArgType(mb, pci, icase?4:3) == TYPE_bat);
+		sid1 = getArgReference_bat(stk, pci, icase?4:3);
+	}
 
-	(void) cntxt;
-	(void) mb;
 	if (!(b = BATdescriptor(*bid))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	canditer_init(&ci1, b, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_bit, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		goto exit2;
 	}
 
 	off1 = b->hseqbase;
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
+	xnil = strNil(x);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *y = BUNtvar(bi, p1);
+			char *y = BUNtvar(bi, p1);
 
-			if (strNil(x) || strNil(y)) {
+			if (xnil || strNil(y)) {
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, str_strlen(y));
 			}
 		}
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *y = BUNtvar(bi, p1);
+			char *y = BUNtvar(bi, p1);
 
-			if (strNil(x) || strNil(y)) {
+			if (xnil || strNil(y)) {
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, str_strlen(y));
 			}
 		}
 	}
 	bat_iterator_end(&bi);
-bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+ exit2:
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
 
 static str
-STRbatPrefix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BATSTRstarts_with_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return prefix_or_suffix_strcst(cntxt, mb, stk, pci, "batstr.startsWith", str_is_prefix);
+	bit *icase = NULL;
+	if ((pci->argc == 4 && getArgType(mb, pci, 3) == TYPE_bit) || pci->argc == 5) {
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
+	}
+	return prefix_or_suffix_strcst(cntxt, mb, stk, pci, "batstr.startsWith", (icase && *icase)?str_is_iprefix:str_is_prefix, icase);
 }
 
 static str
-STRbatSuffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BATSTRends_with_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return prefix_or_suffix_strcst(cntxt, mb, stk, pci, "batstr.endsWith", str_is_suffix);
+	bit *icase = NULL;
+	if ((pci->argc == 4 && getArgType(mb, pci, 3) == TYPE_bit) || pci->argc == 5) {
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
+	}
+	return prefix_or_suffix_strcst(cntxt, mb, stk, pci, "batstr.endsWith", (icase && *icase)?str_is_isuffix:str_is_suffix, icase);
 }
 
 static str
-search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, int (*func)(const char*, const char*))
+BATSTRcontains_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	bit *icase = NULL;
+	if ((pci->argc == 4 && getArgType(mb, pci, 3) == TYPE_bit) || pci->argc == 5) {
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
+	}
+	return prefix_or_suffix_strcst(cntxt, mb, stk, pci, "batstr.contains", (icase && *icase)?str_icontains:str_contains, icase);
+}
+
+static str
+search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, int (*func)(const char*, const char*, int), bit *icase)
+{
+	(void) cntxt;
+	(void) mb;
+
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
 	int *restrict vals;
@@ -1884,28 +1956,26 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 	oid off1, off2;
 	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 1),
 		*r = getArgReference_bat(stk, pci, 2),
-		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
-		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
+		*sid1 = pci->argc >= 5 ? getArgReference_bat(stk, pci, icase?4:3) : NULL,
+		*sid2 = pci->argc >= 5 ? getArgReference_bat(stk, pci, icase?5:4) : NULL;
 
-	(void) cntxt;
-	(void) mb;
 	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	if ((sid1 && !is_bat_nil(*sid1) && !(lefts = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(rights = BATdescriptor(*sid2)))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	canditer_init(&ci1, left, lefts);
 	canditer_init(&ci2, right, rights);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
 		msg = createException(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
-		goto bailout;
+		goto exit2;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		goto exit2;
 	}
 
 	off1 = left->hseqbase;
@@ -1916,53 +1986,78 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
-			const char *y = BUNtvar(righti, p2);
+			char *x = BUNtvar(lefti, p1);
+			char *y = BUNtvar(righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, str_strlen(y));
 			}
 		}
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
-			const char *y = BUNtvar(righti, p2);
+			char *x = BUNtvar(lefti, p1);
+			char *y = BUNtvar(righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, str_strlen(y));
 			}
 		}
 	}
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
-bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+ exit2:
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
 
 static str
-STRbatstrSearch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BATSTRstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return search_string_bat(cntxt, mb, stk, pci, "batstr.search", str_search);
+	bit *icase = NULL;
+	switch (pci->argc) {
+	case 4:
+		if (getArgType(mb, pci, 3) == TYPE_bit)
+			icase = getArgReference_bit(stk, pci, 3);
+		break;
+	case 6:
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
+		break;
+	}
+	return search_string_bat(cntxt, mb, stk, pci, "batstr.search", (icase&&*icase)?str_isearch:str_search, icase);
 }
 
 static str
-STRbatRstrSearch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BATSTRrevstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return search_string_bat(cntxt, mb, stk, pci, "batstr.r_search", str_reverse_str_search);
+	bit *icase = NULL;
+	switch (pci->argc) {
+	case 4:
+		if (getArgType(mb, pci, 3) == TYPE_bit)
+			icase = getArgReference_bit(stk, pci, 3);
+		break;
+	case 6:
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
+		break;
+	}
+	return search_string_bat(cntxt, mb, stk, pci, "batstr.r_search", (icase&&*icase)?str_reverse_str_isearch:str_reverse_str_search, icase);
 }
 
 static str
-search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, int (*func)(const char*, const char*))
+search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, int (*func)(const char*, const char*, int), bit *icase)
 {
+	(void) cntxt;
+	(void) mb;
+
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	int *restrict vals;
@@ -1971,147 +2066,203 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 	bool nils = false;
 	struct canditer ci1 = {0};
 	oid off1;
-	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
-		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1), *sid1 = NULL;
+	int ynil, ylen;
+	/* checking if icase is ~NULL and not if it is true or false */
+	if (pci->argc == 4 || pci->argc == 5) {
+		assert(getArgType(mb, pci, icase?4:3) == TYPE_bat);
+		sid1 = getArgReference_bat(stk, pci, icase?4:3);
+	}
 
-	(void) cntxt;
-	(void) mb;
 	if (!(b = BATdescriptor(*bid))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	canditer_init(&ci1, b, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		goto exit2;
 	}
 
 	off1 = b->hseqbase;
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
+	ynil = strNil(y);
+	ylen = str_strlen(y);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			char *x = BUNtvar(bi, p1);
 
-			if (strNil(x) || strNil(y)) {
+			if (ynil || strNil(x)) {
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, ylen);
 			}
 		}
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			char *x = BUNtvar(bi, p1);
 
-			if (strNil(x) || strNil(y)) {
+			if (ynil || strNil(x)) {
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, ylen);
 			}
 		}
 	}
 	bat_iterator_end(&bi);
-bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+ exit2:
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
 
 static str
-STRbatstrSearchcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BATSTRstr_search_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return search_string_bat_cst(cntxt, mb, stk, pci, "batstr.search", str_search);
+	bit *icase = NULL;
+	switch (pci->argc) {
+	case 4:
+		if (getArgType(mb, pci, 3) == TYPE_bit)
+			icase = getArgReference_bit(stk, pci, 3);
+		break;
+	case 5:
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
+		break;
+	}
+	return search_string_bat_cst(cntxt, mb, stk, pci, "batstr.search", (icase && *icase)?str_isearch:str_search, icase);
 }
 
 static str
-STRbatRstrSearchcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BATSTRrevstr_search_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return search_string_bat_cst(cntxt, mb, stk, pci, "batstr.r_search", str_reverse_str_search);
+	bit *icase = NULL;
+	switch (pci->argc) {
+	case 4:
+		if (getArgType(mb, pci, 3) == TYPE_bit)
+			icase = getArgReference_bit(stk, pci, 3);
+		break;
+	case 5:
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
+		break;
+	}
+	return search_string_bat_cst(cntxt, mb, stk, pci, "batstr.r_search", (icase && *icase)?str_reverse_str_isearch:str_reverse_str_search, icase);
 }
 
 static str
-search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, int (*func)(const char*, const char*))
+search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, int (*func)(const char*, const char*, int), bit *icase)
 {
+	(void) cntxt;
+	(void) mb;
+
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	int *restrict vals;
-	const char *x = *getArgReference_str(stk, pci, 1);
+	char *x = *getArgReference_str(stk, pci, 1);
 	str msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = {0};
 	oid off1;
-	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2),
-		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2), *sid1 = NULL;
+	int xnil;
+	/* checking if icase is ~NULL and not if it is true or false */
+	if (pci->argc == 4 || pci->argc == 5) {
+		assert(getArgType(mb, pci, icase?4:3) == TYPE_bat);
+		sid1 = getArgReference_bat(stk, pci, icase?4:3);
+	}
 
-	(void) cntxt;
-	(void) mb;
 	if (!(b = BATdescriptor(*bid))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
+		goto exit2;
 	}
 	canditer_init(&ci1, b, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		goto exit2;
 	}
 
 	off1 = b->hseqbase;
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
+	xnil = strNil(x);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *y = BUNtvar(bi, p1);
+			char *y = BUNtvar(bi, p1);
 
-			if (strNil(x) || strNil(y)) {
+			if (xnil || strNil(y)) {
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, str_strlen(y));
 			}
 		}
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *y = BUNtvar(bi, p1);
+			char *y = BUNtvar(bi, p1);
 
-			if (strNil(x) || strNil(y)) {
+			if (xnil || strNil(y)) {
 				vals[i] = int_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y);
+				vals[i] = func(x, y, str_strlen(y));
 			}
 		}
 	}
 	bat_iterator_end(&bi);
-bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+ exit2:
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
 
 static str
-STRbatstrSearch_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BATSTRstr_search_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return search_string_bat_strcst(cntxt, mb, stk, pci, "batstr.search", str_search);
+	bit *icase = NULL;
+	switch (pci->argc) {
+	case 4:
+		if (getArgType(mb, pci, 3) == TYPE_bit)
+			icase = getArgReference_bit(stk, pci, 3);
+		break;
+	case 5:
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
+		break;
+	}
+	return search_string_bat_strcst(cntxt, mb, stk, pci, "batstr.search", (icase && *icase)?str_isearch:str_search, icase);
 }
 
 static str
-STRbatRstrSearch_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BATSTRrevstr_search_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return search_string_bat_strcst(cntxt, mb, stk, pci, "batstr.r_search", str_reverse_str_search);
+	bit *icase = NULL;
+	switch (pci->argc) {
+	case 4:
+		if (getArgType(mb, pci, 3) == TYPE_bit)
+			icase = getArgReference_bit(stk, pci, 3);
+		break;
+	case 5:
+		assert(getArgType(mb, pci, 3) == TYPE_bit);
+		icase = getArgReference_bit(stk, pci, 3);
+		break;
+	}
+	return search_string_bat_strcst(cntxt, mb, stk, pci, "batstr.r_search", (icase && *icase)?str_reverse_str_isearch:str_reverse_str_search, icase);
 }
 
 static str
@@ -2189,7 +2340,7 @@ bailout1:
 	bat_iterator_end(&lefti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -2256,7 +2407,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2325,7 +2476,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2411,7 +2562,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2521,7 +2672,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2609,7 +2760,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2721,7 +2872,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -2821,7 +2972,7 @@ bailout1:
 	bat_iterator_end(&lefti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -2945,7 +3096,7 @@ bailout1:
 	bat_iterator_end(&lefti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -3032,7 +3183,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -3158,7 +3309,7 @@ bailout1:
 	bat_iterator_end(&arg3i);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(8, arg1, arg1, arg2, arg2s, arg3, arg3s, arg4, arg4s);
 	return msg;
 }
@@ -3245,7 +3396,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -3345,7 +3496,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, f, fs);
 	return msg;
 }
@@ -3443,7 +3594,7 @@ bailout1:
 	bat_iterator_end(&ni);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, n, ns);
 	return msg;
 }
@@ -3551,7 +3702,7 @@ bailout1:
 	bat_iterator_end(&arg2i);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, arg1, arg1s, arg2, arg2s, arg3, arg3s);
 	return msg;
 }
@@ -3664,7 +3815,7 @@ bailout1:
 	bat_iterator_end(&arg3i);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, arg1, arg1s, arg2, arg2s, arg3, arg3s);
 	return msg;
 }
@@ -3783,7 +3934,7 @@ bailout1:
 	bat_iterator_end(&righti);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(8, left, ls, start, ss, nchars, ns, right, rs);
 	return msg;
 }
@@ -3870,7 +4021,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -3959,7 +4110,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -4047,7 +4198,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -4135,7 +4286,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -4237,7 +4388,7 @@ bailout1:
 	bat_iterator_end(&lbi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, lb, lbs);
 	return msg;
 }
@@ -4337,7 +4488,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, lb, lbs);
 	return msg;
 }
@@ -4436,7 +4587,7 @@ bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, lb, lbs);
 	return msg;
 }
@@ -4544,7 +4695,7 @@ bailout1:
 	bat_iterator_end(&lengthi);
 bailout:
 	GDKfree(buf);
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, left, ls, start, ss, length, lens);
 	return msg;
 }
@@ -4609,7 +4760,7 @@ STRbatstrLocatecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -4674,7 +4825,7 @@ STRbatstrLocate_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -4751,7 +4902,7 @@ STRbatstrLocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
 bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, ls, right, rs);
 	return msg;
 }
@@ -4816,7 +4967,7 @@ STRbatstrLocate3cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	bat_iterator_end(&bi);
 bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -4901,164 +5052,376 @@ STRbatstrLocate3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
 bailout:
-	finalize_ouput(res, bn, msg, nils, ci1.ncand);
+	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, left, ls, right, rs, start, ss);
+	return msg;
+}
+
+static str
+BATSTRasciify(bat *ret, bat *bid)
+{
+#ifdef HAVE_ICONV
+	BAT *b = NULL, *bn = NULL;
+	BATiter bi;
+	BUN p, q;
+	bool nils = false;
+	size_t prev_out_len = 0, in_len = 0, out_len = 0;
+	str s = NULL, out = NULL, in = NULL, msg = MAL_SUCCEED;
+	iconv_t cd;
+	const str f = "UTF8", t = "ASCII//TRANSLIT";
+
+	/* man iconv; /TRANSLIT */
+	if ((cd = iconv_open(t, f)) == (iconv_t)(-1))
+		throw(MAL, "batstr.asciify", "ICONV: cannot convert from (%s) to (%s).", f, t);
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "batstr.asciify", RUNTIME_OBJECT_MISSING);
+	if ((bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT)) == NULL) {
+		BBPreclaim(b);
+		throw(MAL, "batstr.asciify", GDK_EXCEPTION);
+	}
+	bi = bat_iterator(b);
+	BATloop(b, p, q) {
+		in = (str) BUNtail(bi, p);
+		if (strNil(in)) {
+			if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
+				msg = createException(MAL,"batstr.asciify", "ICONV: string conversion failed");
+				goto exit;
+			}
+			nils = true;
+			continue;
+		}
+		in_len = strlen(in), out_len = in_len + 1;
+		if (out == NULL) {
+			if ((out = GDKmalloc(out_len)) == NULL) {
+				msg = createException(MAL,"batstr.asciify", MAL_MALLOC_FAIL);
+				goto exit;
+			}
+			prev_out_len = out_len;
+		}
+		else if (out_len > prev_out_len) {
+			if ((out = GDKrealloc(s, out_len)) == NULL) {
+				msg = createException(MAL,"batstr.asciify", MAL_MALLOC_FAIL);
+				goto exit;
+			}
+			prev_out_len = out_len;
+		}
+		s = out;
+		if (iconv(cd, &in, &in_len, &out, &out_len) == (size_t) - 1) {
+			GDKfree(out);
+			s = NULL;
+			msg = createException(MAL,"batstr.asciify", "ICONV: string conversion failed");
+			goto exit;
+		}
+		*out = '\0';
+		if (BUNappend(bn, s, false) != GDK_SUCCEED) {
+			msg = createException(MAL,"batstr.asciify", GDK_EXCEPTION);
+			goto exit;
+		}
+	}
+ exit:
+	bat_iterator_end(&bi);
+	iconv_close(cd);
+	finalize_output(ret, bn, msg, nils, q);
+	BBPreclaim(b);
+	return msg;
+#else
+	throw(MAL, "batstr.asciify", "ICONV library not available.");
+#endif
+}
+
+static inline void
+str_reverse(char *dst, const char *src, size_t len)
+{
+	dst[len] = 0;
+	if (strNil(src)) {
+		assert(len == strlen(str_nil));
+		strcpy(dst, str_nil);
+		return;
+	}
+	while (*src) {
+		if ((*src & 0xF8) == 0xF0) {
+			/* 4 byte UTF-8 sequence */
+			assert(len >= 4);
+			dst[len - 4] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 3] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 2] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 1] = *src++;
+			len -= 4;
+		} else if ((*src & 0xF0) == 0xE0) {
+			/* 3 byte UTF-8 sequence */
+			assert(len >= 3);
+			dst[len - 3] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 2] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 1] = *src++;
+			len -= 3;
+		} else if ((*src & 0xE0) == 0xC0) {
+			/* 2 byte UTF-8 sequence */
+			assert(len >= 2);
+			dst[len - 2] = *src++;
+			assert((*src & 0xC0) == 0x80);
+			dst[len - 1] = *src++;
+			len -= 2;
+		} else {
+			/* 1 byte UTF-8 "sequence" */
+			assert(len >= 1);
+			assert((*src & 0x80) == 0);
+			dst[--len] = *src++;
+		}
+	}
+	assert(len == 0);
+}
+
+static str
+BATSTRreverse(bat *res, const bat *arg)
+{
+	BAT *b = NULL, *bn = NULL;
+	BATiter bi;
+	BUN p, q;
+	const char *src;
+	size_t len = 0, dst_len = 1024;
+	str dst, msg = MAL_SUCCEED;
+	bool nils = false;
+
+	if (!(dst = GDKzalloc(dst_len)))
+		throw(MAL, "batstr.reverse", MAL_MALLOC_FAIL);
+	if (!(b = BATdescriptor(*arg))) {
+		GDKfree(dst);
+		throw(MAL, "batstr.reverse", RUNTIME_OBJECT_MISSING);
+	}
+	assert(b->ttype == TYPE_str);
+	if (!(bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT))) {
+		GDKfree(dst);
+		BBPreclaim(b);
+		throw(MAL, "batstr.reverse", MAL_MALLOC_FAIL);
+	}
+	bi = bat_iterator(b);
+	BATloop(b, p, q) {
+		src = (const char *) BUNtail(bi, p);
+		if (strNil(src)) {
+			assert(len > strlen(src));
+			nils = true;
+			strcpy(dst, str_nil);
+		}
+		else {
+			len = strlen(src);
+			if (len >= dst_len) {
+				dst_len = len + 1024;
+				if ((dst = GDKrealloc(dst, dst_len)) == NULL) {
+					msg = createException(MAL,"batstr.reverse", MAL_MALLOC_FAIL);
+					goto exit;
+				}
+			}
+			str_reverse(dst, src, len);
+		}
+		if (tfastins_nocheckVAR(bn, p, dst) != GDK_SUCCEED) {
+			msg = createException(MAL,"batstr.reverse", GDK_EXCEPTION);
+			goto exit;
+		}
+	}
+ exit:
+	bat_iterator_end(&bi);
+	GDKfree(dst);
+	finalize_output(res, bn, msg, nils, q);
+	BBPreclaim(b);
 	return msg;
 }
 
 #include "mel.h"
 mel_func batstr_init_funcs[] = {
- pattern("batstr", "length", STRbatLength, false, "Return the length of a string.", args(1,2, batarg("",int),batarg("s",str))),
- pattern("batstr", "length", STRbatLength, false, "Return the length of a string.", args(1,3, batarg("",int),batarg("s",str),batarg("s",oid))),
- pattern("batstr", "nbytes", STRbatBytes, false, "Return the string length in bytes.", args(1,2, batarg("",int),batarg("s",str))),
- pattern("batstr", "nbytes", STRbatBytes, false, "Return the string length in bytes.", args(1,3, batarg("",int),batarg("s",str),batarg("s",oid))),
- pattern("batstr", "toLower", STRbatLower, false, "Convert a string to lower case.", args(1,2, batarg("",str),batarg("s",str))),
- pattern("batstr", "toLower", STRbatLower, false, "Convert a string to lower case.", args(1,3, batarg("",str),batarg("s",str),batarg("s",oid))),
- pattern("batstr", "toUpper", STRbatUpper, false, "Convert a string to upper case.", args(1,2, batarg("",str),batarg("s",str))),
- pattern("batstr", "toUpper", STRbatUpper, false, "Convert a string to upper case.", args(1,3, batarg("",str),batarg("s",str),batarg("s",oid))),
- pattern("batstr", "trim", STRbatStrip, false, "Strip whitespaces around a string.", args(1,2, batarg("",str),batarg("s",str))),
- pattern("batstr", "trim", STRbatStrip, false, "Strip whitespaces around a string.", args(1,3, batarg("",str),batarg("s",str),batarg("s",oid))),
- pattern("batstr", "ltrim", STRbatLtrim, false, "Strip whitespaces from start of a string.", args(1,2, batarg("",str),batarg("s",str))),
- pattern("batstr", "ltrim", STRbatLtrim, false, "Strip whitespaces from start of a string.", args(1,3, batarg("",str),batarg("s",str),batarg("s",oid))),
- pattern("batstr", "rtrim", STRbatRtrim, false, "Strip whitespaces from end of a string.", args(1,2, batarg("",str),batarg("s",str))),
- pattern("batstr", "rtrim", STRbatRtrim, false, "Strip whitespaces from end of a string.", args(1,3, batarg("",str),batarg("s",str),batarg("s",oid))),
- pattern("batstr", "trim2", STRbatStrip2_const, false, "Strip characters in the second string around the first strings.", args(1,3, batarg("",str),batarg("s",str),arg("s2",str))),
- pattern("batstr", "trim2", STRbatStrip2_const, false, "Strip characters in the second string around the first strings.", args(1,4, batarg("",str),batarg("s",str),arg("s2",str),batarg("s",oid))),
- pattern("batstr", "trim2", STRbatStrip2_1st_const, false, "Strip characters in the second string around the first strings.", args(1,3, batarg("",str),arg("s",str),batarg("s2",str))),
- pattern("batstr", "trim2", STRbatStrip2_1st_const, false, "Strip characters in the second string around the first strings.", args(1,4, batarg("",str),arg("s",str),batarg("s2",str),batarg("s",oid))),
- pattern("batstr", "ltrim2", STRbatLtrim2_const, false, "Strip characters in the second string from start of the first strings.", args(1,3, batarg("",str),batarg("s",str),arg("s2",str))),
- pattern("batstr", "ltrim2", STRbatLtrim2_const, false, "Strip characters in the second string from start of the first strings.", args(1,4, batarg("",str),batarg("s",str),arg("s2",str),batarg("s",oid))),
- pattern("batstr", "ltrim2", STRbatLtrim2_1st_const, false, "Strip characters in the second string from start of the first strings.", args(1,3, batarg("",str),arg("s",str),batarg("s2",str))),
- pattern("batstr", "ltrim2", STRbatLtrim2_1st_const, false, "Strip characters in the second string from start of the first strings.", args(1,4, batarg("",str),arg("s",str),batarg("s2",str),batarg("s",oid))),
- pattern("batstr", "rtrim2", STRbatRtrim2_const, false, "Strip characters in the second string from end of the first strings.", args(1,3, batarg("",str),batarg("s",str),arg("s2",str))),
- pattern("batstr", "rtrim2", STRbatRtrim2_const, false, "Strip characters in the second string from end of the first strings.", args(1,4, batarg("",str),batarg("s",str),arg("s2",str),batarg("s",oid))),
- pattern("batstr", "rtrim2", STRbatRtrim2_1st_const, false, "Strip characters in the second string from end of the first strings.", args(1,3, batarg("",str),arg("s",str),batarg("s2",str))),
- pattern("batstr", "rtrim2", STRbatRtrim2_1st_const, false, "Strip characters in the second string from end of the first strings.", args(1,4, batarg("",str),arg("s",str),batarg("s2",str),batarg("s",oid))),
- pattern("batstr", "trim2", STRbatStrip2_bat, false, "Strip characters in the second strings around the first strings.", args(1,3, batarg("",str),batarg("s",str),batarg("s2",str))),
- pattern("batstr", "trim2", STRbatStrip2_bat, false, "Strip characters in the second strings around the first strings.", args(1,5, batarg("",str),batarg("s",str),batarg("s2",str),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "ltrim2", STRbatLtrim2_bat, false, "Strip characters in the second strings from start of the first strings.", args(1,3, batarg("",str),batarg("s",str),batarg("s2",str))),
- pattern("batstr", "ltrim2", STRbatLtrim2_bat, false, "Strip characters in the second strings from start of the first strings.", args(1,5, batarg("",str),batarg("s",str),batarg("s2",str),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "rtrim2", STRbatRtrim2_bat, false, "Strip characters in the second strings from end of the first strings.", args(1,3, batarg("",str),batarg("s",str),batarg("s2",str))),
- pattern("batstr", "rtrim2", STRbatRtrim2_bat, false, "Strip characters in the second strings from end of the first strings.", args(1,5, batarg("",str),batarg("s",str),batarg("s2",str),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "lpad", STRbatLpad_const, false, "Prepend whitespaces to the strings to reach the given length. Truncate the strings on the right if their lengths is larger than the given length.", args(1,3, batarg("",str),batarg("s",str),arg("n",int))),
- pattern("batstr", "lpad", STRbatLpad_const, false, "Prepend whitespaces to the strings to reach the given length. Truncate the strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),batarg("s",oid))),
- pattern("batstr", "rpad", STRbatRpad_const, false, "Append whitespaces to the strings to reach the given length. Truncate the strings on the right if their lengths is larger than the given length.", args(1,3, batarg("",str),batarg("s",str),arg("n",int))),
- pattern("batstr", "rpad", STRbatRpad_const, false, "Append whitespaces to the strings to reach the given length. Truncate the strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),batarg("s",oid))),
- pattern("batstr", "lpad", STRbatLpad_1st_const, false, "Prepend whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,3, batarg("",str),arg("s",str),batarg("n",int))),
- pattern("batstr", "lpad", STRbatLpad_1st_const, false, "Prepend whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),arg("s",str),batarg("n",int),batarg("s",oid))),
- pattern("batstr", "rpad", STRbatRpad_1st_const, false, "Append whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,3, batarg("",str),arg("s",str),batarg("n",int))),
- pattern("batstr", "rpad", STRbatRpad_1st_const, false, "Append whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),arg("s",str),batarg("n",int),batarg("s",oid))),
- pattern("batstr", "lpad", STRbatLpad_bat, false, "Prepend whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,3, batarg("",str),batarg("s",str),batarg("n",int))),
- pattern("batstr", "lpad", STRbatLpad_bat, false, "Prepend whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,5, batarg("",str),batarg("s",str),batarg("n",int),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "rpad", STRbatRpad_bat, false, "Append whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,3, batarg("",str),batarg("s",str),batarg("n",int))),
- pattern("batstr", "rpad", STRbatRpad_bat, false, "Append whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,5, batarg("",str),batarg("s",str),batarg("n",int),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "lpad3", STRbatLpad3_const_const, false, "Prepend the second string to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),arg("s2",str))),
- pattern("batstr", "rpad3", STRbatRpad3_const_const, false, "Append the second string to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),arg("s2",str))),
- pattern("batstr", "lpad3", STRbatLpad3_bat_const, false, "Prepend the second string to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),batarg("s",str),batarg("n",int),arg("s2",str))),
- pattern("batstr", "rpad3", STRbatRpad3_bat_const, false, "Append the second string to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),batarg("s",str),batarg("n",int),arg("s2",str))),
- pattern("batstr", "lpad3", STRbatLpad3_const_bat, false, "Prepend the second strings to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),batarg("s2",str))),
- pattern("batstr", "rpad3", STRbatRpad3_const_bat, false, "Append the second strings to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),batarg("s2",str))),
- pattern("batstr", "lpad3", STRbatLpad3_bat_bat, false, "Prepend the second strings to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),batarg("s",str),batarg("n",int),batarg("s2",str))),
- pattern("batstr", "rpad3", STRbatRpad3_bat_bat, false, "Append the second strings to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),batarg("s",str),batarg("n",int),batarg("s2",str))),
- pattern("batstr", "startsWith", STRbatPrefix, false, "Prefix check.", args(1,3, batarg("",bit),batarg("s",str),batarg("prefix",str))),
- pattern("batstr", "startsWith", STRbatPrefix, false, "Prefix check.", args(1,5, batarg("",bit),batarg("s",str),batarg("prefix",str),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "startsWith", STRbatPrefixcst, false, "Prefix check.", args(1,3, batarg("",bit),batarg("s",str),arg("prefix",str))),
- pattern("batstr", "startsWith", STRbatPrefixcst, false, "Prefix check.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),batarg("s",oid))),
- pattern("batstr", "startsWith", STRbatPrefix_strcst, false, "Prefix check.", args(1,3, batarg("",bit),arg("s",str),batarg("prefix",str))),
- pattern("batstr", "startsWith", STRbatPrefix_strcst, false, "Prefix check.", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),batarg("s",oid))),
- pattern("batstr", "endsWith", STRbatSuffix, false, "Suffix check.", args(1,3, batarg("",bit),batarg("s",str),batarg("suffix",str))),
- pattern("batstr", "endsWith", STRbatSuffix, false, "Suffix check.", args(1,5, batarg("",bit),batarg("s",str),batarg("suffix",str),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "endsWith", STRbatSuffixcst, false, "Suffix check.", args(1,3, batarg("",bit),batarg("s",str),arg("suffix",str))),
- pattern("batstr", "endsWith", STRbatSuffixcst, false, "Suffix check.", args(1,4, batarg("",bit),batarg("s",str),arg("suffix",str),batarg("s",oid))),
- pattern("batstr", "endsWith", STRbatSuffix_strcst, false, "Suffix check.", args(1,3, batarg("",bit),arg("s",str),batarg("suffix",str))),
- pattern("batstr", "endsWith", STRbatSuffix_strcst, false, "Suffix check.", args(1,4, batarg("",bit),arg("s",str),batarg("suffix",str),batarg("s",oid))),
- pattern("batstr", "splitpart", STRbatsplitpart, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),batarg("needle",str),batarg("field",int))),
- pattern("batstr", "splitpart", STRbatsplitpartcst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),arg("field",int))),
- pattern("batstr", "splitpart", STRbatsplitpart_needlecst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),batarg("field",int))),
- pattern("batstr", "splitpart", STRbatsplitpart_fieldcst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),batarg("needle",str),arg("field",int))),
- pattern("batstr", "search", STRbatstrSearch, false, "Search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),batarg("c",str))),
- pattern("batstr", "search", STRbatstrSearch, false, "Search for a substring. Returns position, -1 if not found.", args(1,5, batarg("",int),batarg("s",str),batarg("c",str),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "search", STRbatstrSearchcst, false, "Search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),arg("c",str))),
- pattern("batstr", "search", STRbatstrSearchcst, false, "Search for a substring. Returns position, -1 if not found.", args(1,4, batarg("",int),batarg("s",str),arg("c",str),batarg("s",oid))),
- pattern("batstr", "search", STRbatstrSearch_strcst, false, "Search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),arg("s",str),batarg("c",str))),
- pattern("batstr", "search", STRbatstrSearch_strcst, false, "Search for a substring. Returns position, -1 if not found.", args(1,4, batarg("",int),arg("s",str),batarg("c",str),batarg("s",oid))),
- pattern("batstr", "r_search", STRbatRstrSearch, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),batarg("c",str))),
- pattern("batstr", "r_search", STRbatRstrSearch, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,5, batarg("",int),batarg("s",str),batarg("c",str),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "r_search", STRbatRstrSearchcst, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),arg("c",str))),
- pattern("batstr", "r_search", STRbatRstrSearchcst, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,4, batarg("",int),batarg("s",str),arg("c",str),batarg("s",oid))),
- pattern("batstr", "r_search", STRbatRstrSearch_strcst, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),arg("s",str),batarg("c",str))),
- pattern("batstr", "r_search", STRbatRstrSearch_strcst, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,4, batarg("",int),arg("s",str),batarg("c",str),batarg("s",oid))),
- pattern("batstr", "string", STRbatTail, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, batarg("",str),batarg("b",str),batarg("offset",int))),
- pattern("batstr", "string", STRbatTail, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,5, batarg("",str),batarg("b",str),batarg("offset",int),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "string", STRbatTailcst, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, batarg("",str),batarg("b",str),arg("offset",int))),
- pattern("batstr", "string", STRbatTailcst, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,4, batarg("",str),batarg("b",str),arg("offset",int),batarg("s",oid))),
- pattern("batstr", "string", STRbatTail_strcst, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, batarg("",str),arg("b",str),batarg("offset",int))),
- pattern("batstr", "string", STRbatTail_strcst, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,4, batarg("",str),arg("b",str),batarg("offset",int),batarg("s",oid))),
- pattern("batstr", "ascii", STRbatAscii, false, "Return unicode of head of string", args(1,2, batarg("",int),batarg("s",str))),
- pattern("batstr", "ascii", STRbatAscii, false, "Return unicode of head of string", args(1,3, batarg("",int),batarg("s",str),batarg("s",oid))),
- pattern("batstr", "substring", STRbatsubstringTail, false, "Extract the tail of a string", args(1,3, batarg("",str),batarg("s",str),batarg("start",int))),
- pattern("batstr", "substring", STRbatsubstringTail, false, "Extract the tail of a string", args(1,5, batarg("",str),batarg("s",str),batarg("start",int),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "substring", STRbatsubstringTailcst, false, "Extract the tail of a string", args(1,3, batarg("",str),batarg("s",str),arg("start",int))),
- pattern("batstr", "substring", STRbatsubstringTailcst, false, "Extract the tail of a string", args(1,4, batarg("",str),batarg("s",str),arg("start",int),batarg("s",oid))),
- pattern("batstr", "substring", STRbatsubstringTail_strcst, false, "Extract the tail of a string", args(1,3, batarg("",str),arg("s",str),batarg("start",int))),
- pattern("batstr", "substring", STRbatsubstringTail_strcst, false, "Extract the tail of a string", args(1,4, batarg("",str),arg("s",str),batarg("start",int),batarg("s",oid))),
- pattern("batstr", "substring3", STRbatsubstring, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),batarg("start",int),batarg("index",int))),
- pattern("batstr", "substring3", STRbatsubstring, false, "Substring extraction using [start,start+length]", args(1,7, batarg("",str),batarg("s",str),batarg("start",int),batarg("index",int),batarg("s1",oid),batarg("s2",oid),batarg("s3",oid))),
- pattern("batstr", "substring3", STRbatsubstring_2nd_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),arg("start",int),arg("index",int))),
- pattern("batstr", "substring3", STRbatsubstring_2nd_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,5, batarg("",str),batarg("s",str),arg("start",int),arg("index",int),batarg("s",oid))),
- pattern("batstr", "substring3", STRbatsubstring_2nd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),arg("start",int),batarg("index",int))),
- pattern("batstr", "substring3", STRbatsubstring_2nd_cst, false, "Substring extraction using [start,start+length]", args(1,6, batarg("",str),batarg("s",str),arg("start",int),batarg("index",int),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "substring3", STRbatsubstring_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),batarg("start",int),arg("index",int))),
- pattern("batstr", "substring3", STRbatsubstring_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,6, batarg("",str),batarg("s",str),batarg("start",int),arg("index",int),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "substring3", STRbatsubstring_1st_2nd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),arg("s",str),arg("start",int),batarg("index",int))),
- pattern("batstr", "substring3", STRbatsubstring_1st_2nd_cst, false, "Substring extraction using [start,start+length]", args(1,5, batarg("",str),arg("s",str),arg("start",int),batarg("index",int),batarg("s",oid))),
- pattern("batstr", "substring3", STRbatsubstring_1st_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),arg("s",str),batarg("start",int),arg("index",int))),
- pattern("batstr", "substring3", STRbatsubstring_1st_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,5, batarg("",str),arg("s",str),batarg("start",int),arg("index",int),batarg("s",oid))),
- pattern("batstr", "substring3", STRbatsubstring_1st_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),arg("s",str),batarg("start",int),batarg("index",int))),
- pattern("batstr", "substring3", STRbatsubstring_1st_cst, false, "Substring extraction using [start,start+length]", args(1,6, batarg("",str),arg("s",str),batarg("start",int),batarg("index",int),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "unicode", STRbatFromWChr, false, "convert a unicode to a character.", args(1,2, batarg("",str),batarg("wchar",int))),
- pattern("batstr", "unicode", STRbatFromWChr, false, "convert a unicode to a character.", args(1,3, batarg("",str),batarg("wchar",int),batarg("s",oid))),
- pattern("batstr", "unicodeAt", STRbatWChrAt, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),batarg("s",str),batarg("index",int))),
- pattern("batstr", "unicodeAt", STRbatWChrAt, false, "get a unicode character (as an int) from a string position.", args(1,5, batarg("",int),batarg("s",str),batarg("index",int),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "unicodeAt", STRbatWChrAtcst, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),batarg("s",str),arg("index",int))),
- pattern("batstr", "unicodeAt", STRbatWChrAtcst, false, "get a unicode character (as an int) from a string position.", args(1,4, batarg("",int),batarg("s",str),arg("index",int),batarg("s",oid))),
- pattern("batstr", "unicodeAt", STRbatWChrAt_strcst, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),arg("s",str),batarg("index",int))),
- pattern("batstr", "unicodeAt", STRbatWChrAt_strcst, false, "get a unicode character (as an int) from a string position.", args(1,4, batarg("",int),arg("s",str),batarg("index",int),batarg("s",oid))),
- pattern("batstr", "substitute", STRbatSubstitute, false, "Substitute first occurrence of 'src' by\n'dst'. Iff repeated = true this is\nrepeated while 'src' can be found in the\nresult string. In order to prevent\nrecursion and result strings of unlimited\nsize, repeating is only done iff src is\nnot a substring of dst.", args(1,5, batarg("",str),batarg("s",str),batarg("src",str),batarg("dst",str),batarg("rep",bit))),
- pattern("batstr", "substitute", STRbatSubstitutecst, false, "Substitute first occurrence of 'src' by\n'dst'. Iff repeated = true this is\nrepeated while 'src' can be found in the\nresult string. In order to prevent\nrecursion and result strings of unlimited\nsize, repeating is only done iff src is\nnot a substring of dst.", args(1,5, batarg("",str),batarg("s",str),arg("src",str),arg("dst",str),arg("rep",bit))),
- pattern("batstr", "stringleft", STRbatprefix, false, "", args(1,3, batarg("",str),batarg("s",str),batarg("l",int))),
- pattern("batstr", "stringleft", STRbatprefix, false, "", args(1,5, batarg("",str),batarg("s",str),batarg("l",int),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "stringleft", STRbatprefixcst, false, "", args(1,3, batarg("",str),batarg("s",str),arg("l",int))),
- pattern("batstr", "stringleft", STRbatprefixcst, false, "", args(1,4, batarg("",str),batarg("s",str),arg("l",int),batarg("s",oid))),
- pattern("batstr", "stringleft", STRbatprefix_strcst, false, "", args(1,3, batarg("",str),arg("s",str),batarg("l",int))),
- pattern("batstr", "stringleft", STRbatprefix_strcst, false, "", args(1,4, batarg("",str),arg("s",str),batarg("l",int),batarg("s",oid))),
- pattern("batstr", "stringright", STRbatsuffix, false, "", args(1,3, batarg("",str),batarg("s",str),batarg("l",int))),
- pattern("batstr", "stringright", STRbatsuffix, false, "", args(1,5, batarg("",str),batarg("s",str),batarg("l",int),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "stringright", STRbatsuffixcst, false, "", args(1,3, batarg("",str),batarg("s",str),arg("l",int))),
- pattern("batstr", "stringright", STRbatsuffixcst, false, "", args(1,4, batarg("",str),batarg("s",str),arg("l",int),batarg("s",oid))),
- pattern("batstr", "stringright", STRbatsuffix_strcst, false, "", args(1,3, batarg("",str),arg("s",str),batarg("l",int))),
- pattern("batstr", "stringright", STRbatsuffix_strcst, false, "", args(1,4, batarg("",str),arg("s",str),batarg("l",int),batarg("s",oid))),
- pattern("batstr", "locate", STRbatstrLocate, false, "Locate the start position of a string", args(1,3, batarg("",int),batarg("s1",str),batarg("s2",str))),
- pattern("batstr", "locate", STRbatstrLocate, false, "Locate the start position of a string", args(1,5, batarg("",int),batarg("s1",str),batarg("s2",str),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "locate", STRbatstrLocatecst, false, "Locate the start position of a string", args(1,3, batarg("",int),batarg("s1",str),arg("s2",str))),
- pattern("batstr", "locate", STRbatstrLocatecst, false, "Locate the start position of a string", args(1,4, batarg("",int),batarg("s1",str),arg("s2",str),batarg("s",oid))),
- pattern("batstr", "locate", STRbatstrLocate_strcst, false, "Locate the start position of a string", args(1,3, batarg("",int),arg("s1",str),batarg("s2",str))),
- pattern("batstr", "locate", STRbatstrLocate_strcst, false, "Locate the start position of a string", args(1,4, batarg("",int),arg("s1",str),batarg("s2",str),batarg("s",oid))),
- pattern("batstr", "locate3", STRbatstrLocate3, false, "Locate the start position of a string", args(1,4, batarg("",int),batarg("s1",str),batarg("s2",str),batarg("start",int))),
- pattern("batstr", "locate3", STRbatstrLocate3cst, false, "Locate the start position of a string", args(1,4, batarg("",int),batarg("s1",str),arg("s2",str),arg("start",int))),
- pattern("batstr", "insert", STRbatInsert, false, "Insert a string into another", args(1,5, batarg("",str),batarg("s",str),batarg("start",int),batarg("l",int),batarg("s2",str))),
- pattern("batstr", "insert", STRbatInsertcst, false, "Insert a string into another", args(1,5, batarg("",str),batarg("s",str),arg("start",int),arg("l",int),arg("s2",str))),
- pattern("batstr", "replace", STRbatReplace, false, "Insert a string into another", args(1,4, batarg("",str),batarg("s",str),batarg("pat",str),batarg("s2",str))),
- pattern("batstr", "replace", STRbatReplacecst, false, "Insert a string into another", args(1,4, batarg("",str),batarg("s",str),arg("pat",str),arg("s2",str))),
- pattern("batstr", "repeat", STRbatrepeat, false, "", args(1,3, batarg("",str),batarg("s",str),batarg("c",int))),
- pattern("batstr", "repeat", STRbatrepeat, false, "", args(1,5, batarg("",str),batarg("s",str),batarg("c",int),batarg("s1",oid),batarg("s2",oid))),
- pattern("batstr", "repeat", STRbatrepeatcst, false, "", args(1,3, batarg("",str),batarg("s",str),arg("c",int))),
- pattern("batstr", "repeat", STRbatrepeatcst, false, "", args(1,4, batarg("",str),batarg("s",str),arg("c",int),batarg("s",oid))),
- pattern("batstr", "repeat", STRbatrepeat_strcst, false, "", args(1,3, batarg("",str),arg("s",str),batarg("c",int))),
- pattern("batstr", "repeat", STRbatrepeat_strcst, false, "", args(1,4, batarg("",str),arg("s",str),batarg("c",int),batarg("s",oid))),
- pattern("batstr", "space", STRbatSpace, false, "", args(1,2, batarg("",str),batarg("l",int))),
- pattern("batstr", "space", STRbatSpace, false, "", args(1,3, batarg("",str),batarg("l",int),batarg("s",oid))),
- { .imp=NULL }
+	pattern("batstr", "length", STRbatLength, false, "Return the length of a string.", args(1,2, batarg("",int),batarg("s",str))),
+	pattern("batstr", "length", STRbatLength, false, "Return the length of a string.", args(1,3, batarg("",int),batarg("s",str),batarg("s",oid))),
+	pattern("batstr", "nbytes", STRbatBytes, false, "Return the string length in bytes.", args(1,2, batarg("",int),batarg("s",str))),
+	pattern("batstr", "nbytes", STRbatBytes, false, "Return the string length in bytes.", args(1,3, batarg("",int),batarg("s",str),batarg("s",oid))),
+	pattern("batstr", "toLower", STRbatLower, false, "Convert a string to lower case.", args(1,2, batarg("",str),batarg("s",str))),
+	pattern("batstr", "toLower", STRbatLower, false, "Convert a string to lower case.", args(1,3, batarg("",str),batarg("s",str),batarg("s",oid))),
+	pattern("batstr", "toUpper", STRbatUpper, false, "Convert a string to upper case.", args(1,2, batarg("",str),batarg("s",str))),
+	pattern("batstr", "toUpper", STRbatUpper, false, "Convert a string to upper case.", args(1,3, batarg("",str),batarg("s",str),batarg("s",oid))),
+	pattern("batstr", "trim", STRbatStrip, false, "Strip whitespaces around a string.", args(1,2, batarg("",str),batarg("s",str))),
+	pattern("batstr", "trim", STRbatStrip, false, "Strip whitespaces around a string.", args(1,3, batarg("",str),batarg("s",str),batarg("s",oid))),
+	pattern("batstr", "ltrim", STRbatLtrim, false, "Strip whitespaces from start of a string.", args(1,2, batarg("",str),batarg("s",str))),
+	pattern("batstr", "ltrim", STRbatLtrim, false, "Strip whitespaces from start of a string.", args(1,3, batarg("",str),batarg("s",str),batarg("s",oid))),
+	pattern("batstr", "rtrim", STRbatRtrim, false, "Strip whitespaces from end of a string.", args(1,2, batarg("",str),batarg("s",str))),
+	pattern("batstr", "rtrim", STRbatRtrim, false, "Strip whitespaces from end of a string.", args(1,3, batarg("",str),batarg("s",str),batarg("s",oid))),
+	pattern("batstr", "trim2", STRbatStrip2_const, false, "Strip characters in the second string around the first strings.", args(1,3, batarg("",str),batarg("s",str),arg("s2",str))),
+	pattern("batstr", "trim2", STRbatStrip2_const, false, "Strip characters in the second string around the first strings.", args(1,4, batarg("",str),batarg("s",str),arg("s2",str),batarg("s",oid))),
+	pattern("batstr", "trim2", STRbatStrip2_1st_const, false, "Strip characters in the second string around the first strings.", args(1,3, batarg("",str),arg("s",str),batarg("s2",str))),
+	pattern("batstr", "trim2", STRbatStrip2_1st_const, false, "Strip characters in the second string around the first strings.", args(1,4, batarg("",str),arg("s",str),batarg("s2",str),batarg("s",oid))),
+	pattern("batstr", "ltrim2", STRbatLtrim2_const, false, "Strip characters in the second string from start of the first strings.", args(1,3, batarg("",str),batarg("s",str),arg("s2",str))),
+	pattern("batstr", "ltrim2", STRbatLtrim2_const, false, "Strip characters in the second string from start of the first strings.", args(1,4, batarg("",str),batarg("s",str),arg("s2",str),batarg("s",oid))),
+	pattern("batstr", "ltrim2", STRbatLtrim2_1st_const, false, "Strip characters in the second string from start of the first strings.", args(1,3, batarg("",str),arg("s",str),batarg("s2",str))),
+	pattern("batstr", "ltrim2", STRbatLtrim2_1st_const, false, "Strip characters in the second string from start of the first strings.", args(1,4, batarg("",str),arg("s",str),batarg("s2",str),batarg("s",oid))),
+	pattern("batstr", "rtrim2", STRbatRtrim2_const, false, "Strip characters in the second string from end of the first strings.", args(1,3, batarg("",str),batarg("s",str),arg("s2",str))),
+	pattern("batstr", "rtrim2", STRbatRtrim2_const, false, "Strip characters in the second string from end of the first strings.", args(1,4, batarg("",str),batarg("s",str),arg("s2",str),batarg("s",oid))),
+	pattern("batstr", "rtrim2", STRbatRtrim2_1st_const, false, "Strip characters in the second string from end of the first strings.", args(1,3, batarg("",str),arg("s",str),batarg("s2",str))),
+	pattern("batstr", "rtrim2", STRbatRtrim2_1st_const, false, "Strip characters in the second string from end of the first strings.", args(1,4, batarg("",str),arg("s",str),batarg("s2",str),batarg("s",oid))),
+	pattern("batstr", "trim2", STRbatStrip2_bat, false, "Strip characters in the second strings around the first strings.", args(1,3, batarg("",str),batarg("s",str),batarg("s2",str))),
+	pattern("batstr", "trim2", STRbatStrip2_bat, false, "Strip characters in the second strings around the first strings.", args(1,5, batarg("",str),batarg("s",str),batarg("s2",str),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "ltrim2", STRbatLtrim2_bat, false, "Strip characters in the second strings from start of the first strings.", args(1,3, batarg("",str),batarg("s",str),batarg("s2",str))),
+	pattern("batstr", "ltrim2", STRbatLtrim2_bat, false, "Strip characters in the second strings from start of the first strings.", args(1,5, batarg("",str),batarg("s",str),batarg("s2",str),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "rtrim2", STRbatRtrim2_bat, false, "Strip characters in the second strings from end of the first strings.", args(1,3, batarg("",str),batarg("s",str),batarg("s2",str))),
+	pattern("batstr", "rtrim2", STRbatRtrim2_bat, false, "Strip characters in the second strings from end of the first strings.", args(1,5, batarg("",str),batarg("s",str),batarg("s2",str),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "lpad", STRbatLpad_const, false, "Prepend whitespaces to the strings to reach the given length. Truncate the strings on the right if their lengths is larger than the given length.", args(1,3, batarg("",str),batarg("s",str),arg("n",int))),
+	pattern("batstr", "lpad", STRbatLpad_const, false, "Prepend whitespaces to the strings to reach the given length. Truncate the strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),batarg("s",oid))),
+	pattern("batstr", "rpad", STRbatRpad_const, false, "Append whitespaces to the strings to reach the given length. Truncate the strings on the right if their lengths is larger than the given length.", args(1,3, batarg("",str),batarg("s",str),arg("n",int))),
+	pattern("batstr", "rpad", STRbatRpad_const, false, "Append whitespaces to the strings to reach the given length. Truncate the strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),batarg("s",oid))),
+	pattern("batstr", "lpad", STRbatLpad_1st_const, false, "Prepend whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,3, batarg("",str),arg("s",str),batarg("n",int))),
+	pattern("batstr", "lpad", STRbatLpad_1st_const, false, "Prepend whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),arg("s",str),batarg("n",int),batarg("s",oid))),
+	pattern("batstr", "rpad", STRbatRpad_1st_const, false, "Append whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,3, batarg("",str),arg("s",str),batarg("n",int))),
+	pattern("batstr", "rpad", STRbatRpad_1st_const, false, "Append whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),arg("s",str),batarg("n",int),batarg("s",oid))),
+	pattern("batstr", "lpad", STRbatLpad_bat, false, "Prepend whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,3, batarg("",str),batarg("s",str),batarg("n",int))),
+	pattern("batstr", "lpad", STRbatLpad_bat, false, "Prepend whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,5, batarg("",str),batarg("s",str),batarg("n",int),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "rpad", STRbatRpad_bat, false, "Append whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,3, batarg("",str),batarg("s",str),batarg("n",int))),
+	pattern("batstr", "rpad", STRbatRpad_bat, false, "Append whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.", args(1,5, batarg("",str),batarg("s",str),batarg("n",int),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "lpad3", STRbatLpad3_const_const, false, "Prepend the second string to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),arg("s2",str))),
+	pattern("batstr", "rpad3", STRbatRpad3_const_const, false, "Append the second string to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),arg("s2",str))),
+	pattern("batstr", "lpad3", STRbatLpad3_bat_const, false, "Prepend the second string to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),batarg("s",str),batarg("n",int),arg("s2",str))),
+	pattern("batstr", "rpad3", STRbatRpad3_bat_const, false, "Append the second string to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),batarg("s",str),batarg("n",int),arg("s2",str))),
+	pattern("batstr", "lpad3", STRbatLpad3_const_bat, false, "Prepend the second strings to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),batarg("s2",str))),
+	pattern("batstr", "rpad3", STRbatRpad3_const_bat, false, "Append the second strings to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),batarg("s2",str))),
+	pattern("batstr", "lpad3", STRbatLpad3_bat_bat, false, "Prepend the second strings to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),batarg("s",str),batarg("n",int),batarg("s2",str))),
+	pattern("batstr", "rpad3", STRbatRpad3_bat_bat, false, "Append the second strings to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),batarg("s",str),batarg("n",int),batarg("s2",str))),
+	pattern("batstr", "startsWith", BATSTRstarts_with, false, "Check if bat string starts with bat substring.", args(1,3, batarg("",bit),batarg("s",str),batarg("prefix",str))),
+	pattern("batstr", "startsWith", BATSTRstarts_with, false, "Check if bat string starts with bat substring, icase flag.", args(1,4, batarg("",bit),batarg("s",str),batarg("prefix",str),arg("icase",bit))),
+	pattern("batstr", "startsWith", BATSTRstarts_with, false, "Check if bat string starts with bat substring (with CLs).", args(1,5, batarg("",bit),batarg("s",str),batarg("prefix",str),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "startsWith", BATSTRstarts_with, false, "Check if bat string starts with bat substring (with CLs) + icase flag.", args(1,6, batarg("",bit),batarg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "startsWith", BATSTRstarts_with_cst, false, "Check if bat string starts with substring.", args(1,3, batarg("",bit),batarg("s",str),arg("prefix",str))),
+	pattern("batstr", "startsWith", BATSTRstarts_with_cst, false, "Check if bat string starts with substring, icase flag.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),arg("icase",bit))),
+	pattern("batstr", "startsWith", BATSTRstarts_with_cst, false, "Check if bat string(with CL) starts with substring.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),batarg("s",oid))),
+	pattern("batstr", "startsWith", BATSTRstarts_with_cst, false, "Check if bat string(with CL) starts with substring + icase flag.", args(1,5, batarg("",bit),batarg("s",str),arg("prefix",str),arg("icase",bit),batarg("s",oid))),
+	pattern("batstr", "startsWith", BATSTRstarts_with_strcst, false, "Check if string starts with bat substring.", args(1,3, batarg("",bit),arg("s",str),batarg("prefix",str))),
+	pattern("batstr", "startsWith", BATSTRstarts_with_strcst, false, "Check if string starts with bat substring + icase flag.", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit))),
+	pattern("batstr", "startsWith", BATSTRstarts_with_strcst, false, "Check if string starts with bat substring(with CL).", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),batarg("s",oid))),
+	pattern("batstr", "startsWith", BATSTRstarts_with_strcst, false, "Check if string starts with bat substring(with CL) + icase flag.", args(1,5, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s",oid))),
+	pattern("batstr", "endsWith", BATSTRends_with, false, "Check if bat string ends with bat substring.", args(1,3, batarg("",bit),batarg("s",str),batarg("prefix",str))),
+	pattern("batstr", "endsWith", BATSTRends_with, false, "Check if bat string ends with bat substring, icase flag.", args(1,4, batarg("",bit),batarg("s",str),batarg("prefix",str),arg("icase",bit))),
+	pattern("batstr", "endsWith", BATSTRends_with, false, "Check if bat string ends with bat substring (with CLs).", args(1,5, batarg("",bit),batarg("s",str),batarg("prefix",str),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "endsWith", BATSTRends_with, false, "Check if bat string ends with bat substring (with CLs) + icase flag.", args(1,6, batarg("",bit),batarg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "endsWith", BATSTRends_with_cst, false, "Check if bat string ends with substring.", args(1,3, batarg("",bit),batarg("s",str),arg("prefix",str))),
+	pattern("batstr", "endsWith", BATSTRends_with_cst, false, "Check if bat string ends with substring, icase flag.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),arg("icase",bit))),
+	pattern("batstr", "endsWith", BATSTRends_with_cst, false, "Check if bat string(with CL) ends with substring.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),batarg("s",oid))),
+	pattern("batstr", "endsWith", BATSTRends_with_cst, false, "Check if bat string(with CL) ends with substring + icase flag.", args(1,5, batarg("",bit),batarg("s",str),arg("prefix",str),arg("icase",bit),batarg("s",oid))),
+	pattern("batstr", "endsWith", BATSTRends_with_strcst, false, "Check if string ends with bat substring.", args(1,3, batarg("",bit),arg("s",str),batarg("prefix",str))),
+	pattern("batstr", "endsWith", BATSTRends_with_strcst, false, "Check if string ends with bat substring + icase flag.", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit))),
+	pattern("batstr", "endsWith", BATSTRends_with_strcst, false, "Check if string ends with bat substring(with CL).", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),batarg("s",oid))),
+	pattern("batstr", "endsWith", BATSTRends_with_strcst, false, "Check if string ends with bat substring(with CL) + icase flag.", args(1,5, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s",oid))),
+	pattern("batstr", "contains", BATSTRcontains, false, "Check if bat string haystack contains bat string needle.", args(1,3, batarg("",bit),batarg("s",str),batarg("prefix",str))),
+	pattern("batstr", "contains", BATSTRcontains, false, "Check if bat string haystack contains bat string needle, icase flag.", args(1,4, batarg("",bit),batarg("s",str),batarg("prefix",str),arg("icase",bit))),
+	pattern("batstr", "contains", BATSTRcontains, false, "Check if bat string haystack contains bat string needle (with CLs).", args(1,5, batarg("",bit),batarg("s",str),batarg("prefix",str),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "contains", BATSTRcontains, false, "Check if bat string haystack contains bat string needle (with CLs) + icase flag.", args(1,6, batarg("",bit),batarg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "contains", BATSTRcontains_cst, false, "Check if bat string haystack contains string needle.", args(1,3, batarg("",bit),batarg("s",str),arg("prefix",str))),
+	pattern("batstr", "contains", BATSTRcontains_cst, false, "Check if bat string haystack contains string needle, icase flag.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),arg("icase",bit))),
+	pattern("batstr", "contains", BATSTRcontains_cst, false, "Check if bat string haystack contains string needle (with CL) ends with substring.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),batarg("s",oid))),
+	pattern("batstr", "contains", BATSTRcontains_cst, false, "Check if bat string haystack contains string needle (with CL) ends with substring + icase flag.", args(1,5, batarg("",bit),batarg("s",str),arg("prefix",str),arg("icase",bit),batarg("s",oid))),
+	pattern("batstr", "contains", BATSTRcontains_strcst, false, "Check if string haystack contains bat string needle.", args(1,3, batarg("",bit),arg("s",str),batarg("prefix",str))),
+	pattern("batstr", "contains", BATSTRcontains_strcst, false, "Check if string haystack contains bat string needle + icase flag.", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit))),
+	pattern("batstr", "contains", BATSTRcontains_strcst, false, "Check if string haystack contains bat string needle (with CL).", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),batarg("s",oid))),
+	pattern("batstr", "contains", BATSTRcontains_strcst, false, "Check if string haystack contains bat string needle (with CL) + icase flag.", args(1,5, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s",oid))),
+	pattern("batstr", "splitpart", STRbatsplitpart, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),batarg("needle",str),batarg("field",int))),
+	pattern("batstr", "splitpart", STRbatsplitpartcst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),arg("field",int))),
+	pattern("batstr", "splitpart", STRbatsplitpart_needlecst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),batarg("field",int))),
+	pattern("batstr", "splitpart", STRbatsplitpart_fieldcst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),batarg("needle",str),arg("field",int))),
+	pattern("batstr", "search", BATSTRstr_search, false, "Search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),batarg("c",str))),
+	pattern("batstr", "search", BATSTRstr_search, false, "Search for a substring. Returns position, -1 if not found, icase flag.", args(1,4, batarg("",int),batarg("s",str),batarg("c",str),arg("icase",bit))),
+	pattern("batstr", "search", BATSTRstr_search, false, "Search for a substring. Returns position, -1 if not found.", args(1,5, batarg("",int),batarg("s",str),batarg("c",str),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "search", BATSTRstr_search, false, "Search for a substring. Returns position, -1 if not found, icase flag.", args(1,6, batarg("",int),batarg("s",str),batarg("c",str),arg("icase",bit),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "search", BATSTRstr_search_cst, false, "Search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),arg("c",str))),
+	pattern("batstr", "search", BATSTRstr_search_cst, false, "Search for a substring. Returns position, -1 if not found, icase flag.", args(1,4, batarg("",int),batarg("s",str),arg("c",str),arg("icase",bit))),
+	pattern("batstr", "search", BATSTRstr_search_cst, false, "Search for a substring. Returns position, -1 if not found.", args(1,4, batarg("",int),batarg("s",str),arg("c",str),batarg("s",oid))),
+	pattern("batstr", "search", BATSTRstr_search_cst, false, "Search for a substring. Returns position, -1 if not found, icase flag.", args(1,5, batarg("",int),batarg("s",str),arg("c",str),arg("icase",bit),batarg("s",oid))),
+	pattern("batstr", "search", BATSTRstr_search_strcst, false, "Search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),arg("s",str),batarg("c",str))),
+	pattern("batstr", "search", BATSTRstr_search_strcst, false, "Search for a substring. Returns position, -1 if not found, icase flag.", args(1,4, batarg("",int),arg("s",str),batarg("c",str),arg("icase",bit))),
+	pattern("batstr", "search", BATSTRstr_search_strcst, false, "Search for a substring. Returns position, -1 if not found.", args(1,4, batarg("",int),arg("s",str),batarg("c",str),batarg("s",oid))),
+	pattern("batstr", "search", BATSTRstr_search_strcst, false, "Search for a substring. Returns position, -1 if not found, icase flag.", args(1,5, batarg("",int),arg("s",str),batarg("c",str),arg("icase",bit),batarg("s",oid))),
+	pattern("batstr", "r_search", BATSTRrevstr_search, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),batarg("c",str))),
+	pattern("batstr", "r_search", BATSTRrevstr_search, false, "Reverse search for a substring + icase flag. Returns position, -1 if not found.", args(1,4, batarg("",int),batarg("s",str),batarg("c",str),arg("icase",bit))),
+	pattern("batstr", "r_search", BATSTRrevstr_search, false, "Reverse search for a substring (with CLs). Returns position, -1 if not found.", args(1,5, batarg("",int),batarg("s",str),batarg("c",str),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "r_search", BATSTRrevstr_search, false, "Reverse search for a substring (with CLs) + icase flag. Returns position, -1 if not found.", args(1,6, batarg("",int),batarg("s",str),batarg("c",str),arg("icase",bit),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "r_search", BATSTRrevstr_search_cst, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),arg("c",str))),
+	pattern("batstr", "r_search", BATSTRrevstr_search_cst, false, "Reverse search for a substring + icase flag. Returns position, -1 if not found.", args(1,4, batarg("",int),batarg("s",str),arg("c",str),arg("icase",bit))),
+	pattern("batstr", "r_search", BATSTRrevstr_search_cst, false, "Reverse search for a substring (with CL). Returns position, -1 if not found.", args(1,4, batarg("",int),batarg("s",str),arg("c",str),batarg("s",oid))),
+	pattern("batstr", "r_search", BATSTRrevstr_search_cst, false, "Reverse search for a substring (with CL) + icase flag. Returns position, -1 if not found.", args(1,5, batarg("",int),batarg("s",str),arg("c",str),arg("icase",bit),batarg("s",oid))),
+	pattern("batstr", "r_search", BATSTRrevstr_search_strcst, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),arg("s",str),batarg("c",str))),
+	pattern("batstr", "r_search", BATSTRrevstr_search_strcst, false, "Reverse search for a substring + icase flag. Returns position, -1 if not found.", args(1,4, batarg("",int),arg("s",str),batarg("c",str),arg("icase",bit))),
+	pattern("batstr", "r_search", BATSTRrevstr_search_strcst, false, "Reverse search for a substring (with CL). Returns position, -1 if not found.", args(1,4, batarg("",int),arg("s",str),batarg("c",str),batarg("s",oid))),
+	pattern("batstr", "r_search", BATSTRrevstr_search_strcst, false, "Reverse search for a substring (with CL) + icase flag. Returns position, -1 if not found.", args(1,5, batarg("",int),arg("s",str),batarg("c",str),arg("icase",bit),batarg("s",oid))),
+	pattern("batstr", "string", STRbatTail, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, batarg("",str),batarg("b",str),batarg("offset",int))),
+	pattern("batstr", "string", STRbatTail, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,5, batarg("",str),batarg("b",str),batarg("offset",int),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "string", STRbatTailcst, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, batarg("",str),batarg("b",str),arg("offset",int))),
+	pattern("batstr", "string", STRbatTailcst, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,4, batarg("",str),batarg("b",str),arg("offset",int),batarg("s",oid))),
+	pattern("batstr", "string", STRbatTail_strcst, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, batarg("",str),arg("b",str),batarg("offset",int))),
+	pattern("batstr", "string", STRbatTail_strcst, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,4, batarg("",str),arg("b",str),batarg("offset",int),batarg("s",oid))),
+	pattern("batstr", "ascii", STRbatAscii, false, "Return unicode of head of string", args(1,2, batarg("",int),batarg("s",str))),
+	pattern("batstr", "ascii", STRbatAscii, false, "Return unicode of head of string", args(1,3, batarg("",int),batarg("s",str),batarg("s",oid))),
+	pattern("batstr", "substring", STRbatsubstringTail, false, "Extract the tail of a string", args(1,3, batarg("",str),batarg("s",str),batarg("start",int))),
+	pattern("batstr", "substring", STRbatsubstringTail, false, "Extract the tail of a string", args(1,5, batarg("",str),batarg("s",str),batarg("start",int),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "substring", STRbatsubstringTailcst, false, "Extract the tail of a string", args(1,3, batarg("",str),batarg("s",str),arg("start",int))),
+	pattern("batstr", "substring", STRbatsubstringTailcst, false, "Extract the tail of a string", args(1,4, batarg("",str),batarg("s",str),arg("start",int),batarg("s",oid))),
+	pattern("batstr", "substring", STRbatsubstringTail_strcst, false, "Extract the tail of a string", args(1,3, batarg("",str),arg("s",str),batarg("start",int))),
+	pattern("batstr", "substring", STRbatsubstringTail_strcst, false, "Extract the tail of a string", args(1,4, batarg("",str),arg("s",str),batarg("start",int),batarg("s",oid))),
+	pattern("batstr", "substring3", STRbatsubstring, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),batarg("start",int),batarg("index",int))),
+	pattern("batstr", "substring3", STRbatsubstring, false, "Substring extraction using [start,start+length]", args(1,7, batarg("",str),batarg("s",str),batarg("start",int),batarg("index",int),batarg("s1",oid),batarg("s2",oid),batarg("s3",oid))),
+	pattern("batstr", "substring3", STRbatsubstring_2nd_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),arg("start",int),arg("index",int))),
+	pattern("batstr", "substring3", STRbatsubstring_2nd_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,5, batarg("",str),batarg("s",str),arg("start",int),arg("index",int),batarg("s",oid))),
+	pattern("batstr", "substring3", STRbatsubstring_2nd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),arg("start",int),batarg("index",int))),
+	pattern("batstr", "substring3", STRbatsubstring_2nd_cst, false, "Substring extraction using [start,start+length]", args(1,6, batarg("",str),batarg("s",str),arg("start",int),batarg("index",int),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "substring3", STRbatsubstring_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),batarg("s",str),batarg("start",int),arg("index",int))),
+	pattern("batstr", "substring3", STRbatsubstring_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,6, batarg("",str),batarg("s",str),batarg("start",int),arg("index",int),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "substring3", STRbatsubstring_1st_2nd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),arg("s",str),arg("start",int),batarg("index",int))),
+	pattern("batstr", "substring3", STRbatsubstring_1st_2nd_cst, false, "Substring extraction using [start,start+length]", args(1,5, batarg("",str),arg("s",str),arg("start",int),batarg("index",int),batarg("s",oid))),
+	pattern("batstr", "substring3", STRbatsubstring_1st_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),arg("s",str),batarg("start",int),arg("index",int))),
+	pattern("batstr", "substring3", STRbatsubstring_1st_3rd_cst, false, "Substring extraction using [start,start+length]", args(1,5, batarg("",str),arg("s",str),batarg("start",int),arg("index",int),batarg("s",oid))),
+	pattern("batstr", "substring3", STRbatsubstring_1st_cst, false, "Substring extraction using [start,start+length]", args(1,4, batarg("",str),arg("s",str),batarg("start",int),batarg("index",int))),
+	pattern("batstr", "substring3", STRbatsubstring_1st_cst, false, "Substring extraction using [start,start+length]", args(1,6, batarg("",str),arg("s",str),batarg("start",int),batarg("index",int),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "unicode", STRbatFromWChr, false, "convert a unicode to a character.", args(1,2, batarg("",str),batarg("wchar",int))),
+	pattern("batstr", "unicode", STRbatFromWChr, false, "convert a unicode to a character.", args(1,3, batarg("",str),batarg("wchar",int),batarg("s",oid))),
+	pattern("batstr", "unicodeAt", STRbatWChrAt, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),batarg("s",str),batarg("index",int))),
+	pattern("batstr", "unicodeAt", STRbatWChrAt, false, "get a unicode character (as an int) from a string position.", args(1,5, batarg("",int),batarg("s",str),batarg("index",int),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "unicodeAt", STRbatWChrAtcst, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),batarg("s",str),arg("index",int))),
+	pattern("batstr", "unicodeAt", STRbatWChrAtcst, false, "get a unicode character (as an int) from a string position.", args(1,4, batarg("",int),batarg("s",str),arg("index",int),batarg("s",oid))),
+	pattern("batstr", "unicodeAt", STRbatWChrAt_strcst, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),arg("s",str),batarg("index",int))),
+	pattern("batstr", "unicodeAt", STRbatWChrAt_strcst, false, "get a unicode character (as an int) from a string position.", args(1,4, batarg("",int),arg("s",str),batarg("index",int),batarg("s",oid))),
+	pattern("batstr", "substitute", STRbatSubstitute, false, "Substitute first occurrence of 'src' by\n'dst'. Iff repeated = true this is\nrepeated while 'src' can be found in the\nresult string. In order to prevent\nrecursion and result strings of unlimited\nsize, repeating is only done iff src is\nnot a substring of dst.", args(1,5, batarg("",str),batarg("s",str),batarg("src",str),batarg("dst",str),batarg("rep",bit))),
+	pattern("batstr", "substitute", STRbatSubstitutecst, false, "Substitute first occurrence of 'src' by\n'dst'. Iff repeated = true this is\nrepeated while 'src' can be found in the\nresult string. In order to prevent\nrecursion and result strings of unlimited\nsize, repeating is only done iff src is\nnot a substring of dst.", args(1,5, batarg("",str),batarg("s",str),arg("src",str),arg("dst",str),arg("rep",bit))),
+	pattern("batstr", "stringleft", STRbatprefix, false, "", args(1,3, batarg("",str),batarg("s",str),batarg("l",int))),
+	pattern("batstr", "stringleft", STRbatprefix, false, "", args(1,5, batarg("",str),batarg("s",str),batarg("l",int),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "stringleft", STRbatprefixcst, false, "", args(1,3, batarg("",str),batarg("s",str),arg("l",int))),
+	pattern("batstr", "stringleft", STRbatprefixcst, false, "", args(1,4, batarg("",str),batarg("s",str),arg("l",int),batarg("s",oid))),
+	pattern("batstr", "stringleft", STRbatprefix_strcst, false, "", args(1,3, batarg("",str),arg("s",str),batarg("l",int))),
+	pattern("batstr", "stringleft", STRbatprefix_strcst, false, "", args(1,4, batarg("",str),arg("s",str),batarg("l",int),batarg("s",oid))),
+	pattern("batstr", "stringright", STRbatsuffix, false, "", args(1,3, batarg("",str),batarg("s",str),batarg("l",int))),
+	pattern("batstr", "stringright", STRbatsuffix, false, "", args(1,5, batarg("",str),batarg("s",str),batarg("l",int),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "stringright", STRbatsuffixcst, false, "", args(1,3, batarg("",str),batarg("s",str),arg("l",int))),
+	pattern("batstr", "stringright", STRbatsuffixcst, false, "", args(1,4, batarg("",str),batarg("s",str),arg("l",int),batarg("s",oid))),
+	pattern("batstr", "stringright", STRbatsuffix_strcst, false, "", args(1,3, batarg("",str),arg("s",str),batarg("l",int))),
+	pattern("batstr", "stringright", STRbatsuffix_strcst, false, "", args(1,4, batarg("",str),arg("s",str),batarg("l",int),batarg("s",oid))),
+	pattern("batstr", "locate", STRbatstrLocate, false, "Locate the start position of a string", args(1,3, batarg("",int),batarg("s1",str),batarg("s2",str))),
+	pattern("batstr", "locate", STRbatstrLocate, false, "Locate the start position of a string", args(1,5, batarg("",int),batarg("s1",str),batarg("s2",str),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "locate", STRbatstrLocatecst, false, "Locate the start position of a string", args(1,3, batarg("",int),batarg("s1",str),arg("s2",str))),
+	pattern("batstr", "locate", STRbatstrLocatecst, false, "Locate the start position of a string", args(1,4, batarg("",int),batarg("s1",str),arg("s2",str),batarg("s",oid))),
+	pattern("batstr", "locate", STRbatstrLocate_strcst, false, "Locate the start position of a string", args(1,3, batarg("",int),arg("s1",str),batarg("s2",str))),
+	pattern("batstr", "locate", STRbatstrLocate_strcst, false, "Locate the start position of a string", args(1,4, batarg("",int),arg("s1",str),batarg("s2",str),batarg("s",oid))),
+	pattern("batstr", "locate3", STRbatstrLocate3, false, "Locate the start position of a string", args(1,4, batarg("",int),batarg("s1",str),batarg("s2",str),batarg("start",int))),
+	pattern("batstr", "locate3", STRbatstrLocate3cst, false, "Locate the start position of a string", args(1,4, batarg("",int),batarg("s1",str),arg("s2",str),arg("start",int))),
+	pattern("batstr", "insert", STRbatInsert, false, "Insert a string into another", args(1,5, batarg("",str),batarg("s",str),batarg("start",int),batarg("l",int),batarg("s2",str))),
+	pattern("batstr", "insert", STRbatInsertcst, false, "Insert a string into another", args(1,5, batarg("",str),batarg("s",str),arg("start",int),arg("l",int),arg("s2",str))),
+	pattern("batstr", "replace", STRbatReplace, false, "Insert a string into another", args(1,4, batarg("",str),batarg("s",str),batarg("pat",str),batarg("s2",str))),
+	pattern("batstr", "replace", STRbatReplacecst, false, "Insert a string into another", args(1,4, batarg("",str),batarg("s",str),arg("pat",str),arg("s2",str))),
+	pattern("batstr", "repeat", STRbatrepeat, false, "", args(1,3, batarg("",str),batarg("s",str),batarg("c",int))),
+	pattern("batstr", "repeat", STRbatrepeat, false, "", args(1,5, batarg("",str),batarg("s",str),batarg("c",int),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "repeat", STRbatrepeatcst, false, "", args(1,3, batarg("",str),batarg("s",str),arg("c",int))),
+	pattern("batstr", "repeat", STRbatrepeatcst, false, "", args(1,4, batarg("",str),batarg("s",str),arg("c",int),batarg("s",oid))),
+	pattern("batstr", "repeat", STRbatrepeat_strcst, false, "", args(1,3, batarg("",str),arg("s",str),batarg("c",int))),
+	pattern("batstr", "repeat", STRbatrepeat_strcst, false, "", args(1,4, batarg("",str),arg("s",str),batarg("c",int),batarg("s",oid))),
+	pattern("batstr", "space", STRbatSpace, false, "", args(1,2, batarg("",str),batarg("l",int))),
+	pattern("batstr", "space", STRbatSpace, false, "", args(1,3, batarg("",str),batarg("l",int),batarg("s",oid))),
+	command("batstr", "asciify", BATSTRasciify, false, "Transform BAT of strings from UTF8 to ASCII", args(1, 2, batarg("",str), batarg("b",str))),
+	command("batstr", "reverse", BATSTRreverse, false, "Reverse a BAT of strings", args(1, 2, batarg("",str), batarg("b",str))),
+	{ .imp=NULL }
 };
 #include "mal_import.h"
 #ifdef _MSC_VER
