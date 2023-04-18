@@ -1019,9 +1019,19 @@ command aggr.quantile(X_0:bat[:any_1], X_1:bat[:dbl]):any_1
 AGGRquantile;
 Quantile aggregate
 aggr
+quantile
+command aggr.quantile(X_0:bat[:any_1], X_1:dbl):any_1 
+AGGRquantile_cst;
+Quantile aggregate
+aggr
 quantile_avg
 command aggr.quantile_avg(X_0:bat[:any_1], X_1:bat[:dbl]):dbl 
 AGGRquantile_avg;
+Quantile aggregate
+aggr
+quantile_avg
+command aggr.quantile_avg(X_0:bat[:any_1], X_1:dbl):dbl 
+AGGRquantile_avg_cst;
 Quantile aggregate
 aggr
 stdev

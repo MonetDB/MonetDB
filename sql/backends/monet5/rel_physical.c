@@ -21,6 +21,7 @@ rel_add_orderby(visitor *v, sql_rel *rel)
 {
 	if (is_groupby(rel->op)) {
 		if (rel->exps && !rel->r) { /* find quantiles */
+			sql_exp *obe = NULL, *oberef = NULL;
 			for(node *n = rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
 
@@ -30,24 +31,30 @@ rel_add_orderby(visitor *v, sql_rel *rel)
 
 					/* for now we only handle one sort order */
                         		if (IS_ORDER_BASED_AGGR(af->func->base.name) && aa && list_length(aa) == 2) {
-						sql_exp *obe = aa->h->data;
-						if (obe) { 
+						sql_exp *nobe = aa->h->data;
+						if (nobe && !obe) { 
 							sql_rel *l = rel->l = rel_project(v->sql->sa, rel->l, rel_projections(v->sql, rel->l, NULL, 1, 1));
+							obe = nobe;
+							oberef = nobe;
 							if (l) {
-								if (!is_alias(obe->type)) {
-									append(l->exps, obe);
-									obe = exp_label(v->sql->sa, obe, ++v->sql->label);
-									aa->h->data = exp_ref(v->sql, obe);
+								if (!is_alias(nobe->type)) {
+									oberef = nobe = exp_label(v->sql->sa, exp_copy(v->sql, nobe), ++v->sql->label);
+									append(l->exps, nobe);
 								}
+								set_nulls_first(nobe);
+								set_ascending(nobe);
+								aa->h->data = exp_ref(v->sql, nobe);
 								list *o = l->r = sa_list(v->sql->sa);
 								if (o)
-									append(o, obe);
+									append(o, nobe);
 							}
+						} else if (exp_match_exp(nobe, obe)) {
+							aa->h->data = exp_ref(v->sql, oberef);
 						}
-						return rel;
 					}
 				}
 			}
+			return rel;
 		}
 	}
 	return rel;

@@ -1254,6 +1254,17 @@ exp2bin_copyfrombinary(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *
 	return stmt_list(be, columns);
 }
 
+static bool
+is_const_func(sql_subfunc *f, list *attr)
+{
+	if (list_length(attr) != 2)
+		return false;
+	if (strcmp(f->func->base.name, "quantile") == 0 ||
+	    strcmp(f->func->base.name, "quantile_avg") == 0)
+		return true;
+	return false;
+}
+
 stmt *
 exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, int reduce, int push)
 {
@@ -1465,7 +1476,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 				as = exp_bin(be, at, left, right, NULL, NULL, NULL, sel, depth+1, 0, push);
 
-				if (as && as->nrcols <= 0 && left)
+				if (as && as->nrcols <= 0 && left && (!is_const_func(a, attr) || grp))
 					as = stmt_const(be, bin_find_smallest_column(be, left), as);
 				if (en == attr->h && !en->next && exp_aggr_is_count(e))
 					as = exp_count_no_nil_arg(e, ext, at, as);
