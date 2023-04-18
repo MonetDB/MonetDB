@@ -114,11 +114,12 @@ mvc_fix_depend(mvc *m, sql_column *depids, struct view_t *v, int n)
 	for (int i = 0; i < n; i++) {
 		rs = store->table_api.rids_select(m->session->tr, depids,
 					     &v[i].oldid, &v[i].oldid, NULL);
-		while ((rid = store->table_api.rids_next(rs)), !is_oid_nil(rid)) {
-			store->table_api.column_update_value(m->session->tr, depids,
-							rid, &v[i].newid);
+		if (rs) {
+			while ((rid = store->table_api.rids_next(rs)), !is_oid_nil(rid)) {
+				store->table_api.column_update_value(m->session->tr, depids, rid, &v[i].newid);
+			}
+			store->table_api.rids_destroy(rs);
 		}
-		store->table_api.rids_destroy(rs);
 	}
 }
 
@@ -290,7 +291,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 
 		for (int i = 0; i < 9; i++) {
 			sql_column *col = NULL;
-			
+
 			mvc_create_column_(&col, m, t, tview[i].name, tview[i].type, tview[i].digits);
 			if (col == NULL) {
 				mvc_destroy(m);

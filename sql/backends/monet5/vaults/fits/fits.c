@@ -239,6 +239,8 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	col = mvc_bind_column(m, column, "table_id");
 
 	rs = store->table_api.rids_select(m->session->tr, col, (void *) fid, (void *) fid, NULL);
+	if (!rs)
+		throw(MAL, "fits.exporttable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	GDKfree(fid);
 
 	while ((rid = store->table_api.rids_next(rs)), !is_oid_nil(rid))
