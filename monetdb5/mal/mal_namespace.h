@@ -11,6 +11,9 @@
 #ifndef _MAL_NAMESPACE_H
 #define _MAL_NAMESPACE_H
 
+mal_export  const char *optimizerRef;
+mal_export  const char *totalRef;
+
 mal_export void initNamespace(void);
 mal_export const char *putName(const char *nme);
 mal_export const char *putNameLen(const char *nme, size_t len);
