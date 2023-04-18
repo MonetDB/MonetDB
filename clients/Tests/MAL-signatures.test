@@ -39259,9 +39259,9 @@ command txtsim.editdistance2(X_0:str, X_1:str):int
 TXTSIMdameraulevenshtein2;
 Alias for Damerau-Levenshtein(str,str), insdel cost = 1, replace cost = 1 and transpose = 1
 txtsim
-jaro_winkler_similarity
-command txtsim.jaro_winkler_similarity(X_0:str, X_1:str):dbl 
-jaro_winkler_similarity;
+jarowinkler
+command txtsim.jarowinkler(X_0:str, X_1:str):dbl 
+TXTSIMjarowinkler;
 Calculate Jaro Winkler similarity
 txtsim
 levenshtein
@@ -39289,6 +39289,21 @@ pattern txtsim.maxlevenshtein(X_0:str, X_1:str, X_2:int, X_3:int, X_4:int):int
 TXTSIMmaxlevenshtein;
 Levenshtein distance with variable costs but up to a MAX
 txtsim
+maxlevenshteinjoin
+command txtsim.maxlevenshteinjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit, X_7:any) (X_8:bat[:oid], X_9:bat[:oid]) 
+TXTSIMmaxlevenshteinjoin;
+(empty)
+txtsim
+minjarowinkler
+command txtsim.minjarowinkler(X_0:str, X_1:str, X_2:dbl):bit 
+TXTSIMminjarowinkler;
+(empty)
+txtsim
+minjarowinklerjoin
+command txtsim.minjarowinklerjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:dbl], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+TXTSIMminjarowinklerjoin;
+(empty)
+txtsim
 qgramnormalize
 command txtsim.qgramnormalize(X_0:str):str 
 qgram_normalize;
@@ -39302,7 +39317,7 @@ txtsim
 similarity
 command txtsim.similarity(X_0:str, X_1:str):dbl 
 fstrcmp0_impl;
-"(Deprecated) Normalized edit distance between two strings"
+(Deprecated) Normalized edit distance between two strings
 txtsim
 similarity
 command txtsim.similarity(X_0:str, X_1:str, X_2:dbl):dbl 
