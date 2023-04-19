@@ -414,14 +414,14 @@ typedef struct {
 	BUN o;               /* position in the BAT */
 	str val;             /* string value */
 	int *cp_sequence;    /* string as array of Unicode codepoints */
-	size_t len;          /* string length in characters (multi-byte characters count as 1)*/
-	size_t cp_seq_len;   /* string length in bytes */
+	int len;          /* string length in characters (multi-byte characters count as 1)*/
+	int cp_seq_len;   /* string length in bytes */
 	uint64_t abm;        /* 64bit alphabet bitmap */
-	size_t abm_popcount; /* hamming weight of abm */
+	int abm_popcount; /* hamming weight of abm */
 } str_item;
 
 static inline
-size_t _popcount64(uint64_t x) {
+int _popcount64(uint64_t x) {
 	x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL);
 	x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
 	x = (x & 0x0F0F0F0F0F0F0F0FULL) + ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL);
@@ -429,7 +429,7 @@ size_t _popcount64(uint64_t x) {
 }
 
 static inline
-size_t popcount64(uint64_t x) {
+int popcount64(uint64_t x) {
 	return _popcount64(x);
 	/* __builtin_popcountll is the gcc builtin
 	 * It is fast as long as the hardware
@@ -453,7 +453,7 @@ str_2_codepointseq(str_item *s)
 	if (s->cp_sequence == NULL)
 		throw(MAL, "str_2_byteseq", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	for (size_t i = 0; i < s->len; i++) {
+	for (int i = 0; i < s->len; i++) {
 		UTF8_GETCHAR(c, p);
 		if (c == 0)
 			break;
@@ -465,8 +465,9 @@ illegal:
 }
 
 static void
-str_alphabet_bitmap(str_item *s) {
-	size_t i;
+str_alphabet_bitmap(str_item *s)
+{
+	int i;
 
 	s->abm = 0ULL;
 	for (i=0; i < s->len; i++) {
@@ -482,7 +483,7 @@ jarowinkler_lp(const str_item *a, const str_item *b)
 
 	/* calculate common string prefix up to prefixlen chars */
 	l = 0;
-	for (size_t i = 0; i < MIN3(a->len, b->len, JARO_WINKLER_PREFIX_LEN); i++)
+	for (int i = 0; i < MIN3(a->len, b->len, JARO_WINKLER_PREFIX_LEN); i++)
 		l += (a->cp_sequence[i] == b->cp_sequence[i]);
 
 	return (double)l * JARO_WINKLER_SCALING_FACTOR;
@@ -671,11 +672,11 @@ TXTSIMminjarowinkler(bit *res, str *x, str *y, const dbl *threshold)
 	do {										\
 		for (n=0;n<lci.ncand;n++) {			\
 			ssl[n].len = UTF8_strlen(ssl[n].val);\
-			ssl[n].cp_seq_len = strlen(ssl[n].val);\
+			ssl[n].cp_seq_len = str_strlen(ssl[n].val);\
 		}										\
 		for (n=0;n<rci.ncand;n++) {			\
 			ssr[n].len = UTF8_strlen(ssr[n].val);\
-			ssr[n].cp_seq_len = strlen(ssr[n].val);\
+			ssr[n].cp_seq_len = str_strlen(ssr[n].val);\
 		}										\
 	} while (false)
 
@@ -743,10 +744,10 @@ TXTSIMminjarowinkler(bit *res, str *x, str *y, const dbl *threshold)
 
 static inline int
 maxlevenshtein_extcol_stritem(const str_item *si1, const str_item *si2, unsigned int *column, const int k) {
-	unsigned int x, y, lastdiag, olddiag;
-	int c1, c2;
+	unsigned int lastdiag, olddiag;
+	int c1, c2, x, y;
 	unsigned int min;
-	size_t s1len = si1->len, s2len = si2->len;
+	int s1len = si1->len, s2len = si2->len;
 	int *s1 = si1->cp_sequence, *s2 = si2->cp_sequence;
 	/* first test if the strings are equal */
 	if (s1len == s2len) {
@@ -896,10 +897,10 @@ fail:
 }
 
 static inline void
-jarowinklerrangebounds(size_t *lb, size_t *ub, const str_item *a, const double lp, const double threshold)
+jarowinklerrangebounds(int *lb, int *ub, const str_item *a, const double lp, const double threshold)
 {
-	*lb = (size_t)floor(3.0 * a->len * (threshold - lp) / (1.0 - lp) - (2.0 * a->len));
-	*ub = (size_t)ceil(a->len / ((3.0 * (threshold - lp) / (1.0 - lp)) - 2.0 ));
+	*lb = (int)floor(3.0 * a->len * (threshold - lp) / (1.0 - lp) - (2.0 * a->len));
+	*ub = (int)ceil(a->len / ((3.0 * (threshold - lp) / (1.0 - lp)) - 2.0 ));
 }
 
 /* version with given lp and m, and t=0*/
@@ -920,7 +921,7 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const d
 {
 	strjoincommonvars;
 	str_item shortest;
-	size_t lb, ub;
+	int lb, ub;
 	const bool sliding_window_allowed = threshold > (2.01 + JARO_WINKLER_PREFIX_LEN * JARO_WINKLER_SCALING_FACTOR) / 3.0;
 	int *s1flags=NULL, *s2flags=NULL;
 	double s;
