@@ -5111,7 +5111,7 @@ bailout:
 }
 
 static str
-sql_update_default(Client c, mvc *sql, sql_schema *s)
+sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 {
 	size_t bufsize = 65536, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
@@ -5904,7 +5904,7 @@ SQLupgrades(Client c, mvc *m)
 		return -1;
 	}
 
-	if ((err = sql_update_default(c, m, s)) != NULL) {
+	if ((err = sql_update_jun2023(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		return -1;
