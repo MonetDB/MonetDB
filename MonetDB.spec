@@ -366,6 +366,7 @@ developer.
 %{_bindir}/ODBCStmtAttr
 %{_bindir}/ODBCgetInfo
 %{_bindir}/ODBCmetadata
+%{_bindir}/ODBCtester
 %{_bindir}/arraytest
 %{_bindir}/bincopydata
 %{_bindir}/odbcsample1
