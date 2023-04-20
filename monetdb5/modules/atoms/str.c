@@ -4997,10 +4997,8 @@ STRasciify(str *r, const str *s)
 	iconv_t cd;
 	const str f = "UTF8", t = "ASCII//TRANSLIT";
 	str in = *s, out;
-	/* Output string length LEN+1 when converting from UTF-8 TO ASCII
-	   should be enough. If for some reason LEN is needed is totality,
-	   +1 safeguards the \0.*/
-	size_t in_len = strlen(in), out_len = in_len + 1;
+	size_t in_len = strlen(in), out_len = in_len * 4; /* oversized as a single utf8 char could change into multiple
+														 ascii char */
 	/* man iconv; /TRANSLIT */
 	if ((cd = iconv_open(t, f)) == (iconv_t)(-1))
 		throw(MAL, "str.asciify", "ICONV: cannot convert from (%s) to (%s).", f, t);

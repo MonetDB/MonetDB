@@ -5080,6 +5080,11 @@ BATSTRasciify(bat *ret, bat *bid)
 		throw(MAL, "batstr.asciify", GDK_EXCEPTION);
 	}
 	bi = bat_iterator(b);
+	if ((s = out = GDKmalloc(64*1024)) == NULL) {
+		msg = createException(MAL,"batstr.asciify", MAL_MALLOC_FAIL);
+		goto exit;
+	}
+	prev_out_len = 64*1024;
 	BATloop(b, p, q) {
 		in = (str) BUNtail(bi, p);
 		if (strNil(in)) {
@@ -5090,15 +5095,8 @@ BATSTRasciify(bat *ret, bat *bid)
 			nils = true;
 			continue;
 		}
-		in_len = strlen(in), out_len = in_len + 1;
-		if (out == NULL) {
-			if ((s = out = GDKmalloc(out_len)) == NULL) {
-				msg = createException(MAL,"batstr.asciify", MAL_MALLOC_FAIL);
-				goto exit;
-			}
-			prev_out_len = out_len;
-		}
-		else if (out_len > prev_out_len) {
+		in_len = strlen(in), out_len = in_len*4; /* over sized as single utf8 symbols change into multiple ascii characters */
+		if (out_len > prev_out_len) {
 			if ((out = GDKrealloc(s, out_len)) == NULL) {
 				msg = createException(MAL,"batstr.asciify", MAL_MALLOC_FAIL);
 				goto exit;
