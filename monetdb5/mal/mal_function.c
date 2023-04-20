@@ -100,7 +100,7 @@ chkFlow(MalBlkPtr mb)
 	int  var[DEPTH];
 	InstrPtr stmt[DEPTH];
 	int btop=0;
-	int endseen=0, retseen=0, yieldseen=0;
+	int endseen=0, retseen=0;
 	InstrPtr p, sig;
 	str msg = MAL_SUCCEED;
 
@@ -161,20 +161,10 @@ chkFlow(MalBlkPtr mb)
 			    throw(MAL,"chkFlow",  "%s.%s label '%s' not in guarded block", getModuleId(sig), getFunctionId(sig), nme);
 			}
 			break;
-		case YIELDsymbol:
-			{ InstrPtr ps= getInstrPtr(mb,0);
-			if( ps->token != FACTORYsymbol){
-			    throw(MAL,"chkFlow",  "%s.%s yield misplaced!",  getModuleId(sig), getFunctionId(sig));
-			}
-			yieldseen= TRUE;
-			 }
-			/* fall through */
 		case RETURNsymbol:
 			{
 				InstrPtr ps = getInstrPtr(mb, 0);
 				int e;
-				if (p->barrier == RETURNsymbol)
-					yieldseen = FALSE;    /* always end with a return */
 				if (ps->retc != p->retc) {
 					throw(MAL,"chkFlow",  "%s.%s invalid return target!",  getModuleId(sig), getFunctionId(sig));
 				} else
@@ -182,8 +172,8 @@ chkFlow(MalBlkPtr mb)
 					for (e = 0; e < p->retc; e++) {
 						if (resolveType(getArgType(mb, ps, e), getArgType(mb, p, e)) < 0) {
 							str tpname = getTypeName(getArgType(mb, p, e));
-							msg = createException(MAL, "%s.%s %s type mismatch at type '%s'\n", getModuleId(p), getFunctionId(p),
-									(p->barrier == RETURNsymbol ? "RETURN" : "YIELD"), tpname);
+							msg = createException(MAL, "%s.%s RETURN type mismatch at type '%s'\n",
+									getModuleId(p)?getModuleId(p):"", getFunctionId(p)?getFunctionId(p):"", tpname);
 							GDKfree(tpname);
 							return msg;
 						}
@@ -222,11 +212,9 @@ chkFlow(MalBlkPtr mb)
 		throw( MAL,"chkFlow",  "%s.%s signature missing",  getModuleId(sig), getFunctionId(sig));
 	if( retseen == 0){
 		if( getArgType(mb,p,0)!= TYPE_void &&
-			(p->token==FUNCTIONsymbol || p->token==FACTORYsymbol))
+			(p->token==FUNCTIONsymbol))
 				throw(MAL,"chkFlow",  "%s.%s RETURN missing", getModuleId(sig), getFunctionId(sig));
 	}
-	if ( yieldseen && getArgType(mb,p,0)!= TYPE_void)
-			throw( MAL,"chkFlow",  "%s.%s RETURN missing", getModuleId(sig), getFunctionId(sig));
 	return MAL_SUCCEED;
 }
 

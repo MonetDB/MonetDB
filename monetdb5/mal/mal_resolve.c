@@ -371,7 +371,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		/*
 		 * We found the proper function. Copy some properties. In
 		 * particular, determine the calling strategy, i.e. FCNcall,
-		 * CMDcall, FACcall, PATcall Beware that polymorphic functions
+		 * CMDcall, PATcall Beware that polymorphic functions
 		 * may produce type-incorrect clones.  This piece of code may be
 		 * shared by the separate binder
 		 */
@@ -391,10 +391,6 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 				break;
 			case PATTERNsymbol:
 				p->token = PATcall;
-				p->fcn = getSignature(s)->fcn;      /* C implementation optional */
-				break;
-			case FACTORYsymbol:
-				p->token = FACcall;
 				p->fcn = getSignature(s)->fcn;      /* C implementation optional */
 				break;
 			case FUNCTIONsymbol:

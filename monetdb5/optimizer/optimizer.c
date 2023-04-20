@@ -23,9 +23,9 @@
 #include "monetdb_config.h"
 #include "mal_scenario.h"
 #include "optimizer.h"
-#include "mal_debugger.h"
 #include "optimizer_private.h"
 #include "opt_pipes.h"
+#include "mal_session.h"
 
 /*
  * Upon loading the module it should inspect the scenario table
@@ -35,7 +35,6 @@
 static str
 optimizer_prelude(void)
 {
-	updateScenario("mal", "MALoptimizer", (MALfcn) MALoptimizer);
 	optimizerInit();
 	return MAL_SUCCEED;
 }

@@ -339,10 +339,14 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	}
 
 	msg = MSinitClientPrg(c, "user", "main");/* create new context */
+	if (msg == MAL_SUCCEED)
+		msg = MALparser(c);
+	/*
 	if(msg == MAL_SUCCEED && c->phase[MAL_SCENARIO_PARSER])
 		msg = (str) (*c->phase[MAL_SCENARIO_PARSER])(c);
 	if(msg == MAL_SUCCEED && c->phase[MAL_SCENARIO_OPTIMIZE])
 		msg = (str) (*c->phase[MAL_SCENARIO_OPTIMIZE])(c);
+		*/
 
 	*fcn = c->curprg;
 	c->curprg = 0;

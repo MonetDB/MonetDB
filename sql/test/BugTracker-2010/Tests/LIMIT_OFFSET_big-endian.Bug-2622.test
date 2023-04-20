@@ -232,7 +232,7 @@ query T python .explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a
 ----
 algebra.projection
-2
+1
 algebra.sort
 1
 bat.pack
@@ -254,7 +254,7 @@ query T python .explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a OFFSET 2
 ----
 algebra.projection
-3
+2
 algebra.sort
 1
 algebra.subslice

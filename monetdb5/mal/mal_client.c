@@ -226,7 +226,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->user = user;
 	c->username = 0;
 	c->scenario = NULL;
-	c->oldscenario = NULL;
 	c->srcFile = NULL;
 	c->blkmode = 0;
 
@@ -258,11 +257,11 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->memorylimit = 0;
 	c->qryctx.querytimeout = 0;
 	c->sessiontimeout = 0;
+	c->logical_sessiontimeout = 0;
 	c->qryctx.starttime = 0;
 	ATOMIC_SET(&c->qryctx.datasize, 0);
 	c->qryctx.maxmem = 0;
 	c->maxmem = 0;
-	c->itrace = 0;
 	c->errbuf = 0;
 
 	c->prompt = PROMPT1;
@@ -403,6 +402,7 @@ MCcloseClient(Client c)
 	c->memorylimit = 0;
 	c->qryctx.querytimeout = 0;
 	c->sessiontimeout = 0;
+	c->logical_sessiontimeout = 0;
 	c->user = oid_nil;
 	if (c->username) {
 		GDKfree(c->username);
@@ -502,7 +502,6 @@ MCsuspendClient(int id)
 {
 	if (id < 0 || id >= MAL_MAXCLIENTS)
 		throw(INVCRED, "mal.clients", INVCRED_WRONG_ID);
-	mal_clients[id].itrace = 'S';
 	return MAL_SUCCEED;
 }
 
@@ -511,7 +510,6 @@ MCawakeClient(int id)
 {
 	if (id < 0 || id >= MAL_MAXCLIENTS)
 		throw(INVCRED, "mal.clients", INVCRED_WRONG_ID);
-	mal_clients[id].itrace = 0;
 	return MAL_SUCCEED;
 }
 

@@ -17,7 +17,7 @@ query T python .explain.function_histogram
 explain select id       from fk order by id
 ----
 algebra.projection
-2
+1
 algebra.sort
 1
 bat.pack

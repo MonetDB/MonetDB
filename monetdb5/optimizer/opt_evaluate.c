@@ -122,7 +122,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	InstrPtr p;
 	int i, k, limit, *alias = 0, barrier;
 	MalStkPtr env = NULL;
-	int debugstate = cntxt->itrace, actions = 0, constantblock = 0;
+	int actions = 0, constantblock = 0;
 	int *assigned = 0, use;
 	str msg = MAL_SUCCEED;
 
@@ -130,8 +130,6 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	if ( mb->inlineProp )
 		goto wrapup;
-
-	cntxt->itrace = 0;
 
 	assigned = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	if (assigned == NULL)
@@ -221,7 +219,6 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	// produces errors in SQL when enabled
 	if ( constantblock)
 		msg = OPTremoveUnusedBlocks(cntxt, mb);
-	cntxt->itrace = debugstate;
 
 		/* Defense line against incorrect plans */
 	/* Plan is unaffected */

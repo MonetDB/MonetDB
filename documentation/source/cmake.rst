@@ -184,6 +184,6 @@ You need to install the wixtoolset (with chocolaty): ::
 
 Then you can run the following command from the build directory: ::
 
-  "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\CPack" -G WIX -C Debug --config CPackConfig.cmake
+  "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\CPack" -G WIX -C Debug --config CPackConfig.cmake
 
 This will create the "msi" file.

@@ -103,22 +103,23 @@ check_BATs(Tablet *as)
 	cnt = BATcount(fmt[i].c);
 	base = fmt[i].c->hseqbase;
 
-	if (as->nr != cnt)
+	if (as->nr != cnt) {
+		for (i = 0; i < as->nr_attrs; i++)
+			if (fmt[i].c)
+				fmt[i].p = as->offset;
 		return oid_nil;
+	}
 
 	for (i = 0; i < as->nr_attrs; i++) {
-		BAT *b;
-		BUN offset;
+		BAT *b = fmt[i].c;
 
-		b = fmt[i].c;
 		if (b == NULL)
 			continue;
-		offset = as->offset;
 
 		if (BATcount(b) != cnt || b->hseqbase != base)
 			return oid_nil;
 
-		fmt[i].p = offset;
+		fmt[i].p = as->offset;
 	}
 	return base;
 }
@@ -539,7 +540,6 @@ int
 TABLEToutput_file(Tablet *as, BAT *order, stream *s)
 {
 	oid base = oid_nil;
-	BUN maxnr = BATcount(order);
 	int ret = 0;
 
 	/* only set nr if it is zero or lower (bogus) to the maximum value
@@ -547,12 +547,16 @@ TABLEToutput_file(Tablet *as, BAT *order, stream *s)
 	 * preserve value such that for instance SQL's reply_size still
 	 * works
 	 */
-	if (as->nr == BUN_NONE || as->nr > maxnr)
-		as->nr = maxnr;
+	if (order) {
+		BUN maxnr = BATcount(order);
+		if (as->nr == BUN_NONE || as->nr > maxnr)
+			as->nr = maxnr;
+	}
+	assert(as->nr != BUN_NONE);
 
 	base = check_BATs(as);
-	if (!is_oid_nil(base)) {
-		if (order->hseqbase == base)
+	if (!order || !is_oid_nil(base)) {
+		if (!order || order->hseqbase == base)
 			ret = output_file_dense(as, s);
 		else
 			ret = output_file_ordered(as, order, s);

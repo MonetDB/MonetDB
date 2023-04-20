@@ -44,6 +44,10 @@ typedef struct CLIENT_INPUT {
 	struct CLIENT_INPUT *next;
 } ClientInput;
 
+struct CLIENT;
+typedef str (*init_client)(struct CLIENT *, const char *, const char *, const char *);
+typedef void (*engine_fptr)(struct CLIENT *);
+
 typedef struct CLIENT {
 	int idx;        /* entry in mal_clients (-1 if free) */
 	oid user;       /* user id in the auth administration */
@@ -57,10 +61,9 @@ typedef struct CLIENT {
 	 * provided to temporarily switch to another scenario.
 	 */
 	str     scenario;  /* scenario management references */
-	str     oldscenario;
-	void    *state[SCENARIO_PROPERTIES], *oldstate[SCENARIO_PROPERTIES];
-	MALfcn  phase[SCENARIO_PROPERTIES], oldphase[SCENARIO_PROPERTIES];
-	char    itrace;    /* trace execution using interactive mdb */
+	engine_fptr engine;
+	init_client initClient;
+	MALfcn exitClient;
 						/* if set to 'S' it will put the process to sleep */
 	bit		sqlprofiler;		/* control off-line sql performance monitoring */
 	/*
@@ -72,6 +75,7 @@ typedef struct CLIENT {
 	int		memorylimit;		/* maximum memory currently allowed in MB */
 	lng maxmem;					/* max_memory from db_user_info table */
 	lng	    sessiontimeout;		/* session abort after x usec, 0 = no limit */
+	lng logical_sessiontimeout;     /* logical session timeout, client defined */
 	QryCtx  qryctx;				/* per query limitations */
 
 	time_t  login;  	/* Time when this session started */

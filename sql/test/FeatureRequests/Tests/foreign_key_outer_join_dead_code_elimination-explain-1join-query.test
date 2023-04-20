@@ -17,7 +17,7 @@ query T python .explain.function_histogram
 explain select id       from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id
 ----
 algebra.projection
-2
+1
 algebra.sort
 1
 bat.pack
@@ -45,7 +45,7 @@ algebra.join
 algebra.project
 1
 algebra.projection
-6
+5
 algebra.projectionpath
 1
 algebra.sort
@@ -83,7 +83,7 @@ algebra.join
 algebra.project
 1
 algebra.projection
-6
+5
 algebra.projectionpath
 1
 algebra.sort

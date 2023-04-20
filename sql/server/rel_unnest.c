@@ -1602,6 +1602,19 @@ push_up_table(mvc *sql, sql_rel *rel, list *ad)
 	return rel;
 }
 
+static bool
+exps_have_rank(list *exps)
+{
+	if (!exps)
+		return false;
+	for(node *n=exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		if (is_analytic(e))
+			return true;
+	}
+	return false;
+}
+
 static sql_rel *
 rel_unnest_dependent(mvc *sql, sql_rel *rel)
 {
@@ -1682,7 +1695,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 				}
 			}
 
-			if (r && is_simple_project(r->op) && ((!exps_have_freevar(sql, r->exps) && !exps_have_unsafe(r->exps, 1)) || is_distinct_set(sql, l, ad))) {
+			if (r && is_simple_project(r->op) && ((!r->r && !exps_have_rank(r->exps)) || (!exps_have_freevar(sql, r->exps) && !exps_have_unsafe(r->exps, 1)) || is_distinct_set(sql, l, ad))) {
 				rel = push_up_project(sql, rel, ad);
 				return rel_unnest_dependent(sql, rel);
 			}

@@ -406,7 +406,6 @@ scanner_init_keywords(void)
 	failed += keywords_insert("MINMAX", MINMAX);
 	failed += keywords_insert("EXPLAIN", SQL_EXPLAIN);
 	failed += keywords_insert("PLAN", SQL_PLAN);
-	failed += keywords_insert("DEBUG", SQL_DEBUG);
 	failed += keywords_insert("TRACE", SQL_TRACE);
 	failed += keywords_insert("PREPARE", PREPARE);
 	failed += keywords_insert("PREP", PREP);

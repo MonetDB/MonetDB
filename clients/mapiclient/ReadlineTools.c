@@ -150,7 +150,6 @@ static const char *mal_commands[] = {
 	"exit",
 	"end",
 	"function",
-	"factory",
 	"leave",
 	"pattern",
 	"module",

@@ -296,7 +296,7 @@ GROUP BY t1.col6, t1.col7
 0
 0
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: BATsubcross: more than one match
 SELECT
 	(SELECT MAX(col6) FROM tbl_ProductSales) IN (SELECT MIN(col3) FROM another_T)
 FROM another_T

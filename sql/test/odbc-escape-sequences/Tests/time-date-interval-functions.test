@@ -260,7 +260,7 @@ select { fn year(timestamp'2222-11-14 12:30:34') }
 query T rowsort
 select {fn timestampadd(SQL_TSI_HOUR, 10, {ts '2022-11-14 14:13:12.654321'}) }
 ----
-2022-11-15 00:13:12
+2022-11-15 00:13:12.654321
 
 # corner cases
 query T rowsort
@@ -273,27 +273,25 @@ select sql_sub({fn timestampadd(SQL_TSI_HOUR, 1, date'2022-12-12')}, timestampad
 ----
 0:00:00
 
-# TODO Implement SQL_TSI_FRAC_SECOND option
-statement error 42000!syntax error in: "select { fn timestampadd(sql_tsi_frac_second"
+query T rowsort
 select { fn timestampadd(SQL_TSI_FRAC_SECOND, 123, timestamp'2022-11-14 14:13:12') }
-# ----
-# 2022-11-14 14:13:12.123
+----
+2022-11-14 14:13:12.123000
 
 query T rowsort
 select { fn timestampadd(SQL_TSI_SECOND, 11, timestamp'2022-11-14 14:13:12') }
 ----
 2022-11-14 14:13:23
 
-statement error 42000!syntax error in: "select { fn timestampadd(sql_tsi_second, 11.234"
+query T rowsort
 select { fn timestampadd(SQL_TSI_SECOND, 11.234, timestamp'2022-11-14 14:13:12') }
-# ----
-# 2022-11-14 14:13:23.234
+----
+2022-11-14 14:13:23.234000
 
-# TODO: add support for integer expression as second argument.
-statement error 42000!syntax error in: "select { fn timestampadd(sql_tsi_second, 15*"
+query T rowsort
 select { fn timestampadd(SQL_TSI_SECOND, 15*60, timestamp'2022-11-14 14:13:12') }
-# ----
-# 2022-11-14 14:28:12
+----
+2022-11-14 14:28:12
 
 query T rowsort
 select { fn timestampadd(SQL_TSI_MINUTE, 12, timestamp'2022-11-14 14:13:12') }

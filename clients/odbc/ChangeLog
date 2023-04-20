@@ -1,3 +1,8 @@
 # ChangeLog file for odbc
 # This file is updated with Maddlog
 
+* Thu Apr 13 2023 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Enhanced SQLTables() by adding support for table type names: 'BASE TABLE',
+  'GLOBAL TEMPORARY' and 'LOCAL TEMPORARY' in parameter TableType. These are
+  synonyms of: 'TABLE', 'GLOBAL TEMPORARY TABLE' and 'LOCAL TEMPORARY TABLE'.
+

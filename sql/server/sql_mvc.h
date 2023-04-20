@@ -66,10 +66,9 @@
 
 /* different query execution modifiers (emod) */
 #define mod_none 	0
-#define mod_debug 	1
-#define mod_trace 	2
-#define mod_explain 	4
-#define mod_exec 	8
+#define mod_trace 	1
+#define mod_explain 	2
+#define mod_exec 	4
 
 typedef struct sql_groupby_expression {
 	symbol *sdef;

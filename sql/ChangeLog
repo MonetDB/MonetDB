@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Apr  7 2023 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
+- Session timeout feature improve to start evaluating from the moment
+  the procedure is called, instead of beginning of the session.
+
 * Fri Mar  3 2023 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
 - Queries stopped with the stop procedure are now marked as 'aborted'
   'finished'.

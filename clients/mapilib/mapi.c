@@ -3814,6 +3814,8 @@ mapi_set_size_header(Mapi mid, bool value)
 		mapi_setError(mid, "size header only supported in SQL", __func__, MERROR);
 		return MERROR;
 	}
+	if (mid->sizeheader == value)
+		return MOK;
 	mid->sizeheader = value;
 	if (!mid->connected)
 		return MOK;

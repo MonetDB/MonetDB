@@ -15,7 +15,6 @@
  */
 #include "monetdb_config.h"
 #include "mal_builder.h"
-#include "mal_debugger.h"
 #include "opt_prelude.h"
 #include "sql_mvc.h"
 #include "sql_optimizer.h"
@@ -145,7 +144,6 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 	if (msg){
 		return msg;
 	}
-	mb->keephistory |= be->mvc->emod & mod_debug;
 	if (be->no_mitosis) {
 		for (i = mb->stop - 1; i > 0; i--) {
 			q = getInstrPtr(mb, i);
@@ -175,9 +173,7 @@ SQLoptimizeFunction(Client c, MalBlkPtr mb)
 	msg = addOptimizers(c, mb, pipe, TRUE);
 	if (msg)
 		return msg;
-	mb->keephistory |= be->mvc->emod & mod_debug;
 	msg = optimizeMALBlock(c, mb);
-	mb->keephistory = FALSE;
 	return msg;
 }
 
@@ -206,11 +202,6 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 	if (msg != MAL_SUCCEED || mb->errors) {
 		if (c->listing)
 			printFunction(c->fdout, mb, 0, c->listing);
-		if (be->mvc->debug) {
-			str omsg = runMALDebugger(c, c->curprg->def);
-			if (omsg != MAL_SUCCEED)
-				freeException(omsg); /* ignore error */
-		}
 		if (mb->errors && msg && msg != mb->errors) { /* if both set, throw mb->errors as the earliest one */
 			freeException(msg);
 			msg = MAL_SUCCEED;
@@ -232,7 +223,6 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 		GDKfree(pipe);
 	if (msg)
 		return msg;
-	mb->keephistory |= be->mvc->emod & mod_debug;
 	msg = optimizeMALBlock(c, mb);
 	return msg;
 }

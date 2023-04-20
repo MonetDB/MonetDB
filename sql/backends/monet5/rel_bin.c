@@ -3701,18 +3701,34 @@ rel2bin_inter(backend *be, sql_rel *rel, list *refs)
 	return rel_rename(be, rel, sub);
 }
 
+static int
+find_matching_exp(list *exps, sql_exp *e)
+{
+	int i = 0;
+	for (node *n = exps->h; n; n = n->next, i++) {
+		if (exp_match(n->data, e))
+			return i;
+	}
+	return -1;
+}
+
 static stmt *
-sql_reorder(backend *be, stmt *order, stmt *s)
+sql_reorder(backend *be, stmt *order, list *exps, stmt *s, list *oexps, list *ostmts)
 {
 	list *l = sa_list(be->mvc->sa);
-	node *n;
 
-	for (n = s->op4.lval->h; n; n = n->next) {
+	for (node *n = s->op4.lval->h, *m = exps->h; n && m; n = n->next, m = m->next) {
+		int pos = 0;
 		stmt *sc = n->data;
+		sql_exp *pe = m->data;
 		const char *cname = column_name(be->mvc->sa, sc);
 		const char *tname = table_name(be->mvc->sa, sc);
 
-		sc = stmt_project(be, order, sc);
+		if (oexps && (pos = find_matching_exp(oexps, pe)) >= 0 && list_fetch(ostmts, pos)) {
+			sc = list_fetch(ostmts, pos);
+		} else {
+			sc = stmt_project(be, order, sc);
+		}
 		sc = stmt_alias(be, sc, tname, cname );
 		list_append(l, sc);
 	}
@@ -3886,6 +3902,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		list *oexps = rel->r;
 		stmt *orderby_ids = NULL, *orderby_grp = NULL;
 
+		list *ostmts = sa_list(be->mvc->sa);
 		for (en = oexps->h; en; en = en->next) {
 			stmt *orderby = NULL;
 			sql_exp *orderbycole = en->data;
@@ -3896,17 +3913,21 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 				return NULL;
 			}
 			/* single values don't need sorting */
-			if (orderbycolstmt->nrcols == 0)
+			if (orderbycolstmt->nrcols == 0) {
+				append(ostmts, NULL);
 				continue;
+			}
 			if (orderby_ids)
 				orderby = stmt_reorder(be, orderbycolstmt, is_ascending(orderbycole), nulls_last(orderbycole), orderby_ids, orderby_grp);
 			else
 				orderby = stmt_order(be, orderbycolstmt, is_ascending(orderbycole), nulls_last(orderbycole));
+			stmt *orderby_vals = stmt_result(be, orderby, 0);
+			append(ostmts, orderby_vals);
 			orderby_ids = stmt_result(be, orderby, 1);
 			orderby_grp = stmt_result(be, orderby, 2);
 		}
 		if (orderby_ids)
-			psub = sql_reorder(be, orderby_ids, psub);
+			psub = sql_reorder(be, orderby_ids, rel->exps, psub, oexps, ostmts);
 	}
 	return psub;
 }
@@ -5048,7 +5069,12 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 			stmt *limit = stmt_limit(be, orderby_ids, NULL, NULL, offset, lim, 0, 0, 0, 0, 0, 0);
 			orderby_ids = stmt_project(be, limit, orderby_ids);
 		}
-		psub = sql_reorder(be, orderby_ids, psub);
+		/* FIXME: construct an ordered list of ostmts.  Only then, we
+		 *        can pass bot oexps and ostmts to sql_reorder.  For
+		 *        now, we pass NULLs to disable the recently introduced
+		 *        code in sql_reorder.
+		 */
+		psub = sql_reorder(be, orderby_ids, rel->exps, psub, NULL, NULL);
 	}
 	return psub;
 }

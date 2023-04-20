@@ -154,7 +154,7 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	/* find the return statement of the inline function */
 	for (i = 1; i < mc->stop - 1; i++) {
 		q = mc->stmt[i];
-		if( q->barrier== RETURNsymbol || q->barrier== YIELDsymbol){
+		if( q->barrier== RETURNsymbol){
 			/* add the mapping of the return variables */
 			for(n=0; n<p->retc; n++)
 				nv[getArg(q,n)] = getArg(p,n);
@@ -181,7 +181,7 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 		for (n = 0; n < q->argc; n++)
 			getArg(ns[k], n) = nv[getArg(q, n)];
 
-		if (q->barrier == RETURNsymbol || q->barrier == YIELDsymbol) {
+		if (q->barrier == RETURNsymbol) {
 			for(n=0; n<q->retc; n++)
 				clrVarFixed(mb,getArg(ns[k],n)); /* for typing */
 			setModuleId(ns[k],getModuleId(q));
@@ -215,7 +215,7 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 
 /*
  * The macro processor should be careful in replacing the
- * instruction. In particular, any RETURN or YIELD statement
+ * instruction. In particular, any RETURN statement
  * should be replaced by a jump. For the time being,
  * we only allow for a single return statement at the end
  * of the block.
@@ -234,7 +234,7 @@ MACROvalidate(MalBlkPtr mb)
 
 	for (i = 1; retseen == 0 && i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		retseen = p->token == RETURNsymbol || p->token == YIELDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol;
+		retseen = p->token == RETURNsymbol || p->barrier == RETURNsymbol;
 	}
 	if (retseen && i != mb->stop - 1)
 		throw(MAL, "optimizer.MACROvalidate", SQLSTATE(HY002) MACRO_SYNTAX_ERROR);

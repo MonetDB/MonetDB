@@ -51,9 +51,6 @@ SELECT t.name, i.name, 'DEP_INDEX' from sys.tables as t, sys.idxs as i where i.t
 query TTT rowsort
 (SELECT t.name as name, tri.name as trigname, 'DEP_TRIGGER' from sys.tables as t, sys.triggers as tri where tri.table_id = t.id) UNION (SELECT t.name as name, tri.name as trigname, 'DEP_TRIGGER' from sys.triggers tri, sys.tables t, sys.dependencies dep where dep.id = t.id AND dep.depend_id =tri.id AND dep.depend_type = 8) order by name, trigname
 ----
-_tables
-system_update_tables
-DEP_TRIGGER
 schemas
 system_update_schemas
 DEP_TRIGGER
