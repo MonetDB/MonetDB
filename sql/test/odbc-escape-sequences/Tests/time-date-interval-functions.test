@@ -31,7 +31,7 @@ select { fn CURRENT_TIME() } >= {t'00:00:00'}
 1
 
 # test CURRENT_TIME( time-precision )
-statement error 42000!syntax error in: "select { fn current_time(6"
+statement error 42000!syntax error...
 select { fn current_time(6) } >= {t'00:00:00.000000001'}
 # ----
 # 1
@@ -57,7 +57,7 @@ select { fn CURRENT_TIMESTAMP() } > {ts'2023-01-02 00:00:00'}
 1
 
 # test CURRENT_TIMESTAMP( timestamp-precision )
-statement error 42000!syntax error in: "select { fn current_timestamp(9"
+statement error 42000!syntax error...
 select { fn current_timestamp(9) } >= {ts'2002-01-02 00:00:00.000000001'}
 # ----
 # 1
