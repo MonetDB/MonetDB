@@ -684,12 +684,12 @@ BATfree(BAT *b)
 		BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid, &(oid){nbucket});
 	}
 	if (b->theap) {
-		assert(ATOMIC_GET(&b->theap->refs) == 1);
+		assert((ATOMIC_GET(&b->theap->refs) & HEAPREFS) == 1);
 		assert(b->theap->parentid == b->batCacheid);
 		HEAPfree(b->theap, false);
 	}
 	if (b->tvheap) {
-		assert(ATOMIC_GET(&b->tvheap->refs) == 1);
+		assert((ATOMIC_GET(&b->tvheap->refs) & HEAPREFS) == 1);
 		assert(b->tvheap->parentid == b->batCacheid);
 		HEAPfree(b->tvheap, false);
 	}
@@ -706,6 +706,14 @@ BATdestroy(BAT *b)
 	if (b->tvheap) {
 		ATOMIC_DESTROY(&b->tvheap->refs);
 		GDKfree(b->tvheap);
+	}
+	ValPtr p = BATgetprop_nolock(b, (enum prop_t) 21);
+	if (p != NULL) {
+		Heap *h = p->val.pval;
+		ATOMIC_AND(&h->refs, ~DELAYEDREMOVE);
+		/* the bat has not been committed, so we cannot remove
+		 * the old tail file */
+		HEAPdecref(h, false);
 	}
 	PROPdestroy_nolock(b);
 	MT_lock_destroy(&b->theaplock);

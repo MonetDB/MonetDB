@@ -3012,6 +3012,13 @@ BBPdestroy(BAT *b)
 	}
 	if (tp || vtp)
 		VIEWunlink(b);
+	ValPtr p = BATgetprop(b, (enum prop_t) 21);
+	if (p != NULL) {
+		Heap *h = p->val.pval;
+		BATrmprop(b, (enum prop_t) 21);
+		ATOMIC_AND(&h->refs, ~DELAYEDREMOVE);
+		HEAPdecref(h, true);
+	}
 	BATdelete(b);
 
 	BBPclear(b->batCacheid, true);	/* if destroyed; de-register from BBP */
@@ -3746,7 +3753,19 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 			if (size > bi.count) /* includes sizes==NULL */
 				size = bi.count;
 			bi.b->batInserted = size;
-			if (size == 0) {
+			if (bi.b->ttype >= 0 && ATOMvarsized(bi.b->ttype)) {
+				/* see epilogue() for other part of this */
+				/* remember the tail we're saving */
+				if (BATsetprop_nolock(bi.b, (enum prop_t) 20, TYPE_ptr, &bi.h) == NULL) {
+					GDKerror("setprop failed\n");
+					ret = GDK_FAIL;
+				} else {
+					if (BATgetprop_nolock(bi.b, (enum prop_t) 21) == NULL)
+						BATsetprop_nolock(bi.b, (enum prop_t) 21, TYPE_ptr, &(void *){(Heap *) 1});
+					HEAPincref(bi.h);
+				}
+			}
+			if (size == 0 || ret != GDK_SUCCEED) {
 				/* no need to save anything */
 				MT_lock_unset(&bi.b->theaplock);
 			} else {
@@ -3834,7 +3853,25 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 	TRC_DEBUG(PERF, "%s (ready time %d)\n",
 		  ret == GDK_SUCCEED ? "" : " failed",
 		  (t0 = GDKms()) - t1);
+
   bailout:
+	if (ret != GDK_SUCCEED) {
+		/* clean up extra refs we created */
+		for (int idx = 1; idx < cnt; idx++) {
+			bat i = subcommit ? subcommit[idx] : idx;
+			BAT *b = BBP_desc(i);
+			if (b && ATOMvarsized(b->ttype)) {
+				MT_lock_set(&b->theaplock);
+				ValPtr p = BATgetprop_nolock(b, (enum prop_t) 20);
+				if (p != NULL) {
+					HEAPdecref(p->val.pval, false);
+					BATrmprop_nolock(b, (enum prop_t) 20);
+				}
+				MT_lock_unset(&b->theaplock);
+			}
+		}
+	}
+
 	/* turn off the BBPSYNCING bits for all bats, even when things
 	 * didn't go according to plan (i.e., don't check for ret ==
 	 * GDK_SUCCEED) */
