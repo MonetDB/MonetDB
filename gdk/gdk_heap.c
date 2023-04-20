@@ -532,7 +532,6 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 		HEAPdecref(old, p == NULL || strcmp(((Heap*) p->val.pval)->filename, old->filename) != 0);
 	}
 	MT_lock_unset(&b->theaplock);
-	HEAPdecref(old, strcmp(old->filename, new->filename) != 0);
 	return GDK_SUCCEED;
 }
 
