@@ -3666,34 +3666,21 @@ BBPbackup(BAT *b, bool subcommit)
 }
 
 static inline void
-BBPcheckHeap(bool subcommit, Heap *h)
+BBPcheckHeap(Heap *h)
 {
 	struct stat statb;
 	char *path;
 
-	if (subcommit) {
-		char *s = strrchr(h->filename, DIR_SEP);
-		if (s)
-			s++;
-		else
-			s = h->filename;
-		path = GDKfilepath(0, BAKDIR, s, NULL);
-		if (path == NULL)
-			return;
-		if (MT_stat(path, &statb) < 0) {
-			GDKfree(path);
-			path = GDKfilepath(0, BATDIR, h->filename, NULL);
-			if (path == NULL)
-				return;
-			if (MT_stat(path, &statb) < 0) {
-				GDKsyserror("cannot stat file %s (expected size %zu)\n",
-					    path, h->free);
-				assert(0);
-				GDKfree(path);
-				return;
-			}
-		}
-	} else {
+	char *s = strrchr(h->filename, DIR_SEP);
+	if (s)
+		s++;
+	else
+		s = h->filename;
+	path = GDKfilepath(0, BAKDIR, s, NULL);
+	if (path == NULL)
+		return;
+	if (MT_stat(path, &statb) < 0) {
+		GDKfree(path);
 		path = GDKfilepath(0, BATDIR, h->filename, NULL);
 		if (path == NULL)
 			return;
@@ -3716,7 +3703,7 @@ BBPcheckHeap(bool subcommit, Heap *h)
 }
 
 static void
-BBPcheckBBPdir(bool subcommit)
+BBPcheckBBPdir(void)
 {
 	FILE *fp;
 	int lineno = 0;
@@ -3724,10 +3711,14 @@ BBPcheckBBPdir(bool subcommit)
 	unsigned bbpversion;
 	lng logno, transid;
 
-	fp = GDKfileopen(0, BATDIR, "BBP", "dir", "r");
+	fp = GDKfileopen(0, BAKDIR, "BBP", "dir", "r");
 	assert(fp != NULL);
-	if (fp == NULL)
-		return;
+	if (fp == NULL) {
+		fp = GDKfileopen(0, BATDIR, "BBP", "dir", "r");
+		assert(fp != NULL);
+		if (fp == NULL)
+			return;
+	}
 	bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, &transid);
 	if (bbpversion == 0) {
 		fclose(fp);
@@ -3782,9 +3773,9 @@ BBPcheckBBPdir(bool subcommit)
 			continue;
 		}
 		if (b.theap->free > 0)
-			BBPcheckHeap(subcommit, b.theap);
+			BBPcheckHeap(b.theap);
 		if (b.tvheap != NULL && b.tvheap->free > 0)
-			BBPcheckHeap(subcommit, b.tvheap);
+			BBPcheckHeap(b.tvheap);
 	}
 }
 
@@ -3818,6 +3809,9 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 	}
 
 	TRC_DEBUG_IF(PERF) t0 = t1 = GDKms();
+
+	if ((GDKdebug & TAILCHKMASK) && !GDKinmemory(0))
+		BBPcheckBBPdir();
 
 	ret = BBPprepare(subcommit != NULL);
 
@@ -3938,9 +3932,6 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng tr
 		 * whether the operation of this function
 		 * succeeded, so no changing of ret after this
 		 * call anymore */
-
-		if ((GDKdebug & TAILCHKMASK) && !GDKinmemory(0))
-			BBPcheckBBPdir(subcommit != NULL);
 
 		if (MT_rename(bakdir, deldir) < 0 &&
 		    /* maybe there was an old deldir, so remove and try again */
