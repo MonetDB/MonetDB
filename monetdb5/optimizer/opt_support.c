@@ -434,7 +434,6 @@ inline int isMapOp(InstrPtr p){
 		((getModuleId(p) == malRef && getFunctionId(p) == multiplexRef) ||
 		 (getModuleId(p) == malRef && getFunctionId(p) == manifoldRef) ||
 		 (getModuleId(p) == batcalcRef) ||
-		 (getModuleId(p) == batstrRef) ||
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
 		 (getModuleId(p) == batmkeyRef)) && !isOrderDepenent(p) &&
 		 getModuleId(p) != batrapiRef &&
@@ -449,7 +448,6 @@ inline int isMap2Op(InstrPtr p){
 		((getModuleId(p) == malRef && getFunctionId(p) == multiplexRef) ||
 		 (getModuleId(p) == malRef && getFunctionId(p) == manifoldRef) ||
 		 (getModuleId(p) == batcalcRef) ||
-		 (getModuleId(p) == batstrRef) ||
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
 		 (getModuleId(p) == batmkeyRef)) && !isOrderDepenent(p) &&
 		 getModuleId(p) != batrapiRef &&
