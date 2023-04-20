@@ -1094,11 +1094,6 @@ mel_func calc_init_funcs[] = {
  pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",dbl),arg("v2",int))),
  pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",dbl),arg("v2",lng))),
  pattern("calc", "*", CMDvarMUL, false, "Return V1 * V2, signal error on overflow", args(1,3, arg("",hge),arg("v1",dbl),arg("v2",hge))),
- pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",hge),arg("v1",hge),arg("v2",lng))),
- pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",lng),arg("v1",lng),arg("v2",lng))),
- pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",int),arg("v1",int),arg("v2",lng))),
- pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",sht),arg("v1",sht),arg("v2",lng))),
- pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",bte),arg("v1",bte),arg("v2",lng))),
  pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",bte),arg("v2",bte))),
  pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",bte),arg("v2",sht))),
  pattern("calc", "/", CMDvarDIV, false, "Return V1 / V2, signal error on divide by zero", args(1,3, arg("",hge),arg("v1",bte),arg("v2",int))),
@@ -1500,6 +1495,14 @@ mel_func calc_init_funcs[] = {
  pattern("calc", "<=", CMDvarLE, false, "Equality of two timestamps", args(1,3, arg("",bit),arg("v",timestamp),arg("w",timestamp))),
  pattern("calc", ">", CMDvarGT, false, "Equality of two timestamps", args(1,3, arg("",bit),arg("v",timestamp),arg("w",timestamp))),
  pattern("calc", ">=", CMDvarGE, false, "Equality of two timestamps", args(1,3, arg("",bit),arg("v",timestamp),arg("w",timestamp))),
+ /* calc ops added for pipeline */
+#ifdef HAVE_HGE
+ pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",hge),arg("v1",hge),arg("v2",lng))),
+#endif
+ pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",lng),arg("v1",lng),arg("v2",lng))),
+ pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",int),arg("v1",int),arg("v2",lng))),
+ pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",sht),arg("v1",sht),arg("v2",lng))),
+ pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",bte),arg("v1",bte),arg("v2",lng))),
  /* calc ops from 01_calc.mal */
  pattern("calc", "iszero", CMDvarISZERO, false, "Unary check for zero of V", args(1,2, arg("",bit),arg("v",bte))),
  pattern("calc", "iszero", CMDvarISZERO, false, "Unary check for zero of V", args(1,2, arg("",bit),arg("v",sht))),
