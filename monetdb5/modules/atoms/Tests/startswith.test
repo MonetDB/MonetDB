@@ -1,0 +1,44 @@
+query T
+select startswith(NULL, '')
+----
+NULL
+
+query T
+select startswith('', NULL)
+----
+NULL
+
+query T
+select startswith('', '')
+----
+True
+
+query T
+select startswith('johndoe', '')
+----
+True
+
+query T
+select startswith('', 'johndoe')
+----
+False
+
+query T
+select startswith('johndoe', 'john')
+----
+True
+
+query T
+select startswith('one two three', 'three', true)
+----
+False
+
+query T
+select startswith('Müller Thomas', 'müller', true)
+----
+True
+
+query T
+select startswith('Müller Thomas', 'müller', false)
+----
+False

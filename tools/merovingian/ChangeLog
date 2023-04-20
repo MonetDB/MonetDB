@@ -1,19 +1,3 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
-* Mon Dec  5 2022 Aris Koning <aris.koning@monetdbsolutions.com>
-- The monetdb get, inherit, lock and release commands are extended with
-  ‘apply-to-all’ syntax similar to related functionality:
-  Usage: monetdb set property=value [database ...]
-  sets property to value for the given database(s), or all
-  Usage: monetdb inherit property [database ...]
-  unsets property, reverting to its inherited value from the
-  default configuration for the given database(s), or all
-  Usage: monetdb lock [-a] database [database...]
-  Puts the given database in maintenance mode.
-  Options:
-    -a  locks all known databases
-  Usage: monetdb release [-a] database [database ...]
-  Brings back a database from maintenance mode.
-  Options:
-    -a  releases all known databases

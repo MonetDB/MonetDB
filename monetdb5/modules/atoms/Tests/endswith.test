@@ -1,0 +1,44 @@
+query T
+select endsWith(NULL, '')
+----
+NULL
+
+query T
+select endsWith('', NULL)
+----
+NULL
+
+query T
+select endsWith('', '')
+----
+True
+
+query T
+select endsWith('johndoe', '')
+----
+True
+
+query T
+select endsWith('', 'johndoe')
+----
+False
+
+query T
+select endsWith('johndoe', 'doe')
+----
+True
+
+query T
+select endswith('one two three', 'three', true)
+----
+True
+
+query T
+select endswith('Thomas Müller', 'müller', true)
+----
+True
+
+query T
+select endswith('Thomas Müller', 'müller', false)
+----
+False

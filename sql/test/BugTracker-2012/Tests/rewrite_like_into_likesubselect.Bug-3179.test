@@ -101,35 +101,35 @@ user.main
 1
 
 statement ok
-create function contains(str string, substr string)
+create function mycontains(str string, substr string)
 returns boolean
 begin
 	  return str like '%'||substr||'%';
 end
 
 statement ok
-create function not_contains(str string, substr string)
+create function not_mycontains(str string, substr string)
 returns boolean
 begin
 	  return str not like '%'||substr||'%';
 end
 
 statement ok
-create function icontains(str string, substr string)
+create function imycontains(str string, substr string)
 returns boolean
 begin
 	  return str ilike '%'||substr||'%';
 end
 
 statement ok
-create function not_icontains(str string, substr string)
+create function not_imycontains(str string, substr string)
 returns boolean
 begin
 	  return str not ilike '%'||substr||'%';
 end
 
 query T python .explain.function_histogram
-explain select name,func from functions where contains(name, 'optimizers')
+explain select name,func from functions where mycontains(name, 'optimizers')
 ----
 algebra.likeselect
 2
@@ -153,7 +153,7 @@ user.main
 1
 
 query T python .explain.function_histogram
-explain select name,func from functions where not_contains(name, 'optimizers')
+explain select name,func from functions where not_mycontains(name, 'optimizers')
 ----
 algebra.likeselect
 2
@@ -177,7 +177,7 @@ user.main
 1
 
 query T python .explain.function_histogram
-explain select name,func from functions where icontains(name, 'optimizers')
+explain select name,func from functions where imycontains(name, 'optimizers')
 ----
 algebra.likeselect
 2
@@ -201,7 +201,7 @@ user.main
 1
 
 query T python .explain.function_histogram
-explain select name,func from functions where not_icontains(name, 'optimizers')
+explain select name,func from functions where not_imycontains(name, 'optimizers')
 ----
 algebra.likeselect
 2

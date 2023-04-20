@@ -275,6 +275,18 @@ BINSEARCHFUNC(hge)
 BINSEARCHFUNC(flt)
 BINSEARCHFUNC(dbl)
 
+#if 0
+/* some programs that produce editor tags files don't recognize the
+ * binsearch function because before it are the BINSEARCHFUNC macro
+ * calls that don't look like function definitions or variable
+ * declarations, hence we have this hidden away function to realign the
+ * tags program */
+void
+realign_tags(void)
+{
+}
+#endif
+
 /* Do a binary search for the first/last occurrence of v between lo and hi
  * (lo inclusive, hi not inclusive) in vals/vars.
  * If last > 0, return the index of the first value > v; if last == 0,

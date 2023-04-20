@@ -36,6 +36,7 @@ target_include_directories(atoms
 target_link_libraries(atoms
   PRIVATE
   $<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>
+  $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>
   stream
   monetdb_config_header
   mutils

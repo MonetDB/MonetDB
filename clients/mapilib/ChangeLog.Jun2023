@@ -1,0 +1,6 @@
+# ChangeLog file for mapilib
+# This file is updated with Maddlog
+
+* Fri Sep 30 2022 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Deprecate mapi_setfilecallback() in favor of mapi_setfilecallback2() which
+  can handle binary downloads. For the time being, the old callback still works.

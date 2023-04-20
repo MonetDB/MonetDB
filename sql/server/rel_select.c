@@ -3787,10 +3787,11 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 	if (!a && list_length(exps) > 1) {
 		sql_subtype *t1 = exp_subtype(exps->h->data);
 		a = sql_bind_member(sql, sname, aname, exp_subtype(exps->h->data), F_AGGR, list_length(exps), false, NULL);
+		sql_subtype *t2 = a?&((sql_arg*)a->func->ops->h->next->data)->type:NULL;
 
-		if (list_length(exps) != 2 || (!EC_NUMBER(t1->type->eclass) || !a || subtype_cmp(
+		if (list_length(exps) != 2 || (!EC_NUMBER(t1->type->eclass) || !a /*|| subtype_cmp(
 						&((sql_arg*)a->func->ops->h->data)->type,
-						&((sql_arg*)a->func->ops->h->next->data)->type) != 0) )  {
+						&((sql_arg*)a->func->ops->h->next->data)->type) != 0*/) )  {
 			if (a) {
 				list *nexps = NULL;
 
@@ -3808,6 +3809,14 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 				/* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
+			}
+		} else if (list_length(exps) == 2 && a && subtype_cmp(t2, exp_subtype(exps->h->next->data)) != 0) {
+			sql_exp *e = exps->h->next->data;
+
+			if (!(e = exp_check_type(sql, t2, NULL, e, type_equal))) {
+				a = NULL;
+			} else {
+				exps->h->next->data = e;
 			}
 		} else {
 			sql_exp *l = exps->h->data, *ol = l, *r = exps->h->next->data, *or = r;

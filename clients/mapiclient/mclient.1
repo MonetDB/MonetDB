@@ -320,6 +320,8 @@ query.  Remote content is retrieved by
 \fB\-\-rows=\fP\fInr\fP (\fB\-r\fP \fInr\fP)
 If specified, query results will be paged by an internal pager at the
 specified number of lines.
+If set to \fB0\fP (zero), use the height of the terminal.
+The default is \fB\-1\fP which means no pager is used.
 .TP
 \fB\-\-width=\fP\fInr\fP (\fB\-w\fP \fInr\fP)
 Specify the width of the screen.
@@ -422,7 +424,11 @@ If
 .I rows
 is
 .BR \-1 ,
-stop using the internal pager.
+stop using the internal pager, if
+.I rows
+is
+.BR 0 ,
+use the height of the terminal.
 .SS
 SQL Commands
 .TP

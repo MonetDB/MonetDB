@@ -33,3 +33,6 @@ jsonrender
 
 uuid00
 strappend
+
+startswith
+endswith

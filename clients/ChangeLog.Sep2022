@@ -1,3 +1,8 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Mon Apr 17 2023 Sjoerd Mullender <sjoerd@acm.org>
+- If the number of rows in mclient is set to 0 (using either --rows=0
+  option or \r0 on the mclient command line), the internal pager is used
+  and it then uses the height of the terminal window.
+

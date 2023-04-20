@@ -481,7 +481,7 @@ os_bind_member_internal(mvc *sql, struct objectset *ff, const char *fname, sql_s
 		}
 	}
 	if (cand)
-		return (type == F_AGGR) ? _dup_subaggr(sql->sa, cand, NULL) : sql_dup_subfunc(sql->sa, cand, NULL, tp);
+		return (type == F_AGGR) ? _dup_subaggr(sql->sa, cand, tp) : sql_dup_subfunc(sql->sa, cand, NULL, tp);
 	return NULL;
 }
 

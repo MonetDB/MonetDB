@@ -623,6 +623,8 @@ load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 	if (rs == NULL)
 		return -1;
 
+	if (!rs)
+		return -1;
 	vals = list_create((fdestroy) &part_value_destroy);
 	if (!vals) {
 		store->table_api.rids_destroy(rs);
@@ -1115,8 +1117,10 @@ load_schema(sql_trans *tr, res_table *rt_schemas, res_table *rt_tables, res_tabl
 	type_schema = find_sql_column(types, "schema_id");
 	type_id = find_sql_column(types, "id");
 	rs = store->table_api.rids_select(tr, type_schema, &s->base.id, &s->base.id, type_id, &tmpid, NULL, NULL);
-	if (rs == NULL)
+	if (!rs) {
+		schema_destroy(store, s);
 		return NULL;
+	}
 	for (oid rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
 		sql_type *t = load_type(tr, s, rid);
 		if (os_add(s->types, tr, t->base.name, &t->base)) {
@@ -1164,6 +1168,11 @@ load_schema(sql_trans *tr, res_table *rt_schemas, res_table *rt_tables, res_tabl
 		sql_column *arg_func_id = find_sql_column(args, "func_id");
 		sql_column *arg_number = find_sql_column(args, "number");
 		subrids *nrs = store->table_api.subrids_create(tr, rs, func_id, arg_func_id, arg_number);
+		if (!nrs) {
+			store->table_api.rids_destroy(rs);
+			schema_destroy(store, s);
+			return NULL;
+		}
 		sqlid fid;
 		sql_func *f;
 
@@ -1182,6 +1191,11 @@ load_schema(sql_trans *tr, res_table *rt_schemas, res_table *rt_tables, res_tabl
 		}
 		/* Handle all procedures without arguments (no args) */
 		rs = store->table_api.rids_diff(tr, rs, func_id, nrs, arg_func_id);
+		if (!rs) {
+			store->table_api.subrids_destroy(nrs);
+			schema_destroy(store, s);
+			return NULL;
+		}
 		for (oid rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
 			fid = store->table_api.column_find_sqlid(tr, func_id, rid);
 			f = load_func(tr, s, fid, NULL);
@@ -4682,6 +4696,8 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 		sql_column *pcols = find_sql_column(partitions, "table_id");
 		assert(pcols);
 		rids *rs = store->table_api.rids_select(tr, pcols, &t->base.id, &t->base.id, NULL);
+		if (!rs)
+			return -1;
 		oid poid;
 		if (rs == NULL)
 			return LOG_ERR;
