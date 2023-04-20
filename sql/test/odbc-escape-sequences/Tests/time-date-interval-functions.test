@@ -314,7 +314,7 @@ select { fn timestampadd(SQL_TSI_DAY, 14, { fn timestampadd(SQL_TSI_DAY, 14, tim
 2022-12-12 14:13:12
 
 query T rowsort
-select { fn timestampadd(SQL_TSI_DAY, 28, timestamp'2022-11-14 14:13:12') }
+select { fn timestampadd(SQL_TSI_DAY, 4*7, timestamp'2022-11-14 14:13:12') }
 ----
 2022-12-12 14:13:12
 
@@ -343,6 +343,11 @@ select { fn timestampadd(SQL_TSI_YEAR, 5, timestamp'2022-11-14 14:13:12') }
 # Integer number of intervals of type interval by which time_exp2 is greater than time_exp1.
 # interval has the same value as TIMESTAMPADD.
 # Fractional seconds are expressed in billionths of a second.
+
+query T rowsort
+select cast ({ fn timestampdiff(SQL_TSI_FRAC_SECOND, { ts '2022-12-12 12:00:00.123456'}, {ts'2022-12-12 12:00:30.654321' }) } as varchar(20))
+----
+30.531
 
 query I rowsort
 select { fn timestampdiff(SQL_TSI_SECOND, timestamp'2022-12-12 12:00:00', timestamp'2022-12-12 12:00:30') }
