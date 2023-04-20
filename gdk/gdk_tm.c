@@ -57,6 +57,7 @@ epilogue(int cnt, bat *subcommit, bool locked)
 
 	while (++i < cnt) {
 		bat bid = subcommit ? subcommit[i] : i;
+		BAT *b;
 
 		if (BBP_status(bid) & BBPPERSISTENT) {
 			BBP_status_on(bid, BBPEXISTING);
@@ -71,17 +72,43 @@ epilogue(int cnt, bat *subcommit, bool locked)
 			 * but didn't due to the failure, would be a
 			 * consistency risk.
 			 */
-			BAT *b = BBP_cache(bid);
+			b = BBP_cache(bid);
 			if (b) {
 				/* check mmap modes */
 				if (BATcheckmodes(b, true) != GDK_SUCCEED)
 					TRC_WARNING(GDK, "BATcheckmodes failed\n");
 			}
 		}
+		b = BBP_desc(bid);
+		if (b && ATOMvarsized(b->ttype)) {
+			MT_lock_set(&b->theaplock);
+			ValPtr p = BATgetprop_nolock(b, (enum prop_t) 20);
+			if (p != NULL) {
+				Heap *tail = p->val.pval;
+				assert(BATgetprop_nolock(b, (enum prop_t) 21) != NULL);
+				BATrmprop_nolock(b, (enum prop_t) 20);
+				ValPtr p = BATgetprop_nolock(b, (enum prop_t) 21);
+				Heap *h = p->val.pval;
+				if (h != (Heap *) 1)
+					HEAPdecref(h, true);
+				if (tail == b->theap ||
+				    strcmp(tail->filename,
+					   b->theap->filename) == 0) {
+					/* no upgrades done since saving
+					 * started */
+					BATrmprop_nolock(b, (enum prop_t) 21);
+					HEAPdecref(tail, false);
+				} else {
+					BATsetprop_nolock(b, (enum prop_t) 21, TYPE_ptr, &tail);
+					ATOMIC_OR(&tail->refs, DELAYEDREMOVE);
+				}
+			}
+			MT_lock_unset(&b->theaplock);
+		}
 		if (!locked)
 			MT_lock_set(&GDKswapLock(bid));
 		if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
-			BAT *b = BBPquickdesc(bid);
+			b = BBPquickdesc(bid);
 
 			/* the unloaded ones are deleted without
 			 * loading deleted disk images */
