@@ -798,10 +798,12 @@ void
 IMPSdecref(Imprints *imprints, bool remove)
 {
 	TRC_DEBUG(ACCELERATOR, "Decrement ref count of %s\n", imprints->imprints.filename);
-	imprints->imprints.remove |= remove;
-	if (ATOMIC_DEC(&imprints->imprints.refs) == 0) {
+	if (remove)
+		ATOMIC_OR(&imprints->imprints.refs, HEAPREMOVE);
+	ATOMIC_BASE_TYPE refs = ATOMIC_DEC(&imprints->imprints.refs);
+	if ((refs & HEAPREFS) == 0) {
 		ATOMIC_DESTROY(&imprints->imprints.refs);
-		HEAPfree(&imprints->imprints, imprints->imprints.remove);
+		HEAPfree(&imprints->imprints, (bool) (refs & HEAPREMOVE));
 		GDKfree(imprints);
 	}
 }
