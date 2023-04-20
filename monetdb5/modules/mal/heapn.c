@@ -384,7 +384,9 @@ heap_type_cmp(bte)
 heap_type_cmp(sht)
 heap_type_cmp(int)
 heap_type_cmp(lng)
+#ifdef HAVE_HGE
 heap_type_cmp(hge)
+#endif
 heap_type_cmp(flt)
 heap_type_cmp(dbl)
 
@@ -560,7 +562,9 @@ heap_type(bte)
 heap_type(sht)
 heap_type(int)
 heap_type(lng)
+#ifdef HAVE_HGE
 heap_type(hge)
+#endif
 heap_type(flt)
 heap_type(dbl)
 
@@ -751,8 +755,10 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		j = topn_lng(cnt, sp, dp, ip, hp);
 	} else if (b->ttype == TYPE_timestamp) {
 		j = topn_lng(cnt, sp, dp, ip, hp);
+#ifdef HAVE_HGE
 	} else if (b->ttype == TYPE_hge) {
 		j = topn_hge(cnt, sp, dp, ip, hp);
+#endif
 	} else if (b->ttype == TYPE_flt) {
 		j = topn_flt(cnt, sp, dp, ip, hp);
 	} else if (b->ttype == TYPE_dbl) {
@@ -1277,7 +1283,9 @@ HEAPproject(bat *rid, bat *cand, bat *del, bat *ins, bat *in, lng *n, const ptr 
 		project(sht)
 		project(int)
 		project(lng)
+#ifdef HAVE_HGE
 		project(hge)
+#endif
 		project(flt)
 		project(dbl)
 		if (local_storage) {

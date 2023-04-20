@@ -28,6 +28,8 @@
 #define _hash_oid(X)  _hash_lng(X)
 #define _hash_daytime(X) _hash_lng(X)
 #define _hash_timestamp(X) _hash_lng(X)
+
+#ifdef HAVE_HGE
 #define _hash_uuid(X) _hash_hge(X)
 
 #define _mix_hge(X)      (((hge) (X) >> 7) ^     \
@@ -48,6 +50,8 @@
                          (hge) (X))
 #define _hash_hge(X)  (_hash_lng(((lng)X) ^ _hash_lng((lng)(X>>64))))
 //#define hash_hge(X)  ((lng)_mix_hge(X))
+#endif
+
 #define _hash_flt(X)  (_hash_int(X))
 #define _hash_dbl(X)  (_hash_lng(X))
 #define _hash_gid(X)  (_hash_lng(X))

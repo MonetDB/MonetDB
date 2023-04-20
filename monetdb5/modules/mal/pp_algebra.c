@@ -483,7 +483,11 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int type = getArgType(mb, pci, pci->retc + 1);
 	str err = NULL;
 
-	if (type != TYPE_hge && type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte &&
+	if (
+#ifdef HAVE_HGE
+			type != TYPE_hge &&
+#endif
+			type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte &&
 			type != TYPE_flt && type != TYPE_dbl)
 			return createException(SQL, "lockedaggr.avg", "Wrong input type (%d)", type);
 
@@ -527,7 +531,9 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPkeepref(c);
 		} else {
 			assert(b->ttype == TYPE_dbl);
+#ifdef HAVE_HGE
 			avg_aggr(hge);
+#endif
 			avg_aggr(lng);
 			avg_aggr(int);
 			avg_aggr(sht);
@@ -568,7 +574,11 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int type = getArgType(mb, pci, 2);
 	str err = NULL;
 
-	if (type != TYPE_hge && type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte && type != TYPE_bit &&
+	if (
+#ifdef HAVE_HGE
+			type != TYPE_hge &&
+#endif
+		type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte && type != TYPE_bit &&
 		type != TYPE_flt && type != TYPE_dbl &&
 		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_uuid && type != TYPE_str)
 			return createException(SQL, "lockedaggr.min", "Wrong input type (%d)", type);
@@ -581,7 +591,9 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		aggr(daytime,min);
 		aggr(timestamp,min);
 		faggr(uuid,uuid_min);
+#ifdef HAVE_HGE
 		aggr(hge,min);
+#endif
 		aggr(lng,min);
 		aggr(int,min);
 		aggr(sht,min);
@@ -618,7 +630,11 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int type = getArgType(mb, pci, 2);
 	str err = NULL;
 
-	if (type != TYPE_hge && type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte && type != TYPE_bit &&
+	if (
+#ifdef HAVE_HGE
+			type != TYPE_hge &&
+#endif
+		type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte && type != TYPE_bit &&
 		type != TYPE_flt && type != TYPE_dbl &&
 		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_uuid && type != TYPE_str)
 			return createException(SQL, "lockedaggr.max", "Wrong input type (%d)", type);
@@ -631,7 +647,9 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		aggr(daytime,max);
 		aggr(timestamp,max);
 		faggr(uuid,uuid_max);
+#ifdef HAVE_HGE
 		aggr(hge,max);
+#endif
 		aggr(lng,max);
 		aggr(int,max);
 		aggr(sht,max);
@@ -844,10 +862,14 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			unique(lng)
 			unique(daytime)
 			unique(timestamp)
+#ifdef HAVE_HGE
 			unique(hge)
+#endif
 			funique(flt, int)
 			funique(dbl, lng)
+#ifdef HAVE_HGE
 			cunique(uuid, hge)
+#endif
 			aunique(str)
 		}
 		if (!err) {
@@ -1049,10 +1071,14 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 			gunique(lng)
 			gunique(daytime)
 			gunique(timestamp)
+#ifdef HAVE_HGE
 			gunique(hge)
+#endif
 			gfunique(flt, int)
 			gfunique(dbl, lng)
+#ifdef HAVE_HGE
 			gcunique(uuid, hge)
+#endif
 			gaunique(str)
 		}
 		if (!err) {
@@ -1431,7 +1457,9 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			group(oid)
 			group(daytime)
 			group(timestamp)
+#ifdef HAVE_HGE
 			group(hge)
+#endif
 			fgroup(flt, int)
 			fgroup(dbl, lng)
 			if (local_storage) {
@@ -1798,7 +1826,9 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 			derive(oid)
 			derive(daytime)
 			derive(timestamp)
+#ifdef HAVE_HGE
 			derive(hge)
+#endif
 			fderive(flt, int)
 			fderive(dbl, lng)
 			if (local_storage) {
@@ -2029,7 +2059,9 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			project(sht)
 			project(int)
 			project(lng)
+#ifdef HAVE_HGE
 			project(hge)
+#endif
 			project(flt)
 			project(dbl)
 			if (local_storage) {
@@ -2249,7 +2281,9 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 				gcount(lng);
 				gcount(daytime);
 				gcount(timestamp);
+#ifdef HAVE_HGE
 				gcount(hge);
+#endif
 				gfcount(uuid);
 				gcount(flt);
 				gcount(dbl);
@@ -2361,11 +2395,13 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			gsum(lng,sht);
 			gsum(lng,int);
 			gsum(lng,lng);
+#ifdef HAVE_HGE
 			gsum(hge,bte);
 			gsum(hge,sht);
 			gsum(hge,int);
 			gsum(hge,lng);
 			gsum(hge,hge);
+#endif
 			gsum(flt,flt);
 			gsum(dbl,flt);
 			gsum(dbl,dbl);
@@ -2924,7 +2960,9 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			gfunc(lng,min);
 			gfunc(daytime,min);
 			gfunc(timestamp,min);
+#ifdef HAVE_HGE
 			gfunc(hge,min);
+#endif
 			gfunc2(uuid,uuid_min);
 			gfunc(flt,min);
 			gfunc(dbl,min);
@@ -3051,7 +3089,9 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			gfunc(lng,max);
 			gfunc(daytime,max);
 			gfunc(timestamp,max);
+#ifdef HAVE_HGE
 			gfunc(hge,max);
+#endif
 			gfunc2(uuid,uuid_max);
 			gfunc(flt,max);
 			gfunc(dbl,max);
