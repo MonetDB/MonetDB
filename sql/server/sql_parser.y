@@ -6575,7 +6575,7 @@ odbc_data_type:
     | SQL_BIT
         { sql_find_subtype(&$$, "boolean", 0, 0); }
     | SQL_CHAR
-        { sql_find_subtype(&$$, "char", 1, 0); }
+        { sql_find_subtype(&$$, "char", 0, 0); }
     | SQL_DATE
         { sql_find_subtype(&$$, "date", 0, 0); }
     | SQL_DECIMAL
@@ -6593,7 +6593,7 @@ odbc_data_type:
             }
             sql_init_subtype(&$$, t, 0, 0);
         }
-    | SQL_HUGEINT
+    | SQL_HUGEINT  /* Note: SQL_HUGEINT is not part of or defined in ODBC. It is a MonetDB extension. */
         { sql_find_subtype(&$$, "hugeint", 0, 0); }
     | SQL_INTEGER
         { sql_find_subtype(&$$, "int", 0, 0); }
@@ -6642,13 +6642,13 @@ odbc_data_type:
     | SQL_VARBINARY
         { sql_find_subtype(&$$, "blob", 0, 0); }
     | SQL_VARCHAR
-        { sql_find_subtype(&$$, "clob", 0, 0); }
+        { sql_find_subtype(&$$, "varchar", 0, 0); }
     | SQL_WCHAR
-        { sql_find_subtype(&$$, "char", 1, 0); }
+        { sql_find_subtype(&$$, "char", 0, 0); }
     | SQL_WLONGVARCHAR
         { sql_find_subtype(&$$, "clob", 0, 0); }
     | SQL_WVARCHAR
-        { sql_find_subtype(&$$, "clob", 0, 0); }
+        { sql_find_subtype(&$$, "varchar", 0, 0); }
 ;
 
 odbc_tsi_qualifier:
