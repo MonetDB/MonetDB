@@ -920,7 +920,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	if (c->curprg->def->errors) {
 		sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: %s", c->curprg->def->errors);
 		res = -1;
-		goto cleanup;
 	}
 
 	// restore the context for the wrapper code
