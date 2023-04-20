@@ -5092,7 +5092,7 @@ BATSTRasciify(bat *ret, bat *bid)
 		}
 		in_len = strlen(in), out_len = in_len + 1;
 		if (out == NULL) {
-			if ((out = GDKmalloc(out_len)) == NULL) {
+			if ((s = out = GDKmalloc(out_len)) == NULL) {
 				msg = createException(MAL,"batstr.asciify", MAL_MALLOC_FAIL);
 				goto exit;
 			}
@@ -5104,11 +5104,10 @@ BATSTRasciify(bat *ret, bat *bid)
 				goto exit;
 			}
 			prev_out_len = out_len;
+			s = out;
 		}
-		s = out;
+		out = s;
 		if (iconv(cd, &in, &in_len, &out, &out_len) == (size_t) - 1) {
-			GDKfree(out);
-			s = NULL;
 			msg = createException(MAL,"batstr.asciify", "ICONV: string conversion failed");
 			goto exit;
 		}
@@ -5119,6 +5118,7 @@ BATSTRasciify(bat *ret, bat *bid)
 		}
 	}
  exit:
+	GDKfree(s);
 	bat_iterator_end(&bi);
 	iconv_close(cd);
 	finalize_output(ret, bn, msg, nils, q);

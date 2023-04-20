@@ -5006,13 +5006,14 @@ STRasciify(str *r, const str *s)
 		throw(MAL, "str.asciify", "ICONV: cannot convert from (%s) to (%s).", f, t);
 	if ((*r = out = GDKmalloc(out_len)) == NULL)
 		throw(MAL, "str.asciify", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	if (iconv(cd, &in, &in_len, &out, &out_len) == (size_t) - 1) {
+	str o = out;
+	if (iconv(cd, &in, &in_len, &o, &out_len) == (size_t) - 1) {
 		GDKfree(out);
 		*r = NULL;
 		iconv_close(cd);
 		throw(MAL, "str.asciify", "ICONV: string conversion failed from (%s) to (%s)", f, t);
 	}
-	*out = '\0';
+	*o = '\0';
 	iconv_close(cd);
 	return MAL_SUCCEED;
 #else
