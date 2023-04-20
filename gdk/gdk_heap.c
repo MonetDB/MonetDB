@@ -603,7 +603,8 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 		b->oldtail = old;
 		ATOMIC_OR(&old->refs, DELAYEDREMOVE);
 	} else {
-		HEAPdecref(old, true);
+		ValPtr p = BATgetprop_nolock(b, (enum prop_t) 20);
+		HEAPdecref(old, p == NULL || strcmp(((Heap*) p->val.pval)->filename, old->filename) != 0);
 	}
 	MT_lock_unset(&b->theaplock);
 	return GDK_SUCCEED;
