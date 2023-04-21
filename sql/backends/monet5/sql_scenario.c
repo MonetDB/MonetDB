@@ -182,7 +182,8 @@ SQLexit(Client c)
 str
 SQLepilogue(void *ret)
 {
-	char *s = "sql", *m = "msql", *msg;
+	const char *s = "sql", *m = "msql";
+	char *msg;
 
 	(void) ret;
 	msg = SQLexit(NULL);
