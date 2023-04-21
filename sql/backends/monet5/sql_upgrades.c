@@ -5557,6 +5557,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 
 					   "create function asciify(x string)\n"
 					   "returns string external name str.\"asciify\";\n"
+					   "grant execute on function asciify(string) to public;\n"
 					   "create function sys.startswith(x string, y string)\n"
 					   "returns boolean external name str.\"startsWith\";\n"
 					   "grant execute on function startswith(string, string) to public;\n"
