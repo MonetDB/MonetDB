@@ -201,3 +201,4 @@ pithole
 malids
 # Tracer
 # # tracer00 Output is call dependent
+HAVE_HGE?mal_int128
