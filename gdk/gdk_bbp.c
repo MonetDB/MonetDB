@@ -1915,6 +1915,12 @@ BBPexit(void)
 						HEAPdecref(b->tvheap, false);
 						b->tvheap = NULL;
 					}
+					if (b->oldtail) {
+						Heap *h = b->oldtail;
+						b->oldtail = NULL;
+						ATOMIC_AND(&h->refs, ~DELAYEDREMOVE);
+						HEAPdecref(h, false);
+					}
 					PROPdestroy_nolock(b);
 					MT_lock_unset(&b->theaplock);
 					BATfree(b);
