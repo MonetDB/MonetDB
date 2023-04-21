@@ -2891,6 +2891,7 @@ PROPdestroy_nolock(BAT *b)
 	b->tprops = NULL;
 	while (p) {
 		n = p->next;
+		assert(p->id != (enum prop_t) 20);
 		VALclear(&p->v);
 		GDKfree(p);
 		p = n;
