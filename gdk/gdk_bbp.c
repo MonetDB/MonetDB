@@ -1878,6 +1878,13 @@ BBPexit(void)
 						HEAPdecref(b->tvheap, false);
 						b->tvheap = NULL;
 					}
+					ValPtr p = BATgetprop_nolock(b, (enum prop_t) 21);
+					if (p != NULL) {
+						Heap *h = p->val.pval;
+						BATrmprop_nolock(b, (enum prop_t) 21);
+						ATOMIC_AND(&h->refs, ~DELAYEDREMOVE);
+						HEAPdecref(h, false);
+					}
 					PROPdestroy_nolock(b);
 					MT_lock_unset(&b->theaplock);
 					BATfree(b);

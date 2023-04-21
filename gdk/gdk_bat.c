@@ -698,14 +698,6 @@ BATdestroy(BAT *b)
 		ATOMIC_DESTROY(&b->tvheap->refs);
 		GDKfree(b->tvheap);
 	}
-	ValPtr p = BATgetprop_nolock(b, (enum prop_t) 21);
-	if (p != NULL) {
-		Heap *h = p->val.pval;
-		ATOMIC_AND(&h->refs, ~DELAYEDREMOVE);
-		/* the bat has not been committed, so we cannot remove
-		 * the old tail file */
-		HEAPdecref(h, false);
-	}
 	PROPdestroy_nolock(b);
 	MT_lock_destroy(&b->theaplock);
 	MT_lock_destroy(&b->batIdxLock);
@@ -713,6 +705,15 @@ BATdestroy(BAT *b)
 	if (b->theap) {
 		ATOMIC_DESTROY(&b->theap->refs);
 		GDKfree(b->theap);
+	}
+	ValPtr p = BATgetprop_nolock(b, (enum prop_t) 21);
+	if (p != NULL) {
+		Heap *h = p->val.pval;
+		ATOMIC_AND(&h->refs, ~DELAYEDREMOVE);
+		/* the bat has not been committed, so we cannot remove
+		 * the old tail file */
+		HEAPdecref(h, false);
+		BATrmprop_nolock(b, (enum prop_t) 21);
 	}
 	GDKfree(b);
 }
