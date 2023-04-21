@@ -2844,6 +2844,14 @@ PROPdestroy_nolock(BAT *b)
 	b->tprops = NULL;
 	while (p) {
 		n = p->next;
+		if (p->id == (enum prop_t) 21) {
+			/* keep this special property, it must be
+			 * deleted explicitly using BATrmprop */
+			p->next = b->tprops;
+			b->tprops = p;
+			continue;
+		}
+		assert(p->id != (enum prop_t) 20);
 		VALclear(&p->v);
 		GDKfree(p);
 		p = n;
