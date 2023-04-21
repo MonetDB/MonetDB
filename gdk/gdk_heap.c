@@ -622,7 +622,7 @@ HEAPdecref(Heap *h, bool remove)
 		GDKfree(h);
 		break;
 	case 1:
-		if (ATOMIC_GET(&h->refs) & DELAYEDREMOVE) {
+		if (refs & DELAYEDREMOVE) {
 			/* only reference left is b->oldtail */
 			HEAPfree(h, false);
 		}
