@@ -5063,7 +5063,7 @@ BATSTRasciify(bat *ret, bat *bid)
 #ifdef HAVE_ICONV
 	BAT *b = NULL, *bn = NULL;
 	BATiter bi;
-	BUN p, q;
+	BUN p, q = 0;
 	bool nils = false;
 	size_t prev_out_len = 0, in_len = 0, out_len = 0;
 	str s = NULL, out = NULL, in = NULL, msg = MAL_SUCCEED;
