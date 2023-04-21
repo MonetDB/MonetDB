@@ -916,7 +916,7 @@ const char *fetchRef;
 int findGDKtype(int type);
 Module findModule(Module scope, const char *name);
 const char *findRef;
-Scenario findScenario(str nme);
+Scenario findScenario(const char *nme);
 Symbol findSymbol(Module usermodule, const char *mod, const char *fcn);
 Symbol findSymbolInModule(Module v, const char *fcn);
 int findVariable(MalBlkPtr mb, const char *name);
