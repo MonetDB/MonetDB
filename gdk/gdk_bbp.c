@@ -1576,6 +1576,13 @@ BBPexit(void)
 						}
 						VIEWdestroy(b);
 					} else {
+						ValPtr p = BATgetprop_nolock(b, (enum prop_t) 21);
+						if (p != NULL) {
+							Heap *h = p->val.pval;
+							BATrmprop_nolock(b, (enum prop_t) 21);
+							ATOMIC_AND(&h->refs, ~DELAYEDREMOVE);
+							HEAPdecref(h, false);
+						}
 						PROPdestroy_nolock(b);
 						BATfree(b);
 					}
