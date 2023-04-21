@@ -528,7 +528,11 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 	b->theap = new;
 	if (BBP_status(bid) & (BBPEXISTING|BBPDELETED) && BATgetprop_nolock(b, (enum prop_t) 21) == NULL) {
 		BATsetprop_nolock(b, (enum prop_t) 21, TYPE_ptr, &old);
-		ATOMIC_OR(&old->refs, DELAYEDREMOVE);
+		if ((ATOMIC_OR(&old->refs, DELAYEDREMOVE) & HEAPREFS) == 1) {
+			/* we have the only reference, we can free the
+			 * memory */
+			HEAPfree(old, false);
+		}
 	} else {
 		ValPtr p = BATgetprop_nolock(b, (enum prop_t) 20);
 		HEAPdecref(old, p == NULL || strcmp(((Heap*) p->val.pval)->filename, old->filename) != 0);
