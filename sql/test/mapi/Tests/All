@@ -5,7 +5,6 @@ smack00
 smack01
 python3_dbapi
 utf8test
-HAVE_HGE?mal_int128
 HAVE_HGE?sql_int128
 HAVE_HGE?python3_int128
 HAVE_HGE?sql_dec38
