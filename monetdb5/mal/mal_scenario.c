@@ -141,7 +141,7 @@ showScenario(stream *f, Scenario scen)
 }
 
 Scenario
-findScenario(str nme)
+findScenario(const char *nme)
 {
 	int i;
 	Scenario scen = scenarioRec;
@@ -153,7 +153,7 @@ findScenario(str nme)
 }
 
 void
-showScenarioByName(stream *f, str nme)
+showScenarioByName(stream *f, const char *nme)
 {
 	Scenario scen = findScenario(nme);
 
@@ -204,7 +204,7 @@ fillScenario(Client c, Scenario scen)
  * and execution of the initClientScenario routine.
  */
 str
-setScenario(Client c, str nme)
+setScenario(Client c, const char *nme)
 {
 	str msg;
 	Scenario scen;
