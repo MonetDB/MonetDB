@@ -85,9 +85,9 @@ epilogue(int cnt, bat *subcommit, bool locked)
 			ValPtr p = BATgetprop_nolock(b, (enum prop_t) 20);
 			if (p != NULL) {
 				Heap *tail = p->val.pval;
-				assert(BATgetprop_nolock(b, (enum prop_t) 21) != NULL);
 				BATrmprop_nolock(b, (enum prop_t) 20);
-				ValPtr p = BATgetprop_nolock(b, (enum prop_t) 21);
+				p = BATgetprop_nolock(b, (enum prop_t) 21);
+				assert(p != NULL);
 				Heap *h = p->val.pval;
 				if (h != (Heap *) 1)
 					HEAPdecref(h, true);
