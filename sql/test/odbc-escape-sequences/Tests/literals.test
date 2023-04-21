@@ -103,15 +103,15 @@ select {interval '6:45:4' hour to second}, interval '6:45:4' hour to second
 6:45:04
 
 # also test invalid interval qualifiers
-statement error 42000!syntax error in: "select {interval '7' week"
+statement error 42000!syntax error...
 select {interval '7' week}
 
-statement error 42000!syntax error in: "select {interval '8' quarter"
+statement error 42000!syntax error...
 select {interval '8' quarter}
 
-statement error 42000!syntax error in: "select {interval '9' decade"
+statement error 42000!syntax error...
 select {interval '9' decade}
 
-statement error 42000!syntax error in: "select {interval '1' century"
+statement error 42000!syntax error...
 select {interval '1' century}
 

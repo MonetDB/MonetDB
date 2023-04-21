@@ -5063,7 +5063,7 @@ BATSTRasciify(bat *ret, bat *bid)
 #ifdef HAVE_ICONV
 	BAT *b = NULL, *bn = NULL;
 	BATiter bi;
-	BUN p, q;
+	BUN p, q = 0;
 	bool nils = false;
 	size_t prev_out_len = 0, in_len = 0, out_len = 0;
 	str s = NULL, out = NULL, in = NULL, msg = MAL_SUCCEED;
@@ -5080,6 +5080,11 @@ BATSTRasciify(bat *ret, bat *bid)
 		throw(MAL, "batstr.asciify", GDK_EXCEPTION);
 	}
 	bi = bat_iterator(b);
+	if ((s = out = GDKmalloc(64*1024)) == NULL) {
+		msg = createException(MAL,"batstr.asciify", MAL_MALLOC_FAIL);
+		goto exit;
+	}
+	prev_out_len = 64*1024;
 	BATloop(b, p, q) {
 		in = (str) BUNtail(bi, p);
 		if (strNil(in)) {
@@ -5090,25 +5095,17 @@ BATSTRasciify(bat *ret, bat *bid)
 			nils = true;
 			continue;
 		}
-		in_len = strlen(in), out_len = in_len + 1;
-		if (out == NULL) {
-			if ((out = GDKmalloc(out_len)) == NULL) {
-				msg = createException(MAL,"batstr.asciify", MAL_MALLOC_FAIL);
-				goto exit;
-			}
-			prev_out_len = out_len;
-		}
-		else if (out_len > prev_out_len) {
+		in_len = strlen(in), out_len = in_len*4; /* over sized as single utf8 symbols change into multiple ascii characters */
+		if (out_len > prev_out_len) {
 			if ((out = GDKrealloc(s, out_len)) == NULL) {
 				msg = createException(MAL,"batstr.asciify", MAL_MALLOC_FAIL);
 				goto exit;
 			}
 			prev_out_len = out_len;
+			s = out;
 		}
-		s = out;
+		out = s;
 		if (iconv(cd, &in, &in_len, &out, &out_len) == (size_t) - 1) {
-			GDKfree(out);
-			s = NULL;
 			msg = createException(MAL,"batstr.asciify", "ICONV: string conversion failed");
 			goto exit;
 		}
@@ -5119,6 +5116,7 @@ BATSTRasciify(bat *ret, bat *bid)
 		}
 	}
  exit:
+	GDKfree(s);
 	bat_iterator_end(&bi);
 	iconv_close(cd);
 	finalize_output(ret, bn, msg, nils, q);
