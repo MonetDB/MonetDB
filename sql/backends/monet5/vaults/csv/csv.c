@@ -134,12 +134,57 @@ detect_bigint(const char *s, const char *e)
 static bool
 detect_decimal(const char *s, const char *e)
 {
+	bool dotseen = 0;
+
 	while(s < e) {
-		if (!isdigit(*s))
+		if (!dotseen && *s == '.')
+			dotseen = true;
+		else if (!isdigit(*s))
 			break;
 		s++;
 	}
-	if (s==e)
+	if (s==e && dotseen)
+		return true;
+	return false;
+}
+
+static bool
+detect_time(const char *s, const char *e)
+{
+	if ((e-s) != 5)
+		return false;
+	/* 00:00 - 23:59 */
+	if (s[2] != ':')
+		return false;
+	if ((((s[0] == '0' || s[0] == '1') &&
+	      (s[1] >= '0' && s[1] <= '9'))  ||
+	      (s[0] == '2' && (s[1] >= '0' && s[1] <= '3'))) &&
+          (s[3] >= '0' && s[3] <= '5' && s[4] >= '0' && s[4] <= '9'))
+		return true;
+	return false;
+}
+
+static bool
+detect_date(const char *s, const char *e)
+{
+	if ((e-s) != 10)
+		return false;
+	/* YYYY-MM-DD */
+	if ( s[4] == '-' && s[7] == '-' &&
+	   ((s[5] == '0' && s[6] >= '0' && s[6] <= '9') ||
+	    (s[5] == '1' && s[6] >= '0' && s[6] <= '2')) &&
+	    (s[8] >= '0' && s[8] <= '3' && s[9] >= '0' && s[9] <= '9'))
+		return true;
+	return false;
+}
+
+static bool
+detect_timestamp(const char *s, const char *e)
+{
+	if ((e-s) != 16)
+		return false;
+	/* DATE TIME */
+	if (detect_date(s, s+5) && detect_time(s+6, e))
 		return true;
 	return false;
 }
@@ -162,6 +207,12 @@ detect_types_row(const char *s, const char *e, char delim, char quote, int nr_fi
 				types[i] = CSV_BIGINT;
 			else if (detect_decimal(s, n))
 				types[i] = CSV_DECIMAL;
+			else if (detect_time(s, n))
+				types[i] = CSV_TIME;
+			else if (detect_date(s, n))
+				types[i] = CSV_DATE;
+			else if (detect_timestamp(s, n))
+				types[i] = CSV_TIMESTAMP;
 		}
 		s = n+1;
 	}
@@ -308,7 +359,9 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 		char* st = csv_type_map(types[col]);
 
 		if(st) {
-			sql_subtype *t = sql_bind_subtype(sql->sa, st, 0, 0);
+			sql_subtype *t = (types[col] == CSV_DECIMAL)?
+					sql_bind_subtype(sql->sa, st, 8, 2):
+					sql_bind_subtype(sql->sa, st, 0, 0);
 
 			list_append(typelist, t);
 			list_append(res_exps, exp_column(sql->sa, NULL, name, t, CARD_MULTI, 1, 0, 0));
