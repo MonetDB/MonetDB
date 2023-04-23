@@ -702,7 +702,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token CHECK CONSTRAINT CREATE COMMENT NULLS FIRST LAST
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE
-%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREP PREPARE EXEC EXECUTE DEALLOCATE
+%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_TRACE PREP PREPARE EXEC EXECUTE DEALLOCATE
 %token DEFAULT DISTINCT DROP TRUNCATE
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -859,15 +859,6 @@ sqlstmt:
 			  YYACCEPT;
 			}
 
- | SQL_DEBUG 		{
-			  if (m->scanner.mode == LINE_1) {
-				yyerror(m, "SQL debugging only supported in interactive mode");
-				YYABORT;
-			  }
-		  	  m->emod |= mod_debug;
-			  m->scanner.as = m->scanner.yycur; 
-			}
-   sqlstmt		{ $$ = $3; YYACCEPT; }
  | SQL_TRACE 		{
 		  	  m->emod |= mod_trace;
 			  m->scanner.as = m->scanner.yycur; 
@@ -5627,7 +5618,6 @@ non_reserved_word:
 | CLIENT	{ $$ = sa_strdup(SA, "client"); }
 | COMMENT	{ $$ = sa_strdup(SA, "comment"); }
 | DATA 		{ $$ = sa_strdup(SA, "data"); }
-| SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
 | DECADE	{ $$ = sa_strdup(SA, "decade"); }
 | DIAGNOSTICS 	{ $$ = sa_strdup(SA, "diagnostics"); }
 | DOW 		{ $$ = sa_strdup(SA, "dow"); }
@@ -6598,7 +6588,7 @@ odbc_data_type:
     | SQL_BIT
         { sql_find_subtype(&$$, "boolean", 0, 0); }
     | SQL_CHAR
-        { sql_find_subtype(&$$, "char", 1, 0); }
+        { sql_find_subtype(&$$, "char", 0, 0); }
     | SQL_DATE
         { sql_find_subtype(&$$, "date", 0, 0); }
     | SQL_DECIMAL
@@ -6616,7 +6606,7 @@ odbc_data_type:
             }
             sql_init_subtype(&$$, t, 0, 0);
         }
-    | SQL_HUGEINT
+    | SQL_HUGEINT  /* Note: SQL_HUGEINT is not part of or defined in ODBC. It is a MonetDB extension. */
         { sql_find_subtype(&$$, "hugeint", 0, 0); }
     | SQL_INTEGER
         { sql_find_subtype(&$$, "int", 0, 0); }
@@ -6665,13 +6655,13 @@ odbc_data_type:
     | SQL_VARBINARY
         { sql_find_subtype(&$$, "blob", 0, 0); }
     | SQL_VARCHAR
-        { sql_find_subtype(&$$, "clob", 0, 0); }
+        { sql_find_subtype(&$$, "varchar", 0, 0); }
     | SQL_WCHAR
-        { sql_find_subtype(&$$, "char", 1, 0); }
+        { sql_find_subtype(&$$, "char", 0, 0); }
     | SQL_WLONGVARCHAR
         { sql_find_subtype(&$$, "clob", 0, 0); }
     | SQL_WVARCHAR
-        { sql_find_subtype(&$$, "clob", 0, 0); }
+        { sql_find_subtype(&$$, "varchar", 0, 0); }
 ;
 
 odbc_tsi_qualifier:

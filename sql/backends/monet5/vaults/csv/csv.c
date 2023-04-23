@@ -9,7 +9,6 @@
 #include "mal_builder.h"
 #include "mal_namespace.h"
 #include "mal_exception.h"
-#include "mal_debugger.h"
 #include "mal_linker.h"
 #include "mal_backend.h"
 #include "sql_types.h"

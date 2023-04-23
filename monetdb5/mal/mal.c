@@ -75,20 +75,11 @@ mal_init(char *modules[], bool embedded, const char *initpasswd)
 
 	if (!MCinit())
 		return -1;
-#ifndef NDEBUG
-	if (!mdbInit()) {
-		mal_client_reset();
-		return -1;
-	}
-#endif
 	initNamespace();
 
 	err = malBootstrap(modules, embedded, initpasswd);
 	if (err != MAL_SUCCEED) {
 		mal_client_reset();
-#ifndef NDEBUG
-		mdbExit();
-#endif
 		TRC_CRITICAL(MAL_SERVER, "%s\n", err);
 		freeException(err);
 		return -1;
@@ -127,7 +118,6 @@ void mal_reset(void)
 			free(err);
 		}
 	}
-	mal_factory_reset();
 	mal_dataflow_reset();
 	mal_client_reset();
   	mal_linker_reset();
@@ -135,9 +125,6 @@ void mal_reset(void)
 	mal_runtime_reset();
 	mal_module_reset();
 	mal_atom_reset();
-#ifndef NDEBUG
-	mdbExit();
-#endif
 
 	memset((char*)monet_cwd, 0, sizeof(monet_cwd));
 	memset((char*)monet_characteristics,0, sizeof(monet_characteristics));

@@ -30,7 +30,7 @@ extern int mvc_export_bin_chunk(backend *b, stream *s, int res_id, BUN offset, B
 extern int mvc_export_prepare(backend *b, stream *s);
 
 extern str mvc_import_table(Client cntxt, BAT ***bats, mvc *c, bstream *s, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng nr, lng offset, int best, bool from_stdin, bool escape);
-sql5_export int mvc_result_table(backend *be, oid query_id, int nr_cols, mapi_query_t type, BAT *order);
+sql5_export int mvc_result_table(backend *be, oid query_id, int nr_cols, mapi_query_t type);
 
 sql5_export int mvc_result_column(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, BAT *b);
 extern int mvc_result_value(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, ptr *p, int mtype);
