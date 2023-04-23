@@ -23,13 +23,6 @@ csv_open_file(char* filename)
 	return fopen(filename, "r");
 }
 
-static char
-detect_quote(const char *buf)
-{
-	(void)buf;
-	return '"';
-}
-
 /* todo handle escapes */
 static const char *
 next_delim(const char *s, const char *e, char delim, char quote)
@@ -44,6 +37,30 @@ next_delim(const char *s, const char *e, char delim, char quote)
 	if (s < e)
 		return s;
 	return NULL;
+}
+
+/* todo detect escapes */
+static char
+detect_quote(const char *buf)
+{
+	const char *cur = buf;
+	const char *l = NULL;
+	/* "'(none) */
+	bool has_double_quote = true, has_single_quote = true;
+	while ((has_double_quote || has_single_quote) && (l = strchr(cur, '\n')) != NULL) {
+		const char *s = cur, *t;
+		if (has_double_quote && ((t = strchr(s, '"')) == NULL || t > l))  /* no quote not used */
+			has_double_quote = false;
+		if (has_single_quote && ((t = strchr(s, '\'')) == NULL || t > l))  /* no quote not used */
+			has_single_quote = false;
+		cur = l+1;
+	}
+	if (has_double_quote && !has_single_quote)
+		return '"';
+	if (has_single_quote && !has_double_quote)
+		return '\'';
+	/* no quote */
+	return '\0';
 }
 
 #define DLEN 4
@@ -106,6 +123,11 @@ typedef enum csv {
 //later: UUID, INET, JSON etc
 } csv_types_t;
 
+typedef struct csv_type {
+	csv_types_t type;
+	int scale;
+} csv_type;
+
 static bool
 detect_bool(const char *s, const char *e)
 {
@@ -132,25 +154,28 @@ detect_bigint(const char *s, const char *e)
 }
 
 static bool
-detect_decimal(const char *s, const char *e)
+detect_decimal(const char *s, const char *e, int *scale)
 {
-	bool dotseen = 0;
+	int dotseen = 0;
 
 	while(s < e) {
 		if (!dotseen && *s == '.')
-			dotseen = true;
+			dotseen = (e-(s+1));
 		else if (!isdigit(*s))
 			break;
 		s++;
 	}
-	if (s==e && dotseen)
+	if (s==e && dotseen) {
+		*scale = dotseen;
 		return true;
+	}
 	return false;
 }
 
 static bool
 detect_time(const char *s, const char *e)
 {
+	/* TODO detect time with timezone */
 	if ((e-s) != 5)
 		return false;
 	/* 00:00 - 23:59 */
@@ -190,40 +215,42 @@ detect_timestamp(const char *s, const char *e)
 }
 
 /* per row */
-static  csv_types_t *
+static  csv_type *
 detect_types_row(const char *s, const char *e, char delim, char quote, int nr_fields)
 {
-	csv_types_t *types = (csv_types_t*)GDKmalloc(sizeof(csv_types_t)*nr_fields);
+	csv_type *types = (csv_type*)GDKmalloc(sizeof(csv_type)*nr_fields);
 	if (!types)
 		return NULL;
 	for(int i = 0; i< nr_fields; i++) {
 		const char *n = next_delim(s, e, delim, quote);
+		int scale = 0;
 
-		types[i] = CSV_STRING;
+		types[i].type = CSV_STRING;
 		if (n) {
 			if (detect_bool(s,n))
-				types[i] = CSV_BOOLEAN;
+				types[i].type = CSV_BOOLEAN;
 			else if (detect_bigint(s, n))
-				types[i] = CSV_BIGINT;
-			else if (detect_decimal(s, n))
-				types[i] = CSV_DECIMAL;
+				types[i].type = CSV_BIGINT;
+			else if (detect_decimal(s, n, &scale))
+				types[i].type = CSV_DECIMAL;
 			else if (detect_time(s, n))
-				types[i] = CSV_TIME;
+				types[i].type = CSV_TIME;
 			else if (detect_date(s, n))
-				types[i] = CSV_DATE;
+				types[i].type = CSV_DATE;
 			else if (detect_timestamp(s, n))
-				types[i] = CSV_TIMESTAMP;
+				types[i].type = CSV_TIMESTAMP;
+			types[i].scale = scale;
 		}
 		s = n+1;
 	}
 	return types;
 }
 
-static csv_types_t *
+static csv_type *
 detect_types(const char *buf, char delim, char quote, int nr_fields, bool *has_header)
 {
 	const char *cur = buf;
-	csv_types_t *types = NULL;
+	csv_type *types = NULL;
 	int nr_lines = 0;
 
 	while ( true ) {
@@ -231,18 +258,18 @@ detect_types(const char *buf, char delim, char quote, int nr_fields, bool *has_h
 
 		if (!e)
 			break;
-		csv_types_t *ntypes = detect_types_row( cur, e, delim, quote, nr_fields);
+		csv_type *ntypes = detect_types_row( cur, e, delim, quote, nr_fields);
 		if (!ntypes)
 			return NULL;
 		cur = e+1;
 		int i = 0;
 		if (!types) {
-			for(i = 0; i<nr_fields && ntypes[i] == CSV_STRING; i++)  ;
+			for(i = 0; i<nr_fields && ntypes[i].type == CSV_STRING; i++)  ;
 
 			if (i == nr_fields)
 				*has_header = true;
 		} else { /* check if all are string, then no header */
-			for(i = 0; i<nr_fields && ntypes[i] == CSV_STRING; i++)  ;
+			for(i = 0; i<nr_fields && ntypes[i].type == CSV_STRING; i++)  ;
 
 			if (i == nr_fields)
 				*has_header = false;
@@ -252,7 +279,10 @@ detect_types(const char *buf, char delim, char quote, int nr_fields, bool *has_h
 				types[i] = ntypes[i];
 		if (nr_lines > 1) {
 			for(i = 0; i<nr_fields; i++) {
-				if (types[i] < ntypes[i])
+				if (types[i].type == ntypes[i].type && types[i].type == CSV_DECIMAL && types[i].scale != ntypes[i].scale) {
+					types[i].type = CSV_DOUBLE;
+					types[i].scale = 0;
+				} else if (types[i].type < ntypes[i].type)
 					types[i] = ntypes[i];
 			}
 		}
@@ -289,9 +319,9 @@ get_name(sql_allocator *sa, const char *s, const char *es, const char **E, char 
 }
 
 static char*
-csv_type_map(csv_types_t type)
+csv_type_map(csv_type ct)
 {
-    switch(type) {
+    switch(ct.type) {
       case CSV_BOOLEAN:
         return  "boolean";
       case CSV_BIGINT:
@@ -329,8 +359,7 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 		throw(SQL, SQLSTATE(42000), "csv" RUNTIME_FILE_NOT_FOUND);
 
 	/*
-	 * detect quote \" or \' or none optional escape ?
-	 * detect delimiter ;|,\t
+	 * detect delimiter ;|,\t  using quote \" or \' or none TODO escape \"\'\\ or none
 	 * detect types
 	 * detect header
 	 */
@@ -341,10 +370,10 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	buf[l] = 0;
 	bool has_header;
 	int nr_fields = 0;
-	char q = detect_quote(buf), d = detect_delimiter(buf, q, &nr_fields);
-	csv_types_t *types = detect_types(buf, d, q, nr_fields, &has_header);
+	char q = detect_quote(buf);
+	char d = detect_delimiter(buf, q, &nr_fields);
+	csv_type *types = detect_types(buf, d, q, nr_fields, &has_header);
 
-	printf("delimiter '%c', nr_attrs %d, quote '%c', has_header %s\n", d, nr_fields, q, has_header?"true":"false");
 	if (!tname)
 		tname = "csv";
 
@@ -359,9 +388,9 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 		char* st = csv_type_map(types[col]);
 
 		if(st) {
-			sql_subtype *t = (types[col] == CSV_DECIMAL)?
-					sql_bind_subtype(sql->sa, st, 8, 2):
-					sql_bind_subtype(sql->sa, st, 0, 0);
+			sql_subtype *t = (types[col].type == CSV_DECIMAL)?
+					sql_bind_subtype(sql->sa, st, 18, types[col].scale):
+					sql_bind_subtype(sql->sa, st,  0, types[col].scale);
 
 			list_append(typelist, t);
 			list_append(res_exps, exp_column(sql->sa, NULL, name, t, CARD_MULTI, 1, 0, 0));
