@@ -714,8 +714,6 @@ isReserved(str nme)
 			return 1;
 		if (idcmp("function", nme) == 0)
 			return 1;
-		if (idcmp("factory", nme) == 0)
-			return 1;
 		break;
 	case 'I':
 	case 'i':

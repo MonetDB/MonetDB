@@ -10,11 +10,9 @@ PLAN select quantile(y, 0.0) from x
 project (
 | group by (
 | | project (
-| | | project (
-| | | | table("sys"."x") [ "x"."y" NOT NULL UNIQUE ]
-| | | ) [ "x"."y" NOT NULL UNIQUE, double(53) "0" as "%2"."%2" ]
-| | ) [ "x"."y" NOT NULL UNIQUE, "%2"."%2" NOT NULL, decimal(18,3)["x"."y" NOT NULL UNIQUE] NOT NULL as "%3"."%3" ] [ decimal(18,3)["x"."y" NOT NULL UNIQUE] NOT NULL as "%3"."%3" ]
-| ) [  ] [ "sys"."quantile" no nil ("%3"."%3" NOT NULL, "%2"."%2" NOT NULL) UNIQUE as "%1"."%1" ]
+| | | table("sys"."x") [ "x"."y" NOT NULL UNIQUE ]
+| | ) [ "x"."y" NOT NULL UNIQUE ] [ "x"."y" ASC NOT NULL UNIQUE ]
+| ) [  ] [ "sys"."quantile" no nil ("x"."y" ASC NOT NULL UNIQUE, double(53) "0") UNIQUE as "%1"."%1" ]
 ) [ "%1"."%1" UNIQUE ]
 
 query T nosort
@@ -23,11 +21,9 @@ PLAN select quantile(y, 0) from x
 project (
 | group by (
 | | project (
-| | | project (
-| | | | table("sys"."x") [ "x"."y" NOT NULL UNIQUE ]
-| | | ) [ "x"."y" NOT NULL UNIQUE, double(53) "0" as "%2"."%2" ]
-| | ) [ "x"."y" NOT NULL UNIQUE, "%2"."%2" NOT NULL, decimal(18,3)["x"."y" NOT NULL UNIQUE] NOT NULL as "%3"."%3" ] [ decimal(18,3)["x"."y" NOT NULL UNIQUE] NOT NULL as "%3"."%3" ]
-| ) [  ] [ "sys"."quantile" no nil ("%3"."%3" NOT NULL, "%2"."%2" NOT NULL) UNIQUE as "%1"."%1" ]
+| | | table("sys"."x") [ "x"."y" NOT NULL UNIQUE ]
+| | ) [ "x"."y" NOT NULL UNIQUE ] [ "x"."y" ASC NOT NULL UNIQUE ]
+| ) [  ] [ "sys"."quantile" no nil ("x"."y" ASC NOT NULL UNIQUE, double(53) "0") UNIQUE as "%1"."%1" ]
 ) [ "%1"."%1" UNIQUE ]
 
 statement ok

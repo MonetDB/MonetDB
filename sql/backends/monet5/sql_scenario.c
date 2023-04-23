@@ -37,7 +37,6 @@
 #include "mal_parser.h"
 #include "mal_builder.h"
 #include "mal_namespace.h"
-#include "mal_debugger.h"
 #include "mal_linker.h"
 #include "mal_scenario.h"
 #include "mal_authorize.h"
@@ -105,20 +104,12 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*s = (struct SCENARIO) {
 		.name = "S_Q_L",
 		.language = "sql",
-		.exitSystem = "SQLexit",
-		.exitSystemCmd = SQLexit,
 		.initClient = "SQLinitClient",
 		.initClientCmd = SQLinitClient,
 		.exitClient = "SQLexitClient",
 		.exitClientCmd = SQLexitClient,
-		.reader = "SQLreader",
-		.readerCmd = SQLreader,
-		.parser = "SQLparser",
-		.parserCmd = SQLparser,
 		.engine = "SQLengine",
 		.engineCmd = SQLengine,
-		.callback = "SQLcallback",
-		.callbackCmd = SQLcallback,
 	};
 	ms = getFreeScenario();
 	if (!ms)
@@ -127,22 +118,12 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*ms = (struct SCENARIO) {
 		.name = "M_S_Q_L",
 		.language = "msql",
-		.exitSystem = "SQLexit",
-		.exitSystemCmd = SQLexit,
 		.initClient = "SQLinitClientFromMAL",
 		.initClientCmd = SQLinitClientFromMAL,
 		.exitClient = "SQLexitClient",
 		.exitClientCmd = SQLexitClient,
-		.reader = "MALreader",
-		.readerCmd = MALreader,
-		.parser = "MALparser",
-		.parserCmd = MALparser,
-		.optimizer = "MALoptimizer",
-		.optimizerCmd = MALoptimizer,
 		.engine = "MALengine",
 		.engineCmd = MALengine,
-		.callback = "MALcallback",
-		.callbackCmd = MALcallback,
 	};
 
 	tmp = SQLinit(cntxt, initpasswd);
@@ -185,7 +166,7 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SQLexit(Client c)
 {
 	(void) c;		/* not used */
@@ -201,7 +182,8 @@ SQLexit(Client c)
 str
 SQLepilogue(void *ret)
 {
-	char *s = "sql", *m = "msql", *msg;
+	const char *s = "sql", *m = "msql";
+	char *msg;
 
 	(void) ret;
 	msg = SQLexit(NULL);
@@ -243,7 +225,7 @@ SQLexecPostLoginTriggers(Client c)
 			struct os_iter oi;
 			// triggers not related to table should have been loaded in sys
 			os_iterator(&oi, sys->triggers, tr, NULL);
-			for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
+			for (sql_base *b = oi_next(&oi); b && msg == MAL_SUCCEED; b = oi_next(&oi)) {
 				sql_trigger *t = (sql_trigger*) b;
 				if (t->event == LOGIN_EVENT) {
 					const char *stmt = t->statement;
@@ -280,17 +262,13 @@ SQLexecPostLoginTriggers(Client c)
 						throw(SQL, "sql.SQLexecPostLoginTriggers", SQLSTATE(4200) "%s", "generating MAL failed");
 					}
 
+					msg = SQLoptimizeQuery(c, c->curprg->def);
+
 					stream *out = be->out;
 					be->out = NULL;	/* no output stream */
-					if ((msg = SQLrun(c,m)) != MAL_SUCCEED) {
-						be->out = out;
-						freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
-						sqlcleanup(be, 0);
-						c->curprg = curprg;
-						sa_destroy(m->sa);
-						m->sa = sa;
-						return msg;
-					}
+					if (!msg)
+						msg = SQLrun(c,m);
+
 					// restore previous state
 					be->out = out;
 					MSresetInstructions(c->curprg->def, oldstop);
@@ -306,7 +284,7 @@ SQLexecPostLoginTriggers(Client c)
 				sql_trans_end(m->session, SQL_OK);
 		}
 	}
-	return MAL_SUCCEED;
+	return msg;
 }
 
 static str
@@ -480,9 +458,6 @@ bailout2:
 	if (be)
 		be->language = 'S';
 	/* Set state, this indicates an initialized client scenario */
-	c->state[MAL_SCENARIO_READER] = c;
-	c->state[MAL_SCENARIO_PARSER] = c;
-	c->state[MAL_SCENARIO_OPTIMIZE] = c;
 	c->sqlcontext = be;
 	if (msg)
 		c->mode = FINISHCLIENT;
@@ -515,13 +490,10 @@ SQLresetClient(Client c)
 		pa = m->pa;
 		mvc_destroy(m);
 		backend_destroy(be);
-		c->state[MAL_SCENARIO_OPTIMIZE] = NULL;
-		c->state[MAL_SCENARIO_PARSER] = NULL;
 		c->sqlcontext = NULL;
 		c->query = NULL;
 		sa_destroy(pa);
 	}
-	c->state[MAL_SCENARIO_READER] = NULL;
 	if (other && !msg)
 		msg = other;
 	else if (other && msg)
@@ -660,7 +632,7 @@ SQLinit(Client c, const char *initpasswd)
 		if (!msg) {
 			const char *createdb_inline =
 				"create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas();\n"
-				"create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables();\n"
+				//"create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables();\n"
 				/* only system functions until now */
 				"update sys.functions set system = true;\n"
 				/* only system tables until now */
@@ -912,22 +884,6 @@ SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str
-SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str *ret = getArgReference_str(stk, pci, 0);
-	str *expr = getArgReference_str(stk, pci, 1);
-	str msg;
-
-	(void) mb;
-	*ret = NULL;
-	if ((msg = SQLstatementIntern(cntxt, *expr, "SQLcompile", FALSE, FALSE, NULL)) != MAL_SUCCEED)
-		return msg;
-	if ((*ret = _STRDUP("SQLcompile")) == NULL)
-		throw(SQL,"sql.compile",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
-}
-
 /*
  * Locate a file with SQL commands and execute it. For the time being a 1MB
  * file limit is implicitly imposed. If the file can not be located in the
@@ -990,24 +946,23 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * the duration of these calls.
  */
 
-str
-SQLreader(Client c)
+static str
+SQLreader(Client c, backend *be)
 {
 	bool go = true;
 	str msg = MAL_SUCCEED;
 	bool more = true;
 	bool commit_done = false;
-	backend *be = (backend *) c->sqlcontext;
 	bstream *in = c->fdin;
 	int language = -1;
 	mvc *m = NULL;
 	bool blocked = isa_block_stream(in->s);
 
-	if (!SQLstore || !be || c->mode <= FINISHCLIENT) {
+	if (!SQLstore || c->mode <= FINISHCLIENT) {
 		c->mode = FINISHCLIENT;
 		return MAL_SUCCEED;
 	}
-	language = be->language;	/* 'S' for SQL, 'D' from debugger */
+	language = be->language;	/* 'S', 's' or 'X' */
 	m = be->mvc;
 	m->errstr[0] = 0;
 	/*
@@ -1025,7 +980,7 @@ SQLreader(Client c)
 		   B \n C; -- statements in one block   S
 		 */
 		/* auto_commit on end of statement */
-		if (language != 'D' && m->scanner.mode == LINE_N && !commit_done) {
+		if (m->scanner.mode == LINE_N && !commit_done) {
 			msg = SQLautocommit(m);
 			if (msg)
 				break;
@@ -1048,12 +1003,11 @@ SQLreader(Client c)
 				c->yycur = 0;
 			}
 			if (in->eof || !blocked) {
-				if (language != 'D')
-					language = 0;
+				language = 0;
 
 				/* The rules of auto_commit require us to finish
 				   and start a transaction on the start of a new statement (s A;B; case) */
-				if (language != 'D' && !(m->emod & mod_debug) && !commit_done) {
+				if (!commit_done) {
 					msg = SQLautocommit(m);
 					if (msg)
 						break;
@@ -1076,12 +1030,7 @@ SQLreader(Client c)
 				more = false;
 				go = false;
 			} else if (go && (rd = bstream_next(in)) <= 0) {
-				if (be->language == 'D' && !in->eof) {
-					in->pos++;// skip 's' or 'S'
-					return msg;
-				}
-
-				if (rd == 0 && language !=0 && in->eof) {
+				if (rd == 0 && in->eof) {
 					/* we hadn't seen the EOF before, so just try again
 					   (this time with prompt) */
 					more = true;
@@ -1101,8 +1050,6 @@ SQLreader(Client c)
 				} else if (be->language == 'S') {
 					m->scanner.mode = LINE_N;
 				}
-			} else if (go && language == 'D' && !in->eof) {
-				in->pos++;// skip 's' or 'S'
 			}
 		}
 	}
@@ -1111,6 +1058,116 @@ SQLreader(Client c)
 		c->mode = FINISHCLIENT;
 		return msg;
 	}
+	return msg;
+}
+
+static str
+SQLchannelcmd(Client c, backend *be)
+{
+	assert(be->language == 'X');
+
+	bstream *in = c->fdin;
+	stream *out = c->fdout;
+	mvc *m = be->mvc;
+	str msg = MAL_SUCCEED;
+	int n = 0, v, off, len, ok;
+
+	if (strncmp(in->buf + in->pos, "export ", 7) == 0)
+		n = sscanf(in->buf + in->pos + 7, "%d %d %d", &v, &off, &len);
+
+	if (n == 2 || n == 3) {
+		if (n == 2)
+			len = m->reply_size;
+		in->pos = in->len;	/* HACK: should use parsed length */
+		if ((ok = mvc_export_chunk(be, out, v, off, len < 0 ? BUN_NONE : (BUN) len)) < 0) {
+			sqlcleanup(be, 0);
+			return createException(SQL, "SQLparser", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, out, ok));
+		}
+		return MAL_SUCCEED;
+	}
+	if (strncmp(in->buf + in->pos, "exportbin ", 10) == 0) {
+		n = sscanf(in->buf + in->pos + 10, "%d %d %d", &v, &off, &len);
+		if (n == 3) {
+			if ((ok = mvc_export_bin_chunk(be, out, v, off, len < 0 ? BUN_NONE: (BUN) len)) < 0) {
+				msg = createException(SQL, "SQLparser", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, out, ok));
+				in->pos = in->len;	/* HACK: should use parsed length */
+				sqlcleanup(be, 0);
+				return msg;
+			}
+			in->pos = in->len;	/* HACK: should use parsed length */
+			return MAL_SUCCEED;
+		}
+	}
+	if (strncmp(in->buf + in->pos, "close ", 6) == 0) {
+		res_table *t;
+
+		v = (int) strtol(in->buf + in->pos + 6, NULL, 0);
+		t = res_tables_find(be->results, v);
+		if (t)
+			be->results = res_tables_remove(be->results, t);
+		in->pos = in->len;	/* HACK: should use parsed length */
+		return MAL_SUCCEED;
+	}
+	if (strncmp(in->buf + in->pos, "release ", 8) == 0) {
+		cq *q = NULL;
+
+		v = (int) strtol(in->buf + in->pos + 8, NULL, 0);
+		if ((q = qc_find(m->qc, v)) != NULL)
+			 qc_delete(m->qc, q);
+		in->pos = in->len;	/* HACK: should use parsed length */
+		return MAL_SUCCEED;
+	}
+	if (strncmp(in->buf + in->pos, "auto_commit ", 12) == 0) {
+		int commit;
+		v = (int) strtol(in->buf + in->pos + 12, NULL, 10);
+		commit = (!m->session->auto_commit && v);
+		m->session->auto_commit = (v) != 0;
+		m->session->ac_on_commit = m->session->auto_commit;
+		if (m->session->tr->active) {
+			if (commit) {
+				msg = mvc_commit(m, 0, NULL, true);
+			} else {
+				msg = mvc_rollback(m, 0, NULL, true);
+			}
+		}
+		in->pos = in->len;	/* HACK: should use parsed length */
+		if (msg != NULL)
+			sqlcleanup(be, 0);
+		return msg;
+	}
+	static const char* columnar_protocol = "columnar_protocol ";
+	if (strncmp(in->buf + in->pos, columnar_protocol, strlen(columnar_protocol)) == 0) {
+		v = (int) strtol(in->buf + in->pos + strlen(columnar_protocol), NULL, 10);
+
+		c->protocol = v?PROTOCOL_COLUMNAR:PROTOCOL_9;
+
+		in->pos = in->len;	/* HACK: should use parsed length */
+		return MAL_SUCCEED;
+	}
+	if (strncmp(in->buf + in->pos, "reply_size ", 11) == 0) {
+		v = (int) strtol(in->buf + in->pos + 11, NULL, 10);
+		if (v < -1) {
+			sqlcleanup(be, 0);
+			return createException(SQL, "SQLparser", SQLSTATE(42000) "Reply_size cannot be negative");
+		}
+		m->reply_size = v;
+		in->pos = in->len;	/* HACK: should use parsed length */
+		return MAL_SUCCEED;
+	}
+	if (strncmp(in->buf + in->pos, "sizeheader", 10) == 0) { // no underscore
+		v = (int) strtol(in->buf + in->pos + 10, NULL, 10);
+		be->sizeheader = v != 0;
+		in->pos = in->len;	/* HACK: should use parsed length */
+		return MAL_SUCCEED;
+	}
+	if (strncmp(in->buf + in->pos, "quit", 4) == 0) {
+		c->mode = FINISHCLIENT;
+		in->pos = in->len;	/* HACK: should use parsed length */
+		return MAL_SUCCEED;
+	}
+	in->pos = in->len;	/* HACK: should use parsed length */
+	msg = createException(SQL, "SQLparser", SQLSTATE(42000) "Unrecognized X command: %s\n", in->buf + in->pos);
+	sqlcleanup(be, 0);
 	return msg;
 }
 
@@ -1128,51 +1185,19 @@ SQLreader(Client c)
 
 #define MAX_QUERY 	(64*1024*1024)
 
-str
-SQLparser(Client c)
+static str
+SQLparser(Client c, backend *be)
 {
-	bstream *in = c->fdin;
-	stream *out = c->fdout;
-	str msg = NULL;
-	backend *be;
-	mvc *m;
-	int oldvtop, oldstop, oldvid, ok;
-	int pstatus = 0;
-	int err = 0, opt, preparedid = -1;
-	oid tag = 0;
-	lng Tbegin = 0;
-	lng Tend = 0;
+	assert (be->language != 'X');
+	str msg = MAL_SUCCEED;
+	mvc *m = be->mvc;
+	lng Tbegin = 0, Tend = 0;
 
-	c->query = NULL;
-	be = (backend *) c->sqlcontext;
-	if (be == 0) {
-		/* leave a message in the log */
-		TRC_ERROR(SQL_PARSER, "SQL state description is missing, cannot handle client!\n");
-		/* stop here, instead of printing the exception below to the
-		 * client in an endless loop */
+	if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
 		c->mode = FINISHCLIENT;
-		throw(SQL, "SQLparser", SQLSTATE(42000) "State descriptor missing, aborting");
+		return msg;
 	}
-	assert(c->curprg && c->curprg->def);
-	oldvid = c->curprg->def->vid;
-	oldvtop = c->curprg->def->vtop;
-	oldstop = c->curprg->def->stop;
-	be->vtop = oldvtop;
-	be->vid = oldvid;
-
-	m = be->mvc;
-	m->type = Q_PARSE;
-	if (be->language != 'X') {
-		// generate and set the tag in the mal block of the clients current program.
-		tag = runtimeProfileSetTag(c);
-		assert(tag == c->curprg->def->tag);
-		(void) tag;
-		if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
-			c->mode = FINISHCLIENT;
-			return msg;
-		}
-	}
-	pstatus = m->session->status;
+	int pstatus = m->session->status;
 
 	/* sqlparse needs sql allocator to be available.  It can be NULL at
 	 * this point if this is a recursive call. */
@@ -1187,124 +1212,14 @@ SQLparser(Client c)
 
 		throw(SQL, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL " for SQL allocator");
 	}
-	opt = 0;
-	preparedid = -1;
 
+	m->type = Q_PARSE;
 	m->emode = m_normal;
 	m->emod = mod_none;
-	if (be->language == 'X') {
-		int n = 0, v, off, len;
-
-		if (strncmp(in->buf + in->pos, "export ", 7) == 0) {
-			n = sscanf(in->buf + in->pos + 7, "%d %d %d", &v, &off, &len);
-
-			if (n == 2 || n == 3) {
-				if (n == 2)
-					len = m->reply_size;
-				in->pos = in->len;	/* HACK: should use parsed length */
-				if ((ok = mvc_export_chunk(be, out, v, off, len < 0 ? BUN_NONE : (BUN) len)) < 0) {
-					msg = createException(SQL, "SQLparser", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, out, ok));
-					goto finalize;
-				}
-
-				return MAL_SUCCEED;
-			}
-		}
-
-		if (strncmp(in->buf + in->pos, "exportbin ", 10) == 0) {
-			n = sscanf(in->buf + in->pos + 10, "%d %d %d", &v, &off, &len);
-			if (n == 3) {
-				if ((ok = mvc_export_bin_chunk(be, out, v, off, len < 0 ? BUN_NONE: (BUN) len)) < 0) {
-					msg = createException(SQL, "SQLparser", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, out, ok));
-					in->pos = in->len;	/* HACK: should use parsed length */
-					goto finalize;
-				}
-
-				in->pos = in->len;	/* HACK: should use parsed length */
-				return MAL_SUCCEED;
-			}
-		}
-		if (strncmp(in->buf + in->pos, "close ", 6) == 0) {
-			res_table *t;
-
-			v = (int) strtol(in->buf + in->pos + 6, NULL, 0);
-			t = res_tables_find(be->results, v);
-			if (t)
-				be->results = res_tables_remove(be->results, t);
-			in->pos = in->len;	/* HACK: should use parsed length */
-			return MAL_SUCCEED;
-		}
-		if (strncmp(in->buf + in->pos, "release ", 8) == 0) {
-			cq *q = NULL;
-
-			v = (int) strtol(in->buf + in->pos + 8, NULL, 0);
-			if ((q = qc_find(m->qc, v)) != NULL)
-				 qc_delete(m->qc, q);
-			in->pos = in->len;	/* HACK: should use parsed length */
-			return MAL_SUCCEED;
-		}
-		if (strncmp(in->buf + in->pos, "auto_commit ", 12) == 0) {
-			int commit;
-			v = (int) strtol(in->buf + in->pos + 12, NULL, 10);
-			commit = (!m->session->auto_commit && v);
-			m->session->auto_commit = (v) != 0;
-			m->session->ac_on_commit = m->session->auto_commit;
-			if (m->session->tr->active) {
-				if (commit) {
-					msg = mvc_commit(m, 0, NULL, true);
-				} else {
-					msg = mvc_rollback(m, 0, NULL, true);
-				}
-			}
-			in->pos = in->len;	/* HACK: should use parsed length */
-			if (msg != NULL)
-				goto finalize;
-			return MAL_SUCCEED;
-		}
-		static const char* columnar_protocol = "columnar_protocol ";
-		if (strncmp(in->buf + in->pos, columnar_protocol, strlen(columnar_protocol)) == 0) {
-			v = (int) strtol(in->buf + in->pos + strlen(columnar_protocol), NULL, 10);
-
-			c->protocol = v?PROTOCOL_COLUMNAR:PROTOCOL_9;
-
-			in->pos = in->len;	/* HACK: should use parsed length */
-			return MAL_SUCCEED;
-		}
-		if (strncmp(in->buf + in->pos, "reply_size ", 11) == 0) {
-			v = (int) strtol(in->buf + in->pos + 11, NULL, 10);
-			if (v < -1) {
-				msg = createException(SQL, "SQLparser", SQLSTATE(42000) "Reply_size cannot be negative");
-				goto finalize;
-			}
-			m->reply_size = v;
-			in->pos = in->len;	/* HACK: should use parsed length */
-			return MAL_SUCCEED;
-		}
-		if (strncmp(in->buf + in->pos, "sizeheader", 10) == 0) { // no underscore
-			v = (int) strtol(in->buf + in->pos + 10, NULL, 10);
-			be->sizeheader = v != 0;
-			in->pos = in->len;	/* HACK: should use parsed length */
-			return MAL_SUCCEED;
-		}
-		if (strncmp(in->buf + in->pos, "quit", 4) == 0) {
-			c->mode = FINISHCLIENT;
-			in->pos = in->len;	/* HACK: should use parsed length */
-			return MAL_SUCCEED;
-		}
-		in->pos = in->len;	/* HACK: should use parsed length */
-		msg = createException(SQL, "SQLparser", SQLSTATE(42000) "Unrecognized X command: %s\n", in->buf + in->pos);
-		in->pos = in->len; // consume the command
-		goto finalize;
-	}
-	if (be->language !='S') {
-		msg = createException(SQL, "SQLparser", SQLSTATE(42000) "Unrecognized language prefix: %ci\n", be->language);
-		in->pos = in->len;	/* skip rest of the input */
-		c->mode = FINISHCLIENT; /* and disconnect, as client doesn't respect the mapi protocol */
-		goto finalize;
-	}
-
+	c->query = NULL;
 	Tbegin = GDKusec();
 
+	int err = 0;
 	if ((err = sqlparse(m)) ||
 	    /* Only forget old errors on transaction boundaries */
 	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
@@ -1319,6 +1234,8 @@ SQLparser(Client c)
 		}
 		if (m->sym)
 			msg = handle_error(m, pstatus, msg);
+		if (!m->sym) /* skip empty input */
+			m->emode = m_deallocate;
 		sqlcleanup(be, err);
 		goto finalize;
 	}
@@ -1328,11 +1245,10 @@ SQLparser(Client c)
 	 * Now is the time to also perform the semantic analysis, optimize and
 	 * produce code.
 	 */
-	be->q = NULL;
 	c->query = query_cleaned(m->sa, QUERY(m->scanner));
 
 	c->qryctx.starttime = Tend = GDKusec();
-	if(profilerStatus > 0) {
+	if (profilerStatus > 0) {
 		profilerEvent(NULL,
 					  &(struct NonMalEvent)
 					  {TEXT_TO_SQL, c, Tend, &m->session->tr->ts, NULL, c->query?0:1, Tend-Tbegin});
@@ -1344,25 +1260,32 @@ SQLparser(Client c)
 	} else if (m->emode == m_deallocate) {
 		AtomNode *an = (AtomNode *) m->sym;
 		assert(m->sym->type == type_symbol && an->a->data.vtype == TYPE_int);
-		preparedid = an->a->data.val.ival;
+		int preparedid = an->a->data.val.ival;
 
-		if (preparedid > -1) /* The -1 case represents the deallocate the entire query cache */
+		if (preparedid > -1) { /* The -1 case represents the deallocate the entire query cache */
 			be->q = qc_find(m->qc, preparedid);
-
-		if (preparedid > -1) {
-			const char *mode = "DEALLOC";
 			if (!be->q) {
-				err = -1;
-				msg = createException(SQL, mode, SQLSTATE(07003) "No prepared statement with id: %d\n", preparedid);
+				msg = createException(SQL, "DEALLOC", SQLSTATE(07003) "No prepared statement with id: %d\n", preparedid);
 				*m->errstr = 0;
 				msg = handle_error(m, pstatus, msg);
-				sqlcleanup(be, err);
-				goto finalize;
+				sqlcleanup(be, -1);
+				return msg;
+			} else {
+				qc_delete(m->qc, be->q);
+				be->q = NULL;
 			}
+		} else {
+			qc_clean(m->qc);
 		}
 
 		m->type = Q_SCHEMA; /* TODO DEALLOCATE statements don't fit for Q_SCHEMA */
 		scanner_query_processed(&(m->scanner));
+
+		/* For deallocate statements just export a simple output */
+		if (!GDKembedded() && (err = mvc_export_operation(be, c->fdout, "", c->qryctx.starttime, c->curprg->def->optimize)) < 0)
+			msg = createException(PARSE, "SQLparser", SQLSTATE(45000) "Export operation failed: %s", mvc_export_error(be, c->fdout, err));
+		sqlcleanup(be, 0);
+		return msg;
 	} else {
 		sql_rel *r = sql_symbol2relation(be, m->sym);
 
@@ -1377,6 +1300,12 @@ SQLparser(Client c)
 			goto finalize;
 		}
 
+		int oldvid = c->curprg->def->vid;
+		int oldvtop = c->curprg->def->vtop;
+		int oldstop = c->curprg->def->stop;
+		be->vtop = oldvtop;
+		be->vid = oldvid;
+		(void)runtimeProfileSetTag(c); /* generate and set the tag in the mal block of the clients current program. */
 		if (m->emode != m_prepare) {
 			scanner_query_processed(&(m->scanner));
 
@@ -1395,23 +1324,76 @@ SQLparser(Client c)
 
 			Tbegin = GDKusec();
 
-			if (backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0)
+			int opt = 0;
+			if (backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0) {
+				msg = handle_error(m, 0, msg);
 				err = 1;
-			else
-				opt = (m->emod & mod_exec) == 0;//1;
+				MSresetInstructions(c->curprg->def, oldstop);
+				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+			} else
+				opt = ((m->emod & mod_exec) == 0); /* no need to optimze prepare - execute */
 
 			Tend = GDKusec();
 			if(profilerStatus > 0)
 				profilerEvent(NULL,
 							  &(struct NonMalEvent)
 							  {REL_TO_MAL, c, Tend, NULL, NULL, c->query?0:1, Tend-Tbegin});
+			if (err)
+				m->session->status = -10;
+			if (err == 0) {
+				/* no parsing error encountered, finalize the code of the query wrapper */
+				pushEndInstruction(c->curprg->def);
+
+				/* check the query wrapper for errors */
+				if (msg == MAL_SUCCEED)
+					msg = chkTypes(c->usermodule, c->curprg->def, TRUE);
+
+				if (msg == MAL_SUCCEED && opt) {
+					Tbegin = GDKusec();
+					msg = SQLoptimizeQuery(c, c->curprg->def);
+					Tend = GDKusec();
+					if (profilerStatus > 0)
+						profilerEvent(NULL,
+							  &(struct NonMalEvent)
+							  {MAL_OPT, c, Tend, NULL, NULL, msg==MAL_SUCCEED?0:1, Tend-Tbegin});
+					if (msg != MAL_SUCCEED) {
+						str other = c->curprg->def->errors;
+						c->curprg->def->errors = 0;
+						MSresetInstructions(c->curprg->def, oldstop);
+						freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+						if (other != msg)
+							freeException(other);
+						goto finalize;
+					}
+				}
+
+				/* we know more in this case than chkProgram(c->fdout, c->usermodule, c->curprg->def); */
+				if (msg == MAL_SUCCEED && c->curprg->def->errors) {
+					msg = c->curprg->def->errors;
+					c->curprg->def->errors = 0;
+					/* restore the state */
+					MSresetInstructions(c->curprg->def, oldstop);
+					freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
+					if (msg == NULL && *m->errstr){
+						if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
+							msg = createException(PARSE, "SQLparser", "%s", m->errstr);
+						else
+							msg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", m->errstr);
+						*m->errstr = 0;
+					} else if (msg) {
+						str newmsg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", msg);
+						freeException(msg);
+						msg = newmsg;
+					}
+				}
+			}
 		} else {
 			char *q_copy = sa_strdup(m->sa, c->query);
 
 			be->q = NULL;
 			if (!q_copy) {
-				err = 1;
 				msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = 1;
 			} else {
 				be->q = qc_insert(m->qc, m->sa,	/* the allocator */
 						  r,	/* keep relational query */
@@ -1420,109 +1402,40 @@ SQLparser(Client c)
 						  m->type,	/* the type of the statement */
 						  q_copy,
 						  be->no_mitosis);
-			}
-			if (!be->q) {
-				err = 1;
-				msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				if (!be->q) {
+					msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					err = 1;
+				}
 			}
 			scanner_query_processed(&(m->scanner));
-			if (be->q && backend_dumpproc(be, c, be->q, r) < 0)
+			if (be->q && backend_dumpproc(be, c, be->q, r) < 0) {
+				msg = handle_error(m, 0, msg);
 				err = 1;
+			}
 
 			/* passed over to query cache, used during dumpproc */
 			m->sa = NULL;
 			m->sym = NULL;
 			m->runs = NULL;
 			m->params = NULL;
-			/* register name in the namespace */
+
 			if (be->q) {
-				assert(strlen(be->q->name) < IDLENGTH);
-				be->q->name = putName(be->q->name);
-				if (!be->q->name) {
+				int res = 0;
+				if (!err && (res = mvc_export_prepare(be, c->fdout)) < 0) {
+					msg = createException(PARSE, "SQLparser", SQLSTATE(45000) "Export operation failed: %s", mvc_export_error(be, c->fdout, res));
 					err = 1;
-					msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
+				if (err) {
+					be->q->name = NULL; /* later remove cleanup from mal from qc code */
+					qc_delete(m->qc, be->q);
+				}
+				be->q = NULL;
 			}
-		}
-	}
-	if (err)
-		m->session->status = -10;
-	if (err == 0) {
-		/* no parsing error encountered, finalize the code of the query wrapper */
-		if (m->emode == m_deallocate) {
-			assert(be->q || preparedid == -1);
-			if (be->q) {
-				qc_delete(m->qc, be->q);
-			} else {
-				qc_clean(m->qc);
-			}
-			/* For deallocate statements just export a simple output */
-			if (!GDKembedded() && (err = mvc_export_operation(be, c->fdout, "", c->qryctx.starttime, c->curprg->def->optimize)) < 0) {
-				msg = createException(PARSE, "SQLparser", SQLSTATE(45000) "Export operation failed: %s", mvc_export_error(be, c->fdout, err));
-				MSresetInstructions(c->curprg->def, oldstop);
-				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
-				goto finalize;
-			}
-		} else if (be->q) {
-			assert(m->emode == m_prepare);
-			/* For prepared queries, return a table with result set structure*/
-			/* optimize the code block and rename it */
-			if ((err = mvc_export_prepare(be, c->fdout)) < 0) {
-				msg = createException(PARSE, "SQLparser", SQLSTATE(45000) "Export operation failed: %s", mvc_export_error(be, c->fdout, err));
-				MSresetInstructions(c->curprg->def, oldstop);
-				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
-				goto finalize;
-			}
-		}
-
-		pushEndInstruction(c->curprg->def);
-		/* check the query wrapper for errors */
-		if( msg == MAL_SUCCEED)
-			msg = chkTypes(c->usermodule, c->curprg->def, TRUE);
-
-		/* in case we had produced a non-cachable plan, the optimizer should be called */
-		if (msg == MAL_SUCCEED && opt ) {
-			Tbegin = GDKusec();
-			msg = SQLoptimizeQuery(c, c->curprg->def);
-			Tend = GDKusec();
-			if(profilerStatus > 0)
-				profilerEvent(NULL,
-							  &(struct NonMalEvent)
-							  {MAL_OPT, c, Tend, NULL, NULL, msg==MAL_SUCCEED?0:1, Tend-Tbegin});
-			if (msg != MAL_SUCCEED) {
-				str other = c->curprg->def->errors;
-				/* In debugging mode you may want to assess what went wrong in the optimizers*/
-#ifndef NDEBUG
-				if( m->emod & mod_debug)
-					runMALDebugger(c, c->curprg->def);
-#endif
-				c->curprg->def->errors = 0;
-				MSresetInstructions(c->curprg->def, oldstop);
-				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
-				if (other != msg)
-					freeException(other);
-				goto finalize;
-			}
-		}
-		//printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_ALL);
-		/* we know more in this case than chkProgram(c->fdout, c->usermodule, c->curprg->def); */
-		if (msg == MAL_SUCCEED && c->curprg->def->errors) {
-			msg = c->curprg->def->errors;
-			c->curprg->def->errors = 0;
-			/* restore the state */
-			MSresetInstructions(c->curprg->def, oldstop);
-			freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
-			if (msg == NULL && *m->errstr){
-				if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
-					msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-				else
-					msg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", m->errstr);
-				*m->errstr = 0;
-			} else if (msg) {
-				str newmsg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", msg);
-				freeException(msg);
-				msg = newmsg;
-			}
+			if (err)
+				m->session->status = -10;
+			sqlcleanup(be, 0);
+			c->query = NULL;
+			return msg;
 		}
 	}
 finalize:
@@ -1534,17 +1447,47 @@ finalize:
 }
 
 str
-SQLengine(Client c)
+SQLengine_(Client c)
 {
 	backend *be = (backend *) c->sqlcontext;
+
+	if (be == 0) {
+		/* leave a message in the log */
+		TRC_ERROR(SQL_PARSER, "SQL state description is missing, cannot handle client!\n");
+		/* stop here, instead of printing the exception below to the
+		 * client in an endless loop */
+		c->mode = FINISHCLIENT;
+		throw(SQL, "SQLparser", SQLSTATE(42000) "State descriptor missing, aborting");
+	}
+
+	str msg = SQLreader(c, be);
+	if (msg || c->mode <= FINISHCLIENT)
+		return msg;
+
+	if (be->language == 'X') {
+		return SQLchannelcmd(c, be);
+	} else if (be->language !='S') {
+		msg = createException(SQL, "SQLparser", SQLSTATE(42000) "Unrecognized language prefix: %ci\n", be->language);
+		c->mode = FINISHCLIENT; /* and disconnect, as client doesn't respect the mapi protocol */
+		sqlcleanup(be, 0);
+		c->query = NULL;
+	} else {
+		msg = SQLparser(c, be);
+		if (msg == MAL_SUCCEED && (be->mvc->emode == m_deallocate || be->mvc->emode == m_prepare))
+			return msg;
+	}
+	if (msg || c->mode <= FINISHCLIENT)
+		return msg;
+
 	if (be && be->subbackend)
 		be->subbackend->reset(be->subbackend);
 	return SQLengineIntern(c, be);
 }
 
-str
-SQLcallback(Client c, str msg)
+void
+SQLengine(Client c)
 {
+	char *msg = SQLengine_(c);
 	if (msg) {
 		/* remove exception decoration */
 		for (char *m = msg; m && *m; ) {
@@ -1557,9 +1500,7 @@ SQLcallback(Client c, str msg)
 			}
 		}
 		freeException(msg);
-		return MAL_SUCCEED;
 	}
-	return MAL_SUCCEED;
 }
 
 str

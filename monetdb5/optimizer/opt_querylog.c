@@ -173,7 +173,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			pushInstruction(mb,p);
 			continue;
 		}
-		if ( p->token== ENDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol){
+		if ( p->token== ENDsymbol || p->barrier == RETURNsymbol){
 			if ( rtime == 0){
 				q = newStmt(mb, alarmRef, "usec");
 				if (q == NULL) {
@@ -257,57 +257,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			pushInstruction(mb,p);
 			continue;
 		}
-
 		pushInstruction(mb,p);
-		if (p->barrier == YIELDsymbol){
-			/* the factory yield may return */
-			q = newStmt(mb, mtimeRef, "current_timestamp");
-			if (q == NULL) {
-				msg = createException(MAL, "optimizer.querylog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				break;
-			}
-			start= getArg(q,0)= newVariable(mb,"start",5,TYPE_any);
-			pushInstruction(mb, q);
-			q = newStmtArgs(mb, sqlRef, "argRecord", old[0]->argc);
-			if (q == NULL) {
-				msg = createException(MAL, "optimizer.querylog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				break;
-			}
-			for ( argc=1; argc < old[0]->argc; argc++)
-				q = pushArgument(mb, q, getArg(old[0],argc));
-			arg= getArg(q,0)= newVariable(mb,"args",4,TYPE_str);
-			pushInstruction(mb, q);
-			q = newAssignment(mb);
-			if (q == NULL) {
-				msg = createException(MAL, "optimizer.querylog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				break;
-			}
-			q = pushLng(mb,q,0);
-			pushInstruction(mb, q);
-			q = newAssignment(mb);
-			if (q == NULL) {
-				msg = createException(MAL, "optimizer.querylog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				break;
-			}
-			q = pushLng(mb,q,0);
-			tuples= getArg(q,0)= newVariable(mb,"tuples",6,TYPE_lng);
-			p = newFcnCall(mb,profilerRef,"setMemoryFlag");
-			if (p == NULL) {
-				msg = createException(MAL, "optimizer.querylog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				break;
-			}
-			q->argc--;
-			pushLng(mb,q,1);
-			pushInstruction(mb, q);
-			pushInstruction(mb, p);
-			q = newStmt(mb, alarmRef, "usec");
-			if (q == NULL) {
-				msg = createException(MAL, "optimizer.querylog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				break;
-			}
-			xtime = getArg(q,0)= newVariable(mb,"xtime",5,TYPE_lng);
-			pushInstruction(mb, q);
-		}
 	}
 
   bailout:

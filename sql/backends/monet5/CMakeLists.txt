@@ -102,6 +102,8 @@ set(include_sql_files
   45_uuid
   46_profiler
   47_regexp
+  48_txtsim
+  49_strings
   52_describe
   58_hot_snapshot
   75_storagemodel

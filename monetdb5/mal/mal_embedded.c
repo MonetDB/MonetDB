@@ -89,12 +89,6 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 
 	if (!MCinit())
 		throw(MAL, "malEmbeddedBoot", "MAL debugger failed to start");
-#ifndef NDEBUG
-	if (!mdbInit()) {
-		mal_client_reset();
-		throw(MAL, "malEmbeddedBoot", "MAL debugger failed to start");
-	}
-#endif
 	// monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();
 	initHeartbeat();
@@ -130,6 +124,7 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 		return msg;
 	}
 	pushEndInstruction(c->curprg->def);
+#if 0
 	msg = chkProgram(c->usermodule, c->curprg->def);
 	if ( msg != MAL_SUCCEED || (msg= c->curprg->def->errors) != MAL_SUCCEED ) {
 		MCcloseClient(c);
@@ -137,6 +132,7 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 		return msg;
 	}
 	msg = MALengine(c);
+#endif
 	if (msg == MAL_SUCCEED)
 		embeddedinitialized = true;
 	MCcloseClient(c);
@@ -179,7 +175,6 @@ malEmbeddedReset(void) //remove extra modules and set to non-initialized again
 			free(err);
  		}
 	}
-	mal_factory_reset();
 	mal_dataflow_reset();
 	mal_client_reset();
   	mal_linker_reset();
@@ -187,9 +182,6 @@ malEmbeddedReset(void) //remove extra modules and set to non-initialized again
 	mal_runtime_reset();
 	mal_module_reset();
 	mal_atom_reset();
-#ifndef NDEBUG
-	mdbExit();
-#endif
 
 	memset((char*)monet_cwd, 0, sizeof(monet_cwd));
 	memset((char*)monet_characteristics,0, sizeof(monet_characteristics));

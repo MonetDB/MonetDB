@@ -7,7 +7,7 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 
 %global name MonetDB
-%global version 11.46.0
+%global version 11.48.0
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # Use bcond_with to add a --with option; i.e., "without" is default.
@@ -366,6 +366,7 @@ developer.
 %{_bindir}/ODBCStmtAttr
 %{_bindir}/ODBCgetInfo
 %{_bindir}/ODBCmetadata
+%{_bindir}/ODBCtester
 %{_bindir}/arraytest
 %{_bindir}/bincopydata
 %{_bindir}/odbcsample1
