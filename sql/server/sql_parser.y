@@ -173,6 +173,8 @@ uescape_xform(char *restrict s, const char *restrict esc)
 %parse-param { mvc *m }
 %lex-param { void *m }
 
+%define parse.error verbose
+
 /* reentrant parser */
 %define api.pure
 %union {
