@@ -883,9 +883,11 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 						if (garbage[i] >= 0) {
 							bid = stk->stk[garbage[i]].val.bval;
-							stk->stk[garbage[i]].val.bval = bat_nil;
-							BBPcold(bid);
-							BBPrelease(bid);
+							if (!is_bat_nil(bid)) {
+								stk->stk[garbage[i]].val.bval = bat_nil;
+								BBPcold(bid);
+								BBPrelease(bid);
+							}
 						}
 					}
 				}
