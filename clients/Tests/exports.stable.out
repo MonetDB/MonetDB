@@ -559,7 +559,7 @@ gdk_return log_tend(logger *lg);
 gdk_return log_tflush(logger *lg, ulng log_file_id, ulng commit_ts);
 gdk_return log_tsequence(logger *lg, int seq, lng id);
 gdk_return log_tstart(logger *lg, bool flushnow, ulng *log_file_id);
-log_level_t lvl_per_component[];
+ATOMIC_TYPE lvl_per_component[];
 void *mdlopen(const char *library, int mode);
 const char *mercurial_revision(void) __attribute__((__const__));
 int mo_add_option(opt **Set, int setlen, opt_kind kind, const char *name, const char *value);
