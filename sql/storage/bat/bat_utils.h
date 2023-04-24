@@ -15,7 +15,7 @@
 /* when returning a log_bid, errors are reported using BID_NIL */
 #define BID_NIL 0
 
-#define bat_set_access(b,access) b->batRestricted = access
+#define bat_set_access(b,access) do { if (b->batRestricted != access) b->batRestricted = access; } while (0)
 
 extern BAT *temp_descriptor(log_bid b);
 extern BAT *quick_descriptor(log_bid b);
