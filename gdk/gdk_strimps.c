@@ -621,7 +621,7 @@ BATstrimpsync(BAT *b)
 					((uint64_t *)hp->base)[0] |= (uint64_t) 1 << 32;
 					if (write(fd, hp->base, sizeof(uint64_t)) >= 0) {
 						failed = "";
-						if (!(GDKdebug & NOSYNCMASK)) {
+						if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)) {
 #if defined(NATIVE_WIN32)
 							_commit(fd);
 #elif defined(HAVE_FDATASYNC)
@@ -638,7 +638,7 @@ BATstrimpsync(BAT *b)
 				}
 			} else {
 				((uint64_t *)hp->base)[0] |= (uint64_t) 1 << 32;
-				if (!(GDKdebug & NOSYNCMASK) &&
+				if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK) &&
 				    MT_msync(hp->base, sizeof(uint64_t)) < 0) {
 					((uint64_t *)hp->base)[0] &= ~((uint64_t) 1 << 32);
 				} else {

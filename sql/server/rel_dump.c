@@ -329,7 +329,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	if (e->p && e->type != e_atom && !exp_is_atom(e)) { /* don't show properties on value lists */
 		for (prop *p = e->p; p; p = p->p) {
 			/* Don't show min/max/unique est on atoms, or when running tests with forcemito */
-			if ((GDKdebug & FORCEMITOMASK) == 0 || (p->kind != PROP_MIN && p->kind != PROP_MAX && p->kind != PROP_NUNIQUES)) {
+			if ((ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) == 0 || (p->kind != PROP_MIN && p->kind != PROP_MAX && p->kind != PROP_NUNIQUES)) {
 				char *pv = propvalue2string(sql->ta, p);
 				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 			}
@@ -587,7 +587,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 	}
 	if (rel->p) {
 		for (prop *p = rel->p; p; p = p->p) {
-			if (p->kind != PROP_COUNT || (GDKdebug & FORCEMITOMASK) == 0) {
+			if (p->kind != PROP_COUNT || (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) == 0) {
 				char *pv = propvalue2string(sql->ta, p);
 				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 			}
