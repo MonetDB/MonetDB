@@ -2451,7 +2451,7 @@ string_writer(logger *lg, BAT *b, lng offset, lng nr)
 		}
 		char *dst = buf;
 		for(; p < end && sz < bufsz; p++) {
-			char *s = BUNtail(bi, p);
+			char *s = BUNtvar(bi, p);
 			size_t len = strlen(s)+1;
 			if ((sz+len) > bufsz) {
 				if (len > bufsz)
