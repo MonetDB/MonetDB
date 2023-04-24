@@ -2218,7 +2218,7 @@ BBPinsert(BAT *bn)
 	MT_lock_unset(&GDKswapLock(i));
 
 #ifdef HAVE_HGE
-	if (bn->ttype == TYPE_hge)
+	if (bn->ttype == TYPE_hge && !havehge)
 		havehge = true;
 #endif
 
