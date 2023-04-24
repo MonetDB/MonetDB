@@ -36,3 +36,4 @@ strappend
 
 startswith
 endswith
+HAVE_ICONV?asciify
