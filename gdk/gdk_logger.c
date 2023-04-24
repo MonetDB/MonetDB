@@ -1006,7 +1006,7 @@ log_create_types_file(logger *lg, const char *filename, bool append)
 		GDKerror("writing log file %s failed", filename);
 		return GDK_FAIL;
 	}
-	if (fflush(fp) < 0 || (!(GDKdebug & NOSYNCMASK)
+	if (fflush(fp) < 0 || (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)
 #if defined(_MSC_VER)
 		     && _commit(_fileno(fp)) < 0
 #elif defined(HAVE_FDATASYNC)
@@ -1147,10 +1147,10 @@ log_read_transaction(logger *lg)
 	trans *tr = NULL;
 	log_return err = LOG_OK;
 	int ok = 1;
-	int dbg = GDKdebug;
+	ATOMIC_BASE_TYPE dbg = ATOMIC_GET(&GDKdebug);
 
 	if (!lg->flushing)
-		GDKdebug &= ~CHECKMASK;
+		ATOMIC_AND(&GDKdebug, ~CHECKMASK);
 
 	BAT* cands = NULL; // used in case of LOG_BAT_GROUP
 
@@ -1253,7 +1253,7 @@ log_read_transaction(logger *lg)
 	while (tr)
 		tr = tr_abort(lg, tr);
 	if (!lg->flushing)
-		GDKdebug = dbg;
+		ATOMIC_SET(&GDKdebug, dbg);
 
 	BBPreclaim(cands);
 	if (!ok)
@@ -1837,7 +1837,7 @@ log_load(int debug, const char *fn, const char *logdir, logger *lg, char filenam
 	char bak[FILENAME_MAX];
 	bat catalog_bid, catalog_id, dcatalog;
 	bool needcommit = false;
-	int dbg = GDKdebug;
+	ATOMIC_BASE_TYPE dbg = ATOMIC_GET(&GDKdebug);
 	bool readlogs = false;
 	bool needsnew = false;	/* need to write new log file? */
 
@@ -2077,13 +2077,13 @@ log_load(int debug, const char *fn, const char *logdir, logger *lg, char filenam
 	    (lg->dseqs = BATsetaccess(lg->dseqs, BAT_READ)) == NULL) {
 		goto error;
 	}
-	dbg = GDKdebug;
-	GDKdebug &= ~CHECKMASK;
+	dbg = ATOMIC_GET(&GDKdebug);
+	ATOMIC_AND(&GDKdebug, ~CHECKMASK);
 	if (needcommit && bm_commit(lg) != GDK_SUCCEED) {
 		GDKerror("Logger_new: commit failed");
 		goto error;
 	}
-	GDKdebug = dbg;
+	ATOMIC_SET(&GDKdebug, dbg);
 
 	if (readlogs) {
 		ulng log_id = lg->saved_id+1;
@@ -2102,12 +2102,12 @@ log_load(int debug, const char *fn, const char *logdir, logger *lg, char filenam
 				return GDK_FAIL;
 			}
 		}
-		dbg = GDKdebug;
-		GDKdebug &= ~CHECKMASK;
+		dbg = ATOMIC_GET(&GDKdebug);
+		ATOMIC_AND(&GDKdebug, ~CHECKMASK);
 		if (log_commit(lg) != GDK_SUCCEED) {
 			goto error;
 		}
-		GDKdebug = dbg;
+		ATOMIC_SET(&GDKdebug, dbg);
 		for( ; log_id <= lg->saved_id; log_id++)
 			(void)log_cleanup(lg, log_id);  /* ignore error of removing file */
 		if (needsnew &&
@@ -2137,7 +2137,7 @@ log_load(int debug, const char *fn, const char *logdir, logger *lg, char filenam
 	GDKfree(lg->rbuf);
 	GDKfree(lg->wbuf);
 	GDKfree(lg);
-	GDKdebug = dbg;
+	ATOMIC_SET(&GDKdebug, dbg);
 	return GDK_FAIL;
 }
 
@@ -2333,7 +2333,7 @@ log_create(int debug, const char *fn, const char *logdir, int version, preversio
 static ulng
 log_next_logfile(logger *lg, ulng ts)
 {
-	int m = (GDKdebug & FORCEMITOMASK)?1000:100;
+	int m = (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK)?1000:100;
 	if (!lg->pending || !lg->pending->next)
 		return 0;
 	if (ATOMIC_GET(&lg->pending->refcount) == 0 && lg->pending != lg->current && (ulng) ATOMIC_GET(&lg->pending->last_ts) <= ts) {
@@ -2873,7 +2873,7 @@ check_rotation_conditions(logger *lg) {
 		return false; /* do not rotate if there is already a prepared next current */
 	const lng p = (lng) getfilepos(getFile(lg->current->output_log));
 
-	const lng log_large = (GDKdebug & FORCEMITOMASK)?LOG_MINI:LOG_LARGE;
+	const lng log_large = (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK)?LOG_MINI:LOG_LARGE;
 	return
 		(lg->saved_id+1 >= lg->id && lg->current->drops > 100000) || (p > log_large);
 }
@@ -2918,7 +2918,7 @@ do_flush(logged_range *range) {
 	ulng end = ATOMIC_GET(&range->end);
 	if (
 		mnstr_flush(output_log, MNSTR_FLUSH_DATA) ||
-		(!(GDKdebug & NOSYNCMASK) && mnstr_fsync(output_log)))
+		(!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK) && mnstr_fsync(output_log)))
 		return GDK_FAIL;
 	ATOMIC_SET(&range->flushed_end, end);
 

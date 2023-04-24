@@ -447,7 +447,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 
 	assert(!GDKinmemory(farmid));
 	if (mode == STORE_MMAP) {
-		if (dosync && size && !(GDKdebug & NOSYNCMASK))
+		if (dosync && size && !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK))
 			err = MT_msync(buf, size);
 		if (err)
 			GDKerror("error on: name=%s, ext=%s, mode=%d\n",
@@ -485,7 +485,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 					  (unsigned) MIN(1 << 30, size),
 					  ret);
 			}
-			if (dosync && !(GDKdebug & NOSYNCMASK)
+			if (dosync && !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)
 #if defined(NATIVE_WIN32)
 			    && _commit(fd) < 0
 #elif defined(HAVE_FDATASYNC)
@@ -697,7 +697,7 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 	const char *tail = BATITERtailname(bi);
 	if (bi->type != TYPE_void && bi->base == NULL) {
 		assert(BBP_status(b->batCacheid) & BBPSWAPPED);
-		if (dosync && !(GDKdebug & NOSYNCMASK)) {
+		if (dosync && !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)) {
 			int fd = GDKfdlocate(bi->h->farmid, nme, "rb+", tail);
 			if (fd < 0) {
 				GDKsyserror("cannot open file %s.%s for sync\n",

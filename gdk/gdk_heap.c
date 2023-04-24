@@ -1387,7 +1387,7 @@ HEAP_recover(Heap *h, const var_t *offsets, BUN noffsets)
 	h->cleanhash = false;
 	if (dirty) {
 		if (h->storage == STORE_MMAP) {
-			if (!(GDKdebug & NOSYNCMASK))
+			if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK))
 				(void) MT_msync(h->base, dirty);
 			else
 				h->dirty = true;
