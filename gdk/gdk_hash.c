@@ -317,7 +317,7 @@ HASHfix(Hash *h, bool save, bool dosync)
 			if (fd >= 0) {
 				if (write(fd, h->heapbckt.base, SIZEOF_SIZE_T) == SIZEOF_SIZE_T) {
 					if (dosync &&
-					    !(GDKdebug & NOSYNCMASK)) {
+					    !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)) {
 #if defined(NATIVE_WIN32)
 						_commit(fd);
 #elif defined(HAVE_FDATASYNC)
@@ -335,7 +335,7 @@ HASHfix(Hash *h, bool save, bool dosync)
 			return rc;
 		} else {
 			if (dosync &&
-			    !(GDKdebug & NOSYNCMASK) &&
+			    !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK) &&
 			    MT_msync(h->heapbckt.base, SIZEOF_SIZE_T) < 0) {
 				((size_t *) h->heapbckt.base)[0] &= ~mask;
 				return GDK_FAIL;

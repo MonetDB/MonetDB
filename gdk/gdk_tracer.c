@@ -570,7 +570,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	if ((adapter_t) ATOMIC_GET(&cur_adapter) == MBEDDED)
 		return;
 
-	if (level <= M_WARNING || (GDKdebug & FORCEMITOMASK)) {
+	if (level <= M_WARNING || (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK)) {
 		fprintf(stderr, "#%s%s%s: %s: %s: %s%s%s\n",
 			add_ts ? ts : "",
 			add_ts ? ": " : "",
