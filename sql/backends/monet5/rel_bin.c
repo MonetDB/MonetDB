@@ -5005,12 +5005,12 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 
 		/* heapn.projections */
 		for ( n=pl->h ; n; n = n->next)
-			list_append(npl, stmt_project_(be, sel, del, ins, column(be, n->data), all));
+			list_append(npl, stmt_heapn_projection(be, sel, del, ins, column(be, n->data), all));
 		psub = stmt_list(be, npl);
 
 		list *nosl = sa_list(sql->sa);
 		for ( n=osl->h ; n; n = n->next->next) {
-			append(nosl, stmt_project_(be, sel, del, ins, n->data, all));
+			append(nosl, stmt_heapn_projection(be, sel, del, ins, n->data, all));
 			append(nosl, n->next->data);
 		}
 		osl = nosl;
@@ -5045,13 +5045,13 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 	list *npl = sa_list(sql->sa);
 	prl = prl->next; /* skip heap */
 	for (n=pl->h ; n; n = n->next, prl = prl->next) {
-		stmt *s = stmt_project_(be, sel, del, ins, n->data, all);
+		stmt *s = stmt_heapn_projection(be, sel, del, ins, n->data, all);
 		s->nr = getArg(s->q, 0) = *(int*)prl->data;
 		list_append(npl, s);
 	}
 	list *nosl = sa_list(sql->sa);
 	for (n=osl->h ; n; n = n->next->next, prl = prl->next) {
-		stmt *s = stmt_project_(be, sel, del, ins, n->data, all);
+		stmt *s = stmt_heapn_projection(be, sel, del, ins, n->data, all);
 		s->nr = getArg(s->q, 0) = *(int*)prl->data;
 		append(nosl, s);
 		append(nosl, n->next->data);

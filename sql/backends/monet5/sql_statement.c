@@ -2413,7 +2413,7 @@ stmt_project_join(backend *be, stmt *op1, stmt *op2, bool delta)
 }
 
 stmt *
-stmt_project_(backend *be, int sel, int del, int ins, stmt *c, stmt *all)
+stmt_heapn_projection(backend *be, int sel, int del, int ins, stmt *c, stmt *all)
 {
 
 	InstrPtr q = newStmt(be->mb, getName("heapn"), getName("projection"));
