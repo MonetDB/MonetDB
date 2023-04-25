@@ -611,6 +611,7 @@ BATclear(BAT *b, bool force)
 				.farmid = b->tvheap->farmid,
 				.parentid = b->tvheap->parentid,
 				.dirty = true,
+				.hasfile = b->tvheap->hasfile,
 			};
 			strcpy_len(th->filename, b->tvheap->filename, sizeof(th->filename));
 			if (ATOMheap(b->ttype, th, 0) != GDK_SUCCEED) {
