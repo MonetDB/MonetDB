@@ -1,6 +1,10 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Tue Apr 25 2023 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed parsing of the BBP.dir file when BAT ids grow larger than 2**24
+  (i.e. 100000000 in octal).
+
 * Thu Apr 20 2023 Sjoerd Mullender <sjoerd@acm.org>
 - Fixed yet another occurrence of a missing .tailN file.  This one could
   happen if a string bat was appended to in stages so that between appends
