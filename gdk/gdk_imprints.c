@@ -409,7 +409,7 @@ BATimpsync(void *arg)
 					((size_t *) hp->base)[0] |= (size_t) 1 << 16;
 					if (write(fd, hp->base, SIZEOF_SIZE_T) >= 0) {
 						failed = ""; /* not failed */
-						if (!(GDKdebug & NOSYNCMASK)) {
+						if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)) {
 #if defined(NATIVE_WIN32)
 							_commit(fd);
 #elif defined(HAVE_FDATASYNC)
@@ -430,7 +430,7 @@ BATimpsync(void *arg)
 				((size_t *) hp->base)[0] |= (size_t) IMPRINTS_VERSION << 8;
 				/* sync-on-disk checked bit */
 				((size_t *) hp->base)[0] |= (size_t) 1 << 16;
-				if (!(GDKdebug & NOSYNCMASK) &&
+				if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK) &&
 				    MT_msync(hp->base, SIZEOF_SIZE_T) < 0) {
 					failed = " sync failed";
 					((size_t *) hp->base)[0] &= ~((size_t) IMPRINTS_VERSION << 8);

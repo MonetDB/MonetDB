@@ -817,7 +817,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					lhs->val.pval != stk->stk[getArg(pci, i)].val.pval)
 					GDKfree(lhs->val.pval);
 			}
-			if (GDKdebug & CHECKMASK && exceptionVar < 0) {
+			if (ATOMIC_GET(&GDKdebug) & CHECKMASK && exceptionVar < 0) {
 				BAT *b;
 
 				for (int i = 0; i < pci->retc; i++) {

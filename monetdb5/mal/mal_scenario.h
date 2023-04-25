@@ -34,15 +34,15 @@ typedef struct SCENARIO {
 } *Scenario;
 
 mal_export Scenario getFreeScenario(void);
-mal_export Scenario findScenario(str nme);
+mal_export Scenario findScenario(const char *nme);
 
 #ifdef LIBMONETDB5
-extern str setScenario(Client c, str nme);
+extern str setScenario(Client c, const char *nme);
 extern str runScenario(Client c);
 extern str getScenarioLanguage(Client c);
 
 extern void showCurrentScenario(void);
-extern void showScenarioByName(stream *f, str s);
+extern void showScenarioByName(stream *f, const char *s);
 extern void showScenario(stream *f, Scenario s);
 extern void showAllScenarios(stream *f);
 extern void resetScenario(Client c);

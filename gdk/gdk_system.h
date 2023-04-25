@@ -99,8 +99,8 @@
 #endif
 
 /* also see gdk.h for these */
-#define THRDMASK	(1)
-#define TEMMASK		(1<<10)
+#define THRDMASK	(1U)
+#define TEMMASK		(1U<<10)
 
 /*
  * @- pthreads Includes and Definitions
@@ -139,9 +139,9 @@
 #include "matomic.h"
 
 /* debug and errno integers */
-gdk_export int GDKdebug;
-gdk_export void GDKsetdebug(int debug);
-gdk_export int GDKgetdebug(void);
+gdk_export ATOMIC_TYPE GDKdebug;
+gdk_export void GDKsetdebug(unsigned debug);
+gdk_export unsigned GDKgetdebug(void);
 
 gdk_export int GDKnr_threads;
 

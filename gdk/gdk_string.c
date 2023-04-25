@@ -125,7 +125,7 @@ strCleanHash(Heap *h, bool rebuild)
 	if (memcmp(newhash, h->base, sizeof(newhash)) != 0) {
 		memcpy(h->base, newhash, sizeof(newhash));
 		if (h->storage == STORE_MMAP) {
-			if (!(GDKdebug & NOSYNCMASK))
+			if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK))
 				(void) MT_msync(h->base, GDK_STRHASHSIZE);
 		} else
 			h->dirty = true;

@@ -33,7 +33,7 @@ BATidxsync(void *arg)
 					((oid *) hp->base)[0] |= (oid) 1 << 24;
 					if (write(fd, hp->base, SIZEOF_OID) >= 0) {
 						failed = ""; /* not failed */
-						if (!(GDKdebug & NOSYNCMASK)) {
+						if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)) {
 #if defined(NATIVE_WIN32)
 							_commit(fd);
 #elif defined(HAVE_FDATASYNC)
@@ -50,7 +50,7 @@ BATidxsync(void *arg)
 				}
 			} else {
 				((oid *) hp->base)[0] |= (oid) 1 << 24;
-				if (!(GDKdebug & NOSYNCMASK) &&
+				if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK) &&
 				    MT_msync(hp->base, SIZEOF_OID) < 0) {
 					((oid *) hp->base)[0] &= ~((oid) 1 << 24);
 				} else {

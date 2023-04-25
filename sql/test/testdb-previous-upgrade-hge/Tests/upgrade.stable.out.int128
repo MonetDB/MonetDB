@@ -641,6 +641,7 @@ returns double external name txtsim.similarity;
 grant execute on function similarity(string, string) to public;
 create function asciify(x string)
 returns string external name str."asciify";
+grant execute on function asciify(string) to public;
 create function sys.startswith(x string, y string)
 returns boolean external name str."startsWith";
 grant execute on function startswith(string, string) to public;

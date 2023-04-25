@@ -1056,7 +1056,7 @@ static ATOMIC_TYPE hbrunning = ATOMIC_VAR_INIT(0);
 static void profilerHeartbeat(void *dummy)
 {
 	int t;
-	const int timeout = GDKdebug & FORCEMITOMASK ? 10 : 25;
+	const int timeout = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 10 : 25;
 
 	(void) dummy;
 	for (;;) {

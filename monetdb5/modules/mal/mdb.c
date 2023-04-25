@@ -108,7 +108,7 @@ MDBgetDebug(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb;
 	(void) stk;
 	(void) p;
-	*ret = GDKdebug;
+	*ret = (int) ATOMIC_GET(&GDKdebug);
 	return MAL_SUCCEED;
 }
 
@@ -122,8 +122,8 @@ MDBsetDebug(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb;
 	(void) stk;
 	(void) p;
-	*ret = GDKgetdebug();
-	GDKsetdebug(*flg);
+	*ret = (int) GDKgetdebug();
+	GDKsetdebug((unsigned) *flg);
 	return MAL_SUCCEED;
 }
 
@@ -151,16 +151,17 @@ MDBgetDebugFlags(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		BBPreclaim(val);
 		throw(MAL, "mdb.getDebugFlags",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	addFlag("threads", GRPthreads, GDKdebug);
-	addFlag("memory", GRPmemory, GDKdebug);
-	addFlag("properties", GRPproperties, GDKdebug);
-	addFlag("io", GRPio, GDKdebug);
-	addFlag("heaps", GRPheaps, GDKdebug);
-	addFlag("transactions", GRPtransactions, GDKdebug);
-	addFlag("modules", GRPmodules, GDKdebug);
-	addFlag("algorithms", GRPalgorithms, GDKdebug);
-	addFlag("performance", GRPperformance, GDKdebug);
-	addFlag("forcemito", GRPforcemito, GDKdebug);
+	ATOMIC_BASE_TYPE dbg = ATOMIC_GET(&GDKdebug);
+	addFlag("threads", GRPthreads, dbg);
+	addFlag("memory", GRPmemory, dbg);
+	addFlag("properties", GRPproperties, dbg);
+	addFlag("io", GRPio, dbg);
+	addFlag("heaps", GRPheaps, dbg);
+	addFlag("transactions", GRPtransactions, dbg);
+	addFlag("modules", GRPmodules, dbg);
+	addFlag("algorithms", GRPalgorithms, dbg);
+	addFlag("performance", GRPperformance, dbg);
+	addFlag("forcemito", GRPforcemito, dbg);
 
 	*f = flg->batCacheid;
 	BBPkeepref(flg);
@@ -178,7 +179,7 @@ bailout:
 static str
 MDBsetDebugStr_(int *ret, str *flg)
 {
-	int debug = GDKdebug;
+	ATOMIC_BASE_TYPE debug = ATOMIC_GET(&GDKdebug);
 	if( strcmp("threads",*flg)==0)
 		debug ^= GRPthreads;
 	else if( strcmp("memory",*flg)==0)
@@ -201,8 +202,8 @@ MDBsetDebugStr_(int *ret, str *flg)
 		debug ^= GRPforcemito;
 	else
 		throw(MAL, "mdb.setDebugStr", ILLEGAL_ARGUMENT);
-	*ret = GDKgetdebug();
-	GDKsetdebug(debug);
+	*ret = (int) GDKgetdebug();
+	GDKsetdebug((unsigned) debug);
 
 	return MAL_SUCCEED;
 }

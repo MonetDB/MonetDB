@@ -8,6 +8,7 @@
 
 create function asciify(x string)
 returns string external name str."asciify";
+grant execute on function asciify(string) to public;
 
 create function sys.startswith(x string, y string)
 returns boolean external name str."startsWith";
