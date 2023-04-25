@@ -1,6 +1,10 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Tue Apr 25 2023 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed parsing of the BBP.dir files when BAT ids grow larger than 2**24
+  (i.e. 100000000 in octal).
+
 * Fri Mar 24 2023 Sjoerd Mullender <sjoerd@acm.org>
 - When processing the WAL, if a to-be-destroyed object cannot be found,
   don't stop, but keep processing the rest of the WAL.
