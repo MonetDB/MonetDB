@@ -148,8 +148,6 @@ extern int stmt_key(stmt *s);
 
 extern InstrPtr stmt_bat_new(backend *be, int tt, lng estimate);
 extern InstrPtr stmt_hash_new(backend *be, int tt, lng estimate, int parent);
-extern InstrPtr stmt_part_new(backend *be, int nr_parts);
-extern InstrPtr stmt_mat_new(backend *be, int tt, int nr_parts);
 
 extern stmt *stmt_none(backend *be);
 
@@ -214,7 +212,6 @@ extern stmt *stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int an
 extern stmt *stmt_semijoin(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int is_semantics, bool single);
 extern stmt *stmt_join_cand(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int anti, comp_type cmptype, int need_left, int is_semantics, bool single);
 
-extern stmt *stmt_heapn_projection(backend *be, int sel, int del, int ins, stmt *c, stmt *all);
 extern stmt *stmt_project(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_project_delta(backend *be, stmt *col, stmt *upd);
 extern stmt *stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3);
@@ -225,7 +222,6 @@ extern stmt *stmt_list(backend *be, list *l);
 extern void stmt_set_nrcols(stmt *s);
 
 extern stmt *stmt_group(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt, int done, int pipeline);
-extern stmt *stmt_group_locked(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt, stmt *pp);
 extern stmt *stmt_unique(backend *be, stmt *op1, int shared_output_bat /* shared bat var id (0 no sharing) */);
 
 /* raise exception incase the condition (cond) holds, continue with stmt res */
@@ -247,9 +243,6 @@ extern stmt *stmt_limit(backend *sa, stmt *c, stmt *piv, stmt *gid, stmt *offset
 extern stmt *stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed);
 extern stmt *stmt_order(backend *be, stmt *s, int direction, int nullslast);
 extern stmt *stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_ids, stmt *orderby_grp);
-extern stmt *stmt_slice(backend *be, stmt *col, stmt *limit);
-extern stmt *stmt_slicer(backend *be, stmt *col, int slicer);
-extern stmt *stmt_slices(backend *be, stmt *col); /* call mal nr of slices */
 
 extern stmt *stmt_convert(backend *sa, stmt *v, stmt *sel, sql_subtype *from, sql_subtype *to);
 extern stmt *stmt_unop(backend *be, stmt *op1, stmt *sel, sql_subfunc *op);
@@ -283,10 +276,6 @@ extern stmt *const_column(backend *ba, stmt *val);
 extern stmt *stmt_fetch(backend *ba, stmt *val);
 extern stmt *stmt_rename(backend *ba, sql_exp *e, stmt *s);
 extern stmt *stmt_instruction(backend *ba, InstrPtr p, stmt *s);
-
-extern stmt *pp_create(backend *ba, int nrparts); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */
-extern stmt *pp_dynamic(backend *ba, int input); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */
-extern int pp_jump(backend *ba, stmt *pp, int nrparts);    /* redo: label := part < nrparts; */
-extern int pp_end(backend *ba, stmt *pp);    /* exit: label ; */
+extern stmt *stmt_create(sql_allocator *sa, st_type type);
 
 #endif /* _SQL_STATEMENT_H_ */

@@ -140,6 +140,7 @@ target_sources(sql
   sql_cat.c sql_cat.h
   sql_transaction.c sql_transaction.h
   sql_statement.c sql_statement.h
+  sql_pp_statement.c sql_pp_statement.h
   sql_statistics.c sql_statistics.h
   sql_gencode.c sql_gencode.h
   sql_optimizer.c sql_optimizer.h

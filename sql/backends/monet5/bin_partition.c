@@ -13,6 +13,7 @@
 #include "rel_exp.h"
 #include "mal_builder.h"
 #include "opt_prelude.h"
+#include "sql_pp_statement.h"
 
 bool
 rel_groupby_partition( backend *be, sql_rel *rel)

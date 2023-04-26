@@ -22,6 +22,7 @@
 #include "rel_predicates.h"
 #include "rel_rewriter.h"
 #include "bin_partition.h"
+#include "sql_pp_statement.h"
 #include "sql_env.h"
 #include "sql_optimizer.h"
 #include "sql_gencode.h"
