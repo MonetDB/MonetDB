@@ -314,24 +314,6 @@ stmt_bat_new(backend *be, int tt, lng estimate)
 	return q;
 }
 
-InstrPtr
-stmt_hash_new(backend *be, int tt, lng estimate, int parent)
-{
-	InstrPtr q = newStmt(be->mb, putName("hash"), newRef);
-
-	if (q == NULL)
-		//return -1;
-		return NULL;
-	setVarType(be->mb, getArg(q, 0), newBatType(tt));
-	q = pushType(be->mb, q, tt);
-	assert (estimate >= 0);
-	q = pushInt(be->mb, q, (int)estimate);
-	if (parent)
-		q = pushArgument(be->mb, q, parent);
-	pushInstruction(be->mb, q);
-	return q;
-}
-
 static int *
 dump_table(sql_allocator *sa, backend *be, sql_table *t)
 {

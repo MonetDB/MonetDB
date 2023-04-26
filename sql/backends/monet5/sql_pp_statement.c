@@ -63,6 +63,24 @@ stmt_group_locked(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, stmt *p
 }
 
 InstrPtr
+stmt_hash_new(backend *be, int tt, lng estimate, int parent)
+{
+	InstrPtr q = newStmt(be->mb, putName("hash"), newRef);
+
+	if (q == NULL)
+		//return -1;
+		return NULL;
+	setVarType(be->mb, getArg(q, 0), newBatType(tt));
+	q = pushType(be->mb, q, tt);
+	assert (estimate >= 0);
+	q = pushInt(be->mb, q, (int)estimate);
+	if (parent)
+		q = pushArgument(be->mb, q, parent);
+	pushInstruction(be->mb, q);
+	return q;
+}
+
+InstrPtr
 stmt_part_new(backend *be, int nr_parts)
 {
 	InstrPtr q = newStmt(be->mb, putName("part"), newRef);

@@ -11,6 +11,7 @@
 #ifndef _SQL_PP_STATEMENT_H_
 #define _SQL_PP_STATEMENT_H_
 
+extern InstrPtr stmt_hash_new(backend *be, int tt, lng estimate, int parent);
 extern InstrPtr stmt_part_new(backend *be, int nr_parts);
 extern InstrPtr stmt_mat_new(backend *be, int tt, int nr_parts);
 
