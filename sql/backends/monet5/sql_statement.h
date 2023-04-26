@@ -146,6 +146,7 @@ typedef struct stmt {
 
 extern int stmt_key(stmt *s);
 
+extern InstrPtr pushPtr(MalBlkPtr mb, InstrPtr q, ptr val);
 extern InstrPtr stmt_bat_new(backend *be, int tt, lng estimate);
 
 extern stmt *stmt_none(backend *be);

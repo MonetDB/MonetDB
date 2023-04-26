@@ -9,6 +9,7 @@
  */
 
 #include "monetdb_config.h"
+#include "sql_gencode.h"
 #include "sql_statement.h"
 #include "sql_pp_statement.h"
 #include "rel_exp.h"
@@ -16,6 +17,161 @@
 #include "mal_builder.h"
 #include "opt_prelude.h"
 
+stmt *
+stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+	const char *mod, *aggrfunc;
+	sql_subtype *res = op->res->h->data;
+	int restype = res->type->localtype;
+	bool complex_aggr = false;
+	int *stmt_nr = NULL;
+	int avg = 0;
+
+	if (op1->nr < 0)
+		return NULL;
+	if (backend_create_subfunc(be, op, NULL) < 0)
+		return NULL;
+	mod = sql_func_mod(op->func);
+	aggrfunc = backend_function_imp(be, op->func);
+
+	if (LANG_INT_OR_MAL(op->func->lang)) {
+		if (strcmp(aggrfunc, "avg") == 0)
+			avg = 1;
+
+		/* For the single value aggregates, we use the incremental
+ 		 * aggr. functions from the module 'iaggr' */
+		if (!grp && (strcmp(aggrfunc, "count") == 0 ||
+			     strcmp(aggrfunc, "min") == 0 ||
+			     strcmp(aggrfunc, "max") == 0)) /* incremental versions TODO do for other aggr functions */
+			mod = putName("iaggr");
+		else if (!grp && avg && restype == TYPE_dbl)
+			mod = putName("batcalc");
+
+		if (avg || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0
+			|| strcmp(aggrfunc, "str_group_concat") == 0)
+			complex_aggr = true;
+	}
+
+	int argc = 1
+		+ 2 * avg
+		+ (LANG_EXT(op->func->lang) != 0)
+		+ 2 * (op->func->lang == FUNC_LANG_C || op->func->lang == FUNC_LANG_CPP)
+		+ (op->func->lang == FUNC_LANG_PY || op->func->lang == FUNC_LANG_R)
+		+ (op1->type != st_list ? 1 : list_length(op1->op4.lval))
+		+ (grp ? 4 : avg + 1);
+
+	if (grp) {
+		char *aggrF = SA_NEW_ARRAY(be->mvc->sa, char, strlen(aggrfunc) + 4), *end = aggrF;
+		if (!aggrF)
+			return NULL;
+		stpcpy(end, aggrfunc);
+		aggrfunc = aggrF;
+		if ((grp && grp->nr < 0) || (ext && ext->nr < 0))
+			return NULL;
+
+		q = newStmtArgs(mb, mod, aggrfunc, argc);
+		if (q == NULL)
+			return NULL;
+		setVarType(mb, getArg(q, 0), newBatType(restype));
+		if (avg) { /* for avg also return rest and count */
+			/* TODO: check with the 'new-avg' branch (?). We'll
+ 			 * want to choose between avg/rest and avg+cnt */
+			if (restype != TYPE_dbl)
+				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_lng)));
+			q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_lng)));
+		}
+	} else {
+		int nrargs = (op1->type != st_list ? 1 : list_length(op1->op4.lval));
+		q = newStmtArgs(mb, mod, aggrfunc, argc);
+		if (q == NULL)
+			return NULL;
+		if (complex_aggr) {
+			setVarType(mb, getArg(q, 0), (grp|| nrargs>1)?newBatType(restype):restype);
+			if (avg) { /* for avg also return rest and count */
+				/* TODO: check with the 'new-avg' branch (?). We'll
+				 * want to choose between avg/rest and avg+cnt */
+				if (restype != TYPE_dbl)
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
+			}
+		}
+	}
+
+	if (LANG_EXT(op->func->lang))
+		q = pushPtr(mb, q, op->func);
+	if (op->func->lang == FUNC_LANG_R ||
+		op->func->lang >= FUNC_LANG_PY ||
+		op->func->lang == FUNC_LANG_C ||
+		op->func->lang == FUNC_LANG_CPP) {
+		if (!grp) {
+			setVarType(mb, getArg(q, 0), restype);
+		}
+		if (op->func->lang == FUNC_LANG_C) {
+			q = pushBit(mb, q, 0);
+		} else if (op->func->lang == FUNC_LANG_CPP) {
+			q = pushBit(mb, q, 1);
+		}
+ 		q = pushStr(mb, q, op->func->query);
+	}
+
+	if (grp && grp != op1)
+		q = pushArgument(mb, q, grp->nr);
+
+	if (op1->type != st_list) {
+		q = pushArgument(mb, q, op1->nr);
+	} else {
+		int i;
+		node *n;
+
+		for (i=0, n = op1->op4.lval->h; n; n = n->next, i++) {
+			stmt *op = n->data;
+
+			if (stmt_nr)
+				q = pushArgument(mb, q, stmt_nr[i]);
+			else
+				q = pushArgument(mb, q, op->nr);
+		}
+	}
+	if (grp) {
+		if (LANG_INT_OR_MAL(op->func->lang) && grp != op1 && strncmp(aggrfunc, "count", 5) == 0)
+			q = pushBit(mb, q, no_nil);
+	} else if (LANG_INT_OR_MAL(op->func->lang) && no_nil && strncmp(aggrfunc, "count", 5) == 0) {
+		q = pushBit(mb, q, no_nil);
+	} else if (LANG_INT_OR_MAL(op->func->lang) && !nil_if_empty && strncmp(aggrfunc, "sum", 3) == 0) {
+		q = pushBit(mb, q, FALSE);
+	} else if (LANG_INT_OR_MAL(op->func->lang) && avg && (restype != TYPE_dbl)) { /* push candidates */
+		q = pushNil(mb, q, TYPE_bat);
+		q = pushBit(mb, q, no_nil);
+	}
+	q->inout = 0;
+	pushInstruction(mb, q);
+	if (q) {
+		stmt *s = stmt_create(be->mvc->sa, st_aggr);
+		if(!s) {
+			freeInstruction(q);
+			return NULL;
+		}
+		s->op1 = op1;
+		if (grp) {
+			s->op2 = grp;
+			s->op3 = ext;
+			s->nrcols = 1;
+		} else {
+			if (!reduce)
+				s->nrcols = 1;
+		}
+		s->key = reduce;
+		s->aggr = reduce;
+		s->flag = no_nil;
+		s->op4.funcval = op;
+		s->nr = getDestVar(q);
+		s->q = q;
+		return s;
+	}
+	return NULL;
+}
 
 stmt *
 stmt_group_locked(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, stmt *pp)

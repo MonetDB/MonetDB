@@ -12,6 +12,7 @@
 #include "sql_mem.h"
 #include "sql_stack.h"
 #include "sql_statement.h"
+#include "sql_pp_statement.h"
 #include "sql_gencode.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
@@ -21,7 +22,7 @@
 #include "mal_builder.h"
 #include "opt_prelude.h"
 
-static stmt * stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty, int pipeline);
+static stmt * stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
 
 /*
  * Some utility routines to generate code
@@ -87,7 +88,7 @@ dump_2(MalBlkPtr mb, const char *mod, const char *name, stmt *o1, stmt *o2)
 	return q;
 }
 
-static InstrPtr
+InstrPtr
 pushPtr(MalBlkPtr mb, InstrPtr q, ptr val)
 {
 	int _t;
@@ -3603,7 +3604,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 		push_cands = can_push_cands(sel, mod, fimp);
 		default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
 		if (rows) {
-			card = stmt_aggr_(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1, 0 /* no pipelined version */);
+			card = stmt_aggr_(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true), 1, 0, 1);
 			default_nargs++;
 		}
 
@@ -3810,7 +3811,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 }
 
 static stmt *
-stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty, int pipeline)
+stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -3820,7 +3821,6 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 	bool complex_aggr = false;
 	int *stmt_nr = NULL;
 	int avg = 0;
-	int pipeline_mod = (pipeline && !grp);
 
 	if (op1->nr < 0)
 		return NULL;
@@ -3832,18 +3832,10 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 	if (LANG_INT_OR_MAL(op->func->lang)) {
 		if (strcmp(aggrfunc, "avg") == 0)
 			avg = 1;
-
-		if (pipeline_mod && (strcmp(aggrfunc, "count") == 0 ||
-						 strcmp(aggrfunc, "min") == 0 ||
-						 strcmp(aggrfunc, "max") == 0)) /* incremental versions TODO do for other aggr functions */
-			mod = putName("iaggr");
-		else if (pipeline_mod && avg && restype == TYPE_dbl)
-			mod = putName("batcalc");
-
 		if (avg || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0
 			|| strcmp(aggrfunc, "str_group_concat") == 0)
 			complex_aggr = true;
-		if (!pipeline && restype == TYPE_dbl)
+		if (restype == TYPE_dbl)
 			avg = 0;
 	}
 
@@ -3856,12 +3848,10 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 		+ (grp ? 4 : avg + 1);
 
 	if (grp) {
-		char *aggrF = SA_NEW_ARRAY(be->mvc->sa, char, strlen(aggrfunc) + 4), *end = aggrF;
+		char *aggrF = SA_NEW_ARRAY(be->mvc->sa, char, strlen(aggrfunc) + 4);
 		if (!aggrF)
 			return NULL;
-		if (!pipeline)
-				end = stpcpy(aggrF, "sub");
-		stpcpy(end, aggrfunc);
+		stpcpy(stpcpy(aggrF, "sub"), aggrfunc);
 		aggrfunc = aggrF;
 		if ((grp && grp->nr < 0) || (ext && ext->nr < 0))
 			return NULL;
@@ -3871,18 +3861,22 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 			return NULL;
 		setVarType(mb, getArg(q, 0), newBatType(restype));
 		if (avg) { /* for avg also return rest and count */
+			/* TODO: check with the 'new-avg' branch (?). We'll
+ 			 * want to choose between avg/rest and avg+cnt */
 			if (restype != TYPE_dbl)
 				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_lng)));
 			q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_lng)));
 		}
 	} else {
-		int nrargs = (op1->type != st_list ? 1 : list_length(op1->op4.lval));
 		q = newStmtArgs(mb, mod, aggrfunc, argc);
 		if (q == NULL)
 			return NULL;
 		if (complex_aggr) {
-			setVarType(mb, getArg(q, 0), (grp|| (pipeline && nrargs>1))?newBatType(restype):restype);
+			/* TODO: why the extra "grp?newBatType(restype)"? */
+			setVarType(mb, getArg(q, 0), grp?newBatType(restype):restype);
 			if (avg) { /* for avg also return rest and count */
+				/* TODO: check with the 'new-avg' branch (?). We'll
+				 * want to choose between avg/rest and avg+cnt */
 				if (restype != TYPE_dbl)
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
@@ -3907,9 +3901,6 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
  		q = pushStr(mb, q, op->func->query);
 	}
 
-	if (grp && grp != op1 && pipeline)
-		q = pushArgument(mb, q, grp->nr);
-
 	if (op1->type != st_list) {
 		q = pushArgument(mb, q, op1->nr);
 	} else {
@@ -3926,24 +3917,21 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 		}
 	}
 	if (grp) {
-		if (!pipeline) {
-			q = pushArgument(mb, q, grp->nr);
-			q = pushArgument(mb, q, ext->nr);
-			if (LANG_INT_OR_MAL(op->func->lang) && avg) /* push nil candidates */
+		q = pushArgument(mb, q, grp->nr);
+		q = pushArgument(mb, q, ext->nr);
+		if (LANG_INT_OR_MAL(op->func->lang)) {
+			if (avg) /* push nil candidates */
 				q = pushNil(mb, q, TYPE_bat);
-		}
-		if (LANG_INT_OR_MAL(op->func->lang) && (!pipeline || (grp != op1 && strncmp(aggrfunc, "count", 5) == 0)))
 			q = pushBit(mb, q, no_nil);
+		}
 	} else if (LANG_INT_OR_MAL(op->func->lang) && no_nil && strncmp(aggrfunc, "count", 5) == 0) {
 		q = pushBit(mb, q, no_nil);
 	} else if (LANG_INT_OR_MAL(op->func->lang) && !nil_if_empty && strncmp(aggrfunc, "sum", 3) == 0) {
 		q = pushBit(mb, q, FALSE);
-	} else if (LANG_INT_OR_MAL(op->func->lang) && avg && (restype != TYPE_dbl || !pipeline)) { /* push candidates */
+	} else if (LANG_INT_OR_MAL(op->func->lang) && avg) { /* push candidates */
 		q = pushNil(mb, q, TYPE_bat);
 		q = pushBit(mb, q, no_nil);
 	}
-	if (pipeline)
-		q->inout = 0;
 	pushInstruction(mb, q);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_aggr);
@@ -3974,7 +3962,14 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 stmt *
 stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty)
 {
-	return stmt_aggr_(be, op1, grp, ext, op, reduce, no_nil, nil_if_empty, be->pipeline);
+	/* TODO: use the correct stmt_aggr function in rel_bin, instead of
+	 * (mis)use this function to distinguish pipeline or non-pipeline. Then
+	 * we can also remove '#include "sql_pp_statement.h"'
+	 */
+	if (be->pipeline)
+		return stmt_pp_aggr(be, op1, grp, ext, op, reduce, no_nil, nil_if_empty);
+	else
+		return stmt_aggr_(be, op1, grp, ext, op, reduce, no_nil, nil_if_empty);
 }
 
 static stmt *

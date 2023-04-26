@@ -15,6 +15,7 @@ extern InstrPtr stmt_hash_new(backend *be, int tt, lng estimate, int parent);
 extern InstrPtr stmt_part_new(backend *be, int nr_parts);
 extern InstrPtr stmt_mat_new(backend *be, int tt, int nr_parts);
 
+extern stmt *stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
 extern stmt *stmt_heapn_projection(backend *be, int sel, int del, int ins, stmt *c, stmt *all);
 
 extern stmt *stmt_group_locked(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt, stmt *pp);
