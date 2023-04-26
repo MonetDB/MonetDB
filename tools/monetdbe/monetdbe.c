@@ -33,6 +33,7 @@
 #include "remote.h"
 #include "sql.h"
 #include "sql_result.h"
+#include "mutils.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -739,7 +740,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 			goto cleanup;
 		}
 	}
-	gdk_res = GDKinit(set, setlen, true);
+	gdk_res = GDKinit(set, setlen, true, mercurial_revision());
 	mo_free_options(set, setlen);
 	if (gdk_res != GDK_SUCCEED) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_startup", "GDKinit() failed"));
