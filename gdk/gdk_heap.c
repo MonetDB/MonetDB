@@ -107,6 +107,7 @@ HEAPgrow(Heap **hp, size_t size, bool mayshare)
 			.dirty = true,
 			.parentid = old->parentid,
 			.wasempty = old->wasempty,
+			.hasfile = old->hasfile,
 		};
 		memcpy(new->filename, old->filename, sizeof(new->filename));
 		if (HEAPalloc(new, size, 1) == GDK_SUCCEED) {
