@@ -67,12 +67,12 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 		return msg;
 	clearTrace(cntxt);
 
-	for(k= mb->stop-1; k>0; k--)
+	for(k = mb->stop-1; k>0; k--)
 		if( getInstrPtr(mb,k)->token ==ENDsymbol)
 			break;
-	mb->stop=k;
+	mb->stop = k;
 
-	q= newStmt(mb, profilerRef, stoptraceRef);
+	q = newStmt(mb, profilerRef, stoptraceRef);
 	if (q == NULL) {
 		throw(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -96,26 +96,26 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	tbls = pushType(mb, tbls, TYPE_str);
 	pushInstruction(mb, tbls);
 
-	q= newStmt(mb,batRef,appendRef);
+	q = newStmt(mb,batRef,appendRef);
 	if (q == NULL) {
 		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return msg;
 	}
-	q= pushArgument(mb,q,getArg(tbls,0));
-	q= pushStr(mb,q,".trace");
-	k= getArg(q,0);
+	q = pushArgument(mb,q,getArg(tbls,0));
+	q = pushStr(mb,q,".trace");
+	k = getArg(q,0);
 	pushInstruction(mb, q);
 
-	q= newStmt(mb,batRef,appendRef);
+	q = newStmt(mb,batRef,appendRef);
 	if (q == NULL) {
 		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return msg;
 	}
-	q= pushArgument(mb,q,k);
-	q= pushStr(mb,q,".trace");
+	q = pushArgument(mb,q,k);
+	q = pushStr(mb,q,".trace");
 	pushInstruction(mb, q);
 
-	resultset= pushArgument(mb,resultset, getArg(q,0));
+	resultset = pushArgument(mb,resultset, getArg(q,0));
 
 	/* build colum defs */
 	cols = newStmt(mb,batRef, newRef);
@@ -127,26 +127,26 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	cols = pushType(mb, cols, TYPE_str);
 	pushInstruction(mb, cols);
 
-	q= newStmt(mb,batRef,appendRef);
+	q = newStmt(mb,batRef,appendRef);
 	if (q == NULL) {
 		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return msg;
 	}
-	q= pushArgument(mb,q,getArg(cols,0));
-	q= pushStr(mb,q,"usec");
-	k= getArg(q,0);
+	q = pushArgument(mb,q,getArg(cols,0));
+	q = pushStr(mb,q,"usec");
+	k = getArg(q,0);
 	pushInstruction(mb, q);
 
-	q= newStmt(mb,batRef,appendRef);
+	q = newStmt(mb,batRef,appendRef);
 	if (q == NULL) {
 		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return msg;
 	}
-	q= pushArgument(mb,q, k);
-	q= pushStr(mb,q,"statement");
+	q = pushArgument(mb,q, k);
+	q = pushStr(mb,q,"statement");
 	pushInstruction(mb, q);
 
-	resultset= pushArgument(mb,resultset, getArg(q,0));
+	resultset = pushArgument(mb,resultset, getArg(q,0));
 
 	/* build type defs */
 	types = newStmt(mb,batRef, newRef);
@@ -158,26 +158,26 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	types = pushType(mb, types, TYPE_str);
 	pushInstruction(mb, types);
 
-	q= newStmt(mb,batRef,appendRef);
+	q = newStmt(mb,batRef,appendRef);
 	if (q == NULL) {
 		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return msg;
 	}
-	q= pushArgument(mb,q, getArg(types,0));
-	q= pushStr(mb,q,"bigint");
-	k= getArg(q,0);
+	q = pushArgument(mb,q, getArg(types,0));
+	q = pushStr(mb,q,"bigint");
+	k = getArg(q,0);
 	pushInstruction(mb, q);
 
-	q= newStmt(mb,batRef,appendRef);
+	q = newStmt(mb,batRef,appendRef);
 	if (q == NULL) {
 		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return msg;
 	}
-	q= pushArgument(mb,q, k);
-	q= pushStr(mb,q,"clob");
+	q = pushArgument(mb,q, k);
+	q = pushStr(mb,q,"clob");
 	pushInstruction(mb, q);
 
-	resultset= pushArgument(mb,resultset, getArg(q,0));
+	resultset = pushArgument(mb,resultset, getArg(q,0));
 
 	/* build scale defs */
 	clen = newStmt(mb,batRef, newRef);
@@ -189,26 +189,26 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	clen = pushType(mb, clen, TYPE_int);
 	pushInstruction(mb, clen);
 
-	q= newStmt(mb,batRef,appendRef);
+	q = newStmt(mb,batRef,appendRef);
 	if (q == NULL) {
 		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return msg;
 	}
-	q= pushArgument(mb,q, getArg(clen,0));
-	q= pushInt(mb,q,64);
-	k= getArg(q,0);
+	q = pushArgument(mb,q, getArg(clen,0));
+	q = pushInt(mb,q,64);
+	k = getArg(q,0);
 	pushInstruction(mb, q);
 
-	q= newStmt(mb,batRef,appendRef);
+	q = newStmt(mb,batRef,appendRef);
 	if (q == NULL) {
 		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return msg;
 	}
-	q= pushArgument(mb,q, k);
-	q= pushInt(mb,q,0);
+	q = pushArgument(mb,q, k);
+	q = pushInt(mb,q,0);
 	pushInstruction(mb, q);
 
-	resultset= pushArgument(mb,resultset, getArg(q,0));
+	resultset = pushArgument(mb,resultset, getArg(q,0));
 
 	/* build scale defs */
 	scale = newStmt(mb,batRef, newRef);
@@ -220,26 +220,26 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	scale = pushType(mb, scale, TYPE_int);
 	pushInstruction(mb, scale);
 
-	q= newStmt(mb,batRef,appendRef);
+	q = newStmt(mb,batRef,appendRef);
 	if (q == NULL) {
 		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return msg;
 	}
-	q= pushArgument(mb,q, getArg(scale,0));
-	q= pushInt(mb,q,0);
-	k= getArg(q,0);
+	q = pushArgument(mb,q, getArg(scale,0));
+	q = pushInt(mb,q,0);
+	k = getArg(q,0);
 	pushInstruction(mb, q);
 
-	q= newStmt(mb,batRef,appendRef);
+	q = newStmt(mb,batRef,appendRef);
 	if (q == NULL) {
 		msg = createException(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return msg;
 	}
-	q= pushArgument(mb, q, k);
-	q= pushInt(mb,q,0);
+	q = pushArgument(mb, q, k);
+	q = pushInt(mb,q,0);
 	pushInstruction(mb, q);
 
-	resultset= pushArgument(mb,resultset, getArg(q,0));
+	resultset = pushArgument(mb,resultset, getArg(q,0));
 
 	/* add the ticks column */
 
@@ -249,7 +249,7 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 		return msg;
 	}
 	q = pushStr(mb, q, putName("usec"));
-	resultset= pushArgument(mb,resultset, getArg(q,0));
+	resultset = pushArgument(mb,resultset, getArg(q,0));
 	pushInstruction(mb, q);
 
 	/* add the stmt column */
@@ -259,7 +259,7 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 		return msg;
 	}
 	q = pushStr(mb, q, putName("stmt"));
-	resultset= pushArgument(mb,resultset, getArg(q,0));
+	resultset = pushArgument(mb,resultset, getArg(q,0));
 	pushInstruction(mb, q);
 
 	pushInstruction(mb,resultset);
@@ -519,7 +519,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			else
 				msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
-			*m->errstr=0;
+			*m->errstr = 0;
 			msg = handle_error(m, status, msg);
 			sqlcleanup(sql, err);
 			/* restore the state */
