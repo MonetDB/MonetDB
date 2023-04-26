@@ -1716,20 +1716,24 @@ rel_groupby_cse(visitor *v, sql_rel *rel)
 				sql_exp *e2 = m->data;
 				sql_exp *e2_sub = e2->type == e_column ? exps_find_exp(l->exps, e2) : NULL;
 
-				/* check if the experssion are the same */
+				/* check if the expression are the same */
 				if (exp_match_exp(e1, e2) || exp_refers(e1, e2) || (e1_sub && e2_sub && (exp_match_exp(e1_sub, e2_sub) || exp_refers(e1_sub, e2_sub)))) {
 
-					/* TODO: return checks!! */
+					/* if we cannot find the e2 in the exps list (even though we should) better to just continue */
 					sql_exp *e2_in_exps = rel_find_exp(rel, e2);
-					node *e2_exps_node = list_find(rel->exps, e2_in_exps, NULL);
+					if (!e2_in_exps) continue;
 
-					sql_exp* e2_as_e1_alias = exp_copy(v->sql, e1);
+					/* write e2 as an e1 alias since the expressions are the same */
 					/* XXX: should we use e1 or e1_in_exps for the alias source ???? */
+					sql_exp* e2_as_e1_alias = exp_copy(v->sql, e1);
 					exp_setalias(e2_as_e1_alias, e2->l, e2->r);
-					list_append_before(rel->exps, e2_exps_node, e2_as_e1_alias);
 
+					/* replace e2 with e2_as_e1_alias in expression list */
+					node *e2_exps_node = list_find(rel->exps, e2_in_exps, NULL);
+					list_append_before(rel->exps, e2_exps_node, e2_as_e1_alias);
 					list_remove_node(rel->exps, NULL, e2_exps_node);
 
+					/* finally remove e2 from the groups' list (->r) since it's redundant */
 					node *e2_r_node = list_find(rel->r, e2, NULL);
 					list_remove_node(rel->r, NULL, e2_r_node);
 					v->changes++;
