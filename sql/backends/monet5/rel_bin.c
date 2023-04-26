@@ -30,34 +30,6 @@
 #include "mal_builder.h"
 #include "opt_prelude.h"
 
-void
-set_need_pipeline(backend *be)
-{
-	if(be->need_pipeline)
-		assert(0);
-	be->need_pipeline = true;
-}
-
-bool
-get_need_pipeline(backend *be)
-{
-	bool r = be->need_pipeline;
-	be->need_pipeline = false;
-	return r;
-}
-
-void
-set_pipeline(backend *be, stmt *pp)
-{
-	be->ppstmt = pp;
-}
-
-stmt *
-get_pipeline(backend *be)
-{
-	return be->ppstmt;
-}
-
 static stmt * rel_bin(backend *be, sql_rel *rel);
 
 static stmt *check_types(backend *be, sql_subtype *fromtype, stmt *s, check_type tpe);
@@ -287,7 +259,8 @@ bin_find_columns( backend *be, stmt *sub, const char *name )
 	return NULL;
 }
 
-static stmt *column(backend *be, stmt *val )
+stmt *
+column(backend *be, stmt *val )
 {
 	if (val->nrcols == 0)
 		return const_column(be, val);
@@ -463,27 +436,6 @@ subrel_project( backend *be, stmt *s, list *refs, sql_rel *rel)
 	if (rel && rel_is_ref(rel))
 		refs_update_stmt(refs, rel, s);
 	return s;
-}
-
-stmt *
-rel2bin_slicer(backend *be, stmt *sub, int slicer)
-{
-	if (slicer == 1) {
-		if (sub && sub->cand)
-			sub  = subrel_project(be, sub, NULL, NULL);
-		list *newl = sa_list(be->mvc->sa);
-		for (node *n = sub->op4.lval->h; n; n = n->next) {
-			stmt *sc = n->data;
-			const char *cname = column_name(be->mvc->sa, sc);
-			const char *tname = table_name(be->mvc->sa, sc);
-
-			sc = column(be, sc);
-			sc = stmt_slicer(be, sc, slicer);
-			list_append(newl, stmt_alias(be, sc, tname, cname));
-		}
-		sub = stmt_list(be, newl);
-	}
-	return sub;
 }
 
 static stmt *
@@ -2708,47 +2660,6 @@ get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
 			list_append(new_exps, e);
 	}
 	return new_exps;
-}
-
-//#define SLICES 32
-#define PP_MIN_SIZE (64*1024)
-#define PP_MAX_SIZE (128*1024)
-int
-pp_nr_slices(sql_rel *rel)
-{
-	BUN est = get_rel_count(rel);
-
-	if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max)
-		est = 85000000;
-
-	int nr_slices = 1;
-
-	if (est < PP_MIN_SIZE)
-		nr_slices = 1;
-	else if (est/GDKnr_threads < PP_MIN_SIZE)
-		nr_slices = est/PP_MIN_SIZE;
-	else
-	    nr_slices =	est/PP_MAX_SIZE;
-	FORCEMITODEBUG
-	if (nr_slices < GDKnr_threads)
-		nr_slices = GDKnr_threads;
-	if (nr_slices == 0)
-		return 1;
-	assert(nr_slices > 0);
-	return nr_slices;
-}
-
-int
-pp_dynamic_slices(backend *be, stmt *sub)
-{
-	if (sub && sub->cand)
-		sub  = subrel_project(be, sub, NULL, NULL);
-	node *n = sub->op4.lval->h;
-	stmt *sc = n->data;
-
-	sc = column(be, sc);
-	sc = stmt_slices(be, sc);
-	return sc->nr;
 }
 
 static stmt *

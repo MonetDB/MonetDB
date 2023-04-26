@@ -13,6 +13,17 @@
 #include "sql_statement.h"
 #include "mal_backend.h"
 
+extern bool get_need_pipeline(backend *be);
+extern void set_need_pipeline(backend *be);
+
+/* TODO inline part of .h */
+extern void set_pipeline(backend *be, stmt *pp);
+extern stmt * get_pipeline(backend *be);
+
+extern int pp_nr_slices(sql_rel *rel);
+extern int pp_dynamic_slices(backend *be, stmt *sub);
+extern stmt *rel2bin_slicer(backend *be, stmt *sub, int slicer);
+
 extern bool rel_groupby_partition(backend *be, sql_rel *rel);
 extern stmt *rel2bin_groupby_partition(backend *be, sql_rel *rel, list *refs);
 

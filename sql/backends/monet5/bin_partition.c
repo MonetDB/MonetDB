@@ -6,14 +6,110 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2022 MonetDB B.V.
  */
 
+/*
+ * This file contains the partitioned version of binary algebras for GROUP BY,
+ * JOIN, ORDER BY, etc.
+ */
+
 #include "monetdb_config.h"
 
 #include "bin_partition.h"
 #include "rel_bin.h"
 #include "rel_exp.h"
+#include "rel_rewriter.h"
 #include "mal_builder.h"
 #include "opt_prelude.h"
 #include "sql_pp_statement.h"
+
+void
+set_need_pipeline(backend *be)
+{
+	if(be->need_pipeline)
+		assert(0);
+	be->need_pipeline = true;
+}
+
+bool
+get_need_pipeline(backend *be)
+{
+	bool r = be->need_pipeline;
+	be->need_pipeline = false;
+	return r;
+}
+
+void
+set_pipeline(backend *be, stmt *pp)
+{
+	be->ppstmt = pp;
+}
+
+stmt *
+get_pipeline(backend *be)
+{
+	return be->ppstmt;
+}
+
+//#define SLICES 32
+#define PP_MIN_SIZE (64*1024)
+#define PP_MAX_SIZE (128*1024)
+int
+pp_nr_slices(sql_rel *rel)
+{
+	BUN est = get_rel_count(rel);
+
+	if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max)
+		est = 85000000;
+
+	int nr_slices = 1;
+
+	if (est < PP_MIN_SIZE)
+		nr_slices = 1;
+	else if (est/GDKnr_threads < PP_MIN_SIZE)
+		nr_slices = est/PP_MIN_SIZE;
+	else
+	    nr_slices =	est/PP_MAX_SIZE;
+	FORCEMITODEBUG
+	if (nr_slices < GDKnr_threads)
+		nr_slices = GDKnr_threads;
+	if (nr_slices == 0)
+		return 1;
+	assert(nr_slices > 0);
+	return nr_slices;
+}
+
+int
+pp_dynamic_slices(backend *be, stmt *sub)
+{
+	if (sub && sub->cand)
+		sub  = subrel_project(be, sub, NULL, NULL);
+	node *n = sub->op4.lval->h;
+	stmt *sc = n->data;
+
+	sc = column(be, sc);
+	sc = stmt_slices(be, sc);
+	return sc->nr;
+}
+
+stmt *
+rel2bin_slicer(backend *be, stmt *sub, int slicer)
+{
+	if (slicer == 1) {
+		if (sub && sub->cand)
+			sub  = subrel_project(be, sub, NULL, NULL);
+		list *newl = sa_list(be->mvc->sa);
+		for (node *n = sub->op4.lval->h; n; n = n->next) {
+			stmt *sc = n->data;
+			const char *cname = column_name(be->mvc->sa, sc);
+			const char *tname = table_name(be->mvc->sa, sc);
+
+			sc = column(be, sc);
+			sc = stmt_slicer(be, sc, slicer);
+			list_append(newl, stmt_alias(be, sc, tname, cname));
+		}
+		sub = stmt_list(be, newl);
+	}
+	return sub;
+}
 
 bool
 rel_groupby_partition( backend *be, sql_rel *rel)
