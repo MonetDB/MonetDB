@@ -757,7 +757,7 @@ rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_ba
 	if (!(rel = rel_keep_renames(sql, rel)))
 		return rel;
 
-	sql->runs = !(GDKdebug & FORCEMITOMASK) && profile ? sa_zalloc(sql->sa, NSQLREWRITERS * sizeof(sql_optimizer_run)) : NULL;
+	sql->runs = !(ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) && profile ? sa_zalloc(sql->sa, NSQLREWRITERS * sizeof(sql_optimizer_run)) : NULL;
 	for ( ;rel && gp.opt_cycle < 20 && v.changes; gp.opt_cycle++) {
 		v.changes = 0;
 		gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = gp.opt_cycle, .has_special_modify = gp.has_special_modify};

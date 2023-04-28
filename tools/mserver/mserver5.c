@@ -298,7 +298,8 @@ main(int argc, char **av)
 #endif
 	char *prog = *av;
 	opt *set = NULL;
-	int grpdebug = 0, debug = 0, setlen = 0;
+	unsigned grpdebug = 0, debug = 0;
+	int setlen = 0;
 	str err = MAL_SUCCEED;
 	char prmodpath[FILENAME_MAX];
 	const char *modpath = NULL;
@@ -523,7 +524,7 @@ main(int argc, char **av)
 		case 'd':
 			if (optarg) {
 				char *endarg;
-				debug |= strtol(optarg, &endarg, 10);
+				debug |= strtoul(optarg, &endarg, 10);
 				if (*endarg != '\0') {
 					fprintf(stderr, "ERROR: wrong format for --debug=%s\n",
 							optarg);

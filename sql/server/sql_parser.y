@@ -173,6 +173,10 @@ uescape_xform(char *restrict s, const char *restrict esc)
 %parse-param { mvc *m }
 %lex-param { void *m }
 
+/* only possible from bison 3.6 and up
+%define parse.error verbose
+*/
+
 /* reentrant parser */
 %define api.pure
 %union {
