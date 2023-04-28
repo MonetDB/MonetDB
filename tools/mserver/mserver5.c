@@ -241,7 +241,7 @@ monet_init(opt *set, int setlen, bool embedded)
 	}
 
 	/* determine Monet's kernel settings */
-	if (GDKinit(set, setlen, embedded) != GDK_SUCCEED)
+	if (GDKinit(set, setlen, embedded, mercurial_revision()) != GDK_SUCCEED)
 		return 0;
 
 #ifdef HAVE_SETSID
@@ -795,7 +795,7 @@ main(int argc, char **av)
 	}
 
 	modules[mods++] = 0;
-	if (mal_init(modules, false, readpwdxit ? secret : NULL)) {
+	if (mal_init(modules, false, readpwdxit ? secret : NULL, mercurial_revision())) {
 		/* don't show this as a crash */
 		if (!GDKinmemory(0))
 			msab_registerStop();

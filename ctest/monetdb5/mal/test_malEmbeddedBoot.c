@@ -18,7 +18,7 @@ main(void)
     char* msg = MAL_SUCCEED;
     gdk_return gdk_res;
 
-    gdk_res = GDKinit(NULL, 0, true);
+    gdk_res = GDKinit(NULL, 0, true, NULL);
     if (gdk_res != GDK_SUCCEED) {
 		msg = createException(MAL, "embedded.monetdb_startup", "GDKinit() failed");
 		return 1;
