@@ -1719,16 +1719,26 @@ rel_groupby_cse(visitor *v, sql_rel *rel)
 				/* check if the expression are the same */
 				if (exp_match_exp(e1, e2) || exp_refers(e1, e2) || (e1_sub && e2_sub && (exp_match_exp(e1_sub, e2_sub) || exp_refers(e1_sub, e2_sub)))) {
 
-					/* if we cannot find the e2 in the exps list (even though we should) better to just continue */
-					sql_exp *e2_in_exps = rel_find_exp(rel, e2);
-					if (!e2_in_exps) continue;
+					sql_exp *e2_in_exps = exps_bind_column2(rel->exps, e2->l, e2->r, NULL);
+					if (!e2_in_exps)
+						e2_in_exps = exps_bind_column(rel->exps, e2->alias.name, NULL, NULL, 0);
+					if (!e2_in_exps)
+						/* TODO: should we ever be here? */
+						continue;
+
+					/* use e1 as it is in exps instead of e1 from the rel->r as it might be alias from the higher rel */
+					sql_exp *e1_in_exps = exps_bind_column2(rel->exps, e1->l, e1->r, NULL);
+					if (!e1_in_exps)
+						e1_in_exps = exps_bind_column(rel->exps, e1->alias.name, NULL, NULL, 0);
+					if (!e1_in_exps)
+						/* TODO: should we ever be here? */
+						continue;
 
 					/* write e2 as an e1 alias since the expressions are the same */
-					/* XXX: should we use e1 or e1_in_exps for the alias source ???? */
-					sql_exp* e2_as_e1_alias = exp_copy(v->sql, e1);
-					exp_setalias(e2_as_e1_alias, e2->l, e2->r);
+					sql_exp* e2_as_e1_alias = exp_copy(v->sql, e1_in_exps);
+					exp_setalias(e2_as_e1_alias, e2_in_exps->l, e2_in_exps->r);
 
-					/* replace e2 with e2_as_e1_alias in expression list */
+					/* replace e2 with e2_as_e1_alias in expressions list */
 					node *e2_exps_node = list_find(rel->exps, e2_in_exps, NULL);
 					list_append_before(rel->exps, e2_exps_node, e2_as_e1_alias);
 					list_remove_node(rel->exps, NULL, e2_exps_node);
