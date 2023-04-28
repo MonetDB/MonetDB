@@ -107,6 +107,7 @@ HEAPgrow(Heap **hp, size_t size, bool mayshare)
 			.dirty = true,
 			.parentid = old->parentid,
 			.wasempty = old->wasempty,
+			.hasfile = old->hasfile,
 		};
 		memcpy(new->filename, old->filename, sizeof(new->filename));
 		if (HEAPalloc(new, size, 1) == GDK_SUCCEED) {
@@ -1387,7 +1388,7 @@ HEAP_recover(Heap *h, const var_t *offsets, BUN noffsets)
 	h->cleanhash = false;
 	if (dirty) {
 		if (h->storage == STORE_MMAP) {
-			if (!(GDKdebug & NOSYNCMASK))
+			if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK))
 				(void) MT_msync(h->base, dirty);
 			else
 				h->dirty = true;

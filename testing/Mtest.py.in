@@ -362,10 +362,12 @@ CONDITIONALS = {
     # from configure.ag:
     # These should cover all AM_CONDITIONALS defined in configure.ag, i.e.,
     # `grep AM_CONDITIONAL configure.ag | sed 's|^AM_CONDITIONAL(\([^,]*\),.*$|\1|' | sort -u`
+    'HAVE_CUDF'            : "@HAVE_CUDF_FALSE@",
     'HAVE_CURL'            : "@HAVE_CURL_FALSE@",
     'HAVE_FITS'            : "@HAVE_FITS_FALSE@",
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
     'HAVE_HGE'             : "@HAVE_HGE_FALSE@",
+    'HAVE_ICONV'           : "@HAVE_ICONV_FALSE@",
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
     'HAVE_LIBLZ4'          : "@HAVE_LIBLZ4_FALSE@",
     'HAVE_LIBLZMA'         : "@HAVE_LIBLZMA_FALSE@",
