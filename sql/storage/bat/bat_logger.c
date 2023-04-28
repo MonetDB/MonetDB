@@ -2915,7 +2915,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 		int scanned = sscanf(line,
 				// Taken from the sscanf in BBPreadEntries() in gdk_bbp.c.
 				// 8 fields, we need field 1 (batid) and field 4 (filename)
-				"%" SCNu64 " %*s %*s %19s %*s %*s %*s %*s"
+				"%" SCNu64 " %*s %*s %23s %*s %*s %*s %*s"
 
 				// Taken from the sscanf in heapinit() in gdk_bbp.c.
 				// 14 fields, we need fields 1 (type), 2 (width), 10 (free)
