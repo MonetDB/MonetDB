@@ -10,6 +10,19 @@ VALUES
     (2,1,11),
     (1,1,15)
 
+# bar tables is required for the examples that uses join ops
+statement ok
+create table bar (c1 int, c2 int, c3 int)
+
+statement ok
+INSERT INTO
+    bar
+VALUES
+    (10,1,13),
+    (10,2,17),
+    (20,2,11),
+    (10,3,16)
+
 ## GROUPBY <--input-- BASETABLE ########################################
 
 # the same expression should be removed from the GROUPBY op list of
@@ -312,13 +325,50 @@ GROUP BY
 2
 1
 
+## GROUPBY <--input-- JOIN ############################################
+
+query T nosort
+PLAN
+SELECT
+    foo.c2 AS col, 
+    count(*) 
+FROM 
+    foo JOIN bar 
+ON 
+    foo.c2 = bar.c2 
+GROUP BY
+    foo.c2, 
+    col
+----
+project (
+| group by (
+| | join (
+| | | table("sys"."foo") [ "foo"."c2" ],
+| | | table("sys"."bar") [ "bar"."c2" ]
+| | ) [ ("foo"."c2") = ("bar"."c2") ]
+| ) [ "foo"."c2" ] [ "foo"."c2" as "col", "sys"."count"() as "%1"."%1" ]
+) [ "col", "%1"."%1" ]
+
+query II rowsort
+SELECT
+    foo.c2 AS col, 
+    count(*) 
+FROM 
+    foo JOIN bar 
+ON 
+    foo.c2 = bar.c2 
+GROUP BY
+    foo.c2, 
+    col
+----
+1
+3
+2
+2
 
 ## GROUPBY <--input-- TOPN/SAMPLE
 # this cannot happen since the TOPN/SAMPLE operators are pushed down to
 # the projections 
-
-## GROUPBY <--input-- JOIN
-# TODO
 
 ## GROUPBY <--input-- SEMI
 # TODO
