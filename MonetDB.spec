@@ -1,5 +1,5 @@
 %global name MonetDB
-%global version 11.41.32
+%global version 11.41.33
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # Use bcond_with to add a --with option; i.e., "without" is default.
