@@ -227,7 +227,7 @@ ODBCLength(ODBCDescRec *rec, int lengthtype)
 	case SQL_VARCHAR:
 	case SQL_LONGVARCHAR:
 		if (lengthtype == SQL_DESC_OCTET_LENGTH)
-			return rec->sql_desc_length * 6;
+			return rec->sql_desc_length * 4;
 		else
 			return rec->sql_desc_length;
 	case SQL_WCHAR:
