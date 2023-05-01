@@ -1,9 +1,3 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
-* Mon Apr 24 2023 Sjoerd Mullender <sjoerd@acm.org>
-- A bug was fixed where data from a client context was freed after the
-  context was closed.  This meant that the data being freed could belong
-  to the next user of the context (a next client that just connected),
-  leading to chaos (i.e. crashes).
-

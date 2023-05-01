@@ -1,3 +1,32 @@
+monetdb (11.41.33) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 01 May 2023 09:28:44 +0200
+
+monetdb (11.41.33) unstable; urgency=low
+
+  * gdk: Fixed parsing of the BBP.dir files when BAT ids grow larger than 2**24
+    (i.e. 100000000 in octal).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 25 Apr 2023 09:28:44 +0200
+
+monetdb (11.41.33) unstable; urgency=low
+
+  * monetdb5: A bug was fixed where data from a client context was freed after the
+    context was closed.  This meant that the data being freed could belong
+    to the next user of the context (a next client that just connected),
+    leading to chaos (i.e. crashes).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 24 Apr 2023 09:28:44 +0200
+
+monetdb (11.41.33) unstable; urgency=low
+
+  * sql: When creating a hot snapshot, allow other clients to proceed, even
+    with updating queries.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 5 Apr 2023 09:28:44 +0200
+
 monetdb (11.41.31) unstable; urgency=low
 
   * Rebuilt.
