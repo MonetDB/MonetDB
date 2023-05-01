@@ -150,66 +150,65 @@ GROUP BY
 
 ## GROUPBY <--input-- PROJECT ########################################## 
 
-# TODO: fix that and uncomment
 ## in this example the order by groups are aliases of the same column
 ## coming from the inner projection operator
-#query T nosort
-#PLAN
-#SELECT
-#    c1_alias1,
-#    c1_alias2,
-#    c2,
-#    count(c1_alias2)
-#FROM (
-#    SELECT
-#        c1 AS c1_alias1,
-#        c1 AS c1_alias2,
-#        c2,
-#        c3
-#    FROM
-#        foo
-#) AS sq
-#GROUP BY
-#    c1_alias1,
-#    c1_alias2,
-#    c2
-#----
-#project (
-#| group by (
-#| | project (
-#| | | table("sys"."foo") [ "foo"."c1", "foo"."c2" ]
-#| | ) [ "foo"."c1" as "sq"."c1_alias1", "foo"."c1" as "sq"."c1_alias2", "foo"."c2" as "sq"."c2" ]
-#| ) [ "sq"."c1_alias1", "sq"."c2" ] [ "sq"."c1_alias1", "sq"."c1_alias2", "sq"."c2", "sys"."count" no nil ("sq"."c1_alias2") as "%1"."%1" ]
-#) [ "sq"."c1_alias1", "sq"."c1_alias2", "sq"."c2", "%1"."%1" ]
-#
-#query III rowsort gb-over-pr
-#SELECT
-#    c1_alias_1,
-#    c1_alias_2,
-#    count(c1_alias_2)
-#FROM (
-#    SELECT
-#        c1 AS c1_alias_1,
-#        c1 AS c1_alias_2,
-#        c2,
-#        c3
-#    FROM
-#        foo
-#) AS sq
-#GROUP BY
-#    c1_alias_1,
-#    c1_alias_2,
-#    c2
-#----
-#1
-#1
-#1
-#1
-#1
-#2
-#2
-#2
-#1
+query T nosort
+PLAN
+SELECT
+    c1_alias1,
+    c1_alias2,
+    c2,
+    count(c1_alias2)
+FROM (
+    SELECT
+        c1 AS c1_alias1,
+        c1 AS c1_alias2,
+        c2,
+        c3
+    FROM
+        foo
+) AS sq
+GROUP BY
+    c1_alias1,
+    c1_alias2,
+    c2
+----
+project (
+| group by (
+| | project (
+| | | table("sys"."foo") [ "foo"."c1", "foo"."c2" ]
+| | ) [ "foo"."c1" as "sq"."c1_alias1", "foo"."c1" as "sq"."c1_alias2", "foo"."c2" as "sq"."c2" ]
+| ) [ "sq"."c1_alias1", "sq"."c2" ] [ "sq"."c1_alias1", "sq"."c1_alias1" as "sq"."c1_alias2", "sq"."c2", "sys"."count" no nil ("sq"."c1_alias2") as "%1"."%1" ]
+) [ "sq"."c1_alias1", "sq"."c1_alias2", "sq"."c2", "%1"."%1" ]
+
+query III rowsort gb-over-pr
+SELECT
+    c1_alias_1,
+    c1_alias_2,
+    count(c1_alias_2)
+FROM (
+    SELECT
+        c1 AS c1_alias_1,
+        c1 AS c1_alias_2,
+        c2,
+        c3
+    FROM
+        foo
+) AS sq
+GROUP BY
+    c1_alias_1,
+    c1_alias_2,
+    c2
+----
+1
+1
+1
+1
+1
+2
+2
+2
+1
 
 query T nosort
 PLAN
