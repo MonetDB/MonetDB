@@ -65,10 +65,8 @@ GROUP BY
 ----
 project (
 | group by (
-| | project (
-| | | table("sys"."foo") [ "foo"."c1", "foo"."c3" ]
-| | ) [ "foo"."c1", "foo"."c3", "foo"."c1" as "c1_alias2" ]
-| ) [ "foo"."c1" as "c1_alias1" ] [ "c1_alias1", "c1_alias2", "sys"."count" no nil ("foo"."c3") as "%1"."%1" ]
+| | table("sys"."foo") [ "foo"."c1", "foo"."c3" ]
+| ) [ "foo"."c1" as "c1_alias1" ] [ "c1_alias1", "c1_alias1" as "c1_alias2", "sys"."count" no nil ("foo"."c3") as "%1"."%1" ]
 ) [ "c1_alias1", "c1_alias2", "%1"."%1" ]
 
 query III rowsort gb-over-bt
@@ -223,8 +221,8 @@ project (
 | group by (
 | | project (
 | | | table("sys"."foo") [ "foo"."c1", "foo"."c2", "foo"."c3" ]
-| | ) [ "foo"."c1" as "sq"."c1", "foo"."c2" as "sq"."c2", "foo"."c3" as "sq"."c3", "sq"."c1" as "c1_alias_2" ]
-| ) [ "sq"."c1" as "c1_alias_1", "sq"."c2" ] [ "c1_alias_1", "c1_alias_2", "sys"."count" no nil ("sq"."c3") as "%1"."%1" ]
+| | ) [ "foo"."c1" as "sq"."c1", "foo"."c2" as "sq"."c2", "foo"."c3" as "sq"."c3" ]
+| ) [ "sq"."c1" as "c1_alias_1", "sq"."c2" ] [ "c1_alias_1", "c1_alias_1" as "c1_alias_2", "sys"."count" no nil ("sq"."c3") as "%1"."%1" ]
 ) [ "c1_alias_1", "c1_alias_2", "%1"."%1" ]
 
 query III rowsort
@@ -281,8 +279,8 @@ project (
 | group by (
 | | project (
 | | | table("sys"."foo") [ "foo"."c1", "foo"."c2", "foo"."c3" ]
-| | ) [ "foo"."c1" as "sq"."c1_in_alias_1", "foo"."c1" as "sq"."c1_in_alias_2", "foo"."c2" as "sq"."c2", "foo"."c3" as "sq"."c3", "sq"."c1_in_alias_2" as "c1_out_alias_2" ]
-| ) [ "sq"."c1_in_alias_1" as "c1_out_alias_1", "sq"."c2" ] [ "c1_out_alias_1", "c1_out_alias_2", "sys"."count" no nil ("sq"."c3") as "%1"."%1" ]
+| | ) [ "foo"."c1" as "sq"."c1_in_alias_1", "foo"."c2" as "sq"."c2", "foo"."c3" as "sq"."c3" ]
+| ) [ "sq"."c1_in_alias_1" as "c1_out_alias_1", "sq"."c2" ] [ "c1_out_alias_1", "c1_out_alias_1" as "c1_out_alias_2", "sys"."count" no nil ("sq"."c3") as "%1"."%1" ]
 ) [ "c1_out_alias_1", "c1_out_alias_2", "%1"."%1" ]
 
 query III rowsort
