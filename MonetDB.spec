@@ -84,7 +84,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jul2021-SP9/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jul2021-SP10/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -850,6 +850,23 @@ else
 fi
 
 %changelog
+* Mon May 01 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.33-20230501
+- Rebuilt.
+
+* Tue Apr 25 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.33-20230501
+- gdk: Fixed parsing of the BBP.dir files when BAT ids grow larger than 2**24
+  (i.e. 100000000 in octal).
+
+* Mon Apr 24 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.33-20230501
+- monetdb5: A bug was fixed where data from a client context was freed after the
+  context was closed.  This meant that the data being freed could belong
+  to the next user of the context (a next client that just connected),
+  leading to chaos (i.e. crashes).
+
+* Wed Apr  5 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.33-20230501
+- sql: When creating a hot snapshot, allow other clients to proceed, even
+  with updating queries.
+
 * Fri Mar 24 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.31-20230324
 - Rebuilt.
 

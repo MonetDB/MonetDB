@@ -1,7 +1,3 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Wed Apr  5 2023 Sjoerd Mullender <sjoerd@acm.org>
-- When creating a hot snapshot, allow other clients to proceed, even
-  with updating queries.
-
