@@ -70,7 +70,7 @@ mal_export stream	*maleventstream;
 
 mal_export MT_Lock mal_contextLock;
 
-mal_export int mal_init(char *modules[], bool embedded, const char *initpasswd);
+mal_export int mal_init(char *modules[], bool embedded, const char *initpasswd, const char *caller_revision);
 mal_export _Noreturn void mal_exit(int status);
 mal_export void mal_reset(void);
 mal_export const char *mal_version(void);

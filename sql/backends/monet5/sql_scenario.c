@@ -41,6 +41,7 @@
 #include "mal_scenario.h"
 #include "mal_authorize.h"
 #include "mcrypt.h"
+#include "mutils.h"
 #include "bat5.h"
 #include "msabaoth.h"
 #include "gdk_time.h"
@@ -94,6 +95,15 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	 * password to the prelude function */
 	const char *initpasswd = cntxt->sqlcontext;
 	cntxt->sqlcontext = NULL;
+	/* HACK ALERT: use mb (MalBlkPtr) to pass revision string in order
+	 * to check that in the callee */
+	if (mb) {
+		const char *caller_revision = (const char *) (void *) mb;
+		const char *p = mercurial_revision();
+		if (p && strcmp(p, caller_revision) != 0) {
+			throw(MAL, "sq;.start", "incompatible versions: caller is %s, GDK is %s\n", caller_revision, p);
+		}
+	}
 
 	(void) mb;
 	(void) stk;
