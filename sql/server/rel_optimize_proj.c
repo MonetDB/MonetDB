@@ -1719,23 +1719,26 @@ rel_groupby_cse(visitor *v, sql_rel *rel)
 				/* check if the expression are the same */
 				if (exp_match_exp(e1, e2) || exp_refers(e1, e2) || (e1_sub && e2_sub && (exp_match_exp(e1_sub, e2_sub) || exp_refers(e1_sub, e2_sub)))) {
 
-					sql_exp *e2_in_exps = exps_bind_column2(rel->exps, e2->l, e2->r, NULL);
-					if (!e2_in_exps)
-						e2_in_exps = exps_bind_column(rel->exps, e2->alias.name, NULL, NULL, 0);
+					/* use e2 from rel->exps instead of e2 from the rel->r as it can have an alias from the higher rel */
+					sql_exp *e2_in_exps = (e2->alias.rname == e2->l && e2->alias.name == e2->r) ?
+						exps_bind_column2(rel->exps, e2->l, e2->r, NULL) :
+						exps_bind_column(rel->exps, e2->alias.name, NULL, NULL, 0);
 					if (!e2_in_exps)
 						/* TODO: should we ever be here? */
 						continue;
 
-					/* use e1 as it is in exps instead of e1 from the rel->r as it might be alias from the higher rel */
-					sql_exp *e1_in_exps = exps_bind_column2(rel->exps, e1->l, e1->r, NULL);
-					if (!e1_in_exps)
-						e1_in_exps = exps_bind_column(rel->exps, e1->alias.name, NULL, NULL, 0);
+					/* same as e2 */
+					sql_exp *e1_in_exps = (e1->alias.rname == e1->l && e1->alias.name == e1->r) ?
+						exps_bind_column2(rel->exps, e1->l, e1->r, NULL) :
+						exps_bind_column(rel->exps, e1->alias.name, NULL, NULL, 0);
 					if (!e1_in_exps)
 						/* TODO: should we ever be here? */
 						continue;
 
 					/* write e2 as an e1 alias since the expressions are the same */
 					sql_exp* e2_as_e1_alias = exp_copy(v->sql, e1_in_exps);
+					/* NOTE: it is important to get the rname (exp->l) and name (exp->r) from e2 IN the exps
+					 * (e2_in_exps), and not from e2, since it could carry an alias from the higher rel */
 					exp_setalias(e2_as_e1_alias, e2_in_exps->l, e2_in_exps->r);
 
 					/* replace e2 with e2_as_e1_alias in expressions list */
@@ -1746,6 +1749,7 @@ rel_groupby_cse(visitor *v, sql_rel *rel)
 					/* finally remove e2 from the groups' list (->r) since it's redundant */
 					node *e2_r_node = list_find(rel->r, e2, NULL);
 					list_remove_node(rel->r, NULL, e2_r_node);
+
 					v->changes++;
 				}
 			}
