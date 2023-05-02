@@ -324,6 +324,123 @@ GROUP BY
 2
 1
 
+# combinations of outer project/groupby and inner (subquery) projet
+# aliases for c1 column
+
+query T nosort
+PLAN
+SELECT
+    c1_in_alias_1 AS c1_out_alias_1,
+    c1_in_alias_2,
+    count(c3)
+FROM (
+    SELECT
+        c1 as c1_in_alias_1,
+        c1 as c1_in_alias_2,
+        c2,
+        c3
+    FROM
+        foo
+) AS sq
+GROUP BY
+    c1_out_alias_1,
+    c1_in_alias_2,
+    c2
+----
+project (
+| group by (
+| | project (
+| | | table("sys"."foo") [ "foo"."c1", "foo"."c2", "foo"."c3" ]
+| | ) [ "foo"."c1" as "sq"."c1_in_alias_1", "foo"."c2" as "sq"."c2", "foo"."c3" as "sq"."c3" ]
+| ) [ "sq"."c1_in_alias_1" as "c1_out_alias_1", "sq"."c2" ] [ "c1_out_alias_1", "c1_out_alias_1" as "sq"."c1_in_alias_2", "sys"."count" no nil ("sq"."c3") as "%1"."%1" ]
+) [ "c1_out_alias_1", "sq"."c1_in_alias_2", "%1"."%1" ]
+
+query III rowsort
+SELECT
+    c1_in_alias_1 AS c1_out_alias_1,
+    c1_in_alias_2,
+    count(c3)
+FROM (
+    SELECT
+        c1 as c1_in_alias_1,
+        c1 as c1_in_alias_2,
+        c2,
+        c3
+    FROM
+        foo
+) AS sq
+GROUP BY
+    c1_out_alias_1,
+    c1_in_alias_2,
+    c2
+----
+1
+1
+1
+1
+1
+2
+2
+2
+1
+
+query T nosort
+PLAN
+SELECT
+    c1_in_alias_1,
+    c1_in_alias_2 AS c1_out_alias_2,
+    count(c3)
+FROM (
+    SELECT
+        c1 as c1_in_alias_1,
+        c1 as c1_in_alias_2,
+        c2,
+        c3
+    FROM
+        foo
+) AS sq
+GROUP BY
+    c1_in_alias_1,
+    c1_out_alias_2,
+    c2
+----
+project (
+| group by (
+| | project (
+| | | table("sys"."foo") [ "foo"."c1", "foo"."c2", "foo"."c3" ]
+| | ) [ "foo"."c1" as "sq"."c1_in_alias_1", "foo"."c2" as "sq"."c2", "foo"."c3" as "sq"."c3" ]
+| ) [ "sq"."c1_in_alias_1", "sq"."c2" ] [ "sq"."c1_in_alias_1", "sq"."c1_in_alias_1" as "c1_out_alias_2", "sys"."count" no nil ("sq"."c3") as "%1"."%1" ]
+) [ "sq"."c1_in_alias_1", "c1_out_alias_2", "%1"."%1" ]
+
+query III rowsort
+SELECT
+    c1_in_alias_1,
+    c1_in_alias_2 AS c1_out_alias_2,
+    count(c3)
+FROM (
+    SELECT
+        c1 as c1_in_alias_1,
+        c1 as c1_in_alias_2,
+        c2,
+        c3
+    FROM
+        foo
+) AS sq
+GROUP BY
+    c1_in_alias_1,
+    c1_out_alias_2,
+    c2
+----
+1
+1
+1
+1
+1
+2
+2
+2
+1
+
 ## GROUPBY <--input-- JOIN ############################################
 
 query T nosort
