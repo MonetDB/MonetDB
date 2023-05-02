@@ -307,7 +307,7 @@ partition_groupby(backend *be, sql_rel *rel, list *mats, stmt *sub)
 		}
 		if (!gbcol->nrcols)
 			gbcol = stmt_const(be, bin_find_smallest_column(be, sub), gbcol);
-		stmt *groupby = stmt_group(be, gbcol, grp, ext, cnt, !en->next, 0/*be->pipeline*/);
+		stmt *groupby = stmt_group(be, gbcol, grp, ext, cnt, !en->next);
 
 		grp = stmt_result(be, groupby, 0);
 		ext = stmt_result(be, groupby, 1);

@@ -19,6 +19,7 @@ extern stmt *stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subf
 extern stmt *stmt_heapn_projection(backend *be, int sel, int del, int ins, stmt *c, stmt *all);
 
 extern stmt *stmt_group_locked(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt, stmt *pp);
+extern stmt *stmt_group_partitioned(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt);
 
 extern stmt *stmt_slice(backend *be, stmt *col, stmt *limit);
 extern stmt *stmt_slicer(backend *be, stmt *col, int slicer);
