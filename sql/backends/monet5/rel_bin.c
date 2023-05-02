@@ -3782,9 +3782,9 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 				continue;
 			orderbycolstmt = column(be, orderbycolstmt);
 			if (!limit) {	/* topn based on a single column */
-				limit = stmt_limit(be, orderbycolstmt, NULL, NULL, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, 1, 0);
+				limit = stmt_limit(be, orderbycolstmt, NULL, NULL, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, 1);
 			} else { 	/* topn based on 2 columns */
-				limit = stmt_limit(be, orderbycolstmt, lpiv, lgid, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, 1, 0);
+				limit = stmt_limit(be, orderbycolstmt, lpiv, lgid, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, 1);
 			}
 			if (!limit)
 				return NULL;
@@ -4791,7 +4791,7 @@ rel_pp_topn(backend *be, list *projectresults, stmt *sub, stmt *pp, stmt *o, stm
 	if (list_length(cols) != list_length(projectresults)-1)
 		return NULL;
 	stmt *sc = cols->h->data;
-	stmt *limit = stmt_limit(be, sc, NULL, NULL, o, l, 0,0,0,0,0, be->pipeline);
+	stmt *limit = stmt_limit_partitioned(be, sc, NULL, NULL, o, l);
 	int resid = *(int*)m->data;
 	limit->q->argv[2] = resid; /* shared topn */
 	stmt *glimit = stmt_result(be, limit, 0);
@@ -4989,7 +4989,7 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 	}
 	if (orderby_ids) {
 		if (offset != 0) {
-			stmt *limit = stmt_limit(be, orderby_ids, NULL, NULL, offset, lim, 0, 0, 0, 0, 0, 0);
+			stmt *limit = stmt_limit(be, orderby_ids, NULL, NULL, offset, lim, 0, 0, 0, 0, 0);
 			orderby_ids = stmt_project(be, limit, orderby_ids);
 		}
 		/* FIXME: construct an ordered list of ostmts.  Only then, we
@@ -5088,11 +5088,11 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 		if (pp) {
 			io = stmt_atom_lng(be, 0);
 			il = all;
-		}
-		limit = stmt_limit(be, stmt_alias(be, sc, tname, cname), NULL, NULL, io, il, 0,0,0,0,0, pp?be->pipeline:0);
-		if (pp) {
+			limit = stmt_limit_partitioned(be, stmt_alias(be, sc, tname, cname), NULL, NULL, io, il);
 			glimit = stmt_result(be, limit, 0);
 			limit = stmt_result(be, limit, 1);
+		} else {
+			limit = stmt_limit(be, stmt_alias(be, sc, tname, cname), NULL, NULL, io, il, 0,0,0,0,0);
 		}
 
 		for ( ; n; n = n->next) {

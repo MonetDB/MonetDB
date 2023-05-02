@@ -1116,7 +1116,7 @@ stmt_result(backend *be, stmt *s, int nr)
 
 /* limit maybe atom nil */
 stmt *
-stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int nullslast, int last, int order, int pipeline)
+stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int nullslast, int last, int order)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -1156,7 +1156,6 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 	if (order) {
 		int topn = 0;
 
-		assert(pipeline==0);
 		q = newStmt(mb, calcRef, plusRef);
 		q = pushArgument(mb, q, offset->nr);
 		q = pushArgument(mb, q, limit->nr);
@@ -1209,17 +1208,10 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 		len = getDestVar(q);
 		pushInstruction(mb, q);
 
-		q = newStmtArgs(mb, algebraRef, subsliceRef, 8);
-		if (pipeline) { /* returns gid, rid, hid */
-			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any)); /* rid */
-			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any)); /* hid for topn/heap sink */
-			q->inout = 2;
-		}
+		q = newStmt(mb, algebraRef, subsliceRef);
 		q = pushArgument(mb, q, c);
 		q = pushArgument(mb, q, offset->nr);
 		q = pushArgument(mb, q, len);
-		if (pipeline)
-			q = pushArgument(mb, q, pipeline);
 		if (q == NULL)
 			return NULL;
 		l = getDestVar(q);

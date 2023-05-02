@@ -268,6 +268,104 @@ stmt_group_partitioned(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt)
 	return NULL;
 }
 
+stmt *
+stmt_limit_partitioned(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *limit)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+	int l, c, len;
+
+	if (col->nr < 0 || offset->nr < 0 || limit->nr < 0)
+		return NULL;
+	if (piv && (piv->nr < 0 || gid->nr < 0))
+		return NULL;
+
+	c = (col) ? col->nr : 0;
+
+	/* first insert single value into a bat */
+	if (col->nrcols == 0) {
+		int k, tt = tail_type(col)->type->localtype;
+
+		q = newStmt(mb, batRef, newRef);
+		if (q == NULL)
+			return NULL;
+		setVarType(mb, getArg(q, 0), newBatType(tt));
+		q = pushType(mb, q, tt);
+		if (q == NULL)
+			return NULL;
+		k = getDestVar(q);
+		pushInstruction(mb, q);
+
+		q = newStmt(mb, batRef, appendRef);
+		q = pushArgument(mb, q, k);
+		q = pushArgument(mb, q, c);
+		if (q == NULL)
+			return NULL;
+		pushInstruction(mb, q);
+		c = k;
+	}
+
+	q = newStmt(mb, calcRef, plusRef);
+	q = pushArgument(mb, q, offset->nr);
+	q = pushArgument(mb, q, limit->nr);
+	if (q == NULL)
+		return NULL;
+	len = getDestVar(q);
+	pushInstruction(mb, q);
+
+	/* since both arguments of algebra.subslice are
+	   inclusive correct the LIMIT value by
+	   subtracting 1 */
+	q = newStmt(mb, calcRef, minusRef);
+	q = pushArgument(mb, q, len);
+	q = pushInt(mb, q, 1);
+	if (q == NULL)
+		return NULL;
+	len = getDestVar(q);
+	pushInstruction(mb, q);
+
+	q = newStmtArgs(mb, algebraRef, subsliceRef, 8);
+	/* returns gid, rid, hid */
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any)); /* rid */
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any)); /* hid for topn/heap sink */
+	q->inout = 2;
+	q = pushArgument(mb, q, c);
+	q = pushArgument(mb, q, offset->nr);
+	q = pushArgument(mb, q, len);
+	q = pushArgument(mb, q, be->pipeline);
+	if (q == NULL)
+		return NULL;
+	l = getDestVar(q);
+	pushInstruction(mb, q);
+
+	/* retrieve the single values again */
+	if (col->nrcols == 0) {
+		q = newStmt(mb, algebraRef, findRef);
+		q = pushArgument(mb, q, l);
+		q = pushOid(mb, q, 0);
+		if (q == NULL)
+			return NULL;
+		l = getDestVar(q);
+		pushInstruction(mb, q);
+	}
+
+	stmt *ns = stmt_create(be->mvc->sa, piv?st_limit2:st_limit);
+	if (ns == NULL) {
+		freeInstruction(q);
+		return NULL;
+	}
+
+	ns->op1 = col;
+	ns->op2 = offset;
+	ns->op3 = limit;
+	ns->nrcols = col->nrcols;
+	ns->key = col->key;
+	ns->aggr = col->aggr;
+	ns->q = q;
+	ns->nr = l;
+	return ns;
+}
+
 InstrPtr
 stmt_hash_new(backend *be, int tt, lng estimate, int parent)
 {
