@@ -237,7 +237,7 @@ project (
 | ) [ "sq"."c1" as "c1_alias_1", "sq"."c2" ] [ "c1_alias_1", "c1_alias_1" as "c1_alias_2", "sys"."count" no nil ("sq"."c3") as "%1"."%1" ]
 ) [ "c1_alias_1", "c1_alias_2", "%1"."%1" ]
 
-query III rowsort
+query III rowsort gb-over-pr
 SELECT
     c1 AS c1_alias_1,
     c1 AS c1_alias_2,
@@ -295,7 +295,7 @@ project (
 | ) [ "sq"."c1_in_alias_1" as "c1_out_alias_1", "sq"."c2" ] [ "c1_out_alias_1", "c1_out_alias_1" as "c1_out_alias_2", "sys"."count" no nil ("sq"."c3") as "%1"."%1" ]
 ) [ "c1_out_alias_1", "c1_out_alias_2", "%1"."%1" ]
 
-query III rowsort
+query III rowsort gb-over-pr 
 SELECT
     c1_in_alias_1 AS c1_out_alias_1,
     c1_in_alias_2 AS c1_out_alias_2,
@@ -355,7 +355,7 @@ project (
 | ) [ "sq"."c1_in_alias_1" as "c1_out_alias_1", "sq"."c2" ] [ "c1_out_alias_1", "c1_out_alias_1" as "sq"."c1_in_alias_2", "sys"."count" no nil ("sq"."c3") as "%1"."%1" ]
 ) [ "c1_out_alias_1", "sq"."c1_in_alias_2", "%1"."%1" ]
 
-query III rowsort
+query III rowsort gb-over-pr
 SELECT
     c1_in_alias_1 AS c1_out_alias_1,
     c1_in_alias_2,
@@ -412,7 +412,7 @@ project (
 | ) [ "sq"."c1_in_alias_1", "sq"."c2" ] [ "sq"."c1_in_alias_1", "sq"."c1_in_alias_1" as "c1_out_alias_2", "sys"."count" no nil ("sq"."c3") as "%1"."%1" ]
 ) [ "sq"."c1_in_alias_1", "c1_out_alias_2", "%1"."%1" ]
 
-query III rowsort
+query III rowsort gb-over-pr
 SELECT
     c1_in_alias_1,
     c1_in_alias_2 AS c1_out_alias_2,
