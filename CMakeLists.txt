@@ -54,7 +54,6 @@ include(monetdb-toolchain)
 monetdb_default_compiler_options()
 
 include(monetdb-defines)
-monetdb_hg_revision()
 
 # required for symbol existance tests
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")

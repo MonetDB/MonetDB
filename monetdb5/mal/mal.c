@@ -36,6 +36,7 @@ lng MALdebug;
 #include "mal_runtime.h"
 #include "mal_resource.h"
 #include "mal_atom.h"
+#include "mutils.h"
 
 MT_Lock     mal_contextLock = MT_LOCK_INITIALIZER(mal_contextLock);
 MT_Lock     mal_profileLock = MT_LOCK_INITIALIZER(mal_profileLock);
@@ -54,7 +55,7 @@ mal_version(void)
  */
 
 int
-mal_init(char *modules[], bool embedded, const char *initpasswd)
+mal_init(char *modules[], bool embedded, const char *initpasswd, const char *caller_revision)
 {
 /* Any error encountered here terminates the process
  * with a message sent to stderr
@@ -71,6 +72,14 @@ mal_init(char *modules[], bool embedded, const char *initpasswd)
 		TRC_CRITICAL(MAL_SERVER, "Linked version: %s, compiled version: %s\n",
 					 version, GDK_VERSION);
 		return -1;
+	}
+
+	if (caller_revision) {
+		const char *p = mercurial_revision();
+		if (p && strcmp(p, caller_revision) != 0) {
+			TRC_CRITICAL(MAL_SERVER, "incompatible versions: caller is %s, MAL is %s\n", caller_revision, p);
+			return -1;
+		}
 	}
 
 	if (!MCinit())

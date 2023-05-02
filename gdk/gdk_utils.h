@@ -104,7 +104,7 @@ gdk_export size_t GDKmallocated(const void *s);
 
 gdk_export void MT_init(void);	/*  init the package. */
 struct opt;
-gdk_export gdk_return GDKinit(struct opt *set, int setlen, bool embedded);
+gdk_export gdk_return GDKinit(struct opt *set, int setlen, bool embedded, const char *caller_revision);
 
 /* used for testing only */
 gdk_export void GDKsetmallocsuccesscount(lng count);

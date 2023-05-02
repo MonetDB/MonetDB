@@ -18,7 +18,7 @@ main(void)
 {
     gdk_return gdk_res;
 
-    gdk_res = GDKinit(NULL, 0, true);
+    gdk_res = GDKinit(NULL, 0, true, NULL);
     if (gdk_res != GDK_SUCCEED) {
 		createException(MAL, "embedded.monetdb_startup", "GDKinit() failed");
     	return 1;
@@ -26,6 +26,6 @@ main(void)
     char *modules[2];
     modules[0] = "sql";
     modules[1] = 0;
-    mal_init(modules, true, NULL);
+    mal_init(modules, true, NULL, NULL);
     return 0;
 }

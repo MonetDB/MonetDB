@@ -8,9 +8,6 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2023 MonetDB B.V.
 #]]
 
-configure_file(monetdb_hgversion.h.in
-  ${CMAKE_CURRENT_BINARY_DIR}/monetdb_hgversion.h)
-
 add_library(mutils STATIC)
 
 target_sources(mutils
@@ -40,6 +37,14 @@ set_target_properties(mutils
   PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   PUBLIC_HEADER mutils.h)
+
+add_custom_target(version
+  ${CMAKE_COMMAND} -D SRC=${CMAKE_CURRENT_SOURCE_DIR}/monetdb_hgversion.h.in
+                   -D DST=${CMAKE_CURRENT_BINARY_DIR}/monetdb_hgversion.h
+                   -D DIR=${CMAKE_SOURCE_DIR}
+                   -P ${CMAKE_CURRENT_SOURCE_DIR}/GenerateVersionHeader.cmake
+  )
+add_dependencies(mutils version)
 
 add_library(mcrypt STATIC)
 

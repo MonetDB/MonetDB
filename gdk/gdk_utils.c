@@ -895,7 +895,7 @@ GDKembedded(void)
 static MT_Id mainpid;
 
 gdk_return
-GDKinit(opt *set, int setlen, bool embedded)
+GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 {
 	static bool first = true;
 	const char *dbpath;
@@ -904,6 +904,14 @@ GDKinit(opt *set, int setlen, bool embedded)
 	opt *n;
 	int i, nlen = 0;
 	char buf[16];
+
+	if (caller_revision) {
+		p = mercurial_revision();
+		if (p && strcmp(p, caller_revision) != 0) {
+			GDKerror("incompatible versions: caller is %s, GDK is %s\n", caller_revision, p);
+			return GDK_FAIL;
+		}
+	}
 
 	ATOMIC_SET(&GDKstopped, 0);
 
