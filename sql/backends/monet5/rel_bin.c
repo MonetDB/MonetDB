@@ -1517,11 +1517,11 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				stmt *a = l->h->data;
 				stmt *u;
 				if (e->shared) {
-					u = stmt_unique(be, a, e->shared);
+					u = stmt_unique_sharedout(be, a, e->shared);
 					if (grp)
 						u->q = pushArgument(be->mb, u->q, grp->nr);
 				} else {
-					u = stmt_unique(be, a, 0);
+					u = stmt_unique(be, a);
 				}
 				l = sa_list(sql->sa);
 				if (be->pipeline && grp) {

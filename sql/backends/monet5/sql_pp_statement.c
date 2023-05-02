@@ -366,6 +366,44 @@ stmt_limit_partitioned(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offse
 	return ns;
 }
 
+/* output: shared bat var id, must always be a positive number */
+stmt *
+stmt_unique_sharedout(backend *be, stmt *s, int output)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+
+	if (s->nr < 0)
+		return NULL;
+
+	q = newStmt(mb, algebraRef, uniqueRef);
+	if(!q)
+		return NULL;
+
+	assert(output > 0);
+	q = pushReturn(mb, q, output);
+	q->inout = 1;
+	q = pushArgument(mb, q, be->pipeline);
+	q = pushArgument(mb, q, s->nr);
+	q = pushNil(mb, q, TYPE_bat); /* candidate list */
+	pushInstruction(mb, q);
+	if (q) {
+		stmt *ns = stmt_create(be->mvc->sa, st_unique);
+		if (ns == NULL) {
+			freeInstruction(q);
+			return NULL;
+		}
+
+		ns->op1 = s;
+		ns->nrcols = s->nrcols;
+		ns->key = 1;
+		ns->q = q;
+		ns->nr = getDestVar(q);
+		return ns;
+	}
+	return NULL;
+}
+
 InstrPtr
 stmt_hash_new(backend *be, int tt, lng estimate, int parent)
 {

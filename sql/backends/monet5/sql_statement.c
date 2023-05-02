@@ -241,7 +241,7 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 }
 
 stmt *
-stmt_unique(backend *be, stmt *s, int output)
+stmt_unique(backend *be, stmt *s)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -253,12 +253,6 @@ stmt_unique(backend *be, stmt *s, int output)
 	if(!q)
 		return NULL;
 
-	if (output) {
-		q = pushReturn(mb, q, output);
-		q->inout = 1;
-
-		q = pushArgument(mb, q, be->pipeline);
-	}
 	q = pushArgument(mb, q, s->nr);
 	q = pushNil(mb, q, TYPE_bat); /* candidate list */
 	pushInstruction(mb, q);
