@@ -5221,71 +5221,71 @@ STRcontainsselect(bat *ret, const bat *bid, const bat *sid, const str *key, cons
 #define VALUE(s, x)		(s##vars + VarHeapVal(s##vals, (x), s##i.width))
 
 /* nested loop implementation for batstr joins */
-#define batstr_join_loop(STRCMP, STR_LEN) \
-	do { \
-		for (BUN ridx = 0; ridx < rci.ncand; ridx++) { \
-			GDK_CHECK_TIMEOUT(timeoffset, counter, \
-					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
-			ro = canditer_next(&rci); \
-			vr = VALUE(r, ro - rbase); \
-			rlen = STR_LEN; \
-			nl = 0; \
-			canditer_reset(&lci); \
-			for (BUN lidx = 0; lidx < lci.ncand; lidx++) { \
-				lo = canditer_next(&lci); \
-				vl = VALUE(l, lo - lbase); \
-				if (strNil(vl)) { \
-					continue; \
-				} else if (!(STRCMP)) { \
-					continue; \
-				} \
-				if (BATcount(r1) == BATcapacity(r1)) { \
-					newcap = BATgrows(r1); \
-					BATsetcount(r1, BATcount(r1)); \
-					if (r2) \
-						BATsetcount(r2, BATcount(r2)); \
+#define batstr_join_loop(STRCMP, STR_LEN)								\
+	do {																\
+		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {					\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,						\
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout));				\
+			ro = canditer_next(&rci);									\
+			vr = VALUE(r, ro - rbase);									\
+			rlen = STR_LEN;											\
+			nl = 0;													\
+			canditer_reset(&lci);										\
+			for (BUN lidx = 0; lidx < lci.ncand; lidx++) {				\
+				lo = canditer_next(&lci);								\
+				vl = VALUE(l, lo - lbase);								\
+				if (strNil(vl)) {										\
+					continue;											\
+				} else if (!(STRCMP)) {								\
+					continue;											\
+				}														\
+				if (BATcount(r1) == BATcapacity(r1)) {					\
+					newcap = BATgrows(r1);								\
+					BATsetcount(r1, BATcount(r1));						\
+					if (r2)											\
+						BATsetcount(r2, BATcount(r2));					\
 					if (BATextend(r1, newcap) != GDK_SUCCEED || (r2 && BATextend(r2, newcap) != GDK_SUCCEED)) { \
 						msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-						goto bailout; \
-					} \
-					assert(!r2 || BATcapacity(r1) == BATcapacity(r2)); \
-				} \
-				if (BATcount(r1) > 0) { \
-					if (lastl + 1 != lo) \
-						r1->tseqbase = oid_nil; \
-					if (nl == 0) { \
-						if (r2) \
-							r2->trevsorted = false; \
-						if (lastl > lo) { \
-							r1->tsorted = false; \
-							r1->tkey = false; \
-						} else if (lastl < lo) { \
-							r1->trevsorted = false; \
-						} else { \
-							r1->tkey = false; \
-						} \
-					} \
-				} \
-				APPEND(r1, lo); \
-				if (r2) \
-					APPEND(r2, ro); \
-				lastl = lo; \
-				nl++; \
-			} \
-			if (r2) { \
-				if (nl > 1) { \
-					r2->tkey = false; \
-					r2->tseqbase = oid_nil; \
-					r1->trevsorted = false; \
-				} else if (nl == 0) { \
-					rskipped = BATcount(r2) > 0; \
-				} else if (rskipped) { \
-					r2->tseqbase = oid_nil; \
-				} \
-			} else if (nl > 1) { \
-				r1->trevsorted = false; \
-			} \
-		} \
+						goto bailout;									\
+					}													\
+					assert(!r2 || BATcapacity(r1) == BATcapacity(r2));	\
+				}														\
+				if (BATcount(r1) > 0) {								\
+					if (lastl + 1 != lo)								\
+						r1->tseqbase = oid_nil;						\
+					if (nl == 0) {										\
+						if (r2)										\
+							r2->trevsorted = false;					\
+						if (lastl > lo) {								\
+							r1->tsorted = false;						\
+							r1->tkey = false;							\
+						} else if (lastl < lo) {						\
+							r1->trevsorted = false;					\
+						} else {										\
+							r1->tkey = false;							\
+						}												\
+					}													\
+				}														\
+				APPEND(r1, lo);										\
+				if (r2)												\
+					APPEND(r2, ro);									\
+				lastl = lo;											\
+				nl++;													\
+			}															\
+			if (r2) {													\
+				if (nl > 1) {											\
+					r2->tkey = false;									\
+					r2->tseqbase = oid_nil;							\
+					r1->trevsorted = false;							\
+				} else if (nl == 0) {									\
+					rskipped = BATcount(r2) > 0;						\
+				} else if (rskipped) {									\
+					r2->tseqbase = oid_nil;							\
+				}														\
+			} else if (nl > 1) {										\
+				r1->trevsorted = false;								\
+			}															\
+		}																\
 	} while (0)
 
 static str
@@ -5457,9 +5457,9 @@ STRjoin(bat *r1, bat *r2, const bat lid, const bat rid, const bat slid, const ba
 		BBPreclaim(result1);
 		BBPreclaim(result2);
 	}
-  fail:
-	BBPunfix(left->batCacheid);
-	BBPunfix(right->batCacheid);
+ fail:
+	BBPreclaim(left);
+	BBPreclaim(right);
 	BBPreclaim(candleft);
 	BBPreclaim(candright);
 	return msg;

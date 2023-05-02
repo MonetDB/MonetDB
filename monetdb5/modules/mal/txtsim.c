@@ -224,6 +224,7 @@ levenshtein(int *res, const str *X, const str *Y, int insdel_cost, int replace_c
 	throw(MAL, "txtsim.levenshtein", "Illegal unicode code point");
 }
 
+/* Levenshtein OP but with column externaly allocated */
 static inline int
 levenshtein2(const str X, const str Y, const size_t xlen, const size_t ylen, unsigned int *column,
 			 const int insdel_cost, const int replace_cost, const int max)
@@ -320,7 +321,6 @@ TXTSIMmaxlevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	return levenshtein(res, X, Y, insdel_cost, replace_cost, *k);
-	return MAL_SUCCEED;
 }
 
 static str
@@ -332,96 +332,96 @@ BATTXTSIMmaxlevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *lid = getArgReference_bat(stk, pci, 1);
 	bat *rid = getArgReference_bat(stk, pci, 2);
 	int *k = getArgReference_int(stk, pci, 3);
-	int insdel_cost = 1, replace_cost = 1;
-	if (pci->argc == 6) {
-		insdel_cost = *getArgReference_int(stk, pci, 4);
-		replace_cost = *getArgReference_int(stk, pci, 5);
-	}
-	BAT *left = NULL, *right = NULL;
-	BAT *bn = NULL;
+	int insdel_cost = pci->argc == 6? *getArgReference_int(stk, pci, 4) : 1,
+		replace_cost = pci->argc == 6? *getArgReference_int(stk, pci, 5) : 1;
+	BAT *left = NULL, *right = NULL, *bn = NULL;
 	BUN p,q;
 	BATiter li, ri;
 	unsigned int *buffer = NULL;
-	str lv,rv;
+	str lv, rv, msg = MAL_SUCCEED;
 	size_t llen=0, rlen=0, maxlen=0;
 	int d;
 	bit v;
-	str msg = MAL_SUCCEED;
 
-	if ((left = BATdescriptor(*lid)) == NULL)
-		goto failed;
-	if ((right = BATdescriptor(*rid)) == NULL)
-		goto failed;
-
-	if (BATcount(left) != BATcount(right))
-		goto failed;
-
-	if ((bn = COLnew(0, TYPE_bit, BATcount(left), TRANSIENT)) == NULL)
-		goto failed;
+	if ((left = BATdescriptor(*lid)) == NULL) {
+		msg = createException(MAL, "battxtsim.maxlevenshtein", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto exit;
+	}
+	if ((right = BATdescriptor(*rid)) == NULL) {
+		msg = createException(MAL, "battxtsim.maxlevenshtein", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto exit;
+	}
+	if (BATcount(left) != BATcount(right)) {
+		msg = createException(MAL, "battxtsim.maxlevenshtein", "Columns must be aligned");
+		goto exit;
+	}
+	if ((bn = COLnew(0, TYPE_bit, BATcount(left), TRANSIENT)) == NULL) {
+		msg = createException(MAL, "battxtsim.maxlevenshtein", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto exit;
+	}
 
 	li = bat_iterator(left);
 	ri = bat_iterator(right);
-
 	BATloop(left, p, q) {
 		lv = (str) BUNtail(li, p);
 		rv = (str) BUNtail(ri, p);
 		llen = UTF8_strlen(lv);
 		rlen = UTF8_strlen(rv);
-
 		if (abs((int)llen - (int)rlen) > (int)*k)
 			v = false;
 		else {
 			if (llen > maxlen) {
 				maxlen = llen;
 				unsigned int *tmp = GDKrealloc(buffer, (maxlen + 1) * sizeof(unsigned int));
+				if (tmp == NULL) {
+					bat_iterator_end(&li);
+					bat_iterator_end(&ri);
+					msg = createException(MAL, "battxtsim.maxlevenshtein", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto exit;
+				}
 				buffer = tmp;
 			}
-			d = levenshtein2(lv, rv, llen, rlen, buffer, (int)*k, insdel_cost, replace_cost);
+			d = levenshtein2(lv, rv, llen, rlen, buffer, insdel_cost, replace_cost, (int)*k);
 			v = (bit)(d <= (int)*k);
 		}
-		if (BUNappend(bn, (const void *)&v, false) != GDK_SUCCEED)
-			goto bunins_failed;
+		if (BUNappend(bn, (const void *)&v, false) != GDK_SUCCEED) {
+			bat_iterator_end(&li);
+			bat_iterator_end(&ri);
+			msg = createException(MAL, "battxtsim.maxlevenshtein", "BUNappend failed");
+			goto exit;
+		}
 	}
 	bat_iterator_end(&li);
 	bat_iterator_end(&ri);
-	GDKfree(buffer);
-
-	BBPreclaim(left);
-	BBPreclaim(right);
 
 	*res = bn->batCacheid;
 	BBPkeepref(bn);
-
-	return MAL_SUCCEED;
-
-bunins_failed:
-failed:
-	if (buffer) GDKfree(buffer);
-	if (left) BBPreclaim(left);
-	if (right) BBPreclaim(right);
-	if (bn) BBPreclaim(bn);
+ exit:
+	GDKfree(buffer);
+	BBPreclaim(left);
+	BBPreclaim(right);
 	if (msg != MAL_SUCCEED)
-		return msg;
-	throw(MAL, "battxtsim.maxlevenshtein", OPERATION_FAILED);
-	return MAL_SUCCEED;
+		BBPreclaim(bn);
+	return msg;
 }
 
 #define JARO_WINKLER_SCALING_FACTOR 0.1
 #define JARO_WINKLER_PREFIX_LEN 4
 
 typedef struct {
-	size_t matches;      /* accumulator for number of matches for this item */
-	BUN o;               /* position in the BAT */
-	str val;             /* string value */
-	int *cp_sequence;    /* string as array of Unicode codepoints */
+	size_t matches;   /* accumulator for number of matches for this item */
+	BUN o;            /* position in the BAT */
+	str val;          /* string value */
+	int *cp_sequence; /* string as array of Unicode codepoints */
 	int len;          /* string length in characters (multi-byte characters count as 1)*/
 	int cp_seq_len;   /* string length in bytes */
-	uint64_t abm;        /* 64bit alphabet bitmap */
+	uint64_t abm;     /* 64bit alphabet bitmap */
 	int abm_popcount; /* hamming weight of abm */
 } str_item;
 
 static inline
-int _popcount64(uint64_t x) {
+int _popcount64(uint64_t x)
+{
 	x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL);
 	x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
 	x = (x & 0x0F0F0F0F0F0F0F0FULL) + ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL);
@@ -429,7 +429,8 @@ int _popcount64(uint64_t x) {
 }
 
 static inline
-int popcount64(uint64_t x) {
+int popcount64(uint64_t x)
+{
 	return _popcount64(x);
 	/* __builtin_popcountll is the gcc builtin
 	 * It is fast as long as the hardware
@@ -438,9 +439,9 @@ int popcount64(uint64_t x) {
 }
 
 static int
-str_item_lenrev_cmp(const void * a, const void * b) {
+str_item_lenrev_cmp(const void * a, const void * b)
+{
 	return ((int)((str_item *)b)->len - (int)((str_item *)a)->len);
-
 }
 
 static str
@@ -461,7 +462,7 @@ str_2_codepointseq(str_item *s)
 	}
 	return MAL_SUCCEED;
 illegal:
-	throw(MAL, "str_2_byteseq", SQLSTATE(42000) "Illegal Unicode code point");
+	throw(MAL, "str_2_byteseq", SQLSTATE(42000) "Illegal unicode code point");
 }
 
 static void
@@ -645,10 +646,6 @@ TXTSIMminjarowinkler(bit *res, str *x, str *y, const dbl *threshold)
 		}																\
 	} while (false)
 
-/* these macros allow to tap directly into the heap, without any copying */
-#define VALUE(s, x)		(s##vars + VarHeapVal(s##vals, (x), s##width))
-#define APPEND(b, o)		(((oid *) b->theap->base)[b->batCount++] = (o))
-
 /* macro to initialize the string distance joins' metadata */	\
 #define strdistjoininit										\
 	do {														\
@@ -684,10 +681,12 @@ TXTSIMminjarowinkler(bit *res, str *x, str *y, const dbl *threshold)
 #define strdistjoininittoints											\
 	do {																\
 		for (n=0;n<lci.ncand;n++) {									\
-			if ((msg = str_2_codepointseq(&ssl[n])) != MAL_SUCCEED) goto bailout;\
+			if ((msg = str_2_codepointseq(&ssl[n])) != MAL_SUCCEED)	\
+				goto bailout;											\
 		}																\
 		for (n=0;n<rci.ncand;n++) {									\
-			if ((msg = str_2_codepointseq(&ssr[n])) != MAL_SUCCEED) goto bailout;\
+			if ((msg = str_2_codepointseq(&ssr[n])) != MAL_SUCCEED)	\
+				goto bailout;											\
 		}																\
 	} while (false)
 
@@ -709,8 +708,8 @@ TXTSIMminjarowinkler(bit *res, str *x, str *y, const dbl *threshold)
 
 #define strdistjoininitsort(cmpFunc)			\
 	do {										\
-		strdistjoininitsortleft(cmpFunc);	\
-		strdistjoininitsortright(cmpFunc);	\
+		strdistjoininitsortleft(cmpFunc);		\
+		strdistjoininitsortright(cmpFunc);		\
 	} while (false)
 
 #define strjoinfinalize								\
@@ -742,8 +741,57 @@ TXTSIMminjarowinkler(bit *res, str *x, str *y, const dbl *threshold)
 		result2->theap->dirty |= BATcount(result2) > 0; \
 	} while (false)
 
+/* these macros allow to tap directly into the heap, without any copying */
+#define VALUE(s, x)		(s##vars + VarHeapVal(s##vals, (x), s##width))
+#define APPEND(b, o)		(((oid *) b->theap->base)[b->batCount++] = (o))
+
+#define PREP_BAT_STRITEM(B, CI, SI)									\
+		do {															\
+			for (n = 0; n < CI.ncand; n++) {							\
+				SI[n].matches = 0;										\
+				SI[n].o = canditer_next(&CI);							\
+				SI[n].val = (str) VALUE(B, SI[n].o - B->hseqbase);		\
+				SI[n].cp_sequence = NULL;								\
+				SI[n].len = UTF8_strlen(SI[n].val);					\
+				SI[n].cp_seq_len = str_strlen(SI[n].val);				\
+				if ((msg = str_2_codepointseq(&SI[n])) != MAL_SUCCEED)	\
+					goto exit;											\
+				str_alphabet_bitmap(&SI[n]);							\
+			}															\
+		} while (false)
+
+#define FINALIZE_BATS(L, R, LCI, RCI, LSI, RSI)	\
+		do {										\
+			assert(BATcount(L) == BATcount(R));	\
+			BATsetcount(L, BATcount(L));			\
+			BATsetcount(R, BATcount(R));			\
+			for (n = 0; n < LCI.ncand; n++) {		\
+				if (LSI[n].matches > 1) {			\
+					L->tkey = false;				\
+					break;							\
+				}									\
+			}										\
+			if (n == LCI.ncand) {					\
+				L->tkey = true;					\
+			}										\
+			for (n = 0; n < RCI.ncand; n++) {		\
+				if (RSI[n].matches > 1) {			\
+					R->tkey = false;				\
+					break;							\
+				}									\
+			}										\
+			if (n == RCI.ncand) {					\
+				R->tkey = true;					\
+			}										\
+			BATordered(L);							\
+			BATordered(R);							\
+			L->theap->dirty |= BATcount(L) > 0;	\
+			R->theap->dirty |= BATcount(R) > 0;	\
+		} while (false)
+
 static inline int
-maxlevenshtein_extcol_stritem(const str_item *si1, const str_item *si2, unsigned int *column, const int k) {
+maxlevenshtein_extcol_stritem(const str_item *si1, const str_item *si2, unsigned int *column, const int k)
+{
 	unsigned int lastdiag, olddiag;
 	int c1, c2, x, y;
 	unsigned int min;
@@ -756,7 +804,6 @@ maxlevenshtein_extcol_stritem(const str_item *si1, const str_item *si2, unsigned
 		if (x == s1len)
 			return 0;
 	}
-
 	for (y = 1; y <= s1len; y++)
 		column[y] = y;
 	for (x = 1; x <= s2len; x++) {
@@ -768,7 +815,8 @@ maxlevenshtein_extcol_stritem(const str_item *si1, const str_item *si2, unsigned
 			c1 = s1[y-1];
 			column[y] = MIN3(column[y] + 1, column[y-1] + 1, lastdiag + (c1 == c2 ? 0 : 1));
 			lastdiag = olddiag;
-			if (lastdiag < min) min=lastdiag;
+			if (lastdiag < min)
+				min = lastdiag;
 		}
 		if (min > (unsigned int)k)
 			return INT_MAX;
@@ -777,31 +825,61 @@ maxlevenshtein_extcol_stritem(const str_item *si1, const str_item *si2, unsigned
 }
 
 static str
-maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k) {
-	strjoincommonvars;
-	int d;
+maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
+{
+	struct canditer lci, rci;
+	BAT *r1t = NULL, *r2t = NULL;
+	const char *lvals, *rvals, *lvars, *rvars;;
+	int lwidth, rwidth, d;
+	BUN n;
+	str_item *ssl = NULL, *ssr = NULL;
+	str msg = MAL_SUCCEED;
 	unsigned int *buffer=NULL;
-	strjoininit;
-	strdistjoininit;
-	strdistjoininitlengths;
-	strdistjoininittoints;
-	strdistjoininitalphabetbitmap;
-	strdistjoininitsort(str_item_lenrev_cmp);
 
-	buffer = GDKmalloc((ssl[0].len + 1) * sizeof(int));
-	if (buffer == NULL) {
+	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
+	assert(ATOMtype(l->ttype) == TYPE_str);
+
+	canditer_init(&lci, l, sl);
+	canditer_init(&rci, r, sr);
+	if (lci.ncand == 0 || rci.ncand == 0)
+		goto exit;
+	lvals = (const char *) Tloc(l, 0);
+	rvals = (const char *) Tloc(r, 0);
+	lvars = l->tvheap->base;
+	rvars = r->tvheap->base;
+	lwidth = l->twidth;
+	rwidth = r->twidth;
+	if ((r1t = COLnew(0, TYPE_oid, lci.ncand, TRANSIENT)) == NULL ||
+		(r2t = COLnew(0, TYPE_oid, lci.ncand, TRANSIENT)) == NULL) {
+		BBPreclaim(r1t);
+		BBPreclaim(r2t);
 		msg = createException(MAL, "txtsim.maxlevenshteinjoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
+		goto exit;
 	}
-
-	/* join implementation for string distance */
-	for (BUN lstart=0,rstart=0;rstart<rci.ncand;rstart++) {
-		for (n=lstart;n<lci.ncand;n++) {
-			/* Update sliding window */
-			/* This is the first and cheapest filter */
+	r1t->tsorted = r1t->trevsorted = false;
+	r2t->tsorted = r2t->trevsorted = false;
+	if ((ssl = GDKmalloc(lci.ncand * sizeof(str_item))) == NULL ||
+		(ssr = GDKmalloc(rci.ncand * sizeof(str_item))) == NULL) {
+		BBPreclaim(r1t);
+		BBPreclaim(r2t);
+		msg = createException(MAL, "txtsim.maxlevenshteinjoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto exit;
+	}
+	PREP_BAT_STRITEM(l, lci, ssl);
+	PREP_BAT_STRITEM(r, rci, ssr);
+	qsort(ssl, lci.ncand, sizeof(str_item), str_item_lenrev_cmp);
+	qsort(ssr, rci.ncand, sizeof(str_item), str_item_lenrev_cmp);
+	if ((buffer = GDKmalloc((ssl[0].len + 1) * sizeof(int))) == NULL) {
+		msg = createException(MAL, "txtsim.maxlevenshteinjoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto exit;
+	}
+	/* join loop */
+	for (BUN lstart = 0, rstart = 0; rstart < rci.ncand; rstart++) {
+		for (n = lstart; n < lci.ncand; n++) {
+			/* first and cheapest filter */
 			if ((ssl[n].len) > k + ssr[rstart].len) {
 				lstart++;
-				continue;   /* no possible matches yet for this r */
+				continue; /* no possible matches yet for this r */
 			} else if (ssr[rstart].len > k + ssl[n].len) {
 				break; /* no more possible matches from this r */
 			}
@@ -816,84 +894,78 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k) 
 			/* The match test succeeded */
 			ssl[n].matches++;
 			ssr[rstart].matches++;
-			if (bunfastappTYPE(oid, result1, &(ssl[n].o)) != GDK_SUCCEED)
-				goto bunins_failed;
-			if (bunfastappTYPE(oid, result2, &(ssr[rstart].o)) != GDK_SUCCEED)
-				goto bunins_failed;
+			if (bunfastappTYPE(oid, r1t, &(ssl[n].o)) != GDK_SUCCEED) {
+				BBPreclaim(r1t);
+				BBPreclaim(r2t);
+				msg = createException(MAL, "txtsim.maxlevenshteinjoin", OPERATION_FAILED "Failed bun append");
+				goto exit;
+			}
+			if (bunfastappTYPE(oid, r2t, &(ssr[rstart].o)) != GDK_SUCCEED) {
+				BBPreclaim(r1t);
+				BBPreclaim(r2t);
+				msg = createException(MAL, "txtsim.maxlevenshteinjoin", OPERATION_FAILED "Failed bun append");
+				goto exit;
+			}
 		}
 	}
-	strjoinfinalize;
-bunins_failed:
-bailout:
-	GDKfree(buffer);
-	for (n=0;n<lci.ncand;n++)
+	FINALIZE_BATS(r1t, r2t, lci, rci, ssl, ssr);
+	*r1 = r1t;
+	*r2 = r2t;
+ exit:
+	for (n = 0; ssl && n < lci.ncand; n++)
 		GDKfree(ssl[n].cp_sequence);
-	GDKfree(ssl);
-	for (n=0;n<rci.ncand;n++)
+	for (n = 0; ssr && n < rci.ncand; n++)
 		GDKfree(ssr[n].cp_sequence);
+	GDKfree(ssl);
 	GDKfree(ssr);
-	if (msg != MAL_SUCCEED)
-		return msg;
-result:
-	*r1 = result1;
-	*r2 = result2;
-	return MAL_SUCCEED;
+	GDKfree(buffer);
+	return msg;
 }
 
 static str
-TXTSIMmaxlevenshteinjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *kid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti) {
-	BAT *bleft = NULL, *bright = NULL, *bcandleft = NULL, *bcandright = NULL, *bk = NULL;
-	BAT *result1 = NULL, *result2 = NULL;
-	int k = 0;
-	str msg = MAL_SUCCEED;
-
+TXTSIMmaxlevenshteinjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *kid, const bat *slid, const bat *srid,
+						 const bit *nil_matches, const lng *estimate, const bit *anti)
+{
 	(void)nil_matches;
 	(void)estimate;
 	(void)anti;
 
-	if ((bleft = BATdescriptor(*lid)) == NULL)
-		goto fail;
-	if ((bright = BATdescriptor(*rid)) == NULL)
-		goto fail;
-	if ((bk = BATdescriptor(*kid)) == NULL)
-		goto fail;
-	if (*slid != bat_nil && (bcandleft = BATdescriptor(*slid)) == NULL)
-		goto fail;
-	if (*srid != bat_nil && (bcandright = BATdescriptor(*srid)) == NULL)
-		goto fail;
+	BAT *bleft = NULL, *bright = NULL, *bcandleft = NULL, *bcandright = NULL, *bk = NULL,
+		*result1 = NULL, *result2 = NULL;
+	int k = 0;
+	str msg = MAL_SUCCEED;
 
+	if ((bleft = BATdescriptor(*lid)) == NULL || (bright = BATdescriptor(*rid)) == NULL || (bk = BATdescriptor(*kid)) == NULL) {
+		msg = createException(MAL, "txtsim.maxlevenshteinjoin", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto exit;
+	}
+	if ((*slid != bat_nil && (bcandleft = BATdescriptor(*slid)) == NULL) || (*srid != bat_nil && (bcandright = BATdescriptor(*srid)) == NULL)) {
+		msg = createException(MAL, "txtsim.maxlevenshteinjoin", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto exit;
+	}
 	if (BATcount(bk) > 0) {
 		BATiter ki = bat_iterator(bk);
 		k = *(bte *) BUNtail(ki,0);
 		bat_iterator_end(&ki);
 	}
 
-	msg = maxlevenshteinjoin(&result1, &result2, bleft, bright, bcandleft, bcandright, k);
-	if (msg != MAL_SUCCEED)
-		goto fail;
-
-	BBPreclaim(bleft);
-	BBPreclaim(bright);
-	if (bcandleft) BBPreclaim(bcandleft);
-	if (bcandright) BBPreclaim(bcandright);
+	if ((msg = maxlevenshteinjoin(&result1, &result2, bleft, bright, bcandleft, bcandright, k)) != MAL_SUCCEED)
+		goto exit;
 
 	*r1 = result1->batCacheid;
 	*r2 = result2->batCacheid;
 	BBPkeepref(result1);
 	BBPkeepref(result2);
-
-	return MAL_SUCCEED;
-
-fail:
+ exit:
 	BBPreclaim(bleft);
 	BBPreclaim(bright);
 	BBPreclaim(bcandleft);
 	BBPreclaim(bcandright);
-	BBPreclaim(result1);
-	BBPreclaim(result2);
-	if (msg != MAL_SUCCEED)
-		return msg;
-	throw(MAL, "txtsim.maxlevenshteinjoin", OPERATION_FAILED);
+	if (msg != MAL_SUCCEED) {
+		BBPreclaim(result1);
+		BBPreclaim(result2);
+	}
+	return msg;
 }
 
 static inline void
