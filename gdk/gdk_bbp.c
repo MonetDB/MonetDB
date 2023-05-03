@@ -2979,12 +2979,24 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 			GDKerror("%s: %s does not have pointer fixes.\n", func, BBP_logical(i));
 			assert(0);
 		} else {
-			assert(b == NULL || b->theap == NULL || BBP_refs(b->theap->parentid) > 0);
-			assert(b == NULL || b->tvheap == NULL || BBP_refs(b->tvheap->parentid) > 0);
-			refs = --BBP_refs(i);
-			if (b && refs == 0) {
+#ifndef NDEBUG
+			if (b) {
 				MT_lock_set(&b->theaplock);
 				locked = true;
+				assert(b->theap == NULL || BBP_refs(b->theap->parentid) > 0);
+				assert(b->tvheap == NULL || BBP_refs(b->tvheap->parentid) > 0);
+			}
+#endif
+			refs = --BBP_refs(i);
+			if (b && refs == 0) {
+#ifdef NDEBUG
+				/* if NDEBUG is not defined, we locked
+				 * the heaplock above, so we only lock
+				 * it here if NDEBUG *is* defined */
+				MT_lock_set(&b->theaplock);
+				locked = true;
+#endif
+				assert(locked); /* just to be clear */
 				tp = VIEWtparent(b);
 				tvp = VIEWvtparent(b);
 				if (tp || tvp)
@@ -2993,8 +3005,10 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 		}
 	}
 	if (b) {
-		if (!locked)
+		if (!locked) {
 			MT_lock_set(&b->theaplock);
+			locked = true;
+		}
 		if (b->batCount > b->batInserted && !isVIEW(b)) {
 			/* if batCount is larger than batInserted and
 			 * the dirty bits are off, it may be that a
@@ -3013,9 +3027,14 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	/* we destroy transients asap and unload persistent bats only
 	 * if they have been made cold or are not dirty */
 	unsigned chkflag = BBPSYNCING;
-	if (GDKvm_cursize() < GDK_vm_maxsize &&
-	     ((b && b->theap ? b->theap->size : 0) + (b && b->tvheap ? b->tvheap->size : 0)) < (GDK_vm_maxsize - GDKvm_cursize()) / 32)
-		chkflag |= BBPHOT;
+	if (b && GDKvm_cursize() < GDK_vm_maxsize) {
+		if (!locked) {
+			MT_lock_set(&b->theaplock);
+			locked = true;
+		}
+		if (((b->theap ? b->theap->size : 0) + (b->tvheap ? b->tvheap->size : 0)) < (GDK_vm_maxsize - GDKvm_cursize()) / 32)
+			chkflag |= BBPHOT;
+	}
 	/* only consider unloading if refs is 0; if, in addition, lrefs
 	 * is 0, we can definitely unload, else only if some more
 	 * conditions are met */
@@ -3041,7 +3060,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 		swap = true;
 	} /* else: bat cannot be swapped out */
 	lrefs = BBP_lrefs(i);
-	if (b)
+	if (locked)
 		MT_lock_unset(&b->theaplock);
 
 	/* unlock before re-locking in unload; as saving a dirty
