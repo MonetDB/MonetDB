@@ -664,9 +664,6 @@ BATfree(BAT *b)
 		return;
 
 	/* deallocate all memory for a bat */
-	if (b->tident && !default_ident(b->tident))
-		GDKfree(b->tident);
-	b->tident = BATstring_t;
 	MT_rwlock_rdlock(&b->thashlock);
 	BUN nunique = BUN_NONE, nbucket = BUN_NONE;
 	if (b->thash && b->thash != (Hash *) 1) {
@@ -678,6 +675,9 @@ BATfree(BAT *b)
 	IMPSfree(b);
 	OIDXfree(b);
 	MT_lock_set(&b->theaplock);
+	if (b->tident && !default_ident(b->tident))
+		GDKfree(b->tident);
+	b->tident = BATstring_t;
 	if (nunique != BUN_NONE) {
 		BATsetprop_nolock(b, GDK_NUNIQUE, TYPE_oid, &(oid){nunique});
 		BATsetprop_nolock(b, GDK_UNIQUE_ESTIMATE, TYPE_dbl, &(dbl){(dbl)nunique});
@@ -695,6 +695,7 @@ BATfree(BAT *b)
 		assert((ATOMIC_GET(&b->theap->refs) & HEAPREFS) == 1);
 		assert(b->theap->parentid == b->batCacheid);
 		HEAPfree(b->theap, false);
+		b->theap = NULL;
 	}
 	/* wait until there are no other references to the heap; a
 	 * reference is possible in e.g. BBPsync that uses a
@@ -708,6 +709,7 @@ BATfree(BAT *b)
 		assert((ATOMIC_GET(&b->tvheap->refs) & HEAPREFS) == 1);
 		assert(b->tvheap->parentid == b->batCacheid);
 		HEAPfree(b->tvheap, false);
+		b->tvheap = NULL;
 	}
 	MT_lock_unset(&b->theaplock);
 }
@@ -2076,12 +2078,14 @@ BATroles(BAT *b, const char *tnme)
 {
 	if (b == NULL)
 		return GDK_SUCCEED;
+	MT_lock_set(&b->theaplock);
 	if (b->tident && !default_ident(b->tident))
 		GDKfree(b->tident);
 	if (tnme)
 		b->tident = GDKstrdup(tnme);
 	else
 		b->tident = BATstring_t;
+	MT_lock_unset(&b->theaplock);
 	return b->tident ? GDK_SUCCEED : GDK_FAIL;
 }
 
