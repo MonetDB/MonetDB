@@ -695,7 +695,6 @@ BATfree(BAT *b)
 		assert((ATOMIC_GET(&b->theap->refs) & HEAPREFS) == 1);
 		assert(b->theap->parentid == b->batCacheid);
 		HEAPfree(b->theap, false);
-		b->theap = NULL;
 	}
 	/* wait until there are no other references to the heap; a
 	 * reference is possible in e.g. BBPsync that uses a
@@ -709,7 +708,6 @@ BATfree(BAT *b)
 		assert((ATOMIC_GET(&b->tvheap->refs) & HEAPREFS) == 1);
 		assert(b->tvheap->parentid == b->batCacheid);
 		HEAPfree(b->tvheap, false);
-		b->tvheap = NULL;
 	}
 	MT_lock_unset(&b->theaplock);
 }
