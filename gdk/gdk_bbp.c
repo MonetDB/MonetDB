@@ -267,40 +267,6 @@ static volatile MT_Id locked_by = 0;
 static int BBPunloadCnt = 0;
 static MT_Lock GDKunloadLock = MT_LOCK_INITIALIZER(GDKunloadLock);
 
-/* GDKtmLock protects all accesses and changes to BAKDIR and SUBDIR
- * must use BBPtmlock()/BBPtmunlock() to set/unset the lock */
-static MT_Lock GDKtmLock = MT_LOCK_INITIALIZER(GDKtmLock);
-static char *lockfile;
-static int lockfd;
-
-void
-BBPtmlock(void)
-{
-	MT_lock_set(&GDKtmLock);
-	if (GDKinmemory(0))
-		return;
-	/* also use an external lock file to synchronize with external
-	 * programs */
-	if (lockfile == NULL) {
-		lockfile = GDKfilepath(0, NULL, ".tm_lock", NULL);
-		if (lockfile == NULL)
-			return;
-	}
-	lockfd = MT_lockf(lockfile, F_LOCK);
-}
-
-void
-BBPtmunlock(void)
-{
-	if (lockfile && lockfd >= 0) {
-		assert(!GDKinmemory(0));
-		MT_lockf(lockfile, F_ULOCK);
-		close(lockfd);
-		lockfd = -1;
-	}
-	MT_lock_unset(&GDKtmLock);
-}
-
 void
 BBPlock(void)
 {
@@ -4610,4 +4576,41 @@ BBPcallbacks(void)
 		next = next->next;
 	}
 	MT_lock_unset(&GDKCallbackListLock);
+}
+
+/* GDKtmLock protects all accesses and changes to BAKDIR and SUBDIR.
+ * MUST use BBPtmlock()/BBPtmunlock() to set/unset the lock.
+ *
+ * This is at the end of the file on purpose: we don't want people to
+ * accidentally use GDKtmLock directly. */
+static MT_Lock GDKtmLock = MT_LOCK_INITIALIZER(GDKtmLock);
+static char *lockfile;
+static int lockfd;
+
+void
+BBPtmlock(void)
+{
+	MT_lock_set(&GDKtmLock);
+	if (GDKinmemory(0))
+		return;
+	/* also use an external lock file to synchronize with external
+	 * programs */
+	if (lockfile == NULL) {
+		lockfile = GDKfilepath(0, NULL, ".tm_lock", NULL);
+		if (lockfile == NULL)
+			return;
+	}
+	lockfd = MT_lockf(lockfile, F_LOCK);
+}
+
+void
+BBPtmunlock(void)
+{
+	if (lockfile && lockfd >= 0) {
+		assert(!GDKinmemory(0));
+		MT_lockf(lockfile, F_ULOCK);
+		close(lockfd);
+		lockfd = -1;
+	}
+	MT_lock_unset(&GDKtmLock);
 }
