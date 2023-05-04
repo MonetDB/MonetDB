@@ -13,33 +13,32 @@ insert into bar values ('joHan'),('aajAne'),('rOObert')
 query TT rowsort
 select * from foo,bar where [foo.x] minjarowinkler [bar.x, 1];
 ----
-(empty)
 
 query TT rowsort
 select * from foo,bar where [foo.x] minjarowinkler [bar.x, 0.5];
 ----
+jane
+aajAne
+jane
+joHan
+john
+aajAne
+john
+joHan
+robert
+joHan
 robert
 rOObert
-john
-aajAne
-jane
-aajAne
-robert
-joHan
-john
-joHan
-jane
-joHan
 
 query TT rowsort
 select * from foo,bar where [foo.x] minjarowinkler [bar.x, 0.8];
 ----
-robert
-rOObert
 jane
 aajAne
 john
 joHan
+robert
+rOObert
 
 statement ok
 drop table foo;
