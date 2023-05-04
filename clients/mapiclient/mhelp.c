@@ -228,8 +228,8 @@ SQLhelp sqlhelp1[] = {
 	{"CREATE TRIGGER",
 	 "Define a triggered action for a table data update event",
 	 "CREATE [ OR REPLACE ] TRIGGER ident { BEFORE | AFTER }\n"
-	 " { INSERT | DELETE | TRUNCATE | UPDATE [ OF ident_list ] }\n"
-	 " ON qname [ REFERENCING trigger_reference [...] ] triggered_action",
+	 " { INSERT | DELETE | TRUNCATE | UPDATE [ OF ident_list ] | LOGIN }\n"
+	 " [ ON qname ] [ REFERENCING trigger_reference [...] ] triggered_action",
 	 "qname,ident_list,trigger_reference,triggered_action",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/trigger-definition/"},
 	{"CREATE TYPE",
@@ -950,7 +950,7 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"triggered_action",
 	 NULL,
-	 "[ FOR [EACH] { ROW | STATEMENT } ]\n"
+	 "[ FOR EACH { ROW | STATEMENT } ]\n"
 	 "[ WHEN '(' search_condition ')' ]\n"
 	 "{ trigger_statement | BEGIN ATOMIC trigger_statement [ ; ... ] END }",
 	 "trigger_statement,search_condition",
