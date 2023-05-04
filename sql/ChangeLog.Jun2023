@@ -2,7 +2,7 @@
 # This file is updated with Maddlog
 
 * Fri Apr  7 2023 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
-- Session timeout feature improve to start evaluating from the moment
+- Session timeout feature improvement to start evaluating from the moment
   the procedure is called, instead of beginning of the session.
 
 * Fri Mar  3 2023 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
@@ -40,7 +40,7 @@
 * Fri Sep 30 2022 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
 - When loading data using COPY BINARY INTO, apply default values instead of just
   inserting NULLs.
-- When loading data using COPY BINARY INTO, validate DECIMAL(n,k) and
+- When loading data using COPY BINARY INTO, validate DECIMAL(prec,scale) and
   VARCHAR(n) column width.
 - When loading data using COPY BINARY INTO, string used to have their line
   endings converted from CR LF to LF. Do not do this, it is the responsibility
