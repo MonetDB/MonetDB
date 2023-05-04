@@ -2925,8 +2925,10 @@ decref(bat i, bool logical, bool lock, const char *func)
 		}
 	}
 	if (b) {
-		if (!locked)
+		if (!locked) {
 			MT_lock_set(&b->theaplock);
+			locked = true;
+		}
 #if 0
 		if (b->batCount > b->batInserted && !isVIEW(b)) {
 			/* if batCount is larger than batInserted and
@@ -2947,9 +2949,14 @@ decref(bat i, bool logical, bool lock, const char *func)
 	/* we destroy transients asap and unload persistent bats only
 	 * if they have been made cold or are not dirty */
 	unsigned chkflag = BBPSYNCING;
-	if (GDKvm_cursize() < GDK_vm_maxsize &&
-	     ((b && b->theap ? b->theap->size : 0) + (b && b->tvheap ? b->tvheap->size : 0)) < (GDK_vm_maxsize - GDKvm_cursize()) / 32)
-		chkflag |= BBPHOT;
+	if (b && GDKvm_cursize() < GDK_vm_maxsize) {
+		if (!locked) {
+			MT_lock_set(&b->theaplock);
+			locked = true;
+		}
+		if (((b->theap ? b->theap->size : 0) + (b->tvheap ? b->tvheap->size : 0)) < (GDK_vm_maxsize - GDKvm_cursize()) / 32)
+			chkflag |= BBPHOT;
+	}
 	/* only consider unloading if refs is 0; if, in addition, lrefs
 	 * is 0, we can definitely unload, else only if some more
 	 * conditions are met */
@@ -2975,7 +2982,7 @@ decref(bat i, bool logical, bool lock, const char *func)
 		swap = true;
 	} /* else: bat cannot be swapped out */
 	lrefs = BBP_lrefs(i);
-	if (b)
+	if (locked)
 		MT_lock_unset(&b->theaplock);
 
 	/* unlock before re-locking in unload; as saving a dirty
