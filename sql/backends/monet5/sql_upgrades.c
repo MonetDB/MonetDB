@@ -5511,7 +5511,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 	sql->session->status = 0; /* if the function was not found clean the error */
 	sql->errstr[0] = '\0';
 
-	if (!sql_bind_func(sql, "sys", "levenshtein", &t2, &t2, F_FUNC, true)) {
+	if (!sql_bind_func(sql, "sys", "jarowinkler", &t2, &t2, F_FUNC, true)) {
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
 		pos = snprintf(buf, bufsize,
@@ -5528,6 +5528,9 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 					   "external name txtsim.\"maxlevenshtein\";\n"
 					   "create filter function sys.maxlevenshtein(x string, y string, k int, insdel int, rep int)\n"
 					   "external name txtsim.\"maxlevenshtein\";\n"
+					   "create function sys.jarowinkler(x string, y string)\n"
+					   "returns double external name txtsim.\"jarowinkler\";"
+					   "grant execute on function jarowinkler(string, string) to public;\n"
 					   "create filter function minjarowinkler(x string, y string, threshold double)\n"
 					   "external name txtsim.\"minjarowinkler\";\n"
 					   "create function sys.dameraulevenshtein(x string, y string)\n"
@@ -5536,6 +5539,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 					   "create function sys.dameraulevenshtein(x string, y string, insdel int, rep int, trans int)\n"
 					   "returns int external name txtsim.dameraulevenshtein;\n"
 					   "grant execute on function dameraulevenshtein(string, string, int, int, int) to public;\n"
+
 					   "create function sys.editdistance(x string, y string)\n"
 					   "returns int external name txtsim.editdistance;\n"
 					   "grant execute on function editdistance(string, string) to public;\n"
@@ -5589,7 +5593,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 					   "create filter function sys.contains(x string, y string, icase boolean)\n"
 					   "external name str.\"contains\";\n"
 
-					   "update sys.functions set system = true where system <> true and name in ('levenshtein', 'dameraulevenshtein', 'editdistance', 'editdistance2', 'soundex', 'difference', 'qgramnormalize', 'similarity') and schema_id = 2000 and type = %d;\n"
+					   "update sys.functions set system = true where system <> true and name in ('levenshtein', 'dameraulevenshtein', 'jarowinkler', 'editdistance', 'editdistance2', 'soundex', 'difference', 'qgramnormalize', 'similarity') and schema_id = 2000 and type = %d;\n"
 					   "update sys.functions set system = true where system <> true and name in ('maxlevenshtein', 'minjarowinkler') and schema_id = 2000 and type = %d;\n"
 					   "update sys.functions set system = true where system <> true and name in ('asciify', 'startswith', 'endswith', 'contains') and schema_id = 2000 and type = %d;\n"
 					   "update sys.functions set system = true where system <> true and name in ('startswith', 'endswith', 'contains') and schema_id = 2000 and type = %d;\n"
