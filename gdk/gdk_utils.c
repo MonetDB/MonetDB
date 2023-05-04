@@ -1334,9 +1334,6 @@ GDKexit(int status)
 batlock_t GDKbatLock[BBP_BATMASK + 1];
 MT_Lock GDKthreadLock = MT_LOCK_INITIALIZER(GDKthreadLock);
 
-/* GDKtmLock protects all accesses and changes to BAKDIR and SUBDIR */
-MT_Lock GDKtmLock = MT_LOCK_INITIALIZER(GDKtmLock);
-
 /*
  * @+ Concurrency control
  * Concurrency control requires actions at several levels of the

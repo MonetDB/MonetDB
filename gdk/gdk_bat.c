@@ -2200,7 +2200,7 @@ backup_new(Heap *hp, bool lock)
 	if (batpath != NULL && bakpath != NULL) {
 		/* file actions here interact with the global commits */
 		if (lock)
-			MT_lock_set(&GDKtmLock);
+			BBPtmlock();
 
 		batret = MT_stat(batpath, &st);
 		bakret = MT_stat(bakpath, &st);
@@ -2221,7 +2221,7 @@ backup_new(Heap *hp, bool lock)
 			ret = 0;
 		}
 		if (lock)
-			MT_lock_unset(&GDKtmLock);
+			BBPtmunlock();
 	}
 	GDKfree(batpath);
 	GDKfree(bakpath);
