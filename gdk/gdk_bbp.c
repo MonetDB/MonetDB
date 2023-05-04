@@ -1504,7 +1504,7 @@ BBPtrim(bool aggressive)
 		flag |= BBPHOT;
 	for (bat bid = 1, nbat = (bat) ATOMIC_GET(&BBPsize); bid < nbat; bid++) {
 		/* don't do this during a (sub)commit */
-		MT_lock_set(&GDKtmLock);
+		BBPtmlock();
 		MT_lock_set(&GDKswapLock(bid));
 		BAT *b = NULL;
 		bool swap = false;
@@ -1530,7 +1530,7 @@ BBPtrim(bool aggressive)
 				GDKerror("unload failed for bat %d", bid);
 			n++;
 		}
-		MT_lock_unset(&GDKtmLock);
+		BBPtmunlock();
 	}
 	TRC_DEBUG(BAT_, "unloaded %d bats%s\n", n, aggressive ? " (also hot)" : "");
 }
