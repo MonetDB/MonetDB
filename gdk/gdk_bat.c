@@ -669,9 +669,6 @@ BATfree(BAT *b)
 		return;
 
 	/* deallocate all memory for a bat */
-	if (b->tident && !default_ident(b->tident))
-		GDKfree(b->tident);
-	b->tident = BATstring_t;
 	MT_rwlock_rdlock(&b->thashlock);
 	BUN nunique = BUN_NONE;
 	if (b->thash && b->thash != (Hash *) 1) {
@@ -684,6 +681,9 @@ BATfree(BAT *b)
 	STRMPfree(b);
 	TSKfree(b);
 	MT_lock_set(&b->theaplock);
+	if (b->tident && !default_ident(b->tident))
+		GDKfree(b->tident);
+	b->tident = BATstring_t;
 	if (nunique != BUN_NONE) {
 		b->tunique_est = (double) nunique;
 	}
@@ -2141,12 +2141,14 @@ BATroles(BAT *b, const char *tnme)
 {
 	if (b == NULL)
 		return GDK_SUCCEED;
+	MT_lock_set(&b->theaplock);
 	if (b->tident && !default_ident(b->tident))
 		GDKfree(b->tident);
 	if (tnme)
 		b->tident = GDKstrdup(tnme);
 	else
 		b->tident = BATstring_t;
+	MT_lock_unset(&b->theaplock);
 	return b->tident ? GDK_SUCCEED : GDK_FAIL;
 }
 

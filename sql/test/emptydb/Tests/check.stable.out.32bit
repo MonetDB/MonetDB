@@ -4223,6 +4223,7 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "grant on function",	"sys",	"analyze",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"analyze",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"analyze",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"asciify",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"broadcast",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"contains",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"contains",	"public",	"EXECUTE",	"monetdb",	0	]
