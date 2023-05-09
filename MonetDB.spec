@@ -431,6 +431,7 @@ install it.
 Summary: Integration of MonetDB and Python, allowing use of Python from within SQL
 Group: Applications/Databases
 Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
+Requires: python3-numpy
 
 %description python3
 MonetDB is a database management system that is developed from a
