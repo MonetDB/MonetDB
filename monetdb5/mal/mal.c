@@ -36,6 +36,7 @@ lng MALdebug;
 #include "mal_runtime.h"
 #include "mal_resource.h"
 #include "mal_atom.h"
+#include "mutils.h"
 
 MT_Lock     mal_contextLock = MT_LOCK_INITIALIZER(mal_contextLock);
 MT_Lock     mal_profileLock = MT_LOCK_INITIALIZER(mal_profileLock);
@@ -54,7 +55,7 @@ mal_version(void)
  */
 
 int
-mal_init(char *modules[], bool embedded, const char *initpasswd)
+mal_init(char *modules[], bool embedded, const char *initpasswd, const char *caller_revision)
 {
 /* Any error encountered here terminates the process
  * with a message sent to stderr
@@ -73,22 +74,21 @@ mal_init(char *modules[], bool embedded, const char *initpasswd)
 		return -1;
 	}
 
+	if (caller_revision) {
+		const char *p = mercurial_revision();
+		if (p && strcmp(p, caller_revision) != 0) {
+			TRC_CRITICAL(MAL_SERVER, "incompatible versions: caller is %s, MAL is %s\n", caller_revision, p);
+			return -1;
+		}
+	}
+
 	if (!MCinit())
 		return -1;
-#ifndef NDEBUG
-	if (!mdbInit()) {
-		mal_client_reset();
-		return -1;
-	}
-#endif
 	initNamespace();
 
 	err = malBootstrap(modules, embedded, initpasswd);
 	if (err != MAL_SUCCEED) {
 		mal_client_reset();
-#ifndef NDEBUG
-		mdbExit();
-#endif
 		TRC_CRITICAL(MAL_SERVER, "%s\n", err);
 		freeException(err);
 		return -1;
@@ -127,7 +127,6 @@ void mal_reset(void)
 			free(err);
 		}
 	}
-	mal_factory_reset();
 	mal_dataflow_reset();
 	mal_client_reset();
   	mal_linker_reset();
@@ -135,9 +134,6 @@ void mal_reset(void)
 	mal_runtime_reset();
 	mal_module_reset();
 	mal_atom_reset();
-#ifndef NDEBUG
-	mdbExit();
-#endif
 
 	memset((char*)monet_cwd, 0, sizeof(monet_cwd));
 	memset((char*)monet_characteristics,0, sizeof(monet_characteristics));

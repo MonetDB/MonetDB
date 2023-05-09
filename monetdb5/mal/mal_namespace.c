@@ -44,6 +44,8 @@ typedef struct NAME{
 } *NamePtr;
 
 static NamePtr hash[MAXIDENTIFIERS];
+const char *optimizerRef;
+const char *totalRef;
 
 static struct namespace {
 	struct namespace *next;
@@ -53,6 +55,8 @@ static struct namespace {
 
 void initNamespace(void) {
 	namespace = NULL;
+	optimizerRef = putName("optimizer");
+	totalRef = putName("total");
 }
 
 void mal_namespace_reset(void) {
