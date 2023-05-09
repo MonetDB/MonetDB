@@ -86,20 +86,18 @@ handleClient(void *data)
 	free(data);
 #ifdef HAVE_OPENSSL
 	char *ct_fname, *kp_fname;
-	bool use_tls = true;
+	bool use_tls = false;
 
 	kv = findConfKey(_mero_props, "tls_cert");
-	if (kv == NULL) {
-		use_tls = false;
-	}
-	ct_fname = strdup(kv->val);
+	if (kv != NULL) {
+		ct_fname = strdup(kv->val);
 
-	kv = findConfKey(_mero_props, "tls_key");
-	if (kv == NULL) {
-		use_tls = false;
+		kv = findConfKey(_mero_props, "tls_key");
+		if (kv != NULL) {
+			kp_fname = strdup(kv->val);
+			use_tls = true;
+		}
 	}
-	kp_fname = strdup(kv->val);
-
 	if (use_tls) {
 		fdin = open_tls_server_stream(sock, "merovingian<-client (tls read)", NULL, kp_fname, ct_fname);
 		free(kp_fname);
