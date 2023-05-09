@@ -13,15 +13,6 @@
 
 #include "mal_import.h"
 
-#define MAL_SCENARIO_READER 0
-#define MAL_SCENARIO_PARSER  1
-#define MAL_SCENARIO_OPTIMIZE 2
-#define MAL_SCENARIO_SCHEDULER 3
-#define MAL_SCENARIO_ENGINE 4
-#define MAL_SCENARIO_INITCLIENT 5
-#define MAL_SCENARIO_EXITCLIENT 6
-#define MAL_SCENARIO_CALLBACK 7
-
 /*#define MAL_SCENARIO_DEBUG*/
 /*
  * @-
@@ -30,47 +21,31 @@
  * An exception or error detected while parsing is turned
  * into an exception and aborts the scenario.
  */
-#define MAXSCEN 128
+#define MAXSCEN 4
 
 typedef struct SCENARIO {
 	str name, language;
-	str initSystem;
-	MALfcn initSystemCmd;
-	str exitSystem;
-	MALfcn exitSystemCmd;
 	str initClient;
-	MALfcn initClientCmd;
+	init_client initClientCmd;
 	str exitClient;
 	MALfcn exitClientCmd;
-	str reader;
-	MALfcn readerCmd;
-	str parser;
-	MALfcn parserCmd;
-	str optimizer;
-	MALfcn optimizerCmd;
-	str tactics;
-	MALfcn tacticsCmd;
 	str engine;
-	MALfcn engineCmd;
-	str callback;
-	MALfcn callbackCmd;
+	engine_fptr engineCmd;
 } *Scenario;
 
 mal_export Scenario getFreeScenario(void);
-mal_export Scenario findScenario(str nme);
+mal_export Scenario findScenario(const char *nme);
 
 #ifdef LIBMONETDB5
-extern str setScenario(Client c, str nme);
+extern str setScenario(Client c, const char *nme);
 extern str runScenario(Client c);
 extern str getScenarioLanguage(Client c);
 
 extern void showCurrentScenario(void);
-extern void showScenarioByName(stream *f, str s);
+extern void showScenarioByName(stream *f, const char *s);
 extern void showScenario(stream *f, Scenario s);
 extern void showAllScenarios(stream *f);
 extern void resetScenario(Client c);
-
-extern void updateScenario(str scen, str nme, MALfcn fcn);
 #endif
 
 #endif /* _MAL_SCENARIO_H */

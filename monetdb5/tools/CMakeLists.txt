@@ -25,6 +25,7 @@ target_link_libraries(monetdb5
     ${SOCKET_LIBRARIES}
     $<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>
     $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>
+    $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>
     bat)
 
 set_target_properties(monetdb5

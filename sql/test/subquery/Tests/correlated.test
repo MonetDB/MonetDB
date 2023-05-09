@@ -42,7 +42,7 @@ NULL
 2
 1
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: BATsubcross: more than one match
 SELECT i, (SELECT 42+i1.i FROM integers) AS j FROM integers i1 ORDER BY i
 
 statement error
@@ -329,7 +329,7 @@ NULL
 statement error 42000!SELECT: subquery must return only one column
 SELECT (SELECT SUM(i + i1.i), 1 FROM integers) FROM integers i1
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: BATsubcross: more than one match
 SELECT (SELECT SUM(i1.i) FROM integers) AS k FROM integers i1 GROUP BY i ORDER BY i
 
 query II nosort
@@ -401,7 +401,7 @@ SELECT CAST(SUM((SELECT i+i1.i FROM integers WHERE i=1)) AS BIGINT) FROM integer
 ----
 9
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: BATsubcross: more than one match
 SELECT i, CAST(SUM(i1.i) AS BIGINT), CAST((SELECT SUM(i1.i) FROM integers) AS BIGINT) AS k FROM integers i1 GROUP BY i ORDER BY i
 
 query II nosort
@@ -511,7 +511,7 @@ NULL
 3
 3
 
-statement error GDK reported error: mergejoin: more than one match
+statement error GDK reported error: BATsubcross: more than one match
 SELECT i, SUM(i1.i) FROM integers i1 GROUP BY i ORDER BY (SELECT SUM(i1.i) FROM integers)
 
 statement error

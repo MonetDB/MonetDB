@@ -25,7 +25,7 @@
 
 static BAT *GDKkey = NULL;
 static BAT *GDKval = NULL;
-int GDKdebug = 0;
+ATOMIC_TYPE GDKdebug = ATOMIC_VAR_INIT(0);
 
 #include <signal.h>
 
@@ -788,9 +788,9 @@ static MT_Lock mallocsuccesslock = MT_LOCK_INITIALIZER(mallocsuccesslock);
 #endif
 
 void
-GDKsetdebug(int debug)
+GDKsetdebug(unsigned debug)
 {
-	GDKdebug = debug;
+	ATOMIC_SET(&GDKdebug, debug);
 	if (debug & ACCELMASK)
 		GDKtracer_set_component_level("accelerator", "debug");
 	else
@@ -841,10 +841,10 @@ GDKsetdebug(int debug)
 		GDKtracer_reset_component_level("thrd");
 }
 
-int
+unsigned
 GDKgetdebug(void)
 {
-	int debug = GDKdebug;
+	ATOMIC_BASE_TYPE debug = ATOMIC_GET(&GDKdebug);
 	const char *lvl;
 	lvl = GDKtracer_get_component_level("accelerator");
 	if (lvl && strcmp(lvl, "debug") == 0)
@@ -882,7 +882,7 @@ GDKgetdebug(void)
 	lvl = GDKtracer_get_component_level("thrd");
 	if (lvl && strcmp(lvl, "debug") == 0)
 		debug |= THRDMASK;
-	return debug;
+	return (unsigned) debug;
 }
 
 static bool Mbedded = true;
@@ -895,7 +895,7 @@ GDKembedded(void)
 static MT_Id mainpid;
 
 gdk_return
-GDKinit(opt *set, int setlen, bool embedded)
+GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 {
 	static bool first = true;
 	const char *dbpath;
@@ -904,6 +904,14 @@ GDKinit(opt *set, int setlen, bool embedded)
 	opt *n;
 	int i, nlen = 0;
 	char buf[16];
+
+	if (caller_revision) {
+		p = mercurial_revision();
+		if (p && strcmp(p, caller_revision) != 0) {
+			GDKerror("incompatible versions: caller is %s, GDK is %s\n", caller_revision, p);
+			return GDK_FAIL;
+		}
+	}
 
 	ATOMIC_SET(&GDKstopped, 0);
 
@@ -1303,7 +1311,7 @@ GDKreset(int status)
 #ifdef LOCK_STATS
 		TRC_DEBUG_IF(TEM) GDKlockstatistics(1);
 #endif
-		GDKdebug = 0;
+		ATOMIC_SET(&GDKdebug, 0);
 		GDK_mmap_minsize_persistent = MMAP_MINSIZE_PERSISTENT;
 		GDK_mmap_minsize_transient = MMAP_MINSIZE_TRANSIENT;
 		GDK_mmap_pagesize = MMAP_PAGESIZE;

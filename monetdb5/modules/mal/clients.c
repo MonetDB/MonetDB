@@ -440,68 +440,6 @@ CLTwakeup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-/* Set session time out based in seconds. As of December 2019, this function is deprecated */
-static str
-CLTsetSessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str msg = MAL_SUCCEED;
-	lng sto;
-	int idx = cntxt->idx;
-
-	(void) mb;
-	if( idx < 0 || idx > MAL_MAXCLIENTS)
-		throw(MAL,"clients.setsession","Illegal session id %d", idx);
-	sto = *getArgReference_lng(stk,pci,1);
-	if (is_lng_nil(sto))
-		throw(MAL,"clients.setsession","Session timeout cannot be NULL");
-	if (sto < 0)
-		throw(MAL,"clients.setsession","Session timeout should be >= 0");
-
-	MT_lock_set(&mal_contextLock);
-	if (mal_clients[idx].mode == FREECLIENT)
-		msg = createException(MAL,"clients.setsession","Session not active anymore");
-	else
-		mal_clients[idx].sessiontimeout = sto * 1000000;
-	MT_lock_unset(&mal_contextLock);
-	return msg;
-}
-
-/* Set the current query timeout in seconds. As of December 2019, this function is deprecated */
-static str
-CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str msg = MAL_SUCCEED;
-	lng qto,sto = 0;
-	int idx = cntxt->idx;
-
-	(void) mb;
-	if( idx < 0 || idx > MAL_MAXCLIENTS)
-		throw(MAL,"clients.settimeout","Illegal session id %d", idx);
-	qto = *getArgReference_lng(stk,pci,1);
-	if (is_lng_nil(qto))
-		throw(MAL,"clients.settimeout","Query timeout cannot be NULL");
-	if (qto < 0)
-		throw(MAL,"clients.settimeout","Query timeout should be >= 0");
-	if (pci->argc == 3) {
-		sto = *getArgReference_lng(stk,pci,2);
-		if (is_lng_nil(sto))
-			throw(MAL,"clients.settimeout","Session timeout cannot be NULL");
-		if( sto < 0)
-			throw(MAL,"clients.settimeout","Session timeout should be >= 0");
-	}
-
-	MT_lock_set(&mal_contextLock);
-	if (mal_clients[idx].mode == FREECLIENT) {
-		msg = createException(MAL, "clients.settimeout","Session not active anymore");
-	} else {
-		if (pci->argc == 3)
-			mal_clients[idx].sessiontimeout = sto * 1000000;
-		mal_clients[idx].qryctx.querytimeout = qto * 1000000;
-	}
-	MT_lock_unset(&mal_contextLock);
-	return msg;
-}
-
 /* set query timeout based in seconds, converted into microseconds */
 static str
 CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -530,7 +468,7 @@ CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL,"clients.setquerytimeout","Session not active anymore");
 	else {
 		/* when testing (FORCEMITOMASK), reduce timeout of 1 sec to 1 msec */
-		lng timeout_micro = GDKdebug & FORCEMITOMASK && qto == 1 ? 1000 : (lng) qto * 1000000;
+		lng timeout_micro = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK && qto == 1 ? 1000 : (lng) qto * 1000000;
 		mal_clients[idx].qryctx.querytimeout = timeout_micro;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		if (qry_ctx)
@@ -596,7 +534,7 @@ CLTsessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mal_clients[idx].mode == FREECLIENT)
 		msg = createException(MAL,"clients.setsessiontimeout","Session not active anymore");
 	else {
-		mal_clients[idx].sessiontimeout = (lng) (sto * 1000000) + (GDKusec() - mal_clients[idx].session);
+		mal_clients[idx].sessiontimeout = sto > 0 ? (lng) sto * 1000000 + (GDKusec() - mal_clients[idx].session) : 0;
 		mal_clients[idx].logical_sessiontimeout = (lng) sto;
 	}
 	MT_lock_unset(&mal_contextLock);
@@ -958,9 +896,6 @@ mel_func clients_init_funcs[] = {
  pattern("clients", "suspend", CLTsuspend, true, "Put a client process to sleep for some time.\nIt will simple sleep for a second at a time, until\nthe awake bit has been set in its descriptor", args(1,2, arg("",void),arg("id",int))),
  pattern("clients", "wakeup", CLTwakeup, true, "Wakeup a client process", args(1,2, arg("",void),arg("id",int))),
  pattern("clients", "getprofile", CLTgetProfile, false, "Retrieve the profile settings for a client", args(5,5, arg("opt",str),arg("q",int),arg("s",int),arg("w",int),arg("m",int))),
- pattern("clients", "setsession", CLTsetSessionTimeout, true, "Abort a session after  n seconds.", args(1,2, arg("",void),arg("n",lng))),
- pattern("clients", "settimeout", CLTsetTimeout, true, "Abort a query after  n seconds.", args(1,2, arg("",void),arg("n",lng))),
- pattern("clients", "settimeout", CLTsetTimeout, true, "Abort a query after q seconds (q=0 means run undisturbed).\nThe session timeout aborts the connection after spending too\nmany seconds on query processing.", args(1,3, arg("",void),arg("q",lng),arg("s",lng))),
  pattern("clients", "setQryTimeoutMicro", CLTqueryTimeoutMicro, true, "", args(1,2, arg("",void),arg("n",lng))),
  pattern("clients", "setquerytimeout", CLTqueryTimeout, true, "", args(1,2, arg("",void),arg("n",int))),
  pattern("clients", "setquerytimeout", CLTqueryTimeout, true, "A query is aborted after q seconds (q=0 means run undisturbed).", args(1,3, arg("",void),arg("sid",int),arg("n",int))),

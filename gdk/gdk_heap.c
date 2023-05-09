@@ -107,6 +107,7 @@ HEAPgrow(Heap **hp, size_t size, bool mayshare)
 			.dirty = true,
 			.parentid = old->parentid,
 			.wasempty = old->wasempty,
+			.hasfile = old->hasfile,
 		};
 		memcpy(new->filename, old->filename, sizeof(new->filename));
 		if (HEAPalloc(new, size, 1) == GDK_SUCCEED) {
@@ -601,9 +602,14 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 	b->theap = new;
 	if (BBP_status(bid) & (BBPEXISTING|BBPDELETED) && b->oldtail == NULL) {
 		b->oldtail = old;
-		ATOMIC_OR(&old->refs, DELAYEDREMOVE);
+		if ((ATOMIC_OR(&old->refs, DELAYEDREMOVE) & HEAPREFS) == 1) {
+			/* we have the only reference, we can free the
+			 * memory */
+			HEAPfree(old, false);
+		}
 	} else {
-		HEAPdecref(old, true);
+		ValPtr p = BATgetprop_nolock(b, (enum prop_t) 20);
+		HEAPdecref(old, p == NULL || strcmp(((Heap*) p->val.pval)->filename, old->filename) != 0);
 	}
 	MT_lock_unset(&b->theaplock);
 	return GDK_SUCCEED;
@@ -1382,7 +1388,7 @@ HEAP_recover(Heap *h, const var_t *offsets, BUN noffsets)
 	h->cleanhash = false;
 	if (dirty) {
 		if (h->storage == STORE_MMAP) {
-			if (!(GDKdebug & NOSYNCMASK))
+			if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK))
 				(void) MT_msync(h->base, dirty);
 			else
 				h->dirty = true;

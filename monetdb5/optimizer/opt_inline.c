@@ -19,8 +19,7 @@ isCorrectInline(MalBlkPtr mb){
 
 	for( i= 1; i < mb->stop; i++){
 		p= getInstrPtr(mb,i);
-		if ( p->token == RETURNsymbol || p->token == YIELDsymbol ||
-			 p->barrier == RETURNsymbol || p->barrier == YIELDsymbol)
+		if (p->token == RETURNsymbol || p->barrier == RETURNsymbol)
 			retseen++;
 	}
 	return retseen <= 1;

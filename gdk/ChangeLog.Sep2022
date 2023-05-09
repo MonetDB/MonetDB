@@ -1,6 +1,17 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Tue Apr 25 2023 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed parsing of the BBP.dir file when BAT ids grow larger than 2**24
+  (i.e. 100000000 in octal).
+
+* Thu Apr 20 2023 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed yet another occurrence of a missing .tailN file.  This one could
+  happen if a string bat was appended to in stages so that between appends
+  the column was committed.  If an append caused both a realloc of the
+  tail heap because it was getting longer and a realloc because it got
+  wider, the file might get removed before the GDK level commit happened.
+
 * Fri Mar 24 2023 Sjoerd Mullender <sjoerd@acm.org>
 - When processing the WAL, if a to-be-destroyed object cannot be found,
   don't stop, but keep processing the rest of the WAL.

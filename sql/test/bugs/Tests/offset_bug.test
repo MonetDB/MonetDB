@@ -27,61 +27,6 @@ statement ok
 INSERT INTO query_users (user_id, user_name) VALUES (7, 'fido')
 
 query IT rowsort
-select * from query_users
-----
-1
-john
-2
-jack
-3
-ed
-4
-wendy
-5
-laura
-6
-ralph
-7
-fido
-
-query IT rowsort
-SELECT query_users.user_id, query_users.user_name
-FROM query_users ORDER BY query_users.user_id
-LIMIT 3 OFFSET 2
-----
-3
-ed
-4
-wendy
-5
-laura
-
-query IT rowsort
-SELECT query_users.user_id, query_users.user_name
-FROM query_users LIMIT 3 OFFSET 2
-----
-3
-ed
-4
-wendy
-5
-laura
-
-query IT rowsort
-select * from query_users OFFSET 2
-----
-3
-ed
-4
-wendy
-5
-laura
-6
-ralph
-7
-fido
-
-query IT rowsort
 select * from query_users order by user_name
 ----
 1
@@ -99,8 +44,29 @@ ralph
 7
 fido
 
+statement ok rowcount 7
+select * from query_users
+
 query IT rowsort
-select * from query_users order BY user_name OFFSET 2
+SELECT query_users.user_id, query_users.user_name
+FROM query_users ORDER BY query_users.user_id
+LIMIT 3 OFFSET 2
+----
+3
+ed
+4
+wendy
+5
+laura
+
+statement ok rowcount 3
+SELECT query_users.user_id, query_users.user_name
+FROM query_users
+LIMIT 3 OFFSET 2
+
+query IT rowsort
+select * from query_users order BY user_name
+OFFSET 2
 ----
 1
 john
@@ -112,6 +78,10 @@ wendy
 laura
 6
 ralph
+
+statement ok rowcount 5
+select * from query_users
+OFFSET 2
 
 statement ok
 drop table query_users
