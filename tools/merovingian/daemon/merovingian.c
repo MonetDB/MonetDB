@@ -439,6 +439,12 @@ main(int argc, char *argv[])
 #else
 		{"snapshotcompression", strdup(".tar"),     0,                 STR},
 #endif
+#ifdef HAVE_OPENSSL
+		{"tls_cert",      NULL,                    0,                  STR},
+		{"tls_key",       NULL,                    0,                  STR},
+		{"use_tls",       strdup("false"),         0,                  BOOLEAN},
+		{"tls_port",      strdup(MERO_TLS_PORT),   atoi(MERO_TLS_PORT),INT},
+#endif
 
 		{ NULL,           NULL,                    0,                  INVALID}
 	};
