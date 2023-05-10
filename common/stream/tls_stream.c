@@ -12,6 +12,7 @@
 #include "stream.h"
 #include "stream_internal.h"
 #include <stdio.h>
+#include <sys/types.h>
 
 /* ---------------------------------------------- */
 /* streams working over TLS */
@@ -30,18 +31,68 @@ typedef struct ssl_wrapper {
 static ssize_t
 tls_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
 {
-	/* Is it safe to cast a void pointer into an ssl_wrapper pointer? */
 	ssl_wrapper *w = (ssl_wrapper *)s->stream_data.p;
+	ssize_t ret;
+	size_t retries = 5;
+	int ssl_err = SSL_ERROR_NONE;
 
-	return SSL_write(w->cSSL, buf, elmsize*cnt);
+	fprintf(stderr, "SSL stream write %zu bytes\n", elmsize*cnt);
+
+	ERR_clear_error();
+
+	while (retries > 0) {
+		ret = SSL_write(w->cSSL, buf, elmsize*cnt);
+		if (ret < 0 ) {
+			ssl_err = SSL_get_error(w->cSSL, ret);
+
+			if (ssl_err == SSL_ERROR_ZERO_RETURN) {
+				retries -= 1;
+			} else {
+				break;
+			}
+		} else {
+			break;
+		}
+	}
+
+	switch (ssl_err) {
+		case SSL_ERROR_NONE:
+			/* no error */
+			s->errkind = MNSTR_NO__ERROR;
+			break;
+		default:
+			s->errkind = MNSTR_WRITE_ERROR;
+			ERR_error_string_n(ERR_get_error() , s->errmsg, 1024);
+			fprintf(stderr, "SSL write error: %s\n", s->errmsg);
+			if (errno) {
+				perror(0);
+			}
+			return -1;
+	}
+	fprintf(stderr, "SSL stream write wrote %zd bytes\n", ret);
+
+	return 1;
 }
 
 static ssize_t
 tls_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 {
 	ssl_wrapper *w = (ssl_wrapper *)s->stream_data.p;
+	ssize_t ret;
 
-	return SSL_read(w->cSSL, buf, elmsize*cnt);
+	fprintf(stderr, "SSL stream read\n");
+
+	ret = SSL_read(w->cSSL, buf, elmsize*cnt);
+	if (ret < 0) {
+		s->errkind = MNSTR_READ_ERROR;
+		ERR_error_string(ERR_get_error(), s->errmsg);
+		return -1;
+	}
+
+	fprintf(stderr, "SSL stream read got %zd bytes\n", ret);
+
+
+	return ret > 0;
 }
 
 static void
@@ -75,8 +126,6 @@ new_tls_server_stream(int fd, const char *name, const char *kp_fname, const char
 		return NULL;
 	}
 
-	/* TODO parametrize */
-	// const char *server_keypair_fname = "/home/kutsurak/src/monetdb/mercurial-repos/public/smapi/smapi-dev-certificates/new/server_keypair.pem";
 	ssl_err = SSL_CTX_use_PrivateKey_file(w->ctx, kp_fname, SSL_FILETYPE_PEM);
 	if (ssl_err <= 0) {
 		/* TODO handle */
@@ -85,8 +134,6 @@ new_tls_server_stream(int fd, const char *name, const char *kp_fname, const char
 		return NULL;
 	}
 
-	/* TODO parametrize */
-	// const char *server_cert_chain_fname = "/home/kutsurak/src/monetdb/mercurial-repos/public/smapi/smapi-dev-certificates/new/server_cert.pem";
 	ssl_err = SSL_CTX_use_certificate_chain_file(w->ctx, ct_fname);
 	if (ssl_err <= 0) {
 		/* TODO handle */
