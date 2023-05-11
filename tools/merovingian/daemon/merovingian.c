@@ -783,6 +783,25 @@ main(int argc, char *argv[])
 		MERO_EXIT_CLEAN(1);
 	}
 
+#ifdef HAVE_OPENSSL
+	bool use_tls = (bool)getConfNum(_mero_props, "use_tls");
+
+	// TLS requested. Make sure we have both a certificate and a private
+	// key file.
+	if (use_tls) {
+		p = getConfVal(_mero_props, "tls_cert");
+		if(p == NULL) {
+			Mlevelfprintf(ERROR, stderr, "TLS requested but tls_cert not set\n");
+			MERO_EXIT_CLEAN(1);
+		}
+		p = getConfVal(_mero_props, "tls_key");
+		if(p == NULL) {
+			Mlevelfprintf(ERROR, stderr, "TLS requested but tls_key not set\n");
+			MERO_EXIT_CLEAN(1);
+		}
+	}
+#endif // HAVE_OPENSSL
+
 	/* time to initialize the stream library */
 	if (mnstr_init() < 0) {
 		Mlevelfprintf(ERROR, stderr, "cannot initialize stream library\n");

@@ -86,29 +86,14 @@ handleClient(void *data)
 	free(data);
 #ifdef HAVE_OPENSSL
 	char *ct_fname, *kp_fname;
-	kv = findConfKey(_mero_props, "use_tls");
-	bool use_tls_prop = (bool)kv->ival;
-	bool tls_configured = false;
+	bool use_tls = (bool)getConfNum(_mero_props, "use_tls");
 
-	kv = findConfKey(_mero_props, "tls_cert");
-	if (kv != NULL) {
-		ct_fname = strdup(kv->val);
-
-		kv = findConfKey(_mero_props, "tls_key");
-		if (kv != NULL) {
-			kp_fname = strdup(kv->val);
-			tls_configured = true;
-		}
-	}
-	if (use_tls_prop) {
-		if (tls_configured) {
-			fdin = open_tls_server_stream(sock, "merovingian<-client (tls read)", NULL, kp_fname, ct_fname);
-			free(kp_fname);
-			free(ct_fname);
-		} else {
-			// Error, refuse to start? Should have been handled earlier?
-			abort();
-		}
+	if (use_tls) {
+		ct_fname = strdup(getConfVal(_mero_props, "tls_cert"));
+		kp_fname = strdup(getConfVal(_mero_props, "tls_key"));
+		fdin = open_tls_server_stream(sock, "merovingian<-client (tls read)", NULL, kp_fname, ct_fname);
+		free(kp_fname);
+		free(ct_fname);
 	}
 	else {
 		fdin = socket_rstream(sock, "merovingian<-client (read)");
@@ -127,7 +112,7 @@ handleClient(void *data)
 	 * read write. On the other hand openssl has
 	 * one object (BIO) that handles both directions.
 	 */
-	if (use_tls_prop) {
+	if (use_tls) {
 		fout = open_tls_server_stream(sock, "merovingian->client (tls write)", fdin, NULL, NULL);
 	}
 	else {
