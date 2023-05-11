@@ -1,0 +1,54 @@
+query T
+select contains(NULL, '')
+----
+NULL
+
+query T
+select contains('', NULL)
+----
+NULL
+
+query T
+select contains('', '')
+----
+True
+
+query T
+select contains('johndoe', '')
+----
+True
+
+query T
+select contains('', 'johndoe')
+----
+False
+
+query T
+select contains('johndoe', 'john')
+----
+True
+
+query T
+select contains('one two three', 'three', true)
+----
+True
+
+query T
+select contains('one two three', 'THREE', true)
+----
+True
+
+query T
+select contains('one two three', 'THREE', false)
+----
+False
+
+query T
+select contains('Müller Thomas', 'müller', true)
+----
+True
+
+query T
+select contains('Müller Thomas', 'müller', false)
+----
+False
