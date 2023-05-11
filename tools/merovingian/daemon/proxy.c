@@ -9,6 +9,7 @@
  */
 
 #include "monetdb_config.h"
+#include "utils.h"
 #include <sys/types.h>
 #include <sys/stat.h> /* stat */
 #include <sys/wait.h> /* wait */
@@ -133,7 +134,10 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		return(newErr("unsupported protocol/scheme in redirect: %s", url));
 	}
 
-	if (ssock != -1) {
+	bool use_tls = getConfNum(_mero_props, "use_tls");
+
+
+	if (ssock != -1 && !use_tls) {
 		/* UNIX socket connect, don't proxy, but pass socket fd */
 		struct sockaddr_un server;
 		struct msghdr msg;
