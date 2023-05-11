@@ -71,7 +71,7 @@ tls_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t c
 	}
 	fprintf(stderr, "SSL stream write wrote %zd bytes\n", ret);
 
-	return 1;
+	return ret/elmsize;
 }
 
 static ssize_t
@@ -91,8 +91,10 @@ tls_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 
 	fprintf(stderr, "SSL stream read got %zd bytes\n", ret);
 
-
-	return ret > 0;
+	if (ret == 0) {
+		s->eof = true;
+	}
+	return ret/elmsize;
 }
 
 static void
