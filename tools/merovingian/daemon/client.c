@@ -89,11 +89,11 @@ handleClient(void *data)
 	bool use_tls = (bool)getConfNum(_mero_props, "use_tls");
 
 	if (use_tls) {
-		ct_fname = strdup(getConfVal(_mero_props, "tls_cert"));
-		kp_fname = strdup(getConfVal(_mero_props, "tls_key"));
+		ct_fname = getConfVal(_mero_props, "tls_cert");//strdup();
+		kp_fname = getConfVal(_mero_props, "tls_key");//strdup();
 		fdin = open_tls_server_stream(sock, "merovingian<-client (tls read)", NULL, kp_fname, ct_fname);
-		free(kp_fname);
-		free(ct_fname);
+		// free(kp_fname);
+		// free(ct_fname);
 	}
 	else {
 		fdin = socket_rstream(sock, "merovingian<-client (read)");
@@ -109,8 +109,8 @@ handleClient(void *data)
 
 #ifdef HAVE_OPENSSL
 	/* stream library really wants 2 different streams one read only and one
-	 * read write. On the other hand openssl has
-	 * one object (BIO) that handles both directions.
+	 * write only. On the other hand openssl has one object (BIO) that handles
+	 * both directions.
 	 */
 	if (use_tls) {
 		fout = open_tls_server_stream(sock, "merovingian->client (tls write)", fdin, NULL, NULL);
@@ -277,6 +277,7 @@ handleClient(void *data)
 		return(newErr("client %s specified no database", host));
 	}
 
+	/* TLS TODO: the daemon client probably needs some attention as well */
 	if (strcmp(lang, "control") == 0) {
 		/* handle control client */
 		if (control_authorise(host, chal, algo, passwd, fout))
