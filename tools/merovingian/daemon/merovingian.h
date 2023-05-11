@@ -18,7 +18,6 @@
 #include "utils/utils.h" /* confkeyval, loglevel */
 
 #define MERO_PORT      MAPI_PORT_STR
-#define MERO_TLS_PORT  "50443" /* TODO: Parametrize */
 #define MERO_SOCK      ".s.monetdb."
 #define CONTROL_SOCK   ".s.merovingian."
 
