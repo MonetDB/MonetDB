@@ -1,6 +1,17 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu May 11 2023 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
+- New functionality for string matching and similarity: startswith,
+  endswith, contains, Levenshtein distance and Jaro-Winkler similarity.
+  The functions startswith, endswith and contains have a version where
+  a case insentive flag can be used.
+  Also, there are new custom join functionality for startswith, endswith,
+  contains, Levenshtein distance and Jaro-Winkler similarity.
+- Renamed previous Levenshtein distance to Damerau-Levenshtein distance.
+- New string function that transform from UTF-8 encoding to Ascii called
+  asciify.
+
 * Fri Apr  7 2023 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
 - Session timeout feature improvement to start evaluating from the moment
   the procedure is called, instead of beginning of the session.
