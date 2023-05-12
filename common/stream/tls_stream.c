@@ -27,6 +27,22 @@ typedef struct ssl_wrapper {
 	SSL *cSSL;
 } ssl_wrapper;
 
+#ifndef STREAM_DEBUG
+static void
+print_buffer(const void *restrict buf, size_t len)
+{
+	char *ptr = (char *)buf;
+	for(size_t i = 0; i < len; i++) {
+		char c = ptr[i];
+		if (isprint(c))
+			fprintf(stderr, "%c", c);
+		else
+			fprintf(stderr, "<%hhu>", c);
+	}
+	fprintf(stderr, "\n");
+	fflush(stderr);
+}
+#endif // STREAM_DEBUG
 
 static ssize_t
 tls_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
@@ -36,7 +52,10 @@ tls_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t c
 	size_t retries = 5;
 	int ssl_err = SSL_ERROR_NONE;
 
+#ifndef STREAM_DEBUG
 	fprintf(stderr, "SSL stream write %zu bytes\n", elmsize*cnt);
+	print_buffer(buf, elmsize*cnt);
+#endif // STREAM_DEBUG
 
 	ERR_clear_error();
 
@@ -69,7 +88,9 @@ tls_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t c
 			}
 			return -1;
 	}
+#ifndef STREAM_DEBUG
 	fprintf(stderr, "SSL stream write wrote %zd bytes\n", ret);
+#endif // STREAM_DEBUG
 
 	return ret/elmsize;
 }
@@ -80,7 +101,9 @@ tls_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	ssl_wrapper *w = (ssl_wrapper *)s->stream_data.p;
 	ssize_t ret;
 
+#ifndef STREAM_DEBUG
 	fprintf(stderr, "SSL stream read\n");
+#endif // STREAM_DEBUG
 
 	ret = SSL_read(w->cSSL, buf, elmsize*cnt);
 	if (ret < 0) {
@@ -89,7 +112,10 @@ tls_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 		return -1;
 	}
 
+#ifndef STREAM_DEBUG
 	fprintf(stderr, "SSL stream read got %zd bytes\n", ret);
+	print_buffer(buf, elmsize*cnt);
+#endif // STREAM_DEBUG
 
 	if (ret == 0) {
 		s->eof = true;
@@ -103,6 +129,10 @@ tls_close(stream *s)
 	/* TODO properly shutdown */
 	ssl_wrapper *w = (ssl_wrapper *)s->stream_data.p;
 	SSL_shutdown(w->cSSL);
+#ifndef STREAM_DEBUG
+	fprintf(stderr, "Closing TLS stream\n");
+#endif // STREAM_DEBUG
+
 }
 
 static stream *
