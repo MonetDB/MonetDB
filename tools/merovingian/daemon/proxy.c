@@ -141,8 +141,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 	 * I therefore need to correctly open the UNIX socket in case
 	 * of TLS connection.
 	 * */
-	if (ssock != -1 && !use_tls) {
-		/* UNIX socket connect, don't proxy, but pass socket fd */
+	if (ssock != -1 ) {
 		struct sockaddr_un server;
 		struct msghdr msg;
 		char ccmsg[CMSG_SPACE(sizeof(ssock))];
@@ -171,52 +170,70 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 			return(newErr("cannot connect: %s", strerror(errno)));
 		}
 
-		/* send first byte, nothing special to happen */
-		msg.msg_name = NULL;
-		msg.msg_namelen = 0;
-		*buf = '1'; /* pass fd */
-		vec.iov_base = buf;
-		vec.iov_len = 1;
-		msg.msg_iov = &vec;
-		msg.msg_iovlen = 1;
-		msg.msg_control = ccmsg;
-		msg.msg_controllen = sizeof(ccmsg);
-		cmsg = CMSG_FIRSTHDR(&msg);
-		cmsg->cmsg_level = SOL_SOCKET;
-		cmsg->cmsg_type = SCM_RIGHTS;
-		cmsg->cmsg_len = CMSG_LEN(sizeof(psock));
-		/* HACK to avoid
-		 * "dereferencing type-punned pointer will break strict-aliasing rules"
-		 * (with gcc 4.5.1 on Fedora 14)
-		 */
-		c_d = (int *)CMSG_DATA(cmsg);
-		*c_d = psock;
-		msg.msg_controllen = cmsg->cmsg_len;
-		msg.msg_flags = 0;
+		/* UNIX socket connect and not tls, don't proxy, but pass socket fd */
+		if (!use_tls) {
+			/* send first byte, nothing special to happen */
+			msg.msg_name = NULL;
+			msg.msg_namelen = 0;
+			*buf = '1'; /* pass fd */
+			vec.iov_base = buf;
+			vec.iov_len = 1;
+			msg.msg_iov = &vec;
+			msg.msg_iovlen = 1;
+			msg.msg_control = ccmsg;
+			msg.msg_controllen = sizeof(ccmsg);
+			cmsg = CMSG_FIRSTHDR(&msg);
+			cmsg->cmsg_level = SOL_SOCKET;
+			cmsg->cmsg_type = SCM_RIGHTS;
+			cmsg->cmsg_len = CMSG_LEN(sizeof(psock));
+			/* HACK to avoid
+			 * "dereferencing type-punned pointer will break strict-aliasing rules"
+			 * (with gcc 4.5.1 on Fedora 14)
+			 */
+			c_d = (int *)CMSG_DATA(cmsg);
+			*c_d = psock;
+			msg.msg_controllen = cmsg->cmsg_len;
+			msg.msg_flags = 0;
 
-		Mlevelfprintf(DEBUG, stdout, "target connection is on local UNIX domain socket, "
-				"passing on filedescriptor instead of proxying\n");
-		if (sendmsg(ssock, &msg, 0) < 0) {
+			Mlevelfprintf(DEBUG, stdout, "target connection is on local UNIX domain socket, "
+					"passing on filedescriptor instead of proxying\n");
+			if (sendmsg(ssock, &msg, 0) < 0) {
+				closesocket(ssock);
+				return(newErr("could not send initial byte: %s", strerror(errno)));
+			}
+			/* block until the server acknowledges that it has psock
+			 * connected with itself */
+			if (recv(ssock, buf, 1, 0) == -1) {
+				closesocket(ssock);
+				return(newErr("could not receive initial byte: %s", strerror(errno)));
+			}
+			shutdown(ssock, SHUT_RDWR);
 			closesocket(ssock);
-			return(newErr("could not send initial byte: %s", strerror(errno)));
+			/* psock is the underlying socket of cfdin/cfout which we
+			 * passed on to the client; we need to close the socket, but
+			 * not call shutdown() on it, which would happen if we called
+			 * close_stream(), so we call closesocket to close the socket
+			 * and mnstr_destroy to free memory */
+			closesocket(psock);
+			mnstr_destroy(cfdin);
+			mnstr_destroy(cfout);
+			return(NO_ERR);
+		} else {
+			*buf = '0'; /* no data */
+
+			Mlevelfprintf(DEBUG, stdout, "target connection is on local UNIX domain socket, "
+					"and using TLS. Send byte '0' to start communication.\n");
+			if (send(ssock, buf, 1, 0) < 0) {
+				closesocket(ssock);
+				return(newErr("could not send initial byte: %s", strerror(errno)));
+			}
+			/* block until the server acknowledges that it has psock
+			 * connected with itself */
+			if (recv(ssock, buf, 1, 0) == -1) {
+				closesocket(ssock);
+				return(newErr("could not receive initial byte: %s", strerror(errno)));
+			}
 		}
-		/* block until the server acknowledges that it has psock
-		 * connected with itself */
-		if (recv(ssock, buf, 1, 0) == -1) {
-			closesocket(ssock);
-			return(newErr("could not receive initial byte: %s", strerror(errno)));
-		}
-		shutdown(ssock, SHUT_RDWR);
-		closesocket(ssock);
-		/* psock is the underlying socket of cfdin/cfout which we
-		 * passed on to the client; we need to close the socket, but
-		 * not call shutdown() on it, which would happen if we called
-		 * close_stream(), so we call closesocket to close the socket
-		 * and mnstr_destroy to free memory */
-		closesocket(psock);
-		mnstr_destroy(cfdin);
-		mnstr_destroy(cfout);
-		return(NO_ERR);
 	} else {
 		int check;
 		struct addrinfo *results, *rp, hints = (struct addrinfo) {
