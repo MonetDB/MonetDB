@@ -303,15 +303,14 @@ GDKtracer_reinit_basic(int sig)
 static void
 reinit(void)
 {
+	/* called locked */
+
 	interrupted = 0;
 
 	// GDKtracer needs to reopen the file only in
 	// case the adapter is BASIC
 	if ((adapter_t) ATOMIC_GET(&cur_adapter) != BASIC)
 		return;
-
-	// Make sure that GDKtracer is not trying to flush the buffer
-	MT_lock_set(&GDKtracer_lock);
 
 	if (active_tracer) {
 		if (active_tracer != stderr)
@@ -321,8 +320,6 @@ reinit(void)
 		active_tracer = NULL;
 	}
 	_GDKtracer_init_basic_adptr();
-
-	MT_lock_unset(&GDKtracer_lock);
 }
 
 
@@ -517,9 +514,6 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	static char file_prefix[] = __FILE__;
 	static size_t prefix_length = (size_t) -1;
 
-	if (interrupted)
-		reinit();
-
 	if (prefix_length == (size_t) -1) {
 		/* first time, calculate prefix of file name */
 		msg = strstr(file_prefix, "gdk" DIR_SEP_STR "gdk_tracer.c");
@@ -581,6 +575,10 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	if ((adapter_t) ATOMIC_GET(&cur_adapter) == MBEDDED)
 		return;
 
+	MT_lock_set(&GDKtracer_lock);
+	if (interrupted)
+		reinit();
+
 	if (level <= M_WARNING || (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK)) {
 		fprintf(stderr, "#%s%s%s: %s: %s: %s%s%s\n",
 			add_ts ? ts : "",
@@ -588,11 +586,15 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 			MT_thread_getname(), func, level_str[level] + 2,
 			msg, syserr ? ": " : "",
 			syserr ? syserr : "");
-		if (active_tracer == NULL || active_tracer == stderr || !write_to_tracer)
+		if (active_tracer == NULL || active_tracer == stderr || !write_to_tracer) {
+			MT_lock_unset(&GDKtracer_lock);
 			return;
+		}
 	}
-	if (active_tracer == NULL)
+	if (active_tracer == NULL) {
+		MT_lock_unset(&GDKtracer_lock);
 		return;
+	}
 	if (syserr)
 		fprintf(active_tracer, "%s: %s\n", buffer, syserr);
 	else
@@ -606,6 +608,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	// is still in the buffer which it never gets flushed.
 	if (level == cur_flush_level || level <= M_ERROR)
 		fflush(active_tracer);
+	MT_lock_unset(&GDKtracer_lock);
 }
 
 
