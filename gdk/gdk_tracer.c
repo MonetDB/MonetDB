@@ -291,10 +291,19 @@ find_component(const char *comp)
  * API CALLS
  *
  */
+static volatile sig_atomic_t interrupted = 0;
+
 void
 GDKtracer_reinit_basic(int sig)
 {
 	(void) sig;
+	interrupted = 1;
+}
+
+static void
+reinit(void)
+{
+	interrupted = 0;
 
 	// GDKtracer needs to reopen the file only in
 	// case the adapter is BASIC
@@ -507,6 +516,9 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	char *msg = NULL;
 	static char file_prefix[] = __FILE__;
 	static size_t prefix_length = (size_t) -1;
+
+	if (interrupted)
+		reinit();
 
 	if (prefix_length == (size_t) -1) {
 		/* first time, calculate prefix of file name */
