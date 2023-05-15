@@ -64,6 +64,7 @@ malBootstrap(char *modules[], bool embedded, const char *initpasswd)
 		MCcloseClient(c);
 		return msg;
 	}
+	/*
 	pushEndInstruction(c->curprg->def);
 	msg = chkProgram(c->usermodule, c->curprg->def);
 	if ( msg != MAL_SUCCEED || (msg= c->curprg->def->errors) != MAL_SUCCEED ) {
@@ -71,6 +72,7 @@ malBootstrap(char *modules[], bool embedded, const char *initpasswd)
 		return msg;
 	}
 	msg = MALengine(c);
+	*/
 	MCcloseClient(c);
 	return msg;
 }
@@ -95,7 +97,6 @@ MSresetClientPrg(Client cntxt, const char *mod, const char *fcn)
 	MalBlkPtr mb;
 	InstrPtr p;
 
-	cntxt->itrace = 0;  /* turn off any debugging */
 	mb = cntxt->curprg->def;
 	mb->stop = 1;
 	mb->errors = MAL_SUCCEED;
@@ -214,7 +215,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 	Client c;
 
 	MT_thread_set_qry_ctx(NULL);
-	setClientContext(NULL);
 
 	/* decode BIG/LIT:user:{cypher}passwordchal:lang:database: line */
 
@@ -414,17 +414,15 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 	c->protocol = protocol;
 	c->blocksize = blocksize;
 
-	if (!GDKembedded() && c->phase[MAL_SCENARIO_INITCLIENT]) {
-		str (*init_client)(Client, const char *, const char *, const char *) = (str (*)(Client, const char *, const char *, const char *)) c->phase[MAL_SCENARIO_INITCLIENT];
-		if ((msg = init_client(c, passwd, challenge, algo)) != MAL_SUCCEED) {
+	if (!GDKembedded() && c->initClient) {
+		if ((msg = c->initClient(c, passwd, challenge, algo)) != MAL_SUCCEED) {
 			mnstr_printf(fout, "!%s\n", msg);
 			if (passwd)
 				GDKfree(passwd);
 			if (algo)
 				GDKfree(algo);
-			if (c->phase[MAL_SCENARIO_EXITCLIENT]) {
-				c->phase[MAL_SCENARIO_EXITCLIENT](c);
-			}
+			if (c->exitClient)
+				c->exitClient(c);
 			cleanUpScheduleClient(c, NULL, NULL, &msg);
 			return;
 		}
@@ -628,9 +626,8 @@ MSserveClient(Client c)
 str
 MALinitClient(Client c)
 {
-	assert(c->state[0] == NULL);
-	c->state[0] = c;
-	return NULL;
+	(void)c;
+	return MAL_SUCCEED;
 }
 
 str
@@ -653,7 +650,7 @@ MALexitClient(Client c)
 	return NULL;
 }
 
-str
+static str
 MALreader(Client c)
 {
 	if (MCreadClient(c) > 0)
@@ -747,37 +744,51 @@ MALcommentsOnly(MalBlkPtr mb)
 	return 1;
 }
 
-str
-MALcallback(Client c, str msg)
+/*
+ * The default MAL optimizer includes a final call to
+ * the multiplex expander.
+ * We should take care of functions marked as 'inline',
+ * because they should be kept in raw form.
+ * Their optimization takes place after inlining.
+ */
+static str
+MALoptimizer(Client c)
 {
-	if (msg) {
-		/* don't print exception decoration, just the message */
-		char *n = NULL;
-		char *o = msg;
-		while ((n = strchr(o, '\n')) != NULL) {
-			if (*o == '!')
-				o++;
-			mnstr_printf(c->fdout, "!%.*s\n", (int) (n - o), o);
-			o = ++n;
-		}
-		if (*o != 0) {
-			if (*o == '!')
-				o++;
-			mnstr_printf(c->fdout, "!%s\n", o);
-		}
-		freeException(msg);
-	}
-	return MAL_SUCCEED;
+	str msg;
+
+	if ( c->curprg->def->inlineProp)
+		return MAL_SUCCEED;
+	// only a signature statement can be skipped
+	if (c ->curprg->def->stop == 1)
+		return MAL_SUCCEED;
+	msg= optimizeMALBlock(c, c->curprg->def);
+	/*
+	if( msg == MAL_SUCCEED)
+		msg = OPTmultiplexSimple(c, c->curprg->def);
+		*/
+	return msg;
 }
 
-str
-MALengine(Client c)
+static str
+MALengine_(Client c)
 {
 	Symbol prg;
 	str msg = MAL_SUCCEED;
 
+	do {
+	if ((msg = MALreader(c)) != MAL_SUCCEED)
+		return msg;
+	if (c->mode == FINISHCLIENT)
+		return msg;
+	if ((msg = MALparser(c)) != MAL_SUCCEED)
+		return msg;
+	} while(c->blkmode);
+	/*
 	if (c->blkmode)
 		return MAL_SUCCEED;
+		*/
+	if ((msg = MALoptimizer(c)) != MAL_SUCCEED)
+		return msg;
 	prg = c->curprg;
 	if (prg == NULL)
 		throw(SYNTAX, "mal.engine", SYNTAX_SIGNATURE);
@@ -801,7 +812,6 @@ MALengine(Client c)
 		}
 		c->glb->stktop = prg->def->vtop;
 		c->glb->blk = prg->def;
-		c->glb->cmd = (c->itrace && c->itrace != 'C') ? 'n' : 0;
 	}
 
 	/*
@@ -832,7 +842,117 @@ MALengine(Client c)
 	if (prg->def->errors)
 		freeException(prg->def->errors);
 	prg->def->errors = NULL;
-	if (c->itrace)
-		mnstr_printf(c->fdout, "mdb>#EOD\n");
+	return msg;
+}
+
+void
+MALengine(Client c)
+{
+	str msg = MALengine_(c);
+	if (msg) {
+		/* don't print exception decoration, just the message */
+		char *n = NULL;
+		char *o = msg;
+		while ((n = strchr(o, '\n')) != NULL) {
+			if (*o == '!')
+				o++;
+			mnstr_printf(c->fdout, "!%.*s\n", (int) (n - o), o);
+			o = ++n;
+		}
+		if (*o != 0) {
+			if (*o == '!')
+				o++;
+			mnstr_printf(c->fdout, "!%s\n", o);
+		}
+		freeException(msg);
+	}
+}
+
+/* Hypothetical, optimizers may massage the plan in such a way
+ * that multiple passes are needed.
+ * However, the current SQL driven approach only expects a single
+ * non-repeating pipeline of optimizer steps stored at the end of the MAL block.
+ * A single scan forward over the MAL plan is assumed.
+ */
+str
+optimizeMALBlock(Client cntxt, MalBlkPtr mb)
+{
+	InstrPtr p;
+	int pc, oldstop;
+	str msg = MAL_SUCCEED;
+	int cnt = 0;
+	int actions = 0;
+	lng clk = GDKusec();
+
+	/* assume the type and flow have been checked already */
+	/* SQL functions intended to be inlined should not be optimized */
+	if ( mb->inlineProp)
+		return 0;
+
+	mb->optimize = 0;
+	if (mb->errors)
+		throw(MAL, "optimizer.MALoptimizer", SQLSTATE(42000) "Start with inconsistent MAL plan");
+
+	// strong defense line, assure that MAL plan is initially correct
+	if( mb->errors == 0 && mb->stop > 1){
+		resetMalTypes(mb, mb->stop);
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
+		if (msg)
+			return msg;
+		if (mb->errors != MAL_SUCCEED){
+			msg = mb->errors;
+			mb->errors = MAL_SUCCEED;
+			return msg;
+		}
+	}
+
+	oldstop = mb->stop;
+	for (pc = 0; pc < mb->stop; pc++) {
+		p = getInstrPtr(mb, pc);
+		if (getModuleId(p) == optimizerRef && p->fcn && p->token != REMsymbol) {
+			actions++;
+			msg = (str) (*p->fcn) (cntxt, mb, 0, p);
+			if (msg) {
+				str place = getExceptionPlace(msg);
+				str nmsg = NULL;
+				if (place){
+					nmsg = createException(getExceptionType(msg), place, "%s", getExceptionMessageAndState(msg));
+					GDKfree(place);
+				}
+				if (nmsg ) {
+					freeException(msg);
+					msg = nmsg;
+				}
+				goto wrapup;
+			}
+			if (cntxt->mode == FINISHCLIENT){
+				mb->optimize = GDKusec() - clk;
+				throw(MAL, "optimizeMALBlock", SQLSTATE(42000) "prematurely stopped client");
+			}
+			/* the MAL block may have changed */
+			pc += mb->stop - oldstop - 1;
+			oldstop = mb->stop;
+		}
+	}
+
+wrapup:
+	/* Keep the total time spent on optimizing the plan for inspection */
+	if(actions > 0 && msg == MAL_SUCCEED){
+		mb->optimize = GDKusec() - clk;
+		p = newStmt(mb, optimizerRef, totalRef);
+		if (p == NULL) {
+			throw(MAL, "optimizer.MALoptimizer", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		p->token = REMsymbol;
+		p = pushInt(mb, p, actions);
+		p = pushLng(mb, p, mb->optimize);
+		pushInstruction(mb, p);
+	}
+	if (cnt >= mb->stop)
+		throw(MAL, "optimizer.MALoptimizer", SQLSTATE(42000) OPTIMIZER_CYCLE);
 	return msg;
 }

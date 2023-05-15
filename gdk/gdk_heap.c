@@ -107,6 +107,7 @@ HEAPgrow(Heap **hp, size_t size, bool mayshare)
 			.dirty = true,
 			.parentid = old->parentid,
 			.wasempty = old->wasempty,
+			.hasfile = old->hasfile,
 		};
 		memcpy(new->filename, old->filename, sizeof(new->filename));
 		if (HEAPalloc(new, size, 1) == GDK_SUCCEED) {
@@ -180,6 +181,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 			 * failed */
 			(void) MT_remove(nme);
 			GDKfree(nme);
+			h->hasfile = false; /* just removed it */
 		}
 		GDKerror("Insufficient space for HEAP of %zu bytes.", h->size);
 		return GDK_FAIL;
@@ -296,8 +298,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 		if (!must_mmap) {
 			h->newstorage = h->storage = STORE_MEM;
 			h->base = GDKrealloc(h->base, size);
-			TRC_DEBUG(HEAP, "Extending malloced heap %s %zu %zu %p %p\n", h->filename, size, h->size, bak.base, h->base);
-			h->size = size;
+			TRC_DEBUG(HEAP, "Extending malloced heap %s %zu->%zu %p->%p\n", h->filename, bak.size, size, bak.base, h->base);
 			if (h->base) {
 				if (h->farmid == 1) {
 					QryCtx *qc = MT_thread_get_qry_ctx();
@@ -384,28 +385,19 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 					return GDK_SUCCEED;
 				}
 				failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload() != GDK_SUCCEED";
-				/* couldn't allocate, now first save data to
-				 * file */
-				if (HEAPsave_intern(&bak, nme, ext, ".tmp", false, bak.free, NULL) != GDK_SUCCEED) {
-					failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPsave_intern() != GDK_SUCCEED";
-					goto failed;
-				}
-				/* then free memory */
-				HEAPfree(&bak, false);
-				/* and load heap back in via memory-mapped
-				 * file */
-				if (HEAPload_intern(h, nme, ext, ".tmp", false) == GDK_SUCCEED) {
-					/* success! */
-					GDKclrerr();	/* don't leak errors from e.g. HEAPload */
-					return GDK_SUCCEED;
-				}
-				failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload_intern() != GDK_SUCCEED";
 				/* we failed */
 			} else {
 				failure = "h->storage == STORE_MEM && can_map && fd < 0";
 			}
 		}
 	  failed:
+		if (h->hasfile && !bak.hasfile) {
+			char *path = GDKfilepath(h->farmid, BATDIR, nme, ext);
+			if (path) {
+				MT_remove(path);
+				GDKfree(path);
+			}
+		}
 		*h = bak;
 	}
 	GDKerror("failed to extend to %zu for %s%s%s: %s\n",
@@ -438,7 +430,7 @@ HEAPshrink(Heap *h, size_t size)
 			/* don't grow */
 			return GDK_SUCCEED;
 		}
-		if(!(path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL)))
+		if ((path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL)) == NULL)
 			return GDK_FAIL;
 		p = GDKmremap(path,
 			      h->storage == STORE_PRIV ?
@@ -610,9 +602,14 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 	b->theap = new;
 	if (BBP_status(bid) & (BBPEXISTING|BBPDELETED) && b->oldtail == NULL) {
 		b->oldtail = old;
-		ATOMIC_OR(&old->refs, DELAYEDREMOVE);
+		if ((ATOMIC_OR(&old->refs, DELAYEDREMOVE) & HEAPREFS) == 1) {
+			/* we have the only reference, we can free the
+			 * memory */
+			HEAPfree(old, false);
+		}
 	} else {
-		HEAPdecref(old, true);
+		ValPtr p = BATgetprop_nolock(b, (enum prop_t) 20);
+		HEAPdecref(old, p == NULL || strcmp(((Heap*) p->val.pval)->filename, old->filename) != 0);
 	}
 	MT_lock_unset(&b->theaplock);
 	return GDK_SUCCEED;
@@ -701,10 +698,12 @@ HEAPfree(Heap *h, bool rmheap)
 #ifndef NDEBUG
 		} else {
 			char *path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
-			/* should not be present */
-			struct stat st;
-			assert(stat(path, &st) == -1 && errno == ENOENT);
-			GDKfree(path);
+			if (path) {
+				/* should not be present */
+				struct stat st;
+				assert(stat(path, &st) == -1 && errno == ENOENT);
+				GDKfree(path);
+			}
 #endif
 		}
 	}
@@ -1389,7 +1388,7 @@ HEAP_recover(Heap *h, const var_t *offsets, BUN noffsets)
 	h->cleanhash = false;
 	if (dirty) {
 		if (h->storage == STORE_MMAP) {
-			if (!(GDKdebug & NOSYNCMASK))
+			if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK))
 				(void) MT_msync(h->base, dirty);
 			else
 				h->dirty = true;

@@ -716,7 +716,6 @@ create_prepare_result(backend *b, cq *q, int nrows)
 	BAT* bschema	= COLnew(0, TYPE_str, nrows, TRANSIENT);
 	BAT* btable		= COLnew(0, TYPE_str, nrows, TRANSIENT);
 	BAT* bcolumn	= COLnew(0, TYPE_str, nrows, TRANSIENT);
-	BAT* order		= NULL;
 	node *n;
 
 	const int nr_columns = (b->client->protocol == PROTOCOL_COLUMNAR || GDKembedded()) ? 7 : 6;
@@ -827,18 +826,13 @@ create_prepare_result(backend *b, cq *q, int nrows)
 		}
 	}
 
-	if (!(order = BATdense(0, 0, BATcount(btype)))) {
-		error = -1;
-		goto wrapup;
-	}
 	b->results = res_table_create(
 							b->mvc->session->tr,
 							b->result_id++,
 							b->mb? b->mb->tag: 0 /*TODO check if this is sensible*/,
 							nr_columns,
 							Q_PREPARE,
-							b->results,
-							order);
+							b->results);
 	if (!b->results) {
 		error = -1;
 		goto wrapup;
@@ -868,8 +862,7 @@ create_prepare_result(backend *b, cq *q, int nrows)
 		if (error < 0 && b->results) {
 			res_table_destroy(b->results);
 			b->results = NULL;
-		} else
-			BBPreclaim(order);
+		}
 		return error;
 }
 
@@ -1166,7 +1159,7 @@ mvc_export_table_columnar(stream *s, res_table *t)
 }
 
 static int
-mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
+mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
 {
 	Tablet as;
 	Column *fmt;
@@ -1287,7 +1280,7 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order
 		}
 	}
 	if (i == t->nr_cols + 1)
-		ok = TABLEToutput_file(&as, order, s);
+		ok = TABLEToutput_file(&as, NULL, s);
 	for (i = 0; i <= t->nr_cols; i++) {
 		fmt[i].sep = NULL;
 		fmt[i].rsep = NULL;
@@ -1306,9 +1299,9 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BAT *order
 }
 
 static int
-mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
+mvc_export_table(backend *b, stream *s, res_table *t, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
 {
-	return mvc_export_table_(b->mvc, b->output_format, s, t, order, offset, nr, btag, sep, rsep, ssep, ns);
+	return mvc_export_table_(b->mvc, b->output_format, s, t, offset, nr, btag, sep, rsep, ssep, ns);
 }
 
 int
@@ -1318,12 +1311,10 @@ mvc_export(mvc *m, stream *s, res_table *t, BUN nr)
 	b.mvc = m;
 	b.results = t;
 	b.reloptimizer = 0;
-	t->order = t->cols[0].b;
 	t->nr_rows = nr;
-	BBPretain(t->order);
 	if (mvc_export_head(&b, s, t->id, TRUE, TRUE, 0/*starttime*/, 0/*maloptimizer*/) < 0)
 		return -1;
-	return mvc_export_table_(m, OFMT_CSV, s, t, BBPquickdesc(t->cols[0].b), 0, nr, "[ ", ",\t", "\t]\n", "\"", "NULL");
+	return mvc_export_table_(m, OFMT_CSV, s, t, 0, nr, "[ ", ",\t", "\t]\n", "\"", "NULL");
 }
 
 
@@ -1553,13 +1544,6 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng star
 	return mvc_affrows(b->mvc, s, val, w, query_id, b->last_id, starttime, maloptimizer, b->reloptimizer);
 }
 
-static int
-export_error(BAT *order)
-{
-	BBPreclaim(order);
-	return -4;
-}
-
 int
 mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_lengths, lng starttime, lng maloptimizer)
 {
@@ -1583,7 +1567,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 
 	/* tuple count */
 	if (only_header) {
-		if (t->order) {
+		if (t->cols[0].b) {
 			count = t->nr_rows;
 		} else {
 			count = 1;
@@ -1706,18 +1690,13 @@ mvc_export_file(backend *b, stream *s, res_table *t)
 {
 	int res = 0;
 	BUN count;
-	BAT *order = NULL;
 
-	if (!t->order) {
+	if (!t->cols[0].b) {
 		res = mvc_export_row(b, s, t, "", t->tsep, t->rsep, t->ssep, t->ns);
 	} else {
-		order = BATdescriptor(t->order);
-		if (!order)
-			return -2;
 		count = t->nr_rows;
 
-		res = mvc_export_table(b, s, t, order, 0, count, "", t->tsep, t->rsep, t->ssep, t->ns);
-		BBPunfix(order->batCacheid);
+		res = mvc_export_table(b, s, t, 0, count, "", t->tsep, t->rsep, t->ssep, t->ns);
 		b->results = res_tables_remove(b->results, t);
 	}
 	return res;
@@ -1730,7 +1709,6 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 	int clean = 0, res = 0;
 	BUN count;
 	res_table *t = res_tables_find(b->results, res_id);
-	BAT *order = NULL;
 	int json = (b->output_format == OFMT_JSON);
 
 	if (!s || !t)
@@ -1751,16 +1729,13 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 	if (!json && (res = mvc_export_head(b, s, res_id, TRUE, TRUE, starttime, maloptimizer)) < 0)
 		return res;
 
-	assert(t->order);
+	assert(t->cols[0].b);
 
 	if (b->client->protocol == PROTOCOL_COLUMNAR) {
 		if (mnstr_flush(s, MNSTR_FLUSH_DATA) < 0)
 			return -4;
 		return mvc_export_table_columnar(s, t);
 	}
-
-	if (!(order = BATdescriptor(t->order)))
-		return -2;
 
 	count = m->reply_size;
 	if (m->reply_size != -2 && (count <= 0 || count >= t->nr_rows)) {
@@ -1770,29 +1745,28 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 	if (json) {
 		switch(count) {
 		case 0:
-			res = mvc_export_table(b, s, t, order, 0, count, "{\t", "", "}\n", "\"", "null");
+			res = mvc_export_table(b, s, t, 0, count, "{\t", "", "}\n", "\"", "null");
 			break;
 		case 1:
-			res = mvc_export_table(b, s, t, order, 0, count, "{\n\t\"%s\" : ", ",\n\t\"%s\" : ", "\n}\n", "\"", "null");
+			res = mvc_export_table(b, s, t, 0, count, "{\n\t\"%s\" : ", ",\n\t\"%s\" : ", "\n}\n", "\"", "null");
 			break;
 		case 2:
-			res = mvc_export_table(b, s, t, order, 0, 1, "[\n\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
-			res = mvc_export_table(b, s, t, order, 1, count - 1, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t}\n]\n", "\"", "null");
+			res = mvc_export_table(b, s, t, 0, 1, "[\n\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
+			res = mvc_export_table(b, s, t, 1, count - 1, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t}\n]\n", "\"", "null");
 			break;
 		default:
-			res = mvc_export_table(b, s, t, order, 0, 1, "[\n\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
-			res = mvc_export_table(b, s, t, order, 1, count - 2, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
-			res = mvc_export_table(b, s, t, order, count - 1, 1, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t}\n]\n", "\"", "null");
+			res = mvc_export_table(b, s, t, 0, 1, "[\n\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
+			res = mvc_export_table(b, s, t, 1, count - 2, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t},\n", "\"", "null");
+			res = mvc_export_table(b, s, t, count - 1, 1, "\t{\n\t\t\"%s\" : ", ",\n\t\t\"%s\" : ", "\n\t}\n]\n", "\"", "null");
 		}
 	} else {
-		res = mvc_export_table(b, s, t, order, 0, count, "[ ", ",\t", "\t]\n", "\"", "NULL");
+		res = mvc_export_table(b, s, t, 0, count, "[ ", ",\t", "\t]\n", "\"", "NULL");
 	}
-	BBPunfix(order->batCacheid);
 	if (clean)
 		b->results = res_tables_remove(b->results, t);
 
 	if (res > -1)
-		res = mvc_export_warning(s, "");
+		res = 1;
 	return res;
 }
 
@@ -1801,15 +1775,11 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 {
 	int res = 0;
 	res_table *t = res_tables_find(b->results, res_id);
-	BAT *order = NULL;
 	BUN cnt;
 
 	if (!s || !t)
 		return 0;
 
-	order = BATdescriptor(t->order);
-	if (!order)
-		return -2;
 	cnt = nr;
 	if (cnt == 0)
 		cnt = t->nr_rows;
@@ -1820,36 +1790,35 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 
 	/* query type: Q_BLOCK */
 	if (mnstr_write(s, "&6 ", 3, 1) != 1)
-		return export_error(order);
+		return -4;
 
 	/* result id */
 	if (mvc_send_int(s, res_id) != 1 || mnstr_write(s, " ", 1, 1) != 1)
-		return export_error(order);
+		return -4;
 
 	/* column count */
 	if (mvc_send_int(s, t->nr_cols) != 1 || mnstr_write(s, " ", 1, 1) != 1)
-		return export_error(order);
+		return -4;
 
 	/* row count */
 	if (mvc_send_lng(s, (lng) cnt) != 1 || mnstr_write(s, " ", 1, 1) != 1)
-		return export_error(order);
+		return -4;
 
 	/* block offset */
 	if (mvc_send_lng(s, (lng) offset) != 1)
-		return export_error(order);
+		return -4;
 
 	if (mnstr_write(s, "\n", 1, 1) != 1)
-		return export_error(order);
+		return -4;
 
-	res = mvc_export_table(b, s, t, order, offset, cnt, "[ ", ",\t", "\t]\n", "\"", "NULL");
-	BBPunfix(order->batCacheid);
+	res = mvc_export_table(b, s, t, offset, cnt, "[ ", ",\t", "\t]\n", "\"", "NULL");
 	return res;
 }
 
 int
-mvc_result_table(backend *be, oid query_id, int nr_cols, mapi_query_t type, BAT *order)
+mvc_result_table(backend *be, oid query_id, int nr_cols, mapi_query_t type)
 {
-	res_table *t = res_table_create(be->mvc->session->tr, be->result_id++, query_id, nr_cols, type, be->results, order);
+	res_table *t = res_table_create(be->mvc->session->tr, be->result_id++, query_id, nr_cols, type, be->results);
 	be->results = t;
 	return t ? t->id : -1;
 }
@@ -1954,9 +1923,6 @@ mvc_export_bin_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 		}
 		colinfo[i].type_rec = rec;
 	}
-
-	// TODO: Probably have to deal with t->order somehow..
-	// Right now we just write the contents of the bats.
 
 	// The byte_counting_stream keeps track of the byte offsets
 	countstream = byte_counting_stream(s, &byte_count);

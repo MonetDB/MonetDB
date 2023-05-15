@@ -103,22 +103,23 @@ check_BATs(Tablet *as)
 	cnt = BATcount(fmt[i].c);
 	base = fmt[i].c->hseqbase;
 
-	if (as->nr != cnt)
+	if (as->nr != cnt) {
+		for (i = 0; i < as->nr_attrs; i++)
+			if (fmt[i].c)
+				fmt[i].p = as->offset;
 		return oid_nil;
+	}
 
 	for (i = 0; i < as->nr_attrs; i++) {
-		BAT *b;
-		BUN offset;
+		BAT *b = fmt[i].c;
 
-		b = fmt[i].c;
 		if (b == NULL)
 			continue;
-		offset = as->offset;
 
 		if (BATcount(b) != cnt || b->hseqbase != base)
 			return oid_nil;
 
-		fmt[i].p = offset;
+		fmt[i].p = as->offset;
 	}
 	return base;
 }
@@ -539,7 +540,6 @@ int
 TABLEToutput_file(Tablet *as, BAT *order, stream *s)
 {
 	oid base = oid_nil;
-	BUN maxnr = BATcount(order);
 	int ret = 0;
 
 	/* only set nr if it is zero or lower (bogus) to the maximum value
@@ -547,12 +547,16 @@ TABLEToutput_file(Tablet *as, BAT *order, stream *s)
 	 * preserve value such that for instance SQL's reply_size still
 	 * works
 	 */
-	if (as->nr == BUN_NONE || as->nr > maxnr)
-		as->nr = maxnr;
+	if (order) {
+		BUN maxnr = BATcount(order);
+		if (as->nr == BUN_NONE || as->nr > maxnr)
+			as->nr = maxnr;
+	}
+	assert(as->nr != BUN_NONE);
 
 	base = check_BATs(as);
-	if (!is_oid_nil(base)) {
-		if (order->hseqbase == base)
+	if (!order || !is_oid_nil(base)) {
+		if (!order || order->hseqbase == base)
 			ret = output_file_dense(as, s);
 		else
 			ret = output_file_ordered(as, order, s);
@@ -972,7 +976,7 @@ SQLload_parse_row(READERtask *task, int idx)
 
 			/* eat away the column separator */
 			for (; *row; row++)
-				if (*row == '\\') {
+				if (*row == '\\' && task->escape) {
 					if (row[1])
 						row++;
 				} else if (*row == ch && (task->seplen == 1 || strncmp(row, task->csep, task->seplen) == 0)) {
@@ -1008,7 +1012,7 @@ SQLload_parse_row(READERtask *task, int idx)
 
 			/* eat away the column separator */
 			for (; *row; row++)
-				if (*row == '\\') {
+				if (*row == '\\' && task->escape) {
 					if (row[1])
 						row++;
 				} else if (*row == ch) {
@@ -1060,7 +1064,6 @@ SQLworker(void *arg)
 	GDKclrerr();
 	task->errbuf = GDKerrbuf;
 	MT_thread_set_qry_ctx(task->set_qry_ctx ? &task->cntxt->qryctx : NULL);
-	setClientContext(task->cntxt);
 
 	MT_sema_down(&task->sema);
 	while (task->top[task->cur] >= 0) {
@@ -1112,7 +1115,6 @@ SQLworker(void *arg)
 	GDKfree(GDKerrbuf);
 	GDKsetbuf(NULL);
 	MT_thread_set_qry_ctx(NULL);
-	setClientContext(NULL);
 }
 
 static void
@@ -1227,7 +1229,6 @@ SQLproducer(void *p)
 	}
 
 	MT_thread_set_qry_ctx(task->set_qry_ctx ? &task->cntxt->qryctx : NULL);
-	setClientContext(task->cntxt);
 	rdfa = mkdfa((const unsigned char *) rsep, rseplen);
 	if (rdfa == NULL) {
 		tablet_error(task, lng_nil, lng_nil, int_nil, "cannot allocate memory", "");
@@ -1416,7 +1417,6 @@ SQLproducer(void *p)
 			if (cnt == task->maxrow) {
 				GDKfree(rdfa);
 				MT_thread_set_qry_ctx(NULL);
-				setClientContext(NULL);
 				return;
 			}
 		} else {
@@ -1430,7 +1430,6 @@ SQLproducer(void *p)
 				if (task->state == ENDOFCOPY) {
 					GDKfree(rdfa);
 					MT_thread_set_qry_ctx(NULL);
-					setClientContext(NULL);
 					return;
 				}
 			}
@@ -1453,7 +1452,6 @@ SQLproducer(void *p)
 /*				TRC_DEBUG(MAL_SERVER, "Producer delivered all\n");*/
 				GDKfree(rdfa);
 				MT_thread_set_qry_ctx(NULL);
-				setClientContext(NULL);
 				return;
 			}
 		}
@@ -1464,14 +1462,12 @@ SQLproducer(void *p)
 /*			TRC_DEBUG(MAL_SERVER, "Producer encountered eof\n");*/
 			GDKfree(rdfa);
 			MT_thread_set_qry_ctx(NULL);
-			setClientContext(NULL);
 			return;
 		}
 		/* consumers ask us to stop? */
 		if (task->state == ENDOFCOPY) {
 			GDKfree(rdfa);
 			MT_thread_set_qry_ctx(NULL);
-			setClientContext(NULL);
 			return;
 		}
 		bufcnt[cur] = cnt;
@@ -1487,7 +1483,6 @@ SQLproducer(void *p)
 	}
 	GDKfree(rdfa);
 	MT_thread_set_qry_ctx(NULL);
-	setClientContext(NULL);
 
 	return;
 

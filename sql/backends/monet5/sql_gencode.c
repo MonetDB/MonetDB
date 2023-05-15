@@ -157,7 +157,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 		return -1;
 	}
 	symbackup = c->curprg;
-	memcpy(&bebackup, be, sizeof(backend)); /* backup current backend */
+	bebackup = *be;				/* backup current backend */
 	backend_reset(be);
 
 	int nargs;
@@ -289,7 +289,7 @@ cleanup:
 		else
 			SQLremoveQueryFromCache(c);
 	}
-	memcpy(be, &bebackup, sizeof(backend));
+	*be = bebackup;
 	c->curprg = symbackup;
 	return res;
 }
@@ -1103,7 +1103,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	const char *sql_private_module = putName(sql_private_module_name);
 
 	symbackup = c->curprg;
-	memcpy(&bebackup, be, sizeof(backend)); /* backup current backend */
+	bebackup = *be;				/* backup current backend */
 	backend_reset(be);
 
 	if (m->params)
@@ -1111,7 +1111,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	if (argc < MAXARG)
 		argc = MAXARG;
 	assert(cq && strlen(cq->name) < IDLENGTH);
-	c->curprg = newFunctionArgs(sql_private_module, putName(cq->name), FUNCTIONsymbol, argc);
+	c->curprg = newFunctionArgs(sql_private_module, cq->name = putName(cq->name), FUNCTIONsymbol, argc);
 	if (c->curprg == NULL) {
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		res = -1;
@@ -1169,7 +1169,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	if (c->curprg->def->errors) {
 		sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: %s", c->curprg->def->errors);
 		res = -1;
-		goto cleanup;
 	}
 
 	// restore the context for the wrapper code
@@ -1180,7 +1179,7 @@ cleanup:
 		else
 			SQLremoveQueryFromCache(c);
 	}
-	memcpy(be, &bebackup, sizeof(backend));
+	*be = bebackup;
 	c->curprg = symbackup;
 	return res;
 }
@@ -1466,7 +1465,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	(void) snprintf(befname, IDLENGTH, "f_" LLFMT, store_function_counter(m->store));
 	TRC_INFO(SQL_PARSER, "Mapping SQL name '%s' to MAL name '%s'\n", f->base.name, befname);
 	symbackup = c->curprg;
-	memcpy(&bebackup, be, sizeof(backend)); /* backup current backend */
+	bebackup = *be;				/* backup current backend */
 	backend_reset(be);
 
 	nargs = (f->res && f->type == F_UNION ? list_length(f->res) : 1) + (f->vararg && ops ? list_length(ops) : f->ops ? list_length(f->ops) : 0);
@@ -1570,7 +1569,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			continue;
 		sideeffects = sideeffects || hasSideEffects(curBlk, p, FALSE);
 		no_inline |= (getModuleId(p) == malRef && getFunctionId(p) == multiplexRef);
-		if (p->token == RETURNsymbol || p->token == YIELDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol)
+		if (p->token == RETURNsymbol || p->barrier == RETURNsymbol)
 			retseen++;
 	}
 	if (i == curBlk->stop && retseen == 1 && f->type != F_UNION && !no_inline)
@@ -1621,7 +1620,7 @@ cleanup:
 		}
 		_DELETE(fimp);
 	}
-	memcpy(be, &bebackup, sizeof(backend));
+	*be = bebackup;
 	c->curprg = symbackup;
 	return res;
 }

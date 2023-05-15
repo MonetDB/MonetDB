@@ -746,7 +746,6 @@ typedef struct res_table {
 	const char *ssep;
 	const char *ns;
 	res_col *cols;
-	bat order;
 	struct res_table *next;
 } res_table;
 

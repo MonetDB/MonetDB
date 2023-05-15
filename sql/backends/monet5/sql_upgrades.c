@@ -5111,7 +5111,7 @@ bailout:
 }
 
 static str
-sql_update_default(Client c, mvc *sql, sql_schema *s)
+sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 {
 	size_t bufsize = 65536, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
@@ -5485,16 +5485,118 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 	   the query in bound to. */
 	sql_subtype t1, t2;
 	sql_find_subtype(&t1, "bigint", 64, 0);
-	sql_find_subtype(&t2, "clob", 0, 0);
+	sql_find_subtype(&t2, "varchar", 0, 0);
 	if (!sql_bind_func(sql, "sys", "pause", &t1, &t2, F_PROC, true)) {
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
+		const char *query =
+			"create function sys.queue(username string) returns table(\"tag\" bigint, \"sessionid\" int, \"username\" string, \"started\" timestamp, \"status\" string, \"query\" string, \"finished\" timestamp, \"maxworkers\" int, \"footprint\" int) external name sysmon.queue;\n"
+			"create procedure sys.pause(tag bigint, username string) external name sysmon.pause;\n"
+			"create procedure sys.resume(tag bigint, username string) external name sysmon.resume;\n"
+			"create procedure sys.stop(tag bigint, username string) external name sysmon.stop;\n"
+			"update sys.functions set system = true where system <> true and mod = 'sysmon' and name in ('stop', 'pause', 'resume', 'queue');\n";
+		printf("Running database upgrade commands:\n%s\n", query);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+	}
+
+	/* sys.settimeout and sys.setsession where removed */
+	if (sql_bind_func(sql, "sys", "settimeout", &t1, NULL, F_PROC, true)) {
+		const char *query =
+			"drop procedure sys.settimeout(bigint) cascade;\n"
+			"drop procedure sys.settimeout(bigint, bigint) cascade;\n"
+			"drop procedure sys.setsession(bigint) cascade;\n";
+		printf("Running database upgrade commands:\n%s\n", query);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+	}
+	sql->session->status = 0; /* if the function was not found clean the error */
+	sql->errstr[0] = '\0';
+
+	if (!sql_bind_func(sql, "sys", "levenshtein", &t2, &t2, F_FUNC, true)) {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
 		pos = snprintf(buf, bufsize,
-					   "create function sys.queue(username string) returns table(\"tag\" bigint, \"sessionid\" int, \"username\" string, \"started\" timestamp, \"status\" string, \"query\" string, \"finished\" timestamp, \"maxworkers\" int, \"footprint\" int) external name sysmon.queue;\n"
-					   "create procedure sys.pause(tag bigint, username string) external name sysmon.pause;\n"
-					   "create procedure sys.resume(tag bigint, username string) external name sysmon.resume;\n"
-					   "create procedure sys.stop(tag bigint, username string) external name sysmon.stop;\n"
-					   "update sys.functions set system = true where system <> true and mod = 'sysmon' and name in ('stop', 'pause', 'resume', 'queue');\n");
+					   "create function sys.levenshtein(x string, y string)\n"
+					   "returns int external name txtsim.levenshtein;\n"
+					   "grant execute on function levenshtein(string, string) to public;\n"
+					   "create function sys.levenshtein(x string, y string, insdel int, rep int)\n"
+					   "returns int external name txtsim.levenshtein;\n"
+					   "grant execute on function levenshtein(string, string, int, int) to public;\n"
+					   "create function sys.levenshtein(x string, y string, insdel int, rep int, trans int)\n"
+					   "returns int external name txtsim.levenshtein;\n"
+					   "grant execute on function levenshtein(string, string, int, int, int) to public;\n"
+					   "create filter function sys.maxlevenshtein(x string, y string, k int)\n"
+					   "external name txtsim.\"maxlevenshtein\";\n"
+					   "create filter function sys.maxlevenshtein(x string, y string, k int, insdel int, rep int)\n"
+					   "external name txtsim.\"maxlevenshtein\";\n"
+					   "create filter function minjarowinkler(x string, y string, threshold double)\n"
+					   "external name txtsim.\"minjarowinkler\";\n"
+					   "create function sys.dameraulevenshtein(x string, y string)\n"
+					   "returns int external name txtsim.dameraulevenshtein;\n"
+					   "grant execute on function dameraulevenshtein(string, string) to public;\n"
+					   "create function sys.dameraulevenshtein(x string, y string, insdel int, rep int, trans int)\n"
+					   "returns int external name txtsim.dameraulevenshtein;\n"
+					   "grant execute on function dameraulevenshtein(string, string, int, int, int) to public;\n"
+					   "create function sys.editdistance(x string, y string)\n"
+					   "returns int external name txtsim.editdistance;\n"
+					   "grant execute on function editdistance(string, string) to public;\n"
+					   "create function sys.editdistance2(x string, y string)\n"
+					   "returns int external name txtsim.editdistance2;\n"
+					   "grant execute on function editdistance2(string, string) to public;\n"
+					   "create function sys.soundex(x string)\n"
+					   "returns string external name txtsim.soundex;\n"
+					   "grant execute on function soundex(string) to public;\n"
+					   "create function sys.difference(x string, y string)\n"
+					   "returns int external name txtsim.stringdiff;\n"
+					   "grant execute on function difference(string, string) to public;\n"
+					   "create function sys.qgramnormalize(x string)\n"
+					   "returns string external name txtsim.qgramnormalize;\n"
+					   "grant execute on function qgramnormalize(string) to public;\n"
+					   "create function sys.similarity(x string, y string)\n"
+					   "returns double external name txtsim.similarity;\n"
+					   "grant execute on function similarity(string, string) to public;\n"
+
+					   "create function asciify(x string)\n"
+					   "returns string external name str.\"asciify\";\n"
+					   "grant execute on function asciify(string) to public;\n"
+					   "create function sys.startswith(x string, y string)\n"
+					   "returns boolean external name str.\"startsWith\";\n"
+					   "grant execute on function startswith(string, string) to public;\n"
+					   "create function sys.startswith(x string, y string, icase boolean)\n"
+					   "returns boolean external name str.\"startsWith\";\n"
+					   "grant execute on function startswith(string, string, boolean) to public;\n"
+					   "create filter function sys.startswith(x string, y string)\n"
+					   "external name str.\"startsWith\";\n"
+					   "create filter function sys.startswith(x string, y string, icase boolean)\n"
+					   "external name str.\"startsWith\";\n"
+					   "create function sys.endswith(x string, y string)\n"
+					   "returns boolean external name str.\"endsWith\";\n"
+					   "grant execute on function endswith(string, string) to public;\n"
+					   "create function sys.endswith(x string, y string, icase boolean)\n"
+					   "returns boolean external name str.\"endsWith\";\n"
+					   "grant execute on function endswith(string, string, boolean) to public;\n"
+					   "create filter function sys.endswith(s1 string, s2 string)\n"
+					   "external name str.\"endsWith\";\n"
+					   "create filter function sys.endswith(s1 string, s2 string, icase boolean)\n"
+					   "external name str.\"endsWith\";\n"
+					   "create function sys.contains(x string, y string)\n"
+					   "returns boolean external name str.\"contains\";\n"
+					   "grant execute on function contains(string, string) to public;\n"
+					   "create function sys.contains(x string, y string, icase boolean)\n"
+					   "returns boolean external name str.\"contains\";\n"
+					   "grant execute on function contains(string, string, boolean) to public;\n"
+					   "create filter function sys.contains(x string, y string)\n"
+					   "external name str.\"contains\";\n"
+					   "create filter function sys.contains(x string, y string, icase boolean)\n"
+					   "external name str.\"contains\";\n"
+
+					   "update sys.functions set system = true where system <> true and name in ('levenshtein', 'dameraulevenshtein', 'editdistance', 'editdistance2', 'soundex', 'difference', 'qgramnormalize', 'similarity') and schema_id = 2000 and type = %d;\n"
+					   "update sys.functions set system = true where system <> true and name in ('maxlevenshtein', 'minjarowinkler') and schema_id = 2000 and type = %d;\n"
+					   "update sys.functions set system = true where system <> true and name in ('asciify', 'startswith', 'endswith', 'contains') and schema_id = 2000 and type = %d;\n"
+					   "update sys.functions set system = true where system <> true and name in ('startswith', 'endswith', 'contains') and schema_id = 2000 and type = %d;\n"
+
+					   "delete from sys.triggers where name = 'system_update_tables' and table_id = 2067;\n",
+					   F_FUNC, F_FILT, F_FUNC, F_FILT);
+		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
@@ -5803,7 +5905,7 @@ SQLupgrades(Client c, mvc *m)
 		return -1;
 	}
 
-	if ((err = sql_update_default(c, m, s)) != NULL) {
+	if ((err = sql_update_jun2023(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		return -1;

@@ -173,6 +173,10 @@ uescape_xform(char *restrict s, const char *restrict esc)
 %parse-param { mvc *m }
 %lex-param { void *m }
 
+/* only possible from bison 3.6 and up
+%define parse.error verbose
+*/
+
 /* reentrant parser */
 %define api.pure
 %union {
@@ -702,7 +706,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token CHECK CONSTRAINT CREATE COMMENT NULLS FIRST LAST
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE
-%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREP PREPARE EXEC EXECUTE DEALLOCATE
+%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_TRACE PREP PREPARE EXEC EXECUTE DEALLOCATE
 %token DEFAULT DISTINCT DROP TRUNCATE
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -859,15 +863,6 @@ sqlstmt:
 			  YYACCEPT;
 			}
 
- | SQL_DEBUG 		{
-			  if (m->scanner.mode == LINE_1) {
-				yyerror(m, "SQL debugging only supported in interactive mode");
-				YYABORT;
-			  }
-		  	  m->emod |= mod_debug;
-			  m->scanner.as = m->scanner.yycur; 
-			}
-   sqlstmt		{ $$ = $3; YYACCEPT; }
  | SQL_TRACE 		{
 		  	  m->emod |= mod_trace;
 			  m->scanner.as = m->scanner.yycur; 
@@ -5614,7 +5609,6 @@ non_reserved_word:
 | CLIENT	{ $$ = sa_strdup(SA, "client"); }
 | COMMENT	{ $$ = sa_strdup(SA, "comment"); }
 | DATA 		{ $$ = sa_strdup(SA, "data"); }
-| SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
 | DECADE	{ $$ = sa_strdup(SA, "decade"); }
 | DIAGNOSTICS 	{ $$ = sa_strdup(SA, "diagnostics"); }
 | DOW 		{ $$ = sa_strdup(SA, "dow"); }
@@ -6481,19 +6475,26 @@ odbc_datetime_func:
           append_symbol(l, $3);
           $$ = _symbol_create_list( SQL_UNOP, l ); 
 		}
-    | TIMESTAMPADD '(' odbc_tsi_qualifier ',' intval ',' search_condition ')'
+    | TIMESTAMPADD '(' odbc_tsi_qualifier ',' scalar_exp ',' search_condition ')'
 		{ dlist *l = L(); 
 		  append_list( l, append_string(L(), sa_strdup(SA, "timestampadd")));
 	      append_int(l, FALSE); /* ignore distinct */
           sql_subtype t; 
 	  	  lng i = 0;
-          if (process_odbc_interval(m, $3, $5, &t, &i) < 0) {
+          if (process_odbc_interval(m, $3, 1, &t, &i) < 0) {
 		    yyerror(m, "incorrect interval");
 			$$ = NULL;
 			YYABORT;
           }
           append_symbol(l, $7);
-          append_symbol(l, _newAtomNode(atom_int(SA, &t, i)));
+          append_symbol(l, _symbol_create_list( SQL_BINOP, 
+		  append_symbol(
+		    append_symbol(
+		      append_int(
+		  	append_list(L(), append_string(L(), sa_strdup(SA, "sql_mul"))),
+	      	        FALSE), /* ignore distinct */
+          	      _newAtomNode(atom_int(SA, &t, i))),
+		    $5)));
           $$ = _symbol_create_list( SQL_BINOP, l ); 
 		}
     | TIMESTAMPDIFF '(' odbc_tsi_qualifier ',' search_condition ',' search_condition ')'
@@ -6578,7 +6579,7 @@ odbc_data_type:
     | SQL_BIT
         { sql_find_subtype(&$$, "boolean", 0, 0); }
     | SQL_CHAR
-        { sql_find_subtype(&$$, "char", 1, 0); }
+        { sql_find_subtype(&$$, "char", 0, 0); }
     | SQL_DATE
         { sql_find_subtype(&$$, "date", 0, 0); }
     | SQL_DECIMAL
@@ -6596,7 +6597,7 @@ odbc_data_type:
             }
             sql_init_subtype(&$$, t, 0, 0);
         }
-    | SQL_HUGEINT
+    | SQL_HUGEINT  /* Note: SQL_HUGEINT is not part of or defined in ODBC. It is a MonetDB extension. */
         { sql_find_subtype(&$$, "hugeint", 0, 0); }
     | SQL_INTEGER
         { sql_find_subtype(&$$, "int", 0, 0); }
@@ -6645,17 +6646,19 @@ odbc_data_type:
     | SQL_VARBINARY
         { sql_find_subtype(&$$, "blob", 0, 0); }
     | SQL_VARCHAR
-        { sql_find_subtype(&$$, "clob", 0, 0); }
+        { sql_find_subtype(&$$, "varchar", 0, 0); }
     | SQL_WCHAR
-        { sql_find_subtype(&$$, "char", 1, 0); }
+        { sql_find_subtype(&$$, "char", 0, 0); }
     | SQL_WLONGVARCHAR
         { sql_find_subtype(&$$, "clob", 0, 0); }
     | SQL_WVARCHAR
-        { sql_find_subtype(&$$, "clob", 0, 0); }
+        { sql_find_subtype(&$$, "varchar", 0, 0); }
 ;
 
 odbc_tsi_qualifier:
-    SQL_TSI_SECOND
+      SQL_TSI_FRAC_SECOND
+        { $$ = insec; }
+    | SQL_TSI_SECOND
         { $$ = isec; }
     | SQL_TSI_MINUTE
         { $$ = imin; }

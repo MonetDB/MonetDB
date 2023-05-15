@@ -46,7 +46,7 @@ static bool embeddedinitialized = false;
 str
 malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiontimeout, bool with_mapi_server)
 {
-	Client c, c_old;
+	Client c;
 	QryCtx *qc_old;
 	str msg = MAL_SUCCEED;
 
@@ -89,18 +89,10 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 
 	if (!MCinit())
 		throw(MAL, "malEmbeddedBoot", "MAL debugger failed to start");
-#ifndef NDEBUG
-	if (!mdbInit()) {
-		mal_client_reset();
-		throw(MAL, "malEmbeddedBoot", "MAL debugger failed to start");
-	}
-#endif
 	// monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();
-	initParser();
 	initHeartbeat();
 	// initResource();
-	c_old = setClientContext(NULL); //save context
 	qc_old = MT_thread_get_qry_ctx();
 	c = MCinitClient((oid) 0, 0, 0);
 	if(c == NULL)
@@ -112,42 +104,38 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 	c->curmodule = c->usermodule = userModule();
 	if(c->usermodule == NULL) {
 		MCcloseClient(c);
-		setClientContext(c_old); // restore context
 		MT_thread_set_qry_ctx(qc_old);
 		throw(MAL, "malEmbeddedBoot", "Failed to initialize client MAL module");
 	}
 	if ( (msg = defaultScenario(c)) ) {
 		MCcloseClient(c);
-		setClientContext(c_old); // restore context
 		MT_thread_set_qry_ctx(qc_old);
 		return msg;
 	}
 	if ((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
 		MCcloseClient(c);
-		setClientContext(c_old); // restore context
 		MT_thread_set_qry_ctx(qc_old);
 		return msg;
 	}
 	char *modules[5] = { "embedded", "sql", "generator", "udf" };
 	if ((msg = malIncludeModules(c, modules, 0, !with_mapi_server, NULL)) != MAL_SUCCEED) {
 		MCcloseClient(c);
-		setClientContext(c_old); // restore context
 		MT_thread_set_qry_ctx(qc_old);
 		return msg;
 	}
 	pushEndInstruction(c->curprg->def);
+#if 0
 	msg = chkProgram(c->usermodule, c->curprg->def);
 	if ( msg != MAL_SUCCEED || (msg= c->curprg->def->errors) != MAL_SUCCEED ) {
 		MCcloseClient(c);
-		setClientContext(c_old); // restore context
 		MT_thread_set_qry_ctx(qc_old);
 		return msg;
 	}
 	msg = MALengine(c);
+#endif
 	if (msg == MAL_SUCCEED)
 		embeddedinitialized = true;
 	MCcloseClient(c);
-	setClientContext(c_old); // restore context
 	MT_thread_set_qry_ctx(qc_old);
 	initProfiler();
 	return msg;
@@ -187,7 +175,6 @@ malEmbeddedReset(void) //remove extra modules and set to non-initialized again
 			free(err);
  		}
 	}
-	mal_factory_reset();
 	mal_dataflow_reset();
 	mal_client_reset();
   	mal_linker_reset();
@@ -195,9 +182,6 @@ malEmbeddedReset(void) //remove extra modules and set to non-initialized again
 	mal_runtime_reset();
 	mal_module_reset();
 	mal_atom_reset();
-#ifndef NDEBUG
-	mdbExit();
-#endif
 
 	memset((char*)monet_cwd, 0, sizeof(monet_cwd));
 	memset((char*)monet_characteristics,0, sizeof(monet_characteristics));

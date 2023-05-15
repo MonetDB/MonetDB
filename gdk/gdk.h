@@ -364,6 +364,7 @@ gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *for
 #define GDKisspace(c)	isspace((unsigned char) (c))
 #define GDKisalnum(c)	isalnum((unsigned char) (c))
 #define GDKisdigit(c)	isdigit((unsigned char) (c))
+#define GDKisxdigit(c)	isxdigit((unsigned char) (c))
 
 #define BATDIR		"bat"
 #define TEMPDIR_NAME	"TEMP_DATA"
@@ -379,40 +380,40 @@ gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *for
    for a documentation of the following debug options.
 */
 
-#define THRDMASK	(1)
-#define CHECKMASK	(1<<1)
-#define CHECKDEBUG	if (GDKdebug & CHECKMASK)
-#define PROPMASK	(1<<3)	/* unused */
-#define PROPDEBUG	if (GDKdebug & PROPMASK) /* unused */
-#define IOMASK		(1<<4)
-#define BATMASK		(1<<5)
-#define PARMASK		(1<<7)
-#define TMMASK		(1<<9)
-#define TEMMASK		(1<<10)
-#define PERFMASK	(1<<12)
-#define DELTAMASK	(1<<13)
-#define LOADMASK	(1<<14)
-#define PUSHCANDMASK	(1<<15)	/* used in opt_pushselect.c */
-#define TAILCHKMASK	(1<<16)	/* check .tail file size during commit */
-#define ACCELMASK	(1<<20)
-#define ALGOMASK	(1<<21)
+#define THRDMASK	(1U)
+#define CHECKMASK	(1U<<1)
+#define CHECKDEBUG	if (ATOMIC_GET(&GDKdebug) & CHECKMASK)
+#define PROPMASK	(1U<<3)	/* unused */
+#define PROPDEBUG	if (ATOMIC_GET(&GDKdebug) & PROPMASK) /* unused */
+#define IOMASK		(1U<<4)
+#define BATMASK		(1U<<5)
+#define PARMASK		(1U<<7)
+#define TMMASK		(1U<<9)
+#define TEMMASK		(1U<<10)
+#define PERFMASK	(1U<<12)
+#define DELTAMASK	(1U<<13)
+#define LOADMASK	(1U<<14)
+#define PUSHCANDMASK	(1U<<15)	/* used in opt_pushselect.c */
+#define TAILCHKMASK	(1U<<16)	/* check .tail file size during commit */
+#define ACCELMASK	(1U<<20)
+#define ALGOMASK	(1U<<21)
 
-#define NOSYNCMASK	(1<<24)
+#define NOSYNCMASK	(1U<<24)
 
-#define DEADBEEFMASK	(1<<25)
-#define DEADBEEFCHK	if (!(GDKdebug & DEADBEEFMASK))
+#define DEADBEEFMASK	(1U<<25)
+#define DEADBEEFCHK	if (!(ATOMIC_GET(&GDKdebug) & DEADBEEFMASK))
 
-#define ALLOCMASK	(1<<26)
+#define ALLOCMASK	(1U<<26)
 
 /* M5, only; cf.,
  * monetdb5/mal/mal.h
  */
-#define OPTMASK		(1<<27)
+#define OPTMASK		(1U<<27)
 
-#define HEAPMASK	(1<<28)
+#define HEAPMASK	(1U<<28)
 
-#define FORCEMITOMASK	(1<<29)
-#define FORCEMITODEBUG	if (GDKdebug & FORCEMITOMASK)
+#define FORCEMITOMASK	(1U<<29)
+#define FORCEMITODEBUG	if (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK)
 
 #ifndef TRUE
 #define TRUE		true

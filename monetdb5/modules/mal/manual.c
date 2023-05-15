@@ -19,7 +19,6 @@
 #include "mal_resolve.h"
 #include "mal_client.h"
 #include "mal_exception.h"
-#include "mal_debugger.h"
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
 

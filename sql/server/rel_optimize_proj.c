@@ -3021,7 +3021,7 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 			r = r->l;
 
 		/* both sides only if we have a join index */
-		if (!l || !r ||(is_union(l->op) && is_union(r->op) &&
+		if (!l || !r || (is_union(l->op) && is_union(r->op) &&
 			!(je = rel_is_join_on_pkey(rel, true)))) /* aligned PKEY-FKEY JOIN */
 			return rel;
 		if (is_semi(rel->op) && is_union(l->op) && !je)
