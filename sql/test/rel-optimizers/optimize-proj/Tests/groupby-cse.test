@@ -487,11 +487,16 @@ GROUP BY
 # the projections 
 
 ## GROUPBY <--input-- SEMI
-# TODO
+# this would not make sense since the alias cannot (probably?) exist in
+# the expressions of the semijoin operator. and since the groupby_cse is
+# only looking in the lower subrel it will not be triggered
 
 ## GROUPBY <--input-- UNION
-# TODO
+# TODO: the union operator introduces a distinct in the form of group
+# bys which are NOT processed by the groupby-cse optimizer. this must be
+# investigated more eg 
+# select c1 ca, c1 cb from foo union select c1 ca, c1 cb from bar;
 
 ## GROUPBY <--input-- MERGE
-# TODO
+# not applicable
 
