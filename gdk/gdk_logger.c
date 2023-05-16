@@ -764,8 +764,7 @@ la_bat_destroy(logger *lg, logaction *la, int tid)
 	if (bid < 0)
 		return GDK_FAIL;
 	if (!bid) {
-		GDKerror("la_bat_destroy failed to find bid for object %d (issue ignored)\n", la->cid);
-		GDKclrerr();
+		GDKwarning("failed to find bid for object %d\n", la->cid);
 		return GDK_SUCCEED;
 	}
 	if (bid && log_del_bat(lg, bid) != GDK_SUCCEED)
@@ -1541,7 +1540,7 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts, 
 
 			if ((lb = BATdescriptor(bids[pos])) == NULL ||
 				BATmode(lb, true/*transient*/) != GDK_SUCCEED) {
-				TRC_WARNING(GDK, "Failed to set bat(%d) transient\n", bids[pos]);
+				GDKwarning("Failed to set bat(%d) transient\n", bids[pos]);
 			}
 			logbat_destroy(lb);
 		}
@@ -1826,8 +1825,8 @@ log_cleanup(logger *lg, lng id)
 		return GDK_FAIL;
 	}
 	if (GDKunlink(0, lg->dir, LOGFILE, log_id) != GDK_SUCCEED) {
-		TRC_WARNING(GDK, "#log_cleanup: failed to remove old WAL %s.%s\n", LOGFILE, log_id);
-		GDKclrerr();
+		GDKwarning("failed to remove old WAL %s.%s\n", LOGFILE, log_id);
+		GDKclrerr();	/* clear error from unlink */
 	}
 	return GDK_SUCCEED;
 }
@@ -3070,7 +3069,7 @@ bm_commit(logger *lg)
 		assert(bid);
 		if ((lb = BATdescriptor(bid)) == NULL ||
 		    BATmode(lb, false) != GDK_SUCCEED) {
-			TRC_WARNING(GDK, "Failed to set bat (%d%s) persistent\n", bid, !lb?" gone":"");
+			GDKwarning("Failed to set bat (%d%s) persistent\n", bid, !lb?" gone":"");
 			logbat_destroy(lb);
 			log_unlock(lg);
 			return GDK_FAIL;
