@@ -536,7 +536,8 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 		return;
 
 	if (level <= M_WARNING) {
-		fprintf(stderr, "#%s%s%s: %s: %s%s%s%s\n",
+		fprintf(level <= M_ERROR ? stderr : stdout,
+			"#%s%s%s: %s: %s%s%s%s\n",
 			add_ts ? ts : "",
 			add_ts ? ": " : "",
 			MT_thread_getname(), func, level == M_WARNING ? GDKWARNING : GDKERROR,
