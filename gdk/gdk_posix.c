@@ -393,7 +393,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 			return old_address;
 		}
 		if (path && truncate(path, *new_size) < 0)
-			TRC_WARNING(GDK, "MT_mremap(%s): truncate failed: %s\n",
+			GDKwarning("truncate of %s failed: %s\n",
 				    path, GDKstrerror(errno, (char[64]){0}, 64));
 #endif	/* !__COVERITY__ */
 		return old_address;
