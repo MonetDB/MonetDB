@@ -76,7 +76,7 @@ epilogue(int cnt, bat *subcommit, bool locked)
 			if (b) {
 				/* check mmap modes */
 				if (BATcheckmodes(b, true) != GDK_SUCCEED)
-					TRC_WARNING(GDK, "BATcheckmodes failed\n");
+					GDKwarning("BATcheckmodes failed\n");
 			}
 		}
 		b = BBP_desc(bid);
