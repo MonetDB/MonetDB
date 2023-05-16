@@ -402,8 +402,37 @@ BATSIGabort(int nr)
 static void
 BATSIGinit(void)
 {
+#ifdef HAVE_SIGACTION
+	struct sigaction sa;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+#ifdef SIGPIPE
+	sa.sa_handler = SIG_IGN;
+	sigaction(SIGPIPE, &sa, NULL);
+#endif
+#ifdef SIGHUP
+	sa.sa_handler = GDKtracer_reinit_basic;
+	sigaction(SIGHUP, &sa, NULL);
+#endif
+#ifdef WIN32
+	sa.sa_handler = BATSIGabort;
+	sigaction(SIGABRT, &sa, NULL);
+#endif
+#else
 #ifdef SIGPIPE
 	(void) signal(SIGPIPE, SIG_IGN);
+#endif
+#ifdef SIGHUP
+	// Register signal to GDKtracer (logrotate)
+	(void) signal(SIGHUP, GDKtracer_reinit_basic);
+#endif
+#ifdef WIN32
+	(void) signal(SIGABRT, BATSIGabort);
+#endif
+#endif
+#if defined(WIN32) && !defined(__MINGW32__) && !defined(__CYGWIN__)
+	_set_abort_behavior(0, _CALL_REPORTFAULT | _WRITE_ABORT_MSG);
+	_set_error_mode(_OUT_TO_STDERR);
 #endif
 }
 #endif /* NATIVE_WIN32 */
@@ -987,13 +1016,6 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 		return GDK_FAIL;
 #ifndef NATIVE_WIN32
 	BATSIGinit();
-#endif
-#ifdef WIN32
-	(void) signal(SIGABRT, BATSIGabort);
-#if !defined(__MINGW32__) && !defined(__CYGWIN__)
-	_set_abort_behavior(0, _CALL_REPORTFAULT | _WRITE_ABORT_MSG);
-	_set_error_mode(_OUT_TO_STDERR);
-#endif
 #endif
 	MT_init();
 
