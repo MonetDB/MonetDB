@@ -907,7 +907,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 				bn->batCapacity = 0;
 		} else if (BATatoms[tt].atomFix || tt != TYPE_void || ATOMextern(tt)) {
 			/* case (4): one-by-one BUN insert (really slow) */
-			BUN p, q, r = 0;
+			BUN p, q;
 
 			BATloop(b, p, q) {
 				const void *t = BUNtail(bi, p);
@@ -915,7 +915,6 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 				if (bunfastapp_nocheck(bn, t) != GDK_SUCCEED) {
 					goto bunins_failed;
 				}
-				r++;
 			}
 			bn->theap->dirty |= bi.count > 0;
 		} else if (tt != TYPE_void && bi.type == TYPE_void) {
