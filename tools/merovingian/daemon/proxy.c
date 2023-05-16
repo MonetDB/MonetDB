@@ -136,11 +136,6 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 
 	bool use_tls = getConfNum(_mero_props, "use_tls");
 
-
-	/* TODO: proxy if tls was established, even with UNIX sockets.
-	 * I therefore need to correctly open the UNIX socket in case
-	 * of TLS connection.
-	 * */
 	if (ssock != -1 ) {
 		struct sockaddr_un server;
 		struct msghdr msg;

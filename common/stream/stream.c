@@ -537,7 +537,7 @@ mnstr_fsync(stream *s)
 		return -1;
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "fsync %s (%d)\n",
-		s->name ? s->name : "<unnamed>", s->errnr);
+		s->name ? s->name : "<unnamed>", s->errkind);
 #endif
 	assert(!s->readonly);
 	if (s->errkind != MNSTR_NO__ERROR)
@@ -675,7 +675,7 @@ mnstr_set_bigendian(stream *s, bool bigendian)
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "mnstr_set_bigendian %s %s\n",
 		s->name ? s->name : "<unnamed>",
-		swapbytes ? "true" : "false");
+		bigendian ? "true" : "false");
 #endif
 	assert(s->readonly);
 	s->binary = true;
