@@ -406,9 +406,9 @@ recover_dir(int farmid, bool direxists)
 	if (direxists) {
 		/* just try; don't care about these non-vital files */
 		if (GDKunlink(farmid, BATDIR, "BBP", "bak") != GDK_SUCCEED)
-			TRC_WARNING(GDK, "unlink of BBP.bak failed\n");
+			GDKwarning("unlink of BBP.bak failed\n");
 		if (GDKmove(farmid, BATDIR, "BBP", "dir", BATDIR, "BBP", "bak", false) != GDK_SUCCEED)
-			TRC_WARNING(GDK, "rename of BBP.dir to BBP.bak failed\n");
+			GDKwarning("rename of BBP.dir to BBP.bak failed\n");
 	}
 	return GDKmove(farmid, BAKDIR, "BBP", "dir", BATDIR, "BBP", "dir", true);
 }
@@ -1140,7 +1140,7 @@ movestrbats(void)
 						GDKerror("both %s and %s exist with %s unexpectedly newer: manual intervention required\n", oldpath, newpath, oldpath);
 						ret = -1;
 					} else {
-						TRC_WARNING(GDK, "both %s and %s exist, removing %s\n", oldpath, newpath, oldpath);
+						GDKwarning("both %s and %s exist, removing %s\n", oldpath, newpath, oldpath);
 						ret = MT_remove(oldpath);
 					}
 				} else {
@@ -3087,8 +3087,8 @@ BBPquickdesc(bat bid)
 		const char *aname = ATOMunknown_name(b->ttype);
 		int tt = ATOMindex(aname);
 		if (tt < 0) {
-			TRC_WARNING(GDK, "atom '%s' unknown in bat '%s'.\n",
-				    aname, BBP_physical(bid));
+			GDKwarning("atom '%s' unknown in bat '%s'.\n",
+				   aname, BBP_physical(bid));
 		} else {
 			b->ttype = tt;
 		}

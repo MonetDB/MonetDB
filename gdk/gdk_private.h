@@ -172,6 +172,9 @@ gdk_return GDKtracer_init(const char *dbname, const char *dbtrace)
 	__attribute__((__visibility__("hidden")));
 gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
+#define GDKwarning(format, ...)					\
+	GDKtracer_log(__FILE__, __func__, __LINE__, M_WARNING,	\
+		      GDK, NULL, format, ##__VA_ARGS__)
 void HASHappend(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHappend_locked(BAT *b, BUN i, const void *v)
