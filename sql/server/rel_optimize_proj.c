@@ -1723,17 +1723,13 @@ rel_groupby_cse(visitor *v, sql_rel *rel)
 					sql_exp *e2_in_exps = (e2->alias.rname == e2->l && e2->alias.name == e2->r) ?
 						exps_bind_column2(rel->exps, e2->l, e2->r, NULL) :
 						exps_bind_column(rel->exps, e2->alias.name, NULL, NULL, 0);
-					if (!e2_in_exps)
-						/* TODO: should we ever be here? */
-						continue;
+					assert(e2_in_exps);
 
 					/* same as e2 */
 					sql_exp *e1_in_exps = (e1->alias.rname == e1->l && e1->alias.name == e1->r) ?
 						exps_bind_column2(rel->exps, e1->l, e1->r, NULL) :
 						exps_bind_column(rel->exps, e1->alias.name, NULL, NULL, 0);
-					if (!e1_in_exps)
-						/* TODO: should we ever be here? */
-						continue;
+					assert(e1_in_exps);
 
 					/* write e2 as an e1 alias since the expressions are the same */
 					sql_exp* e2_as_e1_alias = exp_copy(v->sql, e1_in_exps);
