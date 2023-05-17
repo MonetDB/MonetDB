@@ -405,7 +405,7 @@ project (
 | | | table("sys"."tab1") [ "tab1"."part" UNIQUE as "myalias0"."part", "tab1"."tet" UNIQUE as "myalias0"."tet" ],
 | | | table("sys"."tab2") [ "tab2"."myk" as "myalias1"."myk", "tab2"."ups" UNIQUE as "myalias1"."ups" ]
 | | ) [ ("myalias0"."part" UNIQUE) = ("myalias1"."myk") ]
-| ) [ "myalias1"."ups", "myalias0"."part", "myalias0"."tet" as "track" ] [ "myalias0"."part", "track", "myalias0"."tet", "sys"."count"() NOT NULL as "%1"."%1" ]
+| ) [ "myalias1"."ups", "myalias0"."part", "myalias0"."tet" as "track" ] [ "myalias0"."part", "track", "track" as "myalias0"."tet", "sys"."count"() NOT NULL as "%1"."%1" ]
 ) [ "myalias0"."part" as "part", "myalias0"."tet" as "tet", "%1"."%1" NOT NULL as "mycount", "track" ]
 
 query IIII rowsort
