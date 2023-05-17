@@ -111,23 +111,32 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/transactions/"},
 	{"COPY BINARY",
 	 "Append binary representations into a table",
-	 "COPY [( BIG | LITTLE | NATIVE) ENDIAN] BINARY INTO qname [column_list] FROM string [',' ...] [ON { CLIENT | SERVER }]",
+	 "COPY [{BIG | LITTLE | NATIVE} ENDIAN] BINARY INTO qname [column_list] FROM string [',' ...] [ON { CLIENT | SERVER }]",
 	 "qname,column_list",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/binary-loading/"},
 	{"COPY INTO",
-	 "Parse a csv file into a table or write a query result to a csv file",
+	 "Write query result data to a csv file or standard output stream",
+	 "COPY query_expression INTO [STDOUT | string [ON { CLIENT | SERVER }]] [separators] [NULL [AS] string]",
+	 "query_expression,separators",
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/export_data/"},
+	{"COPY INTO BINARY",
+	 "Write query result data to binary files",
+	 "COPY query_expression INTO [{{BIG | LITTLE | NATIVE}} ENDIAN] BINARY string_commalist [ON { CLIENT | SERVER }]",
+	 "query_expression",
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/export_data/"},
+	{"COPY INTO FROM",
+	 "Read csv file(s) or standard input stream data and insert into a table",
 	 "COPY [nrofrecords] INTO qname [column_list] FROM string [',' ...] [headerlist] [ON { CLIENT | SERVER }] [ separators]\n"
 	 " [NULL [AS] string] [BEST EFFORT] [FWF '(' integer [',' ...] ')'\n"
 	 "COPY [nrofrecords] INTO qname [column_list] FROM STDIN [headerlist] [ separators]\n"
-	 " [NULL [AS] string] [BEST EFFORT]\n"
-	 "COPY query_expression INTO [STDOUT | string [ON { CLIENT | SERVER }]] [separators] [NULL [AS] string]",
+	 " [NULL [AS] string] [BEST EFFORT]\n",
 	 "nrofrecords,qname,column_list,headerlist,separators",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/copy-from/"},
 	{"COPY LOADER",
 	 "Copy into using a user supplied parsing function",
 	 "COPY LOADER INTO qname FROM qname '(' [ scalar_expression ... ] ')'",
 	 "qname,scalar_expression",
-	 NULL},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/loader-functions/"},
 	{"CREATE AGGREGATE",
 	 "Create a user-defined aggregate function. The body of the aggregate function\n"
 	 "can also be defined in other programming languages such as Python, R, C or CPP.",
@@ -228,8 +237,8 @@ SQLhelp sqlhelp1[] = {
 	{"CREATE TRIGGER",
 	 "Define a triggered action for a table data update event",
 	 "CREATE [ OR REPLACE ] TRIGGER ident { BEFORE | AFTER }\n"
-	 " { INSERT | DELETE | TRUNCATE | UPDATE [ OF ident_list ] }\n"
-	 " ON qname [ REFERENCING trigger_reference [...] ] triggered_action",
+	 " { INSERT | DELETE | TRUNCATE | UPDATE [ OF ident_list ] | LOGIN }\n"
+	 " [ ON qname ] [ REFERENCING trigger_reference [...] ] triggered_action",
 	 "qname,ident_list,trigger_reference,triggered_action",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/trigger-definition/"},
 	{"CREATE TYPE",
@@ -297,11 +306,6 @@ SQLhelp sqlhelp1[] = {
 	 "DEALLOCATE [ PREPARE ] { intnr | ** | ALL }",
 	 NULL,
 	 NULL},
-	{"DEBUG",
-	 "Debug a SQL statement using MAL debugger",
-	 "DEBUG statement",
-	 NULL,
-	 "See also https://www.monetdb.org/documentation/admin-guide/debugging-features/debug-sql-stmt/"},
 	{"DECLARE",
 	 "Define a local variable",
 	 "DECLARE ident_list data_type",
@@ -950,7 +954,7 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"triggered_action",
 	 NULL,
-	 "[ FOR [EACH] { ROW | STATEMENT } ]\n"
+	 "[ FOR EACH { ROW | STATEMENT } ]\n"
 	 "[ WHEN '(' search_condition ')' ]\n"
 	 "{ trigger_statement | BEGIN ATOMIC trigger_statement [ ; ... ] END }",
 	 "trigger_statement,search_condition",

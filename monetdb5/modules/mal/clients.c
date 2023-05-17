@@ -135,11 +135,6 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUNappend(bn, buf, false) != GDK_SUCCEED)
 		goto bailout;
 
-	(void) snprintf(buf, sizeof(buf), "%d", cntxt->debug);
-	if (BUNappend(b, "debug", false) != GDK_SUCCEED ||
-		BUNappend(bn, buf, false) != GDK_SUCCEED)
-		goto bailout;
-
 	CLTtimeConvert(cntxt->login, buf);
 	if (BUNappend(b, "login", false) != GDK_SUCCEED ||
 		BUNappend(bn, buf, false) != GDK_SUCCEED)

@@ -88,7 +88,7 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 	}
 
 	if (!MCinit())
-		throw(MAL, "malEmbeddedBoot", "MAL debugger failed to start");
+		throw(MAL, "malEmbeddedBoot", "Failed to initialize clients structure");
 	// monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();
 	initHeartbeat();

@@ -127,12 +127,6 @@ typedef struct CLIENT {
 	 * executed.  Nesting is indicated using a '+' before the prompt.
 	 */
 	int blkmode;        /* control block parsing */
-	/*
-	 * The MAL debugger uses the client record to keep track of any
-	 * pervasive debugger command. For detailed information on the
-	 * debugger features.
-	 */
-	int debug;
 	enum clientmode mode;  /* FREECLIENT..BLOCKED */
 	/*
 	 * Client records are organized into a two-level dependency tree,
