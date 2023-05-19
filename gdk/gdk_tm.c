@@ -78,7 +78,7 @@ epilogue(int cnt, bat *subcommit, bool locked)
 				/* check mmap modes */
 				MT_lock_set(&b->theaplock);
 				if (BATcheckmodes(b, true) != GDK_SUCCEED)
-					TRC_WARNING(GDK, "BATcheckmodes failed\n");
+					GDKwarning("BATcheckmodes failed\n");
 				MT_lock_unset(&b->theaplock);
 			}
 		}
