@@ -384,7 +384,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 			sql_table *tt = (sql_table*)b;
 			if (isPartitionedByColumnTable(tt) || isPartitionedByExpressionTable(tt)) {
 				char *err;
-				if ((err = initialize_sql_parts(m, tt)) != NULL) {
+				if ((err = parse_sql_parts(m, tt)) != NULL) {
 					TRC_CRITICAL(SQL_TRANS, "Unable to start partitioned table: %s.%s: %s\n", ss->base.name, tt->base.name, err);
 					freeException(err);
 					mvc_destroy(m);
@@ -393,6 +393,12 @@ mvc_init(int debug, store_type store_tpe, int ro, int su)
 				}
 			}
 		}
+	}
+	if (sql_trans_convert_partitions(m->session->tr) < 0) {
+		TRC_CRITICAL(SQL_TRANS, "Unable to start partitioned tables\n");
+		mvc_destroy(m);
+		mvc_exit(store);
+		return NULL;
 	}
 
 	if ((msg = mvc_commit(m, 0, NULL, false)) != MAL_SUCCEED) {

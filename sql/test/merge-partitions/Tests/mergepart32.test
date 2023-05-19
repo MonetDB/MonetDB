@@ -11,7 +11,7 @@ statement ok
 CREATE TABLE another3 (a int)
 
 statement ok
-ALTER TABLE table1 ADD TABLE another1 AS PARTITION FROM 10 TO 10
+ALTER TABLE table1 ADD TABLE another1 AS PARTITION FROM 10 TO 11
 
 statement ok rowcount 1
 insert into table1 values (10)
@@ -25,19 +25,19 @@ insert into another1 values (11)
 statement ok rowcount 1
 insert into another1 values (10)
 
-statement error 42000!ALTER TABLE: conflicting partitions: 10 to 11 and 10 to 10 from table sys.another1
+statement error 42000!ALTER TABLE: conflicting partitions: 10 to 11 and 10 to 11 from table sys.another1
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM 10 TO 11
 
 statement ok
-ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM 11 TO 11
+ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM 11 TO 12
 
-statement error 42000!ALTER TABLE: conflicting partitions: 11 to 12 and 11 to 11 from table sys.another2
+statement error 42000!ALTER TABLE: conflicting partitions: 11 to 12 and 11 to 12 from table sys.another2
 ALTER TABLE table1 ADD TABLE another3 AS PARTITION FROM 11 TO 12
 
-statement error 42000!ALTER TABLE: conflicting partitions: 10 to absolute max value and 10 to 10 from table sys.another1
+statement error 42000!ALTER TABLE: conflicting partitions: 10 to absolute max value and 10 to 11 from table sys.another1
 ALTER TABLE table1 ADD TABLE another3 AS PARTITION FROM 10 TO RANGE MAXVALUE
 
-statement error 42000!ALTER TABLE: conflicting partitions: 11 to absolute max value and 11 to 11 from table sys.another2
+statement error 42000!ALTER TABLE: conflicting partitions: 11 to absolute max value and 11 to 12 from table sys.another2
 ALTER TABLE table1 ADD TABLE another3 AS PARTITION FROM 11 TO RANGE MAXVALUE
 
 statement ok rowcount 1

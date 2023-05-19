@@ -2841,6 +2841,7 @@ PROPdestroy_nolock(BAT *b)
 	PROPrec *p = b->tprops;
 	PROPrec *n;
 
+	fprintf(stderr, "#%s "ALGOOPTBATFMT"\n", __func__, ALGOOPTBATPAR(b));
 	b->tprops = NULL;
 	while (p) {
 		n = p->next;
@@ -2882,6 +2883,7 @@ BATrmprop_nolock(BAT *b, enum prop_t idx)
 {
 	PROPrec *prop = b->tprops, *prev = NULL;
 
+	fprintf(stderr, "#%s %d "ALGOOPTBATFMT"\n", __func__, (int) idx, ALGOOPTBATPAR(b));
 	while (prop) {
 		if (prop->id == idx) {
 			if (prev)
@@ -2902,6 +2904,7 @@ BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 {
 	PROPrec *p;
 
+	fprintf(stderr, "#%s %d "ALGOOPTBATFMT"\n", __func__, (int) idx, ALGOOPTBATPAR(b));
 	p = b->tprops;
 	while (p && p->id != idx)
 		p = p->next;

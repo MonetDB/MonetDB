@@ -84,11 +84,14 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 		/* we need to find out the min and max of g */
 		const ValRecord *prop;
 
-		prop = BATgetprop(g, GDK_MAX_VALUE);
-		if (prop) {
+		if ((prop = BATgetprop(g, GDK_MAX_VALUE)) != NULL) {
 			assert(prop->vtype == TYPE_oid);
 			min = 0; /* just assume it starts at 0 */
 			max = prop->val.oval;
+		} else if ((prop = BATgetprop(g, GDK_MAX_BOUND)) != NULL) {
+			assert(prop->vtype == TYPE_oid);
+			min = 0; /* just assume it starts at 0 */
+			max = prop->val.oval - 1; /* bound is exclusive */
 		} else {
 			min = oid_nil;	/* note that oid_nil > 0! (unsigned) */
 			max = 0;

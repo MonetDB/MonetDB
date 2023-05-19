@@ -1117,6 +1117,117 @@ scanselect(BAT *b, BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		/* in the case where equi==true, the check is x == *tl */ \
 	} while (false)
 
+enum range_comp_t
+BATrange(BAT *b, const void *tl, const void *th, bool li, bool hi)
+{
+	enum range_comp_t range;
+	const ValRecord *minprop, *maxprop;
+	bool maxincl = true;
+	int c;
+	int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
+
+	if (tl && (*atomcmp)(tl, ATOMnilptr(b->ttype)) == 0)
+		tl = NULL;
+	if (th && (*atomcmp)(th, ATOMnilptr(b->ttype)) == 0)
+		th = NULL;
+	/* keep locked while we look at the property values */
+	MT_lock_set(&b->theaplock);
+	if ((minprop = BATgetprop_nolock(b, GDK_MIN_VALUE)) == NULL)
+		minprop = BATgetprop_nolock(b, GDK_MIN_BOUND);
+	if ((maxprop = BATgetprop_nolock(b, GDK_MAX_VALUE)) == NULL) {
+		maxincl = false;
+		maxprop = BATgetprop_nolock(b, GDK_MAX_BOUND);
+	}
+
+	if (tl == NULL && th == NULL)
+		range = range_contains; /* looking for everything */
+	else if (minprop == NULL && maxprop == NULL)
+		range = range_inside; /* strictly: unknown */
+	else if (maxprop &&
+		 tl &&
+		 ((c = atomcmp(tl, VALptr(maxprop))) > 0 ||
+		  ((!maxincl || !li) && c == 0))) {
+		range = range_after;
+	} else if (minprop &&
+		   th &&
+		   ((c = atomcmp(th, VALptr(minprop))) < 0 ||
+		    (!hi && c == 0))) {
+		range = range_before;
+	} else if (tl == NULL) {
+		if (minprop == NULL) {
+			c = atomcmp(th, VALptr(maxprop));
+			if (c < 0 || ((maxincl || !hi) && c == 0))
+				range = range_atstart;
+			else
+				range = range_contains;
+		} else {
+			c = atomcmp(th, VALptr(minprop));
+			if (c < 0 || (!hi && c == 0))
+				range = range_before;
+			else if (maxprop == NULL)
+				range = range_atstart;
+			else {
+				c = atomcmp(th, VALptr(maxprop));
+				if (c < 0 || ((maxincl || !hi) && c == 0))
+					range = range_atstart;
+				else
+					range = range_contains;
+			}
+		}
+	} else if (th == NULL) {
+		if (maxprop == NULL) {
+			c = atomcmp(tl, VALptr(minprop));
+			if (c >= 0)
+				range = range_atend;
+			else
+				range = range_contains;
+		} else {
+			c = atomcmp(tl, VALptr(maxprop));
+			if (c > 0 || ((!maxincl || !li) && c == 0))
+				range = range_after;
+			else if (minprop == NULL)
+				range = range_atend;
+			else {
+				c = atomcmp(tl, VALptr(minprop));
+				if (c >= 0)
+					range = range_atend;
+				else
+					range = range_contains;
+			}
+		}
+	} else if (minprop == NULL) {
+		c = atomcmp(th, VALptr(maxprop));
+		if (c < 0 || ((maxincl || !hi) && c == 0))
+			range = range_inside;
+		else
+			range = range_atend;
+	} else if (maxprop == NULL) {
+		c = atomcmp(tl, VALptr(minprop));
+		if (c >= 0)
+			range = range_inside;
+		else
+			range = range_atstart;
+	} else {
+		c = atomcmp(tl, VALptr(minprop));
+		if (c >= 0) {
+			c = atomcmp(th, VALptr(maxprop));
+			if (c < 0 || ((maxincl || !hi) && c == 0))
+				range = range_inside;
+			else
+				range = range_atend;
+		} else {
+			c = atomcmp(th, VALptr(maxprop));
+			if (c < 0 || ((maxincl || !hi) && c == 0))
+				range = range_atstart;
+			else
+				range = range_contains;
+		}
+	}
+
+	MT_lock_unset(&b->theaplock);
+	return range;
+}
+
 /* generic range select
  *
  * Return a BAT with the OID values of b for qualifying tuples.  The
@@ -1223,6 +1334,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		dbl v_dbl;
 		oid v_oid;
 	} vl, vh;
+	enum range_comp_t range;
 	lng t0 = GDKusec();
 
 	BATcheck(b, NULL);
@@ -1401,86 +1513,37 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		return bn;
 	}
 
+	range = BATrange(b, lval ? tl : NULL, hval ? th : NULL, li, hi);
 	if (anti) {
-		const ValRecord *prop;
-		int c;
-
-		MT_lock_set(&b->theaplock);
-		if ((prop = BATgetprop_nolock(b, GDK_MIN_VALUE)) != NULL) {
-			c = ATOMcmp(t, tl, VALptr(prop));
-			if (c < 0 || (li && c == 0)) {
-				if ((prop = BATgetprop_nolock(b, GDK_MAX_VALUE)) != NULL) {
-					c = ATOMcmp(t, th, VALptr(prop));
-					if (c > 0 || (hi && c == 0)) {
-						MT_lock_unset(&b->theaplock);
-						/* tl..th range fully
-						 * inside MIN..MAX
-						 * range of values in
-						 * BAT, so nothing
-						 * left over for
-						 * anti */
-						MT_thread_setalgorithm("select: nothing, out of range");
-						bn = BATdense(0, 0, 0);
-						TRC_DEBUG(ALGO, "b=" ALGOBATFMT
-							  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
-							  " (" LLFMT " usec): "
-							  "nothing, out of range\n",
-							  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
-						return bn;
-					}
-				}
-			}
+		if (range == range_contains) {
+			/* MIN..MAX range of values in BAT fully inside
+			 * tl..th range, so nothing left over for
+			 * anti */
+			MT_thread_setalgorithm("select: nothing, out of range");
+			bn = BATdense(0, 0, 0);
+			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+				  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
+				  " (" LLFMT " usec): "
+				  "nothing, out of range\n",
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
+			return bn;
 		}
-		MT_lock_unset(&b->theaplock);
 	} else if (!equi || !lnil) {
-		const ValRecord *prop;
-		int c;
-
-		if (hval) {
-			MT_lock_set(&b->theaplock);
-			if ((prop = BATgetprop_nolock(b, GDK_MIN_VALUE)) != NULL) {
-				c = ATOMcmp(t, th, VALptr(prop));
-				if (c < 0 || (!hi && c == 0)) {
-					MT_lock_unset(&b->theaplock);
-					/* smallest value in BAT larger than
-					 * what we're looking for */
-					MT_thread_setalgorithm("select: nothing, out of range");
-					bn = BATdense(0, 0, 0);
-					TRC_DEBUG(ALGO, "b="
-						  ALGOBATFMT ",s="
-						  ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
-						  " (" LLFMT " usec): "
-						  "nothing, out of range\n",
-						  ALGOBATPAR(b),
-						  ALGOOPTBATPAR(s), anti,
-						  ALGOOPTBATPAR(bn), GDKusec() - t0);
-					return bn;
-				}
-			}
-			MT_lock_unset(&b->theaplock);
-		}
-		if (lval) {
-			MT_lock_set(&b->theaplock);
-			if ((prop = BATgetprop_nolock(b, GDK_MAX_VALUE)) != NULL) {
-				c = ATOMcmp(t, tl, VALptr(prop));
-				if (c > 0 || (!li && c == 0)) {
-					MT_lock_unset(&b->theaplock);
-					/* largest value in BAT smaller than
-					 * what we're looking for */
-					MT_thread_setalgorithm("select: nothing, out of range");
-					bn = BATdense(0, 0, 0);
-					TRC_DEBUG(ALGO, "b="
-						  ALGOBATFMT ",s="
-						  ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
-						  " (" LLFMT " usec): "
-						  "nothing, out of range\n",
-						  ALGOBATPAR(b),
-						  ALGOOPTBATPAR(s), anti,
-						  ALGOOPTBATPAR(bn), GDKusec() - t0);
-					return bn;
-				}
-			}
-			MT_lock_unset(&b->theaplock);
+		if (range == range_before || range == range_after) {
+			/* range we're looking for either completely
+			 * before or complete after the range of values
+			 * in the BAT */
+			MT_thread_setalgorithm("select: nothing, out of range");
+			bn = BATdense(0, 0, 0);
+			TRC_DEBUG(ALGO, "b="
+				  ALGOBATFMT ",s="
+				  ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
+				  " (" LLFMT " usec): "
+				  "nothing, out of range\n",
+				  ALGOBATPAR(b),
+				  ALGOOPTBATPAR(s), anti,
+				  ALGOOPTBATPAR(bn), GDKusec() - t0);
+			return bn;
 		}
 	}
 

@@ -1,6 +1,3 @@
-stdout of test 'MAL-signatures` in directory 'clients` itself:
-
-#select * from sys.malfunctions() order by module, "function", address, signature, comment;
 % .%1,	.%1,	.%1,	.%1,	.%1 # table_name
 % module,	function,	signature,	address,	comment # name
 % clob,	clob,	clob,	clob,	clob # type

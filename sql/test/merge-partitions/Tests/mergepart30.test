@@ -315,10 +315,10 @@ ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM RANGE MINVALUE TO 0
 statement error 42000!ALTER TABLE: conflicting partitions: absolute min value to absolute max value and absolute min value to 0 from table sys.another1
 ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM RANGE MINVALUE TO RANGE MAXVALUE
 
-statement error 42000!ALTER TABLE: conflicting partitions: 0 to 0 and absolute min value to 0 from table sys.another1
+statement error 42000!ALTER TABLE: minimum value is equal to the maximum value
 ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM 0 TO 0
 
-statement error 42000!ALTER TABLE: conflicting partitions: 10 to 10 and 10 to absolute max value from table sys.another2
+statement error 42000!ALTER TABLE: minimum value is equal to the maximum value
 ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM 10 TO 10
 
 statement error 42000!ALTER TABLE: conflicting partitions: 10 to 11 and 10 to absolute max value from table sys.another2

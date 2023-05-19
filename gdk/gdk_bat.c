@@ -1197,6 +1197,14 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		prop = BATgetprop_nolock(b, GDK_MAX_POS);
 		BUN maxpos = prop ? (BUN) prop->val.oval : BUN_NONE;
 		BATiter bi = bat_iterator_nolock(b);
+		ValRecord minprop, maxprop;
+		const void *minbound = NULL, *maxbound = NULL;
+		if ((prop = BATgetprop_nolock(b, GDK_MIN_BOUND)) != NULL &&
+		    VALcopy(&minprop, prop) != NULL)
+			minbound = VALptr(&minprop);
+		if ((prop = BATgetprop_nolock(b, GDK_MAX_BOUND)) != NULL &&
+		    VALcopy(&maxprop, prop) != NULL)
+			maxbound = VALptr(&maxprop);
 		MT_lock_unset(&b->theaplock);
 		const void *minvalp = NULL, *maxvalp = NULL;
 		if (minpos != BUN_NONE)
@@ -1206,10 +1214,27 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		if (b->tvarsized) {
 			const void *vbase = b->tvheap->base;
 			for (BUN i = 0; i < count; i++) {
+				gdk_return rc;
 				t = ((void **) values)[i];
-				gdk_return rc = tfastins_nocheckVAR(b, p, t);
+				if (minbound &&
+				    ATOMcmp(b->ttype, t, minbound) < 0) {
+					assert(0);
+					GDKerror("value not within bounds\n");
+					rc = GDK_FAIL;
+				} else if (maxbound &&
+					   ATOMcmp(b->ttype, t, maxbound) >= 0) {
+					assert(0);
+					GDKerror("value not within bounds\n");
+					rc = GDK_FAIL;
+				} else {
+					rc = tfastins_nocheckVAR(b, p, t);
+				}
 				if (rc != GDK_SUCCEED) {
 					MT_rwlock_wrunlock(&b->thashlock);
+					if (minbound)
+						VALclear(&minprop);
+					if (maxbound)
+						VALclear(&maxprop);
 					return rc;
 				}
 				if (vbase != b->tvheap->base) {
@@ -1266,6 +1291,10 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				gdk_return rc = tfastins_nocheckFIX(b, p, t);
 				if (rc != GDK_SUCCEED) {
 					MT_rwlock_wrunlock(&b->thashlock);
+					if (minbound)
+						VALclear(&minprop);
+					if (maxbound)
+						VALclear(&maxprop);
 					return rc;
 				}
 				if (b->thash) {
@@ -1307,6 +1336,10 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			BATsetprop_nolock(b, GDK_MAX_VALUE, b->ttype, maxvalp);
 		}
 		MT_lock_unset(&b->theaplock);
+		if (minbound)
+			VALclear(&minprop);
+		if (maxbound)
+			VALclear(&maxprop);
 	} else {
 		for (BUN i = 0; i < count; i++) {
 			gdk_return rc = tfastins_nocheck(b, p, t);
@@ -1462,6 +1495,17 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			 BATgetId(b));
 		return GDK_FAIL;
 	}
+	MT_lock_set(&b->theaplock);
+	const ValRecord *prop;
+	ValRecord minprop, maxprop;
+	const void *minbound = NULL, *maxbound = NULL;
+	if ((prop = BATgetprop_nolock(b, GDK_MIN_BOUND)) != NULL &&
+	    VALcopy(&minprop, prop) != NULL)
+		minbound = VALptr(&minprop);
+	if ((prop = BATgetprop_nolock(b, GDK_MAX_BOUND)) != NULL &&
+	    VALcopy(&maxprop, prop) != NULL)
+		maxbound = VALptr(&maxprop);
+	MT_lock_unset(&b->theaplock);
 	MT_rwlock_wrlock(&b->thashlock);
 	for (BUN i = 0; i < count; i++) {
 		BUN p = autoincr ? positions[0] - b->hseqbase + i : positions[i] - b->hseqbase;
@@ -1469,6 +1513,15 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			((const void **) values)[i] :
 			(const void *) ((const char *) values + (i << b->tshift));
 
+		if ((minbound &&
+		     ATOMcmp(b->ttype, t, minbound) < 0) ||
+		    (maxbound &&
+		     ATOMcmp(b->ttype, t, maxbound) >= 0)) {
+			assert(0);
+			GDKerror("value not within bounds\n");
+			MT_rwlock_wrunlock(&b->thashlock);
+			goto bailout;
+		}
 		/* retrieve old value, but if this comes from the
 		 * logger, we need to deal with offsets that point
 		 * outside of the valid vheap */
@@ -1604,14 +1657,14 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			}
 			if (ATOMreplaceVAR(b, &_d, t) != GDK_SUCCEED) {
 				MT_rwlock_wrunlock(&b->thashlock);
-				return GDK_FAIL;
+				goto bailout;
 			}
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 << b->tshift))) {
 				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, _d, 0, bi.count) != GDK_SUCCEED) {
 					MT_rwlock_wrunlock(&b->thashlock);
-					return GDK_FAIL;
+					goto bailout;
 				}
 			}
 			/* reinitialize iterator after possible heap upgrade */
@@ -1640,7 +1693,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			if (ATOMfix(b->ttype, t) != GDK_SUCCEED ||
 			    ATOMunfix(b->ttype, BUNtloc(bi, p)) != GDK_SUCCEED) {
 				MT_rwlock_wrunlock(&b->thashlock);
-				return GDK_FAIL;
+				goto bailout;
 			}
 			switch (ATOMsize(b->ttype)) {
 			case 0:	     /* void */
@@ -1721,6 +1774,10 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		MT_lock_unset(&b->theaplock);
 	}
 	MT_rwlock_wrunlock(&b->thashlock);
+	if (minbound)
+		VALclear(&minprop);
+	if (maxbound)
+		VALclear(&maxprop);
 	MT_lock_set(&b->theaplock);
 	b->theap->dirty = true;
 	if (b->tvheap)
@@ -1728,6 +1785,13 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 	MT_lock_unset(&b->theaplock);
 
 	return GDK_SUCCEED;
+
+  bailout:
+	if (minbound)
+		VALclear(&minprop);
+	if (maxbound)
+		VALclear(&maxprop);
+	return GDK_FAIL;
 }
 
 /* Replace multiple values given by their positions with the given values. */
@@ -2721,6 +2785,8 @@ BATassertProps(BAT *b)
 		const ValRecord *prop;
 		const void *maxval = NULL;
 		const void *minval = NULL;
+		const void *maxbound = NULL;
+		const void *minbound = NULL;
 		bool seenmax = false, seenmin = false;
 		bool seennil = false;
 
@@ -2728,6 +2794,10 @@ BATassertProps(BAT *b)
 			maxval = VALptr(prop);
 		if ((prop = BATgetprop_nolock(b, GDK_MIN_VALUE)) != NULL)
 			minval = VALptr(prop);
+		if ((prop = BATgetprop_nolock(b, GDK_MAX_BOUND)) != NULL)
+			maxbound = VALptr(prop);
+		if ((prop = BATgetprop_nolock(b, GDK_MIN_BOUND)) != NULL)
+			minbound = VALptr(prop);
 		if ((prop = BATgetprop_nolock(b, GDK_MAX_POS)) != NULL) {
 			if (maxval) {
 				assert(prop->vtype == TYPE_oid);
@@ -2760,6 +2830,14 @@ BATassertProps(BAT *b)
 				bool isnil = cmpf(valp, nilp) == 0;
 				assert(b->ttype != TYPE_flt || !isinf(*(flt*)valp));
 				assert(b->ttype != TYPE_dbl || !isinf(*(dbl*)valp));
+				if (minbound && !isnil) {
+					cmp = cmpf(minbound, valp);
+					assert(cmp <= 0);
+				}
+				if (maxbound && !isnil) {
+					cmp = cmpf(maxbound, valp);
+					assert(cmp > 0);
+				}
 				if (maxval && !isnil) {
 					cmp = cmpf(maxval, valp);
 					assert(cmp >= 0);
