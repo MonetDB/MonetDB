@@ -268,40 +268,6 @@ static volatile MT_Id locked_by = 0;
 static int BBPunloadCnt = 0;
 static MT_Lock GDKunloadLock = MT_LOCK_INITIALIZER(GDKunloadLock);
 
-/* GDKtmLock protects all accesses and changes to BAKDIR and SUBDIR
- * must use BBPtmlock()/BBPtmunlock() to set/unset the lock */
-static MT_Lock GDKtmLock = MT_LOCK_INITIALIZER(GDKtmLock);
-static char *lockfile;
-static int lockfd;
-
-void
-BBPtmlock(void)
-{
-	MT_lock_set(&GDKtmLock);
-	if (GDKinmemory(0))
-		return;
-	/* also use an external lock file to synchronize with external
-	 * programs */
-	if (lockfile == NULL) {
-		lockfile = GDKfilepath(0, NULL, ".tm_lock", NULL);
-		if (lockfile == NULL)
-			return;
-	}
-	lockfd = MT_lockf(lockfile, F_LOCK);
-}
-
-void
-BBPtmunlock(void)
-{
-	if (lockfile && lockfd >= 0) {
-		assert(!GDKinmemory(0));
-		MT_lockf(lockfile, F_ULOCK);
-		close(lockfd);
-		lockfd = -1;
-	}
-	MT_lock_unset(&GDKtmLock);
-}
-
 void
 BBPlock(void)
 {
@@ -397,9 +363,9 @@ recover_dir(int farmid, bool direxists)
 	if (direxists) {
 		/* just try; don't care about these non-vital files */
 		if (GDKunlink(farmid, BATDIR, "BBP", "bak") != GDK_SUCCEED)
-			TRC_WARNING(GDK, "unlink of BBP.bak failed\n");
+			GDKwarning("unlink of BBP.bak failed\n");
 		if (GDKmove(farmid, BATDIR, "BBP", "dir", BATDIR, "BBP", "bak", false) != GDK_SUCCEED)
-			TRC_WARNING(GDK, "rename of BBP.dir to BBP.bak failed\n");
+			GDKwarning("rename of BBP.dir to BBP.bak failed\n");
 	}
 	return GDKmove(farmid, BAKDIR, "BBP", "dir", BATDIR, "BBP", "dir", true);
 }
@@ -520,7 +486,7 @@ heapinit(BAT *b, const char *buf,
 	}
 
 	if (strcmp(type, "wkba") == 0)
-		TRC_WARNING(GDK, "type wkba (SQL name: GeometryA) is deprecated\n");
+		GDKwarning("type wkba (SQL name: GeometryA) is deprecated\n");
 
 	if (properties & ~0x0F81) {
 		TRC_CRITICAL(GDK, "unknown properties are set: incompatible database on line %d of BBP.dir\n", lineno);
@@ -1476,7 +1442,7 @@ movestrbats(void)
 						GDKerror("both %s and %s exist with %s unexpectedly newer: manual intervention required\n", oldpath, newpath, oldpath);
 						ret = -1;
 					} else {
-						TRC_WARNING(GDK, "both %s and %s exist, removing %s\n", oldpath, newpath, oldpath);
+						GDKwarning("both %s and %s exist, removing %s\n", oldpath, newpath, oldpath);
 						ret = MT_remove(oldpath);
 					}
 				} else {
@@ -1510,7 +1476,7 @@ BBPtrim(bool aggressive)
 		flag |= BBPHOT;
 	for (bat bid = 1, nbat = (bat) ATOMIC_GET(&BBPsize); bid < nbat; bid++) {
 		/* don't do this during a (sub)commit */
-		MT_lock_set(&GDKtmLock);
+		BBPtmlock();
 		MT_lock_set(&GDKswapLock(bid));
 		BAT *b = NULL;
 		bool swap = false;
@@ -1536,7 +1502,7 @@ BBPtrim(bool aggressive)
 				GDKerror("unload failed for bat %d", bid);
 			n++;
 		}
-		MT_lock_unset(&GDKtmLock);
+		BBPtmunlock();
 	}
 	TRC_DEBUG(BAT_, "unloaded %d bats%s\n", n, aggressive ? " (also hot)" : "");
 }
@@ -3284,8 +3250,8 @@ BBPquickdesc(bat bid)
 		const char *aname = ATOMunknown_name(b->ttype);
 		int tt = ATOMindex(aname);
 		if (tt < 0) {
-			TRC_WARNING(GDK, "atom '%s' unknown in bat '%s'.\n",
-				    aname, BBP_physical(bid));
+			GDKwarning("atom '%s' unknown in bat '%s'.\n",
+				   aname, BBP_physical(bid));
 		} else {
 			b->ttype = tt;
 		}
@@ -4531,4 +4497,41 @@ BBPcallbacks(void)
 		next = next->next;
 	}
 	MT_lock_unset(&GDKCallbackListLock);
+}
+
+/* GDKtmLock protects all accesses and changes to BAKDIR and SUBDIR.
+ * MUST use BBPtmlock()/BBPtmunlock() to set/unset the lock.
+ *
+ * This is at the end of the file on purpose: we don't want people to
+ * accidentally use GDKtmLock directly. */
+static MT_Lock GDKtmLock = MT_LOCK_INITIALIZER(GDKtmLock);
+static char *lockfile;
+static int lockfd;
+
+void
+BBPtmlock(void)
+{
+	MT_lock_set(&GDKtmLock);
+	if (GDKinmemory(0))
+		return;
+	/* also use an external lock file to synchronize with external
+	 * programs */
+	if (lockfile == NULL) {
+		lockfile = GDKfilepath(0, NULL, ".tm_lock", NULL);
+		if (lockfile == NULL)
+			return;
+	}
+	lockfd = MT_lockf(lockfile, F_LOCK);
+}
+
+void
+BBPtmunlock(void)
+{
+	if (lockfile && lockfd >= 0) {
+		assert(!GDKinmemory(0));
+		MT_lockf(lockfile, F_ULOCK);
+		close(lockfd);
+		lockfd = -1;
+	}
+	MT_lock_unset(&GDKtmLock);
 }

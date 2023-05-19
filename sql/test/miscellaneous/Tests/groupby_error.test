@@ -100,6 +100,16 @@ NULL
 NULL
 NULL
 
+#output differs for 1 vs. multiple threads
+skipif threads=1
+query T nosort
+PLAN SELECT DISTINCT col0, col1, col2, col0 FROM tab0
+----
+group by (
+| table("sys"."tab0") [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ]
+) [ "tab0"."col2", "tab0"."col0", "tab0"."col1" ] [ "tab0"."col0", "tab0"."col1", "tab0"."col2", "tab0"."col0" ]
+
+onlyif threads=1
 query T nosort
 PLAN SELECT DISTINCT col0, col1, col2, col0 FROM tab0
 ----
