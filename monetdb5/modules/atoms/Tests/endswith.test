@@ -42,3 +42,47 @@ query T
 select endswith('Thomas Müller', 'müller', false)
 ----
 False
+
+statement ok
+create table foo(x string)
+
+statement ok
+create table bar(x string)
+
+statement ok
+insert into foo values ('johnleft'),('janeright'),('robertright'),('timup'),('lexleft'),('joeleft')
+
+statement ok
+insert into bar values ('left'),('right'),('up'),('down')
+
+query T
+select endswith(x, 'left') from foo
+----
+True
+False
+False
+False
+True
+True
+
+query TT rowsort
+select * from foo,bar where [foo.x] endswith [bar.x, false]
+----
+janeright
+right
+joeleft
+left
+johnleft
+left
+lexleft
+left
+robertright
+right
+timup
+up
+
+statement ok
+drop table foo
+
+statement ok
+drop table bar
