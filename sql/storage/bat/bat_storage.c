@@ -2259,7 +2259,8 @@ col_set_range(sql_trans *tr, sql_column *col, sql_part *pt, bool add_range)
 			MT_lock_set(&b->theaplock);
 			if (add_range) {
 				BATsetprop_nolock(b, GDK_MIN_BOUND, b->ttype, pt->part.range.minvalue);
-				BATsetprop_nolock(b, GDK_MAX_BOUND, b->ttype, pt->part.range.maxvalue);
+				if (ATOMcmp(b->ttype, pt->part.range.maxvalue, ATOMnilptr(b->ttype)) != 0)
+					BATsetprop_nolock(b, GDK_MAX_BOUND, b->ttype, pt->part.range.maxvalue);
 				if (!pt->with_nills || !col->null)
 					BATsetprop_nolock(b, GDK_NOT_NULL, b->ttype, ATOMnilptr(b->ttype));
 			} else {
