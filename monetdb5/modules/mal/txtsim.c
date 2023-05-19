@@ -433,22 +433,12 @@ typedef struct {
 } str_item;
 
 static inline
-int _popcount64(uint64_t x)
+int popcount64(uint64_t x)
 {
 	x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL);
 	x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
 	x = (x & 0x0F0F0F0F0F0F0F0FULL) + ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL);
 	return (x * 0x0101010101010101ULL) >> 56;
-}
-
-static inline
-int popcount64(uint64_t x)
-{
-	return _popcount64(x);
-	/* __builtin_popcountll is the gcc builtin
-	 * It is fast as long as the hardware
-	 * support (-mpopcnt) is NOT activated */
-	/* return __builtin_popcountll(x); */
 }
 
 static int
@@ -484,9 +474,10 @@ str_alphabet_bitmap(str_item *s)
 	int i;
 
 	s->abm = 0ULL;
-	for (i=0; i < s->len; i++) {
+
+	for (i=0; i < s->len; i++)
 		s->abm |= 1ULL << (s->cp_sequence[i] % 64);
-	}
+
 	s->abm_popcount = popcount64(s->abm);
 }
 
