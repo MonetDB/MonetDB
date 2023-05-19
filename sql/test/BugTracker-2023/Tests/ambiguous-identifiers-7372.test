@@ -1,0 +1,11 @@
+statement ok
+create table test (a INT)
+
+statement error 42000!SELECT: identifier 'a' ambiguous
+select a from test a, test b, test c, test d, test e
+
+statement error 42000!SELECT: identifier 'a' ambiguous
+select a from test a, test c, test d, test e
+
+statement error 42000!SELECT: identifier 'a' ambiguous
+select SUM(a) from test a, test b, test c, test d, test e
