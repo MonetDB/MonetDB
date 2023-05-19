@@ -811,7 +811,7 @@ TXTSIMmaxlevenshteinjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const
 
 	if (BATcount(bk) > 0) {
 		BATiter ki = bat_iterator(bk);
-		k = *(bte *) BUNtail(ki,0);
+		k = *(int *) BUNtloc(ki,0);
 		bat_iterator_end(&ki);
 	}
 
