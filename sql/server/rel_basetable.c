@@ -189,7 +189,7 @@ rel_base_bind_column( mvc *sql, sql_rel *rel, const char *cname, int no_tname)
 	sql_table *t = rel->l;
 	rel_base_t *ba = rel->r;
 	(void)no_tname;
-	node *n = ol_find_name(t->columns, cname);
+	node *n = t?ol_find_name(t->columns, cname):NULL;
 	if (!n)
 		return NULL;
 	return bind_col(sql, rel, ba->name?ba->name:t->base.name, n->data);
