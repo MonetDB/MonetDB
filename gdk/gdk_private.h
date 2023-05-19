@@ -28,6 +28,15 @@ enum heaptype {
 	orderidxheap
 };
 
+enum range_comp_t {
+	range_before,		/* search range fully before bat range */
+	range_after,		/* search range fully after bat range */
+	range_atstart,		/* search range before + inside */
+	range_atend,		/* search range inside + after */
+	range_contains,		/* search range contains bat range */
+	range_inside,		/* search range inside bat range */
+};
+
 gdk_return ATOMheap(int id, Heap *hp, size_t cap)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
@@ -57,8 +66,6 @@ void BATdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void BATfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
-ValPtr BATgetprop_nolock(BAT *b, enum prop_t idx)
-	__attribute__((__visibility__("hidden")));
 ValPtr BATgetprop_try(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
 gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, bool subsorted)
@@ -77,17 +84,11 @@ BAT *BATload_intern(bat bid, bool lock)
 gdk_return BATmaterialize(BAT *b)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-void BATrmprop(BAT *b, enum prop_t idx)
-	__attribute__((__visibility__("hidden")));
-void BATrmprop_nolock(BAT *b, enum prop_t idx)
+enum range_comp_t BATrange(BAT *b, const void *tl, const void *th, bool li, bool hi)
 	__attribute__((__visibility__("hidden")));
 gdk_return BATsave_iter(BAT *bd, BATiter *bi, BUN size)
 	__attribute__((__visibility__("hidden")));
 void BATsetdims(BAT *b)
-	__attribute__((__visibility__("hidden")));
-ValPtr BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
-	__attribute__((__visibility__("hidden")));
-ValPtr BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 	__attribute__((__visibility__("hidden")));
 gdk_return BBPcacheit(BAT *bn, bool lock)
 	__attribute__((__warn_unused_result__))
@@ -408,7 +409,7 @@ ilog2(BUN x)
 	b ? ATOMname(b->ttype) : "",					\
 	b ? "]" : "",							\
 	b ? !b->batTransient ? "P" : b->theap && b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T" : "", \
-	b ? BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "" : "", \
+	b ? BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && b->tvheap && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "" : "", \
 	b ? b->tsorted ? "S" : b->tnosorted ? "!s" : "" : "",		\
 	b ? b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "" : "",	\
 	b ? b->tkey ? "K" : b->tnokey[1] ? "!k" : "" : "",		\

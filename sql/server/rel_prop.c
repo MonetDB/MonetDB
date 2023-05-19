@@ -76,6 +76,7 @@ propkind2string( prop *p)
 		PT(REMOTE);
 		PT(USED);
 		PT(GROUPINGS);
+		PT(MEMBER);
 	}
 	return "UNKNOWN";
 }

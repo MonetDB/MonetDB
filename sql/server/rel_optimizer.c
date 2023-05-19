@@ -8768,6 +8768,14 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 				prop *p = ne->p = prop_create(sql->sa, PROP_HASHCOL, ne->p);
 				p->value = NULL;
 			}
+			/*
+			if (isPartitionedByColumnTable(mt) &&
+				isRangePartitionTable(mt) &&
+				strcmp(mt->part.pcol->base.name, c->base.name) == 0) {
+				prop *p = ne->p = prop_create(sql->sa, PROP_MEMBER, ne->p);
+				p->value = mt;
+			}
+			*/
 			set_basecol(ne);
 			rel_base_use(sql, p, rc->colnr);
 			list_append(p->exps, ne);
