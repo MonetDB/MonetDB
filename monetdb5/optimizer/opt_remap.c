@@ -122,7 +122,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 	MalBlkPtr mq;
 	InstrPtr q = NULL, sig;
 	char buf[1024];
-	int i,j,k,m, actions=0;
+	int i,j,k,m;
 	int refbat=0, retc = p->retc;
 	bit *upgrade;
 	str msg;
@@ -277,7 +277,6 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					typeChecker(cntxt->usermodule,mq,q,i,TRUE);
 					if( q->typechk== TYPE_UNKNOWN)
 						goto terminateMX;
-					actions++;
 					break;
 				}
 				/* handle simple upgraded assignments as well */
@@ -294,7 +293,6 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					typeChecker(cntxt->usermodule,mq,q,i,TRUE);
 					if( q->typechk== TYPE_UNKNOWN)
 						goto terminateMX;
-					actions++;
 					break;
 				}
 		}
