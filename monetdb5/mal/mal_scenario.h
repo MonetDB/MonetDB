@@ -28,7 +28,7 @@ typedef struct SCENARIO {
 	str initClient;
 	init_client initClientCmd;
 	str exitClient;
-	MALfcn exitClientCmd;
+	exit_client exitClientCmd;
 	str engine;
 	engine_fptr engineCmd;
 } *Scenario;

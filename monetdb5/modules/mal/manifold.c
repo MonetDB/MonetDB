@@ -59,7 +59,7 @@ typedef struct{
 	do {																\
 		Type *v = (Type*) mut->args[0].first;							\
 		for (;;) {														\
-			msg = (*mut->pci->fcn)(v, __VA_ARGS__);						\
+			msg = (*((str (*)(Type *, ...))mut->pci->fcn))(v, __VA_ARGS__);						\
 			if (msg) break;												\
 			if (++oo == olimit)											\
 				break;													\
@@ -107,7 +107,7 @@ typedef struct{
 		case TYPE_str:													\
 		default: {														\
 			for (;;) {													\
-				msg = (*mut->pci->fcn)(&y, __VA_ARGS__);				\
+			    msg = (*((str (*)(str *, ...))mut->pci->fcn))(&y, __VA_ARGS__);						\
 				if (msg)												\
 					break;												\
 				if (bunfastapp(mut->args[0].b, (void*) y) != GDK_SUCCEED) \

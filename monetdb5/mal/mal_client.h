@@ -46,6 +46,7 @@ typedef struct CLIENT_INPUT {
 
 struct CLIENT;
 typedef str (*init_client)(struct CLIENT *, const char *, const char *, const char *);
+typedef str (*exit_client)(struct CLIENT *);
 typedef void (*engine_fptr)(struct CLIENT *);
 
 typedef struct CLIENT {
@@ -63,7 +64,7 @@ typedef struct CLIENT {
 	str     scenario;  /* scenario management references */
 	engine_fptr engine;
 	init_client initClient;
-	MALfcn exitClient;
+	exit_client exitClient;
 						/* if set to 'S' it will put the process to sleep */
 	bit		sqlprofiler;		/* control off-line sql performance monitoring */
 	/*
