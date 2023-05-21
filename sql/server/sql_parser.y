@@ -811,6 +811,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 sqlstmt:
    sql SCOLON
 	{
+		(void)yynerrs;
 		if (m->sym) {
 			append_symbol(m->sym->data.lval, $$);
 			$$ = m->sym;
