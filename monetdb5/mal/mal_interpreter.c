@@ -47,7 +47,7 @@ malCommandCall(MalStkPtr stk, InstrPtr pci)
 
 	switch (pci->argc) {
 	case 0:
-		ret = (*pci->fcn)();
+		ret = (*(str (*)())pci->fcn)();
 		break;
 	case 1:
 		ret = (*pci->fcn)(
