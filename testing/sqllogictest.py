@@ -46,6 +46,7 @@ if architecture == 'AMD64':     # Windows :-(
     architecture = 'x86_64'
 if architecture == 'arm64':     # MacOS :-(
     architecture = 'aarch64'
+system = platform.system()
 
 skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 
@@ -695,7 +696,7 @@ class SQLLogic:
                 continue
             while words[0] == 'skipif' or words[0] == 'onlyif':
                 if words[0] == 'skipif':
-                    if words[1] in ('MonetDB', f'arch={architecture}'):
+                    if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}'):
                         skipping = True
                     elif words[1].startswith('threads='):
                         if nthreads is None:
@@ -704,7 +705,7 @@ class SQLLogic:
                         if words[1] == f'threads={nthreads}':
                             skipping = True
                 elif words[0] == 'onlyif':
-                    if words[1] not in ('MonetDB', f'arch={architecture}'):
+                    if words[1] not in ('MonetDB', f'arch={architecture}', f'system={system}'):
                         skipping = True
                     elif words[1].startswith('threads='):
                         if nthreads is None:
