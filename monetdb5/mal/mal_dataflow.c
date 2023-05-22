@@ -353,7 +353,7 @@ DFLOWworker(void *T)
 					break;
 			}
 			error = runMALsequence(flow->cntxt, flow->mb, fe->pc, fe->pc + 1, flow->stk, 0, 0);
-			(void) ATOMIC_DEC(&flow->cntxt->workers);
+			ATOMIC_DEC(&flow->cntxt->workers);
 			/* release the memory claim */
 			MALadmission_release(flow->cntxt, flow->mb, flow->stk, p, claim);
 
@@ -692,14 +692,14 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 	/* initialize the eligible statements */
 	fe = flow->status;
 
-	(void) ATOMIC_DEC(&flow->cntxt->workers);
+	ATOMIC_DEC(&flow->cntxt->workers);
 	MT_lock_set(&flow->flowlock);
 	for (i = 0; i < actions; i++)
 		if (fe[i].blocks == 0) {
 			p = getInstrPtr(flow->mb,fe[i].pc);
 			if (p == NULL) {
 				MT_lock_unset(&flow->flowlock);
-				(void) ATOMIC_INC(&flow->cntxt->workers);
+				ATOMIC_INC(&flow->cntxt->workers);
 				throw(MAL, "dataflow", "DFLOWscheduler(): getInstrPtr(flow->mb,fe[i].pc) returned NULL");
 			}
 			fe[i].argclaim = 0;
@@ -716,7 +716,7 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 		if (ATOMIC_GET(&exiting))
 			break;
 		if (f == NULL) {
-			(void) ATOMIC_INC(&flow->cntxt->workers);
+			ATOMIC_INC(&flow->cntxt->workers);
 			throw(MAL, "dataflow", "DFLOWscheduler(): q_dequeue(flow->done) returned NULL");
 		}
 
@@ -744,7 +744,7 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 	/* release the worker from its specific task (turn it into a
 	 * generic worker) */
 	ATOMIC_PTR_SET(&w->cntxt, NULL);
-	(void) ATOMIC_INC(&flow->cntxt->workers);
+	ATOMIC_INC(&flow->cntxt->workers);
 	/* wrap up errors */
 	assert(flow->done->last == 0);
 	if ((ret = ATOMIC_PTR_XCG(&flow->error, NULL)) != NULL ) {
