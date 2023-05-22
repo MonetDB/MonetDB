@@ -1139,14 +1139,14 @@ BATrange(BAT *b, const void *tl, const void *th, bool li, bool hi)
 		maxprop = BATgetprop_nolock(b, GDK_MAX_BOUND);
 	}
 
-	if (tl == NULL && th == NULL)
+	if (tl == NULL && th == NULL) {
 		range = range_contains; /* looking for everything */
-	else if (minprop == NULL && maxprop == NULL)
+	} else if (minprop == NULL && maxprop == NULL) {
 		range = range_inside; /* strictly: unknown */
-	else if (maxprop &&
-		 tl &&
-		 ((c = atomcmp(tl, VALptr(maxprop))) > 0 ||
-		  ((!maxincl || !li) && c == 0))) {
+	} else if (maxprop &&
+		   tl &&
+		   ((c = atomcmp(tl, VALptr(maxprop))) > 0 ||
+		    ((!maxincl || !li) && c == 0))) {
 		range = range_after;
 	} else if (minprop &&
 		   th &&
@@ -1336,6 +1336,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	} vl, vh;
 	enum range_comp_t range;
 	lng t0 = GDKusec();
+	const bool notnull = BATgetprop(b, GDK_NOT_NULL) != NULL;
 
 	BATcheck(b, NULL);
 	if (tl == NULL) {
@@ -1486,7 +1487,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
-	if (equi && lnil && b->tnonil) {
+	if (equi && lnil && (notnull || b->tnonil)) {
 		/* return all nils, but there aren't any */
 		MT_thread_setalgorithm("select: equi-nil, nonil");
 		bn = BATdense(0, 0, 0);
@@ -1499,7 +1500,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		return bn;
 	}
 
-	if (!equi && !lval && !hval && lnil && b->tnonil) {
+	if (!equi && !lval && !hval && lnil && (notnull || b->tnonil)) {
 		/* return all non-nils from a BAT that doesn't have
 		 * any: i.e. return everything */
 		MT_thread_setalgorithm("select: everything, nonil");
@@ -1515,7 +1516,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 	range = BATrange(b, lval ? tl : NULL, hval ? th : NULL, li, hi);
 	if (anti) {
-		if (range == range_contains) {
+		switch (range) {
+		case range_contains:
 			/* MIN..MAX range of values in BAT fully inside
 			 * tl..th range, so nothing left over for
 			 * anti */
@@ -1527,9 +1529,30 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				  "nothing, out of range\n",
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
 			return bn;
+		case range_before:
+		case range_after:
+			if (notnull || b->tnonil) {
+				/* search range does not overlap with BAT range,
+				 * and there are no nils, so we can return
+				 * everything */
+				MT_thread_setalgorithm("select: everything, anti, nonil");
+				bn = canditer_slice(&ci, 0, ci.ncand);
+				TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+					  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
+					  " (" LLFMT " usec): "
+					  "everything, nonil\n",
+					  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
+					  ALGOOPTBATPAR(bn), GDKusec() - t0);
+				return bn;
+			}
+			break;
+		default:
+			break;
 		}
 	} else if (!equi || !lnil) {
-		if (range == range_before || range == range_after) {
+		switch (range) {
+		case range_before:
+		case range_after:
 			/* range we're looking for either completely
 			 * before or complete after the range of values
 			 * in the BAT */
@@ -1544,6 +1567,24 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				  ALGOOPTBATPAR(s), anti,
 				  ALGOOPTBATPAR(bn), GDKusec() - t0);
 			return bn;
+		case range_contains:
+			if (notnull || b->tnonil) {
+				/* search range contains BAT range, and
+				 * there are no nils, so we can return
+				 * everything */
+				MT_thread_setalgorithm("select: everything, nonil");
+				bn = canditer_slice(&ci, 0, ci.ncand);
+				TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+					  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
+					  " (" LLFMT " usec): "
+					  "everything, nonil\n",
+					  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
+					  ALGOOPTBATPAR(bn), GDKusec() - t0);
+				return bn;
+			}
+			break;
+		default:
+			break;
 		}
 	}
 

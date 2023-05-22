@@ -1205,6 +1205,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		if ((prop = BATgetprop_nolock(b, GDK_MAX_BOUND)) != NULL &&
 		    VALcopy(&maxprop, prop) != NULL)
 			maxbound = VALptr(&maxprop);
+		const bool notnull = BATgetprop_nolock(b, GDK_NOT_NULL) != NULL;
 		MT_lock_unset(&b->theaplock);
 		const void *minvalp = NULL, *maxvalp = NULL;
 		if (minpos != BUN_NONE)
@@ -1216,13 +1217,20 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			for (BUN i = 0; i < count; i++) {
 				gdk_return rc;
 				t = ((void **) values)[i];
-				if (minbound &&
-				    ATOMcmp(b->ttype, t, minbound) < 0) {
+				bool isnil = atomcmp(t, atomnil) == 0;
+				if (notnull && isnil) {
+					assert(0);
+					GDKerror("NULL value not within bounds\n");
+					rc = GDK_FAIL;
+				} else if (minbound &&
+					   !isnil &&
+					   atomcmp(t, minbound) < 0) {
 					assert(0);
 					GDKerror("value not within bounds\n");
 					rc = GDK_FAIL;
 				} else if (maxbound &&
-					   ATOMcmp(b->ttype, t, maxbound) >= 0) {
+					   !isnil &&
+					   atomcmp(t, maxbound) >= 0) {
 					assert(0);
 					GDKerror("value not within bounds\n");
 					rc = GDK_FAIL;
@@ -1250,7 +1258,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 					if (maxpos != BUN_NONE)
 						maxvalp = BUNtvar(bi, maxpos);
 				}
-				if (atomcmp(t, atomnil) != 0) {
+				if (!isnil) {
 					if (p == 0) {
 						minpos = maxpos = 0;
 						minvalp = maxvalp = t;
@@ -1488,6 +1496,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 	BUN prv, nxt;
 	const void *val;
 	bool locked = false;
+	int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
+	const void *atomnil = ATOMnilptr(b->ttype);
 
 	/* zap alignment info */
 	if (!force && (b->batRestricted != BAT_WRITE || b->batSharecnt > 0)) {
@@ -1505,6 +1515,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 	if ((prop = BATgetprop_nolock(b, GDK_MAX_BOUND)) != NULL &&
 	    VALcopy(&maxprop, prop) != NULL)
 		maxbound = VALptr(&maxprop);
+	const bool notnull = BATgetprop_nolock(b, GDK_NOT_NULL) != NULL;
 	MT_lock_unset(&b->theaplock);
 	MT_rwlock_wrlock(&b->thashlock);
 	for (BUN i = 0; i < count; i++) {
@@ -1513,10 +1524,17 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			((const void **) values)[i] :
 			(const void *) ((const char *) values + (i << b->tshift));
 
-		if ((minbound &&
-		     ATOMcmp(b->ttype, t, minbound) < 0) ||
-		    (maxbound &&
-		     ATOMcmp(b->ttype, t, maxbound) >= 0)) {
+		bool isnil = atomnil && atomcmp(t, atomnil) == 0;
+		if (notnull && isnil) {
+			assert(0);
+			GDKerror("NULL value not within bounds\n");
+			MT_rwlock_wrunlock(&b->thashlock);
+			goto bailout;
+		} else if (!isnil &&
+			   ((minbound &&
+			     atomcmp(t, minbound) < 0) ||
+			    (maxbound &&
+			     atomcmp(t, maxbound) >= 0))) {
 			assert(0);
 			GDKerror("value not within bounds\n");
 			MT_rwlock_wrunlock(&b->thashlock);
@@ -1542,11 +1560,11 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		}
 
 		if (val) {
-			if (ATOMcmp(b->ttype, val, t) == 0)
+			if (atomcmp(val, t) == 0)
 				continue; /* nothing to do */
 			if (b->tnil &&
-			    ATOMcmp(b->ttype, val, ATOMnilptr(b->ttype)) == 0 &&
-			    ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0) {
+			    atomcmp(val, ATOMnilptr(b->ttype)) == 0 &&
+			    atomcmp(t, ATOMnilptr(b->ttype)) != 0) {
 				/* if old value is nil and new value
 				 * isn't, we're not sure anymore about
 				 * the nil property, so we must clear
@@ -1565,15 +1583,15 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 					locked = true;
 				}
 				if ((prop = BATgetprop_nolock(b, GDK_MAX_VALUE)) != NULL) {
-					if (ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0 &&
-					    ATOMcmp(b->ttype, VALptr(prop), t) < 0) {
+					if (atomcmp(t, ATOMnilptr(b->ttype)) != 0 &&
+					    atomcmp(VALptr(prop), t) < 0) {
 						/* new value is larger
 						 * than previous
 						 * largest */
 						BATsetprop_nolock(b, GDK_MAX_VALUE, b->ttype, t);
 						BATsetprop_nolock(b, GDK_MAX_POS, TYPE_oid, &(oid){p});
-					} else if (ATOMcmp(b->ttype, t, val) != 0 &&
-						   ATOMcmp(b->ttype, VALptr(prop), val) == 0) {
+					} else if (atomcmp(t, val) != 0 &&
+						   atomcmp(VALptr(prop), val) == 0) {
 						/* old value is equal to
 						 * largest and new value
 						 * is smaller (see
@@ -1587,15 +1605,15 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 					BATrmprop_nolock(b, GDK_MAX_POS);
 				}
 				if ((prop = BATgetprop_nolock(b, GDK_MIN_VALUE)) != NULL) {
-					if (ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0 &&
-					    ATOMcmp(b->ttype, VALptr(prop), t) > 0) {
+					if (atomcmp(t, ATOMnilptr(b->ttype)) != 0 &&
+					    atomcmp(VALptr(prop), t) > 0) {
 						/* new value is smaller
 						 * than previous
 						 * smallest */
 						BATsetprop_nolock(b, GDK_MIN_VALUE, b->ttype, t);
 						BATsetprop_nolock(b, GDK_MIN_POS, TYPE_oid, &(oid){p});
-					} else if (ATOMcmp(b->ttype, t, val) != 0 &&
-						   ATOMcmp(b->ttype, VALptr(prop), val) <= 0) {
+					} else if (atomcmp(t, val) != 0 &&
+						   atomcmp(VALptr(prop), val) <= 0) {
 						/* old value is equal to
 						 * smallest and new
 						 * value is larger (see
@@ -1770,7 +1788,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		} else if (!b->tkey && (b->tnokey[0] == p || b->tnokey[1] == p))
 			b->tnokey[0] = b->tnokey[1] = 0;
 		if (b->tnonil && ATOMstorage(b->ttype) != TYPE_msk)
-			b->tnonil = t && ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0;
+			b->tnonil = t && atomcmp(t, ATOMnilptr(b->ttype)) != 0;
 		MT_lock_unset(&b->theaplock);
 	}
 	MT_rwlock_wrunlock(&b->thashlock);
@@ -2787,6 +2805,7 @@ BATassertProps(BAT *b)
 		const void *minval = NULL;
 		const void *maxbound = NULL;
 		const void *minbound = NULL;
+		const bool notnull = BATgetprop_nolock(b, GDK_NOT_NULL) != NULL;
 		bool seenmax = false, seenmin = false;
 		bool seennil = false;
 
@@ -2823,11 +2842,12 @@ BATassertProps(BAT *b)
 			 * scan */
 			/* only call compare function if we have to */
 			bool cmpprv = b->tsorted | b->trevsorted | b->tkey;
-			bool cmpnil = b->tnonil | b->tnil;
 
 			BATloop(b, p, q) {
 				valp = BUNtail(bi, p);
 				bool isnil = cmpf(valp, nilp) == 0;
+				assert(!isnil || !notnull);
+				assert(!b->tnonil || !isnil);
 				assert(b->ttype != TYPE_flt || !isinf(*(flt*)valp));
 				assert(b->ttype != TYPE_dbl || !isinf(*(dbl*)valp));
 				if (minbound && !isnil) {
@@ -2848,31 +2868,19 @@ BATassertProps(BAT *b)
 					assert(cmp <= 0);
 					seenmin |= cmp == 0;
 				}
-				if (prev && cmpprv) {
+				if (cmpprv && prev) {
 					cmp = cmpf(prev, valp);
 					assert(!b->tsorted || cmp <= 0);
 					assert(!b->trevsorted || cmp >= 0);
 					assert(!b->tkey || cmp != 0);
 				}
-				if (cmpnil) {
-					assert(!b->tnonil || !isnil);
-					if (isnil) {
-						/* we found a nil:
-						 * we're done checking
-						 * for them */
-						seennil = true;
-						cmpnil = 0;
-						if (!cmpprv && maxval == NULL && minval == NULL) {
-							/* we were
-							 * only
-							 * checking
-							 * for nils,
-							 * so nothing
-							 * more to
-							 * do */
-							break;
-						}
-					}
+				seennil |= isnil;
+				if (seennil && !cmpprv &&
+				    maxval == NULL && minval == NULL &&
+				    minbound == NULL && maxbound == NULL) {
+					/* we've done all the checking
+					 * we can do */
+					break;
 				}
 				prev = valp;
 			}
@@ -2917,8 +2925,17 @@ BATassertProps(BAT *b)
 				BUN prb;
 				valp = BUNtail(bi, p);
 				bool isnil = cmpf(valp, nilp) == 0;
+				assert(!isnil || !notnull);
 				assert(b->ttype != TYPE_flt || !isinf(*(flt*)valp));
 				assert(b->ttype != TYPE_dbl || !isinf(*(dbl*)valp));
+				if (minbound && !isnil) {
+					cmp = cmpf(minbound, valp);
+					assert(cmp <= 0);
+				}
+				if (maxbound && !isnil) {
+					cmp = cmpf(maxbound, valp);
+					assert(cmp > 0);
+				}
 				if (maxval && !isnil) {
 					cmp = cmpf(maxval, valp);
 					assert(cmp >= 0);

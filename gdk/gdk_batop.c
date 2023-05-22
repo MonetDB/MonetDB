@@ -668,6 +668,9 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	oid hseq = n->hseqbase;
 	char buf[64];
 	lng t0 = 0;
+	ValRecord minprop, maxprop;
+	const void *minbound = NULL, *maxbound = NULL;
+	int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
 
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
 		return GDK_SUCCEED;
@@ -696,7 +699,13 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 
 	cnt = canditer_init(&ci, n, s);
 	if (cnt == 0) {
-		goto doreturn;
+		bat_iterator_end(&ni);
+		TRC_DEBUG(ALGO, "b=%s,n=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+			  " -> " ALGOBATFMT " (" LLFMT " usec)\n",
+			  buf, ALGOBATPAR(n), ALGOOPTBATPAR(s), ALGOBATPAR(b),
+			  GDKusec() - t0);
+
+		return GDK_SUCCEED;
 	}
 
 	if (BUNlast(b) + cnt > BUN_MAX) {
@@ -723,10 +732,33 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	MT_lock_unset(&n->theaplock);
 
 	MT_lock_set(&b->theaplock);
+	const bool notnull = BATgetprop_nolock(b, GDK_NOT_NULL) != NULL;
+	if ((prop = BATgetprop_nolock(b, GDK_MIN_BOUND)) != NULL &&
+	    VALcopy(&minprop, prop) != NULL) {
+		minbound = VALptr(&minprop);
+		if (ci.ncand == BATcount(n) &&
+		    npropminval != NULL &&
+		    atomcmp(VALptr(npropminval), minbound) < 0) {
+			assert(0);
+			GDKerror("value out of bounds\n");
+			goto bailout;
+		}
+	}
+	if ((prop = BATgetprop_nolock(b, GDK_MAX_BOUND)) != NULL &&
+	    VALcopy(&maxprop, prop) != NULL) {
+		maxbound = VALptr(&maxprop);
+		if (ci.ncand == BATcount(n) &&
+		    npropmaxval != NULL &&
+		    atomcmp(VALptr(npropmaxval), maxbound) >= 0) {
+			assert(0);
+			GDKerror("value out of bounds\n");
+			goto bailout;
+		}
+	}
 
 	if (BATcount(b) == 0 || (prop = BATgetprop_nolock(b, GDK_MAX_VALUE)) != NULL) {
 		if (npropmaxval != NULL) {
-			if (BATcount(b) == 0 || ATOMcmp(b->ttype, VALptr(prop), VALptr(npropmaxval)) < 0) {
+			if (BATcount(b) == 0 || atomcmp(VALptr(prop), VALptr(npropmaxval)) < 0) {
 				if (s == NULL) {
 					BATsetprop_nolock(b, GDK_MAX_VALUE, b->ttype, VALptr(npropmaxval));
 					if (npropmaxpos != NULL)
@@ -745,7 +777,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	}
 	if (BATcount(b) == 0 || (prop = BATgetprop_nolock(b, GDK_MIN_VALUE)) != NULL) {
 		if (npropminval != NULL) {
-			if (BATcount(b) == 0 || ATOMcmp(b->ttype, VALptr(prop), VALptr(npropminval)) > 0) {
+			if (BATcount(b) == 0 || atomcmp(VALptr(prop), VALptr(npropminval)) > 0) {
 				if (s == NULL) {
 					BATsetprop_nolock(b, GDK_MIN_VALUE, b->ttype, VALptr(npropminval));
 					if (npropminpos != NULL)
@@ -779,8 +811,19 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		     (BATtdense(b) &&
 		      b->tseqbase + BATcount(b) == n->tseqbase + ci.seq - hseq))) {
 			/* n is also dense and consecutive with b */
-			if (BATcount(b) == 0)
+			if (BATcount(b) == 0) {
+				if (minbound && n->tseqbase + ci.seq - hseq < *(const oid *)minbound) {
+					assert(0);
+					GDKerror("value not within bounds\n");
+					goto bailout;
+				}
 				BATtseqbase(b, n->tseqbase + ci.seq - hseq);
+			}
+			if (maxbound && b->tseqbase + BATcount(b) + cnt >= *(const oid *)maxbound) {
+				assert(0);
+				GDKerror("value not within bounds\n");
+				goto bailout;
+			}
 			BATsetcount(b, BATcount(b) + cnt);
 			MT_lock_unset(&b->theaplock);
 			goto doreturn;
@@ -788,6 +831,11 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		if ((BATcount(b) == 0 || is_oid_nil(b->tseqbase)) &&
 		    ni.type == TYPE_void && is_oid_nil(n->tseqbase)) {
 			/* both b and n are void/nil */
+			if (notnull) {
+				assert(0);
+				GDKerror("NULL value not within bounds\n");
+				goto bailout;
+			}
 			BATtseqbase(b, oid_nil);
 			BATsetcount(b, BATcount(b) + cnt);
 			MT_lock_unset(&b->theaplock);
@@ -797,8 +845,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		b->batCapacity = BATcount(b) + cnt;
 		MT_lock_unset(&b->theaplock);
 		if (BATmaterialize(b) != GDK_SUCCEED) {
-			bat_iterator_end(&ni);
-			return GDK_FAIL;
+			goto bailout;
 		}
 	}
 
@@ -862,18 +909,17 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	MT_lock_unset(&b->theaplock);
 	if (b->ttype == TYPE_str) {
 		if (insert_string_bat(b, n, &ci, force, mayshare) != GDK_SUCCEED) {
-			bat_iterator_end(&ni);
-			return GDK_FAIL;
+			goto bailout;
 		}
 	} else if (ATOMvarsized(b->ttype)) {
 		if (append_varsized_bat(b, n, &ci, mayshare) != GDK_SUCCEED) {
-			bat_iterator_end(&ni);
-			return GDK_FAIL;
+			goto bailout;
 		}
 	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
+		/* no bounds and NOT_NULL property on MSK bats */
+		assert(minbound == NULL && maxbound == NULL && !notnull);
 		if (append_msk_bat(b, n, &ci) != GDK_SUCCEED) {
-			bat_iterator_end(&ni);
-			return GDK_FAIL;
+			goto bailout;
 		}
 	} else {
 		if (cnt > BATcapacity(b) - BATcount(b)) {
@@ -885,8 +931,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			if (ncap > grows)
 				grows = ncap;
 			if (BATextend(b, grows) != GDK_SUCCEED) {
-				bat_iterator_end(&ni);
-				return GDK_FAIL;
+				goto bailout;
 			}
 		}
 		MT_rwlock_wrlock(&b->thashlock);
@@ -903,14 +948,34 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 				r++;
 			}
 		} else {
+			const void *atomnil = ATOMnilptr(b->ttype);
 			while (cnt > 0) {
 				cnt--;
 				BUN p = canditer_next(&ci) - hseq;
 				const void *t = BUNtail(ni, p);
-				if (tfastins_nocheck(b, r, t) != GDK_SUCCEED) {
+				bool isnil = atomcmp(t, atomnil) == 0;
+				if (notnull && isnil) {
+					assert(0);
 					MT_rwlock_wrunlock(&b->thashlock);
-					bat_iterator_end(&ni);
-					return GDK_FAIL;
+					GDKerror("NULL value not within bounds\n");
+					goto bailout;
+				} else if (minbound &&
+					   !isnil &&
+					   atomcmp(t, minbound) < 0) {
+					assert(0);
+					MT_rwlock_wrunlock(&b->thashlock);
+					GDKerror("value not within bounds\n");
+					goto bailout;
+				} else if (maxbound &&
+					   !isnil &&
+					   atomcmp(t, maxbound) >= 0) {
+					assert(0);
+					MT_rwlock_wrunlock(&b->thashlock);
+					GDKerror("value not within bounds\n");
+					goto bailout;
+				} else if (tfastins_nocheck(b, r, t) != GDK_SUCCEED) {
+					MT_rwlock_wrunlock(&b->thashlock);
+					goto bailout;
 				}
 				if (b->thash)
 					HASHappend_locked(b, r, t);
@@ -925,12 +990,23 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 
   doreturn:
 	bat_iterator_end(&ni);
+	if (minbound)
+		VALclear(&minprop);
+	if (maxbound)
+		VALclear(&maxprop);
 	TRC_DEBUG(ALGO, "b=%s,n=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOBATFMT " (" LLFMT " usec)\n",
 		  buf, ALGOBATPAR(n), ALGOOPTBATPAR(s), ALGOBATPAR(b),
 		  GDKusec() - t0);
 
 	return GDK_SUCCEED;
+  bailout:
+	bat_iterator_end(&ni);
+	if (minbound)
+		VALclear(&minprop);
+	if (maxbound)
+		VALclear(&maxprop);
+	return GDK_FAIL;
 }
 
 gdk_return
