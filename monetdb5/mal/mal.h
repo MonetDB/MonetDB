@@ -105,7 +105,7 @@ mal_export const char *mal_version(void);
 #define VARRETS 2
 
 typedef int malType;
-typedef str (*MALfcn) ();
+typedef void *MALfcn;
 
 typedef struct SYMDEF {
 	struct SYMDEF *peer;		/* where to look next */
