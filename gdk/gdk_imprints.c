@@ -843,7 +843,7 @@ void
 IMPSincref(Imprints *imprints)
 {
 	TRC_DEBUG(ACCELERATOR, "Increment ref count of %s\n", imprints->imprints.filename);
-	(void) ATOMIC_INC(&imprints->imprints.refs);
+	ATOMIC_INC(&imprints->imprints.refs);
 }
 
 #ifndef NDEBUG

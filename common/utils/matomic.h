@@ -55,23 +55,22 @@
 #ifndef _MATOMIC_H_
 #define _MATOMIC_H_
 
-/* define this if you don't want to use atomic instructions */
-/* #define NO_ATOMIC_INSTRUCTIONS */
-
 /* the atomic type we export is always a 64 bit unsigned integer */
 
 /* ignore __STDC_NO_ATOMICS__ if compiling using Intel compiler on
  * Windows since otherwise we can't compile this at all in C99 mode */
-#if defined(HAVE_STDATOMIC_H) && (!defined(__STDC_NO_ATOMICS__) || (defined(__INTEL_COMPILER) && defined(_WINDOWS))) && !defined(NO_ATOMIC_INSTRUCTIONS)
+#if defined(HAVE_STDATOMIC_H) && (!defined(__STDC_NO_ATOMICS__) || (defined(__INTEL_COMPILER) && defined(_WINDOWS)))
 
 #ifdef __cplusplus
 
 #include <atomic>
 
 #if SIZEOF_LONG_LONG == 8
+static_assert(ATOMIC_LLONG_LOCK_FREE == 2, "we need _Atomic(unsigned long long) to be lock free");
 typedef atomic_ullong ATOMIC_TYPE;
 typedef unsigned long long ATOMIC_BASE_TYPE;
 #elif SIZEOF_LONG == 8
+static_assert(ATOMIC_LONG_LOCK_FREE == 2, "we need _Atomic(unsigned long) to be lock free");
 typedef atomic_ulong ATOMIC_TYPE;
 typedef unsigned long ATOMIC_BASE_TYPE;
 #else
@@ -83,9 +82,11 @@ typedef unsigned long ATOMIC_BASE_TYPE;
 #include <stdatomic.h>
 
 #if SIZEOF_LONG_LONG == 8
+static_assert(ATOMIC_LLONG_LOCK_FREE == 2, "we need _Atomic(unsigned long long) to be lock free");
 typedef volatile atomic_ullong ATOMIC_TYPE;
 typedef unsigned long long ATOMIC_BASE_TYPE;
 #elif SIZEOF_LONG == 8
+static_assert(ATOMIC_LONG_LOCK_FREE == 2, "we need _Atomic(unsigned long) to be lock free");
 typedef volatile atomic_ulong ATOMIC_TYPE;
 typedef unsigned long ATOMIC_BASE_TYPE;
 #else
@@ -94,14 +95,14 @@ typedef unsigned long ATOMIC_BASE_TYPE;
 
 #define ATOMIC_INIT(var, val)	atomic_init(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_DESTROY(var)		((void) 0)
-#define ATOMIC_GET(var)			((ATOMIC_BASE_TYPE) atomic_load(var))
-#define ATOMIC_SET(var, val)	atomic_store(var, (ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_GET(var)			((ATOMIC_BASE_TYPE) *(var))
+#define ATOMIC_SET(var, val)	(*(var) = (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_XCG(var, val)	atomic_exchange(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_CAS(var, exp, des)	atomic_compare_exchange_strong(var, exp, (ATOMIC_BASE_TYPE) (des))
 #define ATOMIC_ADD(var, val)	atomic_fetch_add(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_SUB(var, val)	atomic_fetch_sub(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_INC(var)			(atomic_fetch_add(var, 1) + 1)
-#define ATOMIC_DEC(var)			(atomic_fetch_sub(var, 1) - 1)
+#define ATOMIC_INC(var)			(++*(var))
+#define ATOMIC_DEC(var)			(--*(var))
 #define ATOMIC_OR(var, val)		atomic_fetch_or(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_AND(var, val)	atomic_fetch_and(var, (ATOMIC_BASE_TYPE) (val))
 
@@ -113,8 +114,8 @@ typedef void *_Atomic volatile ATOMIC_PTR_TYPE;
 #define ATOMIC_PTR_INIT(var, val)	atomic_init(var, val)
 #define ATOMIC_PTR_DESTROY(var)		((void) 0)
 #define ATOMIC_PTR_VAR_INIT(val)	ATOMIC_VAR_INIT(val)
-#define ATOMIC_PTR_GET(var)		atomic_load(var)
-#define ATOMIC_PTR_SET(var, val)	atomic_store(var, (void *) (val))
+#define ATOMIC_PTR_GET(var)			(*(var))
+#define ATOMIC_PTR_SET(var, val)	(*(var) = (void *) (val))
 #define ATOMIC_PTR_XCG(var, val)	atomic_exchange(var, (void *) (val))
 #define ATOMIC_PTR_CAS(var, exp, des)	atomic_compare_exchange_strong(var, exp, (void *) (des))
 
@@ -125,7 +126,7 @@ typedef volatile atomic_flag ATOMIC_FLAG;
 
 #endif	/* __cplusplus */
 
-#elif defined(_MSC_VER) && !defined(NO_ATOMIC_INSTRUCTIONS)
+#elif defined(_MSC_VER)
 
 typedef uint64_t ATOMIC_BASE_TYPE;
 
@@ -245,7 +246,7 @@ typedef volatile int ATOMIC_FLAG;
 #define ATOMIC_TAS(var)		_InterlockedCompareExchange(var, 1, 0)
 #pragma intrinsic(_InterlockedCompareExchange)
 
-#elif (defined(__GNUC__) || defined(__INTEL_COMPILER))  && defined(__ATOMIC_SEQ_CST) && !(defined(__sun__) && SIZEOF_SIZE_T == 8) && !defined(_MSC_VER) && !defined(NO_ATOMIC_INSTRUCTIONS)
+#elif (defined(__GNUC__) || defined(__INTEL_COMPILER))  && defined(__ATOMIC_SEQ_CST) && !(defined(__sun__) && SIZEOF_SIZE_T == 8) && !defined(_MSC_VER)
 
 /* the new way of doing this according to GCC (the old way, using
  * __sync_* primitives is not supported) */
@@ -284,231 +285,7 @@ typedef volatile char ATOMIC_FLAG;
 
 #else
 
-/* emulate using mutexes */
-
-typedef uint64_t ATOMIC_BASE_TYPE;
-
-#include <pthread.h> /* required for pthread_mutex_t */
-
-typedef struct {
-	ATOMIC_BASE_TYPE val;
-	pthread_mutex_t lck;
-} ATOMIC_TYPE;
-#define ATOMIC_VAR_INIT(v)	{ .val = (v), .lck = PTHREAD_MUTEX_INITIALIZER }
-
-static inline void
-ATOMIC_INIT(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE val)
-{
-	pthread_mutex_init(&var->lck, 0);
-	var->val = val;
-}
-#define ATOMIC_INIT(var, val)	ATOMIC_INIT((var), (ATOMIC_BASE_TYPE) (val))
-
-#define ATOMIC_DESTROY(var)	pthread_mutex_destroy(&(var)->lck)
-
-static inline ATOMIC_BASE_TYPE
-ATOMIC_GET(ATOMIC_TYPE *var)
-{
-	ATOMIC_BASE_TYPE old;
-	pthread_mutex_lock(&var->lck);
-	old = var->val;
-	pthread_mutex_unlock(&var->lck);
-	return old;
-}
-
-static inline void
-ATOMIC_SET(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE val)
-{
-	pthread_mutex_lock(&var->lck);
-	var->val = val;
-	pthread_mutex_unlock(&var->lck);
-}
-#define ATOMIC_SET(var, val)	ATOMIC_SET(var, (ATOMIC_BASE_TYPE) (val))
-
-static inline ATOMIC_BASE_TYPE
-ATOMIC_XCG(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE val)
-{
-	ATOMIC_BASE_TYPE old;
-	pthread_mutex_lock(&var->lck);
-	old = var->val;
-	var->val = val;
-	pthread_mutex_unlock(&var->lck);
-	return old;
-}
-#define ATOMIC_XCG(var, val)	ATOMIC_XCG(var, (ATOMIC_BASE_TYPE) (val))
-
-static inline bool
-ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
-{
-	bool ret;
-	pthread_mutex_lock(&var->lck);
-	if (var->val == *exp) {
-		var->val = des;
-		ret = true;
-	} else {
-		*exp = var->val;
-		ret = false;
-	}
-	pthread_mutex_unlock(&var->lck);
-	return ret;
-}
-#define ATOMIC_CAS(var, exp, des)	ATOMIC_CAS(var, exp, (ATOMIC_BASE_TYPE) (des))
-
-static inline ATOMIC_BASE_TYPE
-ATOMIC_ADD(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE val)
-{
-	ATOMIC_BASE_TYPE old;
-	pthread_mutex_lock(&var->lck);
-	old = var->val;
-	var->val += val;
-	pthread_mutex_unlock(&var->lck);
-	return old;
-}
-#define ATOMIC_ADD(var, val)	ATOMIC_ADD(var, (ATOMIC_BASE_TYPE) (val))
-
-static inline ATOMIC_BASE_TYPE
-ATOMIC_SUB(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE val)
-{
-	ATOMIC_BASE_TYPE old;
-	pthread_mutex_lock(&var->lck);
-	old = var->val;
-	var->val -= val;
-	pthread_mutex_unlock(&var->lck);
-	return old;
-}
-#define ATOMIC_SUB(var, val)	ATOMIC_SUB(var, (ATOMIC_BASE_TYPE) (val))
-
-static inline ATOMIC_BASE_TYPE
-ATOMIC_INC(ATOMIC_TYPE *var)
-{
-	ATOMIC_BASE_TYPE new;
-	pthread_mutex_lock(&var->lck);
-	new = var->val += 1;
-	pthread_mutex_unlock(&var->lck);
-	return new;
-}
-
-static inline ATOMIC_BASE_TYPE
-ATOMIC_DEC(ATOMIC_TYPE *var)
-{
-	ATOMIC_BASE_TYPE new;
-	pthread_mutex_lock(&var->lck);
-	new = var->val -= 1;
-	pthread_mutex_unlock(&var->lck);
-	return new;
-}
-
-static inline ATOMIC_BASE_TYPE
-ATOMIC_OR(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE val)
-{
-	ATOMIC_BASE_TYPE old;
-	pthread_mutex_lock(&var->lck);
-	old = var->val;
-	var->val |= val;
-	pthread_mutex_unlock(&var->lck);
-	return old;
-}
-#define ATOMIC_OR(var, val)	ATOMIC_OR(var, (ATOMIC_BASE_TYPE) (val))
-
-static inline ATOMIC_BASE_TYPE
-ATOMIC_AND(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE val)
-{
-	ATOMIC_BASE_TYPE old;
-	pthread_mutex_lock(&var->lck);
-	old = var->val;
-	var->val &= val;
-	pthread_mutex_unlock(&var->lck);
-	return old;
-}
-#define ATOMIC_AND(var, val)	ATOMIC_AND(var, (ATOMIC_BASE_TYPE) (val))
-
-typedef struct {
-	void *val;
-	pthread_mutex_t lck;
-} ATOMIC_PTR_TYPE;
-#define ATOMIC_PTR_VAR_INIT(v)	{ .val = (v), .lck = PTHREAD_MUTEX_INITIALIZER }
-
-static inline void
-ATOMIC_PTR_INIT(ATOMIC_PTR_TYPE *var, void *val)
-{
-	pthread_mutex_init(&var->lck, 0);
-	var->val = val;
-}
-
-#define ATOMIC_PTR_DESTROY(var)	pthread_mutex_destroy(&(var)->lck)
-
-static inline void *
-ATOMIC_PTR_GET(ATOMIC_PTR_TYPE *var)
-{
-	void *old;
-	pthread_mutex_lock(&var->lck);
-	old = var->val;
-	pthread_mutex_unlock(&var->lck);
-	return old;
-}
-
-static inline void
-ATOMIC_PTR_SET(ATOMIC_PTR_TYPE *var, void *val)
-{
-	pthread_mutex_lock(&var->lck);
-	var->val = val;
-	pthread_mutex_unlock(&var->lck);
-}
-
-static inline void *
-ATOMIC_PTR_XCG(ATOMIC_PTR_TYPE *var, void *val)
-{
-	void *old;
-	pthread_mutex_lock(&var->lck);
-	old = var->val;
-	var->val = val;
-	pthread_mutex_unlock(&var->lck);
-	return old;
-}
-
-static inline bool
-ATOMIC_PTR_CAS(ATOMIC_PTR_TYPE *var, void **exp, void *des)
-{
-	bool ret;
-	pthread_mutex_lock(&var->lck);
-	if (var->val == *exp) {
-		var->val = des;
-		ret = true;
-	} else {
-		*exp = var->val;
-		ret = false;
-	}
-	pthread_mutex_unlock(&var->lck);
-	return ret;
-}
-#define ATOMIC_PTR_CAS(var, exp, des)	ATOMIC_PTR_CAS(var, exp, (void *) (des))
-
-typedef struct {
-	bool flg;
-	pthread_mutex_t lck;
-} ATOMIC_FLAG;
-#define ATOMIC_FLAG_INIT	{ .flg = false, .lck = PTHREAD_MUTEX_INITIALIZER }
-
-static inline bool
-ATOMIC_TAS(ATOMIC_FLAG *var)
-{
-	bool old;
-	pthread_mutex_lock(&var->lck);
-	old = var->flg;
-	var->flg = true;
-	pthread_mutex_unlock(&var->lck);
-	return old;
-}
-
-static inline void
-ATOMIC_CLEAR(ATOMIC_FLAG *var)
-{
-	pthread_mutex_lock(&var->lck);
-	var->flg = false;
-	pthread_mutex_unlock(&var->lck);
-}
-
-#define USE_NATIVE_LOCKS 1		/* must use pthread locks */
+#error "we need either stdatomics.h support or native Windows support for atomics"
 
 #endif
 
