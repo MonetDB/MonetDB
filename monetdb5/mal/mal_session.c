@@ -915,7 +915,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 		p = getInstrPtr(mb, pc);
 		if (getModuleId(p) == optimizerRef && p->fcn && p->token != REMsymbol) {
 			actions++;
-			msg = (str) (*p->fcn) (cntxt, mb, 0, p);
+			msg = (*(str (*)(Client, MalBlkPtr, MalStkPtr, InstrPtr))p->fcn)(cntxt, mb, 0, p);
 			if (msg) {
 				str place = getExceptionPlace(msg);
 				str nmsg = NULL;
