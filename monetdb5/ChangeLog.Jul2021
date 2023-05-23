@@ -1,3 +1,9 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Tue May 23 2023 Sjoerd Mullender <sjoerd@acm.org>
+- There is now a new option --set tablet_threads=N to limit the number
+  of threads used for a COPY INTO from CSV file query.  This option can
+  also be set for a specific database using the monetdb command using
+  the ncopyintothreads property.
+
