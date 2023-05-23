@@ -5327,9 +5327,8 @@ strjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bit anti,
 		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
 	}
 
-	if (BAThasstrimps(l) && BAThasstrimps(r)) {
-		if (STRMPcreate(l, NULL) == GDK_SUCCEED &&
-			STRMPcreate(r, NULL) == GDK_SUCCEED)
+	if (BAThasstrimps(l)) {
+		if (STRMPcreate(l, NULL) == GDK_SUCCEED)
 			with_strimps = true;
 		/* else throw the GDK error and default to nested loop without filters */
 	}
