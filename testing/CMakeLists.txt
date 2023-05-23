@@ -183,6 +183,12 @@ configure_file(sqllogictest.py
   ${CMAKE_CURRENT_BINARY_DIR}/sqllogictest.py
   COPYONLY)
 
+if (NOT WIN32)
+  add_library(mtest_fallocate SHARED)
+  target_sources(mtest_fallocate PRIVATE fallocate.c)
+  target_link_libraries(mtest_fallocate)
+endif()
+
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/mktest.py
   ${CMAKE_CURRENT_BINARY_DIR}/sqllogictest.py
