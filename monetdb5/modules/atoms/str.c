@@ -5233,78 +5233,74 @@ STRcontainsselect(bat *ret, const bat *bid, const bat *sid, const str *key, cons
 /* nested loop implementation for batstr joins */
 #define batstr_join_loop(STRCMP, STR_LEN, WITH_STRIMPS)				\
 	do {																\
-	for (BUN ridx = 0; ridx < rci.ncand; ridx++) {						\
-		GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
-		ro = canditer_next(&rci);										\
-		vr = VALUE(r, ro - rbase);										\
-		rlen = str_strlen(vr);											\
-		nl = 0;														\
-		canditer_reset(&lci);											\
-		if (with_strimps) {											\
-			BAT *tmp_sl = STRMPfilter(l, sl, vr, anti);				\
-			if (tmp_sl) {												\
-				old_sl = sl;											\
-				sl = tmp_sl;											\
+		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {					\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit));\
+			ro = canditer_next(&rci);									\
+			vr = VALUE(r, ro - rbase);									\
+			rlen = str_strlen(vr);										\
+			nl = 0;													\
+			canditer_reset(&lci);										\
+			if (with_strimps) { /* for now no strimps with anti */		\
+				if(!(filtered_sl = STRMPfilter(l, sl, vr, anti)))		\
+					sl = filtered_sl;									\
 			}															\
-		}																\
-		for (BUN lidx = 0; lidx < lci.ncand; lidx++) {					\
-			lo = canditer_next(&lci);									\
-			vl = VALUE(l, lo - lbase);									\
-			if (strNil(vl)) {											\
-				continue;												\
-			} else if (!(str_cmp(vl, vr, rlen) != 0)) {				\
-				continue;												\
-			}															\
-			if (BATcount(r1) == BATcapacity(r1)) {						\
-				newcap = BATgrows(r1);									\
-				BATsetcount(r1, BATcount(r1));							\
-				if (r2)												\
-					BATsetcount(r2, BATcount(r2));						\
-				if (BATextend(r1, newcap) != GDK_SUCCEED || (r2 && BATextend(r2, newcap) != GDK_SUCCEED)) {	\
-					msg = createException(MAL, "str.%s", fname, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-					goto bailout;										\
-				}														\
-				assert(!r2 || BATcapacity(r1) == BATcapacity(r2));		\
-			}															\
-			if (BATcount(r1) > 0) {									\
-				if (lastl + 1 != lo)									\
-					r1->tseqbase = oid_nil;							\
-				if (nl == 0) {											\
+			for (BUN lidx = 0; lidx < lci.ncand; lidx++) {				\
+				lo = canditer_next(&lci);								\
+				vl = VALUE(l, lo - lbase);								\
+				if (strNil(vl)) {										\
+					continue;											\
+				} else if (!(STRCMP))									\
+					continue;											\
+				if (BATcount(r1) == BATcapacity(r1)) {					\
+					newcap = BATgrows(r1);								\
+					BATsetcount(r1, BATcount(r1));						\
 					if (r2)											\
-						r2->trevsorted = false;						\
-					if (lastl > lo) {									\
-						r1->tsorted = false;							\
-						r1->tkey = false;								\
-					} else if (lastl < lo) {							\
-						r1->trevsorted = false;						\
-					} else {											\
-						r1->tkey = false;								\
+						BATsetcount(r2, BATcount(r2));					\
+					if (BATextend(r1, newcap) != GDK_SUCCEED || (r2 && BATextend(r2, newcap) != GDK_SUCCEED)) { \
+						msg = createException(MAL, "str.%s", fname, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+						goto exit;										\
+					}													\
+					assert(!r2 || BATcapacity(r1) == BATcapacity(r2));	\
+				}														\
+				if (BATcount(r1) > 0) {								\
+					if (lastl + 1 != lo)								\
+						r1->tseqbase = oid_nil;						\
+					if (nl == 0) {										\
+						if (r2)										\
+							r2->trevsorted = false;					\
+						if (lastl > lo) {								\
+							r1->tsorted = false;						\
+							r1->tkey = false;							\
+						} else if (lastl < lo) {						\
+							r1->trevsorted = false;					\
+						} else {										\
+							r1->tkey = false;							\
+						}												\
 					}													\
 				}														\
+				APPEND(r1, lo);										\
+				if (r2)												\
+					APPEND(r2, ro);									\
+				lastl = lo;											\
+				nl++;													\
+				if (with_strimps) {									\
+					sl = original_sl;									\
+				}														\
 			}															\
-			APPEND(r1, lo);											\
-			if (r2)													\
-				APPEND(r2, ro);										\
-			lastl = lo;												\
-			nl++;														\
-		}																\
-		if (r2) {														\
-			if (nl > 1) {												\
-				r2->tkey = false;										\
-				r2->tseqbase = oid_nil;								\
+			if (r2) {													\
+				if (nl > 1) {											\
+					r2->tkey = false;									\
+					r2->tseqbase = oid_nil;							\
+					r1->trevsorted = false;							\
+				} else if (nl == 0) {									\
+					rskipped = BATcount(r2) > 0;						\
+				} else if (rskipped) {									\
+					r2->tseqbase = oid_nil;							\
+				}														\
+			} else if (nl > 1) {										\
 				r1->trevsorted = false;								\
-			} else if (nl == 0) {										\
-				rskipped = BATcount(r2) > 0;							\
-			} else if (rskipped) {										\
-				r2->tseqbase = oid_nil;								\
 			}															\
-		} else if (nl > 1) {											\
-			r1->trevsorted = false;									\
 		}																\
-		if (with_strimps) {											\
-			sl = old_sl;												\
-		}																\
-	}																	\
 	} while (0)
 
 static str
@@ -5316,7 +5312,7 @@ strjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bit anti,
 	int rskipped = 0, rlen = 0;                 /* whether we skipped values in r */
 	oid lbase, rbase, lo, ro, lastl = 0;        /* last value inserted into r1 */
 	BUN nl, newcap;
-	BAT *old_sl = NULL;
+	BAT *original_sl = sl, *filtered_sl;
 	bool with_strimps = false;
 	char *msg = MAL_SUCCEED;
 
@@ -5327,7 +5323,7 @@ strjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bit anti,
 		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
 	}
 
-	if (BAThasstrimps(l)) {
+	if (BAThasstrimps(l) && !anti) {
 		if (STRMPcreate(l, NULL) == GDK_SUCCEED)
 			with_strimps = true;
 		/* else throw the GDK error and default to nested loop without filters */
@@ -5376,9 +5372,6 @@ strjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bit anti,
 	else
 		batstr_join_loop(str_cmp(vl, vr, rlen) != 0, str_strlen(vr), with_strimps);
 
-	bat_iterator_end(&li);
-	bat_iterator_end(&ri);
-
 	assert(!r2 || BATcount(r1) == BATcount(r2));
 	BATsetcount(r1, BATcount(r1));
 	if (r2)
@@ -5413,12 +5406,13 @@ strjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bit anti,
 				  BATgetId(r1), BATcount(r1),
 				  r1->tsorted ? "-sorted" : "",
 				  r1->trevsorted ? "-revsorted" : "");
-	return MAL_SUCCEED;
-
- bailout:
+ exit:
+	if (with_strimps) {
+		BBPreclaim(filtered_sl);
+		BBPreclaim(original_sl);
+	}
 	bat_iterator_end(&li);
 	bat_iterator_end(&ri);
-	assert(msg != MAL_SUCCEED);
 	return msg;
 }
 
