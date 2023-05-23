@@ -1,7 +1,7 @@
 
 //#define _GNU_SOURCE             /* See feature_test_macros(7) */
 #include <monetdb_config.h>
-#if HAVE_FALLOCATE
+#ifdef HAVE_FALLOCATE
 #include <fcntl.h>
 #include <dlfcn.h>
 #include <stdlib.h>
