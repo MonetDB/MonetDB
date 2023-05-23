@@ -196,14 +196,20 @@ mnstr_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 {
 	if (s == NULL || buf == NULL)
 		return -1;
-#ifdef STREAM_DEBUG
-	fprintf(stderr, "read %s %zu %zu\n",
-		s->name ? s->name : "<unnamed>", elmsize, cnt);
-#endif
+
 	assert(s->readonly);
 	if (s->errkind != MNSTR_NO__ERROR)
 		return -1;
-	return s->read(s, buf, elmsize, cnt);
+	ssize_t r = s->read(s, buf, elmsize, cnt);
+#ifdef STREAM_DEBUG
+	char *msg = (char *)malloc(elmsize*cnt);
+	strncpy(msg, buf, elmsize*cnt);
+	msg[elmsize*cnt] = 0;
+	fprintf(stderr, "read %s %zu %zu <%s>\n",
+			s->name ? s->name : "<unnamed>", elmsize, cnt, msg);
+	free(msg);
+#endif
+	return r;
 }
 
 
@@ -216,8 +222,12 @@ mnstr_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t
 	if (s == NULL || buf == NULL)
 		return -1;
 #ifdef STREAM_DEBUG
-	fprintf(stderr, "write %s %zu %zu\n",
-		s->name ? s->name : "<unnamed>", elmsize, cnt);
+	char *msg = (char *)malloc(elmsize*cnt);
+	strncpy(msg, buf, elmsize*cnt);
+	msg[elmsize*cnt] = 0;
+	fprintf(stderr, "write %s %zu %zu <%s>\n",
+			s->name ? s->name : "<unnamed>", elmsize, cnt, msg);
+	free(msg);
 #endif
 	assert(!s->readonly);
 	if (s->errkind != MNSTR_NO__ERROR)
