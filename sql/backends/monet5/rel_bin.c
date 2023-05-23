@@ -267,7 +267,8 @@ column(backend *be, stmt *val )
 	return val;
 }
 
-static stmt *create_const_column(backend *be, stmt *val )
+static stmt *
+create_const_column(backend *be, stmt *val )
 {
 	if (val->nrcols == 0)
 		val = const_column(be, val);
@@ -5009,7 +5010,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 	stmt *sub = NULL, *l = NULL, *o = NULL;
 	node *n;
 	int _2phases = rel_topn_2_phases(rel);
-    list *projectresults = NULL;
+	list *projectresults = NULL;
 	bool df2 = (SQLrunning && rel->parallel && _2phases);
 	int neededpp = rel->partition && get_need_pipeline(be);
 
@@ -7863,7 +7864,6 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 
 	if (!rel)
 		return s;
-
 	if (rel_is_ref(rel)) {
 		s = refs_find_rel(refs, rel);
 		/* needs a proper fix!! */
