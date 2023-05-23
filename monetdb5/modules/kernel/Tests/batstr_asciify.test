@@ -18,16 +18,25 @@ statement ok
 create table bar(y string);
 
 statement ok
-insert into bar values ('Olá Mundo!'),('こんにちは、世界！'),('Καλημέρα κόσμε!'),('Привет, мир!'),('你好，世界!')
+insert into bar values ('Olá Mundo!'),('João'),('Parabéns Ri!'),('Müller')
 
+onlyif system=Linux
 query T
 select asciify(y) from bar;
 ----
 Ola Mundo!
-????????!
-????u??? ???u?!
-??????, ???!
-??,??!
+Joao
+Parabens Ri!
+Muller
+
+skipif system=Linux
+query T
+select asciify(y) from bar;
+----
+Ol'a Mundo!
+Jo~ao
+Parab'ens Ri!
+M"uller
 
 statement ok
 drop table bar;

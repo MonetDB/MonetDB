@@ -4995,7 +4995,7 @@ STRasciify(str *r, const str *s)
 			return MAL_SUCCEED;
 	}
 	iconv_t cd;
-	const str f = "UTF8", t = "ASCII//TRANSLIT";
+	const str f = "UTF-8", t = "ASCII//TRANSLIT";
 	str in = *s, out;
 	size_t in_len = strlen(in), out_len = in_len * 4; /* oversized as a single utf8 char could change into multiple
 														 ascii char */
