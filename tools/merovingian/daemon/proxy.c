@@ -268,17 +268,23 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 			return(newErr("cannot open socket: %s", strerror(errno)));
 	}
 
-	sfdin = block_stream(socket_rstream(ssock, "merovingian<-server (proxy read)"));
+	sfdin = socket_rstream(ssock, "merovingian<-server (proxy read)");
 	if (sfdin == 0) {
 		return(newErr("merovingian-server inputstream or outputstream problems: %s", mnstr_peek_error(NULL)));
 	}
 
-	sfout = block_stream(socket_wstream(ssock, "merovingian->server (proxy write)"));
+	sfout = socket_wstream(ssock, "merovingian->server (proxy write)");
 	if (sfout == 0) {
 		close_stream(sfdin);
 		return(newErr("merovingian-server inputstream or outputstream problems: %s", mnstr_peek_error(NULL)));
 	}
 
+	Mlevelfprintf(ERROR, stderr, "Proxy streams opened\n");
+	/* char *data = "proxy"; */
+	char data[1] = {0};
+	/* mnstr_read(sfdin, data, 1, 1); */
+	mnstr_write(sfout, data, strlen(data), 1);
+	mnstr_flush(sfout, MNSTR_FLUSH_DATA);
 	/* our proxy schematically looks like this:
 	 *
 	 *                  A___>___B
