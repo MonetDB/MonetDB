@@ -66,11 +66,15 @@
 #include <atomic>
 
 #if SIZEOF_LONG_LONG == 8
-static_assert(ATOMIC_LLONG_LOCK_FREE == 2, "we need _Atomic(unsigned long long) to be lock free");
+#if ATOMIC_LLONG_LOCK_FREE != 2
+#error "we need _Atomic(unsigned long long) to be lock free"
+#endif
 typedef atomic_ullong ATOMIC_TYPE;
 typedef unsigned long long ATOMIC_BASE_TYPE;
 #elif SIZEOF_LONG == 8
-static_assert(ATOMIC_LONG_LOCK_FREE == 2, "we need _Atomic(unsigned long) to be lock free");
+#if ATOMIC_LONG_LOCK_FREE != 2
+#error "we need _Atomic(unsigned long) to be lock free"
+#endif
 typedef atomic_ulong ATOMIC_TYPE;
 typedef unsigned long ATOMIC_BASE_TYPE;
 #else
@@ -82,11 +86,15 @@ typedef unsigned long ATOMIC_BASE_TYPE;
 #include <stdatomic.h>
 
 #if SIZEOF_LONG_LONG == 8
-static_assert(ATOMIC_LLONG_LOCK_FREE == 2, "we need _Atomic(unsigned long long) to be lock free");
+#if ATOMIC_LLONG_LOCK_FREE != 2
+#error "we need _Atomic(unsigned long long) to be lock free"
+#endif
 typedef volatile atomic_ullong ATOMIC_TYPE;
 typedef unsigned long long ATOMIC_BASE_TYPE;
 #elif SIZEOF_LONG == 8
-static_assert(ATOMIC_LONG_LOCK_FREE == 2, "we need _Atomic(unsigned long) to be lock free");
+#if ATOMIC_LONG_LOCK_FREE != 2
+#error "we need _Atomic(unsigned long) to be lock free"
+#endif
 typedef volatile atomic_ulong ATOMIC_TYPE;
 typedef unsigned long ATOMIC_BASE_TYPE;
 #else
