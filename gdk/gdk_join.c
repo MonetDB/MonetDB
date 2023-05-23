@@ -3083,12 +3083,15 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 	canditer_init(&ci, b, s);
 	half = ci.ncand / 2;
 
+	MT_lock_set(&b->theaplock);
 	if (b->tkey || ci.ncand <= 1 || BATtdense(b)) {
 		/* trivial: already unique */
+		MT_lock_unset(&b->theaplock);
 		*cnt1 = half;
 		*cnt2 = ci.ncand;
 		return GDK_SUCCEED;
 	}
+	MT_lock_unset(&b->theaplock);
 
 	(void) BATordered(b);
 	(void) BATordered_rev(b);
