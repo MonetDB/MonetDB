@@ -80,7 +80,7 @@ static struct SCENARIO scenarioRec[MAXSCEN] = {
 		.initClient = "MALinitClient",
 		.initClientCmd = (init_client) MALinitClient,
 		.exitClient = "MALexitClient",
-		.exitClientCmd = (MALfcn) MALexitClient,
+		.exitClientCmd = (exit_client) MALexitClient,
 		.engine = "MALengine",
 		.engineCmd = (engine_fptr)MALengine,
 	},
