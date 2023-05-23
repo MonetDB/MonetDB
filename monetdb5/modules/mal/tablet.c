@@ -465,7 +465,6 @@ output_file_default(Tablet *as, BAT *order, stream *fd)
 	char *localbuf = GDKmalloc(len);
 	BUN p, q;
 	oid id;
-	BUN i = 0;
 	BUN offset = as->offset;
 
 	if (buf == NULL || localbuf == NULL) {
@@ -479,7 +478,6 @@ output_file_default(Tablet *as, BAT *order, stream *fd)
 			GDKfree(localbuf);
 			return res;
 		}
-		i++;
 	}
 	GDKfree(localbuf);
 	GDKfree(buf);

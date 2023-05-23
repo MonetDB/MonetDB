@@ -121,7 +121,7 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/export_data/"},
 	{"COPY INTO BINARY",
 	 "Write query result data to binary files",
-	 "COPY query_expression INTO [{{BIG | LITTLE | NATIVE}} ENDIAN] BINARY string_commalist [ON { CLIENT | SERVER }]",
+	 "COPY query_expression INTO [{BIG | LITTLE | NATIVE} ENDIAN] BINARY string_commalist [ON { CLIENT | SERVER }]",
 	 "query_expression",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/export_data/"},
 	{"COPY INTO FROM",

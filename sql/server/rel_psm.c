@@ -1370,7 +1370,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		if (old_name)
 			stack_update_rel_view(sql, old_name, new_name?rel_dup(rel):rel);
 	}
-	sql->use_views = 1; /* leave the 'use_views' hack to where it belongs */
+	sql->use_views = true; /* leave the 'use_views' hack to where it belongs */
 	sql->session->schema = ss;
 	sq = sequential_block(query, NULL, NULL, stmts, NULL, 1);
 	sql->session->schema = old_schema;

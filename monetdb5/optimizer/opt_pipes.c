@@ -454,7 +454,7 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 		p = newFcnCall(mb, optimizerRef, pipes[i].def[j]);
 		if (p == NULL)
 			throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		p->fcn = OPTwrapper;
+		p->fcn = (MALfcn)OPTwrapper;
 		p->token = PATcall;
 		pushInstruction(mb, p);
 	}

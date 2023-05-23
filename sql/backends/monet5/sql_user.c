@@ -221,9 +221,9 @@ parse_schema_path_str(mvc *m, str schema_path, bool build) /* this function for 
 						throw(SQL, "sql.schema_path", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
 					if (strcmp(next_schema, "sys") == 0)
-						m->schema_path_has_sys = 1;
+						m->schema_path_has_sys = true;
 					else if (strcmp(next_schema, "tmp") == 0)
-						m->schema_path_has_tmp = 1;
+						m->schema_path_has_tmp = true;
 				}
 
 				bp = 0;

@@ -131,7 +131,7 @@ typedef struct mvc {
 	int frame;
 	struct symbol *sym;
 
-	int8_t use_views:1,
+	bool use_views:1,
 		   schema_path_has_sys:1, /* speed up object search */
 		   schema_path_has_tmp:1;
 	struct qc *qc;

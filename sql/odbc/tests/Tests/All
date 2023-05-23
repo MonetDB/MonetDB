@@ -2,4 +2,4 @@ HAVE_ODBC?ODBCgetInfo
 HAVE_ODBC?ODBCmetadata
 HAVE_ODBC?ODBCStmtAttr
 HAVE_ODBC?ODBCtester
-HAVE_PYODBC?pyodbc-test
+HAVE_PYODBC&!SANITIZER?pyodbc-test

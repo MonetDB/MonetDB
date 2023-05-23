@@ -46,6 +46,7 @@ if architecture == 'AMD64':     # Windows :-(
     architecture = 'x86_64'
 if architecture == 'arm64':     # MacOS :-(
     architecture = 'aarch64'
+system = platform.system()
 
 skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 
@@ -664,6 +665,7 @@ class SQLLogic:
     def parse(self, f, approve=None, verbose=False, defines=None):
         self.approve = approve
         self.initfile(f, defines)
+        nthreads = None
         if self.language == 'sql':
             self.crs.execute(f'call sys.setsessiontimeout({self.timeout or 0})')
         else:
@@ -693,10 +695,24 @@ class SQLLogic:
             if not words:
                 continue
             while words[0] == 'skipif' or words[0] == 'onlyif':
-                if words[0] == 'skipif' and words[1] in ('MonetDB', f'arch={architecture}'):
-                    skipping = True
-                elif words[0] == 'onlyif' and words[1] not in ('MonetDB', f'arch={architecture}'):
-                    skipping = True
+                if words[0] == 'skipif':
+                    if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}'):
+                        skipping = True
+                    elif words[1].startswith('threads='):
+                        if nthreads is None:
+                            self.crs.execute("select value from env() where name = 'gdk_nr_threads'")
+                            nthreads = self.crs.fetchall()[0][0]
+                        if words[1] == f'threads={nthreads}':
+                            skipping = True
+                elif words[0] == 'onlyif':
+                    if words[1] not in ('MonetDB', f'arch={architecture}', f'system={system}'):
+                        skipping = True
+                    elif words[1].startswith('threads='):
+                        if nthreads is None:
+                            self.crs.execute("select value from env() where name = 'gdk_nr_threads'")
+                            nthreads = self.crs.fetchall()[0][0]
+                        if words[1] != f'threads={nthreads}':
+                            skipping = True
                 self.writeline(line.rstrip())
                 line = self.readline()
                 words = line.split(maxsplit=2)

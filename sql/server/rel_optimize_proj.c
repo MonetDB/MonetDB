@@ -1703,45 +1703,52 @@ rel_groupby_cse(visitor *v, sql_rel *rel)
 {
 	if (is_groupby(rel->op) && !list_empty(rel->r)) {
 		sql_rel *l = rel->l;
-		int needed = 0;
 
-		for (node *n=((list*)rel->r)->h; n ; n = n->next) {
-			sql_exp *e = n->data;
-			e->used = 0; /* we need to use this flag, clean it first */
-		}
+		/* for every group expression e1 */
 		for (node *n=((list*)rel->r)->h; n ; n = n->next) {
 			sql_exp *e1 = n->data;
+			/* it's good to examine the same expression in the subrelation e.g. in case it's an alias */
 			/* TODO maybe cover more cases? Here I only look at the left relation */
-			sql_exp *e3 = e1->type == e_column ? exps_find_exp(l->exps, e1) : NULL;
+			sql_exp *e1_sub = e1->type == e_column ? exps_find_exp(l->exps, e1) : NULL;
 
+			/* for every other group expression */
 			for (node *m=n->next; m; m = m->next) {
 				sql_exp *e2 = m->data;
-				sql_exp *e4 = e2->type == e_column ? exps_find_exp(l->exps, e2) : NULL;
+				sql_exp *e2_sub = e2->type == e_column ? exps_find_exp(l->exps, e2) : NULL;
 
-				if (exp_match_exp(e1, e2) || exp_refers(e1, e2) || (e3 && e4 && (exp_match_exp(e3, e4) || exp_refers(e3, e4)))) {
-					e2->used = 1; /* flag it as being removed */
-					needed = 1;
+				/* check if the expression are the same */
+				if (exp_match_exp(e1, e2) || exp_refers(e1, e2) || (e1_sub && e2_sub && (exp_match_exp(e1_sub, e2_sub) || exp_refers(e1_sub, e2_sub)))) {
+
+					/* use e2 from rel->exps instead of e2 from the rel->r as it can have an alias from the higher rel */
+					sql_exp *e2_in_exps = (e2->alias.rname == e2->l && e2->alias.name == e2->r) ?
+						exps_bind_column2(rel->exps, e2->l, e2->r, NULL) :
+						exps_bind_column(rel->exps, e2->alias.name, NULL, NULL, 0);
+					assert(e2_in_exps);
+
+					/* same as e2 */
+					sql_exp *e1_in_exps = (e1->alias.rname == e1->l && e1->alias.name == e1->r) ?
+						exps_bind_column2(rel->exps, e1->l, e1->r, NULL) :
+						exps_bind_column(rel->exps, e1->alias.name, NULL, NULL, 0);
+					assert(e1_in_exps);
+
+					/* write e2 as an e1 alias since the expressions are the same */
+					sql_exp* e2_as_e1_alias = exp_copy(v->sql, e1_in_exps);
+					/* NOTE: it is important to get the rname (exp->l) and name (exp->r) from e2 IN the exps
+					 * (e2_in_exps), and not from e2, since it could carry an alias from the higher rel */
+					exp_setalias(e2_as_e1_alias, e2_in_exps->l, e2_in_exps->r);
+
+					/* replace e2 with e2_as_e1_alias in expressions list */
+					node *e2_exps_node = list_find(rel->exps, e2_in_exps, NULL);
+					list_append_before(rel->exps, e2_exps_node, e2_as_e1_alias);
+					list_remove_node(rel->exps, NULL, e2_exps_node);
+
+					/* finally remove e2 from the groups' list (->r) since it's redundant */
+					node *e2_r_node = list_find(rel->r, e2, NULL);
+					list_remove_node(rel->r, NULL, e2_r_node);
+
+					v->changes++;
 				}
 			}
-		}
-
-		if (!needed)
-			return rel;
-
-		if (!is_simple_project(l->op) || !list_empty(l->r) || rel_is_ref(l) || need_distinct(l))
-			rel->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
-
-		for (node *n=((list*)rel->r)->h; n ; ) {
-			node *next = n->next;
-			sql_exp *e = n->data;
-
-			if (e->used) { /* remove unecessary grouping columns */
-				e->used = 0;
-				list_append(l->exps, e);
-				list_remove_node(rel->r, NULL, n);
-				v->changes++;
-			}
-			n = next;
 		}
 	}
 	return rel;

@@ -280,7 +280,7 @@ void freeModule(Module m)
 			str ret = MAL_SUCCEED;
 
 			assert(pci->fcn != NULL);
-			ret = (*pci->fcn)(&status);
+			ret = (*(str (*)(int *))pci->fcn)(&status);
 			freeException(ret);
 			(void)status;
 		}

@@ -91,7 +91,7 @@ initModule(Client c, const char *name, const char *initpasswd)
 				int ret = 0;
 
 				assert(pci->fcn != NULL);
-				msg = (*pci->fcn)(&ret);
+				msg = (*(str (*)(int *))pci->fcn)(&ret);
 				(void)ret;
 			} else if (pci && pci->token == PATTERNsymbol) {
 				void *mb = NULL;
@@ -105,7 +105,7 @@ initModule(Client c, const char *name, const char *initpasswd)
 					 * string in order to check that in the callee */
 					mb = (void *) mercurial_revision();
 				}
-				msg = (*pci->fcn)(c, mb, NULL, NULL);
+				msg = (*(str (*)(Client, MalBlkPtr, MalStkPtr, InstrPtr))pci->fcn)(c, mb, NULL, NULL);
 			}
 		}
 	}

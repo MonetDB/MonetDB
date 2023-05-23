@@ -840,7 +840,7 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 		list_destroy(m->schema_path);
 		return NULL;
 	}
-	m->schema_path_has_sys = 1;
+	m->schema_path_has_sys = true;
 	m->schema_path_has_tmp = 0;
 	m->store = store;
 

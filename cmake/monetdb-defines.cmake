@@ -150,6 +150,7 @@ macro(monetdb_macro_variables)
   set(RHOME "${LIBR_HOME}")
   set(HAVE_GEOM ${GEOS_FOUND})
   set(HAVE_SHP ${GDAL_FOUND})
+  set(SANITIZER ${SANITIZER})
 
   if(PY3INTEGRATION)
     set(HAVE_LIBPY3 "${Python3_NumPy_FOUND}")
