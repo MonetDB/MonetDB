@@ -1,5 +1,7 @@
 
 //#define _GNU_SOURCE             /* See feature_test_macros(7) */
+#include <monetdb_config.h>
+#if HAVE_FALLOCATE
 #include <fcntl.h>
 #include <dlfcn.h>
 #include <stdlib.h>
@@ -24,3 +26,4 @@ fallocate(int fd, int mode, off_t offset, off_t len)
 	}
 	return real_fallocate(fd, mode, offset, len);
 }
+#endif

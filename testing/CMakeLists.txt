@@ -186,6 +186,7 @@ configure_file(sqllogictest.py
 if (NOT WIN32)
   add_library(mtest_fallocate SHARED)
   target_sources(mtest_fallocate PRIVATE fallocate.c)
+  target_link_libraries(mtest_fallocate PRIVATE monetdb_config_header)
   target_link_libraries(mtest_fallocate)
 endif()
 
