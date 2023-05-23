@@ -912,8 +912,8 @@ plan SELECT x AS x, x AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
 ----
 project (
 | group by (
-| |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x", "x"."x" NOT NULL as "x1" ]
-| ) [ "x"."x" NOT NULL ] [ "x"."x" NOT NULL, "x1" NOT NULL ]
+| |  [  [ tinyint(2) "1", tinyint(2) "2", tinyint(2) "3" ] as "x"."x" ]
+| ) [ "x"."x" NOT NULL ] [ "x"."x" NOT NULL, "x"."x" NOT NULL as "x1" ]
 ) [ "x"."x" NOT NULL UNIQUE as "x", "x1" NOT NULL ]
 
 query II rowsort

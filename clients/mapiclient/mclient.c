@@ -418,7 +418,21 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 				 * and code points marked either F or
 				 * W in EastAsianWidth.txt; this list
 				 * is up-to-date with Unicode 11.0 */
-				if ((0x1100 <= c && c <= 0x115F) ||
+				if ((0x0300 <= c && c <= 0x036F) ||
+					(0x0483 <= c && c <= 0x0489) ||
+					(0x0653 <= c && c <= 0x0655) ||
+					(0x1AB0 <= c && c <= 0x1AFF) ||
+					(0x1DC0 <= c && c <= 0x1DFF) ||
+					(0x20D0 <= c && c <= 0x20FF) ||
+					(0x2DE0 <= c && c <= 0x2DFF) ||
+					(0xA66F <= c && c <= 0xA672) ||
+					(0xA674 <= c && c <= 0xA67D) ||
+					(0xA69E <= c && c <= 0xA69F) ||
+					(0xA8E0 <= c && c <= 0xA8F1) ||
+					(0xFE20 <= c && c <= 0xFE2F) ||
+					c == 0x3099 || c == 0x309A)
+					len--;		/* combining mark */
+				else if ((0x1100 <= c && c <= 0x115F) ||
 				    (0x231A <= c && c <= 0x231B) ||
 				    (0x2329 <= c && c <= 0x232A) ||
 				    (0x23E9 <= c && c <= 0x23EC) ||

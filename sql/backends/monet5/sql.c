@@ -4641,7 +4641,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (!ret && ii == q->argc) {
 					BAT *fres = NULL;
 					if (!omb && npci->fcn)
-						ret = npci->fcn(cntxt, nmb, nstk, npci);
+						ret = (*(str (*)(Client, MalBlkPtr, MalStkPtr, InstrPtr))npci->fcn)(cntxt, nmb, nstk, npci);
 					else
 						ret = runMALsequence(cntxt, nmb, 1, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q);
 

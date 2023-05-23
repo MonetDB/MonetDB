@@ -142,6 +142,9 @@ HEAPgrow(Heap **hp, size_t size, bool mayshare)
 gdk_return
 HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 {
+	size_t size = 0;
+	QryCtx *qc = NULL;
+
 	h->base = NULL;
 	h->size = 1;
 	if (itemsize) {
@@ -161,6 +164,16 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	     h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) &&
 	     h->size < ((GDK_mem_maxsize - allocated) >> 6))) {
 		h->storage = STORE_MEM;
+		size = h->size;
+		if (h->farmid == 1 && (qc = MT_thread_get_qry_ctx()) != NULL) {
+			ATOMIC_BASE_TYPE sz = ATOMIC_ADD(&qc->datasize, size);
+			sz += size;
+			if (qc->maxmem > 0 && sz > qc->maxmem) {
+				ATOMIC_SUB(&qc->datasize, size);
+				GDKerror("Query using too much memory.\n");
+				return GDK_FAIL;
+			}
+		}
 		h->base = GDKmalloc(h->size);
 		TRC_DEBUG(HEAP, "%s %zu %p\n", h->filename, h->size, h->base);
 	}
@@ -171,6 +184,18 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		if (nme == NULL)
 			return GDK_FAIL;
 		h->storage = STORE_MMAP;
+		h->size = (h->size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
+		if (h->farmid == 1 && h->size > size &&
+		    (qc != NULL || (qc = MT_thread_get_qry_ctx()) != NULL)) {
+			ATOMIC_BASE_TYPE sz = ATOMIC_ADD(&qc->datasize, h->size - size);
+			sz += h->size - size;
+			size = h->size;
+			if (qc->maxmem > 0 && sz > qc->maxmem) {
+				ATOMIC_SUB(&qc->datasize, size);
+				GDKerror("Query using too much memory.\n");
+				return GDK_FAIL;
+			}
+		}
 		h->base = HEAPcreatefile(NOFARM, &h->size, nme);
 		h->hasfile = true;
 	}
@@ -183,24 +208,13 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 			GDKfree(nme);
 			h->hasfile = false; /* just removed it */
 		}
+		if (qc != NULL && size > 0)
+			ATOMIC_SUB(&qc->datasize, size);
 		GDKerror("Insufficient space for HEAP of %zu bytes.", h->size);
 		return GDK_FAIL;
 	}
 	GDKfree(nme);
 	h->newstorage = h->storage;
-	if (h->farmid == 1) {
-		QryCtx *qc = MT_thread_get_qry_ctx();
-		ATOMIC_BASE_TYPE sz = 0;
-		if (qc) {
-			sz = ATOMIC_ADD(&qc->datasize, h->size);
-			sz += h->size;
-			if (qc->maxmem > 0 && sz > qc->maxmem) {
-				HEAPfree(h, true);
-				GDKerror("Query using too much memory.\n");
-				return GDK_FAIL;
-			}
-		}
-	}
 	return GDK_SUCCEED;
 }
 
@@ -226,6 +240,7 @@ gdk_return
 HEAPextend(Heap *h, size_t size, bool mayshare)
 {
 	size_t osize = h->size;
+	QryCtx *qc = NULL;
 
 	if (size <= h->size)
 		return GDK_SUCCEED;	/* nothing to do */
@@ -256,6 +271,15 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 		if (size == 0)
 			size = GDK_mmap_pagesize;
 
+		if (h->farmid == 1 && (qc = MT_thread_get_qry_ctx()) != NULL) {
+			ATOMIC_BASE_TYPE sz = ATOMIC_ADD(&qc->datasize, size - osize);
+			sz += size - osize;
+			if (qc->maxmem > 0 && sz > qc->maxmem) {
+				GDKerror("Query using too much memory.\n");
+				ATOMIC_SUB(&qc->datasize, size - osize);
+				return GDK_FAIL;
+			}
+		}
 		p = GDKmremap(path,
 			      h->storage == STORE_PRIV ?
 				MMAP_COPY | MMAP_READ | MMAP_WRITE :
@@ -265,20 +289,10 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 		if (p) {
 			h->size = size;
 			h->base = p;
-			if (h->farmid == 1) {
-				QryCtx *qc = MT_thread_get_qry_ctx();
-				ATOMIC_BASE_TYPE sz = 0;
-				if (qc) {
-					sz = ATOMIC_ADD(&qc->datasize, size - osize);
-					sz += size - osize;
-					if (qc->maxmem > 0 && sz > qc->maxmem) {
-						GDKerror("Query using too much memory.\n");
-						return GDK_FAIL;
-					}
-				}
-			}
  			return GDK_SUCCEED; /* success */
  		}
+		if (qc)
+			ATOMIC_SUB(&qc->datasize, size - osize);
 		failure = "GDKmremap() failed";
 	} else {
 		/* extend a malloced heap, possibly switching over to
@@ -296,26 +310,26 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 		/* try GDKrealloc if the heap size stays within
 		 * reasonable limits */
 		if (!must_mmap) {
+			if (h->farmid == 1 &&(qc = MT_thread_get_qry_ctx()) != NULL) {
+				ATOMIC_BASE_TYPE sz = ATOMIC_ADD(&qc->datasize, size - osize);
+				sz += size - osize;
+				if (qc->maxmem > 0 && sz > qc->maxmem) {
+					GDKerror("Query using too much memory.\n");
+					ATOMIC_SUB(&qc->datasize, size - osize);
+					*h = bak;
+					return GDK_FAIL;
+				}
+			}
 			h->newstorage = h->storage = STORE_MEM;
 			h->base = GDKrealloc(h->base, size);
 			TRC_DEBUG(HEAP, "Extending malloced heap %s %zu->%zu %p->%p\n", h->filename, bak.size, size, bak.base, h->base);
 			if (h->base) {
-				if (h->farmid == 1) {
-					QryCtx *qc = MT_thread_get_qry_ctx();
-					ATOMIC_BASE_TYPE sz = 0;
-					if (qc) {
-						sz = ATOMIC_ADD(&qc->datasize, size - osize);
-						sz += size - osize;
-						if (qc->maxmem > 0 && sz > qc->maxmem) {
-							GDKerror("Query using too much memory.\n");
-							return GDK_FAIL;
-						}
-					}
-				}
 				return GDK_SUCCEED; /* success */
 			}
 			/* bak.base is still valid and may get restored */
 			failure = "h->storage == STORE_MEM && !must_map && !h->base";
+			if (qc != NULL)
+				ATOMIC_SUB(&qc->datasize, size - osize);
 		}
 
 		if (!GDKinmemory(h->farmid)) {
@@ -336,6 +350,18 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 			} else {
 				/* no pre-existing heap file, so create a new
 				 * one */
+				if (h->farmid == 1 && (qc = MT_thread_get_qry_ctx()) != NULL) {
+					ATOMIC_BASE_TYPE sz = 0;
+					h->size = (h->size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
+					sz = ATOMIC_ADD(&qc->datasize, h->size);
+					sz += h->size;
+					if (qc->maxmem > 0 && sz > qc->maxmem) {
+						GDKerror("Query using too much memory.\n");
+						sz = ATOMIC_ADD(&qc->datasize, h->size);
+						*h = bak;
+						return GDK_FAIL;
+					}
+				}
 				h->base = HEAPcreatefile(h->farmid, &h->size, h->filename);
 				h->hasfile = true;
 				if (h->base) {
@@ -343,21 +369,11 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 					if (bak.free > 0)
 						memcpy(h->base, bak.base, bak.free);
 					HEAPfree(&bak, false);
-					if (h->farmid == 1) {
-						QryCtx *qc = MT_thread_get_qry_ctx();
-						ATOMIC_BASE_TYPE sz = 0;
-						if (qc) {
-							sz = ATOMIC_ADD(&qc->datasize, h->size);
-							sz += h->size;
-							if (qc->maxmem > 0 && sz > qc->maxmem) {
-								GDKerror("Query using too much memory.\n");
-								return GDK_FAIL;
-							}
-						}
-					}
 					return GDK_SUCCEED;
 				}
 				GDKclrerr();
+				if (qc != NULL)
+					ATOMIC_SUB(&qc->datasize, h->size);
 			}
 			fd = GDKfdlocate(h->farmid, nme, "wb", ext);
 			if (fd >= 0) {
@@ -737,7 +753,7 @@ void
 HEAPincref(Heap *h)
 {
 	//printf("inc ref(%d) %p %d\n", (int)h->refs, h, h->parentid);
-	(void)ATOMIC_INC(&h->refs);
+	ATOMIC_INC(&h->refs);
 }
 
 /*
@@ -816,6 +832,20 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	GDKfree(srcpath);
 	GDKfree(dstpath);
 
+	size_t size = h->size;
+	QryCtx *qc = NULL;
+	if (h->storage != STORE_MEM)
+		size = (size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
+	if (h->farmid == 1 && (qc = MT_thread_get_qry_ctx()) != NULL) {
+		ATOMIC_BASE_TYPE sz = 0;
+		sz = ATOMIC_ADD(&qc->datasize, size);
+		sz += h->size;
+		if (qc->maxmem > 0 && sz > qc->maxmem) {
+			ATOMIC_SUB(&qc->datasize, size);
+			GDKerror("Query using too much memory.\n");
+			return GDK_FAIL;
+		}
+	}
 	if (h->storage == STORE_MEM && h->free == 0) {
 		h->base = GDKmalloc(h->size);
 		h->wasempty = true;
@@ -828,23 +858,12 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		}
 		h->base = GDKload(h->farmid, nme, ext, h->free, &h->size, h->storage);
 	}
-	if (h->base == NULL)
+	if (h->base == NULL) {
+		ATOMIC_SUB(&qc->datasize, size);
 		return GDK_FAIL; /* file could  not be read satisfactorily */
+	}
 
 	h->dirty = false;	/* we just read it, so it's clean */
-	if (h->farmid == 1) {
-		QryCtx *qc = MT_thread_get_qry_ctx();
-		ATOMIC_BASE_TYPE sz = 0;
-		if (qc) {
-			sz = ATOMIC_ADD(&qc->datasize, h->size);
-			sz += h->size;
-			if (qc->maxmem > 0 && sz > qc->maxmem) {
-				HEAPfree(h, true);
-				GDKerror("Query using too much memory.\n");
-				return GDK_FAIL;
-			}
-		}
-	}
 	return GDK_SUCCEED;
 }
 

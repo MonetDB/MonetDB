@@ -55,11 +55,16 @@ typedef struct{
 
 // Loop through the first BAT
 // keep the last error message received
-#define ManifoldLoop(Type, ...)											\
+#define MALfcn1(Type) (str (*) (Type *, void *))
+#define MALfcn2(Type) (str (*) (Type *, void *, void *))
+#define MALfcn3(Type) (str (*) (Type *, void *, void *, void *))
+#define MALfcn4(Type) (str (*) (Type *, void *, void *, void *, void *))
+#define MALfcn5(Type) (str (*) (Type *, void *, void *, void *, void *, void *))
+#define ManifoldLoop(N, Type, ...)										\
 	do {																\
 		Type *v = (Type*) mut->args[0].first;							\
 		for (;;) {														\
-			msg = (*((str (*)(Type *, ...))mut->pci->fcn))(v, __VA_ARGS__);						\
+			msg = (*(MALfcn##N(Type) mut->pci->fcn))(v, __VA_ARGS__);			\
 			if (msg) break;												\
 			if (++oo == olimit)											\
 				break;													\
@@ -87,27 +92,27 @@ typedef struct{
 
 // The target BAT tail type determines the result variable
 #ifdef HAVE_HGE
-#define Manifoldbody_hge(...)					\
-	case TYPE_hge: ManifoldLoop(hge,__VA_ARGS__); break
+#define Manifoldbody_hge(N,...)								\
+	case TYPE_hge: ManifoldLoop(N,hge,__VA_ARGS__); break
 #else
-#define Manifoldbody_hge(...)
+#define Manifoldbody_hge(N,...)
 #endif
-#define Manifoldbody(...)												\
+#define Manifoldbody(N,...)												\
 	do {																\
 		switch(ATOMstorage(mut->args[0].b->ttype)){						\
-		case TYPE_bte: ManifoldLoop(bte,__VA_ARGS__); break;			\
-		case TYPE_sht: ManifoldLoop(sht,__VA_ARGS__); break;			\
-		case TYPE_int: ManifoldLoop(int,__VA_ARGS__); break;			\
-		case TYPE_lng: ManifoldLoop(lng,__VA_ARGS__); break;			\
-		Manifoldbody_hge(__VA_ARGS__);									\
-		case TYPE_oid: ManifoldLoop(oid,__VA_ARGS__); break;			\
-		case TYPE_flt: ManifoldLoop(flt,__VA_ARGS__); break;			\
-		case TYPE_dbl: ManifoldLoop(dbl,__VA_ARGS__); break;			\
-		case TYPE_uuid: ManifoldLoop(uuid,__VA_ARGS__); break;			\
+		case TYPE_bte: ManifoldLoop(N,bte,__VA_ARGS__); break;			\
+		case TYPE_sht: ManifoldLoop(N,sht,__VA_ARGS__); break;			\
+		case TYPE_int: ManifoldLoop(N,int,__VA_ARGS__); break;			\
+		case TYPE_lng: ManifoldLoop(N,lng,__VA_ARGS__); break;			\
+		Manifoldbody_hge(N,__VA_ARGS__);								\
+		case TYPE_oid: ManifoldLoop(N,oid,__VA_ARGS__); break;			\
+		case TYPE_flt: ManifoldLoop(N,flt,__VA_ARGS__); break;			\
+		case TYPE_dbl: ManifoldLoop(N,dbl,__VA_ARGS__); break;			\
+		case TYPE_uuid: ManifoldLoop(N,uuid,__VA_ARGS__); break;		\
 		case TYPE_str:													\
 		default: {														\
 			for (;;) {													\
-			    msg = (*((str (*)(str *, ...))mut->pci->fcn))(&y, __VA_ARGS__);						\
+			    msg = (*(MALfcn##N(str) mut->pci->fcn))(&y, __VA_ARGS__); \
 				if (msg)												\
 					break;												\
 				if (bunfastapp(mut->args[0].b, (void*) y) != GDK_SUCCEED) \
@@ -178,11 +183,11 @@ MANIFOLDjob(MULTItask *mut)
 
 	// use limited argument list expansion.
 	switch(mut->pci->argc){
-	case 4: Manifoldbody(args[3]); break;
-	case 5: Manifoldbody(args[3],args[4]); break;
-	case 6: Manifoldbody(args[3],args[4],args[5]); break;
-	case 7: Manifoldbody(args[3],args[4],args[5],args[6]); break;
-	case 8: Manifoldbody(args[3],args[4],args[5],args[6],args[7]); break;
+	case 4: Manifoldbody(1,args[3]); break;
+	case 5: Manifoldbody(2,args[3],args[4]); break;
+	case 6: Manifoldbody(3,args[3],args[4],args[5]); break;
+	case 7: Manifoldbody(4,args[3],args[4],args[5],args[6]); break;
+	case 8: Manifoldbody(5,args[3],args[4],args[5],args[6],args[7]); break;
 	default:
 		msg= createException(MAL,"mal.manifold","manifold call limitation ");
 	}
