@@ -15,6 +15,13 @@
 _Noreturn void croak(int status, const char *msg, ...)
 	__attribute__((__format__(__printf__, 2, 3)));
 
+void gen_decimal_tinyints(FILE *f, bool byteswap, long nrecs, char *arg);
+void gen_decimal_smallints(FILE *f, bool byteswap, long nrecs, char *arg);
+void gen_decimal_ints(FILE *f, bool byteswap, long nrecs, char *arg);
+void gen_decimal_bigints(FILE *f, bool byteswap, long nrecs, char *arg);
+#ifdef HAVE_HGE
+void gen_decimal_hugeints(FILE *f, bool byteswap, long nrecs, char *arg);
+#endif
 
 void gen_timestamps(FILE *f, bool byteswap, long nrecs, char *arg);
 
