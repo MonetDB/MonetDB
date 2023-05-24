@@ -28,10 +28,10 @@ statement ok
 CREATE TABLE intvals(x INTEGER, y INTEGER)
 
 statement ok
-COPY BIG ENDIAN BINARY INTO intvals FROM (E'$QTSTTRGDIR/be123.bin', E'$QTSTTRGDIR/be456.bin')
+COPY BIG ENDIAN BINARY INTO intvals FROM (E'$QTSTTRGDIR/123.be', E'$QTSTTRGDIR/456.be')
 
 statement ok
-COPY BIG ENDIAN BINARY INTO intvals(y, x) FROM (E'$QTSTTRGDIR/be123.bin', E'$QTSTTRGDIR/be456.bin')
+COPY BIG ENDIAN BINARY INTO intvals(y, x) FROM (E'$QTSTTRGDIR/123.be', E'$QTSTTRGDIR/456.be')
 
 query II nosort
 SELECT x, y FROM intvals
