@@ -23,7 +23,6 @@ FUNCNAME(FILE *f, bool byteswap, long nrecs, char *arg)
 	while (scale-- > 0)
 		hi *= 10;
 	hi -= 1;
-	assert(hi < STYP_MAX / 2);
 
 	STYP n = 0;
 	for (long i = 0; i < nrecs; i++) {
@@ -49,5 +48,4 @@ FUNCNAME(FILE *f, bool byteswap, long nrecs, char *arg)
 #undef FUNCNAME
 #undef STYP
 #undef UTYP
-#undef STYP_MAX
 #undef CONVERT
