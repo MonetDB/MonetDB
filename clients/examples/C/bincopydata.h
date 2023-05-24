@@ -12,22 +12,26 @@
 #include "copybinary.h"
 #include "copybinary_support.h"
 
-void gen_timestamps(FILE *f, bool byteswap, long nrecs);
-
-void gen_timestamp_times(FILE *f, bool byteswap, long nrecs);
-void gen_timestamp_dates(FILE *f, bool byteswap, long nrecs);
+_Noreturn void croak(int status, const char *msg, ...)
+	__attribute__((__format__(__printf__, 2, 3)));
 
 
-void gen_timestamp_ms(FILE *f, bool byteswap, long nrecs);
-void gen_timestamp_seconds(FILE *f, bool byteswap, long nrecs);
-void gen_timestamp_minutes(FILE *f, bool byteswap, long nrecs);
-void gen_timestamp_hours(FILE *f, bool byteswap, long nrecs);
-void gen_timestamp_days(FILE *f, bool byteswap, long nrecs);
-void gen_timestamp_months(FILE *f, bool byteswap, long nrecs);
-void gen_timestamp_years(FILE *f, bool byteswap, long nrecs);
+void gen_timestamps(FILE *f, bool byteswap, long nrecs, char *arg);
 
-void gen_bin_uuids(FILE *f, bool byteswap, long nrecs);
-void gen_text_uuids(FILE *f, bool byteswap, long nrecs);
+void gen_timestamp_times(FILE *f, bool byteswap, long nrecs, char *arg);
+void gen_timestamp_dates(FILE *f, bool byteswap, long nrecs, char *arg);
+
+
+void gen_timestamp_ms(FILE *f, bool byteswap, long nrecs, char *arg);
+void gen_timestamp_seconds(FILE *f, bool byteswap, long nrecs, char *arg);
+void gen_timestamp_minutes(FILE *f, bool byteswap, long nrecs, char *arg);
+void gen_timestamp_hours(FILE *f, bool byteswap, long nrecs, char *arg);
+void gen_timestamp_days(FILE *f, bool byteswap, long nrecs, char *arg);
+void gen_timestamp_months(FILE *f, bool byteswap, long nrecs, char *arg);
+void gen_timestamp_years(FILE *f, bool byteswap, long nrecs, char *arg);
+
+void gen_bin_uuids(FILE *f, bool byteswap, long nrecs, char *arg);
+void gen_text_uuids(FILE *f, bool byteswap, long nrecs, char *arg);
 
 
 // reproducible rng so we can rerun tests with the same data when they fail.
