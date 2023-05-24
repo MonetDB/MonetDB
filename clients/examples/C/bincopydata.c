@@ -271,6 +271,44 @@ gen_json(FILE *f, bool byteswap, long nrecs, char *arg)
 	}
 }
 
+#define FUNCNAME gen_decimal_tinyints
+#define STYP int8_t
+#define UTYP uint8_t
+#define STYP_MAX (INT8_MAX)
+// #define CONVERT
+#include "bincopydecimal_impl.h"
+
+#define FUNCNAME gen_decimal_smallints
+#define STYP int16_t
+#define UTYP uint16_t
+#define STYP_MAX (INT16_MAX)
+#define CONVERT copy_binary_convert16
+#include "bincopydecimal_impl.h"
+
+#define FUNCNAME gen_decimal_ints
+#define STYP int32_t
+#define UTYP uint32_t
+#define STYP_MAX (INT32_MAX)
+#define CONVERT copy_binary_convert32
+#include "bincopydecimal_impl.h"
+
+
+#define FUNCNAME gen_decimal_bigints
+#define STYP int64_t
+#define UTYP uint64_t
+#define STYP_MAX (INT64_MAX)
+#define CONVERT copy_binary_convert64
+#include "bincopydecimal_impl.h"
+
+#ifdef HAVE_HGE
+	#define FUNCNAME gen_decimal_hugeints
+	#define STYP hge
+	#define UTYP uhge
+	#define STYP_MAX (HGE_MAX)
+	#define CONVERT copy_binary_convert128
+	#include "bincopydecimal_impl.h"
+#endif
+
 typedef void (*generator_t)(FILE *f, bool byteswap, long nrecs, char *argument);
 
 static struct gen {
@@ -289,6 +327,14 @@ static struct gen {
 	{ "bigints", gen_bigints },
 #ifdef HAVE_HGE
 	{ "hugeints", gen_hugeints },
+#endif
+	//
+	{ "dec_tinyints", gen_decimal_tinyints, .arg_allowed=true },
+	{ "dec_smallints", gen_decimal_smallints, .arg_allowed=true },
+	{ "dec_ints", gen_decimal_ints, .arg_allowed=true },
+	{ "dec_bigints", gen_decimal_bigints, .arg_allowed=true },
+#ifdef HAVE_HGE
+	{ "dec_hugeints", gen_decimal_hugeints, .arg_allowed=true },
 #endif
 	//
 	{ "strings", gen_strings },
@@ -352,7 +398,7 @@ pick_generator(const char *full_name, char **arg)
 	char *name = strdup(full_name);
 	*arg = NULL;
 
-	char *sep = strchr(name, ':');
+	char *sep = strchr(name, '!');
 	if (sep != NULL) {
 		*arg = strdup(sep + 1);
 		*sep = '\0';
