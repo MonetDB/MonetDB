@@ -26,13 +26,18 @@ returns int external name txtsim.levenshtein;
 grant execute on function levenshtein(string, string, int, int, int) to public;
 
 create filter function sys.maxlevenshtein(x string, y string, k int)
-external name txtsim."maxlevenshtein";
+external name txtsim.maxlevenshtein;
 
 create filter function sys.maxlevenshtein(x string, y string, k int, insdel int, rep int)
-external name txtsim."maxlevenshtein";
+external name txtsim.maxlevenshtein;
+
+-- Calculates Jaro Winkler similarity distance between two strings,
+create function sys.jarowinkler(x string, y string)
+returns double external name txtsim.jarowinkler;
+grant execute on function jarowinkler(string, string) to public;
 
 create filter function minjarowinkler(x string, y string, threshold double)
-external name txtsim."minjarowinkler";
+external name txtsim.minjarowinkler;
 
 -- Calculates Damerau-Levenshtein distance between two strings,
 -- operation costs ins/del = 1, replacement = 1, transposition = 2
