@@ -849,16 +849,32 @@ rel_project_exp(sql_allocator *sa, sql_exp *e)
 }
 
 sql_rel *
+rel_list(sql_allocator *sa, sql_rel *l, sql_rel *r)
+{
+	sql_rel *rel = rel_create(sa);
+	if (!rel)
+		return NULL;
+	if (!l)
+		return r;
+	rel->l = l;
+	rel->r = r;
+	rel->op = op_ddl;
+	rel->flag = ddl_list;
+	return rel;
+}
+
+sql_rel *
 rel_exception(sql_allocator *sa, sql_rel *l, sql_rel *r, list *exps)
 {
 	sql_rel *rel = rel_create(sa);
 	if(!rel)
 		return NULL;
-	rel->l = l;
 	rel->r = r;
 	rel->exps = exps;
 	rel->op = op_ddl;
 	rel->flag = ddl_exception;
+	if (l)
+		return rel_list(sa, rel, l); /* keep base relation on the right ! */
 	return rel;
 }
 
