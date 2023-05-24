@@ -5230,7 +5230,6 @@ STRcontainsselect(bat *ret, const bat *bid, const bat *sid, const str *key, cons
 		B->tseqbase = 0;						\
 	} while (0)
 
-/* nested loop implementation for batstr joins */
 #define batstr_join_loop(STRCMP, STR_LEN, WITH_STRIMPS)				\
 	do {																\
 		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {					\
@@ -5385,7 +5384,8 @@ strjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bit anti,
 	/* 	batstr_join_loop(str_cmp(vl, vr, rlen) != 0, str_strlen(vr), with_strimps); */
 
 	batstr_join_loop(anti && !with_strimps ?
-					 str_cmp(vl, vr, rlen) == 0 : str_cmp(vl, vr, rlen) != 0,
+					 (str_cmp(vl, vr, rlen) == 0) :
+					 (str_cmp(vl, vr, rlen) != 0),
 					 str_strlen(vr), with_strimps);
 
 	assert(!r2 || BATcount(r1) == BATcount(r2));
