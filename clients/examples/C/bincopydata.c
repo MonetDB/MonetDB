@@ -475,7 +475,6 @@ main(int argc, char *argv[])
 
 	gen(dest, byteswap, nrecs, gen_arg);
 
-	free(gen_arg);
 	fclose(dest);
 	free(gen_arg);
 
