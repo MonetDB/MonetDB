@@ -13,14 +13,15 @@
 // Used by odbcconfig.rc
 //
 #define IDD_SETUP_DIALOG                106
-#define IDC_EDIT_DSN                    2000
-#define IDC_EDIT_UID                    2001
-#define IDC_EDIT_PWD                    2002
-#define IDC_EDIT_HOST                   2003
-#define IDB_BANNER                      2003
-#define IDC_EDIT_PORT                   2004
-#define IDC_BUTTON_CANCEL               2006
-#define IDC_EDIT_DATABASE               2007
+#define IDB_BANNER                      2000
+#define IDC_EDIT_DSN                    2001
+#define IDC_EDIT_UID                    2002
+#define IDC_EDIT_PWD                    2003
+#define IDC_EDIT_HOST                   2004
+#define IDC_EDIT_PORT                   2005
+#define IDC_EDIT_DATABASE               2006
+#define IDC_EDIT_LOGFILE                2007
+#define IDC_BUTTON_CANCEL               2008
 
 // Next default values for new objects
 //
