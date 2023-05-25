@@ -1254,7 +1254,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	const char *old_name = NULL, *new_name = NULL;
 	dlist *stmts = triggered_action->h->next->next->data.lval;
 	symbol *condition = triggered_action->h->next->data.sym;
-	int8_t old_useviews = sql->use_views;
+	bool old_useviews = sql->use_views;
 
 	if (opt_ref) {
 		dnode *dl = opt_ref->h;
