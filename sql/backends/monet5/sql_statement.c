@@ -4512,3 +4512,19 @@ stmt_fetch(backend *be, stmt *val)
 	}
 	return NULL;
 }
+
+stmt *
+stmt_rename(backend *be, sql_exp *exp, stmt *s )
+{
+	const char *name = exp_name(exp);
+	const char *rname = exp_relname(exp);
+	stmt *o = s;
+
+	if (!name && exp_is_atom(exp))
+		name = sa_strdup(be->mvc->sa, "single_value");
+	assert(name);
+	s = stmt_alias(be, s, rname, name);
+	if (o->flag & OUTER_ZERO)
+		s->flag |= OUTER_ZERO;
+	return s;
+}
