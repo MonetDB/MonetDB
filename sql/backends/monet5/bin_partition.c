@@ -21,6 +21,23 @@
 #include "opt_prelude.h"
 #include "sql_pp_statement.h"
 
+static sql_rel*
+rel_is_not_pp_safe(visitor *v, sql_rel *rel)
+{
+	if (is_groupby(rel->op) || rel->op == op_table)
+		*((int*)v->data) = 1;
+	return rel;
+}
+
+bool
+pp_can_not_start(mvc *sql, sql_rel *rel)
+{
+	int set = 0;
+	visitor v = { .sql = sql, .data = &set };
+	rel = rel_visitor_bottomup(&v, rel, &rel_is_not_pp_safe);
+	return set;
+}
+
 void
 set_need_pipeline(backend *be)
 {
@@ -137,6 +154,145 @@ rel_groupby_partition( backend *be, sql_rel *rel)
 	/* check size */
 	return partition;
 }
+
+/*
+ * The groupby execution plan:
+ * The various choices:
+ *			global - grouped aggregation
+ *			cardinality
+ *			relation or expression properties
+ *			parallel pipeline execution
+ *			complicating expressions such as distinct
+ */
+
+static lng
+exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
+{
+	BUN est = get_rel_count(rel);
+	lng cnt;
+	sql_subtype *t = exp_subtype(e);
+	prop *p;
+
+	if ((p = find_prop(e->p, PROP_NUNIQUES)))
+		est = p->value.dval;
+
+	if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
+		cnt = 85000000;
+	} else {
+		cnt = (lng) est;
+	}
+	if (e->type == e_column && t && t->type->localtype == TYPE_str) {
+		sql_column *c = name_find_column(rel, e->l, e->r, -1, NULL);
+
+		if (c) {
+			int de = mvc_is_duplicate_eliminated(sql, c);
+			if (de)
+				cnt = de;
+		}
+	}
+	/* for now only based on type info, later use propagated cardinality estimation */
+	switch (ATOMstorage(t->type->localtype)) {
+		case TYPE_bte:
+			return MIN(256,cnt);
+		case TYPE_sht:
+			return MIN(64*1024,cnt);
+		default:
+			break;
+	}
+	return cnt;
+}
+
+/* return true iff groupby can (ie only simple aggregation, which allows for 2 phases)
+ *					and cardinality estimation is low enough for extra resources for aggregation per thread.
+ */
+bool
+rel_groupby_2_phases(mvc *sql, sql_rel *rel)
+{
+	BUN est = get_rel_count(rel);
+	lng card = 1, cnt;
+	bool global = list_empty(rel->r);
+
+	if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
+		cnt = 85000000;
+	} else {
+		cnt = (lng) est;
+	}
+	if (!list_empty(rel->r)) {
+		list *l = rel->r;
+		for( node *n = l->h; n; n = n->next ) {
+			sql_exp *e = n->data;
+			lng lcard = exp_getcard(sql, rel, e);
+			if (lcard == cnt) {
+				card = cnt;
+				break;
+			}
+			card *= lcard; /* TODO check for overflow */
+		}
+	}
+	if (card > 64*1024) /* TODO add tunable */
+		return false;
+	for(node *n = rel->exps->h; n; n = n->next ) {
+		sql_exp *e = n->data;
+
+		if (is_aggr(e->type)) {
+			sql_subfunc *sf = e->f;
+
+			if (need_distinct(e) && !global)
+				return false;
+			if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
+			    strcmp(sf->func->base.name, "avg") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
+			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "prod") == 0)) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+/*
+static bool
+rel_single_distinct(sql_rel *rel)
+{
+	int nr = 0;
+	for( node *n = rel->exps->h; n; n = n->next ) {
+		sql_exp *e = n->data;
+
+		if (is_aggr(e->type)) {
+			nr += need_distinct(e);
+		}
+	}
+	if (nr==1)
+		return true;
+	return false;
+}
+*/
+
+bool
+rel_groupby_pp(sql_rel *rel, bool _2phases)
+{
+	if (!is_groupby(rel->op))
+		return false;
+
+	for(node *n = rel->exps->h; n; n = n->next ) {
+		sql_exp *e = n->data;
+
+		if (is_aggr(e->type)) {
+			sql_subfunc *sf = e->f;
+
+			if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
+			    strcmp(sf->func->base.name, "avg") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
+			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "prod") == 0)) {
+				return false;
+			}
+		}
+	}
+
+	if (list_empty(rel->r) && !_2phases)
+		return false;
+	/* more checks needed */
+	return true;
+}
+
 
 /* part := part.new(nr_parts);
  * mat := mat.new(type:nil, nr_parts);
@@ -435,3 +591,349 @@ rel2bin_groupby_partition(backend *be, sql_rel *rel, list *refs)
 	sub = partition_groupby(be, rel, mats, sub);
 	return sub;
 }
+
+
+////////////////////////////////////////
+
+/* initialize the result variable for the parallel execution */
+list *
+rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2phases)
+{
+	if (!_2phases && list_empty(rel->r)) /* cannot handle global aggregation without 2 phases */
+		return NULL;
+
+	list *shared = NULL;
+	if (is_groupby(rel->op) && list_empty(rel->r) && !list_empty(rel->exps)) { /* global aggregation */
+		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
+		*aggrresults = sa_list(be->mvc->sa);
+		for( node *n = rel->exps->h; n; n = n->next ) {
+			sql_exp *e = n->data;
+			sql_subfunc *sf = e->f;
+			sql_subtype *t = exp_subtype(e);
+			int tt = t->type->localtype;
+			int avg = e->type == e_aggr && strcmp(sf->func->base.name, "avg") == 0;
+
+			stmt *cc = const_column(be, stmt_atom(be, atom_general(be->mvc->sa, t, NULL)));
+			if (!cc)
+				return NULL;
+			append(shared, &cc->nr);
+
+			if (avg) {
+				/* remainder and count */
+				if (!EC_APPNUM(t->type->eclass)) {
+					cc = const_column(be, stmt_atom_lng(be, 0));
+					if (!cc)
+						return NULL;
+					append(shared, &cc->nr);
+				}
+
+				cc = const_column(be, stmt_atom_lng(be, 0));
+				if (!cc)
+					return NULL;
+				append(shared, &cc->nr);
+			}
+
+			InstrPtr q = newAssignment(be->mb);
+			if (!q)
+				return NULL;
+			q = pushNil(be->mb, q, tt);
+			append(*aggrresults, q->argv);
+
+			if (need_distinct(e)) { /* create shared bat, for hash table */
+				list *el = e->l;
+				sql_exp *a = el->h->data;
+				sql_subtype *t = exp_subtype(a);
+				int estimate = exp_getcard(be->mvc, rel->l /* count before group by */, a);
+				if (estimate<0) {
+					assert(0);
+					estimate = 85000000;
+				}
+
+				InstrPtr q = stmt_hash_new(be, t->type->localtype, estimate, 0); /* pushed already */
+				if (q == NULL)
+					return NULL;
+				assert(!e->shared);
+				e->shared = q->argv[0];
+			}
+			pushInstruction(be->mb, q);
+		}
+	} else if (is_groupby(rel->op) && !list_empty(rel->r) && !list_empty(rel->exps)) {
+		BUN est = get_rel_count(rel->l);
+		lng estimate, card = 1;
+		int curhash = 0;
+
+		if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
+			estimate = 85000000;
+		} else {
+			estimate = (lng) est;
+		}
+		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
+		list *gbexps = rel->r;
+		*aggrresults = sa_list(be->mvc->sa);
+		for(node *n = gbexps->h; n; n = n->next ) {
+			sql_exp *e = n->data;
+			sql_subtype *t = exp_subtype(e);
+			/* ext */
+			lng ncard = exp_getcard(be->mvc, rel, e);
+			card *= ncard;
+			if (card > estimate || ncard >= estimate)
+				card = estimate;
+
+			assert(card >= 0);
+			if (card > INT_MAX)
+				card = INT_MAX;
+
+			InstrPtr q = stmt_hash_new(be, t->type->localtype, card, curhash);
+			if (q == NULL)
+				return NULL;
+			curhash = getArg(q,0);
+			append(shared, q->argv);
+			append(*aggrresults, q->argv);
+		}
+		if (card < estimate)
+			estimate = card;
+		for( node *n = rel->exps->h; n; n = n->next ) {
+			sql_exp *e = n->data;
+			sql_subfunc *sf = e->f;
+			sql_subtype *t = exp_subtype(e);
+
+			InstrPtr q = stmt_bat_new(be, t->type->localtype, estimate*1.1);
+			if (q == NULL)
+				return NULL;
+			append(shared, q->argv);
+			append(*aggrresults, q->argv);
+
+			if (e->type == e_aggr && strcmp(sf->func->base.name, "avg") == 0) {
+				if (!EC_APPNUM(t->type->eclass)) {
+					q = stmt_bat_new(be, TYPE_lng, estimate*1.1);
+					if (q == NULL)
+						return NULL;
+					append(shared, q->argv);
+					append(*aggrresults, q->argv);
+				}
+
+				q = stmt_bat_new(be, TYPE_lng, estimate*1.1);
+				if (q == NULL)
+					return NULL;
+				append(shared, q->argv);
+				append(*aggrresults, q->argv);
+			}
+
+			if (need_distinct(e)) { /* create shared bat, for hash table */
+				list *el = e->l;
+				sql_exp *a = el->h->data;
+				sql_subtype *t = exp_subtype(a);
+				BUN est = get_rel_count(rel->l);
+				lng estimate;
+
+				if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
+					estimate = 85000000;
+				} else {
+					estimate = (lng) est;
+				}
+
+				InstrPtr q = stmt_hash_new(be, t->type->localtype, estimate, curhash);
+				if (q == NULL)
+					return NULL;
+				assert(!e->shared);
+				e->shared = q->argv[0];
+			}
+		}
+	} else {
+		return NULL;
+	}
+	return shared;
+}
+
+/* TODO: maybe move to sql_pp_statement.c and rename to stmt_pp_groupby? */
+stmt *
+rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, stmt *cnt, stmt *cursub, stmt *pp, list *sub, bool _2phases)
+{
+	node *o = sub->h;
+	(void)grp; (void)cnt;
+	list *shared = NULL;
+	assert(be->pipeline);
+	if (0 && rel && !list_empty(rel->r)) { /* for group by case re-project group by cols */
+		list *ngbstmts = sa_list(be->mvc->sa);
+		for( node *m = gbstmts->h; m; m = m->next) {
+			stmt *gstmt = m->data;
+
+			stmt *ngstmt = list_find_column(be, cursub->op4.lval, table_name(be->mvc->sa, gstmt), column_name(be->mvc->sa, gstmt));
+			if (!ngstmt)
+				ngstmt = stmt_project(be, ext, gstmt);
+			append(ngbstmts, ngstmt);
+		}
+		gbstmts = ngbstmts;
+	}
+	(void)pp_jump(be, pp, be->nrparts);
+	/* combine concurrent results */
+	if (rel && list_empty(rel->r)) { /* global case */
+		assert(list_empty(gbstmts));
+		list *sub = cursub->op4.lval;
+
+		/* phase 2 */
+		shared = sa_list(be->mvc->sa);
+		for (node *n = rel->exps->h, *m = o, *o = sub->h; n && m && o;
+				n = n->next, m = m->next, o = o->next) {
+			/* min -> min, max -> max, sum -> sum, count -> sum */
+			sql_exp *e = n->data;
+			sql_subtype *tpe = exp_subtype(e);
+			sql_subfunc *sf = e->f;
+			int *v = m->data;
+			stmt *i = o->data;
+
+			if (e->type == e_column) {
+				stmt *s = list_find_column(be, shared, e->l, e->r);
+				assert(s);
+				s = stmt_alias(be, s, exp_relname(e), exp_name(e));
+				append(shared, s);
+				continue;
+			}
+
+			assert(e->type == e_aggr);
+			char *name = NULL;
+			int avg = 0;
+			if (strcmp(sf->func->base.name, "min") == 0 ||
+			    strcmp(sf->func->base.name, "max") == 0 ||
+			    (avg= (strcmp(sf->func->base.name, "avg") == 0)) ||
+			    strcmp(sf->func->base.name, "sum") == 0 ||
+			    strcmp(sf->func->base.name, "prod") == 0) {
+				name = sf->func->base.name;
+			} else {
+				assert(strcmp(sf->func->base.name, "count") == 0);
+				name = "sum";
+			}
+			InstrPtr q = newStmt(be->mb, getName("lockedaggr"), getName(name));
+			if (avg) {
+				if (!EC_APPNUM(tpe->type->eclass)) {
+					m = m->next;
+					q = pushReturn(be->mb, q, *(int*)m->data);
+				}
+				m = m->next;
+				q = pushReturn(be->mb, q, *(int*)m->data);
+				q->inout = 0;
+			}
+			q = pushArgument(be->mb, q, getArg(pp->q, 2));
+			q = pushArgument(be->mb, q, i->nr);
+			if (avg) {
+				/* remainder and count */
+				q = pushArgument(be->mb, q, getArg(i->q, 1));
+				if (!EC_APPNUM(tpe->type->eclass))
+					q = pushArgument(be->mb, q, getArg(i->q, 2));
+			}
+			pushInstruction(be->mb, q);
+			getArg(q, 0) = *v;
+			stmt *s = stmt_none(be);
+			s->op4.typeval = *tpe;
+			s->nr = *v;
+			s = stmt_alias(be, s, exp_find_rel_name(e), exp_name(e));
+			append(shared, s);
+		}
+	} else if (rel && !list_empty(rel->r)) {
+		if (!_2phases) {
+			(void)pp_end(be, pp);
+			return cursub;
+		}
+		list *sub = cursub->op4.lval;
+
+		/* phase 2 of grouping */
+		list *gbexps = rel->r, *ngbstmts = sa_list(be->mvc->sa);
+		stmt *grp = NULL, *ext = NULL, *cnt = NULL;
+		for(node *n = gbexps->h, *m = gbstmts->h; n && m; n = n->next, m = m->next, o = o->next) {
+			sql_exp *e = n->data;
+			stmt *gstmt = m->data;
+
+			//stmt *groupby = stmt_group_locked(be, gstmt, grp, ext, cnt, pp);
+			stmt *groupby = be->pipeline? stmt_group_partitioned(be, gstmt, grp, ext, cnt) : stmt_group(be, gstmt, grp, ext, cnt, 0);
+			/* reuse extend ! */
+			getArg(groupby->q, 1) = *(int*)o->data;
+			groupby->q->inout = 1;
+			grp = stmt_result(be, groupby, 0);
+			ext = stmt_result(be, groupby, 1);
+			//cnt = stmt_result(be, groupby, 2);
+			gstmt = stmt_alias(be, gstmt, exp_find_rel_name(e), exp_name(e));
+			list_append(ngbstmts, gstmt);
+		}
+		gbstmts = ngbstmts;
+
+		shared = sa_list(be->mvc->sa);
+		for (node *n = rel->exps->h, *m = o, *o = sub->h; n && m && o;
+				n = n->next, m = m->next, o = o->next) {
+			/* min -> min, max -> max, sum -> sum, count -> sum */
+			sql_exp *e = n->data;
+			sql_subtype *tpe = exp_subtype(e);
+			sql_subfunc *sf = e->f;
+			int *v = m->data;
+			stmt *i = o->data;
+			InstrPtr q;
+
+			if (e->type == e_aggr) {
+				char *name = NULL;
+				int avg = 0;
+				if (strcmp(sf->func->base.name, "min") == 0 ||
+					strcmp(sf->func->base.name, "max") == 0 ||
+					(avg= (strcmp(sf->func->base.name, "avg") == 0)) ||
+					strcmp(sf->func->base.name, "sum") == 0 ||
+					strcmp(sf->func->base.name, "prod") == 0) {
+					name = sf->func->base.name;
+				} else {
+					assert(strcmp(sf->func->base.name, "count") == 0);
+					name = "sum";
+				}
+				q = newStmt(be->mb, getName("aggr"), getName(name));
+				if (avg) {
+					if (!EC_APPNUM(tpe->type->eclass)) {
+						m = m->next;
+						q = pushReturn(be->mb, q, *(int*)m->data);
+					}
+					m = m->next;
+					q = pushReturn(be->mb, q, *(int*)m->data);
+					q->inout = 0;
+				}
+				q = pushArgument(be->mb, q, grp->nr);
+				q = pushArgument(be->mb, q, i->nr);
+				if (avg) {
+					/* remainder and count */
+					q = pushArgument(be->mb, q, getArg(i->q, 1));
+					if (!EC_APPNUM(tpe->type->eclass))
+						q = pushArgument(be->mb, q, getArg(i->q, 2));
+				}
+				q = pushArgument(be->mb, q, getArg(pp->q, 2));
+				q = pushArgument(be->mb, q, grp->nr);
+				//q = pushArgument(be->mb, q, ext->nr);
+			} else {
+				q = newStmt(be->mb, getName("algebra"), projectionRef);
+				q = pushArgument(be->mb, q, grp->nr);
+				q = pushArgument(be->mb, q, i->nr);
+				q = pushArgument(be->mb, q, getArg(pp->q, 2));
+			}
+			getArg(q, 0) = *v;
+			q->inout = 0;
+			pushInstruction(be->mb, q);
+			stmt *s = stmt_none(be);
+			s->op4.typeval = *exp_subtype(e);
+			s->nr = *v;
+			s->key = s->nrcols = 1;
+			s = stmt_alias(be, s, exp_find_rel_name(e), exp_name(e));
+			append(shared, s);
+		}
+	} else {
+		return NULL;
+	}
+	(void)pp_end(be, pp);
+
+	/* we combined into a bat, ie lets fetch results */
+	if (shared && list_empty(rel->r)) {
+		list *nshared = sa_list(be->mvc->sa);
+		for(node *n = shared->h; n; n = n->next) {
+			stmt *s = n->data;
+			s = stmt_fetch(be, s);
+			append(nshared, s);
+		}
+		shared = nshared;
+	}
+	cursub = stmt_list(be, shared);
+	stmt_set_nrcols(cursub);
+	return cursub;
+}
+
