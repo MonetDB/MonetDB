@@ -256,14 +256,16 @@ bin_find_columns( backend *be, stmt *sub, const char *name )
 	return NULL;
 }
 
-static stmt *column(backend *be, stmt *val )
+static stmt *
+column(backend *be, stmt *val )
 {
 	if (val->nrcols == 0)
 		return const_column(be, val);
 	return val;
 }
 
-static stmt *create_const_column(backend *be, stmt *val )
+static stmt *
+create_const_column(backend *be, stmt *val )
 {
 	if (val->nrcols == 0)
 		val = const_column(be, val);
@@ -1855,22 +1857,6 @@ parse_value(backend *be, sql_schema *s, char *query, sql_subtype *tpe, char emod
 	if (!(e = rel_parse_val(be->mvc, s, query, tpe, emode, NULL)))
 		return NULL;
 	return exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-}
-
-static stmt *
-stmt_rename(backend *be, sql_exp *exp, stmt *s )
-{
-	const char *name = exp_name(exp);
-	const char *rname = exp_relname(exp);
-	stmt *o = s;
-
-	if (!name && exp_is_atom(exp))
-		name = sa_strdup(be->mvc->sa, "single_value");
-	assert(name);
-	s = stmt_alias(be, s, rname, name);
-	if (o->flag & OUTER_ZERO)
-		s->flag |= OUTER_ZERO;
-	return s;
 }
 
 static stmt *
@@ -6683,7 +6669,7 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 	mvc *sql = be->mvc;
 	list *refs = sa_list(sql->sa);
 	mapi_query_t sqltype = sql->type;
-	stmt *s;
+	stmt *s = NULL;
 
 	be->join_idx = 0;
 	be->rowcount = 0;
@@ -6691,6 +6677,7 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 
 	s = subrel_bin(be, rel, refs);
 	s = subrel_project(be, s, refs, rel);
+
 	if (!s)
 		return NULL;
 	if (sqltype == Q_SCHEMA)
