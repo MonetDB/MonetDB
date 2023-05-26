@@ -43,3 +43,8 @@ sql>plan select r_name, count(*) from nation, region where n_nationkey = r_regio
 ```
 
 4. `sql/test/BugTracker-2013/Tests/aggregates-typing-issues.Bug-3277.test`, query `select cast (prod( prob1 ) as bigint) from mtcars2` returns different values in different `mserver5` sessions when `--forcemito` is used (e.g. by Mtest.py).  Without `--forcemito`, the query gives the correct result. So, probably some errors in the pipeline code for the `prod` aggregate.
+
+5. the `stddev_pop` in the following query triggers a crash:
+```
+explain select l_discount, stddev_pop(l_discount) from lineitem, supplier where l_suppkey = s_suppkey group by l_discount limit 5;
+```
