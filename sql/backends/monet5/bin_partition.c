@@ -129,7 +129,7 @@ rel2bin_slicer(backend *be, stmt *sub, int slicer)
 }
 
 bool
-rel_groupby_partition( backend *be, sql_rel *rel)
+rel_groupby_partition(backend *be, sql_rel *rel)
 {
 	/* For now we assume partitioning into disjoint sets which are later grouped by independent workers */
 	/* So we could/need to partition on high cardinality group by results and for complex cases (ie where the second
@@ -203,7 +203,7 @@ exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 }
 
 /* return true iff groupby can (ie only simple aggregation, which allows for 2 phases)
- *					and cardinality estimation is low enough for extra resources for aggregation per thread.
+ * and cardinality estimation is low enough for extra resources for aggregation per thread.
  */
 bool
 rel_groupby_2_phases(mvc *sql, sql_rel *rel)
@@ -591,9 +591,6 @@ rel2bin_groupby_partition(backend *be, sql_rel *rel, list *refs)
 	sub = partition_groupby(be, rel, mats, sub);
 	return sub;
 }
-
-
-////////////////////////////////////////
 
 /* initialize the result variable for the parallel execution */
 list *

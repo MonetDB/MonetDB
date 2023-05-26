@@ -58,7 +58,7 @@
 #define ROT64(x, y)  ((x << y) | (x >> (64 - y)))
 //#define combine(X,Y)  (_hash_lng((X*5671432987))^(ulng)Y)
 #define combine(X,Y)  (_hash_lng((X*(hash_prime_nr[h->bits-5])))^(ulng)Y)
-static const int 
+static const int
 hash_prime_nr[32] = {
 	53,
 	97,
