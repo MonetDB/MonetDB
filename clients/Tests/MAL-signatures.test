@@ -38810,44 +38810,74 @@ STRcontains;
 Check if string chaystack contains string needle, icase flag.
 str
 containsjoin
-command str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit):bat[:oid] 
+pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit):bat[:oid] 
 STRcontainsjoin1;
-The same as STRcontainsjoin, but only produce one output
+The same as STRcontainsjoin, but only produce one output + icase.
 str
 containsjoin
-command str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit):bat[:oid] 
+STRcontainsjoin1;
+The same as STRcontainsjoin, but only produce one output.
+str
+containsjoin
+pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+STRcontainsjoin;
+Join the string bat L with the bat R if L contains the string of R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows + icase.
+str
+containsjoin
+pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit) (X_7:bat[:oid], X_8:bat[:oid]) 
 STRcontainsjoin;
 Join the string bat L with the bat R if L contains the string of R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows.
 str
 containsselect
-command str.containsselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit, X_4:bit):bat[:oid] 
+pattern str.containsselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit):bat[:oid] 
 STRcontainsselect;
 Select all head values of the first input BAT for which the@tail value contains the given needle.
 str
-endsWith
-pattern str.endsWith(X_0:str, X_1:str):bit 
-STRendsWith;
+containsselect
+pattern str.containsselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit, X_4:bit):bat[:oid] 
+STRcontainsselect;
+Select all head values of the first input BAT for which the@tail value contains the given needle + icase.
+str
+endswith
+pattern str.endswith(X_0:str, X_1:str):bit 
+STRendswith;
 Check if string ends with substring.
 str
-endsWith
-pattern str.endsWith(X_0:str, X_1:str, X_2:bit):bit 
-STRendsWith;
+endswith
+pattern str.endswith(X_0:str, X_1:str, X_2:bit):bit 
+STRendswith;
 Check if string ends with substring, icase flag.
 str
-endsWithjoin
-command str.endsWithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit):bat[:oid] 
+endswithjoin
+pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit):bat[:oid] 
 STRendswithjoin1;
-The same as STRendswithjoin, but only produce one output
+The same as STRendswithjoin, but only produce one output + icase.
 str
-endsWithjoin
-command str.endsWithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+endswithjoin
+pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit):bat[:oid] 
+STRendswithjoin1;
+The same as STRendswithjoin, but only produce one output.
+str
+endswithjoin
+pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+STRendswithjoin;
+Join the string bat L with the suffix bat R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows + icase.
+str
+endswithjoin
+pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit) (X_7:bat[:oid], X_8:bat[:oid]) 
 STRendswithjoin;
 Join the string bat L with the suffix bat R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows.
 str
-endsWithselect
-command str.endsWithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit, X_4:bit):bat[:oid] 
+endswithselect
+pattern str.endswithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit):bat[:oid] 
 STRendswithselect;
 Select all head values of the first input BAT for which the@tail value end with the given suffix.
+str
+endswithselect
+pattern str.endswithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit, X_4:bit):bat[:oid] 
+STRendswithselect;
+Select all head values of the first input BAT for which the@tail value end with the given suffix + icase.
 str
 epilogue
 command str.epilogue():void 
@@ -38984,30 +39014,45 @@ command str.splitpart(X_0:str, X_1:str, X_2:int):str
 STRsplitpart;
 Split string on delimiter. Returns@given field (counting from one.)
 str
-startsWith
-pattern str.startsWith(X_0:str, X_1:str):bit 
-STRstartsWith;
+startswith
+pattern str.startswith(X_0:str, X_1:str):bit 
+STRstartswith;
 Check if string starts with substring.
 str
-startsWith
-pattern str.startsWith(X_0:str, X_1:str, X_2:bit):bit 
-STRstartsWith;
+startswith
+pattern str.startswith(X_0:str, X_1:str, X_2:bit):bit 
+STRstartswith;
 Check if string starts with substring, icase flag.
 str
-startsWithjoin
-command str.startsWithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit):bat[:oid] 
+startswithjoin
+pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit):bat[:oid] 
 STRstartswithjoin1;
-The same as STRstartswithjoin, but only produce one output
+The same as STRstartswithjoin, but only produce one output + icase.
 str
-startsWithjoin
-command str.startsWithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+startswithjoin
+pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit):bat[:oid] 
+STRstartswithjoin1;
+The same as STRstartswithjoin, but only produce one output.
+str
+startswithjoin
+pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+STRstartswithjoin;
+Join the string bat L with the prefix bat R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows + icase.
+str
+startswithjoin
+pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit) (X_7:bat[:oid], X_8:bat[:oid]) 
 STRstartswithjoin;
 Join the string bat L with the prefix bat R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows.
 str
-startsWithselect
-command str.startsWithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit, X_4:bit):bat[:oid] 
+startswithselect
+pattern str.startswithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit):bat[:oid] 
 STRstartswithselect;
 Select all head values of the first input BAT for which the@tail value starts with the given prefix.
+str
+startswithselect
+pattern str.startswithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit, X_4:bit):bat[:oid] 
+STRstartswithselect;
+Select all head values of the first input BAT for which the@tail value starts with the given prefix + icase.
 str
 str
 command str.str(X_0:str):str 
