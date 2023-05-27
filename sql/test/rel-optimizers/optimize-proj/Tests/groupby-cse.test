@@ -107,7 +107,7 @@ CREATE FUNCTION tableReturnUDF ()
 RETURNS TABLE(a1 int, a2 int, a3 int)
 BEGIN
     RETURN SELECT c1, c2, c3 FROM foo;
-END;
+END
 
 # the same expression should be removed from the GROUPBY op list of
 # group expressions (->l) exactly like in the case of basetable
@@ -148,7 +148,7 @@ GROUP BY
 2
 1
 
-## GROUPBY <--input-- PROJECT ########################################## 
+## GROUPBY <--input-- PROJECT ##########################################
 
 ## in this example the order by groups are aliases of the same column
 ## coming from the inner projection operator
@@ -295,7 +295,7 @@ project (
 | ) [ "sq"."c1_in_alias_1" as "c1_out_alias_1", "sq"."c2" ] [ "c1_out_alias_1", "c1_out_alias_1" as "c1_out_alias_2", "sys"."count" no nil ("sq"."c3") NOT NULL as "%1"."%1" ]
 ) [ "c1_out_alias_1", "c1_out_alias_2", "%1"."%1" NOT NULL ]
 
-query III rowsort gb-over-pr 
+query III rowsort gb-over-pr
 SELECT
     c1_in_alias_1 AS c1_out_alias_1,
     c1_in_alias_2 AS c1_out_alias_2,
@@ -446,14 +446,14 @@ GROUP BY
 query T nosort
 PLAN
 SELECT
-    foo.c2 AS col, 
-    count(*) 
-FROM 
-    foo JOIN bar 
-ON 
-    foo.c2 = bar.c2 
+    foo.c2 AS col,
+    count(*)
+FROM
+    foo JOIN bar
+ON
+    foo.c2 = bar.c2
 GROUP BY
-    foo.c2, 
+    foo.c2,
     col
 ----
 project (
@@ -467,14 +467,14 @@ project (
 
 query II rowsort
 SELECT
-    foo.c2 AS col, 
-    count(*) 
-FROM 
-    foo JOIN bar 
-ON 
-    foo.c2 = bar.c2 
+    foo.c2 AS col,
+    count(*)
+FROM
+    foo JOIN bar
+ON
+    foo.c2 = bar.c2
 GROUP BY
-    foo.c2, 
+    foo.c2,
     col
 ----
 1
@@ -484,7 +484,7 @@ GROUP BY
 
 ## GROUPBY <--input-- TOPN/SAMPLE
 # this cannot happen since the TOPN/SAMPLE operators are pushed down to
-# the projections 
+# the projections
 
 ## GROUPBY <--input-- SEMI
 # this would not make sense since the alias cannot (probably?) exist in
@@ -494,9 +494,24 @@ GROUP BY
 ## GROUPBY <--input-- UNION
 # TODO: the union operator introduces a distinct in the form of group
 # bys which are NOT processed by the groupby-cse optimizer. this must be
-# investigated more eg 
+# investigated more eg
 # select c1 ca, c1 cb from foo union select c1 ca, c1 cb from bar;
 
 ## GROUPBY <--input-- MERGE
 # not applicable
+
+# crash from clickhouse
+query IIIII nosort
+SELECT c1 AS x, c1 - 1 AS x1, c1 - 2 AS x2, c1 - 3 AS x3, count(*) AS c FROM foo GROUP BY x, x1, x2, x3 ORDER BY c DESC LIMIT 10
+----
+1
+0
+-1
+-2
+3
+2
+1
+0
+-1
+1
 
