@@ -241,7 +241,7 @@ SERVERlistenThread(SOCKET *Sock)
 
 	GDKfree(Sock);
 
-	(void) ATOMIC_INC(&nlistener);
+	ATOMIC_INC(&nlistener);
 
 	do {
 		SOCKET msgsock = INVALID_SOCKET;
@@ -455,7 +455,7 @@ SERVERlistenThread(SOCKET *Sock)
 	if (usockfile && MT_remove(usockfile) == -1 && errno != ENOENT)
 		perror(usockfile);
 #endif
-	(void) ATOMIC_DEC(&nlistener);
+	ATOMIC_DEC(&nlistener);
 	for (i = 0; i < 3; i++)
 		if (socks[i] != INVALID_SOCKET)
 			closesocket(socks[i]);

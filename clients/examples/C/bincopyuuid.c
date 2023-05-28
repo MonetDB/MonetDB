@@ -43,8 +43,9 @@ random_uuid(struct rng *rng, my_uuid *u)
 }
 
 void
-gen_bin_uuids(FILE *f, bool byteswap, long nrecs)
+gen_bin_uuids(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
 	struct rng rng = my_favorite_rng();
 	my_uuid uu = { .u = { 0 }};
 	for (long i = 0; i < nrecs; i++) {
@@ -57,8 +58,9 @@ gen_bin_uuids(FILE *f, bool byteswap, long nrecs)
 }
 
 void
-gen_text_uuids(FILE *f, bool byteswap, long nrecs)
+gen_text_uuids(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
 	struct rng rng = my_favorite_rng();
 	my_uuid uu = { .u = { 0 }};
 	for (long i = 0; i < nrecs; i++) {
