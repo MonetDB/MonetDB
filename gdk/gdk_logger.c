@@ -668,8 +668,8 @@ la_bat_updates(logger *lg, logaction *la, int tid)
 	if (bid < 0)
 		return GDK_FAIL;
 	if (!bid) {
-		GDKerror("la_bat_updates failed to find bid for object %d\n", la->cid);
-		return GDK_FAIL;
+		/* object already gone, nothing needed */
+		return GDK_SUCCEED;
 	}
 
 	if (!lg->flushing) {
