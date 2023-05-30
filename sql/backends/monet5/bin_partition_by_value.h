@@ -12,7 +12,6 @@
 #include "sql_statement.h"
 #include "mal_backend.h"
 
-extern int pp_nr_slices(sql_rel *rel);
 extern int pp_dynamic_slices(backend *be, stmt *sub);
 extern stmt *rel2bin_slicer(backend *be, stmt *sub, int slicer);
 

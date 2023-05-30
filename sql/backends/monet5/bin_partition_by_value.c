@@ -17,38 +17,10 @@
 #include "bin_partition.h"
 #include "rel_bin.h"
 #include "rel_exp.h"
-#include "rel_rewriter.h"
+//#include "rel_rewriter.h"
 #include "mal_builder.h"
 #include "opt_prelude.h"
 #include "sql_pp_statement.h"
-
-//#define SLICES 32
-#define PP_MIN_SIZE (64*1024)
-#define PP_MAX_SIZE (128*1024)
-int
-pp_nr_slices(sql_rel *rel)
-{
-	BUN est = get_rel_count(rel);
-
-	if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max)
-		est = 85000000;
-
-	int nr_slices = 1;
-
-	if (est < PP_MIN_SIZE)
-		nr_slices = 1;
-	else if (est/GDKnr_threads < PP_MIN_SIZE)
-		nr_slices = est/PP_MIN_SIZE;
-	else
-	    nr_slices =	est/PP_MAX_SIZE;
-	FORCEMITODEBUG
-	if (nr_slices < GDKnr_threads)
-		nr_slices = GDKnr_threads;
-	if (nr_slices == 0)
-		return 1;
-	assert(nr_slices > 0);
-	return nr_slices;
-}
 
 int
 pp_dynamic_slices(backend *be, stmt *sub)

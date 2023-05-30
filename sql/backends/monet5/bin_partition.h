@@ -21,4 +21,6 @@ extern stmt * get_pipeline(backend *be);
 
 extern bool pp_can_not_start(mvc *sql, sql_rel *rel);
 
+extern int pp_nr_slices(sql_rel *rel);
+
 #endif /*_BIN_PARTITION_H_*/
