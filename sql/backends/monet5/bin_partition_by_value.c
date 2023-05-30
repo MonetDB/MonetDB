@@ -17,7 +17,6 @@
 #include "bin_partition.h"
 #include "rel_bin.h"
 #include "rel_exp.h"
-//#include "rel_rewriter.h"
 #include "mal_builder.h"
 #include "opt_prelude.h"
 #include "sql_pp_statement.h"
@@ -233,7 +232,7 @@ partition_groupby(backend *be, sql_rel *rel, list *mats, stmt *sub)
 	list *results = partition_groupby_results(be, rel);
 	if (!results)
 		return NULL;
-	stmt *pp = pp_create(be, 256);//be->nrparts);
+	stmt *pp = stmt_pp_start_nrparts(be, 256);//be->nrparts);
 	set_pipeline(be, pp);
 	int ppnr = be->pipeline;
 	be->pipeline = 0;
@@ -313,13 +312,13 @@ partition_groupby(backend *be, sql_rel *rel, list *mats, stmt *sub)
 	stmt_set_nrcols(cursub);
 	/*
 	if (neededpp) {
-		set_pipeline(be, pp_dynamic(be, pp_dynamic_slices(be, cursub)));
+		set_pipeline(be, stmt_pp_start_dynamic(be, pp_dynamic_slices(be, cursub)));
 		cursub = rel2bin_slicer(be, cursub, 1);
 	}
 	*/
 	be->pipeline = ppnr;
-	(void)pp_jump(be, pp, be->nrparts);
-	(void)pp_end(be, pp);
+	(void)stmt_pp_jump(be, pp, be->nrparts);
+	(void)stmt_pp_end(be, pp);
 	/* pack */
 
 	list *nl = sa_list(be->mvc->sa);
@@ -355,7 +354,7 @@ rel2bin_groupby_partition(backend *be, sql_rel *rel, list *refs)
 	if (!rel->spb) {
 		set_need_pipeline(be);
 	} else {
-		pp = pp_create(be, pp_nr_slices(rel->l));
+		pp = stmt_pp_start_nrparts(be, pp_nr_slices(rel->l));
 		set_pipeline(be, pp);
 	}
 	if (rel->l) { /* first construct the sub relation */
@@ -367,12 +366,12 @@ rel2bin_groupby_partition(backend *be, sql_rel *rel, list *refs)
 	pp = get_pipeline(be);
 	if (!pp) {
 		(void)get_and_disable_need_pipeline(be);
-		set_pipeline(be, pp = pp_dynamic(be, pp_dynamic_slices(be, sub)));
+		set_pipeline(be, pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
 		sub = rel2bin_slicer(be, sub, 1);
 	}
 	mats = partition_groupby_part(be, rel, part, mats, sub);
-	(void)pp_jump(be, pp, be->nrparts);
-	(void)pp_end(be, pp);
+	(void)stmt_pp_jump(be, pp, be->nrparts);
+	(void)stmt_pp_end(be, pp);
 	if (!mats)
 		return NULL;
 
@@ -399,7 +398,7 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 		}
 		gbstmts = ngbstmts;
 	}
-	(void)pp_jump(be, pp, be->nrparts);
+	(void)stmt_pp_jump(be, pp, be->nrparts);
 	/* combine concurrent results */
 	if (rel && list_empty(rel->r)) { /* global case */
 		assert(list_empty(gbstmts));
@@ -465,7 +464,7 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 		}
 	} else if (rel && !list_empty(rel->r)) {
 		if (!_2phases) {
-			(void)pp_end(be, pp);
+			(void)stmt_pp_end(be, pp);
 			return cursub;
 		}
 		list *sub = cursub->op4.lval;
@@ -554,7 +553,7 @@ rel_pp_groupby(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, s
 	} else {
 		return NULL;
 	}
-	(void)pp_end(be, pp);
+	(void)stmt_pp_end(be, pp);
 
 	/* we combined into a bat, ie lets fetch results */
 	if (shared && list_empty(rel->r)) {

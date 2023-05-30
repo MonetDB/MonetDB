@@ -585,7 +585,7 @@ stmt_slice(backend *be, stmt *col, stmt *limit)
  *     # slicer.slices(X_24:bat[:...]);
  */
 static stmt *
-pp_create_nrparts_or_dynamic(backend *be, int nrparts, int input)
+stmt_pp_create_nrparts_or_dynamic(backend *be, int nrparts, int input)
 {
 	InstrPtr q = newStmtArgs(be->mb, languageRef, "pipelines", 4);
 	if (q == NULL)
@@ -624,20 +624,31 @@ pp_create_nrparts_or_dynamic(backend *be, int nrparts, int input)
 	return NULL;
 }
 
+/* The following functions generate the control stmt-s to start, repeat or end
+ * a pipeline block.
+ */
+
+
+/* Generates:
+ *   language.pipelines(<nrparts>:int);
+ */
 stmt *
-pp_create(backend *be, int nrparts)
+stmt_pp_start_nrparts(backend *be, int nrparts)
 {
-	return pp_create_nrparts_or_dynamic(be, nrparts, -1);
+	return stmt_pp_create_nrparts_or_dynamic(be, nrparts, -1);
 }
 
+/* Generates:
+ *   language.pipelines(X_<input>:int); # dynamic,
+ */
 stmt *
-pp_dynamic(backend *be, int input)
+stmt_pp_start_dynamic(backend *be, int input)
 {
-	return pp_create_nrparts_or_dynamic(be, 0, input);
+	return stmt_pp_create_nrparts_or_dynamic(be, 0, input);
 }
 
 int
-pp_jump(backend *be, stmt *label, int nrparts)
+stmt_pp_jump(backend *be, stmt *label, int nrparts)
 {
 	InstrPtr r = newStmtArgs(be->mb, putName("pipeline"), "counter", 2);
 	if (r == NULL)
@@ -662,7 +673,7 @@ pp_jump(backend *be, stmt *label, int nrparts)
 }
 
 int
-pp_end(backend *be, stmt *label)
+stmt_pp_end(backend *be, stmt *label)
 {
 	be->pp = be->nrparts = be->pipeline = 0;
 	be->ppstmt = NULL;

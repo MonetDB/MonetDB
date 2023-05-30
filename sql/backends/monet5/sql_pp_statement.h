@@ -28,9 +28,9 @@ extern stmt *stmt_slice(backend *be, stmt *col, stmt *limit);
 extern stmt *stmt_slicer(backend *be, stmt *col, int slicer);
 extern stmt *stmt_slices(backend *be, stmt *col); /* call mal nr of slices */
 
-extern stmt *pp_create(backend *ba, int nrparts); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */
-extern stmt *pp_dynamic(backend *ba, int input); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */
-extern int pp_jump(backend *ba, stmt *pp, int nrparts);    /* redo: label := part < nrparts; */
-extern int pp_end(backend *ba, stmt *pp);    /* exit: label ; */
+extern stmt *stmt_pp_start_nrparts(backend *ba, int nrparts); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */
+extern stmt *stmt_pp_start_dynamic(backend *ba, int input); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */
+extern int stmt_pp_jump(backend *ba, stmt *pp, int nrparts);    /* redo: label := part < nrparts; */
+extern int stmt_pp_end(backend *ba, stmt *pp);    /* exit: label ; */
 
 #endif /* _SQL_PP_STATEMENT_H_ */

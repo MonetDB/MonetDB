@@ -2681,7 +2681,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			right = subrel_project(be, right, refs, rel->r);
 		}
 		if (rel->spb)
-			set_pipeline(be, pp_create(be, pp_nr_slices(rel->l)));
+			set_pipeline(be, stmt_pp_start_nrparts(be, pp_nr_slices(rel->l)));
 		if (rel->l) { /* first construct the left sub relation */
 			left = subrel_bin(be, rel->l, refs);
 			left = subrel_project(be, left, refs, rel->l);
@@ -2692,7 +2692,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			left = subrel_project(be, left, refs, rel->l);
 		}
 		if (rel->spb && rel->partition == 2)
-			set_pipeline(be, pp_create(be, pp_nr_slices(rel->r)));
+			set_pipeline(be, stmt_pp_start_nrparts(be, pp_nr_slices(rel->r)));
 		if (rel->r) { /* first construct the right sub relation */
 			right = subrel_bin(be, rel->r, refs);
 			right = subrel_project(be, right, refs, rel->r);
@@ -2706,7 +2706,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	if (neededpp && !rel->partition) {
 		assert(0);
 		/* left or right ?? */
-		stmt *pp = pp_dynamic(be, pp_dynamic_slices(be, left));
+		stmt *pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, left));
 		set_pipeline(be, pp);
 		left = rel2bin_slicer(be, left, 1);
 	}
@@ -3035,14 +3035,14 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			right = subrel_project(be, right, refs, rel->r);
 		}
 		if (rel->spb)
-			set_pipeline(be, pp_create(be, pp_nr_slices(rel->l)));
+			set_pipeline(be, stmt_pp_start_nrparts(be, pp_nr_slices(rel->l)));
 		if (rel->l) /* first construct the left sub relation */
 			left = subrel_bin(be, rel->l, refs);
 	} else {
 		if (rel->l) /* first construct the left sub relation */
 			left = subrel_bin(be, rel->l, refs);
 		if (rel->spb && rel->partition == 2)
-			set_pipeline(be, pp_create(be, pp_nr_slices(rel->r)));
+			set_pipeline(be, stmt_pp_start_nrparts(be, pp_nr_slices(rel->r)));
 		if (rel->r) { /* first construct the right sub relation */
 			right = subrel_bin(be, rel->r, refs);
 			right = subrel_project(be, right, refs, rel->r);
@@ -3066,7 +3066,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	if (neededpp && !rel->partition) {
 		assert(0);
 		/* left or right ?? */
-		stmt *pp = pp_dynamic(be, pp_dynamic_slices(be, left));
+		stmt *pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, left));
 		set_pipeline(be, pp);
 		left = rel2bin_slicer(be, left, 1);
 	}
@@ -3968,7 +3968,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		if (!rel->spb || pp_can_not_start(be->mvc, rel->l)) {
 			set_need_pipeline(be);
 		} else {
-			pp = pp_create(be, pp_nr_slices(rel->l));
+			pp = stmt_pp_start_nrparts(be, pp_nr_slices(rel->l));
 			set_pipeline(be, pp);
 		}
 		assert(rel->spb || pp == NULL);
@@ -3983,7 +3983,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		pp = get_pipeline(be);
 	if (df2 && !pp) {
 		(void)get_and_disable_need_pipeline(be);
-		set_pipeline(be, pp = pp_dynamic(be, pp_dynamic_slices(be, sub)));
+		set_pipeline(be, pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
 		sub = rel2bin_slicer(be, sub, 1);
 	}
 
@@ -4162,7 +4162,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		}
 	}
 	if (neededpp) {
-		set_pipeline(be, pp_dynamic(be, pp_dynamic_slices(be, cursub)));
+		set_pipeline(be, stmt_pp_start_dynamic(be, pp_dynamic_slices(be, cursub)));
 		cursub = rel2bin_slicer(be, cursub, 1);
 	}
 	return cursub;
@@ -4290,7 +4290,7 @@ static stmt *
 rel_pp_topn(backend *be, list *projectresults, stmt *sub, stmt *pp, stmt *o, stmt *l)
 {
 	node *n, *m = projectresults->h;
-	(void)pp_jump(be, pp, be->nrparts);
+	(void)stmt_pp_jump(be, pp, be->nrparts);
 
 	assert(pp);
 	list *newl = sa_list(be->mvc->sa);
@@ -4320,7 +4320,7 @@ rel_pp_topn(backend *be, list *projectresults, stmt *sub, stmt *pp, stmt *o, stm
 	}
 	sub = stmt_list(be, newl);
 
-	(void)pp_end(be, pp);
+	(void)stmt_pp_end(be, pp);
 	return sub;
 }
 
@@ -4350,7 +4350,7 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 	stmt *pp = get_pipeline(be);
 	if (!pp) {
 		(void)get_and_disable_need_pipeline(be);
-		set_pipeline(be, pp = pp_dynamic(be, pp_dynamic_slices(be, sub)));
+		set_pipeline(be, pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
 		sub = rel2bin_slicer(be, sub, 1);
 	}
 
@@ -4436,7 +4436,7 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 	}
 	/* now phase 2 */
 	pp = get_pipeline(be);
-	(void)pp_jump(be, pp, be->nrparts);
+	(void)stmt_pp_jump(be, pp, be->nrparts);
 
 	InstrPtr q = newStmt(be->mb, getName("heapn"), getName("topn"));
 	int oidbat = newBatType(TYPE_oid);
@@ -4478,7 +4478,7 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 	osl = nosl;
 	psub = stmt_list(be, npl);
 
-	(void)pp_end(be, pp);
+	(void)stmt_pp_end(be, pp);
 
 	/* now order by and slice */
 	stmt *orderby_ids = NULL, *orderby_grp = NULL;
@@ -4551,7 +4551,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 		if (!rel->spb) {
 			set_need_pipeline(be);
 		} else {
-			stmt *pp = pp_create(be, pp_nr_slices(rel->l));
+			stmt *pp = stmt_pp_start_nrparts(be, pp_nr_slices(rel->l));
 			set_pipeline(be, pp);
 		}
 	}
@@ -4577,7 +4577,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 		pp = get_pipeline(be);
 	if (df2 && !pp) {
 		(void)get_and_disable_need_pipeline(be);
-		set_pipeline(be, pp = pp_dynamic(be, pp_dynamic_slices(be, sub)));
+		set_pipeline(be, pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
 		sub = rel2bin_slicer(be, sub, 1);
 	}
 
@@ -4621,7 +4621,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 			sub = rel_pp_topn(be, projectresults, sub, pp, o, l);
 	}
 	if (neededpp && !get_pipeline(be)) {
-		set_pipeline(be, pp_dynamic(be, pp_dynamic_slices(be, sub)));
+		set_pipeline(be, stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
 		sub = rel2bin_slicer(be, sub, 1);
 	}
 	return sub;
@@ -7470,7 +7470,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		}
 	} else if (rel->spb && neededpp) {
 		assert(!is_groupby(rel->op) && !is_join(rel->op));
-		set_pipeline(be, pp_dynamic(be, pp_dynamic_slices(be, s)));
+		set_pipeline(be, stmt_pp_start_dynamic(be, pp_dynamic_slices(be, s)));
 		s = rel2bin_slicer(be, s, 1);
 	}
 	return s;
