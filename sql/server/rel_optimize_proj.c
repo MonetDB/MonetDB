@@ -1605,6 +1605,9 @@ rel_simplify_groupby_columns(visitor *v, sql_rel *rel)
 							if ((!e1ok && e2ok) || (e1ok && !e2ok)) {
 								sql_exp *c = e1ok ? e2 : e1;
 								bool done = false;
+								exp_col = exps_find_exp(efrel->exps, c);
+								if (exp_col)
+									c = exp_col;
 
 								while (!done) {
 									if (is_numeric_upcast(c))
@@ -1720,13 +1723,13 @@ rel_groupby_cse(visitor *v, sql_rel *rel)
 				if (exp_match_exp(e1, e2) || exp_refers(e1, e2) || (e1_sub && e2_sub && (exp_match_exp(e1_sub, e2_sub) || exp_refers(e1_sub, e2_sub)))) {
 
 					/* use e2 from rel->exps instead of e2 from the rel->r as it can have an alias from the higher rel */
-					sql_exp *e2_in_exps = (e2->alias.rname == e2->l && e2->alias.name == e2->r) ?
+					sql_exp *e2_in_exps = (e2->l && e2->alias.rname == e2->l && e2->alias.name == e2->r) ?
 						exps_bind_column2(rel->exps, e2->l, e2->r, NULL) :
 						exps_bind_column(rel->exps, e2->alias.name, NULL, NULL, 0);
 					assert(e2_in_exps);
 
 					/* same as e2 */
-					sql_exp *e1_in_exps = (e1->alias.rname == e1->l && e1->alias.name == e1->r) ?
+					sql_exp *e1_in_exps = (e1->l && e1->alias.rname == e1->l && e1->alias.name == e1->r) ?
 						exps_bind_column2(rel->exps, e1->l, e1->r, NULL) :
 						exps_bind_column(rel->exps, e1->alias.name, NULL, NULL, 0);
 					assert(e1_in_exps);
