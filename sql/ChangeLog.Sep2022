@@ -1,20 +1,3 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Wed Apr  5 2023 Sjoerd Mullender <sjoerd@acm.org>
-- When creating a hot snapshot, allow other clients to proceed, even
-  with updating queries.
-
-* Fri Mar 24 2023 Sjoerd Mullender <sjoerd@acm.org>
-- Increased the size of a variable counting the number of changes made
-  to the database (e.g. in case more than 2 billion rows are added to
-  a table).
-- Improved cleanup after failures such as failed memory allocations.
-
-* Mon Feb 13 2023 Sjoerd Mullender <sjoerd@acm.org>
-- An insert into a table from which a column was dropped in a parallel
-  transaction was incorrectly not flagged as a transaction conflict.
-
-* Thu Jan 26 2023 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
-- Fix bug where boolean NULLs were not recognized by COPY BINARY INTO
-
