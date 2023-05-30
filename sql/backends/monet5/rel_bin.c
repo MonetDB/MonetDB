@@ -22,6 +22,8 @@
 #include "rel_predicates.h"
 #include "rel_rewriter.h"
 #include "bin_partition.h"
+#include "bin_partition_by_slice.h"
+#include "bin_partition_by_value.h"
 #include "sql_pp_statement.h"
 #include "sql_env.h"
 #include "sql_optimizer.h"

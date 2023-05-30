@@ -137,6 +137,8 @@ target_sources(sql
   rel_physical.c rel_physical.h
   rel_predicates.c rel_predicates.h
   bin_partition.c bin_partition.h
+  bin_partition_by_slice.c bin_partition_by_slice.h
+  bin_partition_by_value.c bin_partition_by_value.h
   sql_cat.c sql_cat.h
   sql_transaction.c sql_transaction.h
   sql_statement.c sql_statement.h
