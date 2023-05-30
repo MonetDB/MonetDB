@@ -371,7 +371,6 @@ rel2bin_groupby_partition(backend *be, sql_rel *rel, list *refs)
 
 	list *mats = NULL;
 	stmt *sub = NULL;
-	//int neededpp = get_need_pipeline(be);
 
 	stmt *pp = NULL;
 	InstrPtr part = NULL;
@@ -395,7 +394,7 @@ rel2bin_groupby_partition(backend *be, sql_rel *rel, list *refs)
 	}
 	pp = get_pipeline(be);
 	if (!pp) {
-		(void)get_need_pipeline(be);
+		(void)get_and_disable_need_pipeline(be);
 		set_pipeline(be, pp = pp_dynamic(be, pp_dynamic_slices(be, sub)));
 		sub = rel2bin_slicer(be, sub, 1);
 	}
