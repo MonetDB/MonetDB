@@ -2356,17 +2356,37 @@ log_cleanup_range(logger *lg, ulng id)
 	}
 }
 
+static void
+do_rotate(logger *lg) {
+	logged_range* next	= lg->current->next;
+	if (next) {
+		assert(ATOMIC_GET(&next->refcount) == 1);
+		ulng end = ATOMIC_GET(&lg->current->end);
+		ATOMIC_SET(&next->pend, end);
+		ATOMIC_SET(&next->end, end);
+		assert(ATOMIC_GET(&lg->current->refcount) > 0);
+		lg->current = lg->current->next;
+	}
+}
+
 gdk_return
 log_activate(logger *lg)
 {
+	bool flush = false;
 	gdk_return res = GDK_SUCCEED;
 	rotation_lock(lg);
 	if (!lg->current->next && lg->current->drops > 100000 && ((ulng) ATOMIC_GET(&lg->current->end) - (ulng) ATOMIC_GET(&lg->current->pend)) > 0 && lg->saved_id+1 == lg->id) {
 		lg->id++;
 		/* start new file */
 		res = log_open_output(lg);
+		if(ATOMIC_GET(&lg->current->refcount) == 1) {
+			flush = true;
+			do_rotate(lg);
+		}
 	}
 	rotation_unlock(lg);
+	if (flush)
+		(void) do_flush_range_cleanup(lg);
 	return res;
 }
 
@@ -2931,19 +2951,6 @@ log_tdone(logger* lg, logged_range *range, ulng commit_ts) {
 
 	if ((ulng) ATOMIC_GET(&range->last_ts) < commit_ts)
 		ATOMIC_SET(&range->last_ts, commit_ts);
-}
-
-static void
-do_rotate(logger *lg) {
-	logged_range* next	= lg->current->next;
-	if (next) {
-		assert(ATOMIC_GET(&next->refcount) == 1);
-		ulng end = ATOMIC_GET(&lg->current->end);
-		ATOMIC_SET(&next->pend, end);
-		ATOMIC_SET(&next->end, end);
-		assert(ATOMIC_GET(&lg->current->refcount) > 0);
-		lg->current = lg->current->next;
-	}
 }
 
 gdk_return
