@@ -4277,7 +4277,7 @@ func_ref:
     qfunc '(' ')'
 	{ dlist *l = L();
 	  append_list(l, $1);
-      append_int(l, FALSE); /* ignore distinct */
+	  append_int(l, FALSE); /* ignore distinct */
 	  $$ = _symbol_create_list( SQL_OP, l ); }
 |   qfunc '(' search_condition_commalist ')'
 	{ dlist *l = L();
@@ -5437,7 +5437,7 @@ subgeometry_type:
 		YYABORT;
 	}
 	$$ = subtype;
-}
+    }
 | string {
 	int subtype = find_subgeometry_type(m, $1);
 	char* geoSubType = $1;
@@ -5450,7 +5450,7 @@ subgeometry_type:
 		YYABORT;
 	}
 	$$ = subtype;
-}
+    }
 ;
 
 type_alias:
@@ -6365,13 +6365,13 @@ odbc_guid_escape:
     ;
 
 odbc_interval_escape:
-     '{' interval_expression '}' {$$ = $2;}
+    '{' interval_expression '}' {$$ = $2;}
     ;
+
 
 odbc_scalar_func_escape:
     '{' ODBC_FUNC_ESCAPE_PREFIX odbc_scalar_func '}' {$$ = $3;}
-;
-
+    ;
 
 odbc_datetime_func:
     HOUR '(' search_condition ')'
@@ -6485,9 +6485,8 @@ odbc_datetime_func:
 	}
 ;
 
-
 odbc_scalar_func:
-    func_ref { $$ = $1;}
+      func_ref { $$ = $1;}
     | string_funcs { $$ = $1;}
     | datetime_funcs { $$ = $1;}
     | odbc_datetime_func { $$ = $1;}
@@ -6495,34 +6494,35 @@ odbc_scalar_func:
 	{ dlist *l = L();
 	  append_symbol(l, $3);
 	  append_type(l, &$5);
-	  $$ = _symbol_create_list( SQL_CAST, l ); }
+	  $$ = _symbol_create_list( SQL_CAST, l );
+	}
     | USER '(' ')'
 	{ $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_user"))); }
     | CHARACTER '(' search_condition ')'
-		{ dlist *l = L();
-		  append_list( l, append_string(L(), sa_strdup(SA, "code")));
-	      append_int(l, FALSE); /* ignore distinct */
+	{ dlist *l = L();
+	  append_list( l, append_string(L(), sa_strdup(SA, "code")));
+	  append_int(l, FALSE); /* ignore distinct */
 	  append_symbol(l, $3);
 	  $$ = _symbol_create_list( SQL_UNOP, l );
-		}
+	}
     | TRUNCATE '(' search_condition ',' search_condition ')'
-		{ dlist *l = L();
-		  append_list( l, append_string(L(), sa_strdup(SA, "ms_trunc")));
-	      append_int(l, FALSE); /* ignore distinct */
+	{ dlist *l = L();
+	  append_list( l, append_string(L(), sa_strdup(SA, "ms_trunc")));
+	  append_int(l, FALSE); /* ignore distinct */
 	  append_symbol(l, $3);
 	  append_symbol(l, $5);
-		  $$ = _symbol_create_list( SQL_BINOP, l );
-		}
+	  $$ = _symbol_create_list( SQL_BINOP, l );
+	}
     | IFNULL '(' search_condition ',' search_condition ')'
 	{ dlist *l = L();
 	  append_symbol( l, $3);
 	  append_symbol( l, $5);
-		  $$ = _symbol_create_list(SQL_COALESCE, l);
+	  $$ = _symbol_create_list(SQL_COALESCE, l);
 	}
 ;
 
 odbc_data_type:
-    SQL_BIGINT
+      SQL_BIGINT
 	{ sql_find_subtype(&$$, "bigint", 0, 0); }
     | SQL_BINARY
 	{ sql_find_subtype(&$$, "blob", 0, 0); }
