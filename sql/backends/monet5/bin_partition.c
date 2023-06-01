@@ -62,6 +62,8 @@ pp_can_not_start(mvc *sql, sql_rel *rel)
 	return set;
 }
 
+/* Computes the number of slices we going to horizontally divide a table into.
+ */
 #define PP_MIN_SIZE (64*1024)
 #define PP_MAX_SIZE (128*1024)
 int

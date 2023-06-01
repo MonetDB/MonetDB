@@ -7,9 +7,9 @@ project (
 | | | group by (
 | | | | project (
 | | | | | select (
-| | | | | | table("sys"."_tables") [ "_tables"."id", "_tables"."type" ]
+| | | | | | table("sys"."_tables") [ "_tables"."id" UNIQUE, "_tables"."type" ]
 | | | | | ) [ ("_tables"."type") != (smallint(16) "2") ]
-| | | | ) [ "_tables"."id" as "tables"."id" ]
+| | | | ) [ "_tables"."id" UNIQUE as "tables"."id" ]
 | | | ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%10"."%10" ],
 | | | group by (
 | | | | project (
@@ -48,9 +48,9 @@ pipeline.counter
 3
 querylog.define
 1
-slicer.slice
+slicer.no_slices
 1
-slicer.slices
+slicer.nth_slice
 1
 sql.bind
 2

@@ -21,6 +21,10 @@
 #include "opt_prelude.h"
 #include "sql_pp_statement.h"
 
+/* Generate the stmt to compute the number of dynamic slices, e.g.
+ *   X_42:int := slicer.no_slices(X_24:bat[:...]);
+ * and return the MAL variable number, e.g. 42.
+ */
 int
 pp_dynamic_slices(backend *be, stmt *sub)
 {
@@ -30,7 +34,7 @@ pp_dynamic_slices(backend *be, stmt *sub)
 	stmt *sc = n->data;
 
 	sc = column(be, sc);
-	sc = stmt_slices(be, sc);
+	sc = stmt_no_slices(be, sc);
 	return sc->nr;
 }
 
@@ -47,7 +51,7 @@ rel2bin_slicer(backend *be, stmt *sub, int slicer)
 			const char *tname = table_name(be->mvc->sa, sc);
 
 			sc = column(be, sc);
-			sc = stmt_slicer(be, sc, slicer);
+			sc = stmt_nth_slice(be, sc, slicer);
 			list_append(newl, stmt_alias(be, sc, tname, cname));
 		}
 		sub = stmt_list(be, newl);

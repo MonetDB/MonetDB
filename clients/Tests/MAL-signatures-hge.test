@@ -49360,13 +49360,13 @@ SHPpartialimport;
 Partially import an ESRI Shapefile with given id into the vault
 slicer
 slice
-pattern slicer.slice(X_0:int) (X_1:bat[:any_1], X_2:bat[:any_1]) 
-SLICERslice;
+pattern slicer.nth_slice(X_0:int) (X_1:bat[:any_1], X_2:bat[:any_1]) 
+SLICERnth_slice;
 (empty)
 slicer
 slices
-pattern slicer.slices(X_0:bat[:any_1]):int 
-SLICERslices;
+pattern slicer.no_slices(X_0:bat[:any_1]):int 
+SLICERno_slices;
 (empty)
 sql
 affectedRows
