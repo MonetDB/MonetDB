@@ -1624,7 +1624,8 @@ STRbatRpad3_bat_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * implementation for shifted window arithmetic as well.
  */
 static str
-prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, bit (*func)(const char*, const char*, int), bit *icase)
+prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+				 const char *name, bit (*func)(const char*, const char*, int), bit *icase)
 {
 	(void) cntxt;
 	(void) mb;
@@ -1636,16 +1637,18 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const 
 	bool nils = false;
 	struct canditer ci1 = {0}, ci2 = {0};
 	oid off1, off2;
-	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 1),
+	bat *res = getArgReference_bat(stk, pci, 0),
+		*l = getArgReference_bat(stk, pci, 1),
 		*r = getArgReference_bat(stk, pci, 2),
-		*sid1 = pci->argc >= 5 ? getArgReference_bat(stk, pci, icase?4:3) : NULL,
-		*sid2 = pci->argc >= 5 ? getArgReference_bat(stk, pci, icase?5:4) : NULL;
+		*sid1 = pci->argc >= 5 ? getArgReference_bat(stk, pci, icase ? 4 : 3) : NULL,
+		*sid2 = pci->argc >= 5 ? getArgReference_bat(stk, pci, icase ? 5 : 4) : NULL;
 
 	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit2;
 	}
-	if ((sid1 && !is_bat_nil(*sid1) && !(lefts = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(rights = BATdescriptor(*sid2)))) {
+	if ((sid1 && !is_bat_nil(*sid1) && !(lefts = BATdescriptor(*sid1))) ||
+		(sid2 && !is_bat_nil(*sid2) && !(rights = BATdescriptor(*sid2)))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit2;
 	}
@@ -1708,7 +1711,8 @@ BATSTRstarts_with(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		assert(getArgType(mb, pci, 3) == TYPE_bit);
 		icase = getArgReference_bit(stk, pci, 3);
 	}
-	return prefix_or_suffix(cntxt, mb, stk, pci, "batstr.startsWith", (icase && *icase)?str_is_iprefix:str_is_prefix, icase);
+	return prefix_or_suffix(cntxt, mb, stk, pci, "batstr.startswith",
+							(icase && *icase) ? str_is_iprefix : str_is_prefix, icase);
 }
 
 static str
@@ -1719,7 +1723,8 @@ BATSTRends_with(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		assert(getArgType(mb, pci, 3) == TYPE_bit);
 		icase = getArgReference_bit(stk, pci, 3);
 	}
-	return prefix_or_suffix(cntxt, mb, stk, pci, "batstr.endsWith", (icase && *icase)?str_is_isuffix:str_is_suffix, icase);
+	return prefix_or_suffix(cntxt, mb, stk, pci, "batstr.endswith",
+							(icase && *icase) ? str_is_isuffix : str_is_suffix, icase);
 }
 
 static str
@@ -1730,11 +1735,13 @@ BATSTRcontains(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		assert(getArgType(mb, pci, 3) == TYPE_bit);
 		icase = getArgReference_bit(stk, pci, 3);
 	}
-	return prefix_or_suffix(cntxt, mb, stk, pci, "batstr.contains", (icase && *icase)?str_icontains:str_contains, icase);
+	return prefix_or_suffix(cntxt, mb, stk, pci, "batstr.contains",
+							(icase && *icase) ? str_icontains : str_contains, icase);
 }
 
 static str
-prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, bit (*func)(const char*, const char*, int), bit *icase)
+prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+					 const char *name, bit (*func)(const char*, const char*, int), bit *icase)
 {
 	(void) cntxt;
 	(void) mb;
@@ -1746,11 +1753,15 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 	bool nils = false;
 	struct canditer ci1 = {0};
 	oid off1;
-	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1), *sid1 = NULL;
+	bat *res = getArgReference_bat(stk, pci, 0),
+		*bid = getArgReference_bat(stk, pci, 1),
+		*sid1 = NULL;
 	int ynil, ylen;
-	if ((!icase && pci->argc == 4) || pci->argc == 5) {
-		assert(getArgType(mb, pci, icase?4:3) == TYPE_bat);
-		sid1 = getArgReference_bat(stk, pci, icase?4:3);
+
+	if ((!icase && (pci->argc == 4)) || pci->argc == 5) {
+		assert(getArgType(mb, pci, icase ? 4 : 3) == TYPE_bat ||
+			   isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
+		sid1 = getArgReference_bat(stk, pci, icase ? 4 : 3);
 	}
 
 	if (!(b = BATdescriptor(*bid))) {
@@ -1812,7 +1823,8 @@ BATSTRstarts_with_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		assert(getArgType(mb, pci, 3) == TYPE_bit);
 		icase = getArgReference_bit(stk, pci, 3);
 	}
-	return prefix_or_suffix_cst(cntxt, mb, stk, pci, "batstr.startsWith", (icase && *icase)?str_is_iprefix:str_is_prefix, icase);
+	return prefix_or_suffix_cst(cntxt, mb, stk, pci, "batstr.startswith",
+								(icase && *icase) ? str_is_iprefix : str_is_prefix, icase);
 }
 
 static str
@@ -1823,7 +1835,8 @@ BATSTRends_with_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		assert(getArgType(mb, pci, 3) == TYPE_bit);
 		icase = getArgReference_bit(stk, pci, 3);
 	}
-	return prefix_or_suffix_cst(cntxt, mb, stk, pci, "batstr.endsWith", (icase && *icase)?str_is_isuffix:str_is_suffix, icase);
+	return prefix_or_suffix_cst(cntxt, mb, stk, pci, "batstr.endswith",
+								(icase && *icase) ? str_is_isuffix : str_is_suffix, icase);
 }
 
 static str
@@ -1834,11 +1847,13 @@ BATSTRcontains_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		assert(getArgType(mb, pci, 3) == TYPE_bit);
 		icase = getArgReference_bit(stk, pci, 3);
 	}
-	return prefix_or_suffix_cst(cntxt, mb, stk, pci, "batstr.contains", (icase && *icase)?str_icontains:str_contains, icase);
+	return prefix_or_suffix_cst(cntxt, mb, stk, pci, "batstr.contains",
+								(icase && *icase) ? str_icontains : str_contains, icase);
 }
 
 static str
-prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, bit (*func)(const char*, const char*, int), bit *icase)
+prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+						const char *name, bit (*func)(const char*, const char*, int), bit *icase)
 {
 	(void) cntxt;
 	(void) mb;
@@ -1851,11 +1866,15 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bool nils = false;
 	struct canditer ci1 = {0};
 	oid off1;
-	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2), *sid1 = NULL;
+	bat *res = getArgReference_bat(stk, pci, 0),
+		*bid = getArgReference_bat(stk, pci, 2),
+		*sid1 = NULL;
 	int xnil;
-	if ((!icase && pci->argc == 4) || pci->argc == 5) {
-		assert(getArgType(mb, pci, icase?4:3) == TYPE_bat);
-		sid1 = getArgReference_bat(stk, pci, icase?4:3);
+
+	if ((!icase && (pci->argc == 4)) || pci->argc == 5) {
+		assert(getArgType(mb, pci, icase ? 4 : 3) == TYPE_bat ||
+			   isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
+		sid1 = getArgReference_bat(stk, pci, icase ? 4 : 3);
 	}
 
 	if (!(b = BATdescriptor(*bid))) {
@@ -1916,7 +1935,8 @@ BATSTRstarts_with_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		assert(getArgType(mb, pci, 3) == TYPE_bit);
 		icase = getArgReference_bit(stk, pci, 3);
 	}
-	return prefix_or_suffix_strcst(cntxt, mb, stk, pci, "batstr.startsWith", (icase && *icase)?str_is_iprefix:str_is_prefix, icase);
+	return prefix_or_suffix_strcst(cntxt, mb, stk, pci, "batstr.startsWith",
+								   (icase && *icase) ? str_is_iprefix : str_is_prefix, icase);
 }
 
 static str
@@ -1927,7 +1947,8 @@ BATSTRends_with_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		assert(getArgType(mb, pci, 3) == TYPE_bit);
 		icase = getArgReference_bit(stk, pci, 3);
 	}
-	return prefix_or_suffix_strcst(cntxt, mb, stk, pci, "batstr.endsWith", (icase && *icase)?str_is_isuffix:str_is_suffix, icase);
+	return prefix_or_suffix_strcst(cntxt, mb, stk, pci, "batstr.endsWith",
+								   (icase && *icase) ? str_is_isuffix : str_is_suffix, icase);
 }
 
 static str
@@ -1938,11 +1959,13 @@ BATSTRcontains_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		assert(getArgType(mb, pci, 3) == TYPE_bit);
 		icase = getArgReference_bit(stk, pci, 3);
 	}
-	return prefix_or_suffix_strcst(cntxt, mb, stk, pci, "batstr.contains", (icase && *icase)?str_icontains:str_contains, icase);
+	return prefix_or_suffix_strcst(cntxt, mb, stk, pci, "batstr.contains",
+								   (icase && *icase) ? str_icontains : str_contains, icase);
 }
 
 static str
-search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, int (*func)(const char*, const char*, int), bit *icase)
+search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+				  const char *name, int (*func)(const char*, const char*, int), bit *icase)
 {
 	(void) cntxt;
 	(void) mb;
@@ -1963,7 +1986,8 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit2;
 	}
-	if ((sid1 && !is_bat_nil(*sid1) && !(lefts = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(rights = BATdescriptor(*sid2)))) {
+	if ((sid1 && !is_bat_nil(*sid1) && !(lefts = BATdescriptor(*sid1))) ||
+		(sid2 && !is_bat_nil(*sid2) && !(rights = BATdescriptor(*sid2)))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit2;
 	}
@@ -2032,7 +2056,8 @@ BATSTRstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		icase = getArgReference_bit(stk, pci, 3);
 		break;
 	}
-	return search_string_bat(cntxt, mb, stk, pci, "batstr.search", (icase&&*icase)?str_isearch:str_search, icase);
+	return search_string_bat(cntxt, mb, stk, pci, "batstr.search",
+							 (icase && *icase) ? str_isearch : str_search, icase);
 }
 
 static str
@@ -2049,7 +2074,8 @@ BATSTRrevstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		icase = getArgReference_bit(stk, pci, 3);
 		break;
 	}
-	return search_string_bat(cntxt, mb, stk, pci, "batstr.r_search", (icase&&*icase)?str_reverse_str_isearch:str_reverse_str_search, icase);
+	return search_string_bat(cntxt, mb, stk, pci, "batstr.r_search",
+							 (icase && *icase) ? str_reverse_str_isearch : str_reverse_str_search, icase);
 }
 
 static str
@@ -2068,10 +2094,11 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1), *sid1 = NULL;
 	int ynil, ylen;
-	/* checking if icase is ~NULL and not if it is true or false */
-	if (pci->argc == 4 || pci->argc == 5) {
-		assert(getArgType(mb, pci, icase?4:3) == TYPE_bat);
-		sid1 = getArgReference_bat(stk, pci, icase?4:3);
+
+	if ((!icase && (pci->argc == 4)) || pci->argc == 5) {
+		assert(getArgType(mb, pci, icase ? 4 : 3) == TYPE_bat ||
+			   isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
+		sid1 = getArgReference_bat(stk, pci, icase ? 4 : 3);
 	}
 
 	if (!(b = BATdescriptor(*bid))) {
@@ -2139,7 +2166,8 @@ BATSTRstr_search_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		icase = getArgReference_bit(stk, pci, 3);
 		break;
 	}
-	return search_string_bat_cst(cntxt, mb, stk, pci, "batstr.search", (icase && *icase)?str_isearch:str_search, icase);
+	return search_string_bat_cst(cntxt, mb, stk, pci, "batstr.search",
+								 (icase && *icase) ? str_isearch : str_search, icase);
 }
 
 static str
@@ -2156,11 +2184,13 @@ BATSTRrevstr_search_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		icase = getArgReference_bit(stk, pci, 3);
 		break;
 	}
-	return search_string_bat_cst(cntxt, mb, stk, pci, "batstr.r_search", (icase && *icase)?str_reverse_str_isearch:str_reverse_str_search, icase);
+	return search_string_bat_cst(cntxt, mb, stk, pci, "batstr.r_search",
+								 (icase && *icase) ? str_reverse_str_isearch : str_reverse_str_search, icase);
 }
 
 static str
-search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *name, int (*func)(const char*, const char*, int), bit *icase)
+search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+						 const char *name, int (*func)(const char*, const char*, int), bit *icase)
 {
 	(void) cntxt;
 	(void) mb;
@@ -2173,12 +2203,15 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	bool nils = false;
 	struct canditer ci1 = {0};
 	oid off1;
-	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2), *sid1 = NULL;
+	bat *res = getArgReference_bat(stk, pci, 0),
+		*bid = getArgReference_bat(stk, pci, 2),
+		*sid1 = NULL;
 	int xnil;
-	/* checking if icase is ~NULL and not if it is true or false */
-	if (pci->argc == 4 || pci->argc == 5) {
-		assert(getArgType(mb, pci, icase?4:3) == TYPE_bat);
-		sid1 = getArgReference_bat(stk, pci, icase?4:3);
+
+	if ((!icase && (pci->argc == 4)) || pci->argc == 5) {
+		assert(getArgType(mb, pci, icase ? 4 : 3) == TYPE_bat ||
+			   isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
+		sid1 = getArgReference_bat(stk, pci, icase ? 4 : 3);
 	}
 
 	if (!(b = BATdescriptor(*bid))) {
@@ -2245,7 +2278,8 @@ BATSTRstr_search_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		icase = getArgReference_bit(stk, pci, 3);
 		break;
 	}
-	return search_string_bat_strcst(cntxt, mb, stk, pci, "batstr.search", (icase && *icase)?str_isearch:str_search, icase);
+	return search_string_bat_strcst(cntxt, mb, stk, pci, "batstr.search",
+									(icase && *icase) ? str_isearch : str_search, icase);
 }
 
 static str
@@ -2262,7 +2296,8 @@ BATSTRrevstr_search_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		icase = getArgReference_bit(stk, pci, 3);
 		break;
 	}
-	return search_string_bat_strcst(cntxt, mb, stk, pci, "batstr.r_search", (icase && *icase)?str_reverse_str_isearch:str_reverse_str_search, icase);
+	return search_string_bat_strcst(cntxt, mb, stk, pci, "batstr.r_search",
+									(icase && *icase) ? str_reverse_str_isearch : str_reverse_str_search, icase);
 }
 
 static str
@@ -5089,7 +5124,7 @@ BATSTRasciify(bat *ret, bat *bid)
 		in = (str) BUNtail(bi, p);
 		if (strNil(in)) {
 			if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
-				msg = createException(MAL,"batstr.asciify", "ICONV: string conversion failed");
+				msg = createException(MAL,"batstr.asciify", "BUNappend failed.");
 				goto exit;
 			}
 			nils = true;
@@ -5283,30 +5318,30 @@ mel_func batstr_init_funcs[] = {
 	pattern("batstr", "rpad3", STRbatRpad3_const_bat, false, "Append the second strings to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.", args(1,4, batarg("",str),batarg("s",str),arg("n",int),batarg("s2",str))),
 	pattern("batstr", "lpad3", STRbatLpad3_bat_bat, false, "Prepend the second strings to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),batarg("s",str),batarg("n",int),batarg("s2",str))),
 	pattern("batstr", "rpad3", STRbatRpad3_bat_bat, false, "Append the second strings to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.", args(1,4, batarg("",str),batarg("s",str),batarg("n",int),batarg("s2",str))),
-	pattern("batstr", "startsWith", BATSTRstarts_with, false, "Check if bat string starts with bat substring.", args(1,3, batarg("",bit),batarg("s",str),batarg("prefix",str))),
-	pattern("batstr", "startsWith", BATSTRstarts_with, false, "Check if bat string starts with bat substring, icase flag.", args(1,4, batarg("",bit),batarg("s",str),batarg("prefix",str),arg("icase",bit))),
-	pattern("batstr", "startsWith", BATSTRstarts_with, false, "Check if bat string starts with bat substring (with CLs).", args(1,5, batarg("",bit),batarg("s",str),batarg("prefix",str),batarg("s1",oid),batarg("s2",oid))),
-	pattern("batstr", "startsWith", BATSTRstarts_with, false, "Check if bat string starts with bat substring (with CLs) + icase flag.", args(1,6, batarg("",bit),batarg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s1",oid),batarg("s2",oid))),
-	pattern("batstr", "startsWith", BATSTRstarts_with_cst, false, "Check if bat string starts with substring.", args(1,3, batarg("",bit),batarg("s",str),arg("prefix",str))),
-	pattern("batstr", "startsWith", BATSTRstarts_with_cst, false, "Check if bat string starts with substring, icase flag.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),arg("icase",bit))),
-	pattern("batstr", "startsWith", BATSTRstarts_with_cst, false, "Check if bat string(with CL) starts with substring.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),batarg("s",oid))),
-	pattern("batstr", "startsWith", BATSTRstarts_with_cst, false, "Check if bat string(with CL) starts with substring + icase flag.", args(1,5, batarg("",bit),batarg("s",str),arg("prefix",str),arg("icase",bit),batarg("s",oid))),
-	pattern("batstr", "startsWith", BATSTRstarts_with_strcst, false, "Check if string starts with bat substring.", args(1,3, batarg("",bit),arg("s",str),batarg("prefix",str))),
-	pattern("batstr", "startsWith", BATSTRstarts_with_strcst, false, "Check if string starts with bat substring + icase flag.", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit))),
-	pattern("batstr", "startsWith", BATSTRstarts_with_strcst, false, "Check if string starts with bat substring(with CL).", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),batarg("s",oid))),
-	pattern("batstr", "startsWith", BATSTRstarts_with_strcst, false, "Check if string starts with bat substring(with CL) + icase flag.", args(1,5, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s",oid))),
-	pattern("batstr", "endsWith", BATSTRends_with, false, "Check if bat string ends with bat substring.", args(1,3, batarg("",bit),batarg("s",str),batarg("prefix",str))),
-	pattern("batstr", "endsWith", BATSTRends_with, false, "Check if bat string ends with bat substring, icase flag.", args(1,4, batarg("",bit),batarg("s",str),batarg("prefix",str),arg("icase",bit))),
-	pattern("batstr", "endsWith", BATSTRends_with, false, "Check if bat string ends with bat substring (with CLs).", args(1,5, batarg("",bit),batarg("s",str),batarg("prefix",str),batarg("s1",oid),batarg("s2",oid))),
-	pattern("batstr", "endsWith", BATSTRends_with, false, "Check if bat string ends with bat substring (with CLs) + icase flag.", args(1,6, batarg("",bit),batarg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s1",oid),batarg("s2",oid))),
-	pattern("batstr", "endsWith", BATSTRends_with_cst, false, "Check if bat string ends with substring.", args(1,3, batarg("",bit),batarg("s",str),arg("prefix",str))),
-	pattern("batstr", "endsWith", BATSTRends_with_cst, false, "Check if bat string ends with substring, icase flag.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),arg("icase",bit))),
-	pattern("batstr", "endsWith", BATSTRends_with_cst, false, "Check if bat string(with CL) ends with substring.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),batarg("s",oid))),
-	pattern("batstr", "endsWith", BATSTRends_with_cst, false, "Check if bat string(with CL) ends with substring + icase flag.", args(1,5, batarg("",bit),batarg("s",str),arg("prefix",str),arg("icase",bit),batarg("s",oid))),
-	pattern("batstr", "endsWith", BATSTRends_with_strcst, false, "Check if string ends with bat substring.", args(1,3, batarg("",bit),arg("s",str),batarg("prefix",str))),
-	pattern("batstr", "endsWith", BATSTRends_with_strcst, false, "Check if string ends with bat substring + icase flag.", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit))),
-	pattern("batstr", "endsWith", BATSTRends_with_strcst, false, "Check if string ends with bat substring(with CL).", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),batarg("s",oid))),
-	pattern("batstr", "endsWith", BATSTRends_with_strcst, false, "Check if string ends with bat substring(with CL) + icase flag.", args(1,5, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s",oid))),
+	pattern("batstr", "startswith", BATSTRstarts_with, false, "Check if bat string starts with bat substring.", args(1,3, batarg("",bit),batarg("s",str),batarg("prefix",str))),
+	pattern("batstr", "startswith", BATSTRstarts_with, false, "Check if bat string starts with bat substring, icase flag.", args(1,4, batarg("",bit),batarg("s",str),batarg("prefix",str),arg("icase",bit))),
+	pattern("batstr", "startswith", BATSTRstarts_with, false, "Check if bat string starts with bat substring (with CLs).", args(1,5, batarg("",bit),batarg("s",str),batarg("prefix",str),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "startswith", BATSTRstarts_with, false, "Check if bat string starts with bat substring (with CLs) + icase flag.", args(1,6, batarg("",bit),batarg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "startswith", BATSTRstarts_with_cst, false, "Check if bat string starts with substring.", args(1,3, batarg("",bit),batarg("s",str),arg("prefix",str))),
+	pattern("batstr", "startswith", BATSTRstarts_with_cst, false, "Check if bat string starts with substring, icase flag.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),arg("icase",bit))),
+	pattern("batstr", "startswith", BATSTRstarts_with_cst, false, "Check if bat string(with CL) starts with substring.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),batarg("s",oid))),
+	pattern("batstr", "startswith", BATSTRstarts_with_cst, false, "Check if bat string(with CL) starts with substring + icase flag.", args(1,5, batarg("",bit),batarg("s",str),arg("prefix",str),arg("icase",bit),batarg("s",oid))),
+	pattern("batstr", "startswith", BATSTRstarts_with_strcst, false, "Check if string starts with bat substring.", args(1,3, batarg("",bit),arg("s",str),batarg("prefix",str))),
+	pattern("batstr", "startswith", BATSTRstarts_with_strcst, false, "Check if string starts with bat substring + icase flag.", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit))),
+	pattern("batstr", "startswith", BATSTRstarts_with_strcst, false, "Check if string starts with bat substring(with CL).", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),batarg("s",oid))),
+	pattern("batstr", "startswith", BATSTRstarts_with_strcst, false, "Check if string starts with bat substring(with CL) + icase flag.", args(1,5, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s",oid))),
+	pattern("batstr", "endswith", BATSTRends_with, false, "Check if bat string ends with bat substring.", args(1,3, batarg("",bit),batarg("s",str),batarg("prefix",str))),
+	pattern("batstr", "endswith", BATSTRends_with, false, "Check if bat string ends with bat substring, icase flag.", args(1,4, batarg("",bit),batarg("s",str),batarg("prefix",str),arg("icase",bit))),
+	pattern("batstr", "endswith", BATSTRends_with, false, "Check if bat string ends with bat substring (with CLs).", args(1,5, batarg("",bit),batarg("s",str),batarg("prefix",str),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "endswith", BATSTRends_with, false, "Check if bat string ends with bat substring (with CLs) + icase flag.", args(1,6, batarg("",bit),batarg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s1",oid),batarg("s2",oid))),
+	pattern("batstr", "endswith", BATSTRends_with_cst, false, "Check if bat string ends with substring.", args(1,3, batarg("",bit),batarg("s",str),arg("prefix",str))),
+	pattern("batstr", "endswith", BATSTRends_with_cst, false, "Check if bat string ends with substring, icase flag.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),arg("icase",bit))),
+	pattern("batstr", "endswith", BATSTRends_with_cst, false, "Check if bat string(with CL) ends with substring.", args(1,4, batarg("",bit),batarg("s",str),arg("prefix",str),batarg("s",oid))),
+	pattern("batstr", "endswith", BATSTRends_with_cst, false, "Check if bat string(with CL) ends with substring + icase flag.", args(1,5, batarg("",bit),batarg("s",str),arg("prefix",str),arg("icase",bit),batarg("s",oid))),
+	pattern("batstr", "endswith", BATSTRends_with_strcst, false, "Check if string ends with bat substring.", args(1,3, batarg("",bit),arg("s",str),batarg("prefix",str))),
+	pattern("batstr", "endswith", BATSTRends_with_strcst, false, "Check if string ends with bat substring + icase flag.", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit))),
+	pattern("batstr", "endswith", BATSTRends_with_strcst, false, "Check if string ends with bat substring(with CL).", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),batarg("s",oid))),
+	pattern("batstr", "endswith", BATSTRends_with_strcst, false, "Check if string ends with bat substring(with CL) + icase flag.", args(1,5, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s",oid))),
 	pattern("batstr", "contains", BATSTRcontains, false, "Check if bat string haystack contains bat string needle.", args(1,3, batarg("",bit),batarg("s",str),batarg("prefix",str))),
 	pattern("batstr", "contains", BATSTRcontains, false, "Check if bat string haystack contains bat string needle, icase flag.", args(1,4, batarg("",bit),batarg("s",str),batarg("prefix",str),arg("icase",bit))),
 	pattern("batstr", "contains", BATSTRcontains, false, "Check if bat string haystack contains bat string needle (with CLs).", args(1,5, batarg("",bit),batarg("s",str),batarg("prefix",str),batarg("s1",oid),batarg("s2",oid))),

@@ -34649,63 +34649,63 @@ pattern batstr.contains(X_0:str, X_1:bat[:str], X_2:bit, X_3:bat[:oid]):bat[:bit
 BATSTRcontains_strcst;
 Check if string haystack contains bat string needle (with CL) + icase flag.
 batstr
-endsWith
-pattern batstr.endsWith(X_0:bat[:str], X_1:bat[:str]):bat[:bit] 
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:bat[:str]):bat[:bit] 
 BATSTRends_with;
 Check if bat string ends with bat substring.
 batstr
-endsWith
-pattern batstr.endsWith(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit] 
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit] 
 BATSTRends_with;
 Check if bat string ends with bat substring (with CLs).
 batstr
-endsWith
-pattern batstr.endsWith(X_0:bat[:str], X_1:bat[:str], X_2:bit):bat[:bit] 
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:bat[:str], X_2:bit):bat[:bit] 
 BATSTRends_with;
 Check if bat string ends with bat substring, icase flag.
 batstr
-endsWith
-pattern batstr.endsWith(X_0:bat[:str], X_1:bat[:str], X_2:bit, X_3:bat[:oid], X_4:bat[:oid]):bat[:bit] 
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:bat[:str], X_2:bit, X_3:bat[:oid], X_4:bat[:oid]):bat[:bit] 
 BATSTRends_with;
 Check if bat string ends with bat substring (with CLs) + icase flag.
 batstr
-endsWith
-pattern batstr.endsWith(X_0:bat[:str], X_1:str):bat[:bit] 
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:str):bat[:bit] 
 BATSTRends_with_cst;
 Check if bat string ends with substring.
 batstr
-endsWith
-pattern batstr.endsWith(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:bit] 
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:bit] 
 BATSTRends_with_cst;
 Check if bat string(with CL) ends with substring.
 batstr
-endsWith
-pattern batstr.endsWith(X_0:bat[:str], X_1:str, X_2:bit):bat[:bit] 
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:str, X_2:bit):bat[:bit] 
 BATSTRends_with_cst;
 Check if bat string ends with substring, icase flag.
 batstr
-endsWith
-pattern batstr.endsWith(X_0:bat[:str], X_1:str, X_2:bit, X_3:bat[:oid]):bat[:bit] 
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:str, X_2:bit, X_3:bat[:oid]):bat[:bit] 
 BATSTRends_with_cst;
 Check if bat string(with CL) ends with substring + icase flag.
 batstr
-endsWith
-pattern batstr.endsWith(X_0:str, X_1:bat[:str]):bat[:bit] 
+endswith
+pattern batstr.endswith(X_0:str, X_1:bat[:str]):bat[:bit] 
 BATSTRends_with_strcst;
 Check if string ends with bat substring.
 batstr
-endsWith
-pattern batstr.endsWith(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:bit] 
+endswith
+pattern batstr.endswith(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:bit] 
 BATSTRends_with_strcst;
 Check if string ends with bat substring(with CL).
 batstr
-endsWith
-pattern batstr.endsWith(X_0:str, X_1:bat[:str], X_2:bit):bat[:bit] 
+endswith
+pattern batstr.endswith(X_0:str, X_1:bat[:str], X_2:bit):bat[:bit] 
 BATSTRends_with_strcst;
 Check if string ends with bat substring + icase flag.
 batstr
-endsWith
-pattern batstr.endsWith(X_0:str, X_1:bat[:str], X_2:bit, X_3:bat[:oid]):bat[:bit] 
+endswith
+pattern batstr.endswith(X_0:str, X_1:bat[:str], X_2:bit, X_3:bat[:oid]):bat[:bit] 
 BATSTRends_with_strcst;
 Check if string ends with bat substring(with CL) + icase flag.
 batstr
@@ -35154,63 +35154,63 @@ pattern batstr.splitpart(X_0:bat[:str], X_1:str, X_2:int):bat[:str]
 STRbatsplitpartcst;
 Split string on delimiter. Returns@given field (counting from one.)
 batstr
-startsWith
-pattern batstr.startsWith(X_0:bat[:str], X_1:bat[:str]):bat[:bit] 
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:bat[:str]):bat[:bit] 
 BATSTRstarts_with;
 Check if bat string starts with bat substring.
 batstr
-startsWith
-pattern batstr.startsWith(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit] 
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit] 
 BATSTRstarts_with;
 Check if bat string starts with bat substring (with CLs).
 batstr
-startsWith
-pattern batstr.startsWith(X_0:bat[:str], X_1:bat[:str], X_2:bit):bat[:bit] 
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:bat[:str], X_2:bit):bat[:bit] 
 BATSTRstarts_with;
 Check if bat string starts with bat substring, icase flag.
 batstr
-startsWith
-pattern batstr.startsWith(X_0:bat[:str], X_1:bat[:str], X_2:bit, X_3:bat[:oid], X_4:bat[:oid]):bat[:bit] 
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:bat[:str], X_2:bit, X_3:bat[:oid], X_4:bat[:oid]):bat[:bit] 
 BATSTRstarts_with;
 Check if bat string starts with bat substring (with CLs) + icase flag.
 batstr
-startsWith
-pattern batstr.startsWith(X_0:bat[:str], X_1:str):bat[:bit] 
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:str):bat[:bit] 
 BATSTRstarts_with_cst;
 Check if bat string starts with substring.
 batstr
-startsWith
-pattern batstr.startsWith(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:bit] 
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:bit] 
 BATSTRstarts_with_cst;
 Check if bat string(with CL) starts with substring.
 batstr
-startsWith
-pattern batstr.startsWith(X_0:bat[:str], X_1:str, X_2:bit):bat[:bit] 
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:str, X_2:bit):bat[:bit] 
 BATSTRstarts_with_cst;
 Check if bat string starts with substring, icase flag.
 batstr
-startsWith
-pattern batstr.startsWith(X_0:bat[:str], X_1:str, X_2:bit, X_3:bat[:oid]):bat[:bit] 
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:str, X_2:bit, X_3:bat[:oid]):bat[:bit] 
 BATSTRstarts_with_cst;
 Check if bat string(with CL) starts with substring + icase flag.
 batstr
-startsWith
-pattern batstr.startsWith(X_0:str, X_1:bat[:str]):bat[:bit] 
+startswith
+pattern batstr.startswith(X_0:str, X_1:bat[:str]):bat[:bit] 
 BATSTRstarts_with_strcst;
 Check if string starts with bat substring.
 batstr
-startsWith
-pattern batstr.startsWith(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:bit] 
+startswith
+pattern batstr.startswith(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:bit] 
 BATSTRstarts_with_strcst;
 Check if string starts with bat substring(with CL).
 batstr
-startsWith
-pattern batstr.startsWith(X_0:str, X_1:bat[:str], X_2:bit):bat[:bit] 
+startswith
+pattern batstr.startswith(X_0:str, X_1:bat[:str], X_2:bit):bat[:bit] 
 BATSTRstarts_with_strcst;
 Check if string starts with bat substring + icase flag.
 batstr
-startsWith
-pattern batstr.startsWith(X_0:str, X_1:bat[:str], X_2:bit, X_3:bat[:oid]):bat[:bit] 
+startswith
+pattern batstr.startswith(X_0:str, X_1:bat[:str], X_2:bit, X_3:bat[:oid]):bat[:bit] 
 BATSTRstarts_with_strcst;
 Check if string starts with bat substring(with CL) + icase flag.
 batstr
