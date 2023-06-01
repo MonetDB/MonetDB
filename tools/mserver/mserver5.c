@@ -282,8 +282,6 @@ wmain(int argc, wchar_t **argv)
 main(int argc, char **av)
 #endif
 {
-	/* make sure stdout is line buffered, even when not to a terminal */
-	setvbuf(stdout, NULL, _IOLBF, BUFSIZ);
 #ifdef _MSC_VER
 	char **av = malloc((argc + 1) * sizeof(char *));
 	if (av == NULL) {
@@ -297,6 +295,11 @@ main(int argc, char **av)
 		}
 	}
 	av[argc] = NULL;
+#else
+	/* make sure stdout is line buffered, even when not to a terminal;
+	 * on Windows, _IOLBF does the same as _IOFBF, i.e. full
+	 * buffering */
+	setvbuf(stdout, NULL, _IOLBF, BUFSIZ);
 #endif
 	char *prog = *av;
 	opt *set = NULL;
