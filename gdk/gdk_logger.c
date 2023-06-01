@@ -2232,7 +2232,7 @@ do_flush_range_cleanup(logger* lg) {
 	rotation_unlock(lg);
 
 	for (frange = first; frange && frange != flast; frange = frange->next) {
-		(void) ATOMIC_DEC(&frange->refcount);
+		ATOMIC_DEC(&frange->refcount);
 		if (!LOG_DISABLED(lg)) {
 			close_stream(frange->output_log);
 			frange->output_log = NULL;
@@ -2510,7 +2510,7 @@ log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
 	    !mnstr_writeLng(lg->current->output_log, nr) ||
 	    mnstr_write(lg->current->output_log, &tpe, 1, 1) != 1 ||
 	    !mnstr_writeLng(lg->current->output_log, offset)) {
-		(void) ATOMIC_DEC(&lg->current->refcount);
+		ATOMIC_DEC(&lg->current->refcount);
 		ok = GDK_FAIL;
 		goto bailout;
 	}
@@ -2655,7 +2655,7 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced,
 
   bailout:
 	if (ok != GDK_SUCCEED) {
-		(void) ATOMIC_DEC(&lg->current->refcount);
+		ATOMIC_DEC(&lg->current->refcount);
 		const char *err = mnstr_peek_error(lg->current->output_log);
 		TRC_CRITICAL(GDK, "write failed%s%s\n", err ? ": " : "", err ? err : "");
 	}
@@ -2677,7 +2677,7 @@ log_bat_persists(logger *lg, BAT *b, log_id id)
 	if (log_add_bat(lg, b, id, -1) != GDK_SUCCEED) {
 		log_unlock(lg);
 		if (!LOG_DISABLED(lg))
-			(void) ATOMIC_DEC(&lg->current->refcount);
+			ATOMIC_DEC(&lg->current->refcount);
 		return GDK_FAIL;
 	}
 
@@ -2687,17 +2687,17 @@ log_bat_persists(logger *lg, BAT *b, log_id id)
 		if (log_write_format(lg, &l) != GDK_SUCCEED ||
 		    mnstr_write(lg->current->output_log, &ta, 1, 1) != 1) {
 			log_unlock(lg);
-			(void) ATOMIC_DEC(&lg->current->refcount);
+			ATOMIC_DEC(&lg->current->refcount);
 			return GDK_FAIL;
 		}
 	}
-	(void) ATOMIC_INC(&lg->current->end);
+	ATOMIC_INC(&lg->current->end);
 	if (lg->debug & 1)
 		fprintf(stderr, "#persists id (%d) bat (%d)\n", id, b->batCacheid);
 	gdk_return r = internal_log_bat(lg, b, id, 0, BATcount(b), 0, 0);
 	log_unlock(lg);
 	if (r != GDK_SUCCEED)
-		(void) ATOMIC_DEC(&lg->current->refcount);
+		ATOMIC_DEC(&lg->current->refcount);
 	return r;
 }
 
@@ -2724,11 +2724,11 @@ log_bat_transient(logger *lg, log_id id)
 		if (log_write_format(lg, &l) != GDK_SUCCEED) {
 			TRC_CRITICAL(GDK, "write failed\n");
 			log_unlock(lg);
-			(void) ATOMIC_DEC(&lg->current->refcount);
+			ATOMIC_DEC(&lg->current->refcount);
 			return GDK_FAIL;
 		}
 	}
-	(void) ATOMIC_INC(&lg->current->end);
+	ATOMIC_INC(&lg->current->end);
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged destroyed bat (%d) %d\n", id,
 				bid);
@@ -2740,7 +2740,7 @@ log_bat_transient(logger *lg, log_id id)
 	gdk_return r = log_del_bat(lg, bid);
 	log_unlock(lg);
 	if (r != GDK_SUCCEED)
-		(void) ATOMIC_DEC(&lg->current->refcount);
+		ATOMIC_DEC(&lg->current->refcount);
 	return r;
 }
 
@@ -2792,7 +2792,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 		ok = internal_log_bat(lg, uval, id, uid->tseqbase, BATcount(uval), 1, 0);
 		log_unlock(lg);
 		if (!LOG_DISABLED(lg) && ok != GDK_SUCCEED)
-			(void) ATOMIC_DEC(&lg->current->refcount);
+			ATOMIC_DEC(&lg->current->refcount);
 		return ok;
 	}
 
@@ -2851,7 +2851,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 	if (ok != GDK_SUCCEED) {
 		const char *err = mnstr_peek_error(lg->current->output_log);
 		TRC_CRITICAL(GDK, "write failed%s%s\n", err ? ": " : "", err ? err : "");
-		(void) ATOMIC_DEC(&lg->current->refcount);
+		ATOMIC_DEC(&lg->current->refcount);
 	}
 	log_unlock(lg);
 	return ok;
@@ -2894,7 +2894,7 @@ log_tend(logger *lg)
 	l.id = lg->tid;
 
 	if ((result = log_write_format(lg, &l)) == GDK_SUCCEED) {
-		(void) ATOMIC_INC(&lg->nr_flushers);
+		ATOMIC_INC(&lg->nr_flushers);
 	}
 
 	return result;
@@ -2987,7 +2987,7 @@ log_tflush(logger* lg, ulng writer_end, ulng commit_ts) {
 	/* else somebody else has flushed our log file */
 
 	log_tdone(lg, frange, commit_ts);
-	(void) ATOMIC_DEC(&frange->refcount);
+	ATOMIC_DEC(&frange->refcount);
 
 	if (ATOMIC_DEC(&lg->nr_flushers) == 0) {
 		/* I am the last flusher
@@ -3017,7 +3017,7 @@ log_tsequence_(logger *lg, int seq, lng val)
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    !mnstr_writeLng(lg->current->output_log, val)) {
 		TRC_CRITICAL(GDK, "write failed\n");
-		(void) ATOMIC_DEC(&lg->current->refcount);
+		ATOMIC_DEC(&lg->current->refcount);
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -3206,12 +3206,12 @@ log_tstart(logger *lg, bool flushnow, ulng *writer_end)
 		do_rotate(lg);
 		rotation_unlock(lg);
 	}
-	(void) ATOMIC_INC(&lg->current->end);
+	ATOMIC_INC(&lg->current->end);
 
 	if (LOG_DISABLED(lg))
 		return GDK_SUCCEED;
 
-	(void) ATOMIC_INC(&lg->current->refcount);
+	ATOMIC_INC(&lg->current->refcount);
 
 	logformat l;
 	l.flag = LOG_START;
@@ -3220,7 +3220,7 @@ log_tstart(logger *lg, bool flushnow, ulng *writer_end)
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_tstart %d\n", lg->tid);
 	if (log_write_format(lg, &l) != GDK_SUCCEED) {
-		(void) ATOMIC_DEC(&lg->current->refcount);
+		ATOMIC_DEC(&lg->current->refcount);
 		return GDK_FAIL;
 	}
 

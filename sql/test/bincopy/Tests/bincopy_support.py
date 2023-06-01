@@ -95,7 +95,7 @@ def run_test(side, testcase):
     data_maker.additionally('ON', 'ON ' + side.upper())
     data_maker.additionally('NRECS', NRECS)
     data_maker.additionally('NRECS_DIV_4', NRECS / 4)
-    massage = lambda s: re.sub(r'@(>?\w+)@', data_maker.substitute_match, s)
+    massage = lambda s: re.sub(r'@(>?(\w|!)+)@', data_maker.substitute_match, s)
     code = massage(code)
     code = f"START TRANSACTION;\n{code}\nROLLBACK;\n"
     open(os.path.join(BINCOPY_FILES, 'test.sql'), "w").write(code)
@@ -444,13 +444,21 @@ CREATE TABLE foo(
 
 COPY BINARY INTO foo FROM
     -- bte: i1, d1_1, d2_1
-    @tinyints@, @tinyints@, @tinyints@,
+    @dec_tinyints!1@,
+    @dec_tinyints!1@,
+    @dec_tinyints!1@,
     -- sht: i2, d3_2, d4_2
-    @smallints@, @smallints@, @smallints@,
+    @dec_smallints!3@,
+    @dec_smallints!3@,
+    @dec_smallints!3@,
     -- int: i4, d5_2, d9_2
-    @ints@, @ints@, @ints@,
+    @dec_ints!5@,
+    @dec_ints!5@,
+    @dec_ints!5@,
     -- lng: i8, d10_2, d18_2
-    @bigints@, @bigints@, @bigints@
+    @dec_bigints!10@,
+    @dec_bigints!10@,
+    @dec_bigints!10@
     @ON@;
 
 COPY
@@ -458,13 +466,21 @@ SELECT i1, d1_1, d2_1, i2, d3_2, d4_2, i4, d5_2, d9_2, i8, d10_2, d18_2
 FROM foo
 INTO BINARY
     -- bte: i1, d1_1, d2_1
-    @>tinyints@, @>tinyints@, @>tinyints@,
+    @>dec_tinyints!1@,
+    @>dec_tinyints!1@,
+    @>dec_tinyints!1@,
     -- sht: i2, d3_2, d4_2
-    @>smallints@, @>smallints@, @>smallints@,
+    @>dec_smallints!3@,
+    @>dec_smallints!3@,
+    @>dec_smallints!3@,
     -- int: i4, d5_2, d9_2
-    @>ints@, @>ints@, @>ints@,
+    @>dec_ints!5@,
+    @>dec_ints!5@,
+    @>dec_ints!5@,
     -- lng: i8, d10_2, d18_2
-    @>bigints@, @>bigints@, @>bigints@
+    @>dec_bigints!10@,
+    @>dec_bigints!10@,
+    @>dec_bigints!10@
     @ON@;
 
 WITH verified AS (

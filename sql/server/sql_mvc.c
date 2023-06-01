@@ -802,7 +802,7 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 	m->topframes = 0;
 	m->frame = 0;
 
-	m->use_views = 0;
+	m->use_views = false;
 	if (!m->frames) {
 		qc_destroy(m->qc);
 		return NULL;
@@ -841,7 +841,7 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 		return NULL;
 	}
 	m->schema_path_has_sys = true;
-	m->schema_path_has_tmp = 0;
+	m->schema_path_has_tmp = false;
 	m->store = store;
 
 	m->session = sql_session_create(m->store, m->pa, 1 /*autocommit on*/);

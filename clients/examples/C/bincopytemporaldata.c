@@ -70,8 +70,9 @@ random_timestamp(struct rng *rng)
 }
 
 void
-gen_timestamps(FILE *f, bool byteswap, long nrecs)
+gen_timestamps(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
 	struct rng rng = my_favorite_rng();
 
 	for (long i = 0; i < nrecs; i++) {
@@ -85,8 +86,9 @@ gen_timestamps(FILE *f, bool byteswap, long nrecs)
 
 #define GEN_TIMESTAMP_FIELD(name, typ, fld, nilvalue) \
 	void name \
-		(FILE *f, bool byteswap, long nrecs) \
+		(FILE *f, bool byteswap, long nrecs, char *arg) \
 	{ \
+		(void)arg; \
 		struct rng rng = my_favorite_rng(); \
 	\
 		for (long i = 0; i < nrecs; i++) { \

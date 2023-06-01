@@ -1,0 +1,53 @@
+statement ok
+create table foo(x string, y string)
+
+statement ok
+insert into foo values ('johndoe','doe'),('janedoe','doe'),('robertdoe','doe')
+
+query T
+select levenshtein(x,y) from foo;
+----
+4
+4
+6
+
+statement ok
+drop table foo;
+
+statement ok
+create table foo(x string)
+
+statement ok
+insert into foo values ('john'),('jane'),('robert')
+
+statement ok
+create table bar(x string)
+
+statement ok
+insert into bar values ('joHan'),('aajAne'),('rOObert')
+
+query TT rowsort
+select * from foo,bar where [foo.x] maxlevenshtein [bar.x, 2]
+----
+john
+joHan
+robert
+rOObert
+
+query TT rowsort
+select * from foo,bar where [foo.x] maxlevenshtein [bar.x, 4]
+----
+jane
+aajAne
+jane
+joHan
+john
+joHan
+robert
+rOObert
+
+statement ok
+drop table foo;
+
+statement ok
+drop table bar;

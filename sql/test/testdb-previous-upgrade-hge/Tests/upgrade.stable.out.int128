@@ -610,11 +610,14 @@ create function sys.levenshtein(x string, y string, insdel int, rep int, trans i
 returns int external name txtsim.levenshtein;
 grant execute on function levenshtein(string, string, int, int, int) to public;
 create filter function sys.maxlevenshtein(x string, y string, k int)
-external name txtsim."maxlevenshtein";
+external name txtsim.maxlevenshtein;
 create filter function sys.maxlevenshtein(x string, y string, k int, insdel int, rep int)
-external name txtsim."maxlevenshtein";
+external name txtsim.maxlevenshtein;
+create function sys.jarowinkler(x string, y string)
+returns double external name txtsim.jarowinkler;
+grant execute on function jarowinkler(string, string) to public;
 create filter function minjarowinkler(x string, y string, threshold double)
-external name txtsim."minjarowinkler";
+external name txtsim.minjarowinkler;
 create function sys.dameraulevenshtein(x string, y string)
 returns int external name txtsim.dameraulevenshtein;
 grant execute on function dameraulevenshtein(string, string) to public;
@@ -672,7 +675,7 @@ create filter function sys.contains(x string, y string)
 external name str."contains";
 create filter function sys.contains(x string, y string, icase boolean)
 external name str."contains";
-update sys.functions set system = true where system <> true and name in ('levenshtein', 'dameraulevenshtein', 'editdistance', 'editdistance2', 'soundex', 'difference', 'qgramnormalize', 'similarity') and schema_id = 2000 and type = 1;
+update sys.functions set system = true where system <> true and name in ('levenshtein', 'dameraulevenshtein', 'jarowinkler', 'editdistance', 'editdistance2', 'soundex', 'difference', 'qgramnormalize', 'similarity') and schema_id = 2000 and type = 1;
 update sys.functions set system = true where system <> true and name in ('maxlevenshtein', 'minjarowinkler') and schema_id = 2000 and type = 4;
 update sys.functions set system = true where system <> true and name in ('asciify', 'startswith', 'endswith', 'contains') and schema_id = 2000 and type = 1;
 update sys.functions set system = true where system <> true and name in ('startswith', 'endswith', 'contains') and schema_id = 2000 and type = 4;

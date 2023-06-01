@@ -5068,7 +5068,7 @@ BATSTRasciify(bat *ret, bat *bid)
 	size_t prev_out_len = 0, in_len = 0, out_len = 0;
 	str s = NULL, out = NULL, in = NULL, msg = MAL_SUCCEED;
 	iconv_t cd;
-	const str f = "UTF8", t = "ASCII//TRANSLIT";
+	const str f = "UTF-8", t = "ASCII//TRANSLIT";
 
 	/* man iconv; /TRANSLIT */
 	if ((cd = iconv_open(t, f)) == (iconv_t)(-1))

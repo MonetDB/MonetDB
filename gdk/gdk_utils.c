@@ -1298,7 +1298,7 @@ GDKreset(int status)
 					killed = true;
 					e = MT_kill_thread(victim);
 					TRC_INFO(GDK, "Killing thread: %d\n", e);
-					(void) ATOMIC_DEC(&GDKnrofthreads);
+					ATOMIC_DEC(&GDKnrofthreads);
 				}
 				ATOMIC_SET(&t->pid, 0);
 			}
@@ -1718,7 +1718,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 		return 0;
 	}
 	/* must not fail after this: the thread has been started */
-	(void) ATOMIC_INC(&GDKnrofthreads);
+	ATOMIC_INC(&GDKnrofthreads);
 	ATOMIC_SET(&s->pid, pid);
 	/* send new thread on its way */
 	MT_sema_up(&t->sem);
@@ -1740,7 +1740,7 @@ THRdel(Thread t)
 		t->data[i] = NULL;
 	t->sp = 0;
 	ATOMIC_SET(&t->pid, 0);	/* deallocate */
-	(void) ATOMIC_DEC(&GDKnrofthreads);
+	ATOMIC_DEC(&GDKnrofthreads);
 }
 
 int
@@ -1798,7 +1798,7 @@ THRinit(void)
 		THRdata[1] = NULL;
 		return -1;
 	}
-	(void) ATOMIC_INC(&GDKnrofthreads);
+	ATOMIC_INC(&GDKnrofthreads);
 	MT_thread_setdata(s);
 	return 0;
 }
@@ -1864,14 +1864,14 @@ GDKvm_cursize(void)
 }
 
 #define heapinc(_memdelta)						\
-	(void) ATOMIC_ADD(&GDK_mallocedbytes_estimate, _memdelta)
+	ATOMIC_ADD(&GDK_mallocedbytes_estimate, _memdelta)
 #define heapdec(_memdelta)						\
-	(void) ATOMIC_SUB(&GDK_mallocedbytes_estimate, _memdelta)
+	ATOMIC_SUB(&GDK_mallocedbytes_estimate, _memdelta)
 
 #define meminc(vmdelta)							\
-	(void) ATOMIC_ADD(&GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG))
+	ATOMIC_ADD(&GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG))
 #define memdec(vmdelta)							\
-	(void) ATOMIC_SUB(&GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG))
+	ATOMIC_SUB(&GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG))
 
 /* Memory allocation
  *

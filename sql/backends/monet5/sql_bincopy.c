@@ -30,7 +30,7 @@
 
 
 static str
-load_trivial(BAT *bat, stream *s, BUN rows_estimate, int *eof_seen)
+load_trivial(BAT *bat, stream *s, const char *filename, bincopy_validate_t validate, int width, BUN rows_estimate, int *eof_seen)
 {
 	const char *mal_operator = "sql.importColumn";
 	str msg = MAL_SUCCEED;
@@ -62,6 +62,7 @@ load_trivial(BAT *bat, stream *s, BUN rows_estimate, int *eof_seen)
 		char *start = Tloc(bat, validCount);
 		char *cur = start;
 		char *end = Tloc(bat, newCount);
+		char *validated = start;
 		while (cur < end) {
 			ssize_t nread = mnstr_read(s, cur, 1, end - cur);
 			if (nread < 0)
@@ -75,6 +76,13 @@ load_trivial(BAT *bat, stream *s, BUN rows_estimate, int *eof_seen)
 				end = cur;
 			}
 			cur += (size_t) nread;
+			if (validate) {
+				size_t to_validate = (cur - validated) / asz;
+				msg = validate(validated, to_validate, width, filename);
+				if (msg != MAL_SUCCEED)
+					break;
+				validated += to_validate * asz;
+			}
 		}
 		if (msg != NULL)
 			goto end;
@@ -102,7 +110,7 @@ end:
 }
 
 static str
-load_fixed_width(BAT *bat, stream *s, int width, bool byteswap, bincopy_decoder_t convert, size_t record_size, int *eof_reached)
+load_fixed_width(BAT *bat, stream *s, const char *filename, int width, bool byteswap, bincopy_decoder_t convert, bincopy_validate_t validate, size_t record_size, int *eof_reached)
 {
 	const char *mal_operator = "sql.importColumn";
 	str msg = MAL_SUCCEED;
@@ -138,7 +146,9 @@ load_fixed_width(BAT *bat, stream *s, int width, bool byteswap, bincopy_decoder_
 		if (BATextend(bat, newCount) != GDK_SUCCEED)
 			bailout("%s", GDK_EXCEPTION);
 
-		msg = convert(Tloc(bat, count), &bs->buf[bs->pos], n, width, byteswap);
+		msg = convert(Tloc(bat, count), &bs->buf[bs->pos], n, byteswap);
+		if (validate != NULL && msg == MAL_SUCCEED)
+			msg = validate(Tloc(bat, count), n, width, filename);
 		if (msg != MAL_SUCCEED)
 			goto end;
 		BATsetcount(bat, newCount);
@@ -192,10 +202,10 @@ load_column(type_record_t *rec, const char *name, BAT *bat, stream *s, int width
 	if (loader) {
 		msg = loader(bat, s, eof_reached, width, byteswap);
 	} else if (decoder) {
-		msg = load_fixed_width(bat, s, width, byteswap, rec->decoder, rec->record_size, eof_reached);
+		msg = load_fixed_width(bat, s, name, width, byteswap, rec->decoder, rec->validate, rec->record_size, eof_reached);
 	} else {
 		// load the bytes directly into the bat, as-is
-		msg = load_trivial(bat, s, rows_estimate, eof_reached);
+		msg = load_trivial(bat, s, name, rec->validate, width, rows_estimate, eof_reached);
 	}
 
 	new_count = BATcount(bat);
@@ -369,7 +379,7 @@ dump_fixed_width(BAT *b, stream *s, BUN start, BUN length, bool byteswap, bincop
 		n = end - pos;
 		if (n > batch_size)
 			n = batch_size;
-		msg = encoder(buffer, Tloc(b, pos), n, 0, byteswap);
+		msg = encoder(buffer, Tloc(b, pos), n, byteswap);
 		if (msg != MAL_SUCCEED)
 			goto end;
 		msg = write_out(buffer, buffer + n * record_size, s);

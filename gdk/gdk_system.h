@@ -222,7 +222,7 @@ gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 
 #define _DBG_LOCK_COUNT_0(l)					\
 	do {							\
-		(void) ATOMIC_INC(&GDKlockcnt);			\
+		ATOMIC_INC(&GDKlockcnt);			\
 		TRC_DEBUG(TEM, "Locking %s...\n", (l)->name); 	\
 	} while (0)
 
@@ -244,11 +244,11 @@ gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 #define _DBG_LOCK_CONTENTION(l)						\
 	do {								\
 		TRC_DEBUG(TEM, "Lock %s contention\n", (l)->name); 	\
-		(void) ATOMIC_INC(&GDKlockcontentioncnt);		\
-		(void) ATOMIC_INC(&(l)->contention);			\
+		ATOMIC_INC(&GDKlockcontentioncnt);			\
+		ATOMIC_INC(&(l)->contention);				\
 	} while (0)
 
-#define _DBG_LOCK_SLEEP(l)	((void) ATOMIC_INC(&(l)->sleep))
+#define _DBG_LOCK_SLEEP(l)	(ATOMIC_INC(&(l)->sleep))
 
 #define _DBG_LOCK_COUNT_2(l)						\
 	do {								\
@@ -559,7 +559,7 @@ typedef struct MT_RWLock {
 #define MT_rwlock_rdlock(l)				\
 	do {						\
 		pthread_mutex_lock(&(l)->lock);		\
-		(void) ATOMIC_INC(&(l)->readers);	\
+		ATOMIC_INC(&(l)->readers);		\
 		pthread_mutex_unlock(&(l)->lock);	\
 	} while (0)
 
@@ -568,14 +568,14 @@ MT_rwlock_rdtry(MT_RWLock *l)
 {
 	if (pthread_mutex_trylock(&l->lock) != 0)
 		return false;
-	(void) ATOMIC_INC(&(l)->readers);
+	ATOMIC_INC(&(l)->readers);
 	pthread_mutex_unlock(&l->lock);
 	return true;
 }
 
-#define MT_rwlock_rdunlock(l)				\
-	do {						\
-		(void) ATOMIC_DEC(&(l)->readers);	\
+#define MT_rwlock_rdunlock(l)			\
+	do {					\
+		ATOMIC_DEC(&(l)->readers);	\
 	} while (0)
 
 #define MT_rwlock_wrlock(l)				\

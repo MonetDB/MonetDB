@@ -61,6 +61,7 @@ add_executable(bincopydata
   bincopydata.h
   bincopytemporaldata.c
   bincopyuuid.c
+  bincopydecimal_impl.h
   )
 
 target_link_libraries(bincopydata

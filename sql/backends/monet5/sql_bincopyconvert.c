@@ -27,99 +27,112 @@
 
 
 static str
-validate_bit(void *dst_, void *src_, size_t count, int width, bool byteswap)
+validate_bit(void *dst_, size_t count, int width, const char *filename)
 {
 	(void)width;
-	(void)byteswap;
-	bit *dst = dst_;
-	const unsigned char *src = src_;
+	const unsigned char *data = dst_;
 
 	for (size_t i = 0; i < count; i++) {
-		if (*src > 1 && *src != 0x80)
-			throw(SQL, "convert_bit", SQLSTATE(22003) "invalid boolean byte value: %d", *src);
-		*dst++ = (bit)*src++;
+		if (data[i] > 1 && data[i] != 0x80)
+			throw(SQL, "convert_bit", SQLSTATE(22003) "invalid boolean byte value %d in %s", data[i], filename);
 	}
 	return MAL_SUCCEED;
 }
 
 // width is only nonzero for DECIMAL types. For plain integer types it is 0.
-#define VALIDATE_DECIMAL(TYP) do { \
+#define VALIDATE_DECIMAL(TYP,NIL_VALUE) do { \
 		if (width) { \
 			TYP m = 1; \
 			for (int i = 0; i < width; i++) \
 				m *= 10; \
-			dst = dst_; \
+			TYP *dst = dst_; \
 			for (size_t i = 0; i < count; i++) { \
+				if (dst[i] == NIL_VALUE) \
+					continue; \
 				if (dst[i] >= m || dst[i] <= -m) \
-					throw(SQL, "convert", SQLSTATE(22003) "decimal out of range"); \
+					throw(SQL, "convert", SQLSTATE(22003) "decimal out of range in %s", filename); \
 			} \
 		} \
     } while (0)
 
 
 static str
-byteswap_sht(void *dst_, void *src_, size_t count, int width, bool byteswap)
+byteswap_sht(void *dst_, void *src_, size_t count, bool byteswap)
 {
 	assert(byteswap); (void)byteswap; // otherwise, why call us?
 	sht *dst = dst_;
 	const sht *src = src_;
 	for (size_t i = 0; i < count; i++)
 		*dst++ = copy_binary_byteswap16(*src++);
-
-	VALIDATE_DECIMAL(sht);
-
 	return MAL_SUCCEED;
 }
 
 static str
-byteswap_int(void *dst_, void *src_, size_t count, int width, bool byteswap)
+validate_sht(void *dst_, size_t count, int width, const char *filename)
+{
+	VALIDATE_DECIMAL(sht, sht_nil);
+	return MAL_SUCCEED;
+}
+
+static str
+byteswap_int(void *dst_, void *src_, size_t count, bool byteswap)
 {
 	assert(byteswap); (void)byteswap; // otherwise, why call us?
 	int *dst = dst_;
 	const int *src = src_;
 	for (size_t i = 0; i < count; i++)
 		*dst++ = copy_binary_byteswap32(*src++);
-
-	VALIDATE_DECIMAL(int);
-
 	return MAL_SUCCEED;
 }
 
 static str
-byteswap_lng(void *dst_, void *src_, size_t count, int width, bool byteswap)
+validate_int(void *dst_, size_t count, int width, const char *filename)
+{
+	VALIDATE_DECIMAL(int, int_nil);
+	return MAL_SUCCEED;
+}
+
+static str
+byteswap_lng(void *dst_, void *src_, size_t count, bool byteswap)
 {
 	assert(byteswap); (void)byteswap; // otherwise, why call us?
 	lng *dst = dst_;
 	const lng *src = src_;
 	for (size_t i = 0; i < count; i++)
 		*dst++ = copy_binary_byteswap64(*src++);
+	return MAL_SUCCEED;
+}
 
-	VALIDATE_DECIMAL(lng);
-
+static str
+validate_lng(void *dst_, size_t count, int width, const char *filename)
+{
+	VALIDATE_DECIMAL(lng, lng_nil);
 	return MAL_SUCCEED;
 }
 
 #ifdef HAVE_HGE
 static str
-byteswap_hge(void *dst_, void *src_, size_t count, int width, bool byteswap)
+byteswap_hge(void *dst_, void *src_, size_t count, bool byteswap)
 {
 	assert(byteswap); (void)byteswap; // otherwise, why call us?
 	hge *dst = dst_;
 	const hge *src = src_;
 	for (size_t i = 0; i < count; i++)
 		*dst++ = copy_binary_byteswap128(*src++);
+	return MAL_SUCCEED;
+}
 
-	VALIDATE_DECIMAL(hge);
-
+static str
+validate_hge(void *dst_, size_t count, int width, const char *filename)
+{
+	VALIDATE_DECIMAL(hge, hge_nil);
 	return MAL_SUCCEED;
 }
 #endif
 
 static str
-byteswap_flt(void *dst_, void *src_, size_t count, int width, bool byteswap)
+byteswap_flt(void *dst_, void *src_, size_t count, bool byteswap)
 {
-	(void)width;
-
 	// Verify that size and alignment requirements of flt do not exceed int.
 	// This is important because we use the int32 byteswap to byteswap the floats.
 	assert(sizeof(uint32_t) == sizeof(flt));
@@ -134,10 +147,8 @@ byteswap_flt(void *dst_, void *src_, size_t count, int width, bool byteswap)
 }
 
 static str
-byteswap_dbl(void *dst_, void *src_, size_t count, int width, bool byteswap)
+byteswap_dbl(void *dst_, void *src_, size_t count, bool byteswap)
 {
-	(void)width;
-
 	// Verify that size and alignment requirements of dbl do not exceed lng
 	// This is important because we use the int64 byteswap to byteswap the doubles.
 	assert(sizeof(uint64_t) == sizeof(dbl));
@@ -153,10 +164,8 @@ byteswap_dbl(void *dst_, void *src_, size_t count, int width, bool byteswap)
 
 
 static str
-decode_date(void *dst_, void *src_, size_t count, int width, bool byteswap)
+decode_date(void *dst_, void *src_, size_t count, bool byteswap)
 {
-	(void)width;
-
 	date *dst = dst_;
 	copy_binary_date *src = src_;
 
@@ -173,9 +182,8 @@ decode_date(void *dst_, void *src_, size_t count, int width, bool byteswap)
 }
 
 static str
-encode_date(void *dst_, void *src_, size_t count, int width, bool byteswap)
+encode_date(void *dst_, void *src_, size_t count, bool byteswap)
 {
-	(void)width;
 	copy_binary_date *dst = dst_;
 	date *src = src_;
 	for (size_t i = 0; i < count; i++) {
@@ -201,10 +209,8 @@ encode_date(void *dst_, void *src_, size_t count, int width, bool byteswap)
 }
 
 static str
-decode_time(void *dst_, void *src_, size_t count, int width, bool byteswap)
+decode_time(void *dst_, void *src_, size_t count, bool byteswap)
 {
-	(void)width;
-
 	daytime *dst = dst_;
 	copy_binary_time *src = src_;
 
@@ -221,9 +227,8 @@ decode_time(void *dst_, void *src_, size_t count, int width, bool byteswap)
 }
 
 static str
-encode_time(void *dst_, void *src_, size_t count, int width, bool byteswap)
+encode_time(void *dst_, void *src_, size_t count, bool byteswap)
 {
-	(void)width;
 	copy_binary_time *dst = dst_;
 	daytime *src = src_;
 	for (size_t i = 0; i < count; i++) {
@@ -252,10 +257,8 @@ encode_time(void *dst_, void *src_, size_t count, int width, bool byteswap)
 }
 
 static str
-decode_timestamp(void *dst_, void *src_, size_t count, int width, bool byteswap)
+decode_timestamp(void *dst_, void *src_, size_t count, bool byteswap)
 {
-	(void)width;
-
 	timestamp *dst = dst_;
 	copy_binary_timestamp *src = src_;
 
@@ -275,10 +278,8 @@ decode_timestamp(void *dst_, void *src_, size_t count, int width, bool byteswap)
 
 
 static str
-encode_timestamp(void *dst_, void *src_, size_t count, int width, bool byteswap)
+encode_timestamp(void *dst_, void *src_, size_t count, bool byteswap)
 {
-	(void)width;
-
 	copy_binary_timestamp *dst = dst_;
 	timestamp *src = src_;
 	for (size_t i = 0; i < count; i++) {
@@ -581,18 +582,16 @@ static struct type_record_t type_recs[] = {
 	// no conversion, no byteswapping
 	{ "bte", "bte", .encoder_trivial=true, .decoder_trivial=true},
 	{ "uuid", "uuid", .encoder_trivial=true, .decoder_trivial=true},
-
-	// no conversion and no byteswapping but we must do range checking on loading
-	{ "bit", "bit", .trivial_if_no_byteswap=false, .decoder=validate_bit, .encoder_trivial=true},
+	{ "bit", "bit", .encoder_trivial=true, .decoder_trivial=true, .validate=validate_bit },
 
 	// vanilla integer types
-	{ "sht", "sht", .trivial_if_no_byteswap=true, .decoder=byteswap_sht, .encoder=byteswap_sht},
-	{ "int", "int", .trivial_if_no_byteswap=true, .decoder=byteswap_int, .encoder=byteswap_int},
-	{ "lng", "lng", .trivial_if_no_byteswap=true, .decoder=byteswap_lng, .encoder=byteswap_lng},
+	{ "sht", "sht", .trivial_if_no_byteswap=true, .decoder=byteswap_sht, .encoder=byteswap_sht, .validate=validate_sht },
+	{ "int", "int", .trivial_if_no_byteswap=true, .decoder=byteswap_int, .encoder=byteswap_int, .validate=validate_int },
+	{ "lng", "lng", .trivial_if_no_byteswap=true, .decoder=byteswap_lng, .encoder=byteswap_lng, .validate=validate_lng },
 	{ "flt", "flt", .trivial_if_no_byteswap=true, .decoder=byteswap_flt, .encoder=byteswap_flt},
 	{ "dbl", "dbl", .trivial_if_no_byteswap=true, .decoder=byteswap_dbl, .encoder=byteswap_dbl},
 #ifdef HAVE_HGE
-	{ "hge", "hge", .trivial_if_no_byteswap=true, .decoder=byteswap_hge, .encoder=byteswap_hge},
+	{ "hge", "hge", .trivial_if_no_byteswap=true, .decoder=byteswap_hge, .encoder=byteswap_hge, .validate=validate_hge },
 #endif
 
 	{ "blob", "blob", .loader=load_blob, .dumper=dump_blob },

@@ -37,10 +37,11 @@
 //    the stream and the BAT and does everything necessary to load the data into
 //    the BAT.
 
-typedef str (*bincopy_decoder_t)(void *dst,void *src, size_t count, int width, bool byteswap);
+typedef str (*bincopy_decoder_t)(void *dst,void *src, size_t count, bool byteswap);
+typedef str (*bincopy_validate_t)(void *dst, size_t count, int width, const char *filename);
 typedef str (*bincopy_loader_t)(BAT *bat, stream *s, int *eof_reached, int width, bool byteswap);
 
-typedef str (*bincopy_encoder_t)(void *dst, void *src, size_t count, int width, bool byteswap);
+typedef str (*bincopy_encoder_t)(void *dst, void *src, size_t count, bool byteswap);
 typedef str (*bincopy_dumper_t)(BAT *bat, stream *s, BUN start, BUN length, bool byteswap);
 
 struct type_record_t {
@@ -51,6 +52,7 @@ struct type_record_t {
 
 	bool decoder_trivial;
 	bincopy_decoder_t decoder;
+	bincopy_validate_t validate;
 	bincopy_loader_t loader;
 
 	bool encoder_trivial;

@@ -753,7 +753,7 @@ void
 HEAPincref(Heap *h)
 {
 	//printf("inc ref(%d) %p %d\n", (int)h->refs, h, h->parentid);
-	(void)ATOMIC_INC(&h->refs);
+	ATOMIC_INC(&h->refs);
 }
 
 /*
