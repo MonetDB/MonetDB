@@ -309,13 +309,8 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	}
 
 	hlen = STRIMP_HISTSIZE;
-	if ((hist = (PairHistogramElem *)GDKmalloc(hlen*sizeof(PairHistogramElem))) == NULL) {
+	if ((hist = (PairHistogramElem *)GDKzalloc(hlen*sizeof(PairHistogramElem))) == NULL) {
 		return false;
-	}
-
-	for(hidx = 0; hidx < hlen; hidx++) {
-		hist[hidx].p = NULL;
-		hist[hidx].cnt = 0;
 	}
 
 	// Create Histogram
