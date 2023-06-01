@@ -10,6 +10,14 @@ fkeys
 keys
 keys
 
+query T
+select name from columns where contains(name, 'x0x', false)
+----
+
+query T
+select name from columns where name like '%x0x%'
+----
+
 statement ok
 create table foo(x string)
 
