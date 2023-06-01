@@ -6008,6 +6008,8 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 		if ((res = sys_drop_table(tr, t, drop_action)))
 			return res;
 
+	if (isNew(t))
+		t->base.deleted = 1;
 	if (is_global) {
 		if ((res = os_del(s->tables, tr, t->base.name, dup_base(&t->base))))
 			return res;
