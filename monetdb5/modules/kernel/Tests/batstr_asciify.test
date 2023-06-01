@@ -40,3 +40,11 @@ M"uller
 
 statement ok
 drop table bar;
+
+query TT
+select name, asciify(name) from columns where name <> asciify(name)
+----
+
+query TT
+select name, asciify(name) from args where name <> asciify(name)
+----
