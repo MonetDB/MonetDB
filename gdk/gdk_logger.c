@@ -451,7 +451,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT** cands)
 				}
 			}
 		} else if (l->flag == LOG_UPDATE_BULK) {
-	    		if (mnstr_readLng(lg->input_log, &offset) != 1) {
+			if (mnstr_readLng(lg->input_log, &offset) != 1) {
 				if (r)
 					BBPreclaim(r);
 				return LOG_ERR;
@@ -2315,8 +2315,8 @@ log_create(int debug, const char *fn, const char *logdir, int version, preversio
 	}
 	lg->current = lg->current->next;
 	assert(lg->pending == NULL && lg->flush_ranges == NULL);
-	lg->pending			= lg->current;
-	lg->flush_ranges	= lg->current;
+	lg->pending = lg->current;
+	lg->flush_ranges = lg->current;
 	return lg;
 }
 
@@ -2926,7 +2926,7 @@ log_tdone(logger* lg, logged_range *range, ulng commit_ts) {
 
 static void
 do_rotate(logger *lg) {
-	logged_range* next	= lg->current->next;
+	logged_range* next = lg->current->next;
 	if (next) {
 		assert(ATOMIC_GET(&next->refcount) == 1);
 		ulng end = ATOMIC_GET(&lg->current->end);
