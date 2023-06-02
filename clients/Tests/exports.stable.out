@@ -1656,7 +1656,7 @@ bool mnstr_get_swapbytes(const stream *s);
 int mnstr_init(void);
 int mnstr_isalive(const stream *s);
 bool mnstr_isbinary(const stream *s);
-char *mnstr_name(const stream *s);
+const char *mnstr_name(const stream *s);
 const char *mnstr_peek_error(const stream *s);
 int mnstr_printf(stream *restrict s, _In_z_ _Printf_format_string_ const char *restrict format, ...) __attribute__((__format__(__printf__, 2, 3)));
 ssize_t mnstr_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt);
