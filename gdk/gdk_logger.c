@@ -1059,7 +1059,7 @@ log_open_output(logger *lg)
 			return GDK_FAIL;
 		}
 
-		TRC_DEBUG(WAL, "opening %s.%s", LOGFILE, id);
+		TRC_INFO(WAL, "opening %s.%s", LOGFILE, id);
 		new_range->output_log = open_wstream(filename);
 		if (new_range->output_log) {
 			short byteorder = 1234;
@@ -1093,7 +1093,7 @@ static inline void
 log_close_input(logger *lg)
 {
 	if (!lg->inmemory && lg->input_log) {
-		TRC_DEBUG(WAL, "closing input log %s", mnstr_name(lg->input_log));
+		TRC_INFO(WAL, "closing input log %s", mnstr_name(lg->input_log));
 		close_stream(lg->input_log);
 	}
 	lg->input_log = NULL;
@@ -1103,7 +1103,7 @@ static inline void
 log_close_output(logger *lg)
 {
 	if (!LOG_DISABLED(lg) && lg->current->output_log) {
-		TRC_DEBUG(WAL, "closing output log %s", mnstr_name(lg->current->output_log));
+		TRC_INFO(WAL, "closing output log %s", mnstr_name(lg->current->output_log));
 		close_stream(lg->current->output_log);
 	}
 	lg->current->output_log = NULL;
@@ -1112,7 +1112,7 @@ log_close_output(logger *lg)
 static gdk_return
 log_open_input(logger *lg, const char *filename, bool *filemissing)
 {
-	TRC_DEBUG(WAL, "opening input log %s", filename);
+	TRC_INFO(WAL, "opening input log %s", filename);
 	lg->input_log = open_rstream(filename);
 
 	/* if the file doesn't exist, there is nothing to be read back */
@@ -1269,7 +1269,7 @@ log_readlog(logger *lg, const char *filename, bool *filemissing)
 
 	assert(!lg->inmemory);
 
-	TRC_DEBUG(WAL, "opening %s\n", filename);
+	TRC_INFO(WAL, "opening %s\n", filename);
 
 	gdk_return res = log_open_input(lg, filename, filemissing);
 	if (!lg->input_log || res != GDK_SUCCEED)
@@ -1283,8 +1283,8 @@ log_readlog(logger *lg, const char *filename, bool *filemissing)
 		return GDK_FAIL;
 	}
 	t0 = time(NULL);
-	TRC_DEBUG_IF(WAL) {
-		TRC_DEBUG_ENDIF(WAL, "Start reading the write-ahead log '%s'\n", filename);
+	TRC_INFO_IF(WAL) {
+		TRC_INFO_ENDIF(WAL, "Start reading the write-ahead log '%s'\n", filename);
 		GDKtracer_flush_buffer();
 	}
 	while (err != LOG_EOF && err != LOG_ERR) {
@@ -1294,9 +1294,9 @@ log_readlog(logger *lg, const char *filename, bool *filemissing)
 			t0 = t1;
 			/* not more than once every 10 seconds */
 			fpos = (lng) getfilepos(getFile(lg->input_log));
-			TRC_DEBUG_IF(WAL) {
+			TRC_INFO_IF(WAL) {
 				if (fpos >= 0) {
-					TRC_DEBUG_ENDIF(WAL, "still reading write-ahead log \"%s\" (%d%% done)\n", filename, (int) ((fpos * 100 + 50) / sb.st_size));
+					TRC_INFO_ENDIF(WAL, "still reading write-ahead log \"%s\" (%d%% done)\n", filename, (int) ((fpos * 100 + 50) / sb.st_size));
 					GDKtracer_flush_buffer();
 				}
 			}
@@ -1307,8 +1307,8 @@ log_readlog(logger *lg, const char *filename, bool *filemissing)
 	lg->input_log = NULL;
 
 	/* remaining transactions are not committed, ie abort */
-	TRC_DEBUG_IF(WAL) {
-		TRC_DEBUG_ENDIF(WAL, "Finished reading the write-ahead log '%s'\n", filename);
+	TRC_INFO_IF(WAL) {
+		TRC_INFO_ENDIF(WAL, "Finished reading the write-ahead log '%s'\n", filename);
 		GDKtracer_flush_buffer();
 	}
 	/* we cannot distinguish errors from incomplete transactions
@@ -1902,7 +1902,7 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 		    (lg->dcatalog = BATsetaccess(lg->dcatalog, BAT_READ)) == NULL) {
 			goto error;
 		}
-		TRC_DEBUG(WAL, "create %s catalog\n", fn);
+		TRC_INFO(WAL, "create %s catalog\n", fn);
 
 		/* give the catalog bats names so we can find them
 		 * next time */
@@ -2225,7 +2225,7 @@ do_flush_range_cleanup(logger* lg) {
 	for (frange = first; frange && frange != flast; frange = frange->next) {
 		ATOMIC_DEC(&frange->refcount);
 		if (!LOG_DISABLED(lg) && frange->output_log) {
-			TRC_DEBUG(WAL, "closing output log %s", mnstr_name(frange->output_log));
+			TRC_INFO(WAL, "closing output log %s", mnstr_name(frange->output_log));
 			close_stream(frange->output_log);
 			frange->output_log = NULL;
 		}
@@ -2298,15 +2298,15 @@ logger *
 log_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *funcdata)
 {
 	logger *lg;
-	TRC_DEBUG_IF(WAL) {
-		TRC_DEBUG_ENDIF(WAL, "Started processing logs %s/%s version %d\n", fn, logdir, version);
+	TRC_INFO_IF(WAL) {
+		TRC_INFO_ENDIF(WAL, "Started processing logs %s/%s version %d\n", fn, logdir, version);
 		GDKtracer_flush_buffer();
 	}
 	lg = log_new(debug, fn, logdir, version, prefuncp, postfuncp, funcdata);
 	if (lg == NULL)
 		return NULL;
-	TRC_DEBUG_IF(WAL) {
-		TRC_DEBUG_ENDIF(WAL, "Finished processing logs %s/%s\n", fn, logdir);
+	TRC_INFO_IF(WAL) {
+		TRC_INFO_ENDIF(WAL, "Finished processing logs %s/%s\n", fn, logdir);
 		GDKtracer_flush_buffer();
 	}
 	if (GDKsetenv("recovery", "finished") != GDK_SUCCEED) {
