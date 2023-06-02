@@ -1171,14 +1171,14 @@ log_read_transaction(logger *lg)
 		}
 
 		if (lg->debug & 1) {
-			fprintf(stderr, "#log_readlog: ");
 			if (l.flag > 0 &&
 				l.flag != LOG_CLEAR &&
 			    l.flag < (bte) (sizeof(log_commands) / sizeof(log_commands[0])))
-				fprintf(stderr, "%s", log_commands[(int) l.flag]);
+				fprintf(stderr, "#log_readlog: %s %d\n",
+					log_commands[(int) l.flag], l.id);
 			else
-				fprintf(stderr, "%d", l.flag);
-			fprintf(stderr, " %d\n", l.id);
+				fprintf(stderr, "#log_readlog: %d %d\n",
+					l.flag, l.id);
 		}
 		/* the functions we call here can succeed (LOG_OK),
 		 * but they can also fail for two different reasons:
