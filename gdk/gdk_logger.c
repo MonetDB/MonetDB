@@ -441,7 +441,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT** cands)
 				}
 			}
 		} else if (l->flag == LOG_UPDATE_BULK) {
-	    		if (mnstr_readLng(lg->input_log, &offset) != 1) {
+			if (mnstr_readLng(lg->input_log, &offset) != 1) {
 				if (r)
 					BBPreclaim(r);
 				return LOG_ERR;
@@ -1046,12 +1046,6 @@ log_open_output(logger *lg)
 		TRC_CRITICAL(GDK, "allocation failure\n");
 		return GDK_FAIL;
 	}
-	ATOMIC_INIT(&new_range->refcount, 1);
-	ATOMIC_INIT(&new_range->last_ts, 0);
-	ATOMIC_INIT(&new_range->end, 0);
-	ATOMIC_INIT(&new_range->pend, 0);
-	ATOMIC_INIT(&new_range->flushed_end, 0);
-	ATOMIC_INIT(&new_range->drops, 0);
 	if (!LOG_DISABLED(lg)) {
 		char id[32];
 		char *filename;
@@ -1077,12 +1071,19 @@ log_open_output(logger *lg)
 
 		if (new_range->output_log == NULL || mnstr_errnr(new_range->output_log) != MNSTR_NO__ERROR) {
 			TRC_CRITICAL(GDK, "creating %s failed: %s\n", filename, mnstr_peek_error(NULL));
+			close_stream(new_range->output_log);
 			GDKfree(new_range);
 			GDKfree(filename);
 			return GDK_FAIL;
 		}
 		GDKfree(filename);
 	}
+	ATOMIC_INIT(&new_range->refcount, 1);
+	ATOMIC_INIT(&new_range->last_ts, 0);
+	ATOMIC_INIT(&new_range->end, 0);
+	ATOMIC_INIT(&new_range->pend, 0);
+	ATOMIC_INIT(&new_range->flushed_end, 0);
+	ATOMIC_INIT(&new_range->drops, 0);
 	new_range->id = lg->id;
 	new_range->next = NULL;
 	logged_range* current = lg->current;
@@ -2252,6 +2253,12 @@ log_destroy(logger *lg)
 	log_close_output(lg);
 	for (logged_range *p = lg->pending; p; ){
 		logged_range *n = p->next;
+		ATOMIC_DESTROY(&p->refcount);
+		ATOMIC_DESTROY(&p->last_ts);
+		ATOMIC_DESTROY(&p->end);
+		ATOMIC_DESTROY(&p->pend);
+		ATOMIC_DESTROY(&p->flushed_end);
+		ATOMIC_DESTROY(&p->drops);
 		GDKfree(p);
 		p = n;
 	}
@@ -2324,8 +2331,8 @@ log_create(int debug, const char *fn, const char *logdir, int version, preversio
 	}
 	lg->current = lg->current->next;
 	assert(lg->pending == NULL && lg->flush_ranges == NULL);
-	lg->pending			= lg->current;
-	lg->flush_ranges	= lg->current;
+	lg->pending = lg->current;
+	lg->flush_ranges = lg->current;
 	return lg;
 }
 
@@ -2358,7 +2365,7 @@ log_cleanup_range(logger *lg, ulng id)
 
 static void
 do_rotate(logger *lg) {
-	logged_range* next	= lg->current->next;
+	logged_range* next = lg->current->next;
 	if (next) {
 		assert(ATOMIC_GET(&next->refcount) == 1);
 		ulng end = ATOMIC_GET(&lg->current->end);
