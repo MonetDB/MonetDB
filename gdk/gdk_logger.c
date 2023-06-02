@@ -350,8 +350,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT** cands)
 	int tpe;
 
 	assert(!lg->inmemory);
-	if (lg->debug & 1)
-		fprintf(stderr, "#logger found log_read_updates %d %s\n", id, l->flag == LOG_UPDATE ? "update" : "update_buld");
+	TRC_DEBUG(WAL, "found %d %s", id, l->flag == LOG_UPDATE ? "update" : "update_buld");
 
 	if (mnstr_readLng(lg->input_log, &nr) != 1 ||
 	    mnstr_read(lg->input_log, &type_id, 1, 1) != 1)
@@ -769,8 +768,7 @@ log_read_create(logger *lg, trans *tr, log_id id)
 	int tpe;
 
 	assert(!lg->inmemory);
-	if (lg->debug & 1)
-		fprintf(stderr, "#log_read_create %d\n", id);
+	TRC_DEBUG(WAL, "create %d", id);
 
 	if (mnstr_read(lg->input_log, &tt, 1, 1) != 1)
 		return LOG_ERR;
@@ -927,8 +925,9 @@ tr_abort_(logger *lg, trans *tr, int s)
 {
 	int i;
 
-	if (lg->debug & 1)
-		fprintf(stderr, "#tr_abort\n");
+	(void) lg;
+
+	TRC_DEBUG(WAL, "abort");
 
 	for (i = s; i < tr->nr; i++)
 		la_destroy(&tr->changes[i]);
@@ -946,8 +945,7 @@ tr_commit(logger *lg, trans *tr)
 {
 	int i;
 
-	if (lg->debug & 1)
-		fprintf(stderr, "#tr_commit\n");
+	TRC_DEBUG(WAL, "commit");
 
 	for (i = 0; i < tr->nr; i++) {
 		if (la_apply(lg, &tr->changes[i], tr->tid) != GDK_SUCCEED) {
@@ -1061,8 +1059,7 @@ log_open_output(logger *lg)
 			return GDK_FAIL;
 		}
 
-		if (lg->debug & 1)
-			fprintf(stderr, "#log_open_output: %s.%s\n", LOGFILE, id);
+		TRC_DEBUG(WAL, "opening %s.%s", LOGFILE, id);
 		new_range->output_log = open_wstream(filename);
 		if (new_range->output_log) {
 			short byteorder = 1234;
@@ -1095,22 +1092,27 @@ log_open_output(logger *lg)
 static inline void
 log_close_input(logger *lg)
 {
-	if (!lg->inmemory)
+	if (!lg->inmemory && lg->input_log) {
+		TRC_DEBUG(WAL, "closing input log %s", mnstr_name(lg->input_log));
 		close_stream(lg->input_log);
+	}
 	lg->input_log = NULL;
 }
 
 static inline void
 log_close_output(logger *lg)
 {
-	if (!LOG_DISABLED(lg))
+	if (!LOG_DISABLED(lg) && lg->current->output_log) {
+		TRC_DEBUG(WAL, "closing output log %s", mnstr_name(lg->current->output_log));
 		close_stream(lg->current->output_log);
+	}
 	lg->current->output_log = NULL;
 }
 
 static gdk_return
-log_open_input(logger *lg, char *filename, bool *filemissing)
+log_open_input(logger *lg, const char *filename, bool *filemissing)
 {
+	TRC_DEBUG(WAL, "opening input log %s", filename);
 	lg->input_log = open_rstream(filename);
 
 	/* if the file doesn't exist, there is nothing to be read back */
@@ -1160,15 +1162,13 @@ log_read_transaction(logger *lg)
 			break;
 		}
 
-		if (lg->debug & 1) {
-			fprintf(stderr, "#log_readlog: ");
+		TRC_DEBUG_IF(WAL) {
 			if (l.flag > 0 &&
 				l.flag != LOG_CLEAR &&
 			    l.flag < (bte) (sizeof(log_commands) / sizeof(log_commands[0])))
-				fprintf(stderr, "%s", log_commands[(int) l.flag]);
+				TRC_DEBUG_ENDIF(WAL, "%s %d", log_commands[(int) l.flag], l.id);
 			else
-				fprintf(stderr, "%d", l.flag);
-			fprintf(stderr, " %d\n", l.id);
+				TRC_DEBUG_ENDIF(WAL, "%d %d", l.flag, l.id);
 		}
 		/* the functions we call here can succeed (LOG_OK),
 		 * but they can also fail for two different reasons:
@@ -1186,8 +1186,7 @@ log_read_transaction(logger *lg)
 				err = LOG_ERR;
 				break;
 			}
-			if (lg->debug & 1)
-				fprintf(stderr, "#logger tstart %d\n", tr->tid);
+			TRC_DEBUG(WAL, "tstart %d\n", tr->tid);
 			break;
 		case LOG_END:
 			if (tr == NULL)
@@ -1262,7 +1261,7 @@ log_read_transaction(logger *lg)
 }
 
 static gdk_return
-log_readlog(logger *lg, char *filename, bool *filemissing)
+log_readlog(logger *lg, const char *filename, bool *filemissing)
 {
 	log_return err = LOG_OK;
 	time_t t0, t1;
@@ -1270,27 +1269,23 @@ log_readlog(logger *lg, char *filename, bool *filemissing)
 
 	assert(!lg->inmemory);
 
-	if (lg->debug & 1) {
-		fprintf(stderr, "#log_readlog opening %s\n", filename);
-	}
+	TRC_DEBUG(WAL, "opening %s\n", filename);
 
 	gdk_return res = log_open_input(lg, filename, filemissing);
 	if (!lg->input_log || res != GDK_SUCCEED)
 		return res;
 	int fd;
 	if ((fd = getFileNo(lg->input_log)) < 0 || fstat(fd, &sb) < 0) {
-		if (lg->debug & 1) {
-			fprintf(stderr, "!ERROR: log_readlog: fstat on opened file %s failed\n", filename);
-		}
+		GDKsyserror("fstat on opened file %s failed\n", filename);
 		log_close_input(lg);
 		/* If the file could be opened, but fstat fails,
 		 * something weird is going on */
 		return GDK_FAIL;
 	}
 	t0 = time(NULL);
-	if (lg->debug & 1) {
-		printf("# Start reading the write-ahead log '%s'\n", filename);
-		fflush(stdout);
+	TRC_DEBUG_IF(WAL) {
+		TRC_DEBUG_ENDIF(WAL, "Start reading the write-ahead log '%s'\n", filename);
+		GDKtracer_flush_buffer();
 	}
 	while (err != LOG_EOF && err != LOG_ERR) {
 		t1 = time(NULL);
@@ -1299,9 +1294,11 @@ log_readlog(logger *lg, char *filename, bool *filemissing)
 			t0 = t1;
 			/* not more than once every 10 seconds */
 			fpos = (lng) getfilepos(getFile(lg->input_log));
-			if (lg->debug & 1 && fpos >= 0) {
-				printf("# still reading write-ahead log \"%s\" (%d%% done)\n", filename, (int) ((fpos * 100 + 50) / sb.st_size));
-				fflush(stdout);
+			TRC_DEBUG_IF(WAL) {
+				if (fpos >= 0) {
+					TRC_DEBUG_ENDIF(WAL, "still reading write-ahead log \"%s\" (%d%% done)\n", filename, (int) ((fpos * 100 + 50) / sb.st_size));
+					GDKtracer_flush_buffer();
+				}
 			}
 		}
 		err = log_read_transaction(lg);
@@ -1310,9 +1307,9 @@ log_readlog(logger *lg, char *filename, bool *filemissing)
 	lg->input_log = NULL;
 
 	/* remaining transactions are not committed, ie abort */
-	if (lg->debug & 1) {
-		printf("# Finished reading the write-ahead log '%s'\n", filename);
-		fflush(stdout);
+	TRC_DEBUG_IF(WAL) {
+		TRC_DEBUG_ENDIF(WAL, "Finished reading the write-ahead log '%s'\n", filename);
+		GDKtracer_flush_buffer();
 	}
 	/* we cannot distinguish errors from incomplete transactions
 	 * (even if we would log aborts in the logs). So we simply
@@ -1326,13 +1323,12 @@ log_readlog(logger *lg, char *filename, bool *filemissing)
  * processed in the same sequence.
  */
 static gdk_return
-log_readlogs(logger *lg, char *filename)
+log_readlogs(logger *lg, const char *filename)
 {
 	gdk_return res = GDK_SUCCEED;
 
 	assert(!lg->inmemory);
-	if (lg->debug & 1)
-		fprintf(stderr, "#log_readlogs logger id is " LLFMT " last logger id is " LLFMT "\n", lg->id, lg->saved_id);
+	TRC_DEBUG(WAL, "logger id is " LLFMT " last logger id is " LLFMT "\n", lg->id, lg->saved_id);
 
 	char log_filename[FILENAME_MAX];
 	if (lg->saved_id >= lg->id) {
@@ -1357,8 +1353,7 @@ log_readlogs(logger *lg, char *filename)
 static gdk_return
 log_commit(logger *lg)
 {
-	if (lg->debug & 1)
-		fprintf(stderr, "#log_commit\n");
+	TRC_DEBUG(WAL, "commit");
 
 	return bm_commit(lg);
 }
@@ -1660,8 +1655,7 @@ bm_subcommit(logger *lg)
 
 		if (lids && lids[p] != lng_nil && lids[p] <= lg->saved_tid)
 			cleanup++;
-		if (lg->debug & 1)
-			fprintf(stderr, "#commit new %s (%d)\n", BBP_logical(col), col);
+		TRC_DEBUG(WAL, "new %s (%d)\n", BBP_logical(col), col);
 		assert(col);
 		sizes[i] = cnts?(BUN)cnts[p]:0;
 		n[i++] = col;
@@ -1764,17 +1758,16 @@ bm_subcommit(logger *lg)
 
 	assert((BUN) i <= nn);
 	log_unlock(lg);
-	if (lg->debug & 1)
+	TRC_DEBUG_IF(WAL)
 		t0 = GDKusec();
 	res = TMsubcommit_list(n, cnts?sizes:NULL, i, lg->saved_id, lg->saved_tid);
-	if (lg->debug & 1)
-		fprintf(stderr, "#subcommit " LLFMT "usec\n", GDKusec() - t0);
+	TRC_DEBUG(WAL, "subcommit " LLFMT "usec\n", GDKusec() - t0);
 	if (res == GDK_SUCCEED) { /* now cleanup */
-		for(i=0;i<rcnt; i++) {
-			if (lg->debug & 1) {
-				fprintf(stderr, "#release %d\n", r[i]);
+		for (i = 0; i < rcnt; i++) {
+			TRC_DEBUG_IF(WAL) {
+				TRC_DEBUG_ENDIF(WAL, "release %d\n", r[i]);
 				if (BBP_lrefs(r[i]) != 2)
-					fprintf(stderr, "#release %d %d\n", r[i], BBP_lrefs(r[i]));
+					TRC_DEBUG_ENDIF(WAL, "release %d %d\n", r[i], BBP_lrefs(r[i]));
 			}
 			BBPrelease(r[i]);
 		}
@@ -1831,7 +1824,7 @@ log_cleanup(logger *lg, lng id)
  * unless running in read-only mode
  * Load data and persist it in the BATs */
 static gdk_return
-log_load(int debug, const char *fn, const char *logdir, logger *lg, char filename[FILENAME_MAX])
+log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_MAX])
 {
 	FILE *fp = NULL;
 	char bak[FILENAME_MAX];
@@ -1909,8 +1902,7 @@ log_load(int debug, const char *fn, const char *logdir, logger *lg, char filenam
 		    (lg->dcatalog = BATsetaccess(lg->dcatalog, BAT_READ)) == NULL) {
 			goto error;
 		}
-		if (debug & 1)
-			fprintf(stderr, "#create %s catalog\n", fn);
+		TRC_DEBUG(WAL, "create %s catalog\n", fn);
 
 		/* give the catalog bats names so we can find them
 		 * next time */
@@ -2195,9 +2187,7 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 		GDKfree(lg);
 		return NULL;
 	}
-	if (lg->debug & 1) {
-		fprintf(stderr, "#log_new dir set to %s\n", lg->dir);
-	}
+	TRC_DEBUG(WAL, "dir set to %s\n", lg->dir);
 
 	MT_lock_init(&lg->lock, fn);
 	MT_lock_init(&lg->rotation_lock, "rotation_lock");
@@ -2205,7 +2195,7 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 	MT_cond_init(&lg->excl_flush_cv);
 	ATOMIC_INIT(&lg->nr_flushers, 0);
 
-	if (log_load(debug, fn, logdir, lg, filename) == GDK_SUCCEED) {
+	if (log_load(fn, logdir, lg, filename) == GDK_SUCCEED) {
 		return lg;
 	}
 	return NULL;
@@ -2234,7 +2224,8 @@ do_flush_range_cleanup(logger* lg) {
 
 	for (frange = first; frange && frange != flast; frange = frange->next) {
 		ATOMIC_DEC(&frange->refcount);
-		if (!LOG_DISABLED(lg)) {
+		if (!LOG_DISABLED(lg) && frange->output_log) {
+			TRC_DEBUG(WAL, "closing output log %s", mnstr_name(frange->output_log));
 			close_stream(frange->output_log);
 			frange->output_log = NULL;
 		}
@@ -2307,16 +2298,16 @@ logger *
 log_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *funcdata)
 {
 	logger *lg;
+	TRC_DEBUG_IF(WAL) {
+		TRC_DEBUG_ENDIF(WAL, "Started processing logs %s/%s version %d\n", fn, logdir, version);
+		GDKtracer_flush_buffer();
+	}
 	lg = log_new(debug, fn, logdir, version, prefuncp, postfuncp, funcdata);
 	if (lg == NULL)
 		return NULL;
-	if (lg->debug & 1) {
-		printf("# Started processing logs %s/%s version %d\n",fn,logdir,version);
-		fflush(stdout);
-	}
-	if (lg->debug & 1) {
-		printf("# Finished processing logs %s/%s\n",fn,logdir);
-		fflush(stdout);
+	TRC_DEBUG_IF(WAL) {
+		TRC_DEBUG_ENDIF(WAL, "Finished processing logs %s/%s\n", fn, logdir);
+		GDKtracer_flush_buffer();
 	}
 	if (GDKsetenv("recovery", "finished") != GDK_SUCCEED) {
 		log_destroy(lg);
@@ -2544,8 +2535,7 @@ log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
 
 	ok = wt(val, lg->current->output_log, 1);
 
-	if (lg->debug & 1)
-		fprintf(stderr, "#Logged %d " LLFMT " inserts\n", id, nr);
+	TRC_DEBUG(WAL, "Logged %d " LLFMT " inserts\n", id, nr);
 
   bailout:
 	if (ok != GDK_SUCCEED) {
@@ -2677,8 +2667,7 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced,
 		bat_iterator_end(&bi);
 	}
 
-	if (lg->debug & 1)
-		fprintf(stderr, "#Logged %d " LLFMT " inserts\n", id, nr);
+	TRC_DEBUG(WAL, "Logged %d " LLFMT " inserts\n", id, nr);
 
   bailout:
 	if (ok != GDK_SUCCEED) {
@@ -2719,8 +2708,7 @@ log_bat_persists(logger *lg, BAT *b, log_id id)
 		}
 	}
 	ATOMIC_INC(&lg->current->end);
-	if (lg->debug & 1)
-		fprintf(stderr, "#persists id (%d) bat (%d)\n", id, b->batCacheid);
+	TRC_DEBUG(WAL, "id (%d) bat (%d)\n", id, b->batCacheid);
 	gdk_return r = internal_log_bat(lg, b, id, 0, BATcount(b), 0, 0);
 	log_unlock(lg);
 	if (r != GDK_SUCCEED)
@@ -2756,9 +2744,7 @@ log_bat_transient(logger *lg, log_id id)
 		}
 	}
 	ATOMIC_INC(&lg->current->end);
-	if (lg->debug & 1)
-		fprintf(stderr, "#Logged destroyed bat (%d) %d\n", id,
-				bid);
+	TRC_DEBUG(WAL, "Logged destroyed bat (%d) %d\n", id, bid);
 	BAT *b = BBPquickdesc(bid);
 	assert(b);
 	BUN cnt = BATcount(b);
@@ -2870,8 +2856,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 		}
 	}
 
-	if (lg->debug & 1)
-		fprintf(stderr, "#Logged %d " LLFMT " inserts\n", id, nr);
+	TRC_DEBUG(WAL, "Logged %d " LLFMT " inserts\n", id, nr);
 
   bailout:
 	bat_iterator_end(&vi);
@@ -2907,8 +2892,7 @@ check_rotation_conditions(logger *lg) {
 gdk_return
 log_tend(logger *lg)
 {
-	if (lg->debug & 1)
-		fprintf(stderr, "#log_tend %d\n", lg->tid);
+	TRC_DEBUG(WAL, "tend %d\n", lg->tid);
 
 	*lg->writer_end = (ulng) ATOMIC_INC(&lg->current->end);
 	if (LOG_DISABLED(lg)) {
@@ -2952,9 +2936,10 @@ do_flush(logged_range *range) {
 }
 
 static inline void
-log_tdone(logger* lg, logged_range *range, ulng commit_ts) {
-	if (lg->debug & 1)
-		fprintf(stderr, "#log_tdone " LLFMT "\n", commit_ts);
+log_tdone(logger* lg, logged_range *range, ulng commit_ts)
+{
+	(void) lg;
+	TRC_DEBUG(WAL, "tdone " LLFMT "\n", commit_ts);
 
 	if ((ulng) ATOMIC_GET(&range->last_ts) < commit_ts)
 		ATOMIC_SET(&range->last_ts, commit_ts);
@@ -3025,8 +3010,7 @@ log_tsequence_(logger *lg, int seq, lng val)
 	l.flag = LOG_SEQ;
 	l.id = seq;
 
-	if (lg->debug & 1)
-		fprintf(stderr, "#log_tsequence_ (%d," LLFMT ")\n", seq, val);
+	TRC_DEBUG(WAL, "tsequence(%d," LLFMT ")\n", seq, val);
 
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    !mnstr_writeLng(lg->current->output_log, val)) {
@@ -3043,8 +3027,7 @@ log_tsequence(logger *lg, int seq, lng val)
 {
 	BUN p;
 
-	if (lg->debug & 1)
-		fprintf(stderr, "#log_tsequence (%d," LLFMT ")\n", seq, val);
+	TRC_DEBUG(WAL, "tsequence(%d," LLFMT ")\n", seq, val);
 
 	log_lock(lg);
 	MT_lock_set(&lg->seqs_id->theaplock);
@@ -3101,9 +3084,7 @@ bm_commit(logger *lg)
 		assert(lb->batRestricted != BAT_WRITE);
 		logbat_destroy(lb);
 
-		if (lg->debug & 1)
-			fprintf(stderr, "#bm_commit: create %d (%d)\n",
-				bid, BBP_lrefs(bid));
+		TRC_DEBUG(WAL, "create %d (%d)\n", bid, BBP_lrefs(bid));
 	}
 	/* bm_subcommit releases the lock */
 	return bm_subcommit(lg);
@@ -3129,8 +3110,7 @@ log_add_bat(logger *lg, BAT *b, log_id id, int tid)
 		}
 	}
 	bid = b->batCacheid;
-	if (lg->debug & 1)
-		fprintf(stderr, "#create %d\n", id);
+	TRC_DEBUG(WAL, "create %d\n", id);
 	assert(log_find(lg->catalog_bid, lg->dcatalog, bid) == BUN_NONE);
 	if (BUNappend(lg->catalog_bid, &bid, true) != GDK_SUCCEED ||
 	    BUNappend(lg->catalog_id, &id, true) != GDK_SUCCEED ||
@@ -3231,8 +3211,7 @@ log_tstart(logger *lg, bool flushnow, ulng *writer_end)
 	l.flag = LOG_START;
 	l.id = ++lg->tid;
 
-	if (lg->debug & 1)
-		fprintf(stderr, "#log_tstart %d\n", lg->tid);
+	TRC_DEBUG(WAL, "tstart %d\n", lg->tid);
 	if (log_write_format(lg, &l) != GDK_SUCCEED) {
 		ATOMIC_DEC(&lg->current->refcount);
 		return GDK_FAIL;
