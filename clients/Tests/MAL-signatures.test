@@ -25635,7 +25635,12 @@ STRbatAscii;
 Return unicode of head of string
 batstr
 asciify
-command batstr.asciify(X_0:bat[:str]):bat[:str] 
+pattern batstr.asciify(X_0:bat[:str]):bat[:str] 
+BATSTRasciify;
+Transform BAT of strings from UTF8 to ASCII
+batstr
+asciify
+pattern batstr.asciify(X_0:bat[:str], X_1:bat[:oid]):bat[:str] 
 BATSTRasciify;
 Transform BAT of strings from UTF8 to ASCII
 batstr
