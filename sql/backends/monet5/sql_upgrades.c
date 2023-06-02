@@ -140,6 +140,7 @@ sql_fix_system_tables(Client c, mvc *sql)
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands to update system tables.\n\n");
+	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
@@ -294,6 +295,7 @@ sql_update_hugeint(Client c, mvc *sql)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
+	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
@@ -306,6 +308,7 @@ sql_update_shp(Client c)
 {
 	const char *query = "create procedure SHPattach(fname string) external name shp.attach;\ncreate procedure SHPload(fid integer) external name shp.import;\ncreate procedure SHPload(fid integer, filter geometry) external name shp.import;\nupdate sys.functions set system = true where schema_id = 2000 and name in ('shpattach', 'shpload');\n";
 	printf("Running database upgrade commands:\n%s\n", query);
+	fflush(stdout);
 	return SQLstatementIntern(c, query, "update", true, false, NULL);
 }
 #endif
@@ -350,6 +353,7 @@ sql_drop_functions_dependencies_Xs_on_Ys(Client c)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
+	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
@@ -694,25 +698,31 @@ sql_update_storagemodel(Client c, mvc *sql, bool oct2020_upgrade)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
+	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
 
-#define FLUSH_INSERTS_IF_BUFFERFILLED /* Each new value should add about 20 bytes to the buffer, "flush" when is 200 bytes from being full */ \
-	if (pos > 7900) { \
-		pos += snprintf(buf + pos, bufsize - pos, \
-						") as t1(c1,c2,c3) where t1.c1 not in (select \"id\" from sys.dependencies where depend_id = t1.c2);\n"); \
-		assert(pos < bufsize); \
-		printf("Running database upgrade commands:\n%s\n", buf); \
-		err = SQLstatementIntern(c, buf, "update", true, false, NULL); \
-		if (err) \
-			goto bailout; \
-		pos = 0; \
-		pos += snprintf(buf + pos, bufsize - pos, "insert into sys.dependencies select c1, c2, c3 from (values"); \
-		ppos = pos; \
-		first = true; \
-	}
+#define FLUSH_INSERTS_IF_BUFFERFILLED									\
+	do {																\
+		/* Each new value should add about 20 bytes to the buffer, */	\
+		/* "flush" when is 200 bytes from being full */					\
+		if (pos > 7900) {												\
+			pos += snprintf(buf + pos, bufsize - pos,					\
+							") as t1(c1,c2,c3) where t1.c1 not in (select \"id\" from sys.dependencies where depend_id = t1.c2);\n"); \
+			assert(pos < bufsize);										\
+			printf("Running database upgrade commands:\n%s\n", buf);	\
+			fflush(stdout);												\
+			err = SQLstatementIntern(c, buf, "update", true, false, NULL); \
+			if (err)													\
+				goto bailout;											\
+			pos = 0;													\
+			pos += snprintf(buf + pos, bufsize - pos, "insert into sys.dependencies select c1, c2, c3 from (values"); \
+			ppos = pos;													\
+			first = true;												\
+		}																\
+	} while (0)
 
 static str
 sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
@@ -765,7 +775,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 							pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",", next,
 											f->base.id, (int)(!IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY));
 							first = false;
-							FLUSH_INSERTS_IF_BUFFERFILLED
+							FLUSH_INSERTS_IF_BUFFERFILLED;
 						}
 					}
 				} else if (sql->session->status == -1) {
@@ -801,7 +811,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 								pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",",
 												next, t->base.id, (int) VIEW_DEPENDENCY);
 								first = false;
-								FLUSH_INSERTS_IF_BUFFERFILLED
+								FLUSH_INSERTS_IF_BUFFERFILLED;
 							}
 						}
 					}
@@ -829,7 +839,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 									pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",",
 													next, tr->base.id, (int) TRIGGER_DEPENDENCY);
 									first = false;
-									FLUSH_INSERTS_IF_BUFFERFILLED
+									FLUSH_INSERTS_IF_BUFFERFILLED;
 								}
 							}
 						}
@@ -844,6 +854,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
+		fflush(stdout);
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
 
@@ -1072,6 +1083,7 @@ sql_update_nov2019(Client c, mvc *sql)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
+	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", 1, 0, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
@@ -1103,6 +1115,7 @@ sql_update_nov2019_sp1_hugeint(Client c, mvc *sql)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
+	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
@@ -1678,6 +1691,7 @@ sql_update_jun2020(Client c, mvc *sql)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
+	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	if (err == MAL_SUCCEED) {
 		pos = snprintf(buf, bufsize,
@@ -1685,6 +1699,7 @@ sql_update_jun2020(Client c, mvc *sql)
 			       "ALTER TABLE sys.function_languages SET READ ONLY;\n");
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
+		fflush(stdout);
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
 	GDKfree(buf);
@@ -1762,6 +1777,7 @@ sql_update_jun2020_bam(Client c, mvc *m)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
+	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 
 	GDKfree(buf);
@@ -1816,6 +1832,7 @@ sql_update_jun2020_sp1_hugeint(Client c)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
+	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
@@ -1830,6 +1847,7 @@ sql_update_oscar_lidar(Client c)
 		"drop procedure sys.lidarload(string) cascade;\n"
 		"drop procedure sys.lidarexport(string, string, string) cascade;\n";
 	printf("Running database upgrade commands:\n%s\n", query);
+	fflush(stdout);
 	return SQLstatementIntern(c, query, "update", true, false, NULL);
 }
 
@@ -1962,6 +1980,7 @@ sql_update_oscar(Client c, mvc *sql)
 			assert(pos < bufsize);
 
 			printf("Running database upgrade commands:\n%s\n", buf);
+			fflush(stdout);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 		BBPunfix(b->batCacheid);
@@ -2087,6 +2106,7 @@ sql_update_oct2020(Client c, mvc *sql)
 
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
+			fflush(stdout);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 			if (err != MAL_SUCCEED)
 				goto bailout;
@@ -2095,6 +2115,7 @@ sql_update_oct2020(Client c, mvc *sql)
 					"ALTER TABLE sys.keywords SET READ ONLY;\n");
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
+			fflush(stdout);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 			if (err != MAL_SUCCEED)
 				goto bailout;
@@ -2133,6 +2154,7 @@ sql_update_oct2020_sp1(Client c, mvc *sql)
 
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
+		fflush(stdout);
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
 	GDKfree(buf);
@@ -3155,6 +3177,7 @@ sql_update_jul2021(Client c, mvc *sql)
 
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
+			fflush(stdout);
 			if ((err = SQLstatementIntern(c, buf, "update", true, false, NULL)) != MAL_SUCCEED)
 				goto bailout;
 
@@ -3164,6 +3187,7 @@ sql_update_jul2021(Client c, mvc *sql)
 					"ALTER TABLE sys.function_types SET READ ONLY;\n");
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
+			fflush(stdout);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 	}
@@ -3244,6 +3268,7 @@ sql_update_jul2021_5(Client c, mvc *sql)
 
 				assert(pos < bufsize);
 				printf("Running database upgrade commands:\n%s\n", buf);
+				fflush(stdout);
 				err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 			}
 			BBPunfix(b->batCacheid);
@@ -3279,6 +3304,7 @@ sql_update_jan2022(Client c, mvc *sql)
 					"drop filter function sys.strimp_filter(string, string) cascade;\n"
 					"drop procedure sys.strimp_create(string, string, string) cascade;\n";
 				printf("Running database upgrade commands:\n%s\n", query);
+				fflush(stdout);
 				err = SQLstatementIntern(c, query, "update", true, false, NULL);
 			}
 			sql->session->status = 0; /* if the function was not found clean the error */
@@ -4584,6 +4610,7 @@ sql_update_jan2022(Client c, mvc *sql)
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
+	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 
 	GDKfree(buf);
@@ -4684,6 +4711,7 @@ sql_update_sep2022(Client c, mvc *sql)
 		if (err == MAL_SUCCEED) {
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%.*s-- and copying passwords\n\n", endprint, buf);
+			fflush(stdout);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 		bat_iterator_end(&ui);
@@ -4736,6 +4764,7 @@ sql_update_sep2022(Client c, mvc *sql)
 							"update sys.functions set system = true where system <> true and name in ('db_users') and schema_id = 2000 and type = %d;\n", F_UNION);
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
+			fflush(stdout);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 	}
@@ -5071,6 +5100,7 @@ sql_update_sep2022(Client c, mvc *sql)
 
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
+		fflush(stdout);
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
 	res_table_destroy(output);
@@ -5092,11 +5122,13 @@ sql_update_sep2022(Client c, mvc *sql)
 			"DELETE FROM sys.keywords WHERE keyword IN ('LOCKED');\n");
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
+		fflush(stdout);
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		if (err == MAL_SUCCEED) {
 			pos = snprintf(buf, bufsize, "ALTER TABLE sys.keywords SET READ ONLY;\n");
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
+			fflush(stdout);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 	}
@@ -5119,11 +5151,13 @@ sql_update_sep2022(Client c, mvc *sql)
 				"INSERT INTO sys.table_types VALUES (7, 'UNLOGGED TABLE');\n");
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
+		fflush(stdout);
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		if (err == MAL_SUCCEED) {
 			pos = snprintf(buf, bufsize, "ALTER TABLE sys.table_types SET READ ONLY;\n");
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
+			fflush(stdout);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 	}
@@ -5158,6 +5192,7 @@ sql_update_sep2022(Client c, mvc *sql)
 					   "grant select on sys.tracelog to public;\n");
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
+		fflush(stdout);
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
 	res_table_destroy(output);

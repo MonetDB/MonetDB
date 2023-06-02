@@ -200,6 +200,7 @@ monet_hello(void)
 #endif
 			HOST, GDKnr_threads,
 			sz_mem_h, qc[qi], sizeof(oid) * 8);
+	fflush(stdout);
 }
 
 static str
@@ -282,6 +283,11 @@ wmain(int argc, wchar_t **argv)
 main(int argc, char **av)
 #endif
 {
+	/* make sure stdout is line buffered, even when not to a terminal;
+	 * note, on Windows _IOLBF is interpreted as _IOFBF, but all
+	 * relevant calls to print to stdout are followed by a fflush
+	 * anyway */
+	setvbuf(stdout, NULL, _IOLBF, BUFSIZ);
 #ifdef _MSC_VER
 	char **av = malloc((argc + 1) * sizeof(char *));
 	if (av == NULL) {
@@ -295,11 +301,6 @@ main(int argc, char **av)
 		}
 	}
 	av[argc] = NULL;
-#else
-	/* make sure stdout is line buffered, even when not to a terminal;
-	 * on Windows, _IOLBF does the same as _IOFBF, i.e. full
-	 * buffering */
-	setvbuf(stdout, NULL, _IOLBF, BUFSIZ);
 #endif
 	char *prog = *av;
 	opt *set = NULL;
@@ -672,13 +673,13 @@ main(int argc, char **av)
 				printf("#warning: unusable binary location, "
 					   "please use --set monet_mod_path=/path/to/... to "
 					   "allow finding modules\n");
-				fflush(NULL);
+				fflush(stdout);
 			}
 		} else {
 			printf("#warning: unable to determine binary location, "
 				   "please use --set monet_mod_path=/path/to/... to "
 				   "allow finding modules\n");
-			fflush(NULL);
+			fflush(stdout);
 		}
 		if (modpath != NULL &&
 		    GDKsetenv("monet_mod_path", modpath) != GDK_SUCCEED) {
@@ -825,6 +826,7 @@ main(int argc, char **av)
 
 #ifdef _MSC_VER
 	printf("# MonetDB server is started. To stop server press Ctrl-C.\n");
+	fflush(stdout);
 #endif
 
 	/* why busy wait ? */
