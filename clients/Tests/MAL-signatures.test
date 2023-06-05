@@ -26024,11 +26024,6 @@ pattern batstr.replace(X_0:bat[:str], X_1:str, X_2:str):bat[:str]
 STRbatReplacecst;
 Insert a string into another
 batstr
-reverse
-command batstr.reverse(X_0:bat[:str]):bat[:str] 
-BATSTRreverse;
-Reverse a BAT of strings
-batstr
 rpad
 pattern batstr.rpad(X_0:str, X_1:bat[:int]):bat[:str] 
 STRbatRpad_1st_const;
@@ -38973,11 +38968,6 @@ replace
 command str.replace(X_0:str, X_1:str, X_2:str):str 
 STRreplace;
 Insert a string into another
-str
-reverse
-command str.reverse(X_0:str):str 
-STRreverse;
-Reverse a string
 str
 rpad
 command str.rpad(X_0:str, X_1:int):str 

@@ -5184,108 +5184,6 @@ BATSTRasciify(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 }
 
-static inline void
-str_reverse(char *dst, const char *src, size_t len)
-{
-	dst[len] = 0;
-	if (strNil(src)) {
-		assert(len == strlen(str_nil));
-		strcpy(dst, str_nil);
-		return;
-	}
-	while (*src) {
-		if ((*src & 0xF8) == 0xF0) {
-			/* 4 byte UTF-8 sequence */
-			assert(len >= 4);
-			dst[len - 4] = *src++;
-			assert((*src & 0xC0) == 0x80);
-			dst[len - 3] = *src++;
-			assert((*src & 0xC0) == 0x80);
-			dst[len - 2] = *src++;
-			assert((*src & 0xC0) == 0x80);
-			dst[len - 1] = *src++;
-			len -= 4;
-		} else if ((*src & 0xF0) == 0xE0) {
-			/* 3 byte UTF-8 sequence */
-			assert(len >= 3);
-			dst[len - 3] = *src++;
-			assert((*src & 0xC0) == 0x80);
-			dst[len - 2] = *src++;
-			assert((*src & 0xC0) == 0x80);
-			dst[len - 1] = *src++;
-			len -= 3;
-		} else if ((*src & 0xE0) == 0xC0) {
-			/* 2 byte UTF-8 sequence */
-			assert(len >= 2);
-			dst[len - 2] = *src++;
-			assert((*src & 0xC0) == 0x80);
-			dst[len - 1] = *src++;
-			len -= 2;
-		} else {
-			/* 1 byte UTF-8 "sequence" */
-			assert(len >= 1);
-			assert((*src & 0x80) == 0);
-			dst[--len] = *src++;
-		}
-	}
-	assert(len == 0);
-}
-
-static str
-BATSTRreverse(bat *res, const bat *arg)
-{
-	BAT *b = NULL, *bn = NULL;
-	BATiter bi;
-	BUN p, q;
-	const char *src;
-	size_t len = 0, dst_len = 1024;
-	str dst, msg = MAL_SUCCEED;
-	bool nils = false;
-
-	if (!(dst = GDKzalloc(dst_len)))
-		throw(MAL, "batstr.reverse", MAL_MALLOC_FAIL);
-	if (!(b = BATdescriptor(*arg))) {
-		GDKfree(dst);
-		throw(MAL, "batstr.reverse", RUNTIME_OBJECT_MISSING);
-	}
-	assert(b->ttype == TYPE_str);
-	if (!(bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT))) {
-		GDKfree(dst);
-		BBPreclaim(b);
-		throw(MAL, "batstr.reverse", MAL_MALLOC_FAIL);
-	}
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		src = (const char *) BUNtail(bi, p);
-		if (strNil(src)) {
-			assert(len > strlen(src));
-			nils = true;
-			strcpy(dst, str_nil);
-		}
-		else {
-			len = strlen(src);
-			if (len >= dst_len) {
-				dst_len = len + 1024;
-				if ((dst = GDKrealloc(dst, dst_len)) == NULL) {
-					msg = createException(MAL,"batstr.reverse", MAL_MALLOC_FAIL);
-					goto exit;
-				}
-			}
-			str_reverse(dst, src, len);
-		}
-		if (tfastins_nocheckVAR(bn, p, dst) != GDK_SUCCEED) {
-			msg = createException(MAL,"batstr.reverse", GDK_EXCEPTION);
-			goto exit;
-		}
-	}
- exit:
-	bat_iterator_end(&bi);
-	GDKfree(dst);
-	finalize_output(res, bn, msg, nils, q);
-	BBPreclaim(b);
-	return msg;
-}
-
 #include "mel.h"
 mel_func batstr_init_funcs[] = {
 	pattern("batstr", "length", STRbatLength, false, "Return the length of a string.", args(1,2, batarg("",int),batarg("s",str))),
@@ -5476,7 +5374,6 @@ mel_func batstr_init_funcs[] = {
 	pattern("batstr", "space", STRbatSpace, false, "", args(1,3, batarg("",str),batarg("l",int),batarg("s",oid))),
 	pattern("batstr", "asciify", BATSTRasciify, false, "Transform BAT of strings from UTF8 to ASCII", args(1, 2, batarg("",str), batarg("b",str))),
 	pattern("batstr", "asciify", BATSTRasciify, false, "Transform BAT of strings from UTF8 to ASCII", args(1, 3, batarg("",str), batarg("b",str),batarg("s",oid))),
-	command("batstr", "reverse", BATSTRreverse, false, "Reverse a BAT of strings", args(1, 2, batarg("",str), batarg("b",str))),
 	{ .imp=NULL }
 };
 #include "mal_import.h"
