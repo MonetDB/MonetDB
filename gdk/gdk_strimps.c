@@ -138,6 +138,17 @@ histogram_index(PairHistogramElem *hist, size_t hsize, CharPair *p)
 	return pairToIndex(p->pbytes[0], p->pbytes[1]);
 }
 
+inline static uint8_t *
+histindex2bytes(size_t index, uint8_t *psize)
+{
+	*psize = 2;
+	uint8_t *ret = (uint8_t *)malloc(*psize*sizeof(uint8_t));
+	ret[1] = (uint8_t)(index & 0xFFFF);
+	ret[0] = (uint8_t)((index >> 8) & 0xFFFF);
+
+	return ret;
+}
+
 inline static bool
 pair_at(PairIterator *pi, CharPair *p)
 {
@@ -145,6 +156,7 @@ pair_at(PairIterator *pi, CharPair *p)
 		return false;
 	p->pbytes = (uint8_t*)pi->s + pi->pos;
 	p->psize = 2;
+	p->idx = pairToIndex(p->pbytes[0], p->pbytes[1]);
 	return true;
 }
 
@@ -166,35 +178,25 @@ ignored(CharPair *p, uint8_t elm)
 	return isIgnored(p->pbytes[elm]);
 }
 
-#endif // UTF8STRIMPS
+static uint64_t
+STRMPget_mask(Strimps *r, uint64_t idx)
+{
+	return r->masks[idx];
+}
 
-/* Looks up a given pair in the strimp header. Returns the index of the
- * pair, or -1 if it is not found.
- *
- * NOTE: This routine assumes that there are no more than 128 pairs.
+/* Looks up a given pair in the strimp header and returns the index as a
+ * 64 bit integer. The return value has a bit on in the position
+ * corresponding to the index of the pair in the strimp header, or is 0
+ * if the pair does not occur.
  */
-static int8_t
+static uint64_t
 STRMPpairLookup(Strimps *s, CharPair *p)
 {
-	size_t idx = 0;
-	size_t npairs = NPAIRS(((uint64_t *)s->strimps.base)[0]);
-	size_t offset = 0;
-	CharPair sp;
-
-	// The return type implies that we have no more than 128 pairs
-	// in the header.
-	assert(npairs <= 128);
-
-	for (idx = 0; idx < npairs; idx++) {
-		sp.psize = s->sizes_base[idx];
-		sp.pbytes = s->pairs_base + offset;
-		if (pair_equal(&sp, p))
-			return (int8_t)idx;
-		offset += sp.psize;
-	}
-
-	return -1;
+	return STRMPget_mask(s, pairToIndex(p->pbytes[0], p->pbytes[1]));
 }
+
+
+#endif // UTF8STRIMPS
 
 
 /* Computes the bitstring of a string s with respect to the strimp r.
@@ -204,7 +206,7 @@ static uint64_t
 STRMPmakebitstring(const char *s, Strimps *r)
 {
 	uint64_t ret = 0;
-	int8_t pair_idx = 0;
+	/* int8_t pair_idx = 0; */
 	PairIterator pi;
 	CharPair cp;
 
@@ -213,9 +215,7 @@ STRMPmakebitstring(const char *s, Strimps *r)
 	pi.lim = strlen(s);
 
 	while(pair_at(&pi, &cp)) {
-		pair_idx = STRMPpairLookup(r, &cp);
-		if (pair_idx >= 0)
-			ret |= ((uint64_t)0x1 << pair_idx);
+		ret |= STRMPpairLookup(r, &cp);
 		next_pair(&pi);
 	}
 
@@ -229,51 +229,34 @@ STRMPmakebitstring(const char *s, Strimps *r)
 		((TPE *) _a)[_j] = _t;			\
 	} while(0)
 
-/* Finds the indices of the STRIMP_HEADER_SIZE largest counts in a given
- * a histogram. It returns them in the cp pointer.
- *
- * We make one scan of histogram and every time we find a count that is
- * greater than the current minimum of the STRIMP_HEADER_SIZE, we bubble
- * it up in the header until we find a count that is greater. We carry
- * the index in the histogram because this is the information we are
- * actually interested in keeping.
- *
- * At the end of this process we have the indices of STRIMP_HEADER_SIZE
- * largest counts in the histogram. This process is O(n) in time since
- * we are doing constant work (at most STRIMP_HEADER_SIZE-1 comparisons
- * and swaps) for each item in the histogram and as such is
- * (theoretically) more efficient than sorting (O(nlog n))and taking the
- * STRIMP_HEADER_SIZE largest elements. This depends on the size of the
- * histogram n. For some small n sorting might be more efficient, but
- * for such inputs the difference should not be noticeable.
+
+static int
+STRMPhist_cmp(const void *xx, const void *yy)
+{
+	size_t x = ((PairHistogramElem *)xx)->cnt;
+	size_t y = ((PairHistogramElem *)yy)->cnt;
+
+	return x - y;
+}
+
+/*
  */
 static void
 STRMPchoosePairs(PairHistogramElem *hist, size_t hist_size, CharPair *cp)
 {
 	lng t0 = 0;
 	size_t i;
-	uint64_t max_counts[STRIMP_HEADER_SIZE] = {0};
-	size_t indices[STRIMP_HEADER_SIZE] = {0};
-	const size_t cmin_max = STRIMP_HEADER_SIZE - 1;
-	size_t hidx;
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
-	for(i = 0; i < hist_size; i++) {
-		if (max_counts[cmin_max] < hist[i].cnt) {
-			max_counts[cmin_max] = hist[i].cnt;
-			indices[cmin_max] = i;
-			for(hidx = cmin_max; hidx > 0 && max_counts[hidx] > max_counts[hidx-1]; hidx--) {
-				SWAP(max_counts, hidx, hidx-1, uint64_t);
-				SWAP(indices, hidx, hidx-1, size_t);
-			}
-		}
+	qsort(hist, hist_size, sizeof(PairHistogramElem), STRMPhist_cmp);
+	size_t offset = hist_size/2 - STRIMP_HEADER_SIZE/2;
+	for (i = 0; i < STRIMP_PAIRS; i++) {
+		cp[i].pbytes = histindex2bytes(hist[i + offset].idx, &cp[i].psize);
+		cp[i].idx = hist[i + offset].idx;
+		cp[i].mask = ((uint64_t)0x1) << (STRIMP_PAIRS - i);
 	}
 
-	for(i = 0; i < STRIMP_HEADER_SIZE; i++) {
-		cp[i].pbytes = hist[indices[i]].p->pbytes;
-		cp[i].psize = hist[indices[i]].p->psize;
-	}
 
 	TRC_DEBUG(ACCELERATOR, LLFMT " usec\n", GDKusec() - t0);
 }
@@ -314,8 +297,10 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	}
 
 	for(hidx = 0; hidx < hlen; hidx++) {
-		hist[hidx].p = NULL;
+		hist[hidx].encountered = false;
 		hist[hidx].cnt = 0;
+		hist[hidx].mask = 0;
+		hist[hidx].idx = hidx;
 	}
 
 	// Create Histogram
@@ -347,7 +332,8 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 					;
 
 				} else {
-					hidx = histogram_index(hist, hlen, cpp);
+					/* hidx = histogram_index(hist, hlen, cpp); */
+					hidx = cpp->idx;
 #ifndef UTF8STRINGS
 					assert(hidx < hlen);
 #else
@@ -357,18 +343,9 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 					}
 #endif
 					hist[hidx].cnt++;
-					if (hist[hidx].p == NULL) {
+					if (!hist[hidx].encountered) {
 						values++;
-						hist[hidx].p = (CharPair *)GDKmalloc(sizeof(CharPair));
-						if (!hist[hidx].p) {
-							bat_iterator_end(&bi);
-							for (hidx = 0; hidx < hlen; hidx++)
-								GDKfree(hist[hidx].p);
-							GDKfree(hist);
-							return false;
-						}
-						hist[hidx].p->psize = cpp->psize;
-						hist[hidx].p->pbytes = cpp->pbytes;
+						hist[hidx].encountered = true;
 					}
 				}
 				next_pair(pip);
@@ -383,12 +360,6 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 		STRMPchoosePairs(hist, hlen, hpairs);
 	}
 
-	for (hidx = 0; hidx < hlen; hidx++) {
-		if (hist[hidx].p) {
-			GDKfree(hist[hidx].p);
-			hist[hidx].p = NULL;
-		}
-	}
 	GDKfree(hist);
 
 	TRC_DEBUG(ACCELERATOR, LLFMT " usec\n", GDKusec() - t0);
@@ -720,6 +691,16 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 			      sizeof(uint8_t)) != GDK_SUCCEED) {
 			GDKfree(r);
 			return NULL;
+		}
+
+		if ((r->masks = (strimp_masks_t *)GDKzalloc(STRIMP_HISTSIZE*sizeof(strimp_masks_t))) == NULL) {
+			HEAPfree(&r->strimps, true);
+			GDKfree(r);
+			return NULL;
+		}
+
+		for (size_t i = 0; i < STRIMP_HEADER_SIZE - 1; i++) {
+			r->masks[hpairs[i].idx] = hpairs[i].mask;
 		}
 
 		descriptor = STRIMP_VERSION | ((uint64_t)(STRIMP_PAIRS)) << 8 |
