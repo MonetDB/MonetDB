@@ -34,7 +34,6 @@ typedef struct {
 } PairIterator;
 
 typedef struct {
-	bool encountered;
 	uint64_t cnt;
 	uint64_t mask;
 	size_t idx;
