@@ -5362,10 +5362,10 @@ strjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bit anti,
 	}
 
 	TRC_DEBUG(ALGO,
-			  "%s(%s, l=%s#" BUNFMT "[%s]%s%s,"
+			  "(%s, l=%s#" BUNFMT "[%s]%s%s,"
 			  "r=%s#" BUNFMT "[%s]%s%s,sl=%s#" BUNFMT "%s%s,"
 			  "sr=%s#" BUNFMT "%s%s)\n",
-			  with_strimps ? "true" : "false", fname,
+			  fname,
 			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
 			  l->tsorted ? "-sorted" : "",
 			  l->trevsorted ? "-revsorted" : "",
@@ -5416,8 +5416,8 @@ strjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bit anti,
 
 	if (r2)
 		TRC_DEBUG(ALGO,
-				  "%s(%s, l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
-				  with_strimps ? "true" : "false", fname,
+				  "(%s, l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+				  fname,
 				  BATgetId(l), BATgetId(r),
 				  BATgetId(r1), BATcount(r1),
 				  r1->tsorted ? "-sorted" : "",
@@ -5427,8 +5427,8 @@ strjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bit anti,
 				  r2->trevsorted ? "-revsorted" : "");
 	else
 		TRC_DEBUG(ALGO,
-				  "%s(%s, l=%s,r=%s)=(%s#"BUNFMT"%s%s\n",
-				  with_strimps ? "true" : "false", fname,
+				  "(%s, l=%s,r=%s)=(%s#"BUNFMT"%s%s\n",
+				  fname,
 				  BATgetId(l), BATgetId(r),
 				  BATgetId(r1), BATcount(r1),
 				  r1->tsorted ? "-sorted" : "",
