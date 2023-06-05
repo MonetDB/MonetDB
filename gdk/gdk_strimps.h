@@ -23,6 +23,8 @@
 typedef struct {
 	uint8_t *pbytes;
 	uint8_t psize;
+	size_t idx;
+	uint64_t mask;
 } CharPair;
 
 typedef struct {
@@ -32,8 +34,10 @@ typedef struct {
 } PairIterator;
 
 typedef struct {
-	CharPair *p;
+	bool encountered;
 	uint64_t cnt;
+	uint64_t mask;
+	size_t idx;
 } PairHistogramElem;
 
 
