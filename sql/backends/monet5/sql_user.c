@@ -870,23 +870,23 @@ monet5_user_get_limits(mvc *m, int user, lng *maxmem, int *maxwrk)
 	lng max_memory = 0;
 	int max_workers = 0;
 
-	if (!m->session->tr->active) {
-		sys = find_sql_schema(m->session->tr, "sys");
-		auths = find_sql_table(m->session->tr, sys, "auths");
-		user_info = find_sql_table(m->session->tr, sys, "db_user_info");
+	assert(m->session->tr->active);
 
-		rid = store->table_api.column_find_row(m->session->tr, find_sql_column(auths, "id"), &user, NULL);
-		if (is_oid_nil(rid))
-			return -2;
-		if (!(username = store->table_api.column_find_value(m->session->tr, find_sql_column(auths, "name"), rid)))
-			return -1;
-		rid = store->table_api.column_find_row(m->session->tr, find_sql_column(user_info, "name"), username, NULL);
-		_DELETE(username);
+	sys = find_sql_schema(m->session->tr, "sys");
+	auths = find_sql_table(m->session->tr, sys, "auths");
+	user_info = find_sql_table(m->session->tr, sys, "db_user_info");
 
-		if (!is_oid_nil(rid)) {
-			max_memory = store->table_api.column_find_lng(m->session->tr, find_sql_column(user_info, "max_memory"), rid);
-			max_workers = store->table_api.column_find_int(m->session->tr, find_sql_column(user_info, "max_workers"), rid);
-		}
+	rid = store->table_api.column_find_row(m->session->tr, find_sql_column(auths, "id"), &user, NULL);
+	if (is_oid_nil(rid))
+		return -2;
+	if (!(username = store->table_api.column_find_value(m->session->tr, find_sql_column(auths, "name"), rid)))
+		return -1;
+	rid = store->table_api.column_find_row(m->session->tr, find_sql_column(user_info, "name"), username, NULL);
+	_DELETE(username);
+
+	if (!is_oid_nil(rid)) {
+		max_memory = store->table_api.column_find_lng(m->session->tr, find_sql_column(user_info, "max_memory"), rid);
+		max_workers = store->table_api.column_find_int(m->session->tr, find_sql_column(user_info, "max_workers"), rid);
 	}
 
 	*maxmem = max_memory > 0 ? max_memory : 0;
