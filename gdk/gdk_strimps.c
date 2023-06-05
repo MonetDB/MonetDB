@@ -440,6 +440,8 @@ BATcheckstrimps(BAT *b)
 					hp->sizes_base = (uint8_t *)hp->strimps.base + 8; /* sizes just after the descriptor */
 					hp->pairs_base = hp->sizes_base + STRIMP_HEADER_SIZE;   /* pairs just after the offsets. */
 					hp->bitstrings_base = hp->strimps.base + hsize;   /* bitmasks just after the pairs */
+					//hp->masks = (strimp_masks_t *)GDKzalloc(STRIMP_HISTSIZE*sizeof(strimp_masks_t);
+					/* init */
 
 					close(fd);
 					ATOMIC_INIT(&hp->strimps.refs, 1);
@@ -657,7 +659,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 	uint64_t descriptor;
 	size_t i;
 	uint16_t sz;
-	CharPair hpairs[STRIMP_HEADER_SIZE];
+	CharPair *hpairs = (CharPair*)GDKzalloc(sizeof(CharPair)*STRIMP_HEADER_SIZE);
 	const char *nme;
 
 	if ((r = b->tstrimps) == NULL &&
@@ -721,6 +723,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 		r->rec_cnt = 0;
 		ATOMIC_INIT(&r->strimps.refs, 1);
 	}
+	GDKfree(hpairs);
 	return r;
 }
 
@@ -938,6 +941,7 @@ STRMPdecref(Strimps *strimps, bool remove)
 	if ((refs & HEAPREFS) == 0) {
 		ATOMIC_DESTROY(&strimps->strimps.refs);
 		HEAPfree(&strimps->strimps, (bool) (refs & HEAPREMOVE));
+		GDKfree(strimps->masks);
 		GDKfree(strimps);
 	}
 
