@@ -297,7 +297,6 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	}
 
 	for(hidx = 0; hidx < hlen; hidx++) {
-		hist[hidx].encountered = false;
 		hist[hidx].cnt = 0;
 		hist[hidx].mask = 0;
 		hist[hidx].idx = hidx;
@@ -342,11 +341,9 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 						continue;
 					}
 #endif
-					hist[hidx].cnt++;
-					if (!hist[hidx].encountered) {
+					if (!hist[hidx].cnt)
 						values++;
-						hist[hidx].encountered = true;
-					}
+					hist[hidx].cnt++;
 				}
 				next_pair(pip);
 			}
