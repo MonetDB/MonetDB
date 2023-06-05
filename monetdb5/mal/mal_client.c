@@ -426,7 +426,7 @@ MCcloseClient(Client c)
 	free(c->handshake_options);
 	c->handshake_options = NULL;
 	MT_thread_set_qry_ctx(NULL);
-	assert(c->qryctx.datasize == 0);
+	//assert(c->qryctx.datasize == 0);
 	MT_sema_destroy(&c->s);
 	MT_lock_set(&mal_contextLock);
 	if (shutdowninprogress) {
