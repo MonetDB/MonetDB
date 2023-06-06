@@ -860,6 +860,14 @@ fi
 %endif
 
 %changelog
+* Tue Jun 06 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.17-20230606
+- Rebuilt.
+
+* Tue Jun  6 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.17-20230606
+- sql: Fixed a regression introduced in the previous build: when a table is
+  dropped in the same transaction where it was created, the data wasn't
+  removed from disk.
+
 * Tue May 30 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
 - Rebuilt.
 - GH#7360: Aggregates returning string crash
