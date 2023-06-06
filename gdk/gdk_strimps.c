@@ -236,7 +236,7 @@ STRMPhist_cmp(const void *xx, const void *yy)
 	size_t x = ((PairHistogramElem *)xx)->cnt;
 	size_t y = ((PairHistogramElem *)yy)->cnt;
 
-	return x - y;
+	return y - x;
 }
 
 /*
@@ -250,11 +250,16 @@ STRMPchoosePairs(PairHistogramElem *hist, size_t hist_size, CharPair *cp)
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	qsort(hist, hist_size, sizeof(PairHistogramElem), STRMPhist_cmp);
+	for (i = 0; i < hist_size; i++) {
+		if(!hist[i].cnt)
+			break;
+	}
+	hist_size = i;
 	size_t offset = hist_size/2 - STRIMP_HEADER_SIZE/2;
 	for (i = 0; i < STRIMP_PAIRS; i++) {
 		cp[i].pbytes = histindex2bytes(hist[i + offset].idx, &cp[i].psize);
 		cp[i].idx = hist[i + offset].idx;
-		cp[i].mask = ((uint64_t)0x1) << (STRIMP_PAIRS - i);
+		cp[i].mask = ((uint64_t)0x1) << (STRIMP_PAIRS - 1 - i);
 	}
 
 
