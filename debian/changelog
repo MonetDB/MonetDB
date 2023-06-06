@@ -1,3 +1,17 @@
+monetdb (11.45.17) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 06 Jun 2023 10:54:35 +0200
+
+monetdb (11.45.17) unstable; urgency=low
+
+  * sql: Fixed a regression introduced in the previous build: when a table is
+    dropped in the same transaction where it was created, the data wasn't
+    removed from disk.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 6 Jun 2023 10:54:35 +0200
+
 monetdb (11.45.15) unstable; urgency=low
 
   * Rebuilt.
