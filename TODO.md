@@ -48,3 +48,9 @@ sql>plan select r_name, count(*) from nation, region where n_nationkey = r_regio
 ```
 explain select l_discount, stddev_pop(l_discount) from lineitem, supplier where l_suppkey = s_suppkey group by l_discount limit 5;
 ```
+
+6. this query triggers a crash in `stmt_pp_aggr()` because `grp` is NULL:
+```
+select avg(r_regionkey) from region;
+```
+
