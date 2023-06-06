@@ -149,6 +149,12 @@ histindex2bytes(size_t index, uint8_t *psize)
 	return ret;
 }
 
+inline static size_t
+bytes2histindex(uint8_t *bytes, uint8_t psize) {
+	(void)psize;
+	return pairToIndex(bytes[0], bytes[1]);
+}
+
 inline static bool
 pair_at(PairIterator *pi, CharPair *p)
 {
@@ -178,10 +184,16 @@ ignored(CharPair *p, uint8_t elm)
 	return isIgnored(p->pbytes[elm]);
 }
 
-static uint64_t
+static strimp_masks_t
 STRMPget_mask(Strimps *r, uint64_t idx)
 {
 	return r->masks[idx];
+}
+
+static void
+STRMPset_mask(Strimps *r, uint64_t idx, strimp_masks_t val)
+{
+	r->masks[idx] = val;
 }
 
 /* Looks up a given pair in the strimp header and returns the index as a
@@ -442,15 +454,34 @@ BATcheckstrimps(BAT *b)
 					hp->sizes_base = (uint8_t *)hp->strimps.base + 8; /* sizes just after the descriptor */
 					hp->pairs_base = hp->sizes_base + STRIMP_HEADER_SIZE;   /* pairs just after the offsets. */
 					hp->bitstrings_base = hp->strimps.base + hsize;   /* bitmasks just after the pairs */
-					//hp->masks = (strimp_masks_t *)GDKzalloc(STRIMP_HISTSIZE*sizeof(strimp_masks_t);
-					/* init */
+					hp->masks = (strimp_masks_t *)GDKzalloc(STRIMP_HISTSIZE*sizeof(strimp_masks_t));
+					if (hp->masks != NULL) {
+						/* init */
+						for (size_t idx = 0; idx < STRIMP_PAIRS; idx++) {
+							size_t offset = 0;
+							strimp_masks_t mask = ((strimp_masks_t)0x1) << (STRIMP_PAIRS - 1 - idx);
+							uint8_t pair_size = hp->sizes_base[idx];
+							uint8_t *pair = hp->pairs_base + offset;
 
-					close(fd);
-					ATOMIC_INIT(&hp->strimps.refs, 1);
-					b->tstrimps = hp;
-					hp->strimps.hasfile = true;
-					TRC_DEBUG(ACCELERATOR, "BATcheckstrimps(" ALGOBATFMT "): reusing persisted strimp\n", ALGOBATPAR(b));
-					return true;
+							size_t i = bytes2histindex(pair, pair_size);
+							STRMPset_mask(hp, i, mask);
+
+							offset += pair_size;
+
+						}
+
+						close(fd);
+						ATOMIC_INIT(&hp->strimps.refs, 1);
+						b->tstrimps = hp;
+						hp->strimps.hasfile = true;
+						TRC_DEBUG(ACCELERATOR, "BATcheckstrimps(" ALGOBATFMT "): reusing persisted strimp\n", ALGOBATPAR(b));
+						return true;
+					}
+					/* We failed to allocate the
+					 * masks field. In principle we
+					 * can try to re-create the
+					 * strimp from scratch.
+					 */
 				}
 				close(fd);
 				/* unlink unusable file */
