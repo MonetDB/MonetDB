@@ -1050,9 +1050,9 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 					}
 					retnames[i] = (char *) PyUnicode_AsUTF8(colname);
 				}
+				Py_DECREF(keys);
 			}
-			pResult =
-				PyDict_CheckForConversion(pResult, retcols, retnames, &msg);
+			pResult = PyDict_CheckForConversion(pResult, retcols, retnames, &msg);
 			if (retnames != NULL)
 				GDKfree(retnames);
 		} else if (varres) {
@@ -1225,8 +1225,7 @@ returnvalues:
 	for (i = 0; i < retcols; i++) {
 		PyReturn *ret = &pyreturn_values[i];
 		int bat_type = TYPE_any;
-		sql_subtype *sql_subtype =
-			argnode ? &((sql_arg *)argnode->data)->type : NULL;
+		sql_subtype *sql_subtype = argnode ? &((sql_arg *)argnode->data)->type : NULL;
 		if (!varres) {
 			bat_type = getBatType(getArgType(mb, pci, i));
 
