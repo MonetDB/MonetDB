@@ -236,8 +236,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 	if (getArgType(mb, pci, pci->retc) == TYPE_lng) {
 		has_card_arg=1;
 		card = (BUN) *getArgReference_lng(stk, pci, pci->retc);
-	}
-	else {
+	} else {
 		has_card_arg=0;
 		card = 1;
 	}
@@ -254,8 +253,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 	}
 
 	if ((pci->argc - (pci->retc + 2 + has_card_arg)) * sizeof(PyInput) > 0) {
-		pyinput_values =
-			GDKzalloc((pci->argc - (pci->retc + 2 + has_card_arg)) * sizeof(PyInput));
+		pyinput_values = GDKzalloc((pci->argc - (pci->retc + 2 + has_card_arg)) * sizeof(PyInput));
 
 		if (pyinput_values == NULL) {
 			GDKfree(args);
@@ -393,8 +391,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 			goto wrapup;
 		}
 
-		memory_size =
-			pci->retc * sizeof(ReturnBatDescr); // the memory size for the
+		memory_size = pci->retc * sizeof(ReturnBatDescr); // the memory size for the
 												// header files, each process
 												// has one per return value
 
@@ -1577,8 +1574,7 @@ static void ComputeParallelAggregation(AggrParams *p)
 	gstate = Python_ObtainGIL();
 	for (group_it = p->group_start; group_it < p->group_end; group_it++) {
 		// we first have to construct new
-		PyObject *pArgsPartial =
-			PyTuple_New(p->named_columns + p->additional_columns);
+		PyObject *pArgsPartial = PyTuple_New(p->named_columns + p->additional_columns);
 		PyObject *pColumnsPartial = PyDict_New();
 		PyObject *result;
 		size_t group_elements = (*p->group_counts)[group_it];
@@ -1679,8 +1675,7 @@ static void ComputeParallelAggregation(AggrParams *p)
 				}
 			}
 			// fill in _columns array
-			PyDict_SetItemString(pColumnsPartial, (*p->args)[p->base + i],
-								 vararray);
+			PyDict_SetItemString(pColumnsPartial, (*p->args)[p->base + i], vararray);
 
 			PyTuple_SetItem(pArgsPartial, ai++, vararray);
 		}

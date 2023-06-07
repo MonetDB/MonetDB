@@ -355,14 +355,12 @@ PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char **return_
 				}
 
 				{
-					PyObject **data =
-						((PyObject **)PyArray_DATA((PyArrayObject *)vararray));
+					PyObject **data = ((PyObject **)PyArray_DATA((PyArrayObject *)vararray));
 					PyObject *obj;
 					j = 0;
 					if (unicode) {
 						if (GDK_ELIMDOUBLES(b->tvheap)) {
-							PyObject **pyptrs =
-								GDKzalloc(b->tvheap->free * sizeof(PyObject *));
+							PyObject **pyptrs = GDKzalloc(b->tvheap->free * sizeof(PyObject *));
 							if (!pyptrs) {
 								bat_iterator_end(&li);
 								msg = createException(MAL, "pyapi3.eval",
@@ -379,13 +377,11 @@ PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char **return_
 										// str_nil isn't a valid UTF-8 character
 										// (it's 0x80), so we can't decode it as
 										// UTF-8 (it will throw an error)
-										pyptrs[offset] =
-											PyUnicode_FromString("-");
+										pyptrs[offset] = PyUnicode_FromString("-");
 									} else {
 										// otherwise we can just decode the
 										// string as UTF-8
-										pyptrs[offset] =
-											PyUnicode_FromString(t);
+										pyptrs[offset] = PyUnicode_FromString(t);
 									}
 									if (!pyptrs[offset]) {
 										bat_iterator_end(&li);
@@ -429,8 +425,7 @@ PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char **return_
 						/* special case where we exploit the
 						 * duplicate-eliminated string heap */
 						if (GDK_ELIMDOUBLES(b->tvheap)) {
-							PyObject **pyptrs =
-								GDKzalloc(b->tvheap->free * sizeof(PyObject *));
+							PyObject **pyptrs = GDKzalloc(b->tvheap->free * sizeof(PyObject *));
 							if (!pyptrs) {
 								bat_iterator_end(&li);
 								msg = createException(MAL, "pyapi3.eval",
@@ -525,7 +520,8 @@ wrapup:
 		}                                                                      \
 	}
 
-PyObject *PyNullMask_FromBAT(BAT *b, size_t t_start, size_t t_end)
+PyObject *
+PyNullMask_FromBAT(BAT *b, size_t t_start, size_t t_end)
 {
 	// We will now construct the Masked array, we start by setting everything to
 	// False
@@ -886,6 +882,7 @@ PyObject_PreprocessObject(PyObject *pResult, PyReturn *pyreturn_values, int colu
 
 		// Now we have to do some preprocessing on the data
 		if (ret->multidimensional) {
+			assert(pColO==NULL);
 			// If it is a multidimensional Numpy array, we don't need to do any
 			// conversion, we can just do some pointers
 			ret->count = PyArray_DIMS((PyArrayObject *)pResult)[1];
