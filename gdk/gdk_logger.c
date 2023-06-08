@@ -2202,7 +2202,8 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 }
 
 static logged_range*
-do_flush_range_cleanup(logger* lg) {
+do_flush_range_cleanup(logger* lg)
+{
 	rotation_lock(lg);
 	logged_range* frange = lg->flush_ranges;
 	logged_range* first = frange;
@@ -2230,7 +2231,6 @@ do_flush_range_cleanup(logger* lg) {
 			frange->output_log = NULL;
 		}
 	}
-
 	return flast;
 }
 
@@ -2373,7 +2373,7 @@ log_activate(logger *lg)
 	bool flush = false;
 	gdk_return res = GDK_SUCCEED;
 	rotation_lock(lg);
-	if (!lg->current->next && lg->current->drops > 100000 && ((ulng) ATOMIC_GET(&lg->current->end) - (ulng) ATOMIC_GET(&lg->current->pend)) > 0 && lg->saved_id+1 == lg->id) {
+	if (!lg->flushnow && !lg->current->next && lg->current->drops > 100000 && ((ulng) ATOMIC_GET(&lg->current->end) - (ulng) ATOMIC_GET(&lg->current->pend)) > 0 && lg->saved_id+1 == lg->id) {
 		lg->id++;
 		/* start new file */
 		res = log_open_output(lg);
@@ -2410,8 +2410,7 @@ log_flush(logger *lg, ulng ts)
 		return GDK_SUCCEED;
 	log_return res = LOG_OK;
 	ulng cid = olid;
-	if (lid > lgid)
-		lid = lgid;
+	assert (lid <= lgid);
 	while(cid < lid && res == LOG_OK) {
 		if (!lg->input_log) {
 			char *filename;
@@ -3190,8 +3189,7 @@ log_tstart(logger *lg, bool flushnow, ulng *writer_end)
 		if (lg->saved_id+1 < lg->id)
 			log_flush(lg, (1ULL<<63));
 		lg->flushnow = flushnow;
-	}
-	else {
+	} else {
 		if (check_rotation_conditions(lg)) {
 			lg->id++;
 			if (log_open_output(lg) != GDK_SUCCEED)
