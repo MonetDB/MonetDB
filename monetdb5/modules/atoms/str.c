@@ -5046,9 +5046,36 @@ STRasciify(str *r, const str *s)
 		}																\
 	} while (0)
 
+/* scan select loop with or without candidates */
+#define scanloop_anti(TEST, KEEP_NULLS)							    \
+	do {																\
+		TRC_DEBUG(ALGO,												\
+				  "scanselect(b=%s#"BUNFMT",anti=%d): "				\
+				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
+				  anti, #TEST);										\
+		if (!s || BATtdense(s)) {										\
+			for (; p < q; p++) {										\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				const char *restrict v = BUNtvar(bi, p - off);			\
+				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
+					vals[cnt++] = p;									\
+			}															\
+		} else {														\
+			for (; p < ncands; p++) {									\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				oid o = canditer_next(ci);								\
+				const char *restrict v = BUNtvar(bi, o - off);			\
+				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
+					vals[cnt++] = o;									\
+			}															\
+		}																\
+	} while (0)
+
 static str
 do_string_select(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN *rcnt, const char *key, bool anti,
-		bit (*str_cmp)(const char*, const char*, int))
+				 bit (*str_cmp)(const char*, const char*, int), bool keep_nulls)
 {
 	BATiter bi = bat_iterator(b);
 	BUN cnt = 0, ncands = ci->ncand;
@@ -5063,9 +5090,9 @@ do_string_select(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN
 		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
 
 	if (anti) /* keep nulls ? (use false for now) */
-		scanloop(v && *v != '\200' && str_cmp(v, key, klen) == 0, false);
+		scanloop_anti(v && *v != '\200' && str_cmp(v, key, klen) == 0, keep_nulls);
 	else
-		scanloop(v && *v != '\200' && str_cmp(v, key, klen) != 0, false);
+		scanloop(v && *v != '\200' && str_cmp(v, key, klen) != 0, keep_nulls);
 
 bailout:
 	bat_iterator_end(&bi);
@@ -5074,12 +5101,15 @@ bailout:
 }
 
 static str
-string_select(bat *ret, const bat *bid, const bat *sid, const str *key, const bit *anti, bit (*str_cmp)(const char*, const char*, int), const str fname)
+string_select(bat *ret, const bat *bid, const bat *sid, const str *key, const bit *anti,
+			  bit (*str_cmp)(const char*, const char*, int), const str fname)
 {
-	BAT *b, *s = NULL, *bn = NULL;
+	BAT *b, *s = NULL, *bn = NULL, *old_s = NULL;;
 	str msg = MAL_SUCCEED;
 	BUN p = 0, q = 0, rcnt = 0;
 	struct canditer ci;
+	bool with_strimps = false,
+		with_strimps_anti = false;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		msg = createException(MAL, fname , SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -5091,6 +5121,28 @@ string_select(bat *ret, const bat *bid, const bat *sid, const str *key, const bi
 	}
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
+
+	if (BAThasstrimps(b)) {
+		if (STRMPcreate(b, NULL) == GDK_SUCCEED) {
+			BAT *tmp_s = STRMPfilter(b, s, *key, *anti);
+			if (tmp_s) {
+				old_s = s;
+				s = tmp_s;
+				if (!*anti)
+					with_strimps = true;
+				else
+					with_strimps_anti = true;
+			}
+		} else { /* If we cannot filter with the strimp just continue normally */
+			GDKclrerr();
+		}
+	}
+
+	MT_thread_setalgorithm(with_strimps ?
+						   "string_select: strcmp function using strimps" :
+							(with_strimps_anti ?
+							 "string_select: strcmp function using strimps anti" :
+							 "string_select: strcmp function with no accelerator"));
 
 	canditer_init(&ci, b, s);
 	if (!(bn = COLnew(0, TYPE_oid, ci.ncand, TRANSIENT))) {
@@ -5113,7 +5165,7 @@ string_select(bat *ret, const bat *bid, const bat *sid, const str *key, const bi
 		}
 	}
 
-	msg = do_string_select(bn, b, s, &ci, p, q, &rcnt, *key, *anti, str_cmp);
+	msg = do_string_select(bn, b, s, &ci, p, q, &rcnt, *key, *anti && !with_strimps_anti, str_cmp, with_strimps_anti);
 
 	if (!msg) { /* set some properties */
 		BATsetcount(bn, rcnt);
@@ -5122,12 +5174,27 @@ string_select(bat *ret, const bat *bid, const bat *sid, const str *key, const bi
 		bn->tkey = true;
 		bn->tnil = false;
 		bn->tnonil = true;
-		bn->tseqbase = rcnt == 0 ? 0 : rcnt == 1 ? *(const oid*)Tloc(bn, 0) : rcnt == b->batCount ? b->hseqbase : oid_nil;
+		bn->tseqbase = rcnt == 0 ? 0 : rcnt == 1 ?
+			*(const oid*)Tloc(bn, 0) : rcnt == b->batCount ? b->hseqbase : oid_nil;
+		if(with_strimps_anti) {
+			BAT *rev;
+			if (old_s) {
+				rev = BATdiffcand(old_s, bn);
+				assert (BATintersectcand(old_s, bn)->batCount == bn->batCount);
+				assert (rev->batCount == old_s->batCount - bn->batCount);
+			}
+
+			else
+				rev = BATnegcands(b->batCount, bn);
+			BBPunfix(bn->batCacheid);
+			bn = rev;
+		}
 	}
 
 bailout:
 	BBPreclaim(b);
 	BBPreclaim(s);
+	BBPreclaim(old_s);
 	if (bn && !msg) {
 		*ret = bn->batCacheid;
 		BBPkeepref(bn);
@@ -5142,11 +5209,12 @@ STRstartswithselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	(void)mb;
 	bat *ret = getArgReference(stk, pci, 0);
-	const bat *bid = getArgReference(stk, pci, 1);
-	const bat *sid = getArgReference(stk, pci, 2);
+	const bat *bid = getArgReference(stk, pci, 1),
+		*sid = getArgReference(stk, pci, 2);
 	const str *key = getArgReference_str(stk, pci, 3);
-	const bit icase = pci->argc == 5 ? false : true;
-	const bit *anti = pci->argc == 5 ? getArgReference_bit(stk, pci, 4) : getArgReference_bit(stk, pci, 5);
+	const bit icase = pci->argc == 5 ? false : true,
+		*anti = pci->argc == 5 ? getArgReference_bit(stk, pci, 4) : getArgReference_bit(stk, pci, 5);
+
 	return string_select(ret, bid, sid, key, anti, icase ? str_is_iprefix : str_is_prefix, "str.startswithselect");
 }
 
@@ -5156,11 +5224,12 @@ STRendswithselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	(void)mb;
 	bat *ret = getArgReference(stk, pci, 0);
-	const bat *bid = getArgReference(stk, pci, 1);
-	const bat *sid = getArgReference(stk, pci, 2);
+	const bat *bid = getArgReference(stk, pci, 1),
+		*sid = getArgReference(stk, pci, 2);
 	const str *key = getArgReference_str(stk, pci, 3);
-	const bit icase = pci->argc == 5 ? false : true;
-	const bit *anti = pci->argc == 5 ? getArgReference_bit(stk, pci, 4) : getArgReference_bit(stk, pci, 5);
+	const bit icase = pci->argc == 5 ? false : true,
+		*anti = pci->argc == 5 ? getArgReference_bit(stk, pci, 4) : getArgReference_bit(stk, pci, 5);
+
 	return string_select(ret, bid, sid, key, anti, icase ? str_is_isuffix : str_is_suffix, "str.endswithselect");
 }
 
@@ -5170,11 +5239,12 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	(void)mb;
 	bat *ret = getArgReference(stk, pci, 0);
-	const bat *bid = getArgReference(stk, pci, 1);
-	const bat *sid = getArgReference(stk, pci, 2);
+	const bat *bid = getArgReference(stk, pci, 1),
+		*sid = getArgReference(stk, pci, 2);
 	const str *key = getArgReference_str(stk, pci, 3);
-	const bit icase = pci->argc == 5 ? false : true;
-	const bit *anti = pci->argc == 5 ? getArgReference_bit(stk, pci, 4) : getArgReference_bit(stk, pci, 5);
+	const bit icase = pci->argc == 5 ? false : true,
+		*anti = pci->argc == 5 ? getArgReference_bit(stk, pci, 4) : getArgReference_bit(stk, pci, 5);
+
 	return string_select(ret, bid, sid, key, anti, icase ? str_icontains : str_contains, "str.containsselect");
 }
 
