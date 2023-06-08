@@ -309,13 +309,8 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	}
 
 	hlen = STRIMP_HISTSIZE;
-	if ((hist = (PairHistogramElem *)GDKmalloc(hlen*sizeof(PairHistogramElem))) == NULL) {
+	if ((hist = (PairHistogramElem *)GDKzalloc(hlen*sizeof(PairHistogramElem))) == NULL) {
 		return false;
-	}
-
-	for(hidx = 0; hidx < hlen; hidx++) {
-		hist[hidx].p = NULL;
-		hist[hidx].cnt = 0;
 	}
 
 	// Create Histogram
@@ -589,8 +584,9 @@ STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 	r->tnonil = true;
 	TRC_DEBUG(ACCELERATOR, "strimp prefiltering of " BUNFMT
 		  " items took " LLFMT " usec. Keeping " BUNFMT
-		  " items (%.2f%%).\n", ci.ncand, GDKusec()-t0, r->batCount,
-		  100*r->batCount/(double)ci.ncand);
+		  " items (%.2f%%). Filter string '%s'.\n",
+		  ci.ncand, GDKusec()-t0, r->batCount,
+		  100*r->batCount/(double)ci.ncand, q);
 	TRC_DEBUG(ACCELERATOR, "r->" ALGOBATFMT "\n", ALGOBATPAR(r) );
 	STRMPdecref(strmps, false);
 	if (pb != b)
