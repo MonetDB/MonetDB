@@ -919,6 +919,7 @@ static str RAPIprelude(void) {
 		}
 		MT_lock_unset(&rapiLock);
 		printf("# MonetDB/R   module loaded\n");
+		fflush(stdout);
 	}
 	return MAL_SUCCEED;
 }

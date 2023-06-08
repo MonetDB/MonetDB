@@ -287,13 +287,16 @@ returns int external name txtsim.levenshtein;
 grant execute on function levenshtein(string, string, int, int, int) to public;
 create filter function sys.maxlevenshtein(x string, y string, k int)
 external name txtsim.maxlevenshtein;
+grant execute on filter function maxlevenshtein(string, string, int) to public;
 create filter function sys.maxlevenshtein(x string, y string, k int, insdel int, rep int)
 external name txtsim.maxlevenshtein;
+grant execute on filter function maxlevenshtein(string, string, int, int, int) to public;
 create function sys.jarowinkler(x string, y string)
 returns double external name txtsim.jarowinkler;
 grant execute on function jarowinkler(string, string) to public;
 create filter function minjarowinkler(x string, y string, threshold double)
 external name txtsim.minjarowinkler;
+grant execute on filter function minjarowinkler(string, string, double) to public;
 create function sys.dameraulevenshtein(x string, y string)
 returns int external name txtsim.dameraulevenshtein;
 grant execute on function dameraulevenshtein(string, string) to public;
@@ -319,38 +322,44 @@ create function sys.similarity(x string, y string)
 returns double external name txtsim.similarity;
 grant execute on function similarity(string, string) to public;
 create function asciify(x string)
-returns string external name str."asciify";
+returns string external name str.asciify;
 grant execute on function asciify(string) to public;
 create function sys.startswith(x string, y string)
-returns boolean external name str."startsWith";
+returns boolean external name str.startswith;
 grant execute on function startswith(string, string) to public;
 create function sys.startswith(x string, y string, icase boolean)
-returns boolean external name str."startsWith";
+returns boolean external name str.startswith;
 grant execute on function startswith(string, string, boolean) to public;
 create filter function sys.startswith(x string, y string)
-external name str."startsWith";
+external name str.startswith;
+grant execute on filter function startswith(string, string) to public;
 create filter function sys.startswith(x string, y string, icase boolean)
-external name str."startsWith";
+external name str.startswith;
+grant execute on filter function startswith(string, string, boolean) to public;
 create function sys.endswith(x string, y string)
-returns boolean external name str."endsWith";
+returns boolean external name str.endswith;
 grant execute on function endswith(string, string) to public;
 create function sys.endswith(x string, y string, icase boolean)
-returns boolean external name str."endsWith";
+returns boolean external name str.endswith;
 grant execute on function endswith(string, string, boolean) to public;
-create filter function sys.endswith(s1 string, s2 string)
-external name str."endsWith";
-create filter function sys.endswith(s1 string, s2 string, icase boolean)
-external name str."endsWith";
+create filter function sys.endswith(x string, y string)
+external name str.endswith;
+grant execute on filter function endswith(string, string) to public;
+create filter function sys.endswith(x string, y string, icase boolean)
+external name str.endswith;
+grant execute on filter function endswith(string, string, boolean) to public;
 create function sys.contains(x string, y string)
-returns boolean external name str."contains";
+returns boolean external name str.contains;
 grant execute on function contains(string, string) to public;
 create function sys.contains(x string, y string, icase boolean)
-returns boolean external name str."contains";
+returns boolean external name str.contains;
 grant execute on function contains(string, string, boolean) to public;
 create filter function sys.contains(x string, y string)
-external name str."contains";
+external name str.contains;
+grant execute on filter function contains(string, string) to public;
 create filter function sys.contains(x string, y string, icase boolean)
-external name str."contains";
+external name str.contains;
+grant execute on filter function contains(string, string, boolean) to public;
 update sys.functions set system = true where system <> true and name in ('levenshtein', 'dameraulevenshtein', 'jarowinkler', 'editdistance', 'editdistance2', 'soundex', 'difference', 'qgramnormalize', 'similarity') and schema_id = 2000 and type = 1;
 update sys.functions set system = true where system <> true and name in ('maxlevenshtein', 'minjarowinkler') and schema_id = 2000 and type = 4;
 update sys.functions set system = true where system <> true and name in ('asciify', 'startswith', 'endswith', 'contains') and schema_id = 2000 and type = 1;

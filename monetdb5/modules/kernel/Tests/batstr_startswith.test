@@ -1,3 +1,10 @@
+query T
+select name from tables where startswith(name, 'id')
+----
+idxs
+idxs
+ids
+
 statement ok
 create table foo(x string)
 
@@ -32,6 +39,13 @@ select startswith(x, 'Müller') from bar
 ----
 False
 True
+False
+
+query T
+select startswith('Müller', x) from bar
+----
+False
+False
 False
 
 statement ok

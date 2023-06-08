@@ -599,7 +599,7 @@ mnstr_eof(const stream *s)
 	return s->eof;
 }
 
-char *
+const char *
 mnstr_name(const stream *s)
 {
 	if (s == NULL)

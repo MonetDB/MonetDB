@@ -2396,8 +2396,8 @@ store_manager(sqlstore *store)
 	MT_lock_set(&store->flush);
 
 	for (;;) {
-		if (ATOMIC_GET(&store->nr_active) == 0 &&
-			(store->debug&128 || ATOMIC_GET(&store->lastactive) + IDLE_TIME * 1000000 < (ATOMIC_BASE_TYPE) GDKusec())) {
+		const int idle = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 5000 : IDLE_TIME * 1000000;
+		if (store->debug&128 || ATOMIC_GET(&store->lastactive) + idle < (ATOMIC_BASE_TYPE) GDKusec()) {
 			MT_lock_unset(&store->flush);
 			store_lock(store);
 			if (ATOMIC_GET(&store->nr_active) == 0) {
@@ -3753,6 +3753,7 @@ sql_trans_destroy(sql_trans *tr)
 
 	TRC_DEBUG(SQL_STORE, "Destroy transaction: %p\n", tr);
 	_DELETE(tr->name);
+	assert(!tr->active || tr->parent);
 	if (!list_empty(tr->changes))
 		sql_trans_rollback(tr, false);
 	sqlstore *store = tr->store;
@@ -5976,8 +5977,8 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 		if ((res = sys_drop_table(tr, gt?gt:t, drop_action)))
 			return res;
 
-	t->base.deleted = 1;
-
+	if (isNew(t))
+		t->base.deleted = 1;
 	if (gt && (res = os_del(s->tables, tr, gt->base.name, dup_base(&gt->base))))
 		return res;
 	if (t != gt && (res =os_del(tr->localtmps, tr, t->base.name, dup_base(&t->base))))
