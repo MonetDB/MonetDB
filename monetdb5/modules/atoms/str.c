@@ -5354,11 +5354,11 @@ strjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bit anti,
 			(qry_ctx->starttime + qry_ctx->querytimeout) : 0;
 
 	if (BAThasstrimps(l)) {
-		if (STRMPcreate(l, NULL) == GDK_SUCCEED){
-			/* original_sl = sl; */
-			with_strimps = true;
+		with_strimps = true;
+		if (STRMPcreate(l, NULL) != GDK_SUCCEED) {
+			GDKclrerr();
+			with_strimps = false;
 		}
-		/* else throw the GDK error and default to nested loop without filters */
 	}
 
 	TRC_DEBUG(ALGO,
@@ -5518,13 +5518,14 @@ STRstartswithjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i = pci->argc == 9 ? 4 : 5;
 	bat *r1 = getArgReference(stk, pci, 0);
 	bat *r2 = getArgReference(stk, pci, 1);
-	const bat *lid = getArgReference(stk, pci, 2);
-	const bat *rid = getArgReference(stk, pci, 3);
-	const bat *cid = pci->argc == 9 ? NULL : getArgReference(stk, pci, 4);
-	const bat *slid = getArgReference(stk, pci, i++);
-	const bat *srid = getArgReference(stk, pci, i);
+	const bat *lid = getArgReference(stk, pci, 2),
+		*rid = getArgReference(stk, pci, 3),
+		*cid = pci->argc == 9 ? NULL : getArgReference(stk, pci, 4),
+		*slid = getArgReference(stk, pci, i++),
+		*srid = getArgReference(stk, pci, i);
 	const bit *anti = pci->argc == 9 ? getArgReference_bit(stk, pci, 8) : getArgReference_bit(stk, pci, 9);
 	bool caseignore = false;
+
 	if (pci->argc != 9)
 		msg = join_caseignore(cid, &caseignore, "str.startswithjoin");
 	return msg ? msg : STRjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti,
@@ -5539,13 +5540,14 @@ STRstartswithjoin1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	int i = pci->argc == 8 ? 3 : 4;
 	bat *r1 = getArgReference(stk, pci, 0);
-	const bat *lid = getArgReference(stk, pci, 1);
-	const bat *rid = getArgReference(stk, pci, 2);
-	const bat *cid = pci->argc == 8 ? NULL : getArgReference(stk, pci, 3);
-	const bat *slid = getArgReference(stk, pci, i++);
-	const bat *srid = getArgReference(stk, pci, i);
+	const bat *lid = getArgReference(stk, pci, 1),
+		*rid = getArgReference(stk, pci, 2),
+		*cid = pci->argc == 8 ? NULL : getArgReference(stk, pci, 3),
+		*slid = getArgReference(stk, pci, i++),
+		*srid = getArgReference(stk, pci, i);
 	const bit *anti = pci->argc == 8 ? getArgReference_bit(stk, pci, 7) : getArgReference_bit(stk, pci, 8);
 	bool caseignore = false;
+
 	if (pci->argc != 8)
 		msg = join_caseignore(cid, &caseignore, "str.startswithjoin1");
 	return msg ? msg : STRjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti,
@@ -5561,13 +5563,14 @@ STRendswithjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i = pci->argc == 9 ? 4 : 5;
 	bat *r1 = getArgReference(stk, pci, 0);
 	bat *r2 = getArgReference(stk, pci, 1);
-	const bat *lid = getArgReference(stk, pci, 2);
-	const bat *rid = getArgReference(stk, pci, 3);
-	const bat *cid = pci->argc == 9 ? NULL : getArgReference(stk, pci, 4);
-	const bat *slid = getArgReference(stk, pci, i++);
-	const bat *srid = getArgReference(stk, pci, i);
+	const bat *lid = getArgReference(stk, pci, 2),
+		*rid = getArgReference(stk, pci, 3),
+		*cid = pci->argc == 9 ? NULL : getArgReference(stk, pci, 4),
+		*slid = getArgReference(stk, pci, i++),
+		*srid = getArgReference(stk, pci, i);
 	const bit *anti = pci->argc == 9 ? getArgReference_bit(stk, pci, 8) : getArgReference_bit(stk, pci, 9);
 	bool caseignore = false;
+
 	if (pci->argc != 9)
 		msg = join_caseignore(cid, &caseignore, "str.endswithjoin");
 	return msg ? msg : STRjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti,
@@ -5582,13 +5585,14 @@ STRendswithjoin1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	int i = pci->argc == 8 ? 3 : 4;
 	bat *r1 = getArgReference(stk, pci, 0);
-	const bat *lid = getArgReference(stk, pci, 1);
-	const bat *rid = getArgReference(stk, pci, 2);
-	const bat *cid = pci->argc == 8 ? NULL : getArgReference(stk, pci, 3);
-	const bat *slid = getArgReference(stk, pci, i++);
-	const bat *srid = getArgReference(stk, pci, i);
+	const bat *lid = getArgReference(stk, pci, 1),
+		*rid = getArgReference(stk, pci, 2),
+		*cid = pci->argc == 8 ? NULL : getArgReference(stk, pci, 3),
+		*slid = getArgReference(stk, pci, i++),
+		*srid = getArgReference(stk, pci, i);
 	const bit *anti = pci->argc == 8 ? getArgReference_bit(stk, pci, 7) : getArgReference_bit(stk, pci, 8);
 	bool caseignore = false;
+
 	if (pci->argc != 8)
 		msg = join_caseignore(cid, &caseignore, "str.endswithjoin1");
 	return msg ? msg : STRjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti,
@@ -5604,13 +5608,14 @@ STRcontainsjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i = pci->argc == 9 ? 4 : 5;
 	bat *r1 = getArgReference(stk, pci, 0);
 	bat *r2 = getArgReference(stk, pci, 1);
-	const bat *lid = getArgReference(stk, pci, 2);
-	const bat *rid = getArgReference(stk, pci, 3);
-	const bat *cid = pci->argc == 9 ? NULL : getArgReference(stk, pci, 4);
-	const bat *slid = getArgReference(stk, pci, i++);
-	const bat *srid = getArgReference(stk, pci, i);
+	const bat *lid = getArgReference(stk, pci, 2),
+		*rid = getArgReference(stk, pci, 3),
+		*cid = pci->argc == 9 ? NULL : getArgReference(stk, pci, 4),
+		*slid = getArgReference(stk, pci, i++),
+		*srid = getArgReference(stk, pci, i);
 	const bit *anti = pci->argc == 9 ? getArgReference_bit(stk, pci, 8) : getArgReference_bit(stk, pci, 9);
 	bool caseignore = false;
+
 	if (pci->argc != 9)
 		msg = join_caseignore(cid, &caseignore, "str.containsjoin");
 	return msg ? msg : STRjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti,
@@ -5625,13 +5630,14 @@ STRcontainsjoin1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	int i = pci->argc == 8 ? 3 : 4;
 	bat *r1 = getArgReference(stk, pci, 0);
-	const bat *lid = getArgReference(stk, pci, 1);
-	const bat *rid = getArgReference(stk, pci, 2);
-	const bat *cid = pci->argc == 8 ? NULL : getArgReference(stk, pci, 3);
-	const bat *slid = getArgReference(stk, pci, i++);
-	const bat *srid = getArgReference(stk, pci, i);
+	const bat *lid = getArgReference(stk, pci, 1),
+		*rid = getArgReference(stk, pci, 2),
+		*cid = pci->argc == 8 ? NULL : getArgReference(stk, pci, 3),
+		*slid = getArgReference(stk, pci, i++),
+		*srid = getArgReference(stk, pci, i);
 	const bit *anti = pci->argc == 8 ? getArgReference_bit(stk, pci, 7) : getArgReference_bit(stk, pci, 8);
 	bool caseignore = false;
+
 	if (pci->argc != 8)
 		msg = join_caseignore(cid, &caseignore, "str.containsjoin");
 	return msg ? msg : STRjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti,
