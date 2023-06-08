@@ -141,7 +141,7 @@ histogram_index(PairHistogramElem *hist, size_t hsize, CharPair *p)
 inline static bool
 pair_at(PairIterator *pi, CharPair *p)
 {
-	if (pi->pos >= pi->lim)
+	if (pi->pos >= pi->lim - 1)
 		return false;
 	p->pbytes = (uint8_t*)pi->s + pi->pos;
 	p->psize = 2;
@@ -151,7 +151,7 @@ pair_at(PairIterator *pi, CharPair *p)
 inline static bool
 next_pair(PairIterator *pi)
 {
-	if (pi->pos >= pi->lim)
+	if (pi->pos >= pi->lim - 1)
 		return false;
 	pi->pos++;
 	return true;
