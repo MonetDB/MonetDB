@@ -5209,6 +5209,50 @@ bailout:
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_sep2022_sp4(Client c, mvc *sql)
+{
+	size_t bufsize = 1024, pos = 0;
+	char *err = NULL, *buf = GDKmalloc(bufsize);
+	res_table *output;
+	BAT *b;
+
+	(void) sql;
+
+	if (buf == NULL)
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	/* if the password value for user .snapshot is null in
+	 * sys.db_user_info, we need to set it
+	 * this can happen if an upgrade is done from a version before the
+	 * .snapshot user existed to Sep2022 where the db_user_info table
+	 * was extended with new columns */
+	pos = snprintf(buf, bufsize,
+				   "select \"password\" from sys.db_user_info where name = '.snapshot';\n");
+	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)) == MAL_SUCCEED) {
+		if ((b = BATdescriptor(output->cols[0].b)) != NULL) {
+			if (BATcount(b) > 0) {
+				BATiter bi = bat_iterator(b);
+				const char *pwd = BUNtvar(bi, 0);
+				if (strNil(pwd)) {
+					pos = snprintf(buf, bufsize,
+								   "alter user \".snapshot\" with encrypted password '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000';\n");
+					assert(pos < bufsize);
+
+					printf("Running database upgrade commands:\n%s\n", buf);
+					fflush(stdout);
+					err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+				}
+				bat_iterator_end(&bi);
+			}
+			BBPunfix(b->batCacheid);
+		}
+		res_table_destroy(output);
+	}
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -5405,6 +5449,12 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_sep2022(c, m)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		return -1;
+	}
+
+	if ((err = sql_update_sep2022_sp4(c, m)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		return -1;
