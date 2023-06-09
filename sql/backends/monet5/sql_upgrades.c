@@ -5212,36 +5212,28 @@ bailout:
 static str
 sql_update_sep2022_sp4(Client c, mvc *sql)
 {
-	size_t bufsize = 1024, pos = 0;
-	char *err = NULL, *buf = GDKmalloc(bufsize);
+	char *err = NULL;
 	res_table *output;
 	BAT *b;
 
 	(void) sql;
-
-	if (buf == NULL)
-		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* if the password value for user .snapshot is null in
 	 * sys.db_user_info, we need to set it
 	 * this can happen if an upgrade is done from a version before the
 	 * .snapshot user existed to Sep2022 where the db_user_info table
 	 * was extended with new columns */
-	pos = snprintf(buf, bufsize,
-				   "select \"password\" from sys.db_user_info where name = '.snapshot';\n");
-	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)) == MAL_SUCCEED) {
+	if ((err = SQLstatementIntern(c, "select \"password\" from sys.db_user_info where name = '.snapshot';\n", "update", true, false, &output)) == MAL_SUCCEED) {
 		if ((b = BATdescriptor(output->cols[0].b)) != NULL) {
 			if (BATcount(b) > 0) {
 				BATiter bi = bat_iterator(b);
 				const char *pwd = BUNtvar(bi, 0);
 				if (strNil(pwd)) {
-					pos = snprintf(buf, bufsize,
-								   "alter user \".snapshot\" with encrypted password '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000';\n");
-					assert(pos < bufsize);
+					const char * query = "alter user \".snapshot\" with encrypted password '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000';\n";
 
-					printf("Running database upgrade commands:\n%s\n", buf);
+					printf("Running database upgrade commands:\n%s\n", query);
 					fflush(stdout);
-					err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+					err = SQLstatementIntern(c, query, "update", true, false, NULL);
 				}
 				bat_iterator_end(&bi);
 			}
@@ -5249,7 +5241,6 @@ sql_update_sep2022_sp4(Client c, mvc *sql)
 		}
 		res_table_destroy(output);
 	}
-	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
 
