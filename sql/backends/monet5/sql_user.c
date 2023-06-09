@@ -423,18 +423,17 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 		pwd = passwd;
 	}
 
-	if ((err = AUTHGeneratePasswordHash(&hash, pwd)) != MAL_SUCCEED) {
+	err = AUTHGeneratePasswordHash(&hash, pwd);
+	if (!enc)
+		free(pwd);
+	if (err != MAL_SUCCEED) {
 		GDKfree(schema_buf);
-		if (!enc)
-			free(pwd);
 		throw(MAL, "sql.create_user", SQLSTATE(42000) "create backend hash failure");
 	}
 
 	user_id = store_next_oid(m->session->tr->store);
 	sqlid default_role_id = role_id > 0 ? role_id : user_id;
 	if ((log_res = store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path, &max_memory, &max_workers, &optimizer, &default_role_id, &hash))) {
-		if (!enc)
-			free(pwd);
 		GDKfree(schema_buf);
 		GDKfree(hash);
 		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
@@ -444,8 +443,6 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	GDKfree(hash);
 
 	if ((log_res = store->table_api.table_insert(m->session->tr, auths, &user_id, &user, &grantorid))) {
-		if (!enc)
-			free(pwd);
 		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	}
 
@@ -453,21 +450,15 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 		// update schema authorization to be default_role_id
 		switch (sql_trans_change_schema_authorization(m->session->tr, schema_id, default_role_id)) {
 			case -1:
-				if (!enc)
-					free(pwd);
 				throw(SQL,"sql.create_user",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			case -2:
 			case -3:
-				if (!enc)
-					free(pwd);
 				throw(SQL,"sql.create_user",SQLSTATE(42000) "Update schema authorization failed due to transaction conflict");
 			default:
 				break;
 		}
 
 	}
-	if (!enc)
-		free(pwd);
 	return ret;
 }
 
