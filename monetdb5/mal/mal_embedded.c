@@ -69,7 +69,7 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 					"unable to open vault_key_file %s: %s\n",
 					GDKgetenv("monet_vault_key"), strerror(errno));
 			}
-			len = fread(secret, 1, sizeof(secret), secretf);
+			len = fread(secret, 1, sizeof(secret) - 1, secretf);
 			fclose(secretf);
 			secret[len] = '\0';
 			len = strlen(secret); /* secret can contain null-bytes */

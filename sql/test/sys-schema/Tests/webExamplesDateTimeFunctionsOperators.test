@@ -1,0 +1,498 @@
+statement ok
+SET TIME ZONE interval '+02:00' hour to minute
+
+# Date/Time literal formats
+query T
+select date '2020-09-28'
+----
+2020-09-28
+
+query T
+select {d '2020-09-28'}
+----
+2020-09-28
+
+# next query fails in Mtest.py with error: too many values to unpack (expected 3). It does not fail when used in mclient or via JDBC driver, so possibly an issue with Mtest.py
+#query T
+#select date '-4712-01-01'
+#----
+#-4712-01-01
+
+query T
+select time '18:40:05'
+----
+18:40:05
+
+query T
+select {t '18:40:05'}
+----
+18:40:05
+
+query T
+select time(6) '18:40:05.123456'
+----
+18:40:05.123456
+
+query T
+select time(3) with time zone '18:40:05.123+02:00'
+----
+18:40:05.123000+02:00
+
+query T
+select timestamp '2020-09-28 18:40:05'
+----
+2020-09-28 18:40:05
+
+query T
+select {ts '2020-09-28 18:40:05'}
+----
+2020-09-28 18:40:05
+
+query T
+select timestamp(6) '2020-09-28 18:40:05.123456'
+----
+2020-09-28 18:40:05.123456
+
+query T
+select timestamp(3) with time zone '2020-09-28 18:40:05.123+02:00'
+----
+2020-09-28 18:40:05.123000+02:00
+
+query T
+select interval '86399' second
+----
+23:59:59
+
+query T
+select {interval '86399' second}
+----
+23:59:59
+
+query T
+select interval '30' day
+----
+30
+
+query T
+select {interval '30' day}
+----
+30
+
+query T
+select interval '6' month
+----
+6
+
+query T
+select {interval '6' month}
+----
+6
+
+query T
+select interval '18:40:05' hour to second
+----
+18:40:05
+
+query T
+select {interval '18:40:05' hour to second}
+----
+18:40:05
+
+query T
+select interval '2 18:40:05.123' day to second(3)
+----
+2 days, 18:40:05
+
+query T
+select {interval '2 18:40:05.123' day to second(3)}
+----
+2 days, 18:40:05
+
+query T
+select interval '2-5' year to month
+----
+29
+
+query T
+select {interval '2-5' year to month}
+----
+29
+
+
+# Date/Time operators
+query T
+select date '2020-09-28' + (interval '1' second * (7 * 24 * 60 * 60))
+----
+2020-10-05
+
+query T
+select date '2020-09-28' - (interval '1' second * (7 * 24 * 60 * 60))
+----
+2020-09-21
+
+query T
+select date '2020-09-28' - interval '7' month
+----
+2020-02-28
+
+query T
+select date '2020-09-28' - date '2020-02-28'
+----
+213
+
+query T
+select time '14:35:45' - time '02:12:24'
+----
+12:23:21
+
+
+# Date/Time functions
+query T
+select century(date '2020-03-22')
+----
+21
+
+query I
+select curdate() > date '2020-03-22'
+----
+1
+
+query I
+select current_date() > date '2020-03-22'
+----
+1
+
+query I
+select current_time() <> timetz '13:16:57.734639+01:00'
+----
+1
+
+query I
+select current_timestamp() <> timestamptz '2020-03-22 13:16:57.734639+01:00'
+----
+1
+
+query I
+select curtime() <> timetz '13:16:57.734639+01:00'
+----
+1
+
+query T
+select sys.date_to_str(date '2020-03-22', '%D %d.%m.%Y')
+----
+03/22/20 22.03.2020
+
+query T
+select sys.date_trunc('month', timestamp '2020-03-22 13:16:57.734639')
+----
+2020-03-01 00:00:00
+
+query T
+select "day"(date '2020-03-22')
+----
+22
+
+query T
+select "day"(interval '3.23' second * (24 * 60 * 60))
+----
+3
+
+query T
+select {fn DAYNAME({d '2020-03-22'})}
+----
+Sunday
+
+query T
+select dayofmonth(date '2020-03-22')
+----
+22
+
+query T
+select dayofweek(date '2020-03-22')
+----
+7
+
+query T
+select dayofyear(date '2020-03-22')
+----
+82
+
+query T
+select decade(date '2027-03-22')
+----
+202
+
+query T
+select sys.epoch(1234567890)
+----
+2009-02-14 01:31:30+02:00
+
+query T
+select sys.epoch(1234567890.456)
+----
+2009-02-14 01:31:30.456000+02:00
+
+query T
+select sys.epoch(timestamp '2009-02-13 23:31:30.0')
+----
+1234567890
+
+query T
+select epoch_ms(timestamp '2009-02-13 23:31:30.0')
+----
+1234567890.000
+
+query T
+select extract(doy from date '2027-03-22')
+----
+81
+
+query T
+select greatest(date '2020-03-22', date '2020-03-25')
+----
+2020-03-25
+
+query T
+select "hour"(timetz '15:35:02.002345+01:00')
+----
+16
+
+query T
+select least(time '15:15:15', time '16:16:16')
+----
+15:15:15
+
+query T
+select local_timezone()
+----
+2:00:00
+
+query I
+select localtime() <> time '13:16:57.734639'
+----
+1
+
+query I
+select localtimestamp() <> timestamp(6) '2020-03-22 13:16:57.734639'
+----
+1
+
+query T
+select "minute"(timetz '15:35:02.002345+01:00')
+----
+35
+
+query T
+select "month"(date '2020-07-22')
+----
+7
+
+query T
+select {fn MONTHNAME({d '2020-03-22'})}
+----
+March
+
+query I
+select now() <> timestamptz '2020-03-22 13:16:57.734639+01:00'
+----
+1
+
+query T
+select quarter(date '2020-07-22')
+----
+3
+
+query T
+select "second"(interval '24' second)
+----
+24
+
+query T
+select "second"(timetz '15:35:02.002345+01:00')
+----
+2.002345
+
+query T
+select sql_add(date '2021-12-31', interval '2' month)
+----
+2022-02-28
+
+query T
+select sql_add(time '15:35:50', interval '50' second)
+----
+15:36:40
+
+query T
+select sql_max(date '2020-03-22', date '2020-03-25')
+----
+2020-03-25
+
+query T
+select sql_min(time '15:15:15', time '16:16:16')
+----
+15:15:15
+
+query T
+select sql_sub(date '2021-12-31', date '2021-12-11')
+----
+20
+
+query T
+select sql_sub(date '2021-12-31', interval '-2' month)
+----
+2022-02-28
+
+query T
+select sql_sub(time '15:35:50', interval '3:25' minute to second)
+----
+15:32:25
+
+query T
+select sql_sub(time '9:00:00', time '17:00:00')
+----
+-1 day, 16:00:00
+
+query T
+select sql_sub(timestamp '2021-12-31 18:00:00', timestamp '2021-12-31 17:00:00')
+----
+1:00:00
+
+query T
+select sql_sub(timestamptz '2021-12-31 18:00:00+02:00', timestamptz '2021-12-31 18:00:00-02:00')
+----
+-1 day, 20:00:00
+
+query T
+select sql_sub(timetz '18:00:00+02:00', timetz '18:00:00-02:00')
+----
+-1 day, 20:00:00
+
+query T
+select sys.str_to_date('4/30/2021', '%m/%d/%Y')
+----
+2021-04-30
+
+query T
+select sys.str_to_time('09:30:49','%H:%M:%S')
+----
+11:30:49+02:00
+
+query T
+select sys.str_to_timestamp('4/30/2021 09:30:49','%m/%d/%Y %H:%M:%S')
+----
+2021-04-30 11:30:49+02:00
+
+query T
+select sys.time_to_str(timetz '19:30:49', '%l hour %M:%S %p')
+----
+ 7 hour 30:49 PM
+
+query T
+select sys.timestamp_to_str(timestamptz '2021-12-31 18:00:00', '%m/%d/%Y %l:%M:%S %p')
+----
+12/31/2021  6:00:00 PM
+
+query T
+select timestampadd(timestamp '2021-12-31 18:00:00', interval '2' month)
+----
+2022-02-28 18:00:00
+
+query T
+select timestampdiff(timestamp '2021-12-31 18:40:40', timestamp '2021-12-30 16:30:20')
+----
+1 day, 2:10:20
+
+query T
+select timestampdiff_day(timestamp '2021-12-31 18:40:40', timestamp '2021-12-20 16:30:20')
+----
+11
+
+query T
+select timestampdiff_hour(timestamp '2021-12-31 18:40:40', timestamp '2021-12-20 16:30:20')
+----
+266
+
+query T
+select timestampdiff_min(timestamp '2021-12-31 18:40:40', timestamp '2021-12-31 16:30:20')
+----
+130
+
+query T
+select timestampdiff_month(timestamp '2021-12-31 18:40:40', timestamp '2021-02-20 16:30:20')
+----
+10
+
+query T
+select timestampdiff_quarter(timestamp '2021-12-31 18:40:40', timestamp '2021-02-20 16:30:20')
+----
+3
+
+query T
+select timestampdiff_sec(timestamp '2021-12-31 18:40:40', timestamp '2021-12-31 16:30:20')
+----
+7820
+
+query T
+select timestampdiff_week(timestamp '2021-12-31 18:40:40', timestamp '2021-02-20 16:30:20')
+----
+44
+
+query T
+select timestampdiff_year(timestamp '2021-12-31 18:40:40', timestamp '2024-02-20 16:30:20')
+----
+-3
+
+query T
+select usweekofyear(date '2020-03-22')
+----
+13
+
+query T
+select week(date '2020-03-22')
+----
+12
+
+query T
+select weekofyear(date '2020-03-22')
+----
+12
+
+query T
+select "year"(date '2020-03-22')
+----
+2020
+
+query I
+select current_date <> date '2020-02-02'
+----
+1
+
+query I
+select current_time <> timetz '15:35:02.073522+01:00'
+----
+1
+
+query I
+select current_timestamp <> timestamptz '2020-02-02 15:35:02.002345+01:00'
+----
+1
+
+query T
+select current_timezone
+----
+2:00:00
+
+query I
+select now <> timestamptz '2020-02-02 15:35:02.002345+01:00'
+----
+1
+
+query I
+select localtime <> time '15:35:02.073522'
+----
+1
+
+query I
+select localtimestamp <> timestamp(6) '2020-02-02 15:35:02.073522'
+----
+1

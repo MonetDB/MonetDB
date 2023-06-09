@@ -141,7 +141,7 @@ histogram_index(PairHistogramElem *hist, size_t hsize, CharPair *p)
 inline static bool
 pair_at(PairIterator *pi, CharPair *p)
 {
-	if (pi->pos >= pi->lim)
+	if (pi->pos >= pi->lim - 1)
 		return false;
 	p->pbytes = (uint8_t*)pi->s + pi->pos;
 	p->psize = 2;
@@ -151,7 +151,7 @@ pair_at(PairIterator *pi, CharPair *p)
 inline static bool
 next_pair(PairIterator *pi)
 {
-	if (pi->pos >= pi->lim)
+	if (pi->pos >= pi->lim - 1)
 		return false;
 	pi->pos++;
 	return true;
@@ -688,14 +688,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 	if ((r = b->tstrimps) == NULL &&
 		STRMPbuildHeader(b, s, hpairs)) { /* Find the header pairs, put
 						 the result in hpairs */
-		/* The 64th bit in the bit string is used to indicate if
-		   the string is NULL. So the corresponding pair does
-		   not encode useful information. We need to keep it for
-		   alignment but we must make sure that it will not
-		   match an actual pair of characters we encounter in
-		   strings.*/
-		for (i = 0; i < hpairs[STRIMP_HEADER_SIZE - 1].psize; i++)
-			hpairs[STRIMP_HEADER_SIZE - 1].pbytes[i] = 0;
+
 		sz = 8 + STRIMP_HEADER_SIZE; /* add 8-bytes for the descriptor and
 						the pair sizes */
 		for (i = 0; i < STRIMP_HEADER_SIZE; i++) {
@@ -725,12 +718,25 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 		r->sizes_base = h1 = (uint8_t *)r->strimps.base + 8;
 		r->pairs_base = h2 = (uint8_t *)h1 + STRIMP_HEADER_SIZE;
 
-		for (i = 0; i < STRIMP_HEADER_SIZE; i++) {
+		for (i = 0; i < STRIMP_HEADER_SIZE - 1; i++) {
 			uint8_t psize = hpairs[i].psize;
 			h1[i] = psize;
 			memcpy(h2, hpairs[i].pbytes, psize);
 			h2 += psize;
 		}
+
+		/* The 64th bit in the bit string is used to indicate if
+		   the string is NULL. So the corresponding pair does
+		   not encode useful information. We need to keep it for
+		   alignment but we must make sure that it will not
+		   match an actual pair of characters we encounter in
+		   strings.*/
+		h1[STRIMP_HEADER_SIZE - 1] = hpairs[STRIMP_HEADER_SIZE - 1].psize;
+		for(i = 0; i < hpairs[STRIMP_HEADER_SIZE - 1].psize; i++) {
+			*(h2 + i) = 0;
+		}
+		h2 += hpairs[STRIMP_HEADER_SIZE - 1].psize;
+
 		r->bitstrings_base = h2;
 		r->strimps.free = sz;
 		r->rec_cnt = 0;
