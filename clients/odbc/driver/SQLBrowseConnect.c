@@ -55,7 +55,7 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 	char *dsn, *uid, *pwd, *host, *dbname;
 	int port;
 	SQLSMALLINT len = 0;
-	char buf[256];
+	char buf[1024];
 	int n;
 	SQLRETURN rc;
 #ifdef ODBCDEBUG
@@ -235,7 +235,7 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 			port ? "" : "*PORT:Port=?;",
 			dbname ? "" : "*DATABASE:Database=?;",
 #ifdef ODBCDEBUG
-			ODBCdebug ? "" : "*LOGFILE:Debug log file=?;",
+			ODBCdebug ? "" : "*LOGFILE:Logfile=?;",
 #endif
 			NULL);
 
@@ -322,13 +322,13 @@ SQLBrowseConnectW(SQLHDBC ConnectionHandle,
 
 	fixWcharIn(InConnectionString, StringLength1, SQLCHAR, in,
 		   addDbcError, dbc, return SQL_ERROR);
-	out = malloc(1024);
+	out = malloc(2048);
 	if (out == NULL) {
 		/* Memory allocation error */
 		addDbcError(dbc, "HY001", NULL, 0);
 		return SQL_ERROR;
 	}
-	rc = MNDBBrowseConnect(dbc, in, SQL_NTS, out, 1024, &n);
+	rc = MNDBBrowseConnect(dbc, in, SQL_NTS, out, 2048, &n);
 	if (SQL_SUCCEEDED(rc) || rc == SQL_NEED_DATA) {
 		fixWcharOut(rc, out, n, OutConnectionString, BufferLength,
 			    StringLength2Ptr, 1, addDbcError, dbc);

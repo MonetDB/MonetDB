@@ -869,6 +869,7 @@ memo_print( list *memo )
 		memoitem_print( mi );
 		printf("\n");
 	}
+	fflush(stdout);
 }
 
 static memojoin *
@@ -951,5 +952,3 @@ rel_planner(mvc *sql, list *rels, list *sdje, list *exps)
 		list_merge (top->exps, sdje, (fdup)NULL);
 	return top;
 }
-
-

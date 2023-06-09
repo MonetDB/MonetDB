@@ -22,30 +22,6 @@ select asciify('Müller');
 ----
 Muller
 
-onlyif system=Linux
-query T
-select asciify('こんにちは、世界！');
-----
-????????!
-
-onlyif system=Linux
-query T
-select asciify('Καλημέρα κόσμε!');
-----
-????u??? ???u?!
-
-onlyif system=Linux
-query T
-select asciify('Привет, мир!');
-----
-??????, ???!
-
-onlyif system=Linux
-query T
-select asciify('你好，世界!');
-----
-??,??!
-
 skipif system=Linux
 query T
 select asciify('Olá Mundo!');

@@ -1,3 +1,129 @@
+monetdb (11.45.17) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 06 Jun 2023 10:54:35 +0200
+
+monetdb (11.45.17) unstable; urgency=low
+
+  * sql: Fixed a regression introduced in the previous build: when a table is
+    dropped in the same transaction where it was created, the data wasn't
+    removed from disk.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 6 Jun 2023 10:54:35 +0200
+
+monetdb (11.45.15) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7360: Aggregates returning string crash
+  * GH#7361: Table data is lost on DB restart, but only when a table has
+    2147483647 or more rows.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 30 May 2023 17:07:27 +0200
+
+monetdb (11.45.15) unstable; urgency=low
+
+  * gdk: Warnings and informational messages are now sent to stdout instead of
+    stderr, which means that monetdbd will now log them with the tag MSG
+    instead of ERR.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 16 May 2023 17:07:27 +0200
+
+monetdb (11.45.15) unstable; urgency=low
+
+  * gdk: Fixed parsing of the BBP.dir file when BAT ids grow larger than 2**24
+    (i.e. 100000000 in octal).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 25 Apr 2023 17:07:27 +0200
+
+monetdb (11.45.15) unstable; urgency=low
+
+  * gdk: Fixed yet another occurrence of a missing .tailN file.  This one could
+    happen if a string bat was appended to in stages so that between appends
+    the column was committed.  If an append caused both a realloc of the
+    tail heap because it was getting longer and a realloc because it got
+    wider, the file might get removed before the GDK level commit happened.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 20 Apr 2023 17:07:27 +0200
+
+monetdb (11.45.15) unstable; urgency=low
+
+  * clients: If the number of rows in mclient is set to 0 (using either --rows=0
+    option or \r0 on the mclient command line), the internal pager is used
+    and it then uses the height of the terminal window.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 17 Apr 2023 17:07:27 +0200
+
+monetdb (11.45.15) unstable; urgency=low
+
+  * sql: When creating a hot snapshot, allow other clients to proceed, even
+    with updating queries.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 5 Apr 2023 17:07:27 +0200
+
+monetdb (11.45.15) unstable; urgency=low
+
+  * gdk: When processing the WAL, if a to-be-destroyed object cannot be found,
+    don't stop, but keep processing the rest of the WAL.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 24 Mar 2023 17:07:27 +0200
+
+monetdb (11.45.15) unstable; urgency=low
+
+  * monetdb5: Client connections are cleaned up better so that we get fewer instances
+    of clients that cannot connect.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 24 Mar 2023 17:07:27 +0200
+
+monetdb (11.45.15) unstable; urgency=low
+
+  * sql: Increased the size of a variable counting the number of changes made
+    to the database (e.g. in case more than 2 billion rows are added to
+    a table).
+  * sql: Improved cleanup after failures such as failed memory allocations.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 24 Mar 2023 17:07:27 +0200
+
+monetdb (11.45.15) unstable; urgency=low
+
+  * gdk: A race condition was fixed where certain write-ahead log messages
+    could get intermingled, resulting in a corrupted WAL file.
+  * gdk: If opening of a file failed when it was supposed to get memory mapped,
+    an incorrect value was returned to indicate the failure, causing
+    crashes later on.  This has been fixed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 20 Feb 2023 17:07:27 +0200
+
+monetdb (11.45.15) unstable; urgency=low
+
+  * gdk: A race condition was fixed that could result in a missing tail file
+    for a string bat (i.e. a file with .tail1, .tail2, or .tail4 extension).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 16 Feb 2023 17:07:27 +0200
+
+monetdb (11.45.15) unstable; urgency=low
+
+  * gdk: When saving a bat failed for some reason during a low-level commit,
+    this was logged in the log file, but the error was then subsequently
+    ignored, possibly leading to files that are too short or even missing.
+  * gdk: The write-ahead log (WAL) is now rotated a bit more efficiently by
+    doing multiple log files in one go (i.e. in one low-level transaction).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 13 Feb 2023 17:07:27 +0200
+
+monetdb (11.45.15) unstable; urgency=low
+
+  * sql: An insert into a table from which a column was dropped in a parallel
+    transaction was incorrectly not flagged as a transaction conflict.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 13 Feb 2023 17:07:27 +0200
+
+monetdb (11.45.15) unstable; urgency=low
+
+  * sql: Fix bug where boolean NULLs were not recognized by COPY BINARY INTO
+
+ -- Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>  Thu, 26 Jan 2023 17:07:27 +0200
+
 monetdb (11.45.13) unstable; urgency=low
 
   * Rebuilt.
