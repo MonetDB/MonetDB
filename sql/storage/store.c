@@ -2654,6 +2654,12 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 	char *dest_name = dest_path + snprintf(dest_path, sizeof(dest_path), "%s/", prefix);
 	stream *infile = NULL;
 
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	int len;
 	if (sscanf(p, "%[^\n]\n%n", abs_src_path, &len) != 1) {
 		GDKerror("internal error: first line of plan is malformed");
@@ -2666,6 +2672,7 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 	char command;
 	long size;
 	while (sscanf(p, "%c %ld %100s\n%n", &command, &size, src_name, &len) == 3) {
+		GDK_CHECK_TIMEOUT_BODY(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(end));
 		p += len;
 		strcpy(dest_name, src_name);
 		if (size < 0) {
