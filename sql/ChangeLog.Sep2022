@@ -1,3 +1,9 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Jun  9 2023 Sjoerd Mullender <sjoerd@acm.org>
+- An upgrade that both creates a new .snapshot user and extends the
+  sys.db_user_info table with (among others) a password column did
+  these in such a way that the passord value for the new user was NULL.
+  This is fixed by updating the password.
+
