@@ -4041,8 +4041,7 @@ sql_trans_commit(sql_trans *tr)
 		if (tr->parent) {
 			commit_ts = oldest = tr->parent->tid;
 			tr->parent->logchanges += tr->logchanges;
-		}
-		else {
+		} else {
 			commit_ts = store_timestamp(store);
 			oldest = store_oldest(store, tr);
 		}
