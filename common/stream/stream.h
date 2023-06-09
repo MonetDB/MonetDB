@@ -143,7 +143,7 @@ stream_export int mnstr_flush(stream *s, mnstr_flush_level flush_level); // used
 stream_export int mnstr_fsync(stream *s); // used in gdk_logger.c and store.c
 stream_export int mnstr_fgetpos(stream *restrict s, fpos_t *restrict p); // unused
 stream_export int mnstr_fsetpos(stream *restrict s, fpos_t *restrict p); // unused
-stream_export char *mnstr_name(const stream *s); // used when wrapping in mclient.c
+stream_export const char *mnstr_name(const stream *s); // used when wrapping in mclient.c
 stream_export bool mnstr_isbinary(const stream *s); // unused
 stream_export bool mnstr_get_swapbytes(const stream *s); // sql_result.c/mapi10
 stream_export void mnstr_set_bigendian(stream *s, bool bigendian); // used in mapi.c and mal_session.c

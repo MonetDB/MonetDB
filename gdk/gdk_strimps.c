@@ -169,7 +169,7 @@ pair_at(PairIterator *pi, CharPair *p)
 inline static bool
 next_pair(PairIterator *pi)
 {
-	if (pi->pos >= pi->lim)
+	if (pi->pos >= pi->lim - 1)
 		return false;
 	pi->pos++;
 	return true;
@@ -595,8 +595,9 @@ STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 	r->tnonil = true;
 	TRC_DEBUG(ACCELERATOR, "strimp prefiltering of " BUNFMT
 		  " items took " LLFMT " usec. Keeping " BUNFMT
-		  " items (%.2f%%).\n", ci.ncand, GDKusec()-t0, r->batCount,
-		  100*r->batCount/(double)ci.ncand);
+		  " items (%.2f%%). Filter string '%s'.\n",
+		  ci.ncand, GDKusec()-t0, r->batCount,
+		  100*r->batCount/(double)ci.ncand, q);
 	TRC_DEBUG(ACCELERATOR, "r->" ALGOBATFMT "\n", ALGOBATPAR(r) );
 	STRMPdecref(strmps, false);
 	if (pb != b)
@@ -695,6 +696,9 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 	CharPair *hpairs = (CharPair*)GDKzalloc(sizeof(CharPair)*STRIMP_HEADER_SIZE);
 	const char *nme;
 
+	if (!hpairs)
+		return NULL;
+
 	if ((r = b->tstrimps) == NULL &&
 		STRMPbuildHeader(b, s, hpairs)) { /* Find the header pairs, put
 						 the result in hpairs */
@@ -725,6 +729,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 		    HEAPalloc(&r->strimps, BATcount(b) * sizeof(uint64_t) + sz,
 			      sizeof(uint8_t)) != GDK_SUCCEED) {
 			GDKfree(r);
+			GDKfree(hpairs);
 			return NULL;
 		}
 

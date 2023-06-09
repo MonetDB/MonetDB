@@ -549,6 +549,8 @@ SQLinit(Client c, const char *initpasswd)
 
 	if (debug_str)
 		SQLdebug = strtol(debug_str, NULL, 10);
+	if (SQLdebug & 1)
+		GDKtracer_set_component_level("wal", "debug");
 	if (single_user)
 		SQLdebug |= 64;
 	if (readonly)
