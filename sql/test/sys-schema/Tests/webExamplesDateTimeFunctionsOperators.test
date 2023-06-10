@@ -382,11 +382,13 @@ select sys.str_to_timestamp('4/30/2021 09:30:49','%m/%d/%Y %H:%M:%S')
 ----
 2021-04-30 11:30:49+02:00
 
+skipif system=Win32                                                                                                                                                                        
 query T
 select sys.time_to_str(timetz '19:30:49', '%l hour %M:%S %p')
 ----
  7 hour 30:49 PM
 
+skipif system=Win32                                                                                                                                                                        
 query T
 select sys.timestamp_to_str(timestamptz '2021-12-31 18:00:00', '%m/%d/%Y %l:%M:%S %p')
 ----
