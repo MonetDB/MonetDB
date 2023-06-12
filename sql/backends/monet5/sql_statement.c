@@ -1079,7 +1079,10 @@ stmt_result(backend *be, stmt *s, int nr)
 		ns->nr = s->nr;
 	}
 	ns->op1 = s;
-	ns->op4.typeval = *sql_bind_localtype("oid");
+	if (!nr && (s->type == st_order || s->type == st_reorder))
+		ns->op4.typeval = *tail_type(s->op1);
+	else
+		ns->op4.typeval = *sql_bind_localtype("oid");
 	ns->flag = nr;
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
@@ -3799,13 +3802,13 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 		+ (op1->type != st_list ? 1 : list_length(op1->op4.lval))
 		+ (grp ? 4 : avg + 1);
 
-	if (ext) {
+	if (grp) {
 		char *aggrF = SA_NEW_ARRAY(be->mvc->sa, char, strlen(aggrfunc) + 4);
 		if (!aggrF)
 			return NULL;
 		stpcpy(stpcpy(aggrF, "sub"), aggrfunc);
 		aggrfunc = aggrF;
-		if (grp && (grp->nr < 0 || ext->nr < 0))
+		if ((grp && grp->nr < 0) || (ext && ext->nr < 0))
 			return NULL;
 
 		q = newStmtArgs(mb, mod, aggrfunc, argc);
@@ -4508,4 +4511,20 @@ stmt_fetch(backend *be, stmt *val)
 		return s;
 	}
 	return NULL;
+}
+
+stmt *
+stmt_rename(backend *be, sql_exp *exp, stmt *s )
+{
+	const char *name = exp_name(exp);
+	const char *rname = exp_relname(exp);
+	stmt *o = s;
+
+	if (!name && exp_is_atom(exp))
+		name = sa_strdup(be->mvc->sa, "single_value");
+	assert(name);
+	s = stmt_alias(be, s, rname, name);
+	if (o->flag & OUTER_ZERO)
+		s->flag |= OUTER_ZERO;
+	return s;
 }

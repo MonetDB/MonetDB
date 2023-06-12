@@ -126,8 +126,9 @@ static char *pager = 0;		/* use external pager */
 #ifdef HAVE_SIGACTION
 #include <signal.h>		/* to block SIGPIPE */
 #endif
-static int rowsperpage = 0;	/* for SQL pagination */
+static int rowsperpage = -1;	/* for SQL pagination */
 static int pagewidth = 0;	/* -1: take whatever is necessary, >0: limit */
+static int pageheight = 0;	/* -1: take whatever is necessary, >0: limit */
 static bool pagewidthset = false; /* whether the user set the width explicitly */
 static int croppedfields = 0;	/* whatever got cropped/truncated */
 static bool firstcrop = true;	/* first time we see cropping/truncation */
@@ -417,7 +418,21 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 				 * and code points marked either F or
 				 * W in EastAsianWidth.txt; this list
 				 * is up-to-date with Unicode 11.0 */
-				if ((0x1100 <= c && c <= 0x115F) ||
+				if ((0x0300 <= c && c <= 0x036F) ||
+					(0x0483 <= c && c <= 0x0489) ||
+					(0x0653 <= c && c <= 0x0655) ||
+					(0x1AB0 <= c && c <= 0x1AFF) ||
+					(0x1DC0 <= c && c <= 0x1DFF) ||
+					(0x20D0 <= c && c <= 0x20FF) ||
+					(0x2DE0 <= c && c <= 0x2DFF) ||
+					(0xA66F <= c && c <= 0xA672) ||
+					(0xA674 <= c && c <= 0xA67D) ||
+					(0xA69E <= c && c <= 0xA69F) ||
+					(0xA8E0 <= c && c <= 0xA8F1) ||
+					(0xFE20 <= c && c <= 0xFE2F) ||
+					c == 0x3099 || c == 0x309A)
+					len--;		/* combining mark */
+				else if ((0x1100 <= c && c <= 0x115F) ||
 				    (0x231A <= c && c <= 0x231B) ||
 				    (0x2329 <= c && c <= 0x232A) ||
 				    (0x23E9 <= c && c <= 0x23EC) ||
@@ -1375,7 +1390,7 @@ SQLdebugRendering(MapiHdl hdl)
 }
 
 static void
-SQLpagemove(int *len, int fields, int *ps, bool *silent)
+SQLpagemove(int *len, int fields, int *ps, bool *skiprest)
 {
 	char buf[512];
 	ssize_t sz;
@@ -1388,11 +1403,11 @@ SQLpagemove(int *len, int fields, int *ps, bool *silent)
 		if (buf[0] == 'c')
 			*ps = 0;
 		if (buf[0] == 'q')
-			*silent = true;
+			*skiprest = true;
 		while (sz > 0 && buf[sz - 1] != '\n')
 			sz = mnstr_readline(fromConsole, buf, sizeof(buf));
 	}
-	if (!*silent)
+	if (!*skiprest)
 		SQLseparator(len, fields, '-');
 }
 
@@ -1403,11 +1418,12 @@ SQLrenderer(MapiHdl hdl)
 	int fields, rfields, printfields = 0, max = 1, graphwaste = 0;
 	int *len = NULL, *hdr = NULL, *numeric = NULL;
 	char **rest = NULL;
-	char buf[50];
 	int ps = rowsperpage;
-	bool silent = false;
-	int64_t rows = 0;
+	bool skiprest = false;
+	int64_t rows;				/* total number of rows */
 
+	if (ps == 0)
+		ps = pageheight;
 	croppedfields = 0;
 	fields = mapi_get_field_count(hdl);
 	rows = mapi_get_row_count(hdl);
@@ -1565,8 +1581,10 @@ SQLrenderer(MapiHdl hdl)
 			break;
 	}
 
-	rows = SQLheader(hdl, len, printfields, fields != printfields);
+	int64_t lines;				/* count number of lines printed for pager */
+	lines = SQLheader(hdl, len, printfields, fields != printfields);
 
+	int64_t nrows = 0;			/* count number of rows printed */
 	while ((rfields = fetch_row(hdl)) != 0) {
 		if (mnstr_errnr(toConsole) != MNSTR_NO__ERROR)
 			continue;
@@ -1576,7 +1594,7 @@ SQLrenderer(MapiHdl hdl)
 				     "got %d columns, expected %d, ignoring\n", rfields, fields);
 			continue;
 		}
-		if (silent)
+		if (skiprest)
 			continue;
 		for (i = 0; i < printfields; i++) {
 			rest[i] = mapi_fetch_field(hdl, i);
@@ -1605,22 +1623,24 @@ SQLrenderer(MapiHdl hdl)
 			}
 		}
 
-		if (ps > 0 && rows >= ps && fromConsole != NULL) {
-			SQLpagemove(len, printfields, &ps, &silent);
-			rows = 0;
-			if (silent) {
+		if (ps > 0 && lines >= ps && fromConsole != NULL) {
+			SQLpagemove(len, printfields, &ps, &skiprest);
+			lines = 0;
+			if (skiprest) {
 				mapi_finish(hdl);
 				break;
 			}
 		}
 
-		rows += SQLrow(len, numeric, rest, printfields, 2, 0);
+		nrows++;
+		lines += SQLrow(len, numeric, rest, printfields, 2, 0);
 	}
-	if (fields)
+	if (fields && !skiprest)
 		SQLseparator(len, printfields, '-');
-	rows = mapi_get_row_count(hdl);
-	snprintf(buf, sizeof(buf), "%" PRId64 " rows", rows);
-	mnstr_printf(toConsole, "%" PRId64 " tuple%s", rows, rows != 1 ? "s" : "");
+	if (skiprest)
+		mnstr_printf(toConsole, "%" PRId64 " of %" PRId64 " tuple%s", nrows, rows, nrows != 1 ? "s" : "");
+	else
+		mnstr_printf(toConsole, "%" PRId64 " tuple%s", rows, rows != 1 ? "s" : "");
 
 	if (fields != printfields || croppedfields > 0)
 		mnstr_printf(toConsole, " !");
@@ -1735,12 +1755,13 @@ setWidth(void)
 #ifdef TIOCGWINSZ
 		struct winsize ws;
 
-		if (ioctl(fileno(stdout), TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0)
+		if (ioctl(fileno(stdout), TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0) {
 			pagewidth = ws.ws_col;
-		else
+			pageheight = ws.ws_row;
+		} else
 #endif
 		{
-			pagewidth = -1;
+			pagewidth = pageheight = -1;
 		}
 	}
 }
@@ -2859,7 +2880,8 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						}
 					} else {
 						setFormatter(line);
-						mapi_set_size_header(mid, strcmp(line, "raw") == 0);
+						if (mode == SQL)
+							mapi_set_size_header(mid, strcmp(line, "raw") == 0);
 					}
 					continue;
 				case 't':
@@ -3543,6 +3565,19 @@ main(int argc, char **argv)
 	mapi_setAutocommit(mid, autocommit);
 	if (mode == SQL && !settz)
 		mapi_set_time_zone(mid, 0);
+	if (output) {
+		setFormatter(output);
+		if (mode == SQL)
+			mapi_set_size_header(mid, strcmp(output, "raw") == 0);
+		free(output);
+	} else {
+		if (mode == SQL) {
+			setFormatter("sql");
+			mapi_set_size_header(mid, false);
+		} else {
+			setFormatter("raw");
+		}
+	}
 
 	if (mapi_error(mid) == MOK)
 		mapi_reconnect(mid);	/* actually, initial connect */
@@ -3571,19 +3606,6 @@ main(int argc, char **argv)
 		mapi_log(mid, logfile);
 
 	mapi_trace(mid, trace);
-	if (output) {
-		setFormatter(output);
-		mapi_set_size_header(mid, strcmp(output, "raw") == 0);
-		free(output);
-	} else {
-		if (mode == SQL) {
-			setFormatter("sql");
-			mapi_set_size_header(mid, false);
-		} else {
-			setFormatter("raw");
-			mapi_set_size_header(mid, true);
-		}
-	}
 	/* give the user a welcome message with some general info */
 	if (!has_fileargs && command == NULL && isatty(fileno(stdin))) {
 		char *lang;

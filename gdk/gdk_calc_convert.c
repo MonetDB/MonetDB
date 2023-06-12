@@ -489,7 +489,7 @@ convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
 		     oid candoff, bool *reduce)				\
 {									\
 	BUN cnt = ci->ncand / 32;					\
-	BUN i, j, k;							\
+	BUN i, j;							\
 	uint32_t mask;							\
 	oid x;								\
 	lng timeoffset = 0;						\
@@ -499,14 +499,12 @@ convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
 	}								\
 									\
 	*reduce = true;							\
-	k = 0;								\
 	if (ci->tpe == cand_dense) {					\
 		TIMEOUT_LOOP_IDX(i, cnt, timeoffset) {			\
 			mask = 0;					\
 			for (j = 0; j < 32; j++) {			\
 				x = canditer_next_dense(ci) - candoff;	\
 				mask |= (uint32_t) (!is_##TYPE##_nil(src[x]) && src[x] != 0) << j; \
-				k++;					\
 			}						\
 			dst[i] = mask;					\
 		}							\
@@ -517,7 +515,6 @@ convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
 			for (j = 0; j < cnt; j++) {			\
 				x = canditer_next_dense(ci) - candoff;	\
 				mask |= (uint32_t) (!is_##TYPE##_nil(src[x]) && src[x] != 0) << j; \
-				k++;					\
 			}						\
 			dst[i] = mask;					\
 		}							\
@@ -527,7 +524,6 @@ convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
 			for (j = 0; j < 32; j++) {			\
 				x = canditer_next(ci) - candoff;	\
 				mask |= (uint32_t) (!is_##TYPE##_nil(src[x]) && src[x] != 0) << j; \
-				k++;					\
 			}						\
 			dst[i] = mask;					\
 		}							\
@@ -538,7 +534,6 @@ convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
 			for (j = 0; j < cnt; j++) {			\
 				x = canditer_next(ci) - candoff;	\
 				mask |= (uint32_t) (!is_##TYPE##_nil(src[x]) && src[x] != 0) << j; \
-				k++;					\
 			}						\
 			dst[i] = mask;					\
 		}							\

@@ -199,8 +199,7 @@ mal_export malType destinationType(MalBlkPtr mb, InstrPtr p);
 mal_export void setPolymorphic(InstrPtr p, int tpe, int force);
 /* Utility macros to inspect an instruction */
 #define functionStart(X) ((X)->token == FUNCTIONsymbol || \
-						  (X)->token == COMMANDsymbol ||  \
-						  (X)->token == FACTORYsymbol )
+						  (X)->token == COMMANDsymbol)
 #define patternStart(X)  ((X)->token == PATTERNsymbol)
 #define functionExit(X)  ((X)->token == ENDsymbol)
 
@@ -218,4 +217,5 @@ mal_export void strBeforeCall(ValPtr v, ValPtr bak);
 mal_export void strAfterCall(ValPtr v, ValPtr bak);
 mal_export void batBeforeCall(ValPtr v, ValPtr bak);
 mal_export void batAfterCall(ValPtr v, ValPtr bak);
+
 #endif /*  _MAL_INSTR_H */

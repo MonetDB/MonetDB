@@ -51,10 +51,12 @@ bincopy_big_endians_on_client
 bincopy_big_endians_on_server
 bincopy_native_endians_on_client
 bincopy_native_endians_on_server
+bincopy_blobs_on_client
+bincopy_blobs_on_server
 
 bincopy_default_values
-bincopy_decimal_range
-bincopy_string_width
 
 bincopycollist-prepare
 bincopycollist
+bincopy_decimal_range
+bincopy_string_width

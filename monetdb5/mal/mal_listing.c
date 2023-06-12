@@ -322,18 +322,15 @@ operatorName(int i)
 	case LEAVEsymbol: return "leave";
 	case EXITsymbol: return "exit";
 	case RETURNsymbol: return "return";
-	case YIELDsymbol: return "yield";
 	case CATCHsymbol: return "catch";
 	case RAISEsymbol: return "raise";
 	case ENDsymbol: return "end";
 	case FUNCTIONsymbol: return "function";
-	case FACTORYsymbol: return "factory";
 	case COMMANDsymbol: return "command";
 	case PATTERNsymbol: return "pattern";
 
 	/* internal symbols */
 	case FCNcall:	return "FCNcall";
-	case FACcall:     return "FACcall";
 	case CMDcall:     return "CMDcall";
 	case THRDcall:    return "THRcall";
 	case PATcall:     return "PATcall";
@@ -367,7 +364,6 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		if (p->barrier == LEAVEsymbol ||
 			p->barrier == REDOsymbol ||
 			p->barrier == RETURNsymbol ||
-			p->barrier == YIELDsymbol ||
 			p->barrier == RAISEsymbol) {
 			if (!copystring(&t, "    ", &len))
 				return base;
@@ -385,7 +381,6 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	}
 	switch (p->token<0?-p->token:p->token) {
 	case FCNcall:
-	case FACcall:
 	case PATcall:
 	case CMDcall:
 	case ASSIGNsymbol :
@@ -434,7 +429,6 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		break;
 	case COMMANDsymbol:
 	case FUNCTIONsymbol:
-	case FACTORYsymbol:
 	case PATTERNsymbol:
 		if (flg & LIST_MAL_VALUE) {
 			if (!copystring(&t, operatorName(p->token), &len) ||

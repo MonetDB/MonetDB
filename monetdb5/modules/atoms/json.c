@@ -1668,7 +1668,6 @@ static str
 JSONunfoldContainer(JSON *jt, int idx, BAT *bo, BAT *bk, BAT *bv, oid *o)
 {
 	int i, last;
-	int cnt = 0;
 	char *r;
 
 	last = jt->elm[idx].tail;
@@ -1716,7 +1715,6 @@ JSONunfoldContainer(JSON *jt, int idx, BAT *bo, BAT *bk, BAT *bv, oid *o)
 					goto memfail;
 			}
 			(*o)++;
-			cnt++;
 			if (i == last)
 				break;
 		}
@@ -2749,7 +2747,8 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 						*dst++ = '"';
 						buflen += (dst - odst);
 					}
-				} break;
+					break;
+				}
 				case TYPE_dbl: {
 					dbl val = vals[p];
 					if (is_dbl_nil(val)) {
@@ -2768,7 +2767,8 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 						buflen += 2;
 						buflen += snprintf(buf + buflen, maxlen - buflen, "%f", val);
 					}
-				} break;
+					break;
+				}
 				default:
 					assert(0);
 				}

@@ -35,10 +35,6 @@ import signal
 import fnmatch
 import glob
 import pymonetdb # check for pymonetdb early: it is essential for our work
-try:
-    import winreg               # Python 3 on Windows
-except ImportError:
-    winreg = None               # not on Windows
 
 MonetDB_VERSION = '@MONETDB_VERSION@'.split('.')
 
@@ -158,10 +154,6 @@ if os.path.exists('/usr/bin/coredumpctl'):
         except ValueError:
             # if we can't raise the limit, just forget it
             pass
-
-def ErrExit(msg):
-    print(msg, file=sys.stderr, flush=True)
-    sys.exit(1)
 
 def _configure(str):
     # expand configure variables in str and return result
@@ -370,10 +362,12 @@ CONDITIONALS = {
     # from configure.ag:
     # These should cover all AM_CONDITIONALS defined in configure.ag, i.e.,
     # `grep AM_CONDITIONAL configure.ag | sed 's|^AM_CONDITIONAL(\([^,]*\),.*$|\1|' | sort -u`
+    'HAVE_CUDF'            : "@HAVE_CUDF_FALSE@",
     'HAVE_CURL'            : "@HAVE_CURL_FALSE@",
     'HAVE_FITS'            : "@HAVE_FITS_FALSE@",
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
     'HAVE_HGE'             : "@HAVE_HGE_FALSE@",
+    'HAVE_ICONV'           : "@HAVE_ICONV_FALSE@",
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
     'HAVE_LIBLZ4'          : "@HAVE_LIBLZ4_FALSE@",
     'HAVE_LIBLZMA'         : "@HAVE_LIBLZMA_FALSE@",
@@ -389,23 +383,19 @@ CONDITIONALS = {
     'HAVE_GETENTROPY'      : "@HAVE_GETENTROPY_FALSE@",
     'NATIVE_WIN32'         : "@NATIVE_WIN32_FALSE@",
     'NOT_WIN32'            : "@NOT_WIN32_FALSE@",
-    'NOT_ASSERT'           : "@NOT_ASSERT_FALSE@",
+    'SANITIZER'            : "@SANITIZER_FALSE@",
     # unknown at compile time;
     # hence, we set them only at runtime in main() below
     'KNOWNFAIL'            : False, # skip on release branch when not in testweb
     'HAVE_MONETDBJDBC_JAR' : False,
-    'HAVE_JAVA'            : False,
-    'HAVE_JAVAJDBC'        : False,
-    'HAVE_JAVAMEROCONTROL' : False,
     'HAVE_JDBCCLIENT_JAR'  : False,
     'HAVE_JDBCTESTS_JAR'   : False,
-    'HAVE_JDBCTESTS_DIR'   : False,
     'HAVE_JDBCTESTS'       : False,
 #    'HAVE_LIBPANDAS3'      : False,
     'HAVE_LIBSCIPY3'       : False,
     'HAVE_PERL'            : False,
     'HAVE_PHP'             : False,
-    'HAVE_PYMONETDB'       : True,  # default PYTHON can import pymonetdb
+    'HAVE_PYODBC'          : False,
     'HAVE_PYTHON_LZ4'      : False, # module lz4 is available
     'HAVE_RUBY'            : False,
     'HAVE_CPP'             : False,
@@ -1706,7 +1696,8 @@ def GetBitsAndModsAndThreads(env) :
         proc.killed = False
         proc.onechild = True
         t = Timer(float(par['TIMEOUT']), killProc, args = [proc, stderr, cmd])
-        qOut = qErr = None
+        qOut = qErr = ''
+        mods = []
         try:
             t.start()
             while True:
@@ -1721,36 +1712,32 @@ def GetBitsAndModsAndThreads(env) :
             if proc.returncode is None:
                 connurl = open(os.path.join(dbpath, '.conn')).read()
                 res = mapiportre.search(connurl)
-                cmd = splitcommand(env['exe']['MAL_Client'][1].replace('${PORT}', res.group('port')))
-                if procdebug:
-                    print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
-                with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
-                                   stderr=process.PIPE, text=True) as clnt:
-                    input = '''\
-                        c := mdb.modules();
-                        modsid := algebra.unique(c,nil:bat);
-                        mods := algebra.projection(modsid,c);
-                        s := "\\nModules: ";
-                        sep := "";
-                        barrier (h:oid,t:str) := iterator.new(mods);
-                                s := s + sep;
-                                s := s + "\'";
-                                s := s + t;
-                                s := s + "\'";
-                                sep := ",";
-                        redo (h:oid,t:str) := iterator.next(mods);
-                        exit h;
-                        s := s + "\\n";
-                        io.printf(s);
-                    '''
-                    ##module("NoModule");
-                    qOut, qErr = clnt.communicate(input=input)
+                try:
+                    dbh = pymonetdb.connect(username='monetdb',
+                                            password='monetdb',
+                                            hostname=HOST,
+                                            port=int(res.group('port')),
+                                            database=TSTPREF,
+                                            autocommit=True)
+                except KeyboardInterrupt:
+                    raise
+                except:
+                    pass
+                else:
+                    crs = dbh.cursor()
+                    crs.execute('select distinct module from sys.malfunctions() order by module')
+                    mods = crs.fetchall()
+                    mods = [x[0] for x in mods]
+                    try:
+                        mods.remove('user')
+                    except ValueError:
+                        pass
+                    crs.close()
+                    dbh.close()
                 proc.terminate()
-                sOut = proc.stdout.read()
-                sErr = proc.stderr.read()
+                qOut = proc.stdout.read()
+                qErr = proc.stderr.read()
                 proc.wait()
-                qOut = sOut + qOut
-                qErr = sErr + qErr
         finally:
             t.cancel()
             if proc.returncode is None:
@@ -1758,7 +1745,7 @@ def GetBitsAndModsAndThreads(env) :
                 proc.wait()
             if procdebug:
                 print('GetBitsAndModsAndThreads: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode))
-    env['TST_MODS'] = []
+    env['TST_MODS'] = mods
     env['TST_BITS'] = ""
     env['TST_INT128'] = ""
     env['TST_SINGLE'] = ""
@@ -1767,7 +1754,6 @@ def GetBitsAndModsAndThreads(env) :
     if qOut:
         tbos = re.compile("^# Compiled for (?P<arch>[^-]+).*/(?P<bits>[63][42]bit)(?P<int128> with 128bit integers|)", re.MULTILINE)
         tt = re.compile("^# Serving database .*, using ([0-9]+) threads?", re.MULTILINE)
-        tm = re.compile("^Modules: (.+)$", re.MULTILINE)
         for l in qOut.split('\n'):
             obs = tbos.match(l)
             if obs is not None:
@@ -1786,9 +1772,6 @@ def GetBitsAndModsAndThreads(env) :
                     env['TST_SINGLE'] = "single"
                     os.environ['TST_SINGLE'] = env['TST_SINGLE']
                 env['TST_THREADS'] = t.group(1)
-            m = tm.match(l)
-            if m:
-                env['TST_MODS'] = eval(m.group(1))
         if not env['TST_BITS']:
             ErrMsg("Checking for Bits failed!")
         if not env['TST_MODS']:
@@ -1995,7 +1978,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
     nomito = os.path.isfile(TST + '.nomito')
     user = None
     passwd = None
-
+    odbc = False                # whether to set up odbc.ini file
 
     os.chdir(TSTTRGDIR)
 
@@ -2103,6 +2086,8 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
                     reason = "as conditional '%s' does not hold." % cond
                 elem = SkipTest(env, TST, EXT, reason, length)
                 break
+            elif cond in ('HAVE_ODBC', 'HAVE_PYODBC'):
+                odbc = True
     if reason:
         pass
     elif MissingTests:
@@ -2189,6 +2174,23 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
                     f.write(expandvars(l, env))
                 f.close()
 
+        if odbc:
+            f = openutf8('odbc.ini', 'w')
+            f.write(f'''\
+[MonetDB-Test]
+Description = Test MonetDB Data Source
+Driver = {env["LIBDIR"]}/libMonetODBC.so
+Setup = {env["LIBDIR"]}/libMonetODBCs.so
+Host = localhost
+Port = {env["MAPIPORT"]}
+Database = {TSTDB}
+User = {user or "monetdb"}
+Password = {passwd or "monetdb"}
+Debug =
+''')
+            f.close()
+            os.environ['ODBCINI'] = os.path.join(TSTTRGDIR, 'odbc.ini')
+
         STABLEout,STABLEerr = StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION)
         TIMEOUT = par['TIMEOUT']
         if os.path.isfile(TST+".timeout"):
@@ -2214,6 +2216,9 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
         TX = t1 - t0
         if verbosity > 0:
             print(" %7.3fs " % TX, end='')
+
+        if odbc:
+            del os.environ['ODBCINI']
 
         if tres == 'timeout':
             errcode = F_TIME
@@ -2262,31 +2267,31 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
         ##if [ -f .all.left-over.tmp.bats. ] ; then  mv -f .all.left-over.tmp.bats. $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
 
         if tres == 'socket':
-            if verbosity == 0:
+            if verbosity == 0 and not produce_html:
                 print("\n%s : Socket!" % TST)
             elif verbosity > 1:
                 print("(Socket!) ", end='')
 
         if tres == 'timeout':
-            if verbosity == 0:
+            if verbosity == 0 and not produce_html:
                 print("\n%s : Timeout!" % TST)
             elif verbosity > 1:
                 print("(Timeout!) ", end='')
 
         if tres == 'recursion':
-            if verbosity == 0:
+            if verbosity == 0 and not produce_html:
                 print("\n%s : Recursion!" % TST)
             elif verbosity > 1:
                 print("(Recursion!) ", end='')
 
         if tres == 'segfault':
-            if verbosity == 0:
+            if verbosity == 0 and not produce_html:
                 print("\n%s : Crashed!" % TST)
             elif verbosity > 1:
                 print("(Crashed!) ", end='')
 
         if tres == 'signal':
-            if verbosity == 0:
+            if verbosity == 0 and not produce_html:
                 print("\n%s : Signaled!" % TST)
             elif verbosity > 1:
                 print("(Signaled!) ", end='')
@@ -2935,7 +2940,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                 pass
                         defines = []
                         if lang == 'sql' and os.path.exists(TST+'.test.in'):
-                            for key in ('TSTDATAPATH', 'TSTSRCBASE', 'TSTSRCDIR', 'TSTTRGDIR', 'UTSTSRCDIR'):
+                            for key in ('TSTDATAPATH', 'TSTSRCBASE', 'TSTSRCDIR', 'TSTTRGDIR', 'UTSTSRCDIR', 'TSTDB', 'MAPIPORT'):
                                 if key in env:
                                     defines.append('{}={}'.format(key, env[key]))
                         try:
@@ -3142,9 +3147,9 @@ def CheckClassPath() :
         cp = ''
         cpx = ''
     JARS = {
-        'HAVE_MONETDBJDBC_JAR' : re.compile('^monetdb-jdbc-[0-9]\.[0-9]+(-[a-f0-9]{12})?\.jre[0-9]+\.jar$'),
-        'HAVE_JDBCCLIENT_JAR'  : re.compile('^jdbcclient\.jre[0-9]+\.jar$'),
-        'HAVE_JDBCTESTS_JAR'   : re.compile('^jdbctests\.jar$'),
+        'HAVE_MONETDBJDBC_JAR' : re.compile(r'^monetdb-jdbc-[0-9]\.[0-9]+(-[a-f0-9]{12})?\.jre[0-9]+\.jar$'),
+        'HAVE_JDBCCLIENT_JAR'  : re.compile(r'^jdbcclient\.jre[0-9]+\.jar$'),
+        'HAVE_JDBCTESTS_JAR'   : re.compile(r'^jdbctests\.jar$'),
     }
     # check for known JARs in CLASSPATH files
     for p in cp.split(os.pathsep):
@@ -3171,18 +3176,12 @@ def CheckClassPath() :
             for f in listdir(d):
                 p = os.path.join(d,f)
                 if os.path.isfile(p):
-                    if f == 'BugConcurrent_clients_SF_1504657.class':
-                        C = 'HAVE_JDBCTESTS_DIR'
-                        if not CONDITIONALS.get(C):
-                            cp = cp + os.pathsep + d
-                            CONDITIONALS[C] = True
-                    else:
-                        C = 'HAVE_%s' % f.upper().replace('.','_')
-                        if C not in JARS:
-                            C = 'HAVE_MONETDBJDBC_JAR'
-                        if not CONDITIONALS.get(C) and JARS[C].match(f):
-                            cp = cp + os.pathsep + p
-                            CONDITIONALS[C] = True
+                    C = 'HAVE_%s' % f.upper().replace('.','_')
+                    if C not in JARS:
+                        C = 'HAVE_MONETDBJDBC_JAR'
+                    if not CONDITIONALS.get(C) and JARS[C].match(f):
+                        cp = cp + os.pathsep + p
+                        CONDITIONALS[C] = True
     if cp:
         os.environ['CLASSPATH'] = cp
     if verbosity > 1:
@@ -3194,8 +3193,7 @@ def CheckClassPath() :
         if miss:
             Warn('Could not find%s in\nCLASSPATH="%s"' % (miss,cpx))
     if CONDITIONALS.get('HAVE_MONETDBJDBC_JAR') and \
-       ( CONDITIONALS.get('HAVE_JDBCTESTS_JAR') or
-         CONDITIONALS.get('HAVE_JDBCTESTS_DIR') ):
+       CONDITIONALS.get('HAVE_JDBCTESTS_JAR'):
         CONDITIONALS['HAVE_JDBCTESTS'] = True
 ### CheckClassPath() #
 
@@ -3464,7 +3462,6 @@ def main(argv) :
     parser.add_argument('--SQLDUMP', action='store', dest='SQLDUMP', metavar='<sql-dump program>', help='default: %s' % dft['SQLDUMP'])
     parser.add_argument('--RCLIENT', action='store', dest='RCLIENT', metavar='<R program>', help='default: %s' % dft['RCLIENT'])
     parser.add_argument('--RUBYCLIENT', action='store', dest='RUBYCLIENT', metavar='<ruby program>', help='default: %s' % dft['RUBYCLIENT'])
-    parser.add_argument('--concurrent', action='store_true', dest='concurrent', help='There are concurrent Mtest runs using the same MonetDB installation')
     parser.add_argument('--dbg', action='store', dest='dbg', metavar='<debugger/valgrind>', help="debugger to start before each server")
     parser.add_argument('--mserver_set', action='append', dest='mserver_set', metavar='<mserver5_option>', help="This passes a single set to the server")
     parser.add_argument('--loadmodule', action='append', dest='loadmodule', metavar='<module_name>', help="Pass on loadmodule to mserver5")
@@ -3521,9 +3518,6 @@ def main(argv) :
     a = opts.gdk_dbfarm
     if a is not None:
         env['GDK_DBFARM'] = a
-    a = opts.concurrent
-    if a:
-        env['CONCURRENT'] = a
     a = opts.dbg
     if a is not None:
         env['DBG'] = a
@@ -3579,6 +3573,19 @@ def main(argv) :
     # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
     # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
     os.environ['PYTHON'] = sys.executable
+
+    if CONDITIONALS['HAVE_ODBC']:
+        if CONDITIONALS['NOT_WIN32']:
+            # only enable HAVE_PYODBC if we have ODBC support
+            try:
+                import pyodbc
+            except ImportError:
+                CONDITIONALS['HAVE_PYODBC'] = False
+            else:
+                CONDITIONALS['HAVE_PYODBC'] = True
+        else:
+            # for now, no ODBC testing on Windows
+            CONDITIONALS['HAVE_ODBC'] = False
 
     try:
         import lz4
@@ -3825,10 +3832,11 @@ def main(argv) :
         # fix up URLPREFIX
         if REV:
             URLPREFIX += '%s/' % REV.split()[0].rstrip('+')
-            os.environ['REVISION'] = REV
         else:
             # if no revision known, can't refer to repository
             URLPREFIX = None
+    if REV:
+        os.environ['REVISION'] = REV
 
     global SOCK, HOST
     try:                        # try/finally to clean up sockdir

@@ -37,12 +37,17 @@ enum clientmode {
  * initialization string. See the documentation on Scenarios.
  */
 typedef struct CLIENT_INPUT {
-	bstream             *fdin;
-	size_t              yycur;
-	int                 listing;
-	char                *prompt;
+	bstream *fdin;
+	size_t yycur;
+	int listing;
+	const char *prompt;
 	struct CLIENT_INPUT *next;
 } ClientInput;
+
+struct CLIENT;
+typedef str (*init_client)(struct CLIENT *, const char *, const char *, const char *);
+typedef str (*exit_client)(struct CLIENT *);
+typedef void (*engine_fptr)(struct CLIENT *);
 
 typedef struct CLIENT {
 	int idx;        /* entry in mal_clients (-1 if free) */
@@ -57,10 +62,9 @@ typedef struct CLIENT {
 	 * provided to temporarily switch to another scenario.
 	 */
 	str     scenario;  /* scenario management references */
-	str     oldscenario;
-	void    *state[SCENARIO_PROPERTIES], *oldstate[SCENARIO_PROPERTIES];
-	MALfcn  phase[SCENARIO_PROPERTIES], oldphase[SCENARIO_PROPERTIES];
-	char    itrace;    /* trace execution using interactive mdb */
+	engine_fptr engine;
+	init_client initClient;
+	exit_client exitClient;
 						/* if set to 'S' it will put the process to sleep */
 	bit		sqlprofiler;		/* control off-line sql performance monitoring */
 	/*
@@ -72,6 +76,7 @@ typedef struct CLIENT {
 	int		memorylimit;		/* maximum memory currently allowed in MB */
 	lng maxmem;					/* max_memory from db_user_info table */
 	lng	    sessiontimeout;		/* session abort after x usec, 0 = no limit */
+	lng logical_sessiontimeout;     /* logical session timeout, client defined */
 	QryCtx  qryctx;				/* per query limitations */
 
 	time_t  login;  	/* Time when this session started */
@@ -108,7 +113,7 @@ typedef struct CLIENT {
 	 * the type information.
 	 */
 	int  listing;
-	str prompt;         /* acknowledge prompt */
+	const char *prompt;         /* acknowledge prompt */
 	size_t promptlength;
 	ClientInput *bak;   /* used for recursive script and string execution */
 
@@ -123,12 +128,6 @@ typedef struct CLIENT {
 	 * executed.  Nesting is indicated using a '+' before the prompt.
 	 */
 	int blkmode;        /* control block parsing */
-	/*
-	 * The MAL debugger uses the client record to keep track of any
-	 * pervasive debugger command. For detailed information on the
-	 * debugger features.
-	 */
-	int debug;
 	enum clientmode mode;  /* FREECLIENT..BLOCKED */
 	/*
 	 * Client records are organized into a two-level dependency tree,
@@ -179,14 +178,12 @@ mal_export ClientRec *mal_clients;
 
 mal_export Client  MCgetClient(int id);
 mal_export Client  MCinitClient(oid user, bstream *fin, stream *fout);
-mal_export Client  MCforkClient(Client father);
 mal_export void	   MCstopClients(Client c);
 mal_export int	   MCactiveClients(void);
-mal_export size_t  MCmemoryClaim(void);
 mal_export void    MCcloseClient(Client c);
 mal_export str     MCsuspendClient(int id);
 mal_export str     MCawakeClient(int id);
-mal_export int     MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt);
+mal_export int     MCpushClientInput(Client c, bstream *new_input, int listing, const char *prompt);
 mal_export int	   MCvalid(Client c);
 
 #endif /* _MAL_CLIENT_H_ */

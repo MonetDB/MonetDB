@@ -63,6 +63,12 @@
 #include "monetdb_config.h"
 #include "str.h"
 #include <string.h>
+#ifdef HAVE_ICONV
+#include <iconv.h>
+#endif
+#include "mal_interpreter.h"
+
+#include "utf8.h"
 
 /*
  * UTF-8 Handling
@@ -3004,109 +3010,37 @@ STRepilogue(void *ret)
 	return MAL_SUCCEED;
 }
 
-/* Get the last char in (X2), and #bytes it takes, but do not decrease
- * the pos in (X2).  See gdk_atoms.c for UTF-8 encoding */
-#define UTF8_LASTCHAR(X1, SZ, X2, SZ2)				\
-	do {											\
-		if (((X2)[SZ2-1] & 0x80) == 0) {			\
-			(X1) = (X2)[SZ2-1];						\
-			(SZ) = 1;								\
-		} else if (((X2)[SZ2-2] & 0xE0) == 0xC0) {	\
-			(X1)  = ((X2)[SZ2-2] & 0x1F) << 6;		\
-			(X1) |= ((X2)[SZ2-1] & 0x3F);			\
-			(SZ) = 2;								\
-		} else if (((X2)[SZ2-3] & 0xF0) == 0xE0) {	\
-			(X1)  = ((X2)[SZ2-3] & 0x0F) << 12;		\
-			(X1) |= ((X2)[SZ2-2] & 0x3F) << 6;		\
-			(X1) |= ((X2)[SZ2-1] & 0x3F);			\
-			(SZ) = 3;								\
-		} else if (((X2)[SZ2-4] & 0xF8) == 0xF0) {	\
-			(X1)  = ((X2)[SZ2-4] & 0x07) << 18;		\
-			(X1) |= ((X2)[SZ2-3] & 0x3F) << 12;		\
-			(X1) |= ((X2)[SZ2-2] & 0x3F) << 6;		\
-			(X1) |= ((X2)[SZ2-1] & 0x3F);			\
-			(SZ) = 4;								\
-		} else {									\
-			(X1) = int_nil;							\
-			(SZ) = 0;								\
-		}											\
-	} while (0)
+#ifndef NDEBUG
+static void
+UTF8_assert(const char *restrict s)
+{
+	int c;
 
-/* Get the first char in (X2), and #bytes it takes, but do not
- * increase the pos in (X2) */
-#define UTF8_NEXTCHAR(X1, SZ, X2)				\
-	do {										\
-		if (((X2)[0] & 0x80) == 0) {			\
-			(X1) = (X2)[0];						\
-			(SZ) = 1;							\
-		} else if (((X2)[0] & 0xE0) == 0xC0) {	\
-			(X1)  = ((X2)[0] & 0x1F) << 6;		\
-			(X1) |= ((X2)[1] & 0x3F);			\
-			(SZ) = 2;							\
-		} else if (((X2)[0] & 0xF0) == 0xE0) {	\
-			(X1)  = ((X2)[0] & 0x0F) << 12;		\
-			(X1) |= ((X2)[1] & 0x3F) << 6;		\
-			(X1) |= ((X2)[2] & 0x3F);			\
-			(SZ) = 3;							\
-		} else if (((X2)[0] & 0xF8) == 0xF0) {	\
-			(X1)  = ((X2)[0] & 0x07) << 18;		\
-			(X1) |= ((X2)[1] & 0x3F) << 12;		\
-			(X1) |= ((X2)[2] & 0x3F) << 6;		\
-			(X1) |= ((X2)[3] & 0x3F);			\
-			(SZ) = 4;							\
-		} else {								\
-			(X1) = int_nil;						\
-			(SZ) = 0;							\
-		}										\
-	} while (0)
-
-#define UTF8_GETCHAR(X1, X2)											\
-	do {																\
-		if ((*(X2) & 0x80) == 0) {										\
-			(X1) = *(X2)++;												\
-		} else if ((*(X2) & 0xE0) == 0xC0) {							\
-			(X1)  = (*(X2)++ & 0x1F) << 6;								\
-			(X1) |= (*(X2)++ & 0x3F);									\
-		} else if ((*(X2) & 0xF0) == 0xE0) {							\
-			(X1)  = (*(X2)++ & 0x0F) << 12;								\
-			(X1) |= (*(X2)++ & 0x3F) << 6;								\
-			(X1) |= (*(X2)++ & 0x3F);									\
-		} else if ((*(X2) & 0xF8) == 0xF0) {							\
-			(X1)  = (*(X2)++ & 0x07) << 18;								\
-			(X1) |= (*(X2)++ & 0x3F) << 12;								\
-			(X1) |= (*(X2)++ & 0x3F) << 6;								\
-			(X1) |= (*(X2)++ & 0x3F);									\
-			if ((X1) > 0x10FFFF || ((X1) & 0x1FF800) == 0xD800)			\
-				goto illegal;											\
-		} else {														\
-			(X1) = int_nil;												\
-		}																\
-	} while (0)
-
-#define UTF8_PUTCHAR(X1, X2)											\
-	do {																\
-		if ((X1) < 0 || (X1) > 0x10FFFF || ((X1) & 0x1FF800) == 0xD800) { \
-			goto illegal;												\
-		} else if ((X1) <= 0x7F) {										\
-			*(X2)++ = (X1);												\
-		} else if ((X1) <= 0x7FF) {										\
-			*(X2)++ = 0xC0 | ((X1) >> 6);								\
-			*(X2)++ = 0x80 | ((X1) & 0x3F);								\
-		} else if ((X1) <= 0xFFFF) {									\
-			*(X2)++ = 0xE0 | ((X1) >> 12);								\
-			*(X2)++ = 0x80 | (((X1) >> 6) & 0x3F);						\
-			*(X2)++ = 0x80 | ((X1) & 0x3F);								\
-		} else {														\
-			*(X2)++ = 0xF0 | ((X1) >> 18);								\
-			*(X2)++ = 0x80 | (((X1) >> 12) & 0x3F);						\
-			*(X2)++ = 0x80 | (((X1) >> 6) & 0x3F);						\
-			*(X2)++ = 0x80 | ((X1) & 0x3F);								\
-		}																\
-	} while (0)
-
-#define UTF8_CHARLEN(UC) \
-	((UC) <= 0x7F ? 1 : (UC) <= 0x7FF ? 2 : (UC) <= 0xFFFF ? 3 : 4)
-//	(1 + ((UC) > 0x7F) + ((UC) > 0x7FF) + ((UC) > 0xFFFF))
+	if (s == NULL)
+		return;
+	if (*s == '\200' && s[1] == '\0')
+		return;					/* str_nil */
+	while ((c = *s++) != '\0') {
+		if ((c & 0x80) == 0)
+			continue;
+		if ((*s++ & 0xC0) != 0x80)
+			assert(0);
+		if ((c & 0xE0) == 0xC0)
+			continue;
+		if ((*s++ & 0xC0) != 0x80)
+			assert(0);
+		if ((c & 0xF0) == 0xE0)
+			continue;
+		if ((*s++ & 0xC0) != 0x80)
+			assert(0);
+		if ((c & 0xF8) == 0xF0)
+			continue;
+		assert(0);
+	}
+}
+#else
+#define UTF8_assert(s)		((void) 0)
+#endif
 
 static inline int
 UTF8_strpos(const char *s, const char *end)
@@ -3192,6 +3126,193 @@ UTF8_offset(char *restrict s, int n)
 		n--;
 	}
 	return s;
+}
+
+int
+UTF8_strlen(const char *restrict s) /* This function assumes, s is never nil */
+{
+	size_t pos = 0;
+
+	UTF8_assert(s);
+	assert(!strNil(s));
+
+	while (*s) {
+		/* just count leading bytes of encoded code points; only works
+		 * for correctly encoded UTF-8 */
+		pos += (*s++ & 0xC0) != 0x80;
+	}
+	assert(pos < INT_MAX);
+	return (int) pos;
+}
+
+int
+str_strlen(const char *restrict s)  /* This function assumes, s is never nil */
+{
+	size_t pos = strlen(s);
+	assert(pos < INT_MAX);
+	return (int) pos;
+}
+
+int
+UTF8_strwidth(const char *restrict s)
+{
+	int len = 0;
+	int c;
+	int n;
+
+	if (strNil(s))
+		return int_nil;
+	c = 0;
+	n = 0;
+	while (*s != 0) {
+		if ((*s & 0x80) == 0) {
+			assert(n == 0);
+			len++;
+			n = 0;
+		} else if ((*s & 0xC0) == 0x80) {
+			c = (c << 6) | (*s & 0x3F);
+			if (--n == 0) {
+				/* last byte of a multi-byte character */
+				len++;
+				/* this list was created by combining
+				 * the code points marked as
+				 * Emoji_Presentation in
+				 * /usr/share/unicode/emoji/emoji-data.txt
+				 * and code points marked either F or
+				 * W in EastAsianWidth.txt; this list
+				 * is up-to-date with Unicode 9.0 */
+				if ((0x1100 <= c && c <= 0x115F) ||
+				    (0x231A <= c && c <= 0x231B) ||
+				    (0x2329 <= c && c <= 0x232A) ||
+				    (0x23E9 <= c && c <= 0x23EC) ||
+				    c == 0x23F0 ||
+				    c == 0x23F3 ||
+				    (0x25FD <= c && c <= 0x25FE) ||
+				    (0x2614 <= c && c <= 0x2615) ||
+				    (0x2648 <= c && c <= 0x2653) ||
+				    c == 0x267F ||
+				    c == 0x2693 ||
+				    c == 0x26A1 ||
+				    (0x26AA <= c && c <= 0x26AB) ||
+				    (0x26BD <= c && c <= 0x26BE) ||
+				    (0x26C4 <= c && c <= 0x26C5) ||
+				    c == 0x26CE ||
+				    c == 0x26D4 ||
+				    c == 0x26EA ||
+				    (0x26F2 <= c && c <= 0x26F3) ||
+				    c == 0x26F5 ||
+				    c == 0x26FA ||
+				    c == 0x26FD ||
+				    c == 0x2705 ||
+				    (0x270A <= c && c <= 0x270B) ||
+				    c == 0x2728 ||
+				    c == 0x274C ||
+				    c == 0x274E ||
+				    (0x2753 <= c && c <= 0x2755) ||
+				    c == 0x2757 ||
+				    (0x2795 <= c && c <= 0x2797) ||
+				    c == 0x27B0 ||
+				    c == 0x27BF ||
+				    (0x2B1B <= c && c <= 0x2B1C) ||
+				    c == 0x2B50 ||
+				    c == 0x2B55 ||
+				    (0x2E80 <= c && c <= 0x2E99) ||
+				    (0x2E9B <= c && c <= 0x2EF3) ||
+				    (0x2F00 <= c && c <= 0x2FD5) ||
+				    (0x2FF0 <= c && c <= 0x2FFB) ||
+				    (0x3000 <= c && c <= 0x303E) ||
+				    (0x3041 <= c && c <= 0x3096) ||
+				    (0x3099 <= c && c <= 0x30FF) ||
+				    (0x3105 <= c && c <= 0x312D) ||
+				    (0x3131 <= c && c <= 0x318E) ||
+				    (0x3190 <= c && c <= 0x31BA) ||
+				    (0x31C0 <= c && c <= 0x31E3) ||
+				    (0x31F0 <= c && c <= 0x321E) ||
+				    (0x3220 <= c && c <= 0x3247) ||
+				    (0x3250 <= c && c <= 0x32FE) ||
+				    (0x3300 <= c && c <= 0x4DBF) ||
+				    (0x4E00 <= c && c <= 0xA48C) ||
+				    (0xA490 <= c && c <= 0xA4C6) ||
+				    (0xA960 <= c && c <= 0xA97C) ||
+				    (0xAC00 <= c && c <= 0xD7A3) ||
+				    (0xF900 <= c && c <= 0xFAFF) ||
+				    (0xFE10 <= c && c <= 0xFE19) ||
+				    (0xFE30 <= c && c <= 0xFE52) ||
+				    (0xFE54 <= c && c <= 0xFE66) ||
+				    (0xFE68 <= c && c <= 0xFE6B) ||
+				    (0xFF01 <= c && c <= 0xFF60) ||
+				    (0xFFE0 <= c && c <= 0xFFE6) ||
+				    c == 0x16FE0 ||
+				    (0x17000 <= c && c <= 0x187EC) ||
+				    (0x18800 <= c && c <= 0x18AF2) ||
+				    (0x1B000 <= c && c <= 0x1B001) ||
+				    c == 0x1F004 ||
+				    c == 0x1F0CF ||
+				    c == 0x1F18E ||
+				    (0x1F191 <= c && c <= 0x1F19A) ||
+				    /* removed 0x1F1E6..0x1F1FF */
+				    (0x1F200 <= c && c <= 0x1F202) ||
+				    (0x1F210 <= c && c <= 0x1F23B) ||
+				    (0x1F240 <= c && c <= 0x1F248) ||
+				    (0x1F250 <= c && c <= 0x1F251) ||
+				    (0x1F300 <= c && c <= 0x1F320) ||
+				    (0x1F32D <= c && c <= 0x1F335) ||
+				    (0x1F337 <= c && c <= 0x1F37C) ||
+				    (0x1F37E <= c && c <= 0x1F393) ||
+				    (0x1F3A0 <= c && c <= 0x1F3CA) ||
+				    (0x1F3CF <= c && c <= 0x1F3D3) ||
+				    (0x1F3E0 <= c && c <= 0x1F3F0) ||
+				    c == 0x1F3F4 ||
+				    (0x1F3F8 <= c && c <= 0x1F43E) ||
+				    c == 0x1F440 ||
+				    (0x1F442 <= c && c <= 0x1F4FC) ||
+				    (0x1F4FF <= c && c <= 0x1F53D) ||
+				    (0x1F54B <= c && c <= 0x1F54E) ||
+				    (0x1F550 <= c && c <= 0x1F567) ||
+				    c == 0x1F57A ||
+				    (0x1F595 <= c && c <= 0x1F596) ||
+				    c == 0x1F5A4 ||
+				    (0x1F5FB <= c && c <= 0x1F64F) ||
+				    (0x1F680 <= c && c <= 0x1F6C5) ||
+				    c == 0x1F6CC ||
+				    (0x1F6D0 <= c && c <= 0x1F6D2) ||
+				    (0x1F6EB <= c && c <= 0x1F6EC) ||
+				    (0x1F6F4 <= c && c <= 0x1F6F6) ||
+				    (0x1F910 <= c && c <= 0x1F91E) ||
+				    (0x1F920 <= c && c <= 0x1F927) ||
+				    c == 0x1F930 ||
+				    (0x1F933 <= c && c <= 0x1F93E) ||
+				    (0x1F940 <= c && c <= 0x1F94B) ||
+				    (0x1F950 <= c && c <= 0x1F95E) ||
+				    (0x1F980 <= c && c <= 0x1F991) ||
+				    c == 0x1F9C0 ||
+				    (0x20000 <= c && c <= 0x2FFFD) ||
+				    (0x30000 <= c && c <= 0x3FFFD))
+					len++;
+			}
+		} else if ((*s & 0xE0) == 0xC0) {
+			assert(n == 0);
+			n = 1;
+			c = *s & 0x1F;
+		} else if ((*s & 0xF0) == 0xE0) {
+			assert(n == 0);
+			n = 2;
+			c = *s & 0x0F;
+		} else if ((*s & 0xF8) == 0xF0) {
+			assert(n == 0);
+			n = 3;
+			c = *s & 0x07;
+		} else if ((*s & 0xFC) == 0xF8) {
+			assert(n == 0);
+			n = 4;
+			c = *s & 0x03;
+		} else {
+			assert(0);
+			n = 0;
+		}
+		s++;
+	}
+	return len;
 }
 
 str
@@ -3538,51 +3659,14 @@ STRWChrAt(int *res, const str *arg1, const int *at)
 	return str_wchr_at(res, *arg1, *at);
 }
 
-/* returns whether arg1 starts with arg2 */
-bit
-str_is_prefix(const char *s, const char *prefix)
-{
-	return strncmp(s, prefix, strlen(prefix)) == 0;
-}
-
-static str
-STRPrefix(bit *res, const str *arg1, const str *arg2)
-{
-	const char *s = *arg1, *prefix = *arg2;
-
-	*res = (strNil(s) || strNil(prefix)) ? bit_nil : str_is_prefix(s, prefix);
-	return MAL_SUCCEED;
-}
-
-bit
-str_is_suffix(const char *s, const char *suffix)
-{
-	size_t sl = strlen(s), sul = strlen(suffix);
-
-	if (sl < sul)
-		return 0;
-	else
-		return strcmp(s + sl - sul, suffix) == 0;
-}
-
-/* returns whether arg1 ends with arg2 */
-static str
-STRSuffix(bit *res, const str *arg1, const str *arg2)
-{
-	const char *s = *arg1, *suffix = *arg2;
-
-	*res = (strNil(s) || strNil(suffix)) ? bit_nil : str_is_suffix(s, suffix);
-	return MAL_SUCCEED;
-}
-
 str
 str_lower(str *buf, size_t *buflen, const char *s)
 {
 	return convertCase(UTF8_toLowerFrom, UTF8_toLowerTo, buf, buflen, s, "str.lower");
 }
 
-static str
-STRLower(str *res, const str *arg1)
+static inline str
+STRlower(str *res, const str *arg1)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
@@ -3621,7 +3705,7 @@ str_upper(str *buf, size_t *buflen, const char *s)
 }
 
 static str
-STRUpper(str *res, const str *arg1)
+STRupper(str *res, const str *arg1)
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
@@ -3653,9 +3737,118 @@ STRUpper(str *res, const str *arg1)
 	return msg;
 }
 
-int
-str_search(const char *s, const char *s2)
+/* returns whether arg1 starts with arg2 */
+bit
+str_is_prefix(const char *s, const char *prefix, int plen)
 {
+	return strncmp(s, prefix, plen) == 0;
+}
+
+bit
+str_is_iprefix(const char *s, const char *prefix, int plen)
+{
+	return utf8ncasecmp(s, prefix, plen) == 0;
+}
+
+static str
+STRstartswith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	bit *res = getArgReference(stk, pci, 0);
+	const str *arg1 = getArgReference(stk, pci, 1), *arg2 = getArgReference(stk, pci, 2);
+	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
+	str s = *arg1, prefix = *arg2, msg = MAL_SUCCEED;
+	int plen = str_strlen(prefix);
+
+	*res = (strNil(s) || strNil(prefix)) ? bit_nil :
+		icase ? str_is_iprefix(s, prefix, plen) : str_is_prefix(s, prefix, plen);
+	return msg;
+}
+
+bit
+str_is_suffix(const char *s, const char *suffix, int sul)
+{
+	int sl = str_strlen(s);
+
+	if (sl < sul)
+		return 0;
+	else
+		return strcmp(s + sl - sul, suffix) == 0;
+}
+
+bit
+str_is_isuffix(const char *s, const char *suffix, int sul)
+{
+	int sl = str_strlen(s);
+
+	if (sl < sul)
+		return 0;
+	else
+		return utf8casecmp(s + sl - sul, suffix) == 0;
+}
+
+
+/* returns whether arg1 ends with arg2 */
+static str
+STRendswith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	bit *res = getArgReference(stk, pci, 0);
+	const str *arg1 = getArgReference(stk, pci, 1), *arg2 = getArgReference(stk, pci, 2);
+	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
+	str s = *arg1, suffix = *arg2, msg = MAL_SUCCEED;
+	int sul = str_strlen(suffix);
+
+	*res = (strNil(s) || strNil(suffix)) ? bit_nil :
+		icase ? str_is_isuffix(s, suffix, sul) : str_is_suffix(s, suffix, sul);
+	return msg;
+}
+
+bit
+str_contains(const char *h, const char *n, int nlen)
+{
+	(void)nlen;
+	/* 64bit: should return lng */
+	if (strstr(h, n) != NULL)
+		return TRUE;
+	else
+		return FALSE;
+}
+
+bit
+str_icontains(const char *h, const char *n, int nlen)
+{
+	(void)nlen;
+	/* 64bit: should return lng */
+	if (utf8casestr(h, n) != NULL)
+		return TRUE;
+	else
+		return FALSE;
+}
+
+/* returns whether haystack contains needle */
+static str
+STRcontains(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	bit *res = getArgReference(stk, pci, 0);
+	const str *arg1 = getArgReference(stk, pci, 1), *arg2 = getArgReference(stk, pci, 2);
+	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
+	str haystack = *arg1, needle = *arg2, msg = MAL_SUCCEED;
+	int needle_len = str_strlen(needle);
+
+	*res = (strNil(haystack) || strNil(needle)) ? bit_nil :
+		icase ? str_icontains(haystack, needle, needle_len) : str_contains(haystack, needle, needle_len);
+	return msg;
+}
+
+int
+str_search(const char *s, const char *s2, int slen)
+{
+	(void)slen;
 	/* 64bit: should return lng */
 	if ((s2 = strstr(s, s2)) != NULL)
 		return UTF8_strpos(s, s2);
@@ -3663,21 +3856,39 @@ str_search(const char *s, const char *s2)
 		return -1;
 }
 
+int
+str_isearch(const char *s, const char *s2, int slen)
+{
+	(void)slen;
+	/* 64bit: should return lng */
+	if ((s2 = utf8casestr(s, s2)) != NULL)
+		return UTF8_strpos(s, s2);
+	else
+		return -1;
+}
+
 /* find first occurrence of needle in haystack */
 static str
-STRstrSearch(int *res, const str *haystack, const str *needle)
+STRstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	const char *s = *haystack, *s2 = *needle;
+	(void)cntxt;
+	(void)mb;
+	bit *res = getArgReference(stk, pci, 0);
+	const str *haystack = getArgReference(stk, pci, 1), *needle = getArgReference(stk, pci, 2);
+	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
+	str s = *haystack, h = *needle, msg = MAL_SUCCEED;
+	int needle_len = str_strlen(h);
 
-	*res = (strNil(s) || strNil(s2)) ? int_nil : str_search(s, s2);
-	return MAL_SUCCEED;
+	*res = (strNil(s) || strNil(h)) ? bit_nil :
+		icase ? str_isearch(s, h, needle_len) : str_search(s, h, needle_len);
+	return msg;
 }
 
 int
-str_reverse_str_search(const char *s, const char *s2)
+str_reverse_str_search(const char *s, const char *s2, int slen)
 {
 	/* 64bit: should return lng */
-	size_t len = strlen(s), slen = strlen(s2);
+	int len = str_strlen(s);
 	int res = -1; /* changed if found */
 
 	if (len >= slen) {
@@ -3692,14 +3903,41 @@ str_reverse_str_search(const char *s, const char *s2)
 	return res;
 }
 
+int
+str_reverse_str_isearch(const char *s, const char *s2, int slen)
+{
+	/* 64bit: should return lng */
+	int len = str_strlen(s);
+	int res = -1; /* changed if found */
+
+	if (len >= slen) {
+		const char *p = s + len - slen;
+		do {
+			if (utf8ncasecmp(p, s2, slen) == 0) {
+				res = UTF8_strpos(s, p);
+				break;
+			}
+		} while (p-- > s);
+	}
+	return res;
+}
+
 /* find last occurrence of arg2 in arg1 */
 static str
-STRReverseStrSearch(int *res, const str *arg1, const str *arg2)
+STRrevstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	const char *s = *arg1, *s2 = *arg2;
+	(void)cntxt;
+	(void)mb;
+	bit *res = getArgReference(stk, pci, 0);
+	const str *haystack = getArgReference(stk, pci, 1);
+	const str *needle = getArgReference(stk, pci, 2);
+	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3) ? true : false;
+	str s = *haystack, h = *needle, msg = MAL_SUCCEED;
+	int needle_len = str_strlen(h);
 
-	*res = (strNil(s) || strNil(s2)) ? int_nil : str_reverse_str_search(s, s2);
-	return MAL_SUCCEED;
+	*res = (strNil(s) || strNil(h)) ? bit_nil :
+		icase ? str_reverse_str_isearch(s, h, needle_len) : str_reverse_str_search(s, h, needle_len);
+	return msg;
 }
 
 str
@@ -4585,7 +4823,7 @@ str_locate2(const char *needle, const char *haystack, int start)
 
 	off = start <= 0 ? 1 : start;
 	s = UTF8_strtail(haystack, off - 1);
-	res = str_search(s, needle);
+	res = str_search(s, needle, str_strlen(needle));
 	return res >= 0 ? res + off : 0;
 }
 
@@ -4745,6 +4983,737 @@ STRspace(str *res, const int *ll)
 	return msg;
 }
 
+static str
+STRasciify(str *r, const str *s)
+{
+#ifdef HAVE_ICONV
+	/* Handle NULL and return early */
+	if (strNil(*s)) {
+		if ((*r = GDKstrdup(str_nil)) == NULL)
+			throw(MAL, "str.asciify", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		else
+			return MAL_SUCCEED;
+	}
+	iconv_t cd;
+	const str f = "UTF-8", t = "ASCII//TRANSLIT";
+	str in = *s, out;
+	size_t in_len = strlen(in), out_len = in_len * 4; /* oversized as a single utf8 char could change into multiple
+														 ascii char */
+	/* man iconv; /TRANSLIT */
+	if ((cd = iconv_open(t, f)) == (iconv_t)(-1))
+		throw(MAL, "str.asciify", "ICONV: cannot convert from (%s) to (%s).", f, t);
+	if ((*r = out = GDKmalloc(out_len)) == NULL)
+		throw(MAL, "str.asciify", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	str o = out;
+	if (iconv(cd, &in, &in_len, &o, &out_len) == (size_t) - 1) {
+		GDKfree(out);
+		*r = NULL;
+		iconv_close(cd);
+		throw(MAL, "str.asciify", "ICONV: string conversion failed from (%s) to (%s)", f, t);
+	}
+	*o = '\0';
+	iconv_close(cd);
+	return MAL_SUCCEED;
+#else
+	throw(MAL, "str.asciify", "ICONV library not available.");
+#endif
+}
+
+/* scan select loop with or without candidates */
+#define scanloop(TEST, KEEP_NULLS)									    \
+	do {																\
+		TRC_DEBUG(ALGO,												\
+				  "scanselect(b=%s#"BUNFMT",anti=%d): "				\
+				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
+				  anti, #TEST);										\
+		if (!s || BATtdense(s)) {										\
+			for (; p < q; p++) {										\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				const char *restrict v = BUNtvar(bi, p - off);			\
+				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
+					vals[cnt++] = p;									\
+			}															\
+		} else {														\
+			for (; p < ncands; p++) {									\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				oid o = canditer_next(ci);								\
+				const char *restrict v = BUNtvar(bi, o - off);			\
+				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
+					vals[cnt++] = o;									\
+			}															\
+		}																\
+	} while (0)
+
+/* scan select loop with or without candidates */
+#define scanloop_anti(TEST, KEEP_NULLS)							    \
+	do {																\
+		TRC_DEBUG(ALGO,												\
+				  "scanselect(b=%s#"BUNFMT",anti=%d): "				\
+				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
+				  anti, #TEST);										\
+		if (!s || BATtdense(s)) {										\
+			for (; p < q; p++) {										\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				const char *restrict v = BUNtvar(bi, p - off);			\
+				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
+					vals[cnt++] = p;									\
+			}															\
+		} else {														\
+			for (; p < ncands; p++) {									\
+				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
+								  GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
+				oid o = canditer_next(ci);								\
+				const char *restrict v = BUNtvar(bi, o - off);			\
+				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
+					vals[cnt++] = o;									\
+			}															\
+		}																\
+	} while (0)
+
+static str
+do_string_select(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN *rcnt, const char *key, bool anti,
+				 bit (*str_cmp)(const char*, const char*, int), bool keep_nulls)
+{
+	BATiter bi = bat_iterator(b);
+	BUN cnt = 0, ncands = ci->ncand;
+	oid off = b->hseqbase, *restrict vals = Tloc(bn, 0);
+	str msg = MAL_SUCCEED;
+	int klen = str_strlen(key);
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL)
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+
+	if (anti) /* keep nulls ? (use false for now) */
+		scanloop_anti(v && *v != '\200' && str_cmp(v, key, klen) == 0, keep_nulls);
+	else
+		scanloop(v && *v != '\200' && str_cmp(v, key, klen) != 0, keep_nulls);
+
+bailout:
+	bat_iterator_end(&bi);
+	*rcnt = cnt;
+	return msg;
+}
+
+static str
+string_select(bat *ret, const bat *bid, const bat *sid, const str *key, const bit *anti,
+			  bit (*str_cmp)(const char*, const char*, int), const str fname)
+{
+	BAT *b, *s = NULL, *bn = NULL, *old_s = NULL;;
+	str msg = MAL_SUCCEED;
+	BUN p = 0, q = 0, rcnt = 0;
+	struct canditer ci;
+	bool with_strimps = false,
+		with_strimps_anti = false;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		msg = createException(MAL, fname , SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+		msg = createException(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+
+	assert(ATOMstorage(b->ttype) == TYPE_str);
+
+	if (BAThasstrimps(b)) {
+		if (STRMPcreate(b, NULL) == GDK_SUCCEED) {
+			BAT *tmp_s = STRMPfilter(b, s, *key, *anti);
+			if (tmp_s) {
+				old_s = s;
+				s = tmp_s;
+				if (!*anti)
+					with_strimps = true;
+				else
+					with_strimps_anti = true;
+			}
+		} else { /* If we cannot filter with the strimp just continue normally */
+			GDKclrerr();
+		}
+	}
+
+	MT_thread_setalgorithm(with_strimps ?
+						   "string_select: strcmp function using strimps" :
+							(with_strimps_anti ?
+							 "string_select: strcmp function using strimps anti" :
+							 "string_select: strcmp function with no accelerator"));
+
+	canditer_init(&ci, b, s);
+	if (!(bn = COLnew(0, TYPE_oid, ci.ncand, TRANSIENT))) {
+		msg = createException(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	if (!s || BATtdense(s)) {
+		if (s) {
+			assert(BATtdense(s));
+			p = (BUN) s->tseqbase;
+			q = p + BATcount(s);
+			if ((oid) p < b->hseqbase)
+				p = b->hseqbase;
+			if ((oid) q > b->hseqbase + BATcount(b))
+				q = b->hseqbase + BATcount(b);
+		} else {
+			p = b->hseqbase;
+			q = BATcount(b) + b->hseqbase;
+		}
+	}
+
+	msg = do_string_select(bn, b, s, &ci, p, q, &rcnt, *key, *anti && !with_strimps_anti, str_cmp, with_strimps_anti);
+
+	if (!msg) { /* set some properties */
+		BATsetcount(bn, rcnt);
+		bn->tsorted = true;
+		bn->trevsorted = bn->batCount <= 1;
+		bn->tkey = true;
+		bn->tnil = false;
+		bn->tnonil = true;
+		bn->tseqbase = rcnt == 0 ? 0 : rcnt == 1 ?
+			*(const oid*)Tloc(bn, 0) : rcnt == b->batCount ? b->hseqbase : oid_nil;
+		if(with_strimps_anti) {
+			BAT *rev;
+			if (old_s) {
+				rev = BATdiffcand(old_s, bn);
+				assert (BATintersectcand(old_s, bn)->batCount == bn->batCount);
+				assert (rev->batCount == old_s->batCount - bn->batCount);
+			}
+
+			else
+				rev = BATnegcands(b->batCount, bn);
+			BBPunfix(bn->batCacheid);
+			bn = rev;
+		}
+	}
+
+bailout:
+	BBPreclaim(b);
+	BBPreclaim(s);
+	BBPreclaim(old_s);
+	if (bn && !msg) {
+		*ret = bn->batCacheid;
+		BBPkeepref(bn);
+	} else if (bn)
+		BBPreclaim(bn);
+	return msg;
+}
+
+static str
+STRstartswithselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	bat *ret = getArgReference(stk, pci, 0);
+	const bat *bid = getArgReference(stk, pci, 1),
+		*sid = getArgReference(stk, pci, 2);
+	const str *key = getArgReference_str(stk, pci, 3);
+	const bit icase = pci->argc == 5 ? false : true,
+		*anti = pci->argc == 5 ? getArgReference_bit(stk, pci, 4) : getArgReference_bit(stk, pci, 5);
+
+	return string_select(ret, bid, sid, key, anti, icase ? str_is_iprefix : str_is_prefix, "str.startswithselect");
+}
+
+static str
+STRendswithselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	bat *ret = getArgReference(stk, pci, 0);
+	const bat *bid = getArgReference(stk, pci, 1),
+		*sid = getArgReference(stk, pci, 2);
+	const str *key = getArgReference_str(stk, pci, 3);
+	const bit icase = pci->argc == 5 ? false : true,
+		*anti = pci->argc == 5 ? getArgReference_bit(stk, pci, 4) : getArgReference_bit(stk, pci, 5);
+
+	return string_select(ret, bid, sid, key, anti, icase ? str_is_isuffix : str_is_suffix, "str.endswithselect");
+}
+
+static str
+STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	bat *ret = getArgReference(stk, pci, 0);
+	const bat *bid = getArgReference(stk, pci, 1),
+		*sid = getArgReference(stk, pci, 2);
+	const str *key = getArgReference_str(stk, pci, 3);
+	const bit icase = pci->argc == 5 ? false : true,
+		*anti = pci->argc == 5 ? getArgReference_bit(stk, pci, 4) : getArgReference_bit(stk, pci, 5);
+
+	return string_select(ret, bid, sid, key, anti, icase ? str_icontains : str_contains, "str.containsselect");
+}
+
+#define APPEND(b, o) (((oid *) b->theap->base)[b->batCount++] = (o))
+#define VALUE(s, x)  (s##vars + VarHeapVal(s##vals, (x), s##i.width))
+
+#define set_empty_bat_props(B)					\
+	do {										\
+		B->tnil = false;						\
+		B->tnonil = true;						\
+		B->tkey = true;						\
+		B->tsorted = true;						\
+		B->trevsorted = true;					\
+		B->tseqbase = 0;						\
+	} while (0)
+
+#define str_join_loop(STRCMP, STR_LEN)									\
+	do {																\
+		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {					\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit)); \
+			ro = canditer_next(&rci);									\
+			vr = VALUE(r, ro - rbase);									\
+			rlen = STR_LEN;											\
+			nl = 0;													\
+			if (with_strimps)											\
+				filtered_sl = STRMPfilter(l, sl, vr, anti);			\
+			if (filtered_sl) 											\
+				canditer_init(&lci, l, filtered_sl);					\
+			else														\
+				canditer_init(&lci, l, sl);							\
+			for (BUN lidx = 0; lidx < lci.ncand; lidx++) {				\
+				lo = canditer_next(&lci);								\
+				vl = VALUE(l, lo - lbase);								\
+				if (strNil(vl)) {										\
+					continue;											\
+				} else if (!(STRCMP)) {								\
+					continue;											\
+				}														\
+				if (BATcount(r1) == BATcapacity(r1)) {					\
+					newcap = BATgrows(r1);								\
+					BATsetcount(r1, BATcount(r1));						\
+					if (r2)											\
+						BATsetcount(r2, BATcount(r2));					\
+					if (BATextend(r1, newcap) != GDK_SUCCEED ||		\
+						(r2 && BATextend(r2, newcap) != GDK_SUCCEED)) { \
+						msg = createException(MAL, "str.%s", fname, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+						goto exit;										\
+					}													\
+					assert(!r2 || BATcapacity(r1) == BATcapacity(r2));	\
+				}														\
+				if (BATcount(r1) > 0) {								\
+					if (lastl + 1 != lo)								\
+						r1->tseqbase = oid_nil;						\
+					if (nl == 0) {										\
+						if (r2)										\
+							r2->trevsorted = false;					\
+						if (lastl > lo) {								\
+							r1->tsorted = false;						\
+							r1->tkey = false;							\
+						} else if (lastl < lo) {						\
+							r1->trevsorted = false;					\
+						} else {										\
+							r1->tkey = false;							\
+						}												\
+					}													\
+				}														\
+				APPEND(r1, lo);										\
+				if (r2)												\
+					APPEND(r2, ro);									\
+				lastl = lo;											\
+				nl++;													\
+			}															\
+			if (with_strimps && filtered_sl)							\
+				BBPreclaim(filtered_sl);								\
+			if (r2) {													\
+				if (nl > 1) {											\
+					r2->tkey = false;									\
+					r2->tseqbase = oid_nil;							\
+					r1->trevsorted = false;							\
+				} else if (nl == 0) {									\
+					rskipped = BATcount(r2) > 0;						\
+				} else if (rskipped) {									\
+					r2->tseqbase = oid_nil;							\
+				}														\
+			} else if (nl > 1) {										\
+				r1->trevsorted = false;								\
+			}															\
+		}																\
+	} while (0)
+
+#define str_antijoin_loop(STRCMP, STR_LEN)								\
+	do {																\
+		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {					\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit)); \
+			ro = canditer_next(&rci);									\
+			vr = VALUE(r, ro - rbase);									\
+			rlen = STR_LEN;											\
+			nl = 0;													\
+			canditer_init(&lci, l, sl);								\
+			for (BUN lidx = 0; lidx < lci.ncand; lidx++) {				\
+				lo = canditer_next(&lci);								\
+				vl = VALUE(l, lo - lbase);								\
+				if (strNil(vl)) {										\
+					continue;											\
+				} else if (!(STRCMP)) {								\
+					continue;											\
+				}														\
+				if (BATcount(r1) == BATcapacity(r1)) {					\
+					newcap = BATgrows(r1);								\
+					BATsetcount(r1, BATcount(r1));						\
+					if (r2)											\
+						BATsetcount(r2, BATcount(r2));					\
+					if (BATextend(r1, newcap) != GDK_SUCCEED ||		\
+						(r2 && BATextend(r2, newcap) != GDK_SUCCEED)) { \
+						msg = createException(MAL, "str.%s", fname, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+						goto exit;										\
+					}													\
+					assert(!r2 || BATcapacity(r1) == BATcapacity(r2));	\
+				}														\
+				if (BATcount(r1) > 0) {								\
+					if (lastl + 1 != lo)								\
+						r1->tseqbase = oid_nil;						\
+					if (nl == 0) {										\
+						if (r2)										\
+							r2->trevsorted = false;					\
+						if (lastl > lo) {								\
+							r1->tsorted = false;						\
+							r1->tkey = false;							\
+						} else if (lastl < lo) {						\
+							r1->trevsorted = false;					\
+						} else {										\
+							r1->tkey = false;							\
+						}												\
+					}													\
+				}														\
+				APPEND(r1, lo);										\
+				if (r2)												\
+					APPEND(r2, ro);									\
+				lastl = lo;											\
+				nl++;													\
+			}															\
+			if (r2) {													\
+				if (nl > 1) {											\
+					r2->tkey = false;									\
+					r2->tseqbase = oid_nil;							\
+					r1->trevsorted = false;							\
+				} else if (nl == 0) {									\
+					rskipped = BATcount(r2) > 0;						\
+				} else if (rskipped) {									\
+					r2->tseqbase = oid_nil;							\
+				}														\
+			} else if (nl > 1) {										\
+				r1->trevsorted = false;								\
+			}															\
+		}																\
+	} while (0)
+
+static str
+strjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bit anti,
+		bit (*str_cmp)(const char*, const char*, int), const str fname)
+{
+	(void)anti;
+	struct canditer lci, rci;
+	const char *lvals, *rvals, *lvars, *rvars, *vl, *vr;
+	int rskipped = 0, rlen = 0;
+	oid lbase, rbase, lo, ro, lastl = 0;
+	BUN nl, newcap;
+	BAT *filtered_sl = NULL;
+	bool with_strimps = false;
+	char *msg = MAL_SUCCEED;
+
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL)
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ?
+			(qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+
+	if (BAThasstrimps(l)) {
+		with_strimps = true;
+		if (STRMPcreate(l, NULL) != GDK_SUCCEED) {
+			GDKclrerr();
+			with_strimps = false;
+		}
+	}
+
+	TRC_DEBUG(ALGO,
+			  "(%s, l=%s#" BUNFMT "[%s]%s%s,"
+			  "r=%s#" BUNFMT "[%s]%s%s,sl=%s#" BUNFMT "%s%s,"
+			  "sr=%s#" BUNFMT "%s%s)\n",
+			  fname,
+			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
+			  l->tsorted ? "-sorted" : "",
+			  l->trevsorted ? "-revsorted" : "",
+			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
+			  r->tsorted ? "-sorted" : "",
+			  r->trevsorted ? "-revsorted" : "",
+			  sl ? BATgetId(sl) : "NULL", sl ? BATcount(sl) : 0,
+			  sl && sl->tsorted ? "-sorted" : "",
+			  sl && sl->trevsorted ? "-revsorted" : "",
+			  sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
+			  sr && sr->tsorted ? "-sorted" : "",
+			  sr && sr->trevsorted ? "-revsorted" : "");
+
+	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
+	assert(ATOMtype(l->ttype) == TYPE_str);
+
+	canditer_init(&rci, r, sr);
+
+	BATiter li = bat_iterator(l);
+	BATiter ri = bat_iterator(r);
+	lbase = l->hseqbase;
+	rbase = r->hseqbase;
+	lvals = (const char *) li.base;
+	rvals = (const char *) ri.base;
+	assert(ri.vh && r->ttype);
+	lvars = li.vh->base;
+	rvars = ri.vh->base;
+
+	if (anti)
+		str_antijoin_loop(str_cmp(vl, vr, rlen) == 0, str_strlen(vr));
+	else
+		str_join_loop(str_cmp(vl, vr, rlen) != 0, str_strlen(vr));
+
+	assert(!r2 || BATcount(r1) == BATcount(r2));
+	BATsetcount(r1, BATcount(r1));
+	if (r2)
+		BATsetcount(r2, BATcount(r2));
+	if (BATcount(r1) > 0) {
+		if (BATtdense(r1))
+			r1->tseqbase = ((oid *) r1->theap->base)[0];
+		if (r2 && BATtdense(r2))
+			r2->tseqbase = ((oid *) r2->theap->base)[0];
+	} else {
+		r1->tseqbase = 0;
+		if (r2)
+			r2->tseqbase = 0;
+	}
+
+	if (r2)
+		TRC_DEBUG(ALGO,
+				  "(%s, l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+				  fname,
+				  BATgetId(l), BATgetId(r),
+				  BATgetId(r1), BATcount(r1),
+				  r1->tsorted ? "-sorted" : "",
+				  r1->trevsorted ? "-revsorted" : "",
+				  BATgetId(r2), BATcount(r2),
+				  r2->tsorted ? "-sorted" : "",
+				  r2->trevsorted ? "-revsorted" : "");
+	else
+		TRC_DEBUG(ALGO,
+				  "(%s, l=%s,r=%s)=(%s#"BUNFMT"%s%s\n",
+				  fname,
+				  BATgetId(l), BATgetId(r),
+				  BATgetId(r1), BATcount(r1),
+				  r1->tsorted ? "-sorted" : "",
+				  r1->trevsorted ? "-revsorted" : "");
+ exit:
+	bat_iterator_end(&li);
+	bat_iterator_end(&ri);
+	return msg;
+}
+
+static str
+STRjoin(bat *r1, bat *r2, const bat lid, const bat rid, const bat slid, const bat srid, const bit anti, bit (*str_cmp)(const char*, const char*, int), const str fname)
+{
+	BAT *left = NULL, *right = NULL, *cleft = NULL, *cright = NULL,
+		*res1 = NULL, *res2 = NULL;
+	str msg = MAL_SUCCEED;
+
+	if (!(left = BATdescriptor(lid)) || !(right = BATdescriptor(rid))) {
+		msg = createException(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto exit;
+	}
+
+	if ((!is_bat_nil(slid) && (cleft = BATdescriptor(slid)) == NULL) ||
+		(!is_bat_nil(srid) && (cright = BATdescriptor(srid)) == NULL) ) {
+		msg = createException(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto exit;
+	}
+
+	res1 = COLnew(0, TYPE_oid, BATcount(left), TRANSIENT);
+	if (r2)
+		res2 = COLnew(0, TYPE_oid, BATcount(left), TRANSIENT);
+	if (!res1 || (r2 && !res2)) {
+		BBPreclaim(res1);
+		BBPreclaim(res2);
+		msg = createException(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto exit;
+	}
+
+	set_empty_bat_props(res1);
+	if (r2)
+		set_empty_bat_props(res2);
+
+	msg = strjoin(res1, res2, left, right, cleft, cright, anti, str_cmp, fname);
+
+	if (!msg) {
+		*r1 = res1->batCacheid;
+		BBPkeepref(res1);
+		if (r2) {
+			*r2 = res2->batCacheid;
+			BBPkeepref(res2);
+		}
+	} else {
+		BBPreclaim(res1);
+		BBPreclaim(res2);
+	}
+
+ exit:
+	BBPreclaim(left);
+	BBPreclaim(right);
+	BBPreclaim(cleft);
+	BBPreclaim(cright);
+	return msg;
+}
+
+static str
+join_caseignore(const bat *cid, bool *caseignore, str fname)
+{
+	BAT *c = NULL;
+
+	if ((c = BATdescriptor(*cid)) == NULL)
+		return createException(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if (BATcount(c) != 1)
+		return createException(MAL, fname, SQLSTATE(42000) "At the moment, only one value is allowed for the case ignore input at %s join", fname);
+	BATiter bi = bat_iterator(c);
+	*caseignore = *(bit*)BUNtloc(bi, 0);
+	bat_iterator_end(&bi);
+	BBPreclaim(c);
+	return MAL_SUCCEED;
+}
+
+static str
+STRstartswithjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	str msg = MAL_SUCCEED;
+	int i = pci->argc == 9 ? 4 : 5;
+	bat *r1 = getArgReference(stk, pci, 0);
+	bat *r2 = getArgReference(stk, pci, 1);
+	const bat *lid = getArgReference(stk, pci, 2),
+		*rid = getArgReference(stk, pci, 3),
+		*cid = pci->argc == 9 ? NULL : getArgReference(stk, pci, 4),
+		*slid = getArgReference(stk, pci, i++),
+		*srid = getArgReference(stk, pci, i);
+	const bit *anti = pci->argc == 9 ? getArgReference_bit(stk, pci, 8) : getArgReference_bit(stk, pci, 9);
+	bool caseignore = false;
+
+	if (pci->argc != 9)
+		msg = join_caseignore(cid, &caseignore, "str.startswithjoin");
+	return msg ? msg : STRjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti,
+							   (caseignore) ? str_is_iprefix : str_is_prefix, "str.startswithjoin");
+}
+
+static str
+STRstartswithjoin1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	str msg = MAL_SUCCEED;
+	int i = pci->argc == 8 ? 3 : 4;
+	bat *r1 = getArgReference(stk, pci, 0);
+	const bat *lid = getArgReference(stk, pci, 1),
+		*rid = getArgReference(stk, pci, 2),
+		*cid = pci->argc == 8 ? NULL : getArgReference(stk, pci, 3),
+		*slid = getArgReference(stk, pci, i++),
+		*srid = getArgReference(stk, pci, i);
+	const bit *anti = pci->argc == 8 ? getArgReference_bit(stk, pci, 7) : getArgReference_bit(stk, pci, 8);
+	bool caseignore = false;
+
+	if (pci->argc != 8)
+		msg = join_caseignore(cid, &caseignore, "str.startswithjoin1");
+	return msg ? msg : STRjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti,
+							   (caseignore) ? str_is_iprefix : str_is_prefix, "str.startswithjoin1");
+}
+
+static str
+STRendswithjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	str msg = MAL_SUCCEED;
+	int i = pci->argc == 9 ? 4 : 5;
+	bat *r1 = getArgReference(stk, pci, 0);
+	bat *r2 = getArgReference(stk, pci, 1);
+	const bat *lid = getArgReference(stk, pci, 2),
+		*rid = getArgReference(stk, pci, 3),
+		*cid = pci->argc == 9 ? NULL : getArgReference(stk, pci, 4),
+		*slid = getArgReference(stk, pci, i++),
+		*srid = getArgReference(stk, pci, i);
+	const bit *anti = pci->argc == 9 ? getArgReference_bit(stk, pci, 8) : getArgReference_bit(stk, pci, 9);
+	bool caseignore = false;
+
+	if (pci->argc != 9)
+		msg = join_caseignore(cid, &caseignore, "str.endswithjoin");
+	return msg ? msg : STRjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti,
+							   (caseignore) ? str_is_isuffix : str_is_suffix, "str.endswithjoin");
+}
+
+static str
+STRendswithjoin1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	str msg = MAL_SUCCEED;
+	int i = pci->argc == 8 ? 3 : 4;
+	bat *r1 = getArgReference(stk, pci, 0);
+	const bat *lid = getArgReference(stk, pci, 1),
+		*rid = getArgReference(stk, pci, 2),
+		*cid = pci->argc == 8 ? NULL : getArgReference(stk, pci, 3),
+		*slid = getArgReference(stk, pci, i++),
+		*srid = getArgReference(stk, pci, i);
+	const bit *anti = pci->argc == 8 ? getArgReference_bit(stk, pci, 7) : getArgReference_bit(stk, pci, 8);
+	bool caseignore = false;
+
+	if (pci->argc != 8)
+		msg = join_caseignore(cid, &caseignore, "str.endswithjoin1");
+	return msg ? msg : STRjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti,
+							   (caseignore) ? str_is_isuffix : str_is_suffix, "str.endswithjoin1");
+}
+
+static str
+STRcontainsjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	str msg = MAL_SUCCEED;
+	int i = pci->argc == 9 ? 4 : 5;
+	bat *r1 = getArgReference(stk, pci, 0);
+	bat *r2 = getArgReference(stk, pci, 1);
+	const bat *lid = getArgReference(stk, pci, 2),
+		*rid = getArgReference(stk, pci, 3),
+		*cid = pci->argc == 9 ? NULL : getArgReference(stk, pci, 4),
+		*slid = getArgReference(stk, pci, i++),
+		*srid = getArgReference(stk, pci, i);
+	const bit *anti = pci->argc == 9 ? getArgReference_bit(stk, pci, 8) : getArgReference_bit(stk, pci, 9);
+	bool caseignore = false;
+
+	if (pci->argc != 9)
+		msg = join_caseignore(cid, &caseignore, "str.containsjoin");
+	return msg ? msg : STRjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti,
+							   (caseignore) ? str_icontains : str_contains, "str.containsjoin");
+}
+
+static str
+STRcontainsjoin1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	str msg = MAL_SUCCEED;
+	int i = pci->argc == 8 ? 3 : 4;
+	bat *r1 = getArgReference(stk, pci, 0);
+	const bat *lid = getArgReference(stk, pci, 1),
+		*rid = getArgReference(stk, pci, 2),
+		*cid = pci->argc == 8 ? NULL : getArgReference(stk, pci, 3),
+		*slid = getArgReference(stk, pci, i++),
+		*srid = getArgReference(stk, pci, i);
+	const bit *anti = pci->argc == 8 ? getArgReference_bit(stk, pci, 7) : getArgReference_bit(stk, pci, 8);
+	bool caseignore = false;
+
+	if (pci->argc != 8)
+		msg = join_caseignore(cid, &caseignore, "str.containsjoin");
+	return msg ? msg : STRjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *anti,
+							   (caseignore) ? str_icontains : str_contains, "str.containsjoin1");
+}
+
 #include "mel.h"
 mel_func str_init_funcs[] = {
  command("str", "str", STRtostr, false, "Noop routine.", args(1,2, arg("",str),arg("s",str))),
@@ -4754,12 +5723,18 @@ mel_func str_init_funcs[] = {
  command("str", "nbytes", STRBytes, false, "Return the string length in bytes.", args(1,2, arg("",int),arg("s",str))),
  command("str", "unicodeAt", STRWChrAt, false, "get a unicode character\n(as an int) from a string position.", args(1,3, arg("",int),arg("s",str),arg("index",int))),
  command("str", "unicode", STRFromWChr, false, "convert a unicode to a character.", args(1,2, arg("",str),arg("wchar",int))),
- command("str", "startsWith", STRPrefix, false, "Prefix check.", args(1,3, arg("",bit),arg("s",str),arg("prefix",str))),
- command("str", "endsWith", STRSuffix, false, "Suffix check.", args(1,3, arg("",bit),arg("s",str),arg("suffix",str))),
- command("str", "toLower", STRLower, false, "Convert a string to lower case.", args(1,2, arg("",str),arg("s",str))),
- command("str", "toUpper", STRUpper, false, "Convert a string to upper case.", args(1,2, arg("",str),arg("s",str))),
- command("str", "search", STRstrSearch, false, "Search for a substring. Returns\nposition, -1 if not found.", args(1,3, arg("",int),arg("s",str),arg("c",str))),
- command("str", "r_search", STRReverseStrSearch, false, "Reverse search for a substring. Returns\nposition, -1 if not found.", args(1,3, arg("",int),arg("s",str),arg("c",str))),
+ pattern("str", "startswith", STRstartswith, false, "Check if string starts with substring.", args(1,3, arg("",bit),arg("s",str),arg("prefix",str))),
+ pattern("str", "startswith", STRstartswith, false, "Check if string starts with substring, icase flag.", args(1,4, arg("",bit),arg("s",str),arg("prefix",str),arg("icase",bit))),
+ pattern("str", "endswith", STRendswith, false, "Check if string ends with substring.", args(1,3, arg("",bit),arg("s",str),arg("suffix",str))),
+ pattern("str", "endswith", STRendswith, false, "Check if string ends with substring, icase flag.", args(1,4, arg("",bit),arg("s",str),arg("suffix",str),arg("icase",bit))),
+ pattern("str", "contains", STRcontains, false, "Check if string haystack contains string needle.", args(1,3, arg("",bit),arg("haystack",str),arg("needle",str))),
+ pattern("str", "contains", STRcontains, false, "Check if string chaystack contains string needle, icase flag.", args(1,4, arg("",bit),arg("haystack",str),arg("needle",str),arg("icase",bit))),
+ command("str", "toLower", STRlower, false, "Convert a string to lower case.", args(1,2, arg("",str),arg("s",str))),
+ command("str", "toUpper", STRupper, false, "Convert a string to upper case.", args(1,2, arg("",str),arg("s",str))),
+ pattern("str", "search", STRstr_search, false, "Search for a substring. Returns\nposition, -1 if not found.", args(1,3, arg("",int),arg("s",str),arg("c",str))),
+ pattern("str", "search", STRstr_search, false, "Search for a substring, icase flag. Returns\nposition, -1 if not found.", args(1,4, arg("",int),arg("s",str),arg("c",str),arg("icase",bit))),
+ pattern("str", "r_search", STRrevstr_search, false, "Reverse search for a substring. Returns\nposition, -1 if not found.", args(1,3, arg("",int),arg("s",str),arg("c",str))),
+ pattern("str", "r_search", STRrevstr_search, false, "Reverse search for a substring, icase flag. Returns\nposition, -1 if not found.", args(1,4, arg("",int),arg("s",str),arg("c",str),arg("icase",bit))),
  command("str", "splitpart", STRsplitpart, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, arg("",str),arg("s",str),arg("needle",str),arg("field",int))),
  command("str", "trim", STRStrip, false, "Strip whitespaces around a string.", args(1,2, arg("",str),arg("s",str))),
  command("str", "ltrim", STRLtrim, false, "Strip whitespaces from start of a string.", args(1,2, arg("",str),arg("s",str))),
@@ -4788,6 +5763,25 @@ mel_func str_init_funcs[] = {
  command("str", "repeat", STRrepeat, false, "", args(1,3, arg("",str),arg("s2",str),arg("c",int))),
  command("str", "space", STRspace, false, "", args(1,2, arg("",str),arg("l",int))),
  command("str", "epilogue", STRepilogue, false, "", args(1,1, arg("",void))),
+ command("str", "asciify", STRasciify, false, "Transform string from UTF8 to ASCII", args(1, 2, arg("out",str), arg("in",str))),
+ pattern("str", "startswithselect", STRstartswithselect, false, "Select all head values of the first input BAT for which the\ntail value starts with the given prefix.", args(1,5, batarg("",oid),batarg("b",str),batarg("s",oid),arg("prefix",str),arg("anti",bit))),
+ pattern("str", "startswithselect", STRstartswithselect, false, "Select all head values of the first input BAT for which the\ntail value starts with the given prefix + icase.", args(1,6, batarg("",oid),batarg("b",str),batarg("s",oid),arg("prefix",str),arg("caseignore",bit),arg("anti",bit))),
+ pattern("str", "endswithselect", STRendswithselect, false, "Select all head values of the first input BAT for which the\ntail value end with the given suffix.", args(1,5, batarg("",oid),batarg("b",str),batarg("s",oid),arg("suffix",str),arg("anti",bit))),
+ pattern("str", "endswithselect", STRendswithselect, false, "Select all head values of the first input BAT for which the\ntail value end with the given suffix + icase.", args(1,6, batarg("",oid),batarg("b",str),batarg("s",oid),arg("suffix",str),arg("caseignore",bit),arg("anti",bit))),
+ pattern("str", "containsselect", STRcontainsselect, false, "Select all head values of the first input BAT for which the\ntail value contains the given needle.", args(1,5, batarg("",oid),batarg("b",str),batarg("s",oid),arg("needle",str),arg("anti",bit))),
+ pattern("str", "containsselect", STRcontainsselect, false, "Select all head values of the first input BAT for which the\ntail value contains the given needle + icase.", args(1,6, batarg("",oid),batarg("b",str),batarg("s",oid),arg("needle",str),arg("caseignore",bit),arg("anti",bit))),
+ pattern("str", "startswithjoin", STRstartswithjoin, false, "Join the string bat L with the prefix bat R\nwith optional candidate lists SL and SR\nThe result is two aligned bats with oids of matching rows.", args(2,9, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+ pattern("str", "startswithjoin", STRstartswithjoin, false, "Join the string bat L with the prefix bat R\nwith optional candidate lists SL and SR\nThe result is two aligned bats with oids of matching rows + icase.", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+ pattern("str", "startswithjoin", STRstartswithjoin1, false, "The same as STRstartswithjoin, but only produce one output.", args(1,8,batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
+ pattern("str", "startswithjoin", STRstartswithjoin1, false, "The same as STRstartswithjoin, but only produce one output + icase.", args(1,9,batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
+ pattern("str", "endswithjoin", STRendswithjoin, false, "Join the string bat L with the suffix bat R\nwith optional candidate lists SL and SR\nThe result is two aligned bats with oids of matching rows.", args(2,9, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+ pattern("str", "endswithjoin", STRendswithjoin, false, "Join the string bat L with the suffix bat R\nwith optional candidate lists SL and SR\nThe result is two aligned bats with oids of matching rows + icase.", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+ pattern("str", "endswithjoin", STRendswithjoin1, false, "The same as STRendswithjoin, but only produce one output.", args(1,8,batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
+ pattern("str", "endswithjoin", STRendswithjoin1, false, "The same as STRendswithjoin, but only produce one output + icase.", args(1,9,batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
+ pattern("str", "containsjoin", STRcontainsjoin, false, "Join the string bat L with the bat R if L contains the string of R\nwith optional candidate lists SL and SR\nThe result is two aligned bats with oids of matching rows.", args(2,9, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+ pattern("str", "containsjoin", STRcontainsjoin, false, "Join the string bat L with the bat R if L contains the string of R\nwith optional candidate lists SL and SR\nThe result is two aligned bats with oids of matching rows + icase.", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+ pattern("str", "containsjoin", STRcontainsjoin1, false, "The same as STRcontainsjoin, but only produce one output.", args(1,8,batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
+ pattern("str", "containsjoin", STRcontainsjoin1, false, "The same as STRcontainsjoin, but only produce one output + icase.", args(1,9,batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
  { .imp=NULL }
 };
 #include "mal_import.h"

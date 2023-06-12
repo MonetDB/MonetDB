@@ -401,7 +401,7 @@ int digits2ek( int digits)
 }
 
 
-int
+static int
 parse_time(const char* val,
 	   	unsigned int* hr,
 	   	unsigned int* mn,
@@ -425,7 +425,7 @@ parse_time(const char* val,
 }
 
 
-int
+static int
 parse_timestamp(const char* val,
 	   	unsigned int* yr,
 	   	unsigned int* mt,
@@ -484,15 +484,15 @@ int
 process_odbc_interval(mvc *sql, itype interval, int val, sql_subtype *t, lng *i)
 {
 	assert(sql);
-	int mul = 1;
+	lng mul = 1;
 	int d = inttype2digits(interval, interval);
 	switch (interval) {
 		case iyear:
 			mul *= 12;
-			/* fall through */
+			break;
 		case iquarter:
 			mul *= 3;
-			/* fall through */
+			break;
 		case imonth:
 			break;
 		case iweek:
@@ -505,9 +505,13 @@ process_odbc_interval(mvc *sql, itype interval, int val, sql_subtype *t, lng *i)
 			mul *= 60;
 			/* fall through */
 		case imin:
-			mul *= 60000;
+			mul *= 60;
 			/* fall through */
 		case isec:
+			mul *= 1000;
+			break;
+		case insec:
+			d = 5;
 			break;
 		default:
 			snprintf(sql->errstr, ERRSIZE, _("Internal error: bad interval qualifier (%d)\n"), interval);

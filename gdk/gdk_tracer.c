@@ -36,8 +36,8 @@ static log_level_t cur_flush_level = DEFAULT_FLUSH_LEVEL;
 
 static bool write_to_tracer = false;
 
-#define GENERATE_LOG_LEVEL(COMP) DEFAULT_LOG_LEVEL,
-log_level_t lvl_per_component[] = {
+#define GENERATE_LOG_LEVEL(COMP) ATOMIC_VAR_INIT((ATOMIC_BASE_TYPE) DEFAULT_LOG_LEVEL),
+ATOMIC_TYPE lvl_per_component[] = {
 	FOREACH_COMP(GENERATE_LOG_LEVEL)
 };
 
@@ -89,7 +89,7 @@ static const char *level_str[] = {
 	do {								\
 		write_to_tracer = false;				\
 		for (int i = 0; !write_to_tracer && i < (int) COMPONENTS_COUNT; i++) {	\
-			write_to_tracer = lvl_per_component[i] > DEFAULT_LOG_LEVEL; \
+			write_to_tracer = (log_level_t) ATOMIC_GET(&lvl_per_component[i]) > DEFAULT_LOG_LEVEL; \
 		}							\
 	} while(0)
 
@@ -167,6 +167,7 @@ GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
   too_long:
 	GDK_TRACER_EXCEPTION("path name for dbtrace file too long\n");
 	/* uninitialize */
+	free(fn);
 	free(file_name);
 	file_name = NULL;
 	active_tracer = stderr;
@@ -181,10 +182,9 @@ _GDKtracer_init_basic_adptr(void)
 }
 
 static void
-set_level_for_layer(int layer, int lvl)
+set_level_for_layer(int layer, log_level_t level)
 {
 	const char *tok = NULL;
-	log_level_t level = (log_level_t) lvl;
 
 	// make sure we initialize before changing the component level
 	MT_lock_set(&GDKtracer_lock);
@@ -195,22 +195,22 @@ set_level_for_layer(int layer, int lvl)
 
 	for (int i = 0; i < COMPONENTS_COUNT; i++) {
 		if (layer == MDB_ALL) {
-			lvl_per_component[i] = level;
+			ATOMIC_SET(&lvl_per_component[i], (ATOMIC_BASE_TYPE) level);
 		} else {
 			tok = component_str[i];
 
 			switch (layer) {
 			case SQL_ALL:
 				if (strncmp(tok, "SQL_", 4) == 0)
-					lvl_per_component[i] = level;
+					ATOMIC_SET(&lvl_per_component[i], (ATOMIC_BASE_TYPE) level);
 				break;
 			case MAL_ALL:
 				if (strncmp(tok, "MAL_", 4) == 0)
-					lvl_per_component[i] = level;
+					ATOMIC_SET(&lvl_per_component[i], (ATOMIC_BASE_TYPE) level);
 				break;
 			case GDK_ALL:
 				if (strncmp(tok, "GDK", 3) == 0)
-					lvl_per_component[i] = level;
+					ATOMIC_SET(&lvl_per_component[i], (ATOMIC_BASE_TYPE) level);
 				break;
 			default:
 				break;
@@ -291,18 +291,26 @@ find_component(const char *comp)
  * API CALLS
  *
  */
+static volatile sig_atomic_t interrupted = 0;
+
 void
 GDKtracer_reinit_basic(int sig)
 {
 	(void) sig;
+	interrupted = 1;
+}
+
+static void
+reinit(void)
+{
+	/* called locked */
+
+	interrupted = 0;
 
 	// GDKtracer needs to reopen the file only in
 	// case the adapter is BASIC
 	if ((adapter_t) ATOMIC_GET(&cur_adapter) != BASIC)
 		return;
-
-	// Make sure that GDKtracer is not trying to flush the buffer
-	MT_lock_set(&GDKtracer_lock);
 
 	if (active_tracer) {
 		if (active_tracer != stderr)
@@ -312,8 +320,6 @@ GDKtracer_reinit_basic(int sig)
 		active_tracer = NULL;
 	}
 	_GDKtracer_init_basic_adptr();
-
-	MT_lock_unset(&GDKtracer_lock);
 }
 
 
@@ -354,7 +360,7 @@ GDKtracer_set_component_level(const char *comp, const char *lvl)
 	write_to_tracer |= level > DEFAULT_LOG_LEVEL;
 	MT_lock_unset(&GDKtracer_lock);
 
-	lvl_per_component[component] = level;
+	ATOMIC_SET(&lvl_per_component[component], (ATOMIC_BASE_TYPE) level);
 
 	return GDK_SUCCEED;
 }
@@ -368,7 +374,7 @@ GDKtracer_get_component_level(const char *comp)
 		GDKerror("unknown component\n");
 		return NULL;
 	}
-	return level_str[(int) lvl_per_component[component]];
+	return level_str[ATOMIC_GET(&lvl_per_component[component])];
 }
 
 
@@ -381,7 +387,7 @@ GDKtracer_reset_component_level(const char *comp)
 		GDKerror("unknown component\n");
 		return GDK_FAIL;
 	}
-	lvl_per_component[component] = DEFAULT_LOG_LEVEL;
+	ATOMIC_SET(&lvl_per_component[component], (ATOMIC_BASE_TYPE) DEFAULT_LOG_LEVEL);
 	MT_lock_set(&GDKtracer_lock);
 	GDK_TRACER_RESET_OUTPUT();
 	MT_lock_unset(&GDKtracer_lock);
@@ -569,18 +575,27 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	if ((adapter_t) ATOMIC_GET(&cur_adapter) == MBEDDED)
 		return;
 
-	if (level <= M_WARNING || (GDKdebug & FORCEMITOMASK)) {
-		fprintf(stderr, "#%s%s%s: %s: %s: %s%s%s\n",
+	MT_lock_set(&GDKtracer_lock);
+	if (interrupted)
+		reinit();
+
+	if (level <= M_WARNING || (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK)) {
+		fprintf(level <= M_ERROR ? stderr : stdout,
+			"#%s%s%s: %s: %s: %s%s%s\n",
 			add_ts ? ts : "",
 			add_ts ? ": " : "",
 			MT_thread_getname(), func, level_str[level] + 2,
 			msg, syserr ? ": " : "",
 			syserr ? syserr : "");
-		if (active_tracer == NULL || active_tracer == stderr || !write_to_tracer)
+		if (active_tracer == NULL || active_tracer == stderr || !write_to_tracer) {
+			MT_lock_unset(&GDKtracer_lock);
 			return;
+		}
 	}
-	if (active_tracer == NULL)
+	if (active_tracer == NULL) {
+		MT_lock_unset(&GDKtracer_lock);
 		return;
+	}
 	if (syserr)
 		fprintf(active_tracer, "%s: %s\n", buffer, syserr);
 	else
@@ -594,6 +609,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	// is still in the buffer which it never gets flushed.
 	if (level == cur_flush_level || level <= M_ERROR)
 		fflush(active_tracer);
+	MT_lock_unset(&GDKtracer_lock);
 }
 
 
@@ -616,7 +632,7 @@ GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_level)
 		if (BUNappend(component, component_str[i], false) != GDK_SUCCEED)
 			return GDK_FAIL;
 
-		if (BUNappend(log_level, level_str[lvl_per_component[i]], false) != GDK_SUCCEED)
+		if (BUNappend(log_level, level_str[ATOMIC_GET(&lvl_per_component[i])], false) != GDK_SUCCEED)
 			return GDK_FAIL;
 	}
 

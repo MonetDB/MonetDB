@@ -96,3 +96,11 @@ ROLLBACK;
 PREPARE SELECT 1 FROM (SELECT ?) x(x) CROSS JOIN LATERAL (SELECT 1 FROM ((SELECT 1) INTERSECT (SELECT 2)) vx(vx) JOIN (SELECT 1) z(z) ON x.x) w(w); --error, Could not determine type for argument number 1
 
 PREPARE SELECT 2 FROM (SELECT DISTINCT 1) z(z) LEFT OUTER JOIN LATERAL (SELECT z.z, ? WHERE TRUE) a(a,b) ON TRUE; --error, push_up_project requires a type
+
+START TRANSACTION;
+create table deleteall (i integer, j integer);
+insert into deleteall (select a,a as b from generate_series(cast(1 as integer),10000) as a(a));
+set optimizer='sequential_pipe';
+prepare select count(*) from deleteall where j in (2001,2007,2016,2028,2037,2047,2053,2059,2063,2067,2076,2087,2094,2099,2110,2115,2124,2135,2142,2147);
+EXEC **();
+ROLLBACK;

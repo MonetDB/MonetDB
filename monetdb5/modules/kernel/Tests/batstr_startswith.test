@@ -1,0 +1,89 @@
+query T
+select name from tables where startswith(name, 'id')
+----
+idxs
+idxs
+ids
+
+statement ok
+create table foo(x string)
+
+statement ok
+insert into foo values ('johndoe'),('janedoe'),('robertdoe')
+
+query T
+select startswith(x, '') from foo
+----
+True
+True
+True
+
+query T
+select startswith('', x) from foo
+----
+False
+False
+False
+
+statement ok
+drop table foo
+
+statement ok
+create table bar(x string, y string)
+
+statement ok
+insert into bar values ('johndoe','doe'),('Müller Thomas', 'Thomas Müller'),('Thomas Müller', 'Müller Thomas')
+
+query T
+select startswith(x, 'Müller') from bar
+----
+False
+True
+False
+
+query T
+select startswith('Müller', x) from bar
+----
+False
+False
+False
+
+statement ok
+drop table bar
+
+statement ok
+create table baz(x string)
+
+statement ok
+create table bazbaz(x string)
+
+statement ok
+insert into baz values ('john doe'),('jane doe'),('robert doe')
+
+statement ok
+insert into bazbaz values ('john'),('jane'),('robert')
+
+query T
+select * from baz where [baz.x] startswith ['john', true];
+----
+john doe
+
+query T
+select * from baz where [baz.x] startswith ['doe', true];
+----
+
+query TT
+select * from baz,bazbaz where [baz.x] startswith [bazbaz.x, true];
+----
+john doe
+john
+jane doe
+jane
+robert doe
+robert
+
+statement ok
+drop table baz
+
+statement ok
+drop table bazbaz

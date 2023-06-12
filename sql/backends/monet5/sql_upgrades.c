@@ -140,6 +140,7 @@ sql_fix_system_tables(Client c, mvc *sql)
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands to update system tables.\n\n");
+	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
@@ -309,6 +310,7 @@ sql_update_hugeint(Client c, mvc *sql)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
+	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
@@ -333,6 +335,7 @@ sql_drop_shp(Client c)
 	//Drop the old SHP procedures (upgrade from version before shpload upgrade)
 	const char *query = "drop procedure SHPattach(string); drop procedure SHPload(integer); drop procedure SHPload(integer, geometry);";
 	printf("Running database upgrade commands:\n%s\n", query);
+	fflush(stdout);
 	return SQLstatementIntern(c, query, "update", true, false, NULL);
 }
 #endif
@@ -377,6 +380,7 @@ sql_drop_functions_dependencies_Xs_on_Ys(Client c)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
+	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
@@ -721,25 +725,31 @@ sql_update_storagemodel(Client c, mvc *sql, bool oct2020_upgrade)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
+	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
 
-#define FLUSH_INSERTS_IF_BUFFERFILLED /* Each new value should add about 20 bytes to the buffer, "flush" when is 200 bytes from being full */ \
-	if (pos > 7900) { \
-		pos += snprintf(buf + pos, bufsize - pos, \
-						") as t1(c1,c2,c3) where t1.c1 not in (select \"id\" from sys.dependencies where depend_id = t1.c2);\n"); \
-		assert(pos < bufsize); \
-		printf("Running database upgrade commands:\n%s\n", buf); \
-		err = SQLstatementIntern(c, buf, "update", true, false, NULL); \
-		if (err) \
-			goto bailout; \
-		pos = 0; \
-		pos += snprintf(buf + pos, bufsize - pos, "insert into sys.dependencies select c1, c2, c3 from (values"); \
-		ppos = pos; \
-		first = true; \
-	}
+#define FLUSH_INSERTS_IF_BUFFERFILLED									\
+	do {																\
+		/* Each new value should add about 20 bytes to the buffer, */	\
+		/* "flush" when is 200 bytes from being full */					\
+		if (pos > 7900) {												\
+			pos += snprintf(buf + pos, bufsize - pos,					\
+							") as t1(c1,c2,c3) where t1.c1 not in (select \"id\" from sys.dependencies where depend_id = t1.c2);\n"); \
+			assert(pos < bufsize);										\
+			printf("Running database upgrade commands:\n%s\n", buf);	\
+			fflush(stdout);												\
+			err = SQLstatementIntern(c, buf, "update", true, false, NULL); \
+			if (err)													\
+				goto bailout;											\
+			pos = 0;													\
+			pos += snprintf(buf + pos, bufsize - pos, "insert into sys.dependencies select c1, c2, c3 from (values"); \
+			ppos = pos;													\
+			first = true;												\
+		}																\
+	} while (0)
 
 static str
 sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
@@ -792,7 +802,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 							pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",", next,
 											f->base.id, (int)(!IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY));
 							first = false;
-							FLUSH_INSERTS_IF_BUFFERFILLED
+							FLUSH_INSERTS_IF_BUFFERFILLED;
 						}
 					}
 				} else if (sql->session->status == -1) {
@@ -828,7 +838,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 								pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",",
 												next, t->base.id, (int) VIEW_DEPENDENCY);
 								first = false;
-								FLUSH_INSERTS_IF_BUFFERFILLED
+								FLUSH_INSERTS_IF_BUFFERFILLED;
 							}
 						}
 					}
@@ -856,7 +866,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 									pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",",
 													next, tr->base.id, (int) TRIGGER_DEPENDENCY);
 									first = false;
-									FLUSH_INSERTS_IF_BUFFERFILLED
+									FLUSH_INSERTS_IF_BUFFERFILLED;
 								}
 							}
 						}
@@ -871,6 +881,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
+		fflush(stdout);
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
 
@@ -1043,6 +1054,7 @@ sql_update_nov2019(Client c, mvc *sql)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
+	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", 1, 0, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
@@ -1074,6 +1086,7 @@ sql_update_nov2019_sp1_hugeint(Client c, mvc *sql)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
+	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
@@ -1649,6 +1662,7 @@ sql_update_jun2020(Client c, mvc *sql)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
+	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	if (err == MAL_SUCCEED) {
 		pos = snprintf(buf, bufsize,
@@ -1656,6 +1670,7 @@ sql_update_jun2020(Client c, mvc *sql)
 			       "ALTER TABLE sys.function_languages SET READ ONLY;\n");
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
+		fflush(stdout);
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
 	GDKfree(buf);
@@ -1733,6 +1748,7 @@ sql_update_jun2020_bam(Client c, mvc *m)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
+	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 
 	GDKfree(buf);
@@ -1787,6 +1803,7 @@ sql_update_jun2020_sp1_hugeint(Client c)
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
+	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
@@ -1801,6 +1818,7 @@ sql_update_oscar_lidar(Client c)
 		"drop procedure sys.lidarload(string) cascade;\n"
 		"drop procedure sys.lidarexport(string, string, string) cascade;\n";
 	printf("Running database upgrade commands:\n%s\n", query);
+	fflush(stdout);
 	return SQLstatementIntern(c, query, "update", true, false, NULL);
 }
 
@@ -1933,6 +1951,7 @@ sql_update_oscar(Client c, mvc *sql)
 			assert(pos < bufsize);
 
 			printf("Running database upgrade commands:\n%s\n", buf);
+			fflush(stdout);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 		BBPunfix(b->batCacheid);
@@ -2058,6 +2077,7 @@ sql_update_oct2020(Client c, mvc *sql)
 
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
+			fflush(stdout);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 			if (err != MAL_SUCCEED)
 				goto bailout;
@@ -2066,6 +2086,7 @@ sql_update_oct2020(Client c, mvc *sql)
 					"ALTER TABLE sys.keywords SET READ ONLY;\n");
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
+			fflush(stdout);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 			if (err != MAL_SUCCEED)
 				goto bailout;
@@ -2103,6 +2124,7 @@ sql_update_oct2020_sp1(Client c, mvc *sql)
 
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
+		fflush(stdout);
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
 	GDKfree(buf);
@@ -3125,6 +3147,7 @@ sql_update_jul2021(Client c, mvc *sql)
 
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
+			fflush(stdout);
 			if ((err = SQLstatementIntern(c, buf, "update", true, false, NULL)) != MAL_SUCCEED)
 				goto bailout;
 
@@ -3134,6 +3157,7 @@ sql_update_jul2021(Client c, mvc *sql)
 					"ALTER TABLE sys.function_types SET READ ONLY;\n");
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
+			fflush(stdout);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 	}
@@ -3213,6 +3237,7 @@ sql_update_jul2021_5(Client c, mvc *sql)
 
 				assert(pos < bufsize);
 				printf("Running database upgrade commands:\n%s\n", buf);
+				fflush(stdout);
 				err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 			}
 			BBPunfix(b->batCacheid);
@@ -3248,6 +3273,7 @@ sql_update_jan2022(Client c, mvc *sql)
 					"drop filter function sys.strimp_filter(string, string) cascade;\n"
 					"drop procedure sys.strimp_create(string, string, string) cascade;\n";
 				printf("Running database upgrade commands:\n%s\n", query);
+				fflush(stdout);
 				err = SQLstatementIntern(c, query, "update", true, false, NULL);
 			}
 			sql->session->status = 0; /* if the function was not found clean the error */
@@ -4543,6 +4569,7 @@ sql_update_jan2022(Client c, mvc *sql)
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
+	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 
 	GDKfree(buf);
@@ -4634,6 +4661,7 @@ sql_update_sep2022(Client c, mvc *sql, sql_schema *s)
 		if (err == MAL_SUCCEED) {
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%.*s-- and copying passwords\n\n", endprint, buf);
+			fflush(stdout);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 		bat_iterator_end(&ui);
@@ -4686,6 +4714,7 @@ sql_update_sep2022(Client c, mvc *sql, sql_schema *s)
 							"update sys.functions set system = true where system <> true and name in ('db_users') and schema_id = 2000 and type = %d;\n", F_UNION);
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
+			fflush(stdout);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 	}
@@ -5019,6 +5048,7 @@ sql_update_sep2022(Client c, mvc *sql, sql_schema *s)
 
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
+		fflush(stdout);
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
 	res_table_destroy(output);
@@ -5040,11 +5070,13 @@ sql_update_sep2022(Client c, mvc *sql, sql_schema *s)
 			"DELETE FROM sys.keywords WHERE keyword IN ('LOCKED');\n");
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
+		fflush(stdout);
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		if (err == MAL_SUCCEED) {
 			pos = snprintf(buf, bufsize, "ALTER TABLE sys.keywords SET READ ONLY;\n");
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
+			fflush(stdout);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 	}
@@ -5067,11 +5099,13 @@ sql_update_sep2022(Client c, mvc *sql, sql_schema *s)
 				"INSERT INTO sys.table_types VALUES (7, 'UNLOGGED TABLE');\n");
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
+		fflush(stdout);
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		if (err == MAL_SUCCEED) {
 			pos = snprintf(buf, bufsize, "ALTER TABLE sys.table_types SET READ ONLY;\n");
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
+			fflush(stdout);
 			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 	}
@@ -5106,6 +5140,7 @@ sql_update_sep2022(Client c, mvc *sql, sql_schema *s)
 					   "grant select on sys.tracelog to public;\n");
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
+		fflush(stdout);
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
 	res_table_destroy(output);
@@ -5123,7 +5158,7 @@ bailout:
 }
 
 static str
-sql_update_default(Client c, mvc *sql, sql_schema *s)
+sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 {
 	size_t bufsize = 65536, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
@@ -5497,16 +5532,131 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 	   the query in bound to. */
 	sql_subtype t1, t2;
 	sql_find_subtype(&t1, "bigint", 64, 0);
-	sql_find_subtype(&t2, "clob", 0, 0);
+	sql_find_subtype(&t2, "varchar", 0, 0);
 	if (!sql_bind_func(sql, "sys", "pause", &t1, &t2, F_PROC, true)) {
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
+		const char *query =
+			"create function sys.queue(username string) returns table(\"tag\" bigint, \"sessionid\" int, \"username\" string, \"started\" timestamp, \"status\" string, \"query\" string, \"finished\" timestamp, \"maxworkers\" int, \"footprint\" int) external name sysmon.queue;\n"
+			"create procedure sys.pause(tag bigint, username string) external name sysmon.pause;\n"
+			"create procedure sys.resume(tag bigint, username string) external name sysmon.resume;\n"
+			"create procedure sys.stop(tag bigint, username string) external name sysmon.stop;\n"
+			"update sys.functions set system = true where system <> true and mod = 'sysmon' and name in ('stop', 'pause', 'resume', 'queue');\n";
+		printf("Running database upgrade commands:\n%s\n", query);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+	}
+
+	/* sys.settimeout and sys.setsession where removed */
+	if (sql_bind_func(sql, "sys", "settimeout", &t1, NULL, F_PROC, true)) {
+		const char *query =
+			"drop procedure sys.settimeout(bigint) cascade;\n"
+			"drop procedure sys.settimeout(bigint, bigint) cascade;\n"
+			"drop procedure sys.setsession(bigint) cascade;\n";
+		printf("Running database upgrade commands:\n%s\n", query);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+	}
+	sql->session->status = 0; /* if the function was not found clean the error */
+	sql->errstr[0] = '\0';
+
+	if (!sql_bind_func(sql, "sys", "jarowinkler", &t2, &t2, F_FUNC, true)) {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
 		pos = snprintf(buf, bufsize,
-					   "create function sys.queue(username string) returns table(\"tag\" bigint, \"sessionid\" int, \"username\" string, \"started\" timestamp, \"status\" string, \"query\" string, \"finished\" timestamp, \"maxworkers\" int, \"footprint\" int) external name sysmon.queue;\n"
-					   "create procedure sys.pause(tag bigint, username string) external name sysmon.pause;\n"
-					   "create procedure sys.resume(tag bigint, username string) external name sysmon.resume;\n"
-					   "create procedure sys.stop(tag bigint, username string) external name sysmon.stop;\n"
-					   "update sys.functions set system = true where system <> true and mod = 'sysmon' and name in ('stop', 'pause', 'resume', 'queue');\n");
+					   "create function sys.levenshtein(x string, y string)\n"
+					   "returns int external name txtsim.levenshtein;\n"
+					   "grant execute on function levenshtein(string, string) to public;\n"
+					   "create function sys.levenshtein(x string, y string, insdel int, rep int)\n"
+					   "returns int external name txtsim.levenshtein;\n"
+					   "grant execute on function levenshtein(string, string, int, int) to public;\n"
+					   "create function sys.levenshtein(x string, y string, insdel int, rep int, trans int)\n"
+					   "returns int external name txtsim.levenshtein;\n"
+					   "grant execute on function levenshtein(string, string, int, int, int) to public;\n"
+					   "create filter function sys.maxlevenshtein(x string, y string, k int)\n"
+					   "external name txtsim.maxlevenshtein;\n"
+					   "grant execute on filter function maxlevenshtein(string, string, int) to public;\n"
+					   "create filter function sys.maxlevenshtein(x string, y string, k int, insdel int, rep int)\n"
+					   "external name txtsim.maxlevenshtein;\n"
+					   "grant execute on filter function maxlevenshtein(string, string, int, int, int) to public;\n"
+					   "create function sys.jarowinkler(x string, y string)\n"
+					   "returns double external name txtsim.jarowinkler;\n"
+					   "grant execute on function jarowinkler(string, string) to public;\n"
+					   "create filter function minjarowinkler(x string, y string, threshold double)\n"
+					   "external name txtsim.minjarowinkler;\n"
+					   "grant execute on filter function minjarowinkler(string, string, double) to public;\n"
+					   "create function sys.dameraulevenshtein(x string, y string)\n"
+					   "returns int external name txtsim.dameraulevenshtein;\n"
+					   "grant execute on function dameraulevenshtein(string, string) to public;\n"
+					   "create function sys.dameraulevenshtein(x string, y string, insdel int, rep int, trans int)\n"
+					   "returns int external name txtsim.dameraulevenshtein;\n"
+					   "grant execute on function dameraulevenshtein(string, string, int, int, int) to public;\n"
+
+					   "create function sys.editdistance(x string, y string)\n"
+					   "returns int external name txtsim.editdistance;\n"
+					   "grant execute on function editdistance(string, string) to public;\n"
+					   "create function sys.editdistance2(x string, y string)\n"
+					   "returns int external name txtsim.editdistance2;\n"
+					   "grant execute on function editdistance2(string, string) to public;\n"
+					   "create function sys.soundex(x string)\n"
+					   "returns string external name txtsim.soundex;\n"
+					   "grant execute on function soundex(string) to public;\n"
+					   "create function sys.difference(x string, y string)\n"
+					   "returns int external name txtsim.stringdiff;\n"
+					   "grant execute on function difference(string, string) to public;\n"
+					   "create function sys.qgramnormalize(x string)\n"
+					   "returns string external name txtsim.qgramnormalize;\n"
+					   "grant execute on function qgramnormalize(string) to public;\n"
+					   "create function sys.similarity(x string, y string)\n"
+					   "returns double external name txtsim.similarity;\n"
+					   "grant execute on function similarity(string, string) to public;\n"
+
+					   "create function asciify(x string)\n"
+					   "returns string external name str.asciify;\n"
+					   "grant execute on function asciify(string) to public;\n"
+					   "create function sys.startswith(x string, y string)\n"
+					   "returns boolean external name str.startswith;\n"
+					   "grant execute on function startswith(string, string) to public;\n"
+					   "create function sys.startswith(x string, y string, icase boolean)\n"
+					   "returns boolean external name str.startswith;\n"
+					   "grant execute on function startswith(string, string, boolean) to public;\n"
+					   "create filter function sys.startswith(x string, y string)\n"
+					   "external name str.startswith;\n"
+					   "grant execute on filter function startswith(string, string) to public;\n"
+					   "create filter function sys.startswith(x string, y string, icase boolean)\n"
+					   "external name str.startswith;\n"
+					   "grant execute on filter function startswith(string, string, boolean) to public;\n"
+					   "create function sys.endswith(x string, y string)\n"
+					   "returns boolean external name str.endswith;\n"
+					   "grant execute on function endswith(string, string) to public;\n"
+					   "create function sys.endswith(x string, y string, icase boolean)\n"
+					   "returns boolean external name str.endswith;\n"
+					   "grant execute on function endswith(string, string, boolean) to public;\n"
+					   "create filter function sys.endswith(x string, y string)\n"
+					   "external name str.endswith;\n"
+					   "grant execute on filter function endswith(string, string) to public;\n"
+					   "create filter function sys.endswith(x string, y string, icase boolean)\n"
+					   "external name str.endswith;\n"
+					   "grant execute on filter function endswith(string, string, boolean) to public;\n"
+					   "create function sys.contains(x string, y string)\n"
+					   "returns boolean external name str.contains;\n"
+					   "grant execute on function contains(string, string) to public;\n"
+					   "create function sys.contains(x string, y string, icase boolean)\n"
+					   "returns boolean external name str.contains;\n"
+					   "grant execute on function contains(string, string, boolean) to public;\n"
+					   "create filter function sys.contains(x string, y string)\n"
+					   "external name str.contains;\n"
+					   "grant execute on filter function contains(string, string) to public;\n"
+					   "create filter function sys.contains(x string, y string, icase boolean)\n"
+					   "external name str.contains;\n"
+					   "grant execute on filter function contains(string, string, boolean) to public;\n"
+
+					   "update sys.functions set system = true where system <> true and name in ('levenshtein', 'dameraulevenshtein', 'jarowinkler', 'editdistance', 'editdistance2', 'soundex', 'difference', 'qgramnormalize', 'similarity') and schema_id = 2000 and type = %d;\n"
+					   "update sys.functions set system = true where system <> true and name in ('maxlevenshtein', 'minjarowinkler') and schema_id = 2000 and type = %d;\n"
+					   "update sys.functions set system = true where system <> true and name in ('asciify', 'startswith', 'endswith', 'contains') and schema_id = 2000 and type = %d;\n"
+					   "update sys.functions set system = true where system <> true and name in ('startswith', 'endswith', 'contains') and schema_id = 2000 and type = %d;\n"
+
+					   "delete from sys.triggers where name = 'system_update_tables' and table_id = 2067;\n",
+					   F_FUNC, F_FILT, F_FUNC, F_FILT);
+		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
@@ -5827,7 +5977,7 @@ SQLupgrades(Client c, mvc *m)
 		return -1;
 	}
 
-	if ((err = sql_update_default(c, m, s)) != NULL) {
+	if ((err = sql_update_jun2023(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		return -1;

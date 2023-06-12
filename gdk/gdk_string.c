@@ -125,7 +125,7 @@ strCleanHash(Heap *h, bool rebuild)
 	if (memcmp(newhash, h->base, sizeof(newhash)) != 0) {
 		memcpy(h->base, newhash, sizeof(newhash));
 		if (h->storage == STORE_MMAP) {
-			if (!(GDKdebug & NOSYNCMASK))
+			if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK))
 				(void) MT_msync(h->base, GDK_STRHASHSIZE);
 		} else
 			h->dirty = true;
@@ -1402,20 +1402,20 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 
 	if (cnt > 0) {
 		switch (frame_type) {
-		case 3: /* unbounded until current row */	{
+		case 3: /* unbounded until current row */
 			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_UNBOUNDED_TILL_CURRENT_ROW);
-		} break;
+			break;
 		case 4: /* current row until unbounded */
 			goto notimplemented;
-		case 5: /* all rows */	{
+		case 5: /* all rows */
 			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_ALL_ROWS);
-		} break;
-		case 6: /* current row */ {
+			break;
+		case 6: /* current row */
 			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_CURRENT_ROW);
-		} break;
-		default: {
+			break;
+		default:
 			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_OTHERS);
-		}
+			break;
 		}
 	}
 

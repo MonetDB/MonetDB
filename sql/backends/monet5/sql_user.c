@@ -196,8 +196,8 @@ parse_schema_path_str(mvc *m, str schema_path, bool build) /* this function for 
 	if (build) {
 		while (l->t) /* if building, empty schema_path list */
 			(void) list_remove_node(l, NULL, l->t);
-		m->schema_path_has_sys = 0;
-		m->schema_path_has_tmp = 0;
+		m->schema_path_has_sys = false;
+		m->schema_path_has_tmp = false;
 	}
 
 	for (size_t i = 0; schema_path[i]; i++) {
@@ -221,9 +221,9 @@ parse_schema_path_str(mvc *m, str schema_path, bool build) /* this function for 
 						throw(SQL, "sql.schema_path", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
 					if (strcmp(next_schema, "sys") == 0)
-						m->schema_path_has_sys = 1;
+						m->schema_path_has_sys = true;
 					else if (strcmp(next_schema, "tmp") == 0)
-						m->schema_path_has_tmp = 1;
+						m->schema_path_has_tmp = true;
 				}
 
 				bp = 0;
@@ -329,18 +329,17 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 		pwd = passwd;
 	}
 
-	if ((err = AUTHGeneratePasswordHash(&hash, pwd)) != MAL_SUCCEED) {
+	err = AUTHGeneratePasswordHash(&hash, pwd);
+	if (!enc)
+		free(pwd);
+	if (err != MAL_SUCCEED) {
 		GDKfree(schema_buf);
-		if (!enc)
-			free(pwd);
 		throw(MAL, "sql.create_user", SQLSTATE(42000) "create backend hash failure");
 	}
 
 	user_id = store_next_oid(m->session->tr->store);
 	sqlid default_role_id = role_id > 0 ? role_id : user_id;
 	if ((log_res = store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path, &max_memory, &max_workers, &optimizer, &default_role_id, &hash))) {
-		if (!enc)
-			free(pwd);
 		GDKfree(schema_buf);
 		GDKfree(hash);
 		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
@@ -350,8 +349,6 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 	GDKfree(hash);
 
 	if ((log_res = store->table_api.table_insert(m->session->tr, auths, &user_id, &user, &grantorid))) {
-		if (!enc)
-			free(pwd);
 		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	}
 
@@ -359,21 +356,15 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 		// update schema authorization to be default_role_id
 		switch (sql_trans_change_schema_authorization(m->session->tr, schema_id, default_role_id)) {
 			case -1:
-				if (!enc)
-					free(pwd);
 				throw(SQL,"sql.create_user",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			case -2:
 			case -3:
-				if (!enc)
-					free(pwd);
 				throw(SQL,"sql.create_user",SQLSTATE(42000) "Update schema authorization failed due to transaction conflict");
 			default:
 				break;
 		}
 
 	}
-	if (!enc)
-		free(pwd);
 	return ret;
 }
 
@@ -680,7 +671,8 @@ monet5_schema_user_dependencies(ptr _trans, int schema_id)
 	/* select all authorization ids */
 	A = store->table_api.rids_select(tr, auth_name, NULL, NULL);
 	/* join all authorization with the selected users */
-	A = store->table_api.rids_join(tr, A, auth_name, U, users_name);
+	if (A && U)
+		A = store->table_api.rids_join(tr, A, auth_name, U, users_name);
 	store->table_api.rids_destroy(U);
 	return A;
 }
@@ -869,23 +861,23 @@ monet5_user_get_limits(mvc *m, int user, lng *maxmem, int *maxwrk)
 	lng max_memory = 0;
 	int max_workers = 0;
 
-	if (!m->session->tr->active) {
-		sys = find_sql_schema(m->session->tr, "sys");
-		auths = find_sql_table(m->session->tr, sys, "auths");
-		user_info = find_sql_table(m->session->tr, sys, "db_user_info");
+	assert(m->session->tr->active);
 
-		rid = store->table_api.column_find_row(m->session->tr, find_sql_column(auths, "id"), &user, NULL);
-		if (is_oid_nil(rid))
-			return -2;
-		if (!(username = store->table_api.column_find_value(m->session->tr, find_sql_column(auths, "name"), rid)))
-			return -1;
-		rid = store->table_api.column_find_row(m->session->tr, find_sql_column(user_info, "name"), username, NULL);
-		_DELETE(username);
+	sys = find_sql_schema(m->session->tr, "sys");
+	auths = find_sql_table(m->session->tr, sys, "auths");
+	user_info = find_sql_table(m->session->tr, sys, "db_user_info");
 
-		if (!is_oid_nil(rid)) {
-			max_memory = store->table_api.column_find_lng(m->session->tr, find_sql_column(user_info, "max_memory"), rid);
-			max_workers = store->table_api.column_find_int(m->session->tr, find_sql_column(user_info, "max_workers"), rid);
-		}
+	rid = store->table_api.column_find_row(m->session->tr, find_sql_column(auths, "id"), &user, NULL);
+	if (is_oid_nil(rid))
+		return -2;
+	if (!(username = store->table_api.column_find_value(m->session->tr, find_sql_column(auths, "name"), rid)))
+		return -1;
+	rid = store->table_api.column_find_row(m->session->tr, find_sql_column(user_info, "name"), username, NULL);
+	_DELETE(username);
+
+	if (!is_oid_nil(rid)) {
+		max_memory = store->table_api.column_find_lng(m->session->tr, find_sql_column(user_info, "max_memory"), rid);
+		max_workers = store->table_api.column_find_int(m->session->tr, find_sql_column(user_info, "max_workers"), rid);
 	}
 
 	*maxmem = max_memory > 0 ? max_memory : 0;

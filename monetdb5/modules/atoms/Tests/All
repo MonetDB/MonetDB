@@ -33,3 +33,8 @@ jsonrender
 
 uuid00
 strappend
+
+startswith
+endswith
+contains
+HAVE_ICONV?asciify

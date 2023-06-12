@@ -316,7 +316,7 @@ ODBCutf82wchar(const SQLCHAR *src,
  * understands.
  *
  * Precondition: query != NULL
- * Postcondition: returns a newly allocated null terminated strings.
+ * Postcondition: returns a newly allocated null terminated string.
  */
 /*
   Escape sequences:
@@ -894,7 +894,10 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 	 * plenty long enough */
 	char buf[128], buf2[128];
 
-	if (dbc->minor >= 46)
+	/* From Jun2023 release (11.47) the mserver5 SQL parser supports all
+	 * ODBC escape sequences, so no scanning or translation is required here.
+	 */
+	if (dbc->minor >= 47)
 		noscan = SQL_NOSCAN_ON;
 
 	if (noscan != SQL_NOSCAN_ON) {
@@ -1229,7 +1232,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 						}
 						break;
 					}
-					if (!seenarg && !isspace((signed char) rest[j])) {
+					if (!seenarg && !isspace((unsigned char) rest[j])) {
 						lastarg = j;
 						seenarg = true;
 					}

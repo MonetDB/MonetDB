@@ -130,7 +130,6 @@ newMalBlk(int elements)
 	};
 	if (newMalBlkStmt(mb, elements) < 0) {
 		GDKfree(mb->var);
-		GDKfree(mb->stmt);
 		GDKfree(mb);
 		return NULL;
 	}
@@ -714,8 +713,6 @@ isReserved(str nme)
 		if (idcmp("false", nme) == 0)
 			return 1;
 		if (idcmp("function", nme) == 0)
-			return 1;
-		if (idcmp("factory", nme) == 0)
 			return 1;
 		break;
 	case 'I':

@@ -65,7 +65,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 #endif
 	case TYPE_flt:
 	case TYPE_dbl:
-		if (GDKnr_threads > 1 && BATcount(b) >= 2 * MIN_PIECE && (GDKdebug & FORCEMITOMASK) == 0)
+		if (GDKnr_threads > 1 && BATcount(b) >= 2 * MIN_PIECE && (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) == 0)
 			break;
 		/* fall through */
 	default:
@@ -77,7 +77,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	if( pieces <= 0 ){
 		if (GDKnr_threads <= 1) {
 			pieces = 1;
-		} else if (GDKdebug & FORCEMITOMASK) {
+		} else if (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) {
 			/* we want many pieces, even tiny ones */
 			if (BATcount(b) < 4)
 				pieces = 1;

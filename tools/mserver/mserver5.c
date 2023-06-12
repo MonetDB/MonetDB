@@ -200,6 +200,7 @@ monet_hello(void)
 #endif
 			HOST, GDKnr_threads,
 			sz_mem_h, qc[qi], sizeof(oid) * 8);
+	fflush(stdout);
 }
 
 static str
@@ -241,7 +242,7 @@ monet_init(opt *set, int setlen, bool embedded)
 	}
 
 	/* determine Monet's kernel settings */
-	if (GDKinit(set, setlen, embedded) != GDK_SUCCEED)
+	if (GDKinit(set, setlen, embedded, mercurial_revision()) != GDK_SUCCEED)
 		return 0;
 
 #ifdef HAVE_SETSID
@@ -282,6 +283,11 @@ wmain(int argc, wchar_t **argv)
 main(int argc, char **av)
 #endif
 {
+	/* make sure stdout is line buffered, even when not to a terminal;
+	 * note, on Windows _IOLBF is interpreted as _IOFBF, but all
+	 * relevant calls to print to stdout are followed by a fflush
+	 * anyway */
+	setvbuf(stdout, NULL, _IOLBF, BUFSIZ);
 #ifdef _MSC_VER
 	char **av = malloc((argc + 1) * sizeof(char *));
 	if (av == NULL) {
@@ -298,7 +304,8 @@ main(int argc, char **av)
 #endif
 	char *prog = *av;
 	opt *set = NULL;
-	int grpdebug = 0, debug = 0, setlen = 0;
+	unsigned grpdebug = 0, debug = 0;
+	int setlen = 0;
 	str err = MAL_SUCCEED;
 	char prmodpath[FILENAME_MAX];
 	const char *modpath = NULL;
@@ -519,7 +526,7 @@ main(int argc, char **av)
 		case 'd':
 			if (optarg) {
 				char *endarg;
-				debug |= strtol(optarg, &endarg, 10);
+				debug |= strtoul(optarg, &endarg, 10);
 				if (*endarg != '\0') {
 					fprintf(stderr, "ERROR: wrong format for --debug=%s\n",
 							optarg);
@@ -667,13 +674,13 @@ main(int argc, char **av)
 				printf("#warning: unusable binary location, "
 					   "please use --set monet_mod_path=/path/to/... to "
 					   "allow finding modules\n");
-				fflush(NULL);
+				fflush(stdout);
 			}
 		} else {
 			printf("#warning: unable to determine binary location, "
 				   "please use --set monet_mod_path=/path/to/... to "
 				   "allow finding modules\n");
-			fflush(NULL);
+			fflush(stdout);
 		}
 		if (modpath != NULL &&
 		    GDKsetenv("monet_mod_path", modpath) != GDK_SUCCEED) {
@@ -794,7 +801,7 @@ main(int argc, char **av)
 	}
 
 	modules[mods++] = 0;
-	if (mal_init(modules, false, readpwdxit ? secret : NULL)) {
+	if (mal_init(modules, false, readpwdxit ? secret : NULL, mercurial_revision())) {
 		/* don't show this as a crash */
 		if (!GDKinmemory(0))
 			msab_registerStop();
@@ -813,13 +820,9 @@ main(int argc, char **av)
 		free(err);
 	}
 
-#ifdef SIGHUP
-	// Register signal to GDKtracer (logrotate)
-	signal(SIGHUP, GDKtracer_reinit_basic);
-#endif
-
 #ifdef _MSC_VER
 	printf("# MonetDB server is started. To stop server press Ctrl-C.\n");
+	fflush(stdout);
 #endif
 
 	/* why busy wait ? */

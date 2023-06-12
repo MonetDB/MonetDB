@@ -35,9 +35,6 @@ enum heaptype {
 	dataheap
 };
 
-gdk_return ATOMheap(int id, Heap *hp, size_t cap)
-	__attribute__((__warn_unused_result__))
-	__attribute__((__visibility__("hidden")));
 bool ATOMisdescendant(int id, int parentid)
 	__attribute__((__visibility__("hidden")));
 int ATOMunknown_find(const char *nme)
@@ -113,6 +110,8 @@ gdk_return BBPinit(void)
 bat BBPinsert(BAT *bn)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
+void BBPrelinquish(Thread t)
+	__attribute__((__visibility__("hidden")));
 int BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
 BUN binsearch(const oid *restrict indir, oid offset, int type, const void *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const void *restrict v, int ordering, int last)
@@ -177,6 +176,9 @@ gdk_return GDKtracer_init(const char *dbname, const char *dbtrace)
 	__attribute__((__visibility__("hidden")));
 gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
+#define GDKwarning(format, ...)					\
+	GDKtracer_log(__FILE__, __func__, __LINE__, M_WARNING,	\
+		      GDK, NULL, format, ##__VA_ARGS__)
 BUN HASHappend(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHappend_locked(BAT *b, BUN i, const void *v)
@@ -233,6 +235,8 @@ void IMPSincref(Imprints *imprints)
 void IMPSprint(BAT *b)		/* never called: for debugging only */
 	__attribute__((__cold__));
 #endif
+double joincost(BAT *r, BUN lcount, struct canditer *rci, bool *hash, bool *phash, bool *cand)
+	__attribute__((__visibility__("hidden")));
 void STRMPincref(Strimps *strimps)
 	__attribute__((__visibility__("hidden")));
 void STRMPdecref(Strimps *strimps, bool remove)

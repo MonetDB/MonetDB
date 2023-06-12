@@ -25,7 +25,7 @@
 
 static BAT *GDKkey = NULL;
 static BAT *GDKval = NULL;
-int GDKdebug = 0;
+ATOMIC_TYPE GDKdebug = ATOMIC_VAR_INIT(0);
 
 #include <signal.h>
 
@@ -402,8 +402,37 @@ BATSIGabort(int nr)
 static void
 BATSIGinit(void)
 {
+#ifdef HAVE_SIGACTION
+	struct sigaction sa;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+#ifdef SIGPIPE
+	sa.sa_handler = SIG_IGN;
+	sigaction(SIGPIPE, &sa, NULL);
+#endif
+#ifdef SIGHUP
+	sa.sa_handler = GDKtracer_reinit_basic;
+	sigaction(SIGHUP, &sa, NULL);
+#endif
+#ifdef WIN32
+	sa.sa_handler = BATSIGabort;
+	sigaction(SIGABRT, &sa, NULL);
+#endif
+#else
 #ifdef SIGPIPE
 	(void) signal(SIGPIPE, SIG_IGN);
+#endif
+#ifdef SIGHUP
+	// Register signal to GDKtracer (logrotate)
+	(void) signal(SIGHUP, GDKtracer_reinit_basic);
+#endif
+#ifdef WIN32
+	(void) signal(SIGABRT, BATSIGabort);
+#endif
+#endif
+#if defined(WIN32) && !defined(__MINGW32__) && !defined(__CYGWIN__)
+	_set_abort_behavior(0, _CALL_REPORTFAULT | _WRITE_ABORT_MSG);
+	_set_error_mode(_OUT_TO_STDERR);
 #endif
 }
 #endif /* NATIVE_WIN32 */
@@ -788,9 +817,9 @@ static MT_Lock mallocsuccesslock = MT_LOCK_INITIALIZER(mallocsuccesslock);
 #endif
 
 void
-GDKsetdebug(int debug)
+GDKsetdebug(unsigned debug)
 {
-	GDKdebug = debug;
+	ATOMIC_SET(&GDKdebug, debug);
 	if (debug & ACCELMASK)
 		GDKtracer_set_component_level("accelerator", "debug");
 	else
@@ -841,10 +870,10 @@ GDKsetdebug(int debug)
 		GDKtracer_reset_component_level("thrd");
 }
 
-int
+unsigned
 GDKgetdebug(void)
 {
-	int debug = GDKdebug;
+	ATOMIC_BASE_TYPE debug = ATOMIC_GET(&GDKdebug);
 	const char *lvl;
 	lvl = GDKtracer_get_component_level("accelerator");
 	if (lvl && strcmp(lvl, "debug") == 0)
@@ -882,7 +911,7 @@ GDKgetdebug(void)
 	lvl = GDKtracer_get_component_level("thrd");
 	if (lvl && strcmp(lvl, "debug") == 0)
 		debug |= THRDMASK;
-	return debug;
+	return (unsigned) debug;
 }
 
 static bool Mbedded = true;
@@ -895,7 +924,7 @@ GDKembedded(void)
 static MT_Id mainpid;
 
 gdk_return
-GDKinit(opt *set, int setlen, bool embedded)
+GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 {
 	static bool first = true;
 	const char *dbpath;
@@ -904,6 +933,14 @@ GDKinit(opt *set, int setlen, bool embedded)
 	opt *n;
 	int i, nlen = 0;
 	char buf[16];
+
+	if (caller_revision) {
+		p = mercurial_revision();
+		if (p && strcmp(p, caller_revision) != 0) {
+			GDKerror("incompatible versions: caller is %s, GDK is %s\n", caller_revision, p);
+			return GDK_FAIL;
+		}
+	}
 
 	ATOMIC_SET(&GDKstopped, 0);
 
@@ -979,13 +1016,6 @@ GDKinit(opt *set, int setlen, bool embedded)
 		return GDK_FAIL;
 #ifndef NATIVE_WIN32
 	BATSIGinit();
-#endif
-#ifdef WIN32
-	(void) signal(SIGABRT, BATSIGabort);
-#if !defined(__MINGW32__) && !defined(__CYGWIN__)
-	_set_abort_behavior(0, _CALL_REPORTFAULT | _WRITE_ABORT_MSG);
-	_set_error_mode(_OUT_TO_STDERR);
-#endif
 #endif
 	MT_init();
 
@@ -1268,7 +1298,7 @@ GDKreset(int status)
 					killed = true;
 					e = MT_kill_thread(victim);
 					TRC_INFO(GDK, "Killing thread: %d\n", e);
-					(void) ATOMIC_DEC(&GDKnrofthreads);
+					ATOMIC_DEC(&GDKnrofthreads);
 				}
 				ATOMIC_SET(&t->pid, 0);
 			}
@@ -1303,7 +1333,7 @@ GDKreset(int status)
 #ifdef LOCK_STATS
 		TRC_DEBUG_IF(TEM) GDKlockstatistics(1);
 #endif
-		GDKdebug = 0;
+		ATOMIC_SET(&GDKdebug, 0);
 		GDK_mmap_minsize_persistent = MMAP_MINSIZE_PERSISTENT;
 		GDK_mmap_minsize_transient = MMAP_MINSIZE_TRANSIENT;
 		GDK_mmap_pagesize = MMAP_PAGESIZE;
@@ -1614,6 +1644,8 @@ THRnew(const char *name, MT_Id pid)
 			s->data[0] = THRdata[0];
 			s->data[1] = THRdata[1];
 			s->sp = THRsp();
+			s->freebats = 0;
+			s->nfreebats = 0;
 			strcpy_len(s->name, name, sizeof(s->name));
 			TRC_DEBUG(PAR, "%x %zu sp = %zu\n",
 				  (unsigned) s->tid,
@@ -1686,7 +1718,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 		return 0;
 	}
 	/* must not fail after this: the thread has been started */
-	(void) ATOMIC_INC(&GDKnrofthreads);
+	ATOMIC_INC(&GDKnrofthreads);
 	ATOMIC_SET(&s->pid, pid);
 	/* send new thread on its way */
 	MT_sema_up(&t->sem);
@@ -1697,6 +1729,7 @@ void
 THRdel(Thread t)
 {
 	assert(GDKthreads <= t && t < GDKthreads + THREADS);
+	BBPrelinquish(t);
 	MT_thread_setdata(NULL);
 	TRC_DEBUG(PAR, "pid = %zu, disconnected, %d left\n",
 		  (size_t) ATOMIC_GET(&t->pid),
@@ -1707,7 +1740,7 @@ THRdel(Thread t)
 		t->data[i] = NULL;
 	t->sp = 0;
 	ATOMIC_SET(&t->pid, 0);	/* deallocate */
-	(void) ATOMIC_DEC(&GDKnrofthreads);
+	ATOMIC_DEC(&GDKnrofthreads);
 }
 
 int
@@ -1765,7 +1798,7 @@ THRinit(void)
 		THRdata[1] = NULL;
 		return -1;
 	}
-	(void) ATOMIC_INC(&GDKnrofthreads);
+	ATOMIC_INC(&GDKnrofthreads);
 	MT_thread_setdata(s);
 	return 0;
 }
@@ -1831,14 +1864,14 @@ GDKvm_cursize(void)
 }
 
 #define heapinc(_memdelta)						\
-	(void) ATOMIC_ADD(&GDK_mallocedbytes_estimate, _memdelta)
+	ATOMIC_ADD(&GDK_mallocedbytes_estimate, _memdelta)
 #define heapdec(_memdelta)						\
-	(void) ATOMIC_SUB(&GDK_mallocedbytes_estimate, _memdelta)
+	ATOMIC_SUB(&GDK_mallocedbytes_estimate, _memdelta)
 
 #define meminc(vmdelta)							\
-	(void) ATOMIC_ADD(&GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG))
+	ATOMIC_ADD(&GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG))
 #define memdec(vmdelta)							\
-	(void) ATOMIC_SUB(&GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG))
+	ATOMIC_SUB(&GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG))
 
 /* Memory allocation
  *

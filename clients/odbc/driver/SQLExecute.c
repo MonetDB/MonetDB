@@ -376,9 +376,23 @@ ODBCInitResult(ODBCStmt *stmt)
 
 		/* this must come after other fields have been
 		 * initialized */
-		rec->sql_desc_length = ODBCLength(rec, SQL_DESC_LENGTH);
-		rec->sql_desc_display_size = ODBCLength(rec, SQL_DESC_DISPLAY_SIZE);
-		rec->sql_desc_octet_length = ODBCLength(rec, SQL_DESC_OCTET_LENGTH);
+		if (rec->sql_desc_concise_type == SQL_CHAR ||
+		    rec->sql_desc_concise_type == SQL_VARCHAR ||
+		    rec->sql_desc_concise_type == SQL_LONGVARCHAR ||
+		    rec->sql_desc_concise_type == SQL_WCHAR ||
+		    rec->sql_desc_concise_type == SQL_WVARCHAR ||
+		    rec->sql_desc_concise_type == SQL_WLONGVARCHAR) {
+			/* for strings, get the display size from what
+			 * the server told us the size is for this
+			 * column, and derive the octet length from
+			 * that */
+			rec->sql_desc_display_size = mapi_get_len(hdl, i);
+			rec->sql_desc_octet_length = 4 * rec->sql_desc_display_size;
+		} else {
+			rec->sql_desc_length = ODBCLength(rec, SQL_DESC_LENGTH);
+			rec->sql_desc_display_size = ODBCLength(rec, SQL_DESC_DISPLAY_SIZE);
+			rec->sql_desc_octet_length = ODBCLength(rec, SQL_DESC_OCTET_LENGTH);
+		}
 		if (rec->sql_desc_length == 0) {
 			rec->sql_desc_length = SQL_NO_TOTAL;
 			rec->sql_desc_display_size = SQL_NO_TOTAL;
@@ -423,9 +437,6 @@ MNDBExecute(ODBCStmt *stmt)
 		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
 	}
-
-	/* internal state correctness checks */
-	assert(stmt->State == PREPARED0 || stmt->State == EXECUTED0 || stmt->ImplRowDescr->descRec != NULL);
 
 	assert(stmt->Dbc);
 	assert(stmt->Dbc->mid);
