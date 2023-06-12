@@ -378,7 +378,8 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			return 0;
 		if (res == EPB || res == REL_PARTITION) {
 			rel->partition = 1;
-			if (pb && res == REL_PARTITION)
+			/* only start a parallel block if we're not already in one */
+			if (res == REL_PARTITION && !pb)
 				rel->spb = 1;
 		}
 		sql_rel *r = rel->r;
