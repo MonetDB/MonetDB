@@ -64,11 +64,6 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 		+ (grp ? 4 : avg + 1);
 
 	if (grp) {
-		char *aggrF = SA_NEW_ARRAY(be->mvc->sa, char, strlen(aggrfunc) + 4), *end = aggrF;
-		if (!aggrF)
-			return NULL;
-		stpcpy(end, aggrfunc);
-		aggrfunc = aggrF;
 		if ((grp && grp->nr < 0) || (ext && ext->nr < 0))
 			return NULL;
 
