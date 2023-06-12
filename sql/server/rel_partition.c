@@ -330,7 +330,9 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 	} else if (is_groupby(rel->op)) {
 		bool safe = rel_groupby_partition_safe(sql, rel) && !rel_is_ref(rel);
 		if (rel->l)
-			res = rel_partition_(sql, rel->l, safe?SPB:pb);
+                        /* When a GROUP BY is parallel-unsafe, this (sub)tree
+                         * is certainly unsafe, independent of the current 'pb' */
+			res = rel_partition_(sql, rel->l, safe?SPB:0);
 		if (safe) {
 			rel->parallel = 1;
 			if (res == REL_PARTITION)
