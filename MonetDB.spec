@@ -89,7 +89,7 @@ Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
-Source: https://www.monetdb.org/downloads/sources/Sep2022-SP2/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Sep2022-SP3/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -860,6 +860,84 @@ fi
 %endif
 
 %changelog
+* Tue Jun 06 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.17-20230606
+- Rebuilt.
+
+* Tue Jun  6 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.17-20230606
+- sql: Fixed a regression introduced in the previous build: when a table is
+  dropped in the same transaction where it was created, the data wasn't
+  removed from disk.
+
+* Tue May 30 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
+- Rebuilt.
+- GH#7360: Aggregates returning string crash
+- GH#7361: Table data is lost on DB restart, but only when a table has
+  2147483647 or more rows.
+
+* Tue May 16 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
+- gdk: Warnings and informational messages are now sent to stdout instead of
+  stderr, which means that monetdbd will now log them with the tag MSG
+  instead of ERR.
+
+* Tue Apr 25 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
+- gdk: Fixed parsing of the BBP.dir file when BAT ids grow larger than 2**24
+  (i.e. 100000000 in octal).
+
+* Thu Apr 20 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
+- gdk: Fixed yet another occurrence of a missing .tailN file.  This one could
+  happen if a string bat was appended to in stages so that between appends
+  the column was committed.  If an append caused both a realloc of the
+  tail heap because it was getting longer and a realloc because it got
+  wider, the file might get removed before the GDK level commit happened.
+
+* Mon Apr 17 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
+- clients: If the number of rows in mclient is set to 0 (using either --rows=0
+  option or \r0 on the mclient command line), the internal pager is used
+  and it then uses the height of the terminal window.
+
+* Wed Apr  5 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
+- sql: When creating a hot snapshot, allow other clients to proceed, even
+  with updating queries.
+
+* Fri Mar 24 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
+- gdk: When processing the WAL, if a to-be-destroyed object cannot be found,
+  don't stop, but keep processing the rest of the WAL.
+
+* Fri Mar 24 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
+- monetdb5: Client connections are cleaned up better so that we get fewer instances
+  of clients that cannot connect.
+
+* Fri Mar 24 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
+- sql: Increased the size of a variable counting the number of changes made
+  to the database (e.g. in case more than 2 billion rows are added to
+  a table).
+- sql: Improved cleanup after failures such as failed memory allocations.
+
+* Mon Feb 20 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
+- gdk: A race condition was fixed where certain write-ahead log messages
+  could get intermingled, resulting in a corrupted WAL file.
+- gdk: If opening of a file failed when it was supposed to get memory mapped,
+  an incorrect value was returned to indicate the failure, causing
+  crashes later on.  This has been fixed.
+
+* Thu Feb 16 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
+- gdk: A race condition was fixed that could result in a missing tail file
+  for a string bat (i.e. a file with .tail1, .tail2, or .tail4 extension).
+
+* Mon Feb 13 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
+- gdk: When saving a bat failed for some reason during a low-level commit,
+  this was logged in the log file, but the error was then subsequently
+  ignored, possibly leading to files that are too short or even missing.
+- gdk: The write-ahead log (WAL) is now rotated a bit more efficiently by
+  doing multiple log files in one go (i.e. in one low-level transaction).
+
+* Mon Feb 13 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.15-20230530
+- sql: An insert into a table from which a column was dropped in a parallel
+  transaction was incorrectly not flagged as a transaction conflict.
+
+* Thu Jan 26 2023 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com> - 11.45.15-20230530
+- sql: Fix bug where boolean NULLs were not recognized by COPY BINARY INTO
+
 * Tue Jan 24 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
 - Rebuilt.
 - GH#7343: GDKmmap requesting 0 virtual memory

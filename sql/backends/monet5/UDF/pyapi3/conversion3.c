@@ -114,14 +114,13 @@ wrapup:
 	return vararray;
 }
 
-PyObject *PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
-								char **return_message, bool copy)
+PyObject *
+PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char **return_message, bool copy)
 {
 	BAT *b;
 	char *msg;
-	PyObject *vararray;
+	PyObject *vararray = PyArrayObject_FromBAT(inp, t_start, t_end, return_message, copy);
 
-	vararray = PyArrayObject_FromBAT(inp, t_start, t_end, return_message, copy);
 	if (vararray == NULL) {
 		return NULL;
 	}
@@ -137,12 +136,15 @@ PyObject *PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 	bool bnonil = b->tnonil;
 	MT_lock_unset(&b->theaplock);
 	if (!bnonil) {
-		PyObject *mask;
-		PyObject *mafunc = PyObject_GetAttrString(
-			PyImport_Import(PyUnicode_FromString("numpy.ma")), "masked_array");
+		PyObject *nme = PyUnicode_FromString("numpy.ma");
+		PyObject *mod = PyImport_Import(nme);
+		PyObject *mafunc = PyObject_GetAttrString( mod, "masked_array");
 		PyObject *nullmask = PyNullMask_FromBAT(b, t_start, t_end);
+		Py_DECREF(nme);
 
 		if (!nullmask) {
+			Py_DECREF(mafunc);
+			Py_DECREF(mod);
 			msg = createException(MAL, "pyapi3.eval", "Failed to create mask for some reason");
 			goto wrapup;
 		} else if (nullmask == Py_None) {
@@ -154,16 +156,18 @@ PyObject *PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 
 			// Now we will actually construct the mask by calling the masked
 			// array constructor
-			mask = PyObject_CallObject(mafunc, maargs);
+			PyObject *mask = PyObject_CallObject(mafunc, maargs);
+			Py_DECREF(maargs);
 			if (!mask) {
+				Py_DECREF(mafunc);
+				Py_DECREF(mod);
 				msg = createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "Failed to create mask");
 				goto wrapup;
 			}
-			Py_DECREF(maargs);
-
 			vararray = mask;
 		}
 		Py_DECREF(mafunc);
+		Py_DECREF(mod);
 	}
 	return vararray;
 wrapup:
@@ -171,8 +175,8 @@ wrapup:
 	return NULL;
 }
 
-PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
-								char **return_message, bool copy)
+PyObject *
+PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char **return_message, bool copy)
 {
 	// This variable will hold the converted Python object
 	PyObject *vararray = NULL;
@@ -351,14 +355,12 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 				}
 
 				{
-					PyObject **data =
-						((PyObject **)PyArray_DATA((PyArrayObject *)vararray));
+					PyObject **data = ((PyObject **)PyArray_DATA((PyArrayObject *)vararray));
 					PyObject *obj;
 					j = 0;
 					if (unicode) {
 						if (GDK_ELIMDOUBLES(b->tvheap)) {
-							PyObject **pyptrs =
-								GDKzalloc(b->tvheap->free * sizeof(PyObject *));
+							PyObject **pyptrs = GDKzalloc(b->tvheap->free * sizeof(PyObject *));
 							if (!pyptrs) {
 								bat_iterator_end(&li);
 								msg = createException(MAL, "pyapi3.eval",
@@ -375,13 +377,11 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 										// str_nil isn't a valid UTF-8 character
 										// (it's 0x80), so we can't decode it as
 										// UTF-8 (it will throw an error)
-										pyptrs[offset] =
-											PyUnicode_FromString("-");
+										pyptrs[offset] = PyUnicode_FromString("-");
 									} else {
 										// otherwise we can just decode the
 										// string as UTF-8
-										pyptrs[offset] =
-											PyUnicode_FromString(t);
+										pyptrs[offset] = PyUnicode_FromString(t);
 									}
 									if (!pyptrs[offset]) {
 										bat_iterator_end(&li);
@@ -425,8 +425,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 						/* special case where we exploit the
 						 * duplicate-eliminated string heap */
 						if (GDK_ELIMDOUBLES(b->tvheap)) {
-							PyObject **pyptrs =
-								GDKzalloc(b->tvheap->free * sizeof(PyObject *));
+							PyObject **pyptrs = GDKzalloc(b->tvheap->free * sizeof(PyObject *));
 							if (!pyptrs) {
 								bat_iterator_end(&li);
 								msg = createException(MAL, "pyapi3.eval",
@@ -521,14 +520,14 @@ wrapup:
 		}                                                                      \
 	}
 
-PyObject *PyNullMask_FromBAT(BAT *b, size_t t_start, size_t t_end)
+PyObject *
+PyNullMask_FromBAT(BAT *b, size_t t_start, size_t t_end)
 {
 	// We will now construct the Masked array, we start by setting everything to
 	// False
 	size_t count = t_end - t_start;
 	npy_intp elements[1] = {count};
-	PyArrayObject *nullmask =
-		(PyArrayObject *)PyArray_EMPTY(1, elements, NPY_BOOL, 0);
+	PyArrayObject *nullmask = (PyArrayObject *)PyArray_EMPTY(1, elements, NPY_BOOL, 0);
 	const void *nil = ATOMnilptr(b->ttype);
 	size_t j;
 	bool found_nil = false;
@@ -580,12 +579,11 @@ PyObject *PyNullMask_FromBAT(BAT *b, size_t t_start, size_t t_end)
 	return (PyObject *)nullmask;
 }
 
-PyObject *PyDict_CheckForConversion(PyObject *pResult, int expected_columns,
-									char **retcol_names, char **return_message)
+PyObject *
+PyDict_CheckForConversion(PyObject *pResult, int expected_columns, char **retcol_names, char **return_message)
 {
 	char *msg = MAL_SUCCEED;
-	PyObject *result = PyList_New(expected_columns),
-			 *keys = PyDict_Keys(pResult);
+	PyObject *result = PyList_New(expected_columns);
 	int i;
 
 	for (i = 0; i < expected_columns; i++) {
@@ -614,28 +612,27 @@ PyObject *PyDict_CheckForConversion(PyObject *pResult, int expected_columns,
 			Py_INCREF(item);
 			Py_DECREF(object);
 		} else {
+			if (object)
+				Py_DECREF(object);
 			msg = createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "Why is this not a list?");
 			goto wrapup;
 		}
 	}
-	Py_DECREF(keys);
 	Py_DECREF(pResult);
-	// Py_INCREF(result);
 	return result;
 wrapup:
 	*return_message = msg;
 	Py_DECREF(result);
-	Py_DECREF(keys);
 	Py_DECREF(pResult);
 	return NULL;
 }
 
-PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
-									  int *actual_columns,
-									  char **return_message)
+PyObject *
+PyObject_CheckForConversion(PyObject *pResult, int expected_columns, int *actual_columns, char **return_message)
 {
 	char *msg;
 	int columns = 0;
+
 	if (pResult) {
 		PyObject *pColO = NULL;
 		if (PyType_IsPandasDataFrame(pResult)) {
@@ -643,15 +640,17 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 			// we can convert the pandas data frame to a numpy array by simply
 			// accessing the "values" field (as pandas dataframes are numpy
 			// arrays internally)
-			pResult = PyObject_GetAttrString(pResult, "values");
-			if (pResult == NULL) {
+			PyObject *nResult = PyObject_GetAttrString(pResult, "values");
+			Py_DECREF(pResult);
+			if (nResult == NULL) {
 				msg = createException(MAL, "pyapi3.eval",
 									  SQLSTATE(PY000) "Invalid Pandas data frame.");
 				goto wrapup;
 			}
 			// we transpose the values field so it's aligned correctly for our
 			// purposes
-			pResult = PyObject_GetAttrString(pResult, "T");
+			pResult = PyObject_GetAttrString(nResult, "T");
+			Py_DECREF(nResult);
 			if (pResult == NULL) {
 				msg = createException(MAL, "pyapi3.eval",
 									  SQLSTATE(PY000) "Invalid Pandas data frame.");
@@ -688,14 +687,15 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 		} else {
 			// if it is not a scalar, we check if it is a single array
 			bool IsSingleArray = true;
-			PyObject *data = pResult;
+			PyObject *data = pResult, *ndata = NULL;
 			if (PyType_IsNumpyMaskedArray(data)) {
-				data = PyObject_GetAttrString(pResult, "data");
-				if (data == NULL) {
+				ndata = PyObject_GetAttrString(pResult, "data");
+				if (ndata == NULL) {
 					msg = createException(MAL, "pyapi3.eval",
 										  SQLSTATE(PY000) "Invalid masked array.");
 					goto wrapup;
 				}
+				data = ndata;
 			}
 			if (PyType_IsNumpyArray(data)) {
 				if (PyArray_NDIM((PyArrayObject *)data) != 1) {
@@ -703,10 +703,9 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 				} else if (PyArray_SIZE((PyArrayObject *)data) == 0) {
 					IsSingleArray = true;
 				} else {
-					pColO = PyArray_GETITEM(
-						(PyArrayObject *)data,
-						PyArray_GETPTR1((PyArrayObject *)data, 0));
+					pColO = PyArray_GETITEM( (PyArrayObject *)data, PyArray_GETPTR1((PyArrayObject *)data, 0));
 					IsSingleArray = PyType_IsPyScalar(pColO);
+					Py_DECREF(pColO);
 				}
 			} else if (PyList_Check(data)) {
 				if (PyList_Size(data) == 0) {
@@ -768,6 +767,8 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 					goto wrapup;
 				}
 			}
+			if (ndata)
+				Py_DECREF(ndata);
 		}
 	} else {
 		msg = createException(
@@ -786,13 +787,13 @@ wrapup:
 	return NULL;
 }
 
-str PyObject_GetReturnValues(PyObject *obj, PyReturn *ret)
+str
+PyObject_GetReturnValues(PyObject *obj, PyReturn *ret)
 {
 	PyObject *pMask = NULL;
 	str msg = MAL_SUCCEED;
 	// If it isn't we need to convert pColO to the expected Numpy Array type
-	ret->numpy_array = PyArray_FromAny(
-		obj, NULL, 1, 1, NPY_ARRAY_CARRAY | NPY_ARRAY_FORCECAST, NULL);
+	ret->numpy_array = PyArray_FromAny( obj, NULL, 1, 1, NPY_ARRAY_CARRAY | NPY_ARRAY_FORCECAST, NULL);
 	if (ret->numpy_array == NULL) {
 		msg = createException(
 			MAL, "pyapi3.eval",
@@ -800,9 +801,7 @@ str PyObject_GetReturnValues(PyObject *obj, PyReturn *ret)
 		goto wrapup;
 	}
 
-	ret->result_type =
-		PyArray_DESCR((PyArrayObject *)ret->numpy_array)
-			->type_num; // We read the result type from the resulting array
+	ret->result_type = PyArray_DESCR((PyArrayObject *)ret->numpy_array)->type_num; // We read the result type from the resulting array
 	ret->memory_size = PyArray_DESCR((PyArrayObject *)ret->numpy_array)->elsize;
 	ret->count = PyArray_DIMS((PyArrayObject *)ret->numpy_array)[0];
 	ret->array_data = PyArray_DATA((PyArrayObject *)ret->numpy_array);
@@ -812,14 +811,12 @@ str PyObject_GetReturnValues(PyObject *obj, PyReturn *ret)
 	if (PyObject_HasAttrString(obj, "mask")) {
 		pMask = PyObject_GetAttrString(obj, "mask");
 		if (pMask != NULL) {
-			ret->numpy_mask =
-				PyArray_FromAny(pMask, PyArray_DescrFromType(NPY_BOOL), 1, 1,
-								NPY_ARRAY_CARRAY, NULL);
-			if (ret->numpy_mask == NULL ||
-				PyArray_DIMS((PyArrayObject *)ret->numpy_mask)[0] !=
-					(int)ret->count) {
+			ret->numpy_mask = PyArray_FromAny(pMask, PyArray_DescrFromType(NPY_BOOL), 1, 1, NPY_ARRAY_CARRAY, NULL);
+			Py_DECREF(pMask);
+			if (ret->numpy_mask == NULL || PyArray_DIMS((PyArrayObject *)ret->numpy_mask)[0] != (int)ret->count) {
 				PyErr_Clear();
-				pMask = NULL;
+				if (ret->numpy_mask)
+					Py_DECREF(ret->numpy_mask);
 				ret->numpy_mask = NULL;
 			}
 		}
@@ -830,8 +827,8 @@ wrapup:
 	return msg;
 }
 
-bool PyObject_PreprocessObject(PyObject *pResult, PyReturn *pyreturn_values,
-							   int column_count, char **return_message)
+bool
+PyObject_PreprocessObject(PyObject *pResult, PyReturn *pyreturn_values, int column_count, char **return_message)
 {
 	int i;
 	char *msg;
@@ -857,15 +854,15 @@ bool PyObject_PreprocessObject(PyObject *pResult, PyReturn *pyreturn_values,
 			// If it is a PyList, we simply get the i'th Numpy array from the
 			// PyList
 			pColO = PyList_GetItem(pResult, i);
+			Py_INCREF(pColO);
 		} else {
 			// If it isn't, the result object is either a Nump Masked Array or a
 			// Numpy Array
 			PyObject *data = pResult;
 			if (PyType_IsNumpyMaskedArray(data)) {
-				data = PyObject_GetAttrString(
-					pResult, "data"); // If it is a Masked array, the data is
-									  // stored in the masked_array.data
-									  // attribute
+				assert(0);
+				data = PyObject_GetAttrString( pResult, "data");
+				// If it is a Masked array, the data is stored in the masked_array.data attribute
 				pMask = PyObject_GetAttrString(pResult, "mask");
 			}
 
@@ -875,19 +872,17 @@ bool PyObject_PreprocessObject(PyObject *pResult, PyReturn *pyreturn_values,
 				// If it is a multidimensional numpy array, we have to convert
 				// the i'th dimension to a NUMPY array object
 				ret->multidimensional = true;
-				ret->result_type =
-					PyArray_DESCR((PyArrayObject *)data)->type_num;
+				ret->result_type = PyArray_DESCR((PyArrayObject *)data)->type_num;
 			} else {
 				// If it is a single dimensional Numpy array, we get the i'th
 				// Numpy array from the Numpy Array
-				pColO =
-					PyArray_GETITEM((PyArrayObject *)data,
-									PyArray_GETPTR1((PyArrayObject *)data, i));
+				pColO = PyArray_GETITEM((PyArrayObject *)data, PyArray_GETPTR1((PyArrayObject *)data, i));
 			}
 		}
 
 		// Now we have to do some preprocessing on the data
 		if (ret->multidimensional) {
+			assert(pColO==NULL);
 			// If it is a multidimensional Numpy array, we don't need to do any
 			// conversion, we can just do some pointers
 			ret->count = PyArray_DIMS((PyArrayObject *)pResult)[1];
@@ -896,10 +891,10 @@ bool PyObject_PreprocessObject(PyObject *pResult, PyReturn *pyreturn_values,
 			ret->array_data = PyArray_DATA((PyArrayObject *)ret->numpy_array);
 			if (ret->numpy_mask != NULL)
 				ret->mask_data = PyArray_DATA((PyArrayObject *)ret->numpy_mask);
-			ret->memory_size =
-				PyArray_DESCR((PyArrayObject *)ret->numpy_array)->elsize;
+			ret->memory_size = PyArray_DESCR((PyArrayObject *)ret->numpy_array)->elsize;
 		} else {
 			msg = PyObject_GetReturnValues(pColO, ret);
+			Py_DECREF(pColO);
 			if (msg != MAL_SUCCEED) {
 				goto wrapup;
 			}
@@ -911,8 +906,8 @@ wrapup:
 	return false;
 }
 
-BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
-						   int i, oid seqbase, char **return_message, bool copy)
+BAT *
+PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i, oid seqbase, char **return_message, bool copy)
 {
 	BAT *b = NULL;
 	size_t index_offset = 0;
@@ -1107,8 +1102,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 				data = (char *)ret->array_data;
 
 				if (ret->result_type != NPY_OBJECT) {
-					utf8_string =
-						GDKzalloc(utf8string_minlength + ret->memory_size + 1);
+					utf8_string = GDKzalloc(utf8string_minlength + ret->memory_size + 1);
 					utf8_string[utf8string_minlength + ret->memory_size] = '\0';
 				}
 

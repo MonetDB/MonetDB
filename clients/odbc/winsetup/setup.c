@@ -387,8 +387,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	    !SQLWritePrivateProfileString(data.dsn, "pwd", data.pwd, "odbc.ini") ||
 	    !SQLWritePrivateProfileString(data.dsn, "host", data.host, "odbc.ini") ||
 	    !SQLWritePrivateProfileString(data.dsn, "port", data.port, "odbc.ini") ||
-	    !SQLWritePrivateProfileString(data.dsn, "database", data.database, "odbc.ini") ||
-	    !SQLWritePrivateProfileString(data.dsn, "logfile", data.logfile, "odbc.ini")) {
+	    !SQLWritePrivateProfileString(data.dsn, "database", data.database, "odbc.ini")) {
 		rc = FALSE;
 		if (parent)
 			MessageBox(parent,
@@ -397,6 +396,15 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 				   MB_ICONERROR);
 		SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED,
 				      "Error writing configuration data to registry");
+		goto finish;
+	}
+
+	if (!SQLWritePrivateProfileString(data.dsn, "logfile", data.logfile, "odbc.ini")) {
+		if (parent)
+			MessageBox(parent,
+				   "Error writing logfile configuration data to registry",
+				   NULL,
+				   MB_ICONERROR);
 		goto finish;
 	}
 

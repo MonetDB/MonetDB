@@ -15,7 +15,8 @@
 #include "type_conversion.h"
 #include "gdk_interprocess.h"
 
-static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
+static PyObject *
+_connection_execute(Py_ConnectionObject *self, PyObject *args)
 {
 	char *query = NULL;
 	if (PyUnicode_CheckExact(args)) {
@@ -67,8 +68,7 @@ static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
 				input.scalar = false;
 				input.sql_subtype = &col.type;
 
-				numpy_array =
-					PyMaskedArray_FromBAT(&input, 0, input.count, &res, true);
+				numpy_array = PyMaskedArray_FromBAT(&input, 0, input.count, &res, true);
 				if (!numpy_array) {
 					_connection_cleanup_result(output);
 					BBPunfix(b->batCacheid);
@@ -76,9 +76,9 @@ static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
 								 (res ? getExceptionMessage(res) : "<no error>"));
 					return NULL;
 				}
-				PyDict_SetItem(result,
-							   PyUnicode_FromString(output->cols[i].name),
-							   numpy_array);
+				PyObject *nme = PyUnicode_FromString(output->cols[i].name);
+				PyDict_SetItem(result, nme, numpy_array);
+				Py_DECREF(nme);
 				Py_DECREF(numpy_array);
 				BBPunfix(input.bat->batCacheid);
 			}

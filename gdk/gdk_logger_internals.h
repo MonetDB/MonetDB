@@ -61,7 +61,7 @@ struct logger {
 	logged_range *flush_ranges;
 
 	// atomic
-	ATOMIC_TYPE		nr_flushers;
+	ATOMIC_TYPE nr_flushers;
 
 	// synchronized by store->flush
 	bool flushnow;

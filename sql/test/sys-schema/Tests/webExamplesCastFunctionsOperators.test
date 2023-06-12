@@ -11,6 +11,7 @@ select convert(123, decimal(10,3))
 ----
 123.000
 
+# numeric
 query I rowsort
 select cast(true as smallint)
 ----
@@ -36,6 +37,7 @@ select cast(23.45 as decimal(5,2))
 ----
 23.450
 
+# date, time and timestamp
 query T rowsort
 select cast('2020-07-29' as date)
 ----
@@ -76,16 +78,38 @@ select cast('2020-07-29 17:44:59.321+01:30' as timestamptz)
 ----
 2020-07-29 18:14:59.321000+02:00
 
+# intervals
 query T rowsort
-select cast('1234' as interval month)
+select cast('67' as interval month)
 ----
-1234
+67
+
+query T rowsort
+select cast('120' as interval day)
+----
+120
 
 query T rowsort
 select cast('86400.123' as interval second)
 ----
 1 day, 0:00:00
 
+query T rowsort
+select cast('18:40:05' as interval hour to second)
+----
+18:40:05
+
+query T rowsort
+select cast('2 18:40:05.123' as interval day to second(3))
+----
+2 days, 18:40:05
+
+query T rowsort
+select cast('2-5' as interval year to month)
+----
+29
+
+# blob, clob, inet, json, url, uuid
 query T rowsort
 select cast('abcd' as blob)
 ----
@@ -116,6 +140,7 @@ select cast('e31960fb-dc8b-452d-ab30-b342723e756a' as uuid)
 ----
 e31960fb-dc8b-452d-ab30-b342723e756a
 
+# convert()
 query T rowsort
 select convert('a4cd' , blob)
 ----
@@ -146,6 +171,27 @@ select convert('e31960fb-dc8b-452d-ab30-b342723e756a' , uuid)
 ----
 e31960fb-dc8b-452d-ab30-b342723e756a
 
+# prefix type casting
+query T rowsort
+select E'EA\fB\tC\n\\Z'
+----
+EA@B@C@\Z
+
+query T rowsort
+select e'eA\fB\tC\n\\Z'
+----
+eA@B@C@\Z
+
+query T rowsort
+select R'RA\fB\tC\n\\Z'
+----
+RA\fB\tC\n\\Z
+
+query T rowsort
+select r'rA\fB\tC\n\\Z'
+----
+rA\fB\tC\n\\Z
+
 query T rowsort
 select x'abcd'
 ----
@@ -163,6 +209,71 @@ query T rowsort
 select cast('abcde' as clob)
 ----
 abcde
+
+query T rowsort
+select date '2020-09-28'
+----
+2020-09-28
+
+query T rowsort
+select time '18:40:05'
+----
+18:40:05
+
+query T rowsort
+select time(6) '18:40:05.123456'
+----
+18:40:05.123456
+
+query T rowsort
+select time(3) with time zone '18:40:05.123+02:00'
+----
+18:40:05.123000+02:00
+
+query T rowsort
+select timestamp '2020-09-28 18:40:05'
+----
+2020-09-28 18:40:05
+
+query T rowsort
+select timestamp(6) '2020-09-28 18:40:05.123456'
+----
+2020-09-28 18:40:05.123456
+
+query T rowsort
+select timestamp(3) with time zone '2020-09-28 18:40:05.123+02:00'
+----
+2020-09-28 18:40:05.123000+02:00
+
+query T rowsort
+select interval '67205' second
+----
+18:40:05
+
+query T rowsort
+select interval '30' day
+----
+30
+
+query T rowsort
+select interval '6' month
+----
+6
+
+query T rowsort
+select interval '18:40:05' hour to second
+----
+18:40:05
+
+query T rowsort
+select interval '2 18:40:05.123' day to second(3)
+----
+2 days, 18:40:05
+
+query T rowsort
+select interval '2-5' year to month
+----
+29
 
 query T rowsort
 select inet '192.168.1.5/24'
@@ -183,24 +294,4 @@ query T rowsort
 select uuid 'e31960fb-dc8b-452d-ab30-b342723e756a'
 ----
 e31960fb-dc8b-452d-ab30-b342723e756a
-
-query T rowsort
-select E'EA\fB\tC\n\\Z'
-----
-EA@B@C@\Z
-
-query T rowsort
-select e'eA\fB\tC\n\\Z'
-----
-eA@B@C@\Z
-
-query T rowsort
-select R'RA\fB\tC\n\\Z'
-----
-RA\fB\tC\n\\Z
-
-query T rowsort
-select r'rA\fB\tC\n\\Z'
-----
-rA\fB\tC\n\\Z
 

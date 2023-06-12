@@ -164,7 +164,7 @@ static void
 CreateAttributeString(char *attrs, size_t len, const char *dsn)
 {
 	snprintf(attrs, len,
-			 "DSN=%s;Server=localhost;Database=;UID=monetdb;PWD=monetdb;",
+			 "DSN=%s;Server=localhost;Database=;UID=monetdb;PWD=monetdb;Logfile=;",
 			 dsn);
 
 	for (; *attrs; attrs++)

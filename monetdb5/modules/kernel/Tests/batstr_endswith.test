@@ -1,3 +1,15 @@
+query T rowsort
+select name from tables where endswith(name, 'keys') order by name
+----
+dependency_columns_on_keys
+dependency_keys_on_foreignkeys
+dependency_tables_on_foreignkeys
+describe_foreign_keys
+dump_foreign_keys
+fkeys
+keys
+keys
+
 statement ok
 create table foo(x string)
 

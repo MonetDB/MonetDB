@@ -19,7 +19,7 @@ compressed_stream(stream *inner, int level)
 	if (inner == NULL)
 		return NULL;
 
-	char *filename = mnstr_name(inner);
+	const char *filename = mnstr_name(inner);
 	if (filename == NULL)
 		return inner;
 
@@ -37,5 +37,3 @@ compressed_stream(stream *inner, int level)
 
 	return inner;
 }
-
-

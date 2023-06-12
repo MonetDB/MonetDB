@@ -2396,8 +2396,8 @@ store_manager(sqlstore *store)
 	MT_lock_set(&store->flush);
 
 	for (;;) {
-		if (ATOMIC_GET(&store->nr_active) == 0 &&
-			(store->debug&128 || ATOMIC_GET(&store->lastactive) + IDLE_TIME * 1000000 < (ATOMIC_BASE_TYPE) GDKusec())) {
+		const int idle = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 5000 : IDLE_TIME * 1000000;
+		if (store->debug&128 || ATOMIC_GET(&store->lastactive) + idle < (ATOMIC_BASE_TYPE) GDKusec()) {
 			MT_lock_unset(&store->flush);
 			store_lock(store);
 			if (ATOMIC_GET(&store->nr_active) == 0) {
@@ -2654,6 +2654,12 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 	char *dest_name = dest_path + snprintf(dest_path, sizeof(dest_path), "%s/", prefix);
 	stream *infile = NULL;
 
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	int len;
 	if (sscanf(p, "%[^\n]\n%n", abs_src_path, &len) != 1) {
 		GDKerror("internal error: first line of plan is malformed");
@@ -2666,6 +2672,7 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 	char command;
 	long size;
 	while (sscanf(p, "%c %ld %100s\n%n", &command, &size, src_name, &len) == 3) {
+		GDK_CHECK_TIMEOUT_BODY(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(end));
 		p += len;
 		strcpy(dest_name, src_name);
 		if (size < 0) {
@@ -3753,6 +3760,7 @@ sql_trans_destroy(sql_trans *tr)
 
 	TRC_DEBUG(SQL_STORE, "Destroy transaction: %p\n", tr);
 	_DELETE(tr->name);
+	assert(!tr->active || tr->parent);
 	if (!list_empty(tr->changes))
 		sql_trans_rollback(tr, false);
 	sqlstore *store = tr->store;
@@ -5976,8 +5984,8 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 		if ((res = sys_drop_table(tr, gt?gt:t, drop_action)))
 			return res;
 
-	t->base.deleted = 1;
-
+	if (isNew(t))
+		t->base.deleted = 1;
 	if (gt && (res = os_del(s->tables, tr, gt->base.name, dup_base(&gt->base))))
 		return res;
 	if (t != gt && (res =os_del(tr->localtmps, tr, t->base.name, dup_base(&t->base))))

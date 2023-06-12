@@ -608,9 +608,8 @@ convert_and_append(BAT* b, const char* text, bool force) {
 			mask = (bool *)ret->mask_data;                                     \
 		}                                                                      \
 		if (ret->array_data == NULL) {                                         \
-			msg =                                                              \
-				createException(MAL, "pyapi3.eval",                            \
-								SQLSTATE(PY000) "No return value stored in the structure.\n"); \
+			msg = createException(MAL, "pyapi3.eval",                          \
+				SQLSTATE(PY000) "No return value stored in the structure.\n"); \
 			goto wrapup;                                                       \
 		}                                                                      \
 		data = (char *)ret->array_data;                                        \

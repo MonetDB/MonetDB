@@ -101,6 +101,7 @@ typedef enum {
 	COMP( DELTA )				\
 	COMP( HEAP )				\
 	COMP( IO_ )				\
+	COMP( WAL )				\
 	COMP( PAR )				\
 	COMP( PERF )				\
 	COMP( TEM )				\
