@@ -93,4 +93,5 @@ monet_version(void)
 	printf("Compiled by: %s (%s)\n", "@builtby@", HOST);
 	printf("Compilation: %s\n", "@compilercall@");
 	printf("Linking    : %s\n", "@linkercall@");
+	fflush(stdout);
 }

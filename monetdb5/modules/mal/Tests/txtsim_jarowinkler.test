@@ -1,0 +1,47 @@
+statement ok
+create table foo(x string)
+
+statement ok
+insert into foo values ('john'),('jane'),('robert')
+
+statement ok
+create table bar(x string)
+
+statement ok
+insert into bar values ('joHan'),('aajAne'),('rOObert')
+
+query TT rowsort
+select * from foo,bar where [foo.x] minjarowinkler [bar.x, 1];
+----
+
+query TT rowsort
+select * from foo,bar where [foo.x] minjarowinkler [bar.x, 0.5];
+----
+jane
+aajAne
+jane
+joHan
+john
+aajAne
+john
+joHan
+robert
+joHan
+robert
+rOObert
+
+query TT rowsort
+select * from foo,bar where [foo.x] minjarowinkler [bar.x, 0.8];
+----
+jane
+aajAne
+john
+joHan
+robert
+rOObert
+
+statement ok
+drop table foo;
+
+statement ok
+drop table bar;

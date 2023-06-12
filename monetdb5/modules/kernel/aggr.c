@@ -11,20 +11,21 @@
 #include "monetdb_config.h"
 #include "mal.h"
 #include "mal_exception.h"
+#include "aggr.h"
 
 /*
  * grouped aggregates
  */
 static str
-AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const bat *eid, const bat *sid,
+AGGRgrouped_bat_or_val(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const bat *eid, const bat *sid,
 			bool skip_nils, int scale, int tp,
 			BAT *(*grpfunc1)(BAT *, BAT *, BAT *, BAT *, int, bool),
 			gdk_return (*grpfunc2)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, int, bool, int),
 			BAT *(*quantilefunc)(BAT *, BAT *, BAT *, BAT *, int, double, bool),
-			const bat *quantile,
+			const bat *quantile, const double *quantile_val,
 			const char *malfunc)
 {
-	BAT *b, *g, *e, *s, *bn = NULL, *cnts, *q = NULL;
+	BAT *b, *g, *e, *s, *bn = NULL, *cnts = NULL, *q = NULL;
 	double qvalue;
 
 	/* exactly one of grpfunc1, grpfunc2 and quantilefunc is non-NULL */
@@ -33,7 +34,7 @@ AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const ba
 	/* if retval2 is non-NULL, we must have grpfunc2 */
 	assert(retval2 == NULL || grpfunc2 != NULL);
 	/* only quantiles need a quantile BAT */
-	assert((quantilefunc == NULL) == (quantile == NULL));
+	assert((quantilefunc == NULL) == (quantile == NULL && quantile_val == NULL));
 
 	b = BATdescriptor(*bid);
 	g = gid ? BATdescriptor(*gid) : NULL;
@@ -45,7 +46,7 @@ AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const ba
 		(gid != NULL && g == NULL) ||
 		(eid != NULL && e == NULL) ||
 		(sid != NULL && s == NULL) ||
-		(quantile != NULL && q == NULL)) {
+		((quantile != NULL && quantile_val != NULL) && q == NULL)) {
 		BBPreclaim(b);
 		BBPreclaim(g);
 		BBPreclaim(e);
@@ -63,25 +64,29 @@ AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const ba
 	if (grpfunc1) {
 		bn = (*grpfunc1)(b, g, e, s, tp, skip_nils);
 	} else if (quantilefunc) {
-		assert(BATcount(q) > 0 || BATcount(b) == 0);
-		assert(q->ttype == TYPE_dbl);
-		if (BATcount(q) == 0) {
-			qvalue = 0.5;
-		} else {
-			MT_lock_set(&q->theaplock);
-			qvalue = ((const dbl *)Tloc(q, 0))[0];
-			MT_lock_unset(&q->theaplock);
-			if (qvalue < 0 || qvalue > 1) {
-				BBPunfix(b->batCacheid);
-				BBPreclaim(g);
-				BBPreclaim(e);
-				BBPreclaim(s);
-				BBPunfix(q->batCacheid);
-				throw(MAL, malfunc,
-					  "quantile value of %f is not in range [0,1]", qvalue);
+		if (!quantile_val) {
+			assert(BATcount(q) > 0 || BATcount(b) == 0);
+			assert(q->ttype == TYPE_dbl);
+			if (BATcount(q) == 0) {
+				qvalue = 0.5;
+			} else {
+				MT_lock_set(&q->theaplock);
+				qvalue = ((const dbl *)Tloc(q, 0))[0];
+				MT_lock_unset(&q->theaplock);
+				if (qvalue < 0 || qvalue > 1) {
+					BBPunfix(b->batCacheid);
+					BBPreclaim(g);
+					BBPreclaim(e);
+					BBPreclaim(s);
+					BBPunfix(q->batCacheid);
+					throw(MAL, malfunc,
+					  	"quantile value of %f is not in range [0,1]", qvalue);
+				}
 			}
+			BBPunfix(q->batCacheid);
+		} else {
+			qvalue = *(quantile_val);
 		}
-		BBPunfix(q->batCacheid);
 		bn = (*quantilefunc)(b, g, e, s, tp, qvalue, skip_nils);
 	} else if ((*grpfunc2)(&bn, retval2 ? &cnts : NULL, b, g, e, s, tp,
 						   skip_nils, scale) != GDK_SUCCEED) {
@@ -101,6 +106,18 @@ AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const ba
 		BBPkeepref(cnts);
 	}
 	return MAL_SUCCEED;
+}
+
+static str
+AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const bat *eid, const bat *sid,
+			bool skip_nils, int scale, int tp,
+			BAT *(*grpfunc1)(BAT *, BAT *, BAT *, BAT *, int, bool),
+			gdk_return (*grpfunc2)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, int, bool, int),
+			BAT *(*quantilefunc)(BAT *, BAT *, BAT *, BAT *, int, double, bool),
+			const bat *quantile,
+			const char *malfunc)
+{
+	return AGGRgrouped_bat_or_val(retval1, retval2, bid, gid, eid, sid, skip_nils, scale, tp, grpfunc1, grpfunc2, quantilefunc, quantile, NULL, malfunc);
 }
 
 static str
@@ -124,7 +141,7 @@ AGGRsum3_int(bat *retval, const bat *bid, const bat *gid, const bat *eid)
 					   BATgroupsum, NULL, NULL, NULL, "aggr.sum");
 }
 
-static str
+str
 AGGRsum3_lng(bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
 	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_lng,
@@ -132,7 +149,7 @@ AGGRsum3_lng(bat *retval, const bat *bid, const bat *gid, const bat *eid)
 }
 
 #ifdef HAVE_HGE
-static str
+str
 AGGRsum3_hge(bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
 	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_hge,
@@ -892,6 +909,21 @@ AGGRquantile(void *retval, const bat *bid, const bat *qid)
 }
 
 static str
+AGGRquantile_cst(void *retval, const bat *bid, const dbl *q)
+{
+	str err;
+	bat rval;
+	if ((err = AGGRgrouped_bat_or_val(&rval, NULL, bid, NULL, NULL, NULL, true,
+						   0, TYPE_any, NULL, NULL, BATgroupquantile,
+						   NULL, q, "aggr.subquantile")) == MAL_SUCCEED) {
+		oid pos = 0;
+		err = ALGfetchoid(retval, &rval, &pos);
+		BBPrelease(rval);
+	}
+	return err;
+}
+
+static str
 AGGRsubquantile(bat *retval, const bat *bid, const bat *quantile, const bat *gid, const bat *eid, const bit *skip_nils)
 {
 	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
@@ -947,6 +979,21 @@ AGGRquantile_avg(dbl *retval, const bat *bid, const bat *qid)
 	if ((err = AGGRgrouped(&rval, NULL, bid, NULL, NULL, NULL, true,
 						   0, TYPE_any, NULL, NULL, BATgroupquantile_avg,
 						   qid, "aggr.subquantile_avg")) == MAL_SUCCEED) {
+		oid pos = 0;
+		err = ALGfetchoid(retval, &rval, &pos);
+		BBPrelease(rval);
+	}
+	return err;
+}
+
+static str
+AGGRquantile_avg_cst(dbl *retval, const bat *bid, const dbl *q)
+{
+	str err;
+	bat rval;
+	if ((err = AGGRgrouped_bat_or_val(&rval, NULL, bid, NULL, NULL, NULL, true,
+						   0, TYPE_any, NULL, NULL, BATgroupquantile_avg,
+						   NULL, q, "aggr.subquantile_avg")) == MAL_SUCCEED) {
 		oid pos = 0;
 		err = ALGfetchoid(retval, &rval, &pos);
 		BBPrelease(rval);
@@ -1446,12 +1493,14 @@ mel_func aggr_init_funcs[] = {
  command("aggr", "submedian", AGGRsubmedian, false, "Grouped median aggregate", args(1,5, batargany("",1),batargany("b",1),batarg("g",oid),batargany("e",2),arg("skip_nils",bit))),
  command("aggr", "submedian", AGGRsubmediancand, false, "Grouped median aggregate with candidate list", args(1,6, batargany("",1),batargany("b",1),batarg("g",oid),batargany("e",2),batarg("s",oid),arg("skip_nils",bit))),
  command("aggr", "quantile", AGGRquantile, false, "Quantile aggregate", args(1,3, argany("",1),batargany("b",1),batarg("q",dbl))),
+ command("aggr", "quantile", AGGRquantile_cst, false, "Quantile aggregate", args(1,3, argany("",1),batargany("b",1),arg("q",dbl))),
  command("aggr", "subquantile", AGGRsubquantile, false, "Grouped quantile aggregate", args(1,6, batargany("",1),batargany("b",1),batarg("q",dbl),batarg("g",oid),batargany("e",2),arg("skip_nils",bit))),
  command("aggr", "subquantile", AGGRsubquantilecand, false, "Grouped quantile aggregate with candidate list", args(1,7, batargany("",1),batargany("b",1),batarg("q",dbl),batarg("g",oid),batargany("e",2),batarg("s",oid),arg("skip_nils",bit))),
  command("aggr", "median_avg", AGGRmedian_avg, false, "Median aggregate", args(1,2, arg("",dbl),batargany("b",1))),
  command("aggr", "submedian_avg", AGGRsubmedian_avg, false, "Grouped median aggregate", args(1,5, batarg("",dbl),batargany("b",1),batarg("g",oid),batargany("e",2),arg("skip_nils",bit))),
  command("aggr", "submedian_avg", AGGRsubmediancand_avg, false, "Grouped median aggregate with candidate list", args(1,6, batarg("",dbl),batargany("b",1),batarg("g",oid),batargany("e",2),batarg("s",oid),arg("skip_nils",bit))),
  command("aggr", "quantile_avg", AGGRquantile_avg, false, "Quantile aggregate", args(1,3, arg("",dbl),batargany("b",1),batarg("q",dbl))),
+ command("aggr", "quantile_avg", AGGRquantile_avg_cst, false, "Quantile aggregate", args(1,3, arg("",dbl),batargany("b",1),arg("q",dbl))),
  command("aggr", "subquantile_avg", AGGRsubquantile_avg, false, "Grouped quantile aggregate", args(1,6, batarg("",dbl),batargany("b",1),batarg("q",dbl),batarg("g",oid),batargany("e",2),arg("skip_nils",bit))),
  command("aggr", "subquantile_avg", AGGRsubquantilecand_avg, false, "Grouped quantile aggregate with candidate list", args(1,7, batarg("",dbl),batargany("b",1),batarg("q",dbl),batarg("g",oid),batargany("e",2),batarg("s",oid),arg("skip_nils",bit))),
  command("aggr", "str_group_concat", AGGRstr_group_concat, false, "Grouped string tail concat", args(1,4, batarg("",str),batarg("b",str),batarg("g",oid),batargany("e",1))),

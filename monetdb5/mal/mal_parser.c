@@ -180,32 +180,145 @@ advance(Client cntxt, size_t length)
  * instruction datastructures.
 */
 
-short opCharacter[256];
-short idCharacter[256];
-short idCharacter2[256];
-
-void
-initParser(void)
-{
-	int i;
-
-	for (i = 0; i < 256; i++) {
-		idCharacter2[i] = isalnum(i);
-		idCharacter[i] = isalpha(i);
-	}
-	for (i = 0; i < 256; i++)
-		switch (i) {
-		case '-': case '!': case '\\': case '$': case '%':
-		case '^': case '*': case '~': case '+': case '&':
-		case '|': case '<': case '>': case '=': case '/':
-		case ':':
-			opCharacter[i] = 1;
-		}
-
-	idCharacter[TMPMARKER] = 1;
-	idCharacter2[TMPMARKER] = 1;
-	idCharacter2['@'] = 1;
-}
+static const bool opCharacter[256] = {
+	['$'] = true,
+	['!'] = true,
+	['%'] = true,
+	['&'] = true,
+	['*'] = true,
+	['+'] = true,
+	['-'] = true,
+	['/'] = true,
+	[':'] = true,
+	['<'] = true,
+	['='] = true,
+	['>'] = true,
+	['\\'] = true,
+	['^'] = true,
+	['|'] = true,
+	['~'] = true,
+};
+static const bool idCharacter[256] = {
+	['a'] = true,
+	['b'] = true,
+	['c'] = true,
+	['d'] = true,
+	['e'] = true,
+	['f'] = true,
+	['g'] = true,
+	['h'] = true,
+	['i'] = true,
+	['j'] = true,
+	['k'] = true,
+	['l'] = true,
+	['m'] = true,
+	['n'] = true,
+	['o'] = true,
+	['p'] = true,
+	['q'] = true,
+	['r'] = true,
+	['s'] = true,
+	['t'] = true,
+	['u'] = true,
+	['v'] = true,
+	['w'] = true,
+	['x'] = true,
+	['y'] = true,
+	['z'] = true,
+	['A'] = true,
+	['B'] = true,
+	['C'] = true,
+	['D'] = true,
+	['E'] = true,
+	['F'] = true,
+	['G'] = true,
+	['H'] = true,
+	['I'] = true,
+	['J'] = true,
+	['K'] = true,
+	['L'] = true,
+	['M'] = true,
+	['N'] = true,
+	['O'] = true,
+	['P'] = true,
+	['Q'] = true,
+	['R'] = true,
+	['S'] = true,
+	['T'] = true,
+	['U'] = true,
+	['V'] = true,
+	['W'] = true,
+	['X'] = true,
+	['Y'] = true,
+	['Z'] = true,
+	[TMPMARKER] = true,
+};
+static const bool idCharacter2[256] = {
+	['a'] = true,
+	['b'] = true,
+	['c'] = true,
+	['d'] = true,
+	['e'] = true,
+	['f'] = true,
+	['g'] = true,
+	['h'] = true,
+	['i'] = true,
+	['j'] = true,
+	['k'] = true,
+	['l'] = true,
+	['m'] = true,
+	['n'] = true,
+	['o'] = true,
+	['p'] = true,
+	['q'] = true,
+	['r'] = true,
+	['s'] = true,
+	['t'] = true,
+	['u'] = true,
+	['v'] = true,
+	['w'] = true,
+	['x'] = true,
+	['y'] = true,
+	['z'] = true,
+	['A'] = true,
+	['B'] = true,
+	['C'] = true,
+	['D'] = true,
+	['E'] = true,
+	['F'] = true,
+	['G'] = true,
+	['H'] = true,
+	['I'] = true,
+	['J'] = true,
+	['K'] = true,
+	['L'] = true,
+	['M'] = true,
+	['N'] = true,
+	['O'] = true,
+	['P'] = true,
+	['Q'] = true,
+	['R'] = true,
+	['S'] = true,
+	['T'] = true,
+	['U'] = true,
+	['V'] = true,
+	['W'] = true,
+	['X'] = true,
+	['Y'] = true,
+	['Z'] = true,
+	['0'] = true,
+	['1'] = true,
+	['2'] = true,
+	['3'] = true,
+	['4'] = true,
+	['5'] = true,
+	['6'] = true,
+	['7'] = true,
+	['8'] = true,
+	['9'] = true,
+	[TMPMARKER] = true,
+	['@'] = true,
+};
 
 static int
 idLength(Client cntxt)
@@ -1708,7 +1821,7 @@ parseAssign(Client cntxt, int cntrl)
 	if (!keyphrase2(cntxt, ":=")) {
 		/* no assignment !! a control variable is allowed */
 		/* for the case RETURN X, we normalize it to include the function arguments */
-		if (cntrl == RETURNsymbol || cntrl == YIELDsymbol) {
+		if (cntrl == RETURNsymbol) {
 			int e;
 			InstrPtr sig = getInstrPtr(curBlk,0);
 			curInstr->retc = 0;
@@ -1944,16 +2057,6 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines, MALfcn addres
 					unsafeProp = 0;
 					break;
 				}
-			} else if (MALkeyword(cntxt, "factory", 7)) {
-				if( inlineProp )
-					parseError(cntxt, "parseError:INLINE ignored\n");
-				if( unsafeProp)
-					parseError(cntxt, "parseError:UNSAFE ignored\n");
-				inlineProp = 0;
-				unsafeProp = 0;
-				cntxt->blkmode++;
-				parseFunction(cntxt, FACTORYsymbol);
-				break;
 			}
 			goto allLeft;
 		case 'I': case 'i':
@@ -2009,12 +2112,6 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines, MALfcn addres
 				unsafeProp= 1;
 				skipSpace(cntxt);
 				continue;
-			}
-			goto allLeft;
-		case 'Y': case 'y':
-			if (MALkeyword(cntxt, "yield", 5)) {
-				cntrl = YIELDsymbol;
-				goto allLeft;
 			}
 			/* fall through */
 		default: allLeft :

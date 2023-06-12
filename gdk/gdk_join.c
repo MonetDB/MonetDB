@@ -3083,12 +3083,15 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 	canditer_init(&ci, b, s);
 	half = ci.ncand / 2;
 
+	MT_lock_set(&b->theaplock);
 	if (b->tkey || ci.ncand <= 1 || BATtdense(b)) {
 		/* trivial: already unique */
+		MT_lock_unset(&b->theaplock);
 		*cnt1 = half;
 		*cnt2 = ci.ncand;
 		return GDK_SUCCEED;
 	}
+	MT_lock_unset(&b->theaplock);
 
 	(void) BATordered(b);
 	(void) BATordered_rev(b);
@@ -3304,8 +3307,8 @@ BATguess_uniques(BAT *b, struct canditer *ci)
 /* estimate the cost of doing a hashjoin with a hash on r; return value
  * is the estimated cost, the last three arguments receive some extra
  * information */
-static double
-joincost(BAT *r, struct canditer *lci, struct canditer *rci,
+double
+joincost(BAT *r, BUN lcount, struct canditer *rci,
 	 bool *hash, bool *phash, bool *cand)
 {
 	bool rhash;
@@ -3331,7 +3334,7 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 		 * candidate types is essentially free */
 		rcost += log2((double) rci->nvals);
 	}
-	rcost *= lci->ncand;
+	rcost *= lcount;
 	if (BATtdense(r)) {
 		/* no need for a hash, and lookup is free */
 		rhash = false;	/* don't use it, even if it's there */
@@ -3376,38 +3379,41 @@ joincost(BAT *r, struct canditer *lci, struct canditer *rci,
 #endif
 		}
 	}
-	if (rci->ncand != BATcount(r) && rci->tpe != cand_mask) {
-		/* instead of using the hash on r (cost in rcost), we
-		 * can build a new hash on r taking the candidate list
-		 * into account; don't do this for masked candidate
-		 * since the searching of the candidate list
-		 * (canditer_idx) will kill us */
-		double rccost;
-		if (rhash && !prhash) {
-			rccost = (double) cnt / nheads;
-		} else {
-			MT_lock_set(&r->theaplock);
-			double unique_est = r->tunique_est;
-			MT_lock_unset(&r->theaplock);
-			if (unique_est == 0) {
-				unique_est = guess_uniques(r, rci);
-				if (unique_est < 0)
-					return -1;
+	if (cand) {
+		if (rci->ncand != BATcount(r) && rci->tpe != cand_mask) {
+			/* instead of using the hash on r (cost in
+			 * rcost), we can build a new hash on r taking
+			 * the candidate list into account; don't do
+			 * this for masked candidate since the searching
+			 * of the candidate list (canditer_idx) will
+			 * kill us */
+			double rccost;
+			if (rhash && !prhash) {
+				rccost = (double) cnt / nheads;
+			} else {
+				MT_lock_set(&r->theaplock);
+				double unique_est = r->tunique_est;
+				MT_lock_unset(&r->theaplock);
+				if (unique_est == 0) {
+					unique_est = guess_uniques(r, rci);
+					if (unique_est < 0)
+						return -1;
+				}
+				/* we have an estimate of the number of unique
+				 * values, assume some chains */
+				rccost = 1.1 * ((double) cnt / unique_est);
 			}
-			/* we have an estimate of the number of unique
-			 * values, assume some chains */
-			rccost = 1.1 * ((double) cnt / unique_est);
+			rccost *= lcount;
+			rccost += rci->ncand * 2.0; /* cost of building the hash */
+			if (rccost < rcost) {
+				rcost = rccost;
+				rcand = true;
+			}
 		}
-		rccost *= lci->ncand;
-		rccost += rci->ncand * 2.0; /* cost of building the hash */
-		if (rccost < rcost) {
-			rcost = rccost;
-			rcand = true;
-		}
+		*cand = rcand;
 	}
 	*hash = rhash;
 	*phash = prhash;
-	*cand = rcand;
 	return rcost;
 }
 
@@ -3913,7 +3919,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			goto doreturn;
 		}
 	}
-	rcost = joincost(r, &lci, &rci, &rhash, &prhash, &rcand);
+	rcost = joincost(r, lci.ncand, &rci, &rhash, &prhash, &rcand);
 	if (rcost < 0) {
 		rc = GDK_FAIL;
 		goto doreturn;
@@ -3926,7 +3932,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		bool lhash, plhash, lcand;
 		double lcost;
 
-		lcost = joincost(l, &rci, &lci, &lhash, &plhash, &lcand);
+		lcost = joincost(l, rci.ncand, &lci, &lhash, &plhash, &lcand);
 		if (lcost < 0) {
 			rc = GDK_FAIL;
 			goto doreturn;
@@ -4260,8 +4266,8 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		goto doreturn;
 	}
 
-	lcost = joincost(l, &rci, &lci, &lhash, &plhash, &lcand);
-	rcost = joincost(r, &lci, &rci, &rhash, &prhash, &rcand);
+	lcost = joincost(l, rci.ncand, &lci, &lhash, &plhash, &lcand);
+	rcost = joincost(r, lci.ncand, &rci, &rhash, &prhash, &rcand);
 	if (lcost < 0 || rcost < 0) {
 		rc = GDK_FAIL;
 		goto doreturn;

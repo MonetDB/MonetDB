@@ -839,7 +839,7 @@ MNDBGetInfo(ODBCDbc *dbc,
 		sValue = MONETDB_SERVER_NAME;
 		break;
 	case SQL_SPECIAL_CHARACTERS:
-		sValue = "!$&'()*+,-./:;<=>?@[]^`{|}~";
+		sValue = "!#$%&'()*+,-./:;<=>?@[]^`{|}~";
 		break;
 	case SQL_SQL_CONFORMANCE:
 		nValue = SQL_SC_SQL92_FULL;
@@ -1037,15 +1037,16 @@ MNDBGetInfo(ODBCDbc *dbc,
 		break;
 	case SQL_TIMEDATE_ADD_INTERVALS:
 	case SQL_TIMEDATE_DIFF_INTERVALS:
-		/* SQL_FN_TSI_FRAC_SECOND |
-		 * SQL_FN_TSI_SECOND |
-		 * SQL_FN_TSI_MINUTE |
-		 * SQL_FN_TSI_HOUR |
-		 * SQL_FN_TSI_DAY |
-		 * SQL_FN_TSI_WEEK |
-		 * SQL_FN_TSI_MONTH |
-		 * SQL_FN_TSI_QUARTER |
-		 * SQL_FN_TSI_YEAR */
+		/* when server is 11.46 or higher */
+		nValue = SQL_FN_TSI_FRAC_SECOND |
+			SQL_FN_TSI_SECOND |
+			SQL_FN_TSI_MINUTE |
+			SQL_FN_TSI_HOUR |
+			SQL_FN_TSI_DAY |
+			SQL_FN_TSI_WEEK |
+			SQL_FN_TSI_MONTH |
+			SQL_FN_TSI_QUARTER |
+			SQL_FN_TSI_YEAR;
 		break;
 	case SQL_TIMEDATE_FUNCTIONS:
 		nValue = SQL_FN_TD_CURRENT_DATE |
@@ -1053,7 +1054,7 @@ MNDBGetInfo(ODBCDbc *dbc,
 			SQL_FN_TD_CURRENT_TIMESTAMP |
 			SQL_FN_TD_CURDATE |
 			SQL_FN_TD_CURTIME |
-			/* SQL_FN_TD_DAYNAME | */
+			SQL_FN_TD_DAYNAME |	/* when server is 11.46 or higher */
 			SQL_FN_TD_DAYOFMONTH |
 			SQL_FN_TD_DAYOFWEEK |
 			SQL_FN_TD_DAYOFYEAR |
@@ -1061,12 +1062,12 @@ MNDBGetInfo(ODBCDbc *dbc,
 			SQL_FN_TD_HOUR |
 			SQL_FN_TD_MINUTE |
 			SQL_FN_TD_MONTH |
-			/* SQL_FN_TD_MONTHNAME | */
+			SQL_FN_TD_MONTHNAME |	/* when server is 11.46 or higher */
 			SQL_FN_TD_NOW |
 			SQL_FN_TD_QUARTER |
 			SQL_FN_TD_SECOND |
-			/* SQL_FN_TD_TIMESTAMPADD | */
-			/* SQL_FN_TD_TIMESTAMPDIFF | */
+			SQL_FN_TD_TIMESTAMPADD |	/* when server is 11.46 or higher */
+			SQL_FN_TD_TIMESTAMPDIFF |	/* when server is 11.46 or higher */
 			SQL_FN_TD_WEEK |
 			SQL_FN_TD_YEAR;
 		break;

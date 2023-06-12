@@ -849,9 +849,19 @@ command aggr.quantile(X_0:bat[:any_1], X_1:bat[:dbl]):any_1
 AGGRquantile;
 Quantile aggregate
 aggr
+quantile
+command aggr.quantile(X_0:bat[:any_1], X_1:dbl):any_1 
+AGGRquantile_cst;
+Quantile aggregate
+aggr
 quantile_avg
 command aggr.quantile_avg(X_0:bat[:any_1], X_1:bat[:dbl]):dbl 
 AGGRquantile_avg;
+Quantile aggregate
+aggr
+quantile_avg
+command aggr.quantile_avg(X_0:bat[:any_1], X_1:dbl):dbl 
+AGGRquantile_avg_cst;
 Quantile aggregate
 aggr
 stdev
@@ -24635,12 +24645,12 @@ PCREreplacefirst_bat_wrap;
 (empty)
 batpyapi3
 eval
-unsafe pattern batpyapi3.eval(X_0:lng, X_1:ptr, X_2:str):any... 
+unsafe pattern batpyapi3.eval(X_0:lng, X_1:ptr, X_2:str):bat[:any_1] 
 PYAPI3PyAPIevalStd;
 Execute a simple Python script value
 batpyapi3
 eval
-unsafe pattern batpyapi3.eval(X_0:ptr, X_1:str, X_2:any...):any... 
+unsafe pattern batpyapi3.eval(X_0:ptr, X_1:str, X_2:any...):bat[:any]... 
 PYAPI3PyAPIevalStd;
 Execute a simple Python script value
 batpyapi3
@@ -25669,35 +25679,135 @@ pattern batstr.ascii(X_0:bat[:str], X_1:bat[:oid]):bat[:int]
 STRbatAscii;
 Return unicode of head of string
 batstr
-endsWith
-pattern batstr.endsWith(X_0:bat[:str], X_1:bat[:str]):bat[:bit] 
-STRbatSuffix;
-Suffix check.
+asciify
+pattern batstr.asciify(X_0:bat[:str]):bat[:str] 
+BATSTRasciify;
+Transform BAT of strings from UTF8 to ASCII
 batstr
-endsWith
-pattern batstr.endsWith(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit] 
-STRbatSuffix;
-Suffix check.
+asciify
+pattern batstr.asciify(X_0:bat[:str], X_1:bat[:oid]):bat[:str] 
+BATSTRasciify;
+Transform BAT of strings from UTF8 to ASCII
 batstr
-endsWith
-pattern batstr.endsWith(X_0:str, X_1:bat[:str]):bat[:bit] 
-STRbatSuffix_strcst;
-Suffix check.
+contains
+pattern batstr.contains(X_0:bat[:str], X_1:bat[:str]):bat[:bit] 
+BATSTRcontains;
+Check if bat string haystack contains bat string needle.
 batstr
-endsWith
-pattern batstr.endsWith(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:bit] 
-STRbatSuffix_strcst;
-Suffix check.
+contains
+pattern batstr.contains(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit] 
+BATSTRcontains;
+Check if bat string haystack contains bat string needle (with CLs).
 batstr
-endsWith
-pattern batstr.endsWith(X_0:bat[:str], X_1:str):bat[:bit] 
-STRbatSuffixcst;
-Suffix check.
+contains
+pattern batstr.contains(X_0:bat[:str], X_1:bat[:str], X_2:bit):bat[:bit] 
+BATSTRcontains;
+Check if bat string haystack contains bat string needle, icase flag.
 batstr
-endsWith
-pattern batstr.endsWith(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:bit] 
-STRbatSuffixcst;
-Suffix check.
+contains
+pattern batstr.contains(X_0:bat[:str], X_1:bat[:str], X_2:bit, X_3:bat[:oid], X_4:bat[:oid]):bat[:bit] 
+BATSTRcontains;
+Check if bat string haystack contains bat string needle (with CLs) + icase flag.
+batstr
+contains
+pattern batstr.contains(X_0:bat[:str], X_1:str):bat[:bit] 
+BATSTRcontains_cst;
+Check if bat string haystack contains string needle.
+batstr
+contains
+pattern batstr.contains(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:bit] 
+BATSTRcontains_cst;
+Check if bat string haystack contains string needle (with CL) ends with substring.
+batstr
+contains
+pattern batstr.contains(X_0:bat[:str], X_1:str, X_2:bit):bat[:bit] 
+BATSTRcontains_cst;
+Check if bat string haystack contains string needle, icase flag.
+batstr
+contains
+pattern batstr.contains(X_0:bat[:str], X_1:str, X_2:bit, X_3:bat[:oid]):bat[:bit] 
+BATSTRcontains_cst;
+Check if bat string haystack contains string needle (with CL) ends with substring + icase flag.
+batstr
+contains
+pattern batstr.contains(X_0:str, X_1:bat[:str]):bat[:bit] 
+BATSTRcontains_strcst;
+Check if string haystack contains bat string needle.
+batstr
+contains
+pattern batstr.contains(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:bit] 
+BATSTRcontains_strcst;
+Check if string haystack contains bat string needle (with CL).
+batstr
+contains
+pattern batstr.contains(X_0:str, X_1:bat[:str], X_2:bit):bat[:bit] 
+BATSTRcontains_strcst;
+Check if string haystack contains bat string needle + icase flag.
+batstr
+contains
+pattern batstr.contains(X_0:str, X_1:bat[:str], X_2:bit, X_3:bat[:oid]):bat[:bit] 
+BATSTRcontains_strcst;
+Check if string haystack contains bat string needle (with CL) + icase flag.
+batstr
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:bat[:str]):bat[:bit] 
+BATSTRends_with;
+Check if bat string ends with bat substring.
+batstr
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit] 
+BATSTRends_with;
+Check if bat string ends with bat substring (with CLs).
+batstr
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:bat[:str], X_2:bit):bat[:bit] 
+BATSTRends_with;
+Check if bat string ends with bat substring, icase flag.
+batstr
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:bat[:str], X_2:bit, X_3:bat[:oid], X_4:bat[:oid]):bat[:bit] 
+BATSTRends_with;
+Check if bat string ends with bat substring (with CLs) + icase flag.
+batstr
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:str):bat[:bit] 
+BATSTRends_with_cst;
+Check if bat string ends with substring.
+batstr
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:bit] 
+BATSTRends_with_cst;
+Check if bat string(with CL) ends with substring.
+batstr
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:str, X_2:bit):bat[:bit] 
+BATSTRends_with_cst;
+Check if bat string ends with substring, icase flag.
+batstr
+endswith
+pattern batstr.endswith(X_0:bat[:str], X_1:str, X_2:bit, X_3:bat[:oid]):bat[:bit] 
+BATSTRends_with_cst;
+Check if bat string(with CL) ends with substring + icase flag.
+batstr
+endswith
+pattern batstr.endswith(X_0:str, X_1:bat[:str]):bat[:bit] 
+BATSTRends_with_strcst;
+Check if string ends with bat substring.
+batstr
+endswith
+pattern batstr.endswith(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:bit] 
+BATSTRends_with_strcst;
+Check if string ends with bat substring(with CL).
+batstr
+endswith
+pattern batstr.endswith(X_0:str, X_1:bat[:str], X_2:bit):bat[:bit] 
+BATSTRends_with_strcst;
+Check if string ends with bat substring + icase flag.
+batstr
+endswith
+pattern batstr.endswith(X_0:str, X_1:bat[:str], X_2:bit, X_3:bat[:oid]):bat[:bit] 
+BATSTRends_with_strcst;
+Check if string ends with bat substring(with CL) + icase flag.
 batstr
 insert
 pattern batstr.insert(X_0:bat[:str], X_1:bat[:int], X_2:bat[:int], X_3:bat[:str]):bat[:str] 
@@ -25861,33 +25971,63 @@ Return the string length in bytes.
 batstr
 r_search
 pattern batstr.r_search(X_0:bat[:str], X_1:bat[:str]):bat[:int] 
-STRbatRstrSearch;
+BATSTRrevstr_search;
 Reverse search for a substring. Returns position, -1 if not found.
 batstr
 r_search
 pattern batstr.r_search(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
-STRbatRstrSearch;
-Reverse search for a substring. Returns position, -1 if not found.
+BATSTRrevstr_search;
+Reverse search for a substring (with CLs). Returns position, -1 if not found.
 batstr
 r_search
-pattern batstr.r_search(X_0:str, X_1:bat[:str]):bat[:int] 
-STRbatRstrSearch_strcst;
-Reverse search for a substring. Returns position, -1 if not found.
+pattern batstr.r_search(X_0:bat[:str], X_1:bat[:str], X_2:bit):bat[:int] 
+BATSTRrevstr_search;
+Reverse search for a substring + icase flag. Returns position, -1 if not found.
 batstr
 r_search
-pattern batstr.r_search(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:int] 
-STRbatRstrSearch_strcst;
-Reverse search for a substring. Returns position, -1 if not found.
+pattern batstr.r_search(X_0:bat[:str], X_1:bat[:str], X_2:bit, X_3:bat[:oid], X_4:bat[:oid]):bat[:int] 
+BATSTRrevstr_search;
+Reverse search for a substring (with CLs) + icase flag. Returns position, -1 if not found.
 batstr
 r_search
 pattern batstr.r_search(X_0:bat[:str], X_1:str):bat[:int] 
-STRbatRstrSearchcst;
+BATSTRrevstr_search_cst;
 Reverse search for a substring. Returns position, -1 if not found.
 batstr
 r_search
 pattern batstr.r_search(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:int] 
-STRbatRstrSearchcst;
+BATSTRrevstr_search_cst;
+Reverse search for a substring (with CL). Returns position, -1 if not found.
+batstr
+r_search
+pattern batstr.r_search(X_0:bat[:str], X_1:str, X_2:bit):bat[:int] 
+BATSTRrevstr_search_cst;
+Reverse search for a substring + icase flag. Returns position, -1 if not found.
+batstr
+r_search
+pattern batstr.r_search(X_0:bat[:str], X_1:str, X_2:bit, X_3:bat[:oid]):bat[:int] 
+BATSTRrevstr_search_cst;
+Reverse search for a substring (with CL) + icase flag. Returns position, -1 if not found.
+batstr
+r_search
+pattern batstr.r_search(X_0:str, X_1:bat[:str]):bat[:int] 
+BATSTRrevstr_search_strcst;
 Reverse search for a substring. Returns position, -1 if not found.
+batstr
+r_search
+pattern batstr.r_search(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:int] 
+BATSTRrevstr_search_strcst;
+Reverse search for a substring (with CL). Returns position, -1 if not found.
+batstr
+r_search
+pattern batstr.r_search(X_0:str, X_1:bat[:str], X_2:bit):bat[:int] 
+BATSTRrevstr_search_strcst;
+Reverse search for a substring + icase flag. Returns position, -1 if not found.
+batstr
+r_search
+pattern batstr.r_search(X_0:str, X_1:bat[:str], X_2:bit, X_3:bat[:oid]):bat[:int] 
+BATSTRrevstr_search_strcst;
+Reverse search for a substring (with CL) + icase flag. Returns position, -1 if not found.
 batstr
 repeat
 pattern batstr.repeat(X_0:bat[:str], X_1:bat[:int]):bat[:str] 
@@ -26021,33 +26161,63 @@ Strip characters in the second string from end of the first strings.
 batstr
 search
 pattern batstr.search(X_0:bat[:str], X_1:bat[:str]):bat[:int] 
-STRbatstrSearch;
+BATSTRstr_search;
 Search for a substring. Returns position, -1 if not found.
 batstr
 search
 pattern batstr.search(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:int] 
-STRbatstrSearch;
+BATSTRstr_search;
 Search for a substring. Returns position, -1 if not found.
 batstr
 search
-pattern batstr.search(X_0:str, X_1:bat[:str]):bat[:int] 
-STRbatstrSearch_strcst;
-Search for a substring. Returns position, -1 if not found.
+pattern batstr.search(X_0:bat[:str], X_1:bat[:str], X_2:bit):bat[:int] 
+BATSTRstr_search;
+Search for a substring. Returns position, -1 if not found, icase flag.
 batstr
 search
-pattern batstr.search(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:int] 
-STRbatstrSearch_strcst;
-Search for a substring. Returns position, -1 if not found.
+pattern batstr.search(X_0:bat[:str], X_1:bat[:str], X_2:bit, X_3:bat[:oid], X_4:bat[:oid]):bat[:int] 
+BATSTRstr_search;
+Search for a substring. Returns position, -1 if not found, icase flag.
 batstr
 search
 pattern batstr.search(X_0:bat[:str], X_1:str):bat[:int] 
-STRbatstrSearchcst;
+BATSTRstr_search_cst;
 Search for a substring. Returns position, -1 if not found.
 batstr
 search
 pattern batstr.search(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:int] 
-STRbatstrSearchcst;
+BATSTRstr_search_cst;
 Search for a substring. Returns position, -1 if not found.
+batstr
+search
+pattern batstr.search(X_0:bat[:str], X_1:str, X_2:bit):bat[:int] 
+BATSTRstr_search_cst;
+Search for a substring. Returns position, -1 if not found, icase flag.
+batstr
+search
+pattern batstr.search(X_0:bat[:str], X_1:str, X_2:bit, X_3:bat[:oid]):bat[:int] 
+BATSTRstr_search_cst;
+Search for a substring. Returns position, -1 if not found, icase flag.
+batstr
+search
+pattern batstr.search(X_0:str, X_1:bat[:str]):bat[:int] 
+BATSTRstr_search_strcst;
+Search for a substring. Returns position, -1 if not found.
+batstr
+search
+pattern batstr.search(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:int] 
+BATSTRstr_search_strcst;
+Search for a substring. Returns position, -1 if not found.
+batstr
+search
+pattern batstr.search(X_0:str, X_1:bat[:str], X_2:bit):bat[:int] 
+BATSTRstr_search_strcst;
+Search for a substring. Returns position, -1 if not found, icase flag.
+batstr
+search
+pattern batstr.search(X_0:str, X_1:bat[:str], X_2:bit, X_3:bat[:oid]):bat[:int] 
+BATSTRstr_search_strcst;
+Search for a substring. Returns position, -1 if not found, icase flag.
 batstr
 space
 pattern batstr.space(X_0:bat[:int]):bat[:str] 
@@ -26079,35 +26249,65 @@ pattern batstr.splitpart(X_0:bat[:str], X_1:str, X_2:int):bat[:str]
 STRbatsplitpartcst;
 Split string on delimiter. Returns@given field (counting from one.)
 batstr
-startsWith
-pattern batstr.startsWith(X_0:bat[:str], X_1:bat[:str]):bat[:bit] 
-STRbatPrefix;
-Prefix check.
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:bat[:str]):bat[:bit] 
+BATSTRstarts_with;
+Check if bat string starts with bat substring.
 batstr
-startsWith
-pattern batstr.startsWith(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit] 
-STRbatPrefix;
-Prefix check.
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit] 
+BATSTRstarts_with;
+Check if bat string starts with bat substring (with CLs).
 batstr
-startsWith
-pattern batstr.startsWith(X_0:str, X_1:bat[:str]):bat[:bit] 
-STRbatPrefix_strcst;
-Prefix check.
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:bat[:str], X_2:bit):bat[:bit] 
+BATSTRstarts_with;
+Check if bat string starts with bat substring, icase flag.
 batstr
-startsWith
-pattern batstr.startsWith(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:bit] 
-STRbatPrefix_strcst;
-Prefix check.
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:bat[:str], X_2:bit, X_3:bat[:oid], X_4:bat[:oid]):bat[:bit] 
+BATSTRstarts_with;
+Check if bat string starts with bat substring (with CLs) + icase flag.
 batstr
-startsWith
-pattern batstr.startsWith(X_0:bat[:str], X_1:str):bat[:bit] 
-STRbatPrefixcst;
-Prefix check.
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:str):bat[:bit] 
+BATSTRstarts_with_cst;
+Check if bat string starts with substring.
 batstr
-startsWith
-pattern batstr.startsWith(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:bit] 
-STRbatPrefixcst;
-Prefix check.
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:str, X_2:bat[:oid]):bat[:bit] 
+BATSTRstarts_with_cst;
+Check if bat string(with CL) starts with substring.
+batstr
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:str, X_2:bit):bat[:bit] 
+BATSTRstarts_with_cst;
+Check if bat string starts with substring, icase flag.
+batstr
+startswith
+pattern batstr.startswith(X_0:bat[:str], X_1:str, X_2:bit, X_3:bat[:oid]):bat[:bit] 
+BATSTRstarts_with_cst;
+Check if bat string(with CL) starts with substring + icase flag.
+batstr
+startswith
+pattern batstr.startswith(X_0:str, X_1:bat[:str]):bat[:bit] 
+BATSTRstarts_with_strcst;
+Check if string starts with bat substring.
+batstr
+startswith
+pattern batstr.startswith(X_0:str, X_1:bat[:str], X_2:bat[:oid]):bat[:bit] 
+BATSTRstarts_with_strcst;
+Check if string starts with bat substring(with CL).
+batstr
+startswith
+pattern batstr.startswith(X_0:str, X_1:bat[:str], X_2:bit):bat[:bit] 
+BATSTRstarts_with_strcst;
+Check if string starts with bat substring + icase flag.
+batstr
+startswith
+pattern batstr.startswith(X_0:str, X_1:bat[:str], X_2:bit, X_3:bat[:oid]):bat[:bit] 
+BATSTRstarts_with_strcst;
+Check if string starts with bat substring(with CL) + icase flag.
 batstr
 string
 pattern batstr.string(X_0:bat[:str], X_1:bat[:int]):bat[:str] 
@@ -26409,10 +26609,20 @@ pattern batstr.unicodeAt(X_0:bat[:str], X_1:int, X_2:bat[:oid]):bat[:int]
 STRbatWChrAtcst;
 get a unicode character (as an int) from a string position.
 battxtsim
+maxlevenshtein
+pattern battxtsim.maxlevenshtein(X_0:bat[:str], X_1:bat[:str], X_2:int):bat[:bit] 
+BATTXTSIMmaxlevenshtein;
+Same as maxlevenshtein but for BATS
+battxtsim
+maxlevenshtein
+pattern battxtsim.maxlevenshtein(X_0:bat[:str], X_1:bat[:str], X_2:int, X_3:int, X_4:int):bat[:bit] 
+BATTXTSIMmaxlevenshtein;
+Same as maxlevenshtein but for BATS
+battxtsim
 similarity
 command battxtsim.similarity(X_0:bat[:str], X_1:bat[:str]):bat[:dbl] 
 fstrcmp0_impl_bulk;
-Normalized edit distance between two strings
+(Deprecated) Normalized edit distance between two strings
 baturl
 extractURLHost
 command baturl.extractURLHost(X_0:bat[:str], X_1:bit):bat[:str] 
@@ -33259,11 +33469,6 @@ unsafe pattern clients.setquerytimeout(X_0:int, X_1:int):void
 CLTqueryTimeout;
 A query is aborted after q seconds (q=0 means run undisturbed).
 clients
-setsession
-unsafe pattern clients.setsession(X_0:lng):void 
-CLTsetSessionTimeout;
-Abort a session after  n seconds.
-clients
 setsessiontimeout
 unsafe pattern clients.setsessiontimeout(X_0:int):void 
 CLTsessionTimeout;
@@ -33273,16 +33478,6 @@ setsessiontimeout
 unsafe pattern clients.setsessiontimeout(X_0:int, X_1:int):void 
 CLTsessionTimeout;
 Set the session timeout for a particulat session id
-clients
-settimeout
-unsafe pattern clients.settimeout(X_0:lng):void 
-CLTsetTimeout;
-Abort a query after  n seconds.
-clients
-settimeout
-unsafe pattern clients.settimeout(X_0:lng, X_1:lng):void 
-CLTsetTimeout;
-Abort a query after q seconds (q=0 means run undisturbed).@The session timeout aborts the connection after spending too@many seconds on query processing.
 clients
 setworkerlimit
 unsafe pattern clients.setworkerlimit(X_0:int):void 
@@ -33463,36 +33658,6 @@ thetaselect
 pattern dict.thetaselect(X_0:bat[:any], X_1:bat[:oid], X_2:bat[:any_1], X_3:any_1, X_4:str):bat[:oid] 
 DICTthetaselect;
 thetaselect on a dictionary
-factories
-getArrival
-command factories.getArrival():bat[:timestamp] 
-FCTgetArrival;
-Retrieve the time stamp the last call was made.
-factories
-getCaller
-command factories.getCaller():int 
-FCTgetCaller;
-Retrieve the unique identity of the factory caller.
-factories
-getDeparture
-command factories.getDeparture():bat[:timestamp] 
-FCTgetDeparture;
-Retrieve the time stamp the last answer was returned.
-factories
-getOwners
-command factories.getOwners():bat[:str] 
-FCTgetOwners;
-Retrieve the factory owners table.
-factories
-getPlants
-command factories.getPlants() (X_0:bat[:str], X_1:bat[:str]) 
-FCTgetPlants;
-Retrieve the names for all active factories.
-factories
-shutdown
-pattern factories.shutdown(X_0:str, X_1:str):void 
-FCTshutdown;
-Close a factory.
 fits
 attach
 unsafe pattern fits.attach(X_0:str):void 
@@ -35319,11 +35484,6 @@ pattern json.renderobject(X_0:any...):json
 JSONrenderobject;
 (empty)
 json
-resultSet
-command json.resultSet(X_0:bat[:uuid], X_1:bat[:lng], X_2:bat[:json]):json 
-JSONresultSet;
-Converts the json store into a single json string:
-json
 str
 command json.str(X_0:json):str 
 JSONjson2str;
@@ -35749,11 +35909,6 @@ pattern mdb.List():void
 MDBlistDetail;
 Dump the current routine on standard out.
 mdb
-dump
-pattern mdb.dump():void 
-MDBdump;
-Dump instruction, stacktrace, and stack
-mdb
 getContext
 command mdb.getContext(X_0:str):str 
 MDBgetExceptionContext;
@@ -35809,11 +35964,6 @@ pattern mdb.getVMsize():lng
 MDBgetVMsize;
 Retrieve the max VM size
 mdb
-inspect
-pattern mdb.inspect(X_0:str, X_1:str):void 
-MDBinspect;
-Run the debugger on a specific function
-mdb
 list
 pattern mdb.list(X_0:str, X_1:str):void 
 MDBlist3;
@@ -35834,11 +35984,6 @@ command mdb.modules():bat[:str]
 CMDmodules;
 List available modules
 mdb
-setCatch
-pattern mdb.setCatch(X_0:bit):void 
-MDBsetCatch;
-Turn on/off catching exceptions
-mdb
 setDebug
 pattern mdb.setDebug(X_0:int):int 
 MDBsetDebug;
@@ -35849,40 +35994,10 @@ pattern mdb.setDebug(X_0:str):int
 MDBsetDebugStr;
 Set the kernel debugging bit-set and return its previous value.@The recognized options are: threads, memory, properties,@io, transactions, modules, algorithms, estimates.
 mdb
-setTrace
-pattern mdb.setTrace(X_0:bit):void 
-MDBsetTrace;
-Turn on/off tracing of current routine
-mdb
-setTrace
-pattern mdb.setTrace(X_0:str):void 
-MDBsetVarTrace;
-Turn on/off tracing of a variable 
-mdb
 setVMsize
 pattern mdb.setVMsize(X_0:lng):lng 
 MDBsetVMsize;
 Manipulate the VM max size in MBs
-mdb
-start
-pattern mdb.start():void 
-MDBstart;
-Start interactive debugger
-mdb
-start
-pattern mdb.start(X_0:int):void 
-MDBstart;
-Start interactive debugger on a client
-mdb
-start
-pattern mdb.start(X_0:str, X_1:str):void 
-MDBstartFactory;
-Start interactive debugger on a running factory
-mdb
-stop
-pattern mdb.stop():void 
-MDBstop;
-Stop the interactive debugger
 mdb
 var
 pattern mdb.var(X_0:str, X_1:str):void 
@@ -36724,16 +36839,6 @@ pattern optimizer.deadcode(X_0:str, X_1:str):str
 OPTwrapper;
 Dead code optimizer
 optimizer
-default_fast
-function optimizer.default_fast():void;
-(empty)
-(empty)
-optimizer
-default_pipe
-function optimizer.default_pipe():void;
-(empty)
-(empty)
-optimizer
 defaultfast
 pattern optimizer.defaultfast():str 
 OPTwrapper;
@@ -36819,26 +36924,6 @@ pattern optimizer.inline(X_0:str, X_1:str):str
 OPTwrapper;
 Expand inline functions
 optimizer
-jit
-pattern optimizer.jit():str 
-OPTwrapper;
-(empty)
-optimizer
-jit
-pattern optimizer.jit(X_0:str, X_1:str):str 
-OPTwrapper;
-Propagate candidate lists in just-in-time optimization
-optimizer
-json
-pattern optimizer.json():str 
-OPTwrapper;
-(empty)
-optimizer
-json
-pattern optimizer.json(X_0:str, X_1:str):str 
-OPTwrapper;
-Unroll the mat.pack operation
-optimizer
 macro
 pattern optimizer.macro(X_0:str, X_1:str):void 
 OPTmacro;
@@ -36848,16 +36933,6 @@ macro
 pattern optimizer.macro(X_0:str, X_1:str, X_2:str, X_3:str):void 
 OPTmacro;
 Inline a target function used in a specific function.
-optimizer
-mask
-pattern optimizer.mask():str 
-OPTwrapper;
-(empty)
-optimizer
-mask
-pattern optimizer.mask(X_0:str, X_1:str):str 
-OPTwrapper;
-Manipulate the MSK objects
 optimizer
 matpack
 pattern optimizer.matpack():str 
@@ -36878,16 +36953,6 @@ mergetable
 pattern optimizer.mergetable(X_0:str, X_1:str):str 
 OPTwrapper;
 Resolve the multi-table definitions
-optimizer
-minimal_fast
-function optimizer.minimal_fast():void;
-(empty)
-(empty)
-optimizer
-minimal_pipe
-function optimizer.minimal_pipe():void;
-(empty)
-(empty)
 optimizer
 minimalfast
 pattern optimizer.minimalfast():str 
@@ -36918,11 +36983,6 @@ multiplex
 pattern optimizer.multiplex(X_0:str, X_1:str):str 
 OPTwrapper;
 Compiler for multiplexed instructions
-optimizer
-no_mitosis_pipe
-function optimizer.no_mitosis_pipe():void;
-(empty)
-(empty)
 optimizer
 optimize
 pattern optimizer.optimize(X_0:str, X_1:str):void 
@@ -37028,11 +37088,6 @@ reorder
 pattern optimizer.reorder(X_0:str, X_1:str):str 
 OPTwrapper;
 Reorder by dataflow dependencies
-optimizer
-sequential_pipe
-function optimizer.sequential_pipe():void;
-(empty)
-(empty)
 optimizer
 strimps
 pattern optimizer.strimps():str 
@@ -37190,7 +37245,7 @@ CMDstopTrace;
 Stop collecting trace information
 pyapi3
 eval
-unsafe pattern pyapi3.eval(X_0:ptr, X_1:str):any 
+unsafe pattern pyapi3.eval(X_0:ptr, X_1:str):any_1 
 PYAPI3PyAPIevalStd;
 Execute a simple Python script returning a single value
 pyapi3
@@ -37991,7 +38046,7 @@ Write db snapshot to the given tar(.gz) file
 sql
 hot_snapshot
 unsafe pattern sql.hot_snapshot(X_0:str, X_1:bit):void 
-SQLhot_snapshot_wrap;
+SQLhot_snapshot;
 Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client
 sql
 importColumn
@@ -38253,6 +38308,21 @@ setVariable
 unsafe pattern sql.setVariable(X_0:int, X_1:str, X_2:str, X_3:any_1):int 
 setVariable;
 Set the value of a session variable
+sql
+set_count_distinct
+unsafe pattern sql.set_count_distinct(X_0:str, X_1:str, X_2:str, X_3:lng):void 
+sql_set_count_distinct;
+Set count distinct for column
+sql
+set_max
+unsafe pattern sql.set_max(X_0:str, X_1:str, X_2:str, X_3:any_1):void 
+sql_set_max;
+Set max for column
+sql
+set_min
+unsafe pattern sql.set_min(X_0:str, X_1:str, X_2:str, X_3:any_1):void 
+sql_set_min;
+Set min for column
 sql
 set_protocol
 unsafe pattern sql.set_protocol(X_0:int):int 
@@ -38864,10 +38934,90 @@ command str.ascii(X_0:str):int
 STRascii;
 Return unicode of head of string
 str
-endsWith
-command str.endsWith(X_0:str, X_1:str):bit 
-STRSuffix;
-Suffix check.
+asciify
+command str.asciify(X_0:str):str 
+STRasciify;
+Transform string from UTF8 to ASCII
+str
+contains
+pattern str.contains(X_0:str, X_1:str):bit 
+STRcontains;
+Check if string haystack contains string needle.
+str
+contains
+pattern str.contains(X_0:str, X_1:str, X_2:bit):bit 
+STRcontains;
+Check if string chaystack contains string needle, icase flag.
+str
+containsjoin
+pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit):bat[:oid] 
+STRcontainsjoin1;
+The same as STRcontainsjoin, but only produce one output + icase.
+str
+containsjoin
+pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit):bat[:oid] 
+STRcontainsjoin1;
+The same as STRcontainsjoin, but only produce one output.
+str
+containsjoin
+pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+STRcontainsjoin;
+Join the string bat L with the bat R if L contains the string of R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows + icase.
+str
+containsjoin
+pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit) (X_7:bat[:oid], X_8:bat[:oid]) 
+STRcontainsjoin;
+Join the string bat L with the bat R if L contains the string of R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows.
+str
+containsselect
+pattern str.containsselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit):bat[:oid] 
+STRcontainsselect;
+Select all head values of the first input BAT for which the@tail value contains the given needle.
+str
+containsselect
+pattern str.containsselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit, X_4:bit):bat[:oid] 
+STRcontainsselect;
+Select all head values of the first input BAT for which the@tail value contains the given needle + icase.
+str
+endswith
+pattern str.endswith(X_0:str, X_1:str):bit 
+STRendswith;
+Check if string ends with substring.
+str
+endswith
+pattern str.endswith(X_0:str, X_1:str, X_2:bit):bit 
+STRendswith;
+Check if string ends with substring, icase flag.
+str
+endswithjoin
+pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit):bat[:oid] 
+STRendswithjoin1;
+The same as STRendswithjoin, but only produce one output + icase.
+str
+endswithjoin
+pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit):bat[:oid] 
+STRendswithjoin1;
+The same as STRendswithjoin, but only produce one output.
+str
+endswithjoin
+pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+STRendswithjoin;
+Join the string bat L with the suffix bat R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows + icase.
+str
+endswithjoin
+pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit) (X_7:bat[:oid], X_8:bat[:oid]) 
+STRendswithjoin;
+Join the string bat L with the suffix bat R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows.
+str
+endswithselect
+pattern str.endswithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit):bat[:oid] 
+STRendswithselect;
+Select all head values of the first input BAT for which the@tail value end with the given suffix.
+str
+endswithselect
+pattern str.endswithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit, X_4:bit):bat[:oid] 
+STRendswithselect;
+Select all head values of the first input BAT for which the@tail value end with the given suffix + icase.
 str
 epilogue
 command str.epilogue():void 
@@ -38935,9 +39085,14 @@ STRprefix;
 Extract the prefix of a given length
 str
 r_search
-command str.r_search(X_0:str, X_1:str):int 
-STRReverseStrSearch;
+pattern str.r_search(X_0:str, X_1:str):int 
+STRrevstr_search;
 Reverse search for a substring. Returns@position, -1 if not found.
+str
+r_search
+pattern str.r_search(X_0:str, X_1:str, X_2:bit):int 
+STRrevstr_search;
+Reverse search for a substring, icase flag. Returns@position, -1 if not found.
 str
 repeat
 command str.repeat(X_0:str, X_1:int):str 
@@ -38975,9 +39130,14 @@ STRRtrim2;
 Remove the longest string containing only characters from the second string from the end of the first string.
 str
 search
-command str.search(X_0:str, X_1:str):int 
-STRstrSearch;
+pattern str.search(X_0:str, X_1:str):int 
+STRstr_search;
 Search for a substring. Returns@position, -1 if not found.
+str
+search
+pattern str.search(X_0:str, X_1:str, X_2:bit):int 
+STRstr_search;
+Search for a substring, icase flag. Returns@position, -1 if not found.
 str
 space
 command str.space(X_0:int):str 
@@ -38989,10 +39149,45 @@ command str.splitpart(X_0:str, X_1:str, X_2:int):str
 STRsplitpart;
 Split string on delimiter. Returns@given field (counting from one.)
 str
-startsWith
-command str.startsWith(X_0:str, X_1:str):bit 
-STRPrefix;
-Prefix check.
+startswith
+pattern str.startswith(X_0:str, X_1:str):bit 
+STRstartswith;
+Check if string starts with substring.
+str
+startswith
+pattern str.startswith(X_0:str, X_1:str, X_2:bit):bit 
+STRstartswith;
+Check if string starts with substring, icase flag.
+str
+startswithjoin
+pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit):bat[:oid] 
+STRstartswithjoin1;
+The same as STRstartswithjoin, but only produce one output + icase.
+str
+startswithjoin
+pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit):bat[:oid] 
+STRstartswithjoin1;
+The same as STRstartswithjoin, but only produce one output.
+str
+startswithjoin
+pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+STRstartswithjoin;
+Join the string bat L with the prefix bat R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows + icase.
+str
+startswithjoin
+pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit) (X_7:bat[:oid], X_8:bat[:oid]) 
+STRstartswithjoin;
+Join the string bat L with the prefix bat R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows.
+str
+startswithselect
+pattern str.startswithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit):bat[:oid] 
+STRstartswithselect;
+Select all head values of the first input BAT for which the@tail value starts with the given prefix.
+str
+startswithselect
+pattern str.startswithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit, X_4:bit):bat[:oid] 
+STRstartswithselect;
+Select all head values of the first input BAT for which the@tail value starts with the given prefix + icase.
 str
 str
 command str.str(X_0:str):str 
@@ -39041,12 +39236,12 @@ Extract the suffix of a given length
 str
 toLower
 command str.toLower(X_0:str):str 
-STRLower;
+STRlower;
 Convert a string to lower case.
 str
 toUpper
 command str.toUpper(X_0:str):str 
-STRUpper;
+STRupper;
 Convert a string to upper case.
 str
 trim
@@ -39234,60 +39429,105 @@ pattern tokenizer.take(X_0:oid):str
 TKNZRtakeOid;
 reconstruct and returns the i-th string
 txtsim
+dameraulevenshtein
+pattern txtsim.dameraulevenshtein(X_0:str, X_1:str):int 
+TXTSIMdameraulevenshtein;
+Calculates Damerau-Levenshtein distance between two strings, operation costs (ins/del = 1, replacement = 1, transposition = 2)
+txtsim
+dameraulevenshtein
+pattern txtsim.dameraulevenshtein(X_0:str, X_1:str, X_2:int, X_3:int, X_4:int):int 
+TXTSIMdameraulevenshtein;
+Calculates Damerau-Levenshtein distance between two strings, variable operation costs (ins/del, replacement, transposition)
+txtsim
 editdistance
 command txtsim.editdistance(X_0:str, X_1:str):int 
-levenshteinbasic_impl;
-Alias for Levenshtein(str,str)
+TXTSIMdameraulevenshtein1;
+Alias for Damerau-Levenshtein(str,str), insdel cost = 1, replace cost = 1 and transpose = 2
 txtsim
 editdistance2
 command txtsim.editdistance2(X_0:str, X_1:str):int 
-levenshteinbasic2_impl;
-Calculates Levenshtein distance (edit distance) between two strings. Cost of transposition is 1 instead of 2
+TXTSIMdameraulevenshtein2;
+Alias for Damerau-Levenshtein(str,str), insdel cost = 1, replace cost = 1 and transpose = 1
+txtsim
+jarowinkler
+command txtsim.jarowinkler(X_0:str, X_1:str):dbl 
+TXTSIMjarowinkler;
+Calculate Jaro Winkler similarity
 txtsim
 levenshtein
-command txtsim.levenshtein(X_0:str, X_1:str, X_2:int, X_3:int, X_4:int):int 
-levenshtein_impl;
-Calculates Levenshtein distance (edit distance) between two strings, variable operation costs (ins/del, replacement, transposition)
+pattern txtsim.levenshtein(X_0:str, X_1:str):int 
+TXTSIMlevenshtein;
+Calculates Levenshtein distance between two strings, operation costs (ins/del = 1, replacement = 1)
 txtsim
 levenshtein
-command txtsim.levenshtein(X_0:str, X_1:str):int 
-levenshteinbasic_impl;
-Calculates Levenshtein distance (edit distance) between two strings
+pattern txtsim.levenshtein(X_0:str, X_1:str, X_2:int, X_3:int):int 
+TXTSIMlevenshtein;
+Calculates Levenshtein distance between two strings, variable operation costs (ins/del, replacement)
+txtsim
+levenshtein
+pattern txtsim.levenshtein(X_0:str, X_1:str, X_2:int, X_3:int, X_4:int):int 
+TXTSIMlevenshtein;
+(Backwards compatibility purposes) Calculates Damerau-Levenshtein distance between two strings, variable operation costs (ins/del, replacement, transposition)
+txtsim
+maxlevenshtein
+pattern txtsim.maxlevenshtein(X_0:str, X_1:str, X_2:int):int 
+TXTSIMmaxlevenshtein;
+Levenshtein distance with basic costs but up to a MAX
+txtsim
+maxlevenshtein
+pattern txtsim.maxlevenshtein(X_0:str, X_1:str, X_2:int, X_3:int, X_4:int):int 
+TXTSIMmaxlevenshtein;
+Levenshtein distance with variable costs but up to a MAX
+txtsim
+maxlevenshteinjoin
+command txtsim.maxlevenshteinjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:int], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+TXTSIMmaxlevenshteinjoin;
+(empty)
+txtsim
+minjarowinkler
+command txtsim.minjarowinkler(X_0:str, X_1:str, X_2:dbl):bit 
+TXTSIMminjarowinkler;
+(empty)
+txtsim
+minjarowinklerjoin
+command txtsim.minjarowinklerjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:dbl], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+TXTSIMminjarowinklerjoin;
+(empty)
 txtsim
 qgramnormalize
 command txtsim.qgramnormalize(X_0:str):str 
-CMDqgramnormalize;
+qgram_normalize;
 'Normalizes' strings (eg. toUpper and replaces non-alphanumerics with one space
 txtsim
 qgramselfjoin
 command txtsim.qgramselfjoin(X_0:bat[:oid], X_1:bat[:oid], X_2:bat[:int], X_3:bat[:int], X_4:flt, X_5:int) (X_6:bat[:int], X_7:bat[:int]) 
-CMDqgramselfjoin;
+qgram_selfjoin;
 QGram self-join on ordered(!) qgram tables and sub-ordered q-gram positions
 txtsim
 similarity
 command txtsim.similarity(X_0:str, X_1:str):dbl 
 fstrcmp0_impl;
-Normalized edit distance between two strings
+(Deprecated) Normalized edit distance between two strings
 txtsim
 similarity
 command txtsim.similarity(X_0:str, X_1:str, X_2:dbl):dbl 
 fstrcmp_impl;
-Normalized edit distance between two strings
+(Deprecated) Normalized edit distance between two strings
 txtsim
 soundex
 command txtsim.soundex(X_0:str):str 
-soundex_impl;
+soundex;
 Soundex function for phonetic matching
 txtsim
 str2qgrams
 command txtsim.str2qgrams(X_0:str):bat[:str] 
-CMDstr2qgrams;
+str_2_qgrams;
 Break the string into 4-grams
 txtsim
 stringdiff
 command txtsim.stringdiff(X_0:str, X_1:str):int 
-stringdiff_impl;
-calculate the soundexed editdistance
+stringdiff;
+Calculate the soundexed editdistance
 url
 extractURLHost
 command url.extractURLHost(X_0:str, X_1:bit):str 

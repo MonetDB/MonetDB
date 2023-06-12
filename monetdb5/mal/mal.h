@@ -70,7 +70,7 @@ mal_export stream	*maleventstream;
 
 mal_export MT_Lock mal_contextLock;
 
-mal_export int mal_init(char *modules[], bool embedded, const char *initpasswd);
+mal_export int mal_init(char *modules[], bool embedded, const char *initpasswd, const char *caller_revision);
 mal_export _Noreturn void mal_exit(int status);
 mal_export void mal_reset(void);
 mal_export const char *mal_version(void);
@@ -105,7 +105,7 @@ mal_export const char *mal_version(void);
 #define VARRETS 2
 
 typedef int malType;
-typedef str (*MALfcn) ();
+typedef void (*MALfcn)(void);
 
 typedef struct SYMDEF {
 	struct SYMDEF *peer;		/* where to look next */
@@ -218,7 +218,6 @@ typedef struct MALSTK {
  * for use in profiling instructions.
  */
 	struct timeval clock;	/* time this stack was created */
-	char cmd;				/* debugger and runtime communication */
 	char status;			/* srunning 'R' suspended 'S', quiting 'Q' */
 	int pcup;				/* saved pc upon a recursive all */
 	oid tag;				/* unique invocation call tag */

@@ -118,11 +118,11 @@ static str monetdb_initialize(void) {
 		retval = GDKstrdup("BBPaddfarm failed");
 		goto cleanup;
 	}
-	if (GDKinit(set, setlen, true) != GDK_SUCCEED) {
+	if (GDKinit(set, setlen, true, NULL) != GDK_SUCCEED) {
 		retval = GDKstrdup("GDKinit() failed");
 		goto cleanup;
 	}
-	GDKdebug |= NOSYNCMASK;
+	ATOMIC_OR(&GDKdebug, NOSYNCMASK);
 
 	if (GDKsetenv("mapi_disable", "true") != GDK_SUCCEED) {
 		retval = GDKstrdup("GDKsetenv failed");
@@ -249,7 +249,7 @@ static str monetdb_initialize(void) {
 	char *modules[2];
 	modules[0] = "sql";
 	modules[1] = 0;
-	if (mal_init(modules, true, NULL) != 0) { // mal_init() does not return meaningful codes on failure
+	if (mal_init(modules, true, NULL, NULL) != 0) { // mal_init() does not return meaningful codes on failure
 		retval = GDKstrdup("mal_init() failed");
 		goto cleanup;
 	}

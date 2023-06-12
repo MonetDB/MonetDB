@@ -124,15 +124,15 @@
 #define IMPRINTS_VERSION	2
 #define IMPRINTS_HEADER_SIZE	4 /* nr of size_t fields in header */
 
-#define BINSIZE(B, FUNC, T)			\
-	do {					\
-		switch (B) {			\
-		case 8: FUNC(T,8); break;	\
-		case 16: FUNC(T,16); break;	\
-		case 32: FUNC(T,32); break;	\
-		case 64: FUNC(T,64); break;	\
-		default: assert(0); break;	\
-		}				\
+#define BINSIZE(B, FUNC, T)				\
+	do {						\
+		switch (B) {				\
+		case 8: FUNC(T,8); break;		\
+		case 16: FUNC(T,16); break;		\
+		case 32: FUNC(T,32); break;		\
+		case 64: FUNC(T,64); break;		\
+		default: MT_UNREACHABLE(); break;	\
+		}					\
 	} while (0)
 
 
@@ -253,7 +253,7 @@ imprints_create(BAT *b, BATiter *bi, void *inbins, BUN *stats, bte bits,
 		break;
 	default:
 		/* should never reach here */
-		assert(0);
+		MT_UNREACHABLE();
 	}
 
 	*dictcnt = dcnt;
@@ -409,7 +409,7 @@ BATimpsync(void *arg)
 					((size_t *) hp->base)[0] |= (size_t) 1 << 16;
 					if (write(fd, hp->base, SIZEOF_SIZE_T) >= 0) {
 						failed = ""; /* not failed */
-						if (!(GDKdebug & NOSYNCMASK)) {
+						if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)) {
 #if defined(NATIVE_WIN32)
 							_commit(fd);
 #elif defined(HAVE_FDATASYNC)
@@ -430,7 +430,7 @@ BATimpsync(void *arg)
 				((size_t *) hp->base)[0] |= (size_t) IMPRINTS_VERSION << 8;
 				/* sync-on-disk checked bit */
 				((size_t *) hp->base)[0] |= (size_t) 1 << 16;
-				if (!(GDKdebug & NOSYNCMASK) &&
+				if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK) &&
 				    MT_msync(hp->base, SIZEOF_SIZE_T) < 0) {
 					failed = " sync failed";
 					((size_t *) hp->base)[0] &= ~((size_t) IMPRINTS_VERSION << 8);
@@ -636,7 +636,7 @@ BATimprints(BAT *b)
 			break;
 		default:
 			/* should never reach here */
-			assert(0);
+			MT_UNREACHABLE();
 		}
 
 		imprints_create(b, &bi,
@@ -762,9 +762,7 @@ IMPSgetbin(int tpe, bte bits, const char *restrict inbins, const void *restrict 
 		break;
 	}
 	default:
-		assert(0);
-		(void) inbins;
-		break;
+		MT_UNREACHABLE();
 	}
 	return ret;
 }
@@ -845,7 +843,7 @@ void
 IMPSincref(Imprints *imprints)
 {
 	TRC_DEBUG(ACCELERATOR, "Increment ref count of %s\n", imprints->imprints.filename);
-	(void) ATOMIC_INC(&imprints->imprints.refs);
+	ATOMIC_INC(&imprints->imprints.refs);
 }
 
 #ifndef NDEBUG

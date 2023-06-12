@@ -1,0 +1,648 @@
+statement ok
+create table w (i int)
+
+statement ok
+start transaction
+
+@connection(id=mdb2, username=monetdb, password=monetdb)
+statement ok
+start transaction
+
+statement ok
+alter table w add column j int
+
+@connection(id=mdb2)
+statement error 42000!ALTER TABLE: sys_w_j conflicts with another transaction
+alter table w add column j int
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement ok
+rollback
+
+statement ok
+CREATE TABLE notpossible (i int, j int)
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+insert into notpossible values (5,1),(5,2),(5,3)
+
+@connection(id=mdb2)
+statement ok
+alter table notpossible add primary key (i)
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+statement ok
+CREATE TABLE integers (i int, j int)
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+alter table integers add primary key (i)
+
+@connection(id=mdb2)
+statement ok
+insert into integers values (5,1),(5,2),(5,3)
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+insert into integers values (6,NULL),(7,NULL),(8,NULL)
+
+@connection(id=mdb2)
+statement ok
+alter table integers alter j set not null
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+statement ok
+truncate table integers
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+alter table integers alter j set not null
+
+@connection(id=mdb2)
+statement ok
+insert into integers values (6,NULL),(7,NULL),(8,NULL)
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+statement ok
+create schema ups
+
+statement ok
+create merge table parent1(a int) PARTITION BY RANGE ON (a)
+
+statement ok
+create table child1(c int)
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+ALTER TABLE parent1 ADD TABLE child1 AS PARTITION FROM '1' TO '2'
+
+@connection(id=mdb2)
+statement ok
+alter table child1 set schema ups
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+statement ok
+create merge table parent2(a int) PARTITION BY RANGE ON (a)
+
+statement ok
+create table child2(c int)
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+ALTER TABLE parent2 ADD TABLE child2 AS PARTITION FROM '1' TO '2'
+
+@connection(id=mdb2)
+statement ok
+insert into child2 values (3)
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+statement ok
+create table x(y int, z int)
+
+statement ok
+insert into x values (1, 1)
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+create view myv(a,b) as select y, z from x
+
+@connection(id=mdb2)
+statement ok
+alter table x drop column y
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+query II nosort
+select * from myv
+----
+1
+1
+
+statement ok
+create table ups.no (a int, b int)
+
+statement ok
+insert into ups.no values (2, 2)
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+create function sys.another() returns table(i int) begin return select a from ups.no; end
+
+@connection(id=mdb2)
+statement ok
+alter table ups.no drop column a
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+query I nosort
+select * from another()
+----
+2
+
+statement ok
+CREATE TABLE y (i int)
+
+statement ok
+CREATE TABLE integers2 (i int, j int)
+
+statement ok
+insert into integers2 values (1,1),(2,2),(3,3)
+
+statement ok
+alter table integers2 add primary key (i)
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+alter table y add constraint nono foreign key(i) references integers2(i)
+
+@connection(id=mdb2)
+statement ok
+insert into y values (4)
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+statement ok
+create function pain() returns int return 1
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+create view myv2(a) as select pain()
+
+@connection(id=mdb2)
+statement ok
+drop function pain()
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+query I nosort
+select * from myv2
+----
+1
+
+statement ok
+CREATE TABLE longs (i bigint)
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+create or replace trigger myt after insert on integers referencing new row as new_row for each row insert into longs values(16)
+
+@connection(id=mdb2)
+statement ok
+drop table longs
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+statement ok
+insert into integers values (4,4)
+
+query I nosort
+select * from longs
+----
+16
+
+statement ok
+create table z (i int)
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+create view myv3(a) as select i from z
+
+@connection(id=mdb2)
+statement ok
+alter table z rename to zz
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+statement ok
+create table zzz (i int)
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+alter table zzz rename to aaa
+
+@connection(id=mdb2)
+statement ok
+create view myv8(a) as select i from zzz
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+statement ok
+create table ww(y int, z int)
+
+statement ok
+insert into ww values (1, 1)
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+create view myv4(a,b) as select y, z from ww
+
+@connection(id=mdb2)
+statement ok
+alter table ww rename column y to yy
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+query II nosort
+select * from myv4
+----
+1
+1
+
+statement ok
+create table bbb(y int, z int)
+
+statement ok
+insert into bbb values (1, 1)
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+alter table bbb rename column y to yy
+
+@connection(id=mdb2)
+statement ok
+create view myv9(a,b) as select y, z from bbb
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+statement ok
+create table zz(y int, z int)
+
+statement ok
+insert into zz values (1, 1)
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+create view myv5(a,b) as select y, z from zz
+
+@connection(id=mdb2)
+statement ok
+alter table zz set schema ups
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+query II nosort
+select * from myv5
+----
+1
+1
+
+statement ok
+create table xx(y int, z int)
+
+statement ok
+insert into xx values (1, 1)
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+alter table xx set schema ups
+
+@connection(id=mdb2)
+statement ok
+create view myv6(a,b) as select y, z from sys.xx
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+statement ok
+create table fine(y int, z int)
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+alter table fine drop column y
+
+@connection(id=mdb2)
+statement ok
+create view myv7(a,b) as select y, z from sys.fine
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+statement ok
+create table fine2(y int, z int)
+
+statement ok
+start transaction
+
+@connection(id=mdb2)
+statement ok
+start transaction
+
+statement ok
+create view myv10(a,b) as select y, z from fine2
+
+@connection(id=mdb2)
+statement ok
+alter table fine2 drop column y
+
+statement ok
+commit
+
+@connection(id=mdb2)
+statement error 40001!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead
+commit
+
+statement ok
+start transaction
+
+statement ok
+DROP TABLE w
+
+statement ok
+drop table notpossible
+
+statement ok
+drop table y
+
+statement ok
+drop table integers2
+
+statement ok
+drop trigger myt
+
+statement ok
+drop table longs
+
+statement ok
+drop table integers
+
+statement ok
+drop function another
+
+statement ok
+DROP VIEW myv5
+
+statement ok
+drop table zz
+
+statement ok
+drop table ups.xx
+
+statement ok
+drop table ups.no
+
+statement ok
+drop schema ups
+
+statement ok
+ALTER TABLE parent1 DROP TABLE child1
+
+statement ok
+DROP TABLE parent1
+
+statement ok
+DROP TABLE child1
+
+statement ok
+DROP TABLE parent2
+
+statement ok
+DROP TABLE child2
+
+statement ok
+DROP VIEW myv
+
+statement ok
+DROP TABLE x
+
+statement ok
+DROP VIEW myv3
+
+statement ok
+DROP TABLE z
+
+statement ok
+DROP VIEW myv4
+
+statement ok
+DROP TABLE ww
+
+statement ok
+DROP VIEW myv2
+
+statement ok
+DROP FUNCTION pain()
+
+statement ok
+DROP TABLE fine
+
+statement ok
+DROP TABLE aaa
+
+statement ok
+DROP TABLE bbb
+
+statement ok
+DROP VIEW myv10
+
+statement ok
+DROP TABLE fine2
+
+statement ok
+commit
+

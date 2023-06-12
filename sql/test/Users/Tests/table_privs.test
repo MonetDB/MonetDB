@@ -1,0 +1,69 @@
+statement ok
+CREATE USER my_user with password 'p1' name 'User with role' schema sys
+
+statement ok
+CREATE USER my_user2 with password 'p2' name 'User without role' schema sys
+
+statement ok
+CREATE SCHEMA my_schema
+
+statement ok
+CREATE table my_schema.test (i int, b bigint)
+
+statement ok
+GRANT SELECT on table my_schema.test to my_user
+
+statement ok
+GRANT INSERT on table my_schema.test to my_user
+
+statement ok
+GRANT UPDATE on table my_schema.test to my_user
+
+statement ok
+GRANT DELETE on table my_schema.test to my_user
+
+@connection(id=user1, username=my_user, password=p1)
+query II nosort
+select * from my_schema.test
+----
+
+@connection(id=user1)
+statement ok rowcount 1
+insert into my_schema.test values(1,1)
+
+@connection(id=user1)
+statement ok rowcount 1
+update my_schema.test set b = 2
+
+@connection(id=user1)
+statement ok rowcount 1
+delete from my_schema.test
+
+@connection(id=user2, username=my_user2, password=p2)
+statement error
+select * from my_schema.test
+
+@connection(id=user2)
+statement error
+insert into my_schema.test values(1,1)
+
+@connection(id=user2)
+statement error
+update my_schema.test set b = 2
+
+@connection(id=user2)
+statement error
+delete from my_schema.test
+
+statement ok
+drop table my_schema.test
+
+statement ok
+drop schema my_schema
+
+statement ok
+drop user my_user
+
+statement ok
+drop user my_user2
+

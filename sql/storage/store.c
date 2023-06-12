@@ -623,6 +623,8 @@ load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 	if (rs == NULL)
 		return -1;
 
+	if (!rs)
+		return -1;
 	vals = list_create((fdestroy) &part_value_destroy);
 	if (!vals) {
 		store->table_api.rids_destroy(rs);
@@ -1115,8 +1117,10 @@ load_schema(sql_trans *tr, res_table *rt_schemas, res_table *rt_tables, res_tabl
 	type_schema = find_sql_column(types, "schema_id");
 	type_id = find_sql_column(types, "id");
 	rs = store->table_api.rids_select(tr, type_schema, &s->base.id, &s->base.id, type_id, &tmpid, NULL, NULL);
-	if (rs == NULL)
+	if (!rs) {
+		schema_destroy(store, s);
 		return NULL;
+	}
 	for (oid rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
 		sql_type *t = load_type(tr, s, rid);
 		if (os_add(s->types, tr, t->base.name, &t->base)) {
@@ -1164,6 +1168,11 @@ load_schema(sql_trans *tr, res_table *rt_schemas, res_table *rt_tables, res_tabl
 		sql_column *arg_func_id = find_sql_column(args, "func_id");
 		sql_column *arg_number = find_sql_column(args, "number");
 		subrids *nrs = store->table_api.subrids_create(tr, rs, func_id, arg_func_id, arg_number);
+		if (!nrs) {
+			store->table_api.rids_destroy(rs);
+			schema_destroy(store, s);
+			return NULL;
+		}
 		sqlid fid;
 		sql_func *f;
 
@@ -1182,6 +1191,11 @@ load_schema(sql_trans *tr, res_table *rt_schemas, res_table *rt_tables, res_tabl
 		}
 		/* Handle all procedures without arguments (no args) */
 		rs = store->table_api.rids_diff(tr, rs, func_id, nrs, arg_func_id);
+		if (!rs) {
+			store->table_api.subrids_destroy(nrs);
+			schema_destroy(store, s);
+			return NULL;
+		}
 		for (oid rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
 			fid = store->table_api.column_find_sqlid(tr, func_id, rid);
 			f = load_func(tr, s, fid, NULL);
@@ -2382,8 +2396,8 @@ store_manager(sqlstore *store)
 	MT_lock_set(&store->flush);
 
 	for (;;) {
-		if (ATOMIC_GET(&store->nr_active) == 0 &&
-			(store->debug&128 || ATOMIC_GET(&store->lastactive) + IDLE_TIME * 1000000 < (ATOMIC_BASE_TYPE) GDKusec())) {
+		const int idle = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 5000 : IDLE_TIME * 1000000;
+		if (store->debug&128 || ATOMIC_GET(&store->lastactive) + idle < (ATOMIC_BASE_TYPE) GDKusec()) {
 			MT_lock_unset(&store->flush);
 			store_lock(store);
 			if (ATOMIC_GET(&store->nr_active) == 0) {
@@ -2401,8 +2415,13 @@ store_manager(sqlstore *store)
 		const int sleeptime = 100;
 		MT_lock_unset(&store->flush);
 		MT_sleep_ms(sleeptime);
-		MT_lock_set(&store->commit);
-		MT_lock_set(&store->flush);
+		for (;;) {
+			MT_lock_set(&store->commit);
+			if (MT_lock_try(&store->flush))
+				break;
+			MT_lock_unset(&store->commit);
+			MT_sleep_ms(sleeptime);
+		}
 
 		if (GDKexiting()) {
 			MT_lock_unset(&store->commit);
@@ -2635,6 +2654,12 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 	char *dest_name = dest_path + snprintf(dest_path, sizeof(dest_path), "%s/", prefix);
 	stream *infile = NULL;
 
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	int len;
 	if (sscanf(p, "%[^\n]\n%n", abs_src_path, &len) != 1) {
 		GDKerror("internal error: first line of plan is malformed");
@@ -2647,6 +2672,7 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 	char command;
 	long size;
 	while (sscanf(p, "%c %ld %100s\n%n", &command, &size, src_name, &len) == 3) {
+		GDK_CHECK_TIMEOUT_BODY(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(end));
 		p += len;
 		strcpy(dest_name, src_name);
 		if (size < 0) {
@@ -2767,6 +2793,8 @@ store_hot_snapshot_to_stream(sqlstore *store, stream *tar_stream)
 		goto end; // should already have set a GDK error
 	close_stream(plan_stream);
 	plan_stream = NULL;
+	MT_lock_unset(&store->lock);
+	locked = 2;
 	r = hot_snapshot_write_tar(tar_stream, GDKgetenv("gdk_dbname"), buffer_get_buf(plan_buf));
 	if (r != GDK_SUCCEED)
 		goto end;
@@ -2783,7 +2811,8 @@ store_hot_snapshot_to_stream(sqlstore *store, stream *tar_stream)
 end:
 	if (locked) {
 		BBPtmunlock();
-		MT_lock_unset(&store->lock);
+		if (locked == 1)
+			MT_lock_unset(&store->lock);
 		MT_lock_unset(&store->flush);
 	}
 	if (plan_stream)
@@ -3700,14 +3729,14 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		tr->changes = NULL;
 		tr->logchanges = 0;
 	} else {
-		if (!commit_lock)
-			MT_lock_set(&store->commit);
-		store_lock(store);
-		ulng oldest = store_oldest(store, tr);
-		store_pending_changes(store, oldest, tr);
-		store_unlock(store);
-		if (!commit_lock)
-			MT_lock_unset(&store->commit);
+		if (commit_lock || MT_lock_try(&store->commit)) {
+			store_lock(store);
+			ulng oldest = store_oldest(store, tr);
+			store_pending_changes(store, oldest, tr);
+			store_unlock(store);
+			if (!commit_lock)
+				MT_lock_unset(&store->commit);
+		}
 	}
 
 	if (!list_empty(tr->predicates)) {
@@ -3731,6 +3760,7 @@ sql_trans_destroy(sql_trans *tr)
 
 	TRC_DEBUG(SQL_STORE, "Destroy transaction: %p\n", tr);
 	_DELETE(tr->name);
+	assert(!tr->active || tr->parent);
 	if (!list_empty(tr->changes))
 		sql_trans_rollback(tr, false);
 	sqlstore *store = tr->store;
@@ -3973,7 +4003,7 @@ sql_trans_commit(sql_trans *tr)
 		const bool log = !tr->parent && tr->logchanges > 0;
 
 		if (log) {
-			const int min_changes = GDKdebug & FORCEMITOMASK ? 5 : 1000000;
+			const int min_changes = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 5 : 1000000;
 			flush = (tr->logchanges > min_changes && list_empty(store->changes));
 		}
 
@@ -4674,6 +4704,8 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 		sql_column *pcols = find_sql_column(partitions, "table_id");
 		assert(pcols);
 		rids *rs = store->table_api.rids_select(tr, pcols, &t->base.id, &t->base.id, NULL);
+		if (!rs)
+			return -1;
 		oid poid;
 		if (rs == NULL)
 			return LOG_ERR;
@@ -5952,8 +5984,8 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 		if ((res = sys_drop_table(tr, gt?gt:t, drop_action)))
 			return res;
 
-	t->base.deleted = 1;
-
+	if (isNew(t))
+		t->base.deleted = 1;
 	if (gt && (res = os_del(s->tables, tr, gt->base.name, dup_base(&gt->base))))
 		return res;
 	if (t != gt && (res =os_del(tr->localtmps, tr, t->base.name, dup_base(&t->base))))
@@ -7158,7 +7190,7 @@ sql_trans_begin(sql_session *s)
 	}
 	tr->active = 1;
 
-	(void) ATOMIC_INC(&store->nr_active);
+	ATOMIC_INC(&store->nr_active);
 	list_append(store->active, tr);
 
 	TRC_DEBUG(SQL_STORE, "Exit sql_trans_begin for transaction: " ULLFMT "\n", tr->tid);
@@ -7184,7 +7216,7 @@ sql_trans_end(sql_session *s, int ok)
 	s->auto_commit = s->ac_on_commit;
 	list_remove_data(store->active, NULL, s->tr);
 	ATOMIC_SET(&store->lastactive, GDKusec());
-	(void) ATOMIC_DEC(&store->nr_active);
+	ATOMIC_DEC(&store->nr_active);
 	ulng oldest = store_get_timestamp(store);
 	if (store->active && store->active->h) {
 		for(node *n = store->active->h; n; n = n->next) {

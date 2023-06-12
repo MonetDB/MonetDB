@@ -2576,6 +2576,17 @@ mapi_reconnect(Mapi mid)
 	check_stream(mid, mid->to, "Cannot open socket for writing", mid->error);
 	check_stream(mid, mid->from, "Cannot open socket for reading", mid->error);
 
+	// Send an even number of NUL '\0' bytes to the server.
+	// This forces an error message when accidentally connecting to a TLS server.
+	// Also, surprisingly it seems to make connection setup slightly faster!
+	static const char zeroes[8] = { 0 };
+	for (ssize_t nleft = sizeof(zeroes); nleft > 0; ) {
+		ssize_t nwritten = mnstr_write(mid->to, zeroes, 1, nleft);
+		if (nwritten < 0)
+			return mapi_setError(mid, "could not send leader block", __func__, MERROR);
+		nleft -= nwritten;
+	}
+
 	mid->connected = true;
 
 	if (!isa_block_stream(mid->to)) {
@@ -3814,6 +3825,8 @@ mapi_set_size_header(Mapi mid, bool value)
 		mapi_setError(mid, "size header only supported in SQL", __func__, MERROR);
 		return MERROR;
 	}
+	if (mid->sizeheader == value)
+		return MOK;
 	mid->sizeheader = value;
 	if (!mid->connected)
 		return MOK;

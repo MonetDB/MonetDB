@@ -46,7 +46,7 @@ PLAN select * from r
 project (
 | project (
 | | crossproduct (
-| | | table("sys"."v") [ "v"."a1", "v"."a2" ],
+| | | table("sys"."v") [ "v"."a1" UNIQUE, "v"."a2" ],
 | | | project (
 | | | | crossproduct (
 | | | | | project (

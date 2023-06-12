@@ -1,3 +1,15 @@
+# ref: https://learn.microsoft.com/en-us/sql/odbc/reference/appendixes/time-date-and-interval-functions
+
+query I rowsort
+select { fn current_date() } > date'2023-01-02'
+----
+1
+
+query I rowsort
+select { fn current_date() } > {d'2023-01-02'}
+----
+1
+
 query I rowsort
 select length((select { fn current_date() })) > 0
 ----
@@ -9,6 +21,22 @@ select length((select { fn curdate() })) > 0
 1
 
 query I rowsort
+select { fn current_time() } >= time'00:00:00'
+----
+1
+
+query I rowsort
+select { fn CURRENT_TIME() } >= {t'00:00:00'}
+----
+1
+
+# test CURRENT_TIME( time-precision )
+statement error 42000!syntax error...
+select { fn current_time(6) } >= {t'00:00:00.000000001'}
+# ----
+# 1
+
+query I rowsort
 select length(cast((select { fn current_time() }) as varchar(100))) > 0
 ----
 1
@@ -18,35 +46,156 @@ select length(cast((select { fn curtime() }) as varchar(100))) > 0
 ----
 1
 
+query I rowsort
+select { fn current_timestamp() } > timestamp'2023-01-02 00:00:00'
+----
+1
+
+query I rowsort
+select { fn CURRENT_TIMESTAMP() } > {ts'2023-01-02 00:00:00'}
+----
+1
+
+# test CURRENT_TIMESTAMP( timestamp-precision )
+statement error 42000!syntax error...
+select { fn current_timestamp(9) } >= {ts'2002-01-02 00:00:00.000000001'}
+# ----
+# 1
+
+query I rowsort
+select length(cast((select { fn current_timestamp() }) as varchar(100))) > 0
+----
+1
+
 query T rowsort
-select { fn dayname('2022-11-11') }
+select { fn dayname(date'2022-11-11') }
+----
+Friday
+
+query T rowsort
+select { fn dayname({ts '2022-11-11 23:45:56'}) }
 ----
 Friday
 
 query I rowsort
-select { fn dayofmonth('2022-11-11') }
+select { fn dayofmonth(date'2022-11-11') }
 ----
 11
 
 query I rowsort
-select { fn dayofweek('2022-11-11') }
+select { fn dayofmonth({ts '2022-11-11 23:45:56'}) }
+----
+11
+
+query I rowsort
+select { fn dayofweek(date'2022-11-11') }
 ----
 5
 
 query I rowsort
-select { fn dayofyear('2022-01-01') }
+select { fn dayofweek({ts '2022-11-11 23:45:56'}) }
 ----
-1
+5
 
 query I rowsort
-select { fn extract(day from date'2022-01-01') }
+select { fn dayofyear(date'2022-01-31') }
 ----
-1
+31
+
+query I rowsort
+select { fn dayofyear({ts '2022-11-11 23:45:56'}) }
+----
+315
+
+query I rowsort
+select { fn extract(day from date'2022-01-02') }
+----
+2
+
+query I rowsort
+select { fn extract(month from date'2022-07-02') }
+----
+7
+
+query I rowsort
+select { fn extract(year from date'2023-01-02') }
+----
+2023
+
+query I rowsort
+select { fn extract(week from date'2023-10-02') }
+----
+40
+
+query I rowsort
+select { fn extract(quarter from date'2023-07-02') }
+----
+3
+
+query I rowsort
+select { fn extract(hour from time'15:45:59') }
+----
+15
+
+query I rowsort
+select { fn extract(minute from time'15:45:59') }
+----
+45
+
+query I rowsort
+select { fn extract(second from time'15:45:59') }
+----
+59
+
+query I rowsort
+select { fn extract(day from timestamp'2022-01-02 15:45:59') }
+----
+2
+
+query I rowsort
+select { fn extract(month from timestamp'2022-07-02 15:45:59') }
+----
+7
+
+query I rowsort
+select { fn extract(year from timestamp'2022-01-02 15:45:59') }
+----
+2022
+
+query I rowsort
+select { fn extract(week from timestamp'2023-10-02') }
+----
+40
+
+query I rowsort
+select { fn extract(quarter from timestamp'2022-12-02 15:45:59') }
+----
+4
+
+query I rowsort
+select { fn extract(hour from timestamp'2022-01-02 15:45:59') }
+----
+15
+
+query I rowsort
+select { fn extract(minute from timestamp'2022-01-02 15:45:59') }
+----
+45
+
+query I rowsort
+select { fn extract(second from timestamp'2022-01-02 15:45:59') }
+----
+59
 
 query T rowsort
 select { fn hour(time'12:00:00') }
 ----
 12
+
+query T rowsort
+select { fn hour(timestamp'2022-01-02 15:45:59') }
+----
+15
 
 query I rowsort
 select { fn minute(time'12:15:00') }
@@ -54,7 +203,17 @@ select { fn minute(time'12:15:00') }
 15
 
 query I rowsort
+select { fn minute(timestamp'2022-01-02 15:45:59') }
+----
+45
+
+query I rowsort
 select { fn month(date'2022-11-14') }
+----
+11
+
+query I rowsort
+select { fn month({ts'2022-11-14 22:33:44'}) }
 ----
 11
 
@@ -62,6 +221,16 @@ query T rowsort
 select { fn monthname(date'2022-11-14') }
 ----
 November
+
+query T rowsort
+select { fn monthname({ts'2022-11-14 22:33:44'}) }
+----
+November
+
+query I rowsort
+select {fn now()} > timestamp'2022-01-02 15:45:59'
+----
+1
 
 query I rowsort
 select length(cast((select { fn now() }) as varchar(100))) > 0
@@ -74,26 +243,32 @@ select { fn quarter(date'2022-11-14') }
 4
 
 query I rowsort
+select { fn quarter(timestamp'2022-06-02 15:45:59') }
+----
+2
+
+query I rowsort
 select { fn second(time'12:30:33') }
 ----
 33
 
+query I rowsort
+select { fn second(timestamp'2022-01-02 15:45:59') }
+----
+59
 
-# TODO not implemented
-# query T rowsort
-# select { fn timestampadd(hour, 1, timestamp'2022-11-14 09:26:30') }
-# ----
-# 2022-11-14 10:26:30
-
-
-# TODO not implemented
-# query I rowsort
-# select { fn timestampdiff(hour, timestamp'2022-11-14 10:26:30', timestamp'2022-11-14 09:26:30') }
-# ----
-# 1
+query I rowsort
+select { fn second(timestamp'2022-11-14 12:30:34') }
+----
+34
 
 query I rowsort
 select { fn week(date'2022-11-14') }
+----
+46
+
+query I rowsort
+select { fn week(timestamp'2022-11-14 12:30:34') }
 ----
 46
 
@@ -102,10 +277,20 @@ select { fn year(date'2022-11-14') }
 ----
 2022
 
-query T rowsort
-select { fn timestampadd(SQL_TSI_HOUR, 1, timestamp'2022-11-14 12:12:12') }
+query I rowsort
+select { fn year(timestamp'2222-11-14 12:30:34') }
 ----
-2022-11-14 13:12:12
+2222
+
+# TIMESTAMPADD(interval, integer_exp, time_exp) tests
+# Timestamp calculated by adding integer_exp intervals of type interval to time_exp.
+# interval can be one of the following values: SQL_TSI_FRAC_SECOND, SQL_TSI_SECOND, SQL_TSI_MINUTE, SQL_TSI_HOUR, SQL_TSI_DAY, SQL_TSI_WEEK, SQL_TSI_MONTH, SQL_TSI_QUARTER, SQL_TSI_YEAR
+# Fractional seconds are expressed in billionths of a second.
+
+query T rowsort
+select {fn timestampadd(SQL_TSI_HOUR, 10, {ts '2022-11-14 14:13:12.654321'}) }
+----
+2022-11-15 00:13:12.654321
 
 # corner cases
 query T rowsort
@@ -118,8 +303,89 @@ select sql_sub({fn timestampadd(SQL_TSI_HOUR, 1, date'2022-12-12')}, timestampad
 ----
 0:00:00
 
+query T rowsort
+select { fn timestampadd(SQL_TSI_FRAC_SECOND, 123, timestamp'2022-11-14 14:13:12') }
+----
+2022-11-14 14:13:12.123000
+
+query T rowsort
+select { fn timestampadd(SQL_TSI_SECOND, 11, timestamp'2022-11-14 14:13:12') }
+----
+2022-11-14 14:13:23
+
+query T rowsort
+select { fn timestampadd(SQL_TSI_SECOND, 11.234, timestamp'2022-11-14 14:13:12') }
+----
+2022-11-14 14:13:23.234000
+
+query T rowsort
+select { fn timestampadd(SQL_TSI_SECOND, 15*60, timestamp'2022-11-14 14:13:12') }
+----
+2022-11-14 14:28:12
+
+query T rowsort
+select { fn timestampadd(SQL_TSI_MINUTE, 12, timestamp'2022-11-14 14:13:12') }
+----
+2022-11-14 14:25:12
+
+query T rowsort
+select { fn timestampadd(SQL_TSI_HOUR, 13, timestamp'2022-11-14 14:13:12') }
+----
+2022-11-15 03:13:12
+
+query T rowsort
+select { fn timestampadd(SQL_TSI_DAY, 14, timestamp'2022-11-14 14:13:12') }
+----
+2022-11-28 14:13:12
+
+query T rowsort
+select { fn timestampadd(SQL_TSI_DAY, 14, { fn timestampadd(SQL_TSI_DAY, 14, timestamp'2022-11-14 14:13:12') }) }
+----
+2022-12-12 14:13:12
+
+query T rowsort
+select { fn timestampadd(SQL_TSI_DAY, 4*7, timestamp'2022-11-14 14:13:12') }
+----
+2022-12-12 14:13:12
+
+query T rowsort
+select { fn timestampadd(SQL_TSI_WEEK, 4, timestamp'2022-11-14 14:13:12') }
+----
+2022-12-12 14:13:12
+
+query T rowsort
+select { fn timestampadd(SQL_TSI_MONTH, 3, timestamp'2022-11-14 14:13:12') }
+----
+2023-02-14 14:13:12
+
+query T rowsort
+select { fn timestampadd(SQL_TSI_QUARTER, 5, timestamp'2022-11-14 14:13:12') }
+----
+2024-02-14 14:13:12
+
+query T rowsort
+select { fn timestampadd(SQL_TSI_YEAR, 5, timestamp'2022-11-14 14:13:12') }
+----
+2027-11-14 14:13:12
+
+
+# TIMESTAMPDIFF(interval, time_exp1, time_exp2) tests
+# Integer number of intervals of type interval by which time_exp2 is greater than time_exp1.
+# interval has the same value as TIMESTAMPADD.
+# Fractional seconds are expressed in billionths of a second.
+
+query T rowsort
+select cast ({ fn timestampdiff(SQL_TSI_FRAC_SECOND, { ts '2022-12-12 12:00:00.123456'}, {ts'2022-12-12 12:00:30.654321' }) } as varchar(20))
+----
+30.531
+
 query I rowsort
 select { fn timestampdiff(SQL_TSI_SECOND, timestamp'2022-12-12 12:00:00', timestamp'2022-12-12 12:00:30') }
+----
+30
+
+query I rowsort
+select { fn timestampdiff(SQL_TSI_SECOND, {ts'2022-12-12 12:00:00'}, {ts'2022-12-12 12:00:30'}) }
 ----
 30
 
@@ -247,3 +513,61 @@ query I rowsort
 select { fn timestampdiff(SQL_TSI_YEAR, time'22:00:00', (select now + interval '1' year)) }
 ----
 1
+
+statement ok
+create table dtm (dt date, tm time, ts timestamp)
+
+statement ok
+insert into dtm values ('2023-05-17',' 12:34', '2023-05-17 12:34')
+
+statement ok
+insert into dtm values ('3023-06-17',' 12:34', '3023-06-17 12:34')
+
+statement ok
+insert into dtm values ('1023-07-17',' 12:34', '1023-07-17 12:34')
+
+statement ok
+insert into dtm
+
+statement ok
+insert into dtm values ('1923-12-17',' 12:34', '1923-12-17 12:34')
+
+query T rowsort
+select {fn dayname(dt)} from dtm
+----
+Monday
+NULL
+Thursday
+Tuesday
+Wednesday
+
+query T rowsort
+select {fn dayname(ts)} from dtm
+----
+Monday
+NULL
+Thursday
+Tuesday
+Wednesday
+
+query T rowsort
+select {fn monthname(dt)} from dtm
+----
+December
+July
+June
+May
+NULL
+
+query T rowsort
+select {fn monthname(ts)} from dtm
+----
+December
+July
+June
+May
+NULL
+
+statement ok
+drop table if exists dtm
+

@@ -187,7 +187,7 @@ doChallenge(void *data)
 	}
 
 	// Send the challenge over the block stream
-	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:sql=%d:",
+	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:sql=%d:BINARY=1:",
 			challenge,
 			mcrypt_getHashAlgorithms(),
 #ifdef WORDS_BIGENDIAN
@@ -241,7 +241,7 @@ SERVERlistenThread(SOCKET *Sock)
 
 	GDKfree(Sock);
 
-	(void) ATOMIC_INC(&nlistener);
+	ATOMIC_INC(&nlistener);
 
 	do {
 		SOCKET msgsock = INVALID_SOCKET;
@@ -255,7 +255,7 @@ SERVERlistenThread(SOCKET *Sock)
 											   .events = POLLIN};
 		}
 		/* Wait up to 0.1 seconds (0.01 if testing) */
-		retval = poll(pfd, npfd, GDKdebug & FORCEMITOMASK ? 10 : 100);
+		retval = poll(pfd, npfd, ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 10 : 100);
 		if (retval == -1 && errno == EINTR)
 			continue;
 #else
@@ -271,7 +271,7 @@ SERVERlistenThread(SOCKET *Sock)
 		}
 		/* Wait up to 0.1 seconds (0.01 if testing) */
 		struct timeval tv = (struct timeval) {
-			.tv_usec = GDKdebug & FORCEMITOMASK ? 10000 : 100000,
+			.tv_usec = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 10000 : 100000,
 		};
 
 		retval = select((int) msgsock + 1, &fds, NULL, NULL, &tv);
@@ -455,7 +455,7 @@ SERVERlistenThread(SOCKET *Sock)
 	if (usockfile && MT_remove(usockfile) == -1 && errno != ENOENT)
 		perror(usockfile);
 #endif
-	(void) ATOMIC_DEC(&nlistener);
+	ATOMIC_DEC(&nlistener);
 	for (i = 0; i < 3; i++)
 		if (socks[i] != INVALID_SOCKET)
 			closesocket(socks[i]);

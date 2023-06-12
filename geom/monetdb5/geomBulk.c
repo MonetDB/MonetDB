@@ -2190,7 +2190,6 @@ wkbFilter_bat(bat *aBATfiltered_id, bat *bBATfiltered_id, bat *aBAT_id, bat *bBA
 	bit outBIT;
 	BATiter aBAT_iter, bBAT_iter;
 	BUN i = 0;
-	int remainingElements = 0;
 
 	//get the descriptor of the BAT
 	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL) {
@@ -2249,7 +2248,6 @@ wkbFilter_bat(bat *aBATfiltered_id, bat *bBATfiltered_id, bat *aBAT_id, bat *bBA
 				BBPunfix(bBATfiltered->batCacheid);
 				throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			remainingElements++;
 		}
 	}
 	bat_iterator_end(&aBAT_iter);
@@ -2279,7 +2277,6 @@ wkbFilter_geom_bat(bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
 	BATiter BAToriginal_iter;
 	BUN i = 0;
 	mbr *geomMBR;
-	int remainingElements = 0;
 	str err = NULL;
 
 	//get the descriptor of the BAT
@@ -2337,7 +2334,6 @@ wkbFilter_geom_bat(bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
 				GDKfree(MBRoriginal);
 				throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			remainingElements++;
 		}
 
 		GDKfree(MBRoriginal);

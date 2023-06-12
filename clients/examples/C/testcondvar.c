@@ -12,8 +12,6 @@
 #include "gdk.h"
 #include "gdk_system.h"
 
-#include <assert.h>
-
 #define NN (3)
 
 volatile int timeout = 100; // set this to 0 during interactive debugging

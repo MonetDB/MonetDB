@@ -18,8 +18,9 @@
 static char *exe_name = "<to_be_filled_in>";
 
 static void
-gen_tinyints(FILE *f, bool byteswap, long nrecs)
+gen_tinyints(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
 	for (long i = 0; i < nrecs; i++) {
 		uint8_t v = (uint8_t)i;
 		(void)byteswap;
@@ -28,8 +29,9 @@ gen_tinyints(FILE *f, bool byteswap, long nrecs)
 }
 
 static void
-gen_smallints(FILE *f, bool byteswap, long nrecs)
+gen_smallints(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
 	for (long i = 0; i < nrecs; i++) {
 		uint16_t v = (uint16_t)i;
 		if (byteswap) {
@@ -40,8 +42,9 @@ gen_smallints(FILE *f, bool byteswap, long nrecs)
 }
 
 static void
-gen_bigints(FILE *f, bool byteswap, long nrecs)
+gen_bigints(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
 	for (long i = 0; i < nrecs; i++) {
 		uint64_t v = (uint64_t)i;
 		if (byteswap) {
@@ -53,8 +56,9 @@ gen_bigints(FILE *f, bool byteswap, long nrecs)
 
 #ifdef HAVE_HGE
 static void
-gen_hugeints(FILE *f, bool byteswap, long nrecs)
+gen_hugeints(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
 	for (long i = 0; i < nrecs; i++) {
 		uhge v = (uhge)i;
 		if (byteswap) {
@@ -66,8 +70,9 @@ gen_hugeints(FILE *f, bool byteswap, long nrecs)
 #endif
 
 static void
-gen_ints(FILE *f, bool byteswap, long nrecs)
+gen_ints(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
 	assert((uintmax_t)nrecs <= (uintmax_t) UINT32_MAX);
 	uint32_t n = (uint32_t) nrecs;
 	for (uint32_t i = 0; i < n; i++) {
@@ -80,8 +85,9 @@ gen_ints(FILE *f, bool byteswap, long nrecs)
 }
 
 static void
-gen_more_ints(FILE *f, bool byteswap, long nrecs)
+gen_more_ints(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
 	assert((uintmax_t)nrecs <= (uintmax_t) UINT32_MAX);
 	uint32_t n = (uint32_t) nrecs;
 	for (uint32_t i = 0; i < n; i++) {
@@ -94,8 +100,9 @@ gen_more_ints(FILE *f, bool byteswap, long nrecs)
 }
 
 static void
-gen_null_ints(FILE *f, bool byteswap, long nrecs)
+gen_null_ints(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
 	assert((uintmax_t)nrecs <= (uintmax_t) UINT32_MAX);
 	uint32_t n = (uint32_t) nrecs;
 	uint32_t nil = 0x80000000;
@@ -109,8 +116,9 @@ gen_null_ints(FILE *f, bool byteswap, long nrecs)
 }
 
 static void
-gen_bools(FILE *f, bool byteswap, long nrecs)
+gen_bools(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
 	for (long i = 0; i < nrecs; i++) {
 		char b = i % 2;
 		(void)byteswap;
@@ -119,8 +127,9 @@ gen_bools(FILE *f, bool byteswap, long nrecs)
 }
 
 static void
-gen_floats(FILE *f, bool byteswap, long nrecs)
+gen_floats(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
 	// Assume for now that the raw bits are portable enough
 
 	for (long i = 0; i < nrecs; i++) {
@@ -133,8 +142,9 @@ gen_floats(FILE *f, bool byteswap, long nrecs)
 }
 
 static void
-gen_doubles(FILE *f, bool byteswap, long nrecs)
+gen_doubles(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
 	// Assume for now that the raw bits are portable enough
 
 	for (long i = 0; i < nrecs; i++) {
@@ -147,8 +157,9 @@ gen_doubles(FILE *f, bool byteswap, long nrecs)
 }
 
 static void
-gen_strings(FILE *f, bool byteswap, long nrecs)
+gen_strings(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
 	(void)byteswap;
 	for (long i = 0; i < nrecs; i++) {
 		fprintf(f, "int%ld", i);
@@ -157,8 +168,9 @@ gen_strings(FILE *f, bool byteswap, long nrecs)
 }
 
 static void
-gen_large_strings(FILE *f, bool byteswap, long nrecs)
+gen_large_strings(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
 	size_t n = 280000;
 	char *buf = malloc(n);
 	memset(buf, 'a', n);
@@ -173,8 +185,9 @@ gen_large_strings(FILE *f, bool byteswap, long nrecs)
 }
 
 static void
-gen_broken_strings(FILE *f, bool byteswap, long nrecs)
+gen_broken_strings(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
 	// "bröken"
 	char utf8[] =   {0x62, 0x72,   0xc3, 0xb6,   0x6b, 0x65, 0x6e, 0x00};
 	char latin1[] = {0x62, 0x72,   0xf6,         0x6b, 0x65, 0x6e, 0x00};
@@ -189,8 +202,9 @@ gen_broken_strings(FILE *f, bool byteswap, long nrecs)
 }
 
 static void
-gen_newline_strings(FILE *f, bool byteswap, long nrecs)
+gen_newline_strings(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
 	(void)byteswap;
 	for (long i = 0; i < nrecs; i++) {
 		fprintf(f, "RN\r\nR\r%ld", i);
@@ -199,8 +213,9 @@ gen_newline_strings(FILE *f, bool byteswap, long nrecs)
 }
 
 static void
-gen_null_strings(FILE *f, bool byteswap, long nrecs)
+gen_null_strings(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
 	(void)byteswap;
 	for (long i = 0; i < nrecs; i++) {
 		if (i % 2 == 0)
@@ -212,8 +227,39 @@ gen_null_strings(FILE *f, bool byteswap, long nrecs)
 }
 
 static void
-gen_json(FILE *f, bool byteswap, long nrecs)
+gen_null_blobs(FILE *f, bool byteswap, long nrecs, char *arg)
 {
+	(void)arg;
+	uint8_t *buffer = malloc(nrecs);
+	for (long i = 0; i < nrecs; i++) {
+		buffer[i] = 0xD0 + 3 - (i % 3);
+	}
+
+	for (long i = 0; i < nrecs; i++) {
+		uint64_t header;
+		size_t n;
+		if (i % 3 == 2) {
+			// null
+			n = 0;
+			header = (uint64_t)-1;
+		} else {
+			n = (i % 1000);
+			header = n;
+		}
+		if (byteswap)
+			copy_binary_convert64(&header);
+		assert(sizeof(header) == 8);
+		fwrite(&header, sizeof(header), 1, f);
+		if (n > 0)
+			fwrite(buffer, 1, n, f);
+	}
+	free(buffer);
+}
+
+static void
+gen_json(FILE *f, bool byteswap, long nrecs, char *arg)
+{
+	(void)arg;
 	(void)byteswap;
 	for (long i = 0; i < nrecs; i++) {
 		if (i % 100 == 99) {
@@ -225,9 +271,45 @@ gen_json(FILE *f, bool byteswap, long nrecs)
 	}
 }
 
+#define FUNCNAME gen_decimal_tinyints
+#define STYP int8_t
+#define UTYP uint8_t
+// #define CONVERT
+#include "bincopydecimal_impl.h"
+
+#define FUNCNAME gen_decimal_smallints
+#define STYP int16_t
+#define UTYP uint16_t
+#define CONVERT copy_binary_convert16
+#include "bincopydecimal_impl.h"
+
+#define FUNCNAME gen_decimal_ints
+#define STYP int32_t
+#define UTYP uint32_t
+#define CONVERT copy_binary_convert32
+#include "bincopydecimal_impl.h"
+
+
+#define FUNCNAME gen_decimal_bigints
+#define STYP int64_t
+#define UTYP uint64_t
+#define CONVERT copy_binary_convert64
+#include "bincopydecimal_impl.h"
+
+#ifdef HAVE_HGE
+	#define FUNCNAME gen_decimal_hugeints
+	#define STYP hge
+	#define UTYP uhge
+	#define CONVERT copy_binary_convert128
+	#include "bincopydecimal_impl.h"
+#endif
+
+typedef void (*generator_t)(FILE *f, bool byteswap, long nrecs, char *argument);
+
 static struct gen {
 	char *name;
-	void (*gen)(FILE *f, bool byteswap, long nrecs);
+	generator_t gen;
+	bool arg_allowed;
 } generators[] = {
 	{ "ints", gen_ints },
 	{ "more_ints", gen_more_ints },
@@ -242,11 +324,20 @@ static struct gen {
 	{ "hugeints", gen_hugeints },
 #endif
 	//
+	{ "dec_tinyints", gen_decimal_tinyints, .arg_allowed=true },
+	{ "dec_smallints", gen_decimal_smallints, .arg_allowed=true },
+	{ "dec_ints", gen_decimal_ints, .arg_allowed=true },
+	{ "dec_bigints", gen_decimal_bigints, .arg_allowed=true },
+#ifdef HAVE_HGE
+	{ "dec_hugeints", gen_decimal_hugeints, .arg_allowed=true },
+#endif
+	//
 	{ "strings", gen_strings },
 	{ "large_strings", gen_large_strings },
 	{ "broken_strings", gen_broken_strings },
 	{ "newline_strings", gen_newline_strings },
 	{ "null_strings", gen_null_strings },
+	{ "null_blobs", gen_null_blobs },
 	//
 	{ "timestamps", gen_timestamps },
 	{ "timestamp_times", gen_timestamp_times },
@@ -267,14 +358,11 @@ static struct gen {
 	{ NULL, NULL },
 };
 
-_Noreturn static void croak(int status, const char *msg, ...)
-	__attribute__((__format__(__printf__, 2, 3)));
-
 /* Format the message and write it to stderr. Then exit with the given status.
  * If status is 1, include USAGE in the message.
  * Otherwise, if errno is set, include the error message.
  */
-static void
+void
 croak(int status, const char *ctx, ...)
 {
 	va_list ap;
@@ -299,11 +387,40 @@ croak(int status, const char *ctx, ...)
 	exit(status);
 }
 
+static generator_t
+pick_generator(const char *full_name, char **arg)
+{
+	char *name = strdup(full_name);
+	*arg = NULL;
+
+	char *sep = strchr(name, '!');
+	if (sep != NULL) {
+		*arg = strdup(sep + 1);
+		*sep = '\0';
+	}
+
+	generator_t gen = NULL;
+	for (struct gen *g = generators; g->name; g++) {
+		if (strcmp(g->name, name) == 0) {
+			if (*arg && !g->arg_allowed)
+				croak(2, "Generator '%s' does not take arguments", name);
+			gen = g->gen;
+			break;
+		}
+	}
+
+	free(name);
+
+	return gen;
+}
+
+
 int
 main(int argc, char *argv[])
 {
 	exe_name = argv[0];
-	void (*gen)(FILE*, bool, long);
+	generator_t gen;
+	char *gen_arg = NULL;
 	long nrecs;
 	FILE *dest;
 	bool byteswap = false;
@@ -334,13 +451,7 @@ main(int argc, char *argv[])
 	if (args_end - args != 3)
 		croak(1, "Unexpected number of arguments");
 
-	gen = NULL;
-	for (struct gen *g = generators; g->name; g++) {
-		if (strcmp(g->name, args[0]) == 0) {
-			gen = g->gen;
-			break;
-		}
-	}
+	gen = pick_generator(args[0], &gen_arg);
 	if (gen == NULL)
 		croak(1, "Unknown TYPE: %s", args[0]);
 
@@ -362,9 +473,10 @@ main(int argc, char *argv[])
 	if (dest == NULL)
 		croak(2, "Cannot open '%s' for writing", args[2]);
 
-	gen(dest, byteswap, nrecs);
+	gen(dest, byteswap, nrecs, gen_arg);
 
 	fclose(dest);
+	free(gen_arg);
 
 	return 0;
 }

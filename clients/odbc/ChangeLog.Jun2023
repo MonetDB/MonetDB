@@ -1,0 +1,19 @@
+# ChangeLog file for odbc
+# This file is updated with Maddlog
+
+* Thu May 25 2023 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Extended Windows MonetDB ODBC Data Source setup program with option
+  to specify a logfile to enable tracing of ODBC Driver API calls.
+  On other platforms users can edit the  odbc.ini  file and add a line:
+  logfile=/home/username/odbctrace.log
+  When a logfile is specified it will start logging the ODBC Driver API calls
+  to the logfile after a new connection is made via SQLConnect() or
+  SQLDriverConnect() or SQLBrowseConnect().
+  Note that enabling ODBC logging will slow down the performance of ODBC
+  applications, so enable it only for analysing ODBC Driver problems.
+
+* Thu Apr 13 2023 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Enhanced SQLTables() by adding support for table type names: 'BASE TABLE',
+  'GLOBAL TEMPORARY' and 'LOCAL TEMPORARY' in parameter TableType. These are
+  synonyms of: 'TABLE', 'GLOBAL TEMPORARY TABLE' and 'LOCAL TEMPORARY TABLE'.
+

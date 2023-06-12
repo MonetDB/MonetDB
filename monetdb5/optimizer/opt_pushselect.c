@@ -245,7 +245,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 		}
 		/* left hand side */
-		if ( (GDKdebug & PUSHCANDMASK) &&
+		if ( (ATOMIC_GET(&GDKdebug) & PUSHCANDMASK) &&
 		     isMatJoinOp(p) && p->retc == 2) {
 			int i1 = getArg(p, 2), tid = 0;
 			InstrPtr q = old[vars[i1]];
@@ -275,7 +275,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 		}
 		/* right hand side */
-		if ( (GDKdebug & PUSHCANDMASK) &&
+		if ( (ATOMIC_GET(&GDKdebug) & PUSHCANDMASK) &&
 		     isMatJoinOp(p) && p->retc == 2) {
 			int i1 = getArg(p, 3), tid = 0;
 			InstrPtr q = old[vars[i1]];
@@ -422,7 +422,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					p->blk = NULL;
 					actions++;
 				}
-			} else if ( (GDKdebug & PUSHCANDMASK) && isMatJoinOp(p) && p->retc == 2) {
+			} else if ( (ATOMIC_GET(&GDKdebug) & PUSHCANDMASK) && isMatJoinOp(p) && p->retc == 2) {
 				int ltid = 0, rtid = 0, done = 0;
 				int range = 0;
 
@@ -869,7 +869,11 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				getArg(u, 3) = getArg(q,2); /* update ids */
 				//getArg(u, 4) = getArg(s,0);
 				p = pushArgument(mb, u, getArg(s,0)); /* push at end */
+				/* make sure to resolve again */
+				u->token = ASSIGNsymbol;
 				u->typechk = TYPE_UNKNOWN;
+        		u->fcn = NULL;
+        		u->blk = NULL;
 				pushInstruction(mb,u);
 				oclean[i] = true;
 				continue;

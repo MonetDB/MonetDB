@@ -669,3 +669,99 @@ create procedure sys.resume(tag bigint, username string) external name sysmon.re
 create procedure sys.stop(tag bigint, username string) external name sysmon.stop;
 update sys.functions set system = true where system <> true and mod = 'sysmon' and name in ('stop', 'pause', 'resume', 'queue');
 
+Running database upgrade commands:
+drop procedure sys.settimeout(bigint) cascade;
+drop procedure sys.settimeout(bigint, bigint) cascade;
+drop procedure sys.setsession(bigint) cascade;
+
+Running database upgrade commands:
+create function sys.levenshtein(x string, y string)
+returns int external name txtsim.levenshtein;
+grant execute on function levenshtein(string, string) to public;
+create function sys.levenshtein(x string, y string, insdel int, rep int)
+returns int external name txtsim.levenshtein;
+grant execute on function levenshtein(string, string, int, int) to public;
+create function sys.levenshtein(x string, y string, insdel int, rep int, trans int)
+returns int external name txtsim.levenshtein;
+grant execute on function levenshtein(string, string, int, int, int) to public;
+create filter function sys.maxlevenshtein(x string, y string, k int)
+external name txtsim.maxlevenshtein;
+grant execute on filter function maxlevenshtein(string, string, int) to public;
+create filter function sys.maxlevenshtein(x string, y string, k int, insdel int, rep int)
+external name txtsim.maxlevenshtein;
+grant execute on filter function maxlevenshtein(string, string, int, int, int) to public;
+create function sys.jarowinkler(x string, y string)
+returns double external name txtsim.jarowinkler;
+grant execute on function jarowinkler(string, string) to public;
+create filter function minjarowinkler(x string, y string, threshold double)
+external name txtsim.minjarowinkler;
+grant execute on filter function minjarowinkler(string, string, double) to public;
+create function sys.dameraulevenshtein(x string, y string)
+returns int external name txtsim.dameraulevenshtein;
+grant execute on function dameraulevenshtein(string, string) to public;
+create function sys.dameraulevenshtein(x string, y string, insdel int, rep int, trans int)
+returns int external name txtsim.dameraulevenshtein;
+grant execute on function dameraulevenshtein(string, string, int, int, int) to public;
+create function sys.editdistance(x string, y string)
+returns int external name txtsim.editdistance;
+grant execute on function editdistance(string, string) to public;
+create function sys.editdistance2(x string, y string)
+returns int external name txtsim.editdistance2;
+grant execute on function editdistance2(string, string) to public;
+create function sys.soundex(x string)
+returns string external name txtsim.soundex;
+grant execute on function soundex(string) to public;
+create function sys.difference(x string, y string)
+returns int external name txtsim.stringdiff;
+grant execute on function difference(string, string) to public;
+create function sys.qgramnormalize(x string)
+returns string external name txtsim.qgramnormalize;
+grant execute on function qgramnormalize(string) to public;
+create function sys.similarity(x string, y string)
+returns double external name txtsim.similarity;
+grant execute on function similarity(string, string) to public;
+create function asciify(x string)
+returns string external name str.asciify;
+grant execute on function asciify(string) to public;
+create function sys.startswith(x string, y string)
+returns boolean external name str.startswith;
+grant execute on function startswith(string, string) to public;
+create function sys.startswith(x string, y string, icase boolean)
+returns boolean external name str.startswith;
+grant execute on function startswith(string, string, boolean) to public;
+create filter function sys.startswith(x string, y string)
+external name str.startswith;
+grant execute on filter function startswith(string, string) to public;
+create filter function sys.startswith(x string, y string, icase boolean)
+external name str.startswith;
+grant execute on filter function startswith(string, string, boolean) to public;
+create function sys.endswith(x string, y string)
+returns boolean external name str.endswith;
+grant execute on function endswith(string, string) to public;
+create function sys.endswith(x string, y string, icase boolean)
+returns boolean external name str.endswith;
+grant execute on function endswith(string, string, boolean) to public;
+create filter function sys.endswith(x string, y string)
+external name str.endswith;
+grant execute on filter function endswith(string, string) to public;
+create filter function sys.endswith(x string, y string, icase boolean)
+external name str.endswith;
+grant execute on filter function endswith(string, string, boolean) to public;
+create function sys.contains(x string, y string)
+returns boolean external name str.contains;
+grant execute on function contains(string, string) to public;
+create function sys.contains(x string, y string, icase boolean)
+returns boolean external name str.contains;
+grant execute on function contains(string, string, boolean) to public;
+create filter function sys.contains(x string, y string)
+external name str.contains;
+grant execute on filter function contains(string, string) to public;
+create filter function sys.contains(x string, y string, icase boolean)
+external name str.contains;
+grant execute on filter function contains(string, string, boolean) to public;
+update sys.functions set system = true where system <> true and name in ('levenshtein', 'dameraulevenshtein', 'jarowinkler', 'editdistance', 'editdistance2', 'soundex', 'difference', 'qgramnormalize', 'similarity') and schema_id = 2000 and type = 1;
+update sys.functions set system = true where system <> true and name in ('maxlevenshtein', 'minjarowinkler') and schema_id = 2000 and type = 4;
+update sys.functions set system = true where system <> true and name in ('asciify', 'startswith', 'endswith', 'contains') and schema_id = 2000 and type = 1;
+update sys.functions set system = true where system <> true and name in ('startswith', 'endswith', 'contains') and schema_id = 2000 and type = 4;
+delete from sys.triggers where name = 'system_update_tables' and table_id = 2067;
+

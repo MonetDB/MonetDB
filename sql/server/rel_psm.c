@@ -1254,7 +1254,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	const char *old_name = NULL, *new_name = NULL;
 	dlist *stmts = triggered_action->h->next->next->data.lval;
 	symbol *condition = triggered_action->h->next->data.sym;
-	int8_t old_useviews = sql->use_views;
+	bool old_useviews = sql->use_views;
 
 	if (opt_ref) {
 		dnode *dl = opt_ref->h;
@@ -1370,7 +1370,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		if (old_name)
 			stack_update_rel_view(sql, old_name, new_name?rel_dup(rel):rel);
 	}
-	sql->use_views = 1; /* leave the 'use_views' hack to where it belongs */
+	sql->use_views = true; /* leave the 'use_views' hack to where it belongs */
 	sql->session->schema = ss;
 	sq = sequential_block(query, NULL, NULL, stmts, NULL, 1);
 	sql->session->schema = old_schema;

@@ -22,6 +22,7 @@
 #include "mal_parser.h"
 #include "mal_authorize.h"
 #include "mal_private.h"
+#include "mutils.h"
 
 #include "mal_prelude.h"
 
@@ -90,17 +91,21 @@ initModule(Client c, const char *name, const char *initpasswd)
 				int ret = 0;
 
 				assert(pci->fcn != NULL);
-				msg = (*pci->fcn)(&ret);
+				msg = (*(str (*)(int *))pci->fcn)(&ret);
 				(void)ret;
 			} else if (pci && pci->token == PATTERNsymbol) {
+				void *mb = NULL;
 				assert(pci->fcn != NULL);
 				if (strcmp(name, "sql") == 0) {
 					/* HACK ALERT: temporarily use sqlcontext to pass
 					 * the initial password to the prelude function */
 					assert(c->sqlcontext == NULL);
 					c->sqlcontext = (void *) initpasswd;
+					/* HACK ALERT: use mb (MalBlkPtr) to pass revision
+					 * string in order to check that in the callee */
+					mb = (void *) mercurial_revision();
 				}
-				msg = (*pci->fcn)(c, NULL, NULL, NULL);
+				msg = (*(str (*)(Client, MalBlkPtr, MalStkPtr, InstrPtr))pci->fcn)(c, mb, NULL, NULL);
 			}
 		}
 	}
