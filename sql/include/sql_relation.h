@@ -297,9 +297,9 @@ typedef struct relation {
 	 grouped:1,	/* groupby processed all the group by exps */
 	 single:1,
 
-	 parallel:1,		/* parallel block */
-	 partition:2,		/* partitioned using table slices (1 left/2 right) */
-	 spb:1;				/* start a parallel block */
+	 parallel:1,		/* this rel. op. should/can be run in a parallel block */
+	 partition:2,		/* partitioned using table slices (0 none/1 left/2 right) */
+	 spb:1;			/* start a parallel block */
 	/*
 	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice
 	 * The list is kept at rel_optimizer_private.h Please update it accordingly

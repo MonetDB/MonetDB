@@ -17,6 +17,10 @@
 #include "rel_select.h"
 #include "rel_rewriter.h"
 
+/* Estimate how many rows this 'rel' might return to help _rel_partition()
+ * picking a base table for partitioning.
+ * For now, we simply return the row count of a base table or whatever count
+ * info we can get fom the properties of this 'rel' (i.e. get_rel_count()). */
 static lng
 rel_getcount(mvc *sql, sql_rel *rel)
 {
@@ -38,7 +42,7 @@ rel_getcount(mvc *sql, sql_rel *rel)
 	case op_groupby:
 		if (rel->l && rel->r)
 			return rel_getcount(sql, rel->l);
-		return 1;
+		return 1; /* Global GROUP BY always return 1 row. */
 	default:
 		if (rel->l)
 			return rel_getcount(sql, rel->l);
@@ -116,6 +120,7 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 /* To start parallel processing within a (query plan) graph, we need to mark
  * the places where partitioning is needed, and where to start or end a
  * parallel block.
+ * REL_PARTITION: partition the table via bind
  * SPB: Start Parallel Block
  * EPB: End Parallel Block
  * NPB: currently not used
@@ -235,6 +240,10 @@ _rel_partition(mvc *sql, sql_rel *rel)
 		/*  TODO, we now pick first (okay?)! In case of self joins we need to pick the correct table */
 		r->partition = 1;
 	}
+        /* Now that we've marked the (largest) table for partition, we go over
+         * this 'rel' (sub)tree to process all relational operators based on this
+         * knowledge. */
+        // TODO: instead of a new function, we can probably reuse rel_partition_ for this.
 	return rel_mark_partition(rel);
 }
 
@@ -276,7 +285,7 @@ rel_groupby_partition_safe(mvc *sql, sql_rel *rel)
 			sql_subfunc *sf = e->f;
 			int sum = 0;
 
-			if ((e->l && exps_are_atoms(e->l)) ||
+			if ((e->l && exps_are_atoms(e->l)) || /* e.g. SUM(42) */
 				!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
 			      strcmp(sf->func->base.name, "avg") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
 			     (sum = (strcmp(sf->func->base.name, "sum") == 0)) || strcmp(sf->func->base.name, "prod") == 0))
@@ -286,6 +295,11 @@ rel_groupby_partition_safe(mvc *sql, sql_rel *rel)
 				sql_exp *i = l->h->data;
 				sql_subtype *t = exp_subtype(i);
 
+                                /* Summing over dbl/flt, the current parallel
+                                 * impl. can lose precision. Hence, don't do
+                                 * parallel. */
+                                // TODO: we can relax this rule later if the precision-loss is within an acceptable range or
+                                //       if the user explicitly wants the parallel version
 				if (EC_APPNUM(t->type->eclass))
 					/* TODO in case of a safe range (to be defined) or user override we could still do simple dbl/float sums * */
 					return false;
@@ -295,11 +309,11 @@ rel_groupby_partition_safe(mvc *sql, sql_rel *rel)
 	return true;
 }
 
+// TODO: find better names for _rel_partition and rel_partition_ :)
 static int
 rel_partition_(mvc *sql, sql_rel *rel, int pb)
 {
 	int res = 0, lres = 0, rres = 0;
-	sql_rel *l = rel->l;
 
 	if (mvc_highwater(sql)) {
 		sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
@@ -326,14 +340,15 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 				if (res)
 					res = SPB;
 			} else
+                                /* if this group by is 'safe' and not inside
+                                 * another 'pb', then this group by is the root
+                                 * of this 'pb'. So, we need to end it. */
 				res = EPB;
 		}
-	} else if (is_topn(rel->op) && (l /*&& (!is_simple_project(l->op) || list_empty(l->r))*/)) {
-		bool safe = true;//!has_groupby(rel->l); /* no partitioning after a group by */
-		if (rel->l)
-			safe = (rel_getcount(sql, rel->l) > 1);
-		if (rel->l)
-			res = rel_partition_(sql, rel->l, safe?SPB:pb);
+	} else if (is_topn(rel->op)) {
+		bool safe = (rel_getcount(sql, rel->l) > 1); /* e.g. "SELECT 42 LIMIT 2" is not safe */
+		/* op_topn always has rel->l */
+		res = rel_partition_(sql, rel->l, safe?SPB:pb);
 		if (safe) {
 			rel->parallel = 1;
 			if (res == REL_PARTITION)
@@ -345,12 +360,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			} else
 				res = EPB;
 		}
-	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_topn(rel->op) || is_sample(rel->op)) {
-		/*
-		if (pb && is_simple_project(rel->op) && rel->r)
-			return 0;
-			*/
-		//if (pb && exps_have_unsafe(rel->exps, 1))
+	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_sample(rel->op)) {
 		if (pb && (is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1))
 			return 0;
 		if (rel->l)
@@ -360,8 +370,6 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		if (res == REL_PARTITION)
 			rel->partition = 1;
 	} else if (is_semi(rel->op)) {
-		//if (rel->op == op_anti) /* no partitioning for anti joins jet */
-			//return 0;
 		if (rel->l)
 			res = rel_partition_(sql, rel->l, pb);
 		if (!res)
@@ -394,7 +402,6 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 	} else if (is_join(rel->op)) {
 		if (pb && is_outerjoin(rel->op))
 			return 0;
-		/* TODo also move this into rel_partition_ */
 		bool l = has_groupby(rel->l), r = has_groupby(rel->r);
 		if (0 && (l || r)) {
 			int lres = rel_partition_(sql, rel->l, 0);
@@ -408,10 +415,12 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 				rel->spb = 1;
 			}
 		} else {
-			if (is_left(rel->op))
+			if (is_left(rel->op)) /* and pb == 0 */
 				return rel_partition_(sql, rel->l, pb);
-			if (pb)
-				res =_rel_partition(sql, rel);
+                        /* For now we only try to partition in case of a equi-join.
+                         * The other joins are too complex to handle. */
+			if (pb) /* and rel->op == op_join */
+				res = _rel_partition(sql, rel);
 		}
 	} else if (is_ddl(rel->op)) {
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {

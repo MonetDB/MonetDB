@@ -38,6 +38,9 @@ pp_dynamic_slices(backend *be, stmt *sub)
 	return sc->nr;
 }
 
+/* Generate for every projection column, eg.:
+ *   (X_80:bat[:str], !X_19:bat[:str]) := slicer.nth_slice(X_77:int);
+ */
 stmt *
 rel2bin_slicer(backend *be, stmt *sub, int slicer)
 {
