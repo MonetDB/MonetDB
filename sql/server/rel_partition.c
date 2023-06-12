@@ -310,6 +310,9 @@ rel_groupby_partition_safe(mvc *sql, sql_rel *rel)
 }
 
 // TODO: find better names for _rel_partition and rel_partition_ :)
+// TODO: this function + the whole file need quite some clean up. Probably
+//       store the info. of REL_PARTITION, SPB, EPB, etc in the sql_rel,
+//       instead of just letting rel_partition_ return one of them.
 static int
 rel_partition_(mvc *sql, sql_rel *rel, int pb)
 {
@@ -338,6 +341,8 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			if (res == REL_PARTITION)
 				rel->spb = 1;
 			if (pb) {
+				/* debug code to understand how this code block works. */
+				assert(0);
 				rel->partition = 1;
 				if (res)
 					res = SPB;
