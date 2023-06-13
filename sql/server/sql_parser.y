@@ -710,7 +710,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token<sval> PUBLIC REFERENCES SCHEMA SET AUTO_COMMIT
 %token RETURN
 
-%token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH
+%token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH WITHOUT
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token CENTURY DECADE YEAR QUARTER DOW DOY MONTH WEEK DAY HOUR MINUTE SECOND EPOCH ZONE
 %token LIMIT OFFSET SAMPLE SEED
@@ -4565,6 +4565,7 @@ opt_sign:
 
 tz:
 	WITH TIME ZONE	{ $$ = 1; }
+ |	WITHOUT TIME ZONE	{ $$ = 0; } /* the default */
  | /* empty */		{ $$ = 0; }
  ;
 
@@ -5551,6 +5552,7 @@ non_reserved_word:
 | TIMESTAMP	{ $$ = sa_strdup(SA, "timestamp"); }	/* sloppy: officially reserved */
 | UESCAPE	{ $$ = sa_strdup(SA, "uescape"); }	/* sloppy: officially reserved */
 | VALUE		{ $$ = sa_strdup(SA, "value"); }	/* sloppy: officially reserved */
+| WITHOUT	{ $$ = sa_strdup(SA, "without"); }	/* sloppy: officially reserved */
 
 | ACTION	{ $$ = sa_strdup(SA, "action"); }
 | ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
