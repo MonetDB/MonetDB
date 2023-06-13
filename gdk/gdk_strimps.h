@@ -15,11 +15,11 @@
 
 
 #define STRIMP_VERSION (uint64_t)2
-#define STRIMP_HISTSIZE 256*256
+#define STRIMP_HISTSIZE (256*256)
 #define STRIMP_HEADER_SIZE 64
 #define STRIMP_PAIRS (STRIMP_HEADER_SIZE - 1)
 #define STRIMP_CREATION_THRESHOLD				\
-	((ATOMIC_GET(&GDKdebug) & FORCEMITOMASK)? 100 : 5000)
+	((BUN) ((ATOMIC_GET(&GDKdebug) & FORCEMITOMASK)? 100 : 5000))
 
 typedef struct {
 	uint8_t *pbytes;
