@@ -2456,10 +2456,10 @@ log_flush(logger *lg, ulng ts)
 			rotation_unlock(lg);
 		}
 		if (res != LOG_ERR) {
-			while(olid <= lid) {
+			while(olid < lid) {
 				/* Try to cleanup, remove old log file, continue on failure! */
-				(void)log_cleanup(lg, olid);
 				olid++;
+				(void)log_cleanup(lg, olid);
 			}
 		}
 		if (res == LOG_OK)
@@ -3166,7 +3166,7 @@ log_tstart(logger *lg, bool flushnow, ulng *file_id)
 		}
 		assert(ATOMIC_GET(&lg->nr_flushers) == 0);
 
-		if (ATOMIC_GET(&lg->current->flushed_ts) < ATOMIC_GET(&lg->current->last_ts)) {
+		if (ATOMIC_GET(&lg->current->last_ts)) {
 			lg->id++;
 			if (log_open_output(lg) != GDK_SUCCEED)
 				GDKfatal("Could not create new log file\n"); // TODO: does not have to be fatal (yet)
