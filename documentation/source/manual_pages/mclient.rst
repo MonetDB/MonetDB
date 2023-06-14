@@ -196,7 +196,8 @@ SQL Options
 
 **--rows=**\ *nr* (**-r** *nr*)
    If specified, query results will be paged by an internal pager at the
-   specified number of lines.
+   specified number of lines. If set to **0** (zero), use the height of
+   the terminal. The default is **-1** which means no pager is used.
 
 **--width=**\ *nr* (**-w** *nr*)
    Specify the width of the screen. The default is the (initial) width
@@ -260,7 +261,8 @@ General Commands
 
 **\\r** *rows*
    Use an internal pager using *rows* per page. If *rows* is **-1**,
-   stop using the internal pager.
+   stop using the internal pager, if *rows* is **0**, use the height of
+   the terminal.
 
 SQL Commands
 ------------
