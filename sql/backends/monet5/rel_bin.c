@@ -1732,7 +1732,7 @@ stmt_col(backend *be, sql_column *c, stmt *del, int part)
 	stmt *sc = stmt_bat(be, c, RDONLY, part);
 
 	if (c->null && c->nullmask) {
-		assert(0);
+		printf("todo handle nullmask\n");
 	}
 
 	if (isTable(c->t) && c->t->access != TABLE_READONLY &&
