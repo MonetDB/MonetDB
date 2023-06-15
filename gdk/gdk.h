@@ -1581,7 +1581,7 @@ BATsettrivprop(BAT *b)
 					b->tmaxpos = 0;
 				}
 				b->tseqbase = sqbs;
-			} else if ((b->tvheap
+			} else if (ATOMnilptr(b->ttype) && (b->tvheap
 				    ? ATOMcmp(b->ttype,
 					      b->tvheap->base + VarHeapVal(Tloc(b, 0), 0, b->twidth),
 					      ATOMnilptr(b->ttype))
