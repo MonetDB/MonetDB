@@ -566,6 +566,7 @@ load_column(sql_trans *tr, sql_table *t, res_table *rt_cols)
 	if (!strNil(def))
 		c->def =_STRDUP(def);
 	c->null = *(bit*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "null"));
+	c->nullmask = (c->null && !ATOMnilptr(c->type.type->localtype));
 	c->colnr = *(int*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "number"));
 	c->unique = 0;
 	c->storage_type = NULL;
@@ -2952,6 +2953,7 @@ column_dup(sql_trans *tr, sql_column *oc, sql_table *t, sql_column **cres)
 	if (oc->def)
 		c->def =_STRDUP(oc->def);
 	c->null = oc->null;
+	c->nullmask = oc->nullmask;
 	c->colnr = oc->colnr;
 	c->unique = oc->unique;
 	c->t = t;
@@ -3591,6 +3593,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 	if (c->def)
 		col->def =_STRDUP(c->def);
 	col->null = c->null;
+	col->nullmask = c->nullmask;
 	col->colnr = c->colnr;
 	col->unique = c->unique;
 	col->t = t;
@@ -5924,6 +5927,7 @@ create_sql_column_with_id(sql_allocator *sa, sqlid id, sql_table *t, const char 
 	col->type = *tpe;
 	col->def = NULL;
 	col->null = 1;
+	col->nullmask = (col->null && !ATOMnilptr(col->type.type->localtype));
 	col->colnr = table_next_column_nr(t);
 	col->t = t;
 	col->unique = 0;
@@ -6233,6 +6237,7 @@ sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 		if ((res = new_column(tr, col, &dup)))
 			return res;
 		dup->null = isnull;
+		dup->nullmask = (dup->null && !ATOMnilptr(dup->type.type->localtype));
 
 		/* disallow concurrent updates on the column if not null is set */
 		/* this dependency is needed for merge tables */

@@ -137,10 +137,10 @@ SHA256hash(const void *L)
 }
 
 static str
-SHA256_fromstr(sha256 *ret, str *s)
+SHA256_fromstr(sha256 **ret, str *s)
 {
 	size_t len = sizeof(sha256);
-	if (SHA256fromString(*s, &len, (void **) &ret, false) < 0)
+	if (SHA256fromString(*s, &len, (void **) ret, false) < 0)
 		throw(MAL, "calc.sha256",  GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }

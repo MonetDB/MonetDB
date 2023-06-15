@@ -619,6 +619,7 @@ typedef struct sql_column {
 	sql_subtype type;
 	int colnr;
 	bit null;
+	bit nullmask;
 	char *def;
 	char unique; 		/* 0 NOT UNIQUE, 1 SUB_UNIQUE, 2 UNIQUE */
 	int drop_action;	/* only used for alter statements */

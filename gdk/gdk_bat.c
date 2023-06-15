@@ -1280,7 +1280,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 					if (bi.maxpos != BUN_NONE)
 						maxvalp = BUNtvar(bi, bi.maxpos);
 				}
-				if (atomcmp(t, atomnil) != 0) {
+				if (!atomnil || atomcmp(t, atomnil) != 0) {
 					if (p == 0) {
 						bi.minpos = bi.maxpos = 0;
 						minvalp = maxvalp = t;
@@ -1331,7 +1331,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				if (b->thash) {
 					HASHappend_locked(b, p, t);
 				}
-				if (atomcmp(t, atomnil) != 0) {
+				if (!atomnil || atomcmp(t, atomnil) != 0) {
 					if (p == 0) {
 						bi.minpos = bi.maxpos = 0;
 						minvalp = maxvalp = t;
@@ -1537,8 +1537,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		const void *t = b->ttype && b->tvheap ?
 			((const void **) values)[i] :
 			(const void *) ((const char *) values + (i << b->tshift));
-		const bool isnil = ATOMlinear(b->ttype) &&
-			ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) == 0;
+		const void *atomnil = ATOMnilptr(b->ttype);
+		const bool isnil = atomnil && ATOMcmp(b->ttype, t, atomnil) == 0;
 
 		/* retrieve old value, but if this comes from the
 		 * logger, we need to deal with offsets that point
@@ -1561,8 +1561,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			if (ATOMcmp(b->ttype, val, t) == 0)
 				continue; /* nothing to do */
 			if (!isnil &&
-			    b->tnil &&
-			    ATOMcmp(b->ttype, val, ATOMnilptr(b->ttype)) == 0) {
+			    b->tnil && atomnil &&
+			    ATOMcmp(b->ttype, val, atomnil) == 0) {
 				/* if old value is nil and new value
 				 * isn't, we're not sure anymore about
 				 * the nil property, so we must clear
@@ -1770,8 +1770,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			BATkey(b, false);
 		} else if (!b->tkey && (b->tnokey[0] == p || b->tnokey[1] == p))
 			b->tnokey[0] = b->tnokey[1] = 0;
-		if (b->tnonil && ATOMstorage(b->ttype) != TYPE_msk)
-			b->tnonil = t && ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0;
+		if (b->tnonil && (ATOMstorage(b->ttype) != TYPE_msk || !atomnil))
+			b->tnonil = t && ATOMcmp(b->ttype, t, atomnil) != 0;
 		MT_lock_unset(&b->theaplock);
 	}
 	BUN nunique = b->thash ? b->thash->nunique : 0;
@@ -2843,7 +2843,7 @@ BATassertProps(BAT *b)
 
 			BATloop(b, p, q) {
 				valp = BUNtail(bi, p);
-				bool isnil = cmpf(valp, nilp) == 0;
+				bool isnil = nilp && cmpf(valp, nilp) == 0;
 				assert(b->ttype != TYPE_flt || !isinf(*(flt*)valp));
 				assert(b->ttype != TYPE_dbl || !isinf(*(dbl*)valp));
 				if (maxval && !isnil) {
@@ -2926,7 +2926,7 @@ BATassertProps(BAT *b)
 				BUN hb;
 				BUN prb;
 				valp = BUNtail(bi, p);
-				bool isnil = cmpf(valp, nilp) == 0;
+				bool isnil = nilp && cmpf(valp, nilp) == 0;
 				assert(b->ttype != TYPE_flt || !isinf(*(flt*)valp));
 				assert(b->ttype != TYPE_dbl || !isinf(*(dbl*)valp));
 				if (maxval && !isnil) {

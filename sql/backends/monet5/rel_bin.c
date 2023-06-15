@@ -1731,6 +1731,10 @@ stmt_col(backend *be, sql_column *c, stmt *del, int part)
 {
 	stmt *sc = stmt_bat(be, c, RDONLY, part);
 
+	if (c->null && c->nullmask) {
+		assert(0);
+	}
+
 	if (isTable(c->t) && c->t->access != TABLE_READONLY &&
 	   (!isNew(c) || !isNew(c->t) /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->s) /*&& !c->t->commit_action*/) {
