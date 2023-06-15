@@ -130,9 +130,11 @@ addAtom( mel_atom *atoms)
 			BATatoms[i] = BATatoms[tpe];
 			strcpy_len(BATatoms[i].name, atoms->name, sizeof(BATatoms[i].name));
 			BATatoms[i].storage = ATOMstorage(tpe);
-		} else 	{ /* cannot overload void atoms */
+		} else { /* cannot overload void atoms */
 			BATatoms[i].storage = i;
 			BATatoms[i].linear = false;
+			if (atoms->size)
+				BATatoms[i].size = atoms->size;
 		}
 		if (atoms->del)
 			BATatoms[i].atomDel = atoms->del;

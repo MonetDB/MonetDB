@@ -24,7 +24,8 @@ target_sources(atoms
   inet.c
   identifier.c
   xml.c xml.h
-  batxml.c)
+  batxml.c
+  sha256.c)
 
 target_include_directories(atoms
   PRIVATE
