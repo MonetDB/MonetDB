@@ -54,14 +54,14 @@ store_transaction_id(sqlstore *store)
 ulng
 store_oldest(sqlstore *store, sql_trans *tr)
 {
-	if (tr && tr->ts == store->oldest) {
+	if (tr && tr->ts == (ulng) ATOMIC_GET(&store->oldest)) {
 		sql_session *s = store->active->h->data;
 		if (s->tr == tr && store->active->h->next) {
 			s = store->active->h->next->data;
 			return s->tr->ts;
 		}
 	}
-	return store->oldest;
+	return (ulng) ATOMIC_GET(&store->oldest);
 }
 
 static ulng
@@ -2172,6 +2172,7 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 		.timestamp = ATOMIC_VAR_INIT(0),
 		.lastactive = ATOMIC_VAR_INIT(0),
 		.function_counter = ATOMIC_VAR_INIT(0),
+		.oldest = ATOMIC_VAR_INIT(0),
 		.sa = pa,
 	};
 
@@ -2286,6 +2287,7 @@ store_exit(sqlstore *store)
 	ATOMIC_DESTROY(&store->timestamp);
 	ATOMIC_DESTROY(&store->transaction);
 	ATOMIC_DESTROY(&store->function_counter);
+	ATOMIC_DESTROY(&store->oldest);
 	MT_lock_destroy(&store->lock);
 	MT_lock_destroy(&store->commit);
 	MT_lock_destroy(&store->flush);
@@ -4044,8 +4046,7 @@ sql_trans_commit(sql_trans *tr)
 		if (tr->parent) {
 			commit_ts = oldest = tr->parent->tid;
 			tr->parent->logchanges += tr->logchanges;
-		}
-		else {
+		} else {
 			commit_ts = store_timestamp(store);
 			oldest = store_oldest(store, tr);
 		}
@@ -7230,7 +7231,7 @@ sql_trans_end(sql_session *s, int ok)
 				oldest = tr->ts;
 		}
 	}
-	store->oldest = oldest;
+	ATOMIC_SET(&store->oldest, oldest);
 	assert(list_length(store->active) == (int) ATOMIC_GET(&store->nr_active));
 	store_unlock(store);
 

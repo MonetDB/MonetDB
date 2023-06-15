@@ -15,14 +15,11 @@
 
 typedef struct logged_range_t {
 	ulng id;				/* log file id */
+	ulng drops;
 	ATOMIC_TYPE last_ts;	/* last stored timestamp */
-	struct logged_range_t *next;
+	ATOMIC_TYPE flushed_ts;
 	ATOMIC_TYPE refcount;
-	ATOMIC_TYPE end;
-	ATOMIC_TYPE pend;
-	ATOMIC_TYPE flushed_end;
-	ATOMIC_TYPE drops;
-	// TODO: add flushnow flag here.
+	struct logged_range_t *next;
 	stream *output_log;
 } logged_range;
 
@@ -51,9 +48,9 @@ struct logger {
 	size_t wbufsize;
 
 	// synchronized by combination of store->flush and rotation_lock
-	ulng id;			/* current log output file id */
-	ulng saved_id; 		/* id of last fully handled log file */ /*TODO: requires no additional synchronization*/
-	int tid;			/* current transaction id */
+	ulng id;		/* current log output file id */
+	ulng saved_id; 		/* id of last fully handled log file */
+	int tid;		/* current transaction id */
 	int saved_tid;		/* id of transaction which was flushed out (into BBP storage)  */
 
 	// synchronized by rotation_lock
@@ -62,12 +59,13 @@ struct logger {
 
 	// atomic
 	ATOMIC_TYPE nr_flushers;
+	ATOMIC_TYPE nr_open_files;
 
 	// synchronized by store->flush
 	bool flushnow;
-	bool flushing;			/* log_flush only */
+	bool flushing;		/* log_flush only */
 	logged_range *pending;	/* log_flush only */
-	stream *input_log;		/* log_flush only: current stream to flush */
+	stream *input_log;	/* log_flush only: current stream to flush */
 
 	// synchronized by lock
 	/* Store log_bids (int) to circumvent trouble with reference counting */
