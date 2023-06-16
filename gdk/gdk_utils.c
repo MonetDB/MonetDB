@@ -1611,10 +1611,14 @@ THRget(int tid)
 static inline uintptr_t
 THRsp(void)
 {
+#if defined(__GNUC__) || defined(__clang__)
+	return (uintptr_t) __builtin_frame_address(0);
+#else
 	int l = 0;
 	uintptr_t sp = (uintptr_t) (&l);
 
 	return sp;
+#endif
 }
 
 static inline Thread

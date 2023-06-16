@@ -804,7 +804,11 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 	m->pa = pa;
 	m->sa = NULL;
 	m->ta = sa_create(m->pa);
+#if defined(__GNUC__) || defined(__clang__)
+	m->sp = (uintptr_t) __builtin_frame_address(0);
+#else
 	m->sp = (uintptr_t)(&m);
+#endif
 
 	m->params = NULL;
 	m->sizeframes = MAXPARAMS;
