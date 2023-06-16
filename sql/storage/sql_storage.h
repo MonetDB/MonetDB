@@ -487,7 +487,7 @@ typedef struct sqlstore {
 	ATOMIC_TYPE timestamp;	/* timestamp counter */
 	ATOMIC_TYPE transaction;/* transaction id counter */
 	ATOMIC_TYPE function_counter;/* function counter used during function instantiation */
-	ulng oldest;
+	ATOMIC_TYPE oldest;
 	ulng oldest_pending;
 	int readonly;			/* store is readonly */
 	int singleuser;			/* store is for a single user only (==1 enable, ==2 single user session running) */

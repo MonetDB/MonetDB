@@ -31,8 +31,6 @@
 #include <wchar.h>
 #include <wctype.h>
 
-#include "gdk_strimps.h"
-
 #ifdef HAVE_LIBPCRE
 #include <pcre.h>
 #ifndef PCRE_STUDY_JIT_COMPILE

@@ -2245,7 +2245,8 @@ append_col_execute(sql_trans *tr, sql_delta **delta, sqlid id, BUN offset, BAT *
 {
 	int ok = LOG_OK;
 
-	(*delta)->cs.merged = 0; /* TODO needs to move */
+	if ((*delta)->cs.merged)
+		(*delta)->cs.merged = false; /* TODO needs to move */
 	if (tt == TYPE_bat) {
 		BAT *bat = incoming_data;
 
@@ -3672,7 +3673,7 @@ clear_cs(sql_trans *tr, column_storage *cs, bool renew, bool temp)
 		temp_destroy(cs->uvbid);
 		cs->uvbid = 0;
 	}
-	cs->cleared = 1;
+	cs->cleared = true;
 	cs->ucnt = 0;
 	return sz;
 }
@@ -3960,7 +3961,8 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 static int
 log_storage(sql_trans *tr, sql_table *t, storage *s)
 {
-	int ok = LOG_OK, cleared = s->cs.cleared;
+	int ok = LOG_OK;
+	bool cleared = s->cs.cleared;
 	if (ok == LOG_OK && cleared)
 		ok =  tr_log_cs(tr, t, &s->cs, s->segs->h, t->base.id);
 	if (ok == LOG_OK)
@@ -4007,8 +4009,8 @@ merge_cs( column_storage *cs, const char* caller)
 		bat_destroy(uv);
 		bat_destroy(cur);
 	}
-	cs->cleared = 0;
-	cs->merged = 1;
+	cs->cleared = false;
+	cs->merged = true;
 	return;
 }
 
