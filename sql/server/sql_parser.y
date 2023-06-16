@@ -1310,9 +1310,9 @@ alter_statement:
 	  append_string(l, $7);
 	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_SET_TABLE_SCHEMA, l ); }
- | ALTER USER ident opt_with_encrypted_password user_schema opt_schema_path opt_default_role
+ | ALTER USER ident opt_with_encrypted_password user_schema opt_schema_path opt_default_role opt_max_memory opt_max_workers
 	{ dlist *l = L(), *p = L();
-	  if (!$4 && !$5 && !$6 && !$7) {
+	  if (!$4 && !$5 && !$6 && !$7 && $8 < 0 && $9 < 0) {
 		yyerror(m, "ALTER USER: At least one property should be updated");
 		YYABORT;
 	  }
@@ -1324,6 +1324,8 @@ alter_statement:
 	  append_string(p, NULL);
 	  append_list(l, p);
 	  append_string(l, $7);
+	  append_lng(l, $8);
+	  append_int(l, $9);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
  | ALTER USER ident RENAME TO ident
 	{ dlist *l = L();
@@ -1341,6 +1343,8 @@ alter_statement:
 	  append_string(p, $10);
 	  append_list(l, p);
 	  append_string(l, NULL);
+	  append_lng(l, -1);
+	  append_int(l, -1);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
  | ALTER SCHEMA if_exists ident RENAME TO ident
 	{ dlist *l = L();
@@ -1578,12 +1582,14 @@ role_def:
  ;
 
 opt_max_memory:
-    /* empty */         { $$ = 0; }
+    /* empty */         { $$ = -1; }
+ |  NO MAX_MEMORY       { $$ = 0; }
  |  MAX_MEMORY poslng   { $$ = $2; }
  ;
 
 opt_max_workers:
-    /* empty */         { $$ = 0; }
+    /* empty */         { $$ = -1; }
+ |  NO MAX_WORKERS      { $$ = 0; }
  |  MAX_WORKERS posint  { $$ = $2; }
  ;
 
