@@ -228,11 +228,16 @@ VALinit(ValPtr d, int tpe, const void *s)
 		return d;
 	default:
 		assert(ATOMextern(ATOMstorage(tpe)));
-		d->len = ATOMlen(tpe, s);
-		d->val.pval = GDKmalloc(d->len);
-		if (d->val.pval == NULL)
-			return NULL;
-		memcpy(d->val.pval, s, d->len);
+		if (s) {
+			d->len = ATOMlen(tpe, s);
+			d->val.pval = GDKmalloc(d->len);
+			if (d->val.pval == NULL)
+				return NULL;
+			memcpy(d->val.pval, s, d->len);
+		} else {
+			d->len = 0;
+			d->val.pval = NULL;
+		}
 		return d;
 	}
 	d->len = ATOMsize(d->vtype);

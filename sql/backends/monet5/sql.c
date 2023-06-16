@@ -1797,8 +1797,9 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t;
 	sql_column *c;
 	sql_idx *i;
-	BAT *b = NULL, *pos = NULL;
+	BAT *b = NULL, *pos = NULL, *nullmask = NULL;
 	BUN cnt = 1;
+	ptr *null = NULL;
 
 	*res = 0;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -1817,6 +1818,16 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ins = *(ptr *) ins;
 	if ( tpe == TYPE_bat)
 		b =  (BAT*) ins;
+	if (pci->argc == 9 && (tpe == TYPE_msk || (b && b->ttype == TYPE_msk))) {
+		null = ins;
+		ins = getArgReference(stk, pci, 8);
+		if (b && (ins = BATdescriptor(*(bat *) ins)) == NULL)
+			throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access append positions descriptor");
+		if (b) {
+			nullmask = b;
+			b =  (BAT*) ins;
+		}
+	}
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL) {
 		bat_destroy(pos);
@@ -1838,16 +1849,18 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cnt = BATcount(b);
 	sqlstore *store = m->session->tr->store;
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		log_res = store->storage_api.append_col(m->session->tr, c, offset, pos, ins, cnt, tpe);
+		log_res = store->storage_api.append_col2(m->session->tr, c, offset, pos, null, ins, cnt, tpe);
 	} else if (cname[0] == '%' && (i = mvc_bind_idx(m, s, cname + 1)) != NULL) {
 		log_res = store->storage_api.append_idx(m->session->tr, i, offset, pos, ins, cnt, tpe);
 	} else {
 		bat_destroy(pos);
 		bat_destroy(b);
+		bat_destroy(nullmask);
 		throw(SQL, "sql.append", SQLSTATE(38000) "Unable to find column or index %s.%s.%s",sname,tname,cname);
 	}
 	bat_destroy(pos);
 	bat_destroy(b);
+	bat_destroy(nullmask);
 	if (log_res != LOG_OK) /* the conflict case should never happen, but leave it here */
 		throw(SQL, "sql.append", SQLSTATE(42000) "Append failed %s", log_res == LOG_CONFLICT ? "due to conflict with another transaction" : GDKerrbuf);
 	return MAL_SUCCEED;
@@ -2426,7 +2439,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid o = 0;
 	BATiter itertbl,iteratr,itertpe,iterdig,iterscl;
 	backend *be = NULL;
-	BAT *b = NULL, *tbl = NULL, *atr = NULL, *tpe = NULL,*len = NULL,*scale = NULL;
+	BAT *b = NULL, *tbl = NULL, *atr = NULL, *tpe = NULL,*len = NULL,*scale = NULL, *cand = 0;
 
 	if ((msg = getBackendContext(cntxt, &be)) != NULL)
 		return msg;
@@ -2459,18 +2472,26 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	digits = (int*) iterdig.base;
 	scaledigits = (int*) iterscl.base;
 
-	for( i = 6; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
+	for( i = 6; msg == MAL_SUCCEED && i < pci->argc; i++, o++){
 		bid = *getArgReference_bat(stk,pci,i);
 		tblname = BUNtvar(itertbl,o);
 		colname = BUNtvar(iteratr,o);
 		tpename = BUNtvar(itertpe,o);
 		b = BATdescriptor(bid);
-		if ( b == NULL)
+		if (b && b->ttype == TYPE_msk) {
+			bid = *getArgReference_bat(stk,pci,++i);
+			cand = b;
+			b = BATdescriptor(bid);
+		}
+		if (b == NULL)
 			msg = createException(SQL, "sql.resultSet", SQLSTATE(HY005) "Cannot access column descriptor");
-		else if (mvc_result_column(be, tblname, colname, tpename, *digits++, *scaledigits++, b))
+		else if (mvc_result_column(be, tblname, colname, tpename, *digits++, *scaledigits++, b, cand))
 			msg = createException(SQL, "sql.resultSet", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
-		if( b)
+		if (b)
 			BBPunfix(bid);
+		if (cand)
+			BBPunfix(cand->batCacheid);
+		cand = NULL;
 	}
 	bat_iterator_end(&itertbl);
 	bat_iterator_end(&iteratr);
@@ -2573,7 +2594,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		b = BATdescriptor(bid);
 		if ( b == NULL)
 			msg = createException(SQL, "sql.resultSet", SQLSTATE(HY005) "Cannot access column descriptor");
-		else if (mvc_result_column(be, tblname, colname, tpename, *digits++, *scaledigits++, b))
+		else if (mvc_result_column(be, tblname, colname, tpename, *digits++, *scaledigits++, b, NULL))
 			msg = createException(SQL, "sql.resultSet", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
 		if( b)
 			BBPunfix(bid);
@@ -5094,6 +5115,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "depend", mvc_add_dependency_change, true, "Set dml dependency on current transaction for a table.", args(0,3, arg("sname",str),arg("tname",str),arg("cnt",lng))),
  pattern("sql", "predicate", mvc_add_column_predicate, true, "Add predicate on current transaction for a table column.", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
  pattern("sql", "append", mvc_append_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.", args(1,8, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),arg("offset",oid),batarg("pos",oid),argany("ins",0))),
+ pattern("sql", "append", mvc_append_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.", args(1,9, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),arg("offset",oid),batarg("pos",oid),arg("null", msk), argany("ins",0))),
  pattern("sql", "update", mvc_update_wrap, false, "Update the values of the column tname.cname. Returns sequence number for order dependence)", args(1,7, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("rids",0),argany("upd",0))),
  pattern("sql", "clear_table", mvc_clear_table_wrap, true, "Clear the table sname.tname.", args(1,4, arg("",lng),arg("sname",str),arg("tname",str),arg("restart_sequences",int))),
  pattern("sql", "tid", SQLtid, false, "Return a column with the valid tuple identifiers associated with the table sname.tname.", args(1,4, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str))),

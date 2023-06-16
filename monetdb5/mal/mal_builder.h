@@ -38,6 +38,7 @@ mal_export InstrPtr pushVoid(MalBlkPtr mb, InstrPtr q);
 mal_export InstrPtr pushDbl(MalBlkPtr mb, InstrPtr q, dbl val);
 mal_export InstrPtr pushFlt(MalBlkPtr mb, InstrPtr q, flt val);
 mal_export InstrPtr pushStr(MalBlkPtr mb, InstrPtr q, const char *val);
+mal_export InstrPtr pushMsk(MalBlkPtr mb, InstrPtr q, bit val);
 mal_export InstrPtr pushBit(MalBlkPtr mb, InstrPtr q, bit val);
 mal_export InstrPtr pushNil(MalBlkPtr mb, InstrPtr q, int tpe);
 mal_export InstrPtr pushType(MalBlkPtr mb, InstrPtr q, int tpe);

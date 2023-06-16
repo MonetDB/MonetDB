@@ -17,7 +17,7 @@
 typedef struct column_storage {
 	int refcnt;
 	int bid;
-	int ebid;		/* extra bid */
+	int ebid;		/* extra bid, TODO change ebid into extra column_storage! */
 	int uibid;		/* bat with positions of updates */
 	int uvbid;		/* bat with values of updates */
 	storage_type st; /* ST_DEFAULT, ST_DICT, ST_FOR */

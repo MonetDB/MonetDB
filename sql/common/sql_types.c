@@ -595,6 +595,7 @@ sql_create_type(sql_allocator *sa, const char *sqlname, unsigned int digits, uns
 	t->digits = digits;
 	t->scale = scale;
 	t->localtype = ATOMindex(t->impl);
+	t->nonull = !ATOMnilptr(t->localtype);
 	t->radix = radix;
 	t->eclass = eclass;
 	t->s = NULL;

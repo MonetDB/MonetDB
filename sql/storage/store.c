@@ -566,7 +566,7 @@ load_column(sql_trans *tr, sql_table *t, res_table *rt_cols)
 	if (!strNil(def))
 		c->def =_STRDUP(def);
 	c->null = *(bit*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "null"));
-	c->nullmask = (c->null && !ATOMnilptr(c->type.type->localtype));
+	c->nullmask = (c->null && c->type.type->nonull);
 	c->colnr = *(int*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "number"));
 	c->unique = 0;
 	c->storage_type = NULL;
@@ -876,6 +876,7 @@ load_type(sql_trans *tr, sql_schema *s, oid rid)
 	t->radix = store->table_api.column_find_int(tr, find_sql_column(types, "radix"), rid);
 	t->eclass = (sql_class)store->table_api.column_find_int(tr, find_sql_column(types, "eclass"), rid);
 	t->localtype = ATOMindex(t->impl);
+	t->nonull = !ATOMnilptr(t->localtype);
 	t->bits = 0;
 	t->s = s;
 	return t;
@@ -4903,6 +4904,7 @@ sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, unsigne
 	t->radix = radix;
 	t->eclass = eclass;
 	t->localtype = localtype;
+	t->nonull = !ATOMnilptr(t->localtype);
 	t->s = s;
 
 	if ((res = os_add(s->types, tr, t->base.name, &t->base)))
@@ -5928,7 +5930,7 @@ create_sql_column_with_id(sql_allocator *sa, sqlid id, sql_table *t, const char 
 	col->type = *tpe;
 	col->def = NULL;
 	col->null = 1;
-	col->nullmask = (col->null && !ATOMnilptr(col->type.type->localtype));
+	col->nullmask = (col->null && col->type.type->nonull);
 	col->colnr = table_next_column_nr(t);
 	col->t = t;
 	col->unique = 0;
@@ -6238,7 +6240,7 @@ sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 		if ((res = new_column(tr, col, &dup)))
 			return res;
 		dup->null = isnull;
-		dup->nullmask = (dup->null && !ATOMnilptr(dup->type.type->localtype));
+		dup->nullmask = (dup->null && dup->type.type->nonull);
 
 		/* disallow concurrent updates on the column if not null is set */
 		/* this dependency is needed for merge tables */

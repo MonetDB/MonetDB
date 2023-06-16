@@ -84,6 +84,8 @@ TABLETdestroy_format(Tablet *as)
 
 	for (p = 0; p < as->nr_attrs; p++) {
 		BBPreclaim(fmt[p].c);
+		if (fmt[p].mask)
+			BBPreclaim(fmt[p].mask);
 		if (fmt[p].data)
 			GDKfree(fmt[p].data);
 	}
@@ -277,11 +279,15 @@ output_line(char **buf, size_t *len, char **localbuf, size_t *locallen, Column *
 	if (i == nr_attrs) {
 		for (i = 0; i < nr_attrs; i++) {
 			Column *f = fmt + i;
-			const char *p;
+			const char *p = NULL;
 			ssize_t l;
 
 			if (f->c) {
-				p = BUNtail(f->ci, f->p);
+				bool isnil = 0;
+				if (f->mask)
+					isnil = mskGetVal(f->mask, f->p);
+				if (!isnil)
+					p = BUNtail(f->ci, f->p);
 
 				if (!p || (f->nildata && ATOMcmp(f->adt, f->nildata, p) == 0)) {
 					p = f->nullstr;
@@ -321,11 +327,15 @@ output_line_dense(char **buf, size_t *len, char **localbuf, size_t *locallen, Co
 
 	for (i = 0; i < nr_attrs; i++) {
 		Column *f = fmt + i;
-		const char *p;
+		const char *p = NULL;
 		ssize_t l;
 
 		if (f->c) {
-			p = BUNtail(f->ci, f->p);
+			bool isnil = 0;
+			if (f->mask)
+				isnil = mskGetVal(f->mask, f->p);
+			if (!isnil)
+				p = BUNtail(f->ci, f->p);
 
 			if (!p || (f->nildata && ATOMcmp(f->adt, f->nildata, p) == 0)) {
 				p = f->nullstr;
@@ -366,9 +376,12 @@ output_line_lookup(char **buf, size_t *len, Column *fmt, stream *fd, BUN nr_attr
 		Column *f = fmt + i;
 
 		if (f->c) {
+			bool isnil = 0;
+			if (f->mask)
+				isnil = mskGetVal(f->mask, f->p);
 			const void *p = BUNtail(f->ci, id - f->c->hseqbase);
 
-			if (!p || (f->nildata && ATOMcmp(f->adt, f->nildata, p) == 0)) {
+			if (!p || isnil || (f->nildata && ATOMcmp(f->adt, f->nildata, p) == 0)) {
 				size_t l = strlen(f->nullstr);
 				if (mnstr_write(fd, f->nullstr, 1, l) != (ssize_t) l)
 					return TABLET_error(fd);

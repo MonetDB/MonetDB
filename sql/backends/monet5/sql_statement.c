@@ -587,7 +587,7 @@ find_real_column(backend *be, sql_column *c)
 stmt *
 stmt_bat(backend *be, sql_column *c, int access, int partition)
 {
-	int tt = c->type.type->localtype;
+	int tt = (access==RD_EXT && c->type.type->nonull)?TYPE_msk:c->type.type->localtype;
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
 
@@ -663,6 +663,8 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	s->nrcols = 1;
 	s->flag = access;
 	s->nr = getDestVar(q);
+	if (c->null && c->type.type->nonull && access != RD_EXT)
+		s->cand = stmt_bat(be, c, RD_EXT, partition);
 	s->q = q;
 	s->tname = c->t->base.name;
 	s->cname = c->base.name;
@@ -751,10 +753,10 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_
 		if (q)
 			getArg(q,0) = l[c->colnr+1];
 		pushInstruction(mb, q);
-	} else if (!fake) {	/* fake append */
+	} else if (!fake) {
 		if (offset->nr < 0)
 			return NULL;
-		q = newStmt(mb, sqlRef, appendRef);
+		q = newStmtArgs(mb, sqlRef, appendRef, 9);
 		q = pushArgument(mb, q, be->mvc_var);
 		if (q == NULL)
 			return NULL;
@@ -769,13 +771,15 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_
 		/* also the offsets */
 		assert(offset->q->retc == 2);
 		q = pushArgument(mb, q, getArg(offset->q, 1));
+		if (b->cand) /* nullmask */
+			q = pushArgument(mb, q, b->cand->nr);
 		q = pushArgument(mb, q, b->nr);
 		if (q == NULL)
 			return NULL;
 		if (mvc_var_update != NULL)
 			*mvc_var_update = getDestVar(q);
 		pushInstruction(mb, q);
-	} else {
+	} else { /* fake append */
 		return b;
 	}
 	if (q) {
@@ -1344,15 +1348,40 @@ stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_i
 	return ns;
 }
 
+static stmt *
+stmt_mask(backend *be, bool val)
+{
+	InstrPtr q = newAssignment(be->mb);
+	q = pushMsk(be->mb, q, val);
+	pushInstruction(be->mb, q);
+	if (q) {
+		stmt *s = stmt_create(be->mvc->sa, st_atom);
+		if (s == NULL) {
+			freeInstruction(q);
+			return NULL;
+		}
+
+		s->key = 1;		/* values are also unique */
+		s->q = q;
+		s->nr = getDestVar(q);
+		return s;
+	}
+	return NULL;
+}
+
 stmt *
 stmt_atom(backend *be, atom *a)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = EC_TEMP_FRAC(atom_type(a)->type->eclass) ? newStmt(mb, calcRef, atom_type(a)->type->impl) : newAssignment(mb);
+	stmt *cand = NULL;
 
 	if (!q)
 		return NULL;
+	if (atom_type(a)->type->nonull)
+		cand = stmt_mask(be, atom_null(a));
 	if (atom_null(a)) {
+		/* in case of no null types set cand */
 		q = pushNil(mb, q, atom_type(a)->type->localtype);
 	} else {
 		int k;
@@ -1374,6 +1403,7 @@ stmt_atom(backend *be, atom *a)
 		}
 
 		s->op4.aval = a;
+		s->cand = cand;
 		s->key = 1;		/* values are also unique */
 		s->q = q;
 		s->nr = getDestVar(q);
@@ -2281,6 +2311,7 @@ stmt_project_join(backend *be, stmt *op1, stmt *op2, bool delta)
 stmt *
 stmt_project(backend *be, stmt *op1, stmt *op2)
 {
+	stmt *cand = op2->cand;
 	if (!op2->nrcols)
 		return stmt_const(be, op1, op2);
 	InstrPtr q = stmt_project_join(be, op1, op2, false);
@@ -2293,6 +2324,8 @@ stmt_project(backend *be, stmt *op1, stmt *op2)
 
 		s->op1 = op1;
 		s->op2 = op2;
+		if (cand)
+			s->cand = stmt_project(be, op1, cand);
 		s->flag = cmp_project;
 		s->key = 0;
 		s->nrcols = MAX(op1->nrcols,op2->nrcols);
@@ -2942,6 +2975,8 @@ dump_header(mvc *sql, MalBlkPtr mb, list *l)
 				metaInfo(tpePtr,Str,(t->type->localtype == TYPE_void ? "char" : t->type->base.name));
 				metaInfo(lenPtr,Int,t->digits);
 				metaInfo(scalePtr,Int,t->scale);
+				if (c->cand)
+					list = pushArgument(mb,list,c->cand->nr);
 				list = pushArgument(mb,list,c->nr);
 			} else
 				error = true;
@@ -3918,6 +3953,7 @@ stmt_alias_(backend *be, stmt *op1, const char *tname, const char *alias)
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
 	s->aggr = op1->aggr;
+	s->cand = op1->cand;
 
 	s->tname = tname;
 	s->cname = alias;

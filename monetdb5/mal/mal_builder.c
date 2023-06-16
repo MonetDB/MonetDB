@@ -577,6 +577,23 @@ getBitConstant(MalBlkPtr mb, bit val)
 }
 
 InstrPtr
+pushMsk(MalBlkPtr mb, InstrPtr q, bit val)
+{
+	int _t;
+	ValRecord cst;
+
+	if (q == NULL)
+		return NULL;
+	cst.vtype= TYPE_msk;
+	cst.val.btval= val;
+	cst.len = 0;
+	_t = defConstant(mb,TYPE_msk,&cst);
+	if( _t >= 0)
+		return pushArgument(mb, q, _t);
+	return q;
+}
+
+InstrPtr
 pushBit(MalBlkPtr mb, InstrPtr q, bit val)
 {
 	int _t;
@@ -663,24 +680,25 @@ InstrPtr
 pushType(MalBlkPtr mb, InstrPtr q, int tpe)
 {
 	int _t;
-	ValRecord cst;
-	str msg;
+	ValRecord cst = { 0 };
+	//str msg;
 
 	if (q == NULL)
 		return NULL;
-	cst.vtype=TYPE_void;
-	cst.val.oval= oid_nil;
-	cst.len = 0;
-	msg = convertConstant(tpe, &cst);
-	if (msg != MAL_SUCCEED){
-		addMalException(mb, msg);
-		freeException(msg);
-	} else {
+	cst.vtype=tpe;
+	//cst.vtype=TYPE_void;
+	//cst.val.oval= oid_nil;
+	//cst.len = 0;
+	//msg = convertConstant(tpe, &cst);
+	//if (msg != MAL_SUCCEED){
+		//addMalException(mb, msg);
+		//freeException(msg);
+	//} else {
 		_t = defConstant(mb,tpe,&cst);
 		if( _t >= 0){
 			return pushArgument(mb, q, _t);
 		}
-	}
+	//}
 	return q;
 }
 

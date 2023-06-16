@@ -32,6 +32,7 @@ typedef struct Column_t {
 	const char *type;
 	int adt;					/* type index */
 	BAT *c;						/* set to NULL when scalar is meant */
+	BAT *mask;					/* mask with null values, for no null types */
 	BATiter ci;
 	BUN p;
 	unsigned int tabs;			/* field size in tab positions */

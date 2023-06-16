@@ -124,7 +124,7 @@ typedef struct stmt {
 	 reduce:1,		/* used to reduce number of rows (also for joins) */
 	 loop:1;		/* cond statement is looping */
 
-	struct stmt *cand;	/* optional candidate list */
+	struct stmt *cand;	/* optional candidate list, also used for nullmask */
 
 	int flag;
 	int nr;			/* variable assignment */

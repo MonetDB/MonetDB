@@ -140,6 +140,7 @@ typedef void *(*bind_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef void *(*bind_cands_fptr) (sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr);
 
 typedef int (*append_col_fptr) (sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *d, BUN cnt, int t);
+typedef int (*append_col2_fptr) (sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *null, void *d, BUN cnt, int t);
 typedef int (*append_idx_fptr) (sql_trans *tr, sql_idx *i, BUN offset, BAT *offsets, void *d, BUN cnt, int t);
 
 typedef int (*update_col_fptr) (sql_trans *tr, sql_column *c, void *tids, void *d, int t);
@@ -228,6 +229,7 @@ typedef struct store_functions {
 	bind_cands_fptr bind_cands;
 
 	append_col_fptr append_col;
+	append_col2_fptr append_col2;
 	append_idx_fptr append_idx;
 
 	update_col_fptr update_col;
@@ -328,7 +330,7 @@ typedef struct logger_functions {
 /* we need to add an interface for result_tables later */
 
 extern res_table *res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_query_t querytype, res_table *next);
-extern res_col *res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, char mtype, void *v, bool cache);
+extern res_col *res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, char mtype, void *v, void *null, bool cache);
 
 extern void res_table_destroy(res_table *t);
 

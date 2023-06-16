@@ -1128,7 +1128,7 @@ monetdbe_set_remote_results(backend *be, char* tblname, columnar_result* results
 			break;
 		}
 
-		int res = mvc_result_column(be, tblname, colname, tpename, digits, scale, b);
+		int res = mvc_result_column(be, tblname, colname, tpename, digits, scale, b, NULL);
 		BBPunfix(b->batCacheid);
 		if (res) {
 			error = createException(MAL,"monetdbe.monetdbe_result_cb", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);

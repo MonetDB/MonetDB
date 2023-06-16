@@ -1731,16 +1731,17 @@ stmt_col(backend *be, sql_column *c, stmt *del, int part)
 {
 	stmt *sc = stmt_bat(be, c, RDONLY, part);
 
-	if (c->null && c->nullmask) {
-		printf("todo handle nullmask\n");
-	}
-
 	if (isTable(c->t) && c->t->access != TABLE_READONLY &&
 	   (!isNew(c) || !isNew(c->t) /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->s) /*&& !c->t->commit_action*/) {
+		stmt *cand = sc->cand;
 		stmt *u = stmt_bat(be, c, RD_UPD_ID, part);
 		assert(u);
 		sc = stmt_project_delta(be, sc, u);
+		if (cand)
+			sc->cand = cand;
+			/* todo handle updates on nullmasks */
+			/* sc->cand = stmt_project_delta(be, cand, u); */
 		if (c->storage_type && c->storage_type[0] == 'D') {
 			stmt *v = stmt_bat(be, c, RD_EXT, part);
 			sc = stmt_dict(be, sc, v);
@@ -4485,6 +4486,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	for (n = ol_first_node(t->columns), m = inserts->op4.lval->h; n && m; n = n->next, m = m->next) {
 		sql_column *c = n->data;
 
+		/* how to handle split null and value */
+		/* probably we need to keep 2 results in the stmt record, ie also time to cleanup stmt */
 		updates[c->colnr] = m->data;
 	}
 

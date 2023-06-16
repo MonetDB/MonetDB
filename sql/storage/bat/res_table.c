@@ -51,11 +51,13 @@ res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_quer
 }
 
 res_col *
-res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, char mtype, void *val, bool cached)
+res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, char mtype, void *val, void *null, bool cached)
 {
 	res_col *c = t->cols + t->cur_col;
-	BAT *b;
+	BAT *b = NULL, *nullmask = NULL;
 
+	if (null)
+		t->nr_cols--;
 	if (!sql_find_subtype(&c->type, typename, digits, scale))
 		sql_init_subtype(&c->type, sql_trans_bind_type(tr, NULL, typename), digits, scale);
 	c->tn = _STRDUP(tn);
@@ -70,6 +72,7 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 	c->mtype = mtype;
 	if (mtype == TYPE_bat) {
 		b = (BAT*)val;
+		nullmask = (BAT*)null;
 		if (b && t->cur_col == 0)
 			t->nr_rows = BATcount(b);
 	} else { // wrap scalar values in BATs for result consistency
@@ -90,11 +93,15 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 		cached = true; /* simply keep memory pointer for this small bat */
 	}
 	c->b = b->batCacheid;
+	if (null)
+		c->mask = nullmask->batCacheid;
 	c->cached = cached;
 	if (cached)
 		c->p = (void*)b;
 	else
 		bat_incref(c->b);
+	if (c->mask)
+		bat_incref(c->mask);
 	t->cur_col++;
 	assert(t->cur_col <= t->nr_cols);
 	return c;
@@ -103,6 +110,8 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 static void
 res_col_destroy(res_col *c)
 {
+	if (c->mask)
+		bat_decref(c->mask);
 	if (c->b && !c->cached) {
 		bat_decref(c->b);
 	} else if (c->b) {
