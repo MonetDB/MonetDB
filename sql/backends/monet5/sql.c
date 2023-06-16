@@ -517,7 +517,7 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	const char *sname = *getArgReference_str(stk, pci, 3);
 	const char *tname = *getArgReference_str(stk, pci, 4);
-	lng cnt = *(lng*)getArgReference_lng(stk, pci, 5);
+	lng cnt = *getArgReference_lng(stk, pci, 5);
 	BAT *pos = NULL;
 	sql_schema *s;
 	sql_table *t;
@@ -554,7 +554,7 @@ mvc_add_dependency_change(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	mvc *m = NULL;
 	const char *sname = *getArgReference_str(stk, pci, 1);
 	const char *tname = *getArgReference_str(stk, pci, 2);
-	lng cnt = *(lng*)getArgReference_lng(stk, pci, 3);
+	lng cnt = *getArgReference_lng(stk, pci, 3);
 	sql_schema *s;
 	sql_table *t;
 
@@ -993,7 +993,7 @@ mvc_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s;
 	sql_sequence *seq;
 	bat *res = getArgReference_bat(stk, pci, 0);
-	BUN card = *(BUN*)getArgReference_lng(stk, pci, 1);
+	BUN card = (BUN)*getArgReference_lng(stk, pci, 1);
 	const char *sname = *getArgReference_str(stk, pci, 2);
 	const char *seqname = *getArgReference_str(stk, pci, 3);
 	BAT *r = NULL;
@@ -1789,7 +1789,7 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *sname = *getArgReference_str(stk, pci, 2);
 	const char *tname = *getArgReference_str(stk, pci, 3);
 	const char *cname = *getArgReference_str(stk, pci, 4);
-	BUN offset = *(BUN*)getArgReference_oid(stk, pci, 5);
+	BUN offset = (BUN)*getArgReference_oid(stk, pci, 5);
 	bat Pos = *getArgReference_bat(stk, pci, 6);
 	ptr ins = getArgReference(stk, pci, 7);
 	int tpe = getArgType(mb, pci, 7), log_res = LOG_OK;

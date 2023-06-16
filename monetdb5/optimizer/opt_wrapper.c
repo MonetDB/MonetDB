@@ -173,9 +173,9 @@ OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	bat  *nme = (bat*) getArgReference_bat(stk, p, 0);
-	bat  *cnt = (bat*) getArgReference_bat(stk, p, 1);
-	bat  *time = (bat*) getArgReference_bat(stk, p, 2);
+	bat  *nme = getArgReference_bat(stk, p, 0);
+	bat  *cnt = getArgReference_bat(stk, p, 1);
+	bat  *time = getArgReference_bat(stk, p, 2);
 	BAT *n, *c, *t;
 	int i;
 

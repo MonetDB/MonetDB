@@ -510,7 +510,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		(void)pthread_sigmask(SIG_UNBLOCK, &signal_set, NULL);
 	}
 
-	sqlfun = *(sql_func **)getArgReference_ptr(stk, pci, pci->retc);
+	sqlfun = (sql_func *)*getArgReference_ptr(stk, pci, pci->retc);
 	funcname = sqlfun ? sqlfun->base.name : "yet_another_c_function";
 
 	args = (str *)GDKzalloc(sizeof(str) * pci->argc);
