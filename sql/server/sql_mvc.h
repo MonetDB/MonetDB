@@ -319,8 +319,13 @@ extern int symbol_cmp(mvc* sql, symbol *s1, symbol *s2);
 
 static inline int mvc_highwater(mvc *sql)
 {
-	int l = 0, rc = 0;
+#if defined(__GNUC__) || defined(__clang__)
+	uintptr_t c = (uintptr_t) __builtin_frame_address(0);
+#else
+	int l = 0;
 	uintptr_t c = (uintptr_t) (&l);
+#endif
+	int rc = 0;
 
 	size_t diff = c < sql->sp ? sql->sp - c : c - sql->sp;
 	if (diff > THREAD_STACK_SIZE - 280 * 1024)
