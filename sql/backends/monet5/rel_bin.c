@@ -1472,6 +1472,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		list *attr = e->l;
 		stmt *as = NULL;
 		sql_subfunc *a = e->f;
+		/* `grp` might be changed before we construct the final
+ 		 * stmt_aggr, so keep its old nr in ogrp */
 		int pipeline = grp?be->pipeline:0, ogrp = grp?grp->nr:0;
 
 		assert(sel == NULL);
