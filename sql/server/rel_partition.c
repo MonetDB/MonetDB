@@ -138,10 +138,9 @@ rel_mark_partition(sql_rel *rel)
 	if (!rel)
 		return 0;
 	switch (rel->op) {
-	case op_basetable: {
+	case op_basetable:
 	case op_table:
 		return rel->partition;
-	}
 	case op_join:
 	case op_left:
 	case op_right:
@@ -388,7 +387,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 	} else if (is_set(rel->op) || is_merge(rel->op)) {
 		if (rel->l)
 			lres = rel_partition_(sql, rel->l, 0);
-		if (rel->r && !is_semi(rel->op))
+		if (rel->r)
 			rres = rel_partition_(sql, rel->r, 0);
 		if (lres == EPB)
 			rel->partition = 1;
