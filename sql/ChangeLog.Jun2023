@@ -1,3 +1,6 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Jun 16 2023 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Add MAX_MEMORY and MAX_WORKERS options to the ALTER USER statement
+
