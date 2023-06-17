@@ -1770,7 +1770,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			BATkey(b, false);
 		} else if (!b->tkey && (b->tnokey[0] == p || b->tnokey[1] == p))
 			b->tnokey[0] = b->tnokey[1] = 0;
-		if (b->tnonil && (ATOMstorage(b->ttype) != TYPE_msk || !atomnil))
+		if (b->tnonil && ATOMstorage(b->ttype) != TYPE_msk && atomnil)
 			b->tnonil = t && ATOMcmp(b->ttype, t, atomnil) != 0;
 		MT_lock_unset(&b->theaplock);
 	}
