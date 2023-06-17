@@ -3022,6 +3022,7 @@ create_col(sql_trans *tr, sql_column *c)
 		bat->cs.ts = tr->ts;
 		ok = load_cs(tr, &bat->cs, type, c->base.id);
 		if (nonull) {
+			assert(0);
 			int bid = log_find_bat(store->logger, -c->base.id);
 			if (bid <= 0)
 				return LOG_ERR;
@@ -3078,9 +3079,11 @@ create_col(sql_trans *tr, sql_column *c)
 				sql_delta *bat = ATOMIC_PTR_GET(&c->data);
 				create_delta(bat, b);
 				bat_destroy(b);
-				b = bat_new(TYPE_msk, c->t->sz, PERSISTENT);
-				bat->cs.ebid = temp_create(b);
-				bat_destroy(b);
+				if (nonull) {
+					b = bat_new(TYPE_msk, c->t->sz, PERSISTENT);
+					bat->cs.ebid = temp_create(b);
+					bat_destroy(b);
+				}
 			}
 
 			if (!new) {
