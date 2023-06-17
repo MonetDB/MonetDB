@@ -1253,6 +1253,7 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 		fmt[i].ws = 0;
 		fmt[i].quote = ssep ? ssep[0] : 0;
 		fmt[i].nullstr = ns;
+		fmt[i].nildata = ATOMnilptr(fmt[i].adt);
 		if (c->type.type->eclass == EC_DEC) {
 			fmt[i].tostr = &dec_tostr;
 			fmt[i].frstr = &dec_frstr;
