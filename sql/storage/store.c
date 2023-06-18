@@ -6236,6 +6236,8 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 		if ((res = store->storage_api.drop_col(tr, (sql_column*)dup_base(&col->base))))
 			return res;
 
+	if (isNew(col)) /* remove create from changes */
+		trans_del(tr, &col->base);
 	ol_del(t->columns, store, n);
 
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
