@@ -1,6 +1,7 @@
 ambiguous-identifiers-7372
 temp-table-foreign-key-crash-7378
 add-drop-column-crash-7381
+temp-on-savepoint-truncate-rollback-crash-7382
 recursive-trigger-crash-7383
 view-on-alias-crash-7386
 alter-inc-seq-crash-7387

@@ -4213,7 +4213,7 @@ commit_update_delta( sql_trans *tr, sql_change *change, sql_table* t, sql_base* 
 		}
 		if (!tr->parent)
 			t->base.new = base->new = 0;
-
+		change->handled = true;
 		return ok;
 	}
 	if (commit_ts)
