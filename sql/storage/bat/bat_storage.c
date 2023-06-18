@@ -4112,6 +4112,7 @@ commit_update_delta( sql_trans *tr, sql_change *change, sql_table* t, sql_base* 
 			ok = LOG_ERR; /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
 		if (!tr->parent)
 			t->base.new = base->new = 0;
+		change->handled = true;
 		return ok;
 	}
 
