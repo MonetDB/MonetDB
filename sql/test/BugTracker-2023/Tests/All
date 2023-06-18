@@ -1,3 +1,4 @@
 ambiguous-identifiers-7372
 temp-table-foreign-key-crash-7378
+view-on-alias-crash-7386
 alter-inc-seq-crash-7387
