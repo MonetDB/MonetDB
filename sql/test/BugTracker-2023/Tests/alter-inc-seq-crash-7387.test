@@ -1,1 +1,2 @@
+statement error
 ALTER SEQUENCE x INCREMENT BY 2;
