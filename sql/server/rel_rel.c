@@ -1905,11 +1905,15 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 				continue;
 			} else if (oname[0] == '%') {
 				sql_idx *i = find_sql_idx(t, oname+1);
-				cond_append(l, &i->base);
-			} else {
-				sql_column *c = find_sql_column(t, oname);
-				cond_append(l, &c->base);
+				if (i) {
+					cond_append(l, &i->base);
+					continue;
+				}
 			}
+			sql_column *c = find_sql_column(t, oname);
+			if (!c)
+				return -1;
+			cond_append(l, &c->base);
 		}
 	} break;
 	case op_table: {
