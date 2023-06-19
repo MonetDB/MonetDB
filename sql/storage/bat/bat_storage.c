@@ -4132,6 +4132,7 @@ commit_update_delta( sql_trans *tr, sql_change *change, sql_table* t, sql_base* 
 			ATOMIC_PTR_SET(data, d->next);
 		else
 			o->next = d->next;
+		d->next = NULL;
 		change->cleanup = &tc_gc_rollbacked;
 	} else if (!tr->parent) {
 		/* merge deltas */
