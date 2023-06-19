@@ -17,7 +17,7 @@ statement error
 DELETE FROM w
 
 statement ok
-COMMIT
+ROLLBACK
 
 statement ok
 SELECT 1
