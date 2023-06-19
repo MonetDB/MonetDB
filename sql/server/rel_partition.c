@@ -329,28 +329,43 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 	} else if (is_groupby(rel->op)) {
 		bool safe = rel_groupby_partition_safe(sql, rel) && !rel_is_ref(rel);
 		if (rel->l)
-                        /* When a GROUP BY is parallel-unsafe, this (sub)tree
-                         * is certainly unsafe, independent of the current 'pb' */
+                        /* In principle, we always (try to) process a GROUP BY in parallel.
+			 * When a GROUP BY is parallel-unsafe, this (sub)tree
+                         * is certainly unsafe, independent of the current 'pb'.
+			 * Otherwise, pass SPB to indicate that a `pb' should
+			 * be started in the subtree (if possible).
+			 */
 			res = rel_partition_(sql, rel->l, safe?SPB:0);
 		if (safe) {
 			rel->parallel = 1;
+			/* 'safe' means that a 'pb' should be started within
+			 * the subtree rooted at this GROUP BY.
+			 * If that hasn't been done in the subtree under this
+			 * GROUP BY yet, the GROUP BY will do that.
+			 * rel->spb = 1: start a 'pb' block at the beginning of this GROUP BY
+			 */
 			if (res == REL_PARTITION)
 				rel->spb = 1;
+			/* Msg from upper tree that a 'pb' block is needed somewhere in this subtree */
 			if (pb) {
+				/* result of this GROUP BY can/should be
+ 				 * partitioned, i.e. start a 2nd after its end.
+				 */
 				rel->partition = 1;
-				if (res)
+				if (res) // TODO: maybe we should remove this condition, since we don't care about the subtree, instead, we always want to inform upper tree that we're starting a PB here.
 					res = SPB;
 			} else
-                                /* if this group by is 'safe' and not inside
-                                 * another 'pb', then this group by is the root
-                                 * of this 'pb'. So, we need to end it. */
+				/* if this GROUP BY is 'safe' and has not
+				 * started a 2nd 'pb', end we need to End the
+				 * current 'pb'. */
 				res = EPB;
 		}
 	} else if (is_topn(rel->op)) {
-		bool safe = (rel_getcount(sql, rel->l) > 1); /* e.g. "SELECT 42 LIMIT 2" is not safe */
+		/* e.g. pp is not useful for "SELECT 42 LIMIT 2" */
+		bool pp_useful = (rel_getcount(sql, rel->l) > 1);
 		/* op_topn always has rel->l */
-		res = rel_partition_(sql, rel->l, safe?SPB:pb);
-		if (safe) {
+		res = rel_partition_(sql, rel->l, pp_useful?SPB:pb);
+		if (pp_useful) {
 			rel->parallel = 1;
 			if (res == REL_PARTITION)
 				rel->spb = 1;
@@ -361,6 +376,11 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			} else
 				res = EPB;
 		}
+		/* else: !pp_useful: either there was no 'pb' at all, or a 'pb'
+		 * has been started in the subtree (e.g. by a GROUP BY). In the
+		 * 2nd case, don't try to end the 'pb', instead, leave it to
+		 * the upper tree to end it, and this topN might be computed
+		 * multiple times */
 	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_sample(rel->op)) {
 		if (pb && (is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1))
 			return 0;
@@ -375,12 +395,20 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			res = rel_partition_(sql, rel->l, pb);
 		if (!res)
 			return 0;
+		/* We always use a 'pb' for rel->l of a semijoin. But, if this
+		 * semijoin is not inside an active 'pb' (EPB: 'pb' ended by
+		 * subtree, REL_PARTITION: 'pb' hasn't started), it needs to
+		 * start a 'pb' itself. */
 		if (res == EPB || res == REL_PARTITION) {
 			rel->partition = 1;
-			/* only start a parallel block if we're not already in one */
-			if (res == REL_PARTITION && !pb)
+			if (pb && res == REL_PARTITION) //{ TODO: seems that we should give 'res' its proper value here, which is SPB.
 				rel->spb = 1;
+				//res = SPB;
+			//}
 		}
+		// TODO: the following block code should probably be removed.
+		// 	 Instead of force returning a 0, the code above should
+		// 	 assign 'res' the proper value
 		sql_rel *r = rel->r;
 		if (!is_basetable(r->op))
 		   return 0;

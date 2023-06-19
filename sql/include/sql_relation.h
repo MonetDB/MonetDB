@@ -298,8 +298,13 @@ typedef struct relation {
 	 single:1,
 
 	 parallel:1,		/* this rel. op. should/can be run in a parallel block */
-	 partition:2,		/* partitioned using table slices (0 none/1 left/2 right) */
-	 spb:1;			/* start a parallel block */
+	 partition:2,		/* should or can the data be partitioned or not.
+				 * For a base table, this annotation applies to
+				 * the table data. For (all?) other operators,
+				 * this annotation applies to this operator's
+				 * result.
+				 * 0 (no), 1 (left relation), 2 (right relation) */
+	 spb:1;			/* start a parallel block at the beginning of this relational operator*/
 	/*
 	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice
 	 * The list is kept at rel_optimizer_private.h Please update it accordingly

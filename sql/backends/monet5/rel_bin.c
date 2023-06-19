@@ -2675,6 +2675,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *ld = NULL, *rd = NULL, *res;
 	int need_left = (rel->flag & LEFT_JOIN);
+	// TODO: GROUP BY and topN code at rel->partition, so, either the rel->spb below is an error or it means something else */
 	int neededpp = rel->spb && get_and_disable_need_pipeline(be);
 
 	if (rel->partition == 1) {
@@ -3065,6 +3066,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	left = row2cols(be, left);
 	right = row2cols(be, right);
 
+	// TODO: the correct condition here is probably: (neededpp && rel->partition && !rel->spb)
 	if (neededpp && !rel->partition) {
 		assert(0);
 		/* left or right ?? */
@@ -4163,6 +4165,9 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			}
 		}
 	}
+	/* After having finished with the GROUP BY, if needed, we start a
+	 * second pipeline() block to partition the result of this GROUP BY to
+	 * be prepared for the upper-level operators, e.g. topN. */
 	if (neededpp) {
 		set_pipeline(be, stmt_pp_start_dynamic(be, pp_dynamic_slices(be, cursub)));
 		cursub = rel2bin_slicer(be, cursub, 1);
