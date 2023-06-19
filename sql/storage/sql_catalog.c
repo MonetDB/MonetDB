@@ -48,6 +48,7 @@ trans_del(sql_trans *tr, sql_base *b)
 		if (c->obj == b) {
 			if (c->log)
 				tr->logchanges--;
+			_DELETE(c);
 			n = list_remove_node(tr->changes, NULL, n);
 		}
 	}
