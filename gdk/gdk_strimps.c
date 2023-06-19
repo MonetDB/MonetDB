@@ -785,7 +785,7 @@ BATsetstrimps(BAT *b)
 	}
 
 	if (pb->batCount < STRIMP_CREATION_THRESHOLD) {
-		GDKerror("Cannot create strimps index on columns with fewer than %ud elements\n", STRIMP_CREATION_THRESHOLD);
+		GDKerror("Cannot create strimps index on columns with fewer than " BUNFMT " elements\n", STRIMP_CREATION_THRESHOLD);
 		if (pb != b)
 			BBPunfix(pb->batCacheid);
 		return GDK_FAIL;
@@ -983,6 +983,8 @@ STRMPdestroy(BAT *b)
 				  BATDIR,
 				  BBP_physical(b->batCacheid),
 				  "tstrimps");
+		} else if (b->tstrimps == (Strimps *)2) {
+			b->tstrimps = NULL;
 		} else if (b->tstrimps != NULL) {
 			STRMPdecref(b->tstrimps, b->tstrimps->strimps.parentid == b->batCacheid);
 			b->tstrimps = NULL;

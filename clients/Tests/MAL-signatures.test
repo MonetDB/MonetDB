@@ -38755,7 +38755,7 @@ SQLalter_table;
 Catalog operation alter_table
 sqlcatalog
 alter_user
-pattern sqlcatalog.alter_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str, X_5:str, X_6:str):void 
+pattern sqlcatalog.alter_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str, X_5:str, X_6:str, X_7:lng, X_8:int):void 
 SQLalter_user;
 Catalog operation alter_user
 sqlcatalog

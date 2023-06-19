@@ -1675,7 +1675,7 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			char *y = BUNtvar(righti, p2);
 
 			if (strNil(x) || strNil(y)) {
-				vals[i] = int_nil;
+				vals[i] = bit_nil;
 				nils = true;
 			} else {
 				vals[i] = func(x, y, str_strlen(y));
@@ -1688,7 +1688,7 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			char *y = BUNtvar(righti, p2);
 
 			if (strNil(x) || strNil(y)) {
-				vals[i] = int_nil;
+				vals[i] = bit_nil;
 				nils = true;
 			} else {
 				vals[i] = func(x, y, str_strlen(y));
@@ -1801,7 +1801,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			char *x = BUNtvar(bi, p1);
 
 			if (ynil || strNil(x)) {
-				vals[i] = int_nil;
+				vals[i] = bit_nil;
 				nils = true;
 			} else {
 				vals[i] = func(x, y, ylen);
@@ -1913,7 +1913,7 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			char *y = BUNtvar(bi, p1);
 
 			if (xnil || strNil(y)) {
-				vals[i] = int_nil;
+				vals[i] = bit_nil;
 				nils = true;
 			} else {
 				vals[i] = func(x, y, str_strlen(y));
