@@ -4241,6 +4241,7 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		assert(isTempTable(t));
 		if ((ok = clear_storage(tr, t, dbat)) == LOG_OK)
 			if (commit_ts) dbat->segs->h->ts = commit_ts;
+		change->handled = true;
 		return ok;
 	}
 
