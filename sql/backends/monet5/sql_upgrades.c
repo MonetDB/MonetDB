@@ -328,17 +328,19 @@ sql_create_shp(Client c)
 	printf("Running database upgrade commands:\n%s\n", query);
 	return SQLstatementIntern(c, query, "update", true, false, NULL);
 }
+#endif
 
 static str
 sql_drop_shp(Client c)
 {
 	//Drop the old SHP procedures (upgrade from version before shpload upgrade)
-	const char *query = "drop procedure SHPattach(string); drop procedure SHPload(integer); drop procedure SHPload(integer, geometry);";
+	const char *query = "drop procedure if exists SHPattach(string) cascade;\n"
+		"drop procedure if exists SHPload(integer) cascade;\n"
+		"drop procedure if exists SHPload(integer, geometry) cascade;\n";
 	printf("Running database upgrade commands:\n%s\n", query);
 	fflush(stdout);
 	return SQLstatementIntern(c, query, "update", true, false, NULL);
 }
-#endif
 
 static str
 sql_update_generator(Client c)
@@ -5764,6 +5766,94 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_default_geom(Client c, mvc *sql, sql_schema *s)
+{
+	sql_subtype tp;
+	char *err = NULL;
+
+	/* the shp module was changed: drop the old stuff if it exists, only
+	 * add the new stuff if the appropriate module is available */
+	sql_find_subtype(&tp, "varchar", 0, 0);
+	/* Drop old SHP procedures */
+	if (sql_bind_func(sql, s->base.name, "shpattach", &tp, NULL, F_PROC, true)) {
+		if ((err = sql_drop_shp(c)) != NULL)
+			return err;
+	}
+	sql->session->status = 0; /* if the shpattach function was not found clean the error */
+	sql->errstr[0] = '\0';
+#ifdef HAVE_GEOM
+	if (backend_has_module(&(int){0}, "geom")) {
+#ifdef HAVE_SHP
+		if (backend_has_module(&(int){0}, "shp")) {
+			/* if shpload with two varchar args does not exist, add the
+			 * procedures */
+			if (!sql_bind_func(sql, s->base.name, "shpload", &tp, &tp, F_PROC, true)) {
+				sql->session->status = 0;
+				sql->errstr[0] = '\0';
+				if ((err = sql_create_shp(c)) != NULL)
+					return err;
+			}
+		}
+#endif
+		sql_find_subtype(&tp, "geometry", 0, 0);
+		if (!sql_bind_func(sql, s->base.name, "st_intersects_noindex", &tp, &tp, F_FILT, true)) {
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
+			sql_table *t;
+			if ((t = mvc_bind_table(sql, s, "geometry_columns")) != NULL)
+				t->system = 0;
+			const char *query =
+				"drop function if exists sys.st_intersects(geometry, geometry) cascade;\n"
+				"drop function if exists sys.st_dwithin(geometry, geometry, double) cascade;\n"
+				"drop view if exists sys.geometry_columns cascade;\n"
+				"drop function if exists sys.st_collect(geometry, geometry) cascade;\n"
+				"drop aggregate if exists sys.st_collect(geometry) cascade;\n"
+				"drop aggregate if exists sys.st_makeline(geometry) cascade;\n"
+				"create view sys.geometry_columns as\n"
+				" select cast(null as varchar(1)) as f_table_catalog,\n"
+				"  s.name as f_table_schema,\n"
+				"  t.name as f_table_name,\n"
+				"  c.name as f_geometry_column,\n"
+				"  cast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension,\n"
+				"  c.type_scale as srid,\n"
+				"  get_type(c.type_digits, 0) as geometry_type\n"
+				" from sys.columns c, sys.tables t, sys.schemas s\n"
+				" where c.table_id = t.id and t.schema_id = s.id\n"
+				"  and c.type in (select sqlname from sys.types where systemname in ('wkb', 'wkba'));\n"
+				"GRANT SELECT ON sys.geometry_columns TO PUBLIC;\n"
+				"CREATE FUNCTION ST_Collect(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom.\"Collect\";\n"
+				"GRANT EXECUTE ON FUNCTION ST_Collect(Geometry, Geometry) TO PUBLIC;\n"
+				"CREATE AGGREGATE ST_Collect(geom Geometry) RETURNS Geometry external name aggr.\"Collect\";\n"
+				"GRANT EXECUTE ON AGGREGATE ST_Collect(Geometry) TO PUBLIC;\n"
+				"CREATE FUNCTION ST_DistanceGeographic(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom.\"DistanceGeographic\";\n"
+				"GRANT EXECUTE ON FUNCTION ST_DistanceGeographic(Geometry, Geometry) TO PUBLIC;\n"
+				"CREATE FILTER FUNCTION ST_DWithinGeographic(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME geom.\"DWithinGeographic\";\n"
+				"GRANT EXECUTE ON FILTER ST_DWithinGeographic(Geometry, Geometry, double) TO PUBLIC;\n"
+				"CREATE FILTER FUNCTION ST_DWithin(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME rtree.\"DWithin\";\n"
+				"GRANT EXECUTE ON FILTER ST_DWithin(Geometry, Geometry, double) TO PUBLIC;\n"
+				"CREATE FILTER FUNCTION ST_DWithin_NoIndex(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME geom.\"DWithin_noindex\";\n"
+				"GRANT EXECUTE ON FILTER ST_DWithin_NoIndex(Geometry, Geometry, double) TO PUBLIC;\n"
+				"CREATE FUNCTION ST_DWithin2(geom1 Geometry, geom2 Geometry, bbox1 mbr, bbox2 mbr, dst double) RETURNS boolean EXTERNAL NAME geom.\"DWithin2\";\n"
+				"GRANT EXECUTE ON FUNCTION ST_DWithin2(Geometry, Geometry, mbr, mbr, double) TO PUBLIC;\n"
+				"CREATE FILTER FUNCTION ST_IntersectsGeographic(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom.\"IntersectsGeographic\";\n"
+				"GRANT EXECUTE ON FILTER ST_IntersectsGeographic(Geometry, Geometry) TO PUBLIC;\n"
+				"CREATE FILTER FUNCTION ST_Intersects(geom1 Geometry, geom2 Geometry) EXTERNAL NAME rtree.\"Intersects\";\n"
+				"GRANT EXECUTE ON FILTER ST_Intersects(Geometry, Geometry) TO PUBLIC;\n"
+				"CREATE FILTER FUNCTION ST_Intersects_NoIndex(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom.\"Intersects_noindex\";\n"
+				"GRANT EXECUTE ON FILTER ST_Intersects_NoIndex(Geometry, Geometry) TO PUBLIC;\n"
+				"CREATE AGGREGATE ST_MakeLine(geom Geometry) RETURNS Geometry external name aggr.\"MakeLine\";\n"
+				"GRANT EXECUTE ON AGGREGATE ST_MakeLine(Geometry) TO PUBLIC;\n"
+				"update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('st_collect', 'st_distancegeographic', 'st_dwithingeographic', 'st_dwithin', 'st_dwithin_noindex', 'st_dwithin2', 'st_intersectsgeographic', 'st_intersects', 'st_intersects_noindex', 'st_makeline');\n"
+				"update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'geometry_columns';\n";
+			printf("Running database upgrade commands:\n%s\n", query);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		}
+	}
+#endif
+	return err;
+}
+
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -5787,33 +5877,6 @@ SQLupgrades(Client c, mvc *m)
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			return -1;
-		}
-	}
-#endif
-
-#ifdef HAVE_SHP
-	//TODO FIX
-	if (backend_has_module(&(int){0}, "shp")) {
-		sql_find_subtype(&tp, "varchar", 0, 0);
-		//Drop old SHP procedures
-		if (sql_bind_func(m, s->base.name, "shpattach", &tp, NULL, F_PROC, true)) {
-			if ((err = sql_drop_shp(c)) != NULL) {
-				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-				freeException(err);
-				return -1;
-			}
-		}
-		m->session->status = 0; /* if the shpattach function was not found clean the error */
-		m->errstr[0] = '\0';
-		//Create new SHP procedures
-		if (!sql_bind_func(m, s->base.name, "shpload", &tp, &tp, F_PROC, true)) {
-			m->session->status = 0; /* if the shpload function was not found clean the error */
-			m->errstr[0] = '\0';
-			if ((err = sql_create_shp(c)) != NULL) {
-				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-				freeException(err);
-				return -1;
-			}
 		}
 	}
 #endif
@@ -5978,6 +6041,12 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_jun2023(c, m, s)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		return -1;
+	}
+
+	if ((err = sql_update_default_geom(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		return -1;
