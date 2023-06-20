@@ -234,8 +234,8 @@ format_val2json(const ValPtr res) {
 	char *buf = NULL;
 	size_t sz = 0;
 
-	if (BATatoms[res->vtype].atomNull &&
-		BATatoms[res->vtype].atomCmp(VALget(res), BATatoms[res->vtype].atomNull) == 0)
+	if (BATatoms[res->vtype].atomNull && (!VALget(res) ||
+		BATatoms[res->vtype].atomCmp(VALget(res), BATatoms[res->vtype].atomNull) == 0))
 		return GDKstrdup("\"nil\"");
 
 	bool use_external = true;

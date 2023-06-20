@@ -135,8 +135,9 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				q= updated[j];
 				if(q && getModuleId(q) == sqlRef && isUpdateInstruction(q)){
 					int c = getFunctionId(q) == claimRef;  /* claim has 2 results */
-					if ( strcmp(getVarConstant(mb,getArg(q,2+c)).val.sval, sch) == 0 &&
-						 strcmp(getVarConstant(mb,getArg(q,3+c)).val.sval, tbl) == 0 ){
+					int cl = getFunctionId(q) == clear_tableRef; /* clear table has no mvc dependency */
+					if ( strcmp(getVarConstant(mb,getArg(q,2-cl+c)).val.sval, sch) == 0 &&
+						 strcmp(getVarConstant(mb,getArg(q,3-cl+c)).val.sval, tbl) == 0 ){
 						empty[getArg(p,0)] = 0;
 						if( p->retc == 2){
 							empty[getArg(p,1)] = 0;

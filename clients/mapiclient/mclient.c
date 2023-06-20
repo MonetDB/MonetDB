@@ -78,6 +78,7 @@ static char *encoding;
 #endif
 static bool errseen = false;
 static bool allow_remote = false;
+static const char *curfile = NULL;
 
 #define setPrompt() snprintf(promptbuf, sizeof(promptbuf), "%.*s>", (int) sizeof(promptbuf) - 2, language)
 #define debugMode() (strncmp(promptbuf, "mdb", 3) == 0)
@@ -2744,8 +2745,14 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						if (s)
 							close_stream(s);
 						mnstr_printf(stderr_stream, "Cannot open %s: %s\n", line, mnstr_peek_error(NULL));
-					} else
+					} else {
+						const char *oldfile = curfile;
+						char *newfile = strdup(line);
+						curfile = newfile;
 						doFile(mid, s, 0, 0, 0);
+						curfile = oldfile;
+						free(newfile);
+					}
 					continue;
 				}
 				case '>':
@@ -3033,8 +3040,25 @@ getfile(void *data, const char *filename, bool binary,
 			}
 #endif
 		}
-		if (f == NULL)
-			return (char*) mnstr_peek_error(NULL);
+		if (f == NULL) {
+			if (curfile != NULL) {
+				char *p = strrchr(curfile, '/');
+#ifdef _MSC_VER
+				char *q = strrchr(curfile, '\\');
+				if (p == NULL || (q != NULL && q > p))
+					p = q;
+#endif
+				if (p != NULL) {
+					size_t x = (size_t) (p - curfile) + strlen(filename) + 2;
+					char *b = malloc(x);
+					snprintf(b, x, "%.*s/%s", (int) (p - curfile), curfile, filename);
+					f = binary ? open_rstream(b) : open_rastream(b);
+					free(b);
+				}
+			}
+			if (f == NULL)
+				return (char*) mnstr_peek_error(NULL);
+		}
 		while (offset > 1) {
 			s = mnstr_readline(f, buf, READSIZE);
 			if (s < 0) {
@@ -3528,7 +3552,7 @@ main(int argc, char **argv)
 	c = 0;
 	has_fileargs = optind != argc;
 
-	if (dbname == NULL && has_fileargs) {
+	if (dbname == NULL && has_fileargs && strcmp(argv[optind], "-") != 0) {
 		s = open_rastream(argv[optind]);
 		if (s == NULL || !isfile(getFile(s))) {
 			mnstr_close(s);
@@ -3538,6 +3562,8 @@ main(int argc, char **argv)
 			dbname = strdup(argv[optind]);
 			optind++;
 			has_fileargs = optind != argc;
+		} else {
+			curfile = argv[optind];
 		}
 	}
 
@@ -3710,15 +3736,18 @@ main(int argc, char **argv)
 			const char *arg = argv[optind];
 
 			if (s == NULL) {
-				if (strcmp(arg, "-") == 0)
+				if (strcmp(arg, "-") == 0) {
 					s = stdin_rastream();
-				else
+				} else {
 					s = open_rastream(arg);
+					curfile = arg;
+				}
 			}
 			if (s == NULL) {
 				mnstr_printf(stderr_stream, "%s: cannot open: %s\n", arg, mnstr_peek_error(NULL));
 				c |= 1;
 				optind++;
+				curfile = NULL;
 				continue;
 			}
 			// doFile closes 's'.

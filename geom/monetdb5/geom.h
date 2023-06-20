@@ -244,5 +244,3 @@ geom_export str wkbMBR_bat(bat* outBAT_id, bat* inBAT_id);
 
 geom_export str wkbCoordinateFromWKB_bat(bat *outBAT_id, bat *inBAT_id, int* coordinateIdx);
 geom_export str wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int* coordinateIdx);
-
-geom_export str geom_sql_upgrade(int);

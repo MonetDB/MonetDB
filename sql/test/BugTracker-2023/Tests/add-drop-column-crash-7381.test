@@ -1,0 +1,14 @@
+statement ok
+CREATE TABLE t1(unique_constraint INT PRIMARY KEY);
+
+statement ok
+START TRANSACTION;
+
+statement ok
+ALTER TABLE t1 ADD COLUMN uniq_c1_c2_c3 INT;
+
+statement ok
+ALTER TABLE t1 DROP COLUMN uniq_c1_c2_c3;
+
+statement ok
+COMMIT;

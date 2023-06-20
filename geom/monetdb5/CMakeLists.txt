@@ -24,7 +24,6 @@ if(GEOS_FOUND)
     PRIVATE
     geom.c
     geomBulk.c
-    geom_upgrade.c
     ${MONETDB_CURRENT_SQL_SOURCES}
     PUBLIC
     ${geomodule_public_headers})
