@@ -509,6 +509,32 @@ bind_merge_table_rewrite(visitor *v, global_props *gp)
 	return gp->needs_mergetable_rewrite ? rel_merge_table_rewrite : NULL;
 }
 
+static sql_exp*
+exp_is_predicate(visitor *v, sql_rel *d, sql_exp *e, int depth)
+{
+	(void)d;
+	(void)depth;
+	if (v->changes == -1)
+		return e;
+	if (e->type == e_cmp && !e->f && exp_refers(v->data, e->l)) {
+		if (e->semantics)
+			v->changes = -1;
+		else
+			v->changes = 1;
+	}
+	return e;
+}
+
+static int
+attr_is_predicate(mvc *sql, list *exps, sql_exp *a)
+{
+	visitor v = { .sql = sql, .data=a };
+
+	(void)exps_exp_visitor_topdown(&v, NULL, exps, 0, &exp_is_predicate, false);
+	if (v.changes == 1)
+		return 1;
+	return 0;
+}
 
 static sql_rel *
 rel_setjoins_2_joingroupby_(visitor *v, sql_rel *rel)
@@ -535,7 +561,7 @@ rel_setjoins_2_joingroupby_(visitor *v, sql_rel *rel)
 			assert(needed || !list_empty(rel->attr));
 			sql_exp *nequal = NULL;
 			sql_exp *lid = NULL, *rid = NULL;
-			sql_rel *l = rel->l, *p = rel;
+			sql_rel *l = rel->l, *p = rel, *r = rel->r;
 			sql_rel *pp = NULL; /* maybe one project in between (TODO keep list) */
 
 			if (me && rel->op == op_left) {
@@ -568,6 +594,7 @@ rel_setjoins_2_joingroupby_(visitor *v, sql_rel *rel)
 
 			list *aexps = sa_list(v->sql->sa);
 			if (!list_empty(rel->exps)) {
+				int cnt = list_length(rel->exps);
 				for (node *n = rel->exps->h; n;) {
 					node *next = n->next;
 					sql_exp *e = n->data;
@@ -585,7 +612,10 @@ rel_setjoins_2_joingroupby_(visitor *v, sql_rel *rel)
 						}
 						append(aexps, ne);
 						nequal = ne;
-						list_remove_node(rel->exps, NULL, n);
+						if (cnt == 1 && rel->op == op_left && e->flag == mark_in && v->parent && (!is_project(v->parent->op) && (list_length(rel->attr) == 1 && attr_is_predicate(v->sql, v->parent->exps, rel->attr->h->data))) && r->l)
+							e->flag = cmp_equal; /* just keep join condition as a prefilter */
+						else
+							list_remove_node(rel->exps, NULL, n);
 					}
 					n = next;
 				}
