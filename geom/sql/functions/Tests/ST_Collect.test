@@ -1,0 +1,184 @@
+# column aggregation
+
+## points
+query T rowsort
+SELECT
+    ST_COLLECT(pts)
+FROM (
+    VALUES
+        (ST_GeomFromText('POINT(1 1)')),
+        (ST_GeomFromText('POINT(2 2)'))
+) AS REL(pts)
+----
+MULTIPOINT (1 1, 2 2)
+
+## lines
+query T rowsort
+SELECT
+    ST_COLLECT(lns)
+FROM (
+    VALUES
+        (ST_GeomFromText('LINESTRING(10 20, 30 40, 60 40, 10 20)')),
+        (ST_GeomFromText('LINESTRING(10 10, 50 50)'))
+) AS REL(lns)
+----
+MULTILINESTRING ((10 20, 30 40, 60 40, 10 20), (10 10, 50 50))
+
+## polygons
+query T rowsort
+SELECT
+    ST_COLLECT(pgs)
+FROM (
+    VALUES
+        (ST_GeomFromText('POLYGON((10 10, 30 40, 50 50, 40 30, 10 10))')),
+        (ST_GeomFromText('POLYGON( EMPTY )')),
+        (ST_GeomFromText('POLYGON((30 30, 30 50, 50 30, 30 30))'))
+) AS REL(pgs)
+----
+MULTIPOLYGON (((10 10, 30 40, 50 50, 40 30, 10 10)), EMPTY, ((30 30, 30 50, 50 30, 30 30)))
+
+## multi-types
+query T rowsort
+SELECT
+    ST_COLLECT(pgs)
+FROM (
+    VALUES
+        (ST_GeomFromText('MULTIPOLYGON (((10 10, 30 40, 50 50, 40 30, 10 10)), EMPTY, ((30 30, 30 50, 50 30, 30 30)))')),
+        (ST_GeomFromText('MULTILINESTRING ((10 20, 30 40, 60 40, 10 20), (10 10, 50 50))')),
+        (ST_GeomFromText('POLYGON((30 30, 30 50, 50 30, 30 30))'))
+) AS REL(pgs)
+----
+GEOMETRYCOLLECTION (MULTIPOLYGON (((10 10, 30 40, 50 50, 40 30, 10 10)), EMPTY, ((30 30, 30 50, 50 30, 30 30))), MULTILINESTRING ((10 20, 30 40, 60 40, 10 20), (10 10, 50 50)), POLYGON ((30 30, 30 50, 50 30, 30 30)))
+
+query T rowsort
+SELECT
+    ST_COLLECT(pgs)
+FROM (
+    VALUES
+        (ST_GeomFromText('MULTIPOLYGON (((10 10, 30 40, 50 50, 40 30, 10 10)), EMPTY, ((30 30, 30 50, 50 30, 30 30)))')),
+        (ST_GeomFromText('MULTIPOLYGON (((10 10, 30 40, 50 50, 40 30, 10 10)))')),
+        (ST_GeomFromText('MULTIPOLYGON( EMPTY )'))
+) AS REL(pgs)
+----
+GEOMETRYCOLLECTION (MULTIPOLYGON (((10 10, 30 40, 50 50, 40 30, 10 10)), EMPTY, ((30 30, 30 50, 50 30, 30 30))), MULTIPOLYGON (((10 10, 30 40, 50 50, 40 30, 10 10))), MULTIPOLYGON EMPTY)
+
+# per row aggregation
+
+## points-points 
+query T rowsort
+SELECT
+    ST_COLLECT(p1, p2) AS points
+FROM (
+    VALUES
+        (
+            ST_GeomFromText('POINT(1 2)'),
+            ST_GeomFromText('POINT(3 4)')
+        ),
+        (
+            ST_GeomFromText('POINT(10 20)'),
+            ST_GeomFromText('POINT(30 40)')
+        )
+) AS REL(p1, p2)
+----
+MULTIPOINT (1 2, 3 4)
+MULTIPOINT (10 20, 30 40)
+
+## points-lines
+query T rowsort
+SELECT
+    ST_COLLECT(p1, p2) AS points
+FROM (
+    VALUES
+        (
+            ST_GeomFromText('POINT(1 2)'),
+            ST_GeomFromText('LINESTRING(10 20, 30 40, 60 40, 10 20)')
+        ),
+        (
+            ST_GeomFromText('POINT(10 20)'),
+            ST_GeomFromText('LINESTRING(10 10, 50 50)')
+        )
+) AS REL(p1, p2)
+----
+GEOMETRYCOLLECTION (POINT (1 2), LINESTRING (10 20, 30 40, 60 40, 10 20))
+GEOMETRYCOLLECTION (POINT (10 20), LINESTRING (10 10, 50 50))
+
+## points-polygons
+query T rowsort
+SELECT
+    ST_COLLECT(p1, p2) AS points
+FROM (
+    VALUES
+        (
+            ST_GeomFromText('POINT(1 2)'),
+            ST_GeomFromText('POLYGON( EMPTY )')
+        ),
+        (
+            ST_GeomFromText('POINT(10 20)'),
+            ST_GeomFromText('POLYGON((10 10, 30 40, 50 50, 40 30, 10 10))')
+        )
+) AS REL(p1, p2)
+----
+GEOMETRYCOLLECTION (POINT (1 2), POLYGON EMPTY)
+GEOMETRYCOLLECTION (POINT (10 20), POLYGON ((10 10, 30 40, 50 50, 40 30, 10 10)))
+
+## lines-lines
+query T rowsort
+SELECT
+    ST_COLLECT(p1, p2) AS points
+FROM (
+    VALUES
+        (
+            ST_GeomFromText('LINESTRING(0 0, 30 30, 40 40)'),
+            ST_GeomFromText('LINESTRING(10 20, 30 40, 60 40, 10 20)')
+        ),
+        (
+            ST_GeomFromText('LINESTRING(10 20, 30 40, 60 40, 10 20)'),
+            ST_GeomFromText('LINESTRING(10 10, 50 50)')
+        )
+) AS REL(p1, p2)
+----
+MULTILINESTRING ((0 0, 30 30, 40 40), (10 20, 30 40, 60 40, 10 20))
+MULTILINESTRING ((10 20, 30 40, 60 40, 10 20), (10 10, 50 50))
+
+## lines-polygons
+query T rowsort
+SELECT
+    ST_COLLECT(p1, p2) AS points
+FROM (
+    VALUES
+        (
+            ST_GeomFromText('LINESTRING(0 0, 30 30, 40 40)'),
+            ST_GeomFromText('POLYGON( EMPTY )')
+        ),
+        (
+            ST_GeomFromText('LINESTRING(10 20, 30 40, 60 40, 10 20)'),
+            ST_GeomFromText('POLYGON((10 10, 30 40, 50 50, 40 30, 10 10))')
+        ),
+        (
+            ST_GeomFromText('LINESTRING(0 0, 1 1)'),
+            ST_GeomFromText('POLYGON((10 10, 30 40, 50 50, 40 30, 10 10))')
+        )
+) AS REL(p1, p2)
+----
+GEOMETRYCOLLECTION (LINESTRING (0 0, 1 1), POLYGON ((10 10, 30 40, 50 50, 40 30, 10 10)))
+GEOMETRYCOLLECTION (LINESTRING (0 0, 30 30, 40 40), POLYGON EMPTY)
+GEOMETRYCOLLECTION (LINESTRING (10 20, 30 40, 60 40, 10 20), POLYGON ((10 10, 30 40, 50 50, 40 30, 10 10)))
+
+## polygons-polygons
+query T rowsort
+SELECT
+    ST_COLLECT(p1, p2) AS points
+FROM (
+    VALUES
+        (
+            ST_GeomFromText('POLYGON((10 10, 30 40, 50 50, 40 30, 10 10))'),
+            ST_GeomFromText('POLYGON( EMPTY )')
+        ),
+        (
+            ST_GeomFromText('POLYGON((30 30, 30 50, 50 30, 30 30))'),
+            ST_GeomFromText('POLYGON((30 20, 40 50, 50 30, 50 50, 30 20))')
+        )
+) AS REL(p1, p2)
+----
+MULTIPOLYGON (((10 10, 30 40, 50 50, 40 30, 10 10)), EMPTY)
+MULTIPOLYGON (((30 30, 30 50, 50 30, 30 30)), ((30 20, 40 50, 50 30, 50 50, 30 20)))

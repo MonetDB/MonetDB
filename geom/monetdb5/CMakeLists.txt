@@ -12,6 +12,7 @@ if(GEOS_FOUND)
   add_library(geomodule MODULE)
 
   set(include_sql_files
+    39_spatial_ref_sys
     40_geom)
 
   create_include_object(
@@ -23,6 +24,8 @@ if(GEOS_FOUND)
   target_sources(geomodule
     PRIVATE
     geom.c
+    geod.c
+    geom_atoms.c
     geomBulk.c
     ${MONETDB_CURRENT_SQL_SOURCES}
     PUBLIC

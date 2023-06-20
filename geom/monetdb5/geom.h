@@ -34,6 +34,7 @@
 #define geom_export extern
 #endif
 
+wkb * geos2wkb(const GEOSGeometry *geosGeometry);
 
 /* general functions */
 geom_export str geoHasZ(int* res, int* info);
@@ -41,9 +42,6 @@ geom_export str geoHasM(int* res, int* info);
 geom_export str geoGetType(char** res, int* info, int* flag);
 
 geom_export str geom_epilogue(void *ret);
-
-geom_export str mbrFromString(mbr **w, const char **src);
-geom_export str wkbIsnil(bit *r, wkb **v);
 
 /* functions that are used when a column is added to an existing table */
 geom_export str mbrFromMBR(mbr **w, mbr **src);
@@ -105,6 +103,7 @@ geom_export str wkbRelate(bit*, wkb**, wkb**, str*);
 geom_export str wkbCovers(bit *out, wkb **geomWKB_a, wkb **geomWKB_b);
 geom_export str wkbCoveredBy(bit *out, wkb **geomWKB_a, wkb **geomWKB_b);
 geom_export str wkbDWithin(bit*, wkb**, wkb**, dbl*);
+geom_export str wkbDWithinMbr(bit*, wkb**, wkb**, mbr**, mbr**, dbl*);
 
 //LocateAlong
 //LocateBetween
@@ -131,7 +130,9 @@ geom_export str wkbEnvelope(wkb **out, wkb **geom);
 geom_export str wkbEnvelopeFromCoordinates(wkb** out, dbl* xmin, dbl* ymin, dbl* xmax, dbl* ymax, int* srid);
 geom_export str wkbMakePolygon(wkb** out, wkb** external, bat* internalBAT_id, int* srid);
 geom_export str wkbMakeLine(wkb**, wkb**, wkb**);
-geom_export str wkbMakeLineAggr(wkb** outWKB, bat* inBAT_id);
+geom_export str wkbMakeLineAggr (wkb **out, bat *bid);
+geom_export str wkbMakeLineAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
+geom_export str wkbMakeLineAggrSubGroupedCand(bat* outid, const bat* bid, const bat* gid, const bat* eid, const bat* sid, const bit* skip_nils);
 geom_export str wkbExteriorRing(wkb**, wkb**);
 geom_export str wkbInteriorRingN(wkb**, wkb**, int*);
 
@@ -170,7 +171,17 @@ geom_export str wkbGeometryN_bat(bat *outBAT_id, bat *inBAT_id, const int* flag)
 geom_export str wkbNumGeometries(int* out, wkb** geom);
 geom_export str wkbNumGeometries_bat(bat *outBAT_id, bat *inBAT_id);
 
+#ifdef HAVE_PROJ
+str transformPoint(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P);
+str transformLine(GEOSCoordSeq *gcs_new, const GEOSGeometry *geosGeometry, PJ *P);
+str transformLineString(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P);
+str transformLinearRing(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P);
+str transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P, int srid);
+str transformMultiGeometry(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P, int srid, int geometryType);
+#endif
 geom_export str wkbTransform(wkb**, wkb**, int*, int*, char**, char**);
+geom_export str wkbTransform_bat(bat *outBAT_id, bat *inBAT_id, int *srid_src, int *srid_dst, char **proj4_src_str, char **proj4_dst_str);
+geom_export str wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, int *srid_dst, char **proj4_src_str, char **proj4_dst_str);
 geom_export str wkbTranslate(wkb**, wkb**, dbl*, dbl*, dbl*);
 geom_export str wkbDelaunayTriangles(wkb**, wkb**, dbl*, int*);
 geom_export str wkbPointOnSurface(wkb**, wkb**);
@@ -181,43 +192,6 @@ geom_export str wkbDump(bat* idBAT_id, bat* geomBAT_id, wkb**);
 geom_export str wkbDumpPoints(bat* idBAT_id, bat* geomBAT_id, wkb**);
 
 geom_export str geom_2_geom(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID);
-
-geom_export str wkbMBR(mbr **res, wkb **geom);
-
-geom_export str wkbBox2D(mbr** box, wkb** point1, wkb** point2);
-geom_export str wkbBox2D_bat(bat* outBAT_id, bat *aBAT_id, bat *bBAT_id);
-
-geom_export str mbrOverlaps(bit *out, mbr **b1, mbr **b2);
-geom_export str mbrOverlaps_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrAbove(bit *out, mbr **b1, mbr **b2);
-geom_export str mbrAbove_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrBelow(bit *out, mbr **b1, mbr **b2);
-geom_export str mbrBelow_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrLeft(bit *out, mbr **b1, mbr **b2);
-geom_export str mbrLeft_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrRight(bit *out, mbr **b1, mbr **b2);
-geom_export str mbrRight_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrOverlapOrAbove(bit *out, mbr **b1, mbr **b2);
-geom_export str mbrOverlapOrAbove_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrOverlapOrBelow(bit *out, mbr **b1, mbr **b2);
-geom_export str mbrOverlapOrBelow_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrOverlapOrLeft(bit *out, mbr **b1, mbr **b2);
-geom_export str mbrOverlapOrLeft_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrOverlapOrRight(bit *out, mbr **b1, mbr **b2);
-geom_export str mbrOverlapOrRight_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrContains(bit *out, mbr **b1, mbr **b2);
-geom_export str mbrContains_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrContained(bit *out, mbr **b1, mbr **b2);
-geom_export str mbrContained_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrEqual(bit *out, mbr **b1, mbr **b2);
-geom_export str mbrEqual_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrDistance(dbl *out, mbr **b1, mbr **b2);
-geom_export str mbrDistance_wkb(dbl *out, wkb **geom1WKB, wkb **geom2WKB);
-
-geom_export str wkbCoordinateFromWKB(dbl*, wkb**, int*);
-geom_export str wkbCoordinateFromMBR(dbl*, mbr**, int*);
-
-geom_export str ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY);
 
 /* BULK */
 
@@ -244,3 +218,21 @@ geom_export str wkbMBR_bat(bat* outBAT_id, bat* inBAT_id);
 
 geom_export str wkbCoordinateFromWKB_bat(bat *outBAT_id, bat *inBAT_id, int* coordinateIdx);
 geom_export str wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int* coordinateIdx);
+
+geom_export str wkbIntersectsJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate, bit *anti);
+geom_export str wkbIntersectsSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti);
+
+geom_export str wkbIntersectsJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate, bit *anti);
+geom_export str wkbIntersectsSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti);
+
+geom_export str wkbDWithinJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, double *distance, bit *nil_matches, lng *estimate, bit *anti);
+geom_export str wkbDWithinSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, double *distance, bit *anti);
+
+geom_export str wkbDWithinJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, double *distance, bit *nil_matches, lng *estimate, bit *anti);
+geom_export str wkbDWithinSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, double *distance, bit *anti);
+
+geom_export str mbrIntersects(bit* out, mbr** mbr1, mbr** mbr2);
+
+geom_export str wkbCollectAggr (wkb **out, const bat *bid);
+geom_export str wkbCollectAggrSubGrouped(bat *out, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
+geom_export str wkbCollectAggrSubGroupedCand(bat* outid, const bat* bid, const bat* gid, const bat* eid, const bat* sid, const bit* skip_nils);

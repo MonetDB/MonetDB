@@ -197,6 +197,7 @@
 #cmakedefine HAVE_LIBR 1
 #cmakedefine RHOME "@RHOME@"
 #cmakedefine HAVE_GEOM 1
+#cmakedefine HAVE_RTREE 1
 #cmakedefine HAVE_SHP 1
 #cmakedefine HAVE_LIBPY3 1
 

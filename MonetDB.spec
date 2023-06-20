@@ -118,7 +118,7 @@ BuildRequires: pkgconfig(readline)
 BuildRequires: pkgconfig(cfitsio)
 %endif
 %if %{with geos}
-BuildRequires: geos-devel >= 3.4.0
+BuildRequires: geos-devel >= 3.10.0
 %endif
 BuildRequires: pkgconfig(libcurl)
 BuildRequires: pkgconfig(liblzma)

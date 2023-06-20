@@ -355,6 +355,13 @@ gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *for
 #include "stream.h"
 #include "mstring.h"
 
+#ifdef HAVE_RTREE
+#ifndef SIZEOF_RTREE_COORD_T
+#define SIZEOF_RTREE_COORD_T 4
+#endif
+#include <rtree.h>
+#endif
+
 #undef MIN
 #undef MAX
 #define MAX(A,B)	((A)<(B)?(B):(A))
@@ -567,6 +574,10 @@ typedef struct Hash Hash;
 typedef struct Imprints Imprints;
 typedef struct Strimps Strimps;
 
+#ifdef HAVE_RTREE
+typedef struct RTree RTree;
+#endif
+
 /*
  * @+ Binary Association Tables
  * Having gone to the previous preliminary definitions, we will now
@@ -727,6 +738,9 @@ typedef struct {
 	BUN baseoff;		/* offset in heap->base (in whole items) */
 	Heap *vheap;		/* space for the varsized data. */
 	Hash *hash;		/* hash table */
+#ifdef HAVE_RTREE
+	RTree *rtree;		/* rtree geometric index */
+#endif
 	Imprints *imprints;	/* column imprints index */
 	Heap *orderidx;		/* order oid index */
 	Strimps *strimps;	/* string imprint index  */
@@ -823,7 +837,9 @@ typedef struct BAT {
 #define timprints	T.imprints
 #define tprops		T.props
 #define tstrimps	T.strimps
-
+#ifdef HAVE_RTREE
+#define trtree		T.rtree
+#endif
 
 /* some access functions for the bitmask type */
 static inline void
@@ -1884,6 +1900,28 @@ gdk_export BAT *STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 gdk_export void STRMPdestroy(BAT *b);
 gdk_export bool BAThasstrimps(BAT *b);
 gdk_export gdk_return BATsetstrimps(BAT *b);
+
+/* Rtree structure functions */
+#ifdef HAVE_RTREE
+//TODO REMOVE
+typedef struct mbr_t {
+	float xmin;
+	float ymin;
+	float xmax;
+	float ymax;
+
+} mbr_t;
+
+gdk_export bool RTREEexists(BAT *b);
+gdk_export bool RTREEexists_bid(bat *bid);
+gdk_export gdk_return BATrtree(BAT *wkb, BAT* mbr);
+gdk_export BUN* RTREEsearch(BAT *b, mbr_t *inMBR, int result_limit);
+gdk_export void RTREEdecref(BAT *b);
+gdk_export void RTREEincref(BAT *b);
+#endif
+
+gdk_export void RTREEdestroy(BAT *b);
+gdk_export void RTREEfree(BAT *b);
 
 /* The ordered index structure */
 
