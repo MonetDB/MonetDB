@@ -1410,6 +1410,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 			mskSetVal(b, updid, Tmskval(&ni, i));
 		}
+		bi = bat_iterator_nolock(b);
 	} else if (autoincr) {
 		if (pos < b->hseqbase ||
 		    (!mayappend && pos + ni.count > hseqend)) {
@@ -1438,6 +1439,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			bat_iterator_end(&ni);
 			return GDK_FAIL;
 		}
+		bi = bat_iterator_nolock(b);
 
 		/* we copy all of n, so if there are nils in n we get
 		 * nils in b (and else we don't know) */

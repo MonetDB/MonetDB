@@ -27,7 +27,6 @@ if(GEOS_FOUND)
     geod.c
     geom_atoms.c
     geomBulk.c
-    geom_upgrade.c
     ${MONETDB_CURRENT_SQL_SOURCES}
     PUBLIC
     ${geomodule_public_headers})
