@@ -171,7 +171,7 @@ if(CFITSIO_FOUND)
 endif()
 
 if(GEOS_FOUND)
-  LIST(APPEND buildrequireslist "geos-devel > 3.8.0")
+  LIST(APPEND buildrequireslist "geos-devel >= 3.10.0")
 endif()
 
 if(CURL_FOUND)
