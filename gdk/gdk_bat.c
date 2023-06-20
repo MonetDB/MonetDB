@@ -2718,7 +2718,7 @@ BATassertProps(BAT *b)
 		} else {
 			if (b->tvheap != NULL) {
 				/* candidate list with exceptions */
-				assert(b->batRole == TRANSIENT);
+				assert(b->batRole == TRANSIENT || b->batRole == SYSTRANS);
 				assert(b->tvheap->free <= b->tvheap->size);
 				assert(b->tvheap->free >= sizeof(ccand_t));
 				assert((negoid_cand(b) && ccand_free(b) % SIZEOF_OID == 0) || mask_cand(b));
