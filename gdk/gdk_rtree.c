@@ -274,7 +274,7 @@ RTREEdestroy(BAT *b)
 		pb->trtree->destroy = true;
 		RTREEdecref(pb);
 		//If the farm is in-memory, don't unlink the file (there is no file in that case)
-		if (!GDKinmemory(pb->theap->farmid)) {
+		if (pb->theap && !GDKinmemory(pb->theap->farmid)) {
 			GDKunlink(pb->theap->farmid,
 			  	BATDIR,
 			  	BBP_physical(b->batCacheid),
