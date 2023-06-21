@@ -98,6 +98,22 @@ Test\bu09
 default_pipe
 1
 
+-- alter max_memory and max_workers
+statement ok
+alter user testu06 no max_memory max_workers 456
+
+statement ok
+alter user testu07 max_memory 999999 no max_workers
+
+query TII rowsort
+select name, max_memory, max_workers from sys.users where name in ('testu06', 'testu07')
+----
+testu06
+0
+456
+testu07
+999999
+0
 
 --cleanup
 statement ok

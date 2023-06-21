@@ -587,6 +587,7 @@ BATclear(BAT *b, bool force)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	STRMPdestroy(b);
+	RTREEdestroy(b);
 	PROPdestroy(b);
 
 	bat tvp = 0;
@@ -678,6 +679,7 @@ BATfree(BAT *b)
 	IMPSfree(b);
 	OIDXfree(b);
 	STRMPfree(b);
+	RTREEfree(b);
 	MT_lock_set(&b->theaplock);
 	if (b->tident && !default_ident(b->tident))
 		GDKfree(b->tident);
@@ -1380,6 +1382,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
 	STRMPdestroy(b); 	/* TODO: use STRMPappendBitstring */
+	RTREEdestroy(b);
 	return GDK_SUCCEED;
 }
 
@@ -1624,6 +1627,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		OIDXdestroy(b);
 		IMPSdestroy(b);
 		STRMPdestroy(b);
+		RTREEdestroy(b);
 
 		if (b->tvheap && b->ttype) {
 			var_t _d;
@@ -2718,7 +2722,7 @@ BATassertProps(BAT *b)
 		} else {
 			if (b->tvheap != NULL) {
 				/* candidate list with exceptions */
-				assert(b->batRole == TRANSIENT);
+				assert(b->batRole == TRANSIENT || b->batRole == SYSTRANS);
 				assert(b->tvheap->free <= b->tvheap->size);
 				assert(b->tvheap->free >= sizeof(ccand_t));
 				assert((negoid_cand(b) && ccand_free(b) % SIZEOF_OID == 0) || mask_cand(b));

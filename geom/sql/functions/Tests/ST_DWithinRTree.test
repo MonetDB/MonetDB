@@ -1,0 +1,96 @@
+# Geometric Intersects RTree
+
+## Point - Polygon
+query T rowsort
+SELECT
+    geom
+FROM geometries
+WHERE
+    [ST_POINT(10,10)]
+    ST_DWITHIN
+    [geom, 5]
+----
+POLYGON ((10 10, 20 10, 20 20, 10 20, 10 10))
+POLYGON ((10 10, 20 10, 10 20, 10 10))
+POLYGON ((0 20, 10 20, 20 20, 20 10, 0 20))
+
+query T rowsort
+SELECT
+    geom
+FROM geometries
+WHERE
+    [ST_POINT(15,10)]
+    ST_DWITHIN
+    [geom,5]
+----
+POLYGON ((10 10, 20 10, 20 20, 10 20, 10 10))
+POLYGON ((10 10, 20 10, 10 20, 10 10))
+POLYGON ((10 20, 20 10, 20 20, 10 20))
+POLYGON ((0 20, 10 20, 20 20, 20 10, 0 20))
+
+query T rowsort
+SELECT
+    geom
+FROM geometries
+WHERE
+    [ST_POINT(15,15)]
+    ST_DWITHIN
+    [geom,0]
+----
+POLYGON ((10 10, 20 10, 20 20, 10 20, 10 10))
+POLYGON ((10 10, 20 10, 10 20, 10 10))
+POLYGON ((10 20, 20 10, 20 20, 10 20))
+POLYGON ((0 20, 10 20, 20 20, 20 10, 0 20))
+
+query T rowsort
+SELECT
+    geom
+FROM geometries
+WHERE
+    [ST_POINT(17.5,17.5)]
+    ST_DWITHIN 
+    [geom,2]
+----
+POLYGON ((10 10, 20 10, 20 20, 10 20, 10 10))
+POLYGON ((10 20, 20 10, 20 20, 10 20))
+POLYGON ((0 20, 10 20, 20 20, 20 10, 0 20))
+
+query T rowsort
+SELECT
+    geom
+FROM geometries
+WHERE
+    [ST_POINT(5,15)]
+    ST_DWITHIN 
+    [geom,3]
+----
+POLYGON ((0 20, 10 20, 20 20, 20 10, 0 20))
+
+## Line - Polygon
+query T rowsort
+SELECT
+    geom
+FROM geometries
+WHERE
+    [ST_GEOMFROMTEXT('LINESTRING (0 0, 15 15)')]
+    ST_DWITHIN 
+    [geom,0]
+----
+POLYGON ((10 10, 20 10, 20 20, 10 20, 10 10))
+POLYGON ((10 10, 20 10, 10 20, 10 10))    
+POLYGON ((10 20, 20 10, 20 20, 10 20))
+POLYGON ((0 20, 10 20, 20 20, 20 10, 0 20))  
+
+query T rowsort
+SELECT
+    geom
+FROM geometries
+WHERE
+    [ST_GEOMFROMTEXT('LINESTRING(5 5, 10 15)')]
+    ST_INTERSECTS
+    [geom,4]
+----
+POLYGON ((10 10, 20 10, 20 20, 10 20, 10 10))
+POLYGON ((10 10, 20 10, 10 20, 10 10))    
+POLYGON ((10 20, 20 10, 20 20, 10 20))
+POLYGON ((0 20, 10 20, 20 20, 20 10, 0 20))  

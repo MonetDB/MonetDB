@@ -1,0 +1,8 @@
+statement ok
+CREATE TABLE a (p_id INT, p_name BLOB)
+
+statement ok
+INSERT INTO a VALUES (1,NULL);
+
+statement error
+select * from a where p_name='Lilu'

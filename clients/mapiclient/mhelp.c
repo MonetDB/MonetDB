@@ -83,9 +83,10 @@ SQLhelp sqlhelp1[] = {
 	 "Change a user's login name or password or default schema",
 	 "ALTER USER ident RENAME TO ident\n"
 	 "ALTER USER SET [ENCRYPTED | UNENCRYPTED] PASSWORD string USING OLD PASSWORD string\n"
-	 "ALTER USER ident WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string\n"
-	 "ALTER USER ident [WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string] SET SCHEMA ident\n"
-	 "ALTER USER ident [WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string] SCHEMA PATH string [DEFAULT ROLE ident]",
+	 "ALTER USER ident\n"
+	 "    [WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string]\n"
+	 "    [SET SCHEMA ident] [SCHEMA PATH string] [DEFAULT ROLE ident]\n"
+	 "    [MAX_MEMORY posbytes | NO MAX_MEMORY] [MAX_WORKERS poscount | NO MAX_WORKERS]",
 	 "ident",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/"},
 	{"ANALYZE",
@@ -249,7 +250,8 @@ SQLhelp sqlhelp1[] = {
 	{"CREATE USER",
 	 "Create a new database user",
 	 "CREATE USER ident WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string NAME string [SCHEMA ident] [SCHEMA PATH string]\n"
-	 "[MAX_MEMORY poslng] [MAX_WORKERS posint] [OPTIMIZER string] [DEFAULT ROLE ident]",
+	 "[MAX_MEMORY posbytes | NO MAX_MEMORY] [MAX_WORKERS poscount | NO MAX_WORKERS]\n"
+	 "[OPTIMIZER string] [DEFAULT ROLE ident]",
 	 "ident",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/"},
 	{"CREATE VIEW",

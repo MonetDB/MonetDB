@@ -469,7 +469,7 @@ monet5_schema_has_user(ptr _mvc, sql_schema *s)
 
 static int
 monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str schema_path, str oldpasswd, sqlid
-		role_id)
+		role_id, lng max_memory, int max_workers)
 {
 	mvc *m = (mvc *) _mvc;
 	Client c = MCgetClient(m->clientid);
@@ -482,7 +482,7 @@ monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str
 	sql_table *info = find_sql_table(m->session->tr, sys, "db_user_info");
 	sql_column *users_name = find_sql_column(info, "name");
 
-	if (schema_id || schema_path || role_id) {
+	if (schema_id || schema_path || role_id || max_memory > -1 || max_workers > -1) {
 		rid = store->table_api.column_find_row(m->session->tr, users_name, user, NULL);
 		// user should be checked here since the way `ALTER USER ident ...` stmt is
 		if (is_oid_nil(rid)) {
@@ -606,7 +606,26 @@ monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str
 							res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 			return (FALSE);
 		}
+	}
 
+	if (max_memory > -1) {
+		sql_column *users_max_memory = find_sql_column(info, "max_memory");
+
+		if ((res = store->table_api.column_update_value(m->session->tr, users_max_memory, rid, &max_memory))) {
+			(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: failed%s",
+							res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+			return (FALSE);
+		}
+	}
+
+	if (max_workers > -1) {
+		sql_column *users_max_workers = find_sql_column(info, "max_workers");
+
+		if ((res = store->table_api.column_update_value(m->session->tr, users_max_workers, rid, &max_workers))) {
+			(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: failed%s",
+							res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+			return (FALSE);
+		}
 	}
 
 	return TRUE;

@@ -219,6 +219,7 @@ const char *revoke_rolesRef;
 const char *row_numberRef;
 const char *rpcRef;
 const char *rsColumnRef;
+const char *rtreeRef;
 const char *sampleRef;
 const char *selectNotNilRef;
 const char *selectRef;
@@ -474,6 +475,7 @@ void optimizerInit(void)
 	row_numberRef = putName("row_number");
 	rpcRef = putName("rpc");
 	rsColumnRef = putName("rsColumn");
+	rtreeRef = putName("rtree");
 	sampleRef= putName("sample");
 	selectNotNilRef = putName("selectNotNil");
 	selectRef = putName("select");

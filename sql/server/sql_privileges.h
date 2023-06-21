@@ -44,7 +44,7 @@ extern int sql_schema_has_user(mvc *m, sql_schema *s);
 
 extern char * sql_create_user(mvc *sql, char *user, char *passwd, bool enc, char *fullname, char *schema, char *schema_path, lng max_memory, int max_workers, char *optimizer, char *default_role);
 extern char * sql_drop_user(mvc *sql, char *user);
-extern char * sql_alter_user(mvc *sql, char *user, char *passwd, bool enc, char *schema, char *schema_path, char *oldpasswd, char *role);
+extern char * sql_alter_user(mvc *sql, char *user, char *passwd, bool enc, char *schema, char *schema_path, char *oldpasswd, char *role, lng max_memory, int max_workers);
 extern char * sql_rename_user(mvc *sql, char *olduser, char *newuser);
 
 #endif /*_SQL_PRIV_H_ */
