@@ -860,6 +860,30 @@ fi
 %endif
 
 %changelog
+* Thu Jun 22 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.3-20230622
+- Rebuilt.
+- GH#7344: Database upgrade failure due to user object dependency on
+  system procedure
+- GH#7378: MonetDB server crashes at sql_trans_copy_key
+- GH#7379: MonetDB server 11.46.0 crashes at cs_bind_ubat
+- GH#7380: MonetDB server 11.46.0 crashes at `BLOBcmp`
+- GH#7381: MonetDB server 11.46.0 crashes at `log_create_delta`
+- GH#7382: MonetDB server 11.46.0 crashes at `gc_col`
+- GH#7383: MonetDB server 11.46.0 crashes at `list_append`
+- GH#7384: MonetDB server 11.46.0 crashes at `__nss_database_lookup`
+- GH#7386: MonetDB server 11.46.0 crashes in `rel_deps`
+- GH#7387: MonetDB server 11.46.0 crashes in `rel_sequences`
+
+* Tue Jun 20 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.3-20230622
+- clients: The COPY INTO from file ON CLIENT was extended to also look for a
+  relative path name relative to the file from which the query was read.
+  This is only possible if the name of the query file is known, so when
+  it is specified on the command line or read using the interactive
+  \< command.
+
+* Fri Jun 16 2023 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com> - 11.47.3-20230622
+- sql: Add MAX_MEMORY and MAX_WORKERS options to the ALTER USER statement
+
 * Fri Jun 16 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.1-20230616
 - Rebuilt.
 - GH#7311: Missing `REGEXP_REPLACE` function.
