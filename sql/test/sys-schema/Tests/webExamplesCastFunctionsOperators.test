@@ -102,7 +102,7 @@ select cast('18:40:05' as interval hour to second)
 query T rowsort
 select cast('2 18:40:05.123' as interval day to second(3))
 ----
-2 days, 18:40:05
+2 days, 18:40:05.123000
 
 query T rowsort
 select cast('2-5' as interval year to month)
@@ -268,7 +268,7 @@ select interval '18:40:05' hour to second
 query T rowsort
 select interval '2 18:40:05.123' day to second(3)
 ----
-2 days, 18:40:05
+2 days, 18:40:05.123000
 
 query T rowsort
 select interval '2-5' year to month
