@@ -92,7 +92,7 @@ select cast('120' as interval day)
 query T rowsort
 select cast('86400.123' as interval second)
 ----
-1 day, 0:00:00
+1 day, 0:00:00.123000
 
 query T rowsort
 select cast('18:40:05' as interval hour to second)
