@@ -30,6 +30,7 @@ static const confkeyval _internal_prop_keys[PROPLENGTH] = {
 	{"type",        NULL, 0, STR},
 	{"shared",      NULL, 0, STR},
 	{"nthreads",    NULL, 0, INT},
+	{"ncopyintothreads", NULL, 0, INT},
 	{"optpipe",     NULL, 0, STR},
 	{"readonly",    NULL, 0, BOOLEAN},
 	{"embedr",      NULL, 0, BOOLEAN},

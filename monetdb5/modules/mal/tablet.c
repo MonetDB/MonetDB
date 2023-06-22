@@ -1514,9 +1514,17 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	BUN i, attr;
 	READERtask task;
 	READERtask ptask[MAXWORKERS];
-	int threads = (maxrow< 0 || maxrow > (1 << 16)) && GDKnr_threads > 1 ? (GDKnr_threads < MAXWORKERS ? GDKnr_threads - 1 : MAXWORKERS - 1) : 1;
+	int threads = 1;
 	lng tio, t1 = 0;
 	char name[MT_NAME_LEN];
+
+	if (maxrow < 0 || maxrow > (LL_CONSTANT(1) << 16)) {
+		threads = GDKgetenv_int("tablet_threads", GDKnr_threads);
+		if (threads > 1)
+			threads = threads < MAXWORKERS ? threads - 1 : MAXWORKERS - 1;
+		else
+			threads = 1;
+	}
 
 /*	TRC_DEBUG(MAL_SERVER, "Prepare copy work for '%d' threads col '%s' rec '%s' quot '%c'\n", threads, csep, rsep, quote);*/
 
