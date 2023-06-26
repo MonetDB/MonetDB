@@ -35568,11 +35568,6 @@ maxlevenshtein
 pattern battxtsim.maxlevenshtein(X_0:bat[:str], X_1:bat[:str], X_2:int, X_3:int, X_4:int):bat[:bit] 
 BATTXTSIMmaxlevenshtein;
 Same as maxlevenshtein but for BATS
-battxtsim
-similarity
-command battxtsim.similarity(X_0:bat[:str], X_1:bat[:str]):bat[:dbl] 
-fstrcmp0_impl_bulk;
-(Deprecated) Normalized edit distance between two strings
 baturl
 extractURLHost
 command baturl.extractURLHost(X_0:bat[:str], X_1:bit):bat[:str] 
@@ -51178,16 +51173,6 @@ qgramselfjoin
 command txtsim.qgramselfjoin(X_0:bat[:oid], X_1:bat[:oid], X_2:bat[:int], X_3:bat[:int], X_4:flt, X_5:int) (X_6:bat[:int], X_7:bat[:int]) 
 qgram_selfjoin;
 QGram self-join on ordered(!) qgram tables and sub-ordered q-gram positions
-txtsim
-similarity
-command txtsim.similarity(X_0:str, X_1:str):dbl 
-fstrcmp0_impl;
-(Deprecated) Normalized edit distance between two strings
-txtsim
-similarity
-command txtsim.similarity(X_0:str, X_1:str, X_2:dbl):dbl 
-fstrcmp_impl;
-(Deprecated) Normalized edit distance between two strings
 txtsim
 soundex
 command txtsim.soundex(X_0:str):str 

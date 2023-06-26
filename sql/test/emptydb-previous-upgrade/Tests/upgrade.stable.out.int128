@@ -711,9 +711,6 @@ grant execute on function difference(string, string) to public;
 create function sys.qgramnormalize(x string)
 returns string external name txtsim.qgramnormalize;
 grant execute on function qgramnormalize(string) to public;
-create function sys.similarity(x string, y string)
-returns double external name txtsim.similarity;
-grant execute on function similarity(string, string) to public;
 create function asciify(x string)
 returns string external name str.asciify;
 grant execute on function asciify(string) to public;
@@ -753,7 +750,7 @@ grant execute on filter function contains(string, string) to public;
 create filter function sys.contains(x string, y string, icase boolean)
 external name str.contains;
 grant execute on filter function contains(string, string, boolean) to public;
-update sys.functions set system = true where system <> true and name in ('levenshtein', 'dameraulevenshtein', 'jarowinkler', 'editdistance', 'editdistance2', 'soundex', 'difference', 'qgramnormalize', 'similarity') and schema_id = 2000 and type = 1;
+update sys.functions set system = true where system <> true and name in ('levenshtein', 'dameraulevenshtein', 'jarowinkler', 'editdistance', 'editdistance2', 'soundex', 'difference', 'qgramnormalize') and schema_id = 2000 and type = 1;
 update sys.functions set system = true where system <> true and name in ('maxlevenshtein', 'minjarowinkler') and schema_id = 2000 and type = 4;
 update sys.functions set system = true where system <> true and name in ('asciify', 'startswith', 'endswith', 'contains') and schema_id = 2000 and type = 1;
 update sys.functions set system = true where system <> true and name in ('startswith', 'endswith', 'contains') and schema_id = 2000 and type = 4;
