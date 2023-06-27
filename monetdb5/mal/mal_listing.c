@@ -278,20 +278,22 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 static str
 fmtRemark(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str t, int flg, str base, size_t len)
 {
-	char aux[128]; //no mal opt func name is bigger then this
+	char aux[128];
 
 	if (!copystring(&t, "# ", &len))
 		return base;
-	//optimizer remark, i=1 actions field, i=2 usec field
+
 	if (pci && pci->argc == 3) {
 		if (getFunctionId(pci)) {
 			char *arg1 = renderTerm(mb, stk, pci, 1, flg);
 			char *arg2 = renderTerm(mb, stk, pci, 2, flg);
-			if (arg1 && arg2)
-				snprintf(aux, 128, "%-36s %d actions %ld usec",
-						 getFunctionId(pci),
-						 atoi(arg1),
-						 atol(arg2));
+			if (arg1 && arg2) {
+				const char *f = getFunctionId(pci);
+				if (strcmp(f, "total") == 0)
+					snprintf(aux, 128, "%d optimizers %ld usecs", atoi(arg1), atol(arg2));
+				else
+					snprintf(aux, 128, "%-36s %d actions %ld usecs", f, atoi(arg1), atol(arg2));
+			}
 			GDKfree(arg1);
 			GDKfree(arg2);
 			if (!copystring(&t, aux, &len))
