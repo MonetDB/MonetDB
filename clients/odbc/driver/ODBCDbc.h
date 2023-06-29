@@ -59,6 +59,7 @@ typedef struct tODBCDRIVERDBC {
 	bool has_comment;	/* whether the server has sys.comments */
 	bool allow_hugeint;	/* whether the application deals with HUGEINT */
 	bool raw_strings;	/* server uses raw strings */
+	int mapToLongVarchar;	/* when > 0 we map WVARCHAR to WLONGVARCHAR, default 0 */
 	SQLUINTEGER sql_attr_autocommit;
 	SQLUINTEGER sql_attr_metadata_id;
 	SQLUINTEGER sql_attr_connection_timeout;
@@ -148,9 +149,13 @@ SQLRETURN ODBCConnectionString(SQLRETURN rc, ODBCDbc *dbc,
 			       SQLSMALLINT *StringLength2Ptr,
 			       const char *dsn, const char *uid,
 			       const char *pwd, const char *host,
-			       int port, const char *database);
+			       int port, const char *database,
+			       int mapToLongVarchar);
 SQLRETURN MNDBAllocStmt(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle);
-SQLRETURN MNDBConnect(ODBCDbc *dbc, const SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, const SQLCHAR *szUID, SQLSMALLINT nUIDLength, const SQLCHAR *szPWD, SQLSMALLINT nPWDLength, const char *host, int port, const char *schema);
+SQLRETURN MNDBConnect(ODBCDbc *dbc, const SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
+			const SQLCHAR *szUID, SQLSMALLINT nUIDLength,
+			const SQLCHAR *szPWD, SQLSMALLINT nPWDLength,
+			const char *host, int port, const char *dbname, int mapToLongVarchar);
 SQLRETURN MNDBGetConnectAttr(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER BufferLength, SQLINTEGER *StringLength);
 SQLRETURN MNDBSetConnectAttr(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength);
 
