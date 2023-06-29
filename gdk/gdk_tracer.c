@@ -250,10 +250,19 @@ find_component(const char *comp)
  * API CALLS
  *
  */
+static volatile sig_atomic_t interrupted = 0;
+
 void
 GDKtracer_reinit_basic(int sig)
 {
 	(void) sig;
+	interrupted = 1;
+}
+
+static void
+reinit(void)
+{
+	interrupted = 0;
 
 	// GDKtracer needs to reopen the file only in
 	// case the adapter is BASIC
@@ -462,6 +471,9 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	static char file_prefix[] = __FILE__;
 	static size_t prefix_length = (size_t) -1;
 
+	if (interrupted)
+		reinit();
+
 	if (prefix_length == (size_t) -1) {
 		/* first time, calculate prefix of file name */
 		msg = strstr(file_prefix, "gdk" DIR_SEP_STR "gdk_tracer.c");
@@ -524,7 +536,8 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 		return;
 
 	if (level <= M_WARNING) {
-		fprintf(stderr, "#%s%s%s: %s: %s%s%s%s\n",
+		fprintf(level <= M_ERROR ? stderr : stdout,
+			"#%s%s%s: %s: %s%s%s%s\n",
 			add_ts ? ts : "",
 			add_ts ? ": " : "",
 			MT_thread_getname(), func, level == M_WARNING ? GDKWARNING : GDKERROR,

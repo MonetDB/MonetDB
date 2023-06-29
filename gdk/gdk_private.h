@@ -81,7 +81,7 @@ void BATrmprop(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
 void BATrmprop_nolock(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
-gdk_return BATsave_locked(BAT *bd, BATiter *bi, BUN size)
+gdk_return BATsave_iter(BAT *bd, BATiter *bi, BUN size)
 	__attribute__((__visibility__("hidden")));
 void BATsetdims(BAT *b)
 	__attribute__((__visibility__("hidden")));
@@ -172,6 +172,9 @@ gdk_return GDKtracer_init(const char *dbname, const char *dbtrace)
 	__attribute__((__visibility__("hidden")));
 gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
+#define GDKwarning(format, ...)					\
+	GDKtracer_log(__FILE__, __func__, __LINE__, M_WARNING,	\
+		      GDK, NULL, format, ##__VA_ARGS__)
 void HASHappend(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHappend_locked(BAT *b, BUN i, const void *v)
@@ -452,7 +455,6 @@ extern size_t GDK_mmap_minsize_persistent; /* size after which we use memory map
 extern size_t GDK_mmap_minsize_transient; /* size after which we use memory mapped files for transient heaps */
 extern size_t GDK_mmap_pagesize; /* mmap granularity */
 extern MT_Lock GDKthreadLock;
-extern MT_Lock GDKtmLock;
 
 #define BATcheck(tst, err)				\
 	do {						\
@@ -470,6 +472,10 @@ extern MT_Lock GDKtmLock;
 	} while (0)
 
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
+
+#define HEAPREMOVE	((ATOMIC_BASE_TYPE) 1 << 63)
+#define DELAYEDREMOVE	((ATOMIC_BASE_TYPE) 1 << 62)
+#define HEAPREFS	(((ATOMIC_BASE_TYPE) 1 << 62) - 1)
 
 /* when the number of updates to a BAT is less than 1 in this number, we
  * keep the GDK_UNIQUE_ESTIMATE property */

@@ -26,6 +26,7 @@ struct logger {
 	int saved_tid;		/* id of transaction which was flushed out (into BBP storage)  */
 	bool flushing;
 	bool flushnow;
+	ulng drops;
 	logged_range *pending;
 	logged_range *current;
 
@@ -61,8 +62,10 @@ struct logger {
 	BAT *type_nme;		/* names of types */
 	BAT *type_nr;		/* atom number of this type (transient) */
 
-	void *buf;
-	size_t bufsize;
+	void *rbuf;
+	size_t rbufsize;
+	void *wbuf;
+	size_t wbufsize;
 };
 
 struct old_logger {

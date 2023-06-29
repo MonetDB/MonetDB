@@ -3952,7 +3952,7 @@ exps_merge_select_rse( mvc *sql, list *l, list *r, bool *merged)
 					sql->errstr[0] = '\0';
 					continue;
 				}
-				fnd = exp_compare2(sql->sa, le->l, mine, maxe, le->flag, 0);
+				fnd = exp_compare2(sql->sa, exp_copy(sql, le->l), mine, maxe, le->flag, 0);
 				lmerged = false;
 			}
 			if (fnd) {

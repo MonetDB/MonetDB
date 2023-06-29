@@ -10,7 +10,11 @@
 #include "type_conversion.h"
 #include "unicode.h"
 
+#if PY_MINOR_VERSION >= 11
+#include <cpython/longintrepr.h>
+#else
 #include <longintrepr.h>
+#endif
 
 #define PyInt_Check PyLong_Check
 #define PyString_CheckExact PyUnicode_CheckExact
@@ -55,7 +59,11 @@ PyObject *PyLong_FromHge(hge h)
 		z->ob_digit[i] = result;
 	}
 	if (h < 0)
+#ifdef Py_SET_SIZE
+		Py_SET_SIZE(z, -Py_SIZE(z));
+#else
 		Py_SIZE(z) = -(Py_SIZE(z));
+#endif
 	return (PyObject *)z;
 }
 #endif

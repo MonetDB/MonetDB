@@ -8,9 +8,7 @@ statement error
 CREATE TRIGGER marketdata.calc_sdate BEFORE INSERT ON marketdata.quotes
 FOR EACH ROW
 BEGIN ATOMIC
- update marketdata.quotes set i = quotes.i +2 where quotes.i < 2
-
-statement error
+ update marketdata.quotes set i = quotes.i +2 where quotes.i < 2;
 END
 
 statement ok

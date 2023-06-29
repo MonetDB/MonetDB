@@ -84,7 +84,7 @@ select cast('1234' as interval month)
 query T rowsort
 select cast('86400.123' as interval second)
 ----
-1 day, 0:00:00
+1 day, 0:00:00.123000
 
 query T rowsort
 select cast('abcd' as blob)

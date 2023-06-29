@@ -133,10 +133,12 @@ TABLETcreate_bats(Tablet *as, BUN est)
 		fmt[i].c = void_bat_create(fmt[i].adt, est);
 		if (!fmt[i].c) {
 			while (i > 0) {
-				if (!fmt[--i].skip)
+				if (!fmt[--i].skip) {
 					BBPreclaim(fmt[i].c);
+					fmt[i].c = NULL;
+				}
 			}
-			throw(SQL, "copy", "Failed to create bat of size " BUNFMT "\n", as->nr);
+			throw(SQL, "copy", "Failed to create bat of size " BUNFMT "\n", est);
 		}
 		fmt[i].ci = bat_iterator_nolock(fmt[i].c);
 		nr++;
@@ -1547,9 +1549,17 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	BUN i, attr;
 	READERtask task;
 	READERtask ptask[MAXWORKERS];
-	int threads = (maxrow< 0 || maxrow > (1 << 16)) && GDKnr_threads > 1 ? (GDKnr_threads < MAXWORKERS ? GDKnr_threads - 1 : MAXWORKERS - 1) : 1;
+	int threads = 1;
 	lng tio, t1 = 0;
 	char name[MT_NAME_LEN];
+
+	if (maxrow < 0 || maxrow > (LL_CONSTANT(1) << 16)) {
+		threads = GDKgetenv_int("tablet_threads", GDKnr_threads);
+		if (threads > 1)
+			threads = threads < MAXWORKERS ? threads - 1 : MAXWORKERS - 1;
+		else
+			threads = 1;
+	}
 
 /*	TRC_DEBUG(MAL_SERVER, "Prepare copy work for '%d' threads col '%s' rec '%s' quot '%c'\n", threads, csep, rsep, quote);*/
 
@@ -1565,7 +1575,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	create_rejects_table(task.cntxt);
 	if (task.cntxt->error_row == NULL || task.cntxt->error_fld == NULL || task.cntxt->error_msg == NULL || task.cntxt->error_input == NULL) {
 		tablet_error(&task, lng_nil, lng_nil, int_nil, "SQLload initialization failed", "");
-		goto bailout;
+		/* nothing allocated yet, so nothing to free */
+		return BUN_NONE;
 	}
 
 	assert(rsep);
@@ -1582,7 +1593,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	for (i = 0; i < MAXBUFFERS; i++) {
 		task.base[i] = GDKmalloc(MAXROWSIZE(2 * b->size) + 2);
 		task.rowlimit[i] = MAXROWSIZE(2 * b->size);
-		if (task.base[i] == 0) {
+		if (task.base[i] == NULL) {
 			tablet_error(&task, lng_nil, lng_nil, int_nil, SQLSTATE(HY013) MAL_MALLOC_FAIL, "SQLload_file");
 			goto bailout;
 		}
@@ -1595,11 +1606,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		task.maxrow = BUN_MAX;
 	else
 		task.maxrow = (BUN) maxrow;
-
-	if (task.fields == 0 || task.cols == 0 || task.time == 0) {
-		tablet_error(&task, lng_nil, lng_nil, int_nil, SQLSTATE(HY013) MAL_MALLOC_FAIL, "SQLload_file");
-		goto bailout;
-	}
 
 	task.skip = skip;
 	task.quote = quote;
@@ -1633,7 +1639,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	task.limit = (int) (b->size / as->nr_attrs + as->nr_attrs);
 	for (i = 0; i < as->nr_attrs; i++) {
 		task.fields[i] = GDKmalloc(sizeof(char *) * task.limit);
-		if (task.fields[i] == 0) {
+		if (task.fields[i] == NULL) {
 			if (task.as->error == NULL)
 				as->error = createException(MAL, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
@@ -1672,7 +1678,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		ptask[j] = task;
 		ptask[j].id = j;
 		ptask[j].cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
-		if (ptask[j].cols == 0) {
+		if (ptask[j].cols == NULL) {
 			tablet_error(&task, lng_nil, lng_nil, int_nil, SQLSTATE(HY013) MAL_MALLOC_FAIL, "SQLload_file");
 			task.id = -1;
 			MT_sema_up(&task.producer);
@@ -1938,10 +1944,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 
   bailout:
 	if (task.fields) {
-		for (i = 0; i < as->nr_attrs; i++) {
-			if (task.fields[i])
-				GDKfree(task.fields[i]);
-		}
+		for (i = 0; i < as->nr_attrs; i++)
+			GDKfree(task.fields[i]);
 		GDKfree(task.fields);
 	}
 	GDKfree(task.time);

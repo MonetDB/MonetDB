@@ -529,6 +529,7 @@ gdk_return
 BATextend(BAT *b, BUN newcap)
 {
 	size_t theap_size;
+	gdk_return rc = GDK_SUCCEED;
 
 	assert(newcap <= BUN_MAX);
 	BATcheck(b, GDK_FAIL);
@@ -551,14 +552,17 @@ BATextend(BAT *b, BUN newcap)
 	} else {
 		theap_size = (size_t) newcap << b->tshift;
 	}
-	b->batCapacity = newcap;
 
 	if (b->theap->base) {
 		TRC_DEBUG(HEAP, "HEAPgrow in BATextend %s %zu %zu\n",
 			  b->theap->filename, b->theap->size, theap_size);
-		return HEAPgrow(&b->theaplock, &b->theap, theap_size, b->batRestricted == BAT_READ);
+		rc = HEAPgrow(&b->theaplock, &b->theap, theap_size, b->batRestricted == BAT_READ);
+		if (rc == GDK_SUCCEED)
+			b->batCapacity = newcap;
+	} else {
+		b->batCapacity = newcap;
 	}
-	return GDK_SUCCEED;
+	return rc;
 }
 
 
@@ -660,9 +664,6 @@ BATfree(BAT *b)
 		return;
 
 	/* deallocate all memory for a bat */
-	if (b->tident && !default_ident(b->tident))
-		GDKfree(b->tident);
-	b->tident = BATstring_t;
 	MT_rwlock_rdlock(&b->thashlock);
 	BUN nunique = BUN_NONE, nbucket = BUN_NONE;
 	if (b->thash && b->thash != (Hash *) 1) {
@@ -674,18 +675,37 @@ BATfree(BAT *b)
 	IMPSfree(b);
 	OIDXfree(b);
 	MT_lock_set(&b->theaplock);
+	if (b->tident && !default_ident(b->tident))
+		GDKfree(b->tident);
+	b->tident = BATstring_t;
 	if (nunique != BUN_NONE) {
 		BATsetprop_nolock(b, GDK_NUNIQUE, TYPE_oid, &(oid){nunique});
 		BATsetprop_nolock(b, GDK_UNIQUE_ESTIMATE, TYPE_dbl, &(dbl){(dbl)nunique});
 		BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid, &(oid){nbucket});
 	}
+	/* wait until there are no other references to the heap; a
+	 * reference is possible in e.g. BBPsync that uses a
+	 * bat_iterator directly on the BBP_desc, i.e. without fix */
+	while (b->theap && (ATOMIC_GET(&b->theap->refs) & HEAPREFS) > 1) {
+		MT_lock_unset(&b->theaplock);
+		MT_sleep_ms(1);
+		MT_lock_set(&b->theaplock);
+	}
 	if (b->theap) {
-		assert(ATOMIC_GET(&b->theap->refs) == 1);
+		assert((ATOMIC_GET(&b->theap->refs) & HEAPREFS) == 1);
 		assert(b->theap->parentid == b->batCacheid);
 		HEAPfree(b->theap, false);
 	}
+	/* wait until there are no other references to the heap; a
+	 * reference is possible in e.g. BBPsync that uses a
+	 * bat_iterator directly on the BBP_desc, i.e. without fix */
+	while (b->tvheap && (ATOMIC_GET(&b->tvheap->refs) & HEAPREFS) > 1) {
+		MT_lock_unset(&b->theaplock);
+		MT_sleep_ms(1);
+		MT_lock_set(&b->theaplock);
+	}
 	if (b->tvheap) {
-		assert(ATOMIC_GET(&b->tvheap->refs) == 1);
+		assert((ATOMIC_GET(&b->tvheap->refs) & HEAPREFS) == 1);
 		assert(b->tvheap->parentid == b->batCacheid);
 		HEAPfree(b->tvheap, false);
 	}
@@ -710,6 +730,15 @@ BATdestroy(BAT *b)
 	if (b->theap) {
 		ATOMIC_DESTROY(&b->theap->refs);
 		GDKfree(b->theap);
+	}
+	ValPtr p = BATgetprop_nolock(b, (enum prop_t) 21);
+	if (p != NULL) {
+		Heap *h = p->val.pval;
+		ATOMIC_AND(&h->refs, ~DELAYEDREMOVE);
+		/* the bat has not been committed, so we cannot remove
+		 * the old tail file */
+		HEAPdecref(h, false);
+		BATrmprop_nolock(b, (enum prop_t) 21);
 	}
 	GDKfree(b);
 }
@@ -1158,6 +1187,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		b->tsorted = b->trevsorted = b->tkey = false;
 	}
 	MT_lock_unset(&b->theaplock);
+	MT_rwlock_wrlock(&b->thashlock);
 	if (values && b->ttype) {
 		int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
 		const void *atomnil = ATOMnilptr(b->ttype);
@@ -1179,6 +1209,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				t = ((void **) values)[i];
 				gdk_return rc = tfastins_nocheckVAR(b, p, t);
 				if (rc != GDK_SUCCEED) {
+					MT_rwlock_wrunlock(&b->thashlock);
 					return rc;
 				}
 				if (vbase != b->tvheap->base) {
@@ -1213,7 +1244,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				}
 				p++;
 			}
-			MT_rwlock_wrlock(&b->thashlock);
 			if (b->thash) {
 				p -= count;
 				for (BUN i = 0; i < count; i++) {
@@ -1222,7 +1252,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 					p++;
 				}
 			}
-			MT_rwlock_wrunlock(&b->thashlock);
 		} else if (ATOMstorage(b->ttype) == TYPE_msk) {
 			minpos = maxpos = BUN_NONE;
 			minvalp = maxvalp = NULL;
@@ -1232,7 +1261,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				p++;
 			}
 		} else {
-			MT_rwlock_wrlock(&b->thashlock);
 			for (BUN i = 0; i < count; i++) {
 				t = (void *) ((char *) values + (i << b->tshift));
 				gdk_return rc = tfastins_nocheckFIX(b, p, t);
@@ -1262,7 +1290,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				}
 				p++;
 			}
-			MT_rwlock_wrunlock(&b->thashlock);
 		}
 		MT_lock_set(&b->theaplock);
 		if (minpos == BUN_NONE) {
@@ -1281,7 +1308,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		}
 		MT_lock_unset(&b->theaplock);
 	} else {
-		MT_rwlock_wrlock(&b->thashlock);
 		for (BUN i = 0; i < count; i++) {
 			gdk_return rc = tfastins_nocheck(b, p, t);
 			if (rc != GDK_SUCCEED) {
@@ -1293,11 +1319,11 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			}
 			p++;
 		}
-		MT_rwlock_wrunlock(&b->thashlock);
 	}
 	MT_lock_set(&b->theaplock);
 	BATsetcount(b, p);
 	MT_lock_unset(&b->theaplock);
+	MT_rwlock_wrunlock(&b->thashlock);
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
@@ -1582,14 +1608,11 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			}
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 << b->tshift))) {
-				/* doesn't fit in current heap, upgrade
-				 * it, can't keep hashlock while doing
-				 * so */
-				MT_rwlock_wrunlock(&b->thashlock);
+				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, _d, 0, bi.count) != GDK_SUCCEED) {
+					MT_rwlock_wrunlock(&b->thashlock);
 					return GDK_FAIL;
 				}
-				MT_rwlock_wrlock(&b->thashlock);
 			}
 			/* reinitialize iterator after possible heap upgrade */
 			bi = bat_iterator_nolock(b);
@@ -1786,7 +1809,7 @@ mskfnd(BAT *b, msk v)
 {
 	BUN p, q;
 
-	if (* (msk *) v) {
+	if (v) {
 		/* find a 1 value */
 		for (p = 0, q = (BATcount(b) + 31) / 32; p < q; p++) {
 			if (((uint32_t *) b->theap->base)[p] != 0) {
@@ -2053,12 +2076,14 @@ BATroles(BAT *b, const char *tnme)
 {
 	if (b == NULL)
 		return GDK_SUCCEED;
+	MT_lock_set(&b->theaplock);
 	if (b->tident && !default_ident(b->tident))
 		GDKfree(b->tident);
 	if (tnme)
 		b->tident = GDKstrdup(tnme);
 	else
 		b->tident = BATstring_t;
+	MT_lock_unset(&b->theaplock);
 	return b->tident ? GDK_SUCCEED : GDK_FAIL;
 }
 
@@ -2186,13 +2211,18 @@ backup_new(Heap *hp, bool lock)
 	char *batpath, *bakpath;
 	struct stat st;
 
+	char *bak_filename = NULL;
+	if ((bak_filename = strrchr(hp->filename, DIR_SEP)) != NULL)
+		bak_filename++;
+	else
+		bak_filename = hp->filename;
 	/* check for an existing X.new in BATDIR, BAKDIR and SUBDIR */
-	batpath = GDKfilepath(hp->farmid, BATDIR, hp->filename, ".new");
-	bakpath = GDKfilepath(hp->farmid, BAKDIR, hp->filename, ".new");
+	batpath = GDKfilepath(hp->farmid, BATDIR, hp->filename, "new");
+	bakpath = GDKfilepath(hp->farmid, BAKDIR, bak_filename, "new");
 	if (batpath != NULL && bakpath != NULL) {
 		/* file actions here interact with the global commits */
 		if (lock)
-			MT_lock_set(&GDKtmLock);
+			BBPtmlock();
 
 		batret = MT_stat(batpath, &st);
 		bakret = MT_stat(bakpath, &st);
@@ -2213,7 +2243,7 @@ backup_new(Heap *hp, bool lock)
 			ret = 0;
 		}
 		if (lock)
-			MT_lock_unset(&GDKtmLock);
+			BBPtmunlock();
 	}
 	GDKfree(batpath);
 	GDKfree(bakpath);

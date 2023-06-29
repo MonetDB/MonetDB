@@ -554,8 +554,8 @@ find_tmp_idx(sql_trans *tr, sql_idx *i)
 static sql_delta *
 temp_col_timestamp_delta( sql_trans *tr, sql_column *c)
 {
-	if (isGlobal(c->t))
-		c = find_tmp_column(tr, c);
+	if (isGlobal(c->t) && (c = find_tmp_column(tr, c)) == NULL)
+		return NULL;
 	assert (!isGlobal(c->t));
 	assert(isTempTable(c->t));
 	sql_delta *d = temp_delta(ATOMIC_PTR_GET(&c->data), tr->tid);
@@ -615,8 +615,8 @@ timestamp_storage( sql_trans *tr, storage *d)
 static storage *
 temp_tab_timestamp_storage( sql_trans *tr, sql_table *t)
 {
-	if (isGlobal(t))
-		t = find_tmp_table(tr, t);
+	if (isGlobal(t) && (t = find_tmp_table(tr, t)) == NULL)
+		return NULL;
 	assert(!isGlobal(t));
 	assert(isTempTable(t));
 	storage *d = temp_storage(ATOMIC_PTR_GET(&t->data), tr->tid);
@@ -3336,7 +3336,7 @@ log_update_col( sql_trans *tr, sql_change *change)
 {
 	sql_column *c = (sql_column*)change->obj;
 
-	if (!isTempTable(c->t) && !tr->parent) {/* don't write save point commits */
+	if (!isDeleted(c->t) && !isTempTable(c->t) && !tr->parent) {/* don't write save point commits */
 		storage *s = ATOMIC_PTR_GET(&c->t->data);
 		return tr_log_delta(tr, c->t, ATOMIC_PTR_GET(&c->data), s->segs->h, c->base.id);
 	}
@@ -3444,7 +3444,7 @@ log_update_idx( sql_trans *tr, sql_change *change)
 {
 	sql_idx *i = (sql_idx*)change->obj;
 
-	if (!isTempTable(i->t) && !tr->parent) { /* don't write save point commits */
+	if (!isDeleted(i->t) && !isTempTable(i->t) && !tr->parent) { /* don't write save point commits */
 		storage *s = ATOMIC_PTR_GET(&i->t->data);
 		return tr_log_delta(tr, i->t, ATOMIC_PTR_GET(&i->data), s->segs->h, i->base.id);
 	}
@@ -3541,7 +3541,7 @@ log_update_del( sql_trans *tr, sql_change *change)
 {
 	sql_table *t = (sql_table*)change->obj;
 
-	if (!isTempTable(t) && !tr->parent) /* don't write save point commits */
+	if (!isDeleted(t) && !isTempTable(t) && !tr->parent) /* don't write save point commits */
 		return log_storage(tr, t, ATOMIC_PTR_GET(&t->data), t->base.id);
 	return LOG_OK;
 }

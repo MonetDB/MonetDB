@@ -34,6 +34,14 @@
 #undef _GNU_SOURCE
 #undef _XOPEN_SOURCE
 #undef _POSIX_C_SOURCE
+/* ignore deprecation warnings (errors) so that we can compile with
+ * Python 3.11 (PySys_SetArgvEx is deprecated) */
+#if defined(__GNUC__) \
+    && ((__GNUC__ >= 4) || (__GNUC__ == 3) && (__GNUC_MINOR__ >= 1))
+#define __deprecated__
+#elif defined(_MSC_VER)
+#define deprecated(x)
+#endif
 #ifdef _DEBUG
 #undef _DEBUG
 #include <Python.h>
@@ -41,6 +49,7 @@
 #else
 #include <Python.h>
 #endif
+#undef __deprecated__
 
 // Numpy Library
 #ifdef __COVERITY__

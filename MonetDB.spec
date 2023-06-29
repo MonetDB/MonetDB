@@ -1,5 +1,5 @@
 %global name MonetDB
-%global version 11.41.27
+%global version 11.41.34
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # Use bcond_with to add a --with option; i.e., "without" is default.
@@ -84,7 +84,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jul2021-SP8/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jul2021-SP10/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -98,7 +98,11 @@ BuildRequires: hardlink
 BuildRequires: cmake3 >= 3.12
 BuildRequires: gcc
 BuildRequires: bison
-BuildRequires: /usr/bin/python3
+%if (0%{?rhel} == 8)
+BuildRequires: python36
+%else
+BuildRequires: python3
+%endif
 %if %{?rhel:1}%{!?rhel:0}
 # RH 7 (and for readline also 8)
 BuildRequires: bzip2-devel
@@ -846,6 +850,107 @@ else
 fi
 
 %changelog
+* Mon May 01 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.33-20230501
+- Rebuilt.
+
+* Tue Apr 25 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.33-20230501
+- gdk: Fixed parsing of the BBP.dir files when BAT ids grow larger than 2**24
+  (i.e. 100000000 in octal).
+
+* Mon Apr 24 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.33-20230501
+- monetdb5: A bug was fixed where data from a client context was freed after the
+  context was closed.  This meant that the data being freed could belong
+  to the next user of the context (a next client that just connected),
+  leading to chaos (i.e. crashes).
+
+* Wed Apr  5 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.33-20230501
+- sql: When creating a hot snapshot, allow other clients to proceed, even
+  with updating queries.
+
+* Fri Mar 24 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.31-20230324
+- Rebuilt.
+
+* Fri Mar 24 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.31-20230324
+- gdk: When processing the WAL, if a to-be-destroyed object cannot be found,
+  don't stop, but keep processing the rest of the WAL.
+
+* Fri Mar 24 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.31-20230324
+- monetdb5: Client connections are cleaned up better so that we get fewer instances
+  of clients that cannot connect.
+
+* Fri Mar 24 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.31-20230324
+- sql: Increased the size of a variable counting the number of changes made
+  to the database (e.g. in case more than 2 billion rows are added to
+  a table).
+- sql: Improved cleanup after failures such as failed memory allocations.
+
+* Thu Feb 23 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.29-20230223
+- Rebuilt.
+
+* Mon Feb 20 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.29-20230223
+- gdk: A race condition was fixed where certain write-ahead log messages
+  could get intermingled, resulting in a corrupted WAL file.
+- gdk: If opening of a file failed when it was supposed to get memory mapped,
+  an incorrect value was returned to indicate the failure, causing
+  crashes later on.  This has been fixed.
+
+* Mon Feb 13 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.29-20230223
+- gdk: When saving a bat failed for some reason during a low-level commit,
+  this was logged in the log file, but the error was then subsequently
+  ignored, possibly leading to files that are too short or even missing.
+- gdk: The write-ahead log (WAL) is now rotated a bit more efficiently by
+  doing multiple log files in one go (i.e. in one low-level transaction).
+
+* Mon Feb 13 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.29-20230223
+- sql: An insert into a table from which a column was dropped in a parallel
+  transaction was incorrectly not flagged as a transaction conflict.
+
+* Mon Jan 16 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.41.29-20230223
+- gdk: Fixed a race condition that could lead to a bat being added to the SQL
+  catalog but nog being made persistent, causing a subsequent restart
+  of the system to fail (and crash).
+
+* Fri Dec 16 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.29-20230223
+- sql: Added some error checking to prevent crashes.  Errors would mainly
+  occur under memory pressure.
+
+* Wed Dec 14 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.29-20230223
+- gdk: Fixed a race condition where a hash could have been created on a
+  bat using the old bat count while in another thread the bat count
+  got updated.  This would make the hash be based on too small a size,
+  causing failures later on.
+
+* Wed Dec 14 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.29-20230223
+- sql: Fixed cleanup after a failed allocation where the data being cleaned
+  up was unitialized but still used as pointers to memory that also had
+  to be freed.
+
+* Thu Dec  8 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.29-20230223
+- gdk: When extending a bat failed, the capacity had been updated already and
+  was therefore too large.  This could then later cause a crash.  This has
+  been fixed by only updating the capacity if the extend succeeded.
+
+* Wed Dec  7 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.29-20230223
+- gdk: A bug was fixed when dealing with copy-on-write memory maps.  These can
+  occur for some bats used by the write-ahead log code when they grow
+  large enough.
+
+* Wed Dec  7 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.29-20230223
+- sql: A bug was fixed when optimizing combining of range select
+  subexpressions.
+- sql: If there was an error in one of the special commands to the server
+  (e.g. setting the reply size for result sets), the server could get
+  into an infinite loop.  This has been fixed.
+- sql: Fixed a double cleanup after a failed allocation in COPY INTO.  The
+  double cleanup could cause a crash due to a race condition it enabled.
+
+* Wed Oct 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.29-20230223
+- monetdb5: Fix a bug where the MAL optimizer would use the starttime of the
+  previous query to determine whether a query timeout occurred.
+
+* Wed Oct 12 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.29-20230223
+- merovingian: Stop logging references to monetdbd's logfile in said logfile.
+
 * Fri Aug 26 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.41.27-20220826
 - Rebuilt.
 

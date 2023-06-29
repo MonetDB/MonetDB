@@ -326,7 +326,7 @@ MT_mmap(const char *path, int mode, size_t len)
 	fd = open(path, O_CREAT | ((mode & MMAP_WRITE) ? O_RDWR : O_RDONLY) | O_CLOEXEC, MONETDB_MODE);
 	if (fd < 0) {
 		GDKsyserror("open %s failed\n", path);
-		return MAP_FAILED;
+		return NULL;
 	}
 	ret = mmap(NULL,
 		   len,
@@ -337,9 +337,10 @@ MT_mmap(const char *path, int mode, size_t len)
 	if (ret == MAP_FAILED) {
 		GDKsyserror("mmap(%s,%zu) failed\n", path, len);
 		ret = NULL;
+	} else {
+		VALGRIND_MALLOCLIKE_BLOCK(ret, len, 0, 1);
 	}
 	close(fd);
-	VALGRIND_MALLOCLIKE_BLOCK(ret, len, 0, 1);
 	return ret;
 }
 
@@ -386,7 +387,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 			return old_address;
 		}
 		if (path && truncate(path, *new_size) < 0)
-			TRC_WARNING(GDK, "MT_mremap(%s): truncate failed: %s\n",
+			GDKwarning("truncate of %s failed: %s\n",
 				    path, GDKstrerror(errno, (char[64]){0}, 64));
 #endif	/* !__COVERITY__ */
 		return old_address;

@@ -1,3 +1,8 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Tue May 16 2023 Sjoerd Mullender <sjoerd@acm.org>
+- Warnings and informational messages are now sent to stdout instead of
+  stderr, which means that monetdbd will now log them with the tag MSG
+  instead of ERR.
+

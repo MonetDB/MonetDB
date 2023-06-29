@@ -41,9 +41,10 @@ unshare_varsized_heap(BAT *b)
 		ATOMIC_INIT(&h->refs, 1);
 		MT_lock_set(&b->theaplock);
 		int parent = b->tvheap->parentid;
-		HEAPdecref(b->tvheap, false);
+		Heap *oh = b->tvheap;
 		b->tvheap = h;
 		MT_lock_unset(&b->theaplock);
+		HEAPdecref(oh, false);
 		BBPunshare(parent);
 		BBPunfix(parent);
 	}
@@ -332,13 +333,13 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 			r++;
 		}
 	}
+	MT_rwlock_wrlock(&b->thashlock);
 	MT_lock_set(&b->theaplock);
 	BATsetcount(b, oldcnt + ci->ncand);
 	assert(b->batCapacity >= b->batCount);
 	MT_lock_unset(&b->theaplock);
 	bat_iterator_end(&ni);
 	/* maintain hash */
-	MT_rwlock_wrlock(&b->thashlock);
 	for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
 		HASHappend_locked(b, r, b->tvheap->base + VarHeapVal(Tloc(b, 0), r, b->twidth));
 	}
@@ -410,11 +411,11 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				*dst++ = src[canditer_next(ci) - hseq];
 			}
 		}
+		MT_rwlock_wrlock(&b->thashlock);
 		MT_lock_set(&b->theaplock);
 		BATsetcount(b, BATcount(b) + ci->ncand);
 		MT_lock_unset(&b->theaplock);
 		/* maintain hash table */
-		MT_rwlock_wrlock(&b->thashlock);
 		for (BUN i = BATcount(b) - ci->ncand;
 		     b->thash && i < BATcount(b);
 		     i++) {
@@ -446,11 +447,12 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		}
 		bat parid = b->tvheap->parentid;
 		BBPunshare(parid);
-		MT_lock_set(&b->theaplock);
-		HEAPdecref(b->tvheap, false);
 		ATOMIC_INIT(&h->refs, 1);
+		MT_lock_set(&b->theaplock);
+		Heap *oh = b->tvheap;
 		b->tvheap = h;
 		MT_lock_unset(&b->theaplock);
+		HEAPdecref(oh, false);
 		BBPunfix(parid);
 	}
 	/* copy data from n to b */
@@ -474,10 +476,10 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 			r++;
 		}
 	}
-	MT_rwlock_wrunlock(&b->thashlock);
 	MT_lock_set(&b->theaplock);
 	BATsetcount(b, r);
 	MT_lock_unset(&b->theaplock);
+	MT_rwlock_wrunlock(&b->thashlock);
 	bat_iterator_end(&ni);
 	return GDK_SUCCEED;
 }
@@ -680,7 +682,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	ALIGNapp(b, force, GDK_FAIL);
 
 	if (ATOMstorage(ATOMtype(b->ttype)) != ATOMstorage(ATOMtype(n->ttype))) {
-		GDKerror("Incompatible operands.\n");
+		GDKerror("Incompatible operands ("ALGOBATFMT" vs. "ALGOBATFMT").\n", ALGOBATPAR(b), ALGOBATPAR(n));
 		return GDK_FAIL;
 	}
 
@@ -915,10 +917,10 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 				r++;
 			}
 		}
-		MT_rwlock_wrunlock(&b->thashlock);
 		MT_lock_set(&b->theaplock);
 		BATsetcount(b, b->batCount + ci.ncand);
 		MT_lock_unset(&b->theaplock);
+		MT_rwlock_wrunlock(&b->thashlock);
 	}
 
   doreturn:
@@ -1309,16 +1311,10 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
-				/* doesn't fit in current heap, upgrade
-				 * it, can't keep hashlock while doing
-				 * so */
-				MT_rwlock_wrunlock(&b->thashlock);
-				locked = false;
+				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, d, 0, MAX(updid, b->batCount)) != GDK_SUCCEED) {
 					goto bailout;
 				}
-				MT_rwlock_wrlock(&b->thashlock);
-				locked = true;
 			}
 			/* in case ATOMreplaceVAR and/or
 			 * GDKupgradevarheap replaces a heap, we need to
@@ -1351,6 +1347,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 		b->tvheap->dirty = true;
 		MT_lock_unset(&b->theaplock);
 	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
+		assert(b->thash == NULL);
 		HASHdestroy(b);	/* hash doesn't make sense for msk */
 		for (BUN i = 0; i < ni.count; i++) {
 			oid updid;
@@ -2847,6 +2844,14 @@ PROPdestroy_nolock(BAT *b)
 	b->tprops = NULL;
 	while (p) {
 		n = p->next;
+		if (p->id == (enum prop_t) 21) {
+			/* keep this special property, it must be
+			 * deleted explicitly using BATrmprop */
+			p->next = b->tprops;
+			b->tprops = p;
+			continue;
+		}
+		assert(p->id != (enum prop_t) 20);
 		VALclear(&p->v);
 		GDKfree(p);
 		p = n;

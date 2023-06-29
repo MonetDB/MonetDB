@@ -336,6 +336,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 				mnstr_printf(fout, "!could not allocate space\n");
 				exit_streams(fin, fout);
 				GDKfree(command);
+				MCcloseClient(c);
 				return;
 			}
 		}
@@ -344,7 +345,10 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			mnstr_printf(c->fdout, "!%s\n", s);
 			mnstr_flush(c->fdout, MNSTR_FLUSH_DATA);
 			GDKfree(s);
-			c->mode = FINISHCLIENT;
+			exit_streams(fin, fout);
+			GDKfree(command);
+			MCcloseClient(c);
+			return;
 		}
 		if (!GDKgetenv_isyes(mal_enableflag) &&
 				(strncasecmp("sql", lang, 3) != 0 && uid != 0)) {
@@ -353,6 +357,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 					           "run mserver5 with --set %s=yes to change this.\n", mal_enableflag);
 			exit_streams(fin, fout);
 			GDKfree(command);
+			MCcloseClient(c);
 			return;
 		}
 	}
@@ -362,6 +367,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		exit_streams(fin, fout);
 		freeException(msg);
 		GDKfree(command);
+		MCcloseClient(c);
 		return;
 	}
 
@@ -483,6 +489,7 @@ MSserveClient(Client c)
 		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
 	if (c->glb == NULL) {
 		c->mode = RUNCLIENT;
+		MCcloseClient(c);
 		throw(MAL, "serveClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		c->glb->stktop = mb->vtop;
@@ -493,6 +500,7 @@ MSserveClient(Client c)
 		msg = defaultScenario(c);
 	if (msg) {
 		c->mode = RUNCLIENT;
+		MCcloseClient(c);
 		return msg;
 	} else {
 		do {
@@ -528,10 +536,6 @@ MSserveClient(Client c)
 	*/
 
 	MCcloseClient(c);
-	if (c->usermodule /*&& strcmp(c->usermodule->name, "user") == 0*/) {
-		freeModule(c->usermodule);
-		c->usermodule = NULL;
-	}
 	return MAL_SUCCEED;
 }
 

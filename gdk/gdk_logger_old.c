@@ -492,8 +492,8 @@ log_read_updates(old_logger *lg, trans *tr, logformat *l, char *name, int tpe, o
 		if (ht == TYPE_void && l->flag == LOG_INSERT) {
 			lng nr = l->nr;
 			for (; res == LOG_OK && nr > 0; nr--) {
-				size_t tlen = lg->lg->bufsize;
-				void *t = rt(lg->lg->buf, &tlen, lg->log, 1);
+				size_t tlen = lg->lg->rbufsize;
+				void *t = rt(lg->lg->rbuf, &tlen, lg->log, 1);
 
 				if (t == NULL) {
 					/* see if failure was due to
@@ -506,8 +506,8 @@ log_read_updates(old_logger *lg, trans *tr, logformat *l, char *name, int tpe, o
 						res = LOG_ERR;
 					break;
 				} else {
-					lg->lg->buf = t;
-					lg->lg->bufsize = tlen;
+					lg->lg->rbuf = t;
+					lg->lg->rbufsize = tlen;
 				}
 				if (BUNappend(r, t, true) != GDK_SUCCEED)
 					res = LOG_ERR;
@@ -523,13 +523,13 @@ log_read_updates(old_logger *lg, trans *tr, logformat *l, char *name, int tpe, o
 			if (!pax) {
 				lng nr = l->nr;
 				for (; res == LOG_OK && nr > 0; nr--) {
-					size_t tlen = lg->lg->bufsize;
+					size_t tlen = lg->lg->rbufsize;
 					void *h = rh(hv, &hlen, lg->log, 1);
-					void *t = rt(lg->lg->buf, &tlen, lg->log, 1);
+					void *t = rt(lg->lg->rbuf, &tlen, lg->log, 1);
 
 					if (t != NULL) {
-						lg->lg->buf = t;
-						lg->lg->bufsize = tlen;
+						lg->lg->rbuf = t;
+						lg->lg->rbufsize = tlen;
 					}
 					if (h == NULL)
 						res = LOG_EOF;
@@ -571,8 +571,8 @@ log_read_updates(old_logger *lg, trans *tr, logformat *l, char *name, int tpe, o
 				}
 				nr = l->nr;
 				for (; res == LOG_OK && nr > 0; nr--) {
-					size_t tlen = lg->lg->bufsize;
-					void *t = rt(lg->lg->buf, &tlen, lg->log, 1);
+					size_t tlen = lg->lg->rbufsize;
+					void *t = rt(lg->lg->rbuf, &tlen, lg->log, 1);
 
 					if (t == NULL) {
 						if (strstr(GDKerrbuf, "malloc") == NULL)
@@ -580,8 +580,8 @@ log_read_updates(old_logger *lg, trans *tr, logformat *l, char *name, int tpe, o
 						else
 							res = LOG_ERR;
 					} else {
-						lg->lg->buf = t;
-						lg->lg->bufsize = tlen;
+						lg->lg->rbuf = t;
+						lg->lg->rbufsize = tlen;
 						if (BUNappend(r, t, true) != GDK_SUCCEED)
 							res = LOG_ERR;
 					}

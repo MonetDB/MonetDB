@@ -515,9 +515,11 @@ MCactiveClients(void)
 	int active = 0;
 	Client cntxt = mal_clients;
 
+	MT_lock_set(&mal_contextLock);
 	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
 		active += (cntxt->idle == 0 && cntxt->mode == RUNCLIENT);
 	}
+	MT_lock_unset(&mal_contextLock);
 	return active;
 }
 

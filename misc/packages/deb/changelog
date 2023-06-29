@@ -1,3 +1,167 @@
+monetdb (11.41.33) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 01 May 2023 09:28:44 +0200
+
+monetdb (11.41.33) unstable; urgency=low
+
+  * gdk: Fixed parsing of the BBP.dir files when BAT ids grow larger than 2**24
+    (i.e. 100000000 in octal).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 25 Apr 2023 09:28:44 +0200
+
+monetdb (11.41.33) unstable; urgency=low
+
+  * monetdb5: A bug was fixed where data from a client context was freed after the
+    context was closed.  This meant that the data being freed could belong
+    to the next user of the context (a next client that just connected),
+    leading to chaos (i.e. crashes).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 24 Apr 2023 09:28:44 +0200
+
+monetdb (11.41.33) unstable; urgency=low
+
+  * sql: When creating a hot snapshot, allow other clients to proceed, even
+    with updating queries.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 5 Apr 2023 09:28:44 +0200
+
+monetdb (11.41.31) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 24 Mar 2023 10:59:06 +0100
+
+monetdb (11.41.31) unstable; urgency=low
+
+  * gdk: When processing the WAL, if a to-be-destroyed object cannot be found,
+    don't stop, but keep processing the rest of the WAL.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 24 Mar 2023 10:59:06 +0100
+
+monetdb (11.41.31) unstable; urgency=low
+
+  * monetdb5: Client connections are cleaned up better so that we get fewer instances
+    of clients that cannot connect.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 24 Mar 2023 10:59:06 +0100
+
+monetdb (11.41.31) unstable; urgency=low
+
+  * sql: Increased the size of a variable counting the number of changes made
+    to the database (e.g. in case more than a 2 billion rows are added to
+    a table).
+  * sql: Improved cleanup after failures such as failed memory allocations.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 24 Mar 2023 10:59:06 +0100
+
+monetdb (11.41.29) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 23 Feb 2023 10:49:38 +0100
+
+monetdb (11.41.29) unstable; urgency=low
+
+  * gdk: A race condition was fixed where certain write-ahead log messages
+    could get intermingled, resulting in a corrupted WAL file.
+  * gdk: If opening of a file failed when it was supposed to get memory mapped,
+    an incorrect value was returned to indicate the failure, causing
+    crashes later on.  This has been fixed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 20 Feb 2023 10:49:38 +0100
+
+monetdb (11.41.29) unstable; urgency=low
+
+  * gdk: When saving a bat failed for some reason during a low-level commit,
+    this was logged in the log file, but the error was then subsequently
+    ignored, possibly leading to files that are too short or even missing.
+  * gdk: The write-ahead log (WAL) is now rotated a bit more efficiently by
+    doing multiple log files in one go (i.e. in one low-level transaction).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 13 Feb 2023 10:49:38 +0100
+
+monetdb (11.41.29) unstable; urgency=low
+
+  * sql: An insert into a table from which a column was dropped in a parallel
+    transaction was incorrectly not flagged as a transaction conflict.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 13 Feb 2023 10:49:38 +0100
+
+monetdb (11.41.29) unstable; urgency=low
+
+  * gdk: Fixed a race condition that could lead to a bat being added to the SQL
+    catalog but nog being made persistent, causing a subsequent restart
+    of the system to fail (and crash).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 16 Jan 2023 10:49:38 +0100
+
+monetdb (11.41.29) unstable; urgency=low
+
+  * sql: Added some error checking to prevent crashes.  Errors would mainly
+    occur under memory pressure.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 16 Dec 2022 10:49:38 +0100
+
+monetdb (11.41.29) unstable; urgency=low
+
+  * gdk: Fixed a race condition where a hash could have been created on a
+    bat using the old bat count while in another thread the bat count
+    got updated.  This would make the hash be based on too small a size,
+    causing failures later on.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 14 Dec 2022 10:49:38 +0100
+
+monetdb (11.41.29) unstable; urgency=low
+
+  * sql: Fixed cleanup after a failed allocation where the data being cleaned
+    up was unitialized but still used as pointers to memory that also had
+    to be freed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 14 Dec 2022 10:49:38 +0100
+
+monetdb (11.41.29) unstable; urgency=low
+
+  * gdk: When extending a bat failed, the capacity had been updated already and
+    was therefore too large.  This could then later cause a crash.  This has
+    been fixed by only updating the capacity if the extend succeeded.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 8 Dec 2022 10:49:38 +0100
+
+monetdb (11.41.29) unstable; urgency=low
+
+  * gdk: A bug was fixed when dealing with copy-on-write memory maps.  These can
+    occur for some bats used by the write-ahead log code when they grow
+    large enough.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 7 Dec 2022 10:49:38 +0100
+
+monetdb (11.41.29) unstable; urgency=low
+
+  * sql: A bug was fixed when optimizing combining of range select
+    subexpressions.
+  * sql: If there was an error in one of the special commands to the server
+    (e.g. setting the reply size for result sets), the server could get
+    into an infinite loop.  This has been fixed.
+  * sql: Fixed a double cleanup after a failed allocation in COPY INTO.  The
+    double cleanup could cause a crash due to a race condition it enabled.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 7 Dec 2022 10:49:38 +0100
+
+monetdb (11.41.29) unstable; urgency=low
+
+  * monetdb5: Fix a bug where the MAL optimizer would use the starttime of the
+    previous query to determine whether a query timeout occurred.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 19 Oct 2022 10:49:38 +0100
+
+monetdb (11.41.29) unstable; urgency=low
+
+  * merovingian: Stop logging references to monetdbd's logfile in said logfile.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 12 Oct 2022 10:49:38 +0100
+
 monetdb (11.41.27) unstable; urgency=low
 
   * Rebuilt.

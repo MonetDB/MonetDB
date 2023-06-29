@@ -184,7 +184,15 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 				/* empty line, don't bother */
 				continue;
 			}
-			if (dp->input[fd].cnt < 30000 && strncmp(dp->input[fd].buf, q, (size_t) (p + 1 - q)) == 0) {
+			*p = 0;				/* was '\n' which we do not store */
+			char *s;
+			if ((s = strstr(q, "monetdbd's logfile")) != NULL) {
+				while (--s > q && *s != ',')
+					;
+				/* shorten message with reference to logfile */
+				*s = '\0';
+			}
+			if (dp->input[fd].cnt < 30000 && strcmp(dp->input[fd].buf, q) == 0) {
 				/* repeat of last message */
 				dp->input[fd].cnt++;
 				dp->input[fd].ts = now;
@@ -195,16 +203,15 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 					strftime(tmptime, sizeof(tmptime), "%Y-%m-%d %H:%M:%S",
 							 localtime(&dp->input[fd].ts));
 					if (dp->input[fd].cnt == 1)
-						fprintf(stream, "%s %s %s[%lld]: %s",
+						fprintf(stream, "%s %s %s[%lld]: %s\n",
 								tmptime, type, dbname, pid, dp->input[fd].buf);
 					else
-						fprintf(stream, "%s %s %s[%lld]: message repeated %d times: %s",
+						fprintf(stream, "%s %s %s[%lld]: message repeated %d times: %s\n",
 								tmptime, type, dbname, pid, dp->input[fd].cnt, dp->input[fd].buf);
 				}
 				dp->input[fd].ts = now;
 				dp->input[fd].cnt = 0;
-				strncpy(dp->input[fd].buf, q, p + 1 - q);
-				dp->input[fd].buf[p + 1 - q] = '\0';
+				strcpy(dp->input[fd].buf, q);
 				fprintf(stream, "%s %s %s[%lld]: %.*s\n",
 						mytime, type, dbname, pid, (int) (p - q), q);
 			}
@@ -492,6 +499,8 @@ main(int argc, char *argv[])
 		if (ncpus > 0) {
 			snprintf(cnt, sizeof(cnt), "%d", ncpus);
 			kv = findConfKey(_mero_db_props, "nthreads");
+			kv->val = strdup(cnt);
+			kv = findConfKey(_mero_db_props, "ncopyintothreads");
 			kv->val = strdup(cnt);
 		}
 	}
