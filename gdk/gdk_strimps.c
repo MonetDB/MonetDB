@@ -212,6 +212,10 @@ STRMPmakebitstring(const char *s, Strimps *r)
 	pi.pos = 0;
 	pi.lim = strlen(s);
 
+	if (pi.lim < 2) {
+		return ret;
+	}
+
 	while(pair_at(&pi, &cp)) {
 		pair_idx = STRMPpairLookup(r, &cp);
 		if (pair_idx >= 0)
@@ -324,6 +328,9 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 			pi.s = cs;
 			pi.pos = 0;
 			pi.lim = strlen(pi.s);
+			if (pi.lim < 2) {
+				continue;
+			}
 			while (pair_at(pip, cpp)) {
 				if(ignored(cpp, 1)) {
 					/* Skip this AND the next pair
