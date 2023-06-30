@@ -2,9 +2,6 @@ statement ok
 CREATE TABLE fal(x STRING)
 
 statement ok
-CREATE TABLE f(y STRING)
-
-statement ok
 COPY 100 RECORDS INTO fal FROM STDIN USING DELIMITERS ',','\n','"'
 <COPY_INTO_DATA>
 Mary Garcia
