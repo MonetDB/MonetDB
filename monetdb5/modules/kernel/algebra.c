@@ -683,7 +683,7 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *ret1, *ret2 = NULL;
 	bat bid, sid, gid;
 	BAT *b, *s = NULL, *g = NULL;
-	BAT *bn, *gn;
+	BAT *bn = NULL, *gn = NULL;
 	lng n;
 	bit asc, nilslast, distinct;
 	gdk_return rc;
