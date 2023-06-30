@@ -45113,6 +45113,16 @@ ycc
 command color.ycc(X_0:int, X_1:int, X_2:int):color 
 CLRycc;
 Converts an YCC triplets to a color atom
+csv
+epilogue
+command csv.epilogue():void 
+CSVepilogue;
+(empty)
+csv
+prelude
+pattern csv.prelude():void 
+CSVprelude;
+(empty)
 dict
 compress
 pattern dict.compress(X_0:bat[:any_1]) (X_1:bat[:any], X_2:bat[:any_1]) 

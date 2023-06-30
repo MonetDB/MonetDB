@@ -371,6 +371,7 @@ main(int argc, char **av)
 #ifdef HAVE_NETCDF
 	modules[mods++] = "netcdf";
 #endif
+	modules[mods++] = "csv";
 #ifdef HAVE_SHP
 	modules[mods++] = "shp";
 #endif

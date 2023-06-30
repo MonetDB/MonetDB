@@ -1539,6 +1539,10 @@ sqltypeinit( sql_allocator *sa)
 	f = sql_create_union(sa, "copyfrombinary", "", "", TRUE, SCALE_FIX, 0, TABLE, 3, STR, STR, INT);
 	f->varres = 1;
 
+	/* file_loader */
+	f = sql_create_union(sa, "file_loader", "", "", FALSE, SCALE_FIX, 0, TABLE, 1, STR);
+	f->varres = 1;
+
 	/* sys_update_schemas, sys_update_tables */
 	sql_create_procedure(sa, "sys_update_schemas", "sql", "update_schemas", FALSE, 0);
 	sql_create_procedure(sa, "sys_update_tables", "sql", "update_tables", FALSE, 0);

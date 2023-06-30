@@ -3509,6 +3509,19 @@ table_ref:
 				  append_int(l, 0);
 				  append_symbol(l, $2);
 				  $$ = _symbol_create_list(SQL_NAME, l); }
+ |  string opt_table_name	{ dlist *l = L();
+				  dlist *f = L();
+				  append_list(f, append_string(L(), "file_loader"));
+ 				  append_int(f, FALSE); /* ignore distinct */
+				  const char *s = $1;
+				  int len = UTF8_strlen(s);
+				  sql_subtype t;
+				  sql_find_subtype(&t, "char", len, 0 );
+				  append_symbol(f, _newAtomNode( _atom_string(&t, s)));
+				  append_symbol(l, _symbol_create_list( SQL_UNOP, f));
+				  append_int(l, 0);
+				  append_symbol(l, $2);
+				  $$ = _symbol_create_list(SQL_TABLE, l); }
  |  func_ref opt_table_name
 			        { dlist *l = L();
 				  append_symbol(l, $1);

@@ -15,6 +15,7 @@
 #include "sql_statement.h"
 #include "mal_backend.h"
 
+extern stmt * exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, int reduce, int push);
 extern stmt *output_rel_bin(backend *be, sql_rel *rel, int top);
 
 #endif /*_REL_BIN_H_*/
