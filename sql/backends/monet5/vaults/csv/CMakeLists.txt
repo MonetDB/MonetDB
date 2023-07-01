@@ -23,7 +23,8 @@ target_link_libraries(csv
     sqlinclude
     sql
     monetdb5
-    bat)
+    bat
+  )
 
 set_target_properties(csv
     PROPERTIES
