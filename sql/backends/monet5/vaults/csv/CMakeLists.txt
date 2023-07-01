@@ -22,6 +22,10 @@ target_link_libraries(csv
     monetdb_config_header
     monetdb5
     bat
+    sqlstorage
+    sqlcommon
+    batstore
+    sqlserver
     sqlinclude)
 
 set_target_properties(csv
