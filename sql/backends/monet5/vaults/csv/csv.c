@@ -299,7 +299,7 @@ get_name(sql_allocator *sa, const char *s, const char *es, const char **E, char 
 {
 	if (!has_header) {
 		char buff[25];
-		snprintf(buff, 100, "name_%i", col);
+		snprintf(buff, 25, "name_%i", col);
 		return SA_STRDUP(sa, buff);
 	} else {
 		const char *e = next_delim(s, es, delim, quote);
