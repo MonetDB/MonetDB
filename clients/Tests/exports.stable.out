@@ -1505,6 +1505,7 @@ str dbl_num2dec_bte(bte *res, const dbl *v, const int *d2, const int *s2);
 str dbl_num2dec_int(int *res, const dbl *v, const int *d2, const int *s2);
 str dbl_num2dec_lng(lng *res, const dbl *v, const int *d2, const int *s2);
 str dbl_num2dec_sht(sht *res, const dbl *v, const int *d2, const int *s2);
+stmt *exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, int reduce, int push);
 sql_exp *exp_column(sql_allocator *sa, const char *rname, const char *name, sql_subtype *t, unsigned int card, int has_nils, int unique, int intern);
 sql_table *find_table_or_view_on_scope(mvc *sql, sql_schema *s, const char *sname, const char *tname, const char *error, bool isView);
 str flt_num2dec_bte(bte *res, const flt *v, const int *d2, const int *s2);
