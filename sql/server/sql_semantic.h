@@ -34,7 +34,7 @@ extern bool find_variable_on_scope(mvc *sql, const char *sname, const char *name
 
 /* These functions find catalog functions according to scoping rules */
 /* The private flag tells to attempt to bind functions that cannot be seen by users */
-extern sql_subfunc *sql_find_func(mvc *sql, const char *sname, const char *fname, int nrargs, sql_ftype type, bool private, sql_subfunc *prev);
+sql_export sql_subfunc *sql_find_func(mvc *sql, const char *sname, const char *fname, int nrargs, sql_ftype type, bool private, sql_subfunc *prev);
 extern sql_subfunc *sql_bind_member(mvc *sql, const char *sname, const char *fname, sql_subtype *tp, sql_ftype type, int nrargs, bool private, sql_subfunc *prev);
 extern sql_subfunc *sql_bind_func(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, sql_subtype *tp2, sql_ftype type, bool private);
 extern sql_subfunc *sql_bind_func3(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_ftype type, bool private);

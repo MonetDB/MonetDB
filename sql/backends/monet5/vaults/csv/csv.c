@@ -159,7 +159,7 @@ detect_decimal(const char *s, const char *e, int *scale)
 
 	while(s < e) {
 		if (!dotseen && *s == '.')
-			dotseen = (e-(s+1));
+			dotseen = (int)(e-(s+1));
 		else if (!isdigit(*s))
 			break;
 		s++;
