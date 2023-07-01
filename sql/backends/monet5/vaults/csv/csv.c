@@ -367,7 +367,7 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	if (l<0)
 		throw(SQL, SQLSTATE(42000), "csv" RUNTIME_LOAD_ERROR);
 	buf[l] = 0;
-	bool has_header;
+	bool has_header = false;
 	int nr_fields = 0;
 	char q = detect_quote(buf);
 	char d = detect_delimiter(buf, q, &nr_fields);
