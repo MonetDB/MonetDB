@@ -1597,6 +1597,7 @@ void res_tables_destroy(res_table *results);
 void *sa_alloc(sql_allocator *sa, size_t sz);
 sql_allocator *sa_create(sql_allocator *pa);
 list *sa_list(sql_allocator *sa);
+char *sa_message(sql_allocator *sa, _In_z_ _Printf_format_string_ const char *format, ...) __attribute__((__format__(__printf__, 2, 3)));
 sql_allocator *sa_reset(sql_allocator *sa);
 char *sa_strdup(sql_allocator *sa, const char *s);
 void *sa_zalloc(sql_allocator *sa, size_t sz);

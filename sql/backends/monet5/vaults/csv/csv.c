@@ -348,6 +348,15 @@ typedef struct csv_t {
 	bool has_header;
 } csv_t;
 
+/*
+ * returns an error string (static or via tmp sa_allocator allocated), NULL on success
+ *
+ * Extend the subfunc f with result columns, ie.
+	f->res = typelist;
+	f->coltypes = typelist;
+	f->colnames = nameslist; use tname if passed, for the relation name
+ * Fill the list res_exps, with one result expressions per resulting column.
+ */
 static str
 csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tname)
 {
@@ -355,7 +364,7 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	char buf[8196+1];
 
 	if(file == NULL)
-		throw(SQL, SQLSTATE(42000), "csv" RUNTIME_FILE_NOT_FOUND);
+		return RUNTIME_FILE_NOT_FOUND;
 
 	/*
 	 * detect delimiter ;|,\t  using quote \" or \' or none TODO escape \"\'\\ or none
@@ -365,7 +374,7 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	ssize_t l = fread(buf, 1, 8196, file);
 	fclose(file);
 	if (l<0)
-		throw(SQL, SQLSTATE(42000), "csv" RUNTIME_LOAD_ERROR);
+		return RUNTIME_LOAD_ERROR;
 	buf[l] = 0;
 	bool has_header = false;
 	int nr_fields = 0;
@@ -394,8 +403,9 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 			list_append(typelist, t);
 			list_append(res_exps, exp_column(sql->sa, NULL, name, t, CARD_MULTI, 1, 0, 0));
 		} else {
+			/* shouldn't be possible, we fallback to strings */
 			GDKfree(types);
-			throw(SQL, SQLSTATE(42000), "csv" RUNTIME_LOAD_ERROR); // TODO: this should throw a 'unsupported column type' error.
+			assert(0);
 		}
 	}
 	GDKfree(types);
