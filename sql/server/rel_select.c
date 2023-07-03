@@ -1000,7 +1000,7 @@ table_ref(sql_query *query, symbol *tableref, int lateral, list *refs)
 			if (sql->emode != m_deps) {
 				assert(is_project(rel->op));
 				set_processed(rel);
-				if ((is_simple_project(rel->op) || is_groupby(rel->op)) && !list_empty(rel->r)) {
+				if ((is_set(rel->op) || is_simple_project(rel->op) || is_groupby(rel->op)) && !list_empty(rel->r)) {
 					/* it's unsafe to set the projection names because of possible dependent sorting/grouping columns */
 					rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 0));
 					set_processed(rel);
