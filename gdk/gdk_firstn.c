@@ -227,9 +227,9 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 
 	if (n >= cnt) {
 		/* trivial: return all candidates */
-		if (lastp)
-			*lastp = 0;
 		bn = canditer_slice(&ci, 0, ci.ncand);
+		if (bn && lastp)
+			*lastp = BUNtoid(bn, cnt - 1);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 			  ",n=" BUNFMT " -> " ALGOOPTBATFMT
 			  " (trivial -- " LLFMT " usec)\n",

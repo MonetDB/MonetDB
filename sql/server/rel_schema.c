@@ -735,6 +735,10 @@ table_foreign_key(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_tab
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key between temporary and non temporary tables");
 			return SQL_ERR;
 		}
+		if (isTempTable(ft) && !isGlobal(ft) && ft != t) { /* disable foreign key on local temporary table */
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key with local temporary tables");
+			return SQL_ERR;
+		}
 		if (isUnloggedTable(t) != isUnloggedTable(ft)) { /* disable foreign key between logged and unlogged */
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: cannot create foreign key between logged and unlogged tables");
 			return SQL_ERR;
@@ -2296,8 +2300,8 @@ rel_create_user(sql_allocator *sa, char *user, char *passwd, int enc, char *full
 	append(exps, exp_atom_clob(sa, schema));
 	append(exps, exp_atom_clob(sa, schema_path));
 	append(exps, exp_atom_clob(sa, fullname));
-	append(exps, exp_atom_lng(sa, max_memory));
-	append(exps, exp_atom_int(sa, max_workers));
+	append(exps, exp_atom_lng(sa, max_memory >= 0 ? max_memory : 0));
+	append(exps, exp_atom_int(sa, max_workers >= 0 ? max_workers: 0));
 	append(exps, exp_atom_clob(sa, optimizer));
 	append(exps, exp_atom_clob(sa, default_role));
 	rel->l = NULL;
@@ -2311,7 +2315,7 @@ rel_create_user(sql_allocator *sa, char *user, char *passwd, int enc, char *full
 }
 
 static sql_rel *
-rel_alter_user(sql_allocator *sa, char *user, char *passwd, int enc, char *schema, char *schema_path, char *oldpasswd, char *role)
+rel_alter_user(sql_allocator *sa, char *user, char *passwd, int enc, char *schema, char *schema_path, char *oldpasswd, char *role, lng max_memory, int max_workers)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -2325,6 +2329,9 @@ rel_alter_user(sql_allocator *sa, char *user, char *passwd, int enc, char *schem
 	append(exps, exp_atom_clob(sa, schema_path));
 	append(exps, exp_atom_clob(sa, oldpasswd));
 	append(exps, exp_atom_clob(sa, role));
+	append(exps, exp_atom_lng(sa, max_memory));
+	append(exps, exp_atom_int(sa, max_workers));
+
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->op = op_ddl;
@@ -2965,7 +2972,9 @@ rel_schemas(sql_query *query, symbol *s)
 			     a->next->data.sval,	/* schema */
 				 a->next->next->data.sval, /* schema path */
 			     a->next->next->next->next->data.sval, /* old passwd */
-			     l->h->next->next->data.sval /* default role */
+			     l->h->next->next->data.sval, /* default role */
+			     l->h->next->next->next->data.l_val, /* max_memory */
+			     l->h->next->next->next->next->data.i_val /* max_workers */
 		    );
 	} 	break;
 	case SQL_RENAME_USER: {

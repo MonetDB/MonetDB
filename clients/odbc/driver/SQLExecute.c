@@ -48,7 +48,7 @@ static struct msql_types {
 	{"hugeint", SQL_HUGEINT},
 	/* {"inet", SQL_WCHAR}, */
 	{"int", SQL_INTEGER},
-	/* {"json", SQL_WCHAR}, */
+	/* {"json", SQL_WVARCHAR}, */
 	{"month_interval", SQL_INTERVAL_MONTH},
 	{"oid", SQL_BIGINT},
 	{"real", SQL_REAL},
@@ -60,7 +60,7 @@ static struct msql_types {
 	{"timestamp", SQL_TYPE_TIMESTAMP},
 	{"timestamptz", SQL_TYPE_TIMESTAMP},
 	{"tinyint", SQL_TINYINT},
-	/* {"url", SQL_WCHAR}, */
+	/* {"url", SQL_WVARCHAR}, */
 	{"uuid", SQL_GUID},
 	{"varchar", SQL_WVARCHAR},
 	{0, 0},			/* sentinel */
@@ -388,6 +388,15 @@ ODBCInitResult(ODBCStmt *stmt)
 			 * that */
 			rec->sql_desc_display_size = mapi_get_len(hdl, i);
 			rec->sql_desc_octet_length = 4 * rec->sql_desc_display_size;
+
+			/* For large varchar column definitions conditionally
+			 * change type to SQL_WLONGVARCHAR when mapToLongVarchar is set (e.g. to 4000)
+			 * This is a workaround for MS SQL Server linked server
+			 * which can not handle large varchars (ref: SUPPORT-747) */
+			if (rec->sql_desc_concise_type == SQL_WVARCHAR
+			 && stmt->Dbc->mapToLongVarchar > 0
+			 && rec->sql_desc_length > (SQLULEN) stmt->Dbc->mapToLongVarchar)
+				rec->sql_desc_concise_type = SQL_WLONGVARCHAR;
 		} else {
 			rec->sql_desc_length = ODBCLength(rec, SQL_DESC_LENGTH);
 			rec->sql_desc_display_size = ODBCLength(rec, SQL_DESC_DISPLAY_SIZE);

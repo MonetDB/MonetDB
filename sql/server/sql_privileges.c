@@ -949,7 +949,7 @@ sql_drop_user(mvc *sql, char *user)
 }
 
 char *
-sql_alter_user(mvc *sql, char *user, char *passwd, bool enc, char *schema, char *schema_path, char *oldpasswd, char *role)
+sql_alter_user(mvc *sql, char *user, char *passwd, bool enc, char *schema, char *schema_path, char *oldpasswd, char *role, lng max_memory, int max_workers)
 {
 	sql_schema *s = NULL;
 	sqlid schema_id = 0;
@@ -976,7 +976,7 @@ sql_alter_user(mvc *sql, char *user, char *passwd, bool enc, char *schema, char 
 		if (!isNew(s) && sql_trans_add_dependency(sql->session->tr, s->base.id, ddl) != LOG_OK)
 			throw(SQL, "sql.alter_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	if (backend_alter_user(sql, user, passwd, enc, schema_id, schema_path, oldpasswd, role_id) == FALSE)
+	if (backend_alter_user(sql, user, passwd, enc, schema_id, schema_path, oldpasswd, role_id, max_memory, max_workers) == FALSE)
 		throw(SQL,"sql.alter_user", SQLSTATE(M0M27) "%s", sql->errstr);
 	return NULL;
 }

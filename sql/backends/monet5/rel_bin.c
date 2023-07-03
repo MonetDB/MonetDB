@@ -19,13 +19,13 @@
 #include "rel_select.h"
 #include "rel_updates.h"
 #include "rel_predicates.h"
+#include "rel_file_loader.h"
 #include "sql_env.h"
 #include "sql_optimizer.h"
 #include "sql_gencode.h"
 #include "mal_builder.h"
 #include "opt_prelude.h"
 
-static stmt * exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, int reduce, int push);
 static stmt * rel_bin(backend *be, sql_rel *rel);
 static stmt * subrel_bin(backend *be, sql_rel *rel, list *refs);
 
@@ -1267,6 +1267,37 @@ is_const_func(sql_subfunc *f, list *attr)
 	return false;
 }
 
+static stmt*
+exp2bin_file_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel)
+{
+	assert(left == NULL); (void)left;
+	assert(right == NULL); (void)right;
+	assert(sel == NULL); (void)sel;
+	sql_subfunc *f = fe->f;
+
+	list *arg_list = fe->l;
+	/*
+	list *type_list = f->res;
+	assert(1 + list_length(type_list) == list_length(arg_list));
+	*/
+
+	sql_exp *fexp = arg_list->h->data;
+	assert(is_atom(fexp->type));
+	atom *fa = fexp->l;
+	assert(fa->data.vtype == TYPE_str);
+	char *filename = fa->data.val.sval;
+
+	char *ext = strrchr(filename, '.');
+	if (ext)
+		ext = ext+1;
+	else
+		return NULL;
+	file_loader_t *fl = fl_find(ext);
+	if (!fl)
+		return NULL;
+	return (stmt*)fl->load(be, f, filename);
+}
+
 stmt *
 exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, int reduce, int push)
 {
@@ -1434,6 +1465,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				return exp2bin_coalesce(be, e, left, right, sel, depth);
 			if (strcmp(fname, "copyfrombinary") == 0)
 				return exp2bin_copyfrombinary(be, e, left, right, sel);
+			if (strcmp(fname, "file_loader") == 0)
+				return exp2bin_file_loader(be, e, left, right, sel);
 		}
 		if (!list_empty(exps)) {
 			unsigned nrcols = 0;

@@ -487,7 +487,7 @@ typedef struct sqlstore {
 	ATOMIC_TYPE timestamp;	/* timestamp counter */
 	ATOMIC_TYPE transaction;/* transaction id counter */
 	ATOMIC_TYPE function_counter;/* function counter used during function instantiation */
-	ulng oldest;
+	ATOMIC_TYPE oldest;
 	ulng oldest_pending;
 	int readonly;			/* store is readonly */
 	int singleuser;			/* store is for a single user only (==1 enable, ==2 single user session running) */
@@ -539,6 +539,7 @@ typedef struct sql_change {
 } sql_change;
 
 extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log);
+extern void trans_del(sql_trans *tr, sql_base *b);
 extern int tr_version_of_parent(sql_trans *tr, ulng ts);
 
 extern int sql_trans_add_predicate(sql_trans* tr, sql_column *c, unsigned int cmp, atom *r, atom *f, bool anti, bool semantics);

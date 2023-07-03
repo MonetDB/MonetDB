@@ -4,6 +4,16 @@ query TTTTT nosort
 select * from sys.malfunctions() order by module, "function", address, signature, comment
 ----
 aggr
+Collect
+command aggr.Collect(X_0:bat[:wkb]):wkb 
+wkbCollectAggr;
+TODO
+aggr
+MakeLine
+command aggr.MakeLine(X_0:bat[:wkb]):wkb 
+wkbMakeLineAggr;
+Gets a BAT with point or linestring geometries and returns a single linestring geometry
+aggr
 all
 command aggr.all(X_0:bat[:any_1]):any_1 
 SQLall;
@@ -973,6 +983,26 @@ str_group_concat
 pattern aggr.str_group_concat(X_0:bat[:str], X_1:bit):str 
 CMDBATstr_group_concat;
 Calculate aggregate string concatenate of B.
+aggr
+subCollect
+command aggr.subCollect(X_0:bat[:wkb], X_1:bat[:oid], X_2:bat[:oid], X_3:bit):bat[:wkb] 
+wkbCollectAggrSubGrouped;
+TODO
+aggr
+subCollect
+command aggr.subCollect(X_0:bat[:wkb], X_1:bat[:oid], X_2:bat[:any_1], X_3:bat[:oid], X_4:bit):bat[:wkb] 
+wkbCollectAggrSubGroupedCand;
+TODO
+aggr
+subMakeLine
+command aggr.subMakeLine(X_0:bat[:wkb], X_1:bat[:oid], X_2:bat[:oid], X_3:bit):bat[:wkb] 
+wkbMakeLineAggrSubGrouped;
+TODO
+aggr
+subMakeLine
+command aggr.subMakeLine(X_0:bat[:wkb], X_1:bat[:oid], X_2:bat[:any_1], X_3:bat[:oid], X_4:bit):bat[:wkb] 
+wkbMakeLineAggrSubGroupedCand;
+TODO
 aggr
 suball
 pattern aggr.suball(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:oid], X_3:bat[:oid], X_4:bit):bat[:any_1] 
@@ -21879,6 +21909,16 @@ command batgeom.Distance(X_0:wkb, X_1:bat[:wkb]):bat[:dbl]
 wkbDistance_geom_bat;
 (empty)
 batgeom
+DistanceGeographic
+command batgeom.DistanceGeographic(X_0:bat[:wkb], X_1:bat[:wkb]):bat[:dbl] 
+wkbDistanceGeographic_bat;
+TODO
+batgeom
+DistanceGeographic
+command batgeom.DistanceGeographic(X_0:bat[:wkb], X_1:bat[:wkb], X_2:bat[:oid], X_3:bat[:oid]):bat[:dbl] 
+wkbDistanceGeographic_bat_cand;
+TODO
+batgeom
 Filter
 command batgeom.Filter(X_0:bat[:wkb], X_1:wkb):bat[:wkb] 
 wkbFilter_bat_geom;
@@ -22098,6 +22138,11 @@ ToText
 command batgeom.ToText(X_0:bat[:wkb], X_1:int):bat[:str] 
 wkbAsText_bat;
 (empty)
+batgeom
+Transform
+command batgeom.Transform(X_0:bat[:wkb], X_1:int, X_2:int, X_3:str, X_4:str):bat[:wkb] 
+wkbTransform_bat;
+Transforms a bat of geometries from one srid to another
 batgeom
 Union
 command batgeom.Union(X_0:bat[:wkb], X_1:bat[:wkb]):bat[:wkb] 
@@ -26573,11 +26618,6 @@ maxlevenshtein
 pattern battxtsim.maxlevenshtein(X_0:bat[:str], X_1:bat[:str], X_2:int, X_3:int, X_4:int):bat[:bit] 
 BATTXTSIMmaxlevenshtein;
 Same as maxlevenshtein but for BATS
-battxtsim
-similarity
-command battxtsim.similarity(X_0:bat[:str], X_1:bat[:str]):bat[:dbl] 
-fstrcmp0_impl_bulk;
-(Deprecated) Normalized edit distance between two strings
 baturl
 extractURLHost
 command baturl.extractURLHost(X_0:bat[:str], X_1:bit):bat[:str] 
@@ -33568,6 +33608,16 @@ ycc
 command color.ycc(X_0:int, X_1:int, X_2:int):color 
 CLRycc;
 Converts an YCC triplets to a color atom
+csv
+epilogue
+command csv.epilogue():void 
+CSVepilogue;
+(empty)
+csv
+prelude
+pattern csv.prelude():void 
+CSVprelude;
+(empty)
 dict
 compress
 pattern dict.compress(X_0:bat[:any_1]) (X_1:bat[:any], X_2:bat[:any_1]) 
@@ -34029,6 +34079,11 @@ command geom.Centroid(X_0:wkb):wkb
 wkbCentroid;
 Computes the geometric center of a geometry, or equivalently, the center of mass of the geometry as a POINT.
 geom
+Collect
+command geom.Collect(X_0:wkb, X_1:wkb):wkb 
+wkbCollect;
+TODO
+geom
 Contains
 command geom.Contains(X_0:wkb, X_1:wkb):bit 
 wkbContains;
@@ -34064,15 +34119,50 @@ command geom.Covers(X_0:wkb, X_1:wkb):bit
 wkbCovers;
 Returns TRUE if no point of geometry B is outside geometry A
 geom
+CoversGeographic
+command geom.CoversGeographic(X_0:wkb, X_1:wkb):bit 
+wkbCoversGeographic;
+TODO
+geom
 Crosses
 command geom.Crosses(X_0:wkb, X_1:wkb):bit 
 wkbCrosses;
 Returns TRUE if the supplied geometries have some, but not all, interior points in common.
 geom
-DWithin
-command geom.DWithin(X_0:wkb, X_1:wkb, X_2:dbl):bit 
+DWithin2
+command geom.DWithin2(X_0:wkb, X_1:wkb, X_2:mbr, X_3:mbr, X_4:dbl):bit 
+wkbDWithinMbr;
+(empty)
+geom
+DWithinGeographic
+command geom.DWithinGeographic(X_0:wkb, X_1:wkb, X_2:dbl):bit 
+wkbDWithinGeographic;
+TODO
+geom
+DWithinGeographicjoin
+command geom.DWithinGeographicjoin(X_0:bat[:wkb], X_1:bat[:wkb], X_2:bat[:dbl], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+wkbDWithinGeographicJoin;
+TODO
+geom
+DWithinGeographicselect
+command geom.DWithinGeographicselect(X_0:bat[:wkb], X_1:bat[:oid], X_2:wkb, X_3:dbl, X_4:bit):bat[:oid] 
+wkbDWithinGeographicSelect;
+TODO
+geom
+DWithin_noindex
+command geom.DWithin_noindex(X_0:wkb, X_1:wkb, X_2:dbl):bit 
 wkbDWithin;
 Returns true if the two geometries are within the specifies distance from each other
+geom
+DWithinjoin_noindex
+command geom.DWithinjoin_noindex(X_0:bat[:wkb], X_1:bat[:wkb], X_2:bat[:oid], X_3:bat[:oid], X_4:dbl, X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+wkbDWithinJoinRTree;
+TODO
+geom
+DWithinselect_noindex
+command geom.DWithinselect_noindex(X_0:bat[:wkb], X_1:bat[:oid], X_2:wkb, X_3:dbl, X_4:bit):bat[:oid] 
+wkbDWithinSelectRTree;
+TODO
 geom
 DelaunayTriangles
 command geom.DelaunayTriangles(X_0:wkb, X_1:dbl, X_2:int):wkb 
@@ -34098,6 +34188,11 @@ Distance
 command geom.Distance(X_0:wkb, X_1:wkb):dbl 
 wkbDistance;
 Returns the 2-dimensional minimum cartesian distance between the two geometries in projected units (spatial ref units.
+geom
+DistanceGeographic
+command geom.DistanceGeographic(X_0:wkb, X_1:wkb):dbl 
+wkbDistanceGeographic;
+TODO
 geom
 Dump
 command geom.Dump(X_0:wkb) (X_1:bat[:str], X_2:bat[:wkb]) 
@@ -34219,10 +34314,40 @@ command geom.Intersection(X_0:wkb, X_1:wkb):wkb
 wkbIntersection;
 Returns a geometry that represents the point set intersection of the Geometries a, b
 geom
-Intersects
-command geom.Intersects(X_0:wkb, X_1:wkb):bit 
+IntersectsGeographic
+command geom.IntersectsGeographic(X_0:wkb, X_1:wkb):bit 
+wkbIntersectsGeographic;
+Returns true if the geographic Geometries intersect in any point
+geom
+IntersectsGeographicjoin
+command geom.IntersectsGeographicjoin(X_0:bat[:wkb], X_1:bat[:wkb], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit) (X_7:bat[:oid], X_8:bat[:oid]) 
+wkbIntersectsGeographicJoin;
+TODO
+geom
+IntersectsGeographicselect
+command geom.IntersectsGeographicselect(X_0:bat[:wkb], X_1:bat[:oid], X_2:wkb, X_3:bit):bat[:oid] 
+wkbIntersectsGeographicSelect;
+TODO
+geom
+IntersectsMBR
+command geom.IntersectsMBR(X_0:mbr, X_1:mbr):bit 
+mbrIntersects;
+TODO
+geom
+Intersects_noindex
+command geom.Intersects_noindex(X_0:wkb, X_1:wkb):bit 
 wkbIntersects;
 Returns true if these Geometries 'spatially intersect in 2D'
+geom
+Intersects_noindexjoin
+command geom.Intersects_noindexjoin(X_0:bat[:wkb], X_1:bat[:wkb], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit) (X_7:bat[:oid], X_8:bat[:oid]) 
+wkbIntersectsJoinNoIndex;
+TODO
+geom
+Intersects_noindexselect
+command geom.Intersects_noindexselect(X_0:bat[:wkb], X_1:bat[:oid], X_2:wkb, X_3:bit):bat[:oid] 
+wkbIntersectsSelectNoIndex;
+TODO
 geom
 IsClosed
 command geom.IsClosed(X_0:wkb):bit 
@@ -34328,11 +34453,6 @@ MakeLine
 command geom.MakeLine(X_0:wkb, X_1:wkb):wkb 
 wkbMakeLine;
 Gets two point or linestring geometries and returns a linestring geometry
-geom
-MakeLine
-command geom.MakeLine(X_0:bat[:wkb]):wkb 
-wkbMakeLineAggr;
-Gets a BAT with point or linestring geometries and returns a single linestring geometry
 geom
 MakePoint
 command geom.MakePoint(X_0:dbl, X_1:dbl):wkb 
@@ -37333,6 +37453,36 @@ resolve
 command remote.resolve(X_0:str):bat[:str] 
 RMTresolve;
 resolve a pattern against Merovingian and return the URIs
+rtree
+DWithin
+command rtree.DWithin(X_0:wkb, X_1:wkb, X_2:dbl):bit 
+wkbDWithin;
+Returns true if these Geometries 'spatially intersect in 2D'
+rtree
+DWithinjoin
+command rtree.DWithinjoin(X_0:bat[:wkb], X_1:bat[:wkb], X_2:bat[:oid], X_3:bat[:oid], X_4:dbl, X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid]) 
+wkbDWithinJoinRTree;
+TODO
+rtree
+DWithinselect
+command rtree.DWithinselect(X_0:bat[:wkb], X_1:bat[:oid], X_2:wkb, X_3:dbl, X_4:bit):bat[:oid] 
+wkbDWithinSelectRTree;
+TODO
+rtree
+Intersects
+command rtree.Intersects(X_0:wkb, X_1:wkb):bit 
+wkbIntersects;
+Returns true if these Geometries 'spatially intersect in 2D'
+rtree
+Intersectsjoin
+command rtree.Intersectsjoin(X_0:bat[:wkb], X_1:bat[:wkb], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit) (X_7:bat[:oid], X_8:bat[:oid]) 
+wkbIntersectsJoinRTree;
+TODO
+rtree
+Intersectsselect
+command rtree.Intersectsselect(X_0:bat[:wkb], X_1:bat[:oid], X_2:wkb, X_3:bit):bat[:oid] 
+wkbIntersectsSelectRTree;
+TODO
 sample
 subuniform
 pattern sample.subuniform(X_0:bat[:any], X_1:dbl):bat[:oid] 
@@ -37354,20 +37504,15 @@ pattern sample.subuniform(X_0:bat[:any], X_1:lng, X_2:int):bat[:oid]
 SAMPLEuniform;
 Returns the oids of a uniform sample of size s and where the prg is seeded with sample_seed
 shp
-attach
-unsafe pattern shp.attach(X_0:str):void 
-SHPattach;
-Register an ESRI Shapefile in the vault catalog
+load
+pattern shp.load(X_0:str, X_1:str):void 
+SHPload;
+Import an ESRI Shapefile into a new table, on the sys schema
 shp
-import
-unsafe pattern shp.import(X_0:int):void 
-SHPimport;
-Import an ESRI Shapefile with given id into the vault
-shp
-import
-unsafe pattern shp.import(X_0:int, X_1:wkb):void 
-SHPpartialimport;
-Partially import an ESRI Shapefile with given id into the vault
+load
+pattern shp.load(X_0:str, X_1:str, X_2:str):void 
+SHPloadSchema;
+Import an ESRI Shapefile into a new table, on a certain schema
 sql
 affectedRows
 unsafe pattern sql.affectedRows(X_0:int, X_1:lng):int 
@@ -38615,7 +38760,7 @@ SQLalter_table;
 Catalog operation alter_table
 sqlcatalog
 alter_user
-pattern sqlcatalog.alter_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str, X_5:str, X_6:str):void 
+pattern sqlcatalog.alter_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str, X_5:str, X_6:str, X_7:lng, X_8:int):void 
 SQLalter_user;
 Catalog operation alter_user
 sqlcatalog
@@ -39363,16 +39508,6 @@ qgramselfjoin
 command txtsim.qgramselfjoin(X_0:bat[:oid], X_1:bat[:oid], X_2:bat[:int], X_3:bat[:int], X_4:flt, X_5:int) (X_6:bat[:int], X_7:bat[:int]) 
 qgram_selfjoin;
 QGram self-join on ordered(!) qgram tables and sub-ordered q-gram positions
-txtsim
-similarity
-command txtsim.similarity(X_0:str, X_1:str):dbl 
-fstrcmp0_impl;
-(Deprecated) Normalized edit distance between two strings
-txtsim
-similarity
-command txtsim.similarity(X_0:str, X_1:str, X_2:dbl):dbl 
-fstrcmp_impl;
-(Deprecated) Normalized edit distance between two strings
 txtsim
 soundex
 command txtsim.soundex(X_0:str):str 

@@ -343,6 +343,7 @@ VIEWdestroy(BAT *b)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	STRMPdestroy(b);
+	RTREEdestroy(b);
 
 	MT_lock_set(&b->theaplock);
 	PROPdestroy_nolock(b);

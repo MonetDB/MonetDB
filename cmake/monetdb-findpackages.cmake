@@ -20,6 +20,10 @@ else()
   find_package(Python3 COMPONENTS Interpreter Development NumPy)
 endif()
 
+if(WITH_RTREE)
+  find_package(RTree)
+endif()
+
 if(WITH_LZMA)
   find_package(Lzma)
 endif()
@@ -56,7 +60,7 @@ if(WITH_LZ4)
 endif()
 
 if(WITH_PROJ)
-  find_package(Proj)
+  find_package(Proj 6.0)
 endif()
 
 if(WITH_SNAPPY)
@@ -82,7 +86,7 @@ endif()
 find_package(KVM)
 
 if(GEOM)
-  find_package(Geos)
+  find_package(Geos 3.10.0)
 endif()
 
 if(SHP)

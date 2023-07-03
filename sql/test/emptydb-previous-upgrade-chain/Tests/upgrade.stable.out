@@ -1,12 +1,6 @@
 Running database upgrade commands to update system tables.
 
 Running database upgrade commands:
-create procedure SHPattach(fname string) external name shp.attach;
-create procedure SHPload(fid integer) external name shp.import;
-create procedure SHPload(fid integer, filter geometry) external name shp.import;
-update sys.functions set system = true where schema_id = 2000 and name in ('shpattach', 'shpload');
-
-Running database upgrade commands:
 alter table sys.db_user_info add column max_memory bigint;
 alter table sys.db_user_info add column max_workers int;
 alter table sys.db_user_info add column optimizer varchar(1024);
@@ -648,9 +642,6 @@ grant execute on function difference(string, string) to public;
 create function sys.qgramnormalize(x string)
 returns string external name txtsim.qgramnormalize;
 grant execute on function qgramnormalize(string) to public;
-create function sys.similarity(x string, y string)
-returns double external name txtsim.similarity;
-grant execute on function similarity(string, string) to public;
 create function asciify(x string)
 returns string external name str.asciify;
 grant execute on function asciify(string) to public;
@@ -690,9 +681,57 @@ grant execute on filter function contains(string, string) to public;
 create filter function sys.contains(x string, y string, icase boolean)
 external name str.contains;
 grant execute on filter function contains(string, string, boolean) to public;
-update sys.functions set system = true where system <> true and name in ('levenshtein', 'dameraulevenshtein', 'jarowinkler', 'editdistance', 'editdistance2', 'soundex', 'difference', 'qgramnormalize', 'similarity') and schema_id = 2000 and type = 1;
+update sys.functions set system = true where system <> true and name in ('levenshtein', 'dameraulevenshtein', 'jarowinkler', 'editdistance', 'editdistance2', 'soundex', 'difference', 'qgramnormalize') and schema_id = 2000 and type = 1;
 update sys.functions set system = true where system <> true and name in ('maxlevenshtein', 'minjarowinkler') and schema_id = 2000 and type = 4;
 update sys.functions set system = true where system <> true and name in ('asciify', 'startswith', 'endswith', 'contains') and schema_id = 2000 and type = 1;
 update sys.functions set system = true where system <> true and name in ('startswith', 'endswith', 'contains') and schema_id = 2000 and type = 4;
 delete from sys.triggers where name = 'system_update_tables' and table_id = 2067;
+
+Running database upgrade commands:
+create procedure SHPLoad(fname string, schemaname string, tablename string) external name shp.load;
+create procedure SHPLoad(fname string, tablename string) external name shp.load;
+update sys.functions set system = true where schema_id = 2000 and name in ('shpload');
+Running database upgrade commands:
+drop function if exists sys.st_intersects(geometry, geometry) cascade;
+drop function if exists sys.st_dwithin(geometry, geometry, double) cascade;
+drop view if exists sys.geometry_columns cascade;
+drop function if exists sys.st_collect(geometry, geometry) cascade;
+drop aggregate if exists sys.st_collect(geometry) cascade;
+drop aggregate if exists sys.st_makeline(geometry) cascade;
+create view sys.geometry_columns as
+ select cast(null as varchar(1)) as f_table_catalog,
+  s.name as f_table_schema,
+  t.name as f_table_name,
+  c.name as f_geometry_column,
+  cast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension,
+  c.type_scale as srid,
+  get_type(c.type_digits, 0) as geometry_type
+ from sys.columns c, sys.tables t, sys.schemas s
+ where c.table_id = t.id and t.schema_id = s.id
+  and c.type in (select sqlname from sys.types where systemname in ('wkb', 'wkba'));
+GRANT SELECT ON sys.geometry_columns TO PUBLIC;
+CREATE FUNCTION ST_Collect(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Collect";
+GRANT EXECUTE ON FUNCTION ST_Collect(Geometry, Geometry) TO PUBLIC;
+CREATE AGGREGATE ST_Collect(geom Geometry) RETURNS Geometry external name aggr."Collect";
+GRANT EXECUTE ON AGGREGATE ST_Collect(Geometry) TO PUBLIC;
+CREATE FUNCTION ST_DistanceGeographic(geom1 Geometry, geom2 Geometry) RETURNS double EXTERNAL NAME geom."DistanceGeographic";
+GRANT EXECUTE ON FUNCTION ST_DistanceGeographic(Geometry, Geometry) TO PUBLIC;
+CREATE FILTER FUNCTION ST_DWithinGeographic(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME geom."DWithinGeographic";
+GRANT EXECUTE ON FILTER ST_DWithinGeographic(Geometry, Geometry, double) TO PUBLIC;
+CREATE FILTER FUNCTION ST_DWithin(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME rtree."DWithin";
+GRANT EXECUTE ON FILTER ST_DWithin(Geometry, Geometry, double) TO PUBLIC;
+CREATE FILTER FUNCTION ST_DWithin_NoIndex(geom1 Geometry, geom2 Geometry, distance double) EXTERNAL NAME geom."DWithin_noindex";
+GRANT EXECUTE ON FILTER ST_DWithin_NoIndex(Geometry, Geometry, double) TO PUBLIC;
+CREATE FUNCTION ST_DWithin2(geom1 Geometry, geom2 Geometry, bbox1 mbr, bbox2 mbr, dst double) RETURNS boolean EXTERNAL NAME geom."DWithin2";
+GRANT EXECUTE ON FUNCTION ST_DWithin2(Geometry, Geometry, mbr, mbr, double) TO PUBLIC;
+CREATE FILTER FUNCTION ST_IntersectsGeographic(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom."IntersectsGeographic";
+GRANT EXECUTE ON FILTER ST_IntersectsGeographic(Geometry, Geometry) TO PUBLIC;
+CREATE FILTER FUNCTION ST_Intersects(geom1 Geometry, geom2 Geometry) EXTERNAL NAME rtree."Intersects";
+GRANT EXECUTE ON FILTER ST_Intersects(Geometry, Geometry) TO PUBLIC;
+CREATE FILTER FUNCTION ST_Intersects_NoIndex(geom1 Geometry, geom2 Geometry) EXTERNAL NAME geom."Intersects_noindex";
+GRANT EXECUTE ON FILTER ST_Intersects_NoIndex(Geometry, Geometry) TO PUBLIC;
+CREATE AGGREGATE ST_MakeLine(geom Geometry) RETURNS Geometry external name aggr."MakeLine";
+GRANT EXECUTE ON AGGREGATE ST_MakeLine(Geometry) TO PUBLIC;
+update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('st_collect', 'st_distancegeographic', 'st_dwithingeographic', 'st_dwithin', 'st_dwithin_noindex', 'st_dwithin2', 'st_intersectsgeographic', 'st_intersects', 'st_intersects_noindex', 'st_makeline');
+update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'geometry_columns';
 

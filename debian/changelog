@@ -1,3 +1,201 @@
+monetdb (11.47.3) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7344: Database upgrade failure due to user object dependency on
+    system procedure
+  * GH#7378: MonetDB server crashes at sql_trans_copy_key
+  * GH#7379: MonetDB server 11.46.0 crashes at cs_bind_ubat
+  * GH#7380: MonetDB server 11.46.0 crashes at `BLOBcmp`
+  * GH#7381: MonetDB server 11.46.0 crashes at `log_create_delta`
+  * GH#7382: MonetDB server 11.46.0 crashes at `gc_col`
+  * GH#7383: MonetDB server 11.46.0 crashes at `list_append`
+  * GH#7384: MonetDB server 11.46.0 crashes at `__nss_database_lookup`
+  * GH#7386: MonetDB server 11.46.0 crashes in `rel_deps`
+  * GH#7387: MonetDB server 11.46.0 crashes in `rel_sequences`
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 22 Jun 2023 11:58:29 +0200
+
+monetdb (11.47.3) unstable; urgency=low
+
+  * clients: The COPY INTO from file ON CLIENT was extended to also look for a
+    relative path name relative to the file from which the query was read.
+    This is only possible if the name of the query file is known, so when
+    it is specified on the command line or read using the interactive
+    \< command.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 20 Jun 2023 11:58:29 +0200
+
+monetdb (11.47.3) unstable; urgency=low
+
+  * sql: Add MAX_MEMORY and MAX_WORKERS options to the ALTER USER statement
+
+ -- Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>  Fri, 16 Jun 2023 11:58:29 +0200
+
+monetdb (11.47.1) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7311: Missing `REGEXP_REPLACE` function.
+  * GH#7348: Subquery inside case always evaluated
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 16 Jun 2023 09:52:33 +0200
+
+monetdb (11.47.1) unstable; urgency=low
+
+  * sql: Function 'similarity(x string, y string)' marked as deprecated and will
+    be removed in the next release.
+
+ -- Lucas Pereira <lucas.pereira@monetdbsolutions.com>  Tue, 6 Jun 2023 09:52:33 +0200
+
+monetdb (11.47.1) unstable; urgency=low
+
+  * odbc: Extended Windows MonetDB ODBC Data Source setup program with option
+    to specify a logfile to enable tracing of ODBC Driver API calls.
+    On other platforms users can edit the  odbc.ini  file and add a line:
+    logfile=/home/username/odbctrace.log
+    When a logfile is specified it will start logging the ODBC Driver API calls
+    to the logfile after a new connection is made via SQLConnect() or
+    SQLDriverConnect() or SQLBrowseConnect().
+    Note that enabling ODBC logging will slow down the performance of ODBC
+    applications, so enable it only for analysing ODBC Driver problems.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Tue, 6 Jun 2023 09:52:33 +0200
+
+monetdb (11.47.1) unstable; urgency=low
+
+  * sql: New functionality for string matching and similarity: startswith,
+    endswith, contains, Levenshtein distance and Jaro-Winkler similarity.
+    The functions startswith, endswith and contains have a version where
+    a case insentive flag can be used.
+    Also, there are new custom join functionality for startswith, endswith,
+    contains, Levenshtein distance and Jaro-Winkler similarity.
+  * sql: Renamed previous Levenshtein distance to Damerau-Levenshtein distance.
+  * sql: New string function that transform from UTF-8 encoding to Ascii called
+    asciify.
+
+ -- Lucas Pereira <lucas.pereira@monetdbsolutions.com>  Tue, 6 Jun 2023 09:52:33 +0200
+
+monetdb (11.47.1) unstable; urgency=low
+
+  * odbc: Enhanced SQLTables() by adding support for table type names: 'BASE TABLE',
+    'GLOBAL TEMPORARY' and 'LOCAL TEMPORARY' in parameter TableType. These are
+    synonyms of: 'TABLE', 'GLOBAL TEMPORARY TABLE' and 'LOCAL TEMPORARY TABLE'.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Tue, 6 Jun 2023 09:52:33 +0200
+
+monetdb (11.47.1) unstable; urgency=low
+
+  * sql: Session timeout feature improvement to start evaluating from the moment
+    the procedure is called, instead of beginning of the session.
+
+ -- Lucas Pereira <lucas.pereira@monetdbsolutions.com>  Tue, 6 Jun 2023 09:52:33 +0200
+
+monetdb (11.47.1) unstable; urgency=low
+
+  * sql: Queries stopped with the stop procedure are now marked as 'aborted'
+    'finished'.
+
+ -- Lucas Pereira <lucas.pereira@monetdbsolutions.com>  Tue, 6 Jun 2023 09:52:33 +0200
+
+monetdb (11.47.1) unstable; urgency=low
+
+  * monetdb5: The MAL debugger code has been removed.
+
+ -- Niels Nes <niels@monetdbsolutions.com>  Tue, 6 Jun 2023 09:52:33 +0200
+
+monetdb (11.47.1) unstable; urgency=low
+
+  * sql: The DEBUG statement has been removed.
+
+ -- Niels Nes <niels@monetdbsolutions.com>  Tue, 6 Jun 2023 09:52:33 +0200
+
+monetdb (11.47.1) unstable; urgency=low
+
+  * sql: SQL function sys.queue() overloaded with sys.queue(username string),
+    SYSADMIN only, allowing to filter the global queue by username or
+    use 'ALL' to retrieve the global queue. Calling the function without
+    arguments returns the queue for the current user.
+  * sql: SQL procedures sys.pause(tag bigint), sys.resume(tag bigint),
+    sys.stop(tag bigint) overloaded with sys.pause(tag bigint, username string),
+    sys.resume(tag bigint, username string) and sys.stop(tag bigint, username
+    string), SYSADMIN only, allowing to pause, resume and stop query
+    executions by TAG, USERNAME. The call without arguments is a public
+    procedure giving access to users to pause, resume and stop their
+    own query executions.
+
+ -- Lucas Pereira <lucas.pereira@monetdbsolutions.com>  Tue, 6 Jun 2023 09:52:33 +0200
+
+monetdb (11.47.1) unstable; urgency=low
+
+  * sql: Added support of ODBC escape sequences syntax to SQL layer. Now all clients
+    (including ODBC/JDBC/pymonetdb) can use them without further processing.
+    For details on ODBC escape sequences syntax see:
+    https://learn.microsoft.com/en-us/sql/odbc/reference/appendixes/odbc-escape-sequences
+
+ -- svetlin <svetlin.stalinov@monetdbsolutions.com>  Tue, 6 Jun 2023 09:52:33 +0200
+
+monetdb (11.47.1) unstable; urgency=low
+
+  * merovingian: The monetdb get, inherit, lock and release commands are extended with
+    ‘apply-to-all’ syntax similar to related functionality:
+    Usage: monetdb set property=value [database ...]
+    sets property to value for the given database(s), or all
+    Usage: monetdb inherit property [database ...]
+    unsets property, reverting to its inherited value from the
+    default configuration for the given database(s), or all
+    Usage: monetdb lock [-a] database [database...]
+    Puts the given database in maintenance mode.
+    Options:
+      -a  locks all known databases
+    Usage: monetdb release [-a] database [database ...]
+    Brings back a database from maintenance mode.
+    Options:
+      -a  releases all known databases
+
+ -- Aris Koning <aris.koning@monetdbsolutions.com>  Tue, 6 Jun 2023 09:52:33 +0200
+
+monetdb (11.47.1) unstable; urgency=low
+
+  * sql: It is no longer allowed to create a merge table or remote table or
+    replica table or unlogged table in schema "tmp". The tmp schema is
+    reserved for temporary objects only, such as local/global temp tables.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Tue, 6 Jun 2023 09:52:33 +0200
+
+monetdb (11.47.1) unstable; urgency=low
+
+  * sql: System views sys.dependency_tables_on_functions and
+    dependency_views_on_functions have been extended with column: function_id.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Tue, 6 Jun 2023 09:52:33 +0200
+
+monetdb (11.47.1) unstable; urgency=low
+
+  * mapilib: Deprecate mapi_setfilecallback() in favor of mapi_setfilecallback2() which
+    can handle binary downloads. For the time being, the old callback still works.
+
+ -- Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>  Tue, 6 Jun 2023 09:52:33 +0200
+
+monetdb (11.47.1) unstable; urgency=low
+
+  * sql: When loading data using COPY BINARY INTO, apply default values instead of just
+    inserting NULLs.
+  * sql: When loading data using COPY BINARY INTO, validate DECIMAL(prec,scale) and
+    VARCHAR(n) column width.
+  * sql: When loading data using COPY BINARY INTO, string used to have their line
+    endings converted from CR LF to LF. Do not do this, it is the responsibility
+    of the client.
+  * sql: Implemented dumping binary data using COPY SELECT ... INTO BINARY <file(s)>.
+
+ -- Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>  Tue, 6 Jun 2023 09:52:33 +0200
+
+monetdb (11.47.1) unstable; urgency=low
+
+  * sql: Removed code for Workload Capture and Replace, including system schemas
+    "wlc" and "wlr" and the objects in those schemas. The code was
+    experimental, and it didn't work out. A different approach will be taken.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 6 Jun 2023 09:52:33 +0200
+
 monetdb (11.45.17) unstable; urgency=low
 
   * Rebuilt.

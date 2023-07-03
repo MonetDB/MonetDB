@@ -658,6 +658,7 @@ count_idx(sql_trans *tr, sql_idx *i, int access)
 	return segs_end(d->segs, tr, i->t);
 }
 
+#define BATtdense2(b) (b->ttype == TYPE_void && b->tseqbase != oid_nil)
 static BAT *
 cs_bind_ubat( column_storage *cs, int access, int type, size_t cnt /* ie max position < cnt */)
 {
@@ -669,8 +670,8 @@ cs_bind_ubat( column_storage *cs, int access, int type, size_t cnt /* ie max pos
 		if (access == RD_UPD_ID) {
 			if (!(b = temp_descriptor(cs->uibid)))
 				return NULL;
-			if (!b->tsorted || ((BATtdense(b) && (b->tseqbase + BATcount(b)) >= cnt) ||
-			   (!BATtdense(b) && BATcount(b) && ((oid*)b->theap->base)[BATcount(b)-1] >= cnt))) {
+			if (!b->tsorted || ((BATtdense2(b) && (b->tseqbase + BATcount(b)) >= cnt) ||
+			   (!BATtdense2(b) && BATcount(b) && ((oid*)b->theap->base)[BATcount(b)-1] >= cnt))) {
 					oid nil = oid_nil;
 					/* less then cnt */
 					BAT *s = BATselect(b, NULL, &nil, &cnt, false, false, false);
@@ -2245,7 +2246,8 @@ append_col_execute(sql_trans *tr, sql_delta **delta, sqlid id, BUN offset, BAT *
 {
 	int ok = LOG_OK;
 
-	(*delta)->cs.merged = 0; /* TODO needs to move */
+	if ((*delta)->cs.merged)
+		(*delta)->cs.merged = false; /* TODO needs to move */
 	if (tt == TYPE_bat) {
 		BAT *bat = incoming_data;
 
@@ -3672,7 +3674,7 @@ clear_cs(sql_trans *tr, column_storage *cs, bool renew, bool temp)
 		temp_destroy(cs->uvbid);
 		cs->uvbid = 0;
 	}
-	cs->cleared = 1;
+	cs->cleared = true;
 	cs->ucnt = 0;
 	return sz;
 }
@@ -3960,7 +3962,8 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 static int
 log_storage(sql_trans *tr, sql_table *t, storage *s)
 {
-	int ok = LOG_OK, cleared = s->cs.cleared;
+	int ok = LOG_OK;
+	bool cleared = s->cs.cleared;
 	if (ok == LOG_OK && cleared)
 		ok =  tr_log_cs(tr, t, &s->cs, s->segs->h, t->base.id);
 	if (ok == LOG_OK)
@@ -4007,8 +4010,8 @@ merge_cs( column_storage *cs, const char* caller)
 		bat_destroy(uv);
 		bat_destroy(cur);
 	}
-	cs->cleared = 0;
-	cs->merged = 1;
+	cs->cleared = false;
+	cs->merged = true;
 	return;
 }
 
@@ -4110,6 +4113,7 @@ commit_update_delta( sql_trans *tr, sql_change *change, sql_table* t, sql_base* 
 			ok = LOG_ERR; /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
 		if (!tr->parent)
 			t->base.new = base->new = 0;
+		change->handled = true;
 		return ok;
 	}
 
@@ -4128,6 +4132,7 @@ commit_update_delta( sql_trans *tr, sql_change *change, sql_table* t, sql_base* 
 			ATOMIC_PTR_SET(data, d->next);
 		else
 			o->next = d->next;
+		d->next = NULL;
 		change->cleanup = &tc_gc_rollbacked;
 	} else if (!tr->parent) {
 		/* merge deltas */
@@ -4236,6 +4241,7 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		assert(isTempTable(t));
 		if ((ok = clear_storage(tr, t, dbat)) == LOG_OK)
 			if (commit_ts) dbat->segs->h->ts = commit_ts;
+		change->handled = true;
 		return ok;
 	}
 

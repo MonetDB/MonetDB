@@ -1,0 +1,119 @@
+statement ok
+CREATE TABLE fal(x STRING)
+
+statement ok
+COPY 100 RECORDS INTO fal FROM STDIN USING DELIMITERS ',','\n','"'
+<COPY_INTO_DATA>
+Mary Garcia
+James Ballard
+Alexandria Harris
+Dakota Howell
+Tracy Glover
+Mark Cook
+James Woodard
+Sophia Stone
+Jeffrey Ramirez
+Ryan Knight
+Taylor Lane
+Christopher Russell
+Daniel Sims
+Tony Watts
+Dwayne Johnson
+Jason Dunlap
+Abigail Burton
+Maria Lewis
+Ashley Taylor
+Emma Abbott
+James Whitney
+Philip Maldonado
+Rachel Taylor
+Tina Singleton
+Ricky Johnson
+Anthony Peterson
+Eugene Mata
+Tyler Terry
+Thomas Morales
+Kathy Moore
+William Franco
+Christopher Williams
+David Carter
+Andrew Alvarado
+John Jenkins
+Anthony Charles
+Jose Tran
+Amy Stafford
+Vincent Malone
+Ashley Waters
+Cindy Huffman
+Anthony Hernandez
+Brett Hardy
+Lisa Matthews
+Jeffrey Ingram
+Jessica Miller
+Karen Jones
+Terry Sanders
+Aaron Rodriguez
+Kyle Ortega
+David Clark
+Brent Garrett
+Scott Young
+Shannon Edwards
+Tiffany Macias
+Ricky Gonzalez
+Devin Logan
+Russell Walker
+Michael Nguyen
+Heather Robinson
+April Lawrence
+Christopher Williams
+Laura Gonzalez
+Patrick Ortiz
+Sylvia Phillips
+Cynthia Kemp
+Stephanie Gillespie
+Elizabeth Joseph
+Jay Collins
+Johnny Gibson
+Dr. Audrey Sellers MD
+Desiree Li
+Heather Brown
+Shelly Bauer
+Donna Anderson
+Amy Sharp
+Olivia Howell
+Margaret Tran
+Alexandra Jarvis
+Glen Ray
+Michael Mendoza
+Sarah Hall
+Dennis Moss
+Wanda Brooks
+Debra Powers
+Shannon Nguyen
+Daisy Mcdonald
+Donna Rivera
+Samuel Jackson
+Wendy Howe
+Connor Howell
+Jeffrey Newman
+Daniel Sullivan
+Megan Dunn
+Laura Holland
+Brendan Bates
+Mary Miller
+Thomas Ramirez
+a
+""
+
+
+statement ok
+ALTER TABLE fal SET READ ONLY
+
+statement ok
+CREATE IMPRINTS INDEX fal_index ON fal(x)
+
+query T
+SELECT * FROM fal WHERE x LIKE 'Daniel%'
+----
+Daniel Sims
+Daniel Sullivan

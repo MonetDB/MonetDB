@@ -117,6 +117,7 @@ endif()
 
 install(TARGETS
   stream
+  COMPONENT stream
   EXPORT streamTargets
   RUNTIME
   DESTINATION ${CMAKE_INSTALL_BINDIR}

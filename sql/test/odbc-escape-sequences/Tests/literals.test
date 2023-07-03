@@ -81,8 +81,8 @@ select {interval '3' minute}, interval '3' minute
 query TT rowsort
 select {interval '4.567' second}, interval '4.567' second
 ----
-0:00:04
-0:00:04
+0:00:04.567000
+0:00:04.567000
 
 query TT rowsort
 select {interval '2 6' day to hour}, interval '2 6' day to hour
