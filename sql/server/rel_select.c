@@ -533,16 +533,16 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, sql_exp *e, list *r
 		return "Filename missing";
 	char *filename = a->data.val.sval;
 	char *ext = strrchr(filename, '.');
+
 	if (ext)
 		ext=ext+1;
 
 	file_loader_t *fl = fl_find(ext);
-	/* TODO add errors on missing file loader */
-	if (fl) {
-		 str err = fl->add_types(sql, f, filename, res_exps, tname); /* TODO check for errors */
-		 if (err)
-			return err;
-	}
+	if (!fl)
+		return sa_message(sql->ta, "extension '%s' mising", ext?ext:"");
+	str err = fl->add_types(sql, f, filename, res_exps, tname);
+	if (err)
+		return err;
 	return NULL;
 }
 
@@ -716,6 +716,8 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 
 	if (!sname && strcmp(fname, "file_loader") == 0) {
 		rel = rel_file_loader(sql, exps, tl, tname);
+		if (!rel)
+			return NULL;
 	} else if (!(e = find_table_function(sql, sname, fname, list_empty(exps) ? NULL : exps, tl, F_UNION)))
 		return NULL;
 

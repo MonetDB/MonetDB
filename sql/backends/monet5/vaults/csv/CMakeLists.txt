@@ -20,9 +20,11 @@ target_include_directories(csv
 target_link_libraries(csv
     PRIVATE
     monetdb_config_header
+    sqlinclude
+    sql
     monetdb5
     bat
-    sqlinclude)
+  )
 
 set_target_properties(csv
     PROPERTIES

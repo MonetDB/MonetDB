@@ -22,7 +22,7 @@ typedef struct file_loader_t {
 	fl_load_fptr load;
 } file_loader_t;
 
-extern int fl_register(char *name, fl_add_types_fptr add_types, fl_load_fptr fl_load);
+sql_export int fl_register(char *name, fl_add_types_fptr add_types, fl_load_fptr fl_load);
 extern file_loader_t* fl_find(char *name);
 
 extern void fl_exit(void);

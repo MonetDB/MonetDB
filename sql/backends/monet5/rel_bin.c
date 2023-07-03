@@ -1293,6 +1293,8 @@ exp2bin_file_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel
 	else
 		return NULL;
 	file_loader_t *fl = fl_find(ext);
+	if (!fl)
+		return NULL;
 	return (stmt*)fl->load(be, f, filename);
 }
 
