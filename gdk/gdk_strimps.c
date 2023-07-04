@@ -85,7 +85,38 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-#include "gdk_strimps.h"
+#include <stdint.h>
+
+
+#define STRIMP_VERSION (uint64_t)2
+#define STRIMP_HISTSIZE (256*256)
+#define STRIMP_HEADER_SIZE 64
+#define STRIMP_PAIRS (STRIMP_HEADER_SIZE - 1)
+#define STRIMP_CREATION_THRESHOLD				\
+	((BUN) ((ATOMIC_GET(&GDKdebug) & FORCEMITOMASK)? 100 : 5000))
+
+typedef struct {
+#ifdef UTF8STRIMPS
+	uint8_t *pbytes;
+#else
+	uint8_t pbytes[2];
+#endif //UTF8STRIMPSX
+	uint8_t psize;
+	size_t idx;
+	uint64_t mask;
+} CharPair;
+
+typedef struct {
+	size_t pos;
+	size_t lim;
+	const char *s;
+} PairIterator;
+
+typedef struct {
+	uint64_t cnt;
+	uint64_t mask;
+	size_t idx;
+} PairHistogramElem;
 
 
 /* Macros for accessing metadada of a strimp. These are recorded in the
@@ -136,17 +167,6 @@ histogram_index(PairHistogramElem *hist, size_t hsize, CharPair *p)
 	(void) hist;
 	(void) hsize;
 	return pairToIndex(p->pbytes[0], p->pbytes[1]);
-}
-
-inline static uint8_t *
-histindex2bytes(size_t index, uint8_t *psize)
-{
-	*psize = 2;
-	uint8_t *ret = (uint8_t *)malloc(*psize*sizeof(uint8_t));
-	ret[1] = (uint8_t)(index & 0xFFFF);
-	ret[0] = (uint8_t)((index >> 8) & 0xFFFF);
-
-	return ret;
 }
 
 inline static size_t
