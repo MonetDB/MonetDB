@@ -1,0 +1,20 @@
+statement ok
+create table part1 (n int, m text)
+
+statement ok
+insert into part1 values (1, 'alice')
+
+statement ok
+create table part2 (n int, m text)
+
+statement ok
+insert into part2 values (2, 'bob')
+
+statement ok
+create merge table allparts (n int, m text)
+
+statement ok
+alter table allparts add table part1
+
+statement ok
+alter table allparts add table part2

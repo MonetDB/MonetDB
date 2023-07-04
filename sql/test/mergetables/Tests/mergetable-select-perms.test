@@ -1,0 +1,43 @@
+-- select through individual user perms
+
+statement ok
+create user kate with password '123kate' name 'Kate' schema sys
+
+@connection(id=tc, username=kate, password=123kate)
+statement error 42000!SELECT: access denied for kate to table 'sys.allparts'
+select * from allparts
+
+statement ok
+grant select on allparts to kate
+
+@connection(id=tc, username=kate, password=123kate)
+query IT rowsort
+select * from allparts
+----
+1
+alice
+2
+bob
+
+-- select through role
+
+statement ok
+create role reader
+
+statement ok
+grant select on allparts to reader
+
+statement ok
+create user tom with password '123tom' name 'Tom' schema sys
+
+statement ok
+alter user tom default role reader
+
+@connection(id=tc, username=tom, password=123tom)
+query IT rowsort
+select * from allparts
+----
+1
+alice
+2
+bob
