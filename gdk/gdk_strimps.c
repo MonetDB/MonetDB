@@ -180,7 +180,13 @@ pair_at(PairIterator *pi, CharPair *p)
 {
 	if (pi->pos >= pi->lim - 1)
 		return false;
-	p->pbytes = (uint8_t*)pi->s + pi->pos;
+#ifdef LOWERCASE_STRIMPS
+	p->pbytes[0] = (uint8_t)tolower(*(pi->s + pi->pos));
+	p->pbytes[1] = (uint8_t)tolower(*(pi->s + pi->pos + 1));
+#else
+	p->pbytes[0] = (uint8_t)*(pi->s + pi->pos);
+	p->pbytes[1] = (uint8_t)*(pi->s + pi->pos + 1);
+#endif
 	p->psize = 2;
 	p->idx = pairToIndex(p->pbytes[0], p->pbytes[1]);
 	return true;
@@ -266,38 +272,37 @@ STRMPmakebitstring(const char *s, Strimps *r)
 	} while(0)
 
 
-static int
-STRMPhist_cmp(const void *xx, const void *yy)
-{
-	size_t x = ((PairHistogramElem *)xx)->cnt;
-	size_t y = ((PairHistogramElem *)yy)->cnt;
 
-	return y - x;
-}
-
-/*
- */
 static void
 STRMPchoosePairs(PairHistogramElem *hist, size_t hist_size, CharPair *cp)
 {
 	lng t0 = 0;
 	size_t i;
+	uint64_t max_counts[STRIMP_HEADER_SIZE] = {0};
+	size_t indices[STRIMP_HEADER_SIZE] = {0};
+	const size_t cmin_max = STRIMP_HEADER_SIZE - 1;
+	size_t hidx;
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
-	qsort(hist, hist_size, sizeof(PairHistogramElem), STRMPhist_cmp);
-	for (i = 0; i < hist_size; i++) {
-		if(!hist[i].cnt)
-			break;
-	}
-	hist_size = i;
-	size_t offset = hist_size/2 - STRIMP_HEADER_SIZE/2;
-	for (i = 0; i < STRIMP_PAIRS; i++) {
-		cp[i].pbytes = histindex2bytes(hist[i + offset].idx, &cp[i].psize);
-		cp[i].idx = hist[i + offset].idx;
-		cp[i].mask = ((uint64_t)0x1) << (STRIMP_PAIRS - 1 - i);
+	for(i = 0; i < hist_size; i++) {
+		if (max_counts[cmin_max] < hist[i].cnt) {
+			max_counts[cmin_max] = hist[i].cnt;
+			indices[cmin_max] = i;
+			for(hidx = cmin_max; hidx > 0 && max_counts[hidx] > max_counts[hidx-1]; hidx--) {
+				SWAP(max_counts, hidx, hidx-1, uint64_t);
+				SWAP(indices, hidx, hidx-1, size_t);
+			}
+		}
 	}
 
+	for(i = 0; i < STRIMP_HEADER_SIZE; i++) {
+		cp[i].pbytes[1] = (uint8_t)(hist[indices[i]].idx & 0xFF);
+		cp[i].pbytes[0] = (uint8_t)((hist[indices[i]].idx >> 8) & 0xFF);
+		cp[i].idx = hist[indices[i]].idx;
+		cp[i].psize = 2;
+		cp[i].mask = ((uint64_t)0x1) << (STRIMP_PAIRS - 1 - i);
+	}
 
 	TRC_DEBUG(ACCELERATOR, LLFMT " usec\n", GDKusec() - t0);
 }
