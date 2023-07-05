@@ -313,8 +313,11 @@ wkbCollect (wkb **out, wkb * const *a, wkb * const *b) {
 
 	if ((*out = geos2wkb(collection)) == NULL)
 		err = createException(MAL, "geom.Collect", SQLSTATE(38000) "Geos operation geos2wkb failed");
+
 	GEOSGeom_destroy(ga);
 	GEOSGeom_destroy(gb);
+	GEOSGeom_destroy(collection);
+
 	return err;
 }
 /**
