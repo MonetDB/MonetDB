@@ -3480,6 +3480,8 @@ wkbMakeLineAggrArray(wkb **outWKB, wkb **inWKB_array, int size) {
 		msg = createException(MAL, "geom.MakeLine", SQLSTATE(38000) "Geos operation GEOSGeom_createLineString failed");
 	}
 	*outWKB = geos2wkb(outGeometry);
+	GEOSGeom_destroy(outGeometry);
+	GEOSCoordSeq_destroy(outCoordSeq);
 	return msg;
 }
 
