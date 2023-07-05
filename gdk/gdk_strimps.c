@@ -180,13 +180,10 @@ pair_at(PairIterator *pi, CharPair *p)
 {
 	if (pi->pos >= pi->lim - 1)
 		return false;
-#ifdef LOWERCASE_STRIMPS
+
 	p->pbytes[0] = (uint8_t)tolower(*(pi->s + pi->pos));
 	p->pbytes[1] = (uint8_t)tolower(*(pi->s + pi->pos + 1));
-#else
-	p->pbytes[0] = (uint8_t)*(pi->s + pi->pos);
-	p->pbytes[1] = (uint8_t)*(pi->s + pi->pos + 1);
-#endif
+
 	p->psize = 2;
 	p->idx = pairToIndex(p->pbytes[0], p->pbytes[1]);
 	return true;
