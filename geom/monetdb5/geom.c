@@ -3434,8 +3434,10 @@ wkbExtractPointToCoordSeq(GEOSCoordSeq *outCoordSeq, wkb *inWKB, int index) {
 	GEOSCoordSeq_getY(inCoordSeq, 0, &y);
 	if (!GEOSCoordSeq_setX(*outCoordSeq, index, x) ||
 	    !GEOSCoordSeq_setY(*outCoordSeq, index, y)) {
+		GEOSGeom_destroy(inGeometry);
 		throw(MAL, "geom.MakeLine", SQLSTATE(38000) "Geos operation GEOSCoordSeq_set[XY] failed");
 	}
+	GEOSGeom_destroy(inGeometry);
 	return msg;
 }
 
