@@ -290,32 +290,27 @@ wkbCollectAggr (wkb **out, const bat *bid) {
 static str
 wkbCollect (wkb **out, wkb * const *a, wkb * const *b) {
 	str err = MAL_SUCCEED;
-	GEOSGeom ga, gb, collection;
-	GEOSGeom *collect = NULL;
+	GEOSGeom collection;
+	/* geom_a and geom_b */
+	GEOSGeom geoms[2] = {NULL, NULL};
 	int type_a, type_b;
 
-	if ((err = wkbGetCompatibleGeometries(a, b, &ga, &gb)) != MAL_SUCCEED)
+	if ((err = wkbGetCompatibleGeometries(a, b, &geoms[0], &geoms[1])) != MAL_SUCCEED)
 		throw(MAL,"geom.Collect", "%s", err);
-	if ((collect = GDKmalloc(sizeof(GEOSGeom) * 2)) == NULL) {
-		throw(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
 
-	collect[0] = ga;
-	collect[1] = gb;
 	//int srid = GEOSGetSRID(ga);
-	type_a = GEOSGeomTypeId(ga);
-	type_b = GEOSGeomTypeId(gb);
+	type_a = GEOSGeomTypeId(geoms[0]);
+	type_b = GEOSGeomTypeId(geoms[1]);
 
+	/* NOTE: geoms will be moved to collection. no need for cleanup */
 	if (type_a == type_b)
-		collection = GEOSGeom_createCollection(GEOSGeom_getCollectionType(type_a), collect, (unsigned int) 2);
+		collection = GEOSGeom_createCollection(GEOSGeom_getCollectionType(type_a), geoms, (unsigned int) 2);
 	else
-		collection = GEOSGeom_createCollection(GEOS_GEOMETRYCOLLECTION, collect, (unsigned int) 2);
+		collection = GEOSGeom_createCollection(GEOS_GEOMETRYCOLLECTION, geoms, (unsigned int) 2);
 
 	if ((*out = geos2wkb(collection)) == NULL)
 		err = createException(MAL, "geom.Collect", SQLSTATE(38000) "Geos operation geos2wkb failed");
 
-	GEOSGeom_destroy(ga);
-	GEOSGeom_destroy(gb);
 	GEOSGeom_destroy(collection);
 
 	return err;
