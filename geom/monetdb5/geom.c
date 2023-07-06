@@ -3576,13 +3576,16 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 		lineGroup[position++] = inWKB;
 	}
 	msg = wkbMakeLineAggrArray(&lines[lastGrp], lineGroup, position);
+	GDKfree(lineGroup);
 
 	if (BUNappendmulti(out, lines, ngrp, false) != GDK_SUCCEED) {
 		msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
+		GDKfree(lines);
 		bat_iterator_end(&bi);
 		goto free;
 	}
 
+	GDKfree(lines);
 	bat_iterator_end(&bi);
 
 	*outid = out->batCacheid;
