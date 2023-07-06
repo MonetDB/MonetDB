@@ -3476,7 +3476,7 @@ wkbMakeLineAggrArray(wkb **outWKB, wkb **inWKB_array, int size) {
 	}
 	*outWKB = geos2wkb(outGeometry);
 	GEOSGeom_destroy(outGeometry);
-	GEOSCoordSeq_destroy(outCoordSeq);
+	/* no need to clean outCoordSeq. it is destroyed via outGeometry */
 	return msg;
 }
 
