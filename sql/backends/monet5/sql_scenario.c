@@ -1441,6 +1441,7 @@ SQLparser(Client c, backend *be)
 					be->q->name = NULL; /* later remove cleanup from mal from qc code */
 					qc_delete(m->qc, be->q);
 				}
+				be->result_id = be->q->id;
 				be->q = NULL;
 			}
 			if (err)

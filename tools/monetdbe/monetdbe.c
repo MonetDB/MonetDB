@@ -411,7 +411,7 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 	if ((mdbe->msg = SQLengine_(c)) != MAL_SUCCEED)
 		goto cleanup;
 	if (m->emode == m_prepare && prepare_id)
-		*prepare_id = b->q->id;
+		*prepare_id = b->result_id;
 	if (!b->results && b->rowcnt >= 0 && affected_rows)
 		*affected_rows = b->rowcnt;
 
