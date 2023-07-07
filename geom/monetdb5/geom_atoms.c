@@ -96,7 +96,7 @@ wkbHASH(const void *W)
 	BUN h = 0;
 
 	for (i = 0; i < (w->len - 1); i += 2) {
-		int a = *(w->data + i), b = *(w->data + i + 1);
+		unsigned char a = *(w->data + i), b = *(w->data + i + 1);
 		h = (h << 3) ^ (h >> 11) ^ (h >> 17) ^ (b << 8) ^ a;
 	}
 	return h;
