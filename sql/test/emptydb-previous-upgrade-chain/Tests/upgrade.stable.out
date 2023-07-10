@@ -364,6 +364,11 @@ update sys.functions set system = true where system <> true and name in ('starts
 delete from sys.triggers where name = 'system_update_tables' and table_id = 2067;
 
 Running database upgrade commands:
+drop procedure if exists SHPattach(string) cascade;
+drop procedure if exists SHPload(integer) cascade;
+drop procedure if exists SHPload(integer, geometry) cascade;
+
+Running database upgrade commands:
 create procedure SHPLoad(fname string, schemaname string, tablename string) external name shp.load;
 create procedure SHPLoad(fname string, tablename string) external name shp.load;
 update sys.functions set system = true where schema_id = 2000 and name in ('shpload');

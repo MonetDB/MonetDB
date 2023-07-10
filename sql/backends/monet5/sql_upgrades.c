@@ -5603,9 +5603,6 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 					   "create function sys.qgramnormalize(x string)\n"
 					   "returns string external name txtsim.qgramnormalize;\n"
 					   "grant execute on function qgramnormalize(string) to public;\n"
-					   "create function sys.similarity(x string, y string)\n"
-					   "returns double external name txtsim.similarity;\n"
-					   "grant execute on function similarity(string, string) to public;\n"
 
 					   "create function asciify(x string)\n"
 					   "returns string external name str.asciify;\n"
@@ -5647,7 +5644,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 					   "external name str.contains;\n"
 					   "grant execute on filter function contains(string, string, boolean) to public;\n"
 
-					   "update sys.functions set system = true where system <> true and name in ('levenshtein', 'dameraulevenshtein', 'jarowinkler', 'editdistance', 'editdistance2', 'soundex', 'difference', 'qgramnormalize', 'similarity') and schema_id = 2000 and type = %d;\n"
+					   "update sys.functions set system = true where system <> true and name in ('levenshtein', 'dameraulevenshtein', 'jarowinkler', 'editdistance', 'editdistance2', 'soundex', 'difference', 'qgramnormalize') and schema_id = 2000 and type = %d;\n"
 					   "update sys.functions set system = true where system <> true and name in ('maxlevenshtein', 'minjarowinkler') and schema_id = 2000 and type = %d;\n"
 					   "update sys.functions set system = true where system <> true and name in ('asciify', 'startswith', 'endswith', 'contains') and schema_id = 2000 and type = %d;\n"
 					   "update sys.functions set system = true where system <> true and name in ('startswith', 'endswith', 'contains') and schema_id = 2000 and type = %d;\n"
@@ -5850,6 +5847,21 @@ sql_update_default_geom(Client c, mvc *sql, sql_schema *s)
 	return err;
 }
 
+static str
+sql_update_default(Client c, mvc *sql, sql_schema *s)
+{
+	sql_subtype tp;
+	char *err = NULL;
+
+	sql_find_subtype(&tp, "varchar", 0, 0);
+	if (sql_bind_func(sql, s->base.name, "similarity", &tp, &tp, F_FUNC, true)) {
+		const char *query = "drop function sys.similarity(string, string) cascade;\n";
+		printf("Running database upgrade commands:\n%s\n", query);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+	}
+	return err;
+}
+
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -6043,6 +6055,12 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_default_geom(c, m, s)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		return -1;
+	}
+
+	if ((err = sql_update_default(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		return -1;
