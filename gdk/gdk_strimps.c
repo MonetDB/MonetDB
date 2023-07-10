@@ -153,22 +153,6 @@ pair_equal(CharPair *p1, CharPair *p2) {
 #define isIgnored(x) (isspace((x)) || isdigit((x)) || ispunct((x)))
 #define pairToIndex(b1, b2) (size_t)(((uint16_t)b2)<<8 | ((uint16_t)b1))
 
-inline static bool
-pair_equal(CharPair *p1, CharPair *p2)
-{
-	return p1->pbytes[0] == p2->pbytes[0] &&
-		p1->pbytes[1] == p2->pbytes[1];
-
-}
-
-inline static size_t
-histogram_index(PairHistogramElem *hist, size_t hsize, CharPair *p)
-{
-	(void) hist;
-	(void) hsize;
-	return pairToIndex(p->pbytes[0], p->pbytes[1]);
-}
-
 inline static size_t
 bytes2histindex(uint8_t *bytes, uint8_t psize) {
 	(void)psize;
