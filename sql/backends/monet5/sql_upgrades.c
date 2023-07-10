@@ -5181,32 +5181,30 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 			if (wr)
 				wr->system = 0;
 
-			pos = 0;
-			pos += snprintf(buf + pos, bufsize - pos,
-							"drop procedure if exists wlc.master() cascade;\n"
-							"drop procedure if exists wlc.master(string) cascade;\n"
-							"drop procedure if exists wlc.stop() cascade;\n"
-							"drop procedure if exists wlc.flush() cascade;\n"
-							"drop procedure if exists wlc.beat(int) cascade;\n"
-							"drop function if exists wlc.clock() cascade;\n"
-							"drop function if exists wlc.tick() cascade;\n"
-							"drop procedure if exists wlr.master(string) cascade;\n"
-							"drop procedure if exists wlr.stop() cascade;\n"
-							"drop procedure if exists wlr.accept() cascade;\n"
-							"drop procedure if exists wlr.replicate() cascade;\n"
-							"drop procedure if exists wlr.replicate(timestamp) cascade;\n"
-							"drop procedure if exists wlr.replicate(tinyint) cascade;\n"
-							"drop procedure if exists wlr.replicate(smallint) cascade;\n"
-							"drop procedure if exists wlr.replicate(integer) cascade;\n"
-							"drop procedure if exists wlr.replicate(bigint) cascade;\n"
-							"drop procedure if exists wlr.beat(integer) cascade;\n"
-							"drop function if exists wlr.clock() cascade;\n"
-							"drop function if exists wlr.tick() cascade;\n"
-							"drop schema if exists wlc cascade;\n"
-							"drop schema if exists wlr cascade;\n");
-			assert(pos < bufsize);
-			printf("Running database upgrade commands:\n%s\n", buf);
-			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+			const char *query =
+				"drop procedure if exists wlc.master() cascade;\n"
+				"drop procedure if exists wlc.master(string) cascade;\n"
+				"drop procedure if exists wlc.stop() cascade;\n"
+				"drop procedure if exists wlc.flush() cascade;\n"
+				"drop procedure if exists wlc.beat(int) cascade;\n"
+				"drop function if exists wlc.clock() cascade;\n"
+				"drop function if exists wlc.tick() cascade;\n"
+				"drop procedure if exists wlr.master(string) cascade;\n"
+				"drop procedure if exists wlr.stop() cascade;\n"
+				"drop procedure if exists wlr.accept() cascade;\n"
+				"drop procedure if exists wlr.replicate() cascade;\n"
+				"drop procedure if exists wlr.replicate(timestamp) cascade;\n"
+				"drop procedure if exists wlr.replicate(tinyint) cascade;\n"
+				"drop procedure if exists wlr.replicate(smallint) cascade;\n"
+				"drop procedure if exists wlr.replicate(integer) cascade;\n"
+				"drop procedure if exists wlr.replicate(bigint) cascade;\n"
+				"drop procedure if exists wlr.beat(integer) cascade;\n"
+				"drop function if exists wlr.clock() cascade;\n"
+				"drop function if exists wlr.tick() cascade;\n"
+				"drop schema if exists wlc cascade;\n"
+				"drop schema if exists wlr cascade;\n";
+			printf("Running database upgrade commands:\n%s\n", query);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
 		}
 	}
 
@@ -5248,9 +5246,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 	/* fixes for handling single quotes in strings so that we can run
 	 * with raw_strings after having created a database without (and
 	 * v.v.) */
-	pos = snprintf(buf, bufsize,
-				   "select id from sys.functions where name = 'dump_table_data' and schema_id = 2000 and func like '%% R'')%%';\n");
-	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)) == NULL) {
+	if ((err = SQLstatementIntern(c, "select id from sys.functions where name = 'dump_table_data' and schema_id = 2000 and func like '% R'')%';\n", "update", true, false, &output)) == NULL) {
 		if (((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 0) || find_sql_table(sql->session->tr, s, "remote_user_info") == NULL) {
 			sql_table *t;
 			if ((t = mvc_bind_table(sql, s, "describe_tables")) != NULL)
