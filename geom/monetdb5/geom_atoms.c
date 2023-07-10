@@ -456,7 +456,8 @@ BUN
 mbrHASH(const void *ATOM)
 {
 	const mbr *atom = ATOM;
-	return (BUN) (((int) atom->xmin * (int)atom->ymin) *((int) atom->xmax * (int)atom->ymax));
+	return (BUN) (mix_int(atom->xmin) ^ mix_int(atom->ymin) ^
+			      mix_int(atom->xmax) ^ mix_int(atom->ymax));
 }
 
 const void *
