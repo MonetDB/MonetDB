@@ -229,7 +229,7 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 		/* trivial: return all candidates */
 		bn = canditer_slice(&ci, 0, ci.ncand);
 		if (bn && lastp)
-			*lastp = BUNtoid(bn, cnt - 1);
+			*lastp = oid_nil;
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 			  ",n=" BUNFMT " -> " ALGOOPTBATFMT
 			  " (trivial -- " LLFMT " usec)\n",
@@ -1061,7 +1061,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BATiter *bi, BAT *s, BUN n, bool asc, 
 			BBPunfix(bn1->batCacheid);
 			if (bn == NULL)
 				return GDK_FAIL;
-		} else {
+		} else if (last != oid_nil) {
 			BAT *bn1, *bn2;
 
 			bn1 = bn;
