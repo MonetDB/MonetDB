@@ -5,7 +5,7 @@ statement ok
 INSERT INTO v0 SELECT 0 FROM generate_series(1, 1000000)
 
 statement ok
-SELECT NULL, v1 FROM v0 v0 ORDER BY v1+v1, v1, -1 LIMIT 2147483647
+SELECT NULL, v1 FROM v0 v0 ORDER BY v1+v1, v1, -1 LIMIT 2147483645
 
 statement ok
 drop table v0
