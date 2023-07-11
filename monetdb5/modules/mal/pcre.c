@@ -470,7 +470,8 @@ re_create(const char *pat, bool caseignore, uint32_t esc)
 						goto bailout;
 					*n = (struct RE) {.search = true, .atend = true, .w = wp + 1};
 				}
-				*wq++ = 0;
+				*wq = 0;
+				wq = wp + 1;
 			} else {
 				*wq++ = *wp;
 				n->len++;
@@ -503,7 +504,8 @@ re_create(const char *pat, bool caseignore, uint32_t esc)
 						goto bailout;
 					*n = (struct RE) {.search = true, .atend = true, .k = p + 1};
 				}
-				*q++ = 0;
+				*q = 0;
+				q = p + 1;
 			} else {
 				*q++ = *p;
 				n->len++;

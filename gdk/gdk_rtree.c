@@ -30,6 +30,7 @@ RTREEdecref(BAT *b)
 		ATOMIC_DESTROY(&b->trtree->refs);
 		rtree_destroy(b->trtree->rtree);
 		b->trtree->rtree = NULL;
+		GDKfree(b->trtree);
 		b->trtree = NULL;
 	}
 

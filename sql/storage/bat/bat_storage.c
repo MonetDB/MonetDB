@@ -4282,6 +4282,9 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	} else if (ok == LOG_OK && tr->parent) {/* cleanup older save points */
 		merge_segments(dbat, tr, change, commit_ts, oldest);
 		ATOMIC_PTR_SET(&t->data, savepoint_commit_storage(dbat, commit_ts));
+		storage *s = change->data;
+		if (s->cs.ts == tr->tid)
+			s->cs.ts = commit_ts;
 	}
 	unlock_table(tr->store, t->base.id);
 	return ok;
