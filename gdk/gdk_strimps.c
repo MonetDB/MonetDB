@@ -282,7 +282,7 @@ STRMPchoosePairs(PairHistogramElem *hist, size_t hist_size, CharPair *cp)
 		cp[i].pbytes[0] = (uint8_t)((hist[indices[i]].idx >> 8) & 0xFF);
 		cp[i].idx = hist[indices[i]].idx;
 		cp[i].psize = 2;
-		cp[i].mask = ((uint64_t)0x1) << (STRIMP_PAIRS - 1 - i);
+		cp[i].mask = ((uint64_t)0x1) << i;
 	}
 
 	TRC_DEBUG(ACCELERATOR, LLFMT " usec\n", GDKusec() - t0);
@@ -470,9 +470,9 @@ BATcheckstrimps(BAT *b)
 					hp->masks = (strimp_masks_t *)GDKzalloc(STRIMP_HISTSIZE*sizeof(strimp_masks_t));
 					if (hp->masks != NULL) {
 						/* init */
+						size_t offset = 0;
 						for (size_t idx = 0; idx < STRIMP_PAIRS; idx++) {
-							size_t offset = 0;
-							strimp_masks_t mask = ((strimp_masks_t)0x1) << (STRIMP_PAIRS - 1 - idx);
+							strimp_masks_t mask = ((strimp_masks_t)0x1) << idx;
 							uint8_t pair_size = hp->sizes_base[idx];
 							uint8_t *pair = hp->pairs_base + offset;
 
@@ -591,6 +591,8 @@ STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 
 	qbmask = STRMPmakebitstring(q, strmps);
 	assert((qbmask & ((uint64_t)0x1 << (STRIMP_HEADER_SIZE - 1))) == 0);
+	TRC_DEBUG(ACCELERATOR, "strimp filtering with pattern %s bitmap: 0x%016lx",
+		  q, qbmask);
 	bitstring_array = (uint64_t *)strmps->bitstrings_base;
 	rvals = Tloc(r, 0);
 
