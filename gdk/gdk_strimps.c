@@ -86,7 +86,7 @@
 #include "gdk_private.h"
 
 #include <stdint.h>
-
+#include <inttypes.h>
 
 #define STRIMP_VERSION (uint64_t)2
 #define STRIMP_HISTSIZE (256*256)
@@ -591,7 +591,7 @@ STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 
 	qbmask = STRMPmakebitstring(q, strmps);
 	assert((qbmask & ((uint64_t)0x1 << (STRIMP_HEADER_SIZE - 1))) == 0);
-	TRC_DEBUG(ACCELERATOR, "strimp filtering with pattern %s bitmap: 0x%016lx",
+	TRC_DEBUG(ACCELERATOR, "strimp filtering with pattern '%s' bitmap: %#016" PRIx64 "\n",
 		  q, qbmask);
 	bitstring_array = (uint64_t *)strmps->bitstrings_base;
 	rvals = Tloc(r, 0);
@@ -610,9 +610,9 @@ STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 	r->tnonil = true;
 	TRC_DEBUG(ACCELERATOR, "strimp prefiltering of " BUNFMT
 		  " items took " LLFMT " usec. Keeping " BUNFMT
-		  " items (%.2f%%). Filter string '%s'.\n",
+		  " items (%.2f%%).\n",
 		  ci.ncand, GDKusec()-t0, r->batCount,
-		  100*r->batCount/(double)ci.ncand, q);
+		  100*r->batCount/(double)ci.ncand);
 	TRC_DEBUG(ACCELERATOR, "r->" ALGOBATFMT "\n", ALGOBATPAR(r) );
 	STRMPdecref(strmps, false);
 	if (pb != b)
