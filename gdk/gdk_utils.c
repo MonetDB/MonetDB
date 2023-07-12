@@ -1904,6 +1904,9 @@ GDKvm_cursize(void)
 #define DEBUG_SPACE	16
 #endif
 
+/* malloc smaller than this aren't subject to the GDK_vm_maxsize test */
+#define SMALL_MALLOC	256
+
 static void *
 GDKmalloc_internal(size_t size, bool clear)
 {
@@ -1924,7 +1927,8 @@ GDKmalloc_internal(size_t size, bool clear)
 		return NULL;
 	}
 #endif
-	if (GDKvm_cursize() + size >= GDK_vm_maxsize &&
+	if (size > SMALL_MALLOC &&
+	    GDKvm_cursize() + size >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
 		GDKerror("allocating too much memory\n");
 		return NULL;
@@ -2063,7 +2067,8 @@ GDKrealloc(void *s, size_t size)
 	nsize = (size + 7) & ~7;
 	asize = ((size_t *) s)[-1]; /* how much allocated last */
 
-	if (nsize > asize &&
+	if (size > SMALL_MALLOC &&
+	    nsize > asize &&
 	    GDKvm_cursize() + nsize - asize >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
 		GDKerror("allocating too much memory\n");
