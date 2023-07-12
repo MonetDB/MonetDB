@@ -4183,12 +4183,12 @@ schema_name(sql_allocator *sa, stmt *st)
 	case st_convert:
 	case st_Nop:
 	case st_aggr:
-		return schema_name(sa, st->op1);
-	case st_alias:
 		/* there are no schema aliases, ie look into the base column */
 		if (st->op1)
 			return schema_name(sa, st->op1);
 		return NULL;
+	case st_alias:
+		return schema_name(sa, st->op1);
 	case st_bat:
 		return st->op4.cval->t->s->base.name;
 	case st_atom:
