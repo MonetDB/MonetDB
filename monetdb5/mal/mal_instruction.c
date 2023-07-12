@@ -1191,8 +1191,8 @@ extendInstruction(MalBlkPtr mb, InstrPtr p)
 InstrPtr
 pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 {
-	if (p == NULL)
-		return NULL;
+	if (p == NULL || mb->errors)
+		return p;
 	if (varid < 0) {
 		/* leave everything as is in this exceptional programming error */
 		mb->errors = createMalException(mb, 0, TYPE,"improper variable id");
@@ -1221,8 +1221,8 @@ setArgument(MalBlkPtr mb, InstrPtr p, int idx, int varid)
 {
 	int i;
 
-	if (p == NULL)
-		return NULL;
+	if (p == NULL || mb->errors)
+		return p;
 	p = pushArgument(mb, p, varid);	/* make space */
 	if (p == NULL)
 		return NULL;
@@ -1235,8 +1235,8 @@ setArgument(MalBlkPtr mb, InstrPtr p, int idx, int varid)
 InstrPtr
 pushReturn(MalBlkPtr mb, InstrPtr p, int varid)
 {
-	if (p == NULL)
-		return NULL;
+	if (p == NULL || mb->errors)
+		return p;
 	if (p->retc == 1 && p->argv[0] == -1) {
 		p->argv[0] = varid;
 		return p;
@@ -1258,8 +1258,8 @@ pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name)
 {
 	int v;
 
-	if (p == NULL)
-		return NULL;
+	if (p == NULL || mb->errors)
+		return p;
 	v = findVariable(mb, name);
 	if (v < 0) {
 		size_t namelen = strlen(name);
@@ -1348,28 +1348,27 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 	extra = mb->vsize - mb->vtop; // the extra variables already known
 	if (mb->stop + 1 >= mb->ssize) {
 		int s = ((mb->ssize + extra) / MALCHUNK + 1) * MALCHUNK;
-		if( resizeMalBlk(mb, s) < 0 ){
-			/* perhaps we can continue with a smaller increment.
-			 * But the block remains marked as faulty.
+		if (resizeMalBlk(mb, s) < 0) {
+			/* we are now left with the situation that the new
+			 * instruction is dangling.
+			 * The hack is to take an instruction out of the block that
+			 * is likely not referenced independently.
+			 * The last resort is to take the first, which should always
+			 * be there.
+			 * This assumes that no references are kept elsewhere to the
+			 * statement.
 			 */
-			if( resizeMalBlk(mb,mb->ssize + 1) < 0){
-				/* we are now left with the situation that the new instruction is dangling .
-				 * The hack is to take an instruction out of the block that is likely not referenced independently
-				 * The last resort is to take the first, which should always be there
-				 * This assumes that no references are kept elsewhere to the statement
-				 */
-				for( i = 1; i < mb->stop; i++){
-					q= getInstrPtr(mb,i);
-					if( q->token == REMsymbol){
-						freeInstruction(q);
-						mb->stmt[i] = p;
-						return;
-					}
+			for (i = 1; i < mb->stop; i++) {
+				q = getInstrPtr(mb,i);
+				if (q->token == REMsymbol) {
+					freeInstruction(q);
+					mb->stmt[i] = p;
+					return;
 				}
-				freeInstruction(getInstrPtr(mb,0));
-				mb->stmt[0] = p;
-				return;
 			}
+			freeInstruction(getInstrPtr(mb, 0));
+			mb->stmt[0] = p;
+			return;
 		}
 	}
 	if (mb->stmt[mb->stop])

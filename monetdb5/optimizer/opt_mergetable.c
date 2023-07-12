@@ -176,6 +176,12 @@ mat_pack(MalBlkPtr mb, matlist_t *ml, int m)
 		getArg(r,0) = getArg(ml->v[m].mi, 0);
 		for(l=ml->v[m].mi->retc; l< ml->v[m].mi->argc; l++)
 			r= pushArgument(mb,r, getArg(ml->v[m].mi,l));
+		if (mb->errors) {
+			freeInstruction(r);
+			char *msg = mb->errors;
+			mb->errors = NULL;
+			return msg;
+		}
 	}
 	matlist_pack(ml, m);
 	pushInstruction(mb, r);
@@ -188,7 +194,10 @@ checksize(matlist_t *ml, int v)
 	if (v >= ml->vsize) {
 		int sz = ml->vsize, i, *nhorigin, *ntorigin, *nvars;
 
-		unsigned int nvsize = ml->vsize * 2;
+		int nvsize = ml->vsize * 2;
+		assert(v < nvsize);
+		if (v >= nvsize)
+			nvsize = v + 10;
 		nhorigin = (int*) GDKrealloc(ml->horigin, sizeof(int)* nvsize);
 		if (nhorigin == NULL)
 			return -1;
@@ -222,6 +231,7 @@ setPartnr(matlist_t *ml, int ivar, int ovar, int pnr)
 		tpnr = ml->torigin[ivar];
 	if (tpnr >= 0)
 		ml->torigin[ovar] = tpnr;
+	assert(ovar < ml->vsize);
 	ml->horigin[ovar] = pnr;
 	//printf("%d %d ", pnr, tpnr);
 	return 0;
@@ -239,6 +249,7 @@ propagatePartnr(matlist_t *ml, int ivar, int ovar, int pnr)
 		tpnr = ml->horigin[ivar];
 	if (tpnr >= 0)
 		ml->torigin[ovar] = tpnr;
+	assert(ovar < ml->vsize);
 	ml->horigin[ovar] = pnr;
 	//printf("%d %d ", pnr, tpnr);
 	return 0;
@@ -254,6 +265,7 @@ propagateMirror(matlist_t *ml, int ivar, int ovar)
 		return -1;
 	tpnr = ml->horigin[ivar];
 	if (tpnr >= 0) {
+		assert(ovar < ml->vsize);
 		ml->horigin[ovar] = tpnr;
 		ml->torigin[ovar] = tpnr;
 	}
@@ -331,7 +343,11 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 					getArg(q, ovar) = getArg(mat[o].mi, j);
 					getArg(q, evar) = getArg(mat[e].mi, k);
 					pushInstruction(mb, q);
-					if(setPartnr(ml, getArg(mat[m].mi, j), getArg(q,0), nr)) {
+					if (mb->errors) {
+						freeInstruction(r);
+						return NULL;
+					}
+					if (setPartnr(ml, getArg(mat[m].mi, j), getArg(q,0), nr)) {
 						freeInstruction(r);
 						return NULL;
 					}
@@ -356,6 +372,10 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 			if (e >= 0)
 				getArg(q, evar) = getArg(mat[e].mi, k);
 			pushInstruction(mb, q);
+			if (mb->errors) {
+				freeInstruction(r);
+				return NULL;
+			}
 			if(setPartnr(ml, is_subdelta?getArg(mat[m].mi, k):-1, getArg(q,0), k)) {
 				freeInstruction(r);
 				return NULL;
@@ -374,6 +394,8 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 			q = pushArgument(mb, q, getArg(r, 0));
 			pushInstruction(mb, r);
 			pushInstruction(mb, q);
+			if (mb->errors)
+				return NULL;
 			pushed = 1;
 			r = q;
 		}
@@ -450,6 +472,10 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int var)
 		q = pushOid(mb, q, 0);
 		ident_var = getArg(q, 0);
 		pushInstruction(mb, q);
+		if (mb->errors) {
+			freeInstruction(r);
+			return -1;
+		}
 	}
 	for(k=1; k < mat[m].mi->argc; k++) {
 		int res = 0;
@@ -477,6 +503,10 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int var)
 		}
 		ident_var = getArg(q, 1);
 		pushInstruction(mb, q);
+		if (mb->errors) {
+			freeInstruction(r);
+			return -1;
+		}
 		if (is_mirror || is_identity) {
 			res = propagateMirror(ml, getArg(mat[m].mi, k), getArg(q,0));
 		} else if (is_select)
@@ -488,6 +518,10 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int var)
 			return -1;
 		}
 		r = pushArgument(mb, r, getArg(q, 0));
+	}
+	if (mb->errors) {
+		freeInstruction(r);
+		return -1;
 	}
 	if(!r || mat_add(ml, r, mat_type(ml->v, m), getFunctionId(p))) {
 		return -1;
@@ -523,9 +557,9 @@ mat_apply(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int nrmats)
 	if(!r)
 		return -1;
 	for(k=0; k < p->retc; k++) {
-		if((r[k] = newInstructionArgs(mb, matRef, packRef, parts)) == NULL) {
-			for(l=0; l < k; l++)
-				freeInstruction(r[l]);
+		if ((r[k] = newInstructionArgs(mb, matRef, packRef, parts)) == NULL) {
+			while (k > 0)
+				freeInstruction(r[--k]);
 			GDKfree(r);
 			return -1;
 		}
@@ -535,7 +569,9 @@ mat_apply(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int nrmats)
 	for(k = 1; k < ml->v[matvar[0]].mi->argc; k++) {
 		int tpe;
 		InstrPtr q = copyInstruction(p);
-		if(!q) {
+		if (q == NULL) {
+			for (k = 0; k < p->retc; k++)
+				freeInstruction(r[k]);
 			GDKfree(r);
 			return -1;
 		}
@@ -1272,10 +1308,14 @@ mat_group_project(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int e, int a)
 	mat_t *mat = ml->v;
 	InstrPtr ai1 = newInstructionArgs(mb, matRef, packRef, mat[a].mi->argc), r;
 
-	if(!ai1)
+	if (!ai1)
 		return -1;
 
 	getArg(ai1,0) = newTmpVariable(mb, tp);
+	if (mb->errors) {
+		freeInstruction(ai1);
+		return -1;
+	}
 
 	assert(mat[e].mi->argc == mat[a].mi->argc);
 	for(k=1; k<mat[a].mi->argc; k++) {
@@ -1289,6 +1329,10 @@ mat_group_project(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int e, int a)
 		getArg(q,1) = getArg(mat[e].mi,k);
 		getArg(q,2) = getArg(mat[a].mi,k);
 		pushInstruction(mb,q);
+		if (mb->errors) {
+			freeInstruction(ai1);
+			return -1;
+		}
 		if(setPartnr(ml, getArg(mat[a].mi,k), getArg(q,0), k)){
 			freeInstruction(ai1);
 			return -1;
@@ -1298,13 +1342,16 @@ mat_group_project(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int e, int a)
 		ai1 = pushArgument(mb,ai1,getArg(q,0));
 	}
 	pushInstruction(mb, ai1);
+	if (mb->errors) {
+		return -1;
+	}
 
 	if((r = copyInstruction(p)) == NULL)
 		return -1;
 	getArg(r,1) = mat[e].mv;
 	getArg(r,2) = getArg(ai1,0);
 	pushInstruction(mb,r);
-	return 0;
+	return mb->errors ? -1 : 0;
 }
 
 /* Per partition aggregates are merged and aggregated together. For
@@ -2173,7 +2220,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	ml.vsize = mb->vsize;
 	ml.horigin = (int*) GDKmalloc(sizeof(int)* ml.vsize);
 	ml.torigin = (int*) GDKmalloc(sizeof(int)* ml.vsize);
-	ml.vars = (int*) GDKzalloc(sizeof(int)* ml.vsize);
+	ml.vars = (int*) GDKmalloc(sizeof(int)* ml.vsize);
 	if ( ml.v == NULL || ml.horigin == NULL || ml.torigin == NULL || ml.vars == NULL) {
 		goto cleanup;
 	}
@@ -2620,10 +2667,14 @@ cleanup:
 	if (ml.horigin) GDKfree(ml.horigin);
 	if (ml.torigin) GDKfree(ml.torigin);
 	if (ml.vars) GDKfree(ml.vars);
+	if (mb->errors) {
+		freeException(msg);
+		msg = mb->errors;
+		mb->errors = NULL;
+	}
 	/* Defense line against incorrect plans */
 	if( actions > 0 && msg == MAL_SUCCEED){
-		if (!msg)
-			msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)
@@ -2631,7 +2682,11 @@ cleanup:
 	}
 cleanup2:
 	/* keep actions taken as a fake argument */
-	(void) pushInt(mb, pci, actions);
+	if (msg == MAL_SUCCEED) {
+		(void) pushInt(mb, pci, actions);
+		msg = mb->errors;		/* may well be NULL */
+		mb->errors = NULL;
+	}
 
 #ifndef NDEBUG
 	if( bailout)
