@@ -2915,13 +2915,18 @@ decref(bat i, bool logical, bool lock, const char *func)
 	/* we destroy transients asap and unload persistent bats only
 	 * if they have been made cold or are not dirty */
 	unsigned chkflag = BBPSYNCING;
-	if (b && GDKvm_cursize() < GDK_vm_maxsize) {
-		if (!locked) {
-			MT_lock_set(&b->theaplock);
-			locked = true;
-		}
-		if (((b->theap ? b->theap->size : 0) + (b->tvheap ? b->tvheap->size : 0)) < (GDK_vm_maxsize - GDKvm_cursize()) / 32)
-			chkflag |= BBPHOT;
+	size_t cursize;
+	bool swapdirty = false;
+	if (b) {
+		if ((cursize = GDKvm_cursize()) < (size_t) (GDK_vm_maxsize * 0.75)) {
+			if (!locked) {
+				MT_lock_set(&b->theaplock);
+				locked = true;
+			}
+			if (((b->theap ? b->theap->size : 0) + (b->tvheap ? b->tvheap->size : 0)) < (GDK_vm_maxsize - cursize) / 32)
+				chkflag |= BBPHOT;
+		} else if (cursize > (size_t) (GDK_vm_maxsize * 0.85))
+			swapdirty = true;
 	}
 	/* only consider unloading if refs is 0; if, in addition, lrefs
 	 * is 0, we can definitely unload, else only if some more
@@ -2929,7 +2934,7 @@ decref(bat i, bool logical, bool lock, const char *func)
 	if (BBP_refs(i) == 0 &&
 	    (BBP_lrefs(i) == 0 ||
 	     (b != NULL && b->theap != NULL
-	      ? (!BATdirty(b) &&
+	      ? ((swapdirty || !BATdirty(b)) &&
 		 !(BBP_status(i) & chkflag) &&
 		 (BBP_status(i) & BBPPERSISTENT) &&
 		 /* cannot unload in-memory data */
