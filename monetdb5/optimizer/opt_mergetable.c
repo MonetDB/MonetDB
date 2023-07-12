@@ -401,7 +401,10 @@ mat_assign(MalBlkPtr mb, InstrPtr p, matlist_t *ml)
 		for(int k=1; k < mat[m].mi->argc; k++) {
 			/* reuse inputs of old mat */
 			r = pushArgument(mb, r, getArg(mat[m].mi, k));
-			(void)setPartnr(ml, -1, getArg(mat[m].mi, k), k);
+			if (setPartnr(ml, -1, getArg(mat[m].mi, k), k)) {
+				freeInstruction(r);
+				return NULL;
+			}
 		}
 		if (mat_add(ml, r, mat_none, getFunctionId(p))) {
 			freeInstruction(r);
@@ -873,7 +876,7 @@ join_split(Client cntxt, InstrPtr p, int args)
 	len = strlen( getFunctionId(p) );
 	name = GDKmalloc(len+3);
 	if (!name)
-		return -1;
+		return -2;
 	strncpy(name, getFunctionId(p), len-7);
 	strcpy(name+len-7, "join");
 
@@ -929,6 +932,10 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 		int split = join_split(cntxt, p, args);
 		int nr_mv1 = split;
 
+		if (split == -2) {
+			GDKfree(mats);
+			return -1;
+		}
 		l = newInstructionArgs(mb, matRef, packRef, mat[mv1].mi->argc * mat[mv2].mi->argc);
 		r = newInstructionArgs(mb, matRef, packRef, mat[mv1].mi->argc * mat[mv2].mi->argc);
 		if (l == NULL || r == NULL) {
@@ -2575,6 +2582,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		for (k = p->retc; msg == MAL_SUCCEED && k<p->argc; k++) {
 			if((m=is_a_mat(getArg(p,k), &ml)) >= 0){
 				msg = mat_pack(mb, &ml, m);
+				if (msg)
+					break;
 			}
 		}
 		if (msg)
