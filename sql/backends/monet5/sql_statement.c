@@ -3036,7 +3036,7 @@ stmt_append(backend *be, stmt *c, stmt *a)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 
-	if (c->nr < 0 || a->nr < 0)
+	if (c == NULL || a == NULL || c->nr < 0 || a->nr < 0)
 		return NULL;
 	q = newStmt(mb, batRef, appendRef);
 	q = pushArgument(mb, q, c->nr);
