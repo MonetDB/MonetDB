@@ -4186,7 +4186,9 @@ schema_name(sql_allocator *sa, stmt *st)
 		return schema_name(sa, st->op1);
 	case st_alias:
 		/* there are no schema aliases, ie look into the base column */
-		return schema_name(sa, st->op1);
+		if (st->op1)
+			return schema_name(sa, st->op1);
+		return NULL;
 	case st_bat:
 		return st->op4.cval->t->s->base.name;
 	case st_atom:
