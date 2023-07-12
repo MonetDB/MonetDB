@@ -283,10 +283,12 @@ COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 	}
 
 	if (bn->tvheap && width == 0 && ATOMheap(tt, bn->tvheap, cap) != GDK_SUCCEED) {
+		HEAPfree(bn->theap, true);
 		goto bailout;
 	}
 	DELTAinit(bn);
 	if (BBPcacheit(bn, true) != GDK_SUCCEED) {
+		/* cannot happen, function always returns success */
 		goto bailout;
 	}
 	TRC_DEBUG(ALGO, "-> " ALGOBATFMT "\n", ALGOBATPAR(bn));
