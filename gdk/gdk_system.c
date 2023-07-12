@@ -414,6 +414,7 @@ MT_thread_setworking(const char *work)
 			w->limit_override = false;
 		else
 			w->working = work;
+	}
 }
 
 void
