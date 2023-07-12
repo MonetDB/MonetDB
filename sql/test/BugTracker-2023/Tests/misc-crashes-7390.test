@@ -1,0 +1,107 @@
+statement ok
+CREATE TABLE v0 (v1 SMALLINT)
+
+statement ok
+INSERT INTO v0 SELECT 0 FROM generate_series(1, 1000000)
+
+statement ok
+SELECT NULL, v1 FROM v0 v0 ORDER BY v1+v1, v1, -1 LIMIT 2147483645
+
+statement ok
+drop table v0
+
+statement ok
+CREATE TABLE v0(v1 VARCHAR(30))
+
+query TTI
+SELECT DISTINCT v1 v1, v1, abs(v1)=10 FROM v0 WHERE lower (v1) IS NOT NULL
+----
+
+
+statement ok
+drop table v0
+
+statement ok
+CREATE VIEW v0 AS SELECT CAST (NULL AS INT) INTERSECT SELECT CAST (NULL AS INT)
+
+query IIT
+SELECT 2, row_number() OVER (ORDER BY 10*10, (CASE WHEN (10 IS NULL) THEN 4 ELSE 10 END) DESC NULLS FIRST), '.125e+3' FROM v0 LIMIT 1
+----
+2
+1
+.125e+3
+
+statement ok
+drop view v0
+
+statement ok
+CREATE TABLE v0 (v1 VARCHAR(255))
+
+statement ok
+INSERT INTO v0 VALUES (2),(8),(10),(1),(0),(1),(2)
+
+statement ok
+INSERT INTO v0 SELECT row_number () OVER (ORDER BY 2) FROM v0, v0 AS c3_null, v0 AS t2
+
+statement ok
+INSERT INTO v0 SELECT row_number () OVER (ORDER BY 2 NULLS LAST) AS c0 FROM v0, v0 AS contains
+
+statement ok
+SELECT FIRST_VALUE(v1) OVER (PARTITION BY v1=5 ORDER BY 3003*v1 DESC NULLS FIRST, v1) FROM v0 LIMIT 1000000000
+
+statement ok
+drop table v0;
+
+statement ok
+CREATE TABLE v0 (v1 INT)
+
+statement ok
+INSERT INTO v0 VALUES (NULL),(1),(0),(1),(2),(10),(10),(400),(1)
+
+statement ok
+INSERT INTO v0 SELECT row_number () OVER (ORDER BY 3) FROM v0, v0 AS c3_null, v0 AS t2
+
+statement ok
+INSERT INTO v0 SELECT row_number () OVER (ORDER BY 100 NULLS LAST) FROM v0, v0 AS contains
+
+statement ok
+SELECT FIRST_VALUE (v1) OVER (PARTITION BY 'HASHED' ORDER BY v1<=10 DESC NULLS FIRST, v1 DESC) FROM v0 LIMIT 300000
+
+statement ok
+drop table v0
+
+statement error
+CREATE TEMP TABLE Table0 (Col0 INT, PRIMARY KEY(Col0), FOREIGN KEY (Col0) REFERENCES Table0)
+
+statement ok
+CREATE VIEW v0 AS SELECT CAST (NULL AS INT) EXCEPT SELECT CAST (NULL AS INT) GROUP BY NULL
+
+statement ok
+drop view v0
+
+statement ok
+CREATE TABLE v0 (v1 INT NULL)
+
+statement ok
+INSERT INTO v0 VALUES (3),(10),(1),(200),(5)
+
+statement ok
+INSERT INTO v0 SELECT v0.v1 FROM v0, v0 AS c3_null, v0 AS a
+
+statement ok
+INSERT INTO v0 SELECT v0.v1 FROM v0, v0 AS c3_null, v0 AS col2
+
+statement ok
+SELECT v1, row_number() OVER (ORDER BY v1 * 3 NULLS LAST, NULL*0 DESC NULLS FIRST), 3 FROM v0 LIMIT 300000
+
+statement ok
+drop table v0
+
+statement ok
+CREATE TABLE v0 (v1 INT, v2 REAL)
+
+statement error
+SELECT * FROM v0 ORDER BY (SELECT *)
+
+statement ok
+drop table v0
