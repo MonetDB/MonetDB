@@ -536,7 +536,6 @@ getStrConstant(MalBlkPtr mb, str val)
 		memcpy(cst.val.sval, val, cst.len); /* includes terminating \0 */
 		_t = defConstant(mb, TYPE_str, &cst);
 	}
-	assert(_t >= 0);
 	return _t;
 }
 

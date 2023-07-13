@@ -141,8 +141,14 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 		h->heaplink.dirty = true;
 		h->Link = h->heaplink.base;
 	}
-	if (HEAPalloc(&h->heapbckt, mask + HASH_HEADER_SIZE * SIZEOF_SIZE_T / h->width, h->width) != GDK_SUCCEED)
+	if (HEAPalloc(&h->heapbckt, mask + HASH_HEADER_SIZE * SIZEOF_SIZE_T / h->width, h->width) != GDK_SUCCEED) {
+		if (!bcktonly) {
+			HEAPfree(&h->heaplink, true);
+			h->heaplink.free = 0;
+			h->Link = NULL;
+		}
 		return GDK_FAIL;
+	}
 	h->heapbckt.free = mask * h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 	h->heapbckt.dirty = true;
 	h->nbucket = mask;

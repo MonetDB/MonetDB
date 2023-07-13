@@ -2207,8 +2207,7 @@ void
 BBPdump(void)
 {
 	size_t mem = 0, vm = 0;
-	size_t cmem = 0, cvm = 0;
-	int n = 0, nc = 0;
+	int n = 0;
 
 	for (bat i = 0; i < (bat) ATOMIC_GET(&BBPsize); i++) {
 		if (BBP_refs(i) == 0 && BBP_lrefs(i) == 0)
@@ -2240,15 +2239,9 @@ BBPdump(void)
 					b->theap->farmid,
 					b->theap->base == NULL ? "X" : b->theap->storage == STORE_MMAP ? "M" : "",
 					status & BBPSWAPPED ? "(Swapped)" : b->theap->dirty ? "(Dirty)" : "");
-				if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-					cmem += HEAPmemsize(b->theap);
-					cvm += HEAPvmsize(b->theap);
-					nc++;
-				} else {
-					mem += HEAPmemsize(b->theap);
-					vm += HEAPvmsize(b->theap);
-					n++;
-				}
+				mem += HEAPmemsize(b->theap);
+				vm += HEAPvmsize(b->theap);
+				n++;
 			}
 		}
 		if (b->tvheap) {
@@ -2264,13 +2257,8 @@ BBPdump(void)
 					b->tvheap->farmid,
 					b->tvheap->base == NULL ? "X" : b->tvheap->storage == STORE_MMAP ? "M" : "",
 					b->tvheap->dirty ? "(Dirty)" : "");
-				if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-					cmem += HEAPmemsize(b->tvheap);
-					cvm += HEAPvmsize(b->tvheap);
-				} else {
-					mem += HEAPmemsize(b->tvheap);
-					vm += HEAPvmsize(b->tvheap);
-				}
+				mem += HEAPmemsize(b->tvheap);
+				vm += HEAPvmsize(b->tvheap);
 			}
 		}
 		if (MT_rwlock_rdtry(&b->thashlock)) {
@@ -2280,22 +2268,15 @@ BBPdump(void)
 				fprintf(stderr, " Thash=[%zu,%zu,f=%d/%d]", m, v,
 					b->thash->heaplink.farmid,
 					b->thash->heapbckt.farmid);
-				if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-					cmem += m;
-					cvm += v;
-				} else {
-					mem += m;
-					vm += v;
-				}
+				mem += m;
+				vm += v;
 			}
 			MT_rwlock_rdunlock(&b->thashlock);
 		}
 		fprintf(stderr, " role: %s\n",
 			b->batRole == PERSISTENT ? "persistent" : "transient");
 	}
-	fprintf(stderr,
-		"# %d bats: mem=%zu, vm=%zu %d cached bats: mem=%zu, vm=%zu\n",
-		n, mem, vm, nc, cmem, cvm);
+	fprintf(stderr, "# %d bats: mem=%zu, vm=%zu\n", n, mem, vm);
 	fflush(stderr);
 }
 
@@ -2916,13 +2897,18 @@ decref(bat i, bool logical, bool lock, const char *func)
 	/* we destroy transients asap and unload persistent bats only
 	 * if they have been made cold or are not dirty */
 	unsigned chkflag = BBPSYNCING;
-	if (b && GDKvm_cursize() < GDK_vm_maxsize) {
-		if (!locked) {
-			MT_lock_set(&b->theaplock);
-			locked = true;
-		}
-		if (((b->theap ? b->theap->size : 0) + (b->tvheap ? b->tvheap->size : 0)) < (GDK_vm_maxsize - GDKvm_cursize()) / 32)
-			chkflag |= BBPHOT;
+	size_t cursize;
+	bool swapdirty = false;
+	if (b) {
+		if ((cursize = GDKvm_cursize()) < (size_t) (GDK_vm_maxsize * 0.75)) {
+			if (!locked) {
+				MT_lock_set(&b->theaplock);
+				locked = true;
+			}
+			if (((b->theap ? b->theap->size : 0) + (b->tvheap ? b->tvheap->size : 0)) < (GDK_vm_maxsize - cursize) / 32)
+				chkflag |= BBPHOT;
+		} else if (cursize > (size_t) (GDK_vm_maxsize * 0.85))
+			swapdirty = true;
 	}
 	/* only consider unloading if refs is 0; if, in addition, lrefs
 	 * is 0, we can definitely unload, else only if some more
@@ -2930,7 +2916,7 @@ decref(bat i, bool logical, bool lock, const char *func)
 	if (BBP_refs(i) == 0 &&
 	    (BBP_lrefs(i) == 0 ||
 	     (b != NULL && b->theap != NULL
-	      ? (!BATdirty(b) &&
+	      ? ((swapdirty || !BATdirty(b)) &&
 		 !(BBP_status(i) & chkflag) &&
 		 (BBP_status(i) & BBPPERSISTENT) &&
 		 /* cannot unload in-memory data */
