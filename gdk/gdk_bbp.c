@@ -2206,8 +2206,7 @@ void
 BBPdump(void)
 {
 	size_t mem = 0, vm = 0;
-	size_t cmem = 0, cvm = 0;
-	int n = 0, nc = 0;
+	int n = 0;
 
 	for (bat i = 0; i < (bat) ATOMIC_GET(&BBPsize); i++) {
 		if (BBP_refs(i) == 0 && BBP_lrefs(i) == 0)
@@ -2239,15 +2238,9 @@ BBPdump(void)
 					b->theap->farmid,
 					b->theap->base == NULL ? "X" : b->theap->storage == STORE_MMAP ? "M" : "",
 					status & BBPSWAPPED ? "(Swapped)" : b->theap->dirty ? "(Dirty)" : "");
-				if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-					cmem += HEAPmemsize(b->theap);
-					cvm += HEAPvmsize(b->theap);
-					nc++;
-				} else {
-					mem += HEAPmemsize(b->theap);
-					vm += HEAPvmsize(b->theap);
-					n++;
-				}
+				mem += HEAPmemsize(b->theap);
+				vm += HEAPvmsize(b->theap);
+				n++;
 			}
 		}
 		if (b->tvheap) {
@@ -2263,13 +2256,8 @@ BBPdump(void)
 					b->tvheap->farmid,
 					b->tvheap->base == NULL ? "X" : b->tvheap->storage == STORE_MMAP ? "M" : "",
 					b->tvheap->dirty ? "(Dirty)" : "");
-				if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-					cmem += HEAPmemsize(b->tvheap);
-					cvm += HEAPvmsize(b->tvheap);
-				} else {
-					mem += HEAPmemsize(b->tvheap);
-					vm += HEAPvmsize(b->tvheap);
-				}
+				mem += HEAPmemsize(b->tvheap);
+				vm += HEAPvmsize(b->tvheap);
 			}
 		}
 		if (MT_rwlock_rdtry(&b->thashlock)) {
@@ -2279,22 +2267,15 @@ BBPdump(void)
 				fprintf(stderr, " Thash=[%zu,%zu,f=%d/%d]", m, v,
 					b->thash->heaplink.farmid,
 					b->thash->heapbckt.farmid);
-				if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-					cmem += m;
-					cvm += v;
-				} else {
-					mem += m;
-					vm += v;
-				}
+				mem += m;
+				vm += v;
 			}
 			MT_rwlock_rdunlock(&b->thashlock);
 		}
 		fprintf(stderr, " role: %s\n",
 			b->batRole == PERSISTENT ? "persistent" : "transient");
 	}
-	fprintf(stderr,
-		"# %d bats: mem=%zu, vm=%zu %d cached bats: mem=%zu, vm=%zu\n",
-		n, mem, vm, nc, cmem, cvm);
+	fprintf(stderr, "# %d bats: mem=%zu, vm=%zu\n", n, mem, vm);
 	fflush(stderr);
 }
 
