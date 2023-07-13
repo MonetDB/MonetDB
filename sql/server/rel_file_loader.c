@@ -49,6 +49,8 @@ fl_register(char *name, fl_add_types_fptr add_types, fl_load_fptr load)
 file_loader_t*
 fl_find(char *name)
 {
+	if (!name)
+		return NULL;
 	for (int i = 0; i<NR_FILE_LOADERS; i++) {
 		if (file_loaders[i].name && strcmp(file_loaders[i].name, name) == 0)
 			return file_loaders+i;

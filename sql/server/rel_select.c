@@ -534,8 +534,10 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, sql_exp *e, list *r
 	char *filename = a->data.val.sval;
 	char *ext = strrchr(filename, '.');
 
-	if (ext)
+	if (ext) {
 		ext=ext+1;
+		ext = toLower(ext);
+	}
 
 	file_loader_t *fl = fl_find(ext);
 	if (!fl)
