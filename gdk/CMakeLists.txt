@@ -138,7 +138,6 @@ endif()
 
 install(TARGETS
   bat
-  COMPONENT monetdb
   EXPORT gdkTargets
   RUNTIME
   DESTINATION ${CMAKE_INSTALL_BINDIR}
