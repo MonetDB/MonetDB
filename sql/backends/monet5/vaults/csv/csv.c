@@ -497,6 +497,7 @@ CSVprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 CSVepilogue(void *ret)
 {
+	fl_unregister("csv");
     (void)ret;
     return MAL_SUCCEED;
 }
