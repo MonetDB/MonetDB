@@ -1846,6 +1846,7 @@ BBPinit(void)
  */
 
 static int backup_files = 0, backup_dir = 0, backup_subdir = 0;
+static char *lockfile = NULL;
 
 void
 BBPexit(void)
@@ -1903,7 +1904,10 @@ BBPexit(void)
 	backup_files = 0;
 	backup_dir = 0;
 	backup_subdir = 0;
-
+	if (lockfile) {
+		GDKfree(lockfile);
+		lockfile = NULL;
+	}
 }
 
 /*
@@ -4492,7 +4496,6 @@ BBPcallbacks(void)
  * This is at the end of the file on purpose: we don't want people to
  * accidentally use GDKtmLock directly. */
 static MT_Lock GDKtmLock = MT_LOCK_INITIALIZER(GDKtmLock);
-static char *lockfile;
 static int lockfd;
 
 void
