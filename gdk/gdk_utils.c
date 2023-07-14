@@ -2032,11 +2032,8 @@ GDKfree(void *s)
 #if !defined(NDEBUG) && !defined(SANITIZER)
 	assert((asize & 2) == 0);   /* check against duplicate free */
 	/* check for out-of-bounds writes */
-	{
-		size_t i = ((size_t *) s)[-2]; /* how much asked for last */
-		for (; i < asize - MALLOC_EXTRA_SPACE; i++)
-			assert(((char *) s)[i] == '\xBD');
-	}
+	for (size_t i = ((size_t *) s)[-2]; i < asize - MALLOC_EXTRA_SPACE; i++)
+		assert(((char *) s)[i] == '\xBD');
 	((size_t *) s)[-1] |= 2; /* indicate area is freed */
 
 	/* overwrite memory that is to be freed with a pattern that
@@ -2056,8 +2053,8 @@ GDKrealloc(void *s, size_t size)
 	size_t nsize, asize;
 #if !defined(NDEBUG) && !defined(SANITIZER)
 	size_t osize;
-	size_t *os;
 #endif
+	size_t *os = s;
 
 	assert(size != 0);
 
@@ -2065,7 +2062,7 @@ GDKrealloc(void *s, size_t size)
 		return GDKmalloc(size);
 
 	nsize = (size + 7) & ~7;
-	asize = ((size_t *) s)[-1]; /* how much allocated last */
+	asize = os[-1];		/* how much allocated last */
 
 	if (size > SMALL_MALLOC &&
 	    nsize > asize &&
@@ -2077,16 +2074,12 @@ GDKrealloc(void *s, size_t size)
 #if !defined(NDEBUG) && !defined(SANITIZER)
 	assert((asize & 2) == 0);   /* check against duplicate free */
 	/* check for out-of-bounds writes */
-	osize = ((size_t *) s)[-2]; /* how much asked for last */
-	{
-		size_t i;
-		for (i = osize; i < asize - MALLOC_EXTRA_SPACE; i++)
-			assert(((char *) s)[i] == '\xBD');
-	}
+	osize = os[-2]; /* how much asked for last */
+	for (size_t i = osize; i < asize - MALLOC_EXTRA_SPACE; i++)
+		assert(((char *) s)[i] == '\xBD');
 	/* if shrinking, write debug pattern into to-be-freed memory */
 	DEADBEEFCHK if (size < osize)
 		memset((char *) s + size, '\xDB', osize - size);
-	os = s;
 	os[-1] |= 2;		/* indicate area is freed */
 #endif
 	s = realloc((char *) s - MALLOC_EXTRA_SPACE,
