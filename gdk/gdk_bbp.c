@@ -332,7 +332,7 @@ BBPselectfarm(role_t role, int type, enum heaptype hptype)
 static gdk_return
 BBPextend(bat newsize)
 {
-	if (newsize >= N_BBPINIT * BBPINIT) {
+	if (newsize > N_BBPINIT * BBPINIT) {
 		GDKerror("trying to extend BAT pool beyond the "
 			 "limit (%d)\n", N_BBPINIT * BBPINIT);
 		return GDK_FAIL;
@@ -1697,6 +1697,15 @@ BBPinit(void)
 			return GDK_FAIL;
 		}
 		fclose(fp);
+	}
+
+	/* add free bats to free list in such a way that low numbered
+	 * ones are at the head of the list */
+	for (bat i = (bat) ATOMIC_GET(&BBPsize) - 1; i > 0; i--) {
+		if (BBP_desc(i) == NULL) {
+			BBP_next(i) = BBP_free;
+			BBP_free = i;
+		}
 	}
 
 	/* will call BBPrecover if needed */
