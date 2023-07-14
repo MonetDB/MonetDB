@@ -1514,6 +1514,7 @@ sql_exp *exp_column(sql_allocator *sa, const char *rname, const char *name, sql_
 sql_exp *exp_op(sql_allocator *sa, list *l, sql_subfunc *f);
 sql_table *find_table_or_view_on_scope(mvc *sql, sql_schema *s, const char *sname, const char *tname, const char *error, bool isView);
 int fl_register(char *name, fl_add_types_fptr add_types, fl_load_fptr fl_load);
+void fl_unregister(char *name);
 str flt_num2dec_bte(bte *res, const flt *v, const int *d2, const int *s2);
 str flt_num2dec_int(int *res, const flt *v, const int *d2, const int *s2);
 str flt_num2dec_lng(lng *res, const flt *v, const int *d2, const int *s2);
