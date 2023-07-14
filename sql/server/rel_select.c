@@ -541,7 +541,7 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, sql_exp *e, list *r
 
 	file_loader_t *fl = fl_find(ext);
 	if (!fl)
-		return sa_message(sql->ta, "extension '%s' mising", ext?ext:"");
+		return sa_message(sql->ta, "extension '%s' missing", ext?ext:"");
 	str err = fl->add_types(sql, f, filename, res_exps, tname);
 	if (err)
 		return err;
