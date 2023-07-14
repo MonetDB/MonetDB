@@ -2383,14 +2383,15 @@ maybeextend(void)
 	    BBPextend(size + BBP_FREE_LOWATER) != GDK_SUCCEED) {
 		/* nothing available */
 		return GDK_FAIL;
-	} else {
-		ATOMIC_SET(&BBPsize, size + BBP_FREE_LOWATER);
-		for (int i = 0; i < BBP_FREE_LOWATER; i++) {
-			BBP_next(size) = BBP_free;
-			BBP_free = size;
-			size++;
-		}
 	}
+	ATOMIC_SET(&BBPsize, size + BBP_FREE_LOWATER);
+	assert(BBP_free == 0);
+	BBP_free = size;
+	for (int i = 1; i < BBP_FREE_LOWATER; i++) {
+		bat sz = size;
+		BBP_next(sz) = ++size;
+	}
+	BBP_next(size) = 0;
 	return GDK_SUCCEED;
 }
 
@@ -2407,6 +2408,7 @@ BBPinsert(BAT *bn)
 
 	if (t->freebats == 0) {
 		/* critical section: get a new BBP entry */
+		assert(t->nfreebats == 0);
 		if (lock) {
 			MT_lock_set(&GDKcacheLock);
 		}
@@ -2424,16 +2426,16 @@ BBPinsert(BAT *bn)
 				return 0;
 			}
 		}
-		for (int x = 0; x < BBP_FREE_LOWATER; x++) {
-			i = BBP_free;
-			if (i == 0)
-				break;
-			assert(i > 0);
-			BBP_free = BBP_next(i);
-			BBP_next(i) = t->freebats;
-			t->freebats = i;
+		t->freebats = i = BBP_free;
+		bat l = 0;
+		for (int x = 0; x < BBP_FREE_LOWATER && i; x++) {
+			assert(BBP_next(i) == 0 || BBP_next(i) > i);
 			t->nfreebats++;
+			l = i;
+			i = BBP_next(i);
 		}
+		BBP_next(l) = 0;
+		BBP_free = i;
 
 		if (lock) {
 			MT_lock_unset(&GDKcacheLock);
@@ -2444,6 +2446,7 @@ BBPinsert(BAT *bn)
 		assert(t->freebats > 0);
 		i = t->freebats;
 		t->freebats = BBP_next(i);
+		assert(t->freebats == 0 || t->freebats > i);
 		BBP_next(i) = 0;
 		t->nfreebats--;
 	} else {
@@ -2563,8 +2566,11 @@ BBPhandover(Thread t)
 	bat i = t->freebats;
 	t->freebats = BBP_next(i);
 	t->nfreebats--;
-	BBP_next(i) = BBP_free;
-	BBP_free = i;
+	bat *p;
+	for (p = &BBP_free; *p && *p < i; p = &BBP_next(*p))
+		;
+	BBP_next(i) = *p;
+	*p = i;
 }
 
 static inline void
@@ -2593,8 +2599,11 @@ bbpclear(bat i, bool lock)
 		GDKfree(BBP_logical(i));
 	BBP_status_set(i, 0);
 	BBP_logical(i) = NULL;
-	BBP_next(i) = t->freebats;
-	t->freebats = i;
+	bat *p;
+	for (p = &t->freebats; *p && *p < i; p = &BBP_next(*p))
+		;
+	BBP_next(i) = *p;
+	*p = i;
 	t->nfreebats++;
 	BBP_pid(i) = ~(MT_Id)0; /* not zero, not a valid thread id */
 	if (t->nfreebats > BBP_FREE_HIWATER) {
