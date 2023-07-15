@@ -3288,13 +3288,6 @@ dirty_bat(bat *i, bool subcommit)
 				return b;	/* the bat is loaded, persistent and dirty */
 			}
 			MT_lock_unset(&b->theaplock);
-		} else if (BBP_status(*i) & BBPSWAPPED) {
-			b = (BAT *) BBPquickdesc(*i);
-			if (b) {
-				if (subcommit) {
-					return b;	/* only the desc is loaded */
-				}
-			}
 		}
 	}
 	return NULL;
