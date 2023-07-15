@@ -121,9 +121,8 @@ PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char **return_
 	char *msg;
 	PyObject *vararray = PyArrayObject_FromBAT(inp, t_start, t_end, return_message, copy);
 
-	if (vararray == NULL) {
+	if (vararray == NULL)
 		return NULL;
-	}
 	b = inp->bat;
 	// To deal with null values, we use the numpy masked array structure
 	// The masked array structure is an object with two arrays of equal size, a
@@ -143,6 +142,7 @@ PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char **return_
 		Py_DECREF(nme);
 
 		if (!nullmask) {
+			Py_DECREF(vararray);
 			Py_DECREF(mafunc);
 			Py_DECREF(mod);
 			msg = createException(MAL, "pyapi3.eval", "Failed to create mask for some reason");
@@ -589,8 +589,7 @@ PyDict_CheckForConversion(PyObject *pResult, int expected_columns, char **retcol
 	for (i = 0; i < expected_columns; i++) {
 		PyObject *object = PyDict_GetItemString(pResult, retcol_names[i]);
 		if (object == NULL) {
-			msg =
-				createException(MAL, "pyapi3.eval",
+			msg = createException(MAL, "pyapi3.eval",
 								SQLSTATE(PY000) "Expected a return value with name \"%s\", but "
 								"this key was not present in the dictionary.",
 								retcol_names[i]);
@@ -722,6 +721,7 @@ PyObject_CheckForConversion(PyObject *pResult, int expected_columns, int *actual
 					SQLSTATE(PY000) "Unsupported result object. Expected either a list, "
 					"dictionary, a numpy array, a numpy masked array or a "
 					"pandas data frame, but received an object of type \"%s\"",
+					/* leaks */
 					PyUnicode_AsUTF8(PyObject_Str(PyObject_Type(data))));
 				goto wrapup;
 			}

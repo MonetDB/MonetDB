@@ -723,7 +723,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 		// Now we will add the UDF to the main module
 		d = PyModule_GetDict(pModule);
 		if (code_object == NULL) {
-			v = PyRun_StringFlags(pycall, Py_file_input, d, d, NULL);
+			v = PyRun_StringFlags(pycall, Py_file_input, d, NULL, NULL);
 			if (v == NULL) {
 				msg = PyError_CreateException("Could not parse Python code",
 											  pycall);
@@ -1757,6 +1757,30 @@ bailout:
 	return msg;
 }
 
+static str
+PyAPI3prelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+    (void)cntxt; (void)mb; (void)stk; (void)pci;
+	return PYAPI3PyAPIprelude();
+}
+
+static str
+PyAPI3epilogue(void *ret)
+{
+    (void)ret;
+	MT_lock_set(&pyapiLock);
+	if (pyapiInitialized) {
+		PyGILState_STATE gstate;
+		gstate = PyGILState_Ensure();
+
+		/* now exit/cleanup */
+		if (0) Py_FinalizeEx();
+		(void)gstate;
+	}
+	MT_lock_unset(&pyapiLock);
+    return MAL_SUCCEED;
+}
+
 #include "mel.h"
 static mel_func pyapi3_init_funcs[] = {
  pattern("pyapi3", "eval", PYAPI3PyAPIevalStd, true, "Execute a simple Python script returning a single value", args(1,3, argany("",1),arg("fptr",ptr),arg("expr",str))),
@@ -1778,6 +1802,8 @@ static mel_func pyapi3_init_funcs[] = {
  pattern("batpyapi3map", "eval", PYAPI3PyAPIevalStdMap, false, "Execute a simple Python script value", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("batpyapi3map", "subeval_aggr", PYAPI3PyAPIevalAggrMap, false, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
  pattern("batpyapi3map", "eval_aggr", PYAPI3PyAPIevalAggrMap, false, "grouped aggregates through Python", args(1,4, varargany("",0),arg("fptr",ptr),arg("expr",str),varargany("arg",0))),
+ pattern("pyapi3", "prelude", PyAPI3prelude, false, "", noargs),
+ command("pyapi3", "epilogue", PyAPI3epilogue, false, "", noargs),
  { .imp=NULL }
 };
 #include "mal_import.h"
@@ -1786,4 +1812,4 @@ static mel_func pyapi3_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_pyapi3_mal)
-{ mal_module2("pyapi3", NULL, pyapi3_init_funcs, PYAPI3PyAPIprelude, NULL); }
+{ mal_module("pyapi3", NULL, pyapi3_init_funcs); }
