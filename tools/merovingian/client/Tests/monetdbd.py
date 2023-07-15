@@ -19,8 +19,9 @@ def pickport():
         return port
 
 class Runner:
-    def __init__(self, verbose=True):
+    def __init__(self, verbose=True, timeout=10):
         self.buffering = not verbose
+        self.timeout = timeout
         if self.buffering:
             self.output = tempfile.TemporaryFile('w+')
         else:
@@ -55,15 +56,15 @@ class Runner:
         assert is_valid(attempt)
         return attempt
 
-    def run_command(self, cmd, output=False, timeout=10):
+    def run_command(self, cmd, output=False):
         self.print(f"RUN  {' '.join(self.quote(a) for a in cmd)}")
         if output:
-            out = subprocess.check_output(cmd, timeout=timeout, stderr=self.output)
+            out = subprocess.check_output(cmd, timeout=self.timeout, stderr=self.output)
             self.output.flush()
             out = str(out, locale.getlocale()[1])
             return out
         else:
-            subprocess.check_call(cmd, timeout=timeout, stdout=self.output, stderr=self.output)
+            subprocess.check_call(cmd, timeout=self.timeout, stdout=self.output, stderr=self.output)
             self.output.flush()
             return None
 
