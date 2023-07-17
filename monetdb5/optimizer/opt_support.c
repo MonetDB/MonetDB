@@ -300,7 +300,6 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		return TRUE;
 
 	if( getModuleId(p) == pyapi3Ref ||
-		getModuleId(p) == pyapi3mapRef ||
 		getModuleId(p) == rapiRef ||
 		getModuleId(p) == capiRef)
 		return TRUE;

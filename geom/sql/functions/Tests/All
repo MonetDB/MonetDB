@@ -15,8 +15,10 @@ HAVE_GEOM?ST_Collect
 HAVE_GEOM?ST_MakeLine
 HAVE_GEOM?loadTestPolygons
 HAVE_GEOM?ST_Intersects
-HAVE_GEOM?ST_IntersectsRTree
 HAVE_GEOM?ST_DWithin
+
+HAVE_GEOM?createRTreeIndex
+HAVE_GEOM?ST_IntersectsRTree
 HAVE_GEOM?ST_DWithinRTree
 
 HAVE_GEOM?loadTestGeometries

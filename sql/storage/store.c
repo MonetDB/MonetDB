@@ -945,8 +945,6 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	}
 	if (strcmp(v, "pyapi") == 0) /* pyapi module no longer used */
 		t->mod =_STRDUP("pypapi3");
-	else if (strcmp(v, "pyapimap") == 0) /* pyapimap module no longer used */
-		t->mod =_STRDUP("pyapi3map");
 	else
 		t->mod =_STRDUP(v);
 	if (!update_env) store->table_api.column_find_string_end(cbat);
@@ -968,10 +966,10 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	}
 	/* convert old PYTHON2 and PYTHON2_MAP to PYTHON and PYTHON_MAP
 	 * see also function sql_update_jun2020() in sql_upgrades.c */
-	if ((int) t->lang == 8)		/* old FUNC_LANG_PY2 */
+	if ((int) t->lang == 7 || (int) t->lang == 8)		/* MAP_PY old FUNC_LANG_PY2 */
 		t->lang = FUNC_LANG_PY;
-	else if ((int) t->lang == 9)	/* old FUNC_LANG_MAP_PY2 */
-		t->lang = FUNC_LANG_MAP_PY;
+	else if ((int) t->lang == 9 || (int) t->lang == 11)	/* old FUNC_LANG_MAP_PY2 or MAP_PY3 */
+		t->lang = FUNC_LANG_PY;
 	if (LANG_EXT(t->lang)) { /* instantiate functions other than sql and mal */
 		switch(t->type) {
 		case F_AGGR:
@@ -3395,6 +3393,8 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 
 	if (nk->type == fkey) {
 		sql_key *rkey = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)k)->rkey);
+		if (!rkey)
+			return LOG_ERR;
 
 		if ((res = sql_trans_create_dependency(tr, rkey->base.id, nk->base.id, FKEY_DEPENDENCY)))
 			return res;

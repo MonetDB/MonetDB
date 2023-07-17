@@ -484,8 +484,7 @@ SQLhelp sqlhelp1[] = {
 	 "[ HAVING condition [',' ...] ]\n"
 	 "[ { UNION | INTERSECT | EXCEPT } [ ALL | DISTINCT ] [ CORRESPONDING ] select ]\n"
 	 "[ ORDER BY expression [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [',' ...] ]\n"
-	 "[ LIMIT { count | param } ]\n"
-	 "[ OFFSET { count | param } ]\n"
+	 "[ limit_offset_clause | offset_fetchfirst_clause ]\n"
 	 "[ SAMPLE size [ SEED size ] ]",
 	 "cte_list,expression,group_by_element,window_definition",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-manipulation/table-expressions/"},
@@ -832,8 +831,8 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"query_expression",
 	 NULL,
-	 "select_no_parens [ order_by_clause ] [ limit_clause ] [ offset_clause ] [ sample_clause ]",
-	 "select_no_parens,order_by_clause,limit_clause,offset_clause,sample_clause",
+	 "select_no_parens [ order_by_clause ] [ limit_offset_clause | offset_fetchfirst_clause ] [ sample_clause ]",
+	 "select_no_parens",
 	 NULL},
 	{"select_no_parens",
 	 NULL,
@@ -841,6 +840,21 @@ SQLhelp sqlhelp2[] = {
 	 "| select_no_parens { UNION | EXCEPT | INTERSECT } [ ALL | DISTINCT ] [ corresponding ] select_no_parens\n"
 	 "| '(' select_no_parens ')' }",
 	 "column_exp_commalist,from_clause,window_clause,where_clause,group_by_clause,having_clause,corresponding",
+	 NULL},
+	{"order_by_clause",
+	 NULL,
+	 "ORDER BY expression [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [',' ...]",
+	 "",
+	 NULL},
+	{"limit_offset_clause",
+	 NULL,
+	 "[ LIMIT { count | param } ]  [ OFFSET { count | param } ]",
+	 "",
+	 NULL},
+	{"offset_fetchfirst_clause",
+	 NULL,
+	 "[ OFFSET { count | param } [ {ROW|ROWS} ] ]  [ FETCH {FIRST|NEXT} [ count | param ] {ROW|ROWS} ONLY ]",
+	 "",
 	 NULL},
 	{"corresponding",
 	 NULL,

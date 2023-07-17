@@ -96,7 +96,15 @@ wkbHASH(const void *W)
 	BUN h = 0;
 
 	for (i = 0; i < (w->len - 1); i += 2) {
-		int a = *(w->data + i), b = *(w->data + i + 1);
+		BUN a = ((unsigned char *) w->data)[i];
+		BUN b = ((unsigned char *) w->data)[i + 1];
+#if '\377' < 0					/* char is signed? */
+		/* maybe sign extend */
+		if (a & 0x80)
+			a |= ~(BUN)0x7f;
+		if (b & 0x80)
+			b |= ~(BUN)0x7f;
+#endif
 		h = (h << 3) ^ (h >> 11) ^ (h >> 17) ^ (b << 8) ^ a;
 	}
 	return h;
@@ -456,7 +464,8 @@ BUN
 mbrHASH(const void *ATOM)
 {
 	const mbr *atom = ATOM;
-	return (BUN) (((int) atom->xmin * (int)atom->ymin) *((int) atom->xmax * (int)atom->ymax));
+	return ATOMhash(TYPE_flt, &atom->xmin) ^ ATOMhash(TYPE_flt, &atom->ymin) ^
+		ATOMhash(TYPE_flt, &atom->xmax) ^ ATOMhash(TYPE_flt, &atom->ymax);
 }
 
 const void *
@@ -1228,7 +1237,15 @@ wkbaHASH(const void *WARRAY)
 	for (j = 0; j < wArray->itemsNum; j++) {
 		wkb *w = wArray->data[j];
 		for (i = 0; i < (w->len - 1); i += 2) {
-			int a = *(w->data + i), b = *(w->data + i + 1);
+			BUN a = ((unsigned char *) w->data)[i];
+			BUN b = ((unsigned char *) w->data)[i + 1];
+#if '\377' < 0					/* char is signed? */
+			/* maybe sign extend */
+			if (a & 0x80)
+				a |= ~(BUN)0x7f;
+			if (b & 0x80)
+				b |= ~(BUN)0x7f;
+#endif
 			h = (h << 3) ^ (h >> 11) ^ (h >> 17) ^ (b << 8) ^ a;
 		}
 	}
@@ -1459,4 +1476,3 @@ wkbInteriorRings(wkba **geomArray, wkb **geomWKB)
 
 	return MAL_SUCCEED;
 }
-

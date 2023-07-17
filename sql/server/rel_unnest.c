@@ -2347,7 +2347,14 @@ rel_set_type(visitor *v, sql_rel *rel)
 					if (te->type == e_convert) {
 						sql_exp *l = te->l;
 						if (l->type == e_column) {
-							sql_exp *e = rel_find_exp(rel->l, l);
+							sql_rel *sl = rel->l;
+							sql_exp *e = rel_find_exp(sl, l);
+							if (is_groupby(sl->op) && exp_equal(e, l) == 0) {
+								sql_exp *e2 = list_find_exp(sl->r, l);
+								if (e2) {
+									e = e2;
+								}
+							}
 							sql_subtype *t = exp_subtype(e);
 
 							if (t && !t->type->localtype) {

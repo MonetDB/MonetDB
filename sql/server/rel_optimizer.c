@@ -84,7 +84,7 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 		sql_part *pd = nt->data;
 		sql_table *pt = find_sql_table_id(v->sql->session->tr, mt->s, pd->member);
 		sqlstore *store = v->sql->session->tr->store;
-		int skip = 0, allowed = 1;
+		int skip = 0;
 
 		/* At the moment we throw an error in the optimizer, but later this rewriter should move out from the optimizers */
 		if ((isMergeTable(pt) || isReplicaTable(pt)) && list_empty(pt->members))
@@ -93,9 +93,6 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 		/* Do not include empty partitions */
 		if (isTable(pt) && pt->access == TABLE_READONLY && !store->storage_api.count_col(v->sql->session->tr, ol_first_node(pt->columns)->data, 10)) /* count active rows only */
 			continue;
-
-		if (!table_privs(v->sql, pt, PRIV_SELECT)) /* Test for privileges */
-			allowed = 0;
 
 		for (node *n = mt_rel->exps->h; n && !skip; n = n->next) { /* for each column of the child table */
 			sql_exp *e = n->data;
@@ -112,9 +109,7 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 			mt_col = ol_find_name(mt->columns, exp_name(e))->data;
 			col = ol_fetch(pt->columns, mt_col->colnr);
 			assert(e && e->type == e_column && col);
-			if (!allowed && !column_privs(v->sql, col, PRIV_SELECT))
-				return sql_error(v->sql, 02, SQLSTATE(42000) "The user %s SELECT permissions on table '%s.%s' don't match %s '%s.%s'", get_string_global_var(v->sql, "current_user"),
-								 pt->s->base.name, pt->base.name, TABLE_TYPE_DESCRIPTION(mt->type, mt->properties), mt->s->base.name, mt->base.name);
+
 			if (isTable(pt) && info && !list_empty(info->cols) && ATOMlinear(exp_subtype(e)->type->localtype)) {
 				for (node *nn = info->cols->h ; nn && !skip; nn = nn->next) { /* test if it passes all predicates around it */
 					if (nn->data == e) {

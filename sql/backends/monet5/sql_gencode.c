@@ -1633,8 +1633,6 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 	case FUNC_LANG_R:
 	case FUNC_LANG_PY:
 	case FUNC_LANG_PY3:
-	case FUNC_LANG_MAP_PY:
-	case FUNC_LANG_MAP_PY3:
 	case FUNC_LANG_C:
 	case FUNC_LANG_CPP:
 		return 0; /* these languages don't require internal instantiation */

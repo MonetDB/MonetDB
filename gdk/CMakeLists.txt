@@ -81,7 +81,6 @@ target_sources(bat
   gdk_project.c
   gdk_time.c gdk_time.h
   gdk_unique.c
-  gdk_interprocess.c gdk_interprocess.h
   gdk_firstn.c
   gdk_subquery.c gdk_subquery.h
   gdk_analytic_bounds.c
@@ -141,10 +140,10 @@ endif()
 
 install(TARGETS
   bat
-  COMPONENT monetdb
   EXPORT gdkTargets
   RUNTIME
   DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT monetdb
   LIBRARY
   DESTINATION ${CMAKE_INSTALL_LIBDIR}
   COMPONENT monetdb
@@ -155,8 +154,7 @@ install(TARGETS
   PUBLIC_HEADER
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   COMPONENT monetdbdev
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-  COMPONENT monetdbdev)
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 install(EXPORT gdkTargets
   FILE gdkTargets.cmake

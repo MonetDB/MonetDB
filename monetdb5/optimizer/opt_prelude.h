@@ -195,7 +195,6 @@ mal_export  const char *projectionpathRef;
 mal_export  const char *projectionRef;
 mal_export  const char *projectRef;
 mal_export  const char *putRef;
-mal_export  const char *pyapi3mapRef;
 mal_export  const char *pyapi3Ref;
 mal_export  const char *querylogRef;
 mal_export  const char *raiseRef;

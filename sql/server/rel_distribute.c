@@ -69,10 +69,6 @@ rewrite_replica(mvc *sql, list *exps, sql_table *t, sql_table *p, int remote_pro
 {
 	node *n, *m;
 	sql_rel *r = rel_basetable(sql, p, t->base.name);
-	int allowed = 1;
-
-	if (!table_privs(sql, p, PRIV_SELECT)) /* Test for privileges */
-		allowed = 0;
 
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
@@ -81,10 +77,6 @@ rewrite_replica(mvc *sql, list *exps, sql_table *t, sql_table *p, int remote_pro
 		node *nn = ol_find_name(t->columns, nname);
 		if (nn) {
 			sql_column *c = nn->data;
-
-			if (!allowed && !column_privs(sql, ol_fetch(p->columns, c->colnr), PRIV_SELECT))
-				return sql_error(sql, 02, SQLSTATE(42000) "The user %s SELECT permissions on table '%s.%s' don't match %s '%s.%s'", get_string_global_var(sql, "current_user"),
-								 p->s->base.name, p->base.name, TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->s->base.name, t->base.name);
 			rel_base_use(sql, r, c->colnr);
 		} else if (strcmp(nname, TID) == 0) {
 			rel_base_use_tid(sql, r);
