@@ -2263,12 +2263,7 @@ func_def:
 			if (l == 'R' || l == 'r')
 				lang = FUNC_LANG_R;
 			else if (l == 'P' || l == 'p') {
-				// code does not get cleaner than this people
-				if (strcasecmp($9, "PYTHON_MAP") == 0) {
-					lang = FUNC_LANG_MAP_PY;
-				} else if (strcasecmp($9, "PYTHON3_MAP") == 0) {
-					lang = FUNC_LANG_MAP_PY3;
-				} else if (strcasecmp($9, "PYTHON3") == 0) {
+				if (strcasecmp($9, "PYTHON3") == 0) {
 					lang = FUNC_LANG_PY3;
 				} else {
 					lang = FUNC_LANG_PY;

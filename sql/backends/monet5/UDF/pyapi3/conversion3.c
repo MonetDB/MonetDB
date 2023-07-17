@@ -14,7 +14,6 @@
 #include "pytypes.h"
 #include "type_conversion.h"
 #include "unicode.h"
-#include "gdk_interprocess.h"
 
 //! Wrapper to get eclass of SQL type
 int GetSQLType(sql_subtype *sql_subtype);
@@ -207,8 +206,7 @@ PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char **return_
 			goto wrapup;
 		} else {
 			BAT *ret_bat = NULL;
-			msg = ConvertFromSQLType(b, inp->sql_subtype, &ret_bat,
-									 &inp->bat_type);
+			msg = ConvertFromSQLType(b, inp->sql_subtype, &ret_bat, &inp->bat_type);
 			if (msg != MAL_SUCCEED) {
 				freeException(msg);
 				msg = createException(MAL, "pyapi3.eval",
@@ -1160,8 +1158,8 @@ int GetSQLType(sql_subtype *sql_subtype)
 	return (int) sql_subtype->type->eclass;
 }
 
-str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
-					   int *ret_type)
+str
+ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type)
 {
 	str res = MAL_SUCCEED;
 	int conv_type;

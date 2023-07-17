@@ -129,7 +129,6 @@
 #cmakedefine HAVE_DISPATCH_SEMAPHORE_CREATE 1
 #cmakedefine HAVE_FALLOCATE 1
 #cmakedefine HAVE_FCNTL 1
-#cmakedefine HAVE_FORK 1
 #cmakedefine HAVE_FSYNC 1
 #cmakedefine HAVE_FTIME 1
 #cmakedefine HAVE_GETENTROPY 1

@@ -16,7 +16,6 @@
 
 #include "unicode.h"
 #include "pytypes.h"
-#include "gdk_interprocess.h"
 #include "type_conversion.h"
 #include "formatinput.h"
 
@@ -200,7 +199,7 @@ PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		create_table = true;
 	}
 
-	pConnection = Py_Connection_Create(cntxt, 0, 0, 0);
+	pConnection = Py_Connection_Create(cntxt, 0, 0);
 	pEmit = PyEmit_Create(cols, ncols);
 	if (!pConnection || !pEmit) {
 		msg = createException(MAL, "pyapi3.eval_loader",

@@ -72,7 +72,6 @@ function(monetdb_configure_defines)
   # Linux specific, in the future, it might be ported to other platforms
   check_symbol_exists("fallocate" "fcntl.h" HAVE_FALLOCATE)
   check_function_exists("fcntl" HAVE_FCNTL)
-  check_symbol_exists("fork" "unistd.h" HAVE_FORK)
   check_symbol_exists("fsync" "unistd.h" HAVE_FSYNC)
   check_symbol_exists("ftime" "sys/timeb.h" HAVE_FTIME)
   check_function_exists("getentropy" HAVE_GETENTROPY)
