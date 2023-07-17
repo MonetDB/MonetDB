@@ -3,3 +3,4 @@ strimps_stable_counts2
 persisted_strimp
 strimps_not_like
 small_string_crash
+strimps_with_nulls
