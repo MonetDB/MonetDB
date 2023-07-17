@@ -158,6 +158,14 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	h->free = 0;
 	h->cleanhash = false;
 
+#ifdef SIZE_CHECK_IN_HEAPS_ONLY
+	if (GDKvm_cursize() + h->size >= GDK_vm_maxsize &&
+	    !MT_thread_override_limits()) {
+		GDKerror("allocating too much memory (current: %zu, requested: %zu, limit: %zu)\n", GDKvm_cursize(), h->size, GDK_vm_maxsize);
+		return GDK_FAIL;
+	}
+#endif
+
 	size_t allocated;
 	if (GDKinmemory(h->farmid) ||
 	    ((allocated = GDKmem_cursize()) + h->size < GDK_mem_maxsize &&
@@ -255,6 +263,14 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 		ext = decompose_filename(nme);
 	}
 	failure = "size > h->size";
+
+#ifdef SIZE_CHECK_IN_HEAPS_ONLY
+	if (GDKvm_cursize() + size - h->size >= GDK_vm_maxsize &&
+	    !MT_thread_override_limits()) {
+		GDKerror("allocating too much memory (current: %zu, requested: %zu, limit: %zu)\n", GDKvm_cursize(), size - h->size, GDK_vm_maxsize);
+		return GDK_FAIL;
+	}
+#endif
 
  	if (h->storage != STORE_MEM) {
 		char *p;
@@ -834,6 +850,14 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		  GDKusec() - t0);
 	GDKfree(srcpath);
 	GDKfree(dstpath);
+
+#ifdef SIZE_CHECK_IN_HEAPS_ONLY
+	if (GDKvm_cursize() + h->size >= GDK_vm_maxsize &&
+	    !MT_thread_override_limits()) {
+		GDKerror("allocating too much memory (current: %zu, requested: %zu, limit: %zu)\n", GDKvm_cursize(), h->size, GDK_vm_maxsize);
+		return GDK_FAIL;
+	}
+#endif
 
 	size_t size = h->size;
 	QryCtx *qc = NULL;
