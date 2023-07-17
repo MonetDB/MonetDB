@@ -251,7 +251,6 @@ getIntConstant(MalBlkPtr mb, int val)
 	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_int, &cst);
-	assert(_t >= 0);
 	return _t;
 }
 

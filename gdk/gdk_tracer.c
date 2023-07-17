@@ -114,6 +114,8 @@ GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
 
 	/* we use malloc/free instead of GDKmalloc/GDKfree to avoid
 	 * possible recursion */
+#undef malloc
+#undef free
 	if (dbtrace == NULL) {
 		write_to_tracer = false;
 		if (dbpath == NULL) {

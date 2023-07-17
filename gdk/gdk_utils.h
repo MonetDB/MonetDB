@@ -168,7 +168,7 @@ gdk_export int GDKms(void);
 	({							\
 		void *_ptr = (p);				\
 		size_t _size = (s);				\
-		char _buf[12];					\
+		char _buf[2*sizeof(void*)+3];			\
 		snprintf(_buf, sizeof(_buf), "%p", _ptr);	\
 		void *_res = GDKrealloc(_ptr, _size);		\
 		TRC_DEBUG(ALLOC, "GDKrealloc(%s,%zu) -> %p\n",	\
