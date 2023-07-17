@@ -15,7 +15,7 @@ from monetdbd import MonetDBD, Runner
 gdk_farmdir = os.environ.get('TSTTRGDIR') or '/tmp/'
 farmdir = os.path.join(gdk_farmdir, 'monetdbd-test')
 
-with Runner(False) as run:
+with Runner(False, timeout=100) as run:
 
     def header(text):
         run.print()

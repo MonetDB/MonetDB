@@ -468,17 +468,17 @@ typedef struct MT_Lock {
 #define MT_lock_try(l)		(pthread_mutex_trylock(&(l)->lock) == 0 && (_DBG_LOCK_LOCKER(l), true))
 
 #ifdef LOCK_STATS
-#define MT_lock_set(l)					\
-	do {						\
-		_DBG_LOCK_COUNT_0(l);			\
-		if (pthread_mutex_trylock(&(l)->lock) {	\
-			_DBG_LOCK_CONTENTION(l);	\
-			MT_thread_setlockwait(l);	\
-			pthread_mutex_lock(&(l)->lock);	\
-			MT_thread_setlockwait(NULL);	\
-		}					\
-		_DBG_LOCK_LOCKER(l);			\
-		_DBG_LOCK_COUNT_2(l);			\
+#define MT_lock_set(l)						\
+	do {							\
+		_DBG_LOCK_COUNT_0(l);				\
+		if (pthread_mutex_trylock(&(l)->lock)) {	\
+			_DBG_LOCK_CONTENTION(l);		\
+			MT_thread_setlockwait(l);		\
+			pthread_mutex_lock(&(l)->lock);		\
+			MT_thread_setlockwait(NULL);		\
+		}						\
+		_DBG_LOCK_LOCKER(l);				\
+		_DBG_LOCK_COUNT_2(l);				\
 	} while (0)
 #else
 #define MT_lock_set(l)				\

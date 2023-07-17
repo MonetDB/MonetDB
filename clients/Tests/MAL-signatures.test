@@ -37249,6 +37249,11 @@ unsafe pattern profiler.stoptrace():void
 CMDstopTrace;
 Stop collecting trace information
 pyapi3
+epilogue
+command pyapi3.epilogue():void 
+PyAPI3epilogue;
+(empty)
+pyapi3
 eval
 unsafe pattern pyapi3.eval(X_0:ptr, X_1:str):any_1 
 PYAPI3PyAPIevalStd;
@@ -37273,6 +37278,11 @@ eval_loader
 unsafe pattern pyapi3.eval_loader(X_0:ptr, X_1:str, X_2:any...):any... 
 PYAPI3PyAPIevalLoader;
 loader functions through Python
+pyapi3
+prelude
+pattern pyapi3.prelude():void 
+PyAPI3prelude;
+(empty)
 pyapi3
 subeval_aggr
 unsafe pattern pyapi3.subeval_aggr(X_0:ptr, X_1:str, X_2:any...):any... 

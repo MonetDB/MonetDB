@@ -534,12 +534,14 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, sql_exp *e, list *r
 	char *filename = a->data.val.sval;
 	char *ext = strrchr(filename, '.');
 
-	if (ext)
+	if (ext) {
 		ext=ext+1;
+		ext = toLower(ext);
+	}
 
 	file_loader_t *fl = fl_find(ext);
 	if (!fl)
-		return sa_message(sql->ta, "extension '%s' mising", ext?ext:"");
+		return sa_message(sql->ta, "extension '%s' missing", ext?ext:"");
 	str err = fl->add_types(sql, f, filename, res_exps, tname);
 	if (err)
 		return err;
@@ -4658,10 +4660,12 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int needs_distinct,
 			if ((selection = simple_selection(col)) != NULL) {
 				dnode *o = selection->h;
 				order = o->data.sym;
-				col = order->data.lval->h->data.sym;
+				if (order->data.lval->h->type == type_symbol)
+					col = order->data.lval->h->data.sym;
 				/* remove optional name from selection */
 				order->data.lval->h->next = NULL;
 			}
+
 			if (col->token == SQL_COLUMN || col->token == SQL_IDENT || col->token == SQL_ATOM) {
 				exp_kind ek = {type_value, card_column, FALSE};
 

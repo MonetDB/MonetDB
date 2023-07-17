@@ -199,7 +199,7 @@ static struct winthread {
 	char algorithm[512];	/* the algorithm used in the last operation */
 	size_t algolen;		/* length of string in .algorithm */
 	ATOMIC_TYPE exited;
-	bool detached:1, waiting:1;
+	bool detached:1, waiting:1, limit_override:1;
 	char threadname[MT_NAME_LEN];
 	QryCtx *qry_ctx;
 } *winthreads = NULL;
@@ -405,8 +405,16 @@ MT_thread_setworking(const char *work)
 		return;
 	struct winthread *w = TlsGetValue(threadslot);
 
-	if (w)
-		w->working = work;
+	if (w) {
+		if (work == NULL)
+			w->working = NULL;
+		else if (strcmp(work, "store locked") == 0)
+			w->limit_override = true;
+		else if (strcmp(work, "store unlocked") == 0)
+			w->limit_override = false;
+		else
+			w->working = work;
+	}
 }
 
 void
@@ -447,7 +455,7 @@ MT_thread_override_limits(void)
 		return false;
 	struct winthread *w = TlsGetValue(threadslot);
 
-	return w && w->working && strcmp(w->working, "store locked") == 0;
+	return w && w->limit_override;
 }
 
 static void
@@ -673,7 +681,7 @@ static struct posthread {
 	pthread_t tid;
 	MT_Id mtid;
 	ATOMIC_TYPE exited;
-	bool detached:1, waiting:1;
+	bool detached:1, waiting:1, limit_override:1;
 	QryCtx *qry_ctx;
 } *posthreads = NULL;
 static struct posthread mainthread = {
@@ -880,8 +888,16 @@ MT_thread_setworking(const char *work)
 		return;
 	struct posthread *p = pthread_getspecific(threadkey);
 
-	if (p)
-		p->working = work;
+	if (p) {
+		if (work == NULL)
+			p->working = NULL;
+		else if (strcmp(work, "store locked") == 0)
+			p->limit_override = true;
+		else if (strcmp(work, "store unlocked") == 0)
+			p->limit_override = false;
+		else
+			p->working = work;
+	}
 }
 
 void
@@ -922,7 +938,7 @@ MT_thread_override_limits(void)
 		return false;
 	struct posthread *p = pthread_getspecific(threadkey);
 
-	return p && p->working && strcmp(p->working, "store locked") == 0;
+	return p && p->limit_override;
 }
 
 #ifdef HAVE_PTHREAD_SIGMASK

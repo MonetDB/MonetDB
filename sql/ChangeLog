@@ -1,3 +1,18 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Jul 7 2023 Niels Nes <niels.nes@monetdbsolutions.com>
+- Added SQL support for: <result offset clause> and <fetch first clause>
+  in  <query expression> ::=
+      [ <with clause> ] <query expression body>
+      [ <order by clause> ]
+      [ <result offset clause> ]
+      [ <fetch first clause> ]
+      [ <sample clause> ]
+
+  <result offset clause> ::=
+     OFFSET <offset row count> [ {ROW|ROWS} ]
+
+  <fetch first clause> ::=
+     FETCH {FIRST|NEXT} <fetch first row count> {ROW|ROWS} ONLY
+

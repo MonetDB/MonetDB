@@ -234,7 +234,7 @@ PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		// Now we will add the UDF to the main module
 		d = PyModule_GetDict(pModule);
 		if (code_object == NULL) {
-			v = PyRun_StringFlags(pycall, Py_file_input, d, d, NULL);
+			v = PyRun_StringFlags(pycall, Py_file_input, d, NULL, NULL);
 			if (v == NULL) {
 				msg = PyError_CreateException("Could not parse Python code",
 											  pycall);

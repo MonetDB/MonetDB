@@ -71,13 +71,13 @@ statement ok
 drop table v0
 
 statement error
-CREATE TEMP TABLE Table0 (Col0 INT, PRIMARY KEY(Col0), FOREIGN KEY (Col0) REFERENCES Table0);
+CREATE TEMP TABLE Table0 (Col0 INT, PRIMARY KEY(Col0), FOREIGN KEY (Col0) REFERENCES Table0)
 
 statement ok
-CREATE VIEW v0 AS SELECT CAST (NULL AS INT) EXCEPT SELECT CAST (NULL AS INT) GROUP BY NULL;
+CREATE VIEW v0 AS SELECT CAST (NULL AS INT) EXCEPT SELECT CAST (NULL AS INT) GROUP BY NULL
 
 statement ok
-drop view v0;
+drop view v0
 
 statement ok
 CREATE TABLE v0 (v1 INT NULL)
@@ -92,7 +92,16 @@ statement ok
 INSERT INTO v0 SELECT v0.v1 FROM v0, v0 AS c3_null, v0 AS col2
 
 statement ok
-SELECT v1, row_number() OVER (ORDER BY v1 * 3 NULLS LAST, NULL*0 DESC NULLS FIRST), 3 FROM v0 LIMIT 300000;
+SELECT v1, row_number() OVER (ORDER BY v1 * 3 NULLS LAST, NULL*0 DESC NULLS FIRST), 3 FROM v0 LIMIT 300000
+
+statement ok
+drop table v0
+
+statement ok
+CREATE TABLE v0 (v1 INT, v2 REAL)
+
+statement error
+SELECT * FROM v0 ORDER BY (SELECT *)
 
 statement ok
 drop table v0

@@ -342,6 +342,8 @@ row2cols(backend *be, stmt *sub)
 	if (sub->nrcols == 0 && sub->key) {
 		node *n;
 		list *l = sa_list(be->mvc->sa);
+		if (l == NULL)
+			return NULL;
 
 		for (n = sub->op4.lval->h; n; n = n->next) {
 			stmt *sc = n->data;
@@ -569,6 +571,8 @@ exp_list(backend *be, list *exps, stmt *l, stmt *r, stmt *grp, stmt *ext, stmt *
 	node *n;
 	list *nl = sa_list(sql->sa);
 
+	if (nl == NULL)
+		return NULL;
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		stmt *i = exp_bin(be, e, l, r, grp, ext, cnt, sel, 0, 0, 0);
@@ -1232,6 +1236,8 @@ exp2bin_copyfrombinary(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *
 	// Emit the columns
 	int count_var = -1;
 	list *columns = sa_list(sql->sa);
+	if (columns == NULL)
+		return NULL;
 	stmt *prototype_stmt = emit_loadcolumn(be, onclient_stmt, bswap_stmt, &count_var, prototype_file, prototype_type);
 	if (!prototype_stmt)
 		return NULL;
@@ -1338,6 +1344,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				if (r->type == st_table && lst->nrcols == 0 && lst->key && e->card > CARD_ATOM) {
 					node *n;
 					list *l = sa_list(sql->sa);
+					if (l == NULL)
+						return NULL;
 
 					for (n=lst->op4.lval->h; n; n = n->next)
 						list_append(l, const_column(be, (stmt*)n->data));
@@ -1440,6 +1448,9 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		stmt *rows = NULL;
 		const char *mod, *fimp;
 
+		if (l == NULL)
+			return NULL;
+
 		/* attempt to instantiate MAL functions now, so we can know if we can push candidate lists */
 		if (f->func->lang == FUNC_LANG_MAL && backend_create_mal_func(be->mvc, f->func) < 0)
 			return NULL;
@@ -1528,6 +1539,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				stmt *ngrp = grp;
 				stmt *next = ext;
 				stmt *ncnt = cnt;
+				if (nl == NULL)
+					return NULL;
 				for (en = l->h; en; en = en->next) {
 					stmt *as = en->data;
 					stmt *g = stmt_group(be, as, ngrp, next, ncnt, 1);
@@ -1545,7 +1558,11 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			} else if (need_distinct(e)) {
 				stmt *a = l->h->data;
 				stmt *u = stmt_unique(be, a);
+				if (u == NULL)
+					return NULL;
 				l = sa_list(sql->sa);
+				if (l == NULL)
+					return NULL;
 				append(l, stmt_project(be, u, a));
 			}
 			as = stmt_list(be, l);
@@ -1598,6 +1615,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			int first = 1;
 
 			ops = sa_list(sql->sa);
+			if (ops == NULL)
+				return NULL;
 			args = e->l;
 			for (n = args->h; n; n = n->next) {
 				oldvtop = be->mb->vtop;
@@ -1620,6 +1639,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			}
 			l = stmt_list(be, ops);
 			ops = sa_list(sql->sa);
+			if (ops == NULL)
+				return NULL;
 			args = e->r;
 			for (n = args->h; n; n = n->next) {
 				s = exp_bin(be, n->data, (swapped || !right)?left:right, NULL, grp, ext, cnt, NULL, depth+1, 0, push);
@@ -1733,6 +1754,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 							s = stmt_bool(be, !is_anti(e));
 						} else {
 							list *args = sa_list(sql->sa);
+							if (args == NULL)
+								return NULL;
 							/* add nil semantics bit */
 							list_append(args, l);
 							list_append(args, r);
@@ -1866,6 +1889,8 @@ sql_Nop_(backend *be, const char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
 	list *tl = sa_list(sql->sa);
 	sql_subfunc *f = NULL;
 
+	if (sl == NULL || tl == NULL)
+		return NULL;
 	list_append(sl, a1);
 	list_append(tl, tail_type(a1));
 	list_append(sl, a2);
@@ -1900,6 +1925,8 @@ rel2bin_sql_table(backend *be, sql_table *t, list *aliases)
 	node *n;
 	stmt *dels = stmt_tid(be, t, 0);
 
+	if (l == NULL || dels == NULL)
+		return NULL;
 	if (aliases) {
 		for (n = aliases->h; n; n = n->next) {
 			sql_exp *e = n->data;
@@ -1978,6 +2005,8 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 	stmt *dels = stmt_tid(be, t, rel->flag == REL_PARTITION), *col = NULL;
 	node *en;
 
+	if (l == NULL || dels == NULL)
+		return NULL;
 	/* add aliases */
 	assert(rel->exps);
 	for (en = rel->exps->h; en && !col; en = en->next) {
@@ -2206,6 +2235,8 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 	if (rel->flag == TRIGGER_WRAPPER) {
 		trigger_input *ti = rel->l;
 		l = sa_list(sql->sa);
+		if (l == NULL)
+			return NULL;
 
 		for (n = ol_first_node(ti->t->columns); n; n = n->next) {
 			sql_column *c = n->data;
@@ -2271,6 +2302,8 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 				return NULL;
 		}
 		l = sa_list(sql->sa);
+		if (l == NULL)
+			return NULL;
 		if (f->func->res) {
 			if (f->func->varres) {
 				for (i=0, en = rel->exps->h, n = f->res->h; en; en = en->next, n = n->next, i++) {
@@ -2392,6 +2425,8 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 		return NULL;
 	}
 	l = sa_list(sql->sa);
+	if (l == NULL)
+		return NULL;
 	for (en = rel->exps->h; en; en = en->next) {
 		sql_exp *exp = en->data;
 		const char *rnme = exp_relname(exp)?exp_relname(exp):exp->l;
@@ -3351,7 +3386,11 @@ rel2bin_union(backend *be, sql_rel *rel, list *refs)
 		stmt *s;
 
 		s = stmt_append(be, create_const_column(be, c1), c2);
+		if (s == NULL)
+			return NULL;
 		s = stmt_alias(be, s, rnme, nme);
+		if (s == NULL)
+			return NULL;
 		list_append(l, s);
 	}
 	sub = stmt_list(be, l);
@@ -3680,9 +3719,13 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 	}
 
 	pl = sa_list(sql->sa);
+	if (pl == NULL)
+		return NULL;
 	if (sub)
 		pl->expected_cnt = list_length(sub->op4.lval);
 	psub = stmt_list(be, pl);
+	if (psub == NULL)
+		return NULL;
 	for (en = rel->exps->h; en; en = en->next) {
 		sql_exp *exp = en->data;
 		int oldvtop = be->mb->vtop, oldstop = be->mb->stop, oldvid = be->mb->vid;
@@ -3742,6 +3785,8 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			if (!last) {
 				lpiv = stmt_result(be, limit, 0);
 				lgid = stmt_result(be, limit, 1);
+				if (lpiv == NULL || lgid == NULL)
+					return NULL;
 			}
 		}
 
@@ -3946,8 +3991,12 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	}
 	/* now aggregate */
 	l = sa_list(sql->sa);
+	if (l == NULL)
+		return NULL;
 	aggrs = rel->exps;
 	cursub = stmt_list(be, l);
+	if (cursub == NULL)
+		return NULL;
 	for (n = aggrs->h; n; n = n->next) {
 		sql_exp *aggrexp = n->data;
 		stmt *aggrstmt = NULL;

@@ -1904,6 +1904,9 @@ GDKvm_cursize(void)
 #define DEBUG_SPACE	16
 #endif
 
+/* malloc smaller than this aren't subject to the GDK_vm_maxsize test */
+#define SMALL_MALLOC	256
+
 static void *
 GDKmalloc_internal(size_t size, bool clear)
 {
@@ -1924,7 +1927,8 @@ GDKmalloc_internal(size_t size, bool clear)
 		return NULL;
 	}
 #endif
-	if (GDKvm_cursize() + size >= GDK_vm_maxsize &&
+	if (size > SMALL_MALLOC &&
+	    GDKvm_cursize() + size >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
 		GDKerror("allocating too much memory\n");
 		return NULL;
@@ -2028,11 +2032,8 @@ GDKfree(void *s)
 #if !defined(NDEBUG) && !defined(SANITIZER)
 	assert((asize & 2) == 0);   /* check against duplicate free */
 	/* check for out-of-bounds writes */
-	{
-		size_t i = ((size_t *) s)[-2]; /* how much asked for last */
-		for (; i < asize - MALLOC_EXTRA_SPACE; i++)
-			assert(((char *) s)[i] == '\xBD');
-	}
+	for (size_t i = ((size_t *) s)[-2]; i < asize - MALLOC_EXTRA_SPACE; i++)
+		assert(((char *) s)[i] == '\xBD');
 	((size_t *) s)[-1] |= 2; /* indicate area is freed */
 
 	/* overwrite memory that is to be freed with a pattern that
@@ -2052,8 +2053,8 @@ GDKrealloc(void *s, size_t size)
 	size_t nsize, asize;
 #if !defined(NDEBUG) && !defined(SANITIZER)
 	size_t osize;
-	size_t *os;
 #endif
+	size_t *os = s;
 
 	assert(size != 0);
 
@@ -2061,9 +2062,10 @@ GDKrealloc(void *s, size_t size)
 		return GDKmalloc(size);
 
 	nsize = (size + 7) & ~7;
-	asize = ((size_t *) s)[-1]; /* how much allocated last */
+	asize = os[-1];		/* how much allocated last */
 
-	if (nsize > asize &&
+	if (size > SMALL_MALLOC &&
+	    nsize > asize &&
 	    GDKvm_cursize() + nsize - asize >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
 		GDKerror("allocating too much memory\n");
@@ -2072,16 +2074,12 @@ GDKrealloc(void *s, size_t size)
 #if !defined(NDEBUG) && !defined(SANITIZER)
 	assert((asize & 2) == 0);   /* check against duplicate free */
 	/* check for out-of-bounds writes */
-	osize = ((size_t *) s)[-2]; /* how much asked for last */
-	{
-		size_t i;
-		for (i = osize; i < asize - MALLOC_EXTRA_SPACE; i++)
-			assert(((char *) s)[i] == '\xBD');
-	}
+	osize = os[-2]; /* how much asked for last */
+	for (size_t i = osize; i < asize - MALLOC_EXTRA_SPACE; i++)
+		assert(((char *) s)[i] == '\xBD');
 	/* if shrinking, write debug pattern into to-be-freed memory */
 	DEADBEEFCHK if (size < osize)
 		memset((char *) s + size, '\xDB', osize - size);
-	os = s;
 	os[-1] |= 2;		/* indicate area is freed */
 #endif
 	s = realloc((char *) s - MALLOC_EXTRA_SPACE,
