@@ -81,7 +81,6 @@ target_sources(bat
   gdk_project.c
   gdk_time.c gdk_time.h
   gdk_unique.c
-  gdk_interprocess.c gdk_interprocess.h
   gdk_firstn.c
   gdk_subquery.c gdk_subquery.h
   gdk_analytic_bounds.c

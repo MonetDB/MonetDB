@@ -931,11 +931,6 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			mod = "pyapi3";
 			slang = "Python";
 			break;
-		case FUNC_LANG_MAP_PY:
-		case FUNC_LANG_MAP_PY3:
-			mod = "pyapi3map";
-			slang = "Python";
-			break;
 		default:
 			return sql_error(sql, 01, SQLSTATE(42000) "Function language without a MAL backend");
 		}

@@ -24673,21 +24673,6 @@ subeval_aggr
 unsafe pattern batpyapi3.subeval_aggr(X_0:ptr, X_1:str, X_2:any...):any... 
 PYAPI3PyAPIevalAggr;
 grouped aggregates through Python
-batpyapi3map
-eval
-pattern batpyapi3map.eval(X_0:ptr, X_1:str, X_2:any...):any... 
-PYAPI3PyAPIevalStdMap;
-Execute a simple Python script value
-batpyapi3map
-eval_aggr
-pattern batpyapi3map.eval_aggr(X_0:ptr, X_1:str, X_2:any...):any... 
-PYAPI3PyAPIevalAggrMap;
-grouped aggregates through Python
-batpyapi3map
-subeval_aggr
-pattern batpyapi3map.subeval_aggr(X_0:ptr, X_1:str, X_2:any...):any... 
-PYAPI3PyAPIevalAggrMap;
-grouped aggregates through Python
 batrapi
 eval
 pattern batrapi.eval(X_0:lng, X_1:ptr, X_2:str):any... 
@@ -37287,26 +37272,6 @@ pyapi3
 subeval_aggr
 unsafe pattern pyapi3.subeval_aggr(X_0:ptr, X_1:str, X_2:any...):any... 
 PYAPI3PyAPIevalAggr;
-grouped aggregates through Python
-pyapi3map
-eval
-pattern pyapi3map.eval(X_0:ptr, X_1:str):any 
-PYAPI3PyAPIevalStdMap;
-Execute a simple Python script returning a single value
-pyapi3map
-eval
-pattern pyapi3map.eval(X_0:ptr, X_1:str, X_2:any...):any... 
-PYAPI3PyAPIevalStdMap;
-Execute a simple Python script value
-pyapi3map
-eval_aggr
-pattern pyapi3map.eval_aggr(X_0:ptr, X_1:str, X_2:any...):any... 
-PYAPI3PyAPIevalAggrMap;
-grouped aggregates through Python
-pyapi3map
-subeval_aggr
-pattern pyapi3map.subeval_aggr(X_0:ptr, X_1:str, X_2:any...):any... 
-PYAPI3PyAPIevalAggrMap;
 grouped aggregates through Python
 querylog
 append

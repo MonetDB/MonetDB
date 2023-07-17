@@ -13,7 +13,6 @@
 #include "conversion.h"
 #include "connection.h"
 #include "type_conversion.h"
-#include "gdk_interprocess.h"
 
 static PyObject *
 _connection_execute(Py_ConnectionObject *self, PyObject *args)
@@ -31,66 +30,60 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
 		PyErr_Format(PyExc_Exception, "%s", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return NULL;
 	}
-	if (!self->mapped || option_disable_fork) {
-		// This is not a mapped process, so we can just directly execute the
-		// query here
-		PyObject *result;
-		res_table *output = NULL;
-		char *res = NULL;
+	PyObject *result;
+	res_table *output = NULL;
+	char *res = NULL;
 //Py_BEGIN_ALLOW_THREADS;
-		res = _connection_query(self->cntxt, query, &output);
+	res = _connection_query(self->cntxt, query, &output);
 //Py_END_ALLOW_THREADS;
-		GDKfree(query);
-		if (res != MAL_SUCCEED) {
-			PyErr_Format(PyExc_Exception, "SQL Query Failed: %s",
-						 (res ? getExceptionMessage(res) : "<no error>"));
-			freeException(res);
-			return NULL;
-		}
-
-		result = PyDict_New();
-		if (output && output->nr_cols > 0) {
-			PyInput input;
-			PyObject *numpy_array;
-			int i;
-			for (i = 0; i < output->nr_cols; i++) {
-				res_col col = output->cols[i];
-				BAT *b = BATdescriptor(col.b);
-
-				if (b == NULL) {
-					PyErr_Format(PyExc_Exception, "Internal error: could not retrieve bat");
-					return NULL;
-				}
-
-				input.bat = b;
-				input.count = BATcount(b);
-				input.bat_type = getBatType(b->ttype);
-				input.scalar = false;
-				input.sql_subtype = &col.type;
-
-				numpy_array = PyMaskedArray_FromBAT(&input, 0, input.count, &res, true);
-				if (!numpy_array) {
-					_connection_cleanup_result(output);
-					BBPunfix(b->batCacheid);
-					PyErr_Format(PyExc_Exception, "SQL Query Failed: %s",
-								 (res ? getExceptionMessage(res) : "<no error>"));
-					return NULL;
-				}
-				PyObject *nme = PyUnicode_FromString(output->cols[i].name);
-				PyDict_SetItem(result, nme, numpy_array);
-				Py_DECREF(nme);
-				Py_DECREF(numpy_array);
-				BBPunfix(input.bat->batCacheid);
-			}
-			_connection_cleanup_result(output);
-			return result;
-		} else {
-			Py_RETURN_NONE;
-		}
-	} else {
-		PyErr_Format(PyExc_Exception, "Loopback queries are not supported in parallel.");
-		GDKfree(query);
+	GDKfree(query);
+	if (res != MAL_SUCCEED) {
+		PyErr_Format(PyExc_Exception, "SQL Query Failed: %s",
+					 (res ? getExceptionMessage(res) : "<no error>"));
+		freeException(res);
 		return NULL;
+	}
+
+	result = PyDict_New();
+	if (output && output->nr_cols > 0) {
+		PyInput input;
+		PyObject *numpy_array;
+		int i;
+		for (i = 0; i < output->nr_cols; i++) {
+			res_col col = output->cols[i];
+			BAT *b = BATdescriptor(col.b);
+
+			if (b == NULL) {
+				PyErr_Format(PyExc_Exception, "Internal error: could not retrieve bat");
+				return NULL;
+			}
+
+			input.bat = b;
+			input.conv_bat = NULL;
+			input.count = BATcount(b);
+			input.bat_type = getBatType(b->ttype);
+			input.scalar = false;
+			input.sql_subtype = &col.type;
+
+			numpy_array = PyMaskedArray_FromBAT(&input, 0, input.count, &res, true);
+			if (!numpy_array) {
+				_connection_cleanup_result(output);
+				BBPunfix(b->batCacheid);
+				PyErr_Format(PyExc_Exception, "SQL Query Failed: %s",
+							 (res ? getExceptionMessage(res) : "<no error>"));
+				return NULL;
+			}
+			PyObject *nme = PyUnicode_FromString(output->cols[i].name);
+			PyDict_SetItem(result, nme, numpy_array);
+			Py_DECREF(nme);
+			Py_DECREF(numpy_array);
+			BBPunfix(input.bat->batCacheid);
+			BBPreclaim(input.conv_bat);
+		}
+		_connection_cleanup_result(output);
+		return result;
+	} else {
+		Py_RETURN_NONE;
 	}
 }
 
@@ -138,8 +131,7 @@ str _connection_append_to_table(Client cntxt, char *sname, char *tname,
 	return append_to_table_from_emit(cntxt, sname, tname, columns, ncols);
 }
 
-PyObject *Py_Connection_Create(Client cntxt, bit mapped, QueryStruct *query_ptr,
-							   int query_sem)
+PyObject *Py_Connection_Create(Client cntxt, QueryStruct *query_ptr, int query_sem)
 {
 	register Py_ConnectionObject *op;
 
@@ -149,7 +141,6 @@ PyObject *Py_Connection_Create(Client cntxt, bit mapped, QueryStruct *query_ptr,
 	PyObject_Init((PyObject *)op, &Py_ConnectionType);
 
 	op->cntxt = cntxt;
-	op->mapped = mapped;
 	op->query_ptr = query_ptr;
 	op->query_sem = query_sem;
 

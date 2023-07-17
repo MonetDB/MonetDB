@@ -194,7 +194,6 @@ const char *projectionpathRef;
 const char *projectionRef;
 const char *projectRef;
 const char *putRef;
-const char *pyapi3mapRef;
 const char *pyapi3Ref;
 const char *querylogRef;
 const char *raiseRef;
@@ -450,7 +449,6 @@ void optimizerInit(void)
 	projectionRef = putName("projection");
 	projectRef = putName("project");
 	putRef = putName("put");
-	pyapi3mapRef = putName("batpyapi3map");
 	pyapi3Ref = putName("pyapi3");
 	querylogRef = putName("querylog");
 	raiseRef = putName("raise");
