@@ -111,8 +111,11 @@ OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if( p == NULL)
 		throw(MAL, "opt_wrapper", SQLSTATE(HY002) "missing optimizer statement");
 
-	if( mb->errors)
-		throw(MAL, "opt_wrapper", SQLSTATE(42000) "MAL block contains errors");
+	if (mb->errors) {
+		msg = mb->errors;
+		mb->errors = NULL;
+		return msg;
+	}
 	fcnnme = getFunctionId(p);
 
 	if( p && p->argc > 1 ){
@@ -147,6 +150,10 @@ OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = 0; codes[i].nme != NULL; i++) {
 		if (strcmp(codes[i].nme, id) == 0) {
 			msg = (str)(*codes[i].fcn)(cntxt, mb, stk, p);
+			if (mb->errors) {
+				msg = mb->errors;
+				mb->errors = NULL;
+			}
 			clk = GDKusec() - clk;
 			MT_lock_set(&codeslock);
 			codes[i].timing += clk;
