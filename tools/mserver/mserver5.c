@@ -428,7 +428,7 @@ main(int argc, char **av)
 					optarg[optarglen - 1] == '\\'))
 					optarg[--optarglen] = '\0';
 				dbpath = absolute_path(optarg);
-				if( dbpath == NULL)
+				if (dbpath == NULL)
 					fprintf(stderr, "#error: can not allocate memory for dbpath\n");
 				else
 					setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dbpath);
@@ -450,7 +450,7 @@ main(int argc, char **av)
 					optarg[optarglen - 1] == '\\'))
 					optarg[--optarglen] = '\0';
 				dbtrace = absolute_path(optarg);
-				if(dbtrace == NULL)
+				if (dbtrace == NULL)
 					fprintf(stderr, "#error: can not allocate memory for dbtrace\n");
 				else
 					setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbtrace", dbtrace);
@@ -724,13 +724,13 @@ main(int argc, char **av)
 	if (!SetConsoleCtrlHandler(winhandler, TRUE))
 		fprintf(stderr, "!unable to create console control handler\n");
 #else
-	if(signal(SIGINT, handler) == SIG_ERR)
+	if (signal(SIGINT, handler) == SIG_ERR)
 		fprintf(stderr, "!unable to create signal handlers\n");
 #ifdef SIGQUIT
-	if(signal(SIGQUIT, handler) == SIG_ERR)
+	if (signal(SIGQUIT, handler) == SIG_ERR)
 		fprintf(stderr, "!unable to create signal handlers\n");
 #endif
-	if(signal(SIGTERM, handler) == SIG_ERR)
+	if (signal(SIGTERM, handler) == SIG_ERR)
 		fprintf(stderr, "!unable to create signal handlers\n");
 #endif
 #endif
