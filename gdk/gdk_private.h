@@ -456,15 +456,20 @@ struct Imprints {
 	BUN dictcnt;		/* counter for cache dictionary               */
 };
 
+typedef uint64_t strimp_masks_t;  /* TODO: make this a sparse matrix */
+
 struct Strimps {
 	Heap strimps;
 	uint8_t *sizes_base;	/* pointer into strimps heap (pair sizes)  */
 	uint8_t *pairs_base;	/* pointer into strimps heap (pairs start)   */
-	void *bitstrings_base;	/* pointer into strimps heap (bitstrings start) */
+	void *bitstrings_base;	/* pointer into strimps heap (bitstrings
+				 * start) bitstrings_base is a pointer
+				 * to uint64_t */
 	size_t rec_cnt;		/* reconstruction counter: how many
-				   bitstrings were added after header
-				   construction */
-	/* bitstrings_base is a pointer to uint64_t */
+				 * bitstrings were added after header
+				 * construction. Currently unused. */
+	strimp_masks_t *masks;  /* quick access to masks for
+				 * bitstring construction */
 };
 
 #ifdef HAVE_RTREE
