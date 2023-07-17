@@ -147,4 +147,12 @@ create view sys.describe_accessible_tables as
  where roles.name = current_role;
 GRANT SELECT ON sys.describe_accessible_tables TO PUBLIC;
 update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'describe_accessible_tables';
+alter table sys.function_languages set read write;
+delete from sys.function_languages where language_keyword like 'PYTHON%_MAP';
+update sys.functions set language = language - 1 where language in (7, 11);
+update sys.functions set mod = 'pyapi3' where mod in ('pyapi', 'pyapi3map');
+commit;
+
+Running database upgrade commands:
+alter table sys.function_languages set read only;
 
