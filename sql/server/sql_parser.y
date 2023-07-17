@@ -274,6 +274,8 @@ int yydebug=1;
 	opt_having_clause
 	opt_limit
 	opt_offset
+	opt_offset_rows
+	opt_fetch
 	opt_order_by_clause
 	opt_over
 	opt_partition_by
@@ -717,8 +719,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH WITHOUT
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token CENTURY DECADE YEAR QUARTER DOW DOY MONTH WEEK DAY HOUR MINUTE SECOND EPOCH ZONE
-%token LIMIT OFFSET SAMPLE SEED
-
+%token LIMIT OFFSET SAMPLE SEED FETCH
 %token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
 %token ATOMIC BEGIN END
 %token COPY RECORDS DELIMITERS STDIN STDOUT FWF CLIENT SERVER
@@ -3400,8 +3401,36 @@ select_no_parens_orderby:
 			if ($1->token == SQL_SELECT) {
 				SelectNode *s = (SelectNode*)$1;
 				s -> orderby = $2;
-				s -> limit = $3;
 				s -> offset = $4;
+				s -> limit = $3;
+				s -> sample = $5;
+				s -> seed = $6;
+			} else { /* Add extra select * from .. in case of UNION, EXCEPT, INTERSECT */
+				$$ = newSelectNode(
+					SA, 0,
+					append_symbol(L(), _symbol_create_list(SQL_TABLE, append_string(append_string(L(),NULL),NULL))), NULL,
+					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $3, $4, $5, $6, NULL);
+			}
+		} else {
+			yyerror(m, "missing SELECT operator");
+			YYABORT;
+		}
+	  }
+	}
+|    select_no_parens opt_order_by_clause opt_offset_rows opt_fetch opt_sample opt_seed
+	 {
+	  $$ = $1;
+	  if ($2 || $3 || $4 || $5 || $6) {
+		if ($1 != NULL &&
+		    ($1->token == SQL_SELECT ||
+		     $1->token == SQL_UNION  ||
+		     $1->token == SQL_EXCEPT ||
+		     $1->token == SQL_INTERSECT)) {
+			if ($1->token == SQL_SELECT) {
+				SelectNode *s = (SelectNode*)$1;
+				s -> orderby = $2;
+				s -> offset = $3;
+				s -> limit = $4;
 				s -> sample = $5;
 				s -> seed = $6;
 			} else { /* Add extra select * from .. in case of UNION, EXCEPT, INTERSECT */
@@ -3669,6 +3698,22 @@ opt_order_by_clause:
 		{ $$ = _symbol_create_list( SQL_ORDERBY, $3); }
  ;
 
+first_next:
+    FIRST
+ |  NEXT 
+ ;
+
+opt_rows:
+    /* empty */
+ |  rows
+ ;
+
+rows:
+    ROW
+ |  ROWS 
+ ;
+
+/* TODO add support for limit start, end */
 opt_limit:
     /* empty */	{ $$ = NULL; }
  |  LIMIT nonzerolng	{
@@ -3679,12 +3724,35 @@ opt_limit:
  ;
 
 opt_offset:
-	/* empty */	{ $$ = NULL; }
+    /* empty */		{ $$ = NULL; }
  |  OFFSET poslng	{
 			  sql_subtype *t = sql_bind_localtype("lng");
 			  $$ = _newAtomNode( atom_int(SA, t, $2));
 			}
  |  OFFSET param	{ $$ = $2; }
+ ;
+
+opt_offset_rows:
+    /* empty */		{ $$ = NULL; }
+ |  OFFSET poslng opt_rows	{
+			  sql_subtype *t = sql_bind_localtype("lng");
+			  $$ = _newAtomNode( atom_int(SA, t, $2));
+			}
+ |  OFFSET param opt_rows	{ $$ = $2; }
+ ;
+
+opt_fetch:
+    /* empty */	{ $$ = NULL; }
+ |  FETCH first_next nonzerolng rows ONLY {
+			  sql_subtype *t = sql_bind_localtype("lng");
+			  $$ = _newAtomNode( atom_int(SA, t, $3));
+			}
+ |  FETCH first_next param rows ONLY 
+			{ $$ = $3; }
+ |  FETCH first_next rows ONLY {
+			  sql_subtype *t = sql_bind_localtype("lng");
+			  $$ = _newAtomNode( atom_int(SA, t, 1));
+			}
  ;
 
 opt_sample:

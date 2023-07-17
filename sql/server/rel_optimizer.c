@@ -541,18 +541,49 @@ rel_setjoins_2_joingroupby_(visitor *v, sql_rel *rel)
 {
 	if (rel && is_join(rel->op) && (!list_empty(rel->exps) || !list_empty(rel->attr))) {
 		sql_exp *me = NULL;
-		bool needed = false;
+		bool needed = false, mixed_exps = false;
 
+		if (!list_empty(rel->exps) && !list_empty(rel->attr) && rel->op == op_left) { /* check if some expression mixes left and right */
+			for (node *n = rel->exps->h; n && !mixed_exps; n = n->next) {
+				sql_exp *e = n->data;
+				if (e->type == e_cmp) {
+					if (e->l) {
+						if (!rel_find_exp(rel->l, e->l))
+							mixed_exps = 1;
+					}
+					if (e->r) {
+						if (!rel_find_exp(rel->r, e->r))
+							mixed_exps = 1;
+					}
+					if (e->f) {
+						if (!rel_find_exp(rel->r, e->f))
+							mixed_exps = 1;
+					}
+				}
+			}
+		}
 		if (!list_empty(rel->exps)) {
 			for (node *n = rel->exps->h; n && !needed; n = n->next) {
 				sql_exp *e = n->data;
 
-				if (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin)) {
+				if (e->type == e_cmp && (e->flag == mark_in/* || e->flag == mark_notin*/)) {
 					me = e;
 					needed = true;
 				}
 			}
 		}
+		if (!mixed_exps && needed && rel->op == op_left && v->parent && is_select(v->parent->op)) {
+			/* change select/left into semi */
+			/* first join exps, ie ie any select expression on the attr (it true value) of this join should be rewritten
+			 * into a lower level exp
+			 * remove the attr list,
+			 * change left into semi
+			 */
+			printf("# todo optimize left group join into semijoin \n");
+			return rel;
+		}
+		if (!mixed_exps)
+			return rel;
 		if (needed && rel->op == op_join && list_empty(rel->attr)) {
 			rel->op = (me->flag == mark_in)?op_semi:op_anti;
 			return rel;

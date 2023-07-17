@@ -196,6 +196,8 @@ extern stmt *stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, 
        */
 extern stmt *stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti, int symmetric, int reduce);
 extern stmt *stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, int anti);
+extern stmt *stmt_outerselect(backend *be, stmt *li, stmt *ri, stmt *l, stmt *r, int cmp);
+extern stmt *stmt_markselect(backend *be, stmt *li, stmt *mask, stmt *l, stmt *r, int cmp);
 
 extern stmt *stmt_tunion(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand);
@@ -207,7 +209,7 @@ extern stmt *stmt_join2(backend *be, stmt *l, stmt *ra, stmt *rb, int cmp, int a
 /* generic join operator, with a left and right statement list */
 extern stmt *stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapped);
 extern stmt *stmt_semijoin(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int is_semantics, bool single);
-extern stmt *stmt_join_cand(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int anti, comp_type cmptype, int need_left, int is_semantics, bool single);
+extern stmt *stmt_join_cand(backend *be, stmt *l, stmt *r, stmt *lcand, stmt *rcand, int anti, comp_type cmptype, int need_left, int is_semantics, bool single, bool inner);
 
 extern stmt *stmt_project(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_project_delta(backend *be, stmt *col, stmt *upd);

@@ -172,7 +172,10 @@ stmt_bool(backend *be, int b)
 	sql_subtype t;
 
 	sql_find_subtype(&t, "boolean", 0, 0);
-	if (b) {
+
+	if (b == bit_nil) {
+		return stmt_atom(be, atom_bool(be->mvc->sa, &t, bit_nil));
+	} else if (b) {
 		return stmt_atom(be, atom_bool(be->mvc->sa, &t, TRUE));
 	} else {
 		return stmt_atom(be, atom_bool(be->mvc->sa, &t, FALSE));
@@ -1050,6 +1053,7 @@ stmt_mirror(backend *be, stmt *s)
 	return NULL;
 }
 
+#define MARKJOIN 100
 stmt *
 stmt_result(backend *be, stmt *s, int nr)
 {
@@ -1081,6 +1085,8 @@ stmt_result(backend *be, stmt *s, int nr)
 	ns->op1 = s;
 	if (!nr && (s->type == st_order || s->type == st_reorder))
 		ns->op4.typeval = *tail_type(s->op1);
+	else if (nr && ((s->type == st_join && s->flag == MARKJOIN) || (s->type == st_uselect2 && s->flag == MARKJOIN)))
+		ns->op4.typeval = *sql_bind_localtype("bit");
 	else
 		ns->op4.typeval = *sql_bind_localtype("oid");
 	ns->flag = nr;
@@ -1620,6 +1626,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			switch (cmptype) {
 			case mark_in:
 			case mark_notin: /* we use a anti join, todo handle null (not) in empty semantics */
+				assert(0);
 			case cmp_equal:
 				q = pushStr(mb, q, anti?"!=":"==");
 				break;
@@ -1727,6 +1734,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 	const char *cmd = (type == st_uselect2) ? selectRef : rangejoinRef;
 	stmt *sub = (Sub)?*Sub:NULL;
 
+	assert(cmp != mark_in && cmp != mark_notin);
 	if (op1->nr < 0 || (sub && sub->nr < 0))
 		return NULL;
 	l = op1->nr;
@@ -1893,6 +1901,75 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 	if (Sub)
 		*Sub = sub;
 	return q;
+}
+
+stmt *
+stmt_outerselect(backend *be, stmt *li, stmt *ri, stmt *l, stmt *r, int cmp)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q;
+
+	(void)cmp;
+	if ((q = multiplex2(mb, calcRef, convertMultiplexFcn("="), l->nr, r->nr, TYPE_bit)) == NULL)
+		return NULL;
+	int p = getDestVar(q);
+
+	q = newStmtArgs(mb, algebraRef, outerselectRef, 6);
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+	q = pushArgument(mb, q, li->nr); /* left ids */
+	q = pushArgument(mb, q, ri->nr); /* right ids */
+	q = pushArgument(mb, q, p); /* predicate */
+	pushInstruction(mb, q);
+
+	if (!q)
+		return NULL;
+	stmt *s = stmt_create(be->mvc->sa, st_uselect2);
+	if (s == NULL) {
+		freeInstruction(q);
+		return NULL;
+	}
+
+	s->op1 = li;
+	s->op2 = ri;
+	s->flag = MARKJOIN;
+	s->key = 0;
+	s->nrcols = li->nrcols;
+	s->nr = getDestVar(q);
+	s->q = q;
+	return s;
+}
+
+stmt *
+stmt_markselect(backend *be, stmt *gid, stmt *mask, stmt *l, stmt *r, int cmp)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q;
+
+	q = newStmtArgs(mb, algebraRef, markselectRef, 6);
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+	q = pushArgument(mb, q, gid->nr); /* left ids */
+	q = pushArgument(mb, q, mask->nr); /* mask */
+	q = pushArgument(mb, q, l->nr);
+	q = pushArgument(mb, q, r->nr);
+	q = pushBit(mb, q, (cmp == mark_in)?TRUE:FALSE);
+	pushInstruction(mb, q);
+
+	if (!q)
+		return NULL;
+	stmt *s = stmt_create(be->mvc->sa, st_uselect2);
+	if (s == NULL) {
+		freeInstruction(q);
+		return NULL;
+	}
+
+	s->op1 = gid;
+	s->op2 = mask;
+	s->flag = MARKJOIN;
+	s->key = 0;
+	s->nrcols = gid->nrcols;
+	s->nr = getDestVar(q);
+	s->q = q;
+	return s;
 }
 
 stmt *
@@ -2070,13 +2147,15 @@ stmt_tinter(backend *be, stmt *op1, stmt *op2, bool single)
 }
 
 stmt *
-stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int anti, comp_type cmptype, int need_left, int is_semantics, bool single)
+stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int anti, comp_type cmptype, int need_left, int is_semantics, bool single, bool inner)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	const char *sjt = joinRef;
+	const char *sjt = inner?joinRef:outerjoinRef;
+	int mark = 0;
 
 	(void)anti;
+	(void)inner;
 
 	if (need_left) {
 		cmptype = cmp_equal;
@@ -2090,6 +2169,9 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 	switch (cmptype) {
 	case mark_in:
 	case mark_notin: /* we use a anti join, todo handle null (not) in empty */
+		sjt = markjoinRef;
+		mark = 1;
+		/* fall through */
 	case cmp_equal:
 		q = newStmt(mb, algebraRef, sjt);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
@@ -2103,7 +2185,12 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 			q = pushNil(mb, q, TYPE_bat);
 		else
 			q = pushArgument(mb, q, rcand->nr);
-		q = pushBit(mb, q, is_semantics?TRUE:FALSE);
+		if (mark)
+			q = pushBit(mb, q, cmptype == mark_in?TRUE:FALSE); /* any (true), all (false) */
+		else
+			q = pushBit(mb, q, is_semantics?TRUE:FALSE);
+		if (!inner)
+			q = pushBit(mb, q, FALSE); /* not match_one */
 		q = pushNil(mb, q, TYPE_lng);
 		if (q == NULL)
 			return NULL;
@@ -2186,6 +2273,8 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		s->op1 = op1;
 		s->op2 = op2;
 		s->flag = cmptype;
+		if (mark)
+			s->flag = MARKJOIN;
 		s->key = 0;
 		s->nrcols = 2;
 		s->nr = getDestVar(q);
@@ -2198,7 +2287,7 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 stmt *
 stmt_join(backend *be, stmt *l, stmt *r, int anti, comp_type cmptype, int need_left, int is_semantics, bool single)
 {
-	return stmt_join_cand(be, l, r, NULL, NULL, anti, cmptype, need_left, is_semantics, single);
+	return stmt_join_cand(be, l, r, NULL, NULL, anti, cmptype, need_left, is_semantics, single, true);
 }
 
 stmt *

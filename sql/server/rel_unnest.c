@@ -1015,6 +1015,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 				/* remove old project and change outer into select */
 				rel->r = NULL;
 				rel_destroy(r);
+				operator_type op = rel->op;
 				rel->op = op_select;
 				if (!list_empty(rel->exps)) {
 					for(m=rel->exps->h; m; m = m->next) {
@@ -1022,6 +1023,10 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 
 						if (is_compare(e->type) && (e->flag == mark_in || e->flag == mark_notin))
 							e->flag = (e->flag==mark_in)?cmp_equal:cmp_notequal;
+						else if (op == op_anti && is_compare(e->type) && e->flag == cmp_equal)
+							e->flag = cmp_notequal;
+						else if (op == op_anti && is_compare(e->type) && e->flag == cmp_notequal)
+							e->flag = cmp_equal;
 					}
 				}
 				return rel;
@@ -3376,12 +3381,13 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 					if (is_values(l)) {
 						assert(is_values(r));
 						list *ll = l->f, *rl = r->f;
+						/* TODO for notin, generate or_exp */
 						for(node *n=ll->h, *m=rl->h; n && m; n=n->next, m=m->next) {
-							e = exp_compare(v->sql->sa, n->data, m->data, j->op == op_semi?mark_in:mark_notin);
+							e = exp_compare(v->sql->sa, n->data, m->data, cmp_equal );//j->op == op_semi?cmp_equal/*mark_in*/:cmp_notequal/*mark_notin*/);
 							append(j->exps, e);
 						}
 					} else {
-						e = exp_compare(v->sql->sa, l, r, j->op == op_semi?mark_in:mark_notin);
+						e = exp_compare(v->sql->sa, l, r, cmp_equal);//j->op == op_semi?cmp_equal/*mark_in*/:cmp_notequal/*mark_notin*/);
 						append(j->exps, e);
 					}
 				}

@@ -458,7 +458,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 	case op_except:
 		r = "join";
 		if (rel->op == op_left)
-			r = "left outer join";
+			r = rel->attr?"left outer group join":"left outer join";
 		else if (rel->op == op_right)
 			r = "right outer join";
 		else if (rel->op == op_full)
@@ -1713,6 +1713,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 	list *exps, *gexps;
 	int distinct = 0, dependent = 0, single = 0;
 	operator_type j = op_basetable;
+	bool groupjoin = false;
 
 	skipWS(r,pos);
 	if (r[*pos] == 'R') {
@@ -2179,7 +2180,12 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		}
 		break;
 	case 'l':
-		*pos += (int) strlen("left outer join");
+		if (strcmp(r+*pos, "left outer join") == 0) {
+			*pos += (int) strlen("left outer join");
+		} else {
+			groupjoin = true;
+			*pos += (int) strlen("left outer group join");
+		}
 		j = op_left;
 		/* fall through */
 	case 'r':
@@ -2232,6 +2238,12 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			return NULL;
 		rel = rel_crossproduct(sql->sa, lrel, rrel, j);
 		rel->exps = exps;
+		if (groupjoin) {
+			list *attr = NULL;
+			if (!(attr = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0, 1)))
+				return NULL;
+			rel->attr = attr;
+		}
 		set_processed(rel);
 		break;
 	case 'u':

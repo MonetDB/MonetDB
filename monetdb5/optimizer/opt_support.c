@@ -502,7 +502,7 @@ inline int
 isMatLeftJoinOp(InstrPtr p)
 {
 	return (getModuleId(p) == algebraRef &&
-		(getFunctionId(p) == leftjoinRef || getFunctionId(p) == outerjoinRef));
+		(getFunctionId(p) == leftjoinRef || getFunctionId(p) == outerjoinRef || getFunctionId(p) == markjoinRef));
 }
 
 inline int isDelta(InstrPtr p){

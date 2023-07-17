@@ -2670,6 +2670,189 @@ get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
 }
 
 static stmt *
+rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
+{
+	mvc *sql = be->mvc;
+	list *l;
+	node *n, *en = rel->exps->h;
+	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *res;
+
+	if (rel->l) /* first construct the left sub relation */
+		left = subrel_bin(be, rel->l, refs);
+	if (rel->r) /* first construct the right sub relation */
+		right = subrel_bin(be, rel->r, refs);
+	left = subrel_project(be, left, refs, rel->l);
+	right = subrel_project(be, right, refs, rel->r);
+	if (!left || !right)
+		return NULL;
+	left = row2cols(be, left);
+	right = row2cols(be, right);
+
+	/*
+ 	 * split in 2 steps,
+ 	 * 	first cheap join(s) (equality or idx)
+ 	 * 	second selects/filters
+	 */
+	assert(!list_empty(rel->exps));
+	if (!list_empty(rel->exps)) {
+		assert(!list_empty(rel->exps));
+
+		/* markthetajoin()
+		 * or left-join followed by markthetaselect */
+		sql_exp *e = en->data;
+		/* order list on cmp* exps (ie groups) then mark_* */
+		/* first (left)join on cmp* exps, then
+		 * cmp* exps thetaselect(s)
+		 * then markselects (li, ri (needed for empty right hand side), (P(l1,r1) and/or P(l2,r2)) etc
+		 * with p = { =, <> }
+		 * if no cmp* join exps, the markjoin, ie also handling empty righ case
+		 */
+		en = en->next;
+		assert(en || (e->type == e_cmp && (e->flag == mark_in || e->flag == mark_notin)));
+		stmt *l = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL, 0, 1, 0);
+		if (l && l->nrcols == 0)
+			l = stmt_const(be, bin_find_smallest_column(be, left), l);
+		stmt *r = exp_bin(be, e->r, right, NULL, NULL, NULL, NULL, NULL, 0, 1, 0);
+		if (r && r->nrcols == 0)
+			r = stmt_const(be, bin_find_smallest_column(be, right), r);
+		//join = stmt_markjoin(be, l, r);
+		if (en) {
+			int flag = e->flag;
+			if (flag == mark_in)
+				flag = cmp_equal;
+			else if (flag == mark_notin)
+				flag = cmp_notequal;
+			//join = stmt_join_cand(be, l, r, NULL, NULL, 0, flag, 0, is_semantics(e), false, false);
+			assert(!left->cand);
+			join = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_anti(e), (comp_type) e->flag, 0, is_semantics(e), false, rel->op == op_left?false:true);
+		} else
+			join = stmt_join(be, l, r, 0, e->flag, 0, 0, false);
+	}
+	jl = stmt_result(be, join, 0);
+	/* mark result */
+	jr = stmt_result(be, join, 1);
+
+	if (en) {
+		stmt *sub, *sel = NULL;
+		list *nl;
+
+		/* construct relation */
+		nl = sa_list(sql->sa);
+
+		/* first project using equi-joins */
+		for (n = left->op4.lval->h; n; n = n->next) {
+			stmt *c = n->data;
+			const char *rnme = table_name(sql->sa, c);
+			const char *nme = column_name(sql->sa, c);
+			stmt *s = stmt_project(be, jl, column(be, c));
+
+			s = stmt_alias(be, s, rnme, nme);
+			list_append(nl, s);
+		}
+		for (n = right->op4.lval->h; n; n = n->next) {
+			stmt *c = n->data;
+			const char *rnme = table_name(sql->sa, c);
+			const char *nme = column_name(sql->sa, c);
+			stmt *s = stmt_project(be, jr, column(be, c));
+
+			s = stmt_alias(be, s, rnme, nme);
+			list_append(nl, s);
+		}
+		sub = stmt_list(be, nl);
+
+		jr = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", jr), stmt_bool(be, bit_nil), stmt_bool(be, 0), NULL);
+
+		/* continue with non equi-joins */
+		for ( ; en; en = en->next) {
+			sql_exp *e = en->data;
+			stmt *l = exp_bin(be, e->l, sub, NULL, NULL, NULL, NULL, sel, 0, 1, 0);
+			stmt *r = exp_bin(be, e->r, sub, NULL, NULL, NULL, NULL, sel, 0, 1, 0);
+
+			if (!l || !r) {
+				assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
+				return NULL;
+			}
+			if (l->nrcols == 0) {
+				stmt *nl = stmt_const(be, bin_find_smallest_column(be, sub), l);
+				l = nl;
+				if (sel)
+					l = stmt_project(be, sel, column(be, l));
+			}
+			if (r->nrcols == 0) {
+				stmt *nr = stmt_const(be, bin_find_smallest_column(be, sub), r);
+				r = nr;
+				if (sel)
+					r = stmt_project(be, sel, column(be, r));
+			}
+			if (en->next) {
+				if (rel->op == op_left) {
+					stmt *li = jl;
+					if (sel)
+						li = stmt_project(be, sel, li);
+					/* outerselect(li, rid, [l==r]) */
+					assert(e->flag == cmp_equal);
+					join = stmt_outerselect(be, li, jr, l, r, e->flag);
+					sel = stmt_result(be, join, 0);
+					jr = stmt_result(be, join, 1);
+				} else
+					sel = stmt_uselect(be, l, r, e->flag, sel, 0, 0);
+			} else {
+				assert(e->flag == mark_in || e->flag == mark_notin);
+				stmt *li = jl;
+				if (sel && sel != jl)
+					li = stmt_project(be, sel, li);
+				if (sel && (!l->cand || l->cand != sel))
+					l = stmt_project(be, sel, l);
+				if (sel && (!r->cand || r->cand != sel))
+					r = stmt_project(be, sel, r);
+				join = stmt_markselect(be, li, jr, l, r, e->flag);
+			}
+		}
+		jl = stmt_result(be, join, 0);
+		/* mark result */
+		jr = stmt_result(be, join, 1);
+		/* recreate join output */
+		//jl = stmt_project(be, sel, jl);
+		//jr = stmt_project(be, sel, jr);
+	}
+
+	/* construct relation */
+	l = sa_list(sql->sa);
+	for (n = left->op4.lval->h; n; n = n->next) {
+		stmt *c = n->data;
+		const char *rnme = table_name(sql->sa, c);
+		const char *nme = column_name(sql->sa, c);
+		stmt *s = stmt_project(be, jl, column(be, c));
+
+		s = stmt_alias(be, s, rnme, nme);
+		list_append(l, s);
+	}
+	if (rel->attr) {
+		sql_exp *e = rel->attr->h->data;
+		const char *rnme = exp_relname(e);
+		const char *nme = exp_name(e);
+		/*
+		stmt *last = l->t->data;
+		sql_subtype *tp = tail_type(last);
+
+		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", tp, NULL, F_FUNC, true);
+
+		stmt *s = stmt_unop(be, last, NULL, isnil);
+
+		sql_subtype *bt = sql_bind_localtype("bit");
+		sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true);
+
+		s = stmt_unop(be, s, NULL, not);
+		*/
+		stmt *s = stmt_alias(be, jr, rnme, nme);
+		list_append(l, s);
+	}
+
+	res = stmt_list(be, l);
+	return res;
+}
+
+static stmt *
 rel2bin_join(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
@@ -2677,6 +2860,9 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *ld = NULL, *rd = NULL, *res;
 	int need_left = (rel->flag & LEFT_JOIN);
+
+	if (rel->attr && list_length(rel->attr) > 0)
+		return rel2bin_groupjoin(be, rel, refs);
 
 	if (rel->l) /* first construct the left sub relation */
 		left = subrel_bin(be, rel->l, refs);
@@ -2963,12 +3149,24 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		assert(list_length(mexps) == 1);
 		for (en = mexps->h; en; en = en->next) {
 			sql_exp *e = en->data;
-			stmt *ls = exp_bin(be, e->l, left, right, NULL, NULL, NULL, NULL, 1, 0, 0), *rs;
+			stmt *ls = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL, 1, 0, 0), *rs;
+			bool swap = false;
+
+			if (!ls) {
+				swap = true;
+				ls = exp_bin(be, e->l, right, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
+			}
 			if (!ls)
 				return NULL;
 
 			if (!(rs = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL, 1, 0, 0)))
 				return NULL;
+
+			if (swap) {
+				stmt *t = ls;
+				ls = rs;
+				rs = t;
+			}
 
 			if (ls->nrcols == 0)
 				ls = stmt_const(be, bin_find_smallest_column(be, left), ls);
@@ -3003,7 +3201,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *c, *lcand = NULL;
 	int semijoin_only = 0, l_is_base = 0;
 
-	if (rel->op == op_anti && list_length(rel->exps) == 1 && ((sql_exp*)rel->exps->h->data)->flag == mark_notin)
+	if (rel->op == op_anti && list_length(rel->exps) == 1 /*&& ((sql_exp*)rel->exps->h->data)->flag == mark_notin*/)
 		return rel2bin_antijoin(be, rel, refs);
 
 	if (rel->l) { /* first construct the left sub relation */
@@ -3091,7 +3289,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 						en = NULL;
 						break;
 					} else
-						s = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_anti(e), (comp_type) e->flag, 0, is_semantics(e), false);
+						s = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_anti(e), (comp_type) e->flag, 0, is_semantics(e), false, true);
 					lcand = left->cand;
 				} else {
 					s = exp_bin(be, e, left, right, NULL, NULL, NULL, NULL, 0, 1, 0);
