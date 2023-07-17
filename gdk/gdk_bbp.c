@@ -2560,18 +2560,34 @@ BBPuncacheit(bat i, bool unloaddesc)
  * BBPclear removes a BAT from the BBP directory forever.
  */
 static inline void
-BBPhandover(Thread t)
+BBPhandover(Thread t, int n)
 {
 	/* take one bat from our private free list and hand it over to
 	 * the global free list */
 	bat i = t->freebats;
+	bat bid = i;
+	if (i == 0)
+		return;
+	for (int j = 1; j < n; j++) {
+		if (BBP_next(i) == 0) {
+			n = j;
+			break;
+		}
+		i = BBP_next(i);
+	}
 	t->freebats = BBP_next(i);
-	t->nfreebats--;
-	bat *p;
-	for (p = &BBP_free; *p && *p < i; p = &BBP_next(*p))
-		;
-	BBP_next(i) = *p;
-	*p = i;
+	t->nfreebats -= n;
+	BBP_next(i) = 0;
+	bat *p = &BBP_free;
+	while (n > 0) {
+		while (*p && *p < bid)
+			p = &BBP_next(*p);
+		i = BBP_next(bid);
+		BBP_next(bid) = *p;
+		*p = bid;
+		bid = i;
+		n--;
+	}
 }
 
 static inline void
@@ -2610,9 +2626,7 @@ bbpclear(bat i, bool lock)
 	if (t->nfreebats > BBP_FREE_HIWATER) {
 		if (lock)
 			MT_lock_set(&GDKcacheLock);
-		while (t->nfreebats > BBP_FREE_LOWATER) {
-			BBPhandover(t);
-		}
+		BBPhandover(t, t->nfreebats - BBP_FREE_LOWATER);
 		if (lock)
 			MT_lock_unset(&GDKcacheLock);
 	}
@@ -2634,7 +2648,7 @@ BBPrelinquish(Thread t)
 		return;
 	MT_lock_set(&GDKcacheLock);
 	while (t->nfreebats > 0) {
-		BBPhandover(t);
+		BBPhandover(t, t->nfreebats);
 	}
 	MT_lock_unset(&GDKcacheLock);
 }
