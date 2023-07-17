@@ -2185,3 +2185,17 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	}
 	return ret;
 }
+
+/* print some potentially interesting information */
+void
+GDKprintinfo(void)
+{
+	size_t allocated = (size_t) ATOMIC_GET(&GDK_mallocedbytes_estimate);
+	size_t vmallocated = (size_t) ATOMIC_GET(&GDK_vm_cursize);
+	printf("Virtual memory allocated: %zu, of which %zu with malloc (limit: %zu)\n", vmallocated + allocated, allocated, GDK_vm_maxsize);
+	BBPprintinfo();
+#ifdef LOCK_STATS
+	GDKlockstatistics(3);
+#endif
+	dump_threads();
+}

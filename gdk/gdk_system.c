@@ -140,7 +140,7 @@ GDKlockstatistics(int what)
 	int n = 0;
 
 	if (ATOMIC_TAS(&GDKlocklistlock) != 0) {
-		fprintf(stderr, "GDKlocklistlock is set, so cannot access lock list\n");
+		printf("GDKlocklistlock is set, so cannot access lock list\n");
 		return;
 	}
 	if (what == -1) {
@@ -153,27 +153,28 @@ GDKlockstatistics(int what)
 		return;
 	}
 	GDKlocklist = sortlocklist(GDKlocklist);
-	fprintf(stderr, "%-18s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-		"lock name", "count", "content", "sleep",
-		"locked", "locker", "thread");
+	printf("%-18s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+	       "lock name", "count", "content", "sleep",
+	       "locked", "locker", "thread");
 	for (l = GDKlocklist; l; l = l->next) {
 		n++;
 		if (what == 0 ||
 		    (what == 1 && l->count) ||
 		    (what == 2 && ATOMIC_GET(&l->contention)) ||
 		    (what == 3 && lock_isset(l)))
-			fprintf(stderr, "%-18s\t%zu\t%zu\t%zu\t%s\t%s\t%s\n",
-				l->name, l->count,
-				(size_t) ATOMIC_GET(&l->contention),
-				(size_t) ATOMIC_GET(&l->sleep),
-				lock_isset(l) ? "locked" : "",
-				l->locker ? l->locker : "",
-				l->thread ? l->thread : "");
+			printf("%-18s\t%zu\t%zu\t%zu\t%s\t%s\t%s\n",
+			       l->name, l->count,
+			       (size_t) ATOMIC_GET(&l->contention),
+			       (size_t) ATOMIC_GET(&l->sleep),
+			       lock_isset(l) ? "locked" : "",
+			       l->locker ? l->locker : "",
+			       l->thread ? l->thread : "");
 	}
-	fprintf(stderr, "Number of locks: %d\n", n);
-	fprintf(stderr, "Total lock count: %zu\n", (size_t) ATOMIC_GET(&GDKlockcnt));
-	fprintf(stderr, "Lock contention:  %zu\n", (size_t) ATOMIC_GET(&GDKlockcontentioncnt));
-	fprintf(stderr, "Lock sleep count: %zu\n", (size_t) ATOMIC_GET(&GDKlocksleepcnt));
+	printf("Number of locks: %d\n", n);
+	printf("Total lock count: %zu\n", (size_t) ATOMIC_GET(&GDKlockcnt));
+	printf("Lock contention:  %zu\n", (size_t) ATOMIC_GET(&GDKlockcontentioncnt));
+	printf("Lock sleep count: %zu\n", (size_t) ATOMIC_GET(&GDKlocksleepcnt));
+	fflush(stdout);
 	ATOMIC_CLEAR(&GDKlocklistlock);
 }
 
@@ -238,7 +239,7 @@ dump_threads(void)
 		TRC_DEBUG_IF(THRD)
 			TRC_DEBUG_ENDIF(THRD, "%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
 		else
-			fprintf(stderr, "%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
+			printf("%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
 	}
 	LeaveCriticalSection(&winthread_cs);
 }
@@ -722,7 +723,7 @@ dump_threads(void)
 		TRC_DEBUG_IF(THRD)
 			TRC_DEBUG_ENDIF(THRD, "%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
 		else
-			fprintf(stderr, "%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
+			printf("%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
 	}
 	pthread_mutex_unlock(&posthread_lock);
 }

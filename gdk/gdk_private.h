@@ -110,6 +110,8 @@ gdk_return BBPinit(void)
 bat BBPinsert(BAT *bn)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
+void BBPprintinfo(void)
+	__attribute__((__visibility__("hidden")));
 void BBPrelinquish(Thread t)
 	__attribute__((__visibility__("hidden")));
 int BBPselectfarm(role_t role, int type, enum heaptype hptype)

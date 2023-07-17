@@ -258,6 +258,7 @@ static void emergencyBreakpoint(void)
 }
 
 static volatile sig_atomic_t interrupted = 0;
+static volatile sig_atomic_t usr1_interrupted = 0;
 
 #ifdef _MSC_VER
 static BOOL WINAPI
@@ -273,6 +274,12 @@ handler(int sig)
 {
 	(void) sig;
 	interrupted = 1;
+}
+static void
+handler_usr1(int sig)
+{
+	(void) sig;
+	usr1_interrupted = 1;
 }
 #endif
 
@@ -719,6 +726,12 @@ main(int argc, char **av)
 		    sigaction(SIGTERM, &sa, NULL) == -1) {
 			fprintf(stderr, "!unable to create signal handlers\n");
 		}
+		(void) sigemptyset(&sa.sa_mask);
+		sa.sa_flags = 0;
+		sa.sa_handler = handler_usr1;
+		if (sigaction(SIGUSR1, &sa, NULL) == -1) {
+			fprintf(stderr, "!unable to create signal handler for SIGUSR1\n");
+		}
 	}
 #else
 #ifdef _MSC_VER
@@ -733,6 +746,8 @@ main(int argc, char **av)
 #endif
 	if(signal(SIGTERM, handler) == SIG_ERR)
 		fprintf(stderr, "!unable to create signal handlers\n");
+	if (signal(SIGUSR1, handler_usr1) == SIG_ERR)
+		fprintf(stderr, "!unable to create signal handler for SIGUSR1\n");
 #endif
 #endif
 
@@ -828,7 +843,13 @@ main(int argc, char **av)
 
 	/* why busy wait ? */
 	while (!interrupted && !GDKexiting()) {
-		MT_sleep_ms(100);
+		if (usr1_interrupted) {
+			usr1_interrupted = 0;
+			/* print some useful information */
+			GDKprintinfo();
+			fflush(stdout);
+		}
+		MT_sleep_ms(100);		/* pause(), except for sys.shutdown() */
 	}
 
 	/* mal_exit calls exit, so statements after this call will
