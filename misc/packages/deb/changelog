@@ -1,3 +1,30 @@
+monetdb (11.47.5) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7388: Query results in large cross product
+  * GH#7394: BBPextend: ERROR: trying to extend BAT pool beyond the limit
+    (163840000)
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 18 Jul 2023 13:12:19 +0200
+
+monetdb (11.47.5) unstable; urgency=low
+
+  * sql: An upgrade that both creates a new .snapshot user and extends the
+    sys.db_user_info table with (among others) a password column did
+    these in such a way that the passord value for the new user was NULL.
+    This is fixed by updating the password.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 22 Jun 2023 13:12:19 +0200
+
+monetdb (11.47.5) unstable; urgency=low
+
+  * monetdb5: There is now a new option --set tablet_threads=N to limit the number
+    of threads used for a COPY INTO from CSV file query.  This option can
+    also be set for a specific database using the monetdb command using
+    the ncopyintothreads property.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 22 Jun 2023 13:12:19 +0200
+
 monetdb (11.47.3) unstable; urgency=low
 
   * Rebuilt.
