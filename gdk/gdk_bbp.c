@@ -1700,6 +1700,15 @@ BBPinit(void)
 		fclose(fp);
 	}
 
+	/* remove trailing free bats from potential free list (they will
+	 * get added when needed) */
+	for (bat i = (bat) ATOMIC_GET(&BBPsize) - 1; i > 0; i--) {
+		if (BBP_desc(i) != NULL)
+			break;
+		bbpsize--;
+	}
+	ATOMIC_SET(&BBPsize, bbpsize);
+
 	/* add free bats to free list in such a way that low numbered
 	 * ones are at the head of the list */
 	for (bat i = (bat) ATOMIC_GET(&BBPsize) - 1; i > 0; i--) {
@@ -2554,35 +2563,50 @@ BBPuncacheit(bat i, bool unloaddesc)
  * BBPclear removes a BAT from the BBP directory forever.
  */
 static inline void
-BBPhandover(Thread t, int n)
+BBPhandover(Thread t, uint32_t n)
 {
+	bat *p, bid;
 	/* take one bat from our private free list and hand it over to
 	 * the global free list */
-	bat i = t->freebats;
-	bat bid = i;
-	if (i == 0)
-		return;
-	for (int j = 1; j < n; j++) {
-		if (BBP_next(i) == 0) {
-			n = j;
-			break;
-		}
-		i = BBP_next(i);
+	if (n >= t->nfreebats) {
+		bid = t->freebats;
+		t->freebats = 0;
+		t->nfreebats = 0;
+	} else {
+		p = &t->freebats;
+		for (uint32_t i = n; i < t->nfreebats; i++)
+			p = &BBP_next(*p);
+		bid = *p;
+		*p = 0;
+		t->nfreebats -= n;
 	}
-	t->freebats = BBP_next(i);
-	t->nfreebats -= n;
-	BBP_next(i) = 0;
-	bat *p = &BBP_free;
-	while (n > 0) {
+	p = &BBP_free;
+	while (bid != 0) {
 		while (*p && *p < bid)
 			p = &BBP_next(*p);
-		i = BBP_next(bid);
+		bat i = BBP_next(bid);
 		BBP_next(bid) = *p;
 		*p = bid;
 		bid = i;
-		n--;
 	}
 }
+
+#ifndef NDEBUG
+extern void printlist(bat bid) __attribute__((__cold__));
+/* print a bat free list, pass start of free list as argument
+ * to be used from the debugger */
+void
+printlist(bat bid)
+{
+	int n = 0;
+	while (bid) {
+		printf("%d ", bid);
+		bid = BBP_next(bid);
+		n++;
+	}
+	printf("(%d)\n", n);
+}
+#endif
 
 static inline void
 bbpclear(bat i, bool lock)
