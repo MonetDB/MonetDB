@@ -40,7 +40,7 @@ typedef struct segment {
 	ulng ts;		/* timestamp on this segment, ie tid of some active transaction or commit time of append/delete or
 					   rollback time, ie ready for reuse */
 	ulng oldts;		/* keep previous ts, for rollbacks */
-	struct segment *next;	/* usualy one should be enough */
+	ATOMIC_PTR_TYPE next;	/* usualy one should be enough */
 	struct segment *prev;	/* used in destruction list */
 } segment;
 
