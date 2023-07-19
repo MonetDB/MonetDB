@@ -943,11 +943,13 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	} else {
 		v = store->table_api.column_find_string_start(tr, find_sql_column(funcs, "mod"), rid, &cbat);
 	}
-	if (strcmp(v, "pyapi") == 0) /* pyapi module no longer used */
+	if (strcmp(v, "pyapi") == 0 ||	 /* pyapi module no longer used */
+		strcmp(v, "pyapi3map") == 0) /* pyapi3map module no longer used */
 		t->mod =_STRDUP("pypapi3");
 	else
 		t->mod =_STRDUP(v);
-	if (!update_env) store->table_api.column_find_string_end(cbat);
+	if (!update_env)
+		store->table_api.column_find_string_end(cbat);
 	t->lang = (sql_flang) store->table_api.column_find_int(tr, find_sql_column(funcs, "language"), rid);
 	t->instantiated = t->lang != FUNC_LANG_SQL && t->lang != FUNC_LANG_MAL;
 	t->type = (sql_ftype) store->table_api.column_find_int(tr, find_sql_column(funcs, "type"), rid);

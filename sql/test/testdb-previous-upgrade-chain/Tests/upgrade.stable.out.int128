@@ -485,3 +485,34 @@ GRANT EXECUTE ON AGGREGATE ST_MakeLine(Geometry) TO PUBLIC;
 update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('st_collect', 'st_distancegeographic', 'st_dwithingeographic', 'st_dwithin', 'st_dwithin_noindex', 'st_dwithin2', 'st_intersectsgeographic', 'st_intersects', 'st_intersects_noindex', 'st_makeline');
 update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'geometry_columns';
 
+Running database upgrade commands:
+create view sys.describe_accessible_tables as
+ select
+ schemas.name as schema,
+ tables.name as table,
+ table_types.table_type_name as table_type,
+ privilege_codes.privilege_code_name as privs,
+ privileges.privileges as privs_code
+ from privileges
+ join sys.roles
+ on privileges.auth_id = roles.id
+ join sys.tables
+ on privileges.obj_id = tables.id
+ join sys.table_types
+ on tables.type = table_types.table_type_id
+ join sys.schemas
+ on tables.schema_id = schemas.id
+ join sys.privilege_codes
+ on privileges.privileges = privilege_codes.privilege_code_id
+ where roles.name = current_role;
+GRANT SELECT ON sys.describe_accessible_tables TO PUBLIC;
+update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'describe_accessible_tables';
+alter table sys.function_languages set read write;
+delete from sys.function_languages where language_keyword like 'PYTHON%_MAP';
+update sys.functions set language = language - 1 where language in (7, 11);
+update sys.functions set mod = 'pyapi3' where mod in ('pyapi', 'pyapi3map');
+commit;
+
+Running database upgrade commands:
+alter table sys.function_languages set read only;
+

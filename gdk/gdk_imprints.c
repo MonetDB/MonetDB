@@ -871,7 +871,7 @@ IMPSprint(BAT *b)
 	int i;
 
 	if (!BATcheckimprints(b)) {
-		fprintf(stderr, "No imprint\n");
+		printf("No imprint\n");
 		return;
 	}
 	imprints = b->timprints;
@@ -880,35 +880,35 @@ IMPSprint(BAT *b)
 	max_bins = min_bins + 64;
 	cnt_bins = max_bins + 64;
 
-	fprintf(stderr,
-		"bits = %d, impcnt = " BUNFMT ", dictcnt = " BUNFMT "\n",
-		imprints->bits, imprints->impcnt, imprints->dictcnt);
-	fprintf(stderr, "MIN\n");
+	printf("bits = %d, impcnt = " BUNFMT ", dictcnt = " BUNFMT "\n",
+	       imprints->bits, imprints->impcnt, imprints->dictcnt);
+	printf("MIN\n");
 	for (i = 0; i < imprints->bits; i++) {
-		fprintf(stderr, "[ " BUNFMT " ]\n", min_bins[i]);
+		printf("[ " BUNFMT " ]\n", min_bins[i]);
 	}
 
-	fprintf(stderr, "MAX\n");
+	printf("MAX\n");
 	for (i = 0; i < imprints->bits; i++) {
-		fprintf(stderr, "[ " BUNFMT " ]\n", max_bins[i]);
+		printf("[ " BUNFMT " ]\n", max_bins[i]);
 	}
-	fprintf(stderr, "COUNT\n");
+	printf("COUNT\n");
 	for (i = 0; i < imprints->bits; i++) {
-		fprintf(stderr, "[ " BUNFMT " ]\n", cnt_bins[i]);
+		printf("[ " BUNFMT " ]\n", cnt_bins[i]);
 	}
 	for (dcnt = 0, icnt = 0, pages = 1; dcnt < imprints->dictcnt; dcnt++) {
 		if (d[dcnt].repeat) {
 			BINSIZE(imprints->bits, IMPSPRNTMASK, " ");
 			pages += d[dcnt].cnt;
-			fprintf(stderr, "[ " BUNFMT " ]r %s\n", pages, s);
+			printf("[ " BUNFMT " ]r %s\n", pages, s);
 			icnt++;
 		} else {
 			l = icnt + d[dcnt].cnt;
 			for (; icnt < l; icnt++) {
 				BINSIZE(imprints->bits, IMPSPRNTMASK, " ");
-				fprintf(stderr, "[ " BUNFMT " ]  %s\n", pages++, s);
+				printf("[ " BUNFMT " ]  %s\n", pages++, s);
 			}
 		}
 	}
+	fflush(stdout);
 }
 #endif

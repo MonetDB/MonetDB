@@ -1927,12 +1927,14 @@ GDKmalloc_internal(size_t size, bool clear)
 		return NULL;
 	}
 #endif
+#ifndef SIZE_CHECK_IN_HEAPS_ONLY
 	if (size > SMALL_MALLOC &&
 	    GDKvm_cursize() + size >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
 		GDKerror("allocating too much memory\n");
 		return NULL;
 	}
+#endif
 
 	/* pad to multiple of eight bytes and add some extra space to
 	 * write real size in front; when debugging, also allocate
@@ -2030,11 +2032,14 @@ GDKfree(void *s)
 	asize = ((size_t *) s)[-1]; /* how much allocated last */
 
 #if !defined(NDEBUG) && !defined(SANITIZER)
+	size_t *p = s;
 	assert((asize & 2) == 0);   /* check against duplicate free */
+	size_t size = p[-2];
+	assert(((size + 7) & ~7) + MALLOC_EXTRA_SPACE + DEBUG_SPACE == asize);
 	/* check for out-of-bounds writes */
-	for (size_t i = ((size_t *) s)[-2]; i < asize - MALLOC_EXTRA_SPACE; i++)
+	for (size_t i = size; i < asize - MALLOC_EXTRA_SPACE; i++)
 		assert(((char *) s)[i] == '\xBD');
-	((size_t *) s)[-1] |= 2; /* indicate area is freed */
+	p[-1] |= 2;		/* indicate area is freed */
 
 	/* overwrite memory that is to be freed with a pattern that
 	 * will help us recognize access to already freed memory in
@@ -2064,6 +2069,7 @@ GDKrealloc(void *s, size_t size)
 	nsize = (size + 7) & ~7;
 	asize = os[-1];		/* how much allocated last */
 
+#ifndef SIZE_CHECK_IN_HEAPS_ONLY
 	if (size > SMALL_MALLOC &&
 	    nsize > asize &&
 	    GDKvm_cursize() + nsize - asize >= GDK_vm_maxsize &&
@@ -2071,10 +2077,12 @@ GDKrealloc(void *s, size_t size)
 		GDKerror("allocating too much memory\n");
 		return NULL;
 	}
+#endif
 #if !defined(NDEBUG) && !defined(SANITIZER)
 	assert((asize & 2) == 0);   /* check against duplicate free */
 	/* check for out-of-bounds writes */
-	osize = os[-2]; /* how much asked for last */
+	osize = os[-2];		/* how much asked for last */
+	assert(((osize + 7) & ~7) + MALLOC_EXTRA_SPACE + DEBUG_SPACE == asize);
 	for (size_t i = osize; i < asize - MALLOC_EXTRA_SPACE; i++)
 		assert(((char *) s)[i] == '\xBD');
 	/* if shrinking, write debug pattern into to-be-freed memory */
@@ -2087,6 +2095,8 @@ GDKrealloc(void *s, size_t size)
 	if (s == NULL) {
 #if !defined(NDEBUG) && !defined(SANITIZER)
 		os[-1] &= ~2;	/* not freed after all */
+		assert(os[-1] == asize);
+		assert(os[-2] == osize);
 #endif
 		GDKsyserror("realloc failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", size, GDKmem_cursize(), GDKvm_cursize());;
 		return NULL;
@@ -2139,11 +2149,13 @@ GDKmmap(const char *path, int mode, size_t len)
 {
 	void *ret;
 
+#ifndef SIZE_CHECK_IN_HEAPS_ONLY
 	if (GDKvm_cursize() + len >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
 		GDKerror("requested too much virtual memory; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", len, GDKmem_cursize(), GDKvm_cursize());
 		return NULL;
 	}
+#endif
 	ret = MT_mmap(path, mode, len);
 	if (ret != NULL)
 		meminc(len);
@@ -2170,12 +2182,14 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 {
 	void *ret;
 
+#ifndef SIZE_CHECK_IN_HEAPS_ONLY
 	if (*new_size > old_size &&
 	    GDKvm_cursize() + *new_size - old_size >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
 		GDKerror("requested too much virtual memory; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", *new_size, GDKmem_cursize(), GDKvm_cursize());
 		return NULL;
 	}
+#endif
 	ret = MT_mremap(path, mode, old_address, old_size, new_size);
 	if (ret != NULL) {
 		memdec(old_size);
@@ -2184,4 +2198,18 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		GDKerror("requesting virtual memory failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", *new_size, GDKmem_cursize(), GDKvm_cursize());
 	}
 	return ret;
+}
+
+/* print some potentially interesting information */
+void
+GDKprintinfo(void)
+{
+	size_t allocated = (size_t) ATOMIC_GET(&GDK_mallocedbytes_estimate);
+	size_t vmallocated = (size_t) ATOMIC_GET(&GDK_vm_cursize);
+	printf("Virtual memory allocated: %zu, of which %zu with malloc (limit: %zu)\n", vmallocated + allocated, allocated, GDK_vm_maxsize);
+	BBPprintinfo();
+#ifdef LOCK_STATS
+	GDKlockstatistics(3);
+#endif
+	dump_threads();
 }

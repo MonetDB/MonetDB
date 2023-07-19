@@ -1700,6 +1700,15 @@ BBPinit(void)
 		fclose(fp);
 	}
 
+	/* remove trailing free bats from potential free list (they will
+	 * get added when needed) */
+	for (bat i = (bat) ATOMIC_GET(&BBPsize) - 1; i > 0; i--) {
+		if (BBP_desc(i) != NULL)
+			break;
+		bbpsize--;
+	}
+	ATOMIC_SET(&BBPsize, bbpsize);
+
 	/* add free bats to free list in such a way that low numbered
 	 * ones are at the head of the list */
 	for (bat i = (bat) ATOMIC_GET(&BBPsize) - 1; i > 0; i--) {
@@ -2227,31 +2236,27 @@ BBPdump(void)
 			continue;
 		BAT *b = BBP_desc(i);
 		unsigned status = BBP_status(i);
-		fprintf(stderr,
-			"# %d: " ALGOOPTBATFMT " "
-			"refs=%d lrefs=%d "
-			"status=%u%s",
-			i,
-			ALGOOPTBATPAR(b),
-			BBP_refs(i),
-			BBP_lrefs(i),
-			status,
-			BBP_cache(i) ? "" : " not cached");
+		printf("# %d: " ALGOOPTBATFMT "refs=%d lrefs=%d status=%u%s",
+		       i,
+		       ALGOOPTBATPAR(b),
+		       BBP_refs(i),
+		       BBP_lrefs(i),
+		       status,
+		       BBP_cache(i) ? "" : " not cached");
 		if (b == NULL) {
-			fprintf(stderr, ", no descriptor\n");
+			printf(", no descriptor\n");
 			continue;
 		}
 		if (b->theap) {
 			if (b->theap->parentid != b->batCacheid) {
-				fprintf(stderr, " Theap -> %d", b->theap->parentid);
+				printf(" Theap -> %d", b->theap->parentid);
 			} else {
-				fprintf(stderr,
-					" Theap=[%zu,%zu,f=%d]%s%s",
-					b->theap->free,
-					b->theap->size,
-					b->theap->farmid,
-					b->theap->base == NULL ? "X" : b->theap->storage == STORE_MMAP ? "M" : "",
-					status & BBPSWAPPED ? "(Swapped)" : b->theap->dirty ? "(Dirty)" : "");
+				printf(" Theap=[%zu,%zu,f=%d]%s%s",
+				       b->theap->free,
+				       b->theap->size,
+				       b->theap->farmid,
+				       b->theap->base == NULL ? "X" : b->theap->storage == STORE_MMAP ? "M" : "",
+				       status & BBPSWAPPED ? "(Swapped)" : b->theap->dirty ? "(Dirty)" : "");
 				mem += HEAPmemsize(b->theap);
 				vm += HEAPvmsize(b->theap);
 				n++;
@@ -2259,17 +2264,15 @@ BBPdump(void)
 		}
 		if (b->tvheap) {
 			if (b->tvheap->parentid != b->batCacheid) {
-				fprintf(stderr,
-					" Tvheap -> %d",
-					b->tvheap->parentid);
+				printf(" Tvheap -> %d",
+				       b->tvheap->parentid);
 			} else {
-				fprintf(stderr,
-					" Tvheap=[%zu,%zu,f=%d]%s%s",
-					b->tvheap->free,
-					b->tvheap->size,
-					b->tvheap->farmid,
-					b->tvheap->base == NULL ? "X" : b->tvheap->storage == STORE_MMAP ? "M" : "",
-					b->tvheap->dirty ? "(Dirty)" : "");
+				printf(" Tvheap=[%zu,%zu,f=%d]%s%s",
+				       b->tvheap->free,
+				       b->tvheap->size,
+				       b->tvheap->farmid,
+				       b->tvheap->base == NULL ? "X" : b->tvheap->storage == STORE_MMAP ? "M" : "",
+				       b->tvheap->dirty ? "(Dirty)" : "");
 				mem += HEAPmemsize(b->tvheap);
 				vm += HEAPvmsize(b->tvheap);
 			}
@@ -2278,19 +2281,19 @@ BBPdump(void)
 			if (b->thash && b->thash != (Hash *) 1) {
 				size_t m = HEAPmemsize(&b->thash->heaplink) + HEAPmemsize(&b->thash->heapbckt);
 				size_t v = HEAPvmsize(&b->thash->heaplink) + HEAPvmsize(&b->thash->heapbckt);
-				fprintf(stderr, " Thash=[%zu,%zu,f=%d/%d]", m, v,
-					b->thash->heaplink.farmid,
-					b->thash->heapbckt.farmid);
+				printf(" Thash=[%zu,%zu,f=%d/%d]", m, v,
+				       b->thash->heaplink.farmid,
+				       b->thash->heapbckt.farmid);
 				mem += m;
 				vm += v;
 			}
 			MT_rwlock_rdunlock(&b->thashlock);
 		}
-		fprintf(stderr, " role: %s\n",
-			b->batRole == PERSISTENT ? "persistent" : "transient");
+		printf(" role: %s\n",
+		       b->batRole == PERSISTENT ? "persistent" : "transient");
 	}
-	fprintf(stderr, "# %d bats: mem=%zu, vm=%zu\n", n, mem, vm);
-	fflush(stderr);
+	printf("# %d bats: mem=%zu, vm=%zu\n", n, mem, vm);
+	fflush(stdout);
 }
 
 /*
@@ -2560,35 +2563,50 @@ BBPuncacheit(bat i, bool unloaddesc)
  * BBPclear removes a BAT from the BBP directory forever.
  */
 static inline void
-BBPhandover(Thread t, int n)
+BBPhandover(Thread t, uint32_t n)
 {
+	bat *p, bid;
 	/* take one bat from our private free list and hand it over to
 	 * the global free list */
-	bat i = t->freebats;
-	bat bid = i;
-	if (i == 0)
-		return;
-	for (int j = 1; j < n; j++) {
-		if (BBP_next(i) == 0) {
-			n = j;
-			break;
-		}
-		i = BBP_next(i);
+	if (n >= t->nfreebats) {
+		bid = t->freebats;
+		t->freebats = 0;
+		t->nfreebats = 0;
+	} else {
+		p = &t->freebats;
+		for (uint32_t i = n; i < t->nfreebats; i++)
+			p = &BBP_next(*p);
+		bid = *p;
+		*p = 0;
+		t->nfreebats -= n;
 	}
-	t->freebats = BBP_next(i);
-	t->nfreebats -= n;
-	BBP_next(i) = 0;
-	bat *p = &BBP_free;
-	while (n > 0) {
+	p = &BBP_free;
+	while (bid != 0) {
 		while (*p && *p < bid)
 			p = &BBP_next(*p);
-		i = BBP_next(bid);
+		bat i = BBP_next(bid);
 		BBP_next(bid) = *p;
 		*p = bid;
 		bid = i;
-		n--;
 	}
 }
+
+#ifndef NDEBUG
+extern void printlist(bat bid) __attribute__((__cold__));
+/* print a bat free list, pass start of free list as argument
+ * to be used from the debugger */
+void
+printlist(bat bid)
+{
+	int n = 0;
+	while (bid) {
+		printf("%d ", bid);
+		bid = BBP_next(bid);
+		n++;
+	}
+	printf("(%d)\n", n);
+}
+#endif
 
 static inline void
 bbpclear(bat i, bool lock)
@@ -4523,20 +4541,23 @@ BBPcallbacks(void)
 static MT_Lock GDKtmLock = MT_LOCK_INITIALIZER(GDKtmLock);
 static int lockfd;
 
+static void
+BBPtmlockFinish(void)
+{
+	if (!GDKinmemory(0) &&
+	    /* also use an external lock file to synchronize with
+	     * external programs */
+	    (lockfile != NULL ||
+	     (lockfile = GDKfilepath(0, NULL, ".tm_lock", NULL)) != NULL)) {
+		    lockfd = MT_lockf(lockfile, F_LOCK);
+	}
+}
+
 void
 BBPtmlock(void)
 {
 	MT_lock_set(&GDKtmLock);
-	if (GDKinmemory(0))
-		return;
-	/* also use an external lock file to synchronize with external
-	 * programs */
-	if (lockfile == NULL) {
-		lockfile = GDKfilepath(0, NULL, ".tm_lock", NULL);
-		if (lockfile == NULL)
-			return;
-	}
-	lockfd = MT_lockf(lockfile, F_LOCK);
+	BBPtmlockFinish();
 }
 
 void
@@ -4549,4 +4570,52 @@ BBPtmunlock(void)
 		lockfd = -1;
 	}
 	MT_lock_unset(&GDKtmLock);
+}
+
+void
+BBPprintinfo(void)
+{
+	if (MT_lock_try(&GDKtmLock)) {
+		BBPtmlockFinish();
+		size_t tmem = 0, tvm = 0;
+		size_t pmem = 0, pvm = 0;
+		int tn = 0;
+		int pn = 0;
+		int nh = 0;
+
+		for (bat i = 1, sz = (bat) ATOMIC_GET(&BBPsize); i < sz; i++) {
+			if (BBP_refs(i) == 0 && BBP_lrefs(i) == 0)
+				continue;
+			BAT *b = BBP_desc(i);
+			if (b == NULL)
+				continue;
+			ATOMIC_BASE_TYPE status = BBP_status(i);
+			nh += (status & BBPHOT) != 0;
+			if (status & BBPPERSISTENT) {
+				pn++;
+				pmem += HEAPmemsize(b->theap);
+				pvm += HEAPvmsize(b->theap);
+				pmem += HEAPmemsize(b->tvheap);
+				pvm += HEAPvmsize(b->tvheap);
+			} else {
+				tn++;
+				if (b->theap &&
+				    b->theap->parentid == b->batCacheid) {
+					tmem += HEAPmemsize(b->theap);
+					tvm += HEAPvmsize(b->theap);
+				}
+				if (b->tvheap &&
+				    b->tvheap->parentid == b->batCacheid) {
+					tmem += HEAPmemsize(b->tvheap);
+					tvm += HEAPvmsize(b->tvheap);
+				}
+			}
+		}
+		BBPtmunlock();
+		printf("%d persistent bats using %zu virtual memory (%zu malloced)\n", pn, pvm, pmem);
+		printf("%d transient bats using %zu virtual memory (%zu malloced)\n", tn, tvm, tmem);
+		printf("%d bats are \"hot\" (i.e. currently or recently used)\n", nh);
+	} else {
+		printf("BBP currently locked, so no information available\n");
+	}
 }

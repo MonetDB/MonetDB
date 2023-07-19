@@ -23,6 +23,9 @@
 /* persist strimp heaps for persistent BATs */
 #define PERSISTENTSTRIMP 1
 
+/* only check whether we exceed gdk_vm_maxsize when allocating heaps */
+/* #define SIZE_CHECK_IN_HEAPS_ONLY 1 */
+
 #include "gdk_system_private.h"
 
 enum heaptype {
@@ -109,6 +112,8 @@ gdk_return BBPinit(void)
 	__attribute__((__visibility__("hidden")));
 bat BBPinsert(BAT *bn)
 	__attribute__((__warn_unused_result__))
+	__attribute__((__visibility__("hidden")));
+void BBPprintinfo(void)
 	__attribute__((__visibility__("hidden")));
 void BBPrelinquish(Thread t)
 	__attribute__((__visibility__("hidden")));
@@ -456,15 +461,20 @@ struct Imprints {
 	BUN dictcnt;		/* counter for cache dictionary               */
 };
 
+typedef uint64_t strimp_masks_t;  /* TODO: make this a sparse matrix */
+
 struct Strimps {
 	Heap strimps;
 	uint8_t *sizes_base;	/* pointer into strimps heap (pair sizes)  */
 	uint8_t *pairs_base;	/* pointer into strimps heap (pairs start)   */
-	void *bitstrings_base;	/* pointer into strimps heap (bitstrings start) */
+	void *bitstrings_base;	/* pointer into strimps heap (bitstrings
+				 * start) bitstrings_base is a pointer
+				 * to uint64_t */
 	size_t rec_cnt;		/* reconstruction counter: how many
-				   bitstrings were added after header
-				   construction */
-	/* bitstrings_base is a pointer to uint64_t */
+				 * bitstrings were added after header
+				 * construction. Currently unused. */
+	strimp_masks_t *masks;  /* quick access to masks for
+				 * bitstring construction */
 };
 
 #ifdef HAVE_RTREE

@@ -5862,6 +5862,50 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
 	}
+
+	if (mvc_bind_table(sql, s, "describe_accessible_tables") == NULL) {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+		const char *query =
+		"create view sys.describe_accessible_tables as\n"
+		" select\n"
+		" schemas.name as schema,\n"
+		" tables.name as table,\n"
+		" table_types.table_type_name as table_type,\n"
+		" privilege_codes.privilege_code_name as privs,\n"
+		" privileges.privileges as privs_code\n"
+		" from privileges\n"
+		" join sys.roles\n"
+		" on privileges.auth_id = roles.id\n"
+		" join sys.tables\n"
+		" on privileges.obj_id = tables.id\n"
+		" join sys.table_types\n"
+		" on tables.type = table_types.table_type_id\n"
+		" join sys.schemas\n"
+		" on tables.schema_id = schemas.id\n"
+		" join sys.privilege_codes\n"
+		" on privileges.privileges = privilege_codes.privilege_code_id\n"
+		" where roles.name = current_role;\n"
+ 		"GRANT SELECT ON sys.describe_accessible_tables TO PUBLIC;\n"
+		"update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'describe_accessible_tables';\n"
+
+			"alter table sys.function_languages set read write;\n"
+			"delete from sys.function_languages where language_keyword like 'PYTHON%_MAP';\n"
+			/* for these two, also see load_func() */
+			"update sys.functions set language = language - 1 where language in (7, 11);\n"
+			"update sys.functions set mod = 'pyapi3' where mod in ('pyapi', 'pyapi3map');\n"
+			"commit;\n";
+		printf("Running database upgrade commands:\n%s\n", query);
+		fflush(stdout);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		if (err == MAL_SUCCEED) {
+			query = "alter table sys.function_languages set read only;\n";
+			printf("Running database upgrade commands:\n%s\n", query);
+			fflush(stdout);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		}
+	}
+
 	return err;
 }
 
