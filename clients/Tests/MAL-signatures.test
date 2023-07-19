@@ -2934,6 +2934,11 @@ command algebra.markjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:ba
 ALGmarkjoin;
 Left mark join with candidate lists, produces left output and mark flag; 
 algebra
+markselect
+command algebra.markselect(X_0:bat[:oid], X_1:bat[:bit], X_2:bat[:any_1], X_3:bat[:any_1], X_4:bit) (X_5:bat[:oid], X_6:bat[:bit]) 
+ALGmarkselect;
+Group on group-ids, return aggregated anyequal or allnotequal
+algebra
 not_like
 command algebra.not_like(X_0:str, X_1:str, X_2:str, X_3:bit):bit 
 PCREnotlike;
@@ -2953,6 +2958,11 @@ outerjoin
 command algebra.outerjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:bit, X_6:lng) (X_7:bat[:oid], X_8:bat[:oid]) 
 ALGouterjoin;
 Left outer join with candidate lists
+algebra
+outerselect
+command algebra.outerselect(X_0:bat[:oid], X_1:bat[:bit], X_2:bat[:bit]) (X_3:bat[:oid], X_4:bat[:bit]) 
+ALGouterselect;
+Per input lid return atleast one row, if none of the predicates (p) hold, return a nil, else 'all' true cases.
 algebra
 project
 pattern algebra.project(X_0:bat[:any_1], X_1:any_3):bat[:any_3] 

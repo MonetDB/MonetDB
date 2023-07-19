@@ -622,11 +622,15 @@ exp_bin_or(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ex
 		/* propagate the anti flag */
 		if (anti)
 			set_anti(c);
-		s = exp_bin(be, c, left, right, grp, ext, cnt, sin, depth, reduce, push);
+		s = exp_bin(be, c, left, right, grp, ext, cnt, reduce?sin:NULL, depth, reduce, push);
 		if (!s)
 			return s;
 
-		if (!sin && sel1 && sel1->nrcols == 0 && s->nrcols == 0) {
+		if (!reduce && sin) {
+			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true);
+			assert(f);
+			s = stmt_binop(be, sin, s, NULL, f);
+		} else if (!sin && sel1 && sel1->nrcols == 0 && s->nrcols == 0) {
 			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true);
 			assert(f);
 			s = stmt_binop(be, sel1, s, sin, f);
@@ -649,11 +653,15 @@ exp_bin_or(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ex
 		/* propagate the anti flag */
 		if (anti)
 			set_anti(c);
-		s = exp_bin(be, c, left, right, grp, ext, cnt, sin, depth, reduce, push);
+		s = exp_bin(be, c, left, right, grp, ext, cnt, reduce?sin:NULL, depth, reduce, push);
 		if (!s)
 			return s;
 
-		if (!sin && sel2 && sel2->nrcols == 0 && s->nrcols == 0) {
+		if (!reduce && sin) {
+			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true);
+			assert(f);
+			s = stmt_binop(be, sin, s, NULL, f);
+		} else if (!sin && sel2 && sel2->nrcols == 0 && s->nrcols == 0) {
 			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true);
 			assert(f);
 			s = stmt_binop(be, sel2, s, sin, f);
@@ -684,6 +692,11 @@ exp_bin_or(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ex
 
 		predicate = stmt_const(be, predicate, stmt_bool(be, 1));
 		sel2 = stmt_uselect(be, predicate, sel2, cmp_equal, NULL, 0/*anti*/, 0);
+	}
+	if (!reduce) {
+			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"and":"or", bt, bt, F_FUNC, true);
+			assert(f);
+			return stmt_binop(be, sel1, sel2, NULL, f);
 	}
 	if (anti)
 		return stmt_project(be, stmt_tinter(be, sel1, sel2, false), sel1);
@@ -3152,7 +3165,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	list *l, *jexps = NULL, *sexps = NULL;
 	node *en = NULL, *n;
-	stmt *left = NULL, *right = NULL, *join = NULL, *sel = NULL;
+	stmt *left = NULL, *right = NULL, *join = NULL, *sel = NULL, *sub = NULL;
 
 	if (rel->l) /* first construct the left sub relation */
 		left = subrel_bin(be, rel->l, refs);
@@ -3219,67 +3232,59 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		en = en->next;
 	}
 	if (en) {
-		/* we do not project, as we need the left in original lenght for the null check */
 		stmt *jl = stmt_result(be, join, 0);
 		stmt *jr = stmt_result(be, join, 1);
 		stmt *nulls = NULL;
-		/* but we project before the select operation */
 
-		if (li && stmt_has_null(li))
+		if (li && stmt_has_null(li)) {
 			nulls = stmt_selectnil(be, li);
+		}
+		/* construct relation */
+		list *nl = sa_list(sql->sa);
+		/* first project after equi-joins */
+		for (n = left->op4.lval->h; n; n = n->next) {
+			stmt *c = n->data;
+			const char *rnme = table_name(sql->sa, c);
+			const char *nme = column_name(sql->sa, c);
+			stmt *s = stmt_project(be, jl, column(be, c));
+
+			s = stmt_alias(be, s, rnme, nme);
+			list_append(nl, s);
+		}
+		for (n = right->op4.lval->h; n; n = n->next) {
+			stmt *c = n->data;
+			const char *rnme = table_name(sql->sa, c);
+			const char *nme = column_name(sql->sa, c);
+			stmt *s = stmt_project(be, jr, column(be, c));
+
+			s = stmt_alias(be, s, rnme, nme);
+			list_append(nl, s);
+		}
+		sub = stmt_list(be, nl);
+
+		/* continue with non equi-joins */
 		for (; en; en = en->next) {
-			sql_exp *e = en->data;
-			stmt *ls = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL, 1, 0, 0), *rs;
-			bool ll = ls?true:false, rr = true;
-			bool swap = false;
-			assert(e->type == e_cmp);
+			stmt *s = exp_bin(be, en->data, sub, NULL, NULL, NULL, NULL, NULL /* sel */, 0, 0/* just the project call not the select*/, 0);
 
-			/* handle or exps */
-			if (e->flag == cmp_or) {
-				printf ("todo\n");
-				continue;
+			/* ifthenelse if (not(predicate)) then false else true (needed for antijoin) */
+			sql_subtype *bt = sql_bind_localtype("bit");
+			sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true);
+			s = stmt_unop(be, s, NULL, not);
+			s = sql_Nop_(be, "ifthenelse", s, stmt_bool(be, 0), stmt_bool(be, 1), NULL);
+
+			if (s->nrcols == 0) {
+				stmt *l = bin_find_smallest_column(be, sub);
+				s = stmt_uselect(be, stmt_const(be, l, s), stmt_bool(be, 1), cmp_equal, sel, 0, 0);
+			} else {
+				s = stmt_uselect(be, s, stmt_bool(be, 1), cmp_equal, sel, 0, 0);
 			}
 
-			if (!ls) {
-				swap = true;
-				ls = exp_bin(be, e->l, right, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
-			}
-			if (!ls)
+			if (!s) {
+				assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
 				return NULL;
-
-			if (!(rs = exp_bin(be, e->r, left, NULL, NULL, NULL, NULL, NULL, 1, 0, 0)))
-				rr = false;
-			if (!rs) {
-				if (!(rs = exp_bin(be, e->r, right, NULL, NULL, NULL, NULL, NULL, 1, 0, 0)))
-					return NULL;
-				rr = false;
 			}
-			if (!rs)
-				return NULL;
 
-			if (swap) {
-				stmt *t = ls;
-				ls = rs;
-				rs = t;
-				bool tt = ll;
-				ll = rr;
-				rr = tt;
-			}
-			if (ls->nrcols == 0)
-				ls = stmt_const(be, bin_find_smallest_column(be, ll?left:right), ls);
-			if (rs->nrcols == 0)
-				rs = stmt_const(be, bin_find_smallest_column(be, rr?left:right), rs);
-
-			if (stmt_has_null(ls)) {
-				stmt *nn = stmt_selectnil(be, ls);
-				if (nulls)
-					nulls = stmt_tunion(be, nulls, nn);
-				else
-					nulls = nn;
-			}
-			stmt *l = stmt_project(be, ll?jl:jr, ls);
-			stmt *r = stmt_project(be, rr?jl:jr, rs);
-			sel = stmt_uselect(be, l, r, e->flag, sel, 0, 0);
+			sel = s;
 		}
 		stmt *c = stmt_mirror(be, bin_find_smallest_column(be, left));
 		if (nulls) {
@@ -3287,11 +3292,13 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 			c = stmt_project(be, nonilcand, c);
 		}
 		if (join && sel) {
+			/* recreate join output */
 			jl = stmt_project(be, sel, jl);
 			join = stmt_tdiff(be, c, jl, NULL);
 		}
 		if (nulls)
 			join = stmt_project(be, join, c);
+
 	} else if (list_empty(jexps)) {
 		stmt *jl = stmt_result(be, join, 0);
 		stmt *c = stmt_mirror(be, bin_find_smallest_column(be, left));
