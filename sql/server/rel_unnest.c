@@ -3395,6 +3395,8 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 						}
 					} else {
 						e = exp_compare(v->sql->sa, l, r, cmp_equal);//j->op == op_semi?cmp_equal/*mark_in*/:cmp_notequal/*mark_notin*/);
+						if (e && j->op == op_anti)
+							set_semantics(e);
 						append(j->exps, e);
 					}
 				}
