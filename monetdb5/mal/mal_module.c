@@ -123,11 +123,15 @@ mal_module_reset(void)
 	}
 }
 
-static int getModuleIndex(const char *name) {
+static int
+getModuleIndex(const char *name)
+{
 	return (int) (strHash(name) % MODULE_HASH_SIZE);
 }
 
-static void clrModuleIndex(Module cur){
+static void
+clrModuleIndex(Module cur)
+{
 	int index = getModuleIndex(cur->name);
 	Module prev = NULL;
 	Module m = moduleIndex[index];
@@ -145,16 +149,20 @@ static void clrModuleIndex(Module cur){
 	}
 }
 
-static void addModuleToIndex(Module cur){
+static void
+addModuleToIndex(Module cur)
+{
 	int index = getModuleIndex(cur->name);
 	cur->link = moduleIndex[index];
 	moduleIndex[index] = cur;
 }
 
-Module getModule(const char *name) {
+Module
+getModule(const char *name)
+{
 	int index = getModuleIndex(name);
 	Module m = moduleIndex[index];
-	while(m) {
+	while (m) {
 		if (name == m->name)
 			return m;
 		m = m->link;
@@ -162,7 +170,9 @@ Module getModule(const char *name) {
 	return NULL;
 }
 
-void getModuleList(Module** out, int* length) {
+void
+getModuleList(Module** out, int* length)
+{
 	int i;
 	int moduleCount = 0;
 	int currentIndex = 0;
@@ -188,7 +198,9 @@ void getModuleList(Module** out, int* length) {
 	}
 }
 
-void freeModuleList(Module* list) {
+void
+freeModuleList(Module* list)
+{
 	GDKfree(list);
 }
 
@@ -196,11 +208,13 @@ void freeModuleList(Module* list) {
  * Module scope management
  * It will contain the symbol table of all globally accessible functions.
  */
-Module globalModule(const char *nme)
-{	Module cur;
+Module
+globalModule(const char *nme)
+{
+	Module cur;
 
 	// Global modules are not named 'user'
-	assert (strcmp(nme, "user"));
+	assert(strcmp(nme, "user"));
 	nme = putName(nme);
 	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
 	if (cur == NULL)
@@ -218,7 +232,9 @@ Module globalModule(const char *nme)
 
 /* Every client record has a private module name 'user'
  * for keeping around non-shared functions */
-Module userModule(void){
+Module
+userModule(void)
+{
 	Module cur;
 
 	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
@@ -238,7 +254,9 @@ Module userModule(void){
  * The scope can be fixed. This is used by the parser.
  * Reading a module often calls for creation first.
  */
-Module fixModule(const char *nme) {
+Module
+fixModule(const char *nme)
+{
 	Module m;
 
 	m = getModule(nme);
@@ -249,7 +267,8 @@ Module fixModule(const char *nme) {
  * The freeModule operation throws away a symbol without
  * concerns on it whereabouts in the scope structure.
  */
-static void freeSubScope(Module scope)
+static void
+freeSubScope(Module scope)
 {
 	int i;
 	Symbol s;
@@ -267,7 +286,8 @@ static void freeSubScope(Module scope)
 	scope->space = 0;
 }
 
-void freeModule(Module m)
+void
+freeModule(Module m)
 {
 	Symbol s;
 
@@ -300,7 +320,9 @@ void freeModule(Module m)
  * This speeds up searching provided the modules adhere to the
  * structure and group the functions as well.
  */
-void insertSymbol(Module scope, Symbol prg){
+void
+insertSymbol(Module scope, Symbol prg)
+{
 	InstrPtr sig;
 	int t;
 	Module c;
@@ -341,7 +363,9 @@ void insertSymbol(Module scope, Symbol prg){
  * moment of removal. This situation can not easily
  * checked at runtime, without tremendous overhead.
  */
-void deleteSymbol(Module scope, Symbol prg){
+void
+deleteSymbol(Module scope, Symbol prg)
+{
 	InstrPtr sig;
 	int t;
 
@@ -379,7 +403,9 @@ void deleteSymbol(Module scope, Symbol prg){
  * The 'user' module is an alias for the scope attached
  * to the current user.
  */
-Module findModule(Module scope, const char *name){
+Module
+findModule(Module scope, const char *name)
+{
 	Module def = scope;
 	Module m;
 	if (name == NULL) return scope;
@@ -402,7 +428,9 @@ Module findModule(Module scope, const char *name){
  * The variation on this routine is to dump the definition of
  * all matching definitions.
  */
-Symbol findSymbolInModule(Module v, const char *fcn) {
+Symbol
+findSymbolInModule(Module v, const char *fcn)
+{
 	Symbol s;
 	if (v == NULL || fcn == NULL) return NULL;
 	s = v->space[(int)(*fcn)];
@@ -413,7 +441,9 @@ Symbol findSymbolInModule(Module v, const char *fcn) {
 	return NULL;
 }
 
-Symbol findSymbol(Module usermodule, const char *mod, const char *fcn) {
+Symbol
+findSymbol(Module usermodule, const char *mod, const char *fcn)
+{
 	Module m = findModule(usermodule, mod);
 	return findSymbolInModule(m, fcn);
 }

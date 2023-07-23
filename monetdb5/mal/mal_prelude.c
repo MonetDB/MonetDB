@@ -117,16 +117,16 @@ initModule(Client c, const char *name, const char *initpasswd)
  * their underlying structure.
  */
 static str
-addAtom( mel_atom *atoms)
+addAtom(mel_atom *atoms)
 {
-	for(; atoms && atoms->name[0]; atoms++) {
+	for (; atoms && atoms->name[0]; atoms++) {
 		int i = ATOMallocate(atoms->name);
 		if (is_int_nil(i))
-			throw(TYPE,"addAtom", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(TYPE,"addAtom", GDK_EXCEPTION);
 		if (atoms->basetype[0]) {
 			int tpe = ATOMindex(atoms->basetype);
 			if (tpe < 0)
-				throw(TYPE,"addAtom", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				throw(TYPE,"addAtom", TYPE_NOT_SUPPORTED);
 			BATatoms[i] = BATatoms[tpe];
 			strcpy_len(BATatoms[i].name, atoms->name, sizeof(BATatoms[i].name));
 			BATatoms[i].storage = ATOMstorage(tpe);
@@ -203,9 +203,9 @@ makeArgument(MalBlkPtr mb, const mel_arg *a, int *idx)
 			tpe = newBatType(tpe) | mask;
 	}
 	/*
-	  if (a->name){
+	  if (a->name) {
 	  *idx = findVariableLength(mb, a->name, l = strlen(a->name));
-	  if( *idx != -1)
+	  if (*idx != -1)
 	  throw(LOADER, "addFunctions", "Duplicate argument name %s", a->name);
 	  *idx = newVariable(mb, a->name, l, tpe);
 	  } else
@@ -215,7 +215,8 @@ makeArgument(MalBlkPtr mb, const mel_arg *a, int *idx)
 }
 
 static str
-addFunctions(mel_func *fcn){
+addFunctions(mel_func *fcn)
+{
 	str msg = MAL_SUCCEED;
 	const char *mod;
 	int idx;
@@ -224,54 +225,50 @@ addFunctions(mel_func *fcn){
 	MalBlkPtr mb;
 	InstrPtr sig;
 
-	for(; fcn && fcn->mod[0]; fcn++) {
+	for (; fcn && fcn->mod[0]; fcn++) {
 		assert(fcn->mod);
 		mod = putName(fcn->mod);
 		c = getModule(mod);
-		if( c == NULL){
-			if (globalModule(mod) == NULL)
-				throw(LOADER, "addFunctions", "Module %s can not be created", fcn->mod);
-			c = getModule(mod);
-		}
+		if (c == NULL && (c = globalModule(mod)) == NULL)
+			throw(LOADER, "addFunctions", "Module %s can not be created", fcn->mod);
 
-		s = newSymbol(fcn->fcn, fcn->command ? COMMANDsymbol: PATTERNsymbol );
-		if ( s == NULL)
+		s = newSymbol(fcn->fcn, fcn->command ? COMMANDsymbol : PATTERNsymbol);
+		if (s == NULL)
 			throw(LOADER, "addFunctions", "Can not create symbol for %s.%s missing", fcn->mod, fcn->fcn);
 		mb = s->def;
-		if( mb == NULL) {
-			freeSymbol(s);
-			throw(LOADER, "addFunctions", "Can not create program block for %s.%s missing", fcn->mod, fcn->fcn);
-		}
+		assert(mb);				/* if this is NULL, s should have been NULL */
 
 		if (fcn->cname && fcn->cname[0])
 			strcpy_len(mb->binding, fcn->cname, sizeof(mb->binding));
-		/* keep the comment around, setting the static avoid freeing the string accidentally , saving on duplicate documentation in the code. */
+		/* keep the comment around, setting the static avoids freeing
+		 * the string accidentally, saving on duplicate documentation in
+		 * the code. */
 		mb->statichelp = mb->help = fcn->comment;
 
-		sig= newInstructionArgs(mb, mod, putName(fcn->fcn), fcn->argc + (fcn->retc == 0));
+		sig = newInstructionArgs(mb, mod, putName(fcn->fcn), fcn->argc + (fcn->retc == 0));
 		if (sig == NULL) {
 			freeSymbol(s);
 			throw(LOADER, "addFunctions", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		sig->retc = 0;
 		sig->argc = 0;
-		sig->token = fcn->command?COMMANDsymbol:PATTERNsymbol;
+		sig->token = fcn->command ? COMMANDsymbol : PATTERNsymbol;
 		sig->fcn = fcn->imp;
-		if( fcn->unsafe)
+		if (fcn->unsafe)
 			mb->unsafeProp = 1;
 
 		/* add the return variables */
-		if(fcn->retc == 0){
+		if (fcn->retc == 0) {
 			int idx = newTmpVariable(mb, TYPE_void);
 			sig = pushReturn(mb, sig, idx);
 			if (sig == NULL)
 				throw(LOADER, "addFunctions", "Failed to create void return");
 		}
 		int i;
-		for (i = 0; i<fcn->retc; i++ ){
+		for (i = 0; i<fcn->retc; i++) {
 			const mel_arg *a = fcn->args+i;
 			msg = makeArgument(mb, a, &idx);
-			if( msg)
+			if (msg)
 				return msg;
 			sig = pushReturn(mb, sig, idx);
 			if (sig == NULL)
@@ -289,10 +286,10 @@ addFunctions(mel_func *fcn){
 			}
 		}
 		/* add the arguments */
-		for (i = fcn->retc; i<fcn->argc; i++ ){
+		for (i = fcn->retc; i<fcn->argc; i++) {
 			const mel_arg *a = fcn->args+i;
 			msg = makeArgument(mb, a, &idx);
-			if( msg)
+			if (msg)
 				return msg;
 			sig = pushArgument(mb, sig, idx);
 			if (sig == NULL)
@@ -335,7 +332,7 @@ makeFuncArgument(MalBlkPtr mb, mel_func_arg *a)
 }
 
 int
-melFunction(bool command, const char *mod, const char *fcn, MALfcn imp, const char *fname, bool unsafe, const char *comment, int retc, int argc, ... )
+melFunction(bool command, const char *mod, const char *fcn, MALfcn imp, const char *fname, bool unsafe, const char *comment, int retc, int argc, ...)
 {
 	int i, idx;
 	Module c;
@@ -347,18 +344,15 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp, const ch
 	assert(mod);
 	mod = putName(mod);
 	c = getModule(mod);
-	if (c == NULL) {
-		if (globalModule(mod) == NULL)
-			return MEL_ERR;
-		c = getModule(mod);
-	}
+	if (c == NULL && (c = globalModule(mod)) == NULL)
+		return MEL_ERR;
 
-	s = newSymbol(fcn, command ? COMMANDsymbol:PATTERNsymbol );
+	s = newSymbol(fcn, command ? COMMANDsymbol : PATTERNsymbol);
 	if (s == NULL)
 		return MEL_ERR;
 	fcn = s->name;
 	mb = s->def;
-	(void)comment;
+	(void) comment;
 	if (fname)
 		strcpy_len(mb->binding, fname, sizeof(mb->binding));
 	if (mb == NULL) {
@@ -372,12 +366,12 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp, const ch
 	}
 	sig->retc = 0;
 	sig->argc = 0;
-	sig->token = command ? COMMANDsymbol:PATTERNsymbol;
+	sig->token = command ? COMMANDsymbol : PATTERNsymbol;
 	sig->fcn = imp;
 	if (unsafe)
 		mb->unsafeProp = 1;
 	/* add the return variables */
-	if(retc == 0) {
+	if (retc == 0) {
 		idx = newTmpVariable(mb, TYPE_void);
 		sig = pushReturn(mb, sig, idx);
 		if (idx < 0 || sig == NULL) {
@@ -388,7 +382,7 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp, const ch
 	}
 
 	va_start(va, argc);
-	for (i = 0; i<retc; i++ ){
+	for (i = 0; i<retc; i++) {
 		mel_func_arg a = va_arg(va, mel_func_arg);
 		idx = makeFuncArgument(mb, &a);
 		sig = pushReturn(mb, sig, idx);
@@ -410,7 +404,7 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp, const ch
 		}
 	}
 	/* add the arguments */
-	for (i = retc; i<argc; i++ ){
+	for (i = retc; i<argc; i++) {
 		mel_func_arg a = va_arg(va, mel_func_arg);
 		idx = makeFuncArgument(mb, &a);
 		sig = pushArgument(mb, sig, idx);
@@ -446,7 +440,7 @@ malPrelude(Client c, int listing, int *sql, int *mapi)
 
 	(void) listing;
 	/* Add all atom definitions */
-	for(i = 0; i<mel_modules; i++) {
+	for (i = 0; i < mel_modules; i++) {
 		if (mel_module[i].atoms) {
 			msg = addAtom(mel_module[i].atoms);
 			if (msg)
@@ -455,35 +449,35 @@ malPrelude(Client c, int listing, int *sql, int *mapi)
 	}
 
 	/* Add the signatures, where we now have access to all atoms */
-	for(i = 0; i<mel_modules; i++) {
-		(void) putName(mel_module[i].name);
-		if (!malLibraryEnabled(mel_module[i].name))
+	for (i = 0; i < mel_modules; i++) {
+		const char *name = putName(mel_module[i].name);
+		if (!malLibraryEnabled(name))
 			continue;
 		if (mel_module[i].funcs) {
 			msg = addFunctions(mel_module[i].funcs);
 			if (!msg && mel_module[i].code) /* some modules may also have some function definitions */
-				msg = malIncludeString(c, mel_module[i].name, (str)mel_module[i].code, listing, NULL);
+				msg = malIncludeString(c, name, (str) mel_module[i].code, listing, NULL);
 			if (msg)
 				return msg;
 
 			/* mapi should be last, and sql last before mapi */
-			if (strcmp(mel_module[i].name, "sql") == 0) {
+			if (strcmp(name, "sql") == 0) {
 				*sql = i;
 				continue;
 			}
-			if (strcmp(mel_module[i].name, "mapi") == 0) {
+			if (strcmp(name, "mapi") == 0) {
 				*mapi = i;
 				continue;
 			}
 			if (!mel_module[i].inits) {
-				msg = initModule(c, mel_module[i].name, NULL);
+				msg = initModule(c, name, NULL);
 				if (msg)
 					return msg;
 			}
 		}
 		if (mel_module[i].inits) {
 			/* mapi should be last, and sql last before mapi */
-			if (strcmp(mel_module[i].name, "sql") == 0 || strcmp(mel_module[i].name, "mapi") == 0)
+			if (strcmp(name, "sql") == 0 || strcmp(name, "mapi") == 0)
 				continue;
 			msg = mel_module[i].inits();
 			if (msg)
