@@ -1933,8 +1933,7 @@ stmt_outerselect(backend *be, stmt *li, stmt *ri, stmt *l, stmt *r, int cmp)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
 
-	(void)cmp;
-	if ((q = multiplex2(mb, calcRef, convertMultiplexFcn("="), l->nr, r->nr, TYPE_bit)) == NULL)
+	if ((q = multiplex2(mb, calcRef, convertMultiplexFcn(cmp==cmp_equal?"=":"!="), l->nr, r->nr, TYPE_bit)) == NULL)
 		return NULL;
 	int p = getDestVar(q);
 
@@ -2197,7 +2196,7 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		mark = 1;
 		/* fall through */
 	case cmp_equal:
-		q = newStmt(mb, algebraRef, sjt);
+		q = newStmtArgs(mb, algebraRef, sjt, 9);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
@@ -2209,9 +2208,9 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 			q = pushNil(mb, q, TYPE_bat);
 		else
 			q = pushArgument(mb, q, rcand->nr);
-		if (mark)
+		if (mark) {
 			q = pushBit(mb, q, cmptype == mark_in?TRUE:FALSE); /* any (true), all (false) */
-		else
+		} else
 			q = pushBit(mb, q, is_semantics?TRUE:FALSE);
 		if (!inner)
 			q = pushBit(mb, q, FALSE); /* not match_one */
@@ -2221,7 +2220,9 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		pushInstruction(mb, q);
 		break;
 	case cmp_notequal:
-		q = newStmtArgs(mb, algebraRef, thetajoinRef, 9);
+		if (inner)
+			sjt = thetajoinRef;
+		q = newStmtArgs(mb, algebraRef, sjt, 9);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
@@ -2233,8 +2234,11 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 			q = pushNil(mb, q, TYPE_bat);
 		else
 			q = pushArgument(mb, q, rcand->nr);
-		q = pushInt(mb, q, JOIN_NE);
+		if (inner)
+			q = pushInt(mb, q, JOIN_NE);
 		q = pushBit(mb, q, is_semantics?TRUE:FALSE);
+		if (!inner)
+			q = pushBit(mb, q, FALSE); /* not match_one */
 		q = pushNil(mb, q, TYPE_lng);
 		if (q == NULL)
 			return NULL;
@@ -2271,10 +2275,14 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		pushInstruction(mb, q);
 		break;
 	case cmp_all:	/* aka cross table */
-		q = newStmt(mb, algebraRef, crossRef);
+		q = newStmt(mb, algebraRef, inner?crossRef:outercrossRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
+		if (!inner) {
+			q = pushNil(mb, q, TYPE_bat);
+			q = pushNil(mb, q, TYPE_bat);
+		}
 		q = pushBit(mb, q, single?TRUE:FALSE); /* max_one */
 		assert(!lcand && !rcand);
 		if (q == NULL)
