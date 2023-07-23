@@ -178,6 +178,7 @@ mal_export  const char *notRef;
 mal_export  const char *not_uniqueRef;
 mal_export  const char *nth_valueRef;
 mal_export  const char *ntileRef;
+mal_export  const char *outercrossRef;
 mal_export  const char *outerjoinRef;
 mal_export  const char *outerselectRef;
 mal_export  const char *packIncrementRef;

@@ -180,6 +180,7 @@ const char *notRef;
 const char *not_uniqueRef;
 const char *nth_valueRef;
 const char *ntileRef;
+const char *outercrossRef;
 const char *outerjoinRef;
 const char *outerselectRef;
 const char *packIncrementRef;
@@ -438,6 +439,7 @@ void optimizerInit(void)
 	not_uniqueRef= putName("not_unique");
 	nth_valueRef = putName("nth_value");
 	ntileRef = putName("ntile");
+	outercrossRef = putName("outercrossproduct");
 	outerjoinRef = putName("outerjoin");
 	outerselectRef = putName("outerselect");
 	packIncrementRef = putName("packIncrement");

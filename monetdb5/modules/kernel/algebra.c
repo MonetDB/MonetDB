@@ -496,7 +496,7 @@ ALGouterselect(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *pid)
 		oid c = l->hseqbase;
 		for (BUN n = 0; n < nr; n++, c++) {
 			ri1[q] = c;
-			ri2[q] = (ri[n]!=bit_nil && *pi == TRUE)?TRUE:bit_nil;
+			ri2[q] = (ri[n]!=bit_nil && pi[n] == TRUE)?TRUE:bit_nil;
 			q++;
 		}
 	} else {
@@ -514,9 +514,9 @@ ALGouterselect(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *pid)
 				used = false;
 				cur = li[n];
 			}
-			if (*ri == bit_nil || *pi == TRUE) {
+			if (ri[n] == bit_nil || pi[n] == TRUE) {
 				ri1[q] = c;
-				ri2[q] = *ri == bit_nil?bit_nil:TRUE;
+				ri2[q] = (ri[n] == bit_nil)?bit_nil:TRUE;
 				cur = li[n];
 				used = true;
 				q++;
@@ -1102,6 +1102,45 @@ static str
 ALGcrossproduct4(bat *l, const bat *left, const bat *right, const bat *sl, const bat *sr, const bit *max_one)
 {
 	return ALGcrossproduct(l, NULL, left, right, sl, sr, max_one);
+}
+
+static str
+ALGoutercrossproduct3(bat *l, bat *r, const bat *left, const bat *right, const bat *slid, const bat *srid, const bit *max_one)
+{
+	BAT *L, *R, *bn1, *bn2 = NULL;
+	BAT *sl = NULL, *sr = NULL;
+	gdk_return ret;
+
+	L = BATdescriptor(*left);
+	R = BATdescriptor(*right);
+	if (L == NULL || R == NULL) {
+		BBPreclaim(L);
+		BBPreclaim(R);
+		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if ((slid && !is_bat_nil(*slid) && (sl = BATdescriptor(*slid)) == NULL) ||
+		(srid && !is_bat_nil(*srid) && (sr = BATdescriptor(*srid)) == NULL)) {
+		BBPunfix(L->batCacheid);
+		BBPunfix(R->batCacheid);
+		BBPreclaim(sl);
+		/* sr == NULL, so no need to unfix */
+		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	ret = BAToutercross(&bn1, r ? &bn2 : NULL, L, R, sl, sr,
+					  max_one && !is_bit_nil(*max_one) && *max_one);
+	BBPunfix(L->batCacheid);
+	BBPunfix(R->batCacheid);
+	BBPreclaim(sl);
+	BBPreclaim(sr);
+	if (ret != GDK_SUCCEED)
+		throw(MAL, "algebra.crossproduct", GDK_EXCEPTION);
+	*l = bn1->batCacheid;
+	BBPkeepref(bn1);
+	if (r) {
+		*r = bn2->batCacheid;
+		BBPkeepref(bn2);
+	}
+	return MAL_SUCCEED;
 }
 
 static str
@@ -1709,6 +1748,7 @@ mel_func algebra_init_funcs[] = {
  command("algebra", "crossproduct", ALGcrossproduct1, false, "Compute the cross product of both input bats; but only produce left output", args(1,4, batarg("",oid),batargany("left",1),batargany("right",2),arg("max_one",bit))),
  command("algebra", "crossproduct", ALGcrossproduct3, false, "Compute the cross product of both input bats", args(2,7, batarg("l",oid),batarg("r",oid),batargany("left",1),batargany("right",2),batarg("sl",oid),batarg("sr",oid),arg("max_one",bit))),
  command("algebra", "crossproduct", ALGcrossproduct4, false, "Compute the cross product of both input bats; but only produce left output", args(1,6, batarg("",oid),batargany("left",1),batargany("right",2),batarg("sl",oid),batarg("sr",oid),arg("max_one",bit))),
+ command("algebra", "outercrossproduct", ALGoutercrossproduct3, false, "Compute the outer cross product of both input bats", args(2,7, batarg("l",oid),batarg("r",oid),batargany("left",1),batargany("right",2),batarg("sl",oid),batarg("sr",oid),arg("max_one",bit))),
  command("algebra", "join", ALGjoin, false, "Join", args(2,8, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
  command("algebra", "join", ALGjoin1, false, "Join; only produce left output", args(1,7, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
  command("algebra", "leftjoin", ALGleftjoin, false, "Left join with candidate lists", args(2,8, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),
