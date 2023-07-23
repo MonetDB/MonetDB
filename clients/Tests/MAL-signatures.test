@@ -2949,6 +2949,11 @@ command algebra.orderidx(X_0:bat[:any_1], X_1:bit):bat[:any_1]
 OIDXorderidx;
 Create an order index
 algebra
+outercrossproduct
+command algebra.outercrossproduct(X_0:bat[:any_1], X_1:bat[:any_2], X_2:bat[:oid], X_3:bat[:oid], X_4:bit) (X_5:bat[:oid], X_6:bat[:oid]) 
+ALGoutercrossproduct3;
+Compute the outer cross product of both input bats
+algebra
 outerjoin
 command algebra.outerjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:bit, X_6:lng):bat[:oid] 
 ALGouterjoin1;
