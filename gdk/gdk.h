@@ -2326,6 +2326,8 @@ gdk_export BAT *BATthetaselect(BAT *b, BAT *s, const void *val, const char *op);
 gdk_export BAT *BATconstant(oid hseq, int tt, const void *val, BUN cnt, role_t role);
 gdk_export gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one)
 	__attribute__((__warn_unused_result__));
+gdk_export gdk_return BAToutercross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one)
+	__attribute__((__warn_unused_result__));
 
 gdk_export gdk_return BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 	__attribute__((__warn_unused_result__));
