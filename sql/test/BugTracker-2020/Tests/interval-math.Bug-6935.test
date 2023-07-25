@@ -52,7 +52,7 @@ SELECT INTERVAL '1' MONTH / 1.0
 query T rowsort
 SELECT INTERVAL '1' SECOND * 1.2
 ----
-0:00:01
+0:00:01.200000
 
 query T rowsort
 SELECT INTERVAL '2' MONTH / -1.4
@@ -68,7 +68,7 @@ SELECT INTERVAL '3' MONTH * INTERVAL '3' MONTH
 query T rowsort
 select mya + interval '2' second from (select interval '3' second * 1.2) as mya(mya)
 ----
-0:00:05
+0:00:05.600000
 
 statement error
 SELECT 1 / INTERVAL '2' MONTH
@@ -91,12 +91,12 @@ SELECT INTERVAL '1' MONTH * cast(1.0 as double)
 query T rowsort
 SELECT INTERVAL '1' SECOND * cast(2.44 as double)
 ----
-0:00:02
+0:00:02.440000
 
 query T rowsort
 SELECT INTERVAL '5' SECOND * cast(2.29 as real)
 ----
-0:00:11
+0:00:11.450000
 
 query T rowsort
 SELECT INTERVAL '5' SECOND * cast(1.0 as double)
@@ -111,7 +111,7 @@ SELECT cast(2.56 as double) * INTERVAL '5' MONTH
 query T rowsort
 SELECT cast(3.1 as real) * INTERVAL '3' SECOND
 ----
-0:00:09
+0:00:09.300000
 
 query T rowsort
 SELECT INTERVAL '1' MONTH / cast(2.0 as double)
@@ -146,12 +146,12 @@ SELECT INTERVAL '9' YEAR / cast(1.0 as real)
 query T rowsort
 SELECT INTERVAL '1' SECOND / cast(2.0 as double)
 ----
-0:00:00
+0:00:00.500000
 
 query T rowsort
 SELECT INTERVAL '5' SECOND / cast(1.5 as double)
 ----
-0:00:03
+0:00:03.333000
 
 query T rowsort
 SELECT INTERVAL '5' SECOND / cast(1.0 as double)
@@ -166,22 +166,22 @@ SELECT INTERVAL '-100' DAY / cast(23.34 as real)
 query T rowsort
 SELECT INTERVAL '32' MINUTE / cast(45.5677 as real)
 ----
-0:00:42
+0:00:42.135000
 
 query T rowsort
 SELECT INTERVAL '67' MINUTE / cast(1.57 as real)
 ----
-0:42:40
+0:42:40.510000
 
 query T rowsort
 SELECT INTERVAL '-10.34' SECOND / cast(-1.8 as real)
 ----
-0:00:05
+0:00:05.744000
 
 query T rowsort
 SELECT INTERVAL '-10.34' SECOND / -1.8
 ----
-0:00:05
+0:00:05.740000
 
 statement error
 SELECT INTERVAL '42' DAY / cast(0 as real)
@@ -228,10 +228,10 @@ SELECT x, y, x / y from (values(interval '0' second),(interval '-56' day),(inter
 8 days, 0:00:00
 -56 days, 0:00:00
 1.100
--51 days, 2:10:55
+-51 days, 2:10:54.550000
 -56 days, 0:00:00
 3.400
--17 days, 12:42:22
+-17 days, 12:42:21.180000
 0:00:00
 -7.000
 0:00:00
@@ -243,13 +243,13 @@ SELECT x, y, x / y from (values(interval '0' second),(interval '-56' day),(inter
 0:00:00
 1:07:00
 -7.000
--1 day, 23:50:26
+-1 day, 23:50:25.720000
 1:07:00
 1.100
-1:00:54
+1:00:54.540000
 1:07:00
 3.400
-0:19:42
+0:19:42.350000
 
 query TRT rowsort
 SELECT x, y, x * y from (values(interval '0' month),(interval '-3' month),(interval '6' month)) as x(x), (values(cast(1.1 as double)),(cast(3.4 as real)),(cast(-7 as double))) as y(y)
@@ -290,10 +290,10 @@ SELECT x, y, x / y from (values(interval '0' second),(interval '-56' day),(inter
 8 days, 0:00:00
 -56 days, 0:00:00
 1.100
--51 days, 2:10:55
+-51 days, 2:10:54.545000
 -56 days, 0:00:00
 3.400
--17 days, 12:42:22
+-17 days, 12:42:21.216000
 0:00:00
 -7.000
 0:00:00
@@ -305,13 +305,13 @@ SELECT x, y, x / y from (values(interval '0' second),(interval '-56' day),(inter
 0:00:00
 1:07:00
 -7.000
--1 day, 23:50:26
+-1 day, 23:50:25.714000
 1:07:00
 1.100
-1:00:54
+1:00:54.545000
 1:07:00
 3.400
-0:19:42
+0:19:42.353000
 
 query T rowsort
 SELECT INTERVAL '1' MONTH / cast(NULL as real)

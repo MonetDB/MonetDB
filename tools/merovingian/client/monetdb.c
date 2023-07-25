@@ -26,6 +26,7 @@
 #include "control.h"
 #include "msabaoth.h"
 #include "mutils.h"
+#include "stream.h"
 #include <string.h> /* strerror */
 #include <sys/stat.h> /* mkdir, stat, umask */
 #include <sys/types.h> /* mkdir, readdir */
@@ -2404,6 +2405,11 @@ main(int argc, char *argv[])
 	if (ioctl(fileno(stdout), TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0)
 		TERMWIDTH = ws.ws_col;
 #endif
+
+	if (mnstr_init() < 0) {
+		fprintf(stderr, "monetdb: cannot initialize stream library\n");
+		return 1;
+	}
 
 	/* Start handling the arguments.
 	 * monetdb [monetdb_options] command [options] [database [...]]
