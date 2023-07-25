@@ -1405,8 +1405,8 @@ SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(b->batCacheid);
 			throw(SQL, "sql.alter_seq", SQLSTATE(42000) "Only one value allowed to alter a sequence value");
 		}
+		bi = bat_iterator(b);
 		if (getBatType(getArgType(mb, pci, 4)) == TYPE_lng) {
-			bi = bat_iterator(b);
 			val = (lng*)bi.base;
 		}
 	}

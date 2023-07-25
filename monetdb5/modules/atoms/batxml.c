@@ -969,25 +969,22 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* collect the admin for the xml elements */
 	for (i = pci->retc; i < pci->argc; i++) {
 		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, i));
-		if (b == NULL)
-			break;
-		bi[i] = bat_iterator(b);
-		p[i] = 0;
-		q[i] = BATcount(bi[i].b);
-	}
-	/* check for errors */
-	if (i != pci->argc) {
-		for (i--; i >= pci->retc; i--)
-			if (bi[i].b) {
-				BAT *b = bi[i].b;
+		if (b == NULL) {
+			while (i > pci->retc) {
+				i--;
+				b = bi[i].b;
 				bat_iterator_end(&bi[i]);
 				BBPunfix(b->batCacheid);
 			}
-		GDKfree(bi);
-		GDKfree(p);
-		GDKfree(q);
-		GDKfree(buf);
-		throw(MAL, "xml.forest", INTERNAL_BAT_ACCESS);
+			GDKfree(bi);
+			GDKfree(p);
+			GDKfree(q);
+			GDKfree(buf);
+			throw(MAL, "xml.forest", INTERNAL_BAT_ACCESS);
+		}
+		bi[i] = bat_iterator(b);
+		p[i] = 0;
+		q[i] = BATcount(bi[i].b);
 	}
 
 	prepareResult(bn, bi[pci->retc].b, TYPE_xml, "forest",
