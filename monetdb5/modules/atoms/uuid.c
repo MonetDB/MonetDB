@@ -322,8 +322,7 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 
 			if (conv(v, &l, (void **) pp, false) <= 0) {
 				msg = createException(SQL, "batcalc.str2uuidbulk", SQLSTATE(42000) "Not a UUID");
-				bat_iterator_end(&bi);
-				goto bailout;
+				goto bailout1;
 			}
 			nils |= strNil(v);
 		}
@@ -335,13 +334,13 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 
 			if (conv(v, &l, (void **) pp, false) <= 0) {
 				msg = createException(SQL, "batcalc.str2uuidbulk", SQLSTATE(42000) "Not a UUID");
-				bat_iterator_end(&bi);
-				goto bailout;
+				goto bailout1;
 			}
 			nils |= strNil(v);
 		}
 	}
 	btkey = bi.key;
+  bailout1:
 	bat_iterator_end(&bi);
 
 bailout:
@@ -409,13 +408,11 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 
 			if (conv(&pbuf, &l, &v, false) < 0) { /* it should never be reallocated */
 				msg = createException(MAL, "batcalc.uuid2strbulk", GDK_EXCEPTION);
-				bat_iterator_end(&bi);
-				goto bailout;
+				goto bailout1;
 			}
 			if (tfastins_nocheckVAR(dst, i, buf) != GDK_SUCCEED) {
 				msg = createException(SQL, "batcalc.uuid2strbulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				bat_iterator_end(&bi);
-				goto bailout;
+				goto bailout1;
 			}
 			nils |= strNil(buf);
 		}
@@ -426,18 +423,17 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 
 			if (conv(&pbuf, &l, &v, false) < 0) { /* it should never be reallocated */
 				msg = createException(MAL, "batcalc.uuid2strbulk", GDK_EXCEPTION);
-				bat_iterator_end(&bi);
-				goto bailout;
+				goto bailout1;
 			}
 			if (tfastins_nocheckVAR(dst, i, buf) != GDK_SUCCEED) {
 				msg = createException(SQL, "batcalc.uuid2strbulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				bat_iterator_end(&bi);
-				goto bailout;
+				goto bailout1;
 			}
 			nils |= strNil(buf);
 		}
 	}
 	btkey = bi.key;
+  bailout1:
 	bat_iterator_end(&bi);
 
 bailout:

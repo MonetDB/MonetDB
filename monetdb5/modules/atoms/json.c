@@ -2045,12 +2045,12 @@ JSONrenderRowObject(BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BUN idx
 		tpe = getBatType(getArgType(mb, pci, i + 1));
 		bi = bat_iterator(bl[i + 1]);
 		p = BUNtail(bi, idx);
-		if ((val = ATOMformat(tpe, p)) == NULL) {
-			bat_iterator_end(&bi);
+		val = ATOMformat(tpe, p);
+		bat_iterator_end(&bi);
+		if (val == NULL) {
 			GDKfree(row);
 			return NULL;
 		}
-		bat_iterator_end(&bi);
 		if (strncmp(val, "nil", 3) == 0) {
 			GDKfree(val);
 			val = NULL;
@@ -2162,11 +2162,10 @@ JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 		tpe = getBatType(getArgType(mb, pci, i));
 		bi = bat_iterator(bl[i]);
 		p = BUNtail(bi, idx);
-		if ((val = ATOMformat(tpe, p)) == NULL) {
-			bat_iterator_end(&bi);
-			goto memfail;
-		}
+		val = ATOMformat(tpe, p);
 		bat_iterator_end(&bi);
+		if (val == NULL)
+			goto memfail;
 		if (strcmp(val, "nil") == 0) {
 			GDKfree(val);
 			val = NULL;

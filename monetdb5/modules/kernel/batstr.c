@@ -251,20 +251,17 @@ STRbatFromWChr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if (is_int_nil(x)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
-					bat_iterator_end(&bi);
 					msg = createException(MAL, "batstr.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 				nils = true;
 			} else {
 				if ((msg = str_from_wchr(&buf, &buflen, vals[p1])) != MAL_SUCCEED) {
-					bat_iterator_end(&bi);
-					goto bailout;
+					goto bailout1;
 				}
 				if (tfastins_nocheckVAR(bn, i, buf) != GDK_SUCCEED) {
-					bat_iterator_end(&bi);
 					msg = createException(MAL, "batstr.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
@@ -275,24 +272,22 @@ STRbatFromWChr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if (is_int_nil(x)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
-					bat_iterator_end(&bi);
 					msg = createException(MAL, "batstr.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 				nils = true;
 			} else {
 				if ((msg = str_from_wchr(&buf, &buflen, vals[p1])) != MAL_SUCCEED) {
-					bat_iterator_end(&bi);
-					goto bailout;
+					goto bailout1;
 				}
 				if (tfastins_nocheckVAR(bn, i, buf) != GDK_SUCCEED) {
-					bat_iterator_end(&bi);
 					msg = createException(MAL, "batstr.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
 	}
+  bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
@@ -347,15 +342,15 @@ STRbatSpace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (is_int_nil(x) || x < 0) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
 					msg = createException(MAL, "batstr.space", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 				nils = true;
 			} else {
 				if ((msg = str_repeat(&buf, &buflen, s, x)) != MAL_SUCCEED)
-					goto bailout;
+					goto bailout1;
 				if (tfastins_nocheckVAR(bn, i, buf) != GDK_SUCCEED) {
 					msg = createException(MAL, "batstr.space", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
@@ -367,19 +362,20 @@ STRbatSpace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (is_int_nil(x) || x < 0) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
 					msg = createException(MAL, "batstr.space", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 				nils = true;
 			} else {
 				if ((msg = str_repeat(&buf, &buflen, s, x)) != MAL_SUCCEED)
-					goto bailout;
+					goto bailout1;
 				if (tfastins_nocheckVAR(bn, i, buf) != GDK_SUCCEED) {
 					msg = createException(MAL, "batstr.space", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
 	}
+  bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
@@ -886,15 +882,15 @@ do_batstr_int_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 			if (strNil(x) || is_int_nil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
 					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 				nils = true;
 			} else {
 				if ((msg = (*func)(&buf, &buflen, x, y)) != MAL_SUCCEED)
-					goto bailout;
+					goto bailout1;
 				if (tfastins_nocheckVAR(bn, i, buf) != GDK_SUCCEED) {
 					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
@@ -906,19 +902,20 @@ do_batstr_int_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 			if (strNil(x) || is_int_nil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
 					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 				nils = true;
 			} else {
 				if ((msg = (*func)(&buf, &buflen, x, y)) != MAL_SUCCEED)
-					goto bailout;
+					goto bailout1;
 				if (tfastins_nocheckVAR(bn, i, buf) != GDK_SUCCEED) {
 					msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+					goto bailout1;
 				}
 			}
 		}
 	}
+  bailout1:
 	bat_iterator_end(&bi);
 bailout:
 	GDKfree(buf);
@@ -1021,8 +1018,8 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, co
 			}
 		}
 	}
-	bat_iterator_end(&bi);
 bailout1:
+	bat_iterator_end(&bi);
 	bat_iterator_end(&lefti);
 bailout:
 	GDKfree(buf);
@@ -1216,8 +1213,8 @@ do_batstr_batint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			}
 		}
 	}
-	bat_iterator_end(&bi);
 bailout1:
+	bat_iterator_end(&bi);
 	bat_iterator_end(&lefti);
 bailout:
 	GDKfree(buf);

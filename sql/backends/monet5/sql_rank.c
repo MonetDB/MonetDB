@@ -1934,39 +1934,39 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 
 		if (is_a_bat1 && !(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
 			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
-			goto bailout;
+			goto bailout1;
 		}
 		if (is_a_bat2 && !(c = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
 			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
-			goto bailout;
+			goto bailout1;
 		}
 		if (!(r = COLnew(b->hseqbase, TYPE_dbl, BATcount(b), TRANSIENT))) {
 			msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+			goto bailout1;
 		}
 		if (isaBatType(getArgType(mb, pci, 3)) && !(p = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
 			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
-			goto bailout;
+			goto bailout1;
 		}
 		if ((frame_type == 3 || frame_type == 4) && isaBatType(getArgType(mb, pci, 4)) && !(o = BATdescriptor(*getArgReference_bat(stk, pci, 4)))) {
 			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
-			goto bailout;
+			goto bailout1;
 		}
 		if (frame_type < 3 && isaBatType(getArgType(mb, pci, 6)) && !(s = BATdescriptor(*getArgReference_bat(stk, pci, 6)))) {
 			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
-			goto bailout;
+			goto bailout1;
 		}
 		if (frame_type < 3 && isaBatType(getArgType(mb, pci, 7)) && !(e = BATdescriptor(*getArgReference_bat(stk, pci, 7)))) {
 			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
-			goto bailout;
+			goto bailout1;
 		}
 		if ((s && BATcount(b) != BATcount(s)) || (e && BATcount(b) != BATcount(e)) || (p && BATcount(b) != BATcount(p)) || (o && BATcount(b) != BATcount(o)) || (c && BATcount(b) != BATcount(c))) {
 			msg = createException(SQL, op, ILLEGAL_ARGUMENT " Requires bats of identical size");
-			goto bailout;
+			goto bailout1;
 		}
 		if ((p && p->ttype != TYPE_bit) || (o && o->ttype != TYPE_bit) || (s && s->ttype != TYPE_oid) || (e && e->ttype != TYPE_oid)) {
 			msg = createException(SQL, op, ILLEGAL_ARGUMENT " p and o must be bit type and s and e must be oid");
-			goto bailout;
+			goto bailout1;
 		}
 
 		if (is_a_bat1 && is_a_bat2) {
@@ -2011,15 +2011,16 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 				}
 				}
 			}
+			BATsetcount(r, cnt);
+			r->tnonil = !has_nils;
+			r->tnil = has_nils;
+
+		  bailout:
 			bat_iterator_end(&di);
 			bat_iterator_end(&ei);
 			bat_iterator_end(&si);
 			bat_iterator_end(&oi);
 			bat_iterator_end(&pi);
-
-			BATsetcount(r, cnt);
-			r->tnonil = !has_nils;
-			r->tnil = has_nils;
 		}
 	} else {
 		dbl *res = getArgReference_dbl(stk, pci, 0);
@@ -2043,7 +2044,7 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		}
 	}
 
-bailout:
+bailout1:
 	BBPreclaim(st);
 	unfix_inputs(6, b, c, p, o, s, e);
 	finalize_output(res, r, msg);

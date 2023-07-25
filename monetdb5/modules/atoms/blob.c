@@ -190,8 +190,7 @@ BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
 
 			if (tfastins_nocheckVAR(dst, i, v) != GDK_SUCCEED) {
 				msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				bat_iterator_end(&bi);
-				goto bailout;
+				goto bailout1;
 			}
 			nils |= is_blob_nil(v);
 		}
@@ -202,12 +201,12 @@ BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
 
 			if (tfastins_nocheckVAR(dst, i, v) != GDK_SUCCEED) {
 				msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				bat_iterator_end(&bi);
-				goto bailout;
+				goto bailout1;
 			}
 			nils |= is_blob_nil(v);
 		}
 	}
+  bailout1:
 	bat_iterator_end(&bi);
 
 bailout:

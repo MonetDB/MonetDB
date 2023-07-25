@@ -4589,6 +4589,13 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bat *b = getArgReference_bat(stk, pci, j);
 			if (!(input[i] = BATdescriptor(*b))) {
 				ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY005) "Cannot access column descriptor");
+				while (i > 0) {
+					i--;
+					bat_iterator_end(&bi[i]);
+					BBPunfix(input[i]->batCacheid);
+				}
+				GDKfree(input);
+				input = NULL;
 				goto finalize;
 			}
 			bi[i] = bat_iterator(input[i]);
@@ -4696,14 +4703,15 @@ finalize:
 				}
 			}
 		GDKfree(res);
-		if (input)
+		if (input) {
 			for (int i = 0; i<nrinput; i++) {
 				if (input[i]) {
 					bat_iterator_end(&bi[i]);
 					BBPunfix(input[i]->batCacheid);
 				}
 			}
-		GDKfree(input);
+			GDKfree(input);
+		}
 		GDKfree(bi);
 	}
 	return ret;

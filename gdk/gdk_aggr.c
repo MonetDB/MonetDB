@@ -3678,7 +3678,6 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 						}
 						MT_lock_unset(&b->theaplock);
 					}
-					bat_iterator_end(&bi);
 				} else {
 					r = 0;
 				}
