@@ -771,6 +771,12 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	BAT *bn = NULL;
 	gdk_return rres = GDK_FAIL;
 
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 	/* exactly one of bnp and pt must be NULL, the other non-NULL */
 	assert((bnp == NULL) != (pt == NULL));
 	/* if pt not NULL, only a single group allowed */
@@ -793,7 +799,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 
 		if (separator) {
 			assert(sep == NULL);
-			CAND_LOOP_IDX(ci, i) {
+			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 				p = canditer_next(ci) - seqb;
 				const char *s = BUNtvar(bi, p);
 				if (strNil(s)) {
@@ -810,7 +816,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			CAND_LOOP_IDX(ci, i) {
+			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 				p = canditer_next(ci) - seqb;
 				const char *s = BUNtvar(bi, p);
 				const char *sl = BUNtvar(bis, p);
@@ -835,6 +841,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		}
 		canditer_reset(ci);
+		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 
 		if (nils == 0 && !empty) {
 			char *single_str = NULL;
@@ -847,7 +854,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 			empty = true;
 			if (separator) {
-				CAND_LOOP_IDX(ci, i) {
+				TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 					p = canditer_next(ci) - seqb;
 					const char *s = BUNtvar(bi, p);
 					if (strNil(s))
@@ -863,7 +870,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			} else { /* sep case */
 				assert(sep != NULL);
-				CAND_LOOP_IDX(ci, i) {
+				TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 					p = canditer_next(ci) - seqb;
 					const char *s = BUNtvar(bi, p);
 					const char *sl = BUNtvar(bis, p);
@@ -882,6 +889,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 
 			single_str[offset] = '\0';
+			TIMEOUT_CHECK(timeoffset, do { GDKfree(single_str); GOTO_LABEL_TIMEOUT_HANDLER(bailout); } while (0));
 			if (bn) {
 				if (BUNappend(bn, single_str, false) != GDK_SUCCEED) {
 					GDKfree(single_str);
@@ -930,7 +938,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			astrings[i] = (char *) str_nil;
 
 		if (separator) {
-			CAND_LOOP_IDX(ci, p) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
@@ -949,7 +957,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			CAND_LOOP_IDX(ci, p) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
@@ -975,6 +983,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			}
 		}
+		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(finish));
 
 		if (separator) {
 			for (i = 0; i < ngrp; i++) {
@@ -1003,7 +1012,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		canditer_reset(ci);
 
 		if (separator) {
-			CAND_LOOP_IDX(ci, p) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
@@ -1024,7 +1033,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			CAND_LOOP_IDX(ci, p) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
@@ -1046,6 +1055,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			}
 		}
+		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(finish));
 
 		for (i = 0; i < ngrp; i++) {
 			if (astrings[i]) {
@@ -1078,6 +1088,12 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		BBPreclaim(bn);
 
 	return rres;
+
+  bailout:
+	bat_iterator_end(&bi);
+	bat_iterator_end(&bis);
+	BBPreclaim(bn);
+	return GDK_FAIL;
 }
 
 gdk_return

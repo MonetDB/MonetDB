@@ -3013,6 +3013,7 @@ BATrmprop(BAT *b, enum prop_t idx)
 /*
  * The BATcount_no_nil function counts all BUN in a BAT that have a
  * non-nil tail value.
+ * This function does not fail (the callers currently don't check for failure).
  */
 BUN
 BATcount_no_nil(BAT *b, BAT *s)
