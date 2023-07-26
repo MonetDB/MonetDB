@@ -789,7 +789,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	}
 
 	bi = bat_iterator(b);
-		bis = bat_iterator(sep);
+	bis = bat_iterator(sep);
 	if (separator)
 		separator_length = strlen(separator);
 
