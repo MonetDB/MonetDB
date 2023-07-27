@@ -18,3 +18,10 @@ select distinct d+10 as column2 from (select d, d + 10 as column1 from foo) tfoo
 3252.435
 33.456
 
+query R rowsort
+SELECT d +10 as column2 FROM (SELECT d, d +10 AS column1 FROM foo ) tfoo group by column2
+----
+20.000
+3252.435
+33.456
+
