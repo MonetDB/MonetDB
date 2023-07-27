@@ -769,33 +769,37 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	str *restrict astrings = NULL;
 	BATiter bi, bis = (BATiter) {0};
 	BAT *bn = NULL;
-	gdk_return rres = GDK_SUCCEED;
+	gdk_return rres = GDK_FAIL;
+
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	/* exactly one of bnp and pt must be NULL, the other non-NULL */
 	assert((bnp == NULL) != (pt == NULL));
 	/* if pt not NULL, only a single group allowed */
 	assert(pt == NULL || ngrp == 1);
 
-	bi = bat_iterator(b);
-	if (sep)
-		bis = bat_iterator(sep);
-	else
-		separator_length = strlen(separator);
-
 	if (bnp) {
-		if ((bn = COLnew(min, TYPE_str, ngrp, TRANSIENT)) == NULL) {
-			rres = GDK_FAIL;
-			goto finish;
-		}
+		if ((bn = COLnew(min, TYPE_str, ngrp, TRANSIENT)) == NULL)
+			return GDK_FAIL;
 		*bnp = bn;
 	}
+
+	bi = bat_iterator(b);
+	bis = bat_iterator(sep);
+	if (separator)
+		separator_length = strlen(separator);
 
 	if (ngrp == 1) {
 		size_t offset = 0, single_length = 0;
 		bool empty = true;
 
 		if (separator) {
-			CAND_LOOP_IDX(ci, i) {
+			assert(sep == NULL);
+			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 				p = canditer_next(ci) - seqb;
 				const char *s = BUNtvar(bi, p);
 				if (strNil(s)) {
@@ -812,7 +816,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			CAND_LOOP_IDX(ci, i) {
+			TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 				p = canditer_next(ci) - seqb;
 				const char *s = BUNtvar(bi, p);
 				const char *sl = BUNtvar(bis, p);
@@ -837,19 +841,20 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		}
 		canditer_reset(ci);
+		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 
 		if (nils == 0 && !empty) {
 			char *single_str = NULL;
 
 			if ((single_str = GDKmalloc(single_length + 1)) == NULL) {
 				bat_iterator_end(&bi);
-				if (sep)
-					bat_iterator_end(&bis);
+				bat_iterator_end(&bis);
+				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
 			empty = true;
 			if (separator) {
-				CAND_LOOP_IDX(ci, i) {
+				TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 					p = canditer_next(ci) - seqb;
 					const char *s = BUNtvar(bi, p);
 					if (strNil(s))
@@ -865,7 +870,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			} else { /* sep case */
 				assert(sep != NULL);
-				CAND_LOOP_IDX(ci, i) {
+				TIMEOUT_LOOP_IDX(i, ci->ncand, timeoffset) {
 					p = canditer_next(ci) - seqb;
 					const char *s = BUNtvar(bi, p);
 					const char *sl = BUNtvar(bis, p);
@@ -884,12 +889,13 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 
 			single_str[offset] = '\0';
+			TIMEOUT_CHECK(timeoffset, do { GDKfree(single_str); GOTO_LABEL_TIMEOUT_HANDLER(bailout); } while (0));
 			if (bn) {
 				if (BUNappend(bn, single_str, false) != GDK_SUCCEED) {
 					GDKfree(single_str);
 					bat_iterator_end(&bi);
-					if (sep)
-						bat_iterator_end(&bis);
+					bat_iterator_end(&bis);
+					BBPreclaim(bn);
 					return GDK_FAIL;
 				}
 			} else {
@@ -901,21 +907,19 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		} else if (bn) {
 			if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
 				bat_iterator_end(&bi);
-				if (sep)
-					bat_iterator_end(&bis);
+				bat_iterator_end(&bis);
+				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
 		} else {
 			if (VALinit(pt, TYPE_str, str_nil) == NULL) {
 				bat_iterator_end(&bi);
-				if (sep)
-					bat_iterator_end(&bis);
+				bat_iterator_end(&bis);
 				return GDK_FAIL;
 			}
 		}
 		bat_iterator_end(&bi);
-		if (sep)
-			bat_iterator_end(&bis);
+		bat_iterator_end(&bis);
 		return GDK_SUCCEED;
 	} else {
 		/* first used to calculated the total length of
@@ -925,7 +929,6 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		if (sep)
 			lastseplength = GDKzalloc(ngrp * sizeof(*lastseplength));
 		if (lengths == NULL || astrings == NULL || (sep && lastseplength == NULL)) {
-			rres = GDK_FAIL;
 			goto finish;
 		}
 		/* at first, set astrings[i] to str_nil, then for each
@@ -935,7 +938,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			astrings[i] = (char *) str_nil;
 
 		if (separator) {
-			CAND_LOOP_IDX(ci, p) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
@@ -954,7 +957,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			CAND_LOOP_IDX(ci, p) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
@@ -980,12 +983,12 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			}
 		}
+		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(finish));
 
 		if (separator) {
 			for (i = 0; i < ngrp; i++) {
 				if (astrings[i] == NULL) {
 					if ((astrings[i] = GDKmalloc(lengths[i] + 1 - separator_length)) == NULL) {
-						rres = GDK_FAIL;
 						goto finish;
 					}
 					astrings[i][0] = 0;
@@ -998,7 +1001,6 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			for (i = 0; i < ngrp; i++) {
 				if (astrings[i] == NULL) {
 					if ((astrings[i] = GDKmalloc(lengths[i] + 1 - lastseplength[i])) == NULL) {
-						rres = GDK_FAIL;
 						goto finish;
 					}
 					astrings[i][0] = 0;
@@ -1010,7 +1012,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		canditer_reset(ci);
 
 		if (separator) {
-			CAND_LOOP_IDX(ci, p) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
@@ -1031,7 +1033,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 		} else { /* sep case */
 			assert(sep != NULL);
-			CAND_LOOP_IDX(ci, p) {
+			TIMEOUT_LOOP_IDX(p, ci->ncand, timeoffset) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
@@ -1053,25 +1055,24 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			}
 		}
+		TIMEOUT_CHECK(timeoffset, GOTO_LABEL_TIMEOUT_HANDLER(finish));
 
 		for (i = 0; i < ngrp; i++) {
 			if (astrings[i]) {
 				astrings[i][lengths[i]] = '\0';
 				if (BUNappend(bn, astrings[i], false) != GDK_SUCCEED) {
-					rres = GDK_FAIL;
 					goto finish;
 				}
 			} else if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
-				rres = GDK_FAIL;
 				goto finish;
 			}
 		}
+		rres = GDK_SUCCEED;
 	}
 
   finish:
 	bat_iterator_end(&bi);
-	if (sep)
-		bat_iterator_end(&bis);
+	bat_iterator_end(&bis);
 	if (has_nils)
 		*has_nils = nils;
 	GDKfree(lengths);
@@ -1087,6 +1088,12 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		BBPreclaim(bn);
 
 	return rres;
+
+  bailout:
+	bat_iterator_end(&bi);
+	bat_iterator_end(&bis);
+	BBPreclaim(bn);
+	return GDK_FAIL;
 }
 
 gdk_return
