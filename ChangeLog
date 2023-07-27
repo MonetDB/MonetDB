@@ -1,3 +1,9 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Thu Jul 27 2023 Niels Nes <niels@cwi.nl>
+- Removed the PYTHON MAP external language option, as after a fork the
+  synchronization primitives could be in any state, leading to deadlocks.
+  During the upgrade function definitions will fallback to the normal
+  PYTHON language option.
+
