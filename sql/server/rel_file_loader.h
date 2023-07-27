@@ -13,8 +13,8 @@
 #include "sql_mvc.h"
 
 typedef str (*fl_add_types_fptr)(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *name);
-typedef void *(*fl_load_fptr)(void *be, sql_subfunc *f, char *filename); /* use void * as both return type and be are
-																			unknown types at this layer */
+typedef void *(*fl_load_fptr)(void *be, sql_subfunc *f, char *filename); /* use void * as both return type and be
+																			argument are unknown types at this layer */
 
 typedef struct file_loader_t {
 	char *name;
