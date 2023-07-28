@@ -171,8 +171,7 @@ CREATE VIEW sys.describe_constraints AS
 		AND k.table_id = t.id
 		AND s.id = t.schema_id
 		AND t.system = FALSE
-		AND k.type in (0, 1)
-	ORDER BY k.name, kc.nr;
+		AND k.type in (0, 1);
 
 CREATE VIEW sys.describe_indices AS
 	WITH it (id, idx) AS (VALUES (0, 'INDEX'), (4, 'IMPRINTS INDEX'), (5, 'ORDERED INDEX')) --UNIQUE INDEX wraps to INDEX.
