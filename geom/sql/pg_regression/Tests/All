@@ -87,7 +87,8 @@ HAVE_GEOM&GEOS_VERSION>=3.10?dump #Unknown Types: TRIANGLE, TIN (queries for tho
 
 HAVE_GEOM?dumppoints #Uknown Types: TRIANGLE, TIN, CURVEPOLYGON (queries for these types commented out)
 
-HAVE_GEOM&GEOS_VERSION>=3.11.1?boundary #Uknown Types: TRIANGLE (queries for these types commented out)
+HAVE_GEOM&GEOS_VERSION>=3.11.1&!GEOS_VERSION>=3.12?boundary #Uknown Types: TRIANGLE (queries for these types commented out)
+HAVE_GEOM&GEOS_VERSION>=3.12?boundary-3.12 #Uknown Types: TRIANGLE (queries for these types commented out)
 
 #HAVE_GEOM?wmsservers #Not applicable to MonetDB (?)
 
