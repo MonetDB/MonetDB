@@ -208,8 +208,6 @@ mywstrncaseeq(const char *restrict s1, const uint32_t *restrict s2, size_t n2, b
 			return (*s2 == 0);
 		if (*s2 == 0)
 			return false;
-		if (nn1 == (size_t) -1 || nn1 == (size_t) -2)
-			return true;	 /* actually an error that shouldn't happen */
 #if SIZEOF_WCHAR_T == 2
 		if (c1 > 0xFFFF || *s2 > 0xFFFF) {
 			if (c1 != *s2)
@@ -237,9 +235,6 @@ mystrcasecmp(const char *s1, const char *s2)
 			return -(nn2 != 0 && nn2 != (size_t) -1);
 		if (nn2 == 0 || nn2 == (size_t) -1)
 			return 1;
-		if (nn1 == (size_t) -1 || nn1 == (size_t) -2 ||
-			nn2 == (size_t) -1 || nn2 == (size_t) -2)
-			return 0;	 /* actually an error that shouldn't happen */
 #if SIZEOF_WCHAR_T == 2
 		if (c1 > 0xFFFF || c2 > 0xFFFF) {
 			if (c1 != c2)
@@ -264,8 +259,6 @@ mywstrcasecmp(const char *restrict s1, const uint32_t *restrict s2)
 			return -(*s2 != 0);
 		if (*s2 == 0)
 			return 1;
-		if (nn1 == (size_t) -1 || nn1 == (size_t) -2)
-			return 0;	 /* actually an error that shouldn't happen */
 #if SIZEOF_WCHAR_T == 2
 		if (c1 > 0xFFFF || *s2 > 0xFFFF) {
 			if (c1 != *s2)

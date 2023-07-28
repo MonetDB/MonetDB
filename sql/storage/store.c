@@ -3710,6 +3710,8 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
 
+			if (!c)
+				continue;
 			if (c->commit)
 				c->commit(tr, c, 0 /* ie rollback */, oldest);
 			c->ts = commit_ts;
@@ -3718,6 +3720,8 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
 
+			if (!c)
+				continue;
 			if (!c->cleanup) {
 				_DELETE(c);
 			} else if (c->cleanup && !c->cleanup(store, c, oldest)) {
@@ -4084,12 +4088,15 @@ sql_trans_commit(sql_trans *tr)
 			node *next = n->next;
 			sql_change *c = n->data;
 
-			if (!c->cleanup || c->cleanup(store, c, oldest)) {
-				_DELETE(c);
-			} else if (tr->parent) { /* need to keep everything */
-				tr->parent->changes = list_add(tr->parent->changes, c);
-			} else {
-				store->changes = list_add(store->changes, c);
+			n->data = NULL;
+			if (c) {
+				if (!c->cleanup || c->cleanup(store, c, oldest)) {
+					_DELETE(c);
+				} else if (tr->parent) { /* need to keep everything */
+					tr->parent->changes = list_add(tr->parent->changes, c);
+				} else {
+					store->changes = list_add(store->changes, c);
+				}
 			}
 			n = next;
 		}
@@ -4108,8 +4115,10 @@ sql_trans_commit(sql_trans *tr)
 				MT_lock_unset(&store->flush);
 		}
 		MT_lock_unset(&store->commit);
-		list_destroy(tr->changes);
-		tr->changes = NULL;
+		if (ok == LOG_OK) {
+			list_destroy(tr->changes);
+			tr->changes = NULL;
+		}
 	} else if (ATOMIC_GET(&store->nr_active) == 1) { /* just me cleanup */
 		MT_lock_set(&store->commit);
 		store_lock(store);
@@ -7207,12 +7216,13 @@ sql_trans_begin(sql_session *s)
 int
 sql_trans_end(sql_session *s, int ok)
 {
+	int res = SQL_OK;
 	TRC_DEBUG(SQL_STORE, "End of transaction: " ULLFMT "\n", s->tr->tid);
 	if (ok == SQL_OK) {
-		ok = sql_trans_commit(s->tr);
-	} else if (ok == SQL_ERR) { /* if a conflict happened, it was already rollbacked */
-		sql_trans_rollback(s->tr, false);
+		res = sql_trans_commit(s->tr);
 	}
+	if (ok == SQL_ERR || res != SQL_OK) /* if a conflict happened, it was already rollbacked */
+		sql_trans_rollback(s->tr, false);
 	assert(s->tr->active);
 	sqlstore *store = s->tr->store;
 	store_lock(store);
@@ -7233,6 +7243,5 @@ sql_trans_end(sql_session *s, int ok)
 	ATOMIC_SET(&store->oldest, oldest);
 	assert(list_length(store->active) == (int) ATOMIC_GET(&store->nr_active));
 	store_unlock(store);
-
-	return ok;
+	return res;
 }
