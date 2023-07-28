@@ -2047,6 +2047,8 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
                 else:
                     for i in range(len(geos_version)):
                         if i >= len(req_vers):
+                            reason = "geos version too high"
+                            elem = SkipTest(env, TST, EXT, reason, length)
                             break
                         if int(geos_version[i]) < int(req_vers[i]):
                             break
@@ -2054,6 +2056,9 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress) 
                             reason = "geos version too high"
                             elem = SkipTest(env, TST, EXT, reason, length)
                             break
+                    else:
+                        reason = "geos version too high"
+                        elem = SkipTest(env, TST, EXT, reason, length)
                 if reason is not None:
                     break
             elif cond.startswith('R_VERSION>='):
