@@ -1149,6 +1149,7 @@ int scanner_symbol(mvc * c, int cur)
 	case '^': /* binary xor */
 	case '*':
 	case '?':
+	case ':':
 	case '%':
 	case '+':
 	case '(':

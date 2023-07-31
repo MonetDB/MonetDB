@@ -2376,6 +2376,11 @@ rel_set_type(visitor *v, sql_rel *rel)
 							te->tpe = *sql_bind_localtype("bte");
 							if (te->l)
 								te->l = atom_set_type(v->sql->sa, te->l, &te->tpe);
+						} else if (!t && !te->l && !te->r) { /* parameter, set type, or return ERR?? */
+							sql_arg *a = sql_bind_paramnr(v->sql, te->flag);
+							if (!a->type.type)
+								return sql_error(v->sql, 10, SQLSTATE(42000) "Parameter has no type");
+							te->tpe = a->type;
 						}
 					}
 				}

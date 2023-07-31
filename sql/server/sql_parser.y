@@ -4272,6 +4272,16 @@ param:
 	  sql_add_param(m, NULL, NULL);
 	  $$ = _symbol_create_int( SQL_PARAMETER, nr );
 	}
+  | ':' ident
+	{
+	  int nr = sql_bind_param( m, $2);
+
+	  if (nr < 0) {
+	  	nr = (m->params)?list_length(m->params):0;
+	  	sql_add_param(m, $2, NULL);
+	  }
+	  $$ = _symbol_create_int( SQL_PARAMETER, nr );
+	}
   ;
 
 window_specification:
@@ -5614,6 +5624,8 @@ ident:
 
 non_reserved_word:
   AS		{ $$ = sa_strdup(SA, "as"); }		/* sloppy: officially reserved */
+| ASC		{ $$ = sa_strdup(SA, "asc"); }		/* sloppy: officially reserved */
+| DESC		{ $$ = sa_strdup(SA, "desc"); }		/* sloppy: officially reserved */
 | AUTHORIZATION	{ $$ = sa_strdup(SA, "authorization"); }/* sloppy: officially reserved */
 | COLUMN	{ $$ = sa_strdup(SA, "column"); }	/* sloppy: officially reserved */
 | CYCLE		{ $$ = sa_strdup(SA, "cycle"); }	/* sloppy: officially reserved */

@@ -1420,7 +1420,12 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		} else if (e->f) { 		/* values */
 			s = value_list(be, e->f, left, sel);
 		} else { 			/* arguments */
-			s = stmt_varnr(be, e->flag, e->tpe.type?&e->tpe:NULL);
+			sql_subtype *t = e->tpe.type?&e->tpe:NULL;
+			if (!t && 0) {
+				sql_arg *a = sql_bind_paramnr(be->mvc, e->flag);
+				t = a->type.type?&a->type:NULL;
+			}
+			s = stmt_varnr(be, e->flag, t);
 		}
 	}	break;
 	case e_convert: {
