@@ -3370,6 +3370,45 @@ rel_nop_(mvc *sql, sql_rel *rel, sql_exp *a1, sql_exp *a2, sql_exp *a3, sql_exp 
 	return exp_op4(sql->sa, a1,a2,a3,a4,f);
 }
 
+static sql_func *
+inplace_func(mvc *sql, sql_rel *r)
+{
+	sql_func *f = SA_NEW(sql->sa, sql_func);
+	list *res = NULL;
+
+	if (r && is_project(r->op) && !list_empty(r->exps)) {
+        sql_arg *a;
+        node *m;
+
+        res = sa_list(sql->sa);
+        for(m = r->exps->h; m; m = m->next) {
+            sql_exp *e = m->data;
+            sql_subtype *t = exp_subtype(e);
+
+            a = NULL;
+            if (t)
+                a = sql_create_arg(sql->sa, NULL, t, ARG_OUT);
+            append(res, a);
+        }
+    }
+
+    *f = (sql_func) {
+        .mod = "",
+        .imp = "",
+        .type = F_PROC,
+        .lang = FUNC_LANG_INT,
+        .query = NULL,
+        .ops = sql->params,
+        .res = res,
+    };
+    base_init(sql->sa, &f->base, 0, true, NULL);
+    f->base.new = 1;
+    f->base.id = -1;
+    f->base.name = "-1";
+    f->instantiated = TRUE;
+	return f;
+}
+
 static sql_exp *
 rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 {
@@ -3400,15 +3439,16 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 
 		if (err)
 			return NULL;
-		if ((q = qc_find(sql->qc, nr))) {
+		if (nr == -1 || (q = qc_find(sql->qc, nr))) {
 			list *nexps = new_exp_list(sql->sa);
-			sql_func *f = q->f;
+			sql_func *f = q?q->f:inplace_func(sql, query->last_rel);
+			list *ops = q?f->ops:sql->params;
 
 			tl = sa_list(sql->sa);
-			if (list_length(f->ops) != list_length(exps))
-				return sql_error(sql, 02, SQLSTATE(42000) "EXEC called with wrong number of arguments: expected %d, got %d", list_length(f->ops), list_length(exps));
-			if (exps->h && f->ops) {
-				for (node *n = exps->h, *m = f->ops->h; n && m; n = n->next, m = m->next) {
+			if (list_length(ops) != list_length(exps))
+				return sql_error(sql, 02, SQLSTATE(42000) "EXEC called with wrong number of arguments: expected %d, got %d", list_length(ops), list_length(exps));
+			if (exps->h && ops) {
+				for (node *n = exps->h, *m = ops->h; n && m; n = n->next, m = m->next) {
 					sql_arg *a = m->data;
 					sql_exp *e = n->data;
 					sql_subtype *ntp = &a->type;
@@ -3425,7 +3465,8 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 			}
 			if (err)
 				return NULL;
-			sql->type = q->type;
+			if (q)
+				sql->type = q->type;
 			return exp_op(sql->sa, list_empty(nexps) ? NULL : nexps, sql_dup_subfunc(sql->sa, f, tl, NULL));
 		} else {
 			return sql_error(sql, 02, SQLSTATE(42000) "EXEC: PREPARED Statement missing '%d'", nr);

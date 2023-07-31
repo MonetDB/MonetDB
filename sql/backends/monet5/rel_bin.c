@@ -826,6 +826,41 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 }
 
 static stmt *
+exp2bin_named_placeholders(backend *be, sql_exp *fe)
+{
+	int argc = 0;
+	char arg[IDLENGTH];
+	list *args = fe->l;
+
+	if (list_empty(args))
+		return NULL;
+	for (node *n = args->h; n; n = n->next, argc++) {
+		sql_exp *a = n->data;
+		sql_subtype *t = exp_subtype(a);
+		stmt *s = exp_bin(be, a, NULL, NULL, NULL, NULL, NULL, NULL, 1, 0, 1);
+		InstrPtr q = newAssignment(be->mb);
+
+		if (!q || !t || !s) {
+            sql_error(be->mvc, 10, SQLSTATE(42000) MAL_MALLOC_FAIL);
+			return NULL;
+		}
+        int type = t->type->localtype, varid = 0;
+
+        snprintf(arg, IDLENGTH, "A%d", argc);
+        if ((varid = newVariable(be->mb, arg, strlen(arg), type)) < 0) {
+            sql_error(be->mvc, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+			return NULL;
+        }
+		if (q)
+			getDestVar(q) = varid;
+        q = pushArgument(be->mb, q, s->nr);
+		pushInstruction(be->mb, q);
+        //setVarType(be->mb, varid, type);
+	}
+	return NULL;
+}
+
+static stmt *
 exp2bin_casewhen(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int depth)
 {
 	stmt *res = NULL, *ires = NULL, *rsel = NULL, *osel = NULL, *ncond = NULL, *ocond = NULL, *cond = NULL;
@@ -1483,6 +1518,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				return exp2bin_copyfrombinary(be, e, left, right, sel);
 			if (strcmp(fname, "file_loader") == 0)
 				return exp2bin_file_loader(be, e, left, right, sel);
+			if (strcmp(fname, "-1") == 0) /* map arguments to A0 .. An */
+				return exp2bin_named_placeholders(be, e);
 		}
 		if (!list_empty(exps)) {
 			unsigned nrcols = 0;

@@ -235,6 +235,7 @@ int yydebug=1;
 	drop_table_element
 	exec
 	exec_ref
+	arg_list_ref
 	existence_test
 	filter_exp
 	forest_element_value
@@ -814,10 +815,30 @@ sqlstmt:
 	{
 		(void)yynerrs;
 		if (m->sym) {
-			append_symbol(m->sym->data.lval, $$);
+			append_symbol(m->sym->data.lval, $1);
 			$$ = m->sym;
 		} else {
 			m->sym = $$ = $1;
+		}
+		YYACCEPT;
+	}
+
+ | sql ':' arg_list_ref SCOLON
+	{
+		(void)yynerrs;
+		 if (!m->emode) /* don't replace m_deps/instantiate */
+			m->emode = m_prepare;
+		if (m->sym) {
+			append_symbol(m->sym->data.lval, $1);
+			$$ = m->sym;
+		} else {
+			dlist* stmts = L();
+			append_symbol(stmts, $$ = $1);
+			m->sym = _symbol_create_list(SQL_MULSTMT, stmts);
+		}
+		if (m->sym->data.lval) {
+			m->emod |= mod_exec;
+			append_symbol(m->sym->data.lval, _symbol_create_symbol(SQL_CALL, $3)); 
 		}
 		YYACCEPT;
 	}
@@ -5854,17 +5875,21 @@ dealloc:
  ;
 
 exec_ref:
-    posint '(' ')'
+    posint arg_list_ref { $$ = $2; $$->data.lval->h->data.i_val = $1; }
+ ;
+
+arg_list_ref:
+    '(' ')'
 	{ dlist *l = L();
-	  append_int(l, $1);
+	  append_int(l, -1);
 	  append_int(l, FALSE); /* ignore distinct */
 	  append_list(l, NULL);
 	  $$ = _symbol_create_list( SQL_NOP, l ); }
-|   posint '(' value_commalist ')'
+ |  '(' value_commalist ')'
 	{ dlist *l = L();
-	  append_int(l, $1);
+	  append_int(l, -1);
 	  append_int(l, FALSE); /* ignore distinct */
-	  append_list(l, $3);
+	  append_list(l, $2);
 	  $$ = _symbol_create_list( SQL_NOP, l ); }
  ;
 
