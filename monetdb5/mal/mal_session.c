@@ -360,10 +360,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		if ((msg = setScenario(c, lang)) != NULL) {
 			mnstr_printf(c->fdout, "!%s\n", msg);
 			mnstr_flush(c->fdout, MNSTR_FLUSH_DATA);
-			GDKfree(s);
-			exit_streams(fin, fout);
-			GDKfree(command);
-			MCcloseClient(c);
+			cleanUpScheduleClient(c, &command, &msg);
 			return;
 		}
 		if (!GDKgetenv_isyes(mal_enableflag) &&
