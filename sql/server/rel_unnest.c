@@ -2379,7 +2379,7 @@ rel_set_type(visitor *v, sql_rel *rel)
 						} else if (!t && !te->l && !te->r) { /* parameter, set type, or return ERR?? */
 							sql_arg *a = sql_bind_paramnr(v->sql, te->flag);
 							if (!a->type.type)
-								return sql_error(v->sql, 10, SQLSTATE(42000) "Parameter has no type");
+								return sql_error(v->sql, 10, SQLSTATE(42000) "Could not determine type for argument number %d", te->flag+1);
 							te->tpe = a->type;
 						}
 					}
