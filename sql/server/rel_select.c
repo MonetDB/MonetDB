@@ -3446,7 +3446,7 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	if (l->type == type_int) {
 		/* exec nr (ops)*/
 		int nr = l->data.i_val;
-		cq *q;
+		cq *q = NULL;
 
 		if (err)
 			return NULL;
