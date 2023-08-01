@@ -3479,6 +3479,7 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 					append(tl, exp_subtype(e));
 				}
 			}
+
 			if (err)
 				return NULL;
 			if (q)
