@@ -181,16 +181,9 @@ static str MSserveClient(Client cntxt);
 
 
 static inline void
-cleanUpScheduleClient(Client c, Scenario s, str *command, str *err)
+cleanUpScheduleClient(Client c, str *command, str *err)
 {
 	if(c) {
-		if (s) {
-			str msg = NULL;
-			if((msg = s->exitClientCmd(c)) != MAL_SUCCEED) {
-				mnstr_printf(c->fdout, "!%s\n", msg);
-				freeException(msg);
-			}
-		}
 		MCcloseClient(c);
 	}
 	if (command) {
@@ -359,18 +352,15 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			c->curmodule = c->usermodule = userModule();
 			if(c->curmodule  == NULL) {
 				mnstr_printf(fout, "!could not allocate space\n");
-				cleanUpScheduleClient(c, NULL, &command, &msg);
+				cleanUpScheduleClient(c, &command, &msg);
 				return;
 			}
 		}
 
-		if ((s = setScenario(c, lang)) != NULL) {
-			mnstr_printf(c->fdout, "!%s\n", s);
+		if ((msg = setScenario(c, lang)) != NULL) {
+			mnstr_printf(c->fdout, "!%s\n", msg);
 			mnstr_flush(c->fdout, MNSTR_FLUSH_DATA);
-			GDKfree(s);
-			exit_streams(fin, fout);
-			GDKfree(command);
-			MCcloseClient(c);
+			cleanUpScheduleClient(c, &command, &msg);
 			return;
 		}
 		if (!GDKgetenv_isyes(mal_enableflag) &&
@@ -378,14 +368,14 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 
 			mnstr_printf(fout, "!only the 'monetdb' user can use non-sql languages. "
 					           "run mserver5 with --set %s=yes to change this.\n", mal_enableflag);
-			cleanUpScheduleClient(c, NULL, &command, &msg);
+			cleanUpScheduleClient(c, &command, &msg);
 			return;
 		}
 	}
 
 	if((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
 		mnstr_printf(fout, "!could not allocate space\n");
-		cleanUpScheduleClient(c, NULL, &command, &msg);
+		cleanUpScheduleClient(c, &command, &msg);
 		return;
 	}
 
@@ -423,7 +413,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 				GDKfree(algo);
 			if (c->exitClient)
 				c->exitClient(c);
-			cleanUpScheduleClient(c, NULL, NULL, &msg);
+			cleanUpScheduleClient(c, NULL, &msg);
 			return;
 		}
 	}
