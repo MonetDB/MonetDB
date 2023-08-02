@@ -207,6 +207,10 @@ TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logn
 	}
 	/* lock just prevents other global (sub-)commits */
 	BBPtmlock();
+	if (logno < 0)
+		logno = getBBPlogno();
+	if (transid < 0)
+		transid = getBBPtransid();
 	if (BBPsync(cnt, subcommit, sizes, logno, transid) == GDK_SUCCEED) { /* write BBP.dir (++) */
 		epilogue(cnt, subcommit, false);
 		ret = GDK_SUCCEED;
@@ -239,7 +243,7 @@ TMsubcommit(BAT *b)
 	}
 	bat_iterator_end(&bi);
 
-	ret = TMsubcommit_list(subcommit, NULL, cnt, getBBPlogno(), getBBPtransid());
+	ret = TMsubcommit_list(subcommit, NULL, cnt, -1, -1);
 	GDKfree(subcommit);
 	return ret;
 }

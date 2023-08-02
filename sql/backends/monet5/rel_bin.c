@@ -2399,6 +2399,10 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 					q = pushStr(be->mb, q, mod);
 					q = pushStr(be->mb, q, fcn);
 					psub = stmt_direct_func(be, q);
+					if (psub == NULL) {
+						freeInstruction(q);
+						return NULL;
+					}
 
 					if (ids) /* push input rowids column */
 						q = pushArgument(be->mb, q, ids->nr);
