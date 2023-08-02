@@ -5653,8 +5653,6 @@ ident:
 
 non_reserved_word:
   AS		{ $$ = sa_strdup(SA, "as"); }		/* sloppy: officially reserved */
-| ASC		{ $$ = sa_strdup(SA, "asc"); }		/* sloppy: officially reserved */
-| DESC		{ $$ = sa_strdup(SA, "desc"); }		/* sloppy: officially reserved */
 | AUTHORIZATION	{ $$ = sa_strdup(SA, "authorization"); }/* sloppy: officially reserved */
 | COLUMN	{ $$ = sa_strdup(SA, "column"); }	/* sloppy: officially reserved */
 | CYCLE		{ $$ = sa_strdup(SA, "cycle"); }	/* sloppy: officially reserved */
@@ -5683,6 +5681,7 @@ non_reserved_word:
 
 | ACTION	{ $$ = sa_strdup(SA, "action"); }
 | ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
+| ASC		{ $$ = sa_strdup(SA, "asc"); }
 | AUTO_COMMIT	{ $$ = sa_strdup(SA, "auto_commit"); }
 | BIG		{ $$ = sa_strdup(SA, "big"); }
 | CACHE		{ $$ = sa_strdup(SA, "cache"); }
@@ -5691,6 +5690,7 @@ non_reserved_word:
 | COMMENT	{ $$ = sa_strdup(SA, "comment"); }
 | DATA		{ $$ = sa_strdup(SA, "data"); }
 | DECADE	{ $$ = sa_strdup(SA, "decade"); }
+| DESC		{ $$ = sa_strdup(SA, "desc"); }
 | DIAGNOSTICS	{ $$ = sa_strdup(SA, "diagnostics"); }
 | DOW		{ $$ = sa_strdup(SA, "dow"); }
 | DOY		{ $$ = sa_strdup(SA, "doy"); }
