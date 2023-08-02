@@ -156,12 +156,11 @@ rel_psm_declare(mvc *sql, dnode *n)
 			const char *sname = qname_schema(qname);
 			const char *tname = qname_schema_object(qname);
 			sql_exp *r = NULL;
-			sql_arg *a;
 
 			if (sname)
 				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Declared variables don't have a schema");
 			/* find if there's a parameter with the same name */
-			if (sql->frame == 1 && (a = sql_bind_param(sql, tname)))
+			if (sql->frame == 1 && sql_bind_param(sql, tname) >= 0)
 				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s' declared as a parameter", tname);
 			/* check if we overwrite a scope local variable declare x; declare x; */
 			if (frame_find_var(sql, tname))

@@ -122,4 +122,3 @@ hash_destroy(sql_hash *h) /* this code should be called for hash tables created 
 	_DELETE(h->buckets);
 	_DELETE(h);
 }
-

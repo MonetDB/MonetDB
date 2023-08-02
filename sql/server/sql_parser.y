@@ -235,6 +235,8 @@ int yydebug=1;
 	drop_table_element
 	exec
 	exec_ref
+	arg_list_ref
+	named_arg_list_ref
 	existence_test
 	filter_exp
 	forest_element_value
@@ -519,6 +521,7 @@ int yydebug=1;
 	triggered_statement
 	typelist
 	value_commalist
+	named_value_commalist
 	variable_list
 	variable_ref
 	variable_ref_commalist
@@ -814,10 +817,30 @@ sqlstmt:
 	{
 		(void)yynerrs;
 		if (m->sym) {
-			append_symbol(m->sym->data.lval, $$);
+			append_symbol(m->sym->data.lval, $1);
 			$$ = m->sym;
 		} else {
 			m->sym = $$ = $1;
+		}
+		YYACCEPT;
+	}
+
+ | sql ':' named_arg_list_ref SCOLON
+	{
+		(void)yynerrs;
+		 if (!m->emode) /* don't replace m_deps/instantiate */
+			m->emode = m_prepare;
+		if (m->sym) {
+			append_symbol(m->sym->data.lval, $1);
+			$$ = m->sym;
+		} else {
+			dlist* stmts = L();
+			append_symbol(stmts, $$ = $1);
+			m->sym = _symbol_create_list(SQL_MULSTMT, stmts);
+		}
+		if (m->sym->data.lval) {
+			m->emod |= mod_exec;
+			append_symbol(m->sym->data.lval, _symbol_create_symbol(SQL_CALL, $3)); 
 		}
 		YYACCEPT;
 	}
@@ -3191,6 +3214,12 @@ value_commalist:
 			{ $$ = append_symbol($1, $3); }
  ;
 
+named_value_commalist:
+    ident value		{ $$ = append_string(append_symbol(L(), $2), $1); }
+ |  named_value_commalist ',' ident value
+			{ $$ = append_string(append_symbol($1, $4), $3); }
+ ;
+
 null:
    sqlNULL		{ $$ = _symbol_create(SQL_NULL, NULL ); }
  ;
@@ -4270,6 +4299,16 @@ param:
 	  int nr = (m->params)?list_length(m->params):0;
 
 	  sql_add_param(m, NULL, NULL);
+	  $$ = _symbol_create_int( SQL_PARAMETER, nr );
+	}
+  | ':' ident
+	{
+	  int nr = sql_bind_param( m, $2);
+
+	  if (nr < 0) {
+	  	nr = (m->params)?list_length(m->params):0;
+	  	sql_add_param(m, $2, NULL);
+	  }
 	  $$ = _symbol_create_int( SQL_PARAMETER, nr );
 	}
   ;
@@ -5642,6 +5681,7 @@ non_reserved_word:
 
 | ACTION	{ $$ = sa_strdup(SA, "action"); }
 | ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
+| ASC		{ $$ = sa_strdup(SA, "asc"); }
 | AUTO_COMMIT	{ $$ = sa_strdup(SA, "auto_commit"); }
 | BIG		{ $$ = sa_strdup(SA, "big"); }
 | CACHE		{ $$ = sa_strdup(SA, "cache"); }
@@ -5650,6 +5690,7 @@ non_reserved_word:
 | COMMENT	{ $$ = sa_strdup(SA, "comment"); }
 | DATA		{ $$ = sa_strdup(SA, "data"); }
 | DECADE	{ $$ = sa_strdup(SA, "decade"); }
+| DESC		{ $$ = sa_strdup(SA, "desc"); }
 | DIAGNOSTICS	{ $$ = sa_strdup(SA, "diagnostics"); }
 | DOW		{ $$ = sa_strdup(SA, "dow"); }
 | DOY		{ $$ = sa_strdup(SA, "doy"); }
@@ -5842,17 +5883,36 @@ dealloc:
  ;
 
 exec_ref:
-    posint '(' ')'
+    posint arg_list_ref { $$ = $2; $$->data.lval->h->data.i_val = $1; }
+ ;
+
+arg_list_ref:
+    '(' ')'
 	{ dlist *l = L();
-	  append_int(l, $1);
+	  append_int(l, -1);
 	  append_int(l, FALSE); /* ignore distinct */
 	  append_list(l, NULL);
 	  $$ = _symbol_create_list( SQL_NOP, l ); }
-|   posint '(' value_commalist ')'
+ |  '(' value_commalist ')'
 	{ dlist *l = L();
-	  append_int(l, $1);
+	  append_int(l, -1);
 	  append_int(l, FALSE); /* ignore distinct */
-	  append_list(l, $3);
+	  append_list(l, $2);
+	  $$ = _symbol_create_list( SQL_NOP, l ); }
+ ;
+
+named_arg_list_ref:
+    '(' ')'
+	{ dlist *l = L();
+	  append_int(l, -1);
+	  append_int(l, FALSE); /* ignore distinct */
+	  append_list(l, NULL);
+	  $$ = _symbol_create_list( SQL_NOP, l ); }
+ |  '(' named_value_commalist ')'
+	{ dlist *l = L();
+	  append_int(l, -1);
+	  append_int(l, FALSE); /* ignore distinct */
+	  append_list(l, $2);
 	  $$ = _symbol_create_list( SQL_NOP, l ); }
  ;
 

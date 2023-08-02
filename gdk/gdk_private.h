@@ -184,6 +184,10 @@ gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *e
 #define GDKwarning(format, ...)					\
 	GDKtracer_log(__FILE__, __func__, __LINE__, M_WARNING,	\
 		      GDK, NULL, format, ##__VA_ARGS__)
+lng getBBPlogno(void)
+	__attribute__((__visibility__("hidden")));
+lng getBBPtransid(void)
+	__attribute__((__visibility__("hidden")));
 BUN HASHappend(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHappend_locked(BAT *b, BUN i, const void *v)

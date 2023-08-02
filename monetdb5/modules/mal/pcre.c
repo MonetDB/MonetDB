@@ -208,8 +208,6 @@ mywstrncaseeq(const char *restrict s1, const uint32_t *restrict s2, size_t n2, b
 			return (*s2 == 0);
 		if (*s2 == 0)
 			return false;
-		if (nn1 == (size_t) -1 || nn1 == (size_t) -2)
-			return true;	 /* actually an error that shouldn't happen */
 #if SIZEOF_WCHAR_T == 2
 		if (c1 > 0xFFFF || *s2 > 0xFFFF) {
 			if (c1 != *s2)
@@ -237,9 +235,6 @@ mystrcasecmp(const char *s1, const char *s2)
 			return -(nn2 != 0 && nn2 != (size_t) -1);
 		if (nn2 == 0 || nn2 == (size_t) -1)
 			return 1;
-		if (nn1 == (size_t) -1 || nn1 == (size_t) -2 ||
-			nn2 == (size_t) -1 || nn2 == (size_t) -2)
-			return 0;	 /* actually an error that shouldn't happen */
 #if SIZEOF_WCHAR_T == 2
 		if (c1 > 0xFFFF || c2 > 0xFFFF) {
 			if (c1 != c2)
@@ -264,8 +259,6 @@ mywstrcasecmp(const char *restrict s1, const uint32_t *restrict s2)
 			return -(*s2 != 0);
 		if (*s2 == 0)
 			return 1;
-		if (nn1 == (size_t) -1 || nn1 == (size_t) -2)
-			return 0;	 /* actually an error that shouldn't happen */
 #if SIZEOF_WCHAR_T == 2
 		if (c1 > 0xFFFF || *s2 > 0xFFFF) {
 			if (c1 != *s2)
@@ -1034,7 +1027,7 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 	int escaped = 0;
 	int hasWildcard = 0;
 	char *ppat;
-	int esc = esc_str[0] == '\200' ? 0 : esc_str[0]; /* should change to utf8_convert() */
+	int esc = strNil(esc_str) ? 0 : esc_str[0]; /* should change to utf8_convert() */
 	int specials;
 	int c;
 
@@ -1396,11 +1389,11 @@ re_like_build(struct RE **re, uint32_t **wpat, const char *pat, bool caseignore,
 }
 
 #define proj_scanloop(TEST)	\
-	do {	\
-		if (*s == '\200') \
+	do {					\
+		if (strNil(s))		\
 			return bit_nil; \
-		else \
-			return TEST; \
+		else				\
+			return TEST;	\
 	} while (0)
 
 static inline bit
@@ -1497,7 +1490,7 @@ pcre_like_build(regex_t *res, void *ex, const char *ppat, bool caseignore, BUN c
 #define PCRE_LIKE_BODY(LOOP_BODY, RES1, RES2) \
 	do { \
 		LOOP_BODY  \
-		if (*s == '\200') \
+		if (strNil(s))		\
 			*ret = bit_nil; \
 		else if (pos >= 0) \
 			*ret = RES1; \
@@ -1743,7 +1736,7 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				GDK_CHECK_TIMEOUT(timeoffset, counter,					\
 								  GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 				const char *restrict v = BUNtvar(bi, p - off);			\
-				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
+				if ((TEST) || ((KEEP_NULLS) && strNil(v)))				\
 					vals[cnt++] = p;									\
 			}															\
 		} else {														\
@@ -1752,7 +1745,7 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								  GOTO_LABEL_TIMEOUT_HANDLER(bailout));	\
 				oid o = canditer_next(ci);								\
 				const char *restrict v = BUNtvar(bi, o - off);			\
-				if ((TEST) || ((KEEP_NULLS) && *v == '\200'))			\
+				if ((TEST) || ((KEEP_NULLS) && strNil(v)))				\
 					vals[cnt++] = o;									\
 			}															\
 		}																\
@@ -1790,9 +1783,9 @@ pcre_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN 
 		goto bailout;
 
 	if (anti)
-		pcrescanloop(v && *v != '\200' && !PCRE_LIKESELECT_BODY, keep_nulls);
+		pcrescanloop(!strNil(v) && !PCRE_LIKESELECT_BODY, keep_nulls);
 	else
-		pcrescanloop(v && *v != '\200' && PCRE_LIKESELECT_BODY, keep_nulls);
+		pcrescanloop(!strNil(v) && PCRE_LIKESELECT_BODY, keep_nulls);
 
 bailout:
 	bat_iterator_end(&bi);
@@ -1823,26 +1816,26 @@ re_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q, BUN *r
 	if (use_strcmp) {
 		if (caseignore) {
 			if (anti)
-				pcrescanloop(v && *v != '\200' && mywstrcasecmp(v, wpat) != 0, keep_nulls);
+				pcrescanloop(!strNil(v) && mywstrcasecmp(v, wpat) != 0, keep_nulls);
 			else
-				pcrescanloop(v && *v != '\200' && mywstrcasecmp(v, wpat) == 0, keep_nulls);
+				pcrescanloop(!strNil(v) && mywstrcasecmp(v, wpat) == 0, keep_nulls);
 		} else {
 			if (anti)
-				pcrescanloop(v && *v != '\200' && strcmp(v, pat) != 0, keep_nulls);
+				pcrescanloop(!strNil(v) && strcmp(v, pat) != 0, keep_nulls);
 			else
-				pcrescanloop(v && *v != '\200' && strcmp(v, pat) == 0, keep_nulls);
+				pcrescanloop(!strNil(v) && strcmp(v, pat) == 0, keep_nulls);
 		}
 	} else {
 		if (caseignore) {
 			if (anti)
-				pcrescanloop(v && *v != '\200' && !re_match_ignore(v, re), keep_nulls);
+				pcrescanloop(!strNil(v) && !re_match_ignore(v, re), keep_nulls);
 			else
-				pcrescanloop(v && *v != '\200' && re_match_ignore(v, re), keep_nulls);
+				pcrescanloop(!strNil(v) && re_match_ignore(v, re), keep_nulls);
 		} else {
 			if (anti)
-				pcrescanloop(v && *v != '\200' && !re_match_no_ignore(v, re), keep_nulls);
+				pcrescanloop(!strNil(v) && !re_match_no_ignore(v, re), keep_nulls);
 			else
-				pcrescanloop(v && *v != '\200' && re_match_no_ignore(v, re), keep_nulls);
+				pcrescanloop(!strNil(v) && re_match_no_ignore(v, re), keep_nulls);
 		}
 	}
 

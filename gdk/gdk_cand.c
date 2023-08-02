@@ -1487,6 +1487,7 @@ BATunmask(BAT *b)
 		Heap *dels;
 		if ((dels = GDKmalloc(sizeof(Heap))) == NULL) {
 			BBPreclaim(bn);
+			bat_iterator_end(&bi);
 			return NULL;
 		}
 		*dels = (Heap) {

@@ -130,7 +130,7 @@ static gdk_return BBPdir_init(void);
 static void BBPcallbacks(void);
 
 /* two lngs of extra info in BBP.dir */
-/* these two need to be atomic because of their use in AUTHcommit() */
+/* these two are atomic because of their use in log_new() */
 static ATOMIC_TYPE BBPlogno = ATOMIC_VAR_INIT(0);
 static ATOMIC_TYPE BBPtransid = ATOMIC_VAR_INIT(0);
 

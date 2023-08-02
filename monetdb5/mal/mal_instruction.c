@@ -456,17 +456,7 @@ newInstructionArgs(MalBlkPtr mb, const char *modnme, const char *fcnnme, int arg
 
 	p = GDKzalloc(args * sizeof(p->argv[0]) + offsetof(InstrRecord, argv));
 	if (p == NULL) {
-#if 0
-		/* We are facing an hard problem.
-		 * The upper layers of the code base assume that this routine will always produce a structure.
-		 * Furthermore, failure to allocate such a small data structure indicates we are in serious trouble.
-		 * The only way out is declare it a fatal error, terminate the system to avoid crashes in all kind of places.
-		 */
-		GDKfatal(SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		exit(1);
-#else
 		return NULL;
-#endif
 	}
 	p->maxarg = args;
 	p->typechk = TYPE_UNKNOWN;

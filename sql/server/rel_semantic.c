@@ -207,6 +207,8 @@ rel_semantic(sql_query *query, symbol *s)
 				r = rel_list(sql->sa, r, nr);
 			else
 				r = nr;
+			if (sql->emode == m_prepare)
+				query->last_rel = r;
 		}
 		stack_pop_frame(sql);
 		return r;

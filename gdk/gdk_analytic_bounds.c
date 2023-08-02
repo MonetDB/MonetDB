@@ -956,6 +956,7 @@ GDKanalyticalrowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict boun
 		if (limit == GDK_lng_max) {
 			bat_iterator_end(&pi);
 			bat_iterator_end(&bi);
+			bat_iterator_end(&li);
 			return GDKanalyticalallbounds(r, b, p, preceding);
 		} else if (is_lng_nil(limit) || limit < 0) { /* this check is needed if the input is empty */
 			goto invalid_bound;

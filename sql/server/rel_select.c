@@ -3370,6 +3370,48 @@ rel_nop_(mvc *sql, sql_rel *rel, sql_exp *a1, sql_exp *a2, sql_exp *a3, sql_exp 
 	return exp_op4(sql->sa, a1,a2,a3,a4,f);
 }
 
+static sql_func *
+inplace_func(mvc *sql)
+{
+	sql_func *f = SA_NEW(sql->sa, sql_func);
+
+    *f = (sql_func) {
+        .mod = "",
+        .imp = "",
+        .type = F_PROC,
+        .lang = FUNC_LANG_INT,
+        .query = NULL,
+        .ops = sql->params,
+        .res = NULL,
+    };
+    base_init(sql->sa, &f->base, 0, true, NULL);
+    f->base.new = 1;
+    f->base.id = -1;
+    f->base.name = "-1";
+    f->instantiated = TRUE;
+	return f;
+}
+
+static list *
+reorder_args(mvc *sql, list *exps, list *names, list *params)
+{
+	list *nexps = sa_list(sql->sa);
+	for(node *n = params->h; n; n = n->next) {
+		sql_arg *a = n->data;
+		int found =0;
+		for(node *m = names->h, *o = exps->h; m && o; m = m->next, o = o->next) {
+			if (strcmp(m->data, a->name) == 0) {
+				append(nexps, o->data);
+				found = 1;
+				break;
+			}
+		}
+		if (!found)
+			return NULL;
+	}
+	return nexps;
+}
+
 static sql_exp *
 rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 {
@@ -3380,7 +3422,11 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	list *exps = sa_list(sql->sa), *tl = sa_list(sql->sa);
 	exp_kind iek = {type_value, card_column, FALSE};
 	char buf[ERRSIZE];
+	int split = (l->type == type_int && l->data.i_val == -1);
+	list *names = NULL;
 
+	if (split)
+		names = sa_list(sql->sa);
 	for (; ops; ops = ops->next, nr_args++) {
 		if (!err) { /* we need the nr_args count at the end, but if an error is found, stop calling rel_value_exp */
 			sql_exp *e = rel_value_exp(query, rel, ops->data.sym, fs|sql_farg, iek);
@@ -3389,6 +3435,10 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 				strcpy(buf, sql->errstr);
 				continue;
 			}
+			if (split) {
+				ops = ops->next;
+				append(names, ops->data.sval);
+			}
 			append(exps, e);
 			append(tl, exp_subtype(e));
 		}
@@ -3396,19 +3446,25 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	if (l->type == type_int) {
 		/* exec nr (ops)*/
 		int nr = l->data.i_val;
-		cq *q;
+		cq *q = NULL;
 
 		if (err)
 			return NULL;
-		if ((q = qc_find(sql->qc, nr))) {
+		if (nr == -1 || (q = qc_find(sql->qc, nr))) {
 			list *nexps = new_exp_list(sql->sa);
-			sql_func *f = q->f;
+			sql_func *f = q?q->f:inplace_func(sql);
+			list *ops = q?f->ops:sql->params;
 
 			tl = sa_list(sql->sa);
-			if (list_length(f->ops) != list_length(exps))
-				return sql_error(sql, 02, SQLSTATE(42000) "EXEC called with wrong number of arguments: expected %d, got %d", list_length(f->ops), list_length(exps));
-			if (exps->h && f->ops) {
-				for (node *n = exps->h, *m = f->ops->h; n && m; n = n->next, m = m->next) {
+			if (list_length(ops) != list_length(exps))
+				return sql_error(sql, 02, SQLSTATE(42000) "EXEC called with wrong number of arguments: expected %d, got %d", list_length(ops), list_length(exps));
+			if (split) {
+				exps = reorder_args(sql, exps, names, ops);
+				if (!exps)
+					return sql_error(sql, 02, SQLSTATE(42000) "EXEC called with wrong arguments");
+			}
+			if (exps->h && ops) {
+				for (node *n = exps->h, *m = ops->h; n && m; n = n->next, m = m->next) {
 					sql_arg *a = m->data;
 					sql_exp *e = n->data;
 					sql_subtype *ntp = &a->type;
@@ -3423,9 +3479,11 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 					append(tl, exp_subtype(e));
 				}
 			}
+
 			if (err)
 				return NULL;
-			sql->type = q->type;
+			if (q)
+				sql->type = q->type;
 			return exp_op(sql->sa, list_empty(nexps) ? NULL : nexps, sql_dup_subfunc(sql->sa, f, tl, NULL));
 		} else {
 			return sql_error(sql, 02, SQLSTATE(42000) "EXEC: PREPARED Statement missing '%d'", nr);
