@@ -2299,9 +2299,9 @@ func_def:
 				}
 			}
 			else if (l == 'J' || l == 'j')
-				lang = FUNC_LANG_J;
+				lang = FUNC_LANG_J;	/* Javascript */
 			else {
-				sqlformaterror(m, "Language name R, C, PYTHON[3], PYTHON[3]_MAP or J(avascript):expected, received '%c'", l);
+				sqlformaterror(m, "Language name C, CPP, PYTHON, PYTHON3, R or J(avascript) expected, received '%s'", $9);
 			}
 
 			append_list(f, $3);
