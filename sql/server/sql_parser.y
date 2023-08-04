@@ -173,9 +173,8 @@ uescape_xform(char *restrict s, const char *restrict esc)
 %parse-param { mvc *m }
 %lex-param { void *m }
 
-/* only possible from bison 3.6 and up
+/* only possible from bison 3.6 and up */
 %define parse.error verbose
-*/
 
 /* reentrant parser */
 %define api.pure
@@ -265,6 +264,7 @@ int yydebug=1;
 	merge_match_clause
 	merge_stmt
 	merge_update_or_delete
+	multi_arg_func
 	null
 	object_name
 	operation
@@ -437,6 +437,7 @@ int yydebug=1;
 	XML_PI_target
 	opt_optimizer
 	opt_default_role
+	multi_arg_func_name
 
 %type <l>
 	argument_list
@@ -656,6 +657,7 @@ int yydebug=1;
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE SNAPSHOT
+%token  LEAST GREATEST
 
 %token <sval> ASYMMETRIC SYMMETRIC ORDER ORDERED BY IMPRINTS
 %token <operation> ESCAPE UESCAPE HAVING sqlGROUP ROLLUP CUBE sqlNULL
@@ -4291,6 +4293,7 @@ value_exp:
  |  string_funcs
  |  XML_value_function
  |  odbc_scalar_func_escape
+ |  multi_arg_func
  ;
 
 param:
@@ -6773,6 +6776,28 @@ odbc_tsi_qualifier:
     | SQL_TSI_YEAR
 	{ $$ = iyear; }
 ;
+
+multi_arg_func_name:
+    LEAST	{ $$ = sa_strdup(SA, "least"); }
+ |  GREATEST 	{ $$ = sa_strdup(SA, "greatest"); }		
+ ;
+
+multi_arg_func:
+    multi_arg_func_name '(' case_search_condition_commalist ')' /* create nested calls of binary function */
+		{ dlist *args = $3; 
+		  dnode *f = args->h;
+		  symbol *cur = f->data.sym;
+ 		  for (dnode *dn = f->next; dn; dn = dn->next) {
+			dlist *l = L();
+	  		append_list( l, append_string(L(), $1));
+	  		append_int(l, FALSE); /* ignore distinct */
+	  		append_symbol(l, cur);
+	  		append_symbol(l, dn->data.sym);
+	  		cur = _symbol_create_list( SQL_BINOP, l );
+		  }
+		  $$ = cur;
+	        }
+ ;
 
 %%
 
