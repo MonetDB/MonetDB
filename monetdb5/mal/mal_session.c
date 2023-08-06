@@ -404,7 +404,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 	c->protocol = protocol;
 	c->blocksize = blocksize;
 
-	if (!GDKembedded() && c->initClient) {
+	if (c->initClient) {
 		if ((msg = c->initClient(c, passwd, challenge, algo)) != MAL_SUCCEED) {
 			mnstr_printf(fout, "!%s\n", msg);
 			if (passwd)
