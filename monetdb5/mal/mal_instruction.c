@@ -474,6 +474,7 @@ newInstructionArgs(MalBlkPtr mb, const char *modnme, const char *fcnnme, int arg
 		 * with modifier */
 		.token = ASSIGNsymbol,
 	};
+	memset(p->argv, 0, args * sizeof(p->argv[0]));
 	p->argv[0] = -1;
 	return p;
 }
