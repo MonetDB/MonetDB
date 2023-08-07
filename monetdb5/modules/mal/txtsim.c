@@ -57,23 +57,24 @@ damerau_putat(int *pOrigin, int col, int row, int nCols, int x)
 }
 
 static str
-dameraulevenshtein(int *res, str *S, str *T, int insdel_cost, int replace_cost, int transpose_cost)
+dameraulevenshtein(int *res, str *S, str *T, int insdel_cost, int replace_cost,
+				   int transpose_cost)
 {
 	char *s = *S;
 	char *t = *T;
-	int *d;         /* pointer to matrix */
-	int n;          /* length of s */
-	int m;          /* length of t */
-	int i;          /* iterates through s */
-	int j;          /* iterates through t */
-	char s_i;       /* ith character of s */
-	char t_j;       /* jth character of t */
-	int cost;       /* cost */
-	int cell;       /* contents of target cell */
-	int above;      /* contents of cell immediately above */
-	int left;       /* contents of cell immediately to left */
-	int diag;       /* contents of cell immediately above and to left */
-	int sz;         /* number of cells in matrix */
+	int *d;						/* pointer to matrix */
+	int n;						/* length of s */
+	int m;						/* length of t */
+	int i;						/* iterates through s */
+	int j;						/* iterates through t */
+	char s_i;					/* ith character of s */
+	char t_j;					/* jth character of t */
+	int cost;					/* cost */
+	int cell;					/* contents of target cell */
+	int above;					/* contents of cell immediately above */
+	int left;					/* contents of cell immediately to left */
+	int diag;					/* contents of cell immediately above and to left */
+	int sz;						/* number of cells in matrix */
 	int diag2 = 0, cost2 = 0;
 
 	if (strNil(*S) || strNil(*T)) {
@@ -82,7 +83,7 @@ dameraulevenshtein(int *res, str *S, str *T, int insdel_cost, int replace_cost, 
 	}
 
 	/* Step 1 */
-	n = (int) strlen(s);	/* 64bit: assume strings are less than 2 GB */
+	n = (int) strlen(s);		/* 64bit: assume strings are less than 2 GB */
 	m = (int) strlen(t);
 	if (n == 0) {
 		*res = m;
@@ -94,8 +95,8 @@ dameraulevenshtein(int *res, str *S, str *T, int insdel_cost, int replace_cost, 
 	}
 	sz = (n + 1) * (m + 1) * sizeof(int);
 	d = (int *) GDKmalloc(sz);
-	if ( d == NULL)
-		throw(MAL,"levenshtein", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (d == NULL)
+		throw(MAL, "levenshtein", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* Step 2 */
 	for (i = 0; i <= n; i++) {
@@ -128,9 +129,11 @@ dameraulevenshtein(int *res, str *S, str *T, int insdel_cost, int replace_cost, 
 				} else {
 					cost2 = 2;
 				}
-				cell = MIN4(above + insdel_cost, left + insdel_cost, diag + cost, diag2 + cost2);
+				cell = MIN4(above + insdel_cost, left + insdel_cost,
+							diag + cost, diag2 + cost2);
 			} else {
-				cell = MIN3(above + insdel_cost, left + insdel_cost, diag + cost);
+				cell = MIN3(above + insdel_cost, left + insdel_cost,
+							diag + cost);
 			}
 			damerau_putat(d, i, j, n, cell);
 		}
@@ -154,12 +157,14 @@ TXTSIMdameraulevenshtein2(int *result, str *s, str *t)
 }
 
 static str
-TXTSIMdameraulevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TXTSIMdameraulevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+						 InstrPtr pci)
 {
-	(void)cntxt;
-	(void)mb;
+	(void) cntxt;
+	(void) mb;
 	int *res = getArgReference_int(stk, pci, 0);
-	str *X = getArgReference_str(stk, pci, 1), *Y = getArgReference_str(stk, pci, 2);
+	str *X = getArgReference_str(stk, pci, 1),
+		*Y = getArgReference_str(stk, pci, 2);
 	int insdel_cost, replace_cost, transpose_cost;
 
 	assert(pci->argc == 3 || pci->argc == 6);
@@ -168,18 +173,19 @@ TXTSIMdameraulevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		insdel_cost = 1;
 		replace_cost = 1;
 		transpose_cost = 2;
-	}
-	else {
+	} else {
 		insdel_cost = *getArgReference_int(stk, pci, 3);
 		replace_cost = *getArgReference_int(stk, pci, 4);
 		transpose_cost = *getArgReference_int(stk, pci, 5);
 	}
 
-	return dameraulevenshtein(res, X, Y, insdel_cost, replace_cost, transpose_cost);
+	return dameraulevenshtein(res, X, Y, insdel_cost, replace_cost,
+							  transpose_cost);
 }
 
 static inline str
-levenshtein(int *res, const str *X, const str *Y, int insdel_cost, int replace_cost, int max)
+levenshtein(int *res, const str *X, const str *Y, int insdel_cost,
+			int replace_cost, int max)
 {
 	str x = *X, y = *Y, x_iter = x;
 	unsigned int xlen, ylen, i = 0, j = 0;
@@ -202,7 +208,7 @@ levenshtein(int *res, const str *X, const str *Y, int insdel_cost, int replace_c
 	if (column == NULL)
 		throw(MAL, "levenshtein", MAL_MALLOC_FAIL);
 
-    for (i = 1; i <= xlen; i++)
+	for (i = 1; i <= xlen; i++)
 		column[i] = i;
 
 	for (j = 1; j <= ylen; j++) {
@@ -228,10 +234,10 @@ levenshtein(int *res, const str *X, const str *Y, int insdel_cost, int replace_c
 		(*x)++;
 	}
 
-    *res = column[xlen];
+	*res = column[xlen];
 	GDKfree(column);
 	return MAL_SUCCEED;
- illegal:
+  illegal:
 	/* UTF8_GETCHAR bail */
 	GDKfree(column);
 	throw(MAL, "txtsim.levenshtein", "Illegal unicode code point");
@@ -239,8 +245,9 @@ levenshtein(int *res, const str *X, const str *Y, int insdel_cost, int replace_c
 
 /* Levenshtein OP but with column externaly allocated */
 static inline int
-levenshtein2(const str X, const str Y, const size_t xlen, const size_t ylen, unsigned int *column,
-			 const int insdel_cost, const int replace_cost, const int max)
+levenshtein2(const str X, const str Y, const size_t xlen, const size_t ylen,
+			 unsigned int *column, const int insdel_cost,
+			 const int replace_cost, const int max)
 {
 	str x = X, y = Y;
 	str x_iter = x;
@@ -254,7 +261,7 @@ levenshtein2(const str X, const str Y, const size_t xlen, const size_t ylen, uns
 	if (xlen == ylen && (strcmp(x, y) == 0))
 		return 0;
 
-    for (i = 1; i <= xlen; i++)
+	for (i = 1; i <= xlen; i++)
 		column[i] = i;
 
 	for (j = 1; j <= ylen; j++) {
@@ -277,7 +284,7 @@ levenshtein2(const str X, const str Y, const size_t xlen, const size_t ylen, uns
 		(*x)++;
 	}
 	return column[xlen];
- illegal:
+  illegal:
 	/* UTF8_GETCHAR bail */
 	return INT_MAX;
 }
@@ -285,26 +292,26 @@ levenshtein2(const str X, const str Y, const size_t xlen, const size_t ylen, uns
 static str
 TXTSIMlevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void)cntxt;
-	(void)mb;
+	(void) cntxt;
+	(void) mb;
 	int *res = getArgReference_int(stk, pci, 0);
-	str *X = getArgReference_str(stk, pci, 1), *Y = getArgReference_str(stk, pci, 2);
+	str *X = getArgReference_str(stk, pci, 1),
+		*Y = getArgReference_str(stk, pci, 2);
 	int insdel_cost, replace_cost;
 
 	if (pci->argc == 3) {
 		insdel_cost = 1;
 		replace_cost = 1;
-	}
-	else if (pci->argc == 5 || pci->argc == 6) {
+	} else if (pci->argc == 5 || pci->argc == 6) {
 		insdel_cost = *getArgReference_int(stk, pci, 3);
 		replace_cost = *getArgReference_int(stk, pci, 4);
 		/* Backwards compatibility purposes */
 		if (pci->argc == 6) {
 			int transposition_cost = *getArgReference_int(stk, pci, 5);
-			return dameraulevenshtein(res, X, Y, insdel_cost, replace_cost, transposition_cost);
+			return dameraulevenshtein(res, X, Y, insdel_cost, replace_cost,
+									  transposition_cost);
 		}
-	}
-	else {
+	} else {
 		throw(MAL, "txtsim.levenshtein", RUNTIME_SIGNATURE_MISSING);
 	}
 
@@ -314,22 +321,21 @@ TXTSIMlevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 TXTSIMmaxlevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void)cntxt;
-	(void)mb;
+	(void) cntxt;
+	(void) mb;
 	int *res = getArgReference_int(stk, pci, 0);
-	const str *X = getArgReference_str(stk, pci, 1), *Y = getArgReference_str(stk, pci, 2);
+	const str *X = getArgReference_str(stk, pci, 1),
+		*Y = getArgReference_str(stk, pci, 2);
 	const int *k = getArgReference_int(stk, pci, 3);
 	int insdel_cost, replace_cost;
 
 	if (pci->argc == 4) {
 		insdel_cost = 1;
 		replace_cost = 1;
-	}
-	else if (pci->argc == 6) {
+	} else if (pci->argc == 6) {
 		insdel_cost = *getArgReference_int(stk, pci, 4);
 		replace_cost = *getArgReference_int(stk, pci, 5);
-	}
-	else {
+	} else {
 		throw(MAL, "txtsim.maxlevenshtein", RUNTIME_SIGNATURE_MISSING);
 	}
 
@@ -345,31 +351,35 @@ BATTXTSIMmaxlevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *lid = getArgReference_bat(stk, pci, 1);
 	bat *rid = getArgReference_bat(stk, pci, 2);
 	int *k = getArgReference_int(stk, pci, 3);
-	int insdel_cost = pci->argc == 6? *getArgReference_int(stk, pci, 4) : 1,
-		replace_cost = pci->argc == 6? *getArgReference_int(stk, pci, 5) : 1;
+	int insdel_cost = pci->argc == 6 ? *getArgReference_int(stk, pci, 4) : 1,
+			replace_cost = pci->argc == 6 ? *getArgReference_int(stk, pci, 5) : 1;
 	BAT *left = NULL, *right = NULL, *bn = NULL;
-	BUN p,q;
+	BUN p, q;
 	BATiter li, ri;
 	unsigned int *buffer = NULL;
 	str lv, rv, msg = MAL_SUCCEED;
-	size_t llen=0, rlen=0, maxlen=0;
+	size_t llen = 0, rlen = 0, maxlen = 0;
 	int d;
 	bit v;
 
 	if ((left = BATdescriptor(*lid)) == NULL) {
-		msg = createException(MAL, "battxtsim.maxlevenshtein", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "battxtsim.maxlevenshtein",
+							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit;
 	}
 	if ((right = BATdescriptor(*rid)) == NULL) {
-		msg = createException(MAL, "battxtsim.maxlevenshtein", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "battxtsim.maxlevenshtein",
+							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit;
 	}
 	if (BATcount(left) != BATcount(right)) {
-		msg = createException(MAL, "battxtsim.maxlevenshtein", "Columns must be aligned");
+		msg = createException(MAL, "battxtsim.maxlevenshtein",
+							  "Columns must be aligned");
 		goto exit;
 	}
 	if ((bn = COLnew(0, TYPE_bit, BATcount(left), TRANSIENT)) == NULL) {
-		msg = createException(MAL, "battxtsim.maxlevenshtein", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "battxtsim.maxlevenshtein",
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto exit;
 	}
 
@@ -380,7 +390,7 @@ BATTXTSIMmaxlevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		rv = (str) BUNtail(ri, p);
 		llen = UTF8_strlen(lv);
 		rlen = UTF8_strlen(rv);
-		if (abs((int)llen - (int)rlen) > (int)*k)
+		if (abs((int) llen - (int) rlen) > (int) *k)
 			v = false;
 		else {
 			if (llen > maxlen) {
@@ -389,18 +399,21 @@ BATTXTSIMmaxlevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (tmp == NULL) {
 					bat_iterator_end(&li);
 					bat_iterator_end(&ri);
-					msg = createException(MAL, "battxtsim.maxlevenshtein", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					msg = createException(MAL, "battxtsim.maxlevenshtein",
+										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto exit;
 				}
 				buffer = tmp;
 			}
-			d = levenshtein2(lv, rv, llen, rlen, buffer, insdel_cost, replace_cost, (int)*k);
-			v = (bit)(d <= (int)*k);
+			d = levenshtein2(lv, rv, llen, rlen, buffer, insdel_cost,
+							 replace_cost, (int) *k);
+			v = (bit) (d <= (int) *k);
 		}
-		if (BUNappend(bn, (const void *)&v, false) != GDK_SUCCEED) {
+		if (BUNappend(bn, (const void *) &v, false) != GDK_SUCCEED) {
 			bat_iterator_end(&li);
 			bat_iterator_end(&ri);
-			msg = createException(MAL, "battxtsim.maxlevenshtein", "BUNappend failed");
+			msg = createException(MAL, "battxtsim.maxlevenshtein",
+								  "BUNappend failed");
 			goto exit;
 		}
 	}
@@ -409,7 +422,7 @@ BATTXTSIMmaxlevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	*res = bn->batCacheid;
 	BBPkeepref(bn);
- exit:
+  exit:
 	GDKfree(buffer);
 	BBPreclaim(left);
 	BBPreclaim(right);
@@ -422,18 +435,18 @@ BATTXTSIMmaxlevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #define JARO_WINKLER_PREFIX_LEN 4
 
 typedef struct {
-	size_t matches;   /* accumulator for number of matches for this item */
-	BUN o;            /* position in the BAT */
-	str val;          /* string value */
-	int *cp_sequence; /* string as array of Unicode codepoints */
-	int len;          /* string length in characters (multi-byte characters count as 1)*/
-	int cp_seq_len;   /* string length in bytes */
-	uint64_t abm;     /* 64bit alphabet bitmap */
-	int abm_popcount; /* hamming weight of abm */
+	size_t matches;				/* accumulator for number of matches for this item */
+	BUN o;						/* position in the BAT */
+	str val;					/* string value */
+	int *cp_sequence;			/* string as array of Unicode codepoints */
+	int len;					/* string length in characters (multi-byte characters count as 1) */
+	int cp_seq_len;				/* string length in bytes */
+	uint64_t abm;				/* 64bit alphabet bitmap */
+	int abm_popcount;			/* hamming weight of abm */
 } str_item;
 
-static inline
-int popcount64(uint64_t x)
+static inline int
+popcount64(uint64_t x)
 {
 	x = (x & 0x5555555555555555ULL) + ((x >> 1) & 0x5555555555555555ULL);
 	x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
@@ -442,9 +455,9 @@ int popcount64(uint64_t x)
 }
 
 static int
-str_item_lenrev_cmp(const void * a, const void * b)
+str_item_lenrev_cmp(const void *a, const void *b)
 {
-	return ((int)((str_item *)b)->len - (int)((str_item *)a)->len);
+	return ((int) ((str_item *) b)->len - (int) ((str_item *) a)->len);
 }
 
 static str
@@ -464,7 +477,7 @@ str_2_codepointseq(str_item *s)
 		s->cp_sequence[i] = c;
 	}
 	return MAL_SUCCEED;
-illegal:
+  illegal:
 	throw(MAL, "str_2_byteseq", SQLSTATE(42000) "Illegal unicode code point");
 }
 
@@ -475,7 +488,7 @@ str_alphabet_bitmap(str_item *s)
 
 	s->abm = 0ULL;
 
-	for (i=0; i < s->len; i++)
+	for (i = 0; i < s->len; i++)
 		s->abm |= 1ULL << (s->cp_sequence[i] % 64);
 
 	s->abm_popcount = popcount64(s->abm);
@@ -491,16 +504,17 @@ jarowinkler_lp(const str_item *a, const str_item *b)
 	for (int i = 0; i < MIN3(a->len, b->len, JARO_WINKLER_PREFIX_LEN); i++)
 		l += (a->cp_sequence[i] == b->cp_sequence[i]);
 
-	return (double)l * JARO_WINKLER_SCALING_FACTOR;
+	return (double) l *JARO_WINKLER_SCALING_FACTOR;
 }
 
 static inline double
-jarowinkler(const str_item *x, const str_item *y, double lp, int *x_flags, int *y_flags)
+jarowinkler(const str_item *x, const str_item *y, double lp, int *x_flags,
+			int *y_flags)
 {
 	int xlen = x->len, ylen = y->len;
 	int range = MAX(0, MAX(xlen, ylen) / 2 - 1);
 	int *x1 = x->cp_sequence, *x2 = y->cp_sequence;
-	int m=0, t=0;
+	int m = 0, t = 0;
 	int i, j, l;
 	double dw;
 
@@ -540,7 +554,8 @@ jarowinkler(const str_item *x, const str_item *y, double lp, int *x_flags, int *
 	t /= 2;
 
 	/* jaro similarity */
-	dw = (((double)m / xlen) + ((double)m / ylen) + ((double)(m - t) / m)) / 3.0;
+	dw = (((double) m / xlen) + ((double) m / ylen) +
+		  ((double) (m - t) / m)) / 3.0;
 	/* calculate common string prefix up to prefixlen chars */
 	if (lp == -1)
 		lp = jarowinkler_lp(x, y);
@@ -574,7 +589,7 @@ TXTSIMjarowinkler(dbl *res, str *x, str *y)
 
 	*res = jarowinkler(&xi, &yi, -1, x_flags, y_flags);
 
-bailout:
+  bailout:
 	GDKfree(x_flags);
 	GDKfree(y_flags);
 	GDKfree(xi.cp_sequence);
@@ -644,7 +659,8 @@ TXTSIMminjarowinkler(bit *res, str *x, str *y, const dbl *threshold)
 		} while (false)
 
 static inline int
-maxlevenshtein_extcol_stritem(const str_item *si1, const str_item *si2, unsigned int *column, const int k)
+maxlevenshtein_extcol_stritem(const str_item *si1, const str_item *si2,
+							  unsigned int *column, const int k)
 {
 	unsigned int lastdiag, olddiag;
 	int c1, c2, x, y;
@@ -653,26 +669,27 @@ maxlevenshtein_extcol_stritem(const str_item *si1, const str_item *si2, unsigned
 	int *s1 = si1->cp_sequence, *s2 = si2->cp_sequence;
 	/* first test if the strings are equal */
 	if (s1len == s2len) {
-		for (x=0; x<s1len; x++)
-			if (s1[x]!=s2[x]) break;
+		for (x = 0; x < s1len; x++)
+			if (s1[x] != s2[x])
+				break;
 		if (x == s1len)
 			return 0;
 	}
 	for (y = 1; y <= s1len; y++)
 		column[y] = y;
 	for (x = 1; x <= s2len; x++) {
-		c2 = s2[x-1];
+		c2 = s2[x - 1];
 		column[0] = x;
 		min = INT_MAX;
-		for (y = 1, lastdiag = x-1; y <= s1len; y++) {
+		for (y = 1, lastdiag = x - 1; y <= s1len; y++) {
 			olddiag = column[y];
-			c1 = s1[y-1];
-			column[y] = MIN3(column[y] + 1, column[y-1] + 1, lastdiag + (c1 == c2 ? 0 : 1));
+			c1 = s1[y - 1];
+			column[y] = MIN3(column[y] + 1, column[y - 1] + 1, lastdiag + (c1 == c2 ? 0 : 1));
 			lastdiag = olddiag;
 			if (lastdiag < min)
 				min = lastdiag;
 		}
-		if (min > (unsigned int)k)
+		if (min > (unsigned int) k)
 			return INT_MAX;
 	}
 	return column[s1len];
@@ -688,7 +705,7 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 	int lwidth, rwidth, d;
 	str_item *lsi = NULL, *rsi = NULL;
 	str msg = MAL_SUCCEED;
-	unsigned int *buffer=NULL;
+	unsigned int *buffer = NULL;
 
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(ATOMtype(l->ttype) == TYPE_str);
@@ -709,7 +726,8 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 	if ((r1t = COLnew(0, TYPE_oid, lci.ncand, TRANSIENT)) == NULL ||
 		(r2t = COLnew(0, TYPE_oid, rci.ncand, TRANSIENT)) == NULL) {
 		reclaim_bats(2, r1t, r2t);
-		msg = createException(MAL, "txtsim.maxlevenshteinjoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "txtsim.maxlevenshteinjoin",
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto exit;
 	}
 
@@ -719,7 +737,8 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 	if ((lsi = GDKmalloc(lci.ncand * sizeof(str_item))) == NULL ||
 		(rsi = GDKmalloc(rci.ncand * sizeof(str_item))) == NULL) {
 		reclaim_bats(2, r1t, r2t);
-		msg = createException(MAL, "txtsim.maxlevenshteinjoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "txtsim.maxlevenshteinjoin",
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto exit;
 	}
 
@@ -729,7 +748,8 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 	qsort(rsi, rci.ncand, sizeof(str_item), str_item_lenrev_cmp);
 
 	if ((buffer = GDKmalloc((lsi[0].len + 1) * sizeof(int))) == NULL) {
-		msg = createException(MAL, "txtsim.maxlevenshteinjoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "txtsim.maxlevenshteinjoin",
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto exit;
 	}
 
@@ -739,16 +759,19 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 			/* first and cheapest filter */
 			if ((lsi[n].len) > k + rsi[rstart].len) {
 				lstart++;
-				continue; /* no possible matches yet for this r */
+				continue;		/* no possible matches yet for this r */
 			} else if (rsi[rstart].len > k + lsi[n].len) {
-				break; /* no more possible matches from this r */
+				break;			/* no more possible matches from this r */
 			}
 			/* filter by comparing alphabet bitmaps (imprecise but fast filter) */
-			d = MAX(lsi[n].abm_popcount, rsi[rstart].abm_popcount) - popcount64(lsi[n].abm & rsi[rstart].abm);
+			d = MAX(lsi[n].abm_popcount,
+					rsi[rstart].abm_popcount) -
+					popcount64(lsi[n].abm & rsi[rstart].abm);
 			if (d > k)
 				continue;
 			/* final and most expensive test: Levenshtein distance */
-			d = maxlevenshtein_extcol_stritem(&lsi[n], &rsi[rstart], buffer, (const unsigned int)k);
+			d = maxlevenshtein_extcol_stritem(&lsi[n], &rsi[rstart], buffer,
+											  (const unsigned int) k);
 			if (d > k)
 				continue;
 			/* The match test succeeded */
@@ -756,12 +779,14 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 			rsi[rstart].matches++;
 			if (bunfastappTYPE(oid, r1t, &(lsi[n].o)) != GDK_SUCCEED) {
 				reclaim_bats(2, r1t, r2t);
-				msg = createException(MAL, "txtsim.maxlevenshteinjoin", OPERATION_FAILED "Failed bun append");
+				msg = createException(MAL, "txtsim.maxlevenshteinjoin",
+									  OPERATION_FAILED "Failed bun append");
 				goto exit;
 			}
 			if (bunfastappTYPE(oid, r2t, &(rsi[rstart].o)) != GDK_SUCCEED) {
 				reclaim_bats(2, r1t, r2t);
-				msg = createException(MAL, "txtsim.maxlevenshteinjoin", OPERATION_FAILED "Failed bun append");
+				msg = createException(MAL, "txtsim.maxlevenshteinjoin",
+									  OPERATION_FAILED "Failed bun append");
 				goto exit;
 			}
 		}
@@ -771,7 +796,7 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 	*r1 = r1t;
 	*r2 = r2t;
 
- exit:
+  exit:
 	for (n = 0; lsi && n < lci.ncand; n++)
 		GDKfree(lsi[n].cp_sequence);
 	for (n = 0; rsi && n < rci.ncand; n++)
@@ -783,35 +808,38 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 }
 
 static str
-TXTSIMmaxlevenshteinjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *kid, const bat *slid, const bat *srid,
-						 const bit *nil_matches, const lng *estimate, const bit *anti)
+TXTSIMmaxlevenshteinjoin(bat *r1, bat *r2, const bat *lid, const bat *rid,
+						 const bat *kid, const bat *slid, const bat *srid,
+						 const bit *nil_matches, const lng *estimate,
+						 const bit *anti)
 {
-	(void)nil_matches;
-	(void)estimate;
-	(void)anti;
+	(void) nil_matches;
+	(void) estimate;
+	(void) anti;
 
 	BAT *bleft = NULL, *bright = NULL, *bk = NULL,
-		*bcandleft = NULL, *bcandright = NULL,
-		*r1t = NULL, *r2t = NULL;
+			*bcandleft = NULL, *bcandright = NULL, *r1t = NULL, *r2t = NULL;
 	int k = 0;
 	str msg = MAL_SUCCEED;
 
 	if ((bleft = BATdescriptor(*lid)) == NULL ||
 		(bright = BATdescriptor(*rid)) == NULL ||
 		(bk = BATdescriptor(*kid)) == NULL) {
-		msg = createException(MAL, "txtsim.maxlevenshteinjoin", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "txtsim.maxlevenshteinjoin",
+							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit;
 	}
 
 	if ((*slid != bat_nil && (bcandleft = BATdescriptor(*slid)) == NULL) ||
 		(*srid != bat_nil && (bcandright = BATdescriptor(*srid)) == NULL)) {
-		msg = createException(MAL, "txtsim.maxlevenshteinjoin", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "txtsim.maxlevenshteinjoin",
+							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit;
 	}
 
 	if (BATcount(bk) > 0) {
 		BATiter ki = bat_iterator(bk);
-		k = *(int *) BUNtloc(ki,0);
+		k = *(int *) BUNtloc(ki, 0);
 		bat_iterator_end(&ki);
 	}
 
@@ -823,7 +851,7 @@ TXTSIMmaxlevenshteinjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const
 	BBPkeepref(r1t);
 	BBPkeepref(r2t);
 
- exit:
+  exit:
 	reclaim_bats(5, bleft, bright, bcandleft, bcandright, bk);
 	if (msg != MAL_SUCCEED)
 		reclaim_bats(2, r1t, r2t);
@@ -831,25 +859,29 @@ TXTSIMmaxlevenshteinjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const
 }
 
 static inline void
-jarowinkler_rangebounds(int *lb, int *ub, const str_item *a, const double lp, const double threshold)
+jarowinkler_rangebounds(int *lb, int *ub, const str_item *a, const double lp,
+						const double threshold)
 {
-	*lb = (int)floor(3.0 * a->len * (threshold - lp) / (1.0 - lp) - (2.0 * a->len));
-	*ub = (int)ceil(a->len / ((3.0 * (threshold - lp) / (1.0 - lp)) - 2.0 ));
+	*lb = (int) floor(3.0 * a->len * (threshold - lp) / (1.0 - lp) -
+					  (2.0 * a->len));
+	*ub = (int) ceil(a->len / ((3.0 * (threshold - lp) / (1.0 - lp)) - 2.0));
 }
 
 /* version with given lp and m, and t = 0*/
 static inline double
-jarowinkler_lp_m_t0(const str_item *lsi, const str_item *rsi, double lp, int m) {
+jarowinkler_lp_m_t0(const str_item *lsi, const str_item *rsi, double lp, int m)
+{
 	double dw;
 	/* Jaro similarity */
-	dw = (((double)m / lsi->len) + ((double)m / rsi->len) + 1.0) / 3.0;
+	dw = (((double) m / lsi->len) + ((double) m / rsi->len) + 1.0) / 3.0;
 	/* Jaro-Winkler similarity */
 	dw = dw + (lp * (1 - dw));
 	return dw;
 }
 
 static str
-minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const dbl threshold)
+minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
+				   const dbl threshold)
 {
 	BAT *r1t = NULL, *r2t = NULL;
 	BUN n;
@@ -881,7 +913,8 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const d
 	if ((r1t = COLnew(0, TYPE_oid, lci.ncand, TRANSIENT)) == NULL ||
 		(r2t = COLnew(0, TYPE_oid, rci.ncand, TRANSIENT)) == NULL) {
 		reclaim_bats(2, r1t, r2t);
-		msg = createException(MAL, "txtsim.minjarowinklerjoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "txtsim.minjarowinklerjoin",
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto exit;
 	}
 
@@ -891,7 +924,8 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const d
 	if ((ssl = GDKmalloc(lci.ncand * sizeof(str_item))) == NULL ||
 		(ssr = GDKmalloc(rci.ncand * sizeof(str_item))) == NULL) {
 		reclaim_bats(2, r1t, r2t);
-		msg = createException(MAL, "txtsim.maxlevenshteinjoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "txtsim.maxlevenshteinjoin",
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto exit;
 	}
 
@@ -902,10 +936,10 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const d
 
 	if ((x_flags = GDKmalloc(ssl[0].len * sizeof(int))) == NULL ||
 		(y_flags = GDKmalloc(ssr[0].len * sizeof(int))) == NULL) {
-		msg = createException(MAL, "txtsim.minjarowinklerjoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "txtsim.minjarowinklerjoin",
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto exit;
 	}
-
 	// lp used for filters. Use -1 for actual JW (forces to compute actual lp)
 	lp = JARO_WINKLER_PREFIX_LEN * JARO_WINKLER_SCALING_FACTOR;
 
@@ -917,11 +951,11 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const d
 			/* Update sliding window */
 			/* This is the first and cheapest filter */
 			if (sliding_window_allowed) {
-				if (ssl[n].len > ub) { /* no possible matches yet for this r */
+				if (ssl[n].len > ub) {	/* no possible matches yet for this r */
 					lstart++;
 					continue;
 				}
-				if (ssl[n].len < lb) { /* no more possible matches from this r */
+				if (ssl[n].len < lb) {	/* no more possible matches from this r */
 					break;
 				}
 			}
@@ -929,7 +963,8 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const d
 			/* find the best possible m: the length of the shorter string
 			 * minus the number of characters that surely cannot match */
 			shortest = ssl[n].len < ssr[rstart].len ? ssl[n] : ssr[rstart];
-			m = shortest.len - popcount64(shortest.abm - (ssl[n].abm & ssr[rstart].abm));
+			m = shortest.len - popcount64(shortest.abm -
+										  (ssl[n].abm & ssr[rstart].abm));
 			/* equivalent to:
 			   m = shortest.len - popcount64(shortest.abm & (~(ssl[n].abm & ssr[rstart].abm))); */
 			s = jarowinkler_lp_m_t0(&ssl[n], &ssr[rstart], lp, m);
@@ -946,12 +981,14 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const d
 			ssr[rstart].matches++;
 			if (bunfastappTYPE(oid, r1t, &(ssl[n].o)) != GDK_SUCCEED) {
 				reclaim_bats(2, r1t, r2t);
-				msg = createException(MAL, "txtsim.maxlevenshteinjoin", OPERATION_FAILED "Failed bun append");
+				msg = createException(MAL, "txtsim.maxlevenshteinjoin",
+									  OPERATION_FAILED "Failed bun append");
 				goto exit;
 			}
 			if (bunfastappTYPE(oid, r2t, &(ssr[rstart].o)) != GDK_SUCCEED) {
 				reclaim_bats(2, r1t, r2t);
-				msg = createException(MAL, "txtsim.maxlevenshteinjoin", OPERATION_FAILED "Failed bun append");
+				msg = createException(MAL, "txtsim.maxlevenshteinjoin",
+									  OPERATION_FAILED "Failed bun append");
 				goto exit;
 			}
 		}
@@ -961,7 +998,7 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const d
 	*r1 = r1t;
 	*r2 = r2t;
 
- exit:
+  exit:
 	for (n = 0; n < lci.ncand; n++)
 		GDKfree(ssl[n].cp_sequence);
 	for (n = 0; n < rci.ncand; n++)
@@ -974,35 +1011,39 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const d
 }
 
 static str
-TXTSIMminjarowinklerjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *thresholdid, const bat *slid, const bat *srid,
-						 const bit *nil_matches, const lng *estimate, const bit *anti)
+TXTSIMminjarowinklerjoin(bat *r1, bat *r2, const bat *lid, const bat *rid,
+						 const bat *thresholdid, const bat *slid,
+						 const bat *srid, const bit *nil_matches,
+						 const lng *estimate, const bit *anti)
 {
-	(void)nil_matches;
-	(void)estimate;
-	(void)anti;
+	(void) nil_matches;
+	(void) estimate;
+	(void) anti;
 
 	BAT *bleft = NULL, *bright = NULL,
-		*bcandleft = NULL, *bcandright = NULL, *bthreshold = NULL,
-		*r1t = NULL, *r2t = NULL;
+			*bcandleft = NULL, *bcandright = NULL, *bthreshold = NULL,
+			*r1t = NULL, *r2t = NULL;
 	dbl threshold = 1;
 	str msg = MAL_SUCCEED;
 
 	if ((bleft = BATdescriptor(*lid)) == NULL ||
 		(bright = BATdescriptor(*rid)) == NULL ||
 		(bthreshold = BATdescriptor(*thresholdid)) == NULL) {
-		msg = createException(MAL, "txtsim.minjarowinklerjoin", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "txtsim.minjarowinklerjoin",
+							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit;
 	}
 
 	if ((*slid != bat_nil && (bcandleft = BATdescriptor(*slid)) == NULL) ||
 		(*srid != bat_nil && (bcandright = BATdescriptor(*srid)) == NULL)) {
-		msg = createException(MAL, "txtsim.minjarowinklerjoin", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "txtsim.minjarowinklerjoin",
+							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit;
 	}
 
 	if (BATcount(bthreshold) > 0) {
 		BATiter thresholdi = bat_iterator(bthreshold);
-		threshold = *(dbl *) BUNtail(thresholdi,0);
+		threshold = *(dbl *) BUNtail(thresholdi, 0);
 		bat_iterator_end(&thresholdi);
 	}
 
@@ -1014,21 +1055,21 @@ TXTSIMminjarowinklerjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const
 	BBPkeepref(r1t);
 	BBPkeepref(r2t);
 
-exit:
+  exit:
 	reclaim_bats(5, bleft, bright, bcandleft, bcandright, bthreshold);
 	if (msg != MAL_SUCCEED)
 		reclaim_bats(2, r1t, r2t);
 	return msg;
 }
 
-#define SoundexLen 4		/* length of a soundex code */
-#define SoundexKey "Z000"	/* default key for soundex code */
+#define SoundexLen 4			/* length of a soundex code */
+#define SoundexKey "Z000"		/* default key for soundex code */
 
 /* set letter values */
 static const int Code[] = { 0, 1, 2, 3, 0, 1,
-							2, 0, 0, 2, 2, 4,
-							5, 5, 0, 1, 2, 6,
-							2, 3, 0, 1, 0, 2, 0, 2
+	2, 0, 0, 2, 2, 4,
+	5, 5, 0, 1, 2, 6,
+	2, 3, 0, 1, 0, 2, 0, 2
 };
 
 #define RETURN_NIL_IF(b,t)												\
@@ -1047,7 +1088,7 @@ static inline char
 SCode(unsigned char c)
 {
 	if (c == 95)
-		return (2);	/* german sz */
+		return (2);				/* german sz */
 	return (Code[toupper(c) - 'A']);
 }
 
@@ -1059,7 +1100,9 @@ soundex_code(const char *Name, char *Key)
 
 	for (const char *p = Name; *p; p++)
 		if ((*p & 0x80) != 0)
-			throw(MAL,"soundex", SQLSTATE(42000) "Soundex function not available for non ASCII strings");
+			throw(MAL, "soundex",
+				  SQLSTATE(42000)
+				  "Soundex function not available for non ASCII strings");
 
 	/* set default key */
 	strcpy(Key, SoundexKey);
@@ -1103,8 +1146,8 @@ soundex(str *res, str *Name)
 	RETURN_NIL_IF(strNil(*Name), TYPE_str);
 
 	*res = (str) GDKmalloc(sizeof(char) * (SoundexLen + 1));
-	if( *res == NULL)
-		throw(MAL,"soundex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (*res == NULL)
+		throw(MAL, "soundex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* calculate Key for Name */
 	if ((msg = soundex_code(*Name, *res))) {
@@ -1122,10 +1165,10 @@ stringdiff(int *res, str *s1, str *s2)
 	char *S1 = NULL, *S2 = NULL;
 
 	r = soundex(&S1, s1);
-	if( r != MAL_SUCCEED)
+	if (r != MAL_SUCCEED)
 		return r;
 	r = soundex(&S2, s2);
-	if( r != MAL_SUCCEED){
+	if (r != MAL_SUCCEED) {
 		GDKfree(S1);
 		return r;
 	}
@@ -1177,7 +1220,8 @@ qgram_normalize(str *res, str *Input)
 }
 
 static str
-qgram_selfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, flt *c, int *k)
+qgram_selfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid,
+			   flt *c, int *k)
 {
 	BAT *qgram, *id, *pos, *len;
 	BUN n;
@@ -1198,7 +1242,8 @@ qgram_selfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, flt
 		BBPreclaim(id);
 		BBPreclaim(pos);
 		BBPreclaim(len);
-		throw(MAL, "txtsim.qgramselfjoin", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "txtsim.qgramselfjoin",
+			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	BATiter qgrami = bat_iterator(qgram);
@@ -1207,16 +1252,20 @@ qgram_selfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, flt
 	BATiter leni = bat_iterator(len);
 	if (qgrami.type != TYPE_oid)
 		msg = createException(MAL, "txtsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": tail of BAT qgram must be oid");
+							  SEMANTIC_TYPE_MISMATCH
+							  ": tail of BAT qgram must be oid");
 	else if (idi.type != TYPE_int)
 		msg = createException(MAL, "txtsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": tail of BAT id must be int");
+							  SEMANTIC_TYPE_MISMATCH
+							  ": tail of BAT id must be int");
 	else if (posi.type != TYPE_int)
 		msg = createException(MAL, "txtsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": tail of BAT pos must be int");
+							  SEMANTIC_TYPE_MISMATCH
+							  ": tail of BAT pos must be int");
 	else if (leni.type != TYPE_int)
 		msg = createException(MAL, "txtsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": tail of BAT len must be int");
+							  SEMANTIC_TYPE_MISMATCH
+							  ": tail of BAT len must be int");
 	if (msg) {
 		bat_iterator_end(&qgrami);
 		bat_iterator_end(&idi);
@@ -1234,29 +1283,36 @@ qgram_selfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, flt
 	/* if (BATcount(qgram)>1 && !qgrami.sorted) throw(MAL, "txtsim.qgramselfjoin", SEMANTIC_TYPE_MISMATCH); */
 
 	if (!ALIGNsynced(qgram, id))
-		msg = createException(MAL, "txtsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": qgram and id are not synced");
+		 msg = createException(MAL, "txtsim.qgramselfjoin",
+							   SEMANTIC_TYPE_MISMATCH
+							   ": qgram and id are not synced");
 
 	else if (!ALIGNsynced(qgram, pos))
 		msg = createException(MAL, "txtsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": qgram and pos are not synced");
+							  SEMANTIC_TYPE_MISMATCH
+							  ": qgram and pos are not synced");
 	else if (!ALIGNsynced(qgram, len))
 		msg = createException(MAL, "txtsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": qgram and len are not synced");
+							  SEMANTIC_TYPE_MISMATCH
+							  ": qgram and len are not synced");
 
 	else if (qgrami.width != ATOMsize(qgrami.type))
 		msg = createException(MAL, "txtsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": qgram is not a true void bat");
+							  SEMANTIC_TYPE_MISMATCH
+							  ": qgram is not a true void bat");
 	else if (idi.width != ATOMsize(idi.type))
 		msg = createException(MAL, "txtsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": id is not a true void bat");
+							  SEMANTIC_TYPE_MISMATCH
+							  ": id is not a true void bat");
 
 	else if (posi.width != ATOMsize(posi.type))
 		msg = createException(MAL, "txtsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": pos is not a true void bat");
+							  SEMANTIC_TYPE_MISMATCH
+							  ": pos is not a true void bat");
 	else if (leni.width != ATOMsize(leni.type))
 		msg = createException(MAL, "txtsim.qgramselfjoin",
-							  SEMANTIC_TYPE_MISMATCH ": len is not a true void bat");
+							  SEMANTIC_TYPE_MISMATCH
+							  ": len is not a true void bat");
 	if (msg) {
 		bat_iterator_end(&qgrami);
 		bat_iterator_end(&idi);
@@ -1271,7 +1327,7 @@ qgram_selfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, flt
 
 	bn = COLnew(0, TYPE_int, n, TRANSIENT);
 	bn2 = COLnew(0, TYPE_int, n, TRANSIENT);
-	if (bn == NULL || bn2 == NULL){
+	if (bn == NULL || bn2 == NULL) {
 		bat_iterator_end(&qgrami);
 		bat_iterator_end(&idi);
 		bat_iterator_end(&posi);
@@ -1290,10 +1346,14 @@ qgram_selfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, flt
 	pbuf = (int *) posi.base;
 	lbuf = (int *) leni.base;
 	for (i = 0; i < n - 1; i++) {
-		for (j = i + 1; (j < n && qbuf[j] == qbuf[i] && pbuf[j] <= (pbuf[i] + (*k + *c * MIN(lbuf[i], lbuf[j])))); j++) {
-			if (ibuf[i] != ibuf[j] && abs(lbuf[i] - lbuf[j]) <= (*k + *c * MIN(lbuf[i], lbuf[j]))) {
-				if (BUNappend(bn, ibuf + i, false) != GDK_SUCCEED ||
-					BUNappend(bn2, ibuf + j, false) != GDK_SUCCEED) {
+		for (j = i + 1;
+			 (j < n && qbuf[j] == qbuf[i]
+			  && pbuf[j] <= (pbuf[i] + (*k + *c * MIN(lbuf[i], lbuf[j]))));
+			 j++) {
+			if (ibuf[i] != ibuf[j]
+				&& abs(lbuf[i] - lbuf[j]) <= (*k + *c * MIN(lbuf[i], lbuf[j]))) {
+				if (BUNappend(bn, ibuf + i, false) != GDK_SUCCEED
+					|| BUNappend(bn2, ibuf + j, false) != GDK_SUCCEED) {
 					bat_iterator_end(&qgrami);
 					bat_iterator_end(&idi);
 					bat_iterator_end(&posi);
@@ -1304,7 +1364,8 @@ qgram_selfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, flt
 					BBPunfix(len->batCacheid);
 					BBPreclaim(bn);
 					BBPreclaim(bn2);
-					throw(MAL, "txtsim.qgramselfjoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					throw(MAL, "txtsim.qgramselfjoin",
+						  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			}
 		}
@@ -1473,10 +1534,12 @@ struct partition {
    output.  */
 
 static inline int
-diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part, int too_expensive, struct string_data *string, int *fdiag, int *bdiag)
+diag(int xoff, int xlim, int yoff, int ylim, int minimal,
+	 struct partition *part, int too_expensive, struct string_data *string,
+	 int *fdiag, int *bdiag)
 {
-	int *const fd = fdiag;	/* Give the compiler a chance. */
-	int *const bd = bdiag;	/* Additional help for the compiler. */
+	int *const fd = fdiag;		/* Give the compiler a chance. */
+	int *const bd = bdiag;		/* Additional help for the compiler. */
 	const char *const xv = string[0].data;	/* Still more help for the compiler. */
 	const char *const yv = string[1].data;	/* And more and more . . . */
 	const int dmin = xoff - ylim;	/* Minimum valid diagonal. */
@@ -1484,10 +1547,10 @@ diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part
 	const int fmid = xoff - yoff;	/* Center diagonal of top-down search. */
 	const int bmid = xlim - ylim;	/* Center diagonal of bottom-up search. */
 	int fmin = fmid;
-	int fmax = fmid;	/* Limits of top-down search. */
+	int fmax = fmid;			/* Limits of top-down search. */
 	int bmin = bmid;
-	int bmax = bmid;	/* Limits of bottom-up search. */
-	int c;			/* Cost. */
+	int bmax = bmid;			/* Limits of bottom-up search. */
+	int c;						/* Cost. */
 	int odd = (fmid - bmid) & 1;
 
 	/*
@@ -1497,7 +1560,7 @@ diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part
 	fd[fmid] = xoff;
 	bd[bmid] = xlim;
 	for (c = 1;; ++c) {
-		int d;		/* Active diagonal. */
+		int d;					/* Active diagonal. */
 
 		/* Extend the top-down search by an edit step in each diagonal. */
 		if (fmin > dmin)
@@ -1656,8 +1719,10 @@ diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part
    expensive it is.  */
 
 static inline void
-compareseq(int xoff, int xlim, int yoff, int ylim, int minimal, int max_edits, int too_expensive, struct string_data *string, int *fdiag, int *bdiag) /* compareseq stops when edits > max_edits */
-{
+compareseq(int xoff, int xlim, int yoff, int ylim, int minimal, int max_edits,
+		   int too_expensive, struct string_data *string, int *fdiag,
+		   int *bdiag)
+{								/* compareseq stops when edits > max_edits */
 	const char *const xv = string[0].data;	/* Help the compiler.  */
 	const char *const yv = string[1].data;
 
@@ -1692,7 +1757,8 @@ compareseq(int xoff, int xlim, int yoff, int ylim, int minimal, int max_edits, i
 		struct partition part;
 
 		/* Find a point of correspondence in the middle of the strings.  */
-		c = diag(xoff, xlim, yoff, ylim, minimal, &part, too_expensive, string, fdiag, bdiag);
+		c = diag(xoff, xlim, yoff, ylim, minimal, &part, too_expensive, string,
+				 fdiag, bdiag);
 		if (c == 1) {
 			/* The two subsequences differ by a single insert or delete;
 			   record it and we are done.  */
@@ -1702,14 +1768,17 @@ compareseq(int xoff, int xlim, int yoff, int ylim, int minimal, int max_edits, i
 				++string[0].edit_count;
 		} else {
 			/* Use the partitions to split this problem into subproblems.  */
-			compareseq(xoff, part.xmid, yoff, part.ymid, part.lo_minimal, max_edits, too_expensive, string, fdiag, bdiag);
-			compareseq(part.xmid, xlim, part.ymid, ylim, part.hi_minimal, max_edits, too_expensive, string, fdiag, bdiag);
+			compareseq(xoff, part.xmid, yoff, part.ymid, part.lo_minimal,
+					   max_edits, too_expensive, string, fdiag, bdiag);
+			compareseq(part.xmid, xlim, part.ymid, ylim, part.hi_minimal,
+					   max_edits, too_expensive, string, fdiag, bdiag);
 		}
 	}
 }
 
 static str
-fstrcmp_impl_internal(dbl *ret, int **fdiag_buf, size_t *fdiag_buflen, const char *string1, const char *string2, dbl minimum)
+fstrcmp_impl_internal(dbl *ret, int **fdiag_buf, size_t *fdiag_buflen,
+					  const char *string1, const char *string2, dbl minimum)
 {
 	int i, max_edits, *fdiag, *bdiag, too_expensive = 1;
 	size_t fdiag_len;
@@ -1717,9 +1786,9 @@ fstrcmp_impl_internal(dbl *ret, int **fdiag_buf, size_t *fdiag_buflen, const cha
 
 	/* set the info for each string.  */
 	string[0].data = string1;
-	string[0].data_length = (int) strlen(string1); /* 64bit: assume string not too long */
+	string[0].data_length = (int) strlen(string1);	/* 64bit: assume string not too long */
 	string[1].data = string2;
-	string[1].data_length = (int) strlen(string2); /* 64bit: assume string not too long */
+	string[1].data_length = (int) strlen(string2);	/* 64bit: assume string not too long */
 
 	/* short-circuit obvious comparisons */
 	if (string[0].data_length == 0 && string[1].data_length == 0) {
@@ -1743,7 +1812,8 @@ fstrcmp_impl_internal(dbl *ret, int **fdiag_buf, size_t *fdiag_buflen, const cha
 	   allocations performed.  Thus, we use a static buffer for the
 	   diagonal vectors, and never free them.  */
 	fdiag_len = string[0].data_length + string[1].data_length + 3;
-	CHECK_INT_BUFFER_LENGTH(fdiag_buf, fdiag_buflen, fdiag_len * 2 * sizeof(int), "txtsim.similarity");
+	CHECK_INT_BUFFER_LENGTH(fdiag_buf, fdiag_buflen,
+							fdiag_len * 2 * sizeof(int), "txtsim.similarity");
 	fdiag = *fdiag_buf + string[1].data_length + 1;
 	bdiag = fdiag + fdiag_len;
 
@@ -1752,14 +1822,16 @@ fstrcmp_impl_internal(dbl *ret, int **fdiag_buf, size_t *fdiag_buflen, const cha
 	/* Now do the main comparison algorithm */
 	string[0].edit_count = 0;
 	string[1].edit_count = 0;
-	compareseq(0, string[0].data_length, 0, string[1].data_length, 0, max_edits, too_expensive, string, fdiag, bdiag);
+	compareseq(0, string[0].data_length, 0, string[1].data_length, 0, max_edits,
+			   too_expensive, string, fdiag, bdiag);
 
 	/* The result is
 	   ((number of chars in common) / (average length of the strings)).
 	   This is admittedly biased towards finding that the strings are
 	   similar, however it does produce meaningful results.  */
 	*ret = ((double)
-			(string[0].data_length + string[1].data_length - string[1].edit_count - string[0].edit_count)
+			(string[0].data_length + string[1].data_length -
+			 string[1].edit_count - string[0].edit_count)
 			/ (string[0].data_length + string[1].data_length));
 	return MAL_SUCCEED;
 }
@@ -1780,7 +1852,8 @@ fstrcmp_impl(dbl *ret, str *string1, str *string2, dbl *minimum)
 
 		if (!(fdiag_buf = GDKmalloc(fdiag_buflen)))
 			throw(MAL, "txtsim.similarity", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		msg = fstrcmp_impl_internal(ret, &fdiag_buf, &fdiag_buflen, s1, s1, min);
+		msg = fstrcmp_impl_internal(ret, &fdiag_buf, &fdiag_buflen, s1, s1,
+									min);
 		GDKfree(fdiag_buf);
 		return msg;
 	}
@@ -1801,7 +1874,8 @@ fstrcmp0_impl(dbl *ret, str *string1, str *string2)
 
 		if (!(fdiag_buf = GDKmalloc(fdiag_buflen)))
 			throw(MAL, "txtsim.similarity", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		msg = fstrcmp_impl_internal(ret, &fdiag_buf, &fdiag_buflen, s1, s2, 0.0);
+		msg = fstrcmp_impl_internal(ret, &fdiag_buf, &fdiag_buflen, s1, s2,
+									0.0);
 		GDKfree(fdiag_buf);
 		return msg;
 	}
@@ -1820,16 +1894,20 @@ fstrcmp0_impl_bulk(bat *res, bat *strings1, bat *strings2)
 	int *fdiag_buf = GDKmalloc(fdiag_buflen);
 
 	if (!fdiag_buf) {
-		msg = createException(MAL, "txtsim.similarity", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "txtsim.similarity",
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	if (!(left = BATdescriptor(*strings1)) || !(right = BATdescriptor(*strings2))) {
-		msg = createException(MAL, "txtsim.similarity", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if (!(left = BATdescriptor(*strings1))
+		|| !(right = BATdescriptor(*strings2))) {
+		msg = createException(MAL, "txtsim.similarity",
+							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	q = BATcount(left);
 	if (!(bn = COLnew(left->hseqbase, TYPE_dbl, q, TRANSIENT))) {
-		msg = createException(MAL, "txtsim.similarity", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "txtsim.similarity",
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
@@ -1844,13 +1922,14 @@ fstrcmp0_impl_bulk(bat *res, bat *strings1, bat *strings2)
 			vals[i] = dbl_nil;
 			nils = true;
 		} else {
-			msg = fstrcmp_impl_internal(&vals[i], &fdiag_buf, &fdiag_buflen, x, y, 0.0);
+			msg = fstrcmp_impl_internal(&vals[i], &fdiag_buf, &fdiag_buflen, x,
+										y, 0.0);
 		}
 	}
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
 
- bailout:
+  bailout:
 	GDKfree(fdiag_buf);
 	if (bn && !msg) {
 		BATsetcount(bn, q);
@@ -1867,6 +1946,7 @@ fstrcmp0_impl_bulk(bat *res, bat *strings1, bat *strings2)
 	BBPreclaim(right);
 	return msg;
 }
+
 /* DEPRECATED_END */
 
 #include "mel.h"

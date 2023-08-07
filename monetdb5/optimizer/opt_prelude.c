@@ -160,8 +160,8 @@ const char *mdbRef;
 const char *mergecandRef;
 const char *mergepackRef;
 const char *mergetableRef;
-const char *minRef;
 const char *minjarowinklerRef;
+const char *minRef;
 const char *minusRef;
 const char *mirrorRef;
 const char *mitosisRef;
@@ -270,7 +270,8 @@ const char *window_boundRef;
 const char *zero_or_oneRef;
 /* ! please keep this list sorted for easier maintenance ! */
 
-void optimizerInit(void)
+void
+optimizerInit(void)
 {
 /* ! please keep this list sorted for easier maintenance ! */
 	affectedRowsRef = putName("affectedRows");
@@ -343,9 +344,9 @@ void optimizerInit(void)
 	dependRef = putName("depend");
 	deregisterRef = putName("deregister");
 	dictRef = putName("dict");
-	diffcandRef= putName("diffcand");
+	diffcandRef = putName("diffcand");
 	differenceRef = putName("difference");
-	disconnectRef= putName("disconnect");
+	disconnectRef = putName("disconnect");
 	divRef = putName("/");
 	drop_constraintRef = putName("drop_constraint");
 	drop_functionRef = putName("drop_function");
@@ -387,7 +388,7 @@ void optimizerInit(void)
 	identityRef = putName("identity");
 	ifthenelseRef = putName("ifthenelse");
 	importColumnRef = putName("importColumn");
-	intersectcandRef= putName("intersectcand");
+	intersectcandRef = putName("intersectcand");
 	intersectRef = putName("intersect");
 	intRef = putName("int");
 	ioRef = putName("io");
@@ -395,7 +396,7 @@ void optimizerInit(void)
 	joinRef = putName("join");
 	jsonRef = putName("json");
 	lagRef = putName("lag");
-	languageRef= putName("language");
+	languageRef = putName("language");
 	last_valueRef = putName("last_value");
 	leadRef = putName("lead");
 	leftjoinRef = putName("leftjoin");
@@ -412,11 +413,11 @@ void optimizerInit(void)
 	maxlevenshteinRef = putName("maxlevenshtein");
 	maxRef = putName("max");
 	mdbRef = putName("mdb");
-	mergecandRef= putName("mergecand");
-	mergepackRef= putName("mergepack");
+	mergecandRef = putName("mergecand");
+	mergepackRef = putName("mergepack");
 	mergetableRef = putName("mergetable");
-	minRef = putName("min");
 	minjarowinklerRef = putName("minjarowinkler");
+	minRef = putName("min");
 	minusRef = putName("-");
 	mirrorRef = putName("mirror");
 	mitosisRef = putName("mitosis");
@@ -430,7 +431,7 @@ void optimizerInit(void)
 	nextRef = putName("next");
 	not_likeRef = putName("not_like");
 	notRef = putName("not");
-	not_uniqueRef= putName("not_unique");
+	not_uniqueRef = putName("not_unique");
 	nth_valueRef = putName("nth_value");
 	ntileRef = putName("ntile");
 	outerjoinRef = putName("outerjoin");
@@ -474,14 +475,14 @@ void optimizerInit(void)
 	row_numberRef = putName("row_number");
 	rpcRef = putName("rpc");
 	rsColumnRef = putName("rsColumn");
-	sampleRef= putName("sample");
+	sampleRef = putName("sample");
 	selectNotNilRef = putName("selectNotNil");
 	selectRef = putName("select");
 	semaRef = putName("sema");
 	semijoinRef = putName("semijoin");
 	seriesRef = putName("series");
 	setAccessRef = putName("setAccess");
-	set_protocolRef= putName("set_protocol");
+	set_protocolRef = putName("set_protocol");
 	setVariableRef = putName("setVariable");
 	singleRef = putName("single");
 	sliceRef = putName("slice");
@@ -497,28 +498,28 @@ void optimizerInit(void)
 	subcountRef = putName("subcount");
 	subdeltaRef = putName("subdelta");
 	subeval_aggrRef = putName("subeval_aggr");
-	subgroupdoneRef= putName("subgroupdone");
+	subgroupdoneRef = putName("subgroupdone");
 	subgroupRef = putName("subgroup");
 	submaxRef = putName("submax");
 	subminRef = putName("submin");
 	subprodRef = putName("subprod");
 	subsliceRef = putName("subslice");
 	subsumRef = putName("subsum");
-	subuniformRef= putName("subuniform");
+	subuniformRef = putName("subuniform");
 	sumRef = putName("sum");
-	takeRef= putName("take");
+	takeRef = putName("take");
 	thetajoinRef = putName("thetajoin");
 	thetaselectRef = putName("thetaselect");
 	tidRef = putName("tid");
-	transaction_abortRef= putName("transaction_abort");
-	transaction_beginRef= putName("transaction_begin");
-	transaction_commitRef= putName("transaction_commit");
-	transactionRef= putName("transaction");
-	transaction_releaseRef= putName("transaction_release");
-	transaction_rollbackRef= putName("transaction_rollback");
+	transaction_abortRef = putName("transaction_abort");
+	transaction_beginRef = putName("transaction_begin");
+	transaction_commitRef = putName("transaction_commit");
+	transactionRef = putName("transaction");
+	transaction_releaseRef = putName("transaction_release");
+	transaction_rollbackRef = putName("transaction_rollback");
 	umaskRef = putName("umask");
-	uniqueRef= putName("unique");
-	unlockRef= putName("unlock");
+	uniqueRef = putName("unique");
+	unlockRef = putName("unlock");
 	updateRef = putName("update");
 	userRef = putName("user");
 	window_boundRef = putName("window_bound");

@@ -79,6 +79,7 @@ reallocGlobalStack(MalStkPtr old, int cnt)
 	GDKfree(old);
 	return s;
 }
+
 /*
  * The clearStack operation throws away any space occupied by variables
  * Freeing the stack itself is automatic upon return from the interpreter
@@ -92,7 +93,8 @@ clearStack(MalStkPtr s)
 	ValPtr v;
 	int i;
 
-	if (!s) return;
+	if (!s)
+		return;
 
 	i = s->stktop;
 	for (v = s->stk; i > 0; i--, v++)
@@ -122,4 +124,3 @@ freeStack(MalStkPtr stk)
 		GDKfree(stk);
 	}
 }
-

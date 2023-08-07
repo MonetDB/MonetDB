@@ -49,54 +49,59 @@ typedef char *States;
 
 typedef enum {
 	no_region,
-	singleton_region, // always a single statement
-	dataflow_region,  // statements without or with controlled side effects, in parallel
-	existing_region,  // existing barrier..exit region, copied as-is
-	sql_region,	   // region of nonconflicting sql.append/sql.updates only
+	singleton_region,			// always a single statement
+	dataflow_region,			// statements without or with controlled side effects, in parallel
+	existing_region,			// existing barrier..exit region, copied as-is
+	sql_region,					// region of nonconflicting sql.append/sql.updates only
 } region_type;
 
 typedef struct {
 	region_type type;
 	union {
 		struct {
-			int level;  // level of nesting
+			int level;			// level of nesting
 		} existing_region;
 	} st;
 } region_state;
 
-static int
+static bool
 simpleFlow(InstrPtr *old, int start, int last, region_state *state)
 {
-	int i, j, k, simple = TRUE;
+	int i, j, k;
+	bool simple = true;
 	InstrPtr p = NULL, q;
 
 	/* ignore trivial blocks */
-	if ( last - start == 1)
-		return TRUE;
-	if ( state->type == existing_region )
-		// don't add additional barriers and garbage collection around existing region.
-		return TRUE;
+	if (last - start == 1)
+		return true;
+	if (state->type == existing_region) {
+		/* don't add additional barriers and garbage collection around
+		 * existing region. */
+		return true;
+	}
 	/* skip sequence of simple arithmetic first */
-	for( ; simple && start < last; start++)
-	if ( old[start] ) {
-		p= old[start];
-		simple = getModuleId(p) == calcRef || getModuleId(p) == mtimeRef || getModuleId(p) == strRef || getModuleId(p)== mmathRef;
-	}
-	for( i = start; i < last; i++)
-	if ( old[i]) {
-		q= old[i];
-		simple = getModuleId(q) == calcRef || getModuleId(q) == mtimeRef || getModuleId(q) == strRef || getModuleId(q)== mmathRef;
-		if( !simple)  {
-			/* if not arithmetic than we should consume the previous result directly */
-			for( j= q->retc; j < q->argc; j++)
-				for( k =0; k < p->retc; k++)
-					if( getArg(p,k) == getArg(q,j))
-						simple= TRUE;
-			if( !simple)
-				return 0;
+	for (; simple && start < last; start++)
+		if (old[start]) {
+			p = old[start];
+			simple = getModuleId(p) == calcRef || getModuleId(p) == mtimeRef
+					|| getModuleId(p) == strRef || getModuleId(p) == mmathRef;
 		}
-		p = q;
-	}
+	for (i = start; i < last; i++)
+		if (old[i]) {
+			q = old[i];
+			simple = getModuleId(q) == calcRef || getModuleId(q) == mtimeRef
+					|| getModuleId(q) == strRef || getModuleId(q) == mmathRef;
+			if (!simple) {
+				/* if not arithmetic than we should consume the previous result directly */
+				for (j = q->retc; j < q->argc; j++)
+					for (k = 0; k < p->retc; k++)
+						if (getArg(p, k) == getArg(q, j))
+							simple = true;
+				if (!simple)
+					return false;
+			}
+			p = q;
+		}
 	return simple;
 }
 
@@ -113,38 +118,38 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 {
 	int j;
 
-	if (p->token == ENDsymbol || p->barrier || isUnsafeFunction(p) ||
-		(isMultiplex(p) && MANIFOLDtypecheck(cntxt,mb,p,0) == NULL) ){
-			return TRUE;
-		}
+	if (p->token == ENDsymbol || p->barrier || isUnsafeFunction(p)
+		|| (isMultiplex(p) && MANIFOLDtypecheck(cntxt, mb, p, 0) == NULL)) {
+		return TRUE;
+	}
 
 	/* flow blocks should be closed when we reach a point
 	   where a variable is assigned  more then once or already
 	   being read.
-	*/
-	for(j=0; j<p->retc; j++)
-		if ( getState(states,p,j) & (VARWRITE | VARREAD | VARBLOCK)){
+	 */
+	for (j = 0; j < p->retc; j++)
+		if (getState(states, p, j) & (VARWRITE | VARREAD | VARBLOCK)) {
 			return 1;
 		}
 
 	/* update instructions can be updated if the target variable
 	 * has not been read in the block so far */
-	if ( isUpdateInstruction(p) ){
+	if (isUpdateInstruction(p)) {
 		/* the SQL update functions change BATs that are not
 		 * explicitly mentioned as arguments (and certainly not as the
 		 * first argument), but that can still be available to the MAL
 		 * program (see bugs.monetdb.org/6641) */
 		if (getModuleId(p) == sqlRef)
 			return 1;
-		return getState(states,p,p->retc) & (VARREAD | VARBLOCK);
+		return getState(states, p, p->retc) & (VARREAD | VARBLOCK);
 	}
 
-	for(j=p->retc; j < p->argc; j++){
-		if ( getState(states,p,j) & VARBLOCK){
+	for (j = p->retc; j < p->argc; j++) {
+		if (getState(states, p, j) & VARBLOCK) {
 			return 1;
 		}
 	}
-	return hasSideEffects(mb,p,FALSE);
+	return hasSideEffects(mb, p, FALSE);
 }
 
 static str
@@ -182,23 +187,24 @@ isSqlAppendUpdate(MalBlkPtr mb, InstrPtr p)
 		return false;
 
 	// pattern("sql", "append", mvc_append_wrap, false, "...", args(1,8, arg("",int),
-	//			  arg("mvc",int),
-	//			  arg("sname",str),
-	//			  arg("tname",str),
-	//			  arg("cname",str),
-	//			  arg("offset",lng),
-	//			  batarg("pos",oid),
-	//			  argany("ins",0))),
+	//                        arg("mvc",int),
+	//                        arg("sname",str),
+	//                        arg("tname",str),
+	//                        arg("cname",str),
+	//                        arg("offset",lng),
+	//                        batarg("pos",oid),
+	//                        argany("ins",0))),
 
- 	// pattern("sql", "update", mvc_update_wrap, false, "...", args(1,7, arg("",int),
-	//			  arg("mvc",int),
-	//			  arg("sname",str),
-	//			  arg("tname",str),
-	//			  arg("cname",str),
-	//			  argany("rids",0),
-	//			  argany("upd",0)))
+	// pattern("sql", "update", mvc_update_wrap, false, "...", args(1,7, arg("",int),
+	//                        arg("mvc",int),
+	//                        arg("sname",str),
+	//                        arg("tname",str),
+	//                        arg("cname",str),
+	//                        argany("rids",0),
+	//                        argany("upd",0)))
 
-	if ((p->fcnname == appendRef && p->argc != 8) || (p->fcnname == updateRef && p->argc != 7))
+	if ((p->fcnname == appendRef && p->argc != 8)
+		|| (p->fcnname == updateRef && p->argc != 7))
 		return false;
 
 	int mvc_var = getArg(p, 1);
@@ -255,39 +261,41 @@ sqlBreakpoint(MalBlkPtr mb, InstrPtr *first, InstrPtr *p)
 }
 
 static bool
-checkBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr *first, InstrPtr *p, States states, region_state *state)
+checkBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr *first, InstrPtr *p,
+				States states, region_state *state)
 {
 	InstrPtr instr = *p;
 	switch (state->type) {
-		case singleton_region:
-			// by definition
+	case singleton_region:
+		// by definition
+		return true;
+	case dataflow_region:
+		return dataflowBreakpoint(cntxt, mb, instr, states);
+	case existing_region:
+		if (state->st.existing_region.level == 0) {
+			// previous statement ended the region so we break here
 			return true;
-		case dataflow_region:
-			return dataflowBreakpoint(cntxt, mb, instr, states);
-		case existing_region:
-			if (state->st.existing_region.level == 0) {
-				// previous statement ended the region so we break here
-				return true;
-			}
-			if (blockStart(instr)) {
-				state->st.existing_region.level += 1;
-			} else if (blockExit(instr)) {
-				state->st.existing_region.level -= 1;
-			}
-			return false;
-		case sql_region:
-			return sqlBreakpoint(mb, first, p);
-		default:
-			// serious corruption has occurred.
-			assert(0);			/* corrupted region_type */
-			abort();
+		}
+		if (blockStart(instr)) {
+			state->st.existing_region.level += 1;
+		} else if (blockExit(instr)) {
+			state->st.existing_region.level -= 1;
+		}
+		return false;
+	case sql_region:
+		return sqlBreakpoint(mb, first, p);
+	default:
+		// serious corruption has occurred.
+		assert(0);				/* corrupted region_type */
+		abort();
 	}
 	assert(0);					/* unreachable */
 	return true;
 }
 
 static void
-decideRegionType(Client cntxt, MalBlkPtr mb, InstrPtr p, States states, region_state *state)
+decideRegionType(Client cntxt, MalBlkPtr mb, InstrPtr p, States states,
+				 region_state *state)
 {
 	(void) cntxt;
 
@@ -297,21 +305,19 @@ decideRegionType(Client cntxt, MalBlkPtr mb, InstrPtr p, States states, region_s
 		state->st.existing_region.level = 1;
 	} else if (p->token == ENDsymbol) {
 		state->type = existing_region;
-	} else if (isSqlAppendUpdate(mb,p)) {
+	} else if (isSqlAppendUpdate(mb, p)) {
 		state->type = sql_region;
 	} else if (p->barrier) {
 		state->type = singleton_region;
 	} else if (isUnsafeFunction(p)) {
 		state->type = singleton_region;
-	} else if (
-		isUpdateInstruction(p)
-		&& getModuleId(p) != sqlRef
-		&& (getState(states, p, p->retc) & (VARREAD | VARBLOCK)) == 0
-	) {
+	} else if (isUpdateInstruction(p)
+			   && getModuleId(p) != sqlRef
+			   && (getState(states, p, p->retc) & (VARREAD | VARBLOCK)) == 0) {
 		// Special case. Unless they're from the sql module, instructions with
 		// names like 'append', 'update', 'delete', 'grow', etc., are expected
 		// to express their side effects as data dependencies, for example,
-		//	 X5 := bat.append(X_5, ...)
+		//       X5 := bat.append(X_5, ...)
 		state->type = dataflow_region;
 	} else if (hasSideEffects(mb, p, false)) {
 		state->type = singleton_region;
@@ -328,10 +334,12 @@ decideRegionType(Client cntxt, MalBlkPtr mb, InstrPtr p, States states, region_s
    executed, either sequentially or in parallel */
 
 str
-OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+						  InstrPtr pci)
 {
-	int i,j,k, start, slimit, breakpoint, actions=0, simple = TRUE;
-	int flowblock= 0;
+	int i, j, k, start, slimit, breakpoint, actions = 0;
+	bool simple = true;
+	int flowblock = 0;
 	InstrPtr p, *old = NULL, q;
 	int limit, vlimit;
 	States states = NULL;
@@ -342,69 +350,74 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (GDKnr_threads <= 1 || cntxt->workerlimit == 1)
 		goto wrapup;
 
-	if ( optimizerIsApplied(mb,dataflowRef))
+	if (optimizerIsApplied(mb, dataflowRef))
 		goto wrapup;
 	(void) stk;
 	/* inlined functions will get their dataflow control later */
-	if ( mb->inlineProp)
+	if (mb->inlineProp)
 		goto wrapup;
 
 	vlimit = mb->vsize;
 	states = (States) GDKzalloc(vlimit * sizeof(char));
-	if (states == NULL ){
-		throw(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (states == NULL) {
+		throw(MAL, "optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	setVariableScope(mb);
 
-	limit= mb->stop;
-	slimit= mb->ssize;
+	limit = mb->stop;
+	slimit = mb->ssize;
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(states);
-		throw(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	/* inject new dataflow barriers using a single pass through the program */
 	start = 0;
 	state.type = singleton_region;
-	for (i = 1; i<limit; i++) {
+	for (i = 1; i < limit; i++) {
 		p = old[i];
 		assert(p);
 		breakpoint = checkBreakpoint(cntxt, mb, &old[start], &old[i], states, &state);
-		if ( breakpoint ){
+		if (breakpoint) {
 			/* close previous flow block */
-			simple = simpleFlow(old,start,i, &state);
+			simple = simpleFlow(old, start, i, &state);
 
-			if ( !simple){
-				flowblock = newTmpVariable(mb,TYPE_bit);
-				q= newFcnCall(mb,languageRef,dataflowRef);
+			if (!simple) {
+				flowblock = newTmpVariable(mb, TYPE_bit);
+				q = newFcnCall(mb, languageRef, dataflowRef);
 				if (q == NULL) {
-					msg = createException(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					msg = createException(MAL, "optimizer.dataflow",
+										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
 				}
-				q->barrier= BARRIERsymbol;
-				getArg(q,0)= flowblock;
+				q->barrier = BARRIERsymbol;
+				getArg(q, 0) = flowblock;
 				pushInstruction(mb, q);
 				actions++;
 			}
 			// copyblock the collected statements
-			for( j=start ; j<i; j++) {
-				q= old[j];
-				pushInstruction(mb,q);
+			for (j = start; j < i; j++) {
+				q = old[j];
+				pushInstruction(mb, q);
 				// collect BAT variables garbage collected within the block
-				if( !simple)
-					for( k=q->retc; k<q->argc; k++){
-						if (getState(states,q,k) & VAR2READ &&  getEndScope(mb,getArg(q,k)) == j && isaBatType(getVarType(mb,getArg(q,k))) ){
+				if (!simple)
+					for (k = q->retc; k < q->argc; k++) {
+						if (getState(states, q, k) & VAR2READ
+							&& getEndScope(mb, getArg(q, k)) == j
+							&& isaBatType(getVarType(mb, getArg(q, k)))) {
 							InstrPtr r;
-							r = newInstruction(NULL,languageRef, passRef);
+							r = newInstruction(NULL, languageRef, passRef);
 							if (r == NULL) {
-								msg = createException(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+								msg = createException(MAL, "optimizer.dataflow",
+													  SQLSTATE(HY013)
+													  MAL_MALLOC_FAIL);
 								break;
 							}
-							getArg(r,0) = newTmpVariable(mb,TYPE_void);
-							r= pushArgument(mb,r, getArg(q,k));
-							pushInstruction(mb,r);
+							getArg(r, 0) = newTmpVariable(mb, TYPE_void);
+							r = pushArgument(mb, r, getArg(q, k));
+							pushInstruction(mb, r);
 						}
 					}
 				if (msg)
@@ -413,43 +426,43 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			if (msg)
 				break;
 			/* exit parallel block */
-			if ( ! simple){
-				q= newAssignment(mb);
+			if (!simple) {
+				q = newAssignment(mb);
 				if (q == NULL) {
-					msg = createException(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					msg = createException(MAL, "optimizer.dataflow",
+										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
 				}
-				q->barrier= EXITsymbol;
-				getArg(q,0) = flowblock;
+				q->barrier = EXITsymbol;
+				getArg(q, 0) = flowblock;
 				pushInstruction(mb, q);
 			}
-			if (p->token == ENDsymbol){
+			if (p->token == ENDsymbol) {
 				break;
 			}
-
 			// Start a new region
-			memset((char*) states, 0, vlimit * sizeof(char));
+			memset((char *) states, 0, vlimit * sizeof(char));
 			start = i;
 			decideRegionType(cntxt, mb, p, states, &state);
 		}
-
 		// remember you assigned/read variables
-		for ( k = 0; k < p->retc; k++)
+		for (k = 0; k < p->retc; k++)
 			setState(states, p, k, VARWRITE);
-		if( isUpdateInstruction(p) && (getState(states,p,1) == 0 || getState(states,p,1) & VARWRITE))
-			setState(states, p,1, VARBLOCK);
-		for ( k = p->retc; k< p->argc; k++)
-		if( !isVarConstant(mb,getArg(p,k)) ){
-			if( getState(states, p, k) & VARREAD)
-				setState(states, p, k, VAR2READ);
-			else
-			if( getState(states, p, k) & VARWRITE)
-				setState(states, p ,k, VARREAD);
-		}
+		if (isUpdateInstruction(p)
+			&& (getState(states, p, 1) == 0
+				|| getState(states, p, 1) & VARWRITE))
+			setState(states, p, 1, VARBLOCK);
+		for (k = p->retc; k < p->argc; k++)
+			if (!isVarConstant(mb, getArg(p, k))) {
+				if (getState(states, p, k) & VARREAD)
+					setState(states, p, k, VAR2READ);
+				else if (getState(states, p, k) & VARWRITE)
+					setState(states, p, k, VARREAD);
+			}
 	}
 
 	/* take the remainder as is */
-	for (; i<slimit; i++)
+	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
 	/* Defense line against incorrect plans */
@@ -461,11 +474,13 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				msg = chkDeclarations(mb);
 		}
 	}
-wrapup:
-	/* keep actions taken as a fake argument*/
+  wrapup:
+	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 
-	if(states) GDKfree(states);
-	if(old)	GDKfree(old);
+	if (states)
+		GDKfree(states);
+	if (old)
+		GDKfree(old);
 	return msg;
 }

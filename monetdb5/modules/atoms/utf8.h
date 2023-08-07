@@ -1185,8 +1185,7 @@ utf8codepoint(const utf8_int8_t *utf8_restrict str,
     str += 4;
   } else if (0xe0 == (0xf0 & str[0])) {
     /* 3 byte utf8 codepoint */
-    *out_codepoint =
-        ((0x0f & str[0]) << 12) | ((0x3f & str[1]) << 6) | (0x3f & str[2]);
+	  *out_codepoint = ((0x0f & str[0]) << 12) | ((0x3f & str[1]) << 6) | (0x3f & str[2]);
     str += 3;
   } else if (0xc0 == (0xe0 & str[0])) {
     /* 2 byte utf8 codepoint */
@@ -1658,8 +1657,7 @@ utf8rcodepoint(const utf8_int8_t *utf8_restrict str,
                      ((0x3f & s[2]) << 6) | (0x3f & s[3]);
   } else if (0xe0 == (0xf0 & s[0])) {
     /* 3 byte utf8 codepoint */
-    *out_codepoint =
-        ((0x0f & s[0]) << 12) | ((0x3f & s[1]) << 6) | (0x3f & s[2]);
+	  *out_codepoint = ((0x0f & s[0]) << 12) | ((0x3f & s[1]) << 6) | (0x3f & s[2]);
   } else if (0xc0 == (0xe0 & s[0])) {
     /* 2 byte utf8 codepoint */
     *out_codepoint = ((0x1f & s[0]) << 6) | (0x3f & s[1]);

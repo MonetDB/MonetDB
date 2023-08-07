@@ -14,6 +14,7 @@
 #include "mal_interpreter.h"
 #include "opt_support.h"
 
-extern str OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str OPTcoercionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+									 InstrPtr pci);
 
 #endif

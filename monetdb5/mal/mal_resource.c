@@ -18,13 +18,14 @@
 #include "mal_instruction.h"
 
 /* Memory based admission does not seem to have a major impact so far. */
-static lng memorypool = 0;      /* memory claimed by concurrent threads */
+static lng memorypool = 0;		/* memory claimed by concurrent threads */
 
 void
 mal_resource_reset(void)
 {
 	memorypool = (lng) MEMORY_THRESHOLD;
 }
+
 /*
  * Running all eligible instructions in parallel creates
  * resource contention. This means we should implement
@@ -67,7 +68,7 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 	lng total = 0, itotal = 0, t;
 	BAT *b;
 
-	(void)mb;
+	(void) mb;
 	if (stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
 		bat bid = stk->stk[getArg(pci, i)].val.bval;
 		if (!BBPcheck(bid))
@@ -91,14 +92,15 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 		itotal = hashinfo(b->thash, d->batCacheid);
 		MT_rwlock_rdunlock(&b->thashlock);
 		t = IMPSimprintsize(b);
-		if( t > itotal)
+		if (t > itotal)
 			itotal = t;
 		/* We should also consider the ordered index size */
-		t = b->torderidx && b->torderidx != (Heap *) 1 ? (lng) b->torderidx->free : 0;
-		if( t > itotal)
+		t = b->torderidx
+				&& b->torderidx != (Heap *) 1 ? (lng) b->torderidx->free : 0;
+		if (t > itotal)
 			itotal = t;
 		//total = total > (lng)(MEMORY_THRESHOLD ) ? (lng)(MEMORY_THRESHOLD ) : total;
-		if ( total < itotal)
+		if (total < itotal)
 			total = itotal;
 	}
 	return total;
@@ -113,7 +115,8 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 static MT_Lock admissionLock = MT_LOCK_INITIALIZER(admissionLock);
 
 bool
-MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argclaim)
+MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+				   lng argclaim)
 {
 	(void) pci;
 
@@ -122,7 +125,8 @@ MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng 
 	 * A way out is to attach the thread count to the MAL stacks, which just limits the level
 	 * of parallism for a single dataflow graph.
 	 */
-	if (cntxt->workerlimit > 0 && (int) ATOMIC_GET(&cntxt->workers) >= cntxt->workerlimit)
+	if (cntxt->workerlimit > 0
+		&& (int) ATOMIC_GET(&cntxt->workers) >= cntxt->workerlimit)
 		return false;
 
 	if (argclaim == 0)
@@ -130,17 +134,19 @@ MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng 
 
 	MT_lock_set(&admissionLock);
 	/* Determine if the total memory resource is exhausted, because it is overall limitation.  */
-	if ( memorypool <= 0){
+	if (memorypool <= 0) {
 		// we accidently released too much memory or need to initialize
 		memorypool = (lng) MEMORY_THRESHOLD;
 	}
 
 	/* the argument claim is based on the input for an instruction */
-	if ( memorypool > argclaim || ATOMIC_GET(&cntxt->workers) == 0) {
+	if (memorypool > argclaim || ATOMIC_GET(&cntxt->workers) == 0) {
 		/* If we are low on memory resources, limit the user if he exceeds his memory budget
 		 * but make sure there is at least one worker thread active */
-		if ( cntxt->memorylimit) {
-			if (argclaim + stk->memory > (lng) cntxt->memorylimit * LL_CONSTANT(1048576) && ATOMIC_GET(&cntxt->workers) > 0){
+		if (cntxt->memorylimit) {
+			if (argclaim + stk->memory >
+				(lng) cntxt->memorylimit * LL_CONSTANT(1048576)
+				&& ATOMIC_GET(&cntxt->workers) > 0) {
 				MT_lock_unset(&admissionLock);
 				return false;
 			}
@@ -149,7 +155,7 @@ MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng 
 		memorypool -= argclaim;
 		stk->memory += argclaim;
 		MT_lock_set(&mal_delayLock);
-		if( mb->memory < stk->memory)
+		if (mb->memory < stk->memory)
 			mb->memory = stk->memory;
 		MT_lock_unset(&mal_delayLock);
 		MT_lock_unset(&admissionLock);
@@ -160,21 +166,22 @@ MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng 
 }
 
 void
-MALadmission_release(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argclaim)
+MALadmission_release(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+					 lng argclaim)
 {
 	/* release memory claimed before */
 	(void) cntxt;
 	(void) mb;
 	(void) pci;
-	if (argclaim == 0 )
+	if (argclaim == 0)
 		return;
 
 	MT_lock_set(&admissionLock);
-	if ( cntxt->memorylimit) {
+	if (cntxt->memorylimit) {
 		stk->memory -= argclaim;
 	}
 	memorypool += argclaim;
-	if ( memorypool > (lng) MEMORY_THRESHOLD ){
+	if (memorypool > (lng) MEMORY_THRESHOLD) {
 		memorypool = (lng) MEMORY_THRESHOLD;
 	}
 	stk->memory -= argclaim;

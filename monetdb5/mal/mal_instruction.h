@@ -24,7 +24,7 @@
 #define DEBUG_MAL_INSTR
 #define MAXARG 8				/* was 4 BEWARE the code depends on this knowledge, where? */
 #define STMT_INCREMENT 4
-#define MAL_VAR_WINDOW  16 // was 32
+#define MAL_VAR_WINDOW  16		// was 32
 #define MAXLISTING (64*1024)
 
 /* Allocation of space assumes a rather exotic number of
@@ -67,7 +67,7 @@ setFunctionId(InstrPtr p, const char *s)
 
 #define getVar(M,I)		(&(M)->var[I])
 #define getVarType(M,I)		((M)->var[I].type)
-mal_export char* getVarName(MalBlkPtr mb, int idx);
+mal_export char *getVarName(MalBlkPtr mb, int idx);
 
 #define getVarKind(M,I)   	((M)->var[I].kind)
 #define getVarGDKType(M,I)	getGDKType((M)->var[I].type)
@@ -141,8 +141,10 @@ mal_export char* getVarName(MalBlkPtr mb, int idx);
 
 mal_export void addMalException(MalBlkPtr mb, str msg);
 mal_export void mal_instruction_reset(void);
-mal_export InstrPtr newInstruction(MalBlkPtr mb, const char *modnme, const char *fcnnme);
-mal_export InstrPtr newInstructionArgs(MalBlkPtr mb, const char *modnme, const char *fcnnme, int args);
+mal_export InstrPtr newInstruction(MalBlkPtr mb, const char *modnme,
+								   const char *fcnnme);
+mal_export InstrPtr newInstructionArgs(MalBlkPtr mb, const char *modnme,
+									   const char *fcnnme, int args);
 mal_export InstrPtr copyInstruction(InstrPtr p);
 mal_export InstrPtr copyInstructionArgs(InstrPtr p, int args);
 mal_export void clrInstruction(InstrPtr p);
@@ -175,7 +177,8 @@ mal_export int findVariable(MalBlkPtr mb, const char *name);
 mal_export int findVariableLength(MalBlkPtr mb, const char *name, int len);
 mal_export malType getType(MalBlkPtr mb, const char *nme);
 mal_export str getArgDefault(MalBlkPtr mb, InstrPtr p, int idx);
-mal_export int newVariable(MalBlkPtr mb, const char *name, size_t len, malType type);
+mal_export int newVariable(MalBlkPtr mb, const char *name, size_t len,
+						   malType type);
 mal_export int cloneVariable(MalBlkPtr dst, MalBlkPtr src, int varid);
 mal_export void setVariableType(MalBlkPtr mb, const int idx, malType type);
 mal_export int newTmpVariable(MalBlkPtr mb, malType type);

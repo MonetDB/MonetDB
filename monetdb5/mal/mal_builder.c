@@ -30,10 +30,11 @@ newAssignmentArgs(MalBlkPtr mb, int args)
 
 	if (q == NULL)
 		return NULL;
-	k = newTmpVariable(mb,TYPE_any);
+	k = newTmpVariable(mb, TYPE_any);
 	if (k < 0) {
 		// construct an exception message to be passed to upper layers using ->errors
-		str msg = createException(MAL, "newAssignment", "Can not allocate variable");
+		str msg = createException(MAL, "newAssignment",
+								  "Can not allocate variable");
 		addMalException(mb, msg);
 		freeException(msg);
 		freeInstruction(q);
@@ -70,7 +71,8 @@ newStmtArgs(MalBlkPtr mb, const char *module, const char *name, int args)
 
 	setDestVar(q, newTmpVariable(mb, TYPE_any));
 	if (getDestVar(q) < 0) {
-		str msg = createException(MAL, "newStmtArgs", "Can not allocate variable");
+		str msg = createException(MAL, "newStmtArgs",
+								  "Can not allocate variable");
 		addMalException(mb, msg);
 		freeException(msg);
 		freeInstruction(q);
@@ -154,7 +156,8 @@ newCatchStmt(MalBlkPtr mb, const char *nme)
 	if (i < 0) {
 		i = newVariable(mb, nme, strlen(nme), TYPE_str);
 		if (i < 0) {
-			str msg = createException(MAL, "newCatchStmt", "Can not allocate variable");
+			str msg = createException(MAL, "newCatchStmt",
+									  "Can not allocate variable");
 			addMalException(mb, msg);
 			freeException(msg);
 			freeInstruction(q);
@@ -177,7 +180,8 @@ newRaiseStmt(MalBlkPtr mb, const char *nme)
 	if (i < 0) {
 		i = newVariable(mb, nme, strlen(nme), TYPE_str);
 		if (i < 0) {
-			str msg = createException(MAL, "newRaiseStmt", "Can not allocate variable");
+			str msg = createException(MAL, "newRaiseStmt",
+									  "Can not allocate variable");
 			addMalException(mb, msg);
 			freeException(msg);
 			freeInstruction(q);
@@ -200,7 +204,8 @@ newExitStmt(MalBlkPtr mb, const char *nme)
 	if (i < 0) {
 		i = newVariable(mb, nme, strlen(nme), TYPE_str);
 		if (i < 0) {
-			str msg = createException(MAL, "newExitStmt", "Can not allocate variable");
+			str msg = createException(MAL, "newExitStmt",
+									  "Can not allocate variable");
 			addMalException(mb, msg);
 			freeException(msg);
 			freeInstruction(q);
@@ -214,16 +219,16 @@ newExitStmt(MalBlkPtr mb, const char *nme)
 InstrPtr
 pushEndInstruction(MalBlkPtr mb)
 {
-    InstrPtr q = newInstruction(mb,NULL, NULL);
+	InstrPtr q = newInstruction(mb, NULL, NULL);
 
 	if (q == NULL)
 		return NULL;
-    q->token = ENDsymbol;
-    q->barrier = 0;
-    q->argc = 0;
-    q->retc = 0;
-    q->argv[0] = 0;
-    pushInstruction(mb, q);
+	q->token = ENDsymbol;
+	q->barrier = 0;
+	q->argc = 0;
+	q->retc = 0;
+	q->argv[0] = 0;
+	pushInstruction(mb, q);
 	return q;
 }
 
@@ -233,11 +238,11 @@ getIntConstant(MalBlkPtr mb, int val)
 	int _t;
 	ValRecord cst;
 
-	cst.vtype= TYPE_int;
-	cst.val.ival= val;
+	cst.vtype = TYPE_int;
+	cst.val.ival = val;
 	cst.len = 0;
-	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
-	if( _t < 0)
+	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	if (_t < 0)
 		_t = defConstant(mb, TYPE_int, &cst);
 	return _t;
 }
@@ -250,11 +255,11 @@ pushInt(MalBlkPtr mb, InstrPtr q, int val)
 
 	if (q == NULL)
 		return NULL;
-	cst.vtype= TYPE_int;
-	cst.val.ival= val;
+	cst.vtype = TYPE_int;
+	cst.val.ival = val;
 	cst.len = 0;
 	_t = defConstant(mb, TYPE_int, &cst);
-	if( _t >= 0)
+	if (_t >= 0)
 		return pushArgument(mb, q, _t);
 	return q;
 }
@@ -265,11 +270,11 @@ getBteConstant(MalBlkPtr mb, bte val)
 	int _t;
 	ValRecord cst;
 
-	cst.vtype= TYPE_bte;
-	cst.val.btval= val;
+	cst.vtype = TYPE_bte;
+	cst.val.btval = val;
 	cst.len = 0;
-	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
-	if( _t < 0)
+	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	if (_t < 0)
 		_t = defConstant(mb, TYPE_bte, &cst);
 	return _t;
 }
@@ -282,11 +287,11 @@ pushBte(MalBlkPtr mb, InstrPtr q, bte val)
 
 	if (q == NULL)
 		return NULL;
-	cst.vtype= TYPE_bte;
-	cst.val.btval= val;
+	cst.vtype = TYPE_bte;
+	cst.val.btval = val;
 	cst.len = 0;
-	_t = defConstant(mb, TYPE_bte,&cst);
-	if( _t >= 0)
+	_t = defConstant(mb, TYPE_bte, &cst);
+	if (_t >= 0)
 		return pushArgument(mb, q, _t);
 	return q;
 }
@@ -297,11 +302,11 @@ getOidConstant(MalBlkPtr mb, oid val)
 	int _t;
 	ValRecord cst;
 
-	cst.vtype= TYPE_oid;
-	cst.val.oval= val;
+	cst.vtype = TYPE_oid;
+	cst.val.oval = val;
 	cst.len = 0;
-	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
-	if( _t < 0)
+	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	if (_t < 0)
 		_t = defConstant(mb, TYPE_oid, &cst);
 	return _t;
 }
@@ -314,11 +319,11 @@ pushOid(MalBlkPtr mb, InstrPtr q, oid val)
 
 	if (q == NULL)
 		return NULL;
-	cst.vtype= TYPE_oid;
-	cst.val.oval= val;
+	cst.vtype = TYPE_oid;
+	cst.val.oval = val;
 	cst.len = 0;
-	_t = defConstant(mb,TYPE_oid,&cst);
-	if( _t >= 0)
+	_t = defConstant(mb, TYPE_oid, &cst);
+	if (_t >= 0)
 		return pushArgument(mb, q, _t);
 	return q;
 }
@@ -331,11 +336,11 @@ pushVoid(MalBlkPtr mb, InstrPtr q)
 
 	if (q == NULL)
 		return NULL;
-	cst.vtype= TYPE_void;
-	cst.val.oval= oid_nil;
+	cst.vtype = TYPE_void;
+	cst.val.oval = oid_nil;
 	cst.len = 0;
-	_t = defConstant(mb,TYPE_void,&cst);
-	if( _t >= 0)
+	_t = defConstant(mb, TYPE_void, &cst);
+	if (_t >= 0)
 		return pushArgument(mb, q, _t);
 	return q;
 }
@@ -346,11 +351,11 @@ getLngConstant(MalBlkPtr mb, lng val)
 	int _t;
 	ValRecord cst;
 
-	cst.vtype= TYPE_lng;
-	cst.val.lval= val;
+	cst.vtype = TYPE_lng;
+	cst.val.lval = val;
 	cst.len = 0;
-	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
-	if( _t < 0)
+	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	if (_t < 0)
 		_t = defConstant(mb, TYPE_lng, &cst);
 	return _t;
 }
@@ -363,11 +368,11 @@ pushLng(MalBlkPtr mb, InstrPtr q, lng val)
 
 	if (q == NULL)
 		return NULL;
-	cst.vtype= TYPE_lng;
-	cst.val.lval= val;
+	cst.vtype = TYPE_lng;
+	cst.val.lval = val;
 	cst.len = 0;
-	_t = defConstant(mb,TYPE_lng,&cst);
-	if( _t >= 0)
+	_t = defConstant(mb, TYPE_lng, &cst);
+	if (_t >= 0)
 		return pushArgument(mb, q, _t);
 	return q;
 }
@@ -378,11 +383,11 @@ getShtConstant(MalBlkPtr mb, sht val)
 	int _t;
 	ValRecord cst;
 
-	cst.vtype= TYPE_sht;
-	cst.val.shval= val;
+	cst.vtype = TYPE_sht;
+	cst.val.shval = val;
 	cst.len = 0;
-	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
-	if( _t < 0)
+	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	if (_t < 0)
 		_t = defConstant(mb, TYPE_sht, &cst);
 	return _t;
 }
@@ -395,11 +400,11 @@ pushSht(MalBlkPtr mb, InstrPtr q, sht val)
 
 	if (q == NULL)
 		return NULL;
-	cst.vtype= TYPE_sht;
-	cst.val.shval= val;
+	cst.vtype = TYPE_sht;
+	cst.val.shval = val;
 	cst.len = 0;
-	_t = defConstant(mb,TYPE_sht,&cst);
-	if( _t >= 0)
+	_t = defConstant(mb, TYPE_sht, &cst);
+	if (_t >= 0)
 		return pushArgument(mb, q, _t);
 	return q;
 }
@@ -411,11 +416,11 @@ getHgeConstant(MalBlkPtr mb, hge val)
 	int _t;
 	ValRecord cst;
 
-	cst.vtype= TYPE_oid;
-	cst.val.hval= val;
+	cst.vtype = TYPE_oid;
+	cst.val.hval = val;
 	cst.len = 0;
-	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
-	if( _t < 0)
+	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	if (_t < 0)
 		_t = defConstant(mb, TYPE_hge, &cst);
 	return _t;
 }
@@ -428,10 +433,10 @@ pushHge(MalBlkPtr mb, InstrPtr q, hge val)
 
 	if (q == NULL)
 		return NULL;
-	cst.vtype= TYPE_hge;
-	cst.val.hval= val;
+	cst.vtype = TYPE_hge;
+	cst.val.hval = val;
 	cst.len = 0;
-	_t = defConstant(mb,TYPE_hge,&cst);
+	_t = defConstant(mb, TYPE_hge, &cst);
 	if (_t >= 0)
 		return pushArgument(mb, q, _t);
 	return q;
@@ -444,11 +449,11 @@ getDblConstant(MalBlkPtr mb, dbl val)
 	int _t;
 	ValRecord cst;
 
-	cst.vtype= TYPE_dbl;
-	cst.val.dval= val;
+	cst.vtype = TYPE_dbl;
+	cst.val.dval = val;
 	cst.len = 0;
-	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
-	if( _t < 0)
+	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	if (_t < 0)
 		_t = defConstant(mb, TYPE_dbl, &cst);
 	return _t;
 }
@@ -461,11 +466,11 @@ pushDbl(MalBlkPtr mb, InstrPtr q, dbl val)
 
 	if (q == NULL)
 		return NULL;
-	cst.vtype= TYPE_dbl;
-	cst.val.dval= val;
+	cst.vtype = TYPE_dbl;
+	cst.val.dval = val;
 	cst.len = 0;
-	_t = defConstant(mb,TYPE_dbl,&cst);
-	if( _t >= 0)
+	_t = defConstant(mb, TYPE_dbl, &cst);
+	if (_t >= 0)
 		return pushArgument(mb, q, _t);
 	return q;
 }
@@ -476,11 +481,11 @@ getFltConstant(MalBlkPtr mb, flt val)
 	int _t;
 	ValRecord cst;
 
-	cst.vtype= TYPE_flt;
-	cst.val.fval= val;
+	cst.vtype = TYPE_flt;
+	cst.val.fval = val;
 	cst.len = 0;
-	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
-	if( _t < 0)
+	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	if (_t < 0)
 		_t = defConstant(mb, TYPE_flt, &cst);
 	return _t;
 }
@@ -493,11 +498,11 @@ pushFlt(MalBlkPtr mb, InstrPtr q, flt val)
 
 	if (q == NULL)
 		return NULL;
-	cst.vtype= TYPE_flt;
-	cst.val.fval= val;
+	cst.vtype = TYPE_flt;
+	cst.val.fval = val;
 	cst.len = 0;
-	_t = defConstant(mb,TYPE_flt,&cst);
-	if( _t >= 0)
+	_t = defConstant(mb, TYPE_flt, &cst);
+	if (_t >= 0)
 		return pushArgument(mb, q, _t);
 	return q;
 }
@@ -509,11 +514,11 @@ getStrConstant(MalBlkPtr mb, str val)
 	ValRecord cst;
 
 	VALset(&cst, TYPE_str, val);
-	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
-	if( _t < 0) {
+	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	if (_t < 0) {
 		if ((cst.val.sval = GDKmalloc(cst.len)) == NULL)
 			return -1;
-		memcpy(cst.val.sval, val, cst.len); /* includes terminating \0 */
+		memcpy(cst.val.sval, val, cst.len);	/* includes terminating \0 */
 		_t = defConstant(mb, TYPE_str, &cst);
 	}
 	return _t;
@@ -528,12 +533,13 @@ pushStr(MalBlkPtr mb, InstrPtr q, const char *Val)
 	if (q == NULL)
 		return NULL;
 	if (VALinit(&cst, TYPE_str, Val) == NULL) {
-		str msg = createException(MAL, "pushStr", "Can not allocate string variable");
+		str msg = createException(MAL, "pushStr",
+								  "Can not allocate string variable");
 		addMalException(mb, msg);
 		freeException(msg);
-	} else{
-		_t = defConstant(mb,TYPE_str,&cst);
-		if( _t >= 0)
+	} else {
+		_t = defConstant(mb, TYPE_str, &cst);
+		if (_t >= 0)
 			return pushArgument(mb, q, _t);
 	}
 	return q;
@@ -545,11 +551,11 @@ getBitConstant(MalBlkPtr mb, bit val)
 	int _t;
 	ValRecord cst;
 
-	cst.vtype= TYPE_bit;
-	cst.val.btval= val;
+	cst.vtype = TYPE_bit;
+	cst.val.btval = val;
 	cst.len = 0;
-	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
-	if( _t < 0)
+	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
+	if (_t < 0)
 		_t = defConstant(mb, TYPE_bit, &cst);
 	return _t;
 }
@@ -562,11 +568,11 @@ pushBit(MalBlkPtr mb, InstrPtr q, bit val)
 
 	if (q == NULL)
 		return NULL;
-	cst.vtype= TYPE_bit;
-	cst.val.btval= val;
+	cst.vtype = TYPE_bit;
+	cst.val.btval = val;
 	cst.len = 0;
-	_t = defConstant(mb,TYPE_bit,&cst);
-	if( _t >= 0)
+	_t = defConstant(mb, TYPE_bit, &cst);
+	if (_t >= 0)
 		return pushArgument(mb, q, _t);
 	return q;
 }
@@ -580,27 +586,28 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 	if (q == NULL)
 		return NULL;
 	cst.len = 0;
-	if( !isaBatType(tpe) && tpe != TYPE_bat ) {
+	if (!isaBatType(tpe) && tpe != TYPE_bat) {
 		assert(tpe < MAXATOMS);	/* in particular, tpe!=TYPE_any */
 		if (!tpe) {
-			cst.vtype=TYPE_void;
-			cst.val.oval= oid_nil;
+			cst.vtype = TYPE_void;
+			cst.val.oval = oid_nil;
 		} else {
 			if (VALinit(&cst, tpe, ATOMnilptr(tpe)) == NULL) {
-				str msg =  createException(MAL, "pushNil", "Can not allocate nil variable");
+				str msg = createException(MAL, "pushNil",
+										  "Can not allocate nil variable");
 				addMalException(mb, msg);
 				freeException(msg);
 			}
 		}
-		_t = defConstant(mb,tpe,&cst);
+		_t = defConstant(mb, tpe, &cst);
 	} else {
 		cst.vtype = TYPE_bat;
 		cst.val.bval = bat_nil;
-		_t = defConstant(mb,TYPE_bat,&cst);
-		getVarType(mb,_t) = tpe;
+		_t = defConstant(mb, TYPE_bat, &cst);
+		getVarType(mb, _t) = tpe;
 	}
-	if( _t >= 0){
-		q= pushArgument(mb, q, _t);
+	if (_t >= 0) {
+		q = pushArgument(mb, q, _t);
 	}
 	return q;
 }
@@ -608,28 +615,29 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 InstrPtr
 pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 {
-	int _t,idx;
+	int _t, idx;
 	ValRecord cst;
 	str msg;
 
 	if (q == NULL)
 		return NULL;
-	idx= getAtomIndex(tpe, strlen(tpe), TYPE_any);
-	if( idx < 0 || idx >= GDKatomcnt || idx >= MAXATOMS){
-		str msg = createException(MAL, "pushNilType", "Can not allocate type variable");
+	idx = getAtomIndex(tpe, strlen(tpe), TYPE_any);
+	if (idx < 0 || idx >= GDKatomcnt || idx >= MAXATOMS) {
+		str msg = createException(MAL, "pushNilType",
+								  "Can not allocate type variable");
 		addMalException(mb, msg);
 		freeException(msg);
 	} else {
-		cst.vtype=TYPE_void;
-		cst.val.oval= oid_nil;
+		cst.vtype = TYPE_void;
+		cst.val.oval = oid_nil;
 		cst.len = 0;
 		msg = convertConstant(idx, &cst);
 		if (msg != MAL_SUCCEED) {
 			addMalException(mb, msg);
 			freeException(msg);
 		} else {
-			_t = defConstant(mb,idx,&cst);
-			if( _t >= 0){
+			_t = defConstant(mb, idx, &cst);
+			if (_t >= 0) {
 				return pushArgument(mb, q, _t);
 			}
 		}
@@ -646,16 +654,16 @@ pushType(MalBlkPtr mb, InstrPtr q, int tpe)
 
 	if (q == NULL)
 		return NULL;
-	cst.vtype=TYPE_void;
-	cst.val.oval= oid_nil;
+	cst.vtype = TYPE_void;
+	cst.val.oval = oid_nil;
 	cst.len = 0;
 	msg = convertConstant(tpe, &cst);
-	if (msg != MAL_SUCCEED){
+	if (msg != MAL_SUCCEED) {
 		addMalException(mb, msg);
 		freeException(msg);
 	} else {
-		_t = defConstant(mb,tpe,&cst);
-		if( _t >= 0){
+		_t = defConstant(mb, tpe, &cst);
+		if (_t >= 0) {
 			return pushArgument(mb, q, _t);
 		}
 	}
@@ -671,16 +679,16 @@ pushZero(MalBlkPtr mb, InstrPtr q, int tpe)
 
 	if (q == NULL)
 		return NULL;
-	cst.vtype=TYPE_int;
-	cst.val.ival= 0;
+	cst.vtype = TYPE_int;
+	cst.val.ival = 0;
 	cst.len = 0;
 	msg = convertConstant(tpe, &cst);
 	if (msg != MAL_SUCCEED) {
 		addMalException(mb, msg);
 		freeException(msg);
 	} else {
-		_t = defConstant(mb,tpe,&cst);
-		if( _t >= 0)
+		_t = defConstant(mb, tpe, &cst);
+		if (_t >= 0)
 			return pushArgument(mb, q, _t);
 	}
 	return q;
@@ -694,9 +702,9 @@ pushEmptyBAT(MalBlkPtr mb, InstrPtr q, int tpe)
 	setModuleId(q, getName("bat"));
 	setFunctionId(q, getName("new"));
 
-	q = pushArgument(mb, q, newTypeVariable(mb,TYPE_void));
-	q = pushArgument(mb, q, newTypeVariable(mb,getBatType(tpe)));
-	q = pushZero(mb,q,TYPE_lng);
+	q = pushArgument(mb, q, newTypeVariable(mb, TYPE_void));
+	q = pushArgument(mb, q, newTypeVariable(mb, getBatType(tpe)));
+	q = pushZero(mb, q, TYPE_lng);
 	return q;
 }
 
@@ -713,8 +721,8 @@ pushValue(MalBlkPtr mb, InstrPtr q, ValPtr vr)
 		addMalException(mb, msg);
 		freeException(msg);
 	} else {
-		_t = defConstant(mb,cst.vtype,&cst);
-		if( _t >=0 )
+		_t = defConstant(mb, cst.vtype, &cst);
+		if (_t >= 0)
 			return pushArgument(mb, q, _t);
 	}
 	return q;

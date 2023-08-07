@@ -15,6 +15,7 @@
 #include "mal_interpreter.h"
 #include "mal_builder.h"
 
-extern str OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+extern str OPTmergetableImplementation(Client cntxt, MalBlkPtr mb,
+									   MalStkPtr stk, InstrPtr p);
 
 #endif

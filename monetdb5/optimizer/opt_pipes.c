@@ -206,7 +206,7 @@ static struct pipeline {
  * settings!
  */
 /* sentinel */
-	{NULL, NULL, false, },
+	{NULL, NULL, false,},
 };
 
 #include "optimizer_private.h"
@@ -223,17 +223,20 @@ validatePipe(struct pipeline *pipe)
 	if (pipe->def == NULL || pipe->def[0] == NULL)
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "missing optimizers");
 
-	if (strcmp(pipe->def[0], "defaultfast") == 0 ||
-		strcmp(pipe->def[0], "minimalfast") == 0)
+	if (strcmp(pipe->def[0], "defaultfast") == 0
+		|| strcmp(pipe->def[0], "minimalfast") == 0)
 		return MAL_SUCCEED;
 
 	if (strcmp(pipe->def[0], "inline") != 0)
-		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'inline' should be the first\n");
+		throw(MAL, "optimizer.validate",
+			  SQLSTATE(42000) "'inline' should be the first\n");
 
 	for (i = 0; pipe->def[i]; i++) {
 		const char *fname = pipe->def[i];
 		if (garbage)
-			throw(MAL, "optimizer.validate", SQLSTATE(42000) "'garbageCollector' should be used as the last one\n");
+			throw(MAL, "optimizer.validate",
+				  SQLSTATE(42000)
+				  "'garbageCollector' should be used as the last one\n");
 		if (strcmp(fname, "deadcode") == 0)
 			deadcode = true;
 		else if (strcmp(fname, "remap") == 0)
@@ -251,19 +254,26 @@ validatePipe(struct pipeline *pipe)
 	}
 
 	if (mitosis && !mergetable)
-		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'mitosis' needs 'mergetable'\n");
+		throw(MAL, "optimizer.validate",
+			  SQLSTATE(42000) "'mitosis' needs 'mergetable'\n");
 
 	/* several optimizer should be used */
 	if (!multiplex)
-		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'multiplex' should be used\n");
+		throw(MAL, "optimizer.validate",
+			  SQLSTATE(42000) "'multiplex' should be used\n");
 	if (!deadcode)
-		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'deadcode' should be used at least once\n");
+		throw(MAL, "optimizer.validate",
+			  SQLSTATE(42000) "'deadcode' should be used at least once\n");
 	if (!garbage)
-		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'garbageCollector' should be used as the last one\n");
+		throw(MAL, "optimizer.validate",
+			  SQLSTATE(42000)
+			  "'garbageCollector' should be used as the last one\n");
 	if (!remap)
-		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'remap' should be used\n");
+		throw(MAL, "optimizer.validate",
+			  SQLSTATE(42000) "'remap' should be used\n");
 	if (!generator)
-		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'generator' should be used\n");
+		throw(MAL, "optimizer.validate",
+			  SQLSTATE(42000) "'generator' should be used\n");
 
 	return MAL_SUCCEED;
 }
@@ -285,11 +295,13 @@ addPipeDefinition(Client cntxt, const char *name, const char *pipe)
 
 	if (i == MAXOPTPIPES) {
 		MT_lock_unset(&pipeLock);
-		throw(MAL, "optimizer.addPipeDefinition", SQLSTATE(HY013) "Out of slots");
+		throw(MAL, "optimizer.addPipeDefinition",
+			  SQLSTATE(HY013) "Out of slots");
 	}
 	if (pipes[i].name && pipes[i].builtin) {
 		MT_lock_unset(&pipeLock);
-		throw(MAL, "optimizer.addPipeDefinition", SQLSTATE(42000) "No overwrite of built in allowed");
+		throw(MAL, "optimizer.addPipeDefinition",
+			  SQLSTATE(42000) "No overwrite of built in allowed");
 	}
 
 	/* save old value */
@@ -297,7 +309,7 @@ addPipeDefinition(Client cntxt, const char *name, const char *pipe)
 	pipes[i] = (struct pipeline) {
 		.name = GDKstrdup(name),
 	};
-	if(pipes[i].name == NULL)
+	if (pipes[i].name == NULL)
 		goto bailout;
 	n = 1;
 	for (p = pipe; p; p = strchr(p, ';')) {
@@ -314,7 +326,8 @@ addPipeDefinition(Client cntxt, const char *name, const char *pipe)
 		while (q < p && *q != '(' && *q != '.' && !GDKisspace(*q))
 			q++;
 		if (*q == '.') {
-			msg = createException(MAL, "optimizer.addPipeDefinition", SQLSTATE(42000) "Bad pipeline definition");
+			msg = createException(MAL, "optimizer.addPipeDefinition",
+								  SQLSTATE(42000) "Bad pipeline definition");
 			goto bailout;
 		}
 		if (q > pipe) {
@@ -380,7 +393,8 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 		BBPreclaim(bn);
 		BBPreclaim(bs);
 		GDKfree(buf);
-		throw(MAL, "optimizer.getpipeDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.getpipeDefinition",
+			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) {
@@ -396,7 +410,8 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 				BBPreclaim(bn);
 				BBPreclaim(bs);
 				GDKfree(buf);
-				throw(MAL, "optimizer.getpipeDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				throw(MAL, "optimizer.getpipeDefinition",
+					  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 		char *p = buf;
@@ -405,14 +420,16 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 			p = stpcpy(p, pipes[i].def[j]);
 			p = stpcpy(p, "();");
 		}
-		if (BUNappend(b, pipes[i].name, false) != GDK_SUCCEED ||
-			BUNappend(bn, buf, false) != GDK_SUCCEED ||
-			BUNappend(bs, pipes[i].builtin ? "stable" : "experimental", false) != GDK_SUCCEED) {
+		if (BUNappend(b, pipes[i].name, false) != GDK_SUCCEED
+			|| BUNappend(bn, buf, false) != GDK_SUCCEED
+			|| BUNappend(bs, pipes[i].builtin ? "stable" : "experimental",
+						 false) != GDK_SUCCEED) {
 			BBPreclaim(b);
 			BBPreclaim(bn);
 			BBPreclaim(bs);
 			GDKfree(buf);
-			throw(MAL, "optimizer.getpipeDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "optimizer.getpipeDefinition",
+				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	GDKfree(buf);
@@ -448,13 +465,15 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 	}
 
 	if (i == MAXOPTPIPES || pipes[i].name == NULL)
-		throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(22023) "Unknown optimizer");
+		throw(MAL, "optimizer.addOptimizerPipe",
+			  SQLSTATE(22023) "Unknown optimizer");
 
 	for (j = 0; pipes[i].def[j]; j++) {
 		p = newFcnCall(mb, optimizerRef, pipes[i].def[j]);
 		if (p == NULL)
-			throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		p->fcn = (MALfcn)OPTwrapper;
+			throw(MAL, "optimizer.addOptimizerPipe",
+				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		p->fcn = (MALfcn) OPTwrapper;
 		p->token = PATcall;
 		pushInstruction(mb, p);
 	}
