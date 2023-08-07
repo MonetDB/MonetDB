@@ -26,13 +26,13 @@ static str
 MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *mod, *fcn, *sig, *adr, *com;
-	bat *mx = getArgReference_bat(stk,pci,0);
-	bat *fx = getArgReference_bat(stk,pci,1);
-	bat *sx = getArgReference_bat(stk,pci,2);
-	bat *ax = getArgReference_bat(stk,pci,3);
-	bat *cx = getArgReference_bat(stk,pci,4);
+	bat *mx = getArgReference_bat(stk, pci, 0);
+	bat *fx = getArgReference_bat(stk, pci, 1);
+	bat *sx = getArgReference_bat(stk, pci, 2);
+	bat *ax = getArgReference_bat(stk, pci, 3);
+	bat *cx = getArgReference_bat(stk, pci, 4);
 	Module s;
-	Module* moduleList;
+	Module *moduleList;
 	int length;
 	int j, k, top = 0;
 	Symbol t;
@@ -71,17 +71,21 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					for (t = s->space[j]; t != NULL; t = t->peer) {
 						if (t->def->stmt[0]->fcnname[0] == '#')
 							continue;
-						(void) fcnDefinition(t->def, getInstrPtr(t->def, 0), buf, TRUE, buf, sizeof(buf));
+						(void) fcnDefinition(t->def, getInstrPtr(t->def, 0),
+											 buf, TRUE, buf, sizeof(buf));
 						tt = strstr(buf, "address ");
 						if (tt) {
 							*tt = 0;
 							tt += 8;
 						}
-						if (BUNappend(mod, t->def->stmt[0]->modname, false) != GDK_SUCCEED ||
-							BUNappend(fcn, t->def->stmt[0]->fcnname, false) != GDK_SUCCEED ||
-							BUNappend(com, t->def->help ? t->def->help : "", false) != GDK_SUCCEED ||
-							BUNappend(sig,buf,false) != GDK_SUCCEED ||
-							BUNappend(adr, tt ? tt : "", false) != GDK_SUCCEED) {
+						if (BUNappend(mod, t->def->stmt[0]->modname, false) != GDK_SUCCEED
+							|| BUNappend(fcn, t->def->stmt[0]->fcnname,
+										 false) != GDK_SUCCEED
+							|| BUNappend(com, t->def->help ? t->def->help : "",
+										 false) != GDK_SUCCEED
+							|| BUNappend(sig, buf, false) != GDK_SUCCEED
+							|| BUNappend(adr, tt ? tt : "",
+										 false) != GDK_SUCCEED) {
 							goto bailout;
 						}
 					}
@@ -100,7 +104,7 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(adr);
 	*cx = com->batCacheid;
 	BBPkeepref(com);
-	(void)mb;
+	(void) mb;
 	return MAL_SUCCEED;
 
   bailout:

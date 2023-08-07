@@ -11,7 +11,9 @@
 #ifndef _AGGR_H_
 #define _AGGR_H_
 
-extern str AGGRsum3_lng(bat *retval, const bat *bid, const bat *gid, const bat *eid);
-extern str AGGRsum3_hge(bat *retval, const bat *bid, const bat *gid, const bat *eid);
+extern str AGGRsum3_lng(bat *retval, const bat *bid, const bat *gid,
+						const bat *eid);
+extern str AGGRsum3_hge(bat *retval, const bat *bid, const bat *gid,
+						const bat *eid);
 
 #endif /* _AGGR_H_ */

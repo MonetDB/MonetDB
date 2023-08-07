@@ -76,8 +76,8 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 	if (s == 0)
 		return -1;
 
-	if ( p->retc < 256){
-		for (i=0; i< p->retc; i++)
+	if (p->retc < 256) {
+		for (i = 0; i < p->retc; i++)
 			returns[i] = 0;
 		returntype = returns;
 	} else {
@@ -128,7 +128,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			int limit = sig->polymorphic;
 			if (!(sig->argc == p->argc ||
 				  (sig->argc < p->argc && sig->varargs & (VARARGS | VARRETS)))
-				) {
+					) {
 				s = s->peer;
 				continue;
 			}
@@ -270,8 +270,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 					s1 = -1;
 					break;
 				}
-			}
-		else
+		} else
 			/* check for non-polymorphic return */
 			for (k = i = 0; i < p->retc; i++) {
 				int actual = getArgType(mb, p, i);
@@ -308,7 +307,10 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		for (i = 0; i < p->retc; i++) {
 			int ts = returntype[i];
 			if (isVarConstant(mb, getArg(p, i))) {
-					if(!silent) { mb->errors = createMalException(mb, idx, TYPE, "Assignment to constant"); }
+				if (!silent) {
+					mb->errors = createMalException(mb, idx, TYPE,
+													"Assignment to constant");
+				}
 				p->typechk = TYPE_UNKNOWN;
 				goto wrapup;
 			}
@@ -354,7 +356,8 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 				if (isAnyExpression(actual))
 					cnt++;
 			}
-			if (cnt == 0 && s->kind != COMMANDsymbol && s->kind != PATTERNsymbol) {
+			if (cnt == 0 && s->kind != COMMANDsymbol
+				&& s->kind != PATTERNsymbol) {
 				s = cloneFunction(scope, s, mb, p);
 				if (mb->errors)
 					goto wrapup;
@@ -362,10 +365,10 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		}
 		/* Any previousely found error in the block
 		 * turns the complete block into erroneous.
-		if (mb->errors) {
-			p->typechk = TYPE_UNKNOWN;
-			goto wrapup;
-		}
+		 if (mb->errors) {
+		 p->typechk = TYPE_UNKNOWN;
+		 goto wrapup;
+		 }
 		 */
 
 		/*
@@ -379,29 +382,29 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			switch (getSignature(s)->token) {
 			case COMMANDsymbol:
 				p->token = CMDcall;
-				p->fcn = getSignature(s)->fcn;      /* C implementation mandatory */
+				p->fcn = getSignature(s)->fcn;	/* C implementation mandatory */
 				if (p->fcn == NULL) {
 					if (!silent)
 						mb->errors = createMalException(mb, idx, TYPE,
-										"object code for command %s.%s missing",
-										p->modname, p->fcnname);
+														"object code for command %s.%s missing",
+														p->modname, p->fcnname);
 					p->typechk = TYPE_UNKNOWN;
 					goto wrapup;
 				}
 				break;
 			case PATTERNsymbol:
 				p->token = PATcall;
-				p->fcn = getSignature(s)->fcn;      /* C implementation optional */
+				p->fcn = getSignature(s)->fcn;	/* C implementation optional */
 				break;
 			case FUNCTIONsymbol:
 				p->token = FCNcall;
 				if (getSignature(s)->fcn)
-					p->fcn = getSignature(s)->fcn;     /* C implementation optional */
+					p->fcn = getSignature(s)->fcn;	/* C implementation optional */
 				break;
 			default:
 				if (!silent)
 					mb->errors = createMalException(mb, idx, MAL,
-										"MALresolve: unexpected token type");
+													"MALresolve: unexpected token type");
 				goto wrapup;
 			}
 			p->blk = s->def;
@@ -410,7 +413,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		if (returntype != returns)
 			GDKfree(returntype);
 		return s1;
-	} /* while */
+	}							/* while */
 	/*
 	 * We haven't found the correct function.  To ease debugging, we
 	 * may reveal that we found an instruction with the proper
@@ -470,7 +473,8 @@ typeMismatch(MalBlkPtr mb, InstrPtr p, int idx, int lhs, int rhs, int silent)
 	if (!silent) {
 		n1 = getTypeName(lhs);
 		n2 = getTypeName(rhs);
-		mb->errors = createMalException(mb, idx, TYPE, "type mismatch %s := %s", n1, n2);
+		mb->errors = createMalException(mb, idx, TYPE, "type mismatch %s := %s", n1,
+										n2);
 		GDKfree(n1);
 		GDKfree(n2);
 	}
@@ -536,24 +540,34 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 				char *errsig = NULL;
 				if (!malLibraryEnabled(p->modname)) {
 					mb->errors = createMalException(mb, idx, TYPE,
-										"'%s%s%s' library error in: %s",
-										(getModuleId(p) ? getModuleId(p) : ""),
-										(getModuleId(p) ? "." : ""),
-										getFunctionId(p), malLibraryHowToEnable(p->modname));
+													"'%s%s%s' library error in: %s",
+													(getModuleId(p) ?
+													 getModuleId(p) : ""),
+													(getModuleId(p) ? "." : ""),
+													getFunctionId(p),
+													malLibraryHowToEnable(p->
+																		  modname));
 				} else {
 					bool free_errsig = false, special_undefined = false;
 					errsig = malLibraryHowToEnable(p->modname);
 					if (!strcmp(errsig, "")) {
-						errsig = instruction2str(mb,0,p, (LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_VALUE));
+						errsig = instruction2str(mb, 0, p,
+												 (LIST_MAL_NAME | LIST_MAL_TYPE
+												  | LIST_MAL_VALUE));
 						free_errsig = true;
 					} else {
 						special_undefined = true;
 					}
 					mb->errors = createMalException(mb, idx, TYPE,
-										"'%s%s%s' undefined%s: %s",
-										(getModuleId(p) ? getModuleId(p) : ""),
-										(getModuleId(p) ? "." : ""),
-										getFunctionId(p), special_undefined ? "" : " in", errsig?errsig:"failed instruction2str()");
+													"'%s%s%s' undefined%s: %s",
+													(getModuleId(p) ?
+													 getModuleId(p) : ""),
+													(getModuleId(p) ? "." : ""),
+													getFunctionId(p),
+													special_undefined ? "" :
+													" in",
+													errsig ? errsig :
+													"failed instruction2str()");
 					if (free_errsig)
 						GDKfree(errsig);
 				}
@@ -569,12 +583,13 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 	 * This is achieved by propagation of the rhs types to the lhs
 	 * variables.
 	 */
-	if (getFunctionId(p)){
+	if (getFunctionId(p)) {
 		return;
 	}
 	if (p->retc >= 1 && p->argc > p->retc && p->argc != 2 * p->retc) {
-		if (!silent){
-			mb->errors  = createMalException(mb, idx, TYPE, "Multiple assignment mismatch");
+		if (!silent) {
+			mb->errors = createMalException(mb, idx, TYPE,
+											"Multiple assignment mismatch");
 		}
 		p->typechk = TYPE_RESOLVED;
 	} else
@@ -604,7 +619,7 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 
 				rhs = isaBatType(lhs) ? TYPE_bat : lhs;
 				k = defConstant(mb, rhs, &cst);
-				if( k >=0)
+				if (k >= 0)
 					p->argv[i] = k;
 				rhs = lhs;
 			}
@@ -621,7 +636,7 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 	if (p->barrier && p->retc == p->argc)
 		for (k = 0; k < p->retc; k++) {
 			int tpe = getArgType(mb, p, k);
-			if (isaBatType(tpe)  ||
+			if (isaBatType(tpe) ||
 				ATOMtype(tpe) == TYPE_str ||
 				(!isPolyType(tpe) && tpe < MAXATOMS && ATOMextern(tpe)))
 				setVarCleanup(mb, getArg(p, k));
@@ -649,14 +664,14 @@ chkTypes(Module s, MalBlkPtr mb, int silent)
 {
 	InstrPtr p = 0;
 	int i;
-	str msg= MAL_SUCCEED;
+	str msg = MAL_SUCCEED;
 
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		assert (p != NULL);
+		assert(p != NULL);
 		if (p->typechk != TYPE_RESOLVED)
 			typeChecker(s, mb, p, i, silent);
-		if (mb->errors){
+		if (mb->errors) {
 			msg = mb->errors;
 			mb->errors = NULL;
 			return msg;
@@ -672,7 +687,7 @@ chkTypes(Module s, MalBlkPtr mb, int silent)
 int
 chkInstruction(Module s, MalBlkPtr mb, InstrPtr p)
 {
-	if( mb->errors == MAL_SUCCEED){
+	if (mb->errors == MAL_SUCCEED) {
 		p->typechk = TYPE_UNKNOWN;
 		typeChecker(s, mb, p, getPC(mb, p), TRUE);
 	}
@@ -690,15 +705,15 @@ chkProgram(Module s, MalBlkPtr mb)
 		mb->typefixed = mb->stop == chk; ignored END */
 /*	if( mb->flowfixed == 0)*/
 
-	if (mb->errors){
+	if (mb->errors) {
 		msg = mb->errors;
 		mb->errors = NULL;
 		return msg;
 	}
 	msg = chkTypes(s, mb, FALSE);
-	if( msg == MAL_SUCCEED)
+	if (msg == MAL_SUCCEED)
 		msg = chkFlow(mb);
-	if(msg == MAL_SUCCEED)
+	if (msg == MAL_SUCCEED)
 		msg = chkDeclarations(mb);
 	return msg;
 }

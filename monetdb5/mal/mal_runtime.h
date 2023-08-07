@@ -23,14 +23,14 @@
  * Their management is orchestrated from here.
  * We need to maintain some state from ProfileBegin
 */
-typedef struct{
-	lng ticks;			/* at start of this profile interval */
+typedef struct {
+	lng ticks;					/* at start of this profile interval */
 } *RuntimeProfile, RuntimeProfileRecord;
 
 /* The actual running queries are assembled in a queue
  * for external inspection and manipulation
  */
-typedef struct QRYQUEUE{
+typedef struct QRYQUEUE {
 	Client cntxt;
 	MalBlkPtr mb;
 	MalStkPtr stk;
@@ -47,8 +47,8 @@ typedef struct QRYQUEUE{
 } *QueryQueue;
 
 /* We keep a few statistics per user to identify unexpected behavior */
-typedef struct USERSTAT{
-	oid user;       /* user id in the auth administration */
+typedef struct USERSTAT {
+	oid user;					/* user id in the auth administration */
 	str username;
 	lng querycount;
 	lng totalticks;
@@ -59,23 +59,26 @@ typedef struct USERSTAT{
 } *UserStats;
 extern size_t usrstatscnt;
 
-typedef struct WORKINGSET{
-	Client		cntxt;
-	MalBlkPtr   mb;
-	MalStkPtr   stk;
-	InstrPtr    pci;
-	lng         clock;			/* start time */
+typedef struct WORKINGSET {
+	Client cntxt;
+	MalBlkPtr mb;
+	MalStkPtr stk;
+	InstrPtr pci;
+	lng clock;					/* start time */
 } Workingset;
 
 extern Workingset workingset[THREADS];
 
 extern void runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
 extern void runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
-extern void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
-extern void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
+extern void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+								InstrPtr pci, RuntimeProfile prof);
+extern void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+							   InstrPtr pci, RuntimeProfile prof);
 extern lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
 extern lng getBatSpace(BAT *b);
-extern void sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng clk, lng ticks);
+extern void sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+							 InstrPtr pci, lng clk, lng ticks);
 
 extern QueryQueue QRYqueue;
 extern UserStats USRstats;

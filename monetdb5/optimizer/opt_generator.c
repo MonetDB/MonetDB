@@ -70,10 +70,11 @@ pushInstruction(mb,P);
 	pushInstruction(mb,p);
 
 str
-OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+						   InstrPtr pci)
 {
-	InstrPtr p,q, *old, *series;
-	int i, k, limit, slimit, actions=0;
+	InstrPtr p, q, *old, *series;
+	int i, k, limit, slimit, actions = 0;
 	const char *bteRef = getName("bte");
 	const char *shtRef = getName("sht");
 	const char *intRef = getName("int");
@@ -90,12 +91,12 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	slimit = mb->ssize;
 
 	// check applicability first
-	for( i=0; i < limit; i++){
+	for (i = 0; i < limit; i++) {
 		p = old[i];
-		if ( getModuleId(p) == generatorRef && getFunctionId(p) == seriesRef)
+		if (getModuleId(p) == generatorRef && getFunctionId(p) == seriesRef)
 			needed = 1;
 		/* avoid error in table-udf-column-descriptor */
-		if (p->token == RETURNsymbol || p->barrier == RETURNsymbol){
+		if (p->token == RETURNsymbol || p->barrier == RETURNsymbol) {
 			old = NULL;
 			goto wrapup;
 		}
@@ -103,66 +104,82 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	if (!needed)
 		goto wrapup;
 
-	series = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->vtop);
-	if(series == NULL)
-		throw(MAL,"optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	series = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * mb->vtop);
+	if (series == NULL)
+		throw(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(series);
-		throw(MAL,"optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	for( i=0; i < limit; i++){
+	for (i = 0; i < limit; i++) {
 		p = old[i];
-		if (p->token == ENDsymbol){
+		if (p->token == ENDsymbol) {
 			break;
 		}
-		if ( getModuleId(p) == generatorRef && getFunctionId(p) == seriesRef){
-			series[getArg(p,0)] = p;
+		if (getModuleId(p) == generatorRef && getFunctionId(p) == seriesRef) {
+			series[getArg(p, 0)] = p;
 			setModuleId(p, generatorRef);
 			setFunctionId(p, parametersRef);
 			typeChecker(cntxt->usermodule, mb, p, i, TRUE);
-			pushInstruction(mb,p);
-		} else if ( getModuleId(p) == algebraRef && getFunctionId(p) == selectRef && series[getArg(p,1)]){
-			errorCheck(p,i, algebraRef,getArg(p,1));
-		} else if ( getModuleId(p) == algebraRef && getFunctionId(p) == thetaselectRef && series[getArg(p,1)]){
-			errorCheck(p,i,algebraRef,getArg(p,1));
-		} else if ( getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef && series[getArg(p,2)]){
-			errorCheck(p,i,algebraRef,getArg(p,2));
-		} else if ( getModuleId(p) == sqlRef && getFunctionId(p) ==  putName("exportValue") && isaBatType(getArgType(mb,p,0)) ){
+			pushInstruction(mb, p);
+		} else if (getModuleId(p) == algebraRef && getFunctionId(p) == selectRef
+				   && series[getArg(p, 1)]) {
+			errorCheck(p, i, algebraRef, getArg(p, 1));
+		} else if (getModuleId(p) == algebraRef
+				   && getFunctionId(p) == thetaselectRef
+				   && series[getArg(p, 1)]) {
+			errorCheck(p, i, algebraRef, getArg(p, 1));
+		} else if (getModuleId(p) == algebraRef
+				   && getFunctionId(p) == projectionRef
+				   && series[getArg(p, 2)]) {
+			errorCheck(p, i, algebraRef, getArg(p, 2));
+		} else if (getModuleId(p) == sqlRef
+				   && getFunctionId(p) == putName("exportValue")
+				   && isaBatType(getArgType(mb, p, 0))) {
 			// interface expects scalar type only, not expressable in MAL signature
-			mb->errors=createException(MAL, "generate_series", SQLSTATE(42000) "internal error, generate_series is a table producing function");
-		}else if ( getModuleId(p) == batcalcRef && getFunctionId(p) == bteRef && series[getArg(p,1)] && p->argc == 2 ){
+			mb->errors = createException(MAL, "generate_series",
+										 SQLSTATE(42000)
+										 "internal error, generate_series is a table producing function");
+		} else if (getModuleId(p) == batcalcRef && getFunctionId(p) == bteRef
+				   && series[getArg(p, 1)] && p->argc == 2) {
 			casting(bte);
-		} else if ( getModuleId(p) == batcalcRef && getFunctionId(p) == shtRef && series[getArg(p,1)] && p->argc == 2 ){
+		} else if (getModuleId(p) == batcalcRef && getFunctionId(p) == shtRef
+				   && series[getArg(p, 1)] && p->argc == 2) {
 			casting(sht);
-		} else if ( getModuleId(p) == batcalcRef && getFunctionId(p) == intRef && series[getArg(p,1)] && p->argc == 2 ){
+		} else if (getModuleId(p) == batcalcRef && getFunctionId(p) == intRef
+				   && series[getArg(p, 1)] && p->argc == 2) {
 			casting(int);
-		} else if ( getModuleId(p) == batcalcRef && getFunctionId(p) == lngRef && series[getArg(p,1)] && p->argc == 2 ){
+		} else if (getModuleId(p) == batcalcRef && getFunctionId(p) == lngRef
+				   && series[getArg(p, 1)] && p->argc == 2) {
 			casting(lng);
-		} else if ( getModuleId(p) == batcalcRef && getFunctionId(p) == fltRef && series[getArg(p,1)] && p->argc == 2 ){
+		} else if (getModuleId(p) == batcalcRef && getFunctionId(p) == fltRef
+				   && series[getArg(p, 1)] && p->argc == 2) {
 			casting(flt);
-		} else if ( getModuleId(p) == batcalcRef && getFunctionId(p) == dblRef && series[getArg(p,1)] && p->argc == 2 ){
+		} else if (getModuleId(p) == batcalcRef && getFunctionId(p) == dblRef
+				   && series[getArg(p, 1)] && p->argc == 2) {
 			casting(dbl);
-		} else if ( getModuleId(p) == languageRef && getFunctionId(p) == passRef )
-			pushInstruction(mb,p);
+		} else if (getModuleId(p) == languageRef && getFunctionId(p) == passRef)
+			pushInstruction(mb, p);
 		else {
 			// check for use without conversion
-			for(k = p->retc; k < p->argc; k++)
-			if( series[getArg(p,k)]){
-				const char *m = getModuleId(p);
-				setModuleId(p, generatorRef);
-				typeChecker(cntxt->usermodule, mb, p, i, TRUE);
-				if(p->typechk == TYPE_UNKNOWN){
-					setModuleId(p,m);
+			for (k = p->retc; k < p->argc; k++)
+				if (series[getArg(p, k)]) {
+					const char *m = getModuleId(p);
+					setModuleId(p, generatorRef);
 					typeChecker(cntxt->usermodule, mb, p, i, TRUE);
-					InstrPtr r = series[getArg(p,k)];
-					setModuleId(r, generatorRef);
-					setFunctionId(r, seriesRef);
-					typeChecker(cntxt->usermodule, mb, r, getPC(mb,r),  TRUE);
+					if (p->typechk == TYPE_UNKNOWN) {
+						setModuleId(p, m);
+						typeChecker(cntxt->usermodule, mb, p, i, TRUE);
+						InstrPtr r = series[getArg(p, k)];
+						setModuleId(r, generatorRef);
+						setFunctionId(r, seriesRef);
+						typeChecker(cntxt->usermodule, mb, r, getPC(mb, r),
+									TRUE);
+					}
 				}
-			}
-			pushInstruction(mb,p);
+			pushInstruction(mb, p);
 		}
 	}
 	for (; i < limit; i++)
@@ -178,12 +195,12 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	/* all new/modified statements are already checked */
 	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	// if (!msg)
-	// 	msg = chkFlow(mb);
+	//      msg = chkFlow(mb);
 	// if (!msg)
-	// 	msg = chkDeclarations(mb);
+	//      msg = chkDeclarations(mb);
 	/* keep all actions taken as a post block comment */
-wrapup:
-	/* keep actions taken as a fake argument*/
+  wrapup:
+	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 	return msg;
 }

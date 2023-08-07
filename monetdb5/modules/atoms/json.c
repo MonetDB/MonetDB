@@ -20,7 +20,7 @@
 #include "mal_interpreter.h"
 
 typedef enum JSONkind {
-	JSON_OBJECT=1,
+	JSON_OBJECT = 1,
 	JSON_ARRAY,
 	JSON_ELEMENT,
 	JSON_VALUE,
@@ -33,20 +33,20 @@ typedef enum JSONkind {
 /* The JSON index structure is meant for short lived versions */
 typedef struct JSONterm {
 	JSONkind kind;
-	char *name; /* exclude the quotes */
+	char *name;					/* exclude the quotes */
 	size_t namelen;
-	const char *value; /* start of string rep */
+	const char *value;			/* start of string rep */
 	size_t valuelen;
-	int child, next, tail; /* next offsets allow you to walk array/object chains
-							  and append quickly */
+	int child, next, tail;		/* next offsets allow you to walk array/object chains
+								   and append quickly */
 	/* An array or object item has a number of components */
 } JSONterm;
 
-typedef struct JSON{
-    JSONterm *elm;
-    str error;
-    int size;
-    int free;
+typedef struct JSON {
+	JSONterm *elm;
+	str error;
+	int size;
+	int free;
 } JSON;
 
 typedef str json;
@@ -89,10 +89,10 @@ JSONnewtree(void)
 {
 	JSON *js;
 
-	js = (JSON *) GDKzalloc(sizeof(JSON));
+	js = GDKzalloc(sizeof(JSON));
 	if (js == NULL)
 		return NULL;
-	js->elm = (JSONterm *) GDKzalloc(sizeof(JSONterm) * jsonhint);
+	js->elm = GDKzalloc(sizeof(JSONterm) * jsonhint);
 	if (js->elm == NULL) {
 		GDKfree(js);
 		return NULL;
@@ -107,9 +107,10 @@ JSONnew(JSON *js)
 	JSONterm *term;
 
 	if (js->free == js->size) {
-		term = (JSONterm *) GDKrealloc(js->elm, sizeof(JSONterm) * (js->size + 8));
+		term = GDKrealloc(js->elm, sizeof(JSONterm) * (js->size + 8));
 		if (term == NULL) {
-			js->error = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			js->error = createException(MAL, "json.new",
+										SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return js->free - 1;
 		}
 		js->elm = term;
@@ -196,7 +197,7 @@ JSONtoString(str *s, size_t *len, const void *SRC, bool external)
 	}
 	/* count how much space we need for the output string */
 	if (external) {
-		cnt = 3;		/* two times " plus \0 */
+		cnt = 3;				/* two times " plus \0 */
 		for (c = src; *c; c++)
 			switch (*c) {
 			case '"':
@@ -264,10 +265,10 @@ JSONdumpInternal(JSON *jt, int depth)
 		size_t datlen = 0;
 		je = jt->elm + idx;
 
-		if (datlen + depth*4 + 512 > buflen) {
+		if (datlen + depth * 4 + 512 > buflen) {
 			do {
 				buflen += 1024;
-			} while (datlen + depth*4 + 512 > buflen);
+			} while (datlen + depth * 4 + 512 > buflen);
 			char *newbuf = GDKrealloc(buffer, buflen);
 			if (newbuf == NULL) {
 				GDKfree(buffer);
@@ -276,7 +277,8 @@ JSONdumpInternal(JSON *jt, int depth)
 			}
 			buffer = newbuf;
 		}
-		datlen += snprintf(buffer + datlen, buflen - datlen, "%*s", depth * 4, "");
+		datlen += snprintf(buffer + datlen, buflen - datlen, "%*s", depth * 4,
+						   "");
 		datlen += snprintf(buffer + datlen, buflen - datlen, "[%d] ", idx);
 		switch (je->kind) {
 		case JSON_OBJECT:
@@ -304,9 +306,11 @@ JSONdumpInternal(JSON *jt, int depth)
 			datlen += snprintf(buffer + datlen, buflen - datlen, "null ");
 			break;
 		default:
-			datlen += snprintf(buffer + datlen, buflen - datlen, "unknown %d ", (int) je->kind);
+			datlen += snprintf(buffer + datlen, buflen - datlen, "unknown %d ",
+							   (int) je->kind);
 		}
-		datlen += snprintf(buffer + datlen, buflen - datlen, "child %d list ", je->child);
+		datlen += snprintf(buffer + datlen, buflen - datlen, "child %d list ",
+						   je->child);
 		for (i = je->next; i; i = jt->elm[i].next) {
 			if (datlen + 10 > buflen) {
 				buflen += 1024;
@@ -333,7 +337,8 @@ JSONdumpInternal(JSON *jt, int depth)
 				}
 				buffer = newbuf;
 			}
-			datlen += snprintf(buffer + datlen, buflen - datlen, "%.*s : ", (int) je->namelen, je->name);
+			datlen += snprintf(buffer + datlen, buflen - datlen, "%.*s : ",
+							   (int) je->namelen, je->name);
 		}
 		if (je->value) {
 			if (datlen + 10 + je->valuelen > buflen) {
@@ -348,7 +353,8 @@ JSONdumpInternal(JSON *jt, int depth)
 				}
 				buffer = newbuf;
 			}
-			datlen += snprintf(buffer + datlen, buflen - datlen, "%.*s", (int) je->valuelen, je->value);
+			datlen += snprintf(buffer + datlen, buflen - datlen, "%.*s",
+							   (int) je->valuelen, je->value);
 		}
 		if (BUNappend(bn, buffer, false) != GDK_SUCCEED) {
 			BBPreclaim(bn);
@@ -367,7 +373,7 @@ JSONdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 
 	bat *ret = getArgReference_bat(stk, pci, 0);
-	json *val = (json*) getArgReference(stk, pci, 1);
+	json *val = (json *) getArgReference(stk, pci, 1);
 	JSON *jt = JSONparse(*val);
 
 	CHECK_JSON(jt);
@@ -565,7 +571,7 @@ JSONcompile(char *expr, pattern terms[])
 				if (*s == '.' || *s == '[' || *s == ',')
 					break;
 			terms[t].name = GDKzalloc(s - beg + 1);
-			if(terms[t].name == NULL)
+			if (terms[t].name == NULL)
 				throw(MAL, "json.compile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			terms[t].namelen = s - beg;
 			strncpy(terms[t].name, beg, s - beg);
@@ -645,7 +651,7 @@ JSONglue(str res, str r, char sep)
 		return r;
 	l = strlen(res);
 	n = GDKzalloc(l + len + 3);
-	if( n == NULL) {
+	if (n == NULL) {
 		GDKfree(res);
 		GDKfree(r);
 		return NULL;
@@ -658,7 +664,7 @@ JSONglue(str res, str r, char sep)
 
 /* return NULL on no match, return (str) -1 on (malloc) failure, (str) -2 on stack overflow */
 static str
-JSONmatch(JSON *jt, int ji, pattern * terms, int ti)
+JSONmatch(JSON *jt, int ji, pattern *terms, int ti)
 {
 	str r = NULL, res = NULL;
 	int i;
@@ -693,7 +699,8 @@ JSONmatch(JSON *jt, int ji, pattern * terms, int ti)
 		}
 		cnt = 0;
 		for (i = jt->elm[ji].next; i && cnt >= 0; i = jt->elm[i].next, cnt++) {
-			if (terms[ti].index == INT_MAX || (cnt >= terms[ti].first && cnt <= terms[ti].last)) {
+			if (terms[ti].index == INT_MAX
+				|| (cnt >= terms[ti].first && cnt <= terms[ti].last)) {
 				if (terms[ti].token == ANY_STEP) {
 					if (jt->elm[i].child)
 						r = JSONmatch(jt, jt->elm[i].child, terms, ti);
@@ -722,13 +729,12 @@ JSONmatch(JSON *jt, int ji, pattern * terms, int ti)
 		cnt = 0;
 		for (i = jt->elm[ji].next; i && cnt >= 0; i = jt->elm[i].next) {
 			// check the element label
-			if ((terms[ti].name &&
-				 jt->elm[i].valuelen == terms[ti].namelen &&
-				 strncmp(terms[ti].name, jt->elm[i].value, terms[ti].namelen) == 0) ||
-				terms[ti].name == 0 ||
-				terms[ti].name[0] == '*') {
-				if (terms[ti].index == INT_MAX ||
-					(cnt >= terms[ti].first && cnt <= terms[ti].last)) {
+			if ((terms[ti].name && jt->elm[i].valuelen == terms[ti].namelen
+				 && strncmp(terms[ti].name, jt->elm[i].value,
+							terms[ti].namelen) == 0) || terms[ti].name == 0
+				|| terms[ti].name[0] == '*') {
+				if (terms[ti].index == INT_MAX
+					|| (cnt >= terms[ti].first && cnt <= terms[ti].last)) {
 					if (ti + 1 == MAXTERMS)
 						return NULL;
 					if (terms[ti + 1].token == END_STEP) {
@@ -775,7 +781,7 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 	if (strNil(j)) {
 		*ret = GDKstrdup(j);
 		if (*ret == NULL)
-			throw(MAL,"JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	jt = JSONparse(j);
@@ -787,23 +793,30 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 
 	result = s = JSONmatch(jt, 0, terms, tidx);
 	if (s == (char *) -1) {
-		msg = createException(MAL,"JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "JSONfilterInternal",
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	if (s == (char *) -2) {
-		msg = createException(MAL, "JSONfilterInternal", SQLSTATE(42000) "Expression too complex to parse");
+		msg = createException(MAL, "JSONfilterInternal",
+							  SQLSTATE(42000)
+							  "Expression too complex to parse");
 		goto bailout;
 	}
 	// process all other PATH expression
 	for (tidx++; tidx < MAXTERMS && terms[tidx].token; tidx++)
-		if (terms[tidx].token == END_STEP && tidx + 1 < MAXTERMS && terms[tidx + 1].token) {
+		if (terms[tidx].token == END_STEP && tidx + 1 < MAXTERMS
+			&& terms[tidx + 1].token) {
 			s = JSONmatch(jt, 0, terms, ++tidx);
 			if (s == (char *) -1) {
-				msg = createException(MAL,"JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				msg = createException(MAL, "JSONfilterInternal",
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 			if (s == (char *) -2) {
-				msg = createException(MAL, "JSONfilterInternal", SQLSTATE(42000) "Expression too complex to parse");
+				msg = createException(MAL, "JSONfilterInternal",
+									  SQLSTATE(42000)
+									  "Expression too complex to parse");
 				goto bailout;
 			}
 			result = JSONglue(result, s, ',');
@@ -817,7 +830,7 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 	s = GDKzalloc(l + 3);
 	if (s == NULL) {
 		GDKfree(result);
-		throw(MAL,"JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	snprintf(s, l + 3, "[%s]", (result ? result : ""));
 	GDKfree(result);
@@ -895,7 +908,7 @@ JSONstringParser(const char *j, const char **next)
 			*next = j;
 			return MAL_SUCCEED;
 		default:
-			if ((unsigned char)*j < ' ')
+			if ((unsigned char) *j < ' ')
 				throw(MAL, "json.parser", "illegal control char");
 			if (seensurrogate)
 				throw(MAL, "json.parser", "illegal escape char");
@@ -907,12 +920,13 @@ JSONstringParser(const char *j, const char **next)
 }
 
 static bool
-JSONintegerParser(const char *j, const char **next) {
+JSONintegerParser(const char *j, const char **next)
+{
 	if (*j == '-')
 		j++;
 
 	// skipblancs(j);
-	if (!isdigit((unsigned char)*j)) {
+	if (!isdigit((unsigned char) *j)) {
 		*next = j;
 		return false;
 	}
@@ -922,7 +936,7 @@ JSONintegerParser(const char *j, const char **next) {
 		return true;
 	}
 
-	for(; *j; j++)
+	for (; *j; j++)
 		if (!(isdigit((unsigned char) *j)))
 			break;
 	*next = j;
@@ -931,17 +945,18 @@ JSONintegerParser(const char *j, const char **next) {
 }
 
 static bool
-JSONfractionParser(const char *j, const char **next) {
+JSONfractionParser(const char *j, const char **next)
+{
 	if (*j != '.')
 		return false;
 
 	// skip the period character
 	j++;
 	// must be followed by more digits
-	if (!isdigit((unsigned char)*j))
+	if (!isdigit((unsigned char) *j))
 		return false;
 	for (; *j; j++)
-		if (!isdigit((unsigned char)*j))
+		if (!isdigit((unsigned char) *j))
 			break;
 	*next = j;
 
@@ -949,7 +964,8 @@ JSONfractionParser(const char *j, const char **next) {
 }
 
 static bool
-JSONexponentParser(const char *j, const char **next) {
+JSONexponentParser(const char *j, const char **next)
+{
 	const char *s = j;
 	bool saw_digit = false;
 
@@ -962,7 +978,7 @@ JSONexponentParser(const char *j, const char **next) {
 		j++;
 
 	for (; *j; j++) {
-		if (!isdigit((unsigned char)*j))
+		if (!isdigit((unsigned char) *j))
 			break;
 		saw_digit = true;
 	}
@@ -1012,7 +1028,9 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 	if (jt->error)
 		return idx;
 	if (THRhighwater()) {
-		jt->error = createException(MAL, "json.parser", SQLSTATE(42000) "Expression too complex to parse");
+		jt->error = createException(MAL, "json.parser",
+									SQLSTATE(42000)
+									"Expression too complex to parse");
 		return idx;
 	}
 	skipblancs(j);
@@ -1031,7 +1049,9 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			j = *next;
 			skipblancs(j);
 			if (jt->elm[nxt].kind != JSON_STRING || *j != ':') {
-				jt->error = createException(MAL, "json.parser", "JSON syntax error: element expected at offset %td", jt->elm[nxt].value - string_start);
+				jt->error = createException(MAL, "json.parser",
+											"JSON syntax error: element expected at offset %td",
+											jt->elm[nxt].value - string_start);
 				return idx;
 			}
 			j++;
@@ -1052,18 +1072,24 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			if (*j == '}')
 				break;
 			if (*j != ',') {
-				jt->error = createException(MAL, "json.parser", "JSON syntax error: ',' or '}' expected at offset %td", j - string_start);
+				jt->error = createException(MAL, "json.parser",
+											"JSON syntax error: ',' or '}' expected at offset %td",
+											j - string_start);
 				return idx;
 			}
 			j++;
 			skipblancs(j);
 			if (*j == '}') {
-				jt->error = createException(MAL, "json.parser", "JSON syntax error: '}' not expected at offset %td", j - string_start);
+				jt->error = createException(MAL, "json.parser",
+											"JSON syntax error: '}' not expected at offset %td",
+											j - string_start);
 				return idx;
 			}
 		}
 		if (*j != '}') {
-			jt->error = createException(MAL, "json.parser", "JSON syntax error: '}' expected at offset %td", j - string_start);
+			jt->error = createException(MAL, "json.parser",
+										"JSON syntax error: '}' expected at offset %td",
+										j - string_start);
 			return idx;
 		} else
 			j++;
@@ -1093,7 +1119,8 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 				/* fall through */
 			case JSON_OBJECT:
 			case JSON_ARRAY:
-				if (jt->elm[nxt].kind == JSON_OBJECT || jt->elm[nxt].kind == JSON_ARRAY) {
+				if (jt->elm[nxt].kind == JSON_OBJECT
+					|| jt->elm[nxt].kind == JSON_ARRAY) {
 					int k = JSONnew(jt);
 					if (jt->error)
 						return idx;
@@ -1114,22 +1141,31 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			if (*j == ']')
 				break;
 			if (jt->elm[nxt].kind == JSON_ELEMENT) {
-				jt->error = createException(MAL, "json.parser", "JSON syntax error: Array value expected at offset %td", j - string_start);
+				jt->error = createException(MAL, "json.parser",
+											"JSON syntax error: Array value expected at offset %td",
+											j - string_start);
 				return idx;
 			}
 			if (*j != ',') {
-				jt->error = createException(MAL, "json.parser", "JSON syntax error: ',' or ']' expected at offset %td (context: %c%c%c)", j - string_start, *(j - 1), *j, *(j + 1));
+				jt->error = createException(MAL, "json.parser",
+											"JSON syntax error: ',' or ']' expected at offset %td (context: %c%c%c)",
+											j - string_start, *(j - 1), *j,
+											*(j + 1));
 				return idx;
 			}
 			j++;
 			skipblancs(j);
 			if (*j == ']') {
-				jt->error = createException(MAL, "json.parser", "JSON syntax error: '}' not expected at offset %td", j - string_start);
+				jt->error = createException(MAL, "json.parser",
+											"JSON syntax error: '}' not expected at offset %td",
+											j - string_start);
 				return idx;
 			}
 		}
 		if (*j != ']') {
-			jt->error = createException(MAL, "json.parser", "JSON syntax error: ']' expected at offset %td", j - string_start);
+			jt->error = createException(MAL, "json.parser",
+										"JSON syntax error: ']' expected at offset %td",
+										j - string_start);
 		} else
 			j++;
 		*next = j;
@@ -1153,7 +1189,9 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			jt->elm[idx].valuelen = 4;
 			return idx;
 		}
-		jt->error = createException(MAL, "json.parser", "JSON syntax error: NULL expected at offset %td", j - string_start);
+		jt->error = createException(MAL, "json.parser",
+									"JSON syntax error: NULL expected at offset %td",
+									j - string_start);
 		return idx;
 	case 't':
 		if (strncmp("true", j, 4) == 0) {
@@ -1163,7 +1201,9 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			jt->elm[idx].valuelen = 4;
 			return idx;
 		}
-		jt->error = createException(MAL, "json.parser", "JSON syntax error: True expected at offset %td", j - string_start);
+		jt->error = createException(MAL, "json.parser",
+									"JSON syntax error: True expected at offset %td",
+									j - string_start);
 		return idx;
 	case 'f':
 		if (strncmp("false", j, 5) == 0) {
@@ -1173,7 +1213,9 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			jt->elm[idx].valuelen = 5;
 			return idx;
 		}
-		jt->error = createException(MAL, "json.parser", "JSON syntax error: False expected at offset %td", j - string_start);
+		jt->error = createException(MAL, "json.parser",
+									"JSON syntax error: False expected at offset %td",
+									j - string_start);
 		return idx;
 	default:
 		if (*j == '-' || isdigit((unsigned char) *j)) {
@@ -1185,7 +1227,9 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			jt->elm[idx].valuelen = *next - jt->elm[idx].value;
 			return idx;
 		}
-		jt->error = createException(MAL, "json.parser", "JSON syntax error: value expected at offset %td", j - string_start);
+		jt->error = createException(MAL, "json.parser",
+									"JSON syntax error: value expected at offset %td",
+									j - string_start);
 		return idx;
 	}
 }
@@ -1204,7 +1248,8 @@ JSONparse(const char *j)
 		return jt;
 	skipblancs(j);
 	if (*j)
-		jt->error = createException(MAL, "json.parser", "JSON syntax error: json parse failed");
+		jt->error = createException(MAL, "json.parser",
+									"JSON syntax error: json parse failed");
 	return jt;
 }
 
@@ -1234,7 +1279,8 @@ JSONfilterArrayDefault(json *ret, json *js, lng index, str other)
 	char expr[BUFSIZ], *s = expr;
 
 	if (index < 0)
-		throw(MAL,"json.filter", SQLSTATE(42000) "Filter index cannot be negative");
+		throw(MAL, "json.filter",
+			  SQLSTATE(42000) "Filter index cannot be negative");
 	snprintf(expr, BUFSIZ, "[" LLFMT "]", index);
 	return JSONfilterInternal(ret, js, &s, other);
 }
@@ -1244,7 +1290,7 @@ JSONfilterArray_bte(json *ret, json *js, bte *index)
 {
 	if (strNil(*js) || is_bte_nil(*index)) {
 		if (!(*ret = GDKstrdup(str_nil)))
-			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
@@ -1255,7 +1301,7 @@ JSONfilterArrayDefault_bte(json *ret, json *js, bte *index, str *other)
 {
 	if (strNil(*js) || is_bte_nil(*index) || strNil(*other)) {
 		if (!(*ret = GDKstrdup(str_nil)))
-			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
@@ -1266,7 +1312,7 @@ JSONfilterArray_sht(json *ret, json *js, sht *index)
 {
 	if (strNil(*js) || is_sht_nil(*index)) {
 		if (!(*ret = GDKstrdup(str_nil)))
-			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
@@ -1277,7 +1323,7 @@ JSONfilterArrayDefault_sht(json *ret, json *js, sht *index, str *other)
 {
 	if (strNil(*js) || is_sht_nil(*index) || strNil(*other)) {
 		if (!(*ret = GDKstrdup(str_nil)))
-			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
@@ -1288,7 +1334,7 @@ JSONfilterArray_int(json *ret, json *js, int *index)
 {
 	if (strNil(*js) || is_int_nil(*index)) {
 		if (!(*ret = GDKstrdup(str_nil)))
-			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
@@ -1299,7 +1345,7 @@ JSONfilterArrayDefault_int(json *ret, json *js, int *index, str *other)
 {
 	if (strNil(*js) || is_int_nil(*index) || strNil(*other)) {
 		if (!(*ret = GDKstrdup(str_nil)))
-			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
@@ -1310,7 +1356,7 @@ JSONfilterArray_lng(json *ret, json *js, lng *index)
 {
 	if (strNil(*js) || is_lng_nil(*index)) {
 		if (!(*ret = GDKstrdup(str_nil)))
-			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
@@ -1321,7 +1367,7 @@ JSONfilterArrayDefault_lng(json *ret, json *js, lng *index, str *other)
 {
 	if (strNil(*js) || is_lng_nil(*index) || strNil(*other)) {
 		if (!(*ret = GDKstrdup(str_nil)))
-			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
@@ -1333,7 +1379,7 @@ JSONfilterArray_hge(json *ret, json *js, hge *index)
 {
 	if (strNil(*js) || is_hge_nil(*index)) {
 		if (!(*ret = GDKstrdup(str_nil)))
-			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	if (*index < (hge) GDK_lng_min || *index > (hge) GDK_lng_max)
@@ -1346,7 +1392,7 @@ JSONfilterArrayDefault_hge(json *ret, json *js, hge *index, str *other)
 {
 	if (strNil(*js) || is_hge_nil(*index) || strNil(*other)) {
 		if (!(*ret = GDKstrdup(str_nil)))
-			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	if (*index < (hge) GDK_lng_min || *index > (hge) GDK_lng_max)
@@ -1360,7 +1406,7 @@ JSONfilter(json *ret, json *js, str *expr)
 {
 	if (strNil(*js) || strNil(*expr)) {
 		if (!(*ret = GDKstrdup(str_nil)))
-			throw(MAL,"json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	return JSONfilterInternal(ret, js, expr, 0);
@@ -1370,7 +1416,8 @@ JSONfilter(json *ret, json *js, str *expr)
 // The json string should be valid
 
 static str
-JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, size_t sep_len)
+JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep,
+			  size_t sep_len)
 {
 	int i;
 	size_t j, next_len, next_concat_len;
@@ -1379,13 +1426,16 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 
 	if (THRhighwater()) {
 		*r = *r - (*ilen - *l);
-		throw(MAL,"JSONplaintext", SQLSTATE(42000) "Expression too complex to parse");
+		throw(MAL, "JSONplaintext",
+			  SQLSTATE(42000) "Expression too complex to parse");
 	}
 
 	switch (jt->elm[idx].kind) {
 	case JSON_OBJECT:
 		for (i = jt->elm[idx].next; i; i = jt->elm[i].next)
-			if (jt->elm[i].child && (msg = JSONplaintext(r, l, ilen, jt, jt->elm[i].child, sep, sep_len)))
+			if (jt->elm[i].child
+				&& (msg = JSONplaintext(r, l, ilen, jt, jt->elm[i].child, sep,
+										sep_len)))
 				return msg;
 		break;
 	case JSON_ARRAY:
@@ -1395,7 +1445,9 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 		break;
 	case JSON_ELEMENT:
 	case JSON_VALUE:
-		if (jt->elm[idx].child && (msg = JSONplaintext(r, l, ilen, jt, jt->elm[idx].child, sep, sep_len)))
+		if (jt->elm[idx].child
+			&& (msg = JSONplaintext(r, l, ilen, jt, jt->elm[idx].child, sep,
+									sep_len)))
 			return msg;
 		break;
 	case JSON_STRING:
@@ -1406,10 +1458,10 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 			size_t prev_ilen = *ilen, prev_l = *l;
 			char *p = *r - (prev_ilen - prev_l), *nr;
 
-			*ilen = (prev_ilen * 2) + next_concat_len; /* make sure sep_len + 1 is always included */
+			*ilen = (prev_ilen * 2) + next_concat_len;	/* make sure sep_len + 1 is always included */
 			if (!(nr = GDKrealloc(p, *ilen))) {
 				*r = p;
-				throw(MAL,"JSONplaintext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				throw(MAL, "JSONplaintext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			*r = nr + (prev_ilen - prev_l);
 			*l = *ilen - prev_ilen + prev_l;
@@ -1447,14 +1499,14 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 					break;
 				case 'u':
 					u = 0;
-					for (int i = 0;i < 4; i++) {
+					for (int i = 0; i < 4; i++) {
 						char c = jt->elm[idx].value[++j];
 						u <<= 4;
 						if ('0' <= c && c <= '9')
 							u |= c - '0';
 						else if ('a' <= c && c <= 'f')
 							u |= c - 'a' + 10;
-						else /* if ('A' <= c && c <= 'F') */
+						else	/* if ('A' <= c && c <= 'F') */
 							u |= c - 'A' + 10;
 					}
 					if (u <= 0x7F) {
@@ -1468,14 +1520,14 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 						/* high surrogate; must be followed by low surrogate */
 						*(*r)++ = 0xF0 | (((u & 0x03C0) + 0x0040) >> 8);
 						*(*r)++ = 0x80 | ((((u & 0x03C0) + 0x0040) >> 2) & 0x3F);
-						**r = 0x80 | ((u & 0x0003) << 4); /* no increment */
+						**r = 0x80 | ((u & 0x0003) << 4);	/* no increment */
 						(*l) -= 2;
 					} else if ((u & 0xFC00) == 0xDC00) {
 						/* low surrogate; must follow high surrogate */
-						*(*r)++ |= (u & 0x03C0) >> 6; /* amend last value */
+						*(*r)++ |= (u & 0x03C0) >> 6;	/* amend last value */
 						*(*r)++ = 0x80 | (u & 0x3F);
 						(*l) -= 2;
-					} else /* if (u <= 0xFFFF) */ {
+					} else {	/* if (u <= 0xFFFF) */
 						*(*r)++ = 0xE0 | (u >> 12);
 						*(*r)++ = 0x80 | ((u >> 6) & 0x3F);
 						*(*r)++ = 0x80 | (u & 0x3F);
@@ -1498,10 +1550,10 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, JSON *jt, int idx, str sep, siz
 			size_t prev_ilen = *ilen, prev_l = *l;
 			char *p = *r - (prev_ilen - prev_l), *nr;
 
-			*ilen = (prev_ilen * 2) + next_concat_len; /* make sure sep_len + 1 is always included */
+			*ilen = (prev_ilen * 2) + next_concat_len;	/* make sure sep_len + 1 is always included */
 			if (!(nr = GDKrealloc(p, *ilen))) {
 				*r = p;
-				throw(MAL,"JSONplaintext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				throw(MAL, "JSONplaintext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			*r = nr + (prev_ilen - prev_l);
 			*l = *ilen - prev_ilen + prev_l;
@@ -1527,7 +1579,7 @@ JSONjson2textSeparator(str *ret, json *js, str *sep)
 
 	if (strNil(*js) || strNil(*sep)) {
 		if (!(*ret = GDKstrdup(str_nil)))
-			throw(MAL,"json2txt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "json2txt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 
@@ -1537,7 +1589,7 @@ JSONjson2textSeparator(str *ret, json *js, str *sep)
 	ilen = l = strlen(*js) + 1;
 	if (!(s = GDKmalloc(l))) {
 		JSONfree(jt);
-		throw(MAL,"json2txt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "json2txt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	msg = JSONplaintext(&s, &l, &ilen, jt, 0, *sep, sep_len);
 	JSONfree(jt);
@@ -1561,7 +1613,10 @@ JSONjson2text(str *ret, json *js)
 }
 
 static str
-JSONjson2numberInternal(void **ret, json *js, void (*str2num)(void **ret, const char *nptr, size_t len)) {
+JSONjson2numberInternal(void **ret, json *js,
+						void (*str2num)(void **ret, const char *nptr,
+										size_t len))
+{
 	JSON *jt;
 
 	jt = JSONparse(*js);
@@ -1573,16 +1628,14 @@ JSONjson2numberInternal(void **ret, json *js, void (*str2num)(void **ret, const 
 	case JSON_ARRAY:
 		if (jt->free == 2) {
 			str2num(ret, jt->elm[1].value, jt->elm[1].valuelen);
-		}
-		else {
+		} else {
 			*ret = NULL;
 		}
 		break;
 	case JSON_OBJECT:
 		if (jt->free == 3) {
 			str2num(ret, jt->elm[2].value, jt->elm[2].valuelen);
-		}
-		else {
+		} else {
 			*ret = NULL;
 		}
 		break;
@@ -1595,30 +1648,30 @@ JSONjson2numberInternal(void **ret, json *js, void (*str2num)(void **ret, const 
 }
 
 static void
-strtod_wrapper(void **ret, const char *nptr, size_t len) {
+strtod_wrapper(void **ret, const char *nptr, size_t len)
+{
 	char *rest;
 	dbl val;
 
 	val = strtod(nptr, &rest);
-	if(rest && (size_t)(rest - nptr) != len) {
+	if (rest && (size_t) (rest - nptr) != len) {
 		*ret = NULL;
-	}
-	else {
-		**(dbl **)ret = val;
+	} else {
+		**(dbl **) ret = val;
 	}
 }
 
-static  void
-strtol_wrapper(void **ret, const char *nptr, size_t len) {
+static void
+strtol_wrapper(void **ret, const char *nptr, size_t len)
+{
 	char *rest;
 	lng val;
 
 	val = strtol(nptr, &rest, 0);
-	if(rest && (size_t)(rest - nptr) != len) {
+	if (rest && (size_t) (rest - nptr) != len) {
 		*ret = NULL;
-	}
-	else {
-		**(lng **)ret = val;
+	} else {
+		**(lng **) ret = val;
 	}
 }
 
@@ -1634,7 +1687,8 @@ JSONjson2number(dbl *ret, json *js)
 		return MAL_SUCCEED;
 	}
 
-	rethrow(__func__, tmp, JSONjson2numberInternal((void **)&val_ptr, js, strtod_wrapper));
+	rethrow(__func__, tmp,
+			JSONjson2numberInternal((void **) &val_ptr, js, strtod_wrapper));
 	if (val_ptr == NULL)
 		*ret = dbl_nil;
 	else
@@ -1655,7 +1709,8 @@ JSONjson2integer(lng *ret, json *js)
 		return MAL_SUCCEED;
 	}
 
-	rethrow(__func__, tmp, JSONjson2numberInternal((void **)&val_ptr, js, strtol_wrapper));
+	rethrow(__func__, tmp,
+			JSONjson2numberInternal((void **) &val_ptr, js, strtol_wrapper));
 	if (val_ptr == NULL)
 		*ret = lng_nil;
 	else
@@ -1770,7 +1825,8 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 	if (jt->elm[0].kind == JSON_ARRAY || jt->elm[0].kind == JSON_OBJECT)
 		msg = JSONunfoldContainer(jt, 0, (od ? bo : 0), bk, bv, &o);
 	else
-		msg = createException(MAL, "json.unfold", "JSON object or array expected");
+		msg = createException(MAL, "json.unfold",
+							  "JSON object or array expected");
 	JSONfree(jt);
 	if (msg) {
 		BBPreclaim(bk);
@@ -1812,8 +1868,7 @@ JSONkeyTable(bat *ret, json *js)
 
 	for (i = jt->elm[0].next; i; i = jt->elm[i].next) {
 		r = JSONgetValue(jt, i);
-		if (r == NULL ||
-			BUNappend(bn, r, false) != GDK_SUCCEED) {
+		if (r == NULL || BUNappend(bn, r, false) != GDK_SUCCEED) {
 			GDKfree(r);
 			JSONfree(jt);
 			BBPreclaim(bn);
@@ -1837,7 +1892,7 @@ JSONkeyArray(json *ret, json *js)
 
 	if (strNil(*js)) {
 		if (!(*ret = GDKstrdup(str_nil)))
-			throw(MAL,"json.keyarray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "json.keyarray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 
@@ -1855,7 +1910,7 @@ JSONkeyArray(json *ret, json *js)
 				strncpy(r, jt->elm[i].value - 1, jt->elm[i].valuelen + 2);
 			} else {
 				r = GDKstrdup("\"\"");
-				if(r == NULL) {
+				if (r == NULL) {
 					JSONfree(jt);
 					goto memfail;
 				}
@@ -1916,8 +1971,7 @@ JSONvalueTable(bat *ret, json *js)
 			r = JSONgetValue(jt, jt->elm[i].child);
 		else
 			r = JSONgetValue(jt, i);
-		if (r == NULL ||
-			BUNappend(bn, r, false) != GDK_SUCCEED) {
+		if (r == NULL || BUNappend(bn, r, false) != GDK_SUCCEED) {
 			GDKfree(r);
 			BBPreclaim(bn);
 			JSONfree(jt);
@@ -1941,7 +1995,7 @@ JSONvalueArray(json *ret, json *js)
 
 	if (strNil(*js)) {
 		if (!(*ret = GDKstrdup(str_nil)))
-			throw(MAL,"json.valuearray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(MAL, "json.valuearray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 
@@ -1993,7 +2047,7 @@ JSONargumentlist(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN cnt = 0;
 	BAT **bl;
 
-	bl = (BAT **) GDKzalloc(sizeof(*bl) * pci->argc);
+	bl = GDKzalloc(sizeof(*bl) * pci->argc);
 	if (bl == NULL)
 		return NULL;
 	for (i = pci->retc; i < pci->argc; i++)
@@ -2026,7 +2080,8 @@ JSONfreeArgumentlist(BAT **bl, InstrPtr pci)
 }
 
 static str
-JSONrenderRowObject(BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BUN idx)
+JSONrenderRowObject(BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+					BUN idx)
 {
 	int i, tpe;
 	char *row, *row2, *name = 0, *val = 0;
@@ -2103,10 +2158,10 @@ JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	cnt = BATcount(bl[pci->retc + 1]);
-	result = (char *) GDKmalloc(lim = BUFSIZ);
+	result = GDKmalloc(lim = BUFSIZ);
 	if (result == NULL) {
 		JSONfreeArgumentlist(bl, pci);
-		throw(MAL,"json.renderobject", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "json.renderobject", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	result[0] = '[';
 	result[1] = 0;
@@ -2140,7 +2195,7 @@ JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(result);
 	GDKfree(row);
 	JSONfreeArgumentlist(bl, pci);
-	throw(MAL,"json.renderobject", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	throw(MAL, "json.renderobject", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 static str
@@ -2214,7 +2269,7 @@ JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	cnt = BATcount(bl[pci->retc + 1]);
 	result = GDKmalloc(lim = BUFSIZ);
-	if( result == NULL) {
+	if (result == NULL) {
 		goto memfail;
 	}
 	result[0] = '[';
@@ -2251,7 +2306,7 @@ JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   memfail:
 	GDKfree(result);
 	JSONfreeArgumentlist(bl, pci);
-	throw(MAL,"json.renderArray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	throw(MAL, "json.renderArray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 static str
@@ -2333,7 +2388,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 		if (tpe == TYPE_json)
 			val = p;
 		else {
-			if ((val = ATOMformat(tpe, p))  == NULL) {
+			if ((val = ATOMformat(tpe, p)) == NULL) {
 				bat_iterator_end(&bki);
 				bat_iterator_end(&bvi);
 				goto memfail;
@@ -2493,52 +2548,52 @@ JSONgroupStr(str *ret, const bat *bid)
 		GDKfree(buf);
 		throw(MAL, "json.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	assert(maxlen > 256); /* make sure every floating point fits on the dense case */
+	assert(maxlen > 256);		/* make sure every floating point fits on the dense case */
 	assert(b->ttype == TYPE_str || b->ttype == TYPE_dbl);
 
 	bi = bat_iterator(b);
-	vals = (dbl*) Tloc(b, 0);
+	vals = (dbl *) Tloc(b, 0);
 	switch (b->ttype) {
-		case TYPE_str:
-			for (p = 0, q = BATcount(b); p < q; p++) {
-				const char *v = (const char *) BUNtvar(bi, p);
+	case TYPE_str:
+		for (p = 0, q = BATcount(b); p < q; p++) {
+			const char *v = (const char *) BUNtvar(bi, p);
 
-				if (strNil(v))
-					continue;
-				/* '[' or ',' plus space and null terminator and " ]" final string */
-				JSON_AGGR_CHECK_NEXT_LENGTH(strlen(v) * 2 + 7);
-				char *dst = buf + buflen, *odst = dst;
-				if (buflen == 0)
-					*dst++ = '[';
-				else
-					*dst++ = ',';
-				*dst++ = ' ';
-				*dst++ = '"';
-				JSON_STR_CPY;
-				*dst++ = '"';
-				buflen += (dst - odst);
-			}
-			break;
-		case TYPE_dbl:
-			for (p = 0, q = BATcount(b); p < q; p++) {
-				dbl val = vals[p];
+			if (strNil(v))
+				continue;
+			/* '[' or ',' plus space and null terminator and " ]" final string */
+			JSON_AGGR_CHECK_NEXT_LENGTH(strlen(v) * 2 + 7);
+			char *dst = buf + buflen, *odst = dst;
+			if (buflen == 0)
+				*dst++ = '[';
+			else
+				*dst++ = ',';
+			*dst++ = ' ';
+			*dst++ = '"';
+			JSON_STR_CPY;
+			*dst++ = '"';
+			buflen += (dst - odst);
+		}
+		break;
+	case TYPE_dbl:
+		for (p = 0, q = BATcount(b); p < q; p++) {
+			dbl val = vals[p];
 
-				if (is_dbl_nil(val))
-					continue;
-				/* '[' or ',' plus space and null terminator and " ]" final string */
-				JSON_AGGR_CHECK_NEXT_LENGTH(130 + 6);
-				char *dst = buf + buflen;
-				if (buflen == 0)
-					*dst++ = '[';
-				else
-					*dst++ = ',';
-				*dst++ = ' ';
-				buflen += 2;
-				buflen += snprintf(buf + buflen, maxlen - buflen, "%f", val);
-			}
-			break;
-		default:
-			assert(0);
+			if (is_dbl_nil(val))
+				continue;
+			/* '[' or ',' plus space and null terminator and " ]" final string */
+			JSON_AGGR_CHECK_NEXT_LENGTH(130 + 6);
+			char *dst = buf + buflen;
+			if (buflen == 0)
+				*dst++ = '[';
+			else
+				*dst++ = ',';
+			*dst++ = ' ';
+			buflen += 2;
+			buflen += snprintf(buf + buflen, maxlen - buflen, "%f", val);
+		}
+		break;
+	default:
+		assert(0);
 	}
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
@@ -2548,7 +2603,7 @@ JSONgroupStr(str *ret, const bat *bid)
 		strcpy(buf, str_nil);
 	*ret = GDKstrdup(buf);
 	GDKfree(buf);
-	if (!*ret) /* Don't return a too large string */
+	if (!*ret)					/* Don't return a too large string */
 		throw(MAL, "json.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
   bunins_failed:
@@ -2573,13 +2628,14 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	size_t buflen, maxlen = BUFSIZ, len;
 	dbl *restrict vals;
 
-	assert(maxlen > 256); /* make sure every floating point fits on the dense case */
+	assert(maxlen > 256);		/* make sure every floating point fits on the dense case */
 	assert(b->ttype == TYPE_str || b->ttype == TYPE_dbl);
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		return err;
 	}
 	if (BATcount(b) == 0 || ngrp == 0) {
-		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_str, ATOMnilptr(TYPE_str), ngrp, TRANSIENT);
+		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_str, ATOMnilptr(TYPE_str),
+						 ngrp, TRANSIENT);
 		if (bn == NULL)
 			return SQLSTATE(HY013) MAL_MALLOC_FAIL;
 		*bnp = bn;
@@ -2613,7 +2669,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		goto out;
 	}
 	bi = bat_iterator(b);
-	vals = (dbl*) Tloc(b, 0);
+	vals = (dbl *) Tloc(b, 0);
 	if (g) {
 		/* stable sort g */
 		if (BATsort(&t1, &t2, NULL, g, NULL, NULL, false, false, true) != GDK_SUCCEED) {
@@ -2635,15 +2691,17 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			switch (b->ttype) {
 			case TYPE_str:
 				for (p = 0, q = BATcount(g); p < q; p++) {
-					const char *v = (const char *) BUNtvar(bi, (map ? (BUN) map[p] - mapoff : p));
+					const char *v = (const char *) BUNtvar(bi,
+														   (map ? (BUN) map[p] -
+															mapoff : p));
 					if (strNil(v)) {
 						if (skip_nils) {
 							/*
-							* if q is 1 and the value is
-							* null, then we need to fill
-							* in a value. Otherwise
-							* BATproject will fail.
-							*/
+							 * if q is 1 and the value is
+							 * null, then we need to fill
+							 * in a value. Otherwise
+							 * BATproject will fail.
+							 */
 							if (p == 0 && q == 1)
 								strcpy(buf, "[ null ]");
 							else
@@ -2726,7 +2784,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				if (isnil)
 					continue;
 				switch (b->ttype) {
-				case TYPE_str: {
+				case TYPE_str:{
 					const char *v = (const char *) BUNtvar(bi, p);
 					if (strNil(v)) {
 						if (skip_nils)
@@ -2748,7 +2806,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 					}
 					break;
 				}
-				case TYPE_dbl: {
+				case TYPE_dbl:{
 					dbl val = vals[p];
 					if (is_dbl_nil(val)) {
 						if (skip_nils)
@@ -2764,7 +2822,8 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 							*dst++ = ',';
 						*dst++ = ' ';
 						buflen += 2;
-						buflen += snprintf(buf + buflen, maxlen - buflen, "%f", val);
+						buflen += snprintf(buf + buflen, maxlen - buflen, "%f",
+										   val);
 					}
 					break;
 				}
@@ -2865,7 +2924,8 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 }
 
 static str
-JSONsubjsoncand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_nils)
+JSONsubjsoncand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid,
+				bit *skip_nils)
 {
 	BAT *b, *g, *e, *s, *bn = NULL;
 	const char *err;
@@ -2874,10 +2934,8 @@ JSONsubjsoncand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_n
 	g = gid ? BATdescriptor(*gid) : NULL;
 	e = eid ? BATdescriptor(*eid) : NULL;
 	s = sid ? BATdescriptor(*sid) : NULL;
-	if (b == NULL ||
-		(gid != NULL && g == NULL) ||
-		(eid != NULL && e == NULL) ||
-		(sid != NULL && s == NULL)) {
+	if (b == NULL || (gid != NULL && g == NULL) || (eid != NULL && e == NULL)
+		|| (sid != NULL && s == NULL)) {
 		err = SQLSTATE(HY002) RUNTIME_OBJECT_MISSING;
 	} else {
 		err = JSONjsonaggr(&bn, b, g, e, s, *skip_nils);

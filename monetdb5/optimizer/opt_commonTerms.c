@@ -12,9 +12,9 @@
 #include "opt_commonTerms.h"
 #include "mal_exception.h"
  /*
- * Caveat. A lot of time was lost due to constants that are indistinguisable
- * at the surface level.  It requires the constant optimizer to be ran first.
- */
+  * Caveat. A lot of time was lost due to constants that are indistinguisable
+  * at the surface level.  It requires the constant optimizer to be ran first.
+  */
 
 /* The key for finding common terms is that they share variables.
  * Therefore we skip all constants, except for a constant only situation.
@@ -27,7 +27,7 @@
 static int
 isProjectConst(InstrPtr p)
 {
-	if (getModuleId(p)== algebraRef && getFunctionId(p)== projectRef)
+	if (getModuleId(p) == algebraRef && getFunctionId(p) == projectRef)
 		return TRUE;
 	return FALSE;
 }
@@ -36,18 +36,19 @@ static int
 hashInstruction(MalBlkPtr mb, InstrPtr p)
 {
 	int i;
-	for ( i = p->argc - 1 ; i >= p->retc; i--)
-		if (! isVarConstant(mb,getArg(p,i)) )
-			return getArg(p,i);
-	if (isVarConstant(mb,getArg(p, p->retc)) )
+	for (i = p->argc - 1; i >= p->retc; i--)
+		if (!isVarConstant(mb, getArg(p, i)))
+			return getArg(p, i);
+	if (isVarConstant(mb, getArg(p, p->retc)))
 		return p->retc;
 	return -1;
 }
 
 str
-OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+							 InstrPtr pci)
 {
-	int i, j, k, barrier= 0, bailout = 0;
+	int i, j, k, barrier = 0, bailout = 0;
 	InstrPtr p, q;
 	int actions = 0;
 	int limit, slimit;
@@ -60,50 +61,53 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	InstrPtr *old = NULL;
 
 	/* catch simple insert operations */
-	if( isSimpleSQL(mb)){
+	if (isSimpleSQL(mb)) {
 		goto wrapup;
 	}
 
 	(void) cntxt;
 	(void) stk;
-	alias = (int*) GDKzalloc(sizeof(int) * mb->vtop);
-	list = (int*) GDKzalloc(sizeof(int) * mb->stop);
-	hash = (int*) GDKzalloc(sizeof(int) * mb->vtop);
-	if ( alias == NULL || list == NULL || hash == NULL){
-		msg = createException(MAL,"optimizer.commonTerms", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	alias = (int *) GDKzalloc(sizeof(int) * mb->vtop);
+	list = (int *) GDKzalloc(sizeof(int) * mb->stop);
+	hash = (int *) GDKzalloc(sizeof(int) * mb->vtop);
+	if (alias == NULL || list == NULL || hash == NULL) {
+		msg = createException(MAL, "optimizer.commonTerms",
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 
 	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
-	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
-		msg = createException(MAL,"optimizer.commonTerms", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (newMalBlkStmt(mb, mb->ssize) < 0) {
+		msg = createException(MAL, "optimizer.commonTerms",
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		old = NULL;
 		goto wrapup;
 	}
 
-	for ( i = 0; i < limit; i++) {
+	for (i = 0; i < limit; i++) {
 		p = old[i];
 		duplicate = 0;
 
-		for ( k = 0; k < p->argc; k++)
-			if ( alias[getArg(p,k)] )
-				getArg(p,k) = alias[getArg(p,k)];
+		for (k = 0; k < p->argc; k++)
+			if (alias[getArg(p, k)])
+				getArg(p, k) = alias[getArg(p, k)];
 
-		if (p->token == ENDsymbol){
-			pushInstruction(mb,p);
+		if (p->token == ENDsymbol) {
+			pushInstruction(mb, p);
 			/* wrap up the remainder */
-			for(i++; i<limit; i++)
-				if( old[i])
-					pushInstruction(mb,old[i]);
+			for (i++; i < limit; i++)
+				if (old[i])
+					pushInstruction(mb, old[i]);
 			break;
 		}
 		/*
 		 * Any barrier block signals the end of this optimizer,
 		 * because the impact of the block can affect the common code eliminated.
 		 */
-		barrier |= (p->barrier== BARRIERsymbol || p->barrier== CATCHsymbol || p->barrier == RETURNsymbol);
+		barrier |= (p->barrier == BARRIERsymbol || p->barrier == CATCHsymbol
+					|| p->barrier == RETURNsymbol);
 		/*
 		 * Also block further optimization when you have seen an assert().
 		 * This works particularly for SQL, because it is not easy to track
@@ -113,26 +117,29 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		 */
 		barrier |= getFunctionId(p) == assertRef;
 		if (barrier || p->token == ASSIGNsymbol) {
-			TRC_DEBUG(MAL_OPTIMIZER, "Skipped[%d]: %d %d\n", i, barrier, p->retc == p->argc);
-			pushInstruction(mb,p);
+			TRC_DEBUG(MAL_OPTIMIZER, "Skipped[%d]: %d %d\n", i, barrier,
+					  p->retc == p->argc);
+			pushInstruction(mb, p);
 			continue;
 		}
 
 		/* when we enter a barrier block, we should ditch all previous instructions from consideration */
-		if( p->barrier== BARRIERsymbol || p->barrier== CATCHsymbol || p->barrier == RETURNsymbol){
+		if (p->barrier == BARRIERsymbol || p->barrier == CATCHsymbol
+			|| p->barrier == RETURNsymbol) {
 			memset(list, 0, sizeof(int) * mb->stop);
 			memset(hash, 0, sizeof(int) * mb->vtop);
 		}
 		/* side-effect producing operators can never be replaced */
 		/* the same holds for function calls without an argument, it is unclear where the results comes from (e.g. clock()) */
-		if ( mayhaveSideEffects(cntxt, mb, p,TRUE) || p->argc == p->retc){
-			TRC_DEBUG(MAL_OPTIMIZER, "Skipped[%d] side-effect: %d\n", i, p->retc == p->argc);
-			pushInstruction(mb,p);
+		if (mayhaveSideEffects(cntxt, mb, p, TRUE) || p->argc == p->retc) {
+			TRC_DEBUG(MAL_OPTIMIZER, "Skipped[%d] side-effect: %d\n", i,
+					  p->retc == p->argc);
+			pushInstruction(mb, p);
 			continue;
 		}
 		/* simple SQL bind operations need not be merged, they are cheap and/or can be duplicated eliminated elsewhere cheaper */
-		if( getModuleId(p) == sqlRef && getFunctionId(p) != tidRef){
-			pushInstruction(mb,p);
+		if (getModuleId(p) == sqlRef && getFunctionId(p) != tidRef) {
+			pushInstruction(mb, p);
 			continue;
 		}
 
@@ -140,28 +147,28 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 
 		h = hashInstruction(mb, p);
 
-		TRC_DEBUG(MAL_OPTIMIZER, "Candidate[%d] look at list[%d] => %d\n", i, h, hash[h]);
+		TRC_DEBUG(MAL_OPTIMIZER, "Candidate[%d] look at list[%d] => %d\n", i, h,
+				  hash[h]);
 		traceInstruction(MAL_OPTIMIZER, mb, 0, p, LIST_MAL_ALL);
 
-		if( h < 0){
-			pushInstruction(mb,p);
+		if (h < 0) {
+			pushInstruction(mb, p);
 			continue;
 		}
 
-		bailout = 1024 ;  // don't run over long collision list
+		bailout = 1024;			// don't run over long collision list
 		/* Look into the hash structure for matching instructions */
-		for (j = hash[h];  j > 0 && bailout-- > 0  ; j = list[j])
-			if ( (q= getInstrPtr(mb,j)) && getFunctionId(q) == getFunctionId(p) && getModuleId(q) == getModuleId(p)){
-				TRC_DEBUG(MAL_OPTIMIZER, "Candidate[%d->%d] %d %d :%d %d %d=%d %d %d %d\n",
-					j, list[j],
-					hasSameSignature(mb, p, q),
-					hasSameArguments(mb, p, q),
-					q->token != ASSIGNsymbol ,
-					list[getArg(q,q->argc-1)],i,
-					!hasCommonResults(p, q),
-					!isUnsafeFunction(q),
-					!isUpdateInstruction(q),
-					isLinearFlow(q));
+		for (j = hash[h]; j > 0 && bailout-- > 0; j = list[j])
+			if ((q = getInstrPtr(mb, j)) && getFunctionId(q) == getFunctionId(p)
+				&& getModuleId(q) == getModuleId(p)) {
+				TRC_DEBUG(MAL_OPTIMIZER,
+						  "Candidate[%d->%d] %d %d :%d %d %d=%d %d %d %d\n", j,
+						  list[j], hasSameSignature(mb, p, q),
+						  hasSameArguments(mb, p, q), q->token != ASSIGNsymbol,
+						  list[getArg(q, q->argc - 1)], i, !hasCommonResults(p,
+																			 q),
+						  !isUnsafeFunction(q), !isUpdateInstruction(q),
+						  isLinearFlow(q));
 				traceInstruction(MAL_OPTIMIZER, mb, 0, q, LIST_MAL_ALL);
 
 				/*
@@ -169,72 +176,78 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 				 * handled by the alias removal part. All arguments should
 				 * be assigned their value before instruction p.
 				 */
-				if ( hasSameArguments(mb, p, q) &&
-					 hasSameSignature(mb, p, q) &&
-					 !hasCommonResults(p, q) &&
-					 !isUnsafeFunction(q) &&
-					 !isUpdateInstruction(q) &&
-					 !isProjectConst(q) && /* disable project(x,val), as its used for the result of case statements */
-					 isLinearFlow(q)
-					) {
-					if (safetyBarrier(p, q) ){
+				if (hasSameArguments(mb, p, q) && hasSameSignature(mb, p, q) && !hasCommonResults(p, q) && !isUnsafeFunction(q) && !isUpdateInstruction(q) && !isProjectConst(q) &&	/* disable project(x,val), as its used for the result of case statements */
+					isLinearFlow(q)
+						) {
+					if (safetyBarrier(p, q)) {
 						TRC_DEBUG(MAL_OPTIMIZER, "Safety barrier reached\n");
 						break;
 					}
 					duplicate = 1;
 					clrFunction(p);
 					p->argc = p->retc;
-					for (k = 0; k < q->retc; k++){
-						alias[getArg(p,k)] = getArg(q,k);
+					for (k = 0; k < q->retc; k++) {
+						alias[getArg(p, k)] = getArg(q, k);
 						/* we know the arguments fit so the instruction can safely be patched */
-						p= pushArgument(mb,p, getArg(q,k));
+						p = pushArgument(mb, p, getArg(q, k));
 					}
 
-					TRC_DEBUG(MAL_OPTIMIZER, "Modified expression %d -> %d ", getArg(p,0), getArg(p,1));
+					TRC_DEBUG(MAL_OPTIMIZER, "Modified expression %d -> %d ",
+							  getArg(p, 0), getArg(p, 1));
 					traceInstruction(MAL_OPTIMIZER, mb, 0, p, LIST_MAL_ALL);
 
 					actions++;
-					break; /* end of search */
+					break;		/* end of search */
 				}
 			}
 
-			else if(isUpdateInstruction(p)){
-				TRC_DEBUG(MAL_OPTIMIZER, "Skipped: %d %d\n", mayhaveSideEffects(cntxt, mb, q, TRUE) , isUpdateInstruction(p));
+			else if (isUpdateInstruction(p)) {
+				TRC_DEBUG(MAL_OPTIMIZER, "Skipped: %d %d\n",
+						  mayhaveSideEffects(cntxt, mb, q, TRUE),
+						  isUpdateInstruction(p));
 				traceInstruction(MAL_OPTIMIZER, mb, 0, q, LIST_MAL_ALL);
 			}
 
-		if (duplicate){
-			pushInstruction(mb,p);
+		if (duplicate) {
+			pushInstruction(mb, p);
 			continue;
 		}
 		/* update the hash structure with another candidate for re-use */
-		TRC_DEBUG(MAL_OPTIMIZER, "Update hash[%d] - look at arg '%d' hash '%d' list '%d'\n", i, getArg(p,p->argc-1), h, hash[h]);
+		TRC_DEBUG(MAL_OPTIMIZER,
+				  "Update hash[%d] - look at arg '%d' hash '%d' list '%d'\n", i,
+				  getArg(p, p->argc - 1), h, hash[h]);
 		traceInstruction(MAL_OPTIMIZER, mb, 0, p, LIST_MAL_ALL);
 
-		if ( !mayhaveSideEffects(cntxt, mb, p, TRUE) && p->argc != p->retc &&  isLinearFlow(p) && !isUnsafeFunction(p) && !isUpdateInstruction(p)){
+		if (!mayhaveSideEffects(cntxt, mb, p, TRUE) && p->argc != p->retc
+			&& isLinearFlow(p) && !isUnsafeFunction(p)
+			&& !isUpdateInstruction(p)) {
 			list[i] = hash[h];
 			hash[h] = i;
-			pushInstruction(mb,p);
+			pushInstruction(mb, p);
 		}
 	}
-	for(; i<slimit; i++)
-		if( old[i])
-			pushInstruction(mb,old[i]);
+	for (; i < slimit; i++)
+		if (old[i])
+			pushInstruction(mb, old[i]);
 	/* Defense line against incorrect plans */
-	if( actions > 0){
+	if (actions > 0) {
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)
 			msg = chkDeclarations(mb);
 	}
-wrapup:
-	/* keep actions taken as a fake argument*/
+  wrapup:
+	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 
-	if(alias) GDKfree(alias);
-	if(list) GDKfree(list);
-	if(hash) GDKfree(hash);
-	if(old) GDKfree(old);
+	if (alias)
+		GDKfree(alias);
+	if (list)
+		GDKfree(list);
+	if (hash)
+		GDKfree(hash);
+	if (old)
+		GDKfree(old);
 	return msg;
 }
