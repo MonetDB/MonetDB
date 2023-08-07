@@ -450,24 +450,31 @@ getMalBlkOptimized(MalBlkPtr mb, const char *name)
 InstrPtr
 newInstructionArgs(MalBlkPtr mb, const char *modnme, const char *fcnnme, int args)
 {
-	InstrPtr p = NULL;
+	InstrPtr p;
 
-	(void) mb;
+	if (mb && mb->errors)
+		return NULL;
 
-	p = GDKzalloc(args * sizeof(p->argv[0]) + offsetof(InstrRecord, argv));
+	if (args <= 0)
+		args = 1;
+	p = GDKmalloc(args * sizeof(p->argv[0]) + offsetof(InstrRecord, argv));
 	if (p == NULL) {
+		if (mb)
+			mb->errors = createMalException(mb, 0, TYPE, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return NULL;
 	}
-	p->maxarg = args;
-	p->typechk = TYPE_UNKNOWN;
-	setModuleId(p, modnme);
-	setFunctionId(p, fcnnme);
-	p->argc = 1;
-	p->retc = 1;
-	p->argv[0] = -1;			/* watch out for direct use in variable table */
-	/* Flow of control instructions are always marked as an assignment
-	 * with modifier */
-	p->token = ASSIGNsymbol;
+	*p = (InstrRecord) {
+		.maxarg = args,
+		.typechk = TYPE_UNKNOWN,
+		.modname = modnme,
+		.fcnname = fcnnme,
+		.argc = 1,
+		.retc = 1,
+		/* Flow of control instructions are always marked as an assignment
+		 * with modifier */
+		.token = ASSIGNsymbol,
+	};
+	p->argv[0] = -1;
 	return p;
 }
 
@@ -477,33 +484,19 @@ newInstruction(MalBlkPtr mb, const char *modnme, const char *fcnnme)
 	return newInstructionArgs(mb, modnme, fcnnme, MAXARG);
 }
 
-/* Moving instructions around calls for care, because all dependent
- * information should also be updated. */
-static void
-oldmoveInstruction(InstrPtr new, InstrPtr p)
-{
-	int space;
-
-	space = offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->argv[0]);
-	memcpy((char *) new, (char *) p, space);
-	setFunctionId(new, getFunctionId(p));
-	setModuleId(new, getModuleId(p));
-	new->typechk = TYPE_UNKNOWN;
-}
-
-/* Copying an instruction is space conservative. */
 InstrPtr
 copyInstructionArgs(InstrPtr p, int args)
 {
-	if (p->maxarg > args)
+	if (args < p->maxarg)
 		args = p->maxarg;
 	InstrPtr new = (InstrPtr) GDKmalloc(offsetof(InstrRecord, argv) + args * sizeof(p->argv[0]));
 	if(new == NULL)
 		return new;
-	oldmoveInstruction(new, p);
-	new->maxarg = args;
+	memcpy(new, p, offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->argv[0]));
 	if (args > p->maxarg)
 		memset(new->argv + p->maxarg, 0, (args - p->maxarg) * sizeof(new->argv[0]));
+	new->typechk = TYPE_UNKNOWN;
+	new->maxarg = args;
 	return new;
 }
 
@@ -1119,7 +1112,10 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 			/* free old value */
 			ft = getTypeName(otype);
 			tt = getTypeName(type);
-			mb->errors = createMalException(mb, 0, TYPE, "constant coercion error from %s to %s", ft, tt);
+			if (ft && tt)
+				mb->errors = createMalException(mb, 0, TYPE, "constant coercion error from %s to %s", ft, tt);
+			else
+				mb->errors = createMalException(mb, 0, TYPE, "constant coercion error");
 			GDKfree(ft);
 			GDKfree(tt);
 			freeException(msg);
@@ -1136,6 +1132,10 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 		return k;
 	}
 	k = newTmpVariable(mb, type);
+	if (k < 0) {
+		VALclear(cst);
+		return -1;
+	}
 	setVarConstant(mb, k);
 	setVarFixed(mb, k);
 	if (type >= 0 && type < GDKatomcnt && ATOMextern(type))

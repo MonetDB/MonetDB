@@ -238,10 +238,6 @@ addFunctions(mel_func *fcn){
 		if ( s == NULL)
 			throw(LOADER, "addFunctions", "Can not create symbol for %s.%s missing", fcn->mod, fcn->fcn);
 		mb = s->def;
-		if( mb == NULL) {
-			freeSymbol(s);
-			throw(LOADER, "addFunctions", "Can not create program block for %s.%s missing", fcn->mod, fcn->fcn);
-		}
 
 		if (fcn->cname && fcn->cname[0])
 			strcpy_len(mb->binding, fcn->cname, sizeof(mb->binding));
@@ -263,20 +259,31 @@ addFunctions(mel_func *fcn){
 		/* add the return variables */
 		if(fcn->retc == 0){
 			int idx = newTmpVariable(mb, TYPE_void);
+			if (idx < 0) {
+				freeInstruction(sig);
+				freeSymbol(s);
+				throw(LOADER, "addFunctions", MAL_MALLOC_FAIL);
+			}
 			sig = pushReturn(mb, sig, idx);
-			if (sig == NULL)
+			if (sig == NULL) {
+				freeSymbol(s);
 				throw(LOADER, "addFunctions", "Failed to create void return");
+			}
 		}
 		int i;
 		for (i = 0; i<fcn->retc; i++ ){
 			const mel_arg *a = fcn->args+i;
 			msg = makeArgument(mb, a, &idx);
-			if( msg)
+			if( msg) {
+				freeSymbol(s);
 				return msg;
+			}
 			sig = pushReturn(mb, sig, idx);
-			if (sig == NULL)
+			if (sig == NULL) {
+				freeSymbol(s);
 				//throw(LOADER, "addFunctions", "Failed to keep argument name %s", a->name);
 				throw(LOADER, "addFunctions", "Failed to keep argument %d", i);
+			}
 			int tpe = TYPE_any;
 			if (a->nr > 0) {
 				if (a->isbat)
@@ -292,12 +299,16 @@ addFunctions(mel_func *fcn){
 		for (i = fcn->retc; i<fcn->argc; i++ ){
 			const mel_arg *a = fcn->args+i;
 			msg = makeArgument(mb, a, &idx);
-			if( msg)
+			if( msg) {
+				freeSymbol(s);
 				return msg;
+			}
 			sig = pushArgument(mb, sig, idx);
-			if (sig == NULL)
+			if (sig == NULL) {
+				freeSymbol(s);
 				//throw(LOADER, "addFunctions", "Failed to keep argument name %s", a->name);
 				throw(LOADER, "addFunctions", "Failed to keep argument %d", i);
+			}
 			int tpe = TYPE_any;
 			if (a->nr > 0) {
 				if (a->isbat)

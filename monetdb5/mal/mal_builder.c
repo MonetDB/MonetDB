@@ -36,10 +36,10 @@ newAssignmentArgs(MalBlkPtr mb, int args)
 		str msg = createException(MAL, "newAssignment", "Can not allocate variable");
 		addMalException(mb, msg);
 		freeException(msg);
-		GDKfree(q);
+		freeInstruction(q);
 		return NULL;
-	} else
-		getArg(q,0) =  k;
+	}
+	getArg(q, 0) = k;
 	return q;
 }
 
@@ -61,16 +61,19 @@ newStmtArgs(MalBlkPtr mb, const char *module, const char *name, int args)
 	InstrPtr q;
 	const char *mName = putName(module), *nName = putName(name);
 
+	if (mName == NULL || nName == NULL)
+		return NULL;
+
 	q = newInstructionArgs(mb, mName, nName, args);
 	if (q == NULL)
 		return NULL;
 
 	setDestVar(q, newTmpVariable(mb, TYPE_any));
-	if (getDestVar(q) < 0 || mb->errors != MAL_SUCCEED) {
+	if (getDestVar(q) < 0) {
 		str msg = createException(MAL, "newStmtArgs", "Can not allocate variable");
 		addMalException(mb, msg);
 		freeException(msg);
-		GDKfree(q);
+		freeInstruction(q);
 		return NULL;
 	}
 	return q;
@@ -79,33 +82,25 @@ newStmtArgs(MalBlkPtr mb, const char *module, const char *name, int args)
 InstrPtr
 newReturnStmt(MalBlkPtr mb)
 {
-	InstrPtr q = newInstruction(mb, NULL, NULL);
-	int k;
+	InstrPtr q = newAssignment(mb);
 
-	if (q == NULL)
-		return NULL;
-	k = newTmpVariable(mb,TYPE_any);
-	if (k < 0 ){
-		str msg = createException(MAL, "newReturnStmt", "Can not allocate return variable");
-		addMalException(mb, msg);
-		freeException(msg);
-		GDKfree(q);
-		return NULL;
-	} else
-		getArg(q,0) = k;
-	q->barrier= RETURNsymbol;
+	if (q != NULL)
+		q->barrier = RETURNsymbol;
 	return q;
 }
 
 InstrPtr
 newFcnCallArgs(MalBlkPtr mb, const char *mod, const char *fcn, int args)
 {
-	InstrPtr q = newAssignmentArgs(mb, args);
 	const char *fcnName, *modName;
+	modName = putName(mod);
+	fcnName = putName(fcn);
+	if (modName == NULL || fcnName == NULL)
+		return NULL;
+
+	InstrPtr q = newAssignmentArgs(mb, args);
 
 	if (q != NULL) {
-		modName = putName(mod);
-		fcnName = putName(fcn);
 		setModuleId(q, modName);
 		setFunctionId(q, fcnName);
 	}
@@ -133,18 +128,17 @@ newComment(MalBlkPtr mb, const char *val)
 		str msg = createException(MAL, "newComment", "Can not allocate comment");
 		addMalException(mb, msg);
 		freeException(msg);
-		GDKfree(q);
+		freeInstruction(q);
 		return NULL;
-	} else {
-		k = defConstant(mb, TYPE_str, &cst);
-		if (k < 0) {
-			GDKfree(q);
-			return NULL;
-		}
-		getArg(q,0) = k;
-		clrVarConstant(mb,getArg(q,0));
-		setVarDisabled(mb,getArg(q,0));
 	}
+	k = defConstant(mb, TYPE_str, &cst);
+	if (k < 0) {
+		freeInstruction(q);
+		return NULL;
+	}
+	getArg(q, 0) = k;
+	clrVarConstant(mb, getArg(q, 0));
+	setVarDisabled(mb, getArg(q, 0));
 	return q;
 }
 
@@ -152,24 +146,22 @@ InstrPtr
 newCatchStmt(MalBlkPtr mb, const char *nme)
 {
 	InstrPtr q = newAssignment(mb);
-	int i= findVariable(mb,nme);
-	int k;
+	int i = findVariable(mb, nme);
 
 	if (q == NULL)
 		return NULL;
 	q->barrier = CATCHsymbol;
-	if ( i< 0) {
-		k = newVariable(mb, nme, strlen(nme),TYPE_str);
-		if (k<0){
+	if (i < 0) {
+		i = newVariable(mb, nme, strlen(nme), TYPE_str);
+		if (i < 0) {
 			str msg = createException(MAL, "newCatchStmt", "Can not allocate variable");
 			addMalException(mb, msg);
 			freeException(msg);
-			GDKfree(q);
+			freeInstruction(q);
 			return NULL;
-		}else{
-			getArg(q,0) = k;
 		}
-	} else getArg(q,0) = i;
+	}
+	getArg(q, 0) = i;
 	return q;
 }
 
@@ -177,24 +169,22 @@ InstrPtr
 newRaiseStmt(MalBlkPtr mb, const char *nme)
 {
 	InstrPtr q = newAssignment(mb);
-	int i= findVariable(mb,nme);
-	int k;
+	int i = findVariable(mb, nme);
 
 	if (q == NULL)
 		return NULL;
 	q->barrier = RAISEsymbol;
-	if ( i< 0) {
-		k = newVariable(mb, nme, strlen(nme),TYPE_str);
-		if (k< 0 || mb->errors != MAL_SUCCEED) {
+	if (i < 0) {
+		i = newVariable(mb, nme, strlen(nme), TYPE_str);
+		if (i < 0) {
 			str msg = createException(MAL, "newRaiseStmt", "Can not allocate variable");
 			addMalException(mb, msg);
 			freeException(msg);
-			GDKfree(q);
+			freeInstruction(q);
 			return NULL;
-		} else
-			getArg(q,0) = k;
-	} else
-		getArg(q,0) = i;
+		}
+	}
+	getArg(q, 0) = i;
 	return q;
 }
 
@@ -202,24 +192,22 @@ InstrPtr
 newExitStmt(MalBlkPtr mb, const char *nme)
 {
 	InstrPtr q = newAssignment(mb);
-	int i= findVariable(mb,nme);
-	int k;
+	int i = findVariable(mb, nme);
 
 	if (q == NULL)
 		return NULL;
 	q->barrier = EXITsymbol;
-	if ( i< 0) {
-		k= newVariable(mb, nme,strlen(nme),TYPE_str);
-		if (k < 0 ){
+	if (i < 0) {
+		i = newVariable(mb, nme, strlen(nme), TYPE_str);
+		if (i < 0) {
 			str msg = createException(MAL, "newExitStmt", "Can not allocate variable");
 			addMalException(mb, msg);
 			freeException(msg);
-			GDKfree(q);
+			freeInstruction(q);
 			return NULL;
-		}else
-			getArg(q,0) = k;
-	} else
-		getArg(q,0) = i;
+		}
+	}
+	getArg(q, 0) = i;
 	return q;
 }
 
@@ -283,7 +271,6 @@ getBteConstant(MalBlkPtr mb, bte val)
 	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_bte, &cst);
-	assert(_t >= 0);
 	return _t;
 }
 
@@ -316,7 +303,6 @@ getOidConstant(MalBlkPtr mb, oid val)
 	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_oid, &cst);
-	assert(_t >= 0);
 	return _t;
 }
 
@@ -366,7 +352,6 @@ getLngConstant(MalBlkPtr mb, lng val)
 	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_lng, &cst);
-	assert(_t >= 0);
 	return _t;
 }
 
@@ -399,7 +384,6 @@ getShtConstant(MalBlkPtr mb, sht val)
 	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_sht, &cst);
-	assert(_t >=0);
 	return _t;
 }
 
@@ -433,7 +417,6 @@ getHgeConstant(MalBlkPtr mb, hge val)
 	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_hge, &cst);
-	assert(_t >= 0);
 	return _t;
 }
 
@@ -467,7 +450,6 @@ getDblConstant(MalBlkPtr mb, dbl val)
 	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_dbl, &cst);
-	assert(_t >= 0);
 	return _t;
 }
 
@@ -500,7 +482,6 @@ getFltConstant(MalBlkPtr mb, flt val)
 	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_flt, &cst);
-	assert(_t >= 0);
 	return _t;
 }
 
@@ -570,7 +551,6 @@ getBitConstant(MalBlkPtr mb, bit val)
 	_t= fndConstant(mb, &cst, MAL_VAR_WINDOW);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_bit, &cst);
-	assert(_t >= 0);
 	return _t;
 }
 
