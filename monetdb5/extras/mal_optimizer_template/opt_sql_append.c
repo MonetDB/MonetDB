@@ -192,13 +192,12 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				/* use mal_builder.h primitives
 				 * q1 = newStmt(mb, algebraRef,sliceRef); */
 				q2 = newInstruction(mb,algebraRef, sliceRef);
-				if (q1 == NULL || q2 == NULL) {
+				if (q1 == NULL || q2 == NULL || (getArg(q2,0) = newTmpVariable(mb, TYPE_any)) < 0) {
 					freeInstruction(q1);
 					freeInstruction(q2);
 					i--;
 					break;
 				}
-				getArg(q2,0) = newTmpVariable(mb, TYPE_any);
 				q2 = pushArgument(mb, q2, getArg(p, 5));
 				q2 = pushLng(mb, q2, 0);
 				q2 = pushArgument(mb, q2, getArg(q1, 0));

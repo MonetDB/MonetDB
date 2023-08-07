@@ -59,11 +59,13 @@ dupError(const char *err)
 char *
 concatErrors(char *err1, const char *err2)
 {
-	size_t len = strlen(err1) + strlen(err2) + 1;
+	size_t len = strlen(err1);
+	bool addnl = err1[len - 1] != '\n';
+	len += strlen(err2) + 1 + addnl;
 	char *new = GDKmalloc(len);
 	if (new == NULL)
 		return err1;
-	strconcat_len(new, len, err1, err2, NULL);
+	strconcat_len(new, len, err1, addnl ? "\n" : "", err2, NULL);
 	freeException(err1);
 	return new;
 }

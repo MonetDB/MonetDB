@@ -49,6 +49,10 @@ Symbol newFunctionArgs(const char *mod, const char *nme, int kind, int args)
 		p->barrier = 0;
 		setDestVar(p, varid);
 		pushInstruction(s->def,p);
+		if (s->def->errors) {
+			freeSymbol(s);
+			return NULL;
+		}
 	}
 	return s;
 }

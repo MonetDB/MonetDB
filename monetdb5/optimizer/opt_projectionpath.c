@@ -15,132 +15,6 @@
 #include "opt_deadcode.h"
 #include "opt_projectionpath.h"
 
-
-// Common prefix reduction was not effective it is retained for
-// future experiments.
-//#define ELIMCOMMONPREFIX
-
-#ifdef ELIMCOMMONPREFIX
-static int
-OPTprojectionPrefix(Client cntxt, MalBlkPtr mb)
-{
-	int i, j, k, maxmatch, actions=0;
-	InstrPtr p,q,*old = NULL;
-	int limit, slimit;
-	InstrPtr *paths = NULL;
-	int *alias = NULL;
-
-	(void) cntxt;
-	limit = mb->stop;
-	slimit= mb->ssize;
-
-	paths = (InstrPtr *) GDKzalloc(mb->vsize * sizeof(InstrPtr));
-	if (paths == NULL)
-		return 0;
-	alias = (int*) GDKzalloc(mb->vsize * sizeof(int));
-	if( alias == NULL){
-		GDKfree(paths);
-		return 0;
-	}
-
-	maxmatch = 0; // to collect maximum common paths
-	old = mb->stmt;
-	/* Collect the projection paths achored at the same start */
-	for( i=0; i< limit; i++){
-		p = old[i];
-		if ( getFunctionId(p) == projectionpathRef && p->argc > 3){
-			k = getArg(p,1);
-			if( paths[k] == 0)
-				paths[k] = p;
-			q = paths[k];
-			// Calculate the number of almost identical paths
-			if( q->argc == p->argc){
-				for(j = q->retc; j<q->argc - 1; j++)
-					if( getArg(p,j) != getArg(q,j))
-						break;
-				if( j == q->argc -1 ){
-					alias[k] = alias[k] -1;
-					if (alias[k] < maxmatch)
-						maxmatch = alias[k];
-				}
-			}
-		}
-	}
-	if (maxmatch == -1){
-		GDKfree(alias);
-		GDKfree(paths);
-		return 0;
-	}
-
-	if (newMalBlkStmt(mb,mb->ssize) < 0){
-		GDKfree(paths);
-		GDKfree(alias);
-		return 0;
-	}
-
-
-	for( i = 0; i < limit; i++){
-		p = old[i];
-		if ( getFunctionId(p) != projectionpathRef ){
-			pushInstruction(mb,p);
-			continue;
-		}
-		if( p->argc < 3){
-			pushInstruction(mb,p);
-			continue;
-		}
-
-		actions++;
-		// the first one should be split if there is interest
-		k = getArg(p,1);
-		q = paths[k];
-		if( alias[k] < 0){
-			// inject the join prefix calculation
-			q= copyInstruction(q);
-			q->argc = q->argc -1;
-			getArg(q,0) = newTmpVariable(mb, getArgType(mb,q, q->argc -1));
-			pushInstruction(mb, q);
-			alias[k] = getArg(q,0);
-			q = copyInstruction(p);
-			getArg(q,1) = alias[k];
-			getArg(q,2) = getArg(q, q->argc -1);
-			q->argc = 3;
-			pushInstruction(mb,q);
-			continue;
-		}
-		// check if we can replace the projectionpath with an alias
-		k = getArg(p,1);
-		q = paths[k];
-		if( alias[k] >  0 && q->argc == p->argc){
-			for(j = q->retc; j<q->argc - 1; j++)
-				if( getArg(p,j) != getArg(q,j))
-					break;
-			if( j == q->argc - 1){
-				// we found a common prefix, and it is the first one?
-				getArg(p,1) = alias[k];
-				getArg(p,2) = getArg(p, p->argc -1);
-				p->argc = 3;
-				pushInstruction(mb,p);
-			}
-		} else {
-			pushInstruction(mb,p);
-			continue;
-		}
-
-	}
-
-	for(; i<slimit; i++)
-		if(old[i])
-			freeInstruction(old[i]);
-	GDKfree(old);
-	GDKfree(paths);
-	GDKfree(alias);
-	//if(actions)
-		//printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
-	return actions;
-}
-#endif
-
 str
 OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -280,19 +154,9 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 		if(old[i])
 			pushInstruction(mb, old[i]);
 
-#ifdef ELIMCOMMONPREFIX
-	/* All complete projection paths have been constructed.
-	 * There may be cases where there is a common prefix used multiple times.
-	 * Especially in wide table projections and lengthy paths
-	 * They can be located and replaced in the plan by factoring the common part out
-	 * First experiments on tpch SF10- Q7, showed significant decrease in performance
-	 * Also a run against SF-100 did not show improvement in Q7
- 	 * Also there are collateral damages in the testweb.
-	 */
-	 if( OPTdeadcodeImplementation(cntxt, mb, 0, 0) == MAL_SUCCEED){
-		actions += OPTprojectionPrefix(cntxt, mb);
-	}
-#endif
+	/* At this location there used to be commented out experimental code
+	 * to reuse common prefixes, but this was counter productive.  This
+	 * comment is all that is left. */
 
 	/* Defense line against incorrect plans */
 	if( actions > 0){
