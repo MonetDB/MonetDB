@@ -12,16 +12,15 @@
 #define _MAL_SCOPE_H_
 
 #include "mal.h"
-/* #define MAL_SCOPE_DEBUG  */
 
 #define MAXSCOPE 256
 
 typedef struct SCOPEDEF {
 	struct SCOPEDEF *link;		/* module with same index value */
 	const char *name;			/* index in namespace */
-	Symbol *space;				/* type dispatcher table */
 	int isAtomModule;			/* atom module definition ? */
 	str help;					/* short description of module functionality */
+	Symbol space[MAXSCOPE];		/* type dispatcher table */
 } *Module, ModuleRecord;
 
 mal_export Module userModule(void);

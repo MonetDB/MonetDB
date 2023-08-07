@@ -39,7 +39,7 @@ MALfcn
 findFunctionImplementation(const char *cname)
 {
 	for (int i = 0; i < MODULE_HASH_SIZE; i++) {
-		if (moduleIndex[i] != NULL && moduleIndex[i]->space != NULL) {
+		if (moduleIndex[i] != NULL) {
 			for (int j = 0; j < MAXSCOPE; j++) {
 				Symbol s;
 				if ((s = moduleIndex[i]->space[j]) != NULL) {
@@ -221,11 +221,6 @@ globalModule(const char *nme)
 		return NULL;
 	cur->name = nme;
 	cur->link = NULL;
-	cur->space = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));
-	if (cur->space == NULL) {
-		GDKfree(cur);
-		return NULL;
-	}
 	addModuleToIndex(cur);
 	return cur;
 }
@@ -242,12 +237,6 @@ userModule(void)
 		return NULL;
 	cur->name = putName("user");
 	cur->link = NULL;
-	cur->space = NULL;
-	cur->space = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));
-	if (cur->space == NULL) {
-		GDKfree(cur);
-		return NULL;
-	}
 	return cur;
 }
 
@@ -276,8 +265,6 @@ freeSubScope(Module scope)
 	int i;
 	Symbol s;
 
-	if (scope->space == NULL)
-		return;
 	for (i = 0; i < MAXSCOPE; i++) {
 		if (scope->space[i]) {
 			s = scope->space[i];
@@ -285,8 +272,6 @@ freeSubScope(Module scope)
 			freeSymbolList(s);
 		}
 	}
-	GDKfree(scope->space);
-	scope->space = 0;
 }
 
 void
@@ -340,12 +325,6 @@ insertSymbol(Module scope, Symbol prg)
 			scope = c;
 	}
 	t = getSymbolIndex(getFunctionId(sig));
-	if (scope->space == NULL) {
-		scope->space = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));
-		if (scope->space == NULL)
-			return;
-	}
-	assert(scope->space);
 	if (scope->space[t] == prg) {
 		/* already known, last inserted */
 	} else {

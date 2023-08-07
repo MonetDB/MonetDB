@@ -424,15 +424,13 @@ OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	s = findModule(cntxt->usermodule, putName(mod));
 	if (s == 0)
 		return 0;
-	if (s->space) {
-		j = getSymbolIndex(fcn);
-		for (t = s->space[j]; t != NULL; t = t->peer)
-			if (t->def->errors == 0) {
-				if (getSignature(t)->token == FUNCTIONsymbol) {
-					actions += MACROprocessor(cntxt, target, t);
-				}
+	j = getSymbolIndex(fcn);
+	for (t = s->space[j]; t != NULL; t = t->peer)
+		if (t->def->errors == 0) {
+			if (getSignature(t)->token == FUNCTIONsymbol) {
+				actions += MACROprocessor(cntxt, target, t);
 			}
-	}
+		}
 	return actions;
 }
 
@@ -472,16 +470,14 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p,
 	s = findModule(cntxt->usermodule, putName(mod));
 	if (s == 0)
 		return 0;
-	if (s->space) {
-		j = getSymbolIndex(fcn);
-		for (t = s->space[j]; t != NULL; t = t->peer)
-			if (t->def->errors == 0) {
-				if (getSignature(t)->token == FUNCTIONsymbol) {
-					freeException(msg);
-					msg = ORCAMprocessor(cntxt, target, t, actions);
-				}
+	j = getSymbolIndex(fcn);
+	for (t = s->space[j]; t != NULL; t = t->peer)
+		if (t->def->errors == 0) {
+			if (getSignature(t)->token == FUNCTIONsymbol) {
+				freeException(msg);
+				msg = ORCAMprocessor(cntxt, target, t, actions);
 			}
-	}
+		}
 	return msg;
 }
 

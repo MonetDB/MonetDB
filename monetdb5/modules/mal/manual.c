@@ -31,13 +31,10 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *sx = getArgReference_bat(stk, pci, 2);
 	bat *ax = getArgReference_bat(stk, pci, 3);
 	bat *cx = getArgReference_bat(stk, pci, 4);
-	Module s;
 	Module *moduleList;
 	int length;
-	int j, k, top = 0;
-	Symbol t;
+	int top = 0;
 	Module list[256];
-	char buf[BUFSIZ], *tt;
 
 	mod = COLnew(0, TYPE_str, 0, TRANSIENT);
 	fcn = COLnew(0, TYPE_str, 0, TRANSIENT);
@@ -63,31 +60,30 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	freeModuleList(moduleList);
 
-	for (k = 0; k < top; k++) {
-		s = list[k];
-		if (s->space) {
-			for (j = 0; j < MAXSCOPE; j++) {
-				if (s->space[j]) {
-					for (t = s->space[j]; t != NULL; t = t->peer) {
-						if (t->def->stmt[0]->fcnname[0] == '#')
-							continue;
-						(void) fcnDefinition(t->def, getInstrPtr(t->def, 0),
-											 buf, TRUE, buf, sizeof(buf));
-						tt = strstr(buf, "address ");
-						if (tt) {
-							*tt = 0;
-							tt += 8;
-						}
-						if (BUNappend(mod, t->def->stmt[0]->modname, false) != GDK_SUCCEED
-							|| BUNappend(fcn, t->def->stmt[0]->fcnname,
-										 false) != GDK_SUCCEED
-							|| BUNappend(com, t->def->help ? t->def->help : "",
-										 false) != GDK_SUCCEED
-							|| BUNappend(sig, buf, false) != GDK_SUCCEED
-							|| BUNappend(adr, tt ? tt : "",
-										 false) != GDK_SUCCEED) {
-							goto bailout;
-						}
+	for (int k = 0; k < top; k++) {
+		Module s = list[k];
+		for (int j = 0; j < MAXSCOPE; j++) {
+			if (s->space[j]) {
+				for (Symbol t = s->space[j]; t != NULL; t = t->peer) {
+					if (t->def->stmt[0]->fcnname[0] == '#')
+						continue;
+					char buf[1024];
+					(void) fcnDefinition(t->def, getInstrPtr(t->def, 0),
+										 buf, TRUE, buf, sizeof(buf));
+					char *tt = strstr(buf, "address ");
+					if (tt) {
+						*tt = 0;
+						tt += 8;
+					}
+					if (BUNappend(mod, t->def->stmt[0]->modname, false) != GDK_SUCCEED
+						|| BUNappend(fcn, t->def->stmt[0]->fcnname,
+									 false) != GDK_SUCCEED
+						|| BUNappend(com, t->def->help ? t->def->help : "",
+									 false) != GDK_SUCCEED
+						|| BUNappend(sig, buf, false) != GDK_SUCCEED
+						|| BUNappend(adr, tt ? tt : "",
+									 false) != GDK_SUCCEED) {
+						goto bailout;
 					}
 				}
 			}
