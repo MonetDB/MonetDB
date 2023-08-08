@@ -125,7 +125,7 @@ typedef struct {
 #define NPAIRS(d) (size_t)(((d) >> 8) & 0xff)
 #define HSIZE(d) (size_t)(((d) >> 16) & 0xffff)
 
-#undef UTF8STRIMPS 		/* Not using utf8 for now */
+#undef UTF8STRIMPS		/* Not using utf8 for now */
 #ifdef UTF8STRIMPS
 static bool
 pair_equal(CharPair *p1, CharPair *p2) {

@@ -319,7 +319,7 @@ GDKmunmap_debug(void *ptr, size_t len)
 {
 	gdk_return res = GDKmunmap(ptr, len);
 	TRC_DEBUG(ALLOC, "GDKmunmap(%p,%zu) -> %d\n",
-			   	  ptr, len, (int) res);
+		  ptr, len, (int) res);
 	return res;
 }
 #define GDKmunmap(p, l)		GDKmunmap_debug((p), (l))

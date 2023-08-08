@@ -4452,7 +4452,7 @@ gdk_add_callback(char *name, gdk_callback_func *f, int argc, void *argv[], int
 				return GDK_FAIL;
 			}
 			if (p->next == NULL) {
-			   	p->next = callback;
+				p->next = callback;
 				p = callback->next;
 			} else {
 				p = p->next;
@@ -4488,7 +4488,7 @@ gdk_remove_callback(char *cb_name, gdk_callback_func *argsfree)
 				prev->next = curr->next;
 			}
 			if (argsfree)
-			       	argsfree(curr->argc, curr->argv);
+				argsfree(curr->argc, curr->argv);
 			GDKfree(curr);
 			curr = NULL;
 			callback_list.cnt -=1;

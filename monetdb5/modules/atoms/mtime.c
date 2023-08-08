@@ -124,7 +124,7 @@ bailout: \
 static str																\
 NAME(OUTTYPE *ret, const INTYPE *src)									\
 {																		\
-	str msg = MAL_SUCCEED; 												\
+	str msg = MAL_SUCCEED;												\
 	do {																\
 		FUNC_CALL(FUNC, (*ret), *src);									\
 	} while (0);														\
@@ -133,16 +133,16 @@ NAME(OUTTYPE *ret, const INTYPE *src)									\
 static str																\
 NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
-	str msg = MAL_SUCCEED; 												\
+	str msg = MAL_SUCCEED;												\
 	BAT *b1 = NULL, *s = NULL, *bn = NULL;								\
 	struct canditer ci = {0};											\
 	oid off;															\
 	bool nils = false;													\
 	bat *ret = getArgReference_bat(stk, pci, 0),						\
 		*bid = getArgReference_bat(stk, pci, 1),						\
-		*sid = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;\
+		*sid = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL; \
 	BATiter b1i;														\
-	DEC_SRC(INTYPE, 1); 												\
+	DEC_SRC(INTYPE, 1);													\
 	DEC_OUTPUT(OUTTYPE, n);												\
 																		\
 	(void) cntxt;														\
@@ -153,7 +153,7 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		goto bailout;													\
 	}																	\
 	b1i = bat_iterator(b1);												\
-	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {\
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
@@ -162,7 +162,7 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	canditer_init(&ci, b1, s);											\
 	if ((bn = COLnew(ci.hseq, TYPE_##OUTTYPE, ci.ncand, TRANSIENT)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC,					\
-			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
+			  SQLSTATE(HY013) MAL_MALLOC_FAIL);							\
 		goto bailout;													\
 	}																	\
 	INIT_SRC(1);														\
@@ -185,7 +185,7 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	bn->tnil = nils;													\
 	SETFLAGS(ci.ncand);													\
 	bn->tkey = false;													\
-bailout: 																\
+bailout:																\
 	if (b1) {															\
 		bat_iterator_end(&b1i);											\
 		BBPunfix(b1->batCacheid);										\
@@ -214,7 +214,7 @@ bailout: 																\
 static str																\
 NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2)				\
 {																		\
-	str msg = MAL_SUCCEED; 												\
+	str msg = MAL_SUCCEED;												\
 	DEC_EXTRA(OUTTYPE, res, MALFUNC);									\
 																		\
 	do {																\
@@ -226,11 +226,11 @@ NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2)				\
 static str																\
 NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
-	str msg = MAL_SUCCEED; 												\
+	str msg = MAL_SUCCEED;												\
 	BAT *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL, *bn = NULL;		\
-	oid off1, off2; 													\
-	struct canditer ci1 = {0}, ci2 = {0}; 								\
-	bool nils = false; 													\
+	oid off1, off2;														\
+	struct canditer ci1 = {0}, ci2 = {0};								\
+	bool nils = false;													\
 	bat *ret = getArgReference_bat(stk, pci, 0),						\
 		*bid1 = getArgReference_bat(stk, pci, 1),						\
 		*bid2 = getArgReference_bat(stk, pci, 2),						\
@@ -266,13 +266,13 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	canditer_init(&ci1, b1, s1);										\
 	canditer_init(&ci2, b2, s2);										\
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {				\
-		msg = createException(MAL, "batmtime." MALFUNC, 				\
+		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  "inputs not the same size");								\
 		goto bailout;													\
 	}																	\
 	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE, ci1.ncand, TRANSIENT)) == NULL) { \
-		msg = createException(MAL, "batmtime." MALFUNC, 				\
-			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
+		msg = createException(MAL, "batmtime." MALFUNC,					\
+			  SQLSTATE(HY013) MAL_MALLOC_FAIL);							\
 		goto bailout;													\
 	}																	\
 	off1 = b1->hseqbase;												\
@@ -285,7 +285,7 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			oid p1 = (canditer_next_dense(&ci1) - off1);				\
 			oid p2 = (canditer_next_dense(&ci2) - off2);				\
 			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(1, p1), GET_NEXT_SRC2(2, p2)); \
-			APPEND_NEXT(MALFUNC); 										\
+			APPEND_NEXT(MALFUNC);										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	} else {															\
@@ -293,7 +293,7 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			oid p1 = (canditer_next(&ci1) - off1);						\
 			oid p2 = (canditer_next(&ci2) - off2);						\
 			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(1, p1), GET_NEXT_SRC2(2, p2)); \
-			APPEND_NEXT(MALFUNC); 										\
+			APPEND_NEXT(MALFUNC);										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	}																	\
@@ -303,7 +303,7 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	bn->tsorted = ci1.ncand < 2;										\
 	bn->trevsorted = ci1.ncand < 2;										\
 	bn->tkey = false;													\
-bailout: 																\
+bailout:																\
 	CLEAR_EXTRA_MULTI(res);												\
 	bat_iterator_end(&b1i);												\
 	bat_iterator_end(&b2i);												\
@@ -324,11 +324,11 @@ bailout: 																\
 static str																\
 NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
-	str msg = MAL_SUCCEED; 												\
+	str msg = MAL_SUCCEED;												\
 	BAT *b2 = NULL, *s2 = NULL, *bn = NULL;								\
-	oid off2; 															\
-	struct canditer ci2 = {0}; 											\
-	bool nils = false; 													\
+	oid off2;															\
+	struct canditer ci2 = {0};											\
+	bool nils = false;													\
 	bat *ret = getArgReference_bat(stk, pci, 0),						\
 		*bid2 = getArgReference_bat(stk, pci, 2),						\
 		*sid2 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL; \
@@ -353,8 +353,8 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	}																	\
 	canditer_init(&ci2, b2, s2);										\
 	if ((bn = COLnew(ci2.hseq, TYPE_##OUTTYPE, ci2.ncand, TRANSIENT)) == NULL) { \
-		msg = createException(MAL, "batmtime." MALFUNC, 				\
-			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
+		msg = createException(MAL, "batmtime." MALFUNC,					\
+			  SQLSTATE(HY013) MAL_MALLOC_FAIL);							\
 		goto bailout;													\
 	}																	\
 	off2 = b2->hseqbase;												\
@@ -364,14 +364,14 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		for (BUN i = 0; i < ci2.ncand; i++) {							\
 			oid p2 = (canditer_next_dense(&ci2) - off2);				\
 			FUNC_CALL(FUNC, res, src1, GET_NEXT_SRC2(2, p2));			\
-			APPEND_NEXT(MALFUNC); 										\
+			APPEND_NEXT(MALFUNC);										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	} else {															\
 		for (BUN i = 0; i < ci2.ncand; i++) {							\
 			oid p2 = (canditer_next(&ci2) - off2);						\
 			FUNC_CALL(FUNC, res, src1, GET_NEXT_SRC2(2, p2));			\
-			APPEND_NEXT(MALFUNC); 										\
+			APPEND_NEXT(MALFUNC);										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	}																	\
@@ -381,9 +381,9 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	bn->tsorted = ci2.ncand < 2;										\
 	bn->trevsorted = ci2.ncand < 2;										\
 	bn->tkey = false;													\
-bailout: 																\
+bailout:																\
 	CLEAR_EXTRA_MULTI(res);												\
-	if (b2) { 															\
+	if (b2) {															\
 		bat_iterator_end(&b2i);											\
 		BBPunfix(b2->batCacheid);										\
 	}																	\
@@ -401,11 +401,11 @@ bailout: 																\
 static str																\
 NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
-	str msg = MAL_SUCCEED; 												\
+	str msg = MAL_SUCCEED;												\
 	BAT *b1 = NULL, *s1 = NULL, *bn = NULL;								\
-	oid off1; 															\
+	oid off1;															\
 	struct canditer ci1 = {0};											\
-	bool nils = false; 													\
+	bool nils = false;													\
 	bat *ret = getArgReference_bat(stk, pci, 0),						\
 		*bid1 = getArgReference_bat(stk, pci, 1),						\
 		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL; \
@@ -430,8 +430,8 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	}																	\
 	canditer_init(&ci1, b1, s1);										\
 	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE, ci1.ncand, TRANSIENT)) == NULL) { \
-		msg = createException(MAL, "batmtime." MALFUNC, 				\
-			  SQLSTATE(HY013) MAL_MALLOC_FAIL); 						\
+		msg = createException(MAL, "batmtime." MALFUNC,					\
+			  SQLSTATE(HY013) MAL_MALLOC_FAIL);							\
 		goto bailout;													\
 	}																	\
 	off1 = b1->hseqbase;												\
@@ -441,14 +441,14 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		for (BUN i = 0; i < ci1.ncand; i++) {							\
 			oid p1 = (canditer_next_dense(&ci1) - off1);				\
 			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(1, p1), src2);			\
-			APPEND_NEXT(MALFUNC); 										\
+			APPEND_NEXT(MALFUNC);										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	} else {															\
 		for (BUN i = 0; i < ci1.ncand; i++) {							\
 			oid p1 = (canditer_next(&ci1) - off1);						\
 			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(1, p1), src2);			\
-			APPEND_NEXT(MALFUNC); 										\
+			APPEND_NEXT(MALFUNC);										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
 	}																	\
@@ -458,9 +458,9 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	bn->tsorted = ci1.ncand < 2;										\
 	bn->trevsorted = ci1.ncand < 2;										\
 	bn->tkey = false;													\
-bailout: 																\
+bailout:																\
 	CLEAR_EXTRA_MULTI(res);												\
-	if (b1) { 															\
+	if (b1) {															\
 		bat_iterator_end(&b1i);											\
 		BBPunfix(b1->batCacheid);										\
 	}																	\

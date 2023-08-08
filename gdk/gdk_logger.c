@@ -2165,8 +2165,8 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 		.funcdata = funcdata,
 
 		.id = 0,
-		.saved_id = getBBPlogno(), 		/* get saved log numer from bbp */
-		.saved_tid = (int)getBBPtransid(), 	/* get saved transaction id from bbp */
+		.saved_id = getBBPlogno(),		/* get saved log numer from bbp */
+		.saved_tid = (int)getBBPtransid(),	/* get saved transaction id from bbp */
 	};
 
 	/* probably open file and check version first, then call call old logger code */

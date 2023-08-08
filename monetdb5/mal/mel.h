@@ -51,14 +51,14 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 #define args(RETC,ARGC,...) (mel_arg[ARGC]){__VA_ARGS__}, .retc=RETC, .argc=ARGC
 #define noargs		    NULL, .retc=0, .argc=0
 
-#define arg(n,t) 		{ /*.name=n,*/ .type=# t }
-#define vararg(n,t) 		{ /*.name=n,*/ .type=# t, .vargs=true }
-#define batarg(n,t) 		{ /*.name=n,*/ .type=# t, .isbat=true }
-#define batvararg(n,t) 		{ /*.name=n,*/ .type=# t, .isbat=true, .vargs=true }
-#define argany(n,a) 		{ /*.name=n,*/ .nr=a, }
-#define varargany(n,a) 		{ /*.name=n,*/ .nr=a, .vargs=true, }
-#define batargany(n,a) 		{ /*.name=n,*/ .isbat=true, .nr=a, }
-#define batvarargany(n,a) 	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, }
+#define arg(n,t)			{ /*.name=n,*/ .type=# t }
+#define vararg(n,t)			{ /*.name=n,*/ .type=# t, .vargs=true }
+#define batarg(n,t)			{ /*.name=n,*/ .type=# t, .isbat=true }
+#define batvararg(n,t)		{ /*.name=n,*/ .type=# t, .isbat=true, .vargs=true }
+#define argany(n,a)			{ /*.name=n,*/ .nr=a, }
+#define varargany(n,a)		{ /*.name=n,*/ .nr=a, .vargs=true, }
+#define batargany(n,a)		{ /*.name=n,*/ .isbat=true, .nr=a, }
+#define batvarargany(n,a)	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, }
 
 typedef struct __attribute__((__designated_init__)) mel_arg {
 	//char *name;
@@ -93,14 +93,14 @@ typedef struct __attribute__((__designated_init__)) mel_func {
 
 #define args(RETC,ARGC,...) {__VA_ARGS__}, .retc=RETC, .argc=ARGC
 
-#define arg(n,t) 		{ /*.name=n,*/ .type=TYPE_##t }
-#define vararg(n,t) 		{ /*.name=n,*/ .type=TYPE_##t, .vargs=true }
-#define batarg(n,t) 		{ /*.name=n,*/ .type=TYPE_##t, .isbat=true }
-#define batvararg(n,t) 		{ /*.name=n,*/ .type=TYPE_##t, .isbat=true, .vargs=true }
-#define argany(n,a) 		{ /*.name=n,*/ .nr=a, .type=TYPE_any }
-#define varargany(n,a) 		{ /*.name=n,*/ .nr=a, .vargs=true, .type=TYPE_any }
-#define batargany(n,a) 		{ /*.name=n,*/ .isbat=true, .nr=a, .type=TYPE_any }
-#define batvarargany(n,a) 	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, .type=TYPE_any }
+#define arg(n,t)			{ /*.name=n,*/ .type=TYPE_##t }
+#define vararg(n,t)			{ /*.name=n,*/ .type=TYPE_##t, .vargs=true }
+#define batarg(n,t)			{ /*.name=n,*/ .type=TYPE_##t, .isbat=true }
+#define batvararg(n,t)		{ /*.name=n,*/ .type=TYPE_##t, .isbat=true, .vargs=true }
+#define argany(n,a)			{ /*.name=n,*/ .nr=a, .type=TYPE_any }
+#define varargany(n,a)		{ /*.name=n,*/ .nr=a, .vargs=true, .type=TYPE_any }
+#define batargany(n,a)		{ /*.name=n,*/ .isbat=true, .nr=a, .type=TYPE_any }
+#define batvarargany(n,a)	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, .type=TYPE_any }
 
 typedef struct __attribute__((__designated_init__)) mel_arg {
 	uint16_t type:8, nr:4, isbat:1, vargs:1;

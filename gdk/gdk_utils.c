@@ -2110,7 +2110,7 @@ GDKrealloc(void *s, size_t size)
 	((size_t *) s)[-2] = size;
 	/* if growing, initialize new memory with debug pattern */
 	DEADBEEFCHK if (size > osize)
- 		memset((char *) s + osize, '\xBD', size - osize);
+		memset((char *) s + osize, '\xBD', size - osize);
 	/* write pattern to help find out-of-bounds writes */
 	memset((char *) s + size, '\xBD', nsize + DEBUG_SPACE - size);
 #endif

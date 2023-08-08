@@ -1314,7 +1314,7 @@ BATnegcands(BUN nr, BAT *odels)
 	strconcat_len(dels->filename, sizeof(dels->filename),
 		      nme, ".theap", NULL);
 
-    	if (dels->farmid < 0 ||
+	if (dels->farmid < 0 ||
 	    HEAPalloc(dels, hi - lo + (sizeof(ccand_t)/sizeof(oid)), sizeof(oid)) != GDK_SUCCEED) {
 		GDKfree(dels);
 		BBPreclaim(bn);
@@ -1347,7 +1347,7 @@ BATnegcands(BUN nr, BAT *odels)
 		  " -> " ALGOBATFMT "\n",
 		  nr, ALGOBATPAR(odels),
 		  ALGOBATPAR(bn));
-    	return bn;
+	return bn;
 }
 
 BAT *
@@ -1383,7 +1383,7 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 		      nme, ".theap", NULL);
 
 	nmask = (nr + 31) / 32;
-    	if (msks->farmid < 0 ||
+	if (msks->farmid < 0 ||
 	    HEAPalloc(msks, nmask + (sizeof(ccand_t)/sizeof(uint32_t)), sizeof(uint32_t)) != GDK_SUCCEED) {
 		GDKfree(msks);
 		BBPreclaim(bn);
@@ -1444,7 +1444,7 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 		  selected ? "true" : "false",
 		  ALGOBATPAR(bn));
 	assert(bn->tseqbase != oid_nil);
-    	return bn;
+	return bn;
 }
 
 /* convert a masked candidate list to a positive or negative candidate list */

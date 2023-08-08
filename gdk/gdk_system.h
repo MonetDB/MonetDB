@@ -223,7 +223,7 @@ gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 #define _DBG_LOCK_COUNT_0(l)					\
 	do {							\
 		ATOMIC_INC(&GDKlockcnt);			\
-		TRC_DEBUG(TEM, "Locking %s...\n", (l)->name); 	\
+		TRC_DEBUG(TEM, "Locking %s...\n", (l)->name);	\
 	} while (0)
 
 #define _DBG_LOCK_LOCKER(l)				\
@@ -243,7 +243,7 @@ gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 
 #define _DBG_LOCK_CONTENTION(l)						\
 	do {								\
-		TRC_DEBUG(TEM, "Lock %s contention\n", (l)->name); 	\
+		TRC_DEBUG(TEM, "Lock %s contention\n", (l)->name);	\
 		ATOMIC_INC(&GDKlockcontentioncnt);			\
 		ATOMIC_INC(&(l)->contention);				\
 	} while (0)
