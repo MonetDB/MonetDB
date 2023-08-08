@@ -62,28 +62,29 @@ typedef struct {
 #define MALfcn5(Type) (str (*) (Type *, void *, void *, void *, void *, void *))
 #define ManifoldLoop(N, Type, ...)										\
 	do {																\
-		Type *v = (Type*) mut->args[0].first;							\
+		Type *v = (Type *) mut->args[0].first;							\
 		for (;;) {														\
-			msg = (*(MALfcn##N(Type) mut->pci->fcn))(v, __VA_ARGS__);			\
-			if (msg) break;												\
+			msg = (*(MALfcn##N(Type) mut->pci->fcn))(v, __VA_ARGS__);	\
+			if (msg)													\
+				break;													\
 			if (++oo == olimit)											\
 				break;													\
-			for( i = mut->fvar; i<= mut->lvar; i++) {					\
-				if(ATOMstorage(mut->args[i].type) == TYPE_void ){		\
-					args[i] = (void*)  &mut->args[i].o;					\
+			for (i = mut->fvar; i <= mut->lvar; i++) {					\
+				if (ATOMstorage(mut->args[i].type) == TYPE_void) {		\
+					args[i] = (void *) &mut->args[i].o;					\
 					mut->args[i].o++;									\
-				} else if(mut->args[i].size == 0) {						\
+				} else if (mut->args[i].size == 0) {					\
 					;													\
-				} else if(ATOMstorage(mut->args[i].type) < TYPE_str ) {	\
+				} else if (ATOMstorage(mut->args[i].type) < TYPE_str) {	\
 					args[i] += mut->args[i].size;						\
 				} else if (ATOMvarsized(mut->args[i].type)) {			\
 					mut->args[i].o++;									\
 					mut->args[i].s = (str *) BUNtvar(mut->args[i].bi, mut->args[i].o); \
-					args[i] = (void*)  &mut->args[i].s;					\
+					args[i] = (void *) &mut->args[i].s;					\
 				} else {												\
 					mut->args[i].o++;									\
 					mut->args[i].s = (str *) BUNtloc(mut->args[i].bi, mut->args[i].o); \
-					args[i] = (void*)  &mut->args[i].s;					\
+					args[i] = (void *) &mut->args[i].s;					\
 				}														\
 			}															\
 			v++;														\
@@ -99,7 +100,7 @@ typedef struct {
 #endif
 #define Manifoldbody(N,...)												\
 	do {																\
-		switch(ATOMstorage(mut->args[0].b->ttype)){						\
+		switch (ATOMstorage(mut->args[0].b->ttype)) {					\
 		case TYPE_bte: ManifoldLoop(N,bte,__VA_ARGS__); break;			\
 		case TYPE_sht: ManifoldLoop(N,sht,__VA_ARGS__); break;			\
 		case TYPE_int: ManifoldLoop(N,int,__VA_ARGS__); break;			\
@@ -117,25 +118,26 @@ typedef struct {
 					break;												\
 				if (bunfastapp(mut->args[0].b, (void*) y) != GDK_SUCCEED) \
 					goto bunins_failed;									\
-				GDKfree(y); y = NULL;									\
+				GDKfree(y);												\
+				y = NULL;												\
 				if (++oo == olimit)										\
 					break;												\
-				for( i = mut->fvar; i<= mut->lvar; i++) {				\
-					if(ATOMstorage(mut->args[i].type) == TYPE_void ){ 	\
-						args[i] = (void*)  &mut->args[i].o;				\
+				for (i = mut->fvar; i <= mut->lvar; i++) {				\
+					if (ATOMstorage(mut->args[i].type) == TYPE_void) {	\
+						args[i] = (void *) &mut->args[i].o;				\
 						mut->args[i].o++;								\
 					} else if(mut->args[i].size == 0) {					\
 						;												\
-					} else if (ATOMstorage(mut->args[i].type) < TYPE_str){ \
+					} else if (ATOMstorage(mut->args[i].type) < TYPE_str) { \
 						args[i] += mut->args[i].size;					\
-					} else if(ATOMvarsized(mut->args[i].type)){			\
+					} else if (ATOMvarsized(mut->args[i].type)) {		\
 						mut->args[i].o++;								\
-						mut->args[i].s = (str*) BUNtvar(mut->args[i].bi, mut->args[i].o); \
-						args[i] =  (void*) & mut->args[i].s;			\
+						mut->args[i].s = (str *) BUNtvar(mut->args[i].bi, mut->args[i].o); \
+						args[i] = (void *) &mut->args[i].s;				\
 					} else {											\
 						mut->args[i].o++;								\
-						mut->args[i].s = (str*) BUNtloc(mut->args[i].bi, mut->args[i].o); \
-						args[i] =  (void*) & mut->args[i].s;			\
+						mut->args[i].s = (str *) BUNtloc(mut->args[i].bi, mut->args[i].o); \
+						args[i] = (void*) &mut->args[i].s;				\
 					}													\
 				}														\
 			}															\

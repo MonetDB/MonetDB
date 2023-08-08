@@ -5342,54 +5342,54 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit)); \
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
-			rlen = STR_LEN;											\
-			nl = 0;													\
+			rlen = STR_LEN;												\
+			nl = 0;														\
 			if (with_strimps)											\
-				filtered_sl = STRMPfilter(l, sl, vr, anti);			\
-			if (filtered_sl) 											\
+				filtered_sl = STRMPfilter(l, sl, vr, anti);				\
+			if (filtered_sl)											\
 				canditer_init(&lci, l, filtered_sl);					\
 			else														\
-				canditer_init(&lci, l, sl);							\
+				canditer_init(&lci, l, sl);								\
 			for (BUN lidx = 0; lidx < lci.ncand; lidx++) {				\
 				lo = canditer_next(&lci);								\
 				vl = VALUE(l, lo - lbase);								\
 				if (strNil(vl)) {										\
 					continue;											\
-				} else if (!(STRCMP)) {								\
+				} else if (!(STRCMP)) {									\
 					continue;											\
 				}														\
 				if (BATcount(r1) == BATcapacity(r1)) {					\
 					newcap = BATgrows(r1);								\
 					BATsetcount(r1, BATcount(r1));						\
-					if (r2)											\
+					if (r2)												\
 						BATsetcount(r2, BATcount(r2));					\
-					if (BATextend(r1, newcap) != GDK_SUCCEED ||		\
+					if (BATextend(r1, newcap) != GDK_SUCCEED ||			\
 						(r2 && BATextend(r2, newcap) != GDK_SUCCEED)) { \
 						msg = createException(MAL, "str.%s", fname, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 						goto exit;										\
 					}													\
 					assert(!r2 || BATcapacity(r1) == BATcapacity(r2));	\
 				}														\
-				if (BATcount(r1) > 0) {								\
+				if (BATcount(r1) > 0) {									\
 					if (lastl + 1 != lo)								\
-						r1->tseqbase = oid_nil;						\
+						r1->tseqbase = oid_nil;							\
 					if (nl == 0) {										\
-						if (r2)										\
-							r2->trevsorted = false;					\
+						if (r2)											\
+							r2->trevsorted = false;						\
 						if (lastl > lo) {								\
 							r1->tsorted = false;						\
 							r1->tkey = false;							\
 						} else if (lastl < lo) {						\
-							r1->trevsorted = false;					\
+							r1->trevsorted = false;						\
 						} else {										\
 							r1->tkey = false;							\
 						}												\
 					}													\
 				}														\
-				APPEND(r1, lo);										\
-				if (r2)												\
-					APPEND(r2, ro);									\
-				lastl = lo;											\
+				APPEND(r1, lo);											\
+				if (r2)													\
+					APPEND(r2, ro);										\
+				lastl = lo;												\
 				nl++;													\
 			}															\
 			if (with_strimps && filtered_sl)							\
@@ -5397,15 +5397,15 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (r2) {													\
 				if (nl > 1) {											\
 					r2->tkey = false;									\
-					r2->tseqbase = oid_nil;							\
-					r1->trevsorted = false;							\
+					r2->tseqbase = oid_nil;								\
+					r1->trevsorted = false;								\
 				} else if (nl == 0) {									\
 					rskipped = BATcount(r2) > 0;						\
 				} else if (rskipped) {									\
-					r2->tseqbase = oid_nil;							\
+					r2->tseqbase = oid_nil;								\
 				}														\
 			} else if (nl > 1) {										\
-				r1->trevsorted = false;								\
+				r1->trevsorted = false;									\
 			}															\
 		}																\
 	} while (0)
@@ -5416,63 +5416,63 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(exit)); \
 			ro = canditer_next(&rci);									\
 			vr = VALUE(r, ro - rbase);									\
-			rlen = STR_LEN;											\
-			nl = 0;													\
-			canditer_init(&lci, l, sl);								\
+			rlen = STR_LEN;												\
+			nl = 0;														\
+			canditer_init(&lci, l, sl);									\
 			for (BUN lidx = 0; lidx < lci.ncand; lidx++) {				\
 				lo = canditer_next(&lci);								\
 				vl = VALUE(l, lo - lbase);								\
 				if (strNil(vl)) {										\
 					continue;											\
-				} else if (!(STRCMP)) {								\
+				} else if (!(STRCMP)) {									\
 					continue;											\
 				}														\
 				if (BATcount(r1) == BATcapacity(r1)) {					\
 					newcap = BATgrows(r1);								\
 					BATsetcount(r1, BATcount(r1));						\
-					if (r2)											\
+					if (r2)												\
 						BATsetcount(r2, BATcount(r2));					\
-					if (BATextend(r1, newcap) != GDK_SUCCEED ||		\
+					if (BATextend(r1, newcap) != GDK_SUCCEED ||			\
 						(r2 && BATextend(r2, newcap) != GDK_SUCCEED)) { \
 						msg = createException(MAL, "str.%s", fname, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 						goto exit;										\
 					}													\
 					assert(!r2 || BATcapacity(r1) == BATcapacity(r2));	\
 				}														\
-				if (BATcount(r1) > 0) {								\
+				if (BATcount(r1) > 0) {									\
 					if (lastl + 1 != lo)								\
-						r1->tseqbase = oid_nil;						\
+						r1->tseqbase = oid_nil;							\
 					if (nl == 0) {										\
-						if (r2)										\
-							r2->trevsorted = false;					\
+						if (r2)											\
+							r2->trevsorted = false;						\
 						if (lastl > lo) {								\
 							r1->tsorted = false;						\
 							r1->tkey = false;							\
 						} else if (lastl < lo) {						\
-							r1->trevsorted = false;					\
+							r1->trevsorted = false;						\
 						} else {										\
 							r1->tkey = false;							\
 						}												\
 					}													\
 				}														\
-				APPEND(r1, lo);										\
-				if (r2)												\
-					APPEND(r2, ro);									\
-				lastl = lo;											\
+				APPEND(r1, lo);											\
+				if (r2)													\
+					APPEND(r2, ro);										\
+				lastl = lo;												\
 				nl++;													\
 			}															\
 			if (r2) {													\
 				if (nl > 1) {											\
 					r2->tkey = false;									\
-					r2->tseqbase = oid_nil;							\
-					r1->trevsorted = false;							\
+					r2->tseqbase = oid_nil;								\
+					r1->trevsorted = false;								\
 				} else if (nl == 0) {									\
 					rskipped = BATcount(r2) > 0;						\
 				} else if (rskipped) {									\
-					r2->tseqbase = oid_nil;							\
+					r2->tseqbase = oid_nil;								\
 				}														\
 			} else if (nl > 1) {										\
-				r1->trevsorted = false;								\
+				r1->trevsorted = false;									\
 			}															\
 		}																\
 	} while (0)

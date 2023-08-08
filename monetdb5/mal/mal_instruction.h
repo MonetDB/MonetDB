@@ -69,10 +69,10 @@ setFunctionId(InstrPtr p, const char *s)
 #define getVarType(M,I)		((M)->var[I].type)
 mal_export char *getVarName(MalBlkPtr mb, int idx);
 
-#define getVarKind(M,I)   	((M)->var[I].kind)
+#define getVarKind(M,I)		((M)->var[I].kind)
 #define getVarGDKType(M,I)	getGDKType((M)->var[I].type)
-#define setVarType(M,I,V)   	((M)->var[I].type = V)
-#define setVarKind(M,I,V)   	((M)->var[I].kind = V)	/* either _, X, or C */
+#define setVarType(M,I,V)	((M)->var[I].type = V)
+#define setVarKind(M,I,V)	((M)->var[I].kind = V)	/* either _, X, or C */
 
 #define clrVarFixed(M,I)	((M)->var[I].fixedtype = 0)
 #define setVarFixed(M,I)	((M)->var[I].fixedtype =1)
@@ -137,7 +137,7 @@ mal_export char *getVarName(MalBlkPtr mb, int idx);
 #define getArgName(M,P,I)	getVarName((M),(P)->argv[I])
 #define getArgType(M,P,I)	getVarType((M),(P)->argv[I])
 #define getArgGDKType(M,P,I) getVarGDKType((M),(P)->argv[I])
-#define getGDKType(T) 		( T <= TYPE_str ? T : (T == TYPE_any ? TYPE_void : findGDKtype(T)))
+#define getGDKType(T)		( T <= TYPE_str ? T : (T == TYPE_any ? TYPE_void : findGDKtype(T)))
 
 mal_export void addMalException(MalBlkPtr mb, str msg);
 mal_export void mal_instruction_reset(void);

@@ -114,7 +114,7 @@ nameofSQLtype(SQLSMALLINT dataType)
 	case SQL_REAL:		return "REAL";
 	case SQL_FLOAT:		return "FLOAT";
 	case SQL_DOUBLE:	return "DOUBLE";
-	case SQL_BIT:   	return "BOOLEAN";	/* MonetDB boolean type is mapped to SQL_BIT in ODBC (see msql_types[] in SQLExecute.c) */
+	case SQL_BIT:		return "BOOLEAN";	/* MonetDB boolean type is mapped to SQL_BIT in ODBC (see msql_types[] in SQLExecute.c) */
 	case SQL_TINYINT:	return "TINYINT";
 	case SQL_BIGINT:	return "BIGINT";
 	case SQL_BINARY:	return "BINARY";
@@ -125,7 +125,7 @@ nameofSQLtype(SQLSMALLINT dataType)
 	case SQL_TYPE_TIME:	return "TIME";
 	case SQL_TYPE_TIMESTAMP:	return "TIMESTAMP";
 	case SQL_INTERVAL_MONTH:	return "INTERVAL MONTH";
-	case SQL_INTERVAL_YEAR: 	return "INTERVAL YEAR";
+	case SQL_INTERVAL_YEAR:		return "INTERVAL YEAR";
 	case SQL_INTERVAL_YEAR_TO_MONTH: return "INTERVAL YEAR TO MONTH";
 	case SQL_INTERVAL_DAY:		return "INTERVAL DAY";
 	case SQL_INTERVAL_HOUR:		return "INTERVAL HOUR";

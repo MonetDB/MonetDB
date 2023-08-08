@@ -89,7 +89,7 @@
 #define accept4(sockfd, addr, addrlen, flags)	accept(sockfd, addr, addrlen)
 #endif
 
-#define SERVERMAXUSERS 		SOMAXCONN
+#define SERVERMAXUSERS		SOMAXCONN
 
 static const char seedChars[] ={
 	'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',

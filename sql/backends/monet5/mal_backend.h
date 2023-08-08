@@ -28,7 +28,7 @@
  */
 
 typedef enum output_format {
-	OFMT_CSV  = 	0,
+	OFMT_CSV  = 0,
 	OFMT_JSON =	1,
 	OFMT_NONE = 3
 } ofmt;

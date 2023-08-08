@@ -109,7 +109,7 @@
 		p = (tpe*) Tloc(b, 0);											\
 		for( j = 0; j < cnt; j++, p++){								    \
 			*p = mapfun((tpe) access_fun(s)[j]);						\
-			if (na_check){ b->tnil = true; 	b->tnonil = false; 	*p= tpe##_nil;} \
+			if (na_check){ b->tnil = true; b->tnonil = false; *p= tpe##_nil;} \
 			if (j > 0){													\
 				if (b->trevsorted && !is_##tpe##_nil(*p) && (is_##tpe##_nil(prev) || *p > prev)){ \
 					b->trevsorted = false;								\
@@ -255,7 +255,8 @@ bat_to_sexp(BAT* b, int type)
 				}
 			}
 		}
-	} 	break;
+		break;
+	}
 	}
 	bat_iterator_end(&bi);
 	return varvalue;
