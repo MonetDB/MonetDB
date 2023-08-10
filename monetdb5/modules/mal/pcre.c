@@ -51,7 +51,7 @@ typedef regex_t pcre;
 struct RE {
 	char *k;
 	uint32_t *w;
-	bool search:1, atend:1;
+	bool search:1, atend:1, is_ascii:1, case_ignore:1;
 	size_t len;
 	struct RE *n;
 };
@@ -337,6 +337,9 @@ re_is_pattern_properly_escaped(const char *pat, unsigned char esc)
 	return escaped ? false : true;
 }
 
+/* returns true if the pattern does not contain wildcard
+ * characters ('%' or '_') and no character is escaped
+ */
 static inline bool
 is_strcmpable(const char *pat, const char *esc)
 {
@@ -345,24 +348,115 @@ is_strcmpable(const char *pat, const char *esc)
 	return strlen(esc) == 0 || strNil(esc) || strstr(pat, esc) == NULL;
 }
 
-static inline bool
-re_match_ignore(const char *restrict s, const struct RE *restrict pattern)
+/* Compare two strings ignoring case. When both strings are
+ * lower case this function returns the same result as strcmp.
+ */
+static int
+istrcmp(const char *s1, const char *s2)
 {
-	const struct RE *r;
+	char c1, c2;
+	const char *p1, *p2;
+	for (p1 = s1, p2 = s2; *p1 && *p2; p1++, p2++) {
+		c1 = *p1;
+		c2 = *p2;
 
-	for (r = pattern; r; r = r->n) {
-		if (*r->w == 0 && (r->search || *s == 0))
-			return true;
-		if (!*s ||
-			(r->search
-			 ? (s = mywstrcasestr(s, r->w, r->atend)) == NULL
-			 : !mywstrncaseeq(s, r->w, r->len, r->atend)))
-			return false;
-		s += r->len;
+		if ('A' <= c1 && c1 <= 'Z')
+			c1 += 'a' - 'A';
+
+		if ('A' <= c2 && c2 <= 'Z')
+			c2 += 'a' - 'A';
+
+		if (c1 != c2)
+			return (c1 - c2);
 	}
-	return true;
+
+	if (*p1 != *p2)
+		return *p1 - *p2;
+
+	return 0;
 }
 
+/* Compare at most len characters of two strings ignoring
+ * case. When both strings are lowercase this function
+ * returns the same result as strncmp.
+ */
+static int
+istrncmp(const char *s1, const char *s2, size_t len)
+{
+	char c1, c2;
+	const char *p1, *p2;
+	size_t n = 0;
+
+	for (p1 = s1, p2 = s2; *p1 && *p2 && (n < len); p1++, p2++, n++) {
+		c1 = *p1;
+		c2 = *p2;
+
+		if ('A' <= c1 && c1 <= 'Z')
+			c1 += 'a' - 'A';
+
+		if ('A' <= c2 && c2 <= 'Z')
+			c2 += 'a' - 'A';
+
+		if (c1 != c2)
+			return c1 - c2;
+	}
+
+	if (*p1 != *p2 && n < len)
+		return *p1 - *p2;
+
+	return 0;
+}
+
+
+/* Find the first occurence of the substring needle in
+ * haystack ignoring case.
+ *
+ * NOTE: This function assumes that the needle is already
+ * lowercase.
+ */
+static const char *
+istrstr(const char *haystack, const char *needle)
+{
+	const char *ph;
+	const char *pn;
+	const char *p1;
+	bool match = true;
+
+	for (ph = haystack; *ph; ph++) {
+		match = true;
+		for (pn = needle, p1 = ph; *pn && *p1; pn++, p1++) {
+			char c1 = *pn;
+			char c2 = ('A' <= *p1 && *p1 <= 'Z') ? *p1 - 'A' + 'a' : *p1;
+			if (c1 != c2) {
+				match = false;
+				break;
+			}
+		}
+
+		/* We reached the end of the haystack, but we still have characters in
+		 * needle. None of the future iterations will match.
+		 */
+		if (*p1 == 0 && *pn != 0) {
+			break;
+		}
+
+		if (match) {
+			return ph;
+		}
+	}
+	return NULL;
+}
+
+/* Match regular expression by comparing bytes.
+ *
+ * This is faster than re_match_ignore, because it does not
+ * need to decode characters. This function should be used
+ * in all cases except when we need to perform UTF-8
+ * comparisons ignoring case.
+ *
+ * TODO: The name of the function is no longer accurate and
+ * needs to change.
+ */
 static inline bool
 re_match_no_ignore(const char *restrict s, const struct RE *restrict pattern)
 {
@@ -375,10 +469,44 @@ re_match_no_ignore(const char *restrict s, const struct RE *restrict pattern)
 		if (!*s ||
 			(r->search
 			 ? (r->atend
-				? (l = strlen(s)) < r->len || strcmp(s + l - r->len, r->k) != 0
-				: (s = strstr(s, r->k)) == NULL)
+				? (r->case_ignore
+				   ? (l = strlen(s)) < r->len || istrcmp(s + l - r->len, r->k) != 0
+				   : (l = strlen(s)) < r->len || strcmp(s + l - r->len, r->k) != 0)
+				: (r->case_ignore ? (s = istrstr(s, r->k)) == NULL
+				   : (s = strstr(s, r->k)) == NULL))
 			 : (r->atend
-				? strcmp(s, r->k) != 0 : strncmp(s, r->k, r->len) != 0)))
+				? (r->case_ignore ? istrcmp(s, r->k) != 0
+				   : strcmp(s, r->k) != 0)
+				: (r->case_ignore ? istrncmp(s, r->k, r->len) != 0
+				   : strncmp(s, r->k, r->len) != 0))))
+			return false;
+		s += r->len;
+	}
+	return true;
+}
+
+/* Match a regular expression by comparing wide characters.
+ *
+ * This needs to be used when we need to perform a
+ * case-ignoring comparions involving UTF-8 characters.
+ */
+static inline bool
+re_match_ignore(const char *restrict s, const struct RE *restrict pattern)
+{
+	const struct RE *r;
+
+	/* Since the pattern is ascii, do the cheaper comparison */
+	if (pattern->is_ascii) {
+		return re_match_no_ignore(s, pattern);
+	}
+
+	for (r = pattern; r; r = r->n) {
+		if (*r->w == 0 && (r->search || *s == 0))
+			return true;
+		if (!*s ||
+			(r->search
+			 ? (s = mywstrcasestr(s, r->w, r->atend)) == NULL
+			 : !mywstrncaseeq(s, r->w, r->len, r->atend)))
 			return false;
 		s += r->len;
 	}
@@ -400,13 +528,16 @@ re_destroy(struct RE *p)
 	}
 }
 
-/* Create a linked list of RE structures.  Depending on the caseignore
- * flag, the w (if true) or the k (if false) field is used.  These
- * fields in the first structure are allocated, whereas in all
- * subsequent structures the fields point into the allocated buffer of
- * the first. */
+/* Create a linked list of RE structures.  Depending on the
+ * caseignore and the ascii_pattern flags, the w
+ * (if caseignore == true && ascii_pattern == false) or the k
+ * (in every other case) field is used.  These in the first
+ * structure are allocated, whereas in all subsequent
+ * structures the fields point into the allocated buffer of
+ * the first.
+ */
 static struct RE *
-re_create(const char *pat, bool caseignore, uint32_t esc)
+re_create(const char *pat, bool caseignore, bool ascii_pattern, uint32_t esc)
 {
 	struct RE *r = GDKmalloc(sizeof(struct RE)), *n = r;
 	bool escaped = false;
@@ -419,7 +550,7 @@ re_create(const char *pat, bool caseignore, uint32_t esc)
 		pat++;					/* skip % */
 		r->search = true;
 	}
-	if (caseignore) {
+	if (caseignore && !ascii_pattern) {
 		uint32_t *wp;
 		uint32_t *wq;
 		wp = utf8stoucs(pat);
@@ -465,6 +596,18 @@ re_create(const char *pat, bool caseignore, uint32_t esc)
 			GDKfree(r);
 			return NULL;
 		}
+		if (ascii_pattern)
+			n->is_ascii = true;
+		if (caseignore)
+			n->case_ignore = true;
+
+		if (ascii_pattern && caseignore) {
+			for (q = p; *q != 0; q++) {
+				if ('A' <= *q && *q <= 'Z')
+					*q += 'a' - 'A';
+			}
+		}
+
 		r->k = p;
 		q = p;
 		while (*p) {
@@ -487,11 +630,21 @@ re_create(const char *pat, bool caseignore, uint32_t esc)
 						.atend = true,
 						.k = p + 1
 					};
+					if (ascii_pattern) {
+						n->is_ascii = true;
+					}
+					if (caseignore) {
+						n->case_ignore = true;
+					}
 				}
 				*q = 0;
 				q = p + 1;
 			} else {
-				*q++ = *p;
+				char c = *p;
+				if (ascii_pattern && caseignore && 'A' <= c && c <= 'Z') {
+					c += 'a' - 'A';
+				}
+				*q++ = c;
 				n->len++;
 			}
 			p++;
@@ -1299,14 +1452,29 @@ PCREsql2pcre(str *ret, const str *pat, const str *esc)
 	return sql2pcre(ret, *pat, *esc);
 }
 
+static bool
+is_ascii_str(const char *pat)
+{
+	size_t len = strlen(pat);
+	for (size_t i = 0; i < len; i++) {
+		if (pat[i] & 0x80)
+			return false;
+	}
+
+	return true;
+}
+
 static inline str
 choose_like_path(char **ppat, bool *use_re, bool *use_strcmp, bool *empty,
-				 const char *pat, const char *esc)
+				 bool *ascii_pattern, const char *pat, const char *esc)
 {
 	str res = MAL_SUCCEED;
 	*use_re = false;
 	*use_strcmp = false;
 	*empty = false;
+
+
+	*ascii_pattern = is_ascii_str(pat);
 
 	if (strNil(pat) || strNil(esc)) {
 		*empty = true;
@@ -1340,10 +1508,11 @@ PCRElike_imp(bit *ret, const str *s, const str *pat, const str *esc,
 {
 	str res = MAL_SUCCEED;
 	char *ppat = NULL;
-	bool use_re = false, use_strcmp = false, empty = false;
+	bool use_re = false, use_strcmp = false, empty = false, ascii_pattern = false;
 	struct RE *re = NULL;
 
-	if ((res = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, *pat, *esc)) != MAL_SUCCEED)
+	if ((res = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, &ascii_pattern,
+								*pat, *esc)) != MAL_SUCCEED)
 		return res;
 
 	MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" : use_strcmp ?
@@ -1355,14 +1524,18 @@ PCRElike_imp(bit *ret, const str *s, const str *pat, const str *esc,
 		*ret = bit_nil;
 	} else if (use_re) {
 		if (use_strcmp) {
-			*ret = *isens ? mystrcasecmp(*s, *pat) == 0 : strcmp(*s, *pat) == 0;
+			*ret = *isens ? (ascii_pattern
+							 ? istrcmp(*s, *pat) == 0
+							 : mystrcasecmp(*s, *pat) == 0)
+				: strcmp(*s, *pat) == 0;
 		} else {
-			if (!(re = re_create(*pat, *isens, (unsigned char) **esc)))
+			if (!(re = re_create(*pat, *isens, ascii_pattern, (unsigned char) **esc)))
 				res = createException(MAL, "pcre.like4",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			else
-				*ret = *isens ? re_match_ignore(*s, re) : re_match_no_ignore(*s,
-																			 re);
+				*ret = (*isens && !re->is_ascii)
+					? re_match_ignore(*s, re)
+					: re_match_no_ignore(*s, re);
 		}
 	} else {
 		res = *isens ? PCREimatch(ret, s, &ppat) : PCREmatch(ret, s, &ppat);
@@ -1395,13 +1568,13 @@ PCREnotlike(bit *ret, const str *s, const str *pat, const str *esc,
 
 static inline str
 re_like_build(struct RE **re, uint32_t **wpat, const char *pat, bool caseignore,
-			  bool use_strcmp, uint32_t esc)
+			  bool use_strcmp, bool ascii_pattern, uint32_t esc)
 {
 	if (!use_strcmp) {
-		if (!(*re = re_create(pat, caseignore, esc)))
+		if (!(*re = re_create(pat, caseignore, ascii_pattern, esc)))
 			return createException(MAL, "pcre.re_like_build",
 								   SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	} else if (caseignore) {
+	} else if (caseignore && !ascii_pattern) {
 		if (!(*wpat = utf8stoucs(pat)))
 			return createException(MAL, "pcre.re_like_build",
 								   SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1420,14 +1593,21 @@ re_like_build(struct RE **re, uint32_t **wpat, const char *pat, bool caseignore,
 static inline bit
 re_like_proj_apply(const char *s, const struct RE *restrict re,
 				   const uint32_t *restrict wpat, const char *pat,
-				   bool caseignore, bool anti, bool use_strcmp)
+				   bool caseignore, bool anti, bool use_strcmp, bool is_ascii)
 {
 	if (use_strcmp) {
 		if (caseignore) {
-			if (anti)
-				proj_scanloop(mywstrcasecmp(s, wpat) != 0);
-			else
-				proj_scanloop(mywstrcasecmp(s, wpat) == 0);
+			if (is_ascii) {
+				if (anti)
+					proj_scanloop(istrcmp(s, pat) != 0);
+				else
+					proj_scanloop(istrcmp(s, pat) == 0);
+			} else {
+				if (anti)
+					proj_scanloop(mywstrcasecmp(s, wpat) != 0);
+				else
+					proj_scanloop(mywstrcasecmp(s, wpat) == 0);
+			}
 		} else {
 			if (anti)
 				proj_scanloop(strcmp(s, pat) != 0);
@@ -1435,7 +1615,10 @@ re_like_proj_apply(const char *s, const struct RE *restrict re,
 				proj_scanloop(strcmp(s, pat) == 0);
 		}
 	} else {
-		if (caseignore) {
+		/* Use re_match_ignore only if the pattern is UTF-8
+		 * and we need to ignore case
+		 */
+		if (caseignore && !is_ascii) {
 			if (anti)
 				proj_scanloop(!re_match_ignore(s, re));
 			else
@@ -1590,6 +1773,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		isensitive = (bool) *isens,
 		anti = (bool) *not,
 		has_nil = false,
+		ascii_pattern =	false,
 		input_is_a_bat = isaBatType(getArgType(mb, pci, 1)),
 		pattern_is_a_bat = isaBatType(getArgType(mb, pci, 2));
 	bat *r = getArgReference_bat(stk, pci, 0);
@@ -1645,7 +1829,8 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			const char *next_input = b ? BUNtvar(bi, p) : input,
 				*np = BUNtvar(pi, p);
 
-			if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, np, *esc)) != MAL_SUCCEED) {
+			if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty,
+										&ascii_pattern, np, *esc)) != MAL_SUCCEED) {
 				bat_iterator_end(&pi);
 				if (b)
 					bat_iterator_end(&bi);
@@ -1654,14 +1839,16 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 			if (use_re) {
 				if ((msg = re_like_build(&re_simple, &wpat, np, isensitive,
-										 use_strcmp, (unsigned char) **esc)) != MAL_SUCCEED) {
+										 use_strcmp, ascii_pattern,
+										 (unsigned char) **esc)) != MAL_SUCCEED) {
 					bat_iterator_end(&pi);
 					if (b)
 						bat_iterator_end(&bi);
 					goto bailout;
 				}
 				ret[p] = re_like_proj_apply(next_input, re_simple, wpat, np,
-											isensitive, anti, use_strcmp);
+											isensitive, anti, use_strcmp,
+											ascii_pattern);
 				re_like_clean(&re_simple, &wpat);
 			} else if (empty) {
 				ret[p] = bit_nil;
@@ -1689,7 +1876,8 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			bat_iterator_end(&bi);
 	} else {
 		const char *pat = *getArgReference_str(stk, pci, 2);
-		if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, pat, *esc)) != MAL_SUCCEED)
+		if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty,
+									&ascii_pattern, pat, *esc)) != MAL_SUCCEED)
 			goto bailout;
 
 		bi = bat_iterator(b);
@@ -1699,15 +1887,15 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							   "pcrelike: pattern matching using pcre");
 
 		if (use_re) {
-			if ((msg = re_like_build(&re_simple, &wpat, pat, isensitive,
-									 use_strcmp, (unsigned char) **esc)) != MAL_SUCCEED) {
+			if ((msg = re_like_build(&re_simple, &wpat, pat, isensitive, use_strcmp,
+									 ascii_pattern, (unsigned char) **esc)) != MAL_SUCCEED) {
 				bat_iterator_end(&bi);
 				goto bailout;
 			}
 			for (BUN p = 0; p < q; p++) {
 				const char *s = BUNtvar(bi, p);
 				ret[p] = re_like_proj_apply(s, re_simple, wpat, pat, isensitive,
-											anti, use_strcmp);
+											anti, use_strcmp, ascii_pattern);
 				has_nil |= is_bit_nil(ret[p]);
 			}
 		} else if (empty) {
@@ -1848,7 +2036,8 @@ pcre_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 static str
 re_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 			  BUN *rcnt, const char *pat, bool caseignore, bool anti,
-			  bool use_strcmp, uint32_t esc, bool keep_nulls)
+			  bool use_strcmp, uint32_t esc, bool keep_nulls,
+			  bool ascii_pattern)
 {
 	BATiter bi = bat_iterator(b);
 	BUN cnt = 0, ncands = ci->ncand;
@@ -1865,17 +2054,28 @@ re_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 					  && qry_ctx->querytimeout) ? (qry_ctx->starttime +
 												   qry_ctx->querytimeout) : 0;
 	}
-	if ((msg = re_like_build(&re, &wpat, pat, caseignore, use_strcmp, esc)) != MAL_SUCCEED)
+
+	if ((msg = re_like_build(&re, &wpat, pat, caseignore, use_strcmp, ascii_pattern,
+							 esc)) != MAL_SUCCEED)
 		goto bailout;
 
 	if (use_strcmp) {
 		if (caseignore) {
-			if (anti)
-				pcrescanloop(!strNil(v)
-							 && mywstrcasecmp(v, wpat) != 0, keep_nulls);
-			else
-				pcrescanloop(!strNil(v)
-							 && mywstrcasecmp(v, wpat) == 0, keep_nulls);
+			if (ascii_pattern) {
+				if (anti)
+					pcrescanloop(!strNil(v)
+								 && istrcmp(v, pat) != 0, keep_nulls);
+				else
+					pcrescanloop(!strNil(v)
+								 && istrcmp(v, pat) == 0, keep_nulls);
+			} else {
+				if (anti)
+					pcrescanloop(!strNil(v)
+								 && mywstrcasecmp(v, wpat) != 0, keep_nulls);
+				else
+					pcrescanloop(!strNil(v)
+								 && mywstrcasecmp(v, wpat) == 0, keep_nulls);
+			}
 		} else {
 			if (anti)
 				pcrescanloop(!strNil(v) && strcmp(v, pat) != 0, keep_nulls);
@@ -1884,10 +2084,22 @@ re_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 		}
 	} else {
 		if (caseignore) {
-			if (anti)
-				pcrescanloop(!strNil(v) && !re_match_ignore(v, re), keep_nulls);
-			else
-				pcrescanloop(!strNil(v) && re_match_ignore(v, re), keep_nulls);
+			/* ascii_pattern == true is encoded in re */
+			if (anti) {
+				if (ascii_pattern)
+					pcrescanloop(!strNil(v)
+								 && !re_match_no_ignore(v, re), keep_nulls);
+				else
+					pcrescanloop(!strNil(v)
+								 && !re_match_ignore(v, re), keep_nulls);
+			} else {
+				if (ascii_pattern)
+					pcrescanloop(!strNil(v)
+								 && re_match_no_ignore(v, re), keep_nulls);
+				else
+					pcrescanloop(!strNil(v)
+								 && re_match_ignore(v, re), keep_nulls);
+			}
 		} else {
 			if (anti)
 				pcrescanloop(!strNil(v)
@@ -1912,7 +2124,10 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 	BAT *b, *s = NULL, *bn = NULL, *old_s = NULL;
 	str msg = MAL_SUCCEED;
 	char *ppat = NULL;
-	bool use_re = false, use_strcmp = false, empty = false;
+	bool use_re = false,
+		use_strcmp = false,
+		empty = false,
+		ascii_pattern =	false;
 	bool with_strimps = false;
 	bool with_strimps_anti = false;
 	BUN p = 0, q = 0, rcnt = 0;
@@ -1931,7 +2146,8 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 
-	if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, *pat, *esc)) != MAL_SUCCEED)
+	if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, &ascii_pattern,
+								*pat, *esc)) != MAL_SUCCEED)
 		goto bailout;
 
 	if (empty) {
@@ -2008,7 +2224,8 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 	if (use_re) {
 		msg = re_likeselect(bn, b, s, &ci, p, q, &rcnt, *pat, *caseignore, *anti
 							&& !with_strimps_anti, use_strcmp,
-							(unsigned char) **esc, with_strimps_anti);
+							(unsigned char) **esc, with_strimps_anti,
+							ascii_pattern);
 	} else {
 		msg = pcre_likeselect(bn, b, s, &ci, p, q, &rcnt, ppat, *caseignore,
 							  *anti && !with_strimps_anti, with_strimps_anti);
@@ -2072,98 +2289,98 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const str *pat,
 #endif
 
 /* nested loop implementation for PCRE join */
-#define pcre_join_loop(STRCMP, RE_MATCH, PCRE_COND) \
-	do { \
-		for (BUN ridx = 0; ridx < rci.ncand; ridx++) { \
-			GDK_CHECK_TIMEOUT(timeoffset, counter, \
-					GOTO_LABEL_TIMEOUT_HANDLER(bailout)); \
-			ro = canditer_next(&rci); \
-			vr = VALUE(r, ro - rbase); \
-			nl = 0; \
-			use_re = use_strcmp = empty = false; \
-			if ((msg = choose_like_path(&pcrepat, &use_re, &use_strcmp, &empty, vr, esc))) \
-				goto bailout; \
-			if (!empty) { \
-				if (use_re) { \
-					if ((msg = re_like_build(&re, &wpat, vr, caseignore, use_strcmp, (unsigned char) *esc)) != MAL_SUCCEED) \
-						goto bailout; \
-				} else if (pcrepat) { \
+#define pcre_join_loop(STRCMP, RE_MATCH, PCRE_COND)						\
+	do {																\
+		for (BUN ridx = 0; ridx < rci.ncand; ridx++) {					\
+			GDK_CHECK_TIMEOUT(timeoffset, counter,						\
+							  GOTO_LABEL_TIMEOUT_HANDLER(bailout));		\
+			ro = canditer_next(&rci);									\
+			vr = VALUE(r, ro - rbase);									\
+			nl = 0;														\
+			ascii_pattern = use_re = use_strcmp = empty = false;		\
+			if ((msg = choose_like_path(&pcrepat, &use_re, &use_strcmp, &empty, &ascii_pattern, vr, esc))) \
+				goto bailout;											\
+			if (!empty) {												\
+				if (use_re) {											\
+					if ((msg = re_like_build(&re, &wpat, vr, caseignore, use_strcmp, ascii_pattern, (unsigned char) *esc)) != MAL_SUCCEED) \
+						goto bailout;									\
+				} else if (pcrepat) {									\
 					if ((msg = pcre_like_build(&pcrere, &pcreex, pcrepat, caseignore, lci.ncand)) != MAL_SUCCEED) \
-						goto bailout; \
-					GDKfree(pcrepat); \
-					pcrepat = NULL; \
-				} \
-				canditer_reset(&lci); \
-				for (BUN lidx = 0; lidx < lci.ncand; lidx++) { \
-					lo = canditer_next(&lci); \
-					vl = VALUE(l, lo - lbase); \
-					if (strNil(vl)) { \
-						continue; \
-					} else if (use_re) { \
-						if (use_strcmp) { \
-							if (STRCMP) \
-								continue; \
-						} else { \
-							assert(re); \
-							if (RE_MATCH) \
-								continue; \
-						} \
-					} else { \
-						int retval; \
-						PCRE_EXEC;  \
-						if (PCRE_COND) \
-							continue; \
-					} \
-					if (BATcount(r1) == BATcapacity(r1)) { \
-						newcap = BATgrows(r1); \
-						BATsetcount(r1, BATcount(r1)); \
-						if (r2) \
-							BATsetcount(r2, BATcount(r2)); \
+						goto bailout;									\
+					GDKfree(pcrepat);									\
+					pcrepat = NULL;										\
+				}														\
+				canditer_reset(&lci);									\
+				for (BUN lidx = 0; lidx < lci.ncand; lidx++) {			\
+					lo = canditer_next(&lci);							\
+					vl = VALUE(l, lo - lbase);							\
+					if (strNil(vl)) {									\
+						continue;										\
+					} else if (use_re) {								\
+						if (use_strcmp) {								\
+							if (STRCMP)									\
+								continue;								\
+						} else {										\
+							assert(re);									\
+							if (RE_MATCH)								\
+								continue;								\
+						}												\
+					} else {											\
+						int retval;										\
+						PCRE_EXEC;										\
+						if (PCRE_COND)									\
+							continue;									\
+					}													\
+					if (BATcount(r1) == BATcapacity(r1)) {				\
+						newcap = BATgrows(r1);							\
+						BATsetcount(r1, BATcount(r1));					\
+						if (r2)											\
+							BATsetcount(r2, BATcount(r2));				\
 						if (BATextend(r1, newcap) != GDK_SUCCEED || (r2 && BATextend(r2, newcap) != GDK_SUCCEED)) { \
 							msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-							goto bailout; \
-						} \
+							goto bailout;								\
+						}												\
 						assert(!r2 || BATcapacity(r1) == BATcapacity(r2)); \
-					} \
-					if (BATcount(r1) > 0) { \
-						if (lastl + 1 != lo) \
-							r1->tseqbase = oid_nil; \
-						if (nl == 0) { \
-							if (r2) \
-								r2->trevsorted = false; \
-							if (lastl > lo) { \
-								r1->tsorted = false; \
-								r1->tkey = false; \
-							} else if (lastl < lo) { \
-								r1->trevsorted = false; \
-							} else { \
-								r1->tkey = false; \
-							} \
-						} \
-					} \
-					APPEND(r1, lo); \
-					if (r2) \
-						APPEND(r2, ro); \
-					lastl = lo; \
-					nl++; \
-				} \
-				re_like_clean(&re, &wpat); \
-				pcre_clean(&pcrere, &pcreex); \
-			} \
-			if (r2) { \
-				if (nl > 1) { \
-					r2->tkey = false; \
-					r2->tseqbase = oid_nil; \
-					r1->trevsorted = false; \
-				} else if (nl == 0) { \
-					rskipped = BATcount(r2) > 0; \
-				} else if (rskipped) { \
-					r2->tseqbase = oid_nil; \
-				} \
-			} else if (nl > 1) { \
-				r1->trevsorted = false; \
-			} \
-		} \
+					}													\
+					if (BATcount(r1) > 0) {								\
+						if (lastl + 1 != lo)							\
+							r1->tseqbase = oid_nil;						\
+						if (nl == 0) {									\
+							if (r2)										\
+								r2->trevsorted = false;					\
+							if (lastl > lo) {							\
+								r1->tsorted = false;					\
+								r1->tkey = false;						\
+							} else if (lastl < lo) {					\
+								r1->trevsorted = false;					\
+							} else {									\
+								r1->tkey = false;						\
+							}											\
+						}												\
+					}													\
+					APPEND(r1, lo);										\
+					if (r2)												\
+						APPEND(r2, ro);									\
+					lastl = lo;											\
+					nl++;												\
+				}														\
+				re_like_clean(&re, &wpat);								\
+				pcre_clean(&pcrere, &pcreex);							\
+			}															\
+			if (r2) {													\
+				if (nl > 1) {											\
+					r2->tkey = false;									\
+					r2->tseqbase = oid_nil;								\
+					r1->trevsorted = false;								\
+				} else if (nl == 0) {									\
+					rskipped = BATcount(r2) > 0;						\
+				} else if (rskipped) {									\
+					r2->tseqbase = oid_nil;								\
+				}														\
+			} else if (nl > 1) {										\
+				r1->trevsorted = false;									\
+			}															\
+		}																\
 	} while (0)
 
 static char *
@@ -2177,7 +2394,10 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 	BUN nl, newcap;
 	char *pcrepat = NULL, *msg = MAL_SUCCEED;
 	struct RE *re = NULL;
-	bool use_re = false, use_strcmp = false, empty = false;
+	bool use_re = false,
+		use_strcmp = false,
+		empty = false,
+		ascii_pattern = false;
 	uint32_t *wpat = NULL;
 #ifdef HAVE_LIBPCRE
 	pcre *pcrere = NULL;
@@ -2244,19 +2464,17 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 
 	if (anti) {
 		if (caseignore) {
-			pcre_join_loop(mywstrcasecmp(vl, wpat) == 0,
+			pcre_join_loop(ascii_pattern ? istrcmp(vl, vr) == 0 : mywstrcasecmp(vl, wpat) == 0,
 						   re_match_ignore(vl, re), !PCRE_EXEC_COND);
 		} else {
-			pcre_join_loop(strcmp(vl, vr) == 0, re_match_no_ignore(vl, re),
-						   !PCRE_EXEC_COND);
+			pcre_join_loop(strcmp(vl, vr) == 0, re_match_no_ignore(vl, re), !PCRE_EXEC_COND);
 		}
 	} else {
 		if (caseignore) {
-			pcre_join_loop(mywstrcasecmp(vl, wpat) != 0,
+			pcre_join_loop(ascii_pattern ? istrcmp(vl, vr) != 0 : mywstrcasecmp(vl, wpat) != 0,
 						   !re_match_ignore(vl, re), PCRE_EXEC_COND);
 		} else {
-			pcre_join_loop(strcmp(vl, vr) != 0, !re_match_no_ignore(vl, re),
-						   PCRE_EXEC_COND);
+			pcre_join_loop(strcmp(vl, vr) != 0, !re_match_no_ignore(vl, re), PCRE_EXEC_COND);
 		}
 	}
 	bat_iterator_end(&li);
