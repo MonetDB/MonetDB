@@ -1200,6 +1200,7 @@ log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated)
 			break;
 		default:
 			/* do nothing */
+			break;
 		}
 		/* the functions we call here can succeed (LOG_OK),
 		 * but they can also fail for two different reasons:
