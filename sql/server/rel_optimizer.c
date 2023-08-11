@@ -70,6 +70,55 @@ typedef struct {
 } merge_table_prune_info;
 
 static sql_rel *
+rel_wrap_select_around_table(visitor *v, sql_rel *t, merge_table_prune_info *info)
+{
+	// TODO: it has to be a table (merge table component) add checks
+	sql_table *subt = (sql_table *)t->l;
+
+	if (isMergeTable(subt)) {
+		// TODO: handle it
+		return NULL;
+	}
+
+	if (info) {
+		t = rel_select(v->sql->sa, t, NULL);
+		t->exps = exps_copy(v->sql, info->sel->exps);
+		set_processed(t);
+		set_processed(t);
+	}
+	return t;
+}
+
+static sql_rel *
+rel_unionize_mt_tables_balanced(visitor *v, sql_rel* mt, list* tables, merge_table_prune_info *info)
+{
+	/* This function is creating the union tree in the tables list calling
+	 * itself recursively until the tables list has a single entry (the union tree)
+	 */
+
+	/* base case */
+	if (tables->cnt == 1) // XXX: or/and h->next == NULL
+		return tables->h->data;
+	/* merge (via union) every *two* consequtive nodes of the list */
+	for (node *n = tables->h; n && n->next; n = n->next->next) {
+		/* first (left) node */
+		sql_rel *tl = rel_wrap_select_around_table(v, n->data, info);
+		/* second (right) node */
+		sql_rel *tr = rel_wrap_select_around_table(v, n->next->data, info);
+		/* create the union */
+		sql_rel *tu = rel_setop(v->sql->sa, tl, tr, op_union);
+		rel_setop_set_exps(v->sql, tu, rel_projections(v->sql, mt, NULL, 1, 1), true);
+		set_processed(tu);
+		/* replace the two nodes with the new relation */
+		list_append_before(tables, n, tu);
+		list_remove_node(tables, NULL, n);
+		list_remove_node(tables, NULL, n->next);
+		// TODO: do i need to rebuild the hash of the list?
+	}
+	return rel_unionize_mt_tables_balanced(v, mt, tables, info);
+}
+
+static sql_rel *
 merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_info *info)
 {
 	if (mvc_highwater(v->sql))
@@ -363,25 +412,35 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 		}
 		nrel = rel_project(v->sql->sa, nrel, converted);
 	} else { /* Unionize children tables */
-		for (node *n = tables->h; n ; n = n->next) {
-			sql_rel *next = n->data;
-			sql_table *subt = (sql_table *) next->l;
 
-			if (isMergeTable(subt)) { /* apply select predicate recursively for nested merge tables */
-				if (!(next = merge_table_prune_and_unionize(v, next, info)))
-					return NULL;
-			} else if (info) { /* propagate select under union */
-				next = rel_select(v->sql->sa, next, NULL);
-				next->exps = exps_copy(v->sql, info->sel->exps);
-				set_processed(next);
-			}
-
-			if (nrel) {
-				nrel = rel_setop(v->sql->sa, nrel, next, op_union);
-				rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, mt_rel, NULL, 1, 1), true);
-				set_processed(nrel);
+		if (mvc_debug_on(v->sql, 16)) {
+			/* In case of a single table there in nothing to unionize */
+			if (tables->cnt == 1) {
+				nrel = rel_wrap_select_around_table(v, tables->h->data, info);
 			} else {
-				nrel = next;
+				nrel = rel_unionize_mt_tables_balanced(v, mt_rel, tables, info);
+			}
+		} else {
+			for (node *n = tables->h; n ; n = n->next) {
+				sql_rel *next = n->data;
+				sql_table *subt = (sql_table *) next->l;
+
+				if (isMergeTable(subt)) { /* apply select predicate recursively for nested merge tables */
+					if (!(next = merge_table_prune_and_unionize(v, next, info)))
+						return NULL;
+				} else if (info) { /* propagate select under union */
+					next = rel_select(v->sql->sa, next, NULL);
+					next->exps = exps_copy(v->sql, info->sel->exps);
+					set_processed(next);
+				}
+
+				if (nrel) {
+					nrel = rel_setop(v->sql->sa, nrel, next, op_union);
+					rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, mt_rel, NULL, 1, 1), true);
+					set_processed(nrel);
+				} else {
+					nrel = next;
+				}
 			}
 		}
 	}
