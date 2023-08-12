@@ -1189,6 +1189,7 @@ log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated)
 				BUN p;
 				MT_rwlock_rdlock(&cni.b->thashlock);
 				HASHloop_int(cni, cni.b->thash, p, &l.id) {
+					(void)maxupdated;
 					assert(p < maxupdated);
 					updated[p / 32] |= 1U << (p % 32);
 					/* there should only be one hit */
