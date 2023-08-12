@@ -3469,7 +3469,10 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 					sql_exp *e = n->data;
 					sql_subtype *ntp = &a->type;
 
-					e = exp_check_type(sql, ntp, NULL, e, type_equal);
+					if (ntp && ntp->type)
+						e = exp_check_type(sql, ntp, NULL, e, type_equal);
+					else
+						a->type = *exp_subtype(e);
 					if (!e) {
 						err = sql->session->status;
 						strcpy(buf, sql->errstr);
