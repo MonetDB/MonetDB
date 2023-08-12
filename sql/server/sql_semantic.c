@@ -83,6 +83,17 @@ sql_bind_paramnr(mvc *sql, int nr)
 	return NULL;
 }
 
+sql_arg *
+sql_find_param(mvc *sql, char *name)
+{
+	for (node *n = sql->params->h; n; n = n->next) {
+		sql_arg *a = n->data;
+		if (strcmp(a->name, name) == 0)
+		   return a;
+	}
+	return NULL;
+}
+
 void
 sql_destroy_params(mvc *sql)
 {

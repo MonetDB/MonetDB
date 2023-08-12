@@ -855,7 +855,6 @@ exp2bin_named_placeholders(backend *be, sql_exp *fe)
 			getDestVar(q) = varid;
         q = pushArgument(be->mb, q, s->nr);
 		pushInstruction(be->mb, q);
-        //setVarType(be->mb, varid, type);
 	}
 	return NULL;
 }

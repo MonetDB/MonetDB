@@ -840,9 +840,13 @@ sqlstmt:
 			append_symbol(stmts, $$ = $1);
 			m->sym = _symbol_create_list(SQL_MULSTMT, stmts);
 		}
+		/* call( query, nop(-1, false, parameters) ) */
 		if (m->sym->data.lval) {
 			m->emod |= mod_exec;
-			append_symbol(m->sym->data.lval, _symbol_create_symbol(SQL_CALL, $3)); 
+			dlist* l = L();
+			append_symbol(l, m->sym);
+			append_symbol(l, $3);
+			m->sym = _symbol_create_list(SQL_CALL, l);
 		}
 		YYACCEPT;
 	}

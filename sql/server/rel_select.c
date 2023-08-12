@@ -5418,7 +5418,8 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		if (sql->emode != m_prepare)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: parameters ('?') not allowed in normal queries, use PREPARE");
 		assert(se->type == type_int);
-		return exp_atom_ref(sql->sa, se->data.i_val, NULL);
+		sql_arg *a = sql_bind_paramnr(sql, se->data.i_val);
+		return exp_atom_ref(sql->sa, se->data.i_val, a?&a->type:NULL);
 	}
 	case SQL_NULL:
 		return exp_null(sql->sa, sql_bind_localtype("void"));
