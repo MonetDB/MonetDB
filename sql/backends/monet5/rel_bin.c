@@ -1335,7 +1335,10 @@ exp2bin_file_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel
 	atom *fa = fexp->l;
 	assert(fa->data.vtype == TYPE_str);
 	char *filename = fa->data.val.sval;
-	return (stmt*)fl->load(be, f, filename);
+	sql_exp *topn = NULL;
+	if (list_length(arg_list) == 3)
+		topn = list_fetch(arg_list, 2);
+	return (stmt*)fl->load(be, f, filename, topn);
 }
 
 stmt *

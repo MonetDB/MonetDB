@@ -423,7 +423,7 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 }
 
 static void *
-csv_load(void *BE, sql_subfunc *f, char *filename)
+csv_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 {
 	backend *be = (backend*)BE;
 	mvc *sql = be->mvc;
@@ -474,7 +474,7 @@ csv_load(void *BE, sql_subfunc *f, char *filename)
                             append(
                                 append(
                                     append(
-                                        append(args,
+                                        append(args, topn?topn:
                                                exp_atom_lng(sql->sa, -1)),
                                         exp_atom_lng(sql->sa, r->has_header?2:1)),
                                     exp_atom_int(sql->sa, 0)),
