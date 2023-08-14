@@ -445,6 +445,43 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 }
 
 sql_exp *
+rel_bind_column3( mvc *sql, sql_rel *rel, const char *sname, const char *tname, const char *cname, int f)
+{
+	if (!sname)
+		return rel_bind_column2(sql, rel, tname, cname, f);
+	if (is_basetable(rel->op) && !rel->exps) {
+		return rel_base_bind_column3(sql, rel, sname, tname, cname);
+	} else if (is_set(rel->op)) {
+		return NULL;
+	} else if (is_project(rel->op) && rel->l) {
+		if (!is_processed(rel))
+			return rel_bind_column3(sql, rel->l, sname, tname, cname, f);
+	} else if (is_join(rel->op)) {
+		sql_exp *e = rel_bind_column3(sql, rel->l, sname, tname, cname, f);
+
+		if (e && (is_right(rel->op) || is_full(rel->op)))
+			set_has_nil(e);
+		if (!e) {
+			e = rel_bind_column3(sql, rel->r, sname, tname, cname, f);
+			if (e && (is_left(rel->op) || is_full(rel->op)))
+				set_has_nil(e);
+		}
+		if (!e)
+			return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s.%s' ambiguous", sname, tname, cname);
+		if (e)
+			set_not_unique(e);
+		return e;
+	} else if (is_semi(rel->op) ||
+		   is_select(rel->op) ||
+		   is_topn(rel->op) ||
+		   is_sample(rel->op)) {
+		if (rel->l)
+			return rel_bind_column3(sql, rel->l, sname, tname, cname, f);
+	}
+	return NULL;
+}
+
+sql_exp *
 rel_first_column(mvc *sql, sql_rel *r)
 {
 	if (is_simple_project(r->op))

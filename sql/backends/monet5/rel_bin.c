@@ -1321,20 +1321,20 @@ exp2bin_file_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel
 	assert(1 + list_length(type_list) == list_length(arg_list));
 	*/
 
+	sql_exp *eexp = arg_list->h->next->data;
+	assert(is_atom(eexp->type));
+	atom *ea = eexp->l;
+	assert(ea->data.vtype == TYPE_str);
+	char *ext = ea->data.val.sval;
+
+	file_loader_t *fl = fl_find(ext);
+	if (!fl)
+		return NULL;
 	sql_exp *fexp = arg_list->h->data;
 	assert(is_atom(fexp->type));
 	atom *fa = fexp->l;
 	assert(fa->data.vtype == TYPE_str);
 	char *filename = fa->data.val.sval;
-
-	char *ext = strrchr(filename, '.');
-	if (ext)
-		ext = ext+1;
-	else
-		return NULL;
-	file_loader_t *fl = fl_find(ext);
-	if (!fl)
-		return NULL;
 	return (stmt*)fl->load(be, f, filename);
 }
 

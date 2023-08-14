@@ -22,7 +22,7 @@ select tm + interval '0.333' second(5) from t
 query T rowsort
 select time '20:04:04.847' - time '20:04:04.947'
 ----
-0:00:00
+-1 day, 23:59:59.900000
 
 query T rowsort
 select time(5) '20:04:04.947' - time(5) '20:04:04.847'

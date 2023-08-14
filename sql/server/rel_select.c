@@ -524,27 +524,47 @@ nary_function_arg_types_2str(mvc *sql, list* types, int N)
 }
 
 static char *
-file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, sql_exp *e, list *res_exps, char *tname)
+file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *res_exps, char *tname)
 {
-	if (!exp_is_atom(e))
+	sql_exp *file = exps->h->data;
+	if (!exp_is_atom(file))
 		return "Filename missing";
-	atom *a = e->l;
+	atom *a = file->l;
 	if (a->data.vtype != TYPE_str || !a->data.val.sval)
 		return "Filename missing";
 	char *filename = a->data.val.sval;
-	char *ext = strrchr(filename, '.');
+	char *ext = strrchr(filename, '.'), *ep = ext;
 
 	if (ext) {
 		ext=ext+1;
-		ext = toLower(ext);
+		ext = mkLower(sa_strdup(sql->sa, ext));
 	}
 
 	file_loader_t *fl = fl_find(ext);
-	if (!fl)
-		return sa_message(sql->ta, "extension '%s' missing", ext?ext:"");
+	if (!fl) {
+		/* maybe compressed */
+		char *p = ep - 1;
+		while (p > filename && *p != '.')
+			p--;
+		if (p != filename) {
+			ext = p + 1;
+			ext = sa_strdup(sql->sa, ext);
+			char *d = strchr(ext, '.');
+			assert(d);
+			*d = 0;
+			fl = fl_find(ext);
+		}
+		if (!fl)
+			return sa_message(sql->ta, "extension '%s' missing", ext?ext:"");
+	}
 	str err = fl->add_types(sql, f, filename, res_exps, tname);
 	if (err)
 		return err;
+	sql_subtype *st = sql_bind_localtype("str");
+	sql_exp *ext_exp = exp_atom(sql->sa, atom_string(sql->sa, st, ext));
+	if (!ext_exp)
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	append(exps, ext_exp);
 	return NULL;
 }
 
@@ -559,8 +579,7 @@ rel_file_loader(mvc *sql, list *exps, list *tl, char *tname)
 		if (list_empty(tl) || f->func->vararg || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1))) {
 			list *res_exps = sa_list(sql->sa);
 			if (list_length(exps) == 1 && f && f->func->varres && strlen(f->func->mod) == 0 && strlen(f->func->imp) == 0) {
-				sql_exp *file = exps->h->data;
-				char *err = file_loader_add_table_column_types(sql, f, file, res_exps, tname);
+				char *err = file_loader_add_table_column_types(sql, f, nexps, res_exps, tname);
 				if (err)
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: file_loader function type resolutions failed '%s'", err);
 			}
@@ -1299,29 +1318,35 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
 		if (exp && inner && is_groupby(inner->op) && !is_sql_aggr(f) && !is_freevar(exp))
 			exp = rel_groupby_add_aggr(sql, inner, exp);
-	} else if (dlist_length(l) == 2) {
+	} else if (dlist_length(l) == 2 || dlist_length(l) == 3) {
+		const char *sname = NULL;
 		const char *tname = l->h->data.sval;
 		const char *cname = l->h->next->data.sval;
+		if (dlist_length(l) == 3) {
+			sname = l->h->data.sval;
+			tname = l->h->next->data.sval;
+			cname = l->h->next->next->data.sval;
+		}
 
 		if (!exp && rel && inner)
-			if (!(exp = rel_bind_column2(sql, inner, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
+			if (!(exp = rel_bind_column3(sql, inner, sname, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
 		if (!exp && inner && is_sql_aggr(f) && (is_groupby(inner->op) || is_select(inner->op))) {
 			/* if inner is selection, ie having clause, get the left relation to reach group by */
 			sql_rel *gp = inner;
 			while (gp && is_select(gp->op))
 				gp = gp->l;
-			if (gp && gp->l && !(exp = rel_bind_column2(sql, gp->l, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
+			if (gp && gp->l && !(exp = rel_bind_column3(sql, gp->l, sname, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
 		}
 		if (!exp && query && query_has_outer(query)) {
 			int i;
 
 			for (i=query_has_outer(query)-1; i>= 0 && !exp && (outer = query_fetch_outer(query,i)); i--) {
-				if (!(exp = rel_bind_column2(sql, outer, tname, cname, f | sql_outer)) && sql->session->status == -ERR_AMBIGUOUS)
+				if (!(exp = rel_bind_column3(sql, outer, sname, tname, cname, f | sql_outer)) && sql->session->status == -ERR_AMBIGUOUS)
 					return NULL;
 				if (!exp && is_groupby(outer->op)) {
-					if (!(exp = rel_bind_column2(sql, outer->l, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
+					if (!(exp = rel_bind_column3(sql, outer->l, sname, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
 						return NULL;
 					else
 						used_lower_after_processed = is_processed(outer);
@@ -1371,7 +1396,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 					*rel = rel_crossproduct(sql->sa, *rel, v, op_join);
 				else
 					*rel = v;
-				if (!(exp = rel_bind_column2(sql, *rel, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
+				if (!(exp = rel_bind_column3(sql, *rel, sname, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
 					return NULL;
 			}
 		}
@@ -1387,7 +1412,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			}
 		}
 		if (!exp) {
-			if (inner && !is_sql_aggr(f) && is_groupby(inner->op) && inner->l && (exp = rel_bind_column2(sql, inner->l, tname, cname, f)))
+			if (inner && !is_sql_aggr(f) && is_groupby(inner->op) && inner->l && (exp = rel_bind_column3(sql, inner->l, sname, tname, cname, f)))
 				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
 		}
 
@@ -1397,8 +1422,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
 		if (exp && inner && is_groupby(inner->op) && !is_sql_aggr(f) && !is_freevar(exp))
 			exp = rel_groupby_add_aggr(sql, inner, exp);
-	} else if (dlist_length(l) >= 3) {
-		return sql_error(sql, 02, SQLSTATE(42000) "TODO: column names of level >= 3");
+	} else if (dlist_length(l) > 3) {
+		return sql_error(sql, 02, SQLSTATE(42000) "cross-database references are not implemented");
 	}
 	if (exp && !exp_is_atom(exp) && rel && !outer) {
 		if (query->last_exp && query->last_rel == *rel && !is_sql_aggr(query->last_state) && is_sql_aggr(f)) {

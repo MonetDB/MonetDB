@@ -16,10 +16,10 @@
 
 #include <unistd.h>
 
-static FILE *
+static stream *
 csv_open_file(char* filename)
 {
-	return fopen(filename, "r");
+	return open_rastream(filename);
 }
 
 /* todo handle escapes */
@@ -360,7 +360,7 @@ typedef struct csv_t {
 static str
 csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tname)
 {
-	FILE *file = csv_open_file(filename);
+	stream *file = csv_open_file(filename);
 	char buf[8196+1];
 
 	if(file == NULL)
@@ -371,8 +371,8 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	 * detect types
 	 * detect header
 	 */
-	ssize_t l = fread(buf, 1, 8196, file);
-	fclose(file);
+	ssize_t l = mnstr_read(file, buf, 1, 8196);
+	mnstr_close(file);
 	if (l<0)
 		return RUNTIME_LOAD_ERROR;
 	buf[l] = 0;
