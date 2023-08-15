@@ -976,10 +976,27 @@ number(mvc * c, int cur)
 	 * [0-9]+                           -- (decimal) INTEGER
 	 */
 	lc->started = 1;
+	if (cur == '0' && (cur = scanner_getc(lc)) == 'o') {
+		cur = scanner_getc(lc);
+		while (cur != EOF && isdigit(cur) && cur < '8') {
+			token = OCTAL;
+			cur = scanner_getc(lc);
+		}
+
+		if (cur == EOF)
+			return cur;
+
+		if (token != OCTAL) {
+			/* 0o not followed by a octal digit: show 'o' as erroneous */
+			utf8_putchar(lc, cur);
+			cur = 'o';
+			token = 0;
+		}
+	}
 	/* after this block, cur contains the first character after the
 	 * parsed number (which may be the first causing it not to be a number);
 	 * it token == 0 after this block, a parse error was detected */
-	if (cur == '0' && (cur = scanner_getc(lc)) == 'x') {
+	else if (cur == '0' && (cur = scanner_getc(lc)) == 'x') {
 		cur = scanner_getc(lc);
 		while (cur != EOF && iswxdigit(cur)) {
 			token = HEXADECIMAL;

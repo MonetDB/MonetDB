@@ -63,9 +63,11 @@ makeAtomNode(mvc *m, const char* type, const char* val, unsigned int digits, uns
 #ifdef HAVE_HGE
 #define MAX_DEC_DIGITS 38
 #define MAX_HEX_DIGITS 32
+#define MAX_OCT_DIGITS 64 /* TODO */
 #else
 #define MAX_DEC_DIGITS 18
 #define MAX_HEX_DIGITS 16
+#define MAX_OCT_DIGITS 32 /* TODO */
 #endif
 
 static inline int
@@ -635,7 +637,7 @@ int yydebug=1;
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
-	IDENT UIDENT aTYPE ALIAS RANK sqlINT OIDNUM HEXADECIMAL INTNUM APPROXNUM
+	IDENT UIDENT aTYPE ALIAS RANK sqlINT OIDNUM HEXADECIMAL OCTAL INTNUM APPROXNUM
 	USING
 	GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB sqlTEXT BINARY sqlBLOB
@@ -4838,6 +4840,60 @@ literal:
 		  sql_find_subtype(&t, "char", len, 0 );
 		  $$ = _newAtomNode( _atom_string(&t, s)); }
 
+ |  OCTAL { int len = _strlen($1), i = 2, err = 0;
+		  char * octal = $1;
+		  sql_subtype t;
+#ifdef HAVE_HGE
+		  hge res = 0;
+#else
+		  lng res = 0;
+#endif
+		  /* skip leading '0' */
+		  while (i < len && octal[i] == '0')
+			i++;
+
+		  if (len - i < MAX_OCT_DIGITS || (len - i == MAX_OCT_DIGITS && octal[i] < '8'))
+			while (err == 0 && i < len)
+			{
+				res <<= 3;
+				if ('0' <= octal[i] && octal[i] < '8')
+					res = res + (octal[i] - '0');
+				else
+					err = 1;
+				i++;
+			}
+		  else
+			err = 1;
+
+		  if (err == 0) {
+			assert(res >= 0);
+
+			/* use smallest type that can accommodate the given value */
+			if (res <= GDK_bte_max)
+				sql_find_subtype(&t, "tinyint", 8, 0 );
+			else if (res <= GDK_sht_max)
+				sql_find_subtype(&t, "smallint", 16, 0 );
+			else if (res <= GDK_int_max)
+				sql_find_subtype(&t, "int", 32, 0 );
+			else if (res <= GDK_lng_max)
+				sql_find_subtype(&t, "bigint", 64, 0 );
+#ifdef HAVE_HGE
+			else if (res <= GDK_hge_max)
+				sql_find_subtype(&t, "hugeint", 128, 0 );
+#endif
+			else
+				err = 1;
+		  }
+
+		  if (err != 0) {
+			sqlformaterror(m, SQLSTATE(22003) "Invalid octal number or octal too large (%s)", $1);
+			$$ = NULL;
+			YYABORT;
+		  } else {
+			$$ = _newAtomNode( atom_int(SA, &t, res));
+		  }
+
+ }
  |  HEXADECIMAL { int len = _strlen($1), i = 2, err = 0;
 		  char * hexa = $1;
 		  sql_subtype t;
