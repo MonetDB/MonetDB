@@ -216,6 +216,8 @@ globalModule(const char *nme)
 	// Global modules are not named 'user'
 	assert(strcmp(nme, "user"));
 	nme = putName(nme);
+	if (nme == NULL)
+		return NULL;
 	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
 	if (cur == NULL)
 		return NULL;
@@ -241,6 +243,10 @@ userModule(void)
 	if (cur == NULL)
 		return NULL;
 	cur->name = putName("user");
+	if (cur->name == NULL) {
+		GDKfree(cur);
+		return NULL;
+	}
 	cur->link = NULL;
 	cur->space = NULL;
 	cur->space = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));

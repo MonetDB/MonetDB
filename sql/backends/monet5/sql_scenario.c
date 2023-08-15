@@ -755,6 +755,8 @@ handle_error(mvc *m, int pstatus, str msg)
 	else if (new) {
 		newmsg = createException(SQL, "sql.execute", "%s", new);
 		GDKfree(new);
+	} else {
+		newmsg = createException(SQL, "sql.execute", MAL_MALLOC_FAIL);
 	}
 	return newmsg;
 }
@@ -1219,10 +1221,18 @@ SQLparser(Client c, backend *be)
 		c->mode = FINISHCLIENT;
 		throw(SQL, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL " for SQL allocator");
 	}
+	int err = 0;
 	if (eb_savepoint(&m->sa->eb)) {
+		/* in case m->sa->eb.msg is actually c->curprg->def->errors, we
+		 * free the latter after copying the former into a new error
+		 * message */
+		msg = createException(SQL, "SQLparser", "%s", m->sa->eb.msg);
 		sa_reset(m->sa);
-
-		throw(SQL, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL " for SQL allocator");
+		if (c && c->curprg && c->curprg->def && c->curprg->def->errors) {
+			freeException(c->curprg->def->errors);
+			c->curprg->def->errors = NULL;
+		}
+		goto finalize;
 	}
 
 	m->type = Q_PARSE;
@@ -1231,7 +1241,6 @@ SQLparser(Client c, backend *be)
 	c->query = NULL;
 	Tbegin = GDKusec();
 
-	int err = 0;
 	if ((err = sqlparse(m)) ||
 	    /* Only forget old errors on transaction boundaries */
 	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
@@ -1336,14 +1345,19 @@ SQLparser(Client c, backend *be)
 
 			Tbegin = GDKusec();
 
-			int opt = 0;
-			if (backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0) {
-				msg = handle_error(m, 0, msg);
+			int opt = ((m->emod & mod_exec) == 0); /* no need to optimze prepare - execute */
+			if (eb_savepoint(&m->sa->eb) ||
+				backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0) {
+				if (m->sa->eb.msg && msg == NULL)
+					msg = createException(SQL, "SQLparser", "%s", m->sa->eb.msg);
+				else
+					msg = handle_error(m, 0, msg);
 				err = 1;
 				MSresetInstructions(c->curprg->def, oldstop);
 				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
-			} else
-				opt = ((m->emod & mod_exec) == 0); /* no need to optimze prepare - execute */
+				freeException(c->curprg->def->errors);
+				c->curprg->def->errors = NULL;
+			}
 
 			Tend = GDKusec();
 			if(profilerStatus > 0)
@@ -1452,6 +1466,7 @@ SQLparser(Client c, backend *be)
 		}
 	}
 finalize:
+	eb_init(&m->sa->eb); /* exiting the scope where the exception buffer can be used */
 	if (msg) {
 		sqlcleanup(be, 0);
 		c->query = NULL;

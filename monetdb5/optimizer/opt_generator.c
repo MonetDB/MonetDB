@@ -17,57 +17,74 @@
  * Series generating module for integer, decimal, real, double and timestamps.
  */
 
-#define errorCheck(P,IDX,MOD,I) \
-setModuleId(P, generatorRef);\
-typeChecker(cntxt->usermodule, mb, P, IDX, TRUE);\
-if(P->typechk == TYPE_UNKNOWN){\
-	setModuleId(P,MOD);\
-	typeChecker(cntxt->usermodule, mb, P, IDX, TRUE);\
-	setModuleId(series[I], generatorRef);\
-	setFunctionId(series[I], seriesRef);\
-	typeChecker(cntxt->usermodule, mb, series[I], I, TRUE);\
-}\
-pushInstruction(mb,P);
+#define errorCheck(P,IDX,MOD,I)										\
+	do {															\
+		setModuleId(P, generatorRef);								\
+		typeChecker(cntxt->usermodule, mb, P, IDX, TRUE);			\
+		if(P->typechk == TYPE_UNKNOWN){								\
+			setModuleId(P, MOD);									\
+			typeChecker(cntxt->usermodule, mb, P, IDX, TRUE);		\
+			setModuleId(series[I], generatorRef);					\
+			setFunctionId(series[I], seriesRef);					\
+			typeChecker(cntxt->usermodule, mb, series[I], I, TRUE);	\
+		}															\
+		pushInstruction(mb,P);										\
+	} while (0)
 
 #define casting(TPE)													\
-	k= getArg(p,1);														\
-	p->argc = p->retc;													\
-	q= newInstruction(0,calcRef, TPE##Ref);								\
-	if (q == NULL) {													\
-		msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-		break;															\
-	}																	\
-	setDestVar(q, newTmpVariable(mb, TYPE_##TPE));						\
-	q = pushArgument(mb,q,getArg(series[k],1));							\
-	typeChecker(cntxt->usermodule, mb, q, 0, TRUE);						\
-	p = pushArgument(mb,p, getArg(q,0));								\
-	pushInstruction(mb,q);												\
-	q= newInstruction(0,calcRef,TPE##Ref);								\
-	if (q == NULL) {													\
-		msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-		break;															\
-	}																	\
-	setDestVar(q, newTmpVariable(mb, TYPE_##TPE));						\
-	q = pushArgument(mb,q,getArg(series[k],2));							\
-	pushInstruction(mb,q);												\
-	typeChecker(cntxt->usermodule, mb, q, 0, TRUE);						\
-	p = pushArgument(mb,p, getArg(q,0));								\
-	if( p->argc == 4){													\
-		q= newInstruction(0,calcRef,TPE##Ref);							\
+	do {																\
+		k = getArg(p, 1);												\
+		p->argc = p->retc;												\
+		q = newInstruction(0, calcRef, TPE##Ref);						\
 		if (q == NULL) {												\
 			msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-			break;														\
+			goto bailout;												\
 		}																\
-		setDestVar(q, newTmpVariable(mb, TYPE_##TPE));					\
-		q = pushArgument(mb,q,getArg(series[k],3));						\
+		if (setDestVar(q, newTmpVariable(mb, TYPE_##TPE)) < 0) {		\
+			freeInstruction(q);											\
+			msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+			goto bailout;												\
+		}																\
+		q = pushArgument(mb, q, getArg(series[k], 1));					\
 		typeChecker(cntxt->usermodule, mb, q, 0, TRUE);					\
-		p = pushArgument(mb,p, getArg(q,0));							\
-		pushInstruction(mb,q);											\
-	}																	\
-	setModuleId(p,generatorRef);										\
-	setFunctionId(p,parametersRef);										\
-	series[getArg(p,0)] = p;											\
-	pushInstruction(mb,p);
+		p = pushArgument(mb, p, getArg(q, 0));							\
+		pushInstruction(mb, q);											\
+		q = newInstruction(0, calcRef, TPE##Ref);						\
+		if (q == NULL) {												\
+			msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+			goto bailout;												\
+		}																\
+		if (setDestVar(q, newTmpVariable(mb, TYPE_##TPE)) < 0) {		\
+			freeInstruction(q);											\
+			msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+			goto bailout;												\
+		}																\
+		q = pushArgument(mb, q, getArg(series[k], 2));					\
+		pushInstruction(mb, q);											\
+		typeChecker(cntxt->usermodule,  mb,  q,  0, TRUE);				\
+		p = pushArgument(mb, p, getArg(q, 0));							\
+		if( p->argc == 4){												\
+			q = newInstruction(0, calcRef, TPE##Ref);					\
+			if (q == NULL) {											\
+				msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+				goto bailout;											\
+			}															\
+			if (setDestVar(q, newTmpVariable(mb, TYPE_##TPE)) < 0) {	\
+				freeInstruction(q);										\
+				msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+				goto bailout;											\
+			}															\
+			q = pushArgument(mb, q, getArg(series[k], 3));				\
+			typeChecker(cntxt->usermodule, mb, q, 0, TRUE);				\
+			p = pushArgument(mb, p, getArg(q, 0));						\
+			pushInstruction(mb, q);										\
+		}																\
+		setModuleId(p, generatorRef);									\
+		setFunctionId(p, parametersRef);								\
+		series[getArg(p, 0)] = p;										\
+		pushInstruction(mb, p);											\
+		old[i] = NULL;													\
+	} while (0)
 
 str
 OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
@@ -113,7 +130,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		throw(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	for (i = 0; i < limit; i++) {
+	for (i = 0; mb->errors == NULL && i < limit; i++) {
 		p = old[i];
 		if (p->token == ENDsymbol) {
 			break;
@@ -124,6 +141,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			setFunctionId(p, parametersRef);
 			typeChecker(cntxt->usermodule, mb, p, i, TRUE);
 			pushInstruction(mb, p);
+			old[i] = NULL;
 		} else if (getModuleId(p) == algebraRef && getFunctionId(p) == selectRef
 				   && series[getArg(p, 1)]) {
 			errorCheck(p, i, algebraRef, getArg(p, 1));
@@ -160,11 +178,12 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		} else if (getModuleId(p) == batcalcRef && getFunctionId(p) == dblRef
 				   && series[getArg(p, 1)] && p->argc == 2) {
 			casting(dbl);
-		} else if (getModuleId(p) == languageRef && getFunctionId(p) == passRef)
+		} else if (getModuleId(p) == languageRef && getFunctionId(p) == passRef) {
 			pushInstruction(mb, p);
-		else {
+			old[i] = NULL;
+		} else {
 			// check for use without conversion
-			for (k = p->retc; k < p->argc; k++)
+			for (k = p->retc; k < p->argc; k++) {
 				if (series[getArg(p, k)]) {
 					const char *m = getModuleId(p);
 					setModuleId(p, generatorRef);
@@ -179,11 +198,14 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 									TRUE);
 					}
 				}
+			}
 			pushInstruction(mb, p);
+			old[i] = NULL;
 		}
 	}
 	for (; i < limit; i++)
 		pushInstruction(mb, old[i]);
+  bailout:
 	for (; i < slimit; i++) {
 		if (old[i])
 			pushInstruction(mb, old[i]);
