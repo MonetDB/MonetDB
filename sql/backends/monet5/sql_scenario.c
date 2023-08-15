@@ -1200,6 +1200,19 @@ SQLchannelcmd(Client c, backend *be)
 #define MAX_QUERY 	(64*1024*1024)
 
 static str
+do_dump(Client c, backend *be, mvc *m, sql_rel *r)
+{
+	if ((m->sa && eb_savepoint(&m->sa->eb)) ||
+		backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0) {
+		if (m->sa->eb.msg)
+			return createException(SQL, "SQLparser", "%s", m->sa->eb.msg);
+		else
+			return handle_error(m, 0, MAL_SUCCEED);
+	}
+	return MAL_SUCCEED;
+}
+
+static str
 SQLparser(Client c, backend *be)
 {
 	assert (be->language != 'X');
@@ -1346,13 +1359,8 @@ SQLparser(Client c, backend *be)
 			Tbegin = GDKusec();
 
 			int opt = ((m->emod & mod_exec) == 0); /* no need to optimze prepare - execute */
-			if ((m->sa && eb_savepoint(&m->sa->eb)) ||
-				backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0) {
-				if (m->sa->eb.msg && msg == NULL)
-					msg = createException(SQL, "SQLparser", "%s", m->sa->eb.msg);
-				else
-					msg = handle_error(m, 0, msg);
-				err = 1;
+			msg = do_dump(c, be, m, r);
+			if (msg != MAL_SUCCEED) {
 				MSresetInstructions(c->curprg->def, oldstop);
 				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
 				freeException(c->curprg->def->errors);

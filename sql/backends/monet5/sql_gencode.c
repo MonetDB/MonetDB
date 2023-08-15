@@ -144,7 +144,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0;
 	Symbol symbackup = NULL;
-	int res = 0, added_to_cache = 0;
+	int res = 0, added_to_cache;
 	str msg = MAL_SUCCEED;
 	backend bebackup;
 	exception_buffer ebsave = m->sa->eb;
@@ -169,16 +169,19 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 
 	c->curprg = newFunctionArgs(putName(mod), putName(name), FUNCTIONsymbol, nargs);
 	if(c->curprg  == NULL) {
+		added_to_cache = 0;
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		res = -1;
 		goto cleanup;
 	}
 	if (eb_savepoint(&m->sa->eb)) {
+		added_to_cache = 0;
 		sql_error(m, 10, "%s", m->sa->eb.msg);
 		res = -1;
 		goto cleanup;
 	}
 
+	added_to_cache = 0;
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
 
@@ -347,7 +350,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	Symbol backup = NULL;
 	sqlid table_id = prp->id;
 	node *n;
-	int i, q, v, res = 0, added_to_cache = 0,  *lret, *rret;
+	int i, q, v, res = 0, added_to_cache,  *lret, *rret;
 	size_t len = 1024, nr, pwlen = 0;
 	char *lname = NULL, *buf = NULL, *mal_session_uuid, *err = NULL, *pwhash = NULL;
 	str username = NULL, password = NULL, msg = NULL;
@@ -409,10 +412,12 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		goto bailout;
 	}
 	if (eb_savepoint(&m->sa->eb)) {
+		added_to_cache = 0;
 		sql_error(m, 10, "%s", m->sa->eb.msg);
 		res = -1;
 		goto cleanup;
 	}
+	added_to_cache = 0;
 	lname[0] = 'l';
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
@@ -1115,7 +1120,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	Symbol symbackup = NULL;
 	InstrPtr curInstr = 0;
 	char arg[IDLENGTH];
-	int argc = 1, res = 0, added_to_cache = 0;
+	int argc = 1, res = 0, added_to_cache;
 	backend bebackup;
 	const char *sql_private_module = putName(sql_private_module_name);
 	exception_buffer ebsave = m->sa->eb;
@@ -1131,16 +1136,19 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	assert(cq && strlen(cq->name) < IDLENGTH);
 	c->curprg = newFunctionArgs(sql_private_module, cq->name = putName(cq->name), FUNCTIONsymbol, argc);
 	if (c->curprg == NULL) {
+		added_to_cache = 0;
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		res = -1;
 		goto cleanup;
 	}
 	if (eb_savepoint(&m->sa->eb)) {
+		added_to_cache = 0;
 		sql_error(m, 10, "%s", m->sa->eb.msg);
 		res = -1;
 		goto cleanup;
 	}
 
+	added_to_cache = 0;
 	mb = c->curprg->def;
 	curInstr = getInstrPtr(mb, 0);
 	/* we do not return anything */
@@ -1465,11 +1473,11 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	InstrPtr curInstr = NULL;
 	Client c = be->client;
 	Symbol symbackup = NULL;
-	int res = 0, i, nargs, retseen = 0, sideeffects = 0, no_inline = 0, added_to_cache = 0, needstoclean = 0;
-	str msg = MAL_SUCCEED;
+	int res = 0, i, nargs, retseen, sideeffects = 0, no_inline, added_to_cache, needstoclean;
+	str msg;
 	backend bebackup;
 	sql_func *pf = NULL;
-	str fimp = NULL;
+	str fimp;
 	char befname[IDLENGTH];
 	const char *sql_shared_module;
 	Module mod;
@@ -1500,21 +1508,32 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	nargs = (f->res && f->type == F_UNION ? list_length(f->res) : 1) + (f->vararg && ops ? list_length(ops) : f->ops ? list_length(f->ops) : 0);
 	c->curprg = newFunctionArgs(sql_shared_module, putName(befname), FUNCTIONsymbol, nargs);
 	if (c->curprg == NULL) {
+		added_to_cache = 0;
+		needstoclean = 0;
+		fimp = NULL;
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		res = -1;
 		goto cleanup;
 	}
 	if (eb_savepoint(&m->sa->eb)) {
+		added_to_cache = 0;
+		needstoclean = 0;
+		fimp = NULL;
 		sql_error(m, 10, "%s", m->sa->eb.msg);
 		res = -1;
 		goto cleanup;
 	}
+	msg = MAL_SUCCEED;
+	added_to_cache = 0;
+	needstoclean = 0;
 	if (!(fimp = _STRDUP(befname))) {
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		res = -1;
 		goto cleanup;
 	}
 
+	no_inline = 0;
+	retseen = 0;
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
 
