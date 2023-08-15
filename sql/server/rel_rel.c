@@ -456,6 +456,8 @@ rel_bind_column3( mvc *sql, sql_rel *rel, const char *sname, const char *tname, 
 	} else if (is_project(rel->op) && rel->l) {
 		if (!is_processed(rel))
 			return rel_bind_column3(sql, rel->l, sname, tname, cname, f);
+		else
+			return rel_bind_column2(sql, rel->l, tname, cname, f);
 	} else if (is_join(rel->op)) {
 		sql_exp *e = rel_bind_column3(sql, rel->l, sname, tname, cname, f);
 
