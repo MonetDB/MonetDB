@@ -1222,7 +1222,7 @@ SQLparser(Client c, backend *be)
 		throw(SQL, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL " for SQL allocator");
 	}
 	int err = 0;
-	if (eb_savepoint(&m->sa->eb)) {
+	if (m->sa && eb_savepoint(&m->sa->eb)) {
 		/* in case m->sa->eb.msg is actually c->curprg->def->errors, we
 		 * free the latter after copying the former into a new error
 		 * message */
@@ -1346,7 +1346,7 @@ SQLparser(Client c, backend *be)
 			Tbegin = GDKusec();
 
 			int opt = ((m->emod & mod_exec) == 0); /* no need to optimze prepare - execute */
-			if (eb_savepoint(&m->sa->eb) ||
+			if ((m->sa && eb_savepoint(&m->sa->eb)) ||
 				backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0) {
 				if (m->sa->eb.msg && msg == NULL)
 					msg = createException(SQL, "SQLparser", "%s", m->sa->eb.msg);
@@ -1466,7 +1466,8 @@ SQLparser(Client c, backend *be)
 		}
 	}
 finalize:
-	eb_init(&m->sa->eb); /* exiting the scope where the exception buffer can be used */
+	if (m->sa)
+		eb_init(&m->sa->eb); /* exiting the scope where the exception buffer can be used */
 	if (msg) {
 		sqlcleanup(be, 0);
 		c->query = NULL;
