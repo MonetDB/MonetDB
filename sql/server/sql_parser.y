@@ -5048,7 +5048,7 @@ literal:
 		  int precision = $2;
 	
 		  if (precision == 1 && strlen($4) > 9)
-			precision += strlen($4) - 9;
+			precision += (int) strlen($4) - 9;
 		  r = sql_find_subtype(&t, ($3)?"timetz":"time", precision, 0);
 		  if (!r || (a = atom_general(SA, &t, $4)) == NULL) {
 			sqlformaterror(m, SQLSTATE(22007) "Incorrect time value (%s)", $4);
