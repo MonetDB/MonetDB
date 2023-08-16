@@ -1319,18 +1319,16 @@ SQLparser_body(Client c, backend *be)
 
 			Tbegin = GDKusec();
 
-			int opt = ((m->emod & mod_exec) == 0); /* no need to optimze prepare - execute */
+			int opt = 0;
 			if (backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0) {
-				if (m->sa->eb.msg)
-					msg = createException(SQL, "SQLparser", "%s", m->sa->eb.msg);
-				else
-					msg = handle_error(m, 0, MAL_SUCCEED);
+				msg = handle_error(m, 0, msg);
 				err = 1;
 				MSresetInstructions(c->curprg->def, oldstop);
 				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
 				freeException(c->curprg->def->errors);
 				c->curprg->def->errors = NULL;
-			}
+			} else
+				opt = ((m->emod & mod_exec) == 0); /* no need to optimze prepare - execute */
 
 			Tend = GDKusec();
 			if(profilerStatus > 0)
