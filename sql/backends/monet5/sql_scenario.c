@@ -1200,54 +1200,15 @@ SQLchannelcmd(Client c, backend *be)
 #define MAX_QUERY 	(64*1024*1024)
 
 static str
-do_dump(Client c, backend *be, mvc *m, sql_rel *r)
+SQLparser_body(Client c, backend *be)
 {
-	if ((m->sa && eb_savepoint(&m->sa->eb)) ||
-		backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0) {
-		if (m->sa->eb.msg)
-			return createException(SQL, "SQLparser", "%s", m->sa->eb.msg);
-		else
-			return handle_error(m, 0, MAL_SUCCEED);
-	}
-	return MAL_SUCCEED;
-}
-
-static str
-SQLparser(Client c, backend *be)
-{
-	assert (be->language != 'X');
 	str msg = MAL_SUCCEED;
 	mvc *m = be->mvc;
 	lng Tbegin = 0, Tend = 0;
 
-	if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
-		c->mode = FINISHCLIENT;
-		return msg;
-	}
 	int pstatus = m->session->status;
 
-	/* sqlparse needs sql allocator to be available.  It can be NULL at
-	 * this point if this is a recursive call. */
-	if (!m->sa)
-		m->sa = sa_create(m->pa);
-	if (!m->sa) {
-		c->mode = FINISHCLIENT;
-		throw(SQL, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL " for SQL allocator");
-	}
 	int err = 0;
-	if (m->sa && eb_savepoint(&m->sa->eb)) {
-		/* in case m->sa->eb.msg is actually c->curprg->def->errors, we
-		 * free the latter after copying the former into a new error
-		 * message */
-		msg = createException(SQL, "SQLparser", "%s", m->sa->eb.msg);
-		sa_reset(m->sa);
-		if (c && c->curprg && c->curprg->def && c->curprg->def->errors) {
-			freeException(c->curprg->def->errors);
-			c->curprg->def->errors = NULL;
-		}
-		goto finalize;
-	}
-
 	m->type = Q_PARSE;
 	m->emode = m_normal;
 	m->emod = mod_none;
@@ -1359,8 +1320,12 @@ SQLparser(Client c, backend *be)
 			Tbegin = GDKusec();
 
 			int opt = ((m->emod & mod_exec) == 0); /* no need to optimze prepare - execute */
-			msg = do_dump(c, be, m, r);
-			if (msg != MAL_SUCCEED) {
+			if (backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0) {
+				if (m->sa->eb.msg)
+					msg = createException(SQL, "SQLparser", "%s", m->sa->eb.msg);
+				else
+					msg = handle_error(m, 0, MAL_SUCCEED);
+				err = 1;
 				MSresetInstructions(c->curprg->def, oldstop);
 				freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
 				freeException(c->curprg->def->errors);
@@ -1481,6 +1446,42 @@ finalize:
 		c->query = NULL;
 	}
 	return msg;
+}
+
+static str
+SQLparser(Client c, backend *be)
+{
+	mvc *m = be->mvc;
+	char *msg;
+
+	assert (be->language != 'X');
+
+	if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
+		c->mode = FINISHCLIENT;
+		return msg;
+	}
+
+	/* sqlparse needs sql allocator to be available.  It can be NULL at
+	 * this point if this is a recursive call. */
+	if (m->sa == NULL)
+		m->sa = sa_create(m->pa);
+	if (m->sa == NULL) {
+		c->mode = FINISHCLIENT;
+		throw(SQL, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL " for SQL allocator");
+	}
+	if (eb_savepoint(&m->sa->eb)) {
+		msg = createException(SQL, "SQLparser", "%s", m->sa->eb.msg);
+		eb_init(&m->sa->eb);
+		sa_reset(m->sa);
+		if (c && c->curprg && c->curprg->def && c->curprg->def->errors) {
+			freeException(c->curprg->def->errors);
+			c->curprg->def->errors = NULL;
+		}
+		sqlcleanup(be, 0);
+		c->query = NULL;
+		return msg;
+	}
+	return SQLparser_body(c, be);
 }
 
 str
